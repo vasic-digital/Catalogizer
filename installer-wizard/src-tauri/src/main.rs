@@ -2,9 +2,6 @@
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
 use serde::{Deserialize, Serialize};
-use std::collections::HashMap;
-use std::net::{IpAddr, Ipv4Addr};
-use tauri::Manager;
 
 mod network;
 mod smb;

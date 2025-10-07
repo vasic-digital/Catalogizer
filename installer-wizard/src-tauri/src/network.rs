@@ -1,5 +1,5 @@
 use crate::NetworkHost;
-use anyhow::{anyhow, Result};
+use anyhow::Result;
 use network_interface::{NetworkInterface, NetworkInterfaceConfig};
 use std::net::{IpAddr, Ipv4Addr};
 use std::process::Command;
@@ -13,7 +13,7 @@ pub async fn scan_network() -> Result<Vec<NetworkHost>> {
     let mut hosts = Vec::new();
 
     for interface in interfaces {
-        if interface.addr.is_some() {
+        if !interface.addr.is_empty() {
             if let Some(network) = get_network_range(&interface) {
                 let network_hosts = scan_network_range(network).await?;
                 hosts.extend(network_hosts);
@@ -30,7 +30,7 @@ pub async fn scan_network() -> Result<Vec<NetworkHost>> {
 
 /// Get network range from interface
 fn get_network_range(interface: &NetworkInterface) -> Option<ipnetwork::Ipv4Network> {
-    if let Some(addr) = &interface.addr {
+    for addr in &interface.addr {
         if let IpAddr::V4(ipv4) = addr.ip() {
             // Assume /24 network for simplicity
             if let Ok(network) = ipnetwork::Ipv4Network::new(ipv4, 24) {
@@ -125,10 +125,11 @@ async fn resolve_hostname(ip: Ipv4Addr) -> Option<String> {
     use trust_dns_resolver::TokioAsyncResolver;
     use trust_dns_resolver::config::*;
 
+    // TokioAsyncResolver::tokio() returns the resolver directly, not a Result
     let resolver = TokioAsyncResolver::tokio(
         ResolverConfig::default(),
         ResolverOpts::default(),
-    ).ok()?;
+    );
 
     if let Ok(response) = resolver.reverse_lookup(IpAddr::V4(ip)).await {
         return response.iter().next().map(|name| name.to_string());
@@ -198,7 +199,7 @@ async fn scan_ports(ip: Ipv4Addr) -> Result<Vec<u16>> {
 }
 
 /// Scan SMB shares for a specific host
-async fn scan_smb_shares_for_host(ip: Ipv4Addr) -> Result<Vec<String>> {
+async fn scan_smb_shares_for_host(_ip: Ipv4Addr) -> Result<Vec<String>> {
     // This is a simplified implementation
     // In a real implementation, you would use SMB protocol to enumerate shares
     let mut shares = Vec::new();
