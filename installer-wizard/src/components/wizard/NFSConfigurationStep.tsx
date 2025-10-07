@@ -66,7 +66,7 @@ export default function NFSConfigurationStep() {
       const nfsHosts = configState.selectedHosts.filter(host => host.open_ports.includes(2049))
       const defaultConfigs = nfsHosts.map((host, index) => ({
         name: `NFS Server ${index + 1}`,
-        host,
+        host: host.ip,
         path: '/export/data',
         mount_point: `/mnt/nfs${index + 1}`,
         options: 'vers=3',

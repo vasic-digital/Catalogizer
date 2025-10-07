@@ -10,15 +10,15 @@ edition = "2021"
 rust-version = "1.70"
 
 [build-dependencies]
-tauri-build = { version = "2.0", features = [] }
+tauri-build = { version = "2.8.0", features = [] }
 
 [dependencies]
 serde_json = "1.0"
 serde = { version = "1.0", features = ["derive"] }
-tauri = { version = "2.0", features = ["shell-open", "dialog-open", "dialog-save", "fs-read-file", "fs-write-file", "fs-exists"] }
-tauri-plugin-shell = "2.0"
-tauri-plugin-dialog = "2.0"
-tauri-plugin-fs = "2.0"
+tauri = { version = "2.8.0", features = ["shell-open", "dialog-open", "dialog-save", "fs-read-file", "fs-write-file", "fs-exists"] }
+tauri-plugin-shell = "2.3.1"
+tauri-plugin-dialog = "2.4.0"
+tauri-plugin-fs = "2.4.2"
 tokio = { version = "1.0", features = ["full"] }
 anyhow = "1.0"
 thiserror = "1.0"

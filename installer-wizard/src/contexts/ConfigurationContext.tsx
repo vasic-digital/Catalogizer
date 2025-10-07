@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useReducer, ReactNode } from 'react'
-import { Configuration, ConfigurationAccess, ConfigurationSource, SMBConnectionConfig, FTPConnectionConfig, NFSConnectionConfig, WebDAVConnectionConfig, LocalConnectionConfig } from '../types'
+import { Configuration, ConfigurationAccess, ConfigurationSource, SMBConnectionConfig, FTPConnectionConfig, NFSConnectionConfig, WebDAVConnectionConfig, LocalConnectionConfig, NetworkHost } from '../types'
 
 interface ConfigurationState {
   configuration: Configuration
@@ -9,7 +9,7 @@ interface ConfigurationState {
   currentWebDAVConfig: WebDAVConnectionConfig | null
   currentLocalConfig: LocalConnectionConfig | null
   selectedProtocol: string | null
-  selectedHosts: string[]
+  selectedHosts: NetworkHost[]
   isLoading: boolean
   error: string | null
   hasUnsavedChanges: boolean
@@ -55,7 +55,7 @@ interface ConfigurationContextType {
   setCurrentWebDAVConfig: (config: WebDAVConnectionConfig | null) => void
   setCurrentLocalConfig: (config: LocalConnectionConfig | null) => void
   setSelectedProtocol: (protocol: string | null) => void
-  setSelectedHosts: (hosts: string[]) => void
+  setSelectedHosts: (hosts: NetworkHost[]) => void
   setLoading: (loading: boolean) => void
   setError: (error: string | null) => void
   clearError: () => void
@@ -252,7 +252,7 @@ export function ConfigurationProvider({ children }: { children: ReactNode }) {
   const setSelectedProtocol = (protocol: string | null) =>
     dispatch({ type: 'SET_SELECTED_PROTOCOL', payload: protocol })
 
-  const setSelectedHosts = (hosts: string[]) =>
+  const setSelectedHosts = (hosts: NetworkHost[]) =>
     dispatch({ type: 'SET_SELECTED_HOSTS', payload: hosts })
 
   const setLoading = (loading: boolean) =>

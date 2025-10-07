@@ -70,7 +70,7 @@ export default function WebDAVConfigurationStep() {
       )
       const defaultConfigs = webdavHosts.map((host, index) => ({
         name: `WebDAV Server ${index + 1}`,
-        url: `https://${host}/remote.php/dav/files/user/`,
+        url: `https://${host.ip}/remote.php/dav/files/user/`,
         username: '',
         password: '',
         path: '/',

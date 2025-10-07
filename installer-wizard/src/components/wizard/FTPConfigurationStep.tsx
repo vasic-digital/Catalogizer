@@ -48,7 +48,7 @@ export default function FTPConfigurationStep() {
     register,
     handleSubmit,
     formState: { errors },
-    watch,
+    getValues,
     reset,
   } = useForm<FTPConfigForm>({
     resolver: zodResolver(ftpConfigSchema),
@@ -57,8 +57,6 @@ export default function FTPConfigurationStep() {
       enabled: true,
     }
   })
-
-  const watchedValues = watch()
 
   useEffect(() => {
     // Can proceed if we have at least one valid FTP configuration
@@ -71,7 +69,7 @@ export default function FTPConfigurationStep() {
       const ftpHosts = configState.selectedHosts.filter(host => host.open_ports.includes(21))
       const defaultConfigs = ftpHosts.map((host, index) => ({
         name: `FTP Server ${index + 1}`,
-        host,
+        host: host.ip,
         port: 21,
         username: '',
         password: '',
@@ -92,7 +90,7 @@ export default function FTPConfigurationStep() {
   }
 
   const handleTestConnection = async () => {
-    const values = watchedValues
+    const values = getValues()
     if (!values.host || !values.username || !values.password) {
       setTestResult({
         success: false,

@@ -42,14 +42,15 @@
     "category": "Utility",
     "shortDescription": "Installation wizard for Catalogizer SMB source configuration",
     "longDescription": "Desktop application to configure SMB network sources for Catalogizer media collection management system. Features network scanning, share browsing, and configuration wizard.",
-    "deb": {
-      "depends": []
+    "linux": {
+      "deb": {
+        "depends": []
+      }
     },
     "macOS": {
       "frameworks": [],
       "minimumSystemVersion": "",
       "entitlements": null,
-      "exceptionDomain": "",
       "signingIdentity": null,
       "providerShortName": null,
       "hardenedRuntime": true

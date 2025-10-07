@@ -1,7 +1,8 @@
 import { describe, it, expect } from 'vitest'
-import { renderHook, act } from '@testing-library/react'
+import { renderHook } from '@testing-library/react'
+import { act } from 'react'
 import { ConfigurationProvider, useConfiguration } from '../ConfigurationContext'
-import { Configuration, ConfigurationAccess, ConfigurationSource } from '../../types'
+import { Configuration, ConfigurationAccess, ConfigurationSource, NetworkHost } from '../../types'
 
 const wrapper = ({ children }: { children: React.ReactNode }) => (
   <ConfigurationProvider>{children}</ConfigurationProvider>
@@ -222,7 +223,10 @@ describe('ConfigurationContext', () => {
   it('sets selected hosts', () => {
     const { result } = renderHook(() => useConfiguration(), { wrapper })
 
-    const hosts = ['192.168.1.100', '192.168.1.200']
+    const hosts: NetworkHost[] = [
+      { ip: '192.168.1.100', hostname: 'host1', mac_address: '', vendor: '', open_ports: [445], smb_shares: [] },
+      { ip: '192.168.1.200', hostname: 'host2', mac_address: '', vendor: '', open_ports: [445], smb_shares: [] }
+    ]
 
     act(() => {
       result.current.setSelectedHosts(hosts)
@@ -276,7 +280,7 @@ describe('ConfigurationContext', () => {
         account: 'test',
         secret: 'test',
       })
-      result.current.setSelectedHosts(['192.168.1.100'])
+      result.current.setSelectedHosts([{ ip: '192.168.1.100', hostname: '', mac_address: '', vendor: '', open_ports: [], smb_shares: [] }])
       result.current.setLoading(true)
       result.current.setError('Test error')
     })

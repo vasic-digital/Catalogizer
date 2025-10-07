@@ -1,4 +1,4 @@
-import { describe, it, expect, vi } from 'vitest'
+import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { render, screen, fireEvent, waitFor } from '@testing-library/react'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { BrowserRouter } from 'react-router-dom'
@@ -8,29 +8,29 @@ import { ConfigurationProvider } from '../../contexts/ConfigurationContext'
 import * as TauriService from '../../services/tauri'
 
 const TestWrapper = ({ children }: { children: React.ReactNode }) => {
-  const queryClient = new QueryClient({
-    defaultOptions: {
-      queries: { retry: false },
-      mutations: { retry: false },
-    },
-  })
-
   return (
-    <QueryClientProvider client={queryClient}>
-      <BrowserRouter>
-        <ConfigurationProvider>
-          <WizardProvider>
-            {children}
-          </WizardProvider>
-        </ConfigurationProvider>
-      </BrowserRouter>
-    </QueryClientProvider>
+    <BrowserRouter>
+      <ConfigurationProvider>
+        <WizardProvider>
+          {children}
+        </WizardProvider>
+      </ConfigurationProvider>
+    </BrowserRouter>
   )
 }
 
 describe('FTPConfigurationStep', () => {
   beforeEach(() => {
     vi.clearAllMocks()
+  })
+
+  it('renders without crashing', () => {
+    render(
+      <TestWrapper>
+        <FTPConfigurationStep />
+      </TestWrapper>
+    )
+    expect(true).toBe(true)
   })
 
   it('renders FTP configuration form', () => {
@@ -68,8 +68,7 @@ describe('FTPConfigurationStep', () => {
   })
 
   it('tests FTP connection successfully', async () => {
-    const mockTestFTPConnection = vi.spyOn(TauriService.TauriService, 'testFTPConnection')
-      .mockResolvedValue(true)
+    global.mockInvoke.mockResolvedValue(true)
 
     render(
       <TestWrapper>
@@ -86,14 +85,19 @@ describe('FTPConfigurationStep', () => {
     fireEvent.click(testButton)
 
     await waitFor(() => {
-      expect(mockTestFTPConnection).toHaveBeenCalledWith('ftp.example.com', 21, 'testuser', 'testpass', undefined)
+      expect(global.mockInvoke).toHaveBeenCalledWith('test_ftp_connection', {
+        host: 'ftp.example.com',
+        port: 21,
+        username: 'testuser',
+        password: 'testpass',
+        path: undefined,
+      })
       expect(screen.getByText('Connection successful!')).toBeInTheDocument()
     })
   })
 
   it('handles FTP connection test failure', async () => {
-    const mockTestFTPConnection = vi.spyOn(TauriService.TauriService, 'testFTPConnection')
-      .mockRejectedValue(new Error('Connection failed'))
+    global.mockInvoke.mockRejectedValue(new Error('Connection failed'))
 
     render(
       <TestWrapper>

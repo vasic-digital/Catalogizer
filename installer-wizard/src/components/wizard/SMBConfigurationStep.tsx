@@ -72,7 +72,7 @@ export default function SMBConfigurationStep() {
     if (configState.selectedHosts.length > 0 && smbConfigs.length === 0) {
       const defaultConfigs = configState.selectedHosts.map((host, index) => ({
         name: `SMB Source ${index + 1}`,
-        host,
+        host: host.ip,
         port: 445,
         share_name: '',
         username: '',

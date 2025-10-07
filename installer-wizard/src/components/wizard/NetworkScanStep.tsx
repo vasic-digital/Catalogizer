@@ -5,6 +5,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../ui
 import { useWizard } from '../../contexts/WizardContext'
 import { useConfiguration } from '../../contexts/ConfigurationContext'
 import { TauriService } from '../../services/tauri'
+import { NetworkHost } from '../../types'
 import {
   Search,
   Wifi,
@@ -20,7 +21,7 @@ import {
 export default function NetworkScanStep() {
   const { setCanNext } = useWizard()
   const { setSelectedHosts } = useConfiguration()
-  const [selectedHostIPs, setSelectedHostIPs] = useState<string[]>([])
+  const [selectedHosts, setSelectedHostsState] = useState<NetworkHost[]>([])
   const [isScanning, setIsScanning] = useState(false)
 
   const {
@@ -39,13 +40,13 @@ export default function NetworkScanStep() {
 
   useEffect(() => {
     // Can proceed if we have selected hosts or if user wants to skip
-    setCanNext(selectedHostIPs.length > 0 || (hosts?.length === 0))
-  }, [selectedHostIPs, hosts, setCanNext])
+    setCanNext(selectedHosts.length > 0 || (hosts?.length === 0))
+  }, [selectedHosts, hosts, setCanNext])
 
   useEffect(() => {
     // Update configuration context with selected hosts
-    setSelectedHosts(selectedHostIPs)
-  }, [selectedHostIPs, setSelectedHosts])
+    setSelectedHosts(selectedHosts)
+  }, [selectedHosts, setSelectedHosts])
 
   const handleScan = async () => {
     setIsScanning(true)
@@ -56,11 +57,11 @@ export default function NetworkScanStep() {
     }
   }
 
-  const handleHostToggle = (hostIP: string) => {
-    setSelectedHostIPs(prev =>
-      prev.includes(hostIP)
-        ? prev.filter(ip => ip !== hostIP)
-        : [...prev, hostIP]
+  const handleHostToggle = (host: NetworkHost) => {
+    setSelectedHostsState(prev =>
+      prev.some(h => h.ip === host.ip)
+        ? prev.filter(h => h.ip !== host.ip)
+        : [...prev, host]
     )
   }
 
@@ -69,12 +70,12 @@ export default function NetworkScanStep() {
       const smbHosts = hosts.filter(host =>
         host.open_ports.includes(445) || host.open_ports.includes(139)
       )
-      setSelectedHostIPs(smbHosts.map(host => host.ip))
+      setSelectedHostsState(smbHosts)
     }
   }
 
   const handleDeselectAll = () => {
-    setSelectedHostIPs([])
+    setSelectedHostsState([])
   }
 
   const smbHosts = hosts?.filter(host =>
@@ -179,47 +180,47 @@ export default function NetworkScanStep() {
           <CardContent>
             {smbHosts.length > 0 ? (
               <>
-                <div className="flex gap-2 mb-4">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={handleSelectAll}
-                    disabled={selectedHostIPs.length === smbHosts.length}
-                  >
-                    Select All
-                  </Button>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={handleDeselectAll}
-                    disabled={selectedHostIPs.length === 0}
-                  >
-                    Deselect All
-                  </Button>
-                </div>
+                 <div className="flex gap-2 mb-4">
+                   <Button
+                     variant="outline"
+                     size="sm"
+                     onClick={handleSelectAll}
+                     disabled={selectedHosts.length === smbHosts.length}
+                   >
+                     Select All
+                   </Button>
+                   <Button
+                     variant="outline"
+                     size="sm"
+                     onClick={handleDeselectAll}
+                     disabled={selectedHosts.length === 0}
+                   >
+                     Deselect All
+                   </Button>
+                 </div>
 
                 <div className="grid grid-cols-1 gap-3">
                   {smbHosts.map((host) => (
-                    <div
-                      key={host.ip}
-                      className={`p-4 border rounded-lg cursor-pointer transition-colors ${
-                        selectedHostIPs.includes(host.ip)
-                          ? 'border-blue-500 bg-blue-50'
-                          : 'border-gray-200 hover:border-gray-300'
-                      }`}
-                      onClick={() => handleHostToggle(host.ip)}
-                    >
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-3">
-                          <div className={`w-4 h-4 rounded border-2 flex items-center justify-center ${
-                            selectedHostIPs.includes(host.ip)
-                              ? 'border-blue-500 bg-blue-500'
-                              : 'border-gray-300'
-                          }`}>
-                            {selectedHostIPs.includes(host.ip) && (
-                              <CheckCircle2 className="h-3 w-3 text-white" />
-                            )}
-                          </div>
+                     <div
+                       key={host.ip}
+                       className={`p-4 border rounded-lg cursor-pointer transition-colors ${
+                         selectedHosts.some(h => h.ip === host.ip)
+                           ? 'border-blue-500 bg-blue-50'
+                           : 'border-gray-200 hover:border-gray-300'
+                       }`}
+                       onClick={() => handleHostToggle(host)}
+                     >
+                       <div className="flex items-center justify-between">
+                         <div className="flex items-center gap-3">
+                           <div className={`w-4 h-4 rounded border-2 flex items-center justify-center ${
+                             selectedHosts.some(h => h.ip === host.ip)
+                               ? 'border-blue-500 bg-blue-500'
+                               : 'border-gray-300'
+                           }`}>
+                             {selectedHosts.some(h => h.ip === host.ip) && (
+                               <CheckCircle2 className="h-3 w-3 text-white" />
+                             )}
+                           </div>
                           <Monitor className="h-5 w-5 text-gray-500" />
                           <div>
                             <div className="font-medium">
@@ -238,19 +239,19 @@ export default function NetworkScanStep() {
                   ))}
                 </div>
 
-                {selectedHostIPs.length > 0 && (
-                  <div className="mt-4 p-3 bg-green-50 border border-green-200 rounded-lg">
-                    <div className="flex items-center gap-2 text-green-800">
-                      <CheckCircle2 className="h-4 w-4" />
-                      <span className="font-medium">
-                        {selectedHostIPs.length} device(s) selected
-                      </span>
-                    </div>
-                    <p className="text-sm text-green-700 mt-1">
-                      Click "Next" to configure SMB connections for the selected devices
-                    </p>
-                  </div>
-                )}
+                 {selectedHosts.length > 0 && (
+                   <div className="mt-4 p-3 bg-green-50 border border-green-200 rounded-lg">
+                     <div className="flex items-center gap-2 text-green-800">
+                       <CheckCircle2 className="h-4 w-4" />
+                       <span className="font-medium">
+                         {selectedHosts.length} device(s) selected
+                       </span>
+                     </div>
+                     <p className="text-sm text-green-700 mt-1">
+                       Click "Next" to configure SMB connections for the selected devices
+                     </p>
+                   </div>
+                 )}
               </>
             ) : (
               <div className="text-center py-8 text-gray-500">

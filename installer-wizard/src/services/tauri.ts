@@ -13,7 +13,6 @@ export class TauriService {
     try {
       return await invoke<NetworkHost[]>('scan_network')
     } catch (error) {
-      console.error('Failed to scan network:', error)
       throw new Error(`Network scan failed: ${error}`)
     }
   }
