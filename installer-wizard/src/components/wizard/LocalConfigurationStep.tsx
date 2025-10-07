@@ -30,7 +30,7 @@ type LocalConfigForm = z.infer<typeof localConfigSchema>
 
 export default function LocalConfigurationStep() {
   const { setCanNext } = useWizard()
-  const { state: configState } = useConfiguration()
+  const { } = useConfiguration()
   const [testResult, setTestResult] = useState<{ success: boolean; message: string } | null>(null)
   const [isTestingConnection, setIsTestingConnection] = useState(false)
   const [localConfigs, setLocalConfigs] = useState<LocalConnectionConfig[]>([])

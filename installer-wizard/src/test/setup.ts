@@ -1,4 +1,6 @@
 import '@testing-library/jest-dom'
+import { cleanup } from '@testing-library/react'
+import { afterEach } from 'vitest'
 
 // Mock Tauri API
 const mockInvoke = vi.fn()
@@ -24,7 +26,12 @@ global.mockInvoke = mockInvoke
 global.mockOpen = mockOpen
 global.mockSave = mockSave
 
-// Reset mocks before each test
+// Reset mocks and cleanup before each test
 beforeEach(() => {
   vi.clearAllMocks()
+})
+
+// Cleanup after each test
+afterEach(() => {
+  cleanup()
 })

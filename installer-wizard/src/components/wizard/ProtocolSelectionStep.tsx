@@ -1,7 +1,7 @@
 import { useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { Button } from '../ui/Button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../ui/Card'
-import { useWizard } from '../../contexts/WizardContext'
 import { useConfiguration } from '../../contexts/ConfigurationContext'
 import {
   Server,
@@ -58,12 +58,8 @@ const protocolOptions: ProtocolOption[] = [
   }
 ]
 
-export default function ProtocolSelectionStep({ onNext, onPrevious, canNext, canPrevious }: {
-  onNext: () => void
-  onPrevious: () => void
-  canNext: boolean
-  canPrevious: boolean
-}) {
+export default function ProtocolSelectionStep() {
+  const navigate = useNavigate()
   const { setSelectedProtocol } = useConfiguration()
   const [selectedProtocol, setLocalSelectedProtocol] = useState<string | null>(null)
 
@@ -74,8 +70,12 @@ export default function ProtocolSelectionStep({ onNext, onPrevious, canNext, can
 
   const handleNext = () => {
     if (selectedProtocol) {
-      onNext()
+      navigate(`/configure-${selectedProtocol}`)
     }
+  }
+
+  const handlePrevious = () => {
+    navigate('/')
   }
 
   return (
@@ -151,8 +151,7 @@ export default function ProtocolSelectionStep({ onNext, onPrevious, canNext, can
       <div className="flex justify-between pt-6">
         <Button
           variant="outline"
-          onClick={onPrevious}
-          disabled={!canPrevious}
+          onClick={handlePrevious}
         >
           Previous
         </Button>

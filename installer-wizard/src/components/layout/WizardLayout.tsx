@@ -1,7 +1,7 @@
 import React from 'react'
 import { Outlet, useLocation, useNavigate } from 'react-router-dom'
 import { Button } from '../ui/Button'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../ui/Card'
+import { Card, CardContent, CardHeader, CardTitle } from '../ui/Card'
 import { useWizard } from '../../contexts/WizardContext'
 import { useConfiguration } from '../../contexts/ConfigurationContext'
 import { ChevronLeft, ChevronRight, Settings, FileText } from 'lucide-react'

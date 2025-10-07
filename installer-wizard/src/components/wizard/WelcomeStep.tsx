@@ -1,7 +1,7 @@
 import { useEffect } from 'react'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../ui/Card'
 import { useWizard } from '../../contexts/WizardContext'
-import { Network, Folder, Settings, CheckCircle } from 'lucide-react'
+import { Folder, Settings, CheckCircle } from 'lucide-react'
 
 export default function WelcomeStep() {
   const { setCanNext } = useWizard()
