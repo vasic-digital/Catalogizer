@@ -65,12 +65,7 @@
     "shell": {
       "open": true
     },
-    "dialog": {
-      "open": true,
-      "save": true
-    },
-    "fs": {
-      "scope": ["$APPDATA", "$APPDATA/**", "$DOCUMENT", "$DOCUMENT/**", "$DESKTOP", "$DESKTOP/**"]
-    }
+    "dialog": null,
+    "fs": null
   }
 }
