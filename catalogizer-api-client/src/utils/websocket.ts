@@ -45,7 +45,7 @@ export class WebSocketClient extends EventEmitter {
       };
 
       this.ws.onmessage = (event) => {
-        this.handleMessage(event.data);
+        this.handleMessage(typeof event.data === 'string' ? event.data : event.data.toString());
       };
 
       this.ws.onclose = (event) => {
