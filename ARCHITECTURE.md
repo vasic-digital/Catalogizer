@@ -27,8 +27,8 @@ Catalogizer is built using a modern microservices-inspired architecture with cle
 │  • Real-time Updates      │         │  • Retry Logic       │
 └───────────────────────────┘         └──────┬───────────────┘
                                              │
-        ┌────────────────────────────────────┼────────────────┐
-        │                                    │                │
+         ┌────────────────────────────────────┼────────────────┐
+         │                                    │                │
 ┌───────▼────────┐  ┌─────────▼──────────┐  ┌▼──────────────┐
 │ Media Detection│  │   SMB Resilience   │  │ External APIs │
 │                │  │                    │  │               │
@@ -39,17 +39,59 @@ Catalogizer is built using a modern microservices-inspired architecture with cle
 │ • Metadata     │  │ • Retry Logic      │  │ • Rate Limit  │
 │   Extraction   │  │ • Event Streaming  │  │ • Fallback    │
 └────────────────┘  └────────────────────┘  └───────────────┘
-        │                     │                      │
-        └─────────────────────┼──────────────────────┘
-                              │
-         ┌─────────────────────▼─────────────────────┐
-         │         Multi-Protocol Sources           │
-         │                                           │
-         │  ┌─────────────┐  ┌─────────────┐        │
-         │  │   Server 1  │  │   Server 2  │  ...   │
-         │  │   /media    │  │   /backup   │        │
-         │  └─────────────┘  └─────────────┘        │
-         └───────────────────────────────────────────┘
+         │                     │                      │
+         └─────────────────────┼──────────────────────┘
+                               │
+          ┌─────────────────────▼─────────────────────┐
+          │         Multi-Protocol Sources           │
+          │                                           │
+          │  ┌─────────────┐  ┌─────────────┐        │
+          │  │   Server 1  │  │   Server 2  │  ...   │
+          │  │   /media    │  │   /backup   │        │
+          │  └─────────────┘  └─────────────┘        │
+          └───────────────────────────────────────────┘
+```
+
+#### System Architecture Diagram (Drawio/PlantUML)
+
+The following PlantUML diagram provides a visual representation of the high-level system architecture. This diagram can be imported into Drawio for editing.
+
+```plantuml
+@startuml System Architecture
+skinparam componentStyle uml2
+skinparam backgroundColor #FEFEFE
+skinparam component {
+    BackgroundColor #FFFFFF
+    BorderColor #000000
+    BorderThickness 2
+}
+
+[Load Balancer] as LB #LightBlue
+[Reverse Proxy\n(Nginx)] as RP #LightGreen
+[Frontend\n(React TypeScript)] as FE #LightYellow
+[Backend\n(Go API)] as BE #LightCyan
+[Media Detection] as MD #LightPink
+[SMB Resilience] as SMB #LightGray
+[External APIs] as EA #LightSalmon
+[Multi-Protocol Sources] as MPS #LightCoral
+
+LB --> RP : HTTP/HTTPS
+RP --> FE : Static Assets
+RP --> BE : API Calls
+BE --> MD : Media Processing
+BE --> SMB : SMB Operations
+BE --> EA : Metadata Fetch
+MD --> MPS : File Access
+SMB --> MPS : Network Access
+EA --> MPS : Indirect Access
+
+note right of FE : TypeScript, Tailwind CSS,\nReact Query, WebSocket
+note right of BE : Gin Framework, JWT Auth,\nSQLCipher DB, Circuit Breakers
+note bottom of MD : Pattern Recognition,\nQuality Analysis, Metadata Extraction
+note bottom of SMB : Auto-reconnect, Offline Cache,\nHealth Checks, Circuit Breaker
+note bottom of EA : TMDB, IMDB, Spotify, Steam,\nRate Limiting, Fallback
+note bottom of MPS : SMB, FTP, Local FS,\n/media, /backup directories
+@enduml
 ```
 
 ### Component Details
@@ -100,6 +142,55 @@ HealthMonitor          // System health display
 }
 ```
 
+**Frontend Component Diagram (Drawio/PlantUML)**
+
+```plantuml
+@startuml Frontend Components
+skinparam componentStyle uml2
+skinparam backgroundColor #FEFEFE
+
+package "Authentication & Security" as Auth {
+    [AuthContext] as AC
+    [ProtectedRoute] as PR
+    [UserManagement] as UM
+}
+
+package "Media Management" as Media {
+    [MediaBrowser] as MB
+    [MediaCard] as MC
+    [MediaFilters] as MF
+    [MediaSearch] as MS
+}
+
+package "Real-time Features" as RT {
+    [WebSocketContext] as WSC
+    [ConnectionStatus] as CS
+    [RealTimeUpdates] as RTU
+}
+
+package "Analytics & Monitoring" as AM {
+    [Dashboard] as D
+    [Analytics] as A
+    [HealthMonitor] as HM
+}
+
+AC --> PR
+PR --> UM
+MB --> MC
+MB --> MF
+MB --> MS
+WSC --> CS
+WSC --> RTU
+D --> A
+D --> HM
+
+note right of AC : JWT token management
+note right of MB : Grid/list view of media
+note right of WSC : WebSocket connection management
+note right of D : Overview metrics
+@enduml
+```
+
 #### 2. Backend Layer (Go API)
 
 **Technology Stack:**
@@ -143,6 +234,47 @@ performance_metrics  -- System performance data
 audit_logs          -- User activity tracking
 ```
 
+**Backend Service Diagram (Drawio/PlantUML)**
+
+```plantuml
+@startuml Backend Services
+skinparam componentStyle uml2
+skinparam backgroundColor #FEFEFE
+
+package "Core Services" as Core {
+    [AuthService] as AS
+    [MediaService] as MS
+    [SMBManager] as SM
+    [AnalyticsService] as AnS
+    [WebSocketService] as WSS
+}
+
+package "Infrastructure Services" as Infra {
+    [CircuitBreaker] as CB
+    [RetryManager] as RM
+    [HealthChecker] as HC
+    [CacheManager] as CM
+    [EventStreamer] as ES
+}
+
+AS --> MS
+MS --> SM
+MS --> AnS
+MS --> WSS
+SM --> CB
+SM --> RM
+SM --> HC
+SM --> CM
+SM --> ES
+
+note right of AS : Authentication & authorization
+note right of MS : Media detection & management
+note right of SM : SMB source management
+note right of CB : Fault tolerance
+note right of HC : System health monitoring
+@enduml
+```
+
 #### 3. SMB Resilience Layer
 
 The SMB resilience layer is a critical component that ensures the system remains functional even when SMB sources are temporarily unavailable.
@@ -169,6 +301,60 @@ StateClosed       // Normal operation
 StateHalfOpen     // Testing after failure
 StateOpen         // Circuit breaker activated
 StateOffline      // Extended failure mode
+```
+
+**SMB Resilience Diagram (Drawio/PlantUML)**
+
+```plantuml
+@startuml SMB Resilience
+skinparam componentStyle uml2
+skinparam backgroundColor #FEFEFE
+
+class ResilientSMBManager {
+    +sources: map[string]*SMBSource
+    +offlineCache: *OfflineCache
+    +healthChecker: *HealthChecker
+    +circuitBreaker: *CircuitBreaker
+    +eventBus: *EventBus
+}
+
+class SMBSource {
+    +host: string
+    +share: string
+    +credentials: Credentials
+}
+
+class OfflineCache {
+    +entries: map[string]*CacheEntry
+    +maxSize: int
+    +eviction: EvictionPolicy
+}
+
+class HealthChecker {
+    +checkInterval: time.Duration
+    +timeout: time.Duration
+}
+
+class CircuitBreaker {
+    +state: CircuitState
+    +failures: int
+    +maxFailures: int
+    +resetTimeout: time.Duration
+}
+
+class EventBus {
+    +subscribers: []Subscriber
+}
+
+ResilientSMBManager --> SMBSource : manages
+ResilientSMBManager --> OfflineCache : uses
+ResilientSMBManager --> HealthChecker : uses
+ResilientSMBManager --> CircuitBreaker : uses
+ResilientSMBManager --> EventBus : uses
+
+note right of ResilientSMBManager : Main SMB management component
+note bottom of CircuitBreaker : Closed/Open/Half-Open states
+@enduml
 ```
 
 #### 4. Media Detection Engine
@@ -205,6 +391,32 @@ type QualityMetrics struct {
 }
 ```
 
+**Media Detection Pipeline Diagram (Drawio/PlantUML)**
+
+```plantuml
+@startuml Media Detection Pipeline
+skinparam activity {
+    BackgroundColor #FEFEFE
+    BorderColor #000000
+    BorderThickness 2
+}
+
+start
+:File System Event;
+:Pattern Analysis;
+if (Media Type Detected?) then (yes)
+    :Quality Analysis;
+    :Metadata Extraction;
+    :Database Storage;
+    :WebSocket Notification;
+    :Frontend Update;
+else (no)
+    :Skip Processing;
+endif
+stop
+@enduml
+```
+
 #### 5. External API Integration
 
 **Provider Architecture:**
@@ -231,6 +443,53 @@ type ProviderManager struct {
     circuitBreaker *CircuitBreaker
     cache        *MetadataCache
 }
+```
+
+**External API Integration Diagram (Drawio/PlantUML)**
+
+```plantuml
+@startuml External API Integration
+skinparam componentStyle uml2
+skinparam backgroundColor #FEFEFE
+
+interface MetadataProvider {
+    +Search(query: string): []Metadata
+    +GetDetails(id: string): *DetailedMetadata
+    +GetRateLimit(): *RateLimit
+}
+
+class TMDBProvider
+class IMDBProvider
+class TVDBProvider
+class SpotifyProvider
+class SteamProvider
+
+class ProviderManager {
+    +providers: []MetadataProvider
+    +rateLimiter: *RateLimiter
+    +circuitBreaker: *CircuitBreaker
+    +cache: *MetadataCache
+}
+
+class RateLimiter
+class CircuitBreaker
+class MetadataCache
+
+MetadataProvider <|.. TMDBProvider
+MetadataProvider <|.. IMDBProvider
+MetadataProvider <|.. TVDBProvider
+MetadataProvider <|.. SpotifyProvider
+MetadataProvider <|.. SteamProvider
+
+ProviderManager --> MetadataProvider : uses
+ProviderManager --> RateLimiter : uses
+ProviderManager --> CircuitBreaker : uses
+ProviderManager --> MetadataCache : uses
+
+note right of TMDBProvider : The Movie Database
+note right of SpotifyProvider : Music metadata
+note bottom of ProviderManager : Manages multiple providers\nwith rate limiting and caching
+@enduml
 ```
 
 ## Data Flow
