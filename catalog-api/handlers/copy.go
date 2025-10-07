@@ -72,30 +72,30 @@ func (h *CopyHandler) CopyToSmb(c *gin.Context) {
 		return
 	}
 
-	// Get SMB roots
-	smbRoots, err := h.fileRepo.GetSmbRoots(ctx)
+	// Get storage roots
+	storageRoots, err := h.fileRepo.GetStorageRoots(ctx)
 	if err != nil {
-		utils.ErrorResponse(c, http.StatusInternalServerError, "Failed to get SMB roots", err)
+		utils.ErrorResponse(c, http.StatusInternalServerError, "Failed to get storage roots", err)
 		return
 	}
 
-	// Find source and destination SMB roots
-	var sourceSmbRoot, destSmbRoot *models.SmbRoot
-	for _, root := range smbRoots {
-		if root.ID == sourceFile.SmbRootID {
-			sourceSmbRoot = &root
+	// Find source and destination storage roots
+	var sourceStorageRoot, destStorageRoot *models.StorageRoot
+	for _, root := range storageRoots {
+		if root.ID == sourceFile.StorageRootID {
+			sourceStorageRoot = &root
 		}
-		if root.Name == req.DestinationSmbRoot {
-			destSmbRoot = &root
+		if root.Name == req.DestinationStorageRoot {
+			destStorageRoot = &root
 		}
 	}
 
-	if sourceSmbRoot == nil {
-		utils.ErrorResponse(c, http.StatusNotFound, "Source SMB root not found", nil)
+	if sourceStorageRoot == nil {
+		utils.ErrorResponse(c, http.StatusNotFound, "Source storage root not found", nil)
 		return
 	}
-	if destSmbRoot == nil {
-		utils.ErrorResponse(c, http.StatusNotFound, "Destination SMB root not found", nil)
+	if destStorageRoot == nil {
+		utils.ErrorResponse(c, http.StatusNotFound, "Destination storage root not found", nil)
 		return
 	}
 

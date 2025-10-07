@@ -29,8 +29,8 @@ func (r *StatsRepository) GetOverallStats(ctx context.Context) (*handlers.Overal
 			COALESCE(SUM(CASE WHEN is_directory = 0 AND deleted = 0 THEN size ELSE 0 END), 0) as total_size,
 			COUNT(CASE WHEN is_duplicate = 1 AND deleted = 0 THEN 1 END) as total_duplicates,
 			COUNT(DISTINCT duplicate_group_id) as duplicate_groups,
-			(SELECT COUNT(*) FROM smb_roots) as smb_roots_count,
-			(SELECT COUNT(*) FROM smb_roots WHERE enabled = 1) as active_smb_roots,
+			(SELECT COUNT(*) FROM storage_roots) as storage_roots_count,
+			(SELECT COUNT(*) FROM storage_roots WHERE enabled = 1) as active_storage_roots,
 			COALESCE(MAX(last_scan_at), 0) as last_scan_time
 		FROM files`
 
@@ -41,8 +41,8 @@ func (r *StatsRepository) GetOverallStats(ctx context.Context) (*handlers.Overal
 		&stats.TotalSize,
 		&stats.TotalDuplicates,
 		&stats.DuplicateGroups,
-		&stats.SmbRootsCount,
-		&stats.ActiveSmbRoots,
+		&stats.StorageRootsCount,
+		&stats.ActiveStorageRoots,
 		&stats.LastScanTime,
 	)
 
@@ -53,8 +53,8 @@ func (r *StatsRepository) GetOverallStats(ctx context.Context) (*handlers.Overal
 	return &stats, nil
 }
 
-// GetSmbRootStats retrieves statistics for a specific SMB root
-func (r *StatsRepository) GetSmbRootStats(ctx context.Context, smbRootName string) (*handlers.SmbRootStats, error) {
+// GetStorageRootStats retrieves statistics for a specific storage root
+func (r *StatsRepository) GetStorageRootStats(ctx context.Context, storageRootName string) (*handlers.StorageRootStats, error) {
 	query := `
 		SELECT
 			sr.name,
@@ -65,12 +65,12 @@ func (r *StatsRepository) GetSmbRootStats(ctx context.Context, smbRootName strin
 			COUNT(DISTINCT f.duplicate_group_id) as duplicate_groups,
 			COALESCE(MAX(f.last_scan_at), 0) as last_scan_time,
 			sr.enabled as is_online
-		FROM smb_roots sr
-		LEFT JOIN files f ON sr.id = f.smb_root_id
+		FROM storage_roots sr
+		LEFT JOIN files f ON sr.id = f.storage_root_id
 		WHERE sr.name = ?
 		GROUP BY sr.id, sr.name, sr.enabled`
 
-	var stats handlers.SmbRootStats
+	var stats handlers.StorageRootStats
 	err := r.db.QueryRowContext(ctx, query, smbRootName).Scan(
 		&stats.Name,
 		&stats.TotalFiles,
@@ -84,16 +84,16 @@ func (r *StatsRepository) GetSmbRootStats(ctx context.Context, smbRootName strin
 
 	if err != nil {
 		if err == sql.ErrNoRows {
-			return nil, fmt.Errorf("smb root not found")
+			return nil, fmt.Errorf("storage root not found")
 		}
-		return nil, fmt.Errorf("failed to get SMB root stats: %w", err)
+		return nil, fmt.Errorf("failed to get storage root stats: %w", err)
 	}
 
 	return &stats, nil
 }
 
 // GetFileTypeStats retrieves file type statistics
-func (r *StatsRepository) GetFileTypeStats(ctx context.Context, smbRootName string, limit int) ([]handlers.FileTypeStats, error) {
+func (r *StatsRepository) GetFileTypeStats(ctx context.Context, storageRootName string, limit int) ([]handlers.FileTypeStats, error) {
 	baseQuery := `
 		SELECT
 			COALESCE(file_type, 'unknown') as file_type,
@@ -144,7 +144,7 @@ func (r *StatsRepository) GetFileTypeStats(ctx context.Context, smbRootName stri
 }
 
 // GetSizeDistribution retrieves file size distribution
-func (r *StatsRepository) GetSizeDistribution(ctx context.Context, smbRootName string) (*handlers.SizeDistribution, error) {
+func (r *StatsRepository) GetSizeDistribution(ctx context.Context, storageRootName string) (*handlers.SizeDistribution, error) {
 	baseQuery := `
 		SELECT
 			COUNT(CASE WHEN size = 0 THEN 1 END) as empty,
@@ -189,7 +189,7 @@ func (r *StatsRepository) GetSizeDistribution(ctx context.Context, smbRootName s
 }
 
 // GetDuplicateStats retrieves duplicate file statistics
-func (r *StatsRepository) GetDuplicateStats(ctx context.Context, smbRootName string) (*handlers.DuplicateStats, error) {
+func (r *StatsRepository) GetDuplicateStats(ctx context.Context, storageRootName string) (*handlers.DuplicateStats, error) {
 	baseQuery := `
 		WITH duplicate_analysis AS (
 			SELECT
@@ -200,9 +200,10 @@ func (r *StatsRepository) GetDuplicateStats(ctx context.Context, smbRootName str
 			WHERE f.is_duplicate = 1 AND f.deleted = 0`
 
 	args := []interface{}{}
-	if smbRootName != "" {
-		baseQuery += " AND f.smb_root_id = (SELECT id FROM smb_roots WHERE name = ?)"
-		args = append(args, smbRootName)
+	whereClause := ""
+	if storageRootName != "" {
+		whereClause = " WHERE sr.name = ?"
+		args = append(args, storageRootName)
 	}
 
 	baseQuery += `
@@ -211,8 +212,8 @@ func (r *StatsRepository) GetDuplicateStats(ctx context.Context, smbRootName str
 		SELECT
 			(SELECT COUNT(*) FROM files f WHERE f.is_duplicate = 1 AND f.deleted = 0` +
 			(func() string {
-				if smbRootName != "" {
-					return " AND f.smb_root_id = (SELECT id FROM smb_roots WHERE name = ?)"
+				if storageRootName != "" {
+					return " AND f.storage_root_id = (SELECT id FROM storage_roots WHERE name = ?)"
 				}
 				return ""
 			})() + `) as total_duplicates,
@@ -222,8 +223,8 @@ func (r *StatsRepository) GetDuplicateStats(ctx context.Context, smbRootName str
 			COALESCE(AVG(group_size), 0) as average_group_size
 		FROM duplicate_analysis`
 
-	if smbRootName != "" {
-		args = append(args, smbRootName) // For the subquery
+	if storageRootName != "" {
+		args = append(args, storageRootName) // For the subquery
 	}
 
 	var stats handlers.DuplicateStats
@@ -243,7 +244,7 @@ func (r *StatsRepository) GetDuplicateStats(ctx context.Context, smbRootName str
 }
 
 // GetTopDuplicateGroups retrieves the top duplicate groups
-func (r *StatsRepository) GetTopDuplicateGroups(ctx context.Context, sortBy string, limit int, smbRootName string) ([]handlers.DuplicateGroupStats, error) {
+func (r *StatsRepository) GetTopDuplicateGroups(ctx context.Context, sortBy string, limit int, storageRootName string) ([]handlers.DuplicateGroupStats, error) {
 	baseQuery := `
 		SELECT
 			dg.id as group_id,
@@ -256,13 +257,13 @@ func (r *StatsRepository) GetTopDuplicateGroups(ctx context.Context, sortBy stri
 	args := []interface{}{}
 	whereClause := ""
 
-	if smbRootName != "" {
+	if storageRootName != "" {
 		whereClause = ` WHERE EXISTS (
 			SELECT 1 FROM files f
 			WHERE f.duplicate_group_id = dg.id
-			AND f.smb_root_id = (SELECT id FROM smb_roots WHERE name = ?)
+			AND f.storage_root_id = (SELECT id FROM storage_roots WHERE name = ?)
 		)`
-		args = append(args, smbRootName)
+		args = append(args, storageRootName)
 	}
 
 	orderClause := " ORDER BY "
@@ -301,7 +302,7 @@ func (r *StatsRepository) GetTopDuplicateGroups(ctx context.Context, sortBy stri
 }
 
 // GetAccessPatterns retrieves file access patterns
-func (r *StatsRepository) GetAccessPatterns(ctx context.Context, smbRootName string, days int) (*handlers.AccessPatterns, error) {
+func (r *StatsRepository) GetAccessPatterns(ctx context.Context, storageRootName string, days int) (*handlers.AccessPatterns, error) {
 	// This is a simplified implementation
 	// In a real scenario, you'd need to track actual access times
 	baseQuery := `
@@ -313,9 +314,9 @@ func (r *StatsRepository) GetAccessPatterns(ctx context.Context, smbRootName str
 	args := []interface{}{time.Now().AddDate(0, 0, -days).Unix()}
 	whereClause := " WHERE f.is_directory = 0 AND f.deleted = 0"
 
-	if smbRootName != "" {
-		whereClause += " AND f.smb_root_id = (SELECT id FROM smb_roots WHERE name = ?)"
-		args = append(args, smbRootName)
+	if storageRootName != "" {
+		whereClause += " AND f.storage_root_id = (SELECT id FROM storage_roots WHERE name = ?)"
+		args = append(args, storageRootName)
 	}
 
 	query := baseQuery + whereClause
@@ -339,7 +340,7 @@ func (r *StatsRepository) GetAccessPatterns(ctx context.Context, smbRootName str
 }
 
 // GetGrowthTrends retrieves storage growth trends
-func (r *StatsRepository) GetGrowthTrends(ctx context.Context, smbRootName string, months int) (*handlers.GrowthTrends, error) {
+func (r *StatsRepository) GetGrowthTrends(ctx context.Context, storageRootName string, months int) (*handlers.GrowthTrends, error) {
 	// This is a simplified implementation
 	// In a real scenario, you'd need historical data tracking
 	baseQuery := `
@@ -355,9 +356,9 @@ func (r *StatsRepository) GetGrowthTrends(ctx context.Context, smbRootName strin
 	monthsAgo := time.Now().AddDate(0, -months, 0).Unix()
 	args = append(args, monthsAgo)
 
-	if smbRootName != "" {
-		whereClause += " AND f.smb_root_id = (SELECT id FROM smb_roots WHERE name = ?)"
-		args = append(args, smbRootName)
+	if storageRootName != "" {
+		whereClause += " AND f.storage_root_id = (SELECT id FROM storage_roots WHERE name = ?)"
+		args = append(args, storageRootName)
 	}
 
 	query := baseQuery + whereClause + " GROUP BY month ORDER BY month"
@@ -393,16 +394,16 @@ func (r *StatsRepository) GetGrowthTrends(ctx context.Context, smbRootName strin
 }
 
 // GetScanHistory retrieves scan operation history
-func (r *StatsRepository) GetScanHistory(ctx context.Context, smbRootName string, limit, offset int) ([]handlers.ScanHistoryItem, int64, error) {
+func (r *StatsRepository) GetScanHistory(ctx context.Context, storageRootName string, limit, offset int) ([]handlers.ScanHistoryItem, int64, error) {
 	countQuery := `
 		SELECT COUNT(*)
 		FROM scan_history sh
-		JOIN smb_roots sr ON sh.smb_root_id = sr.id`
+		JOIN storage_roots sr ON sh.storage_root_id = sr.id`
 
 	selectQuery := `
 		SELECT
 			sh.id,
-			sr.name as smb_root_name,
+			sr.name as storage_root_name,
 			sh.scan_type,
 			sh.status,
 			sh.start_time,
@@ -414,14 +415,14 @@ func (r *StatsRepository) GetScanHistory(ctx context.Context, smbRootName string
 			sh.error_count,
 			sh.error_message
 		FROM scan_history sh
-		JOIN smb_roots sr ON sh.smb_root_id = sr.id`
+		JOIN storage_roots sr ON sh.storage_root_id = sr.id`
 
 	args := []interface{}{}
 	whereClause := ""
 
-	if smbRootName != "" {
-		whereClause = " WHERE sr.name = ?"
-		args = append(args, smbRootName)
+	if storageRootName != "" {
+		whereClause += " AND f.storage_root_id = (SELECT id FROM storage_roots WHERE name = ?)"
+		args = append(args, storageRootName)
 	}
 
 	// Get total count

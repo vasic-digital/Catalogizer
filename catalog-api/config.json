@@ -1,92 +1,127 @@
 {
   "server": {
     "host": "localhost",
-    "port": "8080",
+    "port": 8080,
     "read_timeout": 30,
     "write_timeout": 30,
-    "idle_timeout": 60,
+    "idle_timeout": 120,
     "enable_cors": true,
-    "enable_https": false,
-    "cert_file": "",
-    "key_file": ""
+    "enable_https": false
   },
   "database": {
-    "driver": "sqlite3",
-    "host": "",
-    "port": 0,
-    "database": "catalog.db",
-    "username": "",
-    "password": "",
-    "ssl_mode": ""
-  },
-  "smb": {
-    "hosts": [
-      {
-        "name": "nas1",
-        "host": "192.168.1.100",
-        "port": 445,
-        "share": "shared",
-        "username": "user",
-        "password": "password",
-        "domain": "WORKGROUP"
-      }
-    ],
-    "timeout": 30,
-    "chunk_size": 1048576
+    "path": "./catalog.db",
+    "max_open_connections": 25,
+    "max_idle_connections": 5,
+    "conn_max_lifetime": 300,
+    "conn_max_idle_time": 60,
+    "enable_wal": true,
+    "cache_size": -2000,
+    "busy_timeout": 5000
   },
   "auth": {
+    "jwt_secret": "change-this-secret-in-production",
+    "jwt_expiration_hours": 24,
     "enable_auth": false,
-    "jwt_secret": "your-secret-key-here"
+    "admin_username": "admin",
+    "admin_password": "admin123"
+  },
+  "catalog": {
+    "default_page_size": 100,
+    "max_page_size": 1000,
+    "enable_cache": true,
+    "cache_ttl_minutes": 15,
+    "max_concurrent_scans": 3,
+    "download_chunk_size": 1048576,
+    "max_archive_size": 5368709120,
+    "allowed_download_types": ["*"],
+    "temp_dir": "/tmp/catalog-api"
+  },
+  "storage": {
+    "roots": [
+      {
+        "id": "smb-nas1",
+        "name": "NAS1 SMB Share",
+        "protocol": "smb",
+        "enabled": true,
+        "max_depth": 10,
+        "enable_duplicate_detection": true,
+        "enable_metadata_extraction": true,
+        "settings": {
+          "host": "192.168.1.100",
+          "port": 445,
+          "share": "shared",
+          "username": "user",
+          "password": "password",
+          "domain": "WORKGROUP"
+        }
+      },
+      {
+        "id": "ftp-server1",
+        "name": "FTP Server",
+        "protocol": "ftp",
+        "enabled": false,
+        "max_depth": 5,
+        "enable_duplicate_detection": true,
+        "enable_metadata_extraction": false,
+        "settings": {
+          "host": "ftp.example.com",
+          "port": 21,
+          "username": "ftpuser",
+          "password": "ftppass",
+          "path": "/"
+        }
+      },
+      {
+        "id": "nfs-share1",
+        "name": "NFS Share",
+        "protocol": "nfs",
+        "enabled": false,
+        "max_depth": 8,
+        "enable_duplicate_detection": true,
+        "enable_metadata_extraction": true,
+        "settings": {
+          "host": "nfs.example.com",
+          "path": "/export/data",
+          "mount_point": "/mnt/nfs",
+          "options": "vers=3"
+        }
+      },
+      {
+        "id": "webdav-server1",
+        "name": "WebDAV Server",
+        "protocol": "webdav",
+        "enabled": false,
+        "max_depth": 6,
+        "enable_duplicate_detection": true,
+        "enable_metadata_extraction": false,
+        "settings": {
+          "url": "https://webdav.example.com/remote.php/dav/files/user/",
+          "username": "webdavuser",
+          "password": "webdavpass",
+          "path": "/"
+        }
+      },
+      {
+        "id": "local-storage",
+        "name": "Local Storage",
+        "protocol": "local",
+        "enabled": true,
+        "max_depth": 10,
+        "enable_duplicate_detection": true,
+        "enable_metadata_extraction": true,
+        "settings": {
+          "base_path": "/tmp/catalog-data"
+        }
+      }
+    ]
   },
   "logging": {
     "level": "info",
-    "format": "json"
-  },
-  "catalog": {
-    "temp_dir": "/tmp",
-    "max_archive_size": 1073741824,
-    "download_chunk_size": 1048576
-  },
-  "media": {
-    "database_path": "media_catalog.db",
-    "database_password": "secure_media_encryption_key_2024",
-    "enable_realtime": true,
-    "analysis_workers": 4,
-    "api_keys": {
-      "tmdb": "",
-      "imdb": "",
-      "spotify": "",
-      "youtube": "",
-      "igdb": "",
-      "steam": "",
-      "musicbrainz": ""
-    },
-    "watch_paths": [
-      {
-        "smb_root": "nas1",
-        "local_path": "/mnt/smb/nas1",
-        "enabled": true
-      }
-    ],
-    "quality_profiles": {
-      "preferred_video": ["4K/UHD", "1080p", "720p"],
-      "preferred_audio": ["Lossless", "320k", "256k"],
-      "minimum_rating": 6.0,
-      "auto_upgrade": false,
-      "delete_duplicates": false
-    },
-    "detection": {
-      "confidence_threshold": 0.7,
-      "enable_deep_analysis": true,
-      "max_analysis_time": 300,
-      "parallel_analysis": true
-    },
-    "metadata": {
-      "auto_refresh_days": 30,
-      "fetch_covers": true,
-      "fetch_trailers": true,
-      "fetch_reviews": true,
-      "cache_metadata": true
-    }
+    "format": "json",
+    "output": "stdout",
+    "max_size": 100,
+    "max_backups": 3,
+    "max_age": 28,
+    "compress": true
   }
 }

@@ -1,13 +1,14 @@
-# Catalogizer - Advanced Media Collection Management System
+# Catalogizer - Advanced Multi-Protocol Media Collection Management System
 
-Catalogizer is a comprehensive media collection management system that automatically detects, categorizes, and organizes your media files across SMB sources. It provides real-time monitoring, advanced analytics, and a modern web interface for managing your entire media library.
+Catalogizer is a comprehensive media collection management system that automatically detects, categorizes, and organizes your media files across multiple storage protocols including SMB, FTP, NFS, WebDAV, and local filesystem. It provides real-time monitoring, advanced analytics, and a modern web interface for managing your entire media library.
 
 ## 🚀 Features
 
 ### Core Capabilities
 - **Automated Media Detection**: Identifies 50+ media types including movies, TV shows, music, games, software, documentaries, and more
-- **Real-time Monitoring**: Continuously monitors SMB sources for changes and updates metadata automatically
-- **SMB Resilience**: Handles temporary disconnections gracefully with automatic reconnection and offline caching
+- **Multi-Protocol Support**: Works with SMB, FTP, NFS, WebDAV, and local filesystem protocols
+- **Real-time Monitoring**: Continuously monitors storage sources for changes and updates metadata automatically
+- **Protocol Resilience**: Handles temporary disconnections gracefully with automatic reconnection and offline caching
 - **Advanced Analytics**: Comprehensive statistics, growth trends, and quality analysis
 - **Modern Web Interface**: React-based responsive UI with real-time updates
 - **Secure Authentication**: JWT-based auth with role-based access control
@@ -46,43 +47,63 @@ Catalogizer is a comprehensive media collection management system that automatic
 │   React Web    │    │   Go REST API   │    │ SQLCipher DB    │
 │   Application  │◄──►│     Server      │◄──►│   (Encrypted)   │
 └─────────────────┘    └─────────────────┘    └─────────────────┘
-         │                       │                       │
-         │                       │                       │
-         ▼                       ▼                       ▼
+          │                       │                       │
+          │                       │                       │
+          ▼                       ▼                       ▼
 ┌─────────────────┐    ┌─────────────────┐    ┌─────────────────┐
 │   WebSocket     │    │ Media Detection │    │  External APIs  │
 │   Real-time     │    │     Engine      │    │ TMDB, IMDB, etc │
 │    Updates      │    └─────────────────┘    └─────────────────┘
 └─────────────────┘             │
-                                ▼
-                    ┌─────────────────┐
-                    │  SMB Sources    │
-                    │   Monitoring    │
-                    │ (with Resilience)│
-                    └─────────────────┘
+                                 ▼
+                     ┌─────────────────┐
+                     │ Multi-Protocol  │
+                     │ File System     │
+                     │   Clients       │
+                     └─────────────────┘
+                               │
+                ┌──────────────┼──────────────┐
+                │              │              │
+        ┌───────▼─────┐ ┌──────▼─────┐ ┌──────▼─────┐
+        │ SMB Sources │ │ FTP/NFS    │ │ WebDAV/Local│
+        │ Monitoring  │ │ Sources     │ │ Sources     │
+        │ (Resilient) │ │ Monitoring  │ │ Monitoring  │
+        └─────────────┘ └─────────────┘ └─────────────┘
 ```
 
 ### System Components
 
 1. **catalog-api**: Go-based REST API server
-   - Authentication and authorization
-   - Media detection and analysis
-   - Real-time SMB monitoring with resilience
-   - External metadata integration
-   - WebSocket server for real-time updates
+    - Authentication and authorization
+    - Media detection and analysis
+    - Multi-protocol file system monitoring with resilience
+    - External metadata integration
+    - WebSocket server for real-time updates
 
 2. **catalog-web**: React TypeScript web application
-   - Modern responsive UI
-   - Real-time data synchronization
-   - Advanced search and filtering
-   - Analytics dashboard
-   - User management interface
+    - Modern responsive UI
+    - Real-time data synchronization
+    - Advanced search and filtering
+    - Analytics dashboard
+    - User management interface
 
 3. **Database Layer**: SQLCipher encrypted SQLite
-   - Media metadata storage
-   - User and session management
-   - Configuration and settings
-   - Analysis results and statistics
+    - Media metadata storage
+    - User and session management
+    - Configuration and settings
+    - Analysis results and statistics
+
+### Supported Protocols
+
+Catalogizer supports multiple file system protocols for maximum flexibility:
+
+- **SMB/CIFS**: Windows file sharing with automatic reconnection and resilience
+- **FTP/FTPS**: File Transfer Protocol with secure variants
+- **NFS**: Network File System with automatic mounting
+- **WebDAV**: HTTP-based file access over web protocols
+- **Local Filesystem**: Direct access to local storage
+
+Each protocol is abstracted through a common interface, allowing seamless switching and future protocol additions.
 
 ## 🛠️ Installation & Setup
 

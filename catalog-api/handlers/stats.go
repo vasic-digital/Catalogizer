@@ -344,12 +344,12 @@ type OverallStats struct {
 	TotalSize         int64 `json:"total_size"`
 	TotalDuplicates   int64 `json:"total_duplicates"`
 	DuplicateGroups   int64 `json:"duplicate_groups"`
-	SmbRootsCount     int64 `json:"smb_roots_count"`
-	ActiveSmbRoots    int64 `json:"active_smb_roots"`
+	StorageRootsCount int64 `json:"storage_roots_count"`
+	ActiveStorageRoots int64 `json:"active_storage_roots"`
 	LastScanTime      int64 `json:"last_scan_time"`
 }
 
-type SmbRootStats struct {
+type StorageRootStats struct {
 	Name              string `json:"name"`
 	TotalFiles        int64  `json:"total_files"`
 	TotalDirectories  int64  `json:"total_directories"`

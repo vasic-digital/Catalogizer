@@ -4,7 +4,8 @@ import type {
   MediaSearchRequest,
   MediaSearchResponse,
   ExternalMetadata,
-  QualityInfo
+  QualityInfo,
+  StorageRoot
 } from '@/types/media'
 
 export const mediaApi = {
@@ -49,6 +50,25 @@ export const mediaApi = {
 
   updateMedia: (id: number, data: Partial<MediaItem>): Promise<MediaItem> =>
     api.put(`/media/${id}`, data).then((res) => res.data),
+
+  // Storage root management
+  getStorageRoots: (): Promise<StorageRoot[]> =>
+    api.get('/storage/roots').then((res) => res.data.data),
+
+  getStorageRoot: (id: number): Promise<StorageRoot> =>
+    api.get(`/storage/roots/${id}`).then((res) => res.data),
+
+  createStorageRoot: (data: Omit<StorageRoot, 'id' | 'created_at' | 'updated_at'>): Promise<StorageRoot> =>
+    api.post('/storage/roots', data).then((res) => res.data),
+
+  updateStorageRoot: (id: number, data: Partial<StorageRoot>): Promise<StorageRoot> =>
+    api.put(`/storage/roots/${id}`, data).then((res) => res.data),
+
+  deleteStorageRoot: (id: number): Promise<void> =>
+    api.delete(`/storage/roots/${id}`).then(() => {}),
+
+  testStorageRoot: (id: number): Promise<{ success: boolean; message: string }> =>
+    api.post(`/storage/roots/${id}/test`).then((res) => res.data),
 }
 
 export default mediaApi

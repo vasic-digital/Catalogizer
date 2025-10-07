@@ -10,7 +10,8 @@ export interface MediaItem {
   file_size?: number
   duration?: number
   directory_path: string
-  smb_path?: string
+  storage_root_name?: string
+  storage_root_protocol?: string
   created_at: string
   updated_at: string
   external_metadata?: ExternalMetadata[]
@@ -112,3 +113,26 @@ export const QUALITY_LEVELS = [
 ] as const
 
 export type QualityLevel = typeof QUALITY_LEVELS[number]
+
+export interface StorageRoot {
+  id: number
+  name: string
+  protocol: string
+  enabled: boolean
+  max_depth: number
+  enable_duplicate_detection: boolean
+  enable_metadata_extraction: boolean
+  created_at: string
+  updated_at: string
+  last_scan_at?: string
+}
+
+export const SUPPORTED_PROTOCOLS = [
+  'smb',
+  'ftp',
+  'nfs',
+  'webdav',
+  'local',
+] as const
+
+export type StorageProtocol = typeof SUPPORTED_PROTOCOLS[number]

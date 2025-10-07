@@ -23,21 +23,21 @@ func NewBrowseHandler(fileRepo *repository.FileRepository) *BrowseHandler {
 	}
 }
 
-// GetSmbRoots godoc
-// @Summary Get all SMB roots
-// @Description Retrieve all configured SMB roots
+// GetStorageRoots godoc
+// @Summary Get all storage roots
+// @Description Retrieve all configured storage roots
 // @Tags browse
 // @Accept json
 // @Produce json
-// @Success 200 {array} models.SmbRoot
+// @Success 200 {array} models.StorageRoot
 // @Failure 500 {object} utils.ErrorResponse
 // @Router /api/browse/roots [get]
-func (h *BrowseHandler) GetSmbRoots(c *gin.Context) {
+func (h *BrowseHandler) GetStorageRoots(c *gin.Context) {
 	ctx := c.Request.Context()
 
-	roots, err := h.fileRepo.GetSmbRoots(ctx)
+	roots, err := h.fileRepo.GetStorageRoots(ctx)
 	if err != nil {
-		utils.ErrorResponse(c, http.StatusInternalServerError, "Failed to get SMB roots", err)
+		utils.ErrorResponse(c, http.StatusInternalServerError, "Failed to get storage roots", err)
 		return
 	}
 
@@ -53,7 +53,7 @@ func (h *BrowseHandler) GetSmbRoots(c *gin.Context) {
 // @Tags browse
 // @Accept json
 // @Produce json
-// @Param smb_root path string true "SMB root name"
+// @Param storage_root path string true "Storage root name"
 // @Param path query string false "Directory path" default("/")
 // @Param page query int false "Page number" default(1)
 // @Param limit query int false "Items per page" default(100)
@@ -62,13 +62,13 @@ func (h *BrowseHandler) GetSmbRoots(c *gin.Context) {
 // @Success 200 {object} models.SearchResult
 // @Failure 400 {object} utils.ErrorResponse
 // @Failure 500 {object} utils.ErrorResponse
-// @Router /api/browse/{smb_root} [get]
+// @Router /api/browse/{storage_root} [get]
 func (h *BrowseHandler) BrowseDirectory(c *gin.Context) {
 	ctx := c.Request.Context()
 
-	smbRoot := c.Param("smb_root")
-	if smbRoot == "" {
-		utils.ErrorResponse(c, http.StatusBadRequest, "SMB root name is required", nil)
+	storageRoot := c.Param("storage_root")
+	if storageRoot == "" {
+		utils.ErrorResponse(c, http.StatusBadRequest, "Storage root name is required", nil)
 		return
 	}
 
@@ -114,7 +114,7 @@ func (h *BrowseHandler) BrowseDirectory(c *gin.Context) {
 		Order: sortOrder,
 	}
 
-	result, err := h.fileRepo.GetDirectoryContents(ctx, smbRoot, path, pagination, sort)
+	result, err := h.fileRepo.GetDirectoryContents(ctx, storageRoot, path, pagination, sort)
 	if err != nil {
 		utils.ErrorResponse(c, http.StatusInternalServerError, "Failed to browse directory", err)
 		return
@@ -170,20 +170,20 @@ func (h *BrowseHandler) GetFileInfo(c *gin.Context) {
 // @Tags browse
 // @Accept json
 // @Produce json
-// @Param smb_root path string true "SMB root name"
+// @Param storage_root path string true "Storage root name"
 // @Param page query int false "Page number" default(1)
 // @Param limit query int false "Items per page" default(50)
 // @Param ascending query bool false "Sort in ascending order" default(false)
 // @Success 200 {array} models.DirectoryInfo
 // @Failure 400 {object} utils.ErrorResponse
 // @Failure 500 {object} utils.ErrorResponse
-// @Router /api/browse/{smb_root}/sizes [get]
+// @Router /api/browse/{storage_root}/sizes [get]
 func (h *BrowseHandler) GetDirectorySizes(c *gin.Context) {
 	ctx := c.Request.Context()
 
-	smbRoot := c.Param("smb_root")
-	if smbRoot == "" {
-		utils.ErrorResponse(c, http.StatusBadRequest, "SMB root name is required", nil)
+	storageRoot := c.Param("storage_root")
+	if storageRoot == "" {
+		utils.ErrorResponse(c, http.StatusBadRequest, "Storage root name is required", nil)
 		return
 	}
 
@@ -205,7 +205,7 @@ func (h *BrowseHandler) GetDirectorySizes(c *gin.Context) {
 		Limit: limit,
 	}
 
-	directories, err := h.fileRepo.GetDirectoriesSortedBySize(ctx, smbRoot, pagination, ascending)
+	directories, err := h.fileRepo.GetDirectoriesSortedBySize(ctx, storageRoot, pagination, ascending)
 	if err != nil {
 		utils.ErrorResponse(c, http.StatusInternalServerError, "Failed to get directory sizes", err)
 		return
@@ -223,20 +223,20 @@ func (h *BrowseHandler) GetDirectorySizes(c *gin.Context) {
 // @Tags browse
 // @Accept json
 // @Produce json
-// @Param smb_root path string true "SMB root name"
+// @Param storage_root path string true "Storage root name"
 // @Param page query int false "Page number" default(1)
 // @Param limit query int false "Items per page" default(50)
 // @Param ascending query bool false "Sort in ascending order" default(false)
 // @Success 200 {array} models.DirectoryInfo
 // @Failure 400 {object} utils.ErrorResponse
 // @Failure 500 {object} utils.ErrorResponse
-// @Router /api/browse/{smb_root}/duplicates [get]
+// @Router /api/browse/{storage_root}/duplicates [get]
 func (h *BrowseHandler) GetDirectoryDuplicates(c *gin.Context) {
 	ctx := c.Request.Context()
 
-	smbRoot := c.Param("smb_root")
-	if smbRoot == "" {
-		utils.ErrorResponse(c, http.StatusBadRequest, "SMB root name is required", nil)
+	storageRoot := c.Param("storage_root")
+	if storageRoot == "" {
+		utils.ErrorResponse(c, http.StatusBadRequest, "Storage root name is required", nil)
 		return
 	}
 
@@ -258,7 +258,7 @@ func (h *BrowseHandler) GetDirectoryDuplicates(c *gin.Context) {
 		Limit: limit,
 	}
 
-	directories, err := h.fileRepo.GetDirectoriesSortedByDuplicates(ctx, smbRoot, pagination, ascending)
+	directories, err := h.fileRepo.GetDirectoriesSortedByDuplicates(ctx, storageRoot, pagination, ascending)
 	if err != nil {
 		utils.ErrorResponse(c, http.StatusInternalServerError, "Failed to get directory duplicates", err)
 		return

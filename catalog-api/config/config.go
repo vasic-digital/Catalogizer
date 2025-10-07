@@ -13,6 +13,7 @@ type Config struct {
 	Database DatabaseConfig `json:"database"`
 	Auth     AuthConfig     `json:"auth"`
 	Catalog  CatalogConfig  `json:"catalog"`
+	Storage  StorageConfig  `json:"storage"`
 	Logging  LoggingConfig  `json:"logging"`
 }
 
@@ -72,6 +73,25 @@ type LoggingConfig struct {
 	MaxBackups int    `json:"max_backups"`
 	MaxAge     int    `json:"max_age"`
 	Compress   bool   `json:"compress"`
+}
+
+// StorageConfig contains storage configuration for multiple protocols
+type StorageConfig struct {
+	Roots []StorageRootConfig `json:"roots"`
+}
+
+// StorageRootConfig represents configuration for a single storage root
+type StorageRootConfig struct {
+	ID                      string                 `json:"id"`
+	Name                    string                 `json:"name"`
+	Protocol                string                 `json:"protocol"` // smb, ftp, nfs, webdav, local
+	Enabled                 bool                   `json:"enabled"`
+	MaxDepth                int                    `json:"max_depth"`
+	EnableDuplicateDetection bool                  `json:"enable_duplicate_detection"`
+	EnableMetadataExtraction bool                  `json:"enable_metadata_extraction"`
+	IncludePatterns         []string               `json:"include_patterns,omitempty"`
+	ExcludePatterns         []string               `json:"exclude_patterns,omitempty"`
+	Settings                map[string]interface{} `json:"settings"` // Protocol-specific settings
 }
 
 // LoadConfig loads configuration from file or creates default
@@ -144,6 +164,22 @@ func getDefaultConfig() *Config {
 			MaxArchiveSize:       1024 * 1024 * 1024 * 5, // 5GB
 			AllowedDownloadTypes: []string{"*"},
 			TempDir:              "/tmp/catalog-api",
+		},
+		Storage: StorageConfig{
+			Roots: []StorageRootConfig{
+				{
+					ID:                      "local-example",
+					Name:                    "Local Files",
+					Protocol:                "local",
+					Enabled:                 true,
+					MaxDepth:                10,
+					EnableDuplicateDetection: true,
+					EnableMetadataExtraction: true,
+					Settings: map[string]interface{}{
+						"base_path": "/tmp/catalog-data",
+					},
+				},
+			},
 		},
 		Logging: LoggingConfig{
 			Level:      "info",

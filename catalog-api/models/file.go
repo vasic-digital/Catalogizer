@@ -7,8 +7,8 @@ import (
 // File represents a file record from the catalog database
 type File struct {
 	ID              int64     `json:"id" db:"id"`
-	SmbRootID       int64     `json:"smb_root_id" db:"smb_root_id"`
-	SmbRootName     string    `json:"smb_root_name" db:"smb_root_name"`
+	StorageRootID   int64     `json:"storage_root_id" db:"storage_root_id"`
+	StorageRootName string    `json:"storage_root_name" db:"storage_root_name"`
 	Path            string    `json:"path" db:"path"`
 	Name            string    `json:"name" db:"name"`
 	Extension       *string   `json:"extension" db:"extension"`
@@ -33,7 +33,32 @@ type File struct {
 	ParentID        *int64    `json:"parent_id" db:"parent_id"`
 }
 
-// SmbRoot represents an SMB root configuration
+// StorageRoot represents a storage root configuration for any protocol
+type StorageRoot struct {
+	ID                      int64     `json:"id" db:"id"`
+	Name                    string    `json:"name" db:"name"`
+	Protocol                string    `json:"protocol" db:"protocol"` // smb, ftp, nfs, webdav, local
+	Host                    *string   `json:"host,omitempty" db:"host"`
+	Port                    *int      `json:"port,omitempty" db:"port"`
+	Path                    *string   `json:"path,omitempty" db:"path"` // share for SMB, path for FTP/NFS/WebDAV, base_path for local
+	Username                *string   `json:"username,omitempty" db:"username"`
+	Password                *string   `json:"password,omitempty" db:"password"`
+	Domain                  *string   `json:"domain,omitempty" db:"domain"` // SMB specific
+	MountPoint              *string   `json:"mount_point,omitempty" db:"mount_point"` // NFS specific
+	Options                 *string   `json:"options,omitempty" db:"options"` // NFS/WebDAV specific
+	URL                     *string   `json:"url,omitempty" db:"url"` // WebDAV specific
+	Enabled                 bool      `json:"enabled" db:"enabled"`
+	MaxDepth                int       `json:"max_depth" db:"max_depth"`
+	EnableDuplicateDetection bool     `json:"enable_duplicate_detection" db:"enable_duplicate_detection"`
+	EnableMetadataExtraction bool     `json:"enable_metadata_extraction" db:"enable_metadata_extraction"`
+	IncludePatterns         *string   `json:"include_patterns" db:"include_patterns"`
+	ExcludePatterns         *string   `json:"exclude_patterns" db:"exclude_patterns"`
+	CreatedAt               time.Time `json:"created_at" db:"created_at"`
+	UpdatedAt               time.Time `json:"updated_at" db:"updated_at"`
+	LastScanAt              *time.Time `json:"last_scan_at" db:"last_scan_at"`
+}
+
+// SmbRoot represents an SMB root configuration (deprecated - use StorageRoot)
 type SmbRoot struct {
 	ID                      int64     `json:"id" db:"id"`
 	Name                    string    `json:"name" db:"name"`
@@ -83,7 +108,7 @@ type VirtualPath struct {
 // ScanHistory represents scan operation history
 type ScanHistory struct {
 	ID              int64      `json:"id" db:"id"`
-	SmbRootID       int64      `json:"smb_root_id" db:"smb_root_id"`
+	StorageRootID   int64      `json:"storage_root_id" db:"storage_root_id"`
 	ScanType        string     `json:"scan_type" db:"scan_type"`
 	Status          string     `json:"status" db:"status"`
 	StartTime       time.Time  `json:"start_time" db:"start_time"`
@@ -106,7 +131,7 @@ type FileWithMetadata struct {
 type DirectoryInfo struct {
 	Path            string `json:"path" db:"path"`
 	Name            string `json:"name" db:"name"`
-	SmbRootName     string `json:"smb_root_name" db:"smb_root_name"`
+	StorageRootName string `json:"storage_root_name" db:"storage_root_name"`
 	FileCount       int    `json:"file_count" db:"file_count"`
 	DirectoryCount  int    `json:"directory_count" db:"directory_count"`
 	TotalSize       int64  `json:"total_size" db:"total_size"`
@@ -122,7 +147,7 @@ type SearchFilter struct {
 	Extension       string    `json:"extension,omitempty"`
 	FileType        string    `json:"file_type,omitempty"`
 	MimeType        string    `json:"mime_type,omitempty"`
-	SmbRoots        []string  `json:"smb_roots,omitempty"`
+	StorageRoots    []string  `json:"storage_roots,omitempty"`
 	MinSize         *int64    `json:"min_size,omitempty"`
 	MaxSize         *int64    `json:"max_size,omitempty"`
 	ModifiedAfter   *time.Time `json:"modified_after,omitempty"`

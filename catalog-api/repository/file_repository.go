@@ -24,18 +24,18 @@ func NewFileRepository(db *database.DB) *FileRepository {
 // GetFileByID retrieves a file by its ID
 func (r *FileRepository) GetFileByID(ctx context.Context, id int64) (*models.FileWithMetadata, error) {
 	query := `
-		SELECT f.id, f.smb_root_id, sr.name as smb_root_name, f.path, f.name, f.extension,
+		SELECT f.id, f.storage_root_id, sr.name as storage_root_name, f.path, f.name, f.extension,
 			   f.mime_type, f.file_type, f.size, f.is_directory, f.created_at, f.modified_at,
 			   f.accessed_at, f.deleted, f.deleted_at, f.last_scan_at, f.last_verified_at,
 			   f.md5, f.sha256, f.sha1, f.blake3, f.quick_hash, f.is_duplicate,
 			   f.duplicate_group_id, f.parent_id
 		FROM files f
-		JOIN smb_roots sr ON f.smb_root_id = sr.id
+		JOIN storage_roots sr ON f.storage_root_id = sr.id
 		WHERE f.id = ?`
 
 	var file models.File
 	err := r.db.QueryRowContext(ctx, query, id).Scan(
-		&file.ID, &file.SmbRootID, &file.SmbRootName, &file.Path, &file.Name,
+		&file.ID, &file.StorageRootID, &file.StorageRootName, &file.Path, &file.Name,
 		&file.Extension, &file.MimeType, &file.FileType, &file.Size, &file.IsDirectory,
 		&file.CreatedAt, &file.ModifiedAt, &file.AccessedAt, &file.Deleted,
 		&file.DeletedAt, &file.LastScanAt, &file.LastVerifiedAt, &file.MD5,
@@ -63,14 +63,14 @@ func (r *FileRepository) GetFileByID(ctx context.Context, id int64) (*models.Fil
 }
 
 // GetDirectoryContents retrieves files and directories within a path
-func (r *FileRepository) GetDirectoryContents(ctx context.Context, smbRootName, path string, pagination models.PaginationOptions, sort models.SortOptions) (*models.SearchResult, error) {
+func (r *FileRepository) GetDirectoryContents(ctx context.Context, storageRootName, path string, pagination models.PaginationOptions, sort models.SortOptions) (*models.SearchResult, error) {
 	// Build the base query
 	baseQuery := `
 		FROM files f
-		JOIN smb_roots sr ON f.smb_root_id = sr.id
+		JOIN storage_roots sr ON f.storage_root_id = sr.id
 		WHERE sr.name = ? AND f.deleted = FALSE`
 
-	args := []interface{}{smbRootName}
+	args := []interface{}{storageRootName}
 
 	// Handle path filtering
 	if path == "/" || path == "" {
@@ -93,7 +93,7 @@ func (r *FileRepository) GetDirectoryContents(ctx context.Context, smbRootName, 
 
 	// Build the main query with sorting and pagination
 	selectQuery := `
-		SELECT f.id, f.smb_root_id, sr.name as smb_root_name, f.path, f.name, f.extension,
+		SELECT f.id, f.storage_root_id, sr.name as storage_root_name, f.path, f.name, f.extension,
 			   f.mime_type, f.file_type, f.size, f.is_directory, f.created_at, f.modified_at,
 			   f.accessed_at, f.deleted, f.deleted_at, f.last_scan_at, f.last_verified_at,
 			   f.md5, f.sha256, f.sha1, f.blake3, f.quick_hash, f.is_duplicate,
@@ -117,7 +117,7 @@ func (r *FileRepository) GetDirectoryContents(ctx context.Context, smbRootName, 
 	for rows.Next() {
 		var file models.File
 		err := rows.Scan(
-			&file.ID, &file.SmbRootID, &file.SmbRootName, &file.Path, &file.Name,
+			&file.ID, &file.StorageRootID, &file.StorageRootName, &file.Path, &file.Name,
 			&file.Extension, &file.MimeType, &file.FileType, &file.Size, &file.IsDirectory,
 			&file.CreatedAt, &file.ModifiedAt, &file.AccessedAt, &file.Deleted,
 			&file.DeletedAt, &file.LastScanAt, &file.LastVerifiedAt, &file.MD5,
@@ -151,7 +151,7 @@ func (r *FileRepository) SearchFiles(ctx context.Context, filter models.SearchFi
 	// Build the base query
 	baseQuery := `
 		FROM files f
-		JOIN smb_roots sr ON f.smb_root_id = sr.id
+		JOIN storage_roots sr ON f.storage_root_id = sr.id
 		WHERE 1=1`
 
 	args := []interface{}{}
@@ -169,7 +169,7 @@ func (r *FileRepository) SearchFiles(ctx context.Context, filter models.SearchFi
 
 	// Build the main query with sorting and pagination
 	selectQuery := `
-		SELECT f.id, f.smb_root_id, sr.name as smb_root_name, f.path, f.name, f.extension,
+		SELECT f.id, f.storage_root_id, sr.name as storage_root_name, f.path, f.name, f.extension,
 			   f.mime_type, f.file_type, f.size, f.is_directory, f.created_at, f.modified_at,
 			   f.accessed_at, f.deleted, f.deleted_at, f.last_scan_at, f.last_verified_at,
 			   f.md5, f.sha256, f.sha1, f.blake3, f.quick_hash, f.is_duplicate,
@@ -193,7 +193,7 @@ func (r *FileRepository) SearchFiles(ctx context.Context, filter models.SearchFi
 	for rows.Next() {
 		var file models.File
 		err := rows.Scan(
-			&file.ID, &file.SmbRootID, &file.SmbRootName, &file.Path, &file.Name,
+			&file.ID, &file.StorageRootID, &file.StorageRootName, &file.Path, &file.Name,
 			&file.Extension, &file.MimeType, &file.FileType, &file.Size, &file.IsDirectory,
 			&file.CreatedAt, &file.ModifiedAt, &file.AccessedAt, &file.Deleted,
 			&file.DeletedAt, &file.LastScanAt, &file.LastVerifiedAt, &file.MD5,
@@ -232,7 +232,7 @@ func (r *FileRepository) SearchFiles(ctx context.Context, filter models.SearchFi
 }
 
 // GetDirectoriesSortedBySize retrieves directories sorted by total size
-func (r *FileRepository) GetDirectoriesSortedBySize(ctx context.Context, smbRootName string, pagination models.PaginationOptions, ascending bool) ([]models.DirectoryInfo, error) {
+func (r *FileRepository) GetDirectoriesSortedBySize(ctx context.Context, storageRootName string, pagination models.PaginationOptions, ascending bool) ([]models.DirectoryInfo, error) {
 	order := "DESC"
 	if ascending {
 		order = "ASC"
@@ -240,25 +240,25 @@ func (r *FileRepository) GetDirectoriesSortedBySize(ctx context.Context, smbRoot
 
 	query := `
 		WITH RECURSIVE directory_tree AS (
-			SELECT f.path, f.name, sr.name as smb_root_name,
+			SELECT f.path, f.name, sr.name as storage_root_name,
 				   COUNT(CASE WHEN f2.is_directory = FALSE THEN 1 END) as file_count,
 				   COUNT(CASE WHEN f2.is_directory = TRUE THEN 1 END) as directory_count,
 				   COALESCE(SUM(CASE WHEN f2.is_directory = FALSE THEN f2.size ELSE 0 END), 0) as total_size,
 				   COUNT(CASE WHEN f2.is_duplicate = TRUE THEN 1 END) as duplicate_count,
 				   MAX(f.modified_at) as modified_at
 			FROM files f
-			JOIN smb_roots sr ON f.smb_root_id = sr.id
-			LEFT JOIN files f2 ON f2.path LIKE f.path || '/%' AND f2.smb_root_id = f.smb_root_id AND f2.deleted = FALSE
+			JOIN storage_roots sr ON f.storage_root_id = sr.id
+			LEFT JOIN files f2 ON f2.path LIKE f.path || '/%' AND f2.storage_root_id = f.storage_root_id AND f2.deleted = FALSE
 			WHERE f.is_directory = TRUE AND f.deleted = FALSE AND sr.name = ?
 			GROUP BY f.path, f.name, sr.name
 		)
-		SELECT path, name, smb_root_name, file_count, directory_count, total_size, duplicate_count, modified_at
+		SELECT path, name, storage_root_name, file_count, directory_count, total_size, duplicate_count, modified_at
 		FROM directory_tree
 		ORDER BY total_size ` + order + `
 		LIMIT ? OFFSET ?`
 
 	offset := (pagination.Page - 1) * pagination.Limit
-	rows, err := r.db.QueryContext(ctx, query, smbRootName, pagination.Limit, offset)
+	rows, err := r.db.QueryContext(ctx, query, storageRootName, pagination.Limit, offset)
 	if err != nil {
 		return nil, fmt.Errorf("failed to query directories by size: %w", err)
 	}
@@ -268,7 +268,7 @@ func (r *FileRepository) GetDirectoriesSortedBySize(ctx context.Context, smbRoot
 	for rows.Next() {
 		var dir models.DirectoryInfo
 		err := rows.Scan(
-			&dir.Path, &dir.Name, &dir.SmbRootName, &dir.FileCount,
+			&dir.Path, &dir.Name, &dir.StorageRootName, &dir.FileCount,
 			&dir.DirectoryCount, &dir.TotalSize, &dir.DuplicateCount, &dir.ModifiedAt,
 		)
 		if err != nil {
@@ -281,7 +281,7 @@ func (r *FileRepository) GetDirectoriesSortedBySize(ctx context.Context, smbRoot
 }
 
 // GetDirectoriesSortedByDuplicates retrieves directories sorted by duplicate count
-func (r *FileRepository) GetDirectoriesSortedByDuplicates(ctx context.Context, smbRootName string, pagination models.PaginationOptions, ascending bool) ([]models.DirectoryInfo, error) {
+func (r *FileRepository) GetDirectoriesSortedByDuplicates(ctx context.Context, storageRootName string, pagination models.PaginationOptions, ascending bool) ([]models.DirectoryInfo, error) {
 	order := "DESC"
 	if ascending {
 		order = "ASC"
@@ -289,25 +289,25 @@ func (r *FileRepository) GetDirectoriesSortedByDuplicates(ctx context.Context, s
 
 	query := `
 		WITH RECURSIVE directory_tree AS (
-			SELECT f.path, f.name, sr.name as smb_root_name,
+			SELECT f.path, f.name, sr.name as storage_root_name,
 				   COUNT(CASE WHEN f2.is_directory = FALSE THEN 1 END) as file_count,
 				   COUNT(CASE WHEN f2.is_directory = TRUE THEN 1 END) as directory_count,
 				   COALESCE(SUM(CASE WHEN f2.is_directory = FALSE THEN f2.size ELSE 0 END), 0) as total_size,
 				   COUNT(CASE WHEN f2.is_duplicate = TRUE THEN 1 END) as duplicate_count,
 				   MAX(f.modified_at) as modified_at
 			FROM files f
-			JOIN smb_roots sr ON f.smb_root_id = sr.id
-			LEFT JOIN files f2 ON f2.path LIKE f.path || '/%' AND f2.smb_root_id = f.smb_root_id AND f2.deleted = FALSE
+			JOIN storage_roots sr ON f.storage_root_id = sr.id
+			LEFT JOIN files f2 ON f2.path LIKE f.path || '/%' AND f2.storage_root_id = f.storage_root_id AND f2.deleted = FALSE
 			WHERE f.is_directory = TRUE AND f.deleted = FALSE AND sr.name = ?
 			GROUP BY f.path, f.name, sr.name
 		)
-		SELECT path, name, smb_root_name, file_count, directory_count, total_size, duplicate_count, modified_at
+		SELECT path, name, storage_root_name, file_count, directory_count, total_size, duplicate_count, modified_at
 		FROM directory_tree
 		ORDER BY duplicate_count ` + order + `
 		LIMIT ? OFFSET ?`
 
 	offset := (pagination.Page - 1) * pagination.Limit
-	rows, err := r.db.QueryContext(ctx, query, smbRootName, pagination.Limit, offset)
+	rows, err := r.db.QueryContext(ctx, query, storageRootName, pagination.Limit, offset)
 	if err != nil {
 		return nil, fmt.Errorf("failed to query directories by duplicates: %w", err)
 	}
@@ -317,7 +317,7 @@ func (r *FileRepository) GetDirectoriesSortedByDuplicates(ctx context.Context, s
 	for rows.Next() {
 		var dir models.DirectoryInfo
 		err := rows.Scan(
-			&dir.Path, &dir.Name, &dir.SmbRootName, &dir.FileCount,
+			&dir.Path, &dir.Name, &dir.StorageRootName, &dir.FileCount,
 			&dir.DirectoryCount, &dir.TotalSize, &dir.DuplicateCount, &dir.ModifiedAt,
 		)
 		if err != nil {
@@ -329,33 +329,34 @@ func (r *FileRepository) GetDirectoriesSortedByDuplicates(ctx context.Context, s
 	return directories, nil
 }
 
-// GetSmbRoots retrieves all SMB roots
-func (r *FileRepository) GetSmbRoots(ctx context.Context) ([]models.SmbRoot, error) {
+// GetStorageRoots retrieves all storage roots
+func (r *FileRepository) GetStorageRoots(ctx context.Context) ([]models.StorageRoot, error) {
 	query := `
-		SELECT id, name, host, port, share, username, domain, enabled, max_depth,
+		SELECT id, name, protocol, host, port, path, username, password, domain,
+			   mount_point, options, url, enabled, max_depth,
 			   enable_duplicate_detection, enable_metadata_extraction, include_patterns,
 			   exclude_patterns, created_at, updated_at, last_scan_at
-		FROM smb_roots
+		FROM storage_roots
 		ORDER BY name`
 
 	rows, err := r.db.QueryContext(ctx, query)
 	if err != nil {
-		return nil, fmt.Errorf("failed to query SMB roots: %w", err)
+		return nil, fmt.Errorf("failed to query storage roots: %w", err)
 	}
 	defer rows.Close()
 
-	var roots []models.SmbRoot
+	var roots []models.StorageRoot
 	for rows.Next() {
-		var root models.SmbRoot
+		var root models.StorageRoot
 		err := rows.Scan(
-			&root.ID, &root.Name, &root.Host, &root.Port, &root.Share,
-			&root.Username, &root.Domain, &root.Enabled, &root.MaxDepth,
-			&root.EnableDuplicateDetection, &root.EnableMetadataExtraction,
-			&root.IncludePatterns, &root.ExcludePatterns, &root.CreatedAt,
-			&root.UpdatedAt, &root.LastScanAt,
+			&root.ID, &root.Name, &root.Protocol, &root.Host, &root.Port, &root.Path,
+			&root.Username, &root.Password, &root.Domain, &root.MountPoint, &root.Options,
+			&root.URL, &root.Enabled, &root.MaxDepth, &root.EnableDuplicateDetection,
+			&root.EnableMetadataExtraction, &root.IncludePatterns, &root.ExcludePatterns,
+			&root.CreatedAt, &root.UpdatedAt, &root.LastScanAt,
 		)
 		if err != nil {
-			return nil, fmt.Errorf("failed to scan SMB root: %w", err)
+			return nil, fmt.Errorf("failed to scan storage root: %w", err)
 		}
 		roots = append(roots, root)
 	}

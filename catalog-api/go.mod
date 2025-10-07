@@ -10,6 +10,7 @@ require (
 	github.com/swaggo/swag v1.16.2
 	github.com/golang-jwt/jwt/v5 v5.2.0
 	github.com/hirochachacha/go-smb2 v1.1.0
+	github.com/jlaffaye/ftp v0.0.0-20230407172714-6b696d7b19b8
 	github.com/spf13/viper v1.17.0
 	github.com/google/uuid v1.4.0
 	github.com/sirupsen/logrus v1.9.3

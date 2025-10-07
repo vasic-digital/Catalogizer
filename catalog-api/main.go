@@ -20,8 +20,8 @@ import (
 )
 
 // @title Catalog API
-// @version 1.0
-// @description REST API for browsing and searching SMB file catalog
+// @version 2.0
+// @description REST API for browsing and searching multi-protocol file catalog (SMB, FTP, NFS, WebDAV, Local)
 // @termsOfService http://swagger.io/terms/
 
 // @contact.name API Support
@@ -50,22 +50,27 @@ func main() {
 		log.Fatal("Failed to load configuration:", err)
 	}
 
-	// Initialize database (simplified for demo)
-	db, err := sql.Open("sqlite3", ":memory:")
+	// Initialize database
+	dbConn, err := database.NewConnection(cfg.Database)
 	if err != nil {
-		log.Fatal("Failed to open database:", err)
+		log.Fatal("Failed to connect to database:", err)
 	}
-	defer db.Close()
+	defer dbConn.Close()
+
+	// Run database migrations
+	if err := dbConn.RunMigrations(context.Background()); err != nil {
+		log.Fatal("Failed to run database migrations:", err)
+	}
 
 	// Initialize services
 	catalogService := services.NewCatalogService(cfg, logger)
-	catalogService.SetDB(db)
-	smbService := services.NewSMBService(cfg, logger)
+	catalogService.SetDB(dbConn.DB)
+	fileSystemService := services.NewFileSystemService(cfg, logger)
 
 	// Initialize handlers
-	catalogHandler := handlers.NewCatalogHandler(catalogService, smbService, logger)
-	downloadHandler := handlers.NewDownloadHandler(catalogService, smbService, cfg.Catalog.TempDir, cfg.Catalog.MaxArchiveSize, cfg.Catalog.DownloadChunkSize, logger)
-	copyHandler := handlers.NewCopyHandler(catalogService, smbService, cfg.Catalog.TempDir, logger)
+	catalogHandler := handlers.NewCatalogHandler(catalogService, fileSystemService, logger)
+	downloadHandler := handlers.NewDownloadHandler(catalogService, fileSystemService, cfg.Catalog.TempDir, cfg.Catalog.MaxArchiveSize, cfg.Catalog.DownloadChunkSize, logger)
+	copyHandler := handlers.NewCopyHandler(catalogService, fileSystemService, cfg.Catalog.TempDir, logger)
 
 	// Setup Gin router
 	router := gin.Default()
@@ -98,12 +103,12 @@ func main() {
 		api.GET("/download/directory/*path", downloadHandler.DownloadDirectory)
 		api.POST("/download/archive", downloadHandler.DownloadArchive)
 
-		// SMB operations
-		api.POST("/copy/smb", copyHandler.CopyToSMB)
+		// File operations
+		api.POST("/copy/storage", copyHandler.CopyToStorage)
 		api.POST("/copy/local", copyHandler.CopyToLocal)
 		api.POST("/copy/upload", copyHandler.CopyFromLocal)
-		api.GET("/smb/list/*path", copyHandler.ListSMBPath)
-		api.GET("/smb/hosts", copyHandler.GetSMBHosts)
+		api.GET("/storage/list/*path", copyHandler.ListStoragePath)
+		api.GET("/storage/roots", copyHandler.GetStorageRoots)
 
 		// Statistics and sorting
 		api.GET("/stats/directories/by-size", catalogHandler.GetDirectoriesBySize)
