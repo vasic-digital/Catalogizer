@@ -46,8 +46,8 @@ describe('WelcomeStep', () => {
       </TestWrapper>
     )
 
-    expect(screen.getByText('Network Discovery')).toBeInTheDocument()
-    expect(screen.getByText('Share Browsing')).toBeInTheDocument()
+    expect(screen.getByText('Protocol Selection')).toBeInTheDocument()
+    expect(screen.getByText('Source Configuration')).toBeInTheDocument()
     expect(screen.getByText('Configuration')).toBeInTheDocument()
   })
 

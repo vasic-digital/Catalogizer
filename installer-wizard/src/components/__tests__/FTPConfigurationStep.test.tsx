@@ -5,7 +5,7 @@ import { BrowserRouter } from 'react-router-dom'
 import FTPConfigurationStep from '../wizard/FTPConfigurationStep'
 import { WizardProvider } from '../../contexts/WizardContext'
 import { ConfigurationProvider } from '../../contexts/ConfigurationContext'
-import * as TauriService from '../../services/tauri'
+import { TauriService } from '../../services/tauri'
 
 const TestWrapper = ({ children }: { children: React.ReactNode }) => {
   return (

@@ -1,11 +1,12 @@
 import { describe, it, expect, vi } from 'vitest'
+import { beforeEach } from 'vitest'
 import { render, screen, fireEvent, waitFor } from '@testing-library/react'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { BrowserRouter } from 'react-router-dom'
 import WebDAVConfigurationStep from '../wizard/WebDAVConfigurationStep'
 import { WizardProvider } from '../../contexts/WizardContext'
 import { ConfigurationProvider } from '../../contexts/ConfigurationContext'
-import * as TauriService from '../../services/tauri'
+import { TauriService } from '../../services/tauri'
 
 const TestWrapper = ({ children }: { children: React.ReactNode }) => {
   const queryClient = new QueryClient({
@@ -86,7 +87,7 @@ describe('WebDAVConfigurationStep', () => {
   })
 
   it('tests WebDAV connection successfully', async () => {
-    const mockTestWebDAVConnection = vi.spyOn(TauriService.TauriService, 'testWebDAVConnection')
+    const mockTestWebDAVConnection = vi.spyOn(TauriService, 'testWebDAVConnection')
       .mockResolvedValue(true)
 
     render(

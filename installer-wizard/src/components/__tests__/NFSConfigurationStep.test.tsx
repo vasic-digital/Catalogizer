@@ -1,11 +1,12 @@
 import { describe, it, expect, vi } from 'vitest'
+import { beforeEach } from 'vitest'
 import { render, screen, fireEvent, waitFor } from '@testing-library/react'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { BrowserRouter } from 'react-router-dom'
 import NFSConfigurationStep from '../wizard/NFSConfigurationStep'
 import { WizardProvider } from '../../contexts/WizardContext'
 import { ConfigurationProvider } from '../../contexts/ConfigurationContext'
-import * as TauriService from '../../services/tauri'
+import { TauriService } from '../../services/tauri'
 
 const TestWrapper = ({ children }: { children: React.ReactNode }) => {
   const queryClient = new QueryClient({
@@ -66,7 +67,7 @@ describe('NFSConfigurationStep', () => {
   })
 
   it('tests NFS connection successfully', async () => {
-    const mockTestNFSConnection = vi.spyOn(TauriService.TauriService, 'testNFSConnection')
+    const mockTestNFSConnection = vi.spyOn(TauriService, 'testNFSConnection')
       .mockResolvedValue(true)
 
     render(
