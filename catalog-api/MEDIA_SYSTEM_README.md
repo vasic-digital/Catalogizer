@@ -23,7 +23,7 @@ A comprehensive media content detection, analysis, and metadata management syste
 - **Smart Recommendations**: Suggests missing qualities or better versions
 
 ### 🔄 **Real-Time Monitoring**
-- **SMB Change Detection**: Monitors file system changes in real-time
+- **Multi-Protocol Change Detection**: Monitors file system changes in real-time across all supported protocols
 - **Auto-Reanalysis**: Automatically updates catalog when files change
 - **Intelligent Debouncing**: Avoids excessive processing during bulk operations
 - **Change Logging**: Complete audit trail of all modifications

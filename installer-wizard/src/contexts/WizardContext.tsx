@@ -2,7 +2,7 @@ import React, { createContext, useContext, useReducer, ReactNode } from 'react'
 import { WizardState } from '../types'
 
 interface WizardAction {
-  type: 'NEXT_STEP' | 'PREVIOUS_STEP' | 'SET_STEP' | 'SET_CAN_NEXT' | 'SET_CAN_PREVIOUS' | 'RESET'
+  type: 'NEXT_STEP' | 'PREVIOUS_STEP' | 'SET_STEP' | 'SET_CAN_NEXT' | 'SET_CAN_PREVIOUS' | 'SET_TOTAL_STEPS' | 'RESET'
   payload?: any
 }
 
@@ -14,12 +14,13 @@ interface WizardContextType {
   setStep: (step: number) => void
   setCanNext: (canNext: boolean) => void
   setCanPrevious: (canPrevious: boolean) => void
+  setTotalSteps: (total: number) => void
   reset: () => void
 }
 
 const initialState: WizardState = {
   currentStep: 0,
-  totalSteps: 5,
+  totalSteps: 5, // Base steps: welcome, protocol, config, manage, summary
   canGoNext: true,
   canGoPrevious: false,
   isComplete: false,
@@ -61,6 +62,11 @@ function wizardReducer(state: WizardState, action: WizardAction): WizardState {
         ...state,
         canGoPrevious: action.payload,
       }
+    case 'SET_TOTAL_STEPS':
+      return {
+        ...state,
+        totalSteps: action.payload,
+      }
     case 'RESET':
       return initialState
     default:
@@ -78,6 +84,7 @@ export function WizardProvider({ children }: { children: ReactNode }) {
   const setStep = (step: number) => dispatch({ type: 'SET_STEP', payload: step })
   const setCanNext = (canNext: boolean) => dispatch({ type: 'SET_CAN_NEXT', payload: canNext })
   const setCanPrevious = (canPrevious: boolean) => dispatch({ type: 'SET_CAN_PREVIOUS', payload: canPrevious })
+  const setTotalSteps = (total: number) => dispatch({ type: 'SET_TOTAL_STEPS', payload: total })
   const reset = () => dispatch({ type: 'RESET' })
 
   const value: WizardContextType = {
@@ -88,6 +95,7 @@ export function WizardProvider({ children }: { children: ReactNode }) {
     setStep,
     setCanNext,
     setCanPrevious,
+    setTotalSteps,
     reset,
   }
 

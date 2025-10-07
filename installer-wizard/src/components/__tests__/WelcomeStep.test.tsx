@@ -36,7 +36,7 @@ describe('WelcomeStep', () => {
     )
 
     expect(screen.getByText('Welcome to Catalogizer Installation Wizard')).toBeInTheDocument()
-    expect(screen.getByText(/This wizard will help you configure SMB network sources/)).toBeInTheDocument()
+    expect(screen.getByText(/This wizard will help you configure storage sources/)).toBeInTheDocument()
   })
 
   it('displays feature cards', () => {
@@ -59,8 +59,8 @@ describe('WelcomeStep', () => {
     )
 
     expect(screen.getByText("What you'll need:")).toBeInTheDocument()
-    expect(screen.getByText(/Access to your local network with SMB-enabled devices/)).toBeInTheDocument()
-    expect(screen.getByText(/Valid credentials for SMB shares/)).toBeInTheDocument()
+    expect(screen.getByText(/Access to your storage system/)).toBeInTheDocument()
+    expect(screen.getByText(/Valid credentials for the storage system/)).toBeInTheDocument()
     expect(screen.getByText(/A location to save your configuration file/)).toBeInTheDocument()
   })
 })

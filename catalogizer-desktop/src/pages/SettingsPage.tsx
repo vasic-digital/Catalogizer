@@ -181,32 +181,53 @@ export default function SettingsPage() {
             </div>
           </section>
 
-          {/* General */}
-          <section className="bg-card border border-border rounded-lg p-6">
-            <h2 className="text-xl font-semibold text-foreground mb-4">
-              General
-            </h2>
+          {/* Storage Configuration */}
+           <section className="bg-card border border-border rounded-lg p-6">
+             <h2 className="text-xl font-semibold text-foreground mb-4">
+               Storage Configuration
+             </h2>
 
-            <div className="space-y-4">
-              <div className="flex items-center justify-between">
-                <div>
-                  <h3 className="font-medium text-foreground">Auto-start</h3>
-                  <p className="text-sm text-muted-foreground">
-                    Start Catalogizer when your computer starts
-                  </p>
-                </div>
-                <label className="relative inline-flex items-center cursor-pointer">
-                  <input
-                    type="checkbox"
-                    checked={localAutoStart}
-                    onChange={(e) => setLocalAutoStart(e.target.checked)}
-                    className="sr-only peer"
-                  />
-                  <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 dark:peer-focus:ring-blue-800 rounded-full peer dark:bg-gray-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600 peer-checked:bg-blue-600"></div>
-                </label>
-              </div>
-            </div>
-          </section>
+             <div className="space-y-4">
+               <div>
+                 <p className="text-sm text-muted-foreground mb-4">
+                   Configure storage sources for media scanning. Supported protocols: SMB, FTP, NFS, WebDAV, Local.
+                 </p>
+                 <button
+                   className="px-4 py-2 bg-secondary text-secondary-foreground rounded-md hover:bg-secondary/80"
+                   onClick={() => alert('Storage configuration coming soon')}
+                 >
+                   Configure Storage Sources
+                 </button>
+               </div>
+             </div>
+           </section>
+
+           {/* General */}
+           <section className="bg-card border border-border rounded-lg p-6">
+             <h2 className="text-xl font-semibold text-foreground mb-4">
+               General
+             </h2>
+
+             <div className="space-y-4">
+               <div className="flex items-center justify-between">
+                 <div>
+                   <h3 className="font-medium text-foreground">Auto-start</h3>
+                   <p className="text-sm text-muted-foreground">
+                     Start Catalogizer when your computer starts
+                   </p>
+                 </div>
+                 <label className="relative inline-flex items-center cursor-pointer">
+                   <input
+                     type="checkbox"
+                     checked={localAutoStart}
+                     onChange={(e) => setLocalAutoStart(e.target.checked)}
+                     className="sr-only peer"
+                   />
+                   <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 dark:peer-focus:ring-blue-800 rounded-full peer dark:bg-gray-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600 peer-checked:bg-blue-600"></div>
+                 </label>
+               </div>
+             </div>
+           </section>
 
           {/* Save Button */}
           <div className="flex justify-end">

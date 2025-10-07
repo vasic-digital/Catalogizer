@@ -1,10 +1,10 @@
 # Catalogizer Troubleshooting Guide
 
-This guide helps you diagnose and resolve common issues with the Catalogizer system, including SMB resilience, database problems, and performance issues.
+This guide helps you diagnose and resolve common issues with the Catalogizer system, including multi-protocol storage resilience, database problems, and performance issues.
 
 ## Table of Contents
 
-- [SMB Connection Issues](#smb-connection-issues)
+- [Storage Connection Issues](#storage-connection-issues)
 - [Database Problems](#database-problems)
 - [Authentication Issues](#authentication-issues)
 - [Performance Problems](#performance-problems)
@@ -13,21 +13,21 @@ This guide helps you diagnose and resolve common issues with the Catalogizer sys
 - [Deployment Issues](#deployment-issues)
 - [Monitoring & Diagnostics](#monitoring--diagnostics)
 
-## SMB Connection Issues
+## Storage Connection Issues
 
 ### Symptoms
 - Media files not being detected
-- "SMB source offline" notifications
+- "Storage source offline" notifications
 - Connection timeouts in logs
 - Circuit breaker activation
 
 ### Diagnostic Steps
 
-#### 1. Check SMB Source Status
+#### 1. Check Storage Source Status
 ```bash
-# API endpoint to check SMB sources
+# API endpoint to check all storage sources
 curl -H "Authorization: Bearer $TOKEN" \
-  http://localhost:8080/api/v1/smb/sources/status
+  http://localhost:8080/api/v1/storage/sources/status
 ```
 
 Expected response for healthy sources:
@@ -36,16 +36,26 @@ Expected response for healthy sources:
   "sources": {
     "smb_123": {
       "name": "Media Server 1",
+      "protocol": "smb",
       "path": "smb://server1/media",
       "state": "connected",
       "last_connected": "2024-01-15T10:30:00Z",
       "retry_attempts": 0,
       "is_enabled": true
+    },
+    "ftp_456": {
+      "name": "FTP Server",
+      "protocol": "ftp",
+      "path": "ftp://ftp.example.com/media",
+      "state": "connected",
+      "last_connected": "2024-01-15T10:25:00Z",
+      "retry_attempts": 0,
+      "is_enabled": true
     }
   },
   "summary": {
-    "total": 2,
-    "connected": 2,
+    "total": 3,
+    "connected": 3,
     "disconnected": 0,
     "offline": 0
   }

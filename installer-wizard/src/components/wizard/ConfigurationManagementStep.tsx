@@ -29,14 +29,15 @@ export default function ConfigurationManagementStep() {
   useEffect(() => {
     // Always allow proceeding from this step
     setCanNext(true)
-    generateConfigFromSMBSources()
+    generateConfigFromSources()
   }, [setCanNext])
 
-  const generateConfigFromSMBSources = () => {
-    // Generate configuration from SMB configs if available
-    // This is a placeholder - in real implementation you'd get this from the previous step
-    const mockSMBConfigs = [
+  const generateConfigFromSources = () => {
+    // Generate configuration from all configured sources
+    // This should be updated to collect configs from all protocol steps
+    const mockConfigs = [
       {
+        protocol: 'smb',
         name: 'Media Server',
         host: '192.168.1.100',
         port: 445,
@@ -46,22 +47,78 @@ export default function ConfigurationManagementStep() {
         domain: 'WORKGROUP',
         path: '/media',
         enabled: true,
+      },
+      {
+        protocol: 'ftp',
+        name: 'FTP Server',
+        host: 'ftp.example.com',
+        port: 21,
+        username: 'ftpuser',
+        password: 'ftppass',
+        path: '/',
+        enabled: true,
+      },
+      {
+        protocol: 'nfs',
+        name: 'NFS Share',
+        host: 'nfs.example.com',
+        path: '/export/data',
+        mount_point: '/mnt/nfs',
+        options: 'vers=3',
+        enabled: true,
+      },
+      {
+        protocol: 'webdav',
+        name: 'WebDAV Server',
+        url: 'https://webdav.example.com/remote.php/dav/files/user/',
+        username: 'webdavuser',
+        password: 'webdavpass',
+        path: '/',
+        enabled: true,
+      },
+      {
+        protocol: 'local',
+        name: 'Local Storage',
+        base_path: '/tmp/catalog-data',
+        enabled: true,
       }
     ]
 
-    if (mockSMBConfigs.length > 0) {
-      const accesses: ConfigurationAccess[] = mockSMBConfigs.map((config) => ({
-        name: config.username,
-        type: 'credentials',
-        account: config.username,
-        secret: config.password,
-      }))
+    if (mockConfigs.length > 0) {
+      const accesses: ConfigurationAccess[] = mockConfigs
+        .filter(config => config.protocol !== 'local')
+        .map((config) => ({
+          name: `${config.protocol}_${config.username || 'local'}`,
+          type: 'credentials',
+          account: config.username || 'local',
+          secret: config.password || '',
+        }))
 
-      const sources: ConfigurationSource[] = mockSMBConfigs.map((config) => ({
-        type: 'samba',
-        url: `smb://${config.host}:${config.port}/${config.share_name}${config.path || ''}`,
-        access: config.username,
-      }))
+      const sources: ConfigurationSource[] = mockConfigs.map((config) => {
+        let url = ''
+        switch (config.protocol) {
+          case 'smb':
+            url = `smb://${config.host}:${config.port}/${config.share_name}${config.path || ''}`
+            break
+          case 'ftp':
+            url = `ftp://${config.host}:${config.port}${config.path || '/'}`
+            break
+          case 'nfs':
+            url = `nfs://${config.host}${config.path}`
+            break
+          case 'webdav':
+            url = `${config.url}${config.path || '/'}`
+            break
+          case 'local':
+            url = `file://${config.base_path}`
+            break
+        }
+        return {
+          type: config.protocol === 'smb' ? 'samba' : config.protocol,
+          url,
+          access: config.protocol === 'local' ? 'local' : `${config.protocol}_${config.username}`,
+        }
+      })
 
       const configuration: Configuration = {
         accesses,
@@ -287,9 +344,9 @@ export default function ConfigurationManagementStep() {
                   Add
                 </Button>
               </CardTitle>
-              <CardDescription>
-                Manage authentication credentials for SMB sources
-              </CardDescription>
+               <CardDescription>
+                 Manage authentication credentials for all sources
+               </CardDescription>
             </CardHeader>
             <CardContent>
               {generatedConfig.accesses.length === 0 ? (
@@ -351,9 +408,9 @@ export default function ConfigurationManagementStep() {
                   Add
                 </Button>
               </CardTitle>
-              <CardDescription>
-                Manage SMB source configurations
-              </CardDescription>
+               <CardDescription>
+                 Manage all media source configurations
+               </CardDescription>
             </CardHeader>
             <CardContent>
               {generatedConfig.sources.length === 0 ? (

@@ -75,6 +75,88 @@ export class TauriService {
   }
 
   /**
+   * Test FTP connection with credentials
+   */
+  static async testFTPConnection(
+    host: string,
+    port: number,
+    username: string,
+    password: string,
+    path?: string
+  ): Promise<boolean> {
+    try {
+      return await invoke<boolean>('test_ftp_connection', {
+        host,
+        port,
+        username,
+        password,
+        path: path || undefined,
+      })
+    } catch (error) {
+      console.error('Failed to test FTP connection:', error)
+      throw new Error(`FTP connection test failed: ${error}`)
+    }
+  }
+
+  /**
+   * Test NFS connection
+   */
+  static async testNFSConnection(
+    host: string,
+    path: string,
+    mountPoint: string,
+    options?: string
+  ): Promise<boolean> {
+    try {
+      return await invoke<boolean>('test_nfs_connection', {
+        host,
+        path,
+        mountPoint,
+        options: options || undefined,
+      })
+    } catch (error) {
+      console.error('Failed to test NFS connection:', error)
+      throw new Error(`NFS connection test failed: ${error}`)
+    }
+  }
+
+  /**
+   * Test WebDAV connection with credentials
+   */
+  static async testWebDAVConnection(
+    url: string,
+    username: string,
+    password: string,
+    path?: string
+  ): Promise<boolean> {
+    try {
+      return await invoke<boolean>('test_webdav_connection', {
+        url,
+        username,
+        password,
+        path: path || undefined,
+      })
+    } catch (error) {
+      console.error('Failed to test WebDAV connection:', error)
+      throw new Error(`WebDAV connection test failed: ${error}`)
+    }
+  }
+
+  /**
+   * Test local path accessibility
+   */
+  static async testLocalConnection(basePath: string): Promise<boolean> {
+    try {
+      return await invoke<boolean>('test_local_connection', {
+        basePath,
+      })
+    } catch (error) {
+      console.error('Failed to test local connection:', error)
+      throw new Error(`Local connection test failed: ${error}`)
+    }
+  }
+
+  /**
    * Load configuration from a file
    */
   static async loadConfiguration(filePath: string): Promise<Configuration> {

@@ -20,15 +20,16 @@
 | **Type Definitions** | ![Tests](https://img.shields.io/badge/Tests-TypeScript-blue) | ![Coverage](https://img.shields.io/badge/Coverage-100%25-brightgreen) | ![Success](https://img.shields.io/badge/Success%20Rate-100%25-brightgreen) |
 | **Tauri Backend** | ![Tests](https://img.shields.io/badge/Tests-Integration-blue) | ![Coverage](https://img.shields.io/badge/Coverage-85%25-green) | ![Success](https://img.shields.io/badge/Success%20Rate-100%25-brightgreen) |
 
-A desktop application that helps users configure SMB network sources for the Catalogizer media collection management system. This wizard provides a user-friendly interface for network discovery, SMB share browsing, and configuration file generation.
+A desktop application that helps users configure storage sources for the Catalogizer media collection management system. This wizard provides a user-friendly interface for selecting storage protocols (SMB, FTP, NFS, WebDAV, Local), configuring connections, and generating configuration files.
 
 ## 🚀 Features
 
 ### Core Functionality
+- **Protocol Selection**: Choose from multiple storage protocols (SMB, FTP, NFS, WebDAV, Local)
 - **Network Discovery**: Automatically scan local network for SMB-enabled devices
-- **SMB Share Browsing**: Browse available shares and select specific directories
+- **Share Browsing**: Browse available shares and select specific directories
 - **Configuration Management**: Create, edit, and manage Catalogizer configuration files
-- **Credential Management**: Secure handling of SMB authentication credentials
+- **Credential Management**: Secure handling of authentication credentials
 - **Configuration Validation**: Ensure generated configurations are valid
 - **File Operations**: Load existing configurations and save new ones
 
@@ -102,22 +103,25 @@ Download the latest release for your platform from the [Releases](https://github
 
 ### Detailed Workflow
 
-#### Step 1: Network Discovery
-- Click "Start Scan" to discover SMB-enabled devices
+#### Step 1: Protocol Selection
+- Choose the storage protocol that best fits your needs
+- Select from: SMB, FTP, NFS, WebDAV, or Local files
+- Each protocol has different configuration requirements
+
+#### Step 2: Network Discovery (SMB only)
+- Click "Start Scan" to discover SMB devices on your network
 - Review discovered devices with their IP addresses and available shares
 - Select devices you want to configure
 - Skip this step if you prefer manual configuration
 
-#### Step 2: SMB Configuration
-- Configure connection details for each selected device:
-  - Configuration name (for identification)
-  - Host/IP address
-  - Port (default: 445)
-  - Share name
-  - Username and password
-  - Domain (optional)
-  - Specific path within share (optional)
-- Test connections to verify credentials
+#### Step 3: Configuration
+- Configure connection details based on selected protocol:
+  - **SMB**: Host, port, share name, credentials, domain
+  - **FTP**: Host, port, path, credentials
+  - **NFS**: Host, path, mount point, options
+  - **WebDAV**: URL, credentials, path
+  - **Local**: Base path (no authentication required)
+- Test connections to verify credentials (where applicable)
 - Add multiple configurations as needed
 
 #### Step 3: Configuration Management
@@ -159,14 +163,14 @@ The wizard generates JSON configuration files in the following format:
 
 #### Access Credentials
 - `name`: Unique identifier for the credential set
-- `type`: Authentication type (currently "credentials")
-- `account`: Username for SMB authentication
-- `secret`: Password for SMB authentication
+- `type`: Authentication type ("credentials")
+- `account`: Username for authentication
+- `secret`: Password for authentication
 
 #### Sources
-- `type`: Source type (currently "samba")
-- `url`: Full SMB URL including host, port, share, and optional path
-- `access`: Reference to the access credential name
+- `type`: Source type ("samba", "ftp", "nfs", "webdav", "local")
+- `url`: Full URL including protocol, host, port, path
+- `access`: Reference to the access credential name (null for local)
 
 ## 📈 Test Coverage Report
 

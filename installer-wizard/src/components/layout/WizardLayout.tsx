@@ -1,29 +1,75 @@
+import React from 'react'
 import { Outlet, useLocation, useNavigate } from 'react-router-dom'
 import { Button } from '../ui/Button'
-import { Card, CardContent, CardHeader, CardTitle } from '../ui/Card'
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../ui/Card'
 import { useWizard } from '../../contexts/WizardContext'
+import { useConfiguration } from '../../contexts/ConfigurationContext'
 import { ChevronLeft, ChevronRight, Settings, FileText } from 'lucide-react'
 
-const steps = [
-  { path: '/', title: 'Welcome', description: 'Introduction to the setup wizard' },
-  { path: '/scan', title: 'Network Scan', description: 'Discover SMB hosts on your network' },
-  { path: '/configure', title: 'SMB Configuration', description: 'Configure SMB connections' },
-  { path: '/manage', title: 'Configuration Management', description: 'Manage your configuration' },
-  { path: '/summary', title: 'Summary', description: 'Review and finalize setup' },
-]
-
 export default function WizardLayout() {
-  const { state, nextStep, previousStep } = useWizard()
+  const { state, nextStep, previousStep, setTotalSteps } = useWizard()
+  const { state: configState } = useConfiguration()
   const location = useLocation()
   const navigate = useNavigate()
+
+  // Dynamic steps based on selected protocol
+  const getSteps = () => {
+    const baseSteps = [
+      { path: '/', title: 'Welcome', description: 'Introduction to the setup wizard' },
+      { path: '/protocol', title: 'Protocol Selection', description: 'Choose your storage protocol' },
+    ]
+
+    if (configState.selectedProtocol === 'smb') {
+      baseSteps.push({ path: '/scan', title: 'Network Scan', description: 'Discover hosts on your network' })
+    }
+
+    // Add the appropriate configuration step
+    if (configState.selectedProtocol) {
+      const configStep = {
+        path: `/configure-${configState.selectedProtocol}`,
+        title: `${configState.selectedProtocol.toUpperCase()} Configuration`,
+        description: `Configure ${configState.selectedProtocol.toUpperCase()} connections`
+      }
+      baseSteps.push(configStep)
+    }
+
+    // Add remaining steps
+    baseSteps.push(
+      { path: '/manage', title: 'Configuration Management', description: 'Manage your configuration' },
+      { path: '/summary', title: 'Summary', description: 'Review and finalize setup' }
+    )
+
+    return baseSteps
+  }
+
+  const steps = getSteps()
+
+  // Update total steps when steps change
+  React.useEffect(() => {
+    setTotalSteps(steps.length)
+  }, [steps.length, setTotalSteps])
 
   const currentStepIndex = steps.findIndex(step => step.path === location.pathname)
   const currentStep = steps[currentStepIndex] || steps[0]
 
   const handleNext = () => {
     if (currentStepIndex < steps.length - 1) {
-      navigate(steps[currentStepIndex + 1].path)
-      nextStep()
+      // Special handling for protocol selection -> configuration step
+      if (location.pathname === '/protocol' && configState.selectedProtocol) {
+        const configPath = `/configure-${configState.selectedProtocol}`
+        navigate(configPath)
+        // Skip to the appropriate step index
+        const configStepIndex = steps.findIndex(step => step.path === configPath)
+        if (configStepIndex !== -1) {
+          // This is a bit hacky, but we need to update the wizard state
+          for (let i = currentStepIndex + 1; i < configStepIndex; i++) {
+            nextStep()
+          }
+        }
+      } else {
+        navigate(steps[currentStepIndex + 1].path)
+        nextStep()
+      }
     }
   }
 
@@ -47,7 +93,7 @@ export default function WizardLayout() {
             <h1 className="text-3xl font-bold text-gray-900">Catalogizer Installation Wizard</h1>
           </div>
           <p className="text-lg text-gray-600">
-            Configure SMB network sources for your media collection
+            Configure storage sources for your media collection
           </p>
         </div>
 

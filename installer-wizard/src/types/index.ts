@@ -65,6 +65,44 @@ export interface SMBConnectionConfig {
   enabled: boolean
 }
 
+// FTP Connection Configuration
+export interface FTPConnectionConfig {
+  name: string
+  host: string
+  port: number
+  username: string
+  password: string
+  path?: string
+  enabled: boolean
+}
+
+// NFS Connection Configuration
+export interface NFSConnectionConfig {
+  name: string
+  host: string
+  path: string
+  mount_point: string
+  options?: string
+  enabled: boolean
+}
+
+// WebDAV Connection Configuration
+export interface WebDAVConnectionConfig {
+  name: string
+  url: string
+  username: string
+  password: string
+  path?: string
+  enabled: boolean
+}
+
+// Local Connection Configuration
+export interface LocalConnectionConfig {
+  name: string
+  base_path: string
+  enabled: boolean
+}
+
 // Form validation errors
 export interface ValidationError {
   field: string

@@ -1,14 +1,14 @@
 # Catalog API
 
-A REST API for browsing and searching SMB file catalogs, built with Go and Gin framework.
+A REST API for browsing and searching multi-protocol file catalogs, built with Go and Gin framework.
 
 ## Features
 
-- **Catalog Browsing**: Browse files and directories from cataloged SMB shares
+- **Catalog Browsing**: Browse files and directories from cataloged storage sources (SMB, FTP, NFS, WebDAV, Local)
 - **Advanced Search**: Search files by name, size, type, modification date, and more
-- **Duplicate Detection**: Find and analyze duplicate files across SMB shares
+- **Duplicate Detection**: Find and analyze duplicate files across all storage sources
 - **File Downloads**: Download individual files or create archives (ZIP, TAR, TAR.GZ)
-- **SMB Operations**: Copy files between SMB shares or to/from local filesystem
+- **Multi-Protocol Operations**: Copy files between different storage protocols
 - **Statistics**: Directory size analysis and duplicate file statistics
 - **RESTful API**: Clean REST API with JSON responses
 - **CORS Support**: Enable cross-origin requests for web frontends
@@ -16,7 +16,7 @@ A REST API for browsing and searching SMB file catalogs, built with Go and Gin f
 ## API Endpoints
 
 ### Catalog Browsing
-- `GET /api/v1/catalog` - List available SMB root directories
+- `GET /api/v1/catalog` - List available storage root directories
 - `GET /api/v1/catalog/{path}` - List files and directories in path
 - `GET /api/v1/catalog-info/{path}?id={id}` - Get detailed file information
 
@@ -29,12 +29,12 @@ A REST API for browsing and searching SMB file catalogs, built with Go and Gin f
 - `GET /api/v1/download/directory/{path}` - Download directory as archive
 - `POST /api/v1/download/archive` - Create custom archive from file list
 
-### SMB Operations
-- `POST /api/v1/copy/smb` - Copy between SMB shares
-- `POST /api/v1/copy/local` - Copy from SMB to local filesystem
-- `POST /api/v1/copy/upload` - Upload file to SMB share
-- `GET /api/v1/smb/list/{path}?host={host}` - List SMB directory contents
-- `GET /api/v1/smb/hosts` - Get available SMB hosts
+### Storage Operations
+- `POST /api/v1/copy/storage` - Copy between storage sources
+- `POST /api/v1/copy/local` - Copy from storage to local filesystem
+- `POST /api/v1/copy/upload` - Upload file to storage source
+- `GET /api/v1/storage/list/{path}?root={root_id}` - List storage directory contents
+- `GET /api/v1/storage/roots` - Get available storage roots
 
 ### Statistics
 - `GET /api/v1/stats/directories/by-size` - Get directories sorted by size

@@ -9,7 +9,7 @@ import { useWizard } from '../../contexts/WizardContext'
 import { useConfiguration } from '../../contexts/ConfigurationContext'
 import { ConfigurationAccess, ConfigurationSource } from '../../types'
 import { TauriService } from '../../services/tauri'
-import { SMBConnectionConfig } from '../../types'
+import { FTPConnectionConfig } from '../../types'
 import {
   Settings,
   Eye,
@@ -23,27 +23,25 @@ import {
   Trash2
 } from 'lucide-react'
 
-const smbConfigSchema = z.object({
+const ftpConfigSchema = z.object({
   name: z.string().min(1, 'Name is required'),
   host: z.string().min(1, 'Host is required'),
-  port: z.number().min(1).max(65535).default(445),
-  share_name: z.string().min(1, 'Share name is required'),
+  port: z.number().min(1).max(65535).default(21),
   username: z.string().min(1, 'Username is required'),
   password: z.string().min(1, 'Password is required'),
-  domain: z.string().optional(),
   path: z.string().optional(),
   enabled: z.boolean().default(true),
 })
 
-type SMBConfigForm = z.infer<typeof smbConfigSchema>
+type FTPConfigForm = z.infer<typeof ftpConfigSchema>
 
-export default function SMBConfigurationStep() {
+export default function FTPConfigurationStep() {
   const { setCanNext } = useWizard()
   const { state: configState, addAccess, addSource } = useConfiguration()
   const [showPassword, setShowPassword] = useState(false)
   const [testResult, setTestResult] = useState<{ success: boolean; message: string } | null>(null)
   const [isTestingConnection, setIsTestingConnection] = useState(false)
-  const [smbConfigs, setSmbConfigs] = useState<SMBConnectionConfig[]>([])
+  const [ftpConfigs, setFtpConfigs] = useState<FTPConnectionConfig[]>([])
   const [editingIndex, setEditingIndex] = useState<number | null>(null)
 
   const {
@@ -52,10 +50,10 @@ export default function SMBConfigurationStep() {
     formState: { errors },
     watch,
     reset,
-  } = useForm<SMBConfigForm>({
-    resolver: zodResolver(smbConfigSchema),
+  } = useForm<FTPConfigForm>({
+    resolver: zodResolver(ftpConfigSchema),
     defaultValues: {
-      port: 445,
+      port: 21,
       enabled: true,
     }
   })
@@ -63,32 +61,31 @@ export default function SMBConfigurationStep() {
   const watchedValues = watch()
 
   useEffect(() => {
-    // Can proceed if we have at least one valid SMB configuration
-    setCanNext(smbConfigs.length > 0)
-  }, [smbConfigs, setCanNext])
+    // Can proceed if we have at least one valid FTP configuration
+    setCanNext(ftpConfigs.length > 0)
+  }, [ftpConfigs, setCanNext])
 
   useEffect(() => {
-    // Pre-populate with selected hosts from network scan
-    if (configState.selectedHosts.length > 0 && smbConfigs.length === 0) {
-      const defaultConfigs = configState.selectedHosts.map((host, index) => ({
-        name: `SMB Source ${index + 1}`,
+    // Pre-populate with selected hosts from network scan if they have FTP ports
+    if (configState.selectedHosts.length > 0 && ftpConfigs.length === 0) {
+      const ftpHosts = configState.selectedHosts.filter(host => host.open_ports.includes(21))
+      const defaultConfigs = ftpHosts.map((host, index) => ({
+        name: `FTP Server ${index + 1}`,
         host,
-        port: 445,
-        share_name: '',
+        port: 21,
         username: '',
         password: '',
-        domain: '',
         path: '',
         enabled: true,
       }))
-      setSmbConfigs(defaultConfigs)
+      setFtpConfigs(defaultConfigs)
       if (defaultConfigs.length > 0) {
         startEditing(0, defaultConfigs[0])
       }
     }
-  }, [configState.selectedHosts, smbConfigs.length])
+  }, [configState.selectedHosts, ftpConfigs.length])
 
-  const startEditing = (index: number, config: SMBConnectionConfig) => {
+  const startEditing = (index: number, config: FTPConnectionConfig) => {
     setEditingIndex(index)
     reset(config)
     setTestResult(null)
@@ -96,7 +93,7 @@ export default function SMBConfigurationStep() {
 
   const handleTestConnection = async () => {
     const values = watchedValues
-    if (!values.host || !values.share_name || !values.username || !values.password) {
+    if (!values.host || !values.username || !values.password) {
       setTestResult({
         success: false,
         message: 'Please fill in all required fields before testing'
@@ -108,12 +105,12 @@ export default function SMBConfigurationStep() {
     setTestResult(null)
 
     try {
-      const success = await TauriService.testSMBConnection(
+      const success = await TauriService.testFTPConnection(
         values.host,
-        values.share_name,
+        values.port,
         values.username,
         values.password,
-        values.domain
+        values.path
       )
 
       setTestResult({
@@ -132,7 +129,7 @@ export default function SMBConfigurationStep() {
     }
   }
 
-  const onSubmit = (data: SMBConfigForm) => {
+  const onSubmit = (data: FTPConfigForm) => {
     // Create access entry
     const accessName = `${data.name.toLowerCase().replace(/\s+/g, '_')}_access`
     const access: ConfigurationAccess = {
@@ -143,9 +140,9 @@ export default function SMBConfigurationStep() {
     }
 
     // Create source entry
-    const url = `smb://${data.host}:${data.port}/${data.share_name}${data.path ? data.path : ''}`
+    const url = `ftp://${data.host}:${data.port}${data.path ? data.path : ''}`
     const source: ConfigurationSource = {
-      type: 'samba',
+      type: 'ftp',
       url,
       access: accessName,
     }
@@ -156,12 +153,12 @@ export default function SMBConfigurationStep() {
 
     if (editingIndex !== null) {
       // Update existing config
-      const updatedConfigs = [...smbConfigs]
-      updatedConfigs[editingIndex] = data as SMBConnectionConfig
-      setSmbConfigs(updatedConfigs)
+      const updatedConfigs = [...ftpConfigs]
+      updatedConfigs[editingIndex] = data as FTPConnectionConfig
+      setFtpConfigs(updatedConfigs)
     } else {
       // Add new config
-      setSmbConfigs([...smbConfigs, data as SMBConnectionConfig])
+      setFtpConfigs([...ftpConfigs, data as FTPConnectionConfig])
     }
 
     // Reset form for next entry
@@ -169,11 +166,9 @@ export default function SMBConfigurationStep() {
     reset({
       name: '',
       host: '',
-      port: 445,
-      share_name: '',
+      port: 21,
       username: '',
       password: '',
-      domain: '',
       path: '',
       enabled: true,
     })
@@ -185,11 +180,9 @@ export default function SMBConfigurationStep() {
     reset({
       name: '',
       host: '',
-      port: 445,
-      share_name: '',
+      port: 21,
       username: '',
       password: '',
-      domain: '',
       path: '',
       enabled: true,
     })
@@ -197,8 +190,8 @@ export default function SMBConfigurationStep() {
   }
 
   const removeConfig = (index: number) => {
-    const updatedConfigs = smbConfigs.filter((_, i) => i !== index)
-    setSmbConfigs(updatedConfigs)
+    const updatedConfigs = ftpConfigs.filter((_, i) => i !== index)
+    setFtpConfigs(updatedConfigs)
     if (editingIndex === index) {
       setEditingIndex(null)
       reset()
@@ -212,9 +205,9 @@ export default function SMBConfigurationStep() {
         <div className="mx-auto w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center">
           <Settings className="h-8 w-8 text-blue-600" />
         </div>
-        <h2 className="text-xl font-bold text-gray-900">SMB Configuration</h2>
+        <h2 className="text-xl font-bold text-gray-900">FTP Configuration</h2>
         <p className="text-gray-600">
-          Configure SMB connections for your selected devices
+          Configure FTP connections for your selected devices
         </p>
       </div>
 
@@ -227,7 +220,7 @@ export default function SMBConfigurationStep() {
               {editingIndex !== null ? 'Edit Configuration' : 'Add Configuration'}
             </CardTitle>
             <CardDescription>
-              Enter the SMB connection details
+              Enter the FTP connection details
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -236,7 +229,7 @@ export default function SMBConfigurationStep() {
                 <label className="block text-sm font-medium mb-1">Configuration Name</label>
                 <Input
                   {...register('name')}
-                  placeholder="e.g., Media Server"
+                  placeholder="e.g., Media FTP Server"
                   className={errors.name ? 'border-red-500' : ''}
                 />
                 {errors.name && (
@@ -270,18 +263,6 @@ export default function SMBConfigurationStep() {
                 </div>
               </div>
 
-              <div>
-                <label className="block text-sm font-medium mb-1">Share Name</label>
-                <Input
-                  {...register('share_name')}
-                  placeholder="shared"
-                  className={errors.share_name ? 'border-red-500' : ''}
-                />
-                {errors.share_name && (
-                  <p className="text-red-500 text-sm mt-1">{errors.share_name.message}</p>
-                )}
-              </div>
-
               <div className="grid grid-cols-2 gap-3">
                 <div>
                   <label className="block text-sm font-medium mb-1">Username</label>
@@ -296,34 +277,26 @@ export default function SMBConfigurationStep() {
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium mb-1">Domain (optional)</label>
-                  <Input
-                    {...register('domain')}
-                    placeholder="WORKGROUP"
-                  />
+                  <label className="block text-sm font-medium mb-1">Password</label>
+                  <div className="relative">
+                    <Input
+                      type={showPassword ? 'text' : 'password'}
+                      {...register('password')}
+                      placeholder="password"
+                      className={`pr-10 ${errors.password ? 'border-red-500' : ''}`}
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowPassword(!showPassword)}
+                      className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500"
+                    >
+                      {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                    </button>
+                  </div>
+                  {errors.password && (
+                    <p className="text-red-500 text-sm mt-1">{errors.password.message}</p>
+                  )}
                 </div>
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium mb-1">Password</label>
-                <div className="relative">
-                  <Input
-                    type={showPassword ? 'text' : 'password'}
-                    {...register('password')}
-                    placeholder="password"
-                    className={`pr-10 ${errors.password ? 'border-red-500' : ''}`}
-                  />
-                  <button
-                    type="button"
-                    onClick={() => setShowPassword(!showPassword)}
-                    className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500"
-                  >
-                    {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                  </button>
-                </div>
-                {errors.password && (
-                  <p className="text-red-500 text-sm mt-1">{errors.password.message}</p>
-                )}
               </div>
 
               <div>
@@ -387,7 +360,7 @@ export default function SMBConfigurationStep() {
             <CardTitle className="flex items-center justify-between">
               <span className="flex items-center gap-2">
                 <Folder className="h-5 w-5" />
-                Configured Sources ({smbConfigs.length})
+                Configured Sources ({ftpConfigs.length})
               </span>
               <Button
                 variant="outline"
@@ -400,21 +373,21 @@ export default function SMBConfigurationStep() {
               </Button>
             </CardTitle>
             <CardDescription>
-              Manage your SMB source configurations
+              Manage your FTP source configurations
             </CardDescription>
           </CardHeader>
           <CardContent>
-            {smbConfigs.length === 0 ? (
+            {ftpConfigs.length === 0 ? (
               <div className="text-center py-8 text-gray-500">
                 <Folder className="h-12 w-12 mx-auto mb-4 text-gray-300" />
                 <p className="text-lg font-medium">No configurations yet</p>
                 <p className="text-sm">
-                  Add your first SMB configuration to get started
+                  Add your first FTP configuration to get started
                 </p>
               </div>
             ) : (
               <div className="space-y-3">
-                {smbConfigs.map((config, index) => (
+                {ftpConfigs.map((config, index) => (
                   <div
                     key={index}
                     className={`p-4 border rounded-lg transition-colors ${
@@ -427,12 +400,11 @@ export default function SMBConfigurationStep() {
                       <div className="flex-1">
                         <div className="font-medium">{config.name}</div>
                         <div className="text-sm text-gray-500">
-                          {config.host}:{config.port} → {config.share_name}
+                          {config.host}:{config.port}
                           {config.path && ` (${config.path})`}
                         </div>
                         <div className="text-xs text-gray-400">
                           User: {config.username}
-                          {config.domain && ` • Domain: ${config.domain}`}
                         </div>
                       </div>
                       <div className="flex items-center gap-2">
@@ -461,12 +433,12 @@ export default function SMBConfigurationStep() {
         </Card>
       </div>
 
-      {smbConfigs.length > 0 && (
+      {ftpConfigs.length > 0 && (
         <div className="mt-6 p-4 bg-green-50 border border-green-200 rounded-lg">
           <div className="flex items-center gap-2 text-green-800">
             <CheckCircle className="h-4 w-4" />
             <span className="font-medium">
-              {smbConfigs.length} SMB source(s) configured
+              {ftpConfigs.length} FTP source(s) configured
             </span>
           </div>
           <p className="text-sm text-green-700 mt-1">

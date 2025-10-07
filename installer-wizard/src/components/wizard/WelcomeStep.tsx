@@ -21,20 +21,20 @@ export default function WelcomeStep() {
           Welcome to Catalogizer Installation Wizard
         </h2>
         <p className="text-lg text-gray-600 max-w-2xl mx-auto">
-          This wizard will help you configure SMB network sources for your Catalogizer media collection.
-          You'll be able to scan your network, browse available shares, and create a configuration file.
+          This wizard will help you configure storage sources for your Catalogizer media collection.
+          Choose from various protocols including SMB, FTP, NFS, WebDAV, and local files.
         </p>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-8">
         <Card>
           <CardHeader className="text-center">
-            <Network className="h-8 w-8 text-blue-600 mx-auto mb-2" />
-            <CardTitle className="text-lg">Network Discovery</CardTitle>
+            <Settings className="h-8 w-8 text-blue-600 mx-auto mb-2" />
+            <CardTitle className="text-lg">Protocol Selection</CardTitle>
           </CardHeader>
           <CardContent>
             <CardDescription>
-              Automatically scan your local network to discover SMB-enabled devices and shares.
+              Choose the storage protocol that best fits your needs from multiple options.
             </CardDescription>
           </CardContent>
         </Card>
@@ -42,11 +42,11 @@ export default function WelcomeStep() {
         <Card>
           <CardHeader className="text-center">
             <Folder className="h-8 w-8 text-green-600 mx-auto mb-2" />
-            <CardTitle className="text-lg">Share Browsing</CardTitle>
+            <CardTitle className="text-lg">Source Configuration</CardTitle>
           </CardHeader>
           <CardContent>
             <CardDescription>
-              Browse available SMB shares and select specific directories as media sources.
+              Configure connection details, authentication, and paths for your storage sources.
             </CardDescription>
           </CardContent>
         </Card>
@@ -69,11 +69,11 @@ export default function WelcomeStep() {
         <ul className="space-y-2 text-blue-800">
           <li className="flex items-center gap-2">
             <CheckCircle className="h-4 w-4 text-blue-600" />
-            Access to your local network with SMB-enabled devices
+            Access to your storage system (network share, FTP server, etc.)
           </li>
           <li className="flex items-center gap-2">
             <CheckCircle className="h-4 w-4 text-blue-600" />
-            Valid credentials for SMB shares you want to configure
+            Valid credentials for the storage system you choose
           </li>
           <li className="flex items-center gap-2">
             <CheckCircle className="h-4 w-4 text-blue-600" />
@@ -84,7 +84,7 @@ export default function WelcomeStep() {
 
       <div className="text-center mt-8">
         <p className="text-sm text-gray-500">
-          Click "Next" to begin the network scanning process
+          Click "Next" to select your storage protocol
         </p>
       </div>
     </div>

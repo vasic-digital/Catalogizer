@@ -7,13 +7,10 @@ import { Input } from '../ui/Input'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../ui/Card'
 import { useWizard } from '../../contexts/WizardContext'
 import { useConfiguration } from '../../contexts/ConfigurationContext'
-import { ConfigurationAccess, ConfigurationSource } from '../../types'
 import { TauriService } from '../../services/tauri'
-import { SMBConnectionConfig } from '../../types'
+import { NFSConnectionConfig } from '../../types'
 import {
   Settings,
-  Eye,
-  EyeOff,
   TestTube,
   CheckCircle,
   AlertCircle,
@@ -23,27 +20,23 @@ import {
   Trash2
 } from 'lucide-react'
 
-const smbConfigSchema = z.object({
+const nfsConfigSchema = z.object({
   name: z.string().min(1, 'Name is required'),
   host: z.string().min(1, 'Host is required'),
-  port: z.number().min(1).max(65535).default(445),
-  share_name: z.string().min(1, 'Share name is required'),
-  username: z.string().min(1, 'Username is required'),
-  password: z.string().min(1, 'Password is required'),
-  domain: z.string().optional(),
-  path: z.string().optional(),
+  path: z.string().min(1, 'Path is required'),
+  mount_point: z.string().min(1, 'Mount point is required'),
+  options: z.string().optional(),
   enabled: z.boolean().default(true),
 })
 
-type SMBConfigForm = z.infer<typeof smbConfigSchema>
+type NFSConfigForm = z.infer<typeof nfsConfigSchema>
 
-export default function SMBConfigurationStep() {
+export default function NFSConfigurationStep() {
   const { setCanNext } = useWizard()
-  const { state: configState, addAccess, addSource } = useConfiguration()
-  const [showPassword, setShowPassword] = useState(false)
+  const { state: configState } = useConfiguration()
   const [testResult, setTestResult] = useState<{ success: boolean; message: string } | null>(null)
   const [isTestingConnection, setIsTestingConnection] = useState(false)
-  const [smbConfigs, setSmbConfigs] = useState<SMBConnectionConfig[]>([])
+  const [nfsConfigs, setNfsConfigs] = useState<NFSConnectionConfig[]>([])
   const [editingIndex, setEditingIndex] = useState<number | null>(null)
 
   const {
@@ -52,10 +45,10 @@ export default function SMBConfigurationStep() {
     formState: { errors },
     watch,
     reset,
-  } = useForm<SMBConfigForm>({
-    resolver: zodResolver(smbConfigSchema),
+  } = useForm<NFSConfigForm>({
+    resolver: zodResolver(nfsConfigSchema),
     defaultValues: {
-      port: 445,
+      options: 'vers=3',
       enabled: true,
     }
   })
@@ -63,32 +56,30 @@ export default function SMBConfigurationStep() {
   const watchedValues = watch()
 
   useEffect(() => {
-    // Can proceed if we have at least one valid SMB configuration
-    setCanNext(smbConfigs.length > 0)
-  }, [smbConfigs, setCanNext])
+    // Can proceed if we have at least one valid NFS configuration
+    setCanNext(nfsConfigs.length > 0)
+  }, [nfsConfigs, setCanNext])
 
   useEffect(() => {
-    // Pre-populate with selected hosts from network scan
-    if (configState.selectedHosts.length > 0 && smbConfigs.length === 0) {
-      const defaultConfigs = configState.selectedHosts.map((host, index) => ({
-        name: `SMB Source ${index + 1}`,
+    // Pre-populate with selected hosts from network scan if they have NFS ports (2049)
+    if (configState.selectedHosts.length > 0 && nfsConfigs.length === 0) {
+      const nfsHosts = configState.selectedHosts.filter(host => host.open_ports.includes(2049))
+      const defaultConfigs = nfsHosts.map((host, index) => ({
+        name: `NFS Server ${index + 1}`,
         host,
-        port: 445,
-        share_name: '',
-        username: '',
-        password: '',
-        domain: '',
-        path: '',
+        path: '/export/data',
+        mount_point: `/mnt/nfs${index + 1}`,
+        options: 'vers=3',
         enabled: true,
       }))
-      setSmbConfigs(defaultConfigs)
+      setNfsConfigs(defaultConfigs)
       if (defaultConfigs.length > 0) {
         startEditing(0, defaultConfigs[0])
       }
     }
-  }, [configState.selectedHosts, smbConfigs.length])
+  }, [configState.selectedHosts, nfsConfigs.length])
 
-  const startEditing = (index: number, config: SMBConnectionConfig) => {
+  const startEditing = (index: number, config: NFSConnectionConfig) => {
     setEditingIndex(index)
     reset(config)
     setTestResult(null)
@@ -96,7 +87,7 @@ export default function SMBConfigurationStep() {
 
   const handleTestConnection = async () => {
     const values = watchedValues
-    if (!values.host || !values.share_name || !values.username || !values.password) {
+    if (!values.host || !values.path || !values.mount_point) {
       setTestResult({
         success: false,
         message: 'Please fill in all required fields before testing'
@@ -108,19 +99,18 @@ export default function SMBConfigurationStep() {
     setTestResult(null)
 
     try {
-      const success = await TauriService.testSMBConnection(
+      const success = await TauriService.testNFSConnection(
         values.host,
-        values.share_name,
-        values.username,
-        values.password,
-        values.domain
+        values.path,
+        values.mount_point,
+        values.options
       )
 
       setTestResult({
         success,
         message: success
           ? 'Connection successful!'
-          : 'Connection failed. Please check your credentials and network connectivity.'
+          : 'Connection failed. Please check your network connectivity and NFS configuration.'
       })
     } catch (error) {
       setTestResult({
@@ -132,36 +122,15 @@ export default function SMBConfigurationStep() {
     }
   }
 
-  const onSubmit = (data: SMBConfigForm) => {
-    // Create access entry
-    const accessName = `${data.name.toLowerCase().replace(/\s+/g, '_')}_access`
-    const access: ConfigurationAccess = {
-      name: accessName,
-      type: 'credentials',
-      account: data.username,
-      secret: data.password,
-    }
-
-    // Create source entry
-    const url = `smb://${data.host}:${data.port}/${data.share_name}${data.path ? data.path : ''}`
-    const source: ConfigurationSource = {
-      type: 'samba',
-      url,
-      access: accessName,
-    }
-
-    // Add to global configuration
-    addAccess(access)
-    addSource(source)
-
+  const onSubmit = (data: NFSConfigForm) => {
     if (editingIndex !== null) {
       // Update existing config
-      const updatedConfigs = [...smbConfigs]
-      updatedConfigs[editingIndex] = data as SMBConnectionConfig
-      setSmbConfigs(updatedConfigs)
+      const updatedConfigs = [...nfsConfigs]
+      updatedConfigs[editingIndex] = data as NFSConnectionConfig
+      setNfsConfigs(updatedConfigs)
     } else {
       // Add new config
-      setSmbConfigs([...smbConfigs, data as SMBConnectionConfig])
+      setNfsConfigs([...nfsConfigs, data as NFSConnectionConfig])
     }
 
     // Reset form for next entry
@@ -169,12 +138,9 @@ export default function SMBConfigurationStep() {
     reset({
       name: '',
       host: '',
-      port: 445,
-      share_name: '',
-      username: '',
-      password: '',
-      domain: '',
-      path: '',
+      path: '/export/data',
+      mount_point: '/mnt/nfs',
+      options: 'vers=3',
       enabled: true,
     })
     setTestResult(null)
@@ -185,20 +151,17 @@ export default function SMBConfigurationStep() {
     reset({
       name: '',
       host: '',
-      port: 445,
-      share_name: '',
-      username: '',
-      password: '',
-      domain: '',
-      path: '',
+      path: '/export/data',
+      mount_point: '/mnt/nfs',
+      options: 'vers=3',
       enabled: true,
     })
     setTestResult(null)
   }
 
   const removeConfig = (index: number) => {
-    const updatedConfigs = smbConfigs.filter((_, i) => i !== index)
-    setSmbConfigs(updatedConfigs)
+    const updatedConfigs = nfsConfigs.filter((_, i) => i !== index)
+    setNfsConfigs(updatedConfigs)
     if (editingIndex === index) {
       setEditingIndex(null)
       reset()
@@ -212,9 +175,9 @@ export default function SMBConfigurationStep() {
         <div className="mx-auto w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center">
           <Settings className="h-8 w-8 text-blue-600" />
         </div>
-        <h2 className="text-xl font-bold text-gray-900">SMB Configuration</h2>
+        <h2 className="text-xl font-bold text-gray-900">NFS Configuration</h2>
         <p className="text-gray-600">
-          Configure SMB connections for your selected devices
+          Configure NFS connections for your selected devices
         </p>
       </div>
 
@@ -227,7 +190,7 @@ export default function SMBConfigurationStep() {
               {editingIndex !== null ? 'Edit Configuration' : 'Add Configuration'}
             </CardTitle>
             <CardDescription>
-              Enter the SMB connection details
+              Enter the NFS connection details
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -236,7 +199,7 @@ export default function SMBConfigurationStep() {
                 <label className="block text-sm font-medium mb-1">Configuration Name</label>
                 <Input
                   {...register('name')}
-                  placeholder="e.g., Media Server"
+                  placeholder="e.g., Media NFS Server"
                   className={errors.name ? 'border-red-500' : ''}
                 />
                 {errors.name && (
@@ -244,93 +207,49 @@ export default function SMBConfigurationStep() {
                 )}
               </div>
 
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="block text-sm font-medium mb-1">Host/IP Address</label>
-                  <Input
-                    {...register('host')}
-                    placeholder="192.168.1.100"
-                    className={errors.host ? 'border-red-500' : ''}
-                  />
-                  {errors.host && (
-                    <p className="text-red-500 text-sm mt-1">{errors.host.message}</p>
-                  )}
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium mb-1">Port</label>
-                  <Input
-                    type="number"
-                    {...register('port', { valueAsNumber: true })}
-                    className={errors.port ? 'border-red-500' : ''}
-                  />
-                  {errors.port && (
-                    <p className="text-red-500 text-sm mt-1">{errors.port.message}</p>
-                  )}
-                </div>
-              </div>
-
               <div>
-                <label className="block text-sm font-medium mb-1">Share Name</label>
+                <label className="block text-sm font-medium mb-1">Host/IP Address</label>
                 <Input
-                  {...register('share_name')}
-                  placeholder="shared"
-                  className={errors.share_name ? 'border-red-500' : ''}
+                  {...register('host')}
+                  placeholder="192.168.1.100"
+                  className={errors.host ? 'border-red-500' : ''}
                 />
-                {errors.share_name && (
-                  <p className="text-red-500 text-sm mt-1">{errors.share_name.message}</p>
+                {errors.host && (
+                  <p className="text-red-500 text-sm mt-1">{errors.host.message}</p>
                 )}
               </div>
 
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-sm font-medium mb-1">Username</label>
+                  <label className="block text-sm font-medium mb-1">Export Path</label>
                   <Input
-                    {...register('username')}
-                    placeholder="username"
-                    className={errors.username ? 'border-red-500' : ''}
+                    {...register('path')}
+                    placeholder="/export/data"
+                    className={errors.path ? 'border-red-500' : ''}
                   />
-                  {errors.username && (
-                    <p className="text-red-500 text-sm mt-1">{errors.username.message}</p>
+                  {errors.path && (
+                    <p className="text-red-500 text-sm mt-1">{errors.path.message}</p>
                   )}
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium mb-1">Domain (optional)</label>
+                  <label className="block text-sm font-medium mb-1">Mount Point</label>
                   <Input
-                    {...register('domain')}
-                    placeholder="WORKGROUP"
+                    {...register('mount_point')}
+                    placeholder="/mnt/nfs"
+                    className={errors.mount_point ? 'border-red-500' : ''}
                   />
+                  {errors.mount_point && (
+                    <p className="text-red-500 text-sm mt-1">{errors.mount_point.message}</p>
+                  )}
                 </div>
               </div>
 
               <div>
-                <label className="block text-sm font-medium mb-1">Password</label>
-                <div className="relative">
-                  <Input
-                    type={showPassword ? 'text' : 'password'}
-                    {...register('password')}
-                    placeholder="password"
-                    className={`pr-10 ${errors.password ? 'border-red-500' : ''}`}
-                  />
-                  <button
-                    type="button"
-                    onClick={() => setShowPassword(!showPassword)}
-                    className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500"
-                  >
-                    {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                  </button>
-                </div>
-                {errors.password && (
-                  <p className="text-red-500 text-sm mt-1">{errors.password.message}</p>
-                )}
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium mb-1">Path (optional)</label>
+                <label className="block text-sm font-medium mb-1">Mount Options (optional)</label>
                 <Input
-                  {...register('path')}
-                  placeholder="/media/movies"
+                  {...register('options')}
+                  placeholder="vers=3"
                 />
               </div>
 
@@ -387,7 +306,7 @@ export default function SMBConfigurationStep() {
             <CardTitle className="flex items-center justify-between">
               <span className="flex items-center gap-2">
                 <Folder className="h-5 w-5" />
-                Configured Sources ({smbConfigs.length})
+                Configured Sources ({nfsConfigs.length})
               </span>
               <Button
                 variant="outline"
@@ -400,21 +319,21 @@ export default function SMBConfigurationStep() {
               </Button>
             </CardTitle>
             <CardDescription>
-              Manage your SMB source configurations
+              Manage your NFS source configurations
             </CardDescription>
           </CardHeader>
           <CardContent>
-            {smbConfigs.length === 0 ? (
+            {nfsConfigs.length === 0 ? (
               <div className="text-center py-8 text-gray-500">
                 <Folder className="h-12 w-12 mx-auto mb-4 text-gray-300" />
                 <p className="text-lg font-medium">No configurations yet</p>
                 <p className="text-sm">
-                  Add your first SMB configuration to get started
+                  Add your first NFS configuration to get started
                 </p>
               </div>
             ) : (
               <div className="space-y-3">
-                {smbConfigs.map((config, index) => (
+                {nfsConfigs.map((config, index) => (
                   <div
                     key={index}
                     className={`p-4 border rounded-lg transition-colors ${
@@ -427,12 +346,10 @@ export default function SMBConfigurationStep() {
                       <div className="flex-1">
                         <div className="font-medium">{config.name}</div>
                         <div className="text-sm text-gray-500">
-                          {config.host}:{config.port} → {config.share_name}
-                          {config.path && ` (${config.path})`}
+                          {config.host}:{config.path} → {config.mount_point}
                         </div>
                         <div className="text-xs text-gray-400">
-                          User: {config.username}
-                          {config.domain && ` • Domain: ${config.domain}`}
+                          Options: {config.options || 'default'}
                         </div>
                       </div>
                       <div className="flex items-center gap-2">
@@ -461,12 +378,12 @@ export default function SMBConfigurationStep() {
         </Card>
       </div>
 
-      {smbConfigs.length > 0 && (
+      {nfsConfigs.length > 0 && (
         <div className="mt-6 p-4 bg-green-50 border border-green-200 rounded-lg">
           <div className="flex items-center gap-2 text-green-800">
             <CheckCircle className="h-4 w-4" />
             <span className="font-medium">
-              {smbConfigs.length} SMB source(s) configured
+              {nfsConfigs.length} NFS source(s) configured
             </span>
           </div>
           <p className="text-sm text-green-700 mt-1">

@@ -1,9 +1,14 @@
 import React, { createContext, useContext, useReducer, ReactNode } from 'react'
-import { Configuration, ConfigurationAccess, ConfigurationSource, SMBConnectionConfig } from '../types'
+import { Configuration, ConfigurationAccess, ConfigurationSource, SMBConnectionConfig, FTPConnectionConfig, NFSConnectionConfig, WebDAVConnectionConfig, LocalConnectionConfig } from '../types'
 
 interface ConfigurationState {
   configuration: Configuration
   currentSMBConfig: SMBConnectionConfig | null
+  currentFTPConfig: FTPConnectionConfig | null
+  currentNFSConfig: NFSConnectionConfig | null
+  currentWebDAVConfig: WebDAVConnectionConfig | null
+  currentLocalConfig: LocalConnectionConfig | null
+  selectedProtocol: string | null
   selectedHosts: string[]
   isLoading: boolean
   error: string | null
@@ -20,6 +25,11 @@ interface ConfigurationAction {
     | 'UPDATE_SOURCE'
     | 'REMOVE_SOURCE'
     | 'SET_CURRENT_SMB_CONFIG'
+    | 'SET_CURRENT_FTP_CONFIG'
+    | 'SET_CURRENT_NFS_CONFIG'
+    | 'SET_CURRENT_WEBDAV_CONFIG'
+    | 'SET_CURRENT_LOCAL_CONFIG'
+    | 'SET_SELECTED_PROTOCOL'
     | 'SET_SELECTED_HOSTS'
     | 'SET_LOADING'
     | 'SET_ERROR'
@@ -40,6 +50,11 @@ interface ConfigurationContextType {
   updateSource: (index: number, source: ConfigurationSource) => void
   removeSource: (index: number) => void
   setCurrentSMBConfig: (config: SMBConnectionConfig | null) => void
+  setCurrentFTPConfig: (config: FTPConnectionConfig | null) => void
+  setCurrentNFSConfig: (config: NFSConnectionConfig | null) => void
+  setCurrentWebDAVConfig: (config: WebDAVConnectionConfig | null) => void
+  setCurrentLocalConfig: (config: LocalConnectionConfig | null) => void
+  setSelectedProtocol: (protocol: string | null) => void
   setSelectedHosts: (hosts: string[]) => void
   setLoading: (loading: boolean) => void
   setError: (error: string | null) => void
@@ -54,6 +69,11 @@ const initialState: ConfigurationState = {
     sources: [],
   },
   currentSMBConfig: null,
+  currentFTPConfig: null,
+  currentNFSConfig: null,
+  currentWebDAVConfig: null,
+  currentLocalConfig: null,
+  selectedProtocol: null,
   selectedHosts: [],
   isLoading: false,
   error: null,
@@ -131,6 +151,31 @@ function configurationReducer(state: ConfigurationState, action: ConfigurationAc
         ...state,
         currentSMBConfig: action.payload,
       }
+    case 'SET_CURRENT_FTP_CONFIG':
+      return {
+        ...state,
+        currentFTPConfig: action.payload,
+      }
+    case 'SET_CURRENT_NFS_CONFIG':
+      return {
+        ...state,
+        currentNFSConfig: action.payload,
+      }
+    case 'SET_CURRENT_WEBDAV_CONFIG':
+      return {
+        ...state,
+        currentWebDAVConfig: action.payload,
+      }
+    case 'SET_CURRENT_LOCAL_CONFIG':
+      return {
+        ...state,
+        currentLocalConfig: action.payload,
+      }
+    case 'SET_SELECTED_PROTOCOL':
+      return {
+        ...state,
+        selectedProtocol: action.payload,
+      }
     case 'SET_SELECTED_HOSTS':
       return {
         ...state,
@@ -192,6 +237,21 @@ export function ConfigurationProvider({ children }: { children: ReactNode }) {
   const setCurrentSMBConfig = (config: SMBConnectionConfig | null) =>
     dispatch({ type: 'SET_CURRENT_SMB_CONFIG', payload: config })
 
+  const setCurrentFTPConfig = (config: FTPConnectionConfig | null) =>
+    dispatch({ type: 'SET_CURRENT_FTP_CONFIG', payload: config })
+
+  const setCurrentNFSConfig = (config: NFSConnectionConfig | null) =>
+    dispatch({ type: 'SET_CURRENT_NFS_CONFIG', payload: config })
+
+  const setCurrentWebDAVConfig = (config: WebDAVConnectionConfig | null) =>
+    dispatch({ type: 'SET_CURRENT_WEBDAV_CONFIG', payload: config })
+
+  const setCurrentLocalConfig = (config: LocalConnectionConfig | null) =>
+    dispatch({ type: 'SET_CURRENT_LOCAL_CONFIG', payload: config })
+
+  const setSelectedProtocol = (protocol: string | null) =>
+    dispatch({ type: 'SET_SELECTED_PROTOCOL', payload: protocol })
+
   const setSelectedHosts = (hosts: string[]) =>
     dispatch({ type: 'SET_SELECTED_HOSTS', payload: hosts })
 
@@ -221,6 +281,11 @@ export function ConfigurationProvider({ children }: { children: ReactNode }) {
     updateSource,
     removeSource,
     setCurrentSMBConfig,
+    setCurrentFTPConfig,
+    setCurrentNFSConfig,
+    setCurrentWebDAVConfig,
+    setCurrentLocalConfig,
+    setSelectedProtocol,
     setSelectedHosts,
     setLoading,
     setError,
