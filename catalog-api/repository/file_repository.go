@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
+	"path/filepath"
 	"strings"
 	"time"
 
@@ -458,11 +459,11 @@ func (r *FileRepository) applySearchFilters(baseQuery string, args []interface{}
 		args = append(args, filter.MimeType)
 	}
 
-	if len(filter.SmbRoots) > 0 {
-		placeholders := strings.Repeat("?,", len(filter.SmbRoots))
+	if len(filter.StorageRoots) > 0 {
+		placeholders := strings.Repeat("?,", len(filter.StorageRoots))
 		placeholders = placeholders[:len(placeholders)-1] // Remove trailing comma
 		baseQuery += " AND sr.name IN (" + placeholders + ")"
-		for _, root := range filter.SmbRoots {
+		for _, root := range filter.StorageRoots {
 			args = append(args, root)
 		}
 	}
@@ -498,4 +499,205 @@ func (r *FileRepository) applySearchFilters(baseQuery string, args []interface{}
 	}
 
 	return baseQuery, args
+}
+
+// UpdateFilePath updates a file's path and related metadata efficiently
+func (r *FileRepository) UpdateFilePath(ctx context.Context, fileID int64, newPath string) error {
+	// Extract new filename and directory info
+	newName := filepath.Base(newPath)
+	newDir := filepath.Dir(newPath)
+
+	// Get parent directory ID
+	var parentID *int64
+	if newDir != "/" && newDir != "." {
+		parentQuery := `SELECT id FROM files WHERE path = ? AND is_directory = true LIMIT 1`
+		err := r.db.QueryRowContext(ctx, parentQuery, newDir).Scan(&parentID)
+		if err != nil && err != sql.ErrNoRows {
+			return fmt.Errorf("failed to get parent directory: %w", err)
+		}
+	}
+
+	// Update file record
+	updateQuery := `
+		UPDATE files
+		SET path = ?, name = ?, parent_id = ?, modified_at = CURRENT_TIMESTAMP,
+		    last_scan_at = CURRENT_TIMESTAMP
+		WHERE id = ?`
+
+	_, err := r.db.ExecContext(ctx, updateQuery, newPath, newName, parentID, fileID)
+	if err != nil {
+		return fmt.Errorf("failed to update file path: %w", err)
+	}
+
+	return nil
+}
+
+// UpdateDirectoryPaths updates a directory and all its children paths efficiently
+func (r *FileRepository) UpdateDirectoryPaths(ctx context.Context, oldPath, newPath, storageRootName string) error {
+	// Get all files/directories that need to be updated
+	query := `
+		SELECT id, path, is_directory
+		FROM files
+		WHERE storage_root_id = (SELECT id FROM storage_roots WHERE name = ?)
+		  AND (path = ? OR path LIKE ?)
+		ORDER BY LENGTH(path) ASC` // Process parents before children
+
+	oldPathPattern := oldPath + "/%"
+	rows, err := r.db.QueryContext(ctx, query, storageRootName, oldPath, oldPathPattern)
+	if err != nil {
+		return fmt.Errorf("failed to query directory contents: %w", err)
+	}
+	defer rows.Close()
+
+	type fileUpdate struct {
+		ID          int64
+		OldPath     string
+		IsDirectory bool
+	}
+
+	var updates []fileUpdate
+	for rows.Next() {
+		var update fileUpdate
+		if err := rows.Scan(&update.ID, &update.OldPath, &update.IsDirectory); err != nil {
+			return fmt.Errorf("failed to scan file for update: %w", err)
+		}
+		updates = append(updates, update)
+	}
+
+	// Update each file/directory path
+	for _, update := range updates {
+		var updatedPath string
+		if update.OldPath == oldPath {
+			// This is the directory itself
+			updatedPath = newPath
+		} else {
+			// This is a child - replace the old path prefix with new path
+			relativePath := update.OldPath[len(oldPath):]
+			updatedPath = newPath + relativePath
+		}
+
+		// Update the file record using the existing method
+		if err := r.UpdateFilePath(ctx, update.ID, updatedPath); err != nil {
+			return fmt.Errorf("failed to update path for file ID %d: %w", update.ID, err)
+		}
+	}
+
+	return nil
+}
+
+// GetFileByPathAndStorage retrieves a file by path and storage root
+func (r *FileRepository) GetFileByPathAndStorage(ctx context.Context, path, storageRootName string) (*models.File, error) {
+	query := `
+		SELECT f.id, f.storage_root_id, sr.name as storage_root_name, f.path, f.name, f.extension,
+		       f.mime_type, f.file_type, f.size, f.is_directory, f.created_at, f.modified_at,
+		       f.accessed_at, f.deleted, f.deleted_at, f.last_scan_at, f.last_verified_at,
+		       f.md5, f.sha256, f.sha1, f.blake3, f.quick_hash, f.is_duplicate,
+		       f.duplicate_group_id, f.parent_id
+		FROM files f
+		JOIN storage_roots sr ON f.storage_root_id = sr.id
+		WHERE f.path = ? AND sr.name = ?`
+
+	var file models.File
+	err := r.db.QueryRowContext(ctx, query, path, storageRootName).Scan(
+		&file.ID, &file.StorageRootID, &file.StorageRootName, &file.Path, &file.Name,
+		&file.Extension, &file.MimeType, &file.FileType, &file.Size, &file.IsDirectory,
+		&file.CreatedAt, &file.ModifiedAt, &file.AccessedAt, &file.Deleted,
+		&file.DeletedAt, &file.LastScanAt, &file.LastVerifiedAt, &file.MD5,
+		&file.SHA256, &file.SHA1, &file.BLAKE3, &file.QuickHash, &file.IsDuplicate,
+		&file.DuplicateGroupID, &file.ParentID,
+	)
+
+	if err != nil {
+		if err == sql.ErrNoRows {
+			return nil, nil
+		}
+		return nil, fmt.Errorf("failed to get file: %w", err)
+	}
+
+	return &file, nil
+}
+
+// MarkFileAsDeleted marks a file as deleted instead of removing it immediately
+func (r *FileRepository) MarkFileAsDeleted(ctx context.Context, fileID int64) error {
+	query := `
+		UPDATE files
+		SET deleted = true, deleted_at = CURRENT_TIMESTAMP
+		WHERE id = ?`
+
+	_, err := r.db.ExecContext(ctx, query, fileID)
+	if err != nil {
+		return fmt.Errorf("failed to mark file as deleted: %w", err)
+	}
+
+	return nil
+}
+
+// RestoreDeletedFile restores a file that was marked as deleted
+func (r *FileRepository) RestoreDeletedFile(ctx context.Context, fileID int64) error {
+	query := `
+		UPDATE files
+		SET deleted = false, deleted_at = NULL, last_scan_at = CURRENT_TIMESTAMP
+		WHERE id = ?`
+
+	_, err := r.db.ExecContext(ctx, query, fileID)
+	if err != nil {
+		return fmt.Errorf("failed to restore deleted file: %w", err)
+	}
+
+	return nil
+}
+
+// GetFilesWithHash finds files by their hash for duplicate detection and move tracking
+func (r *FileRepository) GetFilesWithHash(ctx context.Context, hash string, storageRootName string) ([]models.File, error) {
+	query := `
+		SELECT f.id, f.storage_root_id, sr.name as storage_root_name, f.path, f.name, f.extension,
+		       f.mime_type, f.file_type, f.size, f.is_directory, f.created_at, f.modified_at,
+		       f.accessed_at, f.deleted, f.deleted_at, f.last_scan_at, f.last_verified_at,
+		       f.md5, f.sha256, f.sha1, f.blake3, f.quick_hash, f.is_duplicate,
+		       f.duplicate_group_id, f.parent_id
+		FROM files f
+		JOIN storage_roots sr ON f.storage_root_id = sr.id
+		WHERE (f.md5 = ? OR f.sha256 = ? OR f.sha1 = ? OR f.blake3 = ? OR f.quick_hash = ?)
+		  AND sr.name = ?
+		  AND f.deleted = false`
+
+	rows, err := r.db.QueryContext(ctx, query, hash, hash, hash, hash, hash, storageRootName)
+	if err != nil {
+		return nil, fmt.Errorf("failed to query files by hash: %w", err)
+	}
+	defer rows.Close()
+
+	var files []models.File
+	for rows.Next() {
+		var file models.File
+		err := rows.Scan(
+			&file.ID, &file.StorageRootID, &file.StorageRootName, &file.Path, &file.Name,
+			&file.Extension, &file.MimeType, &file.FileType, &file.Size, &file.IsDirectory,
+			&file.CreatedAt, &file.ModifiedAt, &file.AccessedAt, &file.Deleted,
+			&file.DeletedAt, &file.LastScanAt, &file.LastVerifiedAt, &file.MD5,
+			&file.SHA256, &file.SHA1, &file.BLAKE3, &file.QuickHash, &file.IsDuplicate,
+			&file.DuplicateGroupID, &file.ParentID,
+		)
+		if err != nil {
+			return nil, fmt.Errorf("failed to scan file: %w", err)
+		}
+		files = append(files, file)
+	}
+
+	return files, nil
+}
+
+// UpdateFileMetadata updates file metadata without triggering a full rescan
+func (r *FileRepository) UpdateFileMetadata(ctx context.Context, fileID int64, size int64, hash *string) error {
+	query := `
+		UPDATE files
+		SET size = ?, quick_hash = ?, last_scan_at = CURRENT_TIMESTAMP, modified_at = CURRENT_TIMESTAMP
+		WHERE id = ?`
+
+	_, err := r.db.ExecContext(ctx, query, size, hash, fileID)
+	if err != nil {
+		return fmt.Errorf("failed to update file metadata: %w", err)
+	}
+
+	return nil
 }
