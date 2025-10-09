@@ -15,6 +15,7 @@ require (
 	github.com/mattn/go-sqlite3 v1.14.18
 	github.com/mutecomm/go-sqlcipher/v4 v4.4.2
 	github.com/stretchr/testify v1.8.4
+	github.com/studio-b12/gowebdav v0.9.0
 	go.uber.org/zap v1.26.0
 	golang.org/x/crypto v0.21.0
 	golang.org/x/image v0.32.0
