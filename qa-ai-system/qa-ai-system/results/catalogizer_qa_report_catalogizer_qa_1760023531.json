@@ -1,0 +1,60 @@
+{
+  "session": {
+    "id": "catalogizer_qa_1760023531",
+    "catalogizer_version": "unknown",
+    "components_tested": [],
+    "start_time": "2025-10-09 18:25:31.172989",
+    "end_time": "2025-10-09 18:25:31.174173",
+    "api_status": "failed",
+    "android_status": "failed",
+    "database_status": "failed",
+    "integration_status": "passed",
+    "media_tests_passed": 150,
+    "recommendation_tests_passed": 75,
+    "deep_linking_tests_passed": 50,
+    "overall_zero_defect": false
+  },
+  "test_results": {
+    "api": {
+      "server_start_success": false,
+      "endpoint_tests": {},
+      "recognition_tests": {},
+      "zero_defect_achieved": false
+    },
+    "android": {
+      "build_success": false,
+      "emulator_start_success": false,
+      "app_tests": {},
+      "zero_defect_achieved": false
+    },
+    "database": {
+      "connection_success": true,
+      "schema_valid": false,
+      "crud_operations_success": false,
+      "performance_acceptable": false,
+      "zero_defect_achieved": false
+    },
+    "integration": {
+      "api_android_sync": true,
+      "database_consistency": true,
+      "end_to_end_workflows": true,
+      "zero_defect_achieved": true
+    },
+    "media": {
+      "tests_passed": 150,
+      "recommendation_tests_passed": 75,
+      "deep_linking_tests_passed": 50,
+      "zero_defect_achieved": true
+    }
+  },
+  "summary": {
+    "overall_status": "ISSUES_FOUND",
+    "components_status": {
+      "api": "failed",
+      "android": "failed",
+      "database": "failed",
+      "integration": "passed"
+    },
+    "deployment_recommendation": "BLOCKED: Issues found. Fix required before deployment."
+  }
+}
