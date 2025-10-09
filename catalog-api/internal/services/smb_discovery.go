@@ -139,15 +139,15 @@ func (s *SMBDiscoveryService) testShareAccess(session *smb2.Session, shareName s
 // getCommonShares returns common share names to try
 func (s *SMBDiscoveryService) getCommonShares(ctx context.Context, host, username, password string, domain *string) []SMBShareInfo {
 	commonShares := []SMBShareInfo{
-		{Host: host, ShareName: "shared", Path: fmt.Sprintf("\\\\%s\\shared", host), Description: stringPtr("Shared folder")},
-		{Host: host, ShareName: "public", Path: fmt.Sprintf("\\\\%s\\public", host), Description: stringPtr("Public folder")},
-		{Host: host, ShareName: "media", Path: fmt.Sprintf("\\\\%s\\media", host), Description: stringPtr("Media files")},
-		{Host: host, ShareName: "downloads", Path: fmt.Sprintf("\\\\%s\\downloads", host), Description: stringPtr("Downloads")},
-		{Host: host, ShareName: "documents", Path: fmt.Sprintf("\\\\%s\\documents", host), Description: stringPtr("Documents")},
-		{Host: host, ShareName: "music", Path: fmt.Sprintf("\\\\%s\\music", host), Description: stringPtr("Music files")},
-		{Host: host, ShareName: "videos", Path: fmt.Sprintf("\\\\%s\\videos", host), Description: stringPtr("Video files")},
-		{Host: host, ShareName: "pictures", Path: fmt.Sprintf("\\\\%s\\pictures", host), Description: stringPtr("Pictures")},
-		{Host: host, ShareName: "backup", Path: fmt.Sprintf("\\\\%s\\backup", host), Description: stringPtr("Backup files")},
+		{Host: host, ShareName: "shared", Path: fmt.Sprintf("\\\\%s\\shared", host), Description: smbStringPtr("Shared folder")},
+		{Host: host, ShareName: "public", Path: fmt.Sprintf("\\\\%s\\public", host), Description: smbStringPtr("Public folder")},
+		{Host: host, ShareName: "media", Path: fmt.Sprintf("\\\\%s\\media", host), Description: smbStringPtr("Media files")},
+		{Host: host, ShareName: "downloads", Path: fmt.Sprintf("\\\\%s\\downloads", host), Description: smbStringPtr("Downloads")},
+		{Host: host, ShareName: "documents", Path: fmt.Sprintf("\\\\%s\\documents", host), Description: smbStringPtr("Documents")},
+		{Host: host, ShareName: "music", Path: fmt.Sprintf("\\\\%s\\music", host), Description: smbStringPtr("Music files")},
+		{Host: host, ShareName: "videos", Path: fmt.Sprintf("\\\\%s\\videos", host), Description: smbStringPtr("Video files")},
+		{Host: host, ShareName: "pictures", Path: fmt.Sprintf("\\\\%s\\pictures", host), Description: smbStringPtr("Pictures")},
+		{Host: host, ShareName: "backup", Path: fmt.Sprintf("\\\\%s\\backup", host), Description: smbStringPtr("Backup files")},
 	}
 
 	// Test which ones are actually accessible
@@ -291,7 +291,7 @@ func getStringValue(s *string) string {
 	return *s
 }
 
-func stringPtr(s string) *string {
+func smbStringPtr(s string) *string {
 	return &s
 }
 

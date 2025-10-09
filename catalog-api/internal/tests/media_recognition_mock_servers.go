@@ -5,8 +5,6 @@ import (
 	"fmt"
 	"net/http"
 	"net/http/httptest"
-	"net/url"
-	"strconv"
 	"strings"
 	"time"
 
@@ -419,7 +417,6 @@ func (m *MediaRecognitionMockServers) setupAcoustIDServer() {
 
 		r.ParseForm()
 		fingerprint := r.Form.Get("fingerprint")
-		duration := r.Form.Get("duration")
 
 		if fingerprint == "" {
 			http.Error(w, "Fingerprint required", http.StatusBadRequest)

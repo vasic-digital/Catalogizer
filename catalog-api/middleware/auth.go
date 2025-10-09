@@ -34,7 +34,7 @@ func (m *JWTMiddleware) RequireAuth() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		authHeader := c.GetHeader("Authorization")
 		if authHeader == "" {
-			utils.ErrorResponse(c, http.StatusUnauthorized, "Authorization header required", nil)
+			utils.SendErrorResponse(c, http.StatusUnauthorized, "Authorization header required", nil)
 			c.Abort()
 			return
 		}
@@ -42,7 +42,7 @@ func (m *JWTMiddleware) RequireAuth() gin.HandlerFunc {
 		// Extract token from "Bearer <token>"
 		parts := strings.Split(authHeader, " ")
 		if len(parts) != 2 || parts[0] != "Bearer" {
-			utils.ErrorResponse(c, http.StatusUnauthorized, "Invalid authorization header format", nil)
+			utils.SendErrorResponse(c, http.StatusUnauthorized, "Invalid authorization header format", nil)
 			c.Abort()
 			return
 		}
@@ -56,13 +56,13 @@ func (m *JWTMiddleware) RequireAuth() gin.HandlerFunc {
 		})
 
 		if err != nil {
-			utils.ErrorResponse(c, http.StatusUnauthorized, "Invalid token", err)
+			utils.SendErrorResponse(c, http.StatusUnauthorized, "Invalid token", err)
 			c.Abort()
 			return
 		}
 
 		if !token.Valid {
-			utils.ErrorResponse(c, http.StatusUnauthorized, "Invalid token", nil)
+			utils.SendErrorResponse(c, http.StatusUnauthorized, "Invalid token", nil)
 			c.Abort()
 			return
 		}

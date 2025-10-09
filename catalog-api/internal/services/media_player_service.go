@@ -24,28 +24,6 @@ type MediaPlayerService struct {
 	playlistService       *PlaylistService
 }
 
-// MediaType represents the type of media content
-type MediaType string
-
-const (
-	MediaTypeMusic    MediaType = "music"
-	MediaTypeVideo    MediaType = "video"
-	MediaTypeGame     MediaType = "game"
-	MediaTypeSoftware MediaType = "software"
-	MediaTypeEbook    MediaType = "ebook"
-	MediaTypeDocument MediaType = "document"
-)
-
-// PlaybackState represents the current playback state
-type PlaybackState string
-
-const (
-	PlaybackStatePlaying PlaybackState = "playing"
-	PlaybackStatePaused  PlaybackState = "paused"
-	PlaybackStateStopped PlaybackState = "stopped"
-	PlaybackStateLoading PlaybackState = "loading"
-	PlaybackStateError   PlaybackState = "error"
-)
 
 // MediaItem represents a media file with all its metadata
 type MediaItem struct {
@@ -124,15 +102,6 @@ type PlaybackSession struct {
 	PlayerSettings  map[string]interface{} `json:"player_settings,omitempty"`
 }
 
-// RepeatMode represents playlist repeat modes
-type RepeatMode string
-
-const (
-	RepeatModeOff    RepeatMode = "off"
-	RepeatModeOne    RepeatMode = "one"
-	RepeatModeAll    RepeatMode = "all"
-	RepeatModeRandom RepeatMode = "random"
-)
 
 // SubtitleTrack represents a subtitle track
 type SubtitleTrack struct {

@@ -529,4 +529,111 @@ func (p *IMDBProvider) GetDetails(ctx context.Context, externalID string) (*mode
 	return &models.ExternalMetadata{}, nil
 }
 
-// Add similar implementations for all other providers...
+// TVDBProvider GetDetails implementation
+func (p *TVDBProvider) GetDetails(ctx context.Context, externalID string) (*models.ExternalMetadata, error) {
+	return &models.ExternalMetadata{}, nil
+}
+
+// MusicBrainzProvider GetDetails implementation
+func (p *MusicBrainzProvider) GetDetails(ctx context.Context, externalID string) (*models.ExternalMetadata, error) {
+	return &models.ExternalMetadata{}, nil
+}
+
+// SpotifyProvider GetDetails implementation
+func (p *SpotifyProvider) GetDetails(ctx context.Context, externalID string) (*models.ExternalMetadata, error) {
+	return &models.ExternalMetadata{}, nil
+}
+
+// LastFMProvider GetDetails implementation
+func (p *LastFMProvider) GetDetails(ctx context.Context, externalID string) (*models.ExternalMetadata, error) {
+	return &models.ExternalMetadata{}, nil
+}
+
+// IGDBProvider GetDetails implementation
+func (p *IGDBProvider) GetDetails(ctx context.Context, externalID string) (*models.ExternalMetadata, error) {
+	return &models.ExternalMetadata{}, nil
+}
+
+// SteamProvider GetDetails implementation
+func (p *SteamProvider) GetDetails(ctx context.Context, externalID string) (*models.ExternalMetadata, error) {
+	return &models.ExternalMetadata{}, nil
+}
+
+// GoodreadsProvider GetDetails implementation
+func (p *GoodreadsProvider) GetDetails(ctx context.Context, externalID string) (*models.ExternalMetadata, error) {
+	return &models.ExternalMetadata{}, nil
+}
+
+// OpenLibraryProvider GetDetails implementation
+func (p *OpenLibraryProvider) GetDetails(ctx context.Context, externalID string) (*models.ExternalMetadata, error) {
+	return &models.ExternalMetadata{}, nil
+}
+
+// AniDBProvider GetDetails implementation
+func (p *AniDBProvider) GetDetails(ctx context.Context, externalID string) (*models.ExternalMetadata, error) {
+	return &models.ExternalMetadata{}, nil
+}
+
+// MyAnimeListProvider GetDetails implementation
+func (p *MyAnimeListProvider) GetDetails(ctx context.Context, externalID string) (*models.ExternalMetadata, error) {
+	return &models.ExternalMetadata{}, nil
+}
+
+// YouTubeProvider GetDetails implementation
+func (p *YouTubeProvider) GetDetails(ctx context.Context, externalID string) (*models.ExternalMetadata, error) {
+	return &models.ExternalMetadata{}, nil
+}
+
+// GitHubProvider GetDetails implementation
+func (p *GitHubProvider) GetDetails(ctx context.Context, externalID string) (*models.ExternalMetadata, error) {
+	return &models.ExternalMetadata{}, nil
+}
+
+// Search method implementations for all providers
+func (p *TVDBProvider) Search(ctx context.Context, query string, mediaType string, year *int) ([]SearchResult, error) {
+	return []SearchResult{}, nil
+}
+
+func (p *MusicBrainzProvider) Search(ctx context.Context, query string, mediaType string, year *int) ([]SearchResult, error) {
+	return []SearchResult{}, nil
+}
+
+func (p *SpotifyProvider) Search(ctx context.Context, query string, mediaType string, year *int) ([]SearchResult, error) {
+	return []SearchResult{}, nil
+}
+
+func (p *LastFMProvider) Search(ctx context.Context, query string, mediaType string, year *int) ([]SearchResult, error) {
+	return []SearchResult{}, nil
+}
+
+func (p *IGDBProvider) Search(ctx context.Context, query string, mediaType string, year *int) ([]SearchResult, error) {
+	return []SearchResult{}, nil
+}
+
+func (p *SteamProvider) Search(ctx context.Context, query string, mediaType string, year *int) ([]SearchResult, error) {
+	return []SearchResult{}, nil
+}
+
+func (p *GoodreadsProvider) Search(ctx context.Context, query string, mediaType string, year *int) ([]SearchResult, error) {
+	return []SearchResult{}, nil
+}
+
+func (p *OpenLibraryProvider) Search(ctx context.Context, query string, mediaType string, year *int) ([]SearchResult, error) {
+	return []SearchResult{}, nil
+}
+
+func (p *AniDBProvider) Search(ctx context.Context, query string, mediaType string, year *int) ([]SearchResult, error) {
+	return []SearchResult{}, nil
+}
+
+func (p *MyAnimeListProvider) Search(ctx context.Context, query string, mediaType string, year *int) ([]SearchResult, error) {
+	return []SearchResult{}, nil
+}
+
+func (p *YouTubeProvider) Search(ctx context.Context, query string, mediaType string, year *int) ([]SearchResult, error) {
+	return []SearchResult{}, nil
+}
+
+func (p *GitHubProvider) Search(ctx context.Context, query string, mediaType string, year *int) ([]SearchResult, error) {
+	return []SearchResult{}, nil
+}

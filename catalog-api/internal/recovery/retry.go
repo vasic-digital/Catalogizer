@@ -4,6 +4,7 @@ import (
 	"context"
 	"math"
 	"math/rand"
+	"sync"
 	"time"
 
 	"go.uber.org/zap"

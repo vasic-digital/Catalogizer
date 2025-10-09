@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"io"
 	"net"
-	"os"
 
 	"github.com/hirochachacha/go-smb2"
 )

@@ -142,7 +142,7 @@ type ViewingProgress struct {
 	TotalBufferTime  int64     `json:"total_buffer_time"`
 }
 
-type Chapter struct {
+type VideoChapter struct {
 	ID        int64     `json:"id"`
 	Title     string    `json:"title"`
 	StartTime int64     `json:"start_time"`

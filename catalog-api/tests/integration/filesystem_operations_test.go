@@ -5,6 +5,7 @@ import (
 	"catalog-api/internal/media/realtime"
 	"catalog-api/internal/services"
 	"context"
+	"fmt"
 	"os"
 	"path/filepath"
 	"testing"
@@ -442,5 +443,3 @@ func initializeTestSchema(mediaDB *database.MediaDatabase) error {
 	return err
 }
 
-// Import fmt for the test
-import "fmt"

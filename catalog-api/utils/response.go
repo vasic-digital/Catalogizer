@@ -20,8 +20,8 @@ type SuccessResponse struct {
 	Message string      `json:"message,omitempty"`
 }
 
-// ErrorResponse sends an error response
-func ErrorResponse(c *gin.Context, statusCode int, message string, err error) {
+// SendErrorResponse sends an error response
+func SendErrorResponse(c *gin.Context, statusCode int, message string, err error) {
 	response := ErrorResponse{
 		Success: false,
 		Error:   message,
@@ -35,8 +35,8 @@ func ErrorResponse(c *gin.Context, statusCode int, message string, err error) {
 	c.JSON(statusCode, response)
 }
 
-// SuccessResponse sends a success response
-func SuccessResponse(c *gin.Context, statusCode int, data interface{}, message string) {
+// SendSuccessResponse sends a success response
+func SendSuccessResponse(c *gin.Context, statusCode int, data interface{}, message string) {
 	response := SuccessResponse{
 		Success: true,
 		Data:    data,

@@ -2,13 +2,13 @@ package analyzer
 
 import (
 	"catalog-api/internal/media/detector"
-	"catalog-api/internal/media/models"
+	mediamodels "catalog-api/internal/media/models"
 	"catalog-api/internal/media/providers"
+	"catalog-api/internal/models"
 	"context"
 	"database/sql"
 	"encoding/json"
 	"fmt"
-	"path/filepath"
 	"strings"
 	"sync"
 	"time"
@@ -41,11 +41,11 @@ type AnalysisRequest struct {
 
 // AnalysisResult represents the result of directory analysis
 type AnalysisResult struct {
-	DirectoryAnalysis *models.DirectoryAnalysis
-	MediaItem         *models.MediaItem
-	ExternalMetadata  []models.ExternalMetadata
+	DirectoryAnalysis *mediamodels.DirectoryAnalysis
+	MediaItem         *mediamodels.MediaItem
+	ExternalMetadata  []mediamodels.ExternalMetadata
 	QualityAnalysis   *QualityAnalysis
-	UpdatedFiles      []models.MediaFile
+	UpdatedFiles      []mediamodels.MediaFile
 }
 
 // QualityAnalysis represents quality analysis of media files
@@ -264,7 +264,7 @@ func (ma *MediaAnalyzer) getDirectoryFiles(directoryPath, smbRoot string) ([]mod
 }
 
 // createDirectoryAnalysis creates or updates directory analysis record
-func (ma *MediaAnalyzer) createDirectoryAnalysis(directoryPath, smbRoot string, detection *detector.DetectionResult) (*models.DirectoryAnalysis, error) {
+func (ma *MediaAnalyzer) createDirectoryAnalysis(directoryPath, smbRoot string, detection *detector.DetectionResult) (*mediamodels.DirectoryAnalysis, error) {
 	analysisDataJSON, _ := json.Marshal(detection.AnalysisData)
 
 	query := `
@@ -308,7 +308,7 @@ func (ma *MediaAnalyzer) createDirectoryAnalysis(directoryPath, smbRoot string, 
 }
 
 // createOrUpdateMediaItem creates or updates media item
-func (ma *MediaAnalyzer) createOrUpdateMediaItem(ctx context.Context, detection *detector.DetectionResult, dirAnalysis *models.DirectoryAnalysis) (*models.MediaItem, error) {
+func (ma *MediaAnalyzer) createOrUpdateMediaItem(ctx context.Context, detection *detector.DetectionResult, dirAnalysis *mediamodels.DirectoryAnalysis) (*mediamodels.MediaItem, error) {
 	// Check if media item already exists
 	var existingID *int64
 	err := ma.db.QueryRow(
@@ -370,7 +370,7 @@ func (ma *MediaAnalyzer) createOrUpdateMediaItem(ctx context.Context, detection 
 }
 
 // updateExistingMediaItem updates an existing media item
-func (ma *MediaAnalyzer) updateExistingMediaItem(mediaItemID int64, detection *detector.DetectionResult) (*models.MediaItem, error) {
+func (ma *MediaAnalyzer) updateExistingMediaItem(mediaItemID int64, detection *detector.DetectionResult) (*mediamodels.MediaItem, error) {
 	// Get existing media item
 	query := `
 		SELECT id, media_type_id, title, year, description, genre, director, cast_crew, rating, runtime, language, country, status, first_detected, last_updated
@@ -404,7 +404,7 @@ func (ma *MediaAnalyzer) updateExistingMediaItem(mediaItemID int64, detection *d
 }
 
 // fetchExternalMetadata fetches metadata from external providers
-func (ma *MediaAnalyzer) fetchExternalMetadata(ctx context.Context, mediaItem *models.MediaItem) ([]models.ExternalMetadata, error) {
+func (ma *MediaAnalyzer) fetchExternalMetadata(ctx context.Context, mediaItem *mediamodels.MediaItem) ([]mediamodels.ExternalMetadata, error) {
 	if mediaItem.MediaType == nil {
 		return nil, fmt.Errorf("media type not available")
 	}
@@ -440,11 +440,11 @@ func (ma *MediaAnalyzer) fetchExternalMetadata(ctx context.Context, mediaItem *m
 		return nil, err
 	}
 
-	return []models.ExternalMetadata{*metadata}, nil
+	return []mediamodels.ExternalMetadata{*metadata}, nil
 }
 
 // analyzeQuality analyzes the quality of media files
-func (ma *MediaAnalyzer) analyzeQuality(files []models.FileInfo, mediaItem *models.MediaItem) (*QualityAnalysis, error) {
+func (ma *MediaAnalyzer) analyzeQuality(files []models.FileInfo, mediaItem *mediamodels.MediaItem) (*QualityAnalysis, error) {
 	if mediaItem.MediaType == nil {
 		return nil, fmt.Errorf("media type not available")
 	}

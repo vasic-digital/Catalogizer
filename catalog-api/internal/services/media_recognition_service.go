@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"time"
 
+	"catalog-api/internal/models"
 	"go.uber.org/zap"
 )
 
@@ -23,33 +24,6 @@ type MediaRecognitionService struct {
 	fingerprintAPIBaseURL string
 }
 
-// Media types supported by the recognition system
-type MediaType string
-
-const (
-	MediaTypeMovie       MediaType = "movie"
-	MediaTypeTVSeries    MediaType = "tv_series"
-	MediaTypeTVEpisode   MediaType = "tv_episode"
-	MediaTypeConcert     MediaType = "concert"
-	MediaTypeDocumentary MediaType = "documentary"
-	MediaTypeCourse      MediaType = "course"
-	MediaTypeTraining    MediaType = "training"
-	MediaTypeMusic       MediaType = "music"
-	MediaTypeAlbum       MediaType = "album"
-	MediaTypeAudiobook   MediaType = "audiobook"
-	MediaTypePodcast     MediaType = "podcast"
-	MediaTypeGame        MediaType = "game"
-	MediaTypeGameOS      MediaType = "game_os"
-	MediaTypeSoftware    MediaType = "software"
-	MediaTypeSoftwareOS  MediaType = "software_os"
-	MediaTypeBook        MediaType = "book"
-	MediaTypeComicBook   MediaType = "comic_book"
-	MediaTypeMagazine    MediaType = "magazine"
-	MediaTypeNewspaper   MediaType = "newspaper"
-	MediaTypeJournal     MediaType = "journal"
-	MediaTypeManual      MediaType = "manual"
-	MediaTypeEbook       MediaType = "ebook"
-)
 
 // Recognition request structure
 type MediaRecognitionRequest struct {
@@ -135,7 +109,7 @@ type MediaRecognitionResult struct {
 	SteamID         string                 `json:"steam_id,omitempty"`
 
 	// Cover art and media
-	CoverArt        []CoverArtResult       `json:"cover_art,omitempty"`
+	CoverArt        []models.CoverArtResult       `json:"cover_art,omitempty"`
 	Screenshots     []string               `json:"screenshots,omitempty"`
 	Trailer         string                 `json:"trailer,omitempty"`
 	PreviewURL      string                 `json:"preview_url,omitempty"`
@@ -701,9 +675,9 @@ func (s *MediaRecognitionService) storeRecognitionResult(ctx context.Context, re
 }
 
 // Additional helper methods for enhancement
-func (s *MediaRecognitionService) getAdditionalCoverArt(ctx context.Context, result *MediaRecognitionResult) ([]CoverArtResult, error) {
+func (s *MediaRecognitionService) getAdditionalCoverArt(ctx context.Context, result *MediaRecognitionResult) ([]models.CoverArtResult, error) {
 	// Implement additional cover art retrieval
-	return []CoverArtResult{}, nil
+	return []models.CoverArtResult{}, nil
 }
 
 func (s *MediaRecognitionService) getEnhancedMetadata(ctx context.Context, result *MediaRecognitionResult) (map[string]string, error) {

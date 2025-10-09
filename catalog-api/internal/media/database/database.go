@@ -132,10 +132,14 @@ func (mdb *MediaDatabase) Close() error {
 
 // Backup creates an encrypted backup of the database
 func (mdb *MediaDatabase) Backup(backupPath string) error {
-	backupQuery := fmt.Sprintf(`
+	_, err := mdb.db.Exec(fmt.Sprintf(`
 		ATTACH DATABASE '%s' AS backup KEY '%s';
 		INSERT INTO backup.sqlite_master SELECT * FROM main.sqlite_master WHERE type='table';
-	`, backupPath, mdb.password)
+	`, backupPath, mdb.password))
+
+	if err != nil {
+		return fmt.Errorf("backup failed: %w", err)
+	}
 
 	// Copy all tables
 	tables, err := mdb.getTables()

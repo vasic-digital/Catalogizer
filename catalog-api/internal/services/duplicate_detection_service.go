@@ -893,13 +893,13 @@ func (s *DuplicateDetectionService) soundexMatch(s1, s2 string) bool {
 	return s.soundex(s1) == s.soundex(s2)
 }
 
-func (s *DuplicateDetectionService) soundex(s string) string {
-	if len(s) == 0 {
+func (s *DuplicateDetectionService) soundex(str string) string {
+	if len(str) == 0 {
 		return "0000"
 	}
 
-	s = strings.ToUpper(s)
-	result := string(s[0])
+	str = strings.ToUpper(str)
+	result := string(str[0])
 
 	// Mapping table
 	mapping := map[rune]string{
@@ -912,7 +912,7 @@ func (s *DuplicateDetectionService) soundex(s string) string {
 	}
 
 	prev := ""
-	for _, char := range s[1:] {
+	for _, char := range str[1:] {
 		if code, exists := mapping[char]; exists {
 			if code != prev {
 				result += code
@@ -940,28 +940,28 @@ func (s *DuplicateDetectionService) metaphoneMatch(s1, s2 string) bool {
 	return s.metaphone(s1) == s.metaphone(s2)
 }
 
-func (s *DuplicateDetectionService) metaphone(s string) string {
-	if len(s) == 0 {
+func (s *DuplicateDetectionService) metaphone(str string) string {
+	if len(str) == 0 {
 		return ""
 	}
 
-	s = strings.ToUpper(s)
+	str = strings.ToUpper(str)
 	result := ""
 
 	// Simplified metaphone algorithm
-	for i, char := range s {
+	for i, char := range str {
 		switch char {
 		case 'A', 'E', 'I', 'O', 'U':
 			if i == 0 {
 				result += string(char)
 			}
 		case 'B':
-			if i == len(s)-1 && s[i-1] == 'M' {
+			if i == len(str)-1 && str[i-1] == 'M' {
 				continue
 			}
 			result += "B"
 		case 'C':
-			if i < len(s)-1 && s[i+1] == 'H' {
+			if i < len(str)-1 && str[i+1] == 'H' {
 				result += "X"
 			} else {
 				result += "K"
@@ -973,15 +973,15 @@ func (s *DuplicateDetectionService) metaphone(s string) string {
 		case 'G':
 			result += "K"
 		case 'H':
-			if i == 0 || isVowel(rune(s[i-1])) {
+			if i == 0 || isVowel(rune(str[i-1])) {
 				result += "H"
 			}
 		case 'K':
-			if i == 0 || s[i-1] != 'C' {
+			if i == 0 || str[i-1] != 'C' {
 				result += "K"
 			}
 		case 'P':
-			if i < len(s)-1 && s[i+1] == 'H' {
+			if i < len(str)-1 && str[i+1] == 'H' {
 				result += "F"
 			} else {
 				result += "P"
@@ -991,7 +991,7 @@ func (s *DuplicateDetectionService) metaphone(s string) string {
 		case 'S':
 			result += "S"
 		case 'T':
-			if i < len(s)-1 && s[i+1] == 'H' {
+			if i < len(str)-1 && str[i+1] == 'H' {
 				result += "0"
 			} else {
 				result += "T"
@@ -999,7 +999,7 @@ func (s *DuplicateDetectionService) metaphone(s string) string {
 		case 'V':
 			result += "F"
 		case 'W', 'Y':
-			if i == 0 || isVowel(rune(s[i-1])) {
+			if i == 0 || isVowel(rune(str[i-1])) {
 				result += string(char)
 			}
 		case 'X':

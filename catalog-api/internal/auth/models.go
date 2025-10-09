@@ -1,7 +1,10 @@
 package auth
 
 import (
+	"fmt"
 	"time"
+
+	"github.com/golang-jwt/jwt/v5"
 )
 
 // User represents a system user
@@ -97,6 +100,38 @@ type Claims struct {
 	Type        string   `json:"type"` // access or refresh
 	IssuedAt    int64    `json:"iat"`
 	ExpiresAt   int64    `json:"exp"`
+}
+
+// JWT Claims interface implementation
+func (c Claims) Valid() error {
+	if time.Now().Unix() > c.ExpiresAt {
+		return fmt.Errorf("token expired")
+	}
+	return nil
+}
+
+func (c Claims) GetExpirationTime() (*jwt.NumericDate, error) {
+	return jwt.NewNumericDate(time.Unix(c.ExpiresAt, 0)), nil
+}
+
+func (c Claims) GetIssuedAt() (*jwt.NumericDate, error) {
+	return jwt.NewNumericDate(time.Unix(c.IssuedAt, 0)), nil
+}
+
+func (c Claims) GetNotBefore() (*jwt.NumericDate, error) {
+	return nil, nil
+}
+
+func (c Claims) GetIssuer() (string, error) {
+	return "", nil
+}
+
+func (c Claims) GetSubject() (string, error) {
+	return c.Username, nil
+}
+
+func (c Claims) GetAudience() (jwt.ClaimStrings, error) {
+	return nil, nil
 }
 
 // Standard permissions

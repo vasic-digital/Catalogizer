@@ -398,6 +398,306 @@ curl "http://localhost:8080/api/stats/scans?limit=20"
 curl "http://localhost:8080/api/stats/scans?smb_root=office-server&limit=50&offset=0"
 ```
 
+## Media Recognition Examples
+
+### Recognize a Movie File
+
+```bash
+curl -X POST http://localhost:8080/api/v1/media/recognize \
+  -H "Content-Type: application/json" \
+  -d '{
+    "file_path": "/movies/The.Matrix.1999.1080p.BluRay.x264.mkv",
+    "media_type": "video",
+    "confidence_threshold": 0.7
+  }'
+```
+
+Response:
+```json
+{
+  "success": true,
+  "data": {
+    "id": 12345,
+    "title": "The Matrix",
+    "year": 1999,
+    "genre": "Science Fiction",
+    "director": "The Wachowskis",
+    "rating": 8.7,
+    "confidence": 0.95,
+    "external_ids": {
+      "tmdb": "603",
+      "imdb": "tt0133093"
+    },
+    "cover_art_url": "https://image.tmdb.org/t/p/w500/f89U3ADr1oiB1s9GkdPOEpXUk5H.jpg"
+  }
+}
+```
+
+### Recognize Music with Audio Fingerprinting
+
+```bash
+curl -X POST http://localhost:8080/api/v1/media/recognize \
+  -H "Content-Type: application/json" \
+  -d '{
+    "file_path": "/music/Queen - Bohemian Rhapsody.mp3",
+    "media_type": "audio",
+    "enable_fingerprinting": true
+  }'
+```
+
+### Batch Media Recognition
+
+```bash
+curl -X POST http://localhost:8080/api/v1/media/bulk-recognize \
+  -H "Content-Type: application/json" \
+  -d '{
+    "files": [
+      {"file_path": "/movies/Matrix1.mkv", "media_type": "video"},
+      {"file_path": "/movies/Matrix2.avi", "media_type": "video"},
+      {"file_path": "/music/Queen - We Will Rock You.mp3", "media_type": "audio"}
+    ],
+    "confidence_threshold": 0.6,
+    "enable_fingerprinting": true
+  }'
+```
+
+## Recommendations Examples
+
+### Get Similar Items for a Media File
+
+```bash
+curl -X GET "http://localhost:8080/api/v1/media/123/similar?max_local=10&max_external=5&threshold=0.3" \
+  -H "User-Platform: web" \
+  -H "User-Context: desktop" \
+  -H "User-Language: en"
+```
+
+Response:
+```json
+{
+  "success": true,
+  "data": {
+    "local_items": [
+      {
+        "id": 124,
+        "title": "The Matrix Reloaded",
+        "genre": "Science Fiction",
+        "year": 2003,
+        "rating": 7.2,
+        "similarity_score": 0.89,
+        "similarity_reasons": ["same_franchise", "same_genre", "same_director"]
+      }
+    ],
+    "external_items": [
+      {
+        "id": "ext_456",
+        "title": "Blade Runner 2049",
+        "provider": "TMDB",
+        "url": "https://www.themoviedb.org/movie/335984",
+        "score": 0.75,
+        "description": "Similar cyberpunk themes and visual style"
+      }
+    ],
+    "total_found": 15,
+    "processing_time": "125ms"
+  }
+}
+```
+
+### Advanced Similar Items Search with Filters
+
+```bash
+curl -X POST http://localhost:8080/api/v1/media/similar \
+  -H "Content-Type: application/json" \
+  -H "User-Platform: android" \
+  -d '{
+    "media_id": 123,
+    "filters": {
+      "genre": "Science Fiction",
+      "year_min": 1990,
+      "year_max": 2010,
+      "rating_min": 7.0,
+      "confidence_min": 0.6
+    },
+    "max_local_items": 15,
+    "max_external_items": 8,
+    "include_trending": true
+  }'
+```
+
+### Get Media with Similar Items (Batch)
+
+```bash
+curl -X GET "http://localhost:8080/api/v1/media/123/detail-with-similar" \
+  -H "User-Platform: ios" \
+  -H "User-Context: mobile"
+```
+
+Response:
+```json
+{
+  "success": true,
+  "data": {
+    "media": {
+      "id": 123,
+      "title": "The Matrix",
+      "description": "A computer programmer discovers reality is a simulation",
+      "genre": "Science Fiction",
+      "year": 1999
+    },
+    "similar_items": {
+      "local_items": [...],
+      "external_items": [...]
+    },
+    "deep_links": {
+      "web_url": "https://catalogizer.app/item/123",
+      "android_url": "catalogizer://item/123",
+      "ios_url": "catalogizer://item/123",
+      "smart_url": "https://catalogizer.app/smart/123"
+    }
+  }
+}
+```
+
+### Get Trending Recommendations
+
+```bash
+curl -X GET "http://localhost:8080/api/v1/recommendations/trends?media_type=movie&period=7d&limit=20"
+```
+
+### Batch Recommendations
+
+```bash
+curl -X POST http://localhost:8080/api/v1/recommendations/batch \
+  -H "Content-Type: application/json" \
+  -d '{
+    "media_ids": [123, 456, 789],
+    "max_items_per_media": 5,
+    "include_external": true,
+    "filters": {
+      "confidence_min": 0.5
+    }
+  }'
+```
+
+## Deep Linking Examples
+
+### Generate Deep Links for All Platforms
+
+```bash
+curl -X POST http://localhost:8080/api/v1/links/generate \
+  -H "Content-Type: application/json" \
+  -H "User-Platform: web" \
+  -d '{
+    "media_id": 123,
+    "context": "detail_screen",
+    "utm_source": "app_share",
+    "utm_medium": "social",
+    "utm_campaign": "winter_2024",
+    "custom_data": {
+      "include_qr": "true"
+    }
+  }'
+```
+
+Response:
+```json
+{
+  "success": true,
+  "data": {
+    "web_url": "https://catalogizer.app/item/123?utm_source=app_share&utm_medium=social&utm_campaign=winter_2024",
+    "android_url": "catalogizer://item/123?utm_source=app_share&utm_medium=social&utm_campaign=winter_2024",
+    "ios_url": "catalogizer://item/123?utm_source=app_share&utm_medium=social&utm_campaign=winter_2024",
+    "desktop_url": "catalogizer://item/123?utm_source=app_share&utm_medium=social&utm_campaign=winter_2024",
+    "smart_url": "https://catalogizer.app/smart/123",
+    "qr_code_url": "https://catalogizer.app/qr/123.png",
+    "analytics": {
+      "utm_source": "app_share",
+      "utm_medium": "social",
+      "utm_campaign": "winter_2024"
+    }
+  }
+}
+```
+
+### Generate Smart Links with Platform Detection
+
+```bash
+curl -X POST http://localhost:8080/api/v1/links/smart \
+  -H "Content-Type: application/json" \
+  -H "User-Agent: Mozilla/5.0 (iPhone; CPU iPhone OS 15_0 like Mac OS X)" \
+  -d '{
+    "media_id": 123,
+    "fallback_url": "https://catalogizer.app/item/123",
+    "enable_analytics": true
+  }'
+```
+
+### Batch Deep Link Generation
+
+```bash
+curl -X POST http://localhost:8080/api/v1/links/batch \
+  -H "Content-Type: application/json" \
+  -d '{
+    "media_ids": [123, 456, 789],
+    "platforms": ["web", "android", "ios"],
+    "utm_source": "email_campaign",
+    "utm_medium": "newsletter",
+    "include_qr_codes": true
+  }'
+```
+
+### Track Link Events
+
+```bash
+curl -X POST http://localhost:8080/api/v1/links/track \
+  -H "Content-Type: application/json" \
+  -d '{
+    "link_id": "abc123def456",
+    "event_type": "click",
+    "user_agent": "Mozilla/5.0 (Android 12; Mobile; rv:68.0) Gecko/68.0 Firefox/88.0",
+    "referrer": "https://twitter.com",
+    "ip_address": "192.168.1.100",
+    "metadata": {
+      "platform": "android",
+      "location": "homepage",
+      "user_id": "user789"
+    }
+  }'
+```
+
+### Get Link Analytics
+
+```bash
+curl -X GET "http://localhost:8080/api/v1/links/abc123def456/analytics?period=30d&group_by=platform"
+```
+
+Response:
+```json
+{
+  "success": true,
+  "data": {
+    "link_id": "abc123def456",
+    "total_clicks": 1250,
+    "unique_clicks": 890,
+    "conversion_rate": 0.712,
+    "platforms": {
+      "web": {"clicks": 650, "conversions": 520},
+      "android": {"clicks": 400, "conversions": 280},
+      "ios": {"clicks": 200, "conversions": 90}
+    },
+    "top_referrers": [
+      {"source": "twitter.com", "clicks": 450},
+      {"source": "facebook.com", "clicks": 320}
+    ],
+    "geographic_data": [
+      {"country": "US", "clicks": 500},
+      {"country": "CA", "clicks": 200}
+    ]
+  }
+}
+```
+
 ## Health Check
 
 ```bash

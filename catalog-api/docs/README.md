@@ -12,6 +12,9 @@ The Catalog API is a REST service for browsing, searching, and managing SMB file
 - **Copy**: Copy files between SMB locations or to/from local computer
 - **Statistics**: Comprehensive analytics and reporting
 - **Authentication**: JWT-based security (optional)
+- **Media Recognition**: AI-powered recognition for movies, music, books, games, and software
+- **Recommendations**: Similar items discovery with local and external recommendations
+- **Deep Linking**: Universal cross-platform linking with UTM tracking and analytics
 
 ## API Endpoints
 
@@ -52,6 +55,29 @@ The Catalog API is a REST service for browsing, searching, and managing SMB file
 - `GET /api/stats/access` - File access patterns
 - `GET /api/stats/growth` - Storage growth trends
 - `GET /api/stats/scans` - Scan operation history
+
+### Media Recognition Endpoints
+
+- `POST /api/v1/media/recognize` - Recognize media file and extract metadata
+- `GET /api/v1/media/metadata/{id}` - Get cached metadata for a media file
+- `POST /api/v1/media/bulk-recognize` - Batch recognize multiple media files
+- `GET /api/v1/media/recognition-status/{job_id}` - Check batch recognition job status
+
+### Recommendations Endpoints
+
+- `GET /api/v1/media/{id}/similar` - Get similar items for a specific media file
+- `POST /api/v1/media/similar` - Advanced similar items search with custom filters
+- `GET /api/v1/media/{id}/detail-with-similar` - Get media details with similar items and deep links
+- `GET /api/v1/recommendations/trends` - Get trending recommendations by media type and period
+- `POST /api/v1/recommendations/batch` - Get recommendations for multiple items simultaneously
+
+### Deep Linking Endpoints
+
+- `POST /api/v1/links/generate` - Generate deep links for all platforms
+- `POST /api/v1/links/smart` - Generate smart links with automatic platform detection
+- `POST /api/v1/links/batch` - Generate deep links for multiple items
+- `POST /api/v1/links/track` - Track link click events and analytics
+- `GET /api/v1/links/{tracking_id}/analytics` - Get detailed link performance analytics
 
 ### Health Check
 
@@ -108,6 +134,59 @@ Create a `config.json` file with the following structure:
     "max_backups": 3,
     "max_age": 28,
     "compress": true
+  },
+  "media_recognition": {
+    "tmdb_api_key": "your_tmdb_api_key",
+    "omdb_api_key": "your_omdb_api_key",
+    "lastfm_api_key": "your_lastfm_api_key",
+    "musicbrainz_user_agent": "CatalogizerAPI/1.0",
+    "igdb_client_id": "your_igdb_client_id",
+    "igdb_client_secret": "your_igdb_client_secret",
+    "google_books_api_key": "your_google_books_api_key",
+    "ocr_space_api_key": "your_ocr_space_api_key",
+    "enable_fingerprinting": true,
+    "cache_duration_hours": 168,
+    "concurrent_workers": 5,
+    "timeout_seconds": 30
+  },
+  "recommendations": {
+    "max_local_items": 10,
+    "max_external_items": 5,
+    "default_similarity_threshold": 0.3,
+    "enable_external_recommendations": true,
+    "cache_duration_hours": 24,
+    "trending_analysis_enabled": true,
+    "trending_update_interval_hours": 6,
+    "collaborative_filtering_enabled": true,
+    "content_based_weight": 0.6,
+    "collaborative_weight": 0.4,
+    "external_apis": {
+      "tmdb": {"enabled": true, "weight": 0.3},
+      "lastfm": {"enabled": true, "weight": 0.2},
+      "google_books": {"enabled": true, "weight": 0.2},
+      "igdb": {"enabled": true, "weight": 0.3}
+    }
+  },
+  "deep_linking": {
+    "base_url": "https://catalogizer.app",
+    "enable_universal_links": true,
+    "enable_qr_codes": true,
+    "link_expiration_hours": 24,
+    "track_analytics": true,
+    "analytics_retention_days": 90,
+    "supported_platforms": ["web", "android", "ios", "desktop"],
+    "app_configurations": {
+      "android": {
+        "package_name": "com.catalogizer.app",
+        "scheme": "catalogizer",
+        "store_url": "https://play.google.com/store/apps/details?id=com.catalogizer.app"
+      },
+      "ios": {
+        "bundle_id": "com.catalogizer.app",
+        "scheme": "catalogizer",
+        "store_url": "https://apps.apple.com/app/id123456789"
+      }
+    }
   }
 }
 ```

@@ -100,12 +100,20 @@ type SubtitleDownloadRequest struct {
 	AutoTranslate []string           `json:"auto_translate,omitempty"` // Languages to auto-translate to
 }
 
-// TranslationRequest represents a subtitle translation request
-type TranslationRequest struct {
+// SubtitleTranslationRequest represents a subtitle translation request
+type SubtitleTranslationRequest struct {
 	SubtitleID     string `json:"subtitle_id"`
 	SourceLanguage string `json:"source_language"`
 	TargetLanguage string `json:"target_language"`
 	UseCache       bool   `json:"use_cache"`
+}
+
+// SubtitleLine represents a single subtitle line
+type SubtitleLine struct {
+	Index     int    `json:"index"`
+	StartTime string `json:"start_time"`
+	EndTime   string `json:"end_time"`
+	Text      string `json:"text"`
 }
 
 // NewSubtitleService creates a new subtitle service
@@ -546,7 +554,7 @@ func generateSubtitleID() string {
 	return fmt.Sprintf("sub_%d", time.Now().UnixNano())
 }
 
-func getStringValue(s *string) string {
+func getSubtitleStringValue(s *string) string {
 	if s == nil {
 		return ""
 	}

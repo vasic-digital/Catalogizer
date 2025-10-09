@@ -3,7 +3,6 @@ package smb
 import (
 	"context"
 	"fmt"
-	"log"
 	"sync"
 	"time"
 
@@ -620,7 +619,7 @@ func (m *ResilientSMBManager) ForceReconnect(sourceID string) error {
 // UpdateSource updates an existing SMB source
 func (m *ResilientSMBManager) UpdateSource(sourceID string, updates interface{}) error {
 	m.mutex.RLock()
-	source, exists := m.sources[sourceID]
+	_, exists := m.sources[sourceID]
 	m.mutex.RUnlock()
 
 	if !exists {
@@ -664,7 +663,7 @@ func (c *OfflineCache) ProcessCachedChanges(sourceID string) {
 	defer c.mutex.Unlock()
 
 	processed := 0
-	for key, entry := range c.entries {
+	for _, entry := range c.entries {
 		if entry.SourceID == sourceID && !entry.IsAvailable {
 			// Process cached change
 			c.logger.Info("Processing cached change",

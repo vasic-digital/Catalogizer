@@ -7,7 +7,7 @@ import (
 	"time"
 
 	"catalog-api/database"
-	"catalog-api/handlers"
+	"catalog-api/internal/models"
 )
 
 // StatsRepository handles statistics-related database operations
@@ -21,7 +21,7 @@ func NewStatsRepository(db *database.DB) *StatsRepository {
 }
 
 // GetOverallStats retrieves overall catalog statistics
-func (r *StatsRepository) GetOverallStats(ctx context.Context) (*handlers.OverallStats, error) {
+func (r *StatsRepository) GetOverallStats(ctx context.Context) (*models.OverallStats, error) {
 	query := `
 		SELECT
 			COUNT(CASE WHEN is_directory = 0 AND deleted = 0 THEN 1 END) as total_files,
@@ -34,7 +34,7 @@ func (r *StatsRepository) GetOverallStats(ctx context.Context) (*handlers.Overal
 			COALESCE(MAX(last_scan_at), 0) as last_scan_time
 		FROM files`
 
-	var stats handlers.OverallStats
+	var stats models.OverallStats
 	err := r.db.QueryRowContext(ctx, query).Scan(
 		&stats.TotalFiles,
 		&stats.TotalDirectories,
@@ -54,7 +54,7 @@ func (r *StatsRepository) GetOverallStats(ctx context.Context) (*handlers.Overal
 }
 
 // GetStorageRootStats retrieves statistics for a specific storage root
-func (r *StatsRepository) GetStorageRootStats(ctx context.Context, storageRootName string) (*handlers.StorageRootStats, error) {
+func (r *StatsRepository) GetStorageRootStats(ctx context.Context, storageRootName string) (*models.StorageRootStats, error) {
 	query := `
 		SELECT
 			sr.name,
@@ -70,8 +70,8 @@ func (r *StatsRepository) GetStorageRootStats(ctx context.Context, storageRootNa
 		WHERE sr.name = ?
 		GROUP BY sr.id, sr.name, sr.enabled`
 
-	var stats handlers.StorageRootStats
-	err := r.db.QueryRowContext(ctx, query, smbRootName).Scan(
+	var stats models.StorageRootStats
+	err := r.db.QueryRowContext(ctx, query, storageRootName).Scan(
 		&stats.Name,
 		&stats.TotalFiles,
 		&stats.TotalDirectories,
@@ -93,7 +93,7 @@ func (r *StatsRepository) GetStorageRootStats(ctx context.Context, storageRootNa
 }
 
 // GetFileTypeStats retrieves file type statistics
-func (r *StatsRepository) GetFileTypeStats(ctx context.Context, storageRootName string, limit int) ([]handlers.FileTypeStats, error) {
+func (r *StatsRepository) GetFileTypeStats(ctx context.Context, storageRootName string, limit int) ([]models.FileTypeStats, error) {
 	baseQuery := `
 		SELECT
 			COALESCE(file_type, 'unknown') as file_type,
@@ -106,9 +106,9 @@ func (r *StatsRepository) GetFileTypeStats(ctx context.Context, storageRootName 
 	args := []interface{}{}
 	whereClause := " WHERE f.is_directory = 0 AND f.deleted = 0"
 
-	if smbRootName != "" {
+	if storageRootName != "" {
 		whereClause += " AND f.smb_root_id = (SELECT id FROM smb_roots WHERE name = ?)"
-		args = append(args, smbRootName)
+		args = append(args, storageRootName)
 	}
 
 	query := baseQuery + whereClause + `
@@ -124,9 +124,9 @@ func (r *StatsRepository) GetFileTypeStats(ctx context.Context, storageRootName 
 	}
 	defer rows.Close()
 
-	var stats []handlers.FileTypeStats
+	var stats []models.FileTypeStats
 	for rows.Next() {
-		var stat handlers.FileTypeStats
+		var stat models.FileTypeStats
 		err := rows.Scan(
 			&stat.FileType,
 			&stat.Extension,
@@ -144,7 +144,7 @@ func (r *StatsRepository) GetFileTypeStats(ctx context.Context, storageRootName 
 }
 
 // GetSizeDistribution retrieves file size distribution
-func (r *StatsRepository) GetSizeDistribution(ctx context.Context, storageRootName string) (*handlers.SizeDistribution, error) {
+func (r *StatsRepository) GetSizeDistribution(ctx context.Context, storageRootName string) (*models.SizeDistribution, error) {
 	baseQuery := `
 		SELECT
 			COUNT(CASE WHEN size = 0 THEN 1 END) as empty,
@@ -159,14 +159,14 @@ func (r *StatsRepository) GetSizeDistribution(ctx context.Context, storageRootNa
 	args := []interface{}{}
 	whereClause := " WHERE f.is_directory = 0 AND f.deleted = 0"
 
-	if smbRootName != "" {
+	if storageRootName != "" {
 		whereClause += " AND f.smb_root_id = (SELECT id FROM smb_roots WHERE name = ?)"
-		args = append(args, smbRootName)
+		args = append(args, storageRootName)
 	}
 
 	query := baseQuery + whereClause
 
-	var distribution handlers.SizeDistribution
+	var distribution models.SizeDistribution
 	var empty int64
 	err := r.db.QueryRowContext(ctx, query, args...).Scan(
 		&empty,
@@ -189,7 +189,7 @@ func (r *StatsRepository) GetSizeDistribution(ctx context.Context, storageRootNa
 }
 
 // GetDuplicateStats retrieves duplicate file statistics
-func (r *StatsRepository) GetDuplicateStats(ctx context.Context, storageRootName string) (*handlers.DuplicateStats, error) {
+func (r *StatsRepository) GetDuplicateStats(ctx context.Context, storageRootName string) (*models.DuplicateStats, error) {
 	baseQuery := `
 		WITH duplicate_analysis AS (
 			SELECT
@@ -227,7 +227,7 @@ func (r *StatsRepository) GetDuplicateStats(ctx context.Context, storageRootName
 		args = append(args, storageRootName) // For the subquery
 	}
 
-	var stats handlers.DuplicateStats
+	var stats models.DuplicateStats
 	err := r.db.QueryRowContext(ctx, baseQuery, args...).Scan(
 		&stats.TotalDuplicates,
 		&stats.DuplicateGroups,
@@ -244,7 +244,7 @@ func (r *StatsRepository) GetDuplicateStats(ctx context.Context, storageRootName
 }
 
 // GetTopDuplicateGroups retrieves the top duplicate groups
-func (r *StatsRepository) GetTopDuplicateGroups(ctx context.Context, sortBy string, limit int, storageRootName string) ([]handlers.DuplicateGroupStats, error) {
+func (r *StatsRepository) GetTopDuplicateGroups(ctx context.Context, sortBy string, limit int, storageRootName string) ([]models.DuplicateGroupStats, error) {
 	baseQuery := `
 		SELECT
 			dg.id as group_id,
@@ -282,9 +282,9 @@ func (r *StatsRepository) GetTopDuplicateGroups(ctx context.Context, sortBy stri
 	}
 	defer rows.Close()
 
-	var groups []handlers.DuplicateGroupStats
+	var groups []models.DuplicateGroupStats
 	for rows.Next() {
-		var group handlers.DuplicateGroupStats
+		var group models.DuplicateGroupStats
 		err := rows.Scan(
 			&group.GroupID,
 			&group.FileCount,
@@ -302,7 +302,7 @@ func (r *StatsRepository) GetTopDuplicateGroups(ctx context.Context, sortBy stri
 }
 
 // GetAccessPatterns retrieves file access patterns
-func (r *StatsRepository) GetAccessPatterns(ctx context.Context, storageRootName string, days int) (*handlers.AccessPatterns, error) {
+func (r *StatsRepository) GetAccessPatterns(ctx context.Context, storageRootName string, days int) (*models.AccessPatterns, error) {
 	// This is a simplified implementation
 	// In a real scenario, you'd need to track actual access times
 	baseQuery := `
@@ -321,7 +321,7 @@ func (r *StatsRepository) GetAccessPatterns(ctx context.Context, storageRootName
 
 	query := baseQuery + whereClause
 
-	var patterns handlers.AccessPatterns
+	var patterns models.AccessPatterns
 	err := r.db.QueryRowContext(ctx, query, args...).Scan(
 		&patterns.RecentlyAccessed,
 		&patterns.NeverAccessed,
@@ -340,7 +340,7 @@ func (r *StatsRepository) GetAccessPatterns(ctx context.Context, storageRootName
 }
 
 // GetGrowthTrends retrieves storage growth trends
-func (r *StatsRepository) GetGrowthTrends(ctx context.Context, storageRootName string, months int) (*handlers.GrowthTrends, error) {
+func (r *StatsRepository) GetGrowthTrends(ctx context.Context, storageRootName string, months int) (*models.GrowthTrends, error) {
 	// This is a simplified implementation
 	// In a real scenario, you'd need historical data tracking
 	baseQuery := `
@@ -369,11 +369,11 @@ func (r *StatsRepository) GetGrowthTrends(ctx context.Context, storageRootName s
 	}
 	defer rows.Close()
 
-	var trends handlers.GrowthTrends
-	var monthlyGrowth []handlers.MonthlyGrowth
+	var trends models.GrowthTrends
+	var monthlyGrowth []models.MonthlyGrowth
 
 	for rows.Next() {
-		var growth handlers.MonthlyGrowth
+		var growth models.MonthlyGrowth
 		err := rows.Scan(
 			&growth.Month,
 			&growth.FilesAdded,
@@ -394,7 +394,7 @@ func (r *StatsRepository) GetGrowthTrends(ctx context.Context, storageRootName s
 }
 
 // GetScanHistory retrieves scan operation history
-func (r *StatsRepository) GetScanHistory(ctx context.Context, storageRootName string, limit, offset int) ([]handlers.ScanHistoryItem, int64, error) {
+func (r *StatsRepository) GetScanHistory(ctx context.Context, storageRootName string, limit, offset int) ([]models.ScanHistoryItem, int64, error) {
 	countQuery := `
 		SELECT COUNT(*)
 		FROM scan_history sh
@@ -442,9 +442,9 @@ func (r *StatsRepository) GetScanHistory(ctx context.Context, storageRootName st
 	}
 	defer rows.Close()
 
-	var history []handlers.ScanHistoryItem
+	var history []models.ScanHistoryItem
 	for rows.Next() {
-		var item handlers.ScanHistoryItem
+		var item models.ScanHistoryItem
 		err := rows.Scan(
 			&item.ID,
 			&item.SmbRootName,

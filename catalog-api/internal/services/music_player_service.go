@@ -126,28 +126,8 @@ const (
 	PlayModeQueue    PlayMode = "queue"
 )
 
-type RepeatMode string
-const (
-	RepeatNone     RepeatMode = "none"
-	RepeatTrack    RepeatMode = "track"
-	RepeatPlaylist RepeatMode = "playlist"
-	RepeatAlbum    RepeatMode = "album"
-)
-
-type PlaybackState string
-const (
-	StateStopped PlaybackState = "stopped"
-	StatePlaying PlaybackState = "playing"
-	StatePaused  PlaybackState = "paused"
-	StateLoading PlaybackState = "loading"
-	StateError   PlaybackState = "error"
-)
-
 type AudioQuality string
 const (
-	QualityLow    AudioQuality = "low"      // 128kbps
-	QualityMedium AudioQuality = "medium"   // 256kbps
-	QualityHigh   AudioQuality = "high"     // 320kbps
 	QualityLossless AudioQuality = "lossless" // FLAC/ALAC
 )
 
@@ -1412,6 +1392,3 @@ func (s *MusicPlayerService) getMostPlayed(ctx context.Context, userID int64, st
 	return nil
 }
 
-func generateSessionID() string {
-	return fmt.Sprintf("session_%d_%d", time.Now().UnixNano(), rand.Int63())
-}

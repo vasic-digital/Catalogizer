@@ -1,16 +1,12 @@
 package mocks
 
 import (
-	"context"
 	"fmt"
-	"io"
 	"net"
-	"os"
 	"strings"
 	"sync"
 	"time"
 
-	"github.com/hirochachacha/go-smb2"
 	"go.uber.org/zap"
 )
 

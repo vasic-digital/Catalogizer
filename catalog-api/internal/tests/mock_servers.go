@@ -470,7 +470,6 @@ func (m *MockServer) mockMyMemoryTranslate(w http.ResponseWriter, r *http.Reques
 	m.logRequest(r, body)
 
 	q := r.URL.Query().Get("q")
-	langpair := r.URL.Query().Get("langpair")
 
 	text := "Mock MyMemory translation"
 	if q != "" {
@@ -500,7 +499,6 @@ func (m *MockServer) mockMusicBrainzSearch(w http.ResponseWriter, r *http.Reques
 	body := m.readBody(r)
 	m.logRequest(r, body)
 
-	query := r.URL.Query().Get("query")
 	format := r.URL.Query().Get("fmt")
 
 	if format != "json" {
@@ -612,9 +610,6 @@ func (m *MockServer) mockiTunesSearch(w http.ResponseWriter, r *http.Request) {
 	body := m.readBody(r)
 	m.logRequest(r, body)
 
-	term := r.URL.Query().Get("term")
-	media := r.URL.Query().Get("media")
-
 	results := []map[string]interface{}{
 		{
 			"trackId":              123456789,
@@ -661,7 +656,6 @@ func (m *MockServer) mockSpotifySearch(w http.ResponseWriter, r *http.Request) {
 	body := m.readBody(r)
 	m.logRequest(r, body)
 
-	query := r.URL.Query().Get("q")
 	searchType := r.URL.Query().Get("type")
 
 	var results interface{}
@@ -831,8 +825,6 @@ For testing purposes only
 func (m *MockServer) mockYifySubtitlesSearch(w http.ResponseWriter, r *http.Request) {
 	body := m.readBody(r)
 	m.logRequest(r, body)
-
-	imdbID := r.URL.Query().Get("imdb_id")
 
 	subtitles := []map[string]interface{}{
 		{

@@ -1,7 +1,6 @@
 package mocks
 
 import (
-	"bytes"
 	"fmt"
 	"io"
 	"net"
@@ -139,7 +138,7 @@ func (s *MockWebDAVServer) Start() error {
 	}
 
 	// Start server in a goroutine to get the port
-	listener, err := s.server.Listen()
+	listener, err := net.Listen("tcp", ":0")
 	if err != nil {
 		return fmt.Errorf("failed to start listener: %w", err)
 	}

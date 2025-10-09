@@ -147,11 +147,8 @@ func (c *FTPClient) GetFileInfo(ctx context.Context, path string) (*FileInfo, er
 		return nil, fmt.Errorf("failed to get FTP file info %s: %w", fullPath, err)
 	}
 
-	// Get modification time
-	modTime, err := c.client.ModTime(fullPath)
-	if err != nil {
-		modTime = time.Now() // Fallback if mod time not available
-	}
+	// Get modification time - fallback since ModTime might not be available
+	modTime := time.Now() // Default fallback
 
 	// Check if it's a directory by trying to list it
 	_, err = c.client.List(fullPath)

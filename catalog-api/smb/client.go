@@ -1,7 +1,6 @@
 package smb
 
 import (
-	"context"
 	"fmt"
 	"io"
 	"net"

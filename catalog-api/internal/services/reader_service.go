@@ -246,7 +246,7 @@ type StartReadingRequest struct {
 	ResumeFromLastPosition bool          `json:"resume_from_last_position"`
 }
 
-type UpdatePositionRequest struct {
+type ReaderUpdatePositionRequest struct {
 	SessionID         string             `json:"session_id"`
 	Position          ReadingPosition    `json:"position"`
 	ReadingTime       int64              `json:"reading_time_seconds"`
@@ -279,7 +279,7 @@ type CreateHighlightRequest struct {
 	IsPublic          bool               `json:"is_public"`
 }
 
-type DeviceInfo struct {
+type ReaderDeviceInfo struct {
 	DeviceID          string             `json:"device_id"`
 	DeviceName        string             `json:"device_name"`
 	DeviceType        string             `json:"device_type"`
@@ -300,7 +300,7 @@ type BookContent struct {
 	EstimatedReadTime int                `json:"estimated_read_time_minutes"`
 }
 
-type Chapter struct {
+type BookChapter struct {
 	ID                string             `json:"id"`
 	Title             string             `json:"title"`
 	Number            int                `json:"number"`
@@ -1021,7 +1021,7 @@ func (s *ReaderService) getTodayReadingTime(ctx context.Context, userID int64) i
 	return minutes
 }
 
-func min(a, b int) int {
+func minInt(a, b int) int {
 	if a < b {
 		return a
 	}

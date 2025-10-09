@@ -13,6 +13,8 @@ import (
 	"strings"
 	"time"
 
+	"catalog-api/internal/models"
+
 	"go.uber.org/zap"
 )
 
@@ -769,7 +771,7 @@ func (p *BookRecognitionProvider) convertGoogleBook(book GoogleBookItem) *MediaR
 
 	// Get cover images
 	if volumeInfo.ImageLinks.Thumbnail != "" {
-		result.CoverArt = append(result.CoverArt, CoverArtResult{
+		result.CoverArt = append(result.CoverArt, models.CoverArtResult{
 			URL:      volumeInfo.ImageLinks.Thumbnail,
 			Type:     "cover",
 			Size:     "medium",
@@ -777,7 +779,7 @@ func (p *BookRecognitionProvider) convertGoogleBook(book GoogleBookItem) *MediaR
 		})
 	}
 	if volumeInfo.ImageLinks.SmallThumbnail != "" {
-		result.CoverArt = append(result.CoverArt, CoverArtResult{
+		result.CoverArt = append(result.CoverArt, models.CoverArtResult{
 			URL:      volumeInfo.ImageLinks.SmallThumbnail,
 			Type:     "cover",
 			Size:     "small",
@@ -912,7 +914,7 @@ func (p *BookRecognitionProvider) convertOpenLibraryBook(doc OpenLibraryDocument
 	// Get cover image
 	if doc.CoverID > 0 {
 		coverURL := fmt.Sprintf("https://covers.openlibrary.org/b/id/%d-L.jpg", doc.CoverID)
-		result.CoverArt = append(result.CoverArt, CoverArtResult{
+		result.CoverArt = append(result.CoverArt, models.CoverArtResult{
 			URL:      coverURL,
 			Type:     "cover",
 			Size:     "large",
@@ -1114,7 +1116,7 @@ func (p *BookRecognitionProvider) looksLikeAuthorName(str string) bool {
 
 	// Check if words look like names (capitalized)
 	for _, word := range words {
-		if len(word) > 0 && !strings.ToUpper(word[:1]) == word[:1] {
+		if len(word) > 0 && strings.ToUpper(word[:1]) != word[:1] {
 			return false
 		}
 	}

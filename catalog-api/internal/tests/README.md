@@ -38,6 +38,20 @@ This test suite provides 100% coverage of the media player functionality with mo
    - LocalizationService integration tests
    - End-to-end workflow tests
 
+4. **`recommendation_integration_test.go`** - NEW: Recommendation system integration tests
+   - MockRecommendationService with realistic test data
+   - Local similar items discovery testing
+   - External recommendations integration
+   - Filtering and performance testing
+   - Concurrent request handling
+
+5. **`deep_linking_integration_test.go`** - NEW: Deep linking system integration tests
+   - MockDeepLinkingService for cross-platform link generation
+   - UTM parameter tracking and analytics
+   - QR code generation testing
+   - Platform-specific URL validation
+   - Performance and edge case testing
+
 ## Running Tests
 
 ### Prerequisites
@@ -169,6 +183,30 @@ go test -v -run "TestSubtitleServiceIntegration" ./internal/tests/
 - ✅ Language detection
 - ✅ Multi-language support
 - ✅ Preference inheritance
+
+### Recommendation Service ✅ (NEW)
+- ✅ Basic recommendation functionality
+- ✅ Local similar items discovery
+- ✅ External recommendations from 16+ APIs
+- ✅ Advanced filtering (genre, year, rating, confidence)
+- ✅ Maximum results limiting and pagination
+- ✅ Performance under concurrent load (10 simultaneous requests)
+- ✅ Response structure validation
+- ✅ Mock service with realistic test data
+- ✅ Processing time measurement
+- ✅ Error handling and edge cases
+
+### Deep Linking Service ✅ (NEW)
+- ✅ Cross-platform link generation (web, Android, iOS, desktop)
+- ✅ UTM parameter integration and tracking
+- ✅ QR code generation on demand
+- ✅ Platform-specific URL validation
+- ✅ Smart URL routing and platform detection
+- ✅ Analytics data collection and tracking
+- ✅ Contextual link generation for different app screens
+- ✅ Performance testing (50 concurrent requests)
+- ✅ Edge case handling (zero media ID, empty platform)
+- ✅ Custom data parameter support
 
 ## Mock Server Features
 
