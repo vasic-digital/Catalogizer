@@ -1,7 +1,8 @@
 use crate::SMBShare;
 use anyhow::{anyhow, Result};
 use serde::{Deserialize, Serialize};
-use std::process::Command;
+use reqwest;
+use std::collections::HashMap;
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct FileEntry {
@@ -12,71 +13,81 @@ pub struct FileEntry {
     pub modified: Option<String>,
 }
 
-/// Scan SMB shares on a specific host
+#[derive(Debug, Serialize, Deserialize)]
+struct SMBShareApiResponse {
+    pub host: String,
+    pub share_name: String,
+    pub path: String,
+    pub writable: bool,
+    pub description: Option<String>,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+struct FileEntryApiResponse {
+    pub name: String,
+    pub path: String,
+    pub is_directory: bool,
+    pub size: Option<i64>,
+    pub modified: Option<String>,
+}
+
+/// Scan SMB shares on a specific host using catalog-api
 pub async fn scan_shares(host: &str) -> Result<Vec<SMBShare>> {
-    // Use smbclient to list shares if available
-    let output = Command::new("smbclient")
-        .arg("-L")
-        .arg(host)
-        .arg("-N") // No password
-        .output();
-
-    let mut shares = Vec::new();
-
-    if let Ok(output) = output {
-        if output.status.success() {
-            let output_str = String::from_utf8_lossy(&output.stdout);
-            shares = parse_smbclient_shares(&output_str, host);
-        }
-    }
-
-    // If smbclient failed or not available, try common share names
-    if shares.is_empty() {
-        shares = get_common_shares(host);
-    }
-
-    Ok(shares)
+    scan_shares_with_credentials(host, "guest", "", None).await
 }
 
-/// Parse smbclient output to extract shares
-fn parse_smbclient_shares(output: &str, host: &str) -> Vec<SMBShare> {
-    let mut shares = Vec::new();
-    let mut in_shares_section = false;
+/// Scan SMB shares with specific credentials
+pub async fn scan_shares_with_credentials(
+    host: &str,
+    username: &str,
+    password: &str,
+    domain: Option<&str>,
+) -> Result<Vec<SMBShare>> {
+    // Use the catalog-api SMB discovery endpoint
+    let client = reqwest::Client::new();
+    let api_url = get_api_base_url();
 
-    for line in output.lines() {
-        let line = line.trim();
+    let mut request_body = HashMap::new();
+    request_body.insert("host", host);
+    request_body.insert("username", username);
+    request_body.insert("password", password);
 
-        if line.contains("Sharename") && line.contains("Type") {
-            in_shares_section = true;
-            continue;
-        }
-
-        if in_shares_section && line.is_empty() {
-            break;
-        }
-
-        if in_shares_section && !line.starts_with('-') {
-            let parts: Vec<&str> = line.split_whitespace().collect();
-            if parts.len() >= 3 {
-                let share_name = parts[0];
-                let share_type = parts[1];
-
-                // Only include Disk shares
-                if share_type == "Disk" {
-                    shares.push(SMBShare {
-                        host: host.to_string(),
-                        share_name: share_name.to_string(),
-                        path: format!("\\\\{}\\{}", host, share_name),
-                        writable: false, // Unknown, would need to test
-                        description: parts.get(2..).map(|desc| desc.join(" ")),
-                    });
-                }
-            }
-        }
+    if let Some(d) = domain {
+        request_body.insert("domain", d);
     }
 
-    shares
+    let response = client
+        .post(&format!("{}/api/v1/smb/discover", api_url))
+        .json(&request_body)
+        .send()
+        .await;
+
+    match response {
+        Ok(resp) if resp.status().is_success() => {
+            let shares: Vec<SMBShareApiResponse> = resp.json().await
+                .map_err(|e| anyhow!("Failed to parse API response: {}", e))?;
+
+            Ok(shares.into_iter().map(|s| SMBShare {
+                host: s.host,
+                share_name: s.share_name,
+                path: s.path,
+                writable: s.writable,
+                description: s.description,
+            }).collect())
+        }
+        Ok(resp) => {
+            // API call failed, fallback to common shares
+            log::warn!("SMB discovery API failed with status: {}", resp.status());
+            Ok(get_common_shares(host))
+        }
+        Err(e) => {
+            // Network error, fallback to common shares
+            log::warn!("SMB discovery API network error: {}", e);
+            Ok(get_common_shares(host))
+        }
+    }
 }
+
 
 /// Get common SMB share names to try
 fn get_common_shares(host: &str) -> Vec<SMBShare> {
@@ -110,29 +121,72 @@ pub async fn browse_share(
     share: &str,
     path: Option<&str>,
 ) -> Result<Vec<FileEntry>> {
-    let smb_path = if let Some(p) = path {
-        format!("\\\\{}\\{}\\{}", host, share, p)
+    browse_share_with_credentials(host, share, path, "guest", "", None).await
+}
+
+/// Browse files and directories in an SMB share with credentials
+pub async fn browse_share_with_credentials(
+    host: &str,
+    share: &str,
+    path: Option<&str>,
+    username: &str,
+    password: &str,
+    domain: Option<&str>,
+) -> Result<Vec<FileEntry>> {
+    // Use the catalog-api SMB browse endpoint
+    let client = reqwest::Client::new();
+    let api_url = get_api_base_url();
+
+    let mut request_body = HashMap::new();
+    request_body.insert("host", host);
+    request_body.insert("share", share);
+    request_body.insert("username", username);
+    request_body.insert("password", password);
+    request_body.insert("port", "445");
+
+    if let Some(p) = path {
+        request_body.insert("path", p);
     } else {
-        format!("\\\\{}\\{}", host, share)
-    };
-
-    // Try using smbclient to list directory contents
-    let output = Command::new("smbclient")
-        .arg(&smb_path)
-        .arg("-N") // No password
-        .arg("-c")
-        .arg("ls")
-        .output();
-
-    if let Ok(output) = output {
-        if output.status.success() {
-            let output_str = String::from_utf8_lossy(&output.stdout);
-            return Ok(parse_smbclient_listing(&output_str, &smb_path));
-        }
+        request_body.insert("path", ".");
     }
 
-    // If smbclient failed, return empty list or mock data for testing
-    Ok(vec![
+    if let Some(d) = domain {
+        request_body.insert("domain", d);
+    }
+
+    let response = client
+        .post(&format!("{}/api/v1/smb/browse", api_url))
+        .json(&request_body)
+        .send()
+        .await;
+
+    match response {
+        Ok(resp) if resp.status().is_success() => {
+            let entries: Vec<FileEntryApiResponse> = resp.json().await
+                .map_err(|e| anyhow!("Failed to parse API response: {}", e))?;
+
+            Ok(entries.into_iter().map(|e| FileEntry {
+                name: e.name,
+                path: e.path,
+                is_directory: e.is_directory,
+                size: e.size.map(|s| s as u64),
+                modified: e.modified,
+            }).collect())
+        }
+        Ok(resp) => {
+            log::warn!("SMB browse API failed with status: {}", resp.status());
+            Ok(get_mock_entries())
+        }
+        Err(e) => {
+            log::warn!("SMB browse API network error: {}", e);
+            Ok(get_mock_entries())
+        }
+    }
+}
+
+/// Get mock entries for fallback
+fn get_mock_entries() -> Vec<FileEntry> {
+    vec![
         FileEntry {
             name: "..".to_string(),
             path: "..".to_string(),
@@ -154,57 +208,9 @@ pub async fn browse_share(
             size: Some(1024),
             modified: Some("2024-01-01 12:00:00".to_string()),
         },
-    ])
+    ]
 }
 
-/// Parse smbclient directory listing output
-fn parse_smbclient_listing(output: &str, base_path: &str) -> Vec<FileEntry> {
-    let mut entries = Vec::new();
-
-    for line in output.lines() {
-        let line = line.trim();
-
-        // Skip header lines and empty lines
-        if line.is_empty() || line.contains("blocks available") || line.contains("blocks of size") {
-            continue;
-        }
-
-        // Parse file entries
-        // Format: filename                     A    size  date
-        let parts: Vec<&str> = line.split_whitespace().collect();
-        if parts.len() >= 4 {
-            let name = parts[0];
-            let attributes = parts[1];
-            let size_str = parts[2];
-
-            // Skip current and parent directory entries unless needed
-            if name == "." {
-                continue;
-            }
-
-            let is_directory = attributes.contains('D');
-            let size = if is_directory {
-                None
-            } else {
-                size_str.parse::<u64>().ok()
-            };
-
-            entries.push(FileEntry {
-                name: name.to_string(),
-                path: if name == ".." {
-                    "..".to_string()
-                } else {
-                    format!("{}/{}", base_path, name)
-                },
-                is_directory,
-                size,
-                modified: None, // Would need to parse date from output
-            });
-        }
-    }
-
-    entries
-}
 
 /// Test SMB connection with credentials
 pub async fn test_connection(
@@ -214,27 +220,46 @@ pub async fn test_connection(
     password: &str,
     domain: Option<&str>,
 ) -> Result<bool> {
-    let smb_path = format!("\\\\{}\\{}", host, share);
+    // Use the catalog-api SMB test endpoint
+    let client = reqwest::Client::new();
+    let api_url = get_api_base_url();
 
-    let mut cmd = Command::new("smbclient");
-    cmd.arg(&smb_path)
-        .arg("-U")
-        .arg(if let Some(d) = domain {
-            format!("{}\\{}", d, username)
-        } else {
-            username.to_string()
-        })
-        .arg("-c")
-        .arg("ls")
-        .env("SMB_PASSWORD", password); // Pass password via environment variable for security
+    let mut request_body = HashMap::new();
+    request_body.insert("host", host);
+    request_body.insert("share", share);
+    request_body.insert("username", username);
+    request_body.insert("password", password);
+    request_body.insert("port", "445");
 
-    let output = cmd.output();
-
-    if let Ok(output) = output {
-        Ok(output.status.success())
-    } else {
-        // If smbclient is not available, we can't test the connection
-        // In a real implementation, you might want to use a pure Rust SMB library
-        Err(anyhow!("smbclient not available for connection testing"))
+    if let Some(d) = domain {
+        request_body.insert("domain", d);
     }
+
+    let response = client
+        .post(&format!("{}/api/v1/smb/test", api_url))
+        .json(&request_body)
+        .send()
+        .await;
+
+    match response {
+        Ok(resp) if resp.status().is_success() => {
+            let result: serde_json::Value = resp.json().await
+                .map_err(|e| anyhow!("Failed to parse API response: {}", e))?;
+
+            Ok(result.get("success").and_then(|v| v.as_bool()).unwrap_or(false))
+        }
+        Ok(resp) => {
+            log::warn!("SMB test API failed with status: {}", resp.status());
+            Ok(false)
+        }
+        Err(e) => {
+            log::warn!("SMB test API network error: {}", e);
+            Ok(false)
+        }
+    }
+}
+
+/// Get the API base URL - assumes catalog-api is running on localhost:8080
+fn get_api_base_url() -> String {
+    std::env::var("CATALOG_API_URL").unwrap_or_else(|_| "http://localhost:8080".to_string())
 }

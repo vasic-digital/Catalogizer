@@ -51,26 +51,23 @@ func main() {
 	}
 
 	// Initialize database
-	dbConn, err := database.NewConnection(cfg.Database)
+	db, err := sql.Open("sqlite3", cfg.Database.Path)
 	if err != nil {
 		log.Fatal("Failed to connect to database:", err)
 	}
-	defer dbConn.Close()
-
-	// Run database migrations
-	if err := dbConn.RunMigrations(context.Background()); err != nil {
-		log.Fatal("Failed to run database migrations:", err)
-	}
+	defer db.Close()
 
 	// Initialize services
 	catalogService := services.NewCatalogService(cfg, logger)
-	catalogService.SetDB(dbConn.DB)
+	catalogService.SetDB(db)
 	fileSystemService := services.NewFileSystemService(cfg, logger)
+	smbDiscoveryService := services.NewSMBDiscoveryService(logger)
 
 	// Initialize handlers
 	catalogHandler := handlers.NewCatalogHandler(catalogService, fileSystemService, logger)
 	downloadHandler := handlers.NewDownloadHandler(catalogService, fileSystemService, cfg.Catalog.TempDir, cfg.Catalog.MaxArchiveSize, cfg.Catalog.DownloadChunkSize, logger)
 	copyHandler := handlers.NewCopyHandler(catalogService, fileSystemService, cfg.Catalog.TempDir, logger)
+	smbDiscoveryHandler := handlers.NewSMBDiscoveryHandler(smbDiscoveryService, logger)
 
 	// Setup Gin router
 	router := gin.Default()
@@ -113,6 +110,16 @@ func main() {
 		// Statistics and sorting
 		api.GET("/stats/directories/by-size", catalogHandler.GetDirectoriesBySize)
 		api.GET("/stats/duplicates/count", catalogHandler.GetDuplicatesCount)
+
+		// SMB Discovery endpoints
+		smbGroup := api.Group("/smb")
+		{
+			smbGroup.POST("/discover", smbDiscoveryHandler.DiscoverShares)
+			smbGroup.GET("/discover", smbDiscoveryHandler.DiscoverSharesGET)
+			smbGroup.POST("/test", smbDiscoveryHandler.TestConnection)
+			smbGroup.GET("/test", smbDiscoveryHandler.TestConnectionGET)
+			smbGroup.POST("/browse", smbDiscoveryHandler.BrowseShare)
+		}
 	}
 
 	// Create HTTP server
