@@ -20,6 +20,24 @@ A comprehensive REST API for browsing, searching, and recognizing media in multi
 - **Smart Duplicate Detection**: Advanced similarity analysis using multiple algorithms (Levenshtein, Jaro-Winkler, Cosine similarity, Jaccard index, Soundex, Metaphone)
 - **Cover Art & Metadata Enhancement**: Automatic cover art discovery and comprehensive metadata enrichment
 
+### Smart Recommendations & Discovery
+- **Similar Items Discovery**: AI-powered recommendations showing local similar content first, then external suggestions
+- **Multi-Algorithm Similarity**: Advanced content matching using metadata, textual similarity, and collaborative filtering
+- **External Recommendations**: Integration with 16+ external services for comprehensive content discovery
+- **Intelligent Filtering**: Genre, year, rating, language, and confidence-based recommendation filtering
+- **Cross-Media Recommendations**: Discover similar content across different media types and formats
+- **Trending Content Analysis**: Real-time trending recommendations based on user behavior and popularity
+
+### Universal Deep Linking System
+- **Cross-Platform Links**: Generate deep links for web, Android, iOS, and desktop applications
+- **Smart Link Routing**: Automatically determine best link strategy based on user context and platform
+- **Universal Link Support**: Single links that work across all platforms with intelligent fallbacks
+- **App Store Integration**: Automatic app store links for users who don't have apps installed
+- **UTM Parameter Support**: Full marketing campaign tracking with UTM parameter integration
+- **Link Analytics**: Comprehensive tracking of link performance, conversion rates, and platform usage
+- **QR Code Generation**: Automatic QR code creation for easy sharing and mobile access
+- **Batch Link Generation**: Process multiple items simultaneously for efficient link creation
+
 ### Premium Reading Experience
 - **Kindle-like Reader**: Advanced reading system with position tracking across devices
 - **Multi-granular Position Tracking**: Page, word, character, and CFI (EPUB) position tracking
@@ -49,6 +67,23 @@ A comprehensive REST API for browsing, searching, and recognizing media in multi
 - `POST /api/v1/media/duplicates/find` - Find duplicate media using AI similarity
 - `GET /api/v1/media/duplicates/{id}` - Get duplicate groups for specific media
 - `DELETE /api/v1/media/duplicates/{id}` - Remove duplicate (keep best quality)
+
+### Recommendations & Similar Items
+- `GET /api/v1/media/{id}/similar` - Get similar items for a specific media file
+- `POST /api/v1/media/similar` - Advanced similar items search with custom filters
+- `GET /api/v1/media/{id}/detail-with-similar` - Get media details with similar items and deep links
+- `GET /api/v1/recommendations/trends` - Get trending recommendations by media type and period
+- `POST /api/v1/recommendations/batch` - Get recommendations for multiple items simultaneously
+- `GET /api/v1/recommendations/user/{user_id}` - Get personalized recommendations for user
+
+### Deep Linking & Sharing
+- `POST /api/v1/links/generate` - Generate deep links for all platforms
+- `POST /api/v1/links/smart` - Generate smart links with automatic platform detection
+- `POST /api/v1/links/batch` - Generate deep links for multiple items
+- `POST /api/v1/links/track` - Track link click events and analytics
+- `GET /api/v1/links/{tracking_id}/analytics` - Get detailed link performance analytics
+- `POST /api/v1/links/validate` - Validate and test deep links
+- `GET /api/v1/links/apps` - Get registered app configurations for deep linking
 
 ### Reader Service
 - `POST /api/v1/reader/sessions` - Create new reading session
@@ -141,6 +176,39 @@ Create a `config.json` file in the project root:
     "artist_author_weight": 0.3,
     "year_weight": 0.1,
     "metadata_weight": 0.2
+  },
+  "recommendations": {
+    "max_local_items": 10,
+    "max_external_items": 5,
+    "default_similarity_threshold": 0.3,
+    "enable_external_recommendations": true,
+    "cache_duration_hours": 24,
+    "trending_analysis_enabled": true,
+    "trending_update_interval_hours": 6,
+    "collaborative_filtering_enabled": true,
+    "content_based_weight": 0.6,
+    "collaborative_weight": 0.4
+  },
+  "deep_linking": {
+    "base_url": "https://catalogizer.app",
+    "enable_universal_links": true,
+    "enable_qr_codes": true,
+    "link_expiration_hours": 24,
+    "track_analytics": true,
+    "analytics_retention_days": 90,
+    "supported_platforms": ["web", "android", "ios", "desktop"],
+    "app_configurations": {
+      "android": {
+        "package_name": "com.catalogizer.app",
+        "scheme": "catalogizer",
+        "store_url": "https://play.google.com/store/apps/details?id=com.catalogizer.app"
+      },
+      "ios": {
+        "bundle_id": "com.catalogizer.app",
+        "scheme": "catalogizer",
+        "store_url": "https://apps.apple.com/app/id123456789"
+      }
+    }
   }
 }
 ```
@@ -406,3 +474,148 @@ This API is designed to work with the existing Catalogizer Kotlin application by
 4. Supporting the same file metadata structure
 
 The API can be deployed separately and accessed by web frontends, mobile apps, or other services that need programmatic access to the file catalog.
+
+## Example API Requests
+
+### Recommendations & Similar Items
+
+#### Get Similar Items for a Media Item
+```bash
+curl -X GET "http://localhost:8080/api/similar/123" \
+  -H "User-Platform: web" \
+  -H "User-Context: desktop" \
+  -H "User-Language: en"
+```
+
+#### Get Similar Items with Filters
+```bash
+curl -X GET "http://localhost:8080/api/similar/123?genre=action&year_min=2020&confidence_min=0.7&limit=10" \
+  -H "User-Platform: android" \
+  -H "User-Context: mobile"
+```
+
+#### Get Media with Similar Items (Batch)
+```bash
+curl -X POST "http://localhost:8080/api/media/with-similar" \
+  -H "Content-Type: application/json" \
+  -H "User-Platform: ios" \
+  -d '{
+    "media_ids": [123, 456, 789],
+    "filters": {
+      "genre": "drama",
+      "rating_min": 7.0,
+      "limit": 5
+    }
+  }'
+```
+
+#### Get Trending Similar Items
+```bash
+curl -X GET "http://localhost:8080/api/trending/similar/123?days=7&min_views=100"
+```
+
+### Deep Linking & Sharing
+
+#### Generate Deep Links for Media Item
+```bash
+curl -X GET "http://localhost:8080/api/deeplink/123" \
+  -H "User-Platform: web" \
+  -H "User-Context: desktop" \
+  -H "User-Language: en"
+```
+
+#### Generate Smart Link with Custom Parameters
+```bash
+curl -X POST "http://localhost:8080/api/smartlink" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "media_id": 123,
+    "utm_source": "email_campaign",
+    "utm_medium": "newsletter",
+    "utm_campaign": "winter_2024",
+    "platforms": ["web", "android", "ios"],
+    "include_qr": true
+  }'
+```
+
+#### Generate Batch Deep Links
+```bash
+curl -X POST "http://localhost:8080/api/deeplink/batch" \
+  -H "Content-Type: application/json" \
+  -H "User-Platform: android" \
+  -d '{
+    "media_ids": [123, 456, 789],
+    "utm_source": "app_share",
+    "include_analytics": true
+  }'
+```
+
+#### Track Link Event
+```bash
+curl -X POST "http://localhost:8080/api/link/track" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "link_id": "abc123",
+    "event_type": "click",
+    "user_agent": "Mozilla/5.0...",
+    "referrer": "https://example.com",
+    "metadata": {
+      "platform": "web",
+      "location": "homepage"
+    }
+  }'
+```
+
+### Configuration Examples
+
+#### Recommendations Configuration
+```json
+{
+  "recommendations": {
+    "cache_ttl": "24h",
+    "max_local_items": 20,
+    "max_external_items": 10,
+    "confidence_threshold": 0.5,
+    "external_apis": {
+      "tmdb": {
+        "enabled": true,
+        "api_key": "your_tmdb_key"
+      },
+      "lastfm": {
+        "enabled": true,
+        "api_key": "your_lastfm_key"
+      },
+      "google_books": {
+        "enabled": true,
+        "api_key": "your_google_books_key"
+      }
+    }
+  }
+}
+```
+
+#### Deep Linking Configuration
+```json
+{
+  "deep_linking": {
+    "base_urls": {
+      "web": "https://catalogizer.app",
+      "android": "catalogizer://",
+      "ios": "catalogizer://",
+      "desktop": "catalogizer://"
+    },
+    "universal_links": {
+      "domain": "catalogizer.app",
+      "path_prefix": "/item/"
+    },
+    "analytics": {
+      "enabled": true,
+      "retention_days": 90
+    },
+    "qr_codes": {
+      "size": 256,
+      "error_correction": "medium"
+    }
+  }
+}
+```
