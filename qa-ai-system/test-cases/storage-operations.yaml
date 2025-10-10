@@ -1,0 +1,119 @@
+test_suite: storage_operations
+description: Comprehensive tests for storage operations and filesystem service
+version: 1.0.0
+
+test_cases:
+  - id: STOR-001
+    name: Get Storage Roots
+    description: Verify that storage roots can be retrieved
+    priority: high
+    type: api
+    steps:
+      - action: GET /api/v1/storage/roots
+        expected:
+          status: 200
+          response_contains:
+            - roots
+          response_schema:
+            roots:
+              type: array
+              min_items: 1
+              items:
+                properties:
+                  - id
+                  - name
+                  - path
+
+  - id: STOR-002
+    name: List Storage Path - Valid Request
+    description: List files in a storage path with valid storage_id
+    priority: high
+    type: api
+    steps:
+      - action: GET /api/v1/storage/list/test?storage_id=local
+        expected:
+          status: 200
+          response_contains:
+            - path
+            - storage_id
+            - files
+
+  - id: STOR-003
+    name: List Storage Path - Missing Storage ID
+    description: Verify error handling when storage_id is missing
+    priority: medium
+    type: api
+    steps:
+      - action: GET /api/v1/storage/list/test
+        expected:
+          status: 400
+          response_contains:
+            - error
+
+  - id: STOR-004
+    name: Copy to Storage - Success
+    description: Successfully copy a file to storage
+    priority: high
+    type: api
+    steps:
+      - action: POST /api/v1/copy/storage
+        body:
+          source_path: /tmp/test.txt
+          dest_path: /storage/test.txt
+          storage_id: local
+        expected:
+          status: 200
+          response_contains:
+            - message
+            - source
+            - destination
+
+  - id: STOR-005
+    name: Copy to Storage - Missing Source Path
+    description: Verify validation when source_path is missing
+    priority: medium
+    type: api
+    steps:
+      - action: POST /api/v1/copy/storage
+        body:
+          dest_path: /storage/test.txt
+          storage_id: local
+        expected:
+          status: 400
+          response_contains:
+            - error
+
+  - id: STOR-006
+    name: FileSystemService - Multi-Protocol Support
+    description: Verify filesystem service supports multiple protocols
+    priority: high
+    type: unit
+    protocols:
+      - local
+      - smb
+      - ftp
+      - nfs
+      - webdav
+
+  - id: STOR-007
+    name: FileSystemService - Auto-Connect
+    description: Verify automatic connection establishment
+    priority: medium
+    type: integration
+    steps:
+      - Create disconnected client
+      - Call ListFiles
+      - Verify auto-connect occurred
+      - Verify files listed successfully
+
+  - id: STOR-008
+    name: Storage Operations - End-to-End
+    description: Complete workflow from getting roots to copying files
+    priority: critical
+    type: e2e
+    workflow:
+      - Get storage roots
+      - Select storage root
+      - List storage path
+      - Copy file to storage
+      - Verify file copied

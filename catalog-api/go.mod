@@ -5,6 +5,7 @@ go 1.24.0
 toolchain go1.24.8
 
 require (
+	github.com/dgrijalva/jwt-go v3.2.0+incompatible
 	github.com/fsnotify/fsnotify v1.6.0
 	github.com/gin-gonic/gin v1.9.1
 	github.com/golang-jwt/jwt/v5 v5.2.0
@@ -13,7 +14,6 @@ require (
 	github.com/hirochachacha/go-smb2 v1.1.0
 	github.com/jlaffaye/ftp v0.2.0
 	github.com/mattn/go-sqlite3 v1.14.18
-	github.com/mutecomm/go-sqlcipher/v4 v4.4.2
 	github.com/stretchr/testify v1.8.4
 	github.com/studio-b12/gowebdav v0.9.0
 	go.uber.org/zap v1.26.0

@@ -13,6 +13,8 @@ import (
 	"strings"
 	"time"
 
+	"catalog-api/internal/models"
+
 	"go.uber.org/zap"
 )
 
@@ -605,11 +607,11 @@ func (p *GameSoftwareRecognitionProvider) convertIGDBGame(game IGDBGame) *MediaR
 
 	// Get cover art
 	if game.Cover.URL != "" {
-		result.CoverArt = append(result.CoverArt, CoverArtResult{
-			URL:      p.getIGDBImageURL(game.Cover.ImageID, "cover_big"),
-			Type:     "cover",
-			Size:     "large",
-			Provider: "IGDB",
+		result.CoverArt = append(result.CoverArt, models.CoverArtResult{
+			ID:      game.Cover.ImageID,
+			URL:     p.getIGDBImageURL(game.Cover.ImageID, "cover_big"),
+			Quality: "large",
+			Source:  "IGDB",
 		})
 	}
 

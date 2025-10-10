@@ -6,8 +6,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
-	"regexp"
-	"strconv"
 	"strings"
 	"time"
 
@@ -251,7 +249,7 @@ func (s *LyricsService) TranslateLyrics(ctx context.Context, request *LyricsTran
 		MediaItemID: original.MediaItemID,
 		Source:      "translated",
 		Language:    getLanguageName(request.TargetLanguage),
-		Content:     translatedContent.Text,
+		Content:     translatedContent.TranslatedText,
 		IsSynced:    original.IsSynced && request.PreserveTiming,
 		CreatedAt:   time.Now(),
 		CachedAt:    timePtr(time.Now()),
@@ -259,7 +257,7 @@ func (s *LyricsService) TranslateLyrics(ctx context.Context, request *LyricsTran
 
 	// Preserve timing if requested and available
 	if request.PreserveTiming && original.IsSynced {
-		translatedLyrics.SyncData = s.preserveLyricsTiming(original.SyncData, translatedContent.Text)
+		translatedLyrics.SyncData = s.preserveLyricsTiming(original.SyncData, translatedContent.TranslatedText)
 	}
 
 	// Save translation
@@ -639,13 +637,203 @@ func stringPtr(s string) *string {
 	return &s
 }
 
-// Additional helper methods would be implemented for:
-// - getCachedLyrics
-// - saveLyricsData
-// - getLyricsDownloadInfo
-// - autoTranslateLyrics
-// - getCachedTranslation
-// - saveCachedLyricsTranslation
-// - preserveLyricsTiming
-// - detectConcertSetlist
-// etc.
+// getCachedLyrics retrieves cached lyrics for a title and artist
+func (s *LyricsService) getCachedLyrics(ctx context.Context, title, artist string) *LyricsSearchResult {
+	// Implementation would check cache for existing lyrics
+	// For now, return nil (cache miss)
+	return nil
+}
+
+// getLyricsDownloadInfo retrieves download information for a lyrics result
+func (s *LyricsService) getLyricsDownloadInfo(ctx context.Context, resultID string) (*LyricsSearchResult, error) {
+	// Mock implementation - would normally fetch from provider
+	return &LyricsSearchResult{
+		ID:           resultID,
+		Provider:     LyricsProviderGenius,
+		Title:        "Sample Title",
+		Artist:       "Sample Artist",
+		Language:     "English",
+		LanguageCode: "en",
+		Content:      "Sample lyrics content",
+		IsSynced:     false,
+		Source:       "genius.com",
+		Confidence:   0.9,
+		MatchScore:   0.85,
+	}, nil
+}
+
+// saveLyricsData saves lyrics data to the database
+func (s *LyricsService) saveLyricsData(ctx context.Context, lyrics *LyricsData) error {
+	syncDataJSON, err := json.Marshal(lyrics.SyncData)
+	if err != nil {
+		return fmt.Errorf("failed to marshal sync data: %w", err)
+	}
+
+	translationsJSON, err := json.Marshal(lyrics.Translations)
+	if err != nil {
+		return fmt.Errorf("failed to marshal translations: %w", err)
+	}
+
+	query := `
+		INSERT INTO lyrics_data (id, media_item_id, source, language, content, is_synced, sync_data, translations, created_at, cached_at)
+		VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+		ON CONFLICT(id) DO UPDATE SET
+			content = excluded.content,
+			is_synced = excluded.is_synced,
+			sync_data = excluded.sync_data,
+			translations = excluded.translations,
+			cached_at = excluded.cached_at
+	`
+
+	var cachedAt interface{}
+	if lyrics.CachedAt != nil {
+		cachedAt = *lyrics.CachedAt
+	}
+
+	_, err = s.db.ExecContext(ctx, query,
+		lyrics.ID, lyrics.MediaItemID, lyrics.Source, lyrics.Language,
+		lyrics.Content, lyrics.IsSynced, string(syncDataJSON), string(translationsJSON),
+		lyrics.CreatedAt, cachedAt)
+
+	if err != nil {
+		return fmt.Errorf("failed to save lyrics data: %w", err)
+	}
+
+	return nil
+}
+
+// autoTranslateLyrics automatically translates lyrics to multiple languages
+func (s *LyricsService) autoTranslateLyrics(ctx context.Context, lyrics *LyricsData, targetLanguages []string) {
+	for _, targetLang := range targetLanguages {
+		req := &LyricsTranslationRequest{
+			LyricsID:       lyrics.ID,
+			SourceLanguage: lyrics.Language,
+			TargetLanguage: targetLang,
+			PreserveTiming: lyrics.IsSynced,
+			UseCache:       true,
+		}
+
+		_, err := s.TranslateLyrics(ctx, req)
+		if err != nil {
+			s.logger.Warn("Failed to auto-translate lyrics",
+				zap.String("target_language", targetLang),
+				zap.Error(err))
+		}
+	}
+}
+
+// getCachedTranslation retrieves a cached translation of lyrics
+func (s *LyricsService) getCachedTranslation(ctx context.Context, lyricsID, targetLanguage string) *LyricsData {
+	// Implementation would check cache for translated lyrics
+	// For now, return nil (cache miss)
+	return nil
+}
+
+// getLyricsData retrieves lyrics data by ID
+func (s *LyricsService) getLyricsData(ctx context.Context, lyricsID string) (*LyricsData, error) {
+	query := `
+		SELECT id, media_item_id, source, language, content, is_synced,
+		       sync_data, translations, created_at, cached_at
+		FROM lyrics_data WHERE id = ?
+	`
+
+	var lyrics LyricsData
+	var syncDataJSON, translationsJSON sql.NullString
+	var cachedAt sql.NullTime
+
+	err := s.db.QueryRowContext(ctx, query, lyricsID).Scan(
+		&lyrics.ID, &lyrics.MediaItemID, &lyrics.Source, &lyrics.Language,
+		&lyrics.Content, &lyrics.IsSynced, &syncDataJSON, &translationsJSON,
+		&lyrics.CreatedAt, &cachedAt,
+	)
+
+	if err != nil {
+		if err == sql.ErrNoRows {
+			return nil, fmt.Errorf("lyrics not found: %s", lyricsID)
+		}
+		return nil, fmt.Errorf("failed to get lyrics data: %w", err)
+	}
+
+	if cachedAt.Valid {
+		lyrics.CachedAt = &cachedAt.Time
+	}
+
+	// Parse sync data
+	if syncDataJSON.Valid && syncDataJSON.String != "" {
+		if err := json.Unmarshal([]byte(syncDataJSON.String), &lyrics.SyncData); err != nil {
+			s.logger.Warn("Failed to parse sync data", zap.Error(err))
+		}
+	}
+
+	// Parse translations
+	if translationsJSON.Valid && translationsJSON.String != "" {
+		if err := json.Unmarshal([]byte(translationsJSON.String), &lyrics.Translations); err != nil {
+			s.logger.Warn("Failed to parse translations", zap.Error(err))
+		}
+	}
+
+	return &lyrics, nil
+}
+
+// saveCachedLyricsTranslation saves a cached translation of lyrics
+func (s *LyricsService) saveCachedLyricsTranslation(ctx context.Context, originalID, targetLanguage string, translation *LyricsData) error {
+	// Save the translation to database
+	return s.saveLyricsData(ctx, translation)
+}
+
+// preserveLyricsTiming preserves timing information when translating lyrics
+func (s *LyricsService) preserveLyricsTiming(originalSyncData []LyricsLine, translatedText string) []LyricsLine {
+	// Parse translated text into lines
+	translatedLines := s.parseLyricsLines(translatedText)
+
+	// If line counts don't match, we can't preserve timing perfectly
+	if len(translatedLines) != len(originalSyncData) {
+		s.logger.Warn("Translated lyrics line count mismatch",
+			zap.Int("original", len(originalSyncData)),
+			zap.Int("translated", len(translatedLines)))
+
+		// Return best-effort sync data
+		var syncData []LyricsLine
+		minLen := len(originalSyncData)
+		if len(translatedLines) < minLen {
+			minLen = len(translatedLines)
+		}
+
+		for i := 0; i < minLen; i++ {
+			syncData = append(syncData, LyricsLine{
+				StartTime: originalSyncData[i].StartTime,
+				EndTime:   originalSyncData[i].EndTime,
+				Text:      translatedLines[i],
+			})
+		}
+		return syncData
+	}
+
+	// Create new sync data with preserved timing
+	var syncData []LyricsLine
+	for i, line := range originalSyncData {
+		syncData = append(syncData, LyricsLine{
+			StartTime: line.StartTime,
+			EndTime:   line.EndTime,
+			Text:      translatedLines[i],
+		})
+	}
+
+	return syncData
+}
+
+// detectConcertSetlist attempts to detect the setlist from concert metadata
+func (s *LyricsService) detectConcertSetlist(ctx context.Context, request *ConcertLyricsRequest) ([]string, error) {
+	// Implementation would analyze concert metadata, title, description
+	// to extract song list. This could involve:
+	// 1. Parsing video description
+	// 2. Using AI/NLP to extract song names
+	// 3. Querying setlist databases (setlist.fm, etc.)
+
+	s.logger.Debug("Detecting concert setlist",
+		zap.Int64("media_item_id", request.MediaItemID),
+		zap.String("artist", request.Artist))
+
+	// Mock implementation - return empty list
+	return []string{}, nil
+}

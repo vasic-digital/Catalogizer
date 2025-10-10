@@ -581,9 +581,9 @@ func (s *LocalizationService) preloadTranslations(ctx context.Context, localizat
 
 		for _, phrase := range commonPhrases {
 			req := TranslationRequest{
-				Text:       phrase,
-				SourceLang: sourceLang,
-				TargetLang: targetLang,
+				Text:           phrase,
+				SourceLanguage: sourceLang,
+				TargetLanguage: targetLang,
 			}
 
 			go func(req TranslationRequest) {
@@ -591,7 +591,7 @@ func (s *LocalizationService) preloadTranslations(ctx context.Context, localizat
 				if err != nil {
 					s.logger.Debug("Failed to preload translation",
 						zap.String("phrase", req.Text),
-						zap.String("target_lang", req.TargetLang),
+						zap.String("target_lang", req.TargetLanguage),
 						zap.Error(err))
 				}
 			}(req)

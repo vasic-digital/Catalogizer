@@ -431,14 +431,14 @@ const (
 
 // Utility functions
 
-// IsLocked checks if the user account is currently locked
-func (u *User) IsLocked() bool {
-	return u.LockedUntil != nil && u.LockedUntil.After(time.Now())
+// IsAccountLocked checks if the user account is currently locked
+func (u *User) IsAccountLocked() bool {
+	return u.IsLocked || (u.LockedUntil != nil && u.LockedUntil.After(time.Now()))
 }
 
 // CanLogin checks if the user can login (active and not locked)
 func (u *User) CanLogin() bool {
-	return u.IsActive && !u.IsLocked()
+	return u.IsActive && !u.IsAccountLocked()
 }
 
 // HasPermission checks if the user has a specific permission
@@ -835,7 +835,7 @@ type PerformanceMetricsReport struct {
 
 // Supporting Types for Reports
 
-type SystemHealth struct {
+type SystemHealthScore struct {
 	Score  float64 `json:"score"`
 	Status string  `json:"status"`
 }

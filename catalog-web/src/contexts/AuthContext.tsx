@@ -10,10 +10,10 @@ interface AuthContextType {
   isLoading: boolean
   permissions: string[]
   isAdmin: boolean
-  login: (data: LoginRequest) => Promise<void>
-  register: (data: RegisterRequest) => Promise<void>
+  login: (data: LoginRequest) => Promise<any>
+  register: (data: RegisterRequest) => Promise<any>
   logout: () => Promise<void>
-  updateProfile: (data: UpdateProfileRequest) => Promise<void>
+  updateProfile: (data: UpdateProfileRequest) => Promise<any>
   changePassword: (data: ChangePasswordRequest) => Promise<void>
   hasPermission: (permission: string) => boolean
   canAccess: (resource: string, action: string) => boolean

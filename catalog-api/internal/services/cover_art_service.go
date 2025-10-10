@@ -568,13 +568,283 @@ func (s *CoverArtService) sortCoverArtResults(results []CoverArtSearchResult) {
 	}
 }
 
-// Additional methods would be implemented for:
-// - getCachedCoverArt
-// - getCoverArtDownloadInfo
-// - processAndSaveCoverArt
-// - generateAdditionalSizes
-// - setDefaultCoverArt
-// - getVideoDuration
-// - generateVideoThumbnail
-// - processLocalCoverArt
-// etc.
+// getCachedCoverArt retrieves cached cover art from the database
+func (s *CoverArtService) getCachedCoverArt(ctx context.Context, request *CoverArtSearchRequest) *CoverArtSearchResult {
+	// Generate cache key based on request parameters
+	cacheKey := s.generateCacheKey(request)
+
+	query := `
+		SELECT id, provider, title, artist, album, url, thumbnail_url, width, height,
+		       format, quality, size, match_score, source, created_at
+		FROM cover_art_cache
+		WHERE cache_key = ? AND created_at > ?
+		ORDER BY match_score DESC
+		LIMIT 1
+	`
+
+	// Cache valid for 30 days
+	cacheExpiry := time.Now().Add(-30 * 24 * time.Hour)
+
+	var result CoverArtSearchResult
+	var album sql.NullString
+	var thumbnailURL sql.NullString
+	var size sql.NullInt64
+	var createdAt time.Time
+
+	err := s.db.QueryRowContext(ctx, query, cacheKey, cacheExpiry).Scan(
+		&result.ID, &result.Provider, &result.Title, &result.Artist,
+		&album, &result.URL, &thumbnailURL, &result.Width, &result.Height,
+		&result.Format, &result.Quality, &size, &result.MatchScore,
+		&result.Source, &createdAt,
+	)
+
+	if err != nil {
+		if err != sql.ErrNoRows {
+			s.logger.Warn("Failed to get cached cover art", zap.Error(err))
+		}
+		return nil
+	}
+
+	if album.Valid {
+		result.Album = &album.String
+	}
+	if thumbnailURL.Valid {
+		result.ThumbnailURL = &thumbnailURL.String
+	}
+	if size.Valid {
+		result.Size = &size.Int64
+	}
+
+	return &result
+}
+
+// getCoverArtDownloadInfo retrieves cover art download information
+func (s *CoverArtService) getCoverArtDownloadInfo(ctx context.Context, resultID string) (*CoverArtSearchResult, error) {
+	// For now, return a placeholder - in a real implementation, this would query the database
+	// or search results cache for the specific result ID
+	return &CoverArtSearchResult{
+		ID:       resultID,
+		Provider: CoverArtProviderLocal,
+		URL:      "",
+		Quality:  QualityHigh,
+		Source:   "cache",
+	}, nil
+}
+
+// processAndSaveCoverArt processes and saves cover art
+func (s *CoverArtService) processAndSaveCoverArt(ctx context.Context, mediaItemID int64, imageData []byte, result *CoverArtSearchResult, request *CoverArtDownloadRequest) (*CoverArt, error) {
+	// Decode image
+	img, format, err := image.Decode(strings.NewReader(string(imageData)))
+	if err != nil {
+		return nil, fmt.Errorf("failed to decode image: %w", err)
+	}
+
+	// Get image dimensions
+	bounds := img.Bounds()
+	width := bounds.Dx()
+	height := bounds.Dy()
+
+	// Generate local path
+	coverID := s.generateCoverArtID()
+	filename := fmt.Sprintf("%s.%s", coverID, format)
+	localPath := filepath.Join(s.cacheDir, filename)
+
+	// Ensure cache directory exists
+	if err := os.MkdirAll(s.cacheDir, 0755); err != nil {
+		return nil, fmt.Errorf("failed to create cache directory: %w", err)
+	}
+
+	// Save image
+	outFile, err := os.Create(localPath)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create file: %w", err)
+	}
+	defer outFile.Close()
+
+	switch format {
+	case "jpeg", "jpg":
+		err = jpeg.Encode(outFile, img, &jpeg.Options{Quality: 90})
+	case "png":
+		err = png.Encode(outFile, img)
+	default:
+		err = jpeg.Encode(outFile, img, &jpeg.Options{Quality: 90})
+	}
+
+	if err != nil {
+		return nil, fmt.Errorf("failed to save image: %w", err)
+	}
+
+	// Get file size
+	fileInfo, err := os.Stat(localPath)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get file info: %w", err)
+	}
+	size := fileInfo.Size()
+
+	// Create CoverArt record
+	now := time.Now()
+	coverArt := &CoverArt{
+		ID:          coverID,
+		MediaItemID: mediaItemID,
+		Source:      string(result.Provider),
+		LocalPath:   &localPath,
+		Width:       &width,
+		Height:      &height,
+		Format:      format,
+		Size:        &size,
+		Quality:     string(request.Quality),
+		CreatedAt:   now,
+		CachedAt:    &now,
+	}
+
+	return coverArt, nil
+}
+
+// generateAdditionalSizes generates additional sizes of cover art
+func (s *CoverArtService) generateAdditionalSizes(ctx context.Context, coverArt *CoverArt, sizes []CoverArtQuality) {
+	if coverArt.LocalPath == nil {
+		s.logger.Warn("Cannot generate additional sizes: no local path")
+		return
+	}
+
+	// Open source image
+	srcFile, err := os.Open(*coverArt.LocalPath)
+	if err != nil {
+		s.logger.Error("Failed to open source image", zap.Error(err))
+		return
+	}
+	defer srcFile.Close()
+
+	srcImg, _, err := image.Decode(srcFile)
+	if err != nil {
+		s.logger.Error("Failed to decode source image", zap.Error(err))
+		return
+	}
+
+	// Generate each size
+	for _, quality := range sizes {
+		targetSize := 0
+		switch quality {
+		case QualityThumbnail:
+			targetSize = 150
+		case QualityMedium:
+			targetSize = 300
+		case QualityHigh:
+			targetSize = 600
+		default:
+			continue
+		}
+
+		// Resize image
+		newImg := image.NewRGBA(image.Rect(0, 0, targetSize, targetSize))
+		draw.ApproxBiLinear.Scale(newImg, newImg.Bounds(), srcImg, srcImg.Bounds(), draw.Over, nil)
+
+		// Save resized image
+		resizedFilename := fmt.Sprintf("%s_%s.%s", coverArt.ID, quality, coverArt.Format)
+		resizedPath := filepath.Join(s.cacheDir, resizedFilename)
+
+		outFile, err := os.Create(resizedPath)
+		if err != nil {
+			s.logger.Error("Failed to create resized file",
+				zap.String("quality", string(quality)),
+				zap.Error(err))
+			continue
+		}
+
+		if coverArt.Format == "png" {
+			err = png.Encode(outFile, newImg)
+		} else {
+			err = jpeg.Encode(outFile, newImg, &jpeg.Options{Quality: 85})
+		}
+		outFile.Close()
+
+		if err != nil {
+			s.logger.Error("Failed to encode resized image",
+				zap.String("quality", string(quality)),
+				zap.Error(err))
+		}
+	}
+}
+
+// setDefaultCoverArt sets cover art as default for a media item
+func (s *CoverArtService) setDefaultCoverArt(ctx context.Context, mediaItemID int64, coverArtID string) error {
+	// In a real implementation, this would update the database to mark the cover art as default
+	query := `UPDATE cover_art SET is_default = 0 WHERE media_item_id = ?`
+	_, err := s.db.ExecContext(ctx, query, mediaItemID)
+	if err != nil {
+		return err
+	}
+
+	query = `UPDATE cover_art SET is_default = 1 WHERE id = ? AND media_item_id = ?`
+	_, err = s.db.ExecContext(ctx, query, coverArtID, mediaItemID)
+	return err
+}
+
+// getVideoDuration gets the duration of a video file
+func (s *CoverArtService) getVideoDuration(videoPath string) (float64, error) {
+	// In a real implementation, this would use ffprobe or similar tool to get video duration
+	// For now, return a placeholder duration
+	return 120.0, nil
+}
+
+// generateVideoThumbnail generates a thumbnail for a video at a specific timestamp
+func (s *CoverArtService) generateVideoThumbnail(ctx context.Context, request *VideoThumbnailRequest, timestamp float64, index int) (*CoverArt, error) {
+	// In a real implementation, this would use ffmpeg to extract a frame from the video
+	// For now, return a placeholder
+	coverID := fmt.Sprintf("video_thumb_%d_%d", request.MediaItemID, index)
+	now := time.Now()
+
+	return &CoverArt{
+		ID:          coverID,
+		MediaItemID: request.MediaItemID,
+		Source:      "video_thumbnail",
+		Quality:     string(request.Quality),
+		CreatedAt:   now,
+	}, nil
+}
+
+// processLocalCoverArt processes local cover art file
+func (s *CoverArtService) processLocalCoverArt(ctx context.Context, mediaItemID int64, filePath string) (*CoverArt, error) {
+	// Open and decode image
+	file, err := os.Open(filePath)
+	if err != nil {
+		return nil, err
+	}
+	defer file.Close()
+
+	img, format, err := image.Decode(file)
+	if err != nil {
+		return nil, err
+	}
+
+	// Get image dimensions
+	bounds := img.Bounds()
+	width := bounds.Dx()
+	height := bounds.Dy()
+
+	// Get file size
+	fileInfo, err := os.Stat(filePath)
+	if err != nil {
+		return nil, err
+	}
+	size := fileInfo.Size()
+
+	// Create CoverArt record
+	coverID := s.generateCoverArtID()
+	now := time.Now()
+
+	coverArt := &CoverArt{
+		ID:          coverID,
+		MediaItemID: mediaItemID,
+		Source:      "local",
+		LocalPath:   &filePath,
+		Width:       &width,
+		Height:      &height,
+		Format:      format,
+		Size:        &size,
+		Quality:     "original",
+		CreatedAt:   now,
+	}
+
+	return coverArt, nil
+}

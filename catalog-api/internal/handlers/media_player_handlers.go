@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"net/http"
 	"strconv"
-	"strings"
 	"time"
 
 	"github.com/gorilla/mux"
@@ -794,7 +793,7 @@ func (h *MediaPlayerHandlers) DownloadSubtitle(w http.ResponseWriter, r *http.Re
 }
 
 func (h *MediaPlayerHandlers) TranslateSubtitle(w http.ResponseWriter, r *http.Request) {
-	var req services.TranslationRequest
+	var req services.SubtitleTranslationRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		h.sendError(w, "Invalid request body", http.StatusBadRequest)
 		return

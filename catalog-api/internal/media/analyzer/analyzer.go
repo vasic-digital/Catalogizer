@@ -50,7 +50,7 @@ type AnalysisResult struct {
 
 // QualityAnalysis represents quality analysis of media files
 type QualityAnalysis struct {
-	BestQuality    *models.QualityInfo
+	BestQuality    *mediamodels.QualityInfo
 	AvailableQualities []string
 	TotalFiles     int
 	TotalSize      int64
@@ -133,11 +133,15 @@ func (ma *MediaAnalyzer) AnalyzeDirectorySync(ctx context.Context, directoryPath
 	// Convert to detector.FileInfo
 	detectorFiles := make([]detector.FileInfo, len(files))
 	for i, file := range files {
+		extension := ""
+		if file.Extension != nil {
+			extension = *file.Extension
+		}
 		detectorFiles[i] = detector.FileInfo{
 			Name:      file.Name,
 			Path:      file.Path,
 			Size:      file.Size,
-			Extension: file.Extension,
+			Extension: extension,
 			IsDir:     file.IsDirectory,
 		}
 	}
@@ -295,7 +299,7 @@ func (ma *MediaAnalyzer) createDirectoryAnalysis(directoryPath, smbRoot string, 
 	}
 
 	// Return the created record
-	return &models.DirectoryAnalysis{
+	return &mediamodels.DirectoryAnalysis{
 		DirectoryPath:   directoryPath,
 		SmbRoot:         smbRoot,
 		ConfidenceScore: detection.Confidence,
@@ -323,7 +327,7 @@ func (ma *MediaAnalyzer) createOrUpdateMediaItem(ctx context.Context, detection 
 
 	// Create new media item
 	genreJSON, _ := json.Marshal([]string{}) // Empty for now
-	castCrewJSON, _ := json.Marshal(&models.CastCrew{})
+	castCrewJSON, _ := json.Marshal(&mediamodels.CastCrew{})
 
 	query := `
 		INSERT INTO media_items
@@ -355,7 +359,7 @@ func (ma *MediaAnalyzer) createOrUpdateMediaItem(ctx context.Context, detection 
 	}
 
 	// Return the created media item
-	mediaItem := &models.MediaItem{
+	mediaItem := &mediamodels.MediaItem{
 		ID:            mediaItemID,
 		MediaTypeID:   detection.MediaTypeID,
 		MediaType:     detection.MediaType,
@@ -377,7 +381,7 @@ func (ma *MediaAnalyzer) updateExistingMediaItem(mediaItemID int64, detection *d
 		FROM media_items WHERE id = ?
 	`
 
-	var item models.MediaItem
+	var item mediamodels.MediaItem
 	var genreJSON, castCrewJSON string
 
 	err := ma.db.QueryRow(query, mediaItemID).Scan(
@@ -515,28 +519,28 @@ func (ma *MediaAnalyzer) filterMediaFiles(files []models.FileInfo, mediaType str
 }
 
 // extractQualityFromFilename extracts quality information from filename
-func (ma *MediaAnalyzer) extractQualityFromFilename(filename string, extension *string) *models.QualityInfo {
+func (ma *MediaAnalyzer) extractQualityFromFilename(filename string, extension *string) *mediamodels.QualityInfo {
 	lower := strings.ToLower(filename)
-	quality := &models.QualityInfo{}
+	quality := &mediamodels.QualityInfo{}
 
 	// Resolution detection
 	if strings.Contains(lower, "2160p") || strings.Contains(lower, "4k") || strings.Contains(lower, "uhd") {
-		quality.Resolution = &models.Resolution{Width: 3840, Height: 2160}
+		quality.Resolution = &mediamodels.Resolution{Width: 3840, Height: 2160}
 		quality.QualityScore = 100
 		profile := "4K/UHD"
 		quality.QualityProfile = &profile
 	} else if strings.Contains(lower, "1080p") || strings.Contains(lower, "fhd") {
-		quality.Resolution = &models.Resolution{Width: 1920, Height: 1080}
+		quality.Resolution = &mediamodels.Resolution{Width: 1920, Height: 1080}
 		quality.QualityScore = 80
 		profile := "1080p"
 		quality.QualityProfile = &profile
 	} else if strings.Contains(lower, "720p") || strings.Contains(lower, "hd") {
-		quality.Resolution = &models.Resolution{Width: 1280, Height: 720}
+		quality.Resolution = &mediamodels.Resolution{Width: 1280, Height: 720}
 		quality.QualityScore = 60
 		profile := "720p"
 		quality.QualityProfile = &profile
 	} else if strings.Contains(lower, "480p") || strings.Contains(lower, "dvd") {
-		quality.Resolution = &models.Resolution{Width: 720, Height: 480}
+		quality.Resolution = &mediamodels.Resolution{Width: 720, Height: 480}
 		quality.QualityScore = 40
 		profile := "480p/DVD"
 		quality.QualityProfile = &profile
@@ -607,8 +611,8 @@ func (ma *MediaAnalyzer) extractQualityFromFilename(filename string, extension *
 }
 
 // updateMediaFiles creates or updates media file records
-func (ma *MediaAnalyzer) updateMediaFiles(mediaItemID int64, files []models.FileInfo, directoryPath, smbRoot string) ([]models.MediaFile, error) {
-	var updatedFiles []models.MediaFile
+func (ma *MediaAnalyzer) updateMediaFiles(mediaItemID int64, files []models.FileInfo, directoryPath, smbRoot string) ([]mediamodels.MediaFile, error) {
+	var updatedFiles []mediamodels.MediaFile
 
 	for _, file := range files {
 		if file.IsDirectory {
@@ -639,7 +643,7 @@ func (ma *MediaAnalyzer) updateMediaFiles(mediaItemID int64, files []models.File
 			continue
 		}
 
-		mediaFile := models.MediaFile{
+		mediaFile := mediamodels.MediaFile{
 			MediaItemID:    mediaItemID,
 			FilePath:       file.Path,
 			SmbRoot:        smbRoot,

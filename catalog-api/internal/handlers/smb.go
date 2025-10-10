@@ -2,8 +2,8 @@ package handlers
 
 import (
 	"catalog-api/internal/smb"
+	"errors"
 	"net/http"
-	"strconv"
 	"time"
 
 	"github.com/gin-gonic/gin"
@@ -398,7 +398,7 @@ func (h *SMBHandler) testSMBConnection(source *smb.SMBSource) error {
 
 	// Simulate occasional failures for testing
 	if time.Now().Unix()%10 == 0 {
-		return gin.Error{Err: gin.E{}, Type: gin.ErrorTypePublic, Meta: "Connection timeout"}
+		return errors.New("Connection timeout")
 	}
 
 	return nil

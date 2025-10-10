@@ -281,7 +281,7 @@ func (s *MusicPlayerService) PlayTrack(ctx context.Context, req *PlayTrackReques
 		Queue:             []MusicTrack{*track},
 		QueueIndex:        0,
 		PlayMode:          req.PlayMode,
-		RepeatMode:        RepeatNone,
+		RepeatMode:        RepeatModeOff,
 		ShuffleEnabled:    false,
 		Volume:            1.0,
 		IsMuted:           false,
@@ -289,7 +289,7 @@ func (s *MusicPlayerService) PlayTrack(ctx context.Context, req *PlayTrackReques
 		CrossfadeDuration: 3000,
 		EqualizerPreset:   "flat",
 		EqualizerBands:    make(map[string]float64),
-		PlaybackState:     StatePlaying,
+		PlaybackState:     PlaybackStatePlaying,
 		Position:          0,
 		Duration:          track.Duration,
 		PlaybackQuality:   req.Quality,
@@ -370,7 +370,7 @@ func (s *MusicPlayerService) PlayAlbum(ctx context.Context, req *PlayAlbumReques
 		Queue:             album.Tracks,
 		QueueIndex:        startIndex,
 		PlayMode:          PlayModeAlbum,
-		RepeatMode:        RepeatNone,
+		RepeatMode:        RepeatModeOff,
 		ShuffleEnabled:    req.Shuffle,
 		Volume:            1.0,
 		IsMuted:           false,
@@ -378,7 +378,7 @@ func (s *MusicPlayerService) PlayAlbum(ctx context.Context, req *PlayAlbumReques
 		CrossfadeDuration: 3000,
 		EqualizerPreset:   "flat",
 		EqualizerBands:    make(map[string]float64),
-		PlaybackState:     StatePlaying,
+		PlaybackState:     PlaybackStatePlaying,
 		Position:          0,
 		Duration:          album.Tracks[startIndex].Duration,
 		PlaybackQuality:   req.Quality,
@@ -443,7 +443,7 @@ func (s *MusicPlayerService) PlayArtist(ctx context.Context, req *PlayArtistRequ
 		Queue:             tracks,
 		QueueIndex:        0,
 		PlayMode:          PlayModeArtist,
-		RepeatMode:        RepeatNone,
+		RepeatMode:        RepeatModeOff,
 		ShuffleEnabled:    req.Shuffle,
 		Volume:            1.0,
 		IsMuted:           false,
@@ -451,7 +451,7 @@ func (s *MusicPlayerService) PlayArtist(ctx context.Context, req *PlayArtistRequ
 		CrossfadeDuration: 3000,
 		EqualizerPreset:   "flat",
 		EqualizerBands:    make(map[string]float64),
-		PlaybackState:     StatePlaying,
+		PlaybackState:     PlaybackStatePlaying,
 		Position:          0,
 		Duration:          tracks[0].Duration,
 		PlaybackQuality:   req.Quality,
@@ -568,7 +568,7 @@ func (s *MusicPlayerService) NextTrack(ctx context.Context, sessionID string) (*
 
 	nextIndex := s.getNextTrackIndex(session)
 	if nextIndex == -1 {
-		session.PlaybackState = StateStopped
+		session.PlaybackState = PlaybackStateStopped
 		return session, nil
 	}
 
@@ -840,7 +840,7 @@ func (s *MusicPlayerService) getTracks(ctx context.Context, trackIDs []int64) ([
 		}
 
 		if bpm.Valid {
-			bpmInt := int(bmp.Int64)
+			bpmInt := int(bpm.Int64)
 			track.BPM = &bpmInt
 		}
 		if key.Valid {
@@ -1179,9 +1179,9 @@ func (s *MusicPlayerService) getNextTrackIndex(session *MusicPlaybackSession) in
 	}
 
 	switch session.RepeatMode {
-	case RepeatTrack:
+	case RepeatModeTrack:
 		return session.QueueIndex
-	case RepeatPlaylist, RepeatAlbum:
+	case RepeatModeAll, RepeatModeAlbum:
 		if session.QueueIndex < len(session.Queue)-1 {
 			return session.QueueIndex + 1
 		}
@@ -1203,7 +1203,7 @@ func (s *MusicPlayerService) getPreviousTrackIndex(session *MusicPlaybackSession
 		return session.QueueIndex - 1
 	}
 
-	if session.RepeatMode == RepeatPlaylist || session.RepeatMode == RepeatAlbum {
+	if session.RepeatMode == RepeatModeAll || session.RepeatMode == RepeatModeAlbum {
 		return len(session.Queue) - 1
 	}
 

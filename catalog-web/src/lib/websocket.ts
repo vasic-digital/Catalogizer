@@ -181,7 +181,7 @@ export const useWebSocket = () => {
 
   const connect = useCallback(() => {
     if (!wsRef.current) {
-      const token = localStorage.getItem('auth_token')
+      const token = localStorage.getItem('auth_token') || undefined
       wsRef.current = new WebSocketClient(token)
     }
 

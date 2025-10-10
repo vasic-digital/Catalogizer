@@ -318,7 +318,12 @@ func (h *LocalizationHandlers) ValidateConfiguration(w http.ResponseWriter, r *h
 		return
 	}
 
-	validation := h.localizationService.ValidateConfigurationJSON(r.Context(), req.ConfigJSON)
+	validation, err := h.localizationService.ValidateConfigurationJSON(r.Context(), req.ConfigJSON)
+	if err != nil {
+		h.logger.Error("Failed to validate configuration", zap.Error(err))
+		h.sendError(w, "Failed to validate configuration", http.StatusInternalServerError)
+		return
+	}
 
 	h.sendSuccess(w, validation)
 }
@@ -368,7 +373,20 @@ func (h *LocalizationHandlers) EditConfiguration(w http.ResponseWriter, r *http.
 func (h *LocalizationHandlers) GetConfigurationTemplates(w http.ResponseWriter, r *http.Request) {
 	h.logger.Debug("Getting configuration templates")
 
-	templates := h.localizationService.GetConfigurationTemplates(r.Context())
+	// Get all template types
+	templateTypes := []string{"localization", "media", "playlists", "full"}
+	templates := make(map[string]interface{})
+
+	for _, templateType := range templateTypes {
+		template, err := h.localizationService.GetConfigurationTemplate(r.Context(), templateType)
+		if err != nil {
+			h.logger.Warn("Failed to get template",
+				zap.String("type", templateType),
+				zap.Error(err))
+			continue
+		}
+		templates[templateType] = template
+	}
 
 	h.sendSuccess(w, map[string]interface{}{
 		"templates": templates,

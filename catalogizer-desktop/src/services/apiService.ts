@@ -1,4 +1,4 @@
-import { invoke } from '@tauri-apps/api/tauri';
+import { invoke } from '@tauri-apps/api/core';
 import {
   MediaItem,
   MediaSearchRequest,
@@ -22,24 +22,24 @@ class ApiService {
       headers?: Record<string, string>;
     } = {}
   ): Promise<T> {
-    const config = await invoke('get_config');
+    const config = await invoke<any>('get_config');
 
     if (!config.server_url) {
       throw new Error('Server URL not configured');
     }
 
     const url = `${config.server_url}/api${endpoint}`;
-    const headers = {
+    const headers: Record<string, string> = {
       'Content-Type': 'application/json',
       ...options.headers,
     };
 
     // Add auth token if available
     if (config.auth_token) {
-      headers.Authorization = `Bearer ${config.auth_token}`;
+      headers['Authorization'] = `Bearer ${config.auth_token}`;
     }
 
-    const response = await invoke('make_http_request', {
+    const response = await invoke<string>('make_http_request', {
       url,
       method: options.method || 'GET',
       headers,
@@ -177,9 +177,9 @@ class ApiService {
     arch: string;
   }> {
     const [version, platform, arch] = await Promise.all([
-      invoke('get_app_version'),
-      invoke('get_platform'),
-      invoke('get_arch'),
+      invoke<string>('get_app_version'),
+      invoke<string>('get_platform'),
+      invoke<string>('get_arch'),
     ]);
 
     return { version, platform, arch };

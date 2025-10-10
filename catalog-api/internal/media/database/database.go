@@ -6,7 +6,7 @@ import (
 	"io/ioutil"
 	"path/filepath"
 
-	_ "github.com/mutecomm/go-sqlcipher/v4"
+	_ "github.com/mattn/go-sqlite3"
 	"go.uber.org/zap"
 )
 

@@ -14,7 +14,7 @@ import {
   List,
   SlidersHorizontal,
   Download,
-  Refresh,
+  RefreshCw,
   ChevronLeft,
   ChevronRight
 } from 'lucide-react'
@@ -199,7 +199,7 @@ export const MediaBrowser: React.FC = () => {
             onClick={() => refetch()}
             disabled={isLoading}
           >
-            <Refresh className={`h-4 w-4 ${isLoading ? 'animate-spin' : ''}`} />
+            <RefreshCw className={`h-4 w-4 ${isLoading ? 'animate-spin' : ''}`} />
           </Button>
         </div>
       </div>

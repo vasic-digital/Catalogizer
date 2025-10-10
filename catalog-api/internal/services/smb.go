@@ -203,7 +203,7 @@ func (s *SMBService) UploadFile(hostName, localPath, remotePath string) error {
 }
 
 func (s *SMBService) CopyFile(sourceHost, sourcePath, destHost, destPath string) error {
-	ctx, cancel := context.WithTimeout(context.Background(), time.Duration(s.config.SMB.Timeout)*time.Second)
+	_, cancel := context.WithTimeout(context.Background(), time.Duration(s.config.SMB.Timeout)*time.Second)
 	defer cancel()
 
 	// Create a temporary file for the transfer

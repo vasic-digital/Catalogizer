@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { Routes, Route, Navigate } from "react-router-dom";
-import { invoke } from "@tauri-apps/api/tauri";
+import { invoke } from "@tauri-apps/api/core";
 import { useAuthStore } from "./stores/authStore";
 import { useConfigStore } from "./stores/configStore";
 import Layout from "./components/Layout";
@@ -24,7 +24,7 @@ function App() {
         await loadConfig();
 
         // Get stored auth token
-        const config = await invoke("get_config");
+        const config = await invoke<any>("get_config");
         if (config.auth_token) {
           setAuthToken(config.auth_token);
         }

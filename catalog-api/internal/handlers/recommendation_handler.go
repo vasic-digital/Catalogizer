@@ -401,7 +401,6 @@ type TrendItem struct {
 // Helper functions
 func extractLinkContext(r *http.Request) *services.LinkContext {
 	context := &services.LinkContext{
-		UserAgent: r.Header.Get("User-Agent"),
 		ReferrerPage: r.Header.Get("Referer"),
 	}
 

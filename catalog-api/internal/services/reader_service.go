@@ -396,7 +396,7 @@ func (s *ReaderService) StartReading(ctx context.Context, req *StartReadingReque
 }
 
 // Update reading position
-func (s *ReaderService) UpdatePosition(ctx context.Context, req *UpdatePositionRequest) (*ReadingSession, error) {
+func (s *ReaderService) UpdatePosition(ctx context.Context, req *ReaderUpdatePositionRequest) (*ReadingSession, error) {
 	s.logger.Debug("Updating reading position",
 		zap.String("session_id", req.SessionID),
 		zap.Float64("percent_complete", req.Position.PercentComplete))

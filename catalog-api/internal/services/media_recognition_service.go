@@ -269,12 +269,10 @@ func (s *MediaRecognitionService) RecognizeMedia(ctx context.Context, req *Media
 
 	// Check cache first
 	cacheKey := fmt.Sprintf("media_recognition:%s", req.FileHash)
-	if cached, err := s.cacheService.Get(ctx, cacheKey); err == nil {
-		var result MediaRecognitionResult
-		if err := json.Unmarshal([]byte(cached), &result); err == nil {
-			s.logger.Debug("Found cached recognition result", zap.String("media_id", result.MediaID))
-			return &result, nil
-		}
+	var result MediaRecognitionResult
+	if found, err := s.cacheService.Get(ctx, cacheKey, &result); err == nil && found {
+		s.logger.Debug("Found cached recognition result", zap.String("media_id", result.MediaID))
+		return &result, nil
 	}
 
 	// Determine media type if not provided
@@ -612,14 +610,22 @@ func (s *MediaRecognitionService) translateMetadata(ctx context.Context, result 
 		translation := Translation{Language: lang}
 
 		// Translate title
-		if translatedTitle, err := s.translationService.TranslateText(ctx, result.Title, result.Language, lang); err == nil {
-			translation.Title = translatedTitle
+		if translatedTitle, err := s.translationService.TranslateText(ctx, TranslationRequest{
+			Text:           result.Title,
+			SourceLanguage: result.Language,
+			TargetLanguage: lang,
+		}); err == nil {
+			translation.Title = translatedTitle.TranslatedText
 		}
 
 		// Translate description
 		if result.Description != "" {
-			if translatedDesc, err := s.translationService.TranslateText(ctx, result.Description, result.Language, lang); err == nil {
-				translation.Description = translatedDesc
+			if translatedDesc, err := s.translationService.TranslateText(ctx, TranslationRequest{
+				Text:           result.Description,
+				SourceLanguage: result.Language,
+				TargetLanguage: lang,
+			}); err == nil {
+				translation.Description = translatedDesc.TranslatedText
 			}
 		}
 
@@ -627,8 +633,12 @@ func (s *MediaRecognitionService) translateMetadata(ctx context.Context, result 
 		if len(result.Genres) > 0 {
 			var translatedGenres []string
 			for _, genre := range result.Genres {
-				if translatedGenre, err := s.translationService.TranslateText(ctx, genre, result.Language, lang); err == nil {
-					translatedGenres = append(translatedGenres, translatedGenre)
+				if translatedGenre, err := s.translationService.TranslateText(ctx, TranslationRequest{
+					Text:           genre,
+					SourceLanguage: result.Language,
+					TargetLanguage: lang,
+				}); err == nil {
+					translatedGenres = append(translatedGenres, translatedGenre.TranslatedText)
 				}
 			}
 			translation.Genres = translatedGenres

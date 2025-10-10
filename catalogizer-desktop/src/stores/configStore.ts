@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import { invoke } from '@tauri-apps/api/tauri';
+import { invoke } from '@tauri-apps/api/core';
 import { AppConfig, Theme } from '../types';
 
 interface ConfigState {
@@ -15,7 +15,7 @@ interface ConfigState {
   resetConfig: () => Promise<void>;
 }
 
-export const useConfigStore = create<ConfigState>((set, get) => ({
+export const useConfigStore = create<ConfigState>((set) => ({
   serverUrl: null,
   theme: 'dark',
   autoStart: false,

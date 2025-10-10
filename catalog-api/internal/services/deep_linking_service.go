@@ -3,7 +3,7 @@ package services
 import (
 	"context"
 	"fmt"
-	"net/url"
+	neturl "net/url"
 	"strings"
 	"time"
 
@@ -212,7 +212,7 @@ func (dls *DeepLinkingService) generateWebLink(req *DeepLinkRequest, trackingID 
 	parameters["track"] = trackingID
 
 	// Build URL with parameters
-	u, err := url.Parse(baseURL + path)
+	u, err := neturl.Parse(baseURL + path)
 	if err != nil {
 		return nil, err
 	}
@@ -270,7 +270,7 @@ func (dls *DeepLinkingService) generateAndroidLink(req *DeepLinkRequest, trackin
 	if len(parameters) > 0 {
 		query := make([]string, 0, len(parameters))
 		for key, value := range parameters {
-			query = append(query, fmt.Sprintf("%s=%s", key, url.QueryEscape(value)))
+			query = append(query, fmt.Sprintf("%s=%s", key, neturl.QueryEscape(value)))
 		}
 		url += "?" + strings.Join(query, "&")
 	}
@@ -326,7 +326,7 @@ func (dls *DeepLinkingService) generateIOSLink(req *DeepLinkRequest, trackingID 
 	if len(parameters) > 0 {
 		query := make([]string, 0, len(parameters))
 		for key, value := range parameters {
-			query = append(query, fmt.Sprintf("%s=%s", key, url.QueryEscape(value)))
+			query = append(query, fmt.Sprintf("%s=%s", key, neturl.QueryEscape(value)))
 		}
 		url += "?" + strings.Join(query, "&")
 	}
@@ -381,7 +381,7 @@ func (dls *DeepLinkingService) generateDesktopLink(req *DeepLinkRequest, trackin
 	if len(parameters) > 0 {
 		query := make([]string, 0, len(parameters))
 		for key, value := range parameters {
-			query = append(query, fmt.Sprintf("%s=%s", key, url.QueryEscape(value)))
+			query = append(query, fmt.Sprintf("%s=%s", key, neturl.QueryEscape(value)))
 		}
 		url += "?" + strings.Join(query, "&")
 	}
@@ -428,7 +428,7 @@ func (dls *DeepLinkingService) generateFallbackURL(req *DeepLinkRequest) string 
 
 func (dls *DeepLinkingService) generateQRCodeURL(link string) string {
 	// Use a QR code generation service
-	return fmt.Sprintf("https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=%s", url.QueryEscape(link))
+	return fmt.Sprintf("https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=%s", neturl.QueryEscape(link))
 }
 
 func (dls *DeepLinkingService) generateTrackingID() string {
@@ -449,23 +449,12 @@ func (dls *DeepLinkingService) getSupportedApps() []string {
 func (dls *DeepLinkingService) getRequiredFeatures(req *DeepLinkRequest) []string {
 	var features []string
 
-	switch req.MediaMetadata.MediaType {
-	case models.MediaTypeVideo:
-		features = append(features, "video_playback")
-		if req.Action == "play" {
-			features = append(features, "fullscreen_video")
-		}
-	case models.MediaTypeAudio:
-		features = append(features, "audio_playback")
-		if req.Action == "play" {
-			features = append(features, "background_audio")
-		}
-	case models.MediaTypeBook:
-		features = append(features, "pdf_reader", "epub_reader")
-	case models.MediaTypeGame:
-		features = append(features, "external_app_launch")
-	case models.MediaTypeSoftware:
-		features = append(features, "external_app_launch")
+	// Note: MediaMetadata doesn't currently have MediaType field
+	// Features are determined based on action for now
+	// TODO: Add MediaType field to MediaMetadata struct if needed
+
+	if req.Action == "play" {
+		features = append(features, "media_playback")
 	}
 
 	if req.Action == "download" {

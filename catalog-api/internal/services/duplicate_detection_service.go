@@ -2,19 +2,11 @@ package services
 
 import (
 	"context"
-	"crypto/md5"
-	"crypto/sha256"
 	"database/sql"
-	"encoding/hex"
-	"encoding/json"
-	"fmt"
 	"math"
 	"regexp"
-	"sort"
-	"strconv"
 	"strings"
 	"time"
-	"unicode"
 
 	"go.uber.org/zap"
 )

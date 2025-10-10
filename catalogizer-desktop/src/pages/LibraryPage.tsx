@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
-import { Grid, List, Filter, Search, Play, Star } from "lucide-react";
+import { Grid, List, Search, Play, Star } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { MediaItem, MediaSearchRequest, MediaType, SortOption, SortOrder } from "../types";
 import { apiService } from "../services/apiService";

@@ -5,9 +5,7 @@ import (
 	"context"
 	"crypto/md5"
 	"fmt"
-	"io"
 	"path/filepath"
-	"strconv"
 	"strings"
 	"time"
 

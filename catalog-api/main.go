@@ -51,7 +51,12 @@ func main() {
 	}
 
 	// Initialize database
-	db, err := sql.Open("sqlite3", cfg.Database.Path)
+	// Use the Database field as the path for SQLite
+	dbPath := cfg.Database.Database
+	if dbPath == "" {
+		dbPath = "./data/catalogizer.db" // Default path
+	}
+	db, err := sql.Open("sqlite3", dbPath)
 	if err != nil {
 		log.Fatal("Failed to connect to database:", err)
 	}
@@ -61,12 +66,14 @@ func main() {
 	catalogService := services.NewCatalogService(cfg, logger)
 	catalogService.SetDB(db)
 	fileSystemService := services.NewFileSystemService(cfg, logger)
+	_ = fileSystemService // Will be used in future implementations
+	smbService := services.NewSMBService(cfg, logger)
 	smbDiscoveryService := services.NewSMBDiscoveryService(logger)
 
 	// Initialize handlers
-	catalogHandler := handlers.NewCatalogHandler(catalogService, fileSystemService, logger)
-	downloadHandler := handlers.NewDownloadHandler(catalogService, fileSystemService, cfg.Catalog.TempDir, cfg.Catalog.MaxArchiveSize, cfg.Catalog.DownloadChunkSize, logger)
-	copyHandler := handlers.NewCopyHandler(catalogService, fileSystemService, cfg.Catalog.TempDir, logger)
+	catalogHandler := handlers.NewCatalogHandler(catalogService, smbService, logger)
+	downloadHandler := handlers.NewDownloadHandler(catalogService, smbService, cfg.Catalog.TempDir, cfg.Catalog.MaxArchiveSize, cfg.Catalog.DownloadChunkSize, logger)
+	copyHandler := handlers.NewCopyHandler(catalogService, smbService, cfg.Catalog.TempDir, logger)
 	smbDiscoveryHandler := handlers.NewSMBDiscoveryHandler(smbDiscoveryService, logger)
 
 	// Setup Gin router

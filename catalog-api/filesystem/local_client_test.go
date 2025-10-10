@@ -1,11 +1,11 @@
 package filesystem
 
 import (
+	"bytes"
 	"context"
 	"os"
 	"path/filepath"
 	"testing"
-	"time"
 )
 
 func TestLocalClient_Connect(t *testing.T) {
@@ -93,7 +93,7 @@ func TestLocalClient_WriteFile(t *testing.T) {
 	testContent := "Hello, World!"
 	testPath := "test.txt"
 
-	err = client.WriteFile(context.Background(), testPath, []byte(testContent))
+	err = client.WriteFile(context.Background(), testPath, bytes.NewReader([]byte(testContent)))
 	if err != nil {
 		t.Errorf("WriteFile failed: %v", err)
 	}

@@ -9,12 +9,13 @@
 2. [Media Management APIs](#media-management-apis)
 3. [Analytics APIs](#analytics-apis)
 4. [Collections & Favorites APIs](#collections--favorites-apis)
-5. [Advanced Features APIs](#advanced-features-apis)
-6. [Administration APIs](#administration-apis)
-7. [WebSocket APIs](#websocket-apis)
-8. [Error Handling](#error-handling)
-9. [Rate Limiting](#rate-limiting)
-10. [SDK Examples](#sdk-examples)
+5. [Storage Operations APIs](#storage-operations-apis)
+6. [Advanced Features APIs](#advanced-features-apis)
+7. [Administration APIs](#administration-apis)
+8. [WebSocket APIs](#websocket-apis)
+9. [Error Handling](#error-handling)
+10. [Rate Limiting](#rate-limiting)
+11. [SDK Examples](#sdk-examples)
 
 ---
 
@@ -448,6 +449,249 @@ Returns the actual media file with appropriate headers.
 
 ### Remove Favorite
 **DELETE** `/api/favorites/{id}`
+
+---
+
+## 🗄️ Storage Operations APIs
+
+### Get Storage Roots
+**GET** `/api/v1/storage/roots`
+
+Retrieves all available storage locations configured in the system.
+
+![Storage Roots](../screenshots/api/storage-roots.png)
+*Available storage root directories*
+
+**Response:**
+```json
+{
+  "success": true,
+  "roots": [
+    {
+      "id": "local",
+      "name": "Local Storage",
+      "path": "/data/storage",
+      "protocol": "local"
+    },
+    {
+      "id": "smb-nas1",
+      "name": "NAS SMB Storage",
+      "path": "smb://192.168.1.100/shared",
+      "protocol": "smb"
+    },
+    {
+      "id": "ftp-server",
+      "name": "FTP Server",
+      "path": "ftp://ftp.example.com/files",
+      "protocol": "ftp"
+    },
+    {
+      "id": "nfs-storage",
+      "name": "NFS Storage",
+      "path": "/mnt/nfs/export",
+      "protocol": "nfs"
+    },
+    {
+      "id": "webdav-cloud",
+      "name": "WebDAV Cloud Storage",
+      "path": "https://cloud.example.com/webdav",
+      "protocol": "webdav"
+    }
+  ]
+}
+```
+
+### List Storage Path
+**GET** `/api/v1/storage/list/*path?storage_id={storage_id}`
+
+Lists files and directories in a specific storage path.
+
+![Storage List](../screenshots/api/storage-list.png)
+*Directory listing from storage*
+
+**Parameters:**
+- `path` (required): The path to list (captured from URL)
+- `storage_id` (required, query): The storage root identifier
+
+**Example Request:**
+```bash
+curl "http://localhost:8080/api/v1/storage/list/documents?storage_id=local"
+```
+
+**Response:**
+```json
+{
+  "success": true,
+  "path": "/documents",
+  "storage_id": "local",
+  "files": [
+    {
+      "name": "report.pdf",
+      "path": "/documents/report.pdf",
+      "size": 1048576,
+      "is_directory": false,
+      "modified_time": "2023-10-01T12:00:00Z",
+      "mime_type": "application/pdf"
+    },
+    {
+      "name": "images",
+      "path": "/documents/images",
+      "size": 0,
+      "is_directory": true,
+      "modified_time": "2023-10-01T10:00:00Z",
+      "mime_type": ""
+    }
+  ],
+  "total_count": 2
+}
+```
+
+### Copy to Storage
+**POST** `/api/v1/copy/storage`
+
+Copies a file to a storage location. Supports copying between different storage protocols (local, SMB, FTP, NFS, WebDAV).
+
+![Copy to Storage](../screenshots/api/copy-storage.png)
+*File copy operation interface*
+
+**Request Body:**
+```json
+{
+  "source_path": "/tmp/upload/document.pdf",
+  "dest_path": "/documents/archive/document.pdf",
+  "storage_id": "local",
+  "overwrite": false
+}
+```
+
+**Request Fields:**
+- `source_path` (required): Source file path
+- `dest_path` (required): Destination file path in storage
+- `storage_id` (required): Target storage root identifier
+- `overwrite` (optional): Whether to overwrite existing files (default: false)
+
+**Response:**
+```json
+{
+  "success": true,
+  "message": "File copied to storage successfully",
+  "source": "/tmp/upload/document.pdf",
+  "destination": "/documents/archive/document.pdf",
+  "storage_id": "local",
+  "bytes_copied": 1048576
+}
+```
+
+**Error Response:**
+```json
+{
+  "success": false,
+  "error": "File already exists at destination",
+  "code": "FILE_EXISTS",
+  "details": {
+    "destination": "/documents/archive/document.pdf",
+    "suggestion": "Set overwrite to true to replace existing file"
+  }
+}
+```
+
+### Supported Storage Protocols
+
+The FileSystem Service provides unified access to multiple storage protocols:
+
+#### Local Filesystem
+Direct filesystem access for local storage operations.
+
+**Configuration Example:**
+```json
+{
+  "id": "local-storage",
+  "name": "Local Storage",
+  "protocol": "local",
+  "enabled": true,
+  "settings": {
+    "base_path": "/data/storage"
+  }
+}
+```
+
+#### SMB (Server Message Block)
+Windows file sharing protocol for network storage.
+
+**Configuration Example:**
+```json
+{
+  "id": "smb-nas",
+  "name": "SMB NAS Storage",
+  "protocol": "smb",
+  "enabled": true,
+  "settings": {
+    "host": "192.168.1.100",
+    "port": 445,
+    "share": "shared",
+    "username": "user",
+    "password": "password",
+    "domain": "WORKGROUP"
+  }
+}
+```
+
+#### FTP (File Transfer Protocol)
+Remote file transfer over FTP.
+
+**Configuration Example:**
+```json
+{
+  "id": "ftp-server",
+  "name": "FTP Server",
+  "protocol": "ftp",
+  "enabled": true,
+  "settings": {
+    "host": "ftp.example.com",
+    "port": 21,
+    "username": "ftpuser",
+    "password": "ftppass",
+    "path": "/files"
+  }
+}
+```
+
+#### NFS (Network File System)
+Unix/Linux network file sharing.
+
+**Configuration Example:**
+```json
+{
+  "id": "nfs-storage",
+  "name": "NFS Storage",
+  "protocol": "nfs",
+  "enabled": true,
+  "settings": {
+    "host": "nfs.example.com",
+    "path": "/export/data",
+    "mount_point": "/mnt/nfs",
+    "options": "vers=3,tcp"
+  }
+}
+```
+
+#### WebDAV
+HTTP-based file access protocol.
+
+**Configuration Example:**
+```json
+{
+  "id": "webdav-cloud",
+  "name": "WebDAV Cloud Storage",
+  "protocol": "webdav",
+  "enabled": true,
+  "settings": {
+    "url": "https://cloud.example.com/webdav",
+    "username": "user",
+    "password": "password"
+  }
+}
+```
 
 ---
 

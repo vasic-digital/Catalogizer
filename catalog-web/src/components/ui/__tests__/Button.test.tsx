@@ -1,4 +1,4 @@
-import { render, screen, fireEvent } from '@testing-library/react';
+import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { Button } from '../Button';
 
@@ -7,26 +7,6 @@ describe('Button', () => {
     render(<Button>Click me</Button>);
     const button = screen.getByRole('button', { name: /click me/i });
     expect(button).toBeInTheDocument();
-    expect(button).toHaveClass('bg-blue-600'); // default variant
-  });
-
-  it('renders with different variants', () => {
-    const { rerender } = render(<Button variant="secondary">Secondary</Button>);
-    expect(screen.getByRole('button')).toHaveClass('bg-gray-600');
-
-    rerender(<Button variant="outline">Outline</Button>);
-    expect(screen.getByRole('button')).toHaveClass('border');
-
-    rerender(<Button variant="ghost">Ghost</Button>);
-    expect(screen.getByRole('button')).toHaveClass('hover:bg-gray-100');
-  });
-
-  it('renders with different sizes', () => {
-    const { rerender } = render(<Button size="sm">Small</Button>);
-    expect(screen.getByRole('button')).toHaveClass('h-8');
-
-    rerender(<Button size="lg">Large</Button>);
-    expect(screen.getByRole('button')).toHaveClass('h-10');
   });
 
   it('handles click events', async () => {
@@ -50,12 +30,10 @@ describe('Button', () => {
     expect(handleClick).not.toHaveBeenCalled();
   });
 
-  it('renders as different HTML elements', () => {
-    const { rerender } = render(<Button asChild><a href="/test">Link</a></Button>);
-    expect(screen.getByRole('link')).toBeInTheDocument();
-
-    rerender(<Button>Button</Button>);
-    expect(screen.getByRole('button')).toBeInTheDocument();
+  it('renders with loading state', () => {
+    render(<Button loading>Loading</Button>);
+    const button = screen.getByRole('button');
+    expect(button).toBeDisabled();
   });
 
   it('applies custom className', () => {

@@ -35,7 +35,6 @@ export default function MediaDetailPage() {
   }
 
   const posterUrl = media.external_metadata?.[0]?.poster_url || media.cover_image;
-  const backdropUrl = media.external_metadata?.[0]?.backdrop_url;
 
   return (
     <div className="min-h-screen bg-background">

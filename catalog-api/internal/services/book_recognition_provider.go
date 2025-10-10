@@ -772,18 +772,18 @@ func (p *BookRecognitionProvider) convertGoogleBook(book GoogleBookItem) *MediaR
 	// Get cover images
 	if volumeInfo.ImageLinks.Thumbnail != "" {
 		result.CoverArt = append(result.CoverArt, models.CoverArtResult{
-			URL:      volumeInfo.ImageLinks.Thumbnail,
-			Type:     "cover",
-			Size:     "medium",
-			Provider: "Google Books",
+			ID:      "google_books_thumbnail",
+			URL:     volumeInfo.ImageLinks.Thumbnail,
+			Quality: "medium",
+			Source:  "Google Books",
 		})
 	}
 	if volumeInfo.ImageLinks.SmallThumbnail != "" {
 		result.CoverArt = append(result.CoverArt, models.CoverArtResult{
-			URL:      volumeInfo.ImageLinks.SmallThumbnail,
-			Type:     "cover",
-			Size:     "small",
-			Provider: "Google Books",
+			ID:      "google_books_small",
+			URL:     volumeInfo.ImageLinks.SmallThumbnail,
+			Quality: "small",
+			Source:  "Google Books",
 		})
 	}
 
@@ -915,10 +915,10 @@ func (p *BookRecognitionProvider) convertOpenLibraryBook(doc OpenLibraryDocument
 	if doc.CoverID > 0 {
 		coverURL := fmt.Sprintf("https://covers.openlibrary.org/b/id/%d-L.jpg", doc.CoverID)
 		result.CoverArt = append(result.CoverArt, models.CoverArtResult{
-			URL:      coverURL,
-			Type:     "cover",
-			Size:     "large",
-			Provider: "Open Library",
+			ID:      fmt.Sprintf("open_library_%d", doc.CoverID),
+			URL:     coverURL,
+			Quality: "large",
+			Source:  "Open Library",
 		})
 	}
 

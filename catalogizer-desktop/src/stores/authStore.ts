@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import { invoke } from '@tauri-apps/api/tauri';
+import { invoke } from '@tauri-apps/api/core';
 import { User } from '../types';
 
 interface AuthState {
@@ -7,12 +7,14 @@ interface AuthState {
   isAuthenticated: boolean;
   isLoading: boolean;
   error: string | null;
+  serverUrl: string | null;
 
-  login: (username: string, password: string) -> Promise<void>;
-  logout: () -> Promise<void>;
-  setAuthToken: (token: string) -> void;
-  clearAuth: () -> void;
-  checkAuthStatus: () -> Promise<void>;
+  login: (username: string, password: string) => Promise<void>;
+  logout: () => Promise<void>;
+  setAuthToken: (token: string) => void;
+  clearAuth: () => void;
+  checkAuthStatus: () => Promise<void>;
+  setServerUrl: (url: string) => void;
 }
 
 export const useAuthStore = create<AuthState>((set, get) => ({
@@ -20,12 +22,13 @@ export const useAuthStore = create<AuthState>((set, get) => ({
   isAuthenticated: false,
   isLoading: false,
   error: null,
+  serverUrl: null,
 
-  login: async (username: string, password: string) -> {
+  login: async (username: string, password: string) => {
     set({ isLoading: true, error: null });
 
     try {
-      const response = await invoke('make_http_request', {
+      const response = await invoke<string>('make_http_request', {
         url: `${get().serverUrl}/api/auth/login`,
         method: 'POST',
         headers: {
@@ -55,14 +58,14 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     }
   },
 
-  logout: async () -> {
+  logout: async () => {
     try {
       // Clear auth token from storage
       await invoke('clear_auth_token');
 
       // Optionally call logout endpoint
       try {
-        await invoke('make_http_request', {
+        await invoke<string>('make_http_request', {
           url: `${get().serverUrl}/api/auth/logout`,
           method: 'POST',
           headers: {},
@@ -81,12 +84,12 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     }
   },
 
-  setAuthToken: (token: string) -> {
+  setAuthToken: (_token: string) => {
     // This is called when loading stored token on app start
     set({ isAuthenticated: true });
   },
 
-  clearAuth: () -> {
+  clearAuth: () => {
     set({
       user: null,
       isAuthenticated: false,
@@ -94,15 +97,15 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     });
   },
 
-  checkAuthStatus: async () -> {
+  checkAuthStatus: async () => {
     try {
-      const config = await invoke('get_config');
+      const config = await invoke<any>('get_config');
       if (!config.auth_token || !config.server_url) {
         set({ isAuthenticated: false });
         return;
       }
 
-      const response = await invoke('make_http_request', {
+      const response = await invoke<string>('make_http_request', {
         url: `${config.server_url}/api/auth/status`,
         method: 'GET',
         headers: {
@@ -126,5 +129,9 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       set({ isAuthenticated: false });
       await invoke('clear_auth_token');
     }
+  },
+
+  setServerUrl: (url: string) => {
+    set({ serverUrl: url });
   },
 }));

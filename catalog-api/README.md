@@ -112,8 +112,30 @@ A comprehensive REST API for browsing, searching, and recognizing media in multi
 - `POST /api/v1/copy/storage` - Copy between storage sources
 - `POST /api/v1/copy/local` - Copy from storage to local filesystem
 - `POST /api/v1/copy/upload` - Upload file to storage source
-- `GET /api/v1/storage/list/{path}?root={root_id}` - List storage directory contents
+- `GET /api/v1/storage/list/*path?storage_id={storage_id}` - List storage directory contents
 - `GET /api/v1/storage/roots` - Get available storage roots
+
+#### FileSystem Service
+
+The FileSystemService provides unified access to multiple storage protocols with automatic connection management:
+
+**Supported Protocols:**
+- **Local**: Direct filesystem access
+- **SMB**: Windows file shares (Server Message Block)
+- **FTP**: File Transfer Protocol
+- **NFS**: Network File System
+- **WebDAV**: Web Distributed Authoring and Versioning
+
+**Features:**
+- Multi-protocol support with unified interface
+- Automatic connection management and pooling
+- File listing and metadata retrieval
+- Cross-protocol file operations
+- Comprehensive error handling
+- Extensive test coverage (80%+)
+
+**Usage:**
+The service automatically handles connections and provides a consistent API across all protocols. Configure storage roots in your `config.json` and access them through the unified API endpoints.
 
 ### Statistics
 - `GET /api/v1/stats/directories/by-size` - Get directories sorted by size

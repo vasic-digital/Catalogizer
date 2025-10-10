@@ -2,9 +2,8 @@ import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { Play, Clock, Star, TrendingUp, Calendar } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
-import { MediaItem, MediaStats } from "../types";
+import { MediaItem } from "../types";
 import { apiService } from "../services/apiService";
-import { cn } from "../utils/cn";
 
 export default function HomePage() {
   const [greeting, setGreeting] = useState("");

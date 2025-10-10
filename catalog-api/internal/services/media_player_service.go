@@ -3,9 +3,9 @@ package services
 import (
 	"context"
 	"database/sql"
-	"encoding/json"
 	"fmt"
 	"path/filepath"
+	"strconv"
 	"strings"
 	"time"
 
@@ -230,15 +230,17 @@ func (s *MediaPlayerService) StartPlayback(ctx context.Context, userID string, r
 	}
 
 	// Create playback session
+	defaultZero := 0.0
+	defaultOne := 1.0
 	session := &PlaybackSession{
 		ID:              generateSessionID(),
 		UserID:          userID,
 		MediaItem:       mediaItem,
 		PlaylistID:      request.PlaylistID,
-		CurrentPosition: getFloatValue(request.StartPosition, mediaItem.LastPosition, 0.0),
+		CurrentPosition: getFloatValue(request.StartPosition, mediaItem.LastPosition, &defaultZero),
 		State:           PlaybackStateLoading,
-		Volume:          getFloatValue(request.Volume, nil, 1.0),
-		PlaybackRate:    getFloatValue(request.PlaybackRate, nil, 1.0),
+		Volume:          getFloatValue(request.Volume, nil, &defaultOne),
+		PlaybackRate:    getFloatValue(request.PlaybackRate, nil, &defaultOne),
 		RepeatMode:      RepeatModeOff,
 		ShuffleEnabled:  false,
 		StartedAt:       time.Now(),
@@ -304,7 +306,13 @@ func (s *MediaPlayerService) UpdatePlayback(ctx context.Context, userID string, 
 	if request.Position != nil {
 		session.CurrentPosition = *request.Position
 		// Save position to database for resume functionality
-		go s.positionTracker.SavePosition(ctx, userID, session.MediaItem.ID, *request.Position)
+		userIDInt, _ := strconv.ParseInt(userID, 10, 64)
+		go s.positionTracker.UpdatePosition(ctx, &UpdatePositionRequest{
+			UserID:      userIDInt,
+			MediaItemID: session.MediaItem.ID,
+			Position:    int64(*request.Position * 1000), // Convert seconds to milliseconds
+			Duration:    0,                                // Duration unknown at this point
+		})
 	}
 
 	if request.State != nil {

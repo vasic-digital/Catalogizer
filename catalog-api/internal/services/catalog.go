@@ -5,9 +5,7 @@ import (
 	"catalog-api/internal/models"
 	"database/sql"
 	"fmt"
-	"path/filepath"
 	"strings"
-	"time"
 
 	"go.uber.org/zap"
 )

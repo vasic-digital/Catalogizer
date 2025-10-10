@@ -11,6 +11,7 @@ import (
 	"strings"
 	"time"
 
+	"catalog-api/internal/models"
 	"go.uber.org/zap"
 )
 
@@ -356,26 +357,25 @@ func (p *MovieRecognitionProvider) getTMDbMovieDetails(ctx context.Context, movi
 
 	// Get cover art
 	if movie.PosterPath != "" {
-		result.CoverArt = append(result.CoverArt, CoverArtResult{
-			URL:      fmt.Sprintf("https://image.tmdb.org/t/p/w500%s", movie.PosterPath),
-			Type:     "poster",
-			Size:     "medium",
-			Provider: "TMDb",
+		result.CoverArt = append(result.CoverArt, models.CoverArtResult{
+			URL:     fmt.Sprintf("https://image.tmdb.org/t/p/w500%s", movie.PosterPath),
+			Width:   500,
+			Quality: "medium",
+			Source:  "TMDb",
 		})
-		result.CoverArt = append(result.CoverArt, CoverArtResult{
-			URL:      fmt.Sprintf("https://image.tmdb.org/t/p/original%s", movie.PosterPath),
-			Type:     "poster",
-			Size:     "large",
-			Provider: "TMDb",
+		result.CoverArt = append(result.CoverArt, models.CoverArtResult{
+			URL:     fmt.Sprintf("https://image.tmdb.org/t/p/original%s", movie.PosterPath),
+			Quality: "high",
+			Source:  "TMDb",
 		})
 	}
 
 	if movie.BackdropPath != "" {
-		result.CoverArt = append(result.CoverArt, CoverArtResult{
-			URL:      fmt.Sprintf("https://image.tmdb.org/t/p/w1280%s", movie.BackdropPath),
-			Type:     "backdrop",
-			Size:     "large",
-			Provider: "TMDb",
+		result.CoverArt = append(result.CoverArt, models.CoverArtResult{
+			URL:     fmt.Sprintf("https://image.tmdb.org/t/p/w1280%s", movie.BackdropPath),
+			Width:   1280,
+			Quality: "high",
+			Source:  "TMDb",
 		})
 	}
 
@@ -449,11 +449,11 @@ func (p *MovieRecognitionProvider) getTMDbTVDetails(ctx context.Context, tvID, s
 
 	// Get cover art
 	if tv.PosterPath != "" {
-		result.CoverArt = append(result.CoverArt, CoverArtResult{
-			URL:      fmt.Sprintf("https://image.tmdb.org/t/p/w500%s", tv.PosterPath),
-			Type:     "poster",
-			Size:     "medium",
-			Provider: "TMDb",
+		result.CoverArt = append(result.CoverArt, models.CoverArtResult{
+			URL:     fmt.Sprintf("https://image.tmdb.org/t/p/w500%s", tv.PosterPath),
+			Width:   500,
+			Quality: "medium",
+			Source:  "TMDb",
 		})
 	}
 
@@ -583,11 +583,10 @@ func (p *MovieRecognitionProvider) searchOMDb(ctx context.Context, title string,
 
 	// Add cover art
 	if omdbResp.Poster != "" && omdbResp.Poster != "N/A" {
-		result.CoverArt = append(result.CoverArt, CoverArtResult{
-			URL:      omdbResp.Poster,
-			Type:     "poster",
-			Size:     "medium",
-			Provider: "OMDb",
+		result.CoverArt = append(result.CoverArt, models.CoverArtResult{
+			URL:     omdbResp.Poster,
+			Quality: "medium",
+			Source:  "OMDb",
 		})
 	}
 

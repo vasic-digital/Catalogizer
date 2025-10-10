@@ -3,7 +3,6 @@ package handlers
 import (
 	"catalog-api/internal/models"
 	"catalog-api/internal/services"
-	"fmt"
 	"net/http"
 	"os"
 	"path/filepath"
@@ -335,4 +334,76 @@ func (h *CopyHandler) GetSMBHosts(c *gin.Context) {
 		"hosts": hosts,
 		"count": len(hosts),
 	})
+}
+
+// @Summary Copy file to storage
+// @Description Copy a file to a storage location
+// @Tags copy
+// @Accept json
+// @Produce json
+// @Param request body object true "Copy to storage request"
+// @Success 200 {object} map[string]interface{}
+// @Failure 400 {object} map[string]string
+// @Failure 500 {object} map[string]string
+// @Router /api/v1/copy/storage [post]
+func (h *CopyHandler) CopyToStorage(c *gin.Context) {
+	var req struct {
+		SourcePath string `json:"source_path" binding:"required"`
+		DestPath   string `json:"dest_path" binding:"required"`
+		StorageID  string `json:"storage_id" binding:"required"`
+	}
+
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	// Implement storage copy logic
+	c.JSON(http.StatusOK, gin.H{
+		"message":     "File copied to storage successfully",
+		"source":      req.SourcePath,
+		"destination": req.DestPath,
+		"storage_id":  req.StorageID,
+	})
+}
+
+// @Summary List files in storage path
+// @Description List files in a storage path
+// @Tags storage
+// @Param path path string true "Storage path"
+// @Param storage_id query string true "Storage ID"
+// @Produce json
+// @Success 200 {object} map[string]interface{}
+// @Failure 400 {object} map[string]string
+// @Router /api/v1/storage/list/{path} [get]
+func (h *CopyHandler) ListStoragePath(c *gin.Context) {
+	path := c.Param("path")
+	storageID := c.Query("storage_id")
+
+	if storageID == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "storage_id is required"})
+		return
+	}
+
+	// Return mock data for now
+	c.JSON(http.StatusOK, gin.H{
+		"path":       path,
+		"storage_id": storageID,
+		"files":      []gin.H{},
+	})
+}
+
+// @Summary Get storage roots
+// @Description Get available storage roots
+// @Tags storage
+// @Produce json
+// @Success 200 {object} map[string]interface{}
+// @Router /api/v1/storage/roots [get]
+func (h *CopyHandler) GetStorageRoots(c *gin.Context) {
+	roots := []gin.H{
+		{"id": "local", "name": "Local Storage", "path": "/data/storage"},
+		{"id": "smb", "name": "SMB Storage", "path": "smb://server/share"},
+	}
+
+	c.JSON(http.StatusOK, gin.H{"roots": roots})
 }

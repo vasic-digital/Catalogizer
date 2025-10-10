@@ -14,6 +14,7 @@ import (
 	"strings"
 	"time"
 
+	"catalog-api/internal/models"
 	"go.uber.org/zap"
 )
 
@@ -558,11 +559,10 @@ func (p *MusicRecognitionProvider) getLastFMTrackDetails(ctx context.Context, tr
 				size = "small"
 			}
 
-			result.CoverArt = append(result.CoverArt, CoverArtResult{
-				URL:      image.Text,
-				Type:     "album",
-				Size:     size,
-				Provider: "Last.fm",
+			result.CoverArt = append(result.CoverArt, models.CoverArtResult{
+				URL:     image.Text,
+				Quality: size,
+				Source:  "Last.fm",
 			})
 		}
 	}
