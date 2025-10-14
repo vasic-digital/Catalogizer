@@ -369,7 +369,7 @@ Catalogizer provides comprehensive client applications for all major platforms:
 | Tauri Backend | ![85%](https://img.shields.io/badge/85%25-green) | ![Integration](https://img.shields.io/badge/Integration-blue) | ✅ |
 
 ### 🤖 Android Mobile & TV
-- **Modern Android Architecture**: MVVM with Hilt DI
+- **Modern Android Architecture**: MVVM with manual dependency injection
 - **Jetpack Compose UI**: Material Design 3 theming
 - **Offline Support**: Room database with automatic sync
 - **Media Playback**: ExoPlayer integration

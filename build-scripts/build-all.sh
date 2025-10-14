@@ -483,7 +483,7 @@ npm run tauri:build
 - **Language:** Kotlin
 - **UI Framework:** Jetpack Compose
 - **Architecture:** MVVM with Repository pattern
-- **DI:** Hilt
+- **DI:** Manual dependency injection
 - **Database:** Room
 - **Networking:** Retrofit2 + OkHttp
 - **Image Loading:** Coil

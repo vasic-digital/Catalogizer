@@ -11,13 +11,9 @@ import kotlinx.coroutines.flow.*
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.decodeFromString
-import javax.inject.Inject
-import javax.inject.Singleton
-
 val Context.offlineDataStore: DataStore<Preferences> by preferencesDataStore(name = "offline_settings")
 
-@Singleton
-class OfflineRepository @Inject constructor(
+class OfflineRepository(
     private val database: CatalogizerDatabase,
     private val syncManager: SyncManager,
     private val context: Context

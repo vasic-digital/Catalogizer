@@ -10,11 +10,7 @@ import kotlinx.coroutines.flow.*
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.decodeFromString
-import javax.inject.Inject
-import javax.inject.Singleton
-
-@Singleton
-class AuthRepository @Inject constructor(
+class AuthRepository(
     private val api: CatalogizerApi,
     private val dataStore: DataStore<Preferences>
 ) {

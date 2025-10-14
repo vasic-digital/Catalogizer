@@ -13,8 +13,6 @@ import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.encodeToString
 import java.util.concurrent.TimeUnit
-import javax.inject.Inject
-import javax.inject.Singleton
 
 @Serializable
 data class SyncStatus(
@@ -33,8 +31,7 @@ data class SyncResult(
     val errorMessage: String? = null
 )
 
-@Singleton
-class SyncManager @Inject constructor(
+class SyncManager(
     private val database: CatalogizerDatabase,
     private val api: CatalogizerApi,
     private val authRepository: AuthRepository,

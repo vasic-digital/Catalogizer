@@ -7,11 +7,7 @@ import com.catalogizer.android.data.remote.CatalogizerApi
 import com.catalogizer.android.data.remote.ApiResult
 import com.catalogizer.android.data.remote.toApiResult
 import kotlinx.coroutines.flow.*
-import javax.inject.Inject
-import javax.inject.Singleton
-
-@Singleton
-class MediaRepository @Inject constructor(
+class MediaRepository(
     private val api: CatalogizerApi,
     private val mediaDao: MediaDao
 ) {
