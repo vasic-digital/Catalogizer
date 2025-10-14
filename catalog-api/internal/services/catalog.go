@@ -46,13 +46,37 @@ func (s *CatalogService) SetDB(db *sql.DB) {
 }
 
 func (s *CatalogService) ListPath(path string, sortBy string, sortOrder string, limit, offset int) ([]models.FileInfo, error) {
-	query := `
-		SELECT id, name, path, is_directory, size, last_modified, hash, extension, mime_type, media_type, parent_id, smb_root, created_at, updated_at
-		FROM files
-		WHERE parent_id = (SELECT id FROM files WHERE path = ? LIMIT 1)
-	`
+	var query string
+	var args []interface{}
 
-	args := []interface{}{path}
+	// Check if path exists in database
+	var parentID sql.NullInt64
+	err := s.db.QueryRow(`SELECT id FROM files WHERE path = ? LIMIT 1`, path).Scan(&parentID)
+	if err != nil && err != sql.ErrNoRows {
+		return nil, fmt.Errorf("failed to check path: %w", err)
+	}
+
+	if err == sql.ErrNoRows {
+		// Path not in database
+		if path == "/" {
+			// Root, return top-level directories
+			query = `
+				SELECT id, name, path, is_directory, size, last_modified, hash, extension, mime_type, media_type, parent_id, smb_root, created_at, updated_at
+				FROM files
+				WHERE parent_id IS NULL
+			`
+		} else {
+			return nil, fmt.Errorf("path not found: %s", path)
+		}
+	} else {
+		// Path exists, list its children
+		query = `
+			SELECT id, name, path, is_directory, size, last_modified, hash, extension, mime_type, media_type, parent_id, smb_root, created_at, updated_at
+			FROM files
+			WHERE parent_id = ?
+		`
+		args = []interface{}{parentID.Int64}
+	}
 
 	// Add sorting
 	switch sortBy {
@@ -73,8 +97,14 @@ func (s *CatalogService) ListPath(path string, sortBy string, sortOrder string, 
 	}
 
 	// Add pagination
-	query += " LIMIT ? OFFSET ?"
-	args = append(args, limit, offset)
+	if limit > 0 {
+		query += " LIMIT ?"
+		args = append(args, limit)
+	}
+	if offset > 0 {
+		query += " OFFSET ?"
+		args = append(args, offset)
+	}
 
 	rows, err := s.db.Query(query, args...)
 	if err != nil {
@@ -214,7 +244,7 @@ func (s *CatalogService) SearchFiles(req *models.SearchRequest) ([]models.FileIn
 	}
 
 	if req.MimeType != "" {
-		conditions = append(conditions, "mime_type = ?")
+		conditions = append(conditions, "media_type = ?")
 		args = append(args, req.MimeType)
 	}
 
@@ -389,14 +419,27 @@ func (s *CatalogService) GetDuplicateGroups(smbRoot string, minCount int, limit 
 		FROM files
 		WHERE hash IS NOT NULL
 			AND is_directory = false
-			AND smb_root = ?
+	`
+	args := []interface{}{}
+
+	if smbRoot != "" {
+		query += " AND smb_root = ?"
+		args = append(args, smbRoot)
+	}
+
+	query += `
 		GROUP BY hash, size
 		HAVING COUNT(*) >= ?
 		ORDER BY COUNT(*) DESC, size DESC
-		LIMIT ?
 	`
+	args = append(args, minCount)
 
-	rows, err := s.db.Query(query, smbRoot, minCount, limit)
+	if limit > 0 {
+		query += " LIMIT ?"
+		args = append(args, limit)
+	}
+
+	rows, err := s.db.Query(query, args...)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get duplicate groups: %w", err)
 	}
@@ -414,11 +457,18 @@ func (s *CatalogService) GetDuplicateGroups(smbRoot string, minCount int, limit 
 		filesQuery := `
 			SELECT id, name, path, is_directory, size, last_modified, hash, extension, mime_type, parent_id, smb_root, created_at, updated_at
 			FROM files
-			WHERE hash = ? AND size = ? AND smb_root = ?
-			ORDER BY path
+			WHERE hash = ? AND size = ?
 		`
+		args2 := []interface{}{group.Hash, group.Size}
 
-		fileRows, err := s.db.Query(filesQuery, group.Hash, group.Size, smbRoot)
+		if smbRoot != "" {
+			filesQuery += " AND smb_root = ?"
+			args2 = append(args2, smbRoot)
+		}
+
+		filesQuery += " ORDER BY path"
+
+		fileRows, err := s.db.Query(filesQuery, args2...)
 		if err != nil {
 			s.logger.Error("Failed to get files for duplicate group", zap.Error(err))
 			continue

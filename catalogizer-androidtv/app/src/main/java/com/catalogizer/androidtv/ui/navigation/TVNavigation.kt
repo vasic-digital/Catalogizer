@@ -12,6 +12,7 @@ import com.catalogizer.androidtv.ui.screens.player.MediaPlayerScreen
 import com.catalogizer.androidtv.ui.screens.search.SearchScreen
 import com.catalogizer.androidtv.ui.screens.settings.SettingsScreen
 import com.catalogizer.androidtv.ui.viewmodel.AuthViewModel
+import com.catalogizer.androidtv.ui.viewmodel.HomeViewModel
 
 sealed class TVScreen(val route: String) {
     object Login : TVScreen("login")
@@ -30,6 +31,7 @@ sealed class TVScreen(val route: String) {
 fun TVNavigation(
     isAuthenticated: Boolean,
     authViewModel: AuthViewModel,
+    homeViewModel: HomeViewModel,
     navController: NavHostController = rememberNavController()
 ) {
     val startDestination = if (isAuthenticated) TVScreen.Home.route else TVScreen.Login.route
@@ -62,7 +64,8 @@ fun TVNavigation(
                 },
                 onNavigateToPlayer = { mediaId ->
                     navController.navigate(TVScreen.Player.createRoute(mediaId))
-                }
+                },
+                viewModel = homeViewModel
             )
         }
 

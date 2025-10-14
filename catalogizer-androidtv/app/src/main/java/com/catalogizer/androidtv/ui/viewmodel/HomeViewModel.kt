@@ -6,10 +6,8 @@ import com.catalogizer.androidtv.data.models.MediaItem
 import com.catalogizer.androidtv.data.models.MediaSearchRequest
 import com.catalogizer.androidtv.data.models.MediaType
 import com.catalogizer.androidtv.data.repository.MediaRepository
-import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
-import javax.inject.Inject
 
 data class HomeUiState(
     val isLoading: Boolean = false,
@@ -23,8 +21,7 @@ data class HomeUiState(
     val featuredItem: MediaItem? = null
 )
 
-@HiltViewModel
-class HomeViewModel @Inject constructor(
+class HomeViewModel(
     private val mediaRepository: MediaRepository
 ) : ViewModel() {
 

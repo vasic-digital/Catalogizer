@@ -7,6 +7,7 @@ import (
 	"catalogizer/internal/services"
 	"context"
 	"database/sql"
+	"flag"
 	"log"
 	"net/http"
 	"os"
@@ -40,9 +41,17 @@ import (
 // @description Type "Bearer" followed by a space and JWT token.
 
 func main() {
+	// Parse command line flags
+	testMode := flag.Bool("test-mode", false, "Run in test mode with additional logging")
+	flag.Parse()
+
 	// Initialize logger
 	logger, _ := zap.NewProduction()
 	defer logger.Sync()
+
+	if *testMode {
+		logger.Info("Running in test mode")
+	}
 
 	// Load configuration
 	cfg, err := config.Load()

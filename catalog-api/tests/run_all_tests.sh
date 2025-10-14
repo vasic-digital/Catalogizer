@@ -206,6 +206,13 @@ SERVER_PID=$!
 # Wait for server to start
 sleep 5
 
+# Check if server is still running
+if ! kill -0 $SERVER_PID 2>/dev/null; then
+    print_error "Test server failed to start"
+    FAILED_TESTS+=("API Integration")
+    return 1
+fi
+
 # API endpoint tests
 API_BASE_URL="http://localhost:8080"
 
@@ -228,14 +235,19 @@ test_api_endpoint() {
 }
 
 # Test critical API endpoints
-if test_api_endpoint "/api/health" "GET" "200" && \
-   test_api_endpoint "/api/analytics/events" "GET" "200" && \
-   test_api_endpoint "/api/favorites" "GET" "200" && \
-   test_api_endpoint "/api/collections" "GET" "200"; then
-    print_success "API integration tests passed"
-    PASSED_TESTS+=("API Integration")
+if test_api_endpoint "/api/health" "GET" "200"; then
+    print_success "Server health check passed"
+    if test_api_endpoint "/api/analytics/events" "GET" "200" && \
+       test_api_endpoint "/api/favorites" "GET" "200" && \
+       test_api_endpoint "/api/collections" "GET" "200"; then
+        print_success "API integration tests passed"
+        PASSED_TESTS+=("API Integration")
+    else
+        print_error "API integration tests failed"
+        FAILED_TESTS+=("API Integration")
+    fi
 else
-    print_error "API integration tests failed"
+    print_error "Server health check failed - server may not have started properly"
     FAILED_TESTS+=("API Integration")
 fi
 
@@ -263,6 +275,14 @@ if [ "$SKIP_UI_TESTS" = false ]; then
 
     # Wait for server to start
     sleep 10
+
+    # Check if UI server is still running
+    if ! kill -0 $UI_SERVER_PID 2>/dev/null; then
+        print_error "UI test server failed to start"
+        FAILED_TESTS+=("UI Automation")
+        cd tests/automation
+        return 1
+    fi
 
     cd tests/automation
 

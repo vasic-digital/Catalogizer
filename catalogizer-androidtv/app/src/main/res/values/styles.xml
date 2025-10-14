@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Base TV Theme -->
+    <style name="Theme.CatalogizerTV" parent="Theme.Leanback">
+        <item name="android:colorPrimary">@android:color/white</item>
+        <item name="android:colorPrimaryDark">@android:color/black</item>
+        <item name="android:colorAccent">@android:color/holo_blue_light</item>
+        <item name="android:windowBackground">@android:color/black</item>
+    </style>
+
+    <!-- Launcher Theme -->
+    <style name="Theme.CatalogizerTV.Launcher" parent="Theme.CatalogizerTV">
+        <item name="android:windowBackground">@android:color/black</item>
+    </style>
+
+    <!-- Player Theme -->
+    <style name="Theme.CatalogizerTV.Player" parent="Theme.CatalogizerTV">
+        <item name="android:windowBackground">@android:color/black</item>
+        <item name="android:windowNoTitle">true</item>
+        <item name="android:windowFullscreen">true</item>
+    </style>
+</resources>

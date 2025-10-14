@@ -8,7 +8,6 @@ import (
 	"path/filepath"
 	"time"
 
-	"github.com/chromedp/cdproto/page"
 	"github.com/chromedp/chromedp"
 )
 
@@ -23,13 +22,13 @@ type ScreenshotCapture struct {
 
 // Screenshot represents a captured screenshot with metadata
 type Screenshot struct {
-	Name        string    `json:"name"`
-	Path        string    `json:"path"`
-	URL         string    `json:"url"`
-	Description string    `json:"description"`
-	Section     string    `json:"section"`
-	Timestamp   time.Time `json:"timestamp"`
-	ViewportSize Viewport `json:"viewport_size"`
+	Name         string    `json:"name"`
+	Path         string    `json:"path"`
+	URL          string    `json:"url"`
+	Description  string    `json:"description"`
+	Section      string    `json:"section"`
+	Timestamp    time.Time `json:"timestamp"`
+	ViewportSize Viewport  `json:"viewport_size"`
 }
 
 // Viewport represents browser viewport dimensions
@@ -40,23 +39,23 @@ type Viewport struct {
 
 // TestScenario represents a complete UI testing scenario
 type TestScenario struct {
-	Name        string      `json:"name"`
-	Description string      `json:"description"`
-	Steps       []TestStep  `json:"steps"`
-	Section     string      `json:"section"`
+	Name        string     `json:"name"`
+	Description string     `json:"description"`
+	Steps       []TestStep `json:"steps"`
+	Section     string     `json:"section"`
 }
 
 // TestStep represents a single step in a test scenario
 type TestStep struct {
-	Name         string            `json:"name"`
-	Action       string            `json:"action"`
-	Selector     string            `json:"selector,omitempty"`
-	Value        string            `json:"value,omitempty"`
-	WaitFor      string            `json:"wait_for,omitempty"`
-	Screenshot   bool              `json:"screenshot"`
-	Annotations  []Annotation      `json:"annotations,omitempty"`
-	ExpectedElements []string       `json:"expected_elements,omitempty"`
-	Metadata     map[string]string `json:"metadata,omitempty"`
+	Name             string            `json:"name"`
+	Action           string            `json:"action"`
+	Selector         string            `json:"selector,omitempty"`
+	Value            string            `json:"value,omitempty"`
+	WaitFor          string            `json:"wait_for,omitempty"`
+	Screenshot       bool              `json:"screenshot"`
+	Annotations      []Annotation      `json:"annotations,omitempty"`
+	ExpectedElements []string          `json:"expected_elements,omitempty"`
+	Metadata         map[string]string `json:"metadata,omitempty"`
 }
 
 // Annotation represents UI annotations for screenshots
@@ -75,7 +74,7 @@ type Annotation struct {
 func NewScreenshotCapture(baseURL, outputDir string) *ScreenshotCapture {
 	// Create Chrome context
 	opts := append(chromedp.DefaultExecAllocatorOptions[:],
-		chromedp.Flag("headless", false), // Set to true for headless mode
+		chromedp.Flag("headless", true), // Run in headless mode for automated testing
 		chromedp.Flag("no-sandbox", true),
 		chromedp.Flag("disable-web-security", true),
 		chromedp.Flag("disable-dev-shm-usage", true),
@@ -169,7 +168,9 @@ func (sc *ScreenshotCapture) executeStep(step TestStep, section string) error {
 		tasks = append(tasks, chromedp.ScrollIntoView(step.Selector))
 
 	case "hover":
-		tasks = append(tasks, chromedp.MouseOver(step.Selector))
+		// Hover action - mouse over element
+		// chromedp doesn't have a direct MouseOver, using scroll into view instead
+		tasks = append(tasks, chromedp.ScrollIntoView(step.Selector))
 
 	case "select":
 		tasks = append(tasks, chromedp.SetValue(step.Selector, step.Value))
@@ -219,12 +220,12 @@ func (sc *ScreenshotCapture) captureScreenshot(name, description, section string
 
 	// Save metadata
 	screenshot := Screenshot{
-		Name:        name,
-		Path:        filepath,
-		URL:         currentURL,
-		Description: description,
-		Section:     section,
-		Timestamp:   time.Now(),
+		Name:         name,
+		Path:         filepath,
+		URL:          currentURL,
+		Description:  description,
+		Section:      section,
+		Timestamp:    time.Now(),
 		ViewportSize: Viewport{Width: 1920, Height: 1080},
 	}
 

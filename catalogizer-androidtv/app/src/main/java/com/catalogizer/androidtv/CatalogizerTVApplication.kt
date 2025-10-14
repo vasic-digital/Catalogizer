@@ -1,11 +1,10 @@
 package com.catalogizer.androidtv
 
 import android.app.Application
-import androidx.core.content.ContextCompat
-import dagger.hilt.android.HiltAndroidApp
 
-@HiltAndroidApp
 class CatalogizerTVApplication : Application() {
+
+    val dependencyContainer by lazy { DependencyContainer.getInstance(this) }
 
     override fun onCreate() {
         super.onCreate()

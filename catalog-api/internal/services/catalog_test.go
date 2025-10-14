@@ -22,8 +22,8 @@ func (suite *CatalogServiceTestSuite) SetupTest() {
 	logger, _ := zap.NewDevelopment()
 	suite.logger = logger
 
-	// Initialize in-memory database
-	db, err := sql.Open("sqlite3", ":memory:")
+	// Initialize in-memory database with shared cache
+	db, err := sql.Open("sqlite3", "file::memory:?cache=shared")
 	suite.Require().NoError(err)
 	suite.db = db
 
@@ -71,28 +71,17 @@ func (suite *CatalogServiceTestSuite) setupDatabase() {
 	`)
 	suite.Require().NoError(err)
 
-	// Insert test data
+	// Insert test data with explicit parent_id
 	_, err = suite.db.Exec(`
-		INSERT INTO files (name, path, is_directory, size, media_type, smb_root) VALUES
-		('root', '/', 1, 0, NULL, 'test'),
-		('media', '/media', 1, 0, NULL, 'test'),
-		('movies', '/media/movies', 1, 0, NULL, 'test'),
-		('music', '/media/music', 1, 0, NULL, 'test'),
-		('games', '/media/games', 1, 0, NULL, 'test'),
-		('movie1.mp4', '/media/movies/movie1.mp4', 0, 1000000, 'movie', 'test'),
-		('movie2.mkv', '/media/movies/movie2.mkv', 0, 2000000, 'movie', 'test'),
-		('song1.mp3', '/media/music/song1.mp3', 0, 5000000, 'music', 'test'),
-		('game1.iso', '/media/games/game1.iso', 0, 50000000, 'game', 'test');
-	`)
-	suite.Require().NoError(err)
-
-	// Update parent_id
-	_, err = suite.db.Exec(`
-		UPDATE files SET parent_id = (SELECT id FROM files f2 WHERE f2.path = '/' AND f2.is_directory = 1) WHERE path = '/media';
-		UPDATE files SET parent_id = (SELECT id FROM files f2 WHERE f2.path = '/media' AND f2.is_directory = 1) WHERE path LIKE '/media/%' AND path != '/media';
-		UPDATE files SET parent_id = (SELECT id FROM files f2 WHERE f2.path = '/media/movies' AND f2.is_directory = 1) WHERE path LIKE '/media/movies/%';
-		UPDATE files SET parent_id = (SELECT id FROM files f2 WHERE f2.path = '/media/music' AND f2.is_directory = 1) WHERE path LIKE '/media/music/%';
-		UPDATE files SET parent_id = (SELECT id FROM files f2 WHERE f2.path = '/media/games' AND f2.is_directory = 1) WHERE path LIKE '/media/games/%';
+		INSERT INTO files (id, name, path, is_directory, size, media_type, smb_root, parent_id) VALUES
+		(1, 'media', '/media', 1, 0, NULL, 'test', NULL),
+		(2, 'movies', '/media/movies', 1, 0, NULL, 'test', 1),
+		(3, 'music', '/media/music', 1, 0, NULL, 'test', 1),
+		(4, 'games', '/media/games', 1, 0, NULL, 'test', 1),
+		(5, 'movie1.mp4', '/media/movies/movie1.mp4', 0, 1000000, 'movie', 'test', 2),
+		(6, 'movie2.mkv', '/media/movies/movie2.mkv', 0, 2000000, 'movie', 'test', 2),
+		(7, 'song1.mp3', '/media/music/song1.mp3', 0, 5000000, 'music', 'test', 3),
+		(8, 'game1.iso', '/media/games/game1.iso', 0, 50000000, 'game', 'test', 4);
 	`)
 	suite.Require().NoError(err)
 
@@ -182,10 +171,12 @@ func (suite *CatalogServiceTestSuite) TestSearch() {
 }
 
 func (suite *CatalogServiceTestSuite) TestSearchDuplicates() {
-	// Add duplicate file
+	// Add duplicate files
 	_, err := suite.db.Exec(`
 		INSERT INTO files (name, path, is_directory, size, media_type, hash, smb_root, parent_id)
-		VALUES ('duplicate.mp4', '/media/movies/duplicate.mp4', 0, 1000000, 'movie', 'hash1', 'test',
+		VALUES ('duplicate1.mp4', '/media/movies/duplicate1.mp4', 0, 1000000, 'movie', 'hash1', 'test',
+			(SELECT id FROM files WHERE path = '/media/movies' AND is_directory = 1)),
+		('duplicate2.mp4', '/media/movies/duplicate2.mp4', 0, 1000000, 'movie', 'hash1', 'test',
 			(SELECT id FROM files WHERE path = '/media/movies' AND is_directory = 1))
 	`)
 	suite.Require().NoError(err)
@@ -193,7 +184,7 @@ func (suite *CatalogServiceTestSuite) TestSearchDuplicates() {
 	duplicates, err := suite.service.SearchDuplicates()
 	assert.NoError(suite.T(), err)
 	assert.Len(suite.T(), duplicates, 1)
-	assert.Len(suite.T(), duplicates[0].Files, 2) // original + duplicate
+	assert.Len(suite.T(), duplicates[0].Files, 2) // two duplicates
 	assert.Equal(suite.T(), "hash1", duplicates[0].Hash)
 }
 
@@ -209,10 +200,12 @@ func (suite *CatalogServiceTestSuite) TestGetDuplicatesCount() {
 	assert.NoError(suite.T(), err)
 	assert.Equal(suite.T(), int64(0), count)
 
-	// Add duplicate
+	// Add duplicates
 	_, err = suite.db.Exec(`
 		INSERT INTO files (name, path, is_directory, size, media_type, hash, smb_root, parent_id)
-		VALUES ('duplicate.mp4', '/media/movies/duplicate.mp4', 0, 1000000, 'movie', 'hash1', 'test',
+		VALUES ('duplicate1.mp4', '/media/movies/duplicate1.mp4', 0, 1000000, 'movie', 'hash1', 'test',
+			(SELECT id FROM files WHERE path = '/media/movies' AND is_directory = 1)),
+		('duplicate2.mp4', '/media/movies/duplicate2.mp4', 0, 1000000, 'movie', 'hash1', 'test',
 			(SELECT id FROM files WHERE path = '/media/movies' AND is_directory = 1))
 	`)
 	suite.Require().NoError(err)
@@ -224,7 +217,7 @@ func (suite *CatalogServiceTestSuite) TestGetDuplicatesCount() {
 
 func (suite *CatalogServiceTestSuite) TestPagination() {
 	// Add more test data for pagination testing
-	for i := 3; i <= 15; i++ {
+	for i := 3; i <= 13; i++ {
 		_, err := suite.db.Exec(`
 			INSERT INTO files (name, path, is_directory, size, media_type, hash, smb_root, parent_id)
 			VALUES (?, ?, 0, ?, 'movie', ?, 'test',

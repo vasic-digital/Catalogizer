@@ -2,7 +2,6 @@ plugins {
     id("com.android.application")
     id("org.jetbrains.kotlin.android")
     id("kotlin-kapt")
-    id("dagger.hilt.android.plugin")
     id("kotlin-parcelize")
     id("org.jetbrains.kotlin.plugin.serialization")
 }
@@ -86,7 +85,6 @@ dependencies {
 
     // Navigation
     implementation("androidx.navigation:navigation-compose:2.7.5")
-    implementation("androidx.hilt:hilt-navigation-compose:1.1.0")
 
     // Lifecycle
     implementation("androidx.lifecycle:lifecycle-viewmodel-compose:2.7.0")
@@ -100,10 +98,6 @@ dependencies {
 
     // WebSocket
     implementation("org.java-websocket:Java-WebSocket:1.5.4")
-
-    // Dependency Injection
-    implementation("com.google.dagger:hilt-android:2.48")
-    kapt("com.google.dagger:hilt-android-compiler:2.48")
 
     // Image Loading
     implementation("io.coil-kt:coil-compose:2.5.0")
