@@ -2,8 +2,10 @@ package com.catalogizer.android.data.sync
 
 import androidx.room.Entity
 import androidx.room.PrimaryKey
+import kotlinx.serialization.Serializable
 
 @Entity(tableName = "sync_operations")
+@Serializable
 data class SyncOperation(
     @PrimaryKey(autoGenerate = true)
     val id: Long = 0,
@@ -15,6 +17,7 @@ data class SyncOperation(
     val maxRetries: Int = 3
 )
 
+@Serializable
 enum class SyncOperationType {
     UPDATE_PROGRESS,
     TOGGLE_FAVORITE,

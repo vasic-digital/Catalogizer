@@ -24,125 +24,124 @@ type MediaRecognitionService struct {
 	fingerprintAPIBaseURL string
 }
 
-
 // Recognition request structure
 type MediaRecognitionRequest struct {
-	FilePath     string            `json:"file_path"`
-	FileName     string            `json:"file_name"`
-	FileSize     int64             `json:"file_size"`
-	FileHash     string            `json:"file_hash"`
-	MimeType     string            `json:"mime_type"`
-	MediaType    MediaType         `json:"media_type,omitempty"`
-	Metadata     map[string]string `json:"metadata,omitempty"`
-	AudioSample  []byte            `json:"audio_sample,omitempty"`
-	VideoSample  []byte            `json:"video_sample,omitempty"`
-	ImageSample  []byte            `json:"image_sample,omitempty"`
-	TextSample   string            `json:"text_sample,omitempty"`
-	UserHints    map[string]string `json:"user_hints,omitempty"`
-	Languages    []string          `json:"languages,omitempty"`
+	FilePath    string            `json:"file_path"`
+	FileName    string            `json:"file_name"`
+	FileSize    int64             `json:"file_size"`
+	FileHash    string            `json:"file_hash"`
+	MimeType    string            `json:"mime_type"`
+	MediaType   MediaType         `json:"media_type,omitempty"`
+	Metadata    map[string]string `json:"metadata,omitempty"`
+	AudioSample []byte            `json:"audio_sample,omitempty"`
+	VideoSample []byte            `json:"video_sample,omitempty"`
+	ImageSample []byte            `json:"image_sample,omitempty"`
+	TextSample  string            `json:"text_sample,omitempty"`
+	UserHints   map[string]string `json:"user_hints,omitempty"`
+	Languages   []string          `json:"languages,omitempty"`
 }
 
 // Recognition result structure
 type MediaRecognitionResult struct {
-	MediaID         string                 `json:"media_id"`
-	MediaType       MediaType              `json:"media_type"`
-	Title           string                 `json:"title"`
-	OriginalTitle   string                 `json:"original_title,omitempty"`
-	AlternativeTitles []string             `json:"alternative_titles,omitempty"`
-	Description     string                 `json:"description"`
-	Year            int                    `json:"year,omitempty"`
-	ReleaseDate     *time.Time             `json:"release_date,omitempty"`
-	Duration        int64                  `json:"duration,omitempty"`
-	Genres          []string               `json:"genres,omitempty"`
-	Tags            []string               `json:"tags,omitempty"`
+	MediaID           string     `json:"media_id"`
+	MediaType         MediaType  `json:"media_type"`
+	Title             string     `json:"title"`
+	OriginalTitle     string     `json:"original_title,omitempty"`
+	AlternativeTitles []string   `json:"alternative_titles,omitempty"`
+	Description       string     `json:"description"`
+	Year              int        `json:"year,omitempty"`
+	ReleaseDate       *time.Time `json:"release_date,omitempty"`
+	Duration          int64      `json:"duration,omitempty"`
+	Genres            []string   `json:"genres,omitempty"`
+	Tags              []string   `json:"tags,omitempty"`
 
 	// Movie/TV specific
-	Director        string                 `json:"director,omitempty"`
-	Cast            []Person               `json:"cast,omitempty"`
-	IMDbID          string                 `json:"imdb_id,omitempty"`
-	TMDbID          string                 `json:"tmdb_id,omitempty"`
-	TVDBId          string                 `json:"tvdb_id,omitempty"`
-	Season          int                    `json:"season,omitempty"`
-	Episode         int                    `json:"episode,omitempty"`
-	SeriesTitle     string                 `json:"series_title,omitempty"`
-	Rating          float64                `json:"rating,omitempty"`
+	Director    string   `json:"director,omitempty"`
+	Cast        []Person `json:"cast,omitempty"`
+	IMDbID      string   `json:"imdb_id,omitempty"`
+	TMDbID      string   `json:"tmdb_id,omitempty"`
+	TVDBId      string   `json:"tvdb_id,omitempty"`
+	Season      int      `json:"season,omitempty"`
+	Episode     int      `json:"episode,omitempty"`
+	SeriesTitle string   `json:"series_title,omitempty"`
+	Rating      float64  `json:"rating,omitempty"`
 
 	// Music specific
-	Artist          string                 `json:"artist,omitempty"`
-	AlbumArtist     string                 `json:"album_artist,omitempty"`
-	Album           string                 `json:"album,omitempty"`
-	TrackNumber     int                    `json:"track_number,omitempty"`
-	DiscNumber      int                    `json:"disc_number,omitempty"`
-	MusicBrainzID   string                 `json:"musicbrainz_id,omitempty"`
-	SpotifyID       string                 `json:"spotify_id,omitempty"`
-	LastFMID        string                 `json:"lastfm_id,omitempty"`
-	BPM             int                    `json:"bpm,omitempty"`
-	Key             string                 `json:"key,omitempty"`
+	Artist        string `json:"artist,omitempty"`
+	AlbumArtist   string `json:"album_artist,omitempty"`
+	Album         string `json:"album,omitempty"`
+	TrackNumber   int    `json:"track_number,omitempty"`
+	DiscNumber    int    `json:"disc_number,omitempty"`
+	MusicBrainzID string `json:"musicbrainz_id,omitempty"`
+	SpotifyID     string `json:"spotify_id,omitempty"`
+	LastFMID      string `json:"lastfm_id,omitempty"`
+	BPM           int    `json:"bpm,omitempty"`
+	Key           string `json:"key,omitempty"`
 
 	// Book/Publication specific
-	Author          string                 `json:"author,omitempty"`
-	Authors         []Person               `json:"authors,omitempty"`
-	Publisher       string                 `json:"publisher,omitempty"`
-	ISBN            string                 `json:"isbn,omitempty"`
-	ISBN10          string                 `json:"isbn10,omitempty"`
-	ISBN13          string                 `json:"isbn13,omitempty"`
-	ISSN            string                 `json:"issn,omitempty"`
-	DOI             string                 `json:"doi,omitempty"`
-	Language        string                 `json:"language,omitempty"`
-	PageCount       int                    `json:"page_count,omitempty"`
-	WordCount       int                    `json:"word_count,omitempty"`
-	Edition         string                 `json:"edition,omitempty"`
-	Series          string                 `json:"series,omitempty"`
-	Volume          int                    `json:"volume,omitempty"`
-	Issue           int                    `json:"issue,omitempty"`
+	Author    string   `json:"author,omitempty"`
+	Authors   []Person `json:"authors,omitempty"`
+	Publisher string   `json:"publisher,omitempty"`
+	ISBN      string   `json:"isbn,omitempty"`
+	ISBN10    string   `json:"isbn10,omitempty"`
+	ISBN13    string   `json:"isbn13,omitempty"`
+	ISSN      string   `json:"issn,omitempty"`
+	DOI       string   `json:"doi,omitempty"`
+	Language  string   `json:"language,omitempty"`
+	PageCount int      `json:"page_count,omitempty"`
+	WordCount int      `json:"word_count,omitempty"`
+	Edition   string   `json:"edition,omitempty"`
+	Series    string   `json:"series,omitempty"`
+	Volume    int      `json:"volume,omitempty"`
+	Issue     int      `json:"issue,omitempty"`
 
 	// Game/Software specific
-	Developer       string                 `json:"developer,omitempty"`
-	Publisher_Game  string                 `json:"publisher_game,omitempty"`
-	Platform        string                 `json:"platform,omitempty"`
-	Platforms       []string               `json:"platforms,omitempty"`
-	Version         string                 `json:"version,omitempty"`
-	BuildNumber     string                 `json:"build_number,omitempty"`
-	License         string                 `json:"license,omitempty"`
-	SystemRequirements map[string]string   `json:"system_requirements,omitempty"`
-	IGDBId          string                 `json:"igdb_id,omitempty"`
-	SteamID         string                 `json:"steam_id,omitempty"`
+	Developer          string            `json:"developer,omitempty"`
+	Publisher_Game     string            `json:"publisher_game,omitempty"`
+	Platform           string            `json:"platform,omitempty"`
+	Platforms          []string          `json:"platforms,omitempty"`
+	Version            string            `json:"version,omitempty"`
+	BuildNumber        string            `json:"build_number,omitempty"`
+	License            string            `json:"license,omitempty"`
+	SystemRequirements map[string]string `json:"system_requirements,omitempty"`
+	IGDBId             string            `json:"igdb_id,omitempty"`
+	SteamID            string            `json:"steam_id,omitempty"`
 
 	// Cover art and media
-	CoverArt        []models.CoverArtResult       `json:"cover_art,omitempty"`
-	Screenshots     []string               `json:"screenshots,omitempty"`
-	Trailer         string                 `json:"trailer,omitempty"`
-	PreviewURL      string                 `json:"preview_url,omitempty"`
+	CoverArt    []models.CoverArtResult `json:"cover_art,omitempty"`
+	Screenshots []string                `json:"screenshots,omitempty"`
+	Trailer     string                  `json:"trailer,omitempty"`
+	PreviewURL  string                  `json:"preview_url,omitempty"`
 
 	// Recognition metadata
-	Confidence      float64                `json:"confidence"`
-	RecognitionMethod string               `json:"recognition_method"`
-	APIProvider     string                 `json:"api_provider"`
-	RecognizedAt    time.Time              `json:"recognized_at"`
-	ProcessingTime  int64                  `json:"processing_time_ms"`
-	Fingerprints    map[string]string      `json:"fingerprints,omitempty"`
+	Confidence        float64           `json:"confidence"`
+	RecognitionMethod string            `json:"recognition_method"`
+	APIProvider       string            `json:"api_provider"`
+	RecognizedAt      time.Time         `json:"recognized_at"`
+	ProcessingTime    int64             `json:"processing_time_ms"`
+	Fingerprints      map[string]string `json:"fingerprints,omitempty"`
 
 	// Additional metadata
-	ExternalIDs     map[string]string      `json:"external_ids,omitempty"`
-	Translations    map[string]Translation `json:"translations,omitempty"`
-	RelatedMedia    []string               `json:"related_media,omitempty"`
-	Duplicates      []DuplicateMatch       `json:"duplicates,omitempty"`
+	ExternalIDs  map[string]string      `json:"external_ids,omitempty"`
+	Translations map[string]Translation `json:"translations,omitempty"`
+	RelatedMedia []string               `json:"related_media,omitempty"`
+	Duplicates   []DuplicateMatch       `json:"duplicates,omitempty"`
 }
 
 type Person struct {
-	Name        string   `json:"name"`
-	Role        string   `json:"role,omitempty"`
-	Character   string   `json:"character,omitempty"`
-	Biography   string   `json:"biography,omitempty"`
-	BirthDate   *time.Time `json:"birth_date,omitempty"`
-	PhotoURL    string   `json:"photo_url,omitempty"`
+	Name        string            `json:"name"`
+	Role        string            `json:"role,omitempty"`
+	Character   string            `json:"character,omitempty"`
+	Biography   string            `json:"biography,omitempty"`
+	BirthDate   *time.Time        `json:"birth_date,omitempty"`
+	PhotoURL    string            `json:"photo_url,omitempty"`
 	ExternalIDs map[string]string `json:"external_ids,omitempty"`
 }
 
 type Translation struct {
-	Language    string `json:"language"`
-	Title       string `json:"title"`
-	Description string `json:"description"`
+	Language    string   `json:"language"`
+	Title       string   `json:"title"`
+	Description string   `json:"description"`
 	Genres      []string `json:"genres,omitempty"`
 }
 
@@ -163,30 +162,30 @@ type RecognitionProvider interface {
 
 // Audio fingerprinting structure
 type AudioFingerprint struct {
-	Algorithm   string            `json:"algorithm"`
-	Hash        string            `json:"hash"`
-	Duration    float64           `json:"duration"`
-	SampleRate  int               `json:"sample_rate"`
-	Channels    int               `json:"channels"`
-	Features    map[string]float64 `json:"features"`
-	Segments    []FingerprintSegment `json:"segments"`
+	Algorithm  string               `json:"algorithm"`
+	Hash       string               `json:"hash"`
+	Duration   float64              `json:"duration"`
+	SampleRate int                  `json:"sample_rate"`
+	Channels   int                  `json:"channels"`
+	Features   map[string]float64   `json:"features"`
+	Segments   []FingerprintSegment `json:"segments"`
 }
 
 type FingerprintSegment struct {
-	StartTime   float64           `json:"start_time"`
-	EndTime     float64           `json:"end_time"`
-	Hash        string            `json:"hash"`
-	Features    map[string]float64 `json:"features"`
+	StartTime float64            `json:"start_time"`
+	EndTime   float64            `json:"end_time"`
+	Hash      string             `json:"hash"`
+	Features  map[string]float64 `json:"features"`
 }
 
 // OCR result structure for text recognition
 type OCRResult struct {
-	Text        string            `json:"text"`
-	Confidence  float64           `json:"confidence"`
-	Language    string            `json:"language"`
-	Blocks      []TextBlock       `json:"blocks"`
-	Layout      LayoutInfo        `json:"layout"`
-	Metadata    map[string]string `json:"metadata"`
+	Text       string            `json:"text"`
+	Confidence float64           `json:"confidence"`
+	Language   string            `json:"language"`
+	Blocks     []TextBlock       `json:"blocks"`
+	Layout     LayoutInfo        `json:"layout"`
+	Metadata   map[string]string `json:"metadata"`
 }
 
 type TextBlock struct {
@@ -205,11 +204,11 @@ type Rectangle struct {
 }
 
 type FontInfo struct {
-	Family   string  `json:"family"`
-	Size     float64 `json:"size"`
-	Bold     bool    `json:"bold"`
-	Italic   bool    `json:"italic"`
-	Color    string  `json:"color"`
+	Family string  `json:"family"`
+	Size   float64 `json:"size"`
+	Bold   bool    `json:"bold"`
+	Italic bool    `json:"italic"`
+	Color  string  `json:"color"`
 }
 
 type LayoutInfo struct {

@@ -18,19 +18,19 @@ type MockServer struct {
 }
 
 type MockRequest struct {
-	Method    string                 `json:"method"`
-	URL       string                 `json:"url"`
-	Headers   map[string]string      `json:"headers"`
-	Body      string                 `json:"body"`
-	Timestamp time.Time              `json:"timestamp"`
-	Query     map[string][]string    `json:"query"`
+	Method    string              `json:"method"`
+	URL       string              `json:"url"`
+	Headers   map[string]string   `json:"headers"`
+	Body      string              `json:"body"`
+	Timestamp time.Time           `json:"timestamp"`
+	Query     map[string][]string `json:"query"`
 }
 
 type MockResponse struct {
-	StatusCode int                    `json:"status_code"`
-	Headers    map[string]string      `json:"headers"`
-	Body       interface{}            `json:"body"`
-	Delay      time.Duration          `json:"delay"`
+	StatusCode int               `json:"status_code"`
+	Headers    map[string]string `json:"headers"`
+	Body       interface{}       `json:"body"`
+	Delay      time.Duration     `json:"delay"`
 }
 
 func NewMockServer() *MockServer {
@@ -167,8 +167,8 @@ func (m *MockServer) mockOpenSubtitlesLogin(w http.ResponseWriter, r *http.Reque
 			"token": "mock_opensubtitles_token_12345",
 			"user": map[string]interface{}{
 				"allowed_downloads": 200,
-				"level":            "VIP",
-				"user_id":          12345,
+				"level":             "VIP",
+				"user_id":           12345,
 			},
 		},
 	}
@@ -240,12 +240,12 @@ func (m *MockServer) mockOpenSubtitlesDownload(w http.ResponseWriter, r *http.Re
 	response := MockResponse{
 		StatusCode: 200,
 		Body: map[string]interface{}{
-			"link":          fmt.Sprintf("%s/opensubtitles/files/subtitle.srt", m.URL()),
-			"file_name":     "subtitle.srt",
-			"requests":      199,
-			"remaining":     199,
-			"message":       "Download successful",
-			"reset_time":    "24:00:00",
+			"link":           fmt.Sprintf("%s/opensubtitles/files/subtitle.srt", m.URL()),
+			"file_name":      "subtitle.srt",
+			"requests":       199,
+			"remaining":      199,
+			"message":        "Download successful",
+			"reset_time":     "24:00:00",
 			"reset_time_utc": time.Now().Add(24 * time.Hour).Format(time.RFC3339),
 		},
 	}
@@ -303,20 +303,20 @@ func (m *MockServer) mockGeniusSearch(w http.ResponseWriter, r *http.Request) {
 			"response": map[string]interface{}{
 				"hits": []map[string]interface{}{
 					{
-						"type":   "song",
-						"index":  "song",
+						"type":  "song",
+						"index": "song",
 						"result": map[string]interface{}{
-							"id":                    123456,
-							"title":                 "Test Song",
-							"title_with_featured":   "Test Song (feat. Test Artist)",
-							"full_title":            "Test Song by Test Artist",
-							"artist_names":          "Test Artist",
-							"primary_artist":        map[string]interface{}{
+							"id":                  123456,
+							"title":               "Test Song",
+							"title_with_featured": "Test Song (feat. Test Artist)",
+							"full_title":          "Test Song by Test Artist",
+							"artist_names":        "Test Artist",
+							"primary_artist": map[string]interface{}{
 								"id":   98765,
 								"name": "Test Artist",
 								"url":  fmt.Sprintf("%s/genius/artists/98765", m.URL()),
 							},
-							"url": fmt.Sprintf("%s/genius/songs/123456", m.URL()),
+							"url":                          fmt.Sprintf("%s/genius/songs/123456", m.URL()),
 							"song_art_image_thumbnail_url": fmt.Sprintf("%s/images/song_art_123456_thumb.jpg", m.URL()),
 							"song_art_image_url":           fmt.Sprintf("%s/images/song_art_123456.jpg", m.URL()),
 						},
@@ -391,7 +391,7 @@ func (m *MockServer) mockGoogleTranslate(w http.ResponseWriter, r *http.Request)
 			"data": map[string]interface{}{
 				"translations": []map[string]interface{}{
 					{
-						"translatedText":   text,
+						"translatedText":         text,
 						"detectedSourceLanguage": "en",
 					},
 				},
@@ -483,7 +483,7 @@ func (m *MockServer) mockMyMemoryTranslate(w http.ResponseWriter, r *http.Reques
 				"translatedText": text,
 				"match":          0.85,
 			},
-			"quotaFinished": false,
+			"quotaFinished":   false,
 			"mtLangSupported": true,
 			"responseDetails": "",
 			"responseStatus":  200,
@@ -577,7 +577,7 @@ func (m *MockServer) mockLastFMAPI(w http.ResponseWriter, r *http.Request) {
 	case "track.getinfo":
 		responseBody = map[string]interface{}{
 			"track": map[string]interface{}{
-				"name":   "Test Track",
+				"name": "Test Track",
 				"artist": map[string]interface{}{
 					"name": "Test Artist",
 				},
@@ -594,7 +594,7 @@ func (m *MockServer) mockLastFMAPI(w http.ResponseWriter, r *http.Request) {
 		}
 	default:
 		responseBody = map[string]interface{}{
-			"error": 6,
+			"error":   6,
 			"message": "Invalid method",
 		}
 	}
@@ -612,18 +612,18 @@ func (m *MockServer) mockiTunesSearch(w http.ResponseWriter, r *http.Request) {
 
 	results := []map[string]interface{}{
 		{
-			"trackId":              123456789,
-			"trackName":            "Test Song",
-			"artistName":           "Test Artist",
-			"collectionName":       "Test Album",
-			"artworkUrl30":         fmt.Sprintf("%s/images/itunes_30.jpg", m.URL()),
-			"artworkUrl60":         fmt.Sprintf("%s/images/itunes_60.jpg", m.URL()),
-			"artworkUrl100":        fmt.Sprintf("%s/images/itunes_100.jpg", m.URL()),
-			"artworkUrl500":        fmt.Sprintf("%s/images/itunes_500.jpg", m.URL()),
-			"releaseDate":          "2023-01-01T00:00:00Z",
-			"kind":                 "song",
-			"trackPrice":           0.99,
-			"currency":             "USD",
+			"trackId":        123456789,
+			"trackName":      "Test Song",
+			"artistName":     "Test Artist",
+			"collectionName": "Test Album",
+			"artworkUrl30":   fmt.Sprintf("%s/images/itunes_30.jpg", m.URL()),
+			"artworkUrl60":   fmt.Sprintf("%s/images/itunes_60.jpg", m.URL()),
+			"artworkUrl100":  fmt.Sprintf("%s/images/itunes_100.jpg", m.URL()),
+			"artworkUrl500":  fmt.Sprintf("%s/images/itunes_500.jpg", m.URL()),
+			"releaseDate":    "2023-01-01T00:00:00Z",
+			"kind":           "song",
+			"trackPrice":     0.99,
+			"currency":       "USD",
 		},
 	}
 
@@ -711,12 +711,12 @@ func (m *MockServer) mockDiscogsSearch(w http.ResponseWriter, r *http.Request) {
 		Body: map[string]interface{}{
 			"results": []map[string]interface{}{
 				{
-					"id":    123456,
-					"title": "Test Artist - Test Album",
-					"type":  "release",
-					"thumb": fmt.Sprintf("%s/images/discogs_thumb.jpg", m.URL()),
+					"id":          123456,
+					"title":       "Test Artist - Test Album",
+					"type":        "release",
+					"thumb":       fmt.Sprintf("%s/images/discogs_thumb.jpg", m.URL()),
 					"cover_image": fmt.Sprintf("%s/images/discogs_cover.jpg", m.URL()),
-					"year": 2023,
+					"year":        2023,
 				},
 			},
 			"pagination": map[string]interface{}{
@@ -747,13 +747,13 @@ func (m *MockServer) mockMusixmatchSearch(w http.ResponseWriter, r *http.Request
 					"track_list": []map[string]interface{}{
 						{
 							"track": map[string]interface{}{
-								"track_id":          123456,
-								"track_name":        "Test Song",
-								"artist_name":       "Test Artist",
-								"album_name":        "Test Album",
-								"has_lyrics":        1,
-								"has_subtitles":     1,
-								"has_richsync":      1,
+								"track_id":      123456,
+								"track_name":    "Test Song",
+								"artist_name":   "Test Artist",
+								"album_name":    "Test Album",
+								"has_lyrics":    1,
+								"has_subtitles": 1,
+								"has_richsync":  1,
 							},
 						},
 					},
@@ -782,8 +782,8 @@ For testing purposes`
 				},
 				"body": map[string]interface{}{
 					"lyrics": map[string]interface{}{
-						"lyrics_id":   123456,
-						"lyrics_body": mockLyrics,
+						"lyrics_id":           123456,
+						"lyrics_body":         mockLyrics,
 						"script_tracking_url": "",
 						"pixel_tracking_url":  "",
 						"lyrics_copyright":    "Mock Copyright",
@@ -891,9 +891,9 @@ func (m *MockServer) mockSetlistFMSearch(w http.ResponseWriter, r *http.Request)
 			"total":        1,
 			"setlist": []map[string]interface{}{
 				{
-					"id":           "test-setlist-123",
-					"versionId":    "test-version-456",
-					"eventDate":    "01-01-2023",
+					"id":        "test-setlist-123",
+					"versionId": "test-version-456",
+					"eventDate": "01-01-2023",
 					"artist": map[string]interface{}{
 						"mbid": "test-artist-mbid-789",
 						"name": artistName,
@@ -902,8 +902,8 @@ func (m *MockServer) mockSetlistFMSearch(w http.ResponseWriter, r *http.Request)
 						"id":   "test-venue-123",
 						"name": "Test Venue",
 						"city": map[string]interface{}{
-							"id":      "test-city-456",
-							"name":    "Test City",
+							"id":   "test-city-456",
+							"name": "Test City",
 							"country": map[string]interface{}{
 								"code": "US",
 								"name": "United States",

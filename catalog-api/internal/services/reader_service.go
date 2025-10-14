@@ -12,314 +12,314 @@ import (
 
 // Advanced reader service with Kindle/Moon Reader Pro-like experience
 type ReaderService struct {
-	db                    *sql.DB
-	logger                *zap.Logger
-	cacheService          *CacheService
-	translationService    *TranslationService
-	localizationService   *LocalizationService
+	db                  *sql.DB
+	logger              *zap.Logger
+	cacheService        *CacheService
+	translationService  *TranslationService
+	localizationService *LocalizationService
 }
 
 // Reading session structure
 type ReadingSession struct {
-	ID                string             `json:"id"`
-	UserID            int64              `json:"user_id"`
-	BookID            string             `json:"book_id"`
-	DeviceID          string             `json:"device_id"`
-	DeviceName        string             `json:"device_name"`
-	StartedAt         time.Time          `json:"started_at"`
-	LastActiveAt      time.Time          `json:"last_active_at"`
-	CurrentPosition   ReadingPosition    `json:"current_position"`
-	ReadingSettings   ReadingSettings    `json:"reading_settings"`
-	SyncStatus        SyncStatus         `json:"sync_status"`
-	ReadingStats      ReadingStats       `json:"reading_stats"`
-	IsActive          bool               `json:"is_active"`
+	ID              string          `json:"id"`
+	UserID          int64           `json:"user_id"`
+	BookID          string          `json:"book_id"`
+	DeviceID        string          `json:"device_id"`
+	DeviceName      string          `json:"device_name"`
+	StartedAt       time.Time       `json:"started_at"`
+	LastActiveAt    time.Time       `json:"last_active_at"`
+	CurrentPosition ReadingPosition `json:"current_position"`
+	ReadingSettings ReadingSettings `json:"reading_settings"`
+	SyncStatus      SyncStatus      `json:"sync_status"`
+	ReadingStats    ReadingStats    `json:"reading_stats"`
+	IsActive        bool            `json:"is_active"`
 }
 
 // Reading position with multiple granularities
 type ReadingPosition struct {
-	BookID            string             `json:"book_id"`
-	ChapterID         string             `json:"chapter_id,omitempty"`
-	PageNumber        int                `json:"page_number"`
-	WordOffset        int                `json:"word_offset"`
-	CharacterOffset   int                `json:"character_offset"`
-	PercentComplete   float64            `json:"percent_complete"`
-	Location          string             `json:"location,omitempty"` // Kindle location equivalent
-	CFI               string             `json:"cfi,omitempty"`      // EPUB Canonical Fragment Identifier
-	Timestamp         time.Time          `json:"timestamp"`
-	PositionContext   PositionContext    `json:"position_context"`
-	Confidence        float64            `json:"confidence"`
+	BookID          string          `json:"book_id"`
+	ChapterID       string          `json:"chapter_id,omitempty"`
+	PageNumber      int             `json:"page_number"`
+	WordOffset      int             `json:"word_offset"`
+	CharacterOffset int             `json:"character_offset"`
+	PercentComplete float64         `json:"percent_complete"`
+	Location        string          `json:"location,omitempty"` // Kindle location equivalent
+	CFI             string          `json:"cfi,omitempty"`      // EPUB Canonical Fragment Identifier
+	Timestamp       time.Time       `json:"timestamp"`
+	PositionContext PositionContext `json:"position_context"`
+	Confidence      float64         `json:"confidence"`
 }
 
 type PositionContext struct {
-	SurroundingText   string             `json:"surrounding_text"`
-	ParagraphStart    string             `json:"paragraph_start"`
-	SentenceStart     string             `json:"sentence_start"`
-	ChapterTitle      string             `json:"chapter_title,omitempty"`
-	SectionTitle      string             `json:"section_title,omitempty"`
+	SurroundingText string `json:"surrounding_text"`
+	ParagraphStart  string `json:"paragraph_start"`
+	SentenceStart   string `json:"sentence_start"`
+	ChapterTitle    string `json:"chapter_title,omitempty"`
+	SectionTitle    string `json:"section_title,omitempty"`
 }
 
 // Reading settings for personalization
 type ReadingSettings struct {
-	FontFamily        string             `json:"font_family"`
-	FontSize          int                `json:"font_size"`
-	LineHeight        float64            `json:"line_height"`
-	TextAlign         string             `json:"text_align"`
-	Theme             string             `json:"theme"`
-	BackgroundColor   string             `json:"background_color"`
-	TextColor         string             `json:"text_color"`
-	PageMargins       PageMargins        `json:"page_margins"`
-	ColumnsPerPage    int                `json:"columns_per_page"`
-	PageTransition    string             `json:"page_transition"`
-	AutoScroll        bool               `json:"auto_scroll"`
-	AutoScrollSpeed   int                `json:"auto_scroll_speed"`
-	ReadingMode       string             `json:"reading_mode"` // day, night, sepia, etc.
-	Brightness        float64            `json:"brightness"`
-	BlueLight         BlueLightFilter    `json:"blue_light_filter"`
-	Hyphenation       bool               `json:"hyphenation"`
-	Justification     bool               `json:"justification"`
-	StatusBar         StatusBarSettings  `json:"status_bar"`
-	Gestures          GestureSettings    `json:"gestures"`
-	Accessibility     AccessibilitySettings `json:"accessibility"`
+	FontFamily      string                `json:"font_family"`
+	FontSize        int                   `json:"font_size"`
+	LineHeight      float64               `json:"line_height"`
+	TextAlign       string                `json:"text_align"`
+	Theme           string                `json:"theme"`
+	BackgroundColor string                `json:"background_color"`
+	TextColor       string                `json:"text_color"`
+	PageMargins     PageMargins           `json:"page_margins"`
+	ColumnsPerPage  int                   `json:"columns_per_page"`
+	PageTransition  string                `json:"page_transition"`
+	AutoScroll      bool                  `json:"auto_scroll"`
+	AutoScrollSpeed int                   `json:"auto_scroll_speed"`
+	ReadingMode     string                `json:"reading_mode"` // day, night, sepia, etc.
+	Brightness      float64               `json:"brightness"`
+	BlueLight       BlueLightFilter       `json:"blue_light_filter"`
+	Hyphenation     bool                  `json:"hyphenation"`
+	Justification   bool                  `json:"justification"`
+	StatusBar       StatusBarSettings     `json:"status_bar"`
+	Gestures        GestureSettings       `json:"gestures"`
+	Accessibility   AccessibilitySettings `json:"accessibility"`
 }
 
 type PageMargins struct {
-	Top               int                `json:"top"`
-	Bottom            int                `json:"bottom"`
-	Left              int                `json:"left"`
-	Right             int                `json:"right"`
+	Top    int `json:"top"`
+	Bottom int `json:"bottom"`
+	Left   int `json:"left"`
+	Right  int `json:"right"`
 }
 
 type BlueLightFilter struct {
-	Enabled           bool               `json:"enabled"`
-	Intensity         float64            `json:"intensity"`
-	AutoSchedule      bool               `json:"auto_schedule"`
-	StartTime         string             `json:"start_time"`
-	EndTime           string             `json:"end_time"`
+	Enabled      bool    `json:"enabled"`
+	Intensity    float64 `json:"intensity"`
+	AutoSchedule bool    `json:"auto_schedule"`
+	StartTime    string  `json:"start_time"`
+	EndTime      string  `json:"end_time"`
 }
 
 type StatusBarSettings struct {
-	Visible           bool               `json:"visible"`
-	ShowProgress      bool               `json:"show_progress"`
-	ShowTime          bool               `json:"show_time"`
-	ShowBattery       bool               `json:"show_battery"`
-	ShowPageNumber    bool               `json:"show_page_number"`
-	Position          string             `json:"position"`
+	Visible        bool   `json:"visible"`
+	ShowProgress   bool   `json:"show_progress"`
+	ShowTime       bool   `json:"show_time"`
+	ShowBattery    bool   `json:"show_battery"`
+	ShowPageNumber bool   `json:"show_page_number"`
+	Position       string `json:"position"`
 }
 
 type GestureSettings struct {
-	TapToTurn         bool               `json:"tap_to_turn"`
-	SwipeToTurn       bool               `json:"swipe_to_turn"`
-	VolumeKeys        bool               `json:"volume_keys"`
-	TapZones          TapZones           `json:"tap_zones"`
-	SwipeSensitivity  float64            `json:"swipe_sensitivity"`
+	TapToTurn        bool     `json:"tap_to_turn"`
+	SwipeToTurn      bool     `json:"swipe_to_turn"`
+	VolumeKeys       bool     `json:"volume_keys"`
+	TapZones         TapZones `json:"tap_zones"`
+	SwipeSensitivity float64  `json:"swipe_sensitivity"`
 }
 
 type TapZones struct {
-	LeftTurn          bool               `json:"left_turn"`
-	RightTurn         bool               `json:"right_turn"`
-	CenterMenu        bool               `json:"center_menu"`
+	LeftTurn   bool `json:"left_turn"`
+	RightTurn  bool `json:"right_turn"`
+	CenterMenu bool `json:"center_menu"`
 }
 
 type AccessibilitySettings struct {
-	TextToSpeech      TTSSettings        `json:"text_to_speech"`
-	HighContrast      bool               `json:"high_contrast"`
-	LargeText         bool               `json:"large_text"`
-	ScreenReader      bool               `json:"screen_reader"`
-	VoiceNavigation   bool               `json:"voice_navigation"`
+	TextToSpeech    TTSSettings `json:"text_to_speech"`
+	HighContrast    bool        `json:"high_contrast"`
+	LargeText       bool        `json:"large_text"`
+	ScreenReader    bool        `json:"screen_reader"`
+	VoiceNavigation bool        `json:"voice_navigation"`
 }
 
 type TTSSettings struct {
-	Enabled           bool               `json:"enabled"`
-	Voice             string             `json:"voice"`
-	Speed             float64            `json:"speed"`
-	Pitch             float64            `json:"pitch"`
-	AutoPlay          bool               `json:"auto_play"`
-	HighlightText     bool               `json:"highlight_text"`
+	Enabled       bool    `json:"enabled"`
+	Voice         string  `json:"voice"`
+	Speed         float64 `json:"speed"`
+	Pitch         float64 `json:"pitch"`
+	AutoPlay      bool    `json:"auto_play"`
+	HighlightText bool    `json:"highlight_text"`
 }
 
 // Sync status for cross-device reading
 type SyncStatus struct {
-	LastSyncAt        time.Time          `json:"last_sync_at"`
-	IsSynced          bool               `json:"is_synced"`
-	ConflictExists    bool               `json:"conflict_exists"`
-	ConflictDetails   []SyncConflict     `json:"conflict_details,omitempty"`
-	SyncVersion       int64              `json:"sync_version"`
+	LastSyncAt      time.Time      `json:"last_sync_at"`
+	IsSynced        bool           `json:"is_synced"`
+	ConflictExists  bool           `json:"conflict_exists"`
+	ConflictDetails []SyncConflict `json:"conflict_details,omitempty"`
+	SyncVersion     int64          `json:"sync_version"`
 }
 
 type SyncConflict struct {
-	DeviceID          string             `json:"device_id"`
-	DeviceName        string             `json:"device_name"`
-	Position          ReadingPosition    `json:"position"`
-	Timestamp         time.Time          `json:"timestamp"`
-	ConflictType      string             `json:"conflict_type"`
+	DeviceID     string          `json:"device_id"`
+	DeviceName   string          `json:"device_name"`
+	Position     ReadingPosition `json:"position"`
+	Timestamp    time.Time       `json:"timestamp"`
+	ConflictType string          `json:"conflict_type"`
 }
 
 // Reading statistics and analytics
 type ReadingStats struct {
-	TotalReadingTime  int64              `json:"total_reading_time_seconds"`
-	SessionTime       int64              `json:"session_time_seconds"`
-	PagesRead         int                `json:"pages_read"`
-	WordsRead         int                `json:"words_read"`
-	ReadingSpeed      float64            `json:"reading_speed_wpm"`
-	AverageSpeed      float64            `json:"average_speed_wpm"`
-	DailyGoal         int                `json:"daily_goal_minutes"`
-	DailyProgress     int                `json:"daily_progress_minutes"`
-	WeeklyStats       WeeklyReadingStats `json:"weekly_stats"`
-	MonthlyStats      MonthlyReadingStats `json:"monthly_stats"`
-	ReadingStreak     int                `json:"reading_streak_days"`
-	LongestStreak     int                `json:"longest_streak_days"`
-	BooksCompleted    int                `json:"books_completed"`
-	PagesPerSession   float64            `json:"pages_per_session"`
+	TotalReadingTime int64               `json:"total_reading_time_seconds"`
+	SessionTime      int64               `json:"session_time_seconds"`
+	PagesRead        int                 `json:"pages_read"`
+	WordsRead        int                 `json:"words_read"`
+	ReadingSpeed     float64             `json:"reading_speed_wpm"`
+	AverageSpeed     float64             `json:"average_speed_wpm"`
+	DailyGoal        int                 `json:"daily_goal_minutes"`
+	DailyProgress    int                 `json:"daily_progress_minutes"`
+	WeeklyStats      WeeklyReadingStats  `json:"weekly_stats"`
+	MonthlyStats     MonthlyReadingStats `json:"monthly_stats"`
+	ReadingStreak    int                 `json:"reading_streak_days"`
+	LongestStreak    int                 `json:"longest_streak_days"`
+	BooksCompleted   int                 `json:"books_completed"`
+	PagesPerSession  float64             `json:"pages_per_session"`
 }
 
 type WeeklyReadingStats struct {
-	Week              string             `json:"week"`
-	TotalTime         int64              `json:"total_time_seconds"`
-	PagesRead         int                `json:"pages_read"`
-	SessionsCount     int                `json:"sessions_count"`
-	DaysActive        int                `json:"days_active"`
+	Week          string `json:"week"`
+	TotalTime     int64  `json:"total_time_seconds"`
+	PagesRead     int    `json:"pages_read"`
+	SessionsCount int    `json:"sessions_count"`
+	DaysActive    int    `json:"days_active"`
 }
 
 type MonthlyReadingStats struct {
-	Month             string             `json:"month"`
-	TotalTime         int64              `json:"total_time_seconds"`
-	PagesRead         int                `json:"pages_read"`
-	BooksCompleted    int                `json:"books_completed"`
-	AverageDaily      float64            `json:"average_daily_minutes"`
+	Month          string  `json:"month"`
+	TotalTime      int64   `json:"total_time_seconds"`
+	PagesRead      int     `json:"pages_read"`
+	BooksCompleted int     `json:"books_completed"`
+	AverageDaily   float64 `json:"average_daily_minutes"`
 }
 
 // Bookmarks and annotations
 type Bookmark struct {
-	ID                string             `json:"id"`
-	UserID            int64              `json:"user_id"`
-	BookID            string             `json:"book_id"`
-	Position          ReadingPosition    `json:"position"`
-	Title             string             `json:"title"`
-	Note              string             `json:"note,omitempty"`
-	Tags              []string           `json:"tags,omitempty"`
-	Color             string             `json:"color,omitempty"`
-	CreatedAt         time.Time          `json:"created_at"`
-	UpdatedAt         time.Time          `json:"updated_at"`
-	IsPublic          bool               `json:"is_public"`
-	ShareURL          string             `json:"share_url,omitempty"`
+	ID        string          `json:"id"`
+	UserID    int64           `json:"user_id"`
+	BookID    string          `json:"book_id"`
+	Position  ReadingPosition `json:"position"`
+	Title     string          `json:"title"`
+	Note      string          `json:"note,omitempty"`
+	Tags      []string        `json:"tags,omitempty"`
+	Color     string          `json:"color,omitempty"`
+	CreatedAt time.Time       `json:"created_at"`
+	UpdatedAt time.Time       `json:"updated_at"`
+	IsPublic  bool            `json:"is_public"`
+	ShareURL  string          `json:"share_url,omitempty"`
 }
 
 type Highlight struct {
-	ID                string             `json:"id"`
-	UserID            int64              `json:"user_id"`
-	BookID            string             `json:"book_id"`
-	StartPosition     ReadingPosition    `json:"start_position"`
-	EndPosition       ReadingPosition    `json:"end_position"`
-	SelectedText      string             `json:"selected_text"`
-	Note              string             `json:"note,omitempty"`
-	Color             string             `json:"color"`
-	Type              string             `json:"type"` // highlight, underline, strikethrough
-	Tags              []string           `json:"tags,omitempty"`
-	CreatedAt         time.Time          `json:"created_at"`
-	UpdatedAt         time.Time          `json:"updated_at"`
-	IsPublic          bool               `json:"is_public"`
-	ShareURL          string             `json:"share_url,omitempty"`
+	ID            string          `json:"id"`
+	UserID        int64           `json:"user_id"`
+	BookID        string          `json:"book_id"`
+	StartPosition ReadingPosition `json:"start_position"`
+	EndPosition   ReadingPosition `json:"end_position"`
+	SelectedText  string          `json:"selected_text"`
+	Note          string          `json:"note,omitempty"`
+	Color         string          `json:"color"`
+	Type          string          `json:"type"` // highlight, underline, strikethrough
+	Tags          []string        `json:"tags,omitempty"`
+	CreatedAt     time.Time       `json:"created_at"`
+	UpdatedAt     time.Time       `json:"updated_at"`
+	IsPublic      bool            `json:"is_public"`
+	ShareURL      string          `json:"share_url,omitempty"`
 }
 
 type Annotation struct {
-	ID                string             `json:"id"`
-	UserID            int64              `json:"user_id"`
-	BookID            string             `json:"book_id"`
-	Position          ReadingPosition    `json:"position"`
-	Type              string             `json:"type"` // note, drawing, voice, image
-	Content           string             `json:"content"`
-	ContentType       string             `json:"content_type"`
-	ContentURL        string             `json:"content_url,omitempty"`
-	Tags              []string           `json:"tags,omitempty"`
-	CreatedAt         time.Time          `json:"created_at"`
-	UpdatedAt         time.Time          `json:"updated_at"`
-	IsPublic          bool               `json:"is_public"`
-	ShareURL          string             `json:"share_url,omitempty"`
+	ID          string          `json:"id"`
+	UserID      int64           `json:"user_id"`
+	BookID      string          `json:"book_id"`
+	Position    ReadingPosition `json:"position"`
+	Type        string          `json:"type"` // note, drawing, voice, image
+	Content     string          `json:"content"`
+	ContentType string          `json:"content_type"`
+	ContentURL  string          `json:"content_url,omitempty"`
+	Tags        []string        `json:"tags,omitempty"`
+	CreatedAt   time.Time       `json:"created_at"`
+	UpdatedAt   time.Time       `json:"updated_at"`
+	IsPublic    bool            `json:"is_public"`
+	ShareURL    string          `json:"share_url,omitempty"`
 }
 
 // Reading requests and responses
 type StartReadingRequest struct {
-	UserID            int64              `json:"user_id"`
-	BookID            string             `json:"book_id"`
-	DeviceInfo        DeviceInfo         `json:"device_info"`
-	ReadingSettings   *ReadingSettings   `json:"reading_settings,omitempty"`
-	ResumeFromLastPosition bool          `json:"resume_from_last_position"`
+	UserID                 int64            `json:"user_id"`
+	BookID                 string           `json:"book_id"`
+	DeviceInfo             DeviceInfo       `json:"device_info"`
+	ReadingSettings        *ReadingSettings `json:"reading_settings,omitempty"`
+	ResumeFromLastPosition bool             `json:"resume_from_last_position"`
 }
 
 type ReaderUpdatePositionRequest struct {
-	SessionID         string             `json:"session_id"`
-	Position          ReadingPosition    `json:"position"`
-	ReadingTime       int64              `json:"reading_time_seconds"`
-	PagesRead         int                `json:"pages_read"`
-	WordsRead         int                `json:"words_read"`
-	AutoSync          bool               `json:"auto_sync"`
+	SessionID   string          `json:"session_id"`
+	Position    ReadingPosition `json:"position"`
+	ReadingTime int64           `json:"reading_time_seconds"`
+	PagesRead   int             `json:"pages_read"`
+	WordsRead   int             `json:"words_read"`
+	AutoSync    bool            `json:"auto_sync"`
 }
 
 type CreateBookmarkRequest struct {
-	UserID            int64              `json:"user_id"`
-	BookID            string             `json:"book_id"`
-	Position          ReadingPosition    `json:"position"`
-	Title             string             `json:"title"`
-	Note              string             `json:"note,omitempty"`
-	Tags              []string           `json:"tags,omitempty"`
-	Color             string             `json:"color,omitempty"`
-	IsPublic          bool               `json:"is_public"`
+	UserID   int64           `json:"user_id"`
+	BookID   string          `json:"book_id"`
+	Position ReadingPosition `json:"position"`
+	Title    string          `json:"title"`
+	Note     string          `json:"note,omitempty"`
+	Tags     []string        `json:"tags,omitempty"`
+	Color    string          `json:"color,omitempty"`
+	IsPublic bool            `json:"is_public"`
 }
 
 type CreateHighlightRequest struct {
-	UserID            int64              `json:"user_id"`
-	BookID            string             `json:"book_id"`
-	StartPosition     ReadingPosition    `json:"start_position"`
-	EndPosition       ReadingPosition    `json:"end_position"`
-	SelectedText      string             `json:"selected_text"`
-	Note              string             `json:"note,omitempty"`
-	Color             string             `json:"color"`
-	Type              string             `json:"type"`
-	Tags              []string           `json:"tags,omitempty"`
-	IsPublic          bool               `json:"is_public"`
+	UserID        int64           `json:"user_id"`
+	BookID        string          `json:"book_id"`
+	StartPosition ReadingPosition `json:"start_position"`
+	EndPosition   ReadingPosition `json:"end_position"`
+	SelectedText  string          `json:"selected_text"`
+	Note          string          `json:"note,omitempty"`
+	Color         string          `json:"color"`
+	Type          string          `json:"type"`
+	Tags          []string        `json:"tags,omitempty"`
+	IsPublic      bool            `json:"is_public"`
 }
 
 type ReaderDeviceInfo struct {
-	DeviceID          string             `json:"device_id"`
-	DeviceName        string             `json:"device_name"`
-	DeviceType        string             `json:"device_type"`
-	ScreenSize        string             `json:"screen_size,omitempty"`
-	OS                string             `json:"os,omitempty"`
-	AppVersion        string             `json:"app_version,omitempty"`
+	DeviceID   string `json:"device_id"`
+	DeviceName string `json:"device_name"`
+	DeviceType string `json:"device_type"`
+	ScreenSize string `json:"screen_size,omitempty"`
+	OS         string `json:"os,omitempty"`
+	AppVersion string `json:"app_version,omitempty"`
 }
 
 // Book content structure for reading
 type BookContent struct {
-	BookID            string             `json:"book_id"`
-	Format            string             `json:"format"` // epub, pdf, mobi, txt
-	Chapters          []Chapter          `json:"chapters"`
-	TableOfContents   []TOCEntry         `json:"table_of_contents"`
-	Metadata          BookMetadata       `json:"metadata"`
-	TotalPages        int                `json:"total_pages"`
-	TotalWords        int                `json:"total_words"`
-	EstimatedReadTime int                `json:"estimated_read_time_minutes"`
+	BookID            string       `json:"book_id"`
+	Format            string       `json:"format"` // epub, pdf, mobi, txt
+	Chapters          []Chapter    `json:"chapters"`
+	TableOfContents   []TOCEntry   `json:"table_of_contents"`
+	Metadata          BookMetadata `json:"metadata"`
+	TotalPages        int          `json:"total_pages"`
+	TotalWords        int          `json:"total_words"`
+	EstimatedReadTime int          `json:"estimated_read_time_minutes"`
 }
 
 type BookChapter struct {
-	ID                string             `json:"id"`
-	Title             string             `json:"title"`
-	Number            int                `json:"number"`
-	Content           string             `json:"content"`
-	HTMLContent       string             `json:"html_content,omitempty"`
-	WordCount         int                `json:"word_count"`
-	PageCount         int                `json:"page_count"`
-	StartPage         int                `json:"start_page"`
-	EndPage           int                `json:"end_page"`
-	Sections          []Section          `json:"sections,omitempty"`
+	ID          string    `json:"id"`
+	Title       string    `json:"title"`
+	Number      int       `json:"number"`
+	Content     string    `json:"content"`
+	HTMLContent string    `json:"html_content,omitempty"`
+	WordCount   int       `json:"word_count"`
+	PageCount   int       `json:"page_count"`
+	StartPage   int       `json:"start_page"`
+	EndPage     int       `json:"end_page"`
+	Sections    []Section `json:"sections,omitempty"`
 }
 
 type Section struct {
-	ID                string             `json:"id"`
-	Title             string             `json:"title"`
-	Content           string             `json:"content"`
-	Level             int                `json:"level"`
-	StartPosition     int                `json:"start_position"`
-	EndPosition       int                `json:"end_position"`
+	ID            string `json:"id"`
+	Title         string `json:"title"`
+	Content       string `json:"content"`
+	Level         int    `json:"level"`
+	StartPosition int    `json:"start_position"`
+	EndPosition   int    `json:"end_position"`
 }
 
 func NewReaderService(
@@ -366,18 +366,18 @@ func (s *ReaderService) StartReading(ctx context.Context, req *StartReadingReque
 
 	// Create reading session
 	session := &ReadingSession{
-		ID:               sessionID,
-		UserID:           req.UserID,
-		BookID:           req.BookID,
-		DeviceID:         req.DeviceInfo.DeviceID,
-		DeviceName:       req.DeviceInfo.DeviceName,
-		StartedAt:        time.Now(),
-		LastActiveAt:     time.Now(),
-		CurrentPosition:  position,
-		ReadingSettings:  settings,
-		SyncStatus:       SyncStatus{IsSynced: true, SyncVersion: 1},
-		ReadingStats:     s.initializeReadingStats(ctx, req.UserID, req.BookID),
-		IsActive:         true,
+		ID:              sessionID,
+		UserID:          req.UserID,
+		BookID:          req.BookID,
+		DeviceID:        req.DeviceInfo.DeviceID,
+		DeviceName:      req.DeviceInfo.DeviceName,
+		StartedAt:       time.Now(),
+		LastActiveAt:    time.Now(),
+		CurrentPosition: position,
+		ReadingSettings: settings,
+		SyncStatus:      SyncStatus{IsSynced: true, SyncVersion: 1},
+		ReadingStats:    s.initializeReadingStats(ctx, req.UserID, req.BookID),
+		IsActive:        true,
 	}
 
 	// Store session in database

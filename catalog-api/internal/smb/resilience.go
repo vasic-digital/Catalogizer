@@ -36,35 +36,35 @@ func (s ConnectionState) String() string {
 
 // SMBSource represents a configured SMB source with resilience capabilities
 type SMBSource struct {
-	ID                string            `json:"id"`
-	Name              string            `json:"name"`
-	Path              string            `json:"path"`
-	Username          string            `json:"username"`
-	Password          string            `json:"password"`
-	Domain            string            `json:"domain"`
-	State             ConnectionState   `json:"state"`
-	LastConnected     time.Time         `json:"last_connected"`
-	LastError         string            `json:"last_error,omitempty"`
-	RetryAttempts     int               `json:"retry_attempts"`
-	MaxRetryAttempts  int               `json:"max_retry_attempts"`
-	RetryDelay        time.Duration     `json:"retry_delay"`
-	ConnectionTimeout time.Duration     `json:"connection_timeout"`
-	HealthCheckInterval time.Duration  `json:"health_check_interval"`
-	IsEnabled         bool              `json:"is_enabled"`
-	mutex             sync.RWMutex
+	ID                  string          `json:"id"`
+	Name                string          `json:"name"`
+	Path                string          `json:"path"`
+	Username            string          `json:"username"`
+	Password            string          `json:"password"`
+	Domain              string          `json:"domain"`
+	State               ConnectionState `json:"state"`
+	LastConnected       time.Time       `json:"last_connected"`
+	LastError           string          `json:"last_error,omitempty"`
+	RetryAttempts       int             `json:"retry_attempts"`
+	MaxRetryAttempts    int             `json:"max_retry_attempts"`
+	RetryDelay          time.Duration   `json:"retry_delay"`
+	ConnectionTimeout   time.Duration   `json:"connection_timeout"`
+	HealthCheckInterval time.Duration   `json:"health_check_interval"`
+	IsEnabled           bool            `json:"is_enabled"`
+	mutex               sync.RWMutex
 }
 
 // ResilientSMBManager manages multiple SMB sources with automatic recovery
 type ResilientSMBManager struct {
-	sources           map[string]*SMBSource
-	logger            *zap.Logger
-	offlineCache      *OfflineCache
-	healthChecker     *HealthChecker
-	eventChannel      chan SMBEvent
-	stopChannel       chan struct{}
-	wg                sync.WaitGroup
-	mutex             sync.RWMutex
-	startTime         time.Time
+	sources       map[string]*SMBSource
+	logger        *zap.Logger
+	offlineCache  *OfflineCache
+	healthChecker *HealthChecker
+	eventChannel  chan SMBEvent
+	stopChannel   chan struct{}
+	wg            sync.WaitGroup
+	mutex         sync.RWMutex
+	startTime     time.Time
 }
 
 // SMBEvent represents events from SMB operations
@@ -112,29 +112,29 @@ func (e EventType) String() string {
 
 // OfflineCache stores metadata when SMB sources are unavailable
 type OfflineCache struct {
-	entries    map[string]*CacheEntry
-	maxSize    int
-	mutex      sync.RWMutex
-	logger     *zap.Logger
+	entries map[string]*CacheEntry
+	maxSize int
+	mutex   sync.RWMutex
+	logger  *zap.Logger
 }
 
 type CacheEntry struct {
-	Path         string                 `json:"path"`
-	Metadata     map[string]interface{} `json:"metadata"`
-	LastSeen     time.Time              `json:"last_seen"`
-	IsAvailable  bool                   `json:"is_available"`
-	SourceID     string                 `json:"source_id"`
+	Path        string                 `json:"path"`
+	Metadata    map[string]interface{} `json:"metadata"`
+	LastSeen    time.Time              `json:"last_seen"`
+	IsAvailable bool                   `json:"is_available"`
+	SourceID    string                 `json:"source_id"`
 }
 
 // HealthChecker periodically checks SMB source health
 type HealthChecker struct {
-	manager   *ResilientSMBManager
-	interval  time.Duration
-	timeout   time.Duration
-	logger    *zap.Logger
-	ticker    *time.Ticker
-	ctx       context.Context
-	cancel    context.CancelFunc
+	manager  *ResilientSMBManager
+	interval time.Duration
+	timeout  time.Duration
+	logger   *zap.Logger
+	ticker   *time.Ticker
+	ctx      context.Context
+	cancel   context.CancelFunc
 }
 
 // NewResilientSMBManager creates a new resilient SMB manager

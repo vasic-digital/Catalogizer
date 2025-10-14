@@ -48,7 +48,7 @@ export class MediaService {
   /**
    * Get recently added media
    */
-  public async getRecentlyAdded(limit: number = 20): Promise<MediaItem[]> {
+  public async getRecentlyAdded(limit = 20): Promise<MediaItem[]> {
     const response = await this.search({
       sort_by: 'created_at',
       sort_order: 'desc',
@@ -60,7 +60,7 @@ export class MediaService {
   /**
    * Get trending/popular media
    */
-  public async getTrending(limit: number = 20): Promise<MediaItem[]> {
+  public async getTrending(limit = 20): Promise<MediaItem[]> {
     const response = await this.search({
       sort_by: 'rating',
       sort_order: 'desc',
@@ -72,7 +72,7 @@ export class MediaService {
   /**
    * Get media by type
    */
-  public async getByType(mediaType: string, limit: number = 20): Promise<MediaItem[]> {
+  public async getByType(mediaType: string, limit = 20): Promise<MediaItem[]> {
     const response = await this.search({
       media_type: mediaType,
       sort_by: 'updated_at',
@@ -85,7 +85,7 @@ export class MediaService {
   /**
    * Get user's favorite media
    */
-  public async getFavorites(limit: number = 50): Promise<MediaItem[]> {
+  public async getFavorites(limit = 50): Promise<MediaItem[]> {
     return this.http.get<MediaItem[]>(`/media/favorites?limit=${limit}`);
   }
 
@@ -99,7 +99,7 @@ export class MediaService {
   /**
    * Get continue watching items (items with partial progress)
    */
-  public async getContinueWatching(limit: number = 20): Promise<MediaItem[]> {
+  public async getContinueWatching(limit = 20): Promise<MediaItem[]> {
     return this.http.get<MediaItem[]>(`/media/continue-watching?limit=${limit}`);
   }
 
@@ -225,7 +225,7 @@ export class MediaService {
   /**
    * Delete a media item
    */
-  public async delete(mediaId: number, deleteFiles: boolean = false): Promise<void> {
+  public async delete(mediaId: number, deleteFiles = false): Promise<void> {
     const params = deleteFiles ? '?delete_files=true' : '';
     return this.http.delete<void>(`/media/${mediaId}${params}`);
   }
@@ -240,14 +240,14 @@ export class MediaService {
   /**
    * Get similar media items
    */
-  public async getSimilar(mediaId: number, limit: number = 10): Promise<MediaItem[]> {
+  public async getSimilar(mediaId: number, limit = 10): Promise<MediaItem[]> {
     return this.http.get<MediaItem[]>(`/media/${mediaId}/similar?limit=${limit}`);
   }
 
   /**
    * Get media recommendations for the user
    */
-  public async getRecommendations(limit: number = 20): Promise<MediaItem[]> {
+  public async getRecommendations(limit = 20): Promise<MediaItem[]> {
     return this.http.get<MediaItem[]>(`/media/recommendations?limit=${limit}`);
   }
 

@@ -14,168 +14,166 @@ import (
 
 // MediaPlayerService handles all media playback functionality
 type MediaPlayerService struct {
-	db                    *sql.DB
-	logger                *zap.Logger
-	lyricsService         *LyricsService
-	subtitleService       *SubtitleService
-	coverArtService       *CoverArtService
-	translationService    *TranslationService
-	positionTracker       *PlaybackPositionService
-	playlistService       *PlaylistService
+	db                 *sql.DB
+	logger             *zap.Logger
+	lyricsService      *LyricsService
+	subtitleService    *SubtitleService
+	coverArtService    *CoverArtService
+	translationService *TranslationService
+	positionTracker    *PlaybackPositionService
+	playlistService    *PlaylistService
 }
-
 
 // MediaItem represents a media file with all its metadata
 type MediaItem struct {
-	ID             int64                  `json:"id" db:"id"`
-	Path           string                 `json:"path" db:"path"`
-	Filename       string                 `json:"filename" db:"filename"`
-	Title          string                 `json:"title" db:"title"`
-	MediaType      MediaType              `json:"media_type" db:"media_type"`
-	MimeType       string                 `json:"mime_type" db:"mime_type"`
-	Size           int64                  `json:"size" db:"size"`
-	Duration       *float64               `json:"duration,omitempty" db:"duration"`
-	CreatedAt      time.Time              `json:"created_at" db:"created_at"`
-	UpdatedAt      time.Time              `json:"updated_at" db:"updated_at"`
+	ID        int64     `json:"id" db:"id"`
+	Path      string    `json:"path" db:"path"`
+	Filename  string    `json:"filename" db:"filename"`
+	Title     string    `json:"title" db:"title"`
+	MediaType MediaType `json:"media_type" db:"media_type"`
+	MimeType  string    `json:"mime_type" db:"mime_type"`
+	Size      int64     `json:"size" db:"size"`
+	Duration  *float64  `json:"duration,omitempty" db:"duration"`
+	CreatedAt time.Time `json:"created_at" db:"created_at"`
+	UpdatedAt time.Time `json:"updated_at" db:"updated_at"`
 
 	// Music-specific metadata
-	Artist         *string                `json:"artist,omitempty" db:"artist"`
-	Album          *string                `json:"album,omitempty" db:"album"`
-	AlbumArtist    *string                `json:"album_artist,omitempty" db:"album_artist"`
-	Genre          *string                `json:"genre,omitempty" db:"genre"`
-	Year           *int                   `json:"year,omitempty" db:"year"`
-	TrackNumber    *int                   `json:"track_number,omitempty" db:"track_number"`
-	DiscNumber     *int                   `json:"disc_number,omitempty" db:"disc_number"`
+	Artist      *string `json:"artist,omitempty" db:"artist"`
+	Album       *string `json:"album,omitempty" db:"album"`
+	AlbumArtist *string `json:"album_artist,omitempty" db:"album_artist"`
+	Genre       *string `json:"genre,omitempty" db:"genre"`
+	Year        *int    `json:"year,omitempty" db:"year"`
+	TrackNumber *int    `json:"track_number,omitempty" db:"track_number"`
+	DiscNumber  *int    `json:"disc_number,omitempty" db:"disc_number"`
 
 	// Video-specific metadata
-	VideoCodec     *string                `json:"video_codec,omitempty" db:"video_codec"`
-	AudioCodec     *string                `json:"audio_codec,omitempty" db:"audio_codec"`
-	Resolution     *string                `json:"resolution,omitempty" db:"resolution"`
-	Framerate      *float64               `json:"framerate,omitempty" db:"framerate"`
-	Bitrate        *int64                 `json:"bitrate,omitempty" db:"bitrate"`
+	VideoCodec *string  `json:"video_codec,omitempty" db:"video_codec"`
+	AudioCodec *string  `json:"audio_codec,omitempty" db:"audio_codec"`
+	Resolution *string  `json:"resolution,omitempty" db:"resolution"`
+	Framerate  *float64 `json:"framerate,omitempty" db:"framerate"`
+	Bitrate    *int64   `json:"bitrate,omitempty" db:"bitrate"`
 
 	// TV Show/Series metadata
-	SeriesTitle    *string                `json:"series_title,omitempty" db:"series_title"`
-	Season         *int                   `json:"season,omitempty" db:"season"`
-	Episode        *int                   `json:"episode,omitempty" db:"episode"`
-	EpisodeTitle   *string                `json:"episode_title,omitempty" db:"episode_title"`
+	SeriesTitle  *string `json:"series_title,omitempty" db:"series_title"`
+	Season       *int    `json:"season,omitempty" db:"season"`
+	Episode      *int    `json:"episode,omitempty" db:"episode"`
+	EpisodeTitle *string `json:"episode_title,omitempty" db:"episode_title"`
 
 	// Additional metadata
-	Description    *string                `json:"description,omitempty" db:"description"`
-	Language       *string                `json:"language,omitempty" db:"language"`
-	Subtitles      []SubtitleTrack        `json:"subtitles,omitempty"`
-	CoverArt       *CoverArt              `json:"cover_art,omitempty"`
-	Lyrics         *LyricsData            `json:"lyrics,omitempty"`
-	Chapters       []Chapter              `json:"chapters,omitempty"`
+	Description *string         `json:"description,omitempty" db:"description"`
+	Language    *string         `json:"language,omitempty" db:"language"`
+	Subtitles   []SubtitleTrack `json:"subtitles,omitempty"`
+	CoverArt    *CoverArt       `json:"cover_art,omitempty"`
+	Lyrics      *LyricsData     `json:"lyrics,omitempty"`
+	Chapters    []Chapter       `json:"chapters,omitempty"`
 
 	// Playback metadata
-	LastPosition   *float64               `json:"last_position,omitempty" db:"last_position"`
-	PlayCount      int                    `json:"play_count" db:"play_count"`
-	LastPlayed     *time.Time             `json:"last_played,omitempty" db:"last_played"`
-	IsFavorite     bool                   `json:"is_favorite" db:"is_favorite"`
-	Rating         *int                   `json:"rating,omitempty" db:"rating"` // 1-5 stars
+	LastPosition *float64   `json:"last_position,omitempty" db:"last_position"`
+	PlayCount    int        `json:"play_count" db:"play_count"`
+	LastPlayed   *time.Time `json:"last_played,omitempty" db:"last_played"`
+	IsFavorite   bool       `json:"is_favorite" db:"is_favorite"`
+	Rating       *int       `json:"rating,omitempty" db:"rating"` // 1-5 stars
 
 	// Cached external data
-	ExternalData   map[string]interface{} `json:"external_data,omitempty"`
+	ExternalData map[string]interface{} `json:"external_data,omitempty"`
 }
 
 // PlaybackSession represents an active playback session
 type PlaybackSession struct {
-	ID              string                 `json:"id"`
-	UserID          string                 `json:"user_id"`
-	MediaItem       *MediaItem             `json:"media_item"`
-	PlaylistID      *string                `json:"playlist_id,omitempty"`
-	CurrentPosition float64                `json:"current_position"`
-	State           PlaybackState          `json:"state"`
-	Volume          float64                `json:"volume"`
-	PlaybackRate    float64                `json:"playback_rate"`
-	RepeatMode      RepeatMode             `json:"repeat_mode"`
-	ShuffleEnabled  bool                   `json:"shuffle_enabled"`
-	StartedAt       time.Time              `json:"started_at"`
-	UpdatedAt       time.Time              `json:"updated_at"`
+	ID              string        `json:"id"`
+	UserID          string        `json:"user_id"`
+	MediaItem       *MediaItem    `json:"media_item"`
+	PlaylistID      *string       `json:"playlist_id,omitempty"`
+	CurrentPosition float64       `json:"current_position"`
+	State           PlaybackState `json:"state"`
+	Volume          float64       `json:"volume"`
+	PlaybackRate    float64       `json:"playback_rate"`
+	RepeatMode      RepeatMode    `json:"repeat_mode"`
+	ShuffleEnabled  bool          `json:"shuffle_enabled"`
+	StartedAt       time.Time     `json:"started_at"`
+	UpdatedAt       time.Time     `json:"updated_at"`
 
 	// Current subtitle and audio tracks
-	CurrentSubtitle *SubtitleTrack         `json:"current_subtitle,omitempty"`
-	CurrentAudio    *AudioTrack            `json:"current_audio,omitempty"`
+	CurrentSubtitle *SubtitleTrack `json:"current_subtitle,omitempty"`
+	CurrentAudio    *AudioTrack    `json:"current_audio,omitempty"`
 
 	// Player-specific settings
-	PlayerSettings  map[string]interface{} `json:"player_settings,omitempty"`
+	PlayerSettings map[string]interface{} `json:"player_settings,omitempty"`
 }
-
 
 // SubtitleTrack represents a subtitle track
 type SubtitleTrack struct {
-	ID            string    `json:"id"`
-	Language      string    `json:"language"`
-	LanguageCode  string    `json:"language_code"`
-	Source        string    `json:"source"` // "embedded", "external", "downloaded"
-	Format        string    `json:"format"` // "srt", "vtt", "ass", etc.
-	Path          *string   `json:"path,omitempty"`
-	Content       *string   `json:"content,omitempty"`
-	IsDefault     bool      `json:"is_default"`
-	IsForced      bool      `json:"is_forced"`
-	Encoding      string    `json:"encoding"`
-	SyncOffset    float64   `json:"sync_offset"` // Milliseconds offset for sync adjustment
-	CreatedAt     time.Time `json:"created_at"`
-	VerifiedSync  bool      `json:"verified_sync"` // Whether sync has been verified
+	ID           string    `json:"id"`
+	Language     string    `json:"language"`
+	LanguageCode string    `json:"language_code"`
+	Source       string    `json:"source"` // "embedded", "external", "downloaded"
+	Format       string    `json:"format"` // "srt", "vtt", "ass", etc.
+	Path         *string   `json:"path,omitempty"`
+	Content      *string   `json:"content,omitempty"`
+	IsDefault    bool      `json:"is_default"`
+	IsForced     bool      `json:"is_forced"`
+	Encoding     string    `json:"encoding"`
+	SyncOffset   float64   `json:"sync_offset"` // Milliseconds offset for sync adjustment
+	CreatedAt    time.Time `json:"created_at"`
+	VerifiedSync bool      `json:"verified_sync"` // Whether sync has been verified
 }
 
 // AudioTrack represents an audio track
 type AudioTrack struct {
-	ID          string  `json:"id"`
-	Language    string  `json:"language"`
-	Codec       string  `json:"codec"`
-	Channels    int     `json:"channels"`
-	Bitrate     *int64  `json:"bitrate,omitempty"`
-	SampleRate  *int    `json:"sample_rate,omitempty"`
-	IsDefault   bool    `json:"is_default"`
-	Title       *string `json:"title,omitempty"`
+	ID         string  `json:"id"`
+	Language   string  `json:"language"`
+	Codec      string  `json:"codec"`
+	Channels   int     `json:"channels"`
+	Bitrate    *int64  `json:"bitrate,omitempty"`
+	SampleRate *int    `json:"sample_rate,omitempty"`
+	IsDefault  bool    `json:"is_default"`
+	Title      *string `json:"title,omitempty"`
 }
 
 // Chapter represents a chapter or bookmark in media
 type Chapter struct {
-	ID        string  `json:"id"`
-	Title     string  `json:"title"`
-	StartTime float64 `json:"start_time"`
+	ID        string   `json:"id"`
+	Title     string   `json:"title"`
+	StartTime float64  `json:"start_time"`
 	EndTime   *float64 `json:"end_time,omitempty"`
-	Thumbnail *string `json:"thumbnail,omitempty"`
+	Thumbnail *string  `json:"thumbnail,omitempty"`
 }
 
 // CoverArt represents cover art metadata
 type CoverArt struct {
-	ID          string    `json:"id"`
-	MediaItemID int64     `json:"media_item_id"`
-	Source      string    `json:"source"` // "embedded", "local", "musicbrainz", "lastfm", etc.
-	URL         *string   `json:"url,omitempty"`
-	LocalPath   *string   `json:"local_path,omitempty"`
-	Width       *int      `json:"width,omitempty"`
-	Height      *int      `json:"height,omitempty"`
-	Format      string    `json:"format"` // "jpeg", "png", "webp"
-	Size        *int64    `json:"size,omitempty"`
-	Quality     string    `json:"quality"` // "thumbnail", "medium", "high", "original"
-	CreatedAt   time.Time `json:"created_at"`
+	ID          string     `json:"id"`
+	MediaItemID int64      `json:"media_item_id"`
+	Source      string     `json:"source"` // "embedded", "local", "musicbrainz", "lastfm", etc.
+	URL         *string    `json:"url,omitempty"`
+	LocalPath   *string    `json:"local_path,omitempty"`
+	Width       *int       `json:"width,omitempty"`
+	Height      *int       `json:"height,omitempty"`
+	Format      string     `json:"format"` // "jpeg", "png", "webp"
+	Size        *int64     `json:"size,omitempty"`
+	Quality     string     `json:"quality"` // "thumbnail", "medium", "high", "original"
+	CreatedAt   time.Time  `json:"created_at"`
 	CachedAt    *time.Time `json:"cached_at,omitempty"`
 }
 
 // LyricsData represents lyrics information
 type LyricsData struct {
-	ID          string                 `json:"id"`
-	MediaItemID int64                  `json:"media_item_id"`
-	Source      string                 `json:"source"` // "embedded", "genius", "musixmatch", etc.
-	Language    string                 `json:"language"`
-	Content     string                 `json:"content"`
-	IsSynced    bool                   `json:"is_synced"`
-	SyncData    []LyricsLine           `json:"sync_data,omitempty"`
-	Translations map[string]string     `json:"translations,omitempty"` // language_code -> translated content
-	CreatedAt   time.Time              `json:"created_at"`
-	CachedAt    *time.Time             `json:"cached_at,omitempty"`
+	ID           string            `json:"id"`
+	MediaItemID  int64             `json:"media_item_id"`
+	Source       string            `json:"source"` // "embedded", "genius", "musixmatch", etc.
+	Language     string            `json:"language"`
+	Content      string            `json:"content"`
+	IsSynced     bool              `json:"is_synced"`
+	SyncData     []LyricsLine      `json:"sync_data,omitempty"`
+	Translations map[string]string `json:"translations,omitempty"` // language_code -> translated content
+	CreatedAt    time.Time         `json:"created_at"`
+	CachedAt     *time.Time        `json:"cached_at,omitempty"`
 }
 
 // LyricsLine represents a synchronized lyrics line
 type LyricsLine struct {
-	StartTime float64 `json:"start_time"`
+	StartTime float64  `json:"start_time"`
 	EndTime   *float64 `json:"end_time,omitempty"`
-	Text      string  `json:"text"`
+	Text      string   `json:"text"`
 }
 
 // PlaybackRequest represents a request to start playback
@@ -206,14 +204,14 @@ type PlaybackUpdateRequest struct {
 // NewMediaPlayerService creates a new media player service
 func NewMediaPlayerService(db *sql.DB, logger *zap.Logger) *MediaPlayerService {
 	return &MediaPlayerService{
-		db:                    db,
-		logger:                logger,
-		lyricsService:         NewLyricsService(db, logger),
-		subtitleService:       NewSubtitleService(db, logger),
-		coverArtService:       NewCoverArtService(db, logger),
-		translationService:    NewTranslationService(logger),
-		positionTracker:       NewPlaybackPositionService(db, logger),
-		playlistService:       NewPlaylistService(db, logger),
+		db:                 db,
+		logger:             logger,
+		lyricsService:      NewLyricsService(db, logger),
+		subtitleService:    NewSubtitleService(db, logger),
+		coverArtService:    NewCoverArtService(db, logger),
+		translationService: NewTranslationService(logger),
+		positionTracker:    NewPlaybackPositionService(db, logger),
+		playlistService:    NewPlaylistService(db, logger),
 	}
 }
 
@@ -311,7 +309,7 @@ func (s *MediaPlayerService) UpdatePlayback(ctx context.Context, userID string, 
 			UserID:      userIDInt,
 			MediaItemID: session.MediaItem.ID,
 			Position:    int64(*request.Position * 1000), // Convert seconds to milliseconds
-			Duration:    0,                                // Duration unknown at this point
+			Duration:    0,                               // Duration unknown at this point
 		})
 	}
 

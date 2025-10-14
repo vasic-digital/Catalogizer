@@ -8,9 +8,9 @@ import (
 	"strings"
 	"time"
 
-	"golang.org/x/crypto/bcrypt"
 	"github.com/golang-jwt/jwt/v5"
 	"go.uber.org/zap"
+	"golang.org/x/crypto/bcrypt"
 )
 
 // AuthService handles authentication operations

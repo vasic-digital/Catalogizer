@@ -66,10 +66,10 @@ func TestDefaultClientFactory_CreateClient(t *testing.T) {
 			config: &StorageConfig{
 				Protocol: "nfs",
 				Settings: map[string]interface{}{
-					"host":       "localhost",
-					"path":       "/export",
+					"host":        "localhost",
+					"path":        "/export",
 					"mount_point": "/mnt/nfs",
-					"options":    "vers=3",
+					"options":     "vers=3",
 				},
 			},
 			wantErr:  false,

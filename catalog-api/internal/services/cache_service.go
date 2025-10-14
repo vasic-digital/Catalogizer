@@ -27,15 +27,15 @@ type CacheEntry struct {
 }
 
 type MediaMetadataCache struct {
-	ID          int64     `json:"id"`
-	MediaItemID int64     `json:"media_item_id"`
-	MetadataType string   `json:"metadata_type"`
-	Provider    string    `json:"provider"`
-	Data        string    `json:"data"`
-	Quality     float64   `json:"quality"`
-	ExpiresAt   time.Time `json:"expires_at"`
-	CreatedAt   time.Time `json:"created_at"`
-	UpdatedAt   time.Time `json:"updated_at"`
+	ID           int64     `json:"id"`
+	MediaItemID  int64     `json:"media_item_id"`
+	MetadataType string    `json:"metadata_type"`
+	Provider     string    `json:"provider"`
+	Data         string    `json:"data"`
+	Quality      float64   `json:"quality"`
+	ExpiresAt    time.Time `json:"expires_at"`
+	CreatedAt    time.Time `json:"created_at"`
+	UpdatedAt    time.Time `json:"updated_at"`
 }
 
 type APICache struct {
@@ -61,11 +61,11 @@ type ThumbnailCache struct {
 }
 
 type CacheStats struct {
-	TotalEntries     int64   `json:"total_entries"`
-	TotalSize        int64   `json:"total_size"`
-	HitRate          float64 `json:"hit_rate"`
-	MissRate         float64 `json:"miss_rate"`
-	ExpiredEntries   int64   `json:"expired_entries"`
+	TotalEntries     int64            `json:"total_entries"`
+	TotalSize        int64            `json:"total_size"`
+	HitRate          float64          `json:"hit_rate"`
+	MissRate         float64          `json:"miss_rate"`
+	ExpiredEntries   int64            `json:"expired_entries"`
 	CachesByType     map[string]int64 `json:"caches_by_type"`
 	CachesByProvider map[string]int64 `json:"caches_by_provider"`
 	RecentActivity   []CacheActivity  `json:"recent_activity"`
@@ -80,14 +80,14 @@ type CacheActivity struct {
 }
 
 const (
-	DefaultCacheTTL        = 24 * time.Hour
-	MetadataCacheTTL       = 7 * 24 * time.Hour
-	ThumbnailCacheTTL      = 30 * 24 * time.Hour
-	APICacheTTL            = 1 * time.Hour
-	TranslationCacheTTL    = 30 * 24 * time.Hour
-	SubtitleCacheTTL       = 7 * 24 * time.Hour
-	LyricsCacheTTL         = 14 * 24 * time.Hour
-	CoverArtCacheTTL       = 30 * 24 * time.Hour
+	DefaultCacheTTL     = 24 * time.Hour
+	MetadataCacheTTL    = 7 * 24 * time.Hour
+	ThumbnailCacheTTL   = 30 * 24 * time.Hour
+	APICacheTTL         = 1 * time.Hour
+	TranslationCacheTTL = 30 * 24 * time.Hour
+	SubtitleCacheTTL    = 7 * 24 * time.Hour
+	LyricsCacheTTL      = 14 * 24 * time.Hour
+	CoverArtCacheTTL    = 30 * 24 * time.Hour
 )
 
 func NewCacheService(db *sql.DB, logger *zap.Logger) *CacheService {
@@ -436,12 +436,12 @@ func (s *CacheService) SetTranslation(ctx context.Context, sourceText, sourceLan
 	key := fmt.Sprintf("translation:%s:%s:%s:%s", provider, sourceLang, targetLang, s.hashString(sourceText))
 
 	translationData := map[string]interface{}{
-		"source_text":   sourceText,
-		"source_lang":   sourceLang,
-		"target_lang":   targetLang,
-		"translation":   translation,
-		"provider":      provider,
-		"cached_at":     time.Now(),
+		"source_text": sourceText,
+		"source_lang": sourceLang,
+		"target_lang": targetLang,
+		"translation": translation,
+		"provider":    provider,
+		"cached_at":   time.Now(),
 	}
 
 	return s.Set(ctx, key, translationData, TranslationCacheTTL)

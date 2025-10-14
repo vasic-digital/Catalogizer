@@ -72,7 +72,7 @@ func (h *LocalizationHandlers) GetWizardDefaults(w http.ResponseWriter, r *http.
 
 	h.sendSuccess(w, map[string]interface{}{
 		"detected_language": detectedLanguage,
-		"defaults":         defaults,
+		"defaults":          defaults,
 	})
 }
 
@@ -269,8 +269,8 @@ func (h *LocalizationHandlers) ImportConfiguration(w http.ResponseWriter, r *htt
 	}
 
 	var req struct {
-		ConfigJSON string            `json:"config_json"`
-		Options    map[string]bool   `json:"options"`
+		ConfigJSON string          `json:"config_json"`
+		Options    map[string]bool `json:"options"`
 	}
 
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
@@ -418,7 +418,7 @@ func (h *LocalizationHandlers) DetectLanguage(w http.ResponseWriter, r *http.Req
 
 	h.sendSuccess(w, map[string]interface{}{
 		"detected_language": detectedLanguage,
-		"confidence":       1.0,
+		"confidence":        1.0,
 	})
 }
 
@@ -455,11 +455,11 @@ func (h *LocalizationHandlers) CheckLanguageSupport(w http.ResponseWriter, r *ht
 	}
 
 	h.sendSuccess(w, map[string]interface{}{
-		"supported":       supported,
-		"language_code":   req.LanguageCode,
-		"content_type":    req.ContentType,
-		"quality_rating":  qualityRating,
-		"providers":       providers,
+		"supported":      supported,
+		"language_code":  req.LanguageCode,
+		"content_type":   req.ContentType,
+		"quality_rating": qualityRating,
+		"providers":      providers,
 	})
 }
 

@@ -255,6 +255,10 @@ class AuthRepository @Inject constructor(
         return !token.isNullOrBlank() && System.currentTimeMillis() < expiry
     }
 
+    suspend fun isAuthenticated(): Boolean {
+        return isAuthenticated.first()
+    }
+
     suspend fun getValidToken(): String? {
         return if (isTokenValid()) {
             authToken.first()

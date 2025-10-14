@@ -26,10 +26,10 @@ type MovieRecognitionProvider struct {
 
 // External API response structures
 type TMDbSearchResponse struct {
-	Page         int           `json:"page"`
-	Results      []TMDbResult  `json:"results"`
-	TotalPages   int           `json:"total_pages"`
-	TotalResults int           `json:"total_results"`
+	Page         int          `json:"page"`
+	Results      []TMDbResult `json:"results"`
+	TotalPages   int          `json:"total_pages"`
+	TotalResults int          `json:"total_results"`
 }
 
 type TMDbResult struct {
@@ -55,56 +55,56 @@ type TMDbResult struct {
 }
 
 type TMDbMovieDetails struct {
-	ID                  int                    `json:"id"`
-	Title               string                 `json:"title"`
-	OriginalTitle       string                 `json:"original_title"`
-	Overview            string                 `json:"overview"`
-	ReleaseDate         string                 `json:"release_date"`
-	Runtime             int                    `json:"runtime"`
-	Genres              []TMDbGenre            `json:"genres"`
+	ID                  int                     `json:"id"`
+	Title               string                  `json:"title"`
+	OriginalTitle       string                  `json:"original_title"`
+	Overview            string                  `json:"overview"`
+	ReleaseDate         string                  `json:"release_date"`
+	Runtime             int                     `json:"runtime"`
+	Genres              []TMDbGenre             `json:"genres"`
 	ProductionCompanies []TMDbProductionCompany `json:"production_companies"`
-	ProductionCountries []TMDbCountry          `json:"production_countries"`
-	SpokenLanguages     []TMDbLanguage         `json:"spoken_languages"`
-	VoteAverage         float64                `json:"vote_average"`
-	VoteCount           int                    `json:"vote_count"`
-	Popularity          float64                `json:"popularity"`
-	PosterPath          string                 `json:"poster_path"`
-	BackdropPath        string                 `json:"backdrop_path"`
-	Adult               bool                   `json:"adult"`
-	Homepage            string                 `json:"homepage"`
-	IMDbID              string                 `json:"imdb_id"`
-	Budget              int64                  `json:"budget"`
-	Revenue             int64                  `json:"revenue"`
-	Status              string                 `json:"status"`
-	Tagline             string                 `json:"tagline"`
+	ProductionCountries []TMDbCountry           `json:"production_countries"`
+	SpokenLanguages     []TMDbLanguage          `json:"spoken_languages"`
+	VoteAverage         float64                 `json:"vote_average"`
+	VoteCount           int                     `json:"vote_count"`
+	Popularity          float64                 `json:"popularity"`
+	PosterPath          string                  `json:"poster_path"`
+	BackdropPath        string                  `json:"backdrop_path"`
+	Adult               bool                    `json:"adult"`
+	Homepage            string                  `json:"homepage"`
+	IMDbID              string                  `json:"imdb_id"`
+	Budget              int64                   `json:"budget"`
+	Revenue             int64                   `json:"revenue"`
+	Status              string                  `json:"status"`
+	Tagline             string                  `json:"tagline"`
 }
 
 type TMDbTVDetails struct {
-	ID                  int                    `json:"id"`
-	Name                string                 `json:"name"`
-	OriginalName        string                 `json:"original_name"`
-	Overview            string                 `json:"overview"`
-	FirstAirDate        string                 `json:"first_air_date"`
-	LastAirDate         string                 `json:"last_air_date"`
-	Genres              []TMDbGenre            `json:"genres"`
-	CreatedBy           []TMDbCreator          `json:"created_by"`
-	Networks            []TMDbNetwork          `json:"networks"`
+	ID                  int                     `json:"id"`
+	Name                string                  `json:"name"`
+	OriginalName        string                  `json:"original_name"`
+	Overview            string                  `json:"overview"`
+	FirstAirDate        string                  `json:"first_air_date"`
+	LastAirDate         string                  `json:"last_air_date"`
+	Genres              []TMDbGenre             `json:"genres"`
+	CreatedBy           []TMDbCreator           `json:"created_by"`
+	Networks            []TMDbNetwork           `json:"networks"`
 	ProductionCompanies []TMDbProductionCompany `json:"production_companies"`
-	ProductionCountries []TMDbCountry          `json:"production_countries"`
-	SpokenLanguages     []TMDbLanguage         `json:"spoken_languages"`
-	VoteAverage         float64                `json:"vote_average"`
-	VoteCount           int                    `json:"vote_count"`
-	Popularity          float64                `json:"popularity"`
-	PosterPath          string                 `json:"poster_path"`
-	BackdropPath        string                 `json:"backdrop_path"`
-	Homepage            string                 `json:"homepage"`
-	InProduction        bool                   `json:"in_production"`
-	NumberOfEpisodes    int                    `json:"number_of_episodes"`
-	NumberOfSeasons     int                    `json:"number_of_seasons"`
-	Status              string                 `json:"status"`
-	Type                string                 `json:"type"`
-	Tagline             string                 `json:"tagline"`
-	ExternalIDs         TMDbExternalIDs        `json:"external_ids,omitempty"`
+	ProductionCountries []TMDbCountry           `json:"production_countries"`
+	SpokenLanguages     []TMDbLanguage          `json:"spoken_languages"`
+	VoteAverage         float64                 `json:"vote_average"`
+	VoteCount           int                     `json:"vote_count"`
+	Popularity          float64                 `json:"popularity"`
+	PosterPath          string                  `json:"poster_path"`
+	BackdropPath        string                  `json:"backdrop_path"`
+	Homepage            string                  `json:"homepage"`
+	InProduction        bool                    `json:"in_production"`
+	NumberOfEpisodes    int                     `json:"number_of_episodes"`
+	NumberOfSeasons     int                     `json:"number_of_seasons"`
+	Status              string                  `json:"status"`
+	Type                string                  `json:"type"`
+	Tagline             string                  `json:"tagline"`
+	ExternalIDs         TMDbExternalIDs         `json:"external_ids,omitempty"`
 }
 
 type TMDbGenre struct {
@@ -153,21 +153,21 @@ type TMDbExternalIDs struct {
 }
 
 type TMDbCredits struct {
-	ID   int                `json:"id"`
-	Cast []TMDbCastMember   `json:"cast"`
-	Crew []TMDbCrewMember   `json:"crew"`
+	ID   int              `json:"id"`
+	Cast []TMDbCastMember `json:"cast"`
+	Crew []TMDbCrewMember `json:"crew"`
 }
 
 type TMDbCastMember struct {
-	ID           int     `json:"id"`
-	Name         string  `json:"name"`
-	Character    string  `json:"character"`
-	Order        int     `json:"order"`
-	Gender       int     `json:"gender"`
-	ProfilePath  string  `json:"profile_path"`
-	CastID       int     `json:"cast_id"`
-	CreditID     string  `json:"credit_id"`
-	Popularity   float64 `json:"popularity"`
+	ID          int     `json:"id"`
+	Name        string  `json:"name"`
+	Character   string  `json:"character"`
+	Order       int     `json:"order"`
+	Gender      int     `json:"gender"`
+	ProfilePath string  `json:"profile_path"`
+	CastID      int     `json:"cast_id"`
+	CreditID    string  `json:"credit_id"`
+	Popularity  float64 `json:"popularity"`
 }
 
 type TMDbCrewMember struct {
@@ -183,32 +183,32 @@ type TMDbCrewMember struct {
 
 // OMDb API structures (fallback)
 type OMDbResponse struct {
-	Title      string `json:"Title"`
-	Year       string `json:"Year"`
-	Rated      string `json:"Rated"`
-	Released   string `json:"Released"`
-	Runtime    string `json:"Runtime"`
-	Genre      string `json:"Genre"`
-	Director   string `json:"Director"`
-	Writer     string `json:"Writer"`
-	Actors     string `json:"Actors"`
-	Plot       string `json:"Plot"`
-	Language   string `json:"Language"`
-	Country    string `json:"Country"`
-	Awards     string `json:"Awards"`
-	Poster     string `json:"Poster"`
+	Title      string       `json:"Title"`
+	Year       string       `json:"Year"`
+	Rated      string       `json:"Rated"`
+	Released   string       `json:"Released"`
+	Runtime    string       `json:"Runtime"`
+	Genre      string       `json:"Genre"`
+	Director   string       `json:"Director"`
+	Writer     string       `json:"Writer"`
+	Actors     string       `json:"Actors"`
+	Plot       string       `json:"Plot"`
+	Language   string       `json:"Language"`
+	Country    string       `json:"Country"`
+	Awards     string       `json:"Awards"`
+	Poster     string       `json:"Poster"`
 	Ratings    []OMDbRating `json:"Ratings"`
-	Metascore  string `json:"Metascore"`
-	IMDbRating string `json:"imdbRating"`
-	IMDbVotes  string `json:"imdbVotes"`
-	IMDbID     string `json:"imdbID"`
-	Type       string `json:"Type"`
-	DVD        string `json:"DVD,omitempty"`
-	BoxOffice  string `json:"BoxOffice,omitempty"`
-	Production string `json:"Production,omitempty"`
-	Website    string `json:"Website,omitempty"`
-	Response   string `json:"Response"`
-	Error      string `json:"Error,omitempty"`
+	Metascore  string       `json:"Metascore"`
+	IMDbRating string       `json:"imdbRating"`
+	IMDbVotes  string       `json:"imdbVotes"`
+	IMDbID     string       `json:"imdbID"`
+	Type       string       `json:"Type"`
+	DVD        string       `json:"DVD,omitempty"`
+	BoxOffice  string       `json:"BoxOffice,omitempty"`
+	Production string       `json:"Production,omitempty"`
+	Website    string       `json:"Website,omitempty"`
+	Response   string       `json:"Response"`
+	Error      string       `json:"Error,omitempty"`
 }
 
 type OMDbRating struct {
@@ -221,10 +221,10 @@ func NewMovieRecognitionProvider(logger *zap.Logger) *MovieRecognitionProvider {
 		logger:     logger,
 		httpClient: &http.Client{Timeout: 30 * time.Second},
 		baseURLs: map[string]string{
-			"tmdb":   "https://api.themoviedb.org/3",
-			"omdb":   "http://www.omdbapi.com",
-			"tvdb":   "https://api4.thetvdb.com/v4",
-			"imdb":   "https://imdb-api.com",
+			"tmdb": "https://api.themoviedb.org/3",
+			"omdb": "http://www.omdbapi.com",
+			"tvdb": "https://api4.thetvdb.com/v4",
+			"imdb": "https://imdb-api.com",
 		},
 		apiKeys: map[string]string{
 			"tmdb": "free_api_key", // Using free tier
@@ -330,19 +330,19 @@ func (p *MovieRecognitionProvider) getTMDbMovieDetails(ctx context.Context, movi
 
 	// Convert to MediaRecognitionResult
 	result := &MediaRecognitionResult{
-		MediaID:       fmt.Sprintf("tmdb_movie_%d", movie.ID),
-		MediaType:     MediaTypeMovie,
-		Title:         movie.Title,
-		OriginalTitle: movie.OriginalTitle,
-		Description:   movie.Overview,
-		Year:          p.parseYear(movie.ReleaseDate),
-		Duration:      int64(movie.Runtime * 60), // Convert minutes to seconds
-		IMDbID:        movie.IMDbID,
-		TMDbID:        strconv.Itoa(movie.ID),
-		Rating:        movie.VoteAverage,
-		Confidence:    p.calculateConfidence(movie.Title, movie.VoteAverage, movie.VoteCount),
+		MediaID:           fmt.Sprintf("tmdb_movie_%d", movie.ID),
+		MediaType:         MediaTypeMovie,
+		Title:             movie.Title,
+		OriginalTitle:     movie.OriginalTitle,
+		Description:       movie.Overview,
+		Year:              p.parseYear(movie.ReleaseDate),
+		Duration:          int64(movie.Runtime * 60), // Convert minutes to seconds
+		IMDbID:            movie.IMDbID,
+		TMDbID:            strconv.Itoa(movie.ID),
+		Rating:            movie.VoteAverage,
+		Confidence:        p.calculateConfidence(movie.Title, movie.VoteAverage, movie.VoteCount),
 		RecognitionMethod: "tmdb_api",
-		APIProvider:   "TMDb",
+		APIProvider:       "TMDb",
 	}
 
 	// Parse release date
@@ -421,20 +421,20 @@ func (p *MovieRecognitionProvider) getTMDbTVDetails(ctx context.Context, tvID, s
 
 	// Convert to MediaRecognitionResult
 	result := &MediaRecognitionResult{
-		MediaID:       fmt.Sprintf("tmdb_tv_%d", tv.ID),
-		MediaType:     mediaType,
-		Title:         title,
-		OriginalTitle: tv.OriginalName,
-		SeriesTitle:   tv.Name,
-		Description:   tv.Overview,
-		Year:          p.parseYear(tv.FirstAirDate),
-		Season:        season,
-		Episode:       episode,
-		TMDbID:        strconv.Itoa(tv.ID),
-		Rating:        tv.VoteAverage,
-		Confidence:    p.calculateConfidence(tv.Name, tv.VoteAverage, tv.VoteCount),
+		MediaID:           fmt.Sprintf("tmdb_tv_%d", tv.ID),
+		MediaType:         mediaType,
+		Title:             title,
+		OriginalTitle:     tv.OriginalName,
+		SeriesTitle:       tv.Name,
+		Description:       tv.Overview,
+		Year:              p.parseYear(tv.FirstAirDate),
+		Season:            season,
+		Episode:           episode,
+		TMDbID:            strconv.Itoa(tv.ID),
+		Rating:            tv.VoteAverage,
+		Confidence:        p.calculateConfidence(tv.Name, tv.VoteAverage, tv.VoteCount),
 		RecognitionMethod: "tmdb_api",
-		APIProvider:   "TMDb",
+		APIProvider:       "TMDb",
 	}
 
 	// Parse first air date
@@ -493,16 +493,16 @@ func (p *MovieRecognitionProvider) getTMDbEpisodeDetails(ctx context.Context, tv
 }
 
 type TMDbEpisodeDetails struct {
-	ID          int     `json:"id"`
-	Name        string  `json:"name"`
-	Overview    string  `json:"overview"`
-	AirDate     string  `json:"air_date"`
-	EpisodeNumber int   `json:"episode_number"`
-	SeasonNumber  int   `json:"season_number"`
-	Runtime     int     `json:"runtime"`
-	VoteAverage float64 `json:"vote_average"`
-	VoteCount   int     `json:"vote_count"`
-	StillPath   string  `json:"still_path"`
+	ID            int     `json:"id"`
+	Name          string  `json:"name"`
+	Overview      string  `json:"overview"`
+	AirDate       string  `json:"air_date"`
+	EpisodeNumber int     `json:"episode_number"`
+	SeasonNumber  int     `json:"season_number"`
+	Runtime       int     `json:"runtime"`
+	VoteAverage   float64 `json:"vote_average"`
+	VoteCount     int     `json:"vote_count"`
+	StillPath     string  `json:"still_path"`
 }
 
 func (p *MovieRecognitionProvider) searchOMDb(ctx context.Context, title string, year int, mediaType MediaType) (*MediaRecognitionResult, error) {
@@ -538,16 +538,16 @@ func (p *MovieRecognitionProvider) searchOMDb(ctx context.Context, title string,
 
 	// Convert OMDb response to MediaRecognitionResult
 	result := &MediaRecognitionResult{
-		MediaID:       fmt.Sprintf("omdb_%s", omdbResp.IMDbID),
-		MediaType:     p.mapOMDbType(omdbResp.Type),
-		Title:         omdbResp.Title,
-		Description:   omdbResp.Plot,
-		Year:          p.parseYear(omdbResp.Year),
-		Director:      omdbResp.Director,
-		IMDbID:        omdbResp.IMDbID,
-		Confidence:    p.calculateOMDbConfidence(omdbResp.IMDbRating, omdbResp.IMDbVotes),
+		MediaID:           fmt.Sprintf("omdb_%s", omdbResp.IMDbID),
+		MediaType:         p.mapOMDbType(omdbResp.Type),
+		Title:             omdbResp.Title,
+		Description:       omdbResp.Plot,
+		Year:              p.parseYear(omdbResp.Year),
+		Director:          omdbResp.Director,
+		IMDbID:            omdbResp.IMDbID,
+		Confidence:        p.calculateOMDbConfidence(omdbResp.IMDbRating, omdbResp.IMDbVotes),
 		RecognitionMethod: "omdb_api",
-		APIProvider:   "OMDb",
+		APIProvider:       "OMDb",
 	}
 
 	// Parse release date
@@ -612,16 +612,16 @@ func (p *MovieRecognitionProvider) basicRecognition(req *MediaRecognitionRequest
 	}
 
 	return &MediaRecognitionResult{
-		MediaID:       fmt.Sprintf("basic_%s_%d", strings.ReplaceAll(title, " ", "_"), time.Now().Unix()),
-		MediaType:     mediaType,
-		Title:         title,
-		Year:          year,
-		Season:        season,
-		Episode:       episode,
-		Confidence:    0.3, // Low confidence for basic recognition
+		MediaID:           fmt.Sprintf("basic_%s_%d", strings.ReplaceAll(title, " ", "_"), time.Now().Unix()),
+		MediaType:         mediaType,
+		Title:             title,
+		Year:              year,
+		Season:            season,
+		Episode:           episode,
+		Confidence:        0.3, // Low confidence for basic recognition
 		RecognitionMethod: "filename_parsing",
-		APIProvider:   "basic",
-		ExternalIDs:   make(map[string]string),
+		APIProvider:       "basic",
+		ExternalIDs:       make(map[string]string),
 	}
 }
 
@@ -632,14 +632,14 @@ func (p *MovieRecognitionProvider) extractTitleFromFilename(filename string) str
 
 	// Remove common patterns
 	patterns := []string{
-		`\d{4}`,                           // Year
-		`S\d{2}E\d{2}`,                   // Season/Episode
-		`\d{1,2}x\d{1,2}`,                // Alternative season/episode
+		`\d{4}`,           // Year
+		`S\d{2}E\d{2}`,    // Season/Episode
+		`\d{1,2}x\d{1,2}`, // Alternative season/episode
 		`(?i)(720p|1080p|4k|hdtv|webrip|bluray|dvdrip|cam|ts|r5)`, // Quality
-		`(?i)(xvid|x264|h264|h265|hevc)`,  // Codec
-		`(?i)(aac|ac3|dts|mp3)`,          // Audio
-		`\[.*?\]`,                         // Brackets
-		`\(.*?\)`,                         // Parentheses
+		`(?i)(xvid|x264|h264|h265|hevc)`,                          // Codec
+		`(?i)(aac|ac3|dts|mp3)`,                                   // Audio
+		`\[.*?\]`,                                                 // Brackets
+		`\(.*?\)`,                                                 // Parentheses
 	}
 
 	for _, pattern := range patterns {

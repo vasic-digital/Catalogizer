@@ -1,6 +1,7 @@
 package com.catalogizer.android.data.models
 
 import android.os.Parcelable
+import androidx.room.ColumnInfo
 import androidx.room.Entity
 import androidx.room.PrimaryKey
 import androidx.room.TypeConverters
@@ -18,30 +19,42 @@ data class MediaItem(
     val id: Long,
     val title: String,
     @SerialName("media_type")
+    @ColumnInfo(name = "media_type")
     val mediaType: String,
     val year: Int? = null,
     val description: String? = null,
     @SerialName("cover_image")
+    @ColumnInfo(name = "cover_image")
     val coverImage: String? = null,
     val rating: Double? = null,
     val quality: String? = null,
     @SerialName("file_size")
+    @ColumnInfo(name = "file_size")
     val fileSize: Long? = null,
     val duration: Int? = null,
     @SerialName("directory_path")
+    @ColumnInfo(name = "directory_path")
     val directoryPath: String,
     @SerialName("smb_path")
+    @ColumnInfo(name = "smb_path")
     val smbPath: String? = null,
     @SerialName("created_at")
+    @ColumnInfo(name = "created_at")
     val createdAt: String,
     @SerialName("updated_at")
+    @ColumnInfo(name = "updated_at")
     val updatedAt: String,
     @SerialName("external_metadata")
+    @ColumnInfo(name = "external_metadata")
     val externalMetadata: List<ExternalMetadata>? = null,
     val versions: List<MediaVersion>? = null,
+    @ColumnInfo(name = "is_favorite")
     val isFavorite: Boolean = false,
+    @ColumnInfo(name = "watch_progress")
     val watchProgress: Double = 0.0,
+    @ColumnInfo(name = "last_watched")
     val lastWatched: String? = null,
+    @ColumnInfo(name = "is_downloaded")
     val isDownloaded: Boolean = false
 ) : Parcelable
 

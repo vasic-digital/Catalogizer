@@ -16,40 +16,40 @@ type FileInfo struct {
 
 // CopyOperation represents a file copy operation
 type CopyOperation struct {
-	SourcePath      string
-	DestinationPath string
+	SourcePath        string
+	DestinationPath   string
 	OverwriteExisting bool
 }
 
 // CopyResult represents the result of a copy operation
 type CopyResult struct {
-	Success      bool
-	BytesCopied  int64
-	Error        error
-	TimeTaken    time.Duration
+	Success     bool
+	BytesCopied int64
+	Error       error
+	TimeTaken   time.Duration
 }
 
 // DirectoryTreeInfo represents directory tree information
 type DirectoryTreeInfo struct {
-	Path         string
-	TotalFiles   int
-	TotalDirs    int
-	TotalSize    int64
-	MaxDepth     int
-	Files        []*FileInfo
-	Subdirs      []*DirectoryTreeInfo
+	Path       string
+	TotalFiles int
+	TotalDirs  int
+	TotalSize  int64
+	MaxDepth   int
+	Files      []*FileInfo
+	Subdirs    []*DirectoryTreeInfo
 }
 
 // SmbConnectionPool manages multiple SMB connections
 type SmbConnectionPool struct {
-	connections map[string]*SmbClient
+	connections    map[string]*SmbClient
 	maxConnections int
 }
 
 // NewSmbConnectionPool creates a new connection pool
 func NewSmbConnectionPool(maxConnections int) *SmbConnectionPool {
 	return &SmbConnectionPool{
-		connections: make(map[string]*SmbClient),
+		connections:    make(map[string]*SmbClient),
 		maxConnections: maxConnections,
 	}
 }

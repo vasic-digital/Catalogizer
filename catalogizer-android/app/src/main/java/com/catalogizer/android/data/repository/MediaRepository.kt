@@ -170,7 +170,7 @@ class MediaRepository @Inject constructor(
             )
             position?.let { progressData["position"] = it }
 
-            api.updateWatchProgress(mediaId, progressData).toApiResult()
+            api.updateUserWatchProgress(mediaId, progressData).toApiResult()
         } catch (e: Exception) {
             ApiResult.error(e.message ?: "Failed to update watch progress")
         }

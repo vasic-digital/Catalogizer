@@ -35,10 +35,10 @@ type GoogleBooksResponse struct {
 }
 
 type GoogleBookItem struct {
-	Kind       string              `json:"kind"`
-	ID         string              `json:"id"`
-	ETag       string              `json:"etag"`
-	SelfLink   string              `json:"selfLink"`
+	Kind       string               `json:"kind"`
+	ID         string               `json:"id"`
+	ETag       string               `json:"etag"`
+	SelfLink   string               `json:"selfLink"`
 	VolumeInfo GoogleBookVolumeInfo `json:"volumeInfo"`
 	SaleInfo   GoogleBookSaleInfo   `json:"saleInfo"`
 	AccessInfo GoogleBookAccessInfo `json:"accessInfo"`
@@ -46,29 +46,29 @@ type GoogleBookItem struct {
 }
 
 type GoogleBookVolumeInfo struct {
-	Title               string                     `json:"title"`
-	Subtitle            string                     `json:"subtitle,omitempty"`
-	Authors             []string                   `json:"authors,omitempty"`
-	Publisher           string                     `json:"publisher,omitempty"`
-	PublishedDate       string                     `json:"publishedDate,omitempty"`
-	Description         string                     `json:"description,omitempty"`
-	IndustryIdentifiers []GoogleBookIdentifier     `json:"industryIdentifiers,omitempty"`
-	ReadingModes        GoogleBookReadingModes     `json:"readingModes"`
-	PageCount           int                        `json:"pageCount,omitempty"`
-	PrintType           string                     `json:"printType"`
-	Categories          []string                   `json:"categories,omitempty"`
-	AverageRating       float64                    `json:"averageRating,omitempty"`
-	RatingsCount        int                        `json:"ratingsCount,omitempty"`
-	MaturityRating      string                     `json:"maturityRating"`
-	AllowAnonLogging    bool                       `json:"allowAnonLogging"`
-	ContentVersion      string                     `json:"contentVersion"`
-	PanelizationSummary GoogleBookPanelization     `json:"panelizationSummary,omitempty"`
-	ImageLinks          GoogleBookImageLinks       `json:"imageLinks,omitempty"`
-	Language            string                     `json:"language"`
-	PreviewLink         string                     `json:"previewLink"`
-	InfoLink            string                     `json:"infoLink"`
-	CanonicalVolumeLink string                     `json:"canonicalVolumeLink"`
-	SeriesInfo          GoogleBookSeriesInfo       `json:"seriesInfo,omitempty"`
+	Title               string                 `json:"title"`
+	Subtitle            string                 `json:"subtitle,omitempty"`
+	Authors             []string               `json:"authors,omitempty"`
+	Publisher           string                 `json:"publisher,omitempty"`
+	PublishedDate       string                 `json:"publishedDate,omitempty"`
+	Description         string                 `json:"description,omitempty"`
+	IndustryIdentifiers []GoogleBookIdentifier `json:"industryIdentifiers,omitempty"`
+	ReadingModes        GoogleBookReadingModes `json:"readingModes"`
+	PageCount           int                    `json:"pageCount,omitempty"`
+	PrintType           string                 `json:"printType"`
+	Categories          []string               `json:"categories,omitempty"`
+	AverageRating       float64                `json:"averageRating,omitempty"`
+	RatingsCount        int                    `json:"ratingsCount,omitempty"`
+	MaturityRating      string                 `json:"maturityRating"`
+	AllowAnonLogging    bool                   `json:"allowAnonLogging"`
+	ContentVersion      string                 `json:"contentVersion"`
+	PanelizationSummary GoogleBookPanelization `json:"panelizationSummary,omitempty"`
+	ImageLinks          GoogleBookImageLinks   `json:"imageLinks,omitempty"`
+	Language            string                 `json:"language"`
+	PreviewLink         string                 `json:"previewLink"`
+	InfoLink            string                 `json:"infoLink"`
+	CanonicalVolumeLink string                 `json:"canonicalVolumeLink"`
+	SeriesInfo          GoogleBookSeriesInfo   `json:"seriesInfo,omitempty"`
 }
 
 type GoogleBookIdentifier struct {
@@ -96,13 +96,13 @@ type GoogleBookImageLinks struct {
 }
 
 type GoogleBookSaleInfo struct {
-	Country     string                   `json:"country"`
-	Saleability string                   `json:"saleability"`
-	IsEbook     bool                     `json:"isEbook"`
-	ListPrice   GoogleBookPrice          `json:"listPrice,omitempty"`
-	RetailPrice GoogleBookPrice          `json:"retailPrice,omitempty"`
-	BuyLink     string                   `json:"buyLink,omitempty"`
-	Offers      []GoogleBookOffer        `json:"offers,omitempty"`
+	Country     string            `json:"country"`
+	Saleability string            `json:"saleability"`
+	IsEbook     bool              `json:"isEbook"`
+	ListPrice   GoogleBookPrice   `json:"listPrice,omitempty"`
+	RetailPrice GoogleBookPrice   `json:"retailPrice,omitempty"`
+	BuyLink     string            `json:"buyLink,omitempty"`
+	Offers      []GoogleBookOffer `json:"offers,omitempty"`
 }
 
 type GoogleBookPrice struct {
@@ -118,16 +118,16 @@ type GoogleBookOffer struct {
 }
 
 type GoogleBookAccessInfo struct {
-	Country                string                      `json:"country"`
-	Viewability            string                      `json:"viewability"`
-	Embeddable             bool                        `json:"embeddable"`
-	PublicDomain           bool                        `json:"publicDomain"`
-	TextToSpeechPermission string                      `json:"textToSpeechPermission"`
+	Country                string                       `json:"country"`
+	Viewability            string                       `json:"viewability"`
+	Embeddable             bool                         `json:"embeddable"`
+	PublicDomain           bool                         `json:"publicDomain"`
+	TextToSpeechPermission string                       `json:"textToSpeechPermission"`
 	Epub                   GoogleBookFormatAvailability `json:"epub"`
 	PDF                    GoogleBookFormatAvailability `json:"pdf"`
-	WebReaderLink          string                      `json:"webReaderLink,omitempty"`
-	AccessViewStatus       string                      `json:"accessViewStatus"`
-	QuoteSharingAllowed    bool                        `json:"quoteSharingAllowed"`
+	WebReaderLink          string                       `json:"webReaderLink,omitempty"`
+	AccessViewStatus       string                       `json:"accessViewStatus"`
+	QuoteSharingAllowed    bool                         `json:"quoteSharingAllowed"`
 }
 
 type GoogleBookFormatAvailability struct {
@@ -140,135 +140,135 @@ type GoogleBookSearchInfo struct {
 }
 
 type GoogleBookSeriesInfo struct {
-	Kind           string                    `json:"kind"`
-	BookDisplayNumber string                 `json:"bookDisplayNumber"`
-	VolumeDisplayNumber string               `json:"volumeDisplayNumber"`
-	ShortSeriesBookTitle string              `json:"shortSeriesBookTitle"`
+	Kind                 string `json:"kind"`
+	BookDisplayNumber    string `json:"bookDisplayNumber"`
+	VolumeDisplayNumber  string `json:"volumeDisplayNumber"`
+	ShortSeriesBookTitle string `json:"shortSeriesBookTitle"`
 }
 
 // Open Library API structures
 type OpenLibrarySearchResponse struct {
-	NumFound      int                    `json:"numFound"`
-	Start         int                    `json:"start"`
-	NumFoundExact bool                   `json:"numFoundExact"`
-	Docs          []OpenLibraryDocument  `json:"docs"`
+	NumFound      int                   `json:"numFound"`
+	Start         int                   `json:"start"`
+	NumFoundExact bool                  `json:"numFoundExact"`
+	Docs          []OpenLibraryDocument `json:"docs"`
 }
 
 type OpenLibraryDocument struct {
-	Key                    string    `json:"key"`
-	Type                   string    `json:"type"`
-	Seed                   []string  `json:"seed,omitempty"`
-	Title                  string    `json:"title"`
-	TitleSuggest           string    `json:"title_suggest,omitempty"`
-	TitleSort              string    `json:"title_sort,omitempty"`
-	Subtitle               string    `json:"subtitle,omitempty"`
-	AlternativeTitle       []string  `json:"alternative_title,omitempty"`
-	AlternativeSubtitle    []string  `json:"alternative_subtitle,omitempty"`
-	Edition                []string  `json:"edition_name,omitempty"`
-	FullTitle              string    `json:"full_title,omitempty"`
-	AuthorKey              []string  `json:"author_key,omitempty"`
-	AuthorName             []string  `json:"author_name,omitempty"`
-	AuthorAlternativeName  []string  `json:"author_alternative_name,omitempty"`
-	AuthorFacet            []string  `json:"author_facet,omitempty"`
-	ContributorName        []string  `json:"contributor,omitempty"`
-	Subject                []string  `json:"subject,omitempty"`
-	SubjectKey             []string  `json:"subject_key,omitempty"`
-	SubjectFacet           []string  `json:"subject_facet,omitempty"`
-	Place                  []string  `json:"place,omitempty"`
-	PlaceKey               []string  `json:"place_key,omitempty"`
-	PlaceFacet             []string  `json:"place_facet,omitempty"`
-	Person                 []string  `json:"person,omitempty"`
-	PersonKey              []string  `json:"person_key,omitempty"`
-	PersonFacet            []string  `json:"person_facet,omitempty"`
-	Language               []string  `json:"language,omitempty"`
-	PublisherName          []string  `json:"publisher,omitempty"`
-	PublisherFacet         []string  `json:"publisher_facet,omitempty"`
-	PublishDate            []string  `json:"publish_date,omitempty"`
-	PublishYear            []int     `json:"publish_year,omitempty"`
-	PublishPlace           []string  `json:"publish_place,omitempty"`
-	FirstPublishYear       int       `json:"first_publish_year,omitempty"`
-	NumberOfPagesMedian    int       `json:"number_of_pages_median,omitempty"`
-	LccnSort               string    `json:"lccn_sort,omitempty"`
-	EditionCount           int       `json:"edition_count"`
-	EditionKey             []string  `json:"edition_key,omitempty"`
-	PrintDisabled          []string  `json:"printdisabled,omitempty"`
-	LendingEdition         string    `json:"lending_edition,omitempty"`
-	LendingIdentifier      string    `json:"lending_identifier,omitempty"`
-	ISBN                   []string  `json:"isbn,omitempty"`
-	LastModified           time.Time `json:"last_modified_i"`
-	EbookCount             int       `json:"ebook_count_i"`
-	EbookAccess            string    `json:"ebook_access,omitempty"`
-	HasFulltext            bool      `json:"has_fulltext"`
-	PublicScan             bool      `json:"public_scan_b,omitempty"`
-	CoverID                int       `json:"cover_i,omitempty"`
-	CoverEditionKey        string    `json:"cover_edition_key,omitempty"`
-	FirstSentence          []string  `json:"first_sentence,omitempty"`
-	LCCN                   []string  `json:"lccn,omitempty"`
-	OCLC                   []string  `json:"oclc,omitempty"`
-	ContributorKey         []string  `json:"contributor_key,omitempty"`
-	ID_Amazon              []string  `json:"id_amazon,omitempty"`
-	ID_LibraryThing        []string  `json:"id_librarything,omitempty"`
-	ID_Goodreads           []string  `json:"id_goodreads,omitempty"`
-	ID_DepositoLegal       []string  `json:"id_dnb,omitempty"`
-	ID_Wikisource          []string  `json:"id_wikisource,omitempty"`
+	Key                   string    `json:"key"`
+	Type                  string    `json:"type"`
+	Seed                  []string  `json:"seed,omitempty"`
+	Title                 string    `json:"title"`
+	TitleSuggest          string    `json:"title_suggest,omitempty"`
+	TitleSort             string    `json:"title_sort,omitempty"`
+	Subtitle              string    `json:"subtitle,omitempty"`
+	AlternativeTitle      []string  `json:"alternative_title,omitempty"`
+	AlternativeSubtitle   []string  `json:"alternative_subtitle,omitempty"`
+	Edition               []string  `json:"edition_name,omitempty"`
+	FullTitle             string    `json:"full_title,omitempty"`
+	AuthorKey             []string  `json:"author_key,omitempty"`
+	AuthorName            []string  `json:"author_name,omitempty"`
+	AuthorAlternativeName []string  `json:"author_alternative_name,omitempty"`
+	AuthorFacet           []string  `json:"author_facet,omitempty"`
+	ContributorName       []string  `json:"contributor,omitempty"`
+	Subject               []string  `json:"subject,omitempty"`
+	SubjectKey            []string  `json:"subject_key,omitempty"`
+	SubjectFacet          []string  `json:"subject_facet,omitempty"`
+	Place                 []string  `json:"place,omitempty"`
+	PlaceKey              []string  `json:"place_key,omitempty"`
+	PlaceFacet            []string  `json:"place_facet,omitempty"`
+	Person                []string  `json:"person,omitempty"`
+	PersonKey             []string  `json:"person_key,omitempty"`
+	PersonFacet           []string  `json:"person_facet,omitempty"`
+	Language              []string  `json:"language,omitempty"`
+	PublisherName         []string  `json:"publisher,omitempty"`
+	PublisherFacet        []string  `json:"publisher_facet,omitempty"`
+	PublishDate           []string  `json:"publish_date,omitempty"`
+	PublishYear           []int     `json:"publish_year,omitempty"`
+	PublishPlace          []string  `json:"publish_place,omitempty"`
+	FirstPublishYear      int       `json:"first_publish_year,omitempty"`
+	NumberOfPagesMedian   int       `json:"number_of_pages_median,omitempty"`
+	LccnSort              string    `json:"lccn_sort,omitempty"`
+	EditionCount          int       `json:"edition_count"`
+	EditionKey            []string  `json:"edition_key,omitempty"`
+	PrintDisabled         []string  `json:"printdisabled,omitempty"`
+	LendingEdition        string    `json:"lending_edition,omitempty"`
+	LendingIdentifier     string    `json:"lending_identifier,omitempty"`
+	ISBN                  []string  `json:"isbn,omitempty"`
+	LastModified          time.Time `json:"last_modified_i"`
+	EbookCount            int       `json:"ebook_count_i"`
+	EbookAccess           string    `json:"ebook_access,omitempty"`
+	HasFulltext           bool      `json:"has_fulltext"`
+	PublicScan            bool      `json:"public_scan_b,omitempty"`
+	CoverID               int       `json:"cover_i,omitempty"`
+	CoverEditionKey       string    `json:"cover_edition_key,omitempty"`
+	FirstSentence         []string  `json:"first_sentence,omitempty"`
+	LCCN                  []string  `json:"lccn,omitempty"`
+	OCLC                  []string  `json:"oclc,omitempty"`
+	ContributorKey        []string  `json:"contributor_key,omitempty"`
+	ID_Amazon             []string  `json:"id_amazon,omitempty"`
+	ID_LibraryThing       []string  `json:"id_librarything,omitempty"`
+	ID_Goodreads          []string  `json:"id_goodreads,omitempty"`
+	ID_DepositoLegal      []string  `json:"id_dnb,omitempty"`
+	ID_Wikisource         []string  `json:"id_wikisource,omitempty"`
 }
 
 // Crossref API structures (for academic publications)
 type CrossrefResponse struct {
-	Status  string           `json:"status"`
-	Message CrossrefMessage  `json:"message"`
+	Status  string          `json:"status"`
+	Message CrossrefMessage `json:"message"`
 }
 
 type CrossrefMessage struct {
-	Facets         map[string]interface{} `json:"facets,omitempty"`
-	TotalResults   int                    `json:"total-results"`
-	Items          []CrossrefWork         `json:"items"`
-	ItemsPerPage   int                    `json:"items-per-page"`
-	Query          map[string]interface{} `json:"query,omitempty"`
+	Facets       map[string]interface{} `json:"facets,omitempty"`
+	TotalResults int                    `json:"total-results"`
+	Items        []CrossrefWork         `json:"items"`
+	ItemsPerPage int                    `json:"items-per-page"`
+	Query        map[string]interface{} `json:"query,omitempty"`
 }
 
 type CrossrefWork struct {
-	Indexed          CrossrefDate           `json:"indexed"`
-	ReferenceCount   int                    `json:"reference-count"`
-	Publisher        string                 `json:"publisher"`
-	Issue            string                 `json:"issue,omitempty"`
-	License          []CrossrefLicense      `json:"license,omitempty"`
-	Funder           []CrossrefFunder       `json:"funder,omitempty"`
-	ContentDomain    CrossrefContentDomain  `json:"content-domain"`
-	ShortContainerTitle []string            `json:"short-container-title,omitempty"`
-	Published        CrossrefPartialDate    `json:"published,omitempty"`
-	Abstract         string                 `json:"abstract,omitempty"`
-	DOI              string                 `json:"DOI"`
-	Type             string                 `json:"type"`
-	Created          CrossrefDate           `json:"created"`
-	Page             string                 `json:"page,omitempty"`
-	UpdatePolicy     string                 `json:"update-policy,omitempty"`
-	Source           string                 `json:"source"`
-	IsReferencedByCount int                 `json:"is-referenced-by-count"`
-	Title            []string               `json:"title"`
-	Prefix           string                 `json:"prefix"`
-	Volume           string                 `json:"volume,omitempty"`
-	Author           []CrossrefAuthor       `json:"author,omitempty"`
-	Member           string                 `json:"member"`
-	ContainerTitle   []string               `json:"container-title,omitempty"`
-	OriginalTitle    []string               `json:"original-title,omitempty"`
-	Language         string                 `json:"language,omitempty"`
-	Link             []CrossrefLink         `json:"link,omitempty"`
-	Deposited        CrossrefDate           `json:"deposited"`
-	Score            float64                `json:"score"`
-	Subtitle         []string               `json:"subtitle,omitempty"`
-	ShortTitle       []string               `json:"short-title,omitempty"`
-	Issued           CrossrefPartialDate    `json:"issued,omitempty"`
-	ReferencesCount  int                    `json:"references-count"`
-	JournalIssue     CrossrefJournalIssue   `json:"journal-issue,omitempty"`
-	AlternativeID    []string               `json:"alternative-id,omitempty"`
-	URL              string                 `json:"URL,omitempty"`
-	Relation         map[string]interface{} `json:"relation,omitempty"`
-	ISSN             []string               `json:"ISSN,omitempty"`
-	IssnType         []CrossrefIssnType     `json:"issn-type,omitempty"`
-	Subject          []string               `json:"subject,omitempty"`
-	PublishedOnline  CrossrefPartialDate    `json:"published-online,omitempty"`
-	PublishedPrint   CrossrefPartialDate    `json:"published-print,omitempty"`
+	Indexed             CrossrefDate           `json:"indexed"`
+	ReferenceCount      int                    `json:"reference-count"`
+	Publisher           string                 `json:"publisher"`
+	Issue               string                 `json:"issue,omitempty"`
+	License             []CrossrefLicense      `json:"license,omitempty"`
+	Funder              []CrossrefFunder       `json:"funder,omitempty"`
+	ContentDomain       CrossrefContentDomain  `json:"content-domain"`
+	ShortContainerTitle []string               `json:"short-container-title,omitempty"`
+	Published           CrossrefPartialDate    `json:"published,omitempty"`
+	Abstract            string                 `json:"abstract,omitempty"`
+	DOI                 string                 `json:"DOI"`
+	Type                string                 `json:"type"`
+	Created             CrossrefDate           `json:"created"`
+	Page                string                 `json:"page,omitempty"`
+	UpdatePolicy        string                 `json:"update-policy,omitempty"`
+	Source              string                 `json:"source"`
+	IsReferencedByCount int                    `json:"is-referenced-by-count"`
+	Title               []string               `json:"title"`
+	Prefix              string                 `json:"prefix"`
+	Volume              string                 `json:"volume,omitempty"`
+	Author              []CrossrefAuthor       `json:"author,omitempty"`
+	Member              string                 `json:"member"`
+	ContainerTitle      []string               `json:"container-title,omitempty"`
+	OriginalTitle       []string               `json:"original-title,omitempty"`
+	Language            string                 `json:"language,omitempty"`
+	Link                []CrossrefLink         `json:"link,omitempty"`
+	Deposited           CrossrefDate           `json:"deposited"`
+	Score               float64                `json:"score"`
+	Subtitle            []string               `json:"subtitle,omitempty"`
+	ShortTitle          []string               `json:"short-title,omitempty"`
+	Issued              CrossrefPartialDate    `json:"issued,omitempty"`
+	ReferencesCount     int                    `json:"references-count"`
+	JournalIssue        CrossrefJournalIssue   `json:"journal-issue,omitempty"`
+	AlternativeID       []string               `json:"alternative-id,omitempty"`
+	URL                 string                 `json:"URL,omitempty"`
+	Relation            map[string]interface{} `json:"relation,omitempty"`
+	ISSN                []string               `json:"ISSN,omitempty"`
+	IssnType            []CrossrefIssnType     `json:"issn-type,omitempty"`
+	Subject             []string               `json:"subject,omitempty"`
+	PublishedOnline     CrossrefPartialDate    `json:"published-online,omitempty"`
+	PublishedPrint      CrossrefPartialDate    `json:"published-print,omitempty"`
 }
 
 type CrossrefDate struct {
@@ -282,10 +282,10 @@ type CrossrefPartialDate struct {
 }
 
 type CrossrefLicense struct {
-	Start            CrossrefDate `json:"start"`
-	ContentVersion   string       `json:"content-version"`
-	DelayInDays      int          `json:"delay-in-days"`
-	URL              string       `json:"URL"`
+	Start          CrossrefDate `json:"start"`
+	ContentVersion string       `json:"content-version"`
+	DelayInDays    int          `json:"delay-in-days"`
+	URL            string       `json:"URL"`
 }
 
 type CrossrefFunder struct {
@@ -300,10 +300,10 @@ type CrossrefContentDomain struct {
 }
 
 type CrossrefAuthor struct {
-	ORCID     string `json:"ORCID,omitempty"`
-	Given     string `json:"given,omitempty"`
-	Family    string `json:"family,omitempty"`
-	Sequence  string `json:"sequence"`
+	ORCID       string                `json:"ORCID,omitempty"`
+	Given       string                `json:"given,omitempty"`
+	Family      string                `json:"family,omitempty"`
+	Sequence    string                `json:"sequence"`
 	Affiliation []CrossrefAffiliation `json:"affiliation,omitempty"`
 }
 
@@ -319,7 +319,7 @@ type CrossrefLink struct {
 }
 
 type CrossrefJournalIssue struct {
-	Issue          string              `json:"issue,omitempty"`
+	Issue           string              `json:"issue,omitempty"`
 	PublishedOnline CrossrefPartialDate `json:"published-online,omitempty"`
 	PublishedPrint  CrossrefPartialDate `json:"published-print,omitempty"`
 }
@@ -331,10 +331,10 @@ type CrossrefIssnType struct {
 
 // OCR Service structures
 type OCRRequest struct {
-	ImageData   []byte            `json:"image_data"`
-	ImageURL    string            `json:"image_url,omitempty"`
-	Language    string            `json:"language,omitempty"`
-	Options     map[string]string `json:"options,omitempty"`
+	ImageData []byte            `json:"image_data"`
+	ImageURL  string            `json:"image_url,omitempty"`
+	Language  string            `json:"language,omitempty"`
+	Options   map[string]string `json:"options,omitempty"`
 }
 
 type OCRResponse struct {
@@ -348,10 +348,10 @@ type OCRResponse struct {
 }
 
 type OCRTextBlock struct {
-	Text        string      `json:"text"`
-	Confidence  float64     `json:"confidence"`
+	Text        string         `json:"text"`
+	Confidence  float64        `json:"confidence"`
 	BoundingBox OCRBoundingBox `json:"bounding_box"`
-	Lines       []OCRLine   `json:"lines"`
+	Lines       []OCRLine      `json:"lines"`
 }
 
 type OCRLine struct {
@@ -376,16 +376,16 @@ type OCRBoundingBox struct {
 
 // Text analysis for book content
 type BookContentAnalysis struct {
-	Language         string            `json:"language"`
-	WordCount        int               `json:"word_count"`
-	CharacterCount   int               `json:"character_count"`
-	ParagraphCount   int               `json:"paragraph_count"`
-	SentenceCount    int               `json:"sentence_count"`
-	ReadabilityScore float64           `json:"readability_score"`
-	Topics           []string          `json:"topics"`
-	Keywords         []string          `json:"keywords"`
-	Entities         []NamedEntity     `json:"entities"`
-	Metadata         BookMetadata      `json:"metadata"`
+	Language         string        `json:"language"`
+	WordCount        int           `json:"word_count"`
+	CharacterCount   int           `json:"character_count"`
+	ParagraphCount   int           `json:"paragraph_count"`
+	SentenceCount    int           `json:"sentence_count"`
+	ReadabilityScore float64       `json:"readability_score"`
+	Topics           []string      `json:"topics"`
+	Keywords         []string      `json:"keywords"`
+	Entities         []NamedEntity `json:"entities"`
+	Metadata         BookMetadata  `json:"metadata"`
 }
 
 type NamedEntity struct {
@@ -397,36 +397,36 @@ type NamedEntity struct {
 }
 
 type BookMetadata struct {
-	Title            string              `json:"title"`
-	Author           string              `json:"author"`
-	Publisher        string              `json:"publisher"`
-	PublicationDate  string              `json:"publication_date"`
-	ISBN             string              `json:"isbn"`
-	Edition          string              `json:"edition"`
-	ChapterTitles    []string            `json:"chapter_titles"`
-	TableOfContents  []TOCEntry          `json:"table_of_contents"`
-	Bibliography     []BibliographyEntry `json:"bibliography"`
-	Index            []IndexEntry        `json:"index"`
+	Title           string              `json:"title"`
+	Author          string              `json:"author"`
+	Publisher       string              `json:"publisher"`
+	PublicationDate string              `json:"publication_date"`
+	ISBN            string              `json:"isbn"`
+	Edition         string              `json:"edition"`
+	ChapterTitles   []string            `json:"chapter_titles"`
+	TableOfContents []TOCEntry          `json:"table_of_contents"`
+	Bibliography    []BibliographyEntry `json:"bibliography"`
+	Index           []IndexEntry        `json:"index"`
 }
 
 type TOCEntry struct {
-	Title     string     `json:"title"`
-	PageNumber int       `json:"page_number"`
-	Level     int        `json:"level"`
-	Children  []TOCEntry `json:"children,omitempty"`
+	Title      string     `json:"title"`
+	PageNumber int        `json:"page_number"`
+	Level      int        `json:"level"`
+	Children   []TOCEntry `json:"children,omitempty"`
 }
 
 type BibliographyEntry struct {
-	Citation string `json:"citation"`
-	Type     string `json:"type"`
+	Citation string   `json:"citation"`
+	Type     string   `json:"type"`
 	Authors  []string `json:"authors"`
-	Title    string `json:"title"`
-	Year     int    `json:"year"`
+	Title    string   `json:"title"`
+	Year     int      `json:"year"`
 }
 
 type IndexEntry struct {
-	Term       string `json:"term"`
-	Pages      []int  `json:"pages"`
+	Term       string       `json:"term"`
+	Pages      []int        `json:"pages"`
 	SubEntries []IndexEntry `json:"sub_entries,omitempty"`
 }
 
@@ -435,13 +435,13 @@ func NewBookRecognitionProvider(logger *zap.Logger) *BookRecognitionProvider {
 		logger:     logger,
 		httpClient: &http.Client{Timeout: 30 * time.Second},
 		baseURLs: map[string]string{
-			"google_books": "https://www.googleapis.com/books/v1",
-			"open_library": "https://openlibrary.org",
-			"crossref":     "https://api.crossref.org",
-			"worldcat":     "https://www.worldcat.org/webservices",
-			"libgen":       "https://libgen.is/json.php",
-			"archive_org":  "https://archive.org",
-			"tesseract":    "https://api.ocr.space/parse",
+			"google_books":  "https://www.googleapis.com/books/v1",
+			"open_library":  "https://openlibrary.org",
+			"crossref":      "https://api.crossref.org",
+			"worldcat":      "https://www.worldcat.org/webservices",
+			"libgen":        "https://libgen.is/json.php",
+			"archive_org":   "https://archive.org",
+			"tesseract":     "https://api.ocr.space/parse",
 			"google_vision": "https://vision.googleapis.com/v1",
 		},
 		apiKeys: map[string]string{
@@ -543,13 +543,13 @@ func (p *BookRecognitionProvider) performOCRSpace(ctx context.Context, imageData
 		Language:   "en",
 		Blocks: []OCRTextBlock{
 			{
-				Text:       "Book Title",
-				Confidence: 0.9,
+				Text:        "Book Title",
+				Confidence:  0.9,
 				BoundingBox: OCRBoundingBox{X: 50, Y: 100, Width: 200, Height: 30},
 			},
 			{
-				Text:       "Author Name",
-				Confidence: 0.8,
+				Text:        "Author Name",
+				Confidence:  0.8,
 				BoundingBox: OCRBoundingBox{X: 50, Y: 150, Width: 150, Height: 25},
 			},
 		},
@@ -714,16 +714,16 @@ func (p *BookRecognitionProvider) convertGoogleBook(book GoogleBookItem) *MediaR
 	volumeInfo := book.VolumeInfo
 
 	result := &MediaRecognitionResult{
-		MediaID:     fmt.Sprintf("google_books_%s", book.ID),
-		MediaType:   p.determineBookType(volumeInfo),
-		Title:       volumeInfo.Title,
-		Description: volumeInfo.Description,
-		PageCount:   volumeInfo.PageCount,
-		Language:    volumeInfo.Language,
-		Rating:      volumeInfo.AverageRating,
-		Confidence:  p.calculateGoogleBooksConfidence(volumeInfo.AverageRating, volumeInfo.RatingsCount),
+		MediaID:           fmt.Sprintf("google_books_%s", book.ID),
+		MediaType:         p.determineBookType(volumeInfo),
+		Title:             volumeInfo.Title,
+		Description:       volumeInfo.Description,
+		PageCount:         volumeInfo.PageCount,
+		Language:          volumeInfo.Language,
+		Rating:            volumeInfo.AverageRating,
+		Confidence:        p.calculateGoogleBooksConfidence(volumeInfo.AverageRating, volumeInfo.RatingsCount),
 		RecognitionMethod: "google_books_api",
-		APIProvider: "Google Books",
+		APIProvider:       "Google Books",
 	}
 
 	// Set subtitle if available
@@ -860,13 +860,13 @@ func (p *BookRecognitionProvider) searchOpenLibraryByISBN(ctx context.Context, i
 
 func (p *BookRecognitionProvider) convertOpenLibraryBook(doc OpenLibraryDocument) *MediaRecognitionResult {
 	result := &MediaRecognitionResult{
-		MediaID:     fmt.Sprintf("open_library_%s", strings.TrimPrefix(doc.Key, "/works/")),
-		MediaType:   MediaTypeBook,
-		Title:       doc.Title,
-		PageCount:   doc.NumberOfPagesMedian,
-		Confidence:  p.calculateOpenLibraryConfidence(doc.EditionCount, doc.EbookCount),
+		MediaID:           fmt.Sprintf("open_library_%s", strings.TrimPrefix(doc.Key, "/works/")),
+		MediaType:         MediaTypeBook,
+		Title:             doc.Title,
+		PageCount:         doc.NumberOfPagesMedian,
+		Confidence:        p.calculateOpenLibraryConfidence(doc.EditionCount, doc.EbookCount),
 		RecognitionMethod: "open_library_api",
-		APIProvider: "Open Library",
+		APIProvider:       "Open Library",
 	}
 
 	// Set subtitle
@@ -973,13 +973,13 @@ func (p *BookRecognitionProvider) searchCrossref(ctx context.Context, title, aut
 
 func (p *BookRecognitionProvider) convertCrossrefWork(work CrossrefWork) *MediaRecognitionResult {
 	result := &MediaRecognitionResult{
-		MediaID:     fmt.Sprintf("crossref_%s", work.DOI),
-		MediaType:   p.mapCrossrefType(work.Type),
-		DOI:         work.DOI,
-		Publisher:   work.Publisher,
-		Confidence:  work.Score,
+		MediaID:           fmt.Sprintf("crossref_%s", work.DOI),
+		MediaType:         p.mapCrossrefType(work.Type),
+		DOI:               work.DOI,
+		Publisher:         work.Publisher,
+		Confidence:        work.Score,
 		RecognitionMethod: "crossref_api",
-		APIProvider: "Crossref",
+		APIProvider:       "Crossref",
 	}
 
 	// Set title
@@ -1042,15 +1042,15 @@ func (p *BookRecognitionProvider) convertCrossrefWork(work CrossrefWork) *MediaR
 
 func (p *BookRecognitionProvider) basicBookRecognition(req *MediaRecognitionRequest, title, author, isbn string, mediaType MediaType) *MediaRecognitionResult {
 	return &MediaRecognitionResult{
-		MediaID:    fmt.Sprintf("basic_book_%s_%d", strings.ReplaceAll(title, " ", "_"), time.Now().Unix()),
-		MediaType:  mediaType,
-		Title:      title,
-		Author:     author,
-		ISBN:       isbn,
-		Confidence: 0.3,
+		MediaID:           fmt.Sprintf("basic_book_%s_%d", strings.ReplaceAll(title, " ", "_"), time.Now().Unix()),
+		MediaType:         mediaType,
+		Title:             title,
+		Author:            author,
+		ISBN:              isbn,
+		Confidence:        0.3,
 		RecognitionMethod: "filename_parsing",
-		APIProvider: "basic",
-		ExternalIDs: make(map[string]string),
+		APIProvider:       "basic",
+		ExternalIDs:       make(map[string]string),
 	}
 }
 

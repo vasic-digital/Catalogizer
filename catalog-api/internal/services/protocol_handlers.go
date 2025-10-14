@@ -472,11 +472,11 @@ func (f *ProtocolHandlerFactory) GetSupportedProtocols() []string {
 
 // ProtocolCapabilities provides information about protocol capabilities
 type ProtocolCapabilities struct {
-	Protocol                   string        `json:"protocol"`
+	Protocol                     string        `json:"protocol"`
 	SupportsRealTimeNotification bool          `json:"supports_realtime_notification"`
-	MoveWindow                 time.Duration `json:"move_window"`
-	SupportsAtomicMove         bool          `json:"supports_atomic_move"`
-	RequiresPolling           bool          `json:"requires_polling"`
+	MoveWindow                   time.Duration `json:"move_window"`
+	SupportsAtomicMove           bool          `json:"supports_atomic_move"`
+	RequiresPolling              bool          `json:"requires_polling"`
 }
 
 func GetProtocolCapabilities(protocol string, logger *zap.Logger) (*ProtocolCapabilities, error) {
@@ -487,10 +487,10 @@ func GetProtocolCapabilities(protocol string, logger *zap.Logger) (*ProtocolCapa
 	}
 
 	return &ProtocolCapabilities{
-		Protocol:                   protocol,
+		Protocol:                     protocol,
 		SupportsRealTimeNotification: handler.SupportsRealTimeNotification(),
-		MoveWindow:                 handler.GetMoveWindow(),
-		SupportsAtomicMove:         protocol == "local" || protocol == "nfs",
-		RequiresPolling:           !handler.SupportsRealTimeNotification(),
+		MoveWindow:                   handler.GetMoveWindow(),
+		SupportsAtomicMove:           protocol == "local" || protocol == "nfs",
+		RequiresPolling:              !handler.SupportsRealTimeNotification(),
 	}, nil
 }

@@ -15,7 +15,7 @@ import (
 
 type RecommendationHandler struct {
 	recommendationService *services.RecommendationService
-	deepLinkingService   *services.DeepLinkingService
+	deepLinkingService    *services.DeepLinkingService
 }
 
 func NewRecommendationHandler(
@@ -24,7 +24,7 @@ func NewRecommendationHandler(
 ) *RecommendationHandler {
 	return &RecommendationHandler{
 		recommendationService: recommendationService,
-		deepLinkingService:   deepLinkingService,
+		deepLinkingService:    deepLinkingService,
 	}
 }
 
@@ -202,18 +202,18 @@ func (rh *RecommendationHandler) GetMediaWithSimilarItems(w http.ResponseWriter,
 	// TODO: Get actual media metadata from database/service
 	// For now, we'll create a mock response
 	response := &MediaDetailWithSimilarResponse{
-		MediaID: mediaID,
+		MediaID:       mediaID,
 		MediaMetadata: nil, // Would be populated from database
-		SimilarItems: nil,  // Will be populated below
-		Links: nil,         // Will be populated below
+		SimilarItems:  nil, // Will be populated below
+		Links:         nil, // Will be populated below
 	}
 
 	// Get similar items
 	similarReq := &services.SimilarItemsRequest{
-		MediaID:         mediaID,
-		MaxLocalItems:   maxLocal,
-		MaxExternalItems: 5,
-		IncludeExternal: includeExternal,
+		MediaID:             mediaID,
+		MaxLocalItems:       maxLocal,
+		MaxExternalItems:    5,
+		IncludeExternal:     includeExternal,
 		SimilarityThreshold: 0.3,
 	}
 
@@ -374,10 +374,10 @@ func (rh *RecommendationHandler) GetRecommendationTrends(w http.ResponseWriter, 
 
 // Helper types
 type MediaDetailWithSimilarResponse struct {
-	MediaID       string                               `json:"media_id"`
-	MediaMetadata interface{}                          `json:"media_metadata"` // Would be proper type
-	SimilarItems  *services.SimilarItemsResponse       `json:"similar_items"`
-	Links         *services.DeepLinkResponse           `json:"links"`
+	MediaID       string                         `json:"media_id"`
+	MediaMetadata interface{}                    `json:"media_metadata"` // Would be proper type
+	SimilarItems  *services.SimilarItemsResponse `json:"similar_items"`
+	Links         *services.DeepLinkResponse     `json:"links"`
 }
 
 type RecommendationTrends struct {
@@ -388,14 +388,14 @@ type RecommendationTrends struct {
 }
 
 type TrendItem struct {
-	MediaID         string  `json:"media_id"`
-	Title           string  `json:"title"`
-	Subtitle        string  `json:"subtitle,omitempty"`
-	CoverArt        string  `json:"cover_art,omitempty"`
-	TrendScore      float64 `json:"trend_score"`
-	RecommendationCount int `json:"recommendation_count"`
-	ViewCount       int     `json:"view_count"`
-	Rating          float64 `json:"rating,omitempty"`
+	MediaID             string  `json:"media_id"`
+	Title               string  `json:"title"`
+	Subtitle            string  `json:"subtitle,omitempty"`
+	CoverArt            string  `json:"cover_art,omitempty"`
+	TrendScore          float64 `json:"trend_score"`
+	RecommendationCount int     `json:"recommendation_count"`
+	ViewCount           int     `json:"view_count"`
+	Rating              float64 `json:"rating,omitempty"`
 }
 
 // Helper functions
@@ -468,8 +468,8 @@ func generateMockTrendingItems(mediaType string, limit int) []TrendItem {
 			MediaID:             fmt.Sprintf("trending_%s_%d", mediaType, i),
 			TrendScore:          0.9 - float64(i)*0.02,
 			RecommendationCount: 100 - i*5,
-			ViewCount:          1000 - i*50,
-			Rating:             8.5 - float64(i)*0.1,
+			ViewCount:           1000 - i*50,
+			Rating:              8.5 - float64(i)*0.1,
 		}
 
 		switch mediaType {

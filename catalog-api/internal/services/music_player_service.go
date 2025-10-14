@@ -14,73 +14,73 @@ import (
 )
 
 type MusicPlayerService struct {
-	db                    *sql.DB
-	logger                *zap.Logger
-	mediaPlayerService    *MediaPlayerService
-	playlistService       *PlaylistService
-	positionService       *PlaybackPositionService
-	lyricsService         *LyricsService
-	coverArtService       *CoverArtService
-	translationService    *TranslationService
+	db                 *sql.DB
+	logger             *zap.Logger
+	mediaPlayerService *MediaPlayerService
+	playlistService    *PlaylistService
+	positionService    *PlaybackPositionService
+	lyricsService      *LyricsService
+	coverArtService    *CoverArtService
+	translationService *TranslationService
 }
 
 type MusicPlaybackSession struct {
-	ID                string                  `json:"id"`
-	UserID            int64                   `json:"user_id"`
-	CurrentTrack      *MusicTrack             `json:"current_track"`
-	Queue             []MusicTrack            `json:"queue"`
-	QueueIndex        int                     `json:"queue_index"`
-	PlaylistID        *int64                  `json:"playlist_id"`
-	PlayMode          PlayMode                `json:"play_mode"`
-	RepeatMode        RepeatMode              `json:"repeat_mode"`
-	ShuffleEnabled    bool                    `json:"shuffle_enabled"`
-	ShuffleHistory    []int                   `json:"shuffle_history"`
-	Volume            float64                 `json:"volume"`
-	IsMuted           bool                    `json:"is_muted"`
-	Crossfade         bool                    `json:"crossfade"`
-	CrossfadeDuration int                     `json:"crossfade_duration"`
-	EqualizerPreset   string                  `json:"equalizer_preset"`
-	EqualizerBands    map[string]float64      `json:"equalizer_bands"`
-	PlaybackState     PlaybackState           `json:"playback_state"`
-	Position          int64                   `json:"position"`
-	Duration          int64                   `json:"duration"`
-	BufferedRanges    []BufferedRange         `json:"buffered_ranges"`
-	PlaybackQuality   AudioQuality            `json:"playback_quality"`
-	DeviceInfo        DeviceInfo              `json:"device_info"`
-	LastActivity      time.Time               `json:"last_activity"`
-	CreatedAt         time.Time               `json:"created_at"`
-	UpdatedAt         time.Time               `json:"updated_at"`
+	ID                string             `json:"id"`
+	UserID            int64              `json:"user_id"`
+	CurrentTrack      *MusicTrack        `json:"current_track"`
+	Queue             []MusicTrack       `json:"queue"`
+	QueueIndex        int                `json:"queue_index"`
+	PlaylistID        *int64             `json:"playlist_id"`
+	PlayMode          PlayMode           `json:"play_mode"`
+	RepeatMode        RepeatMode         `json:"repeat_mode"`
+	ShuffleEnabled    bool               `json:"shuffle_enabled"`
+	ShuffleHistory    []int              `json:"shuffle_history"`
+	Volume            float64            `json:"volume"`
+	IsMuted           bool               `json:"is_muted"`
+	Crossfade         bool               `json:"crossfade"`
+	CrossfadeDuration int                `json:"crossfade_duration"`
+	EqualizerPreset   string             `json:"equalizer_preset"`
+	EqualizerBands    map[string]float64 `json:"equalizer_bands"`
+	PlaybackState     PlaybackState      `json:"playback_state"`
+	Position          int64              `json:"position"`
+	Duration          int64              `json:"duration"`
+	BufferedRanges    []BufferedRange    `json:"buffered_ranges"`
+	PlaybackQuality   AudioQuality       `json:"playback_quality"`
+	DeviceInfo        DeviceInfo         `json:"device_info"`
+	LastActivity      time.Time          `json:"last_activity"`
+	CreatedAt         time.Time          `json:"created_at"`
+	UpdatedAt         time.Time          `json:"updated_at"`
 }
 
 type MusicTrack struct {
-	ID              int64              `json:"id"`
-	Title           string             `json:"title"`
-	Artist          string             `json:"artist"`
-	Album           string             `json:"album"`
-	AlbumArtist     string             `json:"album_artist"`
-	Genre           string             `json:"genre"`
-	Year            int                `json:"year"`
-	TrackNumber     int                `json:"track_number"`
-	DiscNumber      int                `json:"disc_number"`
-	Duration        int64              `json:"duration"`
-	FilePath        string             `json:"file_path"`
-	FileSize        int64              `json:"file_size"`
-	Format          string             `json:"format"`
-	Bitrate         int                `json:"bitrate"`
-	SampleRate      int                `json:"sample_rate"`
-	Channels        int                `json:"channels"`
-	BPM             *int               `json:"bpm"`
-	Key             *string            `json:"key"`
-	Rating          *int               `json:"rating"`
-	PlayCount       int64              `json:"play_count"`
-	LastPlayed      *time.Time         `json:"last_played"`
-	DateAdded       time.Time          `json:"date_added"`
-	CoverArt        *CoverArt          `json:"cover_art"`
-	Lyrics          *LyricsData        `json:"lyrics"`
-	AudioFeatures   *AudioFeatures     `json:"audio_features"`
-	Waveform        *WaveformData      `json:"waveform"`
-	Tags            map[string]string  `json:"tags"`
-	ReplayGain      *ReplayGainData    `json:"replay_gain"`
+	ID            int64             `json:"id"`
+	Title         string            `json:"title"`
+	Artist        string            `json:"artist"`
+	Album         string            `json:"album"`
+	AlbumArtist   string            `json:"album_artist"`
+	Genre         string            `json:"genre"`
+	Year          int               `json:"year"`
+	TrackNumber   int               `json:"track_number"`
+	DiscNumber    int               `json:"disc_number"`
+	Duration      int64             `json:"duration"`
+	FilePath      string            `json:"file_path"`
+	FileSize      int64             `json:"file_size"`
+	Format        string            `json:"format"`
+	Bitrate       int               `json:"bitrate"`
+	SampleRate    int               `json:"sample_rate"`
+	Channels      int               `json:"channels"`
+	BPM           *int              `json:"bpm"`
+	Key           *string           `json:"key"`
+	Rating        *int              `json:"rating"`
+	PlayCount     int64             `json:"play_count"`
+	LastPlayed    *time.Time        `json:"last_played"`
+	DateAdded     time.Time         `json:"date_added"`
+	CoverArt      *CoverArt         `json:"cover_art"`
+	Lyrics        *LyricsData       `json:"lyrics"`
+	AudioFeatures *AudioFeatures    `json:"audio_features"`
+	Waveform      *WaveformData     `json:"waveform"`
+	Tags          map[string]string `json:"tags"`
+	ReplayGain    *ReplayGainData   `json:"replay_gain"`
 }
 
 type AudioFeatures struct {
@@ -116,6 +116,7 @@ type BufferedRange struct {
 }
 
 type PlayMode string
+
 const (
 	PlayModeTrack    PlayMode = "track"
 	PlayModeAlbum    PlayMode = "album"
@@ -127,6 +128,7 @@ const (
 )
 
 type AudioQuality string
+
 const (
 	QualityLossless AudioQuality = "lossless" // FLAC/ALAC
 )
@@ -156,78 +158,78 @@ type MusicLibraryStats struct {
 }
 
 type Album struct {
-	ID           int64       `json:"id"`
-	Title        string      `json:"title"`
-	Artist       string      `json:"artist"`
-	AlbumArtist  string      `json:"album_artist"`
-	Year         int         `json:"year"`
-	Genre        string      `json:"genre"`
-	TrackCount   int         `json:"track_count"`
-	Duration     int64       `json:"duration"`
-	CoverArt     *CoverArt   `json:"cover_art"`
-	Tracks       []MusicTrack `json:"tracks"`
-	PlayCount    int64       `json:"play_count"`
-	Rating       *int        `json:"rating"`
-	DateAdded    time.Time   `json:"date_added"`
-	LastPlayed   *time.Time  `json:"last_played"`
+	ID          int64        `json:"id"`
+	Title       string       `json:"title"`
+	Artist      string       `json:"artist"`
+	AlbumArtist string       `json:"album_artist"`
+	Year        int          `json:"year"`
+	Genre       string       `json:"genre"`
+	TrackCount  int          `json:"track_count"`
+	Duration    int64        `json:"duration"`
+	CoverArt    *CoverArt    `json:"cover_art"`
+	Tracks      []MusicTrack `json:"tracks"`
+	PlayCount   int64        `json:"play_count"`
+	Rating      *int         `json:"rating"`
+	DateAdded   time.Time    `json:"date_added"`
+	LastPlayed  *time.Time   `json:"last_played"`
 }
 
 type Artist struct {
-	ID           int64       `json:"id"`
-	Name         string      `json:"name"`
-	Biography    string      `json:"biography"`
-	Country      string      `json:"country"`
-	Genres       []string    `json:"genres"`
-	Albums       []Album     `json:"albums"`
-	TopTracks    []MusicTrack `json:"top_tracks"`
-	TrackCount   int         `json:"track_count"`
-	AlbumCount   int         `json:"album_count"`
-	PlayCount    int64       `json:"play_count"`
-	Followers    int64       `json:"followers"`
-	CoverImage   *CoverArt   `json:"cover_image"`
-	DateAdded    time.Time   `json:"date_added"`
-	LastPlayed   *time.Time  `json:"last_played"`
+	ID         int64        `json:"id"`
+	Name       string       `json:"name"`
+	Biography  string       `json:"biography"`
+	Country    string       `json:"country"`
+	Genres     []string     `json:"genres"`
+	Albums     []Album      `json:"albums"`
+	TopTracks  []MusicTrack `json:"top_tracks"`
+	TrackCount int          `json:"track_count"`
+	AlbumCount int          `json:"album_count"`
+	PlayCount  int64        `json:"play_count"`
+	Followers  int64        `json:"followers"`
+	CoverImage *CoverArt    `json:"cover_image"`
+	DateAdded  time.Time    `json:"date_added"`
+	LastPlayed *time.Time   `json:"last_played"`
 }
 
 type PlayTrackRequest struct {
-	UserID       int64       `json:"user_id"`
-	TrackID      int64       `json:"track_id"`
-	PlayMode     PlayMode    `json:"play_mode"`
-	StartTime    *int64      `json:"start_time"`
-	Quality      AudioQuality `json:"quality"`
-	DeviceInfo   DeviceInfo  `json:"device_info"`
-	PlaylistID   *int64      `json:"playlist_id"`
-	AlbumID      *int64      `json:"album_id"`
-	ArtistID     *int64      `json:"artist_id"`
-	FolderPath   *string     `json:"folder_path"`
+	UserID     int64        `json:"user_id"`
+	TrackID    int64        `json:"track_id"`
+	PlayMode   PlayMode     `json:"play_mode"`
+	StartTime  *int64       `json:"start_time"`
+	Quality    AudioQuality `json:"quality"`
+	DeviceInfo DeviceInfo   `json:"device_info"`
+	PlaylistID *int64       `json:"playlist_id"`
+	AlbumID    *int64       `json:"album_id"`
+	ArtistID   *int64       `json:"artist_id"`
+	FolderPath *string      `json:"folder_path"`
 }
 
 type PlayAlbumRequest struct {
-	UserID      int64        `json:"user_id"`
-	AlbumID     int64        `json:"album_id"`
-	StartTrack  *int         `json:"start_track"`
-	Shuffle     bool         `json:"shuffle"`
-	Quality     AudioQuality `json:"quality"`
-	DeviceInfo  DeviceInfo   `json:"device_info"`
+	UserID     int64        `json:"user_id"`
+	AlbumID    int64        `json:"album_id"`
+	StartTrack *int         `json:"start_track"`
+	Shuffle    bool         `json:"shuffle"`
+	Quality    AudioQuality `json:"quality"`
+	DeviceInfo DeviceInfo   `json:"device_info"`
 }
 
 type PlayArtistRequest struct {
-	UserID      int64        `json:"user_id"`
-	ArtistID    int64        `json:"artist_id"`
-	Mode        string       `json:"mode"` // "top_tracks", "all_tracks", "albums"
-	Shuffle     bool         `json:"shuffle"`
-	Quality     AudioQuality `json:"quality"`
-	DeviceInfo  DeviceInfo   `json:"device_info"`
+	UserID     int64        `json:"user_id"`
+	ArtistID   int64        `json:"artist_id"`
+	Mode       string       `json:"mode"` // "top_tracks", "all_tracks", "albums"
+	Shuffle    bool         `json:"shuffle"`
+	Quality    AudioQuality `json:"quality"`
+	DeviceInfo DeviceInfo   `json:"device_info"`
 }
 
 type UpdatePlaybackRequest struct {
-	SessionID   string        `json:"session_id"`
-	Position    *int64        `json:"position"`
-	State       *PlaybackState `json:"state"`
-	Volume      *float64      `json:"volume"`
-	IsMuted     *bool         `json:"is_muted"`
-	RepeatMode  *RepeatMode   `json:"repeat_mode"`
-	Shuffle     *bool         `json:"shuffle"`
+	SessionID  string         `json:"session_id"`
+	Position   *int64         `json:"position"`
+	State      *PlaybackState `json:"state"`
+	Volume     *float64       `json:"volume"`
+	IsMuted    *bool          `json:"is_muted"`
+	RepeatMode *RepeatMode    `json:"repeat_mode"`
+	Shuffle    *bool          `json:"shuffle"`
 }
 
 type SeekRequest struct {
@@ -1391,4 +1393,3 @@ func (s *MusicPlayerService) getMostPlayed(ctx context.Context, userID int64, st
 	stats.MostPlayed = tracks
 	return nil
 }
-

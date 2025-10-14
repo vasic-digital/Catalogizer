@@ -16,12 +16,12 @@ import (
 
 // SubtitleService handles subtitle management, downloading, and translation
 type SubtitleService struct {
-	db                *sql.DB
-	logger            *zap.Logger
+	db                 *sql.DB
+	logger             *zap.Logger
 	translationService *TranslationService
-	httpClient        *http.Client
-	apiKeys           map[string]string
-	cacheDir          string
+	httpClient         *http.Client
+	apiKeys            map[string]string
+	cacheDir           string
 }
 
 // SubtitleProvider represents different subtitle providers
@@ -37,47 +37,47 @@ const (
 
 // SubtitleSearchRequest represents a subtitle search request
 type SubtitleSearchRequest struct {
-	MediaPath     string            `json:"media_path"`
-	Title         *string           `json:"title,omitempty"`
-	Year          *int              `json:"year,omitempty"`
-	Season        *int              `json:"season,omitempty"`
-	Episode       *int              `json:"episode,omitempty"`
-	Languages     []string          `json:"languages"`
-	FileHash      *string           `json:"file_hash,omitempty"`
-	FileSize      *int64            `json:"file_size,omitempty"`
+	MediaPath     string             `json:"media_path"`
+	Title         *string            `json:"title,omitempty"`
+	Year          *int               `json:"year,omitempty"`
+	Season        *int               `json:"season,omitempty"`
+	Episode       *int               `json:"episode,omitempty"`
+	Languages     []string           `json:"languages"`
+	FileHash      *string            `json:"file_hash,omitempty"`
+	FileSize      *int64             `json:"file_size,omitempty"`
 	Providers     []SubtitleProvider `json:"providers,omitempty"`
-	ForceDownload bool              `json:"force_download"`
+	ForceDownload bool               `json:"force_download"`
 }
 
 // SubtitleSearchResult represents a subtitle search result
 type SubtitleSearchResult struct {
-	ID               string           `json:"id"`
-	Provider         SubtitleProvider `json:"provider"`
-	Language         string           `json:"language"`
-	LanguageCode     string           `json:"language_code"`
-	Title            string           `json:"title"`
-	DownloadURL      string           `json:"download_url"`
-	Format           string           `json:"format"`
-	Encoding         string           `json:"encoding"`
-	UploadDate       time.Time        `json:"upload_date"`
-	Downloads        int              `json:"downloads"`
-	Rating           float64          `json:"rating"`
-	Comments         int              `json:"comments"`
-	IsHearingImpaired bool            `json:"is_hearing_impaired"`
-	FrameRate        *float64         `json:"frame_rate,omitempty"`
-	FileHash         *string          `json:"file_hash,omitempty"`
-	MovieHash        *string          `json:"movie_hash,omitempty"`
-	MatchScore       float64          `json:"match_score"`
+	ID                string           `json:"id"`
+	Provider          SubtitleProvider `json:"provider"`
+	Language          string           `json:"language"`
+	LanguageCode      string           `json:"language_code"`
+	Title             string           `json:"title"`
+	DownloadURL       string           `json:"download_url"`
+	Format            string           `json:"format"`
+	Encoding          string           `json:"encoding"`
+	UploadDate        time.Time        `json:"upload_date"`
+	Downloads         int              `json:"downloads"`
+	Rating            float64          `json:"rating"`
+	Comments          int              `json:"comments"`
+	IsHearingImpaired bool             `json:"is_hearing_impaired"`
+	FrameRate         *float64         `json:"frame_rate,omitempty"`
+	FileHash          *string          `json:"file_hash,omitempty"`
+	MovieHash         *string          `json:"movie_hash,omitempty"`
+	MatchScore        float64          `json:"match_score"`
 }
 
 // SubtitleSyncResult represents subtitle synchronization verification
 type SubtitleSyncResult struct {
-	IsValid        bool     `json:"is_valid"`
-	SyncOffset     float64  `json:"sync_offset"` // Milliseconds
-	Confidence     float64  `json:"confidence"`  // 0-1
-	DetectedFrames int      `json:"detected_frames"`
+	IsValid        bool        `json:"is_valid"`
+	SyncOffset     float64     `json:"sync_offset"` // Milliseconds
+	Confidence     float64     `json:"confidence"`  // 0-1
+	DetectedFrames int         `json:"detected_frames"`
 	SamplePoints   []SyncPoint `json:"sample_points"`
-	Recommendation string   `json:"recommendation"`
+	Recommendation string      `json:"recommendation"`
 }
 
 // SyncPoint represents a point used for sync verification
@@ -90,11 +90,11 @@ type SyncPoint struct {
 
 // SubtitleDownloadRequest represents a subtitle download request
 type SubtitleDownloadRequest struct {
-	MediaItemID   int64              `json:"media_item_id"`
-	ResultID      string             `json:"result_id"`
-	Language      string             `json:"language"`
-	VerifySync    bool               `json:"verify_sync"`
-	AutoTranslate []string           `json:"auto_translate,omitempty"` // Languages to auto-translate to
+	MediaItemID   int64    `json:"media_item_id"`
+	ResultID      string   `json:"result_id"`
+	Language      string   `json:"language"`
+	VerifySync    bool     `json:"verify_sync"`
+	AutoTranslate []string `json:"auto_translate,omitempty"` // Languages to auto-translate to
 }
 
 // SubtitleTranslationRequest represents a subtitle translation request
@@ -116,12 +116,12 @@ type SubtitleLine struct {
 // NewSubtitleService creates a new subtitle service
 func NewSubtitleService(db *sql.DB, logger *zap.Logger) *SubtitleService {
 	return &SubtitleService{
-		db:                db,
-		logger:            logger,
+		db:                 db,
+		logger:             logger,
 		translationService: NewTranslationService(logger),
-		httpClient:        &http.Client{Timeout: 30 * time.Second},
-		apiKeys:           make(map[string]string),
-		cacheDir:          "./cache/subtitles",
+		httpClient:         &http.Client{Timeout: 30 * time.Second},
+		apiKeys:            make(map[string]string),
+		cacheDir:           "./cache/subtitles",
 	}
 }
 
@@ -534,7 +534,7 @@ func parseTimestamp(timestamp string) (float64, error) {
 	seconds, _ := strconv.Atoi(matches[3])
 	milliseconds, _ := strconv.Atoi(matches[4])
 
-	total := float64(hours*3600 + minutes*60 + seconds) + float64(milliseconds)/1000.0
+	total := float64(hours*3600+minutes*60+seconds) + float64(milliseconds)/1000.0
 	return total, nil
 }
 

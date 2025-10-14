@@ -178,11 +178,11 @@ func (s *SyncService) StartSync(endpointID int, userID int) (*models.SyncSession
 	}
 
 	session := &models.SyncSession{
-		EndpointID:  endpointID,
-		UserID:      userID,
-		Status:      models.SyncSessionStatusRunning,
-		StartedAt:   time.Now(),
-		SyncType:    models.SyncTypeManual,
+		EndpointID: endpointID,
+		UserID:     userID,
+		Status:     models.SyncSessionStatusRunning,
+		StartedAt:  time.Now(),
+		SyncType:   models.SyncTypeManual,
 	}
 
 	sessionID, err := s.syncRepo.CreateSession(session)

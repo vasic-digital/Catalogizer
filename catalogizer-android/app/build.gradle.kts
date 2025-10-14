@@ -56,7 +56,7 @@ android {
     }
 
     composeOptions {
-        kotlinCompilerExtensionVersion = "1.5.5"
+        kotlinCompilerExtensionVersion = "1.5.8"
     }
 
     packaging {
@@ -113,6 +113,7 @@ dependencies {
     // Room Database
     implementation("androidx.room:room-runtime:2.6.1")
     implementation("androidx.room:room-ktx:2.6.1")
+    implementation("androidx.room:room-paging:2.6.1")
     kapt("androidx.room:room-compiler:2.6.1")
 
     // Work Manager

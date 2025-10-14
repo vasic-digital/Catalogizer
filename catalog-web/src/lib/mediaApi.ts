@@ -46,7 +46,7 @@ export const mediaApi = {
     api.get('/media/popular', { params: { limit } }).then((res) => res.data),
 
   deleteMedia: (id: number): Promise<void> =>
-    api.delete(`/media/${id}`).then(() => {}),
+    api.delete(`/media/${id}`).then(() => {/* no content */}),
 
   updateMedia: (id: number, data: Partial<MediaItem>): Promise<MediaItem> =>
     api.put(`/media/${id}`, data).then((res) => res.data),
@@ -65,7 +65,7 @@ export const mediaApi = {
     api.put(`/storage/roots/${id}`, data).then((res) => res.data),
 
   deleteStorageRoot: (id: number): Promise<void> =>
-    api.delete(`/storage/roots/${id}`).then(() => {}),
+    api.delete(`/storage/roots/${id}`).then(() => {/* no content */}),
 
   testStorageRoot: (id: number): Promise<{ success: boolean; message: string }> =>
     api.post(`/storage/roots/${id}/test`).then((res) => res.data),

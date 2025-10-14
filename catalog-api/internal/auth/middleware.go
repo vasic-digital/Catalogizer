@@ -144,9 +144,9 @@ func (m *AuthMiddleware) RequireResourceAccess(resource, action string) gin.Hand
 				zap.String("resource", resource),
 				zap.String("action", action))
 			c.JSON(http.StatusForbidden, gin.H{
-				"error": "Access denied to resource",
+				"error":    "Access denied to resource",
 				"resource": resource,
-				"action": action,
+				"action":   action,
 			})
 			c.Abort()
 			return

@@ -12,10 +12,10 @@ import (
 
 // NFSConfig contains NFS connection configuration
 type NFSConfig struct {
-	Host     string `json:"host"`
-	Path     string `json:"path"`     // Export path on NFS server
+	Host       string `json:"host"`
+	Path       string `json:"path"`        // Export path on NFS server
 	MountPoint string `json:"mount_point"` // Local mount point
-	Options  string `json:"options"` // Mount options
+	Options    string `json:"options"`     // Mount options
 }
 
 // NFSClient implements FileSystemClient for NFS protocol

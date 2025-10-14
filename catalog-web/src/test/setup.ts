@@ -17,11 +17,11 @@ Object.defineProperty(window, 'matchMedia', {
 
 // Mock IntersectionObserver
 global.IntersectionObserver = class IntersectionObserver {
-  root: Element | null = null;
-  rootMargin: string = '';
+  root = null;
+  rootMargin = '';
   thresholds: ReadonlyArray<number> = [];
 
-  constructor() {}
+  constructor() {/* mock */}
   observe() {
     return null;
   }
@@ -31,14 +31,11 @@ global.IntersectionObserver = class IntersectionObserver {
   unobserve() {
     return null;
   }
-  takeRecords(): IntersectionObserverEntry[] {
-    return [];
-  }
 } as any;
 
 // Mock ResizeObserver
 global.ResizeObserver = class ResizeObserver {
-  constructor() {}
+  constructor() {/* mock */}
   observe() {
     return null;
   }

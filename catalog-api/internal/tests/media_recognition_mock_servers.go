@@ -13,37 +13,37 @@ import (
 
 // Comprehensive mock servers for media recognition APIs
 type MediaRecognitionMockServers struct {
-	logger          *zap.Logger
-	tmdbServer      *httptest.Server
-	omdbServer      *httptest.Server
-	lastfmServer    *httptest.Server
+	logger            *zap.Logger
+	tmdbServer        *httptest.Server
+	omdbServer        *httptest.Server
+	lastfmServer      *httptest.Server
 	musicbrainzServer *httptest.Server
-	acoustidServer  *httptest.Server
-	igdbServer      *httptest.Server
-	steamServer     *httptest.Server
-	githubServer    *httptest.Server
+	acoustidServer    *httptest.Server
+	igdbServer        *httptest.Server
+	steamServer       *httptest.Server
+	githubServer      *httptest.Server
 	googlebooksServer *httptest.Server
 	openlibraryServer *httptest.Server
-	crossrefServer  *httptest.Server
-	ocrServer       *httptest.Server
-	wingetServer    *httptest.Server
-	flatpakServer   *httptest.Server
-	snapcraftServer *httptest.Server
-	homebrewServer  *httptest.Server
+	crossrefServer    *httptest.Server
+	ocrServer         *httptest.Server
+	wingetServer      *httptest.Server
+	flatpakServer     *httptest.Server
+	snapcraftServer   *httptest.Server
+	homebrewServer    *httptest.Server
 
 	// Request logging
-	requestLogs     []RequestLog
+	requestLogs []RequestLog
 }
 
 type RequestLog struct {
-	Timestamp   time.Time         `json:"timestamp"`
-	Method      string            `json:"method"`
-	URL         string            `json:"url"`
-	Headers     map[string]string `json:"headers"`
-	Body        string            `json:"body"`
-	Response    string            `json:"response"`
-	StatusCode  int               `json:"status_code"`
-	ServerType  string            `json:"server_type"`
+	Timestamp  time.Time         `json:"timestamp"`
+	Method     string            `json:"method"`
+	URL        string            `json:"url"`
+	Headers    map[string]string `json:"headers"`
+	Body       string            `json:"body"`
+	Response   string            `json:"response"`
+	StatusCode int               `json:"status_code"`
+	ServerType string            `json:"server_type"`
 }
 
 func NewMediaRecognitionMockServers(logger *zap.Logger) *MediaRecognitionMockServers {
@@ -99,20 +99,20 @@ func (m *MediaRecognitionMockServers) handleTMDbSearch(w http.ResponseWriter, r 
 		"total_results": 1,
 		"results": []map[string]interface{}{
 			{
-				"id":            12345,
-				"title":         fmt.Sprintf("Mock Movie: %s", query),
-				"name":          fmt.Sprintf("Mock TV Show: %s", query),
-				"media_type":    "movie",
-				"overview":      "This is a mock movie/TV show for testing purposes.",
-				"release_date":  "2023-01-01",
-				"first_air_date": "2023-01-01",
-				"genre_ids":     []int{28, 12, 878},
-				"vote_average":  8.5,
-				"vote_count":    1500,
-				"poster_path":   "/mock_poster.jpg",
-				"backdrop_path": "/mock_backdrop.jpg",
-				"popularity":    95.5,
-				"adult":         false,
+				"id":                12345,
+				"title":             fmt.Sprintf("Mock Movie: %s", query),
+				"name":              fmt.Sprintf("Mock TV Show: %s", query),
+				"media_type":        "movie",
+				"overview":          "This is a mock movie/TV show for testing purposes.",
+				"release_date":      "2023-01-01",
+				"first_air_date":    "2023-01-01",
+				"genre_ids":         []int{28, 12, 878},
+				"vote_average":      8.5,
+				"vote_count":        1500,
+				"poster_path":       "/mock_poster.jpg",
+				"backdrop_path":     "/mock_backdrop.jpg",
+				"popularity":        95.5,
+				"adult":             false,
 				"original_language": "en",
 			},
 		},
@@ -124,21 +124,21 @@ func (m *MediaRecognitionMockServers) handleTMDbSearch(w http.ResponseWriter, r 
 
 func (m *MediaRecognitionMockServers) handleTMDbMovieDetails(w http.ResponseWriter, r *http.Request) {
 	response := map[string]interface{}{
-		"id":                12345,
-		"title":             "Mock Movie Details",
-		"original_title":    "Mock Movie Details",
-		"overview":          "Detailed mock movie information for testing.",
-		"release_date":      "2023-01-01",
-		"runtime":           125,
-		"vote_average":      8.5,
-		"vote_count":        1500,
-		"poster_path":       "/mock_poster.jpg",
-		"backdrop_path":     "/mock_backdrop.jpg",
-		"imdb_id":           "tt1234567",
-		"budget":            150000000,
-		"revenue":           500000000,
-		"status":            "Released",
-		"tagline":           "The ultimate mock movie experience",
+		"id":             12345,
+		"title":          "Mock Movie Details",
+		"original_title": "Mock Movie Details",
+		"overview":       "Detailed mock movie information for testing.",
+		"release_date":   "2023-01-01",
+		"runtime":        125,
+		"vote_average":   8.5,
+		"vote_count":     1500,
+		"poster_path":    "/mock_poster.jpg",
+		"backdrop_path":  "/mock_backdrop.jpg",
+		"imdb_id":        "tt1234567",
+		"budget":         150000000,
+		"revenue":        500000000,
+		"status":         "Released",
+		"tagline":        "The ultimate mock movie experience",
 		"genres": []map[string]interface{}{
 			{"id": 28, "name": "Action"},
 			{"id": 12, "name": "Adventure"},
@@ -166,20 +166,20 @@ func (m *MediaRecognitionMockServers) handleTMDbMovieDetails(w http.ResponseWrit
 
 func (m *MediaRecognitionMockServers) handleTMDbTVDetails(w http.ResponseWriter, r *http.Request) {
 	response := map[string]interface{}{
-		"id":                   12345,
-		"name":                 "Mock TV Series",
-		"original_name":        "Mock TV Series",
-		"overview":             "Detailed mock TV series information for testing.",
-		"first_air_date":       "2023-01-01",
-		"last_air_date":        "2023-12-31",
-		"vote_average":         8.7,
-		"vote_count":           2000,
-		"poster_path":          "/mock_tv_poster.jpg",
-		"backdrop_path":        "/mock_tv_backdrop.jpg",
-		"number_of_episodes":   24,
-		"number_of_seasons":    2,
-		"status":               "Ended",
-		"type":                 "Scripted",
+		"id":                 12345,
+		"name":               "Mock TV Series",
+		"original_name":      "Mock TV Series",
+		"overview":           "Detailed mock TV series information for testing.",
+		"first_air_date":     "2023-01-01",
+		"last_air_date":      "2023-12-31",
+		"vote_average":       8.7,
+		"vote_count":         2000,
+		"poster_path":        "/mock_tv_poster.jpg",
+		"backdrop_path":      "/mock_tv_backdrop.jpg",
+		"number_of_episodes": 24,
+		"number_of_seasons":  2,
+		"status":             "Ended",
+		"type":               "Scripted",
 		"external_ids": map[string]interface{}{
 			"imdb_id": "tt7654321",
 			"tvdb_id": 98765,
@@ -220,20 +220,20 @@ func (m *MediaRecognitionMockServers) setupOMDbServer() {
 		}
 
 		response := map[string]interface{}{
-			"Title":      title,
-			"Year":       "2023",
-			"Rated":      "PG-13",
-			"Released":   "01 Jan 2023",
-			"Runtime":    "125 min",
-			"Genre":      "Action, Adventure, Sci-Fi",
-			"Director":   "Mock Director",
-			"Writer":     "Mock Writer",
-			"Actors":     "Mock Actor 1, Mock Actor 2, Mock Actor 3",
-			"Plot":       "A comprehensive mock plot for testing purposes.",
-			"Language":   "English",
-			"Country":    "USA",
-			"Awards":     "Won 2 Oscars. Another 15 wins & 30 nominations.",
-			"Poster":     "https://example.com/mock_poster.jpg",
+			"Title":    title,
+			"Year":     "2023",
+			"Rated":    "PG-13",
+			"Released": "01 Jan 2023",
+			"Runtime":  "125 min",
+			"Genre":    "Action, Adventure, Sci-Fi",
+			"Director": "Mock Director",
+			"Writer":   "Mock Writer",
+			"Actors":   "Mock Actor 1, Mock Actor 2, Mock Actor 3",
+			"Plot":     "A comprehensive mock plot for testing purposes.",
+			"Language": "English",
+			"Country":  "USA",
+			"Awards":   "Won 2 Oscars. Another 15 wins & 30 nominations.",
+			"Poster":   "https://example.com/mock_poster.jpg",
 			"Ratings": []map[string]string{
 				{"Source": "Internet Movie Database", "Value": "8.5/10"},
 				{"Source": "Rotten Tomatoes", "Value": "85%"},
@@ -305,12 +305,12 @@ func (m *MediaRecognitionMockServers) handleLastFMTrackSearch(w http.ResponseWri
 func (m *MediaRecognitionMockServers) handleLastFMTrackInfo(w http.ResponseWriter, r *http.Request, track, artist string) {
 	response := map[string]interface{}{
 		"track": map[string]interface{}{
-			"name":       track,
-			"mbid":       "mock-mbid-12345",
-			"url":        "https://last.fm/music/mock-artist/mock-track",
-			"duration":   "240000",
-			"listeners":  "50000",
-			"playcount":  "500000",
+			"name":      track,
+			"mbid":      "mock-mbid-12345",
+			"url":       "https://last.fm/music/mock-artist/mock-track",
+			"duration":  "240000",
+			"listeners": "50000",
+			"playcount": "500000",
 			"streamable": map[string]string{
 				"#text":     "1",
 				"fulltrack": "0",
@@ -368,28 +368,28 @@ func (m *MediaRecognitionMockServers) handleMusicBrainzRecordingSearch(w http.Re
 	response := map[string]interface{}{
 		"recordings": []map[string]interface{}{
 			{
-				"id":    "mock-recording-id-12345",
-				"score": 95,
-				"title": "Mock Recording Title",
-				"length": 240000,
+				"id":             "mock-recording-id-12345",
+				"score":          95,
+				"title":          "Mock Recording Title",
+				"length":         240000,
 				"disambiguation": "",
 				"artist-credit": []map[string]interface{}{
 					{
 						"name": "Mock Artist",
 						"artist": map[string]interface{}{
-							"id":   "mock-artist-id",
-							"name": "Mock Artist",
+							"id":        "mock-artist-id",
+							"name":      "Mock Artist",
 							"sort-name": "Artist, Mock",
-							"type": "Person",
+							"type":      "Person",
 						},
 					},
 				},
 				"releases": []map[string]interface{}{
 					{
-						"id":     "mock-release-id",
-						"title":  "Mock Album",
-						"status": "Official",
-						"date":   "2023",
+						"id":      "mock-release-id",
+						"title":   "Mock Album",
+						"status":  "Official",
+						"date":    "2023",
 						"country": "US",
 					},
 				},
@@ -623,8 +623,8 @@ func (m *MediaRecognitionMockServers) setupGoogleBooksServer() {
 		query := r.URL.Query().Get("q")
 
 		response := map[string]interface{}{
-			"kind":        "books#volumes",
-			"totalItems":  1,
+			"kind":       "books#volumes",
+			"totalItems": 1,
 			"items": []map[string]interface{}{
 				{
 					"kind":     "books#volume",
@@ -632,12 +632,12 @@ func (m *MediaRecognitionMockServers) setupGoogleBooksServer() {
 					"etag":     "mock-etag",
 					"selfLink": "https://www.googleapis.com/books/v1/volumes/mock-book-id-12345",
 					"volumeInfo": map[string]interface{}{
-						"title":       fmt.Sprintf("Mock Book: %s", query),
-						"subtitle":    "A Comprehensive Guide to Testing",
-						"authors":     []string{"Mock Author", "Test Writer"},
-						"publisher":   "Mock Publishing House",
+						"title":         fmt.Sprintf("Mock Book: %s", query),
+						"subtitle":      "A Comprehensive Guide to Testing",
+						"authors":       []string{"Mock Author", "Test Writer"},
+						"publisher":     "Mock Publishing House",
 						"publishedDate": "2023-01-01",
-						"description": "This is a comprehensive mock book designed for testing purposes. It contains detailed information about various testing methodologies and best practices.",
+						"description":   "This is a comprehensive mock book designed for testing purposes. It contains detailed information about various testing methodologies and best practices.",
 						"industryIdentifiers": []map[string]interface{}{
 							{
 								"type":       "ISBN_13",
@@ -665,8 +665,8 @@ func (m *MediaRecognitionMockServers) setupGoogleBooksServer() {
 							"medium":         "https://example.com/mock_book_medium.jpg",
 							"large":          "https://example.com/mock_book_large.jpg",
 						},
-						"language":             "en",
-						"previewLink":          "https://books.google.com/books?id=mock-book-id-12345",
+						"language":            "en",
+						"previewLink":         "https://books.google.com/books?id=mock-book-id-12345",
 						"infoLink":            "https://books.google.com/books?id=mock-book-id-12345",
 						"canonicalVolumeLink": "https://books.google.com/books/about/Mock_Book.html?id=mock-book-id-12345",
 					},
@@ -785,8 +785,8 @@ func (m *MediaRecognitionMockServers) setupCrossrefServer() {
 						"publisher":       "Mock Academic Press",
 						"issue":           "1",
 						"content-domain": map[string]interface{}{
-							"domain":                   []string{"mockacademic.org"},
-							"crossmark-restriction":    false,
+							"domain":                []string{"mockacademic.org"},
+							"crossmark-restriction": false,
 						},
 						"published": map[string]interface{}{
 							"date-parts": [][]int{{2023, 1, 1}},
@@ -799,12 +799,12 @@ func (m *MediaRecognitionMockServers) setupCrossrefServer() {
 							"date-time":  "2023-01-01T00:00:00Z",
 							"timestamp":  1672531200000,
 						},
-						"page":              "1-25",
-						"source":            "Crossref",
+						"page":                   "1-25",
+						"source":                 "Crossref",
 						"is-referenced-by-count": 15,
-						"title":             []string{fmt.Sprintf("Mock Academic Paper: %s", query)},
-						"prefix":            "10.1000",
-						"volume":            "45",
+						"title":                  []string{fmt.Sprintf("Mock Academic Paper: %s", query)},
+						"prefix":                 "10.1000",
+						"volume":                 "45",
 						"author": []map[string]interface{}{
 							{
 								"given":    "John",
@@ -823,15 +823,15 @@ func (m *MediaRecognitionMockServers) setupCrossrefServer() {
 								},
 							},
 						},
-						"member":           "1000",
-						"container-title":  []string{"Journal of Mock Research"},
-						"language":         "en",
+						"member":          "1000",
+						"container-title": []string{"Journal of Mock Research"},
+						"language":        "en",
 						"deposited": map[string]interface{}{
 							"date-parts": [][]int{{2023, 1, 15}},
 							"date-time":  "2023-01-15T10:30:00Z",
 							"timestamp":  1673779800000,
 						},
-						"score":             95.5,
+						"score": 95.5,
 						"issued": map[string]interface{}{
 							"date-parts": [][]int{{2023, 1, 1}},
 						},
@@ -940,8 +940,8 @@ func (m *MediaRecognitionMockServers) setupOCRServer() {
 					"ErrorDetails":      "",
 				},
 			},
-			"OCRExitCode":             1,
-			"IsErroredOnProcessing":   false,
+			"OCRExitCode":                  1,
+			"IsErroredOnProcessing":        false,
 			"ProcessingTimeInMilliseconds": "1250",
 		}
 
@@ -983,18 +983,18 @@ func (m *MediaRecognitionMockServers) setupFlatpakServer() {
 
 		response := []map[string]interface{}{
 			{
-				"flatpakAppId":  "org.mocksoft.TestApp",
-				"name":          fmt.Sprintf("Mock %s", query),
-				"summary":       fmt.Sprintf("Mock application for %s testing", query),
-				"description":   fmt.Sprintf("A comprehensive Flatpak application designed for testing %s functionality.", query),
-				"developerName": "Mock Software Foundation",
+				"flatpakAppId":   "org.mocksoft.TestApp",
+				"name":           fmt.Sprintf("Mock %s", query),
+				"summary":        fmt.Sprintf("Mock application for %s testing", query),
+				"description":    fmt.Sprintf("A comprehensive Flatpak application designed for testing %s functionality.", query),
+				"developerName":  "Mock Software Foundation",
 				"projectLicense": "GPL-3.0+",
-				"categories":    []string{"Development", "Education"},
-				"screenshots":   []string{
+				"categories":     []string{"Development", "Education"},
+				"screenshots": []string{
 					"https://example.com/mock_screenshot1.png",
 					"https://example.com/mock_screenshot2.png",
 				},
-				"iconDesktopUrl": "https://example.com/mock_icon.png",
+				"iconDesktopUrl":        "https://example.com/mock_icon.png",
 				"downloadFlatpakRefUrl": "https://dl.flathub.org/repo/appstream/org.mocksoft.TestApp.flatpakref",
 			},
 		}
@@ -1022,11 +1022,11 @@ func (m *MediaRecognitionMockServers) setupSnapcraftServer() {
 						"username":     "mockpublisher",
 						"validation":   "verified",
 					},
-					"license":   "MIT",
-					"version":   "1.2.3",
-					"revision":  42,
+					"license":     "MIT",
+					"version":     "1.2.3",
+					"revision":    42,
 					"confinement": "strict",
-					"grade":     "stable",
+					"grade":       "stable",
 					"categories": []map[string]interface{}{
 						{"name": "development"},
 						{"name": "education"},
@@ -1062,15 +1062,15 @@ func (m *MediaRecognitionMockServers) setupHomebrewServer() {
 		}
 
 		response := map[string]interface{}{
-			"name":          formulaName,
-			"full_name":     fmt.Sprintf("mock/%s", formulaName),
-			"tap":           "homebrew/core",
-			"oldname":       nil,
-			"aliases":       []string{},
+			"name":               formulaName,
+			"full_name":          fmt.Sprintf("mock/%s", formulaName),
+			"tap":                "homebrew/core",
+			"oldname":            nil,
+			"aliases":            []string{},
 			"versioned_formulae": []string{},
-			"desc":          fmt.Sprintf("Mock Homebrew formula for %s testing purposes", formulaName),
-			"license":       "MIT",
-			"homepage":      "https://mocksoft.com/homebrew-formula",
+			"desc":               fmt.Sprintf("Mock Homebrew formula for %s testing purposes", formulaName),
+			"license":            "MIT",
+			"homepage":           "https://mocksoft.com/homebrew-formula",
 			"versions": map[string]interface{}{
 				"stable": "1.2.3",
 				"head":   "HEAD",
@@ -1083,11 +1083,11 @@ func (m *MediaRecognitionMockServers) setupHomebrewServer() {
 					"revision": "abc123def456",
 				},
 			},
-			"revision": 0,
+			"revision":       0,
 			"version_scheme": 0,
 			"bottle": map[string]interface{}{
 				"stable": map[string]interface{}{
-					"rebuild": 0,
+					"rebuild":  0,
 					"root_url": "https://homebrew.bintray.com/bottles",
 					"files": map[string]interface{}{
 						"monterey": map[string]interface{}{
@@ -1103,23 +1103,23 @@ func (m *MediaRecognitionMockServers) setupHomebrewServer() {
 					},
 				},
 			},
-			"dependencies":         []string{"mock-dependency-1", "mock-dependency-2"},
-			"test_dependencies":    []string{"mock-test-dep"},
+			"dependencies":             []string{"mock-dependency-1", "mock-dependency-2"},
+			"test_dependencies":        []string{"mock-test-dep"},
 			"recommended_dependencies": []string{},
-			"optional_dependencies": []string{},
-			"build_dependencies":   []string{"cmake", "pkg-config"},
-			"conflicts_with":       []string{},
-			"caveats":             nil,
-			"installed":           []string{},
-			"linked_keg":          nil,
-			"pinned":              false,
-			"outdated":            false,
-			"deprecated":          false,
-			"deprecation_date":    nil,
-			"deprecation_reason":  nil,
-			"disabled":            false,
-			"disable_date":        nil,
-			"disable_reason":      nil,
+			"optional_dependencies":    []string{},
+			"build_dependencies":       []string{"cmake", "pkg-config"},
+			"conflicts_with":           []string{},
+			"caveats":                  nil,
+			"installed":                []string{},
+			"linked_keg":               nil,
+			"pinned":                   false,
+			"outdated":                 false,
+			"deprecated":               false,
+			"deprecation_date":         nil,
+			"deprecation_reason":       nil,
+			"disabled":                 false,
+			"disable_date":             nil,
+			"disable_reason":           nil,
 		}
 
 		w.Header().Set("Content-Type", "application/json")
@@ -1137,23 +1137,23 @@ func (m *MediaRecognitionMockServers) setupSteamServer() {
 			"12345": map[string]interface{}{
 				"success": true,
 				"data": map[string]interface{}{
-					"type":                "game",
-					"name":                "Mock Steam Game",
-					"steam_appid":         12345,
-					"required_age":        0,
-					"is_free":             false,
+					"type":                 "game",
+					"name":                 "Mock Steam Game",
+					"steam_appid":          12345,
+					"required_age":         0,
+					"is_free":              false,
 					"detailed_description": "A comprehensive mock Steam game for testing purposes with detailed gameplay mechanics and storyline.",
-					"about_the_game":      "Experience the ultimate mock gaming adventure with cutting-edge graphics and immersive gameplay.",
-					"short_description":   "The definitive mock game experience.",
-					"supported_languages": "English<strong>*</strong>, French, German, Spanish<br><strong>*</strong>languages with full audio support",
-					"header_image":        "https://cdn.akamai.steamstatic.com/steam/apps/12345/header.jpg",
-					"website":             "https://mockgame.com",
+					"about_the_game":       "Experience the ultimate mock gaming adventure with cutting-edge graphics and immersive gameplay.",
+					"short_description":    "The definitive mock game experience.",
+					"supported_languages":  "English<strong>*</strong>, French, German, Spanish<br><strong>*</strong>languages with full audio support",
+					"header_image":         "https://cdn.akamai.steamstatic.com/steam/apps/12345/header.jpg",
+					"website":              "https://mockgame.com",
 					"pc_requirements": map[string]interface{}{
-						"minimum": "<strong>Minimum:</strong><br><ul class=\"bb_ul\"><li><strong>OS:</strong> Windows 10 64-bit<li><strong>Processor:</strong> Intel Core i5-8400 / AMD Ryzen 5 2600<li><strong>Memory:</strong> 8 GB RAM<li><strong>Graphics:</strong> NVIDIA GTX 1060 / AMD RX 580<li><strong>DirectX:</strong> Version 12<li><strong>Storage:</strong> 50 GB available space</ul>",
+						"minimum":     "<strong>Minimum:</strong><br><ul class=\"bb_ul\"><li><strong>OS:</strong> Windows 10 64-bit<li><strong>Processor:</strong> Intel Core i5-8400 / AMD Ryzen 5 2600<li><strong>Memory:</strong> 8 GB RAM<li><strong>Graphics:</strong> NVIDIA GTX 1060 / AMD RX 580<li><strong>DirectX:</strong> Version 12<li><strong>Storage:</strong> 50 GB available space</ul>",
 						"recommended": "<strong>Recommended:</strong><br><ul class=\"bb_ul\"><li><strong>OS:</strong> Windows 11 64-bit<li><strong>Processor:</strong> Intel Core i7-10700K / AMD Ryzen 7 3700X<li><strong>Memory:</strong> 16 GB RAM<li><strong>Graphics:</strong> NVIDIA RTX 3070 / AMD RX 6700 XT<li><strong>DirectX:</strong> Version 12<li><strong>Storage:</strong> 50 GB available space (SSD recommended)</ul>",
 					},
-					"developers":  []string{"Mock Game Studios"},
-					"publishers":  []string{"Mock Publishers"},
+					"developers": []string{"Mock Game Studios"},
+					"publishers": []string{"Mock Publishers"},
 					"platforms": map[string]bool{
 						"windows": true,
 						"mac":     false,
@@ -1176,7 +1176,7 @@ func (m *MediaRecognitionMockServers) setupSteamServer() {
 					},
 					"screenshots": []map[string]interface{}{
 						{
-							"id":            1,
+							"id":             1,
 							"path_thumbnail": "https://cdn.akamai.steamstatic.com/steam/apps/12345/ss_1_thumbnail.jpg",
 							"path_full":      "https://cdn.akamai.steamstatic.com/steam/apps/12345/ss_1.jpg",
 						},
@@ -1233,22 +1233,22 @@ func (m *MediaRecognitionMockServers) ClearRequestLogs() {
 // Get server URLs for configuration
 func (m *MediaRecognitionMockServers) GetURLs() map[string]string {
 	return map[string]string{
-		"tmdb":         m.tmdbServer.URL,
-		"omdb":         m.omdbServer.URL,
-		"lastfm":       m.lastfmServer.URL,
-		"musicbrainz":  m.musicbrainzServer.URL,
-		"acoustid":     m.acoustidServer.URL,
-		"igdb":         m.igdbServer.URL,
-		"steam":        m.steamServer.URL,
-		"github":       m.githubServer.URL,
-		"googlebooks":  m.googlebooksServer.URL,
-		"openlibrary":  m.openlibraryServer.URL,
-		"crossref":     m.crossrefServer.URL,
-		"ocr":          m.ocrServer.URL,
-		"winget":       m.wingetServer.URL,
-		"flatpak":      m.flatpakServer.URL,
-		"snapcraft":    m.snapcraftServer.URL,
-		"homebrew":     m.homebrewServer.URL,
+		"tmdb":        m.tmdbServer.URL,
+		"omdb":        m.omdbServer.URL,
+		"lastfm":      m.lastfmServer.URL,
+		"musicbrainz": m.musicbrainzServer.URL,
+		"acoustid":    m.acoustidServer.URL,
+		"igdb":        m.igdbServer.URL,
+		"steam":       m.steamServer.URL,
+		"github":      m.githubServer.URL,
+		"googlebooks": m.googlebooksServer.URL,
+		"openlibrary": m.openlibraryServer.URL,
+		"crossref":    m.crossrefServer.URL,
+		"ocr":         m.ocrServer.URL,
+		"winget":      m.wingetServer.URL,
+		"flatpak":     m.flatpakServer.URL,
+		"snapcraft":   m.snapcraftServer.URL,
+		"homebrew":    m.homebrewServer.URL,
 	}
 }
 

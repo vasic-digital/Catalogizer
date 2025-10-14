@@ -51,35 +51,35 @@ type LanguageProfile struct {
 }
 
 type ContentLanguagePreference struct {
-	ID           int64     `json:"id" db:"id"`
-	UserID       int64     `json:"user_id" db:"user_id"`
-	ContentType  string    `json:"content_type" db:"content_type"`
-	Languages    []string  `json:"languages" db:"languages"`
-	Priority     int       `json:"priority" db:"priority"`
-	AutoApply    bool      `json:"auto_apply" db:"auto_apply"`
-	CreatedAt    time.Time `json:"created_at" db:"created_at"`
-	UpdatedAt    time.Time `json:"updated_at" db:"updated_at"`
+	ID          int64     `json:"id" db:"id"`
+	UserID      int64     `json:"user_id" db:"user_id"`
+	ContentType string    `json:"content_type" db:"content_type"`
+	Languages   []string  `json:"languages" db:"languages"`
+	Priority    int       `json:"priority" db:"priority"`
+	AutoApply   bool      `json:"auto_apply" db:"auto_apply"`
+	CreatedAt   time.Time `json:"created_at" db:"created_at"`
+	UpdatedAt   time.Time `json:"updated_at" db:"updated_at"`
 }
 
 type LocalizationStats struct {
-	TotalUsers              int64                      `json:"total_users"`
-	UsersWithLocalization   int64                      `json:"users_with_localization"`
-	PopularLanguages        []LanguageStats            `json:"popular_languages"`
-	PopularRegions          []RegionStats              `json:"popular_regions"`
-	TranslationRequests     int64                      `json:"translation_requests"`
-	AutoTranslationEnabled  int64                      `json:"auto_translation_enabled"`
-	LanguageSupport         map[string]LanguageSupport `json:"language_support"`
+	TotalUsers             int64                      `json:"total_users"`
+	UsersWithLocalization  int64                      `json:"users_with_localization"`
+	PopularLanguages       []LanguageStats            `json:"popular_languages"`
+	PopularRegions         []RegionStats              `json:"popular_regions"`
+	TranslationRequests    int64                      `json:"translation_requests"`
+	AutoTranslationEnabled int64                      `json:"auto_translation_enabled"`
+	LanguageSupport        map[string]LanguageSupport `json:"language_support"`
 }
 
 type LanguageStats struct {
-	Language string `json:"language"`
-	Count    int64  `json:"count"`
+	Language string  `json:"language"`
+	Count    int64   `json:"count"`
 	Percent  float64 `json:"percent"`
 }
 
 type RegionStats struct {
-	Region  string `json:"region"`
-	Count   int64  `json:"count"`
+	Region  string  `json:"region"`
+	Count   int64   `json:"count"`
 	Percent float64 `json:"percent"`
 }
 
@@ -108,29 +108,29 @@ type WizardLocalizationStep struct {
 }
 
 type ConfigurationExport struct {
-	Version         string                `json:"version"`
-	ExportedAt      time.Time            `json:"exported_at"`
-	ExportedBy      int64                `json:"exported_by"`
-	ConfigType      string               `json:"config_type"`
-	Localization    *UserLocalization    `json:"localization,omitempty"`
-	WizardStep      *WizardLocalizationStep `json:"wizard_step,omitempty"`
-	MediaSettings   *MediaPlayerConfig   `json:"media_settings,omitempty"`
-	PlaylistSettings *PlaylistConfig     `json:"playlist_settings,omitempty"`
-	Description     string               `json:"description"`
-	Tags            []string             `json:"tags"`
+	Version          string                  `json:"version"`
+	ExportedAt       time.Time               `json:"exported_at"`
+	ExportedBy       int64                   `json:"exported_by"`
+	ConfigType       string                  `json:"config_type"`
+	Localization     *UserLocalization       `json:"localization,omitempty"`
+	WizardStep       *WizardLocalizationStep `json:"wizard_step,omitempty"`
+	MediaSettings    *MediaPlayerConfig      `json:"media_settings,omitempty"`
+	PlaylistSettings *PlaylistConfig         `json:"playlist_settings,omitempty"`
+	Description      string                  `json:"description"`
+	Tags             []string                `json:"tags"`
 }
 
 type MediaPlayerConfig struct {
-	DefaultQuality        string             `json:"default_quality"`
-	AutoPlay             bool               `json:"auto_play"`
-	CrossfadeEnabled     bool               `json:"crossfade_enabled"`
-	CrossfadeDuration    int                `json:"crossfade_duration"`
-	EqualizerPreset      string             `json:"equalizer_preset"`
-	EqualizerBands       map[string]float64 `json:"equalizer_bands"`
-	RepeatMode           string             `json:"repeat_mode"`
-	ShuffleEnabled       bool               `json:"shuffle_enabled"`
-	VolumeLevel          float64            `json:"volume_level"`
-	ReplayGainEnabled    bool               `json:"replay_gain_enabled"`
+	DefaultQuality    string             `json:"default_quality"`
+	AutoPlay          bool               `json:"auto_play"`
+	CrossfadeEnabled  bool               `json:"crossfade_enabled"`
+	CrossfadeDuration int                `json:"crossfade_duration"`
+	EqualizerPreset   string             `json:"equalizer_preset"`
+	EqualizerBands    map[string]float64 `json:"equalizer_bands"`
+	RepeatMode        string             `json:"repeat_mode"`
+	ShuffleEnabled    bool               `json:"shuffle_enabled"`
+	VolumeLevel       float64            `json:"volume_level"`
+	ReplayGainEnabled bool               `json:"replay_gain_enabled"`
 }
 
 type PlaylistConfig struct {
@@ -142,13 +142,13 @@ type PlaylistConfig struct {
 }
 
 type ConfigurationImportResult struct {
-	Success            bool                 `json:"success"`
-	ImportedConfig     *ConfigurationExport `json:"imported_config"`
-	ValidationErrors   []string             `json:"validation_errors"`
-	AppliedSettings    []string             `json:"applied_settings"`
-	SkippedSettings    []string             `json:"skipped_settings"`
-	BackupCreated      bool                 `json:"backup_created"`
-	BackupPath         string               `json:"backup_path"`
+	Success          bool                 `json:"success"`
+	ImportedConfig   *ConfigurationExport `json:"imported_config"`
+	ValidationErrors []string             `json:"validation_errors"`
+	AppliedSettings  []string             `json:"applied_settings"`
+	SkippedSettings  []string             `json:"skipped_settings"`
+	BackupCreated    bool                 `json:"backup_created"`
+	BackupPath       string               `json:"backup_path"`
 }
 
 const (
@@ -858,10 +858,10 @@ func (s *LocalizationService) ImportConfiguration(ctx context.Context, userID in
 	s.logger.Info("Importing user configuration", zap.Int64("user_id", userID))
 
 	result := &ConfigurationImportResult{
-		Success:            false,
-		ValidationErrors:   make([]string, 0),
-		AppliedSettings:    make([]string, 0),
-		SkippedSettings:    make([]string, 0),
+		Success:          false,
+		ValidationErrors: make([]string, 0),
+		AppliedSettings:  make([]string, 0),
+		SkippedSettings:  make([]string, 0),
 	}
 
 	// Parse JSON configuration
@@ -1073,7 +1073,7 @@ func (s *LocalizationService) getMediaPlayerConfig(ctx context.Context, userID i
 	// This would typically fetch from a user_media_settings table
 	// For now, return default settings
 	return &MediaPlayerConfig{
-		DefaultQuality:     "high",
+		DefaultQuality:    "high",
 		AutoPlay:          true,
 		CrossfadeEnabled:  true,
 		CrossfadeDuration: 3000,
@@ -1242,13 +1242,13 @@ func (s *LocalizationService) storeConfigurationExport(ctx context.Context, expo
 
 func (s *LocalizationService) logImportActivity(ctx context.Context, userID int64, config *ConfigurationExport, result *ConfigurationImportResult) error {
 	activityJSON, err := json.Marshal(map[string]interface{}{
-		"config_version":     config.Version,
-		"config_type":        config.ConfigType,
-		"original_user":      config.ExportedBy,
-		"applied_settings":   result.AppliedSettings,
-		"skipped_settings":   result.SkippedSettings,
-		"validation_errors":  result.ValidationErrors,
-		"backup_created":     result.BackupCreated,
+		"config_version":    config.Version,
+		"config_type":       config.ConfigType,
+		"original_user":     config.ExportedBy,
+		"applied_settings":  result.AppliedSettings,
+		"skipped_settings":  result.SkippedSettings,
+		"validation_errors": result.ValidationErrors,
+		"backup_created":    result.BackupCreated,
 	})
 	if err != nil {
 		return err
@@ -1442,7 +1442,7 @@ func (s *LocalizationService) getDefaultWizardStepTemplate() *WizardLocalization
 
 func (s *LocalizationService) getDefaultMediaSettingsTemplate() *MediaPlayerConfig {
 	return &MediaPlayerConfig{
-		DefaultQuality:     "high",
+		DefaultQuality:    "high",
 		AutoPlay:          true,
 		CrossfadeEnabled:  false,
 		CrossfadeDuration: 3000,

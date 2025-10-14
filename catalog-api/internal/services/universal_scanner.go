@@ -15,17 +15,17 @@ import (
 
 // UniversalScanner handles file system scanning across all supported protocols
 type UniversalScanner struct {
-	db                  *sql.DB
-	logger              *zap.Logger
-	renameTracker       *UniversalRenameTracker
-	clientFactory       filesystem.ClientFactory
-	scanQueue           chan ScanJob
-	workers             int
-	stopCh              chan struct{}
-	wg                  sync.WaitGroup
-	protocolScanners    map[string]ProtocolScanner
-	activeScansMu       sync.RWMutex
-	activeScans         map[string]*ScanStatus
+	db               *sql.DB
+	logger           *zap.Logger
+	renameTracker    *UniversalRenameTracker
+	clientFactory    filesystem.ClientFactory
+	scanQueue        chan ScanJob
+	workers          int
+	stopCh           chan struct{}
+	wg               sync.WaitGroup
+	protocolScanners map[string]ProtocolScanner
+	activeScansMu    sync.RWMutex
+	activeScans      map[string]*ScanStatus
 }
 
 // ScanJob represents a scan operation for any protocol
@@ -74,11 +74,11 @@ type ProtocolScanner interface {
 
 // ScanStrategy defines how scanning should be performed
 type ScanStrategy struct {
-	UseRecursiveListing    bool
-	BatchSize              int
-	ParallelDirectories    bool
-	ChecksumCalculation    bool
-	MetadataExtraction     bool
+	UseRecursiveListing     bool
+	BatchSize               int
+	ParallelDirectories     bool
+	ChecksumCalculation     bool
+	MetadataExtraction      bool
 	RealTimeChangeDetection bool
 }
 
@@ -262,8 +262,20 @@ func (s *UniversalScanner) GetAllActiveScanStatuses() map[string]*ScanStatus {
 	statuses := make(map[string]*ScanStatus)
 	for id, status := range s.activeScans {
 		// Create a copy to avoid race conditions
-		statusCopy := *status
-		statuses[id] = &statusCopy
+		statusCopy := &ScanStatus{
+			JobID:           status.JobID,
+			StorageRootName: status.StorageRootName,
+			Protocol:        status.Protocol,
+			StartTime:       status.StartTime,
+			CurrentPath:     status.CurrentPath,
+			FilesProcessed:  status.FilesProcessed,
+			FilesFound:      status.FilesFound,
+			FilesUpdated:    status.FilesUpdated,
+			FilesDeleted:    status.FilesDeleted,
+			ErrorCount:      status.ErrorCount,
+			Status:          status.Status,
+		}
+		statuses[id] = statusCopy
 	}
 	return statuses
 }
@@ -370,7 +382,19 @@ func (s *ScanStatus) incrementCounters(processed, found, updated, deleted, error
 func (s *ScanStatus) GetSnapshot() ScanStatus {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
-	return *s
+	return ScanStatus{
+		JobID:           s.JobID,
+		StorageRootName: s.StorageRootName,
+		Protocol:        s.Protocol,
+		StartTime:       s.StartTime,
+		CurrentPath:     s.CurrentPath,
+		FilesProcessed:  s.FilesProcessed,
+		FilesFound:      s.FilesFound,
+		FilesUpdated:    s.FilesUpdated,
+		FilesDeleted:    s.FilesDeleted,
+		ErrorCount:      s.ErrorCount,
+		Status:          s.Status,
+	}
 }
 
 // LocalScanner implements protocol-specific scanning for local filesystem

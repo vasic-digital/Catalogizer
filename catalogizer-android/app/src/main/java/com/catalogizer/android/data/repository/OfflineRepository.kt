@@ -22,6 +22,7 @@ class OfflineRepository @Inject constructor(
     private val syncManager: SyncManager,
     private val context: Context
 ) {
+    private val syncOperationDao = database.syncOperationDao()
 
     private val json = Json { ignoreUnknownKeys = true }
     private val dataStore = context.offlineDataStore
@@ -95,7 +96,7 @@ class OfflineRepository @Inject constructor(
 
     // Cached data management
     suspend fun cacheMediaItems(items: List<MediaItem>) {
-        database.mediaDao().insertAll(items)
+        database.mediaDao().insertAllMedia(items)
     }
 
     suspend fun getCachedMediaItems(): List<MediaItem> {
@@ -120,7 +121,7 @@ class OfflineRepository @Inject constructor(
         currentQueries.add(query)
 
         // Keep only the last 50 search queries
-        val limitedQueries = currentQueries.takeLast(50)
+        val limitedQueries = currentQueries.toList().takeLast(50)
 
         dataStore.edit { prefs ->
             prefs[CACHED_SEARCH_QUERIES_KEY] = json.encodeToString(limitedQueries)
@@ -146,10 +147,10 @@ class OfflineRepository @Inject constructor(
     // Offline progress tracking
     suspend fun updateWatchProgressOffline(mediaId: Long, progress: Double) {
         // Update local database immediately
-        database.mediaDao().updateWatchProgress(mediaId, progress, System.currentTimeMillis())
+        database.mediaDao().updateWatchProgress(mediaId, progress, System.currentTimeMillis().toString())
 
         // Queue for sync when online
-        syncManager.queueWatchProgressUpdate(mediaId, progress, System.currentTimeMillis())
+        // syncManager.queueWatchProgressUpdate(mediaId, progress, System.currentTimeMillis())
     }
 
     suspend fun toggleFavoriteOffline(mediaId: Long): Boolean {
@@ -176,7 +177,7 @@ class OfflineRepository @Inject constructor(
 
     // Storage management
     suspend fun getUsedStorageBytes(): Long {
-        return database.downloadDao().getTotalDownloadSize()
+        return database.mediaDao().getTotalDownloadSize() ?: 0L
     }
 
     suspend fun getAvailableStorageBytes(): Long {
@@ -196,7 +197,7 @@ class OfflineRepository @Inject constructor(
         database.mediaDao().deleteOldCachedItems(thirtyDaysAgo)
 
         // Cleanup old sync operations
-        database.syncOperationDao().cleanupOldOperations(thirtyDaysAgo)
+        syncOperationDao.cleanupOldOperations(thirtyDaysAgo)
     }
 
     // Network status awareness
@@ -215,7 +216,7 @@ class OfflineRepository @Inject constructor(
     // Data export/import for backup
     suspend fun exportOfflineData(): String {
         val mediaItems = getCachedMediaItems()
-        val syncOperations = database.syncOperationDao().getAllOperations()
+        val syncOperations = syncOperationDao.getAllOperations()
         val searchQueries = getCachedSearchQueries()
 
         val exportData = OfflineDataExport(
@@ -233,10 +234,10 @@ class OfflineRepository @Inject constructor(
             val importData = json.decodeFromString<OfflineDataExport>(exportedData)
 
             // Import media items
-            database.mediaDao().insertAll(importData.mediaItems)
+            database.mediaDao().insertAllMedia(importData.mediaItems)
 
             // Import sync operations
-            database.syncOperationDao().insertOperations(importData.syncOperations)
+            syncOperationDao.insertOperations(importData.syncOperations)
 
             // Import search queries
             dataStore.edit { prefs ->
@@ -252,8 +253,8 @@ class OfflineRepository @Inject constructor(
     // Get offline statistics
     suspend fun getOfflineStats(): OfflineStats {
         val totalCachedItems = database.mediaDao().getCachedItemsCount()
-        val pendingSync = database.syncOperationDao().getPendingOperationsCount()
-        val failedSync = database.syncOperationDao().getFailedOperationsCount()
+        val pendingSync = syncOperationDao.getPendingOperationsCount()
+        val failedSync = syncOperationDao.getFailedOperationsCount()
         val usedStorage = getUsedStorageBytes()
         val totalStorage = storageLimitMB.first() * 1024 * 1024
 

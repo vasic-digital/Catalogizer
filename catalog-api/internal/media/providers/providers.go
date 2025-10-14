@@ -24,13 +24,13 @@ type MetadataProvider interface {
 
 // SearchResult represents search results from providers
 type SearchResult struct {
-	ExternalID  string  `json:"external_id"`
-	Title       string  `json:"title"`
-	Year        *int    `json:"year,omitempty"`
+	ExternalID  string   `json:"external_id"`
+	Title       string   `json:"title"`
+	Year        *int     `json:"year,omitempty"`
 	Rating      *float64 `json:"rating,omitempty"`
-	Description *string `json:"description,omitempty"`
-	CoverURL    *string `json:"cover_url,omitempty"`
-	Relevance   float64 `json:"relevance"`
+	Description *string  `json:"description,omitempty"`
+	CoverURL    *string  `json:"cover_url,omitempty"`
+	Relevance   float64  `json:"relevance"`
 }
 
 // ProviderManager manages all metadata providers

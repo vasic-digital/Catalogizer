@@ -62,7 +62,7 @@ describe('AuthContext', () => {
 
   it('throws error when useAuth is used outside provider', () => {
     // Mock console.error for the error boundary
-    const consoleSpy = jest.spyOn(console, 'error').mockImplementation(() => {});
+    const consoleSpy = jest.spyOn(console, 'error').mockImplementation(() => {/* mock */});
 
     expect(() => {
       render(

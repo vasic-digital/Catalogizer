@@ -27,14 +27,14 @@ const (
 	MediaTypeSoftwareOS MediaType = "software_os"
 
 	// Books and Documents
-	MediaTypeBook       MediaType = "book"
-	MediaTypeEbook      MediaType = "ebook"
-	MediaTypeComicBook  MediaType = "comic_book"
-	MediaTypeMagazine   MediaType = "magazine"
-	MediaTypeNewspaper  MediaType = "newspaper"
-	MediaTypeJournal    MediaType = "journal"
-	MediaTypeManual     MediaType = "manual"
-	MediaTypeDocument   MediaType = "document"
+	MediaTypeBook      MediaType = "book"
+	MediaTypeEbook     MediaType = "ebook"
+	MediaTypeComicBook MediaType = "comic_book"
+	MediaTypeMagazine  MediaType = "magazine"
+	MediaTypeNewspaper MediaType = "newspaper"
+	MediaTypeJournal   MediaType = "journal"
+	MediaTypeManual    MediaType = "manual"
+	MediaTypeDocument  MediaType = "document"
 )
 
 // PlaybackState represents the current playback state
@@ -52,10 +52,10 @@ const (
 type RepeatMode string
 
 const (
-	RepeatModeOff    RepeatMode = "off"
-	RepeatModeTrack  RepeatMode = "track"
-	RepeatModeAlbum  RepeatMode = "album"
-	RepeatModeAll    RepeatMode = "all"
+	RepeatModeOff     RepeatMode = "off"
+	RepeatModeTrack   RepeatMode = "track"
+	RepeatModeAlbum   RepeatMode = "album"
+	RepeatModeAll     RepeatMode = "all"
 	RepeatModeShuffle RepeatMode = "shuffle"
 )
 

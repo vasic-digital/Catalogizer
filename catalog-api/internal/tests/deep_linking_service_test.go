@@ -177,27 +177,27 @@ func TestDeepLinkingService_GenerateDeepLinks(t *testing.T) {
 	t.Run("media type specific features", func(t *testing.T) {
 		testCases := []struct {
 			mediaType        string
-			action          string
+			action           string
 			expectedFeatures []string
 		}{
 			{
 				mediaType:        models.MediaTypeVideo,
-				action:          "play",
+				action:           "play",
 				expectedFeatures: []string{"video_playback", "fullscreen_video"},
 			},
 			{
 				mediaType:        models.MediaTypeAudio,
-				action:          "play",
+				action:           "play",
 				expectedFeatures: []string{"audio_playback", "background_audio"},
 			},
 			{
 				mediaType:        models.MediaTypeBook,
-				action:          "detail",
+				action:           "detail",
 				expectedFeatures: []string{"pdf_reader", "epub_reader"},
 			},
 			{
 				mediaType:        models.MediaTypeGame,
-				action:          "detail",
+				action:           "detail",
 				expectedFeatures: []string{"external_app_launch"},
 			},
 		}

@@ -29,9 +29,9 @@ func TestFileSystemService_GetClient(t *testing.T) {
 	service := NewFileSystemService(cfg, logger)
 
 	tests := []struct {
-		name     string
-		config   *filesystem.StorageConfig
-		wantErr  bool
+		name    string
+		config  *filesystem.StorageConfig
+		wantErr bool
 	}{
 		{
 			name: "Create local client",

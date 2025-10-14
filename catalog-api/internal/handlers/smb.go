@@ -212,17 +212,17 @@ func (h *SMBHandler) TestConnection(c *gin.Context) {
 			zap.Error(err))
 
 		c.JSON(http.StatusInternalServerError, gin.H{
-			"success":        false,
-			"error":          err.Error(),
-			"test_duration":  duration.Milliseconds(),
+			"success":       false,
+			"error":         err.Error(),
+			"test_duration": duration.Milliseconds(),
 		})
 		return
 	}
 
 	c.JSON(http.StatusOK, gin.H{
-		"success":        true,
-		"message":        "Connection successful",
-		"test_duration":  duration.Milliseconds(),
+		"success":       true,
+		"message":       "Connection successful",
+		"test_duration": duration.Milliseconds(),
 	})
 }
 
@@ -358,9 +358,9 @@ func (h *SMBHandler) calculatePerformanceStats(status map[string]interface{}) ma
 	// For now, return placeholder data
 
 	return map[string]interface{}{
-		"avg_response_time_ms": 150,
+		"avg_response_time_ms":    150,
 		"connection_success_rate": 0.95,
-		"total_operations": 1000,
+		"total_operations":        1000,
 	}
 }
 
@@ -380,9 +380,9 @@ func (h *SMBHandler) calculateErrorStats(status map[string]interface{}) map[stri
 	}
 
 	return map[string]interface{}{
-		"total_errors":         totalErrors,
-		"sources_with_errors":  sourcesWithErrors,
-		"error_rate":           float64(sourcesWithErrors) / float64(len(status)),
+		"total_errors":        totalErrors,
+		"sources_with_errors": sourcesWithErrors,
+		"error_rate":          float64(sourcesWithErrors) / float64(len(status)),
 	}
 }
 
@@ -473,11 +473,11 @@ func (h *SMBHandler) GetHealth(c *gin.Context) {
 	isHealthy := summary["offline"].(int) == 0 && summary["disconnected"].(int) < len(status)/2
 
 	health := map[string]interface{}{
-		"healthy":           isHealthy,
-		"sources_summary":   summary,
-		"total_sources":     len(status),
-		"system_uptime":     time.Since(h.smbManager.GetStartTime()).Hours(),
-		"last_check":        time.Now(),
+		"healthy":         isHealthy,
+		"sources_summary": summary,
+		"total_sources":   len(status),
+		"system_uptime":   time.Since(h.smbManager.GetStartTime()).Hours(),
+		"last_check":      time.Now(),
 	}
 
 	statusCode := http.StatusOK

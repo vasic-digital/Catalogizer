@@ -82,10 +82,46 @@ interface MediaDao {
     @Query("DELETE FROM media_items WHERE updated_at < :timestamp")
     suspend fun deleteOldMedia(timestamp: String)
 
+    // Cached data methods for offline repository
+    @Query("SELECT * FROM media_items ORDER BY updated_at DESC")
+    suspend fun getAllCached(): List<MediaItem>
+
+    @Query("SELECT * FROM media_items WHERE id = :id")
+    suspend fun getById(id: Long): MediaItem?
+
+    @Query("SELECT * FROM media_items WHERE media_type = :type ORDER BY updated_at DESC")
+    suspend fun getByType(type: String): List<MediaItem>
+
+    @Query("SELECT * FROM media_items WHERE title LIKE '%' || :query || '%' OR description LIKE '%' || :query || '%' ORDER BY updated_at DESC")
+    suspend fun searchCached(query: String): List<MediaItem>
+
+    @Query("SELECT COUNT(*) FROM media_items")
+    suspend fun getCachedItemsCount(): Int
+
+    @Query("UPDATE media_items SET rating = :rating WHERE id = :id")
+    suspend fun updateRating(id: Long, rating: Double)
+
+    @Query("SELECT SUM(file_size) FROM media_items WHERE is_downloaded = 1")
+    suspend fun getTotalDownloadSize(): Long?
+
+    @Query("DELETE FROM media_items WHERE updated_at < :timestamp")
+    suspend fun deleteOldCachedItems(timestamp: Long)
+
     @Transaction
     suspend fun refreshMedia(mediaItems: List<MediaItem>) {
         deleteAllMedia()
         insertAllMedia(mediaItems)
+    }
+
+    // Insert or update media item
+    @Transaction
+    suspend fun insertOrUpdate(mediaItem: MediaItem) {
+        val existing = getById(mediaItem.id)
+        if (existing != null) {
+            updateMedia(mediaItem)
+        } else {
+            insertMedia(mediaItem)
+        }
     }
 }
 
@@ -120,6 +156,7 @@ interface SearchHistoryDao {
 @Entity(tableName = "download_items")
 data class DownloadItem(
     @PrimaryKey
+    @ColumnInfo(name = "media_id")
     val mediaId: Long,
     val title: String,
     val coverImage: String?,
@@ -127,7 +164,9 @@ data class DownloadItem(
     val localPath: String?,
     val progress: Float = 0f,
     val status: DownloadStatus = DownloadStatus.PENDING,
+    @ColumnInfo(name = "created_at")
     val createdAt: Long = System.currentTimeMillis(),
+    @ColumnInfo(name = "updated_at")
     val updatedAt: Long = System.currentTimeMillis()
 )
 

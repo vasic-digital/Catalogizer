@@ -40,16 +40,16 @@ type PlaybackBookmark struct {
 }
 
 type PlaybackHistory struct {
-	ID              int64     `json:"id" db:"id"`
-	UserID          int64     `json:"user_id" db:"user_id"`
-	MediaItemID     int64     `json:"media_item_id" db:"media_item_id"`
-	StartTime       time.Time `json:"start_time" db:"start_time"`
+	ID              int64      `json:"id" db:"id"`
+	UserID          int64      `json:"user_id" db:"user_id"`
+	MediaItemID     int64      `json:"media_item_id" db:"media_item_id"`
+	StartTime       time.Time  `json:"start_time" db:"start_time"`
 	EndTime         *time.Time `json:"end_time" db:"end_time"`
-	Duration        int64     `json:"duration" db:"duration"`
-	PercentWatched  float64   `json:"percent_watched" db:"percent_watched"`
-	DeviceInfo      string    `json:"device_info" db:"device_info"`
-	PlaybackQuality string    `json:"playback_quality" db:"playback_quality"`
-	WasCompleted    bool      `json:"was_completed" db:"was_completed"`
+	Duration        int64      `json:"duration" db:"duration"`
+	PercentWatched  float64    `json:"percent_watched" db:"percent_watched"`
+	DeviceInfo      string     `json:"device_info" db:"device_info"`
+	PlaybackQuality string     `json:"playback_quality" db:"playback_quality"`
+	WasCompleted    bool       `json:"was_completed" db:"was_completed"`
 }
 
 type UpdatePositionRequest struct {
@@ -78,20 +78,20 @@ type PlaybackStatsRequest struct {
 }
 
 type PlaybackStats struct {
-	TotalPlaytime     int64                    `json:"total_playtime"`
-	TotalMediaItems   int64                    `json:"total_media_items"`
-	CompletedItems    int64                    `json:"completed_items"`
-	MostPlayedGenres  []GenreStats             `json:"most_played_genres"`
-	RecentlyWatched   []PlaybackHistory        `json:"recently_watched"`
-	TopArtists        []ArtistStats            `json:"top_artists"`
-	PlaybackByHour    map[string]int64         `json:"playback_by_hour"`
-	WatchTimeByDevice map[string]int64         `json:"watch_time_by_device"`
+	TotalPlaytime     int64             `json:"total_playtime"`
+	TotalMediaItems   int64             `json:"total_media_items"`
+	CompletedItems    int64             `json:"completed_items"`
+	MostPlayedGenres  []GenreStats      `json:"most_played_genres"`
+	RecentlyWatched   []PlaybackHistory `json:"recently_watched"`
+	TopArtists        []ArtistStats     `json:"top_artists"`
+	PlaybackByHour    map[string]int64  `json:"playback_by_hour"`
+	WatchTimeByDevice map[string]int64  `json:"watch_time_by_device"`
 }
 
 type GenreStats struct {
-	Genre     string `json:"genre"`
-	Count     int64  `json:"count"`
-	Duration  int64  `json:"duration"`
+	Genre    string `json:"genre"`
+	Count    int64  `json:"count"`
+	Duration int64  `json:"duration"`
 }
 
 type ArtistStats struct {

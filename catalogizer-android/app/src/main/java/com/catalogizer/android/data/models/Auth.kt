@@ -65,6 +65,13 @@ data class AuthStatus(
     val error: String? = null
 )
 
+data class AuthState(
+    val isAuthenticated: Boolean = false,
+    val isLoading: Boolean = false,
+    val error: String? = null,
+    val user: User? = null
+)
+
 @Serializable
 data class ChangePasswordRequest(
     @SerialName("current_password")

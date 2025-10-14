@@ -22,83 +22,84 @@ type VideoPlayerService struct {
 }
 
 type VideoPlaybackSession struct {
-	ID                 string                 `json:"id"`
-	UserID             int64                  `json:"user_id"`
-	CurrentVideo       *VideoContent          `json:"current_video"`
-	Playlist           []VideoContent         `json:"playlist"`
-	PlaylistIndex      int                    `json:"playlist_index"`
-	PlayMode           VideoPlayMode          `json:"play_mode"`
-	AutoPlay           bool                   `json:"auto_play"`
-	AutoPlayNext       bool                   `json:"auto_play_next"`
-	Volume             float64                `json:"volume"`
-	IsMuted            bool                   `json:"is_muted"`
-	PlaybackSpeed      float64                `json:"playback_speed"`
-	PlaybackState      PlaybackState          `json:"playback_state"`
-	Position           int64                  `json:"position"`
-	Duration           int64                  `json:"duration"`
-	BufferedRanges     []BufferedRange        `json:"buffered_ranges"`
-	SubtitleTracks     []SubtitleTrack        `json:"subtitle_tracks"`
-	ActiveSubtitle     *int64                 `json:"active_subtitle"`
-	AudioTracks        []AudioTrack           `json:"audio_tracks"`
-	ActiveAudioTrack   *int64                 `json:"active_audio_track"`
-	VideoQuality       VideoQuality           `json:"video_quality"`
-	DeviceInfo         DeviceInfo             `json:"device_info"`
-	ViewingProgress    ViewingProgress        `json:"viewing_progress"`
-	Chapters           []Chapter              `json:"chapters"`
-	Bookmarks          []VideoBookmark        `json:"bookmarks"`
-	WatchParty         *WatchPartyInfo        `json:"watch_party"`
-	LastActivity       time.Time              `json:"last_activity"`
-	CreatedAt          time.Time              `json:"created_at"`
-	UpdatedAt          time.Time              `json:"updated_at"`
+	ID               string          `json:"id"`
+	UserID           int64           `json:"user_id"`
+	CurrentVideo     *VideoContent   `json:"current_video"`
+	Playlist         []VideoContent  `json:"playlist"`
+	PlaylistIndex    int             `json:"playlist_index"`
+	PlayMode         VideoPlayMode   `json:"play_mode"`
+	AutoPlay         bool            `json:"auto_play"`
+	AutoPlayNext     bool            `json:"auto_play_next"`
+	Volume           float64         `json:"volume"`
+	IsMuted          bool            `json:"is_muted"`
+	PlaybackSpeed    float64         `json:"playback_speed"`
+	PlaybackState    PlaybackState   `json:"playback_state"`
+	Position         int64           `json:"position"`
+	Duration         int64           `json:"duration"`
+	BufferedRanges   []BufferedRange `json:"buffered_ranges"`
+	SubtitleTracks   []SubtitleTrack `json:"subtitle_tracks"`
+	ActiveSubtitle   *int64          `json:"active_subtitle"`
+	AudioTracks      []AudioTrack    `json:"audio_tracks"`
+	ActiveAudioTrack *int64          `json:"active_audio_track"`
+	VideoQuality     VideoQuality    `json:"video_quality"`
+	DeviceInfo       DeviceInfo      `json:"device_info"`
+	ViewingProgress  ViewingProgress `json:"viewing_progress"`
+	Chapters         []Chapter       `json:"chapters"`
+	Bookmarks        []VideoBookmark `json:"bookmarks"`
+	WatchParty       *WatchPartyInfo `json:"watch_party"`
+	LastActivity     time.Time       `json:"last_activity"`
+	CreatedAt        time.Time       `json:"created_at"`
+	UpdatedAt        time.Time       `json:"updated_at"`
 }
 
 type VideoContent struct {
-	ID                int64              `json:"id"`
-	Title             string             `json:"title"`
-	OriginalTitle     string             `json:"original_title"`
-	Description       string             `json:"description"`
-	Type              VideoType          `json:"type"`
-	FilePath          string             `json:"file_path"`
-	FileSize          int64              `json:"file_size"`
-	Duration          int64              `json:"duration"`
-	Resolution        string             `json:"resolution"`
-	AspectRatio       string             `json:"aspect_ratio"`
-	FrameRate         float64            `json:"frame_rate"`
-	Bitrate           int64              `json:"bitrate"`
-	Codec             string             `json:"codec"`
-	HDR               bool               `json:"hdr"`
-	DolbyVision       bool               `json:"dolby_vision"`
-	DolbyAtmos        bool               `json:"dolby_atmos"`
-	Year              int                `json:"year"`
-	ReleaseDate       *time.Time         `json:"release_date"`
-	Genres            []string           `json:"genres"`
-	Directors         []string           `json:"directors"`
-	Actors            []string           `json:"actors"`
-	Writers           []string           `json:"writers"`
-	Rating            *float64           `json:"rating"`
-	IMDbID            string             `json:"imdb_id"`
-	TMDbID            string             `json:"tmdb_id"`
-	Language          string             `json:"language"`
-	Country           string             `json:"country"`
-	PlayCount         int64              `json:"play_count"`
-	LastPlayed        *time.Time         `json:"last_played"`
-	DateAdded         time.Time          `json:"date_added"`
-	UserRating        *int               `json:"user_rating"`
-	IsFavorite        bool               `json:"is_favorite"`
-	WatchedPercentage float64            `json:"watched_percentage"`
-	CoverArt          *CoverArt          `json:"cover_art"`
-	Backdrop          *CoverArt          `json:"backdrop"`
-	Trailer           *TrailerInfo       `json:"trailer"`
-	SeriesInfo        *SeriesInfo        `json:"series_info"`
-	EpisodeInfo       *EpisodeInfo       `json:"episode_info"`
-	MovieInfo         *MovieInfo         `json:"movie_info"`
-	Thumbnails        []VideoThumbnail   `json:"thumbnails"`
-	VideoStreams      []VideoStream      `json:"video_streams"`
-	AudioStreams      []AudioStream      `json:"audio_streams"`
-	SubtitleStreams   []SubtitleStream   `json:"subtitle_streams"`
+	ID                int64            `json:"id"`
+	Title             string           `json:"title"`
+	OriginalTitle     string           `json:"original_title"`
+	Description       string           `json:"description"`
+	Type              VideoType        `json:"type"`
+	FilePath          string           `json:"file_path"`
+	FileSize          int64            `json:"file_size"`
+	Duration          int64            `json:"duration"`
+	Resolution        string           `json:"resolution"`
+	AspectRatio       string           `json:"aspect_ratio"`
+	FrameRate         float64          `json:"frame_rate"`
+	Bitrate           int64            `json:"bitrate"`
+	Codec             string           `json:"codec"`
+	HDR               bool             `json:"hdr"`
+	DolbyVision       bool             `json:"dolby_vision"`
+	DolbyAtmos        bool             `json:"dolby_atmos"`
+	Year              int              `json:"year"`
+	ReleaseDate       *time.Time       `json:"release_date"`
+	Genres            []string         `json:"genres"`
+	Directors         []string         `json:"directors"`
+	Actors            []string         `json:"actors"`
+	Writers           []string         `json:"writers"`
+	Rating            *float64         `json:"rating"`
+	IMDbID            string           `json:"imdb_id"`
+	TMDbID            string           `json:"tmdb_id"`
+	Language          string           `json:"language"`
+	Country           string           `json:"country"`
+	PlayCount         int64            `json:"play_count"`
+	LastPlayed        *time.Time       `json:"last_played"`
+	DateAdded         time.Time        `json:"date_added"`
+	UserRating        *int             `json:"user_rating"`
+	IsFavorite        bool             `json:"is_favorite"`
+	WatchedPercentage float64          `json:"watched_percentage"`
+	CoverArt          *CoverArt        `json:"cover_art"`
+	Backdrop          *CoverArt        `json:"backdrop"`
+	Trailer           *TrailerInfo     `json:"trailer"`
+	SeriesInfo        *SeriesInfo      `json:"series_info"`
+	EpisodeInfo       *EpisodeInfo     `json:"episode_info"`
+	MovieInfo         *MovieInfo       `json:"movie_info"`
+	Thumbnails        []VideoThumbnail `json:"thumbnails"`
+	VideoStreams      []VideoStream    `json:"video_streams"`
+	AudioStreams      []AudioStream    `json:"audio_streams"`
+	SubtitleStreams   []SubtitleStream `json:"subtitle_streams"`
 }
 
 type VideoType string
+
 const (
 	VideoTypeMovie   VideoType = "movie"
 	VideoTypeEpisode VideoType = "episode"
@@ -108,6 +109,7 @@ const (
 )
 
 type VideoPlayMode string
+
 const (
 	VideoPlayModeSingle   VideoPlayMode = "single"
 	VideoPlayModeEpisode  VideoPlayMode = "episode"
@@ -117,14 +119,15 @@ const (
 )
 
 type VideoQuality string
+
 const (
-	Quality480p   VideoQuality = "480p"
-	Quality720p   VideoQuality = "720p"
-	Quality1080p  VideoQuality = "1080p"
-	Quality1440p  VideoQuality = "1440p"
-	Quality2160p  VideoQuality = "2160p"  // 4K
-	Quality4320p  VideoQuality = "4320p"  // 8K
-	QualityAuto   VideoQuality = "auto"
+	Quality480p  VideoQuality = "480p"
+	Quality720p  VideoQuality = "720p"
+	Quality1080p VideoQuality = "1080p"
+	Quality1440p VideoQuality = "1440p"
+	Quality2160p VideoQuality = "2160p" // 4K
+	Quality4320p VideoQuality = "4320p" // 8K
+	QualityAuto  VideoQuality = "auto"
 )
 
 type ViewingProgress struct {
@@ -176,16 +179,16 @@ type TrailerInfo struct {
 }
 
 type SeriesInfo struct {
-	ID           int64     `json:"id"`
-	Title        string    `json:"title"`
-	Description  string    `json:"description"`
-	TotalSeasons int       `json:"total_seasons"`
-	TotalEpisodes int      `json:"total_episodes"`
-	Status       string    `json:"status"`
-	FirstAired   *time.Time `json:"first_aired"`
-	LastAired    *time.Time `json:"last_aired"`
-	Network      string    `json:"network"`
-	Creator      []string  `json:"creator"`
+	ID            int64      `json:"id"`
+	Title         string     `json:"title"`
+	Description   string     `json:"description"`
+	TotalSeasons  int        `json:"total_seasons"`
+	TotalEpisodes int        `json:"total_episodes"`
+	Status        string     `json:"status"`
+	FirstAired    *time.Time `json:"first_aired"`
+	LastAired     *time.Time `json:"last_aired"`
+	Network       string     `json:"network"`
+	Creator       []string   `json:"creator"`
 }
 
 type EpisodeInfo struct {
@@ -200,11 +203,11 @@ type EpisodeInfo struct {
 }
 
 type MovieInfo struct {
-	Budget      int64    `json:"budget"`
-	Revenue     int64    `json:"revenue"`
-	Runtime     int      `json:"runtime"`
-	Collection  string   `json:"collection"`
-	Studio      []string `json:"studio"`
+	Budget              int64    `json:"budget"`
+	Revenue             int64    `json:"revenue"`
+	Runtime             int      `json:"runtime"`
+	Collection          string   `json:"collection"`
+	Studio              []string `json:"studio"`
 	ProductionCompanies []string `json:"production_companies"`
 }
 
@@ -219,16 +222,16 @@ type VideoThumbnail struct {
 }
 
 type VideoStream struct {
-	ID       int64  `json:"id"`
-	Index    int    `json:"index"`
-	Codec    string `json:"codec"`
-	Width    int    `json:"width"`
-	Height   int    `json:"height"`
-	Bitrate  int64  `json:"bitrate"`
+	ID       int64   `json:"id"`
+	Index    int     `json:"index"`
+	Codec    string  `json:"codec"`
+	Width    int     `json:"width"`
+	Height   int     `json:"height"`
+	Bitrate  int64   `json:"bitrate"`
 	FPS      float64 `json:"fps"`
-	Language string `json:"language"`
-	Title    string `json:"title"`
-	Default  bool   `json:"default"`
+	Language string  `json:"language"`
+	Title    string  `json:"title"`
+	Default  bool    `json:"default"`
 }
 
 type AudioStream struct {
@@ -278,15 +281,15 @@ type PlaySeriesRequest struct {
 }
 
 type UpdateVideoPlaybackRequest struct {
-	SessionID       string         `json:"session_id"`
-	Position        *int64         `json:"position"`
-	State           *PlaybackState `json:"state"`
-	Volume          *float64       `json:"volume"`
-	IsMuted         *bool          `json:"is_muted"`
-	PlaybackSpeed   *float64       `json:"playback_speed"`
-	Quality         *VideoQuality  `json:"quality"`
-	ActiveSubtitle  *int64         `json:"active_subtitle"`
-	ActiveAudio     *int64         `json:"active_audio"`
+	SessionID      string         `json:"session_id"`
+	Position       *int64         `json:"position"`
+	State          *PlaybackState `json:"state"`
+	Volume         *float64       `json:"volume"`
+	IsMuted        *bool          `json:"is_muted"`
+	PlaybackSpeed  *float64       `json:"playback_speed"`
+	Quality        *VideoQuality  `json:"quality"`
+	ActiveSubtitle *int64         `json:"active_subtitle"`
+	ActiveAudio    *int64         `json:"active_audio"`
 }
 
 type VideoSeekRequest struct {
@@ -310,16 +313,16 @@ type WatchHistoryRequest struct {
 }
 
 type WatchHistory struct {
-	ID               int64       `json:"id"`
-	UserID           int64       `json:"user_id"`
-	VideoID          int64       `json:"video_id"`
-	VideoContent     VideoContent `json:"video_content"`
-	WatchedAt        time.Time   `json:"watched_at"`
-	WatchDuration    int64       `json:"watch_duration"`
-	CompletionRate   float64     `json:"completion_rate"`
-	StoppedAt        int64       `json:"stopped_at"`
-	DeviceInfo       string      `json:"device_info"`
-	Quality          string      `json:"quality"`
+	ID             int64        `json:"id"`
+	UserID         int64        `json:"user_id"`
+	VideoID        int64        `json:"video_id"`
+	VideoContent   VideoContent `json:"video_content"`
+	WatchedAt      time.Time    `json:"watched_at"`
+	WatchDuration  int64        `json:"watch_duration"`
+	CompletionRate float64      `json:"completion_rate"`
+	StoppedAt      int64        `json:"stopped_at"`
+	DeviceInfo     string       `json:"device_info"`
+	Quality        string       `json:"quality"`
 }
 
 func NewVideoPlayerService(
@@ -354,28 +357,28 @@ func (s *VideoPlayerService) PlayVideo(ctx context.Context, req *PlayVideoReques
 	}
 
 	session := &VideoPlaybackSession{
-		ID:             generateSessionID(),
-		UserID:         req.UserID,
-		CurrentVideo:   video,
-		Playlist:       []VideoContent{*video},
-		PlaylistIndex:  0,
-		PlayMode:       req.PlayMode,
-		AutoPlay:       req.AutoPlay,
-		AutoPlayNext:   true,
-		Volume:         1.0,
-		IsMuted:        false,
-		PlaybackSpeed:  1.0,
-		PlaybackState:  PlaybackStatePlaying,
-		Position:       0,
-		Duration:       video.Duration,
-		VideoQuality:   req.Quality,
-		DeviceInfo:     req.DeviceInfo,
+		ID:            generateSessionID(),
+		UserID:        req.UserID,
+		CurrentVideo:  video,
+		Playlist:      []VideoContent{*video},
+		PlaylistIndex: 0,
+		PlayMode:      req.PlayMode,
+		AutoPlay:      req.AutoPlay,
+		AutoPlayNext:  true,
+		Volume:        1.0,
+		IsMuted:       false,
+		PlaybackSpeed: 1.0,
+		PlaybackState: PlaybackStatePlaying,
+		Position:      0,
+		Duration:      video.Duration,
+		VideoQuality:  req.Quality,
+		DeviceInfo:    req.DeviceInfo,
 		ViewingProgress: ViewingProgress{
 			StartedAt: time.Now(),
 		},
-		LastActivity:   time.Now(),
-		CreatedAt:      time.Now(),
-		UpdatedAt:      time.Now(),
+		LastActivity: time.Now(),
+		CreatedAt:    time.Now(),
+		UpdatedAt:    time.Now(),
 	}
 
 	if req.StartTime != nil {
@@ -467,28 +470,28 @@ func (s *VideoPlayerService) PlaySeries(ctx context.Context, req *PlaySeriesRequ
 	}
 
 	session := &VideoPlaybackSession{
-		ID:             generateSessionID(),
-		UserID:         req.UserID,
-		CurrentVideo:   &episodes[startIndex],
-		Playlist:       episodes,
-		PlaylistIndex:  startIndex,
-		PlayMode:       VideoPlayModeSeries,
-		AutoPlay:       req.AutoPlay,
-		AutoPlayNext:   true,
-		Volume:         1.0,
-		IsMuted:        false,
-		PlaybackSpeed:  1.0,
-		PlaybackState:  PlaybackStatePlaying,
-		Position:       0,
-		Duration:       episodes[startIndex].Duration,
-		VideoQuality:   req.Quality,
-		DeviceInfo:     req.DeviceInfo,
+		ID:            generateSessionID(),
+		UserID:        req.UserID,
+		CurrentVideo:  &episodes[startIndex],
+		Playlist:      episodes,
+		PlaylistIndex: startIndex,
+		PlayMode:      VideoPlayModeSeries,
+		AutoPlay:      req.AutoPlay,
+		AutoPlayNext:  true,
+		Volume:        1.0,
+		IsMuted:       false,
+		PlaybackSpeed: 1.0,
+		PlaybackState: PlaybackStatePlaying,
+		Position:      0,
+		Duration:      episodes[startIndex].Duration,
+		VideoQuality:  req.Quality,
+		DeviceInfo:    req.DeviceInfo,
 		ViewingProgress: ViewingProgress{
 			StartedAt: time.Now(),
 		},
-		LastActivity:   time.Now(),
-		CreatedAt:      time.Now(),
-		UpdatedAt:      time.Now(),
+		LastActivity: time.Now(),
+		CreatedAt:    time.Now(),
+		UpdatedAt:    time.Now(),
 	}
 
 	position, err := s.positionService.GetPosition(ctx, req.UserID, episodes[startIndex].ID)

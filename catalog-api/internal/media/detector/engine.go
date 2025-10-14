@@ -14,8 +14,8 @@ import (
 
 // DetectionEngine handles automatic content type detection
 type DetectionEngine struct {
-	logger    *zap.Logger
-	rules     []models.DetectionRule
+	logger     *zap.Logger
+	rules      []models.DetectionRule
 	mediaTypes map[int64]*models.MediaType
 }
 
@@ -49,15 +49,15 @@ func (e *DetectionEngine) LoadRules(rules []models.DetectionRule, mediaTypes []m
 
 // DetectionResult represents the result of content detection
 type DetectionResult struct {
-	MediaTypeID     int64                    `json:"media_type_id"`
-	MediaType       *models.MediaType        `json:"media_type"`
-	Confidence      float64                  `json:"confidence"`
-	Method          string                   `json:"method"`
-	MatchedPatterns []string                 `json:"matched_patterns"`
-	AnalysisData    *models.AnalysisData     `json:"analysis_data"`
-	SuggestedTitle  string                   `json:"suggested_title"`
-	SuggestedYear   *int                     `json:"suggested_year"`
-	QualityHints    []string                 `json:"quality_hints"`
+	MediaTypeID     int64                `json:"media_type_id"`
+	MediaType       *models.MediaType    `json:"media_type"`
+	Confidence      float64              `json:"confidence"`
+	Method          string               `json:"method"`
+	MatchedPatterns []string             `json:"matched_patterns"`
+	AnalysisData    *models.AnalysisData `json:"analysis_data"`
+	SuggestedTitle  string               `json:"suggested_title"`
+	SuggestedYear   *int                 `json:"suggested_year"`
+	QualityHints    []string             `json:"quality_hints"`
 }
 
 // AnalyzeDirectory analyzes a directory to determine its content type
@@ -355,14 +355,14 @@ func (e *DetectionEngine) extractQualityHints(dirPath string, files []FileInfo) 
 	}
 
 	qualityPatterns := map[string][]string{
-		"4K":      {"4k", "uhd", "2160p"},
-		"1080p":   {"1080p", "fullhd", "fhd"},
-		"720p":    {"720p", "hd"},
-		"BluRay":  {"bluray", "brrip", "bd"},
-		"WEB-DL":  {"webdl", "web-dl", "webrip"},
-		"HDR":     {"hdr", "hdr10", "dolby.vision"},
+		"4K":       {"4k", "uhd", "2160p"},
+		"1080p":    {"1080p", "fullhd", "fhd"},
+		"720p":     {"720p", "hd"},
+		"BluRay":   {"bluray", "brrip", "bd"},
+		"WEB-DL":   {"webdl", "web-dl", "webrip"},
+		"HDR":      {"hdr", "hdr10", "dolby.vision"},
 		"Lossless": {"flac", "lossless", "dts-hd"},
-		"Remux":   {"remux"},
+		"Remux":    {"remux"},
 	}
 
 	for quality, patterns := range qualityPatterns {

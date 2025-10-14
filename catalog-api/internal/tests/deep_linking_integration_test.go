@@ -23,13 +23,13 @@ type DeepLinkRequest struct {
 }
 
 type DeepLinkResponse struct {
-	WebURL      string            `json:"web_url"`
-	AndroidURL  string            `json:"android_url"`
-	IOSURL      string            `json:"ios_url"`
-	DesktopURL  string            `json:"desktop_url"`
-	SmartURL    string            `json:"smart_url"`
-	QRCodeURL   string            `json:"qr_code_url,omitempty"`
-	Analytics   map[string]string `json:"analytics,omitempty"`
+	WebURL     string            `json:"web_url"`
+	AndroidURL string            `json:"android_url"`
+	IOSURL     string            `json:"ios_url"`
+	DesktopURL string            `json:"desktop_url"`
+	SmartURL   string            `json:"smart_url"`
+	QRCodeURL  string            `json:"qr_code_url,omitempty"`
+	Analytics  map[string]string `json:"analytics,omitempty"`
 }
 
 func NewMockDeepLinkingService() *MockDeepLinkingService {

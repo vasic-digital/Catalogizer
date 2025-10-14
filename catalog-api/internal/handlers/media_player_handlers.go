@@ -13,15 +13,15 @@ import (
 )
 
 type MediaPlayerHandlers struct {
-	logger              *zap.Logger
-	musicPlayerService  *services.MusicPlayerService
-	videoPlayerService  *services.VideoPlayerService
-	playlistService     *services.PlaylistService
-	positionService     *services.PlaybackPositionService
-	subtitleService     *services.SubtitleService
-	lyricsService       *services.LyricsService
-	coverArtService     *services.CoverArtService
-	translationService  *services.TranslationService
+	logger             *zap.Logger
+	musicPlayerService *services.MusicPlayerService
+	videoPlayerService *services.VideoPlayerService
+	playlistService    *services.PlaylistService
+	positionService    *services.PlaybackPositionService
+	subtitleService    *services.SubtitleService
+	lyricsService      *services.LyricsService
+	coverArtService    *services.CoverArtService
+	translationService *services.TranslationService
 }
 
 type APIResponse struct {
@@ -32,25 +32,25 @@ type APIResponse struct {
 }
 
 type PlaybackSessionResponse struct {
-	SessionID       string                      `json:"session_id"`
-	CurrentTrack    *services.MusicTrack        `json:"current_track,omitempty"`
-	CurrentVideo    *services.VideoContent      `json:"current_video,omitempty"`
-	PlaybackState   services.PlaybackState      `json:"playback_state"`
-	Position        int64                       `json:"position"`
-	Duration        int64                       `json:"duration"`
-	Volume          float64                     `json:"volume"`
-	IsMuted         bool                        `json:"is_muted"`
-	PlaybackSpeed   float64                     `json:"playback_speed,omitempty"`
-	Queue           interface{}                 `json:"queue,omitempty"`
-	QueueIndex      int                         `json:"queue_index,omitempty"`
-	RepeatMode      string                      `json:"repeat_mode,omitempty"`
-	ShuffleEnabled  bool                        `json:"shuffle_enabled,omitempty"`
-	Subtitles       []services.SubtitleTrack    `json:"subtitles,omitempty"`
-	AudioTracks     []services.AudioTrack       `json:"audio_tracks,omitempty"`
-	Chapters        []services.Chapter          `json:"chapters,omitempty"`
-	Lyrics          *services.LyricsData        `json:"lyrics,omitempty"`
-	CoverArt        *services.CoverArt          `json:"cover_art,omitempty"`
-	LastActivity    time.Time                   `json:"last_activity"`
+	SessionID      string                   `json:"session_id"`
+	CurrentTrack   *services.MusicTrack     `json:"current_track,omitempty"`
+	CurrentVideo   *services.VideoContent   `json:"current_video,omitempty"`
+	PlaybackState  services.PlaybackState   `json:"playback_state"`
+	Position       int64                    `json:"position"`
+	Duration       int64                    `json:"duration"`
+	Volume         float64                  `json:"volume"`
+	IsMuted        bool                     `json:"is_muted"`
+	PlaybackSpeed  float64                  `json:"playback_speed,omitempty"`
+	Queue          interface{}              `json:"queue,omitempty"`
+	QueueIndex     int                      `json:"queue_index,omitempty"`
+	RepeatMode     string                   `json:"repeat_mode,omitempty"`
+	ShuffleEnabled bool                     `json:"shuffle_enabled,omitempty"`
+	Subtitles      []services.SubtitleTrack `json:"subtitles,omitempty"`
+	AudioTracks    []services.AudioTrack    `json:"audio_tracks,omitempty"`
+	Chapters       []services.Chapter       `json:"chapters,omitempty"`
+	Lyrics         *services.LyricsData     `json:"lyrics,omitempty"`
+	CoverArt       *services.CoverArt       `json:"cover_art,omitempty"`
+	LastActivity   time.Time                `json:"last_activity"`
 }
 
 func NewMediaPlayerHandlers(
@@ -65,15 +65,15 @@ func NewMediaPlayerHandlers(
 	translationService *services.TranslationService,
 ) *MediaPlayerHandlers {
 	return &MediaPlayerHandlers{
-		logger:              logger,
-		musicPlayerService:  musicPlayerService,
-		videoPlayerService:  videoPlayerService,
-		playlistService:     playlistService,
-		positionService:     positionService,
-		subtitleService:     subtitleService,
-		lyricsService:       lyricsService,
-		coverArtService:     coverArtService,
-		translationService:  translationService,
+		logger:             logger,
+		musicPlayerService: musicPlayerService,
+		videoPlayerService: videoPlayerService,
+		playlistService:    playlistService,
+		positionService:    positionService,
+		subtitleService:    subtitleService,
+		lyricsService:      lyricsService,
+		coverArtService:    coverArtService,
+		translationService: translationService,
 	}
 }
 

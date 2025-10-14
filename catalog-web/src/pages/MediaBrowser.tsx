@@ -233,7 +233,7 @@ export const MediaBrowser: React.FC = () => {
               <div className="text-sm text-gray-600 dark:text-gray-400">
                 Showing {searchResults.items.length} of {searchResults.total.toLocaleString()} results
                 {filters.query && (
-                  <span> for "{filters.query}"</span>
+                  <span> for &quot;{filters.query}&quot;</span>
                 )}
               </div>
 

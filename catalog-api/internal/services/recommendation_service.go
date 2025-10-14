@@ -14,41 +14,41 @@ import (
 )
 
 type RecommendationService struct {
-	mediaRecognitionService *MediaRecognitionService
+	mediaRecognitionService   *MediaRecognitionService
 	duplicateDetectionService *DuplicateDetectionService
-	tmdbBaseURL            string
-	omdbBaseURL            string
-	lastfmBaseURL          string
-	igdbBaseURL            string
-	googleBooksBaseURL     string
-	steamBaseURL           string
-	githubBaseURL          string
-	tmdbAPIKey             string
-	omdbAPIKey             string
-	lastfmAPIKey           string
-	igdbClientID           string
-	igdbClientSecret       string
-	httpClient             *http.Client
+	tmdbBaseURL               string
+	omdbBaseURL               string
+	lastfmBaseURL             string
+	igdbBaseURL               string
+	googleBooksBaseURL        string
+	steamBaseURL              string
+	githubBaseURL             string
+	tmdbAPIKey                string
+	omdbAPIKey                string
+	lastfmAPIKey              string
+	igdbClientID              string
+	igdbClientSecret          string
+	httpClient                *http.Client
 }
 
 type SimilarItemsRequest struct {
-	MediaID          string                 `json:"media_id"`
-	MediaMetadata    *models.MediaMetadata  `json:"media_metadata"`
-	MaxLocalItems    int                    `json:"max_local_items,omitempty"`
-	MaxExternalItems int                    `json:"max_external_items,omitempty"`
-	IncludeExternal  bool                   `json:"include_external,omitempty"`
-	SimilarityThreshold float64             `json:"similarity_threshold,omitempty"`
-	Filters          *RecommendationFilters `json:"filters,omitempty"`
+	MediaID             string                 `json:"media_id"`
+	MediaMetadata       *models.MediaMetadata  `json:"media_metadata"`
+	MaxLocalItems       int                    `json:"max_local_items,omitempty"`
+	MaxExternalItems    int                    `json:"max_external_items,omitempty"`
+	IncludeExternal     bool                   `json:"include_external,omitempty"`
+	SimilarityThreshold float64                `json:"similarity_threshold,omitempty"`
+	Filters             *RecommendationFilters `json:"filters,omitempty"`
 }
 
 type RecommendationFilters struct {
-	GenreFilter      []string `json:"genre_filter,omitempty"`
-	YearRange        *YearRange `json:"year_range,omitempty"`
-	RatingRange      *RatingRange `json:"rating_range,omitempty"`
-	LanguageFilter   []string `json:"language_filter,omitempty"`
-	ExcludeWatched   bool     `json:"exclude_watched,omitempty"`
-	ExcludeOwned     bool     `json:"exclude_owned,omitempty"`
-	MinConfidence    float64  `json:"min_confidence,omitempty"`
+	GenreFilter    []string     `json:"genre_filter,omitempty"`
+	YearRange      *YearRange   `json:"year_range,omitempty"`
+	RatingRange    *RatingRange `json:"rating_range,omitempty"`
+	LanguageFilter []string     `json:"language_filter,omitempty"`
+	ExcludeWatched bool         `json:"exclude_watched,omitempty"`
+	ExcludeOwned   bool         `json:"exclude_owned,omitempty"`
+	MinConfidence  float64      `json:"min_confidence,omitempty"`
 }
 
 type YearRange struct {
@@ -71,59 +71,59 @@ type SimilarItemsResponse struct {
 }
 
 type LocalSimilarItem struct {
-	MediaID          string                 `json:"media_id"`
-	MediaMetadata    *models.MediaMetadata  `json:"media_metadata"`
-	SimilarityScore  float64                `json:"similarity_score"`
+	MediaID           string                `json:"media_id"`
+	MediaMetadata     *models.MediaMetadata `json:"media_metadata"`
+	SimilarityScore   float64               `json:"similarity_score"`
 	SimilarityReasons []string              `json:"similarity_reasons"`
-	DetailLink       string                 `json:"detail_link"`
-	PlayLink         string                 `json:"play_link,omitempty"`
-	DownloadLink     string                 `json:"download_link,omitempty"`
-	LastAccessed     *time.Time             `json:"last_accessed,omitempty"`
-	UserRating       *float64               `json:"user_rating,omitempty"`
-	IsWatched        bool                   `json:"is_watched"`
-	IsOwned          bool                   `json:"is_owned"`
+	DetailLink        string                `json:"detail_link"`
+	PlayLink          string                `json:"play_link,omitempty"`
+	DownloadLink      string                `json:"download_link,omitempty"`
+	LastAccessed      *time.Time            `json:"last_accessed,omitempty"`
+	UserRating        *float64              `json:"user_rating,omitempty"`
+	IsWatched         bool                  `json:"is_watched"`
+	IsOwned           bool                  `json:"is_owned"`
 }
 
 type ExternalSimilarItem struct {
-	ExternalID       string    `json:"external_id"`
-	Title            string    `json:"title"`
-	Subtitle         string    `json:"subtitle,omitempty"`
-	Description      string    `json:"description"`
-	CoverArt         string    `json:"cover_art,omitempty"`
-	Year             string    `json:"year,omitempty"`
-	Genre            string    `json:"genre,omitempty"`
-	Rating           float64   `json:"rating,omitempty"`
-	Provider         string    `json:"provider"`
-	ExternalLink     string    `json:"external_link"`
-	SimilarityScore  float64   `json:"similarity_score"`
-	SimilarityReasons []string `json:"similarity_reasons"`
-	AvailabilityInfo *AvailabilityInfo `json:"availability_info,omitempty"`
-	PriceInfo        *PriceInfo `json:"price_info,omitempty"`
+	ExternalID        string            `json:"external_id"`
+	Title             string            `json:"title"`
+	Subtitle          string            `json:"subtitle,omitempty"`
+	Description       string            `json:"description"`
+	CoverArt          string            `json:"cover_art,omitempty"`
+	Year              string            `json:"year,omitempty"`
+	Genre             string            `json:"genre,omitempty"`
+	Rating            float64           `json:"rating,omitempty"`
+	Provider          string            `json:"provider"`
+	ExternalLink      string            `json:"external_link"`
+	SimilarityScore   float64           `json:"similarity_score"`
+	SimilarityReasons []string          `json:"similarity_reasons"`
+	AvailabilityInfo  *AvailabilityInfo `json:"availability_info,omitempty"`
+	PriceInfo         *PriceInfo        `json:"price_info,omitempty"`
 }
 
 type AvailabilityInfo struct {
-	IsAvailable      bool     `json:"is_available"`
+	IsAvailable       bool     `json:"is_available"`
 	StreamingServices []string `json:"streaming_services,omitempty"`
-	PurchaseOptions  []string `json:"purchase_options,omitempty"`
-	RentalOptions    []string `json:"rental_options,omitempty"`
-	Region           string   `json:"region,omitempty"`
+	PurchaseOptions   []string `json:"purchase_options,omitempty"`
+	RentalOptions     []string `json:"rental_options,omitempty"`
+	Region            string   `json:"region,omitempty"`
 }
 
 type PriceInfo struct {
-	PurchasePrice string `json:"purchase_price,omitempty"`
-	RentalPrice   string `json:"rental_price,omitempty"`
-	Currency      string `json:"currency,omitempty"`
+	PurchasePrice string    `json:"purchase_price,omitempty"`
+	RentalPrice   string    `json:"rental_price,omitempty"`
+	Currency      string    `json:"currency,omitempty"`
 	LastUpdated   time.Time `json:"last_updated"`
 }
 
 type RecommendationStats struct {
 	LocalSearchTime    time.Duration `json:"local_search_time"`
 	ExternalSearchTime time.Duration `json:"external_search_time"`
-	TotalTime         time.Duration `json:"total_time"`
-	LocalItemsFound   int           `json:"local_items_found"`
-	ExternalItemsFound int          `json:"external_items_found"`
-	CacheHitRatio     float64       `json:"cache_hit_ratio"`
-	APICallsCount     int           `json:"api_calls_count"`
+	TotalTime          time.Duration `json:"total_time"`
+	LocalItemsFound    int           `json:"local_items_found"`
+	ExternalItemsFound int           `json:"external_items_found"`
+	CacheHitRatio      float64       `json:"cache_hit_ratio"`
+	APICallsCount      int           `json:"api_calls_count"`
 }
 
 func NewRecommendationService(
@@ -133,13 +133,13 @@ func NewRecommendationService(
 	return &RecommendationService{
 		mediaRecognitionService:   mediaRecognitionService,
 		duplicateDetectionService: duplicateDetectionService,
-		tmdbBaseURL:              "https://api.themoviedb.org/3",
-		omdbBaseURL:              "http://www.omdbapi.com",
-		lastfmBaseURL:            "http://ws.audioscrobbler.com/2.0",
-		igdbBaseURL:              "https://api.igdb.com/v4",
-		googleBooksBaseURL:       "https://www.googleapis.com/books/v1",
-		steamBaseURL:             "https://store.steampowered.com/api",
-		githubBaseURL:            "https://api.github.com",
+		tmdbBaseURL:               "https://api.themoviedb.org/3",
+		omdbBaseURL:               "http://www.omdbapi.com",
+		lastfmBaseURL:             "http://ws.audioscrobbler.com/2.0",
+		igdbBaseURL:               "https://api.igdb.com/v4",
+		googleBooksBaseURL:        "https://www.googleapis.com/books/v1",
+		steamBaseURL:              "https://store.steampowered.com/api",
+		githubBaseURL:             "https://api.github.com",
 		httpClient: &http.Client{
 			Timeout: 30 * time.Second,
 		},
@@ -230,14 +230,14 @@ func (rs *RecommendationService) findLocalSimilarItems(ctx context.Context, req 
 		}
 
 		similarItem := &LocalSimilarItem{
-			MediaID:          rs.generateMediaID(media),
-			MediaMetadata:    media,
-			SimilarityScore:  similarity,
+			MediaID:           rs.generateMediaID(media),
+			MediaMetadata:     media,
+			SimilarityScore:   similarity,
 			SimilarityReasons: reasons,
-			DetailLink:       rs.generateDetailLink(media),
-			PlayLink:         rs.generatePlayLink(media),
-			DownloadLink:     rs.generateDownloadLink(media),
-			IsOwned:          true, // Local items are owned
+			DetailLink:        rs.generateDetailLink(media),
+			PlayLink:          rs.generatePlayLink(media),
+			DownloadLink:      rs.generateDownloadLink(media),
+			IsOwned:           true, // Local items are owned
 		}
 
 		similarItems = append(similarItems, similarItem)
@@ -379,13 +379,13 @@ func (rs *RecommendationService) getTMDbSimilarMovies(ctx context.Context, metad
 
 	var searchResult struct {
 		Results []struct {
-			ID           int    `json:"id"`
-			Title        string `json:"title"`
-			ReleaseDate  string `json:"release_date"`
-			Overview     string `json:"overview"`
-			PosterPath   string `json:"poster_path"`
-			VoteAverage  float64 `json:"vote_average"`
-			GenreIDs     []int  `json:"genre_ids"`
+			ID          int     `json:"id"`
+			Title       string  `json:"title"`
+			ReleaseDate string  `json:"release_date"`
+			Overview    string  `json:"overview"`
+			PosterPath  string  `json:"poster_path"`
+			VoteAverage float64 `json:"vote_average"`
+			GenreIDs    []int   `json:"genre_ids"`
 		} `json:"results"`
 	}
 
@@ -427,14 +427,14 @@ func (rs *RecommendationService) getTMDbSimilarMovies(ctx context.Context, metad
 	var items []*ExternalSimilarItem
 	for _, movie := range similarResult.Results {
 		item := &ExternalSimilarItem{
-			ExternalID:      fmt.Sprintf("tmdb_%d", movie.ID),
-			Title:           movie.Title,
-			Description:     movie.Overview,
-			Year:            rs.extractYear(movie.ReleaseDate),
-			Rating:          movie.VoteAverage,
-			Provider:        "TMDb",
-			ExternalLink:    fmt.Sprintf("https://www.themoviedb.org/movie/%d", movie.ID),
-			SimilarityScore: rs.calculateTMDbSimilarity(metadata, movie.Title, movie.ReleaseDate, movie.VoteAverage),
+			ExternalID:        fmt.Sprintf("tmdb_%d", movie.ID),
+			Title:             movie.Title,
+			Description:       movie.Overview,
+			Year:              rs.extractYear(movie.ReleaseDate),
+			Rating:            movie.VoteAverage,
+			Provider:          "TMDb",
+			ExternalLink:      fmt.Sprintf("https://www.themoviedb.org/movie/%d", movie.ID),
+			SimilarityScore:   rs.calculateTMDbSimilarity(metadata, movie.Title, movie.ReleaseDate, movie.VoteAverage),
 			SimilarityReasons: []string{"genre_match", "tmdb_recommendation"},
 		}
 
@@ -462,11 +462,11 @@ func (rs *RecommendationService) getOMDbSimilarMovies(ctx context.Context, metad
 
 	var searchResult struct {
 		Search []struct {
-			Title    string `json:"Title"`
-			Year     string `json:"Year"`
-			IMDbID   string `json:"imdbID"`
-			Type     string `json:"Type"`
-			Poster   string `json:"Poster"`
+			Title  string `json:"Title"`
+			Year   string `json:"Year"`
+			IMDbID string `json:"imdbID"`
+			Type   string `json:"Type"`
+			Poster string `json:"Poster"`
 		} `json:"Search"`
 		Response string `json:"Response"`
 	}
@@ -491,12 +491,12 @@ func (rs *RecommendationService) getOMDbSimilarMovies(ctx context.Context, metad
 		}
 
 		item := &ExternalSimilarItem{
-			ExternalID:      fmt.Sprintf("imdb_%s", movie.IMDbID),
-			Title:           movie.Title,
-			Year:            movie.Year,
-			Provider:        "IMDb",
-			ExternalLink:    fmt.Sprintf("https://www.imdb.com/title/%s", movie.IMDbID),
-			SimilarityScore: rs.calculateOMDbSimilarity(metadata, movie.Title, movie.Year),
+			ExternalID:        fmt.Sprintf("imdb_%s", movie.IMDbID),
+			Title:             movie.Title,
+			Year:              movie.Year,
+			Provider:          "IMDb",
+			ExternalLink:      fmt.Sprintf("https://www.imdb.com/title/%s", movie.IMDbID),
+			SimilarityScore:   rs.calculateOMDbSimilarity(metadata, movie.Title, movie.Year),
 			SimilarityReasons: []string{"genre_match", "imdb_search"},
 		}
 
@@ -551,12 +551,12 @@ func (rs *RecommendationService) getLastFmSimilarMusic(ctx context.Context, meta
 		}
 
 		item := &ExternalSimilarItem{
-			ExternalID:      fmt.Sprintf("lastfm_artist_%s", strings.ReplaceAll(artist.Name, " ", "_")),
-			Title:           artist.Name,
-			Subtitle:        "Similar Artist",
-			Provider:        "Last.fm",
-			ExternalLink:    artist.URL,
-			SimilarityScore: rs.parseLastFmMatch(artist.Match),
+			ExternalID:        fmt.Sprintf("lastfm_artist_%s", strings.ReplaceAll(artist.Name, " ", "_")),
+			Title:             artist.Name,
+			Subtitle:          "Similar Artist",
+			Provider:          "Last.fm",
+			ExternalLink:      artist.URL,
+			SimilarityScore:   rs.parseLastFmMatch(artist.Match),
 			SimilarityReasons: []string{"artist_similarity", "lastfm_recommendation"},
 		}
 
@@ -601,13 +601,13 @@ func (rs *RecommendationService) getGoogleBooksSimilar(ctx context.Context, meta
 			Items []struct {
 				ID         string `json:"id"`
 				VolumeInfo struct {
-					Title               string   `json:"title"`
-					Authors             []string `json:"authors"`
-					Description         string   `json:"description"`
-					Categories          []string `json:"categories"`
-					AverageRating       float64  `json:"averageRating"`
-					PublishedDate       string   `json:"publishedDate"`
-					ImageLinks          struct {
+					Title         string   `json:"title"`
+					Authors       []string `json:"authors"`
+					Description   string   `json:"description"`
+					Categories    []string `json:"categories"`
+					AverageRating float64  `json:"averageRating"`
+					PublishedDate string   `json:"publishedDate"`
+					ImageLinks    struct {
 						Thumbnail string `json:"thumbnail"`
 					} `json:"imageLinks"`
 					CanonicalVolumeLink string `json:"canonicalVolumeLink"`
@@ -633,15 +633,15 @@ func (rs *RecommendationService) getGoogleBooksSimilar(ctx context.Context, meta
 			}
 
 			item := &ExternalSimilarItem{
-				ExternalID:      fmt.Sprintf("google_books_%s", book.ID),
-				Title:           book.VolumeInfo.Title,
-				Subtitle:        author,
-				Description:     book.VolumeInfo.Description,
-				Year:            rs.extractYear(book.VolumeInfo.PublishedDate),
-				Rating:          book.VolumeInfo.AverageRating,
-				Provider:        "Google Books",
-				ExternalLink:    book.VolumeInfo.CanonicalVolumeLink,
-				SimilarityScore: rs.calculateGoogleBooksSimilarity(metadata, book.VolumeInfo.Title, author),
+				ExternalID:        fmt.Sprintf("google_books_%s", book.ID),
+				Title:             book.VolumeInfo.Title,
+				Subtitle:          author,
+				Description:       book.VolumeInfo.Description,
+				Year:              rs.extractYear(book.VolumeInfo.PublishedDate),
+				Rating:            book.VolumeInfo.AverageRating,
+				Provider:          "Google Books",
+				ExternalLink:      book.VolumeInfo.CanonicalVolumeLink,
+				SimilarityScore:   rs.calculateGoogleBooksSimilarity(metadata, book.VolumeInfo.Title, author),
 				SimilarityReasons: []string{"author_match", "genre_match"},
 			}
 
@@ -681,13 +681,13 @@ func (rs *RecommendationService) getIGDBSimilarGames(ctx context.Context, metada
 
 	for _, game := range similarGames {
 		item := &ExternalSimilarItem{
-			ExternalID:      fmt.Sprintf("igdb_%d", game.ID),
-			Title:           game.Name,
-			Genre:           game.Genre,
-			Rating:          game.Rating,
-			Provider:        "IGDB",
-			ExternalLink:    game.URL,
-			SimilarityScore: 0.8, // Mock score
+			ExternalID:        fmt.Sprintf("igdb_%d", game.ID),
+			Title:             game.Name,
+			Genre:             game.Genre,
+			Rating:            game.Rating,
+			Provider:          "IGDB",
+			ExternalLink:      game.URL,
+			SimilarityScore:   0.8, // Mock score
 			SimilarityReasons: []string{"genre_match", "igdb_recommendation"},
 		}
 
@@ -706,10 +706,10 @@ func (rs *RecommendationService) getSteamSimilarGames(ctx context.Context, metad
 
 	// This is just for demonstration
 	steamGames := []struct {
-		ID     string
-		Name   string
-		Genre  string
-		Price  string
+		ID    string
+		Name  string
+		Genre string
+		Price string
 	}{
 		{"123456", "Steam Similar Game 1", metadata.Genre, "$19.99"},
 		{"789012", "Steam Similar Game 2", metadata.Genre, "$29.99"},
@@ -717,12 +717,12 @@ func (rs *RecommendationService) getSteamSimilarGames(ctx context.Context, metad
 
 	for _, game := range steamGames {
 		item := &ExternalSimilarItem{
-			ExternalID:      fmt.Sprintf("steam_%s", game.ID),
-			Title:           game.Name,
-			Genre:           game.Genre,
-			Provider:        "Steam",
-			ExternalLink:    fmt.Sprintf("https://store.steampowered.com/app/%s", game.ID),
-			SimilarityScore: 0.7, // Mock score
+			ExternalID:        fmt.Sprintf("steam_%s", game.ID),
+			Title:             game.Name,
+			Genre:             game.Genre,
+			Provider:          "Steam",
+			ExternalLink:      fmt.Sprintf("https://store.steampowered.com/app/%s", game.ID),
+			SimilarityScore:   0.7, // Mock score
 			SimilarityReasons: []string{"genre_match", "steam_recommendation"},
 			PriceInfo: &PriceInfo{
 				PurchasePrice: game.Price,
@@ -751,13 +751,13 @@ func (rs *RecommendationService) getGitHubSimilarSoftware(ctx context.Context, m
 
 	var result struct {
 		Items []struct {
-			ID          int    `json:"id"`
-			Name        string `json:"name"`
-			FullName    string `json:"full_name"`
-			Description string `json:"description"`
-			Language    string `json:"language"`
-			StargazersCount int `json:"stargazers_count"`
-			HTMLURL     string `json:"html_url"`
+			ID              int    `json:"id"`
+			Name            string `json:"name"`
+			FullName        string `json:"full_name"`
+			Description     string `json:"description"`
+			Language        string `json:"language"`
+			StargazersCount int    `json:"stargazers_count"`
+			HTMLURL         string `json:"html_url"`
 		} `json:"items"`
 	}
 
@@ -773,13 +773,13 @@ func (rs *RecommendationService) getGitHubSimilarSoftware(ctx context.Context, m
 		}
 
 		item := &ExternalSimilarItem{
-			ExternalID:      fmt.Sprintf("github_%d", repo.ID),
-			Title:           repo.Name,
-			Subtitle:        repo.FullName,
-			Description:     repo.Description,
-			Provider:        "GitHub",
-			ExternalLink:    repo.HTMLURL,
-			SimilarityScore: rs.calculateGitHubSimilarity(metadata, repo.Name, repo.Language, repo.StargazersCount),
+			ExternalID:        fmt.Sprintf("github_%d", repo.ID),
+			Title:             repo.Name,
+			Subtitle:          repo.FullName,
+			Description:       repo.Description,
+			Provider:          "GitHub",
+			ExternalLink:      repo.HTMLURL,
+			SimilarityScore:   rs.calculateGitHubSimilarity(metadata, repo.Name, repo.Language, repo.StargazersCount),
 			SimilarityReasons: []string{"topic_match", "github_stars"},
 		}
 
@@ -1058,33 +1058,33 @@ func (rs *RecommendationService) generateMockLocalMedia(original *models.MediaMe
 
 	mockMedia = append(mockMedia, []*models.MediaMetadata{
 		{
-			Title:       "Similar Movie 1",
-			Year:        original.Year,
-			Genre:       original.Genre,
-			Director:    "Similar Director",
-			Rating:      &rating82,
+			Title:    "Similar Movie 1",
+			Year:     original.Year,
+			Genre:    original.Genre,
+			Director: "Similar Director",
+			Rating:   &rating82,
 		},
 		{
-			Title:       "Another " + original.Genre + " Film",
-			Year:        &year2022,
-			Genre:       original.Genre,
-			Director:    "Another Director",
-			Rating:      &rating78,
+			Title:    "Another " + original.Genre + " Film",
+			Year:     &year2022,
+			Genre:    original.Genre,
+			Director: "Another Director",
+			Rating:   &rating78,
 		},
 		{
-			Title:       "Similar Track",
-			Year:        original.Year,
-			Genre:       original.Genre,
-			Producer:    "Similar Producer",
-			Duration:    &duration240,
-			Rating:      &rating85,
+			Title:    "Similar Track",
+			Year:     original.Year,
+			Genre:    original.Genre,
+			Producer: "Similar Producer",
+			Duration: &duration240,
+			Rating:   &rating85,
 		},
 		{
-			Title:       "Another Media Item",
-			Year:        &year2023,
-			Genre:       original.Genre,
-			Producer:    "Different Producer",
-			Duration:    &duration195,
+			Title:    "Another Media Item",
+			Year:     &year2023,
+			Genre:    original.Genre,
+			Producer: "Different Producer",
+			Duration: &duration195,
 		},
 	}...)
 

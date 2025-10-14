@@ -32,16 +32,16 @@ func (s CircuitState) String() string {
 
 // CircuitBreaker implements the circuit breaker pattern for fault tolerance
 type CircuitBreaker struct {
-	name             string
-	maxFailures      int
-	resetTimeout     time.Duration
-	state            CircuitState
-	failures         int
-	lastFailureTime  time.Time
-	nextAttempt      time.Time
-	mutex            sync.RWMutex
-	logger           *zap.Logger
-	onStateChange    func(string, CircuitState, CircuitState)
+	name            string
+	maxFailures     int
+	resetTimeout    time.Duration
+	state           CircuitState
+	failures        int
+	lastFailureTime time.Time
+	nextAttempt     time.Time
+	mutex           sync.RWMutex
+	logger          *zap.Logger
+	onStateChange   func(string, CircuitState, CircuitState)
 }
 
 // CircuitBreakerConfig contains configuration for a circuit breaker

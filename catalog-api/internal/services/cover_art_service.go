@@ -55,15 +55,15 @@ const (
 
 // CoverArtSearchRequest represents a cover art search request
 type CoverArtSearchRequest struct {
-	Title       string             `json:"title"`
-	Artist      string             `json:"artist"`
-	Album       *string            `json:"album,omitempty"`
-	Year        *int               `json:"year,omitempty"`
-	MusicBrainzID *string          `json:"musicbrainz_id,omitempty"`
-	SpotifyID   *string            `json:"spotify_id,omitempty"`
-	Quality     CoverArtQuality    `json:"quality"`
-	Providers   []CoverArtProvider `json:"providers,omitempty"`
-	UseCache    bool               `json:"use_cache"`
+	Title         string             `json:"title"`
+	Artist        string             `json:"artist"`
+	Album         *string            `json:"album,omitempty"`
+	Year          *int               `json:"year,omitempty"`
+	MusicBrainzID *string            `json:"musicbrainz_id,omitempty"`
+	SpotifyID     *string            `json:"spotify_id,omitempty"`
+	Quality       CoverArtQuality    `json:"quality"`
+	Providers     []CoverArtProvider `json:"providers,omitempty"`
+	UseCache      bool               `json:"use_cache"`
 }
 
 // CoverArtSearchResult represents a cover art search result
@@ -115,10 +115,10 @@ type LocalCoverArtScanRequest struct {
 type CoverArtProcessingOptions struct {
 	Width           int     `json:"width"`
 	Height          int     `json:"height"`
-	Quality         int     `json:"quality"`         // JPEG quality 1-100
-	Format          string  `json:"format"`          // "jpeg", "png", "webp"
-	Crop            bool    `json:"crop"`            // Crop to exact dimensions
-	PreserveAspect  bool    `json:"preserve_aspect"` // Preserve aspect ratio
+	Quality         int     `json:"quality"`                    // JPEG quality 1-100
+	Format          string  `json:"format"`                     // "jpeg", "png", "webp"
+	Crop            bool    `json:"crop"`                       // Crop to exact dimensions
+	PreserveAspect  bool    `json:"preserve_aspect"`            // Preserve aspect ratio
 	BackgroundColor *string `json:"background_color,omitempty"` // Hex color for padding
 }
 

@@ -253,10 +253,10 @@ func (s *FavoritesService) GetRecommendedFavorites(userID int, limit int) ([]mod
 
 		for _, favorite := range similarFavorites {
 			recommendation := models.RecommendedFavorite{
-				Favorite:         favorite,
-				RecommendReason:  fmt.Sprintf("Based on your interest in %s", entityType),
-				RecommendScore:   0.8,
-				RecommendedAt:    time.Now(),
+				Favorite:        favorite,
+				RecommendReason: fmt.Sprintf("Based on your interest in %s", entityType),
+				RecommendScore:  0.8,
+				RecommendedAt:   time.Now(),
 			}
 			recommendations = append(recommendations, recommendation)
 		}

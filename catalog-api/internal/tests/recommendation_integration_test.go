@@ -24,16 +24,16 @@ type ExternalRecommendation struct {
 }
 
 type RecommendationRequest struct {
-	MediaID       int64    `json:"media_id"`
-	MediaMetadata *models.MediaMetadata `json:"media_metadata"`
-	MaxResults    int      `json:"max_results"`
+	MediaID       int64                  `json:"media_id"`
+	MediaMetadata *models.MediaMetadata  `json:"media_metadata"`
+	MaxResults    int                    `json:"max_results"`
 	Filters       map[string]interface{} `json:"filters"`
 }
 
 type RecommendationResponse struct {
-	LocalItems    []models.MediaMetadata     `json:"local_items"`
-	ExternalItems []ExternalRecommendation   `json:"external_items"`
-	TotalFound    int                       `json:"total_found"`
+	LocalItems     []models.MediaMetadata   `json:"local_items"`
+	ExternalItems  []ExternalRecommendation `json:"external_items"`
+	TotalFound     int                      `json:"total_found"`
 	ProcessingTime time.Duration            `json:"processing_time"`
 }
 

@@ -47,7 +47,7 @@ export const authApi = {
     api.post('/auth/register', data).then((res) => res.data),
 
   logout: (): Promise<void> =>
-    api.post('/auth/logout').then(() => {}),
+    api.post('/auth/logout').then(() => {/* no content */}),
 
   getProfile: (): Promise<User> =>
     api.get('/auth/profile').then((res) => res.data),
@@ -56,7 +56,7 @@ export const authApi = {
     api.put('/auth/profile', data).then((res) => res.data),
 
   changePassword: (data: ChangePasswordRequest): Promise<void> =>
-    api.post('/auth/change-password', data).then(() => {}),
+    api.post('/auth/change-password', data).then(() => {/* no content */}),
 
   getAuthStatus: (): Promise<AuthStatus> =>
     api.get('/auth/status').then((res) => res.data),

@@ -46,14 +46,14 @@ type FileSystemClient interface {
 
 // StorageConfig represents the configuration for a storage backend
 type StorageConfig struct {
-	ID          string                 `json:"id"`
-	Name        string                 `json:"name"`
-	Protocol    string                 `json:"protocol"` // "smb", "ftp", "nfs", "webdav", "local"
-	Enabled     bool                   `json:"enabled"`
-	MaxDepth    int                    `json:"max_depth"`
-	Settings    map[string]interface{} `json:"settings"` // Protocol-specific settings
-	CreatedAt   time.Time              `json:"created_at"`
-	UpdatedAt   time.Time              `json:"updated_at"`
+	ID        string                 `json:"id"`
+	Name      string                 `json:"name"`
+	Protocol  string                 `json:"protocol"` // "smb", "ftp", "nfs", "webdav", "local"
+	Enabled   bool                   `json:"enabled"`
+	MaxDepth  int                    `json:"max_depth"`
+	Settings  map[string]interface{} `json:"settings"` // Protocol-specific settings
+	CreatedAt time.Time              `json:"created_at"`
+	UpdatedAt time.Time              `json:"updated_at"`
 }
 
 // ClientFactory creates filesystem clients based on protocol
@@ -64,28 +64,28 @@ type ClientFactory interface {
 
 // CopyOperation represents a file copy operation
 type CopyOperation struct {
-	SourcePath      string
-	DestinationPath string
+	SourcePath        string
+	DestinationPath   string
 	OverwriteExisting bool
 }
 
 // CopyResult represents the result of a copy operation
 type CopyResult struct {
-	Success      bool
-	BytesCopied  int64
-	Error        error
-	TimeTaken    time.Duration
+	Success     bool
+	BytesCopied int64
+	Error       error
+	TimeTaken   time.Duration
 }
 
 // DirectoryTreeInfo represents directory tree information
 type DirectoryTreeInfo struct {
-	Path         string
-	TotalFiles   int
-	TotalDirs    int
-	TotalSize    int64
-	MaxDepth     int
-	Files        []*FileInfo
-	Subdirs      []*DirectoryTreeInfo
+	Path       string
+	TotalFiles int
+	TotalDirs  int
+	TotalSize  int64
+	MaxDepth   int
+	Files      []*FileInfo
+	Subdirs    []*DirectoryTreeInfo
 }
 
 // ConnectionPool manages multiple connections for a protocol

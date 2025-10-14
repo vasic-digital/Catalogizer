@@ -24,17 +24,17 @@ type LogManagementService struct {
 }
 
 type LogManagementConfig struct {
-	LogDirectory        string `json:"log_directory"`
-	MaxLogSize          int64  `json:"max_log_size"`          // in bytes
-	MaxLogFiles         int    `json:"max_log_files"`         // per component
-	RetentionDays       int    `json:"retention_days"`        // how long to keep logs
-	CompressionEnabled  bool   `json:"compression_enabled"`   // compress old logs
-	RealTimeLogging     bool   `json:"real_time_logging"`     // enable real-time log streaming
-	LogLevels           []string `json:"log_levels"`          // enabled log levels
-	ComponentFilters    []string `json:"component_filters"`   // enabled components
-	AutoCleanup         bool   `json:"auto_cleanup"`          // automatically cleanup old logs
-	MaxShareDuration    int    `json:"max_share_duration"`    // hours
-	AllowExternalSharing bool  `json:"allow_external_sharing"`
+	LogDirectory         string   `json:"log_directory"`
+	MaxLogSize           int64    `json:"max_log_size"`        // in bytes
+	MaxLogFiles          int      `json:"max_log_files"`       // per component
+	RetentionDays        int      `json:"retention_days"`      // how long to keep logs
+	CompressionEnabled   bool     `json:"compression_enabled"` // compress old logs
+	RealTimeLogging      bool     `json:"real_time_logging"`   // enable real-time log streaming
+	LogLevels            []string `json:"log_levels"`          // enabled log levels
+	ComponentFilters     []string `json:"component_filters"`   // enabled components
+	AutoCleanup          bool     `json:"auto_cleanup"`        // automatically cleanup old logs
+	MaxShareDuration     int      `json:"max_share_duration"`  // hours
+	AllowExternalSharing bool     `json:"allow_external_sharing"`
 }
 
 type LogCollector interface {
@@ -61,10 +61,10 @@ func NewLogManagementService(logRepo *repository.LogManagementRepository) *LogMa
 		RetentionDays:        30,
 		CompressionEnabled:   true,
 		RealTimeLogging:      true,
-		LogLevels:           []string{"error", "warning", "info", "debug"},
-		ComponentFilters:    []string{"api", "auth", "sync", "conversion", "stress_test"},
-		AutoCleanup:         true,
-		MaxShareDuration:    24, // 24 hours
+		LogLevels:            []string{"error", "warning", "info", "debug"},
+		ComponentFilters:     []string{"api", "auth", "sync", "conversion", "stress_test"},
+		AutoCleanup:          true,
+		MaxShareDuration:     24, // 24 hours
 		AllowExternalSharing: false,
 	}
 
@@ -322,12 +322,12 @@ func (s *LogManagementService) AnalyzeLogs(collectionID int, userID int) (*model
 	}
 
 	analysis := &models.LogAnalysis{
-		CollectionID:    collectionID,
-		TotalEntries:    len(entries),
-		EntriesByLevel:  make(map[string]int),
+		CollectionID:       collectionID,
+		TotalEntries:       len(entries),
+		EntriesByLevel:     make(map[string]int),
 		EntriesByComponent: make(map[string]int),
-		ErrorPatterns:   make(map[string]int),
-		TimeRange:       &models.TimeRange{},
+		ErrorPatterns:      make(map[string]int),
+		TimeRange:          &models.TimeRange{},
 	}
 
 	if len(entries) == 0 {

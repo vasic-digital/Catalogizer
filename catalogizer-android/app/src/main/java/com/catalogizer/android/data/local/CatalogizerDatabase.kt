@@ -9,12 +9,14 @@ import android.content.Context
 import com.catalogizer.android.data.models.ExternalMetadata
 import com.catalogizer.android.data.models.MediaItem
 import com.catalogizer.android.data.models.MediaVersion
+import com.catalogizer.android.data.sync.SyncOperation
+import com.catalogizer.android.data.sync.SyncOperationType
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.decodeFromString
 
 @Database(
-    entities = [MediaItem::class, SearchHistory::class, DownloadItem::class],
+    entities = [MediaItem::class, SearchHistory::class, DownloadItem::class, SyncOperation::class],
     version = 1,
     exportSchema = false
 )
@@ -23,6 +25,7 @@ abstract class CatalogizerDatabase : RoomDatabase() {
     abstract fun mediaDao(): MediaDao
     abstract fun searchHistoryDao(): SearchHistoryDao
     abstract fun downloadDao(): DownloadDao
+    abstract fun syncOperationDao(): SyncOperationDao
 
     companion object {
         @Volatile
@@ -85,5 +88,15 @@ class Converters {
     @TypeConverter
     fun toStringMap(value: String?): Map<String, String>? {
         return value?.let { json.decodeFromString(it) }
+    }
+
+    @TypeConverter
+    fun fromSyncOperationType(value: SyncOperationType?): String? {
+        return value?.name
+    }
+
+    @TypeConverter
+    fun toSyncOperationType(value: String?): SyncOperationType? {
+        return value?.let { SyncOperationType.valueOf(it) }
     }
 }

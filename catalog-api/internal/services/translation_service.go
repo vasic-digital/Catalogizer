@@ -60,10 +60,10 @@ type BatchTranslationRequest struct {
 
 // BatchTranslationResult represents a batch translation result
 type BatchTranslationResult struct {
-	Results        []TranslationResult `json:"results"`
-	TotalTime      float64             `json:"total_time"`
-	SuccessCount   int                 `json:"success_count"`
-	Provider       string              `json:"provider"`
+	Results      []TranslationResult `json:"results"`
+	TotalTime    float64             `json:"total_time"`
+	SuccessCount int                 `json:"success_count"`
+	Provider     string              `json:"provider"`
 }
 
 // LanguageDetectionRequest represents a language detection request
@@ -81,12 +81,12 @@ type LanguageDetectionResult struct {
 
 // SupportedLanguage represents a supported language
 type SupportedLanguage struct {
-	Code         string `json:"code"`
-	Name         string `json:"name"`
-	NativeName   string `json:"native_name"`
-	Flag         string `json:"flag"` // Unicode flag emoji
-	Direction    string `json:"direction"` // "ltr" or "rtl"
-	IsPopular    bool   `json:"is_popular"`
+	Code       string `json:"code"`
+	Name       string `json:"name"`
+	NativeName string `json:"native_name"`
+	Flag       string `json:"flag"`      // Unicode flag emoji
+	Direction  string `json:"direction"` // "ltr" or "rtl"
+	IsPopular  bool   `json:"is_popular"`
 }
 
 // NewTranslationService creates a new translation service
@@ -278,12 +278,12 @@ func (s *TranslationService) getAvailableProviders() []TranslationProvider {
 
 	// Priority order: paid providers first, then free providers
 	providerNames := []string{
-		"google_translate_api", // Paid (if configured)
-		"azure_translator",     // Paid (if configured)
-		"aws_translate",        // Paid (if configured)
+		"google_translate_api",  // Paid (if configured)
+		"azure_translator",      // Paid (if configured)
+		"aws_translate",         // Paid (if configured)
 		"google_translate_free", // Free
-		"libre_translate",      // Free
-		"mymemory",            // Free
+		"libre_translate",       // Free
+		"mymemory",              // Free
 	}
 
 	for _, name := range providerNames {

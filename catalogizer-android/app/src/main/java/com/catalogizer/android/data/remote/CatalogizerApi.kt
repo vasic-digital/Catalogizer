@@ -73,6 +73,22 @@ interface CatalogizerApi {
     @PUT("media/{id}")
     suspend fun updateMedia(@Path("id") id: Long, @Body mediaItem: MediaItem): Response<MediaItem>
 
+    // User interaction endpoints
+    @PUT("media/{id}/progress")
+    suspend fun updateWatchProgress(@Path("id") id: Long, @Body progressData: Map<String, Any>): Response<Unit>
+
+    @PUT("media/{id}/favorite")
+    suspend fun setFavoriteStatus(@Path("id") id: Long, @Body favoriteData: Map<String, Any>): Response<Unit>
+
+    @PUT("media/{id}/rating")
+    suspend fun rateMedia(@Path("id") id: Long, @Body ratingData: Map<String, Any>): Response<Unit>
+
+    @GET("user/preferences")
+    suspend fun getUserPreferences(): Response<Map<String, Any>>
+
+    @GET("media/updated")
+    suspend fun getUpdatedMedia(@Query("since") since: Long): Response<List<MediaItem>>
+
     // SMB endpoints
     @GET("smb/sources/status")
     suspend fun getSMBStatus(): Response<Map<String, Any>>
@@ -130,7 +146,7 @@ interface CatalogizerApi {
     suspend fun removeFromWatchlist(@Path("mediaId") mediaId: Long): Response<Unit>
 
     @PUT("user/progress/{mediaId}")
-    suspend fun updateWatchProgress(
+    suspend fun updateUserWatchProgress(
         @Path("mediaId") mediaId: Long,
         @Body progressData: Map<String, Any>
     ): Response<Unit>

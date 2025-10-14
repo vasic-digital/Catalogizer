@@ -33,8 +33,8 @@ type LastFMSearchResponse struct {
 }
 
 type LastFMResults struct {
-	TrackMatches LastFMTrackMatches `json:"trackmatches"`
-	AlbumMatches LastFMAlbumMatches `json:"albummatches"`
+	TrackMatches  LastFMTrackMatches  `json:"trackmatches"`
+	AlbumMatches  LastFMAlbumMatches  `json:"albummatches"`
 	ArtistMatches LastFMArtistMatches `json:"artistmatches"`
 }
 
@@ -51,13 +51,13 @@ type LastFMArtistMatches struct {
 }
 
 type LastFMTrack struct {
-	Name       string         `json:"name"`
-	Artist     string         `json:"artist"`
-	URL        string         `json:"url"`
-	Streamable string         `json:"streamable"`
-	Listeners  string         `json:"listeners"`
-	Image      []LastFMImage  `json:"image"`
-	MBID       string         `json:"mbid"`
+	Name       string        `json:"name"`
+	Artist     string        `json:"artist"`
+	URL        string        `json:"url"`
+	Streamable string        `json:"streamable"`
+	Listeners  string        `json:"listeners"`
+	Image      []LastFMImage `json:"image"`
+	MBID       string        `json:"mbid"`
 }
 
 type LastFMAlbum struct {
@@ -87,22 +87,22 @@ type LastFMTrackInfo struct {
 }
 
 type LastFMTrackDetail struct {
-	Name       string              `json:"name"`
-	MBID       string              `json:"mbid"`
-	URL        string              `json:"url"`
-	Duration   string              `json:"duration"`
-	Streamable LastFMStreamable    `json:"streamable"`
-	Listeners  string              `json:"listeners"`
-	Playcount  string              `json:"playcount"`
-	Artist     LastFMArtistDetail  `json:"artist"`
-	Album      LastFMAlbumDetail   `json:"album"`
-	TopTags    LastFMTopTags       `json:"toptags"`
-	Wiki       LastFMWiki          `json:"wiki"`
+	Name       string             `json:"name"`
+	MBID       string             `json:"mbid"`
+	URL        string             `json:"url"`
+	Duration   string             `json:"duration"`
+	Streamable LastFMStreamable   `json:"streamable"`
+	Listeners  string             `json:"listeners"`
+	Playcount  string             `json:"playcount"`
+	Artist     LastFMArtistDetail `json:"artist"`
+	Album      LastFMAlbumDetail  `json:"album"`
+	TopTags    LastFMTopTags      `json:"toptags"`
+	Wiki       LastFMWiki         `json:"wiki"`
 }
 
 type LastFMStreamable struct {
-	Text       string `json:"#text"`
-	Fulltrack  string `json:"fulltrack"`
+	Text      string `json:"#text"`
+	Fulltrack string `json:"fulltrack"`
 }
 
 type LastFMArtistDetail struct {
@@ -142,16 +142,16 @@ type MusicBrainzSearchResponse struct {
 }
 
 type MusicBrainzRecording struct {
-	ID             string                      `json:"id"`
-	Score          int                         `json:"score"`
-	Title          string                      `json:"title"`
-	Length         int                         `json:"length"`
-	Disambiguation string                      `json:"disambiguation"`
-	ArtistCredit   []MusicBrainzArtistCredit   `json:"artist-credit"`
-	Releases       []MusicBrainzReleaseBasic   `json:"releases"`
-	Tags           []MusicBrainzTag            `json:"tags"`
-	Genres         []MusicBrainzGenre          `json:"genres"`
-	ISRCs          []string                    `json:"isrcs"`
+	ID             string                    `json:"id"`
+	Score          int                       `json:"score"`
+	Title          string                    `json:"title"`
+	Length         int                       `json:"length"`
+	Disambiguation string                    `json:"disambiguation"`
+	ArtistCredit   []MusicBrainzArtistCredit `json:"artist-credit"`
+	Releases       []MusicBrainzReleaseBasic `json:"releases"`
+	Tags           []MusicBrainzTag          `json:"tags"`
+	Genres         []MusicBrainzGenre        `json:"genres"`
+	ISRCs          []string                  `json:"isrcs"`
 }
 
 type MusicBrainzRelease struct {
@@ -171,20 +171,20 @@ type MusicBrainzRelease struct {
 }
 
 type MusicBrainzArtist struct {
-	ID             string                   `json:"id"`
-	Score          int                      `json:"score"`
-	Name           string                   `json:"name"`
-	SortName       string                   `json:"sort-name"`
-	Type           string                   `json:"type"`
-	Gender         string                   `json:"gender"`
-	Country        string                   `json:"country"`
-	Area           MusicBrainzArea          `json:"area"`
-	BeginArea      MusicBrainzArea          `json:"begin-area"`
-	EndArea        MusicBrainzArea          `json:"end-area"`
-	LifeSpan       MusicBrainzLifeSpan      `json:"life-span"`
-	Aliases        []MusicBrainzAlias       `json:"aliases"`
-	Tags           []MusicBrainzTag         `json:"tags"`
-	Genres         []MusicBrainzGenre       `json:"genres"`
+	ID        string              `json:"id"`
+	Score     int                 `json:"score"`
+	Name      string              `json:"name"`
+	SortName  string              `json:"sort-name"`
+	Type      string              `json:"type"`
+	Gender    string              `json:"gender"`
+	Country   string              `json:"country"`
+	Area      MusicBrainzArea     `json:"area"`
+	BeginArea MusicBrainzArea     `json:"begin-area"`
+	EndArea   MusicBrainzArea     `json:"end-area"`
+	LifeSpan  MusicBrainzLifeSpan `json:"life-span"`
+	Aliases   []MusicBrainzAlias  `json:"aliases"`
+	Tags      []MusicBrainzTag    `json:"tags"`
+	Genres    []MusicBrainzGenre  `json:"genres"`
 }
 
 type MusicBrainzArtistCredit struct {
@@ -193,29 +193,29 @@ type MusicBrainzArtistCredit struct {
 }
 
 type MusicBrainzReleaseBasic struct {
-	ID           string `json:"id"`
-	Title        string `json:"title"`
-	StatusID     string `json:"status-id"`
-	Status       string `json:"status"`
-	Date         string `json:"date"`
-	Country      string `json:"country"`
+	ID       string `json:"id"`
+	Title    string `json:"title"`
+	StatusID string `json:"status-id"`
+	Status   string `json:"status"`
+	Date     string `json:"date"`
+	Country  string `json:"country"`
 }
 
 type MusicBrainzReleaseGroup struct {
-	ID             string `json:"id"`
-	TypeID         string `json:"type-id"`
-	Type           string `json:"type"`
-	PrimaryTypeID  string `json:"primary-type-id"`
-	PrimaryType    string `json:"primary-type"`
-	Title          string `json:"title"`
+	ID               string `json:"id"`
+	TypeID           string `json:"type-id"`
+	Type             string `json:"type"`
+	PrimaryTypeID    string `json:"primary-type-id"`
+	PrimaryType      string `json:"primary-type"`
+	Title            string `json:"title"`
 	FirstReleaseDate string `json:"first-release-date"`
 }
 
 type MusicBrainzMedia struct {
-	Format    string               `json:"format"`
-	DiscCount int                  `json:"disc-count"`
-	TrackCount int                 `json:"track-count"`
-	Tracks    []MusicBrainzTrack   `json:"tracks"`
+	Format     string             `json:"format"`
+	DiscCount  int                `json:"disc-count"`
+	TrackCount int                `json:"track-count"`
+	Tracks     []MusicBrainzTrack `json:"tracks"`
 }
 
 type MusicBrainzTrack struct {
@@ -227,8 +227,8 @@ type MusicBrainzTrack struct {
 }
 
 type MusicBrainzLabelInfo struct {
-	CatalogNumber string            `json:"catalog-number"`
-	Label         MusicBrainzLabel  `json:"label"`
+	CatalogNumber string           `json:"catalog-number"`
+	Label         MusicBrainzLabel `json:"label"`
 }
 
 type MusicBrainzLabel struct {
@@ -237,9 +237,9 @@ type MusicBrainzLabel struct {
 }
 
 type MusicBrainzArea struct {
-	ID       string `json:"id"`
-	Name     string `json:"name"`
-	SortName string `json:"sort-name"`
+	ID       string   `json:"id"`
+	Name     string   `json:"name"`
+	SortName string   `json:"sort-name"`
 	ISO31661 []string `json:"iso-3166-1-codes"`
 }
 
@@ -250,11 +250,11 @@ type MusicBrainzLifeSpan struct {
 }
 
 type MusicBrainzAlias struct {
-	SortName string `json:"sort-name"`
-	Name     string `json:"name"`
-	Locale   string `json:"locale"`
-	Type     string `json:"type"`
-	Primary  bool   `json:"primary"`
+	SortName  string `json:"sort-name"`
+	Name      string `json:"name"`
+	Locale    string `json:"locale"`
+	Type      string `json:"type"`
+	Primary   bool   `json:"primary"`
 	BeginDate string `json:"begin-date"`
 	EndDate   string `json:"end-date"`
 }
@@ -271,36 +271,36 @@ type MusicBrainzGenre struct {
 
 // Audio fingerprinting structures
 type AudioFingerprintAnalysis struct {
-	Duration      float64                    `json:"duration"`
-	SampleRate    int                        `json:"sample_rate"`
-	Channels      int                        `json:"channels"`
-	BitRate       int                        `json:"bit_rate"`
-	Tempo         float64                    `json:"tempo"`
-	Key           string                     `json:"key"`
-	Energy        float64                    `json:"energy"`
-	Valence       float64                    `json:"valence"`
-	Danceability  float64                    `json:"danceability"`
-	Acousticness  float64                    `json:"acousticness"`
-	Instrumentalness float64                 `json:"instrumentalness"`
-	Speechiness   float64                    `json:"speechiness"`
-	SpectralFeatures SpectralFeatures       `json:"spectral_features"`
-	ChromaFeatures   []float64              `json:"chroma_features"`
-	MFCCFeatures     []float64              `json:"mfcc_features"`
-	RhythmFeatures   RhythmFeatures         `json:"rhythm_features"`
+	Duration         float64          `json:"duration"`
+	SampleRate       int              `json:"sample_rate"`
+	Channels         int              `json:"channels"`
+	BitRate          int              `json:"bit_rate"`
+	Tempo            float64          `json:"tempo"`
+	Key              string           `json:"key"`
+	Energy           float64          `json:"energy"`
+	Valence          float64          `json:"valence"`
+	Danceability     float64          `json:"danceability"`
+	Acousticness     float64          `json:"acousticness"`
+	Instrumentalness float64          `json:"instrumentalness"`
+	Speechiness      float64          `json:"speechiness"`
+	SpectralFeatures SpectralFeatures `json:"spectral_features"`
+	ChromaFeatures   []float64        `json:"chroma_features"`
+	MFCCFeatures     []float64        `json:"mfcc_features"`
+	RhythmFeatures   RhythmFeatures   `json:"rhythm_features"`
 }
 
 type SpectralFeatures struct {
-	SpectralCentroid    []float64 `json:"spectral_centroid"`
-	SpectralBandwidth   []float64 `json:"spectral_bandwidth"`
-	SpectralRolloff     []float64 `json:"spectral_rolloff"`
-	ZeroCrossingRate    []float64 `json:"zero_crossing_rate"`
-	SpectralContrast    []float64 `json:"spectral_contrast"`
+	SpectralCentroid  []float64 `json:"spectral_centroid"`
+	SpectralBandwidth []float64 `json:"spectral_bandwidth"`
+	SpectralRolloff   []float64 `json:"spectral_rolloff"`
+	ZeroCrossingRate  []float64 `json:"zero_crossing_rate"`
+	SpectralContrast  []float64 `json:"spectral_contrast"`
 }
 
 type RhythmFeatures struct {
-	OnsetStrength   []float64 `json:"onset_strength"`
-	BeatTrack       []float64 `json:"beat_track"`
-	Tempoogram      [][]float64 `json:"tempogram"`
+	OnsetStrength []float64   `json:"onset_strength"`
+	BeatTrack     []float64   `json:"beat_track"`
+	Tempoogram    [][]float64 `json:"tempogram"`
 }
 
 func NewMusicRecognitionProvider(logger *zap.Logger) *MusicRecognitionProvider {
@@ -316,9 +316,9 @@ func NewMusicRecognitionProvider(logger *zap.Logger) *MusicRecognitionProvider {
 			"discogs":     "https://api.discogs.com",
 		},
 		apiKeys: map[string]string{
-			"lastfm":    "free_api_key",
-			"acoustid":  "free_api_key",
-			"discogs":   "free_api_key",
+			"lastfm":   "free_api_key",
+			"acoustid": "free_api_key",
+			"discogs":  "free_api_key",
 		},
 		rateLimiter: make(map[string]*time.Ticker),
 	}
@@ -404,13 +404,13 @@ func (p *MusicRecognitionProvider) recognizeByFingerprint(ctx context.Context, a
 
 	// Convert to MediaRecognitionResult
 	result := &MediaRecognitionResult{
-		MediaID:    fmt.Sprintf("acoustid_%s", recording.ID),
-		MediaType:  p.determineAudioMediaType(recording.Title),
-		Title:      recording.Title,
-		Duration:   int64(recording.Duration * 1000), // Convert to milliseconds
-		Confidence: bestResult.Score,
+		MediaID:           fmt.Sprintf("acoustid_%s", recording.ID),
+		MediaType:         p.determineAudioMediaType(recording.Title),
+		Title:             recording.Title,
+		Duration:          int64(recording.Duration * 1000), // Convert to milliseconds
+		Confidence:        bestResult.Score,
 		RecognitionMethod: "audio_fingerprint",
-		APIProvider: "AcoustID",
+		APIProvider:       "AcoustID",
 		Fingerprints: map[string]string{
 			"acoustid": fingerprint.Hash,
 		},
@@ -433,8 +433,8 @@ func (p *MusicRecognitionProvider) recognizeByFingerprint(ctx context.Context, a
 
 	// Set external IDs
 	result.ExternalIDs = map[string]string{
-		"acoustid":     recording.ID,
-		"musicbrainz":  recording.ID,
+		"acoustid":    recording.ID,
+		"musicbrainz": recording.ID,
 	}
 
 	// Get additional metadata from MusicBrainz
@@ -521,15 +521,15 @@ func (p *MusicRecognitionProvider) getLastFMTrackDetails(ctx context.Context, tr
 
 	// Convert to MediaRecognitionResult
 	result := &MediaRecognitionResult{
-		MediaID:    fmt.Sprintf("lastfm_%s", p.generateID(track_detail.Name, track_detail.Artist.Name)),
-		MediaType:  p.determineAudioMediaType(track_detail.Name),
-		Title:      track_detail.Name,
-		Artist:     track_detail.Artist.Name,
-		AlbumArtist: track_detail.Artist.Name,
-		Album:      track_detail.Album.Title,
-		Confidence: p.calculateLastFMConfidence(track_detail.Listeners, track_detail.Playcount),
+		MediaID:           fmt.Sprintf("lastfm_%s", p.generateID(track_detail.Name, track_detail.Artist.Name)),
+		MediaType:         p.determineAudioMediaType(track_detail.Name),
+		Title:             track_detail.Name,
+		Artist:            track_detail.Artist.Name,
+		AlbumArtist:       track_detail.Artist.Name,
+		Album:             track_detail.Album.Title,
+		Confidence:        p.calculateLastFMConfidence(track_detail.Listeners, track_detail.Playcount),
 		RecognitionMethod: "metadata_search",
-		APIProvider: "Last.fm",
+		APIProvider:       "Last.fm",
 	}
 
 	// Parse duration
@@ -639,14 +639,14 @@ func (p *MusicRecognitionProvider) getMusicBrainzDetails(ctx context.Context, re
 
 func (p *MusicRecognitionProvider) convertMusicBrainzRecording(recording MusicBrainzRecording) *MediaRecognitionResult {
 	result := &MediaRecognitionResult{
-		MediaID:    fmt.Sprintf("musicbrainz_%s", recording.ID),
-		MediaType:  p.determineAudioMediaType(recording.Title),
-		Title:      recording.Title,
-		Duration:   int64(recording.Length),
-		Confidence: float64(recording.Score) / 100.0,
+		MediaID:           fmt.Sprintf("musicbrainz_%s", recording.ID),
+		MediaType:         p.determineAudioMediaType(recording.Title),
+		Title:             recording.Title,
+		Duration:          int64(recording.Length),
+		Confidence:        float64(recording.Score) / 100.0,
 		RecognitionMethod: "metadata_search",
-		APIProvider: "MusicBrainz",
-		MusicBrainzID: recording.ID,
+		APIProvider:       "MusicBrainz",
+		MusicBrainzID:     recording.ID,
 	}
 
 	// Extract artist information
@@ -719,16 +719,16 @@ func (p *MusicRecognitionProvider) basicMusicRecognition(req *MediaRecognitionRe
 	}
 
 	return &MediaRecognitionResult{
-		MediaID:       fmt.Sprintf("basic_music_%s_%d", strings.ReplaceAll(title, " ", "_"), time.Now().Unix()),
-		MediaType:     mediaType,
-		Title:         title,
-		Artist:        artist,
-		Album:         album,
-		TrackNumber:   trackNumber,
-		Confidence:    0.3, // Low confidence for basic recognition
+		MediaID:           fmt.Sprintf("basic_music_%s_%d", strings.ReplaceAll(title, " ", "_"), time.Now().Unix()),
+		MediaType:         mediaType,
+		Title:             title,
+		Artist:            artist,
+		Album:             album,
+		TrackNumber:       trackNumber,
+		Confidence:        0.3, // Low confidence for basic recognition
 		RecognitionMethod: "filename_parsing",
-		APIProvider:   "basic",
-		ExternalIDs:   make(map[string]string),
+		APIProvider:       "basic",
+		ExternalIDs:       make(map[string]string),
 	}
 }
 
@@ -751,9 +751,9 @@ func (p *MusicRecognitionProvider) generateAudioFingerprint(audioSample []byte) 
 		SampleRate: analysis.SampleRate,
 		Channels:   analysis.Channels,
 		Features: map[string]float64{
-			"energy":    analysis.Energy,
-			"tempo":     analysis.Tempo,
-			"valence":   analysis.Valence,
+			"energy":  analysis.Energy,
+			"tempo":   analysis.Tempo,
+			"valence": analysis.Valence,
 		},
 		Segments: p.generateFingerprintSegments(audioSample, analysis),
 	}
@@ -766,13 +766,13 @@ func (p *MusicRecognitionProvider) analyzeAudioFeatures(audioSample []byte) *Aud
 	// In production, use proper audio analysis libraries
 
 	analysis := &AudioFingerprintAnalysis{
-		Duration:    float64(len(audioSample)) / 44100.0 / 2.0, // Assume 44.1kHz stereo
-		SampleRate:  44100,
-		Channels:    2,
-		BitRate:     1411, // CD quality
-		Tempo:       120.0 + float64(len(audioSample)%60), // Mock tempo
-		Energy:      0.5 + float64(len(audioSample)%100)/200.0, // Mock energy
-		Valence:     0.5 + float64(len(audioSample)%50)/100.0,  // Mock valence
+		Duration:   float64(len(audioSample)) / 44100.0 / 2.0, // Assume 44.1kHz stereo
+		SampleRate: 44100,
+		Channels:   2,
+		BitRate:    1411,                                      // CD quality
+		Tempo:      120.0 + float64(len(audioSample)%60),      // Mock tempo
+		Energy:     0.5 + float64(len(audioSample)%100)/200.0, // Mock energy
+		Valence:    0.5 + float64(len(audioSample)%50)/100.0,  // Mock valence
 	}
 
 	// Generate mock features
@@ -993,22 +993,22 @@ func (p *MusicRecognitionProvider) GetConfidenceThreshold() float64 {
 
 // AcoustID API response structure
 type AcoustIDResponse struct {
-	Status  string          `json:"status"`
+	Status  string           `json:"status"`
 	Results []AcoustIDResult `json:"results"`
 }
 
 type AcoustIDResult struct {
-	ID         string                  `json:"id"`
-	Score      float64                 `json:"score"`
-	Recordings []AcoustIDRecording     `json:"recordings"`
+	ID         string              `json:"id"`
+	Score      float64             `json:"score"`
+	Recordings []AcoustIDRecording `json:"recordings"`
 }
 
 type AcoustIDRecording struct {
-	ID       string                 `json:"id"`
-	Title    string                 `json:"title"`
-	Duration float64                `json:"duration"`
-	Artists  []AcoustIDArtist       `json:"artists"`
-	Releases []AcoustIDRelease      `json:"releases"`
+	ID       string            `json:"id"`
+	Title    string            `json:"title"`
+	Duration float64           `json:"duration"`
+	Artists  []AcoustIDArtist  `json:"artists"`
+	Releases []AcoustIDRelease `json:"releases"`
 }
 
 type AcoustIDArtist struct {
@@ -1017,8 +1017,8 @@ type AcoustIDArtist struct {
 }
 
 type AcoustIDRelease struct {
-	ID     string `json:"id"`
-	Title  string `json:"title"`
-	Date   string `json:"date"`
+	ID      string `json:"id"`
+	Title   string `json:"title"`
+	Date    string `json:"date"`
 	Country string `json:"country"`
 }

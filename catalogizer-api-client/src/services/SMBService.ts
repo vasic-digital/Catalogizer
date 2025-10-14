@@ -168,7 +168,7 @@ export class SMBService {
   /**
    * Browse directories in an SMB share
    */
-  public async browse(id: number, path: string = ''): Promise<{
+  public async browse(id: number, path = ''): Promise<{
     current_path: string;
     directories: Array<{ name: string; path: string }>;
     files: Array<{ name: string; path: string; size: number; modified: string }>;
@@ -227,7 +227,7 @@ export class SMBService {
   /**
    * Get SMB connection logs
    */
-  public async getLogs(id?: number, limit: number = 100): Promise<Array<{
+  public async getLogs(id?: number, limit = 100): Promise<Array<{
     id: number;
     config_id: number;
     level: string;

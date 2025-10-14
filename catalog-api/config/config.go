@@ -82,16 +82,16 @@ type StorageConfig struct {
 
 // StorageRootConfig represents configuration for a single storage root
 type StorageRootConfig struct {
-	ID                      string                 `json:"id"`
-	Name                    string                 `json:"name"`
-	Protocol                string                 `json:"protocol"` // smb, ftp, nfs, webdav, local
-	Enabled                 bool                   `json:"enabled"`
-	MaxDepth                int                    `json:"max_depth"`
-	EnableDuplicateDetection bool                  `json:"enable_duplicate_detection"`
-	EnableMetadataExtraction bool                  `json:"enable_metadata_extraction"`
-	IncludePatterns         []string               `json:"include_patterns,omitempty"`
-	ExcludePatterns         []string               `json:"exclude_patterns,omitempty"`
-	Settings                map[string]interface{} `json:"settings"` // Protocol-specific settings
+	ID                       string                 `json:"id"`
+	Name                     string                 `json:"name"`
+	Protocol                 string                 `json:"protocol"` // smb, ftp, nfs, webdav, local
+	Enabled                  bool                   `json:"enabled"`
+	MaxDepth                 int                    `json:"max_depth"`
+	EnableDuplicateDetection bool                   `json:"enable_duplicate_detection"`
+	EnableMetadataExtraction bool                   `json:"enable_metadata_extraction"`
+	IncludePatterns          []string               `json:"include_patterns,omitempty"`
+	ExcludePatterns          []string               `json:"exclude_patterns,omitempty"`
+	Settings                 map[string]interface{} `json:"settings"` // Protocol-specific settings
 }
 
 // LoadConfig loads configuration from file or creates default
@@ -160,7 +160,7 @@ func getDefaultConfig() *Config {
 			EnableCache:          true,
 			CacheTTLMinutes:      15,
 			MaxConcurrentScans:   3,
-			DownloadChunkSize:    1024 * 1024, // 1MB
+			DownloadChunkSize:    1024 * 1024,            // 1MB
 			MaxArchiveSize:       1024 * 1024 * 1024 * 5, // 5GB
 			AllowedDownloadTypes: []string{"*"},
 			TempDir:              "/tmp/catalog-api",
@@ -168,11 +168,11 @@ func getDefaultConfig() *Config {
 		Storage: StorageConfig{
 			Roots: []StorageRootConfig{
 				{
-					ID:                      "local-example",
-					Name:                    "Local Files",
-					Protocol:                "local",
-					Enabled:                 true,
-					MaxDepth:                10,
+					ID:                       "local-example",
+					Name:                     "Local Files",
+					Protocol:                 "local",
+					Enabled:                  true,
+					MaxDepth:                 10,
 					EnableDuplicateDetection: true,
 					EnableMetadataExtraction: true,
 					Settings: map[string]interface{}{

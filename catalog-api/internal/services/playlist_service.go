@@ -17,47 +17,47 @@ type PlaylistService struct {
 }
 
 type Playlist struct {
-	ID               int64     `json:"id" db:"id"`
-	UserID           int64     `json:"user_id" db:"user_id"`
-	Name             string    `json:"name" db:"name"`
-	Description      string    `json:"description" db:"description"`
-	IsPublic         bool      `json:"is_public" db:"is_public"`
-	IsSmartPlaylist  bool      `json:"is_smart_playlist" db:"is_smart_playlist"`
-	SmartCriteria    string    `json:"smart_criteria" db:"smart_criteria"`
-	CoverArtURL      string    `json:"cover_art_url" db:"cover_art_url"`
-	TrackCount       int       `json:"track_count" db:"track_count"`
-	TotalDuration    int64     `json:"total_duration" db:"total_duration"`
-	PlayCount        int64     `json:"play_count" db:"play_count"`
-	LastPlayed       *time.Time `json:"last_played" db:"last_played"`
-	CreatedAt        time.Time `json:"created_at" db:"created_at"`
-	UpdatedAt        time.Time `json:"updated_at" db:"updated_at"`
-	Tags             []string  `json:"tags"`
-	CollaboratorIDs  []int64   `json:"collaborator_ids"`
+	ID              int64      `json:"id" db:"id"`
+	UserID          int64      `json:"user_id" db:"user_id"`
+	Name            string     `json:"name" db:"name"`
+	Description     string     `json:"description" db:"description"`
+	IsPublic        bool       `json:"is_public" db:"is_public"`
+	IsSmartPlaylist bool       `json:"is_smart_playlist" db:"is_smart_playlist"`
+	SmartCriteria   string     `json:"smart_criteria" db:"smart_criteria"`
+	CoverArtURL     string     `json:"cover_art_url" db:"cover_art_url"`
+	TrackCount      int        `json:"track_count" db:"track_count"`
+	TotalDuration   int64      `json:"total_duration" db:"total_duration"`
+	PlayCount       int64      `json:"play_count" db:"play_count"`
+	LastPlayed      *time.Time `json:"last_played" db:"last_played"`
+	CreatedAt       time.Time  `json:"created_at" db:"created_at"`
+	UpdatedAt       time.Time  `json:"updated_at" db:"updated_at"`
+	Tags            []string   `json:"tags"`
+	CollaboratorIDs []int64    `json:"collaborator_ids"`
 }
 
 type PlaylistItem struct {
-	ID           int64     `json:"id" db:"id"`
-	PlaylistID   int64     `json:"playlist_id" db:"playlist_id"`
-	MediaItemID  int64     `json:"media_item_id" db:"media_item_id"`
-	Position     int       `json:"position" db:"position"`
-	AddedBy      int64     `json:"added_by" db:"added_by"`
-	AddedAt      time.Time `json:"added_at" db:"added_at"`
-	CustomTitle  string    `json:"custom_title" db:"custom_title"`
-	StartTime    *int64    `json:"start_time" db:"start_time"`
-	EndTime      *int64    `json:"end_time" db:"end_time"`
+	ID          int64     `json:"id" db:"id"`
+	PlaylistID  int64     `json:"playlist_id" db:"playlist_id"`
+	MediaItemID int64     `json:"media_item_id" db:"media_item_id"`
+	Position    int       `json:"position" db:"position"`
+	AddedBy     int64     `json:"added_by" db:"added_by"`
+	AddedAt     time.Time `json:"added_at" db:"added_at"`
+	CustomTitle string    `json:"custom_title" db:"custom_title"`
+	StartTime   *int64    `json:"start_time" db:"start_time"`
+	EndTime     *int64    `json:"end_time" db:"end_time"`
 }
 
 type PlaybackQueue struct {
-	ID                int64     `json:"id" db:"id"`
-	UserID            int64     `json:"user_id" db:"user_id"`
-	Name              string    `json:"name" db:"name"`
-	CurrentItemID     *int64    `json:"current_item_id" db:"current_item_id"`
-	CurrentPosition   int       `json:"current_position" db:"current_position"`
-	ShuffleEnabled    bool      `json:"shuffle_enabled" db:"shuffle_enabled"`
-	RepeatMode        string    `json:"repeat_mode" db:"repeat_mode"` // none, track, playlist
-	ShuffleHistory    string    `json:"shuffle_history" db:"shuffle_history"`
-	CreatedAt         time.Time `json:"created_at" db:"created_at"`
-	UpdatedAt         time.Time `json:"updated_at" db:"updated_at"`
+	ID              int64     `json:"id" db:"id"`
+	UserID          int64     `json:"user_id" db:"user_id"`
+	Name            string    `json:"name" db:"name"`
+	CurrentItemID   *int64    `json:"current_item_id" db:"current_item_id"`
+	CurrentPosition int       `json:"current_position" db:"current_position"`
+	ShuffleEnabled  bool      `json:"shuffle_enabled" db:"shuffle_enabled"`
+	RepeatMode      string    `json:"repeat_mode" db:"repeat_mode"` // none, track, playlist
+	ShuffleHistory  string    `json:"shuffle_history" db:"shuffle_history"`
+	CreatedAt       time.Time `json:"created_at" db:"created_at"`
+	UpdatedAt       time.Time `json:"updated_at" db:"updated_at"`
 }
 
 type QueueItem struct {
@@ -84,14 +84,14 @@ type SmartRule struct {
 }
 
 type CreatePlaylistRequest struct {
-	UserID          int64    `json:"user_id"`
-	Name            string   `json:"name"`
-	Description     string   `json:"description"`
-	IsPublic        bool     `json:"is_public"`
-	IsSmartPlaylist bool     `json:"is_smart_playlist"`
+	UserID          int64                  `json:"user_id"`
+	Name            string                 `json:"name"`
+	Description     string                 `json:"description"`
+	IsPublic        bool                   `json:"is_public"`
+	IsSmartPlaylist bool                   `json:"is_smart_playlist"`
 	SmartCriteria   *SmartPlaylistCriteria `json:"smart_criteria"`
-	Tags            []string `json:"tags"`
-	CollaboratorIDs []int64  `json:"collaborator_ids"`
+	Tags            []string               `json:"tags"`
+	CollaboratorIDs []int64                `json:"collaborator_ids"`
 }
 
 type UpdatePlaylistRequest struct {
@@ -106,27 +106,27 @@ type UpdatePlaylistRequest struct {
 }
 
 type AddToPlaylistRequest struct {
-	PlaylistID    int64   `json:"playlist_id"`
-	MediaItemIDs  []int64 `json:"media_item_ids"`
-	UserID        int64   `json:"user_id"`
-	Position      *int    `json:"position"`
-	CustomTitles  map[int64]string `json:"custom_titles"`
+	PlaylistID   int64            `json:"playlist_id"`
+	MediaItemIDs []int64          `json:"media_item_ids"`
+	UserID       int64            `json:"user_id"`
+	Position     *int             `json:"position"`
+	CustomTitles map[int64]string `json:"custom_titles"`
 }
 
 type ReorderPlaylistRequest struct {
-	PlaylistID int64 `json:"playlist_id"`
-	UserID     int64 `json:"user_id"`
-	ItemID     int64 `json:"item_id"`
-	NewPosition int  `json:"new_position"`
+	PlaylistID  int64 `json:"playlist_id"`
+	UserID      int64 `json:"user_id"`
+	ItemID      int64 `json:"item_id"`
+	NewPosition int   `json:"new_position"`
 }
 
 type PlaylistSearchRequest struct {
-	UserID   int64  `json:"user_id"`
-	Query    string `json:"query"`
-	IsPublic *bool  `json:"is_public"`
+	UserID   int64    `json:"user_id"`
+	Query    string   `json:"query"`
+	IsPublic *bool    `json:"is_public"`
 	Tags     []string `json:"tags"`
-	Limit    int    `json:"limit"`
-	Offset   int    `json:"offset"`
+	Limit    int      `json:"limit"`
+	Offset   int      `json:"offset"`
 }
 
 func NewPlaylistService(db *sql.DB, logger *zap.Logger) *PlaylistService {

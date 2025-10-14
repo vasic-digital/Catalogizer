@@ -5,10 +5,13 @@ import androidx.work.*
 import androidx.work.ExistingPeriodicWorkPolicy
 import com.catalogizer.android.data.local.CatalogizerDatabase
 import com.catalogizer.android.data.remote.CatalogizerApi
+import com.catalogizer.android.data.remote.toApiResult
 import com.catalogizer.android.data.repository.AuthRepository
 import com.catalogizer.android.data.repository.MediaRepository
 import kotlinx.coroutines.flow.*
 import kotlinx.serialization.Serializable
+import kotlinx.serialization.json.Json
+import kotlinx.serialization.encodeToString
 import java.util.concurrent.TimeUnit
 import javax.inject.Inject
 import javax.inject.Singleton
@@ -41,11 +44,13 @@ class SyncManager @Inject constructor(
 
     private val _syncStatus = MutableStateFlow(SyncStatus())
     val syncStatus: StateFlow<SyncStatus> = _syncStatus.asStateFlow()
+    private val syncOperationDao = database.syncOperationDao()
 
     companion object {
         private const val SYNC_WORK_NAME = "catalogizer_sync"
         private const val BACKGROUND_SYNC_INTERVAL_HOURS = 6L
         private const val MAX_RETRY_ATTEMPTS = 3
+        private val json = Json { ignoreUnknownKeys = true }
     }
 
     fun startPeriodicSync() {
@@ -134,7 +139,7 @@ class SyncManager @Inject constructor(
 
         try {
             // 1. Sync pending operations (uploads, favorites, progress updates)
-            val pendingOps = database.syncOperationDao().getPendingOperations()
+            val pendingOps = syncOperationDao.getPendingOperations()
             _syncStatus.update { it.copy(pendingOperations = pendingOps.size) }
 
             for (operation in pendingOps) {
@@ -149,21 +154,27 @@ class SyncManager @Inject constructor(
                         SyncOperationType.UPLOAD_RATING -> {
                             syncRating(operation)
                         }
+                        SyncOperationType.UPDATE_METADATA -> {
+                            // TODO: Implement metadata sync
+                        }
+                        SyncOperationType.DELETE_MEDIA -> {
+                            // TODO: Implement media deletion sync
+                        }
                     }
 
                     // Mark operation as completed
-                    database.syncOperationDao().deleteOperation(operation.id)
+                    syncOperationDao.deleteOperation(operation.id)
                     syncedItems++
                 } catch (e: Exception) {
                     // Update retry count
                     if (operation.retryCount < MAX_RETRY_ATTEMPTS) {
-                        database.syncOperationDao().updateRetryCount(
+                        syncOperationDao.updateRetryCount(
                             operation.id,
                             operation.retryCount + 1
                         )
                     } else {
                         // Max retries reached, delete operation
-                        database.syncOperationDao().deleteOperation(operation.id)
+                        syncOperationDao.deleteOperation(operation.id)
                     }
                     failedItems++
                 }
@@ -171,7 +182,7 @@ class SyncManager @Inject constructor(
 
             // 2. Download media updates from server
             val lastSyncTime = _syncStatus.value.lastSyncTime ?: 0L
-            val updatedMedia = api.getUpdatedMedia(lastSyncTime).data ?: emptyList()
+            val updatedMedia = api.getUpdatedMedia(lastSyncTime).toApiResult().data ?: emptyList()
 
             // Update local database with server changes
             for (mediaItem in updatedMedia) {
@@ -206,35 +217,37 @@ class SyncManager @Inject constructor(
 
     private suspend fun syncWatchProgress(operation: SyncOperation) {
         val progressData = operation.data?.let {
-            kotlinx.serialization.json.Json.decodeFromString<WatchProgressData>(it)
+            Json.Default.decodeFromString<WatchProgressData>(it)
         } ?: return
 
-        api.updateWatchProgress(
+        api.updateUserWatchProgress(
             progressData.mediaId,
-            progressData.progress,
-            progressData.timestamp
+            mapOf(
+                "progress" to progressData.progress,
+                "timestamp" to progressData.timestamp
+            )
         )
     }
 
     private suspend fun syncFavoriteStatus(operation: SyncOperation) {
         val favoriteData = operation.data?.let {
-            kotlinx.serialization.json.Json.decodeFromString<FavoriteData>(it)
+            Json.Default.decodeFromString<FavoriteData>(it)
         } ?: return
 
-        api.setFavoriteStatus(favoriteData.mediaId, favoriteData.isFavorite)
+        api.setFavoriteStatus(favoriteData.mediaId, mapOf("isFavorite" to favoriteData.isFavorite))
     }
 
     private suspend fun syncRating(operation: SyncOperation) {
         val ratingData = operation.data?.let {
-            kotlinx.serialization.json.Json.decodeFromString<RatingData>(it)
+            Json.Default.decodeFromString<RatingData>(it)
         } ?: return
 
-        api.rateMedia(ratingData.mediaId, ratingData.rating)
+        api.rateMedia(ratingData.mediaId, mapOf("rating" to ratingData.rating))
     }
 
     private suspend fun syncUserPreferences() {
         try {
-            val serverPrefs = api.getUserPreferences().data
+            val serverPrefs = api.getUserPreferences().toApiResult().data
             serverPrefs?.let {
                 // Update local preferences with server data
                 // This would involve updating SharedPreferences or DataStore
@@ -250,11 +263,11 @@ class SyncManager @Inject constructor(
         val operation = SyncOperation(
             type = SyncOperationType.UPDATE_PROGRESS,
             mediaId = mediaId,
-            data = kotlinx.serialization.json.Json.encodeToString(data),
+            data = Json.Default.encodeToString(data),
             timestamp = System.currentTimeMillis()
         )
 
-        database.syncOperationDao().insertOperation(operation)
+        syncOperationDao.insertOperation(operation)
         updatePendingOperationsCount()
     }
 
@@ -263,11 +276,11 @@ class SyncManager @Inject constructor(
         val operation = SyncOperation(
             type = SyncOperationType.TOGGLE_FAVORITE,
             mediaId = mediaId,
-            data = kotlinx.serialization.json.Json.encodeToString(data),
+            data = Json.Default.encodeToString(data),
             timestamp = System.currentTimeMillis()
         )
 
-        database.syncOperationDao().insertOperation(operation)
+        syncOperationDao.insertOperation(operation)
         updatePendingOperationsCount()
     }
 
@@ -276,26 +289,26 @@ class SyncManager @Inject constructor(
         val operation = SyncOperation(
             type = SyncOperationType.UPLOAD_RATING,
             mediaId = mediaId,
-            data = kotlinx.serialization.json.Json.encodeToString(data),
+            data = Json.Default.encodeToString(data),
             timestamp = System.currentTimeMillis()
         )
 
-        database.syncOperationDao().insertOperation(operation)
+        syncOperationDao.insertOperation(operation)
         updatePendingOperationsCount()
     }
 
     private suspend fun updatePendingOperationsCount() {
-        val count = database.syncOperationDao().getPendingOperationsCount()
+        val count = syncOperationDao.getPendingOperationsCount()
         _syncStatus.update { it.copy(pendingOperations = count) }
     }
 
     suspend fun clearFailedOperations() {
-        database.syncOperationDao().deleteFailedOperations(MAX_RETRY_ATTEMPTS)
+        syncOperationDao.deleteFailedOperations(MAX_RETRY_ATTEMPTS)
         updatePendingOperationsCount()
     }
 
     suspend fun retryFailedOperations() {
-        database.syncOperationDao().resetRetryCount()
+        syncOperationDao.resetRetryCount()
         updatePendingOperationsCount()
     }
 }

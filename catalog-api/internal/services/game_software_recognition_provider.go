@@ -29,68 +29,68 @@ type GameSoftwareRecognitionProvider struct {
 
 // IGDB (Internet Game Database) API structures
 type IGDBGame struct {
-	ID                int                `json:"id"`
-	Name              string             `json:"name"`
-	Summary           string             `json:"summary"`
-	Storyline         string             `json:"storyline"`
-	FirstReleaseDate  int64              `json:"first_release_date"`
-	Category          int                `json:"category"`
-	Status            int                `json:"status"`
-	Rating            float64            `json:"rating"`
-	RatingCount       int                `json:"rating_count"`
-	AggregatedRating  float64            `json:"aggregated_rating"`
-	AggregatedRatingCount int            `json:"aggregated_rating_count"`
-	TotalRating       float64            `json:"total_rating"`
-	TotalRatingCount  int                `json:"total_rating_count"`
-	Popularity        float64            `json:"popularity"`
-	Cover             IGDBCover          `json:"cover"`
-	Screenshots       []IGDBScreenshot   `json:"screenshots"`
-	Artworks          []IGDBArtwork      `json:"artworks"`
-	Videos            []IGDBVideo        `json:"videos"`
-	Genres            []IGDBGenre        `json:"genres"`
-	Themes            []IGDBTheme        `json:"themes"`
-	Platforms         []IGDBPlatform     `json:"platforms"`
-	GameModes         []IGDBGameMode     `json:"game_modes"`
-	PlayerPerspectives []IGDBPlayerPerspective `json:"player_perspectives"`
-	InvolvedCompanies []IGDBInvolvedCompany `json:"involved_companies"`
-	Franchises        []IGDBFranchise    `json:"franchises"`
-	Collection        IGDBCollection     `json:"collection"`
-	DLC               []IGDBGame         `json:"dlcs"`
-	Expansions        []IGDBGame         `json:"expansions"`
-	StandaloneExpansions []IGDBGame      `json:"standalone_expansions"`
-	Remakes           []IGDBGame         `json:"remakes"`
-	Remasters         []IGDBGame         `json:"remasters"`
-	ExternalGames     []IGDBExternalGame `json:"external_games"`
-	Websites          []IGDBWebsite      `json:"websites"`
-	LanguageSupports  []IGDBLanguageSupport `json:"language_supports"`
-	MultiplayerModes  []IGDBMultiplayerMode `json:"multiplayer_modes"`
-	AlternativeNames  []IGDBAlternativeName `json:"alternative_names"`
-	Keywords          []IGDBKeyword      `json:"keywords"`
-	Tags              []int              `json:"tags"`
+	ID                    int                     `json:"id"`
+	Name                  string                  `json:"name"`
+	Summary               string                  `json:"summary"`
+	Storyline             string                  `json:"storyline"`
+	FirstReleaseDate      int64                   `json:"first_release_date"`
+	Category              int                     `json:"category"`
+	Status                int                     `json:"status"`
+	Rating                float64                 `json:"rating"`
+	RatingCount           int                     `json:"rating_count"`
+	AggregatedRating      float64                 `json:"aggregated_rating"`
+	AggregatedRatingCount int                     `json:"aggregated_rating_count"`
+	TotalRating           float64                 `json:"total_rating"`
+	TotalRatingCount      int                     `json:"total_rating_count"`
+	Popularity            float64                 `json:"popularity"`
+	Cover                 IGDBCover               `json:"cover"`
+	Screenshots           []IGDBScreenshot        `json:"screenshots"`
+	Artworks              []IGDBArtwork           `json:"artworks"`
+	Videos                []IGDBVideo             `json:"videos"`
+	Genres                []IGDBGenre             `json:"genres"`
+	Themes                []IGDBTheme             `json:"themes"`
+	Platforms             []IGDBPlatform          `json:"platforms"`
+	GameModes             []IGDBGameMode          `json:"game_modes"`
+	PlayerPerspectives    []IGDBPlayerPerspective `json:"player_perspectives"`
+	InvolvedCompanies     []IGDBInvolvedCompany   `json:"involved_companies"`
+	Franchises            []IGDBFranchise         `json:"franchises"`
+	Collection            IGDBCollection          `json:"collection"`
+	DLC                   []IGDBGame              `json:"dlcs"`
+	Expansions            []IGDBGame              `json:"expansions"`
+	StandaloneExpansions  []IGDBGame              `json:"standalone_expansions"`
+	Remakes               []IGDBGame              `json:"remakes"`
+	Remasters             []IGDBGame              `json:"remasters"`
+	ExternalGames         []IGDBExternalGame      `json:"external_games"`
+	Websites              []IGDBWebsite           `json:"websites"`
+	LanguageSupports      []IGDBLanguageSupport   `json:"language_supports"`
+	MultiplayerModes      []IGDBMultiplayerMode   `json:"multiplayer_modes"`
+	AlternativeNames      []IGDBAlternativeName   `json:"alternative_names"`
+	Keywords              []IGDBKeyword           `json:"keywords"`
+	Tags                  []int                   `json:"tags"`
 }
 
 type IGDBCover struct {
-	ID       int    `json:"id"`
-	URL      string `json:"url"`
-	ImageID  string `json:"image_id"`
-	Width    int    `json:"width"`
-	Height   int    `json:"height"`
+	ID      int    `json:"id"`
+	URL     string `json:"url"`
+	ImageID string `json:"image_id"`
+	Width   int    `json:"width"`
+	Height  int    `json:"height"`
 }
 
 type IGDBScreenshot struct {
-	ID       int    `json:"id"`
-	URL      string `json:"url"`
-	ImageID  string `json:"image_id"`
-	Width    int    `json:"width"`
-	Height   int    `json:"height"`
+	ID      int    `json:"id"`
+	URL     string `json:"url"`
+	ImageID string `json:"image_id"`
+	Width   int    `json:"width"`
+	Height  int    `json:"height"`
 }
 
 type IGDBArtwork struct {
-	ID       int    `json:"id"`
-	URL      string `json:"url"`
-	ImageID  string `json:"image_id"`
-	Width    int    `json:"width"`
-	Height   int    `json:"height"`
+	ID      int    `json:"id"`
+	URL     string `json:"url"`
+	ImageID string `json:"image_id"`
+	Width   int    `json:"width"`
+	Height  int    `json:"height"`
 }
 
 type IGDBVideo struct {
@@ -141,23 +141,23 @@ type IGDBPlayerPerspective struct {
 }
 
 type IGDBInvolvedCompany struct {
-	ID        int         `json:"id"`
-	Company   IGDBCompany `json:"company"`
-	Developer bool        `json:"developer"`
-	Publisher bool        `json:"publisher"`
-	Porting   bool        `json:"porting"`
-	Supporting bool       `json:"supporting"`
+	ID         int         `json:"id"`
+	Company    IGDBCompany `json:"company"`
+	Developer  bool        `json:"developer"`
+	Publisher  bool        `json:"publisher"`
+	Porting    bool        `json:"porting"`
+	Supporting bool        `json:"supporting"`
 }
 
 type IGDBCompany struct {
-	ID            int              `json:"id"`
-	Name          string           `json:"name"`
-	Slug          string           `json:"slug"`
-	Country       int              `json:"country"`
-	Description   string           `json:"description"`
-	StartDate     int64            `json:"start_date"`
-	Logo          IGDBCompanyLogo  `json:"logo"`
-	Websites      []IGDBWebsite    `json:"websites"`
+	ID          int             `json:"id"`
+	Name        string          `json:"name"`
+	Slug        string          `json:"slug"`
+	Country     int             `json:"country"`
+	Description string          `json:"description"`
+	StartDate   int64           `json:"start_date"`
+	Logo        IGDBCompanyLogo `json:"logo"`
+	Websites    []IGDBWebsite   `json:"websites"`
 }
 
 type IGDBCompanyLogo struct {
@@ -179,14 +179,14 @@ type IGDBCollection struct {
 }
 
 type IGDBExternalGame struct {
-	ID       int    `json:"id"`
-	Category int    `json:"category"`
-	UID      string `json:"uid"`
-	URL      string `json:"url"`
-	Year     int    `json:"year"`
-	Media    int    `json:"media"`
-	Platform int    `json:"platform"`
-	Countries []int `json:"countries"`
+	ID        int    `json:"id"`
+	Category  int    `json:"category"`
+	UID       string `json:"uid"`
+	URL       string `json:"url"`
+	Year      int    `json:"year"`
+	Media     int    `json:"media"`
+	Platform  int    `json:"platform"`
+	Countries []int  `json:"countries"`
 }
 
 type IGDBWebsite struct {
@@ -197,8 +197,8 @@ type IGDBWebsite struct {
 }
 
 type IGDBLanguageSupport struct {
-	ID                  int            `json:"id"`
-	Language            IGDBLanguage   `json:"language"`
+	ID                  int                     `json:"id"`
+	Language            IGDBLanguage            `json:"language"`
 	LanguageSupportType IGDBLanguageSupportType `json:"language_support_type"`
 }
 
@@ -215,18 +215,18 @@ type IGDBLanguageSupportType struct {
 }
 
 type IGDBMultiplayerMode struct {
-	ID                  int  `json:"id"`
-	CampaignCoop        bool `json:"campaigncoop"`
-	LancCoop            bool `json:"lancoop"`
-	OfflineCoop         bool `json:"offlinecoop"`
-	OfflineCoopMax      int  `json:"offlinecoopmax"`
-	OfflineMax          int  `json:"offlinemax"`
-	OnlineCoop          bool `json:"onlinecoop"`
-	OnlineCoopMax       int  `json:"onlinecoopmax"`
-	OnlineMax           int  `json:"onlinemax"`
-	Platform            int  `json:"platform"`
-	SplitScreen         bool `json:"splitscreen"`
-	SplitScreenOnline   bool `json:"splitscreenonline"`
+	ID                int  `json:"id"`
+	CampaignCoop      bool `json:"campaigncoop"`
+	LancCoop          bool `json:"lancoop"`
+	OfflineCoop       bool `json:"offlinecoop"`
+	OfflineCoopMax    int  `json:"offlinecoopmax"`
+	OfflineMax        int  `json:"offlinemax"`
+	OnlineCoop        bool `json:"onlinecoop"`
+	OnlineCoopMax     int  `json:"onlinecoopmax"`
+	OnlineMax         int  `json:"onlinemax"`
+	Platform          int  `json:"platform"`
+	SplitScreen       bool `json:"splitscreen"`
+	SplitScreenOnline bool `json:"splitscreenonline"`
 }
 
 type IGDBAlternativeName struct {
@@ -243,46 +243,46 @@ type IGDBKeyword struct {
 
 // Steam API structures
 type SteamAppDetails struct {
-	Success bool           `json:"success"`
-	Data    SteamAppData   `json:"data"`
+	Success bool         `json:"success"`
+	Data    SteamAppData `json:"data"`
 }
 
 type SteamAppData struct {
-	Type                    string                 `json:"type"`
-	Name                    string                 `json:"name"`
-	SteamAppID              int                    `json:"steam_appid"`
-	RequiredAge             int                    `json:"required_age"`
-	IsFree                  bool                   `json:"is_free"`
-	ControllerSupport       string                 `json:"controller_support"`
-	DLCs                    []int                  `json:"dlc"`
-	DetailedDescription     string                 `json:"detailed_description"`
-	AboutTheGame            string                 `json:"about_the_game"`
-	ShortDescription        string                 `json:"short_description"`
-	SupportedLanguages      string                 `json:"supported_languages"`
-	Reviews                 string                 `json:"reviews"`
-	HeaderImage             string                 `json:"header_image"`
-	Website                 string                 `json:"website"`
-	PCRequirements          SteamRequirements      `json:"pc_requirements"`
-	MacRequirements         SteamRequirements      `json:"mac_requirements"`
-	LinuxRequirements       SteamRequirements      `json:"linux_requirements"`
-	LegalNotice             string                 `json:"legal_notice"`
-	Developers              []string               `json:"developers"`
-	Publishers              []string               `json:"publishers"`
-	PriceOverview           SteamPriceOverview     `json:"price_overview"`
-	Packages                []int                  `json:"packages"`
-	PackageGroups           []SteamPackageGroup    `json:"package_groups"`
-	Platforms               SteamPlatforms         `json:"platforms"`
-	Metacritic              SteamMetacritic        `json:"metacritic"`
-	Categories              []SteamCategory        `json:"categories"`
-	Genres                  []SteamGenre           `json:"genres"`
-	Screenshots             []SteamScreenshot      `json:"screenshots"`
-	Movies                  []SteamMovie           `json:"movies"`
-	Recommendations         SteamRecommendations   `json:"recommendations"`
-	Achievements            SteamAchievements      `json:"achievements"`
-	ReleaseDate             SteamReleaseDate       `json:"release_date"`
-	SupportInfo             SteamSupportInfo       `json:"support_info"`
-	Background              string                 `json:"background"`
-	ContentDescriptors      SteamContentDescriptors `json:"content_descriptors"`
+	Type                string                  `json:"type"`
+	Name                string                  `json:"name"`
+	SteamAppID          int                     `json:"steam_appid"`
+	RequiredAge         int                     `json:"required_age"`
+	IsFree              bool                    `json:"is_free"`
+	ControllerSupport   string                  `json:"controller_support"`
+	DLCs                []int                   `json:"dlc"`
+	DetailedDescription string                  `json:"detailed_description"`
+	AboutTheGame        string                  `json:"about_the_game"`
+	ShortDescription    string                  `json:"short_description"`
+	SupportedLanguages  string                  `json:"supported_languages"`
+	Reviews             string                  `json:"reviews"`
+	HeaderImage         string                  `json:"header_image"`
+	Website             string                  `json:"website"`
+	PCRequirements      SteamRequirements       `json:"pc_requirements"`
+	MacRequirements     SteamRequirements       `json:"mac_requirements"`
+	LinuxRequirements   SteamRequirements       `json:"linux_requirements"`
+	LegalNotice         string                  `json:"legal_notice"`
+	Developers          []string                `json:"developers"`
+	Publishers          []string                `json:"publishers"`
+	PriceOverview       SteamPriceOverview      `json:"price_overview"`
+	Packages            []int                   `json:"packages"`
+	PackageGroups       []SteamPackageGroup     `json:"package_groups"`
+	Platforms           SteamPlatforms          `json:"platforms"`
+	Metacritic          SteamMetacritic         `json:"metacritic"`
+	Categories          []SteamCategory         `json:"categories"`
+	Genres              []SteamGenre            `json:"genres"`
+	Screenshots         []SteamScreenshot       `json:"screenshots"`
+	Movies              []SteamMovie            `json:"movies"`
+	Recommendations     SteamRecommendations    `json:"recommendations"`
+	Achievements        SteamAchievements       `json:"achievements"`
+	ReleaseDate         SteamReleaseDate        `json:"release_date"`
+	SupportInfo         SteamSupportInfo        `json:"support_info"`
+	Background          string                  `json:"background"`
+	ContentDescriptors  SteamContentDescriptors `json:"content_descriptors"`
 }
 
 type SteamRequirements struct {
@@ -291,34 +291,34 @@ type SteamRequirements struct {
 }
 
 type SteamPriceOverview struct {
-	Currency                string `json:"currency"`
-	Initial                 int    `json:"initial"`
-	Final                   int    `json:"final"`
-	DiscountPercent         int    `json:"discount_percent"`
-	InitialFormatted        string `json:"initial_formatted"`
-	FinalFormatted          string `json:"final_formatted"`
+	Currency         string `json:"currency"`
+	Initial          int    `json:"initial"`
+	Final            int    `json:"final"`
+	DiscountPercent  int    `json:"discount_percent"`
+	InitialFormatted string `json:"initial_formatted"`
+	FinalFormatted   string `json:"final_formatted"`
 }
 
 type SteamPackageGroup struct {
-	Name                    string          `json:"name"`
-	Title                   string          `json:"title"`
-	Description             string          `json:"description"`
-	SelectionText           string          `json:"selection_text"`
-	SaveText                string          `json:"save_text"`
-	DisplayType             int             `json:"display_type"`
-	IsRecurringSubscription string          `json:"is_recurring_subscription"`
-	Subs                    []SteamSub      `json:"subs"`
+	Name                    string     `json:"name"`
+	Title                   string     `json:"title"`
+	Description             string     `json:"description"`
+	SelectionText           string     `json:"selection_text"`
+	SaveText                string     `json:"save_text"`
+	DisplayType             int        `json:"display_type"`
+	IsRecurringSubscription string     `json:"is_recurring_subscription"`
+	Subs                    []SteamSub `json:"subs"`
 }
 
 type SteamSub struct {
-	PackageID               int    `json:"packageid"`
-	PercentSavingsText      string `json:"percent_savings_text"`
-	PercentSavings          int    `json:"percent_savings"`
-	OptionText              string `json:"option_text"`
-	OptionDescription       string `json:"option_description"`
-	CanGetFreeLicense       string `json:"can_get_free_license"`
-	IsFreeLicense           bool   `json:"is_free_license"`
-	PriceInCentsWithDiscount int   `json:"price_in_cents_with_discount"`
+	PackageID                int    `json:"packageid"`
+	PercentSavingsText       string `json:"percent_savings_text"`
+	PercentSavings           int    `json:"percent_savings"`
+	OptionText               string `json:"option_text"`
+	OptionDescription        string `json:"option_description"`
+	CanGetFreeLicense        string `json:"can_get_free_license"`
+	IsFreeLicense            bool   `json:"is_free_license"`
+	PriceInCentsWithDiscount int    `json:"price_in_cents_with_discount"`
 }
 
 type SteamPlatforms struct {
@@ -349,12 +349,12 @@ type SteamScreenshot struct {
 }
 
 type SteamMovie struct {
-	ID        int    `json:"id"`
-	Name      string `json:"name"`
-	Thumbnail string `json:"thumbnail"`
+	ID        int               `json:"id"`
+	Name      string            `json:"name"`
+	Thumbnail string            `json:"thumbnail"`
 	Webm      map[string]string `json:"webm"`
 	Mp4       map[string]string `json:"mp4"`
-	Highlight bool   `json:"highlight"`
+	Highlight bool              `json:"highlight"`
 }
 
 type SteamRecommendations struct {
@@ -362,8 +362,8 @@ type SteamRecommendations struct {
 }
 
 type SteamAchievements struct {
-	Total       int                    `json:"total"`
-	Highlighted []SteamAchievement     `json:"highlighted"`
+	Total       int                `json:"total"`
+	Highlighted []SteamAchievement `json:"highlighted"`
 }
 
 type SteamAchievement struct {
@@ -415,24 +415,24 @@ type PEInfo struct {
 }
 
 type PESection struct {
-	Name             string `json:"name"`
-	VirtualAddress   string `json:"virtual_address"`
-	VirtualSize      int    `json:"virtual_size"`
-	RawSize          int    `json:"raw_size"`
-	Characteristics  string `json:"characteristics"`
+	Name            string `json:"name"`
+	VirtualAddress  string `json:"virtual_address"`
+	VirtualSize     int    `json:"virtual_size"`
+	RawSize         int    `json:"raw_size"`
+	Characteristics string `json:"characteristics"`
 }
 
 type ELFInfo struct {
-	Class             string            `json:"class"`
-	Data              string            `json:"data"`
-	Version           string            `json:"version"`
-	OSABI             string            `json:"osabi"`
-	Machine           string            `json:"machine"`
-	Type              string            `json:"type"`
-	EntryPoint        string            `json:"entry_point"`
-	DynamicLibraries  []string          `json:"dynamic_libraries"`
-	Symbols           []string          `json:"symbols"`
-	Sections          []ELFSection      `json:"sections"`
+	Class            string       `json:"class"`
+	Data             string       `json:"data"`
+	Version          string       `json:"version"`
+	OSABI            string       `json:"osabi"`
+	Machine          string       `json:"machine"`
+	Type             string       `json:"type"`
+	EntryPoint       string       `json:"entry_point"`
+	DynamicLibraries []string     `json:"dynamic_libraries"`
+	Symbols          []string     `json:"symbols"`
+	Sections         []ELFSection `json:"sections"`
 }
 
 type ELFSection struct {
@@ -444,11 +444,11 @@ type ELFSection struct {
 }
 
 type MachoInfo struct {
-	Architecture     string            `json:"architecture"`
-	FileType         string            `json:"file_type"`
+	Architecture     string             `json:"architecture"`
+	FileType         string             `json:"file_type"`
 	LoadCommands     []MachoLoadCommand `json:"load_commands"`
-	DynamicLibraries []string          `json:"dynamic_libraries"`
-	Symbols          []string          `json:"symbols"`
+	DynamicLibraries []string           `json:"dynamic_libraries"`
+	Symbols          []string           `json:"symbols"`
 }
 
 type MachoLoadCommand struct {
@@ -462,14 +462,14 @@ func NewGameSoftwareRecognitionProvider(logger *zap.Logger) *GameSoftwareRecogni
 		logger:     logger,
 		httpClient: &http.Client{Timeout: 30 * time.Second},
 		baseURLs: map[string]string{
-			"igdb":           "https://api.igdb.com/v4",
-			"steam":          "https://store.steampowered.com/api",
-			"github":         "https://api.github.com",
-			"sourceforge":    "https://sourceforge.net/rest",
-			"winget":         "https://api.winget.run",
-			"flatpak":        "https://flathub.org/api",
-			"snapcraft":      "https://api.snapcraft.io",
-			"homebrew":       "https://formulae.brew.sh/api",
+			"igdb":        "https://api.igdb.com/v4",
+			"steam":       "https://store.steampowered.com/api",
+			"github":      "https://api.github.com",
+			"sourceforge": "https://sourceforge.net/rest",
+			"winget":      "https://api.winget.run",
+			"flatpak":     "https://flathub.org/api",
+			"snapcraft":   "https://api.snapcraft.io",
+			"homebrew":    "https://formulae.brew.sh/api",
 		},
 		apiKeys: map[string]string{
 			"igdb":   "free_api_key",
@@ -567,15 +567,15 @@ func (p *GameSoftwareRecognitionProvider) searchIGDB(ctx context.Context, name, 
 
 func (p *GameSoftwareRecognitionProvider) convertIGDBGame(game IGDBGame) *MediaRecognitionResult {
 	result := &MediaRecognitionResult{
-		MediaID:    fmt.Sprintf("igdb_%d", game.ID),
-		MediaType:  MediaTypeGame,
-		Title:      game.Name,
-		Description: game.Summary,
-		Rating:     game.Rating / 10.0, // IGDB uses 0-100 scale
-		Confidence: p.calculateIGDBConfidence(game.Rating, game.RatingCount, game.Popularity),
+		MediaID:           fmt.Sprintf("igdb_%d", game.ID),
+		MediaType:         MediaTypeGame,
+		Title:             game.Name,
+		Description:       game.Summary,
+		Rating:            game.Rating / 10.0, // IGDB uses 0-100 scale
+		Confidence:        p.calculateIGDBConfidence(game.Rating, game.RatingCount, game.Popularity),
 		RecognitionMethod: "igdb_api",
-		APIProvider: "IGDB",
-		IGDBId:     strconv.Itoa(game.ID),
+		APIProvider:       "IGDB",
+		IGDBId:            strconv.Itoa(game.ID),
 	}
 
 	// Parse release date
@@ -642,13 +642,13 @@ func (p *GameSoftwareRecognitionProvider) searchSteam(ctx context.Context, name 
 
 	// For demonstration, we'll generate a mock Steam result
 	return &MediaRecognitionResult{
-		MediaID:    fmt.Sprintf("steam_%s", p.generateID(name)),
-		MediaType:  MediaTypeGame,
-		Title:      name,
-		Confidence: 0.6,
+		MediaID:           fmt.Sprintf("steam_%s", p.generateID(name)),
+		MediaType:         MediaTypeGame,
+		Title:             name,
+		Confidence:        0.6,
 		RecognitionMethod: "steam_lookup",
-		APIProvider: "Steam",
-		ExternalIDs: make(map[string]string),
+		APIProvider:       "Steam",
+		ExternalIDs:       make(map[string]string),
 	}, nil
 }
 
@@ -707,15 +707,15 @@ func (p *GameSoftwareRecognitionProvider) searchWinget(ctx context.Context, name
 
 	pkg := packages[0]
 	return &MediaRecognitionResult{
-		MediaID:    fmt.Sprintf("winget_%s", pkg.PackageIdentifier),
-		MediaType:  MediaTypeSoftware,
-		Title:      pkg.PackageName,
-		Publisher:  pkg.Publisher,
-		Version:    pkg.PackageVersion,
-		Platform:   "Windows",
-		Confidence: 0.8,
+		MediaID:           fmt.Sprintf("winget_%s", pkg.PackageIdentifier),
+		MediaType:         MediaTypeSoftware,
+		Title:             pkg.PackageName,
+		Publisher:         pkg.Publisher,
+		Version:           pkg.PackageVersion,
+		Platform:          "Windows",
+		Confidence:        0.8,
 		RecognitionMethod: "winget_api",
-		APIProvider: "Winget",
+		APIProvider:       "Winget",
 		ExternalIDs: map[string]string{
 			"winget_id": pkg.PackageIdentifier,
 		},
@@ -744,14 +744,14 @@ func (p *GameSoftwareRecognitionProvider) searchFlatpak(ctx context.Context, nam
 
 	app := apps[0]
 	return &MediaRecognitionResult{
-		MediaID:    fmt.Sprintf("flatpak_%s", app.FlatpakAppID),
-		MediaType:  MediaTypeSoftware,
-		Title:      app.Name,
-		Description: app.Summary,
-		Platform:   "Linux",
-		Confidence: 0.8,
+		MediaID:           fmt.Sprintf("flatpak_%s", app.FlatpakAppID),
+		MediaType:         MediaTypeSoftware,
+		Title:             app.Name,
+		Description:       app.Summary,
+		Platform:          "Linux",
+		Confidence:        0.8,
 		RecognitionMethod: "flatpak_api",
-		APIProvider: "Flatpak",
+		APIProvider:       "Flatpak",
 		ExternalIDs: map[string]string{
 			"flatpak_id": app.FlatpakAppID,
 		},
@@ -780,15 +780,15 @@ func (p *GameSoftwareRecognitionProvider) searchSnapcraft(ctx context.Context, n
 
 	snap := result.Results[0]
 	return &MediaRecognitionResult{
-		MediaID:    fmt.Sprintf("snap_%s", snap.Name),
-		MediaType:  MediaTypeSoftware,
-		Title:      snap.Title,
-		Description: snap.Summary,
-		Publisher:  snap.Publisher.DisplayName,
-		Platform:   "Linux",
-		Confidence: 0.8,
+		MediaID:           fmt.Sprintf("snap_%s", snap.Name),
+		MediaType:         MediaTypeSoftware,
+		Title:             snap.Title,
+		Description:       snap.Summary,
+		Publisher:         snap.Publisher.DisplayName,
+		Platform:          "Linux",
+		Confidence:        0.8,
 		RecognitionMethod: "snapcraft_api",
-		APIProvider: "Snapcraft",
+		APIProvider:       "Snapcraft",
 		ExternalIDs: map[string]string{
 			"snap_id": snap.Name,
 		},
@@ -809,15 +809,15 @@ func (p *GameSoftwareRecognitionProvider) searchHomebrew(ctx context.Context, na
 	}
 
 	return &MediaRecognitionResult{
-		MediaID:    fmt.Sprintf("homebrew_%s", formula.Name),
-		MediaType:  MediaTypeSoftware,
-		Title:      formula.Name,
-		Description: formula.Desc,
-		Version:    formula.Versions.Stable,
-		Platform:   "macOS",
-		Confidence: 0.8,
+		MediaID:           fmt.Sprintf("homebrew_%s", formula.Name),
+		MediaType:         MediaTypeSoftware,
+		Title:             formula.Name,
+		Description:       formula.Desc,
+		Version:           formula.Versions.Stable,
+		Platform:          "macOS",
+		Confidence:        0.8,
 		RecognitionMethod: "homebrew_api",
-		APIProvider: "Homebrew",
+		APIProvider:       "Homebrew",
 		ExternalIDs: map[string]string{
 			"homebrew_name": formula.Name,
 		},
@@ -856,15 +856,15 @@ func (p *GameSoftwareRecognitionProvider) searchGitHub(ctx context.Context, name
 
 	repo := searchResult.Items[0]
 	return &MediaRecognitionResult{
-		MediaID:    fmt.Sprintf("github_%d", repo.ID),
-		MediaType:  MediaTypeSoftware,
-		Title:      repo.Name,
-		Description: repo.Description,
-		Developer:  repo.Owner.Login,
-		License:    repo.License.Name,
-		Confidence: p.calculateGitHubConfidence(repo.StargazersCount, repo.ForksCount),
+		MediaID:           fmt.Sprintf("github_%d", repo.ID),
+		MediaType:         MediaTypeSoftware,
+		Title:             repo.Name,
+		Description:       repo.Description,
+		Developer:         repo.Owner.Login,
+		License:           repo.License.Name,
+		Confidence:        p.calculateGitHubConfidence(repo.StargazersCount, repo.ForksCount),
 		RecognitionMethod: "github_api",
-		APIProvider: "GitHub",
+		APIProvider:       "GitHub",
 		ExternalIDs: map[string]string{
 			"github_id":  strconv.Itoa(repo.ID),
 			"github_url": repo.HTMLURL,
@@ -875,13 +875,13 @@ func (p *GameSoftwareRecognitionProvider) searchGitHub(ctx context.Context, name
 func (p *GameSoftwareRecognitionProvider) searchSourceForge(ctx context.Context, name string) (*MediaRecognitionResult, error) {
 	// SourceForge API search (simplified)
 	return &MediaRecognitionResult{
-		MediaID:    fmt.Sprintf("sourceforge_%s", p.generateID(name)),
-		MediaType:  MediaTypeSoftware,
-		Title:      name,
-		Confidence: 0.5,
+		MediaID:           fmt.Sprintf("sourceforge_%s", p.generateID(name)),
+		MediaType:         MediaTypeSoftware,
+		Title:             name,
+		Confidence:        0.5,
 		RecognitionMethod: "sourceforge_lookup",
-		APIProvider: "SourceForge",
-		ExternalIDs: make(map[string]string),
+		APIProvider:       "SourceForge",
+		ExternalIDs:       make(map[string]string),
 	}, nil
 }
 
@@ -892,15 +892,15 @@ func (p *GameSoftwareRecognitionProvider) basicGameSoftwareRecognition(req *Medi
 	}
 
 	return &MediaRecognitionResult{
-		MediaID:    fmt.Sprintf("basic_%s_%s_%d", strings.ReplaceAll(name, " ", "_"), platform, time.Now().Unix()),
-		MediaType:  mediaType,
-		Title:      name,
-		Version:    version,
-		Platform:   platform,
-		Confidence: 0.3,
+		MediaID:           fmt.Sprintf("basic_%s_%s_%d", strings.ReplaceAll(name, " ", "_"), platform, time.Now().Unix()),
+		MediaType:         mediaType,
+		Title:             name,
+		Version:           version,
+		Platform:          platform,
+		Confidence:        0.3,
 		RecognitionMethod: "filename_parsing",
-		APIProvider: "basic",
-		ExternalIDs: make(map[string]string),
+		APIProvider:       "basic",
+		ExternalIDs:       make(map[string]string),
 	}
 }
 
@@ -964,7 +964,7 @@ func (p *GameSoftwareRecognitionProvider) extractSoftwareMetadataFromFilename(fi
 	// Remove common software suffixes
 	suffixes := []string{"setup", "installer", "install", "portable", "repack", "crack", "keygen"}
 	for _, suffix := range suffixes {
-		re := regexp.MustCompile(`(?i)\b`+suffix+`\b`)
+		re := regexp.MustCompile(`(?i)\b` + suffix + `\b`)
 		name = re.ReplaceAllString(name, "")
 	}
 
@@ -1074,10 +1074,10 @@ type WingetPackage struct {
 }
 
 type FlatpakApp struct {
-	FlatpakAppID string `json:"flatpakAppId"`
-	Name         string `json:"name"`
-	Summary      string `json:"summary"`
-	Description  string `json:"description"`
+	FlatpakAppID  string `json:"flatpakAppId"`
+	Name          string `json:"name"`
+	Summary       string `json:"summary"`
+	Description   string `json:"description"`
 	DeveloperName string `json:"developerName"`
 }
 
@@ -1086,9 +1086,9 @@ type SnapcraftSearchResult struct {
 }
 
 type SnapcraftSnap struct {
-	Name      string           `json:"name"`
-	Title     string           `json:"title"`
-	Summary   string           `json:"summary"`
+	Name      string             `json:"name"`
+	Title     string             `json:"title"`
+	Summary   string             `json:"summary"`
 	Publisher SnapcraftPublisher `json:"publisher"`
 }
 
@@ -1097,9 +1097,9 @@ type SnapcraftPublisher struct {
 }
 
 type HomebrewFormula struct {
-	Name     string            `json:"name"`
-	Desc     string            `json:"desc"`
-	Versions HomebrewVersions  `json:"versions"`
+	Name     string           `json:"name"`
+	Desc     string           `json:"desc"`
+	Versions HomebrewVersions `json:"versions"`
 }
 
 type HomebrewVersions struct {
@@ -1112,16 +1112,16 @@ type GitHubSearchResult struct {
 }
 
 type GitHubRepository struct {
-	ID              int                `json:"id"`
-	Name            string             `json:"name"`
-	FullName        string             `json:"full_name"`
-	Description     string             `json:"description"`
-	HTMLURL         string             `json:"html_url"`
-	StargazersCount int                `json:"stargazers_count"`
-	ForksCount      int                `json:"forks_count"`
-	Language        string             `json:"language"`
-	License         GitHubLicense      `json:"license"`
-	Owner           GitHubOwner        `json:"owner"`
+	ID              int           `json:"id"`
+	Name            string        `json:"name"`
+	FullName        string        `json:"full_name"`
+	Description     string        `json:"description"`
+	HTMLURL         string        `json:"html_url"`
+	StargazersCount int           `json:"stargazers_count"`
+	ForksCount      int           `json:"forks_count"`
+	Language        string        `json:"language"`
+	License         GitHubLicense `json:"license"`
+	Owner           GitHubOwner   `json:"owner"`
 }
 
 type GitHubLicense struct {

@@ -258,21 +258,21 @@ export class CatalogizerError extends Error {
 }
 
 export class AuthenticationError extends CatalogizerError {
-  constructor(message: string = 'Authentication failed') {
+  constructor(message = 'Authentication failed') {
     super(message, 401, 'AUTH_ERROR');
     this.name = 'AuthenticationError';
   }
 }
 
 export class NetworkError extends CatalogizerError {
-  constructor(message: string = 'Network request failed') {
+  constructor(message = 'Network request failed') {
     super(message, 0, 'NETWORK_ERROR');
     this.name = 'NetworkError';
   }
 }
 
 export class ValidationError extends CatalogizerError {
-  constructor(message: string = 'Validation failed') {
+  constructor(message = 'Validation failed') {
     super(message, 400, 'VALIDATION_ERROR');
     this.name = 'ValidationError';
   }

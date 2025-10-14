@@ -18,16 +18,16 @@ import (
 
 // MediaAnalyzer handles real-time analysis of directory content
 type MediaAnalyzer struct {
-	db               *sql.DB
-	detector         *detector.DetectionEngine
-	providerManager  *providers.ProviderManager
-	logger           *zap.Logger
-	analysisQueue    chan AnalysisRequest
-	workers          int
-	stopCh           chan struct{}
-	wg               sync.WaitGroup
-	mu               sync.RWMutex
-	pendingAnalysis  map[string]*AnalysisRequest
+	db              *sql.DB
+	detector        *detector.DetectionEngine
+	providerManager *providers.ProviderManager
+	logger          *zap.Logger
+	analysisQueue   chan AnalysisRequest
+	workers         int
+	stopCh          chan struct{}
+	wg              sync.WaitGroup
+	mu              sync.RWMutex
+	pendingAnalysis map[string]*AnalysisRequest
 }
 
 // AnalysisRequest represents a request to analyze a directory
@@ -50,12 +50,12 @@ type AnalysisResult struct {
 
 // QualityAnalysis represents quality analysis of media files
 type QualityAnalysis struct {
-	BestQuality    *mediamodels.QualityInfo
+	BestQuality        *mediamodels.QualityInfo
 	AvailableQualities []string
-	TotalFiles     int
-	TotalSize      int64
-	DuplicateCount int
-	MissingQualities []string
+	TotalFiles         int
+	TotalSize          int64
+	DuplicateCount     int
+	MissingQualities   []string
 }
 
 // NewMediaAnalyzer creates a new media analyzer
@@ -486,12 +486,12 @@ func (ma *MediaAnalyzer) analyzeQuality(files []models.FileInfo, mediaItem *medi
 // filterMediaFiles filters files relevant to the media type
 func (ma *MediaAnalyzer) filterMediaFiles(files []models.FileInfo, mediaType string) []models.FileInfo {
 	mediaExtensions := map[string][]string{
-		"movie":      {".mp4", ".mkv", ".avi", ".mov", ".wmv", ".flv", ".m4v"},
-		"tv_show":    {".mp4", ".mkv", ".avi", ".mov", ".wmv", ".flv", ".m4v"},
-		"anime":      {".mp4", ".mkv", ".avi", ".mov", ".wmv", ".flv", ".m4v"},
-		"music":      {".mp3", ".flac", ".wav", ".m4a", ".aac", ".ogg", ".wma"},
-		"audiobook":  {".mp3", ".m4a", ".m4b", ".aac", ".ogg"},
-		"podcast":    {".mp3", ".m4a", ".aac", ".ogg"},
+		"movie":     {".mp4", ".mkv", ".avi", ".mov", ".wmv", ".flv", ".m4v"},
+		"tv_show":   {".mp4", ".mkv", ".avi", ".mov", ".wmv", ".flv", ".m4v"},
+		"anime":     {".mp4", ".mkv", ".avi", ".mov", ".wmv", ".flv", ".m4v"},
+		"music":     {".mp3", ".flac", ".wav", ".m4a", ".aac", ".ogg", ".wma"},
+		"audiobook": {".mp3", ".m4a", ".m4b", ".aac", ".ogg"},
+		"podcast":   {".mp3", ".m4a", ".aac", ".ogg"},
 	}
 
 	extensions, exists := mediaExtensions[mediaType]
