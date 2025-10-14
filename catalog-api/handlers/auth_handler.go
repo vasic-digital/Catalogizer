@@ -190,7 +190,7 @@ func (h *AuthHandler) GetActiveSessions(w http.ResponseWriter, r *http.Request) 
 
 	for i := range sessions {
 		sessions[i].SessionToken = ""
-		sessions[i].RefreshToken = ""
+		sessions[i].RefreshToken = nil
 	}
 
 	w.Header().Set("Content-Type", "application/json")

@@ -7,7 +7,7 @@ import (
 	"strings"
 	"time"
 
-	"catalog-api/internal/models"
+	"catalogizer/internal/models"
 )
 
 type DeepLinkingService struct {
@@ -43,52 +43,52 @@ type UTMParameters struct {
 }
 
 type DeepLinkResponse struct {
-	Links           map[string]*DeepLink `json:"links"` // Platform -> DeepLink
-	UniversalLink   string              `json:"universal_link"`
-	QRCode          string              `json:"qr_code,omitempty"`
-	ShareableLink   string              `json:"shareable_link"`
-	ExpiresAt       *time.Time          `json:"expires_at,omitempty"`
-	TrackingID      string              `json:"tracking_id"`
-	SupportedApps   []string            `json:"supported_apps"`
-	FallbackURL     string              `json:"fallback_url"`
+	Links         map[string]*DeepLink `json:"links"` // Platform -> DeepLink
+	UniversalLink string               `json:"universal_link"`
+	QRCode        string               `json:"qr_code,omitempty"`
+	ShareableLink string               `json:"shareable_link"`
+	ExpiresAt     *time.Time           `json:"expires_at,omitempty"`
+	TrackingID    string               `json:"tracking_id"`
+	SupportedApps []string             `json:"supported_apps"`
+	FallbackURL   string               `json:"fallback_url"`
 }
 
 type DeepLink struct {
-	URL           string                 `json:"url"`
-	Scheme        string                 `json:"scheme"`
-	Package       string                 `json:"package,omitempty"`       // Android package name
-	BundleID      string                 `json:"bundle_id,omitempty"`     // iOS bundle ID
-	StoreURL      string                 `json:"store_url,omitempty"`     // App store download link
-	Parameters    map[string]string      `json:"parameters"`
-	Headers       map[string]string      `json:"headers,omitempty"`
-	PostData      map[string]interface{} `json:"post_data,omitempty"`
-	RequiresAuth  bool                   `json:"requires_auth"`
-	AppVersion    string                 `json:"min_app_version,omitempty"`
-	Features      []string               `json:"required_features,omitempty"`
+	URL          string                 `json:"url"`
+	Scheme       string                 `json:"scheme"`
+	Package      string                 `json:"package,omitempty"`   // Android package name
+	BundleID     string                 `json:"bundle_id,omitempty"` // iOS bundle ID
+	StoreURL     string                 `json:"store_url,omitempty"` // App store download link
+	Parameters   map[string]string      `json:"parameters"`
+	Headers      map[string]string      `json:"headers,omitempty"`
+	PostData     map[string]interface{} `json:"post_data,omitempty"`
+	RequiresAuth bool                   `json:"requires_auth"`
+	AppVersion   string                 `json:"min_app_version,omitempty"`
+	Features     []string               `json:"required_features,omitempty"`
 }
 
 type LinkTrackingEvent struct {
-	TrackingID    string                 `json:"tracking_id"`
-	EventType     string                 `json:"event_type"` // click, open, fallback, error
-	Platform      string                 `json:"platform"`
-	UserAgent     string                 `json:"user_agent,omitempty"`
-	IPAddress     string                 `json:"ip_address,omitempty"`
-	Timestamp     time.Time              `json:"timestamp"`
-	Success       bool                   `json:"success"`
-	ErrorMessage  string                 `json:"error_message,omitempty"`
-	AppOpened     bool                   `json:"app_opened"`
-	FallbackUsed  bool                   `json:"fallback_used"`
-	Metadata      map[string]interface{} `json:"metadata,omitempty"`
+	TrackingID   string                 `json:"tracking_id"`
+	EventType    string                 `json:"event_type"` // click, open, fallback, error
+	Platform     string                 `json:"platform"`
+	UserAgent    string                 `json:"user_agent,omitempty"`
+	IPAddress    string                 `json:"ip_address,omitempty"`
+	Timestamp    time.Time              `json:"timestamp"`
+	Success      bool                   `json:"success"`
+	ErrorMessage string                 `json:"error_message,omitempty"`
+	AppOpened    bool                   `json:"app_opened"`
+	FallbackUsed bool                   `json:"fallback_used"`
+	Metadata     map[string]interface{} `json:"metadata,omitempty"`
 }
 
 type AppConfiguration struct {
 	AppID         string            `json:"app_id"`
 	Name          string            `json:"name"`
 	Platforms     []string          `json:"platforms"`
-	Schemes       map[string]string `json:"schemes"`        // Platform -> URL scheme
-	Packages      map[string]string `json:"packages"`       // Platform -> package/bundle ID
-	StoreURLs     map[string]string `json:"store_urls"`     // Platform -> store download URL
-	MinVersions   map[string]string `json:"min_versions"`   // Platform -> minimum version
+	Schemes       map[string]string `json:"schemes"`      // Platform -> URL scheme
+	Packages      map[string]string `json:"packages"`     // Platform -> package/bundle ID
+	StoreURLs     map[string]string `json:"store_urls"`   // Platform -> store download URL
+	MinVersions   map[string]string `json:"min_versions"` // Platform -> minimum version
 	Features      []string          `json:"supported_features"`
 	PreferredApps bool              `json:"is_preferred"`
 	Active        bool              `json:"is_active"`
@@ -102,6 +102,11 @@ func NewDeepLinkingService(baseURL, apiVersion string) *DeepLinkingService {
 }
 
 func (dls *DeepLinkingService) GenerateDeepLinks(ctx context.Context, req *DeepLinkRequest) (*DeepLinkResponse, error) {
+	// Validate request
+	if req.MediaID == "" {
+		return nil, fmt.Errorf("media ID is required")
+	}
+
 	trackingID := dls.generateTrackingID()
 
 	response := &DeepLinkResponse{
@@ -224,9 +229,9 @@ func (dls *DeepLinkingService) generateWebLink(req *DeepLinkRequest, trackingID 
 	u.RawQuery = query.Encode()
 
 	return &DeepLink{
-		URL:        u.String(),
-		Scheme:     "https",
-		Parameters: parameters,
+		URL:          u.String(),
+		Scheme:       "https",
+		Parameters:   parameters,
 		RequiresAuth: req.Action == "edit" || req.Action == "download",
 	}, nil
 }
@@ -276,14 +281,14 @@ func (dls *DeepLinkingService) generateAndroidLink(req *DeepLinkRequest, trackin
 	}
 
 	return &DeepLink{
-		URL:        url,
-		Scheme:     scheme,
-		Package:    packageName,
-		StoreURL:   "https://play.google.com/store/apps/details?id=" + packageName,
-		Parameters: parameters,
+		URL:          url,
+		Scheme:       scheme,
+		Package:      packageName,
+		StoreURL:     "https://play.google.com/store/apps/details?id=" + packageName,
+		Parameters:   parameters,
 		RequiresAuth: req.Action == "edit" || req.Action == "download",
-		AppVersion: "1.0.0",
-		Features:   dls.getRequiredFeatures(req),
+		AppVersion:   "1.0.0",
+		Features:     dls.getRequiredFeatures(req),
 	}, nil
 }
 
@@ -332,14 +337,14 @@ func (dls *DeepLinkingService) generateIOSLink(req *DeepLinkRequest, trackingID 
 	}
 
 	return &DeepLink{
-		URL:        url,
-		Scheme:     scheme,
-		BundleID:   bundleID,
-		StoreURL:   "https://apps.apple.com/app/id123456789", // Would be actual App Store ID
-		Parameters: parameters,
+		URL:          url,
+		Scheme:       scheme,
+		BundleID:     bundleID,
+		StoreURL:     "https://apps.apple.com/app/id123456789", // Would be actual App Store ID
+		Parameters:   parameters,
 		RequiresAuth: req.Action == "edit" || req.Action == "download",
-		AppVersion: "1.0.0",
-		Features:   dls.getRequiredFeatures(req),
+		AppVersion:   "1.0.0",
+		Features:     dls.getRequiredFeatures(req),
 	}, nil
 }
 
@@ -387,13 +392,13 @@ func (dls *DeepLinkingService) generateDesktopLink(req *DeepLinkRequest, trackin
 	}
 
 	return &DeepLink{
-		URL:        url,
-		Scheme:     scheme,
-		StoreURL:   "https://github.com/catalogizer/desktop/releases", // GitHub releases
-		Parameters: parameters,
+		URL:          url,
+		Scheme:       scheme,
+		StoreURL:     "https://github.com/catalogizer/desktop/releases", // GitHub releases
+		Parameters:   parameters,
 		RequiresAuth: req.Action == "edit" || req.Action == "download",
-		AppVersion: "1.0.0",
-		Features:   dls.getRequiredFeatures(req),
+		AppVersion:   "1.0.0",
+		Features:     dls.getRequiredFeatures(req),
 	}, nil
 }
 
@@ -449,10 +454,7 @@ func (dls *DeepLinkingService) getSupportedApps() []string {
 func (dls *DeepLinkingService) getRequiredFeatures(req *DeepLinkRequest) []string {
 	var features []string
 
-	// Note: MediaMetadata doesn't currently have MediaType field
-	// Features are determined based on action for now
-	// TODO: Add MediaType field to MediaMetadata struct if needed
-
+	// Base features based on action
 	if req.Action == "play" {
 		features = append(features, "media_playback")
 	}
@@ -463,6 +465,24 @@ func (dls *DeepLinkingService) getRequiredFeatures(req *DeepLinkRequest) []strin
 
 	if req.Action == "edit" {
 		features = append(features, "file_edit", "user_authentication")
+	}
+
+	// Media type specific features
+	if req.MediaMetadata != nil && req.MediaMetadata.MediaType != "" {
+		switch req.MediaMetadata.MediaType {
+		case "video":
+			if req.Action == "play" {
+				features = append(features, "video_playback", "fullscreen_video")
+			}
+		case "audio":
+			if req.Action == "play" {
+				features = append(features, "audio_playback", "background_audio")
+			}
+		case "book":
+			features = append(features, "pdf_reader", "epub_reader")
+		case "game":
+			features = append(features, "external_app_launch")
+		}
 	}
 
 	return features
@@ -480,9 +500,9 @@ func (dls *DeepLinkingService) GetLinkAnalytics(ctx context.Context, trackingID 
 	// This would normally retrieve analytics from storage
 	// Mock implementation
 	return &LinkAnalytics{
-		TrackingID:     trackingID,
-		TotalClicks:    45,
-		UniqueClicks:   32,
+		TrackingID:   trackingID,
+		TotalClicks:  45,
+		UniqueClicks: 32,
 		PlatformBreakdown: map[string]int{
 			"web":     20,
 			"android": 15,
@@ -640,11 +660,11 @@ func (dls *DeepLinkingService) GenerateBatchLinks(ctx context.Context, requests 
 // Link validation and testing
 func (dls *DeepLinkingService) ValidateLinks(ctx context.Context, links []*DeepLink) (*ValidationResult, error) {
 	result := &ValidationResult{
-		TotalLinks:    len(links),
-		ValidLinks:    0,
-		InvalidLinks:  0,
-		Warnings:      make([]string, 0),
-		Errors:        make([]string, 0),
+		TotalLinks:   len(links),
+		ValidLinks:   0,
+		InvalidLinks: 0,
+		Warnings:     make([]string, 0),
+		Errors:       make([]string, 0),
 	}
 
 	for _, link := range links {

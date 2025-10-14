@@ -13,8 +13,8 @@ import (
 	"strings"
 	"time"
 
-	"catalog-api/models"
-	"catalog-api/repository"
+	"catalogizer/models"
+	"catalogizer/repository"
 )
 
 type LogManagementService struct {

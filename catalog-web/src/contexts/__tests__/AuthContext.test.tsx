@@ -1,4 +1,5 @@
 import { render, screen } from '@testing-library/react';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { AuthProvider, useAuth } from '../AuthContext';
 
 // Mock the API module completely
@@ -44,11 +45,15 @@ function TestComponent() {
 }
 
 describe('AuthContext', () => {
+  const queryClient = new QueryClient();
+
   it('provides initial unauthenticated state', () => {
     render(
-      <AuthProvider>
-        <TestComponent />
-      </AuthProvider>
+      <QueryClientProvider client={queryClient}>
+        <AuthProvider>
+          <TestComponent />
+        </AuthProvider>
+      </QueryClientProvider>
     );
 
     // The component will be loading initially
@@ -60,7 +65,11 @@ describe('AuthContext', () => {
     const consoleSpy = jest.spyOn(console, 'error').mockImplementation(() => {});
 
     expect(() => {
-      render(<TestComponent />);
+      render(
+        <QueryClientProvider client={queryClient}>
+          <TestComponent />
+        </QueryClientProvider>
+      );
     }).toThrow('useAuth must be used within an AuthProvider');
 
     consoleSpy.mockRestore();

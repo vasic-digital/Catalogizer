@@ -13,7 +13,7 @@ import (
 	"strings"
 	"time"
 
-	"catalog-api/internal/models"
+	"catalogizer/internal/models"
 
 	"go.uber.org/zap"
 )

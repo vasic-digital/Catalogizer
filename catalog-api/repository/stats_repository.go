@@ -6,8 +6,8 @@ import (
 	"fmt"
 	"time"
 
-	"catalog-api/database"
-	"catalog-api/internal/models"
+	"catalogizer/database"
+	"catalogizer/internal/models"
 )
 
 // StatsRepository handles statistics-related database operations
@@ -200,9 +200,7 @@ func (r *StatsRepository) GetDuplicateStats(ctx context.Context, storageRootName
 			WHERE f.is_duplicate = 1 AND f.deleted = 0`
 
 	args := []interface{}{}
-	whereClause := ""
 	if storageRootName != "" {
-		whereClause = " WHERE sr.name = ?"
 		args = append(args, storageRootName)
 	}
 
@@ -211,12 +209,12 @@ func (r *StatsRepository) GetDuplicateStats(ctx context.Context, storageRootName
 		)
 		SELECT
 			(SELECT COUNT(*) FROM files f WHERE f.is_duplicate = 1 AND f.deleted = 0` +
-			(func() string {
-				if storageRootName != "" {
-					return " AND f.storage_root_id = (SELECT id FROM storage_roots WHERE name = ?)"
-				}
-				return ""
-			})() + `) as total_duplicates,
+		(func() string {
+			if storageRootName != "" {
+				return " AND f.storage_root_id = (SELECT id FROM storage_roots WHERE name = ?)"
+			}
+			return ""
+		})() + `) as total_duplicates,
 			COUNT(*) as duplicate_groups,
 			COALESCE(SUM((group_size - 1) * file_size), 0) as wasted_space,
 			COALESCE(MAX(group_size), 0) as largest_group,

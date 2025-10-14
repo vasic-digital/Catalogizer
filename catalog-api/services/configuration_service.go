@@ -10,16 +10,16 @@ import (
 	"strings"
 	"time"
 
-	"catalog-api/models"
-	"catalog-api/repository"
+	"catalogizer/models"
+	"catalogizer/repository"
 )
 
 type ConfigurationService struct {
-	configRepo    *repository.ConfigurationRepository
-	configPath    string
-	config        *models.SystemConfiguration
-	wizardSteps   []*models.WizardStep
-	validators    map[string]ConfigValidator
+	configRepo  *repository.ConfigurationRepository
+	configPath  string
+	config      *models.SystemConfiguration
+	wizardSteps []*models.WizardStep
+	validators  map[string]ConfigValidator
 }
 
 type ConfigValidator interface {
@@ -33,9 +33,9 @@ type EmailValidator struct{}
 
 func NewConfigurationService(configRepo *repository.ConfigurationRepository, configPath string) *ConfigurationService {
 	service := &ConfigurationService{
-		configRepo:  configRepo,
-		configPath:  configPath,
-		validators:  make(map[string]ConfigValidator),
+		configRepo: configRepo,
+		configPath: configPath,
+		validators: make(map[string]ConfigValidator),
 	}
 
 	// Register validators
@@ -76,49 +76,49 @@ func (s *ConfigurationService) initializeWizardSteps() {
 			Order:       2,
 			Fields: []*models.WizardField{
 				{
-					Name:        "database_type",
-					Label:       "Database Type",
-					Type:        "select",
-					Required:    true,
-					Options:     []string{"sqlite", "mysql", "postgresql"},
+					Name:         "database_type",
+					Label:        "Database Type",
+					Type:         "select",
+					Required:     true,
+					Options:      []string{"sqlite", "mysql", "postgresql"},
 					DefaultValue: "sqlite",
 				},
 				{
-					Name:        "database_host",
-					Label:       "Database Host",
-					Type:        "text",
-					Required:    false,
+					Name:         "database_host",
+					Label:        "Database Host",
+					Type:         "text",
+					Required:     false,
 					DefaultValue: "localhost",
-					ShowWhen:    map[string]interface{}{"database_type": []string{"mysql", "postgresql"}},
+					ShowWhen:     map[string]interface{}{"database_type": []string{"mysql", "postgresql"}},
 				},
 				{
-					Name:        "database_port",
-					Label:       "Database Port",
-					Type:        "number",
-					Required:    false,
+					Name:         "database_port",
+					Label:        "Database Port",
+					Type:         "number",
+					Required:     false,
 					DefaultValue: 3306,
-					ShowWhen:    map[string]interface{}{"database_type": []string{"mysql", "postgresql"}},
+					ShowWhen:     map[string]interface{}{"database_type": []string{"mysql", "postgresql"}},
 				},
 				{
-					Name:        "database_name",
-					Label:       "Database Name",
-					Type:        "text",
-					Required:    true,
+					Name:         "database_name",
+					Label:        "Database Name",
+					Type:         "text",
+					Required:     true,
 					DefaultValue: "catalogizer",
 				},
 				{
-					Name:        "database_username",
-					Label:       "Database Username",
-					Type:        "text",
-					Required:    false,
-					ShowWhen:    map[string]interface{}{"database_type": []string{"mysql", "postgresql"}},
+					Name:     "database_username",
+					Label:    "Database Username",
+					Type:     "text",
+					Required: false,
+					ShowWhen: map[string]interface{}{"database_type": []string{"mysql", "postgresql"}},
 				},
 				{
-					Name:        "database_password",
-					Label:       "Database Password",
-					Type:        "password",
-					Required:    false,
-					ShowWhen:    map[string]interface{}{"database_type": []string{"mysql", "postgresql"}},
+					Name:     "database_password",
+					Label:    "Database Password",
+					Type:     "password",
+					Required: false,
+					ShowWhen: map[string]interface{}{"database_type": []string{"mysql", "postgresql"}},
 				},
 			},
 			Validation: map[string]interface{}{
@@ -134,41 +134,41 @@ func (s *ConfigurationService) initializeWizardSteps() {
 			Order:       3,
 			Fields: []*models.WizardField{
 				{
-					Name:        "media_directory",
-					Label:       "Media Directory",
-					Type:        "directory",
-					Required:    true,
+					Name:         "media_directory",
+					Label:        "Media Directory",
+					Type:         "directory",
+					Required:     true,
 					DefaultValue: "/var/lib/catalogizer/media",
-					Validation:  map[string]interface{}{"validator": "path"},
+					Validation:   map[string]interface{}{"validator": "path"},
 				},
 				{
-					Name:        "thumbnail_directory",
-					Label:       "Thumbnail Directory",
-					Type:        "directory",
-					Required:    true,
+					Name:         "thumbnail_directory",
+					Label:        "Thumbnail Directory",
+					Type:         "directory",
+					Required:     true,
 					DefaultValue: "/var/lib/catalogizer/thumbnails",
-					Validation:  map[string]interface{}{"validator": "path"},
+					Validation:   map[string]interface{}{"validator": "path"},
 				},
 				{
-					Name:        "temp_directory",
-					Label:       "Temporary Directory",
-					Type:        "directory",
-					Required:    true,
+					Name:         "temp_directory",
+					Label:        "Temporary Directory",
+					Type:         "directory",
+					Required:     true,
 					DefaultValue: "/tmp/catalogizer",
-					Validation:  map[string]interface{}{"validator": "path"},
+					Validation:   map[string]interface{}{"validator": "path"},
 				},
 				{
-					Name:        "max_file_size",
-					Label:       "Maximum File Size (MB)",
-					Type:        "number",
-					Required:    true,
+					Name:         "max_file_size",
+					Label:        "Maximum File Size (MB)",
+					Type:         "number",
+					Required:     true,
 					DefaultValue: 1000,
 				},
 				{
-					Name:        "storage_quota",
-					Label:       "Storage Quota (GB, 0 = unlimited)",
-					Type:        "number",
-					Required:    false,
+					Name:         "storage_quota",
+					Label:        "Storage Quota (GB, 0 = unlimited)",
+					Type:         "number",
+					Required:     false,
 					DefaultValue: 0,
 				},
 			},
@@ -182,47 +182,47 @@ func (s *ConfigurationService) initializeWizardSteps() {
 			Order:       4,
 			Fields: []*models.WizardField{
 				{
-					Name:        "server_host",
-					Label:       "Server Host",
-					Type:        "text",
-					Required:    true,
+					Name:         "server_host",
+					Label:        "Server Host",
+					Type:         "text",
+					Required:     true,
 					DefaultValue: "0.0.0.0",
-					Validation:  map[string]interface{}{"validator": "network"},
+					Validation:   map[string]interface{}{"validator": "network"},
 				},
 				{
-					Name:        "server_port",
-					Label:       "Server Port",
-					Type:        "number",
-					Required:    true,
+					Name:         "server_port",
+					Label:        "Server Port",
+					Type:         "number",
+					Required:     true,
 					DefaultValue: 8080,
-					Validation:  map[string]interface{}{"validator": "network"},
+					Validation:   map[string]interface{}{"validator": "network"},
 				},
 				{
-					Name:        "enable_https",
-					Label:       "Enable HTTPS",
-					Type:        "checkbox",
-					Required:    false,
+					Name:         "enable_https",
+					Label:        "Enable HTTPS",
+					Type:         "checkbox",
+					Required:     false,
 					DefaultValue: false,
 				},
 				{
-					Name:        "ssl_cert_path",
-					Label:       "SSL Certificate Path",
-					Type:        "file",
-					Required:    false,
-					ShowWhen:    map[string]interface{}{"enable_https": true},
+					Name:     "ssl_cert_path",
+					Label:    "SSL Certificate Path",
+					Type:     "file",
+					Required: false,
+					ShowWhen: map[string]interface{}{"enable_https": true},
 				},
 				{
-					Name:        "ssl_key_path",
-					Label:       "SSL Private Key Path",
-					Type:        "file",
-					Required:    false,
-					ShowWhen:    map[string]interface{}{"enable_https": true},
+					Name:     "ssl_key_path",
+					Label:    "SSL Private Key Path",
+					Type:     "file",
+					Required: false,
+					ShowWhen: map[string]interface{}{"enable_https": true},
 				},
 				{
-					Name:        "cors_origins",
-					Label:       "CORS Allowed Origins",
-					Type:        "text",
-					Required:    false,
+					Name:         "cors_origins",
+					Label:        "CORS Allowed Origins",
+					Type:         "text",
+					Required:     false,
 					DefaultValue: "*",
 				},
 			},
@@ -236,39 +236,39 @@ func (s *ConfigurationService) initializeWizardSteps() {
 			Order:       5,
 			Fields: []*models.WizardField{
 				{
-					Name:        "jwt_secret",
-					Label:       "JWT Secret Key",
-					Type:        "password",
-					Required:    true,
-					Generate:    true,
+					Name:     "jwt_secret",
+					Label:    "JWT Secret Key",
+					Type:     "password",
+					Required: true,
+					Generate: true,
 				},
 				{
-					Name:        "session_timeout",
-					Label:       "Session Timeout (hours)",
-					Type:        "number",
-					Required:    true,
+					Name:         "session_timeout",
+					Label:        "Session Timeout (hours)",
+					Type:         "number",
+					Required:     true,
 					DefaultValue: 24,
 				},
 				{
-					Name:        "enable_registration",
-					Label:       "Allow User Registration",
-					Type:        "checkbox",
-					Required:    false,
+					Name:         "enable_registration",
+					Label:        "Allow User Registration",
+					Type:         "checkbox",
+					Required:     false,
 					DefaultValue: true,
 				},
 				{
-					Name:        "require_email_verification",
-					Label:       "Require Email Verification",
-					Type:        "checkbox",
-					Required:    false,
+					Name:         "require_email_verification",
+					Label:        "Require Email Verification",
+					Type:         "checkbox",
+					Required:     false,
 					DefaultValue: false,
 				},
 				{
-					Name:        "admin_email",
-					Label:       "Administrator Email",
-					Type:        "email",
-					Required:    true,
-					Validation:  map[string]interface{}{"validator": "email"},
+					Name:       "admin_email",
+					Label:      "Administrator Email",
+					Type:       "email",
+					Required:   true,
+					Validation: map[string]interface{}{"validator": "email"},
 				},
 			},
 		},
@@ -281,38 +281,38 @@ func (s *ConfigurationService) initializeWizardSteps() {
 			Order:       6,
 			Fields: []*models.WizardField{
 				{
-					Name:        "enable_media_conversion",
-					Label:       "Enable Media Format Conversion",
-					Type:        "checkbox",
-					Required:    false,
+					Name:         "enable_media_conversion",
+					Label:        "Enable Media Format Conversion",
+					Type:         "checkbox",
+					Required:     false,
 					DefaultValue: true,
 				},
 				{
-					Name:        "enable_webdav_sync",
-					Label:       "Enable WebDAV Synchronization",
-					Type:        "checkbox",
-					Required:    false,
+					Name:         "enable_webdav_sync",
+					Label:        "Enable WebDAV Synchronization",
+					Type:         "checkbox",
+					Required:     false,
 					DefaultValue: false,
 				},
 				{
-					Name:        "enable_stress_testing",
-					Label:       "Enable Stress Testing",
-					Type:        "checkbox",
-					Required:    false,
+					Name:         "enable_stress_testing",
+					Label:        "Enable Stress Testing",
+					Type:         "checkbox",
+					Required:     false,
 					DefaultValue: false,
 				},
 				{
-					Name:        "enable_error_reporting",
-					Label:       "Enable Error Reporting",
-					Type:        "checkbox",
-					Required:    false,
+					Name:         "enable_error_reporting",
+					Label:        "Enable Error Reporting",
+					Type:         "checkbox",
+					Required:     false,
 					DefaultValue: true,
 				},
 				{
-					Name:        "enable_log_management",
-					Label:       "Enable Log Management",
-					Type:        "checkbox",
-					Required:    false,
+					Name:         "enable_log_management",
+					Label:        "Enable Log Management",
+					Type:         "checkbox",
+					Required:     false,
 					DefaultValue: true,
 				},
 			},
@@ -326,41 +326,41 @@ func (s *ConfigurationService) initializeWizardSteps() {
 			Order:       7,
 			Fields: []*models.WizardField{
 				{
-					Name:        "smtp_host",
-					Label:       "SMTP Host",
-					Type:        "text",
-					Required:    false,
+					Name:     "smtp_host",
+					Label:    "SMTP Host",
+					Type:     "text",
+					Required: false,
 				},
 				{
-					Name:        "smtp_port",
-					Label:       "SMTP Port",
-					Type:        "number",
-					Required:    false,
+					Name:         "smtp_port",
+					Label:        "SMTP Port",
+					Type:         "number",
+					Required:     false,
 					DefaultValue: 587,
 				},
 				{
-					Name:        "smtp_username",
-					Label:       "SMTP Username",
-					Type:        "text",
-					Required:    false,
+					Name:     "smtp_username",
+					Label:    "SMTP Username",
+					Type:     "text",
+					Required: false,
 				},
 				{
-					Name:        "smtp_password",
-					Label:       "SMTP Password",
-					Type:        "password",
-					Required:    false,
+					Name:     "smtp_password",
+					Label:    "SMTP Password",
+					Type:     "password",
+					Required: false,
 				},
 				{
-					Name:        "slack_webhook_url",
-					Label:       "Slack Webhook URL",
-					Type:        "text",
-					Required:    false,
+					Name:     "slack_webhook_url",
+					Label:    "Slack Webhook URL",
+					Type:     "text",
+					Required: false,
 				},
 				{
-					Name:        "enable_analytics",
-					Label:       "Enable Analytics",
-					Type:        "checkbox",
-					Required:    false,
+					Name:         "enable_analytics",
+					Label:        "Enable Analytics",
+					Type:         "checkbox",
+					Required:     false,
 					DefaultValue: true,
 				},
 			},
@@ -409,9 +409,9 @@ func (s *ConfigurationService) ValidateWizardStep(stepID string, data map[string
 	}
 
 	validation := &models.WizardStepValidation{
-		StepID:  stepID,
-		Valid:   true,
-		Errors:  make(map[string]string),
+		StepID:   stepID,
+		Valid:    true,
+		Errors:   make(map[string]string),
 		Warnings: make(map[string]string),
 	}
 
@@ -716,8 +716,8 @@ func (s *ConfigurationService) createDefaultConfiguration() *models.SystemConfig
 			},
 		},
 		Authentication: &models.AuthenticationConfig{
-			SessionTimeout:          24 * time.Hour,
-			EnableRegistration:      true,
+			SessionTimeout:           24 * time.Hour,
+			EnableRegistration:       true,
 			RequireEmailVerification: false,
 		},
 		Features: &models.FeatureConfig{
@@ -821,8 +821,8 @@ func (s *ConfigurationService) isEmptyValue(value interface{}) bool {
 	}
 }
 
-func (s *ConfigurationService) toCamelCase(s string) string {
-	parts := strings.Split(s, "_")
+func (s *ConfigurationService) toCamelCase(str string) string {
+	parts := strings.Split(str, "_")
 	for i := range parts {
 		if i > 0 {
 			parts[i] = strings.Title(parts[i])

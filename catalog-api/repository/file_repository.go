@@ -7,8 +7,8 @@ import (
 	"path/filepath"
 	"strings"
 
-	"catalog-api/database"
-	"catalog-api/models"
+	"catalogizer/database"
+	"catalogizer/models"
 )
 
 // FileRepository handles file-related database operations

@@ -10,21 +10,21 @@ import (
 	"strconv"
 	"time"
 
-	"catalog-api/models"
-	"catalog-api/repository"
-	"catalog-api/smb"
-	"catalog-api/utils"
+	"catalogizer/models"
+	"catalogizer/repository"
+	"catalogizer/smb"
+	"catalogizer/utils"
 
 	"github.com/gin-gonic/gin"
 )
 
 // DownloadHandler handles file download operations
 type DownloadHandler struct {
-	fileRepo    *repository.FileRepository
-	smbPool     *smb.SmbConnectionPool
-	tempDir     string
+	fileRepo       *repository.FileRepository
+	smbPool        *smb.SmbConnectionPool
+	tempDir        string
 	maxArchiveSize int64
-	chunkSize   int
+	chunkSize      int
 }
 
 // NewDownloadHandler creates a new download handler
@@ -46,9 +46,9 @@ func NewDownloadHandler(fileRepo *repository.FileRepository, tempDir string, max
 // @Param id path int true "File ID"
 // @Param inline query bool false "Display inline instead of download" default(false)
 // @Success 200 {file} binary
-// @Failure 400 {object} utils.ErrorResponse
-// @Failure 404 {object} utils.ErrorResponse
-// @Failure 500 {object} utils.ErrorResponse
+// @Failure 400 {object} utils.SendErrorResponse
+// @Failure 404 {object} utils.SendErrorResponse
+// @Failure 500 {object} utils.SendErrorResponse
 // @Router /api/download/file/{id} [get]
 func (h *DownloadHandler) DownloadFile(c *gin.Context) {
 	ctx := c.Request.Context()
@@ -57,7 +57,7 @@ func (h *DownloadHandler) DownloadFile(c *gin.Context) {
 	idStr := c.Param("id")
 	id, err := strconv.ParseInt(idStr, 10, 64)
 	if err != nil {
-		utils.ErrorResponse(c, http.StatusBadRequest, "Invalid file ID", err)
+		utils.SendErrorResponse(c, http.StatusBadRequest, "Invalid file ID", err)
 		return
 	}
 
@@ -65,68 +65,86 @@ func (h *DownloadHandler) DownloadFile(c *gin.Context) {
 	file, err := h.fileRepo.GetFileByID(ctx, id)
 	if err != nil {
 		if err.Error() == "file not found" {
-			utils.ErrorResponse(c, http.StatusNotFound, "File not found", err)
+			utils.SendErrorResponse(c, http.StatusNotFound, "File not found", err)
 			return
 		}
-		utils.ErrorResponse(c, http.StatusInternalServerError, "Failed to get file info", err)
+		utils.SendErrorResponse(c, http.StatusInternalServerError, "Failed to get file info", err)
 		return
 	}
 
 	// Check if it's a directory
 	if file.IsDirectory {
-		utils.ErrorResponse(c, http.StatusBadRequest, "Cannot download directory as file. Use directory download endpoint", nil)
+		utils.SendErrorResponse(c, http.StatusBadRequest, "Cannot download directory as file. Use directory download endpoint", nil)
 		return
 	}
 
 	// Check if file is deleted
 	if file.Deleted {
-		utils.ErrorResponse(c, http.StatusNotFound, "File has been deleted", nil)
+		utils.SendErrorResponse(c, http.StatusNotFound, "File has been deleted", nil)
 		return
 	}
 
 	// Get SMB root information
-	smbRoots, err := h.fileRepo.GetSmbRoots(ctx)
+	smbRoots, err := h.fileRepo.GetStorageRoots(ctx)
 	if err != nil {
-		utils.ErrorResponse(c, http.StatusInternalServerError, "Failed to get SMB root info", err)
+		utils.SendErrorResponse(c, http.StatusInternalServerError, "Failed to get SMB root info", err)
 		return
 	}
 
-	var smbRoot *models.SmbRoot
+	var smbRoot *models.StorageRoot
 	for _, root := range smbRoots {
-		if root.ID == file.SmbRootID {
+		if root.ID == file.StorageRootID {
 			smbRoot = &root
 			break
 		}
 	}
 
 	if smbRoot == nil {
-		utils.ErrorResponse(c, http.StatusNotFound, "SMB root not found", nil)
+		utils.SendErrorResponse(c, http.StatusNotFound, "SMB root not found", nil)
 		return
 	}
 
 	// Create SMB connection
-	smbConfig := &smb.SmbConfig{
-		Host:     smbRoot.Host,
-		Port:     smbRoot.Port,
-		Share:    smbRoot.Share,
-		Username: smbRoot.Username,
-		Domain:   "",
+	host := ""
+	if smbRoot.Host != nil {
+		host = *smbRoot.Host
 	}
+	port := 445
+	if smbRoot.Port != nil {
+		port = *smbRoot.Port
+	}
+	share := ""
+	if smbRoot.Path != nil {
+		share = *smbRoot.Path
+	}
+	username := ""
+	if smbRoot.Username != nil {
+		username = *smbRoot.Username
+	}
+	domain := ""
 	if smbRoot.Domain != nil {
-		smbConfig.Domain = *smbRoot.Domain
+		domain = *smbRoot.Domain
 	}
 
-	connectionKey := fmt.Sprintf("%s:%d:%s:%s", smbRoot.Host, smbRoot.Port, smbRoot.Share, smbRoot.Username)
+	smbConfig := &smb.SmbConfig{
+		Host:     host,
+		Port:     port,
+		Share:    share,
+		Username: username,
+		Domain:   domain,
+	}
+
+	connectionKey := fmt.Sprintf("%s:%d:%s:%s", host, port, share, username)
 	smbClient, err := h.smbPool.GetConnection(connectionKey, smbConfig)
 	if err != nil {
-		utils.ErrorResponse(c, http.StatusInternalServerError, "Failed to connect to SMB share", err)
+		utils.SendErrorResponse(c, http.StatusInternalServerError, "Failed to connect to SMB share", err)
 		return
 	}
 
 	// Open file for reading
 	reader, err := smbClient.ReadFile(file.Path)
 	if err != nil {
-		utils.ErrorResponse(c, http.StatusInternalServerError, "Failed to open file", err)
+		utils.SendErrorResponse(c, http.StatusInternalServerError, "Failed to open file", err)
 		return
 	}
 	defer reader.Close()
@@ -173,9 +191,9 @@ func (h *DownloadHandler) DownloadFile(c *gin.Context) {
 // @Param recursive query bool false "Include subdirectories recursively" default(true)
 // @Param max_depth query int false "Maximum recursion depth" default(-1)
 // @Success 200 {file} binary
-// @Failure 400 {object} utils.ErrorResponse
-// @Failure 404 {object} utils.ErrorResponse
-// @Failure 500 {object} utils.ErrorResponse
+// @Failure 400 {object} utils.SendErrorResponse
+// @Failure 404 {object} utils.SendErrorResponse
+// @Failure 500 {object} utils.SendErrorResponse
 // @Router /api/download/directory/{smb_root} [get]
 func (h *DownloadHandler) DownloadDirectory(c *gin.Context) {
 	ctx := c.Request.Context()
@@ -186,18 +204,18 @@ func (h *DownloadHandler) DownloadDirectory(c *gin.Context) {
 	maxDepth, _ := strconv.Atoi(c.DefaultQuery("max_depth", "-1"))
 
 	if dirPath == "" {
-		utils.ErrorResponse(c, http.StatusBadRequest, "Directory path is required", nil)
+		utils.SendErrorResponse(c, http.StatusBadRequest, "Directory path is required", nil)
 		return
 	}
 
 	// Get SMB root information
-	smbRoots, err := h.fileRepo.GetSmbRoots(ctx)
+	smbRoots, err := h.fileRepo.GetStorageRoots(ctx)
 	if err != nil {
-		utils.ErrorResponse(c, http.StatusInternalServerError, "Failed to get SMB root info", err)
+		utils.SendErrorResponse(c, http.StatusInternalServerError, "Failed to get SMB root info", err)
 		return
 	}
 
-	var smbRoot *models.SmbRoot
+	var smbRoot *models.StorageRoot
 	for _, root := range smbRoots {
 		if root.Name == smbRootName {
 			smbRoot = &root
@@ -206,38 +224,56 @@ func (h *DownloadHandler) DownloadDirectory(c *gin.Context) {
 	}
 
 	if smbRoot == nil {
-		utils.ErrorResponse(c, http.StatusNotFound, "SMB root not found", nil)
+		utils.SendErrorResponse(c, http.StatusNotFound, "SMB root not found", nil)
 		return
 	}
 
 	// Create SMB connection
-	smbConfig := &smb.SmbConfig{
-		Host:     smbRoot.Host,
-		Port:     smbRoot.Port,
-		Share:    smbRoot.Share,
-		Username: smbRoot.Username,
-		Domain:   "",
+	host := ""
+	if smbRoot.Host != nil {
+		host = *smbRoot.Host
 	}
+	port := 445
+	if smbRoot.Port != nil {
+		port = *smbRoot.Port
+	}
+	share := ""
+	if smbRoot.Path != nil {
+		share = *smbRoot.Path
+	}
+	username := ""
+	if smbRoot.Username != nil {
+		username = *smbRoot.Username
+	}
+	domain := ""
 	if smbRoot.Domain != nil {
-		smbConfig.Domain = *smbRoot.Domain
+		domain = *smbRoot.Domain
 	}
 
-	connectionKey := fmt.Sprintf("%s:%d:%s:%s", smbRoot.Host, smbRoot.Port, smbRoot.Share, smbRoot.Username)
+	smbConfig := &smb.SmbConfig{
+		Host:     host,
+		Port:     port,
+		Share:    share,
+		Username: username,
+		Domain:   domain,
+	}
+
+	connectionKey := fmt.Sprintf("%s:%d:%s:%s", host, port, share, username)
 	smbClient, err := h.smbPool.GetConnection(connectionKey, smbConfig)
 	if err != nil {
-		utils.ErrorResponse(c, http.StatusInternalServerError, "Failed to connect to SMB share", err)
+		utils.SendErrorResponse(c, http.StatusInternalServerError, "Failed to connect to SMB share", err)
 		return
 	}
 
 	// Check if directory exists
 	fileInfo, err := smbClient.GetFileInfo(dirPath)
 	if err != nil {
-		utils.ErrorResponse(c, http.StatusNotFound, "Directory not found", err)
+		utils.SendErrorResponse(c, http.StatusNotFound, "Directory not found", err)
 		return
 	}
 
 	if !fileInfo.IsDir {
-		utils.ErrorResponse(c, http.StatusBadRequest, "Path is not a directory", nil)
+		utils.SendErrorResponse(c, http.StatusBadRequest, "Path is not a directory", nil)
 		return
 	}
 
@@ -358,9 +394,9 @@ func (h *DownloadHandler) addDirectoryToZip(ctx context.Context, zipWriter *zip.
 // @Produce json
 // @Param id path int true "File ID"
 // @Success 200 {object} DownloadInfo
-// @Failure 400 {object} utils.ErrorResponse
-// @Failure 404 {object} utils.ErrorResponse
-// @Failure 500 {object} utils.ErrorResponse
+// @Failure 400 {object} utils.SendErrorResponse
+// @Failure 404 {object} utils.SendErrorResponse
+// @Failure 500 {object} utils.SendErrorResponse
 // @Router /api/download/info/{id} [get]
 func (h *DownloadHandler) GetDownloadInfo(c *gin.Context) {
 	ctx := c.Request.Context()
@@ -369,7 +405,7 @@ func (h *DownloadHandler) GetDownloadInfo(c *gin.Context) {
 	idStr := c.Param("id")
 	id, err := strconv.ParseInt(idStr, 10, 64)
 	if err != nil {
-		utils.ErrorResponse(c, http.StatusBadRequest, "Invalid file ID", err)
+		utils.SendErrorResponse(c, http.StatusBadRequest, "Invalid file ID", err)
 		return
 	}
 
@@ -377,10 +413,10 @@ func (h *DownloadHandler) GetDownloadInfo(c *gin.Context) {
 	file, err := h.fileRepo.GetFileByID(ctx, id)
 	if err != nil {
 		if err.Error() == "file not found" {
-			utils.ErrorResponse(c, http.StatusNotFound, "File not found", err)
+			utils.SendErrorResponse(c, http.StatusNotFound, "File not found", err)
 			return
 		}
-		utils.ErrorResponse(c, http.StatusInternalServerError, "Failed to get file info", err)
+		utils.SendErrorResponse(c, http.StatusInternalServerError, "Failed to get file info", err)
 		return
 	}
 

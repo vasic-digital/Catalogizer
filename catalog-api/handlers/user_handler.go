@@ -36,7 +36,7 @@ func (h *UserHandler) CreateUser(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	hasPermission, err := h.authService.CheckPermission(currentUser.ID, models.PermissionCreateUser)
+	hasPermission, err := h.authService.CheckPermission(currentUser.ID, models.PermissionUserCreate)
 	if err != nil {
 		http.Error(w, "Failed to check permissions", http.StatusInternalServerError)
 		return
@@ -70,6 +70,11 @@ func (h *UserHandler) CreateUser(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	isActive := true
+	if req.IsActive != nil {
+		isActive = *req.IsActive
+	}
+
 	user := &models.User{
 		Username:     req.Username,
 		Email:        req.Email,
@@ -81,7 +86,7 @@ func (h *UserHandler) CreateUser(w http.ResponseWriter, r *http.Request) {
 		DisplayName:  req.DisplayName,
 		TimeZone:     req.TimeZone,
 		Language:     req.Language,
-		IsActive:     req.IsActive,
+		IsActive:     isActive,
 	}
 
 	id, err := h.userRepo.Create(user)
@@ -123,7 +128,7 @@ func (h *UserHandler) GetUser(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if currentUser.ID != userID {
-		hasPermission, err := h.authService.CheckPermission(currentUser.ID, models.PermissionViewUser)
+		hasPermission, err := h.authService.CheckPermission(currentUser.ID, models.PermissionUserView)
 		if err != nil {
 			http.Error(w, "Failed to check permissions", http.StatusInternalServerError)
 			return
@@ -179,7 +184,7 @@ func (h *UserHandler) UpdateUser(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if currentUser.ID != userID {
-		hasPermission, err := h.authService.CheckPermission(currentUser.ID, models.PermissionEditUser)
+		hasPermission, err := h.authService.CheckPermission(currentUser.ID, models.PermissionUserUpdate)
 		if err != nil {
 			http.Error(w, "Failed to check permissions", http.StatusInternalServerError)
 			return
@@ -207,31 +212,53 @@ func (h *UserHandler) UpdateUser(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	user.Username = req.Username
-	user.Email = req.Email
-	user.FirstName = req.FirstName
-	user.LastName = req.LastName
-	user.DisplayName = req.DisplayName
-	user.AvatarURL = req.AvatarURL
-	user.TimeZone = req.TimeZone
-	user.Language = req.Language
+	if req.Username != nil {
+		user.Username = *req.Username
+	}
+	if req.Email != nil {
+		user.Email = *req.Email
+	}
+	if req.FirstName != nil {
+		user.FirstName = req.FirstName
+	}
+	if req.LastName != nil {
+		user.LastName = req.LastName
+	}
+	if req.DisplayName != nil {
+		user.DisplayName = req.DisplayName
+	}
+	if req.AvatarURL != nil {
+		user.AvatarURL = req.AvatarURL
+	}
+	if req.TimeZone != nil {
+		user.TimeZone = req.TimeZone
+	}
+	if req.Language != nil {
+		user.Language = req.Language
+	}
 
 	if currentUser.ID != userID {
-		hasAdminPermission, err := h.authService.CheckPermission(currentUser.ID, models.PermissionManageUsers)
+		hasAdminPermission, err := h.authService.CheckPermission(currentUser.ID, models.PermissionUserManage)
 		if err != nil {
 			http.Error(w, "Failed to check permissions", http.StatusInternalServerError)
 			return
 		}
 
 		if hasAdminPermission {
-			user.RoleID = req.RoleID
-			user.IsActive = req.IsActive
+			if req.RoleID != nil {
+				user.RoleID = *req.RoleID
+			}
+			if req.IsActive != nil {
+				user.IsActive = *req.IsActive
+			}
 		}
 	}
 
-	if req.Settings != "" {
-		user.Settings = req.Settings
-	}
+	// TODO: handle Settings update
+	// if req.Settings != nil {
+	// 	// marshal to string
+	// 	user.Settings = req.Settings
+	// }
 
 	err = h.userRepo.Update(user)
 	if err != nil {
@@ -269,7 +296,7 @@ func (h *UserHandler) DeleteUser(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	hasPermission, err := h.authService.CheckPermission(currentUser.ID, models.PermissionDeleteUser)
+	hasPermission, err := h.authService.CheckPermission(currentUser.ID, models.PermissionUserDelete)
 	if err != nil {
 		http.Error(w, "Failed to check permissions", http.StatusInternalServerError)
 		return
@@ -313,7 +340,7 @@ func (h *UserHandler) ListUsers(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	hasPermission, err := h.authService.CheckPermission(currentUser.ID, models.PermissionViewUser)
+	hasPermission, err := h.authService.CheckPermission(currentUser.ID, models.PermissionUserView)
 	if err != nil {
 		http.Error(w, "Failed to check permissions", http.StatusInternalServerError)
 		return
@@ -387,7 +414,7 @@ func (h *UserHandler) ResetPassword(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	hasPermission, err := h.authService.CheckPermission(currentUser.ID, models.PermissionManageUsers)
+	hasPermission, err := h.authService.CheckPermission(currentUser.ID, models.PermissionUserManage)
 	if err != nil {
 		http.Error(w, "Failed to check permissions", http.StatusInternalServerError)
 		return
@@ -442,7 +469,7 @@ func (h *UserHandler) LockAccount(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	hasPermission, err := h.authService.CheckPermission(currentUser.ID, models.PermissionManageUsers)
+	hasPermission, err := h.authService.CheckPermission(currentUser.ID, models.PermissionUserManage)
 	if err != nil {
 		http.Error(w, "Failed to check permissions", http.StatusInternalServerError)
 		return
@@ -503,7 +530,7 @@ func (h *UserHandler) UnlockAccount(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	hasPermission, err := h.authService.CheckPermission(currentUser.ID, models.PermissionManageUsers)
+	hasPermission, err := h.authService.CheckPermission(currentUser.ID, models.PermissionUserManage)
 	if err != nil {
 		http.Error(w, "Failed to check permissions", http.StatusInternalServerError)
 		return

@@ -13,16 +13,16 @@ import (
 
 // RenameEvent represents a file/directory rename operation
 type RenameEvent struct {
-	ID           int64     `json:"id"`
-	StorageRootID int64    `json:"storage_root_id"`
-	OldPath      string    `json:"old_path"`
-	NewPath      string    `json:"new_path"`
-	IsDirectory  bool      `json:"is_directory"`
-	Size         int64     `json:"size"`
-	FileHash     *string   `json:"file_hash,omitempty"`
-	DetectedAt   time.Time `json:"detected_at"`
-	ProcessedAt  *time.Time `json:"processed_at,omitempty"`
-	Status       string    `json:"status"` // pending, processed, failed
+	ID            int64      `json:"id"`
+	StorageRootID int64      `json:"storage_root_id"`
+	OldPath       string     `json:"old_path"`
+	NewPath       string     `json:"new_path"`
+	IsDirectory   bool       `json:"is_directory"`
+	Size          int64      `json:"size"`
+	FileHash      *string    `json:"file_hash,omitempty"`
+	DetectedAt    time.Time  `json:"detected_at"`
+	ProcessedAt   *time.Time `json:"processed_at,omitempty"`
+	Status        string     `json:"status"` // pending, processed, failed
 }
 
 // PendingMove tracks a potential move operation
@@ -38,14 +38,14 @@ type PendingMove struct {
 
 // RenameTracker efficiently detects and handles file/directory renames
 type RenameTracker struct {
-	db               *sql.DB
-	logger           *zap.Logger
-	pendingMoves     map[string]*PendingMove // key: storageRoot:hash:size
-	pendingMovesMu   sync.RWMutex
-	cleanupInterval  time.Duration
-	moveWindow       time.Duration // time window to detect moves
-	stopCh           chan struct{}
-	wg               sync.WaitGroup
+	db              *sql.DB
+	logger          *zap.Logger
+	PendingMoves    map[string]*PendingMove // key: storageRoot:hash:size
+	PendingMovesMu  sync.RWMutex
+	cleanupInterval time.Duration
+	moveWindow      time.Duration // time window to detect moves
+	stopCh          chan struct{}
+	wg              sync.WaitGroup
 }
 
 // NewRenameTracker creates a new rename tracker
@@ -53,7 +53,7 @@ func NewRenameTracker(db *sql.DB, logger *zap.Logger) *RenameTracker {
 	return &RenameTracker{
 		db:              db,
 		logger:          logger,
-		pendingMoves:    make(map[string]*PendingMove),
+		PendingMoves:    make(map[string]*PendingMove),
 		cleanupInterval: 30 * time.Second,
 		moveWindow:      5 * time.Second, // moves should happen within 5 seconds
 		stopCh:          make(chan struct{}),
@@ -69,7 +69,7 @@ func (rt *RenameTracker) Start() error {
 	go rt.cleanupWorker()
 
 	// Create rename tracking tables if they don't exist
-	if err := rt.initializeTables(); err != nil {
+	if err := rt.InitializeTables(); err != nil {
 		return fmt.Errorf("failed to initialize rename tracking tables: %w", err)
 	}
 
@@ -87,10 +87,10 @@ func (rt *RenameTracker) Stop() {
 // TrackDelete tracks a file/directory deletion for potential move detection
 func (rt *RenameTracker) TrackDelete(ctx context.Context, fileID int64, path, storageRoot string, size int64, fileHash *string, isDirectory bool) {
 	// Create move tracking key
-	key := rt.createMoveKey(storageRoot, fileHash, size, isDirectory)
+	key := rt.CreateMoveKey(storageRoot, fileHash, size, isDirectory)
 
-	rt.pendingMovesMu.Lock()
-	rt.pendingMoves[key] = &PendingMove{
+	rt.PendingMovesMu.Lock()
+	rt.PendingMoves[key] = &PendingMove{
 		Path:        path,
 		StorageRoot: storageRoot,
 		Size:        size,
@@ -99,7 +99,7 @@ func (rt *RenameTracker) TrackDelete(ctx context.Context, fileID int64, path, st
 		DeletedAt:   time.Now(),
 		FileID:      fileID,
 	}
-	rt.pendingMovesMu.Unlock()
+	rt.PendingMovesMu.Unlock()
 
 	rt.logger.Debug("Tracking potential move deletion",
 		zap.String("path", path),
@@ -109,14 +109,14 @@ func (rt *RenameTracker) TrackDelete(ctx context.Context, fileID int64, path, st
 
 // DetectCreate checks if a file creation is actually a move from a deletion
 func (rt *RenameTracker) DetectCreate(ctx context.Context, newPath, storageRoot string, size int64, fileHash *string, isDirectory bool) (*PendingMove, bool) {
-	key := rt.createMoveKey(storageRoot, fileHash, size, isDirectory)
+	key := rt.CreateMoveKey(storageRoot, fileHash, size, isDirectory)
 
-	rt.pendingMovesMu.Lock()
-	pendingMove, exists := rt.pendingMoves[key]
+	rt.PendingMovesMu.Lock()
+	pendingMove, exists := rt.PendingMoves[key]
 	if exists {
-		delete(rt.pendingMoves, key)
+		delete(rt.PendingMoves, key)
 	}
-	rt.pendingMovesMu.Unlock()
+	rt.PendingMovesMu.Unlock()
 
 	if !exists {
 		return nil, false
@@ -322,7 +322,7 @@ func (rt *RenameTracker) markRenameEventStatus(tx *sql.Tx, eventID int64, status
 }
 
 // createMoveKey creates a unique key for tracking potential moves
-func (rt *RenameTracker) createMoveKey(storageRoot string, fileHash *string, size int64, isDirectory bool) string {
+func (rt *RenameTracker) CreateMoveKey(storageRoot string, fileHash *string, size int64, isDirectory bool) string {
 	hashStr := "nil"
 	if fileHash != nil {
 		hashStr = *fileHash
@@ -355,21 +355,21 @@ func (rt *RenameTracker) cleanupWorker() {
 
 // cleanupExpiredMoves removes pending moves that have exceeded the time window
 func (rt *RenameTracker) cleanupExpiredMoves() {
-	rt.pendingMovesMu.Lock()
-	defer rt.pendingMovesMu.Unlock()
+	rt.PendingMovesMu.Lock()
+	defer rt.PendingMovesMu.Unlock()
 
 	now := time.Now()
 	expiredKeys := make([]string, 0)
 
-	for key, move := range rt.pendingMoves {
+	for key, move := range rt.PendingMoves {
 		if now.Sub(move.DeletedAt) > rt.moveWindow {
 			expiredKeys = append(expiredKeys, key)
 		}
 	}
 
 	for _, key := range expiredKeys {
-		move := rt.pendingMoves[key]
-		delete(rt.pendingMoves, key)
+		move := rt.PendingMoves[key]
+		delete(rt.PendingMoves, key)
 
 		rt.logger.Debug("Cleaned up expired pending move",
 			zap.String("path", move.Path),
@@ -416,9 +416,9 @@ func (rt *RenameTracker) GetRenameEvents(ctx context.Context, limit int) ([]Rena
 
 // GetStatistics returns statistics about rename detection
 func (rt *RenameTracker) GetStatistics() map[string]interface{} {
-	rt.pendingMovesMu.RLock()
-	pendingCount := len(rt.pendingMoves)
-	rt.pendingMovesMu.RUnlock()
+	rt.PendingMovesMu.RLock()
+	pendingCount := len(rt.PendingMoves)
+	rt.PendingMovesMu.RUnlock()
 
 	stats := map[string]interface{}{
 		"pending_moves": pendingCount,
@@ -442,8 +442,8 @@ func (rt *RenameTracker) GetStatistics() map[string]interface{} {
 	return stats
 }
 
-// initializeTables creates the rename tracking tables
-func (rt *RenameTracker) initializeTables() error {
+// InitializeTables creates the rename tracking tables
+func (rt *RenameTracker) InitializeTables() error {
 	query := `
 		CREATE TABLE IF NOT EXISTS rename_events (
 			id INTEGER PRIMARY KEY AUTOINCREMENT,

@@ -2,6 +2,7 @@ package repository
 
 import (
 	"database/sql"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"time"
@@ -299,7 +300,7 @@ func (r *UserRepository) GetRole(roleID int) (*models.Role, error) {
 		return nil, fmt.Errorf("failed to get role: %w", err)
 	}
 
-	err = role.Permissions.UnmarshalJSON([]byte(permissionsJSON))
+	err = json.Unmarshal([]byte(permissionsJSON), &role.Permissions)
 	if err != nil {
 		return nil, fmt.Errorf("failed to unmarshal permissions: %w", err)
 	}
@@ -314,7 +315,7 @@ func (r *UserRepository) CreateSession(session *models.UserSession) (int, error)
 		VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
 	`
 
-	deviceInfoJSON, err := session.DeviceInfo.MarshalJSON()
+	deviceInfoJSON, err := json.Marshal(session.DeviceInfo)
 	if err != nil {
 		return 0, fmt.Errorf("failed to marshal device info: %w", err)
 	}
@@ -358,7 +359,7 @@ func (r *UserRepository) GetSession(sessionID string) (*models.UserSession, erro
 		return nil, fmt.Errorf("failed to get session: %w", err)
 	}
 
-	err = session.DeviceInfo.UnmarshalJSON([]byte(deviceInfoJSON))
+	err = json.Unmarshal([]byte(deviceInfoJSON), &session.DeviceInfo)
 	if err != nil {
 		return nil, fmt.Errorf("failed to unmarshal device info: %w", err)
 	}
@@ -385,7 +386,7 @@ func (r *UserRepository) GetSessionByRefreshToken(refreshToken string) (*models.
 		return nil, err
 	}
 
-	err = session.DeviceInfo.UnmarshalJSON([]byte(deviceInfoJSON))
+	err = json.Unmarshal([]byte(deviceInfoJSON), &session.DeviceInfo)
 	if err != nil {
 		return nil, fmt.Errorf("failed to unmarshal device info: %w", err)
 	}
@@ -411,7 +412,7 @@ func (r *UserRepository) UpdateSessionActivity(sessionID int) error {
 	return err
 }
 
-func (r *UserRepository) DeactivateSession(sessionID string) error {
+func (r *UserRepository) DeactivateSession(sessionID int) error {
 	query := `UPDATE user_sessions SET is_active = 0 WHERE id = ?`
 	_, err := r.db.Exec(query, sessionID)
 	return err
@@ -452,7 +453,7 @@ func (r *UserRepository) GetActiveUserSessions(userID int) ([]models.UserSession
 			return nil, fmt.Errorf("failed to scan session: %w", err)
 		}
 
-		err = session.DeviceInfo.UnmarshalJSON([]byte(deviceInfoJSON))
+		err = json.Unmarshal([]byte(deviceInfoJSON), &session.DeviceInfo)
 		if err != nil {
 			return nil, fmt.Errorf("failed to unmarshal device info: %w", err)
 		}
@@ -476,14 +477,14 @@ func (r *UserRepository) CreateRole(role *models.Role) (int, error) {
 		VALUES (?, ?, ?, ?, ?, ?)
 	`
 
-	permissionsJSON, err := role.Permissions.MarshalJSON()
+	permissionsJSON, err := json.Marshal(role.Permissions)
 	if err != nil {
 		return 0, fmt.Errorf("failed to marshal permissions: %w", err)
 	}
 
 	now := time.Now()
 	result, err := r.db.Exec(query, role.Name, role.Description, string(permissionsJSON),
-							role.IsSystem, now, now)
+		role.IsSystem, now, now)
 
 	if err != nil {
 		return 0, fmt.Errorf("failed to create role: %w", err)
@@ -503,13 +504,13 @@ func (r *UserRepository) UpdateRole(role *models.Role) error {
 		WHERE id = ? AND is_system = 0
 	`
 
-	permissionsJSON, err := role.Permissions.MarshalJSON()
+	permissionsJSON, err := json.Marshal(role.Permissions)
 	if err != nil {
 		return fmt.Errorf("failed to marshal permissions: %w", err)
 	}
 
 	result, err := r.db.Exec(query, role.Name, role.Description, string(permissionsJSON),
-							time.Now(), role.ID)
+		time.Now(), role.ID)
 
 	if err != nil {
 		return fmt.Errorf("failed to update role: %w", err)
@@ -579,13 +580,13 @@ func (r *UserRepository) ListRoles() ([]models.Role, error) {
 		var permissionsJSON string
 
 		err := rows.Scan(&role.ID, &role.Name, &role.Description, &permissionsJSON,
-						&role.IsSystem, &role.CreatedAt, &role.UpdatedAt)
+			&role.IsSystem, &role.CreatedAt, &role.UpdatedAt)
 
 		if err != nil {
 			return nil, fmt.Errorf("failed to scan role: %w", err)
 		}
 
-		err = role.Permissions.UnmarshalJSON([]byte(permissionsJSON))
+		err = json.Unmarshal([]byte(permissionsJSON), &role.Permissions)
 		if err != nil {
 			return nil, fmt.Errorf("failed to unmarshal permissions: %w", err)
 		}

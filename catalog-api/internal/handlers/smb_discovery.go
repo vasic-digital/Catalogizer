@@ -1,7 +1,7 @@
 package handlers
 
 import (
-	"catalog-api/internal/services"
+	"catalogizer/internal/services"
 	"net/http"
 	"strconv"
 

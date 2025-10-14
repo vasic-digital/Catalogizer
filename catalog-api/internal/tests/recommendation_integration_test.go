@@ -5,7 +5,7 @@ import (
 	"testing"
 	"time"
 
-	"catalog-api/internal/models"
+	"catalogizer/internal/models"
 )
 
 // MockRecommendationService provides a mock implementation for testing

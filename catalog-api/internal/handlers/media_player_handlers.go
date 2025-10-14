@@ -9,7 +9,7 @@ import (
 	"github.com/gorilla/mux"
 	"go.uber.org/zap"
 
-	"catalog-api/internal/services"
+	"catalogizer/internal/services"
 )
 
 type MediaPlayerHandlers struct {

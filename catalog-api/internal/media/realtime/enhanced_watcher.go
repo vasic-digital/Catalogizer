@@ -1,15 +1,14 @@
 package realtime
 
 import (
-	"catalog-api/internal/media/analyzer"
-	"catalog-api/internal/media/database"
-	"catalog-api/internal/media/models"
-	"catalog-api/internal/services"
+	"catalogizer/internal/media/analyzer"
+	"catalogizer/internal/media/database"
+	"catalogizer/internal/models"
+	"catalogizer/internal/services"
 	"context"
 	"crypto/md5"
 	"encoding/hex"
 	"encoding/json"
-	"fmt"
 	"io"
 	"os"
 	"path/filepath"
@@ -23,19 +22,19 @@ import (
 
 // EnhancedChangeWatcher monitors file system changes with intelligent rename detection
 type EnhancedChangeWatcher struct {
-	mediaDB        *database.MediaDatabase
-	analyzer       *analyzer.MediaAnalyzer
-	renameTracker  *services.RenameTracker
-	logger         *zap.Logger
-	watchers       map[string]*fsnotify.Watcher
-	watcherMu      sync.RWMutex
-	changeQueue    chan EnhancedChangeEvent
-	workers        int
-	stopCh         chan struct{}
-	wg             sync.WaitGroup
-	debounceMap    map[string]*time.Timer
-	debounceMu     sync.Mutex
-	debounceDelay  time.Duration
+	mediaDB       *database.MediaDatabase
+	analyzer      *analyzer.MediaAnalyzer
+	renameTracker *services.RenameTracker
+	logger        *zap.Logger
+	watchers      map[string]*fsnotify.Watcher
+	watcherMu     sync.RWMutex
+	changeQueue   chan EnhancedChangeEvent
+	workers       int
+	stopCh        chan struct{}
+	wg            sync.WaitGroup
+	debounceMap   map[string]*time.Timer
+	debounceMu    sync.Mutex
+	debounceDelay time.Duration
 }
 
 // EnhancedChangeEvent represents a file system change with additional metadata
@@ -239,7 +238,9 @@ func (w *EnhancedChangeWatcher) handleFileSystemEvent(smbRoot, localPath string,
 		if fileInfo != nil {
 			size = fileInfo.Size
 			isDir = fileInfo.IsDirectory
-			fileHash = fileInfo.QuickHash
+			if fileInfo.Hash != nil {
+				fileHash = fileInfo.Hash
+			}
 			fileID = &fileInfo.ID
 		}
 	}
@@ -287,19 +288,27 @@ func (w *EnhancedChangeWatcher) getRelativePath(basePath, fullPath string) (stri
 }
 
 // getFileInfoFromDB retrieves file information from database
-func (w *EnhancedChangeWatcher) getFileInfoFromDB(path, smbRoot string) *models.File {
+func (w *EnhancedChangeWatcher) getFileInfoFromDB(path, smbRoot string) *models.FileInfo {
 	query := `
-		SELECT f.id, f.size, f.is_directory, f.quick_hash
+		SELECT f.id, f.name, f.path, f.is_directory, f.size, f.last_modified, f.hash, f.extension, f.mime_type, f.parent_id, f.smb_root, f.created_at, f.updated_at
 		FROM files f
 		JOIN storage_roots sr ON f.storage_root_id = sr.id
 		WHERE f.path = ? AND sr.name = ?`
 
-	var file models.File
+	var file models.FileInfo
 	err := w.mediaDB.GetDB().QueryRow(query, path, smbRoot).Scan(
-		&file.ID, &file.Size, &file.IsDirectory, &file.QuickHash)
+		&file.ID, &file.Name, &file.Path, &file.IsDirectory, &file.Size,
+		&file.LastModified, &file.Hash, &file.Extension, &file.MimeType,
+		&file.ParentID, &file.SmbRoot, &file.CreatedAt, &file.UpdatedAt)
 
 	if err != nil {
 		return nil
+	}
+
+	if file.IsDirectory {
+		file.Type = "directory"
+	} else {
+		file.Type = "file"
 	}
 
 	return &file

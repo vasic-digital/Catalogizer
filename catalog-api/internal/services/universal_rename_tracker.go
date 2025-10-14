@@ -1,7 +1,7 @@
 package services
 
 import (
-	"catalog-api/filesystem"
+	"catalogizer/filesystem"
 	"context"
 	"database/sql"
 	"fmt"
@@ -27,15 +27,15 @@ type UniversalRenameTracker struct {
 
 // UniversalPendingMove tracks a potential move operation across any protocol
 type UniversalPendingMove struct {
-	Path          string
-	StorageRoot   string
-	Protocol      string
-	Size          int64
-	FileHash      *string
-	IsDirectory   bool
-	DeletedAt     time.Time
-	FileID        int64
-	ProtocolData  map[string]interface{} // Protocol-specific metadata
+	Path         string
+	StorageRoot  string
+	Protocol     string
+	Size         int64
+	FileHash     *string
+	IsDirectory  bool
+	DeletedAt    time.Time
+	FileID       int64
+	ProtocolData map[string]interface{} // Protocol-specific metadata
 }
 
 // ProtocolHandler defines protocol-specific operations for rename handling
@@ -92,7 +92,7 @@ func (rt *UniversalRenameTracker) Start() error {
 	go rt.cleanupWorker()
 
 	// Create rename tracking tables if they don't exist
-	if err := rt.initializeTables(); err != nil {
+	if err := rt.InitializeTables(); err != nil {
 		return fmt.Errorf("failed to initialize rename tracking tables: %w", err)
 	}
 
@@ -461,9 +461,9 @@ func (rt *UniversalRenameTracker) GetStatistics() map[string]interface{} {
 	rt.pendingMovesMu.RUnlock()
 
 	stats := map[string]interface{}{
-		"total_pending_moves":   totalPending,
-		"pending_by_protocol":   pendingByProtocol,
-		"supported_protocols":   rt.getSupportedProtocols(),
+		"total_pending_moves": totalPending,
+		"pending_by_protocol": pendingByProtocol,
+		"supported_protocols": rt.getSupportedProtocols(),
 	}
 
 	// Get database statistics
@@ -492,8 +492,8 @@ func (rt *UniversalRenameTracker) getSupportedProtocols() []string {
 	return protocols
 }
 
-// initializeTables creates the universal rename tracking tables
-func (rt *UniversalRenameTracker) initializeTables() error {
+// InitializeTables creates the universal rename tracking tables
+func (rt *UniversalRenameTracker) InitializeTables() error {
 	query := `
 		CREATE TABLE IF NOT EXISTS universal_rename_events (
 			id INTEGER PRIMARY KEY AUTOINCREMENT,

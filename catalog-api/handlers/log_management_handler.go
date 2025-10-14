@@ -6,28 +6,29 @@ import (
 	"strconv"
 	"time"
 
-	"catalog-api/models"
-	"catalog-api/services"
+	"catalogizer/models"
+	"catalogizer/services"
 
 	"github.com/gorilla/mux"
 )
 
 type LogManagementHandler struct {
 	logManagementService *services.LogManagementService
-	permissionService    *services.PermissionService
+	authService          *services.AuthService
 }
 
-func NewLogManagementHandler(logManagementService *services.LogManagementService, permissionService *services.PermissionService) *LogManagementHandler {
+func NewLogManagementHandler(logManagementService *services.LogManagementService, authService *services.AuthService) *LogManagementHandler {
 	return &LogManagementHandler{
 		logManagementService: logManagementService,
-		permissionService:    permissionService,
+		authService:          authService,
 	}
 }
 
 func (h *LogManagementHandler) CreateLogCollection(w http.ResponseWriter, r *http.Request) {
 	userID := r.Context().Value("user_id").(int)
 
-	if !h.permissionService.HasPermission(userID, "log_management", "write") {
+	hasPermission, err := h.authService.CheckPermission(userID, models.PermissionSystemAdmin)
+	if err != nil || !hasPermission {
 		http.Error(w, "Insufficient permissions", http.StatusForbidden)
 		return
 	}
@@ -57,7 +58,8 @@ func (h *LogManagementHandler) GetLogCollection(w http.ResponseWriter, r *http.R
 		return
 	}
 
-	if !h.permissionService.HasPermission(userID, "log_management", "read") {
+	hasPermission, err := h.authService.CheckPermission(userID, models.PermissionSystemAdmin)
+	if err != nil || !hasPermission {
 		http.Error(w, "Insufficient permissions", http.StatusForbidden)
 		return
 	}
@@ -75,7 +77,8 @@ func (h *LogManagementHandler) GetLogCollection(w http.ResponseWriter, r *http.R
 func (h *LogManagementHandler) ListLogCollections(w http.ResponseWriter, r *http.Request) {
 	userID := r.Context().Value("user_id").(int)
 
-	if !h.permissionService.HasPermission(userID, "log_management", "read") {
+	hasPermission, err := h.authService.CheckPermission(userID, models.PermissionSystemAdmin)
+	if err != nil || !hasPermission {
 		http.Error(w, "Insufficient permissions", http.StatusForbidden)
 		return
 	}
@@ -122,7 +125,8 @@ func (h *LogManagementHandler) GetLogEntries(w http.ResponseWriter, r *http.Requ
 		return
 	}
 
-	if !h.permissionService.HasPermission(userID, "log_management", "read") {
+	hasPermission, err := h.authService.CheckPermission(userID, models.PermissionSystemAdmin)
+	if err != nil || !hasPermission {
 		http.Error(w, "Insufficient permissions", http.StatusForbidden)
 		return
 	}
@@ -144,7 +148,8 @@ func (h *LogManagementHandler) GetLogEntries(w http.ResponseWriter, r *http.Requ
 func (h *LogManagementHandler) CreateLogShare(w http.ResponseWriter, r *http.Request) {
 	userID := r.Context().Value("user_id").(int)
 
-	if !h.permissionService.HasPermission(userID, "log_management", "share") {
+	hasPermission, err := h.authService.CheckPermission(userID, models.PermissionSystemAdmin)
+	if err != nil || !hasPermission {
 		http.Error(w, "Insufficient permissions", http.StatusForbidden)
 		return
 	}
@@ -212,7 +217,8 @@ func (h *LogManagementHandler) RevokeLogShare(w http.ResponseWriter, r *http.Req
 		return
 	}
 
-	if !h.permissionService.HasPermission(userID, "log_management", "share") {
+	hasPermission, err := h.authService.CheckPermission(userID, models.PermissionSystemAdmin)
+	if err != nil || !hasPermission {
 		http.Error(w, "Insufficient permissions", http.StatusForbidden)
 		return
 	}
@@ -235,7 +241,8 @@ func (h *LogManagementHandler) ExportLogs(w http.ResponseWriter, r *http.Request
 		return
 	}
 
-	if !h.permissionService.HasPermission(userID, "log_management", "read") {
+	hasPermission, err := h.authService.CheckPermission(userID, models.PermissionSystemAdmin)
+	if err != nil || !hasPermission {
 		http.Error(w, "Insufficient permissions", http.StatusForbidden)
 		return
 	}
@@ -276,7 +283,8 @@ func (h *LogManagementHandler) ExportLogs(w http.ResponseWriter, r *http.Request
 func (h *LogManagementHandler) StreamLogs(w http.ResponseWriter, r *http.Request) {
 	userID := r.Context().Value("user_id").(int)
 
-	if !h.permissionService.HasPermission(userID, "log_management", "read") {
+	hasPermission, err := h.authService.CheckPermission(userID, models.PermissionSystemAdmin)
+	if err != nil || !hasPermission {
 		http.Error(w, "Insufficient permissions", http.StatusForbidden)
 		return
 	}
@@ -336,7 +344,8 @@ func (h *LogManagementHandler) AnalyzeLogs(w http.ResponseWriter, r *http.Reques
 		return
 	}
 
-	if !h.permissionService.HasPermission(userID, "log_management", "read") {
+	hasPermission, err := h.authService.CheckPermission(userID, models.PermissionSystemAdmin)
+	if err != nil || !hasPermission {
 		http.Error(w, "Insufficient permissions", http.StatusForbidden)
 		return
 	}
@@ -354,7 +363,8 @@ func (h *LogManagementHandler) AnalyzeLogs(w http.ResponseWriter, r *http.Reques
 func (h *LogManagementHandler) GetLogStatistics(w http.ResponseWriter, r *http.Request) {
 	userID := r.Context().Value("user_id").(int)
 
-	if !h.permissionService.HasPermission(userID, "log_management", "read") {
+	hasPermission, err := h.authService.CheckPermission(userID, models.PermissionSystemAdmin)
+	if err != nil || !hasPermission {
 		http.Error(w, "Insufficient permissions", http.StatusForbidden)
 		return
 	}
@@ -372,7 +382,8 @@ func (h *LogManagementHandler) GetLogStatistics(w http.ResponseWriter, r *http.R
 func (h *LogManagementHandler) GetConfiguration(w http.ResponseWriter, r *http.Request) {
 	userID := r.Context().Value("user_id").(int)
 
-	if !h.permissionService.HasPermission(userID, "log_management", "admin") {
+	hasPermission, err := h.authService.CheckPermission(userID, models.PermissionSystemAdmin)
+	if err != nil || !hasPermission {
 		http.Error(w, "Insufficient permissions", http.StatusForbidden)
 		return
 	}
@@ -386,7 +397,8 @@ func (h *LogManagementHandler) GetConfiguration(w http.ResponseWriter, r *http.R
 func (h *LogManagementHandler) UpdateConfiguration(w http.ResponseWriter, r *http.Request) {
 	userID := r.Context().Value("user_id").(int)
 
-	if !h.permissionService.HasPermission(userID, "log_management", "admin") {
+	hasPermission, err := h.authService.CheckPermission(userID, models.PermissionSystemAdmin)
+	if err != nil || !hasPermission {
 		http.Error(w, "Insufficient permissions", http.StatusForbidden)
 		return
 	}
@@ -397,7 +409,7 @@ func (h *LogManagementHandler) UpdateConfiguration(w http.ResponseWriter, r *htt
 		return
 	}
 
-	err := h.logManagementService.UpdateConfiguration(&config)
+	err = h.logManagementService.UpdateConfiguration(&config)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
@@ -412,12 +424,13 @@ func (h *LogManagementHandler) UpdateConfiguration(w http.ResponseWriter, r *htt
 func (h *LogManagementHandler) CleanupOldLogs(w http.ResponseWriter, r *http.Request) {
 	userID := r.Context().Value("user_id").(int)
 
-	if !h.permissionService.HasPermission(userID, "log_management", "admin") {
+	hasPermission, err := h.authService.CheckPermission(userID, models.PermissionSystemAdmin)
+	if err != nil || !hasPermission {
 		http.Error(w, "Insufficient permissions", http.StatusForbidden)
 		return
 	}
 
-	err := h.logManagementService.CleanupOldLogs()
+	err = h.logManagementService.CleanupOldLogs()
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return

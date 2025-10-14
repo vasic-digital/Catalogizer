@@ -1,14 +1,12 @@
 package integration
 
 import (
-	"catalog-api/filesystem"
-	"catalog-api/internal/services"
-	"catalog-api/models"
+	"catalogizer/filesystem"
+	"catalogizer/internal/services"
 	"context"
 	"database/sql"
 	"fmt"
 	"os"
-	"path/filepath"
 	"testing"
 	"time"
 

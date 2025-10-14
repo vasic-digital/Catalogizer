@@ -10,7 +10,7 @@ import (
 	"github.com/stretchr/testify/require"
 	"go.uber.org/zap/zaptest"
 
-	"catalog-api/internal/services"
+	"catalogizer/internal/services"
 )
 
 func TestMusicPlayerService(t *testing.T) {

@@ -35,7 +35,7 @@ func (h *RoleHandler) CreateRole(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	hasPermission, err := h.authService.CheckPermission(currentUser.ID, models.PermissionManageRoles)
+	hasPermission, err := h.authService.CheckPermission(currentUser.ID, models.PermissionSystemAdmin)
 	if err != nil {
 		http.Error(w, "Failed to check permissions", http.StatusInternalServerError)
 		return
@@ -88,7 +88,7 @@ func (h *RoleHandler) GetRole(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	hasPermission, err := h.authService.CheckPermission(currentUser.ID, models.PermissionViewRoles)
+	hasPermission, err := h.authService.CheckPermission(currentUser.ID, models.PermissionSystemAdmin)
 	if err != nil {
 		http.Error(w, "Failed to check permissions", http.StatusInternalServerError)
 		return
@@ -132,7 +132,7 @@ func (h *RoleHandler) UpdateRole(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	hasPermission, err := h.authService.CheckPermission(currentUser.ID, models.PermissionManageRoles)
+	hasPermission, err := h.authService.CheckPermission(currentUser.ID, models.PermissionSystemAdmin)
 	if err != nil {
 		http.Error(w, "Failed to check permissions", http.StatusInternalServerError)
 		return
@@ -158,7 +158,7 @@ func (h *RoleHandler) UpdateRole(w http.ResponseWriter, r *http.Request) {
 
 	role := &models.Role{
 		ID:          roleID,
-		Name:        req.Name,
+		Name:        *req.Name,
 		Description: req.Description,
 		Permissions: req.Permissions,
 	}
@@ -199,7 +199,7 @@ func (h *RoleHandler) DeleteRole(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	hasPermission, err := h.authService.CheckPermission(currentUser.ID, models.PermissionManageRoles)
+	hasPermission, err := h.authService.CheckPermission(currentUser.ID, models.PermissionSystemAdmin)
 	if err != nil {
 		http.Error(w, "Failed to check permissions", http.StatusInternalServerError)
 		return
@@ -246,7 +246,7 @@ func (h *RoleHandler) ListRoles(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	hasPermission, err := h.authService.CheckPermission(currentUser.ID, models.PermissionViewRoles)
+	hasPermission, err := h.authService.CheckPermission(currentUser.ID, models.PermissionSystemAdmin)
 	if err != nil {
 		http.Error(w, "Failed to check permissions", http.StatusInternalServerError)
 		return
@@ -279,7 +279,7 @@ func (h *RoleHandler) GetPermissions(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	hasPermission, err := h.authService.CheckPermission(currentUser.ID, models.PermissionViewRoles)
+	hasPermission, err := h.authService.CheckPermission(currentUser.ID, models.PermissionSystemAdmin)
 	if err != nil {
 		http.Error(w, "Failed to check permissions", http.StatusInternalServerError)
 		return
@@ -292,33 +292,33 @@ func (h *RoleHandler) GetPermissions(w http.ResponseWriter, r *http.Request) {
 
 	permissions := map[string]interface{}{
 		"user_management": map[string]string{
-			"create_user":  models.PermissionCreateUser,
-			"view_user":    models.PermissionViewUser,
-			"edit_user":    models.PermissionEditUser,
-			"delete_user":  models.PermissionDeleteUser,
-			"manage_users": models.PermissionManageUsers,
+			"create_user":  models.PermissionUserCreate,
+			"view_user":    models.PermissionUserView,
+			"edit_user":    models.PermissionUserUpdate,
+			"delete_user":  models.PermissionUserDelete,
+			"manage_users": models.PermissionUserManage,
 		},
 		"role_management": map[string]string{
-			"view_roles":   models.PermissionViewRoles,
-			"manage_roles": models.PermissionManageRoles,
+			"view_roles":   models.PermissionSystemAdmin,
+			"manage_roles": models.PermissionSystemAdmin,
 		},
 		"media_management": map[string]string{
-			"view_media":   models.PermissionViewMedia,
-			"upload_media": models.PermissionUploadMedia,
-			"edit_media":   models.PermissionEditMedia,
-			"delete_media": models.PermissionDeleteMedia,
+			"view_media":   models.PermissionMediaView,
+			"upload_media": models.PermissionMediaUpload,
+			"edit_media":   models.PermissionMediaEdit,
+			"delete_media": models.PermissionMediaDelete,
 		},
 		"share_management": map[string]string{
-			"view_shares":   models.PermissionViewShares,
-			"create_shares": models.PermissionCreateShares,
-			"edit_shares":   models.PermissionEditShares,
-			"delete_shares": models.PermissionDeleteShares,
+			"view_shares":   models.PermissionShareView,
+			"create_shares": models.PermissionShareCreate,
+			"edit_shares":   models.PermissionShareEdit,
+			"delete_shares": models.PermissionShareDelete,
 		},
 		"system": map[string]string{
 			"system_admin":    models.PermissionSystemAdmin,
-			"view_analytics":  models.PermissionViewAnalytics,
-			"export_data":     models.PermissionExportData,
-			"manage_settings": models.PermissionManageSettings,
+			"view_analytics":  models.PermissionAnalyticsView,
+			"export_data":     models.PermissionAnalyticsExport,
+			"manage_settings": models.PermissionSystemConfig,
 		},
 	}
 

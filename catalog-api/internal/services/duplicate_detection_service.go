@@ -20,94 +20,94 @@ type DuplicateDetectionService struct {
 
 // Duplicate detection result
 type DuplicateGroup struct {
-	ID              string                 `json:"id"`
-	MediaType       MediaType              `json:"media_type"`
-	PrimaryItem     DuplicateItem          `json:"primary_item"`
-	DuplicateItems  []DuplicateItem        `json:"duplicate_items"`
-	Confidence      float64                `json:"confidence"`
-	DetectionMethod string                 `json:"detection_method"`
-	MatchTypes      []string               `json:"match_types"`
-	CreatedAt       time.Time              `json:"created_at"`
-	UpdatedAt       time.Time              `json:"updated_at"`
-	Status          string                 `json:"status"` // pending, confirmed, dismissed
-	AutoResolved    bool                   `json:"auto_resolved"`
+	ID              string          `json:"id"`
+	MediaType       MediaType       `json:"media_type"`
+	PrimaryItem     DuplicateItem   `json:"primary_item"`
+	DuplicateItems  []DuplicateItem `json:"duplicate_items"`
+	Confidence      float64         `json:"confidence"`
+	DetectionMethod string          `json:"detection_method"`
+	MatchTypes      []string        `json:"match_types"`
+	CreatedAt       time.Time       `json:"created_at"`
+	UpdatedAt       time.Time       `json:"updated_at"`
+	Status          string          `json:"status"` // pending, confirmed, dismissed
+	AutoResolved    bool            `json:"auto_resolved"`
 }
 
 type DuplicateItem struct {
-	MediaID         string                 `json:"media_id"`
-	FilePath        string                 `json:"file_path"`
-	FileName        string                 `json:"file_name"`
-	FileSize        int64                  `json:"file_size"`
-	FileHash        string                 `json:"file_hash"`
-	Title           string                 `json:"title"`
-	Artist          string                 `json:"artist,omitempty"`
-	Album           string                 `json:"album,omitempty"`
-	Director        string                 `json:"director,omitempty"`
-	Author          string                 `json:"author,omitempty"`
-	Year            int                    `json:"year,omitempty"`
-	Duration        int64                  `json:"duration,omitempty"`
-	Quality         string                 `json:"quality,omitempty"`
-	Format          string                 `json:"format,omitempty"`
-	Bitrate         int                    `json:"bitrate,omitempty"`
-	Resolution      string                 `json:"resolution,omitempty"`
-	ExternalIDs     map[string]string      `json:"external_ids"`
-	Fingerprints    map[string]string      `json:"fingerprints"`
-	Similarity      float64                `json:"similarity"`
-	MatchReasons    []string               `json:"match_reasons"`
-	Metadata        map[string]interface{} `json:"metadata"`
-	AddedAt         time.Time              `json:"added_at"`
-	LastSeen        time.Time              `json:"last_seen"`
+	MediaID      string                 `json:"media_id"`
+	FilePath     string                 `json:"file_path"`
+	FileName     string                 `json:"file_name"`
+	FileSize     int64                  `json:"file_size"`
+	FileHash     string                 `json:"file_hash"`
+	Title        string                 `json:"title"`
+	Artist       string                 `json:"artist,omitempty"`
+	Album        string                 `json:"album,omitempty"`
+	Director     string                 `json:"director,omitempty"`
+	Author       string                 `json:"author,omitempty"`
+	Year         int                    `json:"year,omitempty"`
+	Duration     int64                  `json:"duration,omitempty"`
+	Quality      string                 `json:"quality,omitempty"`
+	Format       string                 `json:"format,omitempty"`
+	Bitrate      int                    `json:"bitrate,omitempty"`
+	Resolution   string                 `json:"resolution,omitempty"`
+	ExternalIDs  map[string]string      `json:"external_ids"`
+	Fingerprints map[string]string      `json:"fingerprints"`
+	Similarity   float64                `json:"similarity"`
+	MatchReasons []string               `json:"match_reasons"`
+	Metadata     map[string]interface{} `json:"metadata"`
+	AddedAt      time.Time              `json:"added_at"`
+	LastSeen     time.Time              `json:"last_seen"`
 }
 
 // Similarity calculation components
 type SimilarityAnalysis struct {
-	OverallScore      float64                `json:"overall_score"`
-	TitleSimilarity   float64                `json:"title_similarity"`
-	MetadataSimilarity float64               `json:"metadata_similarity"`
+	OverallScore          float64            `json:"overall_score"`
+	TitleSimilarity       float64            `json:"title_similarity"`
+	MetadataSimilarity    float64            `json:"metadata_similarity"`
 	FingerprintSimilarity float64            `json:"fingerprint_similarity"`
-	FileSimilarity    float64                `json:"file_similarity"`
-	ExternalIDMatch   bool                   `json:"external_id_match"`
-	HashMatch         bool                   `json:"hash_match"`
-	Components        map[string]float64     `json:"components"`
-	MatchingFields    []string               `json:"matching_fields"`
-	DifferencesFound  []string               `json:"differences_found"`
+	FileSimilarity        float64            `json:"file_similarity"`
+	ExternalIDMatch       bool               `json:"external_id_match"`
+	HashMatch             bool               `json:"hash_match"`
+	Components            map[string]float64 `json:"components"`
+	MatchingFields        []string           `json:"matching_fields"`
+	DifferencesFound      []string           `json:"differences_found"`
 }
 
 // Text similarity algorithms
 type TextSimilarityMetrics struct {
-	LevenshteinDistance int                  `json:"levenshtein_distance"`
-	JaroWinklerScore    float64              `json:"jaro_winkler_score"`
-	CosineSimilarity    float64              `json:"cosine_similarity"`
-	JaccardIndex        float64              `json:"jaccard_index"`
-	LCSRatio            float64              `json:"lcs_ratio"`
-	SoundexMatch        bool                 `json:"soundex_match"`
-	MetaphoneMatch      bool                 `json:"metaphone_match"`
+	LevenshteinDistance int     `json:"levenshtein_distance"`
+	JaroWinklerScore    float64 `json:"jaro_winkler_score"`
+	CosineSimilarity    float64 `json:"cosine_similarity"`
+	JaccardIndex        float64 `json:"jaccard_index"`
+	LCSRatio            float64 `json:"lcs_ratio"`
+	SoundexMatch        bool    `json:"soundex_match"`
+	MetaphoneMatch      bool    `json:"metaphone_match"`
 }
 
 // Deduplication action
 type DeduplicationAction struct {
-	GroupID           string                 `json:"group_id"`
-	Action            string                 `json:"action"` // keep_primary, keep_best_quality, merge, custom
-	PrimaryItemID     string                 `json:"primary_item_id"`
-	ItemsToRemove     []string               `json:"items_to_remove"`
-	ItemsToKeep       []string               `json:"items_to_keep"`
-	MergeStrategy     string                 `json:"merge_strategy,omitempty"`
-	UserID            int64                  `json:"user_id"`
-	Reason            string                 `json:"reason"`
-	ExecutedAt        time.Time              `json:"executed_at"`
-	RollbackData      map[string]interface{} `json:"rollback_data,omitempty"`
+	GroupID       string                 `json:"group_id"`
+	Action        string                 `json:"action"` // keep_primary, keep_best_quality, merge, custom
+	PrimaryItemID string                 `json:"primary_item_id"`
+	ItemsToRemove []string               `json:"items_to_remove"`
+	ItemsToKeep   []string               `json:"items_to_keep"`
+	MergeStrategy string                 `json:"merge_strategy,omitempty"`
+	UserID        int64                  `json:"user_id"`
+	Reason        string                 `json:"reason"`
+	ExecutedAt    time.Time              `json:"executed_at"`
+	RollbackData  map[string]interface{} `json:"rollback_data,omitempty"`
 }
 
 // Duplicate detection request
 type DuplicateDetectionRequest struct {
-	MediaTypes        []MediaType            `json:"media_types,omitempty"`
-	IncludePaths      []string               `json:"include_paths,omitempty"`
-	ExcludePaths      []string               `json:"exclude_paths,omitempty"`
-	MinSimilarity     float64                `json:"min_similarity"`
-	DetectionMethods  []string               `json:"detection_methods"`
-	IncludeExisting   bool                   `json:"include_existing"`
-	BatchSize         int                    `json:"batch_size"`
-	UserID            int64                  `json:"user_id"`
+	MediaTypes       []MediaType `json:"media_types,omitempty"`
+	IncludePaths     []string    `json:"include_paths,omitempty"`
+	ExcludePaths     []string    `json:"exclude_paths,omitempty"`
+	MinSimilarity    float64     `json:"min_similarity"`
+	DetectionMethods []string    `json:"detection_methods"`
+	IncludeExisting  bool        `json:"include_existing"`
+	BatchSize        int         `json:"batch_size"`
+	UserID           int64       `json:"user_id"`
 }
 
 func NewDuplicateDetectionService(
@@ -115,6 +115,9 @@ func NewDuplicateDetectionService(
 	logger *zap.Logger,
 	cacheService *CacheService,
 ) *DuplicateDetectionService {
+	if logger == nil {
+		logger = zap.NewNop()
+	}
 	return &DuplicateDetectionService{
 		db:           db,
 		logger:       logger,
@@ -213,8 +216,8 @@ func (s *DuplicateDetectionService) detectDuplicatesForMediaType(ctx context.Con
 // Calculate similarity between two media items
 func (s *DuplicateDetectionService) calculateSimilarity(ctx context.Context, item1, item2 *DuplicateItem, mediaType MediaType) *SimilarityAnalysis {
 	analysis := &SimilarityAnalysis{
-		Components:     make(map[string]float64),
-		MatchingFields: []string{},
+		Components:       make(map[string]float64),
+		MatchingFields:   []string{},
 		DifferencesFound: []string{},
 	}
 
@@ -341,7 +344,7 @@ func (s *DuplicateDetectionService) calculateVideoMetadataSimilarity(item1, item
 	// Year similarity
 	if item1.Year > 0 && item2.Year > 0 {
 		yearDiff := math.Abs(float64(item1.Year - item2.Year))
-		yearScore := math.Max(0, 1.0 - yearDiff/5.0) // Penalty for year differences
+		yearScore := math.Max(0, 1.0-yearDiff/5.0) // Penalty for year differences
 		score += yearScore
 		components++
 	}
@@ -349,7 +352,7 @@ func (s *DuplicateDetectionService) calculateVideoMetadataSimilarity(item1, item
 	// Duration similarity
 	if item1.Duration > 0 && item2.Duration > 0 {
 		durationDiff := math.Abs(float64(item1.Duration - item2.Duration))
-		durationScore := math.Max(0, 1.0 - durationDiff/600000) // 10 minute tolerance
+		durationScore := math.Max(0, 1.0-durationDiff/600000) // 10 minute tolerance
 		score += durationScore
 		components++
 	}
@@ -392,7 +395,7 @@ func (s *DuplicateDetectionService) calculateAudioMetadataSimilarity(item1, item
 	// Year similarity
 	if item1.Year > 0 && item2.Year > 0 {
 		yearDiff := math.Abs(float64(item1.Year - item2.Year))
-		yearScore := math.Max(0, 1.0 - yearDiff/2.0) // Smaller tolerance for music
+		yearScore := math.Max(0, 1.0-yearDiff/2.0) // Smaller tolerance for music
 		score += yearScore
 		components++
 	}
@@ -400,7 +403,7 @@ func (s *DuplicateDetectionService) calculateAudioMetadataSimilarity(item1, item
 	// Duration similarity
 	if item1.Duration > 0 && item2.Duration > 0 {
 		durationDiff := math.Abs(float64(item1.Duration - item2.Duration))
-		durationScore := math.Max(0, 1.0 - durationDiff/30000) // 30 second tolerance
+		durationScore := math.Max(0, 1.0-durationDiff/30000) // 30 second tolerance
 		score += durationScore
 		components++
 	}
@@ -408,7 +411,7 @@ func (s *DuplicateDetectionService) calculateAudioMetadataSimilarity(item1, item
 	// Bitrate similarity
 	if item1.Bitrate > 0 && item2.Bitrate > 0 {
 		bitrateDiff := math.Abs(float64(item1.Bitrate - item2.Bitrate))
-		bitrateScore := math.Max(0, 1.0 - bitrateDiff/320) // Normalize by 320kbps
+		bitrateScore := math.Max(0, 1.0-bitrateDiff/320) // Normalize by 320kbps
 		score += bitrateScore
 		components++
 	}
@@ -433,7 +436,7 @@ func (s *DuplicateDetectionService) calculateBookMetadataSimilarity(item1, item2
 	// Year similarity
 	if item1.Year > 0 && item2.Year > 0 {
 		yearDiff := math.Abs(float64(item1.Year - item2.Year))
-		yearScore := math.Max(0, 1.0 - yearDiff/5.0)
+		yearScore := math.Max(0, 1.0-yearDiff/5.0)
 		score += yearScore
 		components++
 	}
@@ -484,7 +487,7 @@ func (s *DuplicateDetectionService) calculateSoftwareMetadataSimilarity(item1, i
 	// File size similarity (important for software)
 	if item1.FileSize > 0 && item2.FileSize > 0 {
 		sizeDiff := math.Abs(float64(item1.FileSize - item2.FileSize))
-		sizeScore := math.Max(0, 1.0 - sizeDiff/float64(math.Max(float64(item1.FileSize), float64(item2.FileSize))))
+		sizeScore := math.Max(0, 1.0-sizeDiff/float64(math.Max(float64(item1.FileSize), float64(item2.FileSize))))
 		score += sizeScore
 		components++
 	}
@@ -519,7 +522,7 @@ func (s *DuplicateDetectionService) calculateGenericMetadataSimilarity(item1, it
 		sizeDiff := math.Abs(float64(item1.FileSize - item2.FileSize))
 		maxSize := math.Max(float64(item1.FileSize), float64(item2.FileSize))
 		if maxSize > 0 {
-			sizeScore := math.Max(0, 1.0 - sizeDiff/maxSize)
+			sizeScore := math.Max(0, 1.0-sizeDiff/maxSize)
 			score += sizeScore
 			components++
 		}

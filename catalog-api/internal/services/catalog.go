@@ -1,14 +1,32 @@
 package services
 
 import (
-	"catalog-api/internal/config"
-	"catalog-api/internal/models"
+	"catalogizer/internal/config"
+	"catalogizer/internal/models"
 	"database/sql"
 	"fmt"
+	"strconv"
 	"strings"
 
 	"go.uber.org/zap"
 )
+
+// CatalogServiceInterface defines the interface for catalog operations
+type CatalogServiceInterface interface {
+	SetDB(db *sql.DB)
+	ListPath(path string, sortBy string, sortOrder string, limit, offset int) ([]models.FileInfo, error)
+	GetFileInfo(pathOrID string) (*models.FileInfo, error)
+	SearchFiles(req *models.SearchRequest) ([]models.FileInfo, int64, error)
+	GetDirectoriesBySize(smbRoot string, limit int) ([]models.DirectoryStats, error)
+	GetDuplicateGroups(smbRoot string, minCount int, limit int) ([]models.DuplicateGroup, error)
+	GetSMBRoots() ([]string, error)
+	ListDirectory(path string) ([]models.FileInfo, error)
+	Search(query string, fileType string, limit int, offset int) ([]models.FileInfo, error)
+	SearchDuplicates() ([]models.DuplicateGroup, error)
+	GetFileInfoByPath(path string) (*models.FileInfo, error)
+	GetDuplicatesCount() (int64, error)
+	GetDirectoriesBySizeLimited(limit int) ([]models.DirectoryStats, error)
+}
 
 type CatalogService struct {
 	db     *sql.DB
@@ -29,7 +47,7 @@ func (s *CatalogService) SetDB(db *sql.DB) {
 
 func (s *CatalogService) ListPath(path string, sortBy string, sortOrder string, limit, offset int) ([]models.FileInfo, error) {
 	query := `
-		SELECT id, name, path, is_directory, size, last_modified, hash, extension, mime_type, parent_id, smb_root, created_at, updated_at
+		SELECT id, name, path, is_directory, size, last_modified, hash, extension, mime_type, media_type, parent_id, smb_root, created_at, updated_at
 		FROM files
 		WHERE parent_id = (SELECT id FROM files WHERE path = ? LIMIT 1)
 	`
@@ -67,13 +85,34 @@ func (s *CatalogService) ListPath(path string, sortBy string, sortOrder string, 
 	var files []models.FileInfo
 	for rows.Next() {
 		var file models.FileInfo
+		var mediaType *string
+		var lastModified sql.NullTime
+		var createdAt sql.NullTime
+		var updatedAt sql.NullTime
 		err := rows.Scan(
 			&file.ID, &file.Name, &file.Path, &file.IsDirectory, &file.Size,
-			&file.LastModified, &file.Hash, &file.Extension, &file.MimeType,
-			&file.ParentID, &file.SmbRoot, &file.CreatedAt, &file.UpdatedAt,
+			&lastModified, &file.Hash, &file.Extension, &file.MimeType,
+			&mediaType, &file.ParentID, &file.SmbRoot, &createdAt, &updatedAt,
 		)
+		if mediaType != nil {
+			file.MediaType = mediaType
+		}
+		if lastModified.Valid {
+			file.LastModified = lastModified.Time
+		}
+		if createdAt.Valid {
+			file.CreatedAt = createdAt.Time
+		}
+		if updatedAt.Valid {
+			file.UpdatedAt = updatedAt.Time
+		}
 		if err != nil {
 			return nil, fmt.Errorf("failed to scan file: %w", err)
+		}
+		if file.IsDirectory {
+			file.Type = "directory"
+		} else {
+			file.Type = "file"
 		}
 		files = append(files, file)
 	}
@@ -81,19 +120,50 @@ func (s *CatalogService) ListPath(path string, sortBy string, sortOrder string, 
 	return files, nil
 }
 
-func (s *CatalogService) GetFileInfo(id int64) (*models.FileInfo, error) {
-	query := `
-		SELECT id, name, path, is_directory, size, last_modified, hash, extension, mime_type, parent_id, smb_root, created_at, updated_at
-		FROM files
-		WHERE id = ?
-	`
+func (s *CatalogService) GetFileInfo(pathOrID string) (*models.FileInfo, error) {
+	var query string
+	var arg interface{}
+
+	// Try to parse as ID first
+	if id, err := strconv.ParseInt(pathOrID, 10, 64); err == nil {
+		query = `
+			SELECT id, name, path, is_directory, size, last_modified, hash, extension, mime_type, media_type, parent_id, smb_root, created_at, updated_at
+			FROM files
+			WHERE id = ?
+		`
+		arg = id
+	} else {
+		// Treat as path
+		query = `
+			SELECT id, name, path, is_directory, size, last_modified, hash, extension, mime_type, media_type, parent_id, smb_root, created_at, updated_at
+			FROM files
+			WHERE path = ?
+		`
+		arg = pathOrID
+	}
 
 	var file models.FileInfo
-	err := s.db.QueryRow(query, id).Scan(
+	var mediaType *string
+	var lastModified sql.NullTime
+	var createdAt sql.NullTime
+	var updatedAt sql.NullTime
+	err := s.db.QueryRow(query, arg).Scan(
 		&file.ID, &file.Name, &file.Path, &file.IsDirectory, &file.Size,
-		&file.LastModified, &file.Hash, &file.Extension, &file.MimeType,
-		&file.ParentID, &file.SmbRoot, &file.CreatedAt, &file.UpdatedAt,
+		&lastModified, &file.Hash, &file.Extension, &file.MimeType,
+		&mediaType, &file.ParentID, &file.SmbRoot, &createdAt, &updatedAt,
 	)
+	if mediaType != nil {
+		file.MediaType = mediaType
+	}
+	if lastModified.Valid {
+		file.LastModified = lastModified.Time
+	}
+	if createdAt.Valid {
+		file.CreatedAt = createdAt.Time
+	}
+	if updatedAt.Valid {
+		file.UpdatedAt = updatedAt.Time
+	}
 
 	if err != nil {
 		if err == sql.ErrNoRows {
@@ -102,12 +172,18 @@ func (s *CatalogService) GetFileInfo(id int64) (*models.FileInfo, error) {
 		return nil, fmt.Errorf("failed to get file info: %w", err)
 	}
 
+	if file.IsDirectory {
+		file.Type = "directory"
+	} else {
+		file.Type = "file"
+	}
+
 	return &file, nil
 }
 
 func (s *CatalogService) SearchFiles(req *models.SearchRequest) ([]models.FileInfo, int64, error) {
 	baseQuery := `
-		SELECT id, name, path, is_directory, size, last_modified, hash, extension, mime_type, parent_id, smb_root, created_at, updated_at
+		SELECT id, name, path, is_directory, size, last_modified, hash, extension, mime_type, media_type, parent_id, smb_root, created_at, updated_at
 		FROM files
 		WHERE 1=1
 	`
@@ -220,13 +296,34 @@ func (s *CatalogService) SearchFiles(req *models.SearchRequest) ([]models.FileIn
 	var files []models.FileInfo
 	for rows.Next() {
 		var file models.FileInfo
+		var mediaType *string
+		var lastModified sql.NullTime
+		var createdAt sql.NullTime
+		var updatedAt sql.NullTime
 		err := rows.Scan(
 			&file.ID, &file.Name, &file.Path, &file.IsDirectory, &file.Size,
-			&file.LastModified, &file.Hash, &file.Extension, &file.MimeType,
-			&file.ParentID, &file.SmbRoot, &file.CreatedAt, &file.UpdatedAt,
+			&lastModified, &file.Hash, &file.Extension, &file.MimeType,
+			&mediaType, &file.ParentID, &file.SmbRoot, &createdAt, &updatedAt,
 		)
+		if mediaType != nil {
+			file.MediaType = mediaType
+		}
+		if lastModified.Valid {
+			file.LastModified = lastModified.Time
+		}
+		if createdAt.Valid {
+			file.CreatedAt = createdAt.Time
+		}
+		if updatedAt.Valid {
+			file.UpdatedAt = updatedAt.Time
+		}
 		if err != nil {
 			return nil, 0, fmt.Errorf("failed to scan file: %w", err)
+		}
+		if file.IsDirectory {
+			file.Type = "directory"
+		} else {
+			file.Type = "file"
 		}
 		files = append(files, file)
 	}
@@ -329,11 +426,23 @@ func (s *CatalogService) GetDuplicateGroups(smbRoot string, minCount int, limit 
 
 		for fileRows.Next() {
 			var file models.FileInfo
+			var lastModified sql.NullTime
+			var createdAt sql.NullTime
+			var updatedAt sql.NullTime
 			err := fileRows.Scan(
 				&file.ID, &file.Name, &file.Path, &file.IsDirectory, &file.Size,
-				&file.LastModified, &file.Hash, &file.Extension, &file.MimeType,
-				&file.ParentID, &file.SmbRoot, &file.CreatedAt, &file.UpdatedAt,
+				&lastModified, &file.Hash, &file.Extension, &file.MimeType,
+				&file.ParentID, &file.SmbRoot, &createdAt, &updatedAt,
 			)
+			if lastModified.Valid {
+				file.LastModified = lastModified.Time
+			}
+			if createdAt.Valid {
+				file.CreatedAt = createdAt.Time
+			}
+			if updatedAt.Valid {
+				file.UpdatedAt = updatedAt.Time
+			}
 			if err != nil {
 				s.logger.Error("Failed to scan duplicate file", zap.Error(err))
 				continue
@@ -368,4 +477,101 @@ func (s *CatalogService) GetSMBRoots() ([]string, error) {
 	}
 
 	return roots, nil
+}
+
+// ListDirectory lists files in a directory (alias for ListPath)
+func (s *CatalogService) ListDirectory(path string) ([]models.FileInfo, error) {
+	return s.ListPath(path, "name", "asc", 0, 0)
+}
+
+// Search searches files by query (simplified version)
+func (s *CatalogService) Search(query string, fileType string, limit int, offset int) ([]models.FileInfo, error) {
+	isDirectory := false
+	req := &models.SearchRequest{
+		Query:       query,
+		MimeType:    fileType,
+		IsDirectory: &isDirectory,
+		Limit:       limit,
+		Offset:      offset,
+	}
+	files, _, err := s.SearchFiles(req)
+	return files, err
+}
+
+// SearchDuplicates searches for duplicate files
+func (s *CatalogService) SearchDuplicates() ([]models.DuplicateGroup, error) {
+	return s.GetDuplicateGroups("", 2, 0)
+}
+
+// GetFileInfoByPath gets file info by path (for test compatibility)
+func (s *CatalogService) GetFileInfoByPath(path string) (*models.FileInfo, error) {
+	query := `
+		SELECT id, name, path, is_directory, size, last_modified, hash, extension, mime_type, media_type, parent_id, smb_root, created_at, updated_at
+		FROM files
+		WHERE path = ?
+	`
+
+	var file models.FileInfo
+	var mediaType *string
+	var lastModified sql.NullTime
+	var createdAt sql.NullTime
+	var updatedAt sql.NullTime
+	err := s.db.QueryRow(query, path).Scan(
+		&file.ID, &file.Name, &file.Path, &file.IsDirectory, &file.Size,
+		&lastModified, &file.Hash, &file.Extension, &file.MimeType,
+		&mediaType, &file.ParentID, &file.SmbRoot, &createdAt, &updatedAt,
+	)
+	if mediaType != nil {
+		file.MediaType = mediaType
+	}
+	if lastModified.Valid {
+		file.LastModified = lastModified.Time
+	}
+	if createdAt.Valid {
+		file.CreatedAt = createdAt.Time
+	}
+	if updatedAt.Valid {
+		file.UpdatedAt = updatedAt.Time
+	}
+
+	if err != nil {
+		if err == sql.ErrNoRows {
+			return nil, nil
+		}
+		return nil, fmt.Errorf("failed to get file info by path: %w", err)
+	}
+
+	if file.IsDirectory {
+		file.Type = "directory"
+	} else {
+		file.Type = "file"
+	}
+
+	return &file, nil
+}
+
+// GetDuplicatesCount gets the count of duplicate files
+func (s *CatalogService) GetDuplicatesCount() (int64, error) {
+	query := `
+		SELECT COUNT(*) FROM (
+			SELECT hash, COUNT(*) as count
+			FROM files
+			WHERE hash IS NOT NULL AND hash != '' AND is_directory = false
+			GROUP BY hash
+			HAVING COUNT(*) > 1
+		)
+	`
+
+	var count int64
+	err := s.db.QueryRow(query).Scan(&count)
+	if err != nil {
+		return 0, fmt.Errorf("failed to get duplicates count: %w", err)
+	}
+
+	return count, nil
+}
+
+// GetDirectoriesBySizeLimited gets directories by size with default limit
+func (s *CatalogService) GetDirectoriesBySizeLimited(limit int) ([]models.DirectoryStats, error) {
+	return s.GetDirectoriesBySize("", limit)
 }

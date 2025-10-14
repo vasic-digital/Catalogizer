@@ -5,13 +5,17 @@ import (
 	"encoding/json"
 	"net/http"
 	"net/http/httptest"
+	"os"
 	"testing"
 
 	"github.com/gin-gonic/gin"
+	"github.com/hirochachacha/go-smb2"
+	_ "github.com/mattn/go-sqlite3"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
 	"go.uber.org/zap"
-	_ "github.com/mattn/go-sqlite3"
+
+	"catalogizer/internal/models"
 )
 
 type CatalogHandlerTestSuite struct {
@@ -89,59 +93,102 @@ type mockCatalogService struct {
 	db *sql.DB
 }
 
-func (m *mockCatalogService) ListDirectory(path string) ([]FileItem, error) {
-	if path == "/" {
-		return []FileItem{{Name: "media", Type: "directory", Path: "/media"}}, nil
-	}
-	if path == "/media" {
-		return []FileItem{
-			{Name: "movies", Type: "directory", Path: "/media/movies"},
-			{Name: "music", Type: "directory", Path: "/media/music"},
+func (m *mockCatalogService) SetDB(db *sql.DB) {}
+func (m *mockCatalogService) ListPath(path string, sortBy string, sortOrder string, limit, offset int) ([]models.FileInfo, error) {
+	if path == "media" {
+		return []models.FileInfo{
+			{Name: "movies", Path: "/media/movies", IsDirectory: true},
+			{Name: "music", Path: "/media/music", IsDirectory: true},
 		}, nil
 	}
-	return []FileItem{}, nil
+	return []models.FileInfo{}, nil
 }
-
-func (m *mockCatalogService) GetFileInfo(path string) (*FileInfo, error) {
-	if path == "/media/movies/movie1.mp4" {
-		return &FileInfo{
+func (m *mockCatalogService) GetFileInfo(pathOrID string) (*models.FileInfo, error) {
+	if pathOrID == "media/movies/movie1.mp4" {
+		return &models.FileInfo{
 			Name:      "movie1.mp4",
 			Path:      "/media/movies/movie1.mp4",
 			Size:      1000000,
-			MediaType: "movie",
+			MediaType: func() *string { s := "movie"; return &s }(),
+		}, nil
+	}
+	return nil, sql.ErrNoRows
+}
+func (m *mockCatalogService) SearchFiles(req *models.SearchRequest) ([]models.FileInfo, int64, error) {
+	return []models.FileInfo{}, 0, nil
+}
+func (m *mockCatalogService) GetDirectoriesBySize(smbRoot string, limit int) ([]models.DirectoryStats, error) {
+	return []models.DirectoryStats{}, nil
+}
+func (m *mockCatalogService) GetDuplicateGroups(smbRoot string, minCount int, limit int) ([]models.DuplicateGroup, error) {
+	return []models.DuplicateGroup{}, nil
+}
+func (m *mockCatalogService) GetSMBRoots() ([]string, error) { return []string{}, nil }
+
+func (m *mockCatalogService) GetDuplicatesCount() (int64, error) { return 0, nil }
+func (m *mockCatalogService) GetDirectoriesBySizeLimited(limit int) ([]models.DirectoryStats, error) {
+	return []models.DirectoryStats{}, nil
+}
+
+func (m *mockCatalogService) ListDirectory(path string) ([]models.FileInfo, error) {
+	if path == "/" {
+		return []models.FileInfo{{Name: "media", Path: "/media", IsDirectory: true}}, nil
+	}
+	if path == "/media" {
+		return []models.FileInfo{
+			{Name: "movies", Path: "/media/movies", IsDirectory: true},
+			{Name: "music", Path: "/media/music", IsDirectory: true},
+		}, nil
+	}
+	return []models.FileInfo{}, nil
+}
+
+func (m *mockCatalogService) GetFileInfoByPath(path string) (*models.FileInfo, error) {
+	if path == "/media/movies/movie1.mp4" {
+		return &models.FileInfo{
+			Name:      "movie1.mp4",
+			Path:      "/media/movies/movie1.mp4",
+			Size:      1000000,
+			MediaType: func() *string { s := "movie"; return &s }(),
 		}, nil
 	}
 	return nil, sql.ErrNoRows
 }
 
-func (m *mockCatalogService) Search(query, mediaType string, limit, offset int) ([]SearchResult, error) {
-	return []SearchResult{
-		{Name: "movie1.mp4", Path: "/media/movies/movie1.mp4", MediaType: "movie"},
+func (m *mockCatalogService) Search(query, fileType string, limit, offset int) ([]models.FileInfo, error) {
+	return []models.FileInfo{
+		{Name: "movie1.mp4", Path: "/media/movies/movie1.mp4"},
 	}, nil
 }
 
-func (m *mockCatalogService) SearchDuplicates() ([]DuplicateGroup, error) {
-	return []DuplicateGroup{}, nil
+func (m *mockCatalogService) SearchDuplicates() ([]models.DuplicateGroup, error) {
+	return []models.DuplicateGroup{}, nil
 }
-
-func (m *mockCatalogService) GetDirectoriesBySize(limit int) ([]DirectoryInfo, error) {
-	return []DirectoryInfo{
-		{Path: "/media", TotalSize: 6000000, FileCount: 2},
-	}, nil
-}
-
-func (m *mockCatalogService) GetDuplicatesCount() (int, error) {
-	return 0, nil
-}
-
-func (m *mockCatalogService) SetDB(db *sql.DB) {}
 
 type mockSMBService struct{}
 
-func (m *mockSMBService) Connect(path string) error { return nil }
-func (m *mockSMBService) ListDirectory(path string) ([]FileItem, error) { return []FileItem{}, nil }
-func (m *mockSMBService) IsValidSMBPath(path string) bool { return true }
-func (m *mockSMBService) ParseSMBPath(path string) SMBPath { return SMBPath{} }
+func (m *mockSMBService) GetHosts() []string { return []string{} }
+func (m *mockSMBService) ListFiles(hostName, path string) ([]os.FileInfo, error) {
+	return []os.FileInfo{}, nil
+}
+func (m *mockSMBService) DownloadFile(hostName, remotePath, localPath string) error { return nil }
+func (m *mockSMBService) UploadFile(hostName, localPath, remotePath string) error   { return nil }
+func (m *mockSMBService) CopyFile(sourceHost, sourcePath, destHost, destPath string) error {
+	return nil
+}
+func (m *mockSMBService) CreateRemoteDir(share *smb2.Share, path string) error { return nil }
+func (m *mockSMBService) FileExists(hostName, path string) (bool, error)       { return false, nil }
+func (m *mockSMBService) Connect(hostName string) error                        { return nil }
+func (m *mockSMBService) ListDirectory(hostName, path string) ([]*models.FileInfo, error) {
+	return []*models.FileInfo{}, nil
+}
+func (m *mockSMBService) IsConnected(hostName string) bool                    { return true }
+func (m *mockSMBService) GetFileSize(hostName, path string) (int64, error)    { return 0, nil }
+func (m *mockSMBService) CreateDirectory(hostName, path string) error         { return nil }
+func (m *mockSMBService) DeleteDirectory(hostName, path string) error         { return nil }
+func (m *mockSMBService) DirectoryExists(hostName, path string) (bool, error) { return false, nil }
+func (m *mockSMBService) IsValidSMBPath(path string) bool                     { return true }
+func (m *mockSMBService) ParseSMBPath(path string) models.SMBPath             { return models.SMBPath{} }
 
 func (suite *CatalogHandlerTestSuite) TestListRoot() {
 	req, _ := http.NewRequest("GET", "/api/v1/catalog", nil)
@@ -153,7 +200,7 @@ func (suite *CatalogHandlerTestSuite) TestListRoot() {
 	var response map[string]interface{}
 	err := json.Unmarshal(w.Body.Bytes(), &response)
 	assert.NoError(suite.T(), err)
-	assert.NotNil(suite.T(), response["items"])
+	assert.NotNil(suite.T(), response["roots"])
 }
 
 func (suite *CatalogHandlerTestSuite) TestListPath() {
@@ -167,10 +214,10 @@ func (suite *CatalogHandlerTestSuite) TestListPath() {
 	var response map[string]interface{}
 	err := json.Unmarshal(w.Body.Bytes(), &response)
 	assert.NoError(suite.T(), err)
-	assert.NotNil(suite.T(), response["items"])
+	assert.NotNil(suite.T(), response["files"])
 
-	items := response["items"].([]interface{})
-	assert.Len(suite.T(), items, 2)
+	files := response["files"].([]interface{})
+	assert.Len(suite.T(), files, 2)
 }
 
 func (suite *CatalogHandlerTestSuite) TestGetFileInfo() {
@@ -180,12 +227,13 @@ func (suite *CatalogHandlerTestSuite) TestGetFileInfo() {
 
 	assert.Equal(suite.T(), http.StatusOK, w.Code)
 
-	var response FileInfo
+	var response models.FileInfo
 	err := json.Unmarshal(w.Body.Bytes(), &response)
 	assert.NoError(suite.T(), err)
 	assert.Equal(suite.T(), "movie1.mp4", response.Name)
 	assert.Equal(suite.T(), int64(1000000), response.Size)
-	assert.Equal(suite.T(), "movie", response.MediaType)
+	assert.NotNil(suite.T(), response.MediaType)
+	assert.Equal(suite.T(), "movie", *response.MediaType)
 }
 
 func (suite *CatalogHandlerTestSuite) TestGetFileInfoNotFound() {
@@ -197,7 +245,7 @@ func (suite *CatalogHandlerTestSuite) TestGetFileInfoNotFound() {
 }
 
 func (suite *CatalogHandlerTestSuite) TestSearch() {
-	req, _ := http.NewRequest("GET", "/api/v1/search?q=movie", nil)
+	req, _ := http.NewRequest("GET", "/api/v1/search?query=movie", nil)
 	w := httptest.NewRecorder()
 	suite.router.ServeHTTP(w, req)
 
@@ -206,7 +254,7 @@ func (suite *CatalogHandlerTestSuite) TestSearch() {
 	var response map[string]interface{}
 	err := json.Unmarshal(w.Body.Bytes(), &response)
 	assert.NoError(suite.T(), err)
-	assert.NotNil(suite.T(), response["results"])
+	assert.NotNil(suite.T(), response["files"])
 }
 
 func (suite *CatalogHandlerTestSuite) TestSearchEmptyQuery() {
@@ -218,7 +266,7 @@ func (suite *CatalogHandlerTestSuite) TestSearchEmptyQuery() {
 }
 
 func (suite *CatalogHandlerTestSuite) TestSearchDuplicates() {
-	req, _ := http.NewRequest("GET", "/api/v1/search/duplicates", nil)
+	req, _ := http.NewRequest("GET", "/api/v1/search/duplicates?smb_root=test", nil)
 	w := httptest.NewRecorder()
 	suite.router.ServeHTTP(w, req)
 
@@ -226,7 +274,7 @@ func (suite *CatalogHandlerTestSuite) TestSearchDuplicates() {
 }
 
 func (suite *CatalogHandlerTestSuite) TestGetDirectoriesBySize() {
-	req, _ := http.NewRequest("GET", "/api/v1/stats/directories/by-size", nil)
+	req, _ := http.NewRequest("GET", "/api/v1/stats/directories/by-size?smb_root=test", nil)
 	w := httptest.NewRecorder()
 	suite.router.ServeHTTP(w, req)
 
@@ -248,11 +296,11 @@ func (suite *CatalogHandlerTestSuite) TestGetDuplicatesCount() {
 	var response map[string]interface{}
 	err := json.Unmarshal(w.Body.Bytes(), &response)
 	assert.NoError(suite.T(), err)
-	assert.Equal(suite.T(), float64(0), response["count"])
+	assert.Equal(suite.T(), float64(0), response["total_duplicates"])
 }
 
 func (suite *CatalogHandlerTestSuite) TestPaginationParameters() {
-	req, _ := http.NewRequest("GET", "/api/v1/search?q=test&limit=10&offset=5", nil)
+	req, _ := http.NewRequest("GET", "/api/v1/search?query=test&limit=10&offset=5", nil)
 	w := httptest.NewRecorder()
 	suite.router.ServeHTTP(w, req)
 

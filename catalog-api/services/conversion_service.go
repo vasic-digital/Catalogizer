@@ -1,15 +1,14 @@
 package services
 
 import (
-	"database/sql"
 	"encoding/json"
 	"fmt"
 	"os"
 	"os/exec"
-	"path/filepath"
 	"strings"
 	"time"
 
+	"catalogizer/internal/auth"
 	"catalogizer/models"
 	"catalogizer/repository"
 )
@@ -34,18 +33,18 @@ func (s *ConversionService) CreateConversionJob(userID int, request *models.Conv
 	}
 
 	job := &models.ConversionJob{
-		UserID:           userID,
-		SourcePath:       request.SourcePath,
-		TargetPath:       request.TargetPath,
-		SourceFormat:     request.SourceFormat,
-		TargetFormat:     request.TargetFormat,
-		ConversionType:   request.ConversionType,
-		Quality:          request.Quality,
-		Settings:         request.Settings,
-		Priority:         request.Priority,
-		Status:           models.ConversionStatusPending,
-		CreatedAt:        time.Now(),
-		ScheduledFor:     request.ScheduledFor,
+		UserID:         userID,
+		SourcePath:     request.SourcePath,
+		TargetPath:     request.TargetPath,
+		SourceFormat:   request.SourceFormat,
+		TargetFormat:   request.TargetFormat,
+		ConversionType: request.ConversionType,
+		Quality:        request.Quality,
+		Settings:       request.Settings,
+		Priority:       request.Priority,
+		Status:         models.ConversionStatusPending,
+		CreatedAt:      time.Now(),
+		ScheduledFor:   request.ScheduledFor,
 	}
 
 	id, err := s.conversionRepo.CreateJob(job)
@@ -351,7 +350,7 @@ func (s *ConversionService) GetJob(jobID int, userID int) (*models.ConversionJob
 	}
 
 	if job.UserID != userID {
-		hasPermission, err := s.authService.CheckPermission(userID, models.PermissionViewMedia)
+		hasPermission, err := s.authService.CheckPermission(userID, auth.PermissionViewMedia)
 		if err != nil || !hasPermission {
 			return nil, fmt.Errorf("unauthorized to view this job")
 		}
@@ -367,7 +366,7 @@ func (s *ConversionService) CancelJob(jobID int, userID int) error {
 	}
 
 	if job.UserID != userID {
-		hasPermission, err := s.authService.CheckPermission(userID, models.PermissionManageUsers)
+		hasPermission, err := s.authService.CheckPermission(userID, auth.PermissionManageUsers)
 		if err != nil || !hasPermission {
 			return fmt.Errorf("unauthorized to cancel this job")
 		}
@@ -391,7 +390,7 @@ func (s *ConversionService) RetryJob(jobID int, userID int) error {
 	}
 
 	if job.UserID != userID {
-		hasPermission, err := s.authService.CheckPermission(userID, models.PermissionManageUsers)
+		hasPermission, err := s.authService.CheckPermission(userID, auth.PermissionManageUsers)
 		if err != nil || !hasPermission {
 			return fmt.Errorf("unauthorized to retry this job")
 		}

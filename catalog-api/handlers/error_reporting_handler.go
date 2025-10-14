@@ -6,28 +6,29 @@ import (
 	"strconv"
 	"time"
 
-	"catalog-api/models"
-	"catalog-api/services"
+	"catalogizer/models"
+	"catalogizer/services"
 
 	"github.com/gorilla/mux"
 )
 
 type ErrorReportingHandler struct {
 	errorReportingService *services.ErrorReportingService
-	permissionService     *services.PermissionService
+	authService           *services.AuthService
 }
 
-func NewErrorReportingHandler(errorReportingService *services.ErrorReportingService, permissionService *services.PermissionService) *ErrorReportingHandler {
+func NewErrorReportingHandler(errorReportingService *services.ErrorReportingService, authService *services.AuthService) *ErrorReportingHandler {
 	return &ErrorReportingHandler{
 		errorReportingService: errorReportingService,
-		permissionService:     permissionService,
+		authService:           authService,
 	}
 }
 
 func (h *ErrorReportingHandler) ReportError(w http.ResponseWriter, r *http.Request) {
 	userID := r.Context().Value("user_id").(int)
 
-	if !h.permissionService.HasPermission(userID, "error_reporting", "write") {
+	hasPermission, err := h.authService.CheckPermission(userID, models.PermissionReportCreate)
+	if err != nil || !hasPermission {
 		http.Error(w, "Insufficient permissions", http.StatusForbidden)
 		return
 	}
@@ -51,7 +52,8 @@ func (h *ErrorReportingHandler) ReportError(w http.ResponseWriter, r *http.Reque
 func (h *ErrorReportingHandler) ReportCrash(w http.ResponseWriter, r *http.Request) {
 	userID := r.Context().Value("user_id").(int)
 
-	if !h.permissionService.HasPermission(userID, "error_reporting", "write") {
+	hasPermission, err := h.authService.CheckPermission(userID, models.PermissionReportCreate)
+	if err != nil || !hasPermission {
 		http.Error(w, "Insufficient permissions", http.StatusForbidden)
 		return
 	}
@@ -81,7 +83,8 @@ func (h *ErrorReportingHandler) GetErrorReport(w http.ResponseWriter, r *http.Re
 		return
 	}
 
-	if !h.permissionService.HasPermission(userID, "error_reporting", "read") {
+	hasPermission, err := h.authService.CheckPermission(userID, models.PermissionReportView)
+	if err != nil || !hasPermission {
 		http.Error(w, "Insufficient permissions", http.StatusForbidden)
 		return
 	}
@@ -105,7 +108,8 @@ func (h *ErrorReportingHandler) GetCrashReport(w http.ResponseWriter, r *http.Re
 		return
 	}
 
-	if !h.permissionService.HasPermission(userID, "error_reporting", "read") {
+	hasPermission, err := h.authService.CheckPermission(userID, models.PermissionReportView)
+	if err != nil || !hasPermission {
 		http.Error(w, "Insufficient permissions", http.StatusForbidden)
 		return
 	}
@@ -123,7 +127,8 @@ func (h *ErrorReportingHandler) GetCrashReport(w http.ResponseWriter, r *http.Re
 func (h *ErrorReportingHandler) ListErrorReports(w http.ResponseWriter, r *http.Request) {
 	userID := r.Context().Value("user_id").(int)
 
-	if !h.permissionService.HasPermission(userID, "error_reporting", "read") {
+	hasPermission, err := h.authService.CheckPermission(userID, models.PermissionReportView)
+	if err != nil || !hasPermission {
 		http.Error(w, "Insufficient permissions", http.StatusForbidden)
 		return
 	}
@@ -145,7 +150,8 @@ func (h *ErrorReportingHandler) ListErrorReports(w http.ResponseWriter, r *http.
 func (h *ErrorReportingHandler) ListCrashReports(w http.ResponseWriter, r *http.Request) {
 	userID := r.Context().Value("user_id").(int)
 
-	if !h.permissionService.HasPermission(userID, "error_reporting", "read") {
+	hasPermission, err := h.authService.CheckPermission(userID, models.PermissionReportView)
+	if err != nil || !hasPermission {
 		http.Error(w, "Insufficient permissions", http.StatusForbidden)
 		return
 	}
@@ -173,7 +179,8 @@ func (h *ErrorReportingHandler) UpdateErrorStatus(w http.ResponseWriter, r *http
 		return
 	}
 
-	if !h.permissionService.HasPermission(userID, "error_reporting", "write") {
+	hasPermission, err := h.authService.CheckPermission(userID, models.PermissionReportCreate)
+	if err != nil || !hasPermission {
 		http.Error(w, "Insufficient permissions", http.StatusForbidden)
 		return
 	}
@@ -205,7 +212,8 @@ func (h *ErrorReportingHandler) UpdateCrashStatus(w http.ResponseWriter, r *http
 		return
 	}
 
-	if !h.permissionService.HasPermission(userID, "error_reporting", "write") {
+	hasPermission, err := h.authService.CheckPermission(userID, models.PermissionReportCreate)
+	if err != nil || !hasPermission {
 		http.Error(w, "Insufficient permissions", http.StatusForbidden)
 		return
 	}
@@ -231,7 +239,8 @@ func (h *ErrorReportingHandler) UpdateCrashStatus(w http.ResponseWriter, r *http
 func (h *ErrorReportingHandler) GetErrorStatistics(w http.ResponseWriter, r *http.Request) {
 	userID := r.Context().Value("user_id").(int)
 
-	if !h.permissionService.HasPermission(userID, "error_reporting", "read") {
+	hasPermission, err := h.authService.CheckPermission(userID, models.PermissionReportView)
+	if err != nil || !hasPermission {
 		http.Error(w, "Insufficient permissions", http.StatusForbidden)
 		return
 	}
@@ -249,7 +258,8 @@ func (h *ErrorReportingHandler) GetErrorStatistics(w http.ResponseWriter, r *htt
 func (h *ErrorReportingHandler) GetCrashStatistics(w http.ResponseWriter, r *http.Request) {
 	userID := r.Context().Value("user_id").(int)
 
-	if !h.permissionService.HasPermission(userID, "error_reporting", "read") {
+	hasPermission, err := h.authService.CheckPermission(userID, models.PermissionReportView)
+	if err != nil || !hasPermission {
 		http.Error(w, "Insufficient permissions", http.StatusForbidden)
 		return
 	}
@@ -267,7 +277,8 @@ func (h *ErrorReportingHandler) GetCrashStatistics(w http.ResponseWriter, r *htt
 func (h *ErrorReportingHandler) GetSystemHealth(w http.ResponseWriter, r *http.Request) {
 	userID := r.Context().Value("user_id").(int)
 
-	if !h.permissionService.HasPermission(userID, "error_reporting", "admin") {
+	hasPermission, err := h.authService.CheckPermission(userID, models.PermissionSystemAdmin)
+	if err != nil || !hasPermission {
 		http.Error(w, "Insufficient permissions", http.StatusForbidden)
 		return
 	}
@@ -285,7 +296,8 @@ func (h *ErrorReportingHandler) GetSystemHealth(w http.ResponseWriter, r *http.R
 func (h *ErrorReportingHandler) UpdateConfiguration(w http.ResponseWriter, r *http.Request) {
 	userID := r.Context().Value("user_id").(int)
 
-	if !h.permissionService.HasPermission(userID, "error_reporting", "admin") {
+	hasPermission, err := h.authService.CheckPermission(userID, models.PermissionSystemAdmin)
+	if err != nil || !hasPermission {
 		http.Error(w, "Insufficient permissions", http.StatusForbidden)
 		return
 	}
@@ -296,7 +308,7 @@ func (h *ErrorReportingHandler) UpdateConfiguration(w http.ResponseWriter, r *ht
 		return
 	}
 
-	err := h.errorReportingService.UpdateConfiguration(&config)
+	err = h.errorReportingService.UpdateConfiguration(&config)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
@@ -311,7 +323,8 @@ func (h *ErrorReportingHandler) UpdateConfiguration(w http.ResponseWriter, r *ht
 func (h *ErrorReportingHandler) GetConfiguration(w http.ResponseWriter, r *http.Request) {
 	userID := r.Context().Value("user_id").(int)
 
-	if !h.permissionService.HasPermission(userID, "error_reporting", "admin") {
+	hasPermission, err := h.authService.CheckPermission(userID, models.PermissionSystemAdmin)
+	if err != nil || !hasPermission {
 		http.Error(w, "Insufficient permissions", http.StatusForbidden)
 		return
 	}
@@ -325,7 +338,8 @@ func (h *ErrorReportingHandler) GetConfiguration(w http.ResponseWriter, r *http.
 func (h *ErrorReportingHandler) CleanupOldReports(w http.ResponseWriter, r *http.Request) {
 	userID := r.Context().Value("user_id").(int)
 
-	if !h.permissionService.HasPermission(userID, "error_reporting", "admin") {
+	hasPermission, err := h.authService.CheckPermission(userID, models.PermissionSystemAdmin)
+	if err != nil || !hasPermission {
 		http.Error(w, "Insufficient permissions", http.StatusForbidden)
 		return
 	}
@@ -344,7 +358,7 @@ func (h *ErrorReportingHandler) CleanupOldReports(w http.ResponseWriter, r *http
 	}
 
 	olderThan := time.Now().AddDate(0, 0, -request.DaysOld)
-	err := h.errorReportingService.CleanupOldReports(olderThan)
+	err = h.errorReportingService.CleanupOldReports(olderThan)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
@@ -359,7 +373,8 @@ func (h *ErrorReportingHandler) CleanupOldReports(w http.ResponseWriter, r *http
 func (h *ErrorReportingHandler) ExportReports(w http.ResponseWriter, r *http.Request) {
 	userID := r.Context().Value("user_id").(int)
 
-	if !h.permissionService.HasPermission(userID, "error_reporting", "read") {
+	hasPermission, err := h.authService.CheckPermission(userID, models.PermissionReportView)
+	if err != nil || !hasPermission {
 		http.Error(w, "Insufficient permissions", http.StatusForbidden)
 		return
 	}

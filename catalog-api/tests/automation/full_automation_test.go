@@ -11,9 +11,9 @@ import (
 	"testing"
 	"time"
 
-	"catalog-api/handlers"
-	"catalog-api/services"
-	"catalog-api/tests"
+	"catalogizer/handlers"
+	"catalogizer/services"
+	"catalogizer/tests"
 
 	"github.com/gorilla/mux"
 )

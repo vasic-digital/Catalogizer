@@ -1,10 +1,10 @@
 package analyzer
 
 import (
-	"catalog-api/internal/media/detector"
-	mediamodels "catalog-api/internal/media/models"
-	"catalog-api/internal/media/providers"
-	"catalog-api/internal/models"
+	"catalogizer/internal/media/detector"
+	mediamodels "catalogizer/internal/media/models"
+	"catalogizer/internal/media/providers"
+	"catalogizer/internal/models"
 	"context"
 	"database/sql"
 	"encoding/json"

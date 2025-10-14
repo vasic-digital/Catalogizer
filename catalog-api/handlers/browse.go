@@ -4,9 +4,9 @@ import (
 	"net/http"
 	"strconv"
 
-	"catalog-api/models"
-	"catalog-api/repository"
-	"catalog-api/utils"
+	"catalogizer/models"
+	"catalogizer/repository"
+	"catalogizer/utils"
 
 	"github.com/gin-gonic/gin"
 )
@@ -30,14 +30,14 @@ func NewBrowseHandler(fileRepo *repository.FileRepository) *BrowseHandler {
 // @Accept json
 // @Produce json
 // @Success 200 {array} models.StorageRoot
-// @Failure 500 {object} utils.ErrorResponse
+// @Failure 500 {object} utils.SendErrorResponse
 // @Router /api/browse/roots [get]
 func (h *BrowseHandler) GetStorageRoots(c *gin.Context) {
 	ctx := c.Request.Context()
 
 	roots, err := h.fileRepo.GetStorageRoots(ctx)
 	if err != nil {
-		utils.ErrorResponse(c, http.StatusInternalServerError, "Failed to get storage roots", err)
+		utils.SendErrorResponse(c, http.StatusInternalServerError, "Failed to get storage roots", err)
 		return
 	}
 
@@ -60,15 +60,15 @@ func (h *BrowseHandler) GetStorageRoots(c *gin.Context) {
 // @Param sort_by query string false "Sort field (name, size, modified_at, created_at, path, extension)" default("name")
 // @Param sort_order query string false "Sort order (asc, desc)" default("asc")
 // @Success 200 {object} models.SearchResult
-// @Failure 400 {object} utils.ErrorResponse
-// @Failure 500 {object} utils.ErrorResponse
+// @Failure 400 {object} utils.SendErrorResponse
+// @Failure 500 {object} utils.SendErrorResponse
 // @Router /api/browse/{storage_root} [get]
 func (h *BrowseHandler) BrowseDirectory(c *gin.Context) {
 	ctx := c.Request.Context()
 
 	storageRoot := c.Param("storage_root")
 	if storageRoot == "" {
-		utils.ErrorResponse(c, http.StatusBadRequest, "Storage root name is required", nil)
+		utils.SendErrorResponse(c, http.StatusBadRequest, "Storage root name is required", nil)
 		return
 	}
 
@@ -116,7 +116,7 @@ func (h *BrowseHandler) BrowseDirectory(c *gin.Context) {
 
 	result, err := h.fileRepo.GetDirectoryContents(ctx, storageRoot, path, pagination, sort)
 	if err != nil {
-		utils.ErrorResponse(c, http.StatusInternalServerError, "Failed to browse directory", err)
+		utils.SendErrorResponse(c, http.StatusInternalServerError, "Failed to browse directory", err)
 		return
 	}
 
@@ -134,9 +134,9 @@ func (h *BrowseHandler) BrowseDirectory(c *gin.Context) {
 // @Produce json
 // @Param id path int true "File ID"
 // @Success 200 {object} models.FileWithMetadata
-// @Failure 400 {object} utils.ErrorResponse
-// @Failure 404 {object} utils.ErrorResponse
-// @Failure 500 {object} utils.ErrorResponse
+// @Failure 400 {object} utils.SendErrorResponse
+// @Failure 404 {object} utils.SendErrorResponse
+// @Failure 500 {object} utils.SendErrorResponse
 // @Router /api/browse/file/{id} [get]
 func (h *BrowseHandler) GetFileInfo(c *gin.Context) {
 	ctx := c.Request.Context()
@@ -144,17 +144,17 @@ func (h *BrowseHandler) GetFileInfo(c *gin.Context) {
 	idStr := c.Param("id")
 	id, err := strconv.ParseInt(idStr, 10, 64)
 	if err != nil {
-		utils.ErrorResponse(c, http.StatusBadRequest, "Invalid file ID", err)
+		utils.SendErrorResponse(c, http.StatusBadRequest, "Invalid file ID", nil)
 		return
 	}
 
 	file, err := h.fileRepo.GetFileByID(ctx, id)
 	if err != nil {
 		if err.Error() == "file not found" {
-			utils.ErrorResponse(c, http.StatusNotFound, "File not found", err)
+			utils.SendErrorResponse(c, http.StatusNotFound, "File not found", nil)
 			return
 		}
-		utils.ErrorResponse(c, http.StatusInternalServerError, "Failed to get file info", err)
+		utils.SendErrorResponse(c, http.StatusInternalServerError, "Failed to get file info", err)
 		return
 	}
 
@@ -175,15 +175,15 @@ func (h *BrowseHandler) GetFileInfo(c *gin.Context) {
 // @Param limit query int false "Items per page" default(50)
 // @Param ascending query bool false "Sort in ascending order" default(false)
 // @Success 200 {array} models.DirectoryInfo
-// @Failure 400 {object} utils.ErrorResponse
-// @Failure 500 {object} utils.ErrorResponse
+// @Failure 400 {object} utils.SendErrorResponse
+// @Failure 500 {object} utils.SendErrorResponse
 // @Router /api/browse/{storage_root}/sizes [get]
 func (h *BrowseHandler) GetDirectorySizes(c *gin.Context) {
 	ctx := c.Request.Context()
 
 	storageRoot := c.Param("storage_root")
 	if storageRoot == "" {
-		utils.ErrorResponse(c, http.StatusBadRequest, "Storage root name is required", nil)
+		utils.SendErrorResponse(c, http.StatusBadRequest, "Storage root name is required", nil)
 		return
 	}
 
@@ -207,7 +207,7 @@ func (h *BrowseHandler) GetDirectorySizes(c *gin.Context) {
 
 	directories, err := h.fileRepo.GetDirectoriesSortedBySize(ctx, storageRoot, pagination, ascending)
 	if err != nil {
-		utils.ErrorResponse(c, http.StatusInternalServerError, "Failed to get directory sizes", err)
+		utils.SendErrorResponse(c, http.StatusInternalServerError, "Failed to get directory sizes", err)
 		return
 	}
 
@@ -228,15 +228,15 @@ func (h *BrowseHandler) GetDirectorySizes(c *gin.Context) {
 // @Param limit query int false "Items per page" default(50)
 // @Param ascending query bool false "Sort in ascending order" default(false)
 // @Success 200 {array} models.DirectoryInfo
-// @Failure 400 {object} utils.ErrorResponse
-// @Failure 500 {object} utils.ErrorResponse
+// @Failure 400 {object} utils.SendErrorResponse
+// @Failure 500 {object} utils.SendErrorResponse
 // @Router /api/browse/{storage_root}/duplicates [get]
 func (h *BrowseHandler) GetDirectoryDuplicates(c *gin.Context) {
 	ctx := c.Request.Context()
 
 	storageRoot := c.Param("storage_root")
 	if storageRoot == "" {
-		utils.ErrorResponse(c, http.StatusBadRequest, "Storage root name is required", nil)
+		utils.SendErrorResponse(c, http.StatusBadRequest, "Storage root name is required", nil)
 		return
 	}
 
@@ -260,7 +260,7 @@ func (h *BrowseHandler) GetDirectoryDuplicates(c *gin.Context) {
 
 	directories, err := h.fileRepo.GetDirectoriesSortedByDuplicates(ctx, storageRoot, pagination, ascending)
 	if err != nil {
-		utils.ErrorResponse(c, http.StatusInternalServerError, "Failed to get directory duplicates", err)
+		utils.SendErrorResponse(c, http.StatusInternalServerError, "Failed to get directory duplicates", err)
 		return
 	}
 

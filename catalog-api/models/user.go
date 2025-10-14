@@ -141,8 +141,8 @@ type PrivacyPrefs struct {
 
 // UIPrefs represents UI preferences
 type UIPrefs struct {
-	DensityMode     string `json:"density_mode"`     // compact, comfortable, spacious
-	GridSize        int    `json:"grid_size"`        // items per row
+	DensityMode     string `json:"density_mode"` // compact, comfortable, spacious
+	GridSize        int    `json:"grid_size"`    // items per row
 	ShowThumbnails  bool   `json:"show_thumbnails"`
 	ShowMetadata    bool   `json:"show_metadata"`
 	DefaultSortBy   string `json:"default_sort_by"`
@@ -151,23 +151,23 @@ type UIPrefs struct {
 
 // UserSettings represents user-specific settings
 type UserSettings struct {
-	DefaultShare          string                 `json:"default_share,omitempty"`
-	AutoSync              bool                   `json:"auto_sync"`
-	SyncIntervalMinutes   int                    `json:"sync_interval_minutes"`
-	DownloadQuality       string                 `json:"download_quality"`
-	CacheSettings         CacheSettings          `json:"cache,omitempty"`
-	ConversionSettings    ConversionSettings     `json:"conversion,omitempty"`
-	BackupSettings        BackupSettings         `json:"backup,omitempty"`
-	SecuritySettings      SecuritySettings       `json:"security,omitempty"`
-	ExperimentalFeatures  map[string]interface{} `json:"experimental_features,omitempty"`
+	DefaultShare         string                 `json:"default_share,omitempty"`
+	AutoSync             bool                   `json:"auto_sync"`
+	SyncIntervalMinutes  int                    `json:"sync_interval_minutes"`
+	DownloadQuality      string                 `json:"download_quality"`
+	CacheSettings        CacheSettings          `json:"cache,omitempty"`
+	ConversionSettings   ConversionSettings     `json:"conversion,omitempty"`
+	BackupSettings       BackupSettings         `json:"backup,omitempty"`
+	SecuritySettings     SecuritySettings       `json:"security,omitempty"`
+	ExperimentalFeatures map[string]interface{} `json:"experimental_features,omitempty"`
 }
 
 // CacheSettings represents caching preferences
 type CacheSettings struct {
-	MaxCacheSize    int64 `json:"max_cache_size"`    // bytes
+	MaxCacheSize    int64 `json:"max_cache_size"` // bytes
 	CacheThumbnails bool  `json:"cache_thumbnails"`
 	CacheMetadata   bool  `json:"cache_metadata"`
-	CacheTimeout    int   `json:"cache_timeout"`     // minutes
+	CacheTimeout    int   `json:"cache_timeout"` // minutes
 }
 
 // ConversionSettings represents format conversion preferences
@@ -180,19 +180,19 @@ type ConversionSettings struct {
 
 // BackupSettings represents backup preferences
 type BackupSettings struct {
-	AutoBackup        bool   `json:"auto_backup"`
-	BackupInterval    string `json:"backup_interval"`    // daily, weekly, monthly
-	BackupRetention   int    `json:"backup_retention"`   // days
-	BackupLocation    string `json:"backup_location"`
-	BackupEncryption  bool   `json:"backup_encryption"`
+	AutoBackup       bool   `json:"auto_backup"`
+	BackupInterval   string `json:"backup_interval"`  // daily, weekly, monthly
+	BackupRetention  int    `json:"backup_retention"` // days
+	BackupLocation   string `json:"backup_location"`
+	BackupEncryption bool   `json:"backup_encryption"`
 }
 
 // SecuritySettings represents security preferences
 type SecuritySettings struct {
-	TwoFactorEnabled    bool `json:"two_factor_enabled"`
-	SessionTimeout      int  `json:"session_timeout"`      // minutes
-	RequirePasswordFor  []string `json:"require_password_for"` // actions requiring password
-	LoginNotifications  bool `json:"login_notifications"`
+	TwoFactorEnabled   bool     `json:"two_factor_enabled"`
+	SessionTimeout     int      `json:"session_timeout"`      // minutes
+	RequirePasswordFor []string `json:"require_password_for"` // actions requiring password
+	LoginNotifications bool     `json:"login_notifications"`
 }
 
 // Value implements the driver.Valuer interface for UserPreferences
@@ -241,29 +241,29 @@ func (us *UserSettings) Scan(value interface{}) error {
 
 // UserSession represents an active user session
 type UserSession struct {
-	ID               int        `json:"id" db:"id"`
-	UserID           int        `json:"user_id" db:"user_id"`
-	SessionToken     string     `json:"session_token" db:"session_token"`
-	RefreshToken     *string    `json:"refresh_token,omitempty" db:"refresh_token"`
-	DeviceInfo       DeviceInfo `json:"device_info" db:"device_info"`
-	IPAddress        *string    `json:"ip_address,omitempty" db:"ip_address"`
-	UserAgent        *string    `json:"user_agent,omitempty" db:"user_agent"`
-	IsActive         bool       `json:"is_active" db:"is_active"`
-	ExpiresAt        time.Time  `json:"expires_at" db:"expires_at"`
-	CreatedAt        time.Time  `json:"created_at" db:"created_at"`
-	LastActivityAt   time.Time  `json:"last_activity_at" db:"last_activity_at"`
+	ID             int        `json:"id" db:"id"`
+	UserID         int        `json:"user_id" db:"user_id"`
+	SessionToken   string     `json:"session_token" db:"session_token"`
+	RefreshToken   *string    `json:"refresh_token,omitempty" db:"refresh_token"`
+	DeviceInfo     DeviceInfo `json:"device_info" db:"device_info"`
+	IPAddress      *string    `json:"ip_address,omitempty" db:"ip_address"`
+	UserAgent      *string    `json:"user_agent,omitempty" db:"user_agent"`
+	IsActive       bool       `json:"is_active" db:"is_active"`
+	ExpiresAt      time.Time  `json:"expires_at" db:"expires_at"`
+	CreatedAt      time.Time  `json:"created_at" db:"created_at"`
+	LastActivityAt time.Time  `json:"last_activity_at" db:"last_activity_at"`
 }
 
 // DeviceInfo represents information about the user's device
 type DeviceInfo struct {
-	DeviceType    string  `json:"device_type"`    // mobile, tablet, desktop, tv
-	Platform      string  `json:"platform"`       // android, ios, windows, macos, linux
-	PlatformVersion string `json:"platform_version"`
-	AppVersion    string  `json:"app_version"`
-	DeviceModel   *string `json:"device_model,omitempty"`
-	DeviceName    *string `json:"device_name,omitempty"`
-	ScreenSize    *string `json:"screen_size,omitempty"`
-	IsEmulator    bool    `json:"is_emulator"`
+	DeviceType      string  `json:"device_type"` // mobile, tablet, desktop, tv
+	Platform        string  `json:"platform"`    // android, ios, windows, macos, linux
+	PlatformVersion string  `json:"platform_version"`
+	AppVersion      string  `json:"app_version"`
+	DeviceModel     *string `json:"device_model,omitempty"`
+	DeviceName      *string `json:"device_name,omitempty"`
+	ScreenSize      *string `json:"screen_size,omitempty"`
+	IsEmulator      bool    `json:"is_emulator"`
 }
 
 // Value implements the driver.Valuer interface for DeviceInfo
@@ -290,43 +290,67 @@ func (di *DeviceInfo) Scan(value interface{}) error {
 
 // UserSummary represents a summary view of user information
 type UserSummary struct {
-	ID                  int        `json:"id" db:"id"`
-	Username            string     `json:"username" db:"username"`
-	Email               string     `json:"email" db:"email"`
-	DisplayName         *string    `json:"display_name" db:"display_name"`
-	RoleName            string     `json:"role_name" db:"role_name"`
-	RoleDisplayName     string     `json:"role_display_name" db:"role_display_name"`
-	IsActive            bool       `json:"is_active" db:"is_active"`
-	LastLoginAt         *time.Time `json:"last_login_at" db:"last_login_at"`
-	TotalMediaAccesses  int        `json:"total_media_accesses" db:"total_media_accesses"`
-	TotalFavorites      int        `json:"total_favorites" db:"total_favorites"`
-	CreatedAt           time.Time  `json:"created_at" db:"created_at"`
+	ID                 int        `json:"id" db:"id"`
+	Username           string     `json:"username" db:"username"`
+	Email              string     `json:"email" db:"email"`
+	DisplayName        *string    `json:"display_name" db:"display_name"`
+	RoleName           string     `json:"role_name" db:"role_name"`
+	RoleDisplayName    string     `json:"role_display_name" db:"role_display_name"`
+	IsActive           bool       `json:"is_active" db:"is_active"`
+	LastLoginAt        *time.Time `json:"last_login_at" db:"last_login_at"`
+	TotalMediaAccesses int        `json:"total_media_accesses" db:"total_media_accesses"`
+	TotalFavorites     int        `json:"total_favorites" db:"total_favorites"`
+	CreatedAt          time.Time  `json:"created_at" db:"created_at"`
 }
 
 // CreateUserRequest represents a request to create a new user
 type CreateUserRequest struct {
-	Username                string          `json:"username" validate:"required,min=3,max=50"`
-	Email                   string          `json:"email" validate:"required,email"`
-	Password                string          `json:"password" validate:"required,min=8"`
-	RoleID                  int             `json:"role_id" validate:"required"`
-	DisplayName             *string         `json:"display_name"`
-	LocationTrackingEnabled *bool           `json:"location_tracking_enabled"`
-	AnalyticsEnabled        *bool           `json:"analytics_enabled"`
+	Username                string           `json:"username" validate:"required,min=3,max=50"`
+	Email                   string           `json:"email" validate:"required,email"`
+	Password                string           `json:"password" validate:"required,min=8"`
+	RoleID                  int              `json:"role_id" validate:"required"`
+	FirstName               *string          `json:"first_name"`
+	LastName                *string          `json:"last_name"`
+	TimeZone                *string          `json:"time_zone"`
+	Language                *string          `json:"language"`
+	IsActive                *bool            `json:"is_active"`
+	DisplayName             *string          `json:"display_name"`
+	LocationTrackingEnabled *bool            `json:"location_tracking_enabled"`
+	AnalyticsEnabled        *bool            `json:"analytics_enabled"`
 	Preferences             *UserPreferences `json:"preferences"`
-	Settings                *UserSettings   `json:"settings"`
+	Settings                *UserSettings    `json:"settings"`
 }
 
 // UpdateUserRequest represents a request to update user information
 type UpdateUserRequest struct {
-	Email                   *string         `json:"email" validate:"omitempty,email"`
-	RoleID                  *int            `json:"role_id"`
-	DisplayName             *string         `json:"display_name"`
-	AvatarURL               *string         `json:"avatar_url"`
-	LocationTrackingEnabled *bool           `json:"location_tracking_enabled"`
-	AnalyticsEnabled        *bool           `json:"analytics_enabled"`
-	IsActive                *bool           `json:"is_active"`
+	Username                *string          `json:"username" validate:"omitempty,min=3,max=50"`
+	Email                   *string          `json:"email" validate:"omitempty,email"`
+	RoleID                  *int             `json:"role_id"`
+	FirstName               *string          `json:"first_name"`
+	LastName                *string          `json:"last_name"`
+	TimeZone                *string          `json:"time_zone"`
+	Language                *string          `json:"language"`
+	DisplayName             *string          `json:"display_name"`
+	AvatarURL               *string          `json:"avatar_url"`
+	LocationTrackingEnabled *bool            `json:"location_tracking_enabled"`
+	AnalyticsEnabled        *bool            `json:"analytics_enabled"`
+	IsActive                *bool            `json:"is_active"`
 	Preferences             *UserPreferences `json:"preferences"`
-	Settings                *UserSettings   `json:"settings"`
+	Settings                *UserSettings    `json:"settings"`
+}
+
+// CreateRoleRequest represents a request to create a new role
+type CreateRoleRequest struct {
+	Name        string   `json:"name" validate:"required,min=2,max=50"`
+	Description *string  `json:"description"`
+	Permissions []string `json:"permissions" validate:"required"`
+}
+
+// UpdateRoleRequest represents a request to update role information
+type UpdateRoleRequest struct {
+	Name        *string  `json:"name" validate:"omitempty,min=2,max=50"`
+	Description *string  `json:"description"`
+	Permissions []string `json:"permissions"`
 }
 
 // ChangePasswordRequest represents a request to change user password
@@ -345,9 +369,9 @@ type LoginRequest struct {
 
 // LoginResponse represents a login response
 type LoginResponse struct {
-	User         User   `json:"user"`
-	SessionToken string `json:"session_token"`
-	RefreshToken string `json:"refresh_token"`
+	User         User      `json:"user"`
+	SessionToken string    `json:"session_token"`
+	RefreshToken string    `json:"refresh_token"`
 	ExpiresAt    time.Time `json:"expires_at"`
 }
 
@@ -368,7 +392,7 @@ type UserListResponse struct {
 // Common permission constants
 const (
 	// System permissions
-	PermissionSystemAdmin = "system.admin"
+	PermissionSystemAdmin  = "system.admin"
 	PermissionSystemConfig = "system.configure"
 
 	// User management permissions
@@ -389,16 +413,20 @@ const (
 	PermissionMediaManage   = "media.manage" // includes all media operations
 
 	// Share permissions
-	PermissionShareView   = "share.view"
-	PermissionShareCreate = "share.create"
-	PermissionShareEdit   = "share.edit"
-	PermissionShareDelete = "share.delete"
-	PermissionShareManage = "share.manage" // includes all share operations
+	PermissionShareView    = "share.view"
+	PermissionShareCreate  = "share.create"
+	PermissionShareEdit    = "share.edit"
+	PermissionShareDelete  = "share.delete"
+	PermissionShareManage  = "share.manage" // includes all share operations
+	PermissionViewShares   = "share.view"
+	PermissionEditShares   = "share.edit"
+	PermissionDeleteShares = "share.delete"
 
 	// Analytics permissions
 	PermissionAnalyticsView   = "analytics.view"
 	PermissionAnalyticsExport = "analytics.export"
 	PermissionAnalyticsManage = "analytics.manage"
+	PermissionViewAnalytics   = "analytics.view"
 
 	// Favorites permissions
 	PermissionFavoriteView   = "favorite.view"
@@ -416,9 +444,9 @@ const (
 	PermissionSyncManage  = "sync.manage"
 
 	// Conversion permissions
-	PermissionConversionView    = "conversion.view"
-	PermissionConversionCreate  = "conversion.create"
-	PermissionConversionManage  = "conversion.manage"
+	PermissionConversionView   = "conversion.view"
+	PermissionConversionCreate = "conversion.create"
+	PermissionConversionManage = "conversion.manage"
 
 	// Report permissions
 	PermissionReportView   = "report.view"
@@ -564,57 +592,107 @@ type AnalyticsEvent struct {
 
 // Location represents geographic coordinates
 type Location struct {
-	Latitude  float64 `json:"latitude"`
-	Longitude float64 `json:"longitude"`
-	Country   *string `json:"country,omitempty"`
-	City      *string `json:"city,omitempty"`
+	Latitude  float64  `json:"latitude"`
+	Longitude float64  `json:"longitude"`
+	Country   *string  `json:"country,omitempty"`
+	City      *string  `json:"city,omitempty"`
 	Accuracy  *float64 `json:"accuracy,omitempty"`
+}
+
+// AnalyticsEventRequest represents a request to track an analytics event
+type AnalyticsEventRequest struct {
+	EventType  string                 `json:"event_type"`
+	EntityType string                 `json:"entity_type,omitempty"`
+	EntityID   int                    `json:"entity_id,omitempty"`
+	Metadata   map[string]interface{} `json:"metadata,omitempty"`
+	SessionID  string                 `json:"session_id,omitempty"`
+}
+
+// AnalyticsFilters represents filters for analytics queries
+type AnalyticsFilters struct {
+	StartDate   *time.Time `json:"start_date,omitempty"`
+	EndDate     *time.Time `json:"end_date,omitempty"`
+	EventTypes  []string   `json:"event_types,omitempty"`
+	EntityTypes []string   `json:"entity_types,omitempty"`
+	Limit       int        `json:"limit,omitempty"`
+	Offset      int        `json:"offset,omitempty"`
+}
+
+// AnalyticsData represents aggregated analytics data
+type AnalyticsData struct {
+	TotalEvents    int64                    `json:"total_events"`
+	EventBreakdown map[string]int           `json:"event_breakdown"`
+	Trends         map[string][]interface{} `json:"trends"`
+	TopEntities    []map[string]interface{} `json:"top_entities"`
+}
+
+// DashboardMetrics represents dashboard metrics
+type DashboardMetrics struct {
+	TotalUsers       int64 `json:"total_users"`
+	ActiveUsers      int64 `json:"active_users"`
+	TotalMediaItems  int64 `json:"total_media_items"`
+	TotalStorageUsed int64 `json:"total_storage_used"`
+	RecentActivity   int64 `json:"recent_activity"`
+}
+
+// RealtimeMetrics represents realtime metrics
+type RealtimeMetrics struct {
+	ActiveUsers    int     `json:"active_users"`
+	CurrentStreams int     `json:"current_streams"`
+	RecentEvents   int     `json:"recent_events"`
+	SystemLoad     float64 `json:"system_load"`
+}
+
+// ReportRequest represents a request to generate a report
+type ReportRequest struct {
+	ReportType string                 `json:"report_type"`
+	Params     map[string]interface{} `json:"params,omitempty"`
 }
 
 // UserAnalytics represents analytics data for a user
 type UserAnalytics struct {
-	UserID               int                              `json:"user_id"`
-	StartDate            time.Time                        `json:"start_date"`
-	EndDate              time.Time                        `json:"end_date"`
-	TotalMediaAccesses   int                              `json:"total_media_accesses"`
-	TotalEvents          int                              `json:"total_events"`
-	UniqueMediaAccessed  int                              `json:"unique_media_accessed"`
-	TotalPlaybackTime    time.Duration                    `json:"total_playback_time"`
-	MostAccessedMedia    []MediaAccessCount               `json:"most_accessed_media"`
-	PreferredAccessTimes map[string]int                   `json:"preferred_access_times"`
-	DeviceUsage          map[string]int                   `json:"device_usage"`
-	LocationAnalysis     map[string]int                   `json:"location_analysis"`
+	UserID               int                `json:"user_id"`
+	StartDate            time.Time          `json:"start_date"`
+	EndDate              time.Time          `json:"end_date"`
+	TotalMediaAccesses   int                `json:"total_media_accesses"`
+	TotalEvents          int                `json:"total_events"`
+	UniqueMediaAccessed  int                `json:"unique_media_accessed"`
+	TotalPlaybackTime    time.Duration      `json:"total_playback_time"`
+	MostAccessedMedia    []MediaAccessCount `json:"most_accessed_media"`
+	PreferredAccessTimes map[string]int     `json:"preferred_access_times"`
+	DeviceUsage          map[string]int     `json:"device_usage"`
+	LocationAnalysis     map[string]int     `json:"location_analysis"`
 }
 
 // SystemAnalytics represents system-wide analytics
 type SystemAnalytics struct {
-	StartDate                time.Time           `json:"start_date"`
-	EndDate                  time.Time           `json:"end_date"`
-	TotalUsers               int                 `json:"total_users"`
-	ActiveUsers              int                 `json:"active_users"`
-	TotalMediaAccesses       int                 `json:"total_media_accesses"`
-	TotalEvents              int                 `json:"total_events"`
-	TopAccessedMedia         []MediaAccessCount  `json:"top_accessed_media"`
-	UserGrowthData           []UserGrowthPoint   `json:"user_growth_data"`
-	AverageSessionDuration   time.Duration       `json:"average_session_duration"`
-	PeakUsageHours          map[string]int      `json:"peak_usage_hours"`
-	PopularFileTypes        map[string]int      `json:"popular_file_types"`
-	GeographicDistribution  map[string]interface{} `json:"geographic_distribution"`
+	StartDate              time.Time              `json:"start_date"`
+	EndDate                time.Time              `json:"end_date"`
+	TotalUsers             int                    `json:"total_users"`
+	ActiveUsers            int                    `json:"active_users"`
+	TotalMediaAccesses     int                    `json:"total_media_accesses"`
+	TotalEvents            int                    `json:"total_events"`
+	TopAccessedMedia       []MediaAccessCount     `json:"top_accessed_media"`
+	UserGrowthData         []UserGrowthPoint      `json:"user_growth_data"`
+	AverageSessionDuration time.Duration          `json:"average_session_duration"`
+	PeakUsageHours         map[string]int         `json:"peak_usage_hours"`
+	PopularFileTypes       map[string]int         `json:"popular_file_types"`
+	GeographicDistribution map[string]interface{} `json:"geographic_distribution"`
 }
 
 // MediaAnalytics represents analytics for specific media
 type MediaAnalytics struct {
-	MediaID              int                    `json:"media_id"`
-	StartDate            time.Time              `json:"start_date"`
-	EndDate              time.Time              `json:"end_date"`
-	TotalAccesses        int                    `json:"total_accesses"`
-	UniqueUsers          int                    `json:"unique_users"`
-	TotalPlaybackTime    time.Duration          `json:"total_playback_time"`
-	AveragePlaybackTime  time.Duration          `json:"average_playback_time"`
-	AccessPatterns       map[string]interface{} `json:"access_patterns"`
-	UserRetention        float64                `json:"user_retention"`
-	PopularTimeRanges    map[string]int         `json:"popular_time_ranges"`
-	DevicePreferences    map[string]int         `json:"device_preferences"`
+	MediaID             int                    `json:"media_id"`
+	StartDate           time.Time              `json:"start_date"`
+	EndDate             time.Time              `json:"end_date"`
+	TotalAccesses       int                    `json:"total_accesses"`
+	UniqueUsers         int                    `json:"unique_users"`
+	TotalPlaybackTime   time.Duration          `json:"total_playback_time"`
+	AveragePlaybackTime time.Duration          `json:"average_playback_time"`
+	AccessPatterns      map[string]interface{} `json:"access_patterns"`
+	UserRetention       float64                `json:"user_retention"`
+	PopularTimeRanges   map[string]int         `json:"popular_time_ranges"`
+	DevicePreferences   map[string]int         `json:"device_preferences"`
 }
 
 // MediaAccessCount represents media access statistics
@@ -676,13 +754,13 @@ type FavoriteCategory struct {
 
 // FavoriteShare represents sharing of favorites between users
 type FavoriteShare struct {
-	ID             int               `json:"id" db:"id"`
-	FavoriteID     int               `json:"favorite_id" db:"favorite_id"`
-	SharedByUser   int               `json:"shared_by_user" db:"shared_by_user"`
-	SharedWith     []int             `json:"shared_with" db:"shared_with"`
-	Permissions    SharePermissions  `json:"permissions" db:"permissions"`
-	CreatedAt      time.Time         `json:"created_at" db:"created_at"`
-	IsActive       bool              `json:"is_active" db:"is_active"`
+	ID           int              `json:"id" db:"id"`
+	FavoriteID   int              `json:"favorite_id" db:"favorite_id"`
+	SharedByUser int              `json:"shared_by_user" db:"shared_by_user"`
+	SharedWith   []int            `json:"shared_with" db:"shared_with"`
+	Permissions  SharePermissions `json:"permissions" db:"permissions"`
+	CreatedAt    time.Time        `json:"created_at" db:"created_at"`
+	IsActive     bool             `json:"is_active" db:"is_active"`
 }
 
 // SharePermissions represents permissions for shared favorites
@@ -695,11 +773,11 @@ type SharePermissions struct {
 
 // FavoriteStatistics represents statistics about user's favorites
 type FavoriteStatistics struct {
-	UserID                  int                    `json:"user_id"`
-	TotalFavorites          int                    `json:"total_favorites"`
-	FavoritesByEntityType   map[string]int         `json:"favorites_by_entity_type"`
-	FavoritesByCategory     map[string]int         `json:"favorites_by_category"`
-	RecentFavorites         []Favorite             `json:"recent_favorites"`
+	UserID                int            `json:"user_id"`
+	TotalFavorites        int            `json:"total_favorites"`
+	FavoritesByEntityType map[string]int `json:"favorites_by_entity_type"`
+	FavoritesByCategory   map[string]int `json:"favorites_by_category"`
+	RecentFavorites       []Favorite     `json:"recent_favorites"`
 }
 
 // RecommendedFavorite represents a recommended favorite item
@@ -758,79 +836,79 @@ type GeneratedReport struct {
 
 // UserAnalyticsReport represents a user analytics report
 type UserAnalyticsReport struct {
-	User               *User                   `json:"user"`
-	StartDate          time.Time               `json:"start_date"`
-	EndDate            time.Time               `json:"end_date"`
-	TotalMediaAccesses int                     `json:"total_media_accesses"`
-	TotalEvents        int                     `json:"total_events"`
-	MediaAccessLogs    []MediaAccessLog        `json:"media_access_logs"`
-	Events             []AnalyticsEvent        `json:"events"`
-	AccessPatterns     map[string]interface{}  `json:"access_patterns"`
-	DeviceUsage        map[string]int          `json:"device_usage"`
-	LocationAnalysis   map[string]int          `json:"location_analysis"`
-	TimePatterns       map[string]interface{}  `json:"time_patterns"`
-	PopularContent     []MediaAccessCount      `json:"popular_content"`
+	User               *User                  `json:"user"`
+	StartDate          time.Time              `json:"start_date"`
+	EndDate            time.Time              `json:"end_date"`
+	TotalMediaAccesses int                    `json:"total_media_accesses"`
+	TotalEvents        int                    `json:"total_events"`
+	MediaAccessLogs    []MediaAccessLog       `json:"media_access_logs"`
+	Events             []AnalyticsEvent       `json:"events"`
+	AccessPatterns     map[string]interface{} `json:"access_patterns"`
+	DeviceUsage        map[string]int         `json:"device_usage"`
+	LocationAnalysis   map[string]int         `json:"location_analysis"`
+	TimePatterns       map[string]interface{} `json:"time_patterns"`
+	PopularContent     []MediaAccessCount     `json:"popular_content"`
 }
 
 // SystemOverviewReport represents a system overview report
 type SystemOverviewReport struct {
-	StartDate           time.Time            `json:"start_date"`
-	EndDate             time.Time            `json:"end_date"`
-	TotalUsers          int                  `json:"total_users"`
-	ActiveUsers         int                  `json:"active_users"`
-	TotalMediaAccesses  int                  `json:"total_media_accesses"`
-	TotalEvents         int                  `json:"total_events"`
-	TopAccessedMedia    []MediaAccessCount   `json:"top_accessed_media"`
-	UserGrowthData      []UserGrowthPoint    `json:"user_growth_data"`
-	SystemHealth        SystemHealth         `json:"system_health"`
-	UsageStatistics     UsageStatistics      `json:"usage_statistics"`
-	PerformanceMetrics  PerformanceMetrics   `json:"performance_metrics"`
+	StartDate          time.Time          `json:"start_date"`
+	EndDate            time.Time          `json:"end_date"`
+	TotalUsers         int                `json:"total_users"`
+	ActiveUsers        int                `json:"active_users"`
+	TotalMediaAccesses int                `json:"total_media_accesses"`
+	TotalEvents        int                `json:"total_events"`
+	TopAccessedMedia   []MediaAccessCount `json:"top_accessed_media"`
+	UserGrowthData     []UserGrowthPoint  `json:"user_growth_data"`
+	SystemHealth       SystemHealth       `json:"system_health"`
+	UsageStatistics    UsageStatistics    `json:"usage_statistics"`
+	PerformanceMetrics PerformanceMetrics `json:"performance_metrics"`
 }
 
 // MediaAnalyticsReport represents a media analytics report
 type MediaAnalyticsReport struct {
-	MediaID         int                    `json:"media_id"`
-	StartDate       time.Time              `json:"start_date"`
-	EndDate         time.Time              `json:"end_date"`
-	TotalAccesses   int                    `json:"total_accesses"`
-	UniqueUsers     int                    `json:"unique_users"`
-	AccessLogs      []MediaAccessLog       `json:"access_logs"`
-	AccessPatterns  map[string]interface{} `json:"access_patterns"`
-	UserEngagement  UserEngagement         `json:"user_engagement"`
-	GeographicData  map[string]int         `json:"geographic_data"`
-	DeviceAnalysis  map[string]int         `json:"device_analysis"`
-	TimeAnalysis    map[string]int         `json:"time_analysis"`
+	MediaID        int                    `json:"media_id"`
+	StartDate      time.Time              `json:"start_date"`
+	EndDate        time.Time              `json:"end_date"`
+	TotalAccesses  int                    `json:"total_accesses"`
+	UniqueUsers    int                    `json:"unique_users"`
+	AccessLogs     []MediaAccessLog       `json:"access_logs"`
+	AccessPatterns map[string]interface{} `json:"access_patterns"`
+	UserEngagement UserEngagement         `json:"user_engagement"`
+	GeographicData map[string]int         `json:"geographic_data"`
+	DeviceAnalysis map[string]int         `json:"device_analysis"`
+	TimeAnalysis   map[string]int         `json:"time_analysis"`
 }
 
 // UserActivityReport represents a user activity report
 type UserActivityReport struct {
-	StartDate       time.Time              `json:"start_date"`
-	EndDate         time.Time              `json:"end_date"`
-	UserActivities  []UserActivitySummary  `json:"user_activities"`
-	TotalUsers      int                    `json:"total_users"`
-	TotalAccesses   int                    `json:"total_accesses"`
-	Summary         ActivitySummary        `json:"summary"`
+	StartDate      time.Time             `json:"start_date"`
+	EndDate        time.Time             `json:"end_date"`
+	UserActivities []UserActivitySummary `json:"user_activities"`
+	TotalUsers     int                   `json:"total_users"`
+	TotalAccesses  int                   `json:"total_accesses"`
+	Summary        ActivitySummary       `json:"summary"`
 }
 
 // SecurityAuditReport represents a security audit report
 type SecurityAuditReport struct {
-	StartDate           time.Time           `json:"start_date"`
-	EndDate             time.Time           `json:"end_date"`
-	FailedLoginAttempts int                 `json:"failed_login_attempts"`
-	SuccessfulLogins    int                 `json:"successful_logins"`
-	SuspiciousActivity  []SecurityIncident  `json:"suspicious_activity"`
-	SecurityMetrics     SecurityMetrics     `json:"security_metrics"`
+	StartDate           time.Time          `json:"start_date"`
+	EndDate             time.Time          `json:"end_date"`
+	FailedLoginAttempts int                `json:"failed_login_attempts"`
+	SuccessfulLogins    int                `json:"successful_logins"`
+	SuspiciousActivity  []SecurityIncident `json:"suspicious_activity"`
+	SecurityMetrics     SecurityMetrics    `json:"security_metrics"`
 }
 
 // PerformanceMetricsReport represents a performance metrics report
 type PerformanceMetricsReport struct {
-	StartDate              time.Time      `json:"start_date"`
-	EndDate                time.Time      `json:"end_date"`
-	AverageSessionDuration time.Duration  `json:"average_session_duration"`
-	TotalSessions          int            `json:"total_sessions"`
-	ResponseTimes          ResponseTimes  `json:"response_times"`
-	SystemLoad             SystemLoad     `json:"system_load"`
-	ErrorRates             ErrorRates     `json:"error_rates"`
+	StartDate              time.Time     `json:"start_date"`
+	EndDate                time.Time     `json:"end_date"`
+	AverageSessionDuration time.Duration `json:"average_session_duration"`
+	TotalSessions          int           `json:"total_sessions"`
+	ResponseTimes          ResponseTimes `json:"response_times"`
+	SystemLoad             SystemLoad    `json:"system_load"`
+	ErrorRates             ErrorRates    `json:"error_rates"`
 }
 
 // Supporting Types for Reports
@@ -854,8 +932,8 @@ type PerformanceMetrics struct {
 
 type UserEngagement struct {
 	AverageSessionTime float64 `json:"average_session_time"`
-	ReturnRate        float64 `json:"return_rate"`
-	InteractionDepth  float64 `json:"interaction_depth"`
+	ReturnRate         float64 `json:"return_rate"`
+	InteractionDepth   float64 `json:"interaction_depth"`
 }
 
 type UserActivitySummary struct {
@@ -916,23 +994,23 @@ type ErrorRates struct {
 
 // ConversionJob represents a media conversion job
 type ConversionJob struct {
-	ID             int        `json:"id" db:"id"`
-	UserID         int        `json:"user_id" db:"user_id"`
-	SourcePath     string     `json:"source_path" db:"source_path"`
-	TargetPath     string     `json:"target_path" db:"target_path"`
-	SourceFormat   string     `json:"source_format" db:"source_format"`
-	TargetFormat   string     `json:"target_format" db:"target_format"`
-	ConversionType string     `json:"conversion_type" db:"conversion_type"`
-	Quality        string     `json:"quality" db:"quality"`
-	Settings       *string    `json:"settings,omitempty" db:"settings"`
-	Priority       int        `json:"priority" db:"priority"`
-	Status         string     `json:"status" db:"status"`
-	CreatedAt      time.Time  `json:"created_at" db:"created_at"`
-	StartedAt      *time.Time `json:"started_at,omitempty" db:"started_at"`
-	CompletedAt    *time.Time `json:"completed_at,omitempty" db:"completed_at"`
-	ScheduledFor   *time.Time `json:"scheduled_for,omitempty" db:"scheduled_for"`
+	ID             int            `json:"id" db:"id"`
+	UserID         int            `json:"user_id" db:"user_id"`
+	SourcePath     string         `json:"source_path" db:"source_path"`
+	TargetPath     string         `json:"target_path" db:"target_path"`
+	SourceFormat   string         `json:"source_format" db:"source_format"`
+	TargetFormat   string         `json:"target_format" db:"target_format"`
+	ConversionType string         `json:"conversion_type" db:"conversion_type"`
+	Quality        string         `json:"quality" db:"quality"`
+	Settings       *string        `json:"settings,omitempty" db:"settings"`
+	Priority       int            `json:"priority" db:"priority"`
+	Status         string         `json:"status" db:"status"`
+	CreatedAt      time.Time      `json:"created_at" db:"created_at"`
+	StartedAt      *time.Time     `json:"started_at,omitempty" db:"started_at"`
+	CompletedAt    *time.Time     `json:"completed_at,omitempty" db:"completed_at"`
+	ScheduledFor   *time.Time     `json:"scheduled_for,omitempty" db:"scheduled_for"`
 	Duration       *time.Duration `json:"duration,omitempty" db:"duration"`
-	ErrorMessage   *string    `json:"error_message,omitempty" db:"error_message"`
+	ErrorMessage   *string        `json:"error_message,omitempty" db:"error_message"`
 }
 
 // ConversionRequest represents a request to create a conversion job
@@ -950,14 +1028,14 @@ type ConversionRequest struct {
 
 // ConversionStatistics represents conversion statistics
 type ConversionStatistics struct {
-	StartDate       time.Time        `json:"start_date"`
-	EndDate         time.Time        `json:"end_date"`
-	TotalJobs       int              `json:"total_jobs"`
-	ByStatus        map[string]int   `json:"by_status"`
-	ByType          map[string]int   `json:"by_type"`
-	ByFormat        map[string]int   `json:"by_format"`
-	AverageDuration *time.Duration   `json:"average_duration,omitempty"`
-	SuccessRate     float64          `json:"success_rate"`
+	StartDate       time.Time      `json:"start_date"`
+	EndDate         time.Time      `json:"end_date"`
+	TotalJobs       int            `json:"total_jobs"`
+	ByStatus        map[string]int `json:"by_status"`
+	ByType          map[string]int `json:"by_type"`
+	ByFormat        map[string]int `json:"by_format"`
+	AverageDuration *time.Duration `json:"average_duration,omitempty"`
+	SuccessRate     float64        `json:"success_rate"`
 }
 
 // SupportedFormats represents supported conversion formats
@@ -1067,15 +1145,15 @@ type SyncSchedule struct {
 
 // SyncStatistics represents sync statistics
 type SyncStatistics struct {
-	StartDate         time.Time      `json:"start_date"`
-	EndDate           time.Time      `json:"end_date"`
-	TotalSessions     int            `json:"total_sessions"`
-	TotalFilesSynced  int            `json:"total_files_synced"`
-	TotalFilesFailed  int            `json:"total_files_failed"`
-	ByStatus          map[string]int `json:"by_status"`
-	ByType            map[string]int `json:"by_type"`
-	AverageDuration   *time.Duration `json:"average_duration,omitempty"`
-	SuccessRate       float64        `json:"success_rate"`
+	StartDate        time.Time      `json:"start_date"`
+	EndDate          time.Time      `json:"end_date"`
+	TotalSessions    int            `json:"total_sessions"`
+	TotalFilesSynced int            `json:"total_files_synced"`
+	TotalFilesFailed int            `json:"total_files_failed"`
+	ByStatus         map[string]int `json:"by_status"`
+	ByType           map[string]int `json:"by_type"`
+	AverageDuration  *time.Duration `json:"average_duration,omitempty"`
+	SuccessRate      float64        `json:"success_rate"`
 }
 
 // UpdateSyncEndpointRequest represents a request to update a sync endpoint
@@ -1108,11 +1186,11 @@ const (
 
 // Sync Type Constants
 const (
-	SyncTypeWebDAV        = "webdav"
-	SyncTypeCloudStorage  = "cloud_storage"
-	SyncTypeLocal         = "local"
-	SyncTypeManual        = "manual"
-	SyncTypeScheduled     = "scheduled"
+	SyncTypeWebDAV       = "webdav"
+	SyncTypeCloudStorage = "cloud_storage"
+	SyncTypeLocal        = "local"
+	SyncTypeManual       = "manual"
+	SyncTypeScheduled    = "scheduled"
 )
 
 // Sync Direction Constants
@@ -1168,14 +1246,14 @@ type CrashReport struct {
 
 // ErrorReportRequest represents a request to create an error report
 type ErrorReportRequest struct {
-	Level       string                 `json:"level" validate:"required"`
-	Message     string                 `json:"message" validate:"required"`
-	ErrorCode   string                 `json:"error_code,omitempty"`
-	Component   string                 `json:"component,omitempty"`
-	StackTrace  string                 `json:"stack_trace,omitempty"`
-	Context     map[string]interface{} `json:"context,omitempty"`
-	UserAgent   string                 `json:"user_agent,omitempty"`
-	URL         string                 `json:"url,omitempty"`
+	Level      string                 `json:"level" validate:"required"`
+	Message    string                 `json:"message" validate:"required"`
+	ErrorCode  string                 `json:"error_code,omitempty"`
+	Component  string                 `json:"component,omitempty"`
+	StackTrace string                 `json:"stack_trace,omitempty"`
+	Context    map[string]interface{} `json:"context,omitempty"`
+	UserAgent  string                 `json:"user_agent,omitempty"`
+	URL        string                 `json:"url,omitempty"`
 }
 
 // CrashReportRequest represents a request to create a crash report
@@ -1222,12 +1300,12 @@ type ExportFilters struct {
 
 // ErrorStatistics represents error reporting statistics
 type ErrorStatistics struct {
-	TotalErrors         int            `json:"total_errors"`
-	ErrorsByLevel       map[string]int `json:"errors_by_level"`
-	ErrorsByComponent   map[string]int `json:"errors_by_component"`
-	RecentErrors        int            `json:"recent_errors"`
-	ResolvedErrors      int            `json:"resolved_errors"`
-	AvgResolutionTime   float64        `json:"avg_resolution_time"`
+	TotalErrors       int            `json:"total_errors"`
+	ErrorsByLevel     map[string]int `json:"errors_by_level"`
+	ErrorsByComponent map[string]int `json:"errors_by_component"`
+	RecentErrors      int            `json:"recent_errors"`
+	ResolvedErrors    int            `json:"resolved_errors"`
+	AvgResolutionTime float64        `json:"avg_resolution_time"`
 }
 
 // CrashStatistics represents crash reporting statistics
@@ -1242,6 +1320,7 @@ type CrashStatistics struct {
 
 // SystemHealth represents system health status
 type SystemHealth struct {
+	Score     float64                `json:"score"`
 	Status    string                 `json:"status"`
 	CheckedAt time.Time              `json:"checked_at"`
 	Metrics   map[string]interface{} `json:"metrics"`
@@ -1394,13 +1473,13 @@ type LogStreamFilters struct {
 
 // LogAnalysis represents log analysis results
 type LogAnalysis struct {
-	CollectionID       int                       `json:"collection_id"`
-	TotalEntries       int                       `json:"total_entries"`
-	EntriesByLevel     map[string]int            `json:"entries_by_level"`
-	EntriesByComponent map[string]int            `json:"entries_by_component"`
-	ErrorPatterns      map[string]int            `json:"error_patterns"`
-	TimeRange          *TimeRange                `json:"time_range"`
-	Insights           []string                  `json:"insights"`
+	CollectionID       int            `json:"collection_id"`
+	TotalEntries       int            `json:"total_entries"`
+	EntriesByLevel     map[string]int `json:"entries_by_level"`
+	EntriesByComponent map[string]int `json:"entries_by_component"`
+	ErrorPatterns      map[string]int `json:"error_patterns"`
+	TimeRange          *TimeRange     `json:"time_range"`
+	Insights           []string       `json:"insights"`
 }
 
 // TimeRange represents a time range
@@ -1411,11 +1490,11 @@ type TimeRange struct {
 
 // LogStatistics represents log management statistics
 type LogStatistics struct {
-	TotalCollections      int            `json:"total_collections"`
-	TotalEntries          int            `json:"total_entries"`
-	ActiveShares          int            `json:"active_shares"`
-	CollectionsByStatus   map[string]int `json:"collections_by_status"`
-	RecentCollections     int            `json:"recent_collections"`
+	TotalCollections    int            `json:"total_collections"`
+	TotalEntries        int            `json:"total_entries"`
+	ActiveShares        int            `json:"active_shares"`
+	CollectionsByStatus map[string]int `json:"collections_by_status"`
+	RecentCollections   int            `json:"recent_collections"`
 }
 
 // Log Collection Status Constants
@@ -1446,14 +1525,14 @@ const (
 
 // SystemConfiguration represents the complete system configuration
 type SystemConfiguration struct {
-	Version        string                `json:"version" db:"version"`
-	CreatedAt      time.Time             `json:"created_at" db:"created_at"`
-	UpdatedAt      time.Time             `json:"updated_at" db:"updated_at"`
-	Database       *DatabaseConfig       `json:"database,omitempty"`
-	Storage        *StorageConfig        `json:"storage,omitempty"`
-	Network        *NetworkConfig        `json:"network,omitempty"`
-	Authentication *AuthenticationConfig `json:"authentication,omitempty"`
-	Features       *FeatureConfig        `json:"features,omitempty"`
+	Version          string                  `json:"version" db:"version"`
+	CreatedAt        time.Time               `json:"created_at" db:"created_at"`
+	UpdatedAt        time.Time               `json:"updated_at" db:"updated_at"`
+	Database         *DatabaseConfig         `json:"database,omitempty"`
+	Storage          *StorageConfig          `json:"storage,omitempty"`
+	Network          *NetworkConfig          `json:"network,omitempty"`
+	Authentication   *AuthenticationConfig   `json:"authentication,omitempty"`
+	Features         *FeatureConfig          `json:"features,omitempty"`
 	ExternalServices *ExternalServicesConfig `json:"external_services,omitempty"`
 }
 
@@ -1538,16 +1617,16 @@ type SlackConfig struct {
 
 // WizardStep represents a setup wizard step
 type WizardStep struct {
-	ID          string                 `json:"id"`
-	Name        string                 `json:"name"`
-	Description string                 `json:"description"`
-	Type        string                 `json:"type"`
-	Required    bool                   `json:"required"`
-	Order       int                    `json:"order"`
-	Fields      []*WizardField         `json:"fields,omitempty"`
-	Content     map[string]interface{} `json:"content,omitempty"`
-	Validation  map[string]interface{} `json:"validation,omitempty"`
-	Dependencies []string              `json:"dependencies,omitempty"`
+	ID           string                 `json:"id"`
+	Name         string                 `json:"name"`
+	Description  string                 `json:"description"`
+	Type         string                 `json:"type"`
+	Required     bool                   `json:"required"`
+	Order        int                    `json:"order"`
+	Fields       []*WizardField         `json:"fields,omitempty"`
+	Content      map[string]interface{} `json:"content,omitempty"`
+	Validation   map[string]interface{} `json:"validation,omitempty"`
+	Dependencies []string               `json:"dependencies,omitempty"`
 }
 
 // WizardField represents a field in a wizard step
@@ -1606,9 +1685,9 @@ type ConfigField struct {
 
 // ConfigurationTest represents configuration test results
 type ConfigurationTest struct {
-	TestedAt      time.Time                `json:"tested_at"`
-	OverallStatus string                   `json:"overall_status"`
-	Results       map[string]*TestResult   `json:"results"`
+	TestedAt      time.Time              `json:"tested_at"`
+	OverallStatus string                 `json:"overall_status"`
+	Results       map[string]*TestResult `json:"results"`
 }
 
 // TestResult represents a single test result
@@ -1684,10 +1763,10 @@ const (
 
 // Configuration Category Constants
 const (
-	ConfigCategoryEnvironment  = "Environment"
-	ConfigCategoryPerformance  = "Performance"
-	ConfigCategorySecurity     = "Security"
-	ConfigCategoryDevelopment  = "Development"
+	ConfigCategoryEnvironment = "Environment"
+	ConfigCategoryPerformance = "Performance"
+	ConfigCategorySecurity    = "Security"
+	ConfigCategoryDevelopment = "Development"
 )
 
 // Common Error Variables

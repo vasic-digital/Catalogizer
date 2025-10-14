@@ -9,18 +9,18 @@ import (
 
 // User represents a system user
 type User struct {
-	ID           int64     `json:"id" db:"id"`
-	Username     string    `json:"username" db:"username"`
-	Email        string    `json:"email" db:"email"`
-	PasswordHash string    `json:"-" db:"password_hash"`
-	FirstName    string    `json:"first_name" db:"first_name"`
-	LastName     string    `json:"last_name" db:"last_name"`
-	Role         string    `json:"role" db:"role"`
-	IsActive     bool      `json:"is_active" db:"is_active"`
+	ID           int64      `json:"id" db:"id"`
+	Username     string     `json:"username" db:"username"`
+	Email        string     `json:"email" db:"email"`
+	PasswordHash string     `json:"-" db:"password_hash"`
+	FirstName    string     `json:"first_name" db:"first_name"`
+	LastName     string     `json:"last_name" db:"last_name"`
+	Role         string     `json:"role" db:"role"`
+	IsActive     bool       `json:"is_active" db:"is_active"`
 	LastLogin    *time.Time `json:"last_login,omitempty" db:"last_login"`
-	CreatedAt    time.Time `json:"created_at" db:"created_at"`
-	UpdatedAt    time.Time `json:"updated_at" db:"updated_at"`
-	Permissions  []string  `json:"permissions,omitempty"`
+	CreatedAt    time.Time  `json:"created_at" db:"created_at"`
+	UpdatedAt    time.Time  `json:"updated_at" db:"updated_at"`
+	Permissions  []string   `json:"permissions,omitempty"`
 }
 
 // Role represents user roles
@@ -140,6 +140,7 @@ const (
 	PermissionReadMedia   = "read:media"
 	PermissionWriteMedia  = "write:media"
 	PermissionDeleteMedia = "delete:media"
+	PermissionViewMedia   = "view:media"
 
 	// Catalog permissions
 	PermissionReadCatalog   = "read:catalog"

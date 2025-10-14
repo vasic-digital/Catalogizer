@@ -10,7 +10,7 @@ import (
 
 	"github.com/gorilla/mux"
 
-	"catalog-api/internal/services"
+	"catalogizer/internal/services"
 )
 
 type RecommendationHandler struct {

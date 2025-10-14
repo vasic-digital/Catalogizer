@@ -3,8 +3,8 @@ package handlers
 import (
 	"archive/tar"
 	"archive/zip"
-	"catalog-api/internal/models"
-	"catalog-api/internal/services"
+	"catalogizer/internal/models"
+	"catalogizer/internal/services"
 	"compress/gzip"
 	"fmt"
 	"io"
@@ -57,7 +57,7 @@ func (h *DownloadHandler) DownloadFile(c *gin.Context) {
 		return
 	}
 
-	fileInfo, err := h.catalogService.GetFileInfo(id)
+	fileInfo, err := h.catalogService.GetFileInfo(strconv.FormatInt(id, 10))
 	if err != nil {
 		h.logger.Error("Failed to get file info", zap.Int64("id", id), zap.Error(err))
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to get file information"})

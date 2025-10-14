@@ -1,14 +1,15 @@
 package media
 
 import (
-	"catalog-api/internal/config"
-	"catalog-api/internal/media/analyzer"
-	"catalog-api/internal/media/database"
-	"catalog-api/internal/media/detector"
-	"catalog-api/internal/media/models"
-	"catalog-api/internal/media/providers"
-	"catalog-api/internal/media/realtime"
+	"catalogizer/internal/config"
+	"catalogizer/internal/media/analyzer"
+	"catalogizer/internal/media/database"
+	"catalogizer/internal/media/detector"
+	"catalogizer/internal/media/models"
+	"catalogizer/internal/media/providers"
+	"catalogizer/internal/media/realtime"
 	"context"
+	"encoding/json"
 	"fmt"
 	"io/ioutil"
 	"path/filepath"

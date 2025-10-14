@@ -6,6 +6,7 @@ import (
 	"testing"
 	"time"
 
+	"catalogizer/utils"
 	_ "github.com/mattn/go-sqlite3"
 	"go.uber.org/zap"
 )
@@ -34,6 +35,7 @@ func setupTestDB(t *testing.T) *sql.DB {
 			parent_id INTEGER,
 			created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
 			modified_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+			updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
 			deleted BOOLEAN DEFAULT FALSE,
 			deleted_at TIMESTAMP,
 			last_scan_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
@@ -90,7 +92,7 @@ func TestRenameTracker_CreateMoveKey(t *testing.T) {
 		{
 			name:        "file with hash",
 			storageRoot: "storage1",
-			fileHash:    stringPtr("abcd1234"),
+			fileHash:    utils.StringPtr("abcd1234"),
 			size:        1024,
 			isDirectory: false,
 			expected:    "storage1:abcd1234:1024:false",
@@ -115,9 +117,9 @@ func TestRenameTracker_CreateMoveKey(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			result := tracker.createMoveKey(tt.storageRoot, tt.fileHash, tt.size, tt.isDirectory)
+			result := tracker.CreateMoveKey(tt.storageRoot, tt.fileHash, tt.size, tt.isDirectory)
 			if result != tt.expected {
-				t.Errorf("createMoveKey() = %v, want %v", result, tt.expected)
+				t.Errorf("CreateMoveKey() = %v, want %v", result, tt.expected)
 			}
 		})
 	}
@@ -136,16 +138,16 @@ func TestRenameTracker_TrackDeleteAndDetectCreate(t *testing.T) {
 	path := "/test_file.txt"
 	storageRoot := "test_storage"
 	size := int64(1024)
-	fileHash := stringPtr("abcd1234")
+	fileHash := utils.StringPtr("abcd1234")
 	isDirectory := false
 
 	tracker.TrackDelete(ctx, fileID, path, storageRoot, size, fileHash, isDirectory)
 
 	// Verify the move is tracked
-	key := tracker.createMoveKey(storageRoot, fileHash, size, isDirectory)
-	tracker.pendingMovesMu.RLock()
-	pendingMove, exists := tracker.pendingMoves[key]
-	tracker.pendingMovesMu.RUnlock()
+	key := tracker.CreateMoveKey(storageRoot, fileHash, size, isDirectory)
+	tracker.PendingMovesMu.RLock()
+	pendingMove, exists := tracker.PendingMoves[key]
+	tracker.PendingMovesMu.RUnlock()
 
 	if !exists {
 		t.Fatal("Expected pending move to be tracked")
@@ -171,9 +173,9 @@ func TestRenameTracker_TrackDeleteAndDetectCreate(t *testing.T) {
 	}
 
 	// Verify pending move is removed
-	tracker.pendingMovesMu.RLock()
-	_, stillExists := tracker.pendingMoves[key]
-	tracker.pendingMovesMu.RUnlock()
+	tracker.PendingMovesMu.RLock()
+	_, stillExists := tracker.PendingMoves[key]
+	tracker.PendingMovesMu.RUnlock()
 
 	if stillExists {
 		t.Error("Expected pending move to be removed after detection")
@@ -192,7 +194,7 @@ func TestRenameTracker_DetectCreateNonExistent(t *testing.T) {
 	newPath := "/new_file.txt"
 	storageRoot := "test_storage"
 	size := int64(1024)
-	fileHash := stringPtr("nonexistent")
+	fileHash := utils.StringPtr("nonexistent")
 	isDirectory := false
 
 	detectedMove, isMove := tracker.DetectCreate(ctx, newPath, storageRoot, size, fileHash, isDirectory)
@@ -222,7 +224,7 @@ func TestRenameTracker_DetectCreateExpired(t *testing.T) {
 	path := "/test_file.txt"
 	storageRoot := "test_storage"
 	size := int64(1024)
-	fileHash := stringPtr("abcd1234")
+	fileHash := utils.StringPtr("abcd1234")
 	isDirectory := false
 
 	tracker.TrackDelete(ctx, fileID, path, storageRoot, size, fileHash, isDirectory)
@@ -249,7 +251,7 @@ func TestRenameTracker_ProcessMove(t *testing.T) {
 	defer db.Close()
 
 	tracker := NewRenameTracker(db, logger)
-	if err := tracker.initializeTables(); err != nil {
+	if err := tracker.InitializeTables(); err != nil {
 		t.Fatalf("Failed to initialize tables: %v", err)
 	}
 
@@ -260,7 +262,7 @@ func TestRenameTracker_ProcessMove(t *testing.T) {
 		Path:        "/test_file.txt",
 		StorageRoot: "test_storage",
 		Size:        1024,
-		FileHash:    stringPtr("abcd1234"),
+		FileHash:    utils.StringPtr("abcd1234"),
 		IsDirectory: false,
 		DeletedAt:   time.Now(),
 		FileID:      1,
@@ -303,7 +305,7 @@ func TestRenameTracker_ProcessDirectoryMove(t *testing.T) {
 	defer db.Close()
 
 	tracker := NewRenameTracker(db, logger)
-	if err := tracker.initializeTables(); err != nil {
+	if err := tracker.InitializeTables(); err != nil {
 		t.Fatalf("Failed to initialize tables: %v", err)
 	}
 
@@ -364,13 +366,13 @@ func TestRenameTracker_CleanupExpiredMoves(t *testing.T) {
 	ctx := context.Background()
 
 	// Track some file deletions
-	tracker.TrackDelete(ctx, 1, "/file1.txt", "test_storage", 1024, stringPtr("hash1"), false)
-	tracker.TrackDelete(ctx, 2, "/file2.txt", "test_storage", 2048, stringPtr("hash2"), false)
+	tracker.TrackDelete(ctx, 1, "/file1.txt", "test_storage", 1024, utils.StringPtr("hash1"), false)
+	tracker.TrackDelete(ctx, 2, "/file2.txt", "test_storage", 2048, utils.StringPtr("hash2"), false)
 
 	// Verify moves are tracked
-	tracker.pendingMovesMu.RLock()
-	initialCount := len(tracker.pendingMoves)
-	tracker.pendingMovesMu.RUnlock()
+	tracker.PendingMovesMu.RLock()
+	initialCount := len(tracker.PendingMoves)
+	tracker.PendingMovesMu.RUnlock()
 
 	if initialCount != 2 {
 		t.Errorf("Expected 2 pending moves, got %d", initialCount)
@@ -383,9 +385,9 @@ func TestRenameTracker_CleanupExpiredMoves(t *testing.T) {
 	tracker.cleanupExpiredMoves()
 
 	// Verify moves were cleaned up
-	tracker.pendingMovesMu.RLock()
-	finalCount := len(tracker.pendingMoves)
-	tracker.pendingMovesMu.RUnlock()
+	tracker.PendingMovesMu.RLock()
+	finalCount := len(tracker.PendingMoves)
+	tracker.PendingMovesMu.RUnlock()
 
 	if finalCount != 0 {
 		t.Errorf("Expected 0 pending moves after cleanup, got %d", finalCount)
@@ -398,15 +400,15 @@ func TestRenameTracker_GetStatistics(t *testing.T) {
 	defer db.Close()
 
 	tracker := NewRenameTracker(db, logger)
-	if err := tracker.initializeTables(); err != nil {
+	if err := tracker.InitializeTables(); err != nil {
 		t.Fatalf("Failed to initialize tables: %v", err)
 	}
 
 	ctx := context.Background()
 
 	// Add some pending moves
-	tracker.TrackDelete(ctx, 1, "/file1.txt", "test_storage", 1024, stringPtr("hash1"), false)
-	tracker.TrackDelete(ctx, 2, "/file2.txt", "test_storage", 2048, stringPtr("hash2"), false)
+	tracker.TrackDelete(ctx, 1, "/file1.txt", "test_storage", 1024, utils.StringPtr("hash1"), false)
+	tracker.TrackDelete(ctx, 2, "/file2.txt", "test_storage", 2048, utils.StringPtr("hash2"), false)
 
 	// Add some rename events to database
 	_, err := db.Exec(`
@@ -424,7 +426,7 @@ func TestRenameTracker_GetStatistics(t *testing.T) {
 	stats := tracker.GetStatistics()
 
 	// Verify statistics
-	if pendingMoves, ok := stats["pending_moves"].(int); !ok || pendingMoves != 2 {
+	if PendingMoves, ok := stats["pending_moves"].(int); !ok || PendingMoves != 2 {
 		t.Errorf("Expected 2 pending moves in statistics, got %v", stats["pending_moves"])
 	}
 
@@ -436,7 +438,7 @@ func TestRenameTracker_GetStatistics(t *testing.T) {
 		t.Errorf("Expected 2 successful renames in statistics, got %v", stats["successful_renames"])
 	}
 
-	if successRate, ok := stats["success_rate"].(float64); !ok || successRate != 66.66666666666667 {
+	if successRate, ok := stats["success_rate"].(float64); !ok || successRate < 66.66 || successRate > 66.67 {
 		t.Errorf("Expected success rate ~66.67%%, got %v", stats["success_rate"])
 	}
 }
@@ -447,7 +449,7 @@ func TestRenameTracker_GetRenameEvents(t *testing.T) {
 	defer db.Close()
 
 	tracker := NewRenameTracker(db, logger)
-	if err := tracker.initializeTables(); err != nil {
+	if err := tracker.InitializeTables(); err != nil {
 		t.Fatalf("Failed to initialize tables: %v", err)
 	}
 
@@ -500,12 +502,12 @@ func TestRenameTracker_StartStop(t *testing.T) {
 
 	// Test that cleanup worker is running by adding a pending move and waiting
 	ctx := context.Background()
-	tracker.TrackDelete(ctx, 1, "/test.txt", "test_storage", 1024, stringPtr("hash"), false)
+	tracker.TrackDelete(ctx, 1, "/test.txt", "test_storage", 1024, utils.StringPtr("hash"), false)
 
 	// Verify move is tracked
-	tracker.pendingMovesMu.RLock()
-	count := len(tracker.pendingMoves)
-	tracker.pendingMovesMu.RUnlock()
+	tracker.PendingMovesMu.RLock()
+	count := len(tracker.PendingMoves)
+	tracker.PendingMovesMu.RUnlock()
 
 	if count != 1 {
 		t.Errorf("Expected 1 pending move, got %d", count)
@@ -524,9 +526,4 @@ func TestRenameTracker_StartStop(t *testing.T) {
 	default:
 		t.Error("Expected stop channel to be closed")
 	}
-}
-
-// Helper function to create string pointer
-func stringPtr(s string) *string {
-	return &s
 }

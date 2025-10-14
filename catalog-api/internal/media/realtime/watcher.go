@@ -1,12 +1,12 @@
 package realtime
 
 import (
-	"catalog-api/internal/media/analyzer"
-	"catalog-api/internal/media/database"
-	"catalog-api/internal/media/models"
+	"catalogizer/internal/media/analyzer"
+	"catalogizer/internal/media/database"
 	"context"
 	"encoding/json"
 	"path/filepath"
+	"strings"
 	"sync"
 	"time"
 
@@ -16,18 +16,18 @@ import (
 
 // SMBChangeWatcher monitors SMB shares for changes and triggers real-time analysis
 type SMBChangeWatcher struct {
-	mediaDB        *database.MediaDatabase
-	analyzer       *analyzer.MediaAnalyzer
-	logger         *zap.Logger
-	watchers       map[string]*fsnotify.Watcher
-	watcherMu      sync.RWMutex
-	changeQueue    chan ChangeEvent
-	workers        int
-	stopCh         chan struct{}
-	wg             sync.WaitGroup
-	debounceMap    map[string]*time.Timer
-	debounceMu     sync.Mutex
-	debounceDelay  time.Duration
+	mediaDB       *database.MediaDatabase
+	analyzer      *analyzer.MediaAnalyzer
+	logger        *zap.Logger
+	watchers      map[string]*fsnotify.Watcher
+	watcherMu     sync.RWMutex
+	changeQueue   chan ChangeEvent
+	workers       int
+	stopCh        chan struct{}
+	wg            sync.WaitGroup
+	debounceMap   map[string]*time.Timer
+	debounceMu    sync.Mutex
+	debounceDelay time.Duration
 }
 
 // ChangeEvent represents a file system change

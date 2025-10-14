@@ -2,8 +2,8 @@ package services
 
 import (
 	"bytes"
-	"catalog-api/filesystem"
-	"catalog-api/internal/config"
+	"catalogizer/filesystem"
+	"catalogizer/internal/config"
 	"context"
 	"testing"
 

@@ -6,7 +6,7 @@ import (
 	"fmt"
 	"time"
 
-	"catalog-api/models"
+	"catalogizer/models"
 )
 
 type StressTestRepository struct {
@@ -49,7 +49,7 @@ func (r *StressTestRepository) CreateStressTest(test *models.StressTest) error {
 		return fmt.Errorf("failed to get last insert ID: %w", err)
 	}
 
-	test.ID = int(id)
+	test.ID = id
 	return nil
 }
 
@@ -220,7 +220,7 @@ func (r *StressTestRepository) CreateExecution(execution *models.StressTestExecu
 		return fmt.Errorf("failed to get last insert ID: %w", err)
 	}
 
-	execution.ID = int(id)
+	execution.ID = id
 	return nil
 }
 
@@ -410,4 +410,39 @@ func (r *StressTestRepository) CleanupOldExecutions(olderThan time.Time) error {
 		return fmt.Errorf("failed to cleanup old executions: %w", err)
 	}
 	return nil
+}
+
+// Wrapper methods to match service expectations
+func (r *StressTestRepository) CreateTest(test *models.StressTest) (int64, error) {
+	err := r.CreateStressTest(test)
+	if err != nil {
+		return 0, err
+	}
+	return test.ID, nil
+}
+
+func (r *StressTestRepository) GetTest(id int) (*models.StressTest, error) {
+	return r.GetStressTest(id)
+}
+
+func (r *StressTestRepository) UpdateTest(test *models.StressTest) error {
+	return r.UpdateStressTest(test)
+}
+
+func (r *StressTestRepository) GetUserTests(userID int, limit, offset int) ([]*models.StressTest, error) {
+	return r.GetStressTestsByUser(userID, limit, offset)
+}
+
+func (r *StressTestRepository) DeleteTest(id int) error {
+	return r.DeleteStressTest(id)
+}
+
+func (r *StressTestRepository) SaveResult(result *models.StressTestResult) error {
+	// This would need a table for results, but for now just return nil
+	return nil
+}
+
+func (r *StressTestRepository) GetResult(testID int) (*models.StressTestResult, error) {
+	// This would need a table for results, but for now return nil
+	return nil, fmt.Errorf("not implemented")
 }

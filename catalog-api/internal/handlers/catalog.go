@@ -1,8 +1,8 @@
 package handlers
 
 import (
-	"catalog-api/internal/models"
-	"catalog-api/internal/services"
+	"catalogizer/internal/models"
+	"catalogizer/internal/services"
 	"net/http"
 	"strconv"
 	"strings"
@@ -12,12 +12,12 @@ import (
 )
 
 type CatalogHandler struct {
-	catalogService *services.CatalogService
-	smbService     *services.SMBService
+	catalogService services.CatalogServiceInterface
+	smbService     services.SMBServiceInterface
 	logger         *zap.Logger
 }
 
-func NewCatalogHandler(catalogService *services.CatalogService, smbService *services.SMBService, logger *zap.Logger) *CatalogHandler {
+func NewCatalogHandler(catalogService services.CatalogServiceInterface, smbService services.SMBServiceInterface, logger *zap.Logger) *CatalogHandler {
 	return &CatalogHandler{
 		catalogService: catalogService,
 		smbService:     smbService,
@@ -110,23 +110,14 @@ func (h *CatalogHandler) GetFileInfo(c *gin.Context) {
 		path = path[1:]
 	}
 
-	// For this endpoint, we'll need to convert path to ID first
-	// This is a simplified implementation - you might want to enhance this
-	idStr := c.Query("id")
-	if idStr == "" {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "File ID is required"})
-		return
-	}
-
-	id, err := strconv.ParseInt(idStr, 10, 64)
+	// Try to get file info by path or ID
+	fileInfo, err := h.catalogService.GetFileInfo(path)
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid file ID"})
-		return
-	}
-
-	fileInfo, err := h.catalogService.GetFileInfo(id)
-	if err != nil {
-		h.logger.Error("Failed to get file info", zap.Int64("id", id), zap.Error(err))
+		if err.Error() == "sql: no rows in result set" {
+			c.JSON(http.StatusNotFound, gin.H{"error": "File not found"})
+			return
+		}
+		h.logger.Error("Failed to get file info", zap.String("path", path), zap.Error(err))
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to get file information"})
 		return
 	}
@@ -164,6 +155,11 @@ func (h *CatalogHandler) Search(c *gin.Context) {
 
 	if err := c.ShouldBindQuery(&req); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid search parameters"})
+		return
+	}
+
+	if req.Query == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Search query is required"})
 		return
 	}
 

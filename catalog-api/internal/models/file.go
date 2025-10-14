@@ -4,17 +4,59 @@ import (
 	"time"
 )
 
+// Media types
+const (
+	MediaTypeVideo = "video"
+	MediaTypeAudio = "audio"
+	MediaTypeImage = "image"
+	MediaTypeText  = "text"
+	MediaTypeBook  = "book"
+	MediaTypeGame  = "game"
+	MediaTypeOther = "other"
+)
+
+// FileItem represents a simplified file/directory item for API responses
+type FileItem struct {
+	Name string `json:"name"`
+	Type string `json:"type"`
+	Path string `json:"path"`
+}
+
+// SearchResult represents a search result item
+type SearchResult struct {
+	Name      string `json:"name"`
+	Path      string `json:"path"`
+	MediaType string `json:"media_type"`
+}
+
+// DirectoryInfo represents directory information with statistics
+type DirectoryInfo struct {
+	Path      string `json:"path"`
+	TotalSize int64  `json:"total_size"`
+	FileCount int64  `json:"file_count"`
+}
+
+// SMBPath represents a parsed SMB path
+type SMBPath struct {
+	Server string `json:"server"`
+	Share  string `json:"share"`
+	Path   string `json:"path"`
+	Valid  bool   `json:"valid"`
+}
+
 // FileInfo represents a file or directory in the catalog
 type FileInfo struct {
 	ID           int64     `json:"id" db:"id"`
 	Name         string    `json:"name" db:"name"`
 	Path         string    `json:"path" db:"path"`
 	IsDirectory  bool      `json:"is_directory" db:"is_directory"`
+	Type         string    `json:"type" db:"type"`
 	Size         int64     `json:"size" db:"size"`
 	LastModified time.Time `json:"last_modified" db:"last_modified"`
 	Hash         *string   `json:"hash,omitempty" db:"hash"`
 	Extension    *string   `json:"extension,omitempty" db:"extension"`
 	MimeType     *string   `json:"mime_type,omitempty" db:"mime_type"`
+	MediaType    *string   `json:"media_type,omitempty" db:"media_type"`
 	ParentID     *int64    `json:"parent_id,omitempty" db:"parent_id"`
 	SmbRoot      string    `json:"smb_root" db:"smb_root"`
 	CreatedAt    time.Time `json:"created_at" db:"created_at"`
@@ -91,30 +133,30 @@ type FileTypeStats struct {
 }
 
 type SizeDistribution struct {
-	Tiny    int64 `json:"tiny"`     // < 1KB
-	Small   int64 `json:"small"`    // 1KB - 1MB
-	Medium  int64 `json:"medium"`   // 1MB - 10MB
-	Large   int64 `json:"large"`    // 10MB - 100MB
-	Huge    int64 `json:"huge"`     // 100MB - 1GB
-	Massive int64 `json:"massive"`  // > 1GB
+	Tiny    int64 `json:"tiny"`    // < 1KB
+	Small   int64 `json:"small"`   // 1KB - 1MB
+	Medium  int64 `json:"medium"`  // 1MB - 10MB
+	Large   int64 `json:"large"`   // 10MB - 100MB
+	Huge    int64 `json:"huge"`    // 100MB - 1GB
+	Massive int64 `json:"massive"` // > 1GB
 }
 
 // StorageRootStats represents statistics for a specific storage root
 type StorageRootStats struct {
-	Name            string `json:"name"`
-	TotalFiles      int64  `json:"total_files"`
+	Name             string `json:"name"`
+	TotalFiles       int64  `json:"total_files"`
 	TotalDirectories int64  `json:"total_directories"`
-	TotalSize       int64  `json:"total_size"`
-	DuplicateFiles  int64  `json:"duplicate_files"`
-	DuplicateGroups int64  `json:"duplicate_groups"`
-	LastScanTime    int64  `json:"last_scan_time"`
-	IsOnline        bool   `json:"is_online"`
+	TotalSize        int64  `json:"total_size"`
+	DuplicateFiles   int64  `json:"duplicate_files"`
+	DuplicateGroups  int64  `json:"duplicate_groups"`
+	LastScanTime     int64  `json:"last_scan_time"`
+	IsOnline         bool   `json:"is_online"`
 }
 
 // DuplicateStats represents duplicate file statistics
 type DuplicateStats struct {
-	TotalDuplicates        int64   `json:"total_duplicates"`
-	DuplicateGroups        int64   `json:"duplicate_groups"`
+	TotalDuplicates       int64   `json:"total_duplicates"`
+	DuplicateGroups       int64   `json:"duplicate_groups"`
 	WastedSpace           int64   `json:"wasted_space"`
 	LargestDuplicateGroup int64   `json:"largest_duplicate_group"`
 	AverageGroupSize      float64 `json:"average_group_size"`
@@ -131,19 +173,19 @@ type DuplicateGroupStats struct {
 
 // AccessPatterns represents file access patterns
 type AccessPatterns struct {
-	RecentlyAccessed     int64    `json:"recently_accessed"`
-	NeverAccessed        int64    `json:"never_accessed"`
-	AccessFrequency      []int64  `json:"access_frequency"`
-	PopularExtensions    []string `json:"popular_extensions"`
-	PopularDirectories   []string `json:"popular_directories"`
+	RecentlyAccessed   int64    `json:"recently_accessed"`
+	NeverAccessed      int64    `json:"never_accessed"`
+	AccessFrequency    []int64  `json:"access_frequency"`
+	PopularExtensions  []string `json:"popular_extensions"`
+	PopularDirectories []string `json:"popular_directories"`
 }
 
 // GrowthTrends represents storage growth trends
 type GrowthTrends struct {
-	MonthlyGrowth     []MonthlyGrowth `json:"monthly_growth"`
-	TotalGrowthRate   float64         `json:"total_growth_rate"`
-	FileGrowthRate    float64         `json:"file_growth_rate"`
-	SizeGrowthRate    float64         `json:"size_growth_rate"`
+	MonthlyGrowth   []MonthlyGrowth `json:"monthly_growth"`
+	TotalGrowthRate float64         `json:"total_growth_rate"`
+	FileGrowthRate  float64         `json:"file_growth_rate"`
+	SizeGrowthRate  float64         `json:"size_growth_rate"`
 }
 
 // MonthlyGrowth represents growth data for a specific month
@@ -155,38 +197,41 @@ type MonthlyGrowth struct {
 
 // ScanHistoryItem represents a scan operation in history
 type ScanHistoryItem struct {
-	ID              int64      `json:"id"`
-	SmbRootName     string     `json:"smb_root_name"`
-	ScanType        string     `json:"scan_type"`
-	Status          string     `json:"status"`
-	StartTime       time.Time  `json:"start_time"`
-	EndTime         *time.Time `json:"end_time,omitempty"`
-	FilesProcessed  int64      `json:"files_processed"`
-	FilesAdded      int64      `json:"files_added"`
-	FilesUpdated    int64      `json:"files_updated"`
-	FilesDeleted    int64      `json:"files_deleted"`
-	ErrorCount      int64      `json:"error_count"`
-	ErrorMessage    *string    `json:"error_message,omitempty"`
+	ID             int64      `json:"id"`
+	SmbRootName    string     `json:"smb_root_name"`
+	ScanType       string     `json:"scan_type"`
+	Status         string     `json:"status"`
+	StartTime      time.Time  `json:"start_time"`
+	EndTime        *time.Time `json:"end_time,omitempty"`
+	FilesProcessed int64      `json:"files_processed"`
+	FilesAdded     int64      `json:"files_added"`
+	FilesUpdated   int64      `json:"files_updated"`
+	FilesDeleted   int64      `json:"files_deleted"`
+	ErrorCount     int64      `json:"error_count"`
+	ErrorMessage   *string    `json:"error_message,omitempty"`
 }
 
 // MediaMetadata represents media metadata information
 type MediaMetadata struct {
-	ID          int64             `json:"id" db:"id"`
-	Title       string            `json:"title" db:"title"`
-	Description string            `json:"description,omitempty" db:"description"`
-	Genre       string            `json:"genre,omitempty" db:"genre"`
-	Year        *int              `json:"year,omitempty" db:"year"`
-	Rating      *float64          `json:"rating,omitempty" db:"rating"`
-	Duration    *int              `json:"duration,omitempty" db:"duration"`
-	Language    string            `json:"language,omitempty" db:"language"`
-	Country     string            `json:"country,omitempty" db:"country"`
-	Director    string            `json:"director,omitempty" db:"director"`
-	Producer    string            `json:"producer,omitempty" db:"producer"`
-	Cast        []string          `json:"cast,omitempty" db:"cast"`
+	ID          int64                  `json:"id" db:"id"`
+	Title       string                 `json:"title" db:"title"`
+	Description string                 `json:"description,omitempty" db:"description"`
+	Genre       string                 `json:"genre,omitempty" db:"genre"`
+	Year        *int                   `json:"year,omitempty" db:"year"`
+	Rating      *float64               `json:"rating,omitempty" db:"rating"`
+	Duration    *int                   `json:"duration,omitempty" db:"duration"`
+	Language    string                 `json:"language,omitempty" db:"language"`
+	Country     string                 `json:"country,omitempty" db:"country"`
+	Director    string                 `json:"director,omitempty" db:"director"`
+	Producer    string                 `json:"producer,omitempty" db:"producer"`
+	Cast        []string               `json:"cast,omitempty" db:"cast"`
+	MediaType   string                 `json:"media_type,omitempty" db:"media_type"`
+	Resolution  string                 `json:"resolution,omitempty" db:"resolution"`
+	FileSize    *int64                 `json:"file_size,omitempty" db:"file_size"`
 	Metadata    map[string]interface{} `json:"metadata,omitempty" db:"metadata"`
-	ExternalIDs map[string]string `json:"external_ids,omitempty" db:"external_ids"`
-	CreatedAt   time.Time         `json:"created_at" db:"created_at"`
-	UpdatedAt   time.Time         `json:"updated_at" db:"updated_at"`
+	ExternalIDs map[string]string      `json:"external_ids,omitempty" db:"external_ids"`
+	CreatedAt   time.Time              `json:"created_at" db:"created_at"`
+	UpdatedAt   time.Time              `json:"updated_at" db:"updated_at"`
 }
 
 // CoverArtResult represents cover art search results

@@ -3,6 +3,8 @@ package services
 import (
 	"testing"
 
+	"catalogizer/internal/config"
+	"catalogizer/internal/models"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
 	"go.uber.org/zap"
@@ -20,16 +22,23 @@ func (suite *SMBServiceTestSuite) SetupTest() {
 	suite.logger = logger
 
 	// Initialize service with mock config
-	config := &Config{
-		SMB: SMBConfig{
-			Sources:   []string{"smb://test-server/media"},
-			Username:  "testuser",
-			Password:  "testpass",
-			Domain:    "TEST",
+	cfg := &config.Config{
+		SMB: config.SMBConfig{
+			Hosts: []config.SMBHost{
+				{
+					Name:     "test-server",
+					Host:     "192.168.1.100",
+					Port:     445,
+					Username: "testuser",
+					Password: "testpass",
+				},
+			},
+			Timeout:   30,
+			ChunkSize: 8192,
 		},
 	}
 
-	suite.service = NewSMBService(config, logger)
+	suite.service = NewSMBService(cfg, logger)
 }
 
 func (suite *SMBServiceTestSuite) TestNewSMBService() {
@@ -61,19 +70,19 @@ func (suite *SMBServiceTestSuite) TestSMBConfig() {
 func (suite *SMBServiceTestSuite) TestSMBPathParsing() {
 	tests := []struct {
 		input    string
-		expected SMBPath
+		expected models.SMBPath
 	}{
 		{
 			"smb://server/share",
-			SMBPath{Server: "server", Share: "share", Path: ""},
+			models.SMBPath{Server: "server", Share: "share", Path: ""},
 		},
 		{
 			"smb://server/share/folder",
-			SMBPath{Server: "server", Share: "share", Path: "folder"},
+			models.SMBPath{Server: "server", Share: "share", Path: "folder"},
 		},
 		{
 			"smb://server/share/folder/file.mp4",
-			SMBPath{Server: "server", Share: "share", Path: "folder/file.mp4"},
+			models.SMBPath{Server: "server", Share: "share", Path: "folder/file.mp4"},
 		},
 	}
 
@@ -181,9 +190,9 @@ func (suite *SMBServiceTestSuite) TestSMBConnectionTimeout() {
 	// Test with very short timeout (should fail quickly)
 	shortTimeoutConfig := &Config{
 		SMB: SMBConfig{
-			Sources:        []string{"smb://192.0.2.1/share"}, // TEST-NET-1 (non-routable)
-			Username:       "test",
-			Password:       "test",
+			Sources:           []string{"smb://192.0.2.1/share"}, // TEST-NET-1 (non-routable)
+			Username:          "test",
+			Password:          "test",
 			ConnectionTimeout: 1, // 1 second
 		},
 	}

@@ -6,7 +6,7 @@ import (
 	"fmt"
 	"time"
 
-	"catalog-api/models"
+	"catalogizer/models"
 )
 
 type ConfigurationRepository struct {
@@ -425,4 +425,169 @@ func (r *ConfigurationRepository) GetConfigurationStatistics() (*models.Configur
 	}
 
 	return stats, nil
+}
+
+// SaveWizardSession saves a wizard session
+func (r *ConfigurationRepository) SaveWizardSession(session *models.WizardSession) error {
+	query := `
+		INSERT OR REPLACE INTO wizard_sessions (
+			session_id, user_id, current_step, total_steps, step_data,
+			configuration, started_at, last_activity, is_completed, config_type
+		) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+
+	stepDataJSON, err := json.Marshal(session.StepData)
+	if err != nil {
+		return fmt.Errorf("failed to marshal step data: %w", err)
+	}
+
+	configJSON, err := json.Marshal(session.Configuration)
+	if err != nil {
+		return fmt.Errorf("failed to marshal configuration: %w", err)
+	}
+
+	_, err = r.db.Exec(query,
+		session.SessionID, session.UserID, session.CurrentStep, session.TotalSteps,
+		string(stepDataJSON), string(configJSON), session.StartedAt,
+		session.LastActivity, session.IsCompleted, session.ConfigType)
+
+	if err != nil {
+		return fmt.Errorf("failed to save wizard session: %w", err)
+	}
+
+	return nil
+}
+
+// GetWizardSession retrieves a wizard session by session ID
+func (r *ConfigurationRepository) GetWizardSession(sessionID string) (*models.WizardSession, error) {
+	query := `
+		SELECT session_id, user_id, current_step, total_steps, step_data,
+			   configuration, started_at, last_activity, is_completed, config_type
+		FROM wizard_sessions WHERE session_id = ?`
+
+	session := &models.WizardSession{}
+	var stepDataJSON, configJSON string
+
+	err := r.db.QueryRow(query, sessionID).Scan(
+		&session.SessionID, &session.UserID, &session.CurrentStep, &session.TotalSteps,
+		&stepDataJSON, &configJSON, &session.StartedAt, &session.LastActivity,
+		&session.IsCompleted, &session.ConfigType)
+
+	if err != nil {
+		if err == sql.ErrNoRows {
+			return nil, fmt.Errorf("wizard session not found")
+		}
+		return nil, fmt.Errorf("failed to get wizard session: %w", err)
+	}
+
+	if err := json.Unmarshal([]byte(stepDataJSON), &session.StepData); err != nil {
+		return nil, fmt.Errorf("failed to unmarshal step data: %w", err)
+	}
+
+	if err := json.Unmarshal([]byte(configJSON), &session.Configuration); err != nil {
+		return nil, fmt.Errorf("failed to unmarshal configuration: %w", err)
+	}
+
+	return session, nil
+}
+
+// SaveConfigurationProfile saves a configuration profile
+func (r *ConfigurationRepository) SaveConfigurationProfile(profile *models.ConfigurationProfile) error {
+	query := `
+		INSERT OR REPLACE INTO configuration_profiles (
+			profile_id, name, description, user_id, configuration,
+			created_at, updated_at, is_active, tags
+		) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`
+
+	configJSON, err := json.Marshal(profile.Configuration)
+	if err != nil {
+		return fmt.Errorf("failed to marshal configuration: %w", err)
+	}
+
+	tagsJSON, err := json.Marshal(profile.Tags)
+	if err != nil {
+		return fmt.Errorf("failed to marshal tags: %w", err)
+	}
+
+	_, err = r.db.Exec(query,
+		profile.ProfileID, profile.Name, profile.Description, profile.UserID,
+		string(configJSON), profile.CreatedAt, profile.UpdatedAt,
+		profile.IsActive, string(tagsJSON))
+
+	if err != nil {
+		return fmt.Errorf("failed to save configuration profile: %w", err)
+	}
+
+	return nil
+}
+
+// GetConfigurationProfile retrieves a configuration profile by profile ID
+func (r *ConfigurationRepository) GetConfigurationProfile(profileID string) (*models.ConfigurationProfile, error) {
+	query := `
+		SELECT profile_id, name, description, user_id, configuration,
+			   created_at, updated_at, is_active, tags
+		FROM configuration_profiles WHERE profile_id = ?`
+
+	profile := &models.ConfigurationProfile{}
+	var configJSON, tagsJSON string
+
+	err := r.db.QueryRow(query, profileID).Scan(
+		&profile.ProfileID, &profile.Name, &profile.Description, &profile.UserID,
+		&configJSON, &profile.CreatedAt, &profile.UpdatedAt, &profile.IsActive, &tagsJSON)
+
+	if err != nil {
+		if err == sql.ErrNoRows {
+			return nil, fmt.Errorf("configuration profile not found")
+		}
+		return nil, fmt.Errorf("failed to get configuration profile: %w", err)
+	}
+
+	if err := json.Unmarshal([]byte(configJSON), &profile.Configuration); err != nil {
+		return nil, fmt.Errorf("failed to unmarshal configuration: %w", err)
+	}
+
+	if err := json.Unmarshal([]byte(tagsJSON), &profile.Tags); err != nil {
+		return nil, fmt.Errorf("failed to unmarshal tags: %w", err)
+	}
+
+	return profile, nil
+}
+
+// GetUserConfigurationProfiles retrieves all configuration profiles for a user
+func (r *ConfigurationRepository) GetUserConfigurationProfiles(userID int) ([]*models.ConfigurationProfile, error) {
+	query := `
+		SELECT profile_id, name, description, user_id, configuration,
+			   created_at, updated_at, is_active, tags
+		FROM configuration_profiles WHERE user_id = ? ORDER BY created_at DESC`
+
+	rows, err := r.db.Query(query, userID)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get user configuration profiles: %w", err)
+	}
+	defer rows.Close()
+
+	var profiles []*models.ConfigurationProfile
+	for rows.Next() {
+		profile := &models.ConfigurationProfile{}
+		var configJSON, tagsJSON string
+
+		err := rows.Scan(
+			&profile.ProfileID, &profile.Name, &profile.Description, &profile.UserID,
+			&configJSON, &profile.CreatedAt, &profile.UpdatedAt, &profile.IsActive, &tagsJSON)
+
+		if err != nil {
+			return nil, fmt.Errorf("failed to scan configuration profile: %w", err)
+		}
+
+		if err := json.Unmarshal([]byte(configJSON), &profile.Configuration); err != nil {
+			return nil, fmt.Errorf("failed to unmarshal configuration: %w", err)
+		}
+
+		if err := json.Unmarshal([]byte(tagsJSON), &profile.Tags); err != nil {
+			return nil, fmt.Errorf("failed to unmarshal tags: %w", err)
+		}
+
+		profiles = append(profiles, profile)
+	}
+
+	return profiles, nil
 }

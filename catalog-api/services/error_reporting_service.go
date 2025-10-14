@@ -4,16 +4,14 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
-	"io"
 	"net/http"
 	"os"
-	"path/filepath"
 	"runtime"
 	"strings"
 	"time"
 
-	"catalog-api/models"
-	"catalog-api/repository"
+	"catalogizer/models"
+	"catalogizer/repository"
 )
 
 type ErrorReportingService struct {
@@ -26,10 +24,10 @@ type ErrorReportingService struct {
 }
 
 type ErrorReportingConfig struct {
-	CrashlyticsEnabled   bool   `json:"crashlytics_enabled"`
-	CrashlyticsAPIKey    string `json:"crashlytics_api_key"`
-	SlackWebhookURL      string `json:"slack_webhook_url"`
-	EmailNotifications   bool   `json:"email_notifications"`
+	CrashlyticsEnabled  bool   `json:"crashlytics_enabled"`
+	CrashlyticsAPIKey   string `json:"crashlytics_api_key"`
+	SlackWebhookURL     string `json:"slack_webhook_url"`
+	EmailNotifications  bool   `json:"email_notifications"`
 	SentryDSN           string `json:"sentry_dsn"`
 	AutoReporting       bool   `json:"auto_reporting"`
 	MaxErrorsPerHour    int    `json:"max_errors_per_hour"`
@@ -43,11 +41,11 @@ func NewErrorReportingService(errorRepo *repository.ErrorReportingRepository, cr
 	config := &ErrorReportingConfig{
 		CrashlyticsEnabled:  false,
 		EmailNotifications:  true,
-		AutoReporting:      true,
-		MaxErrorsPerHour:   100,
-		RetentionDays:      30,
-		IncludeStackTrace:  true,
-		IncludeSystemInfo:  true,
+		AutoReporting:       true,
+		MaxErrorsPerHour:    100,
+		RetentionDays:       30,
+		IncludeStackTrace:   true,
+		IncludeSystemInfo:   true,
 		FilterSensitiveData: true,
 	}
 
@@ -75,17 +73,17 @@ func (s *ErrorReportingService) ReportError(userID int, errorReport *models.Erro
 
 	// Create error report
 	report := &models.ErrorReport{
-		UserID:      userID,
-		Level:       errorReport.Level,
-		Message:     errorReport.Message,
-		ErrorCode:   errorReport.ErrorCode,
-		Component:   errorReport.Component,
-		StackTrace:  errorReport.StackTrace,
-		Context:     errorReport.Context,
-		UserAgent:   errorReport.UserAgent,
-		URL:         errorReport.URL,
-		ReportedAt:  time.Now(),
-		Status:      models.ErrorStatusNew,
+		UserID:     userID,
+		Level:      errorReport.Level,
+		Message:    errorReport.Message,
+		ErrorCode:  errorReport.ErrorCode,
+		Component:  errorReport.Component,
+		StackTrace: errorReport.StackTrace,
+		Context:    errorReport.Context,
+		UserAgent:  errorReport.UserAgent,
+		URL:        errorReport.URL,
+		ReportedAt: time.Now(),
+		Status:     models.ErrorStatusNew,
 	}
 
 	// Filter sensitive data

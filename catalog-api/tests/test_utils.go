@@ -4,6 +4,7 @@ import (
 	"database/sql"
 	"encoding/json"
 	"fmt"
+	"io"
 	"log"
 	"net/http"
 	"net/http/httptest"
@@ -13,9 +14,9 @@ import (
 	"testing"
 	"time"
 
-	"catalog-api/models"
-	"catalog-api/repository"
-	"catalog-api/services"
+	"catalogizer/models"
+	"catalogizer/repository"
+	"catalogizer/services"
 
 	_ "github.com/mattn/go-sqlite3"
 )
@@ -29,6 +30,8 @@ type TestDatabase struct {
 // TestSuite represents a complete test suite with all dependencies
 type TestSuite struct {
 	DB                    *TestDatabase
+	UserRepo              *repository.UserRepository
+	AuthService           *services.AuthService
 	AnalyticsRepo         *repository.AnalyticsRepository
 	FavoritesRepo         *repository.FavoritesRepository
 	ConversionRepo        *repository.ConversionRepository
@@ -82,9 +85,11 @@ func (td *TestDatabase) Cleanup() {
 
 // SetupTestSuite creates a complete test suite with all services and repositories
 func SetupTestSuite(t *testing.T) *TestSuite {
+	// Create test database
 	testDB := SetupTestDatabase(t)
 
 	// Create repositories
+	userRepo := repository.NewUserRepository(testDB.DB)
 	analyticsRepo := repository.NewAnalyticsRepository(testDB.DB)
 	favoritesRepo := repository.NewFavoritesRepository(testDB.DB)
 	conversionRepo := repository.NewConversionRepository(testDB.DB)
@@ -95,18 +100,23 @@ func SetupTestSuite(t *testing.T) *TestSuite {
 	logRepo := repository.NewLogManagementRepository(testDB.DB)
 	configRepo := repository.NewConfigurationRepository(testDB.DB)
 
+	// Create auth service
+	authService := services.NewAuthService(userRepo, "test-jwt-secret")
+
 	// Create services
 	analyticsService := services.NewAnalyticsService(analyticsRepo)
-	favoritesService := services.NewFavoritesService(favoritesRepo)
-	conversionService := services.NewConversionService(conversionRepo)
-	syncService := services.NewSyncService(syncRepo)
-	stressTestService := services.NewStressTestService(stressTestRepo)
+	favoritesService := services.NewFavoritesService(favoritesRepo, authService)
+	conversionService := services.NewConversionService(conversionRepo, userRepo, authService)
+	syncService := services.NewSyncService(syncRepo, userRepo, authService)
+	stressTestService := services.NewStressTestService(stressTestRepo, authService)
 	errorReportingService := services.NewErrorReportingService(errorRepo, crashRepo)
 	logManagementService := services.NewLogManagementService(logRepo)
 	configurationService := services.NewConfigurationService(configRepo, "/tmp/test_config.json")
 
 	return &TestSuite{
 		DB:                    testDB,
+		UserRepo:              userRepo,
+		AuthService:           authService,
 		AnalyticsRepo:         analyticsRepo,
 		FavoritesRepo:         favoritesRepo,
 		ConversionRepo:        conversionRepo,
@@ -140,11 +150,12 @@ func CreateTestUser(t *testing.T, db *sql.DB, userID int) *models.User {
 		ID:       userID,
 		Username: fmt.Sprintf("testuser%d", userID),
 		Email:    fmt.Sprintf("test%d@example.com", userID),
-		Role:     "user",
+		RoleID:   1,
+		IsActive: true,
 	}
 
-	query := `INSERT INTO users (id, username, email, role, created_at) VALUES (?, ?, ?, ?, ?)`
-	_, err := db.Exec(query, user.ID, user.Username, user.Email, user.Role, time.Now())
+	query := `INSERT INTO users (id, username, email, role_id, is_active, created_at) VALUES (?, ?, ?, ?, ?, ?)`
+	_, err := db.Exec(query, user.ID, user.Username, user.Email, user.RoleID, user.IsActive, time.Now())
 	if err != nil {
 		t.Fatalf("Failed to create test user: %v", err)
 	}
@@ -155,19 +166,17 @@ func CreateTestUser(t *testing.T, db *sql.DB, userID int) *models.User {
 // CreateTestMediaItem creates a test media item for testing
 func CreateTestMediaItem(t *testing.T, db *sql.DB, itemID int, userID int) *models.MediaItem {
 	item := &models.MediaItem{
-		ID:          itemID,
-		UserID:      userID,
-		Title:       fmt.Sprintf("Test Media %d", itemID),
-		Type:        "video",
-		Path:        fmt.Sprintf("/test/media/%d.mp4", itemID),
-		Size:        1024 * 1024,
-		CreatedAt:   time.Now(),
-		UpdatedAt:   time.Now(),
+		ID:     itemID,
+		UserID: userID,
+		Title:  fmt.Sprintf("Test Media %d", itemID),
+		Type:   "video",
+		Path:   fmt.Sprintf("/test/media/%d.mp4", itemID),
+		Size:   1024 * 1024,
 	}
 
 	query := `INSERT INTO media_items (id, user_id, title, type, path, size, created_at, updated_at)
 			  VALUES (?, ?, ?, ?, ?, ?, ?, ?)`
-	_, err := db.Exec(query, item.ID, item.UserID, item.Title, item.Type, item.Path, item.Size, item.CreatedAt, item.UpdatedAt)
+	_, err := db.Exec(query, item.ID, item.UserID, item.Title, item.Type, item.Path, item.Size, time.Now(), time.Now())
 	if err != nil {
 		t.Fatalf("Failed to create test media item: %v", err)
 	}
@@ -259,9 +268,9 @@ func WaitForCondition(t *testing.T, condition func() bool, timeout time.Duration
 
 // GenerateTestData generates test data for various scenarios
 type TestDataGenerator struct {
-	UserID   int
-	ItemID   int
-	EventID  int
+	UserID  int
+	ItemID  int
+	EventID int
 }
 
 func NewTestDataGenerator() *TestDataGenerator {
@@ -295,8 +304,24 @@ func createTestTables(db *sql.DB) error {
 			id INTEGER PRIMARY KEY,
 			username TEXT UNIQUE NOT NULL,
 			email TEXT UNIQUE NOT NULL,
-			role TEXT NOT NULL DEFAULT 'user',
-			created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+			password_hash TEXT,
+			salt TEXT,
+			role_id INTEGER NOT NULL DEFAULT 1,
+			first_name TEXT,
+			last_name TEXT,
+			display_name TEXT,
+			avatar_url TEXT,
+			time_zone TEXT,
+			language TEXT,
+			settings TEXT DEFAULT '{}',
+			is_active BOOLEAN DEFAULT 1,
+			is_locked BOOLEAN DEFAULT 0,
+			locked_until DATETIME,
+			failed_login_attempts INTEGER DEFAULT 0,
+			last_login_at DATETIME,
+			last_login_ip TEXT,
+			created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+			updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
 		)`,
 
 		// Media items table
@@ -317,13 +342,16 @@ func createTestTables(db *sql.DB) error {
 			id INTEGER PRIMARY KEY AUTOINCREMENT,
 			user_id INTEGER,
 			event_type TEXT NOT NULL,
+			event_category TEXT,
 			entity_type TEXT,
 			entity_id INTEGER,
-			metadata TEXT,
+			data TEXT,
 			timestamp DATETIME DEFAULT CURRENT_TIMESTAMP,
 			session_id TEXT,
 			ip_address TEXT,
-			user_agent TEXT
+			user_agent TEXT,
+			device_info TEXT,
+			location TEXT
 		)`,
 
 		// Favorites table
@@ -583,6 +611,7 @@ func BenchmarkSetup(b *testing.B) *TestSuite {
 	testDB := &TestDatabase{DB: db, Path: dbPath}
 
 	// Create repositories
+	userRepo := repository.NewUserRepository(testDB.DB)
 	analyticsRepo := repository.NewAnalyticsRepository(testDB.DB)
 	favoritesRepo := repository.NewFavoritesRepository(testDB.DB)
 	conversionRepo := repository.NewConversionRepository(testDB.DB)
@@ -593,18 +622,23 @@ func BenchmarkSetup(b *testing.B) *TestSuite {
 	logRepo := repository.NewLogManagementRepository(testDB.DB)
 	configRepo := repository.NewConfigurationRepository(testDB.DB)
 
+	// Create auth service
+	authService := services.NewAuthService(userRepo, "test-jwt-secret")
+
 	// Create services
 	analyticsService := services.NewAnalyticsService(analyticsRepo)
-	favoritesService := services.NewFavoritesService(favoritesRepo)
-	conversionService := services.NewConversionService(conversionRepo)
-	syncService := services.NewSyncService(syncRepo)
-	stressTestService := services.NewStressTestService(stressTestRepo)
+	favoritesService := services.NewFavoritesService(favoritesRepo, authService)
+	conversionService := services.NewConversionService(conversionRepo, userRepo, authService)
+	syncService := services.NewSyncService(syncRepo, userRepo, authService)
+	stressTestService := services.NewStressTestService(stressTestRepo, authService)
 	errorReportingService := services.NewErrorReportingService(errorRepo, crashRepo)
 	logManagementService := services.NewLogManagementService(logRepo)
 	configurationService := services.NewConfigurationService(configRepo, "/tmp/benchmark_config.json")
 
 	return &TestSuite{
 		DB:                    testDB,
+		UserRepo:              userRepo,
+		AuthService:           authService,
 		AnalyticsRepo:         analyticsRepo,
 		FavoritesRepo:         favoritesRepo,
 		ConversionRepo:        conversionRepo,

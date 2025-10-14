@@ -6,9 +6,9 @@ import (
 	"strings"
 	"time"
 
-	"catalog-api/models"
-	"catalog-api/repository"
-	"catalog-api/utils"
+	"catalogizer/models"
+	"catalogizer/repository"
+	"catalogizer/utils"
 
 	"github.com/gin-gonic/gin"
 )
@@ -51,32 +51,32 @@ func NewSearchHandler(fileRepo *repository.FileRepository) *SearchHandler {
 // @Param sort_by query string false "Sort field (name, size, modified_at, created_at, path, extension)" default("name")
 // @Param sort_order query string false "Sort order (asc, desc)" default("asc")
 // @Success 200 {object} models.SearchResult
-// @Failure 400 {object} utils.ErrorResponse
-// @Failure 500 {object} utils.ErrorResponse
+// @Failure 400 {object} utils.SendErrorResponse
+// @Failure 500 {object} utils.SendErrorResponse
 // @Router /api/search [get]
 func (h *SearchHandler) SearchFiles(c *gin.Context) {
 	ctx := c.Request.Context()
 
 	// Parse search filters
 	filter := models.SearchFilter{
-		Query:             c.Query("q"),
-		Path:              c.Query("path"),
-		Name:              c.Query("name"),
-		Extension:         c.Query("extension"),
-		FileType:          c.Query("file_type"),
-		MimeType:          c.Query("mime_type"),
-		IncludeDeleted:    parseBool(c.Query("include_deleted"), false),
-		OnlyDuplicates:    parseBool(c.Query("only_duplicates"), false),
-		ExcludeDuplicates: parseBool(c.Query("exclude_duplicates"), false),
+		Query:              c.Query("q"),
+		Path:               c.Query("path"),
+		Name:               c.Query("name"),
+		Extension:          c.Query("extension"),
+		FileType:           c.Query("file_type"),
+		MimeType:           c.Query("mime_type"),
+		IncludeDeleted:     parseBool(c.Query("include_deleted"), false),
+		OnlyDuplicates:     parseBool(c.Query("only_duplicates"), false),
+		ExcludeDuplicates:  parseBool(c.Query("exclude_duplicates"), false),
 		IncludeDirectories: parseBool(c.Query("include_directories"), true),
 	}
 
 	// Parse SMB roots filter
 	if smbRootsStr := c.Query("smb_roots"); smbRootsStr != "" {
-		filter.SmbRoots = strings.Split(smbRootsStr, ",")
+		filter.StorageRoots = strings.Split(smbRootsStr, ",")
 		// Trim whitespace from each root name
-		for i := range filter.SmbRoots {
-			filter.SmbRoots[i] = strings.TrimSpace(filter.SmbRoots[i])
+		for i := range filter.StorageRoots {
+			filter.StorageRoots[i] = strings.TrimSpace(filter.StorageRoots[i])
 		}
 	}
 
@@ -97,7 +97,7 @@ func (h *SearchHandler) SearchFiles(c *gin.Context) {
 		if modifiedAfter, err := time.Parse(time.RFC3339, modifiedAfterStr); err == nil {
 			filter.ModifiedAfter = &modifiedAfter
 		} else {
-			utils.ErrorResponse(c, http.StatusBadRequest, "Invalid modified_after date format. Use RFC3339 format", err)
+			utils.SendErrorResponse(c, http.StatusBadRequest, "Invalid modified_after date format. Use RFC3339 format", err)
 			return
 		}
 	}
@@ -105,7 +105,7 @@ func (h *SearchHandler) SearchFiles(c *gin.Context) {
 		if modifiedBefore, err := time.Parse(time.RFC3339, modifiedBeforeStr); err == nil {
 			filter.ModifiedBefore = &modifiedBefore
 		} else {
-			utils.ErrorResponse(c, http.StatusBadRequest, "Invalid modified_before date format. Use RFC3339 format", err)
+			utils.SendErrorResponse(c, http.StatusBadRequest, "Invalid modified_before date format. Use RFC3339 format", err)
 			return
 		}
 	}
@@ -152,7 +152,7 @@ func (h *SearchHandler) SearchFiles(c *gin.Context) {
 	// Perform search
 	result, err := h.fileRepo.SearchFiles(ctx, filter, pagination, sort)
 	if err != nil {
-		utils.ErrorResponse(c, http.StatusInternalServerError, "Search failed", err)
+		utils.SendErrorResponse(c, http.StatusInternalServerError, "Search failed", err)
 		return
 	}
 
@@ -178,8 +178,8 @@ func (h *SearchHandler) SearchFiles(c *gin.Context) {
 // @Param sort_by query string false "Sort field (name, size, modified_at, path)" default("name")
 // @Param sort_order query string false "Sort order (asc, desc)" default("asc")
 // @Success 200 {object} models.SearchResult
-// @Failure 400 {object} utils.ErrorResponse
-// @Failure 500 {object} utils.ErrorResponse
+// @Failure 400 {object} utils.SendErrorResponse
+// @Failure 500 {object} utils.SendErrorResponse
 // @Router /api/search/duplicates [get]
 func (h *SearchHandler) SearchDuplicates(c *gin.Context) {
 	ctx := c.Request.Context()
@@ -194,9 +194,9 @@ func (h *SearchHandler) SearchDuplicates(c *gin.Context) {
 
 	// Parse SMB roots filter
 	if smbRootsStr := c.Query("smb_roots"); smbRootsStr != "" {
-		filter.SmbRoots = strings.Split(smbRootsStr, ",")
-		for i := range filter.SmbRoots {
-			filter.SmbRoots[i] = strings.TrimSpace(filter.SmbRoots[i])
+		filter.StorageRoots = strings.Split(smbRootsStr, ",")
+		for i := range filter.StorageRoots {
+			filter.StorageRoots[i] = strings.TrimSpace(filter.StorageRoots[i])
 		}
 	}
 
@@ -252,7 +252,7 @@ func (h *SearchHandler) SearchDuplicates(c *gin.Context) {
 	// Perform search
 	result, err := h.fileRepo.SearchFiles(ctx, filter, pagination, sort)
 	if err != nil {
-		utils.ErrorResponse(c, http.StatusInternalServerError, "Duplicate search failed", err)
+		utils.SendErrorResponse(c, http.StatusInternalServerError, "Duplicate search failed", err)
 		return
 	}
 
@@ -270,15 +270,15 @@ func (h *SearchHandler) SearchDuplicates(c *gin.Context) {
 // @Produce json
 // @Param body body SearchRequest true "Search request"
 // @Success 200 {object} models.SearchResult
-// @Failure 400 {object} utils.ErrorResponse
-// @Failure 500 {object} utils.ErrorResponse
+// @Failure 400 {object} utils.SendErrorResponse
+// @Failure 500 {object} utils.SendErrorResponse
 // @Router /api/search/advanced [post]
 func (h *SearchHandler) AdvancedSearch(c *gin.Context) {
 	ctx := c.Request.Context()
 
 	var req SearchRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
-		utils.ErrorResponse(c, http.StatusBadRequest, "Invalid request body", err)
+		utils.SendErrorResponse(c, http.StatusBadRequest, "Invalid request body", err)
 		return
 	}
 
@@ -319,7 +319,7 @@ func (h *SearchHandler) AdvancedSearch(c *gin.Context) {
 	// Perform search
 	result, err := h.fileRepo.SearchFiles(ctx, req.Filter, pagination, sort)
 	if err != nil {
-		utils.ErrorResponse(c, http.StatusInternalServerError, "Advanced search failed", err)
+		utils.SendErrorResponse(c, http.StatusInternalServerError, "Advanced search failed", err)
 		return
 	}
 

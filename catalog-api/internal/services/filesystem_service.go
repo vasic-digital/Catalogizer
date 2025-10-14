@@ -1,8 +1,8 @@
 package services
 
 import (
-	"catalog-api/filesystem"
-	"catalog-api/internal/config"
+	"catalogizer/filesystem"
+	"catalogizer/internal/config"
 	"context"
 
 	"go.uber.org/zap"

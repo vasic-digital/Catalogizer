@@ -1,4 +1,4 @@
-module catalog-api
+module catalogizer
 
 go 1.24.0
 

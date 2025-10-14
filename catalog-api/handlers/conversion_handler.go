@@ -35,7 +35,7 @@ func (h *ConversionHandler) CreateJob(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	hasPermission, err := h.authService.CheckPermission(currentUser.ID, models.PermissionUploadMedia)
+	hasPermission, err := h.authService.CheckPermission(currentUser.ID, models.PermissionMediaUpload)
 	if err != nil {
 		http.Error(w, "Failed to check permissions", http.StatusInternalServerError)
 		return
@@ -164,7 +164,7 @@ func (h *ConversionHandler) StartJob(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	hasPermission, err := h.authService.CheckPermission(currentUser.ID, models.PermissionManageUsers)
+	hasPermission, err := h.authService.CheckPermission(currentUser.ID, models.PermissionUserManage)
 	if err != nil {
 		http.Error(w, "Failed to check permissions", http.StatusInternalServerError)
 		return
@@ -317,7 +317,7 @@ func (h *ConversionHandler) GetStatistics(w http.ResponseWriter, r *http.Request
 	if userIDStr != "" {
 		if parsed, err := strconv.Atoi(userIDStr); err == nil {
 			if parsed != currentUser.ID {
-				hasPermission, err := h.authService.CheckPermission(currentUser.ID, models.PermissionViewAnalytics)
+				hasPermission, err := h.authService.CheckPermission(currentUser.ID, models.PermissionAnalyticsView)
 				if err != nil || !hasPermission {
 					http.Error(w, "Insufficient permissions", http.StatusForbidden)
 					return
@@ -387,7 +387,7 @@ func (h *ConversionHandler) GetQueue(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	hasPermission, err := h.authService.CheckPermission(currentUser.ID, models.PermissionViewAnalytics)
+	hasPermission, err := h.authService.CheckPermission(currentUser.ID, models.PermissionAnalyticsView)
 	if err != nil {
 		http.Error(w, "Failed to check permissions", http.StatusInternalServerError)
 		return

@@ -1,4 +1,4 @@
-module catalog-api/tests/automation
+module catalogizer/tests/automation
 
 go 1.21
 

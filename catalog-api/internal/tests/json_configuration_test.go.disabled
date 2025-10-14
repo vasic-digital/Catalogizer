@@ -13,8 +13,8 @@ import (
 	"github.com/stretchr/testify/require"
 	"go.uber.org/zap/zaptest"
 
-	"catalog-api/internal/handlers"
-	"catalog-api/internal/services"
+	"catalogizer/internal/handlers"
+	"catalogizer/internal/services"
 )
 
 func TestJSONConfigurationHandlers(t *testing.T) {

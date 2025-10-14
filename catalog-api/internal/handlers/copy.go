@@ -1,8 +1,8 @@
 package handlers
 
 import (
-	"catalog-api/internal/models"
-	"catalog-api/internal/services"
+	"catalogizer/internal/models"
+	"catalogizer/internal/services"
 	"net/http"
 	"os"
 	"path/filepath"

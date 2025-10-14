@@ -5,7 +5,7 @@ import (
 	"strings"
 	"time"
 
-	"catalog-api/utils"
+	"catalogizer/utils"
 
 	"github.com/gin-gonic/gin"
 	"github.com/golang-jwt/jwt/v5"

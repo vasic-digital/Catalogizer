@@ -1,12 +1,12 @@
 package handlers
 
 import (
-	"context"
 	"net/http"
 	"strconv"
 
-	"catalog-api/repository"
-	"catalog-api/utils"
+	"catalogizer/internal/models"
+	"catalogizer/repository"
+	"catalogizer/utils"
 
 	"github.com/gin-gonic/gin"
 )
@@ -32,14 +32,14 @@ func NewStatsHandler(fileRepo *repository.FileRepository, statsRepo *repository.
 // @Accept json
 // @Produce json
 // @Success 200 {object} OverallStats
-// @Failure 500 {object} utils.ErrorResponse
+// @Failure 500 {object} utils.SendErrorResponse
 // @Router /api/stats/overall [get]
 func (h *StatsHandler) GetOverallStats(c *gin.Context) {
 	ctx := c.Request.Context()
 
 	stats, err := h.statsRepo.GetOverallStats(ctx)
 	if err != nil {
-		utils.ErrorResponse(c, http.StatusInternalServerError, "Failed to get overall stats", err)
+		utils.SendErrorResponse(c, http.StatusInternalServerError, "Failed to get overall stats", err)
 		return
 	}
 
@@ -57,26 +57,26 @@ func (h *StatsHandler) GetOverallStats(c *gin.Context) {
 // @Produce json
 // @Param smb_root path string true "SMB root name"
 // @Success 200 {object} SmbRootStats
-// @Failure 400 {object} utils.ErrorResponse
-// @Failure 404 {object} utils.ErrorResponse
-// @Failure 500 {object} utils.ErrorResponse
+// @Failure 400 {object} utils.SendErrorResponse
+// @Failure 404 {object} utils.SendErrorResponse
+// @Failure 500 {object} utils.SendErrorResponse
 // @Router /api/stats/smb/{smb_root} [get]
 func (h *StatsHandler) GetSmbRootStats(c *gin.Context) {
 	ctx := c.Request.Context()
 
 	smbRootName := c.Param("smb_root")
 	if smbRootName == "" {
-		utils.ErrorResponse(c, http.StatusBadRequest, "SMB root name is required", nil)
+		utils.SendErrorResponse(c, http.StatusBadRequest, "SMB root name is required", nil)
 		return
 	}
 
-	stats, err := h.statsRepo.GetSmbRootStats(ctx, smbRootName)
+	stats, err := h.statsRepo.GetStorageRootStats(ctx, smbRootName)
 	if err != nil {
 		if err.Error() == "smb root not found" {
-			utils.ErrorResponse(c, http.StatusNotFound, "SMB root not found", err)
+			utils.SendErrorResponse(c, http.StatusNotFound, "SMB root not found", err)
 			return
 		}
-		utils.ErrorResponse(c, http.StatusInternalServerError, "Failed to get SMB root stats", err)
+		utils.SendErrorResponse(c, http.StatusInternalServerError, "Failed to get SMB root stats", err)
 		return
 	}
 
@@ -95,8 +95,8 @@ func (h *StatsHandler) GetSmbRootStats(c *gin.Context) {
 // @Param smb_root query string false "SMB root name filter"
 // @Param limit query int false "Maximum number of results" default(50)
 // @Success 200 {array} FileTypeStats
-// @Failure 400 {object} utils.ErrorResponse
-// @Failure 500 {object} utils.ErrorResponse
+// @Failure 400 {object} utils.SendErrorResponse
+// @Failure 500 {object} utils.SendErrorResponse
 // @Router /api/stats/filetypes [get]
 func (h *StatsHandler) GetFileTypeStats(c *gin.Context) {
 	ctx := c.Request.Context()
@@ -110,7 +110,7 @@ func (h *StatsHandler) GetFileTypeStats(c *gin.Context) {
 
 	stats, err := h.statsRepo.GetFileTypeStats(ctx, smbRootName, limit)
 	if err != nil {
-		utils.ErrorResponse(c, http.StatusInternalServerError, "Failed to get file type stats", err)
+		utils.SendErrorResponse(c, http.StatusInternalServerError, "Failed to get file type stats", err)
 		return
 	}
 
@@ -128,7 +128,7 @@ func (h *StatsHandler) GetFileTypeStats(c *gin.Context) {
 // @Produce json
 // @Param smb_root query string false "SMB root name filter"
 // @Success 200 {object} SizeDistribution
-// @Failure 500 {object} utils.ErrorResponse
+// @Failure 500 {object} utils.SendErrorResponse
 // @Router /api/stats/sizes [get]
 func (h *StatsHandler) GetSizeDistribution(c *gin.Context) {
 	ctx := c.Request.Context()
@@ -137,7 +137,7 @@ func (h *StatsHandler) GetSizeDistribution(c *gin.Context) {
 
 	distribution, err := h.statsRepo.GetSizeDistribution(ctx, smbRootName)
 	if err != nil {
-		utils.ErrorResponse(c, http.StatusInternalServerError, "Failed to get size distribution", err)
+		utils.SendErrorResponse(c, http.StatusInternalServerError, "Failed to get size distribution", err)
 		return
 	}
 
@@ -155,7 +155,7 @@ func (h *StatsHandler) GetSizeDistribution(c *gin.Context) {
 // @Produce json
 // @Param smb_root query string false "SMB root name filter"
 // @Success 200 {object} DuplicateStats
-// @Failure 500 {object} utils.ErrorResponse
+// @Failure 500 {object} utils.SendErrorResponse
 // @Router /api/stats/duplicates [get]
 func (h *StatsHandler) GetDuplicateStats(c *gin.Context) {
 	ctx := c.Request.Context()
@@ -164,7 +164,7 @@ func (h *StatsHandler) GetDuplicateStats(c *gin.Context) {
 
 	stats, err := h.statsRepo.GetDuplicateStats(ctx, smbRootName)
 	if err != nil {
-		utils.ErrorResponse(c, http.StatusInternalServerError, "Failed to get duplicate stats", err)
+		utils.SendErrorResponse(c, http.StatusInternalServerError, "Failed to get duplicate stats", err)
 		return
 	}
 
@@ -184,8 +184,8 @@ func (h *StatsHandler) GetDuplicateStats(c *gin.Context) {
 // @Param limit query int false "Maximum number of results" default(20)
 // @Param smb_root query string false "SMB root name filter"
 // @Success 200 {array} DuplicateGroupStats
-// @Failure 400 {object} utils.ErrorResponse
-// @Failure 500 {object} utils.ErrorResponse
+// @Failure 400 {object} utils.SendErrorResponse
+// @Failure 500 {object} utils.SendErrorResponse
 // @Router /api/stats/duplicates/groups [get]
 func (h *StatsHandler) GetTopDuplicateGroups(c *gin.Context) {
 	ctx := c.Request.Context()
@@ -195,7 +195,7 @@ func (h *StatsHandler) GetTopDuplicateGroups(c *gin.Context) {
 	smbRootName := c.Query("smb_root")
 
 	if sortBy != "count" && sortBy != "size" {
-		utils.ErrorResponse(c, http.StatusBadRequest, "sort_by must be 'count' or 'size'", nil)
+		utils.SendErrorResponse(c, http.StatusBadRequest, "sort_by must be 'count' or 'size'", nil)
 		return
 	}
 
@@ -205,7 +205,7 @@ func (h *StatsHandler) GetTopDuplicateGroups(c *gin.Context) {
 
 	groups, err := h.statsRepo.GetTopDuplicateGroups(ctx, sortBy, limit, smbRootName)
 	if err != nil {
-		utils.ErrorResponse(c, http.StatusInternalServerError, "Failed to get top duplicate groups", err)
+		utils.SendErrorResponse(c, http.StatusInternalServerError, "Failed to get top duplicate groups", err)
 		return
 	}
 
@@ -224,8 +224,8 @@ func (h *StatsHandler) GetTopDuplicateGroups(c *gin.Context) {
 // @Param smb_root query string false "SMB root name filter"
 // @Param days query int false "Number of days to analyze" default(30)
 // @Success 200 {object} AccessPatterns
-// @Failure 400 {object} utils.ErrorResponse
-// @Failure 500 {object} utils.ErrorResponse
+// @Failure 400 {object} utils.SendErrorResponse
+// @Failure 500 {object} utils.SendErrorResponse
 // @Router /api/stats/access [get]
 func (h *StatsHandler) GetAccessPatterns(c *gin.Context) {
 	ctx := c.Request.Context()
@@ -239,7 +239,7 @@ func (h *StatsHandler) GetAccessPatterns(c *gin.Context) {
 
 	patterns, err := h.statsRepo.GetAccessPatterns(ctx, smbRootName, days)
 	if err != nil {
-		utils.ErrorResponse(c, http.StatusInternalServerError, "Failed to get access patterns", err)
+		utils.SendErrorResponse(c, http.StatusInternalServerError, "Failed to get access patterns", err)
 		return
 	}
 
@@ -258,8 +258,8 @@ func (h *StatsHandler) GetAccessPatterns(c *gin.Context) {
 // @Param smb_root query string false "SMB root name filter"
 // @Param months query int false "Number of months to analyze" default(12)
 // @Success 200 {object} GrowthTrends
-// @Failure 400 {object} utils.ErrorResponse
-// @Failure 500 {object} utils.ErrorResponse
+// @Failure 400 {object} utils.SendErrorResponse
+// @Failure 500 {object} utils.SendErrorResponse
 // @Router /api/stats/growth [get]
 func (h *StatsHandler) GetGrowthTrends(c *gin.Context) {
 	ctx := c.Request.Context()
@@ -273,7 +273,7 @@ func (h *StatsHandler) GetGrowthTrends(c *gin.Context) {
 
 	trends, err := h.statsRepo.GetGrowthTrends(ctx, smbRootName, months)
 	if err != nil {
-		utils.ErrorResponse(c, http.StatusInternalServerError, "Failed to get growth trends", err)
+		utils.SendErrorResponse(c, http.StatusInternalServerError, "Failed to get growth trends", err)
 		return
 	}
 
@@ -293,8 +293,8 @@ func (h *StatsHandler) GetGrowthTrends(c *gin.Context) {
 // @Param limit query int false "Maximum number of results" default(50)
 // @Param offset query int false "Number of results to skip" default(0)
 // @Success 200 {object} ScanHistoryResponse
-// @Failure 400 {object} utils.ErrorResponse
-// @Failure 500 {object} utils.ErrorResponse
+// @Failure 400 {object} utils.SendErrorResponse
+// @Failure 500 {object} utils.SendErrorResponse
 // @Router /api/stats/scans [get]
 func (h *StatsHandler) GetScanHistory(c *gin.Context) {
 	ctx := c.Request.Context()
@@ -312,7 +312,7 @@ func (h *StatsHandler) GetScanHistory(c *gin.Context) {
 
 	history, totalCount, err := h.statsRepo.GetScanHistory(ctx, smbRootName, limit, offset)
 	if err != nil {
-		utils.ErrorResponse(c, http.StatusInternalServerError, "Failed to get scan history", err)
+		utils.SendErrorResponse(c, http.StatusInternalServerError, "Failed to get scan history", err)
 		return
 	}
 
@@ -331,33 +331,33 @@ func (h *StatsHandler) GetScanHistory(c *gin.Context) {
 
 // Response types for statistics endpoints
 type ScanHistoryResponse struct {
-	Scans      []ScanHistoryItem `json:"scans"`
-	TotalCount int64             `json:"total_count"`
-	Limit      int               `json:"limit"`
-	Offset     int               `json:"offset"`
+	Scans      []models.ScanHistoryItem `json:"scans"`
+	TotalCount int64                    `json:"total_count"`
+	Limit      int                      `json:"limit"`
+	Offset     int                      `json:"offset"`
 }
 
 // These types would typically be defined in a separate stats models package
 type OverallStats struct {
-	TotalFiles        int64 `json:"total_files"`
-	TotalDirectories  int64 `json:"total_directories"`
-	TotalSize         int64 `json:"total_size"`
-	TotalDuplicates   int64 `json:"total_duplicates"`
-	DuplicateGroups   int64 `json:"duplicate_groups"`
-	StorageRootsCount int64 `json:"storage_roots_count"`
+	TotalFiles         int64 `json:"total_files"`
+	TotalDirectories   int64 `json:"total_directories"`
+	TotalSize          int64 `json:"total_size"`
+	TotalDuplicates    int64 `json:"total_duplicates"`
+	DuplicateGroups    int64 `json:"duplicate_groups"`
+	StorageRootsCount  int64 `json:"storage_roots_count"`
 	ActiveStorageRoots int64 `json:"active_storage_roots"`
-	LastScanTime      int64 `json:"last_scan_time"`
+	LastScanTime       int64 `json:"last_scan_time"`
 }
 
 type StorageRootStats struct {
-	Name              string `json:"name"`
-	TotalFiles        int64  `json:"total_files"`
-	TotalDirectories  int64  `json:"total_directories"`
-	TotalSize         int64  `json:"total_size"`
-	DuplicateFiles    int64  `json:"duplicate_files"`
-	DuplicateGroups   int64  `json:"duplicate_groups"`
-	LastScanTime      int64  `json:"last_scan_time"`
-	IsOnline          bool   `json:"is_online"`
+	Name             string `json:"name"`
+	TotalFiles       int64  `json:"total_files"`
+	TotalDirectories int64  `json:"total_directories"`
+	TotalSize        int64  `json:"total_size"`
+	DuplicateFiles   int64  `json:"duplicate_files"`
+	DuplicateGroups  int64  `json:"duplicate_groups"`
+	LastScanTime     int64  `json:"last_scan_time"`
+	IsOnline         bool   `json:"is_online"`
 }
 
 type FileTypeStats struct {
@@ -369,20 +369,20 @@ type FileTypeStats struct {
 }
 
 type SizeDistribution struct {
-	Tiny     int64 `json:"tiny"`      // < 1KB
-	Small    int64 `json:"small"`     // 1KB - 1MB
-	Medium   int64 `json:"medium"`    // 1MB - 10MB
-	Large    int64 `json:"large"`     // 10MB - 100MB
-	Huge     int64 `json:"huge"`      // 100MB - 1GB
-	Massive  int64 `json:"massive"`   // > 1GB
+	Tiny    int64 `json:"tiny"`    // < 1KB
+	Small   int64 `json:"small"`   // 1KB - 1MB
+	Medium  int64 `json:"medium"`  // 1MB - 10MB
+	Large   int64 `json:"large"`   // 10MB - 100MB
+	Huge    int64 `json:"huge"`    // 100MB - 1GB
+	Massive int64 `json:"massive"` // > 1GB
 }
 
 type DuplicateStats struct {
-	TotalDuplicates     int64 `json:"total_duplicates"`
-	DuplicateGroups     int64 `json:"duplicate_groups"`
-	WastedSpace         int64 `json:"wasted_space"`
-	LargestDuplicateGroup int `json:"largest_duplicate_group"`
-	AverageGroupSize    float64 `json:"average_group_size"`
+	TotalDuplicates       int64   `json:"total_duplicates"`
+	DuplicateGroups       int64   `json:"duplicate_groups"`
+	WastedSpace           int64   `json:"wasted_space"`
+	LargestDuplicateGroup int     `json:"largest_duplicate_group"`
+	AverageGroupSize      float64 `json:"average_group_size"`
 }
 
 type DuplicateGroupStats struct {
@@ -394,18 +394,18 @@ type DuplicateGroupStats struct {
 }
 
 type AccessPatterns struct {
-	RecentlyAccessed    int64   `json:"recently_accessed"`
-	NeverAccessed       int64   `json:"never_accessed"`
-	AccessFrequency     []int64 `json:"access_frequency"`     // Daily access counts
-	PopularExtensions   []string `json:"popular_extensions"`
-	PopularDirectories  []string `json:"popular_directories"`
+	RecentlyAccessed   int64    `json:"recently_accessed"`
+	NeverAccessed      int64    `json:"never_accessed"`
+	AccessFrequency    []int64  `json:"access_frequency"` // Daily access counts
+	PopularExtensions  []string `json:"popular_extensions"`
+	PopularDirectories []string `json:"popular_directories"`
 }
 
 type GrowthTrends struct {
-	MonthlyGrowth    []MonthlyGrowth `json:"monthly_growth"`
-	TotalGrowthRate  float64         `json:"total_growth_rate"`
-	FileGrowthRate   float64         `json:"file_growth_rate"`
-	SizeGrowthRate   float64         `json:"size_growth_rate"`
+	MonthlyGrowth   []MonthlyGrowth `json:"monthly_growth"`
+	TotalGrowthRate float64         `json:"total_growth_rate"`
+	FileGrowthRate  float64         `json:"file_growth_rate"`
+	SizeGrowthRate  float64         `json:"size_growth_rate"`
 }
 
 type MonthlyGrowth struct {
@@ -414,19 +414,4 @@ type MonthlyGrowth struct {
 	SizeAdded  int64  `json:"size_added"`
 	TotalFiles int64  `json:"total_files"`
 	TotalSize  int64  `json:"total_size"`
-}
-
-type ScanHistoryItem struct {
-	ID              int64  `json:"id"`
-	SmbRootName     string `json:"smb_root_name"`
-	ScanType        string `json:"scan_type"`
-	Status          string `json:"status"`
-	StartTime       int64  `json:"start_time"`
-	EndTime         *int64 `json:"end_time"`
-	FilesProcessed  int    `json:"files_processed"`
-	FilesAdded      int    `json:"files_added"`
-	FilesUpdated    int    `json:"files_updated"`
-	FilesDeleted    int    `json:"files_deleted"`
-	ErrorCount      int    `json:"error_count"`
-	ErrorMessage    *string `json:"error_message"`
 }

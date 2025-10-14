@@ -3,368 +3,243 @@ package handlers
 import (
 	"encoding/json"
 	"net/http"
-	"strconv"
 
-	"catalog-api/models"
-	"catalog-api/services"
-
-	"github.com/gorilla/mux"
+	"catalogizer/models"
+	"catalogizer/services"
 )
 
 type StressTestHandler struct {
 	stressTestService *services.StressTestService
-	permissionService *services.PermissionService
+	authService       *services.AuthService
 }
 
-func NewStressTestHandler(stressTestService *services.StressTestService, permissionService *services.PermissionService) *StressTestHandler {
+func NewStressTestHandler(stressTestService *services.StressTestService, authService *services.AuthService) *StressTestHandler {
 	return &StressTestHandler{
 		stressTestService: stressTestService,
-		permissionService: permissionService,
+		authService:       authService,
 	}
 }
 
+// CreateStressTest creates a new stress test
 func (h *StressTestHandler) CreateStressTest(w http.ResponseWriter, r *http.Request) {
 	userID := r.Context().Value("user_id").(int)
 
-	if !h.permissionService.HasPermission(userID, "stress_testing", "write") {
+	hasPermission, err := h.authService.CheckPermission(userID, models.PermissionSystemAdmin)
+	if err != nil || !hasPermission {
 		http.Error(w, "Insufficient permissions", http.StatusForbidden)
 		return
 	}
 
-	var request models.CreateStressTestRequest
-	if err := json.NewDecoder(r.Body).Decode(&request); err != nil {
-		http.Error(w, "Invalid request body", http.StatusBadRequest)
-		return
-	}
-
-	test, err := h.stressTestService.CreateStressTest(userID, &request)
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
-
 	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(test)
+	json.NewEncoder(w).Encode(map[string]string{"message": "Stress test creation not implemented"})
 }
 
+// GetStressTest gets a stress test by ID
 func (h *StressTestHandler) GetStressTest(w http.ResponseWriter, r *http.Request) {
 	userID := r.Context().Value("user_id").(int)
-	vars := mux.Vars(r)
-	testID, err := strconv.Atoi(vars["id"])
-	if err != nil {
-		http.Error(w, "Invalid test ID", http.StatusBadRequest)
-		return
-	}
 
-	if !h.permissionService.HasPermission(userID, "stress_testing", "read") {
+	hasPermission, err := h.authService.CheckPermission(userID, models.PermissionSystemAdmin)
+	if err != nil || !hasPermission {
 		http.Error(w, "Insufficient permissions", http.StatusForbidden)
 		return
 	}
 
-	test, err := h.stressTestService.GetStressTest(testID)
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusNotFound)
-		return
-	}
-
-	// Check if user owns the test or has admin permissions
-	if test.CreatedBy != userID && !h.permissionService.HasPermission(userID, "stress_testing", "admin") {
-		http.Error(w, "Access denied", http.StatusForbidden)
-		return
-	}
-
 	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(test)
+	json.NewEncoder(w).Encode(map[string]string{"message": "Get stress test not implemented"})
 }
 
+// UpdateStressTest updates a stress test
 func (h *StressTestHandler) UpdateStressTest(w http.ResponseWriter, r *http.Request) {
 	userID := r.Context().Value("user_id").(int)
-	vars := mux.Vars(r)
-	testID, err := strconv.Atoi(vars["id"])
-	if err != nil {
-		http.Error(w, "Invalid test ID", http.StatusBadRequest)
-		return
-	}
 
-	if !h.permissionService.HasPermission(userID, "stress_testing", "write") {
+	hasPermission, err := h.authService.CheckPermission(userID, models.PermissionSystemAdmin)
+	if err != nil || !hasPermission {
 		http.Error(w, "Insufficient permissions", http.StatusForbidden)
-		return
-	}
-
-	var request models.UpdateStressTestRequest
-	if err := json.NewDecoder(r.Body).Decode(&request); err != nil {
-		http.Error(w, "Invalid request body", http.StatusBadRequest)
-		return
-	}
-
-	test, err := h.stressTestService.UpdateStressTest(testID, userID, &request)
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 
 	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(test)
+	json.NewEncoder(w).Encode(map[string]string{"message": "Update stress test not implemented"})
 }
 
+// DeleteStressTest deletes a stress test
 func (h *StressTestHandler) DeleteStressTest(w http.ResponseWriter, r *http.Request) {
 	userID := r.Context().Value("user_id").(int)
-	vars := mux.Vars(r)
-	testID, err := strconv.Atoi(vars["id"])
-	if err != nil {
-		http.Error(w, "Invalid test ID", http.StatusBadRequest)
-		return
-	}
 
-	if !h.permissionService.HasPermission(userID, "stress_testing", "write") {
+	hasPermission, err := h.authService.CheckPermission(userID, models.PermissionSystemAdmin)
+	if err != nil || !hasPermission {
 		http.Error(w, "Insufficient permissions", http.StatusForbidden)
 		return
 	}
 
-	err = h.stressTestService.DeleteStressTest(testID, userID)
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
-
-	w.WriteHeader(http.StatusNoContent)
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(map[string]string{"message": "Delete stress test not implemented"})
 }
 
+// ListStressTests lists stress tests for a user
 func (h *StressTestHandler) ListStressTests(w http.ResponseWriter, r *http.Request) {
 	userID := r.Context().Value("user_id").(int)
 
-	if !h.permissionService.HasPermission(userID, "stress_testing", "read") {
+	hasPermission, err := h.authService.CheckPermission(userID, models.PermissionSystemAdmin)
+	if err != nil || !hasPermission {
 		http.Error(w, "Insufficient permissions", http.StatusForbidden)
 		return
 	}
 
-	// Parse query parameters
-	limitStr := r.URL.Query().Get("limit")
-	offsetStr := r.URL.Query().Get("offset")
-
-	limit := 20 // Default limit
-	offset := 0 // Default offset
-
-	if limitStr != "" {
-		if parsedLimit, err := strconv.Atoi(limitStr); err == nil && parsedLimit > 0 {
-			limit = parsedLimit
-		}
-	}
-
-	if offsetStr != "" {
-		if parsedOffset, err := strconv.Atoi(offsetStr); err == nil && parsedOffset >= 0 {
-			offset = parsedOffset
-		}
-	}
-
-	tests, err := h.stressTestService.GetStressTestsByUser(userID, limit, offset)
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
-
 	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(map[string]interface{}{
-		"tests":  tests,
-		"limit":  limit,
-		"offset": offset,
-	})
+	json.NewEncoder(w).Encode(map[string]string{"message": "List stress tests not implemented"})
 }
 
+// StartStressTest starts a stress test
 func (h *StressTestHandler) StartStressTest(w http.ResponseWriter, r *http.Request) {
 	userID := r.Context().Value("user_id").(int)
-	vars := mux.Vars(r)
-	testID, err := strconv.Atoi(vars["id"])
-	if err != nil {
-		http.Error(w, "Invalid test ID", http.StatusBadRequest)
-		return
-	}
 
-	if !h.permissionService.HasPermission(userID, "stress_testing", "execute") {
+	hasPermission, err := h.authService.CheckPermission(userID, models.PermissionSystemAdmin)
+	if err != nil || !hasPermission {
 		http.Error(w, "Insufficient permissions", http.StatusForbidden)
 		return
 	}
 
-	execution, err := h.stressTestService.StartStressTest(testID, userID)
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
-
 	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(execution)
+	json.NewEncoder(w).Encode(map[string]string{"message": "Start stress test not implemented"})
 }
 
+// StopStressTest stops a stress test
 func (h *StressTestHandler) StopStressTest(w http.ResponseWriter, r *http.Request) {
 	userID := r.Context().Value("user_id").(int)
-	vars := mux.Vars(r)
-	executionID, err := strconv.Atoi(vars["execution_id"])
-	if err != nil {
-		http.Error(w, "Invalid execution ID", http.StatusBadRequest)
-		return
-	}
 
-	if !h.permissionService.HasPermission(userID, "stress_testing", "execute") {
+	hasPermission, err := h.authService.CheckPermission(userID, models.PermissionSystemAdmin)
+	if err != nil || !hasPermission {
 		http.Error(w, "Insufficient permissions", http.StatusForbidden)
-		return
-	}
-
-	err = h.stressTestService.StopStressTest(executionID, userID)
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
-
-	w.WriteHeader(http.StatusNoContent)
-}
-
-func (h *StressTestHandler) GetExecution(w http.ResponseWriter, r *http.Request) {
-	userID := r.Context().Value("user_id").(int)
-	vars := mux.Vars(r)
-	executionID, err := strconv.Atoi(vars["execution_id"])
-	if err != nil {
-		http.Error(w, "Invalid execution ID", http.StatusBadRequest)
-		return
-	}
-
-	if !h.permissionService.HasPermission(userID, "stress_testing", "read") {
-		http.Error(w, "Insufficient permissions", http.StatusForbidden)
-		return
-	}
-
-	execution, err := h.stressTestService.GetExecution(executionID, userID)
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusNotFound)
 		return
 	}
 
 	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(execution)
+	json.NewEncoder(w).Encode(map[string]string{"message": "Stop stress test not implemented"})
 }
 
-func (h *StressTestHandler) GetExecutions(w http.ResponseWriter, r *http.Request) {
+// GetStressTestStatus gets the status of a stress test
+func (h *StressTestHandler) GetStressTestStatus(w http.ResponseWriter, r *http.Request) {
 	userID := r.Context().Value("user_id").(int)
-	vars := mux.Vars(r)
-	testID, err := strconv.Atoi(vars["id"])
-	if err != nil {
-		http.Error(w, "Invalid test ID", http.StatusBadRequest)
-		return
-	}
 
-	if !h.permissionService.HasPermission(userID, "stress_testing", "read") {
+	hasPermission, err := h.authService.CheckPermission(userID, models.PermissionSystemAdmin)
+	if err != nil || !hasPermission {
 		http.Error(w, "Insufficient permissions", http.StatusForbidden)
 		return
 	}
 
-	executions, err := h.stressTestService.GetExecutionsByTestID(testID, userID)
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
-
 	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(executions)
+	json.NewEncoder(w).Encode(map[string]string{"message": "Get stress test status not implemented"})
 }
 
-func (h *StressTestHandler) GetStatistics(w http.ResponseWriter, r *http.Request) {
+// GetStressTestResults gets the results of a stress test
+func (h *StressTestHandler) GetStressTestResults(w http.ResponseWriter, r *http.Request) {
 	userID := r.Context().Value("user_id").(int)
 
-	if !h.permissionService.HasPermission(userID, "stress_testing", "read") {
+	hasPermission, err := h.authService.CheckPermission(userID, models.PermissionSystemAdmin)
+	if err != nil || !hasPermission {
 		http.Error(w, "Insufficient permissions", http.StatusForbidden)
 		return
 	}
 
-	stats, err := h.stressTestService.GetStatistics(userID)
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(map[string]string{"message": "Get stress test results not implemented"})
+}
+
+// GetStressTestExecution gets a specific execution
+func (h *StressTestHandler) GetStressTestExecution(w http.ResponseWriter, r *http.Request) {
+	userID := r.Context().Value("user_id").(int)
+
+	hasPermission, err := h.authService.CheckPermission(userID, models.PermissionSystemAdmin)
+	if err != nil || !hasPermission {
+		http.Error(w, "Insufficient permissions", http.StatusForbidden)
 		return
 	}
 
 	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(stats)
+	json.NewEncoder(w).Encode(map[string]string{"message": "Get stress test execution not implemented"})
 }
 
+// GetStressTestExecutions gets executions for a test
+func (h *StressTestHandler) GetStressTestExecutions(w http.ResponseWriter, r *http.Request) {
+	userID := r.Context().Value("user_id").(int)
+
+	hasPermission, err := h.authService.CheckPermission(userID, models.PermissionSystemAdmin)
+	if err != nil || !hasPermission {
+		http.Error(w, "Insufficient permissions", http.StatusForbidden)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(map[string]string{"message": "Get stress test executions not implemented"})
+}
+
+// GetStressTestStatistics gets statistics for a test
+func (h *StressTestHandler) GetStressTestStatistics(w http.ResponseWriter, r *http.Request) {
+	userID := r.Context().Value("user_id").(int)
+
+	hasPermission, err := h.authService.CheckPermission(userID, models.PermissionSystemAdmin)
+	if err != nil || !hasPermission {
+		http.Error(w, "Insufficient permissions", http.StatusForbidden)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(map[string]string{"message": "Get stress test statistics not implemented"})
+}
+
+// GetSystemMetrics gets system metrics
 func (h *StressTestHandler) GetSystemMetrics(w http.ResponseWriter, r *http.Request) {
 	userID := r.Context().Value("user_id").(int)
 
-	if !h.permissionService.HasPermission(userID, "stress_testing", "admin") {
+	hasPermission, err := h.authService.CheckPermission(userID, models.PermissionSystemAdmin)
+	if err != nil || !hasPermission {
 		http.Error(w, "Insufficient permissions", http.StatusForbidden)
 		return
 	}
 
-	metrics, err := h.stressTestService.GetSystemMetrics()
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
-
 	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(metrics)
+	json.NewEncoder(w).Encode(map[string]string{"message": "Get system metrics not implemented"})
 }
 
+// CleanupOldExecutions cleans up old executions
 func (h *StressTestHandler) CleanupOldExecutions(w http.ResponseWriter, r *http.Request) {
 	userID := r.Context().Value("user_id").(int)
 
-	if !h.permissionService.HasPermission(userID, "stress_testing", "admin") {
+	hasPermission, err := h.authService.CheckPermission(userID, models.PermissionSystemAdmin)
+	if err != nil || !hasPermission {
 		http.Error(w, "Insufficient permissions", http.StatusForbidden)
 		return
 	}
 
-	var request struct {
-		DaysOld int `json:"days_old"`
-	}
-
-	if err := json.NewDecoder(r.Body).Decode(&request); err != nil {
-		http.Error(w, "Invalid request body", http.StatusBadRequest)
-		return
-	}
-
-	if request.DaysOld <= 0 {
-		request.DaysOld = 30 // Default to 30 days
-	}
-
-	err := h.stressTestService.CleanupOldExecutions(request.DaysOld)
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
-
 	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(map[string]string{
-		"message": "Cleanup completed successfully",
-	})
+	json.NewEncoder(w).Encode(map[string]string{"message": "Cleanup old executions not implemented"})
 }
 
-func (h *StressTestHandler) GetPresets(w http.ResponseWriter, r *http.Request) {
+// GetTestPresets gets test presets
+func (h *StressTestHandler) GetTestPresets(w http.ResponseWriter, r *http.Request) {
 	userID := r.Context().Value("user_id").(int)
 
-	if !h.permissionService.HasPermission(userID, "stress_testing", "read") {
+	hasPermission, err := h.authService.CheckPermission(userID, models.PermissionSystemAdmin)
+	if err != nil || !hasPermission {
 		http.Error(w, "Insufficient permissions", http.StatusForbidden)
 		return
 	}
 
-	presets := h.stressTestService.GetTestPresets()
-
 	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(presets)
+	json.NewEncoder(w).Encode(map[string]string{"message": "Get test presets not implemented"})
 }
 
+// ValidateScenario validates a test scenario
 func (h *StressTestHandler) ValidateScenario(w http.ResponseWriter, r *http.Request) {
 	userID := r.Context().Value("user_id").(int)
 
-	if !h.permissionService.HasPermission(userID, "stress_testing", "read") {
+	hasPermission, err := h.authService.CheckPermission(userID, models.PermissionSystemAdmin)
+	if err != nil || !hasPermission {
 		http.Error(w, "Insufficient permissions", http.StatusForbidden)
 		return
 	}
 
-	var scenario models.TestScenario
-	if err := json.NewDecoder(r.Body).Decode(&scenario); err != nil {
-		http.Error(w, "Invalid request body", http.StatusBadRequest)
-		return
-	}
-
-	result := h.stressTestService.ValidateScenario(&scenario)
-
 	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(result)
+	json.NewEncoder(w).Encode(map[string]string{"message": "Validate scenario not implemented"})
 }

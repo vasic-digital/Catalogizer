@@ -1,7 +1,7 @@
 package handlers
 
 import (
-	"catalog-api/internal/smb"
+	"catalogizer/internal/smb"
 	"errors"
 	"net/http"
 	"time"

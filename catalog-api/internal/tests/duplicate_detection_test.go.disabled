@@ -1,12 +1,14 @@
 package tests
 
 import (
+	"database/sql"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
+	"go.uber.org/zap"
 
-	"catalog-api/internal/models"
-	"catalog-api/internal/services"
+	"catalogizer/internal/models"
+	"catalogizer/internal/services"
 )
 
 func TestDuplicateDetectionService_TextSimilarity(t *testing.T) {
@@ -68,97 +70,97 @@ func TestDuplicateDetectionService_MovieDuplicates(t *testing.T) {
 	service := services.NewDuplicateDetectionService()
 
 	originalMovie := &models.MediaMetadata{
-		Title:       "The Matrix",
-		Year:        "1999",
-		Genre:       "Science Fiction",
-		Director:    "The Wachowskis",
-		Duration:    136,
-		Resolution:  "1080p",
-		FileSize:    2048000000, // 2GB
-		Format:      "mkv",
-		Language:    "English",
-		Subtitles:   []string{"English", "Spanish"},
-		MediaType:   models.MediaTypeVideo,
-		Confidence:  0.95,
+		Title:      "The Matrix",
+		Year:       "1999",
+		Genre:      "Science Fiction",
+		Director:   "The Wachowskis",
+		Duration:   136,
+		Resolution: "1080p",
+		FileSize:   2048000000, // 2GB
+		Format:     "mkv",
+		Language:   "English",
+		Subtitles:  []string{"English", "Spanish"},
+		MediaType:  models.MediaTypeVideo,
+		Confidence: 0.95,
 	}
 
 	testCases := []struct {
-		duplicate        *models.MediaMetadata
-		expectedMatch    bool
+		duplicate          *models.MediaMetadata
+		expectedMatch      bool
 		expectedSimilarity float64
-		name            string
+		name               string
 	}{
 		{
 			duplicate: &models.MediaMetadata{
-				Title:       "The Matrix",
-				Year:        "1999",
-				Genre:       "Science Fiction",
-				Director:    "The Wachowskis",
-				Duration:    136,
-				Resolution:  "720p",
-				FileSize:    1024000000, // 1GB
-				Format:      "avi",
-				Language:    "English",
-				MediaType:   models.MediaTypeVideo,
-				Confidence:  0.92,
+				Title:      "The Matrix",
+				Year:       "1999",
+				Genre:      "Science Fiction",
+				Director:   "The Wachowskis",
+				Duration:   136,
+				Resolution: "720p",
+				FileSize:   1024000000, // 1GB
+				Format:     "avi",
+				Language:   "English",
+				MediaType:  models.MediaTypeVideo,
+				Confidence: 0.92,
 			},
 			expectedMatch:      true,
 			expectedSimilarity: 0.95,
-			name:              "same movie different quality",
+			name:               "same movie different quality",
 		},
 		{
 			duplicate: &models.MediaMetadata{
-				Title:       "Matrix",
-				Year:        "1999",
-				Genre:       "Sci-Fi",
-				Director:    "Wachowski Brothers",
-				Duration:    136,
-				Resolution:  "1080p",
-				FileSize:    2048000000,
-				Format:      "mp4",
-				Language:    "English",
-				MediaType:   models.MediaTypeVideo,
-				Confidence:  0.88,
+				Title:      "Matrix",
+				Year:       "1999",
+				Genre:      "Sci-Fi",
+				Director:   "Wachowski Brothers",
+				Duration:   136,
+				Resolution: "1080p",
+				FileSize:   2048000000,
+				Format:     "mp4",
+				Language:   "English",
+				MediaType:  models.MediaTypeVideo,
+				Confidence: 0.88,
 			},
 			expectedMatch:      true,
 			expectedSimilarity: 0.85,
-			name:              "slight variations in metadata",
+			name:               "slight variations in metadata",
 		},
 		{
 			duplicate: &models.MediaMetadata{
-				Title:       "The Matrix Reloaded",
-				Year:        "2003",
-				Genre:       "Science Fiction",
-				Director:    "The Wachowskis",
-				Duration:    138,
-				Resolution:  "1080p",
-				FileSize:    2148000000,
-				Format:      "mkv",
-				Language:    "English",
-				MediaType:   models.MediaTypeVideo,
-				Confidence:  0.94,
+				Title:      "The Matrix Reloaded",
+				Year:       "2003",
+				Genre:      "Science Fiction",
+				Director:   "The Wachowskis",
+				Duration:   138,
+				Resolution: "1080p",
+				FileSize:   2148000000,
+				Format:     "mkv",
+				Language:   "English",
+				MediaType:  models.MediaTypeVideo,
+				Confidence: 0.94,
 			},
 			expectedMatch:      false,
 			expectedSimilarity: 0.6,
-			name:              "sequel - not duplicate",
+			name:               "sequel - not duplicate",
 		},
 		{
 			duplicate: &models.MediaMetadata{
-				Title:       "Inception",
-				Year:        "2010",
-				Genre:       "Science Fiction",
-				Director:    "Christopher Nolan",
-				Duration:    148,
-				Resolution:  "1080p",
-				FileSize:    2200000000,
-				Format:      "mkv",
-				Language:    "English",
-				MediaType:   models.MediaTypeVideo,
-				Confidence:  0.96,
+				Title:      "Inception",
+				Year:       "2010",
+				Genre:      "Science Fiction",
+				Director:   "Christopher Nolan",
+				Duration:   148,
+				Resolution: "1080p",
+				FileSize:   2200000000,
+				Format:     "mkv",
+				Language:   "English",
+				MediaType:  models.MediaTypeVideo,
+				Confidence: 0.96,
 			},
 			expectedMatch:      false,
 			expectedSimilarity: 0.2,
-			name:              "different movie",
+			name:               "different movie",
 		},
 	}
 
@@ -175,111 +177,111 @@ func TestDuplicateDetectionService_MusicDuplicates(t *testing.T) {
 	service := services.NewDuplicateDetectionService()
 
 	originalSong := &models.MediaMetadata{
-		Title:        "Bohemian Rhapsody",
-		Artist:       "Queen",
-		Album:        "A Night at the Opera",
-		Year:         "1975",
-		Genre:        "Rock",
-		Duration:     355, // 5:55
-		TrackNumber:  11,
-		Bitrate:      320,
-		SampleRate:   44100,
-		FileSize:     14200000, // ~14MB
-		Format:       "mp3",
-		Language:     "English",
-		MediaType:    models.MediaTypeAudio,
-		Confidence:   0.96,
+		Title:       "Bohemian Rhapsody",
+		Artist:      "Queen",
+		Album:       "A Night at the Opera",
+		Year:        "1975",
+		Genre:       "Rock",
+		Duration:    355, // 5:55
+		TrackNumber: 11,
+		Bitrate:     320,
+		SampleRate:  44100,
+		FileSize:    14200000, // ~14MB
+		Format:      "mp3",
+		Language:    "English",
+		MediaType:   models.MediaTypeAudio,
+		Confidence:  0.96,
 	}
 
 	testCases := []struct {
-		duplicate        *models.MediaMetadata
-		expectedMatch    bool
+		duplicate          *models.MediaMetadata
+		expectedMatch      bool
 		expectedSimilarity float64
-		name            string
+		name               string
 	}{
 		{
 			duplicate: &models.MediaMetadata{
-				Title:        "Bohemian Rhapsody",
-				Artist:       "Queen",
-				Album:        "A Night at the Opera",
-				Year:         "1975",
-				Genre:        "Rock",
-				Duration:     355,
-				TrackNumber:  11,
-				Bitrate:      128,
-				SampleRate:   44100,
-				FileSize:     7100000, // ~7MB
-				Format:       "mp3",
-				Language:     "English",
-				MediaType:    models.MediaTypeAudio,
-				Confidence:   0.92,
+				Title:       "Bohemian Rhapsody",
+				Artist:      "Queen",
+				Album:       "A Night at the Opera",
+				Year:        "1975",
+				Genre:       "Rock",
+				Duration:    355,
+				TrackNumber: 11,
+				Bitrate:     128,
+				SampleRate:  44100,
+				FileSize:    7100000, // ~7MB
+				Format:      "mp3",
+				Language:    "English",
+				MediaType:   models.MediaTypeAudio,
+				Confidence:  0.92,
 			},
 			expectedMatch:      true,
 			expectedSimilarity: 0.98,
-			name:              "same song different bitrate",
+			name:               "same song different bitrate",
 		},
 		{
 			duplicate: &models.MediaMetadata{
-				Title:        "Bohemian Rhapsody",
-				Artist:       "Queen",
-				Album:        "Greatest Hits",
-				Year:         "1981",
-				Genre:        "Rock",
-				Duration:     355,
-				TrackNumber:  1,
-				Bitrate:      320,
-				SampleRate:   44100,
-				FileSize:     14200000,
-				Format:       "flac",
-				Language:     "English",
-				MediaType:    models.MediaTypeAudio,
-				Confidence:   0.94,
+				Title:       "Bohemian Rhapsody",
+				Artist:      "Queen",
+				Album:       "Greatest Hits",
+				Year:        "1981",
+				Genre:       "Rock",
+				Duration:    355,
+				TrackNumber: 1,
+				Bitrate:     320,
+				SampleRate:  44100,
+				FileSize:    14200000,
+				Format:      "flac",
+				Language:    "English",
+				MediaType:   models.MediaTypeAudio,
+				Confidence:  0.94,
 			},
 			expectedMatch:      true,
 			expectedSimilarity: 0.92,
-			name:              "same song different album compilation",
+			name:               "same song different album compilation",
 		},
 		{
 			duplicate: &models.MediaMetadata{
-				Title:        "Bohemian Rhapsody",
-				Artist:       "Various Artists",
-				Album:        "Rock Ballads Collection",
-				Year:         "2020",
-				Genre:        "Rock",
-				Duration:     355,
-				TrackNumber:  5,
-				Bitrate:      256,
-				SampleRate:   44100,
-				FileSize:     11400000,
-				Format:       "m4a",
-				Language:     "English",
-				MediaType:    models.MediaTypeAudio,
-				Confidence:   0.85,
+				Title:       "Bohemian Rhapsody",
+				Artist:      "Various Artists",
+				Album:       "Rock Ballads Collection",
+				Year:        "2020",
+				Genre:       "Rock",
+				Duration:    355,
+				TrackNumber: 5,
+				Bitrate:     256,
+				SampleRate:  44100,
+				FileSize:    11400000,
+				Format:      "m4a",
+				Language:    "English",
+				MediaType:   models.MediaTypeAudio,
+				Confidence:  0.85,
 			},
 			expectedMatch:      true,
 			expectedSimilarity: 0.88,
-			name:              "same song in compilation",
+			name:               "same song in compilation",
 		},
 		{
 			duplicate: &models.MediaMetadata{
-				Title:        "We Will Rock You",
-				Artist:       "Queen",
-				Album:        "News of the World",
-				Year:         "1977",
-				Genre:        "Rock",
-				Duration:     122,
-				TrackNumber:  1,
-				Bitrate:      320,
-				SampleRate:   44100,
-				FileSize:     4900000,
-				Format:       "mp3",
-				Language:     "English",
-				MediaType:    models.MediaTypeAudio,
-				Confidence:   0.95,
+				Title:       "We Will Rock You",
+				Artist:      "Queen",
+				Album:       "News of the World",
+				Year:        "1977",
+				Genre:       "Rock",
+				Duration:    122,
+				TrackNumber: 1,
+				Bitrate:     320,
+				SampleRate:  44100,
+				FileSize:    4900000,
+				Format:      "mp3",
+				Language:    "English",
+				MediaType:   models.MediaTypeAudio,
+				Confidence:  0.95,
 			},
 			expectedMatch:      false,
 			expectedSimilarity: 0.4,
-			name:              "different song same artist",
+			name:               "different song same artist",
 		},
 	}
 
@@ -296,101 +298,101 @@ func TestDuplicateDetectionService_BookDuplicates(t *testing.T) {
 	service := services.NewDuplicateDetectionService()
 
 	originalBook := &models.MediaMetadata{
-		Title:       "Harry Potter and the Philosopher's Stone",
-		Author:      "J.K. Rowling",
-		ISBN:        "9780747532699",
-		Year:        "1997",
-		Genre:       "Fantasy",
-		Publisher:   "Bloomsbury",
-		Language:    "English",
-		Pages:       223,
-		FileSize:    5200000, // ~5MB
-		Format:      "pdf",
-		MediaType:   models.MediaTypeBook,
-		Confidence:  0.98,
+		Title:      "Harry Potter and the Philosopher's Stone",
+		Author:     "J.K. Rowling",
+		ISBN:       "9780747532699",
+		Year:       "1997",
+		Genre:      "Fantasy",
+		Publisher:  "Bloomsbury",
+		Language:   "English",
+		Pages:      223,
+		FileSize:   5200000, // ~5MB
+		Format:     "pdf",
+		MediaType:  models.MediaTypeBook,
+		Confidence: 0.98,
 	}
 
 	testCases := []struct {
-		duplicate        *models.MediaMetadata
-		expectedMatch    bool
+		duplicate          *models.MediaMetadata
+		expectedMatch      bool
 		expectedSimilarity float64
-		name            string
+		name               string
 	}{
 		{
 			duplicate: &models.MediaMetadata{
-				Title:       "Harry Potter and the Sorcerer's Stone",
-				Author:      "J.K. Rowling",
-				ISBN:        "9780439708180",
-				Year:        "1998",
-				Genre:       "Fantasy",
-				Publisher:   "Scholastic",
-				Language:    "English",
-				Pages:       309,
-				FileSize:    7800000, // ~7.8MB
-				Format:      "epub",
-				MediaType:   models.MediaTypeBook,
-				Confidence:  0.97,
+				Title:      "Harry Potter and the Sorcerer's Stone",
+				Author:     "J.K. Rowling",
+				ISBN:       "9780439708180",
+				Year:       "1998",
+				Genre:      "Fantasy",
+				Publisher:  "Scholastic",
+				Language:   "English",
+				Pages:      309,
+				FileSize:   7800000, // ~7.8MB
+				Format:     "epub",
+				MediaType:  models.MediaTypeBook,
+				Confidence: 0.97,
 			},
 			expectedMatch:      true,
 			expectedSimilarity: 0.92,
-			name:              "US vs UK edition",
+			name:               "US vs UK edition",
 		},
 		{
 			duplicate: &models.MediaMetadata{
-				Title:       "Harry Potter and the Philosopher's Stone",
-				Author:      "J.K. Rowling",
-				ISBN:        "9780747532699",
-				Year:        "1997",
-				Genre:       "Fantasy",
-				Publisher:   "Bloomsbury",
-				Language:    "English",
-				Pages:       223,
-				FileSize:    12400000, // ~12MB higher quality
-				Format:      "pdf",
-				MediaType:   models.MediaTypeBook,
-				Confidence:  0.98,
+				Title:      "Harry Potter and the Philosopher's Stone",
+				Author:     "J.K. Rowling",
+				ISBN:       "9780747532699",
+				Year:       "1997",
+				Genre:      "Fantasy",
+				Publisher:  "Bloomsbury",
+				Language:   "English",
+				Pages:      223,
+				FileSize:   12400000, // ~12MB higher quality
+				Format:     "pdf",
+				MediaType:  models.MediaTypeBook,
+				Confidence: 0.98,
 			},
 			expectedMatch:      true,
 			expectedSimilarity: 1.0,
-			name:              "same book different file size",
+			name:               "same book different file size",
 		},
 		{
 			duplicate: &models.MediaMetadata{
-				Title:       "Harry Potter y la Piedra Filosofal",
-				Author:      "J.K. Rowling",
-				ISBN:        "9788478884452",
-				Year:        "1999",
-				Genre:       "Fantasía",
-				Publisher:   "Emecé",
-				Language:    "Spanish",
-				Pages:       254,
-				FileSize:    6100000,
-				Format:      "epub",
-				MediaType:   models.MediaTypeBook,
-				Confidence:  0.94,
+				Title:      "Harry Potter y la Piedra Filosofal",
+				Author:     "J.K. Rowling",
+				ISBN:       "9788478884452",
+				Year:       "1999",
+				Genre:      "Fantasía",
+				Publisher:  "Emecé",
+				Language:   "Spanish",
+				Pages:      254,
+				FileSize:   6100000,
+				Format:     "epub",
+				MediaType:  models.MediaTypeBook,
+				Confidence: 0.94,
 			},
 			expectedMatch:      true,
 			expectedSimilarity: 0.85,
-			name:              "Spanish translation",
+			name:               "Spanish translation",
 		},
 		{
 			duplicate: &models.MediaMetadata{
-				Title:       "Harry Potter and the Chamber of Secrets",
-				Author:      "J.K. Rowling",
-				ISBN:        "9780747538493",
-				Year:        "1998",
-				Genre:       "Fantasy",
-				Publisher:   "Bloomsbury",
-				Language:    "English",
-				Pages:       251,
-				FileSize:    5800000,
-				Format:      "pdf",
-				MediaType:   models.MediaTypeBook,
-				Confidence:  0.97,
+				Title:      "Harry Potter and the Chamber of Secrets",
+				Author:     "J.K. Rowling",
+				ISBN:       "9780747538493",
+				Year:       "1998",
+				Genre:      "Fantasy",
+				Publisher:  "Bloomsbury",
+				Language:   "English",
+				Pages:      251,
+				FileSize:   5800000,
+				Format:     "pdf",
+				MediaType:  models.MediaTypeBook,
+				Confidence: 0.97,
 			},
 			expectedMatch:      false,
 			expectedSimilarity: 0.6,
-			name:              "sequel - not duplicate",
+			name:               "sequel - not duplicate",
 		},
 	}
 
@@ -407,78 +409,78 @@ func TestDuplicateDetectionService_GameDuplicates(t *testing.T) {
 	service := services.NewDuplicateDetectionService()
 
 	originalGame := &models.MediaMetadata{
-		Title:       "Cyberpunk 2077",
-		Developer:   "CD Projekt RED",
-		Publisher:   "CD Projekt",
-		Year:        "2020",
-		Genre:       "RPG",
-		Platform:    "PC",
-		Version:     "1.63",
-		Language:    "English",
-		FileSize:    70000000000, // 70GB
-		MediaType:   models.MediaTypeGame,
-		Confidence:  0.96,
+		Title:      "Cyberpunk 2077",
+		Developer:  "CD Projekt RED",
+		Publisher:  "CD Projekt",
+		Year:       "2020",
+		Genre:      "RPG",
+		Platform:   "PC",
+		Version:    "1.63",
+		Language:   "English",
+		FileSize:   70000000000, // 70GB
+		MediaType:  models.MediaTypeGame,
+		Confidence: 0.96,
 	}
 
 	testCases := []struct {
-		duplicate        *models.MediaMetadata
-		expectedMatch    bool
+		duplicate          *models.MediaMetadata
+		expectedMatch      bool
 		expectedSimilarity float64
-		name            string
+		name               string
 	}{
 		{
 			duplicate: &models.MediaMetadata{
-				Title:       "Cyberpunk 2077",
-				Developer:   "CD Projekt RED",
-				Publisher:   "CD Projekt",
-				Year:        "2020",
-				Genre:       "RPG",
-				Platform:    "PS4",
-				Version:     "1.63",
-				Language:    "English",
-				FileSize:    68000000000, // 68GB
-				MediaType:   models.MediaTypeGame,
-				Confidence:  0.95,
+				Title:      "Cyberpunk 2077",
+				Developer:  "CD Projekt RED",
+				Publisher:  "CD Projekt",
+				Year:       "2020",
+				Genre:      "RPG",
+				Platform:   "PS4",
+				Version:    "1.63",
+				Language:   "English",
+				FileSize:   68000000000, // 68GB
+				MediaType:  models.MediaTypeGame,
+				Confidence: 0.95,
 			},
 			expectedMatch:      true,
 			expectedSimilarity: 0.95,
-			name:              "same game different platform",
+			name:               "same game different platform",
 		},
 		{
 			duplicate: &models.MediaMetadata{
-				Title:       "Cyberpunk 2077: Phantom Liberty",
-				Developer:   "CD Projekt RED",
-				Publisher:   "CD Projekt",
-				Year:        "2023",
-				Genre:       "RPG",
-				Platform:    "PC",
-				Version:     "2.0",
-				Language:    "English",
-				FileSize:    75000000000, // 75GB
-				MediaType:   models.MediaTypeGame,
-				Confidence:  0.97,
+				Title:      "Cyberpunk 2077: Phantom Liberty",
+				Developer:  "CD Projekt RED",
+				Publisher:  "CD Projekt",
+				Year:       "2023",
+				Genre:      "RPG",
+				Platform:   "PC",
+				Version:    "2.0",
+				Language:   "English",
+				FileSize:   75000000000, // 75GB
+				MediaType:  models.MediaTypeGame,
+				Confidence: 0.97,
 			},
 			expectedMatch:      false,
 			expectedSimilarity: 0.7,
-			name:              "expansion pack - not duplicate",
+			name:               "expansion pack - not duplicate",
 		},
 		{
 			duplicate: &models.MediaMetadata{
-				Title:       "The Witcher 3: Wild Hunt",
-				Developer:   "CD Projekt RED",
-				Publisher:   "CD Projekt",
-				Year:        "2015",
-				Genre:       "RPG",
-				Platform:    "PC",
-				Version:     "1.32",
-				Language:    "English",
-				FileSize:    50000000000, // 50GB
-				MediaType:   models.MediaTypeGame,
-				Confidence:  0.98,
+				Title:      "The Witcher 3: Wild Hunt",
+				Developer:  "CD Projekt RED",
+				Publisher:  "CD Projekt",
+				Year:       "2015",
+				Genre:      "RPG",
+				Platform:   "PC",
+				Version:    "1.32",
+				Language:   "English",
+				FileSize:   50000000000, // 50GB
+				MediaType:  models.MediaTypeGame,
+				Confidence: 0.98,
 			},
 			expectedMatch:      false,
 			expectedSimilarity: 0.3,
-			name:              "different game same developer",
+			name:               "different game same developer",
 		},
 	}
 

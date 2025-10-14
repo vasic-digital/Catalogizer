@@ -7,6 +7,7 @@ import (
 	"encoding/hex"
 	"errors"
 	"fmt"
+	"strconv"
 	"time"
 
 	"github.com/dgrijalva/jwt-go"
@@ -29,7 +30,7 @@ func NewAuthService(userRepo *repository.UserRepository, jwtSecret string) *Auth
 	return &AuthService{
 		userRepo:   userRepo,
 		jwtSecret:  []byte(jwtSecret),
-		jwtExpiry:  24 * time.Hour,    // 24 hours
+		jwtExpiry:  24 * time.Hour,     // 24 hours
 		refreshExp: 7 * 24 * time.Hour, // 7 days
 	}
 }
@@ -64,7 +65,7 @@ func (s *AuthService) Login(req models.LoginRequest, ipAddress string, userAgent
 
 	// Check if user can login
 	if !user.CanLogin() {
-		if user.IsLocked() {
+		if user.IsLocked {
 			return nil, errors.New("account is temporarily locked")
 		}
 		return nil, errors.New("account is disabled")
@@ -192,7 +193,8 @@ func (s *AuthService) Logout(sessionToken string) error {
 		return err
 	}
 
-	return s.userRepo.DeactivateSession(claims.SessionID)
+	sessionID, _ := strconv.Atoi(claims.SessionID)
+	return s.userRepo.DeactivateSession(sessionID)
 }
 
 // LogoutAll terminates all sessions for a user
@@ -236,7 +238,8 @@ func (s *AuthService) GetCurrentUser(tokenString string) (*models.User, error) {
 	user.Role = role
 
 	// Update session activity
-	s.userRepo.UpdateSessionActivity(claims.SessionID)
+	sessionID, _ := strconv.Atoi(claims.SessionID)
+	s.userRepo.UpdateSessionActivity(sessionID)
 
 	return user, nil
 }

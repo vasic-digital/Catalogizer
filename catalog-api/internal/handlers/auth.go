@@ -1,7 +1,7 @@
 package handlers
 
 import (
-	"catalog-api/internal/auth"
+	"catalogizer/internal/auth"
 	"net/http"
 	"strconv"
 

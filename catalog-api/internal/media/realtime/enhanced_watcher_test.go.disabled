@@ -1,9 +1,9 @@
 package realtime
 
 import (
-	"catalog-api/internal/media/analyzer"
-	"catalog-api/internal/media/database"
-	"catalog-api/internal/services"
+	"catalogizer/internal/media/analyzer"
+	"catalogizer/internal/media/database"
+	"catalogizer/internal/services"
 	"context"
 	"database/sql"
 	"os"
@@ -11,6 +11,7 @@ import (
 	"testing"
 	"time"
 
+	"catalogizer/utils"
 	_ "github.com/mattn/go-sqlite3"
 	"go.uber.org/zap"
 )
@@ -85,7 +86,7 @@ func setupTestComponents(t *testing.T) (*EnhancedChangeWatcher, *database.MediaD
 
 	// Create rename tracker
 	renameTracker := services.NewRenameTracker(mediaDB.GetDB(), logger)
-	if err := renameTracker.initializeTables(); err != nil {
+	if err := renameTracker.InitializeTables(); err != nil {
 		t.Fatalf("Failed to initialize rename tracker tables: %v", err)
 	}
 
@@ -203,7 +204,7 @@ func TestEnhancedChangeWatcher_HandleCreate(t *testing.T) {
 			Timestamp: time.Now(),
 			Size:      1024,
 			IsDir:     false,
-			FileHash:  stringPtr("newhash123"),
+			FileHash:  utils.StringPtr("newhash123"),
 		}
 
 		// This should not detect a move (no pending move exists)
@@ -227,7 +228,7 @@ func TestEnhancedChangeWatcher_HandleCreate(t *testing.T) {
 		oldPath := "/old_file.txt"
 		storageRoot := "test_storage"
 		size := int64(2048)
-		fileHash := stringPtr("movehash456")
+		fileHash := utils.StringPtr("movehash456")
 
 		renameTracker.TrackDelete(ctx, fileID, oldPath, storageRoot, size, fileHash, false)
 
@@ -246,10 +247,10 @@ func TestEnhancedChangeWatcher_HandleCreate(t *testing.T) {
 
 		// Verify the move was detected and processed
 		// The pending move should be removed
-		key := renameTracker.createMoveKey(storageRoot, fileHash, size, false)
-		renameTracker.pendingMovesMu.RLock()
-		_, exists := renameTracker.pendingMoves[key]
-		renameTracker.pendingMovesMu.RUnlock()
+		key := renameTracker.CreateMoveKey(storageRoot, fileHash, size, false)
+		renameTracker.PendingMovesMu.RLock()
+		_, exists := renameTracker.PendingMoves[key]
+		renameTracker.PendingMovesMu.RUnlock()
 
 		if exists {
 			t.Error("Expected pending move to be removed after detection")
@@ -281,7 +282,7 @@ func TestEnhancedChangeWatcher_HandleModify(t *testing.T) {
 			Timestamp: time.Now(),
 			Size:      2048, // Changed size
 			IsDir:     false,
-			FileHash:  stringPtr("newhash789"),
+			FileHash:  utils.StringPtr("newhash789"),
 		}
 
 		watcher.handleModify(ctx, event)
@@ -362,17 +363,17 @@ func TestEnhancedChangeWatcher_HandleDelete(t *testing.T) {
 		Timestamp: time.Now(),
 		Size:      1024,
 		IsDir:     false,
-		FileHash:  stringPtr("deletehash"),
+		FileHash:  utils.StringPtr("deletehash"),
 		FileID:    &fileID,
 	}
 
 	watcher.handleDelete(ctx, event)
 
 	// Verify the deletion was tracked for potential move detection
-	key := renameTracker.createMoveKey("test_storage", event.FileHash, event.Size, false)
-	renameTracker.pendingMovesMu.RLock()
-	pendingMove, exists := renameTracker.pendingMoves[key]
-	renameTracker.pendingMovesMu.RUnlock()
+	key := renameTracker.CreateMoveKey("test_storage", event.FileHash, event.Size, false)
+	renameTracker.PendingMovesMu.RLock()
+	pendingMove, exists := renameTracker.PendingMoves[key]
+	renameTracker.PendingMovesMu.RUnlock()
 
 	if !exists {
 		t.Error("Expected deletion to be tracked as pending move")
@@ -424,7 +425,7 @@ func TestEnhancedChangeWatcher_LogChange(t *testing.T) {
 		Timestamp: time.Now(),
 		Size:      1024,
 		IsDir:     false,
-		FileHash:  stringPtr("loghash123"),
+		FileHash:  utils.StringPtr("loghash123"),
 		FileID:    nil,
 	}
 
@@ -531,8 +532,8 @@ func TestEnhancedChangeWatcher_GetStatistics(t *testing.T) {
 	}
 
 	// Add pending moves to rename tracker
-	renameTracker.TrackDelete(ctx, 1, "/pending1.txt", "test_storage", 1024, stringPtr("hash1"), false)
-	renameTracker.TrackDelete(ctx, 2, "/pending2.txt", "test_storage", 2048, stringPtr("hash2"), false)
+	renameTracker.TrackDelete(ctx, 1, "/pending1.txt", "test_storage", 1024, utils.StringPtr("hash1"), false)
+	renameTracker.TrackDelete(ctx, 2, "/pending2.txt", "test_storage", 2048, utils.StringPtr("hash2"), false)
 
 	// Get statistics
 	stats, err := watcher.GetStatistics(since)
@@ -576,9 +577,4 @@ func TestEnhancedChangeWatcher_GetStatistics(t *testing.T) {
 	if workers, ok := stats["workers"].(int); !ok || workers != 4 {
 		t.Errorf("Expected 4 workers, got %v", stats["workers"])
 	}
-}
-
-// Helper function to create string pointer
-func stringPtr(s string) *string {
-	return &s
 }

@@ -1,8 +1,8 @@
 package integration
 
 import (
-	"catalog-api/internal/services"
-	"catalog-api/tests/mocks"
+	"catalogizer/internal/services"
+	"catalogizer/tests/mocks"
 	"context"
 	"fmt"
 	"io"

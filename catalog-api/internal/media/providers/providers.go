@@ -1,7 +1,7 @@
 package providers
 
 import (
-	"catalog-api/internal/media/models"
+	"catalogizer/internal/media/models"
 	"context"
 	"encoding/json"
 	"fmt"

@@ -6,7 +6,7 @@ import (
 	"fmt"
 	"time"
 
-	"catalog-api/models"
+	"catalogizer/models"
 )
 
 type CrashReportingRepository struct {

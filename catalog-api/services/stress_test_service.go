@@ -2,11 +2,11 @@ package services
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"io"
 	"math/rand"
 	"net/http"
+	"strings"
 	"sync"
 	"sync/atomic"
 	"time"
@@ -16,47 +16,47 @@ import (
 )
 
 type StressTestService struct {
-	stressRepo    *repository.StressTestRepository
-	authService   *AuthService
-	activeTests   map[int]*TestExecution
-	testMutex     sync.RWMutex
+	stressRepo  *repository.StressTestRepository
+	authService *AuthService
+	activeTests map[int]*TestExecution
+	testMutex   sync.RWMutex
 }
 
 type TestExecution struct {
-	Test         *models.StressTest
-	Context      context.Context
-	Cancel       context.CancelFunc
-	Workers      []*TestWorker
-	Metrics      *TestMetrics
-	StartTime    time.Time
-	IsRunning    bool
-	Results      *models.StressTestResult
+	Test      *models.StressTest
+	Context   context.Context
+	Cancel    context.CancelFunc
+	Workers   []*TestWorker
+	Metrics   *TestMetrics
+	StartTime time.Time
+	IsRunning bool
+	Results   *models.StressTestResult
 }
 
 type TestWorker struct {
-	ID       int
-	Context  context.Context
-	Metrics  *WorkerMetrics
+	ID      int
+	Context context.Context
+	Metrics *WorkerMetrics
 }
 
 type TestMetrics struct {
-	TotalRequests    int64
-	SuccessfulReqs   int64
-	FailedRequests   int64
+	TotalRequests     int64
+	SuccessfulReqs    int64
+	FailedRequests    int64
 	TotalResponseTime time.Duration
-	MinResponseTime  time.Duration
-	MaxResponseTime  time.Duration
-	ErrorCounts      map[string]int64
-	StatusCounts     map[int]int64
-	mutex           sync.RWMutex
+	MinResponseTime   time.Duration
+	MaxResponseTime   time.Duration
+	ErrorCounts       map[string]int64
+	StatusCounts      map[int]int64
+	mutex             sync.RWMutex
 }
 
 type WorkerMetrics struct {
-	RequestCount     int64
-	SuccessCount     int64
-	ErrorCount       int64
-	TotalRespTime    time.Duration
-	LastRequestTime  time.Time
+	RequestCount    int64
+	SuccessCount    int64
+	ErrorCount      int64
+	TotalRespTime   time.Duration
+	LastRequestTime time.Time
 }
 
 func NewStressTestService(stressRepo *repository.StressTestRepository, authService *AuthService) *StressTestService {
@@ -140,9 +140,9 @@ func (s *StressTestService) StartStressTest(testID int, userID int) (*models.Str
 	go s.executeStressTest(execution)
 
 	result := &models.StressTestResult{
-		TestID:    testID,
+		TestID:    int64(testID),
 		Status:    models.StressTestStatusRunning,
-		StartedAt: execution.StartTime,
+		StartTime: execution.StartTime,
 	}
 
 	return result, nil
@@ -151,7 +151,7 @@ func (s *StressTestService) StartStressTest(testID int, userID int) (*models.Str
 func (s *StressTestService) executeStressTest(execution *TestExecution) {
 	defer func() {
 		s.testMutex.Lock()
-		delete(s.activeTests, execution.Test.ID)
+		delete(s.activeTests, int(execution.Test.ID))
 		s.testMutex.Unlock()
 
 		if r := recover(); r != nil {
@@ -239,7 +239,7 @@ func (s *StressTestService) executeRequest(execution *TestExecution, worker *Tes
 	s.recordResponse(execution, worker, resp, responseTime)
 }
 
-func (s *StressTestService) selectRandomScenario(scenarios []models.TestScenario) *models.TestScenario {
+func (s *StressTestService) selectRandomScenario(scenarios []models.StressTestScenario) *models.StressTestScenario {
 	if len(scenarios) == 0 {
 		return nil
 	}
@@ -266,10 +266,10 @@ func (s *StressTestService) selectRandomScenario(scenarios []models.TestScenario
 	return &scenarios[0]
 }
 
-func (s *StressTestService) buildRequest(scenario *models.TestScenario) (*http.Request, error) {
+func (s *StressTestService) buildRequest(scenario *models.StressTestScenario) (*http.Request, error) {
 	var body io.Reader
 	if scenario.RequestBody != nil {
-		body = io.Reader(scenario.RequestBody)
+		body = strings.NewReader(*scenario.RequestBody)
 	}
 
 	req, err := http.NewRequest(scenario.Method, scenario.URL, body)
@@ -342,7 +342,7 @@ func (s *StressTestService) handleTestCompletion(execution *TestExecution) {
 	result := s.generateTestResult(execution, models.StressTestStatusCompleted)
 
 	execution.Test.Status = models.StressTestStatusCompleted
-	execution.Test.CompletedAt = &result.CompletedAt
+	execution.Test.CompletedAt = result.CompletedAt
 	s.stressRepo.UpdateTest(execution.Test)
 
 	s.saveTestResult(result)
@@ -353,7 +353,7 @@ func (s *StressTestService) handleTestTimeout(execution *TestExecution) {
 	result := s.generateTestResult(execution, models.StressTestStatusTimeout)
 
 	execution.Test.Status = models.StressTestStatusTimeout
-	execution.Test.CompletedAt = &result.CompletedAt
+	execution.Test.CompletedAt = result.CompletedAt
 	s.stressRepo.UpdateTest(execution.Test)
 
 	s.saveTestResult(result)
@@ -366,7 +366,7 @@ func (s *StressTestService) handleTestError(execution *TestExecution, testError 
 	result.ErrorMessage = &errorMsg
 
 	execution.Test.Status = models.StressTestStatusFailed
-	execution.Test.CompletedAt = &result.CompletedAt
+	execution.Test.CompletedAt = result.CompletedAt
 	s.stressRepo.UpdateTest(execution.Test)
 
 	s.saveTestResult(result)
@@ -394,20 +394,37 @@ func (s *StressTestService) generateTestResult(execution *TestExecution, status 
 	return &models.StressTestResult{
 		TestID:            execution.Test.ID,
 		Status:            status,
-		StartedAt:         execution.StartTime,
-		CompletedAt:       completedAt,
+		StartTime:         execution.StartTime,
+		EndTime:           &completedAt,
+		CompletedAt:       &completedAt,
 		Duration:          duration,
 		TotalRequests:     execution.Metrics.TotalRequests,
 		SuccessfulReqs:    execution.Metrics.SuccessfulReqs,
 		FailedRequests:    execution.Metrics.FailedRequests,
 		RequestsPerSecond: requestsPerSecond,
-		AvgResponseTime:   avgResponseTime,
-		MinResponseTime:   execution.Metrics.MinResponseTime,
-		MaxResponseTime:   execution.Metrics.MaxResponseTime,
+		AvgResponseTime:   float64(avgResponseTime),
+		MinResponseTime:   float64(execution.Metrics.MinResponseTime),
+		MaxResponseTime:   float64(execution.Metrics.MaxResponseTime),
 		ErrorRate:         errorRate,
-		StatusCodeDist:    execution.Metrics.StatusCounts,
-		ErrorDistribution: execution.Metrics.ErrorCounts,
+		StatusCodeDist:    convertIntMapToStringInt(execution.Metrics.StatusCounts),
+		ErrorDistribution: convertInt64MapToInt(execution.Metrics.ErrorCounts),
 	}
+}
+
+func convertIntMapToStringInt(m map[int]int64) map[string]int {
+	result := make(map[string]int)
+	for k, v := range m {
+		result[fmt.Sprintf("%d", k)] = int(v)
+	}
+	return result
+}
+
+func convertInt64MapToInt(m map[string]int64) map[string]int {
+	result := make(map[string]int)
+	for k, v := range m {
+		result[k] = int(v)
+	}
+	return result
 }
 
 func (s *StressTestService) saveTestResult(result *models.StressTestResult) {
@@ -461,10 +478,10 @@ func (s *StressTestService) GetTestStatus(testID int, userID int) (*models.Stres
 	}
 
 	status := &models.StressTestStatus{
-		TestID:    testID,
+		TestID:    int64(testID),
 		Status:    test.Status,
 		CreatedAt: test.CreatedAt,
-		StartedAt: test.StartedAt,
+		StartedAt: *test.StartedAt,
 	}
 
 	s.testMutex.RLock()
@@ -500,7 +517,7 @@ func (s *StressTestService) GetTestResults(testID int, userID int) (*models.Stre
 	return s.stressRepo.GetResult(testID)
 }
 
-func (s *StressTestService) ListUserTests(userID int, limit, offset int) ([]models.StressTest, error) {
+func (s *StressTestService) ListUserTests(userID int, limit, offset int) ([]*models.StressTest, error) {
 	hasPermission, err := s.authService.CheckPermission(userID, models.PermissionViewAnalytics)
 	if err != nil {
 		return nil, fmt.Errorf("failed to check permissions: %w", err)
@@ -556,10 +573,10 @@ func (s *StressTestService) GenerateLoadReport(testID int, userID int) (*models.
 	}
 
 	report := &models.LoadTestReport{
-		Test:         test,
-		Result:       result,
-		GeneratedAt:  time.Now(),
-		Summary:      s.generateReportSummary(test, result),
+		Test:            test,
+		Result:          result,
+		GeneratedAt:     time.Now(),
+		Summary:         s.generateReportSummary(test, result),
 		Recommendations: s.generateRecommendations(result),
 	}
 
@@ -569,7 +586,7 @@ func (s *StressTestService) GenerateLoadReport(testID int, userID int) (*models.
 func (s *StressTestService) generateReportSummary(test *models.StressTest, result *models.StressTestResult) string {
 	return fmt.Sprintf(
 		"Load test completed with %d concurrent users over %d seconds. "+
-		"Total requests: %d, Success rate: %.2f%%, Average response time: %v",
+			"Total requests: %d, Success rate: %.2f%%, Average response time: %v",
 		test.ConcurrentUsers,
 		test.Duration,
 		result.TotalRequests,
@@ -585,7 +602,7 @@ func (s *StressTestService) generateRecommendations(result *models.StressTestRes
 		recommendations = append(recommendations, "High error rate detected. Consider investigating server capacity and error handling.")
 	}
 
-	if result.AvgResponseTime > 2*time.Second {
+	if result.AvgResponseTime > float64(2*time.Second) {
 		recommendations = append(recommendations, "Average response time is high. Consider optimizing database queries and caching.")
 	}
 

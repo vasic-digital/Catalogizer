@@ -10,6 +10,7 @@ The Catalogizer QA system has been configured for **manual testing** instead of 
 - ✅ **Manual scripts:** Ready for on-demand testing
 - ✅ **CI/CD pipeline:** Available for GitHub Actions (optional)
 - ✅ **Comprehensive reports:** Generated with each test run
+- 📊 **Unit Test Results:** See TEST_RESULTS.md for latest execution summary
 
 ## 🚀 Quick Start Commands
 

@@ -22,11 +22,11 @@ type SMBShareInfo struct {
 
 // SMBFileEntry represents a file or directory in an SMB share
 type SMBFileEntry struct {
-	Name        string    `json:"name"`
-	Path        string    `json:"path"`
-	IsDirectory bool      `json:"is_directory"`
-	Size        *int64    `json:"size"`
-	Modified    *string   `json:"modified"`
+	Name        string  `json:"name"`
+	Path        string  `json:"path"`
+	IsDirectory bool    `json:"is_directory"`
+	Size        *int64  `json:"size"`
+	Modified    *string `json:"modified"`
 }
 
 // SMBConnectionConfig represents SMB connection parameters
@@ -41,7 +41,7 @@ type SMBConnectionConfig struct {
 
 // SMBDiscoveryService provides SMB share discovery and testing
 type SMBDiscoveryService struct {
-	logger *zap.Logger
+	logger  *zap.Logger
 	timeout time.Duration
 }
 
@@ -162,6 +162,11 @@ func (s *SMBDiscoveryService) getCommonShares(ctx context.Context, host, usernam
 		}) {
 			accessibleShares = append(accessibleShares, share)
 		}
+	}
+
+	// If no shares are accessible (e.g., host unreachable), return common shares as suggestions
+	if len(accessibleShares) == 0 {
+		return commonShares
 	}
 
 	return accessibleShares

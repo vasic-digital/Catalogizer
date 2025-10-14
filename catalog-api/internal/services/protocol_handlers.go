@@ -1,7 +1,7 @@
 package services
 
 import (
-	"catalog-api/filesystem"
+	"catalogizer/filesystem"
 	"context"
 	"crypto/md5"
 	"fmt"

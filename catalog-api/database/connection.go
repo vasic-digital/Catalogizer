@@ -6,7 +6,7 @@ import (
 	"fmt"
 	"time"
 
-	"catalog-api/config"
+	"catalogizer/config"
 	_ "github.com/mattn/go-sqlite3"
 )
 

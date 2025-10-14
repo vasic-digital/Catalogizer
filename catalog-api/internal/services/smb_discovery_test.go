@@ -5,6 +5,7 @@ import (
 	"testing"
 	"time"
 
+	"catalogizer/utils"
 	"go.uber.org/zap"
 )
 
@@ -88,7 +89,7 @@ func TestSMBShareInfo_Structure(t *testing.T) {
 		ShareName:   "testshare",
 		Path:        "\\\\testhost\\testshare",
 		Writable:    false,
-		Description: stringPtr("Test description"),
+		Description: utils.StringPtr("Test description"),
 	}
 
 	if share.Host != "testhost" {
@@ -127,9 +128,4 @@ func TestSMBFileEntry_Structure(t *testing.T) {
 	if entry.Modified == nil || *entry.Modified != "2024-01-01 12:00:00" {
 		t.Error("Expected modified time to match")
 	}
-}
-
-// Helper function for testing
-func stringPtr(s string) *string {
-	return &s
 }

@@ -45,3 +45,8 @@ func SendSuccessResponse(c *gin.Context, statusCode int, data interface{}, messa
 
 	c.JSON(statusCode, response)
 }
+
+// StringPtr returns a pointer to the given string
+func StringPtr(s string) *string {
+	return &s
+}

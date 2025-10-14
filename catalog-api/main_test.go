@@ -1,20 +1,18 @@
 package main
 
 import (
-	"bytes"
 	"database/sql"
 	"encoding/json"
 	"net/http"
 	"net/http/httptest"
-	"os"
 	"testing"
 	"time"
 
 	"github.com/gin-gonic/gin"
+	_ "github.com/mattn/go-sqlite3"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
 	"go.uber.org/zap"
-	_ "github.com/mattn/go-sqlite3"
 )
 
 type MainTestSuite struct {
@@ -161,7 +159,7 @@ func (suite *MainTestSuite) search(c *gin.Context) {
 func (suite *MainTestSuite) getStatsSummary(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{
 		"total_files": 2,
-		"total_size": 6000000,
+		"total_size":  6000000,
 		"media_types": gin.H{
 			"movie": 1,
 			"music": 1,

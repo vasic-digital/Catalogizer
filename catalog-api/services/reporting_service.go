@@ -91,18 +91,18 @@ func (s *ReportingService) generateUserAnalyticsData(params map[string]interface
 	}
 
 	analytics := &models.UserAnalyticsReport{
-		User:                user,
-		StartDate:           startDate,
-		EndDate:             endDate,
-		TotalMediaAccesses:  len(mediaAccessLogs),
-		TotalEvents:         len(events),
-		MediaAccessLogs:     mediaAccessLogs,
-		Events:              events,
-		AccessPatterns:      s.analyzeUserAccessPatterns(mediaAccessLogs),
-		DeviceUsage:         s.analyzeUserDeviceUsage(mediaAccessLogs),
-		LocationAnalysis:    s.analyzeUserLocations(mediaAccessLogs),
-		TimePatterns:        s.analyzeUserTimePatterns(mediaAccessLogs),
-		PopularContent:      s.analyzeUserPopularContent(mediaAccessLogs),
+		User:               user,
+		StartDate:          startDate,
+		EndDate:            endDate,
+		TotalMediaAccesses: len(mediaAccessLogs),
+		TotalEvents:        len(events),
+		MediaAccessLogs:    mediaAccessLogs,
+		Events:             events,
+		AccessPatterns:     s.analyzeUserAccessPatterns(mediaAccessLogs),
+		DeviceUsage:        s.analyzeUserDeviceUsage(mediaAccessLogs),
+		LocationAnalysis:   s.analyzeUserLocations(mediaAccessLogs),
+		TimePatterns:       s.analyzeUserTimePatterns(mediaAccessLogs),
+		PopularContent:     s.analyzeUserPopularContent(mediaAccessLogs),
 	}
 
 	return analytics, nil
@@ -145,17 +145,17 @@ func (s *ReportingService) generateSystemOverviewData(params map[string]interfac
 	}
 
 	overview := &models.SystemOverviewReport{
-		StartDate:           startDate,
-		EndDate:             endDate,
-		TotalUsers:          totalUsers,
-		ActiveUsers:         activeUsers,
-		TotalMediaAccesses:  totalMediaAccesses,
-		TotalEvents:         totalEvents,
-		TopAccessedMedia:    topMedia,
-		UserGrowthData:      userGrowth,
-		SystemHealth:        s.calculateSystemHealth(totalUsers, activeUsers, totalMediaAccesses),
-		UsageStatistics:     s.calculateUsageStatistics(startDate, endDate),
-		PerformanceMetrics:  s.calculatePerformanceMetrics(startDate, endDate),
+		StartDate:          startDate,
+		EndDate:            endDate,
+		TotalUsers:         totalUsers,
+		ActiveUsers:        activeUsers,
+		TotalMediaAccesses: totalMediaAccesses,
+		TotalEvents:        totalEvents,
+		TopAccessedMedia:   topMedia,
+		UserGrowthData:     userGrowth,
+		SystemHealth:       s.calculateSystemHealth(totalUsers, activeUsers, totalMediaAccesses),
+		UsageStatistics:    s.calculateUsageStatistics(startDate, endDate),
+		PerformanceMetrics: s.calculatePerformanceMetrics(startDate, endDate),
 	}
 
 	return overview, nil
@@ -181,17 +181,17 @@ func (s *ReportingService) generateMediaAnalyticsData(params map[string]interfac
 	filteredLogs := s.filterLogsByDateRange(accessLogs, startDate, endDate)
 
 	analytics := &models.MediaAnalyticsReport{
-		MediaID:             mediaID,
-		StartDate:           startDate,
-		EndDate:             endDate,
-		TotalAccesses:       len(filteredLogs),
-		UniqueUsers:         s.countUniqueUsers(filteredLogs),
-		AccessLogs:          filteredLogs,
-		AccessPatterns:      s.analyzeAccessPatterns(filteredLogs),
-		UserEngagement:      s.analyzeUserEngagement(filteredLogs),
-		GeographicData:      s.analyzeGeographicDistribution(filteredLogs),
-		DeviceAnalysis:      s.analyzeDeviceDistribution(filteredLogs),
-		TimeAnalysis:        s.analyzeTimeDistribution(filteredLogs),
+		MediaID:        mediaID,
+		StartDate:      startDate,
+		EndDate:        endDate,
+		TotalAccesses:  len(filteredLogs),
+		UniqueUsers:    s.countUniqueUsers(filteredLogs),
+		AccessLogs:     filteredLogs,
+		AccessPatterns: s.analyzeAccessPatterns(filteredLogs),
+		UserEngagement: s.analyzeUserEngagement(filteredLogs),
+		GeographicData: s.analyzeGeographicDistribution(filteredLogs),
+		DeviceAnalysis: s.analyzeDeviceDistribution(filteredLogs),
+		TimeAnalysis:   s.analyzeTimeDistribution(filteredLogs),
 	}
 
 	return analytics, nil
@@ -221,24 +221,24 @@ func (s *ReportingService) generateUserActivityData(params map[string]interface{
 		}
 
 		activity := models.UserActivitySummary{
-			User:               user,
-			TotalAccesses:      len(logs),
-			LastActivity:       s.getLastActivityTime(logs),
-			MostActiveHour:     s.getMostActiveHour(logs),
-			PreferredDevices:   s.getPreferredDevices(logs),
-			AccessedLocations:  s.getAccessedLocations(logs),
+			User:              user,
+			TotalAccesses:     len(logs),
+			LastActivity:      s.getLastActivityTime(logs),
+			MostActiveHour:    s.getMostActiveHour(logs),
+			PreferredDevices:  s.getPreferredDevices(logs),
+			AccessedLocations: s.getAccessedLocations(logs),
 		}
 
 		userActivities = append(userActivities, activity)
 	}
 
 	report := &models.UserActivityReport{
-		StartDate:       startDate,
-		EndDate:         endDate,
-		UserActivities:  userActivities,
-		TotalUsers:      len(userActivities),
-		TotalAccesses:   len(allLogs),
-		Summary:         s.generateActivitySummary(userActivities),
+		StartDate:      startDate,
+		EndDate:        endDate,
+		UserActivities: userActivities,
+		TotalUsers:     len(userActivities),
+		TotalAccesses:  len(allLogs),
+		Summary:        s.generateActivitySummary(userActivities),
 	}
 
 	return report, nil
@@ -310,7 +310,11 @@ func (s *ReportingService) formatAsMarkdown(data interface{}, reportType string)
 	case "user_analytics":
 		report := data.(*models.UserAnalyticsReport)
 		buffer.WriteString(fmt.Sprintf("# User Analytics Report\n\n"))
-		buffer.WriteString(fmt.Sprintf("**User:** %s (%s)\n", report.User.DisplayName, report.User.Username))
+		displayName := ""
+		if report.User.DisplayName != nil {
+			displayName = *report.User.DisplayName
+		}
+		buffer.WriteString(fmt.Sprintf("**User:** %s (%s)\n", displayName, report.User.Username))
 		buffer.WriteString(fmt.Sprintf("**Period:** %s to %s\n\n", report.StartDate.Format("2006-01-02"), report.EndDate.Format("2006-01-02")))
 		buffer.WriteString(fmt.Sprintf("## Summary\n\n"))
 		buffer.WriteString(fmt.Sprintf("- Total Media Accesses: %d\n", report.TotalMediaAccesses))
@@ -374,6 +378,10 @@ func (s *ReportingService) formatAsHTML(data interface{}, reportType string) ([]
 	switch reportType {
 	case "user_analytics":
 		report := data.(*models.UserAnalyticsReport)
+		displayNameHTML := ""
+		if report.User.DisplayName != nil {
+			displayNameHTML = *report.User.DisplayName
+		}
 		content = fmt.Sprintf(`
 			<div class="section">
 				<h2>User Information</h2>
@@ -386,7 +394,7 @@ func (s *ReportingService) formatAsHTML(data interface{}, reportType string) ([]
 				<div class="metric">Total Media Accesses: %d</div>
 				<div class="metric">Total Events: %d</div>
 			</div>`,
-			report.User.Username, report.User.DisplayName, report.User.Email,
+			report.User.Username, displayNameHTML, report.User.Email,
 			report.TotalMediaAccesses, report.TotalEvents)
 
 	case "system_overview":
@@ -482,7 +490,11 @@ func (s *ReportingService) analyzeUserDeviceUsage(logs []models.MediaAccessLog) 
 
 	for _, log := range logs {
 		if log.DeviceInfo != nil {
-			device := fmt.Sprintf("%s %s", log.DeviceInfo.Platform, log.DeviceInfo.DeviceModel)
+			deviceModel := ""
+			if log.DeviceInfo.DeviceModel != nil {
+				deviceModel = *log.DeviceInfo.DeviceModel
+			}
+			device := fmt.Sprintf("%s %s", log.DeviceInfo.Platform, deviceModel)
 			deviceUsage[device]++
 		}
 	}
@@ -606,8 +618,8 @@ func (s *ReportingService) analyzeAccessPatterns(logs []models.MediaAccessLog) m
 func (s *ReportingService) analyzeUserEngagement(logs []models.MediaAccessLog) models.UserEngagement {
 	return models.UserEngagement{
 		AverageSessionTime: 15.5,
-		ReturnRate:        85.2,
-		InteractionDepth:  3.4,
+		ReturnRate:         85.2,
+		InteractionDepth:   3.4,
 	}
 }
 
@@ -714,20 +726,20 @@ func (s *ReportingService) generateActivitySummary(activities []models.UserActiv
 	avgAccesses := float64(totalAccesses) / float64(len(activities))
 
 	return models.ActivitySummary{
-		TotalUsers:           len(activities),
-		TotalAccesses:        totalAccesses,
-		AverageAccesses:      avgAccesses,
-		MostActiveUsers:      len(activities), // Simplified
-		LeastActiveUsers:     0,               // Simplified
+		TotalUsers:       len(activities),
+		TotalAccesses:    totalAccesses,
+		AverageAccesses:  avgAccesses,
+		MostActiveUsers:  len(activities), // Simplified
+		LeastActiveUsers: 0,               // Simplified
 	}
 }
 
 func (s *ReportingService) calculateSecurityMetrics(startDate, endDate time.Time) models.SecurityMetrics {
 	// Placeholder implementation
 	return models.SecurityMetrics{
-		ThreatLevel:      "low",
+		ThreatLevel:        "low",
 		VulnerabilityCount: 0,
-		SecurityScore:    95.5,
+		SecurityScore:      95.5,
 	}
 }
 
@@ -758,9 +770,9 @@ func (s *ReportingService) calculateResponseTimes(startDate, endDate time.Time) 
 func (s *ReportingService) calculateSystemLoad(startDate, endDate time.Time) models.SystemLoad {
 	// Placeholder implementation
 	return models.SystemLoad{
-		CPU:    45.2,
-		Memory: 68.5,
-		Disk:   32.1,
+		CPU:     45.2,
+		Memory:  68.5,
+		Disk:    32.1,
 		Network: 15.8,
 	}
 }
@@ -768,9 +780,9 @@ func (s *ReportingService) calculateSystemLoad(startDate, endDate time.Time) mod
 func (s *ReportingService) calculateErrorRates(startDate, endDate time.Time) models.ErrorRates {
 	// Placeholder implementation
 	return models.ErrorRates{
-		HTTP4xx: 2.1,
-		HTTP5xx: 0.3,
+		HTTP4xx:  2.1,
+		HTTP5xx:  0.3,
 		Timeouts: 0.1,
-		Total:   2.5,
+		Total:    2.5,
 	}
 }

@@ -1,9 +1,9 @@
 package handlers
 
 import (
-	"catalog-api/internal/media/analyzer"
-	"catalog-api/internal/media/database"
-	"catalog-api/internal/media/models"
+	"catalogizer/internal/media/analyzer"
+	"catalogizer/internal/media/database"
+	"catalogizer/internal/media/models"
 	"database/sql"
 	"encoding/json"
 	"net/http"

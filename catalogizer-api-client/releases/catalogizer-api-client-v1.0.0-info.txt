@@ -1,0 +1,92 @@
+Catalogizer API Client Library Release Information
+==================================================
+
+Version: 1.0.0
+Build Date: 2025-10-14 06:51:04 UTC
+Package: @catalogizer/api-client
+
+Files:
+- catalogizer-api-client-v1.0.0.tgz (NPM package)
+
+Installation:
+------------
+
+NPM:
+npm install @catalogizer/api-client@1.0.0
+
+Yarn:
+yarn add @catalogizer/api-client@1.0.0
+
+PNPM:
+pnpm add @catalogizer/api-client@1.0.0
+
+Local Installation (from tarball):
+npm install ./catalogizer-api-client-v1.0.0.tgz
+
+Features:
+---------
+- Full TypeScript support with type definitions
+- Cross-platform compatibility (Node.js, Browser, React Native)
+- Comprehensive API coverage
+- WebSocket support for real-time updates
+- Automatic retry logic with exponential backoff
+- Built-in error handling with custom error types
+- Authentication management
+- Media search and streaming
+- SMB configuration and management
+- Offline operation queueing
+
+Supported Platforms:
+-------------------
+- Node.js 16+
+- Modern browsers (ES2020)
+- React Native
+- Electron
+- Tauri
+
+API Coverage:
+------------
+- Authentication (login, logout, registration, profile management)
+- Media management (search, streaming, downloads, progress tracking)
+- SMB/CIFS integration (configuration, mounting, scanning)
+- Real-time updates via WebSocket
+- User preferences and settings
+
+Usage Example:
+--------------
+
+import CatalogizerClient from '@catalogizer/api-client';
+
+const client = new CatalogizerClient({
+  baseURL: 'http://localhost:8080',
+  enableWebSocket: true
+});
+
+// Connect and authenticate
+await client.connect({
+  username: 'user',
+  password: 'password'
+});
+
+// Search media
+const results = await client.media.search({
+  query: 'action movies',
+  limit: 20
+});
+
+Dependencies:
+------------
+- axios: HTTP client
+- ws: WebSocket client (Node.js)
+
+Development Dependencies:
+------------------------
+- TypeScript
+- ESLint
+- Jest
+- Node.js types
+
+Changelog:
+----------
+See CHANGELOG.md for detailed changes in this version.
+

@@ -1,10 +1,10 @@
 package main
 
 import (
-	"catalog-api/internal/config"
-	"catalog-api/internal/handlers"
-	"catalog-api/internal/middleware"
-	"catalog-api/internal/services"
+	"catalogizer/internal/config"
+	"catalogizer/internal/handlers"
+	"catalogizer/internal/middleware"
+	"catalogizer/internal/services"
 	"context"
 	"database/sql"
 	"log"

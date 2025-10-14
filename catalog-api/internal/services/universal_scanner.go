@@ -1,8 +1,8 @@
 package services
 
 import (
-	"catalog-api/filesystem"
-	"catalog-api/models"
+	"catalogizer/filesystem"
+	"catalogizer/models"
 	"context"
 	"database/sql"
 	"fmt"

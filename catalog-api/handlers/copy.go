@@ -7,13 +7,12 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
-	"strconv"
 	"time"
 
-	"catalog-api/models"
-	"catalog-api/repository"
-	"catalog-api/smb"
-	"catalog-api/utils"
+	"catalogizer/models"
+	"catalogizer/repository"
+	"catalogizer/smb"
+	"catalogizer/utils"
 
 	"github.com/gin-gonic/gin"
 )
@@ -42,22 +41,22 @@ func NewCopyHandler(fileRepo *repository.FileRepository, tempDir string) *CopyHa
 // @Produce json
 // @Param body body SmbCopyRequest true "Copy request"
 // @Success 200 {object} CopyResponse
-// @Failure 400 {object} utils.ErrorResponse
-// @Failure 404 {object} utils.ErrorResponse
-// @Failure 500 {object} utils.ErrorResponse
+// @Failure 400 {object} utils.SendErrorResponse
+// @Failure 404 {object} utils.SendErrorResponse
+// @Failure 500 {object} utils.SendErrorResponse
 // @Router /api/copy/smb [post]
 func (h *CopyHandler) CopyToSmb(c *gin.Context) {
 	ctx := c.Request.Context()
 
 	var req SmbCopyRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
-		utils.ErrorResponse(c, http.StatusBadRequest, "Invalid request body", err)
+		utils.SendErrorResponse(c, http.StatusBadRequest, "Invalid request body", err)
 		return
 	}
 
 	// Validate request
 	if err := h.validateSmbCopyRequest(&req); err != nil {
-		utils.ErrorResponse(c, http.StatusBadRequest, "Invalid copy request", err)
+		utils.SendErrorResponse(c, http.StatusBadRequest, "Invalid copy request", err)
 		return
 	}
 
@@ -65,17 +64,17 @@ func (h *CopyHandler) CopyToSmb(c *gin.Context) {
 	sourceFile, err := h.fileRepo.GetFileByID(ctx, req.SourceFileID)
 	if err != nil {
 		if err.Error() == "file not found" {
-			utils.ErrorResponse(c, http.StatusNotFound, "Source file not found", err)
+			utils.SendErrorResponse(c, http.StatusNotFound, "Source file not found", err)
 			return
 		}
-		utils.ErrorResponse(c, http.StatusInternalServerError, "Failed to get source file info", err)
+		utils.SendErrorResponse(c, http.StatusInternalServerError, "Failed to get source file info", err)
 		return
 	}
 
 	// Get storage roots
 	storageRoots, err := h.fileRepo.GetStorageRoots(ctx)
 	if err != nil {
-		utils.ErrorResponse(c, http.StatusInternalServerError, "Failed to get storage roots", err)
+		utils.SendErrorResponse(c, http.StatusInternalServerError, "Failed to get storage roots", err)
 		return
 	}
 
@@ -85,30 +84,30 @@ func (h *CopyHandler) CopyToSmb(c *gin.Context) {
 		if root.ID == sourceFile.StorageRootID {
 			sourceStorageRoot = &root
 		}
-		if root.Name == req.DestinationStorageRoot {
+		if root.Name == req.DestinationSmbRoot {
 			destStorageRoot = &root
 		}
 	}
 
 	if sourceStorageRoot == nil {
-		utils.ErrorResponse(c, http.StatusNotFound, "Source storage root not found", nil)
+		utils.SendErrorResponse(c, http.StatusNotFound, "Source storage root not found", nil)
 		return
 	}
 	if destStorageRoot == nil {
-		utils.ErrorResponse(c, http.StatusNotFound, "Destination storage root not found", nil)
+		utils.SendErrorResponse(c, http.StatusNotFound, "Destination storage root not found", nil)
 		return
 	}
 
 	// Create SMB connections
-	sourceSmbClient, err := h.createSmbClient(sourceSmbRoot)
+	sourceSmbClient, err := h.createSmbClient(sourceStorageRoot)
 	if err != nil {
-		utils.ErrorResponse(c, http.StatusInternalServerError, "Failed to connect to source SMB", err)
+		utils.SendErrorResponse(c, http.StatusInternalServerError, "Failed to connect to source SMB", err)
 		return
 	}
 
-	destSmbClient, err := h.createSmbClient(destSmbRoot)
+	destSmbClient, err := h.createSmbClient(destStorageRoot)
 	if err != nil {
-		utils.ErrorResponse(c, http.StatusInternalServerError, "Failed to connect to destination SMB", err)
+		utils.SendErrorResponse(c, http.StatusInternalServerError, "Failed to connect to destination SMB", err)
 		return
 	}
 
@@ -123,7 +122,7 @@ func (h *CopyHandler) CopyToSmb(c *gin.Context) {
 	}
 
 	if err != nil {
-		utils.ErrorResponse(c, http.StatusInternalServerError, "Copy operation failed", err)
+		utils.SendErrorResponse(c, http.StatusInternalServerError, "Copy operation failed", err)
 		return
 	}
 
@@ -144,22 +143,22 @@ func (h *CopyHandler) CopyToSmb(c *gin.Context) {
 // @Produce json
 // @Param body body LocalCopyRequest true "Copy request"
 // @Success 200 {object} CopyResponse
-// @Failure 400 {object} utils.ErrorResponse
-// @Failure 404 {object} utils.ErrorResponse
-// @Failure 500 {object} utils.ErrorResponse
+// @Failure 400 {object} utils.SendErrorResponse
+// @Failure 404 {object} utils.SendErrorResponse
+// @Failure 500 {object} utils.SendErrorResponse
 // @Router /api/copy/local [post]
 func (h *CopyHandler) CopyToLocal(c *gin.Context) {
 	ctx := c.Request.Context()
 
 	var req LocalCopyRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
-		utils.ErrorResponse(c, http.StatusBadRequest, "Invalid request body", err)
+		utils.SendErrorResponse(c, http.StatusBadRequest, "Invalid request body", err)
 		return
 	}
 
 	// Validate request
 	if err := h.validateLocalCopyRequest(&req); err != nil {
-		utils.ErrorResponse(c, http.StatusBadRequest, "Invalid copy request", err)
+		utils.SendErrorResponse(c, http.StatusBadRequest, "Invalid copy request", err)
 		return
 	}
 
@@ -167,38 +166,38 @@ func (h *CopyHandler) CopyToLocal(c *gin.Context) {
 	sourceFile, err := h.fileRepo.GetFileByID(ctx, req.SourceFileID)
 	if err != nil {
 		if err.Error() == "file not found" {
-			utils.ErrorResponse(c, http.StatusNotFound, "Source file not found", err)
+			utils.SendErrorResponse(c, http.StatusNotFound, "Source file not found", err)
 			return
 		}
-		utils.ErrorResponse(c, http.StatusInternalServerError, "Failed to get source file info", err)
+		utils.SendErrorResponse(c, http.StatusInternalServerError, "Failed to get source file info", err)
 		return
 	}
 
 	// Get SMB roots
-	smbRoots, err := h.fileRepo.GetSmbRoots(ctx)
+	smbRoots, err := h.fileRepo.GetStorageRoots(ctx)
 	if err != nil {
-		utils.ErrorResponse(c, http.StatusInternalServerError, "Failed to get SMB roots", err)
+		utils.SendErrorResponse(c, http.StatusInternalServerError, "Failed to get SMB roots", err)
 		return
 	}
 
 	// Find source SMB root
-	var sourceSmbRoot *models.SmbRoot
+	var sourceSmbRoot *models.StorageRoot
 	for _, root := range smbRoots {
-		if root.ID == sourceFile.SmbRootID {
+		if root.ID == sourceFile.StorageRootID {
 			sourceSmbRoot = &root
 			break
 		}
 	}
 
 	if sourceSmbRoot == nil {
-		utils.ErrorResponse(c, http.StatusNotFound, "Source SMB root not found", nil)
+		utils.SendErrorResponse(c, http.StatusNotFound, "Source SMB root not found", nil)
 		return
 	}
 
 	// Create SMB connection
 	sourceSmbClient, err := h.createSmbClient(sourceSmbRoot)
 	if err != nil {
-		utils.ErrorResponse(c, http.StatusInternalServerError, "Failed to connect to source SMB", err)
+		utils.SendErrorResponse(c, http.StatusInternalServerError, "Failed to connect to source SMB", err)
 		return
 	}
 
@@ -213,7 +212,7 @@ func (h *CopyHandler) CopyToLocal(c *gin.Context) {
 	}
 
 	if err != nil {
-		utils.ErrorResponse(c, http.StatusInternalServerError, "Copy operation failed", err)
+		utils.SendErrorResponse(c, http.StatusInternalServerError, "Copy operation failed", err)
 		return
 	}
 
@@ -237,8 +236,8 @@ func (h *CopyHandler) CopyToLocal(c *gin.Context) {
 // @Param overwrite_existing formData bool false "Overwrite existing files" default(false)
 // @Param file formData file true "File to upload"
 // @Success 200 {object} CopyResponse
-// @Failure 400 {object} utils.ErrorResponse
-// @Failure 500 {object} utils.ErrorResponse
+// @Failure 400 {object} utils.SendErrorResponse
+// @Failure 500 {object} utils.SendErrorResponse
 // @Router /api/copy/upload [post]
 func (h *CopyHandler) CopyFromLocal(c *gin.Context) {
 	ctx := c.Request.Context()
@@ -250,27 +249,27 @@ func (h *CopyHandler) CopyFromLocal(c *gin.Context) {
 	overwrite := overwriteStr == "true"
 
 	if destSmbRootName == "" || destPath == "" {
-		utils.ErrorResponse(c, http.StatusBadRequest, "destination_smb_root and destination_path are required", nil)
+		utils.SendErrorResponse(c, http.StatusBadRequest, "destination_smb_root and destination_path are required", nil)
 		return
 	}
 
 	// Get uploaded file
 	file, header, err := c.Request.FormFile("file")
 	if err != nil {
-		utils.ErrorResponse(c, http.StatusBadRequest, "Failed to get uploaded file", err)
+		utils.SendErrorResponse(c, http.StatusBadRequest, "Failed to get uploaded file", err)
 		return
 	}
 	defer file.Close()
 
 	// Get SMB roots
-	smbRoots, err := h.fileRepo.GetSmbRoots(ctx)
+	smbRoots, err := h.fileRepo.GetStorageRoots(ctx)
 	if err != nil {
-		utils.ErrorResponse(c, http.StatusInternalServerError, "Failed to get SMB roots", err)
+		utils.SendErrorResponse(c, http.StatusInternalServerError, "Failed to get SMB roots", err)
 		return
 	}
 
 	// Find destination SMB root
-	var destSmbRoot *models.SmbRoot
+	var destSmbRoot *models.StorageRoot
 	for _, root := range smbRoots {
 		if root.Name == destSmbRootName {
 			destSmbRoot = &root
@@ -279,14 +278,14 @@ func (h *CopyHandler) CopyFromLocal(c *gin.Context) {
 	}
 
 	if destSmbRoot == nil {
-		utils.ErrorResponse(c, http.StatusNotFound, "Destination SMB root not found", nil)
+		utils.SendErrorResponse(c, http.StatusNotFound, "Destination SMB root not found", nil)
 		return
 	}
 
 	// Create SMB connection
 	destSmbClient, err := h.createSmbClient(destSmbRoot)
 	if err != nil {
-		utils.ErrorResponse(c, http.StatusInternalServerError, "Failed to connect to destination SMB", err)
+		utils.SendErrorResponse(c, http.StatusInternalServerError, "Failed to connect to destination SMB", err)
 		return
 	}
 
@@ -296,24 +295,24 @@ func (h *CopyHandler) CopyFromLocal(c *gin.Context) {
 
 	// Check if file exists and overwrite policy
 	if exists, err := destSmbClient.FileExists(fullDestPath); err == nil && exists && !overwrite {
-		utils.ErrorResponse(c, http.StatusConflict, "File already exists and overwrite is disabled", nil)
+		utils.SendErrorResponse(c, http.StatusConflict, "File already exists and overwrite is disabled", nil)
 		return
 	}
 
 	// Copy file
 	err = destSmbClient.WriteFile(fullDestPath, file)
 	if err != nil {
-		utils.ErrorResponse(c, http.StatusInternalServerError, "Failed to copy file to SMB", err)
+		utils.SendErrorResponse(c, http.StatusInternalServerError, "Failed to copy file to SMB", err)
 		return
 	}
 
 	result := CopyResponse{
-		Success:      true,
-		BytesCopied:  header.Size,
-		FilesCount:   1,
-		TimeTaken:    time.Since(startTime),
-		SourcePath:   header.Filename,
-		DestPath:     fullDestPath,
+		Success:     true,
+		BytesCopied: header.Size,
+		FilesCount:  1,
+		TimeTaken:   time.Since(startTime),
+		SourcePath:  header.Filename,
+		DestPath:    fullDestPath,
 	}
 
 	c.JSON(http.StatusOK, gin.H{
@@ -324,19 +323,37 @@ func (h *CopyHandler) CopyFromLocal(c *gin.Context) {
 
 // Helper methods
 
-func (h *CopyHandler) createSmbClient(smbRoot *models.SmbRoot) (*smb.SmbClient, error) {
-	smbConfig := &smb.SmbConfig{
-		Host:     smbRoot.Host,
-		Port:     smbRoot.Port,
-		Share:    smbRoot.Share,
-		Username: smbRoot.Username,
-		Domain:   "",
+func (h *CopyHandler) createSmbClient(storageRoot *models.StorageRoot) (*smb.SmbClient, error) {
+	host := ""
+	if storageRoot.Host != nil {
+		host = *storageRoot.Host
 	}
-	if smbRoot.Domain != nil {
-		smbConfig.Domain = *smbRoot.Domain
+	port := 445
+	if storageRoot.Port != nil {
+		port = *storageRoot.Port
+	}
+	share := ""
+	if storageRoot.Path != nil {
+		share = *storageRoot.Path
+	}
+	username := ""
+	if storageRoot.Username != nil {
+		username = *storageRoot.Username
+	}
+	domain := ""
+	if storageRoot.Domain != nil {
+		domain = *storageRoot.Domain
 	}
 
-	connectionKey := fmt.Sprintf("%s:%d:%s:%s", smbRoot.Host, smbRoot.Port, smbRoot.Share, smbRoot.Username)
+	smbConfig := &smb.SmbConfig{
+		Host:     host,
+		Port:     port,
+		Share:    share,
+		Username: username,
+		Domain:   domain,
+	}
+
+	connectionKey := fmt.Sprintf("%s:%d:%s:%s", host, port, share, username)
 	return h.smbPool.GetConnection(connectionKey, smbConfig)
 }
 
@@ -565,10 +582,10 @@ func (h *CopyHandler) validateLocalCopyRequest(req *LocalCopyRequest) error {
 // Request/Response types
 
 type SmbCopyRequest struct {
-	SourceFileID        int64  `json:"source_file_id" binding:"required"`
-	DestinationSmbRoot  string `json:"destination_smb_root" binding:"required"`
-	DestinationPath     string `json:"destination_path" binding:"required"`
-	OverwriteExisting   bool   `json:"overwrite_existing"`
+	SourceFileID       int64  `json:"source_file_id" binding:"required"`
+	DestinationSmbRoot string `json:"destination_smb_root" binding:"required"`
+	DestinationPath    string `json:"destination_path" binding:"required"`
+	OverwriteExisting  bool   `json:"overwrite_existing"`
 }
 
 type LocalCopyRequest struct {

@@ -10,8 +10,8 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	"catalog-api/internal/models"
-	"catalog-api/internal/services"
+	"catalogizer/internal/models"
+	"catalogizer/internal/services"
 )
 
 func TestDeepLinkingService_GenerateDeepLinks(t *testing.T) {

@@ -1,7 +1,7 @@
 package detector
 
 import (
-	"catalog-api/internal/media/models"
+	"catalogizer/internal/media/models"
 	"encoding/json"
 	"path/filepath"
 	"regexp"

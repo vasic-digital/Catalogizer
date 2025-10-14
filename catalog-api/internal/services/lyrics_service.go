@@ -9,6 +9,7 @@ import (
 	"strings"
 	"time"
 
+	"catalogizer/utils"
 	"go.uber.org/zap"
 )
 
@@ -36,35 +37,35 @@ const (
 
 // LyricsSearchRequest represents a lyrics search request
 type LyricsSearchRequest struct {
-	Title       string           `json:"title"`
-	Artist      string           `json:"artist"`
-	Album       *string          `json:"album,omitempty"`
-	Duration    *float64         `json:"duration,omitempty"`
-	Languages   []string         `json:"languages,omitempty"`
-	Providers   []LyricsProvider `json:"providers,omitempty"`
-	SyncedOnly  bool             `json:"synced_only"`
-	UseCache    bool             `json:"use_cache"`
+	Title      string           `json:"title"`
+	Artist     string           `json:"artist"`
+	Album      *string          `json:"album,omitempty"`
+	Duration   *float64         `json:"duration,omitempty"`
+	Languages  []string         `json:"languages,omitempty"`
+	Providers  []LyricsProvider `json:"providers,omitempty"`
+	SyncedOnly bool             `json:"synced_only"`
+	UseCache   bool             `json:"use_cache"`
 }
 
 // LyricsSearchResult represents a lyrics search result
 type LyricsSearchResult struct {
-	ID               string         `json:"id"`
-	Provider         LyricsProvider `json:"provider"`
-	Title            string         `json:"title"`
-	Artist           string         `json:"artist"`
-	Album            *string        `json:"album,omitempty"`
-	Language         string         `json:"language"`
-	LanguageCode     string         `json:"language_code"`
-	Content          string         `json:"content"`
-	IsSynced         bool           `json:"is_synced"`
-	SyncData         []LyricsLine   `json:"sync_data,omitempty"`
-	Source           string         `json:"source"`
-	Confidence       float64        `json:"confidence"`
-	MatchScore       float64        `json:"match_score"`
-	URL              *string        `json:"url,omitempty"`
-	Copyright        *string        `json:"copyright,omitempty"`
-	Writer           []string       `json:"writer,omitempty"`
-	Publisher        *string        `json:"publisher,omitempty"`
+	ID           string         `json:"id"`
+	Provider     LyricsProvider `json:"provider"`
+	Title        string         `json:"title"`
+	Artist       string         `json:"artist"`
+	Album        *string        `json:"album,omitempty"`
+	Language     string         `json:"language"`
+	LanguageCode string         `json:"language_code"`
+	Content      string         `json:"content"`
+	IsSynced     bool           `json:"is_synced"`
+	SyncData     []LyricsLine   `json:"sync_data,omitempty"`
+	Source       string         `json:"source"`
+	Confidence   float64        `json:"confidence"`
+	MatchScore   float64        `json:"match_score"`
+	URL          *string        `json:"url,omitempty"`
+	Copyright    *string        `json:"copyright,omitempty"`
+	Writer       []string       `json:"writer,omitempty"`
+	Publisher    *string        `json:"publisher,omitempty"`
 }
 
 // LyricsDownloadRequest represents a lyrics download request
@@ -105,11 +106,11 @@ type ConcertLyricsRequest struct {
 
 // SyncedLyricsLine represents a single line of synchronized lyrics
 type SyncedLyricsLine struct {
-	StartTime float64 `json:"start_time"`
-	EndTime   *float64 `json:"end_time,omitempty"`
-	Text      string  `json:"text"`
-	Type      string  `json:"type"` // "verse", "chorus", "bridge", "instrumental"
-	Confidence float64 `json:"confidence"`
+	StartTime  float64  `json:"start_time"`
+	EndTime    *float64 `json:"end_time,omitempty"`
+	Text       string   `json:"text"`
+	Type       string   `json:"type"` // "verse", "chorus", "bridge", "instrumental"
+	Confidence float64  `json:"confidence"`
 }
 
 // NewLyricsService creates a new lyrics service
@@ -338,9 +339,9 @@ func (s *LyricsService) GetConcertLyrics(ctx context.Context, request *ConcertLy
 			if len(results) > 0 {
 				// Take the best match
 				downloadReq := &LyricsDownloadRequest{
-					MediaItemID: request.MediaItemID,
-					ResultID:    results[0].ID,
-					Language:    results[0].Language,
+					MediaItemID:   request.MediaItemID,
+					ResultID:      results[0].ID,
+					Language:      results[0].Language,
 					UseForConcert: true,
 				}
 
@@ -449,7 +450,7 @@ func (s *LyricsService) searchGenius(ctx context.Context, request *LyricsSearchR
 		Source:       "genius.com",
 		Confidence:   0.95,
 		MatchScore:   0.9,
-		URL:          stringPtr("https://genius.com/sample"),
+		URL:          utils.StringPtr("https://genius.com/sample"),
 	}
 
 	return []LyricsSearchResult{result}, nil
@@ -631,10 +632,6 @@ func timePtr(t time.Time) *time.Time {
 
 func floatPtr(f float64) *float64 {
 	return &f
-}
-
-func stringPtr(s string) *string {
-	return &s
 }
 
 // getCachedLyrics retrieves cached lyrics for a title and artist

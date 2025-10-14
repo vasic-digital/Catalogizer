@@ -2,6 +2,7 @@ package services
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io/ioutil"
 	"log"
@@ -12,32 +13,21 @@ import (
 	"strings"
 	"time"
 
-	"catalog-api/models"
-	"catalog-api/repository"
+	"catalogizer/models"
+	"catalogizer/repository"
 )
 
 type ConfigurationWizardService struct {
-	repo              *repository.ConfigurationRepository
-	configPath        string
-	backupPath        string
-	templatesPath     string
-	currentSession    *WizardSession
-	validationRules   map[string]ValidationRule
-	configTemplates   map[string]ConfigTemplate
+	repo            *repository.ConfigurationRepository
+	configPath      string
+	backupPath      string
+	templatesPath   string
+	currentSession  *models.WizardSession
+	validationRules map[string]ValidationRule
+	configTemplates map[string]ConfigTemplate
 }
 
-type WizardSession struct {
-	SessionID     string                 `json:"session_id"`
-	UserID        int                    `json:"user_id"`
-	CurrentStep   int                    `json:"current_step"`
-	TotalSteps    int                    `json:"total_steps"`
-	StepData      map[string]interface{} `json:"step_data"`
-	Configuration map[string]interface{} `json:"configuration"`
-	StartedAt     time.Time              `json:"started_at"`
-	LastActivity  time.Time              `json:"last_activity"`
-	IsCompleted   bool                   `json:"is_completed"`
-	ConfigType    string                 `json:"config_type"`
-}
+// models.WizardSession is defined in models package
 
 type WizardStep struct {
 	StepID          string                 `json:"step_id"`
@@ -75,21 +65,21 @@ type FieldOption struct {
 }
 
 type ValidationRule struct {
-	RuleID      string `json:"rule_id"`
-	Type        string `json:"type"` // required, format, range, custom
-	ErrorMessage string `json:"error_message"`
-	Parameters  map[string]interface{} `json:"parameters,omitempty"`
+	RuleID       string                 `json:"rule_id"`
+	Type         string                 `json:"type"` // required, format, range, custom
+	ErrorMessage string                 `json:"error_message"`
+	Parameters   map[string]interface{} `json:"parameters,omitempty"`
 }
 
 type ConfigTemplate struct {
-	TemplateID   string                 `json:"template_id"`
-	Name         string                 `json:"name"`
-	Description  string                 `json:"description"`
-	Category     string                 `json:"category"`
-	Steps        []WizardStep           `json:"steps"`
+	TemplateID    string                 `json:"template_id"`
+	Name          string                 `json:"name"`
+	Description   string                 `json:"description"`
+	Category      string                 `json:"category"`
+	Steps         []WizardStep           `json:"steps"`
 	DefaultValues map[string]interface{} `json:"default_values"`
-	Requirements []string               `json:"requirements"`
-	PostInstall  []PostInstallAction    `json:"post_install_actions"`
+	Requirements  []string               `json:"requirements"`
+	PostInstall   []PostInstallAction    `json:"post_install_actions"`
 }
 
 type PostInstallAction struct {
@@ -99,17 +89,7 @@ type PostInstallAction struct {
 	Required    bool                   `json:"required"`
 }
 
-type ConfigurationProfile struct {
-	ProfileID    string                 `json:"profile_id"`
-	Name         string                 `json:"name"`
-	Description  string                 `json:"description"`
-	UserID       int                    `json:"user_id"`
-	Configuration map[string]interface{} `json:"configuration"`
-	CreatedAt    time.Time              `json:"created_at"`
-	UpdatedAt    time.Time              `json:"updated_at"`
-	IsActive     bool                   `json:"is_active"`
-	Tags         []string               `json:"tags"`
-}
+// ConfigurationProfile is defined in models package
 
 type SystemInfo struct {
 	OS              string            `json:"os"`
@@ -132,24 +112,24 @@ type NetworkInfo struct {
 }
 
 type InstallationRequest struct {
-	ConfigType    string                 `json:"config_type"`
-	QuickInstall  bool                   `json:"quick_install"`
-	CustomConfig  map[string]interface{} `json:"custom_config,omitempty"`
-	SkipTests     bool                   `json:"skip_tests"`
-	BackupExisting bool                  `json:"backup_existing"`
+	ConfigType     string                 `json:"config_type"`
+	QuickInstall   bool                   `json:"quick_install"`
+	CustomConfig   map[string]interface{} `json:"custom_config,omitempty"`
+	SkipTests      bool                   `json:"skip_tests"`
+	BackupExisting bool                   `json:"backup_existing"`
 }
 
 type InstallationProgress struct {
-	SessionID       string    `json:"session_id"`
-	CurrentAction   string    `json:"current_action"`
-	Progress        float64   `json:"progress"`
-	CompletedSteps  []string  `json:"completed_steps"`
-	FailedSteps     []string  `json:"failed_steps"`
-	EstimatedTime   string    `json:"estimated_time"`
-	LastUpdate      time.Time `json:"last_update"`
-	IsCompleted     bool      `json:"is_completed"`
-	HasErrors       bool      `json:"has_errors"`
-	ErrorMessage    string    `json:"error_message,omitempty"`
+	SessionID      string    `json:"session_id"`
+	CurrentAction  string    `json:"current_action"`
+	Progress       float64   `json:"progress"`
+	CompletedSteps []string  `json:"completed_steps"`
+	FailedSteps    []string  `json:"failed_steps"`
+	EstimatedTime  string    `json:"estimated_time"`
+	LastUpdate     time.Time `json:"last_update"`
+	IsCompleted    bool      `json:"is_completed"`
+	HasErrors      bool      `json:"has_errors"`
+	ErrorMessage   string    `json:"error_message,omitempty"`
 }
 
 func NewConfigurationWizardService(repo *repository.ConfigurationRepository) *ConfigurationWizardService {
@@ -194,9 +174,9 @@ func (s *ConfigurationWizardService) initializeDefaultTemplates() {
 				StepType:    "test",
 				Fields: []FieldDefinition{
 					{
-						FieldID: "auto_fix",
-						Label:   "Automatically fix issues where possible",
-						Type:    "boolean",
+						FieldID:      "auto_fix",
+						Label:        "Automatically fix issues where possible",
+						Type:         "boolean",
 						DefaultValue: true,
 					},
 				},
@@ -208,10 +188,10 @@ func (s *ConfigurationWizardService) initializeDefaultTemplates() {
 				StepType:    "input",
 				Fields: []FieldDefinition{
 					{
-						FieldID:     "db_type",
-						Label:       "Database Type",
-						Type:        "select",
-						Required:    true,
+						FieldID:      "db_type",
+						Label:        "Database Type",
+						Type:         "select",
+						Required:     true,
 						DefaultValue: "sqlite",
 						Options: []FieldOption{
 							{Value: "sqlite", Label: "SQLite (Recommended)"},
@@ -220,10 +200,10 @@ func (s *ConfigurationWizardService) initializeDefaultTemplates() {
 						},
 					},
 					{
-						FieldID:     "db_path",
-						Label:       "Database File Path",
-						Type:        "file",
-						Required:    true,
+						FieldID:      "db_path",
+						Label:        "Database File Path",
+						Type:         "file",
+						Required:     true,
 						DefaultValue: "./catalogizer.db",
 						Dependencies: map[string]interface{}{
 							"db_type": "sqlite",
@@ -284,10 +264,10 @@ func (s *ConfigurationWizardService) initializeDefaultTemplates() {
 				StepType:    "input",
 				Fields: []FieldDefinition{
 					{
-						FieldID:     "storage_type",
-						Label:       "Storage Type",
-						Type:        "select",
-						Required:    true,
+						FieldID:      "storage_type",
+						Label:        "Storage Type",
+						Type:         "select",
+						Required:     true,
 						DefaultValue: "local",
 						Options: []FieldOption{
 							{Value: "local", Label: "Local Storage"},
@@ -297,23 +277,23 @@ func (s *ConfigurationWizardService) initializeDefaultTemplates() {
 						},
 					},
 					{
-						FieldID:     "media_path",
-						Label:       "Media Directory Path",
-						Type:        "directory",
-						Required:    true,
+						FieldID:      "media_path",
+						Label:        "Media Directory Path",
+						Type:         "directory",
+						Required:     true,
 						DefaultValue: "./media",
 						Dependencies: map[string]interface{}{
 							"storage_type": "local",
 						},
 					},
 					{
-						FieldID:     "max_file_size",
-						Label:       "Maximum File Size (MB)",
-						Type:        "number",
-						Required:    true,
+						FieldID:      "max_file_size",
+						Label:        "Maximum File Size (MB)",
+						Type:         "number",
+						Required:     true,
 						DefaultValue: 100,
-						MinValue:    float64Ptr(1),
-						MaxValue:    float64Ptr(10000),
+						MinValue:     float64Ptr(1),
+						MaxValue:     float64Ptr(10000),
 					},
 				},
 			},
@@ -324,36 +304,36 @@ func (s *ConfigurationWizardService) initializeDefaultTemplates() {
 				StepType:    "input",
 				Fields: []FieldDefinition{
 					{
-						FieldID:     "jwt_secret",
-						Label:       "JWT Secret Key",
-						Type:        "password",
-						Required:    true,
-						HelpText:    "Secret key for JWT token generation (minimum 32 characters)",
-						Validation:  "min_length:32",
+						FieldID:    "jwt_secret",
+						Label:      "JWT Secret Key",
+						Type:       "password",
+						Required:   true,
+						HelpText:   "Secret key for JWT token generation (minimum 32 characters)",
+						Validation: "min_length:32",
 					},
 					{
-						FieldID:     "session_timeout",
-						Label:       "Session Timeout (hours)",
-						Type:        "number",
-						Required:    true,
+						FieldID:      "session_timeout",
+						Label:        "Session Timeout (hours)",
+						Type:         "number",
+						Required:     true,
 						DefaultValue: 24,
-						MinValue:    float64Ptr(1),
-						MaxValue:    float64Ptr(720),
+						MinValue:     float64Ptr(1),
+						MaxValue:     float64Ptr(720),
 					},
 					{
-						FieldID:     "enable_2fa",
-						Label:       "Enable Two-Factor Authentication",
-						Type:        "boolean",
+						FieldID:      "enable_2fa",
+						Label:        "Enable Two-Factor Authentication",
+						Type:         "boolean",
 						DefaultValue: false,
 					},
 					{
-						FieldID:     "password_min_length",
-						Label:       "Minimum Password Length",
-						Type:        "number",
-						Required:    true,
+						FieldID:      "password_min_length",
+						Label:        "Minimum Password Length",
+						Type:         "number",
+						Required:     true,
 						DefaultValue: 8,
-						MinValue:    float64Ptr(6),
-						MaxValue:    float64Ptr(128),
+						MinValue:     float64Ptr(6),
+						MaxValue:     float64Ptr(128),
 					},
 				},
 			},
@@ -380,18 +360,18 @@ func (s *ConfigurationWizardService) initializeDefaultTemplates() {
 						Placeholder: "admin@example.com",
 					},
 					{
-						FieldID:     "admin_password",
-						Label:       "Administrator Password",
-						Type:        "password",
-						Required:    true,
-						Validation:  "password_strength",
+						FieldID:    "admin_password",
+						Label:      "Administrator Password",
+						Type:       "password",
+						Required:   true,
+						Validation: "password_strength",
 					},
 					{
-						FieldID:     "admin_password_confirm",
-						Label:       "Confirm Password",
-						Type:        "password",
-						Required:    true,
-						Validation:  "password_match",
+						FieldID:    "admin_password_confirm",
+						Label:      "Confirm Password",
+						Type:       "password",
+						Required:   true,
+						Validation: "password_match",
 					},
 				},
 			},
@@ -402,19 +382,19 @@ func (s *ConfigurationWizardService) initializeDefaultTemplates() {
 				StepType:    "input",
 				Fields: []FieldDefinition{
 					{
-						FieldID:     "server_port",
-						Label:       "Server Port",
-						Type:        "number",
-						Required:    true,
+						FieldID:      "server_port",
+						Label:        "Server Port",
+						Type:         "number",
+						Required:     true,
 						DefaultValue: 8080,
-						MinValue:    float64Ptr(1024),
-						MaxValue:    float64Ptr(65535),
+						MinValue:     float64Ptr(1024),
+						MaxValue:     float64Ptr(65535),
 					},
 					{
-						FieldID:     "log_level",
-						Label:       "Log Level",
-						Type:        "select",
-						Required:    true,
+						FieldID:      "log_level",
+						Label:        "Log Level",
+						Type:         "select",
+						Required:     true,
 						DefaultValue: "info",
 						Options: []FieldOption{
 							{Value: "debug", Label: "Debug"},
@@ -424,16 +404,16 @@ func (s *ConfigurationWizardService) initializeDefaultTemplates() {
 						},
 					},
 					{
-						FieldID:     "enable_cors",
-						Label:       "Enable CORS",
-						Type:        "boolean",
+						FieldID:      "enable_cors",
+						Label:        "Enable CORS",
+						Type:         "boolean",
 						DefaultValue: true,
-						HelpText:    "Enable Cross-Origin Resource Sharing for web clients",
+						HelpText:     "Enable Cross-Origin Resource Sharing for web clients",
 					},
 					{
-						FieldID:     "backup_enabled",
-						Label:       "Enable Automatic Backups",
-						Type:        "boolean",
+						FieldID:      "backup_enabled",
+						Label:        "Enable Automatic Backups",
+						Type:         "boolean",
 						DefaultValue: true,
 					},
 				},
@@ -445,9 +425,9 @@ func (s *ConfigurationWizardService) initializeDefaultTemplates() {
 				StepType:    "test",
 				Fields: []FieldDefinition{
 					{
-						FieldID: "start_services",
-						Label:   "Start services after successful test",
-						Type:    "boolean",
+						FieldID:      "start_services",
+						Label:        "Start services after successful test",
+						Type:         "boolean",
 						DefaultValue: true,
 					},
 				},
@@ -484,21 +464,21 @@ func (s *ConfigurationWizardService) initializeDefaultTemplates() {
 
 	// Enterprise Installation Template
 	s.configTemplates["enterprise"] = ConfigTemplate{
-		TemplateID:  "enterprise",
-		Name:        "Enterprise Installation",
-		Description: "Full enterprise setup with all features enabled",
-		Category:    "installation",
-		Steps:       s.getEnterpriseSteps(),
+		TemplateID:   "enterprise",
+		Name:         "Enterprise Installation",
+		Description:  "Full enterprise setup with all features enabled",
+		Category:     "installation",
+		Steps:        s.getEnterpriseSteps(),
 		Requirements: []string{"go", "docker", "postgresql", "redis"},
 	}
 
 	// Development Template
 	s.configTemplates["development"] = ConfigTemplate{
-		TemplateID:  "development",
-		Name:        "Development Environment",
-		Description: "Development setup with debugging and testing tools",
-		Category:    "development",
-		Steps:       s.getDevelopmentSteps(),
+		TemplateID:   "development",
+		Name:         "Development Environment",
+		Description:  "Development setup with debugging and testing tools",
+		Category:     "development",
+		Steps:        s.getDevelopmentSteps(),
 		Requirements: []string{"go", "git", "make"},
 	}
 }
@@ -551,15 +531,15 @@ func (s *ConfigurationWizardService) getDevelopmentSteps() []WizardStep {
 			StepType:    "input",
 			Fields: []FieldDefinition{
 				{
-					FieldID:     "debug_mode",
-					Label:       "Enable Debug Mode",
-					Type:        "boolean",
+					FieldID:      "debug_mode",
+					Label:        "Enable Debug Mode",
+					Type:         "boolean",
 					DefaultValue: true,
 				},
 				{
-					FieldID:     "hot_reload",
-					Label:       "Enable Hot Reload",
-					Type:        "boolean",
+					FieldID:      "hot_reload",
+					Label:        "Enable Hot Reload",
+					Type:         "boolean",
 					DefaultValue: true,
 				},
 			},
@@ -623,7 +603,7 @@ func (s *ConfigurationWizardService) initializeValidationRules() {
 	}
 }
 
-func (s *ConfigurationWizardService) StartWizard(userID int, configType string, quickInstall bool) (*WizardSession, error) {
+func (s *ConfigurationWizardService) StartWizard(userID int, configType string, quickInstall bool) (*models.WizardSession, error) {
 	template, exists := s.configTemplates[configType]
 	if !exists {
 		return nil, fmt.Errorf("configuration template '%s' not found", configType)
@@ -631,7 +611,7 @@ func (s *ConfigurationWizardService) StartWizard(userID int, configType string, 
 
 	sessionID := fmt.Sprintf("wizard-%d-%d", userID, time.Now().Unix())
 
-	session := &WizardSession{
+	session := &models.WizardSession{
 		SessionID:     sessionID,
 		UserID:        userID,
 		CurrentStep:   0,
@@ -859,7 +839,7 @@ func (s *ConfigurationWizardService) validateFieldRule(ruleName string, value in
 			if strValue, ok := value.(string); ok {
 				matched, err := filepath.Match(pattern, strValue)
 				if err != nil || !matched {
-					return fmt.Errorf(rule.ErrorMessage)
+					return errors.New(rule.ErrorMessage)
 				}
 			}
 		}
@@ -892,7 +872,7 @@ func (s *ConfigurationWizardService) validateCustomRule(rule ValidationRule, val
 	return nil
 }
 
-func (s *ConfigurationWizardService) processTestStep(step WizardStep, data map[string]interface{}, session *WizardSession) error {
+func (s *ConfigurationWizardService) processTestStep(step WizardStep, data map[string]interface{}, session *models.WizardSession) error {
 	switch step.StepID {
 	case "system_check":
 		return s.performSystemCheck(data, session)
@@ -903,7 +883,7 @@ func (s *ConfigurationWizardService) processTestStep(step WizardStep, data map[s
 	}
 }
 
-func (s *ConfigurationWizardService) performSystemCheck(data map[string]interface{}, session *WizardSession) error {
+func (s *ConfigurationWizardService) performSystemCheck(data map[string]interface{}, session *models.WizardSession) error {
 	systemInfo := s.collectSystemInfo()
 
 	// Check minimum requirements
@@ -940,7 +920,7 @@ func (s *ConfigurationWizardService) performSystemCheck(data map[string]interfac
 	return nil
 }
 
-func (s *ConfigurationWizardService) performFinalTest(data map[string]interface{}, session *WizardSession) error {
+func (s *ConfigurationWizardService) performFinalTest(data map[string]interface{}, session *models.WizardSession) error {
 	// Test database connection
 	if err := s.testDatabaseConnection(session.Configuration); err != nil {
 		return fmt.Errorf("database connection test failed: %w", err)
@@ -1049,7 +1029,7 @@ func (s *ConfigurationWizardService) testServiceConfiguration(config map[string]
 	return nil
 }
 
-func (s *ConfigurationWizardService) finalizeConfiguration(session *WizardSession) error {
+func (s *ConfigurationWizardService) finalizeConfiguration(session *models.WizardSession) error {
 	// Generate final configuration file
 	configData := map[string]interface{}{
 		"version":       "3.0.0",
@@ -1088,7 +1068,7 @@ func (s *ConfigurationWizardService) writeConfigFile(filename string, data map[s
 	return ioutil.WriteFile(filename, jsonData, 0644)
 }
 
-func (s *ConfigurationWizardService) executePostInstallAction(action PostInstallAction, session *WizardSession) error {
+func (s *ConfigurationWizardService) executePostInstallAction(action PostInstallAction, session *models.WizardSession) error {
 	switch action.ActionType {
 	case "file_create":
 		return s.createConfigurationFile(action.Parameters, session)
@@ -1101,7 +1081,7 @@ func (s *ConfigurationWizardService) executePostInstallAction(action PostInstall
 	}
 }
 
-func (s *ConfigurationWizardService) createConfigurationFile(params map[string]interface{}, session *WizardSession) error {
+func (s *ConfigurationWizardService) createConfigurationFile(params map[string]interface{}, session *models.WizardSession) error {
 	filePath, _ := params["file_path"].(string)
 	template, _ := params["template"].(string)
 
@@ -1229,7 +1209,7 @@ func (s *ConfigurationWizardService) generateSystemRecommendations(info SystemIn
 	return recommendations
 }
 
-func (s *ConfigurationWizardService) getSession(sessionID string) (*WizardSession, error) {
+func (s *ConfigurationWizardService) getSession(sessionID string) (*models.WizardSession, error) {
 	if s.currentSession != nil && s.currentSession.SessionID == sessionID {
 		return s.currentSession, nil
 	}
@@ -1270,7 +1250,7 @@ func (s *ConfigurationWizardService) GetWizardProgress(sessionID string) (*Insta
 	}, nil
 }
 
-func (s *ConfigurationWizardService) getCompletedSteps(session *WizardSession) []string {
+func (s *ConfigurationWizardService) getCompletedSteps(session *models.WizardSession) []string {
 	var completed []string
 	template := s.configTemplates[session.ConfigType]
 
@@ -1281,7 +1261,7 @@ func (s *ConfigurationWizardService) getCompletedSteps(session *WizardSession) [
 	return completed
 }
 
-func (s *ConfigurationWizardService) SaveConfigurationProfile(userID int, profile *ConfigurationProfile) error {
+func (s *ConfigurationWizardService) SaveConfigurationProfile(userID int, profile *models.ConfigurationProfile) error {
 	profile.UserID = userID
 	profile.CreatedAt = time.Now()
 	profile.UpdatedAt = time.Now()
@@ -1289,11 +1269,11 @@ func (s *ConfigurationWizardService) SaveConfigurationProfile(userID int, profil
 	return s.repo.SaveConfigurationProfile(profile)
 }
 
-func (s *ConfigurationWizardService) LoadConfigurationProfile(userID int, profileID string) (*ConfigurationProfile, error) {
-	return s.repo.GetConfigurationProfile(userID, profileID)
+func (s *ConfigurationWizardService) LoadConfigurationProfile(userID int, profileID string) (*models.ConfigurationProfile, error) {
+	return s.repo.GetConfigurationProfile(profileID)
 }
 
-func (s *ConfigurationWizardService) GetUserConfigurationProfiles(userID int) ([]*ConfigurationProfile, error) {
+func (s *ConfigurationWizardService) GetUserConfigurationProfiles(userID int) ([]*models.ConfigurationProfile, error) {
 	return s.repo.GetUserConfigurationProfiles(userID)
 }
 
