@@ -1,13 +1,13 @@
 name: Catalogizer Zero-Defect QA Pipeline
 
 on:
-  push:
-    branches: [ main, develop, 'feature/*', 'hotfix/*' ]
-  pull_request:
-    branches: [ main, develop ]
-  schedule:
-    # Run comprehensive QA every 6 hours
-    - cron: '0 */6 * * *'
+  # push:
+  #   branches: [ main, develop, 'feature/*', 'hotfix/*' ]
+  # pull_request:
+  #   branches: [ main, develop ]
+  # schedule:
+  #   # Run comprehensive QA every 6 hours
+  #   - cron: '0 */6 * * *'
   workflow_dispatch:
     inputs:
       qa_level:
