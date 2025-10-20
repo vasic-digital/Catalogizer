@@ -74,8 +74,6 @@ func main() {
 	// Initialize services
 	catalogService := services.NewCatalogService(cfg, logger)
 	catalogService.SetDB(db)
-	fileSystemService := services.NewFileSystemService(cfg, logger)
-	_ = fileSystemService // Will be used in future implementations
 	smbService := services.NewSMBService(cfg, logger)
 	smbDiscoveryService := services.NewSMBDiscoveryService(logger)
 

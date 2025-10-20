@@ -1,0 +1,130 @@
+version: '3.8'
+
+services:
+  # PostgreSQL Database - matching production setup
+  postgres:
+    image: postgres:15-alpine
+    container_name: catalogizer-postgres-dev
+    environment:
+      POSTGRES_USER: catalogizer
+      POSTGRES_PASSWORD: dev_password_change_me
+      POSTGRES_DB: catalogizer_dev
+      PGDATA: /var/lib/postgresql/data/pgdata
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./catalog-api/database/migrations:/docker-entrypoint-initdb.d
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U catalogizer"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - catalogizer-network
+
+  # Redis Cache - matching production setup
+  redis:
+    image: redis:7-alpine
+    container_name: catalogizer-redis-dev
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    command: redis-server --appendonly yes
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+    networks:
+      - catalogizer-network
+
+  # Catalogizer API
+  api:
+    build:
+      context: ./catalog-api
+      dockerfile: Dockerfile.dev
+    container_name: catalogizer-api-dev
+    environment:
+      # Database configuration
+      DATABASE_TYPE: postgres
+      DATABASE_HOST: postgres
+      DATABASE_PORT: 5432
+      DATABASE_USER: catalogizer
+      DATABASE_PASSWORD: dev_password_change_me
+      DATABASE_NAME: catalogizer_dev
+
+      # Redis configuration
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+
+      # Application configuration
+      APP_ENV: development
+      API_PORT: 8080
+      LOG_LEVEL: debug
+
+      # CORS for local development
+      CORS_ENABLED: "true"
+      CORS_ORIGINS: "http://localhost:3000,http://localhost:19006"
+    ports:
+      - "8080:8080"
+    volumes:
+      - ./catalog-api:/app
+      - api_cache:/go/pkg/mod
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - catalogizer-network
+    command: go run main.go
+
+  # Optional: pgAdmin for database management
+  pgadmin:
+    image: dpage/pgadmin4:latest
+    container_name: catalogizer-pgadmin-dev
+    environment:
+      PGADMIN_DEFAULT_EMAIL: admin@catalogizer.dev
+      PGADMIN_DEFAULT_PASSWORD: admin
+      PGADMIN_CONFIG_SERVER_MODE: 'False'
+    ports:
+      - "5050:80"
+    volumes:
+      - pgadmin_data:/var/lib/pgadmin
+    depends_on:
+      - postgres
+    networks:
+      - catalogizer-network
+    profiles:
+      - tools
+
+  # Optional: Redis Commander for Redis management
+  redis-commander:
+    image: rediscommander/redis-commander:latest
+    container_name: catalogizer-redis-commander-dev
+    environment:
+      REDIS_HOSTS: local:redis:6379
+    ports:
+      - "8081:8081"
+    depends_on:
+      - redis
+    networks:
+      - catalogizer-network
+    profiles:
+      - tools
+
+volumes:
+  postgres_data:
+    driver: local
+  redis_data:
+    driver: local
+  api_cache:
+    driver: local
+  pgadmin_data:
+    driver: local
+
+networks:
+  catalogizer-network:
+    driver: bridge

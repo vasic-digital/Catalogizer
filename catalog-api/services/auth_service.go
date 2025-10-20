@@ -10,7 +10,7 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/dgrijalva/jwt-go"
+	"github.com/golang-jwt/jwt/v5"
 	"golang.org/x/crypto/bcrypt"
 
 	"catalogizer/models"
@@ -41,7 +41,7 @@ type JWTClaims struct {
 	Username  string `json:"username"`
 	RoleID    int    `json:"role_id"`
 	SessionID string `json:"session_id"`
-	jwt.StandardClaims
+	jwt.RegisteredClaims
 }
 
 // AuthResult represents the result of authentication
@@ -352,14 +352,15 @@ func (s *AuthService) createSession(user *models.User, deviceInfo models.DeviceI
 }
 
 func (s *AuthService) generateJWT(user *models.User, sessionID int) (string, error) {
+	now := time.Now()
 	claims := JWTClaims{
 		UserID:    user.ID,
 		Username:  user.Username,
 		RoleID:    user.RoleID,
 		SessionID: fmt.Sprintf("%d", sessionID),
-		StandardClaims: jwt.StandardClaims{
-			ExpiresAt: time.Now().Add(s.jwtExpiry).Unix(),
-			IssuedAt:  time.Now().Unix(),
+		RegisteredClaims: jwt.RegisteredClaims{
+			ExpiresAt: jwt.NewNumericDate(now.Add(s.jwtExpiry)),
+			IssuedAt:  jwt.NewNumericDate(now),
 			Issuer:    "catalogizer",
 			Subject:   fmt.Sprintf("%d", user.ID),
 		},
