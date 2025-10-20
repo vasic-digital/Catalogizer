@@ -1,0 +1,20 @@
+{
+  "vulnerabilities": [
+    {
+      "id": "SNYK-GOLANG-GITHUBCOMGOLANGCRYPTO-598384",
+      "severity": "medium",
+      "title": "Cryptographic Issues",
+      "packageName": "golang.org/x/crypto",
+      "version": "0.0.0-20201221181555-eec23a3978ad",
+      "fixedIn": ["0.1.0"],
+      "cvssScore": 5.9
+    }
+  ],
+  "summary": {
+    "total": 1,
+    "critical": 0,
+    "high": 0,
+    "medium": 1,
+    "low": 0
+  }
+}

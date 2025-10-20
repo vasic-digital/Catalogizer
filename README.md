@@ -730,6 +730,63 @@ POSTGRES_EFFECTIVE_CACHE_SIZE=1GB
 - 💬 [Discussions](https://github.com/your-repo/Catalogizer/discussions)
 - 📧 Email: support@catalogizer.dev
 
+## 🧪 Testing
+
+### Security Testing
+
+Catalogizer includes comprehensive security testing using industry-standard tools:
+
+#### SonarQube Code Quality Analysis (Freemium)
+- **Version**: Community Edition (Free)
+- **Purpose**: Static code analysis for bugs, vulnerabilities, and code smells
+- **Coverage**: All languages (Go, JavaScript/TypeScript, Kotlin)
+- **Integration**: Mandatory in CI/CD pipeline
+- **Reports**: Available at `reports/sonarqube-report.json`
+- **Setup**: `SONAR_TOKEN` from https://sonarcloud.io (free tier)
+
+#### Snyk Security Scanning (Freemium)
+- **Version**: Free tier with unlimited private repos
+- **Purpose**: Dependency vulnerability scanning and SAST (Static Application Security Testing)
+- **Coverage**: All project modules and dependencies
+- **Integration**: Mandatory in CI/CD pipeline
+- **Reports**: Available at `reports/snyk-*-results.json`
+- **Setup**: `SNYK_TOKEN` from https://snyk.io/account (free tier)
+
+#### Additional Security Tools
+- **Trivy**: Container and filesystem vulnerability scanning
+- **OWASP Dependency Check**: Third-party dependency analysis
+
+### Running Tests
+
+#### Full Test Suite (Including Security)
+```bash
+# Run all tests including security scans
+./scripts/security-test.sh
+
+# Or run individual security scans
+./scripts/sonarqube-scan.sh  # Requires SONAR_TOKEN
+./scripts/snyk-scan.sh       # Requires SNYK_TOKEN
+```
+
+#### Prerequisites for Security Testing
+1. **Setup Freemium Accounts**: Run `./scripts/setup-freemium-tokens.sh`
+2. **SonarQube**: Free account at https://sonarcloud.io + `SONAR_TOKEN`
+3. **Snyk**: Free account at https://snyk.io + `SNYK_TOKEN`
+4. **Docker**: Required for running security services (optional for basic scans)
+
+#### Test Reports
+All test results are stored in the `reports/` directory:
+- `comprehensive-security-report.html` - Main security report
+- `sonarqube-report.json` - Code quality analysis
+- `snyk-*-results.json` - Vulnerability scans
+- `trivy-results.json` - Container scans
+
+### Quality Gates
+- **SonarQube**: Quality gate must pass (no critical issues)
+- **Snyk**: No high or critical severity vulnerabilities
+- **Test Coverage**: Minimum 80% for all modules
+- **Zero Defects**: All tests must pass with 100% success rate
+
 ## 🤝 Contributing
 
 We welcome contributions! Please see our [Contributing Guide](CONTRIBUTING.md) for details.

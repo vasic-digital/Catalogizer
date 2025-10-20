@@ -546,7 +546,41 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: 🔍 Run Trivy vulnerability scanner
+      - name: 🐳 Start Security Services
+        run: |
+          echo "🔍 Starting SonarQube and security scanning services..."
+          docker-compose -f docker-compose.security.yml up -d sonarqube sonarqube-db
+          
+          # Wait for SonarQube to be ready
+          for i in {1..60}; do
+            if curl -f -s http://localhost:9000/api/system/status > /dev/null 2>&1; then
+              echo "✅ SonarQube is ready"
+              break
+            fi
+            if [ $i -eq 60 ]; then
+              echo "❌ SonarQube failed to start"
+              exit 1
+            fi
+            sleep 10
+          done
+
+      - name: 🔍 Run SonarQube Analysis
+        if: env.SONAR_TOKEN != ''
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+          SONAR_HOST_URL: http://localhost:9000
+        run: |
+          ./scripts/sonarqube-scan.sh
+
+      - name: 🔒 Run Snyk Security Analysis
+        if: env.SNYK_TOKEN != ''
+        env:
+          SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
+          SNYK_ORG: ${{ secrets.SNYK_ORG || 'catalogizer' }}
+        run: |
+          ./scripts/snyk-scan.sh
+
+      - name: 🔍 Run Trivy Vulnerability Scanner
         uses: aquasecurity/trivy-action@master
         with:
           scan-type: 'fs'
@@ -554,16 +588,30 @@ jobs:
           format: 'sarif'
           output: 'trivy-results.sarif'
 
-      - name: 📊 Upload Trivy scan results
+      - name: 📊 Upload Security Scan Results
+        uses: actions/upload-artifact@v3
+        if: always()
+        with:
+          name: security-scan-results
+          path: |
+            reports/
+            trivy-results.sarif
+
+      - name: 📊 Upload Trivy Results to GitHub Security
         uses: github/codeql-action/upload-sarif@v2
         if: always()
         with:
           sarif_file: 'trivy-results.sarif'
 
+      - name: 🛑 Stop Security Services
+        if: always()
+        run: |
+          docker-compose -f docker-compose.security.yml down
+
       - name: 🔐 Security Summary
         run: |
           echo "🔐 Security scan completed"
-          echo "📊 Results uploaded to Security tab"
+          echo "📊 Results uploaded to Security tab and artifacts"
 
   # Performance Testing
   performance-test:
