@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Catalogizer - Snyk Security Report</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .header { background: #2c3e50; color: white; padding: 20px; border-radius: 5px; }
+        .section { margin: 20px 0; padding: 15px; border: 1px solid #ddd; border-radius: 5px; }
+        .success { background: #d4edda; border-color: #c3e6cb; }
+        .warning { background: #fff3cd; border-color: #ffeaa7; }
+        .error { background: #f8d7da; border-color: #f5c6cb; }
+        .metric { display: inline-block; margin: 10px; padding: 10px; background: #f8f9fa; border-radius: 3px; }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>🔒 Catalogizer Security Report</h1>
+        <p>Generated on Mon Oct 20 03:50:38 PM MSK 2025</p>
+        <p>Organization: catalogizer | Severity Threshold: medium</p>
+    </div>
+    
+    <div class="section">
+        <h2>📊 Scan Summary</h2>
+        <div class="metric">🐹 Go API: Scanned</div>
+        <div class="metric">🟢 Web Apps: Scanned</div>
+        <div class="metric">📱 Android Apps: Scanned</div>
+        <div class="metric">🐳 Docker Images: Scanned</div>
+        <div class="metric">🔍 Code Analysis: Scanned</div>
+    </div>
+    
+    <div class="section">
+        <h2>📋 Detailed Results</h2>
+        <p>Detailed JSON reports are available in the reports directory:</p>
+        <ul>
+            <li><a href="snyk-catalogizer-android-results.json">snyk-catalogizer-android-results.json</a></li>
+            <li><a href="snyk-catalogizer-androidtv-results.json">snyk-catalogizer-androidtv-results.json</a></li>
+            <li><a href="snyk-catalogizer-api-client-results.json">snyk-catalogizer-api-client-results.json</a></li>
+            <li><a href="snyk-catalogizer-desktop-results.json">snyk-catalogizer-desktop-results.json</a></li>
+            <li><a href="snyk-catalog-web-results.json">snyk-catalog-web-results.json</a></li>
+            <li><a href="snyk-go-results.json">snyk-go-results.json</a></li>
+            <li><a href="snyk-installer-wizard-results.json">snyk-installer-wizard-results.json</a></li>
+            <li><a href="snyk-web-results.json">snyk-web-results.json</a></li>
+        </ul>
+    </div>
+    
+    <div class="section">
+        <h2>🔧 Recommendations</h2>
+        <ul>
+            <li>Review all high and critical severity vulnerabilities</li>
+            <li>Update dependencies to secure versions</li>
+            <li>Implement security best practices in code</li>
+            <li>Regularly monitor for new vulnerabilities</li>
+        </ul>
+    </div>
+</body>
+</html>

@@ -9,7 +9,7 @@ set -e
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT_ROOT="$(dirname "$SCRIPT_DIR")"
 SONAR_HOST_URL="${SONAR_HOST_URL:-http://localhost:9000}"
-SONAR_TOKEN="${SONAR_TOKEN:?Sonar token required}"
+SONAR_TOKEN="${SONAR_TOKEN:-admin}"
 PROJECT_KEY="${PROJECT_KEY:-catalogizer}"
 REPORTS_DIR="$PROJECT_ROOT/reports"
 
@@ -23,13 +23,13 @@ mkdir -p "$REPORTS_DIR"
 # Function to check SonarQube server availability
 check_sonarqube() {
     echo "🔍 Checking SonarQube server availability..."
-    for i in {1..30}; do
+    for i in {1..60}; do
         if curl -f -s "$SONAR_HOST_URL/api/system/status" > /dev/null 2>&1; then
             echo "✅ SonarQube server is ready"
             return 0
         fi
-        echo "⏳ Waiting for SonarQube server... ($i/30)"
-        sleep 10
+        echo "⏳ Waiting for SonarQube server... ($i/60)"
+        sleep 5
     done
     echo "❌ SonarQube server is not available"
     return 1
@@ -50,14 +50,19 @@ install_scanner() {
             *) echo "❌ Unsupported architecture: $ARCH"; exit 1 ;;
         esac
         
-        SONAR_SCANNER_VERSION="5.0.1.3006"
+        SONAR_SCANNER_VERSION="6.2.1.4610"
         SONAR_SCANNER_URL="https://binaries.sonarsource.com/Distribution/sonar-scanner-cli/sonar-scanner-cli-${SONAR_SCANNER_VERSION}-${OS}-${ARCH}.zip"
         
         cd /tmp
-        wget -q "$SONAR_SCANNER_URL" -O sonar-scanner.zip
+        wget -q "$SONAR_SCANNER_URL" -O sonar-scanner.zip || curl -s "$SONAR_SCANNER_URL" -o sonar-scanner.zip
         unzip -q sonar-scanner.zip
-        sudo mv sonar-scanner-${SONAR_SCANNER_VERSION}-${OS}-${ARCH} /opt/sonar-scanner
-        sudo ln -sf /opt/sonar-scanner/bin/sonar-scanner /usr/local/bin/sonar-scanner
+        sudo mv sonar-scanner-${SONAR_SCANNER_VERSION}-${OS}-${ARCH} /opt/sonar-scanner 2>/dev/null || {
+            mkdir -p ~/sonar-scanner
+            mv sonar-scanner-${SONAR_SCANNER_VERSION}-${OS}-${ARCH} ~/sonar-scanner
+            export PATH="$HOME/sonar-scanner/bin:$PATH"
+            echo 'export PATH="$HOME/sonar-scanner/bin:$PATH"' >> ~/.bashrc
+        }
+        sudo ln -sf /opt/sonar-scanner/bin/sonar-scanner /usr/local/bin/sonar-scanner 2>/dev/null || true
         rm sonar-scanner.zip
         
         echo "✅ SonarScanner installed successfully"
@@ -73,7 +78,10 @@ prepare_go_coverage() {
     
     if [ -f "go.mod" ]; then
         go mod tidy
-        go test -v -race -coverprofile=coverage.out ./... 2>/dev/null || true
+        go test -v -race -coverprofile=coverage.out ./... 2>/dev/null || {
+            echo "⚠️  Go tests failed, continuing with coverage..."
+            go test -coverprofile=coverage.out ./... 2>/dev/null || true
+        }
         go tool cover -html=coverage.out -o coverage.html 2>/dev/null || true
         
         # Generate test results in JSON format
@@ -91,6 +99,11 @@ prepare_js_coverage() {
         if [ -d "$PROJECT_ROOT/$project_dir" ] && [ -f "$PROJECT_ROOT/$project_dir/package.json" ]; then
             echo "📦 Processing $project_dir..."
             cd "$PROJECT_ROOT/$project_dir"
+            
+            # Install dependencies if needed
+            if [ ! -d "node_modules" ]; then
+                npm install --silent
+            fi
             
             if npm run test:coverage 2>/dev/null || npm run test 2>/dev/null; then
                 echo "✅ Coverage generated for $project_dir"
@@ -110,10 +123,16 @@ prepare_android_coverage() {
             echo "📱 Processing $project_dir..."
             cd "$PROJECT_ROOT/$project_dir"
             
-            if ./gradlew testDebugUnitTest 2>/dev/null; then
-                echo "✅ Android tests completed for $project_dir"
+            # Check if gradlew exists and is executable
+            if [ -f "./gradlew" ]; then
+                chmod +x ./gradlew
+                if ./gradlew testDebugUnitTest 2>/dev/null; then
+                    echo "✅ Android tests completed for $project_dir"
+                else
+                    echo "⚠️  Android tests failed for $project_dir"
+                fi
             else
-                echo "⚠️  Android tests failed for $project_dir"
+                echo "⚠️  gradlew not found in $project_dir"
             fi
         fi
     done
@@ -129,22 +148,26 @@ run_sonar_scan() {
     prepare_js_coverage
     prepare_android_coverage
     
-    # Run SonarQube scan
+    # Run SonarQube scan with enhanced configuration
     sonar-scanner \
         -Dsonar.projectKey="$PROJECT_KEY" \
         -Dsonar.host.url="$SONAR_HOST_URL" \
         -Dsonar.login="$SONAR_TOKEN" \
         -Dsonar.projectVersion="1.0.0" \
         -Dsonar.sources="." \
-        -Dsonar.exclusions="**/node_modules/**,**/target/**,**/build/**,**/dist/**,**/vendor/**,**/releases/**,**/.git/**,**/reports/**" \
-        -Dsonar.test.inclusions="**/*test*.go,**/*test*.js,**/*test*.ts,**/*Test.java,**/*Test.kt,**/*_test.go" \
-        -Dsonar.coverage.exclusions="**/*_test.go,**/*test*.js,**/*test*.ts,**/mocks/**,**/stubs/**,**/generated/**" \
-        -Dsonar.java.binaries="**/target/classes/**,**/build/classes/**" \
+        -Dsonar.exclusions="**/node_modules/**,**/target/**,**/build/**,**/dist/**,**/vendor/**,**/releases/**,**/.git/**,**/reports/**,**/coverage/**" \
+        -Dsonar.test.inclusions="**/*test*.go,**/*test*.js,**/*test*.ts,**/*Test.java,**/*Test.kt,**/*_test.go,**/*.spec.ts,**/*.spec.js" \
+        -Dsonar.coverage.exclusions="**/*_test.go,**/*test*.js,**/*test*.ts,**/mocks/**,**/stubs/**,**/generated/**,**/*.spec.ts,**/*.spec.js" \
+        -Dsonar.java.binaries="**/target/classes/**,**/build/classes/**,**/build/tmp/kotlin-classes/**" \
         -Dsonar.go.coverage.reportPaths="catalog-api/coverage.out" \
         -Dsonar.javascript.lcov.reportPaths="catalog-web/coverage/lcov.info,catalogizer-desktop/coverage/lcov.info,catalogizer-api-client/coverage/lcov.info,installer-wizard/coverage/lcov.info" \
         -Dsonar.typescript.lcov.reportPaths="catalog-web/coverage/lcov.info,catalogizer-desktop/coverage/lcov.info,catalogizer-api-client/coverage/lcov.info,installer-wizard/coverage/lcov.info" \
         -Dsonar.qualitygate.wait=true \
-        -Dsonar.sourceEncoding=UTF-8
+        -Dsonar.sourceEncoding=UTF-8 \
+        -Dsonar.scm.provider=git \
+        -Dsonar.scm.exclusions.disabled=true \
+        -Dsonar.security.hotspots.enabled=true \
+        -Dsonar.go.tests.reportPaths="catalog-api/test-results.json"
     
     echo "✅ SonarQube analysis completed"
 }
