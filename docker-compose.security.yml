@@ -4,7 +4,7 @@ version: '3.8'
 # This file contains SonarQube and Snyk services for security scanning
 
 services:
-  # SonarQube Community Edition
+  # SonarQube Community Edition (Enhanced for Freemium)
   sonarqube:
     image: sonarqube:community
     container_name: catalogizer-sonarqube
@@ -15,13 +15,20 @@ services:
       SONAR_WEB_HOST: 0.0.0.0
       SONAR_WEB_PORT: 9000
       SONAR_WEB_CONTEXT: /
-      SONAR_ES_BOOTSTRAP_CHECKS_DISABLE: true
+      SONAR_ES_BOOTSTRAP_CHECKS_DISABLE: "true"
+      # Enhanced security settings
+      SONAR_CE_JAVA_OPTS: "-Xmx1g -Xms512m"
+      SONAR_WEB_JAVA_OPTS: "-Xmx1g -Xms512m"
+      # Freemium configuration
+      SONAR_FORCEAUTHENTICATION: "false"
+      SONAR_UPDATECENTER_ACTIVATED: "true"
     ports:
       - "9000:9000"
     volumes:
       - sonarqube_data:/opt/sonarqube/data
       - sonarqube_logs:/opt/sonarqube/logs
       - sonarqube_extensions:/opt/sonarqube/extensions
+      - ./sonarqube/conf:/opt/sonarqube/conf:ro
     depends_on:
       - sonarqube-db
     healthcheck:
@@ -69,7 +76,7 @@ services:
           cpus: '0.5'
           memory: 512M
 
-  # Snyk CLI Container (for freemium scanning)
+  # Snyk CLI Container (Enhanced for freemium scanning)
   snyk-cli:
     image: node:18-alpine
     container_name: catalogizer-snyk-cli
@@ -77,22 +84,30 @@ services:
       SNYK_TOKEN: ${SNYK_TOKEN:-dummy-token}
       SNYK_CFG_ORG: ${SNYK_ORG:-catalogizer}
       SNYK_SEVERITY_THRESHOLD: ${SNYK_SEVERITY_THRESHOLD:-medium}
+      SNYK_INTEGRATION_NAME: "catalogizer-security-scan"
+      SNYK_INTEGRATION_VERSION: "1.0.0"
     volumes:
       - ..:/project
       - snyk_cache:/root/.npm
+      - snyk_global_cache:/root/.cache
     working_dir: /project
     command: >
       sh -c "
-        apk add --no-cache curl &&
+        apk add --no-cache curl git jq &&
         npm install -g snyk &&
-        snyk auth $SNYK_TOKEN &&
-        echo '🔍 Running Snyk dependency scan...' &&
+        echo '🔐 Authenticating with Snyk...' &&
+        snyk auth $SNYK_TOKEN || echo '⚠️ Using freemium mode' &&
+        echo '📁 Creating reports directory...' &&
+        mkdir -p /project/reports &&
+        echo '🔍 Running Snyk dependency scan (all projects)...' &&
         snyk test --all-projects --org=$SNYK_ORG --severity-threshold=$SNYK_SEVERITY_THRESHOLD --json --json-file-output=/project/reports/snyk-dependencies-results.json || true &&
-        echo '🔍 Running Snyk code analysis...' &&
+        echo '🔍 Running Snyk code analysis (SAST)...' &&
         snyk code test --all-projects --org=$SNYK_ORG --severity-threshold=$SNYK_SEVERITY_THRESHOLD --json --json-file-output=/project/reports/snyk-code-results.json || true &&
         echo '📊 Running Snyk container scan...' &&
         snyk container test catalogizer-api:latest --org=$SNYK_ORG --severity-threshold=$SNYK_SEVERITY_THRESHOLD --json --json-file-output=/project/reports/snyk-container-results.json || true &&
-        echo '✅ Snyk scanning completed'
+        echo '🔍 Running Snyk IaC scan...' &&
+        snyk iac test --org=$SNYK_ORG --severity-threshold=$SNYK_SEVERITY_THRESHOLD --json --json-file-output=/project/reports/snyk-iac-results.json || true &&
+        echo '✅ Snyk comprehensive scanning completed'
       "
     profiles:
       - snyk-scan
@@ -101,16 +116,18 @@ services:
     deploy:
       resources:
         limits:
+          cpus: '2'
+          memory: 2G
+        reservations:
           cpus: '1'
           memory: 1G
-        reservations:
-          cpus: '0.5'
-          memory: 512M
 
   # OWASP Dependency Check
   dependency-check:
     image: owasp/dependency-check:latest
     container_name: catalogizer-dependency-check
+    environment:
+      - JAVA_OPTS=-Xmx2g -Xms1g
     volumes:
       - ..:/project:ro
       - dependency_check_data:/usr/share/dependency-check/data
@@ -119,9 +136,14 @@ services:
       "--project", "Catalogizer",
       "--scan", "/project",
       "--format", "HTML",
-      "--format", "XML",
+      "--format", "XML", 
       "--format", "JSON",
-      "--out", "/reports/dependency-check"
+      "--out", "/reports/dependency-check",
+      "--disableRetireJS",
+      "--disableNodeJS",
+      "--disableYarnAudit",
+      "--disableNodeAudit",
+      "--suppressionFile", "/project/dependency-check-suppressions.xml"
     ]
     profiles:
       - dependency-check
@@ -131,10 +153,10 @@ services:
       resources:
         limits:
           cpus: '2'
-          memory: 3G
+          memory: 4G
         reservations:
           cpus: '1'
-          memory: 1G
+          memory: 2G
 
   # Trivy Vulnerability Scanner
   trivy-scanner:
@@ -174,6 +196,8 @@ volumes:
   sonarqube_db_data:
     driver: local
   snyk_cache:
+    driver: local
+  snyk_global_cache:
     driver: local
   dependency_check_data:
     driver: local

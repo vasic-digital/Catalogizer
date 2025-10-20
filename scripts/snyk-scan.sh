@@ -21,14 +21,14 @@ echo "⚠️  Severity Threshold: $SNYK_SEVERITY_THRESHOLD"
 # Create reports directory
 mkdir -p "$REPORTS_DIR"
 
-# Function to install Snyk CLI (Freemium approach)
+# Function to install Snyk CLI (Enhanced Freemium approach)
 install_snyk() {
     if ! command -v snyk &> /dev/null; then
-        echo "📦 Installing Snyk CLI (Freemium version)..."
+        echo "📦 Installing Snyk CLI (Enhanced Freemium version)..."
 
         # Use npm for installation (most reliable for freemium)
         if command -v npm &> /dev/null; then
-            npm install -g snyk
+            npm install -g snyk@latest
             echo "✅ Snyk CLI installed via npm"
         else
             echo "❌ npm not available, trying direct download..."
@@ -42,7 +42,7 @@ install_snyk() {
                 *) echo "❌ Unsupported architecture: $ARCH"; exit 1 ;;
             esac
 
-            SNYK_URL="https://static.snyk.io/cli/latest/snyk-${OS}"
+            SNYK_URL="https://static.snyk.io/cli/latest/snyk-${OS}-${ARCH}"
             curl -s "$SNYK_URL" -o snyk
             chmod +x snyk
             sudo mv snyk /usr/local/bin/ 2>/dev/null || mv snyk /usr/local/bin/
@@ -50,7 +50,15 @@ install_snyk() {
         fi
     else
         echo "✅ Snyk CLI is already installed"
+        # Update to latest version
+        echo "🔄 Updating Snyk CLI to latest version..."
+        npm update -g snyk 2>/dev/null || true
     fi
+
+    # Configure Snyk for freemium usage
+    echo "⚙️  Configuring Snyk for freemium usage..."
+    snyk config set org="$SNYK_ORG" 2>/dev/null || true
+    snyk config set severity-threshold="$SNYK_SEVERITY_THRESHOLD" 2>/dev/null || true
 
     # Authenticate with Snyk (required for freemium usage)
     if [ "$SNYK_TOKEN" != "dummy-token" ]; then
@@ -59,6 +67,7 @@ install_snyk() {
         echo "✅ Snyk authentication successful"
     else
         echo "⚠️  Using dummy Snyk token - some features may be limited"
+        echo "💡 Get your free Snyk token at: https://snyk.io/account"
     fi
 }
 

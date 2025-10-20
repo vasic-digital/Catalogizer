@@ -36,6 +36,7 @@ Catalogizer is a comprehensive media collection management system that automatic
 - [External Providers](#external-providers)
 - [Real-time Monitoring](#real-time-monitoring)
 - [Security & Authentication](#security--authentication)
+- [Security Testing](#security-testing)
 - [Deployment](#deployment)
 - [Troubleshooting](#troubleshooting)
 - [Contributing](#contributing)
@@ -760,7 +761,10 @@ Catalogizer includes comprehensive security testing using industry-standard tool
 
 #### Full Test Suite (Including Security)
 ```bash
-# Run all tests including security scans
+# Run comprehensive test suite (all tests + security scans)
+./scripts/run-all-tests.sh
+
+# Or run security tests only
 ./scripts/security-test.sh
 
 # Or run individual security scans
@@ -772,7 +776,20 @@ Catalogizer includes comprehensive security testing using industry-standard tool
 1. **Setup Freemium Accounts**: Run `./scripts/setup-freemium-tokens.sh`
 2. **SonarQube**: Free account at https://sonarcloud.io + `SONAR_TOKEN`
 3. **Snyk**: Free account at https://snyk.io + `SNYK_TOKEN`
-4. **Docker**: Required for running security services (optional for basic scans)
+4. **Docker**: Required for running security services
+5. **Environment Variables**: Set tokens in environment or `.env` file
+
+#### Environment Setup
+```bash
+# Security tokens (optional for freemium usage)
+export SONAR_TOKEN="your-sonarqube-token"
+export SNYK_TOKEN="your-snyk-token"
+export SNYK_ORG="catalogizer"
+
+# Application secrets
+export JWT_SECRET="your-jwt-secret-here"
+export ADMIN_PASSWORD="your-admin-password-here"
+```
 
 #### Test Reports
 All test results are stored in the `reports/` directory:

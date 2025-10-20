@@ -140,7 +140,7 @@ prepare_android_coverage() {
 
 # Function to run SonarQube scan
 run_sonar_scan() {
-    echo "🔍 Running SonarQube analysis..."
+    echo "🔍 Running comprehensive SonarQube analysis..."
     cd "$PROJECT_ROOT"
     
     # Prepare all coverage reports
@@ -148,16 +148,42 @@ run_sonar_scan() {
     prepare_js_coverage
     prepare_android_coverage
     
+    # Create sonar-project.properties if not exists
+    if [ ! -f "sonar-project.properties" ]; then
+        echo "📝 Creating SonarQube project configuration..."
+        cat > sonar-project.properties << 'EOF'
+# SonarQube Configuration for Catalogizer
+sonar.projectKey=catalogizer
+sonar.projectName=Catalogizer
+sonar.projectVersion=1.0.0
+sonar.sources=.
+sonar.sourceEncoding=UTF-8
+sonar.scm.provider=git
+sonar.exclusions=**/node_modules/**,**/target/**,**/build/**,**/dist/**,**/vendor/**,**/releases/**,**/.git/**,**/reports/**,**/coverage/**,**/logs/**,**/tmp/**,**/temp/**,**/*.min.js,**/*.min.css,**/bundle.js,**/bundle.css
+sonar.test.inclusions=**/*test*.go,**/*test*.js,**/*test*.ts,**/*Test.java,**/*Test.kt,**/*_test.go,**/*.spec.ts,**/*.spec.js,**/test/**/*.go,**/test/**/*.js,**/test/**/*.ts,**/tests/**/*.go,**/tests/**/*.js,**/tests/**/*.ts
+sonar.coverage.exclusions=**/*_test.go,**/*test*.js,**/*test*.ts,**/mocks/**,**/stubs/**,**/generated/**,**/*.spec.ts,**/*.spec.js,**/test/**,**/tests/**,**/node_modules/**,**/vendor/**
+sonar.go.coverage.reportPaths=catalog-api/coverage.out
+sonar.go.tests.reportPaths=catalog-api/test-results.json
+sonar.javascript.lcov.reportPaths=catalog-web/coverage/lcov.info,catalogizer-desktop/coverage/lcov.info,catalogizer-api-client/coverage/lcov.info,installer-wizard/coverage/lcov.info
+sonar.typescript.lcov.reportPaths=catalog-web/coverage/lcov.info,catalogizer-desktop/coverage/lcov.info,catalogizer-api-client/coverage/lcov.info,installer-wizard/coverage/lcov.info
+sonar.java.binaries=**/target/classes/**,**/build/classes/**,**/build/tmp/kotlin-classes/**
+sonar.security.hotspots.enabled=true
+sonar.qualitygate.wait=true
+sonar.scm.exclusions.disabled=true
+EOF
+    fi
+    
     # Run SonarQube scan with enhanced configuration
+    echo "🚀 Starting SonarQube scanner..."
     sonar-scanner \
         -Dsonar.projectKey="$PROJECT_KEY" \
         -Dsonar.host.url="$SONAR_HOST_URL" \
         -Dsonar.login="$SONAR_TOKEN" \
         -Dsonar.projectVersion="1.0.0" \
         -Dsonar.sources="." \
-        -Dsonar.exclusions="**/node_modules/**,**/target/**,**/build/**,**/dist/**,**/vendor/**,**/releases/**,**/.git/**,**/reports/**,**/coverage/**" \
-        -Dsonar.test.inclusions="**/*test*.go,**/*test*.js,**/*test*.ts,**/*Test.java,**/*Test.kt,**/*_test.go,**/*.spec.ts,**/*.spec.js" \
-        -Dsonar.coverage.exclusions="**/*_test.go,**/*test*.js,**/*test*.ts,**/mocks/**,**/stubs/**,**/generated/**,**/*.spec.ts,**/*.spec.js" \
+        -Dsonar.exclusions="**/node_modules/**,**/target/**,**/build/**,**/dist/**,**/vendor/**,**/releases/**,**/.git/**,**/reports/**,**/coverage/**,**/logs/**,**/tmp/**,**/temp/**,**/*.min.js,**/*.min.css,**/bundle.js,**/bundle.css" \
+        -Dsonar.test.inclusions="**/*test*.go,**/*test*.js,**/*test*.ts,**/*Test.java,**/*Test.kt,**/*_test.go,**/*.spec.ts,**/*.spec.js,**/test/**/*.go,**/test/**/*.js,**/test/**/*.ts,**/tests/**/*.go,**/tests/**/*.js,**/tests/**/*.ts" \
+        -Dsonar.coverage.exclusions="**/*_test.go,**/*test*.js,**/*test*.ts,**/mocks/**,**/stubs/**,**/generated/**,**/*.spec.ts,**/*.spec.js,**/test/**,**/tests/**,**/node_modules/**,**/vendor/**" \
         -Dsonar.java.binaries="**/target/classes/**,**/build/classes/**,**/build/tmp/kotlin-classes/**" \
         -Dsonar.go.coverage.reportPaths="catalog-api/coverage.out" \
         -Dsonar.javascript.lcov.reportPaths="catalog-web/coverage/lcov.info,catalogizer-desktop/coverage/lcov.info,catalogizer-api-client/coverage/lcov.info,installer-wizard/coverage/lcov.info" \
@@ -167,7 +193,9 @@ run_sonar_scan() {
         -Dsonar.scm.provider=git \
         -Dsonar.scm.exclusions.disabled=true \
         -Dsonar.security.hotspots.enabled=true \
-        -Dsonar.go.tests.reportPaths="catalog-api/test-results.json"
+        -Dsonar.go.tests.reportPaths="catalog-api/test-results.json" \
+        -Dsonar.issuesReport.multicriteria.paths="**/catalog-api/**:SECURITY_HOTSPOTS,BUGS,VULNERABILITIES,**/catalog-web/**:SECURITY_HOTSPOTS,BUGS,VULNERABILITIES,**/catalogizer-desktop/**:SECURITY_HOTSPOTS,BUGS,VULNERABILITIES,**/catalogizer-android/**:SECURITY_HOTSPOTS,BUGS,VULNERABILITIES,**/catalogizer-androidtv/**:SECURITY_HOTSPOTS,BUGS,VULNERABILITIES" \
+        -Dsonar.import_unknown_files=true
     
     echo "✅ SonarQube analysis completed"
 }

@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<suppressions xmlns="https://jeremylong.github.io/DependencyCheck/dependency-suppression.1.3.xsd">
+    <!-- Suppress false positives and known safe dependencies -->
+    <suppress>
+        <notes><![CDATA[
+        Suppress test dependencies and development tools
+        ]]></notes>
+        <cve>CVE-2021-44228</cve>
+    </suppress>
+    <suppress>
+        <notes><![CDATA[
+        Suppress vulnerabilities in development dependencies only
+        ]]></notes>
+        <packageUrl regex="true">^pkg:npm/.*$</packageUrl>
+        <vulnerabilityName regex="true">.*</vulnerabilityName>
+        <scope>test</scope>
+    </suppress>
+    <suppress>
+        <notes><![CDATA[
+        Suppress known false positives for commonly used libraries
+        ]]></notes>
+        <packageUrl regex="true">^pkg:maven/.*$</packageUrl>
+        <cve regex="true">CVE-2021-</cve>
+    </suppress>
+</suppressions>

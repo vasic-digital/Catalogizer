@@ -37,7 +37,7 @@ check_prerequisites() {
     fi
     
     # Check Docker Compose
-    if ! command -v docker-compose &> /dev/null; then
+    if ! command -v docker-compose &> /dev/null && ! docker compose version &> /dev/null; then
         log "❌ Docker Compose is not installed"
         return 1
     fi
@@ -63,7 +63,7 @@ start_security_services() {
     
     # Start SonarQube and related services
     log "🔍 Starting SonarQube services..."
-    docker-compose -f docker-compose.security.yml up -d sonarqube sonarqube-db
+    docker compose -f docker-compose.security.yml up -d sonarqube sonarqube-db
     
     # Wait for SonarQube to be ready
     log "⏳ Waiting for SonarQube to be ready..."
@@ -213,7 +213,7 @@ stop_security_services() {
     log "🛑 Stopping security testing services..."
     
     cd "$PROJECT_ROOT"
-    docker-compose -f docker-compose.security.yml down
+    docker compose -f docker-compose.security.yml down
     
     log "✅ Security services stopped"
 }

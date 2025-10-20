@@ -19,11 +19,11 @@
     "busy_timeout": 5000
   },
   "auth": {
-    "jwt_secret": "change-this-secret-in-production",
+    "jwt_secret": "${JWT_SECRET:-change-this-secret-in-production}",
     "jwt_expiration_hours": 24,
     "enable_auth": false,
     "admin_username": "admin",
-    "admin_password": "admin123"
+    "admin_password": "${ADMIN_PASSWORD:-admin123}"
   },
   "catalog": {
     "default_page_size": 100,
@@ -51,7 +51,7 @@
           "port": 445,
           "share": "shared",
           "username": "user",
-          "password": "password",
+          "password": "${SMB_PASSWORD:-password}",
           "domain": "WORKGROUP"
         }
       },
@@ -67,7 +67,7 @@
           "host": "ftp.example.com",
           "port": 21,
           "username": "ftpuser",
-          "password": "ftppass",
+          "password": "${FTP_PASSWORD:-ftppass}",
           "path": "/"
         }
       },
@@ -97,7 +97,7 @@
         "settings": {
           "url": "https://webdav.example.com/remote.php/dav/files/user/",
           "username": "webdavuser",
-          "password": "webdavpass",
+          "password": "${WEBDAV_PASSWORD:-webdavpass}",
           "path": "/"
         }
       },

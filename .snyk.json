@@ -1,0 +1,103 @@
+{
+  "api": "v1",
+  "type": "snyk-config",
+  "version": "1.0.0",
+  "org": "${SNYK_ORG:-catalogizer}",
+  "severityThreshold": "${SNYK_SEVERITY_THRESHOLD:-medium}",
+  "project": {
+    "name": "catalogizer",
+    "businessCriticality": "critical",
+    "environment": "production",
+    "lifecycle": "production"
+  },
+  "scanning": {
+    "dependencies": {
+      "enabled": true,
+      "scanAllProjects": true,
+      "includeDevDependencies": true,
+      "excludePatterns": [
+        "**/node_modules/**",
+        "**/target/**",
+        "**/build/**",
+        "**/dist/**",
+        "**/vendor/**"
+      ]
+    },
+    "code": {
+      "enabled": true,
+      "scanAllProjects": true,
+      "severityThreshold": "medium",
+      "excludePatterns": [
+        "**/test/**",
+        "**/tests/**",
+        "**/mocks/**",
+        "**/generated/**"
+      ]
+    },
+    "iac": {
+      "enabled": true,
+      "severityThreshold": "medium",
+      "excludePatterns": [
+        "**/node_modules/**",
+        "**/test/**"
+      ]
+    },
+    "container": {
+      "enabled": true,
+      "images": [
+        "catalogizer-api:latest",
+        "catalogizer-web:latest",
+        "catalogizer-desktop:latest"
+      ],
+      "severityThreshold": "medium"
+    }
+  },
+  "monitoring": {
+    "enabled": true,
+    "frequency": "daily",
+    "autoRemediation": {
+      "enabled": false,
+      "severityThreshold": "low"
+    }
+  },
+  "reporting": {
+    "formats": ["json", "html", "sarif"],
+    "outputDirectory": "reports",
+    "includeDependencies": true,
+    "includeLicenses": true,
+    "includeVulnerabilities": true
+  },
+  "remediation": {
+    "strategies": {
+      "dependencies": {
+        "autoUpdate": false,
+        "pinVersions": true,
+        "pruneDependencies": true
+      },
+      "code": {
+        "autoFix": false,
+        "suggestFixes": true
+      }
+    }
+  },
+  "integration": {
+    "name": "catalogizer-security-scan",
+    "version": "1.0.0",
+    "ci": {
+      "enabled": true,
+      "failOnIssues": true,
+      "failOnSeverity": "high"
+    }
+  },
+  "freemium": {
+    "maxProjects": 100,
+    "maxScansPerDay": 50,
+    "features": [
+      "dependency-scanning",
+      "code-scanning",
+      "iac-scanning",
+      "container-scanning",
+      "reporting"
+    ]
+  }
+}
