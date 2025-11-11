@@ -1361,11 +1361,17 @@ func (s *VideoPlayerService) loadSubtitles(ctx context.Context, session *VideoPl
 	} else {
 		session.SubtitleTracks = subtitleTracks
 
-		for _, track := range subtitleTracks {
+		// Set active subtitle to the default track if available
+		for i, track := range subtitleTracks {
 			if track.IsDefault && session.ActiveSubtitle == nil {
-				// TODO: Fix type mismatch - ActiveSubtitle expects *int64 but track.ID is string
-				// For now, we'll skip setting the active subtitle
-				_ = track
+				// Use track index as the active subtitle identifier
+				// Since SubtitleTrack.ID is string but ActiveSubtitle expects *int64,
+				// we use the track index (position in array) as the identifier
+				trackIndex := int64(i)
+				session.ActiveSubtitle = &trackIndex
+				s.logger.Debug("Set default subtitle track",
+					zap.Int64("index", trackIndex),
+					zap.String("language", track.Language))
 				break
 			}
 		}

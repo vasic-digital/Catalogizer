@@ -23,7 +23,7 @@ const TestWrapper = ({ children }: { children: React.ReactNode }) => {
   )
 }
 
-describe.skip('WebDAVConfigurationStep', () => {
+describe('WebDAVConfigurationStep', () => {
   beforeEach(() => {
     queryClient = new QueryClient({
       defaultOptions: {

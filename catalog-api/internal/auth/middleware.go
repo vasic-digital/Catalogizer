@@ -1,8 +1,11 @@
 package auth
 
 import (
+	"fmt"
 	"net/http"
 	"strings"
+	"sync"
+	"time"
 
 	"github.com/gin-gonic/gin"
 	"go.uber.org/zap"
@@ -272,9 +275,23 @@ func (m *AuthMiddleware) LogUserActivity() gin.HandlerFunc {
 	}
 }
 
-// RateLimitByUser implements per-user rate limiting
+// RateLimitByUser implements per-user rate limiting with sliding window algorithm
 func (m *AuthMiddleware) RateLimitByUser(requests int, window string) gin.HandlerFunc {
-	// This is a placeholder - implement with Redis or in-memory store
+	// Parse window duration
+	windowDuration, err := time.ParseDuration(window)
+	if err != nil {
+		m.logger.Error("Invalid rate limit window", zap.String("window", window), zap.Error(err))
+		windowDuration = time.Minute // Default to 1 minute
+	}
+
+	// In-memory rate limiter (can be upgraded to Redis for distributed systems)
+	type rateLimitEntry struct {
+		timestamps []time.Time
+		mu         sync.Mutex
+	}
+
+	rateLimiters := &sync.Map{}
+
 	return func(c *gin.Context) {
 		user, exists := GetCurrentUser(c)
 		if !exists {
@@ -282,11 +299,47 @@ func (m *AuthMiddleware) RateLimitByUser(requests int, window string) gin.Handle
 			return
 		}
 
-		// TODO: Implement rate limiting logic
-		// For now, just pass through
-		_ = user
-		_ = requests
-		_ = window
+		// Get or create rate limiter for this user
+		key := fmt.Sprintf("ratelimit:%d", user.ID)
+		val, _ := rateLimiters.LoadOrStore(key, &rateLimitEntry{
+			timestamps: make([]time.Time, 0, requests),
+		})
+		entry := val.(*rateLimitEntry)
+
+		entry.mu.Lock()
+		defer entry.mu.Unlock()
+
+		now := time.Now()
+		cutoff := now.Add(-windowDuration)
+
+		// Remove timestamps outside the window
+		validTimestamps := make([]time.Time, 0, len(entry.timestamps))
+		for _, ts := range entry.timestamps {
+			if ts.After(cutoff) {
+				validTimestamps = append(validTimestamps, ts)
+			}
+		}
+		entry.timestamps = validTimestamps
+
+		// Check if rate limit exceeded
+		if len(entry.timestamps) >= requests {
+			m.logger.Warn("Rate limit exceeded",
+				zap.String("username", user.Username),
+				zap.Int64("user_id", user.ID),
+				zap.Int("requests", len(entry.timestamps)),
+				zap.Int("limit", requests),
+				zap.String("window", window),
+			)
+			c.JSON(http.StatusTooManyRequests, gin.H{
+				"error": "Rate limit exceeded. Please try again later.",
+				"retry_after": windowDuration.Seconds(),
+			})
+			c.Abort()
+			return
+		}
+
+		// Add current request timestamp
+		entry.timestamps = append(entry.timestamps, now)
 
 		c.Next()
 	}

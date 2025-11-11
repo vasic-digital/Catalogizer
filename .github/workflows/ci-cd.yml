@@ -1,11 +1,11 @@
 name: Catalogizer CI/CD
 
 on:
-  # Automatic triggers disabled - CI/CD runs manually only
-  # push:
-  #   branches: [ main, develop ]
-  # pull_request:
-  #   branches: [ main, develop ]
+  # Automatic triggers enabled
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main, develop ]
   workflow_dispatch:
     inputs:
       qa_level:

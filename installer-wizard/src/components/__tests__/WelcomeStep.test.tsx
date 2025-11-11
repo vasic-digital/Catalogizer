@@ -27,7 +27,7 @@ const TestWrapper = ({ children }: { children: React.ReactNode }) => {
   )
 }
 
-describe.skip('WelcomeStep', () => {
+describe('WelcomeStep', () => {
   it('renders welcome message', () => {
     render(
       <TestWrapper>

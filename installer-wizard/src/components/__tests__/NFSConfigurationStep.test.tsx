@@ -29,7 +29,7 @@ const TestWrapper = ({ children }: { children: React.ReactNode }) => {
   )
 }
 
-describe.skip('NFSConfigurationStep', () => {
+describe('NFSConfigurationStep', () => {
   beforeEach(() => {
     vi.clearAllMocks()
   })

@@ -28,7 +28,7 @@ const TestWrapper = ({ children }: { children: React.ReactNode }) => {
   )
 }
 
-describe.skip('LocalConfigurationStep', () => {
+describe('LocalConfigurationStep', () => {
   beforeEach(() => {
     vi.clearAllMocks()
   })

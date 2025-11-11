@@ -19,7 +19,7 @@ const TestWrapper = ({ children }: { children: React.ReactNode }) => {
   )
 }
 
-describe.skip('FTPConfigurationStep', () => {
+describe('FTPConfigurationStep', () => {
   beforeEach(() => {
     vi.clearAllMocks()
   })
