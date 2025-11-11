@@ -10,21 +10,26 @@ import (
 
 	"github.com/gorilla/mux"
 
+	"catalogizer/internal/models"
 	"catalogizer/internal/services"
+	"catalogizer/repository"
 )
 
 type RecommendationHandler struct {
 	recommendationService *services.RecommendationService
 	deepLinkingService    *services.DeepLinkingService
+	fileRepository        *repository.FileRepository
 }
 
 func NewRecommendationHandler(
 	recommendationService *services.RecommendationService,
 	deepLinkingService *services.DeepLinkingService,
+	fileRepository *repository.FileRepository,
 ) *RecommendationHandler {
 	return &RecommendationHandler{
 		recommendationService: recommendationService,
 		deepLinkingService:    deepLinkingService,
+		fileRepository:        fileRepository,
 	}
 }
 
@@ -108,10 +113,25 @@ func (rh *RecommendationHandler) GetSimilarItems(w http.ResponseWriter, r *http.
 		}
 	}
 
-	// TODO: Get actual media metadata from database/service
-	// For now, we'll create a mock request
+	// Get actual media metadata from database
+	mediaIDInt, err := strconv.ParseInt(mediaID, 10, 64)
+	if err != nil {
+		http.Error(w, "Invalid media ID format", http.StatusBadRequest)
+		return
+	}
+
+	fileWithMetadata, err := rh.fileRepository.GetFileByID(r.Context(), mediaIDInt)
+	if err != nil {
+		http.Error(w, "Failed to get media metadata: "+err.Error(), http.StatusNotFound)
+		return
+	}
+
+	// Convert file metadata to MediaMetadata
+	metadata := rh.convertFileToMediaMetadata(fileWithMetadata)
+
 	req := &services.SimilarItemsRequest{
 		MediaID:             mediaID,
+		MediaMetadata:       metadata,
 		MaxLocalItems:       maxLocal,
 		MaxExternalItems:    maxExternal,
 		IncludeExternal:     includeExternal,
@@ -199,11 +219,25 @@ func (rh *RecommendationHandler) GetMediaWithSimilarItems(w http.ResponseWriter,
 
 	includeExternal := r.URL.Query().Get("include_external") == "true"
 
-	// TODO: Get actual media metadata from database/service
-	// For now, we'll create a mock response
+	// Get actual media metadata from database
+	mediaIDInt, err := strconv.ParseInt(mediaID, 10, 64)
+	if err != nil {
+		http.Error(w, "Invalid media ID format", http.StatusBadRequest)
+		return
+	}
+
+	fileWithMetadata, err := rh.fileRepository.GetFileByID(r.Context(), mediaIDInt)
+	if err != nil {
+		http.Error(w, "Failed to get media metadata: "+err.Error(), http.StatusNotFound)
+		return
+	}
+
+	// Convert file metadata to MediaMetadata
+	metadata := rh.convertFileToMediaMetadata(fileWithMetadata)
+
 	response := &MediaDetailWithSimilarResponse{
 		MediaID:       mediaID,
-		MediaMetadata: nil, // Would be populated from database
+		MediaMetadata: metadata,
 		SimilarItems:  nil, // Will be populated below
 		Links:         nil, // Will be populated below
 	}
@@ -211,6 +245,7 @@ func (rh *RecommendationHandler) GetMediaWithSimilarItems(w http.ResponseWriter,
 	// Get similar items
 	similarReq := &services.SimilarItemsRequest{
 		MediaID:             mediaID,
+		MediaMetadata:       metadata,
 		MaxLocalItems:       maxLocal,
 		MaxExternalItems:    5,
 		IncludeExternal:     includeExternal,
@@ -490,4 +525,107 @@ func generateMockTrendingItems(mediaType string, limit int) []TrendItem {
 	}
 
 	return items
+}
+
+// convertFileToMediaMetadata converts FileWithMetadata to MediaMetadata
+func (rh *RecommendationHandler) convertFileToMediaMetadata(fileWithMetadata *models.FileWithMetadata) *models.MediaMetadata {
+	if fileWithMetadata == nil {
+		return nil
+	}
+
+	metadata := &models.MediaMetadata{
+		ID:          fileWithMetadata.File.ID,
+		Title:       fileWithMetadata.File.Name,
+		Description: "",
+		FileSize:    &fileWithMetadata.File.Size,
+		CreatedAt:   fileWithMetadata.File.CreatedAt,
+		UpdatedAt:   fileWithMetadata.File.ModifiedAt,
+		Metadata:    make(map[string]interface{}),
+	}
+
+	// Extract metadata from FileMetadata array
+	for _, meta := range fileWithMetadata.Metadata {
+		switch meta.Key {
+		case "title":
+			if title, ok := meta.Value.(string); ok && title != "" {
+				metadata.Title = title
+			}
+		case "description", "synopsis", "plot":
+			if desc, ok := meta.Value.(string); ok {
+				metadata.Description = desc
+			}
+		case "genre", "genres":
+			if genre, ok := meta.Value.(string); ok {
+				metadata.Genre = genre
+			}
+		case "year", "release_year":
+			if year, ok := meta.Value.(float64); ok {
+				yearInt := int(year)
+				metadata.Year = &yearInt
+			}
+		case "rating", "imdb_rating":
+			if rating, ok := meta.Value.(float64); ok {
+				metadata.Rating = &rating
+			}
+		case "duration", "runtime":
+			if duration, ok := meta.Value.(float64); ok {
+				durationInt := int(duration)
+				metadata.Duration = &durationInt
+			}
+		case "language":
+			if lang, ok := meta.Value.(string); ok {
+				metadata.Language = lang
+			}
+		case "country":
+			if country, ok := meta.Value.(string); ok {
+				metadata.Country = country
+			}
+		case "director":
+			if director, ok := meta.Value.(string); ok {
+				metadata.Director = director
+			}
+		case "producer":
+			if producer, ok := meta.Value.(string); ok {
+				metadata.Producer = producer
+			}
+		case "cast":
+			if cast, ok := meta.Value.([]interface{}); ok {
+				castStrings := make([]string, 0, len(cast))
+				for _, c := range cast {
+					if castStr, ok := c.(string); ok {
+						castStrings = append(castStrings, castStr)
+					}
+				}
+				metadata.Cast = castStrings
+			}
+		case "media_type", "type":
+			if mediaType, ok := meta.Value.(string); ok {
+				metadata.MediaType = mediaType
+			}
+		case "resolution", "quality":
+			if resolution, ok := meta.Value.(string); ok {
+				metadata.Resolution = resolution
+			}
+		default:
+			// Store other metadata in the generic metadata map
+			metadata.Metadata[meta.Key] = meta.Value
+		}
+	}
+
+	// If media type is not set, try to infer from MIME type
+	if metadata.MediaType == "" {
+		switch {
+		case strings.HasPrefix(fileWithMetadata.File.MimeType, "video/"):
+			metadata.MediaType = "movie"
+		case strings.HasPrefix(fileWithMetadata.File.MimeType, "audio/"):
+			metadata.MediaType = "music"
+		case strings.HasPrefix(fileWithMetadata.File.MimeType, "application/pdf"),
+			 strings.HasPrefix(fileWithMetadata.File.MimeType, "application/epub"):
+			metadata.MediaType = "ebook"
+		default:
+			metadata.MediaType = "other"
+		}
+	}
+
+	return metadata
 }

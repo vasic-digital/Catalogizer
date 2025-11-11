@@ -19,6 +19,7 @@ type SubtitleService struct {
 	db                 *sql.DB
 	logger             *zap.Logger
 	translationService *TranslationService
+	cacheService       *CacheService
 	httpClient         *http.Client
 	apiKeys            map[string]string
 	cacheDir           string
@@ -114,11 +115,12 @@ type SubtitleLine struct {
 }
 
 // NewSubtitleService creates a new subtitle service
-func NewSubtitleService(db *sql.DB, logger *zap.Logger) *SubtitleService {
+func NewSubtitleService(db *sql.DB, logger *zap.Logger, cacheService *CacheService) *SubtitleService {
 	return &SubtitleService{
 		db:                 db,
 		logger:             logger,
 		translationService: NewTranslationService(logger),
+		cacheService:       cacheService,
 		httpClient:         &http.Client{Timeout: 30 * time.Second},
 		apiKeys:            make(map[string]string),
 		cacheDir:           "./cache/subtitles",
@@ -573,17 +575,23 @@ func (s *SubtitleService) sortSubtitleResults(results []SubtitleSearchResult) {
 
 // getDownloadInfo retrieves download information for a subtitle result
 func (s *SubtitleService) getDownloadInfo(ctx context.Context, resultID string) (*SubtitleSearchResult, error) {
-	// TODO: Implement proper caching and retrieval logic
-	// For now, return a stub
-	return &SubtitleSearchResult{
-		ID:           resultID,
-		Provider:     ProviderOpenSubtitles,
-		Language:     "English",
-		LanguageCode: "en",
-		DownloadURL:  "https://example.com/subtitle.srt",
-		Format:       "srt",
-		Encoding:     "utf-8",
-	}, nil
+	// Try to get from cache first
+	cacheKey := fmt.Sprintf("subtitle_download_info:%s", resultID)
+
+	var result SubtitleSearchResult
+	found, _, err := s.cacheService.Get(ctx, cacheKey, &result)
+	if err == nil && found {
+		s.logger.Debug("Retrieved subtitle download info from cache",
+			zap.String("result_id", resultID))
+		return &result, nil
+	}
+
+	// If not in cache, this is an error - download info should have been cached
+	// during search
+	s.logger.Warn("Subtitle download info not found in cache",
+		zap.String("result_id", resultID))
+
+	return nil, fmt.Errorf("subtitle download info not found for result ID: %s", resultID)
 }
 
 // saveSubtitleTrack saves a subtitle track to the database
@@ -624,8 +632,31 @@ func (s *SubtitleService) autoTranslateSubtitle(ctx context.Context, track *Subt
 
 // getCachedTranslation retrieves a cached translation
 func (s *SubtitleService) getCachedTranslation(ctx context.Context, subtitleID, targetLanguage string) *SubtitleTrack {
-	// TODO: Implement proper cache lookup
-	return nil
+	// Create cache key
+	cacheKey := fmt.Sprintf("subtitle_translation:%s:%s", subtitleID, targetLanguage)
+
+	var track SubtitleTrack
+	found, _, err := s.cacheService.Get(ctx, cacheKey, &track)
+	if err != nil {
+		s.logger.Debug("Error retrieving cached translation",
+			zap.String("subtitle_id", subtitleID),
+			zap.String("target_language", targetLanguage),
+			zap.Error(err))
+		return nil
+	}
+
+	if !found {
+		s.logger.Debug("Cached translation not found",
+			zap.String("subtitle_id", subtitleID),
+			zap.String("target_language", targetLanguage))
+		return nil
+	}
+
+	s.logger.Debug("Retrieved cached translation",
+		zap.String("subtitle_id", subtitleID),
+		zap.String("target_language", targetLanguage))
+
+	return &track
 }
 
 // getSubtitleTrack retrieves a subtitle track by ID
@@ -660,10 +691,25 @@ func (s *SubtitleService) getSubtitleTrack(ctx context.Context, subtitleID strin
 
 // saveCachedTranslation saves a translation to cache
 func (s *SubtitleService) saveCachedTranslation(ctx context.Context, subtitleID, targetLanguage string, track *SubtitleTrack) error {
-	// TODO: Implement proper cache storage
-	s.logger.Debug("Saving cached translation",
+	// Create cache key
+	cacheKey := fmt.Sprintf("subtitle_translation:%s:%s", subtitleID, targetLanguage)
+
+	// Cache for 30 days (translations are expensive to generate)
+	ttl := 30 * 24 * time.Hour
+
+	err := s.cacheService.Set(ctx, cacheKey, track, ttl)
+	if err != nil {
+		s.logger.Error("Failed to save cached translation",
+			zap.String("subtitle_id", subtitleID),
+			zap.String("target_language", targetLanguage),
+			zap.Error(err))
+		return err
+	}
+
+	s.logger.Debug("Saved cached translation",
 		zap.String("subtitle_id", subtitleID),
 		zap.String("target_language", targetLanguage))
+
 	return nil
 }
 
@@ -735,13 +781,84 @@ type VideoInfo struct {
 
 // getVideoInfo retrieves video metadata for sync verification
 func (s *SubtitleService) getVideoInfo(ctx context.Context, mediaItemID int64) (*VideoInfo, error) {
-	// TODO: Implement proper video metadata retrieval
-	return &VideoInfo{
-		Duration:  7200.0, // 2 hours
-		FrameRate: 23.976,
-		Width:     1920,
+	// Query video metadata from file_metadata table
+	query := `
+		SELECT key, value
+		FROM file_metadata
+		WHERE file_id = ? AND key IN ('duration', 'frame_rate', 'width', 'height', 'resolution')
+	`
+
+	rows, err := s.db.QueryContext(ctx, query, mediaItemID)
+	if err != nil {
+		return nil, fmt.Errorf("failed to query video metadata: %w", err)
+	}
+	defer rows.Close()
+
+	videoInfo := &VideoInfo{
+		Duration:  0,
+		FrameRate: 24.0, // Default frame rate
+		Width:     1920,  // Default resolution
 		Height:    1080,
-	}, nil
+	}
+
+	metadataMap := make(map[string]string)
+	for rows.Next() {
+		var key, value string
+		if err := rows.Scan(&key, &value); err != nil {
+			continue
+		}
+		metadataMap[key] = value
+	}
+
+	// Parse duration
+	if durationStr, ok := metadataMap["duration"]; ok {
+		if duration, err := strconv.ParseFloat(durationStr, 64); err == nil {
+			videoInfo.Duration = duration
+		}
+	}
+
+	// Parse frame rate
+	if frameRateStr, ok := metadataMap["frame_rate"]; ok {
+		if frameRate, err := strconv.ParseFloat(frameRateStr, 64); err == nil {
+			videoInfo.FrameRate = frameRate
+		}
+	}
+
+	// Parse width
+	if widthStr, ok := metadataMap["width"]; ok {
+		if width, err := strconv.Atoi(widthStr); err == nil {
+			videoInfo.Width = width
+		}
+	}
+
+	// Parse height
+	if heightStr, ok := metadataMap["height"]; ok {
+		if height, err := strconv.Atoi(heightStr); err == nil {
+			videoInfo.Height = height
+		}
+	}
+
+	// Parse resolution string (e.g., "1920x1080")
+	if resolutionStr, ok := metadataMap["resolution"]; ok {
+		parts := regexp.MustCompile(`(\d+)x(\d+)`).FindStringSubmatch(resolutionStr)
+		if len(parts) == 3 {
+			if width, err := strconv.Atoi(parts[1]); err == nil {
+				videoInfo.Width = width
+			}
+			if height, err := strconv.Atoi(parts[2]); err == nil {
+				videoInfo.Height = height
+			}
+		}
+	}
+
+	s.logger.Debug("Retrieved video info",
+		zap.Int64("media_item_id", mediaItemID),
+		zap.Float64("duration", videoInfo.Duration),
+		zap.Float64("frame_rate", videoInfo.FrameRate),
+		zap.Int("width", videoInfo.Width),
+		zap.Int("height", videoInfo.Height))
+
+	return videoInfo, nil
 }
 
 // extractSamplePoints extracts sample points for sync verification
