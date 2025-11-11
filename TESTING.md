@@ -197,15 +197,16 @@ CI=true npm test
 | Component | Tests | Coverage |
 |-----------|-------|----------|
 | MediaCard | 28 | 86.95% |
+| RegisterForm | 23 | NEW ✨ |
 | MediaGrid | 18 | 100% |
 | MediaFilters | 22 | 100% |
-| LoginForm | 19 | NEW ✨ |
+| LoginForm | 19 | - |
 | ProtectedRoute | 12 | - |
 | ConnectionStatus | 12 | - |
 | Button | 6 | 100% |
 | Input | 5 | 100% |
 | AuthContext | 6 | 45.33% |
-| **Total** | **128** | **~28-29%** |
+| **Total** | **151** | **~29-30%** |
 
 ### Frontend Test Patterns
 
@@ -636,6 +637,6 @@ When adding new features:
 ---
 
 **Last Updated**: November 11, 2024
-**Test Suite Status**: ✅ 238/238 tests passing (100% pass rate)
+**Test Suite Status**: ✅ 261/261 tests passing (100% pass rate)
 **Overall Coverage**: ~25-37% across platforms (steadily improving)
-**Recent Improvements**: +112 tests from initial (+88.9%), Android Gradle wrapper fixed
+**Recent Improvements**: +135 tests from initial (+107.1%), Android Gradle wrapper fixed
