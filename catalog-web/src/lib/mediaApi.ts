@@ -69,6 +69,33 @@ export const mediaApi = {
 
   testStorageRoot: (id: number): Promise<{ success: boolean; message: string }> =>
     api.post(`/storage/roots/${id}/test`).then((res) => res.data),
+
+  // Download media file
+  downloadMedia: async (media: MediaItem): Promise<void> => {
+    const response = await api.get(`/download`, {
+      params: {
+        path: media.directory_path,
+        storage: media.storage_root_name,
+      },
+      responseType: 'blob',
+    })
+
+    // Create a download link and trigger it
+    const url = window.URL.createObjectURL(new Blob([response.data]))
+    const link = document.createElement('a')
+    link.href = url
+
+    // Extract filename from path or use title
+    const filename = media.directory_path.split('/').pop() || `${media.title}.${media.media_type}`
+    link.setAttribute('download', filename)
+
+    document.body.appendChild(link)
+    link.click()
+
+    // Cleanup
+    link.parentNode?.removeChild(link)
+    window.URL.revokeObjectURL(url)
+  },
 }
 
 export default mediaApi

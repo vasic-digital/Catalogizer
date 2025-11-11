@@ -152,10 +152,10 @@ class SyncManager(
                             syncRating(operation)
                         }
                         SyncOperationType.UPDATE_METADATA -> {
-                            // TODO: Implement metadata sync
+                            syncMetadataUpdate(operation)
                         }
                         SyncOperationType.DELETE_MEDIA -> {
-                            // TODO: Implement media deletion sync
+                            syncMediaDeletion(operation)
                         }
                     }
 
@@ -242,6 +242,59 @@ class SyncManager(
         api.rateMedia(ratingData.mediaId, mapOf("rating" to ratingData.rating))
     }
 
+    private suspend fun syncMetadataUpdate(operation: SyncOperation) {
+        val metadataData = operation.data?.let {
+            Json.Default.decodeFromString<MetadataUpdateData>(it)
+        } ?: return
+
+        // Send metadata update to server
+        api.updateMediaMetadata(
+            metadataData.mediaId,
+            metadataData.metadata
+        )
+
+        // Update local database
+        val mediaItem = database.mediaDao().getMediaById(metadataData.mediaId)
+        mediaItem?.let { media ->
+            val updatedMedia = media.copy(
+                title = metadataData.metadata["title"] as? String ?: media.title,
+                description = metadataData.metadata["description"] as? String ?: media.description,
+                year = (metadataData.metadata["year"] as? Number)?.toInt() ?: media.year,
+                rating = (metadataData.metadata["rating"] as? Number)?.toDouble() ?: media.rating
+            )
+            database.mediaDao().insertOrUpdate(updatedMedia)
+        }
+    }
+
+    private suspend fun syncMediaDeletion(operation: SyncOperation) {
+        val deletionData = operation.data?.let {
+            Json.Default.decodeFromString<MediaDeletionData>(it)
+        } ?: return
+
+        try {
+            // Send deletion request to server
+            api.deleteMedia(deletionData.mediaId)
+
+            // Delete from local database
+            database.mediaDao().deleteById(deletionData.mediaId)
+
+            // Delete associated data (favorites, watch progress, etc.)
+            database.watchProgressDao().deleteByMediaId(deletionData.mediaId)
+            database.favoriteDao().deleteByMediaId(deletionData.mediaId)
+
+        } catch (e: Exception) {
+            // If server deletion fails but it's marked as local-only deletion,
+            // still delete from local database
+            if (deletionData.localOnly) {
+                database.mediaDao().deleteById(deletionData.mediaId)
+                database.watchProgressDao().deleteByMediaId(deletionData.mediaId)
+                database.favoriteDao().deleteByMediaId(deletionData.mediaId)
+            } else {
+                throw e
+            }
+        }
+    }
+
     private suspend fun syncUserPreferences() {
         try {
             val serverPrefs = api.getUserPreferences().toApiResult().data
@@ -294,6 +347,32 @@ class SyncManager(
         updatePendingOperationsCount()
     }
 
+    suspend fun queueMetadataUpdate(mediaId: Long, metadata: Map<String, Any>) {
+        val data = MetadataUpdateData(mediaId, metadata)
+        val operation = SyncOperation(
+            type = SyncOperationType.UPDATE_METADATA,
+            mediaId = mediaId,
+            data = Json.Default.encodeToString(data),
+            timestamp = System.currentTimeMillis()
+        )
+
+        syncOperationDao.insertOperation(operation)
+        updatePendingOperationsCount()
+    }
+
+    suspend fun queueMediaDeletion(mediaId: Long, localOnly: Boolean = false) {
+        val data = MediaDeletionData(mediaId, localOnly)
+        val operation = SyncOperation(
+            type = SyncOperationType.DELETE_MEDIA,
+            mediaId = mediaId,
+            data = Json.Default.encodeToString(data),
+            timestamp = System.currentTimeMillis()
+        )
+
+        syncOperationDao.insertOperation(operation)
+        updatePendingOperationsCount()
+    }
+
     private suspend fun updatePendingOperationsCount() {
         val count = syncOperationDao.getPendingOperationsCount()
         _syncStatus.update { it.copy(pendingOperations = count) }
@@ -327,4 +406,16 @@ data class FavoriteData(
 data class RatingData(
     val mediaId: Long,
     val rating: Double
+)
+
+@Serializable
+data class MetadataUpdateData(
+    val mediaId: Long,
+    val metadata: Map<String, Any>
+)
+
+@Serializable
+data class MediaDeletionData(
+    val mediaId: Long,
+    val localOnly: Boolean = false
 )

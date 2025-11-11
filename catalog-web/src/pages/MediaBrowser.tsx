@@ -2,6 +2,7 @@ import React, { useState, useEffect, useMemo } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { MediaGrid } from '@/components/media/MediaGrid'
 import { MediaFilters } from '@/components/media/MediaFilters'
+import { MediaDetailModal } from '@/components/media/MediaDetailModal'
 import { Button } from '@/components/ui/Button'
 import { Input } from '@/components/ui/Input'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card'
@@ -30,6 +31,9 @@ export const MediaBrowser: React.FC = () => {
   const [showFilters, setShowFilters] = useState(false)
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid')
   const [searchQuery, setSearchQuery] = useState('')
+  const [selectedMedia, setSelectedMedia] = useState<MediaItem | null>(null)
+  const [isModalOpen, setIsModalOpen] = useState(false)
+  const [isDownloading, setIsDownloading] = useState(false)
 
   const debouncedSearch = useMemo(
     () => debounce((query: string) => {
@@ -81,13 +85,25 @@ export const MediaBrowser: React.FC = () => {
   }
 
   const handleMediaView = (media: MediaItem) => {
-    console.log('View media:', media)
-    // TODO: Implement media detail modal or navigation
+    setSelectedMedia(media)
+    setIsModalOpen(true)
   }
 
-  const handleMediaDownload = (media: MediaItem) => {
-    console.log('Download media:', media)
-    // TODO: Implement download functionality
+  const handleMediaDownload = async (media: MediaItem) => {
+    setIsDownloading(true)
+    try {
+      await mediaApi.downloadMedia(media)
+    } catch (error) {
+      console.error('Download failed:', error)
+      // TODO: Show error toast notification
+    } finally {
+      setIsDownloading(false)
+    }
+  }
+
+  const handleCloseModal = () => {
+    setIsModalOpen(false)
+    setSelectedMedia(null)
   }
 
   const handlePageChange = (direction: 'prev' | 'next') => {
@@ -327,6 +343,14 @@ export const MediaBrowser: React.FC = () => {
           )}
         </div>
       </div>
+
+      {/* Media Detail Modal */}
+      <MediaDetailModal
+        media={selectedMedia}
+        isOpen={isModalOpen}
+        onClose={handleCloseModal}
+        onDownload={handleMediaDownload}
+      />
     </div>
   )
 }

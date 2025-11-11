@@ -254,11 +254,16 @@ func (h *UserHandler) UpdateUser(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	// TODO: handle Settings update
-	// if req.Settings != nil {
-	// 	// marshal to string
-	// 	user.Settings = req.Settings
-	// }
+	// Handle Settings update
+	if req.Settings != nil {
+		// Marshal settings to JSON string
+		settingsJSON, err := json.Marshal(req.Settings)
+		if err != nil {
+			http.Error(w, "Failed to marshal settings", http.StatusInternalServerError)
+			return
+		}
+		user.Settings = string(settingsJSON)
+	}
 
 	err = h.userRepo.Update(user)
 	if err != nil {
