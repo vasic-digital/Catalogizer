@@ -56,7 +56,7 @@ jobs:
           echo "| Platform | Status | Tests | Coverage |" >> $GITHUB_STEP_SUMMARY
           echo "|----------|--------|-------|----------|" >> $GITHUB_STEP_SUMMARY
           echo "| Backend (Go) | ${{ needs.backend.result }} | 110 | 6-37% |" >> $GITHUB_STEP_SUMMARY
-          echo "| Frontend (React) | ${{ needs.frontend.result }} | 85 | 25.72% |" >> $GITHUB_STEP_SUMMARY
+          echo "| Frontend (React) | ${{ needs.frontend.result }} | 97 | ~26-27% |" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "### Component Breakdown" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
@@ -74,10 +74,11 @@ jobs:
           echo "- ✅ MediaCard: 28 tests (86.95% coverage)" >> $GITHUB_STEP_SUMMARY
           echo "- ✅ MediaGrid: 18 tests (100% coverage)" >> $GITHUB_STEP_SUMMARY
           echo "- ✅ MediaFilters: 22 tests (100% coverage)" >> $GITHUB_STEP_SUMMARY
+          echo "- ✅ ProtectedRoute: 12 tests (NEW)" >> $GITHUB_STEP_SUMMARY
           echo "- ✅ UI Components: 11 tests" >> $GITHUB_STEP_SUMMARY
           echo "- ✅ Context: 6 tests" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
-          echo "**Total: 195 tests passing across all platforms** 🎉" >> $GITHUB_STEP_SUMMARY
+          echo "**Total: 207 tests passing across all platforms** 🎉" >> $GITHUB_STEP_SUMMARY
 
   status-check:
     name: CI Status
