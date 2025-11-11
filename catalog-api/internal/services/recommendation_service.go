@@ -259,17 +259,34 @@ func (rs *RecommendationService) findLocalSimilarItems(ctx context.Context, req 
 func (rs *RecommendationService) findExternalSimilarItems(ctx context.Context, req *SimilarItemsRequest) ([]*ExternalSimilarItem, error) {
 	var externalItems []*ExternalSimilarItem
 
-	// Note: MediaMetadata doesn't have MediaType field yet
-	// For now, try to find similar items based on genre/description
-	// TODO: Add MediaType field to MediaMetadata or use a different approach
-
-	// Try finding similar items across all types
-	if movieItems, err := rs.findSimilarMovies(ctx, req.MediaMetadata); err == nil {
-		externalItems = append(externalItems, movieItems...)
-	}
-
-	if musicItems, err := rs.findSimilarMusic(ctx, req.MediaMetadata); err == nil {
-		externalItems = append(externalItems, musicItems...)
+	// Use MediaType field to find type-specific similar items
+	if req.MediaMetadata != nil && req.MediaMetadata.MediaType != "" {
+		switch strings.ToLower(req.MediaMetadata.MediaType) {
+		case "movie", "tv_show", "documentary", "anime":
+			if movieItems, err := rs.findSimilarMovies(ctx, req.MediaMetadata); err == nil {
+				externalItems = append(externalItems, movieItems...)
+			}
+		case "music", "audiobook", "podcast":
+			if musicItems, err := rs.findSimilarMusic(ctx, req.MediaMetadata); err == nil {
+				externalItems = append(externalItems, musicItems...)
+			}
+		default:
+			// For unknown types, try both movie and music
+			if movieItems, err := rs.findSimilarMovies(ctx, req.MediaMetadata); err == nil {
+				externalItems = append(externalItems, movieItems...)
+			}
+			if musicItems, err := rs.findSimilarMusic(ctx, req.MediaMetadata); err == nil {
+				externalItems = append(externalItems, musicItems...)
+			}
+		}
+	} else {
+		// If no MediaType specified, try finding similar items across all types
+		if movieItems, err := rs.findSimilarMovies(ctx, req.MediaMetadata); err == nil {
+			externalItems = append(externalItems, movieItems...)
+		}
+		if musicItems, err := rs.findSimilarMusic(ctx, req.MediaMetadata); err == nil {
+			externalItems = append(externalItems, musicItems...)
+		}
 	}
 
 	// Apply filters to external items
