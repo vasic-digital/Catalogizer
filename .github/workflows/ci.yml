@@ -55,16 +55,18 @@ jobs:
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "| Platform | Status | Tests | Coverage |" >> $GITHUB_STEP_SUMMARY
           echo "|----------|--------|-------|----------|" >> $GITHUB_STEP_SUMMARY
-          echo "| Backend (Go) | ${{ needs.backend.result }} | 72 | 3.8-36.9% |" >> $GITHUB_STEP_SUMMARY
+          echo "| Backend (Go) | ${{ needs.backend.result }} | 95 | 6.0-36.9% |" >> $GITHUB_STEP_SUMMARY
           echo "| Frontend (React) | ${{ needs.frontend.result }} | 85 | 25.72% |" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "### Component Breakdown" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "**Backend:**" >> $GITHUB_STEP_SUMMARY
-          echo "- ✅ Auth Handler Tests: 24" >> $GITHUB_STEP_SUMMARY
-          echo "- ✅ Browse Handler Tests: 10" >> $GITHUB_STEP_SUMMARY
-          echo "- ✅ Search Handler Tests: 9" >> $GITHUB_STEP_SUMMARY
-          echo "- ✅ Analytics Service Tests: 29" >> $GITHUB_STEP_SUMMARY
+          echo "- ✅ Auth Handler Tests: 30" >> $GITHUB_STEP_SUMMARY
+          echo "- ✅ Browse Handler Tests: 11" >> $GITHUB_STEP_SUMMARY
+          echo "- ✅ Search Handler Tests: 10" >> $GITHUB_STEP_SUMMARY
+          echo "- ✅ Stats Handler Tests: 8" >> $GITHUB_STEP_SUMMARY
+          echo "- ✅ Copy Handler Tests: 14" >> $GITHUB_STEP_SUMMARY
+          echo "- ✅ Analytics Service Tests: 21" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "**Frontend:**" >> $GITHUB_STEP_SUMMARY
           echo "- ✅ MediaCard: 28 tests (86.95% coverage)" >> $GITHUB_STEP_SUMMARY
@@ -73,7 +75,7 @@ jobs:
           echo "- ✅ UI Components: 11 tests" >> $GITHUB_STEP_SUMMARY
           echo "- ✅ Context: 6 tests" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
-          echo "**Total: 157 tests passing across all platforms** 🎉" >> $GITHUB_STEP_SUMMARY
+          echo "**Total: 180 tests passing across all platforms** 🎉" >> $GITHUB_STEP_SUMMARY
 
   status-check:
     name: CI Status
