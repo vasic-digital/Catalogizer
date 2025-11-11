@@ -56,7 +56,7 @@ jobs:
           echo "| Platform | Status | Tests | Coverage |" >> $GITHUB_STEP_SUMMARY
           echo "|----------|--------|-------|----------|" >> $GITHUB_STEP_SUMMARY
           echo "| Backend (Go) | ${{ needs.backend.result }} | 110 | 6-37% |" >> $GITHUB_STEP_SUMMARY
-          echo "| Frontend (React) | ${{ needs.frontend.result }} | 328 | ~45-50% |" >> $GITHUB_STEP_SUMMARY
+          echo "| Frontend (React) | ${{ needs.frontend.result }} | 359 | ~50-55% |" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "### Component Breakdown" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
@@ -73,9 +73,10 @@ jobs:
           echo "**Frontend:**" >> $GITHUB_STEP_SUMMARY
           echo "- ✅ Card: 39 tests" >> $GITHUB_STEP_SUMMARY
           echo "- ✅ MediaDetailModal: 36 tests" >> $GITHUB_STEP_SUMMARY
+          echo "- ✅ Dashboard: 31 tests (NEW)" >> $GITHUB_STEP_SUMMARY
           echo "- ✅ Header: 31 tests" >> $GITHUB_STEP_SUMMARY
           echo "- ✅ MediaCard: 28 tests (86.95% coverage)" >> $GITHUB_STEP_SUMMARY
-          echo "- ✅ App: 26 tests (NEW)" >> $GITHUB_STEP_SUMMARY
+          echo "- ✅ App: 26 tests" >> $GITHUB_STEP_SUMMARY
           echo "- ✅ WebSocketContext: 23 tests" >> $GITHUB_STEP_SUMMARY
           echo "- ✅ RegisterForm: 23 tests" >> $GITHUB_STEP_SUMMARY
           echo "- ✅ Layout: 22 tests" >> $GITHUB_STEP_SUMMARY
@@ -88,7 +89,7 @@ jobs:
           echo "- ✅ Button: 6 tests" >> $GITHUB_STEP_SUMMARY
           echo "- ✅ Input: 5 tests" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
-          echo "**Total: 438 tests passing across all platforms** 🎉🎊🚀" >> $GITHUB_STEP_SUMMARY
+          echo "**Total: 469 tests passing across all platforms** 🎉🎊🚀💯" >> $GITHUB_STEP_SUMMARY
 
   status-check:
     name: CI Status
