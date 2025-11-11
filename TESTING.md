@@ -200,8 +200,9 @@ CI=true npm test
 | MediaDetailModal | 36 | - |
 | Header | 31 | - |
 | MediaCard | 28 | 86.95% |
-| WebSocketContext | 23 | NEW ✨ |
+| WebSocketContext | 23 | - |
 | RegisterForm | 23 | - |
+| Layout | 22 | NEW ✨ |
 | MediaFilters | 22 | 100% |
 | LoginForm | 19 | - |
 | MediaGrid | 18 | 100% |
@@ -210,7 +211,7 @@ CI=true npm test
 | Button | 6 | 100% |
 | AuthContext | 6 | 45.33% |
 | Input | 5 | 100% |
-| **Total** | **280** | **~38-42%** |
+| **Total** | **302** | **~40-45%** |
 
 ### Frontend Test Patterns
 
