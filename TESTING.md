@@ -91,9 +91,9 @@ go tool cover -html=coverage.out -o coverage.html
 
 | Package | Tests | Coverage |
 |---------|-------|----------|
-| handlers | 74 | 6.0% |
+| handlers | 89 | ~6-7% |
 | tests (analytics) | 21 | 36.9% |
-| **Total Backend** | **95** | **6.0-36.9%** |
+| **Total Backend** | **110** | **6-37%** |
 
 ### Backend Test Patterns
 
@@ -633,6 +633,6 @@ When adding new features:
 ---
 
 **Last Updated**: November 11, 2024
-**Test Suite Status**: ✅ 180/180 tests passing (100% pass rate)
+**Test Suite Status**: ✅ 195/195 tests passing (100% pass rate)
 **Overall Coverage**: ~25-37% across platforms (steadily improving)
-**Recent Improvements**: +54 tests from initial, +23 in latest expansion, Android Gradle wrapper fixed
+**Recent Improvements**: +69 tests from initial (+54.8%), Android Gradle wrapper fixed
