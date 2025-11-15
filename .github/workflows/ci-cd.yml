@@ -1,3 +1,4 @@
+# workflow: disable
 name: Catalogizer CI/CD
 
 on:
