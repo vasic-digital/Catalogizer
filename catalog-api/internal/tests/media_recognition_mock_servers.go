@@ -284,7 +284,7 @@ func (m *MediaRecognitionMockServers) handleLastFMTrackSearch(w http.ResponseWri
 						"name":       fmt.Sprintf("Mock Track: %s", track),
 						"artist":     "Mock Artist",
 						"url":        "https://last.fm/music/mock-artist/mock-track",
-						"streamable": "FIXME",
+						"streamable": "1",
 						"listeners":  "50000",
 						"mbid":       "mock-mbid-12345",
 						"image": []map[string]string{

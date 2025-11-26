@@ -1,7 +1,11 @@
 package services
 
 import (
+	"bytes"
+	"encoding/csv"
+	"encoding/json"
 	"fmt"
+	"strings"
 	"time"
 
 	"catalogizer/models"
@@ -403,21 +407,238 @@ func (s *FavoritesService) removeDuplicateStrings(slice []string) []string {
 }
 
 func (s *FavoritesService) exportFavoritesToJSON(favorites []models.Favorite) ([]byte, error) {
-	// Implementation would use JSON marshal
-	return nil, fmt.Errorf("JSON export not yet implemented")
+	// Create export structure with metadata
+	export := struct {
+		Version     string              `json:"version"`
+		ExportedAt  time.Time           `json:"exported_at"`
+		Count       int                 `json:"count"`
+		Favorites   []models.Favorite   `json:"favorites"`
+		Categories  []map[string]interface{} `json:"categories,omitempty"`
+	}{
+		Version:    "1.0",
+		ExportedAt: time.Now(),
+		Count:      len(favorites),
+		Favorites:  favorites,
+	}
+
+	// Marshal to JSON
+	data, err := json.MarshalIndent(export, "", "  ")
+	if err != nil {
+		return nil, fmt.Errorf("failed to marshal favorites to JSON: %w", err)
+	}
+
+	return data, nil
 }
 
 func (s *FavoritesService) exportFavoritesToCSV(favorites []models.Favorite) ([]byte, error) {
-	// Implementation would use CSV writer
-	return nil, fmt.Errorf("CSV export not yet implemented")
+	// Create CSV writer
+	buffer := &bytes.Buffer{}
+	writer := csv.NewWriter(buffer)
+
+	// Write header
+	headers := []string{
+		"ID", "UserID", "EntityType", "EntityID", "Category", "Notes", 
+		"Tags", "IsPublic", "CreatedAt", "UpdatedAt",
+	}
+	if err := writer.Write(headers); err != nil {
+		return nil, fmt.Errorf("failed to write CSV headers: %w", err)
+	}
+
+	// Write data rows
+	for _, favorite := range favorites {
+		// Handle nullable fields
+		category := ""
+		if favorite.Category != nil {
+			category = *favorite.Category
+		}
+
+		notes := ""
+		if favorite.Notes != nil {
+			notes = *favorite.Notes
+		}
+
+		tags := ""
+		if favorite.Tags != nil {
+			tags = fmt.Sprintf("%v", *favorite.Tags)
+		}
+
+		updatedAt := ""
+		if favorite.UpdatedAt != nil {
+			updatedAt = favorite.UpdatedAt.Format(time.RFC3339)
+		}
+
+		record := []string{
+			fmt.Sprintf("%d", favorite.ID),
+			fmt.Sprintf("%d", favorite.UserID),
+			favorite.EntityType,
+			fmt.Sprintf("%d", favorite.EntityID),
+			category,
+			notes,
+			tags,
+			fmt.Sprintf("%t", favorite.IsPublic),
+			favorite.CreatedAt.Format(time.RFC3339),
+			updatedAt,
+		}
+
+		if err := writer.Write(record); err != nil {
+			return nil, fmt.Errorf("failed to write CSV record: %w", err)
+		}
+	}
+
+	// Flush writer
+	writer.Flush()
+	if err := writer.Error(); err != nil {
+		return nil, fmt.Errorf("CSV writer error: %w", err)
+	}
+
+	return buffer.Bytes(), nil
 }
 
 func (s *FavoritesService) importFavoritesFromJSON(userID int, data []byte) ([]models.Favorite, error) {
-	// Implementation would use JSON unmarshal
-	return nil, fmt.Errorf("JSON import not yet implemented")
+	// Parse import data
+	var importData struct {
+		Version     string              `json:"version"`
+		ExportedAt  time.Time           `json:"exported_at"`
+		Count       int                 `json:"count"`
+		Favorites   []models.Favorite   `json:"favorites"`
+	}
+
+	if err := json.Unmarshal(data, &importData); err != nil {
+		return nil, fmt.Errorf("failed to parse JSON data: %w", err)
+	}
+
+	if len(importData.Favorites) == 0 {
+		return []models.Favorite{}, nil
+	}
+
+	// Process each favorite
+	var importedFavorites []models.Favorite
+	var errors []error
+
+	for _, fav := range importData.Favorites {
+		// Create new favorite with current user ID
+		newFavorite := &models.Favorite{
+			UserID:     userID, // Override with current user
+			EntityType: fav.EntityType,
+			EntityID:   fav.EntityID,
+			Category:   fav.Category,
+			Notes:      fav.Notes,
+			Tags:       fav.Tags,
+			IsPublic:   fav.IsPublic,
+		}
+
+		// Try to add favorite (will skip duplicates)
+		result, err := s.AddFavorite(userID, newFavorite)
+		if err != nil {
+			errors = append(errors, fmt.Errorf("failed to import favorite %s %d: %w", fav.EntityType, fav.EntityID, err))
+			continue
+		}
+
+		importedFavorites = append(importedFavorites, *result)
+	}
+
+	// If all failed, return error
+	if len(importedFavorites) == 0 && len(errors) > 0 {
+		return nil, fmt.Errorf("failed to import any favorites: %v", errors)
+	}
+
+	return importedFavorites, nil
 }
 
 func (s *FavoritesService) importFavoritesFromCSV(userID int, data []byte) ([]models.Favorite, error) {
-	// Implementation would use CSV reader
-	return nil, fmt.Errorf("CSV import not yet implemented")
+	// Parse CSV data
+	reader := csv.NewReader(bytes.NewReader(data))
+	
+	// Read header
+	headers, err := reader.Read()
+	if err != nil {
+		return nil, fmt.Errorf("failed to read CSV headers: %w", err)
+	}
+
+	// Validate headers (basic check)
+	if len(headers) < 9 {
+		return nil, fmt.Errorf("invalid CSV format: expected at least 9 columns, got %d", len(headers))
+	}
+
+	// Read all records
+	records, err := reader.ReadAll()
+	if err != nil {
+		return nil, fmt.Errorf("failed to read CSV records: %w", err)
+	}
+
+	var importedFavorites []models.Favorite
+	var errors []error
+
+	for i, record := range records {
+		if len(record) < 9 {
+			errors = append(errors, fmt.Errorf("record %d: insufficient columns", i+1))
+			continue
+		}
+
+		// Parse entity type and ID
+		entityType := record[2]
+		entityIDStr := record[3]
+
+		var entityID int
+		if _, err := fmt.Sscanf(entityIDStr, "%d", &entityID); err != nil {
+			errors = append(errors, fmt.Errorf("record %d: invalid entity ID: %s", i+1, entityIDStr))
+			continue
+		}
+
+		// Parse optional fields
+		var category *string
+		if record[4] != "" {
+			category = &record[4]
+		}
+
+		var notes *string
+		if record[5] != "" {
+			notes = &record[5]
+		}
+
+		var tags *[]string
+		if record[6] != "" {
+			// Simple comma-separated tags parsing
+			tagList := strings.Split(record[6], ",")
+			for i := range tagList {
+				tagList[i] = strings.TrimSpace(tagList[i])
+			}
+			tags = &tagList
+		}
+
+		var isPublic bool
+		if record[7] != "" {
+			if _, err := fmt.Sscanf(record[7], "%t", &isPublic); err != nil {
+				errors = append(errors, fmt.Errorf("record %d: invalid is_public value: %s", i+1, record[7]))
+				continue
+			}
+		}
+
+		// Create favorite
+		favorite := &models.Favorite{
+			UserID:     userID,
+			EntityType: entityType,
+			EntityID:   entityID,
+			Category:   category,
+			Notes:      notes,
+			Tags:       tags,
+			IsPublic:   isPublic,
+		}
+
+		// Add favorite
+		result, err := s.AddFavorite(userID, favorite)
+		if err != nil {
+			errors = append(errors, fmt.Errorf("record %d: failed to add favorite: %w", i+1, err))
+			continue
+		}
+
+		importedFavorites = append(importedFavorites, *result)
+	}
+
+	// If all failed, return error
+	if len(importedFavorites) == 0 && len(errors) > 0 {
+		return nil, fmt.Errorf("failed to import any favorites: %v", errors)
+	}
+
+	return importedFavorites, nil
 }

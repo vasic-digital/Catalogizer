@@ -1,8 +1,10 @@
 package services
 
 import (
+	"context"
 	"crypto/md5"
 	"encoding/hex"
+	"encoding/json"
 	"fmt"
 	"io"
 	"os"
@@ -12,6 +14,12 @@ import (
 
 	"catalogizer/models"
 	"catalogizer/repository"
+
+	"github.com/aws/aws-sdk-go-v2/aws"
+	"github.com/aws/aws-sdk-go-v2/config"
+	"github.com/aws/aws-sdk-go-v2/service/s3"
+	"cloud.google.com/go/storage"
+	"google.golang.org/api/option"
 )
 
 type SyncService struct {
@@ -345,13 +353,484 @@ func (s *SyncService) downloadFromWebDAV(session *models.SyncSession, endpoint *
 }
 
 func (s *SyncService) performCloudSync(session *models.SyncSession, endpoint *models.SyncEndpoint) error {
-	// Placeholder for cloud storage sync (Google Drive, Dropbox, OneDrive)
-	return fmt.Errorf("cloud storage sync not yet implemented")
+	ctx := context.Background()
+	
+	switch endpoint.Type {
+	case "s3":
+		return s.performS3Sync(ctx, session, endpoint)
+	case "google_drive":
+		return s.performGoogleCloudStorageSync(ctx, session, endpoint)
+	default:
+		return fmt.Errorf("unsupported cloud storage type: %s", endpoint.Type)
+	}
+}
+
+// performS3Sync syncs files with Amazon S3
+func (s *SyncService) performS3Sync(ctx context.Context, session *models.SyncSession, endpoint *models.SyncEndpoint) error {
+	// Parse configuration
+	syncConfig := make(map[string]interface{})
+	if endpoint.SyncSettings != nil {
+		if err := json.Unmarshal([]byte(*endpoint.SyncSettings), &syncConfig); err != nil {
+			return fmt.Errorf("failed to parse S3 config: %w", err)
+		}
+	}
+
+	// Extract S3 configuration
+	bucket, ok := syncConfig["bucket"].(string)
+	if !ok {
+		return fmt.Errorf("S3 bucket not specified")
+	}
+
+	region, _ := syncConfig["region"].(string)
+	if region == "" {
+		region = "us-east-1"
+	}
+
+	accessKey, ok := syncConfig["access_key"].(string)
+	if !ok {
+		return fmt.Errorf("S3 access key not specified")
+	}
+
+	secretKey, ok := syncConfig["secret_key"].(string)
+	if !ok {
+		return fmt.Errorf("S3 secret key not specified")
+	}
+
+	// Create AWS configuration
+	awsCfg, err := config.LoadDefaultConfig(ctx,
+		config.WithRegion(region),
+		config.WithCredentialsProvider(aws.CredentialsProviderFunc(func(ctx context.Context) (aws.Credentials, error) {
+			return aws.Credentials{
+				AccessKeyID:     accessKey,
+				SecretAccessKey: secretKey,
+			}, nil
+		})),
+	)
+	if err != nil {
+		return fmt.Errorf("failed to create AWS config: %w", err)
+	}
+
+	// Create S3 client
+	client := s3.NewFromConfig(awsCfg)
+
+	// Get source directory from sync settings
+	sourceDir, ok := syncConfig["source_directory"].(string)
+	if !ok {
+		// Fallback to local path
+		sourceDir = endpoint.LocalPath
+		if sourceDir == "" {
+			return fmt.Errorf("source directory not specified")
+		}
+	}
+
+	// Walk through source directory and upload files
+	err = filepath.Walk(sourceDir, func(path string, info os.FileInfo, err error) error {
+		if err != nil {
+			return err
+		}
+
+		// Skip directories
+		if info.IsDir() {
+			return nil
+		}
+
+		// Calculate relative path
+		relPath, err := filepath.Rel(sourceDir, path)
+		if err != nil {
+			return fmt.Errorf("failed to calculate relative path: %w", err)
+		}
+
+		// Convert to forward slashes for S3
+		s3Key := filepath.ToSlash(relPath)
+
+		// Open file
+		file, err := os.Open(path)
+		if err != nil {
+			return fmt.Errorf("failed to open file %s: %w", path, err)
+		}
+		defer file.Close()
+
+		// Upload to S3
+		_, err = client.PutObject(ctx, &s3.PutObjectInput{
+			Bucket: aws.String(bucket),
+			Key:    aws.String(s3Key),
+			Body:   file,
+		})
+		if err != nil {
+			return fmt.Errorf("failed to upload %s to S3: %w", s3Key, err)
+		}
+
+		// Update sync session progress
+		s.updateSyncProgress(session, fmt.Sprintf("Uploaded: %s", s3Key))
+
+		return nil
+	})
+
+	if err != nil {
+		return fmt.Errorf("S3 sync failed: %w", err)
+	}
+
+	return nil
+}
+
+// performGoogleCloudStorageSync syncs files with Google Cloud Storage
+func (s *SyncService) performGoogleCloudStorageSync(ctx context.Context, session *models.SyncSession, endpoint *models.SyncEndpoint) error {
+	// Parse configuration
+	syncConfig := make(map[string]interface{})
+	if endpoint.SyncSettings != nil {
+		if err := json.Unmarshal([]byte(*endpoint.SyncSettings), &syncConfig); err != nil {
+			return fmt.Errorf("failed to parse Google Cloud Storage config: %w", err)
+		}
+	}
+
+	// Extract GCS configuration
+	bucket, ok := syncConfig["bucket"].(string)
+	if !ok {
+		return fmt.Errorf("GCS bucket not specified")
+	}
+
+	credentialsFile, _ := syncConfig["credentials_file"].(string)
+	
+	// Create GCS client
+	var client *storage.Client
+	var err error
+	
+	if credentialsFile != "" {
+		// Use credentials file
+		client, err = storage.NewClient(ctx, option.WithCredentialsFile(credentialsFile))
+	} else {
+		// Use default credentials
+		client, err = storage.NewClient(ctx)
+	}
+	
+	if err != nil {
+		return fmt.Errorf("failed to create GCS client: %w", err)
+	}
+	defer client.Close()
+
+	// Get source directory from sync settings
+	sourceDir, ok := syncConfig["source_directory"].(string)
+	if !ok {
+		// Fallback to local path
+		sourceDir = endpoint.LocalPath
+		if sourceDir == "" {
+			return fmt.Errorf("source directory not specified")
+		}
+	}
+
+	// Walk through source directory and upload files
+	err = filepath.Walk(sourceDir, func(path string, info os.FileInfo, err error) error {
+		if err != nil {
+			return err
+		}
+
+		// Skip directories
+		if info.IsDir() {
+			return nil
+		}
+
+		// Calculate relative path
+		relPath, err := filepath.Rel(sourceDir, path)
+		if err != nil {
+			return fmt.Errorf("failed to calculate relative path: %w", err)
+		}
+
+		// Convert to forward slashes for GCS
+		gcsObject := filepath.ToSlash(relPath)
+
+		// Open file
+		file, err := os.Open(path)
+		if err != nil {
+			return fmt.Errorf("failed to open file %s: %w", path, err)
+		}
+		defer file.Close()
+
+		// Create GCS object writer
+		wc := client.Bucket(bucket).Object(gcsObject).NewWriter(ctx)
+		defer wc.Close()
+
+		// Copy file to GCS
+		_, err = io.Copy(wc, file)
+		if err != nil {
+			return fmt.Errorf("failed to upload %s to GCS: %w", gcsObject, err)
+		}
+
+		// Close writer to complete upload
+		if err := wc.Close(); err != nil {
+			return fmt.Errorf("failed to complete upload of %s to GCS: %w", gcsObject, err)
+		}
+
+		// Update sync session progress
+		s.updateSyncProgress(session, fmt.Sprintf("Uploaded: %s", gcsObject))
+
+		return nil
+	})
+
+	if err != nil {
+		return fmt.Errorf("Google Cloud Storage sync failed: %w", err)
+	}
+
+	return nil
 }
 
 func (s *SyncService) performLocalSync(session *models.SyncSession, endpoint *models.SyncEndpoint) error {
-	// Placeholder for local folder sync
-	return fmt.Errorf("local folder sync not yet implemented")
+	// Parse configuration
+	syncConfig := make(map[string]interface{})
+	if endpoint.SyncSettings != nil {
+		if err := json.Unmarshal([]byte(*endpoint.SyncSettings), &syncConfig); err != nil {
+			return fmt.Errorf("failed to parse local sync config: %w", err)
+		}
+	}
+
+	// Get source directory from sync settings or endpoint local path
+	sourceDir, ok := syncConfig["source_directory"].(string)
+	if !ok {
+		sourceDir = endpoint.LocalPath
+		if sourceDir == "" {
+			return fmt.Errorf("source directory not specified")
+		}
+	}
+
+	// Get destination directory
+	destDir, ok := syncConfig["destination_directory"].(string)
+	if !ok {
+		return fmt.Errorf("destination directory not specified")
+	}
+
+	// Get sync mode (optional)
+	syncMode := "mirror" // default
+	if mode, ok := syncConfig["sync_mode"].(string); ok {
+		syncMode = mode
+	}
+
+	// Verify source directory exists
+	sourceInfo, err := os.Stat(sourceDir)
+	if err != nil {
+		return fmt.Errorf("source directory does not exist: %w", err)
+	}
+	if !sourceInfo.IsDir() {
+		return fmt.Errorf("source path is not a directory")
+	}
+
+	// Create destination directory if it doesn't exist
+	if err := os.MkdirAll(destDir, 0755); err != nil {
+		return fmt.Errorf("failed to create destination directory: %w", err)
+	}
+
+	// Perform sync based on mode
+	switch syncMode {
+	case "mirror":
+		err = s.performMirrorSync(sourceDir, destDir, session)
+	case "incremental":
+		err = s.performIncrementalSync(sourceDir, destDir, session)
+	case "bidirectional":
+		err = s.performBidirectionalSync(sourceDir, destDir, session)
+	default:
+		return fmt.Errorf("unsupported sync mode: %s", syncMode)
+	}
+
+	if err != nil {
+		return fmt.Errorf("local sync failed: %w", err)
+	}
+
+	return nil
+}
+
+// performMirrorSync creates exact copy of source in destination
+func (s *SyncService) performMirrorSync(sourceDir, destDir string, session *models.SyncSession) error {
+	// Walk through source directory
+	err := filepath.Walk(sourceDir, func(sourcePath string, info os.FileInfo, err error) error {
+		if err != nil {
+			return err
+		}
+
+		// Calculate relative path
+		relPath, err := filepath.Rel(sourceDir, sourcePath)
+		if err != nil {
+			return fmt.Errorf("failed to calculate relative path: %w", err)
+		}
+
+		// Build destination path
+		destPath := filepath.Join(destDir, relPath)
+
+		// Handle directories
+		if info.IsDir() {
+			// Create destination directory
+			if err := os.MkdirAll(destPath, info.Mode()); err != nil {
+				return fmt.Errorf("failed to create directory %s: %w", destPath, err)
+			}
+			return nil
+		}
+
+		// Handle files
+		// Check if file needs to be copied
+		destInfo, err := os.Stat(destPath)
+		if err == nil {
+			// Compare modification times
+			if !info.ModTime().After(destInfo.ModTime()) {
+				// Source is not newer, skip
+				return nil
+			}
+
+			// Compare file sizes
+			if info.Size() == destInfo.Size() && info.ModTime().Equal(destInfo.ModTime()) {
+				// Files are identical, skip
+				return nil
+			}
+		}
+
+		// Copy file
+		if err := s.copyFile(sourcePath, destPath, info.Mode()); err != nil {
+			return fmt.Errorf("failed to copy file %s to %s: %w", sourcePath, destPath, err)
+		}
+
+		// Update sync session progress
+		s.updateSyncProgress(session, fmt.Sprintf("Synced: %s", relPath))
+
+		return nil
+	})
+
+	if err != nil {
+		return fmt.Errorf("mirror sync failed: %w", err)
+	}
+
+	// Remove files in destination that don't exist in source
+	err = s.cleanupDestination(sourceDir, destDir, session)
+	if err != nil {
+		return fmt.Errorf("failed to cleanup destination: %w", err)
+	}
+
+	return nil
+}
+
+// performIncrementalSync only copies newer or missing files
+func (s *SyncService) performIncrementalSync(sourceDir, destDir string, session *models.SyncSession) error {
+	// Walk through source directory
+	err := filepath.Walk(sourceDir, func(sourcePath string, info os.FileInfo, err error) error {
+		if err != nil {
+			return err
+		}
+
+		// Skip directories for incremental sync
+		if info.IsDir() {
+			return nil
+		}
+
+		// Calculate relative path
+		relPath, err := filepath.Rel(sourceDir, sourcePath)
+		if err != nil {
+			return fmt.Errorf("failed to calculate relative path: %w", err)
+		}
+
+		// Build destination path
+		destPath := filepath.Join(destDir, relPath)
+
+		// Check if destination exists
+		destInfo, err := os.Stat(destPath)
+		if err == nil {
+			// File exists, check if source is newer
+			if !info.ModTime().After(destInfo.ModTime()) {
+				// Source is not newer, skip
+				return nil
+			}
+		}
+
+		// Copy file
+		if err := s.copyFile(sourcePath, destPath, info.Mode()); err != nil {
+			return fmt.Errorf("failed to copy file %s to %s: %w", sourcePath, destPath, err)
+		}
+
+		// Update sync session progress
+		s.updateSyncProgress(session, fmt.Sprintf("Incrementally synced: %s", relPath))
+
+		return nil
+	})
+
+	return err
+}
+
+// performBidirectionalSync syncs in both directions
+func (s *SyncService) performBidirectionalSync(sourceDir, destDir string, session *models.SyncSession) error {
+	// For bidirectional sync, we perform incremental sync in both directions
+	// First sync source to destination
+	if err := s.performIncrementalSync(sourceDir, destDir, session); err != nil {
+		return fmt.Errorf("source to destination sync failed: %w", err)
+	}
+
+	// Then sync destination to source
+	if err := s.performIncrementalSync(destDir, sourceDir, session); err != nil {
+		return fmt.Errorf("destination to source sync failed: %w", err)
+	}
+
+	return nil
+}
+
+// copyFile copies a file with proper permissions
+func (s *SyncService) copyFile(src, dst string, mode os.FileMode) error {
+	// Ensure destination directory exists
+	if err := os.MkdirAll(filepath.Dir(dst), 0755); err != nil {
+		return err
+	}
+
+	// Open source file
+	sourceFile, err := os.Open(src)
+	if err != nil {
+		return err
+	}
+	defer sourceFile.Close()
+
+	// Create destination file
+	destFile, err := os.OpenFile(dst, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, mode)
+	if err != nil {
+		return err
+	}
+	defer destFile.Close()
+
+	// Copy file content
+	_, err = io.Copy(destFile, sourceFile)
+	return err
+}
+
+// cleanupDestination removes files in destination that don't exist in source
+func (s *SyncService) cleanupDestination(sourceDir, destDir string, session *models.SyncSession) error {
+	// Walk through destination directory
+	return filepath.Walk(destDir, func(destPath string, info os.FileInfo, err error) error {
+		if err != nil {
+			return err
+		}
+
+		// Calculate relative path
+		relPath, err := filepath.Rel(destDir, destPath)
+		if err != nil {
+			return fmt.Errorf("failed to calculate relative path: %w", err)
+		}
+
+		// Build corresponding source path
+		sourcePath := filepath.Join(sourceDir, relPath)
+
+		// Check if corresponding source file exists
+		_, err = os.Stat(sourcePath)
+		if err != nil {
+			// Source file doesn't exist, remove destination file
+			if info.IsDir() {
+				// Remove directory if it's empty
+				if err := os.Remove(destPath); err != nil {
+					// Directory not empty, skip
+					return nil
+				}
+			} else {
+				// Remove file
+				if err := os.Remove(destPath); err != nil {
+					return fmt.Errorf("failed to remove %s: %w", destPath, err)
+				}
+			}
+
+			// Update sync session progress
+			s.updateSyncProgress(session, fmt.Sprintf("Removed: %s", relPath))
+		}
+
+		return nil
+	})
 }
 
 func (s *SyncService) handleSyncSuccess(session *models.SyncSession) {
@@ -382,6 +861,12 @@ func (s *SyncService) handleSyncError(session *models.SyncSession, syncError err
 
 	s.syncRepo.UpdateSession(session)
 	s.notifyUser(session, fmt.Sprintf("Sync failed: %s", syncError.Error()))
+}
+
+func (s *SyncService) updateSyncProgress(session *models.SyncSession, message string) {
+	// In a full implementation, this would update the session with current progress
+	// For now, we just log the progress update
+	fmt.Printf("Sync progress for session %d: %s\n", session.ID, message)
 }
 
 func (s *SyncService) logSyncError(session *models.SyncSession, message string) {

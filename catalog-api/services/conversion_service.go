@@ -3,14 +3,20 @@ package services
 import (
 	"encoding/json"
 	"fmt"
+	"image/jpeg"
+	"image/png"
 	"os"
 	"os/exec"
+	"path/filepath"
 	"strings"
 	"time"
 
 	"catalogizer/internal/auth"
 	"catalogizer/models"
 	"catalogizer/repository"
+
+	"github.com/gen2brain/go-fitz"
+	"github.com/ledongthuc/pdf"
 )
 
 type ConversionService struct {
@@ -182,8 +188,310 @@ func (s *ConversionService) convertEbook(job *models.ConversionJob) error {
 }
 
 func (s *ConversionService) convertPDF(job *models.ConversionJob) error {
-	// Placeholder for PDF conversion using tools like pandoc or libreoffice
-	return fmt.Errorf("PDF conversion not yet implemented")
+	// Determine target format and use appropriate conversion method
+	ext := strings.ToLower(filepath.Ext(job.TargetPath))
+	targetFormat := strings.TrimPrefix(ext, ".")
+	
+	switch targetFormat {
+	case "jpg", "jpeg", "png", "bmp", "tiff", "gif":
+		return s.convertPDFToImage(job, targetFormat)
+	case "txt", "text":
+		return s.convertPDFToText(job)
+	case "html":
+		return s.convertPDFToHTML(job)
+	default:
+		return fmt.Errorf("unsupported PDF conversion target format: %s", targetFormat)
+	}
+}
+
+// convertPDFToImage converts PDF pages to images using go-fitz library
+func (s *ConversionService) convertPDFToImage(job *models.ConversionJob, format string) error {
+	doc, err := fitz.New(job.SourcePath)
+	if err != nil {
+		return fmt.Errorf("failed to open PDF: %w", err)
+	}
+	defer doc.Close()
+
+	// Get total page count
+	totalPages := doc.NumPage()
+
+	// Parse settings to determine which pages to convert
+	settings := make(map[string]interface{})
+	if job.Settings != nil {
+		if err := json.Unmarshal([]byte(*job.Settings), &settings); err == nil {
+			// Settings parsed successfully
+		}
+	}
+
+	// Determine page range
+	startPage := 0
+	endPage := totalPages
+	
+	if page, ok := settings["page"].(int); ok && page >= 0 && page < totalPages {
+		// Single page
+		startPage = page
+		endPage = page + 1
+	} else if start, ok := settings["start_page"].(int); ok && start >= 0 {
+		startPage = start
+		if end, ok := settings["end_page"].(int); ok && end > start && end <= totalPages {
+			endPage = end
+		}
+	}
+
+	// Determine DPI for quality (default 150)
+	dpi := 150
+	if dpiVal, ok := settings["dpi"].(int); ok && dpiVal > 0 {
+		dpi = dpiVal
+	}
+
+	// Convert each page
+	for i := startPage; i < endPage; i++ {
+		img, err := doc.ImageDPI(i, float64(dpi))
+		if err != nil {
+			return fmt.Errorf("failed to render page %d: %w", i+1, err)
+		}
+
+		// Determine output file path
+		outputPath := job.TargetPath
+		if totalPages > 1 {
+			// Add page number to filename for multi-page PDFs
+			dir := filepath.Dir(outputPath)
+			name := filepath.Base(outputPath)
+			ext := filepath.Ext(outputPath)
+			nameWithoutExt := strings.TrimSuffix(name, ext)
+			outputPath = filepath.Join(dir, fmt.Sprintf("%s_page_%d%s", nameWithoutExt, i+1, ext))
+		}
+
+		// Create output file
+		file, err := os.Create(outputPath)
+		if err != nil {
+			return fmt.Errorf("failed to create output file: %w", err)
+		}
+		defer file.Close()
+
+		// Encode based on format
+		switch format {
+		case "jpg", "jpeg":
+			err = jpeg.Encode(file, img, &jpeg.Options{Quality: 85})
+		case "png":
+			err = png.Encode(file, img)
+		default:
+			// For other formats, use ImageMagick as fallback
+			return s.convertPDFWithImageMagick(job, format)
+		}
+
+		if err != nil {
+			return fmt.Errorf("failed to encode image: %w", err)
+		}
+
+		// If this was a single page conversion, break
+		if totalPages == 1 {
+			break
+		}
+	}
+
+	return nil
+}
+
+// convertPDFToText converts PDF to plain text using pdf reader
+func (s *ConversionService) convertPDFToText(job *models.ConversionJob) error {
+	file, err := os.Open(job.SourcePath)
+	if err != nil {
+		return fmt.Errorf("failed to open PDF: %w", err)
+	}
+	defer file.Close()
+
+	// Get file info for pdf.NewReader
+	fileInfo, err := file.Stat()
+	if err != nil {
+		return fmt.Errorf("failed to get file info: %w", err)
+	}
+
+	pdfReader, err := pdf.NewReader(file, fileInfo.Size())
+	if err != nil {
+		return fmt.Errorf("failed to create PDF reader: %w", err)
+	}
+
+	// Parse settings
+	settings := make(map[string]interface{})
+	if job.Settings != nil {
+		if err := json.Unmarshal([]byte(*job.Settings), &settings); err == nil {
+			// Settings parsed successfully
+		}
+	}
+
+	// Determine page range
+	totalPages := pdfReader.NumPage()
+	startPage := 1
+	endPage := totalPages
+
+	if page, ok := settings["page"].(int); ok && page > 0 && page <= totalPages {
+		startPage = page
+		endPage = page
+	} else if start, ok := settings["start_page"].(int); ok && start > 0 {
+		startPage = start
+		if end, ok := settings["end_page"].(int); ok && end >= start && end <= totalPages {
+			endPage = end
+		}
+	}
+
+	// Create output file
+	outputFile, err := os.Create(job.TargetPath)
+	if err != nil {
+		return fmt.Errorf("failed to create output file: %w", err)
+	}
+	defer outputFile.Close()
+
+	// Extract text from pages
+	for i := startPage; i <= endPage; i++ {
+		page := pdfReader.Page(i)
+		
+		// Get fonts for the page
+		fonts := make(map[string]*pdf.Font)
+		fontNames := page.Fonts()
+		for _, fontName := range fontNames {
+			font := page.Font(fontName)
+			fonts[fontName] = &font
+		}
+		
+		content, err := page.GetPlainText(fonts)
+		if err != nil {
+			return fmt.Errorf("failed to extract text from page %d: %w", i, err)
+		}
+
+		if _, err := outputFile.WriteString(content); err != nil {
+			return fmt.Errorf("failed to write text to file: %w", err)
+		}
+
+		// Add page separator for multi-page PDFs
+		if i < endPage {
+			if _, err := outputFile.WriteString(fmt.Sprintf("\n\n--- Page %d ---\n\n", i+1)); err != nil {
+				return fmt.Errorf("failed to write page separator: %w", err)
+			}
+		}
+	}
+
+	return nil
+}
+
+// convertPDFToHTML converts PDF to HTML using external tools
+func (s *ConversionService) convertPDFToHTML(job *models.ConversionJob) error {
+	// Try pandoc first for HTML conversion
+	args := []string{
+		"-f", "pdf",
+		"-t", "html",
+		"-o", job.TargetPath,
+		job.SourcePath,
+	}
+
+	cmd := exec.Command("pandoc", args...)
+	cmd.Stdout = os.Stdout
+	cmd.Stderr = os.Stderr
+
+	err := cmd.Run()
+	if err == nil {
+		return nil
+	}
+
+	// Fallback to LibreOffice if pandoc is not available
+	args = []string{
+		"--headless",
+		"--convert-to", "html",
+		"--outdir", filepath.Dir(job.TargetPath),
+		job.SourcePath,
+	}
+
+	cmd = exec.Command("libreoffice", args...)
+	cmd.Stdout = os.Stdout
+	cmd.Stderr = os.Stderr
+
+	err = cmd.Run()
+	if err == nil {
+		// LibreOffice might create a different filename, rename if needed
+		libreOutput := strings.TrimSuffix(job.SourcePath, filepath.Ext(job.SourcePath)) + ".html"
+		if _, err := os.Stat(libreOutput); err == nil {
+			if libreOutput != job.TargetPath {
+				if err := os.Rename(libreOutput, job.TargetPath); err != nil {
+					fmt.Printf("Warning: Failed to rename LibreOffice output: %v\n", err)
+				}
+			}
+		}
+		return nil
+	}
+
+	// Last resort: try to convert PDF to text then wrap in HTML
+	tempTextFile := job.TargetPath + ".tmp.txt"
+	err = s.convertPDFToText(&models.ConversionJob{
+		SourcePath: job.SourcePath,
+		TargetPath: tempTextFile,
+		Settings:   job.Settings,
+	})
+	if err != nil {
+		return fmt.Errorf("failed to convert PDF to text for HTML conversion: %w", err)
+	}
+	defer os.Remove(tempTextFile)
+
+	// Read the text content
+	content, err := os.ReadFile(tempTextFile)
+	if err != nil {
+		return fmt.Errorf("failed to read temp text file: %w", err)
+	}
+
+	// Create basic HTML
+	htmlContent := fmt.Sprintf(`<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>%s</title>
+    <style>
+        body { font-family: Arial, sans-serif; max-width: 800px; margin: 0 auto; padding: 20px; }
+        pre { white-space: pre-wrap; word-wrap: break-word; }
+        .page-break { page-break-before: always; border-top: 2px solid #ccc; margin-top: 20px; padding-top: 20px; }
+    </style>
+</head>
+<body>
+    <h1>%s</h1>
+    <pre>%s</pre>
+</body>
+</html>`, filepath.Base(job.SourcePath), filepath.Base(job.SourcePath), string(content))
+
+	// Write HTML file
+	return os.WriteFile(job.TargetPath, []byte(htmlContent), 0644)
+}
+
+// convertPDFWithImageMagick converts PDF to image formats not directly supported by go-fitz
+func (s *ConversionService) convertPDFWithImageMagick(job *models.ConversionJob, format string) error {
+	args := []string{
+		"-density", "150",  // DPI
+		job.SourcePath,
+	}
+
+	// Parse settings for quality options
+	if job.Settings != nil {
+		settings := make(map[string]interface{})
+		if err := json.Unmarshal([]byte(*job.Settings), &settings); err == nil {
+			if dpi, ok := settings["dpi"].(int); ok && dpi > 0 {
+				args[1] = fmt.Sprintf("%d", dpi)
+			}
+			if quality, ok := settings["quality"].(int); ok && quality > 0 {
+				args = append(args, "-quality", fmt.Sprintf("%d", quality))
+			}
+		}
+	}
+
+	args = append(args, job.TargetPath)
+
+	cmd := exec.Command("convert", args...)
+	cmd.Stdout = os.Stdout
+	cmd.Stderr = os.Stderr
+
+	err := cmd.Run()
+	if err != nil {
+		return fmt.Errorf("imagemagick PDF conversion failed: %w", err)
+	}
+
+	return nil
 }
 
 func (s *ConversionService) convertImage(job *models.ConversionJob) error {
