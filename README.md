@@ -15,6 +15,11 @@ Catalogizer is a comprehensive media collection management system that automatic
 - **External Metadata Integration**: Fetches data from TMDB, IMDB, TVDB, MusicBrainz, Spotify, Steam, and more
 - **Quality Analysis**: Automatic quality detection and version tracking
 - **Encrypted Database**: SQLCipher for secure data storage
+- **PDF Conversion Service**: Convert PDF documents to images, text, or HTML formats
+- **Favorites Export/Import**: Export and import favorites in JSON and CSV formats with metadata
+- **Cloud Storage Sync**: Synchronize files with Amazon S3, Google Cloud Storage, or local folders
+- **Advanced Reporting**: Generate professional PDF reports with charts and analytics
+- **NFS Support**: Full NFS mounting and file operations for macOS systems
 
 ### Technical Highlights
 - **Go Backend**: High-performance REST API with Gin framework

@@ -8,6 +8,10 @@ This document provides detailed information about the services available in the 
 2. [MediaRecognitionService](#mediarecognitionservice)
 3. [ReaderService](#readerservice)
 4. [CatalogService](#catalogservice)
+5. [ConversionService](#conversionservice)
+6. [FavoritesService](#favoritesservice)
+7. [ReportingService](#reportingservice)
+8. [SyncService](#syncservice)
 
 ---
 
