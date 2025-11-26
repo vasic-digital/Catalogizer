@@ -6,6 +6,7 @@ import (
 	root_middleware "catalogizer/middleware"
 	root_repository "catalogizer/repository"
 	root_services "catalogizer/services"
+	internal_config "catalogizer/internal/config"
 	"catalogizer/internal/handlers"
 	"catalogizer/internal/middleware"
 	"catalogizer/internal/services"
@@ -66,7 +67,7 @@ func main() {
 
 	// Initialize database
 	// Use the Database field as the path for SQLite
-	dbPath := cfg.Database.Database
+	dbPath := cfg.Database.Path
 	if dbPath == "" {
 		dbPath = "./data/catalogizer.db" // Default path
 	}
@@ -78,8 +79,8 @@ func main() {
 
 	// Initialize services
 	// Convert config to internal format
-	internalCfg := &config.Config{
-		Server: config.ServerConfig{
+	internalCfg := &internal_config.Config{
+		Server: internal_config.ServerConfig{
 			Host:         cfg.Server.Host,
 			Port:         fmt.Sprintf("%d", cfg.Server.Port),
 			ReadTimeout:  cfg.Server.ReadTimeout,
@@ -88,10 +89,10 @@ func main() {
 			EnableCORS:   cfg.Server.EnableCORS,
 			EnableHTTPS:  cfg.Server.EnableHTTPS,
 		},
-		Database: config.DatabaseConfig{
+		Database: internal_config.DatabaseConfig{
 			Database: cfg.Database.Path,
 		},
-		Catalog: config.CatalogConfig{
+		Catalog: internal_config.CatalogConfig{
 			TempDir:           cfg.Catalog.TempDir,
 			MaxArchiveSize:    cfg.Catalog.MaxArchiveSize,
 			DownloadChunkSize: cfg.Catalog.DownloadChunkSize,

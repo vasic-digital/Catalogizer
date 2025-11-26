@@ -1,0 +1,66 @@
+{
+  "server": {
+    "host": "localhost",
+    "port": 8080,
+    "read_timeout": 30,
+    "write_timeout": 30,
+    "idle_timeout": 120,
+    "enable_cors": true,
+    "enable_https": false
+  },
+  "database": {
+    "path": "./catalog.db",
+    "max_open_connections": 25,
+    "max_idle_connections": 5,
+    "conn_max_lifetime": 300,
+    "conn_max_idle_time": 60,
+    "enable_wal": true,
+    "cache_size": -2000,
+    "busy_timeout": 5000
+  },
+  "auth": {
+    "jwt_secret": "change-this-secret-in-production",
+    "jwt_expiration_hours": 24,
+    "enable_auth": false,
+    "admin_username": "admin",
+    "admin_password": "admin123"
+  },
+  "catalog": {
+    "default_page_size": 100,
+    "max_page_size": 1000,
+    "enable_cache": true,
+    "cache_ttl_minutes": 15,
+    "max_concurrent_scans": 3,
+    "download_chunk_size": 1048576,
+    "max_archive_size": 5368709120,
+    "allowed_download_types": [
+      "*"
+    ],
+    "temp_dir": "/tmp/catalog-api"
+  },
+  "storage": {
+    "roots": [
+      {
+        "id": "local-example",
+        "name": "Local Files",
+        "protocol": "local",
+        "enabled": true,
+        "max_depth": 10,
+        "enable_duplicate_detection": true,
+        "enable_metadata_extraction": true,
+        "settings": {
+          "base_path": "/tmp/catalog-data"
+        }
+      }
+    ]
+  },
+  "logging": {
+    "level": "info",
+    "format": "json",
+    "output": "stdout",
+    "max_size": 100,
+    "max_backups": 3,
+    "max_age": 28,
+    "compress": true
+  }
+}
