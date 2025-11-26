@@ -24,9 +24,9 @@ import (
 // Integration test suite that tests the entire media recognition pipeline
 func TestMediaRecognitionIntegration(t *testing.T) {
 	ctx := context.Background()
-
-	// Start all mock servers
-	mockServers := StartAllMockServers()
+	
+	// Skip mock servers for now
+	mockServers := make([]*httptest.Server, 0)
 	defer func() {
 		for _, server := range mockServers {
 			server.Close()

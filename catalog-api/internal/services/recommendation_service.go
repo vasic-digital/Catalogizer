@@ -10,7 +10,7 @@ import (
 	"strings"
 	"time"
 
-	"catalogizer/internal/models"
+	"catalogizer/models"
 )
 
 type RecommendationService struct {

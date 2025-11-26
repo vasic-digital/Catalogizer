@@ -579,7 +579,7 @@ func (s *SubtitleService) getDownloadInfo(ctx context.Context, resultID string) 
 	cacheKey := fmt.Sprintf("subtitle_download_info:%s", resultID)
 
 	var result SubtitleSearchResult
-	found, _, err := s.cacheService.Get(ctx, cacheKey, &result)
+	found, err := s.cacheService.Get(ctx, cacheKey, &result)
 	if err == nil && found {
 		s.logger.Debug("Retrieved subtitle download info from cache",
 			zap.String("result_id", resultID))
@@ -636,7 +636,7 @@ func (s *SubtitleService) getCachedTranslation(ctx context.Context, subtitleID, 
 	cacheKey := fmt.Sprintf("subtitle_translation:%s:%s", subtitleID, targetLanguage)
 
 	var track SubtitleTrack
-	found, _, err := s.cacheService.Get(ctx, cacheKey, &track)
+	found, err := s.cacheService.Get(ctx, cacheKey, &track)
 	if err != nil {
 		s.logger.Debug("Error retrieving cached translation",
 			zap.String("subtitle_id", subtitleID),

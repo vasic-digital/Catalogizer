@@ -2,6 +2,7 @@ package tests
 
 import (
 	"database/sql"
+	"fmt"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -9,10 +10,13 @@ import (
 
 	"catalogizer/internal/models"
 	"catalogizer/internal/services"
+	_ "github.com/mattn/go-sqlite3"
 )
 
 func TestDuplicateDetectionService_TextSimilarity(t *testing.T) {
-	service := services.NewDuplicateDetectionService()
+	db, _ := sql.Open("sqlite3", ":memory:")
+	logger := zap.NewNop()
+	service := services.NewDuplicateDetectionService(db, logger, nil)
 
 	testCases := []struct {
 		text1    string
@@ -67,21 +71,23 @@ func TestDuplicateDetectionService_TextSimilarity(t *testing.T) {
 }
 
 func TestDuplicateDetectionService_MovieDuplicates(t *testing.T) {
-	service := services.NewDuplicateDetectionService()
+	db, _ := sql.Open("sqlite3", ":memory:")
+	logger := zap.NewNop()
+	service := services.NewDuplicateDetectionService(db, logger, nil)
 
+	year := 1999
+	duration := 136
+	fileSize := int64(2048000000) // 2GB
 	originalMovie := &models.MediaMetadata{
 		Title:      "The Matrix",
-		Year:       "1999",
+		Year:       &year,
 		Genre:      "Science Fiction",
 		Director:   "The Wachowskis",
-		Duration:   136,
+		Duration:   &duration,
 		Resolution: "1080p",
-		FileSize:   2048000000, // 2GB
-		Format:     "mkv",
+		FileSize:   &fileSize,
 		Language:   "English",
-		Subtitles:  []string{"English", "Spanish"},
 		MediaType:  models.MediaTypeVideo,
-		Confidence: 0.95,
 	}
 
 	testCases := []struct {
@@ -174,7 +180,9 @@ func TestDuplicateDetectionService_MovieDuplicates(t *testing.T) {
 }
 
 func TestDuplicateDetectionService_MusicDuplicates(t *testing.T) {
-	service := services.NewDuplicateDetectionService()
+	db, _ := sql.Open("sqlite3", ":memory:")
+	logger := zap.NewNop()
+	service := NewDuplicateDetectionService(db, logger, nil)
 
 	originalSong := &models.MediaMetadata{
 		Title:       "Bohemian Rhapsody",
@@ -295,7 +303,9 @@ func TestDuplicateDetectionService_MusicDuplicates(t *testing.T) {
 }
 
 func TestDuplicateDetectionService_BookDuplicates(t *testing.T) {
-	service := services.NewDuplicateDetectionService()
+	db, _ := sql.Open("sqlite3", ":memory:")
+	logger := zap.NewNop()
+	service := NewDuplicateDetectionService(db, logger, nil)
 
 	originalBook := &models.MediaMetadata{
 		Title:      "Harry Potter and the Philosopher's Stone",
@@ -406,7 +416,9 @@ func TestDuplicateDetectionService_BookDuplicates(t *testing.T) {
 }
 
 func TestDuplicateDetectionService_GameDuplicates(t *testing.T) {
-	service := services.NewDuplicateDetectionService()
+	db, _ := sql.Open("sqlite3", ":memory:")
+	logger := zap.NewNop()
+	service := NewDuplicateDetectionService(db, logger, nil)
 
 	originalGame := &models.MediaMetadata{
 		Title:      "Cyberpunk 2077",
@@ -494,7 +506,9 @@ func TestDuplicateDetectionService_GameDuplicates(t *testing.T) {
 }
 
 func TestDuplicateDetectionService_AlgorithmAccuracy(t *testing.T) {
-	service := services.NewDuplicateDetectionService()
+	db, _ := sql.Open("sqlite3", ":memory:")
+	logger := zap.NewNop()
+	service := NewDuplicateDetectionService(db, logger, nil)
 
 	t.Run("levenshtein distance", func(t *testing.T) {
 		testCases := []struct {
@@ -555,7 +569,9 @@ func TestDuplicateDetectionService_AlgorithmAccuracy(t *testing.T) {
 }
 
 func TestDuplicateDetectionService_Performance(t *testing.T) {
-	service := services.NewDuplicateDetectionService()
+	db, _ := sql.Open("sqlite3", ":memory:")
+	logger := zap.NewNop()
+	service := NewDuplicateDetectionService(db, logger, nil)
 
 	// Create a large number of media items for performance testing
 	mediaItems := make([]*models.MediaMetadata, 1000)
@@ -593,7 +609,9 @@ func TestDuplicateDetectionService_Performance(t *testing.T) {
 }
 
 func BenchmarkDuplicateDetection(b *testing.B) {
-	service := services.NewDuplicateDetectionService()
+	db, _ := sql.Open("sqlite3", ":memory:")
+	logger := zap.NewNop()
+	service := NewDuplicateDetectionService(db, logger, nil)
 
 	movie1 := &models.MediaMetadata{
 		Title:      "The Matrix",

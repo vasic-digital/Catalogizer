@@ -2,22 +2,28 @@ package tests
 
 import (
 	"context"
+	"database/sql"
 	"testing"
 	"time"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"go.uber.org/zap"
 
 	"catalogizer/internal/models"
 	"catalogizer/internal/services"
+	_ "github.com/mattn/go-sqlite3"
 )
 
 func TestRecommendationService_GetSimilarItems(t *testing.T) {
 	ctx := context.Background()
 
-	// Setup services
+	// Setup services with database
+	db, _ := sql.Open("sqlite3", ":memory:")
+	logger := zap.NewNop()
+	
 	mediaRecognitionService := services.NewMediaRecognitionService()
-	duplicateDetectionService := services.NewDuplicateDetectionService()
+	duplicateDetectionService := NewDuplicateDetectionService(db, logger, nil)
 	recommendationService := services.NewRecommendationService(
 		mediaRecognitionService,
 		duplicateDetectionService,

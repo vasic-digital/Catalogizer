@@ -2,6 +2,8 @@ package tests
 
 import (
 	"bytes"
+	"context"
+	"database/sql"
 	"encoding/json"
 	"fmt"
 	"net/http"
@@ -12,16 +14,21 @@ import (
 	"github.com/gorilla/mux"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"go.uber.org/zap/zaptest"
 
 	"catalogizer/internal/handlers"
 	"catalogizer/internal/models"
 	"catalogizer/internal/services"
+	_ "github.com/mattn/go-sqlite3"
 )
 
 func TestRecommendationHandler_GetSimilarItems(t *testing.T) {
-	// Setup services
+	// Setup services with database
+	db, _ := sql.Open("sqlite3", ":memory:")
+	logger := zaptest.NewLogger(t)
+	
 	mediaRecognitionService := services.NewMediaRecognitionService()
-	duplicateDetectionService := services.NewDuplicateDetectionService()
+	duplicateDetectionService := NewDuplicateDetectionService(db, logger, nil)
 	recommendationService := services.NewRecommendationService(
 		mediaRecognitionService,
 		duplicateDetectionService,

@@ -203,11 +203,12 @@ type PlaybackUpdateRequest struct {
 
 // NewMediaPlayerService creates a new media player service
 func NewMediaPlayerService(db *sql.DB, logger *zap.Logger) *MediaPlayerService {
+	cacheService := NewCacheService(db, logger)
 	return &MediaPlayerService{
 		db:                 db,
 		logger:             logger,
 		lyricsService:      NewLyricsService(db, logger),
-		subtitleService:    NewSubtitleService(db, logger),
+		subtitleService:    NewSubtitleService(db, logger, cacheService),
 		coverArtService:    NewCoverArtService(db, logger),
 		translationService: NewTranslationService(logger),
 		positionTracker:    NewPlaybackPositionService(db, logger),

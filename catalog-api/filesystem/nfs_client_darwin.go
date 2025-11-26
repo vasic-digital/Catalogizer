@@ -1,0 +1,107 @@
+//go:build darwin
+// +build darwin
+
+package filesystem
+
+import (
+	"context"
+	"fmt"
+	"io"
+)
+
+// NFSConfig contains NFS connection configuration
+type NFSConfig struct {
+	Host       string `json:"host"`
+	Path       string `json:"path"`        // Export path on NFS server
+	MountPoint string `json:"mount_point"` // Local mount point
+	Options    string `json:"options"`     // Mount options
+}
+
+// NFSClient for macOS (placeholder implementation using mount command)
+type NFSClient struct {
+	config   NFSConfig
+	mountPoint string
+	connected bool
+	mounted   bool
+}
+
+func NewNFSClient(config NFSConfig) (*NFSClient, error) {
+	return &NFSClient{
+		config:     config,
+		mountPoint: config.MountPoint,
+	}, nil
+}
+
+func (c *NFSClient) Connect(ctx context.Context) error {
+	// On macOS, mount command would be used in real implementation
+	return fmt.Errorf("NFS mounting not yet implemented for macOS")
+}
+
+func (c *NFSClient) Disconnect(ctx context.Context) error {
+	c.connected = false
+	c.mounted = false
+	return nil
+}
+
+func (c *NFSClient) TestConnection(ctx context.Context) error {
+	if !c.connected {
+		return fmt.Errorf("not connected")
+	}
+	return nil
+}
+
+func (c *NFSClient) ListDirectory(ctx context.Context, path string) ([]*FileInfo, error) {
+	return nil, fmt.Errorf("not connected")
+}
+
+func (c *NFSClient) GetFileInfo(ctx context.Context, path string) (*FileInfo, error) {
+	return nil, fmt.Errorf("not connected")
+}
+
+func (c *NFSClient) CreateDirectory(ctx context.Context, path string) error {
+	return fmt.Errorf("not connected")
+}
+
+func (c *NFSClient) DeleteDirectory(ctx context.Context, path string) error {
+	return fmt.Errorf("not connected")
+}
+
+func (c *NFSClient) DeleteFile(ctx context.Context, path string) error {
+	return fmt.Errorf("not connected")
+}
+
+func (c *NFSClient) CopyFile(ctx context.Context, src, dst string) error {
+	return fmt.Errorf("not connected")
+}
+
+func (c *NFSClient) MoveFile(ctx context.Context, src, dst string) error {
+	return fmt.Errorf("not connected")
+}
+
+func (c *NFSClient) ReadFile(ctx context.Context, path string) (io.ReadCloser, error) {
+	return nil, fmt.Errorf("not connected")
+}
+
+func (c *NFSClient) WriteFile(ctx context.Context, path string, data io.Reader) error {
+	return fmt.Errorf("not connected")
+}
+
+func (c *NFSClient) FileExists(ctx context.Context, path string) (bool, error) {
+	return false, fmt.Errorf("not connected")
+}
+
+func (c *NFSClient) IsConnected() bool {
+	return c.connected
+}
+
+func (c *NFSClient) GetRootPath() string {
+	return c.mountPoint
+}
+
+func (c *NFSClient) GetProtocol() string {
+	return "nfs"
+}
+
+func (c *NFSClient) GetConfig() interface{} {
+	return c.config
+}

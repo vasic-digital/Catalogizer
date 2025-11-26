@@ -244,3 +244,9 @@ type CoverArtResult struct {
 	Source    string `json:"source,omitempty"`
 	IsDefault bool   `json:"is_default,omitempty"`
 }
+
+// FileWithMetadata represents a file with its metadata
+type FileWithMetadata struct {
+	File     *FileInfo     `json:"file"`
+	Metadata *MediaMetadata `json:"metadata,omitempty"`
+}

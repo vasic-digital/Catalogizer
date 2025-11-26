@@ -10,7 +10,7 @@ import (
 
 	"github.com/gorilla/mux"
 
-	"catalogizer/internal/models"
+	"catalogizer/models"
 	"catalogizer/internal/services"
 	"catalogizer/repository"
 )
@@ -546,66 +546,38 @@ func (rh *RecommendationHandler) convertFileToMediaMetadata(fileWithMetadata *mo
 	// Extract metadata from FileMetadata array
 	for _, meta := range fileWithMetadata.Metadata {
 		switch meta.Key {
+		case "media_type", "type":
+			metadata.MediaType = meta.Value
 		case "title":
-			if title, ok := meta.Value.(string); ok && title != "" {
-				metadata.Title = title
-			}
+			metadata.Title = meta.Value
 		case "description", "synopsis", "plot":
-			if desc, ok := meta.Value.(string); ok {
-				metadata.Description = desc
-			}
-		case "genre", "genres":
-			if genre, ok := meta.Value.(string); ok {
-				metadata.Genre = genre
-			}
+			metadata.Description = meta.Value
+		case "genre":
+			metadata.Genre = meta.Value
 		case "year", "release_year":
-			if year, ok := meta.Value.(float64); ok {
-				yearInt := int(year)
-				metadata.Year = &yearInt
+			if year, err := strconv.Atoi(meta.Value); err == nil {
+				metadata.Year = &year
 			}
 		case "rating", "imdb_rating":
-			if rating, ok := meta.Value.(float64); ok {
+			if rating, err := strconv.ParseFloat(meta.Value, 64); err == nil {
 				metadata.Rating = &rating
 			}
 		case "duration", "runtime":
-			if duration, ok := meta.Value.(float64); ok {
-				durationInt := int(duration)
-				metadata.Duration = &durationInt
+			if duration, err := strconv.Atoi(meta.Value); err == nil {
+				metadata.Duration = &duration
 			}
 		case "language":
-			if lang, ok := meta.Value.(string); ok {
-				metadata.Language = lang
-			}
+			metadata.Language = meta.Value
 		case "country":
-			if country, ok := meta.Value.(string); ok {
-				metadata.Country = country
-			}
+			metadata.Country = meta.Value
 		case "director":
-			if director, ok := meta.Value.(string); ok {
-				metadata.Director = director
-			}
+			metadata.Director = meta.Value
 		case "producer":
-			if producer, ok := meta.Value.(string); ok {
-				metadata.Producer = producer
-			}
+			metadata.Producer = meta.Value
 		case "cast":
-			if cast, ok := meta.Value.([]interface{}); ok {
-				castStrings := make([]string, 0, len(cast))
-				for _, c := range cast {
-					if castStr, ok := c.(string); ok {
-						castStrings = append(castStrings, castStr)
-					}
-				}
-				metadata.Cast = castStrings
-			}
-		case "media_type", "type":
-			if mediaType, ok := meta.Value.(string); ok {
-				metadata.MediaType = mediaType
-			}
+			metadata.Cast = strings.Split(meta.Value, ",")
 		case "resolution", "quality":
-			if resolution, ok := meta.Value.(string); ok {
-				metadata.Resolution = resolution
-			}
+			metadata.Resolution = meta.Value
 		default:
 			// Store other metadata in the generic metadata map
 			metadata.Metadata[meta.Key] = meta.Value
@@ -613,15 +585,18 @@ func (rh *RecommendationHandler) convertFileToMediaMetadata(fileWithMetadata *mo
 	}
 
 	// If media type is not set, try to infer from MIME type
-	if metadata.MediaType == "" {
+	if metadata.MediaType == "" && fileWithMetadata.File.MimeType != nil {
 		switch {
-		case strings.HasPrefix(fileWithMetadata.File.MimeType, "video/"):
-			metadata.MediaType = "movie"
-		case strings.HasPrefix(fileWithMetadata.File.MimeType, "audio/"):
-			metadata.MediaType = "music"
-		case strings.HasPrefix(fileWithMetadata.File.MimeType, "application/pdf"),
-			 strings.HasPrefix(fileWithMetadata.File.MimeType, "application/epub"):
-			metadata.MediaType = "ebook"
+		case strings.HasPrefix(*fileWithMetadata.File.MimeType, "video/"):
+			metadata.MediaType = "video"
+		case strings.HasPrefix(*fileWithMetadata.File.MimeType, "audio/"):
+			metadata.MediaType = "audio"
+		case strings.HasPrefix(*fileWithMetadata.File.MimeType, "image/"):
+			metadata.MediaType = "image"
+		case strings.HasPrefix(*fileWithMetadata.File.MimeType, "text/"):
+			metadata.MediaType = "text"
+		case strings.Contains(*fileWithMetadata.File.MimeType, "pdf") || strings.Contains(*fileWithMetadata.File.MimeType, "epub"):
+			metadata.MediaType = "book"
 		default:
 			metadata.MediaType = "other"
 		}

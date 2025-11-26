@@ -1,11 +1,18 @@
 package integration
 
 import (
+	"database/sql"
+	"fmt"
 	"os"
 	"path/filepath"
 	"testing"
+	"time"
 
+	"catalogizer/database"
+	"catalogizer/internal/media/realtime"
+	"catalogizer/internal/services"
 	"go.uber.org/zap"
+	_ "github.com/mattn/go-sqlite3"
 )
 
 // TestFilesystemOperationsIntegration tests the complete file system operations flow
@@ -37,8 +44,8 @@ func TestFilesystemOperationsIntegration(t *testing.T) {
 	}
 	defer mediaDB.Close()
 
-	// Initialize database schema
-	if err := initializeTestSchema(mediaDB); err != nil {
+	// Initialize test database schema
+	if err := initializeTestSchema(mediaDB.GetDB()); err != nil {
 		t.Fatalf("Failed to initialize test schema: %v", err)
 	}
 
@@ -372,7 +379,7 @@ func testConcurrentOperations(t *testing.T, storageDir string, watcher *realtime
 	os.RemoveAll(concurrentDir)
 }
 
-func initializeTestSchema(mediaDB *database.MediaDatabase) error {
+func initializeTestSchema(db *sql.DB) error {
 	schema := `
 		CREATE TABLE IF NOT EXISTS storage_roots (
 			id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -432,6 +439,6 @@ func initializeTestSchema(mediaDB *database.MediaDatabase) error {
 		CREATE INDEX IF NOT EXISTS idx_rename_events_detected_at ON rename_events(detected_at);
 	`
 
-	_, err := mediaDB.GetDB().Exec(schema)
+	_, err := db.Exec(schema)
 	return err
 }

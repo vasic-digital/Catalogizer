@@ -4,6 +4,17 @@ import (
 	"time"
 )
 
+// Media types
+const (
+	MediaTypeVideo = "video"
+	MediaTypeAudio = "audio"
+	MediaTypeImage = "image"
+	MediaTypeText  = "text"
+	MediaTypeBook  = "book"
+	MediaTypeGame  = "game"
+	MediaTypeOther = "other"
+)
+
 // File represents a file record from the catalog database
 type File struct {
 	ID               int64      `json:"id" db:"id"`
@@ -373,6 +384,29 @@ type SystemLoadMetrics struct {
 	NetworkIO   float64   `json:"network_io"`
 	Timestamp   time.Time `json:"timestamp"`
 	ActiveTests int       `json:"active_tests"`
+}
+
+// MediaMetadata represents media metadata information
+type MediaMetadata struct {
+	ID          int64                  `json:"id" db:"id"`
+	Title       string                 `json:"title" db:"title"`
+	Description string                 `json:"description,omitempty" db:"description"`
+	Genre       string                 `json:"genre,omitempty" db:"genre"`
+	Year        *int                   `json:"year,omitempty" db:"year"`
+	Rating      *float64               `json:"rating,omitempty" db:"rating"`
+	Duration    *int                   `json:"duration,omitempty" db:"duration"`
+	Language    string                 `json:"language,omitempty" db:"language"`
+	Country     string                 `json:"country,omitempty" db:"country"`
+	Director    string                 `json:"director,omitempty" db:"director"`
+	Producer    string                 `json:"producer,omitempty" db:"producer"`
+	Cast        []string               `json:"cast,omitempty" db:"cast"`
+	MediaType   string                 `json:"media_type,omitempty" db:"media_type"`
+	Resolution  string                 `json:"resolution,omitempty" db:"resolution"`
+	FileSize    *int64                 `json:"file_size,omitempty" db:"file_size"`
+	Metadata    map[string]interface{} `json:"metadata,omitempty" db:"metadata"`
+	ExternalIDs map[string]string      `json:"external_ids,omitempty" db:"external_ids"`
+	CreatedAt   time.Time              `json:"created_at" db:"created_at"`
+	UpdatedAt   time.Time              `json:"updated_at" db:"updated_at"`
 }
 
 // MediaItem represents a media item for testing
