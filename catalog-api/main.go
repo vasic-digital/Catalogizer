@@ -2,6 +2,7 @@ package main
 
 import (
 	root_config "catalogizer/config"
+	"catalogizer/database"
 	root_handlers "catalogizer/handlers"
 	root_middleware "catalogizer/middleware"
 	root_repository "catalogizer/repository"
@@ -76,6 +77,22 @@ func main() {
 		log.Fatal("Failed to connect to database:", err)
 	}
 	defer db.Close()
+
+	// Initialize database connection wrapper
+	databaseDB, err := database.NewConnection(&root_config.DatabaseConfig{
+		Path: dbPath,
+	})
+	if err != nil {
+		log.Fatal("Failed to initialize database:", err)
+	}
+	
+	// Run database migrations
+	ctx := context.Background()
+	log.Println("Running database migrations...")
+	if err := databaseDB.RunMigrations(ctx); err != nil {
+		log.Fatal("Failed to run database migrations:", err)
+	}
+	log.Println("Database migrations completed successfully")
 
 	// Initialize services
 	// Convert config to internal format

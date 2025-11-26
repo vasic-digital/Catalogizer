@@ -24,6 +24,16 @@ func (db *DB) RunMigrations(ctx context.Context) error {
 			Name:    "migrate_smb_to_storage_roots",
 			Up:      db.migrateSMBToStorageRoots,
 		},
+		{
+			Version: 3,
+			Name:    "create_auth_tables",
+			Up:      db.createAuthTables,
+		},
+		{
+			Version: 4,
+			Name:    "create_conversion_jobs_table",
+			Up:      db.createConversionJobsTable,
+		},
 	}
 
 	for _, migration := range migrations {
@@ -266,5 +276,163 @@ func (db *DB) migrateSMBToStorageRoots(ctx context.Context) error {
 		return fmt.Errorf("failed to update scan_history storage_root_id: %w", err)
 	}
 
+	return nil
+}
+
+// createConversionJobsTable creates the conversion_jobs table
+func (db *DB) createConversionJobsTable(ctx context.Context) error {
+	query := `
+		CREATE TABLE IF NOT EXISTS conversion_jobs (
+			id INTEGER PRIMARY KEY AUTOINCREMENT,
+			user_id INTEGER NOT NULL,
+			source_file_path TEXT NOT NULL,
+			target_file_path TEXT NOT NULL,
+			source_format TEXT NOT NULL,
+			target_format TEXT NOT NULL,
+			quality_level TEXT DEFAULT 'medium',
+			status TEXT DEFAULT 'pending',
+			progress INTEGER DEFAULT 0,
+			error_message TEXT,
+			started_at DATETIME,
+			completed_at DATETIME,
+			created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+			updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+			FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+		)
+	`
+	
+	if _, err := db.ExecContext(ctx, query); err != nil {
+		return fmt.Errorf("failed to create conversion_jobs table: %w", err)
+	}
+	
+	// Create indexes
+	indexes := []string{
+		"CREATE INDEX IF NOT EXISTS idx_conversion_jobs_user_id ON conversion_jobs(user_id)",
+		"CREATE INDEX IF NOT EXISTS idx_conversion_jobs_status ON conversion_jobs(status)",
+		"CREATE INDEX IF NOT EXISTS idx_conversion_jobs_created_at ON conversion_jobs(created_at)",
+	}
+	
+	for _, indexQuery := range indexes {
+		if _, err := db.ExecContext(ctx, indexQuery); err != nil {
+			return fmt.Errorf("failed to create index: %s, error: %w", indexQuery, err)
+		}
+	}
+	
+	return nil
+}
+
+// createAuthTables creates authentication-related tables
+func (db *DB) createAuthTables(ctx context.Context) error {
+	schema := `
+	-- Users table
+	CREATE TABLE IF NOT EXISTS users (
+		id INTEGER PRIMARY KEY AUTOINCREMENT,
+		username TEXT NOT NULL UNIQUE,
+		email TEXT NOT NULL UNIQUE,
+		password_hash TEXT NOT NULL,
+		first_name TEXT NOT NULL,
+		last_name TEXT NOT NULL,
+		role TEXT NOT NULL DEFAULT 'user',
+		is_active BOOLEAN NOT NULL DEFAULT 1,
+		last_login DATETIME,
+		created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+		updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+	);
+
+	-- Roles table
+	CREATE TABLE IF NOT EXISTS roles (
+		id INTEGER PRIMARY KEY AUTOINCREMENT,
+		name TEXT NOT NULL UNIQUE,
+		description TEXT,
+		permissions TEXT,
+		created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+		updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+	);
+
+	-- Sessions table
+	CREATE TABLE IF NOT EXISTS sessions (
+		id TEXT PRIMARY KEY,
+		user_id INTEGER NOT NULL,
+		token TEXT NOT NULL UNIQUE,
+		expires_at DATETIME NOT NULL,
+		created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+		ip_address TEXT,
+		user_agent TEXT,
+		FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+	);
+
+	-- Permissions table
+	CREATE TABLE IF NOT EXISTS permissions (
+		id INTEGER PRIMARY KEY AUTOINCREMENT,
+		name TEXT NOT NULL UNIQUE,
+		resource TEXT NOT NULL,
+		action TEXT NOT NULL,
+		description TEXT
+	);
+
+	-- User permissions (for custom permissions beyond role)
+	CREATE TABLE IF NOT EXISTS user_permissions (
+		user_id INTEGER NOT NULL,
+		permission_id INTEGER NOT NULL,
+		granted_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+		granted_by INTEGER,
+		PRIMARY KEY (user_id, permission_id),
+		FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+		FOREIGN KEY (permission_id) REFERENCES permissions(id) ON DELETE CASCADE,
+		FOREIGN KEY (granted_by) REFERENCES users(id)
+	);
+
+	-- Audit log for authentication events
+	CREATE TABLE IF NOT EXISTS auth_audit_log (
+		id INTEGER PRIMARY KEY AUTOINCREMENT,
+		user_id INTEGER,
+		event_type TEXT NOT NULL,
+		ip_address TEXT,
+		user_agent TEXT,
+		details TEXT,
+		created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+		FOREIGN KEY (user_id) REFERENCES users(id)
+	);
+
+	-- Indexes
+	CREATE INDEX IF NOT EXISTS idx_users_username ON users(username);
+	CREATE INDEX IF NOT EXISTS idx_users_email ON users(email);
+	CREATE INDEX IF NOT EXISTS idx_users_role ON users(role);
+	CREATE INDEX IF NOT EXISTS idx_sessions_user_id ON sessions(user_id);
+	CREATE INDEX IF NOT EXISTS idx_sessions_token ON sessions(token);
+	CREATE INDEX IF NOT EXISTS idx_sessions_expires_at ON sessions(expires_at);
+	CREATE INDEX IF NOT EXISTS idx_auth_audit_user_id ON auth_audit_log(user_id);
+	CREATE INDEX IF NOT EXISTS idx_auth_audit_event_type ON auth_audit_log(event_type);
+	CREATE INDEX IF NOT EXISTS idx_auth_audit_created_at ON auth_audit_log(created_at);
+
+	-- Insert default roles
+	INSERT OR IGNORE INTO roles (name, description, permissions) VALUES
+	('admin', 'System Administrator', '["admin:system", "manage:users", "manage:roles", "read:media", "write:media", "delete:media", "read:catalog", "write:catalog", "delete:catalog", "trigger:analysis", "view:analysis", "view:logs", "access:api", "write:api"]'),
+	('moderator', 'Content Moderator', '["read:media", "write:media", "read:catalog", "write:catalog", "trigger:analysis", "view:analysis", "access:api", "write:api"]'),
+	('user', 'Regular User', '["read:media", "write:media", "read:catalog", "write:catalog", "view:analysis", "access:api"]'),
+	('viewer', 'Read-only Viewer', '["read:media", "read:catalog", "view:analysis", "access:api"]');
+
+	-- Insert default permissions
+	INSERT OR IGNORE INTO permissions (name, resource, action, description) VALUES
+	('read:media', 'media', 'read', 'View media items and metadata'),
+	('write:media', 'media', 'write', 'Create and update media items'),
+	('delete:media', 'media', 'delete', 'Delete media items'),
+	('read:catalog', 'catalog', 'read', 'Browse file catalog'),
+	('write:catalog', 'catalog', 'write', 'Modify file catalog'),
+	('delete:catalog', 'catalog', 'delete', 'Delete from catalog'),
+	('trigger:analysis', 'analysis', 'trigger', 'Start media analysis'),
+	('view:analysis', 'analysis', 'view', 'View analysis results'),
+	('manage:users', 'users', 'manage', 'Create, update, delete users'),
+	('manage:roles', 'roles', 'manage', 'Create, update, delete roles'),
+	('view:logs', 'logs', 'view', 'View system logs'),
+	('admin:system', 'system', 'admin', 'Full system administration'),
+	('access:api', 'api', 'access', 'Access API endpoints'),
+	('write:api', 'api', 'write', 'Modify data via API');
+	`
+
+	if _, err := db.ExecContext(ctx, schema); err != nil {
+		return fmt.Errorf("failed to create auth tables: %w", err)
+	}
+	
 	return nil
 }
