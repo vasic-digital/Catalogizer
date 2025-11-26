@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"fmt"
 	"net/http"
 	"strconv"
 	"strings"
@@ -208,5 +209,9 @@ func (h *ConversionHandler) getCurrentUser(c *gin.Context) (*models.User, error)
 	}
 
 	// Use auth service to get current user from token
-	return h.authService.GetCurrentUser(token)
+	user, err := h.authService.GetCurrentUser(token)
+	if err != nil {
+		return nil, fmt.Errorf("auth error: %w", err)
+	}
+	return user, nil
 }
