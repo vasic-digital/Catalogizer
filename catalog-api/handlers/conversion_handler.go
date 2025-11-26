@@ -21,6 +21,7 @@ type ConversionServiceInterface interface {
 // ConversionAuthServiceInterface defines the interface for authentication service operations
 type ConversionAuthServiceInterface interface {
 	CheckPermission(userID int, permission string) (bool, error)
+	GetCurrentUser(token string) (*models.User, error)
 }
 
 type ConversionHandler struct {
@@ -206,7 +207,6 @@ func (h *ConversionHandler) getCurrentUser(c *gin.Context) (*models.User, error)
 		token = token[7:]
 	}
 
-	// Note: This would need the actual auth service implementation
-	// For now, returning a placeholder
-	return &models.User{ID: 1}, nil
+	// Use auth service to get current user from token
+	return h.authService.GetCurrentUser(token)
 }

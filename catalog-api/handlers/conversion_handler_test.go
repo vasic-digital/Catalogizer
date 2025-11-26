@@ -62,6 +62,14 @@ func (m *MockConversionAuthService) CheckPermission(userID int, permission strin
 	return args.Bool(0), args.Error(1)
 }
 
+func (m *MockConversionAuthService) GetCurrentUser(token string) (*models.User, error) {
+	args := m.Called(token)
+	if args.Get(0) == nil {
+		return nil, args.Error(1)
+	}
+	return args.Get(0).(*models.User), args.Error(1)
+}
+
 func setupConversionHandler() (*ConversionHandler, *gin.Engine) {
 	gin.SetMode(gin.TestMode)
 	
@@ -86,6 +94,9 @@ func TestCreateJob(t *testing.T) {
 	mockConversionService := handler.conversionService.(*MockConversionService)
 	mockAuthService := handler.authService.(*MockConversionAuthService)
 	
+	// Mock GetCurrentUser for authentication
+	mockUser := &models.User{ID: 1, Username: "testuser"}
+	mockAuthService.On("GetCurrentUser", "valid-token").Return(mockUser, nil)
 	mockAuthService.On("CheckPermission", 1, models.PermissionConversionCreate).Return(true, nil)
 	
 	request := &models.ConversionRequest{
@@ -142,6 +153,11 @@ func TestGetJob(t *testing.T) {
 	
 	// Set up mock expectations
 	mockConversionService := handler.conversionService.(*MockConversionService)
+	mockAuthService := handler.authService.(*MockConversionAuthService)
+	
+	// Mock GetCurrentUser for authentication
+	mockUser := &models.User{ID: 1, Username: "testuser"}
+	mockAuthService.On("GetCurrentUser", "valid-token").Return(mockUser, nil)
 	
 	// GetJob doesn't check permissions, only needs the conversion service
 	expectedJob := &models.ConversionJob{
@@ -185,6 +201,9 @@ func TestListJobs(t *testing.T) {
 	mockConversionService := handler.conversionService.(*MockConversionService)
 	mockAuthService := handler.authService.(*MockConversionAuthService)
 	
+	// Mock GetCurrentUser for authentication
+	mockUser := &models.User{ID: 1, Username: "testuser"}
+	mockAuthService.On("GetCurrentUser", "valid-token").Return(mockUser, nil)
 	mockAuthService.On("CheckPermission", 1, models.PermissionConversionView).Return(true, nil)
 	
 	expectedJobs := []models.ConversionJob{
@@ -239,6 +258,9 @@ func TestCancelJob(t *testing.T) {
 	mockConversionService := handler.conversionService.(*MockConversionService)
 	mockAuthService := handler.authService.(*MockConversionAuthService)
 	
+	// Mock GetCurrentUser for authentication
+	mockUser := &models.User{ID: 1, Username: "testuser"}
+	mockAuthService.On("GetCurrentUser", "valid-token").Return(mockUser, nil)
 	mockAuthService.On("CheckPermission", 1, models.PermissionConversionManage).Return(true, nil)
 	mockConversionService.On("CancelJob", 1, 1).Return(nil)
 	
@@ -270,6 +292,9 @@ func TestGetSupportedFormats(t *testing.T) {
 	mockConversionService := handler.conversionService.(*MockConversionService)
 	mockAuthService := handler.authService.(*MockConversionAuthService)
 	
+	// Mock GetCurrentUser for authentication
+	mockUser := &models.User{ID: 1, Username: "testuser"}
+	mockAuthService.On("GetCurrentUser", "valid-token").Return(mockUser, nil)
 	mockAuthService.On("CheckPermission", 1, models.PermissionConversionView).Return(true, nil)
 	
 	expectedFormats := &models.SupportedFormats{
