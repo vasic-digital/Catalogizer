@@ -14,7 +14,7 @@ import (
 	"github.com/stretchr/testify/require"
 	"database/sql"
 
-	_ "github.com/mattn/go-sqlite3"
+	_ "github.com/mutecomm/go-sqlcipher"
 )
 
 // TestConversionIntegration tests the full conversion flow

@@ -285,18 +285,21 @@ func (db *DB) createConversionJobsTable(ctx context.Context) error {
 		CREATE TABLE IF NOT EXISTS conversion_jobs (
 			id INTEGER PRIMARY KEY AUTOINCREMENT,
 			user_id INTEGER NOT NULL,
-			source_file_path TEXT NOT NULL,
-			target_file_path TEXT NOT NULL,
+			source_path TEXT NOT NULL,
+			target_path TEXT NOT NULL,
 			source_format TEXT NOT NULL,
 			target_format TEXT NOT NULL,
-			quality_level TEXT DEFAULT 'medium',
+			conversion_type TEXT NOT NULL,
+			quality TEXT DEFAULT 'medium',
+			settings TEXT,
+			priority INTEGER DEFAULT 0,
 			status TEXT DEFAULT 'pending',
-			progress INTEGER DEFAULT 0,
-			error_message TEXT,
+			created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
 			started_at DATETIME,
 			completed_at DATETIME,
-			created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-			updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+			scheduled_for DATETIME,
+			duration INTEGER,
+			error_message TEXT,
 			FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
 		)
 	`
@@ -407,10 +410,10 @@ func (db *DB) createAuthTables(ctx context.Context) error {
 
 	-- Insert default roles
 	INSERT OR IGNORE INTO roles (name, description, permissions) VALUES
-	('admin', 'System Administrator', '["admin:system", "manage:users", "manage:roles", "read:media", "write:media", "delete:media", "read:catalog", "write:catalog", "delete:catalog", "trigger:analysis", "view:analysis", "view:logs", "access:api", "write:api"]'),
-	('moderator', 'Content Moderator', '["read:media", "write:media", "read:catalog", "write:catalog", "trigger:analysis", "view:analysis", "access:api", "write:api"]'),
-	('user', 'Regular User', '["read:media", "write:media", "read:catalog", "write:catalog", "view:analysis", "access:api"]'),
-	('viewer', 'Read-only Viewer', '["read:media", "read:catalog", "view:analysis", "access:api"]');
+	('admin', 'System Administrator', '["admin:system", "manage:users", "manage:roles", "read:media", "write:media", "delete:media", "read:catalog", "write:catalog", "delete:catalog", "trigger:analysis", "view:analysis", "view:logs", "access:api", "write:api", "conversion:create", "conversion:view", "conversion:manage"]'),
+	('moderator', 'Content Moderator', '["read:media", "write:media", "read:catalog", "write:catalog", "trigger:analysis", "view:analysis", "access:api", "write:api", "conversion:create", "conversion:view"]'),
+	('user', 'Regular User', '["read:media", "write:media", "read:catalog", "write:catalog", "view:analysis", "access:api", "conversion:create", "conversion:view"]'),
+	('viewer', 'Read-only Viewer', '["read:media", "read:catalog", "view:analysis", "access:api", "conversion:view"]');
 
 	-- Insert default permissions
 	INSERT OR IGNORE INTO permissions (name, resource, action, description) VALUES
@@ -427,7 +430,10 @@ func (db *DB) createAuthTables(ctx context.Context) error {
 	('view:logs', 'logs', 'view', 'View system logs'),
 	('admin:system', 'system', 'admin', 'Full system administration'),
 	('access:api', 'api', 'access', 'Access API endpoints'),
-	('write:api', 'api', 'write', 'Modify data via API');
+	('write:api', 'api', 'write', 'Modify data via API'),
+	('conversion:create', 'conversion', 'create', 'Create conversion jobs'),
+	('conversion:view', 'conversion', 'view', 'View conversion jobs'),
+	('conversion:manage', 'conversion', 'manage', 'Manage and cancel conversion jobs');
 	`
 
 	if _, err := db.ExecContext(ctx, schema); err != nil {
