@@ -12,12 +12,36 @@ import (
 	"github.com/gorilla/mux"
 )
 
-type ErrorReportingHandler struct {
-	errorReportingService *services.ErrorReportingService
-	authService           *services.AuthService
+// ErrorReportingServiceInterface defines interface for error reporting service operations
+type ErrorReportingServiceInterface interface {
+	ReportError(userID int, request *models.ErrorReportRequest) (*models.ErrorReport, error)
+	ReportCrash(userID int, request *models.CrashReportRequest) (*models.CrashReport, error)
+	GetErrorReport(reportID int, userID int) (*models.ErrorReport, error)
+	GetCrashReport(reportID int, userID int) (*models.CrashReport, error)
+	GetErrorReportsByUser(userID int, filters *models.ErrorReportFilters) ([]models.ErrorReport, error)
+	GetCrashReportsByUser(userID int, filters *models.CrashReportFilters) ([]models.CrashReport, error)
+	UpdateErrorStatus(reportID int, userID int, status string) error
+	UpdateCrashStatus(reportID int, userID int, status string) error
+	GetErrorStatistics(userID int) (*models.ErrorStatistics, error)
+	GetCrashStatistics(userID int) (*models.CrashStatistics, error)
+	GetSystemHealth() (*models.SystemHealth, error)
+	UpdateConfiguration(config *services.ErrorReportingConfig) error
+	GetConfiguration() (*services.ErrorReportingConfig, error)
+	CleanupOldReports(olderThan time.Time) error
+	ExportReports(userID int, filters *models.ExportFilters) ([]byte, error)
 }
 
-func NewErrorReportingHandler(errorReportingService *services.ErrorReportingService, authService *services.AuthService) *ErrorReportingHandler {
+// ErrorReportingAuthServiceInterface defines interface for authentication service operations
+type ErrorReportingAuthServiceInterface interface {
+	CheckPermission(userID int, permission string) (bool, error)
+}
+
+type ErrorReportingHandler struct {
+	errorReportingService ErrorReportingServiceInterface
+	authService           ErrorReportingAuthServiceInterface
+}
+
+func NewErrorReportingHandler(errorReportingService ErrorReportingServiceInterface, authService ErrorReportingAuthServiceInterface) *ErrorReportingHandler {
 	return &ErrorReportingHandler{
 		errorReportingService: errorReportingService,
 		authService:           authService,
@@ -329,7 +353,11 @@ func (h *ErrorReportingHandler) GetConfiguration(w http.ResponseWriter, r *http.
 		return
 	}
 
-	config := h.errorReportingService.GetConfiguration()
+	config, err := h.errorReportingService.GetConfiguration()
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
 
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(config)

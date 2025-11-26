@@ -12,12 +12,35 @@ import (
 	"github.com/gorilla/mux"
 )
 
-type LogManagementHandler struct {
-	logManagementService *services.LogManagementService
-	authService          *services.AuthService
+// LogManagementServiceInterface defines interface for log management service operations
+type LogManagementServiceInterface interface {
+	CollectLogs(userID int, request *models.LogCollectionRequest) (*models.LogCollection, error)
+	GetLogCollection(collectionID int, userID int) (*models.LogCollection, error)
+	GetLogCollectionsByUser(userID int, limit, offset int) ([]models.LogCollection, error)
+	GetLogEntries(collectionID int, userID int, filters *models.LogEntryFilters) ([]models.LogEntry, error)
+	CreateLogShare(userID int, request *models.LogShareRequest) (*models.LogShare, error)
+	GetLogShare(token string) (*models.LogShare, error)
+	RevokeLogShare(shareID int, userID int) error
+	ExportLogs(collectionID int, userID int, format string) ([]byte, error)
+	StreamLogs(userID int, filters *models.LogStreamFilters) (<-chan models.LogEntry, error)
+	AnalyzeLogs(collectionID int, userID int) (*models.LogAnalysis, error)
+	GetLogStatistics(userID int) (*models.LogStatistics, error)
+	GetConfiguration() *services.LogManagementConfig
+	UpdateConfiguration(config *services.LogManagementConfig) error
+	CleanupOldLogs() error
 }
 
-func NewLogManagementHandler(logManagementService *services.LogManagementService, authService *services.AuthService) *LogManagementHandler {
+// LogManagementAuthServiceInterface defines interface for authentication service operations
+type LogManagementAuthServiceInterface interface {
+	CheckPermission(userID int, permission string) (bool, error)
+}
+
+type LogManagementHandler struct {
+	logManagementService LogManagementServiceInterface
+	authService          LogManagementAuthServiceInterface
+}
+
+func NewLogManagementHandler(logManagementService LogManagementServiceInterface, authService LogManagementAuthServiceInterface) *LogManagementHandler {
 	return &LogManagementHandler{
 		logManagementService: logManagementService,
 		authService:          authService,

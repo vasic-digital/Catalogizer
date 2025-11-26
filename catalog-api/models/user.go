@@ -7,6 +7,32 @@ import (
 	"time"
 )
 
+// ValidationResult represents the result of a validation operation
+type ValidationResult struct {
+	IsValid bool     `json:"is_valid"`
+	Errors  []string `json:"errors,omitempty"`
+	Warnings []string `json:"warnings,omitempty"`
+}
+
+// Configuration represents a configuration object
+type Configuration struct {
+	ID          string                 `json:"id"`
+	Name        string                 `json:"name"`
+	Description string                 `json:"description"`
+	Settings    map[string]interface{} `json:"settings"`
+	CreatedAt   time.Time              `json:"created_at"`
+	UpdatedAt   time.Time              `json:"updated_at"`
+}
+
+// Permission represents a permission object
+type Permission struct {
+	ID          string `json:"id"`
+	Name        string `json:"name"`
+	Description string `json:"description"`
+	Resource    string `json:"resource"`
+	Action      string `json:"action"`
+}
+
 // User represents a system user with role-based permissions
 type User struct {
 	ID                  int        `json:"id" db:"id"`

@@ -8,7 +8,7 @@ import (
 	"go.uber.org/zap"
 
 	"catalogizer/internal/services"
-	_ "github.com/mattn/go-sqlite3"
+	_ "github.com/mutecomm/go-sqlcipher"
 )
 
 func TestDuplicateDetectionService_BasicCreation(t *testing.T) {

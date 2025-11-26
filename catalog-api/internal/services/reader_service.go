@@ -562,7 +562,7 @@ func (s *ReaderService) GetHighlights(ctx context.Context, userID int64, bookID 
 		       is_public, share_url
 		FROM reading_highlights
 		WHERE user_id = ? AND book_id = ?
-		ORDER BY start_position_data->>'$.page_number' ASC
+		ORDER BY created_at ASC
 	`
 
 	rows, err := s.db.QueryContext(ctx, query, userID, bookID)
@@ -611,33 +611,19 @@ func (s *ReaderService) GetHighlights(ctx context.Context, userID int64, bookID 
 func (s *ReaderService) GetReadingStats(ctx context.Context, userID int64, period string) (*ReadingStats, error) {
 	var stats ReadingStats
 
-	// Get total reading statistics
+	// Get total reading statistics from reading_stats table
 	query := `
 		SELECT
-			COALESCE(SUM(total_reading_time), 0) as total_time,
-			COALESCE(SUM(pages_read), 0) as total_pages,
-			COALESCE(SUM(words_read), 0) as total_words,
-			COALESCE(AVG(reading_speed), 0) as avg_speed,
-			COUNT(DISTINCT book_id) as books_read
-		FROM reading_sessions
-		WHERE user_id = ? AND started_at >= ?
+			COALESCE(total_reading_time, 0) as total_time,
+			COALESCE(pages_read, 0) as total_pages,
+			COALESCE(words_read, 0) as total_words,
+			COALESCE(average_speed, 0) as avg_speed,
+			COALESCE(books_completed, 0) as books_read
+		FROM reading_stats
+		WHERE user_id = ?
 	`
 
-	var startDate time.Time
-	switch period {
-	case "day":
-		startDate = time.Now().AddDate(0, 0, -1)
-	case "week":
-		startDate = time.Now().AddDate(0, 0, -7)
-	case "month":
-		startDate = time.Now().AddDate(0, -1, 0)
-	case "year":
-		startDate = time.Now().AddDate(-1, 0, 0)
-	default:
-		startDate = time.Time{} // All time
-	}
-
-	err := s.db.QueryRowContext(ctx, query, userID, startDate).Scan(
+	err := s.db.QueryRowContext(ctx, query, userID).Scan(
 		&stats.TotalReadingTime,
 		&stats.PagesRead,
 		&stats.WordsRead,

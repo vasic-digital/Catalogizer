@@ -6,17 +6,40 @@ import (
 	"strconv"
 
 	"catalogizer/models"
-	"catalogizer/services"
 
 	"github.com/gorilla/mux"
 )
 
-type ConfigurationHandler struct {
-	configurationService *services.ConfigurationService
-	authService          *services.AuthService
+// ConfigurationServiceInterface defines the interface for configuration service operations
+type ConfigurationServiceInterface interface {
+	GetWizardStep(stepID string) (*models.WizardStep, error)
+	ValidateWizardStep(stepID string, data map[string]interface{}) (*models.ValidationResult, error)
+	SaveWizardProgress(userID int, stepID string, data map[string]interface{}) error
+	GetWizardProgress(userID int) (*models.WizardProgress, error)
+	CompleteWizard(userID int, finalData map[string]interface{}) (*models.SystemConfiguration, error)
+	GetConfiguration() (*models.Configuration, error)
+	TestConfiguration(config *models.Configuration) (*models.ValidationResult, error)
+	GetConfigurationSchema() (*models.ConfigurationSchema, error)
 }
 
-func NewConfigurationHandler(configurationService *services.ConfigurationService, authService *services.AuthService) *ConfigurationHandler {
+// AuthServiceInterface defines the interface for authentication service operations
+type AuthServiceInterface interface {
+	ValidatePermissions(userID int, resource, action string) bool
+	ValidateJWT(tokenString string) (*models.User, error)
+}
+
+// ConfigurationAuthServiceInterface defines the interface for authentication service operations
+type ConfigurationAuthServiceInterface interface {
+	ValidateToken(tokenString string) (*models.User, error)
+	CheckPermission(userID int, permission string) (bool, error)
+}
+
+type ConfigurationHandler struct {
+	configurationService ConfigurationServiceInterface
+	authService          ConfigurationAuthServiceInterface
+}
+
+func NewConfigurationHandler(configurationService ConfigurationServiceInterface, authService ConfigurationAuthServiceInterface) *ConfigurationHandler {
 	return &ConfigurationHandler{
 		configurationService: configurationService,
 		authService:          authService,
@@ -104,6 +127,7 @@ func (h *ConfigurationHandler) CompleteWizard(w http.ResponseWriter, r *http.Req
 		return
 	}
 
+	// In a real implementation, this would come from wizard form
 	config, err := h.configurationService.CompleteWizard(userID, finalData)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
@@ -147,13 +171,21 @@ func (h *ConfigurationHandler) TestConfiguration(w http.ResponseWriter, r *http.
 		return
 	}
 
-	// 	// This would test the configuration through the service
+	var config models.Configuration
+	if err := json.NewDecoder(r.Body).Decode(&config); err != nil {
+		http.Error(w, "Invalid request body", http.StatusBadRequest)
+		return
+	}
 
-	// This would test the configuration through the service
+	// Test the configuration through the service
+	result, err := h.configurationService.TestConfiguration(&config)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
 	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(map[string]interface{}{
-		"message": "Configuration tested successfully",
-	})
+	json.NewEncoder(w).Encode(result)
 }
 
 func (h *ConfigurationHandler) DeleteBackup(w http.ResponseWriter, r *http.Request) {

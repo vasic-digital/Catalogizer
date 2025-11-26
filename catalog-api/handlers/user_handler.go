@@ -8,16 +8,38 @@ import (
 	"time"
 
 	"catalogizer/models"
-	"catalogizer/repository"
-	"catalogizer/services"
 )
 
-type UserHandler struct {
-	userRepo    *repository.UserRepository
-	authService *services.AuthService
+// UserServiceInterface defines interface for user repository operations
+type UserServiceInterface interface {
+	Create(user *models.User) (int, error)
+	GetByID(id int) (*models.User, error)
+	Update(user *models.User) error
+	Delete(id int) error
+	List(limit, offset int) ([]models.User, error)
+	GetRole(roleID int) (*models.Role, error)
+	Count() (int, error)
 }
 
-func NewUserHandler(userRepo *repository.UserRepository, authService *services.AuthService) *UserHandler {
+// UserAuthServiceInterface defines interface for authentication service operations  
+type UserAuthServiceInterface interface {
+	CheckPermission(userID int, permission string) (bool, error)
+	GetCurrentUser(token string) (*models.User, error)
+	HashPassword(password string) (string, error)
+	ValidatePassword(password string) error
+	GenerateSecureToken(length int) (string, error)
+	ResetPassword(userID int, newPassword string) error
+	LockAccount(userID int, lockUntil time.Time) error
+	UnlockAccount(userID int) error
+	HashData(data string) string
+}
+
+type UserHandler struct {
+	userRepo    UserServiceInterface
+	authService UserAuthServiceInterface
+}
+
+func NewUserHandler(userRepo UserServiceInterface, authService UserAuthServiceInterface) *UserHandler {
 	return &UserHandler{
 		userRepo:    userRepo,
 		authService: authService,

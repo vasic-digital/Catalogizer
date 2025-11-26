@@ -369,7 +369,7 @@ func (s *CatalogService) GetDirectoriesBySize(smbRoot string, limit int) ([]mode
 				CASE WHEN is_directory THEN 0 ELSE size END as file_size,
 				CASE WHEN is_directory THEN 0 ELSE 1 END as file_count
 			FROM files
-			WHERE smb_root = ? AND is_directory = true
+			WHERE smb_root = ? AND is_directory = 1
 
 			UNION ALL
 
@@ -387,7 +387,7 @@ func (s *CatalogService) GetDirectoriesBySize(smbRoot string, limit int) ([]mode
 			SUM(file_count) as file_count,
 			COUNT(CASE WHEN is_directory THEN 1 END) as directory_count
 		FROM dir_sizes
-		WHERE is_directory = true
+		WHERE is_directory = 1
 		GROUP BY path
 		ORDER BY total_size DESC
 		LIMIT ?
@@ -418,7 +418,7 @@ func (s *CatalogService) GetDuplicateGroups(smbRoot string, minCount int, limit 
 			hash, size, COUNT(*) as count
 		FROM files
 		WHERE hash IS NOT NULL
-			AND is_directory = false
+			AND is_directory = 0
 	`
 	args := []interface{}{}
 
@@ -602,11 +602,11 @@ func (s *CatalogService) GetFileInfoByPath(path string) (*models.FileInfo, error
 
 // GetDuplicatesCount gets the count of duplicate files
 func (s *CatalogService) GetDuplicatesCount() (int64, error) {
-	query := `
+		query := `
 		SELECT COUNT(*) FROM (
 			SELECT hash, COUNT(*) as count
 			FROM files
-			WHERE hash IS NOT NULL AND hash != '' AND is_directory = false
+			WHERE hash IS NOT NULL AND hash != '' AND is_directory = 0
 			GROUP BY hash
 			HAVING COUNT(*) > 1
 		)

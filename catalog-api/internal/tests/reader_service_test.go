@@ -17,7 +17,7 @@ import (
 // Mock implementations for testing - not needed with real services
 func createTestReaderService() *services.ReaderService {
 	// Create in-memory database for testing with sqlcipher
-	db, err := sql.Open("sqlcipher", ":memory:")
+	db, err := sql.Open("sqlite3", ":memory:")
 	if err != nil {
 		panic(err)
 	}

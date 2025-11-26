@@ -7,7 +7,7 @@ import (
 	"time"
 
 	"catalogizer/config"
-	_ "github.com/mattn/go-sqlite3"
+	_ "github.com/mutecomm/go-sqlcipher"
 )
 
 // DB represents the database connection

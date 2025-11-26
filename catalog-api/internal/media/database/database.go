@@ -6,7 +6,7 @@ import (
 	"io/ioutil"
 	"path/filepath"
 
-	_ "github.com/mattn/go-sqlite3"
+	_ "github.com/mutecomm/go-sqlcipher"
 	"go.uber.org/zap"
 )
 
@@ -56,7 +56,7 @@ func (mdb *MediaDatabase) connect() error {
 	// Connection string for SQLCipher
 	dsn := fmt.Sprintf("file:%s?_pragma_key=%s&_pragma_cipher_page_size=4096", mdb.dbPath, mdb.password)
 
-	db, err := sql.Open("sqlcipher", dsn)
+	db, err := sql.Open("sqlite3", dsn)
 	if err != nil {
 		return fmt.Errorf("failed to open database: %w", err)
 	}

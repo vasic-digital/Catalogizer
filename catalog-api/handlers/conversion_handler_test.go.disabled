@@ -1,0 +1,587 @@
+package handlers
+
+import (
+	"bytes"
+	"context"
+	"encoding/json"
+	"net/http"
+	"net/http/httptest"
+	"testing"
+	"time"
+
+	"catalogizer/models"
+	"catalogizer/services"
+
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/mock"
+)
+
+// MockConversionService for testing
+type MockConversionService struct {
+	mock.Mock
+}
+
+func (m *MockConversionService) CreateConversionJob(req *models.ConversionRequest) (*models.ConversionJob, error) {
+	args := m.Called(req)
+	if args.Get(0) == nil {
+		return nil, args.Error(1)
+	}
+	return args.Get(0).(*models.ConversionJob), args.Error(1)
+}
+
+func (m *MockConversionService) GetJobStatus(jobID string) (*models.ConversionJob, error) {
+	args := m.Called(jobID)
+	if args.Get(0) == nil {
+		return nil, args.Error(1)
+	}
+	return args.Get(0).(*models.ConversionJob), args.Error(1)
+}
+
+func (m *MockConversionService) GetJobList(userID int64) ([]*models.ConversionJob, error) {
+	args := m.Called(userID)
+	if args.Get(0) == nil {
+		return nil, args.Error(1)
+	}
+	return args.Get(0).([]*models.ConversionJob), args.Error(1)
+}
+
+func (m *MockConversionService) CancelJob(jobID string) error {
+	args := m.Called(jobID)
+	return args.Error(0)
+}
+
+func (m *MockConversionService) DeleteJob(jobID string) error {
+	args := m.Called(jobID)
+	return args.Error(0)
+}
+
+func (m *MockConversionService) GetJobLogs(jobID string) ([]string, error) {
+	args := m.Called(jobID)
+	if args.Get(0) == nil {
+		return nil, args.Error(1)
+	}
+	return args.Get(0).([]string), args.Error(1)
+}
+
+func (m *MockConversionService) GetSupportedFormats() (*models.SupportedFormats, error) {
+	args := m.Called()
+	if args.Get(0) == nil {
+		return nil, args.Error(1)
+	}
+	return args.Get(0).(*models.SupportedFormats), args.Error(1)
+}
+
+func (m *MockConversionService) RetryJob(jobID string) (*models.ConversionJob, error) {
+	args := m.Called(jobID)
+	if args.Get(0) == nil {
+		return nil, args.Error(1)
+	}
+	return args.Get(0).(*models.ConversionJob), args.Error(1)
+}
+
+// MockAuthService for testing
+type MockConversionAuthService struct {
+	mock.Mock
+}
+
+func (m *MockConversionAuthService) CheckPermission(userID int, permission string) (bool, error) {
+	args := m.Called(userID, permission)
+	return args.Bool(0), args.Error(1)
+}
+
+func (m *MockConversionAuthService) GetUserFromToken(token string) (*models.User, error) {
+	args := m.Called(token)
+	if args.Get(0) == nil {
+		return nil, args.Error(1)
+	}
+	return args.Get(0).(*models.User), args.Error(1)
+}
+
+func createTestConversionHandler() (*ConversionHandler, *MockConversionService, *MockConversionAuthService) {
+	mockConversionService := &MockConversionService{}
+	mockAuthService := &MockConversionAuthService{}
+	
+	handler := NewConversionHandler(mockConversionService, mockAuthService)
+	return handler, mockConversionService, mockAuthService
+}
+
+func createTestUser() *models.User {
+	return &models.User{
+		ID:        1,
+		Username:  "testuser",
+		Email:     "test@example.com",
+		CreatedAt: time.Now(),
+	}
+}
+
+func TestConversionHandler_CreateJob(t *testing.T) {
+	handler, mockService, mockAuthService := createTestConversionHandler()
+
+	tests := []struct {
+		name           string
+		method         string
+		user           *models.User
+		hasPermission  bool
+		permissionErr  error
+		requestData    *models.ConversionRequest
+		mockResponse   *models.ConversionJob
+		serviceError   error
+		expectedStatus int
+		expectedError  bool
+	}{
+		{
+			name:           "Invalid method",
+			method:         "GET",
+			expectedStatus:  405,
+			expectedError:   true,
+		},
+		{
+			name:           "Unauthorized",
+			method:         "POST",
+			user:           nil,
+			expectedStatus:  401,
+			expectedError:   true,
+		},
+		{
+			name:           "Permission denied",
+			method:         "POST",
+			user:           createTestUser(),
+			hasPermission:  false,
+			permissionErr:  nil,
+			expectedStatus:  403,
+			expectedError:   true,
+		},
+		{
+			name:           "Permission error",
+			method:         "POST",
+			user:           createTestUser(),
+			hasPermission:  false,
+			permissionErr:  assert.AnError,
+			expectedStatus:  500,
+			expectedError:   true,
+		},
+		{
+			name:           "Invalid request body",
+			method:         "POST",
+			user:           createTestUser(),
+			hasPermission:  true,
+			requestData:    &models.ConversionRequest{InputPath: "/invalid/path"},
+			expectedStatus:  400,
+			expectedError:   true,
+		},
+		{
+			name:           "Success",
+			method:         "POST",
+			user:           createTestUser(),
+			hasPermission:  true,
+			requestData:    &models.ConversionRequest{
+				InputPath:  "/input/test.pdf",
+				OutputPath: "/output/test.docx",
+				Format:     "docx",
+				Options:    map[string]interface{}{"quality": "high"},
+			},
+			mockResponse:   &models.ConversionJob{ID: "job123", Status: "pending"},
+			serviceError:   nil,
+			expectedStatus: 200,
+			expectedError:   false,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if tt.user != nil && tt.hasPermission {
+				mockAuthService.On("CheckPermission", tt.user.ID, models.PermissionMediaUpload).Return(tt.hasPermission, tt.permissionErr)
+				if tt.hasPermission && tt.permissionErr == nil && tt.requestData != nil {
+					mockService.On("CreateConversionJob", tt.requestData).Return(tt.mockResponse, tt.serviceError)
+				}
+			}
+
+			var body []byte
+			var err error
+			if tt.requestData != nil {
+				body, err = json.Marshal(tt.requestData)
+				assert.NoError(t, err)
+			}
+
+			req := httptest.NewRequest(tt.method, "/conversion/jobs", bytes.NewBuffer(body))
+			req.Header.Set("Content-Type", "application/json")
+			
+			if tt.user != nil {
+				// Mock authentication by adding user to context
+				req = req.WithContext(context.WithValue(context.Background(), "user", tt.user))
+			}
+
+			rr := httptest.NewRecorder()
+			handler.CreateJob(rr, req)
+
+			assert.Equal(t, tt.expectedStatus, rr.Code)
+
+			if !tt.expectedError && tt.mockResponse != nil {
+				var job models.ConversionJob
+				err := json.Unmarshal(rr.Body.Bytes(), &job)
+				assert.NoError(t, err)
+				assert.Equal(t, tt.mockResponse.ID, job.ID)
+			}
+
+			mockAuthService.AssertExpectations(t)
+			mockService.AssertExpectations(t)
+		})
+	}
+}
+
+func TestConversionHandler_GetJobStatus(t *testing.T) {
+	handler, mockService, mockAuthService := createTestConversionHandler()
+
+	tests := []struct {
+		name           string
+		user           *models.User
+		hasPermission  bool
+		permissionErr  error
+		jobID          string
+		mockResponse   *models.ConversionJob
+		serviceError   error
+		expectedStatus int
+		expectedError  bool
+	}{
+		{
+			name:           "Unauthorized",
+			user:           nil,
+			expectedStatus:  401,
+			expectedError:   true,
+		},
+		{
+			name:           "Permission denied",
+			user:           createTestUser(),
+			hasPermission:  false,
+			permissionErr:  nil,
+			expectedStatus:  403,
+			expectedError:   true,
+		},
+		{
+			name:           "Success",
+			user:           createTestUser(),
+			hasPermission:  true,
+			jobID:          "job123",
+			mockResponse:   &models.ConversionJob{ID: "job123", Status: "completed"},
+			serviceError:   nil,
+			expectedStatus: 200,
+			expectedError:   false,
+		},
+		{
+			name:           "Job not found",
+			user:           createTestUser(),
+			hasPermission:  true,
+			jobID:          "nonexistent",
+			mockResponse:   nil,
+			serviceError:   assert.AnError,
+			expectedStatus:  404,
+			expectedError:   true,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if tt.user != nil {
+				mockAuthService.On("CheckPermission", tt.user.ID, models.PermissionMediaUpload).Return(tt.hasPermission, tt.permissionErr)
+				if tt.hasPermission && tt.permissionErr == nil {
+					mockService.On("GetJobStatus", tt.jobID).Return(tt.mockResponse, tt.serviceError)
+				}
+			}
+
+			req := httptest.NewRequest("GET", "/conversion/jobs/"+tt.jobID, nil)
+			if tt.user != nil {
+				req = req.WithContext(context.WithValue(context.Background(), "user", tt.user))
+			}
+
+			rr := httptest.NewRecorder()
+			handler.GetJobStatus(rr, req)
+
+			assert.Equal(t, tt.expectedStatus, rr.Code)
+
+			if !tt.expectedError && tt.mockResponse != nil {
+				var job models.ConversionJob
+				err := json.Unmarshal(rr.Body.Bytes(), &job)
+				assert.NoError(t, err)
+				assert.Equal(t, tt.mockResponse.ID, job.ID)
+			}
+
+			mockAuthService.AssertExpectations(t)
+			mockService.AssertExpectations(t)
+		})
+	}
+}
+
+func TestConversionHandler_GetJobList(t *testing.T) {
+	handler, mockService, mockAuthService := createTestConversionHandler()
+
+	testJobs := []*models.ConversionJob{
+		{ID: "job1", Status: "completed"},
+		{ID: "job2", Status: "pending"},
+	}
+
+	tests := []struct {
+		name           string
+		user           *models.User
+		hasPermission  bool
+		permissionErr  error
+		mockResponse   []*models.ConversionJob
+		serviceError   error
+		expectedStatus int
+		expectedError  bool
+	}{
+		{
+			name:           "Unauthorized",
+			user:           nil,
+			expectedStatus:  401,
+			expectedError:   true,
+		},
+		{
+			name:           "Success",
+			user:           createTestUser(),
+			hasPermission:  true,
+			mockResponse:   testJobs,
+			serviceError:   nil,
+			expectedStatus: 200,
+			expectedError:   false,
+		},
+		{
+			name:           "Service error",
+			user:           createTestUser(),
+			hasPermission:  true,
+			mockResponse:   nil,
+			serviceError:   assert.AnError,
+			expectedStatus:  500,
+			expectedError:   true,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if tt.user != nil {
+				mockAuthService.On("CheckPermission", tt.user.ID, models.PermissionMediaUpload).Return(tt.hasPermission, tt.permissionErr)
+				if tt.hasPermission && tt.permissionErr == nil {
+					mockService.On("GetJobList", tt.user.ID).Return(tt.mockResponse, tt.serviceError)
+				}
+			}
+
+			req := httptest.NewRequest("GET", "/conversion/jobs", nil)
+			if tt.user != nil {
+				req = req.WithContext(context.WithValue(context.Background(), "user", tt.user))
+			}
+
+			rr := httptest.NewRecorder()
+			handler.GetJobList(rr, req)
+
+			assert.Equal(t, tt.expectedStatus, rr.Code)
+
+			if !tt.expectedError && tt.mockResponse != nil {
+				var jobs []*models.ConversionJob
+				err := json.Unmarshal(rr.Body.Bytes(), &jobs)
+				assert.NoError(t, err)
+				assert.Len(t, jobs, len(tt.mockResponse))
+			}
+
+			mockAuthService.AssertExpectations(t)
+			mockService.AssertExpectations(t)
+		})
+	}
+}
+
+func TestConversionHandler_CancelJob(t *testing.T) {
+	handler, mockService, mockAuthService := createTestConversionHandler()
+
+	tests := []struct {
+		name           string
+		method         string
+		user           *models.User
+		hasPermission  bool
+		permissionErr  error
+		jobID          string
+		serviceError   error
+		expectedStatus int
+		expectedError  bool
+	}{
+		{
+			name:           "Invalid method",
+			method:         "GET",
+			expectedStatus:  405,
+			expectedError:   true,
+		},
+		{
+			name:           "Unauthorized",
+			method:         "POST",
+			user:           nil,
+			expectedStatus:  401,
+			expectedError:   true,
+		},
+		{
+			name:           "Success",
+			method:         "POST",
+			user:           createTestUser(),
+			hasPermission:  true,
+			jobID:          "job123",
+			serviceError:   nil,
+			expectedStatus: 200,
+			expectedError:   false,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if tt.user != nil && tt.method == "POST" {
+				mockAuthService.On("CheckPermission", tt.user.ID, models.PermissionMediaUpload).Return(tt.hasPermission, tt.permissionErr)
+				if tt.hasPermission && tt.permissionErr == nil {
+					mockService.On("CancelJob", tt.jobID).Return(tt.serviceError)
+				}
+			}
+
+			req := httptest.NewRequest(tt.method, "/conversion/jobs/"+tt.jobID+"/cancel", nil)
+			if tt.user != nil {
+				req = req.WithContext(context.WithValue(context.Background(), "user", tt.user))
+			}
+
+			rr := httptest.NewRecorder()
+			handler.CancelJob(rr, req)
+
+			assert.Equal(t, tt.expectedStatus, rr.Code)
+
+			if !tt.expectedError {
+				var response map[string]string
+				err := json.Unmarshal(rr.Body.Bytes(), &response)
+				assert.NoError(t, err)
+				assert.Equal(t, "Job cancelled successfully", response["message"])
+			}
+
+			mockAuthService.AssertExpectations(t)
+			mockService.AssertExpectations(t)
+		})
+	}
+}
+
+func TestConversionHandler_DeleteJob(t *testing.T) {
+	handler, mockService, mockAuthService := createTestConversionHandler()
+
+	tests := []struct {
+		name           string
+		method         string
+		user           *models.User
+		hasPermission  bool
+		permissionErr  error
+		jobID          string
+		serviceError   error
+		expectedStatus int
+		expectedError  bool
+	}{
+		{
+			name:           "Invalid method",
+			method:         "GET",
+			expectedStatus:  405,
+			expectedError:   true,
+		},
+		{
+			name:           "Success",
+			method:         "DELETE",
+			user:           createTestUser(),
+			hasPermission:  true,
+			jobID:          "job123",
+			serviceError:   nil,
+			expectedStatus: 200,
+			expectedError:   false,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if tt.user != nil && tt.method == "DELETE" {
+				mockAuthService.On("CheckPermission", tt.user.ID, models.PermissionMediaUpload).Return(tt.hasPermission, tt.permissionErr)
+				if tt.hasPermission && tt.permissionErr == nil {
+					mockService.On("DeleteJob", tt.jobID).Return(tt.serviceError)
+				}
+			}
+
+			req := httptest.NewRequest(tt.method, "/conversion/jobs/"+tt.jobID, nil)
+			if tt.user != nil {
+				req = req.WithContext(context.WithValue(context.Background(), "user", tt.user))
+			}
+
+			rr := httptest.NewRecorder()
+			handler.DeleteJob(rr, req)
+
+			assert.Equal(t, tt.expectedStatus, rr.Code)
+
+			if !tt.expectedError {
+				var response map[string]string
+				err := json.Unmarshal(rr.Body.Bytes(), &response)
+				assert.NoError(t, err)
+				assert.Equal(t, "Job deleted successfully", response["message"])
+			}
+
+			mockAuthService.AssertExpectations(t)
+			mockService.AssertExpectations(t)
+		})
+	}
+}
+
+func TestConversionHandler_GetSupportedFormats(t *testing.T) {
+	handler, mockService, _ := createTestConversionHandler()
+
+	supportedFormats := &models.SupportedFormats{
+		Input:  []string{"pdf", "docx", "txt"},
+		Output: []string{"pdf", "docx", "html"},
+	}
+
+	tests := []struct {
+		name           string
+		mockResponse   *models.SupportedFormats
+		serviceError   error
+		expectedStatus int
+		expectedError  bool
+	}{
+		{
+			name:           "Success",
+			mockResponse:   supportedFormats,
+			serviceError:   nil,
+			expectedStatus: 200,
+			expectedError:   false,
+		},
+		{
+			name:           "Service error",
+			mockResponse:   nil,
+			serviceError:   assert.AnError,
+			expectedStatus:  500,
+			expectedError:   true,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			mockService.On("GetSupportedFormats").Return(tt.mockResponse, tt.serviceError)
+
+			req := httptest.NewRequest("GET", "/conversion/formats", nil)
+			rr := httptest.NewRecorder()
+			handler.GetSupportedFormats(rr, req)
+
+			assert.Equal(t, tt.expectedStatus, rr.Code)
+
+			if !tt.expectedError {
+				var formats models.SupportedFormats
+				err := json.Unmarshal(rr.Body.Bytes(), &formats)
+				assert.NoError(t, err)
+				assert.Equal(t, tt.mockResponse.Input, formats.Input)
+			}
+
+			mockService.AssertExpectations(t)
+		})
+	}
+}
+
+func TestConversionHandler_NewConversionHandler(t *testing.T) {
+	mockService := &MockConversionService{}
+	mockAuthService := &MockConversionAuthService{}
+	
+	handler := NewConversionHandler(mockService, mockAuthService)
+	
+	assert.NotNil(t, handler)
+	assert.Equal(t, mockService, handler.conversionService)
+	assert.Equal(t, mockAuthService, handler.authService)
+}

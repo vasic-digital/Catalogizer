@@ -7,16 +7,29 @@ import (
 	"strings"
 
 	"catalogizer/models"
-	"catalogizer/repository"
-	"catalogizer/services"
 )
 
-type RoleHandler struct {
-	userRepo    *repository.UserRepository
-	authService *services.AuthService
+// RoleUserServiceInterface defines interface for user repository operations
+type RoleUserServiceInterface interface {
+	CreateRole(role *models.Role) (int, error)
+	GetRole(roleID int) (*models.Role, error)
+	UpdateRole(role *models.Role) error
+	DeleteRole(roleID int) error
+	ListRoles() ([]models.Role, error)
 }
 
-func NewRoleHandler(userRepo *repository.UserRepository, authService *services.AuthService) *RoleHandler {
+// RoleAuthServiceInterface defines interface for authentication service operations  
+type RoleAuthServiceInterface interface {
+	CheckPermission(userID int, permission string) (bool, error)
+	GetCurrentUser(token string) (*models.User, error)
+}
+
+type RoleHandler struct {
+	userRepo    RoleUserServiceInterface
+	authService RoleAuthServiceInterface
+}
+
+func NewRoleHandler(userRepo RoleUserServiceInterface, authService RoleAuthServiceInterface) *RoleHandler {
 	return &RoleHandler{
 		userRepo:    userRepo,
 		authService: authService,

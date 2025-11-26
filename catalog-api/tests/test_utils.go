@@ -18,7 +18,7 @@ import (
 	"catalogizer/repository"
 	"catalogizer/services"
 
-	_ "github.com/mattn/go-sqlite3"
+	_ "github.com/mutecomm/go-sqlcipher"
 )
 
 // TestDatabase represents a test database instance

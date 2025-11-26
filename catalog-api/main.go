@@ -1,13 +1,18 @@
 package main
 
 import (
-	"catalogizer/internal/config"
+	root_config "catalogizer/config"
+	root_handlers "catalogizer/handlers"
+	root_middleware "catalogizer/middleware"
+	root_repository "catalogizer/repository"
+	root_services "catalogizer/services"
 	"catalogizer/internal/handlers"
 	"catalogizer/internal/middleware"
 	"catalogizer/internal/services"
 	"context"
 	"database/sql"
 	"flag"
+	"fmt"
 	"log"
 	"net/http"
 	"os"
@@ -16,7 +21,7 @@ import (
 	"time"
 
 	"github.com/gin-gonic/gin"
-	_ "github.com/mattn/go-sqlite3"
+	_ "github.com/mutecomm/go-sqlcipher"
 	"go.uber.org/zap"
 )
 
@@ -54,7 +59,7 @@ func main() {
 	}
 
 	// Load configuration
-	cfg, err := config.Load()
+	cfg, err := root_config.LoadConfig("config.json")
 	if err != nil {
 		log.Fatal("Failed to load configuration:", err)
 	}
@@ -72,25 +77,61 @@ func main() {
 	defer db.Close()
 
 	// Initialize services
-	catalogService := services.NewCatalogService(cfg, logger)
+	// Convert config to internal format
+	internalCfg := &config.Config{
+		Server: config.ServerConfig{
+			Host:         cfg.Server.Host,
+			Port:         fmt.Sprintf("%d", cfg.Server.Port),
+			ReadTimeout:  cfg.Server.ReadTimeout,
+			WriteTimeout: cfg.Server.WriteTimeout,
+			IdleTimeout:  cfg.Server.IdleTimeout,
+			EnableCORS:   cfg.Server.EnableCORS,
+			EnableHTTPS:  cfg.Server.EnableHTTPS,
+		},
+		Database: config.DatabaseConfig{
+			Database: cfg.Database.Path,
+		},
+		Catalog: config.CatalogConfig{
+			TempDir:           cfg.Catalog.TempDir,
+			MaxArchiveSize:    cfg.Catalog.MaxArchiveSize,
+			DownloadChunkSize: cfg.Catalog.DownloadChunkSize,
+		},
+	}
+	
+	catalogService := services.NewCatalogService(internalCfg, logger)
 	catalogService.SetDB(db)
-	smbService := services.NewSMBService(cfg, logger)
+	smbService := services.NewSMBService(internalCfg, logger)
 	smbDiscoveryService := services.NewSMBDiscoveryService(logger)
+	
+	// Initialize repositories
+	userRepo := root_repository.NewUserRepository(db)
+	conversionRepo := root_repository.NewConversionRepository(db)
+	
+	// Initialize authentication and conversion services
+	jwtSecret := cfg.Auth.JWTSecret
+	if jwtSecret == "" {
+		// Generate a default JWT secret if not configured
+		jwtSecret = "default-secret-change-in-production"
+		log.Println("WARNING: Using default JWT secret. Please set JWTSecret in config for production.")
+	}
+	authService := root_services.NewAuthService(userRepo, jwtSecret)
+	conversionService := root_services.NewConversionService(conversionRepo, userRepo, authService)
 
 	// Initialize handlers
 	catalogHandler := handlers.NewCatalogHandler(catalogService, smbService, logger)
 	downloadHandler := handlers.NewDownloadHandler(catalogService, smbService, cfg.Catalog.TempDir, cfg.Catalog.MaxArchiveSize, cfg.Catalog.DownloadChunkSize, logger)
 	copyHandler := handlers.NewCopyHandler(catalogService, smbService, cfg.Catalog.TempDir, logger)
 	smbDiscoveryHandler := handlers.NewSMBDiscoveryHandler(smbDiscoveryService, logger)
+	conversionHandler := root_handlers.NewConversionHandler(conversionService, authService)
 
 	// Setup Gin router
 	router := gin.Default()
 
 	// Middleware
-	router.Use(middleware.CORS())
+	router.Use(root_middleware.CORS())
 	router.Use(middleware.Logger(logger))
 	router.Use(middleware.ErrorHandler())
-	router.Use(middleware.RequestID())
+	router.Use(root_middleware.RequestID())
 
 	// Health check
 	router.GET("/health", func(c *gin.Context) {
@@ -133,6 +174,16 @@ func main() {
 			smbGroup.POST("/test", smbDiscoveryHandler.TestConnection)
 			smbGroup.GET("/test", smbDiscoveryHandler.TestConnectionGET)
 			smbGroup.POST("/browse", smbDiscoveryHandler.BrowseShare)
+		}
+		
+		// Conversion endpoints
+		conversionGroup := api.Group("/conversion")
+		{
+			conversionGroup.POST("/jobs", conversionHandler.CreateJob)
+			conversionGroup.GET("/jobs", conversionHandler.ListJobs)
+			conversionGroup.GET("/jobs/:id", conversionHandler.GetJob)
+			conversionGroup.POST("/jobs/:id/cancel", conversionHandler.CancelJob)
+			conversionGroup.GET("/formats", conversionHandler.GetSupportedFormats)
 		}
 	}
 
