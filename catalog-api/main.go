@@ -180,6 +180,7 @@ func main() {
 	router.Use(middleware.Logger(logger))
 	router.Use(middleware.ErrorHandler())
 	router.Use(root_middleware.RequestID())
+	router.Use(root_middleware.InputValidation(root_middleware.DefaultInputValidationConfig()))
 
 	// Health check
 	router.GET("/health", func(c *gin.Context) {
@@ -188,6 +189,7 @@ func main() {
 
 	// Authentication routes (no auth required)
 	authGroup := router.Group("/api/v1/auth")
+	authGroup.Use(root_middleware.AdvancedRateLimit(root_middleware.AuthRateLimiterConfig())) // Apply strict rate limiting to auth endpoints
 	{
 		authGroup.POST("/login", authHandler.LoginGin)
 		authGroup.POST("/register", func(c *gin.Context) {
@@ -201,6 +203,7 @@ func main() {
 	// API routes
 	api := router.Group("/api/v1")
 	api.Use(jwtMiddleware.RequireAuth()) // Apply auth middleware to all API routes
+	api.Use(root_middleware.IPRateLimit(100, 200)) // Apply general rate limiting to API
 	{
 		// Catalog browsing endpoints
 		api.GET("/catalog", catalogHandler.ListRoot)
