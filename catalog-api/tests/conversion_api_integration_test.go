@@ -87,6 +87,9 @@ func TestConversionAPIIntegration(t *testing.T) {
 		ID:   1,
 		Role: &models.Role{Name: "user"},
 	}
+	
+	// Mock auth service to always return the test user
+	mockAuthService.On("GetCurrentUser", mock.Anything).Return(testUser, nil)
 
 	// Test cases
 	t.Run("GetSupportedFormats", func(t *testing.T) {
@@ -103,6 +106,7 @@ func TestConversionAPIIntegration(t *testing.T) {
 		// Create request
 		w := httptest.NewRecorder()
 		req, _ := http.NewRequest("GET", "/api/v1/conversion/formats", nil)
+		req.Header.Set("Authorization", "Bearer test-token")
 
 		// Create router and setup middleware
 		router := gin.New()
@@ -155,6 +159,7 @@ func TestConversionAPIIntegration(t *testing.T) {
 		w := httptest.NewRecorder()
 		req, _ := http.NewRequest("POST", "/api/v1/conversion/jobs", bytes.NewBuffer(body))
 		req.Header.Set("Content-Type", "application/json")
+		req.Header.Set("Authorization", "Bearer test-token")
 
 		// Create router
 		router := gin.New()
@@ -188,6 +193,7 @@ func TestConversionAPIIntegration(t *testing.T) {
 		// Create request
 		w := httptest.NewRecorder()
 		req, _ := http.NewRequest("GET", "/api/v1/conversion/jobs", nil)
+		req.Header.Set("Authorization", "Bearer test-token")
 
 		// Create router
 		router := gin.New()
@@ -229,6 +235,7 @@ func TestConversionAPIIntegration(t *testing.T) {
 		// Create request
 		w := httptest.NewRecorder()
 		req, _ := http.NewRequest("GET", "/api/v1/conversion/jobs/1", nil)
+		req.Header.Set("Authorization", "Bearer test-token")
 
 		// Create router with URL parameter
 		router := gin.New()
@@ -255,6 +262,7 @@ func TestConversionAPIIntegration(t *testing.T) {
 		// Create request
 		w := httptest.NewRecorder()
 		req, _ := http.NewRequest("POST", "/api/v1/conversion/jobs/1/cancel", nil)
+		req.Header.Set("Authorization", "Bearer test-token")
 
 		// Create router with URL parameter
 		router := gin.New()
@@ -274,11 +282,12 @@ func TestConversionAPIIntegration(t *testing.T) {
 
 	t.Run("UnauthorizedAccess", func(t *testing.T) {
 		// Setup auth service to return error
-		mockAuthService.On("CheckPermission", mock.Anything, mock.Anything).Return(false, assert.AnError)
+		mockAuthService.On("GetCurrentUser", "invalid-token").Return(nil, assert.AnError)
 
 		// Create request
 		w := httptest.NewRecorder()
 		req, _ := http.NewRequest("GET", "/api/v1/conversion/formats", nil)
+		req.Header.Set("Authorization", "Bearer invalid-token")
 
 		// Create router
 		router := gin.New()
