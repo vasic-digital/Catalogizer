@@ -135,7 +135,7 @@ func getDefaultConfig() *Config {
 			WriteTimeout: 30,
 			IdleTimeout:  120,
 			EnableCORS:   true,
-			EnableHTTPS:  false,
+			EnableHTTPS:  true, // Enable HTTPS by default for security
 		},
 		Database: DatabaseConfig{
 			Path:               "./catalog.db",
@@ -148,11 +148,11 @@ func getDefaultConfig() *Config {
 			BusyTimeout:        5000,
 		},
 		Auth: AuthConfig{
-			JWTSecret:          "change-this-secret-in-production",
+			JWTSecret:          "", // Must be set via environment variable
 			JWTExpirationHours: 24,
-			EnableAuth:         false,
-			AdminUsername:      "admin",
-			AdminPassword:      "admin123",
+			EnableAuth:         true, // Enable auth by default for security
+			AdminUsername:      "", // Must be set via environment variable
+			AdminPassword:      "", // Must be set via environment variable
 		},
 		Catalog: CatalogConfig{
 			DefaultPageSize:      100,
@@ -163,7 +163,7 @@ func getDefaultConfig() *Config {
 			DownloadChunkSize:    1024 * 1024,            // 1MB
 			MaxArchiveSize:       1024 * 1024 * 1024 * 5, // 5GB
 			AllowedDownloadTypes: []string{"*"},
-			TempDir:              "/tmp/catalog-api",
+			TempDir:              os.TempDir() + "/catalog-api", // Use system temp directory
 		},
 		Storage: StorageConfig{
 			Roots: []StorageRootConfig{
@@ -203,8 +203,28 @@ func validateConfig(config *Config) error {
 		return fmt.Errorf("database path cannot be empty")
 	}
 
-	if config.Auth.EnableAuth && config.Auth.JWTSecret == "change-this-secret-in-production" {
-		return fmt.Errorf("JWT secret must be changed in production")
+	if config.Auth.EnableAuth {
+		// Check for environment variables first
+		if config.Auth.JWTSecret == "" {
+			config.Auth.JWTSecret = os.Getenv("JWT_SECRET")
+		}
+		if config.Auth.AdminUsername == "" {
+			config.Auth.AdminUsername = os.Getenv("ADMIN_USERNAME")
+		}
+		if config.Auth.AdminPassword == "" {
+			config.Auth.AdminPassword = os.Getenv("ADMIN_PASSWORD")
+		}
+		
+		// Validate required security settings
+		if config.Auth.JWTSecret == "" {
+			return fmt.Errorf("JWT secret must be set via JWT_SECRET environment variable or config")
+		}
+		if len(config.Auth.JWTSecret) < 32 {
+			return fmt.Errorf("JWT secret must be at least 32 characters long")
+		}
+		if config.Auth.AdminUsername == "" || config.Auth.AdminPassword == "" {
+			return fmt.Errorf("admin credentials must be set via ADMIN_USERNAME and ADMIN_PASSWORD environment variables")
+		}
 	}
 
 	if config.Catalog.DefaultPageSize <= 0 {

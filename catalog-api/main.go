@@ -19,6 +19,7 @@ import (
 	"net/http"
 	"os"
 	"os/signal"
+	"strconv"
 	"syscall"
 	"time"
 
@@ -26,6 +27,14 @@ import (
 	_ "github.com/mutecomm/go-sqlcipher"
 	"go.uber.org/zap"
 )
+
+// atoi converts string to int with default fallback
+func atoi(s string) int {
+	if i, err := strconv.Atoi(s); err == nil {
+		return i
+	}
+	return 8080 // default port
+}
 
 // @title Catalog API
 // @version 2.0
@@ -64,6 +73,23 @@ func main() {
 	cfg, err := root_config.LoadConfig("config.json")
 	if err != nil {
 		log.Fatal("Failed to load configuration:", err)
+	}
+
+	// Override sensitive config with environment variables (security best practice)
+	if jwtSecret := os.Getenv("JWT_SECRET"); jwtSecret != "" {
+		cfg.Auth.JWTSecret = jwtSecret
+	}
+	if adminUser := os.Getenv("ADMIN_USERNAME"); adminUser != "" {
+		cfg.Auth.AdminUsername = adminUser
+	}
+	if adminPass := os.Getenv("ADMIN_PASSWORD"); adminPass != "" {
+		cfg.Auth.AdminPassword = adminPass
+	}
+	if port := os.Getenv("PORT"); port != "" {
+		cfg.Server.Port = atoi(port) // Use helper function
+	}
+	if ginMode := os.Getenv("GIN_MODE"); ginMode != "" {
+		gin.SetMode(ginMode)
 	}
 
 	// Initialize database

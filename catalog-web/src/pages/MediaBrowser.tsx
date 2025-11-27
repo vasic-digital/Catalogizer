@@ -8,6 +8,7 @@ import { Input } from '@/components/ui/Input'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card'
 import { mediaApi } from '@/lib/mediaApi'
 import { debounce } from '@/lib/utils'
+import toast from 'react-hot-toast'
 import type { MediaSearchRequest, MediaItem } from '@/types/media'
 import {
   Search,
@@ -93,9 +94,10 @@ export const MediaBrowser: React.FC = () => {
     setIsDownloading(true)
     try {
       await mediaApi.downloadMedia(media)
+      toast.success(`Successfully downloaded ${media.title}`)
     } catch (error) {
       console.error('Download failed:', error)
-      // TODO: Show error toast notification
+      toast.error(`Failed to download ${media.title}: ${error instanceof Error ? error.message : 'Unknown error'}`)
     } finally {
       setIsDownloading(false)
     }
