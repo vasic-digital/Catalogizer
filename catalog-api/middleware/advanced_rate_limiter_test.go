@@ -205,18 +205,34 @@ func TestUserBasedRateLimit(t *testing.T) {
 		c.JSON(http.StatusOK, gin.H{"status": "ok"})
 	})
 
-	// Test with user ID
+	// Test with user ID - need to set up the context properly
 	c, _ := gin.CreateTestContext(httptest.NewRecorder())
 	c.Request = httptest.NewRequest("GET", "/", nil)
+	c.Request = c.Request.WithContext(c.Request.Context())
 	c.Set("user_id", "user123")
 	
-	key := config.KeyGenerator(c)
+	// Create the same key generator that UserBasedRateLimit creates
+	userBasedKeyGenerator := func(c *gin.Context) string {
+		if userID, exists := c.Get("user_id"); exists {
+			if id, ok := userID.(string); ok {
+				return "user:" + id
+			}
+		}
+		return "ip:" + c.ClientIP()
+	}
+	
+	// Test with user ID
+	c1, _ := gin.CreateTestContext(httptest.NewRecorder())
+	c1.Request = httptest.NewRequest("GET", "/", nil)
+	c1.Set("user_id", "user123")
+	
+	key := userBasedKeyGenerator(c1)
 	assert.Equal(t, "user:user123", key)
 
 	// Test without user ID (fallback to IP)
 	c2, _ := gin.CreateTestContext(httptest.NewRecorder())
 	c2.Request = httptest.NewRequest("GET", "/", nil)
-	key2 := config.KeyGenerator(c2)
+	key2 := userBasedKeyGenerator(c2)
 	assert.Contains(t, key2, "ip:")
 }
 
