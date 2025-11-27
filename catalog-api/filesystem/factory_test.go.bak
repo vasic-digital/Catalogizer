@@ -68,7 +68,7 @@ func TestDefaultClientFactory_CreateClient(t *testing.T) {
 				Settings: map[string]interface{}{
 					"host":        "localhost",
 					"path":        "/export",
-					"mount_point": "/tmp/catalog-test-mount/nfs",
+					"mount_point": "/mnt/nfs",
 					"options":     "vers=3",
 				},
 			},

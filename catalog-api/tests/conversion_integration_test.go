@@ -140,18 +140,29 @@ func TestConversionIntegration(t *testing.T) {
 
 // createConversionSchema creates the necessary database tables for conversion testing
 func createConversionSchema(db *sql.DB) error {
+	// Create user table with all required columns
 	queries := []string{
 		`CREATE TABLE IF NOT EXISTS users (
 			id INTEGER PRIMARY KEY AUTOINCREMENT,
 			username TEXT UNIQUE NOT NULL,
 			email TEXT UNIQUE NOT NULL,
+			email_verified BOOLEAN DEFAULT 0,
 			password_hash TEXT NOT NULL,
 			salt TEXT NOT NULL,
+			first_name TEXT,
+			last_name TEXT,
+			display_name TEXT,
+			avatar_url TEXT,
+			time_zone TEXT DEFAULT 'UTC',
+			language TEXT DEFAULT 'en',
+			settings TEXT DEFAULT '{}',
 			role_id INTEGER,
 			is_active BOOLEAN DEFAULT 1,
 			is_locked BOOLEAN DEFAULT 0,
+			locked_until DATETIME,
 			failed_login_attempts INTEGER DEFAULT 0,
 			last_login_at DATETIME,
+			last_login_ip TEXT,
 			created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
 			updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
 		)`,
@@ -159,7 +170,8 @@ func createConversionSchema(db *sql.DB) error {
 			id INTEGER PRIMARY KEY AUTOINCREMENT,
 			name TEXT UNIQUE NOT NULL,
 			description TEXT,
-			permissions TEXT,
+			permissions TEXT DEFAULT '[]',
+			is_system INTEGER DEFAULT 0,
 			created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
 			updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
 		)`,
@@ -172,13 +184,17 @@ func createConversionSchema(db *sql.DB) error {
 			target_format TEXT NOT NULL,
 			conversion_type TEXT NOT NULL,
 			quality TEXT,
+			settings TEXT,
 			status TEXT NOT NULL,
 			progress INTEGER DEFAULT 0,
 			error_message TEXT,
 			priority INTEGER DEFAULT 1,
+			scheduled_for DATETIME,
+			duration DATETIME,
 			created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
 			started_at DATETIME,
 			completed_at DATETIME,
+			updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
 			FOREIGN KEY (user_id) REFERENCES users(id)
 		)`,
 	}

@@ -3,12 +3,35 @@ import { render, screen, fireEvent, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { MediaBrowser } from '../MediaBrowser'
-import * as mediaApi from '@/lib/mediaApi'
+import { mediaApi } from '@/lib/mediaApi'
 import * as utils from '@/lib/utils'
 import type { MediaSearchRequest, MediaItem } from '@/types/media'
 
 // Mock dependencies
-jest.mock('@/lib/mediaApi')
+jest.mock('@/lib/mediaApi', () => ({
+  mediaApi: {
+    searchMedia: jest.fn(),
+    getMediaStats: jest.fn(),
+    downloadMedia: jest.fn(),
+    getMediaById: jest.fn(),
+    getMediaByPath: jest.fn(),
+    analyzeDirectory: jest.fn(),
+    getExternalMetadata: jest.fn(),
+    refreshMetadata: jest.fn(),
+    getQualityInfo: jest.fn(),
+    getRecentMedia: jest.fn(),
+    getPopularMedia: jest.fn(),
+    deleteMedia: jest.fn(),
+    updateMedia: jest.fn(),
+    getStorageRoots: jest.fn(),
+    getStorageRoot: jest.fn(),
+    createStorageRoot: jest.fn(),
+    updateStorageRoot: jest.fn(),
+    deleteStorageRoot: jest.fn(),
+    testStorageRoot: jest.fn(),
+  }
+}))
+
 jest.mock('@/lib/utils', () => ({
   debounce: jest.fn((fn) => fn), // Return the function directly for testing
 }))
@@ -107,6 +130,7 @@ const mockStats = {
   total_items: 150,
   total_size: 1024000000,
   by_type: { video: 100, audio: 30, image: 20 },
+  by_quality: { hd: 80, sd: 50, '4k': 20 },
   recent_additions: 5,
 }
 
@@ -162,7 +186,7 @@ describe('MediaBrowser', () => {
     it('renders search input', () => {
       renderWithQueryClient(<MediaBrowser />)
       
-      const searchInput = screen.getByPlaceholderText('Search media...')
+      const searchInput = screen.getByPlaceholderText('Search your media collection...')
       expect(searchInput).toBeInTheDocument()
     })
 
@@ -227,7 +251,7 @@ describe('MediaBrowser', () => {
     it('handles search input changes', async () => {
       renderWithQueryClient(<MediaBrowser />)
       
-      const searchInput = screen.getByPlaceholderText('Search media...')
+      const searchInput = screen.getByPlaceholderText('Search your media collection...')
       await userEvent.type(searchInput, 'test query')
       
       // Verify debounce was called
@@ -243,7 +267,7 @@ describe('MediaBrowser', () => {
     it('clears search when input is empty', async () => {
       renderWithQueryClient(<MediaBrowser />)
       
-      const searchInput = screen.getByPlaceholderText('Search media...')
+      const searchInput = screen.getByPlaceholderText('Search your media collection...')
       await userEvent.type(searchInput, 'test')
       await userEvent.clear(searchInput)
       
@@ -529,7 +553,7 @@ describe('MediaBrowser', () => {
     it('handles rapid search input changes', async () => {
       renderWithQueryClient(<MediaBrowser />)
       
-      const searchInput = screen.getByPlaceholderText('Search media...')
+      const searchInput = screen.getByPlaceholderText('Search your media collection...')
       
       // Type rapidly
       await userEvent.type(searchInput, 'rapid search')
