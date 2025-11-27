@@ -25,6 +25,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 	_ "github.com/mutecomm/go-sqlcipher"
+	"github.com/redis/go-redis/v9"
 	"go.uber.org/zap"
 )
 
@@ -161,6 +162,21 @@ func main() {
 	authService := root_services.NewAuthService(userRepo, jwtSecret)
 	conversionService := root_services.NewConversionService(conversionRepo, userRepo, authService)
 
+	// Initialize Redis client for distributed rate limiting
+	redisClient := redis.NewClient(&redis.Options{
+		Addr:     os.Getenv("REDIS_ADDR"),
+		Password: os.Getenv("REDIS_PASSWORD"),
+		DB:       0,
+	})
+
+	// Test Redis connection
+	if _, err := redisClient.Ping(context.Background()).Result(); err != nil {
+		log.Printf("Warning: Redis connection failed (%v), falling back to in-memory rate limiting", err)
+		redisClient = nil
+	} else {
+		log.Println("Redis connected successfully for distributed rate limiting")
+	}
+
 	// Initialize handlers
 	catalogHandler := handlers.NewCatalogHandler(catalogService, smbService, logger)
 	downloadHandler := handlers.NewDownloadHandler(catalogService, smbService, cfg.Catalog.TempDir, cfg.Catalog.MaxArchiveSize, cfg.Catalog.DownloadChunkSize, logger)
@@ -171,6 +187,18 @@ func main() {
 	
 	// Initialize JWT middleware
 	jwtMiddleware := root_middleware.NewJWTMiddleware(jwtSecret)
+
+	// Initialize Redis rate limiters
+	var authRateLimiter, defaultRateLimiter gin.HandlerFunc
+	if redisClient != nil {
+		// Use Redis-based distributed rate limiting
+		authRateLimiter = root_middleware.RedisRateLimit(root_middleware.AuthRedisRateLimiterConfig(redisClient))
+		defaultRateLimiter = root_middleware.RedisRateLimit(root_middleware.DefaultRedisRateLimiterConfig(redisClient))
+	} else {
+		// Fall back to in-memory rate limiting
+		authRateLimiter = root_middleware.AdvancedRateLimit(root_middleware.AuthRateLimiterConfig())
+		defaultRateLimiter = root_middleware.IPRateLimit(100, 200)
+	}
 
 	// Setup Gin router
 	router := gin.Default()
@@ -189,7 +217,7 @@ func main() {
 
 	// Authentication routes (no auth required)
 	authGroup := router.Group("/api/v1/auth")
-	authGroup.Use(root_middleware.AdvancedRateLimit(root_middleware.AuthRateLimiterConfig())) // Apply strict rate limiting to auth endpoints
+	authGroup.Use(authRateLimiter) // Apply strict rate limiting to auth endpoints
 	{
 		authGroup.POST("/login", authHandler.LoginGin)
 		authGroup.POST("/register", func(c *gin.Context) {
@@ -203,7 +231,7 @@ func main() {
 	// API routes
 	api := router.Group("/api/v1")
 	api.Use(jwtMiddleware.RequireAuth()) // Apply auth middleware to all API routes
-	api.Use(root_middleware.IPRateLimit(100, 200)) // Apply general rate limiting to API
+	api.Use(defaultRateLimiter) // Apply general rate limiting to API
 	{
 		// Catalog browsing endpoints
 		api.GET("/catalog", catalogHandler.ListRoot)

@@ -8,6 +8,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.media3.common.MediaItem
@@ -24,7 +25,7 @@ fun MediaPlayerScreen(
     mediaTitle: String = "Media $mediaId",
     onNavigateBack: () -> Unit
 ) {
-    val context = LocalContext.current
+    val context = androidx.compose.ui.platform.LocalContext.current
     val scope = rememberCoroutineScope()
     var exoPlayer by remember { mutableStateOf<ExoPlayer?>(null) }
     var isPlaying by remember { mutableStateOf(false) }
@@ -162,10 +163,6 @@ fun MediaPlayerScreen(
     }
 }
 
-@Composable
-private fun LocalContext(): android.content.Context {
-    return androidx.compose.ui.platform.LocalContext.current
-}
 
 private fun formatTime(timeMs: Long): String {
     val seconds = (timeMs / 1000) % 60

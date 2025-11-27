@@ -1,14 +1,5 @@
 package com.catalogizer.androidtv.ui.screens.search
 
-import androidx.compose.foundation.layout.*
-import androidx.compose.runtime.*
-import androidx.compose.ui.Alignment
-import androidx.compose.ui.Modifier
-import androidx.compose.ui.unit.dp
-import androidx.tv.material3.*
-
-package com.catalogizer.androidtv.ui.screens.search
-
 import androidx.compose.foundation.background
 import androidx.compose.foundation.focusable
 import androidx.compose.foundation.layout.*
@@ -16,6 +7,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.ExperimentalComposeUiApi
@@ -27,7 +19,7 @@ import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.unit.dp
 import androidx.tv.material3.*
-import com.catalogizer.androidtv.data.model.MediaItem
+import com.catalogizer.androidtv.data.models.MediaItem
 import com.catalogizer.androidtv.ui.components.MediaCard
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -67,7 +59,7 @@ fun SearchScreen(
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 OutlinedTextField(
-                    value = searchQuery,
+                    value = searchQuery.value,
                     onValueChange = { viewModel.updateSearchQuery(it) },
                     label = { Text("Search Media") },
                     modifier = Modifier
@@ -90,9 +82,9 @@ fun SearchScreen(
                         keyboardController?.hide()
                         viewModel.search() 
                     },
-                    enabled = searchQuery.isNotBlank() && !isLoading
+                    enabled = searchQuery.value.isNotBlank() && !isLoading.value
                 ) {
-                    if (isLoading) {
+                    if (isLoading.value) {
                         CircularProgressIndicator(
                             modifier = Modifier.size(24.dp),
                             strokeWidth = 2.dp
@@ -131,10 +123,11 @@ fun SearchScreen(
                     modifier = Modifier.weight(1f),
                     verticalArrangement = Arrangement.spacedBy(12.dp)
                 ) {
-                    items(searchResults) { mediaItem ->
+                    items(searchResults.value) { mediaItem ->
                         MediaCard(
                             mediaItem = mediaItem,
                             onClick = { onNavigateToMediaDetail(mediaItem.id) },
+                            onFocus = { /* Handle focus if needed */ },
                             modifier = Modifier.fillMaxWidth()
                         )
                     }
@@ -176,7 +169,7 @@ fun SearchScreen(
         }
 
         // Loading Overlay
-        if (isLoading) {
+        if (isLoading.value) {
             Box(
                 modifier = Modifier
                     .fillMaxSize()
@@ -242,13 +235,19 @@ class SearchViewModel : androidx.lifecycle.ViewModel() {
                 id = 1,
                 title = "Sample Movie: ${searchQuery.value}",
                 mediaType = "movie",
-                year = 2024
+                year = 2024,
+                directoryPath = "/movies",
+                createdAt = "2024-01-01T00:00:00Z",
+                updatedAt = "2024-01-01T00:00:00Z"
             ),
             MediaItem(
                 id = 2,
                 title = "Another Result for ${searchQuery.value}",
                 mediaType = "series",
-                year = 2023
+                year = 2023,
+                directoryPath = "/series",
+                createdAt = "2024-01-01T00:00:00Z",
+                updatedAt = "2024-01-01T00:00:00Z"
             )
         )
         _isLoading.value = false

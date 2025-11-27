@@ -1,5 +1,6 @@
 package com.catalogizer.androidtv.ui.components
 
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.runtime.*
@@ -123,28 +124,24 @@ fun MediaCard(
                 }
 
                 // Media type indicator
-                Box(
+                Surface(
                     modifier = Modifier
                         .padding(top = 8.dp)
-                        .clip(RoundedCornerShape(4.dp))
-                ) {
-                    Surface(
-                        color = when (mediaItem.mediaType.lowercase()) {
-                            "movie" -> Color(0xFF4CAF50)
-                            "tv" -> Color(0xFF2196F3)
-                            "music" -> Color(0xFFFF9800)
-                            "document" -> Color(0xFF9C27B0)
-                            else -> MaterialTheme.colorScheme.secondary
-                        },
-                        shape = RoundedCornerShape(4.dp)
-                    ) {
-                        Text(
-                            text = mediaItem.mediaType.uppercase(),
-                            style = MaterialTheme.typography.labelSmall,
-                            color = Color.White,
-                            modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
-                        )
+                        .clip(RoundedCornerShape(4.dp)),
+                    color = when (mediaItem.mediaType.lowercase()) {
+                        "movie" -> Color(0xFF4CAF50)
+                        "tv" -> Color(0xFF2196F3)
+                        "music" -> Color(0xFFFF9800)
+                        "document" -> Color(0xFF9C27B0)
+                        else -> MaterialTheme.colorScheme.secondary
                     }
+                ) {
+                    Text(
+                        text = mediaItem.mediaType.uppercase(),
+                        style = MaterialTheme.typography.labelSmall,
+                        color = Color.White,
+                        modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
+                    )
                 }
             }
         }
@@ -255,7 +252,7 @@ fun CompactMediaCard(
                     }
 
                     Surface(
-                        color = when (mediaItem.mediaType.lowercase()) {
+                        containerColor = when (mediaItem.mediaType.lowercase()) {
                             "movie" -> Color(0xFF4CAF50)
                             "tv" -> Color(0xFF2196F3)
                             "music" -> Color(0xFFFF9800)

@@ -105,7 +105,6 @@ fun TVNavigation(
 
         composable(TVScreen.Settings.route) {
             SettingsScreen(
-                authViewModel = authViewModel,
                 onNavigateBack = {
                     navController.popBackStack()
                 },

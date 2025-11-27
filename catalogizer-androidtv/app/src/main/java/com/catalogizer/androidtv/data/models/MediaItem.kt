@@ -4,7 +4,6 @@ import android.os.Parcelable
 import androidx.room.Entity
 import androidx.room.PrimaryKey
 import androidx.room.TypeConverters
-import com.catalogizer.androidtv.data.local.Converters
 import kotlinx.parcelize.Parcelize
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
@@ -12,7 +11,9 @@ import kotlinx.serialization.Serializable
 @Parcelize
 @Serializable
 @Entity(tableName = "media_items")
-@TypeConverters(Converters::class)
+@TypeConverters(
+    com.catalogizer.androidtv.data.local.Converters::class
+)
 data class MediaItem(
     @PrimaryKey
     val id: Long,
