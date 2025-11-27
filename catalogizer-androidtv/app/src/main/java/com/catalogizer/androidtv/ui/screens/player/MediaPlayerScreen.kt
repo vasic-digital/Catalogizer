@@ -13,13 +13,15 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.media3.common.MediaItem
+import androidx.media3.common.util.UnstableApi
 import androidx.media3.exoplayer.ExoPlayer
 import androidx.media3.ui.PlayerView
 import androidx.tv.material3.*
 import kotlinx.coroutines.launch
 
-@OptIn(ExperimentalTvMaterial3Api::class)
+@OptIn(ExperimentalTvMaterial3Api::class, UnstableApi::class)
 @Composable
+@Suppress("UnsafeOptInUsageError")
 fun MediaPlayerScreen(
     mediaId: Long,
     mediaUrl: String = "", // URL to media file
@@ -65,6 +67,7 @@ fun MediaPlayerScreen(
         // ExoPlayer View
         AndroidView(
             factory = { ctx ->
+                @OptIn(UnstableApi::class)
                 PlayerView(ctx).apply {
                     player = exoPlayer
                     useController = true

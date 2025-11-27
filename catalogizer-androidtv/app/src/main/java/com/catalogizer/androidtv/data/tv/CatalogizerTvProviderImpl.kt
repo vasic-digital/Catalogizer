@@ -10,7 +10,7 @@ import android.database.SQLException
 import android.net.Uri
 import android.provider.BaseColumns
 
-class CatalogizerTvProvider : ContentProvider() {
+class CatalogizerTvProviderImpl : ContentProvider() {
     
     companion object {
         // URI matcher codes
@@ -46,7 +46,8 @@ class CatalogizerTvProvider : ContentProvider() {
     private lateinit var dbHelper: TvDatabaseHelper
     
     override fun onCreate(): Boolean {
-        dbHelper = TvDatabaseHelper(requireContext())
+        val context = context ?: return false
+        dbHelper = TvDatabaseHelper(context)
         return true
     }
     
