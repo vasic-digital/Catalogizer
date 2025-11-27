@@ -20,7 +20,11 @@ class AuthViewModel(
 
     fun login(username: String, password: String) {
         viewModelScope.launch {
-            authRepository.login(username, password)
+            try {
+                authRepository.login(username, password)
+            } catch (e: Exception) {
+                // Handle login error - the repository will update the authState with error
+            }
         }
     }
 
@@ -33,6 +37,12 @@ class AuthViewModel(
     fun refreshToken() {
         viewModelScope.launch {
             authRepository.refreshToken()
+        }
+    }
+
+    fun clearError() {
+        viewModelScope.launch {
+            authRepository.clearError()
         }
     }
 }

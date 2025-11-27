@@ -254,15 +254,3 @@ enum class SortOrder(val value: String, val displayName: String) {
     }
 }
 
-// Auth models
-sealed class AuthState {
-    object Unauthenticated : AuthState()
-    data class Authenticated(
-        val token: String,
-        val userId: Long,
-        val username: String
-    ) : AuthState()
-
-    val isAuthenticated: Boolean
-        get() = this is Authenticated
-}

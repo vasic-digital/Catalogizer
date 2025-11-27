@@ -8,7 +8,11 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.tv.foundation.lazy.list.TvLazyColumn
+import androidx.tv.foundation.lazy.list.items
 import androidx.tv.material3.*
+import androidx.lifecycle.Lifecycle
+import com.catalogizer.androidtv.data.models.Settings
 import com.catalogizer.androidtv.ui.viewmodel.SettingsViewModel
 
 @OptIn(ExperimentalTvMaterial3Api::class)
@@ -18,7 +22,7 @@ fun SettingsScreen(
     onNavigateBack: () -> Unit,
     onLogout: () -> Unit
 ) {
-    val settingsState by settingsViewModel.settingsState.collectAsStateWithLifecycle()
+    val settingsState: Settings? by settingsViewModel.settingsState.collectAsStateWithLifecycle()
     
     // Settings values
     var enableNotifications by remember { mutableStateOf(true) }
@@ -66,14 +70,15 @@ fun SettingsScreen(
             }
 
             // Settings sections
-            LazyColumn(
+            TvLazyColumn(
                 modifier = Modifier.weight(1f),
                 verticalArrangement = Arrangement.spacedBy(16.dp)
             ) {
                 // Playback Settings
                 item {
                     Card(
-                        modifier = Modifier.fillMaxWidth()
+                        modifier = Modifier.fillMaxWidth(),
+                        onClick = {} // Empty onClick for compatibility
                     ) {
                         Column(
                             modifier = Modifier.padding(16.dp),
@@ -119,14 +124,28 @@ fun SettingsScreen(
                                     horizontalArrangement = Arrangement.spacedBy(8.dp)
                                 ) {
                                     listOf("Auto", "High", "Medium", "Low").forEach { quality ->
-                                        FilterChip(
-                                            selected = streamingQuality == quality,
+                                        // Use TV-compatible chip implementation
+                                        Card(
                                             onClick = { 
                                                 streamingQuality = quality
                                                 settingsViewModel.updateStreamingQuality(quality)
                                             },
-                                            label = { Text(quality) }
-                                        )
+                                            colors = CardDefaults.colors(
+                                                containerColor = if (streamingQuality == quality) 
+                                                    MaterialTheme.colorScheme.primary 
+                                                else 
+                                                    MaterialTheme.colorScheme.surface
+                                            )
+                                        ) {
+                                            Text(
+                                                text = quality,
+                                                modifier = Modifier.padding(8.dp),
+                                                color = if (streamingQuality == quality) 
+                                                    MaterialTheme.colorScheme.onPrimary 
+                                                else 
+                                                    MaterialTheme.colorScheme.onSurface
+                                            )
+                                        }
                                     }
                                 }
                             }
@@ -137,7 +156,8 @@ fun SettingsScreen(
                 // Subtitle Settings
                 item {
                     Card(
-                        modifier = Modifier.fillMaxWidth()
+                        modifier = Modifier.fillMaxWidth(),
+                        onClick = {} // Empty onClick for compatibility
                     ) {
                         Column(
                             modifier = Modifier.padding(16.dp),
@@ -211,7 +231,8 @@ fun SettingsScreen(
                 // Notification Settings
                 item {
                     Card(
-                        modifier = Modifier.fillMaxWidth()
+                        modifier = Modifier.fillMaxWidth(),
+                        onClick = {} // Empty onClick for compatibility
                     ) {
                         Column(
                             modifier = Modifier.padding(16.dp),
@@ -253,7 +274,8 @@ fun SettingsScreen(
                 // Account Actions
                 item {
                     Card(
-                        modifier = Modifier.fillMaxWidth()
+                        modifier = Modifier.fillMaxWidth(),
+                        onClick = {} // Empty onClick for compatibility
                     ) {
                         Column(
                             modifier = Modifier.padding(16.dp),

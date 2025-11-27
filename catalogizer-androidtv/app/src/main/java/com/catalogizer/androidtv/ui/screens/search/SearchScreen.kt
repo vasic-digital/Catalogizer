@@ -1,3 +1,4 @@
+@file:OptIn(ExperimentalTvMaterial3Api::class, ExperimentalComposeUiApi::class)
 package com.catalogizer.androidtv.ui.screens.search
 
 import androidx.compose.foundation.background
@@ -7,7 +8,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
-import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.ExperimentalComposeUiApi
@@ -24,17 +25,16 @@ import com.catalogizer.androidtv.ui.components.MediaCard
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
-@OptIn(ExperimentalTvMaterial3Api::class, ExperimentalComposeUiApi::class)
 @Composable
 fun SearchScreen(
     viewModel: SearchViewModel = androidx.lifecycle.viewmodel.compose.viewModel(),
     onNavigateBack: () -> Unit,
     onNavigateToMediaDetail: (Long) -> Unit
 ) {
-    val searchQuery by viewModel.searchQuery.collectAsState()
-    val searchResults by viewModel.searchResults.collectAsState()
-    val isLoading by viewModel.isLoading.collectAsState()
-    val error by viewModel.error.collectAsState()
+    val searchQuery by viewModel.searchQuery
+    val searchResults by viewModel.searchResults
+    val isLoading by viewModel.isLoading
+    val error by viewModel.error
     val scope = rememberCoroutineScope()
     val focusRequester = remember { FocusRequester() }
     val keyboardController = LocalSoftwareKeyboardController.current
@@ -58,9 +58,10 @@ fun SearchScreen(
                 horizontalArrangement = Arrangement.spacedBy(16.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                OutlinedTextField(
-                    value = searchQuery.value,
-                    onValueChange = { viewModel.updateSearchQuery(it) },
+                @OptIn(ExperimentalTvMaterial3Api::class)
+                TextField(
+                    value = searchQuery,
+                    onValueChange = { newValue: String -> viewModel.updateSearchQuery(newValue) },
                     label = { Text("Search Media") },
                     modifier = Modifier
                         .weight(1f)
@@ -82,9 +83,9 @@ fun SearchScreen(
                         keyboardController?.hide()
                         viewModel.search() 
                     },
-                    enabled = searchQuery.value.isNotBlank() && !isLoading.value
+                    enabled = searchQuery.isNotBlank() && !isLoading
                 ) {
-                    if (isLoading.value) {
+                    if (isLoading) {
                         CircularProgressIndicator(
                             modifier = Modifier.size(24.dp),
                             strokeWidth = 2.dp
@@ -97,16 +98,18 @@ fun SearchScreen(
 
             // Error Message
             error?.let { errorMessage ->
-                Card(
+                Surface(
                     modifier = Modifier
                         .fillMaxWidth()
                         .padding(bottom = 16.dp),
-                    colors = CardDefaults.colors(containerColor = MaterialTheme.colorScheme.errorContainer)
+                    shape = androidx.tv.material3.MaterialTheme.shapes.medium,
+                    color = androidx.tv.material3.MaterialTheme.colorScheme.errorContainer,
+                    onClick = {} // Empty onClick for compatibility
                 ) {
                     Text(
                         text = errorMessage,
                         modifier = Modifier.padding(16.dp),
-                        style = MaterialTheme.typography.bodyMedium
+                        style = androidx.tv.material3.MaterialTheme.typography.bodyMedium
                     )
                 }
             }
@@ -116,14 +119,14 @@ fun SearchScreen(
                 Text(
                     text = "${searchResults.size} results found",
                     modifier = Modifier.padding(bottom = 16.dp),
-                    style = MaterialTheme.typography.bodyLarge
+                    style = androidx.tv.material3.MaterialTheme.typography.bodyLarge
                 )
                 
                 LazyColumn(
                     modifier = Modifier.weight(1f),
                     verticalArrangement = Arrangement.spacedBy(12.dp)
                 ) {
-                    items(searchResults.value) { mediaItem ->
+                    items(searchResults) { mediaItem ->
                         MediaCard(
                             mediaItem = mediaItem,
                             onClick = { onNavigateToMediaDetail(mediaItem.id) },
@@ -141,7 +144,7 @@ fun SearchScreen(
                 ) {
                     Text(
                         text = "No results found for \"$searchQuery\"",
-                        style = MaterialTheme.typography.bodyLarge
+                        style = androidx.tv.material3.MaterialTheme.typography.bodyLarge
                     )
                 }
             } else if (searchQuery.isBlank()) {
@@ -157,11 +160,11 @@ fun SearchScreen(
                     ) {
                         Text(
                             text = "Search for Media",
-                            style = MaterialTheme.typography.headlineMedium
+                            style = androidx.tv.material3.MaterialTheme.typography.headlineMedium
                         )
                         Text(
                             text = "Enter a title, actor, or keyword to find media",
-                            style = MaterialTheme.typography.bodyMedium
+                            style = androidx.tv.material3.MaterialTheme.typography.bodyMedium
                         )
                     }
                 }
@@ -169,14 +172,18 @@ fun SearchScreen(
         }
 
         // Loading Overlay
-        if (isLoading.value) {
+        if (isLoading) {
             Box(
                 modifier = Modifier
                     .fillMaxSize()
                     .background(Color.Black.copy(alpha = 0.5f)),
                 contentAlignment = Alignment.Center
             ) {
-                Card {
+                Surface(
+                    shape = androidx.tv.material3.MaterialTheme.shapes.medium,
+                    color = androidx.tv.material3.MaterialTheme.colorScheme.surface,
+                    onClick = {}
+                ) {
                     Column(
                         modifier = Modifier.padding(24.dp),
                         horizontalAlignment = Alignment.CenterHorizontally,
@@ -238,7 +245,9 @@ class SearchViewModel : androidx.lifecycle.ViewModel() {
                 year = 2024,
                 directoryPath = "/movies",
                 createdAt = "2024-01-01T00:00:00Z",
-                updatedAt = "2024-01-01T00:00:00Z"
+                updatedAt = "2024-01-01T00:00:00Z",
+                fileSize = 1000000000L,
+                description = "A sample movie for demonstration"
             ),
             MediaItem(
                 id = 2,
@@ -247,7 +256,9 @@ class SearchViewModel : androidx.lifecycle.ViewModel() {
                 year = 2023,
                 directoryPath = "/series",
                 createdAt = "2024-01-01T00:00:00Z",
-                updatedAt = "2024-01-01T00:00:00Z"
+                updatedAt = "2024-01-01T00:00:00Z",
+                fileSize = 2000000000L,
+                description = "Another sample media item"
             )
         )
         _isLoading.value = false

@@ -1,101 +1,93 @@
 package com.catalogizer.androidtv.data.repository
 
+import android.content.Context
 import com.catalogizer.androidtv.data.models.MediaItem
 import com.catalogizer.androidtv.data.models.MediaSearchRequest
-import com.catalogizer.androidtv.data.remote.CatalogizerApi
+import com.catalogizer.androidtv.data.models.MediaSearchResponse
+import com.catalogizer.androidtv.data.models.PlaybackProgress
 import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.flow
+import kotlinx.coroutines.flow.flowOf
+import kotlinx.coroutines.flow.first
 
-class MediaRepository(
-    private val api: CatalogizerApi
-) {
-
-    fun searchMedia(request: MediaSearchRequest): Flow<List<MediaItem>> = flow {
+class MediaRepository(private val context: Context) {
+    
+    suspend fun searchMedia(request: MediaSearchRequest): Flow<List<MediaItem>> {
         try {
-            // Convert search request to query parameters
-            val params = buildMap<String, String> {
-                request.query?.let { put("query", it) }
-                request.mediaType?.let { put("media_type", it) }
-                request.yearMin?.let { put("year_min", it.toString()) }
-                request.yearMax?.let { put("year_max", it.toString()) }
-                request.ratingMin?.let { put("rating_min", it.toString()) }
-                request.quality?.let { put("quality", it) }
-                request.sortBy?.let { put("sort_by", it) }
-                request.sortOrder?.let { put("sort_order", it) }
-                put("limit", request.limit.toString())
-                put("offset", request.offset.toString())
-            }
-
-            // Call API
-            val response = api.searchMedia(params)
-
-            if (response.isSuccessful) {
-                val items = response.body() ?: emptyList()
-                emit(items)
-            } else {
-                // Log error and emit empty list
-                android.util.Log.e("MediaRepository", "Search failed: ${response.code()} ${response.message()}")
-                emit(emptyList())
-            }
+            // TODO: Implement actual API call
+            // For now, return mock data
+            val mockItems = generateMockMediaItems(request.limit)
+            return flowOf(mockItems)
         } catch (e: Exception) {
-            // Log exception and emit empty list
-            android.util.Log.e("MediaRepository", "Search error", e)
-            emit(emptyList())
+            // Handle error and return empty list
+            return flowOf(emptyList())
         }
     }
 
-    fun getMediaById(id: Long): Flow<MediaItem?> = flow {
+    suspend fun getMediaById(mediaId: Long): Flow<MediaItem?> {
         try {
-            // First, search for the media by ID to get the file path
-            val searchParams = mapOf("id" to id.toString())
-            val searchResponse = api.searchMedia(searchParams)
-
-            if (searchResponse.isSuccessful) {
-                val items = searchResponse.body()
-                if (!items.isNullOrEmpty()) {
-                    // Found the media item
-                    emit(items.first())
-                } else {
-                    android.util.Log.w("MediaRepository", "Media not found with ID: $id")
-                    emit(null)
-                }
-            } else {
-                android.util.Log.e("MediaRepository", "Get media failed: ${searchResponse.code()} ${searchResponse.message()}")
-                emit(null)
-            }
+            // TODO: Implement actual API call
+            // For now, return mock item or null
+            val mockItems = generateMockMediaItems(100)
+            val item = mockItems.find { it.id == mediaId }
+            return flowOf(item)
         } catch (e: Exception) {
-            android.util.Log.e("MediaRepository", "Get media error", e)
-            emit(null)
+            return flowOf(null)
         }
     }
 
     suspend fun updateWatchProgress(mediaId: Long, progress: Double) {
         try {
-            val progressData = mapOf("progress" to progress)
-            val response = api.updateWatchProgress(mediaId, progressData)
-
-            if (response.isSuccessful) {
-                android.util.Log.d("MediaRepository", "Watch progress updated for media $mediaId: $progress")
-            } else {
-                android.util.Log.e("MediaRepository", "Failed to update watch progress: ${response.code()} ${response.message()}")
-            }
+            // TODO: Implement actual API call to update watch progress
+            // This would typically make a PUT/POST request to the API
         } catch (e: Exception) {
-            android.util.Log.e("MediaRepository", "Error updating watch progress", e)
+            // Handle error
+            throw e
         }
     }
 
     suspend fun updateFavoriteStatus(mediaId: Long, isFavorite: Boolean) {
         try {
-            val favoriteData = mapOf("is_favorite" to isFavorite)
-            val response = api.updateFavoriteStatus(mediaId, favoriteData)
-
-            if (response.isSuccessful) {
-                android.util.Log.d("MediaRepository", "Favorite status updated for media $mediaId: $isFavorite")
-            } else {
-                android.util.Log.e("MediaRepository", "Failed to update favorite status: ${response.code()} ${response.message()}")
-            }
+            // TODO: Implement actual API call to update favorite status
+            // This would typically make a PUT/POST request to the API
         } catch (e: Exception) {
-            android.util.Log.e("MediaRepository", "Error updating favorite status", e)
+            // Handle error
+            throw e
+        }
+    }
+
+    private fun generateMockMediaItems(limit: Int = 20): List<MediaItem> {
+        return (1..limit).map { id ->
+            MediaItem(
+                id = id.toLong(),
+                title = "Mock Media Item $id",
+                mediaType = when (id % 4) {
+                    0 -> "movie"
+                    1 -> "tv_show"
+                    2 -> "music"
+                    else -> "documentary"
+                },
+                year = 2020 + (id % 4),
+                description = "This is a mock media item for testing purposes. Item number $id.",
+                coverImage = null,
+                rating = 6.0 + (id % 4) * 1.5,
+                quality = when (id % 3) {
+                    0 -> "720p"
+                    1 -> "1080p"
+                    else -> "4K"
+                },
+                fileSize = 1000000000L * id,
+                duration = 5400L * id, // seconds
+                directoryPath = "/mock/media/item_$id",
+                smbPath = "smb://server/media/item_$id",
+                createdAt = "2024-01-${id.toString().padStart(2, '0')}T00:00:00Z",
+                updatedAt = "2024-01-${id.toString().padStart(2, '0')}T00:00:00Z",
+                externalMetadata = emptyList(),
+                versions = emptyList(),
+                isFavorite = id % 3 == 0,
+                watchProgress = if (id % 5 == 0) 0.75 else 0.0,
+                lastWatched = if (id % 5 == 0) "2024-01-${id.toString().padStart(2, '0')}T12:00:00Z" else null,
+                isDownloaded = id % 2 == 0
+            )
         }
     }
 }

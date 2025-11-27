@@ -51,11 +51,11 @@ class DependencyContainer(private val context: Context) {
 
     // Repositories
     val authRepository: AuthRepository by lazy {
-        AuthRepository(api, dataStore)
+        AuthRepository(context)
     }
 
     val mediaRepository: MediaRepository by lazy {
-        MediaRepository(api)
+        MediaRepository(context)
     }
 
     // ViewModels

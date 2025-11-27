@@ -1,9 +1,11 @@
+@file:OptIn(ExperimentalTvMaterial3Api::class, ExperimentalComposeUiApi::class)
 package com.catalogizer.androidtv.ui.screens.login
 
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.focusable
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.ExperimentalComposeUiApi
@@ -18,7 +20,6 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.tv.material3.*
 import com.catalogizer.androidtv.ui.viewmodel.AuthViewModel
 
-@OptIn(ExperimentalTvMaterial3Api::class, ExperimentalComposeUiApi::class)
 @Composable
 fun LoginScreen(
     authViewModel: AuthViewModel,
@@ -58,19 +59,19 @@ fun LoginScreen(
         ) {
             Text(
                 text = "Welcome to Catalogizer TV",
-                style = MaterialTheme.typography.headlineLarge
+                style = androidx.tv.material3.MaterialTheme.typography.headlineLarge
             )
 
             Text(
                 text = "Please enter your credentials",
-                style = MaterialTheme.typography.bodyLarge
+                style = androidx.tv.material3.MaterialTheme.typography.bodyLarge
             )
 
             // Username field
-            OutlinedTextField(
+            TextField(
                 value = username,
-                onValueChange = { 
-                    username = it
+                onValueChange = { newValue: String -> 
+                    username = newValue
                     errorMessage = null
                 },
                 label = { Text("Username") },
@@ -91,10 +92,10 @@ fun LoginScreen(
             )
 
             // Password field
-            OutlinedTextField(
+            TextField(
                 value = password,
-                onValueChange = { 
-                    password = it
+                onValueChange = { newValue: String -> 
+                    password = newValue
                     errorMessage = null
                 },
                 label = { Text("Password") },
@@ -118,16 +119,18 @@ fun LoginScreen(
 
             // Error message
             errorMessage?.let { error ->
-                Card(
-                    modifier = Modifier.width(300.dp),
-                    colors = CardDefaults.colors(
-                        containerColor = MaterialTheme.colorScheme.errorContainer
-                    )
+                Surface(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(8.dp),
+                    shape = androidx.tv.material3.MaterialTheme.shapes.medium,
+                    color = androidx.tv.material3.MaterialTheme.colorScheme.errorContainer,
+                    onClick = {} // Empty onClick for compatibility
                 ) {
                     Text(
                         text = error,
                         modifier = Modifier.padding(16.dp),
-                        style = MaterialTheme.typography.bodyMedium
+                        style = androidx.tv.material3.MaterialTheme.typography.bodyMedium
                     )
                 }
             }

@@ -1,57 +1,42 @@
+@file:OptIn(ExperimentalTvMaterial3Api::class)
 package com.catalogizer.androidtv.ui.components
 
-import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.BorderStroke
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.tv.material3.*
-import coil.compose.AsyncImage
-import coil.request.ImageRequest
 import com.catalogizer.androidtv.data.models.MediaItem
-import com.catalogizer.androidtv.utils.formatDuration
-import com.catalogizer.androidtv.utils.formatFileSize
 
-@OptIn(ExperimentalTvMaterial3Api::class)
 @Composable
 fun MediaCard(
     mediaItem: MediaItem,
     onClick: () -> Unit,
     onFocus: () -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    isFocused: Boolean = false
 ) {
-    var isFocused by remember { mutableStateOf(false) }
-    val context = LocalContext.current
-
     Card(
         onClick = onClick,
-        modifier = modifier
-            .onFocusChanged {
-                isFocused = it.isFocused
-                if (it.isFocused) onFocus()
-            },
-        colors = CardDefaults.colors(
-            containerColor = if (isFocused)
-                MaterialTheme.colorScheme.primaryContainer
-            else
-                MaterialTheme.colorScheme.surface
-        ),
-        shape = CardDefaults.shape(RoundedCornerShape(8.dp)),
+        modifier = modifier.aspectRatio(2f/3f),
         scale = CardDefaults.scale(
-            scale = if (isFocused) 1.1f else 1.0f
+            scale = if (isFocused) 1.05f else 1.0f
         ),
         border = CardDefaults.border(
             focusedBorder = Border(
-                border = BorderStroke(
-                    width = 3.dp,
+                border = androidx.compose.foundation.BorderStroke(
+                    width = 2.dp,
                     color = MaterialTheme.colorScheme.primary
                 ),
                 shape = RoundedCornerShape(8.dp)
@@ -59,89 +44,157 @@ fun MediaCard(
         )
     ) {
         Column {
-            // Media poster/thumbnail
-            AsyncImage(
-                model = ImageRequest.Builder(context)
-                    .data(mediaItem.posterUrl ?: mediaItem.thumbnailUrl)
-                    .crossfade(true)
-                    .build(),
-                contentDescription = mediaItem.title,
+            // Thumbnail placeholder
+            Box(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .aspectRatio(2f / 3f)
+                    .aspectRatio(16f/9f)
+                    .background(MaterialTheme.colorScheme.surfaceVariant)
                     .clip(RoundedCornerShape(topStart = 8.dp, topEnd = 8.dp)),
-                contentScale = ContentScale.Crop
-            )
-
-            // Media info
-            Column(
-                modifier = Modifier.padding(12.dp)
+                contentAlignment = Alignment.Center
             ) {
+                if (mediaItem.thumbnailUrl != null) {
+                    // TODO: Load actual thumbnail using Coil
+                    // AsyncImage(
+                    //     model = mediaItem.thumbnailUrl,
+                    //     contentDescription = mediaItem.title,
+                    //     modifier = Modifier.fillMaxSize(),
+                    //     contentScale = ContentScale.Crop
+                    // )
+                }
+                
+                // Play button overlay
+                Box(
+                    modifier = Modifier
+                        .background(
+                            color = Color.Black.copy(alpha = 0.6f),
+                            shape = RoundedCornerShape(50)
+                        )
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.PlayArrow,
+                        contentDescription = "Play",
+                        modifier = Modifier.size(32.dp),
+                        tint = Color.White
+                    )
+                }
+            }
+
+            // Content info
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(12.dp)
+            ) {
+                // Title
                 Text(
                     text = mediaItem.title,
-                    style = MaterialTheme.typography.titleSmall,
+                    style = MaterialTheme.typography.titleSmall.copy(
+                        fontWeight = FontWeight.Bold
+                    ),
                     maxLines = 2,
                     overflow = TextOverflow.Ellipsis,
-                    color = if (isFocused)
-                        MaterialTheme.colorScheme.onPrimaryContainer
-                    else
-                        MaterialTheme.colorScheme.onSurface
+                    modifier = Modifier.fillMaxWidth()
                 )
 
                 Spacer(modifier = Modifier.height(4.dp))
 
-                if (mediaItem.year != null) {
-                    Text(
-                        text = mediaItem.year.toString(),
-                        style = MaterialTheme.typography.bodySmall,
-                        color = if (isFocused)
-                            MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.7f)
-                        else
-                            MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
-                    )
-                }
-
-                if (mediaItem.duration != null && mediaItem.duration > 0) {
-                    Text(
-                        text = formatDuration(mediaItem.duration),
-                        style = MaterialTheme.typography.bodySmall,
-                        color = if (isFocused)
-                            MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.7f)
-                        else
-                            MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
-                    )
-                }
-
-                if (mediaItem.fileSize != null) {
-                    Text(
-                        text = formatFileSize(mediaItem.fileSize),
-                        style = MaterialTheme.typography.bodySmall,
-                        color = if (isFocused)
-                            MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.7f)
-                        else
-                            MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
-                    )
-                }
-
-                // Media type indicator
-                Surface(
-                    modifier = Modifier
-                        .padding(top = 8.dp)
-                        .clip(RoundedCornerShape(4.dp)),
-                    color = when (mediaItem.mediaType.lowercase()) {
-                        "movie" -> Color(0xFF4CAF50)
-                        "tv" -> Color(0xFF2196F3)
-                        "music" -> Color(0xFFFF9800)
-                        "document" -> Color(0xFF9C27B0)
-                        else -> MaterialTheme.colorScheme.secondary
-                    }
+                // Metadata row
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Text(
-                        text = mediaItem.mediaType.uppercase(),
-                        style = MaterialTheme.typography.labelSmall,
-                        color = Color.White,
-                        modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
-                    )
+                    // Year and duration
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        mediaItem.year?.let { year ->
+                            Text(
+                                text = year.toString(),
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
+                            )
+                        }
+
+                        mediaItem.duration?.let { duration ->
+                            val minutes = duration / 60
+                            val hours = minutes / 60
+                            val remainingMinutes = minutes % 60
+                            
+                            val durationText = when {
+                                hours > 0 -> "${hours}h ${remainingMinutes}m"
+                                else -> "${minutes}m"
+                            }
+
+                            if (mediaItem.year != null) {
+                                Text(
+                                    text = " • $durationText",
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
+                                )
+                            } else {
+                                Text(
+                                    text = durationText,
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
+                                )
+                            }
+                        }
+                    }
+
+                        // Watch progress indicator
+                        if (mediaItem.hasWatchProgress) {
+                            Box(
+                                modifier = Modifier.background(
+                                    color = MaterialTheme.colorScheme.primary,
+                                    shape = RoundedCornerShape(2.dp)
+                                )
+                            ) {
+                                Text(
+                                    text = "${(mediaItem.watchProgress * 100).toInt()}%",
+                                    style = MaterialTheme.typography.labelSmall.copy(
+                                        fontSize = 10.sp
+                                    ),
+                                    modifier = Modifier.padding(horizontal = 4.dp, vertical = 2.dp)
+                                )
+                            }
+                        }
+                }
+
+                    // Quality indicator
+                    mediaItem.quality?.let { quality ->
+                        Spacer(modifier = Modifier.height(4.dp))
+                        
+                        Box(
+                            modifier = Modifier.background(
+                                color = MaterialTheme.colorScheme.secondary,
+                                shape = RoundedCornerShape(4.dp)
+                            )
+                        ) {
+                            Text(
+                                text = quality,
+                                style = MaterialTheme.typography.labelSmall.copy(
+                                    fontSize = 10.sp
+                                ),
+                                modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp),
+                                color = MaterialTheme.colorScheme.onSecondary
+                            )
+                        }
+                    }
+
+                // Rating
+                mediaItem.rating?.let { rating ->
+                    Spacer(modifier = Modifier.height(4.dp))
+                    
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        // Star icon would go here
+                        Text(
+                            text = String.format("%.1f", rating),
+                            style = MaterialTheme.typography.bodySmall.copy(
+                                fontWeight = FontWeight.Medium
+                            ),
+                            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.8f)
+                        )
+                    }
                 }
             }
         }
@@ -153,123 +206,110 @@ fun MediaCard(
 fun CompactMediaCard(
     mediaItem: MediaItem,
     onClick: () -> Unit,
-    onFocus: () -> Unit,
     modifier: Modifier = Modifier
 ) {
-    var isFocused by remember { mutableStateOf(false) }
-    val context = LocalContext.current
-
-    Card(
+    @OptIn(ExperimentalTvMaterial3Api::class)
+    Surface(
         onClick = onClick,
-        modifier = modifier
-            .height(120.dp)
-            .onFocusChanged {
-                isFocused = it.isFocused
-                if (it.isFocused) onFocus()
-            },
-        colors = CardDefaults.colors(
-            containerColor = if (isFocused)
-                MaterialTheme.colorScheme.primaryContainer
-            else
-                MaterialTheme.colorScheme.surface
+        modifier = modifier.fillMaxWidth(),
+        shape = ClickableSurfaceDefaults.shape(),
+        colors = ClickableSurfaceDefaults.colors(
+            containerColor = MaterialTheme.colorScheme.surface
         ),
-        shape = CardDefaults.shape(RoundedCornerShape(8.dp)),
-        scale = CardDefaults.scale(
-            scale = if (isFocused) 1.05f else 1.0f
-        ),
-        border = CardDefaults.border(
-            focusedBorder = Border(
-                border = BorderStroke(
-                    width = 2.dp,
-                    color = MaterialTheme.colorScheme.primary
-                ),
-                shape = RoundedCornerShape(8.dp)
+        border = ClickableSurfaceDefaults.border(
+            border = androidx.tv.material3.Border(
+                androidx.compose.foundation.BorderStroke(1.dp, androidx.tv.material3.MaterialTheme.colorScheme.onSurface.copy(alpha = 0.3f))
             )
         )
     ) {
         Row(
-            modifier = Modifier.fillMaxSize()
+            modifier = Modifier.padding(12.dp),
+            verticalAlignment = Alignment.CenterVertically
         ) {
-            // Thumbnail
-            AsyncImage(
-                model = ImageRequest.Builder(context)
-                    .data(mediaItem.thumbnailUrl ?: mediaItem.posterUrl)
-                    .crossfade(true)
-                    .build(),
-                contentDescription = mediaItem.title,
-                modifier = Modifier
-                    .width(80.dp)
-                    .fillMaxHeight()
-                    .clip(RoundedCornerShape(topStart = 8.dp, bottomStart = 8.dp)),
-                contentScale = ContentScale.Crop
+        // Thumbnail
+        @OptIn(ExperimentalTvMaterial3Api::class)
+        Surface(
+            modifier = Modifier,
+            shape = NonInteractiveSurfaceDefaults.shape,
+            colors = NonInteractiveSurfaceDefaults.colors(
+                containerColor = androidx.tv.material3.MaterialTheme.colorScheme.surfaceVariant
+            ),
+            border = androidx.tv.material3.Border(
+                androidx.compose.foundation.BorderStroke(1.dp, androidx.tv.material3.MaterialTheme.colorScheme.onSurface.copy(alpha = 0.2f))
+            )
+        ) {
+            Box(
+                modifier = Modifier.size(80.dp, 60.dp),
+                contentAlignment = Alignment.Center
+            ) {
+                // TODO: Load actual thumbnail
+                Box(
+                    modifier = Modifier.background(
+                        color = Color.Black.copy(alpha = 0.6f),
+                        shape = RoundedCornerShape(50)
+                    )
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.PlayArrow,
+                        contentDescription = "Play",
+                        modifier = Modifier.size(24.dp),
+                        tint = Color.White
+                    )
+                }
+            }
+        }
+
+        Spacer(modifier = Modifier.width(12.dp))
+
+        // Info
+        Column(
+            modifier = Modifier.weight(1f)
+        ) {
+            Text(
+                text = mediaItem.title,
+                style = MaterialTheme.typography.titleSmall,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis
             )
 
-            // Content
-            Column(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(12.dp),
-                verticalArrangement = Arrangement.SpaceBetween
-            ) {
-                Column {
-                    Text(
-                        text = mediaItem.title,
-                        style = MaterialTheme.typography.titleSmall,
-                        maxLines = 2,
-                        overflow = TextOverflow.Ellipsis,
-                        color = if (isFocused)
-                            MaterialTheme.colorScheme.onPrimaryContainer
-                        else
-                            MaterialTheme.colorScheme.onSurface
-                    )
+            Spacer(modifier = Modifier.height(4.dp))
 
-                    if (mediaItem.year != null) {
-                        Text(
-                            text = mediaItem.year.toString(),
-                            style = MaterialTheme.typography.bodySmall,
-                            color = if (isFocused)
-                                MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.7f)
-                            else
-                                MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
-                        )
-                    }
+            Row(
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                mediaItem.year?.let { year ->
+                    Text(
+                        text = year.toString(),
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
+                    )
                 }
 
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    if (mediaItem.duration != null && mediaItem.duration > 0) {
+                mediaItem.quality?.let { quality ->
+                    if (mediaItem.year != null) {
                         Text(
-                            text = formatDuration(mediaItem.duration),
+                            text = " • $quality",
                             style = MaterialTheme.typography.bodySmall,
-                            color = if (isFocused)
-                                MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.7f)
-                            else
-                                MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
+                            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
                         )
-                    }
-
-                    Surface(
-                        containerColor = when (mediaItem.mediaType.lowercase()) {
-                            "movie" -> Color(0xFF4CAF50)
-                            "tv" -> Color(0xFF2196F3)
-                            "music" -> Color(0xFFFF9800)
-                            "document" -> Color(0xFF9C27B0)
-                            else -> MaterialTheme.colorScheme.secondary
-                        },
-                        shape = RoundedCornerShape(4.dp)
-                    ) {
+                    } else {
                         Text(
-                            text = mediaItem.mediaType.uppercase(),
-                            style = MaterialTheme.typography.labelSmall,
-                            color = Color.White,
-                            modifier = Modifier.padding(horizontal = 4.dp, vertical = 2.dp)
+                            text = quality,
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
                         )
                     }
                 }
             }
-        }
-    }
+
+            mediaItem.rating?.let { rating ->
+                Text(
+                    text = String.format("%.1f", rating),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.primary
+                )
+            }
+        }  // Close Column
+        }  // Close Row
+    }  // Close Surface
 }

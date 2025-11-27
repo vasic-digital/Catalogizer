@@ -6,8 +6,13 @@ import androidx.tv.material3.MaterialTheme
 import androidx.tv.material3.darkColorScheme
 import androidx.tv.material3.lightColorScheme
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.font.FontFamily
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.sp
 
 // TV-optimized color schemes
+@OptIn(ExperimentalTvMaterial3Api::class)
 private val TVDarkColorScheme = darkColorScheme(
     primary = Color(0xFF9ECAFF),
     onPrimary = Color(0xFF003258),
@@ -30,10 +35,10 @@ private val TVDarkColorScheme = darkColorScheme(
     surface = Color(0xFF101214),
     onSurface = Color(0xFFE2E2E6),
     surfaceVariant = Color(0xFF43474E),
-    onSurfaceVariant = Color(0xFFC3C7CF),
-    outline = Color(0xFF8D9199)
+    onSurfaceVariant = Color(0xFFC3C7CF)
 )
 
+@OptIn(ExperimentalTvMaterial3Api::class)
 private val TVLightColorScheme = lightColorScheme(
     primary = Color(0xFF1976D2),
     onPrimary = Color(0xFFFFFFFF),
@@ -56,8 +61,7 @@ private val TVLightColorScheme = lightColorScheme(
     surface = Color(0xFFFDFCFF),
     onSurface = Color(0xFF1A1C1E),
     surfaceVariant = Color(0xFFDFE2EB),
-    onSurfaceVariant = Color(0xFF43474E),
-    outline = Color(0xFF73777F)
+    onSurfaceVariant = Color(0xFF43474E)
 )
 
 @OptIn(ExperimentalTvMaterial3Api::class)
