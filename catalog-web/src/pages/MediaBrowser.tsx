@@ -188,6 +188,7 @@ export const MediaBrowser: React.FC = () => {
             variant="outline"
             onClick={() => setShowFilters(!showFilters)}
             className="flex items-center"
+            data-testid="filters-button"
           >
             <SlidersHorizontal className="h-4 w-4 mr-2" />
             Filters
@@ -199,6 +200,7 @@ export const MediaBrowser: React.FC = () => {
               size="sm"
               onClick={() => setViewMode('grid')}
               className="rounded-r-none"
+              data-testid="grid-view-button"
             >
               <Grid className="h-4 w-4" />
             </Button>
@@ -207,6 +209,7 @@ export const MediaBrowser: React.FC = () => {
               size="sm"
               onClick={() => setViewMode('list')}
               className="rounded-l-none"
+              data-testid="list-view-button"
             >
               <List className="h-4 w-4" />
             </Button>
@@ -216,6 +219,7 @@ export const MediaBrowser: React.FC = () => {
             variant="outline"
             onClick={() => refetch()}
             disabled={isLoading}
+            data-testid="refresh-button"
           >
             <RefreshCw className={`h-4 w-4 ${isLoading ? 'animate-spin' : ''}`} />
           </Button>
@@ -262,6 +266,7 @@ export const MediaBrowser: React.FC = () => {
                     size="sm"
                     onClick={() => handlePageChange('prev')}
                     disabled={currentPage === 1}
+                    data-testid="prev-page-button"
                   >
                     <ChevronLeft className="h-4 w-4" />
                   </Button>
@@ -273,6 +278,7 @@ export const MediaBrowser: React.FC = () => {
                     size="sm"
                     onClick={() => handlePageChange('next')}
                     disabled={currentPage === totalPages}
+                    data-testid="next-page-button"
                   >
                     <ChevronRight className="h-4 w-4" />
                   </Button>
@@ -300,6 +306,7 @@ export const MediaBrowser: React.FC = () => {
                   variant="outline"
                   onClick={() => refetch()}
                   className="mt-4"
+                  data-testid="retry-button"
                 >
                   Try again
                 </Button>
@@ -325,6 +332,7 @@ export const MediaBrowser: React.FC = () => {
                   variant="outline"
                   onClick={() => handlePageChange('prev')}
                   disabled={currentPage === 1}
+                  data-testid="prev-page-button-main"
                 >
                   <ChevronLeft className="h-4 w-4 mr-1" />
                   Previous
@@ -336,6 +344,7 @@ export const MediaBrowser: React.FC = () => {
                   variant="outline"
                   onClick={() => handlePageChange('next')}
                   disabled={currentPage === totalPages}
+                  data-testid="next-page-button-main"
                 >
                   Next
                   <ChevronRight className="h-4 w-4 ml-1" />

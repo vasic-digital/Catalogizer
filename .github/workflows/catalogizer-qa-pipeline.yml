@@ -1,4 +1,3 @@
-# workflow: disable
 name: Catalogizer Zero-Defect QA Pipeline
 
 on:

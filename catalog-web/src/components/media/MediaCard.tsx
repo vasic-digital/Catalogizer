@@ -104,6 +104,7 @@ export const MediaCard: React.FC<MediaCardProps> = ({
       whileHover={{ y: -4 }}
       transition={{ duration: 0.2 }}
       className={className}
+      data-testid={`media-item-${media.id}`}
     >
       <Card className="h-full overflow-hidden hover:shadow-xl transition-all duration-300 group">
         {/* Cover Image */}
@@ -132,6 +133,7 @@ export const MediaCard: React.FC<MediaCardProps> = ({
                     e.stopPropagation()
                     onView(media)
                   }}
+                  data-testid={`view-button-${media.id}`}
                 >
                   <Eye className="h-4 w-4" />
                 </Button>
@@ -144,6 +146,7 @@ export const MediaCard: React.FC<MediaCardProps> = ({
                     e.stopPropagation()
                     onDownload(media)
                   }}
+                  data-testid={`download-button-${media.id}`}
                 >
                   <Download className="h-4 w-4" />
                 </Button>
