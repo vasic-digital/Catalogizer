@@ -1,4 +1,4 @@
-import React from 'react'
+import React, { act } from 'react'
 import { render, screen, fireEvent, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
@@ -38,23 +38,32 @@ jest.mock('@/lib/utils', () => ({
 
 // Mock child components
 jest.mock('@/components/media/MediaGrid', () => ({
-  MediaGrid: ({ media, onView, onDownload, loading, viewMode }: any) => (
-    <div data-testid="media-grid">
-      {loading && <div data-testid="loading-indicator">Loading...</div>}
-      {!loading && media.length === 0 && (
-        <div data-testid="empty-state">
-          <div>No media items found</div>
-        </div>
-      )}
-      {media?.map((item: MediaItem) => (
-        <div key={item.id} data-testid={`media-item-${item.id}`}>
-          <span>{item.title}</span>
-          <button onClick={() => onView?.(item)} data-testid={`view-button-${item.id}`}>View</button>
-          <button onClick={() => onDownload?.(item)} data-testid={`download-button-${item.id}`}>Download</button>
-        </div>
-      ))}
-    </div>
-  ),
+  MediaGrid: ({ media, onMediaView, onMediaDownload, loading, viewMode }: any) => {
+    return (
+      <div data-testid="media-grid">
+        {loading && <div data-testid="loading-indicator">Loading...</div>}
+        {!loading && media.length === 0 && (
+          <div data-testid="empty-state">
+            <div>No media items found</div>
+          </div>
+        )}
+        {media?.map((item: MediaItem) => {
+          return (
+            <div key={item.id} data-testid={`media-item-${item.id}`}>
+              <span>{item.title}</span>
+              <button 
+                onClick={() => onMediaView?.(item)} 
+                data-testid={`view-button-${item.id}`}
+              >
+                View
+              </button>
+              <button onClick={() => onMediaDownload?.(item)} data-testid={`download-button-${item.id}`}>Download</button>
+            </div>
+          )
+        })}
+      </div>
+    )
+  },
 }))
 
 jest.mock('@/components/media/MediaFilters', () => ({
@@ -69,14 +78,15 @@ jest.mock('@/components/media/MediaFilters', () => ({
 }))
 
 jest.mock('@/components/media/MediaDetailModal', () => ({
-  MediaDetailModal: ({ media, isOpen, onClose }: any) => (
-    isOpen ? (
+  MediaDetailModal: ({ media, isOpen, onClose, onDownload }: any) => {
+    return isOpen ? (
       <div data-testid="media-detail-modal">
         <h2>{media.title}</h2>
         <button onClick={onClose}>Close</button>
+        {onDownload && <button onClick={() => onDownload(media)}>Download</button>}
       </div>
     ) : null
-  ),
+  },
 }))
 
 // Mock UI components
@@ -429,32 +439,36 @@ describe('MediaBrowser', () => {
     })
 
     it('disables next button on last page', async () => {
-      // Simulate being on the last page with total=48 (2 pages) and offset=24
-      // Reset and set up mock properly
-      mockMediaApi.searchMedia.mockClear()
+      // Set up mock for response that will give us 2 pages (total=48, limit=24)
       mockMediaApi.searchMedia.mockResolvedValue({
         items: mockMediaItems,
         total: 48, // 2 pages with limit 24
-        offset: 24, // Second page (last page)
+        offset: 0,
         limit: 24,
       })
       
       renderWithQueryClient(<MediaBrowser />)
       
-      // Wait for component to load and check that we're on page 2
+      // Wait for component to load and show pagination
       await waitFor(() => {
         expect(mockMediaApi.searchMedia).toHaveBeenCalledTimes(1)
+        // Wait for loading to finish and pagination to appear
+        expect(screen.getByTestId('next-page-button-main')).toBeInTheDocument()
       }, { timeout: 3000 })
       
-      // Check that we have the right pagination state
+      // Click next page button to navigate to last page
+      const nextButton = screen.getByTestId('next-page-button-main')
+      await userEvent.click(nextButton)
+      
+      // Now check that we're on page 2
       await waitFor(() => {
         const pageTexts = screen.getAllByText('Page 2 of 2')
         expect(pageTexts.length).toBeGreaterThan(0)
       }, { timeout: 3000 })
       
       // Now check that next button at main pagination is disabled
-      const nextButton = screen.getByTestId('next-page-button-main')
-      expect(nextButton).toBeDisabled()
+      const nextButtonAgain = screen.getByTestId('next-page-button-main')
+      expect(nextButtonAgain).toBeDisabled()
     })
 
     it('handles next page navigation', async () => {
@@ -473,45 +487,69 @@ describe('MediaBrowser', () => {
     })
 
     it('handles previous page navigation', async () => {
-      // Reset mock before starting
-      mockMediaApi.searchMedia.mockClear()
+      // Set up mock for response that will give us multiple pages
+      mockMediaApi.searchMedia
+        .mockResolvedValueOnce({
+          items: mockMediaItems,
+          total: 100,
+          offset: 0,
+          limit: 24,
+        })
+        // Mock response for page 2 (offset: 24)
+        .mockResolvedValueOnce({
+          items: mockMediaItems,
+          total: 100,
+          offset: 24,
+          limit: 24,
+        })
+        // Mock response for returning to page 1 (offset: 0)
+        .mockResolvedValueOnce({
+          items: mockMediaItems,
+          total: 100,
+          offset: 0,
+          limit: 24,
+        })
       
-      // Start on page 2 by overriding the initial mock
-      mockMediaApi.searchMedia.mockResolvedValue({
-        items: mockMediaItems,
-        total: 100,
-        offset: 24, // Page 2
-        limit: 24,
-      })
+      const { container } = renderWithQueryClient(<MediaBrowser />)
       
-      renderWithQueryClient(<MediaBrowser />)
-      
-      // Wait for initial page to load
+      // Wait for component to load and show pagination
       await waitFor(() => {
         expect(mockMediaApi.searchMedia).toHaveBeenCalledTimes(1)
+        expect(screen.getByTestId('next-page-button-main')).toBeInTheDocument()
       }, { timeout: 3000 })
       
-      // Check that we're on page 2
+      // Navigate to page 2 first - wrap in act to handle state updates
+      const nextButton = screen.getByTestId('next-page-button-main')
+      await act(async () => {
+        await userEvent.click(nextButton)
+      })
+      
+      // Wait for page 2 to load
       await waitFor(() => {
         const pageTexts = screen.getAllByText('Page 2 of 5')
-        expect(pageTexts.length).toBeGreaterThan(0)
+        expect(pageTexts.length).toBe(2) // Both top and bottom pagination
       }, { timeout: 3000 })
       
-      // Clear mock to track next call
-      mockMediaApi.searchMedia.mockClear()
-      
-      // Click previous button using the correct test-id
+      // Click previous button - wrap in act
       const prevButton = screen.getByTestId('prev-page-button-main')
-      await userEvent.click(prevButton)
+      await act(async () => {
+        await userEvent.click(prevButton)
+      })
       
-      // Check for API call
+      // Verify we're back on page 1 by checking pagination text and that API was called
       await waitFor(() => {
-        expect(mockMediaApi.searchMedia).toHaveBeenCalledWith(
-          expect.objectContaining({
-            offset: 0, // Back to page 1
-          })
-        )
+        expect(mockMediaApi.searchMedia).toHaveBeenCalledTimes(3)
+        const pageTexts = screen.getAllByText('Page 1 of 5')
+        expect(pageTexts.length).toBe(2) // Both top and bottom pagination
+        expect(screen.getByTestId('prev-page-button-main')).toBeDisabled()
       }, { timeout: 3000 })
+      
+      // Also verify the last API call had the correct offset
+      expect(mockMediaApi.searchMedia).toHaveBeenLastCalledWith(
+        expect.objectContaining({
+          offset: 0, // Back to page 1
+        })
+      )
     })
   })
 
@@ -531,7 +569,7 @@ describe('MediaBrowser', () => {
       // Wait for modal to appear
       await waitFor(() => {
         expect(screen.getByTestId('media-detail-modal')).toBeInTheDocument()
-        expect(screen.getByText('Test Video 1')).toBeInTheDocument()
+        expect(screen.getByRole('heading', { name: 'Test Video 1' })).toBeInTheDocument()
       }, { timeout: 3000 })
     })
 

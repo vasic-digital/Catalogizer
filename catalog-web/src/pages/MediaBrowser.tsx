@@ -29,6 +29,7 @@ export const MediaBrowser: React.FC = () => {
     sort_by: 'updated_at',
     sort_order: 'desc',
   })
+  const [navigationKey, setNavigationKey] = useState(0)
   const [showFilters, setShowFilters] = useState(false)
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid')
   const [searchQuery, setSearchQuery] = useState('')
@@ -57,7 +58,7 @@ export const MediaBrowser: React.FC = () => {
     isError,
     refetch
   } = useQuery({
-    queryKey: ['media-search', filters],
+    queryKey: ['media-search', filters, navigationKey],
     queryFn: () => mediaApi.searchMedia(filters),
     staleTime: 1000 * 60 * 5,
   })
@@ -115,6 +116,7 @@ export const MediaBrowser: React.FC = () => {
       : Math.max(0, (currentPage - 1) * (filters.limit || 24))
 
     setFilters(prev => ({ ...prev, offset: newOffset }))
+    setNavigationKey(prev => prev + 1) // Force React Query to refetch
   }
 
   const currentPage = Math.floor((filters.offset || 0) / (filters.limit || 24)) + 1
