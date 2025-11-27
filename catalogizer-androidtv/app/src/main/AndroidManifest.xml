@@ -78,7 +78,7 @@
 
         <!-- TV Content Provider -->
         <provider
-            android:name=".data.tv.CatalogizerTvProvider"
+            android:name=".data.tv.CatalogizerTvProviderImpl"
             android:authorities="${applicationId}.tv"
             android:enabled="true"
             android:exported="true" />

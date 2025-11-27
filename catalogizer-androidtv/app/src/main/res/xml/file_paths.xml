@@ -1,4 +1,11 @@
 <?xml version="1.0" encoding="utf-8"?>
 <paths xmlns:android="http://schemas.android.com/apk/res/android">
-    <external-path name="external_files" path="."/>
+    <!-- External storage for sharing files -->
+    <external-files-path name="media_files" path="media/" />
+    <external-files-path name="cache_files" path="cache/" />
+    <external-cache-path name="external_cache" path="." />
+    
+    <!-- Internal storage for app files -->
+    <files-path name="internal_files" path="media/" />
+    <cache-path name="internal_cache" path="." />
 </paths>
