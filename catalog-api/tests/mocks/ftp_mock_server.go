@@ -105,6 +105,53 @@ func (s *MockFTPServer) AddUser(username, password string) {
 	s.users[username] = password
 }
 
+// AuthenticateUser tests authentication against the mock server
+func (s *MockFTPServer) AuthenticateUser(username, password string) bool {
+	return s.authenticateUser(username, password)
+}
+
+// ListFiles lists files in the given path
+func (s *MockFTPServer) ListFiles(path, pattern string) ([]*MockFTPFile, error) {
+	return s.listFiles(path), nil
+}
+
+// GetFile retrieves a file from the mock server
+func (s *MockFTPServer) GetFile(path string) (*MockFTPFile, error) {
+	s.mu.RLock()
+	defer s.mu.RUnlock()
+	
+	if file, exists := s.files[path]; exists {
+		return file, nil
+	}
+	return nil, fmt.Errorf("file not found: %s", path)
+}
+
+// WriteFile writes content to a file
+func (s *MockFTPServer) WriteFile(path string, content []byte) error {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	
+	if file, exists := s.files[path]; exists {
+		file.Content = content
+		file.Size = int64(len(content))
+		file.ModTime = time.Now()
+		return nil
+	}
+	return fmt.Errorf("file not found: %s", path)
+}
+
+// DeleteFile removes a file from the mock server
+func (s *MockFTPServer) DeleteFile(path string) error {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	
+	if _, exists := s.files[path]; exists {
+		delete(s.files, path)
+		return nil
+	}
+	return fmt.Errorf("file not found: %s", path)
+}
+
 // Start starts the mock FTP server
 func (s *MockFTPServer) Start() error {
 	s.mu.Lock()

@@ -8,7 +8,7 @@ import (
     "net/http"
 )
 
-func main() {
+func testAuth() {
     // Test registration
     registerData := map[string]interface{}{
         "username":   "testuser",

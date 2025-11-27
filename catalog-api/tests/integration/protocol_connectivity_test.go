@@ -283,7 +283,7 @@ func testFTPProtocol(t *testing.T, logger *zap.Logger, ctx context.Context) {
 
 	t.Run("FTP File Operations", func(t *testing.T) {
 		// Test file retrieval
-		file, err := mockServer.GetFile("/", "readme.txt")
+		file, err := mockServer.GetFile("/readme.txt")
 		if err != nil {
 			t.Errorf("Expected to retrieve readme.txt, got error: %v", err)
 		}
@@ -292,13 +292,13 @@ func testFTPProtocol(t *testing.T, logger *zap.Logger, ctx context.Context) {
 		}
 
 		// Test file writing (to writable directory)
-		err = mockServer.WriteFile("/uploads", "test.txt", []byte("test content"))
+		err = mockServer.WriteFile("/uploads/test.txt", []byte("test content"))
 		if err != nil {
 			t.Errorf("Expected successful file write, got error: %v", err)
 		}
 
 		// Verify file was written
-		writtenFile, err := mockServer.GetFile("/uploads", "test.txt")
+		writtenFile, err := mockServer.GetFile("/uploads/test.txt")
 		if err != nil {
 			t.Errorf("Expected to retrieve written file, got error: %v", err)
 		}
@@ -307,13 +307,13 @@ func testFTPProtocol(t *testing.T, logger *zap.Logger, ctx context.Context) {
 		}
 
 		// Test file deletion
-		err = mockServer.DeleteFile("/uploads", "test.txt")
+		err = mockServer.DeleteFile("/uploads/test.txt")
 		if err != nil {
 			t.Errorf("Expected successful file deletion, got error: %v", err)
 		}
 
 		// Verify file was deleted
-		_, err = mockServer.GetFile("/uploads", "test.txt")
+		_, err = mockServer.GetFile("/uploads/test.txt")
 		if err == nil {
 			t.Error("Expected file to be deleted")
 		}
@@ -765,7 +765,7 @@ func testWebDAVProtocol(t *testing.T, logger *zap.Logger, ctx context.Context) {
 
 // TestProtocolCapabilities tests protocol capability detection
 func TestProtocolCapabilities(t *testing.T) {
-	logger := zap.NewNop()
+	_ = zap.NewNop() // Logger available but not used in this test
 
 	testCases := []struct {
 		protocol              string

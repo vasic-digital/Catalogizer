@@ -3,6 +3,7 @@ package middleware
 import (
 	"context"
 	"net/http"
+	"net/http/httptest"
 	"testing"
 	"time"
 
@@ -10,6 +11,11 @@ import (
 	"github.com/redis/go-redis/v9"
 	"github.com/stretchr/testify/assert"
 )
+
+// createTestRequest creates a simple HTTP request for testing
+func createTestRequest() *http.Request {
+	return httptest.NewRequest("GET", "/", nil)
+}
 
 func TestDefaultRedisRateLimiterConfig(t *testing.T) {
 	client := redis.NewClient(&redis.Options{Addr: ":6379"})
@@ -81,7 +87,7 @@ func TestRedisRateLimit_Integration(t *testing.T) {
 	middleware := RedisRateLimit(config)
 	
 	// First request should pass
-	c, _ := gin.CreateTestContext(nil)
+	c, _ := gin.CreateTestContext(httptest.NewRecorder())
 	c.Request = createTestRequest()
 	c.Set("test_key", "test_value")
 	
@@ -89,21 +95,21 @@ func TestRedisRateLimit_Integration(t *testing.T) {
 	assert.False(t, c.IsAborted())
 	
 	// Second request should pass
-	c2, _ := gin.CreateTestContext(nil)
-	c2.Request = createTestRequest()
+	c2, _ := gin.CreateTestContext(httptest.NewRecorder())
+	c2.Request = createTestRequestWithIP()
 	
 	middleware(c2)
 	assert.False(t, c2.IsAborted())
 	
 	// Third request should pass
-	c3, _ := gin.CreateTestContext(nil)
+	c3, _ := gin.CreateTestContext(httptest.NewRecorder())
 	c3.Request = createTestRequest()
 	
 	middleware(c3)
 	assert.False(t, c3.IsAborted())
 	
 	// Fourth request should be rate limited
-	c4, _ := gin.CreateTestContext(nil)
+	c4, _ := gin.CreateTestContext(httptest.NewRecorder())
 	c4.Request = createTestRequest()
 	
 	middleware(c4)
@@ -147,7 +153,7 @@ func TestSlidingWindowRedisRateLimit_Integration(t *testing.T) {
 	}
 	
 	// Next request should be rate limited
-	c, _ := gin.CreateTestContext(nil)
+	c, _ := gin.CreateTestContext(httptest.NewRecorder())
 	c.Request = createTestRequest()
 	
 	middleware(c)
@@ -200,7 +206,7 @@ func TestTokenBucketRedisRateLimit_Integration(t *testing.T) {
 	
 	// Request should pass again
 	c2, _ := gin.CreateTestContext(nil)
-	c2.Request = createTestRequest()
+	c2.Request = createTestRequestWithIP()
 	
 	middleware(c2)
 	assert.False(t, c2.IsAborted())
@@ -236,7 +242,7 @@ func TestAuthRateLimiterKeyGeneration(t *testing.T) {
 	
 	// Test key generation with username
 	c2, _ := gin.CreateTestContext(nil)
-	c2.Request = createTestRequest()
+	c2.Request = createTestRequestWithIP()
 	c2.Set("username", "testuser")
 	key2 := config.KeyGenerator(c2)
 	assert.Equal(t, "testuser:127.0.0.1", key2)
@@ -254,14 +260,14 @@ func TestUserRateLimiterKeyGeneration(t *testing.T) {
 	
 	// Test key generation with user ID
 	c2, _ := gin.CreateTestContext(nil)
-	c2.Request = createTestRequest()
+	c2.Request = createTestRequestWithIP()
 	c2.Set("user_id", "123")
 	key2 := config.KeyGenerator(c2)
 	assert.Equal(t, "user:123", key2)
 }
 
-// Helper function to create test HTTP request
-func createTestRequest() *http.Request {
+// Helper function to create test HTTP request (using existing function)
+func createTestRequestWithIP() *http.Request {
 	req, _ := http.NewRequest("GET", "/test", nil)
 	req.RemoteAddr = "127.0.0.1:12345"
 	return req

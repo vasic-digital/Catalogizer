@@ -112,7 +112,7 @@ func TestInputValidation_GinMiddleware(t *testing.T) {
 		router.ServeHTTP(w, req)
 
 		assert.Equal(t, http.StatusBadRequest, w.Code)
-		assert.Contains(t, w.Body.String(), "potential XSS")
+		assert.Contains(t, strings.ToLower(w.Body.String()), "potential xss")
 	})
 
 	// Test valid input
