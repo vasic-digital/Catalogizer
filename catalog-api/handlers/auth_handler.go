@@ -7,9 +7,160 @@ import (
 	"strings"
 
 	"catalogizer/models"
+	"catalogizer/repository"
 	"catalogizer/services"
+
+	"github.com/gin-gonic/gin"
 )
 
+// Gin handler functions for auth
+
+// LoginGin handles login request with gin
+func (h *AuthHandler) LoginGin(c *gin.Context) {
+	var req models.LoginRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid request format"})
+		return
+	}
+
+	ipAddress := c.ClientIP()
+	userAgent := c.GetHeader("User-Agent")
+
+	result, err := h.authService.Login(req, ipAddress, userAgent)
+	if err != nil {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, result)
+}
+
+// RefreshTokenGin handles token refresh with gin
+func (h *AuthHandler) RefreshTokenGin(c *gin.Context) {
+	var req struct {
+		RefreshToken string `json:"refresh_token"`
+	}
+
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid request format"})
+		return
+	}
+
+	result, err := h.authService.RefreshToken(req.RefreshToken)
+	if err != nil {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, result)
+}
+
+// LogoutGin handles logout with gin
+func (h *AuthHandler) LogoutGin(c *gin.Context) {
+	token := extractTokenFromGin(c)
+	if token == "" {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "Authorization token required"})
+		return
+	}
+
+	err := h.authService.Logout(token)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"message": "Logged out successfully"})
+}
+
+// GetCurrentUserGin returns current user info with gin
+func (h *AuthHandler) GetCurrentUserGin(c *gin.Context) {
+	token := extractTokenFromGin(c)
+	if token == "" {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "Authorization token required"})
+		return
+	}
+
+	user, err := h.authService.GetCurrentUser(token)
+	if err != nil {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid token"})
+		return
+	}
+
+	c.JSON(http.StatusOK, user)
+}
+
+// RegisterGin handles user registration with gin
+func (h *AuthHandler) RegisterGin(c *gin.Context, userRepo *repository.UserRepository) {
+	var req struct {
+		Username  string `json:"username" binding:"required"`
+		Email     string `json:"email" binding:"required,email"`
+		Password  string `json:"password" binding:"required,min=8"`
+		FirstName string `json:"first_name" binding:"required"`
+		LastName  string `json:"last_name" binding:"required"`
+	}
+
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	// Check if user exists
+	_, err := userRepo.GetByUsername(req.Username)
+	if err == nil {
+		c.JSON(http.StatusConflict, gin.H{"error": "Username already exists"})
+		return
+	}
+
+	_, err = userRepo.GetByEmail(req.Email)
+	if err == nil {
+		c.JSON(http.StatusConflict, gin.H{"error": "Email already exists"})
+		return
+	}
+
+	// Create user
+	user := &models.User{
+		Username:  req.Username,
+		Email:     req.Email,
+		FirstName: &req.FirstName,
+		LastName:  &req.LastName,
+		RoleID:    2, // Default user role
+		Role:      nil, // Will be loaded after creation
+		IsActive:  true,
+	}
+
+	userID, err := userRepo.Create(user)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to create user"})
+		return
+	}
+
+	// Fetch the created user with role
+	createdUser, err := userRepo.GetByID(userID)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to retrieve created user"})
+		return
+	}
+
+	c.JSON(http.StatusCreated, createdUser)
+}
+
+// Helper function to extract token from gin context
+func extractTokenFromGin(c *gin.Context) string {
+	authHeader := c.GetHeader("Authorization")
+	if authHeader == "" {
+		return ""
+	}
+
+	// Extract token from "Bearer <token>"
+	parts := strings.Split(authHeader, " ")
+	if len(parts) == 2 && parts[0] == "Bearer" {
+		return parts[1]
+	}
+
+	return ""
+}
+
+// AuthHandler struct
 type AuthHandler struct {
 	authService *services.AuthService
 }

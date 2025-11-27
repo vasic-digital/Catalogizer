@@ -141,6 +141,10 @@ func main() {
 	copyHandler := handlers.NewCopyHandler(catalogService, smbService, cfg.Catalog.TempDir, logger)
 	smbDiscoveryHandler := handlers.NewSMBDiscoveryHandler(smbDiscoveryService, logger)
 	conversionHandler := root_handlers.NewConversionHandler(conversionService, authService)
+	authHandler := root_handlers.NewAuthHandler(authService)
+	
+	// Initialize JWT middleware
+	jwtMiddleware := root_middleware.NewJWTMiddleware(jwtSecret)
 
 	// Setup Gin router
 	router := gin.Default()
@@ -156,8 +160,21 @@ func main() {
 		c.JSON(http.StatusOK, gin.H{"status": "healthy", "time": time.Now().UTC()})
 	})
 
+	// Authentication routes (no auth required)
+	authGroup := router.Group("/api/v1/auth")
+	{
+		authGroup.POST("/login", authHandler.LoginGin)
+		authGroup.POST("/register", func(c *gin.Context) {
+			authHandler.RegisterGin(c, userRepo)
+		})
+		authGroup.POST("/refresh", authHandler.RefreshTokenGin)
+		authGroup.POST("/logout", authHandler.LogoutGin)
+		authGroup.GET("/me", jwtMiddleware.RequireAuth(), authHandler.GetCurrentUserGin)
+	}
+
 	// API routes
 	api := router.Group("/api/v1")
+	api.Use(jwtMiddleware.RequireAuth()) // Apply auth middleware to all API routes
 	{
 		// Catalog browsing endpoints
 		api.GET("/catalog", catalogHandler.ListRoot)

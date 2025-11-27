@@ -233,6 +233,21 @@ func (c *WebDAVClient) ListDirectory(ctx context.Context, path string) ([]*FileI
 	}
 
 	req.Header.Set("Depth", "1")
+	req.Header.Set("Content-Type", "application/xml")
+
+	// Create a minimal PROPFIND request body
+	body := `<?xml version="1.0" encoding="utf-8" ?>
+<D:propfind xmlns:D="DAV:">
+	<D:prop>
+		<D:displayname/>
+		<D:getcontentlength/>
+		<D:getlastmodified/>
+		<D:resourcetype/>
+	</D:prop>
+</D:propfind>`
+	
+	req.Body = io.NopCloser(strings.NewReader(body))
+	req.ContentLength = int64(len(body))
 
 	resp, err := c.client.Do(req)
 	if err != nil {
@@ -244,9 +259,104 @@ func (c *WebDAVClient) ListDirectory(ctx context.Context, path string) ([]*FileI
 		return nil, fmt.Errorf("WebDAV server returned status %d for directory %s", resp.StatusCode, fullURL)
 	}
 
-	// Parse XML response (simplified - in production you'd use proper XML parsing)
-	// For now, return empty list as PROPFIND parsing is complex
-	return []*FileInfo{}, nil
+	// Parse XML response
+	bodyBytes, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return nil, fmt.Errorf("failed to read WebDAV response: %w", err)
+	}
+
+	// Simple XML parsing for WebDAV multistatus response
+	var files []*FileInfo
+	
+	// Parse the XML to extract file information
+	// This is a simplified parser - in production you might want to use a proper XML decoder
+	responseStr := string(bodyBytes)
+	
+	// Find all <D:response> elements
+	responses := strings.Split(responseStr, "<D:response>")
+	
+	for i := 1; i < len(responses); i++ { // Skip first element as it's before the first response
+		response := responses[i]
+		
+		// Find the end of this response
+		endIndex := strings.Index(response, "</D:response>")
+		if endIndex == -1 {
+			continue
+		}
+		response = response[:endIndex]
+		
+		// Extract href
+		hrefStart := strings.Index(response, "<D:href>")
+		hrefEnd := strings.Index(response, "</D:href>")
+		if hrefStart == -1 || hrefEnd == -1 {
+			continue
+		}
+		href := response[hrefStart+8 : hrefEnd]
+		
+		// Skip the directory itself (usually the first response)
+		if href == fullURL || href == strings.TrimSuffix(fullURL, "/") {
+			continue
+		}
+		
+		// Extract display name
+		displayName := filepath.Base(href)
+		nameStart := strings.Index(response, "<D:displayname>")
+		nameEnd := strings.Index(response, "</D:displayname>")
+		if nameStart != -1 && nameEnd != -1 {
+			displayName = response[nameStart+16 : nameEnd]
+		}
+		
+		// Extract content length
+		var size int64 = 0
+		sizeStart := strings.Index(response, "<D:getcontentlength>")
+		sizeEnd := strings.Index(response, "</D:getcontentlength>")
+		if sizeStart != -1 && sizeEnd != -1 {
+			sizeStr := response[sizeStart+20 : sizeEnd]
+			if s, err := strconv.ParseInt(sizeStr, 10, 64); err == nil {
+				size = s
+			}
+		}
+		
+		// Extract last modified date
+		modTime := time.Now()
+		modStart := strings.Index(response, "<D:getlastmodified>")
+		modEnd := strings.Index(response, "</D:getlastmodified>")
+		if modStart != -1 && modEnd != -1 {
+			modStr := response[modStart+20 : modEnd]
+			// Try RFC1123 format first
+			if t, err := time.Parse(time.RFC1123, modStr); err == nil {
+				modTime = t
+			} else if t, err := time.Parse("Mon, 2 Jan 2006 15:04:05 MST", modStr); err == nil {
+				modTime = t
+			}
+		}
+		
+		// Check if it's a directory
+		isDir := false
+		if strings.Contains(response, "<D:resourcetype><D:collection/></D:resourcetype>") ||
+		   strings.Contains(response, "<D:resourcetype><D:directory/></D:resourcetype>") {
+			isDir = true
+		}
+		
+		// Create relative path from full URL
+		relPath := strings.TrimPrefix(href, fullURL)
+		if relPath == "" {
+			relPath = displayName
+		} else {
+			relPath = strings.TrimPrefix(relPath, "/")
+		}
+		
+		files = append(files, &FileInfo{
+			Name:    displayName,
+			Size:    size,
+			ModTime: modTime,
+			IsDir:   isDir,
+			Mode:    0644, // Default mode
+			Path:    relPath,
+		})
+	}
+	
+	return files, nil
 }
 
 // FileExists checks if a file exists

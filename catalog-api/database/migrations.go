@@ -327,17 +327,27 @@ func (db *DB) createConversionJobsTable(ctx context.Context) error {
 // createAuthTables creates authentication-related tables
 func (db *DB) createAuthTables(ctx context.Context) error {
 	schema := `
-	-- Users table
+	-- Users table with all required columns
 	CREATE TABLE IF NOT EXISTS users (
 		id INTEGER PRIMARY KEY AUTOINCREMENT,
 		username TEXT NOT NULL UNIQUE,
 		email TEXT NOT NULL UNIQUE,
 		password_hash TEXT NOT NULL,
-		first_name TEXT NOT NULL,
-		last_name TEXT NOT NULL,
-		role TEXT NOT NULL DEFAULT 'user',
-		is_active BOOLEAN NOT NULL DEFAULT 1,
-		last_login DATETIME,
+		salt TEXT NOT NULL,
+		role_id INTEGER NOT NULL,
+		first_name TEXT,
+		last_name TEXT,
+		display_name TEXT,
+		avatar_url TEXT,
+		time_zone TEXT,
+		language TEXT,
+		settings TEXT DEFAULT '{}',
+		is_active INTEGER DEFAULT 1,
+		is_locked INTEGER DEFAULT 0,
+		locked_until DATETIME,
+		failed_login_attempts INTEGER DEFAULT 0,
+		last_login_at DATETIME,
+		last_login_ip TEXT,
 		created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
 		updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
 	);
@@ -347,20 +357,25 @@ func (db *DB) createAuthTables(ctx context.Context) error {
 		id INTEGER PRIMARY KEY AUTOINCREMENT,
 		name TEXT NOT NULL UNIQUE,
 		description TEXT,
-		permissions TEXT,
+		permissions TEXT DEFAULT '[]',
+		is_system INTEGER DEFAULT 0,
 		created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
 		updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
 	);
 
-	-- Sessions table
-	CREATE TABLE IF NOT EXISTS sessions (
-		id TEXT PRIMARY KEY,
+	-- User sessions table
+	CREATE TABLE IF NOT EXISTS user_sessions (
+		id INTEGER PRIMARY KEY AUTOINCREMENT,
 		user_id INTEGER NOT NULL,
-		token TEXT NOT NULL UNIQUE,
-		expires_at DATETIME NOT NULL,
-		created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+		session_token TEXT NOT NULL UNIQUE,
+		refresh_token TEXT,
+		device_info TEXT,
 		ip_address TEXT,
 		user_agent TEXT,
+		is_active INTEGER DEFAULT 1,
+		expires_at DATETIME NOT NULL,
+		created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+		last_activity_at DATETIME DEFAULT CURRENT_TIMESTAMP,
 		FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
 	);
 
@@ -397,43 +412,24 @@ func (db *DB) createAuthTables(ctx context.Context) error {
 		FOREIGN KEY (user_id) REFERENCES users(id)
 	);
 
-	-- Indexes
+	-- Insert default admin role
+	INSERT OR IGNORE INTO roles (id, name, description, permissions, is_system)
+	VALUES (1, 'Admin', 'Administrator role with all permissions', '["*"]', 1);
+
+	-- Insert default user role
+	INSERT OR IGNORE INTO roles (id, name, description, permissions, is_system)
+	VALUES (2, 'User', 'Standard user role', '["media.view", "media.download"]', 1);
+
+	-- Indexes for users table
 	CREATE INDEX IF NOT EXISTS idx_users_username ON users(username);
 	CREATE INDEX IF NOT EXISTS idx_users_email ON users(email);
-	CREATE INDEX IF NOT EXISTS idx_users_role ON users(role);
-	CREATE INDEX IF NOT EXISTS idx_sessions_user_id ON sessions(user_id);
-	CREATE INDEX IF NOT EXISTS idx_sessions_token ON sessions(token);
-	CREATE INDEX IF NOT EXISTS idx_sessions_expires_at ON sessions(expires_at);
-	CREATE INDEX IF NOT EXISTS idx_auth_audit_user_id ON auth_audit_log(user_id);
-	CREATE INDEX IF NOT EXISTS idx_auth_audit_event_type ON auth_audit_log(event_type);
-	CREATE INDEX IF NOT EXISTS idx_auth_audit_created_at ON auth_audit_log(created_at);
+	CREATE INDEX IF NOT EXISTS idx_users_role_id ON users(role_id);
+	CREATE INDEX IF NOT EXISTS idx_users_is_active ON users(is_active);
 
-	-- Insert default roles
-	INSERT OR IGNORE INTO roles (name, description, permissions) VALUES
-	('admin', 'System Administrator', '["admin:system", "manage:users", "manage:roles", "read:media", "write:media", "delete:media", "read:catalog", "write:catalog", "delete:catalog", "trigger:analysis", "view:analysis", "view:logs", "access:api", "write:api", "conversion:create", "conversion:view", "conversion:manage"]'),
-	('moderator', 'Content Moderator', '["read:media", "write:media", "read:catalog", "write:catalog", "trigger:analysis", "view:analysis", "access:api", "write:api", "conversion:create", "conversion:view"]'),
-	('user', 'Regular User', '["read:media", "write:media", "read:catalog", "write:catalog", "view:analysis", "access:api", "conversion:create", "conversion:view"]'),
-	('viewer', 'Read-only Viewer', '["read:media", "read:catalog", "view:analysis", "access:api", "conversion:view"]');
-
-	-- Insert default permissions
-	INSERT OR IGNORE INTO permissions (name, resource, action, description) VALUES
-	('read:media', 'media', 'read', 'View media items and metadata'),
-	('write:media', 'media', 'write', 'Create and update media items'),
-	('delete:media', 'media', 'delete', 'Delete media items'),
-	('read:catalog', 'catalog', 'read', 'Browse file catalog'),
-	('write:catalog', 'catalog', 'write', 'Modify file catalog'),
-	('delete:catalog', 'catalog', 'delete', 'Delete from catalog'),
-	('trigger:analysis', 'analysis', 'trigger', 'Start media analysis'),
-	('view:analysis', 'analysis', 'view', 'View analysis results'),
-	('manage:users', 'users', 'manage', 'Create, update, delete users'),
-	('manage:roles', 'roles', 'manage', 'Create, update, delete roles'),
-	('view:logs', 'logs', 'view', 'View system logs'),
-	('admin:system', 'system', 'admin', 'Full system administration'),
-	('access:api', 'api', 'access', 'Access API endpoints'),
-	('write:api', 'api', 'write', 'Modify data via API'),
-	('conversion:create', 'conversion', 'create', 'Create conversion jobs'),
-	('conversion:view', 'conversion', 'view', 'View conversion jobs'),
-	('conversion:manage', 'conversion', 'manage', 'Manage and cancel conversion jobs');
+	-- Indexes for sessions table
+	CREATE INDEX IF NOT EXISTS idx_user_sessions_user_id ON user_sessions(user_id);
+	CREATE INDEX IF NOT EXISTS idx_user_sessions_token ON user_sessions(session_token);
+	CREATE INDEX IF NOT EXISTS idx_user_sessions_expires_at ON user_sessions(expires_at);
 	`
 
 	if _, err := db.ExecContext(ctx, schema); err != nil {
