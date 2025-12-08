@@ -38,12 +38,12 @@ func TestVideoPlayerSubtitleHandling(t *testing.T) {
 
 	t.Run("LoadVideoWithDefaultSubtitle", func(t *testing.T) {
 		// Insert test video
-		videoID := insertTestVideoForSubtitle(t, db, "Test Movie", services.VideoTypeMovie)
+		videoID := insertTestVideoForSubtitle(t, db, "Test Movie", "movie")
 
 		// Insert test subtitle tracks
-		subtitle1ID := insertTestSubtitleTrack(t, db, videoID, "en", true, false)  // Default subtitle
-		subtitle2ID := insertTestSubtitleTrack(t, db, videoID, "es", false, false) // Non-default subtitle
-		subtitle3ID := insertTestSubtitleTrack(t, db, videoID, "fr", false, true)  // Forced subtitle
+		_ = insertTestSubtitleTrack(t, db, videoID, "en", true, false)  // Default subtitle
+		_ = insertTestSubtitleTrack(t, db, videoID, "es", false, false) // Non-default subtitle
+		_ = insertTestSubtitleTrack(t, db, videoID, "fr", false, true)  // Forced subtitle
 
 		// Play video
 		req := &services.PlayVideoRequest{
@@ -78,11 +78,11 @@ func TestVideoPlayerSubtitleHandling(t *testing.T) {
 
 	t.Run("LoadVideoWithNoDefaultSubtitle", func(t *testing.T) {
 		// Insert test video
-		videoID := insertTestVideoForSubtitle(t, db, "Test Movie 2", services.VideoTypeMovie)
+		videoID := insertTestVideoForSubtitle(t, db, "Test Movie 2", "movie")
 
 		// Insert test subtitle tracks with no default
-		subtitle1ID := insertTestSubtitleTrack(t, db, videoID, "en", false, false)
-		subtitle2ID := insertTestSubtitleTrack(t, db, videoID, "es", false, false)
+		_ = insertTestSubtitleTrack(t, db, videoID, "en", false, false)
+		_ = insertTestSubtitleTrack(t, db, videoID, "es", false, false)
 
 		// Play video
 		req := &services.PlayVideoRequest{
@@ -110,11 +110,11 @@ func TestVideoPlayerSubtitleHandling(t *testing.T) {
 
 	t.Run("LoadVideoWithForcedSubtitle", func(t *testing.T) {
 		// Insert test video
-		videoID := insertTestVideoForSubtitle(t, db, "Test Movie 3", services.VideoTypeMovie)
+		videoID := insertTestVideoForSubtitle(t, db, "Test Movie 3", "movie")
 
 		// Insert test subtitle tracks with forced subtitle as first track
-		subtitle1ID := insertTestSubtitleTrack(t, db, videoID, "fr", false, true)  // Forced subtitle
-		subtitle2ID := insertTestSubtitleTrack(t, db, videoID, "en", true, false)  // Default subtitle
+		_ = insertTestSubtitleTrack(t, db, videoID, "fr", false, true)  // Forced subtitle
+		_ = insertTestSubtitleTrack(t, db, videoID, "en", true, false)  // Default subtitle
 
 		// Play video
 		req := &services.PlayVideoRequest{

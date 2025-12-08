@@ -1,7 +1,6 @@
 package tests
 
 import (
-	"context"
 	"testing"
 
 	"catalogizer/internal/models"
@@ -27,8 +26,8 @@ func TestServiceCreation(t *testing.T) {
 	
 	// Test that services can be created with required parameters
 	cacheService := services.NewCacheService(db, logger)
-	translationService := services.NewTranslationService(db, logger, "en")
-	localizationService := services.NewLocalizationService(db, logger, "en", "US")
+	translationService := services.NewTranslationService(logger)
+	localizationService := services.NewLocalizationService(db, logger, translationService, cacheService)
 	
 	// Test creating services with required parameters
 	recognitionService := services.NewMediaRecognitionService(
@@ -37,11 +36,11 @@ func TestServiceCreation(t *testing.T) {
 		cacheService,
 		translationService,
 		"tmdb_key",
-		"imdb_key",
-		"tvdb_key",
-		"fanart_key",
-		"omdb_key",
-		"musixmatch_key",
+		"music_key",
+		"book_key",
+		"game_key",
+		"ocr_key",
+		"fingerprint_key",
 	)
 	
 	duplicationService := services.NewDuplicateDetectionService(db, logger, cacheService)

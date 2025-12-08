@@ -222,12 +222,13 @@ func TestRedisRateLimit_ErrorHandling(t *testing.T) {
 	config := DefaultRedisRateLimiterConfig(client)
 	middleware := RedisRateLimit(config)
 	
-	// Request should pass even with Redis error (fail open)
-	c, _ := gin.CreateTestContext(nil)
+	// Request should fail due to Redis error (fail closed)
+	w := httptest.NewRecorder()
+	c, _ := gin.CreateTestContext(w)
 	c.Request = createTestRequest()
 	
 	middleware(c)
-	assert.False(t, c.IsAborted()) // Should not abort due to Redis error
+	assert.True(t, c.IsAborted()) // Should abort due to Redis error
 }
 
 func TestAuthRateLimiterKeyGeneration(t *testing.T) {
@@ -235,13 +236,14 @@ func TestAuthRateLimiterKeyGeneration(t *testing.T) {
 	config := AuthRedisRateLimiterConfig(client)
 	
 	// Test key generation without username
-	c, _ := gin.CreateTestContext(nil)
+	w := httptest.NewRecorder()
+	c, _ := gin.CreateTestContext(w)
 	c.Request = createTestRequest()
 	key := config.KeyGenerator(c)
 	assert.Contains(t, key, ".")
 	
 	// Test key generation with username
-	c2, _ := gin.CreateTestContext(nil)
+	c2, _ := gin.CreateTestContext(w)
 	c2.Request = createTestRequestWithIP()
 	c2.Set("username", "testuser")
 	key2 := config.KeyGenerator(c2)

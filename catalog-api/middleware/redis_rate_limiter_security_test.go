@@ -11,7 +11,6 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/redis/go-redis/v9"
 	"github.com/stretchr/testify/assert"
-	"catalogizer/middleware"
 )
 
 func TestRedisRateLimit_SecurityBehavior(t *testing.T) {
@@ -19,17 +18,17 @@ func TestRedisRateLimit_SecurityBehavior(t *testing.T) {
 
 	// Create a Redis client that will always fail
 	redisClient := redis.NewClient(&redis.Options{
-		Addr:     "redis://invalid-host:6379", // Invalid address to force failures
+		Addr:     "invalid-host:6379", // Invalid address to force failures
 		Password: "",
 		DB:       0,
 	})
 
-	config := middleware.DefaultRedisRateLimiterConfig(redisClient)
+	config := DefaultRedisRateLimiterConfig(redisClient)
 	config.Requests = 5
 	config.Window = time.Minute
 
 	router := gin.New()
-	router.Use(middleware.RedisRateLimit(config))
+	router.Use(RedisRateLimit(config))
 
 	requestCount := 0
 	router.GET("/test", func(c *gin.Context) {
@@ -37,18 +36,18 @@ func TestRedisRateLimit_SecurityBehavior(t *testing.T) {
 		c.JSON(http.StatusOK, gin.H{"count": requestCount})
 	})
 
-	// Make many requests - they should all pass through due to Redis failure
+	// Make many requests - they should all be rejected due to Redis failure (fail closed)
 	for i := 0; i < 10; i++ { // More than the configured limit of 5
 		req := httptest.NewRequest("GET", "/test", nil)
 		w := httptest.NewRecorder()
 		router.ServeHTTP(w, req)
 		
-		// All requests should succeed due to Redis failure (security vulnerability)
-		assert.Equal(t, http.StatusOK, w.Code, "Request %d should not be rate limited due to Redis failure", i+1)
+		// All requests should fail with service unavailable due to Redis failure (security fix)
+		assert.Equal(t, http.StatusServiceUnavailable, w.Code, "Request %d should be rejected with 503 due to Redis failure", i+1)
 	}
 
-	// This demonstrates the security vulnerability: when Redis fails, all requests pass through
-	assert.Equal(t, 10, requestCount, "All requests should have been processed despite Redis failure")
+	// This demonstrates the security fix: when Redis fails, all requests are blocked
+	assert.Equal(t, 0, requestCount, "No requests should be processed when Redis fails")
 }
 
 func TestRedisRateLimit_FixedBehavior(t *testing.T) {
@@ -66,7 +65,7 @@ func TestRedisRateLimit_FixedBehavior(t *testing.T) {
 	config.Window = time.Minute
 
 	// Create a custom rate limiter that doesn't fail open
-	fixedRateLimiter := func(c middleware.RedisRateLimiterConfig) gin.HandlerFunc {
+	fixedRateLimiter := func(c RedisRateLimiterConfig) gin.HandlerFunc {
 		return func(gc *gin.Context) {
 			key := "rate_limit:" + c.KeyGenerator(gc)
 			ctx := context.Background()

@@ -4,7 +4,6 @@ import (
 	"context"
 	"database/sql"
 	"testing"
-	"time"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -24,11 +23,11 @@ func TestMusicPlayerService(t *testing.T) {
 	defer mockServer.Close()
 
 	// Create services with mock dependencies
-	translationService := services.NewTranslationService(db, logger, mockServer.URL())
+	translationService := services.NewTranslationService(logger)
 	cacheService := services.NewCacheService(db, logger)
-	coverArtService := services.NewCoverArtService(db, logger, mockServer.URL(), cacheService)
-	lyricsService := services.NewLyricsService(db, logger, mockServer.URL(), cacheService, translationService)
-	subtitleService := services.NewSubtitleService(db, logger, mockServer.URL(), cacheService, translationService)
+	coverArtService := services.NewCoverArtService(db, logger)
+	lyricsService := services.NewLyricsService(db, logger)
+	_ = services.NewSubtitleService(db, logger, cacheService) // Create but don't use for now
 	positionService := services.NewPlaybackPositionService(db, logger)
 	playlistService := services.NewPlaylistService(db, logger)
 	mediaPlayerService := services.NewMediaPlayerService(db, logger)
@@ -46,7 +45,7 @@ func TestMusicPlayerService(t *testing.T) {
 			UserID:     1,
 			TrackID:    trackID,
 			PlayMode:   services.PlayModeTrack,
-			Quality:    services.QualityHigh,
+			Quality:    services.QualityLossless,
 			DeviceInfo: services.DeviceInfo{
 				DeviceID:   "test-device-1",
 				DeviceName: "Test Device",
@@ -61,7 +60,7 @@ func TestMusicPlayerService(t *testing.T) {
 
 		assert.Equal(t, req.UserID, session.UserID)
 		assert.Equal(t, trackID, session.CurrentTrack.ID)
-		assert.Equal(t, services.StatePlaying, session.PlaybackState)
+		assert.Equal(t, services.PlaybackStatePlaying, session.PlaybackState)
 		assert.Equal(t, int64(0), session.Position)
 		assert.Equal(t, req.Quality, session.PlaybackQuality)
 		assert.Len(t, session.Queue, 1)
@@ -72,14 +71,14 @@ func TestMusicPlayerService(t *testing.T) {
 		// Insert test album with multiple tracks
 		albumID := insertTestAlbum(t, db, "Test Artist", "Test Album")
 		track1ID := insertTestTrackWithAlbum(t, db, "Test Artist", "Song 1", "Test Album", albumID, 1)
-		track2ID := insertTestTrackWithAlbum(t, db, "Test Artist", "Song 2", "Test Album", albumID, 2)
-		track3ID := insertTestTrackWithAlbum(t, db, "Test Artist", "Song 3", "Test Album", albumID, 3)
+		_ = insertTestTrackWithAlbum(t, db, "Test Artist", "Song 2", "Test Album", albumID, 2)
+		_ = insertTestTrackWithAlbum(t, db, "Test Artist", "Song 3", "Test Album", albumID, 3)
 
 		req := &services.PlayAlbumRequest{
 			UserID:     1,
 			AlbumID:    albumID,
 			Shuffle:    false,
-			Quality:    services.QualityHigh,
+			Quality:    services.QualityLossless,
 			DeviceInfo: services.DeviceInfo{
 				DeviceID:   "test-device-1",
 				DeviceName: "Test Device",
@@ -92,7 +91,7 @@ func TestMusicPlayerService(t *testing.T) {
 
 		assert.Equal(t, req.UserID, session.UserID)
 		assert.Equal(t, services.PlayModeAlbum, session.PlayMode)
-		assert.Equal(t, services.StatePlaying, session.PlaybackState)
+		assert.Equal(t, services.PlaybackStatePlaying, session.PlaybackState)
 		assert.Len(t, session.Queue, 3)
 		assert.Equal(t, 0, session.QueueIndex)
 		assert.Equal(t, track1ID, session.CurrentTrack.ID)
@@ -106,7 +105,7 @@ func TestMusicPlayerService(t *testing.T) {
 			UserID:     1,
 			TrackID:    trackID,
 			PlayMode:   services.PlayModeTrack,
-			Quality:    services.QualityHigh,
+			Quality:    services.QualityLossless,
 			DeviceInfo: services.DeviceInfo{DeviceID: "test-device-1"},
 		}
 
@@ -117,7 +116,7 @@ func TestMusicPlayerService(t *testing.T) {
 		updateReq := &services.UpdatePlaybackRequest{
 			SessionID: session.ID,
 			Position:  int64Ptr(30000), // 30 seconds
-			State:     &[]services.PlaybackState{services.StatePaused}[0],
+			State:     &[]services.PlaybackState{services.PlaybackStatePaused}[0],
 			Volume:    float64Ptr(0.8),
 			IsMuted:   boolPtr(false),
 		}
@@ -127,7 +126,7 @@ func TestMusicPlayerService(t *testing.T) {
 		require.NotNil(t, updatedSession)
 
 		assert.Equal(t, int64(30000), updatedSession.Position)
-		assert.Equal(t, services.StatePaused, updatedSession.PlaybackState)
+		assert.Equal(t, services.PlaybackStatePaused, updatedSession.PlaybackState)
 		assert.Equal(t, 0.8, updatedSession.Volume)
 		assert.Equal(t, false, updatedSession.IsMuted)
 	})
@@ -137,11 +136,12 @@ func TestMusicPlayerService(t *testing.T) {
 		albumID := insertTestAlbum(t, db, "Test Artist", "Next Test Album")
 		track1ID := insertTestTrackWithAlbum(t, db, "Test Artist", "Song 1", "Next Test Album", albumID, 1)
 		track2ID := insertTestTrackWithAlbum(t, db, "Test Artist", "Song 2", "Next Test Album", albumID, 2)
+		_ = track1ID // Use track1ID to avoid unused variable error
 
 		req := &services.PlayAlbumRequest{
 			UserID:     1,
 			AlbumID:    albumID,
-			Quality:    services.QualityHigh,
+			Quality:    services.QualityLossless,
 			DeviceInfo: services.DeviceInfo{DeviceID: "test-device-1"},
 		}
 
@@ -166,7 +166,7 @@ func TestMusicPlayerService(t *testing.T) {
 			UserID:     1,
 			TrackID:    trackID,
 			PlayMode:   services.PlayModeTrack,
-			Quality:    services.QualityHigh,
+			Quality:    services.QualityLossless,
 			DeviceInfo: services.DeviceInfo{DeviceID: "test-device-1"},
 		}
 
@@ -218,10 +218,10 @@ func TestVideoPlayerService(t *testing.T) {
 	defer mockServer.Close()
 
 	// Create services
-	translationService := services.NewTranslationService(db, logger, mockServer.URL())
+	translationService := services.NewTranslationService(logger)
 	cacheService := services.NewCacheService(db, logger)
-	subtitleService := services.NewSubtitleService(db, logger, mockServer.URL(), cacheService, translationService)
-	coverArtService := services.NewCoverArtService(db, logger, mockServer.URL(), cacheService)
+	subtitleService := services.NewSubtitleService(db, logger, cacheService)
+	coverArtService := services.NewCoverArtService(db, logger)
 	positionService := services.NewPlaybackPositionService(db, logger)
 	mediaPlayerService := services.NewMediaPlayerService(db, logger)
 
@@ -251,7 +251,7 @@ func TestVideoPlayerService(t *testing.T) {
 
 		assert.Equal(t, req.UserID, session.UserID)
 		assert.Equal(t, videoID, session.CurrentVideo.ID)
-		assert.Equal(t, services.StatePlaying, session.PlaybackState)
+		assert.Equal(t, services.PlaybackStatePlaying, session.PlaybackState)
 		assert.Equal(t, int64(0), session.Position)
 		assert.Equal(t, req.Quality, session.VideoQuality)
 	})
@@ -275,7 +275,7 @@ func TestVideoPlayerService(t *testing.T) {
 		updateReq := &services.UpdateVideoPlaybackRequest{
 			SessionID:     session.ID,
 			Position:      int64Ptr(120000), // 2 minutes
-			State:         &[]services.PlaybackState{services.StatePaused}[0],
+			State:         &[]services.PlaybackState{services.PlaybackStatePaused}[0],
 			Volume:        float64Ptr(0.9),
 			PlaybackSpeed: float64Ptr(1.25),
 			Quality:       &[]services.VideoQuality{services.Quality720p}[0],
@@ -286,7 +286,7 @@ func TestVideoPlayerService(t *testing.T) {
 		require.NotNil(t, updatedSession)
 
 		assert.Equal(t, int64(120000), updatedSession.Position)
-		assert.Equal(t, services.StatePaused, updatedSession.PlaybackState)
+		assert.Equal(t, services.PlaybackStatePaused, updatedSession.PlaybackState)
 		assert.Equal(t, 0.9, updatedSession.Volume)
 		assert.Equal(t, 1.25, updatedSession.PlaybackSpeed)
 		assert.Equal(t, services.Quality720p, updatedSession.VideoQuality)

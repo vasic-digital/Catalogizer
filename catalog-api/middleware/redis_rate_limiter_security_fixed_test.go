@@ -7,8 +7,8 @@ import (
 	"time"
 
 	"github.com/gin-gonic/gin"
+	"github.com/redis/go-redis/v9"
 	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
 )
 
 // TestRedisRateLimit_FailClosed demonstrates the fix for security vulnerability
@@ -16,7 +16,11 @@ func TestRedisRateLimit_FailClosed(t *testing.T) {
 	gin.SetMode(gin.TestMode)
 
 	// Create a Redis client that will always fail
-	redisClient := createFailingRedisClient()
+	redisClient := redis.NewClient(&redis.Options{
+		Addr:     "redis://invalid-host:6379", // Invalid address to force failures
+		Password: "",
+		DB:       0,
+	})
 
 	config := DefaultRedisRateLimiterConfig(redisClient)
 	config.Requests = 5
@@ -45,21 +49,13 @@ func TestRedisRateLimit_FailClosed(t *testing.T) {
 	assert.Equal(t, 0, requestCount, "No requests should be processed when Redis fails")
 }
 
-// Helper function to create a Redis client that will fail
-func createFailingRedisClient() *RedisClient {
-	// This is a mock implementation that always fails
-	return &RedisClient{}
-}
-
-// Mock RedisClient for testing
-type RedisClient struct {
-	// This would implement the necessary Redis client interface
-	// For this test, we just need a type that won't actually connect
-}
-
 // Helper to create a test rate limiter with Redis failure
 func createRateLimiterWithFailingRedis() gin.HandlerFunc {
-	redisClient := createFailingRedisClient()
+	redisClient := redis.NewClient(&redis.Options{
+		Addr:     "redis://invalid-host:6379", // Invalid address to force failures
+		Password: "",
+		DB:       0,
+	})
 	config := DefaultRedisRateLimiterConfig(redisClient)
 	config.Requests = 5
 	config.Window = time.Minute
