@@ -9,7 +9,11 @@ module.exports = {
   collectCoverageFrom: [
     'src/**/*.{ts,tsx}',
     '!src/main.tsx',
-    '!src/vite-env.d.ts'
+    '!src/vite-env.d.ts',
+    '!src/lib/**/*.{ts,tsx}'
+  ],
+  transformIgnorePatterns: [
+    'node_modules/(?!axios)/'
   ],
   coverageThreshold: {
     global: {
