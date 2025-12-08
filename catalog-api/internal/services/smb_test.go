@@ -55,16 +55,17 @@ func (suite *SMBServiceTestSuite) TestSMBConnection() {
 
 func (suite *SMBServiceTestSuite) TestListSMBDirectory() {
 	// Test listing directory from non-existent server
-	files, err := suite.service.ListDirectory("smb://nonexistent-server/share")
+	files, err := suite.service.ListDirectory("test-server", "/media")
 	assert.Error(suite.T(), err)
 	assert.Nil(suite.T(), files)
 }
 
 func (suite *SMBServiceTestSuite) TestSMBConfig() {
-	assert.Equal(suite.T(), []string{"smb://test-server/media"}, suite.service.config.SMB.Sources)
-	assert.Equal(suite.T(), "testuser", suite.service.config.SMB.Username)
-	assert.Equal(suite.T(), "testpass", suite.service.config.SMB.Password)
-	assert.Equal(suite.T(), "TEST", suite.service.config.SMB.Domain)
+	assert.Equal(suite.T(), 1, len(suite.service.config.SMB.Hosts))
+	assert.Equal(suite.T(), "test-server", suite.service.config.SMB.Hosts[0].Name)
+	assert.Equal(suite.T(), "testuser", suite.service.config.SMB.Hosts[0].Username)
+	assert.Equal(suite.T(), "testpass", suite.service.config.SMB.Hosts[0].Password)
+	assert.Equal(suite.T(), 30, suite.service.config.SMB.Timeout)
 }
 
 func (suite *SMBServiceTestSuite) TestSMBPathParsing() {
@@ -161,52 +162,58 @@ func (suite *SMBServiceTestSuite) TestSMBErrorHandling() {
 
 func (suite *SMBServiceTestSuite) TestSMBFileOperations() {
 	// Test file operations on non-existent server
-	err := suite.service.CopyFile("smb://server1/file1.txt", "smb://server2/file1.txt")
+	err := suite.service.CopyFile("server1", "/file1.txt", "server2", "/file1.txt")
 	assert.Error(suite.T(), err)
 
-	exists, err := suite.service.FileExists("smb://server/file.txt")
+	exists, err := suite.service.FileExists("server", "/file.txt")
 	assert.Error(suite.T(), err)
 	assert.False(suite.T(), exists)
 
-	size, err := suite.service.GetFileSize("smb://server/file.txt")
+	size, err := suite.service.GetFileSize("server", "/file.txt")
 	assert.Error(suite.T(), err)
 	assert.Equal(suite.T(), int64(0), size)
 }
 
 func (suite *SMBServiceTestSuite) TestSMBDirectoryOperations() {
 	// Test directory operations
-	err := suite.service.CreateDirectory("smb://server/newdir")
+	err := suite.service.CreateDirectory("server", "/newdir")
 	assert.Error(suite.T(), err)
 
-	err = suite.service.DeleteDirectory("smb://server/olddir")
+	err = suite.service.DeleteDirectory("server", "/olddir")
 	assert.Error(suite.T(), err)
 
-	exists, err := suite.service.DirectoryExists("smb://server/dir")
+	exists, err := suite.service.DirectoryExists("server", "/dir")
 	assert.Error(suite.T(), err)
 	assert.False(suite.T(), exists)
 }
 
 func (suite *SMBServiceTestSuite) TestSMBConnectionTimeout() {
 	// Test with very short timeout (should fail quickly)
-	shortTimeoutConfig := &Config{
-		SMB: SMBConfig{
-			Sources:           []string{"smb://192.0.2.1/share"}, // TEST-NET-1 (non-routable)
-			Username:          "test",
-			Password:          "test",
-			ConnectionTimeout: 1, // 1 second
+	shortTimeoutConfig := &config.Config{
+		SMB: config.SMBConfig{
+			Hosts: []config.SMBHost{
+				{
+					Name:     "test-timeout",
+					Host:     "192.0.2.1", // TEST-NET-1 (non-routable)
+					Port:     445,
+					Username: "test",
+					Password: "test",
+				},
+			},
+			Timeout: 1, // 1 second
 		},
 	}
 
 	service := NewSMBService(shortTimeoutConfig, suite.logger)
 
 	// This should fail quickly due to timeout
-	err := service.Connect("smb://192.0.2.1/share")
+	_, err := service.getConnection("test-timeout")
 	assert.Error(suite.T(), err)
 }
 
 func (suite *SMBServiceTestSuite) TestSMBSourceManagement() {
 	// Test adding/removing SMB sources
-	initialCount := len(suite.service.config.SMB.Sources)
+	initialCount := len(suite.service.config.SMB.Hosts)
 	assert.Equal(suite.T(), 1, initialCount)
 
 	// Test source validation

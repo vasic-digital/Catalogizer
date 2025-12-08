@@ -247,21 +247,22 @@ class SyncManager(
             Json.Default.decodeFromString<MetadataUpdateData>(it)
         } ?: return
 
-        // Send metadata update to server
-        api.updateMediaMetadata(
-            metadataData.mediaId,
-            metadataData.metadata
-        )
-
-        // Update local database
+        // Get current media item from local database
         val mediaItem = database.mediaDao().getMediaById(metadataData.mediaId)
         mediaItem?.let { media ->
+            // Parse the metadata JSON string and update the media item
+            val metadataMap = Json.Default.decodeFromString<Map<String, String>>(metadataData.metadata)
             val updatedMedia = media.copy(
-                title = metadataData.metadata["title"] as? String ?: media.title,
-                description = metadataData.metadata["description"] as? String ?: media.description,
-                year = (metadataData.metadata["year"] as? Number)?.toInt() ?: media.year,
-                rating = (metadataData.metadata["rating"] as? Number)?.toDouble() ?: media.rating
+                title = metadataMap["title"] ?: media.title,
+                description = metadataMap["description"] ?: media.description,
+                year = metadataMap["year"]?.toIntOrNull() ?: media.year,
+                rating = metadataMap["rating"]?.toDoubleOrNull() ?: media.rating
             )
+
+            // Send update to server
+            api.updateMedia(metadataData.mediaId, updatedMedia)
+
+            // Update local database
             database.mediaDao().insertOrUpdate(updatedMedia)
         }
     }
@@ -348,7 +349,9 @@ class SyncManager(
     }
 
     suspend fun queueMetadataUpdate(mediaId: Long, metadata: Map<String, Any>) {
-        val data = MetadataUpdateData(mediaId, metadata)
+        // Convert Map to JSON string for serialization
+        val metadataJson = Json.Default.encodeToString(metadata.mapValues { it.value.toString() })
+        val data = MetadataUpdateData(mediaId, metadataJson)
         val operation = SyncOperation(
             type = SyncOperationType.UPDATE_METADATA,
             mediaId = mediaId,
@@ -411,7 +414,7 @@ data class RatingData(
 @Serializable
 data class MetadataUpdateData(
     val mediaId: Long,
-    val metadata: Map<String, Any>
+    val metadata: String // JSON string instead of Map<String, Any>
 )
 
 @Serializable

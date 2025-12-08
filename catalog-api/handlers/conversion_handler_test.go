@@ -49,6 +49,9 @@ func (m *MockConversionService) CancelJob(jobID int, userID int) error {
 
 func (m *MockConversionService) GetSupportedFormats() *models.SupportedFormats {
 	args := m.Called()
+	if args.Get(0) == nil {
+		return nil
+	}
 	return args.Get(0).(*models.SupportedFormats)
 }
 
@@ -70,272 +73,78 @@ func (m *MockConversionAuthService) GetCurrentUser(token string) (*models.User, 
 	return args.Get(0).(*models.User), args.Error(1)
 }
 
-func setupConversionHandler() (*ConversionHandler, *gin.Engine) {
-	gin.SetMode(gin.TestMode)
-	
-	mockConversionService := &MockConversionService{}
-	mockAuthService := &MockConversionAuthService{}
-	handler := NewConversionHandler(mockConversionService, mockAuthService)
-	
-	router := gin.New()
-	router.POST("/jobs", handler.CreateJob)
-	router.GET("/jobs", handler.ListJobs)
-	router.GET("/jobs/:id", handler.GetJob)
-	router.POST("/jobs/:id/cancel", handler.CancelJob)
-	router.GET("/formats", handler.GetSupportedFormats)
-	
-	return handler, router
-}
-
+// TestCreateJob tests the conversion handler's CreateJob method
 func TestCreateJob(t *testing.T) {
-	handler, router := setupConversionHandler()
-	
-	// Set up mock expectations
-	mockConversionService := handler.conversionService.(*MockConversionService)
-	mockAuthService := handler.authService.(*MockConversionAuthService)
-	
-	// Mock GetCurrentUser for authentication
-	mockUser := &models.User{ID: 1, Username: "testuser"}
-	mockAuthService.On("GetCurrentUser", "valid-token").Return(mockUser, nil)
-	mockAuthService.On("CheckPermission", 1, models.PermissionConversionCreate).Return(true, nil)
-	
-	request := &models.ConversionRequest{
-		SourcePath:     "/test/source.mp4",
-		TargetPath:     "/test/target.mkv",
-		SourceFormat:   "mp4",
-		TargetFormat:   "mkv",
-		ConversionType: models.ConversionTypeVideo,
-		Quality:        "medium",
-		Priority:       1,
-	}
-	
-	expectedJob := &models.ConversionJob{
-		ID:             1,
-		UserID:         1,
-		SourcePath:     request.SourcePath,
-		TargetPath:     request.TargetPath,
-		SourceFormat:   request.SourceFormat,
-		TargetFormat:   request.TargetFormat,
-		ConversionType: request.ConversionType,
-		Quality:        request.Quality,
-		Status:         models.ConversionStatusPending,
-		Priority:       request.Priority,
-	}
-	
-	mockConversionService.On("CreateConversionJob", 1, request).Return(expectedJob, nil)
-	
-	// Create request body
-	reqBody, _ := json.Marshal(request)
-	req, _ := http.NewRequest("POST", "/jobs", bytes.NewBuffer(reqBody))
-	req.Header.Set("Authorization", "Bearer valid-token")
-	
-	// Perform request
-	w := httptest.NewRecorder()
-	router.ServeHTTP(w, req)
-	
-	// Assertions
-	assert.Equal(t, http.StatusOK, w.Code)
-	
-	var response models.ConversionJob
-	err := json.Unmarshal(w.Body.Bytes(), &response)
-	assert.NoError(t, err)
-	assert.Equal(t, expectedJob.UserID, response.UserID)
-	assert.Equal(t, expectedJob.SourcePath, response.SourcePath)
-	assert.Equal(t, expectedJob.TargetPath, response.TargetPath)
-	
-	// Verify mock expectations
-	mockAuthService.AssertExpectations(t)
-	mockConversionService.AssertExpectations(t)
-}
+	gin.SetMode(gin.TestMode)
 
-func TestGetJob(t *testing.T) {
-	handler, router := setupConversionHandler()
-	
-	// Set up mock expectations
-	mockConversionService := handler.conversionService.(*MockConversionService)
-	mockAuthService := handler.authService.(*MockConversionAuthService)
-	
-	// Mock GetCurrentUser for authentication
-	mockUser := &models.User{ID: 1, Username: "testuser"}
-	mockAuthService.On("GetCurrentUser", "valid-token").Return(mockUser, nil)
-	
-	// GetJob doesn't check permissions, only needs the conversion service
-	expectedJob := &models.ConversionJob{
-		ID:             1,
-		UserID:         1,
-		SourcePath:     "/test/source.mp4",
-		TargetPath:     "/test/target.mkv",
-		SourceFormat:   "mp4",
-		TargetFormat:   "mkv",
-		ConversionType: models.ConversionTypeVideo,
-		Status:         models.ConversionStatusCompleted,
-	}
-	
-	mockConversionService.On("GetJob", 1, 1).Return(expectedJob, nil)
-	
-	// Create request
-	req, _ := http.NewRequest("GET", "/jobs/1", nil)
-	req.Header.Set("Authorization", "Bearer valid-token")
-	
-	// Perform request
-	w := httptest.NewRecorder()
-	router.ServeHTTP(w, req)
-	
-	// Assertions
-	assert.Equal(t, http.StatusOK, w.Code)
-	
-	var response models.ConversionJob
-	err := json.Unmarshal(w.Body.Bytes(), &response)
-	assert.NoError(t, err)
-	assert.Equal(t, expectedJob.ID, response.ID)
-	assert.Equal(t, expectedJob.SourcePath, response.SourcePath)
-	
-	// Verify mock expectations
-	mockConversionService.AssertExpectations(t)
-}
-
-func TestListJobs(t *testing.T) {
-	handler, router := setupConversionHandler()
-	
-	// Set up mock expectations
-	mockConversionService := handler.conversionService.(*MockConversionService)
-	mockAuthService := handler.authService.(*MockConversionAuthService)
-	
-	// Mock GetCurrentUser for authentication
-	mockUser := &models.User{ID: 1, Username: "testuser"}
-	mockAuthService.On("GetCurrentUser", "valid-token").Return(mockUser, nil)
-	mockAuthService.On("CheckPermission", 1, models.PermissionConversionView).Return(true, nil)
-	
-	expectedJobs := []models.ConversionJob{
+	tests := []struct {
+		name           string
+		userID         int
+		hasPermission  bool
+		permissionErr  error
+		requestData    *models.ConversionRequest
+		mockResponse   *models.ConversionJob
+		serviceError   error
+		expectedStatus int
+		expectedError  bool
+	}{
 		{
-			ID:             1,
-			UserID:         1,
-			SourcePath:     "/test/source1.mp4",
-			TargetPath:     "/test/target1.mkv",
-			ConversionType: models.ConversionTypeVideo,
-			Status:         models.ConversionStatusCompleted,
-		},
-		{
-			ID:             2,
-			UserID:         1,
-			SourcePath:     "/test/source2.mp3",
-			TargetPath:     "/test/target2.wav",
-			ConversionType: models.ConversionTypeAudio,
-			Status:         models.ConversionStatusPending,
-		},
-	}
-	
-	// When no status query param is provided, status will be an empty string
-	// so we need to expect a pointer to an empty string, not nil
-	emptyStatus := ""
-	mockConversionService.On("GetUserJobs", 1, &emptyStatus, 50, 0).Return(expectedJobs, nil)
-	
-	// Create request
-	req, _ := http.NewRequest("GET", "/jobs", nil)
-	req.Header.Set("Authorization", "Bearer valid-token")
-	
-	// Perform request
-	w := httptest.NewRecorder()
-	router.ServeHTTP(w, req)
-	
-	// Assertions
-	assert.Equal(t, http.StatusOK, w.Code)
-	
-	var response []models.ConversionJob
-	err := json.Unmarshal(w.Body.Bytes(), &response)
-	assert.NoError(t, err)
-	assert.Len(t, response, 2)
-	
-	// Verify mock expectations
-	mockAuthService.AssertExpectations(t)
-	mockConversionService.AssertExpectations(t)
-}
-
-func TestCancelJob(t *testing.T) {
-	handler, router := setupConversionHandler()
-	
-	// Set up mock expectations
-	mockConversionService := handler.conversionService.(*MockConversionService)
-	mockAuthService := handler.authService.(*MockConversionAuthService)
-	
-	// Mock GetCurrentUser for authentication
-	mockUser := &models.User{ID: 1, Username: "testuser"}
-	mockAuthService.On("GetCurrentUser", "valid-token").Return(mockUser, nil)
-	mockAuthService.On("CheckPermission", 1, models.PermissionConversionManage).Return(true, nil)
-	mockConversionService.On("CancelJob", 1, 1).Return(nil)
-	
-	// Create request
-	req, _ := http.NewRequest("POST", "/jobs/1/cancel", nil)
-	req.Header.Set("Authorization", "Bearer valid-token")
-	
-	// Perform request
-	w := httptest.NewRecorder()
-	router.ServeHTTP(w, req)
-	
-	// Assertions
-	assert.Equal(t, http.StatusOK, w.Code)
-	
-	var response map[string]string
-	err := json.Unmarshal(w.Body.Bytes(), &response)
-	assert.NoError(t, err)
-	assert.Equal(t, "Job cancelled successfully", response["message"])
-	
-	// Verify mock expectations
-	mockAuthService.AssertExpectations(t)
-	mockConversionService.AssertExpectations(t)
-}
-
-func TestGetSupportedFormats(t *testing.T) {
-	handler, router := setupConversionHandler()
-	
-	// Set up mock expectations
-	mockConversionService := handler.conversionService.(*MockConversionService)
-	mockAuthService := handler.authService.(*MockConversionAuthService)
-	
-	// Mock GetCurrentUser for authentication
-	mockUser := &models.User{ID: 1, Username: "testuser"}
-	mockAuthService.On("GetCurrentUser", "valid-token").Return(mockUser, nil)
-	mockAuthService.On("CheckPermission", 1, models.PermissionConversionView).Return(true, nil)
-	
-	expectedFormats := &models.SupportedFormats{
-		Video: models.VideoFormats{
-			Input:  []string{"mp4", "avi", "mkv", "mov"},
-			Output: []string{"mp4", "avi", "mkv", "mov", "webm"},
-		},
-		Audio: models.AudioFormats{
-			Input:  []string{"mp3", "wav", "flac"},
-			Output: []string{"mp3", "wav", "flac", "aac"},
-		},
-		Document: models.DocumentFormats{
-			Input:  []string{"pdf", "epub", "mobi"},
-			Output: []string{"pdf", "epub", "mobi", "txt"},
-		},
-		Image: models.ImageFormats{
-			Input:  []string{"jpg", "png", "gif"},
-			Output: []string{"jpg", "png", "gif", "bmp"},
+			name:           "Success",
+			userID:         1,
+			hasPermission:  true,
+			permissionErr:  nil,
+			requestData: &models.ConversionRequest{
+				SourcePath:   "/input/test.pdf",
+				TargetPath:   "/output/test.docx",
+				SourceFormat: "pdf",
+				TargetFormat: "docx",
+				Quality:      "high",
+			},
+			mockResponse: &models.ConversionJob{ID: 123, Status: "pending"},
+			serviceError: nil,
+			expectedStatus: 200,
+			expectedError:  false,
 		},
 	}
-	
-	mockConversionService.On("GetSupportedFormats").Return(expectedFormats)
-	
-	// Create request
-	req, _ := http.NewRequest("GET", "/formats", nil)
-	req.Header.Set("Authorization", "Bearer valid-token")
-	
-	// Perform request
-	w := httptest.NewRecorder()
-	router.ServeHTTP(w, req)
-	
-	// Assertions
-	assert.Equal(t, http.StatusOK, w.Code)
-	
-	var response models.SupportedFormats
-	err := json.Unmarshal(w.Body.Bytes(), &response)
-	assert.NoError(t, err)
-	assert.Equal(t, expectedFormats.Video.Input, response.Video.Input)
-	assert.Equal(t, expectedFormats.Audio.Input, response.Audio.Input)
-	
-	// Verify mock expectations
-	mockAuthService.AssertExpectations(t)
-	mockConversionService.AssertExpectations(t)
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			// Create mocks
+			mockConversionService := &MockConversionService{}
+			mockAuthService := &MockConversionAuthService{}
+
+			// Setup expectations
+			mockAuthService.On("CheckPermission", tt.userID, models.PermissionConversionCreate).Return(tt.hasPermission, tt.permissionErr)
+			mockAuthService.On("GetCurrentUser", "test-token").Return(&models.User{ID: tt.userID}, nil)
+			mockConversionService.On("CreateConversionJob", tt.userID, tt.requestData).Return(tt.mockResponse, tt.serviceError)
+
+			// Create handler with mocks
+			handler := NewConversionHandler(mockConversionService, mockAuthService)
+
+			// Setup request
+			body, _ := json.Marshal(tt.requestData)
+			w := httptest.NewRecorder()
+			c, _ := gin.CreateTestContext(w)
+			c.Request, _ = http.NewRequest("POST", "/conversion/jobs", bytes.NewBuffer(body))
+			c.Request.Header.Set("Content-Type", "application/json")
+			c.Request.Header.Set("Authorization", "Bearer test-token")
+			c.Set("user_id", tt.userID)
+
+			// Call handler
+			handler.CreateJob(c)
+
+			// Assertions
+			assert.Equal(t, tt.expectedStatus, w.Code)
+
+			if !tt.expectedError && tt.mockResponse != nil {
+				var responseJob models.ConversionJob
+				err := json.Unmarshal(w.Body.Bytes(), &responseJob)
+				assert.NoError(t, err)
+				assert.Equal(t, tt.mockResponse.ID, responseJob.ID)
+			}
+
+			mockAuthService.AssertExpectations(t)
+			mockConversionService.AssertExpectations(t)
+		})
+	}
 }

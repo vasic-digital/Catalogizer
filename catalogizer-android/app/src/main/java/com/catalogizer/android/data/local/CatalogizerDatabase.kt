@@ -16,7 +16,7 @@ import kotlinx.serialization.json.Json
 import kotlinx.serialization.decodeFromString
 
 @Database(
-    entities = [MediaItem::class, SearchHistory::class, DownloadItem::class, SyncOperation::class],
+    entities = [MediaItem::class, SearchHistory::class, DownloadItem::class, SyncOperation::class, WatchProgress::class, Favorite::class],
     version = 1,
     exportSchema = false
 )
@@ -26,6 +26,8 @@ abstract class CatalogizerDatabase : RoomDatabase() {
     abstract fun searchHistoryDao(): SearchHistoryDao
     abstract fun downloadDao(): DownloadDao
     abstract fun syncOperationDao(): SyncOperationDao
+    abstract fun watchProgressDao(): WatchProgressDao
+    abstract fun favoriteDao(): FavoriteDao
 
     companion object {
         @Volatile

@@ -110,11 +110,18 @@ func RedisRateLimit(config RedisRateLimiterConfig) gin.HandlerFunc {
 		// Execute pipeline
 		_, err := pipe.Exec(ctx)
 		
-		// Handle Redis errors gracefully
+		// Handle Redis errors gracefully - fail closed for security
 		if err != nil {
-			// Log the error but allow request through (fail open)
+			// Log the Redis error
 			fmt.Printf("Redis rate limiter error: %v\n", err)
-			c.Next()
+			
+			// When Redis is unavailable, we fail closed for security
+			// This prevents bypassing rate limiting when Redis is down
+			c.JSON(http.StatusServiceUnavailable, gin.H{
+				"error": "Rate limiting service temporarily unavailable",
+				"message": "Please try again later",
+			})
+			c.Abort()
 			return
 		}
 		
