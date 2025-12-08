@@ -13,6 +13,7 @@ import com.catalogizer.androidtv.ui.viewmodel.HomeViewModel
 import com.catalogizer.androidtv.ui.viewmodel.MainViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.ViewModelStoreOwner
+import com.catalogizer.androidtv.data.remote.AuthInterceptor
 import okhttp3.OkHttpClient
 import okhttp3.logging.HttpLoggingInterceptor
 import retrofit2.Retrofit
@@ -28,34 +29,42 @@ class DependencyContainer(private val context: Context) {
         }
     }
 
+    // Repositories (created first to avoid circular dependency)
+    val authRepository: AuthRepository by lazy {
+        AuthRepository(context, null) // API will be set later
+    }
+
     // API
     private val api: CatalogizerApi by lazy {
         val logging = HttpLoggingInterceptor().apply {
             level = HttpLoggingInterceptor.Level.BODY
         }
 
+        val authInterceptor = AuthInterceptor(authRepository)
+
         val client = OkHttpClient.Builder()
+            .addInterceptor(authInterceptor)
             .addInterceptor(logging)
             .connectTimeout(30, TimeUnit.SECONDS)
             .readTimeout(30, TimeUnit.SECONDS)
             .writeTimeout(30, TimeUnit.SECONDS)
             .build()
 
-        Retrofit.Builder()
+        val apiInstance = Retrofit.Builder()
             .baseUrl(BuildConfig.API_BASE_URL)
             .client(client)
             .addConverterFactory(GsonConverterFactory.create())
             .build()
             .create(CatalogizerApi::class.java)
-    }
 
-    // Repositories
-    val authRepository: AuthRepository by lazy {
-        AuthRepository(context)
+        // Set the API on the repository after creation
+        authRepository.setApi(apiInstance)
+
+        apiInstance
     }
 
     val mediaRepository: MediaRepository by lazy {
-        MediaRepository(context)
+        MediaRepository(context, api)
     }
 
     // ViewModels

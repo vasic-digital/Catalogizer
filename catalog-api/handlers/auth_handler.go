@@ -123,7 +123,7 @@ func (h *AuthHandler) RegisterGin(c *gin.Context, userRepo *repository.UserRepos
 		Email:     req.Email,
 		FirstName: &req.FirstName,
 		LastName:  &req.LastName,
-		RoleID:    2, // Default user role
+		RoleID:    2,   // Default user role
 		Role:      nil, // Will be loaded after creation
 		IsActive:  true,
 	}

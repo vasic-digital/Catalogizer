@@ -16,8 +16,8 @@ func TestAdvancedRateLimit_BasicBehavior(t *testing.T) {
 	gin.SetMode(gin.TestMode)
 
 	config := DefaultRateLimiterConfig()
-	config.Rate = 2   // 2 requests per second
-	config.Burst = 4   // Burst of 4 requests
+	config.Rate = 2  // 2 requests per second
+	config.Burst = 4 // Burst of 4 requests
 
 	router := gin.New()
 	router.Use(AdvancedRateLimit(config))
@@ -111,7 +111,7 @@ func TestIPRateLimit(t *testing.T) {
 		req := httptest.NewRequest("GET", "/test", nil)
 		w := httptest.NewRecorder()
 		router.ServeHTTP(w, req)
-		
+
 		if w.Code == http.StatusOK {
 			successCount++
 		}
@@ -122,7 +122,7 @@ func TestIPRateLimit(t *testing.T) {
 
 func TestAuthRateLimitConfig(t *testing.T) {
 	gin.SetMode(gin.TestMode)
-	
+
 	config := AuthRateLimiterConfig()
 
 	assert.Equal(t, 3.0, config.Rate)
@@ -133,7 +133,7 @@ func TestAuthRateLimitConfig(t *testing.T) {
 	c, _ := gin.CreateTestContext(httptest.NewRecorder())
 	c.Request = httptest.NewRequest("GET", "/", nil)
 	c.Set("username", "testuser")
-	
+
 	key := config.KeyGenerator(c)
 	assert.Contains(t, key, "testuser:")
 
@@ -149,9 +149,9 @@ func TestAdvancedRateLimit_LimiterCleanup(t *testing.T) {
 
 	// Create a limiter with small cleanup threshold
 	config := DefaultRateLimiterConfig()
-	
+
 	limiter := NewAdvancedRateLimiter(config)
-	
+
 	// Simulate many different IPs
 	for i := 0; i < 100; i++ {
 		limiter.getLimiter("127.0.0.1")
@@ -178,7 +178,7 @@ func TestDefaultRateLimiterConfig(t *testing.T) {
 	gin.SetMode(gin.TestMode)
 	c, _ := gin.CreateTestContext(httptest.NewRecorder())
 	c.Request = httptest.NewRequest("GET", "/", nil)
-	
+
 	key := config.KeyGenerator(c)
 	assert.NotEmpty(t, key)
 }
@@ -210,7 +210,7 @@ func TestUserBasedRateLimit(t *testing.T) {
 	c.Request = httptest.NewRequest("GET", "/", nil)
 	c.Request = c.Request.WithContext(c.Request.Context())
 	c.Set("user_id", "user123")
-	
+
 	// Create the same key generator that UserBasedRateLimit creates
 	userBasedKeyGenerator := func(c *gin.Context) string {
 		if userID, exists := c.Get("user_id"); exists {
@@ -220,12 +220,12 @@ func TestUserBasedRateLimit(t *testing.T) {
 		}
 		return "ip:" + c.ClientIP()
 	}
-	
+
 	// Test with user ID
 	c1, _ := gin.CreateTestContext(httptest.NewRecorder())
 	c1.Request = httptest.NewRequest("GET", "/", nil)
 	c1.Set("user_id", "user123")
-	
+
 	key := userBasedKeyGenerator(c1)
 	assert.Equal(t, "user:user123", key)
 

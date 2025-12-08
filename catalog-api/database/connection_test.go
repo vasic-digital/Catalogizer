@@ -19,11 +19,11 @@ func TestNewConnection(t *testing.T) {
 
 	// Create test configuration
 	cfg := &config.DatabaseConfig{
-		Path:                tmpFile.Name(),
-		MaxOpenConnections:  10,
-		MaxIdleConnections:  5,
-		ConnMaxLifetime:     3600, // 1 hour
-		ConnMaxIdleTime:     1800, // 30 minutes
+		Path:               tmpFile.Name(),
+		MaxOpenConnections: 10,
+		MaxIdleConnections: 5,
+		ConnMaxLifetime:    3600, // 1 hour
+		ConnMaxIdleTime:    1800, // 30 minutes
 		EnableWAL:          true,
 		CacheSize:          2000,
 		BusyTimeout:        5000, // 5 seconds
@@ -55,11 +55,11 @@ func TestNewConnection(t *testing.T) {
 func TestNewConnectionWithInvalidPath(t *testing.T) {
 	// Create configuration with invalid path
 	cfg := &config.DatabaseConfig{
-		Path:                "/invalid/path/that/does/not/exist/test.db",
-		MaxOpenConnections:  10,
-		MaxIdleConnections:  5,
-		ConnMaxLifetime:     3600,
-		ConnMaxIdleTime:     1800,
+		Path:               "/invalid/path/that/does/not/exist/test.db",
+		MaxOpenConnections: 10,
+		MaxIdleConnections: 5,
+		ConnMaxLifetime:    3600,
+		ConnMaxIdleTime:    1800,
 		EnableWAL:          true,
 		CacheSize:          2000,
 		BusyTimeout:        5000,
@@ -81,11 +81,11 @@ func TestConnectionPoolConfiguration(t *testing.T) {
 	tmpFile.Close()
 
 	cfg := &config.DatabaseConfig{
-		Path:                tmpFile.Name(),
-		MaxOpenConnections:  15,
-		MaxIdleConnections:  8,
-		ConnMaxLifetime:     7200, // 2 hours
-		ConnMaxIdleTime:     3600, // 1 hour
+		Path:               tmpFile.Name(),
+		MaxOpenConnections: 15,
+		MaxIdleConnections: 8,
+		ConnMaxLifetime:    7200, // 2 hours
+		ConnMaxIdleTime:    3600, // 1 hour
 		EnableWAL:          true,
 		CacheSize:          2000,
 		BusyTimeout:        5000,
@@ -118,11 +118,11 @@ func TestHealthCheckTimeout(t *testing.T) {
 	tmpFile.Close()
 
 	cfg := &config.DatabaseConfig{
-		Path:                tmpFile.Name(),
-		MaxOpenConnections:  10,
-		MaxIdleConnections:  5,
-		ConnMaxLifetime:     3600,
-		ConnMaxIdleTime:     1800,
+		Path:               tmpFile.Name(),
+		MaxOpenConnections: 10,
+		MaxIdleConnections: 5,
+		ConnMaxLifetime:    3600,
+		ConnMaxIdleTime:    1800,
 		EnableWAL:          true,
 		CacheSize:          2000,
 		BusyTimeout:        100, // Very short timeout for testing
@@ -154,11 +154,11 @@ func TestConnectionClose(t *testing.T) {
 	tmpFile.Close()
 
 	cfg := &config.DatabaseConfig{
-		Path:                tmpFile.Name(),
-		MaxOpenConnections:  10,
-		MaxIdleConnections:  5,
-		ConnMaxLifetime:     3600,
-		ConnMaxIdleTime:     1800,
+		Path:               tmpFile.Name(),
+		MaxOpenConnections: 10,
+		MaxIdleConnections: 5,
+		ConnMaxLifetime:    3600,
+		ConnMaxIdleTime:    1800,
 		EnableWAL:          true,
 		CacheSize:          2000,
 		BusyTimeout:        5000,

@@ -89,10 +89,10 @@ func TestCreateJob(t *testing.T) {
 		expectedError  bool
 	}{
 		{
-			name:           "Success",
-			userID:         1,
-			hasPermission:  true,
-			permissionErr:  nil,
+			name:          "Success",
+			userID:        1,
+			hasPermission: true,
+			permissionErr: nil,
 			requestData: &models.ConversionRequest{
 				SourcePath:   "/input/test.pdf",
 				TargetPath:   "/output/test.docx",
@@ -100,8 +100,8 @@ func TestCreateJob(t *testing.T) {
 				TargetFormat: "docx",
 				Quality:      "high",
 			},
-			mockResponse: &models.ConversionJob{ID: 123, Status: "pending"},
-			serviceError: nil,
+			mockResponse:   &models.ConversionJob{ID: 123, Status: "pending"},
+			serviceError:   nil,
 			expectedStatus: 200,
 			expectedError:  false,
 		},

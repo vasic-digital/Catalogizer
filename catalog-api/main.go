@@ -4,13 +4,14 @@ import (
 	root_config "catalogizer/config"
 	"catalogizer/database"
 	root_handlers "catalogizer/handlers"
-	root_middleware "catalogizer/middleware"
-	root_repository "catalogizer/repository"
-	root_services "catalogizer/services"
+	"catalogizer/internal/auth"
 	internal_config "catalogizer/internal/config"
 	"catalogizer/internal/handlers"
 	"catalogizer/internal/middleware"
 	"catalogizer/internal/services"
+	root_middleware "catalogizer/middleware"
+	root_repository "catalogizer/repository"
+	root_services "catalogizer/services"
 	"context"
 	"database/sql"
 	"flag"
@@ -112,7 +113,7 @@ func main() {
 	if err != nil {
 		log.Fatal("Failed to initialize database:", err)
 	}
-	
+
 	// Run database migrations
 	ctx := context.Background()
 	log.Println("Running database migrations...")
@@ -142,16 +143,16 @@ func main() {
 			DownloadChunkSize: cfg.Catalog.DownloadChunkSize,
 		},
 	}
-	
+
 	catalogService := services.NewCatalogService(internalCfg, logger)
 	catalogService.SetDB(db)
 	smbService := services.NewSMBService(internalCfg, logger)
 	smbDiscoveryService := services.NewSMBDiscoveryService(logger)
-	
+
 	// Initialize repositories
 	userRepo := root_repository.NewUserRepository(db)
 	conversionRepo := root_repository.NewConversionRepository(db)
-	
+
 	// Initialize authentication and conversion services
 	jwtSecret := cfg.Auth.JWTSecret
 	if jwtSecret == "" {
@@ -161,6 +162,10 @@ func main() {
 	}
 	authService := root_services.NewAuthService(userRepo, jwtSecret)
 	conversionService := root_services.NewConversionService(conversionRepo, userRepo, authService)
+
+	// Initialize internal auth service and middleware for rate limiting
+	internalAuthService := auth.NewAuthService(db, jwtSecret, logger)
+	authMiddleware := auth.NewAuthMiddleware(internalAuthService, logger)
 
 	// Initialize Redis client for distributed rate limiting
 	redisClient := redis.NewClient(&redis.Options{
@@ -184,21 +189,13 @@ func main() {
 	smbDiscoveryHandler := handlers.NewSMBDiscoveryHandler(smbDiscoveryService, logger)
 	conversionHandler := root_handlers.NewConversionHandler(conversionService, authService)
 	authHandler := root_handlers.NewAuthHandler(authService)
-	
+
 	// Initialize JWT middleware
 	jwtMiddleware := root_middleware.NewJWTMiddleware(jwtSecret)
 
-	// Initialize Redis rate limiters
-	var authRateLimiter, defaultRateLimiter gin.HandlerFunc
-	if redisClient != nil {
-		// Use Redis-based distributed rate limiting
-		authRateLimiter = root_middleware.RedisRateLimit(root_middleware.AuthRedisRateLimiterConfig(redisClient))
-		defaultRateLimiter = root_middleware.RedisRateLimit(root_middleware.DefaultRedisRateLimiterConfig(redisClient))
-	} else {
-		// Fall back to in-memory rate limiting
-		authRateLimiter = root_middleware.AdvancedRateLimit(root_middleware.AuthRateLimiterConfig())
-		defaultRateLimiter = root_middleware.IPRateLimit(100, 200)
-	}
+	// Initialize rate limiters using internal auth middleware
+	authRateLimiter := authMiddleware.RateLimitByUser(5, "1m")      // 5 requests per minute for auth
+	defaultRateLimiter := authMiddleware.RateLimitByUser(100, "1m") // 100 requests per minute default
 
 	// Setup Gin router
 	router := gin.Default()
@@ -231,7 +228,7 @@ func main() {
 	// API routes
 	api := router.Group("/api/v1")
 	api.Use(jwtMiddleware.RequireAuth()) // Apply auth middleware to all API routes
-	api.Use(defaultRateLimiter) // Apply general rate limiting to API
+	api.Use(defaultRateLimiter)          // Apply general rate limiting to API
 	{
 		// Catalog browsing endpoints
 		api.GET("/catalog", catalogHandler.ListRoot)
@@ -267,7 +264,7 @@ func main() {
 			smbGroup.GET("/test", smbDiscoveryHandler.TestConnectionGET)
 			smbGroup.POST("/browse", smbDiscoveryHandler.BrowseShare)
 		}
-		
+
 		// Conversion endpoints
 		conversionGroup := api.Group("/conversion")
 		{

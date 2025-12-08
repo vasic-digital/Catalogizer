@@ -37,8 +37,8 @@ func DefaultRateLimiterConfig() RateLimiterConfig {
 // StrictRateLimiterConfig returns a stricter configuration for sensitive endpoints
 func StrictRateLimiterConfig() RateLimiterConfig {
 	return RateLimiterConfig{
-		Rate:    2,  // 2 requests per second
-		Burst:   5,  // Burst of 5 requests
+		Rate:    2, // 2 requests per second
+		Burst:   5, // Burst of 5 requests
 		Message: "Too many requests. Please wait before trying again.",
 		KeyGenerator: func(c *gin.Context) string {
 			return c.ClientIP()
@@ -124,12 +124,12 @@ func AdvancedRateLimit(config RateLimiterConfig) gin.HandlerFunc {
 
 		if !clientLimiter.Allow() {
 			// Log rate limit attempt
-			fmt.Printf("Rate limit exceeded for key: %s, IP: %s, Path: %s\n", 
+			fmt.Printf("Rate limit exceeded for key: %s, IP: %s, Path: %s\n",
 				key, c.ClientIP(), c.Request.URL.Path)
-			
+
 			c.JSON(http.StatusTooManyRequests, gin.H{
-				"error":  "rate_limit_exceeded",
-				"message": config.Message,
+				"error":       "rate_limit_exceeded",
+				"message":     config.Message,
 				"retry_after": "5s", // Suggest retry after
 			})
 			c.Abort()

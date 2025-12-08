@@ -7,8 +7,8 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	"catalogizer/models"
 	"catalogizer/handlers"
+	"catalogizer/models"
 
 	"github.com/gin-gonic/gin"
 	"github.com/stretchr/testify/assert"
@@ -87,7 +87,7 @@ func TestConversionAPIIntegration(t *testing.T) {
 		ID:   1,
 		Role: &models.Role{Name: "user"},
 	}
-	
+
 	// Mock auth service to always return the test user
 	mockAuthService.On("GetCurrentUser", mock.Anything).Return(testUser, nil)
 
@@ -117,7 +117,7 @@ func TestConversionAPIIntegration(t *testing.T) {
 
 		// Assertions
 		assert.Equal(t, http.StatusOK, w.Code)
-		
+
 		var response models.SupportedFormats
 		err := json.Unmarshal(w.Body.Bytes(), &response)
 		assert.NoError(t, err)
@@ -130,25 +130,25 @@ func TestConversionAPIIntegration(t *testing.T) {
 	t.Run("CreateConversionJob", func(t *testing.T) {
 		// Setup request body
 		requestBody := models.ConversionRequest{
-			SourcePath:   "/test/video.avi",
-			TargetPath:   "/test/video.mp4",
-			SourceFormat: "avi",
-			TargetFormat: "mp4",
-			Quality:      "high",
+			SourcePath:     "/test/video.avi",
+			TargetPath:     "/test/video.mp4",
+			SourceFormat:   "avi",
+			TargetFormat:   "mp4",
+			Quality:        "high",
 			ConversionType: models.ConversionTypeVideo,
 		}
 
 		// Setup expected job
 		expectedJob := &models.ConversionJob{
-			ID:           1,
-			UserID:        testUser.ID,
-			SourcePath:    requestBody.SourcePath,
-			TargetPath:    requestBody.TargetPath,
-			SourceFormat:  requestBody.SourceFormat,
-			TargetFormat:  requestBody.TargetFormat,
-			Quality:       requestBody.Quality,
+			ID:             1,
+			UserID:         testUser.ID,
+			SourcePath:     requestBody.SourcePath,
+			TargetPath:     requestBody.TargetPath,
+			SourceFormat:   requestBody.SourceFormat,
+			TargetFormat:   requestBody.TargetFormat,
+			Quality:        requestBody.Quality,
 			ConversionType: requestBody.ConversionType,
-			Status:        models.ConversionStatusPending,
+			Status:         models.ConversionStatusPending,
 		}
 
 		mockAuthService.On("CheckPermission", testUser.ID, models.PermissionConversionCreate).Return(true, nil)
@@ -170,7 +170,7 @@ func TestConversionAPIIntegration(t *testing.T) {
 
 		// Assertions - API returns 200 OK with job wrapped in response structure
 		assert.Equal(t, http.StatusOK, w.Code)
-		
+
 		// Parse the response - handler returns job directly, not wrapped
 		var responseJob models.ConversionJob
 		err := json.Unmarshal(w.Body.Bytes(), &responseJob)
@@ -205,10 +205,10 @@ func TestConversionAPIIntegration(t *testing.T) {
 
 		// Assertions
 		assert.Equal(t, http.StatusOK, w.Code)
-		
+
 		// Check if response is directly an array or wrapped in object
 		body := w.Body.Bytes()
-		
+
 		// Try to unmarshal as direct array first
 		var directArray []models.ConversionJob
 		if err := json.Unmarshal(body, &directArray); err == nil {
@@ -220,10 +220,10 @@ func TestConversionAPIIntegration(t *testing.T) {
 			// Try object wrapper format
 			var response struct {
 				Jobs       []models.ConversionJob `json:"jobs"`
-				Total      int                  `json:"total"`
-				Page       int                  `json:"page"`
-				PerPage    int                  `json:"per_page"`
-				TotalPages int                  `json:"total_pages"`
+				Total      int                    `json:"total"`
+				Page       int                    `json:"page"`
+				PerPage    int                    `json:"per_page"`
+				TotalPages int                    `json:"total_pages"`
 			}
 			err := json.Unmarshal(body, &response)
 			assert.NoError(t, err)
@@ -262,7 +262,7 @@ func TestConversionAPIIntegration(t *testing.T) {
 
 		// Assertions
 		assert.Equal(t, http.StatusOK, w.Code)
-		
+
 		var response models.ConversionJob
 		err := json.Unmarshal(w.Body.Bytes(), &response)
 		assert.NoError(t, err)
@@ -289,7 +289,7 @@ func TestConversionAPIIntegration(t *testing.T) {
 
 		// Assertions
 		assert.Equal(t, http.StatusOK, w.Code)
-		
+
 		var response map[string]interface{}
 		err := json.Unmarshal(w.Body.Bytes(), &response)
 		assert.NoError(t, err)
@@ -311,7 +311,7 @@ func TestConversionAPIIntegration(t *testing.T) {
 
 		// Assertions - API returns 200 even for invalid tokens in this test setup
 		assert.Equal(t, http.StatusOK, w.Code)
-		
+
 		var response map[string]interface{}
 		err := json.Unmarshal(w.Body.Bytes(), &response)
 		assert.NoError(t, err)

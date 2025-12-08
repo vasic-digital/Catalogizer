@@ -10,8 +10,8 @@ import (
 
 	"github.com/gorilla/mux"
 
-	"catalogizer/models"
 	"catalogizer/internal/services"
+	"catalogizer/models"
 	"catalogizer/repository"
 )
 

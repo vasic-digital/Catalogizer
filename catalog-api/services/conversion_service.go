@@ -191,7 +191,7 @@ func (s *ConversionService) convertPDF(job *models.ConversionJob) error {
 	// Determine target format and use appropriate conversion method
 	ext := strings.ToLower(filepath.Ext(job.TargetPath))
 	targetFormat := strings.TrimPrefix(ext, ".")
-	
+
 	switch targetFormat {
 	case "jpg", "jpeg", "png", "bmp", "tiff", "gif":
 		return s.convertPDFToImage(job, targetFormat)
@@ -226,7 +226,7 @@ func (s *ConversionService) convertPDFToImage(job *models.ConversionJob, format 
 	// Determine page range
 	startPage := 0
 	endPage := totalPages
-	
+
 	if page, ok := settings["page"].(int); ok && page >= 0 && page < totalPages {
 		// Single page
 		startPage = page
@@ -345,7 +345,7 @@ func (s *ConversionService) convertPDFToText(job *models.ConversionJob) error {
 	// Extract text from pages
 	for i := startPage; i <= endPage; i++ {
 		page := pdfReader.Page(i)
-		
+
 		// Get fonts for the page
 		fonts := make(map[string]*pdf.Font)
 		fontNames := page.Fonts()
@@ -353,7 +353,7 @@ func (s *ConversionService) convertPDFToText(job *models.ConversionJob) error {
 			font := page.Font(fontName)
 			fonts[fontName] = &font
 		}
-		
+
 		content, err := page.GetPlainText(fonts)
 		if err != nil {
 			return fmt.Errorf("failed to extract text from page %d: %w", i, err)
@@ -463,7 +463,7 @@ func (s *ConversionService) convertPDFToHTML(job *models.ConversionJob) error {
 // convertPDFWithImageMagick converts PDF to image formats not directly supported by go-fitz
 func (s *ConversionService) convertPDFWithImageMagick(job *models.ConversionJob, format string) error {
 	args := []string{
-		"-density", "150",  // DPI
+		"-density", "150", // DPI
 		job.SourcePath,
 	}
 

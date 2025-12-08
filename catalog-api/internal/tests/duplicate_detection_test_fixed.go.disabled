@@ -9,7 +9,6 @@ import (
 	"go.uber.org/zap"
 
 	"catalogizer/internal/services"
-	_ "github.com/mattn/go-sqlite3"
 )
 
 func TestDuplicateDetectionService_Basic(t *testing.T) {

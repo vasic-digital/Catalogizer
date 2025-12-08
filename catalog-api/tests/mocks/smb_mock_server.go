@@ -245,12 +245,122 @@ func (s *MockSMBServer) handleConnection(conn net.Conn) {
 
 // generateMockResponse generates a mock SMB response
 func (s *MockSMBServer) generateMockResponse(request []byte) []byte {
-	// This is a simplified mock response
-	// In practice, you'd need to implement proper SMB protocol handling
+	// This is a mock implementation that handles basic SMB2 negotiation
+	// We need to respond properly to SMB2 negotiate and session setup commands
 
-	// For testing, return a basic success response
+	// Check if this is a negotiate request
+	if len(request) >= 64 {
+		// Check for SMB2 negotiate command (0x0000)
+		if request[16] == 0x00 && request[17] == 0x00 {
+			return s.generateNegotiateResponse()
+		}
+		// Check for session setup command (0x0001)
+		if request[16] == 0x00 && request[17] == 0x01 {
+			return s.generateSessionSetupResponse()
+		}
+		// Check for tree connect command (0x0003)
+		if request[16] == 0x00 && request[17] == 0x03 {
+			return s.generateTreeConnectResponse()
+		}
+		// Check for create command (0x0005)
+		if request[16] == 0x00 && request[17] == 0x05 {
+			return s.generateCreateResponse()
+		}
+		// Check for query directory command (0x0006)
+		if request[16] == 0x00 && request[17] == 0x06 {
+			return s.generateQueryDirectoryResponse()
+		}
+		// Check for tree disconnect command (0x0004)
+		if request[16] == 0x00 && request[17] == 0x04 {
+			return s.generateTreeDisconnectResponse()
+		}
+		// Check for logoff command (0x0002)
+		if request[16] == 0x00 && request[17] == 0x02 {
+			return s.generateLogoffResponse()
+		}
+	}
+
+	// Default response for unknown commands
 	response := make([]byte, 64)
 	copy(response[0:4], []byte{0xFE, 0x53, 0x4D, 0x42}) // SMB2 signature
+	return response
+}
+
+// generateNegotiateResponse generates a mock SMB2 negotiate response
+func (s *MockSMBServer) generateNegotiateResponse() []byte {
+	response := make([]byte, 64)
+	// SMB2 Header
+	copy(response[0:4], []byte{0xFE, 0x53, 0x4D, 0x42}) // SMB2 signature
+	response[16] = 0x00                                 // Credit charge
+	response[17] = 0x00                                 // Status: SUCCESS
+	// Add more response fields as needed
+	return response
+}
+
+// generateSessionSetupResponse generates a mock session setup response
+func (s *MockSMBServer) generateSessionSetupResponse() []byte {
+	response := make([]byte, 64)
+	// SMB2 Header
+	copy(response[0:4], []byte{0xFE, 0x53, 0x4D, 0x42}) // SMB2 signature
+	response[16] = 0x00                                 // Credit charge
+	response[17] = 0x00                                 // Status: SUCCESS
+	// Add more response fields as needed
+	return response
+}
+
+// generateTreeConnectResponse generates a mock tree connect response
+func (s *MockSMBServer) generateTreeConnectResponse() []byte {
+	response := make([]byte, 64)
+	// SMB2 Header
+	copy(response[0:4], []byte{0xFE, 0x53, 0x4D, 0x42}) // SMB2 signature
+	response[16] = 0x00                                 // Credit charge
+	response[17] = 0x00                                 // Status: SUCCESS
+	// Add more response fields as needed
+	return response
+}
+
+// generateCreateResponse generates a mock create response
+func (s *MockSMBServer) generateCreateResponse() []byte {
+	response := make([]byte, 64)
+	// SMB2 Header
+	copy(response[0:4], []byte{0xFE, 0x53, 0x4D, 0x42}) // SMB2 signature
+	response[16] = 0x00                                 // Credit charge
+	response[17] = 0x00                                 // Status: SUCCESS
+	// Add more response fields as needed
+	return response
+}
+
+// generateQueryDirectoryResponse generates a mock query directory response
+func (s *MockSMBServer) generateQueryDirectoryResponse() []byte {
+	response := make([]byte, 256)
+	// SMB2 Header
+	copy(response[0:4], []byte{0xFE, 0x53, 0x4D, 0x42}) // SMB2 signature
+	response[16] = 0x00                                 // Credit charge
+	response[17] = 0x00                                 // Status: SUCCESS
+	// Mock directory entries would go here
+	// For now, just return a successful response
+	return response
+}
+
+// generateTreeDisconnectResponse generates a mock tree disconnect response
+func (s *MockSMBServer) generateTreeDisconnectResponse() []byte {
+	response := make([]byte, 64)
+	// SMB2 Header
+	copy(response[0:4], []byte{0xFE, 0x53, 0x4D, 0x42}) // SMB2 signature
+	response[16] = 0x00                                 // Credit charge
+	response[17] = 0x00                                 // Status: SUCCESS
+	// Add more response fields as needed
+	return response
+}
+
+// generateLogoffResponse generates a mock logoff response
+func (s *MockSMBServer) generateLogoffResponse() []byte {
+	response := make([]byte, 64)
+	// SMB2 Header
+	copy(response[0:4], []byte{0xFE, 0x53, 0x4D, 0x42}) // SMB2 signature
+	response[16] = 0x00                                 // Credit charge
+	response[17] = 0x00                                 // Status: SUCCESS
+	// Add more response fields as needed
 	return response
 }
 

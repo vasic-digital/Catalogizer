@@ -41,10 +41,10 @@ func TestRedisRateLimit_FailClosed(t *testing.T) {
 	router.ServeHTTP(w, req)
 
 	// The request should NOT be processed (fail closed for security)
-	assert.Equal(t, http.StatusServiceUnavailable, w.Code, 
+	assert.Equal(t, http.StatusServiceUnavailable, w.Code,
 		"Request should be rejected when Redis is unavailable for security")
 	assert.Contains(t, w.Body.String(), "Rate limiting service temporarily unavailable")
-	
+
 	// No requests should have been processed
 	assert.Equal(t, 0, requestCount, "No requests should be processed when Redis fails")
 }

@@ -245,7 +245,7 @@ func (c *WebDAVClient) ListDirectory(ctx context.Context, path string) ([]*FileI
 		<D:resourcetype/>
 	</D:prop>
 </D:propfind>`
-	
+
 	req.Body = io.NopCloser(strings.NewReader(body))
 	req.ContentLength = int64(len(body))
 
@@ -267,24 +267,24 @@ func (c *WebDAVClient) ListDirectory(ctx context.Context, path string) ([]*FileI
 
 	// Simple XML parsing for WebDAV multistatus response
 	var files []*FileInfo
-	
+
 	// Parse the XML to extract file information
 	// This is a simplified parser - in production you might want to use a proper XML decoder
 	responseStr := string(bodyBytes)
-	
+
 	// Find all <D:response> elements
 	responses := strings.Split(responseStr, "<D:response>")
-	
+
 	for i := 1; i < len(responses); i++ { // Skip first element as it's before the first response
 		response := responses[i]
-		
+
 		// Find the end of this response
 		endIndex := strings.Index(response, "</D:response>")
 		if endIndex == -1 {
 			continue
 		}
 		response = response[:endIndex]
-		
+
 		// Extract href
 		hrefStart := strings.Index(response, "<D:href>")
 		hrefEnd := strings.Index(response, "</D:href>")
@@ -292,12 +292,12 @@ func (c *WebDAVClient) ListDirectory(ctx context.Context, path string) ([]*FileI
 			continue
 		}
 		href := response[hrefStart+8 : hrefEnd]
-		
+
 		// Skip the directory itself (usually the first response)
 		if href == fullURL || href == strings.TrimSuffix(fullURL, "/") {
 			continue
 		}
-		
+
 		// Extract display name
 		displayName := filepath.Base(href)
 		nameStart := strings.Index(response, "<D:displayname>")
@@ -305,7 +305,7 @@ func (c *WebDAVClient) ListDirectory(ctx context.Context, path string) ([]*FileI
 		if nameStart != -1 && nameEnd != -1 {
 			displayName = response[nameStart+16 : nameEnd]
 		}
-		
+
 		// Extract content length
 		var size int64 = 0
 		sizeStart := strings.Index(response, "<D:getcontentlength>")
@@ -316,7 +316,7 @@ func (c *WebDAVClient) ListDirectory(ctx context.Context, path string) ([]*FileI
 				size = s
 			}
 		}
-		
+
 		// Extract last modified date
 		modTime := time.Now()
 		modStart := strings.Index(response, "<D:getlastmodified>")
@@ -330,14 +330,14 @@ func (c *WebDAVClient) ListDirectory(ctx context.Context, path string) ([]*FileI
 				modTime = t
 			}
 		}
-		
+
 		// Check if it's a directory
 		isDir := false
 		if strings.Contains(response, "<D:resourcetype><D:collection/></D:resourcetype>") ||
-		   strings.Contains(response, "<D:resourcetype><D:directory/></D:resourcetype>") {
+			strings.Contains(response, "<D:resourcetype><D:directory/></D:resourcetype>") {
 			isDir = true
 		}
-		
+
 		// Create relative path from full URL
 		relPath := strings.TrimPrefix(href, fullURL)
 		if relPath == "" {
@@ -345,7 +345,7 @@ func (c *WebDAVClient) ListDirectory(ctx context.Context, path string) ([]*FileI
 		} else {
 			relPath = strings.TrimPrefix(relPath, "/")
 		}
-		
+
 		files = append(files, &FileInfo{
 			Name:    displayName,
 			Size:    size,
@@ -355,7 +355,7 @@ func (c *WebDAVClient) ListDirectory(ctx context.Context, path string) ([]*FileI
 			Path:    relPath,
 		})
 	}
-	
+
 	return files, nil
 }
 

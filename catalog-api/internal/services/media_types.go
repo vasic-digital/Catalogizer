@@ -6,6 +6,7 @@ type MediaType string
 const (
 	// Video content
 	MediaTypeMovie       MediaType = "movie"
+	MediaTypeTV          MediaType = "tv" // Alias for tv_series
 	MediaTypeTVSeries    MediaType = "tv_series"
 	MediaTypeTVEpisode   MediaType = "tv_episode"
 	MediaTypeConcert     MediaType = "concert"
@@ -35,6 +36,10 @@ const (
 	MediaTypeJournal   MediaType = "journal"
 	MediaTypeManual    MediaType = "manual"
 	MediaTypeDocument  MediaType = "document"
+
+	// Additional types
+	MediaTypeImage   MediaType = "image"
+	MediaTypeUnknown MediaType = "unknown"
 )
 
 // PlaybackState represents the current playback state

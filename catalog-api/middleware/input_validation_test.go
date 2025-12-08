@@ -147,7 +147,7 @@ func TestInputValidation_SizeLimit(t *testing.T) {
 	for i := range largeData {
 		largeData[i] = 'a'
 	}
-	
+
 	jsonData := `{"data": "` + string(largeData) + `"}`
 	req := httptest.NewRequest("POST", "/test", strings.NewReader(jsonData))
 	req.Header.Set("Content-Type", "application/json")
@@ -163,7 +163,7 @@ func TestAdvancedRateLimit(t *testing.T) {
 	gin.SetMode(gin.TestMode)
 
 	config := DefaultRateLimiterConfig()
-	config.Rate = 2 // 2 requests per second
+	config.Rate = 2  // 2 requests per second
 	config.Burst = 3 // Burst of 3
 
 	router := gin.New()

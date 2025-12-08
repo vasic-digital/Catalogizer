@@ -1365,8 +1365,7 @@ func (s *VideoPlayerService) loadSubtitles(ctx context.Context, session *VideoPl
 		for i, track := range subtitleTracks {
 			if track.IsDefault && session.ActiveSubtitle == nil {
 				// Use track index as the active subtitle identifier
-				// Since SubtitleTrack.ID is string but ActiveSubtitle expects *int64,
-				// we use the track index (position in array) as the identifier
+				// ActiveSubtitle stores the index into the SubtitleTracks array
 				trackIndex := int64(i)
 				session.ActiveSubtitle = &trackIndex
 				s.logger.Debug("Set default subtitle track",

@@ -7,15 +7,22 @@ import (
 	"net/http"
 	"net/url"
 	"sort"
+	"strconv"
 	"strings"
 	"time"
 
 	"catalogizer/models"
 )
 
+// FileRepositoryInterface defines the interface for file repository operations needed by RecommendationService
+type FileRepositoryInterface interface {
+	SearchFiles(ctx context.Context, filter models.SearchFilter, pagination models.PaginationOptions, sort models.SortOptions) (*models.SearchResult, error)
+}
+
 type RecommendationService struct {
 	mediaRecognitionService   *MediaRecognitionService
 	duplicateDetectionService *DuplicateDetectionService
+	fileRepository            FileRepositoryInterface
 	tmdbBaseURL               string
 	omdbBaseURL               string
 	lastfmBaseURL             string
@@ -129,10 +136,12 @@ type RecommendationStats struct {
 func NewRecommendationService(
 	mediaRecognitionService *MediaRecognitionService,
 	duplicateDetectionService *DuplicateDetectionService,
+	fileRepository FileRepositoryInterface,
 ) *RecommendationService {
 	return &RecommendationService{
 		mediaRecognitionService:   mediaRecognitionService,
 		duplicateDetectionService: duplicateDetectionService,
+		fileRepository:            fileRepository,
 		tmdbBaseURL:               "https://api.themoviedb.org/3",
 		omdbBaseURL:               "http://www.omdbapi.com",
 		lastfmBaseURL:             "http://ws.audioscrobbler.com/2.0",
@@ -199,14 +208,25 @@ func (rs *RecommendationService) GetSimilarItems(ctx context.Context, req *Simil
 }
 
 func (rs *RecommendationService) findLocalSimilarItems(ctx context.Context, req *SimilarItemsRequest) ([]*LocalSimilarItem, error) {
-	// This would normally query the local database/catalog
-	// For now, we'll simulate finding similar items
+	// Query the local database for similar media items
 
 	var allLocalMedia []*models.MediaMetadata
 
-	// In a real implementation, this would query the database
-	// For demonstration, we'll create some mock similar items
-	allLocalMedia = rs.generateMockLocalMedia(req.MediaMetadata)
+	// Query files with metadata from the database
+	filesWithMetadata, err := rs.querySimilarMediaFromDatabase(ctx, req.MediaMetadata)
+	if err != nil {
+		// If database query fails, fall back to mock data for now
+		fmt.Printf("Warning: failed to query similar media from database: %v, falling back to mock data\n", err)
+		allLocalMedia = rs.generateMockLocalMedia(req.MediaMetadata)
+	} else {
+		// Convert FileWithMetadata to MediaMetadata
+		for _, fileWithMeta := range filesWithMetadata {
+			mediaMetadata := rs.convertFileToMediaMetadata(fileWithMeta)
+			if mediaMetadata != nil {
+				allLocalMedia = append(allLocalMedia, mediaMetadata)
+			}
+		}
+	}
 
 	var similarItems []*LocalSimilarItem
 
@@ -257,7 +277,7 @@ func (rs *RecommendationService) findLocalSimilarItems(ctx context.Context, req 
 }
 
 func (rs *RecommendationService) findExternalSimilarItems(ctx context.Context, req *SimilarItemsRequest) ([]*ExternalSimilarItem, error) {
-	var externalItems []*ExternalSimilarItem
+	externalItems := make([]*ExternalSimilarItem, 0)
 
 	// Use MediaType field to find type-specific similar items
 	if req.MediaMetadata != nil && req.MediaMetadata.MediaType != "" {
@@ -290,7 +310,7 @@ func (rs *RecommendationService) findExternalSimilarItems(ctx context.Context, r
 	}
 
 	// Apply filters to external items
-	var filteredItems []*ExternalSimilarItem
+	filteredItems := make([]*ExternalSimilarItem, 0)
 	for _, item := range externalItems {
 		if rs.passesExternalFilters(item, req.Filters) {
 			filteredItems = append(filteredItems, item)
@@ -311,7 +331,7 @@ func (rs *RecommendationService) findExternalSimilarItems(ctx context.Context, r
 }
 
 func (rs *RecommendationService) findSimilarMovies(ctx context.Context, metadata *models.MediaMetadata) ([]*ExternalSimilarItem, error) {
-	var items []*ExternalSimilarItem
+	items := make([]*ExternalSimilarItem, 0)
 
 	// TMDb similar movies
 	tmdbItems, err := rs.getTMDbSimilarMovies(ctx, metadata)
@@ -329,7 +349,7 @@ func (rs *RecommendationService) findSimilarMovies(ctx context.Context, metadata
 }
 
 func (rs *RecommendationService) findSimilarMusic(ctx context.Context, metadata *models.MediaMetadata) ([]*ExternalSimilarItem, error) {
-	var items []*ExternalSimilarItem
+	items := make([]*ExternalSimilarItem, 0)
 
 	// Last.fm similar artists and tracks
 	lastfmItems, err := rs.getLastFmSimilarMusic(ctx, metadata)
@@ -341,7 +361,7 @@ func (rs *RecommendationService) findSimilarMusic(ctx context.Context, metadata 
 }
 
 func (rs *RecommendationService) findSimilarBooks(ctx context.Context, metadata *models.MediaMetadata) ([]*ExternalSimilarItem, error) {
-	var items []*ExternalSimilarItem
+	items := make([]*ExternalSimilarItem, 0)
 
 	// Google Books similar books
 	googleItems, err := rs.getGoogleBooksSimilar(ctx, metadata)
@@ -353,7 +373,7 @@ func (rs *RecommendationService) findSimilarBooks(ctx context.Context, metadata 
 }
 
 func (rs *RecommendationService) findSimilarGames(ctx context.Context, metadata *models.MediaMetadata) ([]*ExternalSimilarItem, error) {
-	var items []*ExternalSimilarItem
+	items := make([]*ExternalSimilarItem, 0)
 
 	// IGDB similar games
 	igdbItems, err := rs.getIGDBSimilarGames(ctx, metadata)
@@ -371,7 +391,7 @@ func (rs *RecommendationService) findSimilarGames(ctx context.Context, metadata 
 }
 
 func (rs *RecommendationService) findSimilarSoftware(ctx context.Context, metadata *models.MediaMetadata) ([]*ExternalSimilarItem, error) {
-	var items []*ExternalSimilarItem
+	items := make([]*ExternalSimilarItem, 0)
 
 	// GitHub similar repositories
 	githubItems, err := rs.getGitHubSimilarSoftware(ctx, metadata)
@@ -1057,6 +1077,129 @@ func (rs *RecommendationService) generateDownloadLink(media *models.MediaMetadat
 func (rs *RecommendationService) generateMediaID(media *models.MediaMetadata) string {
 	// Generate a unique ID based on media ID (FilePath doesn't exist in MediaMetadata)
 	return fmt.Sprintf("%d", media.ID)
+}
+
+// convertFileToMediaMetadata converts FileWithMetadata to MediaMetadata
+func (rs *RecommendationService) convertFileToMediaMetadata(fileWithMetadata *models.FileWithMetadata) *models.MediaMetadata {
+	if fileWithMetadata == nil {
+		return nil
+	}
+
+	metadata := &models.MediaMetadata{
+		ID:          fileWithMetadata.File.ID,
+		Title:       fileWithMetadata.File.Name,
+		Description: "",
+		FileSize:    &fileWithMetadata.File.Size,
+		CreatedAt:   fileWithMetadata.File.CreatedAt,
+		UpdatedAt:   fileWithMetadata.File.ModifiedAt,
+		Metadata:    make(map[string]interface{}),
+	}
+
+	// Extract metadata from FileMetadata array
+	for _, meta := range fileWithMetadata.Metadata {
+		switch meta.Key {
+		case "media_type", "type":
+			metadata.MediaType = meta.Value
+		case "title":
+			metadata.Title = meta.Value
+		case "description", "synopsis", "plot":
+			metadata.Description = meta.Value
+		case "genre":
+			metadata.Genre = meta.Value
+		case "year", "release_year":
+			if year, err := strconv.Atoi(meta.Value); err == nil {
+				metadata.Year = &year
+			}
+		case "rating", "imdb_rating":
+			if rating, err := strconv.ParseFloat(meta.Value, 64); err == nil {
+				metadata.Rating = &rating
+			}
+		case "duration", "runtime":
+			if duration, err := strconv.Atoi(meta.Value); err == nil {
+				metadata.Duration = &duration
+			}
+		case "language":
+			metadata.Language = meta.Value
+		case "country":
+			metadata.Country = meta.Value
+		case "director":
+			metadata.Director = meta.Value
+		case "producer":
+			metadata.Producer = meta.Value
+		case "cast", "actors":
+			metadata.Cast = strings.Split(meta.Value, ",")
+		case "resolution":
+			metadata.Resolution = meta.Value
+		default:
+			// Store other metadata in the Metadata map
+			metadata.Metadata[meta.Key] = meta.Value
+		}
+	}
+
+	return metadata
+}
+
+// querySimilarMediaFromDatabase queries the database for similar media items
+func (rs *RecommendationService) querySimilarMediaFromDatabase(ctx context.Context, originalMetadata *models.MediaMetadata) ([]*models.FileWithMetadata, error) {
+	if originalMetadata == nil {
+		return nil, fmt.Errorf("original metadata is required")
+	}
+
+	// For now, use a simple approach: search for files with similar metadata
+	// This can be enhanced with more sophisticated similarity algorithms
+
+	var allResults []*models.FileWithMetadata
+
+	// Search by MediaType
+	if originalMetadata.MediaType != "" {
+		result, err := rs.fileRepository.SearchFiles(ctx, models.SearchFilter{
+			Query: fmt.Sprintf("media_type:%s", originalMetadata.MediaType),
+		}, models.PaginationOptions{
+			Page:  1,
+			Limit: 20,
+		}, models.SortOptions{
+			Field: "modified_at",
+			Order: "desc",
+		})
+		if err == nil && result != nil {
+			for i := range result.Files {
+				allResults = append(allResults, &result.Files[i])
+			}
+		}
+	}
+
+	// Search by Genre
+	if originalMetadata.Genre != "" {
+		result, err := rs.fileRepository.SearchFiles(ctx, models.SearchFilter{
+			Query: fmt.Sprintf("genre:%s", originalMetadata.Genre),
+		}, models.PaginationOptions{
+			Page:  1,
+			Limit: 20,
+		}, models.SortOptions{
+			Field: "modified_at",
+			Order: "desc",
+		})
+		if err == nil && result != nil {
+			for i := range result.Files {
+				allResults = append(allResults, &result.Files[i])
+			}
+		}
+	}
+
+	// Remove duplicates and limit results
+	seen := make(map[int64]bool)
+	var uniqueResults []*models.FileWithMetadata
+	for _, file := range allResults {
+		if !seen[file.File.ID] {
+			seen[file.File.ID] = true
+			uniqueResults = append(uniqueResults, file)
+			if len(uniqueResults) >= 30 {
+				break
+			}
+		}
+	}
+
+	return uniqueResults, nil
 }
 
 // Mock data generation for testing

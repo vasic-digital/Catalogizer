@@ -602,7 +602,7 @@ func (s *CatalogService) GetFileInfoByPath(path string) (*models.FileInfo, error
 
 // GetDuplicatesCount gets the count of duplicate files
 func (s *CatalogService) GetDuplicatesCount() (int64, error) {
-		query := `
+	query := `
 		SELECT COUNT(*) FROM (
 			SELECT hash, COUNT(*) as count
 			FROM files

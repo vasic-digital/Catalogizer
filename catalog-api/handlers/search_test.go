@@ -100,10 +100,10 @@ func (suite *SearchHandlerTestSuite) TestSearchFiles_InvalidModifiedBeforeDate()
 func (suite *SearchHandlerTestSuite) TestSearchFiles_InvalidDateFormats() {
 	invalidDates := []string{
 		"2024-01-01",           // Missing time
-		"01/01/2024",          // Wrong format
+		"01/01/2024",           // Wrong format
 		"2024-13-01T00:00:00Z", // Invalid month
 		"2024-01-32T00:00:00Z", // Invalid day
-		"not-a-date",          // Completely invalid
+		"not-a-date",           // Completely invalid
 	}
 
 	for _, date := range invalidDates {

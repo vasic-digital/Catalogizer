@@ -441,18 +441,18 @@ func (s *ReportingService) formatAsPDF(data interface{}, reportType string) ([]b
 	// Create new PDF
 	pdf := gofpdf.New("P", "mm", "A4", "")
 	pdf.AddPage()
-	
+
 	// Set title
 	pdf.SetFont("Arial", "B", 16)
 	title := fmt.Sprintf("%s Report", strings.Replace(reportType, "_", " ", -1))
 	pdf.Cell(40, 10, title)
 	pdf.Ln(15)
-	
+
 	// Add generation timestamp
 	pdf.SetFont("Arial", "I", 10)
 	pdf.Cell(40, 8, fmt.Sprintf("Generated: %s", time.Now().Format("2006-01-02 15:04:05")))
 	pdf.Ln(12)
-	
+
 	// Format content based on report type
 	switch reportType {
 	case "user_analytics":
@@ -474,7 +474,7 @@ func (s *ReportingService) formatAsPDF(data interface{}, reportType string) ([]b
 		if err != nil {
 			return nil, fmt.Errorf("failed to marshal data for PDF: %w", err)
 		}
-		
+
 		// Split JSON into lines and add to PDF
 		lines := strings.Split(string(jsonData), "\n")
 		for _, line := range lines {
@@ -493,7 +493,7 @@ func (s *ReportingService) formatAsPDF(data interface{}, reportType string) ([]b
 				pdf.Ln(5)
 			}
 		}
-		
+
 		// Output PDF to bytes
 		return s.outputPDFToBytes(pdf)
 	}
@@ -511,11 +511,11 @@ func (s *ReportingService) outputPDFToBytes(pdf *gofpdf.Fpdf) ([]byte, error) {
 // Helper methods for specific report types
 func (s *ReportingService) formatUserAnalyticsPDF(pdf *gofpdf.Fpdf, data interface{}) ([]byte, error) {
 	report := data.(*models.UserAnalyticsReport)
-	
+
 	pdf.SetFont("Arial", "B", 12)
 	pdf.Cell(40, 8, "User Information")
 	pdf.Ln(8)
-	
+
 	pdf.SetFont("Arial", "", 10)
 	pdf.Cell(40, 6, fmt.Sprintf("User ID: %d", report.User.ID))
 	pdf.Ln(6)
@@ -523,15 +523,15 @@ func (s *ReportingService) formatUserAnalyticsPDF(pdf *gofpdf.Fpdf, data interfa
 	pdf.Ln(6)
 	pdf.Cell(40, 6, fmt.Sprintf("Email: %s", report.User.Email))
 	pdf.Ln(6)
-	pdf.Cell(40, 6, fmt.Sprintf("Period: %s to %s", 
-		report.StartDate.Format("2006-01-02"), 
+	pdf.Cell(40, 6, fmt.Sprintf("Period: %s to %s",
+		report.StartDate.Format("2006-01-02"),
 		report.EndDate.Format("2006-01-02")))
 	pdf.Ln(12)
-	
+
 	pdf.SetFont("Arial", "B", 12)
 	pdf.Cell(40, 8, "Summary Statistics")
 	pdf.Ln(8)
-	
+
 	pdf.SetFont("Arial", "", 10)
 	pdf.Cell(40, 6, fmt.Sprintf("Total Media Accesses: %d", report.TotalMediaAccesses))
 	pdf.Ln(6)
@@ -540,17 +540,17 @@ func (s *ReportingService) formatUserAnalyticsPDF(pdf *gofpdf.Fpdf, data interfa
 	pdf.Cell(40, 6, fmt.Sprintf("Access Logs: %d", len(report.MediaAccessLogs)))
 	pdf.Ln(6)
 	pdf.Cell(40, 6, fmt.Sprintf("User Events: %d", len(report.Events)))
-	
+
 	return s.outputPDFToBytes(pdf)
 }
 
 func (s *ReportingService) formatSystemOverviewPDF(pdf *gofpdf.Fpdf, data interface{}) ([]byte, error) {
 	report := data.(*models.SystemOverviewReport)
-	
+
 	pdf.SetFont("Arial", "B", 12)
 	pdf.Cell(40, 8, "System Statistics")
 	pdf.Ln(8)
-	
+
 	pdf.SetFont("Arial", "", 10)
 	pdf.Cell(40, 6, fmt.Sprintf("Total Users: %d", report.TotalUsers))
 	pdf.Ln(6)
@@ -560,10 +560,10 @@ func (s *ReportingService) formatSystemOverviewPDF(pdf *gofpdf.Fpdf, data interf
 	pdf.Ln(6)
 	pdf.Cell(40, 6, fmt.Sprintf("Total Events: %d", report.TotalEvents))
 	pdf.Ln(6)
-	pdf.Cell(40, 6, fmt.Sprintf("Report Period: %s to %s", 
-		report.StartDate.Format("2006-01-02"), 
+	pdf.Cell(40, 6, fmt.Sprintf("Report Period: %s to %s",
+		report.StartDate.Format("2006-01-02"),
 		report.EndDate.Format("2006-01-02")))
-	
+
 	return s.outputPDFToBytes(pdf)
 }
 
@@ -572,17 +572,17 @@ func (s *ReportingService) formatMediaAnalyticsPDF(pdf *gofpdf.Fpdf, data interf
 	pdf.SetFont("Arial", "B", 12)
 	pdf.Cell(40, 8, "Media Analytics")
 	pdf.Ln(8)
-	
+
 	pdf.SetFont("Arial", "", 10)
 	pdf.Cell(40, 6, "Media statistics and analytics data")
 	pdf.Ln(6)
-	
+
 	// Add JSON data for now (can be enhanced later)
 	jsonData, err := json.MarshalIndent(data, "", "  ")
 	if err != nil {
 		return nil, fmt.Errorf("failed to marshal media analytics data: %w", err)
 	}
-	
+
 	lines := strings.Split(string(jsonData), "\n")
 	pdf.SetFont("Courier", "", 8)
 	for _, line := range lines {
@@ -592,7 +592,7 @@ func (s *ReportingService) formatMediaAnalyticsPDF(pdf *gofpdf.Fpdf, data interf
 		pdf.Cell(40, 3, line)
 		pdf.Ln(3)
 	}
-	
+
 	return s.outputPDFToBytes(pdf)
 }
 
@@ -601,23 +601,23 @@ func (s *ReportingService) formatUserActivityPDF(pdf *gofpdf.Fpdf, data interfac
 	pdf.SetFont("Arial", "B", 12)
 	pdf.Cell(40, 8, "User Activity Report")
 	pdf.Ln(8)
-	
+
 	pdf.SetFont("Arial", "", 10)
 	pdf.Cell(40, 6, "User activity logs and events")
 	pdf.Ln(6)
-	
+
 	// Add summary information
 	jsonData, err := json.Marshal(data)
 	if err != nil {
 		return nil, fmt.Errorf("failed to marshal user activity data: %w", err)
 	}
-	
+
 	pdf.SetFont("Courier", "", 8)
 	text := string(jsonData)
 	if len(text) > 3000 { // Limit text to reasonable size
 		text = text[:3000] + "...[truncated]"
 	}
-	
+
 	lines := strings.Split(text, "\n")
 	for _, line := range lines {
 		if len(line) > 100 {
@@ -626,7 +626,7 @@ func (s *ReportingService) formatUserActivityPDF(pdf *gofpdf.Fpdf, data interfac
 		pdf.Cell(40, 3, line)
 		pdf.Ln(3)
 	}
-	
+
 	return s.outputPDFToBytes(pdf)
 }
 
@@ -635,23 +635,23 @@ func (s *ReportingService) formatSecurityAuditPDF(pdf *gofpdf.Fpdf, data interfa
 	pdf.SetFont("Arial", "B", 12)
 	pdf.Cell(40, 8, "Security Audit Report")
 	pdf.Ln(8)
-	
+
 	pdf.SetFont("Arial", "B", 10)
 	pdf.Cell(40, 6, "Security Events and Audit Information")
 	pdf.Ln(10)
-	
+
 	pdf.SetFont("Arial", "", 10)
 	pdf.Cell(40, 6, "This report contains security audit information")
 	pdf.Ln(6)
 	pdf.Cell(40, 6, fmt.Sprintf("Generated on: %s", time.Now().Format("2006-01-02 15:04:05")))
 	pdf.Ln(10)
-	
+
 	// Add audit data as formatted JSON
 	jsonData, err := json.MarshalIndent(data, "", "  ")
 	if err != nil {
 		return nil, fmt.Errorf("failed to marshal security audit data: %w", err)
 	}
-	
+
 	pdf.SetFont("Courier", "", 8)
 	lines := strings.Split(string(jsonData), "\n")
 	for _, line := range lines {
@@ -661,7 +661,7 @@ func (s *ReportingService) formatSecurityAuditPDF(pdf *gofpdf.Fpdf, data interfa
 		pdf.Cell(40, 3, line)
 		pdf.Ln(3)
 	}
-	
+
 	return s.outputPDFToBytes(pdf)
 }
 
@@ -670,23 +670,23 @@ func (s *ReportingService) formatPerformanceMetricsPDF(pdf *gofpdf.Fpdf, data in
 	pdf.SetFont("Arial", "B", 12)
 	pdf.Cell(40, 8, "Performance Metrics Report")
 	pdf.Ln(8)
-	
+
 	pdf.SetFont("Arial", "B", 10)
 	pdf.Cell(40, 6, "System Performance Metrics")
 	pdf.Ln(10)
-	
+
 	pdf.SetFont("Arial", "", 10)
 	pdf.Cell(40, 6, "This report contains performance metrics for the system")
 	pdf.Ln(6)
 	pdf.Cell(40, 6, fmt.Sprintf("Generated on: %s", time.Now().Format("2006-01-02 15:04:05")))
 	pdf.Ln(10)
-	
+
 	// Add performance data as formatted JSON
 	jsonData, err := json.MarshalIndent(data, "", "  ")
 	if err != nil {
 		return nil, fmt.Errorf("failed to marshal performance metrics data: %w", err)
 	}
-	
+
 	pdf.SetFont("Courier", "", 8)
 	lines := strings.Split(string(jsonData), "\n")
 	for _, line := range lines {
@@ -696,7 +696,7 @@ func (s *ReportingService) formatPerformanceMetricsPDF(pdf *gofpdf.Fpdf, data in
 		pdf.Cell(40, 3, line)
 		pdf.Ln(3)
 	}
-	
+
 	return s.outputPDFToBytes(pdf)
 }
 

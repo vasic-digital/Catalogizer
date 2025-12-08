@@ -204,8 +204,8 @@ func TestErrorReportingHandler_ReportError(t *testing.T) {
 		expectedError  bool
 	}{
 		{
-			name:          "Success",
-			userID:        1,
+			name:           "Success",
+			userID:         1,
 			hasPermission:  true,
 			permissionErr:  nil,
 			requestData:    &models.ErrorReportRequest{Level: "error", Message: "Test error"},
@@ -215,8 +215,8 @@ func TestErrorReportingHandler_ReportError(t *testing.T) {
 			expectedError:  false,
 		},
 		{
-			name:          "Permission denied",
-			userID:        1,
+			name:           "Permission denied",
+			userID:         1,
 			hasPermission:  false,
 			permissionErr:  nil,
 			requestData:    &models.ErrorReportRequest{Level: "error", Message: "Test error"},
@@ -226,8 +226,8 @@ func TestErrorReportingHandler_ReportError(t *testing.T) {
 			expectedError:  true,
 		},
 		{
-			name:          "Service error",
-			userID:        1,
+			name:           "Service error",
+			userID:         1,
 			hasPermission:  true,
 			permissionErr:  nil,
 			requestData:    &models.ErrorReportRequest{Level: "error", Message: "Test error"},
@@ -243,7 +243,7 @@ func TestErrorReportingHandler_ReportError(t *testing.T) {
 			// Create fresh mocks for each test to avoid contamination
 			mockErrorService := new(MockErrorReportingService)
 			mockAuthService := new(MockErrorReportingAuthService)
-			
+
 			handler := &ErrorReportingHandler{
 				errorReportingService: mockErrorService,
 				authService:           mockAuthService,
@@ -290,8 +290,8 @@ func TestErrorReportingHandler_ReportCrash(t *testing.T) {
 		expectedError  bool
 	}{
 		{
-			name:          "Success",
-			userID:        1,
+			name:           "Success",
+			userID:         1,
 			hasPermission:  true,
 			permissionErr:  nil,
 			requestData:    &models.CrashReportRequest{Signal: "SIGSEGV", Message: "Test crash"},
@@ -301,8 +301,8 @@ func TestErrorReportingHandler_ReportCrash(t *testing.T) {
 			expectedError:  false,
 		},
 		{
-			name:          "Permission denied",
-			userID:        1,
+			name:           "Permission denied",
+			userID:         1,
 			hasPermission:  false,
 			permissionErr:  nil,
 			requestData:    &models.CrashReportRequest{Signal: "SIGSEGV", Message: "Test crash"},
@@ -318,7 +318,7 @@ func TestErrorReportingHandler_ReportCrash(t *testing.T) {
 			// Create fresh mocks for each test to avoid contamination
 			mockErrorService := new(MockErrorReportingService)
 			mockAuthService := new(MockErrorReportingAuthService)
-			
+
 			handler := &ErrorReportingHandler{
 				errorReportingService: mockErrorService,
 				authService:           mockAuthService,
@@ -365,9 +365,9 @@ func TestErrorReportingHandler_GetErrorReport(t *testing.T) {
 		expectedError  bool
 	}{
 		{
-			name:          "Success",
-			userID:        1,
-			reportID:      1,
+			name:           "Success",
+			userID:         1,
+			reportID:       1,
 			hasPermission:  true,
 			permissionErr:  nil,
 			mockResponse:   &models.ErrorReport{ID: 1},
@@ -376,9 +376,9 @@ func TestErrorReportingHandler_GetErrorReport(t *testing.T) {
 			expectedError:  false,
 		},
 		{
-			name:          "Permission denied",
-			userID:        1,
-			reportID:      1,
+			name:           "Permission denied",
+			userID:         1,
+			reportID:       1,
 			hasPermission:  false,
 			permissionErr:  nil,
 			mockResponse:   nil,
@@ -393,7 +393,7 @@ func TestErrorReportingHandler_GetErrorReport(t *testing.T) {
 			// Create fresh mocks for each test to avoid contamination
 			mockErrorService := new(MockErrorReportingService)
 			mockAuthService := new(MockErrorReportingAuthService)
-			
+
 			handler := &ErrorReportingHandler{
 				errorReportingService: mockErrorService,
 				authService:           mockAuthService,
@@ -429,9 +429,9 @@ func TestErrorReportingHandler_GetErrorReport(t *testing.T) {
 func TestErrorReportingHandler_NewErrorReportingHandler(t *testing.T) {
 	mockErrorService := new(MockErrorReportingService)
 	mockAuthService := new(MockErrorReportingAuthService)
-	
+
 	handler := NewErrorReportingHandler(mockErrorService, mockAuthService)
-	
+
 	assert.NotNil(t, handler)
 	assert.Equal(t, mockErrorService, handler.errorReportingService)
 	assert.Equal(t, mockAuthService, handler.authService)

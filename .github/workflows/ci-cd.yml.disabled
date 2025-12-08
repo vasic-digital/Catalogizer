@@ -77,6 +77,44 @@ jobs:
           name: api-coverage
           path: catalog-api/coverage.out
 
+  # Frontend Component Testing
+  test-frontend:
+    name: "Frontend Testing"
+    runs-on: ubuntu-latest
+    needs: quick-checks
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'npm'
+          cache-dependency-path: catalog-web/package-lock.json
+
+      - name: Install dependencies
+        working-directory: catalog-web
+        run: npm ci
+
+      - name: Run TypeScript type checking
+        working-directory: catalog-web
+        run: npm run type-check
+
+      - name: Run frontend tests
+        working-directory: catalog-web
+        run: npm test -- --watchAll=false --coverage --passWithNoTests
+
+      - name: Build frontend
+        working-directory: catalog-web
+        run: npm run build
+
+      - name: Upload coverage reports
+        uses: actions/upload-artifact@v4
+        with:
+          name: frontend-coverage
+          path: catalog-web/coverage/
+
   # Android Component Testing
   test-android:
     name: "Android Testing"

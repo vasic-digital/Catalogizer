@@ -303,24 +303,24 @@ func (db *DB) createConversionJobsTable(ctx context.Context) error {
 			FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
 		)
 	`
-	
+
 	if _, err := db.ExecContext(ctx, query); err != nil {
 		return fmt.Errorf("failed to create conversion_jobs table: %w", err)
 	}
-	
+
 	// Create indexes
 	indexes := []string{
 		"CREATE INDEX IF NOT EXISTS idx_conversion_jobs_user_id ON conversion_jobs(user_id)",
 		"CREATE INDEX IF NOT EXISTS idx_conversion_jobs_status ON conversion_jobs(status)",
 		"CREATE INDEX IF NOT EXISTS idx_conversion_jobs_created_at ON conversion_jobs(created_at)",
 	}
-	
+
 	for _, indexQuery := range indexes {
 		if _, err := db.ExecContext(ctx, indexQuery); err != nil {
 			return fmt.Errorf("failed to create index: %s, error: %w", indexQuery, err)
 		}
 	}
-	
+
 	return nil
 }
 
@@ -435,6 +435,6 @@ func (db *DB) createAuthTables(ctx context.Context) error {
 	if _, err := db.ExecContext(ctx, schema); err != nil {
 		return fmt.Errorf("failed to create auth tables: %w", err)
 	}
-	
+
 	return nil
 }

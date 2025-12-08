@@ -10,9 +10,9 @@ import (
 	"catalogizer/repository"
 	"catalogizer/services"
 
+	"database/sql"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"database/sql"
 
 	_ "github.com/mutecomm/go-sqlcipher"
 )
@@ -40,8 +40,8 @@ func TestConversionIntegration(t *testing.T) {
 		Salt:         "salt",
 		RoleID:       1, // Admin role
 		IsActive:     true,
-		CreatedAt:     time.Now(),
-		UpdatedAt:     time.Now(),
+		CreatedAt:    time.Now(),
+		UpdatedAt:    time.Now(),
 	}
 
 	userID, err := userRepo.Create(user)

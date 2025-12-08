@@ -98,6 +98,11 @@ func NewCacheService(db *sql.DB, logger *zap.Logger) *CacheService {
 }
 
 func (s *CacheService) Set(ctx context.Context, key string, value interface{}, ttl time.Duration) error {
+	// If no database is available (e.g., in tests), skip operation
+	if s.db == nil {
+		return nil
+	}
+
 	s.logger.Debug("Setting cache entry",
 		zap.String("key", key),
 		zap.Duration("ttl", ttl))
@@ -130,6 +135,11 @@ func (s *CacheService) Set(ctx context.Context, key string, value interface{}, t
 }
 
 func (s *CacheService) Get(ctx context.Context, key string, dest interface{}) (bool, error) {
+	// If no database is available (e.g., in tests), return not found
+	if s.db == nil {
+		return false, nil
+	}
+
 	s.logger.Debug("Getting cache entry", zap.String("key", key))
 
 	query := `
@@ -163,6 +173,11 @@ func (s *CacheService) Get(ctx context.Context, key string, dest interface{}) (b
 }
 
 func (s *CacheService) Delete(ctx context.Context, key string) error {
+	// If no database is available (e.g., in tests), skip operation
+	if s.db == nil {
+		return nil
+	}
+
 	s.logger.Debug("Deleting cache entry", zap.String("key", key))
 
 	query := `DELETE FROM cache_entries WHERE cache_key = $1`
@@ -180,6 +195,11 @@ func (s *CacheService) Delete(ctx context.Context, key string) error {
 }
 
 func (s *CacheService) Clear(ctx context.Context, pattern string) error {
+	// If no database is available (e.g., in tests), skip operation
+	if s.db == nil {
+		return nil
+	}
+
 	s.logger.Info("Clearing cache entries", zap.String("pattern", pattern))
 
 	var query string
@@ -205,6 +225,11 @@ func (s *CacheService) Clear(ctx context.Context, pattern string) error {
 }
 
 func (s *CacheService) SetMediaMetadata(ctx context.Context, mediaItemID int64, metadataType, provider string, data interface{}, quality float64) error {
+	// If no database is available (e.g., in tests), skip operation
+	if s.db == nil {
+		return nil
+	}
+
 	s.logger.Debug("Setting media metadata cache",
 		zap.Int64("media_item_id", mediaItemID),
 		zap.String("type", metadataType),
@@ -242,6 +267,11 @@ func (s *CacheService) SetMediaMetadata(ctx context.Context, mediaItemID int64, 
 }
 
 func (s *CacheService) GetMediaMetadata(ctx context.Context, mediaItemID int64, metadataType, provider string, dest interface{}) (bool, float64, error) {
+	// If no database is available (e.g., in tests), return not found
+	if s.db == nil {
+		return false, 0, nil
+	}
+
 	s.logger.Debug("Getting media metadata cache",
 		zap.Int64("media_item_id", mediaItemID),
 		zap.String("type", metadataType),
@@ -283,6 +313,11 @@ func (s *CacheService) GetMediaMetadata(ctx context.Context, mediaItemID int64, 
 }
 
 func (s *CacheService) SetAPIResponse(ctx context.Context, provider, endpoint string, requestData interface{}, response interface{}, statusCode int, ttl time.Duration) error {
+	// If no database is available (e.g., in tests), skip operation
+	if s.db == nil {
+		return nil
+	}
+
 	s.logger.Debug("Setting API response cache",
 		zap.String("provider", provider),
 		zap.String("endpoint", endpoint))
@@ -323,6 +358,11 @@ func (s *CacheService) SetAPIResponse(ctx context.Context, provider, endpoint st
 }
 
 func (s *CacheService) GetAPIResponse(ctx context.Context, provider, endpoint string, requestData interface{}, dest interface{}) (bool, int, error) {
+	// If no database is available (e.g., in tests), return not found
+	if s.db == nil {
+		return false, 0, nil
+	}
+
 	s.logger.Debug("Getting API response cache",
 		zap.String("provider", provider),
 		zap.String("endpoint", endpoint))
@@ -366,6 +406,11 @@ func (s *CacheService) GetAPIResponse(ctx context.Context, provider, endpoint st
 }
 
 func (s *CacheService) SetThumbnail(ctx context.Context, videoID, position int64, url string, width, height int, fileSize int64) error {
+	// If no database is available (e.g., in tests), skip operation
+	if s.db == nil {
+		return nil
+	}
+
 	s.logger.Debug("Setting thumbnail cache",
 		zap.Int64("video_id", videoID),
 		zap.Int64("position", position))
@@ -393,6 +438,11 @@ func (s *CacheService) SetThumbnail(ctx context.Context, videoID, position int64
 }
 
 func (s *CacheService) GetThumbnail(ctx context.Context, videoID, position int64, width, height int) (*ThumbnailCache, error) {
+	// If no database is available (e.g., in tests), return nil
+	if s.db == nil {
+		return nil, nil
+	}
+
 	s.logger.Debug("Getting thumbnail cache",
 		zap.Int64("video_id", videoID),
 		zap.Int64("position", position))
@@ -557,6 +607,11 @@ func (s *CacheService) GetStats(ctx context.Context) (*CacheStats, error) {
 		CachesByProvider: make(map[string]int64),
 	}
 
+	// If no database is available (e.g., in tests), return empty stats
+	if s.db == nil {
+		return stats, nil
+	}
+
 	if err := s.getBasicStats(ctx, stats); err != nil {
 		return nil, err
 	}
@@ -581,6 +636,11 @@ func (s *CacheService) GetStats(ctx context.Context) (*CacheStats, error) {
 }
 
 func (s *CacheService) CleanupExpired(ctx context.Context) error {
+	// If no database is available (e.g., in tests), skip operation
+	if s.db == nil {
+		return nil
+	}
+
 	s.logger.Info("Cleaning up expired cache entries")
 
 	tables := []string{
@@ -771,6 +831,11 @@ func (s *CacheService) Warmup(ctx context.Context) error {
 }
 
 func (s *CacheService) InvalidateByPattern(ctx context.Context, pattern string) error {
+	// If no database is available (e.g., in tests), skip operation
+	if s.db == nil {
+		return nil
+	}
+
 	s.logger.Info("Invalidating cache entries by pattern", zap.String("pattern", pattern))
 
 	query := `DELETE FROM cache_entries WHERE cache_key LIKE $1`

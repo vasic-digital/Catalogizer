@@ -20,7 +20,7 @@ func createTestRequest() *http.Request {
 func TestDefaultRedisRateLimiterConfig(t *testing.T) {
 	client := redis.NewClient(&redis.Options{Addr: ":6379"})
 	config := DefaultRedisRateLimiterConfig(client)
-	
+
 	assert.Equal(t, 100, config.Requests)
 	assert.Equal(t, time.Minute, config.Window)
 	assert.NotEmpty(t, config.Message)
@@ -31,7 +31,7 @@ func TestDefaultRedisRateLimiterConfig(t *testing.T) {
 func TestStrictRedisRateLimiterConfig(t *testing.T) {
 	client := redis.NewClient(&redis.Options{Addr: ":6379"})
 	config := StrictRedisRateLimiterConfig(client)
-	
+
 	assert.Equal(t, 10, config.Requests)
 	assert.Equal(t, time.Minute, config.Window)
 	assert.NotEmpty(t, config.Message)
@@ -42,7 +42,7 @@ func TestStrictRedisRateLimiterConfig(t *testing.T) {
 func TestAuthRedisRateLimiterConfig(t *testing.T) {
 	client := redis.NewClient(&redis.Options{Addr: ":6379"})
 	config := AuthRedisRateLimiterConfig(client)
-	
+
 	assert.Equal(t, 5, config.Requests)
 	assert.Equal(t, time.Minute, config.Window)
 	assert.NotEmpty(t, config.Message)
@@ -53,7 +53,7 @@ func TestAuthRedisRateLimiterConfig(t *testing.T) {
 func TestUserRedisRateLimiterConfig(t *testing.T) {
 	client := redis.NewClient(&redis.Options{Addr: ":6379"})
 	config := UserRedisRateLimiterConfig(client)
-	
+
 	assert.Equal(t, 200, config.Requests)
 	assert.Equal(t, time.Minute, config.Window)
 	assert.NotEmpty(t, config.Message)
@@ -67,51 +67,51 @@ func TestRedisRateLimit_Integration(t *testing.T) {
 	client := redis.NewClient(&redis.Options{
 		Addr: "localhost:6379",
 	})
-	
+
 	ctx := context.Background()
 	if err := client.Ping(ctx).Err(); err != nil {
 		t.Skip("Redis not available for integration test")
 	}
-	
+
 	// Clean up after test
 	defer client.Del(ctx, "rate_limit:test_ip")
-	
+
 	gin.SetMode(gin.TestMode)
 	config := DefaultRedisRateLimiterConfig(client)
-	config.Requests = 3 // Low limit for testing
+	config.Requests = 3             // Low limit for testing
 	config.Window = time.Second * 2 // Short window for testing
 	config.KeyGenerator = func(c *gin.Context) string {
 		return "test_ip"
 	}
-	
+
 	middleware := RedisRateLimit(config)
-	
+
 	// First request should pass
 	c, _ := gin.CreateTestContext(httptest.NewRecorder())
 	c.Request = createTestRequest()
 	c.Set("test_key", "test_value")
-	
+
 	middleware(c)
 	assert.False(t, c.IsAborted())
-	
+
 	// Second request should pass
 	c2, _ := gin.CreateTestContext(httptest.NewRecorder())
 	c2.Request = createTestRequestWithIP()
-	
+
 	middleware(c2)
 	assert.False(t, c2.IsAborted())
-	
+
 	// Third request should pass
 	c3, _ := gin.CreateTestContext(httptest.NewRecorder())
 	c3.Request = createTestRequest()
-	
+
 	middleware(c3)
 	assert.False(t, c3.IsAborted())
-	
+
 	// Fourth request should be rate limited
 	c4, _ := gin.CreateTestContext(httptest.NewRecorder())
 	c4.Request = createTestRequest()
-	
+
 	middleware(c4)
 	assert.True(t, c4.IsAborted())
 	assert.Equal(t, 429, c4.Writer.Status())
@@ -121,15 +121,15 @@ func TestSlidingWindowRedisRateLimit_Integration(t *testing.T) {
 	client := redis.NewClient(&redis.Options{
 		Addr: "localhost:6379",
 	})
-	
+
 	ctx := context.Background()
 	if err := client.Ping(ctx).Err(); err != nil {
 		t.Skip("Redis not available for integration test")
 	}
-	
+
 	// Clean up after test
 	defer client.Del(ctx, "sliding_rate_limit:test_ip")
-	
+
 	gin.SetMode(gin.TestMode)
 	config := DefaultRedisRateLimiterConfig(client)
 	config.Requests = 3
@@ -137,25 +137,25 @@ func TestSlidingWindowRedisRateLimit_Integration(t *testing.T) {
 	config.KeyGenerator = func(c *gin.Context) string {
 		return "test_ip"
 	}
-	
+
 	middleware := SlidingWindowRedisRateLimit(config)
-	
+
 	// Make requests that should pass
 	for i := 0; i < 3; i++ {
 		c, _ := gin.CreateTestContext(httptest.NewRecorder())
 		c.Request = createTestRequest()
-		
+
 		middleware(c)
 		assert.False(t, c.IsAborted(), "Request %d should pass", i+1)
-		
+
 		// Small delay to spread out requests
 		time.Sleep(time.Millisecond * 100)
 	}
-	
+
 	// Next request should be rate limited
 	c, _ := gin.CreateTestContext(httptest.NewRecorder())
 	c.Request = createTestRequest()
-	
+
 	middleware(c)
 	assert.True(t, c.IsAborted())
 	assert.Equal(t, 429, c.Writer.Status())
@@ -165,49 +165,49 @@ func TestTokenBucketRedisRateLimit_Integration(t *testing.T) {
 	client := redis.NewClient(&redis.Options{
 		Addr: "localhost:6379",
 	})
-	
+
 	ctx := context.Background()
 	if err := client.Ping(ctx).Err(); err != nil {
 		t.Skip("Redis not available for integration test")
 	}
-	
+
 	// Clean up after test
 	defer client.Del(ctx, "token_bucket:test_ip")
-	
+
 	gin.SetMode(gin.TestMode)
-	
+
 	middleware := TokenBucketRedisRateLimit(
 		client,
 		func(c *gin.Context) string { return "test_ip" },
-		5,    // Max tokens
-		1,    // Refill rate: 1 token per second
+		5,           // Max tokens
+		1,           // Refill rate: 1 token per second
 		time.Second, // Refill interval
 	)
-	
+
 	// Make requests that should consume tokens
 	for i := 0; i < 5; i++ {
 		c, _ := gin.CreateTestContext(httptest.NewRecorder())
 		c.Request = createTestRequest()
-		
+
 		middleware(c)
 		assert.False(t, c.IsAborted(), "Request %d should pass", i+1)
 	}
-	
+
 	// Next request should be rate limited (bucket empty)
 	c, _ := gin.CreateTestContext(httptest.NewRecorder())
 	c.Request = createTestRequest()
-	
+
 	middleware(c)
 	assert.True(t, c.IsAborted())
 	assert.Equal(t, 429, c.Writer.Status())
-	
+
 	// Wait for token refill
 	time.Sleep(time.Second * 2)
-	
+
 	// Request should pass again
 	c2, _ := gin.CreateTestContext(httptest.NewRecorder())
 	c2.Request = createTestRequestWithIP()
-	
+
 	middleware(c2)
 	assert.False(t, c2.IsAborted())
 }
@@ -217,16 +217,16 @@ func TestRedisRateLimit_ErrorHandling(t *testing.T) {
 	client := redis.NewClient(&redis.Options{
 		Addr: "invalid-host:6379",
 	})
-	
+
 	gin.SetMode(gin.TestMode)
 	config := DefaultRedisRateLimiterConfig(client)
 	middleware := RedisRateLimit(config)
-	
+
 	// Request should fail due to Redis error (fail closed)
 	w := httptest.NewRecorder()
 	c, _ := gin.CreateTestContext(w)
 	c.Request = createTestRequest()
-	
+
 	middleware(c)
 	assert.True(t, c.IsAborted()) // Should abort due to Redis error
 }
@@ -234,14 +234,14 @@ func TestRedisRateLimit_ErrorHandling(t *testing.T) {
 func TestAuthRateLimiterKeyGeneration(t *testing.T) {
 	client := redis.NewClient(&redis.Options{Addr: ":6379"})
 	config := AuthRedisRateLimiterConfig(client)
-	
+
 	// Test key generation without username
 	w := httptest.NewRecorder()
 	c, _ := gin.CreateTestContext(w)
 	c.Request = createTestRequest()
 	key := config.KeyGenerator(c)
 	assert.Contains(t, key, ".")
-	
+
 	// Test key generation with username
 	c2, _ := gin.CreateTestContext(w)
 	c2.Request = createTestRequestWithIP()
@@ -253,13 +253,13 @@ func TestAuthRateLimiterKeyGeneration(t *testing.T) {
 func TestUserRateLimiterKeyGeneration(t *testing.T) {
 	client := redis.NewClient(&redis.Options{Addr: ":6379"})
 	config := UserRedisRateLimiterConfig(client)
-	
+
 	// Test key generation without user ID (should fall back to IP)
 	c, _ := gin.CreateTestContext(nil)
 	c.Request = createTestRequest()
 	key := config.KeyGenerator(c)
 	assert.Contains(t, key, "ip:")
-	
+
 	// Test key generation with user ID
 	c2, _ := gin.CreateTestContext(nil)
 	c2.Request = createTestRequestWithIP()

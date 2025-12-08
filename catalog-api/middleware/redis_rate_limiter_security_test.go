@@ -41,7 +41,7 @@ func TestRedisRateLimit_SecurityBehavior(t *testing.T) {
 		req := httptest.NewRequest("GET", "/test", nil)
 		w := httptest.NewRecorder()
 		router.ServeHTTP(w, req)
-		
+
 		// All requests should fail with service unavailable due to Redis failure (security fix)
 		assert.Equal(t, http.StatusServiceUnavailable, w.Code, "Request %d should be rejected with 503 due to Redis failure", i+1)
 	}
@@ -69,15 +69,15 @@ func TestRedisRateLimit_FixedBehavior(t *testing.T) {
 		return func(gc *gin.Context) {
 			key := "rate_limit:" + c.KeyGenerator(gc)
 			ctx := context.Background()
-			
+
 			// Try Redis with fallback to in-memory if Redis fails
 			pipe := c.Client.Pipeline()
 			getCmd := pipe.Get(ctx, key)
 			incrCmd := pipe.Incr(ctx, key)
 			expireCmd := pipe.Expire(ctx, key, c.Window)
-			
+
 			_, err := pipe.Exec(ctx)
-			
+
 			// If Redis fails, use in-memory rate limiting instead of failing open
 			if err != nil {
 				// Use simple in-memory rate limiting as fallback
@@ -88,7 +88,7 @@ func TestRedisRateLimit_FixedBehavior(t *testing.T) {
 				gc.Abort()
 				return
 			}
-			
+
 			var currentCount int64
 			if getCmd.Err() != nil {
 				currentCount = 1
@@ -99,17 +99,17 @@ func TestRedisRateLimit_FixedBehavior(t *testing.T) {
 					currentCount = 1
 				}
 			}
-			
+
 			incrCmd.Val()
 			expireCmd.Val()
-			
+
 			// Check if rate limit exceeded
 			if currentCount > int64(c.Requests) {
 				ttl, _ := c.Client.TTL(ctx, key).Result()
 				if ttl < 0 {
 					ttl = c.Window
 				}
-				
+
 				gc.JSON(http.StatusTooManyRequests, gin.H{
 					"error":       "rate_limit_exceeded",
 					"message":     c.Message,
@@ -118,14 +118,14 @@ func TestRedisRateLimit_FixedBehavior(t *testing.T) {
 				gc.Abort()
 				return
 			}
-			
+
 			// Add rate limit headers
 			remaining := int64(c.Requests) - currentCount
 			gc.Header("X-RateLimit-Limit", strconv.Itoa(c.Requests))
 			gc.Header("X-RateLimit-Remaining", strconv.Itoa(int(remaining)))
 			gc.Header("X-RateLimit-Reset", time.Now().Add(c.Window).Format(time.RFC3339))
 			gc.Header("X-RateLimit-Window", c.Window.String())
-			
+
 			gc.Next()
 		}
 	}
@@ -141,11 +141,11 @@ func TestRedisRateLimit_FixedBehavior(t *testing.T) {
 
 	// Test with valid Redis connection (would need actual Redis running)
 	// For this test, we'll demonstrate the concept
-	
+
 	// The key point is that when Redis fails, we should either:
 	// 1. Fail closed (block requests)
 	// 2. Have a fallback in-memory rate limiter
 	// 3. Return an error indicating rate limiting is unavailable
-	
+
 	t.Skip("Requires actual Redis instance for full testing")
 }

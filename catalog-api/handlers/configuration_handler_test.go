@@ -103,26 +103,26 @@ func TestConfigurationHandler_GetWizardStep(t *testing.T) {
 	tests := []struct {
 		name           string
 		stepID         string
-		mockResponse    *models.WizardStep
+		mockResponse   *models.WizardStep
 		mockError      error
-		expectedStatus  int
-		expectedError   bool
+		expectedStatus int
+		expectedError  bool
 	}{
 		{
-			name:          "Valid step",
-			stepID:        "step1",
+			name:           "Valid step",
+			stepID:         "step1",
 			mockResponse:   &models.WizardStep{ID: "step1", Name: "Step 1"},
 			mockError:      nil,
 			expectedStatus: 200,
-			expectedError:   false,
+			expectedError:  false,
 		},
 		{
-			name:          "Invalid step",
-			stepID:        "invalid",
+			name:           "Invalid step",
+			stepID:         "invalid",
 			mockResponse:   nil,
 			mockError:      assert.AnError,
-			expectedStatus:  404,
-			expectedError:   true,
+			expectedStatus: 404,
+			expectedError:  true,
 		},
 	}
 
@@ -131,7 +131,7 @@ func TestConfigurationHandler_GetWizardStep(t *testing.T) {
 			// Create fresh mocks for each test to avoid contamination
 			mockConfigService := new(MockConfigurationService)
 			mockAuthService := new(MockAuthService)
-			
+
 			handler := &ConfigurationHandler{
 				configurationService: mockConfigService,
 				authService:          mockAuthService,
@@ -175,31 +175,31 @@ func TestConfigurationHandler_ValidateWizardStep(t *testing.T) {
 		expectedError  bool
 	}{
 		{
-			name:          "Valid data",
-			stepID:        "step1",
-			requestData:   testData,
+			name:           "Valid data",
+			stepID:         "step1",
+			requestData:    testData,
 			mockResponse:   &models.ValidationResult{IsValid: true},
 			mockError:      nil,
 			expectedStatus: 200,
-			expectedError:   false,
+			expectedError:  false,
 		},
 		{
-			name:          "Invalid data",
-			stepID:        "step1",
-			requestData:   testData,
+			name:           "Invalid data",
+			stepID:         "step1",
+			requestData:    testData,
 			mockResponse:   &models.ValidationResult{IsValid: false},
 			mockError:      nil,
 			expectedStatus: 200,
-			expectedError:   false,
+			expectedError:  false,
 		},
 		{
-			name:          "Service error",
-			stepID:        "step1",
-			requestData:   testData,
+			name:           "Service error",
+			stepID:         "step1",
+			requestData:    testData,
 			mockResponse:   nil,
 			mockError:      assert.AnError,
 			expectedStatus: 500,
-			expectedError:   true,
+			expectedError:  true,
 		},
 	}
 
@@ -208,7 +208,7 @@ func TestConfigurationHandler_ValidateWizardStep(t *testing.T) {
 			// Create fresh mocks for each test to avoid contamination
 			mockConfigService := new(MockConfigurationService)
 			mockAuthService := new(MockAuthService)
-			
+
 			handler := &ConfigurationHandler{
 				configurationService: mockConfigService,
 				authService:          mockAuthService,
@@ -220,11 +220,11 @@ func TestConfigurationHandler_ValidateWizardStep(t *testing.T) {
 			req := httptest.NewRequest("POST", "/wizard/step/"+tt.stepID+"/validate", bytes.NewBuffer(body))
 			req.Header.Set("Content-Type", "application/json")
 			req = mux.SetURLVars(req, map[string]string{"step_id": tt.stepID})
-			
+
 			// Add user context for authentication
 			ctx := context.WithValue(req.Context(), "user_id", int(1))
 			req = req.WithContext(ctx)
-			
+
 			rr := httptest.NewRecorder()
 
 			handler.ValidateWizardStep(rr, req)
@@ -259,20 +259,20 @@ func TestConfigurationHandler_SaveWizardProgress(t *testing.T) {
 		expectedError  bool
 	}{
 		{
-			name:          "Success",
-			userID:        1,
-			stepID:        "step1",
-			requestData:   testData,
-			mockError:     nil,
+			name:           "Success",
+			userID:         1,
+			stepID:         "step1",
+			requestData:    testData,
+			mockError:      nil,
 			expectedStatus: 200,
 			expectedError:  false,
 		},
 		{
-			name:          "Service error",
-			userID:        1,
-			stepID:        "step1",
-			requestData:   map[string]interface{}{"field1": "value1", "field2": float64(123)},
-			mockError:     assert.AnError,
+			name:           "Service error",
+			userID:         1,
+			stepID:         "step1",
+			requestData:    map[string]interface{}{"field1": "value1", "field2": float64(123)},
+			mockError:      assert.AnError,
 			expectedStatus: 500,
 			expectedError:  true,
 		},
@@ -283,12 +283,12 @@ func TestConfigurationHandler_SaveWizardProgress(t *testing.T) {
 			// Create fresh mocks for each test case
 			mockConfigService := new(MockConfigurationService)
 			mockAuthService := new(MockAuthService)
-			
+
 			handler := &ConfigurationHandler{
 				configurationService: mockConfigService,
 				authService:          mockAuthService,
 			}
-			
+
 			mockConfigService.On("SaveWizardProgress", tt.userID, tt.stepID, tt.requestData).Return(tt.mockError)
 
 			body, _ := json.Marshal(tt.requestData)
@@ -327,20 +327,20 @@ func TestConfigurationHandler_GetWizardProgress(t *testing.T) {
 		expectedError  bool
 	}{
 		{
-			name:          "Success",
-			userID:        1,
+			name:           "Success",
+			userID:         1,
 			mockResponse:   &models.WizardProgress{UserID: 1, CurrentStep: "step2"},
 			mockError:      nil,
 			expectedStatus: 200,
-			expectedError:   false,
+			expectedError:  false,
 		},
 		{
-			name:          "Not found",
-			userID:        1,
+			name:           "Not found",
+			userID:         1,
 			mockResponse:   nil,
 			mockError:      assert.AnError,
 			expectedStatus: 404,
-			expectedError:   true,
+			expectedError:  true,
 		},
 	}
 
@@ -349,7 +349,7 @@ func TestConfigurationHandler_GetWizardProgress(t *testing.T) {
 			// Create fresh mocks for each test to avoid contamination
 			mockConfigService := new(MockConfigurationService)
 			mockAuthService := new(MockAuthService)
-			
+
 			handler := &ConfigurationHandler{
 				configurationService: mockConfigService,
 				authService:          mockAuthService,
@@ -393,22 +393,22 @@ func TestConfigurationHandler_CompleteWizard(t *testing.T) {
 		expectedError  bool
 	}{
 		{
-			name:          "Success",
-			userID:        1,
-			requestData:   testData,
+			name:           "Success",
+			userID:         1,
+			requestData:    testData,
 			mockResponse:   &models.SystemConfiguration{Version: "1.0"},
 			mockError:      nil,
 			expectedStatus: 200,
-			expectedError:   false,
+			expectedError:  false,
 		},
 		{
-			name:          "Service error",
-			userID:        1,
-			requestData:   testData,
+			name:           "Service error",
+			userID:         1,
+			requestData:    testData,
 			mockResponse:   nil,
 			mockError:      assert.AnError,
 			expectedStatus: 500,
-			expectedError:   true,
+			expectedError:  true,
 		},
 	}
 
@@ -417,7 +417,7 @@ func TestConfigurationHandler_CompleteWizard(t *testing.T) {
 			// Create fresh mocks for each test to avoid contamination
 			mockConfigService := new(MockConfigurationService)
 			mockAuthService := new(MockAuthService)
-			
+
 			handler := &ConfigurationHandler{
 				configurationService: mockConfigService,
 				authService:          mockAuthService,
@@ -463,40 +463,40 @@ func TestConfigurationHandler_GetConfiguration(t *testing.T) {
 			userID:         1,
 			hasPermission:  true,
 			permissionErr:  nil,
-			mockResponse:    &models.ConfigurationSchema{Version: "1.0"},
-			serviceError:    nil,
-			expectedStatus:  200,
-			expectedError:   false,
+			mockResponse:   &models.ConfigurationSchema{Version: "1.0"},
+			serviceError:   nil,
+			expectedStatus: 200,
+			expectedError:  false,
 		},
 		{
 			name:           "Permission denied",
 			userID:         1,
 			hasPermission:  false,
 			permissionErr:  nil,
-			mockResponse:    nil,
-			serviceError:    nil,
-			expectedStatus:  403,
-			expectedError:   true,
+			mockResponse:   nil,
+			serviceError:   nil,
+			expectedStatus: 403,
+			expectedError:  true,
 		},
 		{
 			name:           "Permission error",
 			userID:         1,
 			hasPermission:  false,
 			permissionErr:  assert.AnError,
-			mockResponse:    nil,
-			serviceError:    nil,
-			expectedStatus:  403,
-			expectedError:   true,
+			mockResponse:   nil,
+			serviceError:   nil,
+			expectedStatus: 403,
+			expectedError:  true,
 		},
 		{
 			name:           "Service error",
 			userID:         1,
 			hasPermission:  true,
 			permissionErr:  nil,
-			mockResponse:    nil,
-			serviceError:    assert.AnError,
-			expectedStatus:  500,
-			expectedError:   true,
+			mockResponse:   nil,
+			serviceError:   assert.AnError,
+			expectedStatus: 500,
+			expectedError:  true,
 		},
 	}
 
@@ -505,7 +505,7 @@ func TestConfigurationHandler_GetConfiguration(t *testing.T) {
 			// Create fresh mocks for each test to avoid contamination
 			mockConfigService := new(MockConfigurationService)
 			mockAuthService := new(MockAuthService)
-			
+
 			handler := &ConfigurationHandler{
 				configurationService: mockConfigService,
 				authService:          mockAuthService,
@@ -558,9 +558,9 @@ func TestConfigurationHandler_TestConfiguration(t *testing.T) {
 			permissionErr:  nil,
 			requestData:    testConfig,
 			mockResponse:   &models.ValidationResult{IsValid: true},
-			serviceError:    nil,
-			expectedStatus:  200,
-			expectedError:   false,
+			serviceError:   nil,
+			expectedStatus: 200,
+			expectedError:  false,
 		},
 		{
 			name:           "Permission denied",
@@ -568,10 +568,10 @@ func TestConfigurationHandler_TestConfiguration(t *testing.T) {
 			hasPermission:  false,
 			permissionErr:  nil,
 			requestData:    testConfig,
-			mockResponse:    nil,
-			serviceError:    nil,
-			expectedStatus:  403,
-			expectedError:   true,
+			mockResponse:   nil,
+			serviceError:   nil,
+			expectedStatus: 403,
+			expectedError:  true,
 		},
 		{
 			name:           "Service error",
@@ -579,10 +579,10 @@ func TestConfigurationHandler_TestConfiguration(t *testing.T) {
 			hasPermission:  true,
 			permissionErr:  nil,
 			requestData:    testConfig,
-			mockResponse:    nil,
-			serviceError:    assert.AnError,
-			expectedStatus:  500,
-			expectedError:   true,
+			mockResponse:   nil,
+			serviceError:   assert.AnError,
+			expectedStatus: 500,
+			expectedError:  true,
 		},
 	}
 
@@ -591,7 +591,7 @@ func TestConfigurationHandler_TestConfiguration(t *testing.T) {
 			// Create fresh mocks for each test to avoid contamination
 			mockConfigService := new(MockConfigurationService)
 			mockAuthService := new(MockAuthService)
-			
+
 			handler := &ConfigurationHandler{
 				configurationService: mockConfigService,
 				authService:          mockAuthService,
@@ -628,9 +628,9 @@ func TestConfigurationHandler_TestConfiguration(t *testing.T) {
 func TestConfigurationHandler_NewConfigurationHandler(t *testing.T) {
 	mockConfigService := &MockConfigurationService{}
 	mockAuthService := &MockAuthService{}
-	
+
 	handler := NewConfigurationHandler(mockConfigService, mockAuthService)
-	
+
 	assert.NotNil(t, handler)
 	assert.Equal(t, mockConfigService, handler.configurationService)
 	assert.Equal(t, mockAuthService, handler.authService)

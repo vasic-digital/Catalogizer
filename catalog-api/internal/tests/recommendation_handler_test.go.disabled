@@ -16,7 +16,6 @@ import (
 	"catalogizer/internal/handlers"
 	"catalogizer/internal/services"
 	"catalogizer/repository"
-	_ "github.com/mattn/go-sqlite3"
 )
 
 func setupServices(t *testing.T, db *sql.DB) (*services.RecommendationService, *services.DeepLinkingService, *repository.FileRepository) {

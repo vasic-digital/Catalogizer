@@ -151,8 +151,8 @@ func getDefaultConfig() *Config {
 			JWTSecret:          "", // Must be set via environment variable
 			JWTExpirationHours: 24,
 			EnableAuth:         true, // Enable auth by default for security
-			AdminUsername:      "", // Must be set via environment variable
-			AdminPassword:      "", // Must be set via environment variable
+			AdminUsername:      "",   // Must be set via environment variable
+			AdminPassword:      "",   // Must be set via environment variable
 		},
 		Catalog: CatalogConfig{
 			DefaultPageSize:      100,
@@ -214,7 +214,7 @@ func validateConfig(config *Config) error {
 		if config.Auth.AdminPassword == "" {
 			config.Auth.AdminPassword = os.Getenv("ADMIN_PASSWORD")
 		}
-		
+
 		// Validate required security settings
 		if config.Auth.JWTSecret == "" {
 			return fmt.Errorf("JWT secret must be set via JWT_SECRET environment variable or config")

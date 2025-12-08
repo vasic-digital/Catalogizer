@@ -19,14 +19,14 @@ func TestVideoPlayerSubtitleLogic(t *testing.T) {
 				IsForced:  false,
 			},
 			{
-				ID:        "2", 
+				ID:        "2",
 				Language:  "es",
 				IsDefault: false,
 				IsForced:  false,
 			},
 			{
 				ID:        "3",
-				Language:  "fr", 
+				Language:  "fr",
 				IsDefault: false,
 				IsForced:  true,
 			},
@@ -46,7 +46,7 @@ func TestVideoPlayerSubtitleLogic(t *testing.T) {
 		// Verify default subtitle is selected
 		require.NotNil(t, activeSubtitle)
 		assert.Equal(t, int64(0), *activeSubtitle) // First track should be active
-		
+
 		// Verify the active track is English (default)
 		activeTrack := subtitleTracks[*activeSubtitle]
 		assert.Equal(t, "en", activeTrack.Language)
@@ -65,7 +65,7 @@ func TestVideoPlayerSubtitleLogic(t *testing.T) {
 			},
 			{
 				ID:        "2",
-				Language:  "es", 
+				Language:  "es",
 				IsDefault: false,
 				IsForced:  false,
 			},
@@ -97,7 +97,7 @@ func TestVideoPlayerSubtitleLogic(t *testing.T) {
 			{
 				ID:        "2",
 				Language:  "en",
-				IsDefault: true,  // Default subtitle second
+				IsDefault: true, // Default subtitle second
 				IsForced:  false,
 			},
 		}
@@ -115,7 +115,7 @@ func TestVideoPlayerSubtitleLogic(t *testing.T) {
 		// Verify default subtitle is selected over forced
 		require.NotNil(t, activeSubtitle)
 		assert.Equal(t, int64(1), *activeSubtitle) // Second track should be active
-		
+
 		// Verify the active track is English (default)
 		activeTrack := subtitleTracks[*activeSubtitle]
 		assert.Equal(t, "en", activeTrack.Language)

@@ -58,6 +58,18 @@ func (s *MockWebDAVServer) setupDefaultData() {
 	s.users["testuser"] = "testpass"
 	s.users["admin"] = "adminpass"
 
+	// Add root directory
+	s.files["/"] = &MockWebDAVFile{
+		Name:        "/",
+		Path:        "/",
+		IsDirectory: true,
+		Size:        0,
+		ModTime:     time.Now(),
+		Content:     []byte{},
+		ETag:        fmt.Sprintf(`"%x-%d"`, time.Now().Unix(), 0),
+		ContentType: "text/html",
+	}
+
 	// Add default directory structure
 	s.AddFile("/", "documents", true, 0, []byte{}, "text/html")
 	s.AddFile("/", "media", true, 0, []byte{}, "text/html")

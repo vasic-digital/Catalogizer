@@ -95,9 +95,9 @@ func TestRoleHandler_CreateRole(t *testing.T) {
 				Permissions: []string{"user.view"},
 			},
 			mockRoleID:     1,
-			serviceError:    nil,
+			serviceError:   nil,
 			expectedStatus: 201,
-			expectedError:   false,
+			expectedError:  false,
 		},
 		{
 			name:          "Method not allowed",
@@ -110,9 +110,9 @@ func TestRoleHandler_CreateRole(t *testing.T) {
 				Name: "Test Role",
 			},
 			mockRoleID:     0,
-			serviceError:    nil,
+			serviceError:   nil,
 			expectedStatus: 405,
-			expectedError:   true,
+			expectedError:  true,
 		},
 		{
 			name:          "Unauthorized",
@@ -125,9 +125,9 @@ func TestRoleHandler_CreateRole(t *testing.T) {
 				Name: "Test Role",
 			},
 			mockRoleID:     0,
-			serviceError:    nil,
+			serviceError:   nil,
 			expectedStatus: 401,
-			expectedError:   true,
+			expectedError:  true,
 		},
 		{
 			name:          "Permission denied",
@@ -140,9 +140,9 @@ func TestRoleHandler_CreateRole(t *testing.T) {
 				Name: "Test Role",
 			},
 			mockRoleID:     0,
-			serviceError:    nil,
+			serviceError:   nil,
 			expectedStatus: 403,
-			expectedError:   true,
+			expectedError:  true,
 		},
 	}
 
@@ -151,7 +151,7 @@ func TestRoleHandler_CreateRole(t *testing.T) {
 			// Create fresh mocks for each test to avoid contamination
 			mockUserService := new(MockRoleUserService)
 			mockAuthService := new(MockRoleAuthService)
-			
+
 			handler := &RoleHandler{
 				userRepo:    mockUserService,
 				authService: mockAuthService,
@@ -160,7 +160,7 @@ func TestRoleHandler_CreateRole(t *testing.T) {
 			if tt.authToken != "" && tt.currentUser != nil {
 				mockAuthService.On("GetCurrentUser", tt.authToken).Return(tt.currentUser, tt.permissionErr).Maybe()
 			}
-			
+
 			if tt.currentUser != nil && tt.permissionErr == nil {
 				mockAuthService.On("CheckPermission", tt.currentUser.ID, models.PermissionSystemAdmin).Return(tt.hasPermission, tt.permissionErr).Maybe()
 			}
@@ -209,54 +209,54 @@ func TestRoleHandler_GetRole(t *testing.T) {
 		expectedError  bool
 	}{
 		{
-			name:          "Success",
-			method:        "GET",
-			authToken:     "valid-token",
-			currentUser:   &models.User{ID: 1, Username: "admin"},
-			hasPermission: true,
-			permissionErr: nil,
-			roleID:        "1",
-			mockRole:      &models.Role{ID: 1, Name: "Test Role"},
-			serviceError:  nil,
+			name:           "Success",
+			method:         "GET",
+			authToken:      "valid-token",
+			currentUser:    &models.User{ID: 1, Username: "admin"},
+			hasPermission:  true,
+			permissionErr:  nil,
+			roleID:         "1",
+			mockRole:       &models.Role{ID: 1, Name: "Test Role"},
+			serviceError:   nil,
 			expectedStatus: 200,
 			expectedError:  false,
 		},
 		{
-			name:          "Method not allowed",
-			method:        "POST",
-			authToken:     "valid-token",
-			currentUser:   &models.User{ID: 1, Username: "admin"},
-			hasPermission: true,
-			permissionErr: nil,
-			roleID:        "1",
-			mockRole:      nil,
-			serviceError:  nil,
+			name:           "Method not allowed",
+			method:         "POST",
+			authToken:      "valid-token",
+			currentUser:    &models.User{ID: 1, Username: "admin"},
+			hasPermission:  true,
+			permissionErr:  nil,
+			roleID:         "1",
+			mockRole:       nil,
+			serviceError:   nil,
 			expectedStatus: 405,
 			expectedError:  true,
 		},
 		{
-			name:          "Invalid role ID",
-			method:        "GET",
-			authToken:     "valid-token",
-			currentUser:   &models.User{ID: 1, Username: "admin"},
-			hasPermission: true,
-			permissionErr: nil,
-			roleID:        "invalid",
-			mockRole:      nil,
-			serviceError:  nil,
+			name:           "Invalid role ID",
+			method:         "GET",
+			authToken:      "valid-token",
+			currentUser:    &models.User{ID: 1, Username: "admin"},
+			hasPermission:  true,
+			permissionErr:  nil,
+			roleID:         "invalid",
+			mockRole:       nil,
+			serviceError:   nil,
 			expectedStatus: 400,
 			expectedError:  true,
 		},
 		{
-			name:          "Permission denied",
-			method:        "GET",
-			authToken:     "valid-token",
-			currentUser:   &models.User{ID: 1, Username: "user"},
-			hasPermission: false,
-			permissionErr: nil,
-			roleID:        "1",
-			mockRole:      nil,
-			serviceError:  nil,
+			name:           "Permission denied",
+			method:         "GET",
+			authToken:      "valid-token",
+			currentUser:    &models.User{ID: 1, Username: "user"},
+			hasPermission:  false,
+			permissionErr:  nil,
+			roleID:         "1",
+			mockRole:       nil,
+			serviceError:   nil,
 			expectedStatus: 403,
 			expectedError:  true,
 		},
@@ -267,7 +267,7 @@ func TestRoleHandler_GetRole(t *testing.T) {
 			// Create fresh mocks for each test to avoid contamination
 			mockUserService := new(MockRoleUserService)
 			mockAuthService := new(MockRoleAuthService)
-			
+
 			handler := &RoleHandler{
 				userRepo:    mockUserService,
 				authService: mockAuthService,
@@ -276,7 +276,7 @@ func TestRoleHandler_GetRole(t *testing.T) {
 			if tt.authToken != "" && tt.currentUser != nil {
 				mockAuthService.On("GetCurrentUser", tt.authToken).Return(tt.currentUser, tt.permissionErr).Maybe()
 			}
-			
+
 			if tt.currentUser != nil && tt.permissionErr == nil {
 				mockAuthService.On("CheckPermission", tt.currentUser.ID, models.PermissionSystemAdmin).Return(tt.hasPermission, tt.permissionErr).Maybe()
 			}

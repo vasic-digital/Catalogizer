@@ -54,7 +54,7 @@ func StrictRedisRateLimiterConfig(client *redis.Client) RedisRateLimiterConfig {
 // AuthRedisRateLimiterConfig returns a rate limiter specifically for auth endpoints
 func AuthRedisRateLimiterConfig(client *redis.Client) RedisRateLimiterConfig {
 	return RedisRateLimiterConfig{
-		Requests: 5,  // 5 login attempts per minute
+		Requests: 5, // 5 login attempts per minute
 		Window:   time.Minute,
 		Message:  "Too many authentication attempts. Account temporarily locked.",
 		Client:   client,
@@ -96,35 +96,35 @@ func RedisRateLimit(config RedisRateLimiterConfig) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		key := "rate_limit:" + config.KeyGenerator(c)
 		ctx := context.Background()
-		
+
 		// Use Redis pipeline for atomic operations
 		pipe := config.Client.Pipeline()
-		
+
 		// Get current count
 		getCmd := pipe.Get(ctx, key)
-		
+
 		// Increment count and set expiration if key doesn't exist
 		incrCmd := pipe.Incr(ctx, key)
 		expireCmd := pipe.Expire(ctx, key, config.Window)
-		
+
 		// Execute pipeline
 		_, err := pipe.Exec(ctx)
-		
+
 		// Handle Redis errors gracefully - fail closed for security
 		if err != nil {
 			// Log the Redis error
 			fmt.Printf("Redis rate limiter error: %v\n", err)
-			
+
 			// When Redis is unavailable, we fail closed for security
 			// This prevents bypassing rate limiting when Redis is down
 			c.JSON(http.StatusServiceUnavailable, gin.H{
-				"error": "Rate limiting service temporarily unavailable",
+				"error":   "Rate limiting service temporarily unavailable",
 				"message": "Please try again later",
 			})
 			c.Abort()
 			return
 		}
-		
+
 		var currentCount int64
 		if getCmd.Err() != nil {
 			// Key doesn't exist, this is the first request
@@ -137,11 +137,11 @@ func RedisRateLimit(config RedisRateLimiterConfig) gin.HandlerFunc {
 				currentCount = 1
 			}
 		}
-		
+
 		// Wait for increment and expire commands to complete
 		incrCmd.Val()
 		expireCmd.Val()
-		
+
 		// Check if rate limit exceeded
 		if currentCount > int64(config.Requests) {
 			// Get TTL for retry-after header
@@ -149,11 +149,11 @@ func RedisRateLimit(config RedisRateLimiterConfig) gin.HandlerFunc {
 			if ttl < 0 {
 				ttl = config.Window
 			}
-			
+
 			// Log rate limit attempt
-			fmt.Printf("Rate limit exceeded for key: %s, IP: %s, Path: %s\n", 
+			fmt.Printf("Rate limit exceeded for key: %s, IP: %s, Path: %s\n",
 				key, c.ClientIP(), c.Request.URL.Path)
-			
+
 			c.JSON(http.StatusTooManyRequests, gin.H{
 				"error":       "rate_limit_exceeded",
 				"message":     config.Message,
@@ -162,14 +162,14 @@ func RedisRateLimit(config RedisRateLimiterConfig) gin.HandlerFunc {
 			c.Abort()
 			return
 		}
-		
+
 		// Add rate limit headers
 		remaining := int64(config.Requests) - currentCount
 		c.Header("X-RateLimit-Limit", strconv.Itoa(config.Requests))
 		c.Header("X-RateLimit-Remaining", strconv.Itoa(int(remaining)))
 		c.Header("X-RateLimit-Reset", time.Now().Add(config.Window).Format(time.RFC3339))
 		c.Header("X-RateLimit-Window", config.Window.String())
-		
+
 		c.Next()
 	}
 }
@@ -181,41 +181,41 @@ func SlidingWindowRedisRateLimit(config RedisRateLimiterConfig) gin.HandlerFunc 
 		ctx := context.Background()
 		now := time.Now().UnixNano()
 		windowStart := now - config.Window.Nanoseconds()
-		
+
 		// Clean up old entries and add current request timestamp
 		pipe := config.Client.Pipeline()
-		
+
 		// Remove old entries outside the window
 		pipe.ZRemRangeByScore(ctx, key, "0", strconv.FormatInt(windowStart, 10))
-		
+
 		// Add current request
 		pipe.ZAdd(ctx, key, redis.Z{
 			Score:  float64(now),
 			Member: now,
 		})
-		
+
 		// Count current requests in window
 		countCmd := pipe.ZCard(ctx, key)
-		
+
 		// Set expiration for the key
 		pipe.Expire(ctx, key, config.Window*2)
-		
+
 		// Execute pipeline
 		_, err := pipe.Exec(ctx)
-		
+
 		// Handle Redis errors gracefully
 		if err != nil {
 			fmt.Printf("Redis sliding window rate limiter error: %v\n", err)
 			c.Next()
 			return
 		}
-		
+
 		// Get current count
 		count, err := countCmd.Result()
 		if err != nil {
 			count = 1
 		}
-		
+
 		// Check if rate limit exceeded
 		if count > int64(config.Requests) {
 			// Get TTL for retry-after header
@@ -223,11 +223,11 @@ func SlidingWindowRedisRateLimit(config RedisRateLimiterConfig) gin.HandlerFunc 
 			if ttl < 0 {
 				ttl = config.Window
 			}
-			
+
 			// Log rate limit attempt
-			fmt.Printf("Sliding window rate limit exceeded for key: %s, IP: %s, Path: %s\n", 
+			fmt.Printf("Sliding window rate limit exceeded for key: %s, IP: %s, Path: %s\n",
 				key, c.ClientIP(), c.Request.URL.Path)
-			
+
 			c.JSON(http.StatusTooManyRequests, gin.H{
 				"error":       "rate_limit_exceeded",
 				"message":     config.Message,
@@ -236,7 +236,7 @@ func SlidingWindowRedisRateLimit(config RedisRateLimiterConfig) gin.HandlerFunc 
 			c.Abort()
 			return
 		}
-		
+
 		// Add rate limit headers
 		remaining := int64(config.Requests) - count
 		c.Header("X-RateLimit-Limit", strconv.Itoa(config.Requests))
@@ -244,7 +244,7 @@ func SlidingWindowRedisRateLimit(config RedisRateLimiterConfig) gin.HandlerFunc 
 		c.Header("X-RateLimit-Reset", time.Now().Add(config.Window).Format(time.RFC3339))
 		c.Header("X-RateLimit-Window", config.Window.String())
 		c.Header("X-RateLimit-Algorithm", "sliding-window")
-		
+
 		c.Next()
 	}
 }
@@ -253,14 +253,14 @@ func SlidingWindowRedisRateLimit(config RedisRateLimiterConfig) gin.HandlerFunc 
 func TokenBucketRedisRateLimit(
 	redisClient *redis.Client,
 	keyGenerator func(*gin.Context) string,
-	tokens int,           // Maximum tokens in bucket
-	refillRate int,       // Tokens to add per second
+	tokens int, // Maximum tokens in bucket
+	refillRate int, // Tokens to add per second
 	refillInterval time.Duration, // How often to add tokens
 ) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		key := "token_bucket:" + keyGenerator(c)
 		ctx := context.Background()
-		
+
 		// Use Lua script for atomic token bucket operations
 		luaScript := `
 			local key = KEYS[1]
@@ -294,41 +294,41 @@ func TokenBucketRedisRateLimit(
 				return {0, current_tokens, max_tokens}
 			end
 		`
-		
+
 		now := time.Now().Unix()
-		result, err := redisClient.Eval(ctx, luaScript, []string{key}, 
+		result, err := redisClient.Eval(ctx, luaScript, []string{key},
 			now, tokens, refillRate, refillInterval.Seconds(), 1).Result()
-		
+
 		if err != nil {
 			fmt.Printf("Redis token bucket rate limiter error: %v\n", err)
 			c.Next()
 			return
 		}
-		
+
 		// Parse Lua script result
 		if arr, ok := result.([]interface{}); ok && len(arr) >= 3 {
 			allowed := arr[0].(int64)
 			currentTokens := arr[1].(int64)
 			maxTokens := arr[2].(int64)
-			
+
 			if allowed == 0 {
 				// Rate limit exceeded
 				c.JSON(http.StatusTooManyRequests, gin.H{
-					"error": "rate_limit_exceeded",
-					"message": "Rate limit exceeded. Please try again later.",
+					"error":       "rate_limit_exceeded",
+					"message":     "Rate limit exceeded. Please try again later.",
 					"retry_after": refillInterval.String(),
 				})
 				c.Abort()
 				return
 			}
-			
+
 			// Add rate limit headers
 			c.Header("X-RateLimit-Limit", strconv.Itoa(int(maxTokens)))
 			c.Header("X-RateLimit-Remaining", strconv.Itoa(int(currentTokens)))
 			c.Header("X-RateLimit-Reset", time.Now().Add(refillInterval).Format(time.RFC3339))
 			c.Header("X-RateLimit-Algorithm", "token-bucket")
 		}
-		
+
 		c.Next()
 	}
 }

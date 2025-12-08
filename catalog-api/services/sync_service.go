@@ -15,10 +15,10 @@ import (
 	"catalogizer/models"
 	"catalogizer/repository"
 
+	"cloud.google.com/go/storage"
 	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/aws/aws-sdk-go-v2/config"
 	"github.com/aws/aws-sdk-go-v2/service/s3"
-	"cloud.google.com/go/storage"
 	"google.golang.org/api/option"
 )
 
@@ -354,7 +354,7 @@ func (s *SyncService) downloadFromWebDAV(session *models.SyncSession, endpoint *
 
 func (s *SyncService) performCloudSync(session *models.SyncSession, endpoint *models.SyncEndpoint) error {
 	ctx := context.Background()
-	
+
 	switch endpoint.Type {
 	case "s3":
 		return s.performS3Sync(ctx, session, endpoint)
@@ -490,11 +490,11 @@ func (s *SyncService) performGoogleCloudStorageSync(ctx context.Context, session
 	}
 
 	credentialsFile, _ := syncConfig["credentials_file"].(string)
-	
+
 	// Create GCS client
 	var client *storage.Client
 	var err error
-	
+
 	if credentialsFile != "" {
 		// Use credentials file
 		client, err = storage.NewClient(ctx, option.WithCredentialsFile(credentialsFile))
@@ -502,7 +502,7 @@ func (s *SyncService) performGoogleCloudStorageSync(ctx context.Context, session
 		// Use default credentials
 		client, err = storage.NewClient(ctx)
 	}
-	
+
 	if err != nil {
 		return fmt.Errorf("failed to create GCS client: %w", err)
 	}

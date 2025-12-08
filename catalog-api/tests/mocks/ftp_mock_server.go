@@ -119,7 +119,7 @@ func (s *MockFTPServer) ListFiles(path, pattern string) ([]*MockFTPFile, error) 
 func (s *MockFTPServer) GetFile(path string) (*MockFTPFile, error) {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
-	
+
 	if file, exists := s.files[path]; exists {
 		return file, nil
 	}
@@ -130,21 +130,39 @@ func (s *MockFTPServer) GetFile(path string) (*MockFTPFile, error) {
 func (s *MockFTPServer) WriteFile(path string, content []byte) error {
 	s.mu.Lock()
 	defer s.mu.Unlock()
-	
-	if file, exists := s.files[path]; exists {
-		file.Content = content
-		file.Size = int64(len(content))
-		file.ModTime = time.Now()
-		return nil
+
+	// Extract directory and filename from path
+	dir := filepath.Dir(path)
+	filename := filepath.Base(path)
+
+	// Ensure parent directory exists
+	if dir != "." && dir != "/" {
+		if _, exists := s.files[dir]; !exists {
+			return fmt.Errorf("directory not found: %s", dir)
+		}
+		if !s.files[dir].IsDirectory {
+			return fmt.Errorf("path is not a directory: %s", dir)
+		}
 	}
-	return fmt.Errorf("file not found: %s", path)
+
+	// Create or update the file
+	s.files[path] = &MockFTPFile{
+		Name:        filename,
+		Path:        path,
+		IsDirectory: false,
+		Size:        int64(len(content)),
+		ModTime:     time.Now(),
+		Content:     content,
+		Permissions: "-rw-r--r--",
+	}
+	return nil
 }
 
 // DeleteFile removes a file from the mock server
 func (s *MockFTPServer) DeleteFile(path string) error {
 	s.mu.Lock()
 	defer s.mu.Unlock()
-	
+
 	if _, exists := s.files[path]; exists {
 		delete(s.files, path)
 		return nil

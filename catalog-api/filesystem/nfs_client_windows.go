@@ -12,9 +12,9 @@ import (
 
 // NFSClient for Windows (placeholder implementation)
 type NFSClient struct {
-	config   NFSConfig
+	config     NFSConfig
 	mountPoint string
-	connected bool
+	connected  bool
 }
 
 func NewNFSClient(config NFSConfig) (*NFSClient, error) {

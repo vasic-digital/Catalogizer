@@ -21,7 +21,7 @@ type UserServiceInterface interface {
 	Count() (int, error)
 }
 
-// UserAuthServiceInterface defines interface for authentication service operations  
+// UserAuthServiceInterface defines interface for authentication service operations
 type UserAuthServiceInterface interface {
 	CheckPermission(userID int, permission string) (bool, error)
 	GetCurrentUser(token string) (*models.User, error)
@@ -584,6 +584,77 @@ func (h *UserHandler) UnlockAccount(w http.ResponseWriter, r *http.Request) {
 
 	w.WriteHeader(http.StatusOK)
 	json.NewEncoder(w).Encode(map[string]string{"message": "Account unlocked successfully"})
+}
+
+func (h *UserHandler) UpdateUserSettings(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodPut && r.Method != http.MethodPatch {
+		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+		return
+	}
+
+	currentUser, err := h.getCurrentUser(r)
+	if err != nil {
+		http.Error(w, "Unauthorized", http.StatusUnauthorized)
+		return
+	}
+
+	userIDStr := strings.TrimPrefix(r.URL.Path, "/api/users/")
+	userIDStr = strings.TrimSuffix(userIDStr, "/settings")
+	userID, err := strconv.Atoi(userIDStr)
+	if err != nil {
+		http.Error(w, "Invalid user ID", http.StatusBadRequest)
+		return
+	}
+
+	// Users can only update their own settings, or admins can update any user's settings
+	if currentUser.ID != userID {
+		hasPermission, err := h.authService.CheckPermission(currentUser.ID, models.PermissionUserManage)
+		if err != nil {
+			http.Error(w, "Failed to check permissions", http.StatusInternalServerError)
+			return
+		}
+
+		if !hasPermission {
+			http.Error(w, "Insufficient permissions", http.StatusForbidden)
+			return
+		}
+	}
+
+	var req struct {
+		Settings map[string]interface{} `json:"settings"`
+	}
+
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		http.Error(w, "Invalid request body", http.StatusBadRequest)
+		return
+	}
+
+	user, err := h.userRepo.GetByID(userID)
+	if err != nil {
+		if strings.Contains(err.Error(), "not found") {
+			http.Error(w, "User not found", http.StatusNotFound)
+			return
+		}
+		http.Error(w, "Failed to get user", http.StatusInternalServerError)
+		return
+	}
+
+	// Marshal settings to JSON string
+	settingsJSON, err := json.Marshal(req.Settings)
+	if err != nil {
+		http.Error(w, "Failed to marshal settings", http.StatusInternalServerError)
+		return
+	}
+	user.Settings = string(settingsJSON)
+
+	err = h.userRepo.Update(user)
+	if err != nil {
+		http.Error(w, "Failed to update user settings", http.StatusInternalServerError)
+		return
+	}
+
+	w.WriteHeader(http.StatusOK)
+	json.NewEncoder(w).Encode(map[string]string{"message": "Settings updated successfully"})
 }
 
 func (h *UserHandler) getCurrentUser(r *http.Request) (*models.User, error) {

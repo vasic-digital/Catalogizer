@@ -331,7 +331,7 @@ func (m *AuthMiddleware) RateLimitByUser(requests int, window string) gin.Handle
 				zap.String("window", window),
 			)
 			c.JSON(http.StatusTooManyRequests, gin.H{
-				"error": "Rate limit exceeded. Please try again later.",
+				"error":       "Rate limit exceeded. Please try again later.",
 				"retry_after": windowDuration.Seconds(),
 			})
 			c.Abort()

@@ -155,7 +155,7 @@ func TestUserHandler_CreateUser(t *testing.T) {
 				authService.On("ValidatePassword", "password123").Return(nil)
 				authService.On("GenerateSecureToken", 16).Return("random-salt-123", nil)
 				authService.On("HashData", mock.AnythingOfType("string")).Return("hashed-combined")
-				
+
 				userRepo.On("Create", mock.AnythingOfType("*models.User")).Return(1, nil)
 			},
 			expectedStatusCode: http.StatusCreated,
@@ -212,7 +212,7 @@ func TestUserHandler_CreateUser(t *testing.T) {
 				authService.On("ValidatePassword", "password123").Return(nil)
 				authService.On("GenerateSecureToken", 16).Return("random-salt-123", nil)
 				authService.On("HashData", mock.AnythingOfType("string")).Return("hashed-combined")
-				
+
 				userRepo.On("Create", mock.AnythingOfType("*models.User")).Return(0, assert.AnError)
 			},
 			expectedStatusCode: http.StatusInternalServerError,
@@ -224,7 +224,7 @@ func TestUserHandler_CreateUser(t *testing.T) {
 			// Create fresh mocks for each test
 			mockUserService := new(MockUserService)
 			mockAuthService := new(MockUserAuthService)
-			
+
 			// Setup mocks
 			if tt.mockSetup != nil {
 				tt.mockSetup(mockUserService, mockAuthService)
@@ -235,7 +235,7 @@ func TestUserHandler_CreateUser(t *testing.T) {
 			// Create request
 			req := httptest.NewRequest(http.MethodPost, "/api/users", bytes.NewBufferString(tt.requestBody))
 			req.Header.Set("Content-Type", "application/json")
-			
+
 			// Add token for authenticated requests
 			if strings.Contains(tt.requestBody, "password") && tt.name != "unauthorized - no token" {
 				req.Header.Set("Authorization", "Bearer valid-token")
@@ -271,7 +271,7 @@ func TestUserHandler_GetUser(t *testing.T) {
 			mockSetup: func(userRepo *MockUserService, authService *MockUserAuthService) {
 				authUser := &models.User{ID: 1, Username: "testuser"}
 				authService.On("GetCurrentUser", "valid-token").Return(authUser, nil)
-				
+
 				targetUser := &models.User{
 					ID:       1,
 					Username: "testuser",
@@ -279,7 +279,7 @@ func TestUserHandler_GetUser(t *testing.T) {
 					RoleID:   1,
 				}
 				userRepo.On("GetByID", 1).Return(targetUser, nil)
-				
+
 				role := &models.Role{ID: 1, Name: "User"}
 				userRepo.On("GetRole", 1).Return(role, nil)
 			},
@@ -292,7 +292,7 @@ func TestUserHandler_GetUser(t *testing.T) {
 				authUser := &models.User{ID: 1, Username: "admin"}
 				authService.On("GetCurrentUser", "valid-token").Return(authUser, nil)
 				authService.On("CheckPermission", 1, models.PermissionUserView).Return(true, nil)
-				
+
 				targetUser := &models.User{
 					ID:       2,
 					Username: "otheruser",
@@ -300,7 +300,7 @@ func TestUserHandler_GetUser(t *testing.T) {
 					RoleID:   1,
 				}
 				userRepo.On("GetByID", 2).Return(targetUser, nil)
-				
+
 				role := &models.Role{ID: 1, Name: "User"}
 				userRepo.On("GetRole", 1).Return(role, nil)
 			},
@@ -340,7 +340,7 @@ func TestUserHandler_GetUser(t *testing.T) {
 				authUser := &models.User{ID: 1, Username: "admin"}
 				authService.On("GetCurrentUser", "valid-token").Return(authUser, nil)
 				authService.On("CheckPermission", 1, models.PermissionUserView).Return(true, nil)
-				
+
 				userRepo.On("GetByID", 999).Return(nil, errors.New("user not found"))
 			},
 			expectedStatusCode: http.StatusNotFound,
@@ -352,7 +352,7 @@ func TestUserHandler_GetUser(t *testing.T) {
 			// Create fresh mocks for each test
 			mockUserService := new(MockUserService)
 			mockAuthService := new(MockUserAuthService)
-			
+
 			// Setup mocks
 			if tt.mockSetup != nil {
 				tt.mockSetup(mockUserService, mockAuthService)
@@ -401,7 +401,7 @@ func TestUserHandler_UpdateUser(t *testing.T) {
 			mockSetup: func(userRepo *MockUserService, authService *MockUserAuthService) {
 				authUser := &models.User{ID: 1, Username: "testuser"}
 				authService.On("GetCurrentUser", "valid-token").Return(authUser, nil)
-				
+
 				existingUser := &models.User{
 					ID:       1,
 					Username: "testuser",
@@ -426,7 +426,7 @@ func TestUserHandler_UpdateUser(t *testing.T) {
 				authService.On("GetCurrentUser", "valid-token").Return(authUser, nil)
 				authService.On("CheckPermission", 1, models.PermissionUserUpdate).Return(true, nil)
 				authService.On("CheckPermission", 1, models.PermissionUserManage).Return(true, nil)
-				
+
 				existingUser := &models.User{
 					ID:       2,
 					Username: "otheruser",
@@ -452,7 +452,7 @@ func TestUserHandler_UpdateUser(t *testing.T) {
 			// Create fresh mocks for each test
 			mockUserService := new(MockUserService)
 			mockAuthService := new(MockUserAuthService)
-			
+
 			// Setup mocks
 			if tt.mockSetup != nil {
 				tt.mockSetup(mockUserService, mockAuthService)
@@ -498,7 +498,7 @@ func TestUserHandler_ListUsers(t *testing.T) {
 				authUser := &models.User{ID: 1, Username: "admin"}
 				authService.On("GetCurrentUser", "valid-token").Return(authUser, nil)
 				authService.On("CheckPermission", 1, models.PermissionUserView).Return(true, nil)
-				
+
 				users := []models.User{
 					{ID: 1, Username: "user1", RoleID: 1},
 					{ID: 2, Username: "user2", RoleID: 1},
@@ -531,7 +531,7 @@ func TestUserHandler_ListUsers(t *testing.T) {
 			// Create fresh mocks for each test
 			mockUserService := new(MockUserService)
 			mockAuthService := new(MockUserAuthService)
-			
+
 			// Setup mocks
 			if tt.mockSetup != nil {
 				tt.mockSetup(mockUserService, mockAuthService)

@@ -247,6 +247,6 @@ type CoverArtResult struct {
 
 // FileWithMetadata represents a file with its metadata
 type FileWithMetadata struct {
-	File     *FileInfo     `json:"file"`
+	File     *FileInfo      `json:"file"`
 	Metadata *MediaMetadata `json:"metadata,omitempty"`
 }

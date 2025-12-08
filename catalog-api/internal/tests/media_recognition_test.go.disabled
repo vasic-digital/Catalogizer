@@ -12,7 +12,6 @@ import (
 
 	"catalogizer/internal/models"
 	"catalogizer/internal/services"
-	_ "github.com/mattn/go-sqlite3"
 )
 
 func TestMediaRecognitionService_Movies(t *testing.T) {

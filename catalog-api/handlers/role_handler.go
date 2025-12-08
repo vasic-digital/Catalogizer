@@ -18,7 +18,7 @@ type RoleUserServiceInterface interface {
 	ListRoles() ([]models.Role, error)
 }
 
-// RoleAuthServiceInterface defines interface for authentication service operations  
+// RoleAuthServiceInterface defines interface for authentication service operations
 type RoleAuthServiceInterface interface {
 	CheckPermission(userID int, permission string) (bool, error)
 	GetCurrentUser(token string) (*models.User, error)

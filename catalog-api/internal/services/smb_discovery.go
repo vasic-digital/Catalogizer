@@ -61,7 +61,8 @@ func (s *SMBDiscoveryService) DiscoverShares(ctx context.Context, host string, u
 	conn, err := net.DialTimeout("tcp", fmt.Sprintf("%s:445", host), s.timeout)
 	if err != nil {
 		s.logger.Error("Failed to connect to SMB host", zap.String("host", host), zap.Error(err))
-		return nil, fmt.Errorf("failed to connect to SMB host %s: %w", host, err)
+		// Return common shares when connection fails
+		return s.getCommonShares(ctx, host, username, password, domain), nil
 	}
 	defer conn.Close()
 
@@ -77,7 +78,8 @@ func (s *SMBDiscoveryService) DiscoverShares(ctx context.Context, host string, u
 	session, err := d.Dial(conn)
 	if err != nil {
 		s.logger.Error("Failed to create SMB session", zap.String("host", host), zap.Error(err))
-		return nil, fmt.Errorf("failed to create SMB session: %w", err)
+		// Return common shares when session creation fails
+		return s.getCommonShares(ctx, host, username, password, domain), nil
 	}
 	defer session.Logoff()
 

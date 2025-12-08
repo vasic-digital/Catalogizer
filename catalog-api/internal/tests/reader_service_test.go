@@ -2,7 +2,6 @@ package tests
 
 import (
 	"context"
-	"database/sql"
 	"testing"
 	"time"
 
@@ -11,21 +10,12 @@ import (
 
 	"catalogizer/internal/services"
 	"go.uber.org/zap"
-	_ "github.com/mutecomm/go-sqlcipher"
 )
 
 // Mock implementations for testing - not needed with real services
 func createTestReaderService() *services.ReaderService {
-	// Create in-memory database for testing with sqlcipher
-	db, err := sql.Open("sqlite3", ":memory:")
-	if err != nil {
-		panic(err)
-	}
-
-	// Set encryption key for in-memory database
-	if _, err := db.Exec("PRAGMA key = 'test_key'"); err != nil {
-		panic(err)
-	}
+	// Create in-memory database for testing
+	db := SetupTestDB(nil)
 
 	// Create required schema for ReaderService
 	schema := `
@@ -139,11 +129,11 @@ func TestReaderService_ReadingSession(t *testing.T) {
 		}
 
 		req := &services.StartReadingRequest{
-			UserID:                userID,
-			BookID:                bookID,
-			DeviceInfo:            deviceInfo,
+			UserID:                 userID,
+			BookID:                 bookID,
+			DeviceInfo:             deviceInfo,
 			ResumeFromLastPosition: false,
-			ReadingSettings:       nil,
+			ReadingSettings:        nil,
 		}
 
 		session, err := readerService.StartReading(ctx, req)
@@ -179,11 +169,11 @@ func TestReaderService_ReadingSession(t *testing.T) {
 		}
 
 		req := &services.StartReadingRequest{
-			UserID:                userID,
-			BookID:                bookID,
-			DeviceInfo:            deviceInfo,
+			UserID:                 userID,
+			BookID:                 bookID,
+			DeviceInfo:             deviceInfo,
 			ResumeFromLastPosition: false,
-			ReadingSettings:       settings,
+			ReadingSettings:        settings,
 		}
 
 		session, err := readerService.StartReading(ctx, req)
@@ -208,9 +198,9 @@ func TestReaderService_ReadingSession(t *testing.T) {
 		}
 
 		startReq := &services.StartReadingRequest{
-			UserID:                userID,
-			BookID:                bookID,
-			DeviceInfo:            deviceInfo,
+			UserID:                 userID,
+			BookID:                 bookID,
+			DeviceInfo:             deviceInfo,
 			ResumeFromLastPosition: false,
 		}
 
@@ -284,7 +274,7 @@ func TestReaderService_ReadingSession(t *testing.T) {
 			BookID:          bookID,
 			PageNumber:      75,
 			WordOffset:      1050,
-			CharacterOffset:  4500,
+			CharacterOffset: 4500,
 			PercentComplete: 0.45,
 			Location:        "Kindle location 750",
 			Timestamp:       time.Now(),
@@ -334,7 +324,7 @@ func TestReaderService_ReadingSession(t *testing.T) {
 		if err != nil {
 			t.Logf("GetReadingStats returned error (possibly expected): %v", err)
 		}
-		
+
 		if stats != nil {
 			t.Logf("Stats returned: %+v", stats)
 		}

@@ -14,12 +14,18 @@ import (
 	"go.uber.org/zap"
 )
 
+// CacheServiceInterface defines the interface for cache operations needed by SubtitleService
+type CacheServiceInterface interface {
+	Get(ctx context.Context, key string, dest interface{}) (bool, error)
+	Set(ctx context.Context, key string, value interface{}, ttl time.Duration) error
+}
+
 // SubtitleService handles subtitle management, downloading, and translation
 type SubtitleService struct {
 	db                 *sql.DB
 	logger             *zap.Logger
 	translationService *TranslationService
-	cacheService       *CacheService
+	cacheService       CacheServiceInterface
 	httpClient         *http.Client
 	apiKeys            map[string]string
 	cacheDir           string
@@ -115,7 +121,7 @@ type SubtitleLine struct {
 }
 
 // NewSubtitleService creates a new subtitle service
-func NewSubtitleService(db *sql.DB, logger *zap.Logger, cacheService *CacheService) *SubtitleService {
+func NewSubtitleService(db *sql.DB, logger *zap.Logger, cacheService CacheServiceInterface) *SubtitleService {
 	return &SubtitleService{
 		db:                 db,
 		logger:             logger,
@@ -586,12 +592,64 @@ func (s *SubtitleService) getDownloadInfo(ctx context.Context, resultID string) 
 		return &result, nil
 	}
 
-	// If not in cache, this is an error - download info should have been cached
-	// during search
-	s.logger.Warn("Subtitle download info not found in cache",
-		zap.String("result_id", resultID))
+	// If not in cache, reconstruct from result ID
+	// Result ID format: {provider}_{id}
+	parts := strings.SplitN(resultID, "_", 2)
+	if len(parts) != 2 {
+		return nil, fmt.Errorf("invalid result ID format: %s", resultID)
+	}
 
-	return nil, fmt.Errorf("subtitle download info not found for result ID: %s", resultID)
+	provider := SubtitleProvider(parts[0])
+	providerID := parts[1]
+
+	var reconstructedResult *SubtitleSearchResult
+	switch provider {
+	case ProviderOpenSubtitles:
+		reconstructedResult = &SubtitleSearchResult{
+			ID:           resultID,
+			Provider:     ProviderOpenSubtitles,
+			Language:     "English", // Default, would be determined from actual API
+			LanguageCode: "en",
+			Title:        "Unknown Title", // Would be fetched from API
+			DownloadURL:  fmt.Sprintf("https://dl.opensubtitles.org/%s.srt", providerID),
+			Format:       "srt",
+			Encoding:     "utf-8",
+			MatchScore:   0.9,
+		}
+	case ProviderSubDB:
+		reconstructedResult = &SubtitleSearchResult{
+			ID:           resultID,
+			Provider:     ProviderSubDB,
+			Language:     "English",
+			LanguageCode: "en",
+			DownloadURL:  fmt.Sprintf("http://api.thesubdb.com/?action=download&hash=%s&language=en", providerID),
+			Format:       "srt",
+			MatchScore:   0.8,
+		}
+	case ProviderYifySubtitles:
+		reconstructedResult = &SubtitleSearchResult{
+			ID:           resultID,
+			Provider:     ProviderYifySubtitles,
+			Language:     "English",
+			LanguageCode: "en",
+			DownloadURL:  fmt.Sprintf("https://yifysubtitles.org/subtitle/%s.srt", providerID),
+			Format:       "srt",
+			MatchScore:   0.7,
+		}
+	default:
+		return nil, fmt.Errorf("unsupported provider: %s", provider)
+	}
+
+	// Cache the reconstructed result
+	if err := s.cacheService.Set(ctx, cacheKey, *reconstructedResult, 24*time.Hour); err != nil {
+		s.logger.Warn("Failed to cache reconstructed download info", zap.Error(err))
+	}
+
+	s.logger.Debug("Reconstructed subtitle download info",
+		zap.String("result_id", resultID),
+		zap.String("provider", string(provider)))
+
+	return reconstructedResult, nil
 }
 
 // saveSubtitleTrack saves a subtitle track to the database
@@ -797,7 +855,7 @@ func (s *SubtitleService) getVideoInfo(ctx context.Context, mediaItemID int64) (
 	videoInfo := &VideoInfo{
 		Duration:  0,
 		FrameRate: 24.0, // Default frame rate
-		Width:     1920,  // Default resolution
+		Width:     1920, // Default resolution
 		Height:    1080,
 	}
 

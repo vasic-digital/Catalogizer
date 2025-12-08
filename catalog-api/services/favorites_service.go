@@ -409,11 +409,11 @@ func (s *FavoritesService) removeDuplicateStrings(slice []string) []string {
 func (s *FavoritesService) exportFavoritesToJSON(favorites []models.Favorite) ([]byte, error) {
 	// Create export structure with metadata
 	export := struct {
-		Version     string              `json:"version"`
-		ExportedAt  time.Time           `json:"exported_at"`
-		Count       int                 `json:"count"`
-		Favorites   []models.Favorite   `json:"favorites"`
-		Categories  []map[string]interface{} `json:"categories,omitempty"`
+		Version    string                   `json:"version"`
+		ExportedAt time.Time                `json:"exported_at"`
+		Count      int                      `json:"count"`
+		Favorites  []models.Favorite        `json:"favorites"`
+		Categories []map[string]interface{} `json:"categories,omitempty"`
 	}{
 		Version:    "1.0",
 		ExportedAt: time.Now(),
@@ -437,7 +437,7 @@ func (s *FavoritesService) exportFavoritesToCSV(favorites []models.Favorite) ([]
 
 	// Write header
 	headers := []string{
-		"ID", "UserID", "EntityType", "EntityID", "Category", "Notes", 
+		"ID", "UserID", "EntityType", "EntityID", "Category", "Notes",
 		"Tags", "IsPublic", "CreatedAt", "UpdatedAt",
 	}
 	if err := writer.Write(headers); err != nil {
@@ -497,10 +497,10 @@ func (s *FavoritesService) exportFavoritesToCSV(favorites []models.Favorite) ([]
 func (s *FavoritesService) importFavoritesFromJSON(userID int, data []byte) ([]models.Favorite, error) {
 	// Parse import data
 	var importData struct {
-		Version     string              `json:"version"`
-		ExportedAt  time.Time           `json:"exported_at"`
-		Count       int                 `json:"count"`
-		Favorites   []models.Favorite   `json:"favorites"`
+		Version    string            `json:"version"`
+		ExportedAt time.Time         `json:"exported_at"`
+		Count      int               `json:"count"`
+		Favorites  []models.Favorite `json:"favorites"`
 	}
 
 	if err := json.Unmarshal(data, &importData); err != nil {
@@ -548,7 +548,7 @@ func (s *FavoritesService) importFavoritesFromJSON(userID int, data []byte) ([]m
 func (s *FavoritesService) importFavoritesFromCSV(userID int, data []byte) ([]models.Favorite, error) {
 	// Parse CSV data
 	reader := csv.NewReader(bytes.NewReader(data))
-	
+
 	// Read header
 	headers, err := reader.Read()
 	if err != nil {

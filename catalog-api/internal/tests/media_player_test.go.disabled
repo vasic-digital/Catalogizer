@@ -10,12 +10,11 @@ import (
 	"go.uber.org/zap/zaptest"
 
 	"catalogizer/internal/services"
-	_ "github.com/mattn/go-sqlite3"
 )
 
 func TestMusicPlayerService(t *testing.T) {
 	// Setup test database and dependencies
-	db := setupTestDB(t)
+	db := SetupTestDB(t)
 	defer db.Close()
 
 	logger := zaptest.NewLogger(t)
@@ -210,7 +209,7 @@ func TestMusicPlayerService(t *testing.T) {
 
 func TestVideoPlayerService(t *testing.T) {
 	// Setup test database and dependencies
-	db := setupTestDB(t)
+	db := SetupTestDB(t)
 	defer db.Close()
 
 	logger := zaptest.NewLogger(t)
@@ -373,7 +372,7 @@ func TestVideoPlayerService(t *testing.T) {
 
 func TestPlaylistService(t *testing.T) {
 	// Setup test database and dependencies
-	db := setupTestDB(t)
+	db := SetupTestDB(t)
 	defer db.Close()
 
 	logger := zaptest.NewLogger(t)
@@ -523,7 +522,7 @@ func TestPlaylistService(t *testing.T) {
 
 func TestPositionService(t *testing.T) {
 	// Setup test database
-	db := setupTestDB(t)
+	db := SetupTestDB(t)
 	defer db.Close()
 
 	logger := zaptest.NewLogger(t)

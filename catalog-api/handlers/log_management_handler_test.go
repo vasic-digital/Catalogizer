@@ -145,28 +145,28 @@ func TestLogManagementHandler_CreateLogCollection(t *testing.T) {
 		permissionErr  error
 		mockResponse   *models.LogCollection
 		serviceError   error
-		expectedStatus  int
-		expectedError   bool
+		expectedStatus int
+		expectedError  bool
 	}{
 		{
-			name:          "Success",
-			userID:        1,
-			requestBody:   models.LogCollectionRequest{Name: "Test Collection", Description: "Test Description"},
-			hasPermission: true,
-			permissionErr: nil,
-			mockResponse:  &models.LogCollection{ID: 1, Name: "Test Collection"},
-			serviceError:  nil,
+			name:           "Success",
+			userID:         1,
+			requestBody:    models.LogCollectionRequest{Name: "Test Collection", Description: "Test Description"},
+			hasPermission:  true,
+			permissionErr:  nil,
+			mockResponse:   &models.LogCollection{ID: 1, Name: "Test Collection"},
+			serviceError:   nil,
 			expectedStatus: 200,
 			expectedError:  false,
 		},
 		{
-			name:          "Permission denied",
-			userID:        1,
-			requestBody:   models.LogCollectionRequest{Name: "Test Collection"},
-			hasPermission: false,
-			permissionErr: nil,
-			mockResponse:  nil,
-			serviceError:  nil,
+			name:           "Permission denied",
+			userID:         1,
+			requestBody:    models.LogCollectionRequest{Name: "Test Collection"},
+			hasPermission:  false,
+			permissionErr:  nil,
+			mockResponse:   nil,
+			serviceError:   nil,
 			expectedStatus: 403,
 			expectedError:  true,
 		},
@@ -177,7 +177,7 @@ func TestLogManagementHandler_CreateLogCollection(t *testing.T) {
 			// Create fresh mocks for each test to avoid contamination
 			mockLogService := new(MockLogManagementService)
 			mockAuthService := new(MockLogManagementAuthService)
-			
+
 			handler := &LogManagementHandler{
 				logManagementService: mockLogService,
 				authService:          mockAuthService,
@@ -223,28 +223,28 @@ func TestLogManagementHandler_GetLogCollection(t *testing.T) {
 		permissionErr  error
 		mockResponse   *models.LogCollection
 		serviceError   error
-		expectedStatus  int
-		expectedError   bool
+		expectedStatus int
+		expectedError  bool
 	}{
 		{
-			name:          "Success",
-			userID:        1,
-			collectionID:  1,
-			hasPermission: true,
-			permissionErr: nil,
-			mockResponse:  &models.LogCollection{ID: 1, Name: "Test Collection"},
-			serviceError:  nil,
+			name:           "Success",
+			userID:         1,
+			collectionID:   1,
+			hasPermission:  true,
+			permissionErr:  nil,
+			mockResponse:   &models.LogCollection{ID: 1, Name: "Test Collection"},
+			serviceError:   nil,
 			expectedStatus: 200,
 			expectedError:  false,
 		},
 		{
-			name:          "Permission denied",
-			userID:        1,
-			collectionID:  1,
-			hasPermission: false,
-			permissionErr: nil,
-			mockResponse:  nil,
-			serviceError:  nil,
+			name:           "Permission denied",
+			userID:         1,
+			collectionID:   1,
+			hasPermission:  false,
+			permissionErr:  nil,
+			mockResponse:   nil,
+			serviceError:   nil,
 			expectedStatus: 403,
 			expectedError:  true,
 		},
@@ -255,7 +255,7 @@ func TestLogManagementHandler_GetLogCollection(t *testing.T) {
 			// Create fresh mocks for each test to avoid contamination
 			mockLogService := new(MockLogManagementService)
 			mockAuthService := new(MockLogManagementAuthService)
-			
+
 			handler := &LogManagementHandler{
 				logManagementService: mockLogService,
 				authService:          mockAuthService,
@@ -302,35 +302,35 @@ func TestLogManagementHandler_ListLogCollections(t *testing.T) {
 		expectedError  bool
 	}{
 		{
-			name:          "Success with default pagination",
-			userID:        1,
-			queryParams:   "",
-			hasPermission: true,
-			permissionErr: nil,
-			mockResponse:  []models.LogCollection{{ID: 1, Name: "Collection 1"}, {ID: 2, Name: "Collection 2"}},
-			serviceError:  nil,
+			name:           "Success with default pagination",
+			userID:         1,
+			queryParams:    "",
+			hasPermission:  true,
+			permissionErr:  nil,
+			mockResponse:   []models.LogCollection{{ID: 1, Name: "Collection 1"}, {ID: 2, Name: "Collection 2"}},
+			serviceError:   nil,
 			expectedStatus: 200,
 			expectedError:  false,
 		},
 		{
-			name:          "Success with custom pagination",
-			userID:        1,
-			queryParams:   "?limit=10&offset=5",
-			hasPermission: true,
-			permissionErr: nil,
-			mockResponse:  []models.LogCollection{{ID: 3, Name: "Collection 3"}},
-			serviceError:  nil,
+			name:           "Success with custom pagination",
+			userID:         1,
+			queryParams:    "?limit=10&offset=5",
+			hasPermission:  true,
+			permissionErr:  nil,
+			mockResponse:   []models.LogCollection{{ID: 3, Name: "Collection 3"}},
+			serviceError:   nil,
 			expectedStatus: 200,
 			expectedError:  false,
 		},
 		{
-			name:          "Permission denied",
-			userID:        1,
-			queryParams:   "",
-			hasPermission: false,
-			permissionErr: nil,
-			mockResponse:  nil,
-			serviceError:  nil,
+			name:           "Permission denied",
+			userID:         1,
+			queryParams:    "",
+			hasPermission:  false,
+			permissionErr:  nil,
+			mockResponse:   nil,
+			serviceError:   nil,
 			expectedStatus: 403,
 			expectedError:  true,
 		},
@@ -341,7 +341,7 @@ func TestLogManagementHandler_ListLogCollections(t *testing.T) {
 			// Create fresh mocks for each test to avoid contamination
 			mockLogService := new(MockLogManagementService)
 			mockAuthService := new(MockLogManagementAuthService)
-			
+
 			handler := &LogManagementHandler{
 				logManagementService: mockLogService,
 				authService:          mockAuthService,
@@ -402,38 +402,38 @@ func TestLogManagementHandler_GetLogEntries(t *testing.T) {
 		expectedError  bool
 	}{
 		{
-			name:          "Success",
-			userID:        1,
-			collectionID:  "1",
-			queryParams:   "?level=error&component=api",
-			hasPermission: true,
-			permissionErr: nil,
-			mockResponse:  []models.LogEntry{{ID: 1, Level: "error", Message: "Test error"}},
-			serviceError:  nil,
+			name:           "Success",
+			userID:         1,
+			collectionID:   "1",
+			queryParams:    "?level=error&component=api",
+			hasPermission:  true,
+			permissionErr:  nil,
+			mockResponse:   []models.LogEntry{{ID: 1, Level: "error", Message: "Test error"}},
+			serviceError:   nil,
 			expectedStatus: 200,
 			expectedError:  false,
 		},
 		{
-			name:          "Invalid collection ID",
-			userID:        1,
-			collectionID:  "invalid",
-			queryParams:   "",
-			hasPermission: true, // This won't be checked due to early return
-			permissionErr: nil,
-			mockResponse:  nil,
-			serviceError:  nil,
+			name:           "Invalid collection ID",
+			userID:         1,
+			collectionID:   "invalid",
+			queryParams:    "",
+			hasPermission:  true, // This won't be checked due to early return
+			permissionErr:  nil,
+			mockResponse:   nil,
+			serviceError:   nil,
 			expectedStatus: 400,
 			expectedError:  true,
 		},
 		{
-			name:          "Permission denied",
-			userID:        1,
-			collectionID:  "1",
-			queryParams:   "",
-			hasPermission: false,
-			permissionErr: nil,
-			mockResponse:  nil,
-			serviceError:  nil,
+			name:           "Permission denied",
+			userID:         1,
+			collectionID:   "1",
+			queryParams:    "",
+			hasPermission:  false,
+			permissionErr:  nil,
+			mockResponse:   nil,
+			serviceError:   nil,
 			expectedStatus: 403,
 			expectedError:  true,
 		},
@@ -444,7 +444,7 @@ func TestLogManagementHandler_GetLogEntries(t *testing.T) {
 			// Create fresh mocks for each test to avoid contamination
 			mockLogService := new(MockLogManagementService)
 			mockAuthService := new(MockLogManagementAuthService)
-			
+
 			handler := &LogManagementHandler{
 				logManagementService: mockLogService,
 				authService:          mockAuthService,

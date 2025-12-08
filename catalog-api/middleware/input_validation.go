@@ -31,10 +31,10 @@ type InputValidationConfig struct {
 // DefaultInputValidationConfig returns secure defaults
 func DefaultInputValidationConfig() InputValidationConfig {
 	return InputValidationConfig{
-		MaxRequestBodySize:          10 * 1024 * 1024, // 10MB
-		EnableSQLInjectionDetection:   true,
+		MaxRequestBodySize:           10 * 1024 * 1024, // 10MB
+		EnableSQLInjectionDetection:  true,
 		EnableXSSDetection:           true,
-		EnablePathTraversalDetection:   true,
+		EnablePathTraversalDetection: true,
 		CustomRules:                  make(map[string]string),
 	}
 }
@@ -80,10 +80,10 @@ var (
 func SanitizeInput(input string) string {
 	// Trim whitespace
 	input = strings.TrimSpace(input)
-	
+
 	// Remove null bytes
 	input = strings.ReplaceAll(input, "\x00", "")
-	
+
 	// Ensure valid UTF-8
 	if !utf8.ValidString(input) {
 		// Remove invalid UTF-8 sequences
@@ -99,7 +99,7 @@ func SanitizeInput(input string) string {
 		}
 		input = string(valid)
 	}
-	
+
 	return input
 }
 
@@ -243,7 +243,7 @@ func InputValidation(config InputValidationConfig) gin.HandlerFunc {
 			// Log the attempt
 			fmt.Printf("Security validation failed: %v, IP: %s, Path: %s\n",
 				err, c.ClientIP(), c.Request.URL.Path)
-			
+
 			c.JSON(http.StatusBadRequest, gin.H{
 				"error":   "validation_failed",
 				"message": "Invalid input detected",

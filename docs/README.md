@@ -476,4 +476,29 @@ Detailed explanation of the feature...
 
 ---
 
+## 📋 Documentation Versioning
+
+Documentation follows semantic versioning:
+- Major version: Breaking changes or major feature additions
+- Minor version: New features or significant improvements
+- Patch version: Bug fixes, clarifications, or minor updates
+
+Current version: 1.0.0
+
+## 🎬 Video Recording Tools
+
+Recommended tools for creating tutorial videos:
+- OBS Studio (free, open source)
+- ScreenFlow (paid, professional)
+- macOS built-in QuickTime Player
+
+Video specifications:
+- 1080p resolution (1920x1080)
+- 30fps frame rate
+- H.264 codec
+- Include captions/subtitles
+- Keep videos under 10 minutes when possible
+
+---
+
 This documentation structure ensures comprehensive visual coverage of all Catalogizer v3.0 features while maintaining consistency and usability for all user types.

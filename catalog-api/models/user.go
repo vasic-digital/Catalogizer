@@ -9,8 +9,8 @@ import (
 
 // ValidationResult represents the result of a validation operation
 type ValidationResult struct {
-	IsValid bool     `json:"is_valid"`
-	Errors  []string `json:"errors,omitempty"`
+	IsValid  bool     `json:"is_valid"`
+	Errors   []string `json:"errors,omitempty"`
 	Warnings []string `json:"warnings,omitempty"`
 }
 
