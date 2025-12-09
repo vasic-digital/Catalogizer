@@ -2,6 +2,7 @@ package services
 
 import (
 	"context"
+	"database/sql"
 	"encoding/json"
 	"fmt"
 	"net/http"
@@ -23,6 +24,7 @@ type RecommendationService struct {
 	mediaRecognitionService   *MediaRecognitionService
 	duplicateDetectionService *DuplicateDetectionService
 	fileRepository            FileRepositoryInterface
+	db                       *sql.DB
 	tmdbBaseURL               string
 	omdbBaseURL               string
 	lastfmBaseURL             string
@@ -137,11 +139,13 @@ func NewRecommendationService(
 	mediaRecognitionService *MediaRecognitionService,
 	duplicateDetectionService *DuplicateDetectionService,
 	fileRepository FileRepositoryInterface,
+	db *sql.DB,
 ) *RecommendationService {
 	return &RecommendationService{
 		mediaRecognitionService:   mediaRecognitionService,
 		duplicateDetectionService: duplicateDetectionService,
 		fileRepository:            fileRepository,
+		db:                       db,
 		tmdbBaseURL:               "https://api.themoviedb.org/3",
 		omdbBaseURL:               "http://www.omdbapi.com",
 		lastfmBaseURL:             "http://ws.audioscrobbler.com/2.0",
@@ -153,6 +157,11 @@ func NewRecommendationService(
 			Timeout: 30 * time.Second,
 		},
 	}
+}
+
+// GetDB returns the database connection
+func (rs *RecommendationService) GetDB() *sql.DB {
+	return rs.db
 }
 
 func (rs *RecommendationService) GetSimilarItems(ctx context.Context, req *SimilarItemsRequest) (*SimilarItemsResponse, error) {

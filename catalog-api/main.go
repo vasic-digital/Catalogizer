@@ -148,6 +148,17 @@ func main() {
 	catalogService.SetDB(db)
 	smbService := services.NewSMBService(internalCfg, logger)
 	smbDiscoveryService := services.NewSMBDiscoveryService(logger)
+	
+	// Initialize services needed for recommendations
+	mediaRecognitionService := services.NewMediaRecognitionService(db, logger, nil, nil, "", "", "", "", "", "")
+	duplicateDetectionService := services.NewDuplicateDetectionService(db, logger, nil)
+	fileRepository := root_repository.NewFileRepository(databaseDB)
+	recommendationService := services.NewRecommendationService(
+		mediaRecognitionService,
+		duplicateDetectionService,
+		fileRepository,
+		db,
+	)
 
 	// Initialize repositories
 	userRepo := root_repository.NewUserRepository(db)
@@ -189,6 +200,13 @@ func main() {
 	smbDiscoveryHandler := handlers.NewSMBDiscoveryHandler(smbDiscoveryService, logger)
 	conversionHandler := root_handlers.NewConversionHandler(conversionService, authService)
 	authHandler := root_handlers.NewAuthHandler(authService)
+	androidTVMediaHandler := root_handlers.NewAndroidTVMediaHandler(databaseDB)
+	
+	// Simple recommendation handler for testing
+	simpleRecHandler := root_handlers.NewSimpleRecommendationHandler()
+	
+	// Recommendation handler
+	recommendationHandler := root_handlers.NewRecommendationHandler(recommendationService)
 
 	// Initialize JWT middleware
 	jwtMiddleware := root_middleware.NewJWTMiddleware(jwtSecret)
@@ -248,6 +266,23 @@ func main() {
 		api.POST("/copy/storage", copyHandler.CopyToStorage)
 		api.POST("/copy/local", copyHandler.CopyToLocal)
 		api.POST("/copy/upload", copyHandler.CopyFromLocal)
+
+		// Media operations
+		api.GET("/media/:id", androidTVMediaHandler.GetMediaByID)
+		api.PUT("/media/:id/progress", androidTVMediaHandler.UpdateWatchProgress)
+		api.PUT("/media/:id/favorite", androidTVMediaHandler.UpdateFavoriteStatus)
+		
+		// Test recommendation endpoints
+		api.GET("/recommendations/test", simpleRecHandler.GetSimpleRecommendation)
+		api.GET("/recommendations/error", simpleRecHandler.GetTest)
+		
+		// Recommendation endpoints
+		recGroup := api.Group("/recommendations")
+		{
+			recGroup.GET("/similar/:media_id", recommendationHandler.GetSimilarItems)
+			recGroup.GET("/trending", recommendationHandler.GetTrendingItems)
+			recGroup.GET("/personalized/:user_id", recommendationHandler.GetPersonalizedRecommendations)
+		}
 		api.GET("/storage/list/*path", copyHandler.ListStoragePath)
 		api.GET("/storage/roots", copyHandler.GetStorageRoots)
 
