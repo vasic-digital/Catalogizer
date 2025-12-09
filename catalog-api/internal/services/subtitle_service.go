@@ -222,6 +222,7 @@ func (s *SubtitleService) DownloadSubtitle(ctx context.Context, request *Subtitl
 		Source:       "downloaded",
 		Format:       result.Format,
 		Content:      &content,
+		Path:         &result.DownloadURL, // Use download URL as path initially
 		IsDefault:    false,
 		IsForced:     false,
 		Encoding:     encoding,
@@ -666,14 +667,28 @@ func (s *SubtitleService) getDownloadInfo(ctx context.Context, resultID string) 
 func (s *SubtitleService) saveSubtitleTrack(ctx context.Context, mediaItemID int64, track *SubtitleTrack) error {
 	query := `
 		INSERT INTO subtitle_tracks
-		(id, media_item_id, language, language_code, source, format, content,
+		(media_item_id, language, language_code, source, format, content, path,
 		 is_default, is_forced, encoding, sync_offset, verified_sync, created_at)
 		VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
 
+	// Convert boolean values to integers for SQLite compatibility
+	isDefault := 0
+	if track.IsDefault {
+		isDefault = 1
+	}
+	isForced := 0
+	if track.IsForced {
+		isForced = 1
+	}
+	verifiedSync := 0
+	if track.VerifiedSync {
+		verifiedSync = 1
+	}
+
 	_, err := s.db.ExecContext(ctx, query,
-		track.ID, mediaItemID, track.Language, track.LanguageCode, track.Source,
-		track.Format, track.Content, track.IsDefault, track.IsForced,
-		track.Encoding, track.SyncOffset, track.VerifiedSync, track.CreatedAt)
+		mediaItemID, track.Language, track.LanguageCode, track.Source,
+		track.Format, track.Content, track.Path, isDefault, isForced,
+		track.Encoding, track.SyncOffset, verifiedSync, track.CreatedAt)
 
 	return err
 }
