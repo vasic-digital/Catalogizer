@@ -139,6 +139,11 @@ export const playlistsApi = {
     await api.post(`/api/v1/playlists/${playlistId}/shuffle`)
   },
 
+  // Reorder playlist items
+  async reorderPlaylist(playlistId: string, itemIds: string[]): Promise<void> {
+    await api.put(`/api/v1/playlists/${playlistId}/reorder`, { itemIds })
+  },
+
   // Import playlist
   async importPlaylist(file: File, name?: string): Promise<{ playlist: Playlist; imported: number; failed: number }> {
     const formData = new FormData()

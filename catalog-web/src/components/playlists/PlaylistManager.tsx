@@ -1,5 +1,20 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import {
+  DndContext,
+  closestCenter,
+  KeyboardSensor,
+  PointerSensor,
+  useSensor,
+  useSensors,
+  DragEndEvent,
+} from '@dnd-kit/core';
+import {
+  arrayMove,
+  SortableContext,
+  sortableKeyboardCoordinates,
+  verticalListSortingStrategy,
+} from '@dnd-kit/sortable';
 import { 
   Plus, 
   Search, 
@@ -25,8 +40,10 @@ import { Input } from '../ui/Input';
 import { Select } from '../ui/Select';
 import { playlistApi } from '../../lib/playlistsApi';
 import { usePlaylists } from '../../hooks/usePlaylists';
+import { usePlaylistReorder } from '../../hooks/usePlaylistReorder';
 import { Playlist, PlaylistViewMode, PlaylistSortBy, getMediaIconWithMap } from '../../types/playlists';
 import { toast } from 'react-hot-toast';
+import { SortablePlaylistItem } from './SortablePlaylistItem';
 
 interface PlaylistManagerProps {
   onCreatePlaylist: () => void;

@@ -13,6 +13,8 @@ import {
   Shuffle,
   Repeat,
   List,
+  Share,
+  BarChart3,
   X,
   ChevronLeft,
   ChevronRight,
@@ -27,6 +29,9 @@ import { Playlist, PlaylistItem, flattenPlaylistItem, getMediaIconWithMap } from
 import { MediaPlayer } from '../media/MediaPlayer';
 import { FavoriteToggle } from '../favorites/FavoriteToggle';
 import { usePlayerState } from '../../hooks/usePlayerState';
+import { playlistsApi } from '../../lib/playlistsApi';
+import { toast } from 'react-hot-toast';
+import { PlaylistAnalytics } from './PlaylistAnalytics';
 
 interface PlaylistPlayerProps {
   playlist: Playlist;
@@ -68,6 +73,8 @@ export const PlaylistPlayer: React.FC<PlaylistPlayerProps> = ({
   const [showPlaylist, setShowPlaylist] = useState(false);
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [showControls, setShowControls] = useState(true);
+  const [showAnalytics, setShowAnalytics] = useState(false);
+  const [analytics, setAnalytics] = useState<any>(null);
   const [repeatMode, setRepeatMode] = useState<'off' | 'all' | 'one'>('off');
 
   const currentItem = items[currentIndex];
@@ -452,8 +459,37 @@ export const PlaylistPlayer: React.FC<PlaylistPlayerProps> = ({
     );
   }
 
+  const handleShare = async () => {
+    try {
+      const shareInfo = await playlistsApi.sharePlaylist(playlist.id, {
+        can_view: true,
+        can_comment: false,
+        can_download: false
+      });
+      
+      // Copy share link to clipboard
+      await navigator.clipboard.writeText(shareInfo.share_url);
+      toast.success('Share link copied to clipboard!');
+    } catch (error) {
+      console.error('Failed to share playlist:', error);
+      toast.error('Failed to create share link');
+    }
+  };
+
+  const handleShowAnalytics = async () => {
+    try {
+      const analyticsData = await playlistsApi.getPlaylistAnalytics(playlist.id);
+      setAnalytics(analyticsData);
+      setShowAnalytics(true);
+    } catch (error) {
+      console.error('Failed to load analytics:', error);
+      toast.error('Failed to load playlist analytics');
+    }
+  };
+
   return (
-    <div className={`bg-white dark:bg-gray-900 rounded-lg shadow-lg ${className}`}>
+    <>
+      <div className={`bg-white dark:bg-gray-900 rounded-lg shadow-lg ${className}`}>
       {/* Header */}
       <div className="flex items-center justify-between p-4 border-b border-gray-200 dark:border-gray-700">
         <div>
@@ -471,6 +507,22 @@ export const PlaylistPlayer: React.FC<PlaylistPlayerProps> = ({
             onClick={() => setShowPlaylist(!showPlaylist)}
           >
             <List className="w-4 h-4" />
+          </Button>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={handleShare}
+            title="Share playlist"
+          >
+            <Share className="w-4 h-4" />
+          </Button>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={handleShowAnalytics}
+            title="View analytics"
+          >
+            <BarChart3 className="w-4 h-4" />
           </Button>
           <Button
             variant="ghost"
@@ -527,5 +579,29 @@ export const PlaylistPlayer: React.FC<PlaylistPlayerProps> = ({
       {/* Playlist */}
       {renderPlaylist()}
     </div>
+
+    {/* Analytics Modal */}
+    {showAnalytics && analytics && (
+      <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
+        <div className="bg-white dark:bg-gray-900 rounded-lg max-w-4xl w-full max-h-[90vh] overflow-y-auto">
+          <div className="flex items-center justify-between p-6 border-b border-gray-200 dark:border-gray-700">
+            <h2 className="text-xl font-bold text-gray-900 dark:text-white">
+              Playlist Analytics - {playlist.name}
+            </h2>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setShowAnalytics(false)}
+            >
+              <X className="w-4 h-4" />
+            </Button>
+          </div>
+          <div className="p-6">
+            <PlaylistAnalytics analytics={analytics} />
+          </div>
+        </div>
+      </div>
+    )}
+    </>
   );
 };

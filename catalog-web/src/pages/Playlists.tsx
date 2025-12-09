@@ -25,9 +25,10 @@ import { PlaylistGrid } from '../components/playlists/PlaylistGrid';
 import { PlaylistManager } from '../components/playlists/PlaylistManager';
 import { PlaylistPlayer } from '../components/playlists/PlaylistPlayer';
 import { PlaylistItemComponent } from '../components/playlists/PlaylistItem';
+import { SmartPlaylistBuilder } from '../components/playlists/SmartPlaylistBuilder';
 import { playlistsApi } from '../lib/playlistsApi';
 import { usePlaylists } from '../hooks/usePlaylists';
-import { Playlist, PlaylistItem, CreatePlaylistRequest, UpdatePlaylistRequest, flattenPlaylistItem, getMediaIconWithMap } from '../types/playlists';
+import { Playlist, PlaylistItem, CreatePlaylistRequest, UpdatePlaylistRequest, flattenPlaylistItem, getMediaIconWithMap, PlaylistCreateRequest } from '../types/playlists';
 import { toast } from 'react-hot-toast';
 
 const MEDIA_TYPE_OPTIONS = [
@@ -50,7 +51,7 @@ interface CreatePlaylistFormData extends Omit<CreatePlaylistRequest, 'items'> {
 }
 
 export const PlaylistsPage: React.FC = () => {
-  const [activeTab, setActiveTab] = useState<'all' | 'my' | 'public' | 'favorites'>('all');
+  const [activeTab, setActiveTab] = useState<'all' | 'my' | 'public' | 'favorites' | 'smart'>('all');
   const [isCreating, setIsCreating] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   const [editingPlaylist, setEditingPlaylist] = useState<Playlist | null>(null);
@@ -393,7 +394,8 @@ export const PlaylistsPage: React.FC = () => {
             { id: 'all', label: 'All Playlists' },
             { id: 'my', label: 'My Playlists' },
             { id: 'public', label: 'Public' },
-            { id: 'favorites', label: 'Favorites' }
+            { id: 'favorites', label: 'Favorites' },
+            { id: 'smart', label: 'Smart Builder' }
           ]}
           activeTab={activeTab}
           onChangeTab={(tab) => setActiveTab(tab as any)}
@@ -434,10 +436,39 @@ export const PlaylistsPage: React.FC = () => {
 
         {/* Playlists Grid */}
         <div className="mt-8">
-          <PlaylistGrid
-            onCreatePlaylist={() => setIsCreating(true)}
-            onEditPlaylist={handleEditPlaylist}
-          />
+          {activeTab === 'smart' ? (
+            <SmartPlaylistBuilder
+              onSave={(name, description, rules) => {
+                // Convert smart playlist rules to actual playlist data
+                const playlistData: PlaylistCreateRequest = {
+                  name,
+                  description,
+                  is_public: false,
+                  is_smart: true,
+                  smart_rules: rules,
+                  items: [] // Will be populated based on rules by backend
+                };
+                
+                playlistsApi.createPlaylist(playlistData)
+                  .then((newPlaylist) => {
+                    toast.success(`Created smart playlist: ${newPlaylist.name}`);
+                    setActiveTab('my'); // Switch to My Playlists to see the result
+                    refetchPlaylists();
+                  })
+                  .catch((error) => {
+                    console.error('Failed to create smart playlist:', error);
+                    toast.error('Failed to create smart playlist');
+                  });
+              }}
+              onCancel={() => setActiveTab('all')}
+              className="w-full"
+            />
+          ) : (
+            <PlaylistGrid
+              onCreatePlaylist={() => setIsCreating(true)}
+              onEditPlaylist={handleEditPlaylist}
+            />
+          )}
         </div>
 
         {/* Create/Edit Modal */}

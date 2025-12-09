@@ -1,68 +1,299 @@
-import type { Collection } from '@/types/collections';
+import { SmartCollection, CollectionRule, CreateCollectionRequest, UpdateCollectionRequest, CollectionAnalytics, ShareCollectionRequest, CollectionShareInfo, Collection, CollectionTemplate } from '../types/collections';
+import { api } from './api';
+import { mockCollectionsApi, useMockCollections } from './mockCollectionsApi';
 
-export const collectionsApi = {
-  async getCollections(): Promise<Collection[]> {
-    // Mock implementation - would be replaced with actual API call
-    return [
-      {
-        id: '1',
-        name: 'Favorite Movies',
-        description: 'My all-time favorite movies',
-        mediaCount: 42,
-        duration: 6300, // minutes
-        isSmart: false,
-        createdAt: '2023-01-15T10:30:00Z',
-        updatedAt: '2023-12-08T15:45:00Z'
-      },
-      {
-        id: '2',
-        name: 'Recent Documentaries',
-        description: 'Auto-generated collection of documentaries from the last 6 months',
-        mediaCount: 18,
-        duration: 2100,
-        isSmart: true,
-        criteria: {
-          genres: ['Documentary'],
-          yearRange: [2023, 2023]
-        },
-        createdAt: '2023-06-01T09:00:00Z',
-        updatedAt: '2023-12-09T12:30:00Z'
-      },
-      {
-        id: '3',
-        name: 'Highly Rated TV Shows',
-        description: 'TV shows with rating 8.0 or higher',
-        mediaCount: 25,
-        duration: 18750,
-        isSmart: true,
-        criteria: {
-          ratingRange: [8.0, 10.0],
-          tags: ['tv_show']
-        },
-        createdAt: '2023-02-20T14:15:00Z',
-        updatedAt: '2023-12-05T18:20:00Z'
+class CollectionsApi {
+  private baseUrl = '/api/collections';
+
+  private async tryApiCall<T>(apiCall: () => Promise<T>, mockCall: () => Promise<T>): Promise<T> {
+    if (useMockCollections()) {
+      return mockCall();
+    }
+    
+    try {
+      return await apiCall();
+    } catch (error: any) {
+      // If API endpoint not found (404), fall back to mock data
+      if (error.response?.status === 404) {
+        return mockCall();
       }
-    ];
-  },
+      throw error;
+    }
+  }
 
-  async createCollection(collectionData: Omit<Collection, 'id' | 'createdAt' | 'updatedAt'>): Promise<Collection> {
-    // Mock implementation
-    const newCollection: Collection = {
-      ...collectionData,
-      id: Date.now().toString(),
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString()
-    };
-    return newCollection;
-  },
+  async getCollections(): Promise<SmartCollection[]> {
+    return this.tryApiCall(
+      async () => {
+        const response = await api.get(`${this.baseUrl}`);
+        return response.data;
+      },
+      () => mockCollectionsApi.getSmartCollections()
+    );
+  }
 
-  async updateCollection(id: string, updates: Partial<Collection>): Promise<void> {
-    // Mock implementation
-    console.log(`Updating collection ${id}:`, updates);
-  },
+  async getCollection(id: string): Promise<SmartCollection> {
+    return this.tryApiCall(
+      async () => {
+        const response = await api.get(`${this.baseUrl}/${id}`);
+        return response.data;
+      },
+      () => mockCollectionsApi.getSmartCollection(id)
+    );
+  }
+
+  async createCollection(collection: CreateCollectionRequest): Promise<SmartCollection> {
+    return this.tryApiCall(
+      async () => {
+        const response = await api.post(`${this.baseUrl}`, collection);
+        return response.data;
+      },
+      () => mockCollectionsApi.createSmartCollection({
+        name: collection.name,
+        description: collection.description,
+        rules: collection.smart_rules || []
+      })
+    );
+  }
+
+  async updateCollection(id: string, updates: UpdateCollectionRequest): Promise<SmartCollection> {
+    return this.tryApiCall(
+      async () => {
+        const response = await api.put(`${this.baseUrl}/${id}`, updates);
+        return response.data;
+      },
+      () => mockCollectionsApi.updateSmartCollection(id, updates)
+    );
+  }
 
   async deleteCollection(id: string): Promise<void> {
-    // Mock implementation
-    console.log(`Deleting collection ${id}`);
+    return this.tryApiCall(
+      async () => {
+        await api.delete(`${this.baseUrl}/${id}`);
+      },
+      () => mockCollectionsApi.deleteSmartCollection(id)
+    );
   }
-};
+
+  async getCollectionItems(id: string, page = 1, limit = 50): Promise<any> {
+    return this.tryApiCall(
+      async () => {
+        const response = await api.get(`${this.baseUrl}/${id}/items`, {
+          params: { page, limit }
+        });
+        return response.data;
+      },
+      async () => {
+        // Mock items data
+        const mockItems = Array.from({ length: 20 }, (_, i) => ({
+          id: `item${i + 1}`,
+          title: `Sample Item ${i + 1}`,
+          artist: `Sample Artist ${i + 1}`,
+          album: `Sample Album ${i + 1}`,
+          duration: Math.floor(Math.random() * 300) + 120,
+          media_type: ['music', 'video', 'image'][Math.floor(Math.random() * 3)],
+          file_size: Math.floor(Math.random() * 10000000) + 1000000,
+          date_added: new Date(Date.now() - Math.random() * 30 * 24 * 60 * 60 * 1000).toISOString()
+        }));
+        
+        return {
+          items: mockItems,
+          total: mockItems.length,
+          page,
+          limit
+        };
+      }
+    );
+  }
+
+  async refreshCollection(id: string): Promise<SmartCollection> {
+    return this.tryApiCall(
+      async () => {
+        const response = await api.post(`${this.baseUrl}/${id}/refresh`);
+        return response.data;
+      },
+      async () => {
+        await new Promise(resolve => setTimeout(resolve, 1000));
+        const collection = await mockCollectionsApi.getSmartCollection(id);
+        collection.item_count = Math.floor(Math.random() * 100) + 10;
+        collection.last_updated = new Date().toISOString();
+        return collection;
+      }
+    );
+  }
+
+  async getCollectionAnalytics(id: string): Promise<CollectionAnalytics> {
+    return this.tryApiCall(
+      async () => {
+        const response = await api.get(`${this.baseUrl}/${id}/analytics`);
+        return response.data;
+      },
+      () => mockCollectionsApi.getAnalytics(id)
+    );
+  }
+
+  async shareCollection(id: string, shareRequest: ShareCollectionRequest): Promise<CollectionShareInfo> {
+    return this.tryApiCall(
+      async () => {
+        const response = await api.post(`${this.baseUrl}/${id}/share`, shareRequest);
+        return response.data;
+      },
+      async () => {
+        const mockShareInfo: CollectionShareInfo = {
+          share_id: `share_${id}_${Date.now()}`,
+          share_url: `http://localhost:3006/shared/share_${id}_${Date.now()}`,
+          expires_at: shareRequest.expires_at || new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
+          created_at: new Date().toISOString(),
+          access_count: 0,
+          permissions: shareRequest
+        };
+        return mockShareInfo;
+      }
+    );
+  }
+
+  async getSharedCollection(shareId: string): Promise<SmartCollection> {
+    return this.tryApiCall(
+      async () => {
+        const response = await api.get(`${this.baseUrl}/shared/${shareId}`);
+        return response.data;
+      },
+      async () => {
+        return mockCollectionsApi.getSmartCollection('3'); // Return recently added as mock shared
+      }
+    );
+  }
+
+  async exportCollection(id: string, format: 'json' | 'csv' | 'm3u' = 'json'): Promise<Blob> {
+    return this.tryApiCall(
+      async () => {
+        const response = await api.get(`${this.baseUrl}/${id}/export`, {
+          params: { format },
+          responseType: 'blob'
+        });
+        return response.data;
+      },
+      async () => {
+        const collection = await mockCollectionsApi.getSmartCollection(id);
+        let data: string;
+        
+        if (format === 'json') {
+          data = JSON.stringify(collection, null, 2);
+        } else {
+          data = `name,description\n${collection.name},"${collection.description || ''}"`;
+        }
+        
+        return new Blob([data], { type: format === 'json' ? 'application/json' : 'text/csv' });
+      }
+    );
+  }
+
+  async importCollection(file: File): Promise<SmartCollection> {
+    return this.tryApiCall(
+      async () => {
+        const formData = new FormData();
+        formData.append('file', file);
+        
+        const response = await api.post(`${this.baseUrl}/import`, formData, {
+          headers: {
+            'Content-Type': 'multipart/form-data',
+          },
+        });
+        return response.data;
+      },
+      async () => {
+        const text = await file.text();
+        const data = JSON.parse(text) as SmartCollection;
+        return mockCollectionsApi.createSmartCollection({
+          name: data.name,
+          description: data.description,
+          rules: data.smart_rules || []
+        });
+      }
+    );
+  }
+
+  async duplicateCollection(id: string, newName?: string): Promise<SmartCollection> {
+    return this.tryApiCall(
+      async () => {
+        const response = await api.post(`${this.baseUrl}/${id}/duplicate`, {
+          name: newName
+        });
+        return response.data;
+      },
+      async () => {
+        const original = await mockCollectionsApi.getSmartCollection(id);
+        return mockCollectionsApi.createSmartCollection({
+          name: newName || `${original.name} (Copy)`,
+          description: original.description,
+          rules: original.smart_rules
+        });
+      }
+    );
+  }
+
+  async addItemsToCollection(id: string, itemIds: string[]): Promise<void> {
+    return this.tryApiCall(
+      async () => {
+        await api.post(`${this.baseUrl}/${id}/items`, { item_ids: itemIds });
+      },
+      async () => {
+        // Mock implementation - just delay
+        await new Promise(resolve => setTimeout(resolve, 200));
+      }
+    );
+  }
+
+  async removeItemsFromCollection(id: string, itemIds: string[]): Promise<void> {
+    return this.tryApiCall(
+      async () => {
+        await api.delete(`${this.baseUrl}/${id}/items`, {
+          data: { item_ids: itemIds }
+        });
+      },
+      async () => {
+        // Mock implementation - just delay
+        await new Promise(resolve => setTimeout(resolve, 200));
+      }
+    );
+  }
+
+  async getCollectionSuggestions(): Promise<string[]> {
+    return this.tryApiCall(
+      async () => {
+        const response = await api.get(`${this.baseUrl}/suggestions`);
+        return response.data;
+      },
+      async () => {
+        return [
+          'Summer Mix 2024',
+          'Workout Music',
+          'Evening Jazz',
+          'Movie Night Favorites',
+          'Travel Photography'
+        ];
+      }
+    );
+  }
+
+  async getTemplates(): Promise<CollectionTemplate[]> {
+    return this.tryApiCall(
+      async () => {
+        const response = await api.get(`${this.baseUrl}/templates`);
+        return response.data;
+      },
+      () => mockCollectionsApi.getTemplates()
+    );
+  }
+
+  async testRules(rules: CollectionRule[]): Promise<{ valid: boolean; sample_count: number; errors?: string[] }> {
+    return this.tryApiCall(
+      async () => {
+        const response = await api.post(`${this.baseUrl}/test-rules`, { rules });
+        return response.data;
+      },
+      () => mockCollectionsApi.testRules(rules)
+    );
+  }
+}
+
+export const collectionsApi = new CollectionsApi();
