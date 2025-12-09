@@ -474,6 +474,23 @@ func (s *AuthService) HashData(data string) string {
 	return hex.EncodeToString(hash[:])
 }
 
+// HashPasswordForUser hashes a password with a generated salt (public method for registration)
+func (s *AuthService) HashPasswordForUser(password string) (passwordHash string, saltStr string, err error) {
+	// Generate salt
+	saltStr, err = s.generateSalt()
+	if err != nil {
+		return "", "", err
+	}
+
+	// Hash password with salt
+	hash, err := s.hashPassword(password, saltStr)
+	if err != nil {
+		return "", "", err
+	}
+
+	return hash, saltStr, nil
+}
+
 // ValidatePassword checks if a password meets security requirements
 func (s *AuthService) ValidatePassword(password string) error {
 	if len(password) < 8 {

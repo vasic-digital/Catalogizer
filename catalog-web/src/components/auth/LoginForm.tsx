@@ -21,7 +21,20 @@ export const LoginForm: React.FC = () => {
 
     setIsLoading(true)
     try {
-      await login({ username: username.trim(), password })
+      const deviceInfo = {
+        device_type: 'desktop',
+        platform: 'web',
+        platform_version: navigator.userAgent,
+        app_version: '1.0.0',
+        device_name: 'Web Browser'
+      }
+      
+      await login({ 
+        username: username.trim(), 
+        password,
+        device_info: deviceInfo,
+        remember_me: false
+      })
       navigate('/dashboard')
     } catch (error) {
       console.error('Login failed:', error)

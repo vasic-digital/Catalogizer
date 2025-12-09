@@ -1,7 +1,10 @@
 package handlers
 
 import (
+	"bytes"
 	"encoding/json"
+	"fmt"
+	"io"
 	"net/http"
 	"strconv"
 	"strings"
@@ -18,7 +21,16 @@ import (
 // LoginGin handles login request with gin
 func (h *AuthHandler) LoginGin(c *gin.Context) {
 	var req models.LoginRequest
+	
+	// Debug: Print raw request body
+	bodyBytes, _ := c.GetRawData()
+	fmt.Printf("DEBUG: Raw request body: %s\n", string(bodyBytes))
+	
+	// Reset the request body for further processing
+	c.Request.Body = io.NopCloser(bytes.NewBuffer(bodyBytes))
+	
 	if err := c.ShouldBindJSON(&req); err != nil {
+		fmt.Printf("DEBUG: Bind error: %v\n", err)
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid request format"})
 		return
 	}
@@ -100,6 +112,7 @@ func (h *AuthHandler) RegisterGin(c *gin.Context, userRepo *repository.UserRepos
 	}
 
 	if err := c.ShouldBindJSON(&req); err != nil {
+		fmt.Printf("DEBUG: Register bind error: %v\n", err)
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
@@ -117,15 +130,24 @@ func (h *AuthHandler) RegisterGin(c *gin.Context, userRepo *repository.UserRepos
 		return
 	}
 
+	// Generate salt and hash password using auth service
+	passwordHash, salt, err := h.authService.HashPasswordForUser(req.Password)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to hash password"})
+		return
+	}
+
 	// Create user
 	user := &models.User{
-		Username:  req.Username,
-		Email:     req.Email,
-		FirstName: &req.FirstName,
-		LastName:  &req.LastName,
-		RoleID:    2,   // Default user role
-		Role:      nil, // Will be loaded after creation
-		IsActive:  true,
+		Username:    req.Username,
+		Email:       req.Email,
+		PasswordHash: passwordHash,
+		Salt:        salt,
+		FirstName:   &req.FirstName,
+		LastName:    &req.LastName,
+		RoleID:      2,   // Default user role
+		Role:        nil, // Will be loaded after creation
+		IsActive:    true,
 	}
 
 	userID, err := userRepo.Create(user)

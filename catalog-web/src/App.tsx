@@ -10,6 +10,7 @@ import { ProtectedRoute } from '@/components/auth/ProtectedRoute'
 import { Dashboard } from '@/pages/Dashboard'
 import { MediaBrowser } from '@/pages/MediaBrowser'
 import { Analytics } from '@/pages/Analytics'
+import { SubtitleManager } from '@/pages/SubtitleManager'
 
 function App() {
   return (
@@ -46,6 +47,14 @@ function App() {
               element={
                 <ProtectedRoute requiredPermission="view:analysis">
                   <Analytics />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/subtitles"
+              element={
+                <ProtectedRoute requiredPermission="manage:subtitles">
+                  <SubtitleManager />
                 </ProtectedRoute>
               }
             />

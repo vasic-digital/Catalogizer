@@ -437,7 +437,7 @@ func (s *SubtitleService) searchOpenSubtitles(ctx context.Context, request *Subt
 	// Mock results for demonstration
 	results := []SubtitleSearchResult{
 		{
-			ID:           "os_1",
+			ID:           "opensubtitles_1",
 			Provider:     ProviderOpenSubtitles,
 			Language:     "English",
 			LanguageCode: "en",

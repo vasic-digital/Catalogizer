@@ -3,6 +3,7 @@ package middleware
 import (
 	"encoding/json"
 	"fmt"
+	"io"
 	"net/http"
 	"regexp"
 	"strings"
@@ -143,9 +144,18 @@ func ValidateRequestBody(config InputValidationConfig, c *gin.Context) error {
 		return fmt.Errorf("request body too large")
 	}
 
-	// Only validate specific content types
+	// Only validate specific content types and methods that typically have bodies
 	contentType := c.GetHeader("Content-Type")
-	if !strings.Contains(contentType, "application/json") &&
+	method := c.Request.Method
+	
+	// Skip validation for GET requests (they shouldn't have bodies)
+	if method == "GET" || method == "DELETE" || method == "HEAD" {
+		return nil
+	}
+	
+	// Skip validation for non-form/json content types
+	if contentType != "" && 
+		!strings.Contains(contentType, "application/json") &&
 		!strings.Contains(contentType, "application/x-www-form-urlencoded") &&
 		!strings.Contains(contentType, "multipart/form-data") {
 		return nil // Skip validation for other content types
@@ -160,6 +170,9 @@ func ValidateRequestBody(config InputValidationConfig, c *gin.Context) error {
 	if len(bodyBytes) > int(config.MaxRequestBodySize) {
 		return fmt.Errorf("request body too large")
 	}
+
+	// Restore the request body for subsequent handlers
+	c.Request.Body = io.NopCloser(strings.NewReader(string(bodyBytes)))
 
 	// For JSON requests, validate the structure
 	if strings.Contains(contentType, "application/json") {

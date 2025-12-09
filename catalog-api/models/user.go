@@ -282,14 +282,14 @@ type UserSession struct {
 
 // DeviceInfo represents information about the user's device
 type DeviceInfo struct {
-	DeviceType      string  `json:"device_type"` // mobile, tablet, desktop, tv
-	Platform        string  `json:"platform"`    // android, ios, windows, macos, linux
-	PlatformVersion string  `json:"platform_version"`
-	AppVersion      string  `json:"app_version"`
+	DeviceType      *string `json:"device_type,omitempty"` // mobile, tablet, desktop, tv
+	Platform        *string `json:"platform,omitempty"`    // android, ios, windows, macos, linux
+	PlatformVersion *string `json:"platform_version,omitempty"`
+	AppVersion      *string `json:"app_version,omitempty"`
 	DeviceModel     *string `json:"device_model,omitempty"`
 	DeviceName      *string `json:"device_name,omitempty"`
 	ScreenSize      *string `json:"screen_size,omitempty"`
-	IsEmulator      bool    `json:"is_emulator"`
+	IsEmulator      *bool   `json:"is_emulator,omitempty"`
 }
 
 // Value implements the driver.Valuer interface for DeviceInfo
@@ -389,7 +389,7 @@ type ChangePasswordRequest struct {
 type LoginRequest struct {
 	Username   string     `json:"username" validate:"required"`
 	Password   string     `json:"password" validate:"required"`
-	DeviceInfo DeviceInfo `json:"device_info"`
+	DeviceInfo DeviceInfo `json:"device_info,omitempty"`
 	RememberMe bool       `json:"remember_me"`
 }
 

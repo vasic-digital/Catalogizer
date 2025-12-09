@@ -12,9 +12,22 @@ export interface User {
   permissions?: string[]
 }
 
+export interface DeviceInfo {
+  device_type?: string
+  platform?: string
+  platform_version?: string
+  app_version?: string
+  device_model?: string
+  device_name?: string
+  screen_size?: string
+  is_emulator?: boolean
+}
+
 export interface LoginRequest {
   username: string
   password: string
+  device_info?: DeviceInfo
+  remember_me?: boolean
 }
 
 export interface LoginResponse {
@@ -30,6 +43,7 @@ export interface RegisterRequest {
   password: string
   first_name: string
   last_name: string
+  device_info?: DeviceInfo
 }
 
 export interface AuthStatus {

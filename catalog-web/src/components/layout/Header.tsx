@@ -2,7 +2,7 @@ import React, { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { useAuth } from '@/contexts/AuthContext'
 import { Button } from '@/components/ui/Button'
-import { Menu, X, User, LogOut, Settings, Search } from 'lucide-react'
+import { Menu, X, User, LogOut, Settings, Search, Languages } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
 
 export const Header: React.FC = () => {
@@ -56,6 +56,12 @@ export const Header: React.FC = () => {
                 className="text-gray-700 hover:text-gray-900 dark:text-gray-300 dark:hover:text-white transition-colors"
               >
                 Analytics
+              </Link>
+              <Link
+                to="/subtitles"
+                className="text-gray-700 hover:text-gray-900 dark:text-gray-300 dark:hover:text-white transition-colors"
+              >
+                Subtitles
               </Link>
               {user?.role === 'admin' && (
                 <Link
@@ -186,6 +192,13 @@ export const Header: React.FC = () => {
                       onClick={() => setIsMobileMenuOpen(false)}
                     >
                       Analytics
+                    </Link>
+                    <Link
+                      to="/subtitles"
+                      className="block px-3 py-2 text-gray-700 hover:text-gray-900 hover:bg-gray-100 rounded-md dark:text-gray-300 dark:hover:text-white dark:hover:bg-gray-800 transition-colors"
+                      onClick={() => setIsMobileMenuOpen(false)}
+                    >
+                      Subtitles
                     </Link>
                     {user?.role === 'admin' && (
                       <Link
