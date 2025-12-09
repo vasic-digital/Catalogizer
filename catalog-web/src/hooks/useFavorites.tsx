@@ -1,0 +1,147 @@
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
+import { favoritesApi } from '@/lib/favoritesApi'
+import type { Favorite, FavoriteToggleRequest, FavoriteStats } from '@/types/favorites'
+import toast from 'react-hot-toast'
+
+export const useFavorites = (params?: {
+  limit?: number
+  offset?: number
+  media_type?: string
+  sort_by?: 'created_at' | 'title' | 'rating' | 'year'
+  sort_order?: 'asc' | 'desc'
+}) => {
+  const queryClient = useQueryClient()
+
+  const {
+    data: favoritesData,
+    isLoading: isLoadingFavorites,
+    error: favoritesError,
+    refetch: refetchFavorites
+  } = useQuery({
+    queryKey: ['favorites', params],
+    queryFn: () => favoritesApi.getFavorites(params),
+    staleTime: 1000 * 60 * 5, // 5 minutes
+    cacheTime: 1000 * 60 * 10, // 10 minutes
+  })
+
+  const {
+    data: favoriteStats,
+    isLoading: isLoadingStats,
+    error: statsError,
+    refetch: refetchStats
+  } = useQuery({
+    queryKey: ['favorites-stats'],
+    queryFn: () => favoritesApi.getFavoriteStats(),
+    staleTime: 1000 * 60 * 2, // 2 minutes
+    cacheTime: 1000 * 60 * 5, // 5 minutes
+  })
+
+  const toggleFavoriteMutation = useMutation({
+    mutationFn: (request: FavoriteToggleRequest) => favoritesApi.toggleFavorite(request),
+    onMutate: async (request) => {
+      // Cancel any ongoing refetches
+      await queryClient.cancelQueries(['favorites'])
+      
+      // Snapshot previous value
+      const previousFavorites = queryClient.getQueryData(['favorites'])
+      
+      // Optimistically update
+      queryClient.setQueryData(['favorites'], (old: any) => {
+        if (!old?.items) return old
+        
+        if (request.is_favorite) {
+          // Add to favorites (would need full media item in real implementation)
+          toast.success('Added to favorites')
+        } else {
+          // Remove from favorites
+          return {
+            ...old,
+            items: old.items.filter((fav: Favorite) => fav.media_id !== request.media_id)
+          }
+        }
+      })
+      
+      return { previousFavorites }
+    },
+    onError: (error, variables, context) => {
+      // Revert optimistic update
+      queryClient.setQueryData(['favorites'], context?.previousFavorites)
+      toast.error('Failed to update favorite status')
+    },
+    onSettled: () => {
+      // Refetch to ensure server state
+      queryClient.invalidateQueries(['favorites'])
+      queryClient.invalidateQueries(['favorites-stats'])
+    }
+  })
+
+  const bulkAddMutation = useMutation({
+    mutationFn: (mediaIds: number[]) => favoritesApi.bulkAddToFavorites(mediaIds),
+    onSuccess: (data) => {
+      toast.success(`Added ${data.added} items to favorites`)
+      queryClient.invalidateQueries(['favorites'])
+      queryClient.invalidateQueries(['favorites-stats'])
+    },
+    onError: () => {
+      toast.error('Failed to add items to favorites')
+    }
+  })
+
+  const bulkRemoveMutation = useMutation({
+    mutationFn: (mediaIds: number[]) => favoritesApi.bulkRemoveFromFavorites(mediaIds),
+    onSuccess: (data) => {
+      toast.success(`Removed ${data.removed} items from favorites`)
+      queryClient.invalidateQueries(['favorites'])
+      queryClient.invalidateQueries(['favorites-stats'])
+    },
+    onError: () => {
+      toast.error('Failed to remove items from favorites')
+    }
+  })
+
+  const checkFavoriteStatus = (mediaId: number): boolean => {
+    if (!favoritesData?.items) return false
+    return favoritesData.items.some(fav => fav.media_id === mediaId)
+  }
+
+  const toggleFavorite = (mediaId: number, currentStatus?: boolean) => {
+    const isFavorite = currentStatus ?? checkFavoriteStatus(mediaId)
+    toggleFavoriteMutation.mutate({
+      media_id: mediaId,
+      is_favorite: !isFavorite
+    })
+  }
+
+  const bulkAddToFavorites = (mediaIds: number[]) => {
+    bulkAddMutation.mutate(mediaIds)
+  }
+
+  const bulkRemoveFromFavorites = (mediaIds: number[]) => {
+    bulkRemoveMutation.mutate(mediaIds)
+  }
+
+  return {
+    favorites: favoritesData?.items || [],
+    total: favoritesData?.total || 0,
+    isLoading: isLoadingFavorites || isLoadingStats,
+    error: favoritesError || statsError,
+    stats: favoriteStats,
+    refetchFavorites,
+    refetchStats,
+    toggleFavorite,
+    checkFavoriteStatus,
+    bulkAddToFavorites,
+    bulkRemoveFromFavorites,
+    isToggling: toggleFavoriteMutation.isLoading
+  }
+}
+
+// Hook for checking single item favorite status
+export const useFavoriteStatus = (mediaId: number) => {
+  return useQuery({
+    queryKey: ['favorite-status', mediaId],
+    queryFn: () => favoritesApi.checkFavorite(mediaId),
+    staleTime: 1000 * 60 * 5, // 5 minutes
+    enabled: !!mediaId
+  })
+}

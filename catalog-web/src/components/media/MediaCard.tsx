@@ -1,6 +1,7 @@
 import React from 'react'
 import { Card, CardContent } from '@/components/ui/Card'
 import { Button } from '@/components/ui/Button'
+import { FavoriteToggle } from '@/components/favorites/FavoriteToggle'
 import type { MediaItem } from '@/types/media'
 import {
   Film,
@@ -178,6 +179,14 @@ export const MediaCard: React.FC<MediaCardProps> = ({
               </span>
             </div>
           )}
+
+          {/* Favorite Toggle */}
+          <FavoriteToggle
+            mediaId={media.id}
+            mediaItem={media}
+            variant="card"
+            size="md"
+          />
 
           {/* Media Type Badge */}
           <div className="absolute top-2 left-2">

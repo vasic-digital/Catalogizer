@@ -6,9 +6,13 @@ import { motion } from 'framer-motion'
 interface MediaGridProps {
   media: MediaItem[]
   loading?: boolean
+  viewMode?: 'grid' | 'list'
   onMediaView?: (media: MediaItem) => void
   onMediaPlay?: (media: MediaItem) => void
   onMediaDownload?: (media: MediaItem) => void
+  onSelect?: (mediaId: number, selected: boolean) => void
+  selectedItems?: number[]
+  showActions?: boolean
   className?: string
 }
 
@@ -26,9 +30,13 @@ const LoadingSkeleton: React.FC = () => (
 export const MediaGrid: React.FC<MediaGridProps> = ({
   media,
   loading = false,
+  viewMode = 'grid',
   onMediaView,
   onMediaPlay,
   onMediaDownload,
+  onSelect,
+  selectedItems = [],
+  showActions = true,
   className = ''
 }) => {
   if (loading) {
@@ -67,8 +75,12 @@ export const MediaGrid: React.FC<MediaGridProps> = ({
     )
   }
 
+  const gridCols = viewMode === 'grid' 
+    ? 'grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6'
+    : 'grid-cols-1'
+
   return (
-    <div className={`grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-6 ${className}`}>
+    <div className={`grid ${gridCols} gap-6 ${className}`}>
       {media.map((item, index) => (
         <motion.div
           key={item.id}

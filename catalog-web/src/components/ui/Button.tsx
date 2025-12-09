@@ -14,10 +14,12 @@ const buttonVariants = cva(
         ghost: 'hover:bg-gray-100 hover:text-gray-900 dark:hover:bg-gray-700 dark:hover:text-white',
         link: 'text-blue-600 underline-offset-4 hover:underline dark:text-blue-400',
         glass: 'bg-white/10 backdrop-blur-md border border-white/20 text-white hover:bg-white/20',
+        primary: 'bg-blue-600 text-white hover:bg-blue-700 shadow-lg hover:shadow-xl',
       },
       size: {
         default: 'h-10 px-4 py-2',
         sm: 'h-9 rounded-md px-3',
+        md: 'h-10 px-4 py-2',
         lg: 'h-11 rounded-md px-8',
         icon: 'h-10 w-10',
       },

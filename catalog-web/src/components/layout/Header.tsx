@@ -2,7 +2,7 @@ import React, { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { useAuth } from '@/contexts/AuthContext'
 import { Button } from '@/components/ui/Button'
-import { Menu, X, User, LogOut, Settings, Search, Languages, Folder, Settings2 } from 'lucide-react'
+import { Menu, X, User, LogOut, Settings, Search, Languages, Folder, Settings2, Heart, ListMusic } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
 
 export const Header: React.FC = () => {
@@ -50,6 +50,24 @@ export const Header: React.FC = () => {
                 className="text-gray-700 hover:text-gray-900 dark:text-gray-300 dark:hover:text-white transition-colors"
               >
                 Media
+              </Link>
+              <Link
+                to="/favorites"
+                className="text-gray-700 hover:text-gray-900 dark:text-gray-300 dark:hover:text-white transition-colors"
+              >
+                <div className="flex items-center gap-1">
+                  <Heart className="h-4 w-4" />
+                  Favorites
+                </div>
+              </Link>
+              <Link
+                to="/playlists"
+                className="text-gray-700 hover:text-gray-900 dark:text-gray-300 dark:hover:text-white transition-colors"
+              >
+                <div className="flex items-center gap-1">
+                  <ListMusic className="h-4 w-4" />
+                  Playlists
+                </div>
               </Link>
               <Link
                 to="/analytics"
@@ -202,11 +220,24 @@ export const Header: React.FC = () => {
                       Media
                     </Link>
                     <Link
-                      to="/analytics"
+                      to="/favorites"
                       className="block px-3 py-2 text-gray-700 hover:text-gray-900 hover:bg-gray-100 rounded-md dark:text-gray-300 dark:hover:text-white dark:hover:bg-gray-800 transition-colors"
                       onClick={() => setIsMobileMenuOpen(false)}
                     >
-                      Analytics
+                      <div className="flex items-center gap-2">
+                        <Heart className="h-4 w-4" />
+                        Favorites
+                      </div>
+                    </Link>
+                    <Link
+                      to="/playlists"
+                      className="block px-3 py-2 text-gray-700 hover:text-gray-900 hover:bg-gray-100 rounded-md dark:text-gray-300 dark:hover:text-white dark:hover:bg-gray-800 transition-colors"
+                      onClick={() => setIsMobileMenuOpen(false)}
+                    >
+                      <div className="flex items-center gap-2">
+                        <ListMusic className="h-4 w-4" />
+                        Playlists
+                      </div>
                     </Link>
                     <Link
                       to="/subtitles"

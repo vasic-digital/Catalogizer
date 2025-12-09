@@ -14,6 +14,8 @@ import { SubtitleManager } from '@/pages/SubtitleManager'
 import { Collections } from '@/pages/Collections'
 import { ConversionTools } from '@/pages/ConversionTools'
 import { Admin } from '@/pages/Admin'
+import FavoritesPage from '@/pages/Favorites'
+import { PlaylistsPage } from '@/pages/Playlists'
 
 function App() {
   return (
@@ -66,6 +68,22 @@ function App() {
               element={
                 <ProtectedRoute requiredPermission="read:collections">
                   <Collections />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/favorites"
+              element={
+                <ProtectedRoute>
+                  <FavoritesPage />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/playlists"
+              element={
+                <ProtectedRoute>
+                  <PlaylistsPage />
                 </ProtectedRoute>
               }
             />
