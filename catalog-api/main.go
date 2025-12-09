@@ -160,6 +160,7 @@ func main() {
 		db,
 	)
 
+
 	// Initialize repositories
 	userRepo := root_repository.NewUserRepository(db)
 	conversionRepo := root_repository.NewConversionRepository(db)
@@ -192,6 +193,11 @@ func main() {
 	} else {
 		log.Println("Redis connected successfully for distributed rate limiting")
 	}
+	
+	// Initialize subtitle service
+	// Use SQL-based cache service for now
+	cacheService := services.NewCacheService(db, logger)
+	subtitleService := services.NewSubtitleService(db, logger, cacheService)
 
 	// Initialize handlers
 	catalogHandler := handlers.NewCatalogHandler(catalogService, smbService, logger)
@@ -207,6 +213,9 @@ func main() {
 	
 	// Recommendation handler
 	recommendationHandler := root_handlers.NewRecommendationHandler(recommendationService)
+	
+	// Subtitle handler
+	subtitleHandler := root_handlers.NewSubtitleHandler(subtitleService, logger)
 
 	// Initialize JWT middleware
 	jwtMiddleware := root_middleware.NewJWTMiddleware(jwtSecret)
@@ -283,6 +292,18 @@ func main() {
 			recGroup.GET("/trending", recommendationHandler.GetTrendingItems)
 			recGroup.GET("/personalized/:user_id", recommendationHandler.GetPersonalizedRecommendations)
 		}
+		
+		// Subtitle endpoints
+		subGroup := api.Group("/subtitles")
+		{
+			subGroup.GET("/search", subtitleHandler.SearchSubtitles)
+			subGroup.POST("/download", subtitleHandler.DownloadSubtitle)
+			subGroup.GET("/media/:media_id", subtitleHandler.GetSubtitles)
+			subGroup.GET("/:subtitle_id/verify-sync/:media_id", subtitleHandler.VerifySubtitleSync)
+			subGroup.POST("/translate", subtitleHandler.TranslateSubtitle)
+			subGroup.GET("/languages", subtitleHandler.GetSupportedLanguages)
+			subGroup.GET("/providers", subtitleHandler.GetSupportedProviders)
+		}
 		api.GET("/storage/list/*path", copyHandler.ListStoragePath)
 		api.GET("/storage/roots", copyHandler.GetStorageRoots)
 
@@ -344,4 +365,15 @@ func main() {
 	}
 
 	logger.Info("Server exited")
+}
+
+// NopCacheService is a no-operation cache service for when Redis is not available
+type NopCacheService struct{}
+
+func (n *NopCacheService) Get(ctx context.Context, key string, dest interface{}) (bool, error) {
+	return false, nil
+}
+
+func (n *NopCacheService) Set(ctx context.Context, key string, value interface{}, ttl time.Duration) error {
+	return nil
 }

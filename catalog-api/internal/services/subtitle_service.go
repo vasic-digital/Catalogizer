@@ -361,7 +361,17 @@ func (s *SubtitleService) GetSubtitles(ctx context.Context, mediaItemID int64) (
 	return subtitles, nil
 }
 
-// VerifySynchronization checks if subtitles are properly synchronized with video
+// GetSubtitleTrack retrieves a subtitle track by ID (exported version)
+func (s *SubtitleService) GetSubtitleTrack(ctx context.Context, subtitleID string) (*SubtitleTrack, error) {
+	return s.getSubtitleTrack(ctx, subtitleID)
+}
+
+// VerifySynchronization checks if subtitles are properly synchronized with video (exported version)
+func (s *SubtitleService) VerifySynchronization(ctx context.Context, mediaItemID int64, track *SubtitleTrack) (*SubtitleSyncResult, error) {
+	return s.verifySynchronization(ctx, mediaItemID, track)
+}
+
+// verifySynchronization checks if subtitles are properly synchronized with video
 func (s *SubtitleService) verifySynchronization(ctx context.Context, mediaItemID int64, track *SubtitleTrack) (*SubtitleSyncResult, error) {
 	s.logger.Debug("Verifying subtitle synchronization",
 		zap.Int64("media_item_id", mediaItemID),

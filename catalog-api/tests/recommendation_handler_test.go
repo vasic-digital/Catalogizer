@@ -47,6 +47,10 @@ func (suite *RecommendationTestSuite) SetupSuite() {
 	// Don't close the database here - it will be closed in TearDownSuite
 	suite.db = db
 	
+	// Skip migrations for test - use mock data instead
+	// err = db.RunMigrations(context.Background())
+	// suite.Require().NoError(err)
+	
 	// Create test logger
 	logger, _ := zap.NewDevelopment()
 	
