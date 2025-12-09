@@ -41,6 +41,13 @@ type SubtitleDownloadResponse struct {
 	Track   *services.SubtitleTrack `json:"track,omitempty"`
 }
 
+// SubtitleUploadResponse represents the response for subtitle upload
+type SubtitleUploadResponse struct {
+	Success bool                  `json:"success"`
+	Message string                `json:"message,omitempty"`
+	Track   *services.SubtitleTrack `json:"track,omitempty"`
+}
+
 // SubtitleListResponse represents the response for subtitle list
 type SubtitleListResponse struct {
 	Success    bool                      `json:"success"`
@@ -560,4 +567,133 @@ func getProviderDescription(provider services.SubtitleProvider) string {
 	default:
 		return "Subtitle provider"
 	}
+}
+
+// UploadSubtitle handles subtitle upload requests
+// @Summary Upload subtitle
+// @Description Upload a subtitle file for a media item
+// @Tags subtitles
+// @Accept multipart/form-data
+// @Produce json
+// @Param media_item_id formData int true "Media item ID"
+// @Param language formData string true "Subtitle language"
+// @Param language_code formData string true "Language code (e.g., 'en')"
+// @Param file formData file true "Subtitle file"
+// @Success 200 {object} SubtitleUploadResponse
+// @Failure 400 {object} ErrorResponse
+// @Failure 404 {object} ErrorResponse
+// @Failure 500 {object} ErrorResponse
+// @Router /api/v1/subtitles/upload [post]
+func (h *SubtitleHandler) UploadSubtitle(c *gin.Context) {
+	h.logger.Info("Subtitle upload request received")
+
+	// Get form values
+	mediaIDStr := c.PostForm("media_item_id")
+	language := c.PostForm("language")
+	languageCode := c.PostForm("language_code")
+
+	// Validate required parameters
+	if mediaIDStr == "" || language == "" || languageCode == "" {
+		c.JSON(http.StatusBadRequest, ErrorResponse{
+			Success: false,
+			Error:   "media_item_id, language, and language_code are required",
+			Code:    "MISSING_REQUIRED_FIELDS",
+		})
+		return
+	}
+
+	mediaID, err := strconv.ParseInt(mediaIDStr, 10, 64)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, ErrorResponse{
+			Success: false,
+			Error:   "Invalid media_item_id format",
+			Code:    "INVALID_MEDIA_ID",
+		})
+		return
+	}
+
+	// Get uploaded file
+	file, err := c.FormFile("file")
+	if err != nil {
+		c.JSON(http.StatusBadRequest, ErrorResponse{
+			Success: false,
+			Error:   "file is required",
+			Code:    "MISSING_FILE",
+		})
+		return
+	}
+	defer file.Close()
+
+	// Read file content
+	content, err := io.ReadAll(file)
+	if err != nil {
+		h.logger.Error("Failed to read uploaded file", zap.Error(err))
+		c.JSON(http.StatusInternalServerError, ErrorResponse{
+			Success: false,
+			Error:   "Failed to read uploaded file",
+			Code:    "FILE_READ_ERROR",
+		})
+		return
+	}
+
+	// Detect subtitle format from file extension
+	format := "srt" // Default
+	ext := strings.ToLower(filepath.Ext(file.Filename))
+	switch ext {
+	case ".srt":
+		format = "srt"
+	case ".vtt":
+		format = "vtt"
+	case ".ass", ".ssa":
+		format = "ass"
+	case ".txt":
+		format = "txt"
+	}
+
+	// Create subtitle track
+	track := &media_player_service.SubtitleTrack{
+		ID:           fmt.Sprintf("upload_%d_%d", mediaID, time.Now().Unix()),
+		Language:     language,
+		LanguageCode: languageCode,
+		Source:       "uploaded",
+		Format:       format,
+		Path:         &file.Filename,
+		IsDefault:    false,
+		IsForced:     false,
+		Encoding:     "utf-8",
+		SyncOffset:   0.0,
+		CreatedAt:    time.Now(),
+		VerifiedSync: false,
+	}
+
+	// Store content as string
+	contentStr := string(content)
+	track.Content = &contentStr
+
+	// Save to database
+	ctx := context.Background()
+	err = h.subtitleService.SaveUploadedSubtitle(ctx, mediaID, track)
+	if err != nil {
+		h.logger.Error("Failed to save uploaded subtitle", 
+			zap.Int64("media_item_id", mediaID),
+			zap.String("language", language),
+			zap.Error(err))
+		c.JSON(http.StatusInternalServerError, ErrorResponse{
+			Success: false,
+			Error:   "Failed to save uploaded subtitle",
+			Code:    "SAVE_ERROR",
+		})
+		return
+	}
+
+	h.logger.Info("Subtitle uploaded successfully",
+		zap.Int64("media_item_id", mediaID),
+		zap.String("subtitle_id", track.ID),
+		zap.String("language", language))
+
+	c.JSON(http.StatusOK, SubtitleUploadResponse{
+		Success: true,
+		Track:   track,
+		Message: "Subtitle uploaded successfully",
+	})
 }
