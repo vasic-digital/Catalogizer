@@ -114,6 +114,61 @@ export const useCollections = () => {
     },
   });
 
+  const bulkDeleteCollectionsMutation = useMutation({
+    mutationFn: ({ collectionIds }: { collectionIds: string[] }) =>
+      collectionsApi.bulkDeleteCollections(collectionIds),
+    onSuccess: (_, { collectionIds }) => {
+      queryClient.invalidateQueries({ queryKey: ['collections'] });
+      collectionIds.forEach(id => {
+        queryClient.removeQueries({ queryKey: ['collection', id] });
+      });
+    },
+    onError: (error: any) => {
+      toast.error(error.message || 'Failed to delete collections');
+    },
+  });
+
+  const bulkShareCollectionsMutation = useMutation({
+    mutationFn: ({ collectionIds, shareRequest }: { collectionIds: string[]; shareRequest: ShareCollectionRequest }) =>
+      collectionsApi.bulkShareCollections(collectionIds, shareRequest),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['collections'] });
+    },
+    onError: (error: any) => {
+      toast.error(error.message || 'Failed to share collections');
+    },
+  });
+
+  const bulkExportCollectionsMutation = useMutation({
+    mutationFn: ({ collectionIds, format }: { collectionIds: string[]; format: 'json' | 'csv' | 'm3u' }) =>
+      collectionsApi.bulkExportCollections(collectionIds, format),
+    onSuccess: (blob, { format }) => {
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `collections-bulk-export.${format}`;
+      document.body.appendChild(a);
+      a.click();
+      window.URL.revokeObjectURL(url);
+      document.body.removeChild(a);
+      toast.success('Collections exported successfully');
+    },
+    onError: (error: any) => {
+      toast.error(error.message || 'Failed to export collections');
+    },
+  });
+
+  const bulkUpdateCollectionsMutation = useMutation({
+    mutationFn: ({ collectionIds, action, updates }: { collectionIds: string[]; action: string; updates?: UpdateCollectionRequest }) =>
+      collectionsApi.bulkUpdateCollections(collectionIds, action, updates),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['collections'] });
+    },
+    onError: (error: any) => {
+      toast.error(error.message || 'Failed to update collections');
+    },
+  });
+
   return {
     collections,
     isLoading,
@@ -126,6 +181,10 @@ export const useCollections = () => {
     shareCollection: shareCollectionMutation.mutateAsync,
     duplicateCollection: duplicateCollectionMutation.mutateAsync,
     exportCollection: exportCollectionMutation.mutateAsync,
+    bulkDeleteCollections: bulkDeleteCollectionsMutation.mutateAsync,
+    bulkShareCollections: bulkShareCollectionsMutation.mutateAsync,
+    bulkExportCollections: bulkExportCollectionsMutation.mutateAsync,
+    bulkUpdateCollections: bulkUpdateCollectionsMutation.mutateAsync,
     isCreating: createCollectionMutation.isPending,
     isUpdating: updateCollectionMutation.isPending,
     isDeleting: deleteCollectionMutation.isPending,
@@ -133,6 +192,10 @@ export const useCollections = () => {
     isSharing: shareCollectionMutation.isPending,
     isDuplicating: duplicateCollectionMutation.isPending,
     isExporting: exportCollectionMutation.isPending,
+    isBulkDeleting: bulkDeleteCollectionsMutation.isPending,
+    isBulkSharing: bulkShareCollectionsMutation.isPending,
+    isBulkExporting: bulkExportCollectionsMutation.isPending,
+    isBulkUpdating: bulkUpdateCollectionsMutation.isPending,
   };
 };
 

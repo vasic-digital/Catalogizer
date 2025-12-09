@@ -294,6 +294,109 @@ class CollectionsApi {
       () => mockCollectionsApi.testRules(rules)
     );
   }
+
+  // Bulk operations
+  async bulkDeleteCollections(collectionIds: string[]): Promise<void> {
+    return this.tryApiCall(
+      async () => {
+        await api.delete(`${this.baseUrl}/bulk`, { data: { collection_ids: collectionIds } });
+      },
+      async () => {
+        for (const id of collectionIds) {
+          await mockCollectionsApi.deleteSmartCollection(id);
+        }
+      }
+    );
+  }
+
+  async bulkShareCollections(collectionIds: string[], shareRequest: ShareCollectionRequest): Promise<CollectionShareInfo[]> {
+    return this.tryApiCall(
+      async () => {
+        const response = await api.post(`${this.baseUrl}/bulk/share`, {
+          collection_ids: collectionIds,
+          share_request: shareRequest
+        });
+        return response.data;
+      },
+      async () => {
+        const results: CollectionShareInfo[] = [];
+        for (const id of collectionIds) {
+          const mockShareInfo: CollectionShareInfo = {
+            share_id: `share_${id}_${Date.now()}`,
+            share_url: `http://localhost:3006/shared/share_${id}_${Date.now()}`,
+            expires_at: shareRequest.expires_at || new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
+            created_at: new Date().toISOString(),
+            access_count: 0,
+            permissions: shareRequest
+          };
+          results.push(mockShareInfo);
+        }
+        return results;
+      }
+    );
+  }
+
+  async bulkExportCollections(collectionIds: string[], format: 'json' | 'csv' | 'm3u' = 'json'): Promise<Blob> {
+    return this.tryApiCall(
+      async () => {
+        const response = await api.post(`${this.baseUrl}/bulk/export`, {
+          collection_ids: collectionIds,
+          format
+        }, {
+          responseType: 'blob'
+        });
+        return response.data;
+      },
+      async () => {
+        let data: string;
+        const collections = [];
+        
+        for (const id of collectionIds) {
+          const collection = await mockCollectionsApi.getSmartCollection(id);
+          collections.push(collection);
+        }
+        
+        if (format === 'json') {
+          data = JSON.stringify(collections, null, 2);
+        } else {
+          data = 'name,description\n' + collections.map(c => `${c.name},"${c.description || ''}"`).join('\n');
+        }
+        
+        return new Blob([data], { type: format === 'json' ? 'application/json' : 'text/csv' });
+      }
+    );
+  }
+
+  async bulkUpdateCollections(collectionIds: string[], action: string, updates?: UpdateCollectionRequest): Promise<SmartCollection[]> {
+    return this.tryApiCall(
+      async () => {
+        const response = await api.put(`${this.baseUrl}/bulk`, {
+          collection_ids: collectionIds,
+          action,
+          updates
+        });
+        return response.data;
+      },
+      async () => {
+        const results: SmartCollection[] = [];
+        for (const id of collectionIds) {
+          if (action === 'duplicate') {
+            const original = await mockCollectionsApi.getSmartCollection(id);
+            const duplicate = await mockCollectionsApi.createSmartCollection({
+              name: `${original.name} (Copy)`,
+              description: original.description,
+              rules: original.smart_rules
+            });
+            results.push(duplicate);
+          } else if (updates) {
+            const updated = await mockCollectionsApi.updateSmartCollection(id, updates);
+            results.push(updated);
+          }
+        }
+        return results;
+      }
+    );
+  }
 }
 
 export const collectionsApi = new CollectionsApi();

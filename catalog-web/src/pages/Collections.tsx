@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useCallback } from 'react';
 import { motion } from 'framer-motion';
 import {
   Plus,
@@ -15,7 +15,11 @@ import {
   Trash2,
   Copy,
   Download,
-  Eye
+  Eye,
+  Settings,
+  CheckSquare,
+  Square,
+  X
 } from 'lucide-react';
 import { Button } from '../components/ui/Button';
 import { Input } from '../components/ui/Input';
@@ -23,6 +27,10 @@ import { Select } from '../components/ui/Select';
 import { Tabs } from '../components/ui/Tabs';
 import { Card } from '../components/ui/Card';
 import { SmartCollectionBuilder } from '../components/collections/SmartCollectionBuilder';
+import { CollectionPreview } from '../components/collections/CollectionPreview';
+import { BulkOperations } from '../components/collections/BulkOperations';
+import { PerformanceOptimizer } from '../components/collections/PerformanceOptimizer';
+import { CollectionSettings } from '../components/collections/CollectionSettings';
 import { useCollections } from '../hooks/useCollections';
 import { SmartCollection } from '../types/collections';
 import { toast } from 'react-hot-toast';
@@ -62,6 +70,11 @@ export const Collections: React.FC = () => {
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
   const [showSmartBuilder, setShowSmartBuilder] = useState(false);
   const [selectedCollection, setSelectedCollection] = useState<SmartCollection | null>(null);
+  const [previewCollection, setPreviewCollection] = useState<SmartCollection | null>(null);
+  const [selectedCollections, setSelectedCollections] = useState<string[]>([]);
+  const [showBulkOperations, setShowBulkOperations] = useState(false);
+  const [showSettings, setShowSettings] = useState(false);
+  const [selectAll, setSelectAll] = useState(false);
 
   const {
     collections,
@@ -74,6 +87,10 @@ export const Collections: React.FC = () => {
     shareCollection,
     duplicateCollection,
     exportCollection,
+    bulkDeleteCollections,
+    bulkShareCollections,
+    bulkExportCollections,
+    bulkUpdateCollections,
     isSharing,
     isDuplicating,
     isExporting,
@@ -126,6 +143,44 @@ export const Collections: React.FC = () => {
 
     return filtered;
   }, [collections, activeTab, searchQuery, filterMediaType, sortBy]);
+
+  // Selection handlers
+  const handleSelectCollection = useCallback((collectionId: string, selected: boolean) => {
+    setSelectedCollections(prev => {
+      if (selected) {
+        return [...prev, collectionId];
+      } else {
+        return prev.filter(id => id !== collectionId);
+      }
+    });
+  }, []);
+
+  const handleSelectAll = useCallback(() => {
+    if (selectAll) {
+      setSelectedCollections([]);
+    } else {
+      setSelectedCollections(filteredCollections.map(c => c.id));
+    }
+    setSelectAll(!selectAll);
+  }, [selectAll, filteredCollections]);
+
+  const handleClearSelection = () => {
+    setSelectedCollections([]);
+    setSelectAll(false);
+  };
+
+  const handlePreviewCollection = (collection: SmartCollection) => {
+    setPreviewCollection(collection);
+  };
+
+  const handleClosePreview = () => {
+    setPreviewCollection(null);
+  };
+
+  const handleOpenSettings = (collection: SmartCollection) => {
+    setSelectedCollection(collection);
+    setShowSettings(true);
+  };
 
   const handleCreateSmartCollection = () => {
     setShowSmartBuilder(true);
@@ -191,158 +246,273 @@ export const Collections: React.FC = () => {
         await deleteCollection({
           id: collection.id
         });
+        toast.success('Collection deleted successfully');
       } catch (error) {
         console.error('Failed to delete collection:', error);
+        toast.error('Failed to delete collection');
       }
     }
   };
 
-  const renderCollectionCard = (collection: SmartCollection) => (
-    <motion.div
-      key={collection.id}
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      whileHover={{ scale: 1.02 }}
-      className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-4 cursor-pointer hover:shadow-md transition-shadow"
-    >
-      <div className="flex items-start justify-between mb-3">
-        <div className="flex-1">
-          <h3 className="font-semibold text-gray-900 dark:text-white mb-1">
-            {collection.name}
-          </h3>
-          {collection.description && (
-            <p className="text-sm text-gray-600 dark:text-gray-400 line-clamp-2">
-              {collection.description}
-            </p>
-          )}
-        </div>
-        
-        <div className="flex items-center gap-1">
-          {collection.is_smart && (
-            <div className="w-6 h-6 bg-purple-100 dark:bg-purple-900 rounded-full flex items-center justify-center">
-              <Clock className="w-3 h-3 text-purple-600 dark:text-purple-400" />
-            </div>
-          )}
-        </div>
-      </div>
+  const handleBulkOperation = async (operation: string, options?: any) => {
+    try {
+      switch (operation) {
+        case 'delete':
+          await bulkDeleteCollections({ collectionIds: selectedCollections });
+          toast.success(`${selectedCollections.length} collections deleted`);
+          break;
+        case 'share':
+          await bulkShareCollections({ 
+            collectionIds: selectedCollections,
+            shareRequest: options || { can_view: true, can_comment: false, can_download: false }
+          });
+          toast.success(`${selectedCollections.length} collections shared`);
+          break;
+        case 'export':
+          await bulkExportCollections({ 
+            collectionIds: selectedCollections,
+            format: options?.format || 'json'
+          });
+          toast.success(`${selectedCollections.length} collections exported`);
+          break;
+        case 'duplicate':
+          await bulkUpdateCollections({ 
+            collectionIds: selectedCollections,
+            action: 'duplicate'
+          });
+          toast.success(`${selectedCollections.length} collections duplicated`);
+          break;
+        default:
+          toast.error('Unknown operation');
+      }
+      handleClearSelection();
+    } catch (error) {
+      console.error('Bulk operation failed:', error);
+      toast.error('Bulk operation failed');
+    }
+  };
 
-      <div className="flex items-center justify-between text-sm text-gray-500 dark:text-gray-400">
-        <span>{collection.item_count} items</span>
-        <span>{new Date(collection.created_at).toLocaleDateString()}</span>
-      </div>
-
-      <div className="mt-3 pt-3 border-t border-gray-200 dark:border-gray-700 flex items-center justify-between">
-        <div className="flex items-center gap-2">
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => handleShareCollection(collection)}
-            disabled={isSharing}
-            title="Share collection"
+  const renderCollectionCard = (collection: SmartCollection) => {
+    const isSelected = selectedCollections.includes(collection.id);
+    
+    return (
+      <motion.div
+        key={collection.id}
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        whileHover={{ scale: 1.02 }}
+        className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-4 cursor-pointer hover:shadow-md transition-shadow relative"
+      >
+        {/* Selection Checkbox */}
+        <div className="absolute top-2 left-2 z-10">
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              handleSelectCollection(collection.id, !isSelected);
+            }}
+            className={`w-6 h-6 rounded-md border-2 flex items-center justify-center transition-colors ${
+              isSelected
+                ? 'bg-blue-600 border-blue-600 text-white'
+                : 'border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 hover:border-blue-400'
+            }`}
           >
-            <Share className="w-4 h-4" />
-          </Button>
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => handleDuplicateCollection(collection)}
-            disabled={isDuplicating}
-            title="Duplicate collection"
-          >
-            <Copy className="w-4 h-4" />
-          </Button>
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => handleExportCollection(collection, 'json')}
-            disabled={isExporting}
-            title="Export collection"
-          >
-            <Download className="w-4 h-4" />
-          </Button>
+            {isSelected && <CheckSquare className="w-4 h-4" />}
+          </button>
         </div>
-        
-        <Button
-          variant="ghost"
-          size="sm"
-          onClick={() => handleDeleteCollection(collection)}
-          className="text-red-600 hover:text-red-700"
-          title="Delete collection"
-        >
-          <Trash2 className="w-4 h-4" />
-        </Button>
-      </div>
-    </motion.div>
-  );
 
-  const renderCollectionListItem = (collection: SmartCollection) => (
-    <motion.div
-      key={collection.id}
-      initial={{ opacity: 0, x: -20 }}
-      animate={{ opacity: 1, x: 0 }}
-      className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-4 hover:shadow-md transition-shadow"
-    >
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-4 flex-1">
-          <div className="w-12 h-12 bg-gradient-to-br from-purple-500 to-pink-600 rounded-lg flex items-center justify-center">
-            {collection.is_smart ? (
-              <Clock className="w-6 h-6 text-white" />
-            ) : (
-              <Grid className="w-6 h-6 text-white" />
-            )}
-          </div>
-          
-          <div className="flex-1">
+        <div className="flex items-start justify-between mb-3">
+          <div className="flex-1 ml-8">
             <h3 className="font-semibold text-gray-900 dark:text-white mb-1">
               {collection.name}
             </h3>
             {collection.description && (
-              <p className="text-sm text-gray-600 dark:text-gray-400 line-clamp-1">
+              <p className="text-sm text-gray-600 dark:text-gray-400 line-clamp-2">
                 {collection.description}
               </p>
             )}
           </div>
           
-          <div className="text-right">
-            <div className="text-lg font-bold text-gray-900 dark:text-white">
-              {collection.item_count.toLocaleString()}
-            </div>
-            <div className="text-xs text-gray-500 dark:text-gray-400">items</div>
+          <div className="flex items-center gap-1">
+            {collection.is_smart && (
+              <div className="w-6 h-6 bg-purple-100 dark:bg-purple-900 rounded-full flex items-center justify-center">
+                <Clock className="w-3 h-3 text-purple-600 dark:text-purple-400" />
+              </div>
+            )}
           </div>
         </div>
 
-        <div className="flex items-center gap-2 ml-4">
+        <div className="flex items-center justify-between text-sm text-gray-500 dark:text-gray-400">
+          <span>{collection.item_count} items</span>
+          <span>{new Date(collection.created_at).toLocaleDateString()}</span>
+        </div>
+
+        <div className="mt-3 pt-3 border-t border-gray-200 dark:border-gray-700 flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={(e) => {
+                e.stopPropagation();
+                handlePreviewCollection(collection);
+              }}
+              title="Preview collection"
+            >
+              <Eye className="w-4 h-4" />
+            </Button>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={(e) => {
+                e.stopPropagation();
+                handleShareCollection(collection);
+              }}
+              disabled={isSharing}
+              title="Share collection"
+            >
+              <Share className="w-4 h-4" />
+            </Button>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={(e) => {
+                e.stopPropagation();
+                handleDuplicateCollection(collection);
+              }}
+              disabled={isDuplicating}
+              title="Duplicate collection"
+            >
+              <Copy className="w-4 h-4" />
+            </Button>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={(e) => {
+                e.stopPropagation();
+                handleOpenSettings(collection);
+              }}
+              title="Collection settings"
+            >
+              <Settings className="w-4 h-4" />
+            </Button>
+          </div>
+          
           <Button
             variant="ghost"
             size="sm"
-            onClick={() => handleShareCollection(collection)}
-            disabled={isSharing}
-            title="Share collection"
-          >
-            <Share className="w-4 h-4" />
-          </Button>
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => handleDuplicateCollection(collection)}
-            disabled={isDuplicating}
-            title="Duplicate collection"
-          >
-            <Copy className="w-4 h-4" />
-          </Button>
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => handleDeleteCollection(collection)}
+            onClick={(e) => {
+              e.stopPropagation();
+              handleDeleteCollection(collection);
+            }}
             className="text-red-600 hover:text-red-700"
             title="Delete collection"
           >
             <Trash2 className="w-4 h-4" />
           </Button>
         </div>
-      </div>
-    </motion.div>
-  );
+      </motion.div>
+    );
+  };
+
+  const renderCollectionListItem = (collection: SmartCollection) => {
+    const isSelected = selectedCollections.includes(collection.id);
+    
+    return (
+      <motion.div
+        key={collection.id}
+        initial={{ opacity: 0, x: -20 }}
+        animate={{ opacity: 1, x: 0 }}
+        className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-4 hover:shadow-md transition-shadow"
+      >
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-4 flex-1">
+            {/* Selection Checkbox */}
+            <button
+              onClick={() => handleSelectCollection(collection.id, !isSelected)}
+              className={`w-6 h-6 rounded-md border-2 flex items-center justify-center transition-colors ${
+                isSelected
+                  ? 'bg-blue-600 border-blue-600 text-white'
+                  : 'border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 hover:border-blue-400'
+              }`}
+            >
+              {isSelected && <CheckSquare className="w-4 h-4" />}
+            </button>
+            
+            <div className="w-12 h-12 bg-gradient-to-br from-purple-500 to-pink-600 rounded-lg flex items-center justify-center">
+              {collection.is_smart ? (
+                <Clock className="w-6 h-6 text-white" />
+              ) : (
+                <Grid className="w-6 h-6 text-white" />
+              )}
+            </div>
+            
+            <div className="flex-1">
+              <h3 className="font-semibold text-gray-900 dark:text-white mb-1">
+                {collection.name}
+              </h3>
+              {collection.description && (
+                <p className="text-sm text-gray-600 dark:text-gray-400 line-clamp-1">
+                  {collection.description}
+                </p>
+              )}
+            </div>
+            
+            <div className="text-right">
+              <div className="text-lg font-bold text-gray-900 dark:text-white">
+                {collection.item_count.toLocaleString()}
+              </div>
+              <div className="text-xs text-gray-500 dark:text-gray-400">items</div>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-2 ml-4">
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => handlePreviewCollection(collection)}
+              title="Preview collection"
+            >
+              <Eye className="w-4 h-4" />
+            </Button>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => handleShareCollection(collection)}
+              disabled={isSharing}
+              title="Share collection"
+            >
+              <Share className="w-4 h-4" />
+            </Button>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => handleDuplicateCollection(collection)}
+              disabled={isDuplicating}
+              title="Duplicate collection"
+            >
+              <Copy className="w-4 h-4" />
+            </Button>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => handleOpenSettings(collection)}
+              title="Collection settings"
+            >
+              <Settings className="w-4 h-4" />
+            </Button>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => handleDeleteCollection(collection)}
+              className="text-red-600 hover:text-red-700"
+              title="Delete collection"
+            >
+              <Trash2 className="w-4 h-4" />
+            </Button>
+          </div>
+        </div>
+      </motion.div>
+    );
+  };
 
   if (showSmartBuilder) {
     return (
@@ -442,6 +612,47 @@ export const Collections: React.FC = () => {
 
       {/* Collections Display */}
       <div className="min-h-96">
+        {/* Bulk Operations Bar */}
+        {selectedCollections.length > 0 && (
+          <div className="mb-4 p-3 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <span className="text-sm font-medium text-blue-800 dark:text-blue-200">
+                {selectedCollections.length} collection{selectedCollections.length > 1 ? 's' : ''} selected
+              </span>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={handleClearSelection}
+                className="text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-200"
+              >
+                <X className="w-4 h-4" />
+              </Button>
+            </div>
+            <Button
+              onClick={() => setShowBulkOperations(true)}
+              size="sm"
+              className="bg-blue-600 hover:bg-blue-700 text-white"
+            >
+              Bulk Actions
+            </Button>
+          </div>
+        )}
+
+        {/* Selection Controls */}
+        {filteredCollections.length > 0 && (
+          <div className="mb-4 flex items-center gap-4">
+            <label className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400">
+              <input
+                type="checkbox"
+                checked={selectAll}
+                onChange={handleSelectAll}
+                className="rounded border-gray-300 dark:border-gray-600"
+              />
+              Select all ({filteredCollections.length})
+            </label>
+          </div>
+        )}
+
         {isLoading ? (
           <div className="flex items-center justify-center h-64">
             <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
@@ -470,16 +681,54 @@ export const Collections: React.FC = () => {
               </Button>
             )}
           </div>
-        ) : viewMode === 'grid' ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-            {filteredCollections.map(renderCollectionCard)}
-          </div>
         ) : (
-          <div className="space-y-4">
-            {filteredCollections.map(renderCollectionListItem)}
-          </div>
+          <PerformanceOptimizer
+            itemCount={filteredCollections.length}
+            threshold={50}
+            loadingStrategy="lazy"
+            itemHeight={viewMode === 'grid' ? 200 : 80}
+            containerHeight={600}
+          >
+            <div className={viewMode === 'grid' 
+              ? 'grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4' 
+              : 'space-y-4'
+            }>
+              {filteredCollections.map(viewMode === 'grid' ? renderCollectionCard : renderCollectionListItem)}
+            </div>
+          </PerformanceOptimizer>
         )}
       </div>
+
+      {/* Modals and Overlays */}
+      {previewCollection && (
+        <CollectionPreview
+          collection={previewCollection}
+          onClose={handleClosePreview}
+        />
+      )}
+
+      {showBulkOperations && (
+        <BulkOperations
+          selectedCollections={selectedCollections}
+          collections={filteredCollections}
+          onOperation={handleBulkOperation}
+          onClose={() => setShowBulkOperations(false)}
+        />
+      )}
+
+      {showSettings && selectedCollection && (
+        <CollectionSettings
+          collection={selectedCollection}
+          onClose={() => setShowSettings(false)}
+          onSave={(settings) => {
+            updateCollection({
+              id: selectedCollection.id,
+              updates: settings
+            });
+            setShowSettings(false);
+          }}
+        />
+      )}
     </div>
   );
 };
