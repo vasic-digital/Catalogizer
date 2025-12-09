@@ -2,7 +2,9 @@ package handlers
 
 import (
 	"context"
+	"io"
 	"net/http"
+	"path/filepath"
 	"strconv"
 	"strings"
 
@@ -622,10 +624,22 @@ func (h *SubtitleHandler) UploadSubtitle(c *gin.Context) {
 		})
 		return
 	}
-	defer file.Close()
+	
+	// Open the uploaded file
+	fileContent, err := file.Open()
+	if err != nil {
+		h.logger.Error("Failed to open uploaded file", zap.Error(err))
+		c.JSON(http.StatusInternalServerError, ErrorResponse{
+			Success: false,
+			Error:   "Failed to open uploaded file",
+			Code:    "FILE_OPEN_ERROR",
+		})
+		return
+	}
+	defer fileContent.Close()
 
 	// Read file content
-	content, err := io.ReadAll(file)
+	fileContentBytes, err := io.ReadAll(fileContent)
 	if err != nil {
 		h.logger.Error("Failed to read uploaded file", zap.Error(err))
 		c.JSON(http.StatusInternalServerError, ErrorResponse{
@@ -635,6 +649,9 @@ func (h *SubtitleHandler) UploadSubtitle(c *gin.Context) {
 		})
 		return
 	}
+
+	// Store content as string
+	contentStr := string(fileContentBytes)
 
 	// Detect subtitle format from file extension
 	format := "srt" // Default
@@ -650,29 +667,22 @@ func (h *SubtitleHandler) UploadSubtitle(c *gin.Context) {
 		format = "txt"
 	}
 
-	// Create subtitle track
-	track := &media_player_service.SubtitleTrack{
-		ID:           fmt.Sprintf("upload_%d_%d", mediaID, time.Now().Unix()),
-		Language:     language,
+	// Create subtitle upload request
+	request := &services.SubtitleUploadRequest{
+		MediaID:     mediaID,
+		Language:    language,
 		LanguageCode: languageCode,
-		Source:       "uploaded",
-		Format:       format,
-		Path:         &file.Filename,
-		IsDefault:    false,
-		IsForced:     false,
-		Encoding:     "utf-8",
-		SyncOffset:   0.0,
-		CreatedAt:    time.Now(),
-		VerifiedSync: false,
+		Format:      format,
+		Content:     contentStr,
+		IsDefault:   false,
+		IsForced:    false,
+		Encoding:    "utf-8",
+		SyncOffset:  0.0,
 	}
-
-	// Store content as string
-	contentStr := string(content)
-	track.Content = &contentStr
 
 	// Save to database
 	ctx := context.Background()
-	err = h.subtitleService.SaveUploadedSubtitle(ctx, mediaID, track)
+	response, err := h.subtitleService.SaveUploadedSubtitle(ctx, request)
 	if err != nil {
 		h.logger.Error("Failed to save uploaded subtitle", 
 			zap.Int64("media_item_id", mediaID),
@@ -688,12 +698,11 @@ func (h *SubtitleHandler) UploadSubtitle(c *gin.Context) {
 
 	h.logger.Info("Subtitle uploaded successfully",
 		zap.Int64("media_item_id", mediaID),
-		zap.String("subtitle_id", track.ID),
+		zap.String("subtitle_id", response.SubtitleID),
 		zap.String("language", language))
 
 	c.JSON(http.StatusOK, SubtitleUploadResponse{
 		Success: true,
-		Track:   track,
 		Message: "Subtitle uploaded successfully",
 	})
 }

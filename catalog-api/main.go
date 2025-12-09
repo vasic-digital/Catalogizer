@@ -301,6 +301,7 @@ func main() {
 			subGroup.GET("/media/:media_id", subtitleHandler.GetSubtitles)
 			subGroup.GET("/:subtitle_id/verify-sync/:media_id", subtitleHandler.VerifySubtitleSync)
 			subGroup.POST("/translate", subtitleHandler.TranslateSubtitle)
+			subGroup.POST("/upload", subtitleHandler.UploadSubtitle)
 			subGroup.GET("/languages", subtitleHandler.GetSupportedLanguages)
 			subGroup.GET("/providers", subtitleHandler.GetSupportedProviders)
 		}
