@@ -11,6 +11,9 @@ import { Dashboard } from '@/pages/Dashboard'
 import { MediaBrowser } from '@/pages/MediaBrowser'
 import { Analytics } from '@/pages/Analytics'
 import { SubtitleManager } from '@/pages/SubtitleManager'
+import { Collections } from '@/pages/Collections'
+import { ConversionTools } from '@/pages/ConversionTools'
+import { Admin } from '@/pages/Admin'
 
 function App() {
   return (
@@ -58,30 +61,27 @@ function App() {
                 </ProtectedRoute>
               }
             />
+            <Route
+              path="/collections"
+              element={
+                <ProtectedRoute requiredPermission="read:collections">
+                  <Collections />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/conversion"
+              element={
+                <ProtectedRoute requiredPermission="convert:media">
+                  <ConversionTools />
+                </ProtectedRoute>
+              }
+            />
              <Route
                path="/admin"
                element={
                  <ProtectedRoute requireAdmin>
-                   <div className="p-8">
-                     <h1 className="text-2xl font-bold">Admin Panel</h1>
-                     <p className="text-gray-600 mt-2">Storage configuration and system management</p>
-                     <div className="mt-6 space-y-4">
-                       <div className="bg-white p-4 rounded-lg border">
-                         <h2 className="text-lg font-semibold">Storage Roots</h2>
-                         <p className="text-sm text-gray-600">Configure storage sources for media scanning</p>
-                         <button className="mt-2 px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700">
-                           Manage Storage
-                         </button>
-                       </div>
-                       <div className="bg-white p-4 rounded-lg border">
-                         <h2 className="text-lg font-semibold">System Settings</h2>
-                         <p className="text-sm text-gray-600">Configure server and application settings</p>
-                         <button className="mt-2 px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700">
-                           System Config
-                         </button>
-                       </div>
-                     </div>
-                   </div>
+                   <Admin />
                  </ProtectedRoute>
                }
              />

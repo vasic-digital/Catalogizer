@@ -1,0 +1,220 @@
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card'
+import { 
+  Database, 
+  HardDrive, 
+  PlusCircle, 
+  Zap,
+  TrendingUp,
+  TrendingDown,
+  Users,
+  PlayCircle,
+  Clock
+} from 'lucide-react'
+
+interface StatCardProps {
+  title: string
+  value: string | number
+  icon: React.ComponentType<{ className?: string }>
+  trend?: {
+    value: number
+    isPositive: boolean
+  }
+  description?: string
+  loading?: boolean
+}
+
+export const StatCard: React.FC<StatCardProps> = ({
+  title,
+  value,
+  icon: Icon,
+  trend,
+  description,
+  loading = false
+}) => {
+  return (
+    <Card className="relative overflow-hidden">
+      <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+        <CardTitle className="text-sm font-medium">{title}</CardTitle>
+        <Icon className="h-4 w-4 text-muted-foreground" />
+      </CardHeader>
+      <CardContent>
+        <div className="text-2xl font-bold">
+          {loading ? (
+            <div className="h-8 w-20 bg-gray-200 animate-pulse rounded" />
+          ) : (
+            value
+          )}
+        </div>
+        {(trend || description) && (
+          <div className="flex items-center space-x-2 text-xs text-muted-foreground mt-1">
+            {trend && (
+              <div className={`flex items-center space-x-1 ${
+                trend.isPositive ? 'text-green-600' : 'text-red-600'
+              }`}>
+                {trend.isPositive ? (
+                  <TrendingUp className="h-3 w-3" />
+                ) : (
+                  <TrendingDown className="h-3 w-3" />
+                )}
+                <span>{Math.abs(trend.value)}%</span>
+              </div>
+            )}
+            {description && (
+              <span>{description}</span>
+            )}
+          </div>
+        )}
+      </CardContent>
+      
+      {/* Decorative background pattern */}
+      <div className="absolute top-0 right-0 -z-10 opacity-10">
+        <Icon className="h-16 w-16" />
+      </div>
+    </Card>
+  )
+}
+
+interface DashboardStatsProps {
+  mediaStats?: {
+    total_items: number
+    total_size: number
+    recent_additions: number
+    by_type: Record<string, number>
+    by_quality: Record<string, number>
+  }
+  userStats?: {
+    active_users: number
+    total_users: number
+    sessions_today: number
+    avg_session_duration: number
+  }
+  loading?: boolean
+}
+
+export const DashboardStats: React.FC<DashboardStatsProps> = ({
+  mediaStats,
+  userStats,
+  loading = false
+}) => {
+  const formatBytes = (bytes: number) => {
+    const sizes = ['B', 'KB', 'MB', 'GB', 'TB']
+    if (bytes === 0) return '0 B'
+    const i = Math.floor(Math.log(bytes) / Math.log(1024))
+    return `${Math.round(bytes / Math.pow(1024, i) * 100) / 100} ${sizes[i]}`
+  }
+
+  const formatDuration = (minutes: number) => {
+    if (minutes < 60) return `${minutes}m`
+    const hours = Math.floor(minutes / 60)
+    const mins = minutes % 60
+    return `${hours}h ${mins}m`
+  }
+
+  return (
+    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+      {/* Total Media Items */}
+      <StatCard
+        title="Total Media"
+        value={mediaStats?.total_items.toLocaleString() || '0'}
+        icon={Database}
+        trend={{
+          value: 12.5,
+          isPositive: true
+        }}
+        description="vs last month"
+        loading={loading}
+      />
+      
+      {/* Storage Used */}
+      <StatCard
+        title="Storage Used"
+        value={formatBytes(mediaStats?.total_size || 0)}
+        icon={HardDrive}
+        trend={{
+          value: 8.2,
+          isPositive: true
+        }}
+        description="vs last month"
+        loading={loading}
+      />
+      
+      {/* Recent Additions */}
+      <StatCard
+        title="Recent Additions"
+        value={mediaStats?.recent_additions || 0}
+        icon={PlusCircle}
+        trend={{
+          value: 15.3,
+          isPositive: true
+        }}
+        description="last 7 days"
+        loading={loading}
+      />
+      
+      {/* Average Quality Score */}
+      <StatCard
+        title="Quality Score"
+        value="HD"
+        icon={Zap}
+        trend={{
+          value: 5.7,
+          isPositive: true
+        }}
+        description="average quality"
+        loading={loading}
+      />
+      
+      {/* Active Users */}
+      <StatCard
+        title="Active Users"
+        value={userStats?.active_users.toLocaleString() || '0'}
+        icon={Users}
+        trend={{
+          value: 3.2,
+          isPositive: true
+        }}
+        description="online now"
+        loading={loading}
+      />
+      
+      {/* Total Users */}
+      <StatCard
+        title="Total Users"
+        value={userStats?.total_users.toLocaleString() || '0'}
+        icon={Users}
+        trend={{
+          value: 18.7,
+          isPositive: true
+        }}
+        description="registered users"
+        loading={loading}
+      />
+      
+      {/* Sessions Today */}
+      <StatCard
+        title="Sessions Today"
+        value={userStats?.sessions_today.toLocaleString() || '0'}
+        icon={PlayCircle}
+        trend={{
+          value: 22.1,
+          isPositive: true
+        }}
+        description="viewing sessions"
+        loading={loading}
+      />
+      
+      {/* Avg Session Duration */}
+      <StatCard
+        title="Avg Session"
+        value={formatDuration(userStats?.avg_session_duration || 0)}
+        icon={Clock}
+        trend={{
+          value: 7.5,
+          isPositive: false
+        }}
+        description="viewing duration"
+        loading={loading}
+      />
+    </div>
+  )
+}

@@ -14,7 +14,8 @@ import {
   Clock,
   ExternalLink,
   Download,
-  Eye
+  Eye,
+  Play
 } from 'lucide-react'
 import { motion } from 'framer-motion'
 import { formatDate, truncateText } from '@/lib/utils'
@@ -22,6 +23,7 @@ import { formatDate, truncateText } from '@/lib/utils'
 interface MediaCardProps {
   media: MediaItem
   onView?: (media: MediaItem) => void
+  onPlay?: (media: MediaItem) => void
   onDownload?: (media: MediaItem) => void
   className?: string
 }
@@ -96,6 +98,7 @@ const formatDuration = (minutes?: number) => {
 export const MediaCard: React.FC<MediaCardProps> = ({
   media,
   onView,
+  onPlay,
   onDownload,
   className = ''
 }) => {
@@ -125,6 +128,19 @@ export const MediaCard: React.FC<MediaCardProps> = ({
           {/* Overlay */}
           <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-all duration-300 flex items-center justify-center opacity-0 group-hover:opacity-100">
             <div className="flex space-x-2">
+              {onPlay && (
+                <Button
+                  size="sm"
+                  variant="glass"
+                  onClick={(e) => {
+                    e.stopPropagation()
+                    onPlay(media)
+                  }}
+                  data-testid={`play-button-${media.id}`}
+                >
+                  <Play className="h-4 w-4" />
+                </Button>
+              )}
               {onView && (
                 <Button
                   size="sm"

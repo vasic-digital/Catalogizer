@@ -1,0 +1,271 @@
+import React, { useState, useCallback } from 'react';
+import { Upload, X, File, CheckCircle, AlertCircle, Trash2 } from 'lucide-react';
+import { Button } from '../ui/Button';
+import { Card, CardContent, CardHeader, CardTitle } from '../ui/Card';
+import { Progress } from '../ui/Progress';
+
+interface UploadItem {
+  id: string;
+  file: File;
+  progress: number;
+  status: 'pending' | 'uploading' | 'success' | 'error';
+  error?: string;
+}
+
+interface UploadManagerProps {
+  onUpload?: (files: File[]) => Promise<void>;
+  onRemove?: (id: string) => void;
+  onRetry?: (id: string) => void;
+  maxFileSize?: number;
+  acceptedTypes?: string[];
+  maxConcurrentUploads?: number;
+}
+
+export const UploadManager: React.FC<UploadManagerProps> = ({
+  onUpload,
+  onRemove,
+  onRetry,
+  maxFileSize = 100 * 1024 * 1024, // 100MB
+  acceptedTypes = ['video/*', 'audio/*', 'image/*'],
+  maxConcurrentUploads = 3
+}) => {
+  const [uploadQueue, setUploadQueue] = useState<UploadItem[]>([]);
+  const [isDragOver, setIsDragOver] = useState(false);
+
+  const processFiles = useCallback((files: FileList) => {
+    const newItems: UploadItem[] = Array.from(files).map(file => ({
+      id: `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+      file,
+      progress: 0,
+      status: 'pending'
+    }));
+
+    setUploadQueue(prev => [...prev, ...newItems]);
+    
+    // Auto-start uploads
+    setTimeout(() => startUploads(newItems), 100);
+  }, []);
+
+  const startUploads = useCallback(async (items: UploadItem[]) => {
+    for (const item of items) {
+      try {
+        setUploadQueue(prev => 
+          prev.map(i => i.id === item.id ? { ...i, status: 'uploading' } : i)
+        );
+
+        // Simulate upload progress
+        for (let progress = 0; progress <= 100; progress += 10) {
+          await new Promise(resolve => setTimeout(resolve, 200));
+          setUploadQueue(prev => 
+            prev.map(i => i.id === item.id ? { ...i, progress } : i)
+          );
+        }
+
+        setUploadQueue(prev => 
+          prev.map(i => i.id === item.id ? { ...i, status: 'success' } : i)
+        );
+
+        onUpload?.([item.file]);
+      } catch (error) {
+        setUploadQueue(prev => 
+          prev.map(i => i.id === item.id ? { 
+            ...i, 
+            status: 'error', 
+            error: error instanceof Error ? error.message : 'Upload failed' 
+          } : i)
+        );
+      }
+    }
+  }, [onUpload]);
+
+  const handleDrop = useCallback((e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    setIsDragOver(false);
+    
+    const files = Array.from(e.dataTransfer.files);
+    const validFiles = files.filter(file => {
+      if (file.size > maxFileSize) {
+        console.warn(`File ${file.name} exceeds size limit`);
+        return false;
+      }
+      
+      if (acceptedTypes.length > 0 && !acceptedTypes.some(type => {
+        if (type.endsWith('/*')) {
+          return file.type.startsWith(type.slice(0, -2));
+        }
+        return file.type === type;
+      })) {
+        console.warn(`File ${file.name} type not accepted`);
+        return false;
+      }
+      
+      return true;
+    });
+
+    processFiles(validFiles as any);
+  }, [processFiles, maxFileSize, acceptedTypes]);
+
+  const handleDragOver = useCallback((e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    setIsDragOver(true);
+  }, []);
+
+  const handleDragLeave = useCallback((e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    setIsDragOver(false);
+  }, []);
+
+  const handleFileSelect = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files) {
+      processFiles(e.target.files);
+    }
+  }, [processFiles]);
+
+  const removeItem = useCallback((id: string) => {
+    setUploadQueue(prev => prev.filter(item => item.id !== id));
+    onRemove?.(id);
+  }, [onRemove]);
+
+  const retryUpload = useCallback((id: string) => {
+    const item = uploadQueue.find(i => i.id === id);
+    if (item) {
+      startUploads([{ ...item, status: 'pending', progress: 0, error: undefined }]);
+    }
+  }, [uploadQueue, startUploads]);
+
+  const clearCompleted = useCallback(() => {
+    setUploadQueue(prev => prev.filter(item => item.status !== 'success'));
+  }, []);
+
+  const formatFileSize = (bytes: number) => {
+    if (bytes === 0) return '0 Bytes';
+    const k = 1024;
+    const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
+    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+  };
+
+  const getStatusIcon = (status: UploadItem['status']) => {
+    switch (status) {
+      case 'success':
+        return <CheckCircle className="w-4 h-4 text-green-500" />;
+      case 'error':
+        return <AlertCircle className="w-4 h-4 text-red-500" />;
+      case 'uploading':
+        return <div className="w-4 h-4 border-2 border-blue-500 border-t-transparent animate-spin" />;
+      default:
+        return <File className="w-4 h-4 text-gray-500" />;
+    }
+  };
+
+  return (
+    <Card className="w-full max-w-4xl mx-auto">
+      <CardHeader>
+        <div className="flex items-center justify-between">
+          <CardTitle className="flex items-center gap-2">
+            <Upload className="h-5 w-5" />
+            Upload Manager
+          </CardTitle>
+          {uploadQueue.some(item => item.status === 'success') && (
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={clearCompleted}
+            >
+              Clear Completed
+            </Button>
+          )}
+        </div>
+      </CardHeader>
+      
+      <CardContent>
+        {/* Drop Zone */}
+        <div
+          className={`border-2 border-dashed rounded-lg p-8 text-center transition-colors ${
+            isDragOver 
+              ? 'border-blue-500 bg-blue-50' 
+              : 'border-gray-300 hover:border-gray-400'
+          }`}
+          onDrop={handleDrop}
+          onDragOver={handleDragOver}
+          onDragLeave={handleDragLeave}
+        >
+          <Upload className="w-12 h-12 mx-auto mb-4 text-gray-400" />
+          <p className="text-lg font-medium text-gray-700 mb-2">
+            Drop files here or click to browse
+          </p>
+          <p className="text-sm text-gray-500 mb-4">
+            Max file size: {formatFileSize(maxFileSize)}
+            {acceptedTypes.length > 0 && (
+              <> • Accepted types: {acceptedTypes.join(', ')}</>
+            )}
+          </p>
+          <input
+            type="file"
+            multiple
+            accept={acceptedTypes.join(',')}
+            onChange={handleFileSelect}
+            className="hidden"
+            id="file-input"
+          />
+          <Button>
+            <label htmlFor="file-input" className="cursor-pointer">
+              Select Files
+            </label>
+          </Button>
+        </div>
+
+        {/* Upload Queue */}
+        {uploadQueue.length > 0 && (
+          <div className="mt-6">
+            <h3 className="text-lg font-medium mb-4">
+              Upload Queue ({uploadQueue.length} items)
+            </h3>
+            <div className="space-y-3">
+              {uploadQueue.map(item => (
+                <div
+                  key={item.id}
+                  className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg"
+                >
+                  {getStatusIcon(item.status)}
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-medium text-gray-900 truncate">
+                      {item.file.name}
+                    </p>
+                    <p className="text-xs text-gray-500">
+                      {formatFileSize(item.file.size)}
+                    </p>
+                    {item.status === 'uploading' && (
+                      <Progress value={item.progress} className="mt-2" />
+                    )}
+                    {item.status === 'error' && (
+                      <p className="text-xs text-red-500 mt-1">{item.error}</p>
+                    )}
+                  </div>
+                  <div className="flex items-center gap-2">
+                    {item.status === 'error' && (
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => retryUpload(item.id)}
+                      >
+                        Retry
+                      </Button>
+                    )}
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => removeItem(item.id)}
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </Button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+      </CardContent>
+    </Card>
+  );
+};

@@ -1,262 +1,318 @@
-import React from 'react'
+import { useState, useEffect } from 'react'
 import { useAuth } from '@/contexts/AuthContext'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/Card'
+import { useQuery } from '@tanstack/react-query'
+import { DashboardStats } from '@/components/dashboard/DashboardStats'
+import { MediaDistributionChart } from '@/components/dashboard/MediaDistributionChart'
+import { ActivityFeed } from '@/components/dashboard/ActivityFeed'
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card'
 import { Button } from '@/components/ui/Button'
+import { mediaApi } from '@/lib/mediaApi'
 import {
-  Database,
   Film,
-  Music,
-  Gamepad2,
-  Monitor,
-  BookOpen,
-  TrendingUp,
-  Users,
+  Upload,
+  Search,
+  Settings,
   Activity,
-  HardDrive
+  HardDrive,
+  Zap,
+  Clock
 } from 'lucide-react'
 import { motion } from 'framer-motion'
+import toast from 'react-hot-toast'
+import type { MediaStats, UserStats, QuickAction } from '@/types/dashboard'
 
-const StatCard: React.FC<{
-  title: string
-  value: string
-  icon: React.ReactNode
-  change?: string
-  changeType?: 'positive' | 'negative'
-}> = ({ title, value, icon, change, changeType }) => (
-  <Card className="hover:shadow-lg transition-shadow duration-200">
-    <CardContent className="p-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <p className="text-sm text-gray-600 dark:text-gray-400">{title}</p>
-          <p className="text-2xl font-bold text-gray-900 dark:text-white">{value}</p>
-          {change && (
-            <p className={`text-sm ${
-              changeType === 'positive' ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'
-            }`}>
-              {change}
-            </p>
-          )}
-        </div>
-        <div className="text-blue-600 dark:text-blue-400">
-          {icon}
-        </div>
-      </div>
-    </CardContent>
-  </Card>
-)
+const QuickActions: React.FC = () => {
+  const handleUploadMedia = () => {
+    // Navigate to upload page or open upload modal
+    toast.success('Opening upload interface...')
+  }
 
-const QuickActionCard: React.FC<{
-  title: string
-  description: string
-  icon: React.ReactNode
-  onClick: () => void
-}> = ({ title, description, icon, onClick }) => (
-  <Card className="hover:shadow-lg transition-all duration-200 cursor-pointer hover:scale-105" onClick={onClick}>
-    <CardContent className="p-6">
-      <div className="flex items-center space-x-4">
-        <div className="text-blue-600 dark:text-blue-400">
-          {icon}
+  const handleScanLibrary = () => {
+    // Trigger library scan
+    toast.promise(
+      mediaApi.analyzeDirectory('/'),
+      {
+        loading: 'Scanning library...',
+        success: 'Library scan started',
+        error: 'Failed to start scan'
+      }
+    )
+  }
+
+  const handleSearchMedia = () => {
+    // Navigate to media browser with focus on search
+    toast.success('Opening search interface...')
+  }
+
+  const handleSettings = () => {
+    // Navigate to settings
+    toast.success('Opening settings...')
+  }
+
+  const quickActions: QuickAction[] = [
+    {
+      id: 'upload',
+      title: 'Upload Media',
+      description: 'Add new media to your library',
+      icon: Upload,
+      action: handleUploadMedia,
+      variant: 'default'
+    },
+    {
+      id: 'scan',
+      title: 'Scan Library',
+      description: 'Update media library with new files',
+      icon: Activity,
+      action: handleScanLibrary,
+      variant: 'outline'
+    },
+    {
+      id: 'search',
+      title: 'Search',
+      description: 'Find specific media quickly',
+      icon: Search,
+      action: handleSearchMedia,
+      variant: 'outline'
+    },
+    {
+      id: 'settings',
+      title: 'Settings',
+      description: 'Configure system preferences',
+      icon: Settings,
+      action: handleSettings,
+      variant: 'outline'
+    }
+  ]
+
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle>Quick Actions</CardTitle>
+      </CardHeader>
+      <CardContent>
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+          {quickActions.map(action => {
+            const Icon = action.icon
+            return (
+              <Button
+                key={action.id}
+                variant={action.variant}
+                onClick={action.action}
+                className="h-auto p-4 flex flex-col items-center space-y-2"
+              >
+                <Icon className="w-6 h-6" />
+                <span className="text-sm font-medium">{action.title}</span>
+              </Button>
+            )
+          })}
         </div>
-        <div>
-          <h3 className="font-semibold text-gray-900 dark:text-white">{title}</h3>
-          <p className="text-sm text-gray-600 dark:text-gray-400">{description}</p>
+      </CardContent>
+    </Card>
+  )
+}
+
+const SystemStatus: React.FC = () => {
+  const [status, setStatus] = useState({
+    cpu: 45,
+    memory: 62,
+    disk: 78,
+    network: true,
+    uptime: '5d 12h 34m'
+  })
+
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle className="flex items-center gap-2">
+          <Activity className="h-5 w-5" />
+          System Status
+        </CardTitle>
+      </CardHeader>
+      <CardContent>
+        <div className="space-y-4">
+          {/* CPU Usage */}
+          <div className="space-y-2">
+            <div className="flex justify-between text-sm">
+              <span>CPU Usage</span>
+              <span>{status.cpu}%</span>
+            </div>
+            <div className="w-full bg-gray-200 rounded-full h-2">
+              <div 
+                className={`h-2 rounded-full ${
+                  status.cpu > 80 ? 'bg-red-500' : 
+                  status.cpu > 60 ? 'bg-yellow-500' : 'bg-green-500'
+                }`}
+                style={{ width: `${status.cpu}%` }}
+              />
+            </div>
+          </div>
+
+          {/* Memory Usage */}
+          <div className="space-y-2">
+            <div className="flex justify-between text-sm">
+              <span>Memory Usage</span>
+              <span>{status.memory}%</span>
+            </div>
+            <div className="w-full bg-gray-200 rounded-full h-2">
+              <div 
+                className={`h-2 rounded-full ${
+                  status.memory > 80 ? 'bg-red-500' : 
+                  status.memory > 60 ? 'bg-yellow-500' : 'bg-green-500'
+                }`}
+                style={{ width: `${status.memory}%` }}
+              />
+            </div>
+          </div>
+
+          {/* Disk Usage */}
+          <div className="space-y-2">
+            <div className="flex justify-between text-sm">
+              <span>Disk Usage</span>
+              <span>{status.disk}%</span>
+            </div>
+            <div className="w-full bg-gray-200 rounded-full h-2">
+              <div 
+                className={`h-2 rounded-full ${
+                  status.disk > 80 ? 'bg-red-500' : 
+                  status.disk > 60 ? 'bg-yellow-500' : 'bg-green-500'
+                }`}
+                style={{ width: `${status.disk}%` }}
+              />
+            </div>
+          </div>
+
+          {/* Additional Status */}
+          <div className="flex justify-between text-sm pt-2 border-t">
+            <span>Network</span>
+            <span className={status.network ? 'text-green-600' : 'text-red-600'}>
+              {status.network ? 'Online' : 'Offline'}
+            </span>
+          </div>
+          <div className="flex justify-between text-sm">
+            <span>Uptime</span>
+            <span>{status.uptime}</span>
+          </div>
         </div>
-      </div>
-    </CardContent>
-  </Card>
-)
+      </CardContent>
+    </Card>
+  )
+}
 
 export const Dashboard: React.FC = () => {
   const { user } = useAuth()
 
-  const stats = [
+  // Fetch media statistics
+  const { 
+    data: mediaStats, 
+    isLoading: mediaLoading, 
+    error: mediaError 
+  } = useQuery(
+    ['media-stats'],
+    () => mediaApi.getMediaStats(),
     {
-      title: 'Total Media Items',
-      value: '1,234',
-      icon: <Database className="h-8 w-8" />,
-      change: '+12% from last month',
-      changeType: 'positive' as const,
-    },
-    {
-      title: 'Movies',
-      value: '456',
-      icon: <Film className="h-8 w-8" />,
-      change: '+8% from last month',
-      changeType: 'positive' as const,
-    },
-    {
-      title: 'Music Albums',
-      value: '789',
-      icon: <Music className="h-8 w-8" />,
-      change: '+15% from last month',
-      changeType: 'positive' as const,
-    },
-    {
-      title: 'Games',
-      value: '123',
-      icon: <Gamepad2 className="h-8 w-8" />,
-      change: '+5% from last month',
-      changeType: 'positive' as const,
-    },
-  ]
+      refetchInterval: 30000, // Refresh every 30 seconds
+      staleTime: 10000
+    }
+  )
 
-  const quickActions = [
-    {
-      title: 'Browse Media',
-      description: 'Explore your media collection',
-      icon: <Database className="h-6 w-6" />,
-      onClick: () => console.log('Browse media'),
-    },
-    {
-      title: 'View Analytics',
-      description: 'See detailed statistics',
-      icon: <TrendingUp className="h-6 w-6" />,
-      onClick: () => console.log('View analytics'),
-    },
-    {
-      title: 'System Health',
-      description: 'Check system status',
-      icon: <Activity className="h-6 w-6" />,
-      onClick: () => console.log('System health'),
-    },
-    {
-      title: 'Storage Usage',
-      description: 'Monitor disk usage',
-      icon: <HardDrive className="h-6 w-6" />,
-      onClick: () => console.log('Storage usage'),
-    },
-  ]
-
-  if (user?.role === 'admin') {
-    quickActions.push({
-      title: 'User Management',
-      description: 'Manage system users',
-      icon: <Users className="h-6 w-6" />,
-      onClick: () => console.log('User management'),
-    })
+  // Fetch user statistics (mock for now)
+  const userStats: UserStats = {
+    active_users: 3,
+    total_users: 12,
+    sessions_today: 24,
+    avg_session_duration: 45
   }
 
+  // Handle errors
+  useEffect(() => {
+    if (mediaError) {
+      toast.error('Failed to load media statistics')
+    }
+  }, [mediaError])
+
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <div className="space-y-6">
+      {/* Header */}
+      <motion.div
+        initial={{ opacity: 0, y: -20 }}
+        animate={{ opacity: 1, y: 0 }}
+        className="flex items-center justify-between"
+      >
+        <div>
+          <h1 className="text-3xl font-bold text-gray-900">
+            Welcome back, {user?.username || 'User'}!
+          </h1>
+          <p className="text-gray-600">
+            Here's what's happening with your media library today.
+          </p>
+        </div>
+        
+        <div className="flex items-center space-x-2">
+          <Button variant="outline">
+            <Clock className="w-4 h-4 mr-2" />
+            Last updated: {new Date().toLocaleTimeString()}
+          </Button>
+        </div>
+      </motion.div>
+
+      {/* Main Stats Grid */}
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.5 }}
+        transition={{ delay: 0.1 }}
       >
-        {/* Header */}
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
-            Welcome back, {user?.first_name || user?.username}!
-          </h1>
-          <p className="text-gray-600 dark:text-gray-400 mt-2">
-            Here&apos;s what&apos;s happening with your media collection today.
-          </p>
-        </div>
+        <DashboardStats
+          mediaStats={mediaStats}
+          userStats={userStats}
+          loading={mediaLoading}
+        />
+      </motion.div>
 
-        {/* Stats Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-          {stats.map((stat, index) => (
-            <motion.div
-              key={stat.title}
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.5, delay: index * 0.1 }}
-            >
-              <StatCard {...stat} />
-            </motion.div>
-          ))}
-        </div>
+      {/* Charts and Activity Row */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {/* Media Distribution Chart */}
+        <motion.div
+          initial={{ opacity: 0, x: -20 }}
+          animate={{ opacity: 1, x: 0 }}
+          transition={{ delay: 0.2 }}
+        >
+          <MediaDistributionChart
+            data={mediaStats?.by_type}
+            loading={mediaLoading}
+          />
+        </motion.div>
+
+        {/* System Status */}
+        <motion.div
+          initial={{ opacity: 0, x: 20 }}
+          animate={{ opacity: 1, x: 0 }}
+          transition={{ delay: 0.2 }}
+        >
+          <SystemStatus />
+        </motion.div>
+      </div>
+
+      {/* Activity Feed and Quick Actions */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        {/* Activity Feed */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.3 }}
+          className="lg:col-span-2"
+        >
+          <ActivityFeed limit={8} />
+        </motion.div>
 
         {/* Quick Actions */}
-        <div className="mb-8">
-          <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-4">
-            Quick Actions
-          </h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {quickActions.map((action, index) => (
-              <motion.div
-                key={action.title}
-                initial={{ opacity: 0, x: -20 }}
-                animate={{ opacity: 1, x: 0 }}
-                transition={{ duration: 0.5, delay: index * 0.1 }}
-              >
-                <QuickActionCard {...action} />
-              </motion.div>
-            ))}
-          </div>
-        </div>
-
-        {/* Recent Activity */}
-        <Card>
-          <CardHeader>
-            <CardTitle>Recent Activity</CardTitle>
-            <CardDescription>
-              Latest changes in your media collection
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-4">
-              {[
-                {
-                  type: 'Movie',
-                  title: 'The Matrix (1999)',
-                  action: 'Added to collection',
-                  time: '2 hours ago',
-                  icon: <Film className="h-4 w-4" />,
-                },
-                {
-                  type: 'Album',
-                  title: 'Dark Side of the Moon',
-                  action: 'Metadata updated',
-                  time: '4 hours ago',
-                  icon: <Music className="h-4 w-4" />,
-                },
-                {
-                  type: 'Game',
-                  title: 'Cyberpunk 2077',
-                  action: 'Quality analysis completed',
-                  time: '6 hours ago',
-                  icon: <Gamepad2 className="h-4 w-4" />,
-                },
-                {
-                  type: 'Software',
-                  title: 'Adobe Photoshop 2024',
-                  action: 'New version detected',
-                  time: '1 day ago',
-                  icon: <Monitor className="h-4 w-4" />,
-                },
-              ].map((activity, index) => (
-                <div key={index} className="flex items-center space-x-4 p-3 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">
-                  <div className="text-blue-600 dark:text-blue-400">
-                    {activity.icon}
-                  </div>
-                  <div className="flex-1">
-                    <div className="flex items-center space-x-2">
-                      <span className="text-sm font-medium text-gray-900 dark:text-white">
-                        {activity.title}
-                      </span>
-                      <span className="text-xs px-2 py-1 bg-blue-100 text-blue-800 rounded-full dark:bg-blue-900 dark:text-blue-200">
-                        {activity.type}
-                      </span>
-                    </div>
-                    <p className="text-sm text-gray-600 dark:text-gray-400">
-                      {activity.action}
-                    </p>
-                  </div>
-                  <span className="text-xs text-gray-500 dark:text-gray-400">
-                    {activity.time}
-                  </span>
-                </div>
-              ))}
-            </div>
-            <div className="mt-6 text-center">
-              <Button variant="outline">
-                View All Activity
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
-      </motion.div>
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.4 }}
+        >
+          <QuickActions />
+        </motion.div>
+      </div>
     </div>
   )
 }

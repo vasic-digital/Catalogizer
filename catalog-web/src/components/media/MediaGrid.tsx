@@ -7,6 +7,7 @@ interface MediaGridProps {
   media: MediaItem[]
   loading?: boolean
   onMediaView?: (media: MediaItem) => void
+  onMediaPlay?: (media: MediaItem) => void
   onMediaDownload?: (media: MediaItem) => void
   className?: string
 }
@@ -26,6 +27,7 @@ export const MediaGrid: React.FC<MediaGridProps> = ({
   media,
   loading = false,
   onMediaView,
+  onMediaPlay,
   onMediaDownload,
   className = ''
 }) => {
@@ -77,6 +79,7 @@ export const MediaGrid: React.FC<MediaGridProps> = ({
           <MediaCard
             media={item}
             onView={onMediaView}
+            onPlay={onMediaPlay}
             onDownload={onMediaDownload}
           />
         </motion.div>

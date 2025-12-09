@@ -3,6 +3,7 @@ import { useQuery } from '@tanstack/react-query'
 import { MediaGrid } from '@/components/media/MediaGrid'
 import { MediaFilters } from '@/components/media/MediaFilters'
 import { MediaDetailModal } from '@/components/media/MediaDetailModal'
+import { MediaPlayer } from '@/components/media/MediaPlayer'
 import { Button } from '@/components/ui/Button'
 import { Input } from '@/components/ui/Input'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card'
@@ -18,7 +19,8 @@ import {
   Download,
   RefreshCw,
   ChevronLeft,
-  ChevronRight
+  ChevronRight,
+  Play
 } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
 
@@ -35,6 +37,7 @@ export const MediaBrowser: React.FC = () => {
   const [searchQuery, setSearchQuery] = useState('')
   const [selectedMedia, setSelectedMedia] = useState<MediaItem | null>(null)
   const [isModalOpen, setIsModalOpen] = useState(false)
+  const [isPlayerOpen, setIsPlayerOpen] = useState(false)
   const [isDownloading, setIsDownloading] = useState(false)
 
   const debouncedSearch = useMemo(
@@ -91,6 +94,11 @@ export const MediaBrowser: React.FC = () => {
     setIsModalOpen(true)
   }
 
+  const handleMediaPlay = (media: MediaItem) => {
+    setSelectedMedia(media)
+    setIsPlayerOpen(true)
+  }
+
   const handleMediaDownload = async (media: MediaItem) => {
     setIsDownloading(true)
     try {
@@ -106,6 +114,11 @@ export const MediaBrowser: React.FC = () => {
 
   const handleCloseModal = () => {
     setIsModalOpen(false)
+    setSelectedMedia(null)
+  }
+
+  const handleClosePlayer = () => {
+    setIsPlayerOpen(false)
     setSelectedMedia(null)
   }
 
@@ -322,6 +335,7 @@ export const MediaBrowser: React.FC = () => {
               media={searchResults?.items || []}
               loading={isLoading}
               onMediaView={handleMediaView}
+              onMediaPlay={handleMediaPlay}
               onMediaDownload={handleMediaDownload}
             />
           )}
@@ -363,7 +377,28 @@ export const MediaBrowser: React.FC = () => {
         isOpen={isModalOpen}
         onClose={handleCloseModal}
         onDownload={handleMediaDownload}
+        onPlay={handleMediaPlay}
       />
+
+      {/* Media Player Modal */}
+      {selectedMedia && isPlayerOpen && (
+        <div className="fixed inset-0 bg-black z-50 flex items-center justify-center p-4">
+          <div className="relative w-full max-w-6xl">
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={handleClosePlayer}
+              className="absolute -top-12 right-0 text-white hover:text-gray-300 z-10"
+            >
+              Close
+            </Button>
+            <MediaPlayer 
+              media={selectedMedia}
+              onEnded={handleClosePlayer}
+            />
+          </div>
+        </div>
+      )}
     </div>
   )
 }
