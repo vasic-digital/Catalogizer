@@ -21,7 +21,17 @@ import {
   CheckSquare,
   Square,
   X,
-  Users
+  Users,
+  Bot,
+  FileText,
+  Zap,
+  Play,
+  Globe,
+  AlertCircle,
+  Database,
+  Link,
+  Shield,
+  RefreshCw
 } from 'lucide-react';
 import { Button } from '../components/ui/Button';
 import { Input } from '../components/ui/Input';
@@ -37,6 +47,10 @@ import { CollectionAnalytics } from '../components/collections/CollectionAnalyti
 import { CollectionSharing } from '../components/collections/CollectionSharing';
 import { CollectionExport } from '../components/collections/CollectionExport';
 import { CollectionRealTime } from '../components/collections/CollectionRealTime';
+import CollectionTemplates from '../components/collections/CollectionTemplates';
+import AdvancedSearch from '../components/collections/AdvancedSearch';
+import CollectionAutomation from '../components/collections/CollectionAutomation';
+import ExternalIntegrations from '../components/collections/ExternalIntegrations';
 import { useCollections } from '../hooks/useCollections';
 import { SmartCollection } from '../types/collections';
 import { toast } from 'react-hot-toast';
@@ -46,6 +60,9 @@ const COLLECTIONS_TABS = [
   { id: 'smart', label: 'Smart Collections' },
   { id: 'manual', label: 'Manual Collections' },
   { id: 'favorites', label: 'Favorites' },
+  { id: 'templates', label: 'Templates' },
+  { id: 'automation', label: 'Automation' },
+  { id: 'integrations', label: 'Integrations' },
 ];
 
 const MEDIA_TYPE_OPTIONS = [
@@ -84,6 +101,10 @@ export const Collections: React.FC = () => {
   const [showSharing, setShowSharing] = useState(false);
   const [showExport, setShowExport] = useState(false);
   const [showRealTime, setShowRealTime] = useState(false);
+  const [showTemplates, setShowTemplates] = useState(false);
+  const [showAdvancedSearch, setShowAdvancedSearch] = useState(false);
+  const [showAutomation, setShowAutomation] = useState(false);
+  const [showIntegrations, setShowIntegrations] = useState(false);
   const [selectAll, setSelectAll] = useState(false);
 
   const {
@@ -320,6 +341,22 @@ export const Collections: React.FC = () => {
   const handleShowRealTime = (collection: SmartCollection) => {
     setSelectedCollection(collection);
     setShowRealTime(true);
+  };
+
+  const handleShowTemplates = () => {
+    setShowTemplates(true);
+  };
+
+  const handleShowAdvancedSearch = () => {
+    setShowAdvancedSearch(true);
+  };
+
+  const handleShowAutomation = () => {
+    setShowAutomation(true);
+  };
+
+  const handleShowIntegrations = () => {
+    setShowIntegrations(true);
   };
 
   const renderCollectionCard = (collection: SmartCollection) => {
@@ -570,6 +607,45 @@ export const Collections: React.FC = () => {
     );
   }
 
+  if (showTemplates) {
+    return (
+      <div className="max-w-7xl mx-auto">
+        <CollectionTemplates 
+          onClose={() => setShowTemplates(false)}
+          onApplyTemplate={async (template, collectionName) => {
+            // Implementation for applying template
+            toast.success(`Template "${template.name}" applied to "${collectionName}"`);
+            setShowTemplates(false);
+          }}
+        />
+      </div>
+    );
+  }
+
+  if (showAdvancedSearch) {
+    return (
+      <div className="max-w-7xl mx-auto">
+        <AdvancedSearch />
+      </div>
+    );
+  }
+
+  if (showAutomation) {
+    return (
+      <div className="max-w-7xl mx-auto">
+        <CollectionAutomation />
+      </div>
+    );
+  }
+
+  if (showIntegrations) {
+    return (
+      <div className="max-w-7xl mx-auto">
+        <ExternalIntegrations />
+      </div>
+    );
+  }
+
   return (
     <div className="max-w-7xl mx-auto">
       {/* Header */}
@@ -650,6 +726,38 @@ export const Collections: React.FC = () => {
           >
             <Plus className="w-4 h-4" />
             Smart Collection
+          </Button>
+          <Button
+            variant="outline"
+            onClick={handleShowTemplates}
+            className="flex items-center gap-2"
+          >
+            <FileText className="w-4 h-4" />
+            Templates
+          </Button>
+          <Button
+            variant="outline"
+            onClick={handleShowAdvancedSearch}
+            className="flex items-center gap-2"
+          >
+            <Search className="w-4 h-4" />
+            Advanced Search
+          </Button>
+          <Button
+            variant="outline"
+            onClick={handleShowAutomation}
+            className="flex items-center gap-2"
+          >
+            <Bot className="w-4 h-4" />
+            Automation
+          </Button>
+          <Button
+            variant="outline"
+            onClick={handleShowIntegrations}
+            className="flex items-center gap-2"
+          >
+            <Zap className="w-4 h-4" />
+            Integrations
           </Button>
         </div>
       </div>
