@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useMemo } from 'react';
 import { motion } from 'framer-motion';
 import {
   Plus,
@@ -31,7 +31,9 @@ import {
   Database,
   Link,
   Shield,
-  RefreshCw
+  RefreshCw,
+  Activity,
+  Loader2
 } from 'lucide-react';
 import { Button } from '../components/ui/Button';
 import { Input } from '../components/ui/Input';
@@ -47,7 +49,18 @@ import { CollectionAnalytics } from '../components/collections/CollectionAnalyti
 import { CollectionSharing } from '../components/collections/CollectionSharing';
 import { CollectionExport } from '../components/collections/CollectionExport';
 import { CollectionRealTime } from '../components/collections/CollectionRealTime';
-import CollectionTemplates from '../components/collections/CollectionTemplates';
+import { 
+  ComponentLoader,
+  preloadComponent,
+  CollectionTemplates,
+  AdvancedSearch,
+  CollectionAutomation,
+  ExternalIntegrations,
+  CollectionAnalytics as LazyCollectionAnalytics
+} from '../components/performance/LazyComponents';
+import { VirtualList, VirtualizedTable } from '../components/performance/VirtualScroller';
+import { useMemoized, useDebounceSearch, useOptimizedData, usePagination } from '../components/performance/MemoCache';
+import { BundleAnalyzer } from '../components/performance/BundleAnalyzer';
 import AdvancedSearch from '../components/collections/AdvancedSearch';
 import CollectionAutomation from '../components/collections/CollectionAutomation';
 import ExternalIntegrations from '../components/collections/ExternalIntegrations';
@@ -107,6 +120,32 @@ export const Collections: React.FC = () => {
   const [showIntegrations, setShowIntegrations] = useState(false);
   const [selectAll, setSelectAll] = useState(false);
 
+  // Performance metrics state
+  const [performanceMetrics, setPerformanceMetrics] = useState({
+    bundleSize: 0,
+    renderTime: 0,
+    memoryUsage: 0,
+    cacheHitRate: 0
+  });
+
+  // Performance monitoring
+  const measurePerformance = useCallback((name: string) => {
+    const startTime = performance.now();
+    return () => {
+      const endTime = performance.now();
+      const duration = endTime - startTime;
+      
+      setPerformanceMetrics(prev => ({
+        ...prev,
+        renderTime: duration
+      }));
+      
+      if (duration > 100) {
+        console.warn(`Slow render detected: ${name} took ${duration.toFixed(2)}ms`);
+      }
+    };
+  }, []);
+
   const {
     collections,
     isLoading,
@@ -127,53 +166,65 @@ export const Collections: React.FC = () => {
     isExporting,
   } = useCollections();
 
-  // Filter and sort collections
-  const filteredCollections = React.useMemo(() => {
-    let filtered = [...collections];
+  // Performance optimized collection filtering
+  const filters = useMemoized(() => ({
+    activeTab,
+    searchQuery: debouncedSearch,
+    filterMediaType
+  }), [activeTab, debouncedSearch, filterMediaType]);
 
-    // Apply tab filter
+  const filteredCollections = useOptimizedData(
+    collections,
+    filters,
+    sortBy
+  );
+
+  // Pagination for large collections
+  const {
+    page: currentPage,
+    paginatedData: paginatedCollections,
+    totalPages,
+    nextPage,
+    prevPage,
+    goToPage
+  } = usePagination(filteredCollections, 20);
+
+  // Debounced search for performance
+  const { debouncedValue: debouncedSearch, isDebouncing } = useDebounceSearch(
+    searchQuery,
+    300
+  );
+
+  // Update search query with debouncing
+  const handleSearchChange = useCallback((value: string) => {
+    setSearchQuery(value);
+  }, []);
+
+  // Performance monitoring effect
+  React.useEffect(() => {
+    const endPerformance = measurePerformance('Collections Page');
+    
+    return () => {
+      endPerformance();
+    };
+  }, [activeTab, filteredCollections.length, measurePerformance]);
+
+  // Preload components based on active tab
+  React.useEffect(() => {
     switch (activeTab) {
-      case 'smart':
-        filtered = filtered.filter((c: SmartCollection) => c.is_smart);
+      case 'templates':
+        preloadComponent('CollectionTemplates');
         break;
-      case 'manual':
-        filtered = filtered.filter((c: SmartCollection) => !c.is_smart);
+      case 'automation':
+        preloadComponent('CollectionAutomation');
         break;
-      case 'favorites':
-        // This would need favorites integration
-        filtered = filtered.filter(() => false); // Placeholder
+      case 'integrations':
+        preloadComponent('ExternalIntegrations');
+        break;
+      default:
         break;
     }
-
-    // Apply search filter
-    if (searchQuery) {
-      filtered = filtered.filter((c: SmartCollection) =>
-        c.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        c.description?.toLowerCase().includes(searchQuery.toLowerCase())
-      );
-    }
-
-    // Apply media type filter
-    if (filterMediaType !== 'all') {
-      filtered = filtered.filter((c: SmartCollection) => c.primary_media_type === filterMediaType);
-    }
-
-    // Apply sorting
-    filtered.sort((a: SmartCollection, b: SmartCollection) => {
-      const aValue = a[sortBy as keyof SmartCollection];
-      const bValue = b[sortBy as keyof SmartCollection];
-      
-      if (typeof aValue === 'string' && typeof bValue === 'string') {
-        return aValue.localeCompare(bValue);
-      }
-      if (typeof aValue === 'number' && typeof bValue === 'number') {
-        return aValue - bValue;
-      }
-      return 0;
-    });
-
-    return filtered;
-  }, [collections, activeTab, searchQuery, filterMediaType, sortBy]);
+  }, [activeTab]);
 
   // Selection handlers
   const handleSelectCollection = useCallback((collectionId: string, selected: boolean) => {
@@ -650,12 +701,32 @@ export const Collections: React.FC = () => {
     <div className="max-w-7xl mx-auto">
       {/* Header */}
       <div className="mb-6">
-        <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">
-          Collections
-        </h1>
-        <p className="text-gray-600 dark:text-gray-400">
-          Organize your media with smart and manual collections
-        </p>
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">
+              Collections
+            </h1>
+            <p className="text-gray-600 dark:text-gray-400">
+              Organize your media with smart and manual collections
+            </p>
+          </div>
+          
+          {/* Performance Indicator */}
+          <div className="flex items-center gap-4 text-sm text-gray-500 dark:text-gray-400">
+            <div className="flex items-center gap-2">
+              <Activity className="w-4 h-4" />
+              <span>Render: {performanceMetrics.renderTime.toFixed(1)}ms</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <Database className="w-4 h-4" />
+              <span>Items: {filteredCollections.length}</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <Zap className="w-4 h-4" />
+              <span>Page {currentPage}/{totalPages}</span>
+            </div>
+          </div>
+        </div>
       </div>
 
       {/* Tabs */}
@@ -675,9 +746,14 @@ export const Collections: React.FC = () => {
             <Input
               placeholder="Search collections..."
               value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="pl-10"
+              onChange={(e) => handleSearchChange(e.target.value)}
+              className={`pl-10 ${isDebouncing ? 'border-blue-400' : ''}`}
             />
+            {isDebouncing && (
+              <div className="absolute right-3 top-1/2 transform -translate-y-1/2">
+                <Loader2 className="w-4 h-4 text-blue-600 animate-spin" />
+              </div>
+            )}
           </div>
 
           {/* Media Type Filter */}
@@ -759,6 +835,23 @@ export const Collections: React.FC = () => {
             <Zap className="w-4 h-4" />
             Integrations
           </Button>
+          
+          {/* Performance Tools (Development) */}
+          {process.env.NODE_ENV === 'development' && (
+            <Button
+              variant="outline"
+              onClick={() => {
+                const analyzer = window.open('', '_blank', 'width=800,height=600');
+                if (analyzer) {
+                  analyzer.document.write('<html><head><title>Bundle Analyzer</title></head><body><div id="bundle-analyzer"></div><script src="/bundle-analyzer.js"></script></body></html>');
+                }
+              }}
+              className="flex items-center gap-2 text-green-600 border-green-600 hover:bg-green-50"
+            >
+              <Activity className="w-4 h-4" />
+              Bundle Analysis
+            </Button>
+          )}
         </div>
       </div>
 
@@ -834,20 +927,74 @@ export const Collections: React.FC = () => {
             )}
           </div>
         ) : (
-          <PerformanceOptimizer
-            itemCount={filteredCollections.length}
-            threshold={50}
-            loadingStrategy="lazy"
-            itemHeight={viewMode === 'grid' ? 200 : 80}
-            containerHeight={600}
-          >
-            <div className={viewMode === 'grid' 
-              ? 'grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4' 
-              : 'space-y-4'
-            }>
-              {filteredCollections.map(viewMode === 'grid' ? renderCollectionCard : renderCollectionListItem)}
-            </div>
-          </PerformanceOptimizer>
+          <>
+            <PerformanceOptimizer
+              itemCount={paginatedCollections.length}
+              threshold={50}
+              loadingStrategy="lazy"
+              itemHeight={viewMode === 'grid' ? 200 : 80}
+              containerHeight={600}
+            >
+              <div className={viewMode === 'grid' 
+                ? 'grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4' 
+                : 'space-y-4'
+              }>
+                {paginatedCollections.map(viewMode === 'grid' ? renderCollectionCard : renderCollectionListItem)}
+              </div>
+            </PerformanceOptimizer>
+
+            {/* Pagination Controls */}
+            {totalPages > 1 && (
+              <div className="mt-6 flex items-center justify-between">
+                <div className="text-sm text-gray-600 dark:text-gray-400">
+                  Showing {((currentPage - 1) * 20) + 1} to {Math.min(currentPage * 20, filteredCollections.length)} of {filteredCollections.length} collections
+                </div>
+                <div className="flex items-center gap-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={prevPage}
+                    disabled={currentPage === 1}
+                  >
+                    Previous
+                  </Button>
+                  <div className="flex items-center gap-1">
+                    {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
+                      let pageNum;
+                      if (totalPages <= 5) {
+                        pageNum = i + 1;
+                      } else if (currentPage <= 3) {
+                        pageNum = i + 1;
+                      } else if (currentPage >= totalPages - 2) {
+                        pageNum = totalPages - 4 + i;
+                      } else {
+                        pageNum = currentPage - 2 + i;
+                      }
+                      return (
+                        <Button
+                          key={pageNum}
+                          variant={currentPage === pageNum ? "default" : "outline"}
+                          size="sm"
+                          onClick={() => goToPage(pageNum)}
+                          className="min-w-[2.5rem]"
+                        >
+                          {pageNum}
+                        </Button>
+                      );
+                    })}
+                  </div>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={nextPage}
+                    disabled={currentPage === totalPages}
+                  >
+                    Next
+                  </Button>
+                </div>
+              </div>
+            )}
+          </>
         )}
       </div>
 
