@@ -10,6 +10,7 @@ import {
   Clock,
   BarChart3,
   Share,
+  Share2,
   MoreHorizontal,
   Edit,
   Trash2,
@@ -19,7 +20,8 @@ import {
   Settings,
   CheckSquare,
   Square,
-  X
+  X,
+  Users
 } from 'lucide-react';
 import { Button } from '../components/ui/Button';
 import { Input } from '../components/ui/Input';
@@ -31,6 +33,10 @@ import { CollectionPreview } from '../components/collections/CollectionPreview';
 import { BulkOperations } from '../components/collections/BulkOperations';
 import { PerformanceOptimizer } from '../components/collections/PerformanceOptimizer';
 import { CollectionSettings } from '../components/collections/CollectionSettings';
+import { CollectionAnalytics } from '../components/collections/CollectionAnalytics';
+import { CollectionSharing } from '../components/collections/CollectionSharing';
+import { CollectionExport } from '../components/collections/CollectionExport';
+import { CollectionRealTime } from '../components/collections/CollectionRealTime';
 import { useCollections } from '../hooks/useCollections';
 import { SmartCollection } from '../types/collections';
 import { toast } from 'react-hot-toast';
@@ -74,6 +80,10 @@ export const Collections: React.FC = () => {
   const [selectedCollections, setSelectedCollections] = useState<string[]>([]);
   const [showBulkOperations, setShowBulkOperations] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
+  const [showAnalytics, setShowAnalytics] = useState(false);
+  const [showSharing, setShowSharing] = useState(false);
+  const [showExport, setShowExport] = useState(false);
+  const [showRealTime, setShowRealTime] = useState(false);
   const [selectAll, setSelectAll] = useState(false);
 
   const {
@@ -292,6 +302,26 @@ export const Collections: React.FC = () => {
     }
   };
 
+  const handleShowAnalytics = (collection: SmartCollection) => {
+    setSelectedCollection(collection);
+    setShowAnalytics(true);
+  };
+
+  const handleShowSharing = (collection: SmartCollection) => {
+    setSelectedCollection(collection);
+    setShowSharing(true);
+  };
+
+  const handleShowExport = (collection: SmartCollection) => {
+    setSelectedCollection(collection);
+    setShowExport(true);
+  };
+
+  const handleShowRealTime = (collection: SmartCollection) => {
+    setSelectedCollection(collection);
+    setShowRealTime(true);
+  };
+
   const renderCollectionCard = (collection: SmartCollection) => {
     const isSelected = selectedCollections.includes(collection.id);
     
@@ -476,20 +506,34 @@ export const Collections: React.FC = () => {
             <Button
               variant="ghost"
               size="sm"
-              onClick={() => handleShareCollection(collection)}
-              disabled={isSharing}
-              title="Share collection"
+              onClick={() => handleShowAnalytics(collection)}
+              title="View analytics"
             >
-              <Share className="w-4 h-4" />
+              <BarChart3 className="w-4 h-4" />
             </Button>
             <Button
               variant="ghost"
               size="sm"
-              onClick={() => handleDuplicateCollection(collection)}
-              disabled={isDuplicating}
-              title="Duplicate collection"
+              onClick={() => handleShowSharing(collection)}
+              title="Share collection"
             >
-              <Copy className="w-4 h-4" />
+              <Share2 className="w-4 h-4" />
+            </Button>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => handleShowExport(collection)}
+              title="Export collection"
+            >
+              <Download className="w-4 h-4" />
+            </Button>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => handleShowRealTime(collection)}
+              title="Real-time collaboration"
+            >
+              <Users className="w-4 h-4" />
             </Button>
             <Button
               variant="ghost"
@@ -727,6 +771,34 @@ export const Collections: React.FC = () => {
             });
             setShowSettings(false);
           }}
+        />
+      )}
+
+      {showAnalytics && selectedCollection && (
+        <CollectionAnalytics
+          collection={selectedCollection}
+          onClose={() => setShowAnalytics(false)}
+        />
+      )}
+
+      {showSharing && selectedCollection && (
+        <CollectionSharing
+          collection={selectedCollection}
+          onClose={() => setShowSharing(false)}
+        />
+      )}
+
+      {showExport && selectedCollection && (
+        <CollectionExport
+          collection={selectedCollection}
+          onClose={() => setShowExport(false)}
+        />
+      )}
+
+      {showRealTime && selectedCollection && (
+        <CollectionRealTime
+          collection={selectedCollection}
+          onClose={() => setShowRealTime(false)}
         />
       )}
     </div>
