@@ -61,6 +61,21 @@ import {
 import { VirtualList, VirtualizedTable } from '../components/performance/VirtualScroller';
 import { useMemoized, useDebounceSearch, useOptimizedData, usePagination } from '../components/performance/MemoCache';
 import { BundleAnalyzer } from '../components/performance/BundleAnalyzer';
+import { 
+  AICollectionSuggestions,
+  AINaturalSearch,
+  AIContentCategorizer
+} from '../components/ai/AIComponents';
+import { 
+  AIUserBehaviorAnalytics,
+  AIPredictions,
+  AISmartOrganization
+} from '../components/ai/AIAnalytics';
+import { 
+  AIMetadataExtractor,
+  AIAutomationRules,
+  AIContentQualityAnalyzer
+} from '../components/ai/AIMetadata';
 import AdvancedSearch from '../components/collections/AdvancedSearch';
 import CollectionAutomation from '../components/collections/CollectionAutomation';
 import ExternalIntegrations from '../components/collections/ExternalIntegrations';
@@ -76,6 +91,7 @@ const COLLECTIONS_TABS = [
   { id: 'templates', label: 'Templates' },
   { id: 'automation', label: 'Automation' },
   { id: 'integrations', label: 'Integrations' },
+  { id: 'ai', label: 'AI Features' },
 ];
 
 const MEDIA_TYPE_OPTIONS = [
@@ -118,6 +134,7 @@ export const Collections: React.FC = () => {
   const [showAdvancedSearch, setShowAdvancedSearch] = useState(false);
   const [showAutomation, setShowAutomation] = useState(false);
   const [showIntegrations, setShowIntegrations] = useState(false);
+  const [showAI, setShowAI] = useState(false);
   const [selectAll, setSelectAll] = useState(false);
 
   // Performance metrics state
@@ -410,6 +427,61 @@ export const Collections: React.FC = () => {
     setShowIntegrations(true);
   };
 
+  const handleShowAI = () => {
+    setShowAI(true);
+  };
+
+  // AI Feature Handlers
+  const handleAISuggestionAccept = (suggestion: any) => {
+    console.log('AI suggestion accepted:', suggestion);
+    toast.success(`AI suggestion applied: ${suggestion.title}`);
+  };
+
+  const handleAINaturalSearch = (query: any) => {
+    console.log('AI natural search:', query);
+    toast.success(`AI search executed: ${query.query}`);
+  };
+
+  const handleAICategorizationComplete = (result: any) => {
+    console.log('AI categorization complete:', result);
+    toast.success(`Content categorized as: ${result.category}`);
+  };
+
+  const handleAIActionImplement = (action: string) => {
+    console.log('AI action implemented:', action);
+    toast.success(`AI action implemented: ${action}`);
+  };
+
+  const handleAIPredictionAction = (predictionId: string, actionId: string) => {
+    console.log('AI prediction action:', { predictionId, actionId });
+    toast.success(`AI prediction action executed: ${actionId}`);
+  };
+
+  const handleAIOrganizationApply = (suggestionId: string) => {
+    console.log('AI organization applied:', suggestionId);
+    toast.success(`AI organization suggestion applied: ${suggestionId}`);
+  };
+
+  const handleAIMetadataExtracted = (metadata: any) => {
+    console.log('AI metadata extracted:', metadata);
+    toast.success('AI metadata extraction completed');
+  };
+
+  const handleAIRuleToggle = (ruleId: string, enabled: boolean) => {
+    console.log('AI rule toggled:', { ruleId, enabled });
+    toast.success(`AI rule ${enabled ? 'enabled' : 'disabled'}: ${ruleId}`);
+  };
+
+  const handleAIRuleExecute = (ruleId: string) => {
+    console.log('AI rule executed:', ruleId);
+    toast.success(`AI rule executed: ${ruleId}`);
+  };
+
+  const handleAIQualityImprovement = (improvement: string) => {
+    console.log('AI quality improvement:', improvement);
+    toast.success(`AI quality improvement applied: ${improvement}`);
+  };
+
   const renderCollectionCard = (collection: SmartCollection) => {
     const isSelected = selectedCollections.includes(collection.id);
     
@@ -697,6 +769,96 @@ export const Collections: React.FC = () => {
     );
   }
 
+  if (showAI) {
+    return (
+      <div className="max-w-7xl mx-auto">
+        <div className="mb-8">
+          <div className="flex items-center space-x-3">
+            <Brain className="w-8 h-8 text-indigo-600" />
+            <h1 className="text-3xl font-bold text-gray-900">AI-Powered Features</h1>
+            <Sparkles className="w-6 h-6 text-yellow-500" />
+          </div>
+          <p className="text-gray-600 mt-2">
+            Leverage artificial intelligence for intelligent content management
+          </p>
+        </div>
+
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+          <AICollectionSuggestions
+            onSuggestionAccept={handleAISuggestionAccept}
+            maxSuggestions={3}
+          />
+          <AINaturalSearch
+            onSearch={handleAINaturalSearch}
+            placeholder="Search naturally... try 'show me action movies' or 'find productivity tools'"
+          />
+        </div>
+
+        <div className="mb-8">
+          <AIContentCategorizer
+            item={{
+              title: 'Sample Content for AI Categorization',
+              description: 'This is a sample content item to demonstrate AI-powered categorization capabilities'
+            }}
+            onCategorizationComplete={handleAICategorizationComplete}
+          />
+        </div>
+
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+          <AIUserBehaviorAnalytics
+            userId="demo-user"
+            onActionImplement={handleAIActionImplement}
+          />
+          <AIPredictions
+            onPredictionAction={handleAIPredictionAction}
+          />
+        </div>
+
+        <div className="mb-8">
+          <AISmartOrganization
+            collections={collections}
+            onSuggestionApply={handleAIOrganizationApply}
+          />
+        </div>
+
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+          <AIMetadataExtractor
+            content={{
+              title: 'Sample Content',
+              description: 'Sample description for AI metadata extraction',
+              fileType: 'video/mp4',
+              size: 1024000
+            }}
+            onMetadataExtracted={handleAIMetadataExtracted}
+          />
+          <AIContentQualityAnalyzer
+            content={{
+              title: 'Sample Content',
+              description: 'Sample description for AI quality analysis'
+            }}
+            onQualityImprovement={handleAIQualityImprovement}
+          />
+        </div>
+
+        <div>
+          <AIAutomationRules
+            onRuleToggle={handleAIRuleToggle}
+            onRuleExecute={handleAIRuleExecute}
+          />
+        </div>
+
+        <div className="mt-8 text-center">
+          <button
+            onClick={() => setShowAI(false)}
+            className="px-6 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-colors"
+          >
+            Back to Collections
+          </button>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="max-w-7xl mx-auto">
       {/* Header */}
@@ -834,6 +996,14 @@ export const Collections: React.FC = () => {
           >
             <Zap className="w-4 h-4" />
             Integrations
+          </Button>
+          <Button
+            variant="outline"
+            onClick={handleShowAI}
+            className="flex items-center gap-2 bg-indigo-50 border-indigo-200 text-indigo-600 hover:bg-indigo-100"
+          >
+            <Brain className="w-4 h-4" />
+            AI Features
           </Button>
           
           {/* Performance Tools (Development) */}
