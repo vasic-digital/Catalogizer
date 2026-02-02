@@ -12,6 +12,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
+	"os"
 	"path/filepath"
 	"time"
 
@@ -50,9 +51,13 @@ type WatchPath struct {
 // NewMediaManager creates a new media manager
 func NewMediaManager(cfg *config.Config, logger *zap.Logger) (*MediaManager, error) {
 	// Initialize encrypted database
+	dbPassword := os.Getenv("MEDIA_DB_PASSWORD")
+	if dbPassword == "" {
+		return nil, fmt.Errorf("MEDIA_DB_PASSWORD environment variable is required")
+	}
 	dbConfig := database.DatabaseConfig{
 		Path:     "media_catalog.db",
-		Password: "secure_password_123", // This should come from config
+		Password: dbPassword,
 	}
 
 	mediaDB, err := database.NewMediaDatabase(dbConfig, logger)

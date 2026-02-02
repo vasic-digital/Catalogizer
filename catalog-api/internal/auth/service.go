@@ -190,9 +190,8 @@ func (s *AuthService) createDefaultAdmin() error {
 		return err
 	}
 
-	s.logger.Info("Default admin user created",
-		zap.String("username", "admin"),
-		zap.String("password", "admin123"))
+	s.logger.Info("Default admin user created - change default password immediately",
+		zap.String("username", "admin"))
 
 	return nil
 }

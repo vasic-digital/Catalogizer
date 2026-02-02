@@ -3,7 +3,9 @@ package handlers
 import (
 	"encoding/json"
 	"net/http"
+	"os"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/gorilla/mux"
@@ -1128,17 +1130,15 @@ func (h *MediaPlayerHandlers) sendError(w http.ResponseWriter, message string, s
 }
 
 func (h *MediaPlayerHandlers) getUserID(r *http.Request) int64 {
-	userIDStr := r.Header.Get("X-User-ID")
-	if userIDStr == "" {
-		return 0
+	// Get user ID from authenticated context (set by auth middleware)
+	// Never trust client-provided headers for user identity
+	if userID, ok := r.Context().Value("user_id").(int64); ok {
+		return userID
 	}
-
-	userID, err := strconv.ParseInt(userIDStr, 10, 64)
-	if err != nil {
-		return 0
+	if userID, ok := r.Context().Value("user_id").(int); ok {
+		return int64(userID)
 	}
-
-	return userID
+	return 0
 }
 
 func (h *MediaPlayerHandlers) getIDFromPath(r *http.Request, key string) (int64, error) {
@@ -1148,9 +1148,20 @@ func (h *MediaPlayerHandlers) getIDFromPath(r *http.Request, key string) (int64,
 
 func (h *MediaPlayerHandlers) corsMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		w.Header().Set("Access-Control-Allow-Origin", "*")
+		origin := r.Header.Get("Origin")
+		allowedOrigins := os.Getenv("CORS_ALLOWED_ORIGINS")
+		if allowedOrigins == "" {
+			allowedOrigins = "http://localhost:5173,http://localhost:3000"
+		}
+		for _, o := range strings.Split(allowedOrigins, ",") {
+			if strings.TrimSpace(o) == origin && origin != "" {
+				w.Header().Set("Access-Control-Allow-Origin", origin)
+				w.Header().Set("Access-Control-Allow-Credentials", "true")
+				break
+			}
+		}
 		w.Header().Set("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS")
-		w.Header().Set("Access-Control-Allow-Headers", "Content-Type, Authorization, X-User-ID")
+		w.Header().Set("Access-Control-Allow-Headers", "Content-Type, Authorization")
 		w.Header().Set("Access-Control-Max-Age", "86400")
 
 		if r.Method == "OPTIONS" {
