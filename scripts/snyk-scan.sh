@@ -13,6 +13,28 @@ SNYK_ORG="${SNYK_ORG:-catalogizer}"
 SNYK_SEVERITY_THRESHOLD="${SNYK_SEVERITY_THRESHOLD:-medium}"
 REPORTS_DIR="$PROJECT_ROOT/reports"
 
+# Container runtime detection - prefer podman over docker
+if command -v podman &>/dev/null; then
+    CONTAINER_CMD="podman"
+    if command -v podman-compose &>/dev/null; then
+        COMPOSE_CMD="podman-compose"
+    else
+        COMPOSE_CMD=""
+    fi
+elif command -v docker &>/dev/null; then
+    CONTAINER_CMD="docker"
+    if command -v docker-compose &>/dev/null; then
+        COMPOSE_CMD="docker-compose"
+    elif docker compose version &>/dev/null 2>&1; then
+        COMPOSE_CMD="docker compose"
+    else
+        COMPOSE_CMD=""
+    fi
+else
+    CONTAINER_CMD=""
+    COMPOSE_CMD=""
+fi
+
 echo "🔒 Starting Snyk Security Analysis for Catalogizer"
 echo "🏢 Organization: $SNYK_ORG"
 echo "📁 Project Root: $PROJECT_ROOT"
@@ -151,32 +173,32 @@ scan_android_projects() {
 scan_docker_images() {
     echo "🐳 Scanning Docker images..."
     
-    # Check if Docker is available
-    if command -v docker &> /dev/null; then
+    # Check if a container runtime is available
+    if [ -n "$CONTAINER_CMD" ]; then
         # Build API image if it doesn't exist
-        if ! docker images | grep -q "catalogizer-api"; then
+        if ! $CONTAINER_CMD images | grep -q "catalogizer-api"; then
             echo "🏗️  Building catalogizer-api image..."
             cd "$PROJECT_ROOT/catalog-api"
             if [ -f "Dockerfile" ]; then
-                docker build -t catalogizer-api:latest .
+                $CONTAINER_CMD build -t catalogizer-api:latest .
             else
                 echo "⚠️  Dockerfile not found in catalog-api"
                 return 0
             fi
         fi
-        
+
         # Scan API image
         echo "🔍 Scanning catalogizer-api image..."
         snyk container test catalogizer-api:latest --org="$SNYK_ORG" --severity-threshold="$SNYK_SEVERITY_THRESHOLD" --json --json-file-output="$REPORTS_DIR/snyk-container-results.json" || true
-        
+
         # Monitor container
         if [ "$SNYK_TOKEN" != "dummy-token" ]; then
             snyk container monitor catalogizer-api:latest --org="$SNYK_ORG" --project-name="catalogizer-api-container" || true
         fi
-        
-        echo "✅ Docker image scan completed"
+
+        echo "✅ Container image scan completed"
     else
-        echo "⚠️  Docker not available, skipping container scan"
+        echo "⚠️  Neither docker nor podman available, skipping container scan"
     fi
 }
 

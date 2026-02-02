@@ -11,6 +11,28 @@ PROJECT_ROOT="$(dirname "$SCRIPT_DIR")"
 REPORTS_DIR="$PROJECT_ROOT/reports"
 LOG_FILE="$REPORTS_DIR/security-test.log"
 
+# Container runtime detection - prefer podman over docker
+if command -v podman &>/dev/null; then
+    CONTAINER_CMD="podman"
+    if command -v podman-compose &>/dev/null; then
+        COMPOSE_CMD="podman-compose"
+    else
+        COMPOSE_CMD=""
+    fi
+elif command -v docker &>/dev/null; then
+    CONTAINER_CMD="docker"
+    if command -v docker-compose &>/dev/null; then
+        COMPOSE_CMD="docker-compose"
+    elif docker compose version &>/dev/null 2>&1; then
+        COMPOSE_CMD="docker compose"
+    else
+        COMPOSE_CMD=""
+    fi
+else
+    CONTAINER_CMD=""
+    COMPOSE_CMD=""
+fi
+
 echo "🔒 Starting Comprehensive Security Testing for Catalogizer"
 echo "📁 Project Root: $PROJECT_ROOT"
 echo "📊 Reports Directory: $REPORTS_DIR"
@@ -30,15 +52,15 @@ log() {
 check_prerequisites() {
     log "🔍 Checking prerequisites..."
     
-    # Check Docker
-    if ! command -v docker &> /dev/null; then
-        log "❌ Docker is not installed"
+    # Check Docker/Podman
+    if [ -z "$CONTAINER_CMD" ]; then
+        log "❌ Neither docker nor podman is installed"
         return 1
     fi
-    
-    # Check Docker Compose
-    if ! command -v docker-compose &> /dev/null && ! docker compose version &> /dev/null; then
-        log "❌ Docker Compose is not installed"
+
+    # Check Docker/Podman Compose
+    if [ -z "$COMPOSE_CMD" ]; then
+        log "❌ Neither docker-compose, docker compose, nor podman-compose is installed"
         return 1
     fi
     
@@ -63,7 +85,7 @@ start_security_services() {
     
     # Start SonarQube and related services
     log "🔍 Starting SonarQube services..."
-    docker compose -f docker-compose.security.yml up -d sonarqube sonarqube-db
+    $COMPOSE_CMD -f docker-compose.security.yml up -d sonarqube sonarqube-db
     
     # Wait for SonarQube to be ready
     log "⏳ Waiting for SonarQube to be ready..."
@@ -106,14 +128,14 @@ run_snyk_analysis() {
     log "🔒 Running Snyk analysis (Freemium)..."
 
     if [ -n "$SNYK_TOKEN" ]; then
-        # Try Docker-based approach first (if available)
-        if command -v docker &> /dev/null && command -v docker-compose &> /dev/null; then
-            log "🐳 Using Docker-based Snyk scanning..."
-            if docker-compose -f "$PROJECT_ROOT/docker-compose.security.yml" --profile snyk-scan run --rm snyk-cli 2>&1 | tee -a "$LOG_FILE"; then
-                log "✅ Docker-based Snyk analysis completed"
+        # Try container-based approach first (if available)
+        if [ -n "$CONTAINER_CMD" ] && [ -n "$COMPOSE_CMD" ]; then
+            log "🐳 Using container-based Snyk scanning..."
+            if $COMPOSE_CMD -f "$PROJECT_ROOT/docker-compose.security.yml" --profile snyk-scan run --rm snyk-cli 2>&1 | tee -a "$LOG_FILE"; then
+                log "✅ Container-based Snyk analysis completed"
                 return 0
             else
-                log "⚠️  Docker-based Snyk failed, trying CLI approach..."
+                log "⚠️  Container-based Snyk failed, trying CLI approach..."
             fi
         fi
 
@@ -141,7 +163,7 @@ run_additional_scans() {
     
     # Run Trivy scan
     log "🔍 Running Trivy vulnerability scan..."
-    if docker-compose -f docker-compose.security.yml run --rm trivy-scanner; then
+    if $COMPOSE_CMD -f docker-compose.security.yml run --rm trivy-scanner; then
         log "✅ Trivy scan completed"
     else
         log "⚠️  Trivy scan failed"
@@ -149,7 +171,7 @@ run_additional_scans() {
     
     # Run OWASP Dependency Check
     log "🔍 Running OWASP Dependency Check..."
-    if docker-compose -f docker-compose.security.yml run --rm dependency-check; then
+    if $COMPOSE_CMD -f docker-compose.security.yml run --rm dependency-check; then
         log "✅ OWASP Dependency Check completed"
     else
         log "⚠️  OWASP Dependency Check failed"
@@ -213,7 +235,7 @@ stop_security_services() {
     log "🛑 Stopping security testing services..."
     
     cd "$PROJECT_ROOT"
-    docker compose -f docker-compose.security.yml down
+    $COMPOSE_CMD -f docker-compose.security.yml down
     
     log "✅ Security services stopped"
 }

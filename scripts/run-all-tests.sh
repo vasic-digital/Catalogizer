@@ -25,6 +25,28 @@ TOTAL_TESTS=0
 PASSED_TESTS=0
 FAILED_TESTS=0
 
+# Container runtime detection - prefer podman over docker
+if command -v podman &>/dev/null; then
+    CONTAINER_CMD="podman"
+    if command -v podman-compose &>/dev/null; then
+        COMPOSE_CMD="podman-compose"
+    else
+        COMPOSE_CMD=""
+    fi
+elif command -v docker &>/dev/null; then
+    CONTAINER_CMD="docker"
+    if command -v docker-compose &>/dev/null; then
+        COMPOSE_CMD="docker-compose"
+    elif docker compose version &>/dev/null 2>&1; then
+        COMPOSE_CMD="docker compose"
+    else
+        COMPOSE_CMD=""
+    fi
+else
+    CONTAINER_CMD=""
+    COMPOSE_CMD=""
+fi
+
 echo -e "${BLUE}🧪 Starting Comprehensive Test Suite for Catalogizer${NC}"
 echo -e "${BLUE}📁 Project Root: $PROJECT_ROOT${NC}"
 echo -e "${BLUE}📊 Reports Directory: $REPORTS_DIR${NC}"
@@ -71,20 +93,20 @@ check_prerequisites() {
     
     local missing_prereqs=false
     
-    # Check Docker
-    if ! command -v docker &> /dev/null; then
-        print_status "FAIL" "Docker is not installed"
+    # Check Docker/Podman
+    if [ -z "$CONTAINER_CMD" ]; then
+        print_status "FAIL" "Neither docker nor podman is installed"
         missing_prereqs=true
     else
-        print_status "PASS" "Docker is available"
+        print_status "PASS" "Container runtime is available ($CONTAINER_CMD)"
     fi
-    
-    # Check Docker Compose
-    if ! command -v docker-compose &> /dev/null && ! docker compose version &> /dev/null; then
-        print_status "FAIL" "Docker Compose is not installed"
+
+    # Check Docker/Podman Compose
+    if [ -z "$COMPOSE_CMD" ]; then
+        print_status "FAIL" "Neither docker-compose, docker compose, nor podman-compose is installed"
         missing_prereqs=true
     else
-        print_status "PASS" "Docker Compose is available"
+        print_status "PASS" "Compose tool is available ($COMPOSE_CMD)"
     fi
     
     # Check Node.js
@@ -290,14 +312,14 @@ run_security_tests() {
     cd "$PROJECT_ROOT"
     
     # Run Trivy scan
-    if docker compose -f docker-compose.security.yml --profile trivy-scan run --rm trivy-scanner 2>&1 | tee -a "$LOG_FILE"; then
+    if $COMPOSE_CMD -f docker-compose.security.yml --profile trivy-scan run --rm trivy-scanner 2>&1 | tee -a "$LOG_FILE"; then
         print_status "PASS" "Trivy scan completed"
     else
         print_status "WARN" "Trivy scan failed"
     fi
     
     # Run OWASP Dependency Check
-    if docker compose -f docker-compose.security.yml --profile dependency-check run --rm dependency-check 2>&1 | tee -a "$LOG_FILE"; then
+    if $COMPOSE_CMD -f docker-compose.security.yml --profile dependency-check run --rm dependency-check 2>&1 | tee -a "$LOG_FILE"; then
         print_status "PASS" "OWASP Dependency Check completed"
     else
         print_status "WARN" "OWASP Dependency Check failed"
@@ -472,9 +494,9 @@ EOF
 cleanup() {
     log "🧹 Cleaning up..."
     
-    # Stop Docker services
+    # Stop container services
     cd "$PROJECT_ROOT"
-    docker compose -f docker-compose.security.yml down 2>/dev/null || true
+    $COMPOSE_CMD -f docker-compose.security.yml down 2>/dev/null || true
     
     log "✅ Cleanup completed"
 }
@@ -495,7 +517,7 @@ main() {
     # Start security services
     log "🚀 Starting security testing services..."
     cd "$PROJECT_ROOT"
-    docker compose -f docker-compose.security.yml up -d sonarqube sonarqube-db
+    $COMPOSE_CMD -f docker-compose.security.yml up -d sonarqube sonarqube-db
     
     # Wait for SonarQube to be ready
     log "⏳ Waiting for SonarQube to be ready..."

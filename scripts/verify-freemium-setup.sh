@@ -9,6 +9,28 @@ echo "🔍 Verifying Catalogizer Freemium Security Setup"
 echo "================================================"
 echo ""
 
+# Container runtime detection - prefer podman over docker
+if command -v podman &>/dev/null; then
+    CONTAINER_CMD="podman"
+    if command -v podman-compose &>/dev/null; then
+        COMPOSE_CMD="podman-compose"
+    else
+        COMPOSE_CMD=""
+    fi
+elif command -v docker &>/dev/null; then
+    CONTAINER_CMD="docker"
+    if command -v docker-compose &>/dev/null; then
+        COMPOSE_CMD="docker-compose"
+    elif docker compose version &>/dev/null 2>&1; then
+        COMPOSE_CMD="docker compose"
+    else
+        COMPOSE_CMD=""
+    fi
+else
+    CONTAINER_CMD=""
+    COMPOSE_CMD=""
+fi
+
 # Function to check SonarQube setup
 check_sonarqube() {
     echo "🔍 Checking SonarQube setup..."
@@ -61,24 +83,24 @@ check_snyk() {
 
 # Function to check Docker setup
 check_docker() {
-    echo "🔍 Checking Docker setup..."
-    if command -v docker &> /dev/null; then
-        echo "✅ Docker is installed"
-        if command -v docker-compose &> /dev/null; then
-            echo "✅ Docker Compose is installed"
-            # Test Docker functionality
-            if docker run --rm hello-world &> /dev/null; then
-                echo "✅ Docker is working"
+    echo "🔍 Checking Docker/Podman setup..."
+    if [ -n "$CONTAINER_CMD" ]; then
+        echo "✅ Container runtime is installed ($CONTAINER_CMD)"
+        if [ -n "$COMPOSE_CMD" ]; then
+            echo "✅ Compose tool is installed ($COMPOSE_CMD)"
+            # Test container runtime functionality
+            if $CONTAINER_CMD run --rm hello-world &> /dev/null; then
+                echo "✅ Container runtime is working"
             else
-                echo "⚠️  Docker installed but not working"
+                echo "⚠️  Container runtime installed but not working"
             fi
         else
-            echo "❌ Docker Compose not installed"
-            echo "   Install Docker Compose for full security testing"
+            echo "❌ No compose tool installed (docker-compose/podman-compose)"
+            echo "   Install a compose tool for full security testing"
         fi
     else
-        echo "❌ Docker not installed"
-        echo "   Docker is optional but recommended for full testing"
+        echo "❌ Neither docker nor podman is installed"
+        echo "   A container runtime is optional but recommended for full testing"
     fi
     echo ""
 }
@@ -106,14 +128,18 @@ check_scripts() {
 
 # Function to check Docker Compose configuration
 check_docker_compose() {
-    echo "🔍 Checking Docker Compose configuration..."
+    echo "🔍 Checking Compose configuration..."
     if [ -f "docker-compose.security.yml" ]; then
         echo "✅ docker-compose.security.yml exists"
         # Basic syntax check
-        if docker-compose -f docker-compose.security.yml config &> /dev/null; then
-            echo "✅ Docker Compose configuration is valid"
+        if [ -n "$COMPOSE_CMD" ]; then
+            if $COMPOSE_CMD -f docker-compose.security.yml config &> /dev/null; then
+                echo "✅ Compose configuration is valid"
+            else
+                echo "⚠️  Compose configuration has issues"
+            fi
         else
-            echo "⚠️  Docker Compose configuration has issues"
+            echo "⚠️  No compose tool available to validate configuration"
         fi
     else
         echo "❌ docker-compose.security.yml not found"
@@ -130,8 +156,8 @@ provide_summary() {
 
     if [ -z "$SONAR_TOKEN" ]; then ((issues++)); fi
     if [ -z "$SNYK_TOKEN" ]; then ((issues++)); fi
-    if ! command -v docker &> /dev/null; then ((issues++)); fi
-    if ! command -v docker-compose &> /dev/null; then ((issues++)); fi
+    if [ -z "$CONTAINER_CMD" ]; then ((issues++)); fi
+    if [ -z "$COMPOSE_CMD" ]; then ((issues++)); fi
 
     if [ $issues -eq 0 ]; then
         echo "🎉 All freemium tools are properly configured!"

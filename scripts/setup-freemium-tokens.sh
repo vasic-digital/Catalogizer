@@ -9,6 +9,28 @@ echo "🔐 Catalogizer Freemium Security Testing Setup"
 echo "=============================================="
 echo ""
 
+# Container runtime detection - prefer podman over docker
+if command -v podman &>/dev/null; then
+    CONTAINER_CMD="podman"
+    if command -v podman-compose &>/dev/null; then
+        COMPOSE_CMD="podman-compose"
+    else
+        COMPOSE_CMD=""
+    fi
+elif command -v docker &>/dev/null; then
+    CONTAINER_CMD="docker"
+    if command -v docker-compose &>/dev/null; then
+        COMPOSE_CMD="docker-compose"
+    elif docker compose version &>/dev/null 2>&1; then
+        COMPOSE_CMD="docker compose"
+    else
+        COMPOSE_CMD=""
+    fi
+else
+    CONTAINER_CMD=""
+    COMPOSE_CMD=""
+fi
+
 # Function to setup SonarQube token
 setup_sonarqube() {
     echo "🔍 SonarQube Community Edition (Free)"
@@ -70,21 +92,21 @@ setup_snyk() {
 
 # Function to test Docker setup
 test_docker() {
-    echo "🐳 Testing Docker Setup"
-    echo "-----------------------"
-    if command -v docker &> /dev/null; then
-        echo "✅ Docker is installed"
-        if command -v docker-compose &> /dev/null; then
-            echo "✅ Docker Compose is installed"
-            echo "🚀 Docker setup is ready for security testing"
+    echo "🐳 Testing Container Runtime Setup"
+    echo "-----------------------------------"
+    if [ -n "$CONTAINER_CMD" ]; then
+        echo "✅ Container runtime is installed ($CONTAINER_CMD)"
+        if [ -n "$COMPOSE_CMD" ]; then
+            echo "✅ Compose tool is installed ($COMPOSE_CMD)"
+            echo "🚀 Container setup is ready for security testing"
         else
-            echo "❌ Docker Compose is not installed"
-            echo "📦 Install Docker Compose to run full security tests"
+            echo "❌ No compose tool is installed (docker-compose/podman-compose)"
+            echo "📦 Install a compose tool to run full security tests"
         fi
     else
-        echo "❌ Docker is not installed"
-        echo "📦 Install Docker to run full security tests"
-        echo "💡 You can still run basic tests without Docker"
+        echo "❌ Neither docker nor podman is installed"
+        echo "📦 Install docker or podman to run full security tests"
+        echo "💡 You can still run basic tests without a container runtime"
     fi
     echo ""
 }

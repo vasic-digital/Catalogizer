@@ -25,6 +25,28 @@ log_warning() { echo -e "${YELLOW}[WARNING]${NC} $1"; }
 log_error() { echo -e "${RED}[ERROR]${NC} $1"; }
 log_header() { echo -e "${PURPLE}[SERVER DEPLOY]${NC} $1"; }
 
+# Container runtime detection - prefer podman over docker
+if command -v podman &>/dev/null; then
+    CONTAINER_CMD="podman"
+    if command -v podman-compose &>/dev/null; then
+        COMPOSE_CMD="podman-compose"
+    else
+        COMPOSE_CMD=""
+    fi
+elif command -v docker &>/dev/null; then
+    CONTAINER_CMD="docker"
+    if command -v docker-compose &>/dev/null; then
+        COMPOSE_CMD="docker-compose"
+    elif docker compose version &>/dev/null 2>&1; then
+        COMPOSE_CMD="docker compose"
+    else
+        COMPOSE_CMD=""
+    fi
+else
+    CONTAINER_CMD=""
+    COMPOSE_CMD=""
+fi
+
 # Default configuration
 DEPLOY_TARGET="production"  # production, staging, development
 DEPLOYMENT_STRATEGY="rolling"  # rolling, blue-green, recreate
@@ -296,22 +318,25 @@ EOF
 validate_environment() {
     log_info "Validating deployment environment..."
 
-    # Check Docker and Docker Compose
-    if ! command -v docker &> /dev/null; then
-        log_error "Docker is required but not installed"
+    # Check container runtime (docker or podman)
+    if [[ -z "$CONTAINER_CMD" ]]; then
+        log_error "A container runtime is required but neither docker nor podman is installed"
         exit 1
     fi
 
-    if ! command -v docker-compose &> /dev/null && ! docker compose version &> /dev/null; then
-        log_error "Docker Compose is required but not installed"
+    if [[ -z "$COMPOSE_CMD" ]]; then
+        log_error "A compose tool is required but neither docker-compose, docker compose, nor podman-compose is installed"
         exit 1
     fi
 
-    # Check if services are accessible
-    if ! docker info &> /dev/null; then
-        log_error "Cannot connect to Docker daemon"
+    # Check if container runtime is accessible
+    if ! $CONTAINER_CMD info &> /dev/null; then
+        log_error "Cannot connect to $CONTAINER_CMD daemon"
         exit 1
     fi
+
+    log_info "Using container runtime: $CONTAINER_CMD"
+    log_info "Using compose command: $COMPOSE_CMD"
 
     # Validate configuration
     local errors=0
@@ -351,7 +376,7 @@ backup_database() {
     local backup_path="/tmp/$backup_filename"
 
     # Create backup
-    docker-compose exec -T database pg_dump \
+    $COMPOSE_CMD exec -T database pg_dump \
         -U "$DATABASE_USER" \
         -d "$DATABASE_NAME" \
         --clean --if-exists > "$backup_path"
@@ -415,12 +440,12 @@ pull_images() {
 
     # Login to registry if credentials provided
     if [[ -n "$DOCKER_REGISTRY_USERNAME" ]]; then
-        echo "$DOCKER_REGISTRY_PASSWORD" | docker login "$DOCKER_REGISTRY" \
+        echo "$DOCKER_REGISTRY_PASSWORD" | $CONTAINER_CMD login "$DOCKER_REGISTRY" \
             --username "$DOCKER_REGISTRY_USERNAME" --password-stdin
     fi
 
     # Pull images
-    docker-compose pull
+    $COMPOSE_CMD pull
 
     log_success "Images pulled successfully"
 }
@@ -429,7 +454,7 @@ pull_images() {
 build_images() {
     log_info "Building images locally..."
 
-    docker-compose build --pull
+    $COMPOSE_CMD build --pull
 
     log_success "Images built successfully"
 }
@@ -471,7 +496,7 @@ deploy_rolling() {
         log_info "Updating service: $service"
 
         # Update service one by one
-        docker-compose up -d --no-deps "$service"
+        $COMPOSE_CMD up -d --no-deps "$service"
 
         # Wait for service to be healthy
         wait_for_service_health "$service"
@@ -491,7 +516,7 @@ deploy_blue_green() {
 
     # Create green environment
     log_info "Creating green environment..."
-    docker-compose -f docker-compose.yml -f docker-compose.green.yml up -d
+    $COMPOSE_CMD -f docker-compose.yml -f docker-compose.green.yml up -d
 
     # Wait for green environment to be healthy
     wait_for_environment_health "green"
@@ -505,11 +530,11 @@ deploy_blue_green() {
 
     # Remove blue environment
     log_info "Removing blue environment..."
-    docker-compose -f docker-compose.yml down
+    $COMPOSE_CMD -f docker-compose.yml down
 
     # Rename green to blue
-    docker-compose -f docker-compose.green.yml down
-    docker-compose up -d
+    $COMPOSE_CMD -f docker-compose.green.yml down
+    $COMPOSE_CMD up -d
 
     log_success "Blue-green deployment completed"
 }
@@ -524,10 +549,10 @@ deploy_recreate() {
     fi
 
     # Stop all services
-    docker-compose down
+    $COMPOSE_CMD down
 
     # Start all services with new images
-    docker-compose up -d
+    $COMPOSE_CMD up -d
 
     # Wait for all services to be healthy
     wait_for_environment_health "main"
@@ -544,7 +569,7 @@ wait_for_service_health() {
     log_info "Waiting for $service to be healthy..."
 
     while [[ $attempt -lt $max_attempts ]]; do
-        if docker-compose ps "$service" | grep -q "healthy\|Up"; then
+        if $COMPOSE_CMD ps "$service" | grep -q "healthy\|Up"; then
             log_success "$service is healthy"
             return 0
         fi
@@ -617,7 +642,7 @@ run_migrations() {
     wait_for_database
 
     # Run migrations
-    docker-compose exec catalogizer-server /app/scripts/migrate.sh
+    $COMPOSE_CMD exec catalogizer-server /app/scripts/migrate.sh
 
     log_success "Database migrations completed"
 }
@@ -630,7 +655,7 @@ wait_for_database() {
     log_info "Waiting for database to be ready..."
 
     while [[ $attempt -lt $max_attempts ]]; do
-        if docker-compose exec database pg_isready -U "$DATABASE_USER" > /dev/null 2>&1; then
+        if $COMPOSE_CMD exec database pg_isready -U "$DATABASE_USER" > /dev/null 2>&1; then
             log_success "Database is ready"
             return 0
         fi
@@ -666,7 +691,7 @@ rollback_deployment() {
     fi
 
     # Get previous version
-    local previous_version=$(docker images --format "table {{.Repository}}\t{{.Tag}}" | \
+    local previous_version=$($CONTAINER_CMD images --format "table {{.Repository}}\t{{.Tag}}" | \
         grep "catalogizer/server" | grep -v "latest" | head -1 | awk '{print $2}')
 
     if [[ -n "$previous_version" ]]; then
@@ -677,7 +702,7 @@ rollback_deployment() {
         export WEB_IMAGE_TAG="$previous_version"
 
         # Redeploy with previous version
-        docker-compose up -d
+        $COMPOSE_CMD up -d
 
         # Wait for health checks
         wait_for_environment_health "rollback"
@@ -826,15 +851,15 @@ cleanup_deployment() {
     fi
 
     # Remove unused images
-    docker image prune -f
+    $CONTAINER_CMD image prune -f
 
     # Remove old versions (keep last N)
-    local images_to_remove=$(docker images --format "table {{.Repository}}\t{{.Tag}}" | \
+    local images_to_remove=$($CONTAINER_CMD images --format "table {{.Repository}}\t{{.Tag}}" | \
         grep "catalogizer/" | grep -v "latest" | tail -n +$((KEEP_PREVIOUS_VERSIONS + 1)) | \
         awk '{print $1":"$2}')
 
     if [[ -n "$images_to_remove" ]]; then
-        echo "$images_to_remove" | xargs docker rmi
+        echo "$images_to_remove" | xargs $CONTAINER_CMD rmi
     fi
 
     log_success "Cleanup completed"

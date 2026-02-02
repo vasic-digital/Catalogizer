@@ -33,6 +33,36 @@ INSTALL_MODE="full"  # full, server-only, clients-only
 DOCKER_COMPOSE_FILE="$PROJECT_ROOT/docker-compose.yml"
 OVERRIDE_COMPOSE_FILE="$PROJECT_ROOT/docker-compose.override.yml"
 
+# Container runtime variables (set by detect_container_runtime)
+CONTAINER_CMD=""
+COMPOSE_CMD=""
+
+# Container runtime detection - prefer podman over docker
+detect_container_runtime() {
+    if command -v podman &>/dev/null; then
+        CONTAINER_CMD="podman"
+        if command -v podman-compose &>/dev/null; then
+            COMPOSE_CMD="podman-compose"
+        else
+            log_warning "podman found but podman-compose is not installed"
+            COMPOSE_CMD=""
+        fi
+    elif command -v docker &>/dev/null; then
+        CONTAINER_CMD="docker"
+        if command -v docker-compose &>/dev/null; then
+            COMPOSE_CMD="docker-compose"
+        elif docker compose version &>/dev/null 2>&1; then
+            COMPOSE_CMD="docker compose"
+        else
+            log_warning "docker found but docker-compose is not installed"
+            COMPOSE_CMD=""
+        fi
+    else
+        CONTAINER_CMD=""
+        COMPOSE_CMD=""
+    fi
+}
+
 # Show banner
 show_banner() {
     echo -e "${CYAN}"
@@ -61,7 +91,7 @@ OPTIONS:
     -m, --mode MODE         Installation mode: full, server-only, clients-only (default: full)
     -v, --version           Show version information
     --dry-run               Show what would be installed without actually installing
-    --skip-docker-check     Skip Docker installation check
+    --skip-docker-check     Skip Docker/Podman installation check
     --skip-deps             Skip dependency installation
     --force                 Force installation even if components exist
 
@@ -324,24 +354,28 @@ check_requirements() {
         exit 1
     fi
 
-    # Check Docker (for server installation)
+    # Check container runtime (for server installation)
     if [[ "$INSTALL_MODE" == "full" ]] || [[ "$INSTALL_MODE" == "server-only" ]] || [[ "$INSTALL_MODE" == "development" ]]; then
         if [[ "$SKIP_DOCKER_CHECK" != "true" ]]; then
-            if ! command -v docker &> /dev/null; then
-                log_error "Docker is required but not installed"
-                log_info "Please install Docker and Docker Compose"
-                log_info "Visit: https://docs.docker.com/get-docker/"
+            detect_container_runtime
+
+            if [[ -z "$CONTAINER_CMD" ]]; then
+                log_error "A container runtime is required but not installed"
+                log_info "Please install Docker or Podman"
+                log_info "  Docker: https://docs.docker.com/get-docker/"
+                log_info "  Podman: https://podman.io/getting-started/installation"
                 exit 1
             fi
 
-            if ! command -v docker-compose &> /dev/null && ! docker compose version &> /dev/null; then
-                log_error "Docker Compose is required but not installed"
-                log_info "Please install Docker Compose"
-                log_info "Visit: https://docs.docker.com/compose/install/"
+            if [[ -z "$COMPOSE_CMD" ]]; then
+                log_error "A compose tool is required but not installed"
+                log_info "Please install docker-compose or podman-compose"
+                log_info "  Docker Compose: https://docs.docker.com/compose/install/"
+                log_info "  Podman Compose: https://github.com/containers/podman-compose"
                 exit 1
             fi
 
-            log_success "Docker and Docker Compose are available"
+            log_success "Container runtime available: $CONTAINER_CMD (compose: $COMPOSE_CMD)"
         fi
     fi
 
@@ -508,15 +542,15 @@ start_services() {
     cd "$PROJECT_ROOT"
 
     if [[ "$DRY_RUN" == "true" ]]; then
-        log_info "DRY RUN: Would execute: docker-compose up -d"
+        log_info "DRY RUN: Would execute: $COMPOSE_CMD up -d"
         return
     fi
 
     # Pull latest images
-    docker-compose pull
+    $COMPOSE_CMD pull
 
     # Start services
-    docker-compose up -d
+    $COMPOSE_CMD up -d
 
     log_success "Services started successfully"
 }
@@ -540,7 +574,7 @@ wait_for_services() {
     done
 
     log_error "Server failed to start within expected time"
-    log_info "Check logs with: docker-compose logs"
+    log_info "Check logs with: $COMPOSE_CMD logs"
     exit 1
 }
 
@@ -550,13 +584,13 @@ run_initial_setup() {
 
     # Create admin user
     log_info "Creating admin user..."
-    docker-compose exec catalogizer-server /app/scripts/create-admin-user.sh \
+    $COMPOSE_CMD exec catalogizer-server /app/scripts/create-admin-user.sh \
         "$ADMIN_USERNAME" "$ADMIN_PASSWORD" "$ADMIN_EMAIL"
 
     # Import initial data if available
     if [[ -f "$PROJECT_ROOT/data/initial-data.sql" ]]; then
         log_info "Importing initial data..."
-        docker-compose exec database psql -U "$DATABASE_USER" -d "$DATABASE_NAME" \
+        $COMPOSE_CMD exec database psql -U "$DATABASE_USER" -d "$DATABASE_NAME" \
             -f /docker-entrypoint-initdb.d/initial-data.sql
     fi
 
