@@ -5,10 +5,6 @@ name: DISABLED - All Actions Disabled
 # Re-enable by removing this file and restoring individual workflow files
 
 on:
-  push:
-    branches: [ main ]
-  pull_request:
-    branches: [ main ]
   workflow_dispatch:
 
 jobs:
