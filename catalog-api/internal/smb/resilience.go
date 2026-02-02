@@ -143,7 +143,7 @@ func NewResilientSMBManager(logger *zap.Logger, cacheSize int) *ResilientSMBMana
 		sources:      make(map[string]*SMBSource),
 		logger:       logger,
 		offlineCache: NewOfflineCache(cacheSize, logger),
-		eventChannel: make(chan SMBEvent, 100),
+		eventChannel: make(chan SMBEvent, 1000),
 		stopChannel:  make(chan struct{}),
 		startTime:    time.Now(),
 	}
@@ -203,7 +203,11 @@ func (m *ResilientSMBManager) AddSource(source *SMBSource) error {
 	m.sources[source.ID] = source
 
 	// Try initial connection
-	go m.connectSource(source)
+	m.wg.Add(1)
+	go func() {
+		defer m.wg.Done()
+		m.connectSource(source)
+	}()
 
 	m.logger.Info("SMB source added",
 		zap.String("id", source.ID),
@@ -315,7 +319,11 @@ func (m *ResilientSMBManager) connectSource(source *SMBSource) error {
 
 		// Schedule retry if not exceeded max attempts
 		if source.RetryAttempts < source.MaxRetryAttempts {
-			go m.scheduleRetry(source)
+			m.wg.Add(1)
+			go func() {
+				defer m.wg.Done()
+				m.scheduleRetry(source)
+			}()
 		} else {
 			source.State = StateOffline
 			m.sendEvent(SMBEvent{
@@ -437,7 +445,11 @@ func (m *ResilientSMBManager) checkSourceHealth(source *SMBSource) {
 		source.mutex.Unlock()
 
 		// Attempt reconnection
-		go m.connectSource(source)
+		m.wg.Add(1)
+		go func() {
+			defer m.wg.Done()
+			m.connectSource(source)
+		}()
 	}
 }
 
@@ -610,7 +622,11 @@ func (m *ResilientSMBManager) ForceReconnect(sourceID string) error {
 	source.mutex.Unlock()
 
 	// Trigger reconnection
-	go m.connectSource(source)
+	m.wg.Add(1)
+	go func() {
+		defer m.wg.Done()
+		m.connectSource(source)
+	}()
 
 	m.logger.Info("Force reconnect initiated", zap.String("source_id", sourceID))
 	return nil

@@ -13,7 +13,9 @@ import (
 	root_repository "catalogizer/repository"
 	root_services "catalogizer/services"
 	"context"
+	"crypto/rand"
 	"database/sql"
+	"encoding/hex"
 	"flag"
 	"fmt"
 	"log"
@@ -167,10 +169,14 @@ func main() {
 
 	// Initialize authentication and conversion services
 	jwtSecret := cfg.Auth.JWTSecret
-	if jwtSecret == "" {
-		// Generate a default JWT secret if not configured
-		jwtSecret = "default-secret-change-in-production"
-		log.Println("WARNING: Using default JWT secret. Please set JWTSecret in config for production.")
+	if jwtSecret == "" || jwtSecret == "change-this-secret-in-production" {
+		// Generate a cryptographically secure random secret at startup
+		secretBytes := make([]byte, 32)
+		if _, err := rand.Read(secretBytes); err != nil {
+			log.Fatal("FATAL: Failed to generate JWT secret: ", err)
+		}
+		jwtSecret = hex.EncodeToString(secretBytes)
+		log.Println("WARNING: No JWT secret configured. Generated ephemeral secret. Set Auth.JWTSecret in config for persistent sessions across restarts.")
 	}
 	authService := root_services.NewAuthService(userRepo, jwtSecret)
 	conversionService := root_services.NewConversionService(conversionRepo, userRepo, authService)

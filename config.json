@@ -19,11 +19,9 @@
     "busy_timeout": 5000
   },
   "auth": {
-    "jwt_secret": "change-this-secret-in-production",
+    "jwt_secret": "",
     "jwt_expiration_hours": 24,
-    "enable_auth": false,
-    "admin_username": "admin",
-    "admin_password": "admin123"
+    "enable_auth": true
   },
   "catalog": {
     "default_page_size": 100,

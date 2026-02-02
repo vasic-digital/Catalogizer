@@ -3,8 +3,10 @@ use anyhow::Result;
 use network_interface::{NetworkInterface, NetworkInterfaceConfig};
 use std::net::{IpAddr, Ipv4Addr};
 use std::process::Command;
+use std::sync::Arc;
 use std::time::Duration;
 use tokio::net::TcpStream;
+use tokio::sync::Semaphore;
 use tokio::time::timeout;
 
 /// Scan the local network for hosts
@@ -41,14 +43,20 @@ fn get_network_range(interface: &NetworkInterface) -> Option<ipnetwork::Ipv4Netw
     None
 }
 
+/// Maximum number of concurrent network scan tasks
+const MAX_CONCURRENT_SCANS: usize = 32;
+
 /// Scan a network range for active hosts
 async fn scan_network_range(network: ipnetwork::Ipv4Network) -> Result<Vec<NetworkHost>> {
     let mut hosts = Vec::new();
     let mut tasks = Vec::new();
+    let semaphore = Arc::new(Semaphore::new(MAX_CONCURRENT_SCANS));
 
-    // Create async tasks for each IP in the network
+    // Create async tasks for each IP in the network, limited by semaphore
     for ip in network.iter() {
+        let permit = semaphore.clone();
         let task = tokio::spawn(async move {
+            let _permit = permit.acquire().await.ok()?;
             if is_host_alive(ip).await {
                 Some(scan_host(ip).await)
             } else {

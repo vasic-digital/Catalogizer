@@ -35,11 +35,12 @@ fun MediaPlayerScreen(
     var currentPosition by remember { mutableStateOf(0L) }
     var duration by remember { mutableStateOf(0L) }
 
-    // Initialize ExoPlayer
-    LaunchedEffect(mediaUrl) {
+    // Initialize ExoPlayer with proper lifecycle management
+    DisposableEffect(mediaUrl) {
+        var player: ExoPlayer? = null
         if (mediaUrl.isNotEmpty()) {
             try {
-                val player = ExoPlayer.Builder(context).build().apply {
+                player = ExoPlayer.Builder(context).build().apply {
                     setMediaItem(MediaItem.fromUri(mediaUrl))
                     prepare()
                     playWhenReady = true
@@ -47,6 +48,12 @@ fun MediaPlayerScreen(
                 exoPlayer = player
             } catch (e: Exception) {
                 // Handle error
+            }
+        }
+        onDispose {
+            player?.release()
+            if (exoPlayer == player) {
+                exoPlayer = null
             }
         }
     }
@@ -159,12 +166,6 @@ fun MediaPlayerScreen(
         }
     }
 
-    // Cleanup
-    DisposableEffect(Unit) {
-        onDispose {
-            exoPlayer?.release()
-        }
-    }
 }
 
 

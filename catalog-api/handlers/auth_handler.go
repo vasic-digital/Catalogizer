@@ -1,10 +1,7 @@
 package handlers
 
 import (
-	"bytes"
 	"encoding/json"
-	"fmt"
-	"io"
 	"net/http"
 	"strconv"
 	"strings"
@@ -21,16 +18,8 @@ import (
 // LoginGin handles login request with gin
 func (h *AuthHandler) LoginGin(c *gin.Context) {
 	var req models.LoginRequest
-	
-	// Debug: Print raw request body
-	bodyBytes, _ := c.GetRawData()
-	fmt.Printf("DEBUG: Raw request body: %s\n", string(bodyBytes))
-	
-	// Reset the request body for further processing
-	c.Request.Body = io.NopCloser(bytes.NewBuffer(bodyBytes))
-	
+
 	if err := c.ShouldBindJSON(&req); err != nil {
-		fmt.Printf("DEBUG: Bind error: %v\n", err)
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid request format"})
 		return
 	}
@@ -112,7 +101,6 @@ func (h *AuthHandler) RegisterGin(c *gin.Context, userRepo *repository.UserRepos
 	}
 
 	if err := c.ShouldBindJSON(&req); err != nil {
-		fmt.Printf("DEBUG: Register bind error: %v\n", err)
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}

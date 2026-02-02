@@ -23,20 +23,23 @@ type NFSConfig struct {
 
 // NFSClient implements FileSystemClient for NFS protocol
 type NFSClient struct {
-	config     *NFSConfig
+	config     NFSConfig
 	mounted    bool
 	connected  bool
 	mountPoint string
 }
 
 // NewNFSClient creates a new NFS client
-func NewNFSClient(config *NFSConfig) *NFSClient {
+func NewNFSClient(config NFSConfig) (*NFSClient, error) {
+	if config.MountPoint == "" {
+		return nil, fmt.Errorf("mount point is required")
+	}
 	return &NFSClient{
 		config:     config,
 		mounted:    false,
 		connected:  false,
 		mountPoint: config.MountPoint,
-	}
+	}, nil
 }
 
 // Connect establishes the NFS connection by mounting the filesystem
@@ -309,5 +312,5 @@ func (c *NFSClient) GetProtocol() string {
 
 // GetConfig returns the NFS configuration
 func (c *NFSClient) GetConfig() interface{} {
-	return c.config
+	return &c.config
 }

@@ -86,7 +86,7 @@ func TestSubtitleService_SearchSubtitles(t *testing.T) {
 	assert.NotNil(t, results)
 	// Should return results from OpenSubtitles (mock data)
 	assert.Greater(t, len(results), 0)
-	assert.Equal(t, "os_1", results[0].ID)
+	assert.Equal(t, "opensubtitles_1", results[0].ID)
 	assert.Equal(t, ProviderOpenSubtitles, results[0].Provider)
 }
 

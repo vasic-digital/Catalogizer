@@ -687,12 +687,16 @@ func (s *CacheService) hashString(text string) string {
 }
 
 func (s *CacheService) recordCacheActivity(ctx context.Context, activityType, key, provider string, hit bool) {
+	// Use a detached context with timeout for the background write,
+	// so it doesn't outlive the application but isn't tied to the request lifecycle
 	go func() {
+		writeCtx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+		defer cancel()
 		query := `
 			INSERT INTO cache_activity (type, cache_key, provider, hit, timestamp)
 			VALUES ($1, $2, $3, $4, NOW())
 		`
-		_, err := s.db.ExecContext(context.Background(), query, activityType, key, provider, hit)
+		_, err := s.db.ExecContext(writeCtx, query, activityType, key, provider, hit)
 		if err != nil {
 			s.logger.Debug("Failed to record cache activity", zap.Error(err))
 		}

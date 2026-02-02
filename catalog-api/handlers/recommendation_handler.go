@@ -177,9 +177,9 @@ func (h *RecommendationHandler) getMediaMetadata(ctx context.Context, mediaID in
 		SELECT 
 			id, title, media_type, year, description, rating, 
 			duration, language, country, director, producer, 
-			cast, resolution, file_size, created_at, updated_at
-		FROM media_items 
-		WHERE id = $1
+			"cast", resolution, file_size, created_at, updated_at
+		FROM media_items
+		WHERE id = ?
 	`
 
 	var metadata models.MediaMetadata

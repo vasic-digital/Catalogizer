@@ -1,7 +1,9 @@
 package com.catalogizer.androidtv.data.remote
 
 import com.catalogizer.androidtv.data.repository.AuthRepository
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.withTimeout
 import okhttp3.Interceptor
 import okhttp3.Response
 
@@ -15,15 +17,17 @@ class AuthInterceptor(private val authRepository: AuthRepository) : Interceptor 
             return chain.proceed(originalRequest)
         }
 
-        // Check if we need to refresh token
+        // Refresh token if needed, with timeout to prevent blocking indefinitely
         if (authRepository.shouldRefreshToken()) {
-            runBlocking {
-                authRepository.refreshToken()
+            runBlocking(Dispatchers.IO) {
+                withTimeout(10_000L) {
+                    authRepository.refreshToken()
+                }
             }
         }
 
-        // Add authorization header if we have a token
-        val authState = runBlocking { authRepository.authState.value }
+        // Add authorization header if we have a token (synchronous StateFlow access)
+        val authState = authRepository.authState.value
         val newRequest = if (authState.isAuthenticated && authState.token != null) {
             originalRequest.newBuilder()
                 .addHeader("Authorization", "Bearer ${authState.token}")

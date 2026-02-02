@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"net/http"
 	"net/http/httptest"
+	"os"
 	"testing"
 
 	"catalogizer/config"
@@ -26,31 +27,65 @@ type RecommendationTestSuite struct {
 	recommendationHandler *handlers.RecommendationHandler
 	simpleRecHandler     *root_handlers.SimpleRecommendationHandler
 	db                   *database.DB
+	tmpDBPath            string
 }
 
 func (suite *RecommendationTestSuite) TearDownSuite() {
 	if suite.db != nil {
 		suite.db.Close()
 	}
+	if suite.tmpDBPath != "" {
+		os.Remove(suite.tmpDBPath)
+	}
 }
 
 func (suite *RecommendationTestSuite) SetupSuite() {
 	gin.SetMode(gin.TestMode)
 	
-	// Create a test database
+	// Create a temporary test database file
+	tmpFile, err := os.CreateTemp("", "catalogizer-rec-test-*.db")
+	suite.Require().NoError(err)
+	tmpFile.Close()
+	suite.tmpDBPath = tmpFile.Name()
+
 	dbConfig := &config.DatabaseConfig{
-		Path: ":memory:",
+		Path: tmpFile.Name(),
 	}
-	var err error
 	db, err := database.NewConnection(dbConfig)
 	suite.Require().NoError(err)
 	// Don't close the database here - it will be closed in TearDownSuite
 	suite.db = db
 	
-	// Skip migrations for test - use mock data instead
-	// err = db.RunMigrations(context.Background())
-	// suite.Require().NoError(err)
-	
+	// Create the media_items table for tests
+	_, err = db.DB.Exec(`
+		CREATE TABLE IF NOT EXISTS media_items (
+			id INTEGER PRIMARY KEY,
+			title TEXT,
+			media_type TEXT,
+			year INTEGER,
+			description TEXT,
+			rating REAL,
+			duration INTEGER,
+			language TEXT,
+			country TEXT,
+			director TEXT,
+			producer TEXT,
+			"cast" TEXT,
+			resolution TEXT,
+			file_size INTEGER,
+			created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+			updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+		)
+	`)
+	suite.Require().NoError(err)
+
+	// Insert test data
+	_, err = db.DB.Exec(`
+		INSERT INTO media_items (id, title, media_type, year, description, rating, duration, language, country, director, producer, "cast", resolution, file_size)
+		VALUES (123, 'Test Movie', 'movie', 2023, 'A test movie', 8.5, 120, 'en', 'US', 'Test Director', 'Test Producer', 'Actor1, Actor2', '1080p', 1000000)
+	`)
+	suite.Require().NoError(err)
+
 	// Create test logger
 	logger, _ := zap.NewDevelopment()
 	
