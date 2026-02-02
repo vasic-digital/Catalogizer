@@ -5,6 +5,8 @@ import androidx.room.Room
 import androidx.room.RoomDatabase
 import androidx.room.TypeConverter
 import androidx.room.TypeConverters
+import androidx.room.migration.Migration
+import androidx.sqlite.db.SupportSQLiteDatabase
 import android.content.Context
 import com.catalogizer.android.data.models.ExternalMetadata
 import com.catalogizer.android.data.models.MediaItem
@@ -33,6 +35,12 @@ abstract class CatalogizerDatabase : RoomDatabase() {
         @Volatile
         private var INSTANCE: CatalogizerDatabase? = null
 
+        // Define migrations here as the schema evolves
+        val ALL_MIGRATIONS: Array<Migration> = arrayOf(
+            // Example for future use:
+            // MIGRATION_1_2
+        )
+
         fun getDatabase(context: Context): CatalogizerDatabase {
             return INSTANCE ?: synchronized(this) {
                 val instance = Room.databaseBuilder(
@@ -40,6 +48,8 @@ abstract class CatalogizerDatabase : RoomDatabase() {
                     CatalogizerDatabase::class.java,
                     "catalogizer_database"
                 )
+                    .addMigrations(*ALL_MIGRATIONS)
+                    .fallbackToDestructiveMigration()
                     .build()
                 INSTANCE = instance
                 instance

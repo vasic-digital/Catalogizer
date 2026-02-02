@@ -96,7 +96,7 @@ const formatDuration = (minutes?: number) => {
   return `${mins}m`
 }
 
-export const MediaCard: React.FC<MediaCardProps> = ({
+export const MediaCard: React.FC<MediaCardProps> = React.memo(({
   media,
   onView,
   onPlay,
@@ -271,4 +271,4 @@ export const MediaCard: React.FC<MediaCardProps> = ({
       </Card>
     </motion.div>
   )
-}
+})

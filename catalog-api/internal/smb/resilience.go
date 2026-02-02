@@ -507,12 +507,31 @@ func (m *ResilientSMBManager) handleEvent(event SMBEvent) {
 	}
 }
 
-// sendEvent sends an event to the event channel
+// sendEvent sends an event to the event channel with backpressure.
+// If the channel is full, the oldest event is drained to make room for the new one.
 func (m *ResilientSMBManager) sendEvent(event SMBEvent) {
 	select {
 	case m.eventChannel <- event:
+		return
 	default:
-		m.logger.Warn("Event channel full, dropping event",
+	}
+
+	// Channel full: drain the oldest event to make room
+	select {
+	case dropped := <-m.eventChannel:
+		m.logger.Warn("Event channel full, dropped oldest event to make room",
+			zap.String("dropped_type", dropped.Type.String()),
+			zap.String("dropped_source", dropped.SourceID),
+			zap.String("new_type", event.Type.String()),
+			zap.String("new_source", event.SourceID))
+	default:
+	}
+
+	// Try sending again (may still fail if another goroutine filled it, which is acceptable)
+	select {
+	case m.eventChannel <- event:
+	default:
+		m.logger.Warn("Event channel still full after drain attempt, dropping new event",
 			zap.String("type", event.Type.String()),
 			zap.String("source_id", event.SourceID))
 	}

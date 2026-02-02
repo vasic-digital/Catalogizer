@@ -106,7 +106,6 @@ func main() {
 	if err != nil {
 		log.Fatal("Failed to connect to database:", err)
 	}
-	defer db.Close()
 
 	// Initialize database connection wrapper
 	databaseDB, err := database.NewConnection(&root_config.DatabaseConfig{
@@ -482,14 +481,31 @@ func main() {
 
 	// The context is used to inform the server it has 30 seconds to finish
 	// the request it is currently handling
-	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
-	defer cancel()
+	shutdownCtx, shutdownCancel := context.WithTimeout(context.Background(), 30*time.Second)
+	defer shutdownCancel()
 
-	if err := srv.Shutdown(ctx); err != nil {
-		logger.Fatal("Server forced to shutdown", zap.Error(err))
+	// Shutdown HTTP server (stops accepting new connections, waits for in-flight requests)
+	if err := srv.Shutdown(shutdownCtx); err != nil {
+		logger.Error("HTTP server shutdown error", zap.Error(err))
 	}
 
-	logger.Info("Server exited")
+	// Close Redis connection if available
+	if redisClient != nil {
+		if err := redisClient.Close(); err != nil {
+			logger.Error("Redis connection close error", zap.Error(err))
+		} else {
+			logger.Info("Redis connection closed")
+		}
+	}
+
+	// Close database connection
+	if err := db.Close(); err != nil {
+		logger.Error("Database close error", zap.Error(err))
+	} else {
+		logger.Info("Database connection closed")
+	}
+
+	logger.Info("Server exited cleanly")
 }
 
 // NopCacheService is a no-operation cache service for when Redis is not available

@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from 'react'
+import { useState, useRef, useEffect, useCallback } from 'react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card'
 import { Button } from '@/components/ui/Button'
 import { Input } from '@/components/ui/Input'
@@ -54,38 +54,38 @@ export const MediaPlayer: React.FC<MediaPlayerProps> = ({
   }
 
   // Handle play/pause
-  const togglePlay = () => {
+  const togglePlay = useCallback(() => {
     if (!videoRef.current) return
-    
+
     if (isPlaying) {
       videoRef.current.pause()
     } else {
       videoRef.current.play()
     }
     setIsPlaying(!isPlaying)
-  }
+  }, [isPlaying])
 
   // Handle volume change
-  const handleVolumeChange = (newVolume: number) => {
+  const handleVolumeChange = useCallback((newVolume: number) => {
     if (!videoRef.current) return
-    
+
     videoRef.current.volume = newVolume
     setVolume(newVolume)
     setIsMuted(newVolume === 0)
-  }
+  }, [])
 
   // Handle mute toggle
-  const toggleMute = () => {
+  const toggleMute = useCallback(() => {
     if (!videoRef.current) return
-    
+
     videoRef.current.muted = !isMuted
     setIsMuted(!isMuted)
-  }
+  }, [isMuted])
 
   // Handle fullscreen toggle
-  const toggleFullscreen = () => {
+  const toggleFullscreen = useCallback(() => {
     if (!playerRef.current) return
-    
+
     if (!isFullscreen) {
       if (playerRef.current.requestFullscreen) {
         playerRef.current.requestFullscreen()
@@ -96,36 +96,36 @@ export const MediaPlayer: React.FC<MediaPlayerProps> = ({
       }
     }
     setIsFullscreen(!isFullscreen)
-  }
+  }, [isFullscreen])
 
   // Handle seek
-  const handleSeek = (event: React.ChangeEvent<HTMLInputElement>) => {
+  const handleSeek = useCallback((event: React.ChangeEvent<HTMLInputElement>) => {
     if (!videoRef.current) return
-    
+
     const newTime = parseFloat(event.target.value)
     videoRef.current.currentTime = newTime
     setCurrentTime(newTime)
-  }
+  }, [])
 
   // Skip forward/backward
-  const skip = (seconds: number) => {
+  const skip = useCallback((seconds: number) => {
     if (!videoRef.current) return
-    
+
     videoRef.current.currentTime += seconds
-  }
+  }, [])
 
   // Show/hide controls
-  const handleMouseMove = () => {
+  const handleMouseMove = useCallback(() => {
     setShowControls(true)
-    
+
     if (controlsTimeoutRef.current) {
       clearTimeout(controlsTimeoutRef.current)
     }
-    
+
     controlsTimeoutRef.current = setTimeout(() => {
       setShowControls(false)
     }, 3000)
-  }
+  }, [])
 
   // Video event handlers
   useEffect(() => {

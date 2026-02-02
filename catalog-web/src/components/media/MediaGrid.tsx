@@ -1,4 +1,4 @@
-import React from 'react'
+import React, { useMemo } from 'react'
 import { MediaCard } from './MediaCard'
 import type { MediaItem } from '@/types/media'
 import { motion } from 'framer-motion'
@@ -75,9 +75,9 @@ export const MediaGrid: React.FC<MediaGridProps> = ({
     )
   }
 
-  const gridCols = viewMode === 'grid' 
+  const gridCols = useMemo(() => viewMode === 'grid'
     ? 'grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6'
-    : 'grid-cols-1'
+    : 'grid-cols-1', [viewMode])
 
   return (
     <div className={`grid ${gridCols} gap-6 ${className}`}>
