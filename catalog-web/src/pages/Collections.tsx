@@ -33,7 +33,9 @@ import {
   Shield,
   RefreshCw,
   Activity,
-  Loader2
+  Loader2,
+  Brain,
+  Sparkles
 } from 'lucide-react';
 import { Button } from '../components/ui/Button';
 import { Input } from '../components/ui/Input';
@@ -59,7 +61,7 @@ import {
   CollectionAnalytics as LazyCollectionAnalytics
 } from '../components/performance/LazyComponents';
 import { VirtualList, VirtualizedTable } from '../components/performance/VirtualScroller';
-import { useMemoized, useDebounceSearch, useOptimizedData, usePagination } from '../components/performance/MemoCache';
+import { useMemoized, useOptimizedData, usePagination } from '../components/performance/MemoCache';
 import { BundleAnalyzer } from '../components/performance/BundleAnalyzer';
 import { 
   AICollectionSuggestions,
@@ -76,9 +78,6 @@ import {
   AIAutomationRules,
   AIContentQualityAnalyzer
 } from '../components/ai/AIMetadata';
-import AdvancedSearch from '../components/collections/AdvancedSearch';
-import CollectionAutomation from '../components/collections/CollectionAutomation';
-import ExternalIntegrations from '../components/collections/ExternalIntegrations';
 import { useCollections } from '../hooks/useCollections';
 import { SmartCollection } from '../types/collections';
 import { toast } from 'react-hot-toast';
@@ -183,6 +182,19 @@ export const Collections: React.FC = () => {
     isExporting,
   } = useCollections();
 
+  // Debounced search for performance
+  const [debouncedSearch, setDebouncedSearch] = useState(searchQuery);
+  const [isDebouncing, setIsDebouncing] = useState(false);
+
+  React.useEffect(() => {
+    setIsDebouncing(true);
+    const timer = setTimeout(() => {
+      setDebouncedSearch(searchQuery);
+      setIsDebouncing(false);
+    }, 300);
+    return () => clearTimeout(timer);
+  }, [searchQuery]);
+
   // Performance optimized collection filtering
   const filters = useMemoized(() => ({
     activeTab,
@@ -205,12 +217,6 @@ export const Collections: React.FC = () => {
     prevPage,
     goToPage
   } = usePagination(filteredCollections, 20);
-
-  // Debounced search for performance
-  const { debouncedValue: debouncedSearch, isDebouncing } = useDebounceSearch(
-    searchQuery,
-    300
-  );
 
   // Update search query with debouncing
   const handleSearchChange = useCallback((value: string) => {
@@ -1130,7 +1136,7 @@ export const Collections: React.FC = () => {
                   </Button>
                   <div className="flex items-center gap-1">
                     {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
-                      let pageNum;
+                      let pageNum: number;
                       if (totalPages <= 5) {
                         pageNum = i + 1;
                       } else if (currentPage <= 3) {

@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"net/http"
 	"net/http/httptest"
@@ -375,7 +376,11 @@ func TestLocalizationHandlers_getUserID(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			r := httptest.NewRequest("GET", "/", nil)
-			r.Header.Set("X-User-ID", tt.header)
+			// getUserID now reads from context, not headers
+			if tt.expected != 0 {
+				ctx := context.WithValue(r.Context(), "user_id", tt.expected)
+				r = r.WithContext(ctx)
+			}
 
 			result := handler.getUserID(r)
 			assert.Equal(t, tt.expected, result)
@@ -396,18 +401,20 @@ func TestLocalizationHandlers_corsMiddleware(t *testing.T) {
 
 	middleware := handler.corsMiddleware(testHandler)
 
-	// Test OPTIONS request
+	// Test OPTIONS request with allowed origin
 	w := httptest.NewRecorder()
 	r := httptest.NewRequest("OPTIONS", "/", nil)
+	r.Header.Set("Origin", "http://localhost:5173")
 	middleware.ServeHTTP(w, r)
 
 	assert.Equal(t, http.StatusOK, w.Code)
-	assert.Equal(t, "*", w.Header().Get("Access-Control-Allow-Origin"))
+	assert.Equal(t, "http://localhost:5173", w.Header().Get("Access-Control-Allow-Origin"))
 	assert.Equal(t, "GET, POST, PUT, DELETE, OPTIONS", w.Header().Get("Access-Control-Allow-Methods"))
 
 	// Test regular request
 	w = httptest.NewRecorder()
 	r = httptest.NewRequest("GET", "/", nil)
+	r.Header.Set("Origin", "http://localhost:5173")
 	middleware.ServeHTTP(w, r)
 
 	assert.Equal(t, http.StatusOK, w.Code)

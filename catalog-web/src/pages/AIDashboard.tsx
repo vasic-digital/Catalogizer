@@ -10,7 +10,7 @@ import {
   type AISuggestion,
   type AICategorizationResult,
   type AISearchQuery
-} from './AIComponents';
+} from '../components/ai/AIComponents';
 
 import {
   AIUserBehaviorAnalytics,
@@ -20,7 +20,7 @@ import {
   type UserBehaviorPattern,
   type AIPrediction,
   type AIOrganizationSuggestion
-} from './AIAnalytics';
+} from '../components/ai/AIAnalytics';
 
 import {
   AIMetadataExtractor,
@@ -31,7 +31,7 @@ import {
   type AutomationRule,
   type ContentQuality,
   type SmartContent
-} from './AIMetadata';
+} from '../components/ai/AIMetadata';
 
 // Types for AI Dashboard state
 interface AIDashboardState {

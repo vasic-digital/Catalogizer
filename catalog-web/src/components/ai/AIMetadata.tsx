@@ -119,9 +119,9 @@ class AIMetadataService {
         contentType: { value: contentType, confidence: 0.95, source: 'file_analysis' },
         quality: { value: this.assessQuality(content), confidence: 0.80, source: 'ai_analysis' },
         engagement: { value: this.predictEngagement(content), confidence: 0.70, source: 'ml_model' },
-        duration: content.duration ? { value: content.duration, confidence: 0.90, source: 'metadata' } : undefined,
-        size: content.size ? { value: content.size, confidence: 0.95, source: 'file_system' } : undefined
-      }.filter(Boolean) as any
+        ...(content.duration ? { duration: { value: content.duration, confidence: 0.90, source: 'metadata' } } : {}),
+        ...(content.size ? { size: { value: content.size, confidence: 0.95, source: 'file_system' } } : {})
+      }
     };
   }
 

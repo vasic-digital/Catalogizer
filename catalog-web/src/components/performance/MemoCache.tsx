@@ -191,7 +191,7 @@ export const useOptimizedData = <T,>(
     Object.entries(filters).forEach(([field, value]) => {
       if (value !== null && value !== undefined && value !== '') {
         result = result.filter(item => {
-          const itemValue = item[field];
+          const itemValue = (item as Record<string, any>)[field];
           if (typeof value === 'string') {
             return String(itemValue).toLowerCase().includes(value.toLowerCase());
           }
@@ -203,8 +203,8 @@ export const useOptimizedData = <T,>(
     // Apply sorting
     if (sortBy) {
       result.sort((a, b) => {
-        const aVal = a[sortBy];
-        const bVal = b[sortBy];
+        const aVal = (a as Record<string, any>)[sortBy];
+        const bVal = (b as Record<string, any>)[sortBy];
         
         if (aVal === null || aVal === undefined) return sortDirection === 'asc' ? -1 : 1;
         if (bVal === null || bVal === undefined) return sortDirection === 'asc' ? 1 : -1;

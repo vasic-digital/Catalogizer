@@ -123,10 +123,10 @@ class AIService {
     return {
       id: `ai-cat-${Date.now()}`,
       category,
-      subcategory: `${category}/${item.split(' ')[0]}`,
+      subcategory: `${category}/${item.title.split(' ')[0]}`,
       confidence,
       reasoning: `AI analysis of title, content type, and metadata suggests ${category} category with ${Math.round(confidence * 100)}% confidence.`,
-      suggestedTags: [category.toLowerCase(), item.toLowerCase().split(' ')[0], 'suggested'],
+      suggestedTags: [category.toLowerCase(), item.title.toLowerCase().split(' ')[0], 'suggested'],
       metadata: {
         contentType: 'video',
         quality: confidence > 0.9 ? 'high' : confidence > 0.8 ? 'medium' : 'low',

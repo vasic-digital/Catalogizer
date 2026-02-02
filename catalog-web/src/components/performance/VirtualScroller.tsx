@@ -143,7 +143,7 @@ export const VirtualizedTable: React.FC<VirtualizedTableProps> = ({
     });
   };
 
-  const renderRow = useCallback(({ index, data: rowData }) => (
+  const renderRow = useCallback(({ index, data: rowData }: { index: number; data: Record<string, any> }) => (
     <div className="flex items-center border-b border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800">
       {columns.map((column, colIndex) => (
         <div

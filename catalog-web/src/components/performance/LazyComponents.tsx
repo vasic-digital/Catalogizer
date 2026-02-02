@@ -6,8 +6,8 @@ const CollectionTemplates = lazy(() => import('../collections/CollectionTemplate
 const AdvancedSearch = lazy(() => import('../collections/AdvancedSearch'));
 const CollectionAutomation = lazy(() => import('../collections/CollectionAutomation'));
 const ExternalIntegrations = lazy(() => import('../collections/ExternalIntegrations'));
-const SmartCollectionBuilder = lazy(() => import('../collections/SmartCollectionBuilder'));
-const CollectionAnalytics = lazy(() => import('../collections/CollectionAnalytics'));
+const SmartCollectionBuilder = lazy(() => import('../collections/SmartCollectionBuilder').then(m => ({ default: m.SmartCollectionBuilder })));
+const CollectionAnalytics = lazy(() => import('../collections/CollectionAnalytics').then(m => ({ default: m.CollectionAnalytics })));
 const BulkOperations = lazy(() => import('../collections/BulkOperations'));
 
 interface LazyComponentProps {
@@ -45,16 +45,14 @@ export const preloadComponent = (componentName: string) => {
     case 'ExternalIntegrations':
       import('../collections/ExternalIntegrations');
       break;
-      import('./collections/ExternalIntegrations');
-      break;
     case 'SmartCollectionBuilder':
-      import('./collections/SmartCollectionBuilder');
+      import('../collections/SmartCollectionBuilder');
       break;
     case 'CollectionAnalytics':
-      import('./collections/CollectionAnalytics');
+      import('../collections/CollectionAnalytics');
       break;
     case 'BulkOperations':
-      import('./collections/BulkOperations');
+      import('../collections/BulkOperations');
       break;
     default:
       console.warn(`Unknown component: ${componentName}`);
