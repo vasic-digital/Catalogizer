@@ -6,6 +6,99 @@ Catalogizer is built using a modern microservices-inspired architecture with cle
 
 ## System Architecture
 
+### Mermaid System Architecture Diagram
+
+```mermaid
+graph TB
+    subgraph Clients["Client Applications"]
+        CW["catalog-web<br/>(React/TypeScript)"]
+        CD["catalogizer-desktop<br/>(Tauri/Rust + React)"]
+        IW["installer-wizard<br/>(Tauri/Rust + React)"]
+        CA["catalogizer-android<br/>(Kotlin/Compose)"]
+        CTV["catalogizer-androidtv<br/>(Kotlin/Compose)"]
+        ACL["catalogizer-api-client<br/>(TypeScript Library)"]
+    end
+
+    subgraph Infrastructure["Infrastructure"]
+        LB["Load Balancer"]
+        RP["Reverse Proxy (Nginx)"]
+    end
+
+    subgraph Backend["catalog-api (Go/Gin)"]
+        API["REST API /api/v1/*"]
+        WS["WebSocket Server /ws/*"]
+        AUTH["Auth Service (JWT + Sessions)"]
+        MW["Middleware Stack<br/>CORS, Rate Limit,<br/>Input Validation, Metrics"]
+    end
+
+    subgraph CoreServices["Core Services"]
+        CAT["Catalog Service"]
+        SMB_SVC["SMB Service"]
+        SMB_DISC["SMB Discovery"]
+        MEDIA_REC["Media Recognition"]
+        DUP["Duplicate Detection"]
+        REC["Recommendation Service"]
+        SUB["Subtitle Service"]
+        CONV["Conversion Service"]
+        ANALYTICS["Analytics Service"]
+        CONFIG["Configuration Service"]
+        ERR_SVC["Error/Crash Reporting"]
+        LOG_SVC["Log Management"]
+        FAV["Favorites Service"]
+    end
+
+    subgraph DataLayer["Data Layer"]
+        SQLITE["SQLite/SQLCipher<br/>(Encrypted DB)"]
+        REDIS["Redis<br/>(Rate Limiting / Cache)"]
+    end
+
+    subgraph FileWatch["Real-time File Monitoring"]
+        WATCHER["SMBChangeWatcher"]
+        ENH["EnhancedChangeWatcher<br/>(rename detection)"]
+        QUEUE["Change Event Queue"]
+    end
+
+    subgraph Providers["External Metadata Providers"]
+        TMDB["TMDB"]
+        IMDB["IMDB"]
+        TVDB["TVDB"]
+        SPOTIFY["Spotify"]
+        STEAM["Steam"]
+    end
+
+    subgraph Storage["Multi-Protocol Storage"]
+        LOCAL["Local FS"]
+        SMB_P["SMB/CIFS"]
+        FTP["FTP"]
+        NFS["NFS"]
+        WEBDAV["WebDAV"]
+    end
+
+    CW & CD & CA & CTV & ACL & IW -->|HTTP/WS| LB
+    LB --> RP
+    RP --> API & WS
+
+    API --> MW --> AUTH
+    API --> CAT & SMB_SVC & SMB_DISC
+    API --> MEDIA_REC & REC & SUB & CONV
+    API --> ANALYTICS & CONFIG & ERR_SVC & LOG_SVC & FAV
+
+    CAT & AUTH & CONV & ANALYTICS --> SQLITE
+    AUTH --> REDIS
+    MEDIA_REC --> TMDB & IMDB & TVDB & SPOTIFY & STEAM
+    WATCHER & ENH --> QUEUE
+    QUEUE --> MEDIA_REC
+    WS --> QUEUE
+    CAT --> LOCAL & SMB_P & FTP & NFS & WEBDAV
+
+    style Backend fill:#e1f5fe
+    style DataLayer fill:#fff3e0
+    style Providers fill:#f3e5f5
+    style Storage fill:#e8f5e9
+    style Clients fill:#fce4ec
+    style FileWatch fill:#fff9c4
+```
+
 ### High-Level Architecture
 
 ```

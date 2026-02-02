@@ -12,6 +12,11 @@ This guide helps you diagnose and resolve common issues with the Catalogizer sys
 - [API Errors](#api-errors)
 - [Deployment Issues](#deployment-issues)
 - [Monitoring & Diagnostics](#monitoring--diagnostics)
+- [WebSocket Connection Failures](#websocket-connection-failures)
+- [SMB Authentication Issues](#smb-authentication-issues)
+- [Subtitle Search Issues](#subtitle-search-issues)
+- [Format Conversion Errors](#format-conversion-errors)
+- [Android Connectivity Issues](#android-connectivity-issues)
 
 ## Storage Connection Issues
 
@@ -690,3 +695,451 @@ echo "Debug information collected in debug-info.txt"
 - [Deployment Guide](../deployment/DEPLOYMENT.md)
 
 This troubleshooting guide covers the most common issues you may encounter. For specific problems not covered here, please check the logs and consider opening a GitHub issue with the debug information collected using the script above.
+
+---
+
+## WebSocket Connection Failures
+
+WebSocket connections are used for real-time updates between the frontend and the catalog-api server. When WebSocket connections fail, you will see stale data or missing live updates in the web and desktop apps.
+
+### Symptoms
+
+- Real-time notifications not appearing
+- Activity feed not updating
+- "WebSocket disconnected" warnings in browser console
+- Collection real-time collaboration not working
+
+### Diagnostic Steps
+
+```bash
+# Test WebSocket connectivity
+wscat -c ws://localhost:8080/ws
+
+# Check if the WebSocket endpoint is accessible
+curl -i -N -H "Connection: Upgrade" -H "Upgrade: websocket" \
+  -H "Sec-WebSocket-Version: 13" \
+  -H "Sec-WebSocket-Key: dGhlIHNhbXBsZSBub25jZQ==" \
+  http://localhost:8080/ws
+
+# Check if the API server is accepting WebSocket upgrades
+curl -v http://localhost:8080/ws 2>&1 | grep -i upgrade
+```
+
+### Common Solutions
+
+#### 1. Reverse Proxy Configuration
+
+If you are using Nginx or another reverse proxy, ensure WebSocket upgrades are forwarded:
+
+```nginx
+# Nginx configuration for WebSocket support
+location /ws {
+    proxy_pass http://localhost:8080;
+    proxy_http_version 1.1;
+    proxy_set_header Upgrade $http_upgrade;
+    proxy_set_header Connection "upgrade";
+    proxy_set_header Host $host;
+    proxy_set_header X-Real-IP $remote_addr;
+    proxy_read_timeout 86400;  # Keep connection alive for 24 hours
+}
+```
+
+For Apache:
+
+```apache
+# Enable required modules
+LoadModule proxy_wstunnel_module modules/mod_proxy_wstunnel.so
+
+ProxyPass /ws ws://localhost:8080/ws
+ProxyPassReverse /ws ws://localhost:8080/ws
+```
+
+#### 2. Environment Variable Configuration
+
+Ensure the frontend WebSocket URL matches the server:
+
+```env
+# In catalog-web .env
+VITE_WS_URL=ws://localhost:8080/ws
+
+# For HTTPS deployments
+VITE_WS_URL=wss://catalogizer.example.com/ws
+```
+
+#### 3. Firewall and Network Issues
+
+```bash
+# Check if the WebSocket port is open
+nc -zv localhost 8080
+
+# On cloud deployments, ensure security groups allow WebSocket traffic
+# WebSocket uses the same port as HTTP (typically 80 or 443)
+```
+
+#### 4. Connection Timeout Adjustments
+
+If WebSocket connections drop frequently, adjust timeout settings:
+
+```bash
+# Increase proxy timeout in Nginx
+proxy_read_timeout 3600;
+proxy_send_timeout 3600;
+```
+
+The web app includes automatic reconnection logic with exponential backoff, but persistent failures indicate a configuration issue.
+
+#### 5. CORS Issues
+
+If the web app is served from a different origin than the API:
+
+```go
+// Ensure CORS middleware allows WebSocket origins
+c.Header("Access-Control-Allow-Origin", "http://localhost:5173")
+```
+
+---
+
+## SMB Authentication Issues
+
+SMB (Server Message Block) is a primary storage protocol for Catalogizer. Authentication failures prevent media detection and browsing.
+
+### Symptoms
+
+- "Storage source offline" notifications
+- "Access denied" or "Authentication failed" in server logs
+- Circuit breaker activating for SMB sources
+- Media files not being detected from network shares
+
+### Diagnostic Steps
+
+```bash
+# Test SMB credentials manually
+smbclient -L //server-hostname -U username
+
+# Test access to a specific share
+smbclient //server-hostname/share-name -U username -c "ls"
+
+# Test with domain credentials
+smbclient //server-hostname/share-name -U domain/username%password -c "ls"
+
+# Check SMB port connectivity
+nc -zv server-hostname 445
+nc -zv server-hostname 139
+```
+
+### Common Solutions
+
+#### 1. Credential Format Issues
+
+Different SMB servers expect credentials in different formats:
+
+```env
+# Standard format
+SMB_USERNAME=username
+SMB_PASSWORD=password
+
+# Domain format (Active Directory)
+SMB_USERNAME=DOMAIN\username
+SMB_PASSWORD=password
+SMB_DOMAIN=DOMAIN
+
+# UPN format
+SMB_USERNAME=username@domain.com
+SMB_PASSWORD=password
+```
+
+#### 2. SMB Protocol Version Mismatch
+
+Modern servers may require SMB2 or SMB3:
+
+```bash
+# Check supported protocol versions
+smbclient -L //server --option="client min protocol=SMB2" -U username
+
+# Configure minimum protocol version
+echo "client min protocol = SMB2" >> /etc/samba/smb.conf
+echo "client max protocol = SMB3" >> /etc/samba/smb.conf
+```
+
+#### 3. Guest Authentication Disabled
+
+Some NAS devices disable guest access by default:
+
+```bash
+# If guest access is needed
+smbclient //server/share -N  # Test with no password
+
+# If this fails, verify the share allows guest access on the server side
+```
+
+#### 4. Expired or Changed Passwords
+
+When SMB passwords change:
+
+1. Update credentials in the Catalogizer configuration.
+2. Restart the catalog-api server or trigger a reconnection:
+
+```bash
+curl -X POST -H "Authorization: Bearer $TOKEN" \
+  http://localhost:8080/api/v1/smb/sources/{source_id}/reconnect
+```
+
+3. Monitor the circuit breaker state -- it should transition from Open to Half-Open to Closed.
+
+#### 5. Permissions on the Share
+
+Even with valid credentials, access may be denied due to share permissions:
+
+- Ensure the user has read access to the share and its subdirectories.
+- On Windows, check both Share Permissions and NTFS Permissions.
+- On Linux Samba servers, check the `valid users` and `read list` directives in `smb.conf`.
+
+---
+
+## Subtitle Search Issues
+
+The subtitle system integrates with external providers (OpenSubtitles, Subscene, etc.) and can encounter various issues.
+
+### Symptoms
+
+- "No subtitles found" for media that should have subtitles available
+- Subtitle search returning errors or timing out
+- Downloaded subtitles not syncing properly with media
+- Subtitle upload failing
+
+### Diagnostic Steps
+
+```bash
+# Test subtitle API endpoint
+curl -H "Authorization: Bearer $TOKEN" \
+  http://localhost:8080/api/v1/subtitles/search?query=movie-title&language=en
+
+# Check supported providers
+curl -H "Authorization: Bearer $TOKEN" \
+  http://localhost:8080/api/v1/subtitles/providers
+
+# Check supported languages
+curl -H "Authorization: Bearer $TOKEN" \
+  http://localhost:8080/api/v1/subtitles/languages
+```
+
+### Common Solutions
+
+#### 1. Provider API Keys
+
+Some subtitle providers require API keys:
+
+```env
+# Configure provider API keys
+OPENSUBTITLES_API_KEY=your-api-key
+OPENSUBTITLES_USERNAME=your-username
+OPENSUBTITLES_PASSWORD=your-password
+```
+
+#### 2. Rate Limiting
+
+External subtitle providers enforce rate limits:
+
+- OpenSubtitles: typically 40 requests per 10 seconds for authenticated users.
+- If you see HTTP 429 errors, wait before retrying.
+- The system should respect rate limits automatically, but high concurrent usage may trigger limits.
+
+#### 3. Search Query Too Specific
+
+- Try broadening the search query (use the movie title without year).
+- Remove special characters from the query.
+- Try different language codes.
+
+#### 4. Subtitle Sync Offset
+
+If downloaded subtitles are out of sync:
+
+1. In the web app Subtitle Manager, select the media item.
+2. Click the **Verify Sync** button for the subtitle.
+3. Use the Subtitle Sync Modal to adjust the timing offset (in milliseconds).
+4. Positive values delay the subtitles; negative values advance them.
+
+#### 5. Encoding Issues
+
+If subtitles display garbled characters:
+
+- Check the subtitle encoding (shown in the subtitle details: e.g. UTF-8, ISO-8859-1).
+- The system attempts automatic encoding detection, but some edge cases may require manual re-encoding.
+- Try downloading a different subtitle version from the search results.
+
+---
+
+## Format Conversion Errors
+
+The format conversion system transforms media files between different formats (MP4, MKV, AVI, MOV, WebM, MP3, WAV, FLAC).
+
+### Symptoms
+
+- Conversion jobs stuck in "pending" status
+- Jobs failing with error messages
+- Converted files having no audio or video
+- Conversion progress not updating
+
+### Diagnostic Steps
+
+```bash
+# Check conversion job status
+curl -H "Authorization: Bearer $TOKEN" \
+  http://localhost:8080/api/v1/conversion/jobs
+
+# Check a specific job
+curl -H "Authorization: Bearer $TOKEN" \
+  http://localhost:8080/api/v1/conversion/jobs/{job_id}
+
+# Verify FFmpeg is installed (required for conversion)
+ffmpeg -version
+
+# Check disk space (conversions need temporary space)
+df -h
+```
+
+### Common Solutions
+
+#### 1. FFmpeg Not Installed or Not in PATH
+
+The conversion system requires FFmpeg:
+
+```bash
+# Install on Ubuntu/Debian
+sudo apt install ffmpeg
+
+# Install on macOS
+brew install ffmpeg
+
+# Install on Alpine (Docker)
+apk add ffmpeg
+
+# Verify installation
+which ffmpeg
+ffmpeg -version
+```
+
+#### 2. Insufficient Disk Space
+
+Conversions require temporary disk space, often 1-3x the size of the source file:
+
+```bash
+# Check available space
+df -h /tmp
+df -h /var/lib/catalogizer
+
+# Clean up old conversion artifacts
+rm -rf /tmp/catalogizer-conversion-*
+```
+
+#### 3. Unsupported Codec
+
+Some source files may use codecs not supported by your FFmpeg build:
+
+```bash
+# List supported codecs
+ffmpeg -codecs
+
+# List supported formats
+ffmpeg -formats
+```
+
+If a codec is missing, install a full-featured FFmpeg build:
+
+```bash
+# Ubuntu - install with all codecs
+sudo apt install ffmpeg libavcodec-extra
+```
+
+#### 4. Conversion Timeout
+
+Very large files may exceed the conversion timeout:
+
+- Check server logs for timeout errors.
+- For files over 10 GB, consider adjusting the conversion timeout in the server configuration.
+- Lower quality settings can speed up conversion.
+
+#### 5. Job Queue Stalled
+
+If jobs remain in "pending" state:
+
+```bash
+# Restart the conversion worker
+sudo systemctl restart catalogizer-api
+
+# Or check if the worker process is alive
+ps aux | grep catalogizer
+```
+
+---
+
+## Android Connectivity Issues
+
+Android apps (both mobile and TV) connect to the Catalogizer server over the network. Various connectivity issues can prevent the apps from functioning.
+
+### Symptoms
+
+- Login fails with "Connection failed"
+- Media list not loading
+- Offline mode activating unexpectedly
+- Sync operations failing
+
+### Diagnostic Steps
+
+On the Android device:
+
+1. Open a browser and try navigating to your Catalogizer server URL.
+2. Check Wi-Fi or cellular connection status.
+3. In the app, check the Settings screen for any error messages.
+
+### Common Solutions
+
+#### 1. Server URL Issues
+
+- Ensure the URL includes the protocol: `http://` or `https://`.
+- If using a local IP address (e.g. `192.168.1.100`), ensure the Android device is on the same network.
+- Do not use `localhost` -- this refers to the Android device itself, not your server.
+- Try the IP address instead of a hostname if DNS resolution is unreliable.
+
+#### 2. HTTPS Certificate Issues
+
+If using self-signed certificates:
+
+- Android rejects self-signed certificates by default.
+- Install your CA certificate on the Android device: Settings > Security > Install from storage.
+- For development, consider using HTTP instead of HTTPS.
+
+#### 3. Cellular vs. Wi-Fi
+
+- If the server is on a private network, cellular connections cannot reach it.
+- Check if "Wi-Fi Only" is enabled in the app's offline settings.
+- If using a VPN, ensure it is connected and routing traffic to your server's network.
+
+#### 4. Background Sync Failures
+
+Android's battery optimization may kill background sync processes:
+
+- Go to device Settings > Apps > Catalogizer > Battery > Unrestricted.
+- This allows the sync worker to run in the background without being killed.
+
+#### 5. Token Expiration
+
+JWT tokens have an expiration time:
+
+- If the app suddenly cannot connect, try logging out and back in.
+- The app should automatically refresh tokens, but edge cases (device clock skew, server restart) can cause token issues.
+- Ensure your Android device's clock is accurate (Settings > Date & time > Automatic date & time).
+
+#### 6. Large Library Loading
+
+If you have a very large media library:
+
+- The initial load may take longer on mobile connections.
+- Enable offline mode to cache data locally for faster subsequent access.
+- The app paginates requests, but the first page still requires a round trip.
+
+#### 7. Android TV Specific Issues
+
+- Ensure your TV has a stable Ethernet or Wi-Fi connection.
+- Some Android TV devices have limited memory -- close other apps if Catalogizer crashes.
+- Remote control input may be slow during network operations; wait for loading to complete before navigating.
