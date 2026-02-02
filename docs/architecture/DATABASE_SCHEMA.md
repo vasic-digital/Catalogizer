@@ -752,3 +752,5 @@ Schema version tracking table used by the migration system.
 | 4 | create_conversion_jobs_table | Media conversion job queue |
 | 5 | create_subtitle_tables | Subtitle management: tracks, sync status, cache, downloads, associations |
 | 6 | fix_subtitle_foreign_keys | Corrects subtitle table foreign keys to reference files instead of media_items |
+
+For detailed migration documentation including how to create new migrations, rollback procedures, and troubleshooting, see the [SQL Migrations Guide](SQL_MIGRATIONS.md).

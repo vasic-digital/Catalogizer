@@ -871,4 +871,4 @@ curl -X POST http://localhost:8080/api/config/reset \
 4. **Documentation**: Keep configuration documentation up to date
 5. **Testing**: Test configuration changes in non-production environments first
 
-For more advanced configuration topics, see the [Deployment Guide](DEPLOYMENT_GUIDE.md) and [Troubleshooting Guide](TROUBLESHOOTING_GUIDE.md).
+For more advanced configuration topics, see the [Deployment Guide](DEPLOYMENT_GUIDE.md) and [Troubleshooting Guide](TROUBLESHOOTING_GUIDE.md). For database configuration details, refer to the [Database Schema](architecture/DATABASE_SCHEMA.md) and [SQL Migrations](architecture/SQL_MIGRATIONS.md) documentation. See also the [Environment Variables](deployment/ENVIRONMENT_VARIABLES.md) reference for the complete list of supported environment variables.

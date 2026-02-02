@@ -255,6 +255,7 @@
         <h2>📋 Table of Contents</h2>
         <ul>
             <li><a href="#overview">System Overview</a></li>
+            <li><a href="#tutorials">Step-by-Step Tutorials</a></li>
             <li><a href="#prerequisites">Prerequisites</a></li>
             <li><a href="#quick-start">Quick Start</a></li>
             <li><a href="#backend-setup">Backend API Setup</a></li>
@@ -274,18 +275,22 @@
 
     <div id="overview" class="section">
         <h2>🏗️ System Overview</h2>
-        <p>Catalogizer is a comprehensive media collection management system that automatically detects, categorizes, and organizes your media files across SMB network sources. It provides real-time monitoring, advanced analytics, and multiple client interfaces for managing your entire media library.</p>
+        <p>Catalogizer is a comprehensive media collection management system that automatically detects, categorizes, and organizes your media files across multiple storage protocols including SMB, FTP, NFS, WebDAV, and local filesystems. It provides real-time monitoring, advanced analytics, and multiple client interfaces for managing your entire media library.</p>
 
         <div class="component-grid">
             <div class="component-card">
                 <h4>🎯 Core Features</h4>
                 <ul>
                     <li>Automated media detection (50+ types)</li>
-                    <li>Real-time SMB monitoring</li>
-                    <li>SMB resilience with offline caching</li>
-                    <li>Advanced analytics & quality analysis</li>
+                    <li>Multi-protocol support (SMB, FTP, NFS, WebDAV, Local)</li>
+                    <li>Protocol resilience with offline caching</li>
+                    <li>Subtitle management &amp; translation</li>
+                    <li>Advanced analytics &amp; quality analysis</li>
                     <li>JWT-based secure authentication</li>
-                    <li>External metadata integration</li>
+                    <li>External metadata integration (TMDB, IMDB, Spotify, Steam)</li>
+                    <li>PDF conversion &amp; advanced reporting</li>
+                    <li>Favorites export/import (JSON, CSV)</li>
+                    <li>Cloud storage sync (S3, GCS)</li>
                 </ul>
             </div>
             <div class="component-card">
@@ -315,6 +320,38 @@
 
         <div class="info">
             <strong>💡 Pro Tip:</strong> Start with the Installation Wizard for the easiest setup experience, or use Docker Compose for a complete development environment.
+        </div>
+    </div>
+
+    <div id="tutorials" class="section">
+        <h2>📚 Step-by-Step Tutorials</h2>
+        <p>New to Catalogizer? Start with these focused tutorials to get up and running quickly.</p>
+
+        <div class="component-grid">
+            <div class="component-card">
+                <h4>🚀 <a href="docs/tutorials/QUICK_START.md">Quick Start Guide</a></h4>
+                <p>Install via Docker, create an admin account, connect your first storage source, and browse your catalog in 10 minutes.</p>
+            </div>
+            <div class="component-card">
+                <h4>🔌 <a href="docs/tutorials/CONNECT_SMB_SHARE.md">Connect an SMB Share</a></h4>
+                <p>Configure an SMB network share, test the connection, scan for media, and verify results in your catalog.</p>
+            </div>
+            <div class="component-card">
+                <h4>🎬 <a href="docs/tutorials/SUBTITLE_MANAGEMENT.md">Subtitle Management</a></h4>
+                <p>Search subtitles across providers, download and sync, translate to other languages, and upload custom files.</p>
+            </div>
+            <div class="component-card">
+                <h4>📊 <a href="docs/tutorials/SETUP_MONITORING.md">Set Up Monitoring</a></h4>
+                <p>Enable Prometheus and Grafana, explore pre-built dashboards, and create custom alerts.</p>
+            </div>
+            <div class="component-card">
+                <h4>📱 <a href="docs/tutorials/MOBILE_SETUP.md">Mobile Setup</a></h4>
+                <p>Install the Android app, connect to your server, and configure offline mode for on-the-go access.</p>
+            </div>
+        </div>
+
+        <div class="info">
+            <strong>📖 Full Documentation:</strong> Visit the <a href="docs/website/DOCUMENTATION.md">Documentation Hub</a> for comprehensive guides organized by audience (users, admins, developers). See the <a href="docs/website/FEATURES.md">Features page</a> for a complete feature overview, or the <a href="docs/website/DOWNLOAD.md">Download page</a> for all installation options.
         </div>
     </div>
 
@@ -359,12 +396,15 @@
         <h3>Network Requirements</h3>
         <ul>
             <li><strong>SMB Access:</strong> Network access to SMB/CIFS shares (ports 139, 445)</li>
-            <li><strong>Internet Access:</strong> For external metadata APIs (TMDB, IMDB, etc.)</li>
-            <li><strong>Firewall:</strong> Open ports 8080 (API), 3000 (dev web), 80/443 (production)</li>
+            <li><strong>FTP Access:</strong> FTP/FTPS connectivity (port 21 plus passive ports)</li>
+            <li><strong>NFS Access:</strong> NFS service and exports configured</li>
+            <li><strong>WebDAV Access:</strong> HTTP/HTTPS connectivity to WebDAV endpoints</li>
+            <li><strong>Internet Access:</strong> For external metadata APIs (TMDB, IMDB, MusicBrainz, Spotify, Steam)</li>
+            <li><strong>Firewall:</strong> Open ports 8080 (API), 5173 (dev web), 80/443 (production), 9090 (Prometheus), 3001 (Grafana)</li>
         </ul>
 
         <div class="warning">
-            <strong>⚠️ Important:</strong> Ensure your SMB shares are accessible and you have read permissions. The system will monitor these shares continuously.
+            <strong>⚠️ Important:</strong> Ensure your storage sources are accessible and you have read permissions. The system will monitor these sources continuously. See the <a href="docs/tutorials/CONNECT_SMB_SHARE.md">SMB tutorial</a> for connection testing steps.
         </div>
     </div>
 
@@ -1073,12 +1113,32 @@ curl http://localhost:8080/health
     <div id="support" class="section">
         <h2>🆘 Support & Resources</h2>
 
-        <h3>Documentation</h3>
+        <h3>Documentation Hub</h3>
         <ul>
-            <li><strong>API Documentation:</strong> <a href="http://localhost:8080/swagger">Swagger UI</a></li>
-            <li><strong>Architecture Guide:</strong> <a href="ARCHITECTURE.md">ARCHITECTURE.md</a></li>
-            <li><strong>Deployment Guide:</strong> <a href="DEPLOYMENT.md">DEPLOYMENT.md</a></li>
-            <li><strong>Troubleshooting:</strong> <a href="TROUBLESHOOTING.md">TROUBLESHOOTING.md</a></li>
+            <li><strong>Documentation Hub:</strong> <a href="docs/website/DOCUMENTATION.md">All documentation organized by audience</a></li>
+            <li><strong>Features Overview:</strong> <a href="docs/website/FEATURES.md">Complete feature list</a></li>
+            <li><strong>Download &amp; Install:</strong> <a href="docs/website/DOWNLOAD.md">All installation options</a></li>
+        </ul>
+
+        <h3>Tutorials</h3>
+        <ul>
+            <li><strong>Quick Start:</strong> <a href="docs/tutorials/QUICK_START.md">10-minute setup guide</a></li>
+            <li><strong>Connect SMB Share:</strong> <a href="docs/tutorials/CONNECT_SMB_SHARE.md">SMB configuration tutorial</a></li>
+            <li><strong>Subtitle Management:</strong> <a href="docs/tutorials/SUBTITLE_MANAGEMENT.md">Search, download, translate subtitles</a></li>
+            <li><strong>Monitoring Setup:</strong> <a href="docs/tutorials/SETUP_MONITORING.md">Prometheus &amp; Grafana setup</a></li>
+            <li><strong>Mobile Setup:</strong> <a href="docs/tutorials/MOBILE_SETUP.md">Android app installation &amp; offline mode</a></li>
+        </ul>
+
+        <h3>Technical Documentation</h3>
+        <ul>
+            <li><strong>API Documentation:</strong> <a href="http://localhost:8080/swagger">Swagger UI</a> (on running instance)</li>
+            <li><strong>API Reference:</strong> <a href="docs/api/API_DOCUMENTATION.md">REST API documentation</a></li>
+            <li><strong>WebSocket Events:</strong> <a href="docs/api/WEBSOCKET_EVENTS.md">Real-time event reference</a></li>
+            <li><strong>Architecture Guide:</strong> <a href="docs/architecture/ARCHITECTURE.md">System architecture</a></li>
+            <li><strong>Deployment Guide:</strong> <a href="docs/deployment/DEPLOYMENT.md">Production deployment</a></li>
+            <li><strong>Monitoring Guide:</strong> <a href="docs/deployment/MONITORING_GUIDE.md">Metrics and dashboards</a></li>
+            <li><strong>Configuration Guide:</strong> <a href="docs/CONFIGURATION_GUIDE.md">All configuration options</a></li>
+            <li><strong>Troubleshooting:</strong> <a href="docs/TROUBLESHOOTING_GUIDE.md">Common issues and solutions</a></li>
         </ul>
 
         <h3>Community Support</h3>
@@ -1103,7 +1163,7 @@ curl http://localhost:8080/health
     <div class="footer">
         <p><strong>Catalogizer</strong> - Organize your media collection with intelligence and style 🎬📺🎵🎮</p>
         <p>Generated on: <span id="current-date"></span></p>
-        <p>Version: 2.1.0</p>
+        <p>Version: 3.0.0</p>
     </div>
 
     <script>

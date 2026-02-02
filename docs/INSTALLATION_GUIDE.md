@@ -796,4 +796,4 @@ After successful installation:
 
 **Welcome to Catalogizer v3.0!** 🚀
 
-For additional help, consult the [User Manual](USER_MANUAL.md) and [Admin Guide](ADMIN_GUIDE.md).
+For additional help, consult the [User Guide](USER_GUIDE.md) and [Configuration Guide](CONFIGURATION_GUIDE.md).

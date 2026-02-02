@@ -49,11 +49,13 @@ Before contributing, ensure you have:
 
 ### Useful Resources
 
-- [Project Architecture Overview](ARCHITECTURE.md)
+- [Project Architecture Overview](architecture/ARCHITECTURE.md)
 - [API Documentation](api/API_DOCUMENTATION.md)
 - [Testing Guide](TESTING_GUIDE.md)
 - [Configuration Guide](CONFIGURATION_GUIDE.md)
 - [Deployment Guide](DEPLOYMENT_GUIDE.md)
+- [Database Schema](architecture/DATABASE_SCHEMA.md)
+- [SQL Migrations](architecture/SQL_MIGRATIONS.md)
 
 ### Communication Channels
 
@@ -1416,7 +1418,8 @@ Examples:
 Thank you for contributing to Catalogizer v3.0! Your contributions help make this project better for everyone. If you have questions about contributing, please don't hesitate to ask in our GitHub Discussions or reach out to the maintainers.
 
 For more information, see:
-- [Architecture Overview](ARCHITECTURE.md)
+- [Architecture Overview](architecture/ARCHITECTURE.md)
 - [API Documentation](api/API_DOCUMENTATION.md)
 - [Testing Guide](TESTING_GUIDE.md)
 - [Deployment Guide](DEPLOYMENT_GUIDE.md)
+- [Changelog](CHANGELOG.md)

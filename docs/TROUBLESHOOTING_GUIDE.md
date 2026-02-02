@@ -1286,4 +1286,6 @@ For additional help with specific issues not covered in this guide, please:
 1. Check the [Configuration Guide](CONFIGURATION_GUIDE.md) for setup issues
 2. Review the [Deployment Guide](DEPLOYMENT_GUIDE.md) for infrastructure problems
 3. Consult the [API Documentation](api/API_DOCUMENTATION.md) for integration issues
-4. Contact support with the debug information collected using the scripts in this guide
+4. See the [SQL Migrations](architecture/SQL_MIGRATIONS.md) guide for database migration issues
+5. Review the [Monitoring Guide](deployment/MONITORING_GUIDE.md) for metrics and alerting
+6. Contact support with the debug information collected using the scripts in this guide

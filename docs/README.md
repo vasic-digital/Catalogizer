@@ -1,504 +1,158 @@
-# Catalogizer v3.0 - Complete Documentation
+# Catalogizer Documentation
 
-## 📚 Documentation Overview
+Comprehensive documentation for the Catalogizer multi-platform media collection manager.
 
-This comprehensive documentation covers all aspects of Catalogizer v3.0, a next-generation enterprise media management platform.
+## Quick Navigation
 
-### 📋 Table of Contents
-
-1. [Quick Start Guide](#quick-start-guide)
-2. [Installation & Setup](#installation--setup)
-3. [User Interface Guide](#user-interface-guide)
-4. [API Documentation](#api-documentation)
-5. [Administrator Guide](#administrator-guide)
-6. [Developer Documentation](#developer-documentation)
-7. [Troubleshooting](#troubleshooting)
-8. [Screenshots & Visual Guide](#screenshots--visual-guide)
+| Document | Description |
+|----------|-------------|
+| [Changelog](CHANGELOG.md) | Release notes and version history |
+| [Installation Guide](INSTALLATION_GUIDE.md) | Getting started with Catalogizer |
+| [User Guide](USER_GUIDE.md) | End-user documentation |
+| [Configuration Guide](CONFIGURATION_GUIDE.md) | Application configuration options |
+| [Contributing Guide](CONTRIBUTING.md) | How to contribute to the project |
 
 ---
 
-## 🚀 Quick Start Guide
+## Architecture
 
-### System Requirements
-- **Operating System**: Linux, macOS, Windows
-- **RAM**: Minimum 4GB, Recommended 8GB+
-- **Storage**: 10GB+ free space
-- **Database**: SQLite (default), MySQL, PostgreSQL
-- **Go Version**: 1.21+
+| Document | Description |
+|----------|-------------|
+| [Architecture Overview](architecture/ARCHITECTURE.md) | System design, component interactions, and data flow |
+| [Database Schema](architecture/DATABASE_SCHEMA.md) | Complete table, index, and trigger reference |
+| [SQL Migrations](architecture/SQL_MIGRATIONS.md) | Migration versions, schema changes, and how to add new migrations |
+| [Auth Flow](architecture/AUTH_FLOW.md) | Authentication and authorization architecture |
+| [Go Backend Guide](architecture/GO_BACKEND_GUIDE.md) | Backend development patterns, Handler/Service/Repository layers |
+| [React Frontend Guide](architecture/REACT_FRONTEND_GUIDE.md) | Frontend architecture, React Query, and component patterns |
+| [Android Architecture](architecture/ANDROID_ARCHITECTURE.md) | MVVM architecture for Android and Android TV |
+| [Tauri IPC Guide](architecture/TAURI_IPC_GUIDE.md) | Desktop application Rust/React IPC commands and events |
 
-### Installation Steps
-1. Download the latest release
-2. Run the installer wizard
-3. Configure your database
-4. Set up storage locations
-5. Start the application
+## API Reference
 
----
+| Document | Description |
+|----------|-------------|
+| [API Documentation](api/API_DOCUMENTATION.md) | REST API endpoint reference for `/api/v1` |
+| [WebSocket Events](api/WEBSOCKET_EVENTS.md) | Real-time event bus and WebSocket message formats |
 
-## 📱 User Interface Guide
+## User and Platform Guides
 
-### Login & Authentication
+| Document | Description |
+|----------|-------------|
+| [Web App Guide](guides/WEB_APP_GUIDE.md) | Using the React web frontend |
+| [Desktop Guide](guides/DESKTOP_GUIDE.md) | Using the Tauri desktop application |
+| [Android Guide](guides/ANDROID_GUIDE.md) | Using the Android mobile app |
+| [Android TV Guide](guides/ANDROID_TV_GUIDE.md) | Using the Android TV lean-back app |
+| [Installer Wizard Guide](guides/INSTALLER_WIZARD_GUIDE.md) | Step-by-step installation wizard |
+| [Rename Detection Guide](guides/RENAME_DETECTION_GUIDE.md) | File rename detection system |
+| [Rename Detection Deployment](guides/RENAME_DETECTION_DEPLOYMENT_GUIDE.md) | Deploying rename detection |
+| [Troubleshooting (Guides)](guides/TROUBLESHOOTING.md) | Platform-specific troubleshooting |
+| [Quick Start](guides/QUICK_START_TOMORROW.md) | Quick start reference |
 
-#### Login Screen
-![Login Screen](screenshots/auth/login-screen.png)
-*The main login interface with email/username and password fields*
+## Deployment and Operations
 
-**Features:**
-- Email or username authentication
-- Password visibility toggle
-- Remember me functionality
-- Forgot password link
-- Registration link (if enabled)
+| Document | Description |
+|----------|-------------|
+| [Deployment Guide](DEPLOYMENT_GUIDE.md) | Full deployment instructions (dev to production) |
+| [Deployment (Detailed)](deployment/DEPLOYMENT.md) | Extended deployment documentation |
+| [Docker Setup](deployment/DOCKER_SETUP.md) | Docker and Docker Compose configuration |
+| [Environment Variables](deployment/ENVIRONMENT_VARIABLES.md) | Complete environment variable reference |
+| [Monitoring Guide](deployment/MONITORING_GUIDE.md) | Metrics, alerting, and observability |
+| [Production Runbook](deployment/PRODUCTION_RUNBOOK.md) | Operational procedures and incident response |
+| [Backup and Recovery](deployment/BACKUP_AND_RECOVERY.md) | Database and file backup strategies |
+| [Scaling Guide](deployment/SCALING_GUIDE.md) | Horizontal and vertical scaling strategies |
 
-#### Registration Screen
-![Registration Screen](screenshots/auth/registration-screen.png)
-*New user registration form with validation*
+## Testing
 
-**Required Fields:**
-- Full name
-- Email address
-- Username
-- Password (with strength indicator)
-- Confirm password
-- Terms acceptance
+| Document | Description |
+|----------|-------------|
+| [Testing Guide](TESTING_GUIDE.md) | How to run tests across all modules |
+| [Test Strategy](testing/TEST_STRATEGY.md) | Overall testing philosophy and approach |
+| [Security Testing Guide](SECURITY_TESTING_GUIDE.md) | Security scanning and penetration testing |
+| [Test Results Summary](testing/TEST_RESULTS_SUMMARY.md) | Latest test execution results |
+| [Test Results](testing/TEST_RESULTS.md) | Detailed test output |
+| [Final Test Report](testing/FINAL_TEST_REPORT.md) | Comprehensive test verification report |
+| [Test Expansion Progress](testing/TEST_EXPANSION_PROGRESS.md) | Test coverage expansion tracking |
+| [Test Implementation Summary](testing/TEST_IMPLEMENTATION_SUMMARY.md) | Test implementation details |
+| [Testing Report](testing/TESTING_REPORT.md) | Testing phase report |
+| [Comprehensive Test Verification](testing/COMPREHENSIVE_TEST_VERIFICATION.md) | Cross-module test verification |
+| [Protocol Testing](testing/PROTOCOL_TESTING_COMPLETE.md) | Network protocol test results |
 
-### Dashboard
+## QA
 
-#### Main Dashboard
-![Main Dashboard](screenshots/dashboard/main-dashboard.png)
-*Overview of system metrics and quick actions*
+| Document | Description |
+|----------|-------------|
+| [QA Testing Guide](qa/QA_TESTING_GUIDE.md) | QA process and test case management |
+| [Catalogizer QA](qa/CATALOGIZER_QA.md) | QA test plan and execution summary |
 
-**Dashboard Components:**
-- **Media Statistics**: Total files, size, recent uploads
-- **Quick Actions**: Upload, create collection, search
-- **Recent Activity**: Latest user actions and system events
-- **System Health**: Performance metrics and alerts
-- **Storage Usage**: Visual representation of storage consumption
+## Security
 
-#### Analytics Dashboard
-![Analytics Dashboard](screenshots/dashboard/analytics-dashboard.png)
-*Comprehensive analytics and reporting interface*
+| Document | Description |
+|----------|-------------|
+| [Freemium Security Setup](FREEMIUM_SECURITY_SETUP.md) | Security configuration for freemium deployments |
 
-**Analytics Features:**
-- Real-time usage metrics
-- User activity trends
-- Media access patterns
-- Custom date range selection
-- Export functionality
+## Project Status and Tracking
 
-### Media Management
+| Document | Description |
+|----------|-------------|
+| [Master Audit Plan](MASTER_AUDIT_AND_IMPLEMENTATION_PLAN.md) | Comprehensive audit and implementation roadmap |
+| [Completion Summary](status/COMPLETION_SUMMARY.md) | Project completion status overview |
+| [Comprehensive Status Report](status/COMPREHENSIVE_STATUS_REPORT.md) | Detailed status across all modules |
+| [Project Dashboard](status/PROJECT_DASHBOARD.md) | High-level project metrics |
+| [Implementation Task Tracker](status/IMPLEMENTATION_TASK_TRACKER.md) | Task-level tracking |
+| [Implementation Report](status/IMPLEMENTATION_REPORT.md) | Implementation phase report |
+| [Implementation Summary](status/IMPLEMENTATION_SUMMARY.md) | Implementation highlights |
+| [Implementation Tracking](status/IMPLEMENTATION_TRACKING.md) | Ongoing implementation tracking |
+| [Improvements Applied](status/IMPROVEMENTS_APPLIED.md) | List of applied improvements |
+| [Improvements Summary](status/IMPROVEMENTS_SUMMARY.md) | Summary of improvement areas |
+| [Installer Wizard Summary](status/INSTALLER_WIZARD_SUMMARY.md) | Installer wizard implementation status |
+| [Project Completion Summary](status/PROJECT_COMPLETION_SUMMARY.md) | Final completion summary |
+| [Security Integration](status/SECURITY_INTEGRATION_COMPLETE.md) | Security integration status |
+| [Final Expansion Summary](status/FINAL_EXPANSION_SUMMARY.md) | Feature expansion summary |
+| [Final Polish Report](status/FINAL_POLISH_REPORT.md) | Final polish pass report |
+| [Status and Implementation Plan](status/COMPREHENSIVE_STATUS_AND_IMPLEMENTATION_PLAN.md) | Combined status and plan |
 
-#### Media Library
-![Media Library](screenshots/media/media-library.png)
-*Grid and list views of media collection*
+## Development Phases
 
-**View Options:**
-- Grid view with thumbnails
-- List view with details
-- Filtering by type, date, size
-- Sorting options
-- Bulk selection tools
+| Document | Description |
+|----------|-------------|
+| [Phase 1 Complete](phases/PHASE1_COMPLETE.md) | Phase 1 completion report |
+| [Phase 1 Progress](phases/PHASE1_PROGRESS_UPDATE.md) | Phase 1 progress update |
+| [Phase 1 Report](phases/PHASE_1_PROGRESS_REPORT.md) | Phase 1 detailed report |
+| [Phase 2 Feature Docs](phases/PHASE_2_FEATURE_DOCUMENTATION.md) | Phase 2 feature documentation |
+| [Phase 2 Implementation](phases/PHASE_2_IMPLEMENTATION_DOCUMENTATION.md) | Phase 2 implementation details |
+| [Phase 2 Testing Plan](phases/PHASE_2_TESTING_PLAN.md) | Phase 2 testing strategy |
+| [Phase 2-4 Completion](phases/PHASE2_4_COMPLETION_REPORT.md) | Phases 2-4 completion report |
+| [Phase 2 Final](phases/PHASE2_FINAL_COMPLETION.md) | Phase 2 final completion |
+| [Phase 3 Plan](phases/PHASE3_IMPLEMENTATION_PLAN.md) | Phase 3 implementation plan |
 
-#### Media Upload
-![Media Upload](screenshots/media/upload-interface.png)
-*Drag-and-drop upload interface with progress tracking*
+## Roadmap
 
-**Upload Features:**
-- Drag-and-drop support
-- Multiple file selection
-- Progress indicators
-- File validation
-- Metadata extraction
-
-#### Media Details
-![Media Details](screenshots/media/media-details.png)
-*Detailed view of media item with metadata and actions*
-
-**Detail Information:**
-- File properties (size, format, dimensions)
-- Metadata (EXIF, creation date, etc.)
-- Preview/thumbnail
-- Tags and categories
-- Share options
-
-### Collections & Favorites
-
-#### Collections View
-![Collections](screenshots/collections/collections-view.png)
-*Organized collections with smart categorization*
-
-**Collection Features:**
-- Create custom collections
-- Smart collections based on criteria
-- Drag-and-drop organization
-- Share collections
-- Collection statistics
-
-#### Favorites Management
-![Favorites](screenshots/collections/favorites-management.png)
-*Favorite items across all entity types*
-
-**Favorites Options:**
-- Quick access to favorite items
-- Organize by type
-- Share favorite collections
-- Recommendation engine
-
-### Advanced Features
-
-#### Format Conversion
-![Format Conversion](screenshots/features/format-conversion.png)
-*Media format conversion interface with queue management*
-
-**Conversion Features:**
-- Support for video, audio, image, document formats
-- Batch conversion
-- Quality settings
-- Progress tracking
-- Queue management
-
-#### Sync & Backup
-![Sync Settings](screenshots/features/sync-backup.png)
-*WebDAV synchronization and backup configuration*
-
-**Sync Options:**
-- WebDAV server configuration
-- Bidirectional sync
-- Scheduled backups
-- Conflict resolution
-- Sync history
-
-#### Error Reporting
-![Error Reporting](screenshots/features/error-reporting.png)
-*Comprehensive error tracking and analysis*
-
-**Error Management:**
-- Real-time error detection
-- Crash report analysis
-- System health monitoring
-- External integrations
-- Error resolution tracking
-
-### Administration
-
-#### User Management
-![User Management](screenshots/admin/user-management.png)
-*Complete user administration interface*
-
-**Admin Features:**
-- User creation and editing
-- Role assignment
-- Permission management
-- Activity monitoring
-- Bulk operations
-
-#### System Configuration
-![System Config](screenshots/admin/system-configuration.png)
-*Comprehensive system settings and configuration*
-
-**Configuration Sections:**
-- Database settings
-- Storage configuration
-- Network settings
-- Security options
-- Feature toggles
-
-#### Installation Wizard
-![Installation Wizard](screenshots/admin/installation-wizard.png)
-*Step-by-step setup wizard for new installations*
-
-**Wizard Steps:**
-1. Welcome and requirements check
-2. Database configuration
-3. Storage setup
-4. Network configuration
-5. Authentication setup
-6. Feature selection
-7. External services
-8. Configuration summary
-9. Completion
+| Document | Description |
+|----------|-------------|
+| [Roadmap v3](roadmap/CATALOGIZER_ROADMAP_V3.md) | Product roadmap and future plans |
 
 ---
 
-## 📊 Screenshot Documentation Template
+## Directory Structure
 
-### How to Capture Screenshots
-
-For each interface component, capture screenshots following these guidelines:
-
-#### Screenshot Standards
-- **Resolution**: 1920x1080 minimum
-- **Format**: PNG with transparency where applicable
-- **Quality**: High DPI/Retina support
-- **Naming**: Descriptive, kebab-case naming
-- **Location**: Organized in `/docs/screenshots/` subdirectories
-
-#### Directory Structure
 ```
 docs/
-├── screenshots/
-│   ├── auth/
-│   │   ├── login-screen.png
-│   │   ├── registration-screen.png
-│   │   ├── forgot-password.png
-│   │   └── two-factor-auth.png
-│   ├── dashboard/
-│   │   ├── main-dashboard.png
-│   │   ├── analytics-dashboard.png
-│   │   ├── realtime-metrics.png
-│   │   └── reports-view.png
-│   ├── media/
-│   │   ├── media-library.png
-│   │   ├── upload-interface.png
-│   │   ├── media-details.png
-│   │   ├── media-grid-view.png
-│   │   └── media-list-view.png
-│   ├── collections/
-│   │   ├── collections-view.png
-│   │   ├── create-collection.png
-│   │   ├── favorites-management.png
-│   │   └── smart-collections.png
-│   ├── features/
-│   │   ├── format-conversion.png
-│   │   ├── sync-backup.png
-│   │   ├── error-reporting.png
-│   │   ├── log-management.png
-│   │   └── stress-testing.png
-│   ├── admin/
-│   │   ├── user-management.png
-│   │   ├── system-configuration.png
-│   │   ├── installation-wizard.png
-│   │   ├── backup-restore.png
-│   │   └── system-health.png
-│   └── mobile/
-│       ├── mobile-dashboard.png
-│       ├── mobile-media-view.png
-│       └── mobile-upload.png
+  CHANGELOG.md              - Release notes (Keep a Changelog format)
+  README.md                 - This index file
+  CONFIGURATION_GUIDE.md    - Application configuration
+  CONTRIBUTING.md           - Contribution guidelines
+  DEPLOYMENT_GUIDE.md       - Deployment instructions
+  INSTALLATION_GUIDE.md     - Installation guide
+  TESTING_GUIDE.md          - Testing instructions
+  TROUBLESHOOTING_GUIDE.md  - Troubleshooting reference
+  USER_GUIDE.md             - End-user documentation
+  api/                      - API and WebSocket documentation
+  architecture/             - System design, DB schema, migrations
+  deployment/               - Docker, monitoring, scaling, runbooks
+  guides/                   - Platform-specific user guides
+  phases/                   - Development phase reports
+  qa/                       - QA test plans and results
+  roadmap/                  - Product roadmap
+  status/                   - Project status and tracking
+  testing/                  - Test strategy, results, and reports
 ```
-
-### Screenshot Capture Checklist
-
-#### Before Capturing
-- [ ] Clear browser cache and cookies
-- [ ] Use consistent test data
-- [ ] Ensure optimal lighting/theme
-- [ ] Close unnecessary browser tabs
-- [ ] Set browser zoom to 100%
-
-#### During Capture
-- [ ] Include relevant UI elements
-- [ ] Show realistic data (not Lorem Ipsum)
-- [ ] Capture different states (loading, error, success)
-- [ ] Include tooltips and help text where relevant
-- [ ] Show responsive design variations
-
-#### After Capture
-- [ ] Crop to relevant area
-- [ ] Add annotations if needed
-- [ ] Optimize file size
-- [ ] Verify image quality
-- [ ] Update documentation references
-
----
-
-## 🎯 Interface Components to Document
-
-### Core Application Screens
-
-#### 1. Authentication Flow
-- [ ] Login page
-- [ ] Registration form
-- [ ] Password reset
-- [ ] Two-factor authentication
-- [ ] Account verification
-
-#### 2. Main Dashboard
-- [ ] Overview dashboard
-- [ ] Quick actions panel
-- [ ] Recent activity feed
-- [ ] System status indicators
-- [ ] Navigation menu
-
-#### 3. Media Management
-- [ ] Media library (grid view)
-- [ ] Media library (list view)
-- [ ] Upload interface
-- [ ] Media details panel
-- [ ] Batch operations
-- [ ] Search and filter
-- [ ] Media preview
-
-#### 4. Collections & Organization
-- [ ] Collections overview
-- [ ] Create collection modal
-- [ ] Collection details
-- [ ] Favorites view
-- [ ] Tags management
-- [ ] Smart collections
-
-#### 5. Advanced Features
-- [ ] Format conversion queue
-- [ ] Sync configuration
-- [ ] Backup management
-- [ ] Error reporting dashboard
-- [ ] Log viewer
-- [ ] Stress testing interface
-
-#### 6. Administration
-- [ ] User management table
-- [ ] Role assignment
-- [ ] System configuration panels
-- [ ] Installation wizard steps
-- [ ] Backup/restore interface
-- [ ] System health monitor
-
-#### 7. Settings & Preferences
-- [ ] User profile settings
-- [ ] Notification preferences
-- [ ] Theme selection
-- [ ] Language settings
-- [ ] Privacy controls
-
-#### 8. Mobile Interface
-- [ ] Mobile dashboard
-- [ ] Mobile media browser
-- [ ] Mobile upload
-- [ ] Mobile navigation
-- [ ] Touch gestures
-
-### Error States & Edge Cases
-- [ ] Empty states
-- [ ] Loading states
-- [ ] Error messages
-- [ ] Network offline
-- [ ] Permission denied
-- [ ] Server maintenance
-
-### Responsive Design
-- [ ] Desktop view (1920x1080)
-- [ ] Laptop view (1366x768)
-- [ ] Tablet view (768x1024)
-- [ ] Mobile view (375x667)
-- [ ] Large display (2560x1440)
-
----
-
-## 📖 Documentation Integration
-
-### Markdown Integration
-```markdown
-## Feature Description
-
-### Overview
-Detailed explanation of the feature...
-
-### Interface
-![Feature Screenshot](screenshots/feature/feature-overview.png)
-*Caption describing what the screenshot shows*
-
-### Step-by-Step Guide
-1. Navigate to the feature
-   ![Step 1](screenshots/feature/step-1.png)
-
-2. Configure the settings
-   ![Step 2](screenshots/feature/step-2.png)
-
-3. Review and apply
-   ![Step 3](screenshots/feature/step-3.png)
-```
-
-### API Documentation Integration
-```markdown
-## API Endpoint
-
-### Request
-```json
-{
-  "parameter": "value"
-}
-```
-
-### Response
-```json
-{
-  "result": "success"
-}
-```
-
-### UI Implementation
-![API Result in UI](screenshots/api/endpoint-result.png)
-*How the API response appears in the user interface*
-```
-
----
-
-## 🔧 Tools for Screenshot Management
-
-### Recommended Tools
-- **macOS**: Built-in Screenshot tool, CleanMyMac
-- **Windows**: Snipping Tool, Greenshot, ShareX
-- **Linux**: GNOME Screenshot, Shutter, Flameshot
-- **Cross-platform**: Lightshot, Nimbus Screenshot
-
-### Automation Options
-- **Playwright**: Automated screenshot capture
-- **Puppeteer**: Browser automation for consistent screenshots
-- **Selenium**: Cross-browser screenshot automation
-
-### Image Optimization
-- **TinyPNG**: Compress PNG files
-- **ImageOptim**: Lossless image optimization
-- **GIMP**: Advanced image editing
-- **Figma**: Design and annotation tool
-
----
-
-## 📝 Caption and Annotation Guidelines
-
-### Caption Format
-```
-![Alt Text](path/to/image.png)
-*Descriptive caption explaining the screenshot content and context*
-```
-
-### Annotation Best Practices
-- Use consistent color scheme for annotations
-- Keep annotations minimal and clear
-- Use arrows to highlight important elements
-- Include callout numbers for step-by-step guides
-- Maintain consistency across all screenshots
-
-### Accessibility Considerations
-- Provide meaningful alt text
-- Ensure color contrast for annotations
-- Include text descriptions for complex images
-- Support screen readers with detailed captions
-
----
-
-## 📋 Documentation Versioning
-
-Documentation follows semantic versioning:
-- Major version: Breaking changes or major feature additions
-- Minor version: New features or significant improvements
-- Patch version: Bug fixes, clarifications, or minor updates
-
-Current version: 1.0.0
-
-## 🎬 Video Recording Tools
-
-Recommended tools for creating tutorial videos:
-- OBS Studio (free, open source)
-- ScreenFlow (paid, professional)
-- macOS built-in QuickTime Player
-
-Video specifications:
-- 1080p resolution (1920x1080)
-- 30fps frame rate
-- H.264 codec
-- Include captions/subtitles
-- Keep videos under 10 minutes when possible
-
----
-
-This documentation structure ensures comprehensive visual coverage of all Catalogizer v3.0 features while maintaining consistency and usability for all user types.

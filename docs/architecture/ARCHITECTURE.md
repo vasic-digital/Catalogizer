@@ -862,3 +862,17 @@ CREATE INDEX idx_media_2024_type ON media_items_2024(media_type);
 ```
 
 This architecture provides a robust, scalable, and resilient foundation for the Catalogizer system, with comprehensive error handling and recovery mechanisms to ensure high availability even in the face of various failure scenarios.
+
+## Related Documentation
+
+- [Database Schema](DATABASE_SCHEMA.md) - Complete database table and index reference
+- [SQL Migrations](SQL_MIGRATIONS.md) - Migration versions, schema changes, and how to create new migrations
+- [Auth Flow](AUTH_FLOW.md) - Authentication and authorization architecture
+- [Go Backend Guide](GO_BACKEND_GUIDE.md) - Backend development patterns and conventions
+- [React Frontend Guide](REACT_FRONTEND_GUIDE.md) - Frontend architecture and component patterns
+- [Android Architecture](ANDROID_ARCHITECTURE.md) - MVVM architecture for mobile clients
+- [Tauri IPC Guide](TAURI_IPC_GUIDE.md) - Desktop application IPC commands and events
+- [API Documentation](../api/API_DOCUMENTATION.md) - REST API endpoint reference
+- [WebSocket Events](../api/WEBSOCKET_EVENTS.md) - Real-time event bus documentation
+- [Deployment Guide](../DEPLOYMENT_GUIDE.md) - Production deployment instructions
+- [Monitoring Guide](../deployment/MONITORING_GUIDE.md) - Metrics and observability
