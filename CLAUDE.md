@@ -37,8 +37,8 @@ cd catalogizer-android   # or catalogizer-androidtv
 ./gradlew test                       # unit tests
 ./gradlew assembleDebug              # debug build
 
-# Docker & full system
-docker-compose -f docker-compose.dev.yml up   # dev env
+# Containers & full system (use podman if docker is unavailable)
+podman-compose -f docker-compose.dev.yml up   # dev env
 ./scripts/run-all-tests.sh                    # all tests + security
 ```
 
@@ -78,6 +78,22 @@ New files MUST be placed in the correct directory. Do NOT add files to the proje
 | `Assets/` | Static assets (images, HTML tutorials) |
 
 Docker Compose files (`docker-compose.yml`, `docker-compose.dev.yml`) reference `config/` for nginx and redis configs. Do NOT move these config files without updating the Compose volume mounts.
+
+## Container Runtime
+
+**Always use Podman when Docker is not available.** This project supports both Docker and Podman as container runtimes. Before running any container command, check which is available and prefer `podman`/`podman-compose` over `docker`/`docker-compose`. All `docker-compose.yml` files are compatible with both runtimes.
+
+```bash
+# Check available runtime
+which podman && podman --version || which docker && docker --version
+
+# Use podman-compose (preferred) or docker-compose
+podman-compose -f docker-compose.dev.yml up
+podman-compose -f docker-compose.yml config --quiet  # validate
+
+# Single container commands
+podman run / podman build / podman ps  # instead of docker equivalents
+```
 
 ## Conventions
 
