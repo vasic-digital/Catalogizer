@@ -4,8 +4,8 @@ import { MemoryRouter } from 'react-router-dom'
 import App from '../App'
 
 // Mock BrowserRouter to use MemoryRouter for testing
-jest.mock('react-router-dom', () => {
-  const actual = jest.requireActual('react-router-dom')
+vi.mock('react-router-dom', async () => {
+  const actual = await vi.importActual('react-router-dom')
   return {
     ...actual,
     BrowserRouter: ({ children }: { children: React.ReactNode }) => (
@@ -15,30 +15,30 @@ jest.mock('react-router-dom', () => {
 })
 
 // Mock all child components and contexts
-jest.mock('@/contexts/AuthContext', () => ({
+vi.mock('@/contexts/AuthContext', async () => ({
   AuthProvider: ({ children }: { children: React.ReactNode }) => (
     <div data-testid="auth-provider">{children}</div>
   ),
-  useAuth: jest.fn(() => ({
+  useAuth: vi.fn(() => ({
     user: null,
     isAuthenticated: false,
-    login: jest.fn(),
-    logout: jest.fn(),
+    login: vi.fn(),
+    logout: vi.fn(),
   })),
 }))
 
-jest.mock('@/contexts/WebSocketContext', () => ({
+vi.mock('@/contexts/WebSocketContext', async () => ({
   WebSocketProvider: ({ children }: { children: React.ReactNode }) => (
     <div data-testid="websocket-provider">{children}</div>
   ),
-  useWebSocketContext: jest.fn(),
+  useWebSocketContext: vi.fn(),
 }))
 
-jest.mock('@/components/ui/ConnectionStatus', () => ({
+vi.mock('@/components/ui/ConnectionStatus', async () => ({
   ConnectionStatus: () => <div data-testid="connection-status">Connection Status</div>,
 }))
 
-jest.mock('@/components/layout/Layout', () => {
+vi.mock('@/components/layout/Layout', async () => {
   const { Outlet } = require('react-router-dom')
   return {
     Layout: () => (
@@ -50,29 +50,29 @@ jest.mock('@/components/layout/Layout', () => {
   }
 })
 
-jest.mock('@/components/auth/LoginForm', () => ({
+vi.mock('@/components/auth/LoginForm', async () => ({
   LoginForm: () => <div data-testid="login-form">Login Form</div>,
 }))
 
-jest.mock('@/components/auth/RegisterForm', () => ({
+vi.mock('@/components/auth/RegisterForm', async () => ({
   RegisterForm: () => <div data-testid="register-form">Register Form</div>,
 }))
 
-jest.mock('@/components/auth/ProtectedRoute', () => ({
+vi.mock('@/components/auth/ProtectedRoute', async () => ({
   ProtectedRoute: ({ children }: { children: React.ReactNode }) => (
     <div data-testid="protected-route">{children}</div>
   ),
 }))
 
-jest.mock('@/pages/Dashboard', () => ({
+vi.mock('@/pages/Dashboard', async () => ({
   Dashboard: () => <div data-testid="dashboard-page">Dashboard Page</div>,
 }))
 
-jest.mock('@/pages/MediaBrowser', () => ({
+vi.mock('@/pages/MediaBrowser', async () => ({
   MediaBrowser: () => <div data-testid="media-browser-page">Media Browser Page</div>,
 }))
 
-jest.mock('@/pages/Analytics', () => ({
+vi.mock('@/pages/Analytics', async () => ({
   Analytics: () => <div data-testid="analytics-page">Analytics Page</div>,
 }))
 

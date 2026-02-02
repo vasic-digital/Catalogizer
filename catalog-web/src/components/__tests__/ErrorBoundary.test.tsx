@@ -23,7 +23,7 @@ describe('ErrorBoundary', () => {
   // Suppress console.error for expected error boundary logs
   const originalError = console.error
   beforeAll(() => {
-    console.error = jest.fn()
+    console.error = vi.fn()
   })
 
   afterAll(() => {

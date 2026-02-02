@@ -9,13 +9,13 @@
 export {} // Ensure this is treated as a module under --isolatedModules
 
 // Mock web-vitals module
-const mockOnCLS = jest.fn()
-const mockOnFCP = jest.fn()
-const mockOnINP = jest.fn()
-const mockOnLCP = jest.fn()
-const mockOnTTFB = jest.fn()
+const mockOnCLS = vi.fn()
+const mockOnFCP = vi.fn()
+const mockOnINP = vi.fn()
+const mockOnLCP = vi.fn()
+const mockOnTTFB = vi.fn()
 
-jest.mock('web-vitals', () => ({
+vi.mock('web-vitals', async () => ({
   onCLS: mockOnCLS,
   onFCP: mockOnFCP,
   onINP: mockOnINP,
@@ -44,7 +44,7 @@ const createMockMetric = (name: string, value = 100, rating = 'good'): MockMetri
 })
 
 beforeEach(() => {
-  jest.clearAllMocks()
+  vi.clearAllMocks()
 })
 
 describe('webVitals', () => {
@@ -52,7 +52,7 @@ describe('webVitals', () => {
     it('should register callbacks for all five core web vitals', async () => {
       // The reportWebVitals function dynamically imports web-vitals
       // and calls onCLS, onFCP, onINP, onLCP, onTTFB with the provided callback
-      const callback = jest.fn()
+      const callback = vi.fn()
       const { onCLS, onFCP, onINP, onLCP, onTTFB } = require('web-vitals')
 
       onCLS(callback)
@@ -69,7 +69,7 @@ describe('webVitals', () => {
     })
 
     it('should pass metric data through to the callback', () => {
-      const callback = jest.fn()
+      const callback = vi.fn()
       const metric = createMockMetric('LCP', 2500, 'good')
 
       mockOnLCP.mockImplementation((cb: (m: MockMetric) => void) => cb(metric))
@@ -103,7 +103,7 @@ describe('webVitals', () => {
 
   describe('logWebVitals - console logging pattern', () => {
     it('should format metric for console output', () => {
-      const consoleSpy = jest.spyOn(console, 'log').mockImplementation()
+      const consoleSpy = vi.spyOn(console, 'log').mockImplementation()
       const metric = createMockMetric('CLS', 0.05, 'good')
 
       // Mirrors: console.log(`[Web Vitals] ${metric.name}:`, { value, rating, delta, id, navigationType })
@@ -133,7 +133,7 @@ describe('webVitals', () => {
       // logWebVitals checks import.meta.env.DEV
       // When DEV is true, it calls reportWebVitals; when false, it does nothing
       const isDev = true
-      const callback = jest.fn()
+      const callback = vi.fn()
 
       if (isDev) {
         const { onCLS } = require('web-vitals')
@@ -145,7 +145,7 @@ describe('webVitals', () => {
 
     it('should not register callbacks in production mode', () => {
       const isDev = false
-      const callback = jest.fn()
+      const callback = vi.fn()
 
       if (isDev) {
         const { onCLS } = require('web-vitals')
@@ -160,7 +160,7 @@ describe('webVitals', () => {
   describe('sendToAnalytics - analytics endpoint pattern', () => {
     it('should not send metrics when analytics URL is not configured', () => {
       const analyticsUrl = '' // equivalent to env var not set
-      const mockSendBeacon = jest.fn()
+      const mockSendBeacon = vi.fn()
 
       if (analyticsUrl) {
         mockSendBeacon(analyticsUrl, '{}')
@@ -204,7 +204,7 @@ describe('webVitals', () => {
         navigationType: metric.navigationType,
       })
 
-      const mockSendBeacon = jest.fn()
+      const mockSendBeacon = vi.fn()
 
       // Mirrors: if (typeof navigator.sendBeacon === 'function')
       if (typeof mockSendBeacon === 'function') {
@@ -229,7 +229,7 @@ describe('webVitals', () => {
         navigationType: metric.navigationType,
       })
 
-      const mockFetch = jest.fn()
+      const mockFetch = vi.fn()
       const sendBeaconAvailable = false
 
       // Mirrors the fallback logic in sendToAnalytics

@@ -42,12 +42,12 @@ describe('utils', () => {
 
   describe('formatRelativeTime', () => {
     beforeEach(() => {
-      jest.useFakeTimers()
-      jest.setSystemTime(new Date('2024-01-15T12:00:00Z'))
+      vi.useFakeTimers()
+      vi.setSystemTime(new Date('2024-01-15T12:00:00Z'))
     })
 
     afterEach(() => {
-      jest.useRealTimers()
+      vi.useRealTimers()
     })
 
     it('returns "Just now" for very recent dates', () => {
@@ -112,57 +112,57 @@ describe('utils', () => {
 
   describe('debounce', () => {
     beforeEach(() => {
-      jest.useFakeTimers()
+      vi.useFakeTimers()
     })
 
     afterEach(() => {
-      jest.useRealTimers()
+      vi.useRealTimers()
     })
 
     it('delays function execution', () => {
-      const mockFn = jest.fn()
+      const mockFn = vi.fn()
       const debouncedFn = debounce(mockFn, 100)
 
       debouncedFn()
       expect(mockFn).not.toHaveBeenCalled()
 
-      jest.advanceTimersByTime(100)
+      vi.advanceTimersByTime(100)
       expect(mockFn).toHaveBeenCalledTimes(1)
     })
 
     it('resets delay on subsequent calls', () => {
-      const mockFn = jest.fn()
+      const mockFn = vi.fn()
       const debouncedFn = debounce(mockFn, 100)
 
       debouncedFn()
-      jest.advanceTimersByTime(50)
+      vi.advanceTimersByTime(50)
       debouncedFn()
-      jest.advanceTimersByTime(50)
+      vi.advanceTimersByTime(50)
       expect(mockFn).not.toHaveBeenCalled()
 
-      jest.advanceTimersByTime(50)
+      vi.advanceTimersByTime(50)
       expect(mockFn).toHaveBeenCalledTimes(1)
     })
 
     it('calls function with correct arguments', () => {
-      const mockFn = jest.fn()
+      const mockFn = vi.fn()
       const debouncedFn = debounce(mockFn, 100)
 
       debouncedFn('arg1', 'arg2')
-      jest.advanceTimersByTime(100)
+      vi.advanceTimersByTime(100)
 
       expect(mockFn).toHaveBeenCalledWith('arg1', 'arg2')
     })
 
     it('handles multiple rapid calls', () => {
-      const mockFn = jest.fn()
+      const mockFn = vi.fn()
       const debouncedFn = debounce(mockFn, 100)
 
       debouncedFn()
       debouncedFn()
       debouncedFn()
 
-      jest.advanceTimersByTime(100)
+      vi.advanceTimersByTime(100)
 
       expect(mockFn).toHaveBeenCalledTimes(1)
     })

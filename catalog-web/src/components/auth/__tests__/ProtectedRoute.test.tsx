@@ -1,25 +1,26 @@
 import { render, screen } from '@testing-library/react'
 import { MemoryRouter } from 'react-router-dom'
 import { ProtectedRoute } from '../ProtectedRoute'
+import { useAuth } from '@/contexts/AuthContext'
 
 // Mock the AuthContext
-jest.mock('@/contexts/AuthContext', () => ({
-  useAuth: jest.fn(),
+vi.mock('@/contexts/AuthContext', async () => ({
+  useAuth: vi.fn(),
 }))
 
 // Mock Navigate component
-jest.mock('react-router-dom', () => ({
-  ...jest.requireActual('react-router-dom'),
+vi.mock('react-router-dom', async () => ({
+  ...(await vi.importActual('react-router-dom')),
   Navigate: ({ to }: { to: string }) => <div data-testid="navigate-to">{to}</div>,
 }))
 
-const mockUseAuth = require('@/contexts/AuthContext').useAuth
+const mockUseAuth = vi.mocked(useAuth)
 
 describe('ProtectedRoute', () => {
   const TestChild = () => <div>Protected Content</div>
 
   beforeEach(() => {
-    jest.clearAllMocks()
+    vi.clearAllMocks()
   })
 
   describe('Loading State', () => {
@@ -28,7 +29,7 @@ describe('ProtectedRoute', () => {
         isAuthenticated: false,
         isLoading: true,
         user: null,
-        hasPermission: jest.fn(),
+        hasPermission: vi.fn(),
       })
 
       render(
@@ -52,7 +53,7 @@ describe('ProtectedRoute', () => {
         isAuthenticated: false,
         isLoading: false,
         user: null,
-        hasPermission: jest.fn(),
+        hasPermission: vi.fn(),
       })
 
       render(
@@ -74,7 +75,7 @@ describe('ProtectedRoute', () => {
         isAuthenticated: true,
         isLoading: false,
         user: { id: 1, username: 'testuser', role: 'user' },
-        hasPermission: jest.fn(),
+        hasPermission: vi.fn(),
       })
 
       render(
@@ -95,7 +96,7 @@ describe('ProtectedRoute', () => {
         isAuthenticated: true,
         isLoading: false,
         user: { id: 1, username: 'admin', role: 'admin' },
-        hasPermission: jest.fn(),
+        hasPermission: vi.fn(),
       })
 
       render(
@@ -114,7 +115,7 @@ describe('ProtectedRoute', () => {
         isAuthenticated: true,
         isLoading: false,
         user: { id: 1, username: 'testuser', role: 'user' },
-        hasPermission: jest.fn(),
+        hasPermission: vi.fn(),
       })
 
       render(
@@ -136,7 +137,7 @@ describe('ProtectedRoute', () => {
         isAuthenticated: true,
         isLoading: false,
         user: { id: 1, username: 'testuser', role: 'editor' },
-        hasPermission: jest.fn(),
+        hasPermission: vi.fn(),
       })
 
       render(
@@ -155,7 +156,7 @@ describe('ProtectedRoute', () => {
         isAuthenticated: true,
         isLoading: false,
         user: { id: 1, username: 'testuser', role: 'viewer' },
-        hasPermission: jest.fn(),
+        hasPermission: vi.fn(),
       })
 
       render(
@@ -173,7 +174,7 @@ describe('ProtectedRoute', () => {
 
   describe('Permission-Based Access Control', () => {
     it('allows access when user has required permission', () => {
-      const mockHasPermission = jest.fn().mockReturnValue(true)
+      const mockHasPermission = vi.fn().mockReturnValue(true)
       mockUseAuth.mockReturnValue({
         isAuthenticated: true,
         isLoading: false,
@@ -194,7 +195,7 @@ describe('ProtectedRoute', () => {
     })
 
     it('redirects to dashboard when user does not have required permission', () => {
-      const mockHasPermission = jest.fn().mockReturnValue(false)
+      const mockHasPermission = vi.fn().mockReturnValue(false)
       mockUseAuth.mockReturnValue({
         isAuthenticated: true,
         isLoading: false,
@@ -223,7 +224,7 @@ describe('ProtectedRoute', () => {
         isAuthenticated: false,
         isLoading: false,
         user: null,
-        hasPermission: jest.fn(),
+        hasPermission: vi.fn(),
       })
 
       const { rerender } = render(
@@ -242,7 +243,7 @@ describe('ProtectedRoute', () => {
         isAuthenticated: true,
         isLoading: false,
         user: { id: 1, username: 'testuser', role: 'user' },
-        hasPermission: jest.fn().mockReturnValue(true),
+        hasPermission: vi.fn().mockReturnValue(true),
       })
 
       rerender(
@@ -262,7 +263,7 @@ describe('ProtectedRoute', () => {
         isAuthenticated: true,
         isLoading: false,
         user: { id: 1, username: 'admin', role: 'admin' },
-        hasPermission: jest.fn().mockReturnValue(true),
+        hasPermission: vi.fn().mockReturnValue(true),
       })
 
       render(
@@ -283,7 +284,7 @@ describe('ProtectedRoute', () => {
         isAuthenticated: true,
         isLoading: false,
         user: { id: 1, username: 'testuser', role: 'user' },
-        hasPermission: jest.fn(),
+        hasPermission: vi.fn(),
       })
 
       render(

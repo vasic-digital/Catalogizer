@@ -2,33 +2,34 @@ import { render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { MemoryRouter } from 'react-router-dom'
 import { Header } from '../Header'
+import { useAuth } from '@/contexts/AuthContext'
 
 // Mock AuthContext
-const mockLogout = jest.fn()
-const mockNavigate = jest.fn()
+const mockLogout = vi.fn()
+const mockNavigate = vi.fn()
 
-jest.mock('@/contexts/AuthContext', () => ({
-  useAuth: jest.fn(),
+vi.mock('@/contexts/AuthContext', async () => ({
+  useAuth: vi.fn(),
 }))
 
-jest.mock('react-router-dom', () => ({
-  ...jest.requireActual('react-router-dom'),
+vi.mock('react-router-dom', async () => ({
+  ...(await vi.importActual('react-router-dom')),
   useNavigate: () => mockNavigate,
 }))
 
 // Mock framer-motion to avoid animation issues in tests
-jest.mock('framer-motion', () => ({
+vi.mock('framer-motion', async () => ({
   motion: {
     div: ({ children, ...props }: any) => <div {...props}>{children}</div>,
   },
   AnimatePresence: ({ children }: any) => <>{children}</>,
 }))
 
-const mockUseAuth = require('@/contexts/AuthContext').useAuth
+const mockUseAuth = vi.mocked(useAuth)
 
 describe('Header', () => {
   beforeEach(() => {
-    jest.clearAllMocks()
+    vi.clearAllMocks()
   })
 
   describe('Logo and Branding', () => {
@@ -278,7 +279,7 @@ describe('Header', () => {
 
     it('handles logout errors gracefully', async () => {
       const user = userEvent.setup()
-      const consoleErrorSpy = jest.spyOn(console, 'error').mockImplementation()
+      const consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation()
       mockLogout.mockRejectedValue(new Error('Logout failed'))
 
       render(

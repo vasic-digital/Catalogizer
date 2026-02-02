@@ -5,7 +5,7 @@ import { axe, toHaveNoViolations } from 'jest-axe'
 expect.extend(toHaveNoViolations)
 
 // Mock framer-motion to avoid issues in test environment
-jest.mock('framer-motion', () => ({
+vi.mock('framer-motion', async () => ({
   motion: {
     div: React.forwardRef(({ children, ...props }: any, ref: any) => (
       <div ref={ref} {...props}>{children}</div>
@@ -15,7 +15,7 @@ jest.mock('framer-motion', () => ({
 }))
 
 // Mock lucide-react icons used across components
-jest.mock('lucide-react', () => {
+vi.mock('lucide-react', async () => {
   const icon = ({ className }: { className?: string }) => (
     <svg className={className} data-testid="mock-icon" />
   )

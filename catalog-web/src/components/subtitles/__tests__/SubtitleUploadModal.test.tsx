@@ -4,7 +4,7 @@ import { SubtitleUploadModal } from '../SubtitleUploadModal'
 import { subtitleApi } from '@/lib/subtitleApi'
 
 // Mock framer-motion to render plain divs
-jest.mock('framer-motion', () => ({
+vi.mock('framer-motion', async () => ({
   motion: {
     div: ({ children, onClick, className, ...props }: any) => {
       return <div onClick={onClick} className={className}>{children}</div>
@@ -13,7 +13,7 @@ jest.mock('framer-motion', () => ({
 }))
 
 // Mock lucide-react icons as simple spans
-jest.mock('lucide-react', () => ({
+vi.mock('lucide-react', async () => ({
   X: (props: any) => <span data-testid="icon-x" {...props} />,
   Upload: (props: any) => <span data-testid="icon-upload" {...props} />,
   FileText: (props: any) => <span data-testid="icon-file-text" {...props} />,
@@ -22,17 +22,17 @@ jest.mock('lucide-react', () => ({
   CheckCircle: (props: any) => <span data-testid="icon-check-circle" {...props} />,
 }))
 
-jest.mock('@/lib/subtitleApi', () => ({
+vi.mock('@/lib/subtitleApi', async () => ({
   subtitleApi: {
-    uploadSubtitle: jest.fn(),
+    uploadSubtitle: vi.fn(),
   },
 }))
 
-const mockUploadSubtitle = subtitleApi.uploadSubtitle as jest.MockedFunction<typeof subtitleApi.uploadSubtitle>
+const mockUploadSubtitle = subtitleApi.uploadSubtitle as vi.MockedFunction<typeof subtitleApi.uploadSubtitle>
 
 const defaultProps = {
   isOpen: true,
-  onClose: jest.fn(),
+  onClose: vi.fn(),
   mediaId: 42,
 }
 
@@ -53,12 +53,12 @@ function getUploadButton(): HTMLButtonElement {
 
 describe('SubtitleUploadModal', () => {
   beforeEach(() => {
-    jest.clearAllMocks()
-    jest.useFakeTimers()
+    vi.clearAllMocks()
+    vi.useFakeTimers()
   })
 
   afterEach(() => {
-    jest.useRealTimers()
+    vi.useRealTimers()
   })
 
   describe('Rendering', () => {
@@ -134,8 +134,8 @@ describe('SubtitleUploadModal', () => {
 
   describe('User interactions', () => {
     it('calls onClose when Cancel button is clicked', async () => {
-      const user = userEvent.setup({ advanceTimers: jest.advanceTimersByTime })
-      const onClose = jest.fn()
+      const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime })
+      const onClose = vi.fn()
 
       render(<SubtitleUploadModal {...defaultProps} onClose={onClose} />)
       await user.click(screen.getByText('Cancel'))
@@ -144,8 +144,8 @@ describe('SubtitleUploadModal', () => {
     })
 
     it('calls onClose when X button is clicked', async () => {
-      const user = userEvent.setup({ advanceTimers: jest.advanceTimersByTime })
-      const onClose = jest.fn()
+      const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime })
+      const onClose = vi.fn()
 
       render(<SubtitleUploadModal {...defaultProps} onClose={onClose} />)
       const xIcon = screen.getAllByTestId('icon-x')[0]
@@ -155,8 +155,8 @@ describe('SubtitleUploadModal', () => {
     })
 
     it('calls onClose when clicking the backdrop', async () => {
-      const user = userEvent.setup({ advanceTimers: jest.advanceTimersByTime })
-      const onClose = jest.fn()
+      const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime })
+      const onClose = vi.fn()
 
       render(<SubtitleUploadModal {...defaultProps} onClose={onClose} />)
       const backdrop = screen.getByText('Upload Subtitle', { selector: 'h2' }).closest('.fixed')!
@@ -166,8 +166,8 @@ describe('SubtitleUploadModal', () => {
     })
 
     it('does not close when clicking inside the modal content', async () => {
-      const user = userEvent.setup({ advanceTimers: jest.advanceTimersByTime })
-      const onClose = jest.fn()
+      const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime })
+      const onClose = vi.fn()
 
       render(<SubtitleUploadModal {...defaultProps} onClose={onClose} />)
       await user.click(screen.getByText('Upload Subtitle', { selector: 'h2' }))
@@ -240,7 +240,7 @@ describe('SubtitleUploadModal', () => {
     })
 
     it('clears file when remove button is clicked', async () => {
-      const user = userEvent.setup({ advanceTimers: jest.advanceTimersByTime })
+      const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime })
       render(<SubtitleUploadModal {...defaultProps} />)
 
       const fileInput = document.querySelector('input[type="file"]') as HTMLInputElement
@@ -275,7 +275,7 @@ describe('SubtitleUploadModal', () => {
     })
 
     it('upload button is enabled when file and language are selected', async () => {
-      const user = userEvent.setup({ advanceTimers: jest.advanceTimersByTime })
+      const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime })
       render(<SubtitleUploadModal {...defaultProps} />)
 
       const fileInput = document.querySelector('input[type="file"]') as HTMLInputElement
@@ -289,7 +289,7 @@ describe('SubtitleUploadModal', () => {
     })
 
     it('calls uploadSubtitle API on successful upload', async () => {
-      const user = userEvent.setup({ advanceTimers: jest.advanceTimersByTime })
+      const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime })
       mockUploadSubtitle.mockResolvedValue({
         success: true,
         message: 'Subtitle uploaded successfully!',
@@ -312,7 +312,7 @@ describe('SubtitleUploadModal', () => {
     })
 
     it('shows success message after upload', async () => {
-      const user = userEvent.setup({ advanceTimers: jest.advanceTimersByTime })
+      const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime })
       mockUploadSubtitle.mockResolvedValue({
         success: true,
         message: 'Subtitle uploaded successfully!',
@@ -335,8 +335,8 @@ describe('SubtitleUploadModal', () => {
     })
 
     it('calls onUploadSuccess callback on successful upload', async () => {
-      const user = userEvent.setup({ advanceTimers: jest.advanceTimersByTime })
-      const onUploadSuccess = jest.fn()
+      const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime })
+      const onUploadSuccess = vi.fn()
       mockUploadSubtitle.mockResolvedValue({
         success: true,
         message: 'Done!',
@@ -359,7 +359,7 @@ describe('SubtitleUploadModal', () => {
     })
 
     it('resets form after successful upload timeout', async () => {
-      const user = userEvent.setup({ advanceTimers: jest.advanceTimersByTime })
+      const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime })
       mockUploadSubtitle.mockResolvedValue({
         success: true,
         message: 'Done!',
@@ -382,7 +382,7 @@ describe('SubtitleUploadModal', () => {
 
       // Advance timers to trigger the form reset (2000ms timeout)
       act(() => {
-        jest.advanceTimersByTime(2000)
+        vi.advanceTimersByTime(2000)
       })
 
       await waitFor(() => {
@@ -391,7 +391,7 @@ describe('SubtitleUploadModal', () => {
     })
 
     it('shows error message when upload fails with error response', async () => {
-      const user = userEvent.setup({ advanceTimers: jest.advanceTimersByTime })
+      const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime })
       mockUploadSubtitle.mockResolvedValue({
         success: false,
         error: 'File too large',
@@ -414,7 +414,7 @@ describe('SubtitleUploadModal', () => {
     })
 
     it('shows error message when upload throws an exception', async () => {
-      const user = userEvent.setup({ advanceTimers: jest.advanceTimersByTime })
+      const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime })
       mockUploadSubtitle.mockRejectedValue(new Error('Network error'))
 
       render(<SubtitleUploadModal {...defaultProps} />)
@@ -434,7 +434,7 @@ describe('SubtitleUploadModal', () => {
     })
 
     it('shows generic error for non-Error exceptions', async () => {
-      const user = userEvent.setup({ advanceTimers: jest.advanceTimersByTime })
+      const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime })
       mockUploadSubtitle.mockRejectedValue('string error')
 
       render(<SubtitleUploadModal {...defaultProps} />)
@@ -454,7 +454,7 @@ describe('SubtitleUploadModal', () => {
     })
 
     it('shows "Uploading..." during upload', async () => {
-      const user = userEvent.setup({ advanceTimers: jest.advanceTimersByTime })
+      const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime })
       let resolvePromise: (value: any) => void
       mockUploadSubtitle.mockReturnValue(
         new Promise((resolve) => { resolvePromise = resolve })
@@ -483,7 +483,7 @@ describe('SubtitleUploadModal', () => {
     })
 
     it('passes format as undefined when auto-detect is selected', async () => {
-      const user = userEvent.setup({ advanceTimers: jest.advanceTimersByTime })
+      const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime })
       mockUploadSubtitle.mockResolvedValue({
         success: true,
         message: 'Done!',

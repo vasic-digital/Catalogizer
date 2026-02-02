@@ -2,29 +2,30 @@ import { renderHook, act, waitFor } from '@testing-library/react'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import React from 'react'
 import { useFavorites, useFavoriteStatus } from '../useFavorites'
+import { favoritesApi } from '@/lib/favoritesApi'
 
 // Mock favoritesApi
-jest.mock('@/lib/favoritesApi', () => ({
+vi.mock('@/lib/favoritesApi', async () => ({
   favoritesApi: {
-    getFavorites: jest.fn(),
-    getFavoriteStats: jest.fn(),
-    toggleFavorite: jest.fn(),
-    checkFavorite: jest.fn(),
-    bulkAddToFavorites: jest.fn(),
-    bulkRemoveFromFavorites: jest.fn(),
+    getFavorites: vi.fn(),
+    getFavoriteStats: vi.fn(),
+    toggleFavorite: vi.fn(),
+    checkFavorite: vi.fn(),
+    bulkAddToFavorites: vi.fn(),
+    bulkRemoveFromFavorites: vi.fn(),
   },
 }))
 
 // Mock react-hot-toast
-jest.mock('react-hot-toast', () => ({
+vi.mock('react-hot-toast', async () => ({
   __esModule: true,
   default: {
-    success: jest.fn(),
-    error: jest.fn(),
+    success: vi.fn(),
+    error: vi.fn(),
   },
 }))
 
-const mockFavoritesApi = require('@/lib/favoritesApi').favoritesApi
+const mockFavoritesApi = vi.mocked(favoritesApi)
 const mockToast = require('react-hot-toast').default
 
 const createWrapper = () => {
@@ -86,7 +87,7 @@ const mockStats = {
 
 describe('useFavorites', () => {
   beforeEach(() => {
-    jest.clearAllMocks()
+    vi.clearAllMocks()
     mockFavoritesApi.getFavorites.mockResolvedValue(mockFavoritesResponse)
     mockFavoritesApi.getFavoriteStats.mockResolvedValue(mockStats)
   })
@@ -381,7 +382,7 @@ describe('useFavorites', () => {
 
 describe('useFavoriteStatus', () => {
   beforeEach(() => {
-    jest.clearAllMocks()
+    vi.clearAllMocks()
   })
 
   it('fetches favorite status for a media ID', async () => {

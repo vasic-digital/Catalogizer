@@ -10,6 +10,13 @@ export default defineConfig({
     environment: 'jsdom',
     setupFiles: ['./src/test-setup.ts'],
     css: true,
+    deps: {
+      optimizer: {
+        web: {
+          include: ['@vitejs/plugin-react'],
+        },
+      },
+    },
   },
   resolve: {
     alias: {

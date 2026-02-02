@@ -1,36 +1,37 @@
 import { render, screen, waitFor } from '@testing-library/react'
 import { ConnectionStatus } from '../ConnectionStatus'
+import { useWebSocket } from '@/lib/websocket'
 
 // Mock the websocket hook
-jest.mock('@/lib/websocket', () => ({
-  useWebSocket: jest.fn(),
+vi.mock('@/lib/websocket', async () => ({
+  useWebSocket: vi.fn(),
 }))
 
 // Mock framer-motion to avoid animation issues in tests
-jest.mock('framer-motion', () => ({
+vi.mock('framer-motion', async () => ({
   motion: {
     div: ({ children, ...props }: any) => <div {...props}>{children}</div>,
   },
   AnimatePresence: ({ children }: any) => <>{children}</>,
 }))
 
-const mockUseWebSocket = require('@/lib/websocket').useWebSocket
+const mockUseWebSocket = vi.mocked(useWebSocket)
 
 describe('ConnectionStatus', () => {
   beforeEach(() => {
-    jest.clearAllMocks()
-    jest.useFakeTimers()
+    vi.clearAllMocks()
+    vi.useFakeTimers()
   })
 
   afterEach(() => {
-    jest.runOnlyPendingTimers()
-    jest.useRealTimers()
+    vi.runOnlyPendingTimers()
+    vi.useRealTimers()
   })
 
   describe('Connection States', () => {
     it('displays connecting status when connection state is connecting', () => {
       mockUseWebSocket.mockReturnValue({
-        getConnectionState: jest.fn().mockReturnValue('connecting'),
+        getConnectionState: vi.fn().mockReturnValue('connecting'),
       })
 
       render(<ConnectionStatus />)
@@ -41,7 +42,7 @@ describe('ConnectionStatus', () => {
 
     it('does not display status when connection state is open', () => {
       mockUseWebSocket.mockReturnValue({
-        getConnectionState: jest.fn().mockReturnValue('open'),
+        getConnectionState: vi.fn().mockReturnValue('open'),
       })
 
       render(<ConnectionStatus />)
@@ -53,7 +54,7 @@ describe('ConnectionStatus', () => {
 
     it('displays disconnecting status when connection state is closing', () => {
       mockUseWebSocket.mockReturnValue({
-        getConnectionState: jest.fn().mockReturnValue('closing'),
+        getConnectionState: vi.fn().mockReturnValue('closing'),
       })
 
       render(<ConnectionStatus />)
@@ -63,7 +64,7 @@ describe('ConnectionStatus', () => {
 
     it('displays disconnected status when connection state is closed', () => {
       mockUseWebSocket.mockReturnValue({
-        getConnectionState: jest.fn().mockReturnValue('closed'),
+        getConnectionState: vi.fn().mockReturnValue('closed'),
       })
 
       render(<ConnectionStatus />)
@@ -75,7 +76,7 @@ describe('ConnectionStatus', () => {
   describe('Status Colors', () => {
     it('applies yellow background for connecting state', () => {
       mockUseWebSocket.mockReturnValue({
-        getConnectionState: jest.fn().mockReturnValue('connecting'),
+        getConnectionState: vi.fn().mockReturnValue('connecting'),
       })
 
       render(<ConnectionStatus />)
@@ -86,7 +87,7 @@ describe('ConnectionStatus', () => {
 
     it('applies red background for disconnected state', () => {
       mockUseWebSocket.mockReturnValue({
-        getConnectionState: jest.fn().mockReturnValue('closed'),
+        getConnectionState: vi.fn().mockReturnValue('closed'),
       })
 
       render(<ConnectionStatus />)
@@ -97,7 +98,7 @@ describe('ConnectionStatus', () => {
 
     it('applies orange background for disconnecting state', () => {
       mockUseWebSocket.mockReturnValue({
-        getConnectionState: jest.fn().mockReturnValue('closing'),
+        getConnectionState: vi.fn().mockReturnValue('closing'),
       })
 
       render(<ConnectionStatus />)
@@ -109,7 +110,7 @@ describe('ConnectionStatus', () => {
 
   describe('Dynamic State Changes', () => {
     it('updates status when connection state changes', async () => {
-      const getConnectionState = jest.fn().mockReturnValue('connecting')
+      const getConnectionState = vi.fn().mockReturnValue('connecting')
       mockUseWebSocket.mockReturnValue({
         getConnectionState,
       })
@@ -122,7 +123,7 @@ describe('ConnectionStatus', () => {
       getConnectionState.mockReturnValue('closed')
 
       // Fast-forward time to trigger the interval
-      jest.advanceTimersByTime(1000)
+      vi.advanceTimersByTime(1000)
 
       // Wait for the state update
       await waitFor(() => {
@@ -131,7 +132,7 @@ describe('ConnectionStatus', () => {
     })
 
     it('hides status when connection becomes open', async () => {
-      const getConnectionState = jest.fn().mockReturnValue('connecting')
+      const getConnectionState = vi.fn().mockReturnValue('connecting')
       mockUseWebSocket.mockReturnValue({
         getConnectionState,
       })
@@ -144,7 +145,7 @@ describe('ConnectionStatus', () => {
       getConnectionState.mockReturnValue('open')
 
       // Fast-forward time to trigger the interval
-      jest.advanceTimersByTime(1000)
+      vi.advanceTimersByTime(1000)
 
       // Wait for the status to be hidden
       await waitFor(() => {
@@ -155,7 +156,7 @@ describe('ConnectionStatus', () => {
 
   describe('Interval Updates', () => {
     it('checks connection state every second', () => {
-      const getConnectionState = jest.fn().mockReturnValue('closed')
+      const getConnectionState = vi.fn().mockReturnValue('closed')
       mockUseWebSocket.mockReturnValue({
         getConnectionState,
       })
@@ -166,16 +167,16 @@ describe('ConnectionStatus', () => {
       expect(getConnectionState).toHaveBeenCalledTimes(1)
 
       // After 1 second
-      jest.advanceTimersByTime(1000)
+      vi.advanceTimersByTime(1000)
       expect(getConnectionState).toHaveBeenCalledTimes(2)
 
       // After 3 more seconds
-      jest.advanceTimersByTime(3000)
+      vi.advanceTimersByTime(3000)
       expect(getConnectionState).toHaveBeenCalledTimes(5)
     })
 
     it('cleans up interval on unmount', () => {
-      const getConnectionState = jest.fn().mockReturnValue('closed')
+      const getConnectionState = vi.fn().mockReturnValue('closed')
       mockUseWebSocket.mockReturnValue({
         getConnectionState,
       })
@@ -187,7 +188,7 @@ describe('ConnectionStatus', () => {
       unmount()
 
       // Advance time after unmount
-      jest.advanceTimersByTime(5000)
+      vi.advanceTimersByTime(5000)
 
       // Should not call again after unmount
       expect(getConnectionState).toHaveBeenCalledTimes(1)
@@ -205,7 +206,7 @@ describe('ConnectionStatus', () => {
 
       testCases.forEach(({ state, shouldShow }) => {
         mockUseWebSocket.mockReturnValue({
-          getConnectionState: jest.fn().mockReturnValue(state),
+          getConnectionState: vi.fn().mockReturnValue(state),
         })
 
         const { unmount } = render(<ConnectionStatus />)

@@ -1,12 +1,13 @@
 import { mediaApi } from '../mediaApi'
+import apiDefault from '../api'
 
 // Mock the api module
-jest.mock('../api', () => {
+vi.mock('../api', async () => {
   const mockApi = {
-    get: jest.fn(),
-    post: jest.fn(),
-    put: jest.fn(),
-    delete: jest.fn(),
+    get: vi.fn(),
+    post: vi.fn(),
+    put: vi.fn(),
+    delete: vi.fn(),
   }
   return {
     __esModule: true,
@@ -15,11 +16,11 @@ jest.mock('../api', () => {
   }
 })
 
-const mockApi = require('../api').default
+const mockApi = vi.mocked(apiDefault)
 
 describe('mediaApi', () => {
   beforeEach(() => {
-    jest.clearAllMocks()
+    vi.clearAllMocks()
   })
 
   describe('searchMedia', () => {
@@ -283,12 +284,12 @@ describe('mediaApi', () => {
   })
 
   describe('downloadMedia', () => {
-    let createObjectURLMock: jest.Mock
-    let revokeObjectURLMock: jest.Mock
+    let createObjectURLMock: vi.Mock
+    let revokeObjectURLMock: vi.Mock
 
     beforeEach(() => {
-      createObjectURLMock = jest.fn(() => 'blob:http://localhost/fake-url')
-      revokeObjectURLMock = jest.fn()
+      createObjectURLMock = vi.fn(() => 'blob:http://localhost/fake-url')
+      revokeObjectURLMock = vi.fn()
       Object.defineProperty(window, 'URL', {
         value: {
           createObjectURL: createObjectURLMock,
@@ -302,13 +303,13 @@ describe('mediaApi', () => {
       const blobData = new Blob(['file content'])
       mockApi.get.mockResolvedValue({ data: blobData })
 
-      const clickMock = jest.fn()
-      const appendChildMock = jest.spyOn(document.body, 'appendChild').mockImplementation((node) => node as any)
-      const removeChildMock = jest.spyOn(document.body, 'removeChild').mockImplementation((node) => node as any)
+      const clickMock = vi.fn()
+      const appendChildMock = vi.spyOn(document.body, 'appendChild').mockImplementation((node) => node as any)
+      const removeChildMock = vi.spyOn(document.body, 'removeChild').mockImplementation((node) => node as any)
 
       // Mock createElement to capture the anchor
       const originalCreateElement = document.createElement.bind(document)
-      jest.spyOn(document, 'createElement').mockImplementation((tag: string) => {
+      vi.spyOn(document, 'createElement').mockImplementation((tag: string) => {
         const el = originalCreateElement(tag)
         if (tag === 'a') {
           el.click = clickMock
@@ -337,7 +338,7 @@ describe('mediaApi', () => {
 
       appendChildMock.mockRestore()
       removeChildMock.mockRestore()
-      ;(document.createElement as jest.Mock).mockRestore()
+      ;(document.createElement as vi.Mock).mockRestore()
     })
   })
 })

@@ -2,38 +2,39 @@ import { renderHook, act, waitFor } from '@testing-library/react'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import React from 'react'
 import { useCollections, useCollection, useCollectionAnalytics, useSharedCollection } from '../useCollections'
+import { collectionsApi } from '@/lib/collectionsApi'
 
 // Mock collectionsApi
-jest.mock('@/lib/collectionsApi', () => ({
+vi.mock('@/lib/collectionsApi', async () => ({
   collectionsApi: {
-    getCollections: jest.fn(),
-    getCollection: jest.fn(),
-    createCollection: jest.fn(),
-    updateCollection: jest.fn(),
-    deleteCollection: jest.fn(),
-    refreshCollection: jest.fn(),
-    shareCollection: jest.fn(),
-    duplicateCollection: jest.fn(),
-    exportCollection: jest.fn(),
-    getCollectionItems: jest.fn(),
-    getCollectionAnalytics: jest.fn(),
-    getSharedCollection: jest.fn(),
-    bulkDeleteCollections: jest.fn(),
-    bulkShareCollections: jest.fn(),
-    bulkExportCollections: jest.fn(),
-    bulkUpdateCollections: jest.fn(),
+    getCollections: vi.fn(),
+    getCollection: vi.fn(),
+    createCollection: vi.fn(),
+    updateCollection: vi.fn(),
+    deleteCollection: vi.fn(),
+    refreshCollection: vi.fn(),
+    shareCollection: vi.fn(),
+    duplicateCollection: vi.fn(),
+    exportCollection: vi.fn(),
+    getCollectionItems: vi.fn(),
+    getCollectionAnalytics: vi.fn(),
+    getSharedCollection: vi.fn(),
+    bulkDeleteCollections: vi.fn(),
+    bulkShareCollections: vi.fn(),
+    bulkExportCollections: vi.fn(),
+    bulkUpdateCollections: vi.fn(),
   },
 }))
 
 // Mock react-hot-toast
-jest.mock('react-hot-toast', () => ({
+vi.mock('react-hot-toast', async () => ({
   toast: {
-    success: jest.fn(),
-    error: jest.fn(),
+    success: vi.fn(),
+    error: vi.fn(),
   },
 }))
 
-const mockCollectionsApi = require('@/lib/collectionsApi').collectionsApi
+const mockCollectionsApi = vi.mocked(collectionsApi)
 const mockToast = require('react-hot-toast').toast
 
 const createWrapper = () => {
@@ -69,7 +70,7 @@ const mockCollection = {
 
 describe('useCollections', () => {
   beforeEach(() => {
-    jest.clearAllMocks()
+    vi.clearAllMocks()
     mockCollectionsApi.getCollections.mockResolvedValue([mockCollection])
   })
 
@@ -350,7 +351,7 @@ describe('useCollections', () => {
 
 describe('useCollection', () => {
   beforeEach(() => {
-    jest.clearAllMocks()
+    vi.clearAllMocks()
   })
 
   it('fetches a single collection and its items by ID', async () => {
@@ -400,7 +401,7 @@ describe('useCollection', () => {
 
 describe('useCollectionAnalytics', () => {
   beforeEach(() => {
-    jest.clearAllMocks()
+    vi.clearAllMocks()
   })
 
   it('fetches analytics for a collection', async () => {
@@ -446,7 +447,7 @@ describe('useCollectionAnalytics', () => {
 
 describe('useSharedCollection', () => {
   beforeEach(() => {
-    jest.clearAllMocks()
+    vi.clearAllMocks()
   })
 
   it('fetches a shared collection by shareId', async () => {

@@ -8,36 +8,36 @@ import * as utils from '@/lib/utils'
 import type { MediaSearchRequest, MediaItem } from '@/types/media'
 
 // Mock dependencies
-jest.mock('@/lib/mediaApi', () => ({
+vi.mock('@/lib/mediaApi', async () => ({
   mediaApi: {
-    searchMedia: jest.fn(),
-    getMediaStats: jest.fn(),
-    downloadMedia: jest.fn(),
-    getMediaById: jest.fn(),
-    getMediaByPath: jest.fn(),
-    analyzeDirectory: jest.fn(),
-    getExternalMetadata: jest.fn(),
-    refreshMetadata: jest.fn(),
-    getQualityInfo: jest.fn(),
-    getRecentMedia: jest.fn(),
-    getPopularMedia: jest.fn(),
-    deleteMedia: jest.fn(),
-    updateMedia: jest.fn(),
-    getStorageRoots: jest.fn(),
-    getStorageRoot: jest.fn(),
-    createStorageRoot: jest.fn(),
-    updateStorageRoot: jest.fn(),
-    deleteStorageRoot: jest.fn(),
-    testStorageRoot: jest.fn(),
+    searchMedia: vi.fn(),
+    getMediaStats: vi.fn(),
+    downloadMedia: vi.fn(),
+    getMediaById: vi.fn(),
+    getMediaByPath: vi.fn(),
+    analyzeDirectory: vi.fn(),
+    getExternalMetadata: vi.fn(),
+    refreshMetadata: vi.fn(),
+    getQualityInfo: vi.fn(),
+    getRecentMedia: vi.fn(),
+    getPopularMedia: vi.fn(),
+    deleteMedia: vi.fn(),
+    updateMedia: vi.fn(),
+    getStorageRoots: vi.fn(),
+    getStorageRoot: vi.fn(),
+    createStorageRoot: vi.fn(),
+    updateStorageRoot: vi.fn(),
+    deleteStorageRoot: vi.fn(),
+    testStorageRoot: vi.fn(),
   }
 }))
 
-jest.mock('@/lib/utils', () => ({
-  debounce: jest.fn((fn) => fn), // Return the function directly for testing
+vi.mock('@/lib/utils', async () => ({
+  debounce: vi.fn((fn) => fn), // Return the function directly for testing
 }))
 
 // Mock child components
-jest.mock('@/components/media/MediaGrid', () => ({
+vi.mock('@/components/media/MediaGrid', async () => ({
   MediaGrid: ({ media, onMediaView, onMediaDownload, loading, viewMode }: any) => {
     return (
       <div data-testid="media-grid">
@@ -66,7 +66,7 @@ jest.mock('@/components/media/MediaGrid', () => ({
   },
 }))
 
-jest.mock('@/components/media/MediaFilters', () => ({
+vi.mock('@/components/media/MediaFilters', async () => ({
   MediaFilters: ({ filters, onFiltersChange, onReset }: any) => (
     <div data-testid="media-filters">
       <button onClick={() => onFiltersChange?.({ ...filters, media_type: 'video' })}>
@@ -77,7 +77,7 @@ jest.mock('@/components/media/MediaFilters', () => ({
   ),
 }))
 
-jest.mock('@/components/media/MediaDetailModal', () => ({
+vi.mock('@/components/media/MediaDetailModal', async () => ({
   MediaDetailModal: ({ media, isOpen, onClose, onDownload }: any) => {
     return isOpen ? (
       <div data-testid="media-detail-modal">
@@ -90,14 +90,14 @@ jest.mock('@/components/media/MediaDetailModal', () => ({
 }))
 
 // Mock UI components
-jest.mock('@/components/ui/Card', () => ({
+vi.mock('@/components/ui/Card', async () => ({
   Card: ({ children }: any) => <div data-testid="card">{children}</div>,
   CardContent: ({ children }: any) => <div data-testid="card-content">{children}</div>,
   CardHeader: ({ children }: any) => <div data-testid="card-header">{children}</div>,
   CardTitle: ({ children }: any) => <div data-testid="card-title">{children}</div>,
 }))
 
-jest.mock('@/components/ui/Button', () => ({
+vi.mock('@/components/ui/Button', async () => ({
   Button: ({ children, onClick, disabled, 'data-testid': testId = 'button' }: any) => (
     <button onClick={onClick} disabled={disabled} data-testid={testId}>
       {children}
@@ -105,7 +105,7 @@ jest.mock('@/components/ui/Button', () => ({
   ),
 }))
 
-jest.mock('@/components/ui/Input', () => ({
+vi.mock('@/components/ui/Input', async () => ({
   Input: ({ onChange, value, placeholder }: any) => (
     <input
       onChange={onChange}
@@ -116,8 +116,8 @@ jest.mock('@/components/ui/Input', () => ({
   ),
 }))
 
-const mockMediaApi = mediaApi as jest.Mocked<typeof mediaApi>
-const mockDebounce = utils.debounce as jest.MockedFunction<typeof utils.debounce>
+const mockMediaApi = mediaApi as vi.Mocked<typeof mediaApi>
+const mockDebounce = utils.debounce as vi.MockedFunction<typeof utils.debounce>
 
 // Test data
 const mockMediaItems: MediaItem[] = [
@@ -167,7 +167,7 @@ const renderWithQueryClient = (component: React.ReactElement) => {
 
 describe('MediaBrowser', () => {
   beforeEach(() => {
-    jest.clearAllMocks()
+    vi.clearAllMocks()
     mockMediaApi.searchMedia.mockResolvedValue({
       items: mockMediaItems,
       total: 100,
@@ -656,7 +656,7 @@ describe('MediaBrowser', () => {
 
     it('handles download error gracefully', async () => {
       mockMediaApi.downloadMedia.mockRejectedValue(new Error('Download failed'))
-      const consoleSpy = jest.spyOn(console, 'error').mockImplementation()
+      const consoleSpy = vi.spyOn(console, 'error').mockImplementation()
       
       renderWithQueryClient(<MediaBrowser />)
       

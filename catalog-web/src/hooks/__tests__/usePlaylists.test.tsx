@@ -2,32 +2,33 @@ import { renderHook, act, waitFor } from '@testing-library/react'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import React from 'react'
 import { usePlaylists, usePlaylistItems, usePlaylistAnalytics } from '../usePlaylists'
+import { playlistsApi } from '@/lib/playlistsApi'
 
 // Mock playlistsApi
-jest.mock('@/lib/playlistsApi', () => ({
+vi.mock('@/lib/playlistsApi', async () => ({
   playlistsApi: {
-    getPlaylists: jest.fn(),
-    getPlaylistItems: jest.fn(),
-    createPlaylist: jest.fn(),
-    updatePlaylist: jest.fn(),
-    deletePlaylist: jest.fn(),
-    addItemsToPlaylist: jest.fn(),
-    removeFromPlaylist: jest.fn(),
-    reorderPlaylistItems: jest.fn(),
-    getPlaylistAnalytics: jest.fn(),
+    getPlaylists: vi.fn(),
+    getPlaylistItems: vi.fn(),
+    createPlaylist: vi.fn(),
+    updatePlaylist: vi.fn(),
+    deletePlaylist: vi.fn(),
+    addItemsToPlaylist: vi.fn(),
+    removeFromPlaylist: vi.fn(),
+    reorderPlaylistItems: vi.fn(),
+    getPlaylistAnalytics: vi.fn(),
   },
 }))
 
 // Mock react-hot-toast
-jest.mock('react-hot-toast', () => ({
+vi.mock('react-hot-toast', async () => ({
   __esModule: true,
   default: {
-    success: jest.fn(),
-    error: jest.fn(),
+    success: vi.fn(),
+    error: vi.fn(),
   },
 }))
 
-const mockPlaylistsApi = require('@/lib/playlistsApi').playlistsApi
+const mockPlaylistsApi = vi.mocked(playlistsApi)
 const mockToast = require('react-hot-toast').default
 
 const createWrapper = () => {
@@ -102,10 +103,10 @@ const mockAnalytics = {
 
 describe('usePlaylists', () => {
   beforeEach(() => {
-    jest.clearAllMocks()
+    vi.clearAllMocks()
     mockPlaylistsApi.getPlaylists.mockResolvedValue(mockPlaylistsResponse)
     // Mock window.confirm for delete tests
-    window.confirm = jest.fn(() => true)
+    window.confirm = vi.fn(() => true)
   })
 
   describe('Fetching playlists', () => {
@@ -292,7 +293,7 @@ describe('usePlaylists', () => {
     })
 
     it('does not delete when user cancels confirmation', async () => {
-      ;(window.confirm as jest.Mock).mockReturnValue(false)
+      ;(window.confirm as vi.Mock).mockReturnValue(false)
 
       const { Wrapper } = createWrapper()
       const { result } = renderHook(() => usePlaylists(), { wrapper: Wrapper })
@@ -518,7 +519,7 @@ describe('usePlaylists', () => {
 
 describe('usePlaylistItems', () => {
   beforeEach(() => {
-    jest.clearAllMocks()
+    vi.clearAllMocks()
     mockPlaylistsApi.getPlaylistItems.mockResolvedValue(mockPlaylistItemsResponse)
   })
 
@@ -560,7 +561,7 @@ describe('usePlaylistItems', () => {
 
 describe('usePlaylistAnalytics', () => {
   beforeEach(() => {
-    jest.clearAllMocks()
+    vi.clearAllMocks()
     mockPlaylistsApi.getPlaylistAnalytics.mockResolvedValue(mockAnalytics)
   })
 

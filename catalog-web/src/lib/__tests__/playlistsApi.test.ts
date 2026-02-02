@@ -1,12 +1,13 @@
 import { playlistsApi, playlistApi } from '../playlistsApi'
+import { api } from '../api'
 
 // Mock the api module
-jest.mock('../api', () => {
+vi.mock('../api', async () => {
   const mockApi = {
-    get: jest.fn(),
-    post: jest.fn(),
-    put: jest.fn(),
-    delete: jest.fn(),
+    get: vi.fn(),
+    post: vi.fn(),
+    put: vi.fn(),
+    delete: vi.fn(),
   }
   return {
     __esModule: true,
@@ -15,11 +16,11 @@ jest.mock('../api', () => {
   }
 })
 
-const mockApi = require('../api').api
+const mockApi = vi.mocked(api)
 
 describe('playlistsApi', () => {
   beforeEach(() => {
-    jest.clearAllMocks()
+    vi.clearAllMocks()
   })
 
   it('exports playlistApi as an alias for playlistsApi', () => {

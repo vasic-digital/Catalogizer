@@ -2,19 +2,20 @@ import React from 'react'
 import { render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { Dashboard } from '../Dashboard'
+import { useAuth } from '@/contexts/AuthContext'
 
 // Mock dependencies
-jest.mock('@/contexts/AuthContext', () => ({
-  useAuth: jest.fn(),
+vi.mock('@/contexts/AuthContext', async () => ({
+  useAuth: vi.fn(),
 }))
 
-jest.mock('framer-motion', () => ({
+vi.mock('framer-motion', async () => ({
   motion: {
     div: ({ children, ...props }: any) => <div {...props}>{children}</div>,
   },
 }))
 
-jest.mock('lucide-react', () => ({
+vi.mock('lucide-react', async () => ({
   Database: () => <div data-testid="icon-database">Database Icon</div>,
   Film: () => <div data-testid="icon-film">Film Icon</div>,
   Music: () => <div data-testid="icon-music">Music Icon</div>,
@@ -27,11 +28,11 @@ jest.mock('lucide-react', () => ({
   HardDrive: () => <div data-testid="icon-harddrive">HardDrive Icon</div>,
 }))
 
-const mockUseAuth = require('@/contexts/AuthContext').useAuth
+const mockUseAuth = vi.mocked(useAuth)
 
 describe('Dashboard', () => {
   beforeEach(() => {
-    jest.clearAllMocks()
+    vi.clearAllMocks()
   })
 
   describe('Rendering', () => {
@@ -182,7 +183,7 @@ describe('Dashboard', () => {
 
     it('quick action cards are clickable', async () => {
       const user = userEvent.setup()
-      const consoleSpy = jest.spyOn(console, 'log').mockImplementation()
+      const consoleSpy = vi.spyOn(console, 'log').mockImplementation()
 
       mockUseAuth.mockReturnValue({
         user: { username: 'testuser' },

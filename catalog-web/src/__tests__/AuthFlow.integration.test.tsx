@@ -11,25 +11,25 @@ let authState = {
   isLoading: false,
   permissions: [] as string[],
   isAdmin: false,
-  login: jest.fn(),
-  register: jest.fn(),
-  logout: jest.fn(),
-  updateProfile: jest.fn(),
-  changePassword: jest.fn(),
-  hasPermission: jest.fn(),
-  canAccess: jest.fn(),
+  login: vi.fn(),
+  register: vi.fn(),
+  logout: vi.fn(),
+  updateProfile: vi.fn(),
+  changePassword: vi.fn(),
+  hasPermission: vi.fn(),
+  canAccess: vi.fn(),
 }
 
-jest.mock('@/contexts/AuthContext', () => ({
+vi.mock('@/contexts/AuthContext', async () => ({
   useAuth: () => authState,
 }))
 
 // Mock react-hot-toast
-jest.mock('react-hot-toast', () => ({
+vi.mock('react-hot-toast', async () => ({
   __esModule: true,
   default: {
-    success: jest.fn(),
-    error: jest.fn(),
+    success: vi.fn(),
+    error: vi.fn(),
   },
 }))
 
@@ -135,18 +135,18 @@ function resetAuthState() {
   authState.isLoading = false
   authState.permissions = []
   authState.isAdmin = false
-  authState.login = jest.fn()
-  authState.register = jest.fn()
-  authState.logout = jest.fn()
-  authState.updateProfile = jest.fn()
-  authState.changePassword = jest.fn()
-  authState.hasPermission = jest.fn().mockReturnValue(false)
-  authState.canAccess = jest.fn().mockReturnValue(false)
+  authState.login = vi.fn()
+  authState.register = vi.fn()
+  authState.logout = vi.fn()
+  authState.updateProfile = vi.fn()
+  authState.changePassword = vi.fn()
+  authState.hasPermission = vi.fn().mockReturnValue(false)
+  authState.canAccess = vi.fn().mockReturnValue(false)
 }
 
 describe('Auth Flow Integration Tests', () => {
   beforeEach(() => {
-    jest.clearAllMocks()
+    vi.clearAllMocks()
     resetAuthState()
   })
 
@@ -178,7 +178,7 @@ describe('Auth Flow Integration Tests', () => {
   describe('Login Flow', () => {
     it('calls login and navigates to dashboard on success', async () => {
       const user = userEvent.setup()
-      authState.login = jest.fn().mockResolvedValue(undefined)
+      authState.login = vi.fn().mockResolvedValue(undefined)
 
       renderApp('/login')
 
@@ -210,7 +210,7 @@ describe('Auth Flow Integration Tests', () => {
 
     it('stays on login page when login fails', async () => {
       const user = userEvent.setup()
-      authState.login = jest.fn().mockRejectedValue(new Error('Invalid credentials'))
+      authState.login = vi.fn().mockRejectedValue(new Error('Invalid credentials'))
 
       renderApp('/login')
 
@@ -233,7 +233,7 @@ describe('Auth Flow Integration Tests', () => {
         user: { id: 1, username: 'testuser', role: 'user' },
         isAuthenticated: true,
       })
-      authState.logout = jest.fn().mockImplementation(async () => {
+      authState.logout = vi.fn().mockImplementation(async () => {
         setAuthState({
           user: null,
           isAuthenticated: false,
@@ -263,7 +263,7 @@ describe('Auth Flow Integration Tests', () => {
         isAuthenticated: true,
       })
       // Logout rejects but we catch it and still navigate
-      authState.logout = jest.fn().mockResolvedValue(undefined)
+      authState.logout = vi.fn().mockResolvedValue(undefined)
 
       renderApp('/dashboard')
 
@@ -307,7 +307,7 @@ describe('Auth Flow Integration Tests', () => {
       setAuthState({
         user: { id: 1, username: 'testuser', role: 'user' },
         isAuthenticated: true,
-        hasPermission: jest.fn().mockReturnValue(true),
+        hasPermission: vi.fn().mockReturnValue(true),
       })
 
       renderApp('/settings')
@@ -319,7 +319,7 @@ describe('Auth Flow Integration Tests', () => {
       setAuthState({
         user: { id: 1, username: 'testuser', role: 'user' },
         isAuthenticated: true,
-        hasPermission: jest.fn().mockReturnValue(false),
+        hasPermission: vi.fn().mockReturnValue(false),
       })
 
       renderApp('/settings')
@@ -333,7 +333,7 @@ describe('Auth Flow Integration Tests', () => {
         user: { id: 1, username: 'admin', role: 'admin' },
         isAuthenticated: true,
         isAdmin: true,
-        hasPermission: jest.fn().mockReturnValue(true),
+        hasPermission: vi.fn().mockReturnValue(true),
       })
 
       renderApp('/settings')
@@ -364,7 +364,7 @@ describe('Auth Flow Integration Tests', () => {
       expect(screen.getByTestId('login-page')).toBeInTheDocument()
 
       // Set up login to update auth state
-      authState.login = jest.fn().mockImplementation(async () => {
+      authState.login = vi.fn().mockImplementation(async () => {
         setAuthState({
           user: { id: 1, username: 'testuser', role: 'user' },
           isAuthenticated: true,
@@ -379,7 +379,7 @@ describe('Auth Flow Integration Tests', () => {
       })
 
       // Set up logout to update auth state
-      authState.logout = jest.fn().mockImplementation(async () => {
+      authState.logout = vi.fn().mockImplementation(async () => {
         setAuthState({
           user: null,
           isAuthenticated: false,

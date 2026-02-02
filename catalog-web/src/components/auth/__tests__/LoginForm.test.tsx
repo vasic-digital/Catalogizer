@@ -2,33 +2,34 @@ import { render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { MemoryRouter } from 'react-router-dom'
 import { LoginForm } from '../LoginForm'
+import { useAuth } from '@/contexts/AuthContext'
 
 // Mock the AuthContext
-jest.mock('@/contexts/AuthContext', () => ({
-  useAuth: jest.fn(),
+vi.mock('@/contexts/AuthContext', async () => ({
+  useAuth: vi.fn(),
 }))
 
 // Mock framer-motion to avoid animation issues in tests
-jest.mock('framer-motion', () => ({
+vi.mock('framer-motion', async () => ({
   motion: {
     div: ({ children, ...props }: any) => <div {...props}>{children}</div>,
   },
 }))
 
 // Mock react-router-dom's useNavigate
-const mockNavigate = jest.fn()
-jest.mock('react-router-dom', () => ({
-  ...jest.requireActual('react-router-dom'),
+const mockNavigate = vi.fn()
+vi.mock('react-router-dom', async () => ({
+  ...(await vi.importActual('react-router-dom')),
   useNavigate: () => mockNavigate,
 }))
 
-const mockUseAuth = require('@/contexts/AuthContext').useAuth
+const mockUseAuth = vi.mocked(useAuth)
 
 describe('LoginForm', () => {
   beforeEach(() => {
-    jest.clearAllMocks()
+    vi.clearAllMocks()
     mockUseAuth.mockReturnValue({
-      login: jest.fn().mockResolvedValue(undefined),
+      login: vi.fn().mockResolvedValue(undefined),
     })
   })
 
@@ -239,7 +240,7 @@ describe('LoginForm', () => {
   describe('Form Submission', () => {
     it('calls login with trimmed username and password on submit', async () => {
       const user = userEvent.setup()
-      const mockLogin = jest.fn().mockResolvedValue(undefined)
+      const mockLogin = vi.fn().mockResolvedValue(undefined)
       mockUseAuth.mockReturnValue({ login: mockLogin })
 
       render(
@@ -266,7 +267,7 @@ describe('LoginForm', () => {
 
     it('navigates to dashboard on successful login', async () => {
       const user = userEvent.setup()
-      const mockLogin = jest.fn().mockResolvedValue(undefined)
+      const mockLogin = vi.fn().mockResolvedValue(undefined)
       mockUseAuth.mockReturnValue({ login: mockLogin })
 
       render(
@@ -290,7 +291,7 @@ describe('LoginForm', () => {
 
     it('shows loading state during login', async () => {
       const user = userEvent.setup()
-      const mockLogin = jest.fn(() => new Promise((resolve) => setTimeout(resolve, 100)))
+      const mockLogin = vi.fn(() => new Promise((resolve) => setTimeout(resolve, 100)))
       mockUseAuth.mockReturnValue({ login: mockLogin })
 
       render(
@@ -317,9 +318,9 @@ describe('LoginForm', () => {
 
     it('handles login errors gracefully', async () => {
       const user = userEvent.setup()
-      const mockLogin = jest.fn().mockRejectedValue(new Error('Invalid credentials'))
+      const mockLogin = vi.fn().mockRejectedValue(new Error('Invalid credentials'))
       mockUseAuth.mockReturnValue({ login: mockLogin })
-      const consoleErrorSpy = jest.spyOn(console, 'error').mockImplementation(() => {})
+      const consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => {})
 
       render(
         <MemoryRouter>
@@ -352,7 +353,7 @@ describe('LoginForm', () => {
 
     it('does not submit form when username is empty', async () => {
       const user = userEvent.setup()
-      const mockLogin = jest.fn()
+      const mockLogin = vi.fn()
       mockUseAuth.mockReturnValue({ login: mockLogin })
 
       render(

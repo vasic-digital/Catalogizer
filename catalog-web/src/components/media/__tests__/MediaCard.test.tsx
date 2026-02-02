@@ -68,7 +68,7 @@ describe('MediaCard', () => {
 
   it('calls onView when view button is clicked', async () => {
     const user = userEvent.setup();
-    const handleView = jest.fn();
+    const handleView = vi.fn();
 
     render(<MediaCard media={mockMediaItem} onView={handleView} />);
 
@@ -84,7 +84,7 @@ describe('MediaCard', () => {
 
   it('calls onDownload when download button is clicked', async () => {
     const user = userEvent.setup();
-    const handleDownload = jest.fn();
+    const handleDownload = vi.fn();
 
     render(<MediaCard media={mockMediaItem} onDownload={handleDownload} />);
 
@@ -212,7 +212,7 @@ describe('MediaCard', () => {
   });
 
   it('renders only one button when only onView provided', () => {
-    const handleView = jest.fn();
+    const handleView = vi.fn();
     render(<MediaCard media={mockMediaItem} onView={handleView} />);
 
     const buttons = screen.queryAllByRole('button');
@@ -220,7 +220,7 @@ describe('MediaCard', () => {
   });
 
   it('renders only one button when only onDownload provided', () => {
-    const handleDownload = jest.fn();
+    const handleDownload = vi.fn();
     render(<MediaCard media={mockMediaItem} onDownload={handleDownload} />);
 
     const buttons = screen.queryAllByRole('button');
@@ -228,8 +228,8 @@ describe('MediaCard', () => {
   });
 
   it('renders two buttons when both callbacks provided', () => {
-    const handleView = jest.fn();
-    const handleDownload = jest.fn();
+    const handleView = vi.fn();
+    const handleDownload = vi.fn();
     render(<MediaCard media={mockMediaItem} onView={handleView} onDownload={handleDownload} />);
 
     const buttons = screen.queryAllByRole('button');

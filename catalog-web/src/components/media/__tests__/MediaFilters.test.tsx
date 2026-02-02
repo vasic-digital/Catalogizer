@@ -11,8 +11,8 @@ const mockFilters: MediaSearchRequest = {
 
 describe('MediaFilters', () => {
   it('renders filter title', () => {
-    const handleChange = jest.fn();
-    const handleReset = jest.fn();
+    const handleChange = vi.fn();
+    const handleReset = vi.fn();
 
     render(
       <MediaFilters
@@ -26,8 +26,8 @@ describe('MediaFilters', () => {
   });
 
   it('renders search input', () => {
-    const handleChange = jest.fn();
-    const handleReset = jest.fn();
+    const handleChange = vi.fn();
+    const handleReset = vi.fn();
 
     render(
       <MediaFilters
@@ -42,8 +42,8 @@ describe('MediaFilters', () => {
 
   it('updates query filter on search input change', async () => {
     const user = userEvent.setup();
-    const handleChange = jest.fn();
-    const handleReset = jest.fn();
+    const handleChange = vi.fn();
+    const handleReset = vi.fn();
 
     render(
       <MediaFilters
@@ -62,8 +62,8 @@ describe('MediaFilters', () => {
   });
 
   it('displays query value in search input', () => {
-    const handleChange = jest.fn();
-    const handleReset = jest.fn();
+    const handleChange = vi.fn();
+    const handleReset = vi.fn();
     const filtersWithQuery = { ...mockFilters, query: 'Inception' };
 
     render(
@@ -79,8 +79,8 @@ describe('MediaFilters', () => {
   });
 
   it('renders media type filter buttons', () => {
-    const handleChange = jest.fn();
-    const handleReset = jest.fn();
+    const handleChange = vi.fn();
+    const handleReset = vi.fn();
 
     render(
       <MediaFilters
@@ -97,8 +97,8 @@ describe('MediaFilters', () => {
 
   it('updates media type filter when button clicked', async () => {
     const user = userEvent.setup();
-    const handleChange = jest.fn();
-    const handleReset = jest.fn();
+    const handleChange = vi.fn();
+    const handleReset = vi.fn();
 
     render(
       <MediaFilters
@@ -118,8 +118,8 @@ describe('MediaFilters', () => {
 
   it('clears media type filter when clicked again', async () => {
     const user = userEvent.setup();
-    const handleChange = jest.fn();
-    const handleReset = jest.fn();
+    const handleChange = vi.fn();
+    const handleReset = vi.fn();
     const filtersWithType = { ...mockFilters, media_type: 'movie' };
 
     render(
@@ -139,8 +139,8 @@ describe('MediaFilters', () => {
   });
 
   it('renders quality filter buttons', () => {
-    const handleChange = jest.fn();
-    const handleReset = jest.fn();
+    const handleChange = vi.fn();
+    const handleReset = vi.fn();
 
     render(
       <MediaFilters
@@ -155,8 +155,8 @@ describe('MediaFilters', () => {
 
   it('updates quality filter when button clicked', async () => {
     const user = userEvent.setup();
-    const handleChange = jest.fn();
-    const handleReset = jest.fn();
+    const handleChange = vi.fn();
+    const handleReset = vi.fn();
 
     render(
       <MediaFilters
@@ -177,8 +177,8 @@ describe('MediaFilters', () => {
   });
 
   it('renders year range inputs', () => {
-    const handleChange = jest.fn();
-    const handleReset = jest.fn();
+    const handleChange = vi.fn();
+    const handleReset = vi.fn();
 
     render(
       <MediaFilters
@@ -195,8 +195,8 @@ describe('MediaFilters', () => {
 
   it('updates year_min filter', async () => {
     const user = userEvent.setup();
-    const handleChange = jest.fn();
-    const handleReset = jest.fn();
+    const handleChange = vi.fn();
+    const handleReset = vi.fn();
 
     render(
       <MediaFilters
@@ -214,8 +214,8 @@ describe('MediaFilters', () => {
 
   it('updates year_max filter', async () => {
     const user = userEvent.setup();
-    const handleChange = jest.fn();
-    const handleReset = jest.fn();
+    const handleChange = vi.fn();
+    const handleReset = vi.fn();
 
     render(
       <MediaFilters
@@ -232,8 +232,8 @@ describe('MediaFilters', () => {
   });
 
   it('renders rating input', () => {
-    const handleChange = jest.fn();
-    const handleReset = jest.fn();
+    const handleChange = vi.fn();
+    const handleReset = vi.fn();
 
     render(
       <MediaFilters
@@ -249,8 +249,8 @@ describe('MediaFilters', () => {
 
   it('updates rating_min filter', async () => {
     const user = userEvent.setup();
-    const handleChange = jest.fn();
-    const handleReset = jest.fn();
+    const handleChange = vi.fn();
+    const handleReset = vi.fn();
 
     render(
       <MediaFilters
@@ -267,8 +267,8 @@ describe('MediaFilters', () => {
   });
 
   it('renders sort options', () => {
-    const handleChange = jest.fn();
-    const handleReset = jest.fn();
+    const handleChange = vi.fn();
+    const handleReset = vi.fn();
 
     render(
       <MediaFilters
@@ -285,8 +285,8 @@ describe('MediaFilters', () => {
 
   it('updates sort_by filter', async () => {
     const user = userEvent.setup();
-    const handleChange = jest.fn();
-    const handleReset = jest.fn();
+    const handleChange = vi.fn();
+    const handleReset = vi.fn();
 
     render(
       <MediaFilters
@@ -306,8 +306,8 @@ describe('MediaFilters', () => {
 
   it('updates sort_order filter', async () => {
     const user = userEvent.setup();
-    const handleChange = jest.fn();
-    const handleReset = jest.fn();
+    const handleChange = vi.fn();
+    const handleReset = vi.fn();
 
     render(
       <MediaFilters
@@ -326,8 +326,8 @@ describe('MediaFilters', () => {
   });
 
   it('shows clear all button when filters are active', () => {
-    const handleChange = jest.fn();
-    const handleReset = jest.fn();
+    const handleChange = vi.fn();
+    const handleReset = vi.fn();
     const activeFilters = { ...mockFilters, query: 'test', media_type: 'movie' };
 
     render(
@@ -342,8 +342,8 @@ describe('MediaFilters', () => {
   });
 
   it('hides clear all button when no filters are active', () => {
-    const handleChange = jest.fn();
-    const handleReset = jest.fn();
+    const handleChange = vi.fn();
+    const handleReset = vi.fn();
     // Empty filters - limit and offset are ignored by hasActiveFilters check
     const emptyFilters = {};
 
@@ -360,8 +360,8 @@ describe('MediaFilters', () => {
 
   it('calls onReset when clear all button is clicked', async () => {
     const user = userEvent.setup();
-    const handleChange = jest.fn();
-    const handleReset = jest.fn();
+    const handleChange = vi.fn();
+    const handleReset = vi.fn();
     const activeFilters = { ...mockFilters, query: 'test' };
 
     render(
@@ -379,8 +379,8 @@ describe('MediaFilters', () => {
   });
 
   it('applies custom className', () => {
-    const handleChange = jest.fn();
-    const handleReset = jest.fn();
+    const handleChange = vi.fn();
+    const handleReset = vi.fn();
 
     const { container } = render(
       <MediaFilters
@@ -395,8 +395,8 @@ describe('MediaFilters', () => {
   });
 
   it('displays all filter values from props', () => {
-    const handleChange = jest.fn();
-    const handleReset = jest.fn();
+    const handleChange = vi.fn();
+    const handleReset = vi.fn();
     const fullFilters: MediaSearchRequest = {
       query: 'Matrix',
       media_type: 'movie',

@@ -4,32 +4,31 @@ import userEvent from '@testing-library/user-event'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { AuthProvider, useAuth } from '../AuthContext'
 import type { User, LoginResponse, AuthStatus } from '@/types/auth'
+import { authApi } from '@/lib/api'
 
 // Mock the API module
-jest.mock('@/lib/api', () => ({
+vi.mock('@/lib/api', async () => ({
   authApi: {
-    getAuthStatus: jest.fn(),
-    getPermissions: jest.fn(),
-    login: jest.fn(),
-    register: jest.fn(),
-    logout: jest.fn(),
-    updateProfile: jest.fn(),
-    changePassword: jest.fn(),
+    getAuthStatus: vi.fn(),
+    getPermissions: vi.fn(),
+    login: vi.fn(),
+    register: vi.fn(),
+    logout: vi.fn(),
+    updateProfile: vi.fn(),
+    changePassword: vi.fn(),
   },
 }))
 
 // Mock react-hot-toast
-jest.mock('react-hot-toast', () => ({
+vi.mock('react-hot-toast', async () => ({
   __esModule: true,
   default: {
-    success: jest.fn(),
-    error: jest.fn(),
+    success: vi.fn(),
+    error: vi.fn(),
   },
 }))
 
-// eslint-disable-next-line @typescript-eslint/no-var-requires
-const { authApi: mockAuthApi } = require('@/lib/api')
-// eslint-disable-next-line @typescript-eslint/no-var-requires
+const mockAuthApi = vi.mocked(authApi)
 const mockToast = require('react-hot-toast').default
 
 // --- Test helper components ---
@@ -187,14 +186,14 @@ function renderWithProviders(ui: React.ReactElement) {
 
 // --- Tests ---
 
-let setItemSpy: jest.SpyInstance
-let removeItemSpy: jest.SpyInstance
+let setItemSpy: vi.SpyInstance
+let removeItemSpy: vi.SpyInstance
 
 describe('AuthContext Integration Tests', () => {
   beforeEach(() => {
-    jest.clearAllMocks()
-    setItemSpy = jest.spyOn(Storage.prototype, 'setItem').mockImplementation(() => {})
-    removeItemSpy = jest.spyOn(Storage.prototype, 'removeItem').mockImplementation(() => {})
+    vi.clearAllMocks()
+    setItemSpy = vi.spyOn(Storage.prototype, 'setItem').mockImplementation(() => {})
+    removeItemSpy = vi.spyOn(Storage.prototype, 'removeItem').mockImplementation(() => {})
   })
 
   afterEach(() => {
@@ -739,7 +738,7 @@ describe('AuthContext Integration Tests', () => {
 
   describe('useAuth Hook Error', () => {
     it('throws error when useAuth is used outside AuthProvider', () => {
-      const consoleSpy = jest.spyOn(console, 'error').mockImplementation(() => {})
+      const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {})
 
       expect(() => {
         const qc = createQueryClient()

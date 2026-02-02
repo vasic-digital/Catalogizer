@@ -2,14 +2,14 @@ import React from 'react'
 import { render, screen, waitFor } from '@testing-library/react'
 import { MemoryRouter, Routes, Route } from 'react-router-dom'
 import { ProtectedRoute } from '../ProtectedRoute'
+import { useAuth } from '@/contexts/AuthContext'
 
 // Mock the AuthContext
-jest.mock('@/contexts/AuthContext', () => ({
-  useAuth: jest.fn(),
+vi.mock('@/contexts/AuthContext', async () => ({
+  useAuth: vi.fn(),
 }))
 
-// eslint-disable-next-line @typescript-eslint/no-var-requires
-const mockUseAuth = require('@/contexts/AuthContext').useAuth
+const mockUseAuth = vi.mocked(useAuth)
 
 function renderApp(
   initialRoute: string,
@@ -30,7 +30,7 @@ function renderApp(
 
 describe('ProtectedRoute Integration Tests', () => {
   beforeEach(() => {
-    jest.clearAllMocks()
+    vi.clearAllMocks()
   })
 
   describe('Loading State', () => {
@@ -39,7 +39,7 @@ describe('ProtectedRoute Integration Tests', () => {
         isAuthenticated: false,
         isLoading: true,
         user: null,
-        hasPermission: jest.fn(),
+        hasPermission: vi.fn(),
       })
 
       renderApp(
@@ -65,7 +65,7 @@ describe('ProtectedRoute Integration Tests', () => {
         isAuthenticated: true,
         isLoading: true,
         user: { id: 1, username: 'test', role: 'admin' },
-        hasPermission: jest.fn().mockReturnValue(true),
+        hasPermission: vi.fn().mockReturnValue(true),
       })
 
       renderApp(
@@ -91,7 +91,7 @@ describe('ProtectedRoute Integration Tests', () => {
         isAuthenticated: false,
         isLoading: false,
         user: null,
-        hasPermission: jest.fn(),
+        hasPermission: vi.fn(),
       })
     })
 
@@ -154,7 +154,7 @@ describe('ProtectedRoute Integration Tests', () => {
         isAuthenticated: true,
         isLoading: false,
         user: { id: 1, username: 'testuser', role: 'user' },
-        hasPermission: jest.fn(),
+        hasPermission: vi.fn(),
       })
 
       renderApp(
@@ -178,7 +178,7 @@ describe('ProtectedRoute Integration Tests', () => {
         isAuthenticated: true,
         isLoading: false,
         user: { id: 1, username: 'admin', role: 'admin' },
-        hasPermission: jest.fn(),
+        hasPermission: vi.fn(),
       })
 
       renderApp(
@@ -203,7 +203,7 @@ describe('ProtectedRoute Integration Tests', () => {
         isAuthenticated: true,
         isLoading: false,
         user: { id: 1, username: 'admin', role: 'admin' },
-        hasPermission: jest.fn(),
+        hasPermission: vi.fn(),
       })
 
       renderApp(
@@ -226,7 +226,7 @@ describe('ProtectedRoute Integration Tests', () => {
         isAuthenticated: true,
         isLoading: false,
         user: { id: 1, username: 'testuser', role: 'user' },
-        hasPermission: jest.fn(),
+        hasPermission: vi.fn(),
       })
 
       renderApp(
@@ -252,7 +252,7 @@ describe('ProtectedRoute Integration Tests', () => {
         isAuthenticated: true,
         isLoading: false,
         user: { id: 1, username: 'editor1', role: 'editor' },
-        hasPermission: jest.fn(),
+        hasPermission: vi.fn(),
       })
 
       renderApp(
@@ -275,7 +275,7 @@ describe('ProtectedRoute Integration Tests', () => {
         isAuthenticated: true,
         isLoading: false,
         user: { id: 1, username: 'viewer', role: 'viewer' },
-        hasPermission: jest.fn(),
+        hasPermission: vi.fn(),
       })
 
       renderApp(
@@ -301,7 +301,7 @@ describe('ProtectedRoute Integration Tests', () => {
         isAuthenticated: true,
         isLoading: false,
         user: { id: 1, username: 'testuser', role: 'user' },
-        hasPermission: jest.fn().mockReturnValue(true),
+        hasPermission: vi.fn().mockReturnValue(true),
       })
 
       renderApp(
@@ -320,7 +320,7 @@ describe('ProtectedRoute Integration Tests', () => {
     })
 
     it('calls hasPermission with the correct permission string', () => {
-      const mockHasPermission = jest.fn().mockReturnValue(true)
+      const mockHasPermission = vi.fn().mockReturnValue(true)
       mockUseAuth.mockReturnValue({
         isAuthenticated: true,
         isLoading: false,
@@ -348,7 +348,7 @@ describe('ProtectedRoute Integration Tests', () => {
         isAuthenticated: true,
         isLoading: false,
         user: { id: 1, username: 'testuser', role: 'user' },
-        hasPermission: jest.fn().mockReturnValue(false),
+        hasPermission: vi.fn().mockReturnValue(false),
       })
 
       renderApp(
@@ -374,7 +374,7 @@ describe('ProtectedRoute Integration Tests', () => {
         isAuthenticated: false,
         isLoading: false,
         user: null,
-        hasPermission: jest.fn(),
+        hasPermission: vi.fn(),
       })
 
       renderApp(
@@ -399,7 +399,7 @@ describe('ProtectedRoute Integration Tests', () => {
         isAuthenticated: true,
         isLoading: false,
         user: { id: 1, username: 'testuser', role: 'user' },
-        hasPermission: jest.fn().mockReturnValue(true),
+        hasPermission: vi.fn().mockReturnValue(true),
       })
 
       renderApp(
@@ -424,7 +424,7 @@ describe('ProtectedRoute Integration Tests', () => {
         isAuthenticated: true,
         isLoading: false,
         user: { id: 1, username: 'testuser', role: 'viewer' },
-        hasPermission: jest.fn().mockReturnValue(true),
+        hasPermission: vi.fn().mockReturnValue(true),
       })
 
       renderApp(
@@ -449,7 +449,7 @@ describe('ProtectedRoute Integration Tests', () => {
         isAuthenticated: true,
         isLoading: false,
         user: { id: 1, username: 'admin', role: 'admin' },
-        hasPermission: jest.fn().mockReturnValue(true),
+        hasPermission: vi.fn().mockReturnValue(true),
       })
 
       renderApp(
@@ -474,7 +474,7 @@ describe('ProtectedRoute Integration Tests', () => {
         isAuthenticated: true,
         isLoading: false,
         user: { id: 1, username: 'testuser', role: 'user' },
-        hasPermission: jest.fn().mockReturnValue(false),
+        hasPermission: vi.fn().mockReturnValue(false),
       })
 
       // Test that one route redirects while showing the correct dashboard

@@ -4,7 +4,7 @@ import { MediaDetailModal } from '../MediaDetailModal'
 import type { MediaItem } from '@/types/media'
 
 // Mock headlessui Dialog to avoid portal issues in tests
-jest.mock('@headlessui/react', () => ({
+vi.mock('@headlessui/react', async () => ({
   Dialog: Object.assign(
     ({ children, onClose }: any) => <div onClick={onClose}>{children}</div>,
     {
@@ -85,7 +85,7 @@ describe('MediaDetailModal', () => {
   describe('Rendering', () => {
     it('renders nothing when media is null', () => {
       const { container } = render(
-        <MediaDetailModal media={null} isOpen={true} onClose={jest.fn()} />
+        <MediaDetailModal media={null} isOpen={true} onClose={vi.fn()} />
       )
 
       expect(container.firstChild).toBeNull()
@@ -93,7 +93,7 @@ describe('MediaDetailModal', () => {
 
     it('renders modal when isOpen is true and media is provided', () => {
       render(
-        <MediaDetailModal media={mockMediaItem} isOpen={true} onClose={jest.fn()} />
+        <MediaDetailModal media={mockMediaItem} isOpen={true} onClose={vi.fn()} />
       )
 
       expect(screen.getByText('Test Movie (External)')).toBeInTheDocument()
@@ -101,7 +101,7 @@ describe('MediaDetailModal', () => {
 
     it('displays external metadata title when available', () => {
       render(
-        <MediaDetailModal media={mockMediaItem} isOpen={true} onClose={jest.fn()} />
+        <MediaDetailModal media={mockMediaItem} isOpen={true} onClose={vi.fn()} />
       )
 
       expect(screen.getByText('Test Movie (External)')).toBeInTheDocument()
@@ -110,7 +110,7 @@ describe('MediaDetailModal', () => {
     it('displays fallback title when external metadata is not available', () => {
       const mediaWithoutExternal = { ...mockMediaItem, external_metadata: [] }
       render(
-        <MediaDetailModal media={mediaWithoutExternal} isOpen={true} onClose={jest.fn()} />
+        <MediaDetailModal media={mediaWithoutExternal} isOpen={true} onClose={vi.fn()} />
       )
 
       expect(screen.getByText('Test Movie')).toBeInTheDocument()
@@ -118,7 +118,7 @@ describe('MediaDetailModal', () => {
 
     it('displays backdrop image when available', () => {
       render(
-        <MediaDetailModal media={mockMediaItem} isOpen={true} onClose={jest.fn()} />
+        <MediaDetailModal media={mockMediaItem} isOpen={true} onClose={vi.fn()} />
       )
 
       const images = screen.getAllByAltText('Test Movie')
@@ -129,7 +129,7 @@ describe('MediaDetailModal', () => {
 
     it('displays poster image when available', () => {
       render(
-        <MediaDetailModal media={mockMediaItem} isOpen={true} onClose={jest.fn()} />
+        <MediaDetailModal media={mockMediaItem} isOpen={true} onClose={vi.fn()} />
       )
 
       const images = screen.getAllByAltText('Test Movie')
@@ -141,7 +141,7 @@ describe('MediaDetailModal', () => {
   describe('Meta Information', () => {
     it('displays year when available', () => {
       render(
-        <MediaDetailModal media={mockMediaItem} isOpen={true} onClose={jest.fn()} />
+        <MediaDetailModal media={mockMediaItem} isOpen={true} onClose={vi.fn()} />
       )
 
       expect(screen.getByText('2023')).toBeInTheDocument()
@@ -149,7 +149,7 @@ describe('MediaDetailModal', () => {
 
     it('displays rating when available', () => {
       render(
-        <MediaDetailModal media={mockMediaItem} isOpen={true} onClose={jest.fn()} />
+        <MediaDetailModal media={mockMediaItem} isOpen={true} onClose={vi.fn()} />
       )
 
       expect(screen.getByText('8.5')).toBeInTheDocument()
@@ -157,7 +157,7 @@ describe('MediaDetailModal', () => {
 
     it('displays media type when available', () => {
       render(
-        <MediaDetailModal media={mockMediaItem} isOpen={true} onClose={jest.fn()} />
+        <MediaDetailModal media={mockMediaItem} isOpen={true} onClose={vi.fn()} />
       )
 
       const movieMatches = screen.getAllByText(/movie/i)
@@ -166,7 +166,7 @@ describe('MediaDetailModal', () => {
 
     it('displays quality badge when available', () => {
       render(
-        <MediaDetailModal media={mockMediaItem} isOpen={true} onClose={jest.fn()} />
+        <MediaDetailModal media={mockMediaItem} isOpen={true} onClose={vi.fn()} />
       )
 
       const qualityMatches = screen.getAllByText(/1080p/i)
@@ -183,7 +183,7 @@ describe('MediaDetailModal', () => {
         updated_at: '2023-01-01T00:00:00Z',
       }
       render(
-        <MediaDetailModal media={minimalMedia} isOpen={true} onClose={jest.fn()} />
+        <MediaDetailModal media={minimalMedia} isOpen={true} onClose={vi.fn()} />
       )
 
       expect(screen.queryByText('2023')).not.toBeInTheDocument()
@@ -194,7 +194,7 @@ describe('MediaDetailModal', () => {
   describe('Genres', () => {
     it('displays genres when available', () => {
       render(
-        <MediaDetailModal media={mockMediaItem} isOpen={true} onClose={jest.fn()} />
+        <MediaDetailModal media={mockMediaItem} isOpen={true} onClose={vi.fn()} />
       )
 
       expect(screen.getByText('Action')).toBeInTheDocument()
@@ -208,7 +208,7 @@ describe('MediaDetailModal', () => {
         external_metadata: [{ ...mockMediaItem.external_metadata![0], genres: [] }],
       }
       render(
-        <MediaDetailModal media={mediaWithoutGenres} isOpen={true} onClose={jest.fn()} />
+        <MediaDetailModal media={mediaWithoutGenres} isOpen={true} onClose={vi.fn()} />
       )
 
       expect(screen.queryByText('Action')).not.toBeInTheDocument()
@@ -218,7 +218,7 @@ describe('MediaDetailModal', () => {
   describe('Description', () => {
     it('displays external metadata description when available', () => {
       render(
-        <MediaDetailModal media={mockMediaItem} isOpen={true} onClose={jest.fn()} />
+        <MediaDetailModal media={mockMediaItem} isOpen={true} onClose={vi.fn()} />
       )
 
       expect(screen.getByText('External description')).toBeInTheDocument()
@@ -227,7 +227,7 @@ describe('MediaDetailModal', () => {
     it('displays fallback description when external metadata is not available', () => {
       const mediaWithoutExternal = { ...mockMediaItem, external_metadata: [] }
       render(
-        <MediaDetailModal media={mediaWithoutExternal} isOpen={true} onClose={jest.fn()} />
+        <MediaDetailModal media={mediaWithoutExternal} isOpen={true} onClose={vi.fn()} />
       )
 
       expect(screen.getByText('A great test movie for testing purposes')).toBeInTheDocument()
@@ -240,7 +240,7 @@ describe('MediaDetailModal', () => {
         external_metadata: [{ ...mockMediaItem.external_metadata![0], description: undefined }],
       }
       render(
-        <MediaDetailModal media={mediaWithoutDescription} isOpen={true} onClose={jest.fn()} />
+        <MediaDetailModal media={mediaWithoutDescription} isOpen={true} onClose={vi.fn()} />
       )
 
       expect(screen.queryByText(/description/i)).not.toBeInTheDocument()
@@ -249,12 +249,12 @@ describe('MediaDetailModal', () => {
 
   describe('Action Buttons', () => {
     it('displays Play button when onPlay is provided', () => {
-      const onPlay = jest.fn()
+      const onPlay = vi.fn()
       render(
         <MediaDetailModal
           media={mockMediaItem}
           isOpen={true}
-          onClose={jest.fn()}
+          onClose={vi.fn()}
           onPlay={onPlay}
         />
       )
@@ -264,12 +264,12 @@ describe('MediaDetailModal', () => {
 
     it('calls onPlay when Play button is clicked', async () => {
       const user = userEvent.setup()
-      const onPlay = jest.fn()
+      const onPlay = vi.fn()
       render(
         <MediaDetailModal
           media={mockMediaItem}
           isOpen={true}
-          onClose={jest.fn()}
+          onClose={vi.fn()}
           onPlay={onPlay}
         />
       )
@@ -280,19 +280,19 @@ describe('MediaDetailModal', () => {
 
     it('does not display Play button when onPlay is not provided', () => {
       render(
-        <MediaDetailModal media={mockMediaItem} isOpen={true} onClose={jest.fn()} />
+        <MediaDetailModal media={mockMediaItem} isOpen={true} onClose={vi.fn()} />
       )
 
       expect(screen.queryByRole('button', { name: /play/i })).not.toBeInTheDocument()
     })
 
     it('displays Download button when onDownload is provided', () => {
-      const onDownload = jest.fn()
+      const onDownload = vi.fn()
       render(
         <MediaDetailModal
           media={mockMediaItem}
           isOpen={true}
-          onClose={jest.fn()}
+          onClose={vi.fn()}
           onDownload={onDownload}
         />
       )
@@ -302,12 +302,12 @@ describe('MediaDetailModal', () => {
 
     it('calls onDownload when Download button is clicked', async () => {
       const user = userEvent.setup()
-      const onDownload = jest.fn()
+      const onDownload = vi.fn()
       render(
         <MediaDetailModal
           media={mockMediaItem}
           isOpen={true}
-          onClose={jest.fn()}
+          onClose={vi.fn()}
           onDownload={onDownload}
         />
       )
@@ -318,7 +318,7 @@ describe('MediaDetailModal', () => {
 
     it('does not display Download button when onDownload is not provided', () => {
       render(
-        <MediaDetailModal media={mockMediaItem} isOpen={true} onClose={jest.fn()} />
+        <MediaDetailModal media={mockMediaItem} isOpen={true} onClose={vi.fn()} />
       )
 
       expect(screen.queryByRole('button', { name: /download/i })).not.toBeInTheDocument()
@@ -328,7 +328,7 @@ describe('MediaDetailModal', () => {
   describe('Technical Details', () => {
     it('displays file size when available', () => {
       render(
-        <MediaDetailModal media={mockMediaItem} isOpen={true} onClose={jest.fn()} />
+        <MediaDetailModal media={mockMediaItem} isOpen={true} onClose={vi.fn()} />
       )
 
       expect(screen.getByText('File Size')).toBeInTheDocument()
@@ -337,7 +337,7 @@ describe('MediaDetailModal', () => {
 
     it('displays duration when available', () => {
       render(
-        <MediaDetailModal media={mockMediaItem} isOpen={true} onClose={jest.fn()} />
+        <MediaDetailModal media={mockMediaItem} isOpen={true} onClose={vi.fn()} />
       )
 
       expect(screen.getByText('Duration')).toBeInTheDocument()
@@ -346,7 +346,7 @@ describe('MediaDetailModal', () => {
 
     it('displays storage name when available', () => {
       render(
-        <MediaDetailModal media={mockMediaItem} isOpen={true} onClose={jest.fn()} />
+        <MediaDetailModal media={mockMediaItem} isOpen={true} onClose={vi.fn()} />
       )
 
       expect(screen.getByText('Storage')).toBeInTheDocument()
@@ -355,7 +355,7 @@ describe('MediaDetailModal', () => {
 
     it('displays protocol when available', () => {
       render(
-        <MediaDetailModal media={mockMediaItem} isOpen={true} onClose={jest.fn()} />
+        <MediaDetailModal media={mockMediaItem} isOpen={true} onClose={vi.fn()} />
       )
 
       expect(screen.getByText('Protocol')).toBeInTheDocument()
@@ -365,14 +365,14 @@ describe('MediaDetailModal', () => {
     it('formats file size correctly for different sizes', () => {
       const mediaWithSmallFile = { ...mockMediaItem, file_size: 1024 }
       const { rerender } = render(
-        <MediaDetailModal media={mediaWithSmallFile} isOpen={true} onClose={jest.fn()} />
+        <MediaDetailModal media={mediaWithSmallFile} isOpen={true} onClose={vi.fn()} />
       )
 
       expect(screen.getByText('1.00 KB')).toBeInTheDocument()
 
       const mediaWithMediumFile = { ...mockMediaItem, file_size: 1048576 }
       rerender(
-        <MediaDetailModal media={mediaWithMediumFile} isOpen={true} onClose={jest.fn()} />
+        <MediaDetailModal media={mediaWithMediumFile} isOpen={true} onClose={vi.fn()} />
       )
 
       expect(screen.getByText('1.00 MB')).toBeInTheDocument()
@@ -381,7 +381,7 @@ describe('MediaDetailModal', () => {
     it('formats duration correctly for minutes only', () => {
       const mediaWithShortDuration = { ...mockMediaItem, duration: 1800 } // 30 minutes
       render(
-        <MediaDetailModal media={mediaWithShortDuration} isOpen={true} onClose={jest.fn()} />
+        <MediaDetailModal media={mediaWithShortDuration} isOpen={true} onClose={vi.fn()} />
       )
 
       expect(screen.getByText('30m')).toBeInTheDocument()
@@ -396,7 +396,7 @@ describe('MediaDetailModal', () => {
         storage_root_protocol: undefined,
       }
       render(
-        <MediaDetailModal media={minimalMedia} isOpen={true} onClose={jest.fn()} />
+        <MediaDetailModal media={minimalMedia} isOpen={true} onClose={vi.fn()} />
       )
 
       expect(screen.queryByText('File Size')).not.toBeInTheDocument()
@@ -409,7 +409,7 @@ describe('MediaDetailModal', () => {
   describe('Cast', () => {
     it('displays cast section when available', () => {
       render(
-        <MediaDetailModal media={mockMediaItem} isOpen={true} onClose={jest.fn()} />
+        <MediaDetailModal media={mockMediaItem} isOpen={true} onClose={vi.fn()} />
       )
 
       expect(screen.getByText('Cast')).toBeInTheDocument()
@@ -429,7 +429,7 @@ describe('MediaDetailModal', () => {
         ],
       }
       render(
-        <MediaDetailModal media={mediaWithManyCast} isOpen={true} onClose={jest.fn()} />
+        <MediaDetailModal media={mediaWithManyCast} isOpen={true} onClose={vi.fn()} />
       )
 
       expect(screen.getByText('Actor 10')).toBeInTheDocument()
@@ -442,7 +442,7 @@ describe('MediaDetailModal', () => {
         external_metadata: [{ ...mockMediaItem.external_metadata![0], cast: [] }],
       }
       render(
-        <MediaDetailModal media={mediaWithoutCast} isOpen={true} onClose={jest.fn()} />
+        <MediaDetailModal media={mediaWithoutCast} isOpen={true} onClose={vi.fn()} />
       )
 
       expect(screen.queryByText('Cast')).not.toBeInTheDocument()
@@ -452,7 +452,7 @@ describe('MediaDetailModal', () => {
   describe('Versions', () => {
     it('displays versions section when available', () => {
       render(
-        <MediaDetailModal media={mockMediaItem} isOpen={true} onClose={jest.fn()} />
+        <MediaDetailModal media={mockMediaItem} isOpen={true} onClose={vi.fn()} />
       )
 
       expect(screen.getByText('Available Versions')).toBeInTheDocument()
@@ -460,7 +460,7 @@ describe('MediaDetailModal', () => {
 
     it('displays version details correctly', () => {
       render(
-        <MediaDetailModal media={mockMediaItem} isOpen={true} onClose={jest.fn()} />
+        <MediaDetailModal media={mockMediaItem} isOpen={true} onClose={vi.fn()} />
       )
 
       expect(screen.getByText('1080p - 1920x1080')).toBeInTheDocument()
@@ -471,7 +471,7 @@ describe('MediaDetailModal', () => {
 
     it('displays version language when available', () => {
       render(
-        <MediaDetailModal media={mockMediaItem} isOpen={true} onClose={jest.fn()} />
+        <MediaDetailModal media={mockMediaItem} isOpen={true} onClose={vi.fn()} />
       )
 
       const languageBadges = screen.getAllByText('en')
@@ -481,7 +481,7 @@ describe('MediaDetailModal', () => {
     it('does not display versions section when not available', () => {
       const mediaWithoutVersions = { ...mockMediaItem, versions: [] }
       render(
-        <MediaDetailModal media={mediaWithoutVersions} isOpen={true} onClose={jest.fn()} />
+        <MediaDetailModal media={mediaWithoutVersions} isOpen={true} onClose={vi.fn()} />
       )
 
       expect(screen.queryByText('Available Versions')).not.toBeInTheDocument()

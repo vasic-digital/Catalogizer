@@ -4,7 +4,7 @@ import { SubtitleSyncModal } from '../SubtitleSyncModal'
 import { subtitleApi } from '@/lib/subtitleApi'
 
 // Mock framer-motion to render plain divs
-jest.mock('framer-motion', () => ({
+vi.mock('framer-motion', async () => ({
   motion: {
     div: ({ children, onClick, className, ...props }: any) => {
       return <div onClick={onClick} className={className}>{children}</div>
@@ -13,7 +13,7 @@ jest.mock('framer-motion', () => ({
 }))
 
 // Mock lucide-react icons as simple spans
-jest.mock('lucide-react', () => ({
+vi.mock('lucide-react', async () => ({
   X: (props: any) => <span data-testid="icon-x" {...props} />,
   CheckCircle: (props: any) => <span data-testid="icon-check-circle" {...props} />,
   AlertCircle: (props: any) => <span data-testid="icon-alert-circle" {...props} />,
@@ -23,24 +23,24 @@ jest.mock('lucide-react', () => ({
   Pause: (props: any) => <span data-testid="icon-pause" {...props} />,
 }))
 
-jest.mock('@/lib/subtitleApi', () => ({
+vi.mock('@/lib/subtitleApi', async () => ({
   subtitleApi: {
-    verifySync: jest.fn(),
+    verifySync: vi.fn(),
   },
 }))
 
-const mockVerifySync = subtitleApi.verifySync as jest.MockedFunction<typeof subtitleApi.verifySync>
+const mockVerifySync = subtitleApi.verifySync as vi.MockedFunction<typeof subtitleApi.verifySync>
 
 const defaultProps = {
   isOpen: true,
-  onClose: jest.fn(),
+  onClose: vi.fn(),
   subtitleId: 'sub-123',
   mediaId: 42,
 }
 
 describe('SubtitleSyncModal', () => {
   beforeEach(() => {
-    jest.clearAllMocks()
+    vi.clearAllMocks()
   })
 
   describe('Rendering', () => {
@@ -102,7 +102,7 @@ describe('SubtitleSyncModal', () => {
   describe('User interactions', () => {
     it('calls onClose when Close button is clicked', async () => {
       const user = userEvent.setup()
-      const onClose = jest.fn()
+      const onClose = vi.fn()
 
       render(<SubtitleSyncModal {...defaultProps} onClose={onClose} />)
       await user.click(screen.getByText('Close'))
@@ -112,7 +112,7 @@ describe('SubtitleSyncModal', () => {
 
     it('calls onClose when X button is clicked', async () => {
       const user = userEvent.setup()
-      const onClose = jest.fn()
+      const onClose = vi.fn()
 
       render(<SubtitleSyncModal {...defaultProps} onClose={onClose} />)
       // The X icon button is the one containing the icon-x testid
@@ -124,7 +124,7 @@ describe('SubtitleSyncModal', () => {
 
     it('calls onClose when clicking the backdrop', async () => {
       const user = userEvent.setup()
-      const onClose = jest.fn()
+      const onClose = vi.fn()
 
       render(<SubtitleSyncModal {...defaultProps} onClose={onClose} />)
       const backdrop = screen.getByText('Verify Subtitle Sync').closest('.fixed')!
@@ -135,7 +135,7 @@ describe('SubtitleSyncModal', () => {
 
     it('does not close when clicking inside the modal content', async () => {
       const user = userEvent.setup()
-      const onClose = jest.fn()
+      const onClose = vi.fn()
 
       render(<SubtitleSyncModal {...defaultProps} onClose={onClose} />)
       await user.click(screen.getByText('Verify Subtitle Sync'))

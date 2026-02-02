@@ -4,7 +4,7 @@ import { MediaGrid } from '../MediaGrid';
 import type { MediaItem } from '@/types/media';
 
 // Mock MediaCard component
-jest.mock('../MediaCard', () => ({
+vi.mock('../MediaCard', async () => ({
   MediaCard: ({ media, onView, onDownload }: any) => (
     <div data-testid={`media-card-${media.id}`}>
       <h3>{media.title}</h3>
@@ -92,7 +92,7 @@ describe('MediaGrid', () => {
 
   it('passes onMediaView callback to MediaCard', async () => {
     const user = userEvent.setup();
-    const handleView = jest.fn();
+    const handleView = vi.fn();
 
     render(<MediaGrid media={mockMediaItems} onMediaView={handleView} />);
 
@@ -105,7 +105,7 @@ describe('MediaGrid', () => {
 
   it('passes onMediaDownload callback to MediaCard', async () => {
     const user = userEvent.setup();
-    const handleDownload = jest.fn();
+    const handleDownload = vi.fn();
 
     render(<MediaGrid media={mockMediaItems} onMediaDownload={handleDownload} />);
 
@@ -166,7 +166,7 @@ describe('MediaGrid', () => {
   });
 
   it('renders only view callback when only onMediaView provided', () => {
-    const handleView = jest.fn();
+    const handleView = vi.fn();
     render(<MediaGrid media={mockMediaItems} onMediaView={handleView} />);
 
     expect(screen.getByText('View Test Movie 1')).toBeInTheDocument();
@@ -174,7 +174,7 @@ describe('MediaGrid', () => {
   });
 
   it('renders only download callback when only onMediaDownload provided', () => {
-    const handleDownload = jest.fn();
+    const handleDownload = vi.fn();
     render(<MediaGrid media={mockMediaItems} onMediaDownload={handleDownload} />);
 
     expect(screen.getByText('Download Test Movie 1')).toBeInTheDocument();

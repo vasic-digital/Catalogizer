@@ -4,16 +4,16 @@ import { MemoryRouter, Routes, Route } from 'react-router-dom'
 import { Layout } from '../Layout'
 
 // Mock the Header component
-jest.mock('../Header', () => ({
+vi.mock('../Header', async () => ({
   Header: () => <div data-testid="mock-header">Header</div>,
 }))
 
 // Mock AuthContext for Header
-jest.mock('@/contexts/AuthContext', () => ({
-  useAuth: jest.fn(() => ({
+vi.mock('@/contexts/AuthContext', async () => ({
+  useAuth: vi.fn(() => ({
     user: null,
     isAuthenticated: false,
-    logout: jest.fn(),
+    logout: vi.fn(),
   })),
 }))
 

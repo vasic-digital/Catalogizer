@@ -2,22 +2,23 @@ import React from 'react'
 import { render, screen, waitFor } from '@testing-library/react'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { Analytics } from '../Analytics'
+import { mediaApi } from '@/lib/mediaApi'
 
 // Mock dependencies
-jest.mock('@/lib/mediaApi', () => ({
+vi.mock('@/lib/mediaApi', async () => ({
   mediaApi: {
-    getMediaStats: jest.fn(),
-    getRecentMedia: jest.fn(),
+    getMediaStats: vi.fn(),
+    getRecentMedia: vi.fn(),
   },
 }))
 
-jest.mock('framer-motion', () => ({
+vi.mock('framer-motion', async () => ({
   motion: {
     div: ({ children, ...props }: any) => <div {...props}>{children}</div>,
   },
 }))
 
-jest.mock('recharts', () => ({
+vi.mock('recharts', async () => ({
   ResponsiveContainer: ({ children }: any) => <div data-testid="responsive-container">{children}</div>,
   PieChart: ({ children }: any) => <div data-testid="pie-chart">{children}</div>,
   Pie: ({ children }: any) => <div data-testid="pie">{children}</div>,
@@ -34,7 +35,7 @@ jest.mock('recharts', () => ({
   Tooltip: () => <div data-testid="tooltip" />,
 }))
 
-jest.mock('lucide-react', () => ({
+vi.mock('lucide-react', async () => ({
   TrendingUp: () => <div data-testid="icon-trending">TrendingUp Icon</div>,
   Database: () => <div data-testid="icon-database">Database Icon</div>,
   HardDrive: () => <div data-testid="icon-harddrive">HardDrive Icon</div>,
@@ -46,7 +47,7 @@ jest.mock('lucide-react', () => ({
   Monitor: () => <div data-testid="icon-monitor">Monitor Icon</div>,
 }))
 
-const mockMediaApi = require('@/lib/mediaApi').mediaApi
+const mockMediaApi = vi.mocked(mediaApi)
 
 // Create a test wrapper with QueryClient
 const createTestWrapper = () => {
@@ -67,7 +68,7 @@ const createTestWrapper = () => {
 
 describe('Analytics', () => {
   beforeEach(() => {
-    jest.clearAllMocks()
+    vi.clearAllMocks()
   })
 
   describe('Loading State', () => {

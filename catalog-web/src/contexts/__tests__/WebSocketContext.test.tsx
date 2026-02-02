@@ -2,25 +2,27 @@ import React from 'react'
 import { render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { WebSocketProvider, useWebSocketContext } from '../WebSocketContext'
+import { useAuth } from '@/contexts/AuthContext'
+import { useWebSocket } from '@/lib/websocket'
 
 // Mock dependencies
-const mockConnect = jest.fn()
-const mockDisconnect = jest.fn()
-const mockSend = jest.fn()
-const mockSubscribe = jest.fn()
-const mockUnsubscribe = jest.fn()
-const mockGetConnectionState = jest.fn(() => 'closed')
+const mockConnect = vi.fn()
+const mockDisconnect = vi.fn()
+const mockSend = vi.fn()
+const mockSubscribe = vi.fn()
+const mockUnsubscribe = vi.fn()
+const mockGetConnectionState = vi.fn(() => 'closed')
 
-jest.mock('@/contexts/AuthContext', () => ({
-  useAuth: jest.fn(),
+vi.mock('@/contexts/AuthContext', async () => ({
+  useAuth: vi.fn(),
 }))
 
-jest.mock('@/lib/websocket', () => ({
-  useWebSocket: jest.fn(),
+vi.mock('@/lib/websocket', async () => ({
+  useWebSocket: vi.fn(),
 }))
 
-const mockUseAuth = require('@/contexts/AuthContext').useAuth
-const mockUseWebSocket = require('@/lib/websocket').useWebSocket
+const mockUseAuth = vi.mocked(useAuth)
+const mockUseWebSocket = vi.mocked(useWebSocket)
 
 // Test component that uses the context
 const TestComponent = () => {
@@ -41,7 +43,7 @@ const TestComponent = () => {
 
 describe('WebSocketContext', () => {
   beforeEach(() => {
-    jest.clearAllMocks()
+    vi.clearAllMocks()
 
     // Default mock implementation
     mockUseWebSocket.mockReturnValue({
@@ -302,7 +304,7 @@ describe('WebSocketContext', () => {
 
     it('throws error when used outside provider', () => {
       // Suppress console.error for this test
-      const consoleErrorSpy = jest.spyOn(console, 'error').mockImplementation()
+      const consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation()
 
       expect(() => {
         render(<TestComponent />)

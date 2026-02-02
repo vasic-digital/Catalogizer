@@ -3,24 +3,24 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { AuthProvider, useAuth } from '../AuthContext';
 
 // Mock the API module completely
-jest.mock('@/lib/api', () => ({
+vi.mock('@/lib/api', async () => ({
   authApi: {
-    getAuthStatus: jest.fn(),
-    getPermissions: jest.fn(),
-    login: jest.fn(),
-    register: jest.fn(),
-    logout: jest.fn(),
-    updateProfile: jest.fn(),
-    changePassword: jest.fn(),
+    getAuthStatus: vi.fn(),
+    getPermissions: vi.fn(),
+    login: vi.fn(),
+    register: vi.fn(),
+    logout: vi.fn(),
+    updateProfile: vi.fn(),
+    changePassword: vi.fn(),
   }
 }));
 
 // Mock react-hot-toast
-jest.mock('react-hot-toast', () => ({
+vi.mock('react-hot-toast', async () => ({
   __esModule: true,
   default: {
-    success: jest.fn(),
-    error: jest.fn(),
+    success: vi.fn(),
+    error: vi.fn(),
   },
 }));
 
@@ -62,7 +62,7 @@ describe('AuthContext', () => {
 
   it('throws error when useAuth is used outside provider', () => {
     // Mock console.error for the error boundary
-    const consoleSpy = jest.spyOn(console, 'error').mockImplementation(() => {/* mock */});
+    const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {/* mock */});
 
     expect(() => {
       render(

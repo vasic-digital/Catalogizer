@@ -2,33 +2,34 @@ import { render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { MemoryRouter } from 'react-router-dom'
 import { RegisterForm } from '../RegisterForm'
+import { useAuth } from '@/contexts/AuthContext'
 
 // Mock the AuthContext
-jest.mock('@/contexts/AuthContext', () => ({
-  useAuth: jest.fn(),
+vi.mock('@/contexts/AuthContext', async () => ({
+  useAuth: vi.fn(),
 }))
 
 // Mock framer-motion to avoid animation issues in tests
-jest.mock('framer-motion', () => ({
+vi.mock('framer-motion', async () => ({
   motion: {
     div: ({ children, ...props }: any) => <div {...props}>{children}</div>,
   },
 }))
 
 // Mock react-router-dom's useNavigate
-const mockNavigate = jest.fn()
-jest.mock('react-router-dom', () => ({
-  ...jest.requireActual('react-router-dom'),
+const mockNavigate = vi.fn()
+vi.mock('react-router-dom', async () => ({
+  ...(await vi.importActual('react-router-dom')),
   useNavigate: () => mockNavigate,
 }))
 
-const mockUseAuth = require('@/contexts/AuthContext').useAuth
+const mockUseAuth = vi.mocked(useAuth)
 
 describe('RegisterForm', () => {
   beforeEach(() => {
-    jest.clearAllMocks()
+    vi.clearAllMocks()
     mockUseAuth.mockReturnValue({
-      register: jest.fn().mockResolvedValue(undefined),
+      register: vi.fn().mockResolvedValue(undefined),
     })
   })
 
@@ -408,7 +409,7 @@ describe('RegisterForm', () => {
   describe('Form Submission', () => {
     it('calls register with correct data on valid submission', async () => {
       const user = userEvent.setup()
-      const mockRegister = jest.fn().mockResolvedValue(undefined)
+      const mockRegister = vi.fn().mockResolvedValue(undefined)
       mockUseAuth.mockReturnValue({ register: mockRegister })
 
       render(
@@ -440,7 +441,7 @@ describe('RegisterForm', () => {
 
     it('navigates to login on successful registration', async () => {
       const user = userEvent.setup()
-      const mockRegister = jest.fn().mockResolvedValue(undefined)
+      const mockRegister = vi.fn().mockResolvedValue(undefined)
       mockUseAuth.mockReturnValue({ register: mockRegister })
 
       render(
@@ -466,7 +467,7 @@ describe('RegisterForm', () => {
 
     it('shows loading state during registration', async () => {
       const user = userEvent.setup()
-      const mockRegister = jest.fn(() => new Promise((resolve) => setTimeout(resolve, 100)))
+      const mockRegister = vi.fn(() => new Promise((resolve) => setTimeout(resolve, 100)))
       mockUseAuth.mockReturnValue({ register: mockRegister })
 
       render(
@@ -495,9 +496,9 @@ describe('RegisterForm', () => {
 
     it('handles registration errors gracefully', async () => {
       const user = userEvent.setup()
-      const mockRegister = jest.fn().mockRejectedValue(new Error('Registration failed'))
+      const mockRegister = vi.fn().mockRejectedValue(new Error('Registration failed'))
       mockUseAuth.mockReturnValue({ register: mockRegister })
-      const consoleErrorSpy = jest.spyOn(console, 'error').mockImplementation(() => {})
+      const consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => {})
 
       render(
         <MemoryRouter>
@@ -532,7 +533,7 @@ describe('RegisterForm', () => {
 
     it('does not submit form when validation fails', async () => {
       const user = userEvent.setup()
-      const mockRegister = jest.fn()
+      const mockRegister = vi.fn()
       mockUseAuth.mockReturnValue({ register: mockRegister })
 
       render(

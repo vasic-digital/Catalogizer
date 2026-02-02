@@ -11,7 +11,7 @@ describe('Button', () => {
 
   it('handles click events', async () => {
     const user = userEvent.setup();
-    const handleClick = jest.fn();
+    const handleClick = vi.fn();
     render(<Button onClick={handleClick}>Click me</Button>);
 
     await user.click(screen.getByRole('button'));
@@ -20,7 +20,7 @@ describe('Button', () => {
 
   it('can be disabled', async () => {
     const user = userEvent.setup();
-    const handleClick = jest.fn();
+    const handleClick = vi.fn();
     render(<Button disabled onClick={handleClick}>Disabled</Button>);
 
     const button = screen.getByRole('button');

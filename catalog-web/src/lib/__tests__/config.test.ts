@@ -15,7 +15,7 @@ export {} // Ensure this is treated as a module under --isolatedModules
 const originalEnv = { ...process.env }
 
 beforeEach(() => {
-  jest.resetModules()
+  vi.resetModules()
 })
 
 afterEach(() => {
@@ -28,7 +28,7 @@ describe('Configuration and Environment Handling', () => {
       // The api.ts module sets: const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080'
       // And creates axios with baseURL: `${API_BASE_URL}/api/v1`
       // Since import.meta.env is mocked as empty by Jest, the default is used
-      jest.mock('@/lib/api', () => {
+      vi.mock('@/lib/api', async () => {
         const baseUrl = 'http://localhost:8080'
         return {
           __esModule: true,

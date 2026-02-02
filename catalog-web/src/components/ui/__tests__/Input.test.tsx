@@ -54,7 +54,7 @@ describe('Input', () => {
   });
 
   it('handles controlled input', () => {
-    const handleChange = jest.fn();
+    const handleChange = vi.fn();
     render(<Input value="controlled" onChange={handleChange} />);
     const input = screen.getByRole('textbox');
     expect(input).toHaveValue('controlled');

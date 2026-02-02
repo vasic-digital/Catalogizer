@@ -13,9 +13,11 @@
 import React from 'react'
 import { render, screen, renderHook, act } from '@testing-library/react'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
+import { useAuth } from '@/contexts/AuthContext'
+import { WebSocketProvider, useWebSocketContext } from '@/contexts/WebSocketContext'
 
 // Mock framer-motion
-jest.mock('framer-motion', () => ({
+vi.mock('framer-motion', async () => ({
   motion: {
     div: 'div',
     span: 'span',
@@ -25,7 +27,7 @@ jest.mock('framer-motion', () => ({
 }))
 
 // Mock lucide-react
-jest.mock('lucide-react', () => new Proxy({}, {
+vi.mock('lucide-react', () => new Proxy({}, {
   get: (_target, prop) => {
     if (prop === '__esModule') return true
     return () => null
@@ -33,11 +35,11 @@ jest.mock('lucide-react', () => new Proxy({}, {
 }))
 
 // Mock react-hot-toast
-jest.mock('react-hot-toast', () => ({
+vi.mock('react-hot-toast', async () => ({
   __esModule: true,
-  default: Object.assign(jest.fn(), {
-    success: jest.fn(),
-    error: jest.fn(),
+  default: Object.assign(vi.fn(), {
+    success: vi.fn(),
+    error: vi.fn(),
   }),
 }))
 
@@ -240,15 +242,15 @@ const WS_URL = 'ws://localhost:8080/ws'
 
 describe('WebSocketClient', () => {
   beforeEach(() => {
-    jest.useFakeTimers()
+    vi.useFakeTimers()
     wsInstances = []
     ;(global as any).WebSocket = MockWebSocket
-    // Re-mock localStorage.getItem since jest.clearAllMocks may reset it
-    global.localStorage.getItem = jest.fn().mockReturnValue(null)
+    // Re-mock localStorage.getItem since vi.clearAllMocks may reset it
+    global.localStorage.getItem = vi.fn().mockReturnValue(null)
   })
 
   afterEach(() => {
-    jest.useRealTimers()
+    vi.useRealTimers()
   })
 
   describe('Connection', () => {
@@ -306,7 +308,7 @@ describe('WebSocketClient', () => {
       client.connect()
       wsInstances[0].simulateOpen()
 
-      const closeSpy = jest.spyOn(wsInstances[0], 'close')
+      const closeSpy = vi.spyOn(wsInstances[0], 'close')
       client.disconnect()
 
       expect(closeSpy).toHaveBeenCalledWith(1000, 'Client disconnect')
@@ -322,7 +324,7 @@ describe('WebSocketClient', () => {
     })
 
     it('calls onDisconnect callback when connection closes', () => {
-      const onDisconnect = jest.fn()
+      const onDisconnect = vi.fn()
       const client = new TestWebSocketClient(WS_URL)
       client.setOnDisconnect(onDisconnect)
       client.connect()
@@ -338,7 +340,7 @@ describe('WebSocketClient', () => {
       client.connect()
       wsInstances[0].simulateOpen()
 
-      const closeSpy = jest.spyOn(wsInstances[0], 'close')
+      const closeSpy = vi.spyOn(wsInstances[0], 'close')
       client.disconnect()
 
       expect(closeSpy).toHaveBeenCalled()
@@ -353,7 +355,7 @@ describe('WebSocketClient', () => {
 
       wsInstances[0].simulateClose(1006, 'Abnormal closure')
 
-      jest.advanceTimersByTime(1000)
+      vi.advanceTimersByTime(1000)
 
       expect(wsInstances).toHaveLength(2)
     })
@@ -365,7 +367,7 @@ describe('WebSocketClient', () => {
 
       wsInstances[0].simulateClose(1000, 'Normal closure')
 
-      jest.advanceTimersByTime(5000)
+      vi.advanceTimersByTime(5000)
 
       expect(wsInstances).toHaveLength(1)
     })
@@ -379,18 +381,18 @@ describe('WebSocketClient', () => {
       wsInstances[0].simulateClose(1006)
 
       // First reconnect at 1000ms (1000 * 2^0)
-      jest.advanceTimersByTime(999)
+      vi.advanceTimersByTime(999)
       expect(wsInstances).toHaveLength(1)
-      jest.advanceTimersByTime(1)
+      vi.advanceTimersByTime(1)
       expect(wsInstances).toHaveLength(2)
 
       // Second unexpected close
       wsInstances[1].simulateClose(1006)
 
       // Second reconnect at 2000ms (1000 * 2^1)
-      jest.advanceTimersByTime(1999)
+      vi.advanceTimersByTime(1999)
       expect(wsInstances).toHaveLength(2)
-      jest.advanceTimersByTime(1)
+      vi.advanceTimersByTime(1)
       expect(wsInstances).toHaveLength(3)
     })
 
@@ -404,14 +406,14 @@ describe('WebSocketClient', () => {
         lastInstance.simulateClose(1006)
 
         const delay = 1000 * Math.pow(2, i)
-        jest.advanceTimersByTime(delay)
+        vi.advanceTimersByTime(delay)
       }
 
       const countAfterMax = wsInstances.length
 
       // One more close should NOT trigger another reconnect
       wsInstances[wsInstances.length - 1].simulateClose(1006)
-      jest.advanceTimersByTime(100000)
+      vi.advanceTimersByTime(100000)
 
       expect(wsInstances.length).toBe(countAfterMax)
     })
@@ -423,7 +425,7 @@ describe('WebSocketClient', () => {
       wsInstances[0].simulateOpen()
       wsInstances[0].simulateClose(1006)
 
-      jest.advanceTimersByTime(1000)
+      vi.advanceTimersByTime(1000)
       expect(wsInstances).toHaveLength(2)
 
       // Successful reconnection resets attempts
@@ -433,7 +435,7 @@ describe('WebSocketClient', () => {
       wsInstances[1].simulateClose(1006)
 
       // Should reconnect at base delay (1000ms), not exponential
-      jest.advanceTimersByTime(1000)
+      vi.advanceTimersByTime(1000)
       expect(wsInstances).toHaveLength(3)
     })
   })
@@ -505,7 +507,7 @@ describe('WebSocketClient', () => {
 
   describe('Message Receiving', () => {
     it('calls onMessage callback with parsed message', () => {
-      const onMessage = jest.fn()
+      const onMessage = vi.fn()
       const client = new TestWebSocketClient(WS_URL)
       client.setOnMessage(onMessage)
       client.connect()
@@ -518,7 +520,7 @@ describe('WebSocketClient', () => {
     })
 
     it('handles invalid JSON messages gracefully without crashing', () => {
-      const onMessage = jest.fn()
+      const onMessage = vi.fn()
       const client = new TestWebSocketClient(WS_URL)
       client.setOnMessage(onMessage)
       client.connect()
@@ -533,7 +535,7 @@ describe('WebSocketClient', () => {
     })
 
     it('calls onConnect callback when connection opens', () => {
-      const onConnect = jest.fn()
+      const onConnect = vi.fn()
       const client = new TestWebSocketClient(WS_URL)
       client.setOnConnect(onConnect)
       client.connect()
@@ -544,7 +546,7 @@ describe('WebSocketClient', () => {
     })
 
     it('calls onError callback on WebSocket error', () => {
-      const onError = jest.fn()
+      const onError = vi.fn()
       const client = new TestWebSocketClient(WS_URL)
       client.setOnError(onError)
       client.connect()
@@ -585,7 +587,7 @@ describe('WebSocketClient', () => {
 
   describe('Error Handling', () => {
     it('handles connection errors gracefully', () => {
-      const onError = jest.fn()
+      const onError = vi.fn()
       const client = new TestWebSocketClient(WS_URL)
       client.setOnError(onError)
       client.connect()
@@ -614,7 +616,7 @@ describe('WebSocketClient', () => {
       // Restore WebSocket mock so reconnect can proceed
       ;(global as any).WebSocket = MockWebSocket
 
-      jest.advanceTimersByTime(1000)
+      vi.advanceTimersByTime(1000)
 
       // A new WebSocket should have been created on reconnect
       expect(wsInstances).toHaveLength(1)
@@ -628,15 +630,15 @@ describe('WebSocketClient', () => {
 // with WebSocketContext and React Query without import.meta.env issues.
 // ============================================================================
 
-const mockConnect = jest.fn()
-const mockDisconnect = jest.fn()
-const mockSend = jest.fn()
-const mockSubscribe = jest.fn()
-const mockUnsubscribe = jest.fn()
-const mockGetConnectionState = jest.fn(() => 'closed' as const)
+const mockConnect = vi.fn()
+const mockDisconnect = vi.fn()
+const mockSend = vi.fn()
+const mockSubscribe = vi.fn()
+const mockUnsubscribe = vi.fn()
+const mockGetConnectionState = vi.fn(() => 'closed' as const)
 
-jest.mock('@/lib/websocket', () => ({
-  useWebSocket: jest.fn(() => ({
+vi.mock('@/lib/websocket', async () => ({
+  useWebSocket: vi.fn(() => ({
     connect: mockConnect,
     disconnect: mockDisconnect,
     send: mockSend,
@@ -644,18 +646,18 @@ jest.mock('@/lib/websocket', () => ({
     unsubscribe: mockUnsubscribe,
     getConnectionState: mockGetConnectionState,
   })),
-  WebSocketClient: jest.fn(),
+  WebSocketClient: vi.fn(),
 }))
 
-jest.mock('@/contexts/AuthContext', () => ({
-  useAuth: jest.fn(),
+vi.mock('@/contexts/AuthContext', async () => ({
+  useAuth: vi.fn(),
 }))
 
-const mockUseAuth = require('@/contexts/AuthContext').useAuth
+const mockUseAuth = vi.mocked(useAuth)
 
 describe('WebSocket Integration with Provider', () => {
   beforeEach(() => {
-    jest.clearAllMocks()
+    vi.clearAllMocks()
     mockGetConnectionState.mockReturnValue('closed')
   })
 
@@ -665,7 +667,6 @@ describe('WebSocket Integration with Provider', () => {
       user: { id: 1, username: 'testuser' },
     })
 
-    const { WebSocketProvider } = require('@/contexts/WebSocketContext')
 
     render(
       <WebSocketProvider>
@@ -682,7 +683,6 @@ describe('WebSocket Integration with Provider', () => {
       user: { id: 1, username: 'testuser' },
     })
 
-    const { WebSocketProvider } = require('@/contexts/WebSocketContext')
 
     render(
       <WebSocketProvider>
@@ -699,7 +699,6 @@ describe('WebSocket Integration with Provider', () => {
       user: null,
     })
 
-    const { WebSocketProvider } = require('@/contexts/WebSocketContext')
 
     render(
       <WebSocketProvider>
@@ -716,7 +715,6 @@ describe('WebSocket Integration with Provider', () => {
       user: { id: 1, username: 'testuser' },
     })
 
-    const { WebSocketProvider } = require('@/contexts/WebSocketContext')
 
     const { unmount } = render(
       <WebSocketProvider>
@@ -735,7 +733,6 @@ describe('WebSocket Integration with Provider', () => {
       user: { id: 1, username: 'testuser' },
     })
 
-    const { WebSocketProvider, useWebSocketContext } = require('@/contexts/WebSocketContext')
 
     const TestConsumer = () => {
       const { send } = useWebSocketContext()
@@ -758,7 +755,6 @@ describe('WebSocket Integration with Provider', () => {
       user: { id: 1, username: 'testuser' },
     })
 
-    const { WebSocketProvider, useWebSocketContext } = require('@/contexts/WebSocketContext')
 
     const TestConsumer = () => {
       const { subscribe } = useWebSocketContext()
@@ -785,7 +781,6 @@ describe('WebSocket Integration with Provider', () => {
       // Simulate connection error silently
     })
 
-    const { WebSocketProvider } = require('@/contexts/WebSocketContext')
 
     render(
       <WebSocketProvider>
@@ -797,7 +792,6 @@ describe('WebSocket Integration with Provider', () => {
   })
 
   it('reconnects after disconnection by re-rendering with new auth state', () => {
-    const { WebSocketProvider } = require('@/contexts/WebSocketContext')
 
     // Start authenticated
     mockUseAuth.mockReturnValue({
@@ -831,9 +825,8 @@ describe('WebSocket Integration with Provider', () => {
   })
 
   it('throws error when useWebSocketContext is used outside provider', () => {
-    const consoleErrorSpy = jest.spyOn(console, 'error').mockImplementation()
+    const consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation()
 
-    const { useWebSocketContext } = require('@/contexts/WebSocketContext')
 
     const BadComponent = () => {
       useWebSocketContext()
