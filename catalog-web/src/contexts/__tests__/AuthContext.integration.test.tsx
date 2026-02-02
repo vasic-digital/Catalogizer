@@ -5,6 +5,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { AuthProvider, useAuth } from '../AuthContext'
 import type { User, LoginResponse, AuthStatus } from '@/types/auth'
 import { authApi } from '@/lib/api'
+import toast from 'react-hot-toast'
 
 // Mock the API module
 vi.mock('@/lib/api', async () => ({
@@ -29,7 +30,7 @@ vi.mock('react-hot-toast', async () => ({
 }))
 
 const mockAuthApi = vi.mocked(authApi)
-const mockToast = require('react-hot-toast').default
+const mockToast = vi.mocked(toast)
 
 // --- Test helper components ---
 

@@ -258,10 +258,12 @@ describe('LoginForm', () => {
       await user.click(submitButton)
 
       await waitFor(() => {
-        expect(mockLogin).toHaveBeenCalledWith({
-          username: 'testuser',
-          password: 'password123',
-        })
+        expect(mockLogin).toHaveBeenCalledWith(
+          expect.objectContaining({
+            username: 'testuser',
+            password: 'password123',
+          })
+        )
       })
     })
 

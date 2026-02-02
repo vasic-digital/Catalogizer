@@ -49,17 +49,16 @@ beforeEach(() => {
 
 describe('webVitals', () => {
   describe('reportWebVitals - metric registration pattern', () => {
-    it('should register callbacks for all five core web vitals', async () => {
+    it('should register callbacks for all five core web vitals', () => {
       // The reportWebVitals function dynamically imports web-vitals
       // and calls onCLS, onFCP, onINP, onLCP, onTTFB with the provided callback
       const callback = vi.fn()
-      const { onCLS, onFCP, onINP, onLCP, onTTFB } = require('web-vitals')
 
-      onCLS(callback)
-      onFCP(callback)
-      onINP(callback)
-      onLCP(callback)
-      onTTFB(callback)
+      mockOnCLS(callback)
+      mockOnFCP(callback)
+      mockOnINP(callback)
+      mockOnLCP(callback)
+      mockOnTTFB(callback)
 
       expect(mockOnCLS).toHaveBeenCalledWith(callback)
       expect(mockOnFCP).toHaveBeenCalledWith(callback)
@@ -73,9 +72,7 @@ describe('webVitals', () => {
       const metric = createMockMetric('LCP', 2500, 'good')
 
       mockOnLCP.mockImplementation((cb: (m: MockMetric) => void) => cb(metric))
-
-      const { onLCP } = require('web-vitals')
-      onLCP(callback)
+      mockOnLCP(callback)
 
       expect(callback).toHaveBeenCalledWith(
         expect.objectContaining({
@@ -136,8 +133,7 @@ describe('webVitals', () => {
       const callback = vi.fn()
 
       if (isDev) {
-        const { onCLS } = require('web-vitals')
-        onCLS(callback)
+        mockOnCLS(callback)
       }
 
       expect(mockOnCLS).toHaveBeenCalled()
@@ -297,28 +293,23 @@ describe('webVitals', () => {
 
   describe('web-vitals module exports', () => {
     it('should export onCLS function', () => {
-      const { onCLS } = require('web-vitals')
-      expect(typeof onCLS).toBe('function')
+      expect(typeof mockOnCLS).toBe('function')
     })
 
     it('should export onFCP function', () => {
-      const { onFCP } = require('web-vitals')
-      expect(typeof onFCP).toBe('function')
+      expect(typeof mockOnFCP).toBe('function')
     })
 
     it('should export onINP function', () => {
-      const { onINP } = require('web-vitals')
-      expect(typeof onINP).toBe('function')
+      expect(typeof mockOnINP).toBe('function')
     })
 
     it('should export onLCP function', () => {
-      const { onLCP } = require('web-vitals')
-      expect(typeof onLCP).toBe('function')
+      expect(typeof mockOnLCP).toBe('function')
     })
 
     it('should export onTTFB function', () => {
-      const { onTTFB } = require('web-vitals')
-      expect(typeof onTTFB).toBe('function')
+      expect(typeof mockOnTTFB).toBe('function')
     })
   })
 })

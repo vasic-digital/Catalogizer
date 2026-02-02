@@ -1,6 +1,7 @@
 import React from 'react'
 import { render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { Dashboard } from '../Dashboard'
 import { useAuth } from '@/contexts/AuthContext'
 
@@ -15,20 +16,100 @@ vi.mock('framer-motion', async () => ({
   },
 }))
 
-vi.mock('lucide-react', async () => ({
-  Database: () => <div data-testid="icon-database">Database Icon</div>,
-  Film: () => <div data-testid="icon-film">Film Icon</div>,
-  Music: () => <div data-testid="icon-music">Music Icon</div>,
-  Gamepad2: () => <div data-testid="icon-gamepad">Gamepad Icon</div>,
-  Monitor: () => <div data-testid="icon-monitor">Monitor Icon</div>,
-  BookOpen: () => <div data-testid="icon-book">Book Icon</div>,
-  TrendingUp: () => <div data-testid="icon-trending">Trending Icon</div>,
-  Users: () => <div data-testid="icon-users">Users Icon</div>,
-  Activity: () => <div data-testid="icon-activity">Activity Icon</div>,
-  HardDrive: () => <div data-testid="icon-harddrive">HardDrive Icon</div>,
+vi.mock('lucide-react', async () => {
+  const icon = (name: string) => {
+    const Component = (props: any) => <svg data-testid={`icon-${name.toLowerCase()}`} {...props} />
+    Component.displayName = name
+    return Component
+  }
+  return {
+    // Dashboard.tsx
+    Film: icon('film'),
+    Upload: icon('upload'),
+    Search: icon('search'),
+    Settings: icon('settings'),
+    Activity: icon('activity'),
+    HardDrive: icon('harddrive'),
+    Zap: icon('zap'),
+    Clock: icon('clock'),
+    // ActivityFeed.tsx
+    Play: icon('play'),
+    Download: icon('download'),
+    Users: icon('users'),
+    Eye: icon('eye'),
+    Filter: icon('filter'),
+    // DashboardStats.tsx
+    Database: icon('database'),
+    PlusCircle: icon('pluscircle'),
+    TrendingUp: icon('trendingup'),
+    TrendingDown: icon('trendingdown'),
+    PlayCircle: icon('playcircle'),
+    // MediaDistributionChart.tsx
+    PieChart: icon('piechart'),
+  }
+})
+
+vi.mock('react-hot-toast', async () => ({
+  default: {
+    success: vi.fn(),
+    error: vi.fn(),
+    promise: vi.fn(),
+  },
+}))
+
+vi.mock('@/lib/mediaApi', async () => ({
+  mediaApi: {
+    getMediaStats: vi.fn().mockResolvedValue({
+      total_items: 100,
+      total_size: 1024000,
+      recent_additions: 5,
+      by_type: { video: 50, audio: 30, image: 20 },
+      by_quality: { hd: 60, sd: 40 },
+    }),
+    analyzeDirectory: vi.fn().mockResolvedValue({}),
+  },
+}))
+
+// Mock child components to isolate Dashboard logic
+vi.mock('@/components/dashboard/DashboardStats', async () => ({
+  DashboardStats: ({ loading }: any) => (
+    <div data-testid="dashboard-stats">{loading ? 'Loading stats...' : 'Dashboard Stats'}</div>
+  ),
+}))
+
+vi.mock('@/components/dashboard/MediaDistributionChart', async () => ({
+  MediaDistributionChart: ({ loading }: any) => (
+    <div data-testid="media-distribution-chart">{loading ? 'Loading chart...' : 'Media Distribution Chart'}</div>
+  ),
+}))
+
+vi.mock('@/components/dashboard/ActivityFeed', async () => ({
+  ActivityFeed: ({ limit }: any) => (
+    <div data-testid="activity-feed">Activity Feed (limit: {limit})</div>
+  ),
+}))
+
+vi.mock('recharts', async () => ({
+  ResponsiveContainer: ({ children }: any) => <div>{children}</div>,
+  PieChart: ({ children }: any) => <div>{children}</div>,
+  Pie: () => <div />,
+  Cell: () => <div />,
+  Legend: () => <div />,
+  Tooltip: () => <div />,
 }))
 
 const mockUseAuth = vi.mocked(useAuth)
+
+function createWrapper() {
+  const queryClient = new QueryClient({
+    defaultOptions: {
+      queries: { retry: false },
+    },
+  })
+  return ({ children }: { children: React.ReactNode }) => (
+    <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>
+  )
+}
 
 describe('Dashboard', () => {
   beforeEach(() => {
@@ -41,7 +122,7 @@ describe('Dashboard', () => {
         user: { username: 'testuser' },
       })
 
-      render(<Dashboard />)
+      render(<Dashboard />, { wrapper: createWrapper() })
       expect(screen.getByText(/Welcome back/i)).toBeInTheDocument()
     })
 
@@ -50,17 +131,17 @@ describe('Dashboard', () => {
         user: { username: 'johndoe' },
       })
 
-      render(<Dashboard />)
+      render(<Dashboard />, { wrapper: createWrapper() })
       expect(screen.getByText(/Welcome back, johndoe!/i)).toBeInTheDocument()
     })
 
-    it('displays welcome message with first_name if available', () => {
+    it('displays welcome message with fallback for missing username', () => {
       mockUseAuth.mockReturnValue({
-        user: { username: 'johndoe', first_name: 'John' },
+        user: { username: '' },
       })
 
-      render(<Dashboard />)
-      expect(screen.getByText(/Welcome back, John!/i)).toBeInTheDocument()
+      render(<Dashboard />, { wrapper: createWrapper() })
+      expect(screen.getByText(/Welcome back/i)).toBeInTheDocument()
     })
 
     it('displays subtitle description', () => {
@@ -68,57 +149,33 @@ describe('Dashboard', () => {
         user: { username: 'testuser' },
       })
 
-      render(<Dashboard />)
+      render(<Dashboard />, { wrapper: createWrapper() })
       expect(
-        screen.getByText(/Here's what's happening with your media collection today/i)
+        screen.getByText(/Here's what's happening with your media library today/i)
       ).toBeInTheDocument()
     })
   })
 
-  describe('Stats Section', () => {
+  describe('Child Components', () => {
     beforeEach(() => {
       mockUseAuth.mockReturnValue({
         user: { username: 'testuser' },
       })
     })
 
-    it('renders all 4 stat cards', () => {
-      render(<Dashboard />)
-
-      expect(screen.getByText('Total Media Items')).toBeInTheDocument()
-      expect(screen.getByText('Movies')).toBeInTheDocument()
-      expect(screen.getByText('Music Albums')).toBeInTheDocument()
-      expect(screen.getByText('Games')).toBeInTheDocument()
+    it('renders DashboardStats component', () => {
+      render(<Dashboard />, { wrapper: createWrapper() })
+      expect(screen.getByTestId('dashboard-stats')).toBeInTheDocument()
     })
 
-    it('displays stat values', () => {
-      render(<Dashboard />)
-
-      expect(screen.getByText('1,234')).toBeInTheDocument()
-      expect(screen.getByText('456')).toBeInTheDocument()
-      expect(screen.getByText('789')).toBeInTheDocument()
-      expect(screen.getByText('123')).toBeInTheDocument()
+    it('renders MediaDistributionChart component', () => {
+      render(<Dashboard />, { wrapper: createWrapper() })
+      expect(screen.getByTestId('media-distribution-chart')).toBeInTheDocument()
     })
 
-    it('displays stat changes', () => {
-      render(<Dashboard />)
-
-      expect(screen.getByText('+12% from last month')).toBeInTheDocument()
-      expect(screen.getByText('+8% from last month')).toBeInTheDocument()
-      expect(screen.getByText('+15% from last month')).toBeInTheDocument()
-      expect(screen.getByText('+5% from last month')).toBeInTheDocument()
-    })
-
-    it('renders stat icons', () => {
-      render(<Dashboard />)
-
-      // Count Database icons (appears in stats and quick actions)
-      const databaseIcons = screen.getAllByTestId('icon-database')
-      expect(databaseIcons.length).toBeGreaterThan(0)
-
-      expect(screen.getAllByTestId('icon-film').length).toBeGreaterThan(0)
-      expect(screen.getAllByTestId('icon-music').length).toBeGreaterThan(0)
-      expect(screen.getAllByTestId('icon-gamepad').length).toBeGreaterThan(0)
+    it('renders ActivityFeed component', () => {
+      render(<Dashboard />, { wrapper: createWrapper() })
+      expect(screen.getByTestId('activity-feed')).toBeInTheDocument()
     })
   })
 
@@ -128,170 +185,69 @@ describe('Dashboard', () => {
         user: { username: 'testuser' },
       })
 
-      render(<Dashboard />)
+      render(<Dashboard />, { wrapper: createWrapper() })
       expect(screen.getByText('Quick Actions')).toBeInTheDocument()
     })
 
-    it('renders 4 quick action cards for regular users', () => {
-      mockUseAuth.mockReturnValue({
-        user: { username: 'testuser', role: 'user' },
-      })
-
-      render(<Dashboard />)
-
-      expect(screen.getByText('Browse Media')).toBeInTheDocument()
-      expect(screen.getByText('View Analytics')).toBeInTheDocument()
-      expect(screen.getByText('System Health')).toBeInTheDocument()
-      expect(screen.getByText('Storage Usage')).toBeInTheDocument()
-    })
-
-    it('renders 5 quick action cards for admin users', () => {
-      mockUseAuth.mockReturnValue({
-        user: { username: 'admin', role: 'admin' },
-      })
-
-      render(<Dashboard />)
-
-      expect(screen.getByText('Browse Media')).toBeInTheDocument()
-      expect(screen.getByText('View Analytics')).toBeInTheDocument()
-      expect(screen.getByText('System Health')).toBeInTheDocument()
-      expect(screen.getByText('Storage Usage')).toBeInTheDocument()
-      expect(screen.getByText('User Management')).toBeInTheDocument()
-    })
-
-    it('does not show User Management for non-admin users', () => {
-      mockUseAuth.mockReturnValue({
-        user: { username: 'testuser', role: 'user' },
-      })
-
-      render(<Dashboard />)
-      expect(screen.queryByText('User Management')).not.toBeInTheDocument()
-    })
-
-    it('renders quick action descriptions', () => {
+    it('renders 4 quick action buttons', () => {
       mockUseAuth.mockReturnValue({
         user: { username: 'testuser' },
       })
 
-      render(<Dashboard />)
+      render(<Dashboard />, { wrapper: createWrapper() })
 
-      expect(screen.getByText('Explore your media collection')).toBeInTheDocument()
-      expect(screen.getByText('See detailed statistics')).toBeInTheDocument()
-      expect(screen.getByText('Check system status')).toBeInTheDocument()
-      expect(screen.getByText('Monitor disk usage')).toBeInTheDocument()
+      expect(screen.getByText('Upload Media')).toBeInTheDocument()
+      expect(screen.getByText('Scan Library')).toBeInTheDocument()
+      expect(screen.getByText('Search')).toBeInTheDocument()
+      expect(screen.getByText('Settings')).toBeInTheDocument()
     })
 
-    it('quick action cards are clickable', async () => {
+    it('quick action buttons are clickable', async () => {
       const user = userEvent.setup()
-      const consoleSpy = vi.spyOn(console, 'log').mockImplementation()
+      const toast = (await import('react-hot-toast')).default
 
       mockUseAuth.mockReturnValue({
         user: { username: 'testuser' },
       })
 
-      render(<Dashboard />)
+      render(<Dashboard />, { wrapper: createWrapper() })
 
-      const browseMediaCard = screen.getByText('Browse Media').closest('div')?.parentElement?.parentElement
-      if (browseMediaCard) {
-        await user.click(browseMediaCard)
-        expect(consoleSpy).toHaveBeenCalledWith('Browse media')
-      }
-
-      consoleSpy.mockRestore()
+      const uploadButton = screen.getByText('Upload Media')
+      await user.click(uploadButton)
+      expect(toast.success).toHaveBeenCalledWith('Opening upload interface...')
     })
   })
 
-  describe('Recent Activity Section', () => {
+  describe('System Status Section', () => {
     beforeEach(() => {
       mockUseAuth.mockReturnValue({
         user: { username: 'testuser' },
       })
     })
 
-    it('renders Recent Activity heading', () => {
-      render(<Dashboard />)
-      expect(screen.getByText('Recent Activity')).toBeInTheDocument()
+    it('renders System Status heading', () => {
+      render(<Dashboard />, { wrapper: createWrapper() })
+      expect(screen.getByText('System Status')).toBeInTheDocument()
     })
 
-    it('renders Recent Activity description', () => {
-      render(<Dashboard />)
-      expect(screen.getByText('Latest changes in your media collection')).toBeInTheDocument()
+    it('renders CPU, Memory, and Disk usage', () => {
+      render(<Dashboard />, { wrapper: createWrapper() })
+
+      expect(screen.getByText('CPU Usage')).toBeInTheDocument()
+      expect(screen.getByText('Memory Usage')).toBeInTheDocument()
+      expect(screen.getByText('Disk Usage')).toBeInTheDocument()
     })
 
-    it('renders all 4 recent activity items', () => {
-      render(<Dashboard />)
-
-      expect(screen.getByText('The Matrix (1999)')).toBeInTheDocument()
-      expect(screen.getByText('Dark Side of the Moon')).toBeInTheDocument()
-      expect(screen.getByText('Cyberpunk 2077')).toBeInTheDocument()
-      expect(screen.getByText('Adobe Photoshop 2024')).toBeInTheDocument()
+    it('renders network status', () => {
+      render(<Dashboard />, { wrapper: createWrapper() })
+      expect(screen.getByText('Network')).toBeInTheDocument()
+      expect(screen.getByText('Online')).toBeInTheDocument()
     })
 
-    it('renders activity actions', () => {
-      render(<Dashboard />)
-
-      expect(screen.getByText('Added to collection')).toBeInTheDocument()
-      expect(screen.getByText('Metadata updated')).toBeInTheDocument()
-      expect(screen.getByText('Quality analysis completed')).toBeInTheDocument()
-      expect(screen.getByText('New version detected')).toBeInTheDocument()
-    })
-
-    it('renders activity timestamps', () => {
-      render(<Dashboard />)
-
-      expect(screen.getByText('2 hours ago')).toBeInTheDocument()
-      expect(screen.getByText('4 hours ago')).toBeInTheDocument()
-      expect(screen.getByText('6 hours ago')).toBeInTheDocument()
-      expect(screen.getByText('1 day ago')).toBeInTheDocument()
-    })
-
-    it('renders activity type badges', () => {
-      render(<Dashboard />)
-
-      expect(screen.getByText('Movie')).toBeInTheDocument()
-      expect(screen.getByText('Album')).toBeInTheDocument()
-      expect(screen.getByText('Game')).toBeInTheDocument()
-      expect(screen.getByText('Software')).toBeInTheDocument()
-    })
-
-    it('renders View All Activity button', () => {
-      render(<Dashboard />)
-      expect(screen.getByRole('button', { name: /View All Activity/i })).toBeInTheDocument()
-    })
-  })
-
-  describe('User Role Handling', () => {
-    it('handles admin user correctly', () => {
-      mockUseAuth.mockReturnValue({
-        user: { username: 'admin', role: 'admin', first_name: 'Admin' },
-      })
-
-      render(<Dashboard />)
-
-      expect(screen.getByText(/Welcome back, Admin!/i)).toBeInTheDocument()
-      expect(screen.getByText('User Management')).toBeInTheDocument()
-    })
-
-    it('handles regular user correctly', () => {
-      mockUseAuth.mockReturnValue({
-        user: { username: 'user', role: 'user', first_name: 'Regular' },
-      })
-
-      render(<Dashboard />)
-
-      expect(screen.getByText(/Welcome back, Regular!/i)).toBeInTheDocument()
-      expect(screen.queryByText('User Management')).not.toBeInTheDocument()
-    })
-
-    it('handles user without role', () => {
-      mockUseAuth.mockReturnValue({
-        user: { username: 'testuser' },
-      })
-
-      render(<Dashboard />)
-
-      expect(screen.getByText(/Welcome back, testuser!/i)).toBeInTheDocument()
-      expect(screen.queryByText('User Management')).not.toBeInTheDocument()
+    it('renders uptime', () => {
+      render(<Dashboard />, { wrapper: createWrapper() })
+      expect(screen.getByText('Uptime')).toBeInTheDocument()
+      expect(screen.getByText('5d 12h 34m')).toBeInTheDocument()
     })
   })
 
@@ -301,10 +257,10 @@ describe('Dashboard', () => {
         user: null,
       })
 
-      render(<Dashboard />)
+      render(<Dashboard />, { wrapper: createWrapper() })
 
-      // Should still render but with no name
-      expect(screen.getByText(/Welcome back,/i)).toBeInTheDocument()
+      // Should still render with fallback "User"
+      expect(screen.getByText(/Welcome back/i)).toBeInTheDocument()
     })
 
     it('renders with undefined user', () => {
@@ -312,9 +268,9 @@ describe('Dashboard', () => {
         user: undefined,
       })
 
-      render(<Dashboard />)
+      render(<Dashboard />, { wrapper: createWrapper() })
 
-      expect(screen.getByText(/Welcome back,/i)).toBeInTheDocument()
+      expect(screen.getByText(/Welcome back/i)).toBeInTheDocument()
     })
 
     it('renders with empty username', () => {
@@ -322,19 +278,9 @@ describe('Dashboard', () => {
         user: { username: '' },
       })
 
-      render(<Dashboard />)
+      render(<Dashboard />, { wrapper: createWrapper() })
 
-      expect(screen.getByText(/Welcome back,/i)).toBeInTheDocument()
-    })
-
-    it('handles user with only first_name', () => {
-      mockUseAuth.mockReturnValue({
-        user: { first_name: 'John' },
-      })
-
-      render(<Dashboard />)
-
-      expect(screen.getByText(/Welcome back, John!/i)).toBeInTheDocument()
+      expect(screen.getByText(/Welcome back/i)).toBeInTheDocument()
     })
   })
 
@@ -345,32 +291,29 @@ describe('Dashboard', () => {
       })
     })
 
-    it('renders main container with correct classes', () => {
-      const { container } = render(<Dashboard />)
+    it('renders main container with correct class', () => {
+      const { container } = render(<Dashboard />, { wrapper: createWrapper() })
       const mainDiv = container.firstChild as HTMLElement
 
-      expect(mainDiv).toHaveClass('max-w-7xl')
-      expect(mainDiv).toHaveClass('mx-auto')
+      expect(mainDiv).toHaveClass('space-y-6')
     })
 
-    it('renders stats in grid layout', () => {
-      const { container } = render(<Dashboard />)
+    it('renders grid layouts', () => {
+      const { container } = render(<Dashboard />, { wrapper: createWrapper() })
 
-      // Check for grid container
       const grids = container.querySelectorAll('.grid')
       expect(grids.length).toBeGreaterThan(0)
     })
 
     it('renders all sections in correct order', () => {
-      render(<Dashboard />)
+      render(<Dashboard />, { wrapper: createWrapper() })
 
       const headings = screen.getAllByRole('heading')
       const headingTexts = headings.map(h => h.textContent)
 
-      // Should have Welcome message, Quick Actions, Recent Activity
       expect(headingTexts.some(text => text?.includes('Welcome back'))).toBe(true)
       expect(headingTexts.some(text => text?.includes('Quick Actions'))).toBe(true)
-      expect(headingTexts.some(text => text?.includes('Recent Activity'))).toBe(true)
+      expect(headingTexts.some(text => text?.includes('System Status'))).toBe(true)
     })
   })
 })

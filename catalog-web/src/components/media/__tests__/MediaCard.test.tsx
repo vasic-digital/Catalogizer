@@ -1,7 +1,40 @@
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import React from 'react';
 import { MediaCard } from '../MediaCard';
 import type { MediaItem } from '@/types/media';
+
+// Mock the FavoriteToggle component to avoid its react-query dependencies
+vi.mock('@/components/favorites/FavoriteToggle', () => ({
+  FavoriteToggle: () => null,
+}));
+
+// Mock framer-motion to simplify rendering
+vi.mock('framer-motion', () => ({
+  motion: {
+    div: React.forwardRef(({ children, className, ...props }: any, ref: any) => (
+      <div ref={ref} className={className} data-testid={props['data-testid']}>
+        {children}
+      </div>
+    )),
+  },
+}));
+
+const createTestQueryClient = () =>
+  new QueryClient({
+    defaultOptions: {
+      queries: { retry: false },
+      mutations: { retry: false },
+    },
+  });
+
+const renderWithProviders = (ui: React.ReactElement) => {
+  const queryClient = createTestQueryClient();
+  return render(
+    <QueryClientProvider client={queryClient}>{ui}</QueryClientProvider>
+  );
+};
 
 const mockMediaItem: MediaItem = {
   id: 1,
@@ -20,35 +53,35 @@ const mockMediaItem: MediaItem = {
 
 describe('MediaCard', () => {
   it('renders media title', () => {
-    render(<MediaCard media={mockMediaItem} />);
+    renderWithProviders(<MediaCard media={mockMediaItem} />);
     expect(screen.getByText('Test Movie')).toBeInTheDocument();
   });
 
   it('renders media type icon', () => {
-    render(<MediaCard media={mockMediaItem} />);
+    renderWithProviders(<MediaCard media={mockMediaItem} />);
     // Film icon should be rendered for movies
     const card = screen.getByText('Test Movie').closest('div');
     expect(card).toBeInTheDocument();
   });
 
   it('displays formatted file size', () => {
-    render(<MediaCard media={mockMediaItem} />);
+    renderWithProviders(<MediaCard media={mockMediaItem} />);
     expect(screen.getByText(/1\.\d+ GB/i)).toBeInTheDocument();
   });
 
   it('displays quality badge', () => {
-    render(<MediaCard media={mockMediaItem} />);
+    renderWithProviders(<MediaCard media={mockMediaItem} />);
     // Quality is displayed in uppercase
     expect(screen.getByText('1080P')).toBeInTheDocument();
   });
 
   it('displays year when provided', () => {
-    render(<MediaCard media={mockMediaItem} />);
+    renderWithProviders(<MediaCard media={mockMediaItem} />);
     expect(screen.getByText('2024')).toBeInTheDocument();
   });
 
   it('displays rating when provided', () => {
-    render(<MediaCard media={mockMediaItem} />);
+    renderWithProviders(<MediaCard media={mockMediaItem} />);
     expect(screen.getByText('8.5')).toBeInTheDocument();
   });
 
@@ -62,7 +95,7 @@ describe('MediaCard', () => {
       updated_at: '2024-01-01T00:00:00Z',
     };
 
-    render(<MediaCard media={minimalMedia} />);
+    renderWithProviders(<MediaCard media={minimalMedia} />);
     expect(screen.getByText('Minimal Movie')).toBeInTheDocument();
   });
 
@@ -70,7 +103,7 @@ describe('MediaCard', () => {
     const user = userEvent.setup();
     const handleView = vi.fn();
 
-    render(<MediaCard media={mockMediaItem} onView={handleView} />);
+    renderWithProviders(<MediaCard media={mockMediaItem} onView={handleView} />);
 
     // Buttons have icons but no text, so we need to find them differently
     const buttons = screen.getAllByRole('button');
@@ -86,7 +119,7 @@ describe('MediaCard', () => {
     const user = userEvent.setup();
     const handleDownload = vi.fn();
 
-    render(<MediaCard media={mockMediaItem} onDownload={handleDownload} />);
+    renderWithProviders(<MediaCard media={mockMediaItem} onDownload={handleDownload} />);
 
     const buttons = screen.getAllByRole('button');
     expect(buttons.length).toBeGreaterThan(0);
@@ -98,7 +131,7 @@ describe('MediaCard', () => {
   });
 
   it('applies custom className', () => {
-    const { container } = render(
+    const { container } = renderWithProviders(
       <MediaCard media={mockMediaItem} className="custom-class" />
     );
     expect(container.firstChild).toHaveClass('custom-class');
@@ -107,25 +140,25 @@ describe('MediaCard', () => {
   describe('media type icons', () => {
     it('renders film icon for movie type', () => {
       const movieMedia = { ...mockMediaItem, media_type: 'movie' };
-      render(<MediaCard media={movieMedia} />);
+      renderWithProviders(<MediaCard media={movieMedia} />);
       expect(screen.getByText('Test Movie')).toBeInTheDocument();
     });
 
     it('renders music icon for music type', () => {
       const musicMedia = { ...mockMediaItem, media_type: 'music', title: 'Test Song' };
-      render(<MediaCard media={musicMedia} />);
+      renderWithProviders(<MediaCard media={musicMedia} />);
       expect(screen.getByText('Test Song')).toBeInTheDocument();
     });
 
     it('renders gamepad icon for game type', () => {
       const gameMedia = { ...mockMediaItem, media_type: 'game', title: 'Test Game' };
-      render(<MediaCard media={gameMedia} />);
+      renderWithProviders(<MediaCard media={gameMedia} />);
       expect(screen.getByText('Test Game')).toBeInTheDocument();
     });
 
     it('renders book icon for ebook type', () => {
       const ebookMedia = { ...mockMediaItem, media_type: 'ebook', title: 'Test Book' };
-      render(<MediaCard media={ebookMedia} />);
+      renderWithProviders(<MediaCard media={ebookMedia} />);
       expect(screen.getByText('Test Book')).toBeInTheDocument();
     });
   });
@@ -133,27 +166,27 @@ describe('MediaCard', () => {
   describe('quality badge colors', () => {
     it('renders purple badge for 4K quality', () => {
       const hqMedia = { ...mockMediaItem, quality: '4K' };
-      render(<MediaCard media={hqMedia} />);
+      renderWithProviders(<MediaCard media={hqMedia} />);
       expect(screen.getByText('4K')).toBeInTheDocument();
     });
 
     it('renders blue badge for 1080p quality', () => {
       const hdMedia = { ...mockMediaItem, quality: '1080p' };
-      render(<MediaCard media={hdMedia} />);
+      renderWithProviders(<MediaCard media={hdMedia} />);
       // Quality is displayed in uppercase
       expect(screen.getByText('1080P')).toBeInTheDocument();
     });
 
     it('renders green badge for 720p quality', () => {
       const sdMedia = { ...mockMediaItem, quality: '720p' };
-      render(<MediaCard media={sdMedia} />);
+      renderWithProviders(<MediaCard media={sdMedia} />);
       // Quality is displayed in uppercase
       expect(screen.getByText('720P')).toBeInTheDocument();
     });
 
     it('renders gray badge for unknown quality', () => {
       const unknownMedia = { ...mockMediaItem, quality: 'unknown' };
-      render(<MediaCard media={unknownMedia} />);
+      renderWithProviders(<MediaCard media={unknownMedia} />);
       // Quality is displayed in uppercase
       expect(screen.getByText('UNKNOWN')).toBeInTheDocument();
     });
@@ -162,31 +195,31 @@ describe('MediaCard', () => {
   describe('file size formatting', () => {
     it('formats bytes correctly', () => {
       const smallMedia = { ...mockMediaItem, file_size: 512 };
-      render(<MediaCard media={smallMedia} />);
+      renderWithProviders(<MediaCard media={smallMedia} />);
       expect(screen.getByText(/512\.\d+ B/i)).toBeInTheDocument();
     });
 
     it('formats kilobytes correctly', () => {
       const kbMedia = { ...mockMediaItem, file_size: 1024 };
-      render(<MediaCard media={kbMedia} />);
+      renderWithProviders(<MediaCard media={kbMedia} />);
       expect(screen.getByText(/1\.\d+ KB/i)).toBeInTheDocument();
     });
 
     it('formats megabytes correctly', () => {
       const mbMedia = { ...mockMediaItem, file_size: 1048576 };
-      render(<MediaCard media={mbMedia} />);
+      renderWithProviders(<MediaCard media={mbMedia} />);
       expect(screen.getByText(/1\.\d+ MB/i)).toBeInTheDocument();
     });
 
     it('formats gigabytes correctly', () => {
       const gbMedia = { ...mockMediaItem, file_size: 1073741824 };
-      render(<MediaCard media={gbMedia} />);
+      renderWithProviders(<MediaCard media={gbMedia} />);
       expect(screen.getByText(/1\.\d+ GB/i)).toBeInTheDocument();
     });
 
     it('handles missing file size', () => {
       const noSizeMedia = { ...mockMediaItem, file_size: undefined };
-      render(<MediaCard media={noSizeMedia} />);
+      renderWithProviders(<MediaCard media={noSizeMedia} />);
       // When file_size is undefined, the component doesn't render the file size section at all
       expect(screen.queryByText(/GB|MB|KB|B/i)).not.toBeInTheDocument();
     });
@@ -197,14 +230,14 @@ describe('MediaCard', () => {
       ...mockMediaItem,
       description: 'A'.repeat(200),
     };
-    render(<MediaCard media={longDescMedia} />);
+    renderWithProviders(<MediaCard media={longDescMedia} />);
     // Description should be truncated to approximately 100 characters
     const text = screen.getByText(/A+/);
     expect(text.textContent?.length).toBeLessThan(200);
   });
 
   it('renders without action buttons when callbacks not provided', () => {
-    render(<MediaCard media={mockMediaItem} />);
+    renderWithProviders(<MediaCard media={mockMediaItem} />);
 
     // Buttons should not be present if no callbacks provided
     const buttons = screen.queryAllByRole('button');
@@ -213,7 +246,7 @@ describe('MediaCard', () => {
 
   it('renders only one button when only onView provided', () => {
     const handleView = vi.fn();
-    render(<MediaCard media={mockMediaItem} onView={handleView} />);
+    renderWithProviders(<MediaCard media={mockMediaItem} onView={handleView} />);
 
     const buttons = screen.queryAllByRole('button');
     expect(buttons.length).toBe(1);
@@ -221,7 +254,7 @@ describe('MediaCard', () => {
 
   it('renders only one button when only onDownload provided', () => {
     const handleDownload = vi.fn();
-    render(<MediaCard media={mockMediaItem} onDownload={handleDownload} />);
+    renderWithProviders(<MediaCard media={mockMediaItem} onDownload={handleDownload} />);
 
     const buttons = screen.queryAllByRole('button');
     expect(buttons.length).toBe(1);
@@ -230,7 +263,7 @@ describe('MediaCard', () => {
   it('renders two buttons when both callbacks provided', () => {
     const handleView = vi.fn();
     const handleDownload = vi.fn();
-    render(<MediaCard media={mockMediaItem} onView={handleView} onDownload={handleDownload} />);
+    renderWithProviders(<MediaCard media={mockMediaItem} onView={handleView} onDownload={handleDownload} />);
 
     const buttons = screen.queryAllByRole('button');
     expect(buttons.length).toBe(2);

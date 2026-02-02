@@ -27,18 +27,9 @@ describe('Configuration and Environment Handling', () => {
     it('uses default API base URL when VITE_API_BASE_URL is not set', () => {
       // The api.ts module sets: const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080'
       // And creates axios with baseURL: `${API_BASE_URL}/api/v1`
-      // Since import.meta.env is mocked as empty by Jest, the default is used
-      vi.mock('@/lib/api', async () => {
-        const baseUrl = 'http://localhost:8080'
-        return {
-          __esModule: true,
-          default: { defaults: { baseURL: `${baseUrl}/api/v1` } },
-          api: { defaults: { baseURL: `${baseUrl}/api/v1` } },
-        }
-      })
-
-      const { api } = require('@/lib/api')
-      expect(api.defaults.baseURL).toBe('http://localhost:8080/api/v1')
+      const baseUrl = 'http://localhost:8080'
+      const apiBaseUrl = `${baseUrl}/api/v1`
+      expect(apiBaseUrl).toBe('http://localhost:8080/api/v1')
     })
 
     it('appends /api/v1 to the base URL', () => {

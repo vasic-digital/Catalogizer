@@ -20,16 +20,19 @@ vi.mock('@/lib/playlistsApi', async () => ({
 }))
 
 // Mock react-hot-toast
-vi.mock('react-hot-toast', async () => ({
-  __esModule: true,
-  default: {
+const { mockToast } = vi.hoisted(() => ({
+  mockToast: {
     success: vi.fn(),
     error: vi.fn(),
   },
 }))
 
+vi.mock('react-hot-toast', () => ({
+  __esModule: true,
+  default: mockToast,
+}))
+
 const mockPlaylistsApi = vi.mocked(playlistsApi)
-const mockToast = require('react-hot-toast').default
 
 const createWrapper = () => {
   const queryClient = new QueryClient({
@@ -137,7 +140,7 @@ describe('usePlaylists', () => {
     })
 
     it('returns empty array when no playlists data', async () => {
-      mockPlaylistsApi.getPlaylists.mockResolvedValue(undefined)
+      mockPlaylistsApi.getPlaylists.mockResolvedValue(null as any)
 
       const { Wrapper } = createWrapper()
       const { result } = renderHook(() => usePlaylists(), { wrapper: Wrapper })
@@ -544,7 +547,7 @@ describe('usePlaylistItems', () => {
   })
 
   it('returns empty defaults when no data', async () => {
-    mockPlaylistsApi.getPlaylistItems.mockResolvedValue(undefined)
+    mockPlaylistsApi.getPlaylistItems.mockResolvedValue(null as any)
 
     const { Wrapper } = createWrapper()
     const { result } = renderHook(() => usePlaylistItems('pl-1'), { wrapper: Wrapper })

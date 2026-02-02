@@ -1,4 +1,4 @@
-import { render, screen, waitFor } from '@testing-library/react'
+import { render, screen, waitFor, fireEvent } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { MemoryRouter } from 'react-router-dom'
 import { RegisterForm } from '../RegisterForm'
@@ -221,8 +221,9 @@ describe('RegisterForm', () => {
       await user.type(screen.getByPlaceholderText('Create password'), 'password123')
       await user.type(screen.getByPlaceholderText('Confirm password'), 'password123')
 
-      const submitButton = screen.getByRole('button', { name: /create account/i })
-      await user.click(submitButton)
+      // Use fireEvent.submit to bypass native HTML5 required validation
+      const form = screen.getByRole('button', { name: /create account/i }).closest('form')!
+      fireEvent.submit(form)
 
       await waitFor(() => {
         expect(screen.getByText('Username is required')).toBeInTheDocument()
@@ -269,8 +270,9 @@ describe('RegisterForm', () => {
       await user.type(screen.getByPlaceholderText('Create password'), 'password123')
       await user.type(screen.getByPlaceholderText('Confirm password'), 'password123')
 
-      const submitButton = screen.getByRole('button', { name: /create account/i })
-      await user.click(submitButton)
+      // Use fireEvent.submit to bypass native HTML5 email type validation
+      const form = screen.getByRole('button', { name: /create account/i }).closest('form')!
+      fireEvent.submit(form)
 
       await waitFor(() => {
         expect(screen.getByText('Email is invalid')).toBeInTheDocument()
@@ -340,8 +342,9 @@ describe('RegisterForm', () => {
       await user.type(screen.getByPlaceholderText('Create password'), 'password123')
       await user.type(screen.getByPlaceholderText('Confirm password'), 'password123')
 
-      const submitButton = screen.getByRole('button', { name: /create account/i })
-      await user.click(submitButton)
+      // Use fireEvent.submit to bypass native HTML5 required validation
+      const form = screen.getByRole('button', { name: /create account/i }).closest('form')!
+      fireEvent.submit(form)
 
       await waitFor(() => {
         expect(screen.getByText('First name is required')).toBeInTheDocument()
@@ -363,8 +366,9 @@ describe('RegisterForm', () => {
       await user.type(screen.getByPlaceholderText('Create password'), 'password123')
       await user.type(screen.getByPlaceholderText('Confirm password'), 'password123')
 
-      const submitButton = screen.getByRole('button', { name: /create account/i })
-      await user.click(submitButton)
+      // Use fireEvent.submit to bypass native HTML5 required validation
+      const form = screen.getByRole('button', { name: /create account/i }).closest('form')!
+      fireEvent.submit(form)
 
       await waitFor(() => {
         expect(screen.getByText('Last name is required')).toBeInTheDocument()

@@ -76,6 +76,34 @@ vi.mock('@/pages/Analytics', async () => ({
   Analytics: () => <div data-testid="analytics-page">Analytics Page</div>,
 }))
 
+vi.mock('@/pages/Admin', async () => ({
+  Admin: () => <div data-testid="admin-page">Admin Page</div>,
+}))
+
+vi.mock('@/pages/SubtitleManager', async () => ({
+  SubtitleManager: () => <div data-testid="subtitle-manager-page">Subtitle Manager Page</div>,
+}))
+
+vi.mock('@/pages/Collections', async () => ({
+  Collections: () => <div data-testid="collections-page">Collections Page</div>,
+}))
+
+vi.mock('@/pages/ConversionTools', async () => ({
+  ConversionTools: () => <div data-testid="conversion-tools-page">Conversion Tools Page</div>,
+}))
+
+vi.mock('@/pages/Favorites', async () => ({
+  default: () => <div data-testid="favorites-page">Favorites Page</div>,
+}))
+
+vi.mock('@/pages/Playlists', async () => ({
+  PlaylistsPage: () => <div data-testid="playlists-page">Playlists Page</div>,
+}))
+
+vi.mock('@/pages/AIDashboard', async () => ({
+  default: () => <div data-testid="ai-dashboard-page">AI Dashboard Page</div>,
+}))
+
 describe('App', () => {
   describe('Rendering and Setup', () => {
     it('renders the App component', () => {

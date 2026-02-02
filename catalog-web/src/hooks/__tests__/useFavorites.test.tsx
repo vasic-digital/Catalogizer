@@ -17,16 +17,19 @@ vi.mock('@/lib/favoritesApi', async () => ({
 }))
 
 // Mock react-hot-toast
-vi.mock('react-hot-toast', async () => ({
-  __esModule: true,
-  default: {
+const { mockToast } = vi.hoisted(() => ({
+  mockToast: {
     success: vi.fn(),
     error: vi.fn(),
   },
 }))
 
+vi.mock('react-hot-toast', () => ({
+  __esModule: true,
+  default: mockToast,
+}))
+
 const mockFavoritesApi = vi.mocked(favoritesApi)
-const mockToast = require('react-hot-toast').default
 
 const createWrapper = () => {
   const queryClient = new QueryClient({
@@ -122,8 +125,8 @@ describe('useFavorites', () => {
     })
 
     it('returns empty array when no favorites data', async () => {
-      mockFavoritesApi.getFavorites.mockResolvedValue(undefined)
-      mockFavoritesApi.getFavoriteStats.mockResolvedValue(undefined)
+      mockFavoritesApi.getFavorites.mockResolvedValue(null as any)
+      mockFavoritesApi.getFavoriteStats.mockResolvedValue(null as any)
 
       const { Wrapper } = createWrapper()
       const { result } = renderHook(() => useFavorites(), { wrapper: Wrapper })

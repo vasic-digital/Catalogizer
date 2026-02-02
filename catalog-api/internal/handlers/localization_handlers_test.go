@@ -98,7 +98,8 @@ func TestLocalizationHandlers_UpdateUserLocalization_InvalidJSON(t *testing.T) {
 	w := httptest.NewRecorder()
 	r := httptest.NewRequest("PUT", "/localization", bytes.NewBufferString("invalid json"))
 	r.Header.Set("Content-Type", "application/json")
-	r.Header.Set("X-User-ID", "1")
+	ctx := context.WithValue(r.Context(), "user_id", int64(1))
+	r = r.WithContext(ctx)
 
 	handler.UpdateUserLocalization(w, r)
 
@@ -214,7 +215,8 @@ func TestLocalizationHandlers_ImportConfiguration_InvalidJSON(t *testing.T) {
 	w := httptest.NewRecorder()
 	r := httptest.NewRequest("POST", "/wizard/configuration/import", bytes.NewBufferString("invalid json"))
 	r.Header.Set("Content-Type", "application/json")
-	r.Header.Set("X-User-ID", "1")
+	ctx := context.WithValue(r.Context(), "user_id", int64(1))
+	r = r.WithContext(ctx)
 
 	handler.ImportConfiguration(w, r)
 

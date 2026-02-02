@@ -27,15 +27,18 @@ vi.mock('@/lib/collectionsApi', async () => ({
 }))
 
 // Mock react-hot-toast
-vi.mock('react-hot-toast', async () => ({
-  toast: {
+const { mockToast } = vi.hoisted(() => ({
+  mockToast: {
     success: vi.fn(),
     error: vi.fn(),
   },
 }))
 
+vi.mock('react-hot-toast', () => ({
+  toast: mockToast,
+}))
+
 const mockCollectionsApi = vi.mocked(collectionsApi)
-const mockToast = require('react-hot-toast').toast
 
 const createWrapper = () => {
   const queryClient = new QueryClient({
