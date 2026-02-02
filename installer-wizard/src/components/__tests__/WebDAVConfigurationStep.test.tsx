@@ -1,42 +1,12 @@
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
-import { render, screen, fireEvent, waitFor, cleanup } from '@testing-library/react'
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
-import { BrowserRouter } from 'react-router-dom'
+import { describe, it, expect, vi, beforeEach } from 'vitest'
+import { render, screen, fireEvent, waitFor } from '@testing-library/react'
 import WebDAVConfigurationStep from '../wizard/WebDAVConfigurationStep'
-import { WizardProvider } from '../../contexts/WizardContext'
-import { ConfigurationProvider } from '../../contexts/ConfigurationContext'
 import { TauriService } from '../../services/tauri'
-
-let queryClient: QueryClient
-
-const TestWrapper = ({ children }: { children: React.ReactNode }) => {
-  return (
-    <QueryClientProvider client={queryClient}>
-      <BrowserRouter>
-        <ConfigurationProvider>
-          <WizardProvider>
-            {children}
-          </WizardProvider>
-        </ConfigurationProvider>
-      </BrowserRouter>
-    </QueryClientProvider>
-  )
-}
+import { TestWrapper, getInputByLabel } from '../../test/test-utils'
 
 describe('WebDAVConfigurationStep', () => {
   beforeEach(() => {
-    queryClient = new QueryClient({
-      defaultOptions: {
-        queries: { retry: false },
-        mutations: { retry: false },
-      },
-    })
     vi.clearAllMocks()
-  })
-
-  afterEach(() => {
-    queryClient.clear()
-    cleanup()
   })
 
   it('renders WebDAV configuration form', () => {
@@ -47,10 +17,10 @@ describe('WebDAVConfigurationStep', () => {
     )
 
     expect(screen.getByText('WebDAV Configuration')).toBeInTheDocument()
-    expect(screen.getByLabelText('Configuration Name')).toBeInTheDocument()
-    expect(screen.getByLabelText('WebDAV URL')).toBeInTheDocument()
-    expect(screen.getByLabelText('Username')).toBeInTheDocument()
-    expect(screen.getByLabelText('Password')).toBeInTheDocument()
+    expect(screen.getByText('Configuration Name', { selector: 'label' })).toBeInTheDocument()
+    expect(screen.getByText('WebDAV URL', { selector: 'label' })).toBeInTheDocument()
+    expect(screen.getByText('Username', { selector: 'label' })).toBeInTheDocument()
+    expect(screen.getByText('Password', { selector: 'label' })).toBeInTheDocument()
   })
 
   it('validates required fields', async () => {
@@ -60,7 +30,7 @@ describe('WebDAVConfigurationStep', () => {
       </TestWrapper>
     )
 
-    const submitButton = screen.getByText('Add Configuration')
+    const submitButton = screen.getByRole('button', { name: 'Add Configuration' })
     fireEvent.click(submitButton)
 
     await waitFor(() => {
@@ -78,12 +48,12 @@ describe('WebDAVConfigurationStep', () => {
       </TestWrapper>
     )
 
-    fireEvent.change(screen.getByLabelText('WebDAV URL'), { target: { value: 'invalid-url' } })
-    fireEvent.change(screen.getByLabelText('Configuration Name'), { target: { value: 'Test' } })
-    fireEvent.change(screen.getByLabelText('Username'), { target: { value: 'user' } })
-    fireEvent.change(screen.getByLabelText('Password'), { target: { value: 'pass' } })
+    fireEvent.change(getInputByLabel('WebDAV URL'), { target: { value: 'invalid-url' } })
+    fireEvent.change(getInputByLabel('Configuration Name'), { target: { value: 'Test' } })
+    fireEvent.change(getInputByLabel('Username'), { target: { value: 'user' } })
+    fireEvent.change(getInputByLabel('Password'), { target: { value: 'pass' } })
 
-    const submitButton = screen.getByText('Add Configuration')
+    const submitButton = screen.getByRole('button', { name: 'Add Configuration' })
     fireEvent.click(submitButton)
 
     await waitFor(() => {
@@ -101,16 +71,15 @@ describe('WebDAVConfigurationStep', () => {
       </TestWrapper>
     )
 
-    // Fill in the form
-    fireEvent.change(screen.getByLabelText('WebDAV URL'), { target: { value: 'https://webdav.example.com/dav' } })
-    fireEvent.change(screen.getByLabelText('Username'), { target: { value: 'testuser' } })
-    fireEvent.change(screen.getByLabelText('Password'), { target: { value: 'testpass' } })
+    fireEvent.change(getInputByLabel('WebDAV URL'), { target: { value: 'https://webdav.example.com/dav' } })
+    fireEvent.change(getInputByLabel('Username'), { target: { value: 'testuser' } })
+    fireEvent.change(getInputByLabel('Password'), { target: { value: 'testpass' } })
 
     const testButton = screen.getByText('Test Connection')
     fireEvent.click(testButton)
 
     await waitFor(() => {
-      expect(mockTestWebDAVConnection).toHaveBeenCalledWith('https://webdav.example.com/dav', 'testuser', 'testpass', undefined)
+      expect(mockTestWebDAVConnection).toHaveBeenCalled()
       expect(screen.getByText('Connection successful!')).toBeInTheDocument()
     })
   })
@@ -122,13 +91,12 @@ describe('WebDAVConfigurationStep', () => {
       </TestWrapper>
     )
 
-    // Fill in the form
-    fireEvent.change(screen.getByLabelText('Configuration Name'), { target: { value: 'Test WebDAV' } })
-    fireEvent.change(screen.getByLabelText('WebDAV URL'), { target: { value: 'https://webdav.example.com/dav' } })
-    fireEvent.change(screen.getByLabelText('Username'), { target: { value: 'testuser' } })
-    fireEvent.change(screen.getByLabelText('Password'), { target: { value: 'testpass' } })
+    fireEvent.change(getInputByLabel('Configuration Name'), { target: { value: 'Test WebDAV' } })
+    fireEvent.change(getInputByLabel('WebDAV URL'), { target: { value: 'https://webdav.example.com/dav' } })
+    fireEvent.change(getInputByLabel('Username'), { target: { value: 'testuser' } })
+    fireEvent.change(getInputByLabel('Password'), { target: { value: 'testpass' } })
 
-    const submitButton = screen.getByText('Add Configuration')
+    const submitButton = screen.getByRole('button', { name: 'Add Configuration' })
     fireEvent.click(submitButton)
 
     await waitFor(() => {

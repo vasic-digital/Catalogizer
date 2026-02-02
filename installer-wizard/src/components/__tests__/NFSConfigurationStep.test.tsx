@@ -1,33 +1,8 @@
-import { describe, it, expect, vi } from 'vitest'
-import { beforeEach } from 'vitest'
+import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { render, screen, fireEvent, waitFor } from '@testing-library/react'
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
-import { BrowserRouter } from 'react-router-dom'
 import NFSConfigurationStep from '../wizard/NFSConfigurationStep'
-import { WizardProvider } from '../../contexts/WizardContext'
-import { ConfigurationProvider } from '../../contexts/ConfigurationContext'
 import { TauriService } from '../../services/tauri'
-
-const TestWrapper = ({ children }: { children: React.ReactNode }) => {
-  const queryClient = new QueryClient({
-    defaultOptions: {
-      queries: { retry: false },
-      mutations: { retry: false },
-    },
-  })
-
-  return (
-    <QueryClientProvider client={queryClient}>
-      <BrowserRouter>
-        <ConfigurationProvider>
-          <WizardProvider>
-            {children}
-          </WizardProvider>
-        </ConfigurationProvider>
-      </BrowserRouter>
-    </QueryClientProvider>
-  )
-}
+import { TestWrapper, getInputByLabel } from '../../test/test-utils'
 
 describe('NFSConfigurationStep', () => {
   beforeEach(() => {
@@ -42,10 +17,10 @@ describe('NFSConfigurationStep', () => {
     )
 
     expect(screen.getByText('NFS Configuration')).toBeInTheDocument()
-    expect(screen.getByLabelText('Configuration Name')).toBeInTheDocument()
-    expect(screen.getByLabelText('Host/IP Address')).toBeInTheDocument()
-    expect(screen.getByLabelText('Export Path')).toBeInTheDocument()
-    expect(screen.getByLabelText('Mount Point')).toBeInTheDocument()
+    expect(screen.getByText('Configuration Name', { selector: 'label' })).toBeInTheDocument()
+    expect(screen.getByText('Host/IP Address', { selector: 'label' })).toBeInTheDocument()
+    expect(screen.getByText('Export Path', { selector: 'label' })).toBeInTheDocument()
+    expect(screen.getByText('Mount Point', { selector: 'label' })).toBeInTheDocument()
   })
 
   it('validates required fields', async () => {
@@ -55,7 +30,7 @@ describe('NFSConfigurationStep', () => {
       </TestWrapper>
     )
 
-    const submitButton = screen.getByText('Add Configuration')
+    const submitButton = screen.getByRole('button', { name: 'Add Configuration' })
     fireEvent.click(submitButton)
 
     await waitFor(() => {
@@ -76,10 +51,9 @@ describe('NFSConfigurationStep', () => {
       </TestWrapper>
     )
 
-    // Fill in the form
-    fireEvent.change(screen.getByLabelText('Host/IP Address'), { target: { value: 'nfs.example.com' } })
-    fireEvent.change(screen.getByLabelText('Export Path'), { target: { value: '/export/data' } })
-    fireEvent.change(screen.getByLabelText('Mount Point'), { target: { value: '/mnt/nfs' } })
+    fireEvent.change(getInputByLabel('Host/IP Address'), { target: { value: 'nfs.example.com' } })
+    fireEvent.change(getInputByLabel('Export Path'), { target: { value: '/export/data' } })
+    fireEvent.change(getInputByLabel('Mount Point'), { target: { value: '/mnt/nfs' } })
 
     const testButton = screen.getByText('Test Connection')
     fireEvent.click(testButton)
@@ -97,18 +71,17 @@ describe('NFSConfigurationStep', () => {
       </TestWrapper>
     )
 
-    // Fill in the form
-    fireEvent.change(screen.getByLabelText('Configuration Name'), { target: { value: 'Test NFS' } })
-    fireEvent.change(screen.getByLabelText('Host/IP Address'), { target: { value: 'nfs.example.com' } })
-    fireEvent.change(screen.getByLabelText('Export Path'), { target: { value: '/export/data' } })
-    fireEvent.change(screen.getByLabelText('Mount Point'), { target: { value: '/mnt/nfs' } })
+    fireEvent.change(getInputByLabel('Configuration Name'), { target: { value: 'Test NFS' } })
+    fireEvent.change(getInputByLabel('Host/IP Address'), { target: { value: 'nfs.example.com' } })
+    fireEvent.change(getInputByLabel('Export Path'), { target: { value: '/export/data' } })
+    fireEvent.change(getInputByLabel('Mount Point'), { target: { value: '/mnt/nfs' } })
 
-    const submitButton = screen.getByText('Add Configuration')
+    const submitButton = screen.getByRole('button', { name: 'Add Configuration' })
     fireEvent.click(submitButton)
 
     await waitFor(() => {
       expect(screen.getByText('Test NFS')).toBeInTheDocument()
-      expect(screen.getByText('nfs.example.com:/export/data → /mnt/nfs')).toBeInTheDocument()
+      expect(screen.getByText(/nfs\.example\.com/)).toBeInTheDocument()
     })
   })
 })

@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useReducer, ReactNode } from 'react'
+import React, { createContext, useCallback, useContext, useMemo, useReducer, ReactNode } from 'react'
 import { WizardState } from '../types'
 
 interface WizardAction {
@@ -79,15 +79,15 @@ const WizardContext = createContext<WizardContextType | undefined>(undefined)
 export function WizardProvider({ children }: { children: ReactNode }) {
   const [state, dispatch] = useReducer(wizardReducer, initialState)
 
-  const nextStep = () => dispatch({ type: 'NEXT_STEP' })
-  const previousStep = () => dispatch({ type: 'PREVIOUS_STEP' })
-  const setStep = (step: number) => dispatch({ type: 'SET_STEP', payload: step })
-  const setCanNext = (canNext: boolean) => dispatch({ type: 'SET_CAN_NEXT', payload: canNext })
-  const setCanPrevious = (canPrevious: boolean) => dispatch({ type: 'SET_CAN_PREVIOUS', payload: canPrevious })
-  const setTotalSteps = (total: number) => dispatch({ type: 'SET_TOTAL_STEPS', payload: total })
-  const reset = () => dispatch({ type: 'RESET' })
+  const nextStep = useCallback(() => dispatch({ type: 'NEXT_STEP' }), [])
+  const previousStep = useCallback(() => dispatch({ type: 'PREVIOUS_STEP' }), [])
+  const setStep = useCallback((step: number) => dispatch({ type: 'SET_STEP', payload: step }), [])
+  const setCanNext = useCallback((canNext: boolean) => dispatch({ type: 'SET_CAN_NEXT', payload: canNext }), [])
+  const setCanPrevious = useCallback((canPrevious: boolean) => dispatch({ type: 'SET_CAN_PREVIOUS', payload: canPrevious }), [])
+  const setTotalSteps = useCallback((total: number) => dispatch({ type: 'SET_TOTAL_STEPS', payload: total }), [])
+  const reset = useCallback(() => dispatch({ type: 'RESET' }), [])
 
-  const value: WizardContextType = {
+  const value: WizardContextType = useMemo(() => ({
     state,
     dispatch,
     nextStep,
@@ -97,7 +97,7 @@ export function WizardProvider({ children }: { children: ReactNode }) {
     setCanPrevious,
     setTotalSteps,
     reset,
-  }
+  }), [state, dispatch, nextStep, previousStep, setStep, setCanNext, setCanPrevious, setTotalSteps, reset])
 
   return <WizardContext.Provider value={value}>{children}</WizardContext.Provider>
 }

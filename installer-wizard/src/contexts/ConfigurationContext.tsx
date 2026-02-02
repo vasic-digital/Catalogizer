@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useReducer, ReactNode } from 'react'
+import React, { createContext, useCallback, useContext, useMemo, useReducer, ReactNode } from 'react'
 import { Configuration, ConfigurationAccess, ConfigurationSource, SMBConnectionConfig, FTPConnectionConfig, NFSConnectionConfig, WebDAVConnectionConfig, LocalConnectionConfig, NetworkHost } from '../types'
 
 interface ConfigurationState {
@@ -213,64 +213,64 @@ const ConfigurationContext = createContext<ConfigurationContextType | undefined>
 export function ConfigurationProvider({ children }: { children: ReactNode }) {
   const [state, dispatch] = useReducer(configurationReducer, initialState)
 
-  const setConfiguration = (config: Configuration) =>
-    dispatch({ type: 'SET_CONFIGURATION', payload: config })
+  const setConfiguration = useCallback((config: Configuration) =>
+    dispatch({ type: 'SET_CONFIGURATION', payload: config }), [])
 
-  const addAccess = (access: ConfigurationAccess) =>
-    dispatch({ type: 'ADD_ACCESS', payload: access })
+  const addAccess = useCallback((access: ConfigurationAccess) =>
+    dispatch({ type: 'ADD_ACCESS', payload: access }), [])
 
-  const updateAccess = (index: number, access: ConfigurationAccess) =>
-    dispatch({ type: 'UPDATE_ACCESS', payload: { index, access } })
+  const updateAccess = useCallback((index: number, access: ConfigurationAccess) =>
+    dispatch({ type: 'UPDATE_ACCESS', payload: { index, access } }), [])
 
-  const removeAccess = (index: number) =>
-    dispatch({ type: 'REMOVE_ACCESS', payload: index })
+  const removeAccess = useCallback((index: number) =>
+    dispatch({ type: 'REMOVE_ACCESS', payload: index }), [])
 
-  const addSource = (source: ConfigurationSource) =>
-    dispatch({ type: 'ADD_SOURCE', payload: source })
+  const addSource = useCallback((source: ConfigurationSource) =>
+    dispatch({ type: 'ADD_SOURCE', payload: source }), [])
 
-  const updateSource = (index: number, source: ConfigurationSource) =>
-    dispatch({ type: 'UPDATE_SOURCE', payload: { index, source } })
+  const updateSource = useCallback((index: number, source: ConfigurationSource) =>
+    dispatch({ type: 'UPDATE_SOURCE', payload: { index, source } }), [])
 
-  const removeSource = (index: number) =>
-    dispatch({ type: 'REMOVE_SOURCE', payload: index })
+  const removeSource = useCallback((index: number) =>
+    dispatch({ type: 'REMOVE_SOURCE', payload: index }), [])
 
-  const setCurrentSMBConfig = (config: SMBConnectionConfig | null) =>
-    dispatch({ type: 'SET_CURRENT_SMB_CONFIG', payload: config })
+  const setCurrentSMBConfig = useCallback((config: SMBConnectionConfig | null) =>
+    dispatch({ type: 'SET_CURRENT_SMB_CONFIG', payload: config }), [])
 
-  const setCurrentFTPConfig = (config: FTPConnectionConfig | null) =>
-    dispatch({ type: 'SET_CURRENT_FTP_CONFIG', payload: config })
+  const setCurrentFTPConfig = useCallback((config: FTPConnectionConfig | null) =>
+    dispatch({ type: 'SET_CURRENT_FTP_CONFIG', payload: config }), [])
 
-  const setCurrentNFSConfig = (config: NFSConnectionConfig | null) =>
-    dispatch({ type: 'SET_CURRENT_NFS_CONFIG', payload: config })
+  const setCurrentNFSConfig = useCallback((config: NFSConnectionConfig | null) =>
+    dispatch({ type: 'SET_CURRENT_NFS_CONFIG', payload: config }), [])
 
-  const setCurrentWebDAVConfig = (config: WebDAVConnectionConfig | null) =>
-    dispatch({ type: 'SET_CURRENT_WEBDAV_CONFIG', payload: config })
+  const setCurrentWebDAVConfig = useCallback((config: WebDAVConnectionConfig | null) =>
+    dispatch({ type: 'SET_CURRENT_WEBDAV_CONFIG', payload: config }), [])
 
-  const setCurrentLocalConfig = (config: LocalConnectionConfig | null) =>
-    dispatch({ type: 'SET_CURRENT_LOCAL_CONFIG', payload: config })
+  const setCurrentLocalConfig = useCallback((config: LocalConnectionConfig | null) =>
+    dispatch({ type: 'SET_CURRENT_LOCAL_CONFIG', payload: config }), [])
 
-  const setSelectedProtocol = (protocol: string | null) =>
-    dispatch({ type: 'SET_SELECTED_PROTOCOL', payload: protocol })
+  const setSelectedProtocol = useCallback((protocol: string | null) =>
+    dispatch({ type: 'SET_SELECTED_PROTOCOL', payload: protocol }), [])
 
-  const setSelectedHosts = (hosts: NetworkHost[]) =>
-    dispatch({ type: 'SET_SELECTED_HOSTS', payload: hosts })
+  const setSelectedHosts = useCallback((hosts: NetworkHost[]) =>
+    dispatch({ type: 'SET_SELECTED_HOSTS', payload: hosts }), [])
 
-  const setLoading = (loading: boolean) =>
-    dispatch({ type: 'SET_LOADING', payload: loading })
+  const setLoading = useCallback((loading: boolean) =>
+    dispatch({ type: 'SET_LOADING', payload: loading }), [])
 
-  const setError = (error: string | null) =>
-    dispatch({ type: 'SET_ERROR', payload: error })
+  const setError = useCallback((error: string | null) =>
+    dispatch({ type: 'SET_ERROR', payload: error }), [])
 
-  const clearError = () =>
-    dispatch({ type: 'CLEAR_ERROR' })
+  const clearError = useCallback(() =>
+    dispatch({ type: 'CLEAR_ERROR' }), [])
 
-  const setUnsavedChanges = (hasChanges: boolean) =>
-    dispatch({ type: 'SET_UNSAVED_CHANGES', payload: hasChanges })
+  const setUnsavedChanges = useCallback((hasChanges: boolean) =>
+    dispatch({ type: 'SET_UNSAVED_CHANGES', payload: hasChanges }), [])
 
-  const reset = () =>
-    dispatch({ type: 'RESET' })
+  const reset = useCallback(() =>
+    dispatch({ type: 'RESET' }), [])
 
-  const value: ConfigurationContextType = {
+  const value: ConfigurationContextType = useMemo(() => ({
     state,
     dispatch,
     setConfiguration,
@@ -292,7 +292,7 @@ export function ConfigurationProvider({ children }: { children: ReactNode }) {
     clearError,
     setUnsavedChanges,
     reset,
-  }
+  }), [state, dispatch, setConfiguration, addAccess, updateAccess, removeAccess, addSource, updateSource, removeSource, setCurrentSMBConfig, setCurrentFTPConfig, setCurrentNFSConfig, setCurrentWebDAVConfig, setCurrentLocalConfig, setSelectedProtocol, setSelectedHosts, setLoading, setError, clearError, setUnsavedChanges, reset])
 
   return <ConfigurationContext.Provider value={value}>{children}</ConfigurationContext.Provider>
 }

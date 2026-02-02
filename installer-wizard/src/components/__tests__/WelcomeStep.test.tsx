@@ -1,29 +1,19 @@
 import { describe, it, expect } from 'vitest'
 import { render, screen } from '@testing-library/react'
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { BrowserRouter } from 'react-router-dom'
 import WelcomeStep from '../wizard/WelcomeStep'
 import { WizardProvider } from '../../contexts/WizardContext'
 import { ConfigurationProvider } from '../../contexts/ConfigurationContext'
 
 const TestWrapper = ({ children }: { children: React.ReactNode }) => {
-  const queryClient = new QueryClient({
-    defaultOptions: {
-      queries: { retry: false },
-      mutations: { retry: false },
-    },
-  })
-
   return (
-    <QueryClientProvider client={queryClient}>
-      <BrowserRouter>
-        <ConfigurationProvider>
-          <WizardProvider>
-            {children}
-          </WizardProvider>
-        </ConfigurationProvider>
-      </BrowserRouter>
-    </QueryClientProvider>
+    <BrowserRouter>
+      <ConfigurationProvider>
+        <WizardProvider>
+          {children}
+        </WizardProvider>
+      </ConfigurationProvider>
+    </BrowserRouter>
   )
 }
 
@@ -62,5 +52,15 @@ describe('WelcomeStep', () => {
     expect(screen.getByText(/Access to your storage system/)).toBeInTheDocument()
     expect(screen.getByText(/Valid credentials for the storage system/)).toBeInTheDocument()
     expect(screen.getByText(/A location to save your configuration file/)).toBeInTheDocument()
+  })
+
+  it('shows next step instruction', () => {
+    render(
+      <TestWrapper>
+        <WelcomeStep />
+      </TestWrapper>
+    )
+
+    expect(screen.getByText(/Click "Next" to select your storage protocol/)).toBeInTheDocument()
   })
 })

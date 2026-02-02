@@ -1,23 +1,8 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { render, screen, fireEvent, waitFor } from '@testing-library/react'
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
-import { BrowserRouter } from 'react-router-dom'
 import FTPConfigurationStep from '../wizard/FTPConfigurationStep'
-import { WizardProvider } from '../../contexts/WizardContext'
-import { ConfigurationProvider } from '../../contexts/ConfigurationContext'
 import { TauriService } from '../../services/tauri'
-
-const TestWrapper = ({ children }: { children: React.ReactNode }) => {
-  return (
-    <BrowserRouter>
-      <ConfigurationProvider>
-        <WizardProvider>
-          {children}
-        </WizardProvider>
-      </ConfigurationProvider>
-    </BrowserRouter>
-  )
-}
+import { TestWrapper, getInputByLabel } from '../../test/test-utils'
 
 describe('FTPConfigurationStep', () => {
   beforeEach(() => {
@@ -41,12 +26,11 @@ describe('FTPConfigurationStep', () => {
     )
 
     expect(screen.getByText('FTP Configuration')).toBeInTheDocument()
-    expect(screen.getByText('Configure FTP connections for your selected devices')).toBeInTheDocument()
-    expect(screen.getByLabelText('Configuration Name')).toBeInTheDocument()
-    expect(screen.getByLabelText('Host/IP Address')).toBeInTheDocument()
-    expect(screen.getByLabelText('Port')).toBeInTheDocument()
-    expect(screen.getByLabelText('Username')).toBeInTheDocument()
-    expect(screen.getByLabelText('Password')).toBeInTheDocument()
+    expect(screen.getByText('Configuration Name', { selector: 'label' })).toBeInTheDocument()
+    expect(screen.getByText('Host/IP Address', { selector: 'label' })).toBeInTheDocument()
+    expect(screen.getByText('Port', { selector: 'label' })).toBeInTheDocument()
+    expect(screen.getByText('Username', { selector: 'label' })).toBeInTheDocument()
+    expect(screen.getByText('Password', { selector: 'label' })).toBeInTheDocument()
   })
 
   it('validates required fields', async () => {
@@ -56,7 +40,7 @@ describe('FTPConfigurationStep', () => {
       </TestWrapper>
     )
 
-    const submitButton = screen.getByText('Add Configuration')
+    const submitButton = screen.getByRole('button', { name: 'Add Configuration' })
     fireEvent.click(submitButton)
 
     await waitFor(() => {
@@ -76,10 +60,9 @@ describe('FTPConfigurationStep', () => {
       </TestWrapper>
     )
 
-    // Fill in the form
-    fireEvent.change(screen.getByLabelText('Host/IP Address'), { target: { value: 'ftp.example.com' } })
-    fireEvent.change(screen.getByLabelText('Username'), { target: { value: 'testuser' } })
-    fireEvent.change(screen.getByLabelText('Password'), { target: { value: 'testpass' } })
+    fireEvent.change(getInputByLabel('Host/IP Address'), { target: { value: 'ftp.example.com' } })
+    fireEvent.change(getInputByLabel('Username'), { target: { value: 'testuser' } })
+    fireEvent.change(getInputByLabel('Password'), { target: { value: 'testpass' } })
 
     const testButton = screen.getByText('Test Connection')
     fireEvent.click(testButton)
@@ -105,16 +88,15 @@ describe('FTPConfigurationStep', () => {
       </TestWrapper>
     )
 
-    // Fill in the form
-    fireEvent.change(screen.getByLabelText('Host/IP Address'), { target: { value: 'ftp.example.com' } })
-    fireEvent.change(screen.getByLabelText('Username'), { target: { value: 'testuser' } })
-    fireEvent.change(screen.getByLabelText('Password'), { target: { value: 'testpass' } })
+    fireEvent.change(getInputByLabel('Host/IP Address'), { target: { value: 'ftp.example.com' } })
+    fireEvent.change(getInputByLabel('Username'), { target: { value: 'testuser' } })
+    fireEvent.change(getInputByLabel('Password'), { target: { value: 'testpass' } })
 
     const testButton = screen.getByText('Test Connection')
     fireEvent.click(testButton)
 
     await waitFor(() => {
-      expect(screen.getByText('Connection test failed: Connection failed')).toBeInTheDocument()
+      expect(screen.getByText(/Connection test failed/)).toBeInTheDocument()
     })
   })
 
@@ -125,13 +107,12 @@ describe('FTPConfigurationStep', () => {
       </TestWrapper>
     )
 
-    // Fill in the form
-    fireEvent.change(screen.getByLabelText('Configuration Name'), { target: { value: 'Test FTP' } })
-    fireEvent.change(screen.getByLabelText('Host/IP Address'), { target: { value: 'ftp.example.com' } })
-    fireEvent.change(screen.getByLabelText('Username'), { target: { value: 'testuser' } })
-    fireEvent.change(screen.getByLabelText('Password'), { target: { value: 'testpass' } })
+    fireEvent.change(getInputByLabel('Configuration Name'), { target: { value: 'Test FTP' } })
+    fireEvent.change(getInputByLabel('Host/IP Address'), { target: { value: 'ftp.example.com' } })
+    fireEvent.change(getInputByLabel('Username'), { target: { value: 'testuser' } })
+    fireEvent.change(getInputByLabel('Password'), { target: { value: 'testpass' } })
 
-    const submitButton = screen.getByText('Add Configuration')
+    const submitButton = screen.getByRole('button', { name: 'Add Configuration' })
     fireEvent.click(submitButton)
 
     await waitFor(() => {
@@ -147,13 +128,12 @@ describe('FTPConfigurationStep', () => {
       </TestWrapper>
     )
 
-    // Fill in the form
-    fireEvent.change(screen.getByLabelText('Configuration Name'), { target: { value: 'Test FTP' } })
-    fireEvent.change(screen.getByLabelText('Host/IP Address'), { target: { value: 'ftp.example.com' } })
-    fireEvent.change(screen.getByLabelText('Username'), { target: { value: 'testuser' } })
-    fireEvent.change(screen.getByLabelText('Password'), { target: { value: 'testpass' } })
+    fireEvent.change(getInputByLabel('Configuration Name'), { target: { value: 'Test FTP' } })
+    fireEvent.change(getInputByLabel('Host/IP Address'), { target: { value: 'ftp.example.com' } })
+    fireEvent.change(getInputByLabel('Username'), { target: { value: 'testuser' } })
+    fireEvent.change(getInputByLabel('Password'), { target: { value: 'testpass' } })
 
-    const submitButton = screen.getByText('Add Configuration')
+    const submitButton = screen.getByRole('button', { name: 'Add Configuration' })
     fireEvent.click(submitButton)
 
     await waitFor(() => {

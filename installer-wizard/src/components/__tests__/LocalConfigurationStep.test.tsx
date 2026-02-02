@@ -1,32 +1,8 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { render, screen, fireEvent, waitFor } from '@testing-library/react'
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
-import { BrowserRouter } from 'react-router-dom'
 import LocalConfigurationStep from '../wizard/LocalConfigurationStep'
-import { WizardProvider } from '../../contexts/WizardContext'
-import { ConfigurationProvider } from '../../contexts/ConfigurationContext'
 import { TauriService } from '../../services/tauri'
-
-const TestWrapper = ({ children }: { children: React.ReactNode }) => {
-  const queryClient = new QueryClient({
-    defaultOptions: {
-      queries: { retry: false },
-      mutations: { retry: false },
-    },
-  })
-
-  return (
-    <QueryClientProvider client={queryClient}>
-      <BrowserRouter>
-        <ConfigurationProvider>
-          <WizardProvider>
-            {children}
-          </WizardProvider>
-        </ConfigurationProvider>
-      </BrowserRouter>
-    </QueryClientProvider>
-  )
-}
+import { TestWrapper, getInputByLabel } from '../../test/test-utils'
 
 describe('LocalConfigurationStep', () => {
   beforeEach(() => {
@@ -41,18 +17,39 @@ describe('LocalConfigurationStep', () => {
     )
 
     expect(screen.getByText('Local Configuration')).toBeInTheDocument()
-    expect(screen.getByLabelText('Configuration Name')).toBeInTheDocument()
-    expect(screen.getByLabelText('Base Path')).toBeInTheDocument()
+    expect(screen.getByText('Configuration Name', { selector: 'label' })).toBeInTheDocument()
+    expect(screen.getByText('Base Path', { selector: 'label' })).toBeInTheDocument()
   })
 
-  it('validates required fields', async () => {
+  it('pre-populates with default local path', () => {
     render(
       <TestWrapper>
         <LocalConfigurationStep />
       </TestWrapper>
     )
 
-    const submitButton = screen.getByText('Add Configuration')
+    // LocalConfigurationStep auto-populates with a default config and starts in edit mode
+    expect(screen.getByText('Edit Configuration')).toBeInTheDocument()
+  })
+
+  it('validates required fields on empty form', async () => {
+    render(
+      <TestWrapper>
+        <LocalConfigurationStep />
+      </TestWrapper>
+    )
+
+    // First, click "Add New" to get a clean form (since component starts in edit mode with pre-populated data)
+    // Cancel editing to get to "Add Configuration" state
+    const cancelButton = screen.getByText('Cancel')
+    fireEvent.click(cancelButton)
+
+    // Clear the fields
+    fireEvent.change(getInputByLabel('Configuration Name'), { target: { value: '' } })
+    fireEvent.change(getInputByLabel('Base Path'), { target: { value: '' } })
+
+    // Now submit the empty form
+    const submitButton = screen.getByRole('button', { name: 'Add Configuration' })
     fireEvent.click(submitButton)
 
     await waitFor(() => {
@@ -71,8 +68,7 @@ describe('LocalConfigurationStep', () => {
       </TestWrapper>
     )
 
-    // Fill in the form
-    fireEvent.change(screen.getByLabelText('Base Path'), { target: { value: '/home/user/media' } })
+    fireEvent.change(getInputByLabel('Base Path'), { target: { value: '/home/user/media' } })
 
     const testButton = screen.getByText('Test Path')
     fireEvent.click(testButton)
@@ -83,23 +79,34 @@ describe('LocalConfigurationStep', () => {
     }, { timeout: 3000 })
   })
 
-  it('adds local configuration successfully', async () => {
+  it('updates local configuration successfully', async () => {
     render(
       <TestWrapper>
         <LocalConfigurationStep />
       </TestWrapper>
     )
 
-    // Fill in the form
-    fireEvent.change(screen.getByLabelText('Configuration Name'), { target: { value: 'Local Media' } })
-    fireEvent.change(screen.getByLabelText('Base Path'), { target: { value: '/home/user/media' } })
+    // Since the component starts in edit mode, update the pre-populated config
+    fireEvent.change(getInputByLabel('Configuration Name'), { target: { value: 'My Media' } })
+    fireEvent.change(getInputByLabel('Base Path'), { target: { value: '/opt/media' } })
 
-    const submitButton = screen.getByText('Add Configuration')
+    const submitButton = screen.getByRole('button', { name: 'Update Configuration' })
     fireEvent.click(submitButton)
 
     await waitFor(() => {
-      expect(screen.getByText('Local Media')).toBeInTheDocument()
-      expect(screen.getByText('/home/user/media')).toBeInTheDocument()
+      expect(screen.getByText('My Media')).toBeInTheDocument()
+      expect(screen.getByText('/opt/media')).toBeInTheDocument()
     }, { timeout: 3000 })
+  })
+
+  it('shows configured sources count', () => {
+    render(
+      <TestWrapper>
+        <LocalConfigurationStep />
+      </TestWrapper>
+    )
+
+    // Component auto-creates one default config
+    expect(screen.getByText(/1 local source\(s\) configured/)).toBeInTheDocument()
   })
 })
