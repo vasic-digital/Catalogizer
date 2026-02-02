@@ -6,6 +6,7 @@ import { ReactQueryDevtools } from '@tanstack/react-query-devtools'
 import { Toaster } from 'react-hot-toast'
 
 import App from './App'
+import { logWebVitals, sendToAnalytics } from './lib/webVitals'
 import './index.css'
 
 // Create a client
@@ -58,3 +59,7 @@ ReactDOM.createRoot(document.getElementById('root')!).render(
     </HelmetProvider>
   </React.StrictMode>
 )
+
+// Report Web Vitals
+logWebVitals()
+sendToAnalytics()

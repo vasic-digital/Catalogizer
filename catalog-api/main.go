@@ -7,6 +7,7 @@ import (
 	"catalogizer/internal/auth"
 	internal_config "catalogizer/internal/config"
 	"catalogizer/internal/handlers"
+	"catalogizer/internal/metrics"
 	"catalogizer/internal/middleware"
 	"catalogizer/internal/services"
 	root_middleware "catalogizer/middleware"
@@ -28,6 +29,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 	_ "github.com/mutecomm/go-sqlcipher"
+	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"github.com/redis/go-redis/v9"
 	"go.uber.org/zap"
 )
@@ -268,10 +270,17 @@ func main() {
 
 	// Middleware
 	router.Use(root_middleware.CORS())
+	router.Use(metrics.GinMiddleware())
 	router.Use(middleware.Logger(logger))
 	router.Use(middleware.ErrorHandler())
 	router.Use(root_middleware.RequestID())
 	router.Use(root_middleware.InputValidation(root_middleware.DefaultInputValidationConfig()))
+
+	// Start runtime metrics collector (goroutines, memory)
+	metrics.StartRuntimeCollector(15 * time.Second)
+
+	// Prometheus metrics endpoint
+	router.GET("/metrics", gin.WrapH(promhttp.Handler()))
 
 	// Health check
 	router.GET("/health", func(c *gin.Context) {
@@ -483,6 +492,9 @@ func main() {
 	// the request it is currently handling
 	shutdownCtx, shutdownCancel := context.WithTimeout(context.Background(), 30*time.Second)
 	defer shutdownCancel()
+
+	// Stop runtime metrics collector
+	metrics.StopRuntimeCollector()
 
 	// Shutdown HTTP server (stops accepting new connections, waits for in-flight requests)
 	if err := srv.Shutdown(shutdownCtx); err != nil {
