@@ -151,8 +151,10 @@ func TestForceReconnectDisabledSource(t *testing.T) {
 	manager.AddSource(source)
 	time.Sleep(200 * time.Millisecond)
 
-	// Disable the source
+	// Disable the source (use mutex to avoid data race with background goroutine)
+	source.mutex.Lock()
 	source.IsEnabled = false
+	source.mutex.Unlock()
 
 	err := manager.ForceReconnect("disabled-test")
 	assert.Error(t, err)

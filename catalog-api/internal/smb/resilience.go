@@ -227,7 +227,9 @@ func (m *ResilientSMBManager) RemoveSource(sourceID string) error {
 		return fmt.Errorf("source not found: %s", sourceID)
 	}
 
+	source.mutex.Lock()
 	source.IsEnabled = false
+	source.mutex.Unlock()
 	delete(m.sources, sourceID)
 
 	m.logger.Info("SMB source removed", zap.String("id", sourceID))
