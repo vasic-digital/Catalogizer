@@ -686,9 +686,7 @@ echo "Debug information collected in debug-info.txt"
 
 ### Useful Resources
 
-- [Architecture Documentation](ARCHITECTURE.md)
-- [Deployment Guide](DEPLOYMENT.md)
-- [API Documentation](API.md)
-- [SMB Resilience Guide](SMB_RESILIENCE.md)
+- [Architecture Documentation](../architecture/ARCHITECTURE.md)
+- [Deployment Guide](../deployment/DEPLOYMENT.md)
 
 This troubleshooting guide covers the most common issues you may encounter. For specific problems not covered here, please check the logs and consider opening a GitHub issue with the debug information collected using the script above.

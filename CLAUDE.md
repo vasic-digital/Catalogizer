@@ -57,6 +57,28 @@ docker-compose -f docker-compose.dev.yml up   # dev env
 
 **Tauri apps**: React frontend ↔ Rust backend via IPC commands/events.
 
+## Root Directory Structure (Mandatory Locations)
+
+New files MUST be placed in the correct directory. Do NOT add files to the project root unless they are conventional root files (README, LICENSE, .gitignore, docker-compose, etc.).
+
+| Directory | Purpose |
+|---|---|
+| `config/` | Infrastructure config files (nginx.conf, redis.conf) |
+| `scripts/` | Shell scripts (install, setup, CI/CD, testing runners) |
+| `tests/` | Standalone/integration test files (test_*.js, test_*.go, test_*.sh) |
+| `docs/` | All documentation markdown files, organized by subdirectory |
+| `docs/architecture/` | Architecture and design docs |
+| `docs/deployment/` | Deployment and Docker setup docs |
+| `docs/testing/` | Test reports and testing docs |
+| `docs/qa/` | QA guides and checklists |
+| `docs/guides/` | User-facing guides and troubleshooting |
+| `docs/status/` | Status reports, dashboards, completion summaries |
+| `docs/phases/` | Phase-specific progress and completion reports |
+| `docs/roadmap/` | Roadmap and planning docs |
+| `Assets/` | Static assets (images, HTML tutorials) |
+
+Docker Compose files (`docker-compose.yml`, `docker-compose.dev.yml`) reference `config/` for nginx and redis configs. Do NOT move these config files without updating the Compose volume mounts.
+
 ## Conventions
 
 - **Go**: `NewService` constructor injection, error wrapping, table-driven tests, `*_test.go` beside source

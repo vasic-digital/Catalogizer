@@ -1,7 +1,8 @@
 #!/bin/bash
 
 PROGRESS_DIR=".implementation/progress"
-PROJECT_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+PROJECT_ROOT="$(dirname "$SCRIPT_DIR")"
 
 check_progress() {
     local item=$1

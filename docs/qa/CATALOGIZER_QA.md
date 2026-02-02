@@ -243,11 +243,11 @@ rm .git/hooks/pre-commit .git/hooks/pre-push
 ## 📚 Documentation
 
 ### Comprehensive Documentation Available
-- **📖 [Complete Manual](qa-ai-system/CATALOGIZER_QA_MANUAL.html)** - Interactive user guide
-- **📊 [Execution Report](qa-ai-system/reports/CATALOGIZER_QA_EXECUTION_REPORT.md)** - Detailed test results
-- **📱 [Test Cases](qa-ai-system/reports/test-cases/)** - API and Android test specifications
-- **🌐 [Protocol Analysis](qa-ai-system/reports/data-analysis/PROTOCOL_ANALYSIS_REPORT.md)** - Network protocol details
-- **📈 [Summary Report](qa-ai-system/reports/TEST_EXECUTION_SUMMARY.html)** - Visual dashboard
+- **📖 [Complete Manual](../../qa-ai-system/CATALOGIZER_QA_MANUAL.html)** - Interactive user guide
+- **📊 [Execution Report](../../qa-ai-system/reports/CATALOGIZER_QA_EXECUTION_REPORT.md)** - Detailed test results
+- **📱 [Test Cases](../../qa-ai-system/reports/test-cases/)** - API and Android test specifications
+- **🌐 [Protocol Analysis](../../qa-ai-system/reports/data-analysis/PROTOCOL_ANALYSIS_REPORT.md)** - Network protocol details
+- **📈 [Summary Report](../../qa-ai-system/reports/TEST_EXECUTION_SUMMARY.html)** - Visual dashboard
 
 ### Key Features Documented
 - Complete test case specifications (1,800 test cases)

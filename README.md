@@ -351,7 +351,7 @@ curl -X POST -H "Authorization: Bearer $TOKEN" \
 ✅ **Performance**: Circuit breaker prevents slowdowns from failed connection attempts
 ✅ **Monitoring**: Real-time visibility into connection health and recovery status
 
-For detailed technical documentation, see [SMB Resilience Architecture](ARCHITECTURE.md#smb-resilience-layer).
+For detailed technical documentation, see [SMB Resilience Architecture](docs/architecture/ARCHITECTURE.md#smb-resilience-layer).
 
 ## 📱 Client Applications
 
@@ -421,10 +421,10 @@ Use the automated installer to set up the complete Catalogizer ecosystem:
 
 ```bash
 # Download and run the installer
-curl -fsSL https://raw.githubusercontent.com/your-repo/Catalogizer/main/install.sh | bash
+curl -fsSL https://raw.githubusercontent.com/your-repo/Catalogizer/main/scripts/install.sh | bash
 
 # Or with custom configuration
-curl -fsSL https://raw.githubusercontent.com/your-repo/Catalogizer/main/install.sh | bash -s -- --mode=full --env-file=./my-config.env
+curl -fsSL https://raw.githubusercontent.com/your-repo/Catalogizer/main/scripts/install.sh | bash -s -- --mode=full --env-file=./my-config.env
 ```
 
 ### Installation Modes
@@ -570,7 +570,7 @@ npm install @catalogizer/api-client
 ### Development Environment
 ```bash
 # Start development environment
-./install.sh --mode=development
+./scripts/install.sh --mode=development
 
 # This sets up:
 # - Hot-reload enabled services
@@ -682,10 +682,10 @@ docker exec catalogizer-server tail -f /app/logs/catalogizer.log
 
 - **[API Documentation](docs/API.md)**: Complete REST API reference
 - **[Client Integration](docs/CLIENTS.md)**: Client development guide
-- **[Deployment Guide](docs/DEPLOYMENT.md)**: Production deployment
-- **[Architecture Overview](docs/ARCHITECTURE.md)**: System design
+- **[Deployment Guide](docs/deployment/DEPLOYMENT.md)**: Production deployment
+- **[Architecture Overview](docs/architecture/ARCHITECTURE.md)**: System design
 - **[Security Guide](docs/SECURITY.md)**: Security best practices
-- **[Troubleshooting](docs/TROUBLESHOOTING.md)**: Common issues and solutions
+- **[Troubleshooting](docs/guides/TROUBLESHOOTING.md)**: Common issues and solutions
 
 ## 🆘 Support & Troubleshooting
 
@@ -811,12 +811,12 @@ All test results are stored in the `reports/` directory:
 
 ## 🤝 Contributing
 
-We welcome contributions! Please see our [Contributing Guide](CONTRIBUTING.md) for details.
+We welcome contributions! Please see our [Contributing Guide](docs/CONTRIBUTING.md) for details.
 
 ### Development Workflow
 1. Fork the repository
 2. Create a feature branch
-3. Set up development environment: `./install.sh --mode=development`
+3. Set up development environment: `./scripts/install.sh --mode=development`
 4. Make your changes
 5. Run tests: `./scripts/run-tests.sh`
 6. Submit a pull request

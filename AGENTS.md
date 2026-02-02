@@ -486,7 +486,7 @@ This documentation should help AI agents understand the codebase structure and w
 For new agents setting up the development environment:
 
 1. Clone the repository and navigate to the project root
-2. Run `./install.sh --mode=development` to set up all services
+2. Run `./scripts/install.sh --mode=development` to set up all services
 3. This will configure:
    - PostgreSQL with test data
    - Redis cache

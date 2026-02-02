@@ -90,6 +90,9 @@ go.work
 *.tmp
 *.temp
 
+# Server PID
+server.pid
+
 # Gradle
 .gradle/
 build/

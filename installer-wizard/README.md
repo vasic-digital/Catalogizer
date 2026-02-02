@@ -404,7 +404,7 @@ Application logs are stored in:
 
 ## 🤝 Contributing
 
-We welcome contributions! Please see our [Contributing Guide](../CONTRIBUTING.md) for details.
+We welcome contributions! Please see our [Contributing Guide](../docs/CONTRIBUTING.md) for details.
 
 ### Development Workflow
 1. Fork the repository

@@ -327,7 +327,7 @@ go test ./...
 docker-compose -f docker-compose.dev.yml down
 ```
 
-See `DOCKER_SETUP.md` for more details.
+See `../deployment/DOCKER_SETUP.md` for more details.
 
 ## 📈 Test Coverage Reporting
 
@@ -395,7 +395,7 @@ chmod +x qa-ai-system/scripts/run-qa-tests.sh
 ## 📚 Additional Resources
 
 - **Database Migrations:** `catalog-api/database/migrations/README.md`
-- **Docker Setup:** `DOCKER_SETUP.md`
+- **Docker Setup:** `../deployment/DOCKER_SETUP.md`
 - **CI/CD Pipeline:** `.github/workflows/ci-cd.yml`
 - **API Testing:** `catalog-api/docs/TESTING.md`
 
