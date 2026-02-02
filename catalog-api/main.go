@@ -166,6 +166,12 @@ func main() {
 	// Initialize repositories
 	userRepo := root_repository.NewUserRepository(db)
 	conversionRepo := root_repository.NewConversionRepository(db)
+	analyticsRepo := root_repository.NewAnalyticsRepository(db)
+	configurationRepo := root_repository.NewConfigurationRepository(db)
+	errorReportingRepo := root_repository.NewErrorReportingRepository(db)
+	crashReportingRepo := root_repository.NewCrashReportingRepository(db)
+	logManagementRepo := root_repository.NewLogManagementRepository(db)
+	favoritesRepo := root_repository.NewFavoritesRepository(db)
 
 	// Initialize authentication and conversion services
 	jwtSecret := cfg.Auth.JWTSecret
@@ -180,6 +186,12 @@ func main() {
 	}
 	authService := root_services.NewAuthService(userRepo, jwtSecret)
 	conversionService := root_services.NewConversionService(conversionRepo, userRepo, authService)
+	analyticsService := root_services.NewAnalyticsService(analyticsRepo)
+	reportingService := root_services.NewReportingService(analyticsRepo, userRepo)
+	configurationService := root_services.NewConfigurationService(configurationRepo, "./config.json")
+	errorReportingService := root_services.NewErrorReportingService(errorReportingRepo, crashReportingRepo)
+	logManagementService := root_services.NewLogManagementService(logManagementRepo)
+	favoritesService := root_services.NewFavoritesService(favoritesRepo, authService)
 
 	// Initialize internal auth service and middleware for rate limiting
 	internalAuthService := auth.NewAuthService(db, jwtSecret, logger)
@@ -222,6 +234,24 @@ func main() {
 	
 	// Subtitle handler
 	subtitleHandler := root_handlers.NewSubtitleHandler(subtitleService, logger)
+
+	// Create service adapters to bridge interface differences between services and handlers
+	authAdapter := &root_handlers.AuthServiceAdapter{Inner: authService}
+	configAdapter := &root_handlers.ConfigurationServiceAdapter{Inner: configurationService}
+	errorAdapter := &root_handlers.ErrorReportingServiceAdapter{Inner: errorReportingService}
+	logAdapter := &root_handlers.LogManagementServiceAdapter{Inner: logManagementService}
+
+	// User management, role, configuration, error reporting, and log management handlers
+	userHandler := root_handlers.NewUserHandler(userRepo, authAdapter)
+	roleHandler := root_handlers.NewRoleHandler(userRepo, authAdapter)
+	configurationHandler := root_handlers.NewConfigurationHandler(configAdapter, authAdapter)
+	errorReportingHandler := root_handlers.NewErrorReportingHandler(errorAdapter, authAdapter)
+	logManagementHandler := root_handlers.NewLogManagementHandler(logAdapter, authAdapter)
+
+	// Services initialized for future route integration
+	_ = analyticsService
+	_ = reportingService
+	_ = favoritesService
 
 	// Initialize JWT middleware
 	jwtMiddleware := root_middleware.NewJWTMiddleware(jwtSecret)
@@ -336,6 +366,76 @@ func main() {
 			conversionGroup.GET("/jobs/:id", conversionHandler.GetJob)
 			conversionGroup.POST("/jobs/:id/cancel", conversionHandler.CancelJob)
 			conversionGroup.GET("/formats", conversionHandler.GetSupportedFormats)
+		}
+
+		// User management endpoints
+		wrap := root_handlers.WrapHTTPHandler
+		usersGroup := api.Group("/users")
+		{
+			usersGroup.POST("", wrap(userHandler.CreateUser))
+			usersGroup.GET("", wrap(userHandler.ListUsers))
+			usersGroup.GET("/:id", wrap(userHandler.GetUser))
+			usersGroup.PUT("/:id", wrap(userHandler.UpdateUser))
+			usersGroup.DELETE("/:id", wrap(userHandler.DeleteUser))
+			usersGroup.POST("/:id/reset-password", wrap(userHandler.ResetPassword))
+			usersGroup.POST("/:id/lock", wrap(userHandler.LockAccount))
+			usersGroup.POST("/:id/unlock", wrap(userHandler.UnlockAccount))
+		}
+
+		// Role management endpoints
+		rolesGroup := api.Group("/roles")
+		{
+			rolesGroup.POST("", wrap(roleHandler.CreateRole))
+			rolesGroup.GET("", wrap(roleHandler.ListRoles))
+			rolesGroup.GET("/:id", wrap(roleHandler.GetRole))
+			rolesGroup.PUT("/:id", wrap(roleHandler.UpdateRole))
+			rolesGroup.DELETE("/:id", wrap(roleHandler.DeleteRole))
+			rolesGroup.GET("/permissions", wrap(roleHandler.GetPermissions))
+		}
+
+		// Configuration endpoints
+		configGroup := api.Group("/configuration")
+		{
+			configGroup.GET("", wrap(configurationHandler.GetConfiguration))
+			configGroup.POST("/test", wrap(configurationHandler.TestConfiguration))
+			configGroup.GET("/status", wrap(configurationHandler.GetSystemStatus))
+			configGroup.GET("/wizard/step/:step_id", wrap(configurationHandler.GetWizardStep))
+			configGroup.POST("/wizard/step/:step_id/validate", wrap(configurationHandler.ValidateWizardStep))
+			configGroup.POST("/wizard/step/:step_id/save", wrap(configurationHandler.SaveWizardProgress))
+			configGroup.GET("/wizard/progress", wrap(configurationHandler.GetWizardProgress))
+			configGroup.POST("/wizard/complete", wrap(configurationHandler.CompleteWizard))
+		}
+
+		// Error reporting endpoints
+		errorsGroup := api.Group("/errors")
+		{
+			errorsGroup.POST("/report", wrap(errorReportingHandler.ReportError))
+			errorsGroup.POST("/crash", wrap(errorReportingHandler.ReportCrash))
+			errorsGroup.GET("/reports", wrap(errorReportingHandler.ListErrorReports))
+			errorsGroup.GET("/reports/:id", wrap(errorReportingHandler.GetErrorReport))
+			errorsGroup.PUT("/reports/:id/status", wrap(errorReportingHandler.UpdateErrorStatus))
+			errorsGroup.GET("/crashes", wrap(errorReportingHandler.ListCrashReports))
+			errorsGroup.GET("/crashes/:id", wrap(errorReportingHandler.GetCrashReport))
+			errorsGroup.PUT("/crashes/:id/status", wrap(errorReportingHandler.UpdateCrashStatus))
+			errorsGroup.GET("/statistics", wrap(errorReportingHandler.GetErrorStatistics))
+			errorsGroup.GET("/crash-statistics", wrap(errorReportingHandler.GetCrashStatistics))
+			errorsGroup.GET("/health", wrap(errorReportingHandler.GetSystemHealth))
+		}
+
+		// Log management endpoints
+		logsGroup := api.Group("/logs")
+		{
+			logsGroup.POST("/collect", wrap(logManagementHandler.CreateLogCollection))
+			logsGroup.GET("/collections", wrap(logManagementHandler.ListLogCollections))
+			logsGroup.GET("/collections/:id", wrap(logManagementHandler.GetLogCollection))
+			logsGroup.GET("/collections/:id/entries", wrap(logManagementHandler.GetLogEntries))
+			logsGroup.POST("/collections/:id/export", wrap(logManagementHandler.ExportLogs))
+			logsGroup.GET("/collections/:id/analyze", wrap(logManagementHandler.AnalyzeLogs))
+			logsGroup.POST("/share", wrap(logManagementHandler.CreateLogShare))
+			logsGroup.GET("/share/:token", wrap(logManagementHandler.GetLogShare))
+			logsGroup.DELETE("/share/:id", wrap(logManagementHandler.RevokeLogShare))
+			logsGroup.GET("/stream", wrap(logManagementHandler.StreamLogs))
+			logsGroup.GET("/statistics", wrap(logManagementHandler.GetLogStatistics))
 		}
 	}
 

@@ -16,6 +16,7 @@ import { ConversionTools } from '@/pages/ConversionTools'
 import { Admin } from '@/pages/Admin'
 import FavoritesPage from '@/pages/Favorites'
 import { PlaylistsPage } from '@/pages/Playlists'
+import AIDashboard from '@/pages/AIDashboard'
 
 function App() {
   return (
@@ -104,24 +105,10 @@ function App() {
                }
              />
             <Route
-              path="/profile"
+              path="/ai"
               element={
                 <ProtectedRoute>
-                  <div className="p-8">
-                    <h1 className="text-2xl font-bold">Profile</h1>
-                    <p className="text-gray-600 mt-2">Coming soon...</p>
-                  </div>
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/settings"
-              element={
-                <ProtectedRoute>
-                  <div className="p-8">
-                    <h1 className="text-2xl font-bold">Settings</h1>
-                    <p className="text-gray-600 mt-2">Coming soon...</p>
-                  </div>
+                  <AIDashboard />
                 </ProtectedRoute>
               }
             />
