@@ -235,6 +235,10 @@ func main() {
 	// Subtitle handler
 	subtitleHandler := root_handlers.NewSubtitleHandler(subtitleService, logger)
 
+	// Stats handler
+	statsRepo := root_repository.NewStatsRepository(databaseDB)
+	statsHandler := root_handlers.NewStatsHandler(fileRepository, statsRepo)
+
 	// Create service adapters to bridge interface differences between services and handlers
 	authAdapter := &root_handlers.AuthServiceAdapter{Inner: authService}
 	configAdapter := &root_handlers.ConfigurationServiceAdapter{Inner: configurationService}
@@ -248,7 +252,7 @@ func main() {
 	errorReportingHandler := root_handlers.NewErrorReportingHandler(errorAdapter, authAdapter)
 	logManagementHandler := root_handlers.NewLogManagementHandler(logAdapter, authAdapter)
 
-	// Services initialized for future route integration
+	// Analytics and reporting services used by stats handler via repositories
 	_ = analyticsService
 	_ = reportingService
 	_ = favoritesService
@@ -347,6 +351,20 @@ func main() {
 		// Statistics and sorting
 		api.GET("/stats/directories/by-size", catalogHandler.GetDirectoriesBySize)
 		api.GET("/stats/duplicates/count", catalogHandler.GetDuplicatesCount)
+
+		// Advanced statistics endpoints
+		statsGroup := api.Group("/stats")
+		{
+			statsGroup.GET("/overall", statsHandler.GetOverallStats)
+			statsGroup.GET("/smb/:smb_root", statsHandler.GetSmbRootStats)
+			statsGroup.GET("/filetypes", statsHandler.GetFileTypeStats)
+			statsGroup.GET("/sizes", statsHandler.GetSizeDistribution)
+			statsGroup.GET("/duplicates", statsHandler.GetDuplicateStats)
+			statsGroup.GET("/duplicates/groups", statsHandler.GetTopDuplicateGroups)
+			statsGroup.GET("/access", statsHandler.GetAccessPatterns)
+			statsGroup.GET("/growth", statsHandler.GetGrowthTrends)
+			statsGroup.GET("/scans", statsHandler.GetScanHistory)
+		}
 
 		// SMB Discovery endpoints
 		smbGroup := api.Group("/smb")

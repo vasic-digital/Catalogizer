@@ -1,10 +1,10 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { Save, TestTube, RefreshCw, ArrowLeft } from "lucide-react";
+import { Save, TestTube, RefreshCw, ArrowLeft, Plus, Trash2, HardDrive, Loader2 } from "lucide-react";
 import { useConfigStore } from "../stores/configStore";
 import { useAuthStore } from "../stores/authStore";
 import { apiService } from "../services/apiService";
-import { Theme } from "../types";
+import { Theme, SMBConfig } from "../types";
 
 export default function SettingsPage() {
   const navigate = useNavigate();
@@ -20,6 +20,65 @@ export default function SettingsPage() {
     success: boolean;
     message: string;
   } | null>(null);
+
+  // Storage configuration state
+  const [smbConfigs, setSmbConfigs] = useState<SMBConfig[]>([]);
+  const [isLoadingStorage, setIsLoadingStorage] = useState(false);
+  const [storageError, setStorageError] = useState<string | null>(null);
+  const [showAddStorage, setShowAddStorage] = useState(false);
+  const [newStoragePath, setNewStoragePath] = useState("");
+  const [newStorageUsername, setNewStorageUsername] = useState("");
+  const [newStoragePassword, setNewStoragePassword] = useState("");
+  const [isAddingStorage, setIsAddingStorage] = useState(false);
+
+  useEffect(() => {
+    if (isAuthenticated) {
+      loadStorageConfigs();
+    }
+  }, [isAuthenticated]);
+
+  const loadStorageConfigs = async () => {
+    setIsLoadingStorage(true);
+    setStorageError(null);
+    try {
+      const configs = await apiService.getSMBConfigs();
+      setSmbConfigs(configs);
+    } catch (err) {
+      setStorageError(err instanceof Error ? err.message : "Failed to load storage configs");
+    } finally {
+      setIsLoadingStorage(false);
+    }
+  };
+
+  const handleAddStorage = async () => {
+    if (!newStoragePath.trim()) return;
+    setIsAddingStorage(true);
+    try {
+      const config = await apiService.createSMBConfig({
+        path: newStoragePath.trim(),
+        username: newStorageUsername || undefined,
+        password: newStoragePassword || undefined,
+      } as any);
+      setSmbConfigs((prev) => [...prev, config]);
+      setShowAddStorage(false);
+      setNewStoragePath("");
+      setNewStorageUsername("");
+      setNewStoragePassword("");
+    } catch (err) {
+      setStorageError(err instanceof Error ? err.message : "Failed to add storage source");
+    } finally {
+      setIsAddingStorage(false);
+    }
+  };
+
+  const handleDeleteStorage = async (id: number) => {
+    try {
+      await apiService.deleteSMBConfig(id);
+      setSmbConfigs((prev) => prev.filter((c) => c.id !== id));
+    } catch (err) {
+      setStorageError(err instanceof Error ? err.message : "Failed to delete storage source");
+    }
+  };
 
   const handleTestConnection = async () => {
     if (!localServerUrl) {
@@ -188,17 +247,109 @@ export default function SettingsPage() {
              </h2>
 
              <div className="space-y-4">
-               <div>
-                 <p className="text-sm text-muted-foreground mb-4">
-                   Configure storage sources for media scanning. Supported protocols: SMB, FTP, NFS, WebDAV, Local.
-                 </p>
-                 <button
-                   className="px-4 py-2 bg-secondary text-secondary-foreground rounded-md hover:bg-secondary/80"
-                   onClick={() => alert('Storage configuration coming soon')}
-                 >
-                   Configure Storage Sources
-                 </button>
-               </div>
+               <p className="text-sm text-muted-foreground">
+                 Configure storage sources for media scanning. Supported protocols: SMB, FTP, NFS, WebDAV, Local.
+               </p>
+
+               {storageError && (
+                 <div className="p-3 rounded-md text-sm bg-red-50 border border-red-200 text-red-800 dark:bg-red-900/20 dark:border-red-800 dark:text-red-300">
+                   {storageError}
+                 </div>
+               )}
+
+               {isLoadingStorage ? (
+                 <div className="flex items-center gap-2 text-muted-foreground py-4">
+                   <Loader2 className="h-4 w-4 animate-spin" />
+                   Loading storage sources...
+                 </div>
+               ) : (
+                 <>
+                   {smbConfigs.length > 0 ? (
+                     <div className="space-y-2">
+                       {smbConfigs.map((config) => (
+                         <div
+                           key={config.id}
+                           className="flex items-center justify-between p-3 bg-background border border-input rounded-md"
+                         >
+                           <div className="flex items-center gap-3">
+                             <HardDrive className="h-4 w-4 text-muted-foreground" />
+                             <div>
+                               <p className="text-sm font-medium text-foreground">
+                                 {(config as any).path || (config as any).share_path || `Storage #${config.id}`}
+                               </p>
+                               <p className="text-xs text-muted-foreground">
+                                 Added {new Date(config.created_at).toLocaleDateString()}
+                               </p>
+                             </div>
+                           </div>
+                           <button
+                             onClick={() => handleDeleteStorage(config.id)}
+                             className="p-1.5 text-red-500 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-900/20 rounded"
+                           >
+                             <Trash2 className="h-4 w-4" />
+                           </button>
+                         </div>
+                       ))}
+                     </div>
+                   ) : (
+                     <p className="text-sm text-muted-foreground italic py-2">
+                       No storage sources configured yet.
+                     </p>
+                   )}
+
+                   {showAddStorage ? (
+                     <div className="space-y-3 p-4 bg-background border border-input rounded-md">
+                       <input
+                         type="text"
+                         placeholder="Storage path (e.g. //server/share or /mnt/media)"
+                         value={newStoragePath}
+                         onChange={(e) => setNewStoragePath(e.target.value)}
+                         className="w-full px-3 py-2 border border-input bg-background rounded-md text-foreground placeholder-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring text-sm"
+                       />
+                       <div className="grid grid-cols-2 gap-3">
+                         <input
+                           type="text"
+                           placeholder="Username (optional)"
+                           value={newStorageUsername}
+                           onChange={(e) => setNewStorageUsername(e.target.value)}
+                           className="px-3 py-2 border border-input bg-background rounded-md text-foreground placeholder-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring text-sm"
+                         />
+                         <input
+                           type="password"
+                           placeholder="Password (optional)"
+                           value={newStoragePassword}
+                           onChange={(e) => setNewStoragePassword(e.target.value)}
+                           className="px-3 py-2 border border-input bg-background rounded-md text-foreground placeholder-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring text-sm"
+                         />
+                       </div>
+                       <div className="flex gap-2">
+                         <button
+                           onClick={handleAddStorage}
+                           disabled={isAddingStorage || !newStoragePath.trim()}
+                           className="px-4 py-2 bg-primary text-primary-foreground rounded-md hover:bg-primary/90 disabled:opacity-50 flex items-center gap-2 text-sm"
+                         >
+                           {isAddingStorage && <Loader2 className="h-3 w-3 animate-spin" />}
+                           Add Source
+                         </button>
+                         <button
+                           onClick={() => setShowAddStorage(false)}
+                           className="px-4 py-2 bg-secondary text-secondary-foreground rounded-md hover:bg-secondary/80 text-sm"
+                         >
+                           Cancel
+                         </button>
+                       </div>
+                     </div>
+                   ) : (
+                     <button
+                       onClick={() => setShowAddStorage(true)}
+                       className="flex items-center gap-2 px-4 py-2 bg-secondary text-secondary-foreground rounded-md hover:bg-secondary/80"
+                     >
+                       <Plus className="h-4 w-4" />
+                       Add Storage Source
+                     </button>
+                   )}
+                 </>
+               )}
              </div>
            </section>
 

@@ -20,9 +20,11 @@ import {
   RefreshCw,
   ChevronLeft,
   ChevronRight,
-  Play
+  Play,
+  Upload
 } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
+import { UploadManager } from '@/components/upload/UploadManager'
 
 export const MediaBrowser: React.FC = () => {
   const [filters, setFilters] = useState<MediaSearchRequest>({
@@ -39,6 +41,7 @@ export const MediaBrowser: React.FC = () => {
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [isPlayerOpen, setIsPlayerOpen] = useState(false)
   const [isDownloading, setIsDownloading] = useState(false)
+  const [showUpload, setShowUpload] = useState(false)
 
   const debouncedSearch = useMemo(
     () => debounce((query: string) => {
@@ -232,6 +235,14 @@ export const MediaBrowser: React.FC = () => {
 
           <Button
             variant="outline"
+            onClick={() => setShowUpload(!showUpload)}
+            data-testid="upload-button"
+          >
+            <Upload className="h-4 w-4" />
+          </Button>
+
+          <Button
+            variant="outline"
             onClick={() => refetch()}
             disabled={isLoading}
             data-testid="refresh-button"
@@ -240,6 +251,23 @@ export const MediaBrowser: React.FC = () => {
           </Button>
         </div>
       </div>
+
+      {/* Upload Manager */}
+      <AnimatePresence>
+        {showUpload && (
+          <motion.div
+            initial={{ height: 0, opacity: 0 }}
+            animate={{ height: 'auto', opacity: 1 }}
+            exit={{ height: 0, opacity: 0 }}
+            transition={{ duration: 0.3 }}
+            className="overflow-hidden mb-8"
+          >
+            <UploadManager
+              onUpload={async () => { refetch() }}
+            />
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       <div className="flex gap-8">
         {/* Sidebar Filters */}

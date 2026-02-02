@@ -12,7 +12,9 @@ import com.catalogizer.android.data.repository.AuthRepository
 import com.catalogizer.android.data.repository.MediaRepository
 import com.catalogizer.android.data.sync.SyncManager
 import com.catalogizer.android.ui.viewmodel.AuthViewModel
+import com.catalogizer.android.ui.viewmodel.HomeViewModel
 import com.catalogizer.android.ui.viewmodel.MainViewModel
+import com.catalogizer.android.ui.viewmodel.SearchViewModel
 import okhttp3.OkHttpClient
 import okhttp3.logging.HttpLoggingInterceptor
 import retrofit2.Retrofit
@@ -80,6 +82,14 @@ class DependencyContainer(private val context: Context) {
 
     fun createMainViewModel(): MainViewModel {
         return MainViewModel(mediaRepository)
+    }
+
+    fun createHomeViewModel(): HomeViewModel {
+        return HomeViewModel(mediaRepository)
+    }
+
+    fun createSearchViewModel(): SearchViewModel {
+        return SearchViewModel(mediaRepository)
     }
 
     companion object {
