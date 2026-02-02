@@ -1,25 +1,20 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <suppressions xmlns="https://jeremylong.github.io/DependencyCheck/dependency-suppression.1.3.xsd">
-    <!-- Suppress false positives and known safe dependencies -->
+    <!-- Suppress Log4Shell false positive: project does not use Log4j -->
     <suppress>
         <notes><![CDATA[
-        Suppress test dependencies and development tools
+        Log4Shell (CVE-2021-44228) false positive - this project uses zap logger, not Log4j.
         ]]></notes>
         <cve>CVE-2021-44228</cve>
     </suppress>
+
+    <!-- Suppress test-scoped npm vulnerabilities (dev dependencies only) -->
     <suppress>
         <notes><![CDATA[
-        Suppress vulnerabilities in development dependencies only
+        Test/dev npm dependencies are not included in production builds.
+        Applies only to devDependencies used during testing.
         ]]></notes>
-        <packageUrl regex="true">^pkg:npm/.*$</packageUrl>
+        <packageUrl regex="true">^pkg:npm/(jest|@testing-library|vitest|eslint|prettier|@types)(/.*)?@.*$</packageUrl>
         <vulnerabilityName regex="true">.*</vulnerabilityName>
-        <scope>test</scope>
-    </suppress>
-    <suppress>
-        <notes><![CDATA[
-        Suppress known false positives for commonly used libraries
-        ]]></notes>
-        <packageUrl regex="true">^pkg:maven/.*$</packageUrl>
-        <cve regex="true">CVE-2021-</cve>
     </suppress>
 </suppressions>

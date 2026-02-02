@@ -36,6 +36,8 @@ type PendingMove struct {
 	FileID      int64
 }
 
+const maxPendingMoves = 10000 // prevent unbounded map growth
+
 // RenameTracker efficiently detects and handles file/directory renames
 type RenameTracker struct {
 	db              *sql.DB
@@ -90,6 +92,10 @@ func (rt *RenameTracker) TrackDelete(ctx context.Context, fileID int64, path, st
 	key := rt.CreateMoveKey(storageRoot, fileHash, size, isDirectory)
 
 	rt.PendingMovesMu.Lock()
+	// Evict oldest entries if map exceeds size limit
+	if len(rt.PendingMoves) >= maxPendingMoves {
+		rt.evictOldestLocked()
+	}
 	rt.PendingMoves[key] = &PendingMove{
 		Path:        path,
 		StorageRoot: storageRoot,
@@ -351,6 +357,41 @@ func (rt *RenameTracker) cleanupWorker() {
 			rt.cleanupExpiredMoves()
 		}
 	}
+}
+
+// evictOldestLocked removes the oldest 10% of entries when map is full.
+// Must be called with PendingMovesMu held.
+func (rt *RenameTracker) evictOldestLocked() {
+	evictCount := maxPendingMoves / 10
+	if evictCount < 1 {
+		evictCount = 1
+	}
+
+	type entry struct {
+		key       string
+		deletedAt time.Time
+	}
+	entries := make([]entry, 0, len(rt.PendingMoves))
+	for k, v := range rt.PendingMoves {
+		entries = append(entries, entry{key: k, deletedAt: v.DeletedAt})
+	}
+
+	// Sort by DeletedAt ascending (oldest first)
+	for i := 0; i < len(entries)-1; i++ {
+		for j := i + 1; j < len(entries); j++ {
+			if entries[j].deletedAt.Before(entries[i].deletedAt) {
+				entries[i], entries[j] = entries[j], entries[i]
+			}
+		}
+	}
+
+	for i := 0; i < evictCount && i < len(entries); i++ {
+		delete(rt.PendingMoves, entries[i].key)
+	}
+
+	rt.logger.Warn("PendingMoves map reached capacity, evicted oldest entries",
+		zap.Int("evicted", evictCount),
+		zap.Int("max_capacity", maxPendingMoves))
 }
 
 // cleanupExpiredMoves removes pending moves that have exceeded the time window

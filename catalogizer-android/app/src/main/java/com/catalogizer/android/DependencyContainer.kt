@@ -35,7 +35,6 @@ class DependencyContainer(private val context: Context) {
             CatalogizerDatabase::class.java,
             "catalogizer_database"
         )
-            .fallbackToDestructiveMigration()
             .build()
     }
 

@@ -40,7 +40,6 @@ abstract class CatalogizerDatabase : RoomDatabase() {
                     CatalogizerDatabase::class.java,
                     "catalogizer_database"
                 )
-                    .fallbackToDestructiveMigration()
                     .build()
                 INSTANCE = instance
                 instance

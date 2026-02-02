@@ -29,12 +29,15 @@ class DependencyContainer(private val context: Context) {
         }
     }
 
-    // Repositories (created first to avoid circular dependency)
+    // Initialization order: authRepository is created with null API, then api lazy
+    // creates AuthInterceptor (reads authState synchronously) and calls setApi().
+    // The API is guaranteed to be set before any HTTP call because the interceptor
+    // is part of the OkHttp client inside api, so by the time it executes, setApi()
+    // has already been called at the end of the api lazy block.
     val authRepository: AuthRepository by lazy {
-        AuthRepository(context, null) // API will be set later
+        AuthRepository(context, null)
     }
 
-    // API
     private val api: CatalogizerApi by lazy {
         val logging = HttpLoggingInterceptor().apply {
             level = HttpLoggingInterceptor.Level.BODY
@@ -78,6 +81,12 @@ class DependencyContainer(private val context: Context) {
 
     fun createHomeViewModel(): HomeViewModel {
         return HomeViewModel(mediaRepository)
+    }
+
+    // Eagerly initialize the API to resolve the circular dependency early.
+    // Call from Application.onCreate() to fail fast if configuration is wrong.
+    fun initialize() {
+        api // triggers lazy initialization, which also calls authRepository.setApi()
     }
 
     companion object {
