@@ -37,7 +37,7 @@ func TestVideoPlayerSubtitleHandling(t *testing.T) {
 
 	t.Run("LoadVideoWithDefaultSubtitle", func(t *testing.T) {
 		// Insert test video
-		videoID := insertTestVideoForSubtitle(t, db, "Test Movie", "movie")
+		videoID := insertTestVideoForSubtitle(t, db, "Test Movie", "video")
 
 		// Insert test subtitle tracks
 		_ = insertTestSubtitleTrack(t, db, videoID, "en", true, false)  // Default subtitle
@@ -77,7 +77,7 @@ func TestVideoPlayerSubtitleHandling(t *testing.T) {
 
 	t.Run("LoadVideoWithNoDefaultSubtitle", func(t *testing.T) {
 		// Insert test video
-		videoID := insertTestVideoForSubtitle(t, db, "Test Movie 2", "movie")
+		videoID := insertTestVideoForSubtitle(t, db, "Test Movie 2", "video")
 
 		// Insert test subtitle tracks with no default
 		_ = insertTestSubtitleTrack(t, db, videoID, "en", false, false)
@@ -109,7 +109,7 @@ func TestVideoPlayerSubtitleHandling(t *testing.T) {
 
 	t.Run("LoadVideoWithForcedSubtitle", func(t *testing.T) {
 		// Insert test video
-		videoID := insertTestVideoForSubtitle(t, db, "Test Movie 3", "movie")
+		videoID := insertTestVideoForSubtitle(t, db, "Test Movie 3", "video")
 
 		// Insert test subtitle tracks with forced subtitle as first track
 		_ = insertTestSubtitleTrack(t, db, videoID, "fr", false, true)  // Forced subtitle
@@ -182,19 +182,45 @@ func insertTestSubtitleTrack(t *testing.T, db *sql.DB, videoID int64, language s
 func insertTestVideoForSubtitle(t *testing.T, db *sql.DB, title string, videoType string) int64 {
 	query := `
 		INSERT INTO media_items (
-			title, type, duration, file_size, file_path, 
+			path, title, original_title, description, type, duration, file_size, file_path,
+			resolution, aspect_ratio, frame_rate, bitrate, codec, hdr, dolby_vision, dolby_atmos,
+			year, genres, directors, actors, writers, language, country,
+			play_count, is_favorite, watched_percentage, date_added,
 			created_at, updated_at
-		) VALUES (?, ?, ?, ?, ?, ?, ?)
+		) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
 	`
-	
+
+	now := time.Now()
 	result, err := db.Exec(query,
-		title,               // title
-		videoType,           // type
-		7200,                // duration (2 hours)
-		1073741824,          // file_size (1GB)
+		"/path/to/video.mp4", // path (required)
+		title,                // title
+		title,                // original_title (same as title)
+		"Test video description", // description
+		videoType,            // type
+		7200,                 // duration (2 hours in seconds)
+		1073741824,           // file_size (1GB)
 		"/path/to/video.mp4", // file_path
-		time.Now(),           // created_at
-		time.Now(),           // updated_at
+		"1920x1080",          // resolution
+		"16:9",               // aspect_ratio
+		23.976,               // frame_rate
+		8000000,              // bitrate
+		"h264",               // codec
+		false,                // hdr
+		false,                // dolby_vision
+		false,                // dolby_atmos
+		2023,                 // year
+		"[]",                 // genres (JSON array)
+		"[]",                 // directors (JSON array)
+		"[]",                 // actors (JSON array)
+		"[]",                 // writers (JSON array)
+		"en",                 // language
+		"US",                 // country
+		0,                    // play_count
+		false,                // is_favorite
+		0.0,                  // watched_percentage
+		now,                  // date_added
+		now,                  // created_at
+		now,                  // updated_at
 	)
 	require.NoError(t, err)
 
