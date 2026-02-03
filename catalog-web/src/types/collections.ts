@@ -50,7 +50,7 @@ export interface CollectionTemplate {
   icon?: string;
 }
 
-export interface CollectionTemplateRule extends Omit<CollectionRule, 'id'> {}
+export type CollectionTemplateRule = Omit<CollectionRule, 'id'>;
 
 export interface CollectionAnalytics {
   collection_id: string;

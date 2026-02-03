@@ -407,18 +407,127 @@ func (s *SMBService) GetFileSize(hostName, path string) (int64, error) {
 
 // CreateDirectory creates a directory on an SMB host
 func (s *SMBService) CreateDirectory(hostName, path string) error {
-	// This is a stub implementation
-	return fmt.Errorf("CreateDirectory not implemented")
+	session, err := s.getConnection(hostName)
+	if err != nil {
+		return err
+	}
+	defer session.Logoff()
+
+	var smbHost *config.SMBHost
+	for _, host := range s.config.SMB.Hosts {
+		if host.Name == hostName {
+			smbHost = &host
+			break
+		}
+	}
+
+	if smbHost == nil {
+		return fmt.Errorf("SMB host not found: %s", hostName)
+	}
+
+	share, err := session.Mount(smbHost.Share)
+	if err != nil {
+		return fmt.Errorf("failed to mount share: %w", err)
+	}
+	defer share.Umount()
+
+	// Use CreateRemoteDir to create the directory (handles parent directories too)
+	if err := s.CreateRemoteDir(share, path); err != nil {
+		return fmt.Errorf("failed to create directory: %w", err)
+	}
+
+	s.logger.Info("Directory created successfully",
+		zap.String("host", hostName),
+		zap.String("path", path))
+
+	return nil
 }
 
 // DeleteDirectory deletes a directory on an SMB host
 func (s *SMBService) DeleteDirectory(hostName, path string) error {
-	// This is a stub implementation
-	return fmt.Errorf("DeleteDirectory not implemented")
+	session, err := s.getConnection(hostName)
+	if err != nil {
+		return err
+	}
+	defer session.Logoff()
+
+	var smbHost *config.SMBHost
+	for _, host := range s.config.SMB.Hosts {
+		if host.Name == hostName {
+			smbHost = &host
+			break
+		}
+	}
+
+	if smbHost == nil {
+		return fmt.Errorf("SMB host not found: %s", hostName)
+	}
+
+	share, err := session.Mount(smbHost.Share)
+	if err != nil {
+		return fmt.Errorf("failed to mount share: %w", err)
+	}
+	defer share.Umount()
+
+	// Check if the directory exists first
+	stat, err := share.Stat(path)
+	if err != nil {
+		if os.IsNotExist(err) {
+			return fmt.Errorf("directory does not exist: %s", path)
+		}
+		return fmt.Errorf("failed to stat directory: %w", err)
+	}
+
+	if !stat.IsDir() {
+		return fmt.Errorf("path is not a directory: %s", path)
+	}
+
+	// Delete the directory (note: directory must be empty for Remove to work)
+	err = share.Remove(path)
+	if err != nil {
+		return fmt.Errorf("failed to delete directory: %w", err)
+	}
+
+	s.logger.Info("Directory deleted successfully",
+		zap.String("host", hostName),
+		zap.String("path", path))
+
+	return nil
 }
 
 // DirectoryExists checks if a directory exists on an SMB host
 func (s *SMBService) DirectoryExists(hostName, path string) (bool, error) {
-	// This is a stub implementation
-	return false, fmt.Errorf("DirectoryExists not implemented")
+	session, err := s.getConnection(hostName)
+	if err != nil {
+		return false, err
+	}
+	defer session.Logoff()
+
+	var smbHost *config.SMBHost
+	for _, host := range s.config.SMB.Hosts {
+		if host.Name == hostName {
+			smbHost = &host
+			break
+		}
+	}
+
+	if smbHost == nil {
+		return false, fmt.Errorf("SMB host not found: %s", hostName)
+	}
+
+	share, err := session.Mount(smbHost.Share)
+	if err != nil {
+		return false, fmt.Errorf("failed to mount share: %w", err)
+	}
+	defer share.Umount()
+
+	stat, err := share.Stat(path)
+	if err != nil {
+		if os.IsNotExist(err) {
+			return false, nil
+		}
+		return false, fmt.Errorf("failed to stat path: %w", err)
+	}
+
+	return stat.IsDir(), nil
 }

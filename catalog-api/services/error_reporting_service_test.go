@@ -2,6 +2,7 @@ package services
 
 import (
 	"testing"
+	"time"
 
 	"catalogizer/models"
 
@@ -372,4 +373,198 @@ func TestErrorReportingService_SendSlackNotification_EmptyWebhook(t *testing.T) 
 		Message: "test crash",
 	})
 	assert.NoError(t, err) // Should return nil when webhook is empty
+}
+
+func TestErrorReportingService_ExportToCSV_ErrorReports(t *testing.T) {
+	svc := &ErrorReportingService{}
+
+	reports := []interface{}{
+		&models.ErrorReport{
+			ID:          1,
+			UserID:      100,
+			Level:       "error",
+			Message:     "Test error message",
+			ErrorCode:   "ERR001",
+			Component:   "auth",
+			StackTrace:  "at main.go:10",
+			UserAgent:   "Mozilla/5.0",
+			URL:         "https://example.com/test",
+			Fingerprint: "abc123",
+			Status:      "new",
+			ReportedAt:  mustParseTime("2024-01-15T10:30:00Z"),
+			ResolvedAt:  nil,
+		},
+		&models.ErrorReport{
+			ID:          2,
+			UserID:      100,
+			Level:       "warning",
+			Message:     "Test warning message",
+			ErrorCode:   "WARN001",
+			Component:   "db",
+			StackTrace:  "at db.go:20",
+			UserAgent:   "Chrome/120",
+			URL:         "https://example.com/api",
+			Fingerprint: "def456",
+			Status:      "resolved",
+			ReportedAt:  mustParseTime("2024-01-15T11:00:00Z"),
+			ResolvedAt:  timePtr(mustParseTime("2024-01-15T12:00:00Z")),
+		},
+	}
+
+	csvData, err := svc.exportToCSV(reports)
+
+	require.NoError(t, err)
+	require.NotEmpty(t, csvData)
+
+	csvString := string(csvData)
+
+	// Check header
+	assert.Contains(t, csvString, "ID,User ID,Level,Message,Error Code,Component")
+	assert.Contains(t, csvString, "Stack Trace,User Agent,URL,Fingerprint,Status")
+	assert.Contains(t, csvString, "Reported At,Resolved At")
+
+	// Check first row data
+	assert.Contains(t, csvString, "1,100,error,Test error message,ERR001,auth")
+
+	// Check second row data
+	assert.Contains(t, csvString, "2,100,warning,Test warning message,WARN001,db")
+}
+
+func TestErrorReportingService_ExportToCSV_CrashReports(t *testing.T) {
+	svc := &ErrorReportingService{}
+
+	reports := []interface{}{
+		&models.CrashReport{
+			ID:          1,
+			UserID:      100,
+			Signal:      "SIGSEGV",
+			Message:     "Segmentation fault",
+			StackTrace:  "at main.go:50",
+			Fingerprint: "crash123",
+			Status:      "new",
+			ReportedAt:  mustParseTime("2024-01-15T10:30:00Z"),
+			ResolvedAt:  nil,
+		},
+	}
+
+	csvData, err := svc.exportToCSV(reports)
+
+	require.NoError(t, err)
+	require.NotEmpty(t, csvData)
+
+	csvString := string(csvData)
+
+	// Check header
+	assert.Contains(t, csvString, "ID,User ID,Signal,Message,Stack Trace")
+	assert.Contains(t, csvString, "Fingerprint,Status,Reported At,Resolved At")
+
+	// Check data
+	assert.Contains(t, csvString, "1,100,SIGSEGV,Segmentation fault")
+}
+
+func TestErrorReportingService_ExportToCSV_EmptyReports(t *testing.T) {
+	svc := &ErrorReportingService{}
+
+	reports := []interface{}{}
+
+	csvData, err := svc.exportToCSV(reports)
+
+	require.NoError(t, err)
+	assert.Empty(t, csvData)
+}
+
+func TestErrorReportingService_ExportToCSV_WithNewlines(t *testing.T) {
+	svc := &ErrorReportingService{}
+
+	reports := []interface{}{
+		&models.ErrorReport{
+			ID:          1,
+			UserID:      100,
+			Level:       "error",
+			Message:     "Error with\nnewline",
+			ErrorCode:   "ERR001",
+			Component:   "test",
+			StackTrace:  "Line 1\r\nLine 2\nLine 3",
+			UserAgent:   "Test",
+			URL:         "https://example.com",
+			Fingerprint: "abc123",
+			Status:      "new",
+			ReportedAt:  mustParseTime("2024-01-15T10:30:00Z"),
+		},
+	}
+
+	csvData, err := svc.exportToCSV(reports)
+
+	require.NoError(t, err)
+	require.NotEmpty(t, csvData)
+
+	csvString := string(csvData)
+
+	// Newlines should be replaced with spaces
+	assert.Contains(t, csvString, "Error with newline")
+	assert.Contains(t, csvString, "Line 1 Line 2 Line 3")
+}
+
+func TestEscapeCSVField(t *testing.T) {
+	tests := []struct {
+		name     string
+		input    string
+		expected string
+	}{
+		{
+			name:     "no special characters",
+			input:    "normal text",
+			expected: "normal text",
+		},
+		{
+			name:     "with newline",
+			input:    "line1\nline2",
+			expected: "line1 line2",
+		},
+		{
+			name:     "with carriage return",
+			input:    "line1\rline2",
+			expected: "line1 line2",
+		},
+		{
+			name:     "with CRLF",
+			input:    "line1\r\nline2",
+			expected: "line1 line2",
+		},
+		{
+			name:     "with tab",
+			input:    "col1\tcol2",
+			expected: "col1 col2",
+		},
+		{
+			name:     "multiple special chars",
+			input:    "a\nb\r\nc\td",
+			expected: "a b c d",
+		},
+		{
+			name:     "empty string",
+			input:    "",
+			expected: "",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			result := escapeCSVField(tt.input)
+			assert.Equal(t, tt.expected, result)
+		})
+	}
+}
+
+// Helper functions for tests
+func mustParseTime(s string) time.Time {
+	t, err := time.Parse(time.RFC3339, s)
+	if err != nil {
+		panic(err)
+	}
+	return t
+}
+
+func timePtr(t time.Time) *time.Time {
+	return &t
 }

@@ -512,7 +512,7 @@ export const SubtitleManager: React.FC = () => {
         >
           <h2 className="text-xl font-semibold mb-4 flex items-center gap-2">
             <Languages className="w-5 h-5" />
-            Subtitles for "{selectedMedia.title}"
+            Subtitles for &quot;{selectedMedia.title}&quot;
           </h2>
 
           {isLoadingMediaSubtitles ? (

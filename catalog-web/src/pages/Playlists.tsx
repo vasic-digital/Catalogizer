@@ -27,7 +27,9 @@ import { PlaylistPlayer } from '../components/playlists/PlaylistPlayer';
 import { PlaylistItemComponent } from '../components/playlists/PlaylistItem';
 import { SmartPlaylistBuilder } from '../components/playlists/SmartPlaylistBuilder';
 import { playlistsApi } from '../lib/playlistsApi';
+import { mediaApi } from '../lib/mediaApi';
 import { usePlaylists } from '../hooks/usePlaylists';
+import type { MediaItem } from '../types/media';
 import { Playlist, PlaylistItem, CreatePlaylistRequest, UpdatePlaylistRequest, flattenPlaylistItem, getMediaIconWithMap, PlaylistCreateRequest } from '../types/playlists';
 import { toast } from 'react-hot-toast';
 
@@ -59,6 +61,11 @@ export const PlaylistsPage: React.FC = () => {
   const [selectedPlaylist, setSelectedPlaylist] = useState<Playlist | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [filterMediaType, setFilterMediaType] = useState('all');
+
+  // Media item search state
+  const [mediaSearchQuery, setMediaSearchQuery] = useState('');
+  const [mediaSearchResults, setMediaSearchResults] = useState<MediaItem[]>([]);
+  const [isSearchingMedia, setIsSearchingMedia] = useState(false);
 
   // Form state for creating/editing playlists
   const [formData, setFormData] = useState<CreatePlaylistFormData>({
@@ -187,6 +194,64 @@ export const PlaylistsPage: React.FC = () => {
     }
   };
 
+  // Media item search function
+  const handleMediaSearch = async () => {
+    if (!mediaSearchQuery.trim()) {
+      setMediaSearchResults([]);
+      return;
+    }
+
+    setIsSearchingMedia(true);
+    try {
+      const response = await mediaApi.searchMedia({
+        query: mediaSearchQuery,
+        limit: 20
+      });
+      setMediaSearchResults(response.items || []);
+    } catch (error) {
+      console.error('Failed to search media:', error);
+      toast.error('Failed to search media items');
+      setMediaSearchResults([]);
+    } finally {
+      setIsSearchingMedia(false);
+    }
+  };
+
+  // Add media item to playlist
+  const handleAddMediaToPlaylist = (media: MediaItem) => {
+    // Check if already added
+    if (formData.selectedItems.some(item => item.media_id === media.id)) {
+      toast.error('This item is already in the playlist');
+      return;
+    }
+
+    const newItem: PlaylistItem = {
+      id: `temp-${Date.now()}`,
+      playlist_id: editingPlaylist?.id || '',
+      media_id: media.id,
+      position: formData.selectedItems.length,
+      added_at: new Date().toISOString(),
+      media_item: {
+        id: media.id,
+        title: media.title,
+        media_type: media.media_type,
+        year: media.year,
+        cover_image: media.cover_image,
+        duration: media.duration,
+        rating: media.rating,
+        quality: media.quality,
+        file_path: media.directory_path,
+        thumbnail_url: media.cover_image
+      }
+    };
+
+    setFormData(prev => ({
+      ...prev,
+      selectedItems: [...prev.selectedItems, newItem]
+    }));
+    toast.success(`Added "${media.title}" to playlist`);
+  };
+
   const resetForm = () => {
     setFormData({
       name: '',
@@ -194,6 +259,8 @@ export const PlaylistsPage: React.FC = () => {
       is_public: false,
       selectedItems: []
     });
+    setMediaSearchQuery('');
+    setMediaSearchResults([]);
   };
 
   const handleFormChange = (field: keyof CreatePlaylistFormData, value: any) => {
@@ -338,15 +405,67 @@ export const PlaylistsPage: React.FC = () => {
                 <Input
                   placeholder="Search media items..."
                   className="flex-1"
-                  // TODO: Implement media item search
+                  value={mediaSearchQuery}
+                  onChange={(e) => setMediaSearchQuery(e.target.value)}
+                  onKeyDown={(e) => e.key === 'Enter' && handleMediaSearch()}
                 />
-                <Button variant="outline">
+                <Button
+                  variant="outline"
+                  onClick={handleMediaSearch}
+                  disabled={isSearchingMedia}
+                >
                   <Search className="w-4 h-4" />
                 </Button>
               </div>
-              <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                Media item search will be available in the next update
-              </p>
+
+              {/* Search Results */}
+              {mediaSearchResults.length > 0 && (
+                <div className="mt-3 max-h-48 overflow-y-auto border border-gray-200 dark:border-gray-700 rounded-lg">
+                  {mediaSearchResults.map((media) => {
+                    const isAdded = formData.selectedItems.some(item => item.media_id === media.id);
+                    const MediaIcon = MEDIA_TYPE_ICONS[media.media_type as keyof typeof MEDIA_TYPE_ICONS] || FileText;
+                    return (
+                      <div
+                        key={media.id}
+                        className={`flex items-center justify-between p-2 hover:bg-gray-50 dark:hover:bg-gray-800 border-b border-gray-100 dark:border-gray-700 last:border-b-0 ${
+                          isAdded ? 'bg-green-50 dark:bg-green-900/20' : ''
+                        }`}
+                      >
+                        <div className="flex items-center gap-2 flex-1 min-w-0">
+                          <MediaIcon className="w-4 h-4 text-gray-500 flex-shrink-0" />
+                          <div className="min-w-0">
+                            <div className="text-sm font-medium truncate">{media.title}</div>
+                            <div className="text-xs text-gray-500">
+                              {media.media_type} {media.year && `• ${media.year}`}
+                            </div>
+                          </div>
+                        </div>
+                        <Button
+                          size="sm"
+                          variant={isAdded ? 'ghost' : 'outline'}
+                          onClick={() => handleAddMediaToPlaylist(media)}
+                          disabled={isAdded}
+                          className="flex-shrink-0 ml-2"
+                        >
+                          {isAdded ? '✓ Added' : <Plus className="w-4 h-4" />}
+                        </Button>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+
+              {isSearchingMedia && (
+                <p className="text-xs text-gray-500 dark:text-gray-400 mt-2">
+                  Searching...
+                </p>
+              )}
+
+              {mediaSearchQuery && !isSearchingMedia && mediaSearchResults.length === 0 && (
+                <p className="text-xs text-gray-500 dark:text-gray-400 mt-2">
+                  No results found. Try a different search term.
+                </p>
+              )}
             </div>
           </div>
 

@@ -128,22 +128,24 @@ export const PlaylistGrid: React.FC<PlaylistGridProps> = ({
   const handlePlaylistAction = async (playlist: Playlist, action: string) => {
     try {
       switch (action) {
-        case 'play':
-          const items = await playlistApi.getPlaylistItems(playlist.id);
+        case 'play': {
+          const _items = await playlistApi.getPlaylistItems(playlist.id);
           setSelectedPlaylist(playlist);
           setShowPlayer(true);
           toast.success(`Playing ${playlist.name}`);
           break;
-        
-        case 'shuffle':
-          const shuffleItems = await playlistApi.getPlaylistItems(playlist.id);
+        }
+
+        case 'shuffle': {
+          const _shuffleItems = await playlistApi.getPlaylistItems(playlist.id);
           await playlistApi.shufflePlaylist(playlist.id);
           setSelectedPlaylist(playlist);
           setShowPlayer(true);
           toast.success(`Shuffling ${playlist.name}`);
           break;
-        
-        case 'duplicate':
+        }
+
+        case 'duplicate': {
           const duplicateName = `${playlist.name} (Copy)`;
           const duplicate = await playlistApi.createPlaylist({
             name: duplicateName,
@@ -154,16 +156,18 @@ export const PlaylistGrid: React.FC<PlaylistGridProps> = ({
           toast.success(`Playlist duplicated as ${duplicate.name}`);
           refetchPlaylists();
           break;
-        
-        case 'toggle_public':
+        }
+
+        case 'toggle_public': {
           const updated = await playlistApi.updatePlaylist(playlist.id, {
             is_public: !playlist.is_public
           });
           toast.success(`Playlist is now ${updated.is_public ? 'public' : 'private'}`);
           refetchPlaylists();
           break;
-        
-        case 'export':
+        }
+
+        case 'export': {
           const exportData = await playlistApi.exportPlaylist(playlist.id);
           const blob = new Blob([JSON.stringify(exportData, null, 2)], {
             type: 'application/json'
@@ -178,6 +182,7 @@ export const PlaylistGrid: React.FC<PlaylistGridProps> = ({
           URL.revokeObjectURL(url);
           toast.success(`Exported ${playlist.name}`);
           break;
+        }
         
         case 'share':
           if (navigator.share) {
@@ -242,7 +247,7 @@ export const PlaylistGrid: React.FC<PlaylistGridProps> = ({
           }
           break;
         
-        case 'export':
+        case 'export': {
           const selectedPlaylists = playlists.filter(p => selectedItems.has(p.id));
           const exportData = {
             playlists: selectedPlaylists,
@@ -262,6 +267,7 @@ export const PlaylistGrid: React.FC<PlaylistGridProps> = ({
           URL.revokeObjectURL(url);
           toast.success(`Exported ${selectedItems.size} playlists`);
           break;
+        }
       }
     } catch (error) {
       console.error(`Failed to ${action} playlists:`, error);

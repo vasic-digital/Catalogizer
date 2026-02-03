@@ -97,7 +97,7 @@ podman run / podman build / podman ps  # instead of docker equivalents
 
 ## Constraints
 
-**GitHub Actions MUST remain DISABLED.** All workflow files in `.github/workflows/` must have the `.disabled` extension. Do NOT enable, rename, or create active GitHub Actions workflow files. CI/CD must be run locally or through other means.
+**GitHub Actions are PERMANENTLY DISABLED.** All workflow files have been deleted from `.github/workflows/`. Do NOT create any GitHub Actions workflow files (*.yml, *.yaml) in this directory. CI/CD, security scanning, and automated builds must be run locally using the commands documented below.
 
 ## Local Development Setup
 

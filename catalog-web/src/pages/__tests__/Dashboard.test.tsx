@@ -10,11 +10,15 @@ vi.mock('@/contexts/AuthContext', async () => ({
   useAuth: vi.fn(),
 }))
 
-vi.mock('framer-motion', async () => ({
-  motion: {
-    div: ({ children, ...props }: any) => <div {...props}>{children}</div>,
-  },
-}))
+vi.mock('framer-motion', async () => {
+  const MockMotionDiv = ({ children, ...props }: any) => <div {...props}>{children}</div>
+  MockMotionDiv.displayName = 'MockMotionDiv'
+  return {
+    motion: {
+      div: MockMotionDiv,
+    },
+  }
+})
 
 vi.mock('lucide-react', async () => {
   const icon = (name: string) => {

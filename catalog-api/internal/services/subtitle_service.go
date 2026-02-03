@@ -587,14 +587,264 @@ func (s *SubtitleService) parseSRT(content string) ([]SubtitleLine, error) {
 	return lines, nil
 }
 
-func (s *SubtitleService) parseVTT(content string) (interface{}, error) {
-	// WebVTT parser implementation
-	return nil, fmt.Errorf("VTT parsing not implemented")
+func (s *SubtitleService) parseVTT(content string) ([]SubtitleLine, error) {
+	var lines []SubtitleLine
+
+	// WebVTT format:
+	// WEBVTT
+	//
+	// [optional cue identifier]
+	// 00:00:01.000 --> 00:00:03.000 [optional settings]
+	// Text content
+	//
+	// Timestamps can be either HH:MM:SS.mmm or MM:SS.mmm
+
+	// Remove BOM if present
+	content = strings.TrimPrefix(content, "\xef\xbb\xbf")
+
+	// Check for WEBVTT header
+	if !strings.HasPrefix(strings.TrimSpace(content), "WEBVTT") {
+		return nil, fmt.Errorf("invalid WebVTT: missing WEBVTT header")
+	}
+
+	// Split by blank lines to get cues
+	// WebVTT uses blank lines to separate cues
+	cueBlocks := regexp.MustCompile(`\n\s*\n`).Split(content, -1)
+
+	// VTT timestamp pattern - supports both HH:MM:SS.mmm and MM:SS.mmm formats
+	// Also handles optional cue settings after the timestamp
+	timestampPattern := regexp.MustCompile(`(?:(\d{2}):)?(\d{2}):(\d{2})\.(\d{3})\s*-->\s*(?:(\d{2}):)?(\d{2}):(\d{2})\.(\d{3})(?:\s+.*)?`)
+
+	index := 0
+	for _, block := range cueBlocks {
+		block = strings.TrimSpace(block)
+		if block == "" || strings.HasPrefix(block, "WEBVTT") || strings.HasPrefix(block, "NOTE") {
+			continue
+		}
+
+		blockLines := strings.Split(block, "\n")
+		if len(blockLines) < 2 {
+			continue
+		}
+
+		// Find the timestamp line (may be first or second line if there's an identifier)
+		timestampLineIdx := 0
+		for i, line := range blockLines {
+			if timestampPattern.MatchString(line) {
+				timestampLineIdx = i
+				break
+			}
+		}
+
+		if timestampLineIdx >= len(blockLines) {
+			continue
+		}
+
+		timestampLine := blockLines[timestampLineIdx]
+		matches := timestampPattern.FindStringSubmatch(timestampLine)
+		if len(matches) < 9 {
+			continue
+		}
+
+		// Parse start time
+		startHours := 0
+		if matches[1] != "" {
+			startHours, _ = strconv.Atoi(matches[1])
+		}
+		startMinutes, _ := strconv.Atoi(matches[2])
+		startSeconds, _ := strconv.Atoi(matches[3])
+		startMillis, _ := strconv.Atoi(matches[4])
+
+		// Parse end time
+		endHours := 0
+		if matches[5] != "" {
+			endHours, _ = strconv.Atoi(matches[5])
+		}
+		endMinutes, _ := strconv.Atoi(matches[6])
+		endSeconds, _ := strconv.Atoi(matches[7])
+		endMillis, _ := strconv.Atoi(matches[8])
+
+		// Format timestamps as SRT-compatible format (HH:MM:SS,mmm)
+		startTime := fmt.Sprintf("%02d:%02d:%02d,%03d", startHours, startMinutes, startSeconds, startMillis)
+		endTime := fmt.Sprintf("%02d:%02d:%02d,%03d", endHours, endMinutes, endSeconds, endMillis)
+
+		// Get text content (everything after the timestamp line)
+		var textLines []string
+		for i := timestampLineIdx + 1; i < len(blockLines); i++ {
+			line := blockLines[i]
+			// Strip VTT-specific tags like <v Speaker>, <c.classname>, etc.
+			line = regexp.MustCompile(`<[^>]+>`).ReplaceAllString(line, "")
+			if strings.TrimSpace(line) != "" {
+				textLines = append(textLines, strings.TrimSpace(line))
+			}
+		}
+
+		if len(textLines) == 0 {
+			continue
+		}
+
+		index++
+		lines = append(lines, SubtitleLine{
+			Index:     index,
+			StartTime: startTime,
+			EndTime:   endTime,
+			Text:      strings.Join(textLines, "\n"),
+		})
+	}
+
+	if len(lines) == 0 {
+		return nil, fmt.Errorf("no valid subtitle cues found in WebVTT content")
+	}
+
+	return lines, nil
 }
 
-func (s *SubtitleService) parseASS(content string) (interface{}, error) {
-	// ASS/SSA parser implementation
-	return nil, fmt.Errorf("ASS parsing not implemented")
+func (s *SubtitleService) parseASS(content string) ([]SubtitleLine, error) {
+	var lines []SubtitleLine
+
+	// ASS/SSA format:
+	// [Script Info]
+	// ...
+	// [V4+ Styles] or [V4 Styles]
+	// ...
+	// [Events]
+	// Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text
+	// Dialogue: 0,0:00:01.00,0:00:03.00,Default,,0,0,0,,Text here
+
+	// Remove BOM if present
+	content = strings.TrimPrefix(content, "\xef\xbb\xbf")
+
+	// Find the [Events] section
+	eventsIdx := strings.Index(strings.ToLower(content), "[events]")
+	if eventsIdx == -1 {
+		return nil, fmt.Errorf("invalid ASS/SSA: missing [Events] section")
+	}
+
+	eventsSection := content[eventsIdx:]
+
+	// Find the Format line to understand the field order
+	formatLine := ""
+	contentLines := strings.Split(eventsSection, "\n")
+	for _, line := range contentLines {
+		line = strings.TrimSpace(line)
+		if strings.HasPrefix(strings.ToLower(line), "format:") {
+			formatLine = line
+			break
+		}
+	}
+
+	// Parse format to find text field position
+	textFieldIndex := 9 // Default position for Text field
+	if formatLine != "" {
+		formatFields := strings.Split(strings.TrimPrefix(formatLine, "Format:"), ",")
+		formatFields = strings.Split(strings.TrimPrefix(strings.ToLower(formatLine), "format:"), ",")
+		for i, field := range formatFields {
+			if strings.TrimSpace(field) == "text" {
+				textFieldIndex = i
+				break
+			}
+		}
+	}
+
+	// ASS timestamp pattern: H:MM:SS.cc (centiseconds, not milliseconds)
+	dialoguePattern := regexp.MustCompile(`(?i)^Dialogue:\s*(.*)$`)
+
+	index := 0
+	for _, line := range contentLines {
+		line = strings.TrimSpace(line)
+		matches := dialoguePattern.FindStringSubmatch(line)
+		if matches == nil {
+			continue
+		}
+
+		// Split fields - but text field can contain commas, so we need to be careful
+		fieldsStr := matches[1]
+		fields := make([]string, 0)
+
+		// Split only up to textFieldIndex, then take the rest as text
+		currentField := ""
+		fieldCount := 0
+		for _, char := range fieldsStr {
+			if char == ',' && fieldCount < textFieldIndex {
+				fields = append(fields, currentField)
+				currentField = ""
+				fieldCount++
+			} else {
+				currentField += string(char)
+			}
+		}
+		// Add the last field (text)
+		fields = append(fields, currentField)
+
+		if len(fields) < 3 {
+			continue
+		}
+
+		// Parse timestamps (format: H:MM:SS.cc)
+		startTime, err := parseASSTimestamp(strings.TrimSpace(fields[1]))
+		if err != nil {
+			continue
+		}
+		endTime, err := parseASSTimestamp(strings.TrimSpace(fields[2]))
+		if err != nil {
+			continue
+		}
+
+		// Get text field
+		text := ""
+		if len(fields) > textFieldIndex {
+			text = fields[textFieldIndex]
+		}
+
+		// Clean ASS formatting codes
+		// Remove override tags like {\an8}, {\pos(x,y)}, {\b1}, etc.
+		text = regexp.MustCompile(`\{[^}]*\}`).ReplaceAllString(text, "")
+		// Replace \N and \n with actual newlines
+		text = strings.ReplaceAll(text, "\\N", "\n")
+		text = strings.ReplaceAll(text, "\\n", "\n")
+		// Replace \h with non-breaking space (treat as regular space)
+		text = strings.ReplaceAll(text, "\\h", " ")
+		text = strings.TrimSpace(text)
+
+		if text == "" {
+			continue
+		}
+
+		index++
+		lines = append(lines, SubtitleLine{
+			Index:     index,
+			StartTime: startTime,
+			EndTime:   endTime,
+			Text:      text,
+		})
+	}
+
+	if len(lines) == 0 {
+		return nil, fmt.Errorf("no valid dialogue entries found in ASS/SSA content")
+	}
+
+	return lines, nil
+}
+
+// parseASSTimestamp converts ASS timestamp (H:MM:SS.cc) to SRT format (HH:MM:SS,mmm)
+func parseASSTimestamp(timestamp string) (string, error) {
+	// ASS format: H:MM:SS.cc (hours can be single digit, centiseconds not milliseconds)
+	re := regexp.MustCompile(`(\d+):(\d{2}):(\d{2})\.(\d{2})`)
+	matches := re.FindStringSubmatch(timestamp)
+
+	if len(matches) != 5 {
+		return "", fmt.Errorf("invalid ASS timestamp format: %s", timestamp)
+	}
+
+	hours, _ := strconv.Atoi(matches[1])
+	minutes, _ := strconv.Atoi(matches[2])
+	seconds, _ := strconv.Atoi(matches[3])
+	centiseconds, _ := strconv.Atoi(matches[4])
+
+	// Convert centiseconds to milliseconds
+	milliseconds := centiseconds * 10
+
+	return fmt.Sprintf("%02d:%02d:%02d,%03d", hours, minutes, seconds, milliseconds), nil
 }
 
 func parseTimestamp(timestamp string) (float64, error) {

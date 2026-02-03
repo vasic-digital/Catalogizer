@@ -303,7 +303,7 @@ export const useMemoryOptimization = () => {
 }
 
 // Debounced search hook
-export const useDebouncedSearch = (searchTerm: string, delay: number = 300) => {
+export const useDebouncedSearch = (searchTerm: string, delay = 300) => {
   const [debouncedTerm, setDebouncedTerm] = useState(searchTerm)
 
   useEffect(() => {

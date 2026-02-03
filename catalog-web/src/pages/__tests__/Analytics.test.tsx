@@ -12,11 +12,15 @@ vi.mock('@/lib/mediaApi', async () => ({
   },
 }))
 
-vi.mock('framer-motion', async () => ({
-  motion: {
-    div: ({ children, ...props }: any) => <div {...props}>{children}</div>,
-  },
-}))
+vi.mock('framer-motion', async () => {
+  const MockMotionDiv = ({ children, ...props }: any) => <div {...props}>{children}</div>
+  MockMotionDiv.displayName = 'MockMotionDiv'
+  return {
+    motion: {
+      div: MockMotionDiv,
+    },
+  }
+})
 
 vi.mock('recharts', async () => ({
   ResponsiveContainer: ({ children }: any) => <div data-testid="responsive-container">{children}</div>,

@@ -1,6 +1,5 @@
-import React, { useState, useEffect, useCallback, useMemo } from 'react';
-import { Zap, Target, TrendingUp, BarChart3, Settings, RefreshCw, Lightbulb, Calendar, Users, Activity } from 'lucide-react';
-import { debounce } from 'lodash';
+import React, { useState, useEffect, useCallback } from 'react';
+import { Zap, Target, TrendingUp, BarChart3, Settings, RefreshCw, Lightbulb, Activity } from 'lucide-react';
 
 // Types for AI analytics and predictions
 interface UserBehaviorPattern {
@@ -64,7 +63,7 @@ interface AIOrganizationSuggestion {
 
 // Mock AI analytics service
 class AIAnalyticsService {
-  private static delay(ms: number = 800): Promise<void> {
+  private static delay(ms = 800): Promise<void> {
     return new Promise(resolve => setTimeout(resolve, ms));
   }
 

@@ -1,6 +1,5 @@
-import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { Search, Brain, Lightbulb, Tag, Grid, Folder, Sparkles, TrendingUp } from 'lucide-react';
-import { debounce } from 'lodash';
 
 // Types for AI-powered suggestions
 interface AISuggestion {
@@ -43,7 +42,7 @@ interface AISearchQuery {
 // Mock AI service for demonstration
 class AIService {
   // Simulate AI processing delay
-  private static delay(ms: number = 800): Promise<void> {
+  private static delay(ms = 800): Promise<void> {
     return new Promise(resolve => setTimeout(resolve, ms));
   }
 

@@ -353,7 +353,7 @@ export const CollectionTemplates: React.FC<CollectionTemplatesProps> = ({
   const [showAdvanced, setShowAdvanced] = useState(false);
 
   const filteredTemplates = useMemo(() => {
-    let filtered = COLLECTION_TEMPLATES.filter(template => {
+    const filtered = COLLECTION_TEMPLATES.filter(template => {
       const matchesCategory = selectedCategory === 'all' || template.category === selectedCategory;
       const matchesSearch = !searchQuery || 
         template.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -370,9 +370,10 @@ export const CollectionTemplates: React.FC<CollectionTemplatesProps> = ({
           return (b.metrics?.popularity || 0) - (a.metrics?.popularity || 0);
         case 'name':
           return a.name.localeCompare(b.name);
-        case 'complexity':
+        case 'complexity': {
           const complexityOrder = { simple: 1, medium: 2, advanced: 3 };
           return complexityOrder[a.metrics?.complexity || 'simple'] - complexityOrder[b.metrics?.complexity || 'simple'];
+        }
         case 'updated':
           return (b.metrics?.lastUpdated || '').localeCompare(a.metrics?.lastUpdated || '');
         default:

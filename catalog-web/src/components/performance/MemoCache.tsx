@@ -78,18 +78,20 @@ export const useMemoized = <T,>(
   ttl = 300000
 ): T => {
   const cacheKey = key || dependencies.map(dep => String(dep)).join('|');
-  
+
+  // Always call useMemo first (hooks must be called unconditionally)
+  const computedValue = useMemo(computation, dependencies);
+
   // Try to get from cache first
   const cachedValue = globalCache.get(cacheKey);
   if (cachedValue !== null) {
     return cachedValue;
   }
 
-  // Compute and cache
-  const value = useMemo(computation, dependencies);
-  globalCache.set(cacheKey, value, ttl);
-  
-  return value;
+  // Cache and return the computed value
+  globalCache.set(cacheKey, computedValue, ttl);
+
+  return computedValue;
 };
 
 // Debounced search hook
@@ -273,7 +275,7 @@ export const useIntersectionObserver = (
 export const usePagination = <T,>(
   data: T[],
   itemsPerPage: number,
-  currentPage: number = 1
+  currentPage = 1
 ) => {
   const [page, setPage] = useState(currentPage);
   const cacheKey = `pagination-${page}-${itemsPerPage}`;

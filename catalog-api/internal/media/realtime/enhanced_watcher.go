@@ -437,6 +437,14 @@ func (w *EnhancedChangeWatcher) handleCreate(ctx context.Context, event Enhanced
 
 // handleCreateNew handles creation of a genuinely new file/directory
 func (w *EnhancedChangeWatcher) handleCreateNew(ctx context.Context, event EnhancedChangeEvent) {
+	// Skip analysis if no analyzer is configured (e.g., in tests)
+	if w.analyzer == nil {
+		w.logger.Debug("Skipping analysis for new file/directory (no analyzer configured)",
+			zap.String("path", event.Path),
+			zap.Bool("is_dir", event.IsDir))
+		return
+	}
+
 	if event.IsDir {
 		// Directory creation - trigger directory analysis
 		err := w.analyzer.AnalyzeDirectory(ctx, event.Path, event.SmbRoot, 7) // High priority

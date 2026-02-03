@@ -1,12 +1,12 @@
 import { SmartCollection, CollectionRule, CreateCollectionRequest, UpdateCollectionRequest, CollectionAnalytics, ShareCollectionRequest, CollectionShareInfo, Collection, CollectionTemplate } from '../types/collections';
 import { api } from './api';
-import { mockCollectionsApi, useMockCollections } from './mockCollectionsApi';
+import { mockCollectionsApi, shouldUseMockCollections } from './mockCollectionsApi';
 
 class CollectionsApi {
   private baseUrl = '/api/collections';
 
   private async tryApiCall<T>(apiCall: () => Promise<T>, mockCall: () => Promise<T>): Promise<T> {
-    if (useMockCollections()) {
+    if (shouldUseMockCollections()) {
       return mockCall();
     }
     

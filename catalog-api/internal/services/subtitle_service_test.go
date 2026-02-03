@@ -403,6 +403,420 @@ func TestGenerateSubtitleID(t *testing.T) {
 	assert.Contains(t, id2, "sub_")
 }
 
+func TestSubtitleService_ParseVTT(t *testing.T) {
+	mockDB := &sql.DB{}
+	mockLogger := zap.NewNop()
+	mockCache := &MockCacheService{}
+
+	service := NewSubtitleService(mockDB, mockLogger, mockCache)
+
+	// Test basic VTT parsing
+	vttContent := `WEBVTT
+
+00:00:01.000 --> 00:00:04.000
+Hello world
+
+00:00:05.000 --> 00:00:08.000
+This is a test
+`
+
+	lines, err := service.parseVTT(vttContent)
+
+	assert.NoError(t, err)
+	assert.NotNil(t, lines)
+	assert.Equal(t, 2, len(lines))
+	assert.Equal(t, 1, lines[0].Index)
+	assert.Equal(t, "00:00:01,000", lines[0].StartTime)
+	assert.Equal(t, "00:00:04,000", lines[0].EndTime)
+	assert.Equal(t, "Hello world", lines[0].Text)
+	assert.Equal(t, 2, lines[1].Index)
+	assert.Equal(t, "00:00:05,000", lines[1].StartTime)
+	assert.Equal(t, "00:00:08,000", lines[1].EndTime)
+	assert.Equal(t, "This is a test", lines[1].Text)
+}
+
+func TestSubtitleService_ParseVTT_WithCueIdentifiers(t *testing.T) {
+	mockDB := &sql.DB{}
+	mockLogger := zap.NewNop()
+	mockCache := &MockCacheService{}
+
+	service := NewSubtitleService(mockDB, mockLogger, mockCache)
+
+	// Test VTT with cue identifiers
+	vttContent := `WEBVTT
+
+cue-1
+00:00:01.000 --> 00:00:04.000
+First line
+
+cue-2
+00:00:05.000 --> 00:00:08.000
+Second line
+`
+
+	lines, err := service.parseVTT(vttContent)
+
+	assert.NoError(t, err)
+	assert.NotNil(t, lines)
+	assert.Equal(t, 2, len(lines))
+	assert.Equal(t, "First line", lines[0].Text)
+	assert.Equal(t, "Second line", lines[1].Text)
+}
+
+func TestSubtitleService_ParseVTT_WithCueSettings(t *testing.T) {
+	mockDB := &sql.DB{}
+	mockLogger := zap.NewNop()
+	mockCache := &MockCacheService{}
+
+	service := NewSubtitleService(mockDB, mockLogger, mockCache)
+
+	// Test VTT with cue settings (position, align, etc.)
+	vttContent := `WEBVTT
+
+00:00:01.000 --> 00:00:04.000 line:0 position:50% align:center
+Centered text
+
+00:00:05.000 --> 00:00:08.000 vertical:rl
+Vertical text
+`
+
+	lines, err := service.parseVTT(vttContent)
+
+	assert.NoError(t, err)
+	assert.NotNil(t, lines)
+	assert.Equal(t, 2, len(lines))
+	assert.Equal(t, "Centered text", lines[0].Text)
+	assert.Equal(t, "Vertical text", lines[1].Text)
+}
+
+func TestSubtitleService_ParseVTT_WithTags(t *testing.T) {
+	mockDB := &sql.DB{}
+	mockLogger := zap.NewNop()
+	mockCache := &MockCacheService{}
+
+	service := NewSubtitleService(mockDB, mockLogger, mockCache)
+
+	// Test VTT with voice tags and formatting
+	vttContent := `WEBVTT
+
+00:00:01.000 --> 00:00:04.000
+<v Speaker1>Hello there
+
+00:00:05.000 --> 00:00:08.000
+<c.highlighted>Important text</c>
+`
+
+	lines, err := service.parseVTT(vttContent)
+
+	assert.NoError(t, err)
+	assert.NotNil(t, lines)
+	assert.Equal(t, 2, len(lines))
+	// Tags should be stripped
+	assert.Equal(t, "Hello there", lines[0].Text)
+	assert.Equal(t, "Important text", lines[1].Text)
+}
+
+func TestSubtitleService_ParseVTT_ShortTimestamps(t *testing.T) {
+	mockDB := &sql.DB{}
+	mockLogger := zap.NewNop()
+	mockCache := &MockCacheService{}
+
+	service := NewSubtitleService(mockDB, mockLogger, mockCache)
+
+	// Test VTT with MM:SS.mmm format (no hours)
+	vttContent := `WEBVTT
+
+01:23.000 --> 01:27.000
+Short timestamp format
+`
+
+	lines, err := service.parseVTT(vttContent)
+
+	assert.NoError(t, err)
+	assert.NotNil(t, lines)
+	assert.Equal(t, 1, len(lines))
+	assert.Equal(t, "00:01:23,000", lines[0].StartTime)
+	assert.Equal(t, "00:01:27,000", lines[0].EndTime)
+}
+
+func TestSubtitleService_ParseVTT_MissingHeader(t *testing.T) {
+	mockDB := &sql.DB{}
+	mockLogger := zap.NewNop()
+	mockCache := &MockCacheService{}
+
+	service := NewSubtitleService(mockDB, mockLogger, mockCache)
+
+	// Test VTT without WEBVTT header (invalid)
+	vttContent := `00:00:01.000 --> 00:00:04.000
+Invalid VTT
+`
+
+	_, err := service.parseVTT(vttContent)
+
+	assert.Error(t, err)
+	assert.Contains(t, err.Error(), "missing WEBVTT header")
+}
+
+func TestSubtitleService_ParseVTT_EmptyCues(t *testing.T) {
+	mockDB := &sql.DB{}
+	mockLogger := zap.NewNop()
+	mockCache := &MockCacheService{}
+
+	service := NewSubtitleService(mockDB, mockLogger, mockCache)
+
+	// Test VTT with only header, no cues
+	vttContent := `WEBVTT
+
+NOTE This is a comment
+`
+
+	_, err := service.parseVTT(vttContent)
+
+	assert.Error(t, err)
+	assert.Contains(t, err.Error(), "no valid subtitle cues found")
+}
+
+func TestSubtitleService_ParseASS(t *testing.T) {
+	mockDB := &sql.DB{}
+	mockLogger := zap.NewNop()
+	mockCache := &MockCacheService{}
+
+	service := NewSubtitleService(mockDB, mockLogger, mockCache)
+
+	// Test basic ASS parsing
+	assContent := `[Script Info]
+ScriptType: v4.00+
+PlayResX: 384
+PlayResY: 288
+
+[V4+ Styles]
+Format: Name, Fontname, Fontsize, PrimaryColour, SecondaryColour, OutlineColour, BackColour, Bold, Italic, Underline, StrikeOut, ScaleX, ScaleY, Spacing, Angle, BorderStyle, Outline, Shadow, Alignment, MarginL, MarginR, MarginV, Encoding
+Style: Default,Arial,20,&H00FFFFFF,&H0000FFFF,&H00000000,&H00000000,0,0,0,0,100,100,0,0,1,1,0,2,10,10,10,1
+
+[Events]
+Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text
+Dialogue: 0,0:00:01.00,0:00:04.00,Default,,0,0,0,,Hello world
+Dialogue: 0,0:00:05.00,0:00:08.00,Default,,0,0,0,,This is a test
+`
+
+	lines, err := service.parseASS(assContent)
+
+	assert.NoError(t, err)
+	assert.NotNil(t, lines)
+	assert.Equal(t, 2, len(lines))
+	assert.Equal(t, 1, lines[0].Index)
+	assert.Equal(t, "00:00:01,000", lines[0].StartTime)
+	assert.Equal(t, "00:00:04,000", lines[0].EndTime)
+	assert.Equal(t, "Hello world", lines[0].Text)
+	assert.Equal(t, 2, lines[1].Index)
+	assert.Equal(t, "00:00:05,000", lines[1].StartTime)
+	assert.Equal(t, "00:00:08,000", lines[1].EndTime)
+	assert.Equal(t, "This is a test", lines[1].Text)
+}
+
+func TestSubtitleService_ParseASS_WithFormattingCodes(t *testing.T) {
+	mockDB := &sql.DB{}
+	mockLogger := zap.NewNop()
+	mockCache := &MockCacheService{}
+
+	service := NewSubtitleService(mockDB, mockLogger, mockCache)
+
+	// Test ASS with override tags
+	assContent := `[Events]
+Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text
+Dialogue: 0,0:00:01.00,0:00:04.00,Default,,0,0,0,,{\an8}Top aligned text
+Dialogue: 0,0:00:05.00,0:00:08.00,Default,,0,0,0,,{\b1}Bold text{\b0}
+Dialogue: 0,0:00:09.00,0:00:12.00,Default,,0,0,0,,{\pos(192,144)}Positioned text
+`
+
+	lines, err := service.parseASS(assContent)
+
+	assert.NoError(t, err)
+	assert.NotNil(t, lines)
+	assert.Equal(t, 3, len(lines))
+	// Formatting codes should be stripped
+	assert.Equal(t, "Top aligned text", lines[0].Text)
+	assert.Equal(t, "Bold text", lines[1].Text)
+	assert.Equal(t, "Positioned text", lines[2].Text)
+}
+
+func TestSubtitleService_ParseASS_WithNewlines(t *testing.T) {
+	mockDB := &sql.DB{}
+	mockLogger := zap.NewNop()
+	mockCache := &MockCacheService{}
+
+	service := NewSubtitleService(mockDB, mockLogger, mockCache)
+
+	// Test ASS with \N and \n newlines
+	assContent := `[Events]
+Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text
+Dialogue: 0,0:00:01.00,0:00:04.00,Default,,0,0,0,,Line 1\NLine 2
+Dialogue: 0,0:00:05.00,0:00:08.00,Default,,0,0,0,,Line A\nLine B
+`
+
+	lines, err := service.parseASS(assContent)
+
+	assert.NoError(t, err)
+	assert.NotNil(t, lines)
+	assert.Equal(t, 2, len(lines))
+	assert.Contains(t, lines[0].Text, "\n")
+	assert.Equal(t, "Line 1\nLine 2", lines[0].Text)
+	assert.Equal(t, "Line A\nLine B", lines[1].Text)
+}
+
+func TestSubtitleService_ParseASS_WithCommasInText(t *testing.T) {
+	mockDB := &sql.DB{}
+	mockLogger := zap.NewNop()
+	mockCache := &MockCacheService{}
+
+	service := NewSubtitleService(mockDB, mockLogger, mockCache)
+
+	// Test ASS with commas in the text field
+	assContent := `[Events]
+Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text
+Dialogue: 0,0:00:01.00,0:00:04.00,Default,,0,0,0,,Hello, how are you?
+Dialogue: 0,0:00:05.00,0:00:08.00,Default,,0,0,0,,Yes, I am fine, thank you!
+`
+
+	lines, err := service.parseASS(assContent)
+
+	assert.NoError(t, err)
+	assert.NotNil(t, lines)
+	assert.Equal(t, 2, len(lines))
+	assert.Equal(t, "Hello, how are you?", lines[0].Text)
+	assert.Equal(t, "Yes, I am fine, thank you!", lines[1].Text)
+}
+
+func TestSubtitleService_ParseASS_MissingEvents(t *testing.T) {
+	mockDB := &sql.DB{}
+	mockLogger := zap.NewNop()
+	mockCache := &MockCacheService{}
+
+	service := NewSubtitleService(mockDB, mockLogger, mockCache)
+
+	// Test ASS without [Events] section
+	assContent := `[Script Info]
+ScriptType: v4.00+
+`
+
+	_, err := service.parseASS(assContent)
+
+	assert.Error(t, err)
+	assert.Contains(t, err.Error(), "missing [Events] section")
+}
+
+func TestSubtitleService_ParseASS_EmptyDialogues(t *testing.T) {
+	mockDB := &sql.DB{}
+	mockLogger := zap.NewNop()
+	mockCache := &MockCacheService{}
+
+	service := NewSubtitleService(mockDB, mockLogger, mockCache)
+
+	// Test ASS with empty dialogue entries
+	assContent := `[Events]
+Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text
+Comment: This is a comment
+`
+
+	_, err := service.parseASS(assContent)
+
+	assert.Error(t, err)
+	assert.Contains(t, err.Error(), "no valid dialogue entries found")
+}
+
+func TestSubtitleService_ParseASS_Timestamp(t *testing.T) {
+	// Test ASS timestamp parsing (H:MM:SS.cc format)
+	tests := []struct {
+		timestamp string
+		expected  string
+		hasError  bool
+	}{
+		{"0:00:01.00", "00:00:01,000", false},
+		{"0:01:23.45", "00:01:23,450", false},
+		{"1:02:03.99", "01:02:03,990", false},
+		{"12:34:56.78", "12:34:56,780", false},
+		{"invalid", "", true},
+		{"", "", true},
+	}
+
+	for _, test := range tests {
+		result, err := parseASSTimestamp(test.timestamp)
+		if test.hasError {
+			assert.Error(t, err, "Expected error for timestamp: %s", test.timestamp)
+		} else {
+			assert.NoError(t, err, "Expected no error for timestamp: %s", test.timestamp)
+			assert.Equal(t, test.expected, result, "Incorrect parsing for timestamp: %s", test.timestamp)
+		}
+	}
+}
+
+func TestSubtitleService_ParseSubtitle_VTT(t *testing.T) {
+	mockDB := &sql.DB{}
+	mockLogger := zap.NewNop()
+	mockCache := &MockCacheService{}
+
+	service := NewSubtitleService(mockDB, mockLogger, mockCache)
+
+	vttContent := `WEBVTT
+
+00:00:01.000 --> 00:00:04.000
+Test VTT subtitle
+`
+
+	result, err := service.parseSubtitle(vttContent, "vtt")
+	assert.NoError(t, err)
+	assert.NotNil(t, result)
+
+	lines, ok := result.([]SubtitleLine)
+	assert.True(t, ok)
+	assert.Equal(t, 1, len(lines))
+	assert.Equal(t, "Test VTT subtitle", lines[0].Text)
+}
+
+func TestSubtitleService_ParseSubtitle_ASS(t *testing.T) {
+	mockDB := &sql.DB{}
+	mockLogger := zap.NewNop()
+	mockCache := &MockCacheService{}
+
+	service := NewSubtitleService(mockDB, mockLogger, mockCache)
+
+	assContent := `[Events]
+Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text
+Dialogue: 0,0:00:01.00,0:00:04.00,Default,,0,0,0,,Test ASS subtitle
+`
+
+	result, err := service.parseSubtitle(assContent, "ass")
+	assert.NoError(t, err)
+	assert.NotNil(t, result)
+
+	lines, ok := result.([]SubtitleLine)
+	assert.True(t, ok)
+	assert.Equal(t, 1, len(lines))
+	assert.Equal(t, "Test ASS subtitle", lines[0].Text)
+}
+
+func TestSubtitleService_ParseSubtitle_SSA(t *testing.T) {
+	mockDB := &sql.DB{}
+	mockLogger := zap.NewNop()
+	mockCache := &MockCacheService{}
+
+	service := NewSubtitleService(mockDB, mockLogger, mockCache)
+
+	ssaContent := `[Events]
+Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text
+Dialogue: 0,0:00:01.00,0:00:04.00,Default,,0,0,0,,Test SSA subtitle
+`
+
+	result, err := service.parseSubtitle(ssaContent, "ssa")
+	assert.NoError(t, err)
+	assert.NotNil(t, result)
+
+	lines, ok := result.([]SubtitleLine)
+	assert.True(t, ok)
+	assert.Equal(t, 1, len(lines))
+	assert.Equal(t, "Test SSA subtitle", lines[0].Text)
+}
+
 // Helper functions for tests
 func stringPtr(s string) *string {
 	return &s

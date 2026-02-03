@@ -20,14 +20,19 @@ expect.extend({
 })
 
 // Mock framer-motion to avoid issues in test environment
-vi.mock('framer-motion', async () => ({
-  motion: {
-    div: React.forwardRef(({ children, ...props }: any, ref: any) => (
-      <div ref={ref} {...props}>{children}</div>
-    )),
-  },
-  AnimatePresence: ({ children }: any) => <>{children}</>,
-}))
+vi.mock('framer-motion', async () => {
+  const MockMotionDiv = React.forwardRef<HTMLDivElement, any>(({ children, ...props }, ref) => (
+    <div ref={ref} {...props}>{children}</div>
+  ))
+  MockMotionDiv.displayName = 'MockMotionDiv'
+
+  return {
+    motion: {
+      div: MockMotionDiv,
+    },
+    AnimatePresence: ({ children }: { children: React.ReactNode }) => <>{children}</>,
+  }
+})
 
 // Mock lucide-react icons used across components
 vi.mock('lucide-react', async () => {
@@ -167,7 +172,7 @@ describe('Accessibility Tests', () => {
             { value: 'game', label: 'Game' },
           ]}
           value="movie"
-          onChange={() => {}}
+          onChange={vi.fn()}
         />
       )
       const results = await axe(container)
@@ -176,7 +181,7 @@ describe('Accessibility Tests', () => {
 
     it('should have no accessibility violations with children options', async () => {
       const { container } = render(
-        <Select aria-label="Sort order" value="asc" onChange={() => {}}>
+        <Select aria-label="Sort order" value="asc" onChange={vi.fn()}>
           <option value="asc">Ascending</option>
           <option value="desc">Descending</option>
         </Select>
@@ -211,7 +216,7 @@ describe('Accessibility Tests', () => {
           Enable notifications
           <Switch
             checked={false}
-            onCheckedChange={() => {}}
+            onCheckedChange={vi.fn()}
           />
         </label>
       )
@@ -225,7 +230,7 @@ describe('Accessibility Tests', () => {
           Dark mode
           <Switch
             checked={true}
-            onCheckedChange={() => {}}
+            onCheckedChange={vi.fn()}
           />
         </label>
       )

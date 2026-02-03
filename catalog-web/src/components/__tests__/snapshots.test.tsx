@@ -2,14 +2,19 @@ import React from 'react'
 import { render } from '@testing-library/react'
 
 // Mock framer-motion to avoid issues in test environment
-vi.mock('framer-motion', async () => ({
-  motion: {
-    div: React.forwardRef(({ children, ...props }: any, ref: any) => (
-      <div ref={ref} {...props}>{children}</div>
-    )),
-  },
-  AnimatePresence: ({ children }: any) => <>{children}</>,
-}))
+vi.mock('framer-motion', async () => {
+  const MockMotionDiv = React.forwardRef<HTMLDivElement, any>(({ children, ...props }, ref) => (
+    <div ref={ref} {...props}>{children}</div>
+  ))
+  MockMotionDiv.displayName = 'MockMotionDiv'
+
+  return {
+    motion: {
+      div: MockMotionDiv,
+    },
+    AnimatePresence: ({ children }: { children: React.ReactNode }) => <>{children}</>,
+  }
+})
 
 // Mock lucide-react icons used across components
 vi.mock('lucide-react', async () => {
@@ -159,7 +164,7 @@ describe('Snapshot Tests', () => {
             { value: 'game', label: 'Game' },
           ]}
           value="movie"
-          onChange={() => {}}
+          onChange={vi.fn()}
         />
       )
       expect(container).toMatchSnapshot()
@@ -191,14 +196,14 @@ describe('Snapshot Tests', () => {
   describe('Switch', () => {
     it('renders unchecked', () => {
       const { container } = render(
-        <Switch checked={false} onCheckedChange={() => {}} />
+        <Switch checked={false} onCheckedChange={vi.fn()} />
       )
       expect(container).toMatchSnapshot()
     })
 
     it('renders checked', () => {
       const { container } = render(
-        <Switch checked={true} onCheckedChange={() => {}} />
+        <Switch checked={true} onCheckedChange={vi.fn()} />
       )
       expect(container).toMatchSnapshot()
     })

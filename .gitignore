@@ -136,6 +136,12 @@ src-tauri/Cargo.lock
 coverage/
 *.lcov
 
+# Playwright
+playwright-report/
+playwright/.cache/
+test-results/
+.playwright/
+
 # Rust
 target/
 Cargo.lock# Build files

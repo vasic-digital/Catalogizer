@@ -438,11 +438,117 @@ func (r *StressTestRepository) DeleteTest(id int) error {
 }
 
 func (r *StressTestRepository) SaveResult(result *models.StressTestResult) error {
-	// This would need a table for results, but for now just return nil
-	return nil
+	// Results are stored in executions, so we create/update an execution entry
+	execution := &models.StressTestExecution{
+		StressTestID: result.TestID,
+		Status:       result.Status,
+		StartedAt:    &result.StartTime,
+		CompletedAt:  result.EndTime,
+		Metrics: map[string]interface{}{
+			"total_requests":       result.Metrics.TotalRequests,
+			"successful_requests":  result.Metrics.SuccessfulRequests,
+			"failed_requests":      result.Metrics.FailedRequests,
+			"avg_response_time_ns": int64(result.Metrics.AverageResponseTime),
+			"min_response_time_ns": int64(result.Metrics.MinResponseTime),
+			"max_response_time_ns": int64(result.Metrics.MaxResponseTime),
+			"p95_response_time_ns": int64(result.Metrics.P95ResponseTime),
+			"p99_response_time_ns": int64(result.Metrics.P99ResponseTime),
+			"requests_per_second":  result.Metrics.RequestsPerSecond,
+			"error_rate":           result.Metrics.ErrorRate,
+			"throughput":           result.Metrics.Throughput,
+		},
+		Results: models.StressTestExecutionResults{
+			TotalRequests:       result.TotalRequests,
+			SuccessfulRequests:  result.SuccessfulReqs,
+			FailedRequests:      result.FailedRequests,
+			AverageResponseTime: result.AvgResponseTime,
+			MinResponseTime:     result.MinResponseTime,
+			MaxResponseTime:     result.MaxResponseTime,
+			ErrorRate:           result.ErrorRate,
+			Throughput:          result.RequestsPerSecond,
+		},
+		ErrorMessage: result.ErrorMessage,
+	}
+	return r.CreateExecution(execution)
 }
 
 func (r *StressTestRepository) GetResult(testID int) (*models.StressTestResult, error) {
-	// This would need a table for results, but for now return nil
-	return nil, fmt.Errorf("not implemented")
+	// Get the latest execution for this test
+	executions, err := r.GetExecutionsByTestID(testID)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get executions: %w", err)
+	}
+
+	if len(executions) == 0 {
+		return nil, fmt.Errorf("no results found for test %d", testID)
+	}
+
+	// Get the most recent execution (last in list)
+	execution := executions[len(executions)-1]
+
+	// Build StressTestResult from execution
+	result := &models.StressTestResult{
+		TestID:       execution.StressTestID,
+		Status:       execution.Status,
+		ErrorMessage: execution.ErrorMessage,
+	}
+
+	if execution.StartedAt != nil {
+		result.StartTime = *execution.StartedAt
+	}
+	result.EndTime = execution.CompletedAt
+	result.CompletedAt = execution.CompletedAt
+
+	if execution.CompletedAt != nil && execution.StartedAt != nil {
+		result.Duration = execution.CompletedAt.Sub(*execution.StartedAt)
+	}
+
+	// Extract from Results struct
+	result.TotalRequests = execution.Results.TotalRequests
+	result.SuccessfulReqs = execution.Results.SuccessfulRequests
+	result.FailedRequests = execution.Results.FailedRequests
+	result.AvgResponseTime = execution.Results.AverageResponseTime
+	result.MinResponseTime = execution.Results.MinResponseTime
+	result.MaxResponseTime = execution.Results.MaxResponseTime
+	result.ErrorRate = execution.Results.ErrorRate
+	result.RequestsPerSecond = execution.Results.Throughput
+
+	// Extract metrics from map
+	if execution.Metrics != nil {
+		if v, ok := execution.Metrics["total_requests"].(float64); ok {
+			result.Metrics.TotalRequests = int64(v)
+		}
+		if v, ok := execution.Metrics["successful_requests"].(float64); ok {
+			result.Metrics.SuccessfulRequests = int64(v)
+		}
+		if v, ok := execution.Metrics["failed_requests"].(float64); ok {
+			result.Metrics.FailedRequests = int64(v)
+		}
+		if v, ok := execution.Metrics["avg_response_time_ns"].(float64); ok {
+			result.Metrics.AverageResponseTime = time.Duration(v)
+		}
+		if v, ok := execution.Metrics["min_response_time_ns"].(float64); ok {
+			result.Metrics.MinResponseTime = time.Duration(v)
+		}
+		if v, ok := execution.Metrics["max_response_time_ns"].(float64); ok {
+			result.Metrics.MaxResponseTime = time.Duration(v)
+		}
+		if v, ok := execution.Metrics["p95_response_time_ns"].(float64); ok {
+			result.Metrics.P95ResponseTime = time.Duration(v)
+		}
+		if v, ok := execution.Metrics["p99_response_time_ns"].(float64); ok {
+			result.Metrics.P99ResponseTime = time.Duration(v)
+		}
+		if v, ok := execution.Metrics["requests_per_second"].(float64); ok {
+			result.Metrics.RequestsPerSecond = v
+		}
+		if v, ok := execution.Metrics["error_rate"].(float64); ok {
+			result.Metrics.ErrorRate = v
+		}
+		if v, ok := execution.Metrics["throughput"].(float64); ok {
+			result.Metrics.Throughput = v
+		}
+	}
+
+	return result, nil
 }

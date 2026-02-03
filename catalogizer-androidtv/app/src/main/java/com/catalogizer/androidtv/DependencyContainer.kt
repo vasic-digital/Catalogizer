@@ -8,9 +8,12 @@ import androidx.datastore.preferences.preferencesDataStoreFile
 import com.catalogizer.androidtv.data.remote.CatalogizerApi
 import com.catalogizer.androidtv.data.repository.AuthRepository
 import com.catalogizer.androidtv.data.repository.MediaRepository
+import com.catalogizer.androidtv.data.repository.SettingsRepository
 import com.catalogizer.androidtv.ui.viewmodel.AuthViewModel
 import com.catalogizer.androidtv.ui.viewmodel.HomeViewModel
 import com.catalogizer.androidtv.ui.viewmodel.MainViewModel
+import com.catalogizer.androidtv.ui.viewmodel.SettingsViewModel
+import com.catalogizer.androidtv.ui.screens.search.SearchViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.ViewModelStoreOwner
 import com.catalogizer.androidtv.data.remote.AuthInterceptor
@@ -70,6 +73,10 @@ class DependencyContainer(private val context: Context) {
         MediaRepository(context, api)
     }
 
+    val settingsRepository: SettingsRepository by lazy {
+        SettingsRepository(dataStore)
+    }
+
     // ViewModels
     fun createAuthViewModel(): AuthViewModel {
         return AuthViewModel(authRepository)
@@ -81,6 +88,14 @@ class DependencyContainer(private val context: Context) {
 
     fun createHomeViewModel(): HomeViewModel {
         return HomeViewModel(mediaRepository)
+    }
+
+    fun createSettingsViewModel(): SettingsViewModel {
+        return SettingsViewModel(settingsRepository)
+    }
+
+    fun createSearchViewModel(): SearchViewModel {
+        return SearchViewModel(mediaRepository)
     }
 
     // Eagerly initialize the API to resolve the circular dependency early.

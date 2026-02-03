@@ -303,7 +303,7 @@ export const mockCollectionsApi = {
 };
 
 // Helper function to determine if we should use mock API
-export const useMockCollections = () => {
+export const shouldUseMockCollections = () => {
   // Use mock API when backend doesn't have collections endpoints
   return true;
 };

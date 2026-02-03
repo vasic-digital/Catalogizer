@@ -39,6 +39,11 @@ export const MediaGrid: React.FC<MediaGridProps> = ({
   showActions = true,
   className = ''
 }) => {
+  // Always call hooks at the top level, before any early returns
+  const gridCols = useMemo(() => viewMode === 'grid'
+    ? 'grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6'
+    : 'grid-cols-1', [viewMode])
+
   if (loading) {
     return (
       <div className={`grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-6 ${className}`}>
@@ -74,10 +79,6 @@ export const MediaGrid: React.FC<MediaGridProps> = ({
       </div>
     )
   }
-
-  const gridCols = useMemo(() => viewMode === 'grid'
-    ? 'grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6'
-    : 'grid-cols-1', [viewMode])
 
   return (
     <div className={`grid ${gridCols} gap-6 ${className}`}>

@@ -598,7 +598,7 @@ describe('WebSocketClient', () => {
     })
 
     it('attempts reconnect after WebSocket constructor throws', () => {
-      ;(global as any).WebSocket = class ThrowingWebSocket {
+      (global as any).WebSocket = class ThrowingWebSocket {
         static CONNECTING = 0
         static OPEN = 1
         static CLOSING = 2

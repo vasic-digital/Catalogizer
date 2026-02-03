@@ -42,15 +42,27 @@ const TabsContext = React.createContext<{
   onValueChange?: (value: string) => void
 }>({})
 
-const Tabs: React.FC<TabsProps> = ({ 
-  tabs, 
-  activeTab, 
+const Tabs: React.FC<TabsProps> = ({
+  tabs,
+  activeTab,
   onChangeTab,
-  children, 
-  defaultValue, 
-  value: controlledValue, 
-  onValueChange 
+  children,
+  defaultValue,
+  value: controlledValue,
+  onValueChange
 }) => {
+  // Always call hooks at the top level
+  const [internalValue, setInternalValue] = React.useState(defaultValue || '')
+  const isControlled = controlledValue !== undefined
+  const currentValue = isControlled ? controlledValue : internalValue
+
+  const handleValueChange = React.useCallback((newValue: string) => {
+    if (!isControlled) {
+      setInternalValue(newValue)
+    }
+    onValueChange?.(newValue)
+  }, [isControlled, onValueChange])
+
   // Support simple tabs mode
   if (tabs && activeTab && onChangeTab) {
     return (
@@ -61,7 +73,7 @@ const Tabs: React.FC<TabsProps> = ({
             onClick={() => onChangeTab(tab.id)}
             className={`inline-flex items-center justify-center whitespace-nowrap rounded-sm px-3 py-1.5 text-sm font-medium transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 ${
               activeTab === tab.id
-                ? "bg-white dark:bg-gray-700 text-gray-900 dark:text-white shadow-sm" 
+                ? "bg-white dark:bg-gray-700 text-gray-900 dark:text-white shadow-sm"
                 : "hover:bg-gray-200 dark:hover:bg-gray-700 hover:text-gray-900 dark:hover:text-white"
             }`}
           >
@@ -73,17 +85,6 @@ const Tabs: React.FC<TabsProps> = ({
   }
 
   // Support complex tabs with children
-  const [internalValue, setInternalValue] = React.useState(defaultValue || '')
-  const isControlled = controlledValue !== undefined
-  const currentValue = isControlled ? controlledValue : internalValue
-
-  const handleValueChange = (newValue: string) => {
-    if (!isControlled) {
-      setInternalValue(newValue)
-    }
-    onValueChange?.(newValue)
-  }
-
   return (
     <TabsContext.Provider value={{ value: currentValue, onValueChange: handleValueChange }}>
       {children}

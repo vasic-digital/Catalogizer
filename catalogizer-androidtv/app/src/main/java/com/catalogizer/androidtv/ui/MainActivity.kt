@@ -13,6 +13,7 @@ import androidx.tv.material3.Surface
 import com.catalogizer.androidtv.CatalogizerTVApplication
 import com.catalogizer.androidtv.ui.navigation.TVNavigation
 import com.catalogizer.androidtv.ui.theme.CatalogizerTVTheme
+import com.catalogizer.androidtv.ui.screens.search.SearchViewModel
 import com.catalogizer.androidtv.ui.viewmodel.AuthViewModel
 import com.catalogizer.androidtv.ui.viewmodel.HomeViewModel
 import com.catalogizer.androidtv.ui.viewmodel.MainViewModel
@@ -22,6 +23,7 @@ class MainActivity : ComponentActivity() {
     private lateinit var authViewModel: AuthViewModel
     private lateinit var mainViewModel: MainViewModel
     private lateinit var homeViewModel: HomeViewModel
+    private lateinit var searchViewModel: SearchViewModel
 
     @OptIn(ExperimentalTvMaterial3Api::class)
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -32,6 +34,7 @@ class MainActivity : ComponentActivity() {
         authViewModel = dependencyContainer.createAuthViewModel()
         mainViewModel = dependencyContainer.createMainViewModel()
         homeViewModel = dependencyContainer.createHomeViewModel()
+        searchViewModel = dependencyContainer.createSearchViewModel()
 
         setContent {
             CatalogizerTVTheme {
@@ -41,7 +44,8 @@ class MainActivity : ComponentActivity() {
                     CatalogizerTVApp(
                         authViewModel = authViewModel,
                         mainViewModel = mainViewModel,
-                        homeViewModel = homeViewModel
+                        homeViewModel = homeViewModel,
+                        searchViewModel = searchViewModel
                     )
                 }
             }
@@ -53,7 +57,8 @@ class MainActivity : ComponentActivity() {
 fun CatalogizerTVApp(
     authViewModel: AuthViewModel,
     mainViewModel: MainViewModel,
-    homeViewModel: HomeViewModel
+    homeViewModel: HomeViewModel,
+    searchViewModel: SearchViewModel
 ) {
     val authState by authViewModel.authState.collectAsStateWithLifecycle()
     val isLoading by mainViewModel.isLoading.collectAsStateWithLifecycle()
@@ -67,7 +72,8 @@ fun CatalogizerTVApp(
         TVNavigation(
             isAuthenticated = authState.isAuthenticated,
             authViewModel = authViewModel,
-            homeViewModel = homeViewModel
+            homeViewModel = homeViewModel,
+            searchViewModel = searchViewModel
         )
     }
 }

@@ -344,7 +344,7 @@ export const CollectionPreview: React.FC<CollectionPreviewProps> = ({
                   No items found
                 </h3>
                 <p className="text-gray-500 dark:text-gray-400">
-                  This collection doesn't have any items yet.
+                  This collection doesn&apos;t have any items yet.
                 </p>
               </div>
             )}

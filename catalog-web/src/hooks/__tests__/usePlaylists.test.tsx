@@ -296,7 +296,7 @@ describe('usePlaylists', () => {
     })
 
     it('does not delete when user cancels confirmation', async () => {
-      ;(window.confirm as vi.Mock).mockReturnValue(false)
+      (window.confirm as vi.Mock).mockReturnValue(false)
 
       const { Wrapper } = createWrapper()
       const { result } = renderHook(() => usePlaylists(), { wrapper: Wrapper })

@@ -1,6 +1,5 @@
-import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { Brain, Zap, Search, TrendingUp, Settings, Sparkles, FileText, Image, Video, Music, Download, Share } from 'lucide-react';
-import { debounce } from 'lodash';
 
 // Types for AI metadata extraction and automation
 interface ExtractedMetadata {
@@ -79,7 +78,7 @@ interface SmartContent {
 
 // Mock AI service for metadata extraction and automation
 class AIMetadataService {
-  private static delay(ms: number = 600): Promise<void> {
+  private static delay(ms = 600): Promise<void> {
     return new Promise(resolve => setTimeout(resolve, ms));
   }
 

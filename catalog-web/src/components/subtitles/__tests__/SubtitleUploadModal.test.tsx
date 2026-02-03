@@ -36,7 +36,7 @@ const defaultProps = {
   mediaId: 42,
 }
 
-function createFile(name: string, size: number = 1024): File {
+function createFile(name: string, size = 1024): File {
   const content = new Array(size).fill('a').join('')
   return new File([content], name, { type: 'text/plain' })
 }

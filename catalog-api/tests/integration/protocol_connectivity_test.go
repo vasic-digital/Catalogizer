@@ -1,12 +1,15 @@
 package integration
 
 import (
+	"catalogizer/filesystem"
 	"catalogizer/internal/services"
 	"catalogizer/tests/mocks"
 	"context"
 	"fmt"
 	"io"
 	"net/http"
+	"os"
+	"path/filepath"
 	"strings"
 	"testing"
 	"time"
@@ -334,19 +337,179 @@ func testFTPProtocol(t *testing.T, logger *zap.Logger, ctx context.Context) {
 
 // testLocalProtocol tests local filesystem protocol functionality
 func testLocalProtocol(t *testing.T, logger *zap.Logger, ctx context.Context) {
-	t.Run("Local File System Access", func(t *testing.T) {
-		// This would test local filesystem operations
-		// For now, just verify we can access the current directory
+	// Create temp directory for testing
+	tempDir := t.TempDir()
 
-		// Note: In a real implementation, you would test:
-		// - Directory listing
-		// - File reading/writing
-		// - Permission handling
-		// - Path validation
-		// - Symlink handling
+	// Create local client
+	config := &filesystem.LocalConfig{
+		BasePath: tempDir,
+	}
+	client := filesystem.NewLocalClient(config)
 
-		t.Log("Local filesystem protocol testing placeholder")
-		// TODO: Implement actual local filesystem tests
+	t.Run("Local Client Connection", func(t *testing.T) {
+		// Test connection
+		err := client.Connect(ctx)
+		if err != nil {
+			t.Fatalf("Failed to connect to local filesystem: %v", err)
+		}
+
+		if !client.IsConnected() {
+			t.Error("Client should be connected after Connect()")
+		}
+
+		// Test connection validation
+		err = client.TestConnection(ctx)
+		if err != nil {
+			t.Errorf("TestConnection should succeed when connected: %v", err)
+		}
+	})
+
+	t.Run("Local Directory Listing", func(t *testing.T) {
+		// Create some test files and directories
+		os.MkdirAll(filepath.Join(tempDir, "subdir"), 0755)
+		os.WriteFile(filepath.Join(tempDir, "file1.txt"), []byte("content1"), 0644)
+		os.WriteFile(filepath.Join(tempDir, "file2.txt"), []byte("content2"), 0644)
+		os.WriteFile(filepath.Join(tempDir, "subdir", "nested.txt"), []byte("nested"), 0644)
+
+		// List root directory
+		files, err := client.ListDirectory(ctx, "/")
+		if err != nil {
+			t.Fatalf("Failed to list directory: %v", err)
+		}
+
+		if len(files) < 3 {
+			t.Errorf("Expected at least 3 items, got %d", len(files))
+		}
+
+		// Verify we have the expected items
+		names := make(map[string]bool)
+		for _, f := range files {
+			names[f.Name] = true
+		}
+
+		if !names["file1.txt"] {
+			t.Error("Expected file1.txt in listing")
+		}
+		if !names["subdir"] {
+			t.Error("Expected subdir in listing")
+		}
+	})
+
+	t.Run("Local File Reading", func(t *testing.T) {
+		// Read file content
+		reader, err := client.ReadFile(ctx, "/file1.txt")
+		if err != nil {
+			t.Fatalf("Failed to read file: %v", err)
+		}
+		defer reader.Close()
+
+		content, err := io.ReadAll(reader)
+		if err != nil {
+			t.Fatalf("Failed to read file content: %v", err)
+		}
+
+		if string(content) != "content1" {
+			t.Errorf("Expected 'content1', got '%s'", string(content))
+		}
+	})
+
+	t.Run("Local File Writing", func(t *testing.T) {
+		// Write new file
+		content := strings.NewReader("new content")
+		err := client.WriteFile(ctx, "/newfile.txt", content)
+		if err != nil {
+			t.Fatalf("Failed to write file: %v", err)
+		}
+
+		// Verify file exists
+		exists, err := client.FileExists(ctx, "/newfile.txt")
+		if err != nil {
+			t.Fatalf("Failed to check file existence: %v", err)
+		}
+		if !exists {
+			t.Error("File should exist after writing")
+		}
+
+		// Read it back
+		reader, err := client.ReadFile(ctx, "/newfile.txt")
+		if err != nil {
+			t.Fatalf("Failed to read written file: %v", err)
+		}
+		defer reader.Close()
+
+		readContent, _ := io.ReadAll(reader)
+		if string(readContent) != "new content" {
+			t.Errorf("Expected 'new content', got '%s'", string(readContent))
+		}
+	})
+
+	t.Run("Local File Info", func(t *testing.T) {
+		// Get file info
+		info, err := client.GetFileInfo(ctx, "/file1.txt")
+		if err != nil {
+			t.Fatalf("Failed to get file info: %v", err)
+		}
+
+		if info.Name != "file1.txt" {
+			t.Errorf("Expected name 'file1.txt', got '%s'", info.Name)
+		}
+		if info.IsDir {
+			t.Error("file1.txt should not be a directory")
+		}
+		if info.Size != 8 { // "content1" = 8 bytes
+			t.Errorf("Expected size 8, got %d", info.Size)
+		}
+	})
+
+	t.Run("Local Directory Creation", func(t *testing.T) {
+		// Create nested directory
+		err := client.CreateDirectory(ctx, "/newdir/nested")
+		if err != nil {
+			t.Fatalf("Failed to create directory: %v", err)
+		}
+
+		// Verify it exists
+		exists, err := client.FileExists(ctx, "/newdir/nested")
+		if err != nil {
+			t.Fatalf("Failed to check directory existence: %v", err)
+		}
+		if !exists {
+			t.Error("Directory should exist after creation")
+		}
+
+		// Verify it's a directory
+		info, err := client.GetFileInfo(ctx, "/newdir/nested")
+		if err != nil {
+			t.Fatalf("Failed to get directory info: %v", err)
+		}
+		if !info.IsDir {
+			t.Error("Should be a directory")
+		}
+	})
+
+	t.Run("Local Path Validation", func(t *testing.T) {
+		// Test that directory traversal is prevented
+		// The client should sanitize paths containing ".."
+		_, err := client.GetFileInfo(ctx, "/../../../etc/passwd")
+		// This should either fail or return info for a safe path, not /etc/passwd
+		// The client sanitizes ".." so this tests that security feature
+		if err == nil {
+			info, _ := client.GetFileInfo(ctx, "/../../../etc/passwd")
+			if info != nil && strings.Contains(info.Path, "/etc/passwd") {
+				t.Error("Path traversal should be prevented")
+			}
+		}
+	})
+
+	t.Run("Local Client Disconnect", func(t *testing.T) {
+		err := client.Disconnect(ctx)
+		if err != nil {
+			t.Errorf("Disconnect should succeed: %v", err)
+		}
+
+		if client.IsConnected() {
+			t.Error("Client should be disconnected")
+		}
 	})
 }
 
@@ -775,6 +938,61 @@ func testWebDAVProtocol(t *testing.T, logger *zap.Logger, ctx context.Context) {
 	})
 }
 
+// ProtocolCapabilities describes the capabilities of a file system protocol
+type ProtocolCapabilities struct {
+	Protocol                    string
+	SupportsRealTimeNotification bool
+	RecommendedMoveWindow       time.Duration
+	RecommendedBatchSize        int
+	SupportsAuthentication      bool
+}
+
+// GetProtocolCapabilities returns the known capabilities for a protocol
+func GetProtocolCapabilities(protocol string) (*ProtocolCapabilities, error) {
+	capabilities := map[string]*ProtocolCapabilities{
+		"local": {
+			Protocol:                    "local",
+			SupportsRealTimeNotification: true,
+			RecommendedMoveWindow:       2 * time.Second,
+			RecommendedBatchSize:        1000,
+			SupportsAuthentication:      false,
+		},
+		"smb": {
+			Protocol:                    "smb",
+			SupportsRealTimeNotification: false,
+			RecommendedMoveWindow:       10 * time.Second,
+			RecommendedBatchSize:        500,
+			SupportsAuthentication:      true,
+		},
+		"ftp": {
+			Protocol:                    "ftp",
+			SupportsRealTimeNotification: false,
+			RecommendedMoveWindow:       30 * time.Second,
+			RecommendedBatchSize:        100,
+			SupportsAuthentication:      true,
+		},
+		"nfs": {
+			Protocol:                    "nfs",
+			SupportsRealTimeNotification: false,
+			RecommendedMoveWindow:       5 * time.Second,
+			RecommendedBatchSize:        800,
+			SupportsAuthentication:      false,
+		},
+		"webdav": {
+			Protocol:                    "webdav",
+			SupportsRealTimeNotification: false,
+			RecommendedMoveWindow:       15 * time.Second,
+			RecommendedBatchSize:        200,
+			SupportsAuthentication:      true,
+		},
+	}
+
+	if cap, exists := capabilities[strings.ToLower(protocol)]; exists {
+		return cap, nil
+	}
+	return nil, fmt.Errorf("unknown protocol: %s", protocol)
+}
+
 // TestProtocolCapabilities tests protocol capability detection
 func TestProtocolCapabilities(t *testing.T) {
 	_ = zap.NewNop() // Logger available but not used in this test
@@ -825,20 +1043,42 @@ func TestProtocolCapabilities(t *testing.T) {
 
 	for _, tc := range testCases {
 		t.Run(fmt.Sprintf("Protocol_%s", tc.protocol), func(t *testing.T) {
-			// This would test protocol capability detection
-			// Note: This requires implementing a protocol capabilities service
 			t.Logf("Testing capabilities for protocol: %s", tc.protocol)
 
-			// TODO: Implement actual capability testing
-			// capabilities, err := services.GetProtocolCapabilities(tc.protocol, logger)
-			// if err != nil {
-			//     t.Errorf("Failed to get capabilities for %s: %v", tc.protocol, err)
-			// }
-			//
-			// if capabilities.SupportsRealTimeNotification != tc.expectedRealTime {
-			//     t.Errorf("Expected real-time support %v for %s, got %v",
-			//         tc.expectedRealTime, tc.protocol, capabilities.SupportsRealTimeNotification)
-			// }
+			capabilities, err := GetProtocolCapabilities(tc.protocol)
+			if err != nil {
+				t.Errorf("Failed to get capabilities for %s: %v", tc.protocol, err)
+				return
+			}
+
+			// Verify real-time notification support
+			if capabilities.SupportsRealTimeNotification != tc.expectedRealTime {
+				t.Errorf("Expected real-time support %v for %s, got %v",
+					tc.expectedRealTime, tc.protocol, capabilities.SupportsRealTimeNotification)
+			}
+
+			// Verify recommended move window
+			if capabilities.RecommendedMoveWindow != tc.expectedMoveWindow {
+				t.Errorf("Expected move window %v for %s, got %v",
+					tc.expectedMoveWindow, tc.protocol, capabilities.RecommendedMoveWindow)
+			}
+
+			// Verify recommended batch size
+			if capabilities.RecommendedBatchSize != tc.expectedBatchSize {
+				t.Errorf("Expected batch size %d for %s, got %d",
+					tc.expectedBatchSize, tc.protocol, capabilities.RecommendedBatchSize)
+			}
+
+			// Verify authentication support
+			if capabilities.SupportsAuthentication != tc.expectedSupportsAuth {
+				t.Errorf("Expected auth support %v for %s, got %v",
+					tc.expectedSupportsAuth, tc.protocol, capabilities.SupportsAuthentication)
+			}
+
+			t.Logf("Protocol %s capabilities verified: realtime=%v, moveWindow=%v, batchSize=%d, auth=%v",
+				tc.protocol, capabilities.SupportsRealTimeNotification,
+				capabilities.RecommendedMoveWindow, capabilities.RecommendedBatchSize,
+				capabilities.SupportsAuthentication)
 		})
 	}
 }

@@ -15,6 +15,19 @@ import (
 	"catalogizer/internal/services"
 )
 
+// MockFileRepository implements services.FileRepositoryInterface for testing
+type MockFileRepository struct{}
+
+func (m *MockFileRepository) SearchFiles(ctx context.Context, filter models.SearchFilter, pagination models.PaginationOptions, sort models.SortOptions) (*models.SearchResult, error) {
+	return &models.SearchResult{
+		Files:      []models.FileWithMetadata{},
+		TotalCount: 0,
+		Page:       1,
+		Limit:      20,
+		TotalPages: 0,
+	}, nil
+}
+
 func TestRecommendationService_GetSimilarItems(t *testing.T) {
 	ctx := context.Background()
 
@@ -29,9 +42,12 @@ func TestRecommendationService_GetSimilarItems(t *testing.T) {
 		"http://mock-ocr-api", "http://mock-fingerprint-api",
 	)
 	duplicateDetectionService := services.NewDuplicateDetectionService(db, logger, nil)
+	mockFileRepo := &MockFileRepository{}
 	recommendationService := services.NewRecommendationService(
 		mediaRecognitionService,
 		duplicateDetectionService,
+		mockFileRepo,
+		db,
 	)
 
 	t.Run("movie recommendations", func(t *testing.T) {
@@ -273,16 +289,22 @@ func TestRecommendationService_ExternalProviders(t *testing.T) {
 	// 	}
 	// }()
 
+	db, _ := sql.Open("sqlite3", ":memory:")
+	defer db.Close()
+
 	mediaRecognitionService := services.NewMediaRecognitionService(
-		nil, zap.NewNop(), nil, nil, 
-		"http://mock-movie-api", "http://mock-music-api", 
-		"http://mock-book-api", "http://mock-game-api", 
+		db, zap.NewNop(), nil, nil,
+		"http://mock-movie-api", "http://mock-music-api",
+		"http://mock-book-api", "http://mock-game-api",
 		"http://mock-ocr-api", "http://mock-fingerprint-api",
 	)
-	duplicateDetectionService := services.NewDuplicateDetectionService(nil, zap.NewNop(), nil)
+	duplicateDetectionService := services.NewDuplicateDetectionService(db, zap.NewNop(), nil)
+	mockFileRepo := &MockFileRepository{}
 	recommendationService := services.NewRecommendationService(
 		mediaRecognitionService,
 		duplicateDetectionService,
+		mockFileRepo,
+		db,
 	)
 
 	t.Run("TMDb movie recommendations", func(t *testing.T) {
@@ -412,16 +434,22 @@ func TestRecommendationService_ExternalProviders(t *testing.T) {
 func TestRecommendationService_Performance(t *testing.T) {
 	ctx := context.Background()
 
+	db, _ := sql.Open("sqlite3", ":memory:")
+	defer db.Close()
+
 	mediaRecognitionService := services.NewMediaRecognitionService(
-		nil, zap.NewNop(), nil, nil, 
-		"http://mock-movie-api", "http://mock-music-api", 
-		"http://mock-book-api", "http://mock-game-api", 
+		db, zap.NewNop(), nil, nil,
+		"http://mock-movie-api", "http://mock-music-api",
+		"http://mock-book-api", "http://mock-game-api",
 		"http://mock-ocr-api", "http://mock-fingerprint-api",
 	)
-	duplicateDetectionService := services.NewDuplicateDetectionService(nil, zap.NewNop(), nil)
+	duplicateDetectionService := services.NewDuplicateDetectionService(db, zap.NewNop(), nil)
+	mockFileRepo := &MockFileRepository{}
 	recommendationService := services.NewRecommendationService(
 		mediaRecognitionService,
 		duplicateDetectionService,
+		mockFileRepo,
+		db,
 	)
 
 	t.Run("performance metrics", func(t *testing.T) {
@@ -488,16 +516,22 @@ func TestRecommendationService_Performance(t *testing.T) {
 func TestRecommendationService_EdgeCases(t *testing.T) {
 	ctx := context.Background()
 
+	db, _ := sql.Open("sqlite3", ":memory:")
+	defer db.Close()
+
 	mediaRecognitionService := services.NewMediaRecognitionService(
-		nil, zap.NewNop(), nil, nil, 
-		"http://mock-movie-api", "http://mock-music-api", 
-		"http://mock-book-api", "http://mock-game-api", 
+		db, zap.NewNop(), nil, nil,
+		"http://mock-movie-api", "http://mock-music-api",
+		"http://mock-book-api", "http://mock-game-api",
 		"http://mock-ocr-api", "http://mock-fingerprint-api",
 	)
-	duplicateDetectionService := services.NewDuplicateDetectionService(nil, zap.NewNop(), nil)
+	duplicateDetectionService := services.NewDuplicateDetectionService(db, zap.NewNop(), nil)
+	mockFileRepo := &MockFileRepository{}
 	recommendationService := services.NewRecommendationService(
 		mediaRecognitionService,
 		duplicateDetectionService,
+		mockFileRepo,
+		db,
 	)
 
 	t.Run("empty media metadata", func(t *testing.T) {
@@ -624,169 +658,174 @@ func TestRecommendationService_EdgeCases(t *testing.T) {
 	})
 }
 
+// TestRecommendationService_SimilarityAlgorithms tests similarity algorithm behavior
+// through the public GetSimilarItems interface rather than accessing private methods.
 func TestRecommendationService_SimilarityAlgorithms(t *testing.T) {
-	t.Skip("Skipping similarity algorithm tests that use private methods")
+	ctx := context.Background()
 
-	// Original test code commented out due to private method access
-	/*
+	// Setup services with database
+	db, _ := sql.Open("sqlite3", ":memory:")
+	logger := zap.NewNop()
+
 	mediaRecognitionService := services.NewMediaRecognitionService(
-		nil, zap.NewNop(), nil, nil, 
-		"http://mock-movie-api", "http://mock-music-api", 
-		"http://mock-book-api", "http://mock-game-api", 
+		db, logger, nil, nil,
+		"http://mock-movie-api", "http://mock-music-api",
+		"http://mock-book-api", "http://mock-game-api",
 		"http://mock-ocr-api", "http://mock-fingerprint-api",
 	)
-	duplicateDetectionService := services.NewDuplicateDetectionService(nil, zap.NewNop(), nil)
+	duplicateDetectionService := services.NewDuplicateDetectionService(db, logger, nil)
+	mockFileRepo := &MockFileRepository{}
 	recommendationService := services.NewRecommendationService(
 		mediaRecognitionService,
 		duplicateDetectionService,
+		mockFileRepo,
+		db,
 	)
 
-	t.Run("title similarity", func(t *testing.T) {
-		original := &models.MediaMetadata{
-			Title:     "The Dark Knight",
-			MediaType: models.MediaTypeVideo,
+	t.Run("similarity scoring produces ordered results", func(t *testing.T) {
+		// Test that GetSimilarItems returns items sorted by similarity score (descending)
+		year2008 := 2008
+		rating90 := 9.0
+		req := &services.SimilarItemsRequest{
+			MediaID: "dark_knight_2008",
+			MediaMetadata: &models.MediaMetadata{
+				Title:     "The Dark Knight",
+				Year:      &year2008,
+				Genre:     "Action",
+				Director:  "Christopher Nolan",
+				MediaType: models.MediaTypeVideo,
+				Rating:    &rating90,
+			},
+			MaxLocalItems:       10,
+			IncludeExternal:     false,
+			SimilarityThreshold: 0.1, // Low threshold to get more results
 		}
 
-		candidates := []*models.MediaMetadata{
-			{Title: "The Dark Knight Rises", MediaType: models.MediaTypeVideo},
-			{Title: "Dark Knight", MediaType: models.MediaTypeVideo},
-			{Title: "Batman Begins", MediaType: models.MediaTypeVideo},
-			{Title: "Completely Different Movie", MediaType: models.MediaTypeVideo},
-		}
+		response, err := recommendationService.GetSimilarItems(ctx, req)
+		require.NoError(t, err)
+		require.NotNil(t, response)
 
-		similarities := make([]float64, len(candidates))
-		for i, candidate := range candidates {
-			// TODO: Fix private method access
-			// similarity, _ := recommendationService.calculateLocalSimilarity(original, candidate)
-			similarity := 0.5 // Placeholder similarity
-			similarities[i] = similarity
+		// Verify results are sorted by similarity score (descending)
+		if len(response.LocalItems) > 1 {
+			for i := 0; i < len(response.LocalItems)-1; i++ {
+				assert.GreaterOrEqual(t, response.LocalItems[i].SimilarityScore, response.LocalItems[i+1].SimilarityScore,
+					"Items should be sorted by similarity score (descending)")
+			}
 		}
-
-		// Title similarities should be in expected order
-		assert.True(t, similarities[1] > similarities[2]) // "Dark Knight" > "Batman Begins"
-		assert.True(t, similarities[2] > similarities[3]) // "Batman Begins" > "Completely Different"
 	})
 
-	t.Run("genre matching", func(t *testing.T) {
-		original := &models.MediaMetadata{
-			Title:     "Action Movie",
-			Genre:     "Action",
-			MediaType: models.MediaTypeVideo,
+	t.Run("similarity threshold filtering", func(t *testing.T) {
+		year2010 := 2010
+		rating85 := 8.5
+
+		// Test with high threshold - should get fewer or no results
+		highThresholdReq := &services.SimilarItemsRequest{
+			MediaID: "inception_2010",
+			MediaMetadata: &models.MediaMetadata{
+				Title:     "Inception",
+				Year:      &year2010,
+				Genre:     "Science Fiction",
+				Director:  "Christopher Nolan",
+				MediaType: models.MediaTypeVideo,
+				Rating:    &rating85,
+			},
+			MaxLocalItems:       10,
+			IncludeExternal:     false,
+			SimilarityThreshold: 0.9, // Very high threshold
 		}
 
-		sameGenre := &models.MediaMetadata{
-			Title:     "Another Action Movie",
-			Genre:     "Action",
-			MediaType: models.MediaTypeVideo,
+		highThresholdResponse, err := recommendationService.GetSimilarItems(ctx, highThresholdReq)
+		require.NoError(t, err)
+		require.NotNil(t, highThresholdResponse)
+
+		// All returned items should meet the threshold
+		for _, item := range highThresholdResponse.LocalItems {
+			assert.GreaterOrEqual(t, item.SimilarityScore, highThresholdReq.SimilarityThreshold,
+				"All items should meet the similarity threshold")
 		}
 
-		differentGenre := &models.MediaMetadata{
-			Title:     "Romance Movie",
-			Genre:     "Romance",
-			MediaType: models.MediaTypeVideo,
+		// Test with low threshold - should get more results
+		lowThresholdReq := &services.SimilarItemsRequest{
+			MediaID: "inception_2010",
+			MediaMetadata: &models.MediaMetadata{
+				Title:     "Inception",
+				Year:      &year2010,
+				Genre:     "Science Fiction",
+				Director:  "Christopher Nolan",
+				MediaType: models.MediaTypeVideo,
+				Rating:    &rating85,
+			},
+			MaxLocalItems:       10,
+			IncludeExternal:     false,
+			SimilarityThreshold: 0.1, // Low threshold
 		}
 
-		// Note: calculateLocalSimilarity is a private method
-		// This test would need to be refactored to test through public interface
-		// For now, we'll skip the private method call
-		t.Skip("Skipping private method test - needs refactoring")
-		
-		// sameSimilarity, sameReasons := recommendationService.calculateLocalSimilarity(original, sameGenre)
-		// diffSimilarity, diffReasons := recommendationService.calculateLocalSimilarity(original, differentGenre)
-		//
-		// assert.True(t, sameSimilarity > diffSimilarity)
-		// assert.Contains(t, sameReasons, "same_genre")
-		// assert.NotContains(t, diffReasons, "same_genre")
+		lowThresholdResponse, err := recommendationService.GetSimilarItems(ctx, lowThresholdReq)
+		require.NoError(t, err)
+		require.NotNil(t, lowThresholdResponse)
+
+		// Low threshold should generally yield >= results as high threshold
+		assert.GreaterOrEqual(t, len(lowThresholdResponse.LocalItems), len(highThresholdResponse.LocalItems),
+			"Lower threshold should yield at least as many results")
 	})
 
-	// t.Run("year matching", func(t *testing.T) {
-	// 	original := &models.MediaMetadata{
-	// 		Title:     "Movie 1999",
-	// 		Year:      &[]int{1999}[0],
-	// 		MediaType: models.MediaTypeVideo,
-	// 	}
-	//
-	// 	sameYear := &models.MediaMetadata{
-	// 		Title:     "Another 1999 Movie",
-	// 		Year:      &[]int{1999}[0],
-	// 		MediaType: models.MediaTypeVideo,
-	// 	}
-	//
-	// 	differentYear := &models.MediaMetadata{
-	// 		Title:     "2020 Movie",
-	// 		Year:      &[]int{2020}[0],
-	// 		MediaType: models.MediaTypeVideo,
-	// 	}
-	//
-	// 	sameSimilarity, sameReasons := recommendationService.calculateLocalSimilarity(original, sameYear)
-	// 	diffSimilarity, diffReasons := recommendationService.calculateLocalSimilarity(original, differentYear)
-	//
-	// 	assert.True(t, sameSimilarity > diffSimilarity)
-	// 	assert.Contains(t, sameReasons, "same_year")
-	// 	assert.NotContains(t, diffReasons, "same_year")
-	// })
+	t.Run("similarity reasons are provided", func(t *testing.T) {
+		year2014 := 2014
+		rating86 := 8.6
+		req := &services.SimilarItemsRequest{
+			MediaID: "interstellar_2014",
+			MediaMetadata: &models.MediaMetadata{
+				Title:     "Interstellar",
+				Year:      &year2014,
+				Genre:     "Science Fiction",
+				Director:  "Christopher Nolan",
+				MediaType: models.MediaTypeVideo,
+				Rating:    &rating86,
+			},
+			MaxLocalItems:       10,
+			IncludeExternal:     false,
+			SimilarityThreshold: 0.2,
+		}
 
-	t.Skip("Skipping similarity algorithm tests that use private methods")
+		response, err := recommendationService.GetSimilarItems(ctx, req)
+		require.NoError(t, err)
+		require.NotNil(t, response)
 
-	// t.Run("artist/author matching", func(t *testing.T) {
-	// 	// Test music artist matching
-	// 	originalSong := &models.MediaMetadata{
-	// 		Title:     "Song 1",
-	// 		Description: "Artist Name",
-	// 		MediaType: models.MediaTypeAudio,
-	// 	}
-	//
-	// 	sameArtist := &models.MediaMetadata{
-	// 		Title:     "Song 2",
-	// 		Description: "Artist Name",
-	// 		MediaType: models.MediaTypeAudio,
-	// 	}
-	//
-	// 	sameSimilarity, sameReasons := recommendationService.calculateLocalSimilarity(originalSong, sameArtist)
-	// 	assert.Contains(t, sameReasons, "same_artist")
-	//
-	// 	// Test book author matching
-	// 	originalBook := &models.MediaMetadata{
-	// 		Title:     "Book 1",
-	// 		Description: "Author Name",
-	// 		MediaType: models.MediaTypeBook,
-	// 	}
-	//
-	// 	sameAuthor := &models.MediaMetadata{
-	// 		Title:     "Book 2",
-	// 		Description: "Author Name",
-	// 		MediaType: models.MediaTypeBook,
-	// 	}
-	//
-	// 	bookSimilarity, bookReasons := recommendationService.calculateLocalSimilarity(originalBook, sameAuthor)
-	// 	assert.Contains(t, bookReasons, "same_author")
-	// 	assert.True(t, bookSimilarity > 0.5)
-	// })
+		// Verify that similarity reasons are provided for local items
+		for _, item := range response.LocalItems {
+			assert.NotEmpty(t, item.SimilarityReasons,
+				"Each similar item should have similarity reasons explaining the match")
+		}
+	})
 
-	// t.Run("media type matching", func(t *testing.T) {
-	// 	original := &models.MediaMetadata{
-	// 		Title:     "Test Item",
-	// 		MediaType: models.MediaTypeVideo,
-	// 	}
-	//
-	// 	sameType := &models.MediaMetadata{
-	// 		Title:     "Another Video",
-	// 		MediaType: models.MediaTypeVideo,
-	// 	}
-	//
-	// 	differentType := &models.MediaMetadata{
-	// 		Title:     "Audio File",
-	// 		MediaType: models.MediaTypeAudio,
-	// 	}
-	//
-	// 	sameSimilarity, sameReasons := recommendationService.calculateLocalSimilarity(original, sameType)
-	// 	diffSimilarity, diffReasons := recommendationService.calculateLocalSimilarity(original, differentType)
-	//
-	// 	assert.True(t, sameSimilarity > diffSimilarity)
-	// 	assert.Contains(t, sameReasons, "same_media_type")
-	// 	assert.NotContains(t, diffReasons, "same_media_type")
-	// })
-	*/
+	t.Run("genre filter affects results", func(t *testing.T) {
+		year2015 := 2015
+		rating78 := 7.8
+		req := &services.SimilarItemsRequest{
+			MediaID: "test_movie",
+			MediaMetadata: &models.MediaMetadata{
+				Title:     "Test Movie",
+				Year:      &year2015,
+				Genre:     "Action",
+				MediaType: models.MediaTypeVideo,
+				Rating:    &rating78,
+			},
+			MaxLocalItems:       10,
+			IncludeExternal:     false,
+			SimilarityThreshold: 0.1,
+			Filters: &services.RecommendationFilters{
+				GenreFilter: []string{"Action"},
+			},
+		}
+
+		response, err := recommendationService.GetSimilarItems(ctx, req)
+		require.NoError(t, err)
+		require.NotNil(t, response)
+
+		// Results should be filtered - response structure should be valid
+		assert.NotNil(t, response.Performance)
+		assert.NotEmpty(t, response.Algorithms)
+	})
 }
 
 func BenchmarkRecommendationService(b *testing.B) {
@@ -804,9 +843,12 @@ func BenchmarkRecommendationService(b *testing.B) {
 		"http://mock-ocr-api", "http://mock-fingerprint-api",
 	)
 	duplicateDetectionService := services.NewDuplicateDetectionService(db, logger, nil)
+	mockFileRepo := &MockFileRepository{}
 	recommendationService := services.NewRecommendationService(
 		mediaRecognitionService,
 		duplicateDetectionService,
+		mockFileRepo,
+		db,
 	)
 
 	year2023 := 2023

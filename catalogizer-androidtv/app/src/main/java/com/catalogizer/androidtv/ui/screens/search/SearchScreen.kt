@@ -21,13 +21,16 @@ import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.unit.dp
 import androidx.tv.material3.*
 import com.catalogizer.androidtv.data.models.MediaItem
+import com.catalogizer.androidtv.data.models.MediaSearchRequest
+import com.catalogizer.androidtv.data.repository.MediaRepository
 import com.catalogizer.androidtv.ui.components.MediaCard
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 
 @Composable
 fun SearchScreen(
-    viewModel: SearchViewModel = androidx.lifecycle.viewmodel.compose.viewModel(),
+    viewModel: SearchViewModel,
     onNavigateBack: () -> Unit,
     onNavigateToMediaDetail: (Long) -> Unit
 ) {
@@ -198,8 +201,10 @@ fun SearchScreen(
     }
 }
 
-// Simple ViewModel for search functionality
-class SearchViewModel : androidx.lifecycle.ViewModel() {
+// ViewModel for search functionality with repository integration
+class SearchViewModel(
+    private val mediaRepository: MediaRepository
+) : androidx.lifecycle.ViewModel() {
     private val _searchQuery = mutableStateOf("")
     val searchQuery = _searchQuery
 
@@ -220,47 +225,28 @@ class SearchViewModel : androidx.lifecycle.ViewModel() {
     fun search() {
         if (searchQuery.value.isBlank()) return
 
-        // Simulate search - in real implementation, this would call the repository
         _isLoading.value = true
         _error.value = null
-        
-        // TODO: Replace with actual search call to repository
-        // viewModelScope.launch {
-        //     try {
-        //         val results = repository.searchMedia(searchQuery.value)
-        //         _searchResults.value = results
-        //     } catch (e: Exception) {
-        //         _error.value = "Search failed: ${e.message}"
-        //     } finally {
-        //         _isLoading.value = false
-        //     }
-        // }
-        
-        // Mock search results for demonstration
-        _searchResults.value = listOf(
-            MediaItem(
-                id = 1,
-                title = "Sample Movie: ${searchQuery.value}",
-                mediaType = "movie",
-                year = 2024,
-                directoryPath = "/movies",
-                createdAt = "2024-01-01T00:00:00Z",
-                updatedAt = "2024-01-01T00:00:00Z",
-                fileSize = 1000000000L,
-                description = "A sample movie for demonstration"
-            ),
-            MediaItem(
-                id = 2,
-                title = "Another Result for ${searchQuery.value}",
-                mediaType = "series",
-                year = 2023,
-                directoryPath = "/series",
-                createdAt = "2024-01-01T00:00:00Z",
-                updatedAt = "2024-01-01T00:00:00Z",
-                fileSize = 2000000000L,
-                description = "Another sample media item"
-            )
-        )
-        _isLoading.value = false
+
+        androidx.lifecycle.viewModelScope.launch {
+            try {
+                val request = MediaSearchRequest(
+                    query = searchQuery.value,
+                    limit = 50
+                )
+                val results = mediaRepository.searchMedia(request).first()
+                _searchResults.value = results
+            } catch (e: Exception) {
+                _error.value = "Search failed: ${e.message}"
+            } finally {
+                _isLoading.value = false
+            }
+        }
+    }
+
+    fun clearResults() {
+        _searchResults.value = emptyList()
+        _searchQuery.value = ""
+        _error.value = null
     }
 }

@@ -1,6 +1,5 @@
 import React from 'react'
 import { render, screen, waitFor } from '@testing-library/react'
-import { MemoryRouter } from 'react-router-dom'
 import App from '../App'
 
 // Mock BrowserRouter to use MemoryRouter for testing
@@ -39,12 +38,12 @@ vi.mock('@/components/ui/ConnectionStatus', async () => ({
 }))
 
 vi.mock('@/components/layout/Layout', async () => {
-  const { Outlet } = require('react-router-dom')
+  const actual = await import('react-router-dom')
   return {
     Layout: () => (
       <div data-testid="layout">
         Layout
-        <Outlet />
+        <actual.Outlet />
       </div>
     ),
   }
@@ -134,7 +133,7 @@ describe('App', () => {
 
   describe('Public Routes', () => {
     it('renders LoginForm on /login route', async () => {
-      ;(global as any).testInitialRoute = '/login'
+      (global as any).testInitialRoute = '/login'
       render(<App />)
 
       await waitFor(() => {
@@ -143,7 +142,7 @@ describe('App', () => {
     })
 
     it('renders RegisterForm on /register route', async () => {
-      ;(global as any).testInitialRoute = '/register'
+      (global as any).testInitialRoute = '/register'
       render(<App />)
 
       await waitFor(() => {
@@ -154,7 +153,7 @@ describe('App', () => {
 
   describe('Protected Routes with Layout', () => {
     it('renders Dashboard on /dashboard route', async () => {
-      ;(global as any).testInitialRoute = '/dashboard'
+      (global as any).testInitialRoute = '/dashboard'
       render(<App />)
 
       await waitFor(() => {
@@ -163,7 +162,7 @@ describe('App', () => {
     })
 
     it('renders MediaBrowser on /media route', async () => {
-      ;(global as any).testInitialRoute = '/media'
+      (global as any).testInitialRoute = '/media'
       render(<App />)
 
       await waitFor(() => {
@@ -172,7 +171,7 @@ describe('App', () => {
     })
 
     it('renders Analytics on /analytics route', async () => {
-      ;(global as any).testInitialRoute = '/analytics'
+      (global as any).testInitialRoute = '/analytics'
       render(<App />)
 
       await waitFor(() => {
@@ -181,7 +180,7 @@ describe('App', () => {
     })
 
     it('renders Admin page on /admin route', async () => {
-      ;(global as any).testInitialRoute = '/admin'
+      (global as any).testInitialRoute = '/admin'
       render(<App />)
 
       await waitFor(() => {
@@ -190,7 +189,7 @@ describe('App', () => {
     })
 
     it('renders Profile page on /profile route', async () => {
-      ;(global as any).testInitialRoute = '/profile'
+      (global as any).testInitialRoute = '/profile'
       render(<App />)
 
       await waitFor(() => {
@@ -199,7 +198,7 @@ describe('App', () => {
     })
 
     it('renders Settings page on /settings route', async () => {
-      ;(global as any).testInitialRoute = '/settings'
+      (global as any).testInitialRoute = '/settings'
       render(<App />)
 
       await waitFor(() => {
@@ -210,7 +209,7 @@ describe('App', () => {
 
   describe('Navigation and Redirects', () => {
     it('redirects from root / to /dashboard', async () => {
-      ;(global as any).testInitialRoute = '/'
+      (global as any).testInitialRoute = '/'
       render(<App />)
 
       await waitFor(() => {
@@ -220,7 +219,7 @@ describe('App', () => {
     })
 
     it('redirects from unknown route to /dashboard', async () => {
-      ;(global as any).testInitialRoute = '/unknown-route'
+      (global as any).testInitialRoute = '/unknown-route'
       render(<App />)
 
       await waitFor(() => {
@@ -230,7 +229,7 @@ describe('App', () => {
     })
 
     it('redirects from invalid nested route to /dashboard', async () => {
-      ;(global as any).testInitialRoute = '/invalid/nested/route'
+      (global as any).testInitialRoute = '/invalid/nested/route'
       render(<App />)
 
       await waitFor(() => {
@@ -242,7 +241,7 @@ describe('App', () => {
 
   describe('Layout Integration', () => {
     it('protected routes render inside Layout wrapper', async () => {
-      ;(global as any).testInitialRoute = '/dashboard'
+      (global as any).testInitialRoute = '/dashboard'
       render(<App />)
 
       await waitFor(() => {
@@ -252,7 +251,7 @@ describe('App', () => {
     })
 
     it('public routes render without Layout wrapper', async () => {
-      ;(global as any).testInitialRoute = '/login'
+      (global as any).testInitialRoute = '/login'
       render(<App />)
 
       await waitFor(() => {
@@ -264,7 +263,7 @@ describe('App', () => {
 
   describe('Protected Route Wrapper', () => {
     it('wraps dashboard with ProtectedRoute', async () => {
-      ;(global as any).testInitialRoute = '/dashboard'
+      (global as any).testInitialRoute = '/dashboard'
       render(<App />)
 
       await waitFor(() => {
@@ -273,7 +272,7 @@ describe('App', () => {
     })
 
     it('wraps media browser with ProtectedRoute', async () => {
-      ;(global as any).testInitialRoute = '/media'
+      (global as any).testInitialRoute = '/media'
       render(<App />)
 
       await waitFor(() => {
@@ -282,7 +281,7 @@ describe('App', () => {
     })
 
     it('wraps analytics with ProtectedRoute', async () => {
-      ;(global as any).testInitialRoute = '/analytics'
+      (global as any).testInitialRoute = '/analytics'
       render(<App />)
 
       await waitFor(() => {
@@ -312,7 +311,7 @@ describe('App', () => {
 
   describe('Edge Cases', () => {
     it('handles login route rendering', async () => {
-      ;(global as any).testInitialRoute = '/login'
+      (global as any).testInitialRoute = '/login'
       render(<App />)
 
       await waitFor(() => {
@@ -322,7 +321,7 @@ describe('App', () => {
     })
 
     it('handles dashboard route rendering', async () => {
-      ;(global as any).testInitialRoute = '/dashboard'
+      (global as any).testInitialRoute = '/dashboard'
       render(<App />)
 
       await waitFor(() => {
@@ -332,14 +331,14 @@ describe('App', () => {
     })
 
     it('renders ConnectionStatus on public routes', async () => {
-      ;(global as any).testInitialRoute = '/login'
+      (global as any).testInitialRoute = '/login'
       render(<App />)
 
       expect(screen.getByTestId('connection-status')).toBeInTheDocument()
     })
 
     it('renders ConnectionStatus on protected routes', async () => {
-      ;(global as any).testInitialRoute = '/dashboard'
+      (global as any).testInitialRoute = '/dashboard'
       render(<App />)
 
       expect(screen.getByTestId('connection-status')).toBeInTheDocument()

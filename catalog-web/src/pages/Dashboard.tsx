@@ -243,7 +243,7 @@ export const Dashboard: React.FC = () => {
             Welcome back, {user?.username || 'User'}!
           </h1>
           <p className="text-gray-600">
-            Here's what's happening with your media library today.
+            Here&apos;s what&apos;s happening with your media library today.
           </p>
         </div>
         

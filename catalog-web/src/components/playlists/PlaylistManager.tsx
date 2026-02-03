@@ -130,7 +130,7 @@ export const PlaylistManager: React.FC<PlaylistManagerProps> = ({
           toast.success(`Shuffling ${playlist.name}`);
           break;
         
-        case 'duplicate':
+        case 'duplicate': {
           const duplicateName = `${playlist.name} (Copy)`;
           const duplicate = await playlistApi.createPlaylist({
             name: duplicateName,
@@ -141,14 +141,16 @@ export const PlaylistManager: React.FC<PlaylistManagerProps> = ({
           toast.success(`Playlist duplicated as ${duplicate.name}`);
           refetchPlaylists();
           break;
-        
-        case 'toggle_public':
+        }
+
+        case 'toggle_public': {
           const updated = await playlistApi.updatePlaylist(playlist.id, {
             is_public: !playlist.is_public
           });
           toast.success(`Playlist is now ${updated.is_public ? 'public' : 'private'}`);
           refetchPlaylists();
           break;
+        }
         
         case 'delete':
           if (window.confirm(`Are you sure you want to delete "${playlist.name}"?`)) {

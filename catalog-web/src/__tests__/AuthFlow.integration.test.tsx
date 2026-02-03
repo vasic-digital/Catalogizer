@@ -5,7 +5,7 @@ import { MemoryRouter, Routes, Route, useNavigate } from 'react-router-dom'
 import { ProtectedRoute } from '@/components/auth/ProtectedRoute'
 
 // Mock the AuthContext with stateful behavior for full flow tests
-let authState = {
+const authState = {
   user: null as any,
   isAuthenticated: false,
   isLoading: false,
@@ -32,9 +32,6 @@ vi.mock('react-hot-toast', async () => ({
     error: vi.fn(),
   },
 }))
-
-// eslint-disable-next-line @typescript-eslint/no-var-requires
-const mockToast = require('react-hot-toast').default
 
 // --- Simulated Page Components ---
 
@@ -91,7 +88,7 @@ function SettingsPage() {
   return <div data-testid="settings-page">Settings</div>
 }
 
-function renderApp(initialRoute: string = '/login') {
+function renderApp(initialRoute = '/login') {
   return render(
     <MemoryRouter initialEntries={[initialRoute]}>
       <Routes>

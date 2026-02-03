@@ -2,11 +2,13 @@ package services
 
 import (
 	"bytes"
+	"encoding/csv"
 	"encoding/json"
 	"fmt"
 	"net/http"
 	"os"
 	"runtime"
+	"strconv"
 	"strings"
 	"time"
 
@@ -535,7 +537,183 @@ func (s *ErrorReportingService) getColorForLevel(level string) string {
 }
 
 func (s *ErrorReportingService) exportToCSV(reports []interface{}) ([]byte, error) {
-	// CSV export implementation would go here
-	// This is a placeholder for CSV export logic
-	return []byte("CSV export not implemented"), nil
+	if len(reports) == 0 {
+		return []byte(""), nil
+	}
+
+	var buf bytes.Buffer
+	writer := csv.NewWriter(&buf)
+
+	// Determine report type and write appropriate header
+	firstReport := reports[0]
+
+	switch firstReport.(type) {
+	case *models.ErrorReport:
+		// Write header for error reports
+		header := []string{
+			"ID", "User ID", "Level", "Message", "Error Code", "Component",
+			"Stack Trace", "User Agent", "URL", "Fingerprint", "Status",
+			"Reported At", "Resolved At",
+		}
+		if err := writer.Write(header); err != nil {
+			return nil, fmt.Errorf("failed to write CSV header: %w", err)
+		}
+
+		// Write error report data
+		for _, r := range reports {
+			errorReport, ok := r.(*models.ErrorReport)
+			if !ok {
+				continue
+			}
+
+			resolvedAt := ""
+			if errorReport.ResolvedAt != nil {
+				resolvedAt = errorReport.ResolvedAt.Format(time.RFC3339)
+			}
+
+			// Escape special characters in text fields
+			row := []string{
+				strconv.Itoa(errorReport.ID),
+				strconv.Itoa(errorReport.UserID),
+				errorReport.Level,
+				escapeCSVField(errorReport.Message),
+				errorReport.ErrorCode,
+				errorReport.Component,
+				escapeCSVField(errorReport.StackTrace),
+				errorReport.UserAgent,
+				errorReport.URL,
+				errorReport.Fingerprint,
+				errorReport.Status,
+				errorReport.ReportedAt.Format(time.RFC3339),
+				resolvedAt,
+			}
+			if err := writer.Write(row); err != nil {
+				return nil, fmt.Errorf("failed to write CSV row: %w", err)
+			}
+		}
+
+	case *models.CrashReport:
+		// Write header for crash reports
+		header := []string{
+			"ID", "User ID", "Signal", "Message", "Stack Trace",
+			"Fingerprint", "Status", "Reported At", "Resolved At",
+		}
+		if err := writer.Write(header); err != nil {
+			return nil, fmt.Errorf("failed to write CSV header: %w", err)
+		}
+
+		// Write crash report data
+		for _, r := range reports {
+			crashReport, ok := r.(*models.CrashReport)
+			if !ok {
+				continue
+			}
+
+			resolvedAt := ""
+			if crashReport.ResolvedAt != nil {
+				resolvedAt = crashReport.ResolvedAt.Format(time.RFC3339)
+			}
+
+			row := []string{
+				strconv.Itoa(crashReport.ID),
+				strconv.Itoa(crashReport.UserID),
+				crashReport.Signal,
+				escapeCSVField(crashReport.Message),
+				escapeCSVField(crashReport.StackTrace),
+				crashReport.Fingerprint,
+				crashReport.Status,
+				crashReport.ReportedAt.Format(time.RFC3339),
+				resolvedAt,
+			}
+			if err := writer.Write(row); err != nil {
+				return nil, fmt.Errorf("failed to write CSV row: %w", err)
+			}
+		}
+
+	default:
+		// Handle mixed report types - use a combined format
+		header := []string{
+			"Type", "ID", "User ID", "Level/Signal", "Message", "Error Code", "Component",
+			"Stack Trace", "User Agent", "URL", "Fingerprint", "Status",
+			"Reported At", "Resolved At",
+		}
+		if err := writer.Write(header); err != nil {
+			return nil, fmt.Errorf("failed to write CSV header: %w", err)
+		}
+
+		for _, r := range reports {
+			var row []string
+
+			switch report := r.(type) {
+			case *models.ErrorReport:
+				resolvedAt := ""
+				if report.ResolvedAt != nil {
+					resolvedAt = report.ResolvedAt.Format(time.RFC3339)
+				}
+				row = []string{
+					"error",
+					strconv.Itoa(report.ID),
+					strconv.Itoa(report.UserID),
+					report.Level,
+					escapeCSVField(report.Message),
+					report.ErrorCode,
+					report.Component,
+					escapeCSVField(report.StackTrace),
+					report.UserAgent,
+					report.URL,
+					report.Fingerprint,
+					report.Status,
+					report.ReportedAt.Format(time.RFC3339),
+					resolvedAt,
+				}
+			case *models.CrashReport:
+				resolvedAt := ""
+				if report.ResolvedAt != nil {
+					resolvedAt = report.ResolvedAt.Format(time.RFC3339)
+				}
+				row = []string{
+					"crash",
+					strconv.Itoa(report.ID),
+					strconv.Itoa(report.UserID),
+					report.Signal,
+					escapeCSVField(report.Message),
+					"", // Error Code (N/A for crash)
+					"", // Component (N/A for crash)
+					escapeCSVField(report.StackTrace),
+					"", // User Agent (N/A for crash)
+					"", // URL (N/A for crash)
+					report.Fingerprint,
+					report.Status,
+					report.ReportedAt.Format(time.RFC3339),
+					resolvedAt,
+				}
+			default:
+				continue
+			}
+
+			if err := writer.Write(row); err != nil {
+				return nil, fmt.Errorf("failed to write CSV row: %w", err)
+			}
+		}
+	}
+
+	writer.Flush()
+	if err := writer.Error(); err != nil {
+		return nil, fmt.Errorf("CSV writer error: %w", err)
+	}
+
+	return buf.Bytes(), nil
+}
+
+// escapeCSVField handles special characters in CSV fields
+// Newlines and other control characters are replaced with spaces to ensure valid CSV
+func escapeCSVField(s string) string {
+	// Replace newlines with spaces (CSV spec allows this within quoted fields,
+	// but many parsers have issues with it)
+	s = strings.ReplaceAll(s, "\r\n", " ")
+	s = strings.ReplaceAll(s, "\n", " ")
+	s = strings.ReplaceAll(s, "\r", " ")
+	// Replace tabs with spaces
+	s = strings.ReplaceAll(s, "\t", " ")
+	return s
 }

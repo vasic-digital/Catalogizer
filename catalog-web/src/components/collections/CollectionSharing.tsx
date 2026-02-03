@@ -373,7 +373,7 @@ export const CollectionSharing: React.FC<CollectionSharingProps> = ({
             href={link.url}
             target="_blank"
             title="Open in new tab"
-            className="inline-flex"
+            className="inline-flex" rel="noreferrer"
           >
             <Button
               variant="ghost"

@@ -4,15 +4,20 @@ import androidx.arch.core.executor.testing.InstantTaskExecutorRule
 import com.catalogizer.androidtv.MainDispatcherRule
 import com.catalogizer.androidtv.data.models.Settings
 import com.catalogizer.androidtv.data.repository.SettingsRepository
+import io.mockk.coEvery
+import io.mockk.coVerify
 import io.mockk.every
 import io.mockk.mockk
-import io.mockk.verify
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
+import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
@@ -29,16 +34,56 @@ class SettingsViewModelTest {
     private lateinit var settingsRepository: SettingsRepository
     private lateinit var viewModel: SettingsViewModel
 
+    private val defaultSettings = Settings(
+        enableNotifications = true,
+        enableAutoPlay = false,
+        streamingQuality = "Auto",
+        enableSubtitles = true,
+        subtitleLanguage = "English"
+    )
+
+    private lateinit var settingsFlowSource: MutableStateFlow<Settings>
+
     @Before
     fun setup() {
         settingsRepository = mockk()
+        settingsFlowSource = MutableStateFlow(defaultSettings)
+
+        // Setup default mock behavior
+        every { settingsRepository.settingsFlow } returns settingsFlowSource
+        every { settingsRepository.getSettings() } returns defaultSettings
+        coEvery { settingsRepository.getSettingsAsync() } returns defaultSettings
+        coEvery { settingsRepository.saveSettings(any()) } answers {
+            settingsFlowSource.value = firstArg()
+        }
+        coEvery { settingsRepository.updateNotifications(any()) } answers {
+            settingsFlowSource.value = settingsFlowSource.value.copy(enableNotifications = firstArg())
+        }
+        coEvery { settingsRepository.updateAutoPlay(any()) } answers {
+            settingsFlowSource.value = settingsFlowSource.value.copy(enableAutoPlay = firstArg())
+        }
+        coEvery { settingsRepository.updateStreamingQuality(any()) } answers {
+            settingsFlowSource.value = settingsFlowSource.value.copy(streamingQuality = firstArg())
+        }
+        coEvery { settingsRepository.updateSubtitles(any()) } answers {
+            settingsFlowSource.value = settingsFlowSource.value.copy(enableSubtitles = firstArg())
+        }
+        coEvery { settingsRepository.updateSubtitleLanguage(any()) } answers {
+            settingsFlowSource.value = settingsFlowSource.value.copy(subtitleLanguage = firstArg())
+        }
+        coEvery { settingsRepository.resetToDefaults() } answers {
+            settingsFlowSource.value = defaultSettings
+        }
+
         viewModel = SettingsViewModel(settingsRepository)
     }
 
     @Test
-    fun `initial settings state should be null`() = runTest {
-        val initialState = viewModel.settingsState.value
-        assertNull(initialState)
+    fun `initial settings state should be default from flow`() = runTest {
+        advanceUntilIdle()
+
+        val settingsState = viewModel.settingsState.value
+        assertEquals(defaultSettings, settingsState)
     }
 
     @Test
@@ -50,19 +95,20 @@ class SettingsViewModelTest {
             enableSubtitles = true,
             subtitleLanguage = "English"
         )
-
-        every { settingsRepository.getSettings() } returns expectedSettings
+        coEvery { settingsRepository.getSettingsAsync() } returns expectedSettings
 
         viewModel.loadSettings()
         advanceUntilIdle()
 
         val settingsState = viewModel.settingsState.value
         assertEquals(expectedSettings, settingsState)
-        verify { settingsRepository.getSettings() }
+        coVerify { settingsRepository.getSettingsAsync() }
     }
 
     @Test
     fun `updateSettings should save to repository and update state`() = runTest {
+        advanceUntilIdle() // Let initial collection happen
+
         val newSettings = Settings(
             enableNotifications = false,
             enableAutoPlay = true,
@@ -76,60 +122,25 @@ class SettingsViewModelTest {
 
         val settingsState = viewModel.settingsState.value
         assertEquals(newSettings, settingsState)
-        verify { settingsRepository.saveSettings(newSettings) }
+        coVerify { settingsRepository.saveSettings(newSettings) }
     }
 
     @Test
     fun `updateStreamingQuality should update only streaming quality`() = runTest {
-        // First set initial settings
-        val initialSettings = Settings(
-            enableNotifications = true,
-            enableAutoPlay = false,
-            streamingQuality = "Auto",
-            enableSubtitles = true,
-            subtitleLanguage = "English"
-        )
-        viewModel.updateSettings(initialSettings)
-        advanceUntilIdle()
+        advanceUntilIdle() // Let initial collection happen
 
-        // Update streaming quality
         viewModel.updateStreamingQuality("4K")
         advanceUntilIdle()
 
         val updatedSettings = viewModel.settingsState.value
         assertEquals("4K", updatedSettings?.streamingQuality)
-        // Other fields should remain unchanged
-        assertEquals(true, updatedSettings?.enableNotifications)
-        assertEquals(false, updatedSettings?.enableAutoPlay)
-        assertEquals(true, updatedSettings?.enableSubtitles)
-        assertEquals("English", updatedSettings?.subtitleLanguage)
-    }
-
-    @Test
-    fun `updateStreamingQuality with null current settings should do nothing`() = runTest {
-        // Don't set initial settings (state remains null)
-
-        viewModel.updateStreamingQuality("4K")
-        advanceUntilIdle()
-
-        val settingsState = viewModel.settingsState.value
-        assertNull(settingsState) // Should remain null
+        coVerify { settingsRepository.updateStreamingQuality("4K") }
     }
 
     @Test
     fun `updateSubtitleSettings should update subtitle settings correctly`() = runTest {
-        // First set initial settings
-        val initialSettings = Settings(
-            enableNotifications = true,
-            enableAutoPlay = false,
-            streamingQuality = "Auto",
-            enableSubtitles = true,
-            subtitleLanguage = "English"
-        )
-        viewModel.updateSettings(initialSettings)
-        advanceUntilIdle()
+        advanceUntilIdle() // Let initial collection happen
 
-        // Update subtitle settings
         viewModel.updateSubtitleSettings(
             enableSubtitles = false,
             subtitleLanguage = "French"
@@ -139,61 +150,38 @@ class SettingsViewModelTest {
         val updatedSettings = viewModel.settingsState.value
         assertEquals(false, updatedSettings?.enableSubtitles)
         assertEquals("French", updatedSettings?.subtitleLanguage)
-        // Other fields should remain unchanged
-        assertEquals(true, updatedSettings?.enableNotifications)
-        assertEquals(false, updatedSettings?.enableAutoPlay)
-        assertEquals("Auto", updatedSettings?.streamingQuality)
-    }
-
-    @Test
-    fun `updateSubtitleSettings with null current settings should do nothing`() = runTest {
-        viewModel.updateSubtitleSettings(
-            enableSubtitles = false,
-            subtitleLanguage = "French"
-        )
-        advanceUntilIdle()
-
-        val settingsState = viewModel.settingsState.value
-        assertNull(settingsState) // Should remain null
+        coVerify { settingsRepository.updateSubtitles(false) }
+        coVerify { settingsRepository.updateSubtitleLanguage("French") }
     }
 
     @Test
     fun `updateNotificationSettings should update notification setting correctly`() = runTest {
-        // First set initial settings with notifications enabled
-        val initialSettings = Settings(
-            enableNotifications = true,
-            enableAutoPlay = false,
-            streamingQuality = "Auto",
-            enableSubtitles = true,
-            subtitleLanguage = "English"
-        )
-        viewModel.updateSettings(initialSettings)
-        advanceUntilIdle()
+        advanceUntilIdle() // Let initial collection happen
 
-        // Disable notifications
         viewModel.updateNotificationSettings(false)
         advanceUntilIdle()
 
         val updatedSettings = viewModel.settingsState.value
         assertEquals(false, updatedSettings?.enableNotifications)
-        // Other fields should remain unchanged
-        assertEquals(false, updatedSettings?.enableAutoPlay)
-        assertEquals("Auto", updatedSettings?.streamingQuality)
-        assertEquals(true, updatedSettings?.enableSubtitles)
-        assertEquals("English", updatedSettings?.subtitleLanguage)
+        coVerify { settingsRepository.updateNotifications(false) }
     }
 
     @Test
-    fun `updateNotificationSettings with null current settings should do nothing`() = runTest {
-        viewModel.updateNotificationSettings(false)
+    fun `updateAutoPlay should update auto-play setting correctly`() = runTest {
+        advanceUntilIdle() // Let initial collection happen
+
+        viewModel.updateAutoPlay(true)
         advanceUntilIdle()
 
-        val settingsState = viewModel.settingsState.value
-        assertNull(settingsState) // Should remain null
+        val updatedSettings = viewModel.settingsState.value
+        assertEquals(true, updatedSettings?.enableAutoPlay)
+        coVerify { settingsRepository.updateAutoPlay(true) }
     }
 
     @Test
     fun `updateAllSettings should update all settings at once`() = runTest {
+        advanceUntilIdle() // Let initial collection happen
+
         viewModel.updateAllSettings(
             enableNotifications = false,
             enableAutoPlay = true,
@@ -212,7 +200,86 @@ class SettingsViewModelTest {
     }
 
     @Test
+    fun `resetToDefaults should restore default settings`() = runTest {
+        advanceUntilIdle() // Let initial collection happen
+
+        // First change settings
+        val customSettings = Settings(
+            enableNotifications = false,
+            enableAutoPlay = true,
+            streamingQuality = "4K",
+            enableSubtitles = false,
+            subtitleLanguage = "German"
+        )
+        viewModel.updateSettings(customSettings)
+        advanceUntilIdle()
+
+        // Reset to defaults
+        viewModel.resetToDefaults()
+        advanceUntilIdle()
+
+        val settingsState = viewModel.settingsState.value
+        assertEquals(defaultSettings, settingsState)
+        coVerify { settingsRepository.resetToDefaults() }
+    }
+
+    @Test
+    fun `isLoading should be true during save operation`() = runTest {
+        advanceUntilIdle() // Let initial collection happen
+
+        var loadingDuringOperation = false
+
+        val job = launch {
+            viewModel.isLoading.collect { isLoading ->
+                if (isLoading) {
+                    loadingDuringOperation = true
+                }
+            }
+        }
+
+        viewModel.updateSettings(defaultSettings)
+        advanceUntilIdle()
+
+        assertTrue(loadingDuringOperation)
+        assertFalse(viewModel.isLoading.value) // Should be false after completion
+
+        job.cancel()
+    }
+
+    @Test
+    fun `error should be set when save fails`() = runTest {
+        advanceUntilIdle() // Let initial collection happen
+
+        coEvery { settingsRepository.saveSettings(any()) } throws Exception("Save failed")
+
+        viewModel.updateSettings(defaultSettings)
+        advanceUntilIdle()
+
+        val error = viewModel.error.value
+        assertTrue(error?.contains("Failed to save settings") == true)
+    }
+
+    @Test
+    fun `clearError should clear error state`() = runTest {
+        advanceUntilIdle() // Let initial collection happen
+
+        // Trigger an error
+        coEvery { settingsRepository.saveSettings(any()) } throws Exception("Save failed")
+        viewModel.updateSettings(defaultSettings)
+        advanceUntilIdle()
+
+        assertTrue(viewModel.error.value != null)
+
+        // Clear the error
+        viewModel.clearError()
+
+        assertNull(viewModel.error.value)
+    }
+
+    @Test
     fun `multiple updateSettings calls should work correctly`() = runTest {
+        advanceUntilIdle() // Let initial collection happen
+
         val firstSettings = Settings(
             enableNotifications = true,
             enableAutoPlay = false,
@@ -244,40 +311,8 @@ class SettingsViewModelTest {
         assertEquals(secondSettings, currentSettings)
 
         // Verify both saves were called
-        verify { settingsRepository.saveSettings(firstSettings) }
-        verify { settingsRepository.saveSettings(secondSettings) }
-    }
-
-    @Test
-    fun `settings state flow should emit correct values`() = runTest {
-        val emittedValues = mutableListOf<Settings?>()
-
-        val job = launch {
-            viewModel.settingsState.collect { emittedValues.add(it) }
-        }
-
-        // Initial emission should be null
-        assertEquals(1, emittedValues.size)
-        assertNull(emittedValues[0])
-
-        // Load settings
-        val settings = Settings(
-            enableNotifications = true,
-            enableAutoPlay = false,
-            streamingQuality = "Auto",
-            enableSubtitles = true,
-            subtitleLanguage = "English"
-        )
-        every { settingsRepository.getSettings() } returns settings
-
-        viewModel.loadSettings()
-        advanceUntilIdle()
-
-        // Should have emitted the loaded settings
-        assertEquals(2, emittedValues.size)
-        assertEquals(settings, emittedValues[1])
-
-        job.cancel()
+        coVerify { settingsRepository.saveSettings(firstSettings) }
+        coVerify { settingsRepository.saveSettings(secondSettings) }
     }
 
     @Test

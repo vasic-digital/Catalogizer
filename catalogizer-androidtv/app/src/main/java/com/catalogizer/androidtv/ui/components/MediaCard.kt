@@ -12,11 +12,13 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.tv.material3.*
+import coil.compose.AsyncImage
 import com.catalogizer.androidtv.data.models.MediaItem
 
 @Composable
@@ -53,16 +55,15 @@ fun MediaCard(
                     .clip(RoundedCornerShape(topStart = 8.dp, topEnd = 8.dp)),
                 contentAlignment = Alignment.Center
             ) {
-                if (mediaItem.thumbnailUrl != null) {
-                    // TODO: Load actual thumbnail using Coil
-                    // AsyncImage(
-                    //     model = mediaItem.thumbnailUrl,
-                    //     contentDescription = mediaItem.title,
-                    //     modifier = Modifier.fillMaxSize(),
-                    //     contentScale = ContentScale.Crop
-                    // )
+                mediaItem.thumbnailUrl?.let { url ->
+                    AsyncImage(
+                        model = url,
+                        contentDescription = mediaItem.title,
+                        modifier = Modifier.fillMaxSize(),
+                        contentScale = ContentScale.Crop
+                    )
                 }
-                
+
                 // Play button overlay
                 Box(
                     modifier = Modifier
@@ -242,7 +243,15 @@ fun CompactMediaCard(
                 modifier = Modifier.size(80.dp, 60.dp),
                 contentAlignment = Alignment.Center
             ) {
-                // TODO: Load actual thumbnail
+                mediaItem.thumbnailUrl?.let { url ->
+                    AsyncImage(
+                        model = url,
+                        contentDescription = mediaItem.title,
+                        modifier = Modifier.fillMaxSize(),
+                        contentScale = ContentScale.Crop
+                    )
+                }
+                // Play button overlay (shown on top of thumbnail)
                 Box(
                     modifier = Modifier.background(
                         color = Color.Black.copy(alpha = 0.6f),
