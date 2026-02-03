@@ -9,6 +9,7 @@ import (
 	"regexp"
 	"strconv"
 	"strings"
+	"sync"
 	"time"
 
 	"go.uber.org/zap"
@@ -29,6 +30,8 @@ type SubtitleService struct {
 	httpClient         *http.Client
 	apiKeys            map[string]string
 	cacheDir           string
+	wg                 sync.WaitGroup // Tracks running goroutines for graceful shutdown
+	shutdown           chan struct{}  // Signals goroutines to stop
 }
 
 // SubtitleProvider represents different subtitle providers
@@ -156,7 +159,14 @@ func NewSubtitleService(db *sql.DB, logger *zap.Logger, cacheService CacheServic
 		httpClient:         &http.Client{Timeout: 30 * time.Second},
 		apiKeys:            make(map[string]string),
 		cacheDir:           "./cache/subtitles",
+		shutdown:           make(chan struct{}),
 	}
+}
+
+// Close gracefully shuts down the subtitle service, waiting for pending goroutines
+func (s *SubtitleService) Close() {
+	close(s.shutdown)
+	s.wg.Wait()
 }
 
 // SearchSubtitles searches for subtitles across multiple providers
@@ -275,7 +285,17 @@ func (s *SubtitleService) DownloadSubtitle(ctx context.Context, request *Subtitl
 
 	// Auto-translate to requested languages
 	if len(request.AutoTranslate) > 0 {
-		go s.autoTranslateSubtitle(ctx, track, request.AutoTranslate)
+		// Check if shutdown is in progress before spawning goroutine
+		select {
+		case <-s.shutdown:
+			s.logger.Debug("Skipping auto-translate, service shutting down")
+		default:
+			s.wg.Add(1)
+			go func() {
+				defer s.wg.Done()
+				s.autoTranslateSubtitle(ctx, track, request.AutoTranslate)
+			}()
+		}
 	}
 
 	s.logger.Info("Subtitle downloaded successfully",

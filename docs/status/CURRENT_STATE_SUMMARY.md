@@ -148,12 +148,13 @@ These tests have specific requirements preventing them from running with SQLite 
   - Added performance indexes
   - Inserted default test user
 
-### 6. Concurrency Fixes (Session 2)
+### 6. Concurrency Fixes (Sessions 2-3)
 
 **Files Modified:**
 - `catalog-api/internal/services/universal_scanner.go` - Added `protocolScannersMu` mutex for thread-safe map access
 - `catalog-api/internal/services/cache_service.go` - Added WaitGroup and shutdown channel for goroutine tracking
 - `catalog-api/middleware/advanced_rate_limiter.go` - Added `stopCh` for graceful cleanup goroutine shutdown
+- `catalog-api/internal/services/subtitle_service.go` - Added WaitGroup and shutdown channel for autoTranslate goroutine lifecycle
 
 ### 7. Additional Tests Re-enabled (Session 2)
 
