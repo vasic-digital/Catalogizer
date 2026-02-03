@@ -15,17 +15,18 @@ import (
 
 // UniversalScanner handles file system scanning across all supported protocols
 type UniversalScanner struct {
-	db               *sql.DB
-	logger           *zap.Logger
-	renameTracker    *UniversalRenameTracker
-	clientFactory    filesystem.ClientFactory
-	scanQueue        chan ScanJob
-	workers          int
-	stopCh           chan struct{}
-	wg               sync.WaitGroup
-	protocolScanners map[string]ProtocolScanner
-	activeScansMu    sync.RWMutex
-	activeScans      map[string]*ScanStatus
+	db                 *sql.DB
+	logger             *zap.Logger
+	renameTracker      *UniversalRenameTracker
+	clientFactory      filesystem.ClientFactory
+	scanQueue          chan ScanJob
+	workers            int
+	stopCh             chan struct{}
+	wg                 sync.WaitGroup
+	protocolScannersMu sync.RWMutex
+	protocolScanners   map[string]ProtocolScanner
+	activeScansMu      sync.RWMutex
+	activeScans        map[string]*ScanStatus
 }
 
 // ScanJob represents a scan operation for any protocol
@@ -108,6 +109,8 @@ func NewUniversalScanner(db *sql.DB, logger *zap.Logger, renameTracker *Universa
 
 // RegisterProtocolScanner registers a protocol-specific scanner
 func (s *UniversalScanner) RegisterProtocolScanner(protocol string, scanner ProtocolScanner) {
+	s.protocolScannersMu.Lock()
+	defer s.protocolScannersMu.Unlock()
 	s.protocolScanners[protocol] = scanner
 }
 
@@ -193,7 +196,9 @@ func (s *UniversalScanner) processScanJob(job ScanJob, workerID int) {
 	}()
 
 	// Get protocol scanner
+	s.protocolScannersMu.RLock()
 	protocolScanner, exists := s.protocolScanners[job.StorageRoot.Protocol]
+	s.protocolScannersMu.RUnlock()
 	if !exists {
 		s.logger.Error("No scanner for protocol",
 			zap.String("protocol", job.StorageRoot.Protocol),
@@ -239,11 +244,12 @@ func (s *UniversalScanner) processScanJob(job ScanJob, workerID int) {
 	}
 
 	status.updateStatus("completed")
+	snapshot := status.GetSnapshot()
 	s.logger.Info("Scan completed successfully",
 		zap.String("job_id", job.ID),
 		zap.String("storage_root", job.StorageRoot.Name),
-		zap.Int64("files_processed", status.FilesProcessed),
-		zap.Duration("duration", time.Since(status.StartTime)))
+		zap.Int64("files_processed", snapshot.FilesProcessed),
+		zap.Duration("duration", time.Since(snapshot.StartTime)))
 }
 
 // GetActiveScanStatus returns the status of an active scan
@@ -261,21 +267,9 @@ func (s *UniversalScanner) GetAllActiveScanStatuses() map[string]*ScanStatus {
 
 	statuses := make(map[string]*ScanStatus)
 	for id, status := range s.activeScans {
-		// Create a copy to avoid race conditions
-		statusCopy := &ScanStatus{
-			JobID:           status.JobID,
-			StorageRootName: status.StorageRootName,
-			Protocol:        status.Protocol,
-			StartTime:       status.StartTime,
-			CurrentPath:     status.CurrentPath,
-			FilesProcessed:  status.FilesProcessed,
-			FilesFound:      status.FilesFound,
-			FilesUpdated:    status.FilesUpdated,
-			FilesDeleted:    status.FilesDeleted,
-			ErrorCount:      status.ErrorCount,
-			Status:          status.Status,
-		}
-		statuses[id] = statusCopy
+		// Use GetSnapshot for thread-safe copy of status fields
+		snapshot := status.GetSnapshot()
+		statuses[id] = &snapshot
 	}
 	return statuses
 }

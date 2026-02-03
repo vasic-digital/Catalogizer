@@ -70,6 +70,7 @@ type AdvancedRateLimiter struct {
 	limiters map[string]*rate.Limiter
 	mu       sync.RWMutex
 	config   RateLimiterConfig
+	stopCh   chan struct{} // Signals shutdown for cleanup goroutine
 }
 
 // NewAdvancedRateLimiter creates a new rate limiter
@@ -77,7 +78,13 @@ func NewAdvancedRateLimiter(config RateLimiterConfig) *AdvancedRateLimiter {
 	return &AdvancedRateLimiter{
 		limiters: make(map[string]*rate.Limiter),
 		config:   config,
+		stopCh:   make(chan struct{}),
 	}
+}
+
+// Stop gracefully stops the cleanup goroutine
+func (r *AdvancedRateLimiter) Stop() {
+	close(r.stopCh)
 }
 
 // getLimiter returns a rate limiter for the given key
@@ -109,12 +116,17 @@ func (r *AdvancedRateLimiter) CleanupExpiredLimiters() {
 func AdvancedRateLimit(config RateLimiterConfig) gin.HandlerFunc {
 	limiter := NewAdvancedRateLimiter(config)
 
-	// Start cleanup goroutine
+	// Start cleanup goroutine with stop signal support
 	go func() {
 		ticker := time.NewTicker(5 * time.Minute)
 		defer ticker.Stop()
-		for range ticker.C {
-			limiter.CleanupExpiredLimiters()
+		for {
+			select {
+			case <-ticker.C:
+				limiter.CleanupExpiredLimiters()
+			case <-limiter.stopCh:
+				return // Graceful shutdown
+			}
 		}
 	}()
 

@@ -95,6 +95,10 @@ podman-compose -f docker-compose.yml config --quiet  # validate
 podman run / podman build / podman ps  # instead of docker equivalents
 ```
 
+## Constraints
+
+**GitHub Actions MUST remain DISABLED.** All workflow files in `.github/workflows/` must have the `.disabled` extension. Do NOT enable, rename, or create active GitHub Actions workflow files. CI/CD must be run locally or through other means.
+
 ## Conventions
 
 - **Go**: `NewService` constructor injection, error wrapping, table-driven tests, `*_test.go` beside source

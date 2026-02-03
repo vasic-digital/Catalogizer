@@ -28,10 +28,11 @@
   - Test framework migration from Jest to Vitest completed
 
 ### CI/CD Workflows
-- **Status:** ENABLED
-  - `ci.yml` - Main CI pipeline (Go, Web, API Client, Android apps)
-  - `security.yml` - Security scanning (CodeQL, Trivy, dependency audit)
-  - `docker.yml` - Docker image build and push
+- **Status:** DISABLED (per project constraints)
+  - `ci.yml.disabled` - Main CI pipeline (Go, Web, API Client, Android apps)
+  - `security.yml.disabled` - Security scanning (CodeQL, Trivy, dependency audit)
+  - `docker.yml.disabled` - Docker image build and push
+  - **Note:** GitHub Actions must remain disabled. Run tests locally.
 
 ---
 
@@ -44,7 +45,7 @@
 | Format string reporting | FIXED | Proper pointer dereferencing |
 | Cascading build failures | RESOLVED | `go build ./...` succeeds |
 | Web test framework mismatch | FIXED | Migrated to Vitest, 823 tests pass |
-| CI/CD workflows disabled | FIXED | All 3 workflows enabled |
+| CI/CD workflows disabled | BY DESIGN | Workflows disabled per project constraints |
 
 ---
 
@@ -108,12 +109,13 @@ These tests have specific requirements preventing them from running with SQLite 
 - `catalog-web/src/test/` directory (obsolete Jest compatibility files)
 - `catalog-web/src/lib/__mocks__/` directory
 
-### 2. CI/CD Workflows Enabled
+### 2. CI/CD Workflows Status
 
-**Files Renamed:**
-- `.github/workflows/ci.yml.disabled` → `.github/workflows/ci.yml`
-- `.github/workflows/security.yml.disabled` → `.github/workflows/security.yml`
-- `.github/workflows/docker.yml.disabled` → `.github/workflows/docker.yml`
+**Status:** Disabled per project constraints
+- `.github/workflows/ci.yml.disabled` - Main CI pipeline
+- `.github/workflows/security.yml.disabled` - Security scanning
+- `.github/workflows/docker.yml.disabled` - Docker builds
+- Added constraint to CLAUDE.md requiring workflows remain disabled
 
 ### 3. Go Tests Re-enabled
 

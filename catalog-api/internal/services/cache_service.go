@@ -7,14 +7,17 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
+	"sync"
 	"time"
 
 	"go.uber.org/zap"
 )
 
 type CacheService struct {
-	db     *sql.DB
-	logger *zap.Logger
+	db       *sql.DB
+	logger   *zap.Logger
+	wg       sync.WaitGroup // Tracks background goroutines for graceful shutdown
+	shutdown chan struct{}  // Signals shutdown to prevent new goroutines
 }
 
 type CacheEntry struct {
@@ -92,9 +95,16 @@ const (
 
 func NewCacheService(db *sql.DB, logger *zap.Logger) *CacheService {
 	return &CacheService{
-		db:     db,
-		logger: logger,
+		db:       db,
+		logger:   logger,
+		shutdown: make(chan struct{}),
 	}
+}
+
+// Close gracefully shuts down the cache service, waiting for pending operations
+func (s *CacheService) Close() {
+	close(s.shutdown)
+	s.wg.Wait()
 }
 
 func (s *CacheService) Set(ctx context.Context, key string, value interface{}, ttl time.Duration) error {
@@ -687,9 +697,17 @@ func (s *CacheService) hashString(text string) string {
 }
 
 func (s *CacheService) recordCacheActivity(ctx context.Context, activityType, key, provider string, hit bool) {
-	// Use a detached context with timeout for the background write,
-	// so it doesn't outlive the application but isn't tied to the request lifecycle
+	// Check if shutdown has been initiated
+	select {
+	case <-s.shutdown:
+		return // Don't start new goroutines during shutdown
+	default:
+	}
+
+	// Track goroutine for graceful shutdown
+	s.wg.Add(1)
 	go func() {
+		defer s.wg.Done()
 		writeCtx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 		defer cancel()
 		query := `
