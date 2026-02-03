@@ -99,6 +99,99 @@ podman run / podman build / podman ps  # instead of docker equivalents
 
 **GitHub Actions MUST remain DISABLED.** All workflow files in `.github/workflows/` must have the `.disabled` extension. Do NOT enable, rename, or create active GitHub Actions workflow files. CI/CD must be run locally or through other means.
 
+## Local Development Setup
+
+### Prerequisites
+- **Go** 1.21+ (for catalog-api)
+- **Node.js** 18+ and npm (for catalog-web, installer-wizard, catalogizer-desktop)
+- **Rust** and Cargo (for Tauri apps)
+- **Android Studio** with Kotlin (for Android apps)
+- **SQLite3** or **PostgreSQL** (database)
+- **Podman** or **Docker** (optional, for containerized development)
+
+### Database Setup
+
+**SQLite (Development - Recommended):**
+```bash
+# No setup needed - catalog-api creates catalogizer.db automatically
+cd catalog-api && go run main.go
+```
+
+**PostgreSQL (Production):**
+```bash
+# Set environment variables
+export DB_TYPE=postgres
+export DB_HOST=localhost
+export DB_PORT=5432
+export DB_NAME=catalogizer
+export DB_USER=catalogizer
+export DB_PASSWORD=your_password
+```
+
+### Environment Variables
+
+Create `.env` file in `catalog-api/`:
+```env
+# Server
+PORT=8080
+GIN_MODE=debug
+
+# Database (SQLite default, or set for PostgreSQL)
+DB_TYPE=sqlite
+# DB_HOST=localhost
+# DB_PORT=5432
+# DB_NAME=catalogizer
+# DB_USER=catalogizer
+# DB_PASSWORD=secret
+
+# Authentication
+JWT_SECRET=your-dev-secret-key
+ADMIN_PASSWORD=admin123
+
+# External APIs (optional)
+TMDB_API_KEY=your_tmdb_key
+OMDB_API_KEY=your_omdb_key
+```
+
+### Running the Full Stack
+
+```bash
+# Terminal 1: Backend
+cd catalog-api && go run main.go
+
+# Terminal 2: Frontend
+cd catalog-web && npm install && npm run dev
+
+# Access: http://localhost:5173 (frontend) / http://localhost:8080 (API)
+```
+
+## Testing
+
+### Running Tests by Component
+
+```bash
+# Go tests (all packages)
+cd catalog-api && go test ./...
+
+# Go tests (single test with verbose output)
+cd catalog-api && go test -v -run TestFunctionName ./path/to/package/
+
+# Web tests (Vitest)
+cd catalog-web && npm run test         # watch mode
+cd catalog-web && npm run test -- --run  # single run
+
+# Installer wizard tests
+cd installer-wizard && npm run test -- --run
+
+# All tests
+./scripts/run-all-tests.sh
+```
+
+### Test File Conventions
+- Go: `*_test.go` alongside source files
+- React/TS: `__tests__/*.test.tsx` or `*.test.ts` in same directory
+- Test helper in `catalog-api/internal/tests/test_helper.go` provides SQLite test database setup
+
 ## Conventions
 
 - **Go**: `NewService` constructor injection, error wrapping, table-driven tests, `*_test.go` beside source
