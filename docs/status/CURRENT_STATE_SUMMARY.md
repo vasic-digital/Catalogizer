@@ -182,10 +182,10 @@ These tests have specific requirements preventing them from running with SQLite 
 
 | Component | Tests | Status |
 |-----------|-------|--------|
-| catalog-api (Go) | 25+ packages | ALL PASS |
+| catalog-api (Go) | 27 packages, 721 test cases | ALL PASS |
 | catalog-web (React) | 823 tests | ALL PASS |
 | installer-wizard | 102 tests | ALL PASS |
-| **Total** | **950+ tests** | **ALL PASS** |
+| **Total** | **1,646+ tests** | **ALL PASS** |
 
 ---
 
@@ -196,8 +196,9 @@ These tests have specific requirements preventing them from running with SQLite 
 2. ~~Fix critical concurrency issues~~ **COMPLETED** (5 services fixed)
 3. ~~Add component README files~~ **COMPLETED** (4 README files added)
 4. ~~Enhance CLAUDE.md~~ **COMPLETED** (local dev setup guide added)
-5. Run security scans (Snyk, SonarQube) via CI/CD on push
-6. Enhance test helper to run migrations for remaining 7 disabled tests
+5. ~~Add tests for untested packages~~ **COMPLETED** (config + utils tests added)
+6. Run security scans (Snyk, SonarQube) via CI/CD on push
+7. Enhance test helper to run migrations for remaining 7 disabled tests
 
 ### Medium-term (Priority 3)
 1. Fix remaining concurrency issues (lower priority, mostly false positives)
@@ -228,4 +229,4 @@ cd catalog-web && npm run test
 
 ---
 
-*Last Updated: 2026-02-03*
+*Last Updated: 2026-02-03 (Session 4)*
