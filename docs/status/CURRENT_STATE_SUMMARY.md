@@ -162,6 +162,20 @@ These tests have specific requirements preventing them from running with SQLite 
 - `internal/tests/deep_linking_integration_test.go.disabled` → `internal/tests/deep_linking_integration_test.go`
 - `internal/tests/recommendation_service_test_simple.go.disabled` → `internal/tests/recommendation_service_simple_test.go` (rewritten for proper Go test naming)
 
+### 8. Documentation Enhancements (Session 3)
+
+**CLAUDE.md Enhanced:**
+- Added Prerequisites section
+- Added Database Setup (SQLite/PostgreSQL)
+- Added Environment Variables section
+- Added Testing section with commands
+
+**README Files Created:**
+- `catalog-web/README.md` - React frontend documentation
+- `catalogizer-desktop/README.md` - Tauri desktop app documentation
+- `catalogizer-android/README.md` - Android mobile app documentation
+- `catalogizer-androidtv/README.md` - Android TV app documentation
+
 ---
 
 ## TEST SUMMARY
@@ -179,14 +193,15 @@ These tests have specific requirements preventing them from running with SQLite 
 
 ### Short-term (Priority 2)
 1. ~~Verify security configurations (S1-S8)~~ **COMPLETED**
-2. ~~Fix critical concurrency issues~~ **COMPLETED** (4 of 13 - critical ones fixed)
-3. Run security scans (Snyk, SonarQube) via CI/CD on push
-4. Enhance test helper to run migrations for remaining 7 disabled tests
+2. ~~Fix critical concurrency issues~~ **COMPLETED** (5 services fixed)
+3. ~~Add component README files~~ **COMPLETED** (4 README files added)
+4. ~~Enhance CLAUDE.md~~ **COMPLETED** (local dev setup guide added)
+5. Run security scans (Snyk, SonarQube) via CI/CD on push
+6. Enhance test helper to run migrations for remaining 7 disabled tests
 
 ### Medium-term (Priority 3)
-1. Fix remaining concurrency issues (9 remaining - lower priority)
-2. Complete documentation gaps
-3. Performance optimizations
+1. Fix remaining concurrency issues (lower priority, mostly false positives)
+2. Performance optimizations
 
 ### Long-term (Priority 4)
 1. Add E2E tests (Playwright)
