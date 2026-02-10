@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"io"
+	"net"
 	"path/filepath"
 	"time"
 
@@ -36,7 +37,7 @@ func NewFTPClient(config *FTPConfig) *FTPClient {
 
 // Connect establishes the FTP connection
 func (c *FTPClient) Connect(ctx context.Context) error {
-	addr := fmt.Sprintf("%s:%d", c.config.Host, c.config.Port)
+	addr := net.JoinHostPort(c.config.Host, fmt.Sprintf("%d", c.config.Port))
 
 	client, err := ftp.Dial(addr, ftp.DialWithTimeout(30*time.Second))
 	if err != nil {

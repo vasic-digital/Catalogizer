@@ -96,7 +96,7 @@ server.pid
 # Gradle
 .gradle/
 build/
-!gradle/wrapper/gradle-wrapper.jar
+!**/gradle/wrapper/gradle-wrapper.jar
 
 # IntelliJ IDEA
 .idea/modules.xml

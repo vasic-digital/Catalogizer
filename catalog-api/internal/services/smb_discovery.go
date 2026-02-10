@@ -182,7 +182,7 @@ func (s *SMBDiscoveryService) TestConnection(ctx context.Context, config SMBConn
 		zap.String("username", config.Username))
 
 	// Establish connection
-	conn, err := net.DialTimeout("tcp", fmt.Sprintf("%s:%d", config.Host, config.Port), s.timeout)
+	conn, err := net.DialTimeout("tcp", net.JoinHostPort(config.Host, fmt.Sprintf("%d", config.Port)), s.timeout)
 	if err != nil {
 		s.logger.Debug("Failed to connect to SMB host", zap.String("host", config.Host), zap.Error(err))
 		return false
@@ -232,7 +232,7 @@ func (s *SMBDiscoveryService) BrowseShare(ctx context.Context, config SMBConnect
 		zap.String("path", path))
 
 	// Establish connection
-	conn, err := net.DialTimeout("tcp", fmt.Sprintf("%s:%d", config.Host, config.Port), s.timeout)
+	conn, err := net.DialTimeout("tcp", net.JoinHostPort(config.Host, fmt.Sprintf("%d", config.Port)), s.timeout)
 	if err != nil {
 		return nil, fmt.Errorf("failed to connect to SMB host %s: %w", config.Host, err)
 	}

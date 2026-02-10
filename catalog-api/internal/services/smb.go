@@ -60,7 +60,7 @@ func (s *SMBService) getConnection(hostName string) (*smb2.Session, error) {
 		return nil, fmt.Errorf("SMB host not found: %s", hostName)
 	}
 
-	conn, err := net.Dial("tcp", fmt.Sprintf("%s:%d", smbHost.Host, smbHost.Port))
+	conn, err := net.Dial("tcp", net.JoinHostPort(smbHost.Host, fmt.Sprintf("%d", smbHost.Port)))
 	if err != nil {
 		return nil, fmt.Errorf("failed to connect to SMB host: %w", err)
 	}

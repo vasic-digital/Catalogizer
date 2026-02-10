@@ -37,7 +37,7 @@ func NewSmbClient(config *SmbConfig) *SmbClient {
 // Connect establishes the SMB connection
 func (c *SmbClient) Connect(ctx context.Context) error {
 	// Establish TCP connection
-	addr := fmt.Sprintf("%s:%d", c.config.Host, c.config.Port)
+	addr := net.JoinHostPort(c.config.Host, fmt.Sprintf("%d", c.config.Port))
 	conn, err := net.Dial("tcp", addr)
 	if err != nil {
 		return fmt.Errorf("failed to connect to SMB server: %w", err)

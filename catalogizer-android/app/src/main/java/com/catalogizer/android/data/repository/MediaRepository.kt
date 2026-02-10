@@ -241,9 +241,7 @@ class MediaRepository(
                 }
                 result
             } else {
-                // Fallback to local data
-                val localData = mediaDao.getContinueWatchingPaging()
-                // Convert PagingSource to List for this use case
+                // Fallback: server unavailable, using cached data
                 ApiResult.error("Server unavailable, using cached data")
             }
         } catch (e: Exception) {

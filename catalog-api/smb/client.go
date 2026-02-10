@@ -29,7 +29,7 @@ type SmbConfig struct {
 // NewSmbClient creates a new SMB client
 func NewSmbClient(config *SmbConfig) (*SmbClient, error) {
 	// Establish TCP connection
-	addr := fmt.Sprintf("%s:%d", config.Host, config.Port)
+	addr := net.JoinHostPort(config.Host, fmt.Sprintf("%d", config.Port))
 	conn, err := net.Dial("tcp", addr)
 	if err != nil {
 		return nil, fmt.Errorf("failed to connect to SMB server: %w", err)

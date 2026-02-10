@@ -196,19 +196,7 @@ export const MediaPlayer: React.FC<MediaPlayerProps> = ({
           className="relative bg-black aspect-video"
           onMouseMove={handleMouseMove}
         >
-          {/* Video Element - Placeholder for now */}
-          <div className="absolute inset-0 flex items-center justify-center">
-            <div className="text-center text-white">
-              <Play className="w-16 h-16 mx-auto mb-4" />
-              <p className="text-lg">Media Player</p>
-              <p className="text-sm opacity-75">{media.directory_path}</p>
-              <p className="text-xs opacity-50 mt-2">
-                (Placeholder - react-player integration needed)
-              </p>
-            </div>
-          </div>
-
-          {/* Video Element - will be implemented with react-player */}
+          {/* Video Element */}
           <video
             ref={videoRef}
             className="absolute inset-0 w-full h-full"

@@ -3,7 +3,6 @@ package com.catalogizer.android.ui.viewmodel
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.catalogizer.android.data.models.MediaItem
-import com.catalogizer.android.data.models.MediaSearchRequest
 import com.catalogizer.android.data.repository.MediaRepository
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
@@ -41,11 +40,6 @@ class SearchViewModel(
             delay(300) // debounce
             _isSearching.value = true
             try {
-                val request = MediaSearchRequest(
-                    query = query,
-                    limit = 50,
-                    offset = 0
-                )
                 val result = mediaRepository.getRecentMedia(50)
                 if (result.isSuccess) {
                     _searchResults.value = (result.data ?: emptyList()).filter {

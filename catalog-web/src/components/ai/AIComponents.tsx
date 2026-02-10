@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { Search, Brain, Lightbulb, Tag, Grid, Folder, Sparkles, TrendingUp } from 'lucide-react';
+import { debounce } from '@/lib/utils';
 
 // Types for AI-powered suggestions
 interface AISuggestion {

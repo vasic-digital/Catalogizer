@@ -41,8 +41,8 @@ class AuthViewModelTest {
         mockAuthRepository = mockk(relaxed = true)
         
         // Setup default mock responses
-        every { mockAuthRepository.isAuthenticated } returns flowOf(true)
-        
+        coEvery { mockAuthRepository.isAuthenticated() } returns true
+
         viewModel = com.catalogizer.android.ui.viewmodel.AuthViewModel(mockAuthRepository)
         // No need to advance here since test will handle it
     }
@@ -62,7 +62,7 @@ class AuthViewModelTest {
         assertNotNull(viewModel.authState)
         
         // Verify auth status check was made
-        verify { mockAuthRepository.isAuthenticated }
+        coVerify { mockAuthRepository.isAuthenticated() }
     }
     
     @Test
