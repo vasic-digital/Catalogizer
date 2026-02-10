@@ -250,9 +250,11 @@ func (s *StressTestService) selectRandomScenario(scenarios []models.StressTestSc
 	}
 
 	if totalWeight == 0 {
+		// #nosec G404 - math/rand is appropriate for test scenario selection (non-cryptographic)
 		return &scenarios[rand.Intn(len(scenarios))]
 	}
 
+	// #nosec G404 - math/rand is appropriate for test scenario selection (non-cryptographic)
 	randomWeight := rand.Intn(totalWeight)
 	currentWeight := 0
 

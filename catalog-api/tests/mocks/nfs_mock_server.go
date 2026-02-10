@@ -136,6 +136,7 @@ func (s *MockNFSServer) AddFile(exportPath, parentPath, name string, isDirectory
 	}
 
 	// Generate inode number
+	// #nosec G115 - safe conversion int->uint64 in mock server, len() result is always non-negative
 	inode := uint64(len(s.files) + 1)
 
 	s.files[fullPath] = &MockNFSFile{
@@ -353,6 +354,7 @@ func (s *MockNFSServer) WriteFile(exportPath, filePath string, content []byte, m
 	fileName := filepath.Base(filePath)
 
 	// Generate inode number
+	// #nosec G115 - safe conversion int->uint64 in mock server, len() result is always non-negative
 	inode := uint64(len(s.files) + 1)
 
 	s.files[fullPath] = &MockNFSFile{
@@ -414,6 +416,7 @@ func (s *MockNFSServer) CreateDirectory(exportPath, dirPath string, mode, uid, g
 	dirName := filepath.Base(dirPath)
 
 	// Generate inode number
+	// #nosec G115 - safe conversion int->uint64 in mock server, len() result is always non-negative
 	inode := uint64(len(s.files) + 1)
 
 	s.files[fullPath] = &MockNFSFile{

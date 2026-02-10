@@ -178,9 +178,16 @@ func (c *FTPClient) ListDirectory(ctx context.Context, path string) ([]*FileInfo
 
 	var files []*FileInfo
 	for _, entry := range entries {
+		// Safe conversion: Check for overflow when converting uint64 to int64
+		size := int64(entry.Size)
+		if entry.Size > uint64(1<<63-1) {
+			// File size exceeds int64 max, clamp to max value
+			size = 1<<63 - 1
+		}
+
 		files = append(files, &FileInfo{
 			Name:    entry.Name,
-			Size:    int64(entry.Size),
+			Size:    size,
 			ModTime: entry.Time,
 			IsDir:   entry.Type == ftp.EntryTypeFolder,
 			Mode:    0644, // Default mode
