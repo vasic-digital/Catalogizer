@@ -20,6 +20,12 @@ import (
 	"go.uber.org/zap"
 )
 
+// enhancedDebounceEntry tracks a debounce timer with a generation counter
+type enhancedDebounceEntry struct {
+	timer      *time.Timer
+	generation uint64
+}
+
 // EnhancedChangeWatcher monitors file system changes with intelligent rename detection
 type EnhancedChangeWatcher struct {
 	mediaDB       *database.MediaDatabase
@@ -32,7 +38,7 @@ type EnhancedChangeWatcher struct {
 	workers       int
 	stopCh        chan struct{}
 	wg            sync.WaitGroup
-	debounceMap   map[string]*time.Timer
+	debounceMap   map[string]*enhancedDebounceEntry
 	debounceMu    sync.Mutex
 	debounceDelay time.Duration
 }
@@ -60,7 +66,7 @@ func NewEnhancedChangeWatcher(mediaDB *database.MediaDatabase, analyzer *analyze
 		watchers:      make(map[string]*fsnotify.Watcher),
 		changeQueue:   make(chan EnhancedChangeEvent, 10000),
 		workers:       4, // Increased workers for better performance
-		debounceMap:   make(map[string]*time.Timer),
+		debounceMap:   make(map[string]*enhancedDebounceEntry),
 		debounceDelay: 2 * time.Second,
 		stopCh:        make(chan struct{}),
 	}
@@ -85,12 +91,12 @@ func (w *EnhancedChangeWatcher) Stop() {
 
 	// Stop all file watchers
 	w.watcherMu.Lock()
+	defer w.watcherMu.Unlock()
 	for path, watcher := range w.watchers {
 		watcher.Close()
 		w.logger.Debug("Closed watcher", zap.String("path", path))
 	}
 	w.watchers = make(map[string]*fsnotify.Watcher)
-	w.watcherMu.Unlock()
 
 	// Stop workers
 	close(w.stopCh)
@@ -248,10 +254,10 @@ func (w *EnhancedChangeWatcher) handleFileSystemEvent(smbRoot, localPath string,
 	// Handle directory creation by adding to watcher
 	if operation == "created" && isDir {
 		w.watcherMu.Lock()
+		defer w.watcherMu.Unlock()
 		if watcher, exists := w.watchers[smbRoot]; exists {
 			watcher.Add(event.Name)
 		}
-		w.watcherMu.Unlock()
 	}
 
 	changeEvent := EnhancedChangeEvent{
@@ -333,19 +339,27 @@ func (w *EnhancedChangeWatcher) calculateFileHash(filePath string) string {
 // debounceChange debounces file changes to avoid excessive processing
 func (w *EnhancedChangeWatcher) debounceChange(event EnhancedChangeEvent) {
 	w.debounceMu.Lock()
-	defer w.debounceMu.Unlock()
 
 	key := event.SmbRoot + ":" + event.Path
 
-	// Cancel existing timer
-	if timer, exists := w.debounceMap[key]; exists {
-		timer.Stop()
+	// Cancel existing timer and increment generation
+	var generation uint64
+	if entry, exists := w.debounceMap[key]; exists {
+		entry.timer.Stop()
+		generation = entry.generation + 1
+	} else {
+		generation = 1
 	}
 
-	// Create new timer
-	w.debounceMap[key] = time.AfterFunc(w.debounceDelay, func() {
+	// Create new timer with generation counter to prevent race conditions
+	// The generation ensures that old timer callbacks don't delete newer entries
+	currentGeneration := generation
+	timer := time.AfterFunc(w.debounceDelay, func() {
 		w.debounceMu.Lock()
-		delete(w.debounceMap, key)
+		// Only delete if this is still the current generation
+		if entry, exists := w.debounceMap[key]; exists && entry.generation == currentGeneration {
+			delete(w.debounceMap, key)
+		}
 		w.debounceMu.Unlock()
 
 		// Send to processing queue
@@ -357,6 +371,14 @@ func (w *EnhancedChangeWatcher) debounceChange(event EnhancedChangeEvent) {
 				zap.String("operation", event.Operation))
 		}
 	})
+
+	// Store timer with generation counter
+	w.debounceMap[key] = &enhancedDebounceEntry{
+		timer:      timer,
+		generation: currentGeneration,
+	}
+
+	w.debounceMu.Unlock()
 }
 
 // changeWorker processes change events

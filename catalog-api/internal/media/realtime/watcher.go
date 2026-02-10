@@ -14,6 +14,12 @@ import (
 	"go.uber.org/zap"
 )
 
+// debounceEntry tracks a debounce timer with a generation counter
+type debounceEntry struct {
+	timer      *time.Timer
+	generation uint64
+}
+
 // SMBChangeWatcher monitors SMB shares for changes and triggers real-time analysis
 type SMBChangeWatcher struct {
 	mediaDB       *database.MediaDatabase
@@ -25,7 +31,7 @@ type SMBChangeWatcher struct {
 	workers       int
 	stopCh        chan struct{}
 	wg            sync.WaitGroup
-	debounceMap   map[string]*time.Timer
+	debounceMap   map[string]*debounceEntry
 	debounceMu    sync.Mutex
 	debounceDelay time.Duration
 }
@@ -49,7 +55,7 @@ func NewSMBChangeWatcher(mediaDB *database.MediaDatabase, analyzer *analyzer.Med
 		watchers:      make(map[string]*fsnotify.Watcher),
 		changeQueue:   make(chan ChangeEvent, 10000),
 		workers:       2,
-		debounceMap:   make(map[string]*time.Timer),
+		debounceMap:   make(map[string]*debounceEntry),
 		debounceDelay: 2 * time.Second, // Wait 2 seconds before processing changes
 		stopCh:        make(chan struct{}),
 	}
@@ -74,12 +80,12 @@ func (w *SMBChangeWatcher) Stop() {
 
 	// Stop all file watchers
 	w.watcherMu.Lock()
+	defer w.watcherMu.Unlock()
 	for path, watcher := range w.watchers {
 		watcher.Close()
 		w.logger.Debug("Closed watcher", zap.String("path", path))
 	}
 	w.watchers = make(map[string]*fsnotify.Watcher)
-	w.watcherMu.Unlock()
 
 	// Stop workers
 	close(w.stopCh)
@@ -207,19 +213,27 @@ func (w *SMBChangeWatcher) handleFileSystemEvent(smbRoot string, event fsnotify.
 // debounceChange debounces file changes to avoid excessive processing
 func (w *SMBChangeWatcher) debounceChange(event ChangeEvent) {
 	w.debounceMu.Lock()
-	defer w.debounceMu.Unlock()
 
 	key := event.SmbRoot + ":" + event.Path
 
-	// Cancel existing timer
-	if timer, exists := w.debounceMap[key]; exists {
-		timer.Stop()
+	// Cancel existing timer and increment generation
+	var generation uint64
+	if entry, exists := w.debounceMap[key]; exists {
+		entry.timer.Stop()
+		generation = entry.generation + 1
+	} else {
+		generation = 1
 	}
 
-	// Create new timer
-	w.debounceMap[key] = time.AfterFunc(w.debounceDelay, func() {
+	// Create new timer with generation counter to prevent race conditions
+	// The generation ensures that old timer callbacks don't delete newer entries
+	currentGeneration := generation
+	timer := time.AfterFunc(w.debounceDelay, func() {
 		w.debounceMu.Lock()
-		delete(w.debounceMap, key)
+		// Only delete if this is still the current generation
+		if entry, exists := w.debounceMap[key]; exists && entry.generation == currentGeneration {
+			delete(w.debounceMap, key)
+		}
 		w.debounceMu.Unlock()
 
 		// Send to processing queue
@@ -231,6 +245,14 @@ func (w *SMBChangeWatcher) debounceChange(event ChangeEvent) {
 				zap.String("operation", event.Operation))
 		}
 	})
+
+	// Store timer with generation counter
+	w.debounceMap[key] = &debounceEntry{
+		timer:      timer,
+		generation: currentGeneration,
+	}
+
+	w.debounceMu.Unlock()
 }
 
 // changeWorker processes change events

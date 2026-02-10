@@ -98,26 +98,35 @@ func (ma *MediaAnalyzer) AnalyzeDirectory(ctx context.Context, directoryPath, sm
 		Timestamp:     time.Now(),
 	}
 
-	// Check if already pending
-	ma.mu.Lock()
-	if existing, exists := ma.pendingAnalysis[directoryPath]; exists {
-		// Update priority if higher
-		if priority > existing.Priority {
-			existing.Priority = priority
-		}
-		ma.mu.Unlock()
-		return nil
-	}
-	ma.pendingAnalysis[directoryPath] = &request
-	ma.mu.Unlock()
+	// Check if already pending and add to pending map
+	// Use a function scope to ensure lock is released with defer before select block
+	shouldQueue := func() bool {
+		ma.mu.Lock()
+		defer ma.mu.Unlock()
 
+		if existing, exists := ma.pendingAnalysis[directoryPath]; exists {
+			// Update priority if higher
+			if priority > existing.Priority {
+				existing.Priority = priority
+			}
+			return false // Already pending, don't queue again
+		}
+		ma.pendingAnalysis[directoryPath] = &request
+		return true // New request, should queue
+	}()
+
+	if !shouldQueue {
+		return nil // Already pending
+	}
+
+	// Queue the analysis request
 	select {
 	case ma.analysisQueue <- request:
 		return nil
 	case <-ctx.Done():
 		ma.mu.Lock()
+		defer ma.mu.Unlock()
 		delete(ma.pendingAnalysis, directoryPath)
-		ma.mu.Unlock()
 		return ctx.Err()
 	}
 }
