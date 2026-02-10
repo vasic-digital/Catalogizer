@@ -15,6 +15,10 @@ func SetupTestDB(t *testing.T) *sql.DB {
 		t.Fatalf("Failed to open test database: %v", err)
 	}
 
+	// CRITICAL: For in-memory SQLite, use only ONE connection
+	// Multiple connections to :memory: create SEPARATE databases!
+	db.SetMaxOpenConns(1)
+
 	// Enable foreign keys
 	_, err = db.Exec("PRAGMA foreign_keys = ON")
 	if err != nil {

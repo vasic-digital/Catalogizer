@@ -118,10 +118,17 @@ func TestConcurrentDatabaseReads(t *testing.T) {
 	dsc := newDatabaseStressContext(t)
 	defer dsc.DB.Close()
 
-	// Insert test data first
+	// Create test storage root
 	_, err := dsc.DB.Exec(`
-		INSERT INTO files (path, name, size, modified_time)
-		VALUES (?, ?, ?, datetime('now'))
+		INSERT INTO storage_roots (id, name, protocol, path, enabled)
+		VALUES (1, 'test-root', 'local', '/test', 1)
+	`)
+	require.NoError(t, err)
+
+	// Insert test data first
+	_, err = dsc.DB.Exec(`
+		INSERT INTO files (storage_root_id, path, name, size, modified_at)
+		VALUES (1, ?, ?, ?, datetime('now'))
 	`, "/test/file1.txt", "file1.txt", 1024)
 	require.NoError(t, err)
 
@@ -167,6 +174,13 @@ func TestConcurrentDatabaseWrites(t *testing.T) {
 	dsc := newDatabaseStressContext(t)
 	defer dsc.DB.Close()
 
+	// Create test storage root
+	_, err := dsc.DB.Exec(`
+		INSERT INTO storage_roots (id, name, protocol, path, enabled)
+		VALUES (1, 'test-root', 'local', '/test', 1)
+	`)
+	require.NoError(t, err)
+
 	t.Run("ConcurrentInserts", func(t *testing.T) {
 		concurrentWriters := 50
 		writesPerWriter := 20
@@ -180,8 +194,8 @@ func TestConcurrentDatabaseWrites(t *testing.T) {
 				for j := 0; j < writesPerWriter; j++ {
 					start := time.Now()
 					_, err := dsc.DB.Exec(`
-						INSERT INTO files (path, name, size, modified_time)
-						VALUES (?, ?, ?, datetime('now'))
+						INSERT INTO files (storage_root_id, path, name, size, modified_at)
+						VALUES (1, ?, ?, ?, datetime('now'))
 					`,
 						fmt.Sprintf("/test/writer%d/file%d.txt", writerID, j),
 						fmt.Sprintf("file%d.txt", j),
@@ -214,8 +228,8 @@ func TestConcurrentDatabaseWrites(t *testing.T) {
 		// Insert test records
 		for i := 0; i < 100; i++ {
 			dsc.DB.Exec(`
-				INSERT INTO files (path, name, size, modified_time)
-				VALUES (?, ?, ?, datetime('now'))
+				INSERT INTO files (storage_root_id, path, name, size, modified_at)
+				VALUES (1, ?, ?, ?, datetime('now'))
 			`, fmt.Sprintf("/update/file%d.txt", i), fmt.Sprintf("file%d.txt", i), 1024)
 		}
 
@@ -264,11 +278,18 @@ func TestMixedReadWriteWorkload(t *testing.T) {
 	dsc := newDatabaseStressContext(t)
 	defer dsc.DB.Close()
 
+	// Create test storage root
+	_, err := dsc.DB.Exec(`
+		INSERT INTO storage_roots (id, name, protocol, path, enabled)
+		VALUES (1, 'test-root', 'local', '/test', 1)
+	`)
+	require.NoError(t, err)
+
 	// Pre-populate with some data
 	for i := 0; i < 100; i++ {
 		dsc.DB.Exec(`
-			INSERT INTO files (path, name, size, modified_time)
-			VALUES (?, ?, ?, datetime('now'))
+			INSERT INTO files (storage_root_id, path, name, size, modified_at)
+			VALUES (1, ?, ?, ?, datetime('now'))
 		`, fmt.Sprintf("/mixed/file%d.txt", i), fmt.Sprintf("file%d.txt", i), 1024*(i+1))
 	}
 
@@ -303,8 +324,8 @@ func TestMixedReadWriteWorkload(t *testing.T) {
 								// Insert
 								start := time.Now()
 								_, err := dsc.DB.Exec(`
-									INSERT INTO files (path, name, size, modified_time)
-									VALUES (?, ?, ?, datetime('now'))
+									INSERT INTO files (storage_root_id, path, name, size, modified_at)
+									VALUES (1, ?, ?, ?, datetime('now'))
 								`,
 									fmt.Sprintf("/mixed/new_%d_%d.txt", workerID, time.Now().UnixNano()),
 									fmt.Sprintf("new_%d.txt", workerID),
@@ -355,6 +376,13 @@ func TestTransactionStress(t *testing.T) {
 	dsc := newDatabaseStressContext(t)
 	defer dsc.DB.Close()
 
+	// Create test storage root
+	_, err := dsc.DB.Exec(`
+		INSERT INTO storage_roots (id, name, protocol, path, enabled)
+		VALUES (1, 'test-root', 'local', '/test', 1)
+	`)
+	require.NoError(t, err)
+
 	t.Run("ConcurrentTransactions", func(t *testing.T) {
 		concurrentTxs := 20
 		operationsPerTx := 10
@@ -375,8 +403,8 @@ func TestTransactionStress(t *testing.T) {
 				// Perform multiple operations in transaction
 				for j := 0; j < operationsPerTx; j++ {
 					_, err := tx.Exec(`
-						INSERT INTO files (path, name, size, modified_time)
-						VALUES (?, ?, ?, datetime('now'))
+						INSERT INTO files (storage_root_id, path, name, size, modified_at)
+						VALUES (1, ?, ?, ?, datetime('now'))
 					`,
 						fmt.Sprintf("/tx/tx%d/file%d.txt", txID, j),
 						fmt.Sprintf("file%d.txt", j),
@@ -421,6 +449,13 @@ func TestConnectionPoolStress(t *testing.T) {
 
 	dsc := newDatabaseStressContext(t)
 	defer dsc.DB.Close()
+
+	// Create test storage root
+	_, err := dsc.DB.Exec(`
+		INSERT INTO storage_roots (id, name, protocol, path, enabled)
+		VALUES (1, 'test-root', 'local', '/test', 1)
+	`)
+	require.NoError(t, err)
 
 	// Configure connection pool
 	dsc.DB.SetMaxOpenConns(25)
@@ -490,13 +525,20 @@ func TestLargeQueryResults(t *testing.T) {
 	dsc := newDatabaseStressContext(t)
 	defer dsc.DB.Close()
 
+	// Create test storage root
+	_, err := dsc.DB.Exec(`
+		INSERT INTO storage_roots (id, name, protocol, path, enabled)
+		VALUES (1, 'test-root', 'local', '/test', 1)
+	`)
+	require.NoError(t, err)
+
 	// Insert large dataset
 	t.Log("Preparing large dataset...")
 	tx, _ := dsc.DB.Begin()
 	for i := 0; i < 10000; i++ {
 		tx.Exec(`
-			INSERT INTO files (path, name, size, modified_time)
-			VALUES (?, ?, ?, datetime('now'))
+			INSERT INTO files (storage_root_id, path, name, size, modified_at)
+			VALUES (1, ?, ?, ?, datetime('now'))
 		`, fmt.Sprintf("/large/file%d.txt", i), fmt.Sprintf("file%d.txt", i), 1024*(i+1))
 	}
 	tx.Commit()
