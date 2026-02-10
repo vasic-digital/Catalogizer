@@ -144,9 +144,10 @@ test-results/
 
 # Rust
 target/
-Cargo.lock# Build files
+Cargo.lock
+
+# Build files (Android and Gradle)
 */build/
-!*/build/intermediates/
 
 # Gradle
 .gradle/
@@ -210,3 +211,10 @@ fastlane/readme.md
 ehthumbs.db
 Thumbs.db
 catalog-api/profiles/
+catalog-api/coverage.html
+catalog-api/coverage-summary.txt
+catalog-api/coverage.out
+
+# Go profiling
+*.prof
+*.pprof
