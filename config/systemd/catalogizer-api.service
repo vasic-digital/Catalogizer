@@ -1,0 +1,72 @@
+[Unit]
+Description=Catalogizer API Server
+Documentation=https://docs.catalogizer.com
+After=network.target network-online.target postgresql.service redis.service
+Wants=network-online.target postgresql.service redis.service
+Requires=network.target
+
+[Service]
+Type=simple
+User=catalogizer
+Group=catalogizer
+WorkingDirectory=/opt/catalogizer/api
+
+# Environment configuration
+EnvironmentFile=/opt/catalogizer/api/.env
+
+# Service execution
+ExecStart=/opt/catalogizer/api/catalog-api
+ExecReload=/bin/kill -HUP $MAINPID
+ExecStop=/bin/kill -SIGTERM $MAINPID
+
+# Restart policy
+Restart=always
+RestartSec=10
+StartLimitInterval=200
+StartLimitBurst=5
+
+# Logging
+StandardOutput=append:/opt/catalogizer/logs/api.log
+StandardError=append:/opt/catalogizer/logs/api-error.log
+SyslogIdentifier=catalogizer-api
+
+# Security hardening
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=true
+ReadWritePaths=/opt/catalogizer/data /opt/catalogizer/logs
+ProtectKernelTunables=true
+ProtectKernelModules=true
+ProtectControlGroups=true
+RestrictRealtime=true
+RestrictNamespaces=true
+RestrictAddressFamilies=AF_INET AF_INET6 AF_UNIX
+LockPersonality=true
+MemoryDenyWriteExecute=true
+RestrictSUIDSGID=true
+RemoveIPC=true
+PrivateMounts=true
+SystemCallArchitectures=native
+
+# System call filtering (optional, may need adjustment based on app needs)
+# SystemCallFilter=@system-service
+# SystemCallFilter=~@privileged @resources
+
+# Resource limits
+LimitNOFILE=65536
+LimitNPROC=4096
+LimitCORE=infinity
+
+# Process limits (optional, adjust based on your needs)
+# MemoryLimit=2G
+# MemoryHigh=1536M
+# CPUQuota=200%
+
+# Timeout settings
+TimeoutStartSec=30s
+TimeoutStopSec=30s
+
+# Make service start after critical services are ready
+[Install]
+WantedBy=multi-user.target
