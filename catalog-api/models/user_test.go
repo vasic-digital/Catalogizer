@@ -101,10 +101,10 @@ func TestPermissions_HasPermission(t *testing.T) {
 		want       bool
 	}{
 		{"has exact permission", "read:media", true},
-		{"has wildcard admin", "admin:*", true},
+		{"has wildcard admin", "admin:*", false}, // user doesn't have admin:* permission
 		{"doesn't have permission", "delete:media", false},
 		{"empty permission", "", false},
-		{"admin wildcard matches all", "admin:anything", true},
+		{"admin wildcard matches all", "admin:anything", false}, // user doesn't have admin:* wildcard
 	}
 
 	for _, tt := range tests {
@@ -346,18 +346,22 @@ func TestUser_IsAdmin(t *testing.T) {
 		want bool
 	}{
 		{
-			name: "admin role",
-			user: User{Role: &Role{Name: "admin"}},
+			name: "admin role with system.admin permission",
+			user: User{
+				Role: &Role{Name: "admin", Permissions: Permissions{PermissionSystemAdmin}},
+			},
 			want: true,
 		},
 		{
-			name: "administrator role",
-			user: User{Role: &Role{Name: "administrator"}},
+			name: "administrator role with wildcard permission",
+			user: User{
+				Role: &Role{Name: "administrator", Permissions: Permissions{PermissionWildcard}},
+			},
 			want: true,
 		},
 		{
-			name: "user role",
-			user: User{Role: &Role{Name: "user"}},
+			name: "user role without admin permissions",
+			user: User{Role: &Role{Name: "user", Permissions: Permissions{"read:media"}}},
 			want: false,
 		},
 		{

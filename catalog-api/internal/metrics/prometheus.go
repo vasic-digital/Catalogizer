@@ -9,38 +9,11 @@ import (
 
 // Prometheus metrics for the Catalogizer application
 var (
-	// HTTP Metrics
-	HTTPRequestsTotal = promauto.NewCounterVec(
-		prometheus.CounterOpts{
-			Name: "catalogizer_http_requests_total",
-			Help: "Total number of HTTP requests",
-		},
-		[]string{"method", "path", "status"},
-	)
-
-	HTTPRequestDuration = promauto.NewHistogramVec(
-		prometheus.HistogramOpts{
-			Name:    "catalogizer_http_request_duration_seconds",
-			Help:    "HTTP request duration in seconds",
-			Buckets: prometheus.DefBuckets,
-		},
-		[]string{"method", "path"},
-	)
-
-	// Database Metrics
+	// Database Connection Metrics (metrics.go contains HTTP and DBQueryDuration)
 	DBQueryTotal = promauto.NewCounterVec(
 		prometheus.CounterOpts{
 			Name: "catalogizer_db_queries_total",
 			Help: "Total number of database queries",
-		},
-		[]string{"operation", "table"},
-	)
-
-	DBQueryDuration = promauto.NewHistogramVec(
-		prometheus.HistogramOpts{
-			Name:    "catalogizer_db_query_duration_seconds",
-			Help:    "Database query duration in seconds",
-			Buckets: prometheus.DefBuckets,
 		},
 		[]string{"operation", "table"},
 	)

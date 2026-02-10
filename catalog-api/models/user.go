@@ -78,7 +78,11 @@ func (p Permissions) Value() (driver.Value, error) {
 	if len(p) == 0 {
 		return "[]", nil
 	}
-	return json.Marshal(p)
+	bytes, err := json.Marshal(p)
+	if err != nil {
+		return nil, err
+	}
+	return string(bytes), nil
 }
 
 // Scan implements the sql.Scanner interface for database retrieval
@@ -487,7 +491,15 @@ const (
 
 // IsAccountLocked checks if the user account is currently locked
 func (u *User) IsAccountLocked() bool {
-	return u.IsLocked || (u.LockedUntil != nil && u.LockedUntil.After(time.Now()))
+	if !u.IsLocked {
+		return false
+	}
+	// If locked but LockedUntil is nil, it's a permanent lock
+	if u.LockedUntil == nil {
+		return true
+	}
+	// If locked with expiry, check if lock has expired
+	return u.LockedUntil.After(time.Now())
 }
 
 // CanLogin checks if the user can login (active and not locked)
