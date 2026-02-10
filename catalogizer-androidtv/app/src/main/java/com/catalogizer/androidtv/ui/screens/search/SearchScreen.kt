@@ -20,6 +20,7 @@ import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.unit.dp
 import androidx.tv.material3.*
+import androidx.lifecycle.viewModelScope
 import com.catalogizer.androidtv.data.models.MediaItem
 import com.catalogizer.androidtv.data.models.MediaSearchRequest
 import com.catalogizer.androidtv.data.repository.MediaRepository
@@ -228,7 +229,7 @@ class SearchViewModel(
         _isLoading.value = true
         _error.value = null
 
-        androidx.lifecycle.viewModelScope.launch {
+        viewModelScope.launch {
             try {
                 val request = MediaSearchRequest(
                     query = searchQuery.value,
