@@ -316,7 +316,7 @@ While the test suite is now polished and production-ready, these opportunities e
 
 ### Backend Tests
 ```bash
-cd /Volumes/T7/Projects/Catalogizer/catalog-api
+cd catalog-api
 
 # Run all tests
 go test ./handlers ./tests
@@ -335,7 +335,7 @@ go test -v -cover ./handlers ./tests
 
 ### Frontend Tests
 ```bash
-cd /Volumes/T7/Projects/Catalogizer/catalog-web
+cd catalog-web
 
 # Run all tests
 npm test -- --watchAll=false
@@ -350,7 +350,7 @@ npm test -- --coverage --watchAll=false
 
 ### Verify Android Gradle (Fixed)
 ```bash
-cd /Volumes/T7/Projects/Catalogizer/catalogizer-android
+cd catalogizer-android
 ./gradlew --version
 
 # Should output:

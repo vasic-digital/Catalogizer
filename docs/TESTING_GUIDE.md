@@ -141,24 +141,25 @@ Catalogizer follows a zero-defect policy where:
 
 ## CI/CD Integration
 
-### GitHub Actions
-The security testing is integrated into the QA pipeline:
+### Local CI/CD
 
-```yaml
-- name: 🔍 Run SonarQube Analysis
-  if: env.SONAR_TOKEN != ''
-  env:
-    SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
-  run: ./scripts/sonarqube-scan.sh
+> **Note:** GitHub Actions are permanently disabled for this project. All testing and security scanning runs locally.
 
-- name: 🔒 Run Snyk Security Analysis
-  if: env.SNYK_TOKEN != ''
-  env:
-    SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
-  run: ./scripts/snyk-scan.sh
+Run security scans locally:
+```bash
+# SonarQube analysis (set SONAR_TOKEN env var first)
+export SONAR_TOKEN=your_sonar_token
+./scripts/sonarqube-scan.sh
+
+# Snyk security analysis (set SNYK_TOKEN env var first)
+export SNYK_TOKEN=your_snyk_token
+./scripts/snyk-scan.sh
+
+# Full test suite including security
+./scripts/run-all-tests.sh
 ```
 
-### Required Secrets
+### Required Environment Variables
 - `SONAR_TOKEN`: SonarQube authentication token
 - `SNYK_TOKEN`: Snyk API token
 - `SNYK_ORG`: Snyk organization name (optional)

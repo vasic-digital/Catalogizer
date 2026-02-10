@@ -894,12 +894,12 @@ it('redirects to login when user is not authenticated', () => {
 
 ```bash
 # Backend tests
-cd /Volumes/T7/Projects/Catalogizer/catalog-api
+cd catalog-api
 go test ./handlers ./tests
 # Expected: 110 tests passing
 
 # Frontend tests
-cd /Volumes/T7/Projects/Catalogizer/catalog-web
+cd catalog-web
 npm test -- --watchAll=false
 # Expected: 97 tests passing
 ```

@@ -54,7 +54,6 @@ export class WebSocketClient {
       this.ws = new WebSocket(wsUrl)
 
       this.ws.onopen = () => {
-        console.log('WebSocket connected')
         this.isConnected = true
         this.reconnectAttempts = 0
 
@@ -79,7 +78,6 @@ export class WebSocketClient {
       }
 
       this.ws.onclose = (event) => {
-        console.log('WebSocket disconnected:', event.code, event.reason)
         this.isConnected = false
         this.onDisconnect?.()
 
@@ -102,8 +100,6 @@ export class WebSocketClient {
   private scheduleReconnect() {
     this.reconnectAttempts++
     const delay = this.reconnectDelay * Math.pow(2, this.reconnectAttempts - 1)
-
-    console.log(`Attempting to reconnect in ${delay}ms (attempt ${this.reconnectAttempts}/${this.maxReconnectAttempts})`)
 
     setTimeout(() => {
       this.connect()
@@ -186,8 +182,6 @@ export const useWebSocket = () => {
     }
 
     wsRef.current.setOnMessage((message: WebSocketMessage) => {
-      console.log('WebSocket message received:', message)
-
       switch (message.type) {
         case 'media_update':
           handleMediaUpdate(message.data as MediaUpdate, queryClient)
@@ -205,7 +199,6 @@ export const useWebSocket = () => {
     })
 
     wsRef.current.setOnConnect(() => {
-      console.log('WebSocket connected successfully')
       toast.success('Connected to real-time updates')
 
       // Subscribe to relevant channels
@@ -215,7 +208,6 @@ export const useWebSocket = () => {
     })
 
     wsRef.current.setOnDisconnect(() => {
-      console.log('WebSocket disconnected')
       toast.error('Disconnected from real-time updates')
     })
 
@@ -300,7 +292,6 @@ const handleSystemUpdate = (update: SystemUpdate) => {
 
   switch (status) {
     case 'healthy':
-      console.log(`${component} is healthy:`, message)
       break
     case 'warning':
       toast(`${component} warning: ${message}`, {

@@ -158,15 +158,7 @@ export const usePerformanceMonitor = (componentName: string) => {
       renderTimes.current.shift();
     }
 
-    // Log performance warnings
-    if (renderTime > 16) { // 16ms = 60fps threshold
-      console.warn(`${componentName}: Slow render detected (${renderTime}ms)`);
-    }
-
-    if (renderCount.current % 10 === 0) {
-      const avgRenderTime = renderTimes.current.reduce((a, b) => a + b, 0) / renderTimes.current.length;
-      console.log(`${componentName}: Render #${renderCount.current}, Avg render time: ${avgRenderTime.toFixed(2)}ms`);
-    }
+    // Performance data available via returned renderCount and averageRenderTime
   });
 
   return {
@@ -323,10 +315,7 @@ export const measurePerformance = <T,>(
   name: string,
   fn: () => T
 ): T => {
-  const start = performance.now();
   const result = fn();
-  const end = performance.now();
-  console.log(`${name}: ${(end - start).toFixed(2)}ms`);
   return result;
 };
 
@@ -335,9 +324,6 @@ export const measureAsyncPerformance = async <T,>(
   name: string,
   fn: () => Promise<T>
 ): Promise<T> => {
-  const start = performance.now();
   const result = await fn();
-  const end = performance.now();
-  console.log(`${name}: ${(end - start).toFixed(2)}ms`);
   return result;
 };

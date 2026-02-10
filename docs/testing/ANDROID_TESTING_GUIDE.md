@@ -569,48 +569,23 @@ grep -r "@After" catalogizer-android/app/src/test/
 
 ## CI/CD Integration
 
-### GitHub Actions (When Re-enabled)
+### Local CI/CD
 
-```yaml
-name: Android Tests
-on: [push, pull_request]
+> **Note:** GitHub Actions are permanently disabled for this project. All CI/CD, security scanning, and automated builds must be run locally using the scripts and commands below.
 
-jobs:
-  unit-tests:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v3
-      - uses: actions/setup-java@v3
-        with:
-          java-version: '11'
+**Run all tests locally:**
+```bash
+# Run the full test suite (all components including Android)
+./scripts/run-all-tests.sh
 
-      - name: Run unit tests
-        run: |
-          cd catalogizer-android
-          ./gradlew test
+# Run Android unit tests only
+cd catalogizer-android && ./gradlew test
 
-      - name: Upload test results
-        uses: actions/upload-artifact@v3
-        with:
-          name: test-results
-          path: catalogizer-android/app/build/reports/tests/
+# Run Android instrumented tests (requires connected device or emulator)
+cd catalogizer-android && ./gradlew connectedAndroidTest
 
-  instrumented-tests:
-    runs-on: macos-latest
-    steps:
-      - uses: actions/checkout@v3
-      - uses: actions/setup-java@v3
-        with:
-          java-version: '11'
-
-      - name: Run instrumented tests
-        uses: reactivecircus/android-emulator-runner@v2
-        with:
-          api-level: 30
-          arch: x86_64
-          script: |
-            cd catalogizer-android
-            ./gradlew connectedAndroidTest
+# View test results
+open catalogizer-android/app/build/reports/tests/
 ```
 
 ### Local Pre-Commit Hook

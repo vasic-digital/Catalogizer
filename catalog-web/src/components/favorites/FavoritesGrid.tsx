@@ -127,8 +127,7 @@ export const FavoritesGrid: React.FC<FavoritesGridProps> = ({
   const handleBulkRemoveFromFavorites = () => {
     if (selectedItems.length === 0) return
     
-    // Use bulk remove from favorites hook
-    console.log('Remove from favorites:', selectedItems)
+    // TODO: Use bulk remove from favorites hook
     setSelectedItems([])
   }
 
@@ -333,9 +332,9 @@ export const FavoritesGrid: React.FC<FavoritesGridProps> = ({
             <MediaGrid
               media={enhancedMediaItems}
               viewMode={viewMode}
-              onMediaView={(media) => console.log('View media:', media)}
-              onMediaPlay={(media) => console.log('Play media:', media)}
-              onMediaDownload={(media) => console.log('Download media:', media)}
+              onMediaView={() => {/* TODO: implement media view */}}
+              onMediaPlay={() => {/* TODO: implement media play */}}
+              onMediaDownload={() => {/* TODO: implement media download */}}
               onSelect={selectable ? handleSelectItem : undefined}
               selectedItems={selectedItems}
               showActions={true}

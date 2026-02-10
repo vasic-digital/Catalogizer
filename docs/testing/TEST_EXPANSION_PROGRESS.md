@@ -231,18 +231,18 @@ describe('Component', () => {
 
 ### Files That Need Updates After Each Expansion
 
-1. **TESTING.md** (`/Volumes/T7/Projects/Catalogizer/TESTING.md`)
+1. **TESTING.md** (`TESTING.md`)
    - Component test table
    - Total test count
    - Coverage percentages
    - Milestone messages
 
-2. **.github/workflows/ci.yml** (`/Volumes/T7/Projects/Catalogizer/.github/workflows/ci.yml`)
+2. **.github/workflows/ci.yml** (`.github/workflows/ci.yml`)
    - Frontend test count
    - Component breakdown
    - Total test count
 
-3. **FINAL_TEST_REPORT.md** (`/Volumes/T7/Projects/Catalogizer/FINAL_TEST_REPORT.md`)
+3. **FINAL_TEST_REPORT.md** (`FINAL_TEST_REPORT.md`)
    - Status header
    - Executive summary
    - Journey table
@@ -255,13 +255,13 @@ describe('Component', () => {
 
 ### Run Tests for New Component
 ```bash
-cd /Volumes/T7/Projects/Catalogizer/catalog-web
+cd catalog-web
 npm test -- MediaBrowser.test.tsx --watchAll=false
 ```
 
 ### Run Full Test Suite
 ```bash
-cd /Volumes/T7/Projects/Catalogizer/catalog-web
+cd catalog-web
 npm test -- --watchAll=false
 ```
 
@@ -272,7 +272,7 @@ npm test -- --watchAll=false 2>&1 | tail -10
 
 ### Verify Backend Tests
 ```bash
-cd /Volumes/T7/Projects/Catalogizer/catalog-api
+cd catalog-api
 go test ./...
 ```
 

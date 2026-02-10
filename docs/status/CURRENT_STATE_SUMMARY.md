@@ -28,12 +28,11 @@
   - Vitest infrastructure working correctly
   - Test framework migration from Jest to Vitest completed
 
-### CI/CD Workflows
-- **Status:** DISABLED (per project constraints)
-  - `ci.yml.disabled` - Main CI pipeline (Go, Web, API Client, Android apps)
-  - `security.yml.disabled` - Security scanning (CodeQL, Trivy, dependency audit)
-  - `docker.yml.disabled` - Docker image build and push
-  - **Note:** GitHub Actions must remain disabled. Run tests locally.
+### CI/CD
+- **Status:** GitHub Actions are **permanently disabled** and all workflow files have been deleted from `.github/workflows/`.
+  - CI/CD, security scanning, and automated builds must be run locally.
+  - Use `./scripts/run-all-tests.sh` for the full test suite.
+  - See CLAUDE.md for the complete list of local commands by component.
 
 ---
 
@@ -111,13 +110,13 @@ These tests have specific requirements preventing them from running with SQLite 
 - `catalog-web/src/test/` directory (obsolete Jest compatibility files)
 - `catalog-web/src/lib/__mocks__/` directory
 
-### 2. CI/CD Workflows Status
+### 2. CI/CD Status
 
-**Status:** Disabled per project constraints
-- `.github/workflows/ci.yml.disabled` - Main CI pipeline
-- `.github/workflows/security.yml.disabled` - Security scanning
-- `.github/workflows/docker.yml.disabled` - Docker builds
-- Added constraint to CLAUDE.md requiring workflows remain disabled
+**Status:** GitHub Actions permanently disabled; all workflow files deleted from `.github/workflows/`.
+- CI/CD runs locally via `./scripts/run-all-tests.sh`
+- Security scanning runs locally via `./scripts/sonarqube-scan.sh` and `./scripts/snyk-scan.sh`
+- Docker builds run locally via `podman-compose` or `docker-compose`
+- Constraint documented in CLAUDE.md: no GitHub Actions workflow files may be created
 
 ### 3. Go Tests Re-enabled
 

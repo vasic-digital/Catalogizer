@@ -164,20 +164,15 @@ docker compose -f docker-compose.security.yml logs snyk-cli
 
 ## Integration with CI/CD
 
-### GitHub Actions Example
-```yaml
-name: Security Tests
-on: [push, pull_request]
-jobs:
-  security:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v3
-      - name: Run Security Tests
-        env:
-          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
-          SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
-        run: ./scripts/run-all-tests.sh
+### Local Security Scanning
+
+> **Note:** GitHub Actions are permanently disabled for this project. Run security tests locally using the commands below.
+
+```bash
+# Run all tests including security scans
+export SONAR_TOKEN=your_sonar_token
+export SNYK_TOKEN=your_snyk_token
+./scripts/run-all-tests.sh
 ```
 
 ### Jenkins Pipeline Example

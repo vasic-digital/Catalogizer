@@ -355,38 +355,23 @@ groups:
 
 ### Performance Testing in CI/CD
 
-**GitHub Actions Example** (if re-enabled):
-```yaml
-name: Performance Tests
-on: [pull_request]
+> **Note:** GitHub Actions are permanently disabled for this project. Run performance tests locally using the commands below.
 
-jobs:
-  backend-benchmarks:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v3
-      - uses: actions/setup-go@v4
-      - name: Run benchmarks
-        run: |
-          cd catalog-api
-          go test -bench=. -benchmem ./tests/performance/... > benchmark-results.txt
-      - name: Compare with baseline
-        run: |
-          # Compare results with previous run
-          # Fail if performance regressed > 20%
+**Run performance tests locally:**
+```bash
+# Backend benchmarks
+cd catalog-api
+go test -bench=. -benchmem ./tests/performance/... > benchmark-results.txt
 
-  frontend-lighthouse:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v3
-      - uses: actions/setup-node@v3
-      - name: Build and test
-        run: |
-          cd catalog-web
-          npm ci
-          npm run build
-          npm run preview &
-          npx lhci autorun
+# Frontend Lighthouse audit
+cd catalog-web
+npm ci
+npm run build
+npm run preview &
+npx lhci autorun
+
+# Full test suite (includes performance)
+./scripts/run-all-tests.sh
 ```
 
 **Local Pre-Commit Hook**:

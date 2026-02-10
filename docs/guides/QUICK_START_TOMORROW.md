@@ -30,7 +30,7 @@ Remaining:
 
 **1. Navigate to project**
 ```bash
-cd /Volumes/T7/Projects/Catalogizer/catalog-web
+cd catalog-web
 ```
 
 **2. Read the source file**
@@ -77,11 +77,10 @@ npm test -- --watchAll=false
 | **Total** | **387** | **~52-57%** |  # Update totals
 ```
 
-**.github/workflows/ci.yml**:
-```yaml
-echo "| Frontend (React) | ... | 387 | ~52-57% |"
-echo "- ✅ MediaBrowser: 28 tests (NEW)"
-echo "**Total: 497 tests passing..."
+**Verify locally** (GitHub Actions are permanently disabled):
+```bash
+# Run all tests to confirm counts
+./scripts/run-all-tests.sh
 ```
 
 **FINAL_TEST_REPORT.md**:
@@ -125,9 +124,9 @@ Utils (Later):
 ### Documentation Files to Update
 ```
 After Each Expansion:
-1. /Volumes/T7/Projects/Catalogizer/TESTING.md
-2. /Volumes/T7/Projects/Catalogizer/.github/workflows/ci.yml
-3. /Volumes/T7/Projects/Catalogizer/FINAL_TEST_REPORT.md
+1. TESTING.md
+2. FINAL_TEST_REPORT.md
+3. Run `./scripts/run-all-tests.sh` to verify
 ```
 
 ---
@@ -136,7 +135,7 @@ After Each Expansion:
 
 ```bash
 # Navigate to frontend
-cd /Volumes/T7/Projects/Catalogizer/catalog-web
+cd catalog-web
 
 # Run specific test file
 npm test -- MediaBrowser.test.tsx --watchAll=false
@@ -148,7 +147,7 @@ npm test -- --watchAll=false
 npm test -- --watchAll=false 2>&1 | tail -10
 
 # Navigate to backend
-cd /Volumes/T7/Projects/Catalogizer/catalog-api
+cd catalog-api
 
 # Run backend tests
 go test ./...
@@ -203,8 +202,8 @@ describe('MediaBrowser', () => {
 - [ ] Run new tests - verify all passing
 - [ ] Run full suite - verify no regressions
 - [ ] Update TESTING.md (component table + totals)
-- [ ] Update .github/workflows/ci.yml (counts + breakdown)
 - [ ] Update FINAL_TEST_REPORT.md (status + journey + details)
+- [ ] Run `./scripts/run-all-tests.sh` to verify all tests pass
 - [ ] Verify documentation is consistent
 - [ ] Commit with clear message
 

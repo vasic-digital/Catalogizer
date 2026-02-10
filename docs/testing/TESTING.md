@@ -314,40 +314,27 @@ gradle wrapper --gradle-version 8.2
 
 ## CI/CD
 
-### GitHub Actions Workflows
+> **Note:** GitHub Actions are permanently disabled for this project. All CI/CD runs locally.
 
-**1. Backend Tests** (`.github/workflows/backend-tests.yml`)
-- Runs on: Go 1.24
-- Triggers: Push/PR to `main` or `develop`
-- Steps: Test, lint, security scan
-- Coverage: Uploaded to Codecov
-
-**2. Frontend Tests** (`.github/workflows/frontend-tests.yml`)
-- Runs on: Node 18.x, 20.x
-- Triggers: Push/PR to `main` or `develop`
-- Steps: Test, lint, security audit, build
-- Coverage: Uploaded to Codecov
-
-**3. Combined CI** (`.github/workflows/ci.yml`)
-- Detects changes in each platform
-- Runs only relevant test suites
-- Generates comprehensive test summary
-- Status checks for PR approval
-
-### Running CI Locally
+### Running Tests Locally
 
 ```bash
-# Install act (https://github.com/nektos/act)
-brew install act
+# Run all tests
+./scripts/run-all-tests.sh
 
-# Run backend workflow
-act -W .github/workflows/backend-tests.yml
+# Backend only
+cd catalog-api && go test -race ./...
 
-# Run frontend workflow
-act -W .github/workflows/frontend-tests.yml
+# Frontend only
+cd catalog-web && npm run test:coverage
 
-# Run all workflows
-act push
+# Android
+cd catalogizer-android && ./gradlew test
+cd catalogizer-androidtv && ./gradlew test
+
+# Security scans
+cd catalog-api && govulncheck ./...
+cd catalog-web && npm audit
 ```
 
 ---

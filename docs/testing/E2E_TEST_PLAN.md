@@ -27,7 +27,7 @@ This document outlines the comprehensive E2E testing strategy for Catalogizer ac
 
 **Framework**: Playwright
 **Execution**: `npm run test:e2e`
-**CI/CD**: Configured but GitHub Actions disabled
+**CI/CD**: Runs locally only (GitHub Actions permanently disabled). Use `./scripts/run-all-tests.sh`
 
 ### catalogizer-android
 
@@ -414,38 +414,21 @@ maestro test --format junit flows/  # All flows
 
 ### CI/CD Integration
 
-**GitHub Actions Example** (when re-enabled):
+> **Note:** GitHub Actions are permanently disabled for this project. All CI/CD runs locally using the commands below.
 
-```yaml
-name: E2E Tests
-on: [pull_request]
+**Run all E2E tests locally:**
+```bash
+# Full test suite (all components)
+./scripts/run-all-tests.sh
 
-jobs:
-  web-e2e:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v3
-      - uses: actions/setup-node@v3
-      - name: Install dependencies
-        run: cd catalog-web && npm ci
-      - name: Run Playwright tests
-        run: cd catalog-web && npm run test:e2e
-      - uses: actions/upload-artifact@v3
-        if: always()
-        with:
-          name: playwright-report
-          path: catalog-web/playwright-report/
+# Web E2E tests (Playwright)
+cd catalog-web && npm ci && npm run test:e2e
 
-  android-e2e:
-    runs-on: macos-latest
-    steps:
-      - uses: actions/checkout@v3
-      - uses: actions/setup-java@v3
-      - name: Run Espresso tests
-        uses: reactivecircus/android-emulator-runner@v2
-        with:
-          api-level: 30
-          script: ./gradlew connectedAndroidTest
+# Android E2E tests (requires connected device or emulator)
+cd catalogizer-android && ./gradlew connectedAndroidTest
+
+# Android E2E tests (Maestro)
+maestro test --format junit flows/
 ```
 
 ---

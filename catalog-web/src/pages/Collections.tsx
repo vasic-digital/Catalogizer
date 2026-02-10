@@ -157,7 +157,7 @@ export const Collections: React.FC = () => {
       }));
       
       if (duration > 100) {
-        console.warn(`Slow render detected: ${name} took ${duration.toFixed(2)}ms`);
+        // Slow render detected - duration exceeds 100ms threshold
       }
     };
   }, []);
@@ -439,52 +439,42 @@ export const Collections: React.FC = () => {
 
   // AI Feature Handlers
   const handleAISuggestionAccept = (suggestion: any) => {
-    console.log('AI suggestion accepted:', suggestion);
     toast.success(`AI suggestion applied: ${suggestion.title}`);
   };
 
   const handleAINaturalSearch = (query: any) => {
-    console.log('AI natural search:', query);
     toast.success(`AI search executed: ${query.query}`);
   };
 
   const handleAICategorizationComplete = (result: any) => {
-    console.log('AI categorization complete:', result);
     toast.success(`Content categorized as: ${result.category}`);
   };
 
   const handleAIActionImplement = (action: string) => {
-    console.log('AI action implemented:', action);
     toast.success(`AI action implemented: ${action}`);
   };
 
   const handleAIPredictionAction = (predictionId: string, actionId: string) => {
-    console.log('AI prediction action:', { predictionId, actionId });
     toast.success(`AI prediction action executed: ${actionId}`);
   };
 
   const handleAIOrganizationApply = (suggestionId: string) => {
-    console.log('AI organization applied:', suggestionId);
     toast.success(`AI organization suggestion applied: ${suggestionId}`);
   };
 
   const handleAIMetadataExtracted = (metadata: any) => {
-    console.log('AI metadata extracted:', metadata);
     toast.success('AI metadata extraction completed');
   };
 
   const handleAIRuleToggle = (ruleId: string, enabled: boolean) => {
-    console.log('AI rule toggled:', { ruleId, enabled });
     toast.success(`AI rule ${enabled ? 'enabled' : 'disabled'}: ${ruleId}`);
   };
 
   const handleAIRuleExecute = (ruleId: string) => {
-    console.log('AI rule executed:', ruleId);
     toast.success(`AI rule executed: ${ruleId}`);
   };
 
   const handleAIQualityImprovement = (improvement: string) => {
-    console.log('AI quality improvement:', improvement);
     toast.success(`AI quality improvement applied: ${improvement}`);
   };
 

@@ -85,7 +85,6 @@ export const UploadManager: React.FC<UploadManagerProps> = ({
     const files = Array.from(e.dataTransfer.files);
     const validFiles = files.filter(file => {
       if (file.size > maxFileSize) {
-        console.warn(`File ${file.name} exceeds size limit`);
         return false;
       }
       
@@ -95,7 +94,6 @@ export const UploadManager: React.FC<UploadManagerProps> = ({
         }
         return file.type === type;
       })) {
-        console.warn(`File ${file.name} type not accepted`);
         return false;
       }
       

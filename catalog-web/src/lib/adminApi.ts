@@ -88,21 +88,17 @@ export const adminApi = {
 
   async createBackup(type: 'full' | 'incremental'): Promise<void> {
     // Mock implementation
-    console.log(`Creating ${type} backup`);
   },
 
   async restoreBackup(id: string): Promise<void> {
     // Mock implementation
-    console.log(`Restoring backup ${id}`);
   },
 
   async scanStorage(path: string): Promise<void> {
     // Mock implementation
-    console.log(`Scanning storage ${path}`);
   },
 
   async updateUser(id: string, updates: Partial<User>): Promise<void> {
     // Mock implementation
-    console.log(`Updating user ${id}:`, updates);
   }
 };

@@ -239,20 +239,11 @@ export const usePerformanceMonitor = (componentName: string) => {
     const timeSinceLastRender = now - lastRenderTime.current
     const totalTime = now - startTime.current
 
-    if (process.env.NODE_ENV === 'development') {
-      console.log(`[Performance] ${componentName}:`, {
-        renderCount: renderCount.current,
-        timeSinceLastRender: `${timeSinceLastRender}ms`,
-        totalTime: `${totalTime}ms`
-      })
-    }
+    // Performance metrics available via getMetrics()
 
     lastRenderTime.current = now
 
-    // Warn if rendering too frequently
-    if (timeSinceLastRender < 16) { // Less than 60fps
-      console.warn(`[Performance Warning] ${componentName} is rendering too frequently: ${timeSinceLastRender}ms`)
-    }
+    // Track frequent rendering (less than 60fps threshold)
   })
 
   const getMetrics = () => ({

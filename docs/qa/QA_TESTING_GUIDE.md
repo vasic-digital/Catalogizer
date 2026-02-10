@@ -21,12 +21,12 @@ Catalogizer has a comprehensive quality assurance system with real, automated te
 
 ### CI/CD Integration
 
-All tests run automatically on:
-- Pull requests to `main` and `develop` branches
-- Pushes to `main` and `develop` branches
-- Manual workflow dispatch (on-demand)
+> **Note:** GitHub Actions are permanently disabled for this project. All tests must be run locally.
 
-See `.github/workflows/ci-cd.yml` for the complete pipeline.
+Run the full test suite with:
+```bash
+./scripts/run-all-tests.sh
+```
 
 ## 🚀 Quick Start Commands
 
@@ -355,9 +355,9 @@ Add coverage badges to README (requires CI/CD integration):
 
 ## 🚨 Troubleshooting
 
-### Tests Fail Locally But Pass in CI
+### Tests Fail Locally
 
-1. Check Go version: `go version` (should match `.github/workflows/ci-cd.yml`)
+1. Check Go version: `go version` (should be 1.21+)
 2. Check dependencies: `go mod tidy`
 3. Clear test cache: `go clean -testcache`
 4. Check environment variables
@@ -396,7 +396,7 @@ chmod +x qa-ai-system/scripts/run-qa-tests.sh
 
 - **Database Migrations:** `catalog-api/database/migrations/README.md`
 - **Docker Setup:** `../deployment/DOCKER_SETUP.md`
-- **CI/CD Pipeline:** `.github/workflows/ci-cd.yml`
+- **CI/CD (Local):** `./scripts/run-all-tests.sh`
 - **API Testing:** `catalog-api/docs/TESTING.md`
 
 ## 🎯 Quality Standards

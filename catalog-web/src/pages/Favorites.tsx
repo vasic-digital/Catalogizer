@@ -13,13 +13,11 @@ const FavoritesPage: React.FC = () => {
   const { stats, refetchStats } = useFavorites()
 
   const handleExportFavorites = () => {
-    // Export favorites to JSON/CSV
-    console.log('Export favorites')
+    // TODO: implement export favorites to JSON/CSV
   }
 
   const handleImportFavorites = () => {
-    // Import favorites from file
-    console.log('Import favorites')
+    // TODO: implement import favorites from file
   }
 
   const handleBulkOperations = () => {

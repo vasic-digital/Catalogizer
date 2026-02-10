@@ -3,8 +3,10 @@ package config
 import (
 	"encoding/json"
 	"fmt"
+	"net"
 	"os"
 	"path/filepath"
+	"strconv"
 )
 
 // Config represents the API configuration
@@ -272,5 +274,5 @@ func (c *Config) GetDatabaseURL() string {
 
 // GetServerAddress returns the server address
 func (c *Config) GetServerAddress() string {
-	return fmt.Sprintf("%s:%d", c.Server.Host, c.Server.Port)
+	return net.JoinHostPort(c.Server.Host, strconv.Itoa(c.Server.Port))
 }

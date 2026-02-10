@@ -118,7 +118,6 @@ const AIDashboard: React.FC = () => {
 
   // Handle natural language search
   const handleNaturalSearch = useCallback((query: AISearchQuery) => {
-    console.log('AI Search query processed:', query);
     setState(prev => ({
       ...prev,
       alerts: [{
@@ -138,7 +137,6 @@ const AIDashboard: React.FC = () => {
 
   // Handle categorization completion
   const handleCategorizationComplete = useCallback((result: AICategorizationResult) => {
-    console.log('Content categorized:', result);
     setState(prev => ({
       ...prev,
       alerts: [{
@@ -158,7 +156,6 @@ const AIDashboard: React.FC = () => {
 
   // Handle user behavior analytics actions
   const handleActionImplement = useCallback((action: string) => {
-    console.log('Implementing action:', action);
     setState(prev => ({
       ...prev,
       alerts: [{
@@ -178,7 +175,6 @@ const AIDashboard: React.FC = () => {
 
   // Handle prediction actions
   const handlePredictionAction = useCallback((predictionId: string, actionId: string) => {
-    console.log('Executing prediction action:', { predictionId, actionId });
     setState(prev => ({
       ...prev,
       alerts: [{
@@ -198,7 +194,6 @@ const AIDashboard: React.FC = () => {
 
   // Handle organization suggestions
   const handleSuggestionApply = useCallback((suggestionId: string) => {
-    console.log('Applying organization suggestion:', suggestionId);
     setState(prev => ({
       ...prev,
       alerts: [{
@@ -218,7 +213,6 @@ const AIDashboard: React.FC = () => {
 
   // Handle metadata extraction
   const handleMetadataExtracted = useCallback((metadata: ExtractedMetadata) => {
-    console.log('Metadata extracted:', metadata);
     setState(prev => ({
       ...prev,
       metrics: {
@@ -230,7 +224,6 @@ const AIDashboard: React.FC = () => {
 
   // Handle automation rule toggles
   const handleRuleToggle = useCallback((ruleId: string, enabled: boolean) => {
-    console.log('Toggling rule:', { ruleId, enabled });
     setState(prev => ({
       ...prev,
       metrics: {
@@ -242,7 +235,6 @@ const AIDashboard: React.FC = () => {
 
   // Handle rule execution
   const handleRuleExecute = useCallback((ruleId: string) => {
-    console.log('Executing rule:', ruleId);
     setState(prev => ({
       ...prev,
       alerts: [{
@@ -262,7 +254,6 @@ const AIDashboard: React.FC = () => {
 
   // Handle quality improvements
   const handleQualityImprovement = useCallback((improvement: string) => {
-    console.log('Applying quality improvement:', improvement);
     setState(prev => ({
       ...prev,
       alerts: [{

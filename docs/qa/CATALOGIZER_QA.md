@@ -30,8 +30,7 @@ Catalogizer/
 │   ├── scripts/                   # CI/CD integration scripts
 │   │   └── ci-cd/                 # Git hooks and deployment gates
 │   └── CATALOGIZER_QA_MANUAL.html # Complete user manual
-├── .github/workflows/              # 🆕 GitHub Actions CI/CD
-│   └── catalogizer-qa-pipeline.yml # Automated QA pipeline
+├── scripts/run-all-tests.sh          # Local CI/CD test runner
 └── CATALOGIZER_QA.md              # This integration guide
 ```
 

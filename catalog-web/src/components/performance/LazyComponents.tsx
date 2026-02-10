@@ -55,7 +55,8 @@ export const preloadComponent = (componentName: string) => {
       import('../collections/BulkOperations');
       break;
     default:
-      console.warn(`Unknown component: ${componentName}`);
+      // Unknown component name - no preload action taken
+      break;
   }
 };
 

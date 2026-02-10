@@ -64,16 +64,13 @@ export const conversionApi = {
 
   async cancelConversion(id: string): Promise<void> {
     // Mock implementation
-    console.log(`Cancelling conversion job ${id}`);
   },
 
   async retryConversion(id: string): Promise<void> {
     // Mock implementation
-    console.log(`Retrying conversion job ${id}`);
   },
 
   async downloadFile(path: string): Promise<void> {
     // Mock implementation - would trigger file download
-    console.log(`Downloading file from ${path}`);
   }
 };

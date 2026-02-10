@@ -21,14 +21,9 @@ export function reportWebVitals(onReport: WebVitalsCallback): void {
  */
 export function logWebVitals(): void {
   if (import.meta.env.DEV) {
-    reportWebVitals((metric) => {
-      console.log(`[Web Vitals] ${metric.name}:`, {
-        value: metric.value,
-        rating: metric.rating,
-        delta: metric.delta,
-        id: metric.id,
-        navigationType: metric.navigationType,
-      })
+    reportWebVitals((_metric) => {
+      // In development, metrics are captured but not logged.
+      // Use sendToAnalytics() to report metrics to an analytics service.
     })
   }
 }

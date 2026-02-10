@@ -298,42 +298,42 @@ This report provides a complete analysis of all unfinished work, broken componen
 
 **Major Application Components WITHOUT README.md:**
 
-1. `/Volumes/T7/Projects/Catalogizer/catalog-web/README.md` 🔴
+1. `catalog-web/README.md` 🔴
    - **Impact:** React web frontend has no setup/build documentation
    - **Effort:** 4 hours
 
-2. `/Volumes/T7/Projects/Catalogizer/catalogizer-desktop/README.md` 🔴
+2. `catalogizer-desktop/README.md` 🔴
    - **Impact:** Tauri desktop app has no build instructions
    - **Effort:** 4 hours
 
-3. `/Volumes/T7/Projects/Catalogizer/catalogizer-android/README.md` 🔴
+3. `catalogizer-android/README.md` 🔴
    - **Impact:** Android mobile app has no Android Studio setup guide
    - **Effort:** 4 hours
 
-4. `/Volumes/T7/Projects/Catalogizer/catalogizer-androidtv/README.md` 🔴
+4. `catalogizer-androidtv/README.md` 🔴
    - **Impact:** Android TV app has no setup documentation
    - **Effort:** 3 hours
 
-5. `/Volumes/T7/Projects/Catalogizer/CONTRIBUTING.md` 🔴
+5. `CONTRIBUTING.md` 🔴
    - **Impact:** Referenced in main README but doesn't exist
    - **Note:** Actually exists in `docs/CONTRIBUTING.md` - needs symlink or move
    - **Effort:** 1 hour
 
 **Utility Directories:**
 
-6. `/Volumes/T7/Projects/Catalogizer/scripts/README.md`
+6. `scripts/README.md`
    - **Purpose:** Document utility scripts
    - **Effort:** 2 hours
 
-7. `/Volumes/T7/Projects/Catalogizer/deployment/README.md`
+7. `deployment/README.md`
    - **Purpose:** Deployment script documentation
    - **Effort:** 3 hours
 
-8. `/Volumes/T7/Projects/Catalogizer/build-scripts/README.md`
+8. `build-scripts/README.md`
    - **Purpose:** Build automation documentation
    - **Effort:** 2 hours
 
-9. `/Volumes/T7/Projects/Catalogizer/docs/CLIENTS.md`
+9. `docs/CLIENTS.md`
    - **Purpose:** Client applications overview (referenced but missing)
    - **Effort:** 3 hours
 
@@ -405,7 +405,7 @@ This report provides a complete analysis of all unfinished work, broken componen
 **Status:** The project does NOT have a "Website" directory
 **Impact:** Website content must be created from scratch
 
-**Current Documentation Location:** `/Volumes/T7/Projects/Catalogizer/docs/`
+**Current Documentation Location:** `docs/`
 
 ### 4.2 Existing Website-Ready Content
 
@@ -441,7 +441,7 @@ This report provides a complete analysis of all unfinished work, broken componen
 
 #### Screenshots Directory - COMPLETELY MISSING
 
-**Expected Location:** `/Volumes/T7/Projects/Catalogizer/docs/screenshots/`
+**Expected Location:** `docs/screenshots/`
 **Status:** Directory doesn't exist
 **Impact:** 78+ broken image references across documentation
 
@@ -544,7 +544,7 @@ Website/
 ### 5.1 Critical Build Issues
 
 #### BROKEN-001: Production Dockerfile Missing
-**Location:** `/Volumes/T7/Projects/Catalogizer/catalog-api/Dockerfile`
+**Location:** `catalog-api/Dockerfile`
 **Status:** Only `Dockerfile.dev` exists
 **Impact:** Production Docker builds WILL FAIL
 
@@ -575,8 +575,8 @@ Website/
 
 #### BROKEN-003: Missing Configuration Files
 **Missing:**
-- `/Volumes/T7/Projects/Catalogizer/redis.conf` (referenced in docker-compose.yml:46)
-- `/Volumes/T7/Projects/Catalogizer/nginx.conf` (referenced in docker-compose.yml:138)
+- `redis.conf` (referenced in docker-compose.yml:46)
+- `nginx.conf` (referenced in docker-compose.yml:138)
 
 **Impact:** Services may use defaults or fail to start
 **Priority:** 🟠 MEDIUM
@@ -1891,9 +1891,9 @@ Before declaring project complete:
 - Missing web tests: `catalog-web/src/` (23 files)
 
 **Documentation:**
-- Main docs: `/Volumes/T7/Projects/Catalogizer/docs/`
-- Screenshots: `/Volumes/T7/Projects/Catalogizer/docs/screenshots/` (needs creation)
-- Tutorial: `/Volumes/T7/Projects/Catalogizer/catalogizer-tutorial.html`
+- Main docs: `docs/`
+- Screenshots: `docs/screenshots/` (needs creation)
+- Tutorial: `catalogizer-tutorial.html`
 
 ### Appendix B: Command Reference
 

@@ -242,7 +242,7 @@ Total Tests: 195 (100% passing)
 ### Backend Tests
 
 ```bash
-cd /Volumes/T7/Projects/Catalogizer/catalog-api
+cd catalog-api
 
 # Run all tests
 go test ./handlers ./tests
@@ -259,7 +259,7 @@ go test -cover ./handlers ./tests
 ### Frontend Tests
 
 ```bash
-cd /Volumes/T7/Projects/Catalogizer/catalog-web
+cd catalog-web
 
 # Run all tests
 npm test -- --watchAll=false

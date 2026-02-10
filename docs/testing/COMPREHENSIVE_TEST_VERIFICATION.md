@@ -174,7 +174,7 @@ Overall Coverage: 25.72%
 ### Backend Tests
 
 ```bash
-cd /Volumes/T7/Projects/Catalogizer/catalog-api
+cd catalog-api
 
 # Run all backend tests
 $ go test ./handlers ./tests
@@ -194,7 +194,7 @@ ok      catalogizer/tests       0.625s    coverage: 36.9% of statements
 ### Frontend Tests
 
 ```bash
-cd /Volumes/T7/Projects/Catalogizer/catalog-web
+cd catalog-web
 
 # Run all frontend tests
 $ npm test -- --watchAll=false
@@ -453,14 +453,14 @@ jest.mock('../MediaCard', () => ({
 
 ```bash
 # Backend tests
-cd /Volumes/T7/Projects/Catalogizer/catalog-api
+cd catalog-api
 go test ./handlers ./tests
 
 # Backend with coverage
 go test -cover ./handlers ./tests
 
 # Frontend tests
-cd /Volumes/T7/Projects/Catalogizer/catalog-web
+cd catalog-web
 npm test -- --watchAll=false
 
 # Frontend with coverage
