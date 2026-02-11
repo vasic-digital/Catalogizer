@@ -218,3 +218,6 @@ catalog-api/coverage.out
 # Go profiling
 *.prof
 *.pprof
+
+# AppImage files (too large for git hosting, build locally)
+*.AppImage

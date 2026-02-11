@@ -53,7 +53,11 @@
         "sha256": "6bbb6ab6338bf004acb49d10b162d2f76a12cbf62c88ef056dd4e5508988a499",
         "size": 15069424,
         "deb": "linux/catalogizer-desktop/Catalogizer_1.0.0_amd64.deb",
-        "rpm": "linux/catalogizer-desktop/Catalogizer-1.0.0-1.x86_64.rpm"
+        "rpm": "linux/catalogizer-desktop/Catalogizer-1.0.0-1.x86_64.rpm",
+        "appimage": "linux/catalogizer-desktop/Catalogizer_1.0.0_amd64.AppImage",
+        "appimage_sha256": "c647773d562a91738e463787fa8a8680ac59dc46b0e008aa6feb66cf4c0751b5",
+        "appimage_size": 180468216,
+        "appimage_note": "Local build only - exceeds git hosting size limits, build with: cd catalogizer-desktop && npx tauri build --bundles appimage"
       },
       "note": "Linux only - Windows/macOS require native build environment"
     },
@@ -63,7 +67,11 @@
         "sha256": "a55a16db48fb41daa01b3d52666f0d0c6d1ae67e72d76808ed0c1bcbb90caa18",
         "size": 18161464,
         "deb": "linux/installer-wizard/Catalogizer Installation Wizard_1.0.0_amd64.deb",
-        "rpm": "linux/installer-wizard/Catalogizer Installation Wizard-1.0.0-1.x86_64.rpm"
+        "rpm": "linux/installer-wizard/Catalogizer Installation Wizard-1.0.0-1.x86_64.rpm",
+        "appimage": "linux/installer-wizard/Catalogizer Installation Wizard_1.0.0_amd64.AppImage",
+        "appimage_sha256": "fcd23035844821826918bf6df6eb0b0ae001f265d2571ad1462323203ea1d193",
+        "appimage_size": 181451256,
+        "appimage_note": "Local build only - exceeds git hosting size limits, build with: cd installer-wizard && npx tauri build --bundles appimage"
       },
       "note": "Linux only - Windows/macOS require native build environment"
     }
