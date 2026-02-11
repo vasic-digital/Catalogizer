@@ -2,6 +2,7 @@ package middleware
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"net/http"
 	"strconv"
@@ -111,7 +112,8 @@ func RedisRateLimit(config RedisRateLimiterConfig) gin.HandlerFunc {
 		_, err := pipe.Exec(ctx)
 
 		// Handle Redis errors gracefully - fail closed for security
-		if err != nil {
+		// redis.Nil is expected when the key doesn't exist yet (first request)
+		if err != nil && !errors.Is(err, redis.Nil) {
 			// Log the Redis error
 			fmt.Printf("Redis rate limiter error: %v\n", err)
 

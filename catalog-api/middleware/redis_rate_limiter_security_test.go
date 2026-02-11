@@ -1,10 +1,8 @@
 package middleware
 
 import (
-	"context"
 	"net/http"
 	"net/http/httptest"
-	"strconv"
 	"testing"
 	"time"
 
@@ -53,85 +51,15 @@ func TestRedisRateLimit_SecurityBehavior(t *testing.T) {
 func TestRedisRateLimit_FixedBehavior(t *testing.T) {
 	gin.SetMode(gin.TestMode)
 
-	// Create a mock Redis client that simulates failures
-	redisClient := redis.NewClient(&redis.Options{
-		Addr:     "redis://localhost:6379", // Valid address
-		Password: "",
-		DB:       0,
-	})
+	// Use miniredis for a real working Redis instance
+	_, client := setupMiniredis(t)
 
-	config := DefaultRedisRateLimiterConfig(redisClient)
+	config := DefaultRedisRateLimiterConfig(client)
 	config.Requests = 5
 	config.Window = time.Minute
 
-	// Create a custom rate limiter that doesn't fail open
-	fixedRateLimiter := func(c RedisRateLimiterConfig) gin.HandlerFunc {
-		return func(gc *gin.Context) {
-			key := "rate_limit:" + c.KeyGenerator(gc)
-			ctx := context.Background()
-
-			// Try Redis with fallback to in-memory if Redis fails
-			pipe := c.Client.Pipeline()
-			getCmd := pipe.Get(ctx, key)
-			incrCmd := pipe.Incr(ctx, key)
-			expireCmd := pipe.Expire(ctx, key, c.Window)
-
-			_, err := pipe.Exec(ctx)
-
-			// If Redis fails, use in-memory rate limiting instead of failing open
-			if err != nil {
-				// Use simple in-memory rate limiting as fallback
-				// This would need to be implemented with proper storage
-				gc.JSON(http.StatusInternalServerError, gin.H{
-					"error": "Rate limiting service temporarily unavailable",
-				})
-				gc.Abort()
-				return
-			}
-
-			var currentCount int64
-			if getCmd.Err() != nil {
-				currentCount = 1
-			} else {
-				if val, err := getCmd.Int64(); err == nil {
-					currentCount = val + 1
-				} else {
-					currentCount = 1
-				}
-			}
-
-			incrCmd.Val()
-			expireCmd.Val()
-
-			// Check if rate limit exceeded
-			if currentCount > int64(c.Requests) {
-				ttl, _ := c.Client.TTL(ctx, key).Result()
-				if ttl < 0 {
-					ttl = c.Window
-				}
-
-				gc.JSON(http.StatusTooManyRequests, gin.H{
-					"error":       "rate_limit_exceeded",
-					"message":     c.Message,
-					"retry_after": ttl.String(),
-				})
-				gc.Abort()
-				return
-			}
-
-			// Add rate limit headers
-			remaining := int64(c.Requests) - currentCount
-			gc.Header("X-RateLimit-Limit", strconv.Itoa(c.Requests))
-			gc.Header("X-RateLimit-Remaining", strconv.Itoa(int(remaining)))
-			gc.Header("X-RateLimit-Reset", time.Now().Add(c.Window).Format(time.RFC3339))
-			gc.Header("X-RateLimit-Window", c.Window.String())
-
-			gc.Next()
-		}
-	}
-
 	router := gin.New()
-	router.Use(fixedRateLimiter(config))
+	router.Use(RedisRateLimit(config))
 
 	requestCount := 0
 	router.GET("/test", func(c *gin.Context) {
@@ -139,13 +67,22 @@ func TestRedisRateLimit_FixedBehavior(t *testing.T) {
 		c.JSON(http.StatusOK, gin.H{"count": requestCount})
 	})
 
-	// Test with valid Redis connection (would need actual Redis running)
-	// For this test, we'll demonstrate the concept
+	// Make 5 requests - they should all pass (within rate limit)
+	for i := 0; i < 5; i++ {
+		req := httptest.NewRequest("GET", "/test", nil)
+		w := httptest.NewRecorder()
+		router.ServeHTTP(w, req)
 
-	// The key point is that when Redis fails, we should either:
-	// 1. Fail closed (block requests)
-	// 2. Have a fallback in-memory rate limiter
-	// 3. Return an error indicating rate limiting is unavailable
+		assert.Equal(t, http.StatusOK, w.Code, "Request %d should pass (within limit)", i+1)
+	}
 
-	t.Skip("Requires actual Redis instance for full testing")
+	// 6th request should be rate limited
+	req := httptest.NewRequest("GET", "/test", nil)
+	w := httptest.NewRecorder()
+	router.ServeHTTP(w, req)
+
+	assert.Equal(t, http.StatusTooManyRequests, w.Code, "Request 6 should be rate limited")
+
+	// Verify that exactly 5 requests were processed
+	assert.Equal(t, 5, requestCount, "Exactly 5 requests should be processed")
 }

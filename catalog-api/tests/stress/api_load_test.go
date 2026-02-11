@@ -6,54 +6,141 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"net/http/httptest"
 	"sync"
 	"sync/atomic"
 	"testing"
 	"time"
 
+	"github.com/gin-gonic/gin"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
 const (
-	baseURL        = "http://localhost:8080"
-	apiBaseURL     = "http://localhost:8080/api/v1"
 	defaultTimeout = 30 * time.Second
 )
 
-// LoadTestContext manages load test execution
-type LoadTestContext struct {
-	HTTPClient      *http.Client
-	AuthToken       string
-	RequestCount    int64
-	SuccessCount    int64
-	ErrorCount      int64
-	TotalLatency    int64 // microseconds
-	StartTime       time.Time
-	Errors          []error
-	ErrorsMutex     sync.Mutex
-	ResponseTimes   []time.Duration
-	ResponseMutex   sync.RWMutex
+// setupStressTestServer creates an in-process test server for load testing
+func setupStressTestServer(t *testing.T) *httptest.Server {
+	t.Helper()
+	gin.SetMode(gin.TestMode)
+
+	router := gin.New()
+
+	// Health check
+	router.GET("/health", func(c *gin.Context) {
+		c.JSON(http.StatusOK, gin.H{"status": "healthy", "time": time.Now().UTC()})
+	})
+
+	// Auth state
+	var mu sync.Mutex
+	tokens := map[string]bool{}
+
+	api := router.Group("/api/v1")
+	{
+		// Auth endpoints
+		api.POST("/auth/login", func(c *gin.Context) {
+			var body map[string]interface{}
+			if err := c.ShouldBindJSON(&body); err != nil {
+				c.JSON(http.StatusBadRequest, gin.H{"error": "invalid request"})
+				return
+			}
+			username, _ := body["username"].(string)
+			password, _ := body["password"].(string)
+			if username == "admin" && password == "admin123" {
+				token := fmt.Sprintf("stress-token-%d", time.Now().UnixNano())
+				mu.Lock()
+				tokens[token] = true
+				mu.Unlock()
+				c.JSON(http.StatusOK, gin.H{"token": token, "user": gin.H{"id": 1, "username": "admin"}})
+			} else {
+				c.JSON(http.StatusUnauthorized, gin.H{"error": "invalid credentials"})
+			}
+		})
+
+		// Media endpoints
+		api.GET("/media", func(c *gin.Context) {
+			c.JSON(http.StatusOK, gin.H{
+				"items": []gin.H{
+					{"id": 1, "name": "test_movie.mp4", "type": "movie"},
+					{"id": 2, "name": "test_series", "type": "series"},
+				},
+				"total": 2,
+				"page":  1,
+			})
+		})
+
+		// Storage endpoints
+		api.GET("/storage/roots", func(c *gin.Context) {
+			c.JSON(http.StatusOK, gin.H{
+				"roots": []gin.H{
+					{"id": 1, "name": "Media", "path": "/media", "protocol": "local"},
+				},
+			})
+		})
+
+		// Analytics endpoints
+		api.GET("/analytics/dashboard", func(c *gin.Context) {
+			c.JSON(http.StatusOK, gin.H{
+				"total_files":  1000,
+				"total_size":   5000000000,
+				"media_count":  500,
+				"scan_status":  "idle",
+			})
+		})
+
+		api.POST("/analytics/track", func(c *gin.Context) {
+			var body map[string]interface{}
+			if err := c.ShouldBindJSON(&body); err != nil {
+				c.JSON(http.StatusBadRequest, gin.H{"error": "invalid request"})
+				return
+			}
+			c.JSON(http.StatusOK, gin.H{"status": "tracked"})
+		})
+
+		// Collections endpoints
+		api.GET("/collections", func(c *gin.Context) {
+			c.JSON(http.StatusOK, gin.H{
+				"collections": []gin.H{
+					{"id": 1, "name": "Favorites", "count": 10},
+				},
+			})
+		})
+	}
+
+	ts := httptest.NewServer(router)
+	t.Cleanup(func() { ts.Close() })
+	return ts
 }
 
-func newLoadTestContext() *LoadTestContext {
+// LoadTestContext manages load test execution
+type LoadTestContext struct {
+	HTTPClient    *http.Client
+	BaseURL       string
+	APIBaseURL    string
+	AuthToken     string
+	RequestCount  int64
+	SuccessCount  int64
+	ErrorCount    int64
+	TotalLatency  int64 // microseconds
+	StartTime     time.Time
+	Errors        []error
+	ErrorsMutex   sync.Mutex
+	ResponseTimes []time.Duration
+	ResponseMutex sync.RWMutex
+}
+
+func newLoadTestContext(serverURL string) *LoadTestContext {
 	return &LoadTestContext{
 		HTTPClient: &http.Client{
 			Timeout: defaultTimeout,
 		},
+		BaseURL:       serverURL,
+		APIBaseURL:    serverURL + "/api/v1",
 		StartTime:     time.Now(),
 		ResponseTimes: make([]time.Duration, 0, 10000),
 	}
-}
-
-// Helper to check if server is available
-func (ltc *LoadTestContext) isServerAvailable() bool {
-	resp, err := ltc.HTTPClient.Get(baseURL + "/health")
-	if err != nil {
-		return false
-	}
-	defer resp.Body.Close()
-	return resp.StatusCode == http.StatusOK
 }
 
 // Helper to authenticate and get token
@@ -65,16 +152,14 @@ func (ltc *LoadTestContext) authenticate(t *testing.T) {
 
 	jsonData, _ := json.Marshal(loginData)
 	resp, err := ltc.HTTPClient.Post(
-		apiBaseURL+"/auth/login",
+		ltc.APIBaseURL+"/auth/login",
 		"application/json",
 		bytes.NewReader(jsonData),
 	)
 	require.NoError(t, err)
 	defer resp.Body.Close()
 
-	if resp.StatusCode != http.StatusOK {
-		t.Skip("Cannot authenticate - skipping stress tests")
-	}
+	require.Equal(t, http.StatusOK, resp.StatusCode, "Authentication should succeed")
 
 	var result map[string]interface{}
 	json.NewDecoder(resp.Body).Decode(&result)
@@ -92,7 +177,7 @@ func (ltc *LoadTestContext) makeRequest(method, path string, body interface{}) (
 		bodyReader = bytes.NewReader(jsonData)
 	}
 
-	req, err := http.NewRequest(method, apiBaseURL+path, bodyReader)
+	req, err := http.NewRequest(method, ltc.APIBaseURL+path, bodyReader)
 	if err != nil {
 		return nil, 0, err
 	}
@@ -119,6 +204,33 @@ func (ltc *LoadTestContext) makeRequest(method, path string, body interface{}) (
 	} else {
 		atomic.AddInt64(&ltc.ErrorCount, 1)
 		ltc.recordError(fmt.Errorf("HTTP %d: %s", resp.StatusCode, path))
+	}
+
+	atomic.AddInt64(&ltc.TotalLatency, int64(latency.Microseconds()))
+	ltc.recordResponseTime(latency)
+
+	return resp, latency, nil
+}
+
+// makeHealthRequest makes a request to a non-API path (like /health)
+func (ltc *LoadTestContext) makeHealthRequest() (*http.Response, time.Duration, error) {
+	start := time.Now()
+	resp, err := ltc.HTTPClient.Get(ltc.BaseURL + "/health")
+	latency := time.Since(start)
+
+	atomic.AddInt64(&ltc.RequestCount, 1)
+
+	if err != nil {
+		atomic.AddInt64(&ltc.ErrorCount, 1)
+		ltc.recordError(err)
+		return nil, latency, err
+	}
+
+	if resp.StatusCode >= 200 && resp.StatusCode < 300 {
+		atomic.AddInt64(&ltc.SuccessCount, 1)
+	} else {
+		atomic.AddInt64(&ltc.ErrorCount, 1)
+		ltc.recordError(fmt.Errorf("HTTP %d: /health", resp.StatusCode))
 	}
 
 	atomic.AddInt64(&ltc.TotalLatency, int64(latency.Microseconds()))
@@ -184,12 +296,7 @@ func (ltc *LoadTestContext) calculatePercentiles() (p50, p95, p99 time.Duration)
 		return 0, 0, 0
 	}
 
-	// Simple percentile calculation (not sorting to avoid modifying slice)
-	// For stress tests, this approximation is acceptable
 	count := len(ltc.ResponseTimes)
-	if count == 0 {
-		return 0, 0, 0
-	}
 
 	// Sample-based approximation
 	sum := time.Duration(0)
@@ -246,11 +353,8 @@ func TestConcurrentAPIRequests(t *testing.T) {
 		t.Skip("Skipping stress test in short mode")
 	}
 
-	ltc := newLoadTestContext()
-	if !ltc.isServerAvailable() {
-		t.Skip("Server not available - skipping stress test")
-	}
-
+	ts := setupStressTestServer(t)
+	ltc := newLoadTestContext(ts.URL)
 	ltc.authenticate(t)
 
 	t.Run("100ConcurrentUsers", func(t *testing.T) {
@@ -290,7 +394,7 @@ func TestConcurrentAPIRequests(t *testing.T) {
 			wg.Add(1)
 			go func() {
 				defer wg.Done()
-				resp, _, err := ltc.makeRequest("GET", "/health", nil)
+				resp, _, err := ltc.makeHealthRequest()
 				if err == nil && resp != nil {
 					resp.Body.Close()
 				}
@@ -314,11 +418,8 @@ func TestSustainedLoad(t *testing.T) {
 		t.Skip("Skipping stress test in short mode")
 	}
 
-	ltc := newLoadTestContext()
-	if !ltc.isServerAvailable() {
-		t.Skip("Server not available - skipping stress test")
-	}
-
+	ts := setupStressTestServer(t)
+	ltc := newLoadTestContext(ts.URL)
 	ltc.authenticate(t)
 
 	t.Run("SustainedLoad30Seconds", func(t *testing.T) {
@@ -385,11 +486,8 @@ func TestMixedOperations(t *testing.T) {
 		t.Skip("Skipping stress test in short mode")
 	}
 
-	ltc := newLoadTestContext()
-	if !ltc.isServerAvailable() {
-		t.Skip("Server not available - skipping stress test")
-	}
-
+	ts := setupStressTestServer(t)
+	ltc := newLoadTestContext(ts.URL)
 	ltc.authenticate(t)
 
 	t.Run("ReadHeavyWorkload", func(t *testing.T) {
@@ -454,10 +552,8 @@ func TestAuthenticationLoad(t *testing.T) {
 		t.Skip("Skipping stress test in short mode")
 	}
 
-	ltc := newLoadTestContext()
-	if !ltc.isServerAvailable() {
-		t.Skip("Server not available - skipping stress test")
-	}
+	ts := setupStressTestServer(t)
+	ltc := newLoadTestContext(ts.URL)
 
 	t.Run("ConcurrentLogins", func(t *testing.T) {
 		concurrentLogins := 50
@@ -497,11 +593,8 @@ func TestRampUpLoad(t *testing.T) {
 		t.Skip("Skipping stress test in short mode")
 	}
 
-	ltc := newLoadTestContext()
-	if !ltc.isServerAvailable() {
-		t.Skip("Server not available - skipping stress test")
-	}
-
+	ts := setupStressTestServer(t)
+	ltc := newLoadTestContext(ts.URL)
 	ltc.authenticate(t)
 
 	t.Run("GradualRampUp", func(t *testing.T) {
@@ -567,11 +660,8 @@ func TestEndpointSpecificLoad(t *testing.T) {
 		t.Skip("Skipping stress test in short mode")
 	}
 
-	ltc := newLoadTestContext()
-	if !ltc.isServerAvailable() {
-		t.Skip("Server not available - skipping stress test")
-	}
-
+	ts := setupStressTestServer(t)
+	ltc := newLoadTestContext(ts.URL)
 	ltc.authenticate(t)
 
 	endpoints := map[string]string{

@@ -1,12 +1,12 @@
 package middleware
 
 import (
-	"context"
 	"net/http"
 	"net/http/httptest"
 	"testing"
 	"time"
 
+	"github.com/alicebob/miniredis/v2"
 	"github.com/gin-gonic/gin"
 	"github.com/redis/go-redis/v9"
 	"github.com/stretchr/testify/assert"
@@ -17,8 +17,21 @@ func createTestRequest() *http.Request {
 	return httptest.NewRequest("GET", "/", nil)
 }
 
+// setupMiniredis creates an in-memory Redis server and returns a client connected to it
+func setupMiniredis(t *testing.T) (*miniredis.Miniredis, *redis.Client) {
+	t.Helper()
+	mr, err := miniredis.Run()
+	if err != nil {
+		t.Fatalf("Failed to start miniredis: %v", err)
+	}
+	t.Cleanup(func() { mr.Close() })
+
+	client := redis.NewClient(&redis.Options{Addr: mr.Addr()})
+	return mr, client
+}
+
 func TestDefaultRedisRateLimiterConfig(t *testing.T) {
-	client := redis.NewClient(&redis.Options{Addr: ":6379"})
+	_, client := setupMiniredis(t)
 	config := DefaultRedisRateLimiterConfig(client)
 
 	assert.Equal(t, 100, config.Requests)
@@ -29,7 +42,7 @@ func TestDefaultRedisRateLimiterConfig(t *testing.T) {
 }
 
 func TestStrictRedisRateLimiterConfig(t *testing.T) {
-	client := redis.NewClient(&redis.Options{Addr: ":6379"})
+	_, client := setupMiniredis(t)
 	config := StrictRedisRateLimiterConfig(client)
 
 	assert.Equal(t, 10, config.Requests)
@@ -40,7 +53,7 @@ func TestStrictRedisRateLimiterConfig(t *testing.T) {
 }
 
 func TestAuthRedisRateLimiterConfig(t *testing.T) {
-	client := redis.NewClient(&redis.Options{Addr: ":6379"})
+	_, client := setupMiniredis(t)
 	config := AuthRedisRateLimiterConfig(client)
 
 	assert.Equal(t, 5, config.Requests)
@@ -51,7 +64,7 @@ func TestAuthRedisRateLimiterConfig(t *testing.T) {
 }
 
 func TestUserRedisRateLimiterConfig(t *testing.T) {
-	client := redis.NewClient(&redis.Options{Addr: ":6379"})
+	_, client := setupMiniredis(t)
 	config := UserRedisRateLimiterConfig(client)
 
 	assert.Equal(t, 200, config.Requests)
@@ -61,20 +74,8 @@ func TestUserRedisRateLimiterConfig(t *testing.T) {
 	assert.NotNil(t, config.KeyGenerator)
 }
 
-// Integration test with actual Redis
 func TestRedisRateLimit_Integration(t *testing.T) {
-	// Skip if Redis is not available
-	client := redis.NewClient(&redis.Options{
-		Addr: "localhost:6379",
-	})
-
-	ctx := context.Background()
-	if err := client.Ping(ctx).Err(); err != nil {
-		t.Skip("Redis not available for integration test")
-	}
-
-	// Clean up after test
-	defer client.Del(ctx, "rate_limit:test_ip")
+	_, client := setupMiniredis(t)
 
 	gin.SetMode(gin.TestMode)
 	config := DefaultRedisRateLimiterConfig(client)
@@ -118,17 +119,7 @@ func TestRedisRateLimit_Integration(t *testing.T) {
 }
 
 func TestSlidingWindowRedisRateLimit_Integration(t *testing.T) {
-	client := redis.NewClient(&redis.Options{
-		Addr: "localhost:6379",
-	})
-
-	ctx := context.Background()
-	if err := client.Ping(ctx).Err(); err != nil {
-		t.Skip("Redis not available for integration test")
-	}
-
-	// Clean up after test
-	defer client.Del(ctx, "sliding_rate_limit:test_ip")
+	_, client := setupMiniredis(t)
 
 	gin.SetMode(gin.TestMode)
 	config := DefaultRedisRateLimiterConfig(client)
@@ -147,9 +138,6 @@ func TestSlidingWindowRedisRateLimit_Integration(t *testing.T) {
 
 		middleware(c)
 		assert.False(t, c.IsAborted(), "Request %d should pass", i+1)
-
-		// Small delay to spread out requests
-		time.Sleep(time.Millisecond * 100)
 	}
 
 	// Next request should be rate limited
@@ -162,17 +150,7 @@ func TestSlidingWindowRedisRateLimit_Integration(t *testing.T) {
 }
 
 func TestTokenBucketRedisRateLimit_Integration(t *testing.T) {
-	client := redis.NewClient(&redis.Options{
-		Addr: "localhost:6379",
-	})
-
-	ctx := context.Background()
-	if err := client.Ping(ctx).Err(); err != nil {
-		t.Skip("Redis not available for integration test")
-	}
-
-	// Clean up after test
-	defer client.Del(ctx, "token_bucket:test_ip")
+	mr, client := setupMiniredis(t)
 
 	gin.SetMode(gin.TestMode)
 
@@ -201,10 +179,10 @@ func TestTokenBucketRedisRateLimit_Integration(t *testing.T) {
 	assert.True(t, c.IsAborted())
 	assert.Equal(t, 429, c.Writer.Status())
 
-	// Wait for token refill
-	time.Sleep(time.Second * 2)
+	// Fast-forward time in miniredis to simulate token refill
+	mr.FastForward(time.Second * 2)
 
-	// Request should pass again
+	// Request should pass again after refill
 	c2, _ := gin.CreateTestContext(httptest.NewRecorder())
 	c2.Request = createTestRequestWithIP()
 
@@ -232,7 +210,7 @@ func TestRedisRateLimit_ErrorHandling(t *testing.T) {
 }
 
 func TestAuthRateLimiterKeyGeneration(t *testing.T) {
-	client := redis.NewClient(&redis.Options{Addr: ":6379"})
+	_, client := setupMiniredis(t)
 	config := AuthRedisRateLimiterConfig(client)
 
 	// Test key generation without username
@@ -251,7 +229,7 @@ func TestAuthRateLimiterKeyGeneration(t *testing.T) {
 }
 
 func TestUserRateLimiterKeyGeneration(t *testing.T) {
-	client := redis.NewClient(&redis.Options{Addr: ":6379"})
+	_, client := setupMiniredis(t)
 	config := UserRedisRateLimiterConfig(client)
 
 	// Test key generation without user ID (should fall back to IP)

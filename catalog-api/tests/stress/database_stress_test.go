@@ -447,20 +447,54 @@ func TestConnectionPoolStress(t *testing.T) {
 		t.Skip("Skipping stress test in short mode")
 	}
 
-	t.Skip("Connection pool stress test incompatible with in-memory SQLite - requires production database")
-	// NOTE: This test requires a real database connection pool (PostgreSQL, MySQL).
-	// SQLite :memory: databases MUST use MaxOpenConns=1 (each connection creates a separate DB).
-	// This test is designed for production database validation where connection pooling matters.
+	// Use file-based SQLite with WAL mode to enable real connection pooling.
+	// In-memory SQLite creates separate databases per connection, but file-based
+	// SQLite with WAL mode supports concurrent reads from multiple connections.
+	tmpDir := t.TempDir()
+	dbPath := tmpDir + "/pool_stress_test.db"
 
-	dsc := newDatabaseStressContext(t)
-	defer dsc.DB.Close()
+	db, err := sql.Open("sqlite3", dbPath+"?_journal_mode=WAL&cache=shared")
+	require.NoError(t, err, "Failed to open file-based SQLite")
+	t.Cleanup(func() { db.Close() })
 
-	// Create test storage root
-	_, err := dsc.DB.Exec(`
-		INSERT INTO storage_roots (id, name, protocol, path, enabled)
-		VALUES (1, 'test-root', 'local', '/test', 1)
-	`)
+	// Enable WAL mode explicitly
+	_, err = db.Exec("PRAGMA journal_mode=WAL")
 	require.NoError(t, err)
+	_, err = db.Exec("PRAGMA foreign_keys = ON")
+	require.NoError(t, err)
+
+	// Create tables
+	_, err = db.Exec(`CREATE TABLE IF NOT EXISTS storage_roots (
+		id INTEGER PRIMARY KEY AUTOINCREMENT,
+		name TEXT NOT NULL UNIQUE,
+		protocol TEXT NOT NULL,
+		path TEXT,
+		enabled BOOLEAN DEFAULT 1,
+		created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+	)`)
+	require.NoError(t, err)
+
+	_, err = db.Exec(`CREATE TABLE IF NOT EXISTS files (
+		id INTEGER PRIMARY KEY AUTOINCREMENT,
+		storage_root_id INTEGER NOT NULL,
+		path TEXT NOT NULL,
+		name TEXT NOT NULL,
+		size INTEGER NOT NULL,
+		modified_at DATETIME NOT NULL,
+		FOREIGN KEY (storage_root_id) REFERENCES storage_roots(id)
+	)`)
+	require.NoError(t, err)
+
+	// Insert test data
+	_, err = db.Exec(`INSERT INTO storage_roots (id, name, protocol, path, enabled)
+		VALUES (1, 'test-root', 'local', '/test', 1)`)
+	require.NoError(t, err)
+
+	// Build the stress context manually with our file-based DB
+	dsc := &DatabaseStressContext{
+		DB:        db,
+		StartTime: time.Now(),
+	}
 
 	// Configure connection pool
 	dsc.DB.SetMaxOpenConns(25)
