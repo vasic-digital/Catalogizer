@@ -1,0 +1,59 @@
+{
+  "version": "1.0.0",
+  "build_date": "2026-02-11T08:35:37Z",
+  "build_host": "nezha",
+  "artifacts": {
+    "catalog-api": {
+      "linux-amd64": {
+        "path": "linux/catalog-api/catalog-api-v1.0.0-linux-amd64",
+        "sha256": "484ef3c79f4a6210400d1cca8bb4f0e85b1caa752a00026f8833177f3cf55d84",
+        "size": 48279844
+      },
+      "windows-amd64": {
+        "path": "windows/catalog-api/catalog-api-v1.0.0-windows-amd64.exe",
+        "sha256": "758dc0c63ae9791e6639837b7f44e80937e2353fceb53fec7b329402c4a708f6",
+        "size": 49313280
+      },
+      "macos-amd64": {
+        "path": "macos/catalog-api/catalog-api-v1.0.0-macos-amd64",
+        "sha256": "0fe234c0f8b0e15ff9a7e87686e4b8292a54cdef09a83aea4cb2cfd27ec92420",
+        "size": 49577152
+      },
+      "macos-arm64": {
+        "path": "macos/catalog-api/catalog-api-v1.0.0-macos-arm64",
+        "sha256": "1d356c67502a44e24ec92f66f5348c35cdf8517cff6f89b36e57266001dc6e0d",
+        "size": 47062578
+      }
+    },
+    "catalog-web": {
+      "path": "linux/catalog-web/",
+      "note": "Static files - same bundle for all platforms",
+      "files": 68
+    },
+    "catalogizer-api-client": {
+      "path": "lib/catalogizer-api-client/",
+      "note": "TypeScript library - platform independent",
+      "files": 28
+    },
+    "catalogizer-android": {
+      "path": "android/catalogizer-android/app-release-unsigned.apk",
+      "sha256": "00ae8371d7a55417e25447cf29f746f176a52f156be20e7eeea4e8a418f64667",
+      "size": 2687978,
+      "note": "Unsigned APK - requires signing before distribution"
+    },
+    "catalogizer-androidtv": {
+      "path": "android/catalogizer-androidtv/app-release-unsigned.apk",
+      "sha256": "4e473d7b8c9bbf681323af662efcfcbd6c8b5ac4abfc7ffc9cbb0c991742f5f7",
+      "size": 5195330,
+      "note": "Unsigned APK - requires signing before distribution"
+    },
+    "catalogizer-desktop": {
+      "status": "not_built",
+      "reason": "Requires cargo (Rust package manager) - not available on build system"
+    },
+    "installer-wizard": {
+      "status": "not_built",
+      "reason": "Requires cargo (Rust package manager) - not available on build system"
+    }
+  }
+}

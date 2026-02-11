@@ -1,0 +1,6 @@
+00ae8371d7a55417e25447cf29f746f176a52f156be20e7eeea4e8a418f64667  ./android/catalogizer-android/app-release-unsigned.apk
+4e473d7b8c9bbf681323af662efcfcbd6c8b5ac4abfc7ffc9cbb0c991742f5f7  ./android/catalogizer-androidtv/app-release-unsigned.apk
+484ef3c79f4a6210400d1cca8bb4f0e85b1caa752a00026f8833177f3cf55d84  ./linux/catalog-api/catalog-api-v1.0.0-linux-amd64
+0fe234c0f8b0e15ff9a7e87686e4b8292a54cdef09a83aea4cb2cfd27ec92420  ./macos/catalog-api/catalog-api-v1.0.0-macos-amd64
+1d356c67502a44e24ec92f66f5348c35cdf8517cff6f89b36e57266001dc6e0d  ./macos/catalog-api/catalog-api-v1.0.0-macos-arm64
+758dc0c63ae9791e6639837b7f44e80937e2353fceb53fec7b329402c4a708f6  ./windows/catalog-api/catalog-api-v1.0.0-windows-amd64.exe
