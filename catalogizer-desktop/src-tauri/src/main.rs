@@ -6,7 +6,7 @@ use serde::{Deserialize, Serialize};
 use tauri::State;
 use tokio::sync::Mutex;
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 struct AppConfig {
     server_url: Option<String>,
     auth_token: Option<String>,
@@ -125,6 +125,7 @@ fn main() {
     let config = ConfigState::default();
 
     tauri::Builder::default()
+        .plugin(tauri_plugin_shell::init())
         .manage(config)
         .invoke_handler(tauri::generate_handler![
             get_config,
