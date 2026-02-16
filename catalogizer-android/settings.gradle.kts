@@ -15,3 +15,7 @@ dependencyResolutionManagement {
 
 rootProject.name = "catalogizer-android"
 include(":app")
+
+// Android-Toolkit submodule is available at ../Android-Toolkit/
+// To include specific modules (when build configs are aligned):
+// includeBuild("../Android-Toolkit")

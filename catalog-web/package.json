@@ -31,8 +31,9 @@
     "react-virtualized-auto-sizer": "^1.0.20",
     "react-window": "^1.8.8",
     "recharts": "^2.15.4",
-    "socket.io-client": "^4.6.1",
     "tailwind-merge": "^1.10.0",
+    "@vasic-digital/websocket-client": "file:../WebSocket-Client-TS",
+    "@vasic-digital/ui-components": "file:../UI-Components-React",
     "web-vitals": "^5.1.0",
     "zod": "^3.20.6",
     "zustand": "^4.3.6"

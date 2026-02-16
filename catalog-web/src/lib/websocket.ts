@@ -1,12 +1,13 @@
 import { useEffect, useRef, useCallback } from 'react'
 import { useQueryClient } from '@tanstack/react-query'
 import toast from 'react-hot-toast'
+import {
+  WebSocketClient as BaseWebSocketClient,
+  type WebSocketMessage,
+  type ConnectionState,
+} from '@vasic-digital/websocket-client'
 
-export interface WebSocketMessage {
-  type: string
-  data: any
-  timestamp: string
-}
+export type { WebSocketMessage }
 
 export interface MediaUpdate {
   action: 'created' | 'updated' | 'deleted' | 'analyzed'
@@ -25,226 +26,109 @@ export interface SystemUpdate {
 
 const WS_URL = import.meta.env.VITE_WS_URL || 'ws://localhost:8080/ws'
 
-export class WebSocketClient {
-  private ws: WebSocket | null = null
-  private reconnectAttempts = 0
-  private maxReconnectAttempts = 5
-  private reconnectDelay = 1000
-  private messageQueue: string[] = []
-  private isConnected = false
-  private token: string | null = null
-
-  private onMessage: ((message: WebSocketMessage) => void) | null = null
-  private onConnect: (() => void) | null = null
-  private onDisconnect: (() => void) | null = null
-  private onError: ((error: Event) => void) | null = null
-
-  constructor(token?: string) {
-    this.token = token || localStorage.getItem('auth_token')
-  }
-
-  connect() {
-    if (this.ws?.readyState === WebSocket.OPEN) {
-      return
-    }
-
-    const wsUrl = this.token ? `${WS_URL}?token=${this.token}` : WS_URL
-
-    try {
-      this.ws = new WebSocket(wsUrl)
-
-      this.ws.onopen = () => {
-        this.isConnected = true
-        this.reconnectAttempts = 0
-
-        // Send queued messages
-        while (this.messageQueue.length > 0) {
-          const message = this.messageQueue.shift()
-          if (message && this.ws?.readyState === WebSocket.OPEN) {
-            this.ws.send(message)
-          }
-        }
-
-        this.onConnect?.()
-      }
-
-      this.ws.onmessage = (event) => {
-        try {
-          const message: WebSocketMessage = JSON.parse(event.data)
-          this.onMessage?.(message)
-        } catch (error) {
-          console.error('Failed to parse WebSocket message:', error)
-        }
-      }
-
-      this.ws.onclose = (event) => {
-        this.isConnected = false
-        this.onDisconnect?.()
-
-        // Attempt to reconnect if not closed intentionally
-        if (event.code !== 1000 && this.reconnectAttempts < this.maxReconnectAttempts) {
-          this.scheduleReconnect()
-        }
-      }
-
-      this.ws.onerror = (event) => {
-        console.error('WebSocket error:', event)
-        this.onError?.(event)
-      }
-    } catch (error) {
-      console.error('Failed to create WebSocket connection:', error)
-      this.scheduleReconnect()
-    }
-  }
-
-  private scheduleReconnect() {
-    this.reconnectAttempts++
-    const delay = this.reconnectDelay * Math.pow(2, this.reconnectAttempts - 1)
-
-    setTimeout(() => {
-      this.connect()
-    }, delay)
-  }
-
-  send(message: any) {
-    const messageStr = JSON.stringify(message)
-
-    if (this.isConnected && this.ws?.readyState === WebSocket.OPEN) {
-      this.ws.send(messageStr)
-    } else {
-      this.messageQueue.push(messageStr)
-    }
-  }
-
-  subscribe(channel: string) {
-    this.send({
-      type: 'subscribe',
-      channel
-    })
-  }
-
-  unsubscribe(channel: string) {
-    this.send({
-      type: 'unsubscribe',
-      channel
-    })
-  }
-
-  setOnMessage(callback: (message: WebSocketMessage) => void) {
-    this.onMessage = callback
-  }
-
-  setOnConnect(callback: () => void) {
-    this.onConnect = callback
-  }
-
-  setOnDisconnect(callback: () => void) {
-    this.onDisconnect = callback
-  }
-
-  setOnError(callback: (error: Event) => void) {
-    this.onError = callback
-  }
-
-  disconnect() {
-    if (this.ws) {
-      this.ws.close(1000, 'Client disconnect')
-    }
-  }
-
-  getConnectionState(): 'connecting' | 'open' | 'closing' | 'closed' {
-    if (!this.ws) return 'closed'
-
-    switch (this.ws.readyState) {
-      case WebSocket.CONNECTING:
-        return 'connecting'
-      case WebSocket.OPEN:
-        return 'open'
-      case WebSocket.CLOSING:
-        return 'closing'
-      case WebSocket.CLOSED:
-        return 'closed'
-      default:
-        return 'closed'
-    }
+/** Map submodule connection states to legacy state names used by ConnectionStatus */
+function toLegacyState(state: ConnectionState): 'connecting' | 'open' | 'closing' | 'closed' {
+  switch (state) {
+    case 'connecting':
+      return 'connecting'
+    case 'connected':
+      return 'open'
+    case 'disconnecting':
+      return 'closing'
+    case 'disconnected':
+      return 'closed'
   }
 }
 
 // React hook for WebSocket connection
 export const useWebSocket = () => {
-  const wsRef = useRef<WebSocketClient | null>(null)
+  const clientRef = useRef<BaseWebSocketClient | null>(null)
   const queryClient = useQueryClient()
 
   const connect = useCallback(() => {
-    if (!wsRef.current) {
-      const token = localStorage.getItem('auth_token') || undefined
-      wsRef.current = new WebSocketClient(token)
+    if (clientRef.current) {
+      clientRef.current.connect()
+      return
     }
 
-    wsRef.current.setOnMessage((message: WebSocketMessage) => {
+    const token = localStorage.getItem('auth_token') || undefined
+    const wsUrl = token ? `${WS_URL}?token=${token}` : WS_URL
+
+    const client = new BaseWebSocketClient({
+      url: wsUrl,
+      reconnectAttempts: 5,
+      reconnectInterval: 1000,
+      bufferWhileDisconnected: true,
+    })
+
+    client.on('message', (message: WebSocketMessage) => {
       switch (message.type) {
         case 'media_update':
-          handleMediaUpdate(message.data as MediaUpdate, queryClient)
+          handleMediaUpdate(message.payload as MediaUpdate, queryClient)
           break
         case 'system_update':
-          handleSystemUpdate(message.data as SystemUpdate)
+          handleSystemUpdate(message.payload as SystemUpdate)
           break
         case 'analysis_complete':
-          handleAnalysisComplete(message.data, queryClient)
+          handleAnalysisComplete(message.payload, queryClient)
           break
         case 'notification':
-          handleNotification(message.data)
+          handleNotification(message.payload)
           break
       }
     })
 
-    wsRef.current.setOnConnect(() => {
+    client.on('connected', () => {
       toast.success('Connected to real-time updates')
 
       // Subscribe to relevant channels
-      wsRef.current?.subscribe('media_updates')
-      wsRef.current?.subscribe('system_updates')
-      wsRef.current?.subscribe('analysis_updates')
+      client.sendJSON({ type: 'subscribe', channel: 'media_updates' })
+      client.sendJSON({ type: 'subscribe', channel: 'system_updates' })
+      client.sendJSON({ type: 'subscribe', channel: 'analysis_updates' })
     })
 
-    wsRef.current.setOnDisconnect(() => {
+    client.on('disconnected', () => {
       toast.error('Disconnected from real-time updates')
     })
 
-    wsRef.current.setOnError((error) => {
+    client.on('error', (error) => {
       console.error('WebSocket error:', error)
       toast.error('Connection error - some features may not work')
     })
 
-    wsRef.current.connect()
+    clientRef.current = client
+    client.connect()
   }, [queryClient])
 
   const disconnect = useCallback(() => {
-    wsRef.current?.disconnect()
-    wsRef.current = null
+    if (clientRef.current) {
+      clientRef.current.dispose()
+      clientRef.current = null
+    }
   }, [])
 
   const send = useCallback((message: any) => {
-    wsRef.current?.send(message)
+    clientRef.current?.sendJSON(message)
   }, [])
 
   const subscribe = useCallback((channel: string) => {
-    wsRef.current?.subscribe(channel)
+    clientRef.current?.sendJSON({ type: 'subscribe', channel })
   }, [])
 
   const unsubscribe = useCallback((channel: string) => {
-    wsRef.current?.unsubscribe(channel)
+    clientRef.current?.sendJSON({ type: 'unsubscribe', channel })
   }, [])
 
-  const getConnectionState = useCallback(() => {
-    return wsRef.current?.getConnectionState() || 'closed'
+  const getConnectionState = useCallback((): 'connecting' | 'open' | 'closing' | 'closed' => {
+    return toLegacyState(clientRef.current?.getState() ?? 'disconnected')
   }, [])
 
   useEffect(() => {
     return () => {
-      disconnect()
+      clientRef.current?.dispose()
+      clientRef.current = null
     }
-  }, [disconnect])
+  }, [])
 
   return {
     connect,
@@ -331,5 +215,3 @@ const handleNotification = (notification: any) => {
       toast(message)
   }
 }
-
-export default WebSocketClient
