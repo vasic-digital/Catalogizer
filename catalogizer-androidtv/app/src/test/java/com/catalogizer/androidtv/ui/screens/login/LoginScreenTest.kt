@@ -6,7 +6,9 @@ import com.catalogizer.androidtv.data.repository.AuthRepository
 import com.catalogizer.androidtv.ui.viewmodel.AuthViewModel
 import io.mockk.*
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.runTest
 import org.junit.After
@@ -82,6 +84,10 @@ class LoginScreenTest {
 
     @Test
     fun `login success should update auth state to authenticated`() = runTest {
+        // Start collecting to activate the WhileSubscribed upstream
+        val job = launch { authViewModel.authState.collect {} }
+        advanceUntilIdle()
+
         authViewModel.login("user", "pass")
         advanceUntilIdle()
 
@@ -91,10 +97,13 @@ class LoginScreenTest {
             username = "user",
             token = "test-token"
         )
+        advanceUntilIdle()
 
         val state = authViewModel.authState.value
         assertTrue(state.isAuthenticated)
         assertEquals("user", state.username)
+
+        job.cancel()
     }
 
     @Test
@@ -111,6 +120,10 @@ class LoginScreenTest {
 
     @Test
     fun `login with repository error should update auth state error`() = runTest {
+        // Start collecting to activate the WhileSubscribed upstream
+        val job = launch { authViewModel.authState.collect {} }
+        advanceUntilIdle()
+
         authViewModel.login("user", "pass")
         advanceUntilIdle()
 
@@ -119,11 +132,14 @@ class LoginScreenTest {
             isAuthenticated = false,
             error = "Login failed: Invalid credentials"
         )
+        advanceUntilIdle()
 
         val state = authViewModel.authState.value
         assertFalse(state.isAuthenticated)
         assertNotNull(state.error)
         assertTrue(state.error!!.contains("Invalid credentials"))
+
+        job.cancel()
     }
 
     @Test
@@ -167,6 +183,8 @@ class LoginScreenTest {
 
     @Test
     fun `authState should reflect repository state changes`() = runTest {
+        // Start collecting to activate the WhileSubscribed upstream
+        val job = launch { authViewModel.authState.collect {} }
         advanceUntilIdle()
 
         // Update repository state
@@ -183,6 +201,8 @@ class LoginScreenTest {
         assertEquals("testuser", state.username)
         assertEquals("abc123", state.token)
         assertEquals(42L, state.userId)
+
+        job.cancel()
     }
 
     @Test

@@ -102,19 +102,25 @@ describe('FavoritesGrid', () => {
 
   it('shows movie count in stats', () => {
     render(<FavoritesGrid />)
-    expect(screen.getByText('Movies')).toBeInTheDocument()
+    // "Movies" appears both in the stats section and in the filter select options
+    const moviesElements = screen.getAllByText('Movies')
+    expect(moviesElements.length).toBeGreaterThanOrEqual(1)
     expect(screen.getByText('20')).toBeInTheDocument()
   })
 
   it('shows TV show count in stats', () => {
     render(<FavoritesGrid />)
-    expect(screen.getByText('TV Shows')).toBeInTheDocument()
+    // "TV Shows" appears both in the stats section and in the filter select options
+    const tvShowElements = screen.getAllByText('TV Shows')
+    expect(tvShowElements.length).toBeGreaterThanOrEqual(1)
     expect(screen.getByText('10')).toBeInTheDocument()
   })
 
   it('shows music count in stats', () => {
     render(<FavoritesGrid />)
-    expect(screen.getByText('Music')).toBeInTheDocument()
+    // "Music" appears both in the stats section and in the filter select options
+    const musicElements = screen.getAllByText('Music')
+    expect(musicElements.length).toBeGreaterThanOrEqual(1)
     expect(screen.getByText('8')).toBeInTheDocument()
   })
 

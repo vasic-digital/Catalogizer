@@ -2,6 +2,9 @@ package services
 
 import (
 	"testing"
+	"time"
+
+	"catalogizer/models"
 
 	"github.com/stretchr/testify/assert"
 )
@@ -17,25 +20,25 @@ func TestStressTestService_ValidateTestConfiguration(t *testing.T) {
 
 	tests := []struct {
 		name    string
-		config  interface{}
+		test    *models.StressTest
 		wantErr bool
 	}{
 		{
-			name:    "nil config",
-			config:  nil,
+			name: "empty name",
+			test: &models.StressTest{
+				Name: "",
+			},
 			wantErr: true,
 		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if tt.config == nil {
-				err := service.validateTestConfiguration(nil)
-				if tt.wantErr {
-					assert.Error(t, err)
-				} else {
-					assert.NoError(t, err)
-				}
+			err := service.validateTestConfiguration(tt.test)
+			if tt.wantErr {
+				assert.Error(t, err)
+			} else {
+				assert.NoError(t, err)
 			}
 		})
 	}
@@ -44,49 +47,64 @@ func TestStressTestService_ValidateTestConfiguration(t *testing.T) {
 func TestStressTestService_SelectRandomScenario(t *testing.T) {
 	service := NewStressTestService(nil, nil)
 
-	scenarios := []string{"read", "write", "mixed", "search"}
+	scenarios := []models.StressTestScenario{
+		{Name: "read", URL: "/api/v1/test", Method: "GET"},
+		{Name: "write", URL: "/api/v1/test", Method: "POST"},
+		{Name: "mixed", URL: "/api/v1/test", Method: "PUT"},
+		{Name: "search", URL: "/api/v1/search", Method: "GET"},
+	}
 
 	for i := 0; i < 10; i++ {
 		scenario := service.selectRandomScenario(scenarios)
-		assert.Contains(t, scenarios, scenario)
+		assert.NotNil(t, scenario)
 	}
 }
 
 func TestStressTestService_SelectRandomScenario_EmptyList(t *testing.T) {
 	service := NewStressTestService(nil, nil)
 
-	scenario := service.selectRandomScenario([]string{})
-	assert.Empty(t, scenario)
+	scenario := service.selectRandomScenario([]models.StressTestScenario{})
+	assert.Nil(t, scenario)
 }
 
 func TestStressTestService_GenerateRecommendations(t *testing.T) {
 	service := NewStressTestService(nil, nil)
 
 	tests := []struct {
-		name       string
-		errorRate  float64
-		avgLatency float64
+		name   string
+		result *models.StressTestResult
 	}{
 		{
-			name:       "good performance",
-			errorRate:  0.01,
-			avgLatency: 50.0,
+			name: "good performance",
+			result: &models.StressTestResult{
+				ErrorRate:       0.01,
+				AvgResponseTime: 50.0,
+				TotalRequests:   1000,
+				SuccessfulReqs:  990,
+			},
 		},
 		{
-			name:       "poor performance",
-			errorRate:  0.25,
-			avgLatency: 2000.0,
+			name: "poor performance",
+			result: &models.StressTestResult{
+				ErrorRate:       25.0,
+				AvgResponseTime: 2000.0,
+				TotalRequests:   1000,
+				SuccessfulReqs:  750,
+			},
 		},
 		{
-			name:       "zero values",
-			errorRate:  0.0,
-			avgLatency: 0.0,
+			name: "zero values",
+			result: &models.StressTestResult{
+				ErrorRate:       0.0,
+				AvgResponseTime: 0.0,
+				TotalRequests:   0,
+			},
 		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			recommendations := service.generateRecommendations(tt.errorRate, tt.avgLatency)
+			recommendations := service.generateRecommendations(tt.result)
 			assert.NotNil(t, recommendations)
 		})
 	}
@@ -96,35 +114,45 @@ func TestStressTestService_GenerateReportSummary(t *testing.T) {
 	service := NewStressTestService(nil, nil)
 
 	tests := []struct {
-		name          string
-		totalRequests int
-		totalErrors   int
-		avgLatency    float64
+		name   string
+		test   *models.StressTest
+		result *models.StressTestResult
 	}{
 		{
-			name:          "normal run",
-			totalRequests: 1000,
-			totalErrors:   5,
-			avgLatency:    100.0,
+			name: "normal run",
+			test: &models.StressTest{
+				Name:            "Load Test",
+				ConcurrentUsers: 10,
+				DurationSeconds: 60,
+			},
+			result: &models.StressTestResult{
+				TotalRequests:   1000,
+				SuccessfulReqs:  995,
+				FailedRequests:  5,
+				AvgResponseTime: 100.0,
+				Duration:        60 * time.Second,
+			},
 		},
 		{
-			name:          "zero requests",
-			totalRequests: 0,
-			totalErrors:   0,
-			avgLatency:    0.0,
-		},
-		{
-			name:          "all errors",
-			totalRequests: 100,
-			totalErrors:   100,
-			avgLatency:    5000.0,
+			name: "zero requests",
+			test: &models.StressTest{
+				Name:            "Empty Test",
+				ConcurrentUsers: 0,
+				DurationSeconds: 0,
+			},
+			result: &models.StressTestResult{
+				TotalRequests:   0,
+				SuccessfulReqs:  0,
+				FailedRequests:  0,
+				AvgResponseTime: 0.0,
+			},
 		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			summary := service.generateReportSummary(tt.totalRequests, tt.totalErrors, tt.avgLatency)
-			assert.NotNil(t, summary)
+			summary := service.generateReportSummary(tt.test, tt.result)
+			assert.NotEmpty(t, summary)
 		})
 	}
 }
@@ -140,7 +168,8 @@ func TestStressTestService_CreateTestMetrics(t *testing.T) {
 func TestStressTestService_GetSystemLoad(t *testing.T) {
 	service := NewStressTestService(nil, nil)
 
-	load := service.GetSystemLoad()
+	load, err := service.GetSystemLoad()
 
+	assert.NoError(t, err)
 	assert.NotNil(t, load)
 }

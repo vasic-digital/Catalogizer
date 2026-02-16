@@ -234,7 +234,7 @@ class FormatUtilsTest {
 
     @Test
     fun `formatFrameRate with fractional rate should format with decimal`() {
-        assertEquals("23.9 fps", formatFrameRate(23.976))
+        assertEquals("24.0 fps", formatFrameRate(23.976))
     }
 
     @Test

@@ -1,30 +1,43 @@
-import { CatalogizerClient, CatalogizerError } from '../index';
+import { describe, it, expect, vi, beforeEach, type Mock } from 'vitest';
 
 // Mock axios
-jest.mock('axios');
+vi.mock('axios');
 import axios from 'axios';
-const mockAxios = axios as jest.Mocked<typeof axios>;
+const mockAxios = axios as unknown as { create: Mock };
 
 // Mock axios.create to return a mock instance with interceptors
 const mockAxiosInstance = {
   interceptors: {
-    request: { use: jest.fn() },
-    response: { use: jest.fn() },
+    request: { use: vi.fn() },
+    response: { use: vi.fn() },
   },
-  get: jest.fn(),
-  post: jest.fn(),
-  put: jest.fn(),
-  delete: jest.fn(),
-  patch: jest.fn(),
+  get: vi.fn(),
+  post: vi.fn(),
+  put: vi.fn(),
+  delete: vi.fn(),
+  patch: vi.fn(),
 };
 
 mockAxios.create.mockReturnValue(mockAxiosInstance as any);
+
+import { CatalogizerClient, CatalogizerError } from '../index';
 
 describe('CatalogizerClient', () => {
   let client: CatalogizerClient;
 
   beforeEach(() => {
-    jest.clearAllMocks();
+    vi.clearAllMocks();
+    // Re-setup mockAxios.create since clearAllMocks clears it
+    mockAxios.create.mockReturnValue(mockAxiosInstance as any);
+    // Re-clear the instance mocks
+    mockAxiosInstance.interceptors.request.use.mockClear();
+    mockAxiosInstance.interceptors.response.use.mockClear();
+    mockAxiosInstance.get.mockReset();
+    mockAxiosInstance.post.mockReset();
+    mockAxiosInstance.put.mockReset();
+    mockAxiosInstance.delete.mockReset();
+    mockAxiosInstance.patch.mockReset();
+
     client = new CatalogizerClient({
       baseURL: 'http://localhost:8080'
     });

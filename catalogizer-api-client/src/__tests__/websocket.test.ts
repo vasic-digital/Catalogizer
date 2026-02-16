@@ -1,35 +1,66 @@
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { WebSocketClient } from '../utils/websocket';
-import WebSocket from 'ws';
 
-// Mock WebSocket
-jest.mock('ws');
-const MockWebSocket = WebSocket as jest.MockedClass<typeof WebSocket>;
+// We need to create a mock constructor that vitest recognizes as a class/constructor.
+// vi.mock with a factory that returns a default export as a class.
+let mockWsInstance: any;
+
+vi.mock('ws', () => {
+  // Define the mock class at the factory level
+  const MockWS = vi.fn(function (this: any) {
+    // Copy properties from mockWsInstance
+    Object.assign(this, mockWsInstance);
+    // Store reference so we can access callbacks set on 'this' later
+    Object.defineProperty(mockWsInstance, '_instance', { value: this, writable: true, configurable: true });
+    return this;
+  }) as any;
+
+  // Add static constants that ws.WebSocket has
+  MockWS.CONNECTING = 0;
+  MockWS.OPEN = 1;
+  MockWS.CLOSING = 2;
+  MockWS.CLOSED = 3;
+
+  return {
+    default: MockWS,
+    WebSocket: MockWS,
+    CONNECTING: 0,
+    OPEN: 1,
+    CLOSING: 2,
+    CLOSED: 3,
+  };
+});
+
+// Import the mocked WebSocket after vi.mock
+import WebSocket from 'ws';
+const MockWebSocket = WebSocket as unknown as ReturnType<typeof vi.fn>;
 
 describe('WebSocketClient', () => {
-  let mockWs: jest.Mocked<WebSocket>;
-
   beforeEach(() => {
-    jest.clearAllMocks();
-    jest.useFakeTimers();
+    vi.clearAllMocks();
+    vi.useFakeTimers();
 
-    mockWs = {
-      readyState: WebSocket.OPEN,
-      onopen: null,
-      onmessage: null,
-      onclose: null,
-      onerror: null,
-      send: jest.fn(),
-      close: jest.fn(),
-      addEventListener: jest.fn(),
-      removeEventListener: jest.fn(),
-    } as any;
-
-    MockWebSocket.mockImplementation(() => mockWs);
+    mockWsInstance = {
+      readyState: 1, // WebSocket.OPEN
+      onopen: null as any,
+      onmessage: null as any,
+      onclose: null as any,
+      onerror: null as any,
+      send: vi.fn(),
+      close: vi.fn(),
+      addEventListener: vi.fn(),
+      removeEventListener: vi.fn(),
+    };
   });
 
   afterEach(() => {
-    jest.useRealTimers();
+    vi.useRealTimers();
   });
+
+  // Helper to get the actual instance that the source code set callbacks on
+  function getWsInstance(): any {
+    return mockWsInstance._instance || mockWsInstance;
+  }
 
   describe('initialization', () => {
     it('creates WebSocketClient with URL', () => {
@@ -46,9 +77,10 @@ describe('WebSocketClient', () => {
 
       const connectPromise = client.connect();
 
-      // Simulate connection opened
-      if (mockWs.onopen) {
-        mockWs.onopen({} as any);
+      // The source code sets this.ws.onopen on the constructed instance
+      const inst = getWsInstance();
+      if (inst.onopen) {
+        inst.onopen({} as any);
       }
 
       await connectPromise;
@@ -62,8 +94,9 @@ describe('WebSocketClient', () => {
 
       const connectPromise = client.connect('test-token');
 
-      if (mockWs.onopen) {
-        mockWs.onopen({} as any);
+      const inst = getWsInstance();
+      if (inst.onopen) {
+        inst.onopen({} as any);
       }
 
       await connectPromise;
@@ -73,14 +106,15 @@ describe('WebSocketClient', () => {
 
     it('emits connection:open event on successful connection', async () => {
       const client = new WebSocketClient('ws://localhost:8080');
-      const openListener = jest.fn();
+      const openListener = vi.fn();
 
       client.on('connection:open', openListener);
 
       const connectPromise = client.connect();
 
-      if (mockWs.onopen) {
-        mockWs.onopen({} as any);
+      const inst = getWsInstance();
+      if (inst.onopen) {
+        inst.onopen({} as any);
       }
 
       await connectPromise;
@@ -90,15 +124,16 @@ describe('WebSocketClient', () => {
 
     it('handles connection error', async () => {
       const client = new WebSocketClient('ws://localhost:8080');
-      const errorListener = jest.fn();
+      const errorListener = vi.fn();
 
       client.on('connection:error', errorListener);
 
       const connectPromise = client.connect();
 
       const error = new Error('Connection failed');
-      if (mockWs.onerror) {
-        mockWs.onerror(error as any);
+      const inst = getWsInstance();
+      if (inst.onerror) {
+        inst.onerror(error as any);
       }
 
       await expect(connectPromise).rejects.toThrow('Connection failed');
@@ -111,8 +146,9 @@ describe('WebSocketClient', () => {
       const promise1 = client.connect();
       const promise2 = client.connect();
 
-      if (mockWs.onopen) {
-        mockWs.onopen({} as any);
+      const inst = getWsInstance();
+      if (inst.onopen) {
+        inst.onopen({} as any);
       }
 
       await promise1;
@@ -126,8 +162,9 @@ describe('WebSocketClient', () => {
 
       const promise1 = client.connect();
 
-      if (mockWs.onopen) {
-        mockWs.onopen({} as any);
+      const inst = getWsInstance();
+      if (inst.onopen) {
+        inst.onopen({} as any);
       }
 
       await promise1;
@@ -144,34 +181,36 @@ describe('WebSocketClient', () => {
 
       const connectPromise = client.connect();
 
-      if (mockWs.onopen) {
-        mockWs.onopen({} as any);
+      const inst = getWsInstance();
+      if (inst.onopen) {
+        inst.onopen({} as any);
       }
 
       await connectPromise;
 
       client.disconnect();
 
-      expect(mockWs.close).toHaveBeenCalled();
+      expect(inst.close).toHaveBeenCalled();
       expect(client.isConnected()).toBe(false);
     });
 
     it('emits connection:close event on disconnection', async () => {
       const client = new WebSocketClient('ws://localhost:8080');
-      const closeListener = jest.fn();
+      const closeListener = vi.fn();
 
       client.on('connection:close', closeListener);
 
       const connectPromise = client.connect();
 
-      if (mockWs.onopen) {
-        mockWs.onopen({} as any);
+      const inst = getWsInstance();
+      if (inst.onopen) {
+        inst.onopen({} as any);
       }
 
       await connectPromise;
 
-      if (mockWs.onclose) {
-        mockWs.onclose({ wasClean: true } as any);
+      if (inst.onclose) {
+        inst.onclose({ wasClean: true } as any);
       }
 
       expect(closeListener).toHaveBeenCalled();
@@ -182,19 +221,20 @@ describe('WebSocketClient', () => {
 
       const connectPromise = client.connect();
 
-      if (mockWs.onopen) {
-        mockWs.onopen({} as any);
+      const inst = getWsInstance();
+      if (inst.onopen) {
+        inst.onopen({} as any);
       }
 
       await connectPromise;
 
       client.disconnect();
 
-      if (mockWs.onclose) {
-        mockWs.onclose({ wasClean: false } as any);
+      if (inst.onclose) {
+        inst.onclose({ wasClean: false } as any);
       }
 
-      jest.advanceTimersByTime(5000);
+      vi.advanceTimersByTime(5000);
 
       expect(MockWebSocket).toHaveBeenCalledTimes(1);
     });
@@ -203,14 +243,15 @@ describe('WebSocketClient', () => {
   describe('message handling', () => {
     it('handles download progress messages', async () => {
       const client = new WebSocketClient('ws://localhost:8080');
-      const progressListener = jest.fn();
+      const progressListener = vi.fn();
 
       client.on('download:progress', progressListener);
 
       const connectPromise = client.connect();
 
-      if (mockWs.onopen) {
-        mockWs.onopen({} as any);
+      const inst = getWsInstance();
+      if (inst.onopen) {
+        inst.onopen({} as any);
       }
 
       await connectPromise;
@@ -220,8 +261,8 @@ describe('WebSocketClient', () => {
         data: { id: 1, progress: 50, speed: 1000000 },
       };
 
-      if (mockWs.onmessage) {
-        mockWs.onmessage({ data: JSON.stringify(message) } as any);
+      if (inst.onmessage) {
+        inst.onmessage({ data: JSON.stringify(message) } as any);
       }
 
       expect(progressListener).toHaveBeenCalledWith({ id: 1, progress: 50, speed: 1000000 });
@@ -229,14 +270,15 @@ describe('WebSocketClient', () => {
 
     it('handles scan progress messages', async () => {
       const client = new WebSocketClient('ws://localhost:8080');
-      const progressListener = jest.fn();
+      const progressListener = vi.fn();
 
       client.on('scan:progress', progressListener);
 
       const connectPromise = client.connect();
 
-      if (mockWs.onopen) {
-        mockWs.onopen({} as any);
+      const inst = getWsInstance();
+      if (inst.onopen) {
+        inst.onopen({} as any);
       }
 
       await connectPromise;
@@ -246,8 +288,8 @@ describe('WebSocketClient', () => {
         data: { id: 1, scanned: 100, total: 500 },
       };
 
-      if (mockWs.onmessage) {
-        mockWs.onmessage({ data: JSON.stringify(message) } as any);
+      if (inst.onmessage) {
+        inst.onmessage({ data: JSON.stringify(message) } as any);
       }
 
       expect(progressListener).toHaveBeenCalledWith({ id: 1, scanned: 100, total: 500 });
@@ -258,16 +300,17 @@ describe('WebSocketClient', () => {
 
       const connectPromise = client.connect();
 
-      if (mockWs.onopen) {
-        mockWs.onopen({} as any);
+      const inst = getWsInstance();
+      if (inst.onopen) {
+        inst.onopen({} as any);
       }
 
       await connectPromise;
 
       const message = { type: 'pong', timestamp: new Date().toISOString() };
 
-      if (mockWs.onmessage) {
-        mockWs.onmessage({ data: JSON.stringify(message) } as any);
+      if (inst.onmessage) {
+        inst.onmessage({ data: JSON.stringify(message) } as any);
       }
 
       // Should not throw, pong is handled silently
@@ -276,22 +319,23 @@ describe('WebSocketClient', () => {
 
     it('emits generic message event for unknown types', async () => {
       const client = new WebSocketClient('ws://localhost:8080');
-      const messageListener = jest.fn();
+      const messageListener = vi.fn();
 
       client.on('message', messageListener);
 
       const connectPromise = client.connect();
 
-      if (mockWs.onopen) {
-        mockWs.onopen({} as any);
+      const inst = getWsInstance();
+      if (inst.onopen) {
+        inst.onopen({} as any);
       }
 
       await connectPromise;
 
       const message = { type: 'unknown', data: { foo: 'bar' } };
 
-      if (mockWs.onmessage) {
-        mockWs.onmessage({ data: JSON.stringify(message) } as any);
+      if (inst.onmessage) {
+        inst.onmessage({ data: JSON.stringify(message) } as any);
       }
 
       expect(messageListener).toHaveBeenCalledWith(message);
@@ -299,18 +343,19 @@ describe('WebSocketClient', () => {
 
     it('handles malformed JSON messages gracefully', async () => {
       const client = new WebSocketClient('ws://localhost:8080');
-      const consoleSpy = jest.spyOn(console, 'error').mockImplementation();
+      const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
 
       const connectPromise = client.connect();
 
-      if (mockWs.onopen) {
-        mockWs.onopen({} as any);
+      const inst = getWsInstance();
+      if (inst.onopen) {
+        inst.onopen({} as any);
       }
 
       await connectPromise;
 
-      if (mockWs.onmessage) {
-        mockWs.onmessage({ data: 'not valid json' } as any);
+      if (inst.onmessage) {
+        inst.onmessage({ data: 'not valid json' } as any);
       }
 
       expect(consoleSpy).toHaveBeenCalledWith(
@@ -328,8 +373,9 @@ describe('WebSocketClient', () => {
 
       const connectPromise = client.connect();
 
-      if (mockWs.onopen) {
-        mockWs.onopen({} as any);
+      const inst = getWsInstance();
+      if (inst.onopen) {
+        inst.onopen({} as any);
       }
 
       await connectPromise;
@@ -337,7 +383,7 @@ describe('WebSocketClient', () => {
       const message = { type: 'test', data: { foo: 'bar' } };
       client.send(message);
 
-      expect(mockWs.send).toHaveBeenCalledWith(JSON.stringify(message));
+      expect(inst.send).toHaveBeenCalledWith(JSON.stringify(message));
     });
 
     it('throws error when sending while not connected', () => {
@@ -355,19 +401,20 @@ describe('WebSocketClient', () => {
 
       const connectPromise = client.connect();
 
-      if (mockWs.onopen) {
-        mockWs.onopen({} as any);
+      const inst = getWsInstance();
+      if (inst.onopen) {
+        inst.onopen({} as any);
       }
 
       await connectPromise;
 
       // Clear initial send calls
-      mockWs.send.mockClear();
+      inst.send.mockClear();
 
       // Fast-forward 30 seconds
-      jest.advanceTimersByTime(30000);
+      vi.advanceTimersByTime(30000);
 
-      expect(mockWs.send).toHaveBeenCalledWith(expect.stringContaining('"type":"ping"'));
+      expect(inst.send).toHaveBeenCalledWith(expect.stringContaining('"type":"ping"'));
     });
 
     it('stops sending pings after disconnect', async () => {
@@ -375,19 +422,20 @@ describe('WebSocketClient', () => {
 
       const connectPromise = client.connect();
 
-      if (mockWs.onopen) {
-        mockWs.onopen({} as any);
+      const inst = getWsInstance();
+      if (inst.onopen) {
+        inst.onopen({} as any);
       }
 
       await connectPromise;
 
       client.disconnect();
 
-      mockWs.send.mockClear();
+      inst.send.mockClear();
 
-      jest.advanceTimersByTime(30000);
+      vi.advanceTimersByTime(30000);
 
-      expect(mockWs.send).not.toHaveBeenCalled();
+      expect(inst.send).not.toHaveBeenCalled();
     });
   });
 
@@ -397,19 +445,20 @@ describe('WebSocketClient', () => {
 
       const connectPromise = client.connect();
 
-      if (mockWs.onopen) {
-        mockWs.onopen({} as any);
+      const inst = getWsInstance();
+      if (inst.onopen) {
+        inst.onopen({} as any);
       }
 
       await connectPromise;
 
       // Simulate unclean disconnect
-      if (mockWs.onclose) {
-        mockWs.onclose({ wasClean: false } as any);
+      if (inst.onclose) {
+        inst.onclose({ wasClean: false } as any);
       }
 
       // Verify a timer was set (reconnection scheduled)
-      expect(jest.getTimerCount()).toBeGreaterThan(0);
+      expect(vi.getTimerCount()).toBeGreaterThan(0);
     });
 
     it('does not reconnect after clean disconnect', async () => {
@@ -417,22 +466,23 @@ describe('WebSocketClient', () => {
 
       const connectPromise = client.connect();
 
-      if (mockWs.onopen) {
-        mockWs.onopen({} as any);
+      const inst = getWsInstance();
+      if (inst.onopen) {
+        inst.onopen({} as any);
       }
 
       await connectPromise;
 
       // Clear any existing timers
-      jest.clearAllTimers();
+      vi.clearAllTimers();
 
       // Simulate clean disconnect
-      if (mockWs.onclose) {
-        mockWs.onclose({ wasClean: true } as any);
+      if (inst.onclose) {
+        inst.onclose({ wasClean: true } as any);
       }
 
       // No new timers should be set
-      expect(jest.getTimerCount()).toBe(0);
+      expect(vi.getTimerCount()).toBe(0);
     });
   });
 
@@ -450,8 +500,9 @@ describe('WebSocketClient', () => {
 
       const connectPromise = client.connect('old-token');
 
-      if (mockWs.onopen) {
-        mockWs.onopen({} as any);
+      const inst = getWsInstance();
+      if (inst.onopen) {
+        inst.onopen({} as any);
       }
 
       await connectPromise;
@@ -459,14 +510,13 @@ describe('WebSocketClient', () => {
       client.setAuthToken('new-token');
 
       // Simulate disconnect and reconnect
-      if (mockWs.onclose) {
-        mockWs.onclose({ wasClean: false } as any);
+      if (inst.onclose) {
+        inst.onclose({ wasClean: false } as any);
       }
 
-      jest.advanceTimersByTime(1000);
+      vi.advanceTimersByTime(1000);
 
-      // New connection should use new token (but since reconnect uses stored authToken,
-      // it will use 'old-token' unless we explicitly reconnect)
+      // Reconnect uses the authToken stored at connect() time (old-token)
       expect(MockWebSocket).toHaveBeenLastCalledWith(expect.stringContaining('token=old-token'));
     });
   });
@@ -479,8 +529,9 @@ describe('WebSocketClient', () => {
 
       const connectPromise = client.connect();
 
-      if (mockWs.onopen) {
-        mockWs.onopen({} as any);
+      const inst = getWsInstance();
+      if (inst.onopen) {
+        inst.onopen({} as any);
       }
 
       await connectPromise;
@@ -489,13 +540,15 @@ describe('WebSocketClient', () => {
 
       client.disconnect();
 
-      Object.defineProperty(mockWs, 'readyState', { value: WebSocket.CLOSED, writable: true });
+      // After disconnect, ws is set to undefined so isConnected returns false
       expect(client.isConnected()).toBe(false);
     });
 
     it('reports not connected when readyState is CONNECTING', () => {
+      // Override the mockWsInstance readyState to CONNECTING before connect
+      mockWsInstance.readyState = 0; // CONNECTING
+
       const client = new WebSocketClient('ws://localhost:8080');
-      Object.defineProperty(mockWs, 'readyState', { value: WebSocket.CONNECTING, writable: true });
 
       client.connect();
 
@@ -504,7 +557,6 @@ describe('WebSocketClient', () => {
 
     it('reports not connected when readyState is CLOSING', () => {
       const client = new WebSocketClient('ws://localhost:8080');
-      Object.defineProperty(mockWs, 'readyState', { value: WebSocket.CLOSING, writable: true });
 
       expect(client.isConnected()).toBe(false);
     });

@@ -1,26 +1,27 @@
+import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { MediaService } from '../MediaService';
 import { HttpClient } from '../../utils/http';
 
 // Mock HttpClient
-jest.mock('../../utils/http');
+vi.mock('../../utils/http');
 
 describe('MediaService', () => {
   let mediaService: MediaService;
-  let mockHttp: jest.Mocked<HttpClient>;
+  let mockHttp: any;
 
   beforeEach(() => {
-    jest.clearAllMocks();
+    vi.clearAllMocks();
 
     mockHttp = {
-      get: jest.fn(),
-      post: jest.fn(),
-      put: jest.fn(),
-      patch: jest.fn(),
-      delete: jest.fn(),
-      downloadStream: jest.fn(),
-    } as any;
+      get: vi.fn(),
+      post: vi.fn(),
+      put: vi.fn(),
+      patch: vi.fn(),
+      delete: vi.fn(),
+      downloadStream: vi.fn(),
+    };
 
-    mediaService = new MediaService(mockHttp);
+    mediaService = new MediaService(mockHttp as any);
   });
 
   describe('search', () => {

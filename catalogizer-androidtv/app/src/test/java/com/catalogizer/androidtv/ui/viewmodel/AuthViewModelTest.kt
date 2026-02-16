@@ -6,11 +6,13 @@ import com.catalogizer.androidtv.data.models.AuthState
 import com.catalogizer.androidtv.data.repository.AuthRepository
 import io.mockk.coEvery
 import io.mockk.coVerify
+import io.mockk.every
 import io.mockk.mockk
 import io.mockk.verify
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
@@ -31,22 +33,19 @@ class AuthViewModelTest {
 
     private lateinit var authRepository: AuthRepository
     private lateinit var viewModel: AuthViewModel
+    private val mockAuthState = MutableStateFlow(AuthState.Unauthenticated)
 
     @Before
     fun setup() {
         authRepository = mockk()
+        every { authRepository.authState } returns mockAuthState
         viewModel = AuthViewModel(authRepository)
     }
 
     @Test
     fun `authState exposes repository authState with correct initial value`() = runTest {
-        val mockAuthState = MutableStateFlow(AuthState.Unauthenticated)
-        coEvery { authRepository.authState } returns mockAuthState
-
-        // Recreate viewModel to get the new mock
-        viewModel = AuthViewModel(authRepository)
-
-        val initialState = viewModel.authState.first()
+        advanceUntilIdle()
+        val initialState = viewModel.authState.value
         assertEquals(AuthState.Unauthenticated, initialState)
     }
 
@@ -109,13 +108,12 @@ class AuthViewModelTest {
 
     @Test
     fun `authState reflects repository state changes`() = runTest {
-        val mockAuthState = MutableStateFlow(AuthState.Unauthenticated)
-        coEvery { authRepository.authState } returns mockAuthState
-
-        viewModel = AuthViewModel(authRepository)
+        // Start collecting to activate the WhileSubscribed upstream
+        val job = launch { viewModel.authState.collect {} }
+        advanceUntilIdle()
 
         // Initial state
-        var state = viewModel.authState.first()
+        var state = viewModel.authState.value
         assertEquals(AuthState.Unauthenticated, state)
 
         // Update repository state
@@ -126,22 +124,24 @@ class AuthViewModelTest {
             userId = 123L
         )
         mockAuthState.value = authenticatedState
+        advanceUntilIdle()
 
         // ViewModel should reflect the change
-        state = viewModel.authState.first()
+        state = viewModel.authState.value
         assertEquals(authenticatedState, state)
         assertTrue(state.isAuthenticated)
         assertEquals("test-token", state.token)
         assertEquals("testuser", state.username)
         assertEquals(123L, state.userId)
+
+        job.cancel()
     }
 
     @Test
     fun `authState reflects error states from repository`() = runTest {
-        val mockAuthState = MutableStateFlow(AuthState.Unauthenticated)
-        coEvery { authRepository.authState } returns mockAuthState
-
-        viewModel = AuthViewModel(authRepository)
+        // Start collecting to activate the WhileSubscribed upstream
+        val job = launch { viewModel.authState.collect {} }
+        advanceUntilIdle()
 
         // Set error state in repository
         val errorState = AuthState(
@@ -149,11 +149,14 @@ class AuthViewModelTest {
             error = "Invalid credentials"
         )
         mockAuthState.value = errorState
+        advanceUntilIdle()
 
-        val state = viewModel.authState.first()
+        val state = viewModel.authState.value
         assertEquals(errorState, state)
         assertFalse(state.isAuthenticated)
         assertEquals("Invalid credentials", state.error)
+
+        job.cancel()
     }
 
     @Test

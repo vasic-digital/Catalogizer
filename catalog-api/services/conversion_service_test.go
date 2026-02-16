@@ -3,6 +3,8 @@ package services
 import (
 	"testing"
 
+	"catalogizer/models"
+
 	"github.com/stretchr/testify/assert"
 )
 
@@ -21,7 +23,11 @@ func TestConversionService_GetSupportedFormats(t *testing.T) {
 	formats := service.GetSupportedFormats()
 
 	assert.NotNil(t, formats)
-	assert.Greater(t, len(formats), 0)
+	// Verify that supported formats struct has entries in each category
+	assert.Greater(t, len(formats.Video.Input), 0)
+	assert.Greater(t, len(formats.Audio.Input), 0)
+	assert.Greater(t, len(formats.Document.Input), 0)
+	assert.Greater(t, len(formats.Image.Input), 0)
 }
 
 func TestConversionService_ValidateConversionRequest(t *testing.T) {
@@ -29,22 +35,37 @@ func TestConversionService_ValidateConversionRequest(t *testing.T) {
 
 	tests := []struct {
 		name   string
-		input  interface{}
+		input  *models.ConversionRequest
 		expect bool
 	}{
 		{
-			name:   "nil request",
-			input:  nil,
+			name: "empty request",
+			input: &models.ConversionRequest{
+				SourcePath:     "",
+				TargetPath:     "",
+				SourceFormat:   "",
+				TargetFormat:   "",
+				ConversionType: "",
+			},
+			expect: false,
+		},
+		{
+			name: "missing target path",
+			input: &models.ConversionRequest{
+				SourcePath:     "/input/video.avi",
+				TargetPath:     "",
+				SourceFormat:   "avi",
+				TargetFormat:   "mp4",
+				ConversionType: "video",
+			},
 			expect: false,
 		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if tt.input == nil {
-				result := service.validateConversionRequest(nil)
-				assert.Equal(t, tt.expect, result)
-			}
+			result := service.validateConversionRequest(tt.input)
+			assert.Equal(t, tt.expect, result)
 		})
 	}
 }
@@ -102,25 +123,29 @@ func TestConversionService_IsSupportedFormat(t *testing.T) {
 
 	tests := []struct {
 		name           string
-		format         string
+		sourceFormat   string
+		targetFormat   string
 		conversionType string
 		expected       bool
 	}{
 		{
 			name:           "mp4 video format",
-			format:         "mp4",
+			sourceFormat:   "mp4",
+			targetFormat:   "mp4",
 			conversionType: "video",
 			expected:       true,
 		},
 		{
 			name:           "mp3 audio format",
-			format:         "mp3",
+			sourceFormat:   "mp3",
+			targetFormat:   "mp3",
 			conversionType: "audio",
 			expected:       true,
 		},
 		{
 			name:           "unsupported format",
-			format:         "xyz",
+			sourceFormat:   "xyz",
+			targetFormat:   "xyz",
 			conversionType: "video",
 			expected:       false,
 		},
@@ -128,7 +153,7 @@ func TestConversionService_IsSupportedFormat(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			result := service.isSupportedFormat(tt.format, tt.conversionType)
+			result := service.isSupportedFormat(tt.conversionType, tt.sourceFormat, tt.targetFormat)
 			assert.Equal(t, tt.expected, result)
 		})
 	}
@@ -139,33 +164,34 @@ func TestConversionService_BuildFFmpegVideoArgs(t *testing.T) {
 
 	tests := []struct {
 		name     string
-		source   string
-		target   string
-		format   string
-		quality  string
+		job      *models.ConversionJob
 		wantArgs bool
 	}{
 		{
-			name:     "basic video conversion",
-			source:   "/input/video.avi",
-			target:   "/output/video.mp4",
-			format:   "mp4",
-			quality:  "medium",
+			name: "basic video conversion",
+			job: &models.ConversionJob{
+				SourcePath: "/input/video.avi",
+				TargetPath: "/output/video.mp4",
+				TargetFormat: "mp4",
+				Quality:    "medium",
+			},
 			wantArgs: true,
 		},
 		{
-			name:     "high quality video",
-			source:   "/input/video.mkv",
-			target:   "/output/video.mp4",
-			format:   "mp4",
-			quality:  "high",
+			name: "high quality video",
+			job: &models.ConversionJob{
+				SourcePath: "/input/video.mkv",
+				TargetPath: "/output/video.mp4",
+				TargetFormat: "mp4",
+				Quality:    "high",
+			},
 			wantArgs: true,
 		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			args := service.buildFFmpegVideoArgs(tt.source, tt.target, tt.format, tt.quality)
+			args := service.buildFFmpegVideoArgs(tt.job)
 			if tt.wantArgs {
 				assert.NotEmpty(t, args)
 			}
@@ -178,33 +204,34 @@ func TestConversionService_BuildFFmpegAudioArgs(t *testing.T) {
 
 	tests := []struct {
 		name     string
-		source   string
-		target   string
-		format   string
-		quality  string
+		job      *models.ConversionJob
 		wantArgs bool
 	}{
 		{
-			name:     "basic audio conversion",
-			source:   "/input/audio.wav",
-			target:   "/output/audio.mp3",
-			format:   "mp3",
-			quality:  "medium",
+			name: "basic audio conversion",
+			job: &models.ConversionJob{
+				SourcePath: "/input/audio.wav",
+				TargetPath: "/output/audio.mp3",
+				TargetFormat: "mp3",
+				Quality:    "medium",
+			},
 			wantArgs: true,
 		},
 		{
-			name:     "flac conversion",
-			source:   "/input/audio.wav",
-			target:   "/output/audio.flac",
-			format:   "flac",
-			quality:  "high",
+			name: "flac conversion",
+			job: &models.ConversionJob{
+				SourcePath: "/input/audio.wav",
+				TargetPath: "/output/audio.flac",
+				TargetFormat: "flac",
+				Quality:    "high",
+			},
 			wantArgs: true,
 		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			args := service.buildFFmpegAudioArgs(tt.source, tt.target, tt.format, tt.quality)
+			args := service.buildFFmpegAudioArgs(tt.job)
 			if tt.wantArgs {
 				assert.NotEmpty(t, args)
 			}

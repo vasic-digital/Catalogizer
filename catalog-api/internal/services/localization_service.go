@@ -212,7 +212,7 @@ func (s *LocalizationService) SetupUserLocalization(ctx context.Context, req *Wi
 			lyrics_languages, metadata_languages, auto_translate, auto_download_subtitles,
 			auto_download_lyrics, preferred_region, date_format, time_format,
 			number_format, currency_code, created_at, updated_at
-		) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, NOW(), NOW())
+		) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
 		ON CONFLICT (user_id)
 		DO UPDATE SET
 			primary_language = EXCLUDED.primary_language,
@@ -228,23 +228,26 @@ func (s *LocalizationService) SetupUserLocalization(ctx context.Context, req *Wi
 			time_format = EXCLUDED.time_format,
 			number_format = EXCLUDED.number_format,
 			currency_code = EXCLUDED.currency_code,
-			updated_at = NOW()
-		RETURNING id, created_at, updated_at
+			updated_at = CURRENT_TIMESTAMP
 	`
 
 	var localization UserLocalization
-	err := s.db.QueryRowContext(ctx, query,
+	result, err := s.db.ExecContext(ctx, query,
 		req.UserID, req.PrimaryLanguage, string(secondaryLanguagesJSON),
 		string(subtitleLanguagesJSON), string(lyricsLanguagesJSON),
 		string(metadataLanguagesJSON), req.AutoTranslate, req.AutoDownloadSubtitles,
 		req.AutoDownloadLyrics, req.PreferredRegion, req.DateFormat,
-		req.TimeFormat, req.NumberFormat, req.CurrencyCode).Scan(
-		&localization.ID, &localization.CreatedAt, &localization.UpdatedAt)
+		req.TimeFormat, req.NumberFormat, req.CurrencyCode)
 
 	if err != nil {
 		s.logger.Error("Failed to setup user localization", zap.Error(err))
 		return nil, fmt.Errorf("failed to setup localization: %w", err)
 	}
+
+	localizationID, _ := result.LastInsertId()
+	localization.ID = localizationID
+	localization.CreatedAt = time.Now()
+	localization.UpdatedAt = time.Now()
 
 	localization.UserID = req.UserID
 	localization.PrimaryLanguage = req.PrimaryLanguage
@@ -281,7 +284,7 @@ func (s *LocalizationService) GetUserLocalization(ctx context.Context, userID in
 			   auto_download_lyrics, preferred_region, date_format, time_format,
 			   number_format, currency_code, created_at, updated_at
 		FROM user_localization
-		WHERE user_id = $1
+		WHERE user_id = ?
 	`
 
 	var localization UserLocalization
@@ -321,25 +324,21 @@ func (s *LocalizationService) UpdateUserLocalization(ctx context.Context, userID
 
 	setParts := []string{}
 	args := []interface{}{}
-	argIndex := 1
 
 	for field, value := range updates {
 		switch field {
 		case "primary_language", "preferred_region", "date_format", "time_format", "number_format", "currency_code":
-			setParts = append(setParts, fmt.Sprintf("%s = $%d", field, argIndex))
+			setParts = append(setParts, fmt.Sprintf("%s = ?", field))
 			args = append(args, value)
-			argIndex++
 		case "secondary_languages", "subtitle_languages", "lyrics_languages", "metadata_languages":
 			if languages, ok := value.([]string); ok {
 				languagesJSON, _ := json.Marshal(languages)
-				setParts = append(setParts, fmt.Sprintf("%s = $%d", field, argIndex))
+				setParts = append(setParts, fmt.Sprintf("%s = ?", field))
 				args = append(args, string(languagesJSON))
-				argIndex++
 			}
 		case "auto_translate", "auto_download_subtitles", "auto_download_lyrics":
-			setParts = append(setParts, fmt.Sprintf("%s = $%d", field, argIndex))
+			setParts = append(setParts, fmt.Sprintf("%s = ?", field))
 			args = append(args, value)
-			argIndex++
 		}
 	}
 
@@ -347,14 +346,14 @@ func (s *LocalizationService) UpdateUserLocalization(ctx context.Context, userID
 		return fmt.Errorf("no valid updates provided")
 	}
 
-	setParts = append(setParts, "updated_at = NOW()")
+	setParts = append(setParts, "updated_at = CURRENT_TIMESTAMP")
 	args = append(args, userID)
 
 	query := fmt.Sprintf(`
 		UPDATE user_localization
 		SET %s
-		WHERE user_id = $%d
-	`, strings.Join(setParts, ", "), argIndex)
+		WHERE user_id = ?
+	`, strings.Join(setParts, ", "))
 
 	_, err := s.db.ExecContext(ctx, query, args...)
 	if err != nil {
@@ -540,12 +539,12 @@ func (s *LocalizationService) setupContentPreferences(ctx context.Context, local
 
 		query := `
 			INSERT INTO content_language_preferences (user_id, content_type, languages, priority, auto_apply, created_at, updated_at)
-			VALUES ($1, $2, $3, 1, true, NOW(), NOW())
+			VALUES (?, ?, ?, 1, true, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
 			ON CONFLICT (user_id, content_type)
 			DO UPDATE SET
 				languages = EXCLUDED.languages,
 				auto_apply = EXCLUDED.auto_apply,
-				updated_at = NOW()
+				updated_at = CURRENT_TIMESTAMP
 		`
 
 		_, err := s.db.ExecContext(ctx, query, localization.UserID, ct.Type, string(languagesJSON))
@@ -1232,7 +1231,7 @@ func (s *LocalizationService) storeConfigurationExport(ctx context.Context, expo
 
 	query := `
 		INSERT INTO configuration_exports (user_id, config_type, config_data, description, tags, created_at)
-		VALUES ($1, $2, $3, $4, $5, NOW())
+		VALUES (?, ?, ?, ?, ?, CURRENT_TIMESTAMP)
 	`
 
 	tagsJSON, _ := json.Marshal(export.Tags)
@@ -1256,7 +1255,7 @@ func (s *LocalizationService) logImportActivity(ctx context.Context, userID int6
 
 	query := `
 		INSERT INTO configuration_import_log (user_id, import_data, success, created_at)
-		VALUES ($1, $2, $3, NOW())
+		VALUES (?, ?, ?, CURRENT_TIMESTAMP)
 	`
 
 	_, err = s.db.ExecContext(ctx, query, userID, string(activityJSON), result.Success)

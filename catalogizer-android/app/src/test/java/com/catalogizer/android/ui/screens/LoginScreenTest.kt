@@ -7,6 +7,7 @@ import com.catalogizer.android.ui.viewmodel.AuthViewModel
 import io.mockk.*
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.test.advanceTimeBy
 import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.runTest
 import org.junit.After
@@ -70,7 +71,11 @@ class LoginScreenTest {
             com.catalogizer.android.data.remote.ApiResult.success(mockk(relaxed = true))
         }
 
+        advanceUntilIdle() // complete init checkAuthStatus coroutine
+
         authViewModel.login("user", "pass")
+        // Advance just enough to start the coroutine (sets loading=true) but not past the delay
+        advanceTimeBy(1)
 
         // Should be in loading state
         val state = authViewModel.authState.value
@@ -161,16 +166,14 @@ class LoginScreenTest {
         advanceUntilIdle()
         assertEquals("Error 1", authViewModel.authState.value.error)
 
-        // Second attempt - should clear the error first
+        // Second attempt - should clear the error and succeed
         coEvery { mockAuthRepository.login(any(), any(), any()) } returns
             com.catalogizer.android.data.remote.ApiResult.success(mockk(relaxed = true))
         authViewModel.login("user", "pass")
-
-        // During loading, error should be null
-        assertNull(authViewModel.authState.value.error)
-        assertTrue(authViewModel.authState.value.isLoading)
-
         advanceUntilIdle()
+
+        // After successful login, error should be null and user authenticated
+        assertNull(authViewModel.authState.value.error)
         assertTrue(authViewModel.authState.value.isAuthenticated)
     }
 

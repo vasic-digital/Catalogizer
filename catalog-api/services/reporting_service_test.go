@@ -4,6 +4,8 @@ import (
 	"testing"
 	"time"
 
+	"catalogizer/models"
+
 	"github.com/stretchr/testify/assert"
 )
 
@@ -17,35 +19,35 @@ func TestReportingService_CalculateSystemHealth(t *testing.T) {
 	service := NewReportingService(nil, nil)
 
 	tests := []struct {
-		name       string
-		errorRate  float64
-		uptime     float64
-		wantHealth string
+		name          string
+		totalUsers    int
+		activeUsers   int
+		mediaAccesses int
 	}{
 		{
-			name:       "healthy system",
-			errorRate:  0.01,
-			uptime:     99.9,
-			wantHealth: "healthy",
+			name:          "healthy system with active users",
+			totalUsers:    100,
+			activeUsers:   80,
+			mediaAccesses: 5000,
 		},
 		{
-			name:       "degraded system",
-			errorRate:  0.10,
-			uptime:     95.0,
-			wantHealth: "degraded",
+			name:          "system with low activity",
+			totalUsers:    100,
+			activeUsers:   5,
+			mediaAccesses: 10,
 		},
 		{
-			name:       "critical system",
-			errorRate:  0.50,
-			uptime:     50.0,
-			wantHealth: "critical",
+			name:          "empty system",
+			totalUsers:    0,
+			activeUsers:   0,
+			mediaAccesses: 0,
 		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			health := service.calculateSystemHealth(tt.errorRate, tt.uptime)
-			assert.NotEmpty(t, health)
+			health := service.calculateSystemHealth(tt.totalUsers, tt.activeUsers, tt.mediaAccesses)
+			assert.NotEmpty(t, health.Status)
 		})
 	}
 }
@@ -55,39 +57,37 @@ func TestReportingService_ExtractDateRange(t *testing.T) {
 
 	tests := []struct {
 		name    string
-		period  string
+		params  map[string]interface{}
 		wantErr bool
 	}{
 		{
-			name:    "daily period",
-			period:  "daily",
+			name: "valid date range",
+			params: map[string]interface{}{
+				"start_date": "2025-01-01",
+				"end_date":   "2025-01-31",
+			},
 			wantErr: false,
 		},
 		{
-			name:    "weekly period",
-			period:  "weekly",
-			wantErr: false,
-		},
-		{
-			name:    "monthly period",
-			period:  "monthly",
-			wantErr: false,
-		},
-		{
-			name:    "invalid period",
-			period:  "invalid",
+			name:    "missing start_date",
+			params:  map[string]interface{}{"end_date": "2025-01-31"},
 			wantErr: true,
 		},
 		{
-			name:    "empty period",
-			period:  "",
+			name:    "missing end_date",
+			params:  map[string]interface{}{"start_date": "2025-01-01"},
+			wantErr: true,
+		},
+		{
+			name:    "empty params",
+			params:  map[string]interface{}{},
 			wantErr: true,
 		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			start, end, err := service.extractDateRange(tt.period)
+			start, end, err := service.extractDateRange(tt.params)
 			if tt.wantErr {
 				assert.Error(t, err)
 			} else {
@@ -105,29 +105,39 @@ func TestReportingService_CountUniqueUsers(t *testing.T) {
 
 	tests := []struct {
 		name     string
-		userIDs  []int
+		logs     []models.MediaAccessLog
 		expected int
 	}{
 		{
-			name:     "no users",
-			userIDs:  []int{},
+			name:     "no logs",
+			logs:     []models.MediaAccessLog{},
 			expected: 0,
 		},
 		{
-			name:     "unique users",
-			userIDs:  []int{1, 2, 3},
+			name: "unique users",
+			logs: []models.MediaAccessLog{
+				{UserID: 1, MediaID: 1, AccessTime: time.Now()},
+				{UserID: 2, MediaID: 1, AccessTime: time.Now()},
+				{UserID: 3, MediaID: 1, AccessTime: time.Now()},
+			},
 			expected: 3,
 		},
 		{
-			name:     "duplicate users",
-			userIDs:  []int{1, 2, 1, 3, 2},
+			name: "duplicate users",
+			logs: []models.MediaAccessLog{
+				{UserID: 1, MediaID: 1, AccessTime: time.Now()},
+				{UserID: 2, MediaID: 1, AccessTime: time.Now()},
+				{UserID: 1, MediaID: 2, AccessTime: time.Now()},
+				{UserID: 3, MediaID: 1, AccessTime: time.Now()},
+				{UserID: 2, MediaID: 3, AccessTime: time.Now()},
+			},
 			expected: 3,
 		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			count := service.countUniqueUsers(tt.userIDs)
+			count := service.countUniqueUsers(tt.logs)
 			assert.Equal(t, tt.expected, count)
 		})
 	}
@@ -137,26 +147,26 @@ func TestReportingService_AnalyzeTimeDistribution(t *testing.T) {
 	service := NewReportingService(nil, nil)
 
 	tests := []struct {
-		name       string
-		timestamps []time.Time
+		name string
+		logs []models.MediaAccessLog
 	}{
 		{
-			name:       "empty timestamps",
-			timestamps: []time.Time{},
+			name: "empty logs",
+			logs: []models.MediaAccessLog{},
 		},
 		{
-			name: "various timestamps",
-			timestamps: []time.Time{
-				time.Date(2025, 1, 1, 8, 0, 0, 0, time.UTC),
-				time.Date(2025, 1, 1, 14, 0, 0, 0, time.UTC),
-				time.Date(2025, 1, 1, 20, 0, 0, 0, time.UTC),
+			name: "various access times",
+			logs: []models.MediaAccessLog{
+				{UserID: 1, MediaID: 1, AccessTime: time.Date(2025, 1, 1, 8, 0, 0, 0, time.UTC)},
+				{UserID: 1, MediaID: 2, AccessTime: time.Date(2025, 1, 1, 14, 0, 0, 0, time.UTC)},
+				{UserID: 1, MediaID: 3, AccessTime: time.Date(2025, 1, 1, 20, 0, 0, 0, time.UTC)},
 			},
 		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			distribution := service.analyzeTimeDistribution(tt.timestamps)
+			distribution := service.analyzeTimeDistribution(tt.logs)
 			assert.NotNil(t, distribution)
 		})
 	}
@@ -166,25 +176,28 @@ func TestReportingService_GetMostActiveHour(t *testing.T) {
 	service := NewReportingService(nil, nil)
 
 	tests := []struct {
-		name         string
-		distribution map[int]int
-		expected     int
+		name string
+		logs []models.MediaAccessLog
 	}{
 		{
-			name:         "empty distribution",
-			distribution: map[int]int{},
-			expected:     0,
+			name: "empty logs",
+			logs: []models.MediaAccessLog{},
 		},
 		{
-			name:         "single peak",
-			distribution: map[int]int{8: 10, 14: 30, 20: 5},
-			expected:     14,
+			name: "peak at 14:00",
+			logs: []models.MediaAccessLog{
+				{UserID: 1, MediaID: 1, AccessTime: time.Date(2025, 1, 1, 8, 0, 0, 0, time.UTC)},
+				{UserID: 1, MediaID: 2, AccessTime: time.Date(2025, 1, 1, 14, 0, 0, 0, time.UTC)},
+				{UserID: 2, MediaID: 3, AccessTime: time.Date(2025, 1, 1, 14, 30, 0, 0, time.UTC)},
+				{UserID: 3, MediaID: 4, AccessTime: time.Date(2025, 1, 1, 14, 45, 0, 0, time.UTC)},
+				{UserID: 1, MediaID: 5, AccessTime: time.Date(2025, 1, 1, 20, 0, 0, 0, time.UTC)},
+			},
 		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			hour := service.getMostActiveHour(tt.distribution)
+			hour := service.getMostActiveHour(tt.logs)
 			assert.GreaterOrEqual(t, hour, 0)
 			assert.LessOrEqual(t, hour, 23)
 		})
@@ -195,40 +208,38 @@ func TestReportingService_FormatReport(t *testing.T) {
 	service := NewReportingService(nil, nil)
 
 	tests := []struct {
-		name    string
-		format  string
-		data    map[string]interface{}
-		wantErr bool
+		name       string
+		format     string
+		reportType string
+		data       interface{}
+		wantErr    bool
 	}{
 		{
-			name:    "json format",
-			format:  "json",
-			data:    map[string]interface{}{"key": "value"},
-			wantErr: false,
+			name:       "json format",
+			format:     "json",
+			reportType: "generic",
+			data:       map[string]interface{}{"key": "value"},
+			wantErr:    false,
 		},
 		{
-			name:    "csv format",
-			format:  "csv",
-			data:    map[string]interface{}{"key": "value"},
-			wantErr: false,
+			name:       "unsupported format",
+			format:     "xml",
+			reportType: "generic",
+			data:       map[string]interface{}{"key": "value"},
+			wantErr:    true,
 		},
 		{
-			name:    "unsupported format",
-			format:  "xml",
-			data:    map[string]interface{}{"key": "value"},
-			wantErr: true,
-		},
-		{
-			name:    "empty data",
-			format:  "json",
-			data:    map[string]interface{}{},
-			wantErr: false,
+			name:       "empty data json",
+			format:     "json",
+			reportType: "generic",
+			data:       map[string]interface{}{},
+			wantErr:    false,
 		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			result, err := service.formatReport(tt.format, tt.data)
+			result, err := service.formatReport(tt.data, tt.format, tt.reportType)
 			if tt.wantErr {
 				assert.Error(t, err)
 			} else {

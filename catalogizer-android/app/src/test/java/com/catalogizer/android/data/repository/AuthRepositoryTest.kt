@@ -70,12 +70,7 @@ class AuthRepositoryTest {
     fun `login success should save auth data and return success`() = runTest {
         val response = Response.success(testLoginResponse)
         coEvery { mockApi.login(any()) } returns response
-        coEvery { mockDataStore.edit(any()) } coAnswers {
-            val transform = firstArg<suspend (MutablePreferences) -> Unit>()
-            val mutablePrefs = mockk<MutablePreferences>(relaxed = true)
-            transform(mutablePrefs)
-            emptyPreferences
-        }
+        coEvery { mockDataStore.updateData(any()) } returns emptyPreferences
 
         val result = repository.login("testuser", "password123")
 
@@ -113,24 +108,31 @@ class AuthRepositoryTest {
     fun `login with rememberMe saves remember preference`() = runTest {
         val response = Response.success(testLoginResponse)
         coEvery { mockApi.login(any()) } returns response
-        coEvery { mockDataStore.edit(any()) } coAnswers {
-            val transform = firstArg<suspend (MutablePreferences) -> Unit>()
-            val mutablePrefs = mockk<MutablePreferences>(relaxed = true)
-            transform(mutablePrefs)
-            emptyPreferences
-        }
+        coEvery { mockDataStore.updateData(any()) } returns emptyPreferences
 
         val result = repository.login("testuser", "password", rememberMe = true)
 
         assertTrue(result.isSuccess)
-        coVerify { mockDataStore.edit(any()) }
+        coVerify { mockDataStore.updateData(any()) }
     }
 
     // --- Register Tests ---
 
     @Test
     fun `register success should return user`() = runTest {
-        val response = Response.success(testUser)
+        val registeredUser = User(
+            id = 2L,
+            username = "newuser",
+            email = "new@email.com",
+            firstName = "New",
+            lastName = "User",
+            role = "user",
+            isActive = true,
+            createdAt = "2024-01-01T00:00:00Z",
+            updatedAt = "2024-01-01T00:00:00Z",
+            permissions = null
+        )
+        val response = Response.success(registeredUser)
         coEvery { mockApi.register(any()) } returns response
 
         val result = repository.register(
@@ -161,35 +163,25 @@ class AuthRepositoryTest {
     @Test
     fun `logout should clear auth data even if API call fails`() = runTest {
         coEvery { mockApi.logout() } throws RuntimeException("Network error")
-        coEvery { mockDataStore.edit(any()) } coAnswers {
-            val transform = firstArg<suspend (MutablePreferences) -> Unit>()
-            val mutablePrefs = mockk<MutablePreferences>(relaxed = true)
-            transform(mutablePrefs)
-            emptyPreferences
-        }
+        coEvery { mockDataStore.updateData(any()) } returns emptyPreferences
 
         val result = repository.logout()
 
         assertTrue(result.isSuccess)
-        coVerify { mockDataStore.edit(any()) }
+        coVerify { mockDataStore.updateData(any()) }
     }
 
     @Test
     fun `logout should call API logout and clear local data`() = runTest {
         val response = Response.success(Unit)
         coEvery { mockApi.logout() } returns response
-        coEvery { mockDataStore.edit(any()) } coAnswers {
-            val transform = firstArg<suspend (MutablePreferences) -> Unit>()
-            val mutablePrefs = mockk<MutablePreferences>(relaxed = true)
-            transform(mutablePrefs)
-            emptyPreferences
-        }
+        coEvery { mockDataStore.updateData(any()) } returns emptyPreferences
 
         val result = repository.logout()
 
         assertTrue(result.isSuccess)
         coVerify { mockApi.logout() }
-        coVerify { mockDataStore.edit(any()) }
+        coVerify { mockDataStore.updateData(any()) }
     }
 
     // --- Token Refresh Tests ---
@@ -216,18 +208,13 @@ class AuthRepositoryTest {
     fun `getProfile success should return user and save`() = runTest {
         val response = Response.success(testUser)
         coEvery { mockApi.getProfile() } returns response
-        coEvery { mockDataStore.edit(any()) } coAnswers {
-            val transform = firstArg<suspend (MutablePreferences) -> Unit>()
-            val mutablePrefs = mockk<MutablePreferences>(relaxed = true)
-            transform(mutablePrefs)
-            emptyPreferences
-        }
+        coEvery { mockDataStore.updateData(any()) } returns emptyPreferences
 
         val result = repository.getProfile()
 
         assertTrue(result.isSuccess)
         assertEquals("testuser", result.data?.username)
-        coVerify { mockDataStore.edit(any()) }
+        coVerify { mockDataStore.updateData(any()) }
     }
 
     @Test
@@ -244,30 +231,20 @@ class AuthRepositoryTest {
 
     @Test
     fun `setServerUrl should update datastore`() = runTest {
-        coEvery { mockDataStore.edit(any()) } coAnswers {
-            val transform = firstArg<suspend (MutablePreferences) -> Unit>()
-            val mutablePrefs = mockk<MutablePreferences>(relaxed = true)
-            transform(mutablePrefs)
-            emptyPreferences
-        }
+        coEvery { mockDataStore.updateData(any()) } returns emptyPreferences
 
         repository.setServerUrl("http://192.168.1.100:8080")
 
-        coVerify { mockDataStore.edit(any()) }
+        coVerify { mockDataStore.updateData(any()) }
     }
 
     @Test
     fun `setBiometricEnabled should update datastore`() = runTest {
-        coEvery { mockDataStore.edit(any()) } coAnswers {
-            val transform = firstArg<suspend (MutablePreferences) -> Unit>()
-            val mutablePrefs = mockk<MutablePreferences>(relaxed = true)
-            transform(mutablePrefs)
-            emptyPreferences
-        }
+        coEvery { mockDataStore.updateData(any()) } returns emptyPreferences
 
         repository.setBiometricEnabled(true)
 
-        coVerify { mockDataStore.edit(any()) }
+        coVerify { mockDataStore.updateData(any()) }
     }
 
     // --- Permission Tests ---

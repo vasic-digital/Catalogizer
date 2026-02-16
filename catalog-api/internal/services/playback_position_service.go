@@ -121,7 +121,7 @@ func (s *PlaybackPositionService) UpdatePosition(ctx context.Context, req *Updat
 		INSERT INTO playback_positions (
 			user_id, media_item_id, position, duration, percent_complete,
 			last_played, is_completed, device_info, playback_quality, created_at, updated_at
-		) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, NOW(), NOW())
+		) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
 		ON CONFLICT (user_id, media_item_id)
 		DO UPDATE SET
 			position = EXCLUDED.position,
@@ -131,7 +131,7 @@ func (s *PlaybackPositionService) UpdatePosition(ctx context.Context, req *Updat
 			is_completed = EXCLUDED.is_completed,
 			device_info = EXCLUDED.device_info,
 			playback_quality = EXCLUDED.playback_quality,
-			updated_at = NOW()
+			updated_at = CURRENT_TIMESTAMP
 	`
 
 	_, err := s.db.ExecContext(ctx, query,
@@ -161,7 +161,7 @@ func (s *PlaybackPositionService) GetPosition(ctx context.Context, userID, media
 		SELECT id, user_id, media_item_id, position, duration, percent_complete,
 			   last_played, is_completed, device_info, playback_quality, created_at, updated_at
 		FROM playback_positions
-		WHERE user_id = $1 AND media_item_id = $2
+		WHERE user_id = ? AND media_item_id = ?
 	`
 
 	var position PlaybackPosition
@@ -194,11 +194,11 @@ func (s *PlaybackPositionService) GetContinueWatching(ctx context.Context, userI
 			   pp.device_info, pp.playback_quality, pp.created_at, pp.updated_at
 		FROM playback_positions pp
 		INNER JOIN media_items mi ON pp.media_item_id = mi.id
-		WHERE pp.user_id = $1
+		WHERE pp.user_id = ?
 		  AND pp.percent_complete BETWEEN 5 AND 90
-		  AND pp.last_played > NOW() - INTERVAL '30 days'
+		  AND pp.last_played > datetime('now', '-30 days')
 		ORDER BY pp.last_played DESC
-		LIMIT $2
+		LIMIT ?
 	`
 
 	rows, err := s.db.QueryContext(ctx, query, userID, limit)
@@ -235,19 +235,21 @@ func (s *PlaybackPositionService) CreateBookmark(ctx context.Context, req *Bookm
 
 	query := `
 		INSERT INTO playback_bookmarks (user_id, media_item_id, position, name, description, created_at)
-		VALUES ($1, $2, $3, $4, $5, NOW())
-		RETURNING id, created_at
+		VALUES (?, ?, ?, ?, ?, CURRENT_TIMESTAMP)
 	`
 
 	var bookmark PlaybackBookmark
-	err := s.db.QueryRowContext(ctx, query,
-		req.UserID, req.MediaItemID, req.Position, req.Name, req.Description).Scan(
-		&bookmark.ID, &bookmark.CreatedAt)
+	result, err := s.db.ExecContext(ctx, query,
+		req.UserID, req.MediaItemID, req.Position, req.Name, req.Description)
 
 	if err != nil {
 		s.logger.Error("Failed to create bookmark", zap.Error(err))
 		return nil, fmt.Errorf("failed to create bookmark: %w", err)
 	}
+
+	bookmarkID, _ := result.LastInsertId()
+	bookmark.ID = bookmarkID
+	bookmark.CreatedAt = time.Now()
 
 	bookmark.UserID = req.UserID
 	bookmark.MediaItemID = req.MediaItemID
@@ -266,7 +268,7 @@ func (s *PlaybackPositionService) GetBookmarks(ctx context.Context, userID, medi
 	query := `
 		SELECT id, user_id, media_item_id, position, name, description, created_at
 		FROM playback_bookmarks
-		WHERE user_id = $1 AND media_item_id = $2
+		WHERE user_id = ? AND media_item_id = ?
 		ORDER BY position ASC
 	`
 
@@ -300,7 +302,7 @@ func (s *PlaybackPositionService) DeleteBookmark(ctx context.Context, userID, bo
 		zap.Int64("user_id", userID),
 		zap.Int64("bookmark_id", bookmarkID))
 
-	query := `DELETE FROM playback_bookmarks WHERE id = $1 AND user_id = $2`
+	query := `DELETE FROM playback_bookmarks WHERE id = ? AND user_id = ?`
 
 	result, err := s.db.ExecContext(ctx, query, bookmarkID, userID)
 	if err != nil {
@@ -360,13 +362,14 @@ func (s *PlaybackPositionService) recordPlaybackHistory(ctx context.Context, req
 		INSERT INTO playback_history (
 			user_id, media_item_id, start_time, end_time, duration,
 			percent_watched, device_info, playback_quality, was_completed
-		) VALUES ($1, $2, NOW() - INTERVAL '%d milliseconds', NOW(), $3, $4, $5, $6, $7)
+		) VALUES (?, ?, datetime('now', ?), CURRENT_TIMESTAMP, ?, ?, ?, ?, ?)
 	`
 
 	percentWatched := float64(req.Position) / float64(req.Duration) * 100
+	offsetSeconds := fmt.Sprintf("-%d seconds", req.Position/1000)
 
-	_, err := s.db.ExecContext(ctx, fmt.Sprintf(query, req.Position),
-		req.UserID, req.MediaItemID, req.Duration, percentWatched,
+	_, err := s.db.ExecContext(ctx, query,
+		req.UserID, req.MediaItemID, offsetSeconds, req.Duration, percentWatched,
 		req.DeviceInfo, req.PlaybackQuality, completed)
 
 	return err
@@ -379,20 +382,16 @@ func (s *PlaybackPositionService) getTotalPlaytime(ctx context.Context, req *Pla
 			COUNT(*) as total_items,
 			COUNT(CASE WHEN was_completed THEN 1 END) as completed_items
 		FROM playback_history
-		WHERE user_id = $1
+		WHERE user_id = ?
 	`
 
 	args := []interface{}{req.UserID}
 	if req.StartDate != nil {
-		query += " AND start_time >= $2"
+		query += " AND start_time >= ?"
 		args = append(args, *req.StartDate)
 	}
 	if req.EndDate != nil {
-		if req.StartDate != nil {
-			query += " AND start_time <= $3"
-		} else {
-			query += " AND start_time <= $2"
-		}
+		query += " AND start_time <= ?"
 		args = append(args, *req.EndDate)
 	}
 
@@ -412,9 +411,9 @@ func (s *PlaybackPositionService) getRecentlyWatched(ctx context.Context, req *P
 		SELECT id, user_id, media_item_id, start_time, end_time, duration,
 			   percent_watched, device_info, playback_quality, was_completed
 		FROM playback_history
-		WHERE user_id = $1
+		WHERE user_id = ?
 		ORDER BY start_time DESC
-		LIMIT $2
+		LIMIT ?
 	`
 
 	rows, err := s.db.QueryContext(ctx, query, req.UserID, limit)
@@ -443,11 +442,11 @@ func (s *PlaybackPositionService) getRecentlyWatched(ctx context.Context, req *P
 func (s *PlaybackPositionService) getPlaybackByHour(ctx context.Context, req *PlaybackStatsRequest, stats *PlaybackStats) error {
 	query := `
 		SELECT
-			EXTRACT(HOUR FROM start_time) as hour,
+			CAST(strftime('%H', start_time) AS INTEGER) as hour,
 			COUNT(*) as count
 		FROM playback_history
-		WHERE user_id = $1
-		GROUP BY EXTRACT(HOUR FROM start_time)
+		WHERE user_id = ?
+		GROUP BY strftime('%H', start_time)
 		ORDER BY hour
 	`
 
@@ -476,7 +475,7 @@ func (s *PlaybackPositionService) getWatchTimeByDevice(ctx context.Context, req 
 			device_info,
 			SUM(duration) as total_duration
 		FROM playback_history
-		WHERE user_id = $1
+		WHERE user_id = ?
 		GROUP BY device_info
 		ORDER BY total_duration DESC
 	`
@@ -506,7 +505,7 @@ func (s *PlaybackPositionService) CleanupOldPositions(ctx context.Context, older
 
 	query := `
 		DELETE FROM playback_positions
-		WHERE last_played < $1 AND is_completed = true
+		WHERE last_played < ? AND is_completed = true
 	`
 
 	cutoff := time.Now().Add(-olderThan)

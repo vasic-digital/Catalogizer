@@ -1,29 +1,30 @@
+import { describe, it, expect, vi, beforeEach, type Mock } from 'vitest';
 import { HttpClient } from '../utils/http';
 import { CatalogizerError, AuthenticationError, NetworkError, ValidationError } from '../types';
 import axios, { AxiosInstance } from 'axios';
 
-jest.mock('axios');
-const mockAxios = axios as jest.Mocked<typeof axios>;
+vi.mock('axios');
+const mockAxios = axios as unknown as { create: Mock };
 
 describe('HttpClient', () => {
-  let mockAxiosInstance: jest.Mocked<AxiosInstance>;
+  let mockAxiosInstance: any;
 
   beforeEach(() => {
-    jest.clearAllMocks();
+    vi.clearAllMocks();
 
-    const requestUseMock = jest.fn();
-    const responseUseMock = jest.fn();
+    const requestUseMock = vi.fn();
+    const responseUseMock = vi.fn();
 
     mockAxiosInstance = {
       interceptors: {
-        request: { use: requestUseMock as any, eject: jest.fn() },
-        response: { use: responseUseMock as any, eject: jest.fn() },
+        request: { use: requestUseMock as any, eject: vi.fn() },
+        response: { use: responseUseMock as any, eject: vi.fn() },
       },
-      get: jest.fn(),
-      post: jest.fn(),
-      put: jest.fn(),
-      patch: jest.fn(),
-      delete: jest.fn(),
+      get: vi.fn(),
+      post: vi.fn(),
+      put: vi.fn(),
+      patch: vi.fn(),
+      delete: vi.fn(),
       defaults: {
         headers: {},
         baseURL: '',
@@ -101,7 +102,7 @@ describe('HttpClient', () => {
       client.setAuthToken('test-token');
 
       // Get the request interceptor function
-      const requestUseMock = mockAxiosInstance.interceptors.request.use as jest.Mock;
+      const requestUseMock = mockAxiosInstance.interceptors.request.use;
       const requestInterceptor = requestUseMock.mock.calls[0][0];
 
       const config = { headers: {} };
@@ -113,7 +114,7 @@ describe('HttpClient', () => {
     it('does not add auth header when token is not set', () => {
       const client = new HttpClient({ baseURL: 'http://localhost:8080' });
 
-      const requestUseMock = mockAxiosInstance.interceptors.request.use as jest.Mock;
+      const requestUseMock = mockAxiosInstance.interceptors.request.use;
       const requestInterceptor = requestUseMock.mock.calls[0][0];
       const config = { headers: {} };
       const result = requestInterceptor(config);
@@ -252,7 +253,7 @@ describe('HttpClient', () => {
       mockAxiosInstance.get.mockRejectedValueOnce(networkError);
 
       // Get the response interceptor error handler
-      const responseUseMock = mockAxiosInstance.interceptors.response.use as jest.Mock;
+      const responseUseMock = mockAxiosInstance.interceptors.response.use;
       const responseInterceptor = responseUseMock.mock.calls[0][1];
 
       try {
@@ -272,7 +273,7 @@ describe('HttpClient', () => {
       };
       mockAxiosInstance.get.mockRejectedValueOnce(error);
 
-      const responseUseMock = mockAxiosInstance.interceptors.response.use as jest.Mock;
+      const responseUseMock = mockAxiosInstance.interceptors.response.use;
       const responseInterceptor = responseUseMock.mock.calls[0][1];
 
       try {
@@ -293,7 +294,7 @@ describe('HttpClient', () => {
       };
       mockAxiosInstance.get.mockRejectedValueOnce(error);
 
-      const responseUseMock = mockAxiosInstance.interceptors.response.use as jest.Mock;
+      const responseUseMock = mockAxiosInstance.interceptors.response.use;
       const responseInterceptor = responseUseMock.mock.calls[0][1];
 
       try {
@@ -312,7 +313,7 @@ describe('HttpClient', () => {
       };
       mockAxiosInstance.get.mockRejectedValueOnce(error);
 
-      const responseUseMock = mockAxiosInstance.interceptors.response.use as jest.Mock;
+      const responseUseMock = mockAxiosInstance.interceptors.response.use;
       const responseInterceptor = responseUseMock.mock.calls[0][1];
 
       try {
@@ -332,7 +333,7 @@ describe('HttpClient', () => {
       };
       mockAxiosInstance.get.mockRejectedValueOnce(error);
 
-      const responseUseMock = mockAxiosInstance.interceptors.response.use as jest.Mock;
+      const responseUseMock = mockAxiosInstance.interceptors.response.use;
       const responseInterceptor = responseUseMock.mock.calls[0][1];
 
       try {
@@ -352,7 +353,7 @@ describe('HttpClient', () => {
       };
       mockAxiosInstance.get.mockRejectedValueOnce(error);
 
-      const responseUseMock = mockAxiosInstance.interceptors.response.use as jest.Mock;
+      const responseUseMock = mockAxiosInstance.interceptors.response.use;
       const responseInterceptor = responseUseMock.mock.calls[0][1];
 
       try {
@@ -372,7 +373,7 @@ describe('HttpClient', () => {
       };
       mockAxiosInstance.get.mockRejectedValueOnce(error);
 
-      const responseUseMock = mockAxiosInstance.interceptors.response.use as jest.Mock;
+      const responseUseMock = mockAxiosInstance.interceptors.response.use;
       const responseInterceptor = responseUseMock.mock.calls[0][1];
 
       try {
@@ -392,7 +393,7 @@ describe('HttpClient', () => {
       };
       mockAxiosInstance.get.mockRejectedValueOnce(error);
 
-      const responseUseMock = mockAxiosInstance.interceptors.response.use as jest.Mock;
+      const responseUseMock = mockAxiosInstance.interceptors.response.use;
       const responseInterceptor = responseUseMock.mock.calls[0][1];
 
       try {
@@ -413,7 +414,7 @@ describe('HttpClient', () => {
     it('has onTokenRefresh callback property', () => {
       expect(client.onTokenRefresh).toBeUndefined();
 
-      const callback = jest.fn();
+      const callback = vi.fn();
       client.onTokenRefresh = callback;
 
       expect(client.onTokenRefresh).toBe(callback);
@@ -422,7 +423,7 @@ describe('HttpClient', () => {
     it('has onAuthenticationError callback property', () => {
       expect(client.onAuthenticationError).toBeUndefined();
 
-      const callback = jest.fn();
+      const callback = vi.fn();
       client.onAuthenticationError = callback;
 
       expect(client.onAuthenticationError).toBe(callback);
@@ -441,7 +442,7 @@ describe('HttpClient', () => {
     });
 
     it('does not retry authentication errors', async () => {
-      const operation = jest.fn()
+      const operation = vi.fn()
         .mockRejectedValue(new AuthenticationError('Unauthorized'));
 
       await expect(client.withRetry(operation, 3, 10)).rejects.toThrow(AuthenticationError);
@@ -449,7 +450,7 @@ describe('HttpClient', () => {
     });
 
     it('does not retry validation errors', async () => {
-      const operation = jest.fn()
+      const operation = vi.fn()
         .mockRejectedValue(new ValidationError('Invalid data'));
 
       await expect(client.withRetry(operation, 3, 10)).rejects.toThrow(ValidationError);
@@ -457,7 +458,7 @@ describe('HttpClient', () => {
     });
 
     it('succeeds on first attempt when operation succeeds', async () => {
-      const operation = jest.fn().mockResolvedValue('Success');
+      const operation = vi.fn().mockResolvedValue('Success');
 
       const result = await client.withRetry(operation, 3, 10);
 

@@ -45,9 +45,9 @@ describe('BundleAnalyzer', () => {
       { timeout: 3000 }
     )
 
-    // The total size is calculated from the mock data
-    const sizeText = screen.getByText(/MB/)
-    expect(sizeText).toBeInTheDocument()
+    // The total size is calculated from the mock data - multiple elements contain "MB"
+    const sizeTexts = screen.getAllByText(/MB/)
+    expect(sizeTexts.length).toBeGreaterThan(0)
   })
 
   it('displays potential savings', async () => {
@@ -239,7 +239,9 @@ describe('BundleAnalyzer', () => {
 
     await user.click(screen.getByText('Show Details'))
 
-    expect(screen.getByText('Parents: collections, main')).toBeInTheDocument()
+    // Multiple chunks share the same parents "collections, main"
+    const parentElements = screen.getAllByText('Parents: collections, main')
+    expect(parentElements.length).toBeGreaterThanOrEqual(1)
   })
 
   it('renders Optimize Bundle button', async () => {
@@ -266,13 +268,15 @@ describe('BundleAnalyzer', () => {
   })
 
   it('copies stats to clipboard', async () => {
-    const mockClipboard = { writeText: vi.fn().mockResolvedValue(undefined) }
+    const writeTextSpy = vi.fn().mockResolvedValue(undefined)
+    // Use vi.stubGlobal to properly mock clipboard for jsdom
+    const originalClipboard = navigator.clipboard
     Object.defineProperty(navigator, 'clipboard', {
-      value: mockClipboard,
+      value: { writeText: writeTextSpy, readText: vi.fn() },
       writable: true,
+      configurable: true,
     })
 
-    const user = userEvent.setup()
     render(<BundleAnalyzer />)
 
     await waitFor(
@@ -283,11 +287,20 @@ describe('BundleAnalyzer', () => {
     )
 
     const copyBtn = screen.getByTitle('Copy Stats')
-    await user.click(copyBtn)
+    // Use fireEvent instead of userEvent to avoid userEvent's clipboard interception
+    const { fireEvent } = await import('@testing-library/react')
+    fireEvent.click(copyBtn)
 
-    expect(mockClipboard.writeText).toHaveBeenCalledWith(
+    expect(writeTextSpy).toHaveBeenCalledWith(
       expect.stringContaining('Bundle Analysis Report')
     )
+
+    // Restore
+    Object.defineProperty(navigator, 'clipboard', {
+      value: originalClipboard,
+      writable: true,
+      configurable: true,
+    })
   })
 
   it('exports report as JSON', async () => {

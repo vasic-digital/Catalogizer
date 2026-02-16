@@ -1,9 +1,15 @@
 package services
 
 import (
+	"os"
+	"path/filepath"
 	"testing"
+	"time"
+
+	"catalogizer/models"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestNewSyncService(t *testing.T) {
@@ -17,28 +23,36 @@ func TestSyncService_ValidateSyncEndpoint(t *testing.T) {
 
 	tests := []struct {
 		name     string
-		endpoint string
+		endpoint *models.SyncEndpoint
 		wantErr  bool
 	}{
 		{
-			name:     "valid http endpoint",
-			endpoint: "http://example.com/api",
-			wantErr:  false,
+			name: "valid endpoint",
+			endpoint: &models.SyncEndpoint{
+				Name:          "Test Endpoint",
+				Type:          models.SyncTypeWebDAV,
+				URL:           "https://example.com/api",
+				SyncDirection: models.SyncDirectionUpload,
+				LocalPath:     "/tmp/sync",
+				RemotePath:    "/remote/sync",
+			},
+			wantErr: false,
 		},
 		{
-			name:     "valid https endpoint",
-			endpoint: "https://example.com/api",
-			wantErr:  false,
+			name: "empty name",
+			endpoint: &models.SyncEndpoint{
+				Name: "",
+				URL:  "https://example.com/api",
+			},
+			wantErr: true,
 		},
 		{
-			name:     "empty endpoint",
-			endpoint: "",
-			wantErr:  true,
-		},
-		{
-			name:     "invalid endpoint",
-			endpoint: "not-a-url",
-			wantErr:  true,
+			name: "empty URL",
+			endpoint: &models.SyncEndpoint{
+				Name: "Test",
+				URL:  "",
+			},
+			wantErr: true,
 		},
 	}
 
@@ -57,24 +71,26 @@ func TestSyncService_ValidateSyncEndpoint(t *testing.T) {
 func TestSyncService_IsValidType(t *testing.T) {
 	service := NewSyncService(nil, nil, nil)
 
+	validTypes := []string{models.SyncTypeWebDAV, models.SyncTypeCloudStorage, models.SyncTypeLocal}
+
 	tests := []struct {
 		name     string
 		syncType string
 		expected bool
 	}{
 		{
-			name:     "valid full sync type",
-			syncType: "full",
+			name:     "valid webdav sync type",
+			syncType: models.SyncTypeWebDAV,
 			expected: true,
 		},
 		{
-			name:     "valid incremental sync type",
-			syncType: "incremental",
+			name:     "valid cloud_storage sync type",
+			syncType: models.SyncTypeCloudStorage,
 			expected: true,
 		},
 		{
-			name:     "valid selective sync type",
-			syncType: "selective",
+			name:     "valid local sync type",
+			syncType: models.SyncTypeLocal,
 			expected: true,
 		},
 		{
@@ -91,7 +107,7 @@ func TestSyncService_IsValidType(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			result := service.isValidType(tt.syncType)
+			result := service.isValidType(tt.syncType, validTypes)
 			assert.Equal(t, tt.expected, result)
 		})
 	}
@@ -103,32 +119,32 @@ func TestSyncService_ShouldSkipFile(t *testing.T) {
 	tests := []struct {
 		name     string
 		filename string
-		patterns []string
+		endpoint *models.SyncEndpoint
 		expected bool
 	}{
 		{
-			name:     "no patterns means no skip",
-			filename: "test.txt",
-			patterns: []string{},
-			expected: false,
-		},
-		{
-			name:     "matching pattern skips",
+			name:     "hidden file is skipped",
 			filename: ".gitignore",
-			patterns: []string{".*"},
+			endpoint: &models.SyncEndpoint{},
 			expected: true,
 		},
 		{
-			name:     "non-matching pattern does not skip",
+			name:     "temp file is skipped",
+			filename: "data.tmp",
+			endpoint: &models.SyncEndpoint{},
+			expected: true,
+		},
+		{
+			name:     "normal file is not skipped",
 			filename: "test.txt",
-			patterns: []string{"*.log"},
+			endpoint: &models.SyncEndpoint{},
 			expected: false,
 		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			result := service.shouldSkipFile(tt.filename, tt.patterns)
+			result := service.shouldSkipFile(tt.filename, tt.endpoint)
 			assert.Equal(t, tt.expected, result)
 		})
 	}
@@ -137,19 +153,29 @@ func TestSyncService_ShouldSkipFile(t *testing.T) {
 func TestSyncService_ShouldRunSchedule(t *testing.T) {
 	service := NewSyncService(nil, nil, nil)
 
+	pastTime := time.Now().Add(-2 * time.Hour)
+
 	tests := []struct {
 		name     string
-		schedule string
+		schedule *models.SyncSchedule
 		expected bool
 	}{
 		{
-			name:     "always schedule",
-			schedule: "always",
+			name: "hourly schedule due",
+			schedule: &models.SyncSchedule{
+				Frequency: models.SyncFrequencyHourly,
+				LastRun:   &pastTime,
+				IsActive:  true,
+			},
 			expected: true,
 		},
 		{
-			name:     "empty schedule",
-			schedule: "",
+			name: "hourly schedule not due",
+			schedule: &models.SyncSchedule{
+				Frequency: models.SyncFrequencyHourly,
+				LastRun:   func() *time.Time { t := time.Now(); return &t }(),
+				IsActive:  true,
+			},
 			expected: false,
 		},
 	}
@@ -165,28 +191,22 @@ func TestSyncService_ShouldRunSchedule(t *testing.T) {
 func TestSyncService_CalculateChecksum(t *testing.T) {
 	service := NewSyncService(nil, nil, nil)
 
-	tests := []struct {
-		name string
-		data []byte
-	}{
-		{
-			name: "basic data",
-			data: []byte("hello world"),
-		},
-		{
-			name: "empty data",
-			data: []byte{},
-		},
-	}
+	// Create a temporary file for checksum testing
+	tmpDir := t.TempDir()
+	tmpFile := filepath.Join(tmpDir, "test.txt")
+	err := os.WriteFile(tmpFile, []byte("hello world"), 0644)
+	require.NoError(t, err)
 
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			checksum := service.calculateChecksum(tt.data)
-			assert.NotEmpty(t, checksum)
+	checksum, err := service.calculateChecksum(tmpFile)
+	assert.NoError(t, err)
+	assert.NotEmpty(t, checksum)
 
-			// Same input should produce same output
-			checksum2 := service.calculateChecksum(tt.data)
-			assert.Equal(t, checksum, checksum2)
-		})
-	}
+	// Same file should produce same checksum
+	checksum2, err := service.calculateChecksum(tmpFile)
+	assert.NoError(t, err)
+	assert.Equal(t, checksum, checksum2)
+
+	// Non-existent file should return error
+	_, err = service.calculateChecksum("/nonexistent/file.txt")
+	assert.Error(t, err)
 }

@@ -53,7 +53,7 @@ func (h *AndroidTVMediaHandler) GetMediaByID(c *gin.Context) {
 			file_size, duration, directory_path, smb_path, created_at, updated_at,
 			external_metadata, versions, is_favorite, watch_progress, last_watched, is_downloaded
 		FROM media_items 
-		WHERE id = $1
+		WHERE id = ?
 	`
 	
 	var mediaItem models.MediaCatalogItem
@@ -125,8 +125,8 @@ func (h *AndroidTVMediaHandler) UpdateWatchProgress(c *gin.Context) {
 	// Update database
 	query := `
 		UPDATE media_items 
-		SET watch_progress = $1, last_watched = CURRENT_TIMESTAMP, updated_at = CURRENT_TIMESTAMP
-		WHERE id = $2
+		SET watch_progress = ?, last_watched = CURRENT_TIMESTAMP, updated_at = CURRENT_TIMESTAMP
+		WHERE id = ?
 	`
 	
 	result, err := h.db.ExecContext(ctx, query, progress, id)
@@ -193,8 +193,8 @@ func (h *AndroidTVMediaHandler) UpdateFavoriteStatus(c *gin.Context) {
 	// Update database
 	query := `
 		UPDATE media_items 
-		SET is_favorite = $1, updated_at = CURRENT_TIMESTAMP
-		WHERE id = $2
+		SET is_favorite = ?, updated_at = CURRENT_TIMESTAMP
+		WHERE id = ?
 	`
 	
 	result, err := h.db.ExecContext(ctx, query, isFavorite, id)

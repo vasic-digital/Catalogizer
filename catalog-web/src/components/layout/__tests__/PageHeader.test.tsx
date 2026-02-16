@@ -84,7 +84,9 @@ describe('PageHeader', () => {
 
     expect(screen.getByText('Home')).toBeInTheDocument()
     expect(screen.getByText('Media')).toBeInTheDocument()
-    expect(screen.getByText('Detail')).toBeInTheDocument()
+    // "Detail" appears both in the breadcrumb (span) and h1 title
+    const detailElements = screen.getAllByText('Detail')
+    expect(detailElements.length).toBe(2)
   })
 
   it('renders breadcrumb links as router links', () => {

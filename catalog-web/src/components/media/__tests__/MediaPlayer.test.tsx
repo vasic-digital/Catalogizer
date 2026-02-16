@@ -109,7 +109,9 @@ describe('MediaPlayer', () => {
       await user.click(button)
     }
 
-    expect(screen.getByText('Subtitles')).toBeInTheDocument()
+    // "Subtitles" appears both in the mock icon and in the subtitle panel h3 heading
+    const subtitlesElements = screen.getAllByText('Subtitles')
+    expect(subtitlesElements.length).toBeGreaterThanOrEqual(2)
     expect(screen.getByText('English')).toBeInTheDocument()
     expect(screen.getByText('French')).toBeInTheDocument()
     expect(screen.getByText('Off')).toBeInTheDocument()

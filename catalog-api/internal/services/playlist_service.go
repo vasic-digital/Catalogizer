@@ -156,15 +156,19 @@ func (s *PlaylistService) CreatePlaylist(ctx context.Context, req *CreatePlaylis
 			user_id, name, description, is_public, is_smart_playlist,
 			smart_criteria, track_count, total_duration, play_count,
 			created_at, updated_at
-		) VALUES ($1, $2, $3, $4, $5, $6, 0, 0, 0, NOW(), NOW())
-		RETURNING id, created_at, updated_at
+		) VALUES (?, ?, ?, ?, ?, ?, 0, 0, 0, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
 	`
 
 	var playlist Playlist
-	err := s.db.QueryRowContext(ctx, query,
+	result, err := s.db.ExecContext(ctx, query,
 		req.UserID, req.Name, req.Description, req.IsPublic,
-		req.IsSmartPlaylist, smartCriteriaJSON).Scan(
-		&playlist.ID, &playlist.CreatedAt, &playlist.UpdatedAt)
+		req.IsSmartPlaylist, smartCriteriaJSON)
+	if err == nil {
+		id, _ := result.LastInsertId()
+		playlist.ID = id
+		playlist.CreatedAt = time.Now()
+		playlist.UpdatedAt = time.Now()
+	}
 
 	if err != nil {
 		s.logger.Error("Failed to create playlist", zap.Error(err))
@@ -213,12 +217,12 @@ func (s *PlaylistService) GetPlaylist(ctx context.Context, playlistID, userID in
 			   p.created_at, p.updated_at
 		FROM playlists p
 		LEFT JOIN playlist_collaborators pc ON p.id = pc.playlist_id
-		WHERE p.id = $1
-		  AND (p.user_id = $2 OR p.is_public = true OR pc.user_id = $2)
+		WHERE p.id = ?
+		  AND (p.user_id = ? OR p.is_public = true OR pc.user_id = ?)
 	`
 
 	var playlist Playlist
-	err := s.db.QueryRowContext(ctx, query, playlistID, userID).Scan(
+	err := s.db.QueryRowContext(ctx, query, playlistID, userID, userID).Scan(
 		&playlist.ID, &playlist.UserID, &playlist.Name, &playlist.Description,
 		&playlist.IsPublic, &playlist.IsSmartPlaylist, &playlist.SmartCriteria,
 		&playlist.CoverArtURL, &playlist.TrackCount, &playlist.TotalDuration,
@@ -251,7 +255,7 @@ func (s *PlaylistService) GetUserPlaylists(ctx context.Context, userID int64, in
 			   p.created_at, p.updated_at
 		FROM playlists p
 		LEFT JOIN playlist_collaborators pc ON p.id = pc.playlist_id
-		WHERE p.user_id = $1 OR pc.user_id = $1
+		WHERE p.user_id = ? OR pc.user_id = ?
 	`
 
 	if includePublic {
@@ -260,7 +264,7 @@ func (s *PlaylistService) GetUserPlaylists(ctx context.Context, userID int64, in
 
 	baseQuery += " ORDER BY p.updated_at DESC"
 
-	rows, err := s.db.QueryContext(ctx, baseQuery, userID)
+	rows, err := s.db.QueryContext(ctx, baseQuery, userID, userID)
 	if err != nil {
 		s.logger.Error("Failed to get user playlists", zap.Error(err))
 		return nil, fmt.Errorf("failed to get user playlists: %w", err)
@@ -310,7 +314,7 @@ func (s *PlaylistService) AddToPlaylist(ctx context.Context, req *AddToPlaylistR
 		position = *req.Position
 	} else {
 		err := tx.QueryRowContext(ctx,
-			"SELECT COALESCE(MAX(position), 0) + 1 FROM playlist_items WHERE playlist_id = $1",
+			"SELECT COALESCE(MAX(position), 0) + 1 FROM playlist_items WHERE playlist_id = ?",
 			req.PlaylistID).Scan(&position)
 		if err != nil {
 			return fmt.Errorf("failed to get next position: %w", err)
@@ -319,7 +323,7 @@ func (s *PlaylistService) AddToPlaylist(ctx context.Context, req *AddToPlaylistR
 
 	if req.Position != nil {
 		_, err := tx.ExecContext(ctx,
-			"UPDATE playlist_items SET position = position + $1 WHERE playlist_id = $2 AND position >= $3",
+			"UPDATE playlist_items SET position = position + ? WHERE playlist_id = ? AND position >= ?",
 			len(req.MediaItemIDs), req.PlaylistID, *req.Position)
 		if err != nil {
 			return fmt.Errorf("failed to shift positions: %w", err)
@@ -334,7 +338,7 @@ func (s *PlaylistService) AddToPlaylist(ctx context.Context, req *AddToPlaylistR
 
 		_, err := tx.ExecContext(ctx, `
 			INSERT INTO playlist_items (playlist_id, media_item_id, position, added_by, added_at, custom_title)
-			VALUES ($1, $2, $3, $4, NOW(), $5)
+			VALUES (?, ?, ?, ?, CURRENT_TIMESTAMP, ?)
 		`, req.PlaylistID, mediaItemID, position+i, req.UserID, customTitle)
 
 		if err != nil {
@@ -371,21 +375,21 @@ func (s *PlaylistService) RemoveFromPlaylist(ctx context.Context, playlistID, it
 
 	var position int
 	err = tx.QueryRowContext(ctx,
-		"SELECT position FROM playlist_items WHERE id = $1 AND playlist_id = $2",
+		"SELECT position FROM playlist_items WHERE id = ? AND playlist_id = ?",
 		itemID, playlistID).Scan(&position)
 	if err != nil {
 		return fmt.Errorf("playlist item not found: %w", err)
 	}
 
 	_, err = tx.ExecContext(ctx,
-		"DELETE FROM playlist_items WHERE id = $1 AND playlist_id = $2",
+		"DELETE FROM playlist_items WHERE id = ? AND playlist_id = ?",
 		itemID, playlistID)
 	if err != nil {
 		return fmt.Errorf("failed to remove item: %w", err)
 	}
 
 	_, err = tx.ExecContext(ctx,
-		"UPDATE playlist_items SET position = position - 1 WHERE playlist_id = $1 AND position > $2",
+		"UPDATE playlist_items SET position = position - 1 WHERE playlist_id = ? AND position > ?",
 		playlistID, position)
 	if err != nil {
 		return fmt.Errorf("failed to update positions: %w", err)
@@ -420,7 +424,7 @@ func (s *PlaylistService) ReorderPlaylist(ctx context.Context, req *ReorderPlayl
 
 	var currentPosition int
 	err = tx.QueryRowContext(ctx,
-		"SELECT position FROM playlist_items WHERE id = $1 AND playlist_id = $2",
+		"SELECT position FROM playlist_items WHERE id = ? AND playlist_id = ?",
 		req.ItemID, req.PlaylistID).Scan(&currentPosition)
 	if err != nil {
 		return fmt.Errorf("playlist item not found: %w", err)
@@ -430,13 +434,13 @@ func (s *PlaylistService) ReorderPlaylist(ctx context.Context, req *ReorderPlayl
 		_, err = tx.ExecContext(ctx, `
 			UPDATE playlist_items
 			SET position = position - 1
-			WHERE playlist_id = $1 AND position > $2 AND position <= $3
+			WHERE playlist_id = ? AND position > ? AND position <= ?
 		`, req.PlaylistID, currentPosition, req.NewPosition)
 	} else if currentPosition > req.NewPosition {
 		_, err = tx.ExecContext(ctx, `
 			UPDATE playlist_items
 			SET position = position + 1
-			WHERE playlist_id = $1 AND position >= $2 AND position < $3
+			WHERE playlist_id = ? AND position >= ? AND position < ?
 		`, req.PlaylistID, req.NewPosition, currentPosition)
 	}
 
@@ -445,7 +449,7 @@ func (s *PlaylistService) ReorderPlaylist(ctx context.Context, req *ReorderPlayl
 	}
 
 	_, err = tx.ExecContext(ctx,
-		"UPDATE playlist_items SET position = $1 WHERE id = $2",
+		"UPDATE playlist_items SET position = ? WHERE id = ?",
 		req.NewPosition, req.ItemID)
 	if err != nil {
 		return fmt.Errorf("failed to update item position: %w", err)
@@ -470,13 +474,13 @@ func (s *PlaylistService) GetPlaylistItems(ctx context.Context, playlistID, user
 		FROM playlist_items pi
 		INNER JOIN playlists p ON pi.playlist_id = p.id
 		LEFT JOIN playlist_collaborators pc ON p.id = pc.playlist_id
-		WHERE pi.playlist_id = $1
-		  AND (p.user_id = $2 OR p.is_public = true OR pc.user_id = $2)
+		WHERE pi.playlist_id = ?
+		  AND (p.user_id = ? OR p.is_public = true OR pc.user_id = ?)
 		ORDER BY pi.position ASC
-		LIMIT $3 OFFSET $4
+		LIMIT ? OFFSET ?
 	`
 
-	rows, err := s.db.QueryContext(ctx, query, playlistID, userID, limit, offset)
+	rows, err := s.db.QueryContext(ctx, query, playlistID, userID, userID, limit, offset)
 	if err != nil {
 		s.logger.Error("Failed to get playlist items", zap.Error(err))
 		return nil, fmt.Errorf("failed to get playlist items: %w", err)
@@ -525,7 +529,7 @@ func (s *PlaylistService) RefreshSmartPlaylist(ctx context.Context, playlistID i
 	}
 	defer tx.Rollback()
 
-	_, err = tx.ExecContext(ctx, "DELETE FROM playlist_items WHERE playlist_id = $1", playlistID)
+	_, err = tx.ExecContext(ctx, "DELETE FROM playlist_items WHERE playlist_id = ?", playlistID)
 	if err != nil {
 		return fmt.Errorf("failed to clear playlist: %w", err)
 	}
@@ -546,7 +550,7 @@ func (s *PlaylistService) RefreshSmartPlaylist(ctx context.Context, playlistID i
 
 		_, err = tx.ExecContext(ctx, `
 			INSERT INTO playlist_items (playlist_id, media_item_id, position, added_by, added_at)
-			VALUES ($1, $2, $3, $4, NOW())
+			VALUES (?, ?, ?, ?, CURRENT_TIMESTAMP)
 		`, playlistID, mediaItemID, position, playlist.UserID)
 
 		if err != nil {
@@ -574,13 +578,17 @@ func (s *PlaylistService) CreateQueue(ctx context.Context, userID int64, name st
 
 	query := `
 		INSERT INTO playback_queues (user_id, name, current_position, shuffle_enabled, repeat_mode, created_at, updated_at)
-		VALUES ($1, $2, 0, false, 'none', NOW(), NOW())
-		RETURNING id, created_at, updated_at
+		VALUES (?, ?, 0, false, 'none', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
 	`
 
 	var queue PlaybackQueue
-	err := s.db.QueryRowContext(ctx, query, userID, name).Scan(
-		&queue.ID, &queue.CreatedAt, &queue.UpdatedAt)
+	result, err := s.db.ExecContext(ctx, query, userID, name)
+	if err == nil {
+		id, _ := result.LastInsertId()
+		queue.ID = id
+		queue.CreatedAt = time.Now()
+		queue.UpdatedAt = time.Now()
+	}
 
 	if err != nil {
 		s.logger.Error("Failed to create queue", zap.Error(err))
@@ -609,7 +617,7 @@ func (s *PlaylistService) AddToQueue(ctx context.Context, queueID int64, mediaIt
 
 	var position int
 	err = tx.QueryRowContext(ctx,
-		"SELECT COALESCE(MAX(position), 0) + 1 FROM queue_items WHERE queue_id = $1",
+		"SELECT COALESCE(MAX(position), 0) + 1 FROM queue_items WHERE queue_id = ?",
 		queueID).Scan(&position)
 	if err != nil {
 		return fmt.Errorf("failed to get next position: %w", err)
@@ -618,7 +626,7 @@ func (s *PlaylistService) AddToQueue(ctx context.Context, queueID int64, mediaIt
 	for i, mediaItemID := range mediaItemIDs {
 		_, err := tx.ExecContext(ctx, `
 			INSERT INTO queue_items (queue_id, media_item_id, position, original_position, play_count, added_at)
-			VALUES ($1, $2, $3, $4, 0, NOW())
+			VALUES (?, ?, ?, ?, 0, CURRENT_TIMESTAMP)
 		`, queueID, mediaItemID, position+i, position+i)
 
 		if err != nil {
@@ -640,7 +648,7 @@ func (s *PlaylistService) ShuffleQueue(ctx context.Context, queueID int64, enabl
 		zap.Bool("enabled", enabled))
 
 	_, err := s.db.ExecContext(ctx,
-		"UPDATE playback_queues SET shuffle_enabled = $1, updated_at = NOW() WHERE id = $2",
+		"UPDATE playback_queues SET shuffle_enabled = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?",
 		enabled, queueID)
 
 	if err != nil {
@@ -657,10 +665,10 @@ func (s *PlaylistService) canModifyPlaylist(ctx context.Context, playlistID, use
 		SELECT COUNT(*)
 		FROM playlists p
 		LEFT JOIN playlist_collaborators pc ON p.id = pc.playlist_id
-		WHERE p.id = $1 AND (p.user_id = $2 OR pc.user_id = $2)
+		WHERE p.id = ? AND (p.user_id = ? OR pc.user_id = ?)
 	`
 
-	err := s.db.QueryRowContext(ctx, query, playlistID, userID).Scan(&count)
+	err := s.db.QueryRowContext(ctx, query, playlistID, userID, userID).Scan(&count)
 	return err == nil && count > 0
 }
 
@@ -668,19 +676,19 @@ func (s *PlaylistService) updatePlaylistStats(ctx context.Context, tx *sql.Tx, p
 	query := `
 		UPDATE playlists
 		SET track_count = (
-				SELECT COUNT(*) FROM playlist_items WHERE playlist_id = $1
+				SELECT COUNT(*) FROM playlist_items WHERE playlist_id = ?
 			),
 			total_duration = (
 				SELECT COALESCE(SUM(mi.duration), 0)
 				FROM playlist_items pi
 				JOIN media_items mi ON pi.media_item_id = mi.id
-				WHERE pi.playlist_id = $1
+				WHERE pi.playlist_id = ?
 			),
-			updated_at = NOW()
-		WHERE id = $1
+			updated_at = CURRENT_TIMESTAMP
+		WHERE id = ?
 	`
 
-	_, err := tx.ExecContext(ctx, query, playlistID)
+	_, err := tx.ExecContext(ctx, query, playlistID, playlistID, playlistID)
 	return err
 }
 
@@ -691,14 +699,14 @@ func (s *PlaylistService) updatePlaylistTags(ctx context.Context, playlistID int
 	}
 	defer tx.Rollback()
 
-	_, err = tx.ExecContext(ctx, "DELETE FROM playlist_tags WHERE playlist_id = $1", playlistID)
+	_, err = tx.ExecContext(ctx, "DELETE FROM playlist_tags WHERE playlist_id = ?", playlistID)
 	if err != nil {
 		return err
 	}
 
 	for _, tag := range tags {
 		_, err = tx.ExecContext(ctx,
-			"INSERT INTO playlist_tags (playlist_id, tag) VALUES ($1, $2)",
+			"INSERT INTO playlist_tags (playlist_id, tag) VALUES (?, ?)",
 			playlistID, tag)
 		if err != nil {
 			return err
@@ -715,14 +723,14 @@ func (s *PlaylistService) updatePlaylistCollaborators(ctx context.Context, playl
 	}
 	defer tx.Rollback()
 
-	_, err = tx.ExecContext(ctx, "DELETE FROM playlist_collaborators WHERE playlist_id = $1", playlistID)
+	_, err = tx.ExecContext(ctx, "DELETE FROM playlist_collaborators WHERE playlist_id = ?", playlistID)
 	if err != nil {
 		return err
 	}
 
 	for _, userID := range collaboratorIDs {
 		_, err = tx.ExecContext(ctx,
-			"INSERT INTO playlist_collaborators (playlist_id, user_id, added_at) VALUES ($1, $2, NOW())",
+			"INSERT INTO playlist_collaborators (playlist_id, user_id, added_at) VALUES (?, ?, CURRENT_TIMESTAMP)",
 			playlistID, userID)
 		if err != nil {
 			return err
@@ -734,7 +742,7 @@ func (s *PlaylistService) updatePlaylistCollaborators(ctx context.Context, playl
 
 func (s *PlaylistService) getPlaylistTags(ctx context.Context, playlistID int64) ([]string, error) {
 	rows, err := s.db.QueryContext(ctx,
-		"SELECT tag FROM playlist_tags WHERE playlist_id = $1", playlistID)
+		"SELECT tag FROM playlist_tags WHERE playlist_id = ?", playlistID)
 	if err != nil {
 		return nil, err
 	}
@@ -752,7 +760,7 @@ func (s *PlaylistService) getPlaylistTags(ctx context.Context, playlistID int64)
 
 func (s *PlaylistService) getPlaylistCollaborators(ctx context.Context, playlistID int64) ([]int64, error) {
 	rows, err := s.db.QueryContext(ctx,
-		"SELECT user_id FROM playlist_collaborators WHERE playlist_id = $1", playlistID)
+		"SELECT user_id FROM playlist_collaborators WHERE playlist_id = ?", playlistID)
 	if err != nil {
 		return nil, err
 	}
@@ -811,41 +819,41 @@ func (s *PlaylistService) buildRuleCondition(rule SmartRule, argIndex *int) (str
 	switch rule.Field {
 	case "genre":
 		if rule.Operator == "equals" {
-			condition = fmt.Sprintf("mi.genre = $%d", *argIndex)
+			condition = "mi.genre = ?"
 			args = append(args, rule.Value)
 			*argIndex++
 		} else if rule.Operator == "contains" {
-			condition = fmt.Sprintf("mi.genre ILIKE $%d", *argIndex)
+			condition = "mi.genre LIKE ?"
 			args = append(args, "%"+rule.Value.(string)+"%")
 			*argIndex++
 		}
 	case "artist":
 		if rule.Operator == "equals" {
-			condition = fmt.Sprintf("mi.artist = $%d", *argIndex)
+			condition = "mi.artist = ?"
 			args = append(args, rule.Value)
 			*argIndex++
 		} else if rule.Operator == "contains" {
-			condition = fmt.Sprintf("mi.artist ILIKE $%d", *argIndex)
+			condition = "mi.artist LIKE ?"
 			args = append(args, "%"+rule.Value.(string)+"%")
 			*argIndex++
 		}
 	case "year":
 		if rule.Operator == "equals" {
-			condition = fmt.Sprintf("mi.year = $%d", *argIndex)
+			condition = "mi.year = ?"
 			args = append(args, rule.Value)
 			*argIndex++
 		} else if rule.Operator == "greater_than" {
-			condition = fmt.Sprintf("mi.year > $%d", *argIndex)
+			condition = "mi.year > ?"
 			args = append(args, rule.Value)
 			*argIndex++
 		} else if rule.Operator == "less_than" {
-			condition = fmt.Sprintf("mi.year < $%d", *argIndex)
+			condition = "mi.year < ?"
 			args = append(args, rule.Value)
 			*argIndex++
 		}
 	case "rating":
 		if rule.Operator == "greater_than" {
-			condition = fmt.Sprintf("mi.rating > $%d", *argIndex)
+			condition = "mi.rating > ?"
 			args = append(args, rule.Value)
 			*argIndex++
 		}

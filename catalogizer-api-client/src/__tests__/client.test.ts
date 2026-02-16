@@ -1,30 +1,31 @@
+import { describe, it, expect, vi, beforeEach, type Mock } from 'vitest';
 import { CatalogizerClient } from '../index';
 import axios from 'axios';
 import WebSocket from 'ws';
 
-jest.mock('axios');
-jest.mock('ws');
+vi.mock('axios');
+vi.mock('ws');
 
-const mockAxios = axios as jest.Mocked<typeof axios>;
-const MockWebSocket = WebSocket as jest.MockedClass<typeof WebSocket>;
+const mockAxios = axios as unknown as { create: Mock };
+const MockWebSocket = WebSocket as unknown as Mock;
 
 describe('CatalogizerClient Integration', () => {
   let mockAxiosInstance: any;
-  let mockWs: jest.Mocked<WebSocket>;
+  let mockWs: any;
 
   beforeEach(() => {
-    jest.clearAllMocks();
+    vi.clearAllMocks();
 
     mockAxiosInstance = {
       interceptors: {
-        request: { use: jest.fn(), eject: jest.fn() },
-        response: { use: jest.fn(), eject: jest.fn() },
+        request: { use: vi.fn(), eject: vi.fn() },
+        response: { use: vi.fn(), eject: vi.fn() },
       },
-      get: jest.fn(),
-      post: jest.fn(),
-      put: jest.fn(),
-      patch: jest.fn(),
-      delete: jest.fn(),
+      get: vi.fn(),
+      post: vi.fn(),
+      put: vi.fn(),
+      patch: vi.fn(),
+      delete: vi.fn(),
       defaults: {
         headers: {},
         baseURL: '',
@@ -40,11 +41,11 @@ describe('CatalogizerClient Integration', () => {
       onmessage: null,
       onclose: null,
       onerror: null,
-      send: jest.fn(),
-      close: jest.fn(),
-      addEventListener: jest.fn(),
-      removeEventListener: jest.fn(),
-    } as any;
+      send: vi.fn(),
+      close: vi.fn(),
+      addEventListener: vi.fn(),
+      removeEventListener: vi.fn(),
+    };
 
     MockWebSocket.mockImplementation(() => mockWs);
   });
@@ -107,7 +108,7 @@ describe('CatalogizerClient Integration', () => {
       mockAxiosInstance.get.mockResolvedValueOnce({ data: { status: 'healthy' } });
       mockAxiosInstance.post.mockResolvedValueOnce({ data: loginResponse });
 
-      const loginListener = jest.fn();
+      const loginListener = vi.fn();
       client.on('auth:login', loginListener);
 
       const result = await client.connect({
@@ -137,7 +138,7 @@ describe('CatalogizerClient Integration', () => {
           },
         });
 
-      const loginListener = jest.fn();
+      const loginListener = vi.fn();
       client.on('auth:login', loginListener);
 
       await client.connect();
@@ -167,7 +168,7 @@ describe('CatalogizerClient Integration', () => {
 
       mockAxiosInstance.post.mockResolvedValueOnce({ data: {} });
 
-      const logoutListener = jest.fn();
+      const logoutListener = vi.fn();
       client.on('auth:logout', logoutListener);
 
       await client.disconnect();
@@ -183,7 +184,7 @@ describe('CatalogizerClient Integration', () => {
 
       mockAxiosInstance.post.mockRejectedValueOnce(new Error('Logout failed'));
 
-      const logoutListener = jest.fn();
+      const logoutListener = vi.fn();
       client.on('auth:logout', logoutListener);
 
       await client.disconnect();
@@ -388,7 +389,7 @@ describe('CatalogizerClient Integration', () => {
       mockAxiosInstance.get.mockResolvedValueOnce({ data: { status: 'healthy' } });
       mockAxiosInstance.post.mockResolvedValueOnce({ data: loginResponse });
 
-      const loginListener = jest.fn();
+      const loginListener = vi.fn();
       client.on('auth:login', loginListener);
 
       await client.connect({ username: 'testuser', password: 'password' });
@@ -403,7 +404,7 @@ describe('CatalogizerClient Integration', () => {
 
       mockAxiosInstance.post.mockResolvedValueOnce({ data: {} });
 
-      const logoutListener = jest.fn();
+      const logoutListener = vi.fn();
       client.on('auth:logout', logoutListener);
 
       await client.disconnect();
@@ -418,7 +419,7 @@ describe('CatalogizerClient Integration', () => {
         baseURL: 'http://localhost:8080',
       });
 
-      const tokenRefreshListener = jest.fn();
+      const tokenRefreshListener = vi.fn();
       client.on('auth:token_refresh', tokenRefreshListener);
 
       mockAxiosInstance.post.mockResolvedValueOnce({

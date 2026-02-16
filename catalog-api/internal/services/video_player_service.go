@@ -520,7 +520,7 @@ func (s *VideoPlayerService) GetVideoSession(ctx context.Context, sessionID stri
 	query := `
 		SELECT session_data, updated_at
 		FROM video_playback_sessions
-		WHERE id = $1 AND expires_at > NOW()
+		WHERE id = ? AND expires_at > CURRENT_TIMESTAMP
 	`
 
 	var sessionData string
@@ -750,8 +750,7 @@ func (s *VideoPlayerService) CreateVideoBookmark(ctx context.Context, req *Creat
 
 	query := `
 		INSERT INTO video_bookmarks (user_id, video_id, position, title, description, thumbnail_url, created_at)
-		VALUES ($1, $2, $3, $4, $5, $6, NOW())
-		RETURNING id, created_at
+		VALUES (?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)
 	`
 
 	var bookmark VideoBookmark
@@ -760,10 +759,14 @@ func (s *VideoPlayerService) CreateVideoBookmark(ctx context.Context, req *Creat
 		thumbnailURL = *thumbnail.URL
 	}
 
-	err = s.db.QueryRowContext(ctx, query,
+	result, err := s.db.ExecContext(ctx, query,
 		session.UserID, session.CurrentVideo.ID, session.Position,
-		req.Title, req.Description, thumbnailURL).Scan(
-		&bookmark.ID, &bookmark.CreatedAt)
+		req.Title, req.Description, thumbnailURL)
+	if err == nil {
+		bookmarkID, _ := result.LastInsertId()
+		bookmark.ID = bookmarkID
+		bookmark.CreatedAt = time.Now()
+	}
 
 	if err != nil {
 		return nil, fmt.Errorf("failed to create bookmark: %w", err)
@@ -786,28 +789,24 @@ func (s *VideoPlayerService) GetWatchHistory(ctx context.Context, req *WatchHist
 		SELECT vh.id, vh.user_id, vh.video_id, vh.watched_at, vh.watch_duration,
 			   vh.completion_rate, vh.stopped_at, vh.device_info, vh.quality
 		FROM video_watch_history vh
-		WHERE vh.user_id = $1
+		WHERE vh.user_id = ?
 	`
 
 	args := []interface{}{req.UserID}
-	argIndex := 2
 
 	if req.StartDate != nil {
-		baseQuery += fmt.Sprintf(" AND vh.watched_at >= $%d", argIndex)
+		baseQuery += " AND vh.watched_at >= ?"
 		args = append(args, *req.StartDate)
-		argIndex++
 	}
 
 	if req.EndDate != nil {
-		baseQuery += fmt.Sprintf(" AND vh.watched_at <= $%d", argIndex)
+		baseQuery += " AND vh.watched_at <= ?"
 		args = append(args, *req.EndDate)
-		argIndex++
 	}
 
 	if req.VideoType != nil {
-		baseQuery += fmt.Sprintf(" AND mi.type = $%d", argIndex)
+		baseQuery += " AND mi.type = ?"
 		args = append(args, string(*req.VideoType))
-		argIndex++
 		baseQuery = strings.Replace(baseQuery, "FROM video_watch_history vh",
 			"FROM video_watch_history vh INNER JOIN media_items mi ON vh.video_id = mi.id", 1)
 	}
@@ -815,13 +814,12 @@ func (s *VideoPlayerService) GetWatchHistory(ctx context.Context, req *WatchHist
 	baseQuery += " ORDER BY vh.watched_at DESC"
 
 	if req.Limit > 0 {
-		baseQuery += fmt.Sprintf(" LIMIT $%d", argIndex)
+		baseQuery += " LIMIT ?"
 		args = append(args, req.Limit)
-		argIndex++
 	}
 
 	if req.Offset > 0 {
-		baseQuery += fmt.Sprintf(" OFFSET $%d", argIndex)
+		baseQuery += " OFFSET ?"
 		args = append(args, req.Offset)
 	}
 
@@ -869,12 +867,12 @@ func (s *VideoPlayerService) GetContinueWatching(ctx context.Context, userID int
 		SELECT DISTINCT pp.media_item_id
 		FROM playback_positions pp
 		INNER JOIN media_items mi ON pp.media_item_id = mi.id
-		WHERE pp.user_id = $1
+		WHERE pp.user_id = ?
 		  AND mi.type = 'video'
 		  AND pp.percent_complete BETWEEN 5 AND 90
-		  AND pp.last_played > NOW() - INTERVAL '30 days'
+		  AND pp.last_played > datetime('now', '-30 days')
 		ORDER BY pp.last_played DESC
-		LIMIT $2
+		LIMIT ?
 	`
 
 	rows, err := s.db.QueryContext(ctx, query, userID, limit)
@@ -908,7 +906,7 @@ func (s *VideoPlayerService) getVideoContent(ctx context.Context, videoID int64)
 			   country, play_count, last_played, date_added, user_rating,
 			   is_favorite, watched_percentage
 		FROM media_items
-		WHERE id = $1 AND type = 'video'
+		WHERE id = ? AND type = 'video'
 	`
 
 	var video VideoContent
@@ -995,7 +993,7 @@ func (s *VideoPlayerService) getVideoContentsMap(ctx context.Context, videoIDs [
 	placeholders := make([]string, len(videoIDs))
 	args := make([]interface{}, len(videoIDs))
 	for i, id := range videoIDs {
-		placeholders[i] = fmt.Sprintf("$%d", i+1)
+		placeholders[i] = "?"
 		args[i] = id
 	}
 
@@ -1078,7 +1076,7 @@ func (s *VideoPlayerService) getSeriesInfo(ctx context.Context, seriesID int64) 
 		SELECT id, title, description, total_seasons, total_episodes, status,
 			   first_aired, last_aired, network, creator
 		FROM series
-		WHERE id = $1
+		WHERE id = ?
 	`
 
 	var series SeriesInfo
@@ -1113,7 +1111,7 @@ func (s *VideoPlayerService) getSeasonEpisodes(ctx context.Context, seriesID int
 		SELECT mi.id
 		FROM media_items mi
 		INNER JOIN episodes e ON mi.id = e.media_item_id
-		WHERE e.series_id = $1 AND e.season_number = $2 AND mi.type = 'video'
+		WHERE e.series_id = ? AND e.season_number = ? AND mi.type = 'video'
 		ORDER BY e.episode_number ASC
 	`
 
@@ -1160,7 +1158,7 @@ func (s *VideoPlayerService) loadSeriesInfo(ctx context.Context, video *VideoCon
 			   s.status, s.first_aired, s.last_aired, s.network, s.creator
 		FROM series s
 		INNER JOIN episodes e ON s.id = e.series_id
-		WHERE e.media_item_id = $1
+		WHERE e.media_item_id = ?
 	`
 
 	var series SeriesInfo
@@ -1200,7 +1198,7 @@ func (s *VideoPlayerService) loadEpisodeInfo(ctx context.Context, video *VideoCo
 		SELECT series_id, season_number, episode_number, air_date, runtime, guest_stars,
 			   next_episode_id, prev_episode_id
 		FROM episodes
-		WHERE media_item_id = $1
+		WHERE media_item_id = ?
 	`
 
 	var episode EpisodeInfo
@@ -1244,7 +1242,7 @@ func (s *VideoPlayerService) loadMovieInfo(ctx context.Context, video *VideoCont
 	query := `
 		SELECT budget, revenue, runtime, collection, studio, production_companies
 		FROM movies
-		WHERE media_item_id = $1
+		WHERE media_item_id = ?
 	`
 
 	var movie MovieInfo
@@ -1274,7 +1272,7 @@ func (s *VideoPlayerService) loadVideoStreams(ctx context.Context, session *Vide
 	query := `
 		SELECT id, stream_index, codec, width, height, bitrate, fps, language, title, is_default
 		FROM video_streams
-		WHERE media_item_id = $1
+		WHERE media_item_id = ?
 		ORDER BY stream_index ASC
 	`
 
@@ -1302,7 +1300,7 @@ func (s *VideoPlayerService) loadVideoStreams(ctx context.Context, session *Vide
 	audioQuery := `
 		SELECT id, stream_index, codec, channels, bitrate, language, title, is_default
 		FROM audio_streams
-		WHERE media_item_id = $1
+		WHERE media_item_id = ?
 		ORDER BY stream_index ASC
 	`
 
@@ -1383,7 +1381,7 @@ func (s *VideoPlayerService) getSubtitleStreams(ctx context.Context, videoID int
 	query := `
 		SELECT id, stream_index, codec, language, title, is_default, is_forced, is_external, file_path
 		FROM subtitle_streams
-		WHERE media_item_id = $1
+		WHERE media_item_id = ?
 		ORDER BY stream_index ASC
 	`
 
@@ -1414,7 +1412,7 @@ func (s *VideoPlayerService) getSubtitleTracks(ctx context.Context, videoID int6
 		SELECT id, language, language_code, source, format, path, content,
 			   is_default, is_forced, encoding, sync_offset, created_at, verified_sync
 		FROM subtitle_tracks
-		WHERE media_item_id = $1
+		WHERE media_item_id = ?
 		ORDER BY is_default DESC, language ASC
 	`
 
@@ -1456,7 +1454,7 @@ func (s *VideoPlayerService) loadChapters(ctx context.Context, session *VideoPla
 	query := `
 		SELECT id, title, start_time, end_time, thumbnail_url
 		FROM video_chapters
-		WHERE media_item_id = $1
+		WHERE media_item_id = ?
 		ORDER BY start_time ASC
 	`
 
@@ -1514,7 +1512,7 @@ func (s *VideoPlayerService) loadSeriesPlaylist(ctx context.Context, session *Vi
 		SELECT mi.id
 		FROM media_items mi
 		INNER JOIN episodes e ON mi.id = e.media_item_id
-		WHERE e.series_id = $1 AND mi.type = 'video'
+		WHERE e.series_id = ? AND mi.type = 'video'
 		ORDER BY e.season_number ASC, e.episode_number ASC
 	`
 
@@ -1586,12 +1584,12 @@ func (s *VideoPlayerService) saveVideoSession(ctx context.Context, session *Vide
 
 	query := `
 		INSERT INTO video_playback_sessions (id, user_id, session_data, expires_at, updated_at)
-		VALUES ($1, $2, $3, NOW() + INTERVAL '24 hours', NOW())
+		VALUES (?, ?, ?, datetime('now', '+24 hours'), CURRENT_TIMESTAMP)
 		ON CONFLICT (id)
 		DO UPDATE SET
 			session_data = EXCLUDED.session_data,
-			expires_at = NOW() + INTERVAL '24 hours',
-			updated_at = NOW()
+			expires_at = datetime('now', '+24 hours'),
+			updated_at = CURRENT_TIMESTAMP
 	`
 
 	_, err = s.db.ExecContext(ctx, query, session.ID, session.UserID, string(sessionData))
@@ -1601,8 +1599,8 @@ func (s *VideoPlayerService) saveVideoSession(ctx context.Context, session *Vide
 func (s *VideoPlayerService) recordVideoPlayback(ctx context.Context, userID, videoID int64) error {
 	query := `
 		UPDATE media_items
-		SET play_count = play_count + 1, last_played = NOW()
-		WHERE id = $1
+		SET play_count = play_count + 1, last_played = CURRENT_TIMESTAMP
+		WHERE id = ?
 	`
 
 	_, err := s.db.ExecContext(ctx, query, videoID)
@@ -1612,7 +1610,7 @@ func (s *VideoPlayerService) recordVideoPlayback(ctx context.Context, userID, vi
 
 	historyQuery := `
 		INSERT INTO video_watch_history (user_id, video_id, watched_at, watch_duration, completion_rate, stopped_at, device_info, quality)
-		VALUES ($1, $2, NOW(), 0, 0, 0, '', '')
+		VALUES (?, ?, CURRENT_TIMESTAMP, 0, 0, 0, '', '')
 	`
 
 	_, err = s.db.ExecContext(ctx, historyQuery, userID, videoID)

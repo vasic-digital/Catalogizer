@@ -63,6 +63,9 @@ class MainViewModelTest {
             viewModel.isLoading.collect { emissions.add(it) }
         }
 
+        // Let the collector start and receive the initial value
+        advanceUntilIdle()
+
         // Initial emission should be true
         assertTrue(emissions.first())
 

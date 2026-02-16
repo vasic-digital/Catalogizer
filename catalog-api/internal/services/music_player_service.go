@@ -480,7 +480,7 @@ func (s *MusicPlayerService) GetSession(ctx context.Context, sessionID string) (
 	query := `
 		SELECT session_data, updated_at
 		FROM music_playback_sessions
-		WHERE id = $1 AND expires_at > NOW()
+		WHERE id = ? AND expires_at > CURRENT_TIMESTAMP
 	`
 
 	var sessionData string
@@ -754,7 +754,7 @@ func (s *MusicPlayerService) getTrack(ctx context.Context, trackID int64) (*Musi
 			   sample_rate, channels, bpm, key, rating, play_count, last_played,
 			   date_added
 		FROM media_items
-		WHERE id = $1 AND type = 'audio'
+		WHERE id = ? AND type = 'audio'
 	`
 
 	var track MusicTrack
@@ -801,7 +801,7 @@ func (s *MusicPlayerService) getTracks(ctx context.Context, trackIDs []int64) ([
 	placeholders := make([]string, len(trackIDs))
 	args := make([]interface{}, len(trackIDs))
 	for i, id := range trackIDs {
-		placeholders[i] = fmt.Sprintf("$%d", i+1)
+		placeholders[i] = "?"
 		args[i] = id
 	}
 
@@ -812,8 +812,7 @@ func (s *MusicPlayerService) getTracks(ctx context.Context, trackIDs []int64) ([
 			   date_added
 		FROM media_items
 		WHERE id IN (%s) AND type = 'audio'
-		ORDER BY array_position(ARRAY[%s], id)
-	`, strings.Join(placeholders, ","), strings.Join(placeholders, ","))
+	`, strings.Join(placeholders, ","))
 
 	rows, err := s.db.QueryContext(ctx, query, args...)
 	if err != nil {
@@ -902,7 +901,7 @@ func (s *MusicPlayerService) getAlbumTracks(ctx context.Context, albumID int64) 
 			   sample_rate, channels, bpm, key, rating, play_count, last_played,
 			   date_added
 		FROM media_items
-		WHERE album_id = $1 AND type = 'audio'
+		WHERE album_id = ? AND type = 'audio'
 		ORDER BY disc_number ASC, track_number ASC
 	`
 
@@ -960,9 +959,9 @@ func (s *MusicPlayerService) getArtistTopTracks(ctx context.Context, artistID in
 			   sample_rate, channels, bpm, key, rating, play_count, last_played,
 			   date_added
 		FROM media_items
-		WHERE artist_id = $1 AND type = 'audio'
+		WHERE artist_id = ? AND type = 'audio'
 		ORDER BY play_count DESC, rating DESC
-		LIMIT $2
+		LIMIT ?
 	`
 
 	rows, err := s.db.QueryContext(ctx, query, artistID, limit)
@@ -981,7 +980,7 @@ func (s *MusicPlayerService) getArtistAllTracks(ctx context.Context, artistID in
 			   sample_rate, channels, bmp, key, rating, play_count, last_played,
 			   date_added
 		FROM media_items
-		WHERE artist_id = $1 AND type = 'audio'
+		WHERE artist_id = ? AND type = 'audio'
 		ORDER BY year DESC, album ASC, disc_number ASC, track_number ASC
 	`
 
@@ -1108,7 +1107,7 @@ func (s *MusicPlayerService) loadFolderQueue(ctx context.Context, session *Music
 			   sample_rate, channels, bmp, key, rating, play_count, last_played,
 			   date_added
 		FROM media_items
-		WHERE file_path LIKE $1 AND type = 'audio'
+		WHERE file_path LIKE ? AND type = 'audio'
 		ORDER BY file_path ASC
 	`
 
@@ -1220,12 +1219,12 @@ func (s *MusicPlayerService) saveSession(ctx context.Context, session *MusicPlay
 
 	query := `
 		INSERT INTO music_playback_sessions (id, user_id, session_data, expires_at, updated_at)
-		VALUES ($1, $2, $3, NOW() + INTERVAL '24 hours', NOW())
+		VALUES (?, ?, ?, datetime('now', '+24 hours'), CURRENT_TIMESTAMP)
 		ON CONFLICT (id)
 		DO UPDATE SET
 			session_data = EXCLUDED.session_data,
-			expires_at = NOW() + INTERVAL '24 hours',
-			updated_at = NOW()
+			expires_at = datetime('now', '+24 hours'),
+			updated_at = CURRENT_TIMESTAMP
 	`
 
 	_, err = s.db.ExecContext(ctx, query, session.ID, session.UserID, string(sessionData))
@@ -1235,8 +1234,8 @@ func (s *MusicPlayerService) saveSession(ctx context.Context, session *MusicPlay
 func (s *MusicPlayerService) recordPlayback(ctx context.Context, userID, trackID int64) error {
 	query := `
 		UPDATE media_items
-		SET play_count = play_count + 1, last_played = NOW()
-		WHERE id = $1
+		SET play_count = play_count + 1, last_played = CURRENT_TIMESTAMP
+		WHERE id = ?
 	`
 
 	_, err := s.db.ExecContext(ctx, query, trackID)
@@ -1253,7 +1252,7 @@ func (s *MusicPlayerService) getBasicStats(ctx context.Context, userID int64, st
 			COALESCE(SUM(duration), 0) as total_duration,
 			COALESCE(SUM(file_size), 0) as total_size
 		FROM media_items
-		WHERE type = 'audio' AND user_id = $1
+		WHERE type = 'audio' AND user_id = ?
 	`
 
 	return s.db.QueryRowContext(ctx, query, userID).Scan(
@@ -1266,7 +1265,7 @@ func (s *MusicPlayerService) getFormatBreakdown(ctx context.Context, userID int6
 	query := `
 		SELECT format, COUNT(*)
 		FROM media_items
-		WHERE type = 'audio' AND user_id = $1
+		WHERE type = 'audio' AND user_id = ?
 		GROUP BY format
 		ORDER BY COUNT(*) DESC
 	`
@@ -1292,7 +1291,7 @@ func (s *MusicPlayerService) getTopGenres(ctx context.Context, userID int64, sta
 	query := `
 		SELECT genre, COUNT(*) as count, COALESCE(SUM(duration), 0) as duration
 		FROM media_items
-		WHERE type = 'audio' AND user_id = $1 AND genre != ''
+		WHERE type = 'audio' AND user_id = ? AND genre != ''
 		GROUP BY genre
 		ORDER BY COUNT(*) DESC
 		LIMIT 10
@@ -1318,7 +1317,7 @@ func (s *MusicPlayerService) getTopArtists(ctx context.Context, userID int64, st
 	query := `
 		SELECT artist, COUNT(*) as count, COALESCE(SUM(duration), 0) as duration
 		FROM media_items
-		WHERE type = 'audio' AND user_id = $1 AND artist != ''
+		WHERE type = 'audio' AND user_id = ? AND artist != ''
 		GROUP BY artist
 		ORDER BY COUNT(*) DESC
 		LIMIT 10
@@ -1347,7 +1346,7 @@ func (s *MusicPlayerService) getRecentlyAdded(ctx context.Context, userID int64,
 			   sample_rate, channels, bmp, key, rating, play_count, last_played,
 			   date_added
 		FROM media_items
-		WHERE type = 'audio' AND user_id = $1
+		WHERE type = 'audio' AND user_id = ?
 		ORDER BY date_added DESC
 		LIMIT 20
 	`
@@ -1374,7 +1373,7 @@ func (s *MusicPlayerService) getMostPlayed(ctx context.Context, userID int64, st
 			   sample_rate, channels, bmp, key, rating, play_count, last_played,
 			   date_added
 		FROM media_items
-		WHERE type = 'audio' AND user_id = $1 AND play_count > 0
+		WHERE type = 'audio' AND user_id = ? AND play_count > 0
 		ORDER BY play_count DESC
 		LIMIT 20
 	`

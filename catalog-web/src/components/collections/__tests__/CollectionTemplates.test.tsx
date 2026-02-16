@@ -45,6 +45,7 @@ vi.mock('lucide-react', () => {
     BarChart3: icon('barchart'),
     Settings: icon('settings'),
     ChevronRight: icon('chevron'),
+    ChevronDown: icon('chevrondown'),
     Zap: icon('zap'),
     BookOpen: icon('book'),
     Film: icon('film'),
@@ -179,9 +180,11 @@ describe('CollectionTemplates', () => {
     render(<CollectionTemplates {...defaultProps} />)
 
     await user.click(screen.getByText('Recent Movies'))
-    await user.click(screen.getByText('Create Collection'))
 
-    expect(toast.error).toHaveBeenCalledWith('Please enter a collection name')
+    // The Create Collection button is disabled when name is empty,
+    // so the click handler won't fire - verify the button is disabled instead
+    const createBtn = screen.getByText('Create Collection')
+    expect(createBtn.closest('button')).toBeDisabled()
   })
 
   it('calls onApplyTemplate and shows success toast with valid name', async () => {
@@ -256,7 +259,9 @@ describe('CollectionTemplates', () => {
 
     expect(screen.getByText('Preview')).toBeInTheDocument()
     expect(screen.getByText('127')).toBeInTheDocument()
-    expect(screen.getByText('Video')).toBeInTheDocument()
+    // "Video" appears both in the grid template preview and detail modal preview
+    const videoElements = screen.getAllByText('Video')
+    expect(videoElements.length).toBeGreaterThanOrEqual(1)
     expect(screen.getByText('45.2 GB')).toBeInTheDocument()
   })
 

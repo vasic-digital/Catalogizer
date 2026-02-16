@@ -126,12 +126,12 @@ func (s *CacheService) Set(ctx context.Context, key string, value interface{}, t
 
 	query := `
 		INSERT INTO cache_entries (cache_key, value, expires_at, created_at, updated_at)
-		VALUES ($1, $2, $3, NOW(), NOW())
+		VALUES (?, ?, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
 		ON CONFLICT (cache_key)
 		DO UPDATE SET
 			value = EXCLUDED.value,
 			expires_at = EXCLUDED.expires_at,
-			updated_at = NOW()
+			updated_at = CURRENT_TIMESTAMP
 	`
 
 	_, err = s.db.ExecContext(ctx, query, key, string(valueJSON), expiresAt)
@@ -155,7 +155,7 @@ func (s *CacheService) Get(ctx context.Context, key string, dest interface{}) (b
 	query := `
 		SELECT value, expires_at
 		FROM cache_entries
-		WHERE cache_key = $1 AND expires_at > NOW()
+		WHERE cache_key = ? AND expires_at > CURRENT_TIMESTAMP
 	`
 
 	var valueJSON string
@@ -190,7 +190,7 @@ func (s *CacheService) Delete(ctx context.Context, key string) error {
 
 	s.logger.Debug("Deleting cache entry", zap.String("key", key))
 
-	query := `DELETE FROM cache_entries WHERE cache_key = $1`
+	query := `DELETE FROM cache_entries WHERE cache_key = ?`
 
 	result, err := s.db.ExecContext(ctx, query, key)
 	if err != nil {
@@ -218,7 +218,7 @@ func (s *CacheService) Clear(ctx context.Context, pattern string) error {
 	if pattern == "" {
 		query = `DELETE FROM cache_entries`
 	} else {
-		query = `DELETE FROM cache_entries WHERE cache_key LIKE $1`
+		query = `DELETE FROM cache_entries WHERE cache_key LIKE ?`
 		args = append(args, pattern)
 	}
 
@@ -255,13 +255,13 @@ func (s *CacheService) SetMediaMetadata(ctx context.Context, mediaItemID int64, 
 	query := `
 		INSERT INTO media_metadata_cache (
 			media_item_id, metadata_type, provider, data, quality, expires_at, created_at, updated_at
-		) VALUES ($1, $2, $3, $4, $5, $6, NOW(), NOW())
+		) VALUES (?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
 		ON CONFLICT (media_item_id, metadata_type, provider)
 		DO UPDATE SET
 			data = EXCLUDED.data,
 			quality = EXCLUDED.quality,
 			expires_at = EXCLUDED.expires_at,
-			updated_at = NOW()
+			updated_at = CURRENT_TIMESTAMP
 	`
 
 	_, err = s.db.ExecContext(ctx, query, mediaItemID, metadataType, provider, string(dataJSON), quality, expiresAt)
@@ -290,7 +290,7 @@ func (s *CacheService) GetMediaMetadata(ctx context.Context, mediaItemID int64, 
 	query := `
 		SELECT data, quality, expires_at
 		FROM media_metadata_cache
-		WHERE media_item_id = $1 AND metadata_type = $2 AND provider = $3 AND expires_at > NOW()
+		WHERE media_item_id = ? AND metadata_type = ? AND provider = ? AND expires_at > CURRENT_TIMESTAMP
 		ORDER BY quality DESC, updated_at DESC
 		LIMIT 1
 	`
@@ -346,13 +346,13 @@ func (s *CacheService) SetAPIResponse(ctx context.Context, provider, endpoint st
 
 	query := `
 		INSERT INTO api_cache (provider, endpoint, request_hash, response, status_code, expires_at, created_at)
-		VALUES ($1, $2, $3, $4, $5, $6, NOW())
+		VALUES (?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)
 		ON CONFLICT (provider, endpoint, request_hash)
 		DO UPDATE SET
 			response = EXCLUDED.response,
 			status_code = EXCLUDED.status_code,
 			expires_at = EXCLUDED.expires_at,
-			created_at = NOW()
+			created_at = CURRENT_TIMESTAMP
 	`
 
 	_, err = s.db.ExecContext(ctx, query, provider, endpoint, requestHash, string(responseJSON), statusCode, expiresAt)
@@ -385,7 +385,7 @@ func (s *CacheService) GetAPIResponse(ctx context.Context, provider, endpoint st
 	query := `
 		SELECT response, status_code, expires_at
 		FROM api_cache
-		WHERE provider = $1 AND endpoint = $2 AND request_hash = $3 AND expires_at > NOW()
+		WHERE provider = ? AND endpoint = ? AND request_hash = ? AND expires_at > CURRENT_TIMESTAMP
 	`
 
 	var responseJSON string
@@ -427,12 +427,12 @@ func (s *CacheService) SetThumbnail(ctx context.Context, videoID, position int64
 
 	query := `
 		INSERT INTO thumbnail_cache (video_id, position, url, width, height, file_size, created_at)
-		VALUES ($1, $2, $3, $4, $5, $6, NOW())
+		VALUES (?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)
 		ON CONFLICT (video_id, position, width, height)
 		DO UPDATE SET
 			url = EXCLUDED.url,
 			file_size = EXCLUDED.file_size,
-			created_at = NOW()
+			created_at = CURRENT_TIMESTAMP
 	`
 
 	_, err := s.db.ExecContext(ctx, query, videoID, position, url, width, height, fileSize)
@@ -460,7 +460,7 @@ func (s *CacheService) GetThumbnail(ctx context.Context, videoID, position int64
 	query := `
 		SELECT id, video_id, position, url, width, height, file_size, created_at
 		FROM thumbnail_cache
-		WHERE video_id = $1 AND position = $2 AND width = $3 AND height = $4
+		WHERE video_id = ? AND position = ? AND width = ? AND height = ?
 		ORDER BY created_at DESC
 		LIMIT 1
 	`
@@ -662,7 +662,7 @@ func (s *CacheService) CleanupExpired(ctx context.Context) error {
 	totalCleaned := int64(0)
 
 	for _, table := range tables {
-		query := fmt.Sprintf("DELETE FROM %s WHERE expires_at <= NOW()", table)
+		query := fmt.Sprintf("DELETE FROM %s WHERE expires_at <= CURRENT_TIMESTAMP", table)
 		result, err := s.db.ExecContext(ctx, query)
 		if err != nil {
 			s.logger.Error("Failed to cleanup expired entries",
@@ -712,7 +712,7 @@ func (s *CacheService) recordCacheActivity(ctx context.Context, activityType, ke
 		defer cancel()
 		query := `
 			INSERT INTO cache_activity (type, cache_key, provider, hit, timestamp)
-			VALUES ($1, $2, $3, $4, NOW())
+			VALUES (?, ?, ?, ?, CURRENT_TIMESTAMP)
 		`
 		_, err := s.db.ExecContext(writeCtx, query, activityType, key, provider, hit)
 		if err != nil {
@@ -726,7 +726,7 @@ func (s *CacheService) getBasicStats(ctx context.Context, stats *CacheStats) err
 		SELECT
 			COUNT(*) as total_entries,
 			COALESCE(SUM(LENGTH(value)), 0) as total_size,
-			COUNT(CASE WHEN expires_at <= NOW() THEN 1 END) as expired_entries
+			COUNT(CASE WHEN expires_at <= CURRENT_TIMESTAMP THEN 1 END) as expired_entries
 		FROM cache_entries
 	`
 
@@ -749,7 +749,7 @@ func (s *CacheService) getCachesByType(ctx context.Context, stats *CacheStats) e
 			END as cache_type,
 			COUNT(*) as count
 		FROM cache_entries
-		WHERE expires_at > NOW()
+		WHERE expires_at > CURRENT_TIMESTAMP
 		GROUP BY cache_type
 		ORDER BY count DESC
 	`
@@ -775,7 +775,7 @@ func (s *CacheService) getCachesByProvider(ctx context.Context, stats *CacheStat
 	query := `
 		SELECT provider, COUNT(*) as count
 		FROM api_cache
-		WHERE expires_at > NOW()
+		WHERE expires_at > CURRENT_TIMESTAMP
 		GROUP BY provider
 		ORDER BY count DESC
 	`
@@ -801,7 +801,7 @@ func (s *CacheService) getRecentActivity(ctx context.Context, stats *CacheStats)
 	query := `
 		SELECT type, cache_key, provider, hit, timestamp
 		FROM cache_activity
-		WHERE timestamp > NOW() - INTERVAL '1 hour'
+		WHERE timestamp > datetime('now', '-1 hour')
 		ORDER BY timestamp DESC
 		LIMIT 100
 	`
@@ -829,7 +829,7 @@ func (s *CacheService) calculateHitRate(ctx context.Context, stats *CacheStats) 
 			COUNT(CASE WHEN hit = false THEN 1 END) as misses,
 			COUNT(*) as total
 		FROM cache_activity
-		WHERE timestamp > NOW() - INTERVAL '24 hours'
+		WHERE timestamp > datetime('now', '-24 hours')
 	`
 
 	var hits, misses, total int64
@@ -860,7 +860,7 @@ func (s *CacheService) InvalidateByPattern(ctx context.Context, pattern string) 
 
 	s.logger.Info("Invalidating cache entries by pattern", zap.String("pattern", pattern))
 
-	query := `DELETE FROM cache_entries WHERE cache_key LIKE $1`
+	query := `DELETE FROM cache_entries WHERE cache_key LIKE ?`
 	result, err := s.db.ExecContext(ctx, query, pattern)
 	if err != nil {
 		return fmt.Errorf("failed to invalidate cache entries: %w", err)

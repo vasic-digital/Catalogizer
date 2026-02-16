@@ -1,28 +1,29 @@
+import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { AuthService } from '../AuthService';
 import { HttpClient } from '../../utils/http';
 
 // Mock HttpClient
-jest.mock('../../utils/http');
+vi.mock('../../utils/http');
 
 describe('AuthService', () => {
   let authService: AuthService;
-  let mockHttp: jest.Mocked<HttpClient>;
+  let mockHttp: any;
 
   beforeEach(() => {
-    jest.clearAllMocks();
+    vi.clearAllMocks();
 
     mockHttp = {
-      get: jest.fn(),
-      post: jest.fn(),
-      put: jest.fn(),
-      patch: jest.fn(),
-      delete: jest.fn(),
-      setAuthToken: jest.fn(),
-      clearAuthToken: jest.fn(),
-      getAuthToken: jest.fn(),
-    } as any;
+      get: vi.fn(),
+      post: vi.fn(),
+      put: vi.fn(),
+      patch: vi.fn(),
+      delete: vi.fn(),
+      setAuthToken: vi.fn(),
+      clearAuthToken: vi.fn(),
+      getAuthToken: vi.fn(),
+    };
 
-    authService = new AuthService(mockHttp);
+    authService = new AuthService(mockHttp as any);
   });
 
   describe('login', () => {

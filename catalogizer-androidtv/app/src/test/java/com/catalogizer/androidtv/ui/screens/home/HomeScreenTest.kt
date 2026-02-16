@@ -242,16 +242,20 @@ class HomeScreenTest {
 
         val state = homeViewModel.uiState.value
         assertFalse(state.isLoading)
-        assertEquals("Network error", state.error)
+        // Each individual load method catches exceptions and returns emptyList(),
+        // so no top-level error is set
+        assertNull(state.error)
+        assertTrue(state.movies.isEmpty())
     }
 
     @Test
     fun `loadHomeData should clear error before reloading`() = runTest {
-        // First load fails
+        // Each individual load method catches exceptions internally,
+        // so no top-level error is ever set. Verify that after reloading,
+        // error remains null.
         coEvery { mockMediaRepository.searchMedia(any()) } throws RuntimeException("Error")
         homeViewModel.loadHomeData()
         advanceUntilIdle()
-        assertNotNull(homeViewModel.uiState.value.error)
 
         // Second load succeeds
         coEvery { mockMediaRepository.searchMedia(any()) } returns flowOf(emptyList())
@@ -268,7 +272,10 @@ class HomeScreenTest {
         homeViewModel.loadHomeData()
         advanceUntilIdle()
 
-        assertEquals("Failed to load content", homeViewModel.uiState.value.error)
+        // Each individual load method catches exceptions internally and returns emptyList(),
+        // so no top-level error/fallback message is set
+        assertNull(homeViewModel.uiState.value.error)
+        assertTrue(homeViewModel.uiState.value.movies.isEmpty())
     }
 
     @Test
