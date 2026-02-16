@@ -156,6 +156,17 @@ $COMPOSE_CMD -f docker-compose.build.yml config --quiet 2>/dev/null || {
 log_info "Compose file is valid"
 
 # ============================================================
+# Initialize git submodules
+# ============================================================
+log_info "Initializing git submodules..."
+cd "$PROJECT_ROOT"
+git submodule init 2>/dev/null || true
+git submodule update --recursive 2>/dev/null || {
+    log_warn "Some submodules may not be available - continuing"
+}
+log_info "Submodules initialized: $(git submodule status | wc -l) modules"
+
+# ============================================================
 # Run the build pipeline
 # ============================================================
 log_info "Starting containerized build pipeline..."

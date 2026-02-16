@@ -1,0 +1,66 @@
+[submodule "Auth"]
+	path = Auth
+	url = git@github.com:vasic-digital/Auth.git
+[submodule "Cache"]
+	path = Cache
+	url = git@github.com:vasic-digital/Cache.git
+[submodule "Database"]
+	path = Database
+	url = git@github.com:vasic-digital/Database.git
+[submodule "Concurrency"]
+	path = Concurrency
+	url = git@github.com:vasic-digital/Concurrency.git
+[submodule "Storage"]
+	path = Storage
+	url = git@github.com:vasic-digital/Storage.git
+[submodule "EventBus"]
+	path = EventBus
+	url = git@github.com:vasic-digital/EventBus.git
+[submodule "Streaming"]
+	path = Streaming
+	url = git@github.com:vasic-digital/Streaming.git
+[submodule "Security"]
+	path = Security
+	url = git@github.com:vasic-digital/Security.git
+[submodule "Observability"]
+	path = Observability
+	url = git@github.com:vasic-digital/Observability.git
+[submodule "Formatters"]
+	path = Formatters
+	url = git@github.com:vasic-digital/Formatters.git
+[submodule "Plugins"]
+	path = Plugins
+	url = git@github.com:vasic-digital/Plugins.git
+[submodule "Challenges"]
+	path = Challenges
+	url = git@github.com:vasic-digital/Challenges.git
+[submodule "Filesystem"]
+	path = Filesystem
+	url = git@github.com:vasic-digital/Filesystem.git
+[submodule "Config"]
+	path = Config
+	url = git@github.com:vasic-digital/Config.git
+[submodule "RateLimiter"]
+	path = RateLimiter
+	url = git@github.com:vasic-digital/RateLimiter.git
+[submodule "Middleware"]
+	path = Middleware
+	url = git@github.com:vasic-digital/Middleware.git
+[submodule "Discovery"]
+	path = Discovery
+	url = git@github.com:vasic-digital/Discovery.git
+[submodule "Media"]
+	path = Media
+	url = git@github.com:vasic-digital/Media.git
+[submodule "Watcher"]
+	path = Watcher
+	url = git@github.com:vasic-digital/Watcher.git
+[submodule "Android-Toolkit"]
+	path = Android-Toolkit
+	url = git@github.com:vasic-digital/Android-Toolkit.git
+[submodule "WebSocket-Client-TS"]
+	path = WebSocket-Client-TS
+	url = git@github.com:vasic-digital/WebSocket-Client-TS.git
+[submodule "UI-Components-React"]
+	path = UI-Components-React
+	url = git@github.com:vasic-digital/UI-Components-React.git

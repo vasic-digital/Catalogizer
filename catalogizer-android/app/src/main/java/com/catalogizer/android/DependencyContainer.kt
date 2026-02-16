@@ -15,13 +15,21 @@ import com.catalogizer.android.ui.viewmodel.AuthViewModel
 import com.catalogizer.android.ui.viewmodel.HomeViewModel
 import com.catalogizer.android.ui.viewmodel.MainViewModel
 import com.catalogizer.android.ui.viewmodel.SearchViewModel
+import com.jakewharton.retrofit2.converter.kotlinx.serialization.asConverterFactory
+import kotlinx.serialization.json.Json
+import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.OkHttpClient
 import okhttp3.logging.HttpLoggingInterceptor
 import retrofit2.Retrofit
-import retrofit2.converter.gson.GsonConverterFactory
 import java.util.concurrent.TimeUnit
 
 class DependencyContainer(private val context: Context) {
+
+    private val json = Json {
+        ignoreUnknownKeys = true
+        coerceInputValues = true
+        isLenient = true
+    }
 
     // DataStore
     private val dataStore: DataStore<Preferences> by lazy {
@@ -55,10 +63,12 @@ class DependencyContainer(private val context: Context) {
             .writeTimeout(30, TimeUnit.SECONDS)
             .build()
 
+        val contentType = "application/json".toMediaType()
+
         Retrofit.Builder()
             .baseUrl(BuildConfig.API_BASE_URL)
             .client(client)
-            .addConverterFactory(GsonConverterFactory.create())
+            .addConverterFactory(json.asConverterFactory(contentType))
             .build()
             .create(CatalogizerApi::class.java)
     }

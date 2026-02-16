@@ -4,7 +4,44 @@ go 1.24.1
 
 toolchain go1.24.8
 
+// Submodule replace directives - point to local submodule paths
+replace (
+	digital.vasic.auth => ../Auth
+	digital.vasic.cache => ../Cache
+	digital.vasic.challenges => ../Challenges
+	digital.vasic.concurrency => ../Concurrency
+	digital.vasic.config => ../Config
+	digital.vasic.database => ../Database
+	digital.vasic.discovery => ../Discovery
+	digital.vasic.eventbus => ../EventBus
+	digital.vasic.filesystem => ../Filesystem
+	digital.vasic.formatters => ../Formatters
+	digital.vasic.media => ../Media
+	digital.vasic.middleware => ../Middleware
+	digital.vasic.observability => ../Observability
+	digital.vasic.plugins => ../Plugins
+	digital.vasic.ratelimiter => ../RateLimiter
+	digital.vasic.security => ../Security
+	digital.vasic.storage => ../Storage
+	digital.vasic.streaming => ../Streaming
+	digital.vasic.watcher => ../Watcher
+)
+
 require (
+	digital.vasic.auth v0.0.0
+	digital.vasic.cache v0.0.0
+	digital.vasic.concurrency v0.0.0
+	digital.vasic.config v0.0.0
+	digital.vasic.discovery v0.0.0
+	digital.vasic.eventbus v0.0.0
+	digital.vasic.filesystem v0.0.0
+	digital.vasic.media v0.0.0
+	digital.vasic.middleware v0.0.0
+	digital.vasic.observability v0.0.0
+	digital.vasic.ratelimiter v0.0.0
+	digital.vasic.security v0.0.0
+	digital.vasic.streaming v0.0.0
+	digital.vasic.watcher v0.0.0
 	cloud.google.com/go/storage v1.59.2
 	github.com/DATA-DOG/go-sqlmock v1.5.2
 	github.com/alicebob/miniredis/v2 v2.36.1

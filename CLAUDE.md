@@ -6,6 +6,68 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 Multi-platform media collection manager. Detects, categorizes, and organizes media across SMB, FTP, NFS, WebDAV, and local filesystems. Components: **catalog-api** (Go/Gin backend), **catalog-web** (React/TS frontend), **catalogizer-desktop** & **installer-wizard** (Tauri/Rust+React), **catalogizer-android** & **catalogizer-androidtv** (Kotlin/Compose), **catalogizer-api-client** (TS library).
 
+## Submodule Architecture
+
+Reusable functionality is extracted into independent git submodules under the vasic-digital organization. Each module has its own repo (GitHub + GitLab), tests, docs, and Upstreams for multi-remote push.
+
+### Go Modules (Existing vasic-digital repos)
+
+| Module | Path | Description |
+|--------|------|-------------|
+| `digital.vasic.auth` | `Auth/` | JWT, API key, OAuth2, HTTP auth middleware |
+| `digital.vasic.cache` | `Cache/` | Redis/memory cache with TTL/eviction policies |
+| `digital.vasic.database` | `Database/` | PostgreSQL/SQLite adapters, migrations, repository pattern |
+| `digital.vasic.concurrency` | `Concurrency/` | Worker pools, circuit breaker, rate limiter, semaphore |
+| `digital.vasic.storage` | `Storage/` | S3/local object storage with provider abstraction |
+| `digital.vasic.eventbus` | `EventBus/` | Pub/sub event bus with middleware and filtering |
+| `digital.vasic.streaming` | `Streaming/` | SSE, WebSocket, gRPC streaming, webhooks |
+| `digital.vasic.security` | `Security/` | PII detection, content filtering, policy enforcement |
+| `digital.vasic.observability` | `Observability/` | Tracing, Prometheus metrics, structured logging |
+| `digital.vasic.formatters` | `Formatters/` | Code formatting framework with registry |
+| `digital.vasic.plugins` | `Plugins/` | Plugin lifecycle, dynamic loading, sandboxing |
+| `digital.vasic.challenges` | `Challenges/` | Challenge/test scenario framework |
+
+### Go Modules (New, extracted from Catalogizer)
+
+| Module | Path | Description |
+|--------|------|-------------|
+| `digital.vasic.filesystem` | `Filesystem/` | Multi-protocol filesystem (SMB, FTP, NFS, WebDAV, Local) |
+| `digital.vasic.ratelimiter` | `RateLimiter/` | Sliding window rate limiter (memory + Redis) |
+| `digital.vasic.config` | `Config/` | Config file/env loading with validation |
+| `digital.vasic.discovery` | `Discovery/` | Network service/SMB share discovery |
+| `digital.vasic.media` | `Media/` | Media type detection, metadata analysis, provider registry |
+| `digital.vasic.middleware` | `Middleware/` | HTTP middleware (CORS, logging, recovery, request ID) |
+| `digital.vasic.watcher` | `Watcher/` | Filesystem watcher with debounce and filtering |
+
+### TypeScript/React Modules
+
+| Module | Path | Description |
+|--------|------|-------------|
+| `@vasic-digital/websocket-client` | `WebSocket-Client-TS/` | WebSocket client with reconnection + React hooks |
+| `@vasic-digital/ui-components` | `UI-Components-React/` | React UI component library (Button, Card, Input, etc.) |
+
+### Android/Kotlin Module
+
+| Module | Path | Description |
+|--------|------|-------------|
+| Android-Toolkit | `Android-Toolkit/` | Android utilities, UI components, Compose helpers |
+
+### Submodule Commands
+
+```bash
+# Initialize all submodules after cloning
+git submodule init && git submodule update --recursive
+
+# Add a new submodule
+./scripts/setup-submodule.sh ModuleName [--create-repos] [--go|--ts|--kotlin]
+
+# Push a submodule to all upstreams
+cd SubmoduleName && commit "message"
+
+# Install upstream remotes for a submodule
+cd SubmoduleName && install_upstreams
+```
+
 ## Commands
 
 ```bash
