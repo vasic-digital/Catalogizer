@@ -1,3 +1,5 @@
+import java.util.Properties
+
 plugins {
     id("com.android.application")
     id("org.jetbrains.kotlin.android")
@@ -28,12 +30,12 @@ android {
         create("release") {
             val signingPropsFile = file("${rootProject.projectDir}/../docker/signing/signing.properties")
             if (signingPropsFile.exists()) {
-                val props = java.util.Properties()
+                val props = Properties()
                 props.load(signingPropsFile.inputStream())
-                storeFile = file(props["storeFile"] as String)
-                storePassword = props["storePassword"] as String
-                keyAlias = props["keyAlias"] as String
-                keyPassword = props["keyPassword"] as String
+                storeFile = file(props.getProperty("storeFile"))
+                storePassword = props.getProperty("storePassword")
+                keyAlias = props.getProperty("keyAlias")
+                keyPassword = props.getProperty("keyPassword")
             }
         }
     }
@@ -191,9 +193,9 @@ tasks.register<JacocoReport>("jacocoTestReport") {
         "**/R.class", "**/R\$*.class", "**/BuildConfig.*",
         "**/Manifest*.*", "**/*Test*.*", "**/com/catalogizer/androidtv/databinding/**"
     )
-    val debugTree = fileTree("${buildDir}/tmp/kotlin-classes/debug") { exclude(fileFilter) }
+    val debugTree = fileTree(layout.buildDirectory.dir("tmp/kotlin-classes/debug")) { exclude(fileFilter) }
     val mainSrc = "${project.projectDir}/src/main/java"
     sourceDirectories.setFrom(files(mainSrc))
     classDirectories.setFrom(files(debugTree))
-    executionData.setFrom(fileTree(buildDir) { include("jacoco/testDebugUnitTest.exec") })
+    executionData.setFrom(fileTree(layout.buildDirectory) { include("jacoco/testDebugUnitTest.exec") })
 }

@@ -42,9 +42,8 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 # Layer 2: Go 1.24
 # ============================================================
 ENV GO_VERSION=1.24.1
-RUN wget --retry-connrefused --waitretry=10 --tries=5 -q \
-        "https://dl.google.com/go/go${GO_VERSION}.linux-amd64.tar.gz" -O /tmp/go.tar.gz \
-    && tar -C /usr/local -xzf /tmp/go.tar.gz \
+COPY docker/go${GO_VERSION}.linux-amd64.tar.gz /tmp/go.tar.gz
+RUN tar -C /usr/local -xzf /tmp/go.tar.gz \
     && rm /tmp/go.tar.gz
 ENV PATH="/usr/local/go/bin:/root/go/bin:${PATH}"
 ENV GOPATH="/root/go"
@@ -85,8 +84,12 @@ ENV PATH="${ANDROID_HOME}/cmdline-tools/latest/bin:${ANDROID_HOME}/platform-tool
 
 RUN mkdir -p "${ANDROID_HOME}/cmdline-tools" \
     && cd "${ANDROID_HOME}/cmdline-tools" \
-    && wget --retry-connrefused --waitretry=10 --tries=5 -q \
-        "https://dl.google.com/android/repository/commandlinetools-linux-11076708_latest.zip" -O cmdline-tools.zip \
+    && for i in 1 2 3 4 5; do \
+        echo "Attempt $i: Downloading Android cmdline-tools..." && \
+        curl --retry 5 --retry-delay 10 --retry-all-errors -fSL \
+            "https://dl.google.com/android/repository/commandlinetools-linux-11076708_latest.zip" -o cmdline-tools.zip && \
+        break || (echo "Attempt $i failed, waiting 15s..." && sleep 15); \
+    done \
     && unzip -q cmdline-tools.zip \
     && mv cmdline-tools latest \
     && rm cmdline-tools.zip
