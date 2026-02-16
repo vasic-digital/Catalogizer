@@ -2,7 +2,7 @@
 
 **Date:** 2026-02-03
 **Scope:** Full project audit, implementation, testing, documentation, and optimization
-**Modules:** catalog-api, catalog-web, catalogizer-desktop, installer-wizard, catalogizer-android, catalogizer-androidtv, catalogizer-api-client, Catalogizer (legacy)
+**Modules:** catalog-api, catalog-web, catalogizer-desktop, installer-wizard, catalogizer-android, catalogizer-androidtv, catalogizer-api-client
 **Target:** 100% completion - no broken, disabled, or undocumented functionality
 
 ---
@@ -83,7 +83,7 @@ This document provides a complete roadmap to bring the Catalogizer project to pr
 
 | ID | Issue | Module | Files |
 |----|-------|--------|-------|
-| **D1** | Legacy Kotlin module disconnected | Catalogizer/ | 30 source files |
+| **D1** | ~~Legacy Kotlin module removed~~ (cleaned up) | ~~Catalogizer/~~ | ~~30 source files~~ |
 | **D2** | Stress test service stub | catalog-api | services/stress_test_service.go |
 | **D3** | Configuration wizard stubs | catalog-api | services/configuration_wizard_service.go |
 | **D4** | Test compilation placeholder | catalog-api | handlers/test_compilation.go |

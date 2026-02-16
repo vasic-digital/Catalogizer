@@ -1,8 +1,8 @@
 # Catalogizer Master Audit Report & Implementation Plan
 
 **Date:** 2026-02-02
-**Scope:** Full project audit across all 8 modules + infrastructure
-**Modules:** catalog-api, catalog-web, catalogizer-desktop, installer-wizard, catalogizer-android, catalogizer-androidtv, catalogizer-api-client, Catalogizer (legacy Kotlin)
+**Scope:** Full project audit across all 7 modules + infrastructure
+**Modules:** catalog-api, catalog-web, catalogizer-desktop, installer-wizard, catalogizer-android, catalogizer-androidtv, catalogizer-api-client
 
 ---
 
@@ -64,7 +64,7 @@
 
 | # | Issue | Module | Files |
 |---|-------|--------|-------|
-| D1 | **Entire legacy Kotlin module** not connected to any modern component | Catalogizer/ | 30 source files |
+| D1 | ~~**Legacy Kotlin module removed**~~ (cleaned up) | ~~Catalogizer/~~ | ~~30 source files~~ |
 | D2 | **Stress test service** returns "not implemented" for all endpoints | catalog-api | services/stress_test_service.go |
 | D3 | **Configuration wizard** has stub email/Sentry/Crashlytics implementations | catalog-api | services/configuration_wizard_service.go |
 | D4 | **Test compilation handler** - placeholder not connected to routes | catalog-api | handlers/test_compilation.go |
@@ -89,9 +89,8 @@
 | catalogizer-android | 22 | 4 | ~18% | Repositories, DAOs, sync, navigation |
 | catalogizer-androidtv | 34 | 9 | ~26% | Media playback, TV provider, screens |
 | catalogizer-api-client | 7 | 1 | ~14% | Individual service files |
-| Catalogizer (legacy) | 30 | 6 | ~20% | Scanner, search, VFS, metadata, hashing |
 
-**Total project-wide:** ~366 source files, ~81 test files = **~22% coverage**
+**Total project-wide:** ~336 source files, ~75 test files = **~22% coverage**
 
 ---
 
