@@ -221,3 +221,9 @@ catalog-api/coverage.out
 
 # AppImage files (too large for git hosting, build locally)
 *.AppImage
+
+# Container build signing keys (generated, not committed)
+docker/signing/catalogizer-debug.keystore
+docker/signing/signing.properties
+docker/signing/tauri-updater.key
+docker/signing/tauri-updater.key.pub

@@ -1,0 +1,118 @@
+# Containerized Build, Test & Release Pipeline for Catalogizer
+# Usage: podman-compose -f docker-compose.build.yml up --build --abort-on-container-exit
+# Or via: ./scripts/container-build.sh [version]
+
+services:
+  # ============================================================
+  # PostgreSQL 15 - Integration test database
+  # ============================================================
+  postgres:
+    image: postgres:15-alpine
+    environment:
+      POSTGRES_DB: catalogizer_test
+      POSTGRES_USER: catalogizer
+      POSTGRES_PASSWORD: catalogizer_test_pass
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U catalogizer -d catalogizer_test"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+      start_period: 10s
+    tmpfs:
+      - /var/lib/postgresql/data
+    networks:
+      - build-network
+
+  # ============================================================
+  # Redis 7 - Integration test cache
+  # ============================================================
+  redis:
+    image: redis:7-alpine
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+      start_period: 5s
+    tmpfs:
+      - /data
+    networks:
+      - build-network
+
+  # ============================================================
+  # Main builder container
+  # Multi-toolchain: Go + Node + Rust + JDK + Android SDK
+  # ============================================================
+  catalogizer-builder:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.builder
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    environment:
+      # Infrastructure
+      POSTGRES_HOST: postgres
+      POSTGRES_PORT: 5432
+      POSTGRES_DB: catalogizer_test
+      POSTGRES_USER: catalogizer
+      POSTGRES_PASSWORD: catalogizer_test_pass
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      # Build configuration
+      BUILD_VERSION: "${BUILD_VERSION:-1.0.0}"
+      SKIP_EMULATOR_TESTS: "${SKIP_EMULATOR_TESTS:-true}"
+      SKIP_E2E_TESTS: "${SKIP_E2E_TESTS:-false}"
+      SKIP_SECURITY_TESTS: "${SKIP_SECURITY_TESTS:-true}"
+      # Database config for Go tests
+      DB_TYPE: postgres
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_NAME: catalogizer_test
+      DB_USER: catalogizer
+      DB_PASSWORD: catalogizer_test_pass
+      # CI mode
+      CI: "true"
+      # Android SDK
+      ANDROID_HOME: /opt/android-sdk
+      ANDROID_SDK_ROOT: /opt/android-sdk
+    volumes:
+      - .:/project
+      - go-cache:/root/go
+      - gradle-cache:/root/.gradle
+      - npm-cache:/root/.npm
+      - cargo-cache:/root/.cargo/registry
+    networks:
+      - build-network
+
+  # ============================================================
+  # Android Emulator (optional, requires KVM on host)
+  # Activate with: --profile emulator
+  # ============================================================
+  android-emulator:
+    image: budtmo/docker-android:emulator_14.0
+    profiles:
+      - emulator
+    privileged: true
+    environment:
+      EMULATOR_DEVICE: "pixel_5"
+      WEB_VNC: "true"
+    ports:
+      - "6080:6080"   # VNC web viewer
+      - "5555:5555"   # ADB
+    devices:
+      - /dev/kvm
+    networks:
+      - build-network
+
+volumes:
+  go-cache:
+  gradle-cache:
+  npm-cache:
+  cargo-cache:
+
+networks:
+  build-network:
+    driver: bridge
