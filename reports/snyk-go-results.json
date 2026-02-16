@@ -1,5 +1,0 @@
-{
-  "ok": false,
-  "error": "Authentication failed. Please check the API token on https://snyk.io",
-  "path": "/home/milosvasic/Projects/Catalogizer/catalog-api"
-}
