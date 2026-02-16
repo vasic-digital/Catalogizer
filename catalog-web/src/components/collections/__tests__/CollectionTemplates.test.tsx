@@ -1,0 +1,309 @@
+import { render, screen, waitFor } from '@testing-library/react'
+import userEvent from '@testing-library/user-event'
+import { CollectionTemplates } from '../CollectionTemplates'
+import { toast } from 'react-hot-toast'
+
+vi.mock('react-hot-toast', () => ({
+  toast: {
+    success: vi.fn(),
+    error: vi.fn(),
+  },
+}))
+
+vi.mock('framer-motion', () => {
+  const MotionDiv = ({ children, onClick, ...props }: any) => (
+    <div onClick={onClick} {...props}>{children}</div>
+  )
+  return {
+    motion: { div: MotionDiv },
+    AnimatePresence: ({ children }: any) => <>{children}</>,
+  }
+})
+
+vi.mock('lucide-react', () => {
+  const icon = (name: string) => () => <span data-testid={`icon-${name}`}>{name}</span>
+  return {
+    Plus: icon('plus'),
+    Search: icon('search'),
+    Filter: icon('filter'),
+    Star: icon('star'),
+    Heart: icon('heart'),
+    Clock: icon('clock'),
+    TrendingUp: icon('trending'),
+    Folder: icon('folder'),
+    Music: icon('music'),
+    Video: icon('video'),
+    Image: icon('image'),
+    FileText: icon('filetext'),
+    Grid: icon('grid'),
+    List: icon('list'),
+    Copy: icon('copy'),
+    Download: icon('download'),
+    Eye: icon('eye'),
+    Calendar: icon('calendar'),
+    Tag: icon('tag'),
+    BarChart3: icon('barchart'),
+    Settings: icon('settings'),
+    ChevronRight: icon('chevron'),
+    Zap: icon('zap'),
+    BookOpen: icon('book'),
+    Film: icon('film'),
+    Tv: icon('tv'),
+    Headphones: icon('headphones'),
+    Camera: icon('camera'),
+    Archive: icon('archive'),
+    Users: icon('users'),
+    Globe: icon('globe'),
+    Shield: icon('shield'),
+    Sparkles: icon('sparkles'),
+    Package: icon('package'),
+    X: icon('x'),
+  }
+})
+
+describe('CollectionTemplates', () => {
+  const defaultProps = {
+    onClose: vi.fn(),
+    onApplyTemplate: vi.fn().mockResolvedValue(undefined),
+  }
+
+  beforeEach(() => {
+    vi.clearAllMocks()
+  })
+
+  it('renders the dialog title', () => {
+    render(<CollectionTemplates {...defaultProps} />)
+    expect(screen.getByText('Collection Templates')).toBeInTheDocument()
+  })
+
+  it('renders subtitle text', () => {
+    render(<CollectionTemplates {...defaultProps} />)
+    expect(
+      screen.getByText('Choose from pre-built templates to get started')
+    ).toBeInTheDocument()
+  })
+
+  it('renders search input', () => {
+    render(<CollectionTemplates {...defaultProps} />)
+    expect(screen.getByPlaceholderText('Search templates...')).toBeInTheDocument()
+  })
+
+  it('renders all templates initially', () => {
+    render(<CollectionTemplates {...defaultProps} />)
+    expect(screen.getByText('Recent Movies')).toBeInTheDocument()
+    expect(screen.getByText('Music by Genres')).toBeInTheDocument()
+    expect(screen.getByText('Photo Library')).toBeInTheDocument()
+    expect(screen.getByText('Watchlist Manager')).toBeInTheDocument()
+    expect(screen.getByText('Content Review Queue')).toBeInTheDocument()
+    expect(screen.getByText('Decades Collection')).toBeInTheDocument()
+    expect(screen.getByText('Workspace Projects')).toBeInTheDocument()
+    expect(screen.getByText('Smart Suggestions')).toBeInTheDocument()
+    expect(screen.getByText('Trending Now')).toBeInTheDocument()
+  })
+
+  it('shows template count badge', () => {
+    render(<CollectionTemplates {...defaultProps} />)
+    expect(screen.getByText('9 templates')).toBeInTheDocument()
+  })
+
+  it('shows All Templates heading by default', () => {
+    render(<CollectionTemplates {...defaultProps} />)
+    expect(screen.getByText('All Templates')).toBeInTheDocument()
+  })
+
+  it('filters templates by search query', async () => {
+    const user = userEvent.setup()
+    render(<CollectionTemplates {...defaultProps} />)
+
+    const searchInput = screen.getByPlaceholderText('Search templates...')
+    await user.type(searchInput, 'movie')
+
+    expect(screen.getByText('Recent Movies')).toBeInTheDocument()
+    expect(screen.queryByText('Music by Genres')).not.toBeInTheDocument()
+  })
+
+  it('filters by tags when searching', async () => {
+    const user = userEvent.setup()
+    render(<CollectionTemplates {...defaultProps} />)
+
+    const searchInput = screen.getByPlaceholderText('Search templates...')
+    await user.type(searchInput, 'trending')
+
+    expect(screen.getByText('Trending Now')).toBeInTheDocument()
+    expect(screen.queryByText('Recent Movies')).not.toBeInTheDocument()
+  })
+
+  it('shows complexity badges', () => {
+    render(<CollectionTemplates {...defaultProps} />)
+    const simpleBadges = screen.getAllByText('Simple')
+    const mediumBadges = screen.getAllByText('Medium')
+    const advancedBadges = screen.getAllByText('Advanced')
+
+    expect(simpleBadges.length).toBeGreaterThan(0)
+    expect(mediumBadges.length).toBeGreaterThan(0)
+    expect(advancedBadges.length).toBeGreaterThan(0)
+  })
+
+  it('shows popularity percentage', () => {
+    render(<CollectionTemplates {...defaultProps} />)
+    expect(screen.getByText('95%')).toBeInTheDocument() // Recent Movies
+    expect(screen.getByText('96%')).toBeInTheDocument() // Trending Now
+  })
+
+  it('opens template detail when clicked', async () => {
+    const user = userEvent.setup()
+    render(<CollectionTemplates {...defaultProps} />)
+
+    await user.click(screen.getByText('Recent Movies'))
+
+    // Preview modal should show detailed info
+    expect(screen.getByText('Description')).toBeInTheDocument()
+    expect(screen.getByText('Metrics')).toBeInTheDocument()
+    expect(screen.getByText('Tags')).toBeInTheDocument()
+    expect(screen.getByText('Create Collection')).toBeInTheDocument()
+  })
+
+  it('shows collection name input in preview', async () => {
+    const user = userEvent.setup()
+    render(<CollectionTemplates {...defaultProps} />)
+
+    await user.click(screen.getByText('Recent Movies'))
+
+    expect(
+      screen.getByPlaceholderText('Enter collection name...')
+    ).toBeInTheDocument()
+  })
+
+  it('shows error toast when trying to create without name', async () => {
+    const user = userEvent.setup()
+    render(<CollectionTemplates {...defaultProps} />)
+
+    await user.click(screen.getByText('Recent Movies'))
+    await user.click(screen.getByText('Create Collection'))
+
+    expect(toast.error).toHaveBeenCalledWith('Please enter a collection name')
+  })
+
+  it('calls onApplyTemplate and shows success toast with valid name', async () => {
+    const user = userEvent.setup()
+    render(<CollectionTemplates {...defaultProps} />)
+
+    await user.click(screen.getByText('Recent Movies'))
+
+    const nameInput = screen.getByPlaceholderText('Enter collection name...')
+    await user.type(nameInput, 'My Movies')
+    await user.click(screen.getByText('Create Collection'))
+
+    await waitFor(() => {
+      expect(defaultProps.onApplyTemplate).toHaveBeenCalled()
+      expect(toast.success).toHaveBeenCalledWith(
+        'Collection "My Movies" created from template'
+      )
+    })
+  })
+
+  it('shows error toast when onApplyTemplate fails', async () => {
+    const failProps = {
+      ...defaultProps,
+      onApplyTemplate: vi.fn().mockRejectedValue(new Error('Server error')),
+    }
+    const user = userEvent.setup()
+    render(<CollectionTemplates {...failProps} />)
+
+    await user.click(screen.getByText('Recent Movies'))
+
+    const nameInput = screen.getByPlaceholderText('Enter collection name...')
+    await user.type(nameInput, 'My Movies')
+    await user.click(screen.getByText('Create Collection'))
+
+    await waitFor(() => {
+      expect(toast.error).toHaveBeenCalledWith('Server error')
+    })
+  })
+
+  it('closes template preview when Cancel is clicked', async () => {
+    const user = userEvent.setup()
+    render(<CollectionTemplates {...defaultProps} />)
+
+    await user.click(screen.getByText('Recent Movies'))
+    expect(screen.getByText('Create Collection')).toBeInTheDocument()
+
+    await user.click(screen.getByText('Cancel'))
+    // After cancel, the create button should disappear
+    expect(screen.queryByText('Create Collection')).not.toBeInTheDocument()
+  })
+
+  it('calls onClose when close button is clicked', async () => {
+    const user = userEvent.setup()
+    render(<CollectionTemplates {...defaultProps} />)
+
+    // The X close button
+    const closeIcons = screen.getAllByTestId('icon-x')
+    const closeBtn = closeIcons[0].closest('button')
+    if (closeBtn) {
+      await user.click(closeBtn)
+    }
+
+    expect(defaultProps.onClose).toHaveBeenCalled()
+  })
+
+  it('shows preview data for templates with preview', async () => {
+    const user = userEvent.setup()
+    render(<CollectionTemplates {...defaultProps} />)
+
+    // Recent Movies has preview with 127 items, Video type, 45.2 GB
+    await user.click(screen.getByText('Recent Movies'))
+
+    expect(screen.getByText('Preview')).toBeInTheDocument()
+    expect(screen.getByText('127')).toBeInTheDocument()
+    expect(screen.getByText('Video')).toBeInTheDocument()
+    expect(screen.getByText('45.2 GB')).toBeInTheDocument()
+  })
+
+  it('shows rules in template detail', async () => {
+    const user = userEvent.setup()
+    render(<CollectionTemplates {...defaultProps} />)
+
+    await user.click(screen.getByText('Recent Movies'))
+
+    expect(screen.getByText('Rules')).toBeInTheDocument()
+  })
+
+  it('shows settings in template detail', async () => {
+    const user = userEvent.setup()
+    render(<CollectionTemplates {...defaultProps} />)
+
+    await user.click(screen.getByText('Music by Genres'))
+
+    expect(screen.getByText('Settings')).toBeInTheDocument()
+  })
+
+  it('disables Create Collection button when name is empty', async () => {
+    const user = userEvent.setup()
+    render(<CollectionTemplates {...defaultProps} />)
+
+    await user.click(screen.getByText('Recent Movies'))
+
+    const createBtn = screen.getByText('Create Collection')
+    expect(createBtn.closest('button')).toBeDisabled()
+  })
+
+  it('enables Create Collection button when name is provided', async () => {
+    const user = userEvent.setup()
+    render(<CollectionTemplates {...defaultProps} />)
+
+    await user.click(screen.getByText('Recent Movies'))
+
+    const nameInput = screen.getByPlaceholderText('Enter collection name...')
+    await user.type(nameInput, 'Test')
+
+    const createBtn = screen.getByText('Create Collection')
+    expect(createBtn.closest('button')).not.toBeDisabled()
+  })
+
+  it('shows estimated items for templates', () => {
+    render(<CollectionTemplates {...defaultProps} />)
+    expect(screen.getByText('~50-200')).toBeInTheDocument()
+    expect(screen.getByText('~1000-5000')).toBeInTheDocument()
+  })
+})

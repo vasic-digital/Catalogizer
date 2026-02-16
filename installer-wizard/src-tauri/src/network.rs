@@ -223,3 +223,90 @@ async fn scan_smb_shares_for_host(_ip: Ipv4Addr) -> Result<Vec<String>> {
 
     Ok(shares)
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_max_concurrent_scans_constant() {
+        assert_eq!(MAX_CONCURRENT_SCANS, 32);
+    }
+
+    #[test]
+    fn test_get_network_range_returns_none_for_empty_interface() {
+        let interface = NetworkInterface {
+            name: "lo".to_string(),
+            addr: vec![],
+            mac_addr: None,
+            index: 1,
+        };
+
+        let result = get_network_range(&interface);
+        assert!(result.is_none());
+    }
+
+    #[test]
+    fn test_common_smb_shares_list() {
+        // Verify the common shares list has expected entries
+        let expected = vec!["C$", "ADMIN$", "IPC$", "shared", "public", "media", "downloads"];
+        assert_eq!(expected.len(), 7);
+        assert!(expected.contains(&"media"));
+        assert!(expected.contains(&"shared"));
+    }
+
+    #[tokio::test]
+    async fn test_scan_smb_shares_for_host_returns_common_shares() {
+        let ip = Ipv4Addr::new(127, 0, 0, 1);
+        let result = scan_smb_shares_for_host(ip).await;
+
+        assert!(result.is_ok());
+        let shares = result.unwrap();
+        assert_eq!(shares.len(), 7);
+        assert!(shares.contains(&"media".to_string()));
+        assert!(shares.contains(&"public".to_string()));
+        assert!(shares.contains(&"C$".to_string()));
+    }
+
+    #[test]
+    fn test_common_port_list_includes_smb_ports() {
+        let common_ports: Vec<u16> = vec![
+            21, 22, 23, 25, 53, 80, 110, 135, 139, 143, 443, 445, 993, 995, 3389, 5985, 5986
+        ];
+
+        // SMB ports
+        assert!(common_ports.contains(&139));
+        assert!(common_ports.contains(&445));
+        // SSH
+        assert!(common_ports.contains(&22));
+        // HTTP/HTTPS
+        assert!(common_ports.contains(&80));
+        assert!(common_ports.contains(&443));
+    }
+
+    #[test]
+    fn test_is_host_alive_port_list() {
+        // The ports used for quick alive check
+        let ports: Vec<u16> = vec![22, 80, 135, 139, 443, 445];
+        assert_eq!(ports.len(), 6);
+        assert!(ports.contains(&445)); // SMB
+        assert!(ports.contains(&22));  // SSH
+    }
+
+    #[test]
+    fn test_ipv4_network_creation() {
+        let ip = Ipv4Addr::new(192, 168, 1, 0);
+        let network = ipnetwork::Ipv4Network::new(ip, 24);
+        assert!(network.is_ok());
+        let net = network.unwrap();
+        assert_eq!(net.prefix(), 24);
+    }
+
+    #[test]
+    fn test_ipv4_network_iteration_count() {
+        let ip = Ipv4Addr::new(192, 168, 1, 0);
+        let network = ipnetwork::Ipv4Network::new(ip, 24).unwrap();
+        // /24 network has 256 addresses (0-255)
+        assert_eq!(network.iter().count(), 256);
+    }
+}

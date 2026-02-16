@@ -263,3 +263,184 @@ pub async fn test_connection(
 fn get_api_base_url() -> String {
     std::env::var("CATALOG_API_URL").unwrap_or_else(|_| "http://localhost:8080".to_string())
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    /// Tests for FileEntry struct
+    mod file_entry_tests {
+        use super::*;
+
+        #[test]
+        fn test_file_entry_serialization() {
+            let entry = FileEntry {
+                name: "movie.mkv".to_string(),
+                path: "/media/movies/movie.mkv".to_string(),
+                is_directory: false,
+                size: Some(4294967296),
+                modified: Some("2024-06-15 10:30:00".to_string()),
+            };
+
+            let json = serde_json::to_string(&entry).unwrap();
+            let deserialized: FileEntry = serde_json::from_str(&json).unwrap();
+
+            assert_eq!(deserialized.name, "movie.mkv");
+            assert_eq!(deserialized.path, "/media/movies/movie.mkv");
+            assert!(!deserialized.is_directory);
+            assert_eq!(deserialized.size, Some(4294967296));
+            assert!(deserialized.modified.is_some());
+        }
+
+        #[test]
+        fn test_file_entry_directory() {
+            let entry = FileEntry {
+                name: "Documents".to_string(),
+                path: "Documents".to_string(),
+                is_directory: true,
+                size: None,
+                modified: None,
+            };
+
+            assert!(entry.is_directory);
+            assert!(entry.size.is_none());
+        }
+
+        #[test]
+        fn test_file_entry_debug_trait() {
+            let entry = FileEntry {
+                name: "test.txt".to_string(),
+                path: "test.txt".to_string(),
+                is_directory: false,
+                size: Some(1024),
+                modified: None,
+            };
+
+            let debug = format!("{:?}", entry);
+            assert!(debug.contains("FileEntry"));
+            assert!(debug.contains("test.txt"));
+        }
+    }
+
+    /// Tests for get_common_shares
+    mod common_shares_tests {
+        use super::*;
+
+        #[test]
+        fn test_get_common_shares_returns_expected_count() {
+            let shares = get_common_shares("192.168.1.10");
+            assert_eq!(shares.len(), 9);
+        }
+
+        #[test]
+        fn test_get_common_shares_has_expected_names() {
+            let shares = get_common_shares("testhost");
+            let names: Vec<&str> = shares.iter().map(|s| s.share_name.as_str()).collect();
+
+            assert!(names.contains(&"shared"));
+            assert!(names.contains(&"public"));
+            assert!(names.contains(&"media"));
+            assert!(names.contains(&"downloads"));
+            assert!(names.contains(&"documents"));
+            assert!(names.contains(&"music"));
+            assert!(names.contains(&"videos"));
+            assert!(names.contains(&"pictures"));
+            assert!(names.contains(&"backup"));
+        }
+
+        #[test]
+        fn test_get_common_shares_host_is_set() {
+            let host = "192.168.1.100";
+            let shares = get_common_shares(host);
+
+            for share in &shares {
+                assert_eq!(share.host, host);
+            }
+        }
+
+        #[test]
+        fn test_get_common_shares_path_format() {
+            let shares = get_common_shares("myhost");
+
+            for share in &shares {
+                assert!(share.path.starts_with("\\\\myhost\\"));
+                assert!(share.path.contains(&share.share_name));
+            }
+        }
+
+        #[test]
+        fn test_get_common_shares_all_read_only() {
+            let shares = get_common_shares("host");
+
+            for share in &shares {
+                assert!(!share.writable, "Share {} should not be writable", share.share_name);
+            }
+        }
+
+        #[test]
+        fn test_get_common_shares_all_have_descriptions() {
+            let shares = get_common_shares("host");
+
+            for share in &shares {
+                assert!(share.description.is_some(), "Share {} should have a description", share.share_name);
+            }
+        }
+    }
+
+    /// Tests for get_mock_entries
+    mod mock_entries_tests {
+        use super::*;
+
+        #[test]
+        fn test_get_mock_entries_returns_three_entries() {
+            let entries = get_mock_entries();
+            assert_eq!(entries.len(), 3);
+        }
+
+        #[test]
+        fn test_get_mock_entries_has_parent_directory() {
+            let entries = get_mock_entries();
+            let parent = &entries[0];
+            assert_eq!(parent.name, "..");
+            assert!(parent.is_directory);
+        }
+
+        #[test]
+        fn test_get_mock_entries_has_folder() {
+            let entries = get_mock_entries();
+            let folder = &entries[1];
+            assert_eq!(folder.name, "Example Folder");
+            assert!(folder.is_directory);
+        }
+
+        #[test]
+        fn test_get_mock_entries_has_file() {
+            let entries = get_mock_entries();
+            let file = &entries[2];
+            assert_eq!(file.name, "example.txt");
+            assert!(!file.is_directory);
+            assert_eq!(file.size, Some(1024));
+        }
+    }
+
+    /// Tests for API base URL
+    mod api_url_tests {
+        use super::*;
+
+        #[test]
+        fn test_default_api_base_url() {
+            // Clear any existing env var to test default
+            std::env::remove_var("CATALOG_API_URL");
+            let url = get_api_base_url();
+            assert_eq!(url, "http://localhost:8080");
+        }
+
+        #[test]
+        fn test_custom_api_base_url() {
+            std::env::set_var("CATALOG_API_URL", "http://custom:9090");
+            let url = get_api_base_url();
+            assert_eq!(url, "http://custom:9090");
+            std::env::remove_var("CATALOG_API_URL");
+        }
+    }
+}

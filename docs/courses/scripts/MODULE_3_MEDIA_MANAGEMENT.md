@@ -1,4 +1,4 @@
-# Module 3: Media Management - Video Scripts
+# Module 3: Advanced Media Features - Video Scripts
 
 ---
 
@@ -18,7 +18,7 @@ One particularly useful feature is favorites export and import. You can export y
 
 Importing works the same way in reverse. Upload a JSON or CSV file, and Catalogizer will match items in your catalog and re-add them to your favorites. The matching is done by media metadata, not just file paths, so it works even if files have moved between sources.
 
-The favorites components live in the catalog-web/src/components/favorites/ directory, with the main hook in hooks/useFavorites.tsx. On the backend, the catalog service handles the favorites endpoints.
+On the backend, the favorites service (favorites_service.go) handles the business logic, while the favorites repository (favorites_repository.go) manages persistence. The favorites components live in the catalog-web/src/components/favorites/ directory, with the main hook in hooks/useFavorites.tsx.
 
 ### On-Screen Actions
 
@@ -36,6 +36,7 @@ The favorites components live in the catalog-web/src/components/favorites/ direc
 - [06:30] Use Import to re-add from the exported JSON
 - [07:00] Verify the item reappears in favorites
 - [07:30] Show the useFavorites.tsx hook code
+- [08:00] Show favorites_service.go and favorites_repository.go
 - [08:30] Show the favorites components directory
 - [09:00] Demonstrate removing all favorites and re-importing from CSV
 - [09:30] Final overview of the Favorites page
@@ -46,11 +47,22 @@ The favorites components live in the catalog-web/src/components/favorites/ direc
 - Favorites page shows all bookmarked items with full filter and sort capabilities
 - Export favorites to JSON or CSV with complete metadata
 - Import favorites from JSON/CSV files -- matches by metadata, not just file paths
-- useFavorites hook in catalog-web manages favorite state and API communication
+- Backend: favorites_service.go + favorites_repository.go; Frontend: useFavorites hook
 
 ### Tips
 
 > **Tip**: Export your favorites periodically as a backup. If you ever need to reset or migrate your Catalogizer instance, you can re-import them without losing your curated list.
+
+### Quiz Questions
+
+1. **Q**: What two export formats does the Favorites feature support?
+   **A**: JSON and CSV.
+
+2. **Q**: When importing favorites, how does Catalogizer match items?
+   **A**: By media metadata, not just file paths, so it works even if files have moved between sources.
+
+3. **Q**: What hook manages the favorite state on the frontend?
+   **A**: The useFavorites hook.
 
 ---
 
@@ -112,6 +124,17 @@ Bulk operations are essential for managing large libraries. Select multiple item
 
 > **Tip**: Use Smart collections for ongoing organization. Set up rules like "all 4K movies" or "all music from a specific genre" and let Catalogizer maintain them automatically as your library grows.
 
+### Quiz Questions
+
+1. **Q**: What are the three types of collections?
+   **A**: Manual (hand-picked items), Smart (rule-based auto-population), and Dynamic (adaptive criteria).
+
+2. **Q**: What happens when new media matches a Smart collection's rules?
+   **A**: It is automatically added to the Smart collection.
+
+3. **Q**: What access permission options are available for collections?
+   **A**: Public (anyone can view), Private (only owner), or shared with specific users.
+
 ---
 
 ## Lesson 3.3: Playlists
@@ -130,7 +153,7 @@ When you play a playlist, items are played in sequence. The media player tracks 
 
 You can add items to playlists from the Media Browser, from within a collection, or from search results. Multiple playlists can contain the same item, so you are not limited to having a movie or song in just one place.
 
-The playlist components live in catalog-web/src/components/playlists/. The backend service in services/playlist_service.go provides the API for CRUD operations on playlists and their items.
+The playlist components live in catalog-web/src/components/playlists/. The backend service in internal/services/playlist_service.go provides the API for CRUD operations on playlists and their items.
 
 ### On-Screen Actions
 
@@ -164,6 +187,17 @@ The playlist components live in catalog-web/src/components/playlists/. The backe
 
 > **Tip**: Create playlists for different moods or occasions. A "Movie Night" playlist with films in your preferred order makes it easy to just hit play and relax.
 
+### Quiz Questions
+
+1. **Q**: What is the key difference between playlists and collections?
+   **A**: Playlists emphasize order and sequential playback, while collections organize media thematically without a specific play order.
+
+2. **Q**: What hook handles drag-and-drop reordering in playlists?
+   **A**: The usePlaylistReorder hook.
+
+3. **Q**: Can the same media item belong to multiple playlists?
+   **A**: Yes, items can belong to multiple playlists simultaneously.
+
 ---
 
 ## Lesson 3.4: Subtitle Management
@@ -184,6 +218,8 @@ You can also upload new subtitle files directly through the interface. Select a 
 
 The subtitles components are in catalog-web/src/components/subtitles/. During video playback, the media player offers a subtitle track selector, letting you switch between available subtitle files or turn them off entirely.
 
+The backend also has a subtitle_handler.go in the handlers/ directory that exposes the API endpoints for subtitle operations. There are comprehensive integration tests in the tests/ directory: test_subtitle_api.js, test_subtitle_search.js, test_subtitle_upload.js, and more.
+
 ### On-Screen Actions
 
 - [00:00] Navigate to the Subtitle Manager page
@@ -200,23 +236,35 @@ The subtitles components are in catalog-web/src/components/subtitles/. During vi
 - [06:30] Turn subtitles off
 - [07:00] Show the SubtitleManager.tsx component code
 - [07:30] Show subtitle_service.go on the backend
-- [08:00] Show the subtitle matching logic
-- [08:30] Show the subtitles components directory
+- [08:00] Show subtitle_handler.go in handlers/
+- [08:30] Show the subtitle matching logic
 - [09:00] Demonstrate subtitle support for different formats (SRT, VTT)
 - [09:30] Final overview
 
 ### Key Points
 
 - Subtitle Manager provides centralized management of all subtitle files
+- Supported formats: SRT, ASS, SSA, VTT
 - Automatic matching based on naming conventions (same base name as video)
 - Manual association for unmatched files
 - Upload new subtitle files with language specification
 - Media player includes subtitle track selector for switching during playback
-- Backend: subtitle_service.go; Frontend: SubtitleManager.tsx and components/subtitles/
+- Backend: subtitle_service.go + subtitle_handler.go; Frontend: SubtitleManager.tsx
 
 ### Tips
 
 > **Tip**: Name your subtitle files with the same base name as the video file and include the language code -- for example, "movie.en.srt" and "movie.fr.srt". This gives the automatic matching the best chance of working correctly.
+
+### Quiz Questions
+
+1. **Q**: What subtitle file formats does Catalogizer support?
+   **A**: SRT, ASS, SSA, and VTT.
+
+2. **Q**: How does automatic subtitle matching work?
+   **A**: The subtitle service matches subtitle files with videos based on naming conventions -- a subtitle file with the same base name as a video file is automatically associated.
+
+3. **Q**: Can you upload new subtitle files through the web interface?
+   **A**: Yes, you can upload subtitle files, specify the language, and associate them with videos directly through the Subtitle Manager page.
 
 ---
 
@@ -236,7 +284,7 @@ The conversion components live in catalog-web/src/components/conversion/. The in
 
 The conversion queue lets you batch multiple conversions. You can add several files, choose their target formats, and let them process in the background. Progress is reported via WebSocket so the UI stays up to date.
 
-Let me demonstrate a few common conversion workflows. First, converting a video to a different format for compatibility. Second, converting a PDF to images for easy viewing. Third, converting a FLAC audio file to MP3 for mobile playback.
+On the backend, the conversion service (conversion_service.go) handles the conversion logic, while the conversion repository (conversion_repository.go) manages the conversion queue and status tracking. The conversion handler (conversion_handler.go in handlers/) exposes the API endpoints.
 
 ### On-Screen Actions
 
@@ -253,7 +301,8 @@ Let me demonstrate a few common conversion workflows. First, converting a video 
 - [07:00] Show progress updates arriving via WebSocket
 - [07:30] Show a completed conversion and the output file
 - [08:00] Open ConversionTools.tsx in the code editor
-- [09:00] Show the conversion components directory
+- [08:30] Show conversion_service.go and conversion_repository.go
+- [09:00] Show conversion_handler.go
 - [09:30] Show how converted files appear in the catalog
 - [10:00] Demonstrate batch conversion: select multiple files
 - [10:30] Configure batch settings and start
@@ -265,11 +314,23 @@ Let me demonstrate a few common conversion workflows. First, converting a video 
 - PDF conversion: to images (thumbnails/previews), text (searchable), or HTML (web display)
 - Batch conversion queue with real-time progress via WebSocket
 - Converted files automatically appear in the catalog
+- Backend: conversion_service.go + conversion_repository.go + conversion_handler.go
 - Frontend: ConversionTools.tsx and components/conversion/
 
 ### Tips
 
 > **Tip**: Use PDF to text conversion to make document content searchable in Catalogizer's search system. The extracted text is indexed alongside other media metadata.
+
+### Quiz Questions
+
+1. **Q**: What three output formats does PDF conversion support?
+   **A**: Images (thumbnails/previews), plain text (for search indexing), and HTML (for web display).
+
+2. **Q**: How is conversion progress reported to the frontend?
+   **A**: Via WebSocket, so the UI updates in real-time without manual refresh.
+
+3. **Q**: What happens to converted files after conversion completes?
+   **A**: They automatically appear in the catalog alongside other media.
 
 ---
 
@@ -289,7 +350,7 @@ One of the most convenient features is playback position tracking. The playback_
 
 For music, the lyrics service (lyrics_service.go) can display song lyrics synchronized with playback. If lyrics are available for a track, they appear alongside the player controls.
 
-The media player handles streaming from remote sources transparently. Whether a file is on an SMB share, FTP server, or local disk, the media player handlers (media_player_handlers.go) coordinate with the filesystem layer to stream content to the player.
+The media player handles streaming from remote sources transparently. Whether a file is on an SMB share, FTP server, or local disk, the media player handlers (media_player_handlers.go in internal/handlers/) coordinate with the filesystem layer to stream content to the player.
 
 Playlist integration means the player advances through playlist items automatically. When one item finishes, the next begins. Combined with playback position tracking, you can pause a playlist on Tuesday and pick up exactly where you left off on Friday.
 
@@ -342,3 +403,14 @@ The cover art service (cover_art_service.go) provides album artwork and movie po
 > **Tip**: Use deep linking to share specific moments in videos with others. The link includes the playback position, so the recipient jumps directly to the relevant point.
 
 > **Tip**: Playback position syncs across devices. Start a movie on your desktop, pause it, and pick up on your Android phone right where you left off.
+
+### Quiz Questions
+
+1. **Q**: What three specialized player services exist on the backend?
+   **A**: media_player_service.go (general), video_player_service.go (video-specific), and music_player_service.go (audio-specific).
+
+2. **Q**: How does playback position tracking work across devices?
+   **A**: The playback_position_service.go saves your position whenever you pause or close the player, and restores it when you return, even from a different device.
+
+3. **Q**: What does the deep linking service enable?
+   **A**: Sharing direct links to specific media items with an exact playback position, so recipients jump directly to the relevant point.

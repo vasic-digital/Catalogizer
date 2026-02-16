@@ -341,3 +341,320 @@ fn main() {
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    /// Tests for NetworkHost struct
+    mod network_host_tests {
+        use super::*;
+
+        #[test]
+        fn test_network_host_serialization() {
+            let host = NetworkHost {
+                ip: "192.168.1.100".to_string(),
+                hostname: Some("fileserver".to_string()),
+                mac_address: Some("AA:BB:CC:DD:EE:FF".to_string()),
+                vendor: None,
+                open_ports: vec![22, 80, 445],
+                smb_shares: vec!["shared".to_string(), "media".to_string()],
+            };
+
+            let json = serde_json::to_string(&host).unwrap();
+            let deserialized: NetworkHost = serde_json::from_str(&json).unwrap();
+
+            assert_eq!(deserialized.ip, "192.168.1.100");
+            assert_eq!(deserialized.hostname, Some("fileserver".to_string()));
+            assert_eq!(deserialized.mac_address, Some("AA:BB:CC:DD:EE:FF".to_string()));
+            assert!(deserialized.vendor.is_none());
+            assert_eq!(deserialized.open_ports, vec![22, 80, 445]);
+            assert_eq!(deserialized.smb_shares.len(), 2);
+        }
+
+        #[test]
+        fn test_network_host_with_no_optional_fields() {
+            let host = NetworkHost {
+                ip: "10.0.0.1".to_string(),
+                hostname: None,
+                mac_address: None,
+                vendor: None,
+                open_ports: vec![],
+                smb_shares: vec![],
+            };
+
+            let json = serde_json::to_string(&host).unwrap();
+            assert!(json.contains("\"ip\":\"10.0.0.1\""));
+            assert!(json.contains("\"hostname\":null"));
+        }
+
+        #[test]
+        fn test_network_host_deserialization_from_json() {
+            let json = r#"{
+                "ip": "172.16.0.1",
+                "hostname": "nas",
+                "mac_address": null,
+                "vendor": "Synology",
+                "open_ports": [80, 443, 5000],
+                "smb_shares": ["homes", "video"]
+            }"#;
+
+            let host: NetworkHost = serde_json::from_str(json).unwrap();
+            assert_eq!(host.ip, "172.16.0.1");
+            assert_eq!(host.hostname, Some("nas".to_string()));
+            assert!(host.mac_address.is_none());
+            assert_eq!(host.vendor, Some("Synology".to_string()));
+            assert_eq!(host.open_ports.len(), 3);
+        }
+
+        #[test]
+        fn test_network_host_debug_trait() {
+            let host = NetworkHost {
+                ip: "1.2.3.4".to_string(),
+                hostname: None,
+                mac_address: None,
+                vendor: None,
+                open_ports: vec![],
+                smb_shares: vec![],
+            };
+            let debug = format!("{:?}", host);
+            assert!(debug.contains("NetworkHost"));
+            assert!(debug.contains("1.2.3.4"));
+        }
+    }
+
+    /// Tests for SMBShare struct
+    mod smb_share_tests {
+        use super::*;
+
+        #[test]
+        fn test_smb_share_serialization() {
+            let share = SMBShare {
+                host: "192.168.1.50".to_string(),
+                share_name: "media".to_string(),
+                path: "\\\\192.168.1.50\\media".to_string(),
+                writable: true,
+                description: Some("Media files".to_string()),
+            };
+
+            let json = serde_json::to_string(&share).unwrap();
+            let deserialized: SMBShare = serde_json::from_str(&json).unwrap();
+
+            assert_eq!(deserialized.host, "192.168.1.50");
+            assert_eq!(deserialized.share_name, "media");
+            assert!(deserialized.writable);
+            assert_eq!(deserialized.description, Some("Media files".to_string()));
+        }
+
+        #[test]
+        fn test_smb_share_without_description() {
+            let share = SMBShare {
+                host: "10.0.0.5".to_string(),
+                share_name: "data".to_string(),
+                path: "\\\\10.0.0.5\\data".to_string(),
+                writable: false,
+                description: None,
+            };
+
+            let json = serde_json::to_string(&share).unwrap();
+            assert!(json.contains("\"description\":null"));
+        }
+    }
+
+    /// Tests for ConfigurationSource struct
+    mod configuration_source_tests {
+        use super::*;
+
+        #[test]
+        fn test_configuration_source_serialization() {
+            let source = ConfigurationSource {
+                r#type: "smb".to_string(),
+                url: "smb://192.168.1.100/media".to_string(),
+                access: "my-access".to_string(),
+            };
+
+            let json = serde_json::to_string(&source).unwrap();
+            let deserialized: ConfigurationSource = serde_json::from_str(&json).unwrap();
+
+            assert_eq!(deserialized.r#type, "smb");
+            assert_eq!(deserialized.url, "smb://192.168.1.100/media");
+            assert_eq!(deserialized.access, "my-access");
+        }
+
+        #[test]
+        fn test_configuration_source_type_field() {
+            // Test that the `type` reserved keyword is handled correctly via r#type
+            let json = r#"{"type": "ftp", "url": "ftp://example.com", "access": "ftp-creds"}"#;
+            let source: ConfigurationSource = serde_json::from_str(json).unwrap();
+            assert_eq!(source.r#type, "ftp");
+        }
+    }
+
+    /// Tests for ConfigurationAccess struct
+    mod configuration_access_tests {
+        use super::*;
+
+        #[test]
+        fn test_configuration_access_serialization() {
+            let access = ConfigurationAccess {
+                name: "NAS Credentials".to_string(),
+                r#type: "smb".to_string(),
+                account: "admin".to_string(),
+                secret: "password123".to_string(),
+            };
+
+            let json = serde_json::to_string(&access).unwrap();
+            let deserialized: ConfigurationAccess = serde_json::from_str(&json).unwrap();
+
+            assert_eq!(deserialized.name, "NAS Credentials");
+            assert_eq!(deserialized.r#type, "smb");
+            assert_eq!(deserialized.account, "admin");
+            assert_eq!(deserialized.secret, "password123");
+        }
+
+        #[test]
+        fn test_configuration_access_type_field() {
+            let json = r#"{"name": "test", "type": "ftp", "account": "user", "secret": "pass"}"#;
+            let access: ConfigurationAccess = serde_json::from_str(json).unwrap();
+            assert_eq!(access.r#type, "ftp");
+        }
+    }
+
+    /// Tests for Configuration struct
+    mod configuration_tests {
+        use super::*;
+
+        #[test]
+        fn test_configuration_serialization_roundtrip() {
+            let config = Configuration {
+                accesses: vec![
+                    ConfigurationAccess {
+                        name: "NAS".to_string(),
+                        r#type: "smb".to_string(),
+                        account: "admin".to_string(),
+                        secret: "pass".to_string(),
+                    },
+                ],
+                sources: vec![
+                    ConfigurationSource {
+                        r#type: "smb".to_string(),
+                        url: "smb://nas/media".to_string(),
+                        access: "NAS".to_string(),
+                    },
+                ],
+            };
+
+            let json = serde_json::to_string_pretty(&config).unwrap();
+            let deserialized: Configuration = serde_json::from_str(&json).unwrap();
+
+            assert_eq!(deserialized.accesses.len(), 1);
+            assert_eq!(deserialized.sources.len(), 1);
+            assert_eq!(deserialized.accesses[0].name, "NAS");
+            assert_eq!(deserialized.sources[0].url, "smb://nas/media");
+        }
+
+        #[test]
+        fn test_empty_configuration() {
+            let config = Configuration {
+                accesses: vec![],
+                sources: vec![],
+            };
+
+            let json = serde_json::to_string(&config).unwrap();
+            let deserialized: Configuration = serde_json::from_str(&json).unwrap();
+
+            assert!(deserialized.accesses.is_empty());
+            assert!(deserialized.sources.is_empty());
+        }
+
+        #[test]
+        fn test_configuration_with_multiple_entries() {
+            let config = Configuration {
+                accesses: vec![
+                    ConfigurationAccess {
+                        name: "NAS1".to_string(),
+                        r#type: "smb".to_string(),
+                        account: "admin".to_string(),
+                        secret: "pass1".to_string(),
+                    },
+                    ConfigurationAccess {
+                        name: "FTP Server".to_string(),
+                        r#type: "ftp".to_string(),
+                        account: "ftpuser".to_string(),
+                        secret: "ftppass".to_string(),
+                    },
+                ],
+                sources: vec![
+                    ConfigurationSource {
+                        r#type: "smb".to_string(),
+                        url: "smb://nas1/media".to_string(),
+                        access: "NAS1".to_string(),
+                    },
+                    ConfigurationSource {
+                        r#type: "ftp".to_string(),
+                        url: "ftp://ftp.example.com/files".to_string(),
+                        access: "FTP Server".to_string(),
+                    },
+                ],
+            };
+
+            let json = serde_json::to_string(&config).unwrap();
+            let deserialized: Configuration = serde_json::from_str(&json).unwrap();
+
+            assert_eq!(deserialized.accesses.len(), 2);
+            assert_eq!(deserialized.sources.len(), 2);
+        }
+
+        #[test]
+        fn test_configuration_json_deserialization() {
+            let json = r#"{
+                "accesses": [
+                    {"name": "test", "type": "smb", "account": "user", "secret": "pass"}
+                ],
+                "sources": [
+                    {"type": "smb", "url": "smb://host/share", "access": "test"}
+                ]
+            }"#;
+
+            let config: Configuration = serde_json::from_str(json).unwrap();
+            assert_eq!(config.accesses.len(), 1);
+            assert_eq!(config.sources.len(), 1);
+        }
+    }
+
+    /// Tests for local connection validation
+    mod local_connection_tests {
+        #[tokio::test]
+        async fn test_local_connection_with_nonexistent_path() {
+            let result = super::test_local_connection("/nonexistent/path/12345".to_string()).await;
+            assert!(result.is_err());
+            assert!(result.unwrap_err().contains("does not exist"));
+        }
+
+        #[tokio::test]
+        async fn test_local_connection_with_valid_directory() {
+            let result = super::test_local_connection("/tmp".to_string()).await;
+            assert!(result.is_ok());
+            assert!(result.unwrap());
+        }
+    }
+
+    /// Tests for default config path
+    mod config_path_tests {
+        #[tokio::test]
+        async fn test_get_default_config_path_returns_path() {
+            let result = super::get_default_config_path().await;
+            assert!(result.is_ok());
+            let path = result.unwrap();
+            assert!(path.contains(".catalogizer"));
+            assert!(path.contains("config.json"));
+        }
+
+        #[tokio::test]
+        async fn test_get_default_config_path_format() {
+            let result = super::get_default_config_path().await.unwrap();
+            // Should end with the expected filename
+            assert!(result.ends_with("config.json"));
+        }
+    }
+}

@@ -498,4 +498,121 @@ mod tests {
             }
         }
     }
+
+    /// Tests for auth token management
+    mod auth_token_tests {
+        use super::*;
+
+        #[tokio::test]
+        async fn test_set_auth_token() {
+            let state = ConfigState::default();
+            {
+                let mut config = state.lock().await;
+                config.auth_token = Some("test-jwt-token".to_string());
+            }
+            let config = state.lock().await;
+            assert_eq!(config.auth_token, Some("test-jwt-token".to_string()));
+        }
+
+        #[tokio::test]
+        async fn test_clear_auth_token() {
+            let state = ConfigState::default();
+            {
+                let mut config = state.lock().await;
+                config.auth_token = Some("token-to-clear".to_string());
+            }
+            {
+                let mut config = state.lock().await;
+                config.auth_token = None;
+            }
+            let config = state.lock().await;
+            assert!(config.auth_token.is_none());
+        }
+
+        #[tokio::test]
+        async fn test_set_server_url_updates_config() {
+            let state = ConfigState::default();
+            {
+                let mut config = state.lock().await;
+                config.server_url = Some("https://api.example.com".to_string());
+            }
+            let config = state.lock().await;
+            assert_eq!(config.server_url, Some("https://api.example.com".to_string()));
+        }
+
+        #[tokio::test]
+        async fn test_update_entire_config() {
+            let state = ConfigState::default();
+            let new_config = AppConfig {
+                server_url: Some("http://new-server:9090".to_string()),
+                auth_token: Some("new-token".to_string()),
+                theme: "light".to_string(),
+                auto_start: true,
+            };
+            {
+                let mut config = state.lock().await;
+                *config = new_config;
+            }
+            let config = state.lock().await;
+            assert_eq!(config.server_url, Some("http://new-server:9090".to_string()));
+            assert_eq!(config.auth_token, Some("new-token".to_string()));
+            assert_eq!(config.theme, "light");
+            assert!(config.auto_start);
+        }
+    }
+
+    /// Tests for config edge cases
+    mod config_edge_case_tests {
+        use super::*;
+
+        #[test]
+        fn test_config_debug_trait() {
+            let config = AppConfig::default();
+            let debug_str = format!("{:?}", config);
+            assert!(debug_str.contains("AppConfig"));
+            assert!(debug_str.contains("theme"));
+        }
+
+        #[test]
+        fn test_config_with_empty_strings() {
+            let config = AppConfig {
+                server_url: Some("".to_string()),
+                auth_token: Some("".to_string()),
+                theme: "".to_string(),
+                auto_start: false,
+            };
+            assert_eq!(config.server_url, Some("".to_string()));
+            assert_eq!(config.auth_token, Some("".to_string()));
+            assert_eq!(config.theme, "");
+        }
+
+        #[test]
+        fn test_config_with_special_characters_in_url() {
+            let config = AppConfig {
+                server_url: Some("http://192.168.1.100:8080/api?key=value&foo=bar".to_string()),
+                ..AppConfig::default()
+            };
+            assert!(config.server_url.unwrap().contains("?key=value"));
+        }
+
+        #[test]
+        fn test_config_deserialization_with_missing_optional_fields() {
+            let json = r#"{
+                "theme": "dark",
+                "auto_start": false
+            }"#;
+
+            let config: AppConfig = serde_json::from_str(json).unwrap();
+            assert!(config.server_url.is_none());
+            assert!(config.auth_token.is_none());
+            assert_eq!(config.theme, "dark");
+        }
+
+        #[test]
+        fn test_config_serialization_preserves_none() {
+            let config = AppConfig::default();
+            let json = serde_json::to_string(&config).unwrap();
+            assert!(json.contains("null"));
+        }
+    }
 }

@@ -1,4 +1,4 @@
-# Module 4: Multi-Platform Usage - Video Scripts
+# Module 4: Multi-Platform Experience - Video Scripts
 
 ---
 
@@ -65,6 +65,17 @@ The app supports the same core features as the web interface: browsing your cata
 
 > **Tip**: The Android app shares the same user account and favorites as the web interface. Changes on one platform appear on the other.
 
+### Quiz Questions
+
+1. **Q**: What architecture pattern does the Android app follow?
+   **A**: MVVM (Model-View-ViewModel) with Compose UI, ViewModel using StateFlow, Repository using Room + Retrofit.
+
+2. **Q**: What technology enables offline mode on Android?
+   **A**: Room database stores metadata locally for offline browsing.
+
+3. **Q**: What dependency injection framework does the Android app use?
+   **A**: Hilt.
+
 ---
 
 ## Lesson 4.2: Android TV App
@@ -126,6 +137,17 @@ The shared architecture with the mobile app means the same Repositories and data
 
 > **Tip**: Organize your most-watched content into collections. They appear as dedicated rows on the TV home screen, making it easy to find your favorites.
 
+### Quiz Questions
+
+1. **Q**: How does the TV app differ from the mobile app in terms of architecture?
+   **A**: They share the same data layer (Repositories, Room, Retrofit) but differ in the UI layer, where TV uses Composables optimized for large screens and D-pad navigation.
+
+2. **Q**: What navigation method is the TV app optimized for?
+   **A**: D-pad navigation (up, down, left, right, select) for use with a TV remote.
+
+3. **Q**: How does the shared architecture benefit both apps?
+   **A**: Bug fixes and features in the shared data layer benefit both apps simultaneously without duplicate work.
+
 ---
 
 ## Lesson 4.3: Desktop Application
@@ -136,13 +158,13 @@ The shared architecture with the mobile app means the same Repositories and data
 
 The Catalogizer desktop application is built with Tauri, a modern framework that combines a web frontend with a native Rust backend. This gives you the full web interface experience with native operating system integration.
 
-The project lives in the catalogizer-desktop directory. The frontend is a React application -- similar to catalog-web -- while the backend is Rust code that handles native OS operations. Communication between the two happens through Tauri's IPC system using commands and events.
+The project lives in the catalogizer-desktop directory. The frontend is a React application -- similar to catalog-web -- while the backend is Rust code in src-tauri/ that handles native OS operations. Communication between the two happens through Tauri's IPC system using commands and events.
 
 To develop the desktop app, you need Node.js for the frontend and the Rust toolchain for the backend. Start the development environment with npm run tauri:dev. This launches both the frontend dev server and the Rust backend, with hot reloading for the frontend.
 
 For production builds, run npm run tauri:build. This compiles the Rust backend, bundles the frontend, and produces a native installer for your platform -- MSI for Windows, DMG for macOS, or AppImage/deb for Linux.
 
-There is also the Installer Wizard, a separate Tauri application in the installer-wizard directory. This provides a guided setup experience for first-time users. It walks through server configuration, authentication, and initial settings with a step-by-step interface. The wizard uses the same Tauri architecture with its own React frontend and Rust backend.
+There is also the Installer Wizard, a separate Tauri application in the installer-wizard directory. This provides a guided setup experience for first-time users. It walks through server configuration, authentication, and initial settings with a step-by-step interface. The wizard also has Rust backend code in src-tauri/ with specialized network and SMB configuration modules (network.rs, smb.rs).
 
 The desktop app provides native features not available in the browser. System tray integration keeps Catalogizer accessible even when the window is minimized. Native file system access allows direct file operations. Desktop notifications alert you to new media discoveries or completed conversions.
 
@@ -153,7 +175,7 @@ The IPC layer is key to understanding how the desktop app works. React component
 - [00:00] Open the catalogizer-desktop project directory
 - [00:30] Show the project structure: src/ for React, src-tauri/ for Rust
 - [01:00] Open a React component file
-- [01:30] Open a Rust command file showing IPC handlers
+- [01:30] Open a Rust command file (src-tauri/src/main.rs) showing IPC handlers
 - [02:00] Run `npm run tauri:dev` -- show both servers starting
 - [03:00] The desktop app window opens -- show the native frame
 - [03:30] Browse the catalog in the desktop app -- looks like the web but with native chrome
@@ -166,15 +188,16 @@ The IPC layer is key to understanding how the desktop app works. React component
 - [07:00] Click system tray to restore the window
 - [07:30] Show the installer-wizard directory
 - [08:00] Open the installer wizard project structure
-- [08:30] Run `npm run tauri:dev` in the installer-wizard directory
-- [09:00] Walk through the wizard steps: server config, auth, settings
+- [08:30] Show installer-wizard/src-tauri/src/ -- main.rs, network.rs, smb.rs
+- [09:00] Run `npm run tauri:dev` in the installer-wizard directory
+- [09:30] Walk through the wizard steps: server config, auth, settings
 - [10:00] Run `npm run tauri:build` for the desktop app
 - [10:30] Show the build output: native installer file
 - [11:00] Show the IPC command pattern in the Rust code
 - [12:00] Show the IPC event pattern
 - [12:30] Show how React calls Tauri commands
-- [13:00] Discuss the contexts directory in the desktop app
-- [13:30] Show the services and utilities
+- [13:00] Show the desktop app lib/ directory for utilities
+- [13:30] Show the pages and components directories
 - [14:00] Final overview of the desktop experience
 
 ### Key Points
@@ -183,6 +206,7 @@ The IPC layer is key to understanding how the desktop app works. React component
 - Development: `npm run tauri:dev` for hot-reloading dev environment
 - Production: `npm run tauri:build` creates native installers (MSI, DMG, AppImage/deb)
 - Installer Wizard provides guided first-time setup (installer-wizard directory)
+- Installer Wizard has specialized Rust modules: network.rs, smb.rs
 - Native features: system tray, file system access, desktop notifications
 - IPC uses Tauri commands (React calls Rust) and events (bidirectional)
 
@@ -191,6 +215,17 @@ The IPC layer is key to understanding how the desktop app works. React component
 > **Tip**: Use the Installer Wizard for first-time setup. It validates your server connection and configuration before the main app launches, preventing common setup issues.
 
 > **Tip**: The desktop app can stay in the system tray and notify you of new media discoveries. This makes it a great background companion while you work.
+
+### Quiz Questions
+
+1. **Q**: What two technologies make up the Tauri desktop application?
+   **A**: A React frontend and a Rust backend, communicating through Tauri's IPC system.
+
+2. **Q**: What native platform installers can `npm run tauri:build` produce?
+   **A**: MSI for Windows, DMG for macOS, and AppImage/deb for Linux.
+
+3. **Q**: What does the Installer Wizard provide?
+   **A**: A guided first-time setup experience that walks through server configuration, authentication, and initial settings with step-by-step validation.
 
 ---
 
@@ -210,7 +245,7 @@ Let me walk through a typical workflow. First, create a client instance with the
 
 The type system is comprehensive. Every API response has a corresponding TypeScript interface, so you get full autocomplete and type checking in your editor. This makes it much harder to make mistakes when building integrations.
 
-Testing the library is straightforward. Run npm run build to compile the TypeScript, then npm run test to execute the test suite. The tests directory contains test files that also serve as usage examples.
+Testing the library is straightforward. Run npm run build to compile the TypeScript, then npm run test to execute the test suite. The tests in src/services/__tests__/ also serve as usage examples.
 
 Common use cases include: building custom dashboards, automating media organization workflows, integrating Catalogizer with other services like home automation systems, creating batch processing scripts, and building mobile or desktop clients beyond the official ones.
 
@@ -233,7 +268,7 @@ Common use cases include: building custom dashboards, automating media organizat
 - [08:00] Show full TypeScript autocomplete in the editor
 - [08:30] Run `npm run build` in the library directory
 - [09:00] Run `npm run test` -- show tests passing
-- [09:30] Open the test files as usage examples
+- [09:30] Open the test files in src/services/__tests__/ as usage examples
 - [10:00] Show a more complex example: automation script that organizes new media
 - [11:00] Discuss integration possibilities: home automation, batch processing, custom UIs
 - [12:00] Final overview of the API client capabilities
@@ -252,3 +287,14 @@ Common use cases include: building custom dashboards, automating media organizat
 > **Tip**: Start by reading the test files in the library. They serve as practical usage examples for every API endpoint.
 
 > **Tip**: The TypeScript types exported by the library are invaluable even if you are building a client in another language. They document the exact shape of every API request and response.
+
+### Quiz Questions
+
+1. **Q**: What three main directories make up the API client library?
+   **A**: services/ (API methods), types/ (TypeScript interfaces), and utils/ (helper functions).
+
+2. **Q**: How does the client handle JWT token expiry?
+   **A**: Automatically -- the client manages JWT tokens including refresh when they expire.
+
+3. **Q**: Where can you find practical usage examples for the API client?
+   **A**: In the test files under src/services/__tests__/, which demonstrate every API endpoint.
