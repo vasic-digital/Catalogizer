@@ -31,6 +31,7 @@ Catalogizer is a comprehensive media collection management system that automatic
 ## 📋 Table of Contents
 
 - [Architecture Overview](#architecture-overview)
+- [Modular Architecture (Submodules)](#modular-architecture-submodules)
 - [Installation & Setup](#installation--setup)
 - [Configuration](#configuration)
 - [SMB Resilience & Offline Handling](#smb-resilience--offline-handling)
@@ -97,6 +98,47 @@ Catalogizer is a comprehensive media collection management system that automatic
     - Media metadata storage
     - User and session management
     - Configuration and settings
+
+### Modular Architecture (Submodules)
+
+All generic, reusable functionality has been extracted into independent modules registered as git submodules. Each module follows the `digital.vasic.*` convention with its own tests, documentation, and upstream repositories.
+
+**Go Modules (21):**
+
+| Module | Package | Purpose |
+|--------|---------|---------|
+| Auth | `digital.vasic.auth` | JWT authentication, bcrypt password helpers |
+| Cache | `digital.vasic.cache` | Redis-backed caching with TTL management |
+| Challenges | `digital.vasic.challenges` | Structured test scenario framework |
+| Concurrency | `digital.vasic.concurrency` | Retry with backoff, offline cache patterns |
+| Config | `digital.vasic.config` | Configuration management (env, file, validation) |
+| Database | `digital.vasic.database` | Migration patterns, dual SQLite/PostgreSQL support |
+| Discovery | `digital.vasic.discovery` | Network/service discovery (SMB, mDNS) |
+| EventBus | `digital.vasic.eventbus` | Typed event channels and pub/sub |
+| Filesystem | `digital.vasic.filesystem` | Unified multi-protocol client (SMB, FTP, NFS, WebDAV, local) |
+| Formatters | `digital.vasic.formatters` | HTTP response formatting and error wrapping |
+| Media | `digital.vasic.media` | Media detection, analysis, and metadata extraction |
+| Middleware | `digital.vasic.middleware` | HTTP middleware (CORS, logging, recovery, request ID) |
+| Observability | `digital.vasic.observability` | Prometheus metrics and OpenTelemetry integration |
+| Plugins | `digital.vasic.plugins` | Provider plugin interface and registry |
+| RateLimiter | `digital.vasic.ratelimiter` | Pluggable rate limiting (memory, Redis, sliding window) |
+| Security | `digital.vasic.security` | CORS config, CSP headers, request sanitization |
+| Storage | `digital.vasic.storage` | Object storage abstraction (MinIO/S3-compatible) |
+| Streaming | `digital.vasic.streaming` | WebSocket hub with room/topic support |
+| Watcher | `digital.vasic.watcher` | Filesystem watcher with debouncing and filtering |
+| Android-Toolkit | — | Android UI components and utilities |
+
+**TypeScript Modules (2):**
+
+| Module | Package | Purpose |
+|--------|---------|---------|
+| WebSocket-Client-TS | `@vasic-digital/websocket-client` | Generic WebSocket client with React hooks |
+| UI-Components-React | `@vasic-digital/ui-components` | Reusable React UI component library |
+
+To initialize submodules after cloning:
+```bash
+git submodule init && git submodule update --recursive
+```
     - Analysis results and statistics
 
 ### Supported Protocols
