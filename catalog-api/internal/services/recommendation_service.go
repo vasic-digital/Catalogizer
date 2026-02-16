@@ -532,7 +532,7 @@ func (rs *RecommendationService) getOMDbSimilarMovies(ctx context.Context, metad
 		}
 
 		// Skip the same movie
-		if strings.ToLower(movie.Title) == strings.ToLower(metadata.Title) {
+		if strings.EqualFold(movie.Title, metadata.Title) {
 			continue
 		}
 
@@ -669,7 +669,7 @@ func (rs *RecommendationService) getGoogleBooksSimilar(ctx context.Context, meta
 
 		for _, book := range result.Items {
 			// Skip the same book
-			if strings.ToLower(book.VolumeInfo.Title) == strings.ToLower(metadata.Title) {
+			if strings.EqualFold(book.VolumeInfo.Title, metadata.Title) {
 				continue
 			}
 
@@ -814,7 +814,7 @@ func (rs *RecommendationService) getGitHubSimilarSoftware(ctx context.Context, m
 	var items []*ExternalSimilarItem
 	for _, repo := range result.Items {
 		// Skip if same name
-		if strings.ToLower(repo.Name) == strings.ToLower(metadata.Title) {
+		if strings.EqualFold(repo.Name, metadata.Title) {
 			continue
 		}
 

@@ -64,9 +64,7 @@ func (h *CatalogHandler) ListPath(c *gin.Context) {
 	}
 
 	// Clean the path (remove leading slash if present)
-	if strings.HasPrefix(path, "/") {
-		path = path[1:]
-	}
+	path = strings.TrimPrefix(path, "/")
 
 	sortBy := c.DefaultQuery("sort_by", "name")
 	sortOrder := c.DefaultQuery("sort_order", "asc")
@@ -106,9 +104,7 @@ func (h *CatalogHandler) GetFileInfo(c *gin.Context) {
 	}
 
 	// Clean the path
-	if strings.HasPrefix(path, "/") {
-		path = path[1:]
-	}
+	path = strings.TrimPrefix(path, "/")
 
 	// Try to get file info by path or ID
 	fileInfo, err := h.catalogService.GetFileInfo(path)

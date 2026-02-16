@@ -235,17 +235,12 @@ func (s *FavoritesService) GetRecommendedFavorites(userID int, limit int) ([]mod
 	}
 
 	var entityTypes []string
-	var categories []string
 
 	for _, favorite := range userFavorites {
 		entityTypes = append(entityTypes, favorite.EntityType)
-		if favorite.Category != nil {
-			categories = append(categories, *favorite.Category)
-		}
 	}
 
 	entityTypes = s.removeDuplicateStrings(entityTypes)
-	categories = s.removeDuplicateStrings(categories)
 
 	var recommendations []models.RecommendedFavorite
 

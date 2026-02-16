@@ -12,6 +12,9 @@ import (
 
 	"catalogizer/models"
 	"catalogizer/repository"
+
+	"golang.org/x/text/cases"
+	"golang.org/x/text/language"
 )
 
 type ConfigurationService struct {
@@ -825,7 +828,7 @@ func (s *ConfigurationService) toCamelCase(str string) string {
 	parts := strings.Split(str, "_")
 	for i := range parts {
 		if i > 0 {
-			parts[i] = strings.Title(parts[i])
+			parts[i] = cases.Title(language.Und, cases.NoLower).String(parts[i])
 		}
 	}
 	return strings.Join(parts, "")

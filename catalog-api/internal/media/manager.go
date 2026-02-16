@@ -11,7 +11,6 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
 	"os"
 	"path/filepath"
 	"time"
@@ -579,7 +578,7 @@ func (mm *MediaManager) ExportData(exportPath string) error {
 
 	statsPath := filepath.Join(exportPath, "media_stats.json")
 	statsJSON, _ := json.Marshal(stats)
-	if err := ioutil.WriteFile(statsPath, statsJSON, 0644); err != nil {
+	if err := os.WriteFile(statsPath, statsJSON, 0644); err != nil {
 		return fmt.Errorf("failed to export statistics: %w", err)
 	}
 

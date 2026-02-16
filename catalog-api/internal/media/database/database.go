@@ -3,7 +3,7 @@ package database
 import (
 	"database/sql"
 	"fmt"
-	"io/ioutil"
+	"os"
 	"path/filepath"
 
 	_ "github.com/mutecomm/go-sqlcipher"
@@ -87,7 +87,7 @@ func (mdb *MediaDatabase) connect() error {
 func (mdb *MediaDatabase) initialize() error {
 	// Read schema from file
 	schemaPath := filepath.Join(filepath.Dir(mdb.dbPath), "schema.sql")
-	schemaContent, err := ioutil.ReadFile(schemaPath)
+	schemaContent, err := os.ReadFile(schemaPath)
 	if err != nil {
 		// If schema file doesn't exist, use embedded schema
 		return mdb.createSchemaFromString(getEmbeddedSchema())

@@ -3,6 +3,7 @@ package smb
 import (
 	"errors"
 	"fmt"
+	"net"
 	"strings"
 	"testing"
 )
@@ -122,7 +123,7 @@ func TestSmbConfig_AddressFormatting(t *testing.T) {
 		{
 			name:     "IPv6 host",
 			config:   SmbConfig{Host: "::1", Port: 445},
-			wantAddr: "::1:445",
+			wantAddr: "[::1]:445",
 		},
 		{
 			name:     "empty host",
@@ -139,7 +140,8 @@ func TestSmbConfig_AddressFormatting(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			// Replicate the address formatting logic from NewSmbClient
-			addr := fmt.Sprintf("%s:%d", tt.config.Host, tt.config.Port)
+			// using net.JoinHostPort to correctly handle IPv6 addresses
+			addr := net.JoinHostPort(tt.config.Host, fmt.Sprintf("%d", tt.config.Port))
 			if addr != tt.wantAddr {
 				t.Errorf("address = %q, want %q", addr, tt.wantAddr)
 			}
@@ -434,7 +436,8 @@ func TestSmbConfig_SpecialCharacters(t *testing.T) {
 			}
 
 			// Verify address formatting works with any config
-			addr := fmt.Sprintf("%s:%d", tt.config.Host, tt.config.Port)
+			// using net.JoinHostPort to correctly handle IPv6 addresses
+			addr := net.JoinHostPort(tt.config.Host, fmt.Sprintf("%d", tt.config.Port))
 			if !strings.Contains(addr, tt.config.Host) {
 				t.Errorf("address %q should contain host %q", addr, tt.config.Host)
 			}

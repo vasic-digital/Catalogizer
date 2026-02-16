@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"io/ioutil"
 	"log"
 	"os"
 	"path/filepath"
@@ -967,7 +966,7 @@ func (s *ConfigurationWizardService) testSQLiteConnection(dbPath string) error {
 
 	// Test write access
 	testFile := filepath.Join(dir, "test.tmp")
-	if err := ioutil.WriteFile(testFile, []byte("test"), 0644); err != nil {
+	if err := os.WriteFile(testFile, []byte("test"), 0644); err != nil {
 		return fmt.Errorf("no write access to database directory: %w", err)
 	}
 	os.Remove(testFile)
@@ -1004,7 +1003,7 @@ func (s *ConfigurationWizardService) testMediaStorage(config map[string]interfac
 
 		// Test write access
 		testFile := filepath.Join(mediaPath, "test.tmp")
-		if err := ioutil.WriteFile(testFile, []byte("test"), 0644); err != nil {
+		if err := os.WriteFile(testFile, []byte("test"), 0644); err != nil {
 			return fmt.Errorf("no write access to media directory: %w", err)
 		}
 		os.Remove(testFile)
@@ -1065,7 +1064,7 @@ func (s *ConfigurationWizardService) writeConfigFile(filename string, data map[s
 		return err
 	}
 
-	return ioutil.WriteFile(filename, jsonData, 0644)
+	return os.WriteFile(filename, jsonData, 0644)
 }
 
 func (s *ConfigurationWizardService) executePostInstallAction(action PostInstallAction, session *models.WizardSession) error {

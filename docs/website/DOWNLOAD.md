@@ -4,13 +4,12 @@ Choose the installation method that best fits your environment.
 
 ---
 
-## Docker (Recommended)
+## Containers (Recommended)
 
-The fastest way to get Catalogizer running. Includes the API server, PostgreSQL, and Redis.
+The fastest way to get Catalogizer running. Includes the API server, PostgreSQL, and Redis. Both Podman and Docker are supported as container runtimes.
 
 ### Requirements
-- Docker 20.10+
-- Docker Compose v2+
+- Podman 5+ with podman-compose, or Docker 20.10+ with Docker Compose v2+
 - 4 GB RAM minimum
 
 ### Quick Install
@@ -20,6 +19,11 @@ git clone <repository-url>
 cd Catalogizer
 cp .env.example .env
 # Edit .env with your POSTGRES_PASSWORD and JWT_SECRET
+
+# Using Podman (preferred when Docker is unavailable)
+podman-compose up -d
+
+# Or using Docker
 docker compose up -d
 ```
 
@@ -30,6 +34,8 @@ The API is available at http://localhost:8080.
 Include Prometheus and Grafana for metrics and dashboards:
 
 ```bash
+podman-compose --profile monitoring up -d
+# or
 docker compose --profile monitoring up -d
 ```
 
@@ -38,17 +44,26 @@ docker compose --profile monitoring up -d
 
 ### Development Environment
 
-Use the development Docker Compose file for local development with hot reloading:
+Use the development compose file for local development with hot reloading:
 
 ```bash
+podman-compose -f docker-compose.dev.yml up
+# or
 docker compose -f docker-compose.dev.yml up
 ```
 
 Includes pgAdmin (port 5050) and Redis Commander (port 8081) with the `tools` profile:
 
 ```bash
-docker compose -f docker-compose.dev.yml --profile tools up
+podman-compose -f docker-compose.dev.yml --profile tools up
 ```
+
+### Podman Notes
+
+When using Podman, keep these points in mind:
+- Use fully qualified image names (e.g., `docker.io/library/postgres:15-alpine`) as short names may not resolve without a TTY
+- Use `podman build --network host` to avoid SSL issues with package downloads
+- Set `GOTOOLCHAIN=local` in build environments to prevent Go from auto-downloading toolchains
 
 See the [Quick Start Tutorial](../tutorials/QUICK_START.md) for a step-by-step walkthrough.
 

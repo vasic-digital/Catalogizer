@@ -298,11 +298,7 @@ func (h *DownloadHandler) createZipStream(ctx context.Context, w io.Writer, smbC
 
 	var totalSize int64
 	err := h.addDirectoryToZip(ctx, zipWriter, smbClient, basePath, "", recursive, maxDepth, currentDepth, &totalSize)
-	if err != nil {
-		return false
-	}
-
-	return true
+	return err == nil
 }
 
 // addDirectoryToZip recursively adds directory contents to ZIP

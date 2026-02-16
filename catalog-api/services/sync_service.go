@@ -496,7 +496,9 @@ func (s *SyncService) performGoogleCloudStorageSync(ctx context.Context, session
 	var err error
 
 	if credentialsFile != "" {
-		// Use credentials file
+		// Use credentials file for GCS authentication
+		// Note: option.WithCredentialsFile is deprecated; migrate to cloud.google.com/go/auth
+		// when upgrading Google Cloud dependencies
 		client, err = storage.NewClient(ctx, option.WithCredentialsFile(credentialsFile))
 	} else {
 		// Use default credentials
@@ -567,7 +569,7 @@ func (s *SyncService) performGoogleCloudStorageSync(ctx context.Context, session
 	})
 
 	if err != nil {
-		return fmt.Errorf("Google Cloud Storage sync failed: %w", err)
+		return fmt.Errorf("google cloud storage sync failed: %w", err)
 	}
 
 	return nil

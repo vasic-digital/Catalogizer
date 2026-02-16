@@ -736,8 +736,7 @@ func (s *SubtitleService) parseASS(content string) ([]SubtitleLine, error) {
 	// Parse format to find text field position
 	textFieldIndex := 9 // Default position for Text field
 	if formatLine != "" {
-		formatFields := strings.Split(strings.TrimPrefix(formatLine, "Format:"), ",")
-		formatFields = strings.Split(strings.TrimPrefix(strings.ToLower(formatLine), "format:"), ",")
+		formatFields := strings.Split(strings.TrimPrefix(strings.ToLower(formatLine), "format:"), ",")
 		for i, field := range formatFields {
 			if strings.TrimSpace(field) == "text" {
 				textFieldIndex = i

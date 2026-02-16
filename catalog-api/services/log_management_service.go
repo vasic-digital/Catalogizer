@@ -544,12 +544,9 @@ func (s *LogManagementService) streamLogEntries(channel chan<- *models.LogEntry,
 	ticker := time.NewTicker(1 * time.Second)
 	defer ticker.Stop()
 
-	for {
-		select {
-		case <-ticker.C:
-			// Check for new log entries and send them to the channel
-			// This is a placeholder implementation
-		}
+	for range ticker.C {
+		// Check for new log entries and send them to the channel
+		// This is a placeholder implementation
 	}
 }
 

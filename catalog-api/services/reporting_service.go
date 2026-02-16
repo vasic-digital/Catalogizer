@@ -312,23 +312,23 @@ func (s *ReportingService) formatAsMarkdown(data interface{}, reportType string)
 	switch reportType {
 	case "user_analytics":
 		report := data.(*models.UserAnalyticsReport)
-		buffer.WriteString(fmt.Sprintf("# User Analytics Report\n\n"))
+		buffer.WriteString("# User Analytics Report\n\n")
 		displayName := ""
 		if report.User.DisplayName != nil {
 			displayName = *report.User.DisplayName
 		}
 		buffer.WriteString(fmt.Sprintf("**User:** %s (%s)\n", displayName, report.User.Username))
 		buffer.WriteString(fmt.Sprintf("**Period:** %s to %s\n\n", report.StartDate.Format("2006-01-02"), report.EndDate.Format("2006-01-02")))
-		buffer.WriteString(fmt.Sprintf("## Summary\n\n"))
+		buffer.WriteString("## Summary\n\n")
 		buffer.WriteString(fmt.Sprintf("- Total Media Accesses: %d\n", report.TotalMediaAccesses))
 		buffer.WriteString(fmt.Sprintf("- Total Events: %d\n", report.TotalEvents))
 		buffer.WriteString(fmt.Sprintf("- Account Created: %s\n\n", report.User.CreatedAt.Format("2006-01-02")))
 
 	case "system_overview":
 		report := data.(*models.SystemOverviewReport)
-		buffer.WriteString(fmt.Sprintf("# System Overview Report\n\n"))
+		buffer.WriteString("# System Overview Report\n\n")
 		buffer.WriteString(fmt.Sprintf("**Period:** %s to %s\n\n", report.StartDate.Format("2006-01-02"), report.EndDate.Format("2006-01-02")))
-		buffer.WriteString(fmt.Sprintf("## System Statistics\n\n"))
+		buffer.WriteString("## System Statistics\n\n")
 		buffer.WriteString(fmt.Sprintf("- Total Users: %d\n", report.TotalUsers))
 		buffer.WriteString(fmt.Sprintf("- Active Users: %d\n", report.ActiveUsers))
 		buffer.WriteString(fmt.Sprintf("- Total Media Accesses: %d\n", report.TotalMediaAccesses))

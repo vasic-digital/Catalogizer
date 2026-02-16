@@ -2,10 +2,17 @@
 
 ## Course Title: Mastering Catalogizer - Multi-Protocol Media Collection Management
 
-**Total Estimated Duration**: ~9 hours 45 minutes
+**Total Estimated Duration**: ~6 hours 25 minutes (core modules) / ~9 hours 20 minutes (with advanced modules)
 **Target Audience**: End users, system administrators, and developers
 **Prerequisites**: Basic familiarity with web applications and file management concepts
 **Certification**: Complete all modules, exercises, and pass the final assessment with 80% or higher
+
+### Course Materials
+
+Each module includes:
+- **Video Scripts**: Detailed narration and on-screen action guides in `scripts/`
+- **Slide Outlines**: Structured presentation slides with speaker notes in `slides/`
+- **Quiz Questions**: Comprehension checks embedded in each lesson script
 
 ---
 
@@ -429,10 +436,10 @@ By the end of this module, students will be able to:
 
 ---
 
-## Module 7: Testing & Quality Assurance
+## Advanced Module 7: Testing & Quality Assurance (Optional)
 
 **Module Duration**: ~60 minutes
-**Description**: Comprehensive testing strategies, writing effective tests, security scanning, performance testing, and maintaining code quality across all components.
+**Description**: Comprehensive testing strategies, writing effective tests, security scanning, performance testing, and maintaining code quality across all components. This is an advanced module beyond the core six-module curriculum.
 **Prerequisites**: Module 6 completed (at least Lessons 6.1-6.2)
 
 ### Learning Objectives
@@ -497,10 +504,10 @@ By the end of this module, students will be able to:
 
 ---
 
-## Module 8: Deployment & Production
+## Advanced Module 8: Deployment & Production (Optional)
 
 **Module Duration**: ~55 minutes
-**Description**: Deploy Catalogizer to production environments, configure infrastructure, set up monitoring, and maintain the system.
+**Description**: Deploy Catalogizer to production environments, configure infrastructure, set up monitoring, and maintain the system. This is an advanced module beyond the core six-module curriculum.
 **Prerequisites**: Modules 5 and 6 completed
 
 ### Learning Objectives
@@ -564,23 +571,46 @@ By the end of this module, students will be able to:
 
 ## Summary
 
+### Core Modules (6 modules, ~6 hours 25 minutes)
+
 | Module | Lessons | Duration |
 |--------|---------|----------|
-| Module 1: Introduction & Installation | 4 | ~45 min |
-| Module 2: Getting Started with Media Management | 6 | ~75 min |
-| Module 3: Advanced Media Features | 6 | ~75 min |
-| Module 4: Multi-Platform Experience | 4 | ~55 min |
-| Module 5: Administration & Configuration | 5 | ~65 min |
-| Module 6: Developer Guide & API | 5 | ~70 min |
+| Module 1: Installation & Setup | 4 | ~45 min |
+| Module 2: Getting Started | 6 | ~75 min |
+| Module 3: Media Management | 6 | ~75 min |
+| Module 4: Multi-Platform | 4 | ~55 min |
+| Module 5: Administration | 5 | ~65 min |
+| Module 6: Developer Guide | 5 | ~70 min |
+| **Core Total** | **30** | **~6h 25min** |
+
+### Advanced Modules (Optional, ~1 hour 55 minutes)
+
+| Module | Lessons | Duration |
+|--------|---------|----------|
 | Module 7: Testing & Quality Assurance | 4 | ~60 min |
 | Module 8: Deployment & Production | 4 | ~55 min |
-| **Total** | **38** | **~9h 45min** |
+| **Advanced Total** | **8** | **~1h 55min** |
+
+### Complete Course Total: 38 lessons, ~9 hours 20 minutes
+
+---
+
+## Course Materials Reference
+
+| Module | Script | Slides |
+|--------|--------|--------|
+| Module 1 | `scripts/MODULE_1_INSTALLATION.md` | `slides/MODULE_1_SLIDES.md` |
+| Module 2 | `scripts/MODULE_2_GETTING_STARTED.md` | `slides/MODULE_2_SLIDES.md` |
+| Module 3 | `scripts/MODULE_3_MEDIA_MANAGEMENT.md` | `slides/MODULE_3_SLIDES.md` |
+| Module 4 | `scripts/MODULE_4_MULTI_PLATFORM.md` | `slides/MODULE_4_SLIDES.md` |
+| Module 5 | `scripts/MODULE_5_ADMINISTRATION.md` | `slides/MODULE_5_SLIDES.md` |
+| Module 6 | `scripts/MODULE_6_DEVELOPER_GUIDE.md` | `slides/MODULE_6_SLIDES.md` |
 
 ---
 
 ## Certification Path
 
-1. **Complete all 8 modules** including video lessons and reading materials
+1. **Complete all 6 core modules** including video lessons and reading materials
 2. **Complete all hands-on exercises** (see EXERCISES.md) with at least 80% completion
 3. **Pass the final assessment** (see ASSESSMENT.md) with a score of 80% or higher
 4. **Complete one capstone project** from the exercises document
@@ -588,4 +618,5 @@ By the end of this module, students will be able to:
 Certification levels:
 - **Catalogizer User** -- Modules 1-4 completed with exercises and assessment
 - **Catalogizer Administrator** -- Modules 1-5 completed with exercises and assessment
-- **Catalogizer Developer** -- All 8 modules completed with exercises, assessment, and capstone project
+- **Catalogizer Developer** -- All 6 core modules completed with exercises, assessment, and capstone project
+- **Catalogizer Expert** -- All 8 modules (including advanced) completed with exercises, assessment, and capstone project

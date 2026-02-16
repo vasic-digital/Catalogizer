@@ -1,5 +1,9 @@
 # Catalogizer Features
 
+Catalogizer is a multi-protocol media collection management system that detects, categorizes, and organizes media across all your storage. Below is a comprehensive overview of its capabilities.
+
+---
+
 ## Multi-Protocol Storage
 
 Connect to media stored anywhere on your network or cloud.
@@ -11,7 +15,16 @@ Connect to media stored anywhere on your network or cloud.
 - **Local Filesystem**: Direct access to locally attached storage
 - **Cloud Storage Sync**: Synchronize files with Amazon S3, Google Cloud Storage, or local folders
 
-All protocols share a common interface, making it easy to manage media across different storage backends from a single catalog.
+All protocols share a common UnifiedClient interface, making it easy to manage media across different storage backends from a single catalog. A factory pattern creates the appropriate client based on the protocol, so the rest of the application is protocol-agnostic.
+
+### Network Resilience
+
+Catalogizer is designed for unreliable network environments:
+
+- **Circuit Breaker**: Prevents repeated connection attempts to downed servers, preserving system resources
+- **Exponential Backoff Retry**: Gradually retries failed connections with increasing delays
+- **Offline Cache**: Serves previously loaded metadata during storage outages so users can continue browsing
+- **SMB Discovery**: Auto-detects available SMB shares on the local network for simplified setup
 
 ## Media Detection and Analysis
 
@@ -92,11 +105,71 @@ Access your catalog from any device.
 - Media search, metadata retrieval, and source management
 - Publishable as an npm package or usable via local linking
 
+## Built-in Media Player
+
+Play video and audio directly in the browser without external software.
+
+- **Universal playback**: Stream from any connected storage source regardless of protocol
+- **Playback position tracking**: Resume where you left off, synced across all devices
+- **Subtitle support**: SRT, ASS, SSA, and VTT formats with auto-matching and in-player track selection
+- **Music features**: Lyrics display, cover art fetching from MusicBrainz, Last.fm, Spotify, iTunes, and Discogs
+- **Deep linking**: Share links to specific playback positions with other users
+- **Playlist playback**: Auto-advancement through ordered sequences with seamless transitions
+
+## Organization and Library Management
+
+Keep your library structured with powerful organizational tools.
+
+- **Favorites**: Quick bookmarking with JSON and CSV export/import; matching uses metadata so imports work across instances
+- **Collections**: Manual (hand-picked), Smart (rule-based auto-population), and Dynamic (adaptive criteria) collection types
+- **Playlists**: Ordered sequences for sequential playback with drag-and-drop reordering
+- **Access permissions**: Collections support Public, Private, and shared-with-specific-users visibility
+- **Bulk operations**: Select multiple items for batch actions across the catalog
+
+## Format Conversion
+
+Transform media between formats without leaving the application.
+
+- **Video**: Convert between containers and codecs
+- **Audio**: MP3, FLAC, WAV, AAC, and more
+- **PDF**: Convert to images (thumbnails), text (search indexing), or HTML (web display)
+- **Batch queue**: Queue multiple conversions with real-time progress via WebSocket
+- **Automatic cataloging**: Converted files appear in the catalog alongside originals
+
+## Localization
+
+Full multi-language support for both the interface and media metadata.
+
+- **Interface localization**: Translates UI labels, messages, and system text
+- **Media metadata translation**: Displays titles and descriptions in the user's preferred language
+- **TMDB multi-language**: Fetches metadata in dozens of languages
+- **Cross-language search**: Find media using translated titles
+- **Extensible**: Add new languages through translation files without code changes
+
+## Advanced Reporting
+
+Generate professional reports and analytics exports.
+
+- **PDF reports**: Charts, statistics, and library summaries in professional format
+- **Analytics export**: Export data for external reporting tools
+- **Point-in-time snapshots**: Reports capture the state of your library at generation time
+- **Growth analysis**: Track how your library has changed over time
+
+## Modular Architecture
+
+Built for extensibility with a submodule-based architecture.
+
+- **19 Go modules**: Auth, Cache, Database, Concurrency, Storage, EventBus, Streaming, Security, Observability, Formatters, Plugins, Challenges, Filesystem, RateLimiter, Config, Discovery, Media, Middleware, Watcher
+- **2 TypeScript modules**: WebSocket-Client, UI-Components-React
+- **1 Kotlin module**: Android-Toolkit
+- Each module is an independent git repository with its own tests and documentation
+- Shared across projects for consistent behavior and reduced duplication
+
 ## Additional Features
 
-- **PDF Conversion Service**: Convert PDF documents to images, text, or HTML formats
-- **Favorites Export/Import**: Export and import favorites in JSON and CSV formats with metadata
-- **Advanced Reporting**: Generate professional PDF reports with charts and analytics
-- **Resilient Architecture**: Circuit breaker, exponential backoff retry, and offline caching for network storage protocols
+- **Duplicate detection**: Identify the same content across different storage sources using hash-based matching
+- **Recommendation engine**: Suggests media based on user interaction patterns
+- **AI Dashboard**: Intelligent insights derived from library patterns and usage data
 - **WebSocket Event Bus**: Real-time event system connecting backend changes to all connected clients
 - **Connection Pooling**: Managed connection pools for storage protocols
+- **Crash Recovery**: Automatic state restoration from persistent storage after unexpected termination

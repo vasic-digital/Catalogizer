@@ -398,7 +398,7 @@ func (h *SMBHandler) testSMBConnection(source *smb.SMBSource) error {
 
 	// Simulate occasional failures for testing
 	if time.Now().Unix()%10 == 0 {
-		return errors.New("Connection timeout")
+		return errors.New("connection timeout")
 	}
 
 	return nil

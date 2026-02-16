@@ -131,9 +131,7 @@ func (h *DownloadHandler) DownloadDirectory(c *gin.Context) {
 	}
 
 	// Clean the path
-	if strings.HasPrefix(path, "/") {
-		path = path[1:]
-	}
+	path = strings.TrimPrefix(path, "/")
 
 	// Get directory listing recursively
 	files, err := h.getDirectoryContentsRecursive(path)
