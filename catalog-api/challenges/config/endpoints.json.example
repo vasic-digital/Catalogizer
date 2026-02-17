@@ -1,0 +1,22 @@
+{
+  "endpoints": [
+    {
+      "id": "synology-data8",
+      "name": "Synology NAS Data8",
+      "host": "synology.local",
+      "port": 445,
+      "share": "data8",
+      "username": "reader",
+      "password": "CHANGE_ME",
+      "domain": "",
+      "readonly": true,
+      "directories": [
+        {"path": "Музика", "content_type": "music"},
+        {"path": "Серије", "content_type": "tv_show"},
+        {"path": "Филмови", "content_type": "movie"},
+        {"path": "Инсталације", "content_type": "software"},
+        {"path": "Стрипови", "content_type": "comic"}
+      ]
+    }
+  ]
+}

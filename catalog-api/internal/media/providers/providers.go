@@ -201,6 +201,7 @@ func (pm *ProviderManager) getProvidersForMediaType(mediaType string) []string {
 		"documentary":   {"tmdb", "imdb"},
 		"youtube_video": {"youtube"},
 		"software":      {"github"},
+		"comic":         {"comicvine", "openlibrary"},
 		"podcast":       {"spotify"},
 	}
 

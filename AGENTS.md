@@ -339,6 +339,12 @@ Data Layer (Repository)
 - Espresso for UI tests
 - Mockito for mocking
 
+## Constraints
+
+**All builds and services MUST use containers.** Never build or run services directly on the host machine. Always use the containerized approach: `podman run --network host` for single-container builds, `podman-compose` for multi-service environments. Nothing — builds, tests, service execution — should be executed directly on the host. The builder container has all required toolchains (Go, Node, Rust, JDK, Android SDK). Use Podman as the container runtime (Docker is not available).
+
+**GitHub Actions are PERMANENTLY DISABLED.** Do NOT create any GitHub Actions workflow files. CI/CD, security scanning, and automated builds must be run locally in containers.
+
 ## Important Gotchas
 
 ### Protocol Implementation

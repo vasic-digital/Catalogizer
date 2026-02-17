@@ -135,7 +135,7 @@ podman run / podman build / podman ps  # instead of docker equivalents
 
 **GitHub Actions are PERMANENTLY DISABLED.** All workflow files have been deleted from `.github/workflows/`. Do NOT create any GitHub Actions workflow files (*.yml, *.yaml) in this directory. CI/CD, security scanning, and automated builds must be run locally using the commands documented below.
 
-**All release builds MUST use containers.** Never build releases directly on the host. Always use the containerized build pipeline (`./scripts/container-build.sh` or `podman-compose -f docker-compose.build.yml`). The builder container has all required toolchains (Go, Node, Rust, JDK, Android SDK). Host builds will fail for Tauri (requires Rust) and Android (requires signing keystore at container path). Only unit tests may be run on the host directly.
+**All builds and services MUST use containers.** Never build or run services directly on the host machine. Always use the containerized build pipeline (`./scripts/container-build.sh` or `podman-compose -f docker-compose.build.yml`) for builds, and `podman-compose` / `podman run` for running services. The builder container has all required toolchains (Go, Node, Rust, JDK, Android SDK). Nothing — builds, tests, service execution — should be executed directly on the host. Use `podman run --network host` for single-container builds and `podman-compose` for multi-service environments.
 
 ## Local Development Setup
 

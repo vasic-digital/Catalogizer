@@ -237,3 +237,6 @@ reports/
 # Challenge results (generated at runtime)
 challenges/results/
 !challenges/results/.gitkeep
+
+# Challenge endpoint config with credentials
+catalog-api/challenges/config/endpoints.json

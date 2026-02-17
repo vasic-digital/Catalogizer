@@ -501,6 +501,9 @@ func (ma *MediaAnalyzer) filterMediaFiles(files []models.FileInfo, mediaType str
 		"music":     {".mp3", ".flac", ".wav", ".m4a", ".aac", ".ogg", ".wma"},
 		"audiobook": {".mp3", ".m4a", ".m4b", ".aac", ".ogg"},
 		"podcast":   {".mp3", ".m4a", ".aac", ".ogg"},
+		"comic":     {".cbr", ".cbz", ".cb7", ".cbt", ".pdf", ".epub"},
+		"software":  {".exe", ".msi", ".dmg", ".pkg", ".iso", ".img", ".deb", ".rpm", ".apk", ".appimage"},
+		"game":      {".exe", ".iso", ".img", ".bin", ".rom", ".nes", ".sfc", ".gba", ".nds"},
 	}
 
 	extensions, exists := mediaExtensions[mediaType]

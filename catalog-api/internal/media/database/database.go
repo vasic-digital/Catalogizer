@@ -356,6 +356,7 @@ INSERT OR IGNORE INTO media_types (name, description) VALUES
 ('music', 'Music albums and tracks'),
 ('game', 'Video games and software'),
 ('software', 'Applications and utilities'),
+('comic', 'Comic books and graphic novels'),
 ('training', 'Educational and training content'),
 ('other', 'Unclassified content');
 `
