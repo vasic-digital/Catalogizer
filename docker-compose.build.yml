@@ -67,6 +67,10 @@ services:
       REDIS_PORT: 6379
       # Build configuration
       BUILD_VERSION: "${BUILD_VERSION:-1.0.0}"
+      BUILD_NUMBER: "${BUILD_NUMBER:-0}"
+      BUILD_COMPONENTS_ENV: "${BUILD_COMPONENTS:-all}"
+      FORCE_BUILD: "${FORCE_BUILD:-false}"
+      SKIP_TESTS: "${SKIP_TESTS:-false}"
       SKIP_EMULATOR_TESTS: "${SKIP_EMULATOR_TESTS:-true}"
       SKIP_E2E_TESTS: "${SKIP_E2E_TESTS:-false}"
       SKIP_SECURITY_TESTS: "${SKIP_SECURITY_TESTS:-true}"

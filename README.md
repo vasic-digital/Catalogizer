@@ -722,11 +722,11 @@ docker exec catalogizer-server tail -f /app/logs/catalogizer.log
 
 ## 📚 Documentation
 
-- **[API Documentation](docs/API.md)**: Complete REST API reference
-- **[Client Integration](docs/CLIENTS.md)**: Client development guide
+- **[API Documentation](docs/api/API_DOCUMENTATION.md)**: Complete REST API reference
 - **[Deployment Guide](docs/deployment/DEPLOYMENT.md)**: Production deployment
 - **[Architecture Overview](docs/architecture/ARCHITECTURE.md)**: System design
-- **[Security Guide](docs/SECURITY.md)**: Security best practices
+- **[Security Guide](docs/SECURITY_TESTING_GUIDE.md)**: Security best practices
+- **[Build System](docs/BUILD_SYSTEM.md)**: Release build system with versioning
 - **[Troubleshooting](docs/guides/TROUBLESHOOTING.md)**: Common issues and solutions
 
 ## 🆘 Support & Troubleshooting

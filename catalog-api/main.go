@@ -34,6 +34,13 @@ import (
 	"go.uber.org/zap"
 )
 
+// Version information injected via ldflags at build time
+var (
+	Version     = "dev"
+	BuildNumber = "0"
+	BuildDate   = "unknown"
+)
+
 // atoi converts string to int with default fallback
 func atoi(s string) int {
 	if i, err := strconv.Atoi(s); err == nil {
@@ -284,7 +291,13 @@ func main() {
 
 	// Health check
 	router.GET("/health", func(c *gin.Context) {
-		c.JSON(http.StatusOK, gin.H{"status": "healthy", "time": time.Now().UTC()})
+		c.JSON(http.StatusOK, gin.H{
+			"status":       "healthy",
+			"time":         time.Now().UTC(),
+			"version":      Version,
+			"build_number": BuildNumber,
+			"build_date":   BuildDate,
+		})
 	})
 
 	// Authentication routes (no auth required)

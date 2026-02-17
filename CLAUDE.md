@@ -10,47 +10,12 @@ Multi-platform media collection manager. Detects, categorizes, and organizes med
 
 Reusable functionality is extracted into independent git submodules under the vasic-digital organization. Each module has its own repo (GitHub + GitLab), tests, docs, and Upstreams for multi-remote push.
 
-### Go Modules (Existing vasic-digital repos)
-
-| Module | Path | Description |
-|--------|------|-------------|
-| `digital.vasic.auth` | `Auth/` | JWT, API key, OAuth2, HTTP auth middleware |
-| `digital.vasic.cache` | `Cache/` | Redis/memory cache with TTL/eviction policies |
-| `digital.vasic.database` | `Database/` | PostgreSQL/SQLite adapters, migrations, repository pattern |
-| `digital.vasic.concurrency` | `Concurrency/` | Worker pools, circuit breaker, rate limiter, semaphore |
-| `digital.vasic.storage` | `Storage/` | S3/local object storage with provider abstraction |
-| `digital.vasic.eventbus` | `EventBus/` | Pub/sub event bus with middleware and filtering |
-| `digital.vasic.streaming` | `Streaming/` | SSE, WebSocket, gRPC streaming, webhooks |
-| `digital.vasic.security` | `Security/` | PII detection, content filtering, policy enforcement |
-| `digital.vasic.observability` | `Observability/` | Tracing, Prometheus metrics, structured logging |
-| `digital.vasic.formatters` | `Formatters/` | Code formatting framework with registry |
-| `digital.vasic.plugins` | `Plugins/` | Plugin lifecycle, dynamic loading, sandboxing |
-| `digital.vasic.challenges` | `Challenges/` | Challenge/test scenario framework |
-
-### Go Modules (New, extracted from Catalogizer)
-
-| Module | Path | Description |
-|--------|------|-------------|
-| `digital.vasic.filesystem` | `Filesystem/` | Multi-protocol filesystem (SMB, FTP, NFS, WebDAV, Local) |
-| `digital.vasic.ratelimiter` | `RateLimiter/` | Sliding window rate limiter (memory + Redis) |
-| `digital.vasic.config` | `Config/` | Config file/env loading with validation |
-| `digital.vasic.discovery` | `Discovery/` | Network service/SMB share discovery |
-| `digital.vasic.media` | `Media/` | Media type detection, metadata analysis, provider registry |
-| `digital.vasic.middleware` | `Middleware/` | HTTP middleware (CORS, logging, recovery, request ID) |
-| `digital.vasic.watcher` | `Watcher/` | Filesystem watcher with debounce and filtering |
-
 ### TypeScript/React Modules
 
 | Module | Path | Description |
 |--------|------|-------------|
 | `@vasic-digital/websocket-client` | `WebSocket-Client-TS/` | WebSocket client with reconnection + React hooks |
 | `@vasic-digital/ui-components` | `UI-Components-React/` | React UI component library (Button, Card, Input, etc.) |
-
-### Android/Kotlin Module
-
-| Module | Path | Description |
-|--------|------|-------------|
-| Android-Toolkit | `Android-Toolkit/` | Android utilities, UI components, Compose helpers |
 
 ### Submodule Commands
 
@@ -160,6 +125,8 @@ podman run / podman build / podman ps  # instead of docker equivalents
 ## Constraints
 
 **GitHub Actions are PERMANENTLY DISABLED.** All workflow files have been deleted from `.github/workflows/`. Do NOT create any GitHub Actions workflow files (*.yml, *.yaml) in this directory. CI/CD, security scanning, and automated builds must be run locally using the commands documented below.
+
+**All release builds MUST use containers.** Never build releases directly on the host. Always use the containerized build pipeline (`./scripts/container-build.sh` or `podman-compose -f docker-compose.build.yml`). The builder container has all required toolchains (Go, Node, Rust, JDK, Android SDK). Host builds will fail for Tauri (requires Rust) and Android (requires signing keystore at container path). Only unit tests may be run on the host directly.
 
 ## Local Development Setup
 

@@ -1,0 +1,53 @@
+{
+  "schema_version": 1,
+  "global": {
+    "major": 1,
+    "minor": 0,
+    "patch": 0,
+    "build_number": 12
+  },
+  "components": {
+    "catalog-api": {
+      "last_build_number": 12,
+      "last_build_date": "2026-02-17T10:00:12Z",
+      "last_source_hash": "b7337dcf3ab4ed9cf77011cc10b3647a55fd8cbaf985c2bd6aef8ed152d41528",
+      "last_git_commit": "c5a4a4b7"
+    },
+    "catalog-web": {
+      "last_build_number": 12,
+      "last_build_date": "2026-02-17T10:01:38Z",
+      "last_source_hash": "378e4a0ca1d9a1310d18e24791d11e6cfe6fa3bbf9142e574d5d44fbb09187ff",
+      "last_git_commit": "c5a4a4b7"
+    },
+    "catalogizer-api-client": {
+      "last_build_number": 12,
+      "last_build_date": "2026-02-17T10:01:49Z",
+      "last_source_hash": "55de70610441bde676ba813c9d297fd16a8143b8b5103615114c80a6f6322ca1",
+      "last_git_commit": "c5a4a4b7"
+    },
+    "catalogizer-desktop": {
+      "last_build_number": 12,
+      "last_build_date": "2026-02-17T10:05:14Z",
+      "last_source_hash": "694c829e86196637163b168a9785cab1fcebe05dfe2e4a7862bd03e9cf0be100",
+      "last_git_commit": "c5a4a4b7"
+    },
+    "installer-wizard": {
+      "last_build_number": 12,
+      "last_build_date": "2026-02-17T10:08:31Z",
+      "last_source_hash": "ddf1694fee1a2cd7c277a08c9ab7bca3f4624a659020b95748c4d101fa339e6e",
+      "last_git_commit": "c5a4a4b7"
+    },
+    "catalogizer-android": {
+      "last_build_number": 12,
+      "last_build_date": "2026-02-17T10:08:59Z",
+      "last_source_hash": "9c4e4fedc9434fcc6ff28976b513d1f3e2212572efa37b522f3337d2c4ce5778",
+      "last_git_commit": "c5a4a4b7"
+    },
+    "catalogizer-androidtv": {
+      "last_build_number": 12,
+      "last_build_date": "2026-02-17T10:09:22Z",
+      "last_source_hash": "317f45b949a46908be31c205ea37feef9e992955ce25f8b2b45228d8a6bfb21c",
+      "last_git_commit": "c5a4a4b7"
+    }
+  }
+}

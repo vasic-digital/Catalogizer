@@ -213,7 +213,7 @@ sudo systemctl restart docker
 ### Pre-commit Testing
 ```bash
 # Run tests before committing
-./scripts/run-tests.sh
+./scripts/run-all-tests.sh
 
 # Run security checks
 ./scripts/security-test.sh
@@ -324,7 +324,7 @@ For testing-related issues:
 | `security-test.sh` | Full security testing | Docker, tokens |
 | `sonarqube-scan.sh` | Code quality analysis | SONAR_TOKEN |
 | `snyk-scan.sh` | Vulnerability scanning | SNYK_TOKEN |
-| `run-tests.sh` | Unit and integration tests | None |
+| `run-all-tests.sh` | Unit and integration tests | None |
 
 ### Environment Variables
 

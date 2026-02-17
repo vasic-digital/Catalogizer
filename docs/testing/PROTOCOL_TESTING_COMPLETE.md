@@ -104,7 +104,7 @@ This document outlines the comprehensive solution implemented for real-time file
 - **CI/CD ready**: Suitable for automated pipelines
 
 **Files Created**:
-- `scripts/run_comprehensive_tests.sh` - Master test runner
+- `scripts/run-all-tests.sh` - Master test runner
 - Supports timeout configuration, coverage thresholds, retry counts
 - Generates detailed reports with timestamps and metrics
 
@@ -168,10 +168,10 @@ The testing framework has been designed to achieve and verify **100% test succes
 ### Running All Tests
 ```bash
 # Run comprehensive test suite
-./scripts/run_comprehensive_tests.sh
+./scripts/run-all-tests.sh
 
 # Run with custom settings
-./scripts/run_comprehensive_tests.sh --timeout 600 --coverage 90 --retries 5
+./scripts/run-all-tests.sh --timeout 600 --coverage 90 --retries 5
 ```
 
 ### Running Specific Protocol Tests
@@ -330,7 +330,7 @@ go test -v -run "TestSpecificFailure" ./tests/integration/...
 For issues or questions:
 1. Check the troubleshooting guide above
 2. Review test logs in the `logs/` directory
-3. Run diagnostic tests with `./scripts/run_comprehensive_tests.sh`
+3. Run diagnostic tests with `./scripts/run-all-tests.sh`
 4. Check API health endpoints for service status
 
 ---
