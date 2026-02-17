@@ -1,6 +1,7 @@
 package main
 
 import (
+	"catalogizer/challenges"
 	root_config "catalogizer/config"
 	"catalogizer/database"
 	root_handlers "catalogizer/handlers"
@@ -23,6 +24,7 @@ import (
 	"net/http"
 	"os"
 	"os/signal"
+	"path/filepath"
 	"strconv"
 	"syscall"
 	"time"
@@ -220,6 +222,12 @@ func main() {
 		log.Println("Redis connected successfully for distributed rate limiting")
 	}
 	
+	// Initialize challenge service
+	challengeService := root_services.NewChallengeService(
+		filepath.Join(".", "data", "challenge_results"),
+	)
+	challenges.RegisterAll(challengeService)
+
 	// Initialize subtitle service
 	// Use SQL-based cache service for now
 	cacheService := services.NewCacheService(db, logger)
@@ -242,6 +250,9 @@ func main() {
 	
 	// Subtitle handler
 	subtitleHandler := root_handlers.NewSubtitleHandler(subtitleService, logger)
+
+	// Challenge handler
+	challengeHandler := root_handlers.NewChallengeHandler(challengeService)
 
 	// Stats handler
 	statsRepo := root_repository.NewStatsRepository(databaseDB)
@@ -475,6 +486,17 @@ func main() {
 			logsGroup.DELETE("/share/:id", wrap(logManagementHandler.RevokeLogShare))
 			logsGroup.GET("/stream", wrap(logManagementHandler.StreamLogs))
 			logsGroup.GET("/statistics", wrap(logManagementHandler.GetLogStatistics))
+		}
+
+		// Challenge endpoints
+		challengeGroup := api.Group("/challenges")
+		{
+			challengeGroup.GET("", challengeHandler.ListChallenges)
+			challengeGroup.GET("/:id", challengeHandler.GetChallenge)
+			challengeGroup.POST("/:id/run", challengeHandler.RunChallenge)
+			challengeGroup.POST("/run", challengeHandler.RunAll)
+			challengeGroup.POST("/run/category/:category", challengeHandler.RunByCategory)
+			challengeGroup.GET("/results", challengeHandler.GetResults)
 		}
 	}
 

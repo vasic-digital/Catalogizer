@@ -10,6 +10,12 @@ Multi-platform media collection manager. Detects, categorizes, and organizes med
 
 Reusable functionality is extracted into independent git submodules under the vasic-digital organization. Each module has its own repo (GitHub + GitLab), tests, docs, and Upstreams for multi-remote push.
 
+### Go Modules
+
+| Module | Path | Description |
+|--------|------|-------------|
+| `digital.vasic.challenges` | `Challenges/` | Challenge framework: define, register, run, and report on structured test scenarios |
+
 ### TypeScript/React Modules
 
 | Module | Path | Description |
@@ -84,12 +90,15 @@ podman-compose -f docker-compose.dev.yml up   # dev env
 
 **Tauri apps**: React frontend ↔ Rust backend via IPC commands/events.
 
+**Challenges**: `digital.vasic.challenges` framework integrated via `Challenges/` submodule. Challenges are Go structs embedding `challenge.BaseChallenge` with custom `Execute()`. Registered in `catalog-api/challenges/register.go`, exposed via `/api/v1/challenges` REST endpoints. Challenge bank definitions in `challenges/data/challenges_bank.json`.
+
 ## Root Directory Structure (Mandatory Locations)
 
 New files MUST be placed in the correct directory. Do NOT add files to the project root unless they are conventional root files (README, LICENSE, .gitignore, docker-compose, etc.).
 
 | Directory | Purpose |
 |---|---|
+| `challenges/` | Challenge bank definitions and runtime results |
 | `config/` | Infrastructure config files (nginx.conf, redis.conf) |
 | `scripts/` | Shell scripts (install, setup, CI/CD, testing runners) |
 | `tests/` | Standalone/integration test files (test_*.js, test_*.go, test_*.sh) |

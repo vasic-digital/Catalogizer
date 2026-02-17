@@ -4,3 +4,6 @@
 [submodule "UI-Components-React"]
 	path = UI-Components-React
 	url = git@github.com:vasic-digital/UI-Components-React.git
+[submodule "Challenges"]
+	path = Challenges
+	url = git@github.com:vasic-digital/Challenges.git
