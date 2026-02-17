@@ -47,5 +47,10 @@ func RegisterAll(svc *services.ChallengeService) error {
 		}
 	}
 
+	// Browsing challenges (validate the running API and web app)
+	svc.Register(NewBrowsingAPIHealthChallenge())
+	svc.Register(NewBrowsingAPICatalogChallenge())
+	svc.Register(NewBrowsingWebAppChallenge())
+
 	return nil
 }
