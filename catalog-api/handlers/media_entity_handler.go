@@ -454,6 +454,59 @@ func (h *MediaEntityHandler) DownloadEntity(c *gin.Context) {
 	})
 }
 
+// GetInstallInfo handles GET /api/v1/entities/:id/install-info — software installation details.
+func (h *MediaEntityHandler) GetInstallInfo(c *gin.Context) {
+	ctx := c.Request.Context()
+
+	id, err := strconv.ParseInt(c.Param("id"), 10, 64)
+	if err != nil {
+		utils.SendErrorResponse(c, http.StatusBadRequest, "Invalid entity ID", err)
+		return
+	}
+
+	item, err := h.itemRepo.GetByID(ctx, id)
+	if err != nil {
+		utils.SendErrorResponse(c, http.StatusNotFound, "Entity not found", err)
+		return
+	}
+
+	// Verify this is a software entity
+	types, _ := h.itemRepo.GetMediaTypes(ctx)
+	typeName := ""
+	for _, mt := range types {
+		if mt.ID == item.MediaTypeID {
+			typeName = mt.Name
+			break
+		}
+	}
+	if typeName != "software" {
+		utils.SendErrorResponse(c, http.StatusBadRequest, "Install info is only available for software entities", nil)
+		return
+	}
+
+	files, err := h.fileRepo.GetFilesByItem(ctx, id)
+	if err != nil || len(files) == 0 {
+		utils.SendErrorResponse(c, http.StatusNotFound, "No files available", err)
+		return
+	}
+
+	primary := files[0]
+	for _, f := range files {
+		if f.IsPrimary {
+			primary = f
+			break
+		}
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"entity_id":    id,
+		"title":        item.Title,
+		"file_id":      primary.FileID,
+		"download_url": fmt.Sprintf("/api/v1/entities/%d/download", id),
+		"total_files":  len(files),
+	})
+}
+
 // ListDuplicateGroups handles GET /api/v1/entities/duplicates — global duplicate listing.
 func (h *MediaEntityHandler) ListDuplicateGroups(c *gin.Context) {
 	ctx := c.Request.Context()

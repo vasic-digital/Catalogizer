@@ -6,7 +6,7 @@ import { MediaDistributionChart } from '@/components/dashboard/MediaDistribution
 import { ActivityFeed } from '@/components/dashboard/ActivityFeed'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card'
 import { Button } from '@/components/ui/Button'
-import { mediaApi } from '@/lib/mediaApi'
+import { mediaApi, entityApi } from '@/lib/mediaApi'
 import {
   Film,
   Upload,
@@ -15,7 +15,13 @@ import {
   Activity,
   HardDrive,
   Zap,
-  Clock
+  Clock,
+  Tv,
+  Music,
+  Gamepad2,
+  Monitor,
+  BookOpen,
+  Book,
 } from 'lucide-react'
 import { motion } from 'framer-motion'
 import toast from 'react-hot-toast'
@@ -215,6 +221,16 @@ export const Dashboard: React.FC = () => {
     }
   )
 
+  // Fetch entity statistics
+  const { data: entityStats } = useQuery(
+    ['entity-stats'],
+    () => entityApi.getEntityStats(),
+    {
+      refetchInterval: 30000,
+      staleTime: 10000
+    }
+  )
+
   // Fetch user statistics (mock for now)
   const userStats: UserStats = {
     active_users: 3,
@@ -267,6 +283,47 @@ export const Dashboard: React.FC = () => {
           loading={mediaLoading}
         />
       </motion.div>
+
+      {/* Entity Overview */}
+      {entityStats && entityStats.by_type && Object.keys(entityStats.by_type).length > 0 && (
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.15 }}
+        >
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Film className="h-5 w-5" />
+                Media Entities ({entityStats.total_entities} total)
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6 gap-3">
+                {Object.entries(entityStats.by_type as Record<string, number>)
+                  .filter(([, count]) => count > 0)
+                  .sort(([, a], [, b]) => b - a)
+                  .map(([type, count]) => {
+                    const iconMap: Record<string, React.ElementType> = {
+                      movie: Film, tv_show: Tv, music_artist: Music, music_album: Music,
+                      song: Music, game: Gamepad2, software: Monitor, book: BookOpen, comic: Book,
+                    }
+                    const TypeIcon = iconMap[type] || Film
+                    return (
+                      <div key={type} className="flex items-center gap-3 p-3 rounded-lg bg-gray-50 dark:bg-gray-800">
+                        <TypeIcon className="h-5 w-5 text-gray-500 flex-shrink-0" />
+                        <div>
+                          <div className="text-lg font-semibold text-gray-900 dark:text-white">{count}</div>
+                          <div className="text-xs text-gray-500 capitalize">{type.replace(/_/g, ' ')}</div>
+                        </div>
+                      </div>
+                    )
+                  })}
+              </div>
+            </CardContent>
+          </Card>
+        </motion.div>
+      )}
 
       {/* Charts and Activity Row */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">

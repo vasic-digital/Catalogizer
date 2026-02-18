@@ -629,6 +629,7 @@ func main() {
 			entityGroup.GET("/:id/duplicates", mediaEntityHandler.GetEntityDuplicates)
 			entityGroup.GET("/:id/stream", mediaEntityHandler.StreamEntity)
 			entityGroup.GET("/:id/download", mediaEntityHandler.DownloadEntity)
+			entityGroup.GET("/:id/install-info", mediaEntityHandler.GetInstallInfo)
 			entityGroup.POST("/:id/metadata/refresh", mediaEntityHandler.RefreshEntityMetadata)
 			entityGroup.PUT("/:id/user-metadata", mediaEntityHandler.UpdateUserMetadata)
 		}

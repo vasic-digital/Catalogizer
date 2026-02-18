@@ -14,23 +14,31 @@ import {
   SkipBack,
   Square
 } from 'lucide-react'
-import type { MediaItem } from '@/types/media'
+import type { MediaItem, MediaEntity } from '@/types/media'
 import type { SubtitleTrack } from '@/types/subtitles'
 
 interface MediaPlayerProps {
   media: MediaItem
+  entity?: MediaEntity
+  entityStreamUrl?: string
+  siblings?: MediaEntity[]
   subtitles?: SubtitleTrack[]
   onProgress?: (currentTime: number, duration: number) => void
   onEnded?: () => void
   onError?: (error: Error) => void
+  onNavigate?: (entityId: number) => void
 }
 
 export const MediaPlayer: React.FC<MediaPlayerProps> = ({
   media,
+  entity,
+  entityStreamUrl,
+  siblings = [],
   subtitles = [],
   onProgress,
   onEnded,
-  onError
+  onError,
+  onNavigate,
 }) => {
   const [isPlaying, setIsPlaying] = useState(false)
   const [currentTime, setCurrentTime] = useState(0)
@@ -163,6 +171,22 @@ export const MediaPlayer: React.FC<MediaPlayerProps> = ({
     }
   }, [onProgress, onEnded, onError])
 
+  // Entity navigation (next/previous for episodes/tracks)
+  const currentIndex = entity ? siblings.findIndex((s) => s.id === entity.id) : -1
+  const prevSibling = currentIndex > 0 ? siblings[currentIndex - 1] : null
+  const nextSibling = currentIndex >= 0 && currentIndex < siblings.length - 1 ? siblings[currentIndex + 1] : null
+
+  const handlePrev = useCallback(() => {
+    if (prevSibling && onNavigate) onNavigate(prevSibling.id)
+  }, [prevSibling, onNavigate])
+
+  const handleNext = useCallback(() => {
+    if (nextSibling && onNavigate) onNavigate(nextSibling.id)
+  }, [nextSibling, onNavigate])
+
+  // Determine video source: entity stream URL takes priority over file path
+  const videoSrc = entityStreamUrl || media.directory_path
+
   // Auto-hide controls
   useEffect(() => {
     if (isPlaying) {
@@ -185,7 +209,7 @@ export const MediaPlayer: React.FC<MediaPlayerProps> = ({
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
           <Play className="h-5 w-5" />
-          {media.title || 'Unknown Title'}
+          {entity?.title || media.title || 'Unknown Title'}
         </CardTitle>
       </CardHeader>
       
@@ -203,7 +227,7 @@ export const MediaPlayer: React.FC<MediaPlayerProps> = ({
             onPlay={() => setIsPlaying(true)}
             onPause={() => setIsPlaying(false)}
           >
-            <source src={media.directory_path} type={media.media_type} />
+            <source src={videoSrc} type={media.media_type} />
             Your browser does not support the video tag.
           </video>
 
@@ -230,7 +254,21 @@ export const MediaPlayer: React.FC<MediaPlayerProps> = ({
                 {/* Control Buttons */}
                 <div className="flex items-center justify-between">
                   <div className="flex items-center space-x-2">
-                    {/* Skip Back */}
+                    {/* Previous Episode/Track */}
+                    {prevSibling && (
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={handlePrev}
+                        className="text-white hover:text-white/80"
+                        title={`Previous: ${prevSibling.title}`}
+                      >
+                        <SkipBack className="w-4 h-4" />
+                        <SkipBack className="w-4 h-4 -ml-2" />
+                      </Button>
+                    )}
+
+                    {/* Skip Back 10s */}
                     <Button
                       variant="ghost"
                       size="sm"
@@ -254,7 +292,7 @@ export const MediaPlayer: React.FC<MediaPlayerProps> = ({
                       )}
                     </Button>
 
-                    {/* Skip Forward */}
+                    {/* Skip Forward 10s */}
                     <Button
                       variant="ghost"
                       size="sm"
@@ -263,6 +301,20 @@ export const MediaPlayer: React.FC<MediaPlayerProps> = ({
                     >
                       <SkipForward className="w-4 h-4" />
                     </Button>
+
+                    {/* Next Episode/Track */}
+                    {nextSibling && (
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={handleNext}
+                        className="text-white hover:text-white/80"
+                        title={`Next: ${nextSibling.title}`}
+                      >
+                        <SkipForward className="w-4 h-4" />
+                        <SkipForward className="w-4 h-4 -ml-2" />
+                      </Button>
+                    )}
                   </div>
 
                   <div className="flex items-center space-x-2">
