@@ -9,13 +9,15 @@ import (
 	"strings"
 	"time"
 
+	"catalogizer/database"
 	"catalogizer/utils"
+
 	"go.uber.org/zap"
 )
 
 // LyricsService handles lyrics retrieval, synchronization, and caching
 type LyricsService struct {
-	db                 *sql.DB
+	db                 *database.DB
 	logger             *zap.Logger
 	translationService *TranslationService
 	httpClient         *http.Client
@@ -114,7 +116,7 @@ type SyncedLyricsLine struct {
 }
 
 // NewLyricsService creates a new lyrics service
-func NewLyricsService(db *sql.DB, logger *zap.Logger) *LyricsService {
+func NewLyricsService(db *database.DB, logger *zap.Logger) *LyricsService {
 	return &LyricsService{
 		db:                 db,
 		logger:             logger,

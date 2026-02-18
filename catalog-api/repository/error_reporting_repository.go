@@ -1,19 +1,21 @@
 package repository
 
 import (
+	"context"
 	"database/sql"
 	"encoding/json"
 	"fmt"
 	"time"
 
+	"catalogizer/database"
 	"catalogizer/models"
 )
 
 type ErrorReportingRepository struct {
-	db *sql.DB
+	db *database.DB
 }
 
-func NewErrorReportingRepository(db *sql.DB) *ErrorReportingRepository {
+func NewErrorReportingRepository(db *database.DB) *ErrorReportingRepository {
 	return &ErrorReportingRepository{db: db}
 }
 
@@ -34,7 +36,7 @@ func (r *ErrorReportingRepository) CreateErrorReport(report *models.ErrorReport)
 			context, system_info, user_agent, url, fingerprint, status, reported_at
 		) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
 
-	result, err := r.db.Exec(query,
+	id, err := r.db.InsertReturningID(context.Background(), query,
 		report.UserID, report.Level, report.Message, report.ErrorCode,
 		report.Component, report.StackTrace, string(contextJSON),
 		string(systemInfoJSON), report.UserAgent, report.URL,
@@ -42,11 +44,6 @@ func (r *ErrorReportingRepository) CreateErrorReport(report *models.ErrorReport)
 
 	if err != nil {
 		return fmt.Errorf("failed to create error report: %w", err)
-	}
-
-	id, err := result.LastInsertId()
-	if err != nil {
-		return fmt.Errorf("failed to get last insert ID: %w", err)
 	}
 
 	report.ID = int(id)

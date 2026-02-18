@@ -1,8 +1,8 @@
 package services
 
 import (
+	"catalogizer/database"
 	"context"
-	"database/sql"
 	"testing"
 	"time"
 
@@ -11,7 +11,7 @@ import (
 )
 
 func TestNewCacheService(t *testing.T) {
-	var mockDB *sql.DB
+	mockDB := database.WrapDB(nil, database.DialectSQLite)
 	mockLogger := zap.NewNop()
 
 	service := NewCacheService(mockDB, mockLogger)
@@ -22,7 +22,7 @@ func TestNewCacheService(t *testing.T) {
 }
 
 func TestCacheService_Set(t *testing.T) {
-	var mockDB *sql.DB
+	mockDB := database.WrapDB(nil, database.DialectSQLite)
 	mockLogger := zap.NewNop()
 	service := NewCacheService(mockDB, mockLogger)
 
@@ -35,7 +35,7 @@ func TestCacheService_Set(t *testing.T) {
 }
 
 func TestCacheService_Get(t *testing.T) {
-	var mockDB *sql.DB
+	mockDB := database.WrapDB(nil, database.DialectSQLite)
 	mockLogger := zap.NewNop()
 	service := NewCacheService(mockDB, mockLogger)
 
@@ -48,7 +48,7 @@ func TestCacheService_Get(t *testing.T) {
 }
 
 func TestCacheService_Delete(t *testing.T) {
-	var mockDB *sql.DB
+	mockDB := database.WrapDB(nil, database.DialectSQLite)
 	mockLogger := zap.NewNop()
 	service := NewCacheService(mockDB, mockLogger)
 
@@ -59,7 +59,7 @@ func TestCacheService_Delete(t *testing.T) {
 }
 
 func TestCacheService_Clear(t *testing.T) {
-	var mockDB *sql.DB
+	mockDB := database.WrapDB(nil, database.DialectSQLite)
 	mockLogger := zap.NewNop()
 	service := NewCacheService(mockDB, mockLogger)
 
@@ -70,7 +70,7 @@ func TestCacheService_Clear(t *testing.T) {
 }
 
 func TestCacheService_Clear_WithPattern(t *testing.T) {
-	var mockDB *sql.DB
+	mockDB := database.WrapDB(nil, database.DialectSQLite)
 	mockLogger := zap.NewNop()
 	service := NewCacheService(mockDB, mockLogger)
 
@@ -81,7 +81,7 @@ func TestCacheService_Clear_WithPattern(t *testing.T) {
 }
 
 func TestCacheService_SetMediaMetadata(t *testing.T) {
-	var mockDB *sql.DB
+	mockDB := database.WrapDB(nil, database.DialectSQLite)
 	mockLogger := zap.NewNop()
 	service := NewCacheService(mockDB, mockLogger)
 
@@ -93,7 +93,7 @@ func TestCacheService_SetMediaMetadata(t *testing.T) {
 }
 
 func TestCacheService_GetMediaMetadata(t *testing.T) {
-	var mockDB *sql.DB
+	mockDB := database.WrapDB(nil, database.DialectSQLite)
 	mockLogger := zap.NewNop()
 	service := NewCacheService(mockDB, mockLogger)
 
@@ -107,7 +107,7 @@ func TestCacheService_GetMediaMetadata(t *testing.T) {
 }
 
 func TestCacheService_SetAPIResponse(t *testing.T) {
-	var mockDB *sql.DB
+	mockDB := database.WrapDB(nil, database.DialectSQLite)
 	mockLogger := zap.NewNop()
 	service := NewCacheService(mockDB, mockLogger)
 
@@ -121,7 +121,7 @@ func TestCacheService_SetAPIResponse(t *testing.T) {
 }
 
 func TestCacheService_GetAPIResponse(t *testing.T) {
-	var mockDB *sql.DB
+	mockDB := database.WrapDB(nil, database.DialectSQLite)
 	mockLogger := zap.NewNop()
 	service := NewCacheService(mockDB, mockLogger)
 
@@ -137,7 +137,7 @@ func TestCacheService_GetAPIResponse(t *testing.T) {
 }
 
 func TestCacheService_SetThumbnail(t *testing.T) {
-	var mockDB *sql.DB
+	mockDB := database.WrapDB(nil, database.DialectSQLite)
 	mockLogger := zap.NewNop()
 	service := NewCacheService(mockDB, mockLogger)
 
@@ -148,7 +148,7 @@ func TestCacheService_SetThumbnail(t *testing.T) {
 }
 
 func TestCacheService_GetThumbnail(t *testing.T) {
-	var mockDB *sql.DB
+	mockDB := database.WrapDB(nil, database.DialectSQLite)
 	mockLogger := zap.NewNop()
 	service := NewCacheService(mockDB, mockLogger)
 
@@ -160,7 +160,7 @@ func TestCacheService_GetThumbnail(t *testing.T) {
 }
 
 func TestCacheService_SetTranslation(t *testing.T) {
-	var mockDB *sql.DB
+	mockDB := database.WrapDB(nil, database.DialectSQLite)
 	mockLogger := zap.NewNop()
 	service := NewCacheService(mockDB, mockLogger)
 
@@ -171,7 +171,7 @@ func TestCacheService_SetTranslation(t *testing.T) {
 }
 
 func TestCacheService_GetTranslation(t *testing.T) {
-	var mockDB *sql.DB
+	mockDB := database.WrapDB(nil, database.DialectSQLite)
 	mockLogger := zap.NewNop()
 	service := NewCacheService(mockDB, mockLogger)
 
@@ -184,7 +184,7 @@ func TestCacheService_GetTranslation(t *testing.T) {
 }
 
 func TestCacheService_SetSubtitle(t *testing.T) {
-	var mockDB *sql.DB
+	mockDB := database.WrapDB(nil, database.DialectSQLite)
 	mockLogger := zap.NewNop()
 	service := NewCacheService(mockDB, mockLogger)
 
@@ -202,7 +202,7 @@ func TestCacheService_SetSubtitle(t *testing.T) {
 }
 
 func TestCacheService_GetSubtitle(t *testing.T) {
-	var mockDB *sql.DB
+	mockDB := database.WrapDB(nil, database.DialectSQLite)
 	mockLogger := zap.NewNop()
 	service := NewCacheService(mockDB, mockLogger)
 
@@ -215,7 +215,7 @@ func TestCacheService_GetSubtitle(t *testing.T) {
 }
 
 func TestCacheService_SetLyrics(t *testing.T) {
-	var mockDB *sql.DB
+	mockDB := database.WrapDB(nil, database.DialectSQLite)
 	mockLogger := zap.NewNop()
 	service := NewCacheService(mockDB, mockLogger)
 
@@ -231,7 +231,7 @@ func TestCacheService_SetLyrics(t *testing.T) {
 }
 
 func TestCacheService_GetLyrics(t *testing.T) {
-	var mockDB *sql.DB
+	mockDB := database.WrapDB(nil, database.DialectSQLite)
 	mockLogger := zap.NewNop()
 	service := NewCacheService(mockDB, mockLogger)
 
@@ -244,7 +244,7 @@ func TestCacheService_GetLyrics(t *testing.T) {
 }
 
 func TestCacheService_SetCoverArt(t *testing.T) {
-	var mockDB *sql.DB
+	mockDB := database.WrapDB(nil, database.DialectSQLite)
 	mockLogger := zap.NewNop()
 	service := NewCacheService(mockDB, mockLogger)
 
@@ -267,7 +267,7 @@ func TestCacheService_SetCoverArt(t *testing.T) {
 }
 
 func TestCacheService_GetCoverArt(t *testing.T) {
-	var mockDB *sql.DB
+	mockDB := database.WrapDB(nil, database.DialectSQLite)
 	mockLogger := zap.NewNop()
 	service := NewCacheService(mockDB, mockLogger)
 
@@ -280,7 +280,7 @@ func TestCacheService_GetCoverArt(t *testing.T) {
 }
 
 func TestCacheService_GetStats(t *testing.T) {
-	var mockDB *sql.DB
+	mockDB := database.WrapDB(nil, database.DialectSQLite)
 	mockLogger := zap.NewNop()
 	service := NewCacheService(mockDB, mockLogger)
 
@@ -292,7 +292,7 @@ func TestCacheService_GetStats(t *testing.T) {
 }
 
 func TestCacheService_CleanupExpired(t *testing.T) {
-	var mockDB *sql.DB
+	mockDB := database.WrapDB(nil, database.DialectSQLite)
 	mockLogger := zap.NewNop()
 	service := NewCacheService(mockDB, mockLogger)
 
@@ -303,7 +303,7 @@ func TestCacheService_CleanupExpired(t *testing.T) {
 }
 
 func TestCacheService_Warmup(t *testing.T) {
-	var mockDB *sql.DB
+	mockDB := database.WrapDB(nil, database.DialectSQLite)
 	mockLogger := zap.NewNop()
 	service := NewCacheService(mockDB, mockLogger)
 
@@ -314,7 +314,7 @@ func TestCacheService_Warmup(t *testing.T) {
 }
 
 func TestCacheService_InvalidateByPattern(t *testing.T) {
-	var mockDB *sql.DB
+	mockDB := database.WrapDB(nil, database.DialectSQLite)
 	mockLogger := zap.NewNop()
 	service := NewCacheService(mockDB, mockLogger)
 
@@ -325,7 +325,7 @@ func TestCacheService_InvalidateByPattern(t *testing.T) {
 }
 
 func TestCacheService_HashString(t *testing.T) {
-	var mockDB *sql.DB
+	mockDB := database.WrapDB(nil, database.DialectSQLite)
 	mockLogger := zap.NewNop()
 	service := NewCacheService(mockDB, mockLogger)
 
@@ -339,7 +339,7 @@ func TestCacheService_HashString(t *testing.T) {
 }
 
 func TestCacheService_HashRequest(t *testing.T) {
-	var mockDB *sql.DB
+	mockDB := database.WrapDB(nil, database.DialectSQLite)
 	mockLogger := zap.NewNop()
 	service := NewCacheService(mockDB, mockLogger)
 

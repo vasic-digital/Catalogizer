@@ -5,6 +5,8 @@ import (
 	"testing"
 	"time"
 
+	"catalogizer/database"
+
 	"github.com/DATA-DOG/go-sqlmock"
 	"github.com/stretchr/testify/assert"
 	"go.uber.org/zap"
@@ -12,11 +14,12 @@ import (
 )
 
 func setupAuthServiceTest() (*AuthService, sqlmock.Sqlmock) {
-	db, mock, err := sqlmock.New()
+	sqlDB, mock, err := sqlmock.New()
 	if err != nil {
 		panic(err)
 	}
 
+	db := database.WrapDB(sqlDB, database.DialectSQLite)
 	logger := zap.NewNop()
 	service := NewAuthService(db, "test-secret", logger)
 
@@ -24,10 +27,11 @@ func setupAuthServiceTest() (*AuthService, sqlmock.Sqlmock) {
 }
 
 func TestNewAuthService(t *testing.T) {
-	db, _, err := sqlmock.New()
+	sqlDB, _, err := sqlmock.New()
 	assert.NoError(t, err)
-	defer db.Close()
+	defer sqlDB.Close()
 
+	db := database.WrapDB(sqlDB, database.DialectSQLite)
 	logger := zap.NewNop()
 	service := NewAuthService(db, "test-secret", logger)
 

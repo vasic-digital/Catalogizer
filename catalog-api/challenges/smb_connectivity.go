@@ -55,7 +55,7 @@ func (c *SMBConnectivityChallenge) Execute(ctx context.Context) (*challenge.Resu
 		Expected: "connection established",
 		Actual:   fmt.Sprintf("dial %s", addr),
 		Passed:   err == nil,
-		Message:  ternary(err == nil, "TCP connection succeeded", fmt.Sprintf("TCP dial failed: %v", err)),
+		Message:  challenge.Ternary(err == nil, "TCP connection succeeded", fmt.Sprintf("TCP dial failed: %v", err)),
 	})
 	if err != nil {
 		return c.CreateResult(challenge.StatusFailed, start, assertions, nil, outputs, err.Error()), nil
@@ -70,7 +70,7 @@ func (c *SMBConnectivityChallenge) Execute(ctx context.Context) (*challenge.Resu
 		Expected: "SMB session with NTLM auth",
 		Actual:   fmt.Sprintf("connect to %s/%s", c.endpoint.Host, c.endpoint.Share),
 		Passed:   err == nil,
-		Message:  ternary(err == nil, "SMB session and share mount succeeded", fmt.Sprintf("SMB connection failed: %v", err)),
+		Message:  challenge.Ternary(err == nil, "SMB session and share mount succeeded", fmt.Sprintf("SMB connection failed: %v", err)),
 	})
 	if err != nil {
 		return c.CreateResult(challenge.StatusFailed, start, assertions, nil, outputs, err.Error()), nil
@@ -86,7 +86,7 @@ func (c *SMBConnectivityChallenge) Execute(ctx context.Context) (*challenge.Resu
 		Expected: "> 0",
 		Actual:   fmt.Sprintf("%d", entryCount),
 		Passed:   err == nil && entryCount > 0,
-		Message:  ternary(err == nil && entryCount > 0, fmt.Sprintf("Root listing returned %d entries", entryCount), fmt.Sprintf("Root listing failed: entries=%d, err=%v", entryCount, err)),
+		Message:  challenge.Ternary(err == nil && entryCount > 0, fmt.Sprintf("Root listing returned %d entries", entryCount), fmt.Sprintf("Root listing failed: entries=%d, err=%v", entryCount, err)),
 	})
 	if err != nil {
 		return c.CreateResult(challenge.StatusFailed, start, assertions, nil, outputs, err.Error()), nil
@@ -126,9 +126,3 @@ func (c *SMBConnectivityChallenge) Cleanup(ctx context.Context) error {
 	return c.BaseChallenge.Cleanup(ctx)
 }
 
-func ternary(cond bool, t, f string) string {
-	if cond {
-		return t
-	}
-	return f
-}

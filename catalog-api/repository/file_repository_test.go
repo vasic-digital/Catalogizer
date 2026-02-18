@@ -20,7 +20,7 @@ import (
 func newMockFileRepo(t *testing.T) (*FileRepository, sqlmock.Sqlmock) {
 	sqlDB, mock, err := sqlmock.New()
 	require.NoError(t, err)
-	db := &database.DB{DB: sqlDB}
+	db := database.WrapDB(sqlDB, database.DialectSQLite)
 	return NewFileRepository(db), mock
 }
 

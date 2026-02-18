@@ -52,15 +52,15 @@ type FileInfo struct {
 	IsDirectory  bool      `json:"is_directory" db:"is_directory"`
 	Type         string    `json:"type" db:"type"`
 	Size         int64     `json:"size" db:"size"`
-	LastModified time.Time `json:"last_modified" db:"last_modified"`
-	Hash         *string   `json:"hash,omitempty" db:"hash"`
+	LastModified time.Time `json:"last_modified" db:"modified_at"`
+	Hash         *string   `json:"hash,omitempty" db:"quick_hash"`
 	Extension    *string   `json:"extension,omitempty" db:"extension"`
 	MimeType     *string   `json:"mime_type,omitempty" db:"mime_type"`
-	MediaType    *string   `json:"media_type,omitempty" db:"media_type"`
+	MediaType    *string   `json:"media_type,omitempty" db:"-"`
 	ParentID     *int64    `json:"parent_id,omitempty" db:"parent_id"`
 	SmbRoot      string    `json:"smb_root" db:"smb_root"`
 	CreatedAt    time.Time `json:"created_at" db:"created_at"`
-	UpdatedAt    time.Time `json:"updated_at" db:"updated_at"`
+	UpdatedAt    time.Time `json:"updated_at" db:"last_scan_at"`
 }
 
 // DirectoryStats represents statistics for a directory

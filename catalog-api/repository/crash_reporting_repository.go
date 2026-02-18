@@ -1,19 +1,21 @@
 package repository
 
 import (
+	"context"
 	"database/sql"
 	"encoding/json"
 	"fmt"
 	"time"
 
+	"catalogizer/database"
 	"catalogizer/models"
 )
 
 type CrashReportingRepository struct {
-	db *sql.DB
+	db *database.DB
 }
 
-func NewCrashReportingRepository(db *sql.DB) *CrashReportingRepository {
+func NewCrashReportingRepository(db *database.DB) *CrashReportingRepository {
 	return &CrashReportingRepository{db: db}
 }
 
@@ -34,18 +36,13 @@ func (r *CrashReportingRepository) CreateCrashReport(report *models.CrashReport)
 			fingerprint, status, reported_at
 		) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`
 
-	result, err := r.db.Exec(query,
+	id, err := r.db.InsertReturningID(context.Background(), query,
 		report.UserID, report.Signal, report.Message, report.StackTrace,
 		string(contextJSON), string(systemInfoJSON), report.Fingerprint,
 		report.Status, report.ReportedAt)
 
 	if err != nil {
 		return fmt.Errorf("failed to create crash report: %w", err)
-	}
-
-	id, err := result.LastInsertId()
-	if err != nil {
-		return fmt.Errorf("failed to get last insert ID: %w", err)
 	}
 
 	report.ID = int(id)

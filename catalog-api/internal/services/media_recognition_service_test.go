@@ -1,8 +1,8 @@
 package services
 
 import (
+	"catalogizer/database"
 	"context"
-	"database/sql"
 	"encoding/json"
 	"testing"
 	"time"
@@ -63,7 +63,7 @@ func (m *MockRecognitionProvider) GetConfidenceThreshold() float64 {
 }
 
 func TestNewMediaRecognitionService(t *testing.T) {
-	var mockDB *sql.DB // nil DB for testing
+	mockDB := database.WrapDB(nil, database.DialectSQLite) // nil DB for testing
 	mockLogger := zap.NewNop()
 	mockCache := &MockMediaRecognitionCacheService{}
 	mockTranslation := &MockMediaRecognitionTranslationService{}
@@ -95,7 +95,7 @@ func TestNewMediaRecognitionService(t *testing.T) {
 }
 
 func TestMediaRecognitionService_RecognizeMedia_Cached(t *testing.T) {
-	var mockDB *sql.DB // nil DB for testing
+	mockDB := database.WrapDB(nil, database.DialectSQLite) // nil DB for testing
 	mockLogger := zap.NewNop()
 	mockCache := &MockMediaRecognitionCacheService{}
 	mockTranslation := &MockMediaRecognitionTranslationService{}
@@ -131,7 +131,7 @@ func TestMediaRecognitionService_RecognizeMedia_Cached(t *testing.T) {
 }
 
 func TestMediaRecognitionService_RecognizeMedia_NoCache(t *testing.T) {
-	var mockDB *sql.DB // nil DB for testing
+	mockDB := database.WrapDB(nil, database.DialectSQLite) // nil DB for testing
 	mockLogger := zap.NewNop()
 	mockCache := &MockMediaRecognitionCacheService{}
 	mockTranslation := &MockMediaRecognitionTranslationService{}
@@ -159,7 +159,7 @@ func TestMediaRecognitionService_RecognizeMedia_NoCache(t *testing.T) {
 }
 
 func TestMediaRecognitionService_DetectMediaType(t *testing.T) {
-	var mockDB *sql.DB // nil DB for testing
+	mockDB := database.WrapDB(nil, database.DialectSQLite) // nil DB for testing
 	mockLogger := zap.NewNop()
 	mockCache := &MockMediaRecognitionCacheService{}
 	mockTranslation := &MockMediaRecognitionTranslationService{}
@@ -215,7 +215,7 @@ func TestMediaRecognitionService_DetectMediaType(t *testing.T) {
 }
 
 func TestMediaRecognitionService_GetProvidersForMediaType(t *testing.T) {
-	var mockDB *sql.DB // nil DB for testing
+	mockDB := database.WrapDB(nil, database.DialectSQLite) // nil DB for testing
 	mockLogger := zap.NewNop()
 	mockCache := &MockMediaRecognitionCacheService{}
 	mockTranslation := &MockMediaRecognitionTranslationService{}
@@ -230,7 +230,7 @@ func TestMediaRecognitionService_GetProvidersForMediaType(t *testing.T) {
 }
 
 func TestMediaRecognitionService_EnhanceRecognitionResult(t *testing.T) {
-	var mockDB *sql.DB // nil DB for testing
+	mockDB := database.WrapDB(nil, database.DialectSQLite) // nil DB for testing
 	mockLogger := zap.NewNop()
 	mockCache := &MockMediaRecognitionCacheService{}
 	mockTranslation := &MockMediaRecognitionTranslationService{}
@@ -259,7 +259,7 @@ func TestMediaRecognitionService_EnhanceRecognitionResult(t *testing.T) {
 }
 
 func TestMediaRecognitionService_FindDuplicates(t *testing.T) {
-	var mockDB *sql.DB // nil DB for testing
+	mockDB := database.WrapDB(nil, database.DialectSQLite) // nil DB for testing
 	mockLogger := zap.NewNop()
 	mockCache := &MockMediaRecognitionCacheService{}
 	mockTranslation := &MockMediaRecognitionTranslationService{}
@@ -283,7 +283,7 @@ func TestMediaRecognitionService_FindDuplicates(t *testing.T) {
 }
 
 func TestMediaRecognitionService_TranslateMetadata(t *testing.T) {
-	var mockDB *sql.DB // nil DB for testing
+	mockDB := database.WrapDB(nil, database.DialectSQLite) // nil DB for testing
 	mockLogger := zap.NewNop()
 	mockCache := &MockMediaRecognitionCacheService{}
 	mockTranslation := &MockMediaRecognitionTranslationService{}
@@ -315,7 +315,7 @@ func TestMediaRecognitionService_TranslateMetadata(t *testing.T) {
 }
 
 func TestMediaRecognitionService_StoreRecognitionResult(t *testing.T) {
-	var mockDB *sql.DB // nil DB for testing
+	mockDB := database.WrapDB(nil, database.DialectSQLite) // nil DB for testing
 	mockLogger := zap.NewNop()
 	mockCache := &MockMediaRecognitionCacheService{}
 	mockTranslation := &MockMediaRecognitionTranslationService{}
@@ -434,7 +434,7 @@ func TestMediaRecognitionResult_JSON(t *testing.T) {
 }
 
 func TestMediaRecognitionService_RecognizeMediaBatch(t *testing.T) {
-	var mockDB *sql.DB
+	mockDB := database.WrapDB(nil, database.DialectSQLite)
 	mockLogger := zap.NewNop()
 	mockCache := &MockMediaRecognitionCacheService{}
 	mockTranslation := &MockMediaRecognitionTranslationService{}
@@ -472,7 +472,7 @@ func TestMediaRecognitionService_RecognizeMediaBatch(t *testing.T) {
 }
 
 func TestMediaRecognitionService_GetRecognitionStats(t *testing.T) {
-	var mockDB *sql.DB
+	mockDB := database.WrapDB(nil, database.DialectSQLite)
 	mockLogger := zap.NewNop()
 	mockCache := &MockMediaRecognitionCacheService{}
 	mockTranslation := &MockMediaRecognitionTranslationService{}
@@ -489,7 +489,7 @@ func TestMediaRecognitionService_GetRecognitionStats(t *testing.T) {
 }
 
 func TestMediaRecognitionService_DetectMediaType_EdgeCases(t *testing.T) {
-	var mockDB *sql.DB
+	mockDB := database.WrapDB(nil, database.DialectSQLite)
 	mockLogger := zap.NewNop()
 	mockCache := &MockMediaRecognitionCacheService{}
 	mockTranslation := &MockMediaRecognitionTranslationService{}
@@ -537,7 +537,7 @@ func TestMediaRecognitionService_DetectMediaType_EdgeCases(t *testing.T) {
 }
 
 func TestMediaRecognitionService_RecognizeMedia_ErrorHandling(t *testing.T) {
-	var mockDB *sql.DB
+	mockDB := database.WrapDB(nil, database.DialectSQLite)
 	mockLogger := zap.NewNop()
 	mockCache := &MockMediaRecognitionCacheService{}
 	mockTranslation := &MockMediaRecognitionTranslationService{}

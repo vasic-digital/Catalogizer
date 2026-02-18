@@ -5,6 +5,7 @@ import (
 	"testing"
 	"time"
 
+	"catalogizer/database"
 	"catalogizer/models"
 
 	"github.com/DATA-DOG/go-sqlmock"
@@ -13,8 +14,9 @@ import (
 )
 
 func newMockConversionRepo(t *testing.T) (*ConversionRepository, sqlmock.Sqlmock) {
-	db, mock, err := sqlmock.New()
+	sqlDB, mock, err := sqlmock.New()
 	require.NoError(t, err)
+	db := database.WrapDB(sqlDB, database.DialectSQLite)
 	return NewConversionRepository(db), mock
 }
 
@@ -29,8 +31,9 @@ var conversionJobColumns = []string{
 // ---------------------------------------------------------------------------
 
 func TestConversionRepository_Constructor(t *testing.T) {
-	db, _, err := sqlmock.New()
+	sqlDB, _, err := sqlmock.New()
 	require.NoError(t, err)
+	db := database.WrapDB(sqlDB, database.DialectSQLite)
 	repo := NewConversionRepository(db)
 	assert.NotNil(t, repo)
 }

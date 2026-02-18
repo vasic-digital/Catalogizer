@@ -15,6 +15,8 @@ import (
 	"path/filepath"
 	"time"
 
+	catalogDB "catalogizer/database"
+
 	"go.uber.org/zap"
 )
 
@@ -76,7 +78,7 @@ func NewMediaManager(cfg *config.Config, logger *zap.Logger) (*MediaManager, err
 	providerManager := providers.NewProviderManager(logger)
 
 	// Initialize analyzer
-	mediaAnalyzer := analyzer.NewMediaAnalyzer(mediaDB.GetDB(), detectionEngine, providerManager, logger)
+	mediaAnalyzer := analyzer.NewMediaAnalyzer(catalogDB.WrapDB(mediaDB.GetDB(), catalogDB.DialectSQLite), detectionEngine, providerManager, logger)
 
 	// Initialize change watcher
 	changeWatcher := realtime.NewSMBChangeWatcher(mediaDB, mediaAnalyzer, logger)

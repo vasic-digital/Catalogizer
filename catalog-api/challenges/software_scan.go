@@ -84,7 +84,7 @@ func (c *SoftwareScanChallenge) Execute(ctx context.Context) (*challenge.Result,
 		Expected: "> 0",
 		Actual:   fmt.Sprintf("%d", result.FileCount),
 		Passed:   result.FileCount > 0,
-		Message:  ternary(result.FileCount > 0, fmt.Sprintf("Found %d installer/archive files", result.FileCount), "No installer/archive files found"),
+		Message:  challenge.Ternary(result.FileCount > 0, fmt.Sprintf("Found %d installer/archive files", result.FileCount), "No installer/archive files found"),
 	})
 
 	// Assertion: total size > 0
@@ -94,7 +94,7 @@ func (c *SoftwareScanChallenge) Execute(ctx context.Context) (*challenge.Result,
 		Expected: "> 0 bytes",
 		Actual:   fmt.Sprintf("%d bytes", result.TotalSize),
 		Passed:   result.TotalSize > 0,
-		Message:  ternary(result.TotalSize > 0, fmt.Sprintf("Total size: %d bytes", result.TotalSize), "Total size is 0"),
+		Message:  challenge.Ternary(result.TotalSize > 0, fmt.Sprintf("Total size: %d bytes", result.TotalSize), "Total size is 0"),
 	})
 
 	extList := []string{}

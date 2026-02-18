@@ -6,6 +6,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"go.uber.org/zap"
 
+	"catalogizer/database"
 	"catalogizer/internal/services"
 )
 
@@ -14,8 +15,9 @@ import (
 // Note: Full functional tests require mock implementations of FileRepositoryInterface.
 func TestRecommendationServiceConstruction(t *testing.T) {
 	// Setup database with schema
-	db := SetupTestDB(t)
-	defer db.Close()
+	sqlDB := SetupTestDB(t)
+	defer sqlDB.Close()
+	db := database.WrapDB(sqlDB, database.DialectSQLite)
 
 	logger := zap.NewNop()
 

@@ -32,16 +32,27 @@ type ServerConfig struct {
 	KeyFile      string `json:"key_file,omitempty"`
 }
 
-// DatabaseConfig contains database connection configuration
+// DatabaseConfig contains database connection configuration.
+// Type selects the backend: "postgres" (default) or "sqlite".
 type DatabaseConfig struct {
+	Type               string `json:"type"` // "postgres" or "sqlite"
+	// PostgreSQL fields
+	Host               string `json:"host"`
+	Port               int    `json:"port"`
+	Name               string `json:"name"`
+	User               string `json:"user"`
+	Password           string `json:"password"`
+	SSLMode            string `json:"ssl_mode"`
+	// SQLite fields (used when Type="sqlite")
 	Path               string `json:"path"`
+	EnableWAL          bool   `json:"enable_wal"`
+	CacheSize          int    `json:"cache_size"`
+	BusyTimeout        int    `json:"busy_timeout"`
+	// Common
 	MaxOpenConnections int    `json:"max_open_connections"`
 	MaxIdleConnections int    `json:"max_idle_connections"`
 	ConnMaxLifetime    int    `json:"conn_max_lifetime"`
 	ConnMaxIdleTime    int    `json:"conn_max_idle_time"`
-	EnableWAL          bool   `json:"enable_wal"`
-	CacheSize          int    `json:"cache_size"`
-	BusyTimeout        int    `json:"busy_timeout"`
 }
 
 // AuthConfig contains authentication configuration
@@ -133,13 +144,20 @@ func getDefaultConfig() *Config {
 		Server: ServerConfig{
 			Host:         "localhost",
 			Port:         8080,
-			ReadTimeout:  30,
-			WriteTimeout: 30,
+			ReadTimeout:  900,
+			WriteTimeout: 900,
 			IdleTimeout:  120,
 			EnableCORS:   true,
 			EnableHTTPS:  true, // Enable HTTPS by default for security
 		},
 		Database: DatabaseConfig{
+			Type:               "postgres",
+			Host:               "localhost",
+			Port:               5433,
+			Name:               "catalogizer",
+			User:               "catalogizer",
+			Password:           "catalogizer_dev",
+			SSLMode:            "disable",
 			Path:               "./catalog.db",
 			MaxOpenConnections: 25,
 			MaxIdleConnections: 5,
@@ -201,20 +219,62 @@ func validateConfig(config *Config) error {
 		return fmt.Errorf("invalid server port: %d", config.Server.Port)
 	}
 
-	if config.Database.Path == "" {
-		return fmt.Errorf("database path cannot be empty")
+	// Apply DATABASE_* env overrides
+	if dbType := os.Getenv("DATABASE_TYPE"); dbType != "" {
+		config.Database.Type = dbType
+	}
+	if dbHost := os.Getenv("DATABASE_HOST"); dbHost != "" {
+		config.Database.Host = dbHost
+	}
+	if dbPort := os.Getenv("DATABASE_PORT"); dbPort != "" {
+		if p, err := strconv.Atoi(dbPort); err == nil {
+			config.Database.Port = p
+		}
+	}
+	if dbName := os.Getenv("DATABASE_NAME"); dbName != "" {
+		config.Database.Name = dbName
+	}
+	if dbUser := os.Getenv("DATABASE_USER"); dbUser != "" {
+		config.Database.User = dbUser
+	}
+	if dbPass := os.Getenv("DATABASE_PASSWORD"); dbPass != "" {
+		config.Database.Password = dbPass
+	}
+	if dbSSL := os.Getenv("DATABASE_SSL_MODE"); dbSSL != "" {
+		config.Database.SSLMode = dbSSL
+	}
+
+	// Validate database config based on type
+	dbType := config.Database.Type
+	if dbType == "" {
+		dbType = "postgres"
+	}
+	switch dbType {
+	case "postgres":
+		if config.Database.Host == "" {
+			return fmt.Errorf("database host cannot be empty for postgres")
+		}
+		if config.Database.Name == "" {
+			return fmt.Errorf("database name cannot be empty for postgres")
+		}
+	case "sqlite":
+		if config.Database.Path == "" {
+			return fmt.Errorf("database path cannot be empty for sqlite")
+		}
+	default:
+		return fmt.Errorf("unsupported database type: %s", dbType)
 	}
 
 	if config.Auth.EnableAuth {
-		// Check for environment variables first
-		if config.Auth.JWTSecret == "" {
-			config.Auth.JWTSecret = os.Getenv("JWT_SECRET")
+		// Environment variables override config file values (config.json may have ${VAR} placeholders)
+		if envJWT := os.Getenv("JWT_SECRET"); envJWT != "" {
+			config.Auth.JWTSecret = envJWT
 		}
-		if config.Auth.AdminUsername == "" {
-			config.Auth.AdminUsername = os.Getenv("ADMIN_USERNAME")
+		if envUser := os.Getenv("ADMIN_USERNAME"); envUser != "" {
+			config.Auth.AdminUsername = envUser
 		}
-		if config.Auth.AdminPassword == "" {
-			config.Auth.AdminPassword = os.Getenv("ADMIN_PASSWORD")
+		if envPass := os.Getenv("ADMIN_PASSWORD"); envPass != "" {
+			config.Auth.AdminPassword = envPass
 		}
 
 		// Validate required security settings
@@ -262,6 +322,23 @@ func saveConfig(config *Config, configPath string) error {
 
 // GetDatabaseURL returns the database connection URL
 func (c *Config) GetDatabaseURL() string {
+	dbType := c.Database.Type
+	if dbType == "" {
+		dbType = "postgres"
+	}
+
+	if dbType == "postgres" {
+		sslMode := c.Database.SSLMode
+		if sslMode == "" {
+			sslMode = "disable"
+		}
+		return fmt.Sprintf("postgres://%s:%s@%s:%d/%s?sslmode=%s",
+			c.Database.User, c.Database.Password,
+			c.Database.Host, c.Database.Port,
+			c.Database.Name, sslMode)
+	}
+
+	// SQLite
 	params := "?_busy_timeout=5000&_journal_mode=WAL&_synchronous=NORMAL&_foreign_keys=1"
 	if c.Database.EnableWAL {
 		params += "&_wal_autocheckpoint=1000"

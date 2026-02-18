@@ -81,11 +81,12 @@ func TestValidateConfig_InvalidPort(t *testing.T) {
 func TestValidateConfig_EmptyDatabasePath(t *testing.T) {
 	config := getDefaultConfig()
 	config.Auth.EnableAuth = false
+	config.Database.Type = "sqlite"
 	config.Database.Path = ""
 
 	err := validateConfig(config)
 	assert.Error(t, err)
-	assert.Contains(t, err.Error(), "database path cannot be empty")
+	assert.Contains(t, err.Error(), "database path cannot be empty for sqlite")
 }
 
 func TestValidateConfig_AuthValidation(t *testing.T) {
@@ -141,8 +142,21 @@ func TestValidateConfig_PageSizeValidation(t *testing.T) {
 	assert.Contains(t, err.Error(), "max page size must be >= default page size")
 }
 
-func TestGetDatabaseURL(t *testing.T) {
+func TestGetDatabaseURL_Postgres(t *testing.T) {
 	config := getDefaultConfig()
+	// Default is postgres
+	url := config.GetDatabaseURL()
+	assert.Contains(t, url, "postgres://")
+	assert.Contains(t, url, "catalogizer")
+	assert.Contains(t, url, "sslmode=disable")
+}
+
+func TestGetDatabaseURL_SQLite(t *testing.T) {
+	config := getDefaultConfig()
+	config.Database.Type = "sqlite"
+	config.Database.Path = "./catalog.db"
+	config.Database.BusyTimeout = 5000
+	config.Database.EnableWAL = true
 
 	url := config.GetDatabaseURL()
 	assert.Contains(t, url, "./catalog.db")
@@ -154,6 +168,8 @@ func TestGetDatabaseURL(t *testing.T) {
 
 func TestGetDatabaseURL_WithCustomCacheSize(t *testing.T) {
 	config := getDefaultConfig()
+	config.Database.Type = "sqlite"
+	config.Database.Path = "./catalog.db"
 	config.Database.CacheSize = -4000
 
 	url := config.GetDatabaseURL()
@@ -162,6 +178,8 @@ func TestGetDatabaseURL_WithCustomCacheSize(t *testing.T) {
 
 func TestGetDatabaseURL_DisabledWAL(t *testing.T) {
 	config := getDefaultConfig()
+	config.Database.Type = "sqlite"
+	config.Database.Path = "./catalog.db"
 	config.Database.EnableWAL = false
 
 	url := config.GetDatabaseURL()

@@ -2,10 +2,11 @@ package metrics
 
 import (
 	"context"
-	"database/sql"
 	"net/http"
 	"sync"
 	"time"
+
+	"catalogizer/database"
 )
 
 // HealthStatus represents the health status of a component
@@ -35,7 +36,7 @@ type HealthCheckResponse struct {
 
 // HealthChecker performs health checks on various components
 type HealthChecker struct {
-	db        *sql.DB
+	db        *database.DB
 	startTime time.Time
 	version   string
 	mu        sync.RWMutex
@@ -43,7 +44,7 @@ type HealthChecker struct {
 }
 
 // NewHealthChecker creates a new health checker
-func NewHealthChecker(db *sql.DB, version string) *HealthChecker {
+func NewHealthChecker(db *database.DB, version string) *HealthChecker {
 	hc := &HealthChecker{
 		db:        db,
 		startTime: time.Now(),

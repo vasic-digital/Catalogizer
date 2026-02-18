@@ -6,8 +6,12 @@ toolchain go1.24.8
 
 replace digital.vasic.challenges => ../Challenges
 
+replace digital.vasic.assets => ../Assets
+
 require (
 	cloud.google.com/go/storage v1.59.2
+	digital.vasic.assets v0.0.0-00010101000000-000000000000
+	digital.vasic.challenges v0.0.0-00010101000000-000000000000
 	github.com/DATA-DOG/go-sqlmock v1.5.2
 	github.com/alicebob/miniredis/v2 v2.36.1
 	github.com/aws/aws-sdk-go-v2 v1.41.1
@@ -20,6 +24,7 @@ require (
 	github.com/golang-jwt/jwt/v5 v5.3.1
 	github.com/google/uuid v1.6.0
 	github.com/gorilla/mux v1.8.1
+	github.com/gorilla/websocket v1.5.3
 	github.com/hirochachacha/go-smb2 v1.1.0
 	github.com/jlaffaye/ftp v0.2.0
 	github.com/jung-kurt/gofpdf v1.16.2
@@ -47,7 +52,6 @@ require (
 	cloud.google.com/go/compute/metadata v0.9.0 // indirect
 	cloud.google.com/go/iam v1.5.3 // indirect
 	cloud.google.com/go/monitoring v1.24.3 // indirect
-	digital.vasic.challenges v0.0.0-00010101000000-000000000000 // indirect
 	github.com/GoogleCloudPlatform/opentelemetry-operations-go/detectors/gcp v1.30.0 // indirect
 	github.com/GoogleCloudPlatform/opentelemetry-operations-go/exporter/metric v0.54.0 // indirect
 	github.com/GoogleCloudPlatform/opentelemetry-operations-go/internal/resourcemapping v0.54.0 // indirect
@@ -98,6 +102,7 @@ require (
 	github.com/jupiterrider/ffi v0.5.0 // indirect
 	github.com/klauspost/cpuid/v2 v2.3.0 // indirect
 	github.com/leodido/go-urn v1.4.0 // indirect
+	github.com/lib/pq v1.10.9 // indirect
 	github.com/mattn/go-isatty v0.0.20 // indirect
 	github.com/modern-go/concurrent v0.0.0-20180306012644-bacd9c7ef1dd // indirect
 	github.com/modern-go/reflect2 v1.0.2 // indirect

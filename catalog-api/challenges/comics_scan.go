@@ -81,7 +81,7 @@ func (c *ComicsScanChallenge) Execute(ctx context.Context) (*challenge.Result, e
 		Expected: "> 0",
 		Actual:   fmt.Sprintf("%d", result.FileCount),
 		Passed:   result.FileCount > 0,
-		Message:  ternary(result.FileCount > 0, fmt.Sprintf("Found %d comic files", result.FileCount), "No comic files found"),
+		Message:  challenge.Ternary(result.FileCount > 0, fmt.Sprintf("Found %d comic files", result.FileCount), "No comic files found"),
 	})
 
 	// Assertion: total size > 0
@@ -91,7 +91,7 @@ func (c *ComicsScanChallenge) Execute(ctx context.Context) (*challenge.Result, e
 		Expected: "> 0 bytes",
 		Actual:   fmt.Sprintf("%d bytes", result.TotalSize),
 		Passed:   result.TotalSize > 0,
-		Message:  ternary(result.TotalSize > 0, fmt.Sprintf("Total size: %d bytes", result.TotalSize), "Total size is 0"),
+		Message:  challenge.Ternary(result.TotalSize > 0, fmt.Sprintf("Total size: %d bytes", result.TotalSize), "Total size is 0"),
 	})
 
 	extList := []string{}

@@ -16,7 +16,7 @@ import (
 func newMockStatsRepo(t *testing.T) (*StatsRepository, sqlmock.Sqlmock) {
 	sqlDB, mock, err := sqlmock.New()
 	require.NoError(t, err)
-	db := &database.DB{DB: sqlDB}
+	db := database.WrapDB(sqlDB, database.DialectSQLite)
 	return NewStatsRepository(db), mock
 }
 

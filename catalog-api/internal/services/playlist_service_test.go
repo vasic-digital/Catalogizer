@@ -1,7 +1,7 @@
 package services
 
 import (
-	"database/sql"
+	"catalogizer/database"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -9,7 +9,7 @@ import (
 )
 
 func TestNewPlaylistService(t *testing.T) {
-	var mockDB *sql.DB
+	mockDB := database.WrapDB(nil, database.DialectSQLite)
 	mockLogger := zap.NewNop()
 
 	service := NewPlaylistService(mockDB, mockLogger)
@@ -18,7 +18,7 @@ func TestNewPlaylistService(t *testing.T) {
 }
 
 func TestPlaylistService_BuildSmartPlaylistQuery(t *testing.T) {
-	var mockDB *sql.DB
+	mockDB := database.WrapDB(nil, database.DialectSQLite)
 	mockLogger := zap.NewNop()
 	service := NewPlaylistService(mockDB, mockLogger)
 
@@ -103,7 +103,7 @@ func TestPlaylistService_BuildSmartPlaylistQuery(t *testing.T) {
 }
 
 func TestPlaylistService_BuildRuleCondition(t *testing.T) {
-	var mockDB *sql.DB
+	mockDB := database.WrapDB(nil, database.DialectSQLite)
 	mockLogger := zap.NewNop()
 	service := NewPlaylistService(mockDB, mockLogger)
 
@@ -159,7 +159,7 @@ func TestPlaylistService_BuildRuleCondition(t *testing.T) {
 }
 
 func TestPlaylistService_GetOrderClause(t *testing.T) {
-	var mockDB *sql.DB
+	mockDB := database.WrapDB(nil, database.DialectSQLite)
 	mockLogger := zap.NewNop()
 	service := NewPlaylistService(mockDB, mockLogger)
 

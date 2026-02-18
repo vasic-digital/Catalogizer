@@ -1,8 +1,6 @@
 package integration
 
 import (
-	"catalogizer/filesystem"
-	"catalogizer/internal/services"
 	"context"
 	"database/sql"
 	"fmt"
@@ -12,6 +10,10 @@ import (
 
 	_ "github.com/mutecomm/go-sqlcipher"
 	"go.uber.org/zap"
+
+	"catalogizer/database"
+	"catalogizer/filesystem"
+	"catalogizer/internal/services"
 )
 
 // ProtocolTestSuite defines the interface for protocol-specific tests
@@ -500,11 +502,13 @@ func (s *WebDAVProtocolTestSuite) SupportsRealTimeEvents() bool {
 
 // Helper functions
 
-func setupProtocolTestDB(t *testing.T) *sql.DB {
-	db, err := sql.Open("sqlite3", ":memory:")
+func setupProtocolTestDB(t *testing.T) *database.DB {
+	sqlDB, err := sql.Open("sqlite3", ":memory:")
 	if err != nil {
 		t.Fatalf("Failed to create test database: %v", err)
 	}
+
+	db := database.WrapDB(sqlDB, database.DialectSQLite)
 
 	schema := `
 		CREATE TABLE storage_roots (

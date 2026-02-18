@@ -2,18 +2,19 @@ package services
 
 import (
 	"context"
-	"database/sql"
 	"math"
 	"regexp"
 	"strings"
 	"time"
+
+	"catalogizer/database"
 
 	"go.uber.org/zap"
 )
 
 // Duplicate detection and deduplication service
 type DuplicateDetectionService struct {
-	db           *sql.DB
+	db           *database.DB
 	logger       *zap.Logger
 	cacheService *CacheService
 }
@@ -111,7 +112,7 @@ type DuplicateDetectionRequest struct {
 }
 
 func NewDuplicateDetectionService(
-	db *sql.DB,
+	db *database.DB,
 	logger *zap.Logger,
 	cacheService *CacheService,
 ) *DuplicateDetectionService {

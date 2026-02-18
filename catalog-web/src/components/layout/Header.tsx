@@ -2,7 +2,7 @@ import React, { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { useAuth } from '@/contexts/AuthContext'
 import { Button } from '@/components/ui/Button'
-import { Menu, X, User, LogOut, Settings, Search, Languages, Folder, Settings2, Heart, ListMusic } from 'lucide-react'
+import { Menu, X, User, LogOut, Settings, Search, Languages, Folder, Settings2, Heart, ListMusic, Library } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
 
 export const Header: React.FC = () => {
@@ -52,6 +52,15 @@ export const Header: React.FC = () => {
                 Media
               </Link>
               <Link
+                to="/browse"
+                className="text-gray-700 hover:text-gray-900 dark:text-gray-300 dark:hover:text-white transition-colors"
+              >
+                <div className="flex items-center gap-1">
+                  <Library className="h-4 w-4" />
+                  Browse
+                </div>
+              </Link>
+              <Link
                 to="/favorites"
                 className="text-gray-700 hover:text-gray-900 dark:text-gray-300 dark:hover:text-white transition-colors"
               >
@@ -96,7 +105,7 @@ export const Header: React.FC = () => {
               >
                 Convert
               </Link>
-              {user?.role === 'admin' && (
+              {user?.role?.name === 'Admin' && (
                 <Link
                   to="/admin"
                   className="text-gray-700 hover:text-gray-900 dark:text-gray-300 dark:hover:text-white transition-colors"
@@ -220,6 +229,16 @@ export const Header: React.FC = () => {
                       Media
                     </Link>
                     <Link
+                      to="/browse"
+                      className="block px-3 py-2 text-gray-700 hover:text-gray-900 hover:bg-gray-100 rounded-md dark:text-gray-300 dark:hover:text-white dark:hover:bg-gray-800 transition-colors"
+                      onClick={() => setIsMobileMenuOpen(false)}
+                    >
+                      <div className="flex items-center gap-2">
+                        <Library className="h-4 w-4" />
+                        Browse
+                      </div>
+                    </Link>
+                    <Link
                       to="/favorites"
                       className="block px-3 py-2 text-gray-700 hover:text-gray-900 hover:bg-gray-100 rounded-md dark:text-gray-300 dark:hover:text-white dark:hover:bg-gray-800 transition-colors"
                       onClick={() => setIsMobileMenuOpen(false)}
@@ -263,7 +282,7 @@ export const Header: React.FC = () => {
                     >
                       Convert
                     </Link>
-                    {user?.role === 'admin' && (
+                    {user?.role?.name === 'Admin' && (
                       <Link
                         to="/admin"
                         className="block px-3 py-2 text-gray-700 hover:text-gray-900 hover:bg-gray-100 rounded-md dark:text-gray-300 dark:hover:text-white dark:hover:bg-gray-800 transition-colors"

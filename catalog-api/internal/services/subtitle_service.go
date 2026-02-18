@@ -12,6 +12,8 @@ import (
 	"sync"
 	"time"
 
+	"catalogizer/database"
+
 	"go.uber.org/zap"
 )
 
@@ -23,7 +25,7 @@ type CacheServiceInterface interface {
 
 // SubtitleService handles subtitle management, downloading, and translation
 type SubtitleService struct {
-	db                 *sql.DB
+	db                 *database.DB
 	logger             *zap.Logger
 	translationService *TranslationService
 	cacheService       CacheServiceInterface
@@ -150,7 +152,7 @@ type SubtitleUploadResponse struct {
 }
 
 // NewSubtitleService creates a new subtitle service
-func NewSubtitleService(db *sql.DB, logger *zap.Logger, cacheService CacheServiceInterface) *SubtitleService {
+func NewSubtitleService(db *database.DB, logger *zap.Logger, cacheService CacheServiceInterface) *SubtitleService {
 	return &SubtitleService{
 		db:                 db,
 		logger:             logger,

@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"digital.vasic.challenges/pkg/challenge"
+	"digital.vasic.challenges/pkg/httpclient"
 )
 
 // allFirstCatalogDeps lists all 7 first-catalog challenge IDs
@@ -27,7 +28,7 @@ type BrowsingAPIHealthChallenge struct {
 	config *BrowsingConfig
 }
 
-// NewBrowsingAPIHealthChallenge creates CH-008.
+// NewBrowsingAPIHealthChallenge creates CH-009.
 func NewBrowsingAPIHealthChallenge() *BrowsingAPIHealthChallenge {
 	return &BrowsingAPIHealthChallenge{
 		BaseChallenge: challenge.NewBaseChallenge(
@@ -36,7 +37,7 @@ func NewBrowsingAPIHealthChallenge() *BrowsingAPIHealthChallenge {
 			"Validates API health endpoint responds, admin login succeeds "+
 				"with JWT token, and /auth/me returns user data",
 			"e2e",
-			allFirstCatalogDeps,
+			[]challenge.ID{"first-catalog-populate"},
 		),
 		config: LoadBrowsingConfig(),
 	}
@@ -52,7 +53,7 @@ func (c *BrowsingAPIHealthChallenge) Execute(ctx context.Context) (*challenge.Re
 		"password": c.config.Password,
 	}
 
-	client := NewAPIClient(c.config.BaseURL)
+	client := httpclient.NewAPIClient(c.config.BaseURL)
 
 	// Step 1: GET /health returns 200 with status=healthy
 	healthCode, healthBody, healthErr := client.Get(ctx, "/health")
@@ -71,7 +72,7 @@ func (c *BrowsingAPIHealthChallenge) Execute(ctx context.Context) (*challenge.Re
 		Expected: "HTTP 200 with status=healthy",
 		Actual:   fmt.Sprintf("HTTP %d, status=%q", healthCode, healthStatus),
 		Passed:   healthPassed,
-		Message:  ternary(healthPassed, "Health endpoint returned healthy", fmt.Sprintf("Health check failed: code=%d status=%q err=%v", healthCode, healthStatus, healthErr)),
+		Message:  challenge.Ternary(healthPassed, "Health endpoint returned healthy", fmt.Sprintf("Health check failed: code=%d status=%q err=%v", healthCode, healthStatus, healthErr)),
 	})
 	if !healthPassed {
 		errMsg := fmt.Sprintf("health check failed: HTTP %d", healthCode)
@@ -89,9 +90,9 @@ func (c *BrowsingAPIHealthChallenge) Execute(ctx context.Context) (*challenge.Re
 		Type:     "not_empty",
 		Target:   "login_endpoint",
 		Expected: "successful login response",
-		Actual:   ternary(loginOK, "login succeeded", fmt.Sprintf("err=%v", loginErr)),
+		Actual:   challenge.Ternary(loginOK, "login succeeded", fmt.Sprintf("err=%v", loginErr)),
 		Passed:   loginOK,
-		Message:  ternary(loginOK, "Admin login succeeded", fmt.Sprintf("Login failed: %v", loginErr)),
+		Message:  challenge.Ternary(loginOK, "Admin login succeeded", fmt.Sprintf("Login failed: %v", loginErr)),
 	})
 	if !loginOK {
 		errMsg := "login failed"
@@ -108,9 +109,9 @@ func (c *BrowsingAPIHealthChallenge) Execute(ctx context.Context) (*challenge.Re
 		Type:     "not_empty",
 		Target:   "session_token",
 		Expected: "non-empty JWT token",
-		Actual:   ternary(tokenOK, fmt.Sprintf("token length=%d", len(token)), "empty"),
+		Actual:   challenge.Ternary(tokenOK, fmt.Sprintf("token length=%d", len(token)), "empty"),
 		Passed:   tokenOK,
-		Message:  ternary(tokenOK, "JWT token received", "No token in login response"),
+		Message:  challenge.Ternary(tokenOK, "JWT token received", "No token in login response"),
 	})
 
 	// Step 4: Response contains refresh_token
@@ -120,21 +121,21 @@ func (c *BrowsingAPIHealthChallenge) Execute(ctx context.Context) (*challenge.Re
 		Type:     "not_empty",
 		Target:   "refresh_token",
 		Expected: "refresh_token present",
-		Actual:   ternary(refreshOK, "present", "missing"),
+		Actual:   challenge.Ternary(refreshOK, "present", "missing"),
 		Passed:   refreshOK,
-		Message:  ternary(refreshOK, "Refresh token present in response", "No refresh_token in login response"),
+		Message:  challenge.Ternary(refreshOK, "Refresh token present in response", "No refresh_token in login response"),
 	})
 
-	// Step 5: Response contains expires_in
-	_, hasExpires := loginResp["expires_in"]
+	// Step 5: Response contains expires_at
+	_, hasExpires := loginResp["expires_at"]
 	expiresOK := hasExpires
 	assertions = append(assertions, challenge.AssertionResult{
 		Type:     "not_empty",
-		Target:   "expires_in",
-		Expected: "expires_in present",
-		Actual:   ternary(expiresOK, "present", "missing"),
+		Target:   "expires_at",
+		Expected: "expires_at present",
+		Actual:   challenge.Ternary(expiresOK, "present", "missing"),
 		Passed:   expiresOK,
-		Message:  ternary(expiresOK, "Expiration info present in response", "No expires_in in login response"),
+		Message:  challenge.Ternary(expiresOK, "Expiration info present in response", "No expires_at in login response"),
 	})
 
 	// Step 6: Response user.username matches config
@@ -148,9 +149,9 @@ func (c *BrowsingAPIHealthChallenge) Execute(ctx context.Context) (*challenge.Re
 		Type:     "not_empty",
 		Target:   "user_username",
 		Expected: c.config.Username,
-		Actual:   ternary(usernameOK, c.config.Username, "mismatch or missing"),
+		Actual:   challenge.Ternary(usernameOK, c.config.Username, "mismatch or missing"),
 		Passed:   usernameOK,
-		Message:  ternary(usernameOK, fmt.Sprintf("Username matches: %s", c.config.Username), "Username mismatch in login response"),
+		Message:  challenge.Ternary(usernameOK, fmt.Sprintf("Username matches: %s", c.config.Username), "Username mismatch in login response"),
 	})
 
 	// Step 7: GET /api/v1/auth/me returns 200
@@ -162,7 +163,7 @@ func (c *BrowsingAPIHealthChallenge) Execute(ctx context.Context) (*challenge.Re
 		Expected: "HTTP 200 with user data",
 		Actual:   fmt.Sprintf("HTTP %d", meCode),
 		Passed:   meOK,
-		Message:  ternary(meOK, "Auth /me endpoint returned user data", fmt.Sprintf("Auth /me failed: code=%d err=%v", meCode, meErr)),
+		Message:  challenge.Ternary(meOK, "Auth /me endpoint returned user data", fmt.Sprintf("Auth /me failed: code=%d err=%v", meCode, meErr)),
 	})
 
 	metrics := map[string]challenge.MetricValue{

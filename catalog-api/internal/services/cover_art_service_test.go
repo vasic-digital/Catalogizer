@@ -1,8 +1,8 @@
 package services
 
 import (
+	"catalogizer/database"
 	"context"
-	"database/sql"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -10,7 +10,7 @@ import (
 )
 
 func TestNewCoverArtService(t *testing.T) {
-	var mockDB *sql.DB
+	mockDB := database.WrapDB(nil, database.DialectSQLite)
 	mockLogger := zap.NewNop()
 
 	service := NewCoverArtService(mockDB, mockLogger)
@@ -19,7 +19,7 @@ func TestNewCoverArtService(t *testing.T) {
 }
 
 func TestCoverArtService_GetCoverArt_NilDB(t *testing.T) {
-	var mockDB *sql.DB
+	mockDB := database.WrapDB(nil, database.DialectSQLite)
 	mockLogger := zap.NewNop()
 	service := NewCoverArtService(mockDB, mockLogger)
 
@@ -31,7 +31,7 @@ func TestCoverArtService_GetCoverArt_NilDB(t *testing.T) {
 }
 
 func TestCoverArtService_GenerateCacheKey(t *testing.T) {
-	var mockDB *sql.DB
+	mockDB := database.WrapDB(nil, database.DialectSQLite)
 	mockLogger := zap.NewNop()
 	service := NewCoverArtService(mockDB, mockLogger)
 
@@ -78,7 +78,7 @@ func TestCoverArtService_GenerateCacheKey(t *testing.T) {
 }
 
 func TestCoverArtService_GenerateCacheKey_Uniqueness(t *testing.T) {
-	var mockDB *sql.DB
+	mockDB := database.WrapDB(nil, database.DialectSQLite)
 	mockLogger := zap.NewNop()
 	service := NewCoverArtService(mockDB, mockLogger)
 
@@ -89,7 +89,7 @@ func TestCoverArtService_GenerateCacheKey_Uniqueness(t *testing.T) {
 }
 
 func TestCoverArtService_GenerateTimestamps(t *testing.T) {
-	var mockDB *sql.DB
+	mockDB := database.WrapDB(nil, database.DialectSQLite)
 	mockLogger := zap.NewNop()
 	service := NewCoverArtService(mockDB, mockLogger)
 
@@ -124,7 +124,7 @@ func TestCoverArtService_GenerateTimestamps(t *testing.T) {
 }
 
 func TestCoverArtService_SortCoverArtResults(t *testing.T) {
-	var mockDB *sql.DB
+	mockDB := database.WrapDB(nil, database.DialectSQLite)
 	mockLogger := zap.NewNop()
 	service := NewCoverArtService(mockDB, mockLogger)
 
@@ -141,7 +141,7 @@ func TestCoverArtService_SortCoverArtResults(t *testing.T) {
 }
 
 func TestCoverArtService_GenerateCoverArtID(t *testing.T) {
-	var mockDB *sql.DB
+	mockDB := database.WrapDB(nil, database.DialectSQLite)
 	mockLogger := zap.NewNop()
 	service := NewCoverArtService(mockDB, mockLogger)
 

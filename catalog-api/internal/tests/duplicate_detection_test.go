@@ -6,14 +6,16 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
-	
-	"catalogizer/models"
+
+	"catalogizer/database"
 	"catalogizer/internal/services"
+	"catalogizer/models"
 	"go.uber.org/zap"
 )
 
 func TestDuplicateDetectionService_TextSimilarity(t *testing.T) {
-	db, _ := sql.Open("sqlite3", ":memory:")
+	sqlDB, _ := sql.Open("sqlite3", ":memory:")
+	db := database.WrapDB(sqlDB, database.DialectSQLite)
 	logger := zap.NewNop()
 	service := services.NewDuplicateDetectionService(db, logger, nil)
 	_ = service // Initialize service but don't use in this test
@@ -66,7 +68,8 @@ func TestDuplicateDetectionService_TextSimilarity(t *testing.T) {
 }
 
 func TestDuplicateDetectionService_MovieDuplicates(t *testing.T) {
-	db, _ := sql.Open("sqlite3", ":memory:")
+	sqlDB, _ := sql.Open("sqlite3", ":memory:")
+	db := database.WrapDB(sqlDB, database.DialectSQLite)
 	logger := zap.NewNop()
 	_ = services.NewDuplicateDetectionService(db, logger, nil)
 

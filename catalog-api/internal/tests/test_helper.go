@@ -4,8 +4,9 @@ import (
 	"database/sql"
 	"testing"
 
-	// Import SQLite driver once for all tests
-	_ "github.com/mattn/go-sqlite3"
+	// Import SQLite driver once for all tests (use go-sqlcipher to avoid linker
+	// conflict with catalogizer/database which also imports go-sqlcipher)
+	_ "github.com/mutecomm/go-sqlcipher"
 )
 
 // SetupTestDB creates an in-memory SQLite database for testing

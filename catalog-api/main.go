@@ -4,6 +4,7 @@ import (
 	"catalogizer/challenges"
 	root_config "catalogizer/config"
 	"catalogizer/database"
+	"catalogizer/filesystem"
 	root_handlers "catalogizer/handlers"
 	"catalogizer/internal/auth"
 	internal_config "catalogizer/internal/config"
@@ -16,7 +17,6 @@ import (
 	root_services "catalogizer/services"
 	"context"
 	"crypto/rand"
-	"database/sql"
 	"encoding/hex"
 	"flag"
 	"fmt"
@@ -29,8 +29,14 @@ import (
 	"syscall"
 	"time"
 
+	"digital.vasic.assets/pkg/defaults"
+	"digital.vasic.assets/pkg/event"
+	"digital.vasic.assets/pkg/manager"
+	"digital.vasic.assets/pkg/resolver"
+	asset_store "digital.vasic.assets/pkg/store"
 	"github.com/gin-gonic/gin"
 	_ "github.com/mutecomm/go-sqlcipher"
+	"golang.org/x/crypto/bcrypt"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"github.com/redis/go-redis/v9"
 	"go.uber.org/zap"
@@ -107,24 +113,44 @@ func main() {
 		gin.SetMode(ginMode)
 	}
 
-	// Initialize database
-	// Use the Database field as the path for SQLite
-	dbPath := cfg.Database.Path
-	if dbPath == "" {
-		dbPath = "./data/catalogizer.db" // Default path
+	// Apply DATABASE_* env overrides before creating connection
+	if dbType := os.Getenv("DATABASE_TYPE"); dbType != "" {
+		cfg.Database.Type = dbType
 	}
-	db, err := sql.Open("sqlite3", dbPath)
-	if err != nil {
-		log.Fatal("Failed to connect to database:", err)
+	if dbHost := os.Getenv("DATABASE_HOST"); dbHost != "" {
+		cfg.Database.Host = dbHost
+	}
+	if dbPort := os.Getenv("DATABASE_PORT"); dbPort != "" {
+		cfg.Database.Port = atoi(dbPort)
+	}
+	if dbName := os.Getenv("DATABASE_NAME"); dbName != "" {
+		cfg.Database.Name = dbName
+	}
+	if dbUser := os.Getenv("DATABASE_USER"); dbUser != "" {
+		cfg.Database.User = dbUser
+	}
+	if dbPass := os.Getenv("DATABASE_PASSWORD"); dbPass != "" {
+		cfg.Database.Password = dbPass
+	}
+	if dbSSL := os.Getenv("DATABASE_SSL_MODE"); dbSSL != "" {
+		cfg.Database.SSLMode = dbSSL
 	}
 
-	// Initialize database connection wrapper
-	databaseDB, err := database.NewConnection(&root_config.DatabaseConfig{
-		Path: dbPath,
-	})
+	// Default SQLite path if not set
+	if cfg.Database.Path == "" {
+		cfg.Database.Path = "./data/catalogizer.db"
+	}
+	// Default SSLMode
+	if cfg.Database.SSLMode == "" {
+		cfg.Database.SSLMode = "disable"
+	}
+
+	// Initialize single database connection
+	databaseDB, err := database.NewConnection(&cfg.Database)
 	if err != nil {
 		log.Fatal("Failed to initialize database:", err)
 	}
+	log.Printf("Database connected: %s", databaseDB.DatabaseType())
 
 	// Run database migrations
 	ctx := context.Background()
@@ -133,6 +159,11 @@ func main() {
 		log.Fatal("Failed to run database migrations:", err)
 	}
 	log.Println("Database migrations completed successfully")
+
+	// Seed default admin user if none exists
+	if err := seedDefaultAdmin(databaseDB, cfg.Auth.AdminUsername, cfg.Auth.AdminPassword); err != nil {
+		log.Printf("Warning: failed to seed admin user: %v", err)
+	}
 
 	// Initialize services
 	// Convert config to internal format
@@ -157,31 +188,30 @@ func main() {
 	}
 
 	catalogService := services.NewCatalogService(internalCfg, logger)
-	catalogService.SetDB(db)
+	catalogService.SetDB(databaseDB)
 	smbService := services.NewSMBService(internalCfg, logger)
 	smbDiscoveryService := services.NewSMBDiscoveryService(logger)
-	
+
 	// Initialize services needed for recommendations
-	mediaRecognitionService := services.NewMediaRecognitionService(db, logger, nil, nil, "", "", "", "", "", "")
-	duplicateDetectionService := services.NewDuplicateDetectionService(db, logger, nil)
+	mediaRecognitionService := services.NewMediaRecognitionService(databaseDB, logger, nil, nil, "", "", "", "", "", "")
+	duplicateDetectionService := services.NewDuplicateDetectionService(databaseDB, logger, nil)
 	fileRepository := root_repository.NewFileRepository(databaseDB)
 	recommendationService := services.NewRecommendationService(
 		mediaRecognitionService,
 		duplicateDetectionService,
 		fileRepository,
-		db,
+		databaseDB,
 	)
 
-
 	// Initialize repositories
-	userRepo := root_repository.NewUserRepository(db)
-	conversionRepo := root_repository.NewConversionRepository(db)
-	analyticsRepo := root_repository.NewAnalyticsRepository(db)
-	configurationRepo := root_repository.NewConfigurationRepository(db)
-	errorReportingRepo := root_repository.NewErrorReportingRepository(db)
-	crashReportingRepo := root_repository.NewCrashReportingRepository(db)
-	logManagementRepo := root_repository.NewLogManagementRepository(db)
-	favoritesRepo := root_repository.NewFavoritesRepository(db)
+	userRepo := root_repository.NewUserRepository(databaseDB)
+	conversionRepo := root_repository.NewConversionRepository(databaseDB)
+	analyticsRepo := root_repository.NewAnalyticsRepository(databaseDB)
+	configurationRepo := root_repository.NewConfigurationRepository(databaseDB)
+	errorReportingRepo := root_repository.NewErrorReportingRepository(databaseDB)
+	crashReportingRepo := root_repository.NewCrashReportingRepository(databaseDB)
+	logManagementRepo := root_repository.NewLogManagementRepository(databaseDB)
+	favoritesRepo := root_repository.NewFavoritesRepository(databaseDB)
 
 	// Initialize authentication and conversion services
 	jwtSecret := cfg.Auth.JWTSecret
@@ -204,7 +234,7 @@ func main() {
 	favoritesService := root_services.NewFavoritesService(favoritesRepo, authService)
 
 	// Initialize internal auth service and middleware for rate limiting
-	internalAuthService := auth.NewAuthService(db, jwtSecret, logger)
+	internalAuthService := auth.NewAuthService(databaseDB, jwtSecret, logger)
 	authMiddleware := auth.NewAuthMiddleware(internalAuthService, logger)
 
 	// Initialize Redis client for distributed rate limiting
@@ -228,10 +258,29 @@ func main() {
 	)
 	challenges.RegisterAll(challengeService)
 
+	// Initialize media entity repositories
+	mediaItemRepo := root_repository.NewMediaItemRepository(databaseDB)
+	mediaFileRepo := root_repository.NewMediaFileRepository(databaseDB)
+	extMetaRepo := root_repository.NewExternalMetadataRepository(databaseDB)
+	userMetaRepo := root_repository.NewUserMetadataRepository(databaseDB)
+	dirAnalysisRepo := root_repository.NewDirectoryAnalysisRepository(databaseDB)
+
+	// Initialize universal scanner for file system scanning
+	clientFactory := filesystem.NewDefaultClientFactory()
+	universalScanner := services.NewUniversalScanner(databaseDB, logger, nil, clientFactory)
+	if err := universalScanner.Start(); err != nil {
+		log.Fatalf("Failed to start universal scanner: %v", err)
+	}
+	defer universalScanner.Stop()
+
+	// Initialize aggregation service and hook into scanner
+	aggregationService := services.NewAggregationService(databaseDB, logger, mediaItemRepo, mediaFileRepo, dirAnalysisRepo, extMetaRepo)
+	universalScanner.SetAggregationService(aggregationService)
+
 	// Initialize subtitle service
 	// Use SQL-based cache service for now
-	cacheService := services.NewCacheService(db, logger)
-	subtitleService := services.NewSubtitleService(db, logger, cacheService)
+	cacheService := services.NewCacheService(databaseDB, logger)
+	subtitleService := services.NewSubtitleService(databaseDB, logger, cacheService)
 
 	// Initialize handlers
 	catalogHandler := handlers.NewCatalogHandler(catalogService, smbService, logger)
@@ -257,6 +306,54 @@ func main() {
 	// Stats handler
 	statsRepo := root_repository.NewStatsRepository(databaseDB)
 	statsHandler := root_handlers.NewStatsHandler(fileRepository, statsRepo)
+
+	// Media browse handler (wires /media/search and /media/stats to the database)
+	mediaBrowseHandler := root_handlers.NewMediaBrowseHandler(fileRepository, statsRepo, databaseDB)
+
+	// WebSocket handler for real-time updates
+	wsHandler := root_handlers.NewWebSocketHandler()
+
+	// Initialize asset management system
+	assetRepo := root_repository.NewAssetRepository(databaseDB)
+	assetStore, err := asset_store.NewFileStore(filepath.Join(".", "cache", "assets"))
+	if err != nil {
+		log.Printf("Warning: failed to create asset store: %v", err)
+	}
+	assetEventBus := event.NewInMemoryBus()
+	assetResolver := resolver.NewChain(
+		services.NewCachedFileResolver(filepath.Join(".", "cache", "cover_art"), 1),
+		services.NewExternalMetadataResolver(databaseDB, 2),
+		services.NewLocalScanResolver(4),
+	)
+	assetManager := manager.New(
+		manager.WithStore(assetStore),
+		manager.WithResolver(assetResolver),
+		manager.WithEventBus(assetEventBus),
+		manager.WithDefaults(defaults.NewEmbeddedProvider()),
+		manager.WithWorkers(4),
+	)
+	defer assetManager.Stop()
+	assetHandler := root_handlers.NewAssetHandler(assetManager, assetRepo)
+
+	// Bridge asset events to WebSocket clients
+	assetEventBus.Subscribe(func(evt event.Event) {
+		if evt.Type == event.AssetReady || evt.Type == event.AssetFailed {
+			wsHandler.BroadcastToClients(map[string]interface{}{
+				"type":        "asset_update",
+				"action":      string(evt.Type),
+				"asset_id":    string(evt.AssetID),
+				"asset_type":  string(evt.AssetType),
+				"entity_type": evt.Metadata["entity_type"],
+				"entity_id":   evt.Metadata["entity_id"],
+			})
+		}
+	})
+
+	// Media entity handler for structured media browsing
+	mediaEntityHandler := root_handlers.NewMediaEntityHandler(mediaItemRepo, mediaFileRepo, extMetaRepo, userMetaRepo)
+
+	// Scan handler for storage roots and scan operations
+	scanHandler := root_handlers.NewScanHandler(universalScanner, databaseDB)
 
 	// Create service adapters to bridge interface differences between services and handlers
 	authAdapter := &root_handlers.AuthServiceAdapter{Inner: authService}
@@ -311,6 +408,12 @@ func main() {
 		})
 	})
 
+	// WebSocket endpoint (auth via query parameter, not header)
+	router.GET("/ws", wsHandler.HandleConnection)
+
+	// Asset serving (public — no auth needed for serving images)
+	router.GET("/api/v1/assets/:id", assetHandler.ServeAsset)
+
 	// Authentication routes (no auth required)
 	authGroup := router.Group("/api/v1/auth")
 	authGroup.Use(authRateLimiter) // Apply strict rate limiting to auth endpoints
@@ -322,6 +425,9 @@ func main() {
 		authGroup.POST("/refresh", authHandler.RefreshTokenGin)
 		authGroup.POST("/logout", authHandler.LogoutGin)
 		authGroup.GET("/me", jwtMiddleware.RequireAuth(), authHandler.GetCurrentUserGin)
+		authGroup.GET("/status", authHandler.GetAuthStatusGin)
+		authGroup.GET("/permissions", jwtMiddleware.RequireAuth(), authHandler.GetPermissionsGin)
+		authGroup.GET("/profile", jwtMiddleware.RequireAuth(), authHandler.GetCurrentUserGin)
 	}
 
 	// API routes
@@ -347,6 +453,10 @@ func main() {
 		api.POST("/copy/storage", copyHandler.CopyToStorage)
 		api.POST("/copy/local", copyHandler.CopyToLocal)
 		api.POST("/copy/upload", copyHandler.CopyFromLocal)
+
+		// Media browsing endpoints (must be before :id to prevent route conflict)
+		api.GET("/media/search", mediaBrowseHandler.SearchMedia)
+		api.GET("/media/stats", mediaBrowseHandler.GetMediaStats)
 
 		// Media operations
 		api.GET("/media/:id", androidTVMediaHandler.GetMediaByID)
@@ -378,7 +488,8 @@ func main() {
 			subGroup.GET("/providers", subtitleHandler.GetSupportedProviders)
 		}
 		api.GET("/storage/list/*path", copyHandler.ListStoragePath)
-		api.GET("/storage/roots", copyHandler.GetStorageRoots)
+		api.GET("/storage/roots", scanHandler.GetStorageRoots)
+		api.POST("/storage/roots", scanHandler.CreateStorageRoot)
 
 		// Statistics and sorting
 		api.GET("/stats/directories/by-size", catalogHandler.GetDirectoriesBySize)
@@ -406,6 +517,14 @@ func main() {
 			smbGroup.POST("/test", smbDiscoveryHandler.TestConnection)
 			smbGroup.GET("/test", smbDiscoveryHandler.TestConnectionGET)
 			smbGroup.POST("/browse", smbDiscoveryHandler.BrowseShare)
+		}
+
+		// Scan endpoints
+		scanGroup := api.Group("/scans")
+		{
+			scanGroup.POST("", scanHandler.QueueScan)
+			scanGroup.GET("", scanHandler.ListScans)
+			scanGroup.GET("/:job_id", scanHandler.GetScanStatus)
 		}
 
 		// Conversion endpoints
@@ -488,6 +607,32 @@ func main() {
 			logsGroup.GET("/statistics", wrap(logManagementHandler.GetLogStatistics))
 		}
 
+		// Asset management endpoints (authenticated)
+		assetsGroup := api.Group("/assets")
+		{
+			assetsGroup.POST("/request", assetHandler.RequestAsset)
+			assetsGroup.GET("/by-entity/:type/:id", assetHandler.GetByEntity)
+		}
+
+		// Media entity endpoints (structured media browsing)
+		entityGroup := api.Group("/entities")
+		{
+			entityGroup.GET("", mediaEntityHandler.ListEntities)
+			entityGroup.GET("/types", mediaEntityHandler.GetEntityTypes)
+			entityGroup.GET("/stats", mediaEntityHandler.GetEntityStats)
+			entityGroup.GET("/duplicates", mediaEntityHandler.ListDuplicateGroups)
+			entityGroup.GET("/browse/:type", mediaEntityHandler.BrowseByType)
+			entityGroup.GET("/:id", mediaEntityHandler.GetEntity)
+			entityGroup.GET("/:id/children", mediaEntityHandler.GetEntityChildren)
+			entityGroup.GET("/:id/files", mediaEntityHandler.GetEntityFiles)
+			entityGroup.GET("/:id/metadata", mediaEntityHandler.GetEntityMetadata)
+			entityGroup.GET("/:id/duplicates", mediaEntityHandler.GetEntityDuplicates)
+			entityGroup.GET("/:id/stream", mediaEntityHandler.StreamEntity)
+			entityGroup.GET("/:id/download", mediaEntityHandler.DownloadEntity)
+			entityGroup.POST("/:id/metadata/refresh", mediaEntityHandler.RefreshEntityMetadata)
+			entityGroup.PUT("/:id/user-metadata", mediaEntityHandler.UpdateUserMetadata)
+		}
+
 		// Challenge endpoints
 		challengeGroup := api.Group("/challenges")
 		{
@@ -546,7 +691,7 @@ func main() {
 	}
 
 	// Close database connection
-	if err := db.Close(); err != nil {
+	if err := databaseDB.Close(); err != nil {
 		logger.Error("Database close error", zap.Error(err))
 	} else {
 		logger.Info("Database connection closed")
@@ -564,4 +709,47 @@ func (n *NopCacheService) Get(ctx context.Context, key string, dest interface{})
 
 func (n *NopCacheService) Set(ctx context.Context, key string, value interface{}, ttl time.Duration) error {
 	return nil
+}
+
+// seedDefaultAdmin creates a default admin user if none exists in the database.
+// Uses the same password hashing scheme as services.AuthService (bcrypt(password + salt)).
+func seedDefaultAdmin(db *database.DB, username, password string) error {
+	var count int
+	err := db.QueryRow("SELECT COUNT(*) FROM users WHERE role_id = 1").Scan(&count)
+	if err != nil {
+		return fmt.Errorf("check admin count: %w", err)
+	}
+	if count > 0 {
+		return nil // admin already exists
+	}
+
+	// Generate salt
+	saltBytes := make([]byte, 16)
+	if _, err := rand.Read(saltBytes); err != nil {
+		return fmt.Errorf("generate salt: %w", err)
+	}
+	salt := hex.EncodeToString(saltBytes)
+
+	// Hash password with salt (same as services.AuthService.hashPassword)
+	hash, err := bcryptHash([]byte(password + salt))
+	if err != nil {
+		return fmt.Errorf("hash password: %w", err)
+	}
+
+	_, err = db.Exec(
+		`INSERT INTO users (username, email, password_hash, salt, role_id, first_name, last_name, display_name, is_active)
+		 VALUES (?, ?, ?, ?, 1, 'System', 'Administrator', 'Admin', ?)`,
+		username, username+"@catalogizer.local", string(hash), salt, 1,
+	)
+	if err != nil {
+		return fmt.Errorf("insert admin user: %w", err)
+	}
+
+	log.Printf("Default admin user '%s' created", username)
+	return nil
+}
+
+// bcryptHash wraps bcrypt.GenerateFromPassword.
+func bcryptHash(data []byte) ([]byte, error) {
+	return bcrypt.GenerateFromPassword(data, bcrypt.DefaultCost)
 }

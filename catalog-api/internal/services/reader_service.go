@@ -7,12 +7,14 @@ import (
 	"fmt"
 	"time"
 
+	"catalogizer/database"
+
 	"go.uber.org/zap"
 )
 
 // Advanced reader service with Kindle/Moon Reader Pro-like experience
 type ReaderService struct {
-	db                  *sql.DB
+	db                  *database.DB
 	logger              *zap.Logger
 	cacheService        *CacheService
 	translationService  *TranslationService
@@ -323,7 +325,7 @@ type Section struct {
 }
 
 func NewReaderService(
-	db *sql.DB,
+	db *database.DB,
 	logger *zap.Logger,
 	cacheService *CacheService,
 	translationService *TranslationService,

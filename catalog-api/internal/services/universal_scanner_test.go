@@ -1,15 +1,19 @@
 package services
 
 import (
-	"database/sql"
+	"fmt"
 	"testing"
+
+	"catalogizer/database"
+	"catalogizer/models"
 
 	"github.com/stretchr/testify/assert"
 	"go.uber.org/zap"
 )
 
+
 func TestNewUniversalScanner(t *testing.T) {
-	var mockDB *sql.DB
+	var mockDB *database.DB
 	mockLogger := zap.NewNop()
 
 	scanner := NewUniversalScanner(mockDB, mockLogger, nil, nil)
@@ -19,14 +23,14 @@ func TestNewUniversalScanner(t *testing.T) {
 
 func TestNewLocalScanner(t *testing.T) {
 	mockLogger := zap.NewNop()
-	scanner := NewLocalScanner(mockLogger)
+	scanner := NewLocalScanner(nil, mockLogger)
 
 	assert.NotNil(t, scanner)
 }
 
 func TestNewSMBScanner(t *testing.T) {
 	mockLogger := zap.NewNop()
-	scanner := NewSMBScanner(mockLogger)
+	scanner := NewSMBScanner(nil, mockLogger)
 
 	assert.NotNil(t, scanner)
 }
@@ -54,7 +58,7 @@ func TestNewWebDAVScanner(t *testing.T) {
 
 func TestLocalScanner_GetScanStrategy(t *testing.T) {
 	mockLogger := zap.NewNop()
-	scanner := NewLocalScanner(mockLogger)
+	scanner := NewLocalScanner(nil, mockLogger)
 
 	strategy := scanner.GetScanStrategy()
 	assert.True(t, strategy.UseRecursiveListing)
@@ -67,7 +71,7 @@ func TestLocalScanner_GetScanStrategy(t *testing.T) {
 
 func TestSMBScanner_GetScanStrategy(t *testing.T) {
 	mockLogger := zap.NewNop()
-	scanner := NewSMBScanner(mockLogger)
+	scanner := NewSMBScanner(nil, mockLogger)
 
 	strategy := scanner.GetScanStrategy()
 	assert.False(t, strategy.UseRecursiveListing)
@@ -127,12 +131,12 @@ func TestScanners_SupportsIncrementalScan(t *testing.T) {
 	}{
 		{
 			name:     "local supports incremental",
-			scanner:  NewLocalScanner(mockLogger),
+			scanner:  NewLocalScanner(nil, mockLogger),
 			expected: true,
 		},
 		{
 			name:     "SMB supports incremental",
-			scanner:  NewSMBScanner(mockLogger),
+			scanner:  NewSMBScanner(nil, mockLogger),
 			expected: true,
 		},
 		{
@@ -170,12 +174,12 @@ func TestScanners_GetOptimalBatchSize(t *testing.T) {
 	}{
 		{
 			name:     "local batch size",
-			scanner:  NewLocalScanner(mockLogger),
+			scanner:  NewLocalScanner(nil, mockLogger),
 			expected: 1000,
 		},
 		{
 			name:     "SMB batch size",
-			scanner:  NewSMBScanner(mockLogger),
+			scanner:  NewSMBScanner(nil, mockLogger),
 			expected: 500,
 		},
 		{
@@ -204,12 +208,12 @@ func TestScanners_GetOptimalBatchSize(t *testing.T) {
 }
 
 func TestUniversalScanner_RegisterProtocolScanner(t *testing.T) {
-	var mockDB *sql.DB
+	var mockDB *database.DB
 	mockLogger := zap.NewNop()
 	scanner := NewUniversalScanner(mockDB, mockLogger, nil, nil)
 
 	// Register a custom scanner
-	customScanner := NewLocalScanner(mockLogger)
+	customScanner := NewLocalScanner(nil, mockLogger)
 	scanner.RegisterProtocolScanner("custom", customScanner)
 
 	// Verify it was registered (no direct accessor, but no panic means success)
@@ -217,7 +221,7 @@ func TestUniversalScanner_RegisterProtocolScanner(t *testing.T) {
 }
 
 func TestUniversalScanner_GetActiveScanStatus(t *testing.T) {
-	var mockDB *sql.DB
+	var mockDB *database.DB
 	mockLogger := zap.NewNop()
 	scanner := NewUniversalScanner(mockDB, mockLogger, nil, nil)
 
@@ -227,7 +231,7 @@ func TestUniversalScanner_GetActiveScanStatus(t *testing.T) {
 }
 
 func TestUniversalScanner_GetAllActiveScanStatuses(t *testing.T) {
-	var mockDB *sql.DB
+	var mockDB *database.DB
 	mockLogger := zap.NewNop()
 	scanner := NewUniversalScanner(mockDB, mockLogger, nil, nil)
 
@@ -293,4 +297,122 @@ func TestScanStatus_GetSnapshot(t *testing.T) {
 	assert.Equal(t, "media", snapshot.StorageRootName)
 	assert.Equal(t, "local", snapshot.Protocol)
 	assert.Equal(t, "running", snapshot.Status)
+}
+
+func TestUniversalScanner_ConcurrentWorkers(t *testing.T) {
+	// Verify scanner is created with multiple concurrent workers
+	var mockDB *database.DB
+	mockLogger := zap.NewNop()
+	scanner := NewUniversalScanner(mockDB, mockLogger, nil, nil)
+
+	assert.NotNil(t, scanner)
+	assert.Equal(t, 4, scanner.workers, "scanner must support at least 4 concurrent workers")
+}
+
+func TestUniversalScanner_QueueCapacity(t *testing.T) {
+	// Verify the scan queue can hold multiple jobs
+	var mockDB *database.DB
+	mockLogger := zap.NewNop()
+	scanner := NewUniversalScanner(mockDB, mockLogger, nil, nil)
+
+	assert.NotNil(t, scanner)
+	assert.Equal(t, 1000, cap(scanner.scanQueue), "scan queue must have capacity for multiple concurrent scans")
+}
+
+func TestUniversalScanner_QueueMultipleScans(t *testing.T) {
+	// Verify multiple scan jobs can be queued (one per content directory)
+	// Workers are NOT started — we only verify the queue accepts all jobs
+	var mockDB *database.DB
+	mockLogger := zap.NewNop()
+	scanner := NewUniversalScanner(mockDB, mockLogger, nil, nil)
+
+	// Queue 5 scans (one per content directory, as the populate challenge does)
+	directories := []string{"Music", "Series", "Movies", "Software", "Comics"}
+	for i, dir := range directories {
+		job := ScanJob{
+			ID: fmt.Sprintf("test-job-%d", i),
+			StorageRoot: &models.StorageRoot{
+				Name:     "test-nas",
+				Protocol: "local",
+				Host:     strPtr("localhost"),
+				Path:     strPtr("/tmp/nonexistent"),
+			},
+			Path:     dir,
+			ScanType: "full",
+			MaxDepth: 10,
+		}
+		err := scanner.QueueScan(job)
+		assert.NoError(t, err, "should be able to queue scan for directory %s", dir)
+	}
+
+	// Verify all 5 jobs are in the queue
+	assert.Equal(t, 5, len(scanner.scanQueue), "all 5 directory scans must be queued")
+}
+
+func TestUniversalScanner_TrackMultipleActiveScans(t *testing.T) {
+	// Verify multiple scans can be tracked simultaneously
+	var mockDB *database.DB
+	mockLogger := zap.NewNop()
+	scanner := NewUniversalScanner(mockDB, mockLogger, nil, nil)
+
+	// Manually add scan statuses to verify concurrent tracking
+	for i := 0; i < 5; i++ {
+		jobID := fmt.Sprintf("concurrent-job-%d", i)
+		status := &ScanStatus{
+			JobID:           jobID,
+			StorageRootName: "test-nas",
+			Protocol:        "smb",
+			Status:          "running",
+		}
+		scanner.activeScansMu.Lock()
+		scanner.activeScans[jobID] = status
+		scanner.activeScansMu.Unlock()
+	}
+
+	// Verify all 5 scans are tracked
+	statuses := scanner.GetAllActiveScanStatuses()
+	assert.Equal(t, 5, len(statuses), "must track 5 concurrent active scans")
+
+	// Verify each scan can be retrieved individually
+	for i := 0; i < 5; i++ {
+		jobID := fmt.Sprintf("concurrent-job-%d", i)
+		status, exists := scanner.GetActiveScanStatus(jobID)
+		assert.True(t, exists, "scan %s must be retrievable", jobID)
+		assert.NotNil(t, status)
+		assert.Equal(t, "running", status.GetSnapshot().Status)
+	}
+}
+
+func TestUniversalScanner_QueueFullReturnsError(t *testing.T) {
+	// Verify that queuing to a full queue returns an error (not blocks)
+	var mockDB *database.DB
+	mockLogger := zap.NewNop()
+	scanner := NewUniversalScanner(mockDB, mockLogger, nil, nil)
+
+	// Don't start workers — queue will fill up
+	// Fill the queue to capacity
+	for i := 0; i < 1000; i++ {
+		job := ScanJob{
+			ID: fmt.Sprintf("fill-job-%d", i),
+			StorageRoot: &models.StorageRoot{
+				Name:     "test",
+				Protocol: "local",
+			},
+			Path: fmt.Sprintf("dir-%d", i),
+		}
+		_ = scanner.QueueScan(job)
+	}
+
+	// Next queue should fail
+	overflowJob := ScanJob{
+		ID: "overflow-job",
+		StorageRoot: &models.StorageRoot{
+			Name:     "test",
+			Protocol: "local",
+		},
+		Path: "overflow",
+	}
+	err := scanner.QueueScan(overflowJob)
+	assert.Error(t, err, "queuing to a full queue must return an error")
+	assert.Contains(t, err.Error(), "queue is full")
 }

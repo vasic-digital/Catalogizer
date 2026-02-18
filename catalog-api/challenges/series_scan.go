@@ -82,7 +82,7 @@ func (c *SeriesScanChallenge) Execute(ctx context.Context) (*challenge.Result, e
 		Expected: "> 0",
 		Actual:   fmt.Sprintf("%d", result.FileCount),
 		Passed:   result.FileCount > 0,
-		Message:  ternary(result.FileCount > 0, fmt.Sprintf("Found %d video files", result.FileCount), "No video files found"),
+		Message:  challenge.Ternary(result.FileCount > 0, fmt.Sprintf("Found %d video files", result.FileCount), "No video files found"),
 	})
 
 	// Assertion: subdirectories exist (show/season structure)
@@ -92,7 +92,7 @@ func (c *SeriesScanChallenge) Execute(ctx context.Context) (*challenge.Result, e
 		Expected: "> 0",
 		Actual:   fmt.Sprintf("%d", result.DirCount),
 		Passed:   result.DirCount > 0,
-		Message:  ternary(result.DirCount > 0, fmt.Sprintf("Found %d subdirectories (show/season structure)", result.DirCount), "No subdirectories found"),
+		Message:  challenge.Ternary(result.DirCount > 0, fmt.Sprintf("Found %d subdirectories (show/season structure)", result.DirCount), "No subdirectories found"),
 	})
 
 	// Assertion: total size > 0
@@ -102,7 +102,7 @@ func (c *SeriesScanChallenge) Execute(ctx context.Context) (*challenge.Result, e
 		Expected: "> 0 bytes",
 		Actual:   fmt.Sprintf("%d bytes", result.TotalSize),
 		Passed:   result.TotalSize > 0,
-		Message:  ternary(result.TotalSize > 0, fmt.Sprintf("Total video size: %d bytes", result.TotalSize), "Total size is 0"),
+		Message:  challenge.Ternary(result.TotalSize > 0, fmt.Sprintf("Total video size: %d bytes", result.TotalSize), "Total size is 0"),
 	})
 
 	extList := []string{}

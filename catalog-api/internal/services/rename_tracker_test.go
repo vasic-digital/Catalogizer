@@ -1,6 +1,7 @@
 package services
 
 import (
+	"catalogizer/database"
 	"context"
 	"database/sql"
 	"testing"
@@ -11,11 +12,13 @@ import (
 	"go.uber.org/zap"
 )
 
-func setupTestDB(t *testing.T) *sql.DB {
-	db, err := sql.Open("sqlite3", ":memory:")
+func setupTestDB(t *testing.T) *database.DB {
+	sqlDB, err := sql.Open("sqlite3", ":memory:")
 	if err != nil {
 		t.Fatalf("Failed to open test database: %v", err)
 	}
+
+	db := database.WrapDB(sqlDB, database.DialectSQLite)
 
 	// Create required tables
 	schema := `

@@ -5,6 +5,7 @@ import (
 	"testing"
 	"time"
 
+	"catalogizer/database"
 	"catalogizer/models"
 
 	"github.com/DATA-DOG/go-sqlmock"
@@ -13,8 +14,9 @@ import (
 )
 
 func newMockSyncRepo(t *testing.T) (*SyncRepository, sqlmock.Sqlmock) {
-	db, mock, err := sqlmock.New()
+	sqlDB, mock, err := sqlmock.New()
 	require.NoError(t, err)
+	db := database.WrapDB(sqlDB, database.DialectSQLite)
 	return NewSyncRepository(db), mock
 }
 
@@ -33,8 +35,9 @@ var syncSessionColumns = []string{
 // ---------------------------------------------------------------------------
 
 func TestSyncRepository_Constructor(t *testing.T) {
-	db, _, err := sqlmock.New()
+	sqlDB, _, err := sqlmock.New()
 	require.NoError(t, err)
+	db := database.WrapDB(sqlDB, database.DialectSQLite)
 	repo := NewSyncRepository(db)
 	assert.NotNil(t, repo)
 }

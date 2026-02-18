@@ -5,6 +5,7 @@ import (
 	"testing"
 	"time"
 
+	"catalogizer/database"
 	"catalogizer/models"
 
 	"github.com/DATA-DOG/go-sqlmock"
@@ -13,8 +14,9 @@ import (
 )
 
 func newMockStressTestRepo(t *testing.T) (*StressTestRepository, sqlmock.Sqlmock) {
-	db, mock, err := sqlmock.New()
+	sqlDB, mock, err := sqlmock.New()
 	require.NoError(t, err)
+	db := database.WrapDB(sqlDB, database.DialectSQLite)
 	return NewStressTestRepository(db), mock
 }
 
@@ -34,8 +36,9 @@ var stressTestExecutionColumns = []string{
 // ---------------------------------------------------------------------------
 
 func TestStressTestRepository_Constructor(t *testing.T) {
-	db, _, err := sqlmock.New()
+	sqlDB, _, err := sqlmock.New()
 	require.NoError(t, err)
+	db := database.WrapDB(sqlDB, database.DialectSQLite)
 	repo := NewStressTestRepository(db)
 	assert.NotNil(t, repo)
 }

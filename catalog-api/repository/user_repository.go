@@ -1,20 +1,22 @@
 package repository
 
 import (
+	"context"
 	"database/sql"
 	"encoding/json"
 	"errors"
 	"fmt"
 	"time"
 
+	"catalogizer/database"
 	"catalogizer/models"
 )
 
 type UserRepository struct {
-	db *sql.DB
+	db *database.DB
 }
 
-func NewUserRepository(db *sql.DB) *UserRepository {
+func NewUserRepository(db *database.DB) *UserRepository {
 	return &UserRepository{db: db}
 }
 
@@ -26,18 +28,13 @@ func (r *UserRepository) Create(user *models.User) (int, error) {
 	`
 
 	now := time.Now()
-	result, err := r.db.Exec(query,
+	id, err := r.db.InsertReturningID(context.Background(), query,
 		user.Username, user.Email, user.PasswordHash, user.Salt, user.RoleID,
 		user.FirstName, user.LastName, user.DisplayName, user.AvatarURL,
 		user.TimeZone, user.Language, user.IsActive, now, now)
 
 	if err != nil {
 		return 0, fmt.Errorf("failed to create user: %w", err)
-	}
-
-	id, err := result.LastInsertId()
-	if err != nil {
-		return 0, fmt.Errorf("failed to get user ID: %w", err)
 	}
 
 	return int(id), nil
@@ -320,18 +317,13 @@ func (r *UserRepository) CreateSession(session *models.UserSession) (int, error)
 		return 0, fmt.Errorf("failed to marshal device info: %w", err)
 	}
 
-	result, err := r.db.Exec(query,
+	id, err := r.db.InsertReturningID(context.Background(), query,
 		session.UserID, session.SessionToken, session.RefreshToken, string(deviceInfoJSON),
 		session.IPAddress, session.UserAgent, session.IsActive, session.ExpiresAt,
 		session.CreatedAt, session.LastActivityAt)
 
 	if err != nil {
 		return 0, fmt.Errorf("failed to create session: %w", err)
-	}
-
-	id, err := result.LastInsertId()
-	if err != nil {
-		return 0, fmt.Errorf("failed to get session ID: %w", err)
 	}
 
 	return int(id), nil
@@ -483,16 +475,11 @@ func (r *UserRepository) CreateRole(role *models.Role) (int, error) {
 	}
 
 	now := time.Now()
-	result, err := r.db.Exec(query, role.Name, role.Description, string(permissionsJSON),
+	id, err := r.db.InsertReturningID(context.Background(), query, role.Name, role.Description, string(permissionsJSON),
 		role.IsSystem, now, now)
 
 	if err != nil {
 		return 0, fmt.Errorf("failed to create role: %w", err)
-	}
-
-	id, err := result.LastInsertId()
-	if err != nil {
-		return 0, fmt.Errorf("failed to get role ID: %w", err)
 	}
 
 	return int(id), nil

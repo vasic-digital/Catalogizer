@@ -1,12 +1,14 @@
 package auth
 
 import (
+	"context"
 	"crypto/rand"
-	"database/sql"
 	"encoding/hex"
 	"fmt"
 	"strings"
 	"time"
+
+	"catalogizer/database"
 
 	"github.com/golang-jwt/jwt/v5"
 	"go.uber.org/zap"
@@ -15,14 +17,14 @@ import (
 
 // AuthService handles authentication operations
 type AuthService struct {
-	db        *sql.DB
+	db        *database.DB
 	jwtSecret []byte
 	logger    *zap.Logger
 	tokenTTL  time.Duration
 }
 
 // NewAuthService creates a new authentication service
-func NewAuthService(db *sql.DB, jwtSecret string, logger *zap.Logger) *AuthService {
+func NewAuthService(db *database.DB, jwtSecret string, logger *zap.Logger) *AuthService {
 	return &AuthService{
 		db:        db,
 		jwtSecret: []byte(jwtSecret),
@@ -47,8 +49,12 @@ func (s *AuthService) Initialize() error {
 	return nil
 }
 
-// createTables creates authentication-related tables
+// createTables creates authentication-related tables.
+// On PostgreSQL, tables are created by the migration system so this is a no-op.
 func (s *AuthService) createTables() error {
+	if s.db.Dialect().IsPostgres() {
+		return nil // migrations handle PostgreSQL schema
+	}
 	schema := `
 	-- Users table
 	CREATE TABLE IF NOT EXISTS users (
@@ -59,7 +65,7 @@ func (s *AuthService) createTables() error {
 		first_name TEXT NOT NULL,
 		last_name TEXT NOT NULL,
 		role TEXT NOT NULL DEFAULT 'user',
-		is_active BOOLEAN NOT NULL DEFAULT true,
+		is_active BOOLEAN NOT NULL DEFAULT 1,
 		last_login DATETIME,
 		created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
 		updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
@@ -185,7 +191,7 @@ func (s *AuthService) createDefaultAdmin() error {
 		VALUES (?, ?, ?, ?, ?, ?, ?)
 	`
 
-	_, err = s.db.Exec(query, "admin", "admin@catalogizer.local", string(passwordHash), "System", "Administrator", "admin", true)
+	_, err = s.db.Exec(query, "admin", "admin@catalogizer.local", string(passwordHash), "System", "Administrator", "admin", 1)
 	if err != nil {
 		return err
 	}
@@ -339,17 +345,12 @@ func (s *AuthService) CreateUser(req *RegisterRequest) (*User, error) {
 	// Insert user
 	query := `
 		INSERT INTO users (username, email, password_hash, first_name, last_name, role, is_active)
-		VALUES (?, ?, ?, ?, ?, 'user', true)
+		VALUES (?, ?, ?, ?, ?, 'user', 1)
 	`
 
-	result, err := s.db.Exec(query, req.Username, req.Email, string(passwordHash), req.FirstName, req.LastName)
+	userID, err := s.db.InsertReturningID(context.Background(), query, req.Username, req.Email, string(passwordHash), req.FirstName, req.LastName)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create user: %w", err)
-	}
-
-	userID, err := result.LastInsertId()
-	if err != nil {
-		return nil, err
 	}
 
 	return s.GetUserByID(userID)

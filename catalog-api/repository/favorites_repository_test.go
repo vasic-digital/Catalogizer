@@ -5,6 +5,7 @@ import (
 	"testing"
 	"time"
 
+	"catalogizer/database"
 	"catalogizer/models"
 
 	"github.com/DATA-DOG/go-sqlmock"
@@ -13,8 +14,9 @@ import (
 )
 
 func newMockFavoritesRepo(t *testing.T) (*FavoritesRepository, sqlmock.Sqlmock) {
-	db, mock, err := sqlmock.New()
+	sqlDB, mock, err := sqlmock.New()
 	require.NoError(t, err)
+	db := database.WrapDB(sqlDB, database.DialectSQLite)
 	return NewFavoritesRepository(db), mock
 }
 
@@ -28,8 +30,9 @@ var favoriteColumns = []string{
 // ---------------------------------------------------------------------------
 
 func TestFavoritesRepository_Constructor(t *testing.T) {
-	db, _, err := sqlmock.New()
+	sqlDB, _, err := sqlmock.New()
 	require.NoError(t, err)
+	db := database.WrapDB(sqlDB, database.DialectSQLite)
 	repo := NewFavoritesRepository(db)
 	assert.NotNil(t, repo)
 }

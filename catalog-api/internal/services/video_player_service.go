@@ -8,11 +8,13 @@ import (
 	"strings"
 	"time"
 
+	"catalogizer/database"
+
 	"go.uber.org/zap"
 )
 
 type VideoPlayerService struct {
-	db                 *sql.DB
+	db                 *database.DB
 	logger             *zap.Logger
 	mediaPlayerService *MediaPlayerService
 	positionService    *PlaybackPositionService
@@ -326,7 +328,7 @@ type WatchHistory struct {
 }
 
 func NewVideoPlayerService(
-	db *sql.DB,
+	db *database.DB,
 	logger *zap.Logger,
 	mediaPlayerService *MediaPlayerService,
 	positionService *PlaybackPositionService,
@@ -759,18 +761,15 @@ func (s *VideoPlayerService) CreateVideoBookmark(ctx context.Context, req *Creat
 		thumbnailURL = *thumbnail.URL
 	}
 
-	result, err := s.db.ExecContext(ctx, query,
+	bookmarkID, err := s.db.InsertReturningID(ctx, query,
 		session.UserID, session.CurrentVideo.ID, session.Position,
 		req.Title, req.Description, thumbnailURL)
-	if err == nil {
-		bookmarkID, _ := result.LastInsertId()
-		bookmark.ID = bookmarkID
-		bookmark.CreatedAt = time.Now()
-	}
-
 	if err != nil {
 		return nil, fmt.Errorf("failed to create bookmark: %w", err)
 	}
+
+	bookmark.ID = bookmarkID
+	bookmark.CreatedAt = time.Now()
 
 	bookmark.UserID = session.UserID
 	bookmark.VideoID = session.CurrentVideo.ID

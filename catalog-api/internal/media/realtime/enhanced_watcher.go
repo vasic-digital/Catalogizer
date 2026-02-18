@@ -296,7 +296,7 @@ func (w *EnhancedChangeWatcher) getRelativePath(basePath, fullPath string) (stri
 // getFileInfoFromDB retrieves file information from database
 func (w *EnhancedChangeWatcher) getFileInfoFromDB(path, smbRoot string) *models.FileInfo {
 	query := `
-		SELECT f.id, f.name, f.path, f.is_directory, f.size, f.last_modified, f.hash, f.extension, f.mime_type, f.parent_id, f.smb_root, f.created_at, f.updated_at
+		SELECT f.id, f.name, f.path, f.is_directory, f.size, f.modified_at, f.quick_hash, f.extension, f.mime_type, f.parent_id, sr.name as smb_root, f.created_at, f.last_scan_at
 		FROM files f
 		JOIN storage_roots sr ON f.storage_root_id = sr.id
 		WHERE f.path = ? AND sr.name = ?`

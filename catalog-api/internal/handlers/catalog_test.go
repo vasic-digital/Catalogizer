@@ -8,6 +8,8 @@ import (
 	"os"
 	"testing"
 
+	"catalogizer/database"
+
 	"github.com/gin-gonic/gin"
 	"github.com/hirochachacha/go-smb2"
 	_ "github.com/mutecomm/go-sqlcipher"
@@ -93,7 +95,7 @@ type mockCatalogService struct {
 	db *sql.DB
 }
 
-func (m *mockCatalogService) SetDB(db *sql.DB) {}
+func (m *mockCatalogService) SetDB(db *database.DB) {}
 func (m *mockCatalogService) ListPath(path string, sortBy string, sortOrder string, limit, offset int) ([]models.FileInfo, error) {
 	if path == "media" {
 		return []models.FileInfo{

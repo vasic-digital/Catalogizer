@@ -1,7 +1,7 @@
 package services
 
 import (
-	"database/sql"
+	"catalogizer/database"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -9,7 +9,7 @@ import (
 )
 
 func TestNewVideoPlayerService(t *testing.T) {
-	var mockDB *sql.DB
+	mockDB := database.WrapDB(nil, database.DialectSQLite)
 	mockLogger := zap.NewNop()
 
 	service := NewVideoPlayerService(mockDB, mockLogger, nil, nil, nil, nil, nil)

@@ -1,19 +1,21 @@
 package repository
 
 import (
+	"context"
 	"database/sql"
 	"encoding/json"
 	"fmt"
 	"time"
 
+	"catalogizer/database"
 	"catalogizer/models"
 )
 
 type StressTestRepository struct {
-	db *sql.DB
+	db *database.DB
 }
 
-func NewStressTestRepository(db *sql.DB) *StressTestRepository {
+func NewStressTestRepository(db *database.DB) *StressTestRepository {
 	return &StressTestRepository{db: db}
 }
 
@@ -34,7 +36,7 @@ func (r *StressTestRepository) CreateStressTest(test *models.StressTest) error {
 			concurrent_users, duration_seconds, ramp_up_time, created_by, created_at
 		) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
 
-	result, err := r.db.Exec(query,
+	id, err := r.db.InsertReturningID(context.Background(), query,
 		test.Name, test.Description, test.Type, test.Status,
 		string(scenariosJSON), string(configJSON),
 		test.ConcurrentUsers, test.DurationSeconds, test.RampUpTime,
@@ -42,11 +44,6 @@ func (r *StressTestRepository) CreateStressTest(test *models.StressTest) error {
 
 	if err != nil {
 		return fmt.Errorf("failed to create stress test: %w", err)
-	}
-
-	id, err := result.LastInsertId()
-	if err != nil {
-		return fmt.Errorf("failed to get last insert ID: %w", err)
 	}
 
 	test.ID = id
@@ -207,17 +204,12 @@ func (r *StressTestRepository) CreateExecution(execution *models.StressTestExecu
 			stress_test_id, status, started_at, metrics, results, error_message
 		) VALUES (?, ?, ?, ?, ?, ?)`
 
-	result, err := r.db.Exec(query,
+	id, err := r.db.InsertReturningID(context.Background(), query,
 		execution.StressTestID, execution.Status, execution.StartedAt,
 		string(metricsJSON), string(resultsJSON), execution.ErrorMessage)
 
 	if err != nil {
 		return fmt.Errorf("failed to create execution: %w", err)
-	}
-
-	id, err := result.LastInsertId()
-	if err != nil {
-		return fmt.Errorf("failed to get last insert ID: %w", err)
 	}
 
 	execution.ID = id

@@ -2,7 +2,6 @@ package services
 
 import (
 	"context"
-	"database/sql"
 	"encoding/json"
 	"fmt"
 	"net/http"
@@ -12,6 +11,7 @@ import (
 	"strings"
 	"time"
 
+	"catalogizer/database"
 	"catalogizer/models"
 )
 
@@ -24,7 +24,7 @@ type RecommendationService struct {
 	mediaRecognitionService   *MediaRecognitionService
 	duplicateDetectionService *DuplicateDetectionService
 	fileRepository            FileRepositoryInterface
-	db                       *sql.DB
+	db                       *database.DB
 	tmdbBaseURL               string
 	omdbBaseURL               string
 	lastfmBaseURL             string
@@ -139,7 +139,7 @@ func NewRecommendationService(
 	mediaRecognitionService *MediaRecognitionService,
 	duplicateDetectionService *DuplicateDetectionService,
 	fileRepository FileRepositoryInterface,
-	db *sql.DB,
+	db *database.DB,
 ) *RecommendationService {
 	return &RecommendationService{
 		mediaRecognitionService:   mediaRecognitionService,
@@ -160,7 +160,7 @@ func NewRecommendationService(
 }
 
 // GetDB returns the database connection
-func (rs *RecommendationService) GetDB() *sql.DB {
+func (rs *RecommendationService) GetDB() *database.DB {
 	return rs.db
 }
 

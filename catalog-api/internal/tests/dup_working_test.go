@@ -6,11 +6,13 @@ import (
 	"github.com/stretchr/testify/assert"
 	"go.uber.org/zap"
 
+	"catalogizer/database"
 	"catalogizer/internal/services"
 )
 
 func TestDuplicateDetectionService_BasicCreation(t *testing.T) {
-	db := SetupTestDB(t)
+	sqlDB := SetupTestDB(t)
+	db := database.WrapDB(sqlDB, database.DialectSQLite)
 	logger := zap.NewNop()
 
 	// Create cache service first
@@ -22,7 +24,8 @@ func TestDuplicateDetectionService_BasicCreation(t *testing.T) {
 }
 
 func TestDuplicateDetectionService_DetectDuplicates(t *testing.T) {
-	db := SetupTestDB(t)
+	sqlDB := SetupTestDB(t)
+	db := database.WrapDB(sqlDB, database.DialectSQLite)
 	logger := zap.NewNop()
 
 	// Create cache service first

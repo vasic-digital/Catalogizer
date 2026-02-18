@@ -8,11 +8,13 @@ import (
 	"strings"
 	"time"
 
+	"catalogizer/database"
+
 	"go.uber.org/zap"
 )
 
 type LocalizationService struct {
-	db                 *sql.DB
+	db                 *database.DB
 	logger             *zap.Logger
 	translationService *TranslationService
 	cacheService       *CacheService
@@ -183,7 +185,7 @@ var SupportedLanguages = map[string]LanguageProfile{
 }
 
 func NewLocalizationService(
-	db *sql.DB,
+	db *database.DB,
 	logger *zap.Logger,
 	translationService *TranslationService,
 	cacheService *CacheService,
@@ -232,7 +234,7 @@ func (s *LocalizationService) SetupUserLocalization(ctx context.Context, req *Wi
 	`
 
 	var localization UserLocalization
-	result, err := s.db.ExecContext(ctx, query,
+	localizationID, err := s.db.InsertReturningID(ctx, query,
 		req.UserID, req.PrimaryLanguage, string(secondaryLanguagesJSON),
 		string(subtitleLanguagesJSON), string(lyricsLanguagesJSON),
 		string(metadataLanguagesJSON), req.AutoTranslate, req.AutoDownloadSubtitles,
@@ -244,7 +246,6 @@ func (s *LocalizationService) SetupUserLocalization(ctx context.Context, req *Wi
 		return nil, fmt.Errorf("failed to setup localization: %w", err)
 	}
 
-	localizationID, _ := result.LastInsertId()
 	localization.ID = localizationID
 	localization.CreatedAt = time.Now()
 	localization.UpdatedAt = time.Now()

@@ -5,6 +5,7 @@ import (
 	"testing"
 	"time"
 
+	"catalogizer/database"
 	"catalogizer/models"
 
 	"github.com/DATA-DOG/go-sqlmock"
@@ -13,8 +14,9 @@ import (
 )
 
 func newMockConfigRepo(t *testing.T) (*ConfigurationRepository, sqlmock.Sqlmock) {
-	db, mock, err := sqlmock.New()
+	sqlDB, mock, err := sqlmock.New()
 	require.NoError(t, err)
+	db := database.WrapDB(sqlDB, database.DialectSQLite)
 	return NewConfigurationRepository(db), mock
 }
 
@@ -23,8 +25,9 @@ func newMockConfigRepo(t *testing.T) (*ConfigurationRepository, sqlmock.Sqlmock)
 // ---------------------------------------------------------------------------
 
 func TestConfigurationRepository_Constructor(t *testing.T) {
-	db, _, err := sqlmock.New()
+	sqlDB, _, err := sqlmock.New()
 	require.NoError(t, err)
+	db := database.WrapDB(sqlDB, database.DialectSQLite)
 	repo := NewConfigurationRepository(db)
 	assert.NotNil(t, repo)
 }

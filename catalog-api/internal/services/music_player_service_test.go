@@ -1,7 +1,7 @@
 package services
 
 import (
-	"database/sql"
+	"catalogizer/database"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -9,7 +9,7 @@ import (
 )
 
 func TestNewMusicPlayerService(t *testing.T) {
-	var mockDB *sql.DB
+	mockDB := database.WrapDB(nil, database.DialectSQLite)
 	mockLogger := zap.NewNop()
 
 	service := NewMusicPlayerService(mockDB, mockLogger, nil, nil, nil, nil, nil, nil)
@@ -18,7 +18,7 @@ func TestNewMusicPlayerService(t *testing.T) {
 }
 
 func TestMusicPlayerService_GetNextTrackIndex(t *testing.T) {
-	var mockDB *sql.DB
+	mockDB := database.WrapDB(nil, database.DialectSQLite)
 	mockLogger := zap.NewNop()
 	service := NewMusicPlayerService(mockDB, mockLogger, nil, nil, nil, nil, nil, nil)
 
@@ -92,7 +92,7 @@ func TestMusicPlayerService_GetNextTrackIndex(t *testing.T) {
 }
 
 func TestMusicPlayerService_GetPreviousTrackIndex(t *testing.T) {
-	var mockDB *sql.DB
+	mockDB := database.WrapDB(nil, database.DialectSQLite)
 	mockLogger := zap.NewNop()
 	service := NewMusicPlayerService(mockDB, mockLogger, nil, nil, nil, nil, nil, nil)
 

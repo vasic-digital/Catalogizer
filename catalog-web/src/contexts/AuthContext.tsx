@@ -74,7 +74,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const loginMutation = useMutation({
     mutationFn: authApi.login,
     onSuccess: (data) => {
-      localStorage.setItem('auth_token', data.token)
+      localStorage.setItem('auth_token', data.session_token)
       localStorage.setItem('user', JSON.stringify(data.user))
       setUser(data.user)
       queryClient.invalidateQueries({ queryKey: ['auth-status'] })
@@ -141,8 +141,10 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     },
   })
 
+  const isUserAdmin = user?.role?.name === 'Admin' || user?.role_id === 1
+
   const hasPermission = (permission: string): boolean => {
-    if (user?.role === 'admin') return true
+    if (isUserAdmin) return true
     return permissions.includes(permission)
   }
 
@@ -156,7 +158,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     isAuthenticated: !!user,
     isLoading,
     permissions,
-    isAdmin: user?.role === 'admin',
+    isAdmin: isUserAdmin,
     login: loginMutation.mutateAsync,
     register: registerMutation.mutateAsync,
     logout: logoutMutation.mutateAsync,

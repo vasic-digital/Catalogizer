@@ -2,13 +2,14 @@ package services
 
 import (
 	"context"
-	"database/sql"
 	"encoding/json"
 	"fmt"
 	"strings"
 	"time"
 
+	"catalogizer/database"
 	"catalogizer/internal/models"
+
 	"go.uber.org/zap"
 )
 
@@ -18,7 +19,7 @@ type TranslationServiceInterface interface {
 }
 
 type MediaRecognitionService struct {
-	db                    *sql.DB
+	db                    *database.DB
 	logger                *zap.Logger
 	cacheService          CacheServiceInterface
 	translationService    TranslationServiceInterface
@@ -239,7 +240,7 @@ type TableRegion struct {
 }
 
 func NewMediaRecognitionService(
-	db *sql.DB,
+	db *database.DB,
 	logger *zap.Logger,
 	cacheService CacheServiceInterface,
 	translationService TranslationServiceInterface,

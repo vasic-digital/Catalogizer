@@ -8,6 +8,8 @@ import (
 	"testing"
 	"time"
 
+	"catalogizer/database"
+
 	"github.com/gin-gonic/gin"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -23,9 +25,10 @@ func init() {
 // for integration-style tests where session lookups are needed.
 func setupMiddlewareTestWithRealDB(t *testing.T) (*AuthService, *AuthMiddleware) {
 	t.Helper()
-	db, err := sql.Open("sqlite3", ":memory:")
+	sqlDB, err := sql.Open("sqlite3", ":memory:")
 	require.NoError(t, err)
 
+	db := database.WrapDB(sqlDB, database.DialectSQLite)
 	logger := zap.NewNop()
 	service := NewAuthService(db, "integration-test-secret", logger)
 	err = service.Initialize()

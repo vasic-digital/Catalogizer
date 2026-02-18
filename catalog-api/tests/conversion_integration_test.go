@@ -6,6 +6,7 @@ import (
 	"testing"
 	"time"
 
+	"catalogizer/database"
 	"catalogizer/models"
 	"catalogizer/repository"
 	"catalogizer/services"
@@ -20,13 +21,15 @@ import (
 // TestConversionIntegration tests the full conversion flow
 func TestConversionIntegration(t *testing.T) {
 	// Setup in-memory database
-	db, err := sql.Open("sqlite3", ":memory:")
+	sqlDB, err := sql.Open("sqlite3", ":memory:")
 	require.NoError(t, err)
-	defer db.Close()
+	defer sqlDB.Close()
 
 	// Create database schema
-	err = createConversionSchema(db)
+	err = createConversionSchema(sqlDB)
 	require.NoError(t, err)
+
+	db := database.WrapDB(sqlDB, database.DialectSQLite)
 
 	// Create repositories
 	userRepo := repository.NewUserRepository(db)

@@ -1,6 +1,7 @@
 package services
 
 import (
+	"catalogizer/database"
 	"database/sql"
 	"testing"
 
@@ -12,7 +13,7 @@ import (
 
 type CatalogServiceTestSuite struct {
 	suite.Suite
-	db      *sql.DB
+	db      *database.DB
 	service *CatalogService
 	logger  *zap.Logger
 }
@@ -23,16 +24,16 @@ func (suite *CatalogServiceTestSuite) SetupTest() {
 	suite.logger = logger
 
 	// Initialize in-memory database with shared cache
-	db, err := sql.Open("sqlite3", "file::memory:?cache=shared")
+	sqlDB, err := sql.Open("sqlite3", "file::memory:?cache=shared")
 	suite.Require().NoError(err)
-	suite.db = db
+	suite.db = database.WrapDB(sqlDB, database.DialectSQLite)
 
 	// Create tables
 	suite.setupDatabase()
 
 	// Initialize service
 	suite.service = NewCatalogService(nil, logger)
-	suite.service.SetDB(db)
+	suite.service.SetDB(suite.db)
 }
 
 func (suite *CatalogServiceTestSuite) TearDownTest() {
@@ -44,21 +45,43 @@ func (suite *CatalogServiceTestSuite) TearDownTest() {
 func (suite *CatalogServiceTestSuite) setupDatabase() {
 	// Create test tables
 	_, err := suite.db.Exec(`
+		CREATE TABLE IF NOT EXISTS storage_roots (
+			id INTEGER PRIMARY KEY AUTOINCREMENT,
+			name TEXT NOT NULL UNIQUE,
+			protocol TEXT,
+			host TEXT,
+			port INTEGER,
+			path TEXT,
+			username TEXT,
+			password TEXT,
+			domain TEXT,
+			enabled BOOLEAN DEFAULT 1,
+			max_depth INTEGER DEFAULT 10,
+			created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+			updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+			last_scan_at DATETIME
+		);
+
 		CREATE TABLE IF NOT EXISTS files (
 			id INTEGER PRIMARY KEY AUTOINCREMENT,
+			storage_root_id INTEGER NOT NULL,
 			name TEXT NOT NULL,
 			path TEXT NOT NULL,
 			is_directory BOOLEAN DEFAULT 0,
 			size INTEGER,
-			last_modified DATETIME,
-			hash TEXT,
+			modified_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+			quick_hash TEXT,
 			extension TEXT,
 			mime_type TEXT,
-			media_type TEXT,
+			file_type TEXT,
 			parent_id INTEGER,
-			smb_root TEXT,
 			created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-			updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+			last_scan_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+			deleted BOOLEAN DEFAULT 0,
+			is_duplicate BOOLEAN DEFAULT 0,
+			duplicate_group_id INTEGER,
+			FOREIGN KEY (storage_root_id) REFERENCES storage_roots(id),
+			FOREIGN KEY (parent_id) REFERENCES files(id)
 		);
 
 		CREATE TABLE IF NOT EXISTS duplicate_groups (
@@ -71,17 +94,21 @@ func (suite *CatalogServiceTestSuite) setupDatabase() {
 	`)
 	suite.Require().NoError(err)
 
+	// Insert test storage root
+	_, err = suite.db.Exec(`INSERT INTO storage_roots (id, name, protocol) VALUES (1, 'test', 'local')`)
+	suite.Require().NoError(err)
+
 	// Insert test data with explicit parent_id
 	_, err = suite.db.Exec(`
-		INSERT INTO files (id, name, path, is_directory, size, media_type, smb_root, parent_id) VALUES
-		(1, 'media', '/media', 1, 0, NULL, 'test', NULL),
-		(2, 'movies', '/media/movies', 1, 0, NULL, 'test', 1),
-		(3, 'music', '/media/music', 1, 0, NULL, 'test', 1),
-		(4, 'games', '/media/games', 1, 0, NULL, 'test', 1),
-		(5, 'movie1.mp4', '/media/movies/movie1.mp4', 0, 1000000, 'movie', 'test', 2),
-		(6, 'movie2.mkv', '/media/movies/movie2.mkv', 0, 2000000, 'movie', 'test', 2),
-		(7, 'song1.mp3', '/media/music/song1.mp3', 0, 5000000, 'music', 'test', 3),
-		(8, 'game1.iso', '/media/games/game1.iso', 0, 50000000, 'game', 'test', 4);
+		INSERT INTO files (id, storage_root_id, name, path, is_directory, size, modified_at, parent_id) VALUES
+		(1, 1, 'media', '/media', 1, 0, CURRENT_TIMESTAMP, NULL),
+		(2, 1, 'movies', '/media/movies', 1, 0, CURRENT_TIMESTAMP, 1),
+		(3, 1, 'music', '/media/music', 1, 0, CURRENT_TIMESTAMP, 1),
+		(4, 1, 'games', '/media/games', 1, 0, CURRENT_TIMESTAMP, 1),
+		(5, 1, 'movie1.mp4', '/media/movies/movie1.mp4', 0, 1000000, CURRENT_TIMESTAMP, 2),
+		(6, 1, 'movie2.mkv', '/media/movies/movie2.mkv', 0, 2000000, CURRENT_TIMESTAMP, 2),
+		(7, 1, 'song1.mp3', '/media/music/song1.mp3', 0, 5000000, CURRENT_TIMESTAMP, 3),
+		(8, 1, 'game1.iso', '/media/games/game1.iso', 0, 50000000, CURRENT_TIMESTAMP, 4);
 	`)
 	suite.Require().NoError(err)
 
@@ -135,8 +162,6 @@ func (suite *CatalogServiceTestSuite) TestGetFileInfo() {
 	assert.NotNil(suite.T(), info)
 	assert.Equal(suite.T(), "movie1.mp4", info.Name)
 	assert.Equal(suite.T(), int64(1000000), info.Size)
-	assert.NotNil(suite.T(), info.MediaType)
-	assert.Equal(suite.T(), "movie", *info.MediaType)
 
 	// Test non-existing file
 	info, err = suite.service.GetFileInfo("/nonexistent/file.mp4")
@@ -158,8 +183,8 @@ func (suite *CatalogServiceTestSuite) TestSearch() {
 	assert.Len(suite.T(), results, 1)
 	assert.Equal(suite.T(), "song1.mp3", results[0].Name)
 
-	// Search with type filter
-	results, err = suite.service.Search("game", "game", 10, 0)
+	// Search for specific file by name
+	results, err = suite.service.Search("game1", "", 10, 0)
 	assert.NoError(suite.T(), err)
 	assert.Len(suite.T(), results, 1)
 	assert.Equal(suite.T(), "game1.iso", results[0].Name)
@@ -173,10 +198,10 @@ func (suite *CatalogServiceTestSuite) TestSearch() {
 func (suite *CatalogServiceTestSuite) TestSearchDuplicates() {
 	// Add duplicate files
 	_, err := suite.db.Exec(`
-		INSERT INTO files (name, path, is_directory, size, media_type, hash, smb_root, parent_id)
-		VALUES ('duplicate1.mp4', '/media/movies/duplicate1.mp4', 0, 1000000, 'movie', 'hash1', 'test',
+		INSERT INTO files (storage_root_id, name, path, is_directory, size, modified_at, quick_hash, parent_id)
+		VALUES (1, 'duplicate1.mp4', '/media/movies/duplicate1.mp4', 0, 1000000, CURRENT_TIMESTAMP, 'hash1',
 			(SELECT id FROM files WHERE path = '/media/movies' AND is_directory = 1)),
-		('duplicate2.mp4', '/media/movies/duplicate2.mp4', 0, 1000000, 'movie', 'hash1', 'test',
+		(1, 'duplicate2.mp4', '/media/movies/duplicate2.mp4', 0, 1000000, CURRENT_TIMESTAMP, 'hash1',
 			(SELECT id FROM files WHERE path = '/media/movies' AND is_directory = 1))
 	`)
 	suite.Require().NoError(err)
@@ -202,10 +227,10 @@ func (suite *CatalogServiceTestSuite) TestGetDuplicatesCount() {
 
 	// Add duplicates
 	_, err = suite.db.Exec(`
-		INSERT INTO files (name, path, is_directory, size, media_type, hash, smb_root, parent_id)
-		VALUES ('duplicate1.mp4', '/media/movies/duplicate1.mp4', 0, 1000000, 'movie', 'hash1', 'test',
+		INSERT INTO files (storage_root_id, name, path, is_directory, size, modified_at, quick_hash, parent_id)
+		VALUES (1, 'duplicate1.mp4', '/media/movies/duplicate1.mp4', 0, 1000000, CURRENT_TIMESTAMP, 'hash1',
 			(SELECT id FROM files WHERE path = '/media/movies' AND is_directory = 1)),
-		('duplicate2.mp4', '/media/movies/duplicate2.mp4', 0, 1000000, 'movie', 'hash1', 'test',
+		(1, 'duplicate2.mp4', '/media/movies/duplicate2.mp4', 0, 1000000, CURRENT_TIMESTAMP, 'hash1',
 			(SELECT id FROM files WHERE path = '/media/movies' AND is_directory = 1))
 	`)
 	suite.Require().NoError(err)
@@ -219,8 +244,8 @@ func (suite *CatalogServiceTestSuite) TestPagination() {
 	// Add more test data for pagination testing
 	for i := 3; i <= 13; i++ {
 		_, err := suite.db.Exec(`
-			INSERT INTO files (name, path, is_directory, size, media_type, hash, smb_root, parent_id)
-			VALUES (?, ?, 0, ?, 'movie', ?, 'test',
+			INSERT INTO files (storage_root_id, name, path, is_directory, size, modified_at, quick_hash, parent_id)
+			VALUES (1, ?, ?, 0, ?, CURRENT_TIMESTAMP, ?,
 				(SELECT id FROM files WHERE path = '/media/movies' AND is_directory = 1))
 		`, "movie"+string(rune(i+'0'))+".mp4", "/media/movies/movie"+string(rune(i+'0'))+".mp4", 1000000, "hash"+string(rune(i+'0')))
 		suite.Require().NoError(err)

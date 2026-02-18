@@ -1,12 +1,12 @@
 package analyzer
 
 import (
+	"catalogizer/database"
 	"catalogizer/internal/media/detector"
 	mediamodels "catalogizer/internal/media/models"
 	"catalogizer/internal/media/providers"
 	"catalogizer/internal/models"
 	"context"
-	"database/sql"
 	"encoding/json"
 	"fmt"
 	"strings"
@@ -18,7 +18,7 @@ import (
 
 // MediaAnalyzer handles real-time analysis of directory content
 type MediaAnalyzer struct {
-	db              *sql.DB
+	db              *database.DB
 	detector        *detector.DetectionEngine
 	providerManager *providers.ProviderManager
 	logger          *zap.Logger
@@ -59,7 +59,7 @@ type QualityAnalysis struct {
 }
 
 // NewMediaAnalyzer creates a new media analyzer
-func NewMediaAnalyzer(db *sql.DB, detector *detector.DetectionEngine, providerManager *providers.ProviderManager, logger *zap.Logger) *MediaAnalyzer {
+func NewMediaAnalyzer(db *database.DB, detector *detector.DetectionEngine, providerManager *providers.ProviderManager, logger *zap.Logger) *MediaAnalyzer {
 	return &MediaAnalyzer{
 		db:              db,
 		detector:        detector,
@@ -248,10 +248,10 @@ func (ma *MediaAnalyzer) worker(workerID int) {
 // getDirectoryFiles retrieves files in a directory from the catalog database
 func (ma *MediaAnalyzer) getDirectoryFiles(directoryPath, smbRoot string) ([]models.FileInfo, error) {
 	query := `
-		SELECT id, name, path, is_directory, size, last_modified, extension, mime_type
-		FROM files
-		WHERE path LIKE ? AND smb_root = ?
-		ORDER BY is_directory DESC, name ASC
+		SELECT f.id, f.name, f.path, f.is_directory, f.size, f.modified_at, f.extension, f.mime_type
+		FROM files f
+		WHERE f.path LIKE ? AND f.storage_root_id = (SELECT id FROM storage_roots WHERE name = ? LIMIT 1)
+		ORDER BY f.is_directory DESC, f.name ASC
 	`
 
 	rows, err := ma.db.Query(query, directoryPath+"%", smbRoot)
@@ -344,16 +344,11 @@ func (ma *MediaAnalyzer) createOrUpdateMediaItem(ctx context.Context, detection 
 		VALUES (?, ?, ?, ?, ?, ?, 'active', ?, ?)
 	`
 
-	result, err := ma.db.Exec(query,
+	mediaItemID, err := ma.db.InsertReturningID(context.Background(), query,
 		detection.MediaTypeID, detection.SuggestedTitle, detection.SuggestedYear,
 		nil, string(genreJSON), string(castCrewJSON),
 		time.Now(), time.Now(),
 	)
-	if err != nil {
-		return nil, err
-	}
-
-	mediaItemID, err := result.LastInsertId()
 	if err != nil {
 		return nil, err
 	}

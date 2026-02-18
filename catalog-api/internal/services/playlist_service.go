@@ -8,11 +8,13 @@ import (
 	"strings"
 	"time"
 
+	"catalogizer/database"
+
 	"go.uber.org/zap"
 )
 
 type PlaylistService struct {
-	db     *sql.DB
+	db     *database.DB
 	logger *zap.Logger
 }
 
@@ -129,7 +131,7 @@ type PlaylistSearchRequest struct {
 	Offset   int      `json:"offset"`
 }
 
-func NewPlaylistService(db *sql.DB, logger *zap.Logger) *PlaylistService {
+func NewPlaylistService(db *database.DB, logger *zap.Logger) *PlaylistService {
 	return &PlaylistService{
 		db:     db,
 		logger: logger,
@@ -160,20 +162,17 @@ func (s *PlaylistService) CreatePlaylist(ctx context.Context, req *CreatePlaylis
 	`
 
 	var playlist Playlist
-	result, err := s.db.ExecContext(ctx, query,
+	id, err := s.db.InsertReturningID(ctx, query,
 		req.UserID, req.Name, req.Description, req.IsPublic,
 		req.IsSmartPlaylist, smartCriteriaJSON)
-	if err == nil {
-		id, _ := result.LastInsertId()
-		playlist.ID = id
-		playlist.CreatedAt = time.Now()
-		playlist.UpdatedAt = time.Now()
-	}
-
 	if err != nil {
 		s.logger.Error("Failed to create playlist", zap.Error(err))
 		return nil, fmt.Errorf("failed to create playlist: %w", err)
 	}
+
+	playlist.ID = id
+	playlist.CreatedAt = time.Now()
+	playlist.UpdatedAt = time.Now()
 
 	playlist.UserID = req.UserID
 	playlist.Name = req.Name
@@ -582,18 +581,15 @@ func (s *PlaylistService) CreateQueue(ctx context.Context, userID int64, name st
 	`
 
 	var queue PlaybackQueue
-	result, err := s.db.ExecContext(ctx, query, userID, name)
-	if err == nil {
-		id, _ := result.LastInsertId()
-		queue.ID = id
-		queue.CreatedAt = time.Now()
-		queue.UpdatedAt = time.Now()
-	}
-
+	queueID, err := s.db.InsertReturningID(ctx, query, userID, name)
 	if err != nil {
 		s.logger.Error("Failed to create queue", zap.Error(err))
 		return nil, fmt.Errorf("failed to create queue: %w", err)
 	}
+
+	queue.ID = queueID
+	queue.CreatedAt = time.Now()
+	queue.UpdatedAt = time.Now()
 
 	queue.UserID = userID
 	queue.Name = name

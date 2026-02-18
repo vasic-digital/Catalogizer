@@ -72,6 +72,9 @@ export const useWebSocket = () => {
         case 'analysis_complete':
           handleAnalysisComplete(message.payload, queryClient)
           break
+        case 'asset_update':
+          handleAssetUpdate(message.payload, queryClient)
+          break
         case 'notification':
           handleNotification(message.payload)
           break
@@ -79,21 +82,19 @@ export const useWebSocket = () => {
     })
 
     client.on('connected', () => {
-      toast.success('Connected to real-time updates')
-
       // Subscribe to relevant channels
       client.sendJSON({ type: 'subscribe', channel: 'media_updates' })
       client.sendJSON({ type: 'subscribe', channel: 'system_updates' })
       client.sendJSON({ type: 'subscribe', channel: 'analysis_updates' })
+      client.sendJSON({ type: 'subscribe', channel: 'asset_updates' })
     })
 
     client.on('disconnected', () => {
-      toast.error('Disconnected from real-time updates')
+      // Connection status is shown in the UI via ConnectionStatus component
     })
 
-    client.on('error', (error) => {
-      console.error('WebSocket error:', error)
-      toast.error('Connection error - some features may not work')
+    client.on('error', () => {
+      // Silently handle WebSocket errors - connection status is shown in the UI
     })
 
     clientRef.current = client
@@ -193,6 +194,14 @@ const handleAnalysisComplete = (data: any, queryClient: any) => {
   toast.success(`Analysis complete for ${data.items_processed} items`)
   queryClient.invalidateQueries({ queryKey: ['media-search'] })
   queryClient.invalidateQueries({ queryKey: ['media-stats'] })
+}
+
+const handleAssetUpdate = (data: any, queryClient: any) => {
+  if (data.action === 'asset_ready') {
+    queryClient.invalidateQueries({ queryKey: ['asset', data.asset_id] })
+    queryClient.invalidateQueries({ queryKey: [data.entity_type, data.entity_id] })
+    queryClient.invalidateQueries({ queryKey: ['media-search'] })
+  }
 }
 
 const handleNotification = (notification: any) => {

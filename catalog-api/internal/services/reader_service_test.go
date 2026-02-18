@@ -1,6 +1,7 @@
 package services
 
 import (
+	"catalogizer/database"
 	"context"
 	"database/sql"
 	"strings"
@@ -15,11 +16,13 @@ import (
 
 // setupReaderTestDB creates an in-memory SQLite database with all tables
 // required by the ReaderService methods.
-func setupReaderTestDB(t *testing.T) *sql.DB {
+func setupReaderTestDB(t *testing.T) *database.DB {
 	t.Helper()
 
-	db, err := sql.Open("sqlite3", ":memory:")
+	sqlDB, err := sql.Open("sqlite3", ":memory:")
 	require.NoError(t, err)
+
+	db := database.WrapDB(sqlDB, database.DialectSQLite)
 
 	tables := []string{
 		`CREATE TABLE IF NOT EXISTS reading_sessions (

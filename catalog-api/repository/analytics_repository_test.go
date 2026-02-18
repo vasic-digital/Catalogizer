@@ -5,6 +5,7 @@ import (
 	"testing"
 	"time"
 
+	"catalogizer/database"
 	"catalogizer/models"
 
 	"github.com/DATA-DOG/go-sqlmock"
@@ -13,8 +14,9 @@ import (
 )
 
 func newMockAnalyticsRepo(t *testing.T) (*AnalyticsRepository, sqlmock.Sqlmock) {
-	db, mock, err := sqlmock.New()
+	sqlDB, mock, err := sqlmock.New()
 	require.NoError(t, err)
+	db := database.WrapDB(sqlDB, database.DialectSQLite)
 	return NewAnalyticsRepository(db), mock
 }
 
@@ -23,8 +25,9 @@ func newMockAnalyticsRepo(t *testing.T) (*AnalyticsRepository, sqlmock.Sqlmock) 
 // ---------------------------------------------------------------------------
 
 func TestAnalyticsRepository_Constructor(t *testing.T) {
-	db, _, err := sqlmock.New()
+	sqlDB, _, err := sqlmock.New()
 	require.NoError(t, err)
+	db := database.WrapDB(sqlDB, database.DialectSQLite)
 	repo := NewAnalyticsRepository(db)
 	assert.NotNil(t, repo)
 }

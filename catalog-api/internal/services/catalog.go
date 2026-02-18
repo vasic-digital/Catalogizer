@@ -1,6 +1,7 @@
 package services
 
 import (
+	"catalogizer/database"
 	"catalogizer/internal/config"
 	"catalogizer/internal/models"
 	"database/sql"
@@ -13,7 +14,7 @@ import (
 
 // CatalogServiceInterface defines the interface for catalog operations
 type CatalogServiceInterface interface {
-	SetDB(db *sql.DB)
+	SetDB(db *database.DB)
 	ListPath(path string, sortBy string, sortOrder string, limit, offset int) ([]models.FileInfo, error)
 	GetFileInfo(pathOrID string) (*models.FileInfo, error)
 	SearchFiles(req *models.SearchRequest) ([]models.FileInfo, int64, error)
@@ -29,7 +30,7 @@ type CatalogServiceInterface interface {
 }
 
 type CatalogService struct {
-	db     *sql.DB
+	db     *database.DB
 	config *config.Config
 	logger *zap.Logger
 }
@@ -41,7 +42,7 @@ func NewCatalogService(cfg *config.Config, logger *zap.Logger) *CatalogService {
 	}
 }
 
-func (s *CatalogService) SetDB(db *sql.DB) {
+func (s *CatalogService) SetDB(db *database.DB) {
 	s.db = db
 }
 
@@ -61,9 +62,10 @@ func (s *CatalogService) ListPath(path string, sortBy string, sortOrder string, 
 		if path == "/" {
 			// Root, return top-level directories
 			query = `
-				SELECT id, name, path, is_directory, size, last_modified, hash, extension, mime_type, media_type, parent_id, smb_root, created_at, updated_at
-				FROM files
-				WHERE parent_id IS NULL
+				SELECT f.id, f.name, f.path, f.is_directory, f.size, f.modified_at, f.quick_hash, f.extension, f.mime_type, f.parent_id, sr.name as smb_root, f.created_at, f.last_scan_at
+				FROM files f
+				JOIN storage_roots sr ON f.storage_root_id = sr.id
+				WHERE f.parent_id IS NULL
 			`
 		} else {
 			return nil, fmt.Errorf("path not found: %s", path)
@@ -71,9 +73,10 @@ func (s *CatalogService) ListPath(path string, sortBy string, sortOrder string, 
 	} else {
 		// Path exists, list its children
 		query = `
-			SELECT id, name, path, is_directory, size, last_modified, hash, extension, mime_type, media_type, parent_id, smb_root, created_at, updated_at
-			FROM files
-			WHERE parent_id = ?
+			SELECT f.id, f.name, f.path, f.is_directory, f.size, f.modified_at, f.quick_hash, f.extension, f.mime_type, f.parent_id, sr.name as smb_root, f.created_at, f.last_scan_at
+			FROM files f
+			JOIN storage_roots sr ON f.storage_root_id = sr.id
+			WHERE f.parent_id = ?
 		`
 		args = []interface{}{parentID.Int64}
 	}
@@ -81,13 +84,13 @@ func (s *CatalogService) ListPath(path string, sortBy string, sortOrder string, 
 	// Add sorting
 	switch sortBy {
 	case "name":
-		query += " ORDER BY name"
+		query += " ORDER BY f.name"
 	case "size":
-		query += " ORDER BY size"
+		query += " ORDER BY f.size"
 	case "modified":
-		query += " ORDER BY last_modified"
+		query += " ORDER BY f.modified_at"
 	default:
-		query += " ORDER BY is_directory DESC, name"
+		query += " ORDER BY f.is_directory DESC, f.name"
 	}
 
 	if sortOrder == "desc" {
@@ -115,18 +118,14 @@ func (s *CatalogService) ListPath(path string, sortBy string, sortOrder string, 
 	var files []models.FileInfo
 	for rows.Next() {
 		var file models.FileInfo
-		var mediaType *string
 		var lastModified sql.NullTime
 		var createdAt sql.NullTime
 		var updatedAt sql.NullTime
 		err := rows.Scan(
 			&file.ID, &file.Name, &file.Path, &file.IsDirectory, &file.Size,
 			&lastModified, &file.Hash, &file.Extension, &file.MimeType,
-			&mediaType, &file.ParentID, &file.SmbRoot, &createdAt, &updatedAt,
+			&file.ParentID, &file.SmbRoot, &createdAt, &updatedAt,
 		)
-		if mediaType != nil {
-			file.MediaType = mediaType
-		}
 		if lastModified.Valid {
 			file.LastModified = lastModified.Time
 		}
@@ -157,34 +156,32 @@ func (s *CatalogService) GetFileInfo(pathOrID string) (*models.FileInfo, error) 
 	// Try to parse as ID first
 	if id, err := strconv.ParseInt(pathOrID, 10, 64); err == nil {
 		query = `
-			SELECT id, name, path, is_directory, size, last_modified, hash, extension, mime_type, media_type, parent_id, smb_root, created_at, updated_at
-			FROM files
-			WHERE id = ?
+			SELECT f.id, f.name, f.path, f.is_directory, f.size, f.modified_at, f.quick_hash, f.extension, f.mime_type, f.parent_id, sr.name as smb_root, f.created_at, f.last_scan_at
+			FROM files f
+			JOIN storage_roots sr ON f.storage_root_id = sr.id
+			WHERE f.id = ?
 		`
 		arg = id
 	} else {
 		// Treat as path
 		query = `
-			SELECT id, name, path, is_directory, size, last_modified, hash, extension, mime_type, media_type, parent_id, smb_root, created_at, updated_at
-			FROM files
-			WHERE path = ?
+			SELECT f.id, f.name, f.path, f.is_directory, f.size, f.modified_at, f.quick_hash, f.extension, f.mime_type, f.parent_id, sr.name as smb_root, f.created_at, f.last_scan_at
+			FROM files f
+			JOIN storage_roots sr ON f.storage_root_id = sr.id
+			WHERE f.path = ?
 		`
 		arg = pathOrID
 	}
 
 	var file models.FileInfo
-	var mediaType *string
 	var lastModified sql.NullTime
 	var createdAt sql.NullTime
 	var updatedAt sql.NullTime
 	err := s.db.QueryRow(query, arg).Scan(
 		&file.ID, &file.Name, &file.Path, &file.IsDirectory, &file.Size,
 		&lastModified, &file.Hash, &file.Extension, &file.MimeType,
-		&mediaType, &file.ParentID, &file.SmbRoot, &createdAt, &updatedAt,
+		&file.ParentID, &file.SmbRoot, &createdAt, &updatedAt,
 	)
-	if mediaType != nil {
-		file.MediaType = mediaType
-	}
 	if lastModified.Valid {
 		file.LastModified = lastModified.Time
 	}
@@ -213,14 +210,16 @@ func (s *CatalogService) GetFileInfo(pathOrID string) (*models.FileInfo, error) 
 
 func (s *CatalogService) SearchFiles(req *models.SearchRequest) ([]models.FileInfo, int64, error) {
 	baseQuery := `
-		SELECT id, name, path, is_directory, size, last_modified, hash, extension, mime_type, media_type, parent_id, smb_root, created_at, updated_at
-		FROM files
+		SELECT f.id, f.name, f.path, f.is_directory, f.size, f.modified_at, f.quick_hash, f.extension, f.mime_type, f.parent_id, sr.name as smb_root, f.created_at, f.last_scan_at
+		FROM files f
+		JOIN storage_roots sr ON f.storage_root_id = sr.id
 		WHERE 1=1
 	`
 
 	countQuery := `
 		SELECT COUNT(*)
-		FROM files
+		FROM files f
+		JOIN storage_roots sr ON f.storage_root_id = sr.id
 		WHERE 1=1
 	`
 
@@ -229,46 +228,46 @@ func (s *CatalogService) SearchFiles(req *models.SearchRequest) ([]models.FileIn
 
 	// Add search conditions
 	if req.Query != "" {
-		conditions = append(conditions, "name LIKE ?")
+		conditions = append(conditions, "f.name LIKE ?")
 		args = append(args, "%"+req.Query+"%")
 	}
 
 	if req.Path != "" {
-		conditions = append(conditions, "path LIKE ?")
+		conditions = append(conditions, "f.path LIKE ?")
 		args = append(args, req.Path+"%")
 	}
 
 	if req.Extension != "" {
-		conditions = append(conditions, "extension = ?")
+		conditions = append(conditions, "f.extension = ?")
 		args = append(args, req.Extension)
 	}
 
 	if req.MimeType != "" {
-		conditions = append(conditions, "media_type = ?")
+		conditions = append(conditions, "f.mime_type = ?")
 		args = append(args, req.MimeType)
 	}
 
 	if req.MinSize != nil {
-		conditions = append(conditions, "size >= ?")
+		conditions = append(conditions, "f.size >= ?")
 		args = append(args, *req.MinSize)
 	}
 
 	if req.MaxSize != nil {
-		conditions = append(conditions, "size <= ?")
+		conditions = append(conditions, "f.size <= ?")
 		args = append(args, *req.MaxSize)
 	}
 
 	if len(req.SmbRoots) > 0 {
 		placeholders := strings.Repeat("?,", len(req.SmbRoots))
 		placeholders = placeholders[:len(placeholders)-1]
-		conditions = append(conditions, fmt.Sprintf("smb_root IN (%s)", placeholders))
+		conditions = append(conditions, fmt.Sprintf("sr.name IN (%s)", placeholders))
 		for _, root := range req.SmbRoots {
 			args = append(args, root)
 		}
 	}
 
 	if req.IsDirectory != nil {
-		conditions = append(conditions, "is_directory = ?")
+		conditions = append(conditions, "f.is_directory = ?")
 		args = append(args, *req.IsDirectory)
 	}
 
@@ -291,13 +290,13 @@ func (s *CatalogService) SearchFiles(req *models.SearchRequest) ([]models.FileIn
 	// Add sorting
 	switch req.SortBy {
 	case "name":
-		query += " ORDER BY name"
+		query += " ORDER BY f.name"
 	case "size":
-		query += " ORDER BY size"
+		query += " ORDER BY f.size"
 	case "modified":
-		query += " ORDER BY last_modified"
+		query += " ORDER BY f.modified_at"
 	default:
-		query += " ORDER BY is_directory DESC, name"
+		query += " ORDER BY f.is_directory DESC, f.name"
 	}
 
 	if req.SortOrder == "desc" {
@@ -326,18 +325,14 @@ func (s *CatalogService) SearchFiles(req *models.SearchRequest) ([]models.FileIn
 	var files []models.FileInfo
 	for rows.Next() {
 		var file models.FileInfo
-		var mediaType *string
 		var lastModified sql.NullTime
 		var createdAt sql.NullTime
 		var updatedAt sql.NullTime
 		err := rows.Scan(
 			&file.ID, &file.Name, &file.Path, &file.IsDirectory, &file.Size,
 			&lastModified, &file.Hash, &file.Extension, &file.MimeType,
-			&mediaType, &file.ParentID, &file.SmbRoot, &createdAt, &updatedAt,
+			&file.ParentID, &file.SmbRoot, &createdAt, &updatedAt,
 		)
-		if mediaType != nil {
-			file.MediaType = mediaType
-		}
 		if lastModified.Valid {
 			file.LastModified = lastModified.Time
 		}
@@ -365,21 +360,20 @@ func (s *CatalogService) GetDirectoriesBySize(smbRoot string, limit int) ([]mode
 	query := `
 		WITH RECURSIVE dir_sizes AS (
 			SELECT
-				id, path, name, is_directory,
-				CASE WHEN is_directory THEN 0 ELSE size END as file_size,
-				CASE WHEN is_directory THEN 0 ELSE 1 END as file_count
-			FROM files
-			WHERE smb_root = ? AND is_directory = 1
+				f.id, f.path, f.name, f.is_directory,
+				CASE WHEN f.is_directory THEN 0 ELSE f.size END as file_size,
+				CASE WHEN f.is_directory THEN 0 ELSE 1 END as file_count
+			FROM files f
+			WHERE f.storage_root_id = (SELECT id FROM storage_roots WHERE name = ? LIMIT 1) AND f.is_directory = 1
 
 			UNION ALL
 
 			SELECT
-				f.id, f.path, f.name, f.is_directory,
-				CASE WHEN f.is_directory THEN 0 ELSE f.size END,
-				CASE WHEN f.is_directory THEN 0 ELSE 1 END
-			FROM files f
-			JOIN dir_sizes ds ON f.parent_id = ds.id
-			WHERE f.smb_root = ?
+				f2.id, f2.path, f2.name, f2.is_directory,
+				CASE WHEN f2.is_directory THEN 0 ELSE f2.size END,
+				CASE WHEN f2.is_directory THEN 0 ELSE 1 END
+			FROM files f2
+			JOIN dir_sizes ds ON f2.parent_id = ds.id
 		)
 		SELECT
 			path,
@@ -393,7 +387,7 @@ func (s *CatalogService) GetDirectoriesBySize(smbRoot string, limit int) ([]mode
 		LIMIT ?
 	`
 
-	rows, err := s.db.Query(query, smbRoot, smbRoot, limit)
+	rows, err := s.db.Query(query, smbRoot, limit)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get directories by size: %w", err)
 	}
@@ -415,22 +409,22 @@ func (s *CatalogService) GetDirectoriesBySize(smbRoot string, limit int) ([]mode
 func (s *CatalogService) GetDuplicateGroups(smbRoot string, minCount int, limit int) ([]models.DuplicateGroup, error) {
 	query := `
 		SELECT
-			hash, size, COUNT(*) as count
-		FROM files
-		WHERE hash IS NOT NULL
-			AND is_directory = 0
+			f.quick_hash, f.size, COUNT(*) as count
+		FROM files f
+		WHERE f.quick_hash IS NOT NULL
+			AND f.is_directory = 0
 	`
 	args := []interface{}{}
 
 	if smbRoot != "" {
-		query += " AND smb_root = ?"
+		query += " AND f.storage_root_id = (SELECT id FROM storage_roots WHERE name = ? LIMIT 1)"
 		args = append(args, smbRoot)
 	}
 
 	query += `
-		GROUP BY hash, size
+		GROUP BY f.quick_hash, f.size
 		HAVING COUNT(*) >= ?
-		ORDER BY COUNT(*) DESC, size DESC
+		ORDER BY COUNT(*) DESC, f.size DESC
 	`
 	args = append(args, minCount)
 
@@ -455,18 +449,19 @@ func (s *CatalogService) GetDuplicateGroups(smbRoot string, minCount int, limit 
 
 		// Get files in this duplicate group
 		filesQuery := `
-			SELECT id, name, path, is_directory, size, last_modified, hash, extension, mime_type, parent_id, smb_root, created_at, updated_at
-			FROM files
-			WHERE hash = ? AND size = ?
+			SELECT f.id, f.name, f.path, f.is_directory, f.size, f.modified_at, f.quick_hash, f.extension, f.mime_type, f.parent_id, sr.name as smb_root, f.created_at, f.last_scan_at
+			FROM files f
+			JOIN storage_roots sr ON f.storage_root_id = sr.id
+			WHERE f.quick_hash = ? AND f.size = ?
 		`
 		args2 := []interface{}{group.Hash, group.Size}
 
 		if smbRoot != "" {
-			filesQuery += " AND smb_root = ?"
+			filesQuery += " AND f.storage_root_id = (SELECT id FROM storage_roots WHERE name = ? LIMIT 1)"
 			args2 = append(args2, smbRoot)
 		}
 
-		filesQuery += " ORDER BY path"
+		filesQuery += " ORDER BY f.path"
 
 		fileRows, err := s.db.Query(filesQuery, args2...)
 		if err != nil {
@@ -509,7 +504,7 @@ func (s *CatalogService) GetDuplicateGroups(smbRoot string, minCount int, limit 
 }
 
 func (s *CatalogService) GetSMBRoots() ([]string, error) {
-	query := `SELECT DISTINCT smb_root FROM files ORDER BY smb_root`
+	query := `SELECT DISTINCT sr.name as smb_root FROM files f JOIN storage_roots sr ON f.storage_root_id = sr.id ORDER BY sr.name`
 
 	rows, err := s.db.Query(query)
 	if err != nil {
@@ -556,24 +551,21 @@ func (s *CatalogService) SearchDuplicates() ([]models.DuplicateGroup, error) {
 // GetFileInfoByPath gets file info by path (for test compatibility)
 func (s *CatalogService) GetFileInfoByPath(path string) (*models.FileInfo, error) {
 	query := `
-		SELECT id, name, path, is_directory, size, last_modified, hash, extension, mime_type, media_type, parent_id, smb_root, created_at, updated_at
-		FROM files
-		WHERE path = ?
+		SELECT f.id, f.name, f.path, f.is_directory, f.size, f.modified_at, f.quick_hash, f.extension, f.mime_type, f.parent_id, sr.name as smb_root, f.created_at, f.last_scan_at
+		FROM files f
+		JOIN storage_roots sr ON f.storage_root_id = sr.id
+		WHERE f.path = ?
 	`
 
 	var file models.FileInfo
-	var mediaType *string
 	var lastModified sql.NullTime
 	var createdAt sql.NullTime
 	var updatedAt sql.NullTime
 	err := s.db.QueryRow(query, path).Scan(
 		&file.ID, &file.Name, &file.Path, &file.IsDirectory, &file.Size,
 		&lastModified, &file.Hash, &file.Extension, &file.MimeType,
-		&mediaType, &file.ParentID, &file.SmbRoot, &createdAt, &updatedAt,
+		&file.ParentID, &file.SmbRoot, &createdAt, &updatedAt,
 	)
-	if mediaType != nil {
-		file.MediaType = mediaType
-	}
 	if lastModified.Valid {
 		file.LastModified = lastModified.Time
 	}
@@ -604,12 +596,12 @@ func (s *CatalogService) GetFileInfoByPath(path string) (*models.FileInfo, error
 func (s *CatalogService) GetDuplicatesCount() (int64, error) {
 	query := `
 		SELECT COUNT(*) FROM (
-			SELECT hash, COUNT(*) as count
+			SELECT quick_hash, COUNT(*) as count
 			FROM files
-			WHERE hash IS NOT NULL AND hash != '' AND is_directory = 0
-			GROUP BY hash
+			WHERE quick_hash IS NOT NULL AND quick_hash != '' AND is_directory = 0
+			GROUP BY quick_hash
 			HAVING COUNT(*) > 1
-		)
+		) AS dup_groups
 	`
 
 	var count int64

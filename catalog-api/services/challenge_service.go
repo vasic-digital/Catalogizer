@@ -28,7 +28,8 @@ func NewChallengeService(resultsDir string) *ChallengeService {
 	reg := registry.NewRegistry()
 	r := runner.NewRunner(
 		runner.WithRegistry(reg),
-		runner.WithTimeout(10*time.Minute),
+		runner.WithTimeout(72*time.Hour),
+		runner.WithStaleThreshold(5*time.Minute),
 		runner.WithResultsDir(resultsDir),
 	)
 	return &ChallengeService{
@@ -80,7 +81,7 @@ func (s *ChallengeService) RunChallenge(
 			s.resultsDir, id,
 			time.Now().Format("20060102_150405"),
 		),
-		Timeout: 10 * time.Minute,
+		Timeout: 72 * time.Hour,
 		Verbose: true,
 	}
 	result, err := s.runner.Run(
@@ -106,7 +107,7 @@ func (s *ChallengeService) RunAll(
 			s.resultsDir, "all",
 			time.Now().Format("20060102_150405"),
 		),
-		Timeout: 10 * time.Minute,
+		Timeout: 72 * time.Hour,
 		Verbose: true,
 	}
 	results, err := s.runner.RunAll(ctx, cfg)
@@ -142,7 +143,7 @@ func (s *ChallengeService) RunByCategory(
 			s.resultsDir, "category", category,
 			time.Now().Format("20060102_150405"),
 		),
-		Timeout: 10 * time.Minute,
+		Timeout: 72 * time.Hour,
 		Verbose: true,
 	}
 	results, err := s.runner.RunSequence(ctx, ids, cfg)

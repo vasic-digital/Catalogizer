@@ -16,13 +16,15 @@ import (
 	"strings"
 	"time"
 
+	"catalogizer/database"
+
 	"go.uber.org/zap"
 	"golang.org/x/image/draw"
 )
 
 // CoverArtService handles cover art retrieval, processing, and caching
 type CoverArtService struct {
-	db         *sql.DB
+	db         *database.DB
 	logger     *zap.Logger
 	httpClient *http.Client
 	apiKeys    map[string]string
@@ -123,7 +125,7 @@ type CoverArtProcessingOptions struct {
 }
 
 // NewCoverArtService creates a new cover art service
-func NewCoverArtService(db *sql.DB, logger *zap.Logger) *CoverArtService {
+func NewCoverArtService(db *database.DB, logger *zap.Logger) *CoverArtService {
 	return &CoverArtService{
 		db:         db,
 		logger:     logger,

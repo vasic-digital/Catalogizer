@@ -68,7 +68,7 @@ func (r *FileRepository) GetDirectoryContents(ctx context.Context, storageRootNa
 	baseQuery := `
 		FROM files f
 		JOIN storage_roots sr ON f.storage_root_id = sr.id
-		WHERE sr.name = ? AND f.deleted = FALSE`
+		WHERE sr.name = ? AND f.deleted = 0`
 
 	args := []interface{}{storageRootName}
 
@@ -241,15 +241,15 @@ func (r *FileRepository) GetDirectoriesSortedBySize(ctx context.Context, storage
 	query := `
 		WITH RECURSIVE directory_tree AS (
 			SELECT f.path, f.name, sr.name as storage_root_name,
-				   COUNT(CASE WHEN f2.is_directory = FALSE THEN 1 END) as file_count,
-				   COUNT(CASE WHEN f2.is_directory = TRUE THEN 1 END) as directory_count,
-				   COALESCE(SUM(CASE WHEN f2.is_directory = FALSE THEN f2.size ELSE 0 END), 0) as total_size,
-				   COUNT(CASE WHEN f2.is_duplicate = TRUE THEN 1 END) as duplicate_count,
+				   COUNT(CASE WHEN f2.is_directory = 0 THEN 1 END) as file_count,
+				   COUNT(CASE WHEN f2.is_directory = 1 THEN 1 END) as directory_count,
+				   COALESCE(SUM(CASE WHEN f2.is_directory = 0 THEN f2.size ELSE 0 END), 0) as total_size,
+				   COUNT(CASE WHEN f2.is_duplicate = 1 THEN 1 END) as duplicate_count,
 				   MAX(f.modified_at) as modified_at
 			FROM files f
 			JOIN storage_roots sr ON f.storage_root_id = sr.id
-			LEFT JOIN files f2 ON f2.path LIKE f.path || '/%' AND f2.storage_root_id = f.storage_root_id AND f2.deleted = FALSE
-			WHERE f.is_directory = TRUE AND f.deleted = FALSE AND sr.name = ?
+			LEFT JOIN files f2 ON f2.path LIKE f.path || '/%' AND f2.storage_root_id = f.storage_root_id AND f2.deleted = 0
+			WHERE f.is_directory = 1 AND f.deleted = 0 AND sr.name = ?
 			GROUP BY f.path, f.name, sr.name
 		)
 		SELECT path, name, storage_root_name, file_count, directory_count, total_size, duplicate_count, modified_at
@@ -290,15 +290,15 @@ func (r *FileRepository) GetDirectoriesSortedByDuplicates(ctx context.Context, s
 	query := `
 		WITH RECURSIVE directory_tree AS (
 			SELECT f.path, f.name, sr.name as storage_root_name,
-				   COUNT(CASE WHEN f2.is_directory = FALSE THEN 1 END) as file_count,
-				   COUNT(CASE WHEN f2.is_directory = TRUE THEN 1 END) as directory_count,
-				   COALESCE(SUM(CASE WHEN f2.is_directory = FALSE THEN f2.size ELSE 0 END), 0) as total_size,
-				   COUNT(CASE WHEN f2.is_duplicate = TRUE THEN 1 END) as duplicate_count,
+				   COUNT(CASE WHEN f2.is_directory = 0 THEN 1 END) as file_count,
+				   COUNT(CASE WHEN f2.is_directory = 1 THEN 1 END) as directory_count,
+				   COALESCE(SUM(CASE WHEN f2.is_directory = 0 THEN f2.size ELSE 0 END), 0) as total_size,
+				   COUNT(CASE WHEN f2.is_duplicate = 1 THEN 1 END) as duplicate_count,
 				   MAX(f.modified_at) as modified_at
 			FROM files f
 			JOIN storage_roots sr ON f.storage_root_id = sr.id
-			LEFT JOIN files f2 ON f2.path LIKE f.path || '/%' AND f2.storage_root_id = f.storage_root_id AND f2.deleted = FALSE
-			WHERE f.is_directory = TRUE AND f.deleted = FALSE AND sr.name = ?
+			LEFT JOIN files f2 ON f2.path LIKE f.path || '/%' AND f2.storage_root_id = f.storage_root_id AND f2.deleted = 0
+			WHERE f.is_directory = 1 AND f.deleted = 0 AND sr.name = ?
 			GROUP BY f.path, f.name, sr.name
 		)
 		SELECT path, name, storage_root_name, file_count, directory_count, total_size, duplicate_count, modified_at
@@ -424,7 +424,7 @@ func (r *FileRepository) buildSortClause(sort models.SortOptions) string {
 
 func (r *FileRepository) applySearchFilters(baseQuery string, args []interface{}, filter models.SearchFilter) (string, []interface{}) {
 	if !filter.IncludeDeleted {
-		baseQuery += " AND f.deleted = FALSE"
+		baseQuery += " AND f.deleted = 0"
 	}
 
 	if filter.Query != "" {
@@ -488,13 +488,13 @@ func (r *FileRepository) applySearchFilters(baseQuery string, args []interface{}
 	}
 
 	if filter.OnlyDuplicates {
-		baseQuery += " AND f.is_duplicate = TRUE"
+		baseQuery += " AND f.is_duplicate = 1"
 	} else if filter.ExcludeDuplicates {
-		baseQuery += " AND f.is_duplicate = FALSE"
+		baseQuery += " AND f.is_duplicate = 0"
 	}
 
 	if !filter.IncludeDirectories {
-		baseQuery += " AND f.is_directory = FALSE"
+		baseQuery += " AND f.is_directory = 0"
 	}
 
 	return baseQuery, args
@@ -509,7 +509,7 @@ func (r *FileRepository) UpdateFilePath(ctx context.Context, fileID int64, newPa
 	// Get parent directory ID
 	var parentID *int64
 	if newDir != "/" && newDir != "." {
-		parentQuery := `SELECT id FROM files WHERE path = ? AND is_directory = true LIMIT 1`
+		parentQuery := `SELECT id FROM files WHERE path = ? AND is_directory = 1 LIMIT 1`
 		err := r.db.QueryRowContext(ctx, parentQuery, newDir).Scan(&parentID)
 		if err != nil && err != sql.ErrNoRows {
 			return fmt.Errorf("failed to get parent directory: %w", err)
@@ -620,7 +620,7 @@ func (r *FileRepository) GetFileByPathAndStorage(ctx context.Context, path, stor
 func (r *FileRepository) MarkFileAsDeleted(ctx context.Context, fileID int64) error {
 	query := `
 		UPDATE files
-		SET deleted = true, deleted_at = CURRENT_TIMESTAMP
+		SET deleted = 1, deleted_at = CURRENT_TIMESTAMP
 		WHERE id = ?`
 
 	_, err := r.db.ExecContext(ctx, query, fileID)
@@ -635,7 +635,7 @@ func (r *FileRepository) MarkFileAsDeleted(ctx context.Context, fileID int64) er
 func (r *FileRepository) RestoreDeletedFile(ctx context.Context, fileID int64) error {
 	query := `
 		UPDATE files
-		SET deleted = false, deleted_at = NULL, last_scan_at = CURRENT_TIMESTAMP
+		SET deleted = 0, deleted_at = NULL, last_scan_at = CURRENT_TIMESTAMP
 		WHERE id = ?`
 
 	_, err := r.db.ExecContext(ctx, query, fileID)
@@ -658,7 +658,7 @@ func (r *FileRepository) GetFilesWithHash(ctx context.Context, hash string, stor
 		JOIN storage_roots sr ON f.storage_root_id = sr.id
 		WHERE (f.md5 = ? OR f.sha256 = ? OR f.sha1 = ? OR f.blake3 = ? OR f.quick_hash = ?)
 		  AND sr.name = ?
-		  AND f.deleted = false`
+		  AND f.deleted = 0`
 
 	rows, err := r.db.QueryContext(ctx, query, hash, hash, hash, hash, hash, storageRootName)
 	if err != nil {

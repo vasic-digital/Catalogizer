@@ -5,6 +5,8 @@ import (
 	"testing"
 	"time"
 
+	"catalogizer/database"
+
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
@@ -15,7 +17,9 @@ import (
 // Mock implementations for testing - not needed with real services
 func createTestReaderService() *services.ReaderService {
 	// Create in-memory database for testing
-	db := SetupTestDB(nil)
+	sqlDB := SetupTestDB(nil)
+
+	db := database.WrapDB(sqlDB, database.DialectSQLite)
 
 	// Create required schema for ReaderService
 	schema := `
@@ -101,7 +105,7 @@ func createTestReaderService() *services.ReaderService {
 	);
 	`
 
-	if _, err := db.Exec(schema); err != nil {
+	if _, err := sqlDB.Exec(schema); err != nil {
 		panic(err)
 	}
 

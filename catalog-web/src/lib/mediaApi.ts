@@ -5,7 +5,15 @@ import type {
   MediaSearchResponse,
   ExternalMetadata,
   QualityInfo,
-  StorageRoot
+  StorageRoot,
+  MediaEntity,
+  MediaEntityDetail,
+  MediaTypeInfo,
+  EntityListResponse,
+  EntityStatsResponse,
+  EntityFile,
+  EntityUserMetadata,
+  EntityExternalMetadata,
 } from '@/types/media'
 
 export const mediaApi = {
@@ -96,6 +104,54 @@ export const mediaApi = {
     link.parentNode?.removeChild(link)
     window.URL.revokeObjectURL(url)
   },
+}
+
+// --- Entity API (structured media browsing) ---
+
+export const entityApi = {
+  getEntities: (params: {
+    query?: string
+    type?: string
+    limit?: number
+    offset?: number
+  }): Promise<EntityListResponse> =>
+    api.get('/entities', { params }).then((res) => res.data),
+
+  getEntity: (id: number): Promise<MediaEntityDetail> =>
+    api.get(`/entities/${id}`).then((res) => res.data),
+
+  getEntityChildren: (id: number, params?: {
+    limit?: number
+    offset?: number
+  }): Promise<EntityListResponse> =>
+    api.get(`/entities/${id}/children`, { params }).then((res) => res.data),
+
+  getEntityFiles: (id: number): Promise<{ files: EntityFile[]; total: number }> =>
+    api.get(`/entities/${id}/files`).then((res) => res.data),
+
+  getEntityMetadata: (id: number): Promise<{ metadata: EntityExternalMetadata[] }> =>
+    api.get(`/entities/${id}/metadata`).then((res) => res.data),
+
+  getEntityDuplicates: (id: number): Promise<{ duplicates: MediaEntity[]; total: number }> =>
+    api.get(`/entities/${id}/duplicates`).then((res) => res.data),
+
+  getEntityTypes: (): Promise<{ types: MediaTypeInfo[] }> =>
+    api.get('/entities/types').then((res) => res.data),
+
+  browseByType: (type: string, params?: {
+    limit?: number
+    offset?: number
+  }): Promise<EntityListResponse & { type: string }> =>
+    api.get(`/entities/browse/${type}`, { params }).then((res) => res.data),
+
+  getEntityStats: (): Promise<EntityStatsResponse> =>
+    api.get('/entities/stats').then((res) => res.data),
+
+  refreshEntityMetadata: (id: number): Promise<{ message: string; entity_id: number }> =>
+    api.post(`/entities/${id}/metadata/refresh`).then((res) => res.data),
+
+  updateUserMetadata: (id: number, data: EntityUserMetadata): Promise<{ message: string }> =>
+    api.put(`/entities/${id}/user-metadata`, data).then((res) => res.data),
 }
 
 export default mediaApi

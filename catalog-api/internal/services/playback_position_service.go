@@ -6,11 +6,13 @@ import (
 	"fmt"
 	"time"
 
+	"catalogizer/database"
+
 	"go.uber.org/zap"
 )
 
 type PlaybackPositionService struct {
-	db     *sql.DB
+	db     *database.DB
 	logger *zap.Logger
 }
 
@@ -100,7 +102,7 @@ type ArtistStats struct {
 	Duration int64  `json:"duration"`
 }
 
-func NewPlaybackPositionService(db *sql.DB, logger *zap.Logger) *PlaybackPositionService {
+func NewPlaybackPositionService(db *database.DB, logger *zap.Logger) *PlaybackPositionService {
 	return &PlaybackPositionService{
 		db:     db,
 		logger: logger,
@@ -239,7 +241,7 @@ func (s *PlaybackPositionService) CreateBookmark(ctx context.Context, req *Bookm
 	`
 
 	var bookmark PlaybackBookmark
-	result, err := s.db.ExecContext(ctx, query,
+	bookmarkID, err := s.db.InsertReturningID(ctx, query,
 		req.UserID, req.MediaItemID, req.Position, req.Name, req.Description)
 
 	if err != nil {
@@ -247,7 +249,6 @@ func (s *PlaybackPositionService) CreateBookmark(ctx context.Context, req *Bookm
 		return nil, fmt.Errorf("failed to create bookmark: %w", err)
 	}
 
-	bookmarkID, _ := result.LastInsertId()
 	bookmark.ID = bookmarkID
 	bookmark.CreatedAt = time.Now()
 
@@ -440,15 +441,20 @@ func (s *PlaybackPositionService) getRecentlyWatched(ctx context.Context, req *P
 }
 
 func (s *PlaybackPositionService) getPlaybackByHour(ctx context.Context, req *PlaybackStatsRequest, stats *PlaybackStats) error {
-	query := `
+	hourExpr := "CAST(strftime('%H', start_time) AS INTEGER)"
+	if s.db.Dialect().IsPostgres() {
+		hourExpr = "EXTRACT(HOUR FROM start_time)::INTEGER"
+	}
+
+	query := fmt.Sprintf(`
 		SELECT
-			CAST(strftime('%H', start_time) AS INTEGER) as hour,
+			%s as hour,
 			COUNT(*) as count
 		FROM playback_history
 		WHERE user_id = ?
-		GROUP BY strftime('%H', start_time)
+		GROUP BY %s
 		ORDER BY hour
-	`
+	`, hourExpr, hourExpr)
 
 	rows, err := s.db.QueryContext(ctx, query, req.UserID)
 	if err != nil {

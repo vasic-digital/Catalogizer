@@ -8,6 +8,8 @@ import (
 	"sync"
 	"time"
 
+	"catalogizer/database"
+
 	"go.uber.org/zap"
 )
 
@@ -40,7 +42,7 @@ const maxPendingMoves = 10000 // prevent unbounded map growth
 
 // RenameTracker efficiently detects and handles file/directory renames
 type RenameTracker struct {
-	db              *sql.DB
+	db              *database.DB
 	logger          *zap.Logger
 	PendingMoves    map[string]*PendingMove // key: storageRoot:hash:size
 	PendingMovesMu  sync.RWMutex
@@ -51,7 +53,7 @@ type RenameTracker struct {
 }
 
 // NewRenameTracker creates a new rename tracker
-func NewRenameTracker(db *sql.DB, logger *zap.Logger) *RenameTracker {
+func NewRenameTracker(db *database.DB, logger *zap.Logger) *RenameTracker {
 	return &RenameTracker{
 		db:              db,
 		logger:          logger,
@@ -155,7 +157,7 @@ func (rt *RenameTracker) ProcessMove(ctx context.Context, oldMove *PendingMove, 
 	defer tx.Rollback()
 
 	// Record the rename event
-	renameEventID, err := rt.recordRenameEvent(tx, oldMove, newPath)
+	renameEventID, err := rt.recordRenameEvent(ctx, tx, oldMove, newPath)
 	if err != nil {
 		return fmt.Errorf("failed to record rename event: %w", err)
 	}
@@ -302,19 +304,14 @@ func (rt *RenameTracker) moveDirectory(tx *sql.Tx, oldPath, newPath, storageRoot
 }
 
 // recordRenameEvent creates a record of the rename operation
-func (rt *RenameTracker) recordRenameEvent(tx *sql.Tx, oldMove *PendingMove, newPath string) (int64, error) {
+func (rt *RenameTracker) recordRenameEvent(ctx context.Context, tx *sql.Tx, oldMove *PendingMove, newPath string) (int64, error) {
 	query := `
 		INSERT INTO rename_events (storage_root_id, old_path, new_path, is_directory, size, file_hash, detected_at, status)
 		VALUES ((SELECT id FROM storage_roots WHERE name = ?), ?, ?, ?, ?, ?, ?, 'pending')`
 
-	result, err := tx.Exec(query, oldMove.StorageRoot, oldMove.Path, newPath, oldMove.IsDirectory, oldMove.Size, oldMove.FileHash, time.Now())
+	id, err := rt.db.TxInsertReturningID(ctx, tx, query, oldMove.StorageRoot, oldMove.Path, newPath, oldMove.IsDirectory, oldMove.Size, oldMove.FileHash, time.Now())
 	if err != nil {
 		return 0, fmt.Errorf("failed to insert rename event: %w", err)
-	}
-
-	id, err := result.LastInsertId()
-	if err != nil {
-		return 0, fmt.Errorf("failed to get rename event ID: %w", err)
 	}
 
 	return id, nil

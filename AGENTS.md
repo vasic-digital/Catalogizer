@@ -291,6 +291,44 @@ ViewModel Layer
 Data Layer (Repository)
 ```
 
+### Media Entity Architecture
+
+The system transforms flat scanned files into structured media entities through a pipeline:
+
+```
+Scan Pipeline (UniversalScanner)
+       ↓ (post-scan hook)
+Aggregation Service
+  ├── Title Parser (regex-based media type detection)
+  ├── MediaItem creation/update
+  ├── MediaFile linking (junction table)
+  ├── DirectoryAnalysis storage
+  └── TV hierarchy builder (show → season → episode)
+       ↓
+Entity API (/api/v1/entities)
+       ↓
+Entity Browser UI (/browse, /entity/:id)
+```
+
+**Supported Entity Types**: movie, tv_show, tv_season, tv_episode, music_artist, music_album, song, game, software, book, comic (11 seeded in media_types table)
+
+**Key tables (migration v8)**: media_types, media_items (with parent_id self-ref for hierarchy), media_files (junction), media_collections, external_metadata, user_metadata, directory_analyses, detection_rules
+
+**Entity constraints**:
+- All scanned files MUST be associated with a recognized media entity after aggregation
+- Entity API endpoints MUST return real data from the database
+- All entity types MUST support browsing, search, metadata, and playback/download
+- Entity hierarchy navigation: TV Show → seasons → episodes, Music Artist → albums → songs
+
+**Key files**:
+- `repository/media_item_repository.go` — entity CRUD, search, duplicates, hierarchy
+- `repository/media_file_repository.go` — file-entity linking
+- `internal/services/aggregation_service.go` — post-scan entity creation
+- `internal/services/title_parser.go` — regex parsers for all media types
+- `handlers/media_entity_handler.go` — entity browsing API endpoints
+- `catalog-web/src/pages/EntityBrowser.tsx` — frontend type selector + entity grid
+- `catalog-web/src/pages/EntityDetail.tsx` — entity detail with hierarchy navigation
+
 ## Code Organization & Conventions
 
 ### Go Backend
@@ -344,6 +382,39 @@ Data Layer (Repository)
 **All builds and services MUST use containers.** Never build or run services directly on the host machine. Always use the containerized approach: `podman run --network host` for single-container builds, `podman-compose` for multi-service environments. Nothing — builds, tests, service execution — should be executed directly on the host. The builder container has all required toolchains (Go, Node, Rust, JDK, Android SDK). Use Podman as the container runtime (Docker is not available).
 
 **GitHub Actions are PERMANENTLY DISABLED.** Do NOT create any GitHub Actions workflow files. CI/CD, security scanning, and automated builds must be run locally in containers.
+
+**CRITICAL: Host Resource Limits (30-40% Maximum).** The host machine runs other mission-critical processes. All tests, challenges, builds, and container workloads MUST be strictly limited to 30-40% of total host resources. Exceeding this limit can freeze the entire system, requiring a hard reset. Apply these limits:
+
+- **Go tests**: `GOMAXPROCS=3 go test ./... -p 2 -parallel 2` (max 3 OS threads, 2 packages at a time, 2 parallel tests per package)
+- **Container CPU/memory limits** (mandatory for all `podman run`):
+  - PostgreSQL: `--cpus=1 --memory=2g`
+  - API server: `--cpus=2 --memory=4g`
+  - Web frontend: `--cpus=1 --memory=2g`
+  - Builder: `--cpus=3 --memory=8g`
+- **Challenges**: Run sequentially via the API, never in parallel
+- **Total container budget**: max 4 CPUs, 8 GB RAM across all running containers
+- **Monitor**: Use `podman stats --no-stream` and `cat /proc/loadavg` to verify resource usage stays within bounds
+
+**CRITICAL: HTTP/3 (QUIC) with Brotli Compression (Mandatory).** All network communication in every component of the system MUST use HTTP/3 (QUIC) as the primary protocol with Brotli compression as the default content encoding. HTTP/2 with gzip compression is the only acceptable fallback (when HTTP/3 is unavailable). HTTP/1.1 must never be used in production (development/debugging only). This applies to:
+
+- **catalog-api (Go)**: QUIC-enabled server (e.g., `quic-go`) + Brotli middleware
+- **catalog-web (React)**: Serve via HTTP/3-capable reverse proxy, Brotli-compressed static assets
+- **catalogizer-desktop / installer-wizard (Tauri)**: HTTP/3 client for API calls
+- **catalogizer-android / catalogizer-androidtv**: OkHttp with HTTP/3 (Cronet) + Brotli
+- **catalogizer-api-client (TS)**: HTTP/3-capable client with Brotli Accept-Encoding
+- **Reverse proxy / Load balancer**: Must terminate HTTP/3 and negotiate Brotli, with HTTP/2+gzip fallback
+
+## Challenge Execution Policy
+
+**All challenge operations MUST be executed exclusively by system deliverables (compiled binaries) — the catalog-api service and other Catalogizer applications.** Challenges interact with the system through the running services' REST API, exactly as an end user would. This means:
+
+- Scanning is triggered via `POST /api/v1/scans` on the running catalog-api service
+- Storage roots are created via `POST /api/v1/storage/roots` on the running catalog-api service
+- All data population and verification goes through the live API endpoints
+- **Never** use custom scripts, curl commands, or third-party tools to trigger API endpoints within challenge `Execute()` methods
+- The challenge code calls the API using the built-in `APIClient` (in `challenges/browsing_helper.go`), which is part of the catalog-api binary itself
+
+This ensures that challenges validate the real system behavior end-to-end, not a synthetic test harness.
 
 ## Important Gotchas
 

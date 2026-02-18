@@ -1,8 +1,8 @@
 package services
 
 import (
+	"catalogizer/database"
 	"context"
-	"database/sql"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -10,7 +10,7 @@ import (
 )
 
 func TestNewLocalizationService(t *testing.T) {
-	var mockDB *sql.DB
+	mockDB := database.WrapDB(nil, database.DialectSQLite)
 	mockLogger := zap.NewNop()
 
 	service := NewLocalizationService(mockDB, mockLogger, nil, nil)
@@ -19,7 +19,7 @@ func TestNewLocalizationService(t *testing.T) {
 }
 
 func TestLocalizationService_IsLanguageSupported(t *testing.T) {
-	var mockDB *sql.DB
+	mockDB := database.WrapDB(nil, database.DialectSQLite)
 	mockLogger := zap.NewNop()
 	service := NewLocalizationService(mockDB, mockLogger, nil, nil)
 
@@ -82,7 +82,7 @@ func TestLocalizationService_IsLanguageSupported(t *testing.T) {
 }
 
 func TestLocalizationService_DetectUserLanguage(t *testing.T) {
-	var mockDB *sql.DB
+	mockDB := database.WrapDB(nil, database.DialectSQLite)
 	mockLogger := zap.NewNop()
 	service := NewLocalizationService(mockDB, mockLogger, nil, nil)
 
@@ -133,7 +133,7 @@ func TestLocalizationService_DetectUserLanguage(t *testing.T) {
 }
 
 func TestLocalizationService_GetWizardDefaults(t *testing.T) {
-	var mockDB *sql.DB
+	mockDB := database.WrapDB(nil, database.DialectSQLite)
 	mockLogger := zap.NewNop()
 	service := NewLocalizationService(mockDB, mockLogger, nil, nil)
 
@@ -177,7 +177,7 @@ func TestLocalizationService_GetWizardDefaults(t *testing.T) {
 }
 
 func TestLocalizationService_GetDefaultDateFormat(t *testing.T) {
-	var mockDB *sql.DB
+	mockDB := database.WrapDB(nil, database.DialectSQLite)
 	mockLogger := zap.NewNop()
 	service := NewLocalizationService(mockDB, mockLogger, nil, nil)
 
@@ -212,7 +212,7 @@ func TestLocalizationService_GetDefaultDateFormat(t *testing.T) {
 }
 
 func TestLocalizationService_GetDefaultTimeFormat(t *testing.T) {
-	var mockDB *sql.DB
+	mockDB := database.WrapDB(nil, database.DialectSQLite)
 	mockLogger := zap.NewNop()
 	service := NewLocalizationService(mockDB, mockLogger, nil, nil)
 
@@ -242,7 +242,7 @@ func TestLocalizationService_GetDefaultTimeFormat(t *testing.T) {
 }
 
 func TestLocalizationService_GetDefaultCurrency(t *testing.T) {
-	var mockDB *sql.DB
+	mockDB := database.WrapDB(nil, database.DialectSQLite)
 	mockLogger := zap.NewNop()
 	service := NewLocalizationService(mockDB, mockLogger, nil, nil)
 
@@ -287,7 +287,7 @@ func TestLocalizationService_GetDefaultCurrency(t *testing.T) {
 }
 
 func TestLocalizationService_ValidateConfiguration(t *testing.T) {
-	var mockDB *sql.DB
+	mockDB := database.WrapDB(nil, database.DialectSQLite)
 	mockLogger := zap.NewNop()
 	service := NewLocalizationService(mockDB, mockLogger, nil, nil)
 

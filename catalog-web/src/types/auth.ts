@@ -1,12 +1,24 @@
+export interface Role {
+  id: number
+  name: string
+  description: string
+  permissions: string[]
+  is_system: boolean
+  created_at: string
+  updated_at: string
+}
+
 export interface User {
   id: number
   username: string
   email: string
   first_name: string
   last_name: string
-  role: string
+  role_id: number
+  role: Role | null
+  display_name?: string
   is_active: boolean
-  last_login?: string
+  last_login_at?: string
   created_at: string
   updated_at: string
   permissions?: string[]
@@ -32,9 +44,9 @@ export interface LoginRequest {
 
 export interface LoginResponse {
   user: User
-  token: string
+  session_token: string
   refresh_token: string
-  expires_in: number
+  expires_at: string
 }
 
 export interface RegisterRequest {

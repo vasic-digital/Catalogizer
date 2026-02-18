@@ -5,7 +5,9 @@ import (
 	"testing"
 	"time"
 
-	_ "github.com/mattn/go-sqlite3"
+	"catalogizer/database"
+
+	_ "github.com/mutecomm/go-sqlcipher"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"go.uber.org/zap"
@@ -15,9 +17,10 @@ import (
 // setupRealDBService creates an AuthService backed by an in-memory SQLite database.
 func setupRealDBService(t *testing.T) *AuthService {
 	t.Helper()
-	db, err := sql.Open("sqlite3", ":memory:")
+	sqlDB, err := sql.Open("sqlite3", ":memory:")
 	require.NoError(t, err)
 
+	db := database.WrapDB(sqlDB, database.DialectSQLite)
 	logger := zap.NewNop()
 	service := NewAuthService(db, "test-jwt-secret-key", logger)
 	err = service.Initialize()
@@ -111,10 +114,11 @@ func TestTokenGeneration_ClaimsContainCorrectData(t *testing.T) {
 
 // TestTokenValidation_WrongSecret verifies that a token signed with a different secret is rejected.
 func TestTokenValidation_WrongSecret(t *testing.T) {
-	db, err := sql.Open("sqlite3", ":memory:")
+	sqlDB, err := sql.Open("sqlite3", ":memory:")
 	require.NoError(t, err)
-	defer db.Close()
+	defer sqlDB.Close()
 
+	db := database.WrapDB(sqlDB, database.DialectSQLite)
 	logger := zap.NewNop()
 	service1 := NewAuthService(db, "secret-one", logger)
 	service2 := NewAuthService(db, "secret-two", logger)

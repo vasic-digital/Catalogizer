@@ -6,6 +6,8 @@ import (
 	"net/http/httptest"
 	"testing"
 
+	"catalogizer/database"
+
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"go.uber.org/zap"
@@ -26,9 +28,11 @@ func TestMediaRecognitionService_Movies(t *testing.T) {
 	}()
 
 	// Create in-memory database
-	db, err := sql.Open("sqlite3", ":memory:")
+	sqlDB, err := sql.Open("sqlite3", ":memory:")
 	require.NoError(t, err)
-	defer db.Close()
+	defer sqlDB.Close()
+
+	db := database.WrapDB(sqlDB, database.DialectSQLite)
 
 	// Create logger
 	logger, _ := zap.NewDevelopment()
@@ -110,9 +114,11 @@ func TestMediaRecognitionService_Music(t *testing.T) {
 	ctx := context.Background()
 
 	// Create in-memory database
-	db, err := sql.Open("sqlite3", ":memory:")
+	sqlDB, err := sql.Open("sqlite3", ":memory:")
 	require.NoError(t, err)
-	defer db.Close()
+	defer sqlDB.Close()
+
+	db := database.WrapDB(sqlDB, database.DialectSQLite)
 
 	// Create logger
 	logger, _ := zap.NewDevelopment()
@@ -194,9 +200,11 @@ func TestMediaRecognitionService_ErrorCases(t *testing.T) {
 	ctx := context.Background()
 
 	// Create in-memory database
-	db, err := sql.Open("sqlite3", ":memory:")
+	sqlDB, err := sql.Open("sqlite3", ":memory:")
 	require.NoError(t, err)
-	defer db.Close()
+	defer sqlDB.Close()
+
+	db := database.WrapDB(sqlDB, database.DialectSQLite)
 
 	// Create logger
 	logger, _ := zap.NewDevelopment()
@@ -256,9 +264,11 @@ func TestMediaRecognitionService_Cache(t *testing.T) {
 	ctx := context.Background()
 
 	// Create in-memory database
-	db, err := sql.Open("sqlite3", ":memory:")
+	sqlDB, err := sql.Open("sqlite3", ":memory:")
 	require.NoError(t, err)
-	defer db.Close()
+	defer sqlDB.Close()
+
+	db := database.WrapDB(sqlDB, database.DialectSQLite)
 
 	// Create logger
 	logger, _ := zap.NewDevelopment()

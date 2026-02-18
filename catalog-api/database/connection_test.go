@@ -145,6 +145,43 @@ func TestHealthCheckTimeout(t *testing.T) {
 	cancel()
 }
 
+// TestRewriteBooleanLiterals tests the PostgreSQL boolean literal rewriter
+func TestRewriteBooleanLiterals(t *testing.T) {
+	pg := Dialect{Type: DialectPostgres}
+	sq := Dialect{Type: DialectSQLite}
+
+	tests := []struct {
+		name   string
+		input  string
+		expect string
+	}{
+		{"WHERE deleted = 0", "SELECT * FROM files WHERE deleted = 0", "SELECT * FROM files WHERE deleted = FALSE"},
+		{"WHERE deleted = 1", "SELECT * FROM files WHERE deleted = 1", "SELECT * FROM files WHERE deleted = TRUE"},
+		{"SET is_active = 0", "UPDATE users SET is_active = 0 WHERE id = 1", "UPDATE users SET is_active = FALSE WHERE id = 1"},
+		{"SET is_active = 1", "UPDATE users SET is_active = 1 WHERE id = 1", "UPDATE users SET is_active = TRUE WHERE id = 1"},
+		{"SET is_locked = 1", "UPDATE users SET is_locked = 1 WHERE id = 5", "UPDATE users SET is_locked = TRUE WHERE id = 5"},
+		{"SET is_locked = 0", "UPDATE users SET is_locked = 0, locked_until = NULL WHERE id = 5", "UPDATE users SET is_locked = FALSE, locked_until = NULL WHERE id = 5"},
+		{"multiple booleans", "SELECT * FROM files WHERE is_directory = 1 AND deleted = 0", "SELECT * FROM files WHERE is_directory = TRUE AND deleted = FALSE"},
+		{"no match for non-boolean", "SELECT * FROM files WHERE role_id = 1", "SELECT * FROM files WHERE role_id = 1"},
+		{"no match for COUNT", "SELECT COUNT(*) WHERE file_count = 0", "SELECT COUNT(*) WHERE file_count = 0"},
+		{"enabled column", "WHERE enabled = 1 AND max_depth = 10", "WHERE enabled = TRUE AND max_depth = 10"},
+		{"is_duplicate", "WHERE is_duplicate = 1 AND deleted = 0", "WHERE is_duplicate = TRUE AND deleted = FALSE"},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got := pg.RewriteBooleanLiterals(tt.input)
+			assert.Equal(t, tt.expect, got)
+		})
+	}
+
+	// SQLite should pass through unchanged
+	t.Run("sqlite passthrough", func(t *testing.T) {
+		input := "SELECT * FROM files WHERE deleted = 0 AND is_active = 1"
+		assert.Equal(t, input, sq.RewriteBooleanLiterals(input))
+	})
+}
+
 // TestConnectionClose tests proper connection cleanup
 func TestConnectionClose(t *testing.T) {
 	// Create a temporary database file

@@ -10,11 +10,13 @@ import (
 	"strings"
 	"time"
 
+	"catalogizer/database"
+
 	"go.uber.org/zap"
 )
 
 type MusicPlayerService struct {
-	db                 *sql.DB
+	db                 *database.DB
 	logger             *zap.Logger
 	mediaPlayerService *MediaPlayerService
 	playlistService    *PlaylistService
@@ -244,7 +246,7 @@ type QueueRequest struct {
 }
 
 func NewMusicPlayerService(
-	db *sql.DB,
+	db *database.DB,
 	logger *zap.Logger,
 	mediaPlayerService *MediaPlayerService,
 	playlistService *PlaylistService,

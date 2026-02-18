@@ -90,14 +90,14 @@ func (suite *RecommendationTestSuite) SetupSuite() {
 	logger, _ := zap.NewDevelopment()
 	
 	// Initialize services
-	mediaRecognitionService := services.NewMediaRecognitionService(db.DB, logger, nil, nil, "", "", "", "", "", "")
-	duplicateDetectionService := services.NewDuplicateDetectionService(db.DB, logger, nil)
+	mediaRecognitionService := services.NewMediaRecognitionService(db, logger, nil, nil, "", "", "", "", "", "")
+	duplicateDetectionService := services.NewDuplicateDetectionService(db, logger, nil)
 	fileRepository := root_repository.NewFileRepository(db)
 	recommendationService := services.NewRecommendationService(
 		mediaRecognitionService,
 		duplicateDetectionService,
 		fileRepository,
-		db.DB,
+		db,
 	)
 	
 	// Create handlers

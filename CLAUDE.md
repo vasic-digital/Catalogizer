@@ -14,7 +14,7 @@ Reusable functionality is extracted into independent git submodules under the va
 
 | Module | Path | Description |
 |--------|------|-------------|
-| `digital.vasic.challenges` | `Challenges/` | Challenge framework: define, register, run, and report on structured test scenarios |
+| `digital.vasic.challenges` | `Challenges/` | Challenge framework: define, register, run, and report on structured test scenarios. Includes progress-based liveness detection (stale threshold) for long-running challenges |
 
 ### TypeScript/React Modules
 
@@ -90,7 +90,83 @@ podman-compose -f docker-compose.dev.yml up   # dev env
 
 **Tauri apps**: React frontend ↔ Rust backend via IPC commands/events.
 
-**Challenges**: `digital.vasic.challenges` framework integrated via `Challenges/` submodule. Challenges are Go structs embedding `challenge.BaseChallenge` with custom `Execute()`. Registered in `catalog-api/challenges/register.go`, exposed via `/api/v1/challenges` REST endpoints. Challenge bank definitions in `challenges/data/challenges_bank.json`.
+**Challenges**: `digital.vasic.challenges` framework integrated via `Challenges/` submodule. Challenges are Go structs embedding `challenge.BaseChallenge` with custom `Execute()`. Registered in `catalog-api/challenges/register.go`, exposed via `/api/v1/challenges` REST endpoints. Challenge bank definitions in `challenges/data/challenges_bank.json`. **All challenge operations MUST be executed exclusively by system deliverables (compiled binaries) — the catalog-api service and other Catalogizer applications. Never use custom scripts, curl commands, or third-party tools to trigger API endpoints within challenge execution. Scanning, storage root creation, and all other operations must go through the running services, exactly as an end user would.**
+
+## Media Entity System
+
+Scanned files are transformed into structured media entities via a post-scan aggregation pipeline:
+
+```
+UniversalScanner (scan completes)
+       ↓ (post-scan hook)
+AggregationService.AggregateAfterScan()
+  ├── Title parser (regex: movie, TV, music, game, software)
+  ├── MediaItem creation/update (media_items table)
+  ├── MediaFile linking (media_files junction table)
+  ├── Hierarchy builder (TV: show→season→episode, Music: artist→album→song)
+  └── Duplicate detection (same title + type + year)
+       ↓
+Entity API (/api/v1/entities)
+       ↓
+Entity Browser UI (/browse, /entity/:id)
+```
+
+**11 media types** (seeded in `media_types` table, migration v8): movie, tv_show, tv_season, tv_episode, music_artist, music_album, song, game, software, book, comic.
+
+**Entity tables** (migration v8): media_types, media_items (parent_id self-ref for hierarchy), media_files (junction to files), media_collections, media_collection_items, external_metadata, user_metadata, directory_analyses, detection_rules.
+
+### Entity API Endpoints
+
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| GET | `/api/v1/entities` | List entities with type filter, search, pagination |
+| GET | `/api/v1/entities/:id` | Entity detail with files, metadata, children |
+| GET | `/api/v1/entities/:id/children` | Child entities (episodes, songs) |
+| GET | `/api/v1/entities/:id/files` | File versions for entity |
+| GET | `/api/v1/entities/:id/metadata` | External metadata |
+| GET | `/api/v1/entities/:id/duplicates` | Duplicate entities |
+| GET | `/api/v1/entities/types` | Media types with counts |
+| GET | `/api/v1/entities/browse/:type` | Browse by type with pagination |
+| GET | `/api/v1/entities/stats` | Entity-level stats |
+| GET | `/api/v1/entities/duplicates` | Global duplicate groups |
+| GET | `/api/v1/entities/:id/stream` | Stream primary file |
+| GET | `/api/v1/entities/:id/download` | Download file |
+| POST | `/api/v1/entities/:id/metadata/refresh` | Trigger metadata refresh |
+| PUT | `/api/v1/entities/:id/user-metadata` | Update user rating/watched/favorite |
+
+### Key Entity Files
+
+| File | Role |
+|------|------|
+| `repository/media_item_repository.go` | Entity CRUD, search, hierarchy, duplicates |
+| `repository/media_file_repository.go` | File-entity linking |
+| `repository/duplicate_entity_repository.go` | Duplicate group queries |
+| `repository/external_metadata_repository.go` | External metadata CRUD |
+| `repository/user_metadata_repository.go` | User ratings, favorites |
+| `repository/directory_analysis_repository.go` | Detection result storage |
+| `internal/services/aggregation_service.go` | Post-scan entity creation |
+| `internal/services/title_parser.go` | Regex parsers for all media types |
+| `handlers/media_entity_handler.go` | Entity browsing API |
+| `internal/media/models/media.go` | All model structs |
+| `catalog-web/src/pages/EntityBrowser.tsx` | Frontend type selector + entity grid |
+| `catalog-web/src/pages/EntityDetail.tsx` | Entity detail with hierarchy navigation |
+
+### Entity Challenges
+
+| ID | Name | Validates |
+|----|------|-----------|
+| CH-016 | Entity Aggregation | Stats, types, listing after scan |
+| CH-017 | Entity Browsing | Filtered listing, detail, pagination |
+| CH-018 | Entity Metadata | External metadata, refresh, user metadata |
+| CH-019 | Entity Duplicates | Duplicate groups, per-entity duplicates |
+| CH-020 | Entity Hierarchy | TV show→seasons→episodes, album→songs |
+
+### Entity Constraints
+
+- All scanned files MUST be associated with a recognized media entity after aggregation
+- Entity API endpoints MUST return real data from the database
+- All entity types MUST support browsing, search, metadata, and playback/download
+- Entity hierarchy: parent_id self-reference (TV Show → seasons → episodes, Music Artist → albums → songs)
 
 ## Root Directory Structure (Mandatory Locations)
 
@@ -229,6 +305,67 @@ cd installer-wizard && npm run test -- --run
 - Go: `*_test.go` alongside source files
 - React/TS: `__tests__/*.test.tsx` or `*.test.ts` in same directory
 - Test helper in `catalog-api/internal/tests/test_helper.go` provides SQLite test database setup
+
+## Zero Warning / Zero Error Policy
+
+**All components must run with zero console warnings, zero console errors, and zero failed network requests.** This policy applies to every environment: development, container, and production.
+
+### Rules
+- **No browser console errors or warnings.** Every `console.error`, `console.warn`, and failed network request visible in browser DevTools is a defect that must be fixed.
+- **No unhandled API errors.** Every API endpoint the frontend calls must exist, return valid responses (2xx), and match the expected response shape. A 4xx or 5xx response from any endpoint used by the UI is a bug.
+- **No framework deprecation warnings.** React Router future flags, React strict mode warnings, and similar deprecation notices must be addressed proactively.
+- **No WebSocket connection failures.** The backend must expose all endpoints the frontend expects. If a feature is not yet implemented, provide a stub endpoint that returns a valid empty response.
+- **Challenges enforce this policy.** The challenge suite validates end-to-end system behavior: CH-001 to CH-007 validate NAS connectivity and content discovery, CH-008 populates the catalog database via the scan pipeline, CH-009 to CH-011 validate API endpoints and web app, CH-012 to CH-015 validate assets and database, and CH-016 to CH-020 validate the entity system (aggregation, browsing, metadata, duplicates, hierarchy). Challenges must fail if any endpoint returns an error.
+
+### How to Verify
+```bash
+# 1. Start services
+./scripts/services-up.sh
+
+# 2. Open http://localhost:3000 in browser
+# 3. Open browser DevTools (F12) → Console tab
+# 4. Login with admin / admin123
+# 5. Navigate to Media, Dashboard, Analytics, Admin pages
+# 6. Console must show ZERO errors and ZERO warnings
+# 7. Network tab must show ZERO failed (red) requests
+
+# 8. Run challenges to verify programmatically
+curl -s -X POST http://localhost:8080/api/v1/challenges/run \
+  -H "Authorization: Bearer <token>" \
+  -H "Content-Type: application/json" \
+  -d '{"challenge_id":"browsing-api-health"}'
+# All 20 challenges (CH-001 to CH-020) must pass
+```
+
+## CRITICAL: Host Resource Limits (30-40% Maximum)
+
+The host machine runs other mission-critical processes. All tests, challenges, builds, and container workloads MUST be strictly limited to 30-40% of total host resources. Exceeding this limit can freeze the entire system, requiring a hard reset. Apply these limits:
+
+- **Go tests**: `GOMAXPROCS=3 go test ./... -p 2 -parallel 2` (max 3 OS threads, 2 packages at a time, 2 parallel tests per package)
+- **Container CPU/memory limits** (mandatory for all `podman run`):
+  - PostgreSQL: `--cpus=1 --memory=2g`
+  - API server: `--cpus=2 --memory=4g`
+  - Web frontend: `--cpus=1 --memory=2g`
+  - Builder: `--cpus=3 --memory=8g`
+- **Challenges**: Run sequentially via the API, never in parallel
+- **Total container budget**: max 4 CPUs, 8 GB RAM across all running containers
+- **Monitor**: Use `podman stats --no-stream` and `cat /proc/loadavg` to verify resource usage stays within bounds
+
+## CRITICAL: HTTP/3 (QUIC) with Brotli Compression (Mandatory)
+
+All network communication in every component of the system MUST use **HTTP/3 (QUIC) as the primary protocol** with **Brotli compression** as the default content encoding. This applies to all API servers, web servers, reverse proxies, client libraries, and inter-service communication.
+
+- **Primary**: HTTP/3 (QUIC) + Brotli compression
+- **Fallback**: HTTP/2 + gzip compression (only when HTTP/3 is unavailable)
+- **Never**: HTTP/1.1 in production (development/debugging only)
+
+Implementation requirements:
+- **catalog-api (Go)**: Use QUIC-enabled server (e.g., `quic-go`), enable Brotli middleware
+- **catalog-web (React)**: Serve via HTTP/3-capable reverse proxy (nginx with QUIC or Caddy), Brotli-compressed static assets
+- **catalogizer-desktop / installer-wizard (Tauri)**: HTTP/3 client for API communication
+- **catalogizer-android / catalogizer-androidtv**: OkHttp with HTTP/3 (Cronet) + Brotli
+- **catalogizer-api-client (TS)**: HTTP/3-capable fetch/axios with Brotli Accept-Encoding
+- **Reverse proxy / Load balancer**: Must terminate HTTP/3 and negotiate Brotli, with HTTP/2+gzip fallback
 
 ## Conventions
 

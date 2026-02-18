@@ -1,18 +1,20 @@
 package repository
 
 import (
+	"context"
 	"database/sql"
 	"encoding/json"
 	"fmt"
 
+	"catalogizer/database"
 	"catalogizer/models"
 )
 
 type FavoritesRepository struct {
-	db *sql.DB
+	db *database.DB
 }
 
-func NewFavoritesRepository(db *sql.DB) *FavoritesRepository {
+func NewFavoritesRepository(db *database.DB) *FavoritesRepository {
 	return &FavoritesRepository{db: db}
 }
 
@@ -32,17 +34,12 @@ func (r *FavoritesRepository) CreateFavorite(favorite *models.Favorite) (int, er
 		tagsJSON = &tagsStr
 	}
 
-	result, err := r.db.Exec(query,
+	id, err := r.db.InsertReturningID(context.Background(), query,
 		favorite.UserID, favorite.EntityType, favorite.EntityID,
 		favorite.Category, favorite.Notes, tagsJSON, favorite.IsPublic, favorite.CreatedAt)
 
 	if err != nil {
 		return 0, fmt.Errorf("failed to create favorite: %w", err)
-	}
-
-	id, err := result.LastInsertId()
-	if err != nil {
-		return 0, fmt.Errorf("failed to get favorite ID: %w", err)
 	}
 
 	return int(id), nil
@@ -363,17 +360,12 @@ func (r *FavoritesRepository) CreateFavoriteCategory(category *models.FavoriteCa
 		VALUES (?, ?, ?, ?, ?, ?, ?)
 	`
 
-	result, err := r.db.Exec(query,
+	id, err := r.db.InsertReturningID(context.Background(), query,
 		category.UserID, category.Name, category.Description, category.Color,
 		category.Icon, category.IsPublic, category.CreatedAt)
 
 	if err != nil {
 		return 0, fmt.Errorf("failed to create favorite category: %w", err)
-	}
-
-	id, err := result.LastInsertId()
-	if err != nil {
-		return 0, fmt.Errorf("failed to get category ID: %w", err)
 	}
 
 	return int(id), nil
@@ -475,17 +467,12 @@ func (r *FavoritesRepository) CreateFavoriteShare(share *models.FavoriteShare) (
 		return 0, fmt.Errorf("failed to marshal permissions: %w", err)
 	}
 
-	result, err := r.db.Exec(query,
+	id, err := r.db.InsertReturningID(context.Background(), query,
 		share.FavoriteID, share.SharedByUser, string(sharedWithJSON),
 		string(permissionsJSON), share.CreatedAt, share.IsActive)
 
 	if err != nil {
 		return 0, fmt.Errorf("failed to create favorite share: %w", err)
-	}
-
-	id, err := result.LastInsertId()
-	if err != nil {
-		return 0, fmt.Errorf("failed to get share ID: %w", err)
 	}
 
 	return int(id), nil

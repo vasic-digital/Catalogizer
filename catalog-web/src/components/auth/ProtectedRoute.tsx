@@ -30,11 +30,11 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
     return <Navigate to="/login" state={{ from: location }} replace />
   }
 
-  if (requireAdmin && user?.role !== 'admin') {
+  if (requireAdmin && !(user?.role?.name === 'Admin' || user?.role_id === 1)) {
     return <Navigate to="/dashboard" replace />
   }
 
-  if (requiredRole && user?.role !== requiredRole) {
+  if (requiredRole && user?.role?.name !== requiredRole) {
     return <Navigate to="/dashboard" replace />
   }
 

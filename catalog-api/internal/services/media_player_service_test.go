@@ -1,7 +1,7 @@
 package services
 
 import (
-	"database/sql"
+	"catalogizer/database"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -9,7 +9,7 @@ import (
 )
 
 func TestNewMediaPlayerService(t *testing.T) {
-	var mockDB *sql.DB
+	mockDB := database.WrapDB(nil, database.DialectSQLite)
 	mockLogger := zap.NewNop()
 
 	service := NewMediaPlayerService(mockDB, mockLogger)
@@ -18,7 +18,7 @@ func TestNewMediaPlayerService(t *testing.T) {
 }
 
 func TestMediaPlayerService_GetSupportedMediaTypes(t *testing.T) {
-	var mockDB *sql.DB
+	mockDB := database.WrapDB(nil, database.DialectSQLite)
 	mockLogger := zap.NewNop()
 	service := NewMediaPlayerService(mockDB, mockLogger)
 
@@ -85,7 +85,7 @@ func TestGetMediaTypeFromExtension(t *testing.T) {
 }
 
 func TestMediaPlayerService_FindSubtitleByLanguage(t *testing.T) {
-	var mockDB *sql.DB
+	mockDB := database.WrapDB(nil, database.DialectSQLite)
 	mockLogger := zap.NewNop()
 	service := NewMediaPlayerService(mockDB, mockLogger)
 
@@ -131,7 +131,7 @@ func TestMediaPlayerService_FindSubtitleByLanguage(t *testing.T) {
 }
 
 func TestMediaPlayerService_FindSubtitleByID(t *testing.T) {
-	var mockDB *sql.DB
+	mockDB := database.WrapDB(nil, database.DialectSQLite)
 	mockLogger := zap.NewNop()
 	service := NewMediaPlayerService(mockDB, mockLogger)
 

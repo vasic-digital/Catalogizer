@@ -1,18 +1,20 @@
 package repository
 
 import (
+	"context"
 	"database/sql"
 	"fmt"
 	"time"
 
+	"catalogizer/database"
 	"catalogizer/models"
 )
 
 type ConversionRepository struct {
-	db *sql.DB
+	db *database.DB
 }
 
-func NewConversionRepository(db *sql.DB) *ConversionRepository {
+func NewConversionRepository(db *database.DB) *ConversionRepository {
 	return &ConversionRepository{db: db}
 }
 
@@ -23,18 +25,13 @@ func (r *ConversionRepository) CreateJob(job *models.ConversionJob) (int, error)
 		VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
 	`
 
-	result, err := r.db.Exec(query,
+	id, err := r.db.InsertReturningID(context.Background(), query,
 		job.UserID, job.SourcePath, job.TargetPath, job.SourceFormat, job.TargetFormat,
 		job.ConversionType, job.Quality, job.Settings, job.Priority, job.Status,
 		job.CreatedAt, job.ScheduledFor)
 
 	if err != nil {
 		return 0, fmt.Errorf("failed to create conversion job: %w", err)
-	}
-
-	id, err := result.LastInsertId()
-	if err != nil {
-		return 0, fmt.Errorf("failed to get job ID: %w", err)
 	}
 
 	return int(id), nil

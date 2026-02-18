@@ -1,7 +1,7 @@
 package services
 
 import (
-	"database/sql"
+	"catalogizer/database"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -9,7 +9,7 @@ import (
 )
 
 func TestNewUniversalRenameTracker(t *testing.T) {
-	var mockDB *sql.DB
+	mockDB := database.WrapDB(nil, database.DialectSQLite)
 	mockLogger := zap.NewNop()
 
 	tracker := NewUniversalRenameTracker(mockDB, mockLogger)
@@ -18,7 +18,7 @@ func TestNewUniversalRenameTracker(t *testing.T) {
 }
 
 func TestUniversalRenameTracker_RegisterProtocolHandler(t *testing.T) {
-	var mockDB *sql.DB
+	mockDB := database.WrapDB(nil, database.DialectSQLite)
 	mockLogger := zap.NewNop()
 	tracker := NewUniversalRenameTracker(mockDB, mockLogger)
 
@@ -36,7 +36,7 @@ func TestUniversalRenameTracker_RegisterProtocolHandler(t *testing.T) {
 }
 
 func TestUniversalRenameTracker_GetSupportedProtocols(t *testing.T) {
-	var mockDB *sql.DB
+	mockDB := database.WrapDB(nil, database.DialectSQLite)
 	mockLogger := zap.NewNop()
 	tracker := NewUniversalRenameTracker(mockDB, mockLogger)
 
@@ -57,7 +57,7 @@ func TestUniversalRenameTracker_GetSupportedProtocols(t *testing.T) {
 }
 
 func TestUniversalRenameTracker_CreateFallbackKey(t *testing.T) {
-	var mockDB *sql.DB
+	mockDB := database.WrapDB(nil, database.DialectSQLite)
 	mockLogger := zap.NewNop()
 	tracker := NewUniversalRenameTracker(mockDB, mockLogger)
 
@@ -106,7 +106,7 @@ func TestUniversalRenameTracker_CreateFallbackKey(t *testing.T) {
 }
 
 func TestUniversalRenameTracker_CreateFallbackKey_Uniqueness(t *testing.T) {
-	var mockDB *sql.DB
+	mockDB := database.WrapDB(nil, database.DialectSQLite)
 	mockLogger := zap.NewNop()
 	tracker := NewUniversalRenameTracker(mockDB, mockLogger)
 

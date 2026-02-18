@@ -1,6 +1,7 @@
 package services
 
 import (
+	"catalogizer/database"
 	"catalogizer/filesystem"
 	"context"
 	"database/sql"
@@ -14,7 +15,7 @@ import (
 
 // UniversalRenameTracker handles rename detection across all supported protocols
 type UniversalRenameTracker struct {
-	db               *sql.DB
+	db               *database.DB
 	logger           *zap.Logger
 	pendingMoves     map[string]*UniversalPendingMove // key: protocol:storageRoot:hash:size
 	pendingMovesMu   sync.RWMutex
@@ -57,7 +58,7 @@ type ProtocolHandler interface {
 }
 
 // NewUniversalRenameTracker creates a new universal rename tracker
-func NewUniversalRenameTracker(db *sql.DB, logger *zap.Logger) *UniversalRenameTracker {
+func NewUniversalRenameTracker(db *database.DB, logger *zap.Logger) *UniversalRenameTracker {
 	tracker := &UniversalRenameTracker{
 		db:               db,
 		logger:           logger,
@@ -220,7 +221,7 @@ func (rt *UniversalRenameTracker) ProcessMove(ctx context.Context, client filesy
 	defer tx.Rollback()
 
 	// Record the rename event
-	renameEventID, err := rt.recordUniversalRenameEvent(tx, oldMove, newPath)
+	renameEventID, err := rt.recordUniversalRenameEvent(ctx, tx, oldMove, newPath)
 	if err != nil {
 		return fmt.Errorf("failed to record rename event: %w", err)
 	}
@@ -363,19 +364,14 @@ func (rt *UniversalRenameTracker) moveDirectory(tx *sql.Tx, oldPath, newPath, st
 }
 
 // recordUniversalRenameEvent creates a record of the rename operation
-func (rt *UniversalRenameTracker) recordUniversalRenameEvent(tx *sql.Tx, oldMove *UniversalPendingMove, newPath string) (int64, error) {
+func (rt *UniversalRenameTracker) recordUniversalRenameEvent(ctx context.Context, tx *sql.Tx, oldMove *UniversalPendingMove, newPath string) (int64, error) {
 	query := `
 		INSERT INTO universal_rename_events (storage_root_id, protocol, old_path, new_path, is_directory, size, file_hash, detected_at, status)
 		VALUES ((SELECT id FROM storage_roots WHERE name = ?), ?, ?, ?, ?, ?, ?, ?, 'pending')`
 
-	result, err := tx.Exec(query, oldMove.StorageRoot, oldMove.Protocol, oldMove.Path, newPath, oldMove.IsDirectory, oldMove.Size, oldMove.FileHash, time.Now())
+	id, err := rt.db.TxInsertReturningID(ctx, tx, query, oldMove.StorageRoot, oldMove.Protocol, oldMove.Path, newPath, oldMove.IsDirectory, oldMove.Size, oldMove.FileHash, time.Now())
 	if err != nil {
 		return 0, fmt.Errorf("failed to insert universal rename event: %w", err)
-	}
-
-	id, err := result.LastInsertId()
-	if err != nil {
-		return 0, fmt.Errorf("failed to get rename event ID: %w", err)
 	}
 
 	return id, nil

@@ -6,7 +6,9 @@ import (
 	"net/http"
 	"testing"
 
-	_ "github.com/mattn/go-sqlite3"
+	"catalogizer/database"
+
+	_ "github.com/mutecomm/go-sqlcipher"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -16,12 +18,12 @@ import (
 // degraded status. When MaxOpenConns is 0 (the default / unlimited), the source
 // code compares OpenConnections >= MaxOpenConnections-1, which evaluates to
 // 1 >= -1 (true), incorrectly reporting degraded status.
-func openHealthyDB(t *testing.T) *sql.DB {
+func openHealthyDB(t *testing.T) *database.DB {
 	t.Helper()
-	db, err := sql.Open("sqlite3", ":memory:")
+	sqlDB, err := sql.Open("sqlite3", ":memory:")
 	require.NoError(t, err)
-	db.SetMaxOpenConns(10)
-	return db
+	sqlDB.SetMaxOpenConns(10)
+	return database.WrapDB(sqlDB, database.DialectSQLite)
 }
 
 func TestNewHealthChecker(t *testing.T) {
@@ -120,11 +122,11 @@ func TestCheckDatabase(t *testing.T) {
 	})
 
 	t.Run("closed db returns unhealthy", func(t *testing.T) {
-		db, err := sql.Open("sqlite3", ":memory:")
+		sqlDB, err := sql.Open("sqlite3", ":memory:")
 		require.NoError(t, err)
-		db.Close()
+		sqlDB.Close()
 
-		hc := NewHealthChecker(db, "1.0.0")
+		hc := NewHealthChecker(database.WrapDB(sqlDB, database.DialectSQLite), "1.0.0")
 		result := hc.checkDatabase(context.Background())
 
 		assert.Equal(t, HealthStatusUnhealthy, result.Status)
@@ -296,11 +298,11 @@ func TestReadinessProbe(t *testing.T) {
 	})
 
 	t.Run("returns 503 with closed db", func(t *testing.T) {
-		db, err := sql.Open("sqlite3", ":memory:")
+		sqlDB, err := sql.Open("sqlite3", ":memory:")
 		require.NoError(t, err)
-		db.Close()
+		sqlDB.Close()
 
-		hc := NewHealthChecker(db, "1.0.0")
+		hc := NewHealthChecker(database.WrapDB(sqlDB, database.DialectSQLite), "1.0.0")
 		assert.Equal(t, http.StatusServiceUnavailable, hc.ReadinessProbe(context.Background()))
 	})
 }

@@ -1,18 +1,20 @@
 package repository
 
 import (
+	"context"
 	"database/sql"
 	"fmt"
 	"time"
 
+	"catalogizer/database"
 	"catalogizer/models"
 )
 
 type SyncRepository struct {
-	db *sql.DB
+	db *database.DB
 }
 
-func NewSyncRepository(db *sql.DB) *SyncRepository {
+func NewSyncRepository(db *database.DB) *SyncRepository {
 	return &SyncRepository{db: db}
 }
 
@@ -23,18 +25,13 @@ func (r *SyncRepository) CreateEndpoint(endpoint *models.SyncEndpoint) (int, err
 		VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
 	`
 
-	result, err := r.db.Exec(query,
+	id, err := r.db.InsertReturningID(context.Background(), query,
 		endpoint.UserID, endpoint.Name, endpoint.Type, endpoint.URL, endpoint.Username,
 		endpoint.Password, endpoint.SyncDirection, endpoint.LocalPath, endpoint.RemotePath,
 		endpoint.SyncSettings, endpoint.Status, endpoint.CreatedAt, endpoint.UpdatedAt)
 
 	if err != nil {
 		return 0, fmt.Errorf("failed to create sync endpoint: %w", err)
-	}
-
-	id, err := result.LastInsertId()
-	if err != nil {
-		return 0, fmt.Errorf("failed to get endpoint ID: %w", err)
 	}
 
 	return int(id), nil
@@ -128,17 +125,12 @@ func (r *SyncRepository) CreateSession(session *models.SyncSession) (int, error)
 		VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
 	`
 
-	result, err := r.db.Exec(query,
+	id, err := r.db.InsertReturningID(context.Background(), query,
 		session.EndpointID, session.UserID, session.Status, session.SyncType, session.StartedAt,
 		session.TotalFiles, session.SyncedFiles, session.FailedFiles, session.SkippedFiles)
 
 	if err != nil {
 		return 0, fmt.Errorf("failed to create sync session: %w", err)
-	}
-
-	id, err := result.LastInsertId()
-	if err != nil {
-		return 0, fmt.Errorf("failed to get session ID: %w", err)
 	}
 
 	return int(id), nil
@@ -241,16 +233,11 @@ func (r *SyncRepository) CreateSchedule(schedule *models.SyncSchedule) (int, err
 		VALUES (?, ?, ?, ?, ?)
 	`
 
-	result, err := r.db.Exec(query,
+	id, err := r.db.InsertReturningID(context.Background(), query,
 		schedule.EndpointID, schedule.UserID, schedule.Frequency, schedule.IsActive, schedule.CreatedAt)
 
 	if err != nil {
 		return 0, fmt.Errorf("failed to create sync schedule: %w", err)
-	}
-
-	id, err := result.LastInsertId()
-	if err != nil {
-		return 0, fmt.Errorf("failed to get schedule ID: %w", err)
 	}
 
 	return int(id), nil

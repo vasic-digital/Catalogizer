@@ -1,19 +1,21 @@
 package repository
 
 import (
+	"context"
 	"database/sql"
 	"encoding/json"
 	"fmt"
 	"time"
 
+	"catalogizer/database"
 	"catalogizer/models"
 )
 
 type LogManagementRepository struct {
-	db *sql.DB
+	db *database.DB
 }
 
-func NewLogManagementRepository(db *sql.DB) *LogManagementRepository {
+func NewLogManagementRepository(db *database.DB) *LogManagementRepository {
 	return &LogManagementRepository{db: db}
 }
 
@@ -34,7 +36,7 @@ func (r *LogManagementRepository) CreateLogCollection(collection *models.LogColl
 			end_time, created_at, status, filters
 		) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
 
-	result, err := r.db.Exec(query,
+	id, err := r.db.InsertReturningID(context.Background(), query,
 		collection.UserID, collection.Name, collection.Description,
 		string(componentsJSON), collection.LogLevel, collection.StartTime,
 		collection.EndTime, collection.CreatedAt, collection.Status,
@@ -42,11 +44,6 @@ func (r *LogManagementRepository) CreateLogCollection(collection *models.LogColl
 
 	if err != nil {
 		return fmt.Errorf("failed to create log collection: %w", err)
-	}
-
-	id, err := result.LastInsertId()
-	if err != nil {
-		return fmt.Errorf("failed to get last insert ID: %w", err)
 	}
 
 	collection.ID = int(id)
@@ -206,17 +203,12 @@ func (r *LogManagementRepository) CreateLogEntry(entry *models.LogEntry) error {
 			collection_id, timestamp, level, component, message, context
 		) VALUES (?, ?, ?, ?, ?, ?)`
 
-	result, err := r.db.Exec(query,
+	id, err := r.db.InsertReturningID(context.Background(), query,
 		entry.CollectionID, entry.Timestamp, entry.Level,
 		entry.Component, entry.Message, string(contextJSON))
 
 	if err != nil {
 		return fmt.Errorf("failed to create log entry: %w", err)
-	}
-
-	id, err := result.LastInsertId()
-	if err != nil {
-		return fmt.Errorf("failed to get last insert ID: %w", err)
 	}
 
 	entry.ID = int(id)
@@ -362,18 +354,13 @@ func (r *LogManagementRepository) CreateLogShare(share *models.LogShare) error {
 			created_at, is_active, permissions, recipients
 		) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`
 
-	result, err := r.db.Exec(query,
+	id, err := r.db.InsertReturningID(context.Background(), query,
 		share.CollectionID, share.UserID, share.ShareToken, share.ShareType,
 		share.ExpiresAt, share.CreatedAt, share.IsActive,
 		string(permissionsJSON), string(recipientsJSON))
 
 	if err != nil {
 		return fmt.Errorf("failed to create log share: %w", err)
-	}
-
-	id, err := result.LastInsertId()
-	if err != nil {
-		return fmt.Errorf("failed to get last insert ID: %w", err)
 	}
 
 	share.ID = int(id)

@@ -68,7 +68,7 @@ func (c *DirectoryDiscoveryChallenge) Execute(ctx context.Context) (*challenge.R
 			Expected: fmt.Sprintf("directory '%s' exists", dir.Path),
 			Actual:   fmt.Sprintf("exists=%v", dirExists),
 			Passed:   dirExists,
-			Message:  ternary(dirExists, fmt.Sprintf("Directory '%s' exists", dir.Path), fmt.Sprintf("Directory '%s' not found: %v", dir.Path, err)),
+			Message:  challenge.Ternary(dirExists, fmt.Sprintf("Directory '%s' exists", dir.Path), fmt.Sprintf("Directory '%s' not found: %v", dir.Path, err)),
 		})
 
 		if !dirExists {
@@ -85,7 +85,7 @@ func (c *DirectoryDiscoveryChallenge) Execute(ctx context.Context) (*challenge.R
 			Expected: "> 0",
 			Actual:   fmt.Sprintf("%d", entryCount),
 			Passed:   readable,
-			Message:  ternary(readable, fmt.Sprintf("Directory '%s' has %d entries", dir.Path, entryCount), fmt.Sprintf("Directory '%s' empty or unreadable: entries=%d, err=%v", dir.Path, entryCount, err)),
+			Message:  challenge.Ternary(readable, fmt.Sprintf("Directory '%s' has %d entries", dir.Path, entryCount), fmt.Sprintf("Directory '%s' empty or unreadable: entries=%d, err=%v", dir.Path, entryCount, err)),
 		})
 
 		outputs[fmt.Sprintf("%s_entry_count", dir.ContentType)] = fmt.Sprintf("%d", entryCount)

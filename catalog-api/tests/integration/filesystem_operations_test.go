@@ -8,6 +8,7 @@ import (
 	"testing"
 	"time"
 
+	catalogdb "catalogizer/database"
 	"catalogizer/internal/media/database"
 	"catalogizer/internal/media/realtime"
 	"catalogizer/internal/services"
@@ -51,7 +52,7 @@ func TestFilesystemOperationsIntegration(t *testing.T) {
 	}
 
 	// Create rename tracker
-	renameTracker := services.NewRenameTracker(mediaDB.GetDB(), logger)
+	renameTracker := services.NewRenameTracker(catalogdb.WrapDB(mediaDB.GetDB(), catalogdb.DialectSQLite), logger)
 	if err := renameTracker.Start(); err != nil {
 		t.Fatalf("Failed to start rename tracker: %v", err)
 	}

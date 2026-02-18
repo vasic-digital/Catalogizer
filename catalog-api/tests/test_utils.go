@@ -14,6 +14,7 @@ import (
 	"testing"
 	"time"
 
+	"catalogizer/database"
 	"catalogizer/models"
 	"catalogizer/repository"
 	"catalogizer/services"
@@ -23,7 +24,7 @@ import (
 
 // TestDatabase represents a test database instance
 type TestDatabase struct {
-	DB   *sql.DB
+	DB   *database.DB
 	Path string
 }
 
@@ -57,13 +58,15 @@ func SetupTestDatabase(t *testing.T) *TestDatabase {
 	tempDir := t.TempDir()
 	dbPath := filepath.Join(tempDir, "test.db")
 
-	db, err := sql.Open("sqlite3", dbPath)
+	sqlDB, err := sql.Open("sqlite3", dbPath)
 	if err != nil {
 		t.Fatalf("Failed to open test database: %v", err)
 	}
 
+	db := database.WrapDB(sqlDB, database.DialectSQLite)
+
 	// Create all required tables
-	if err := createTestTables(db); err != nil {
+	if err := createTestTables(sqlDB); err != nil {
 		t.Fatalf("Failed to create test tables: %v", err)
 	}
 
@@ -145,7 +148,7 @@ func (ts *TestSuite) Cleanup() {
 }
 
 // CreateTestUser creates a test user for testing
-func CreateTestUser(t *testing.T, db *sql.DB, userID int) *models.User {
+func CreateTestUser(t *testing.T, db *database.DB, userID int) *models.User {
 	user := &models.User{
 		ID:       userID,
 		Username: fmt.Sprintf("testuser%d", userID),
@@ -164,7 +167,7 @@ func CreateTestUser(t *testing.T, db *sql.DB, userID int) *models.User {
 }
 
 // CreateTestMediaItem creates a test media item for testing
-func CreateTestMediaItem(t *testing.T, db *sql.DB, itemID int, userID int) *models.MediaItem {
+func CreateTestMediaItem(t *testing.T, db *database.DB, itemID int, userID int) *models.MediaItem {
 	item := &models.MediaItem{
 		ID:     itemID,
 		UserID: userID,
@@ -599,16 +602,16 @@ func BenchmarkSetup(b *testing.B) *TestSuite {
 	tempDir := b.TempDir()
 	dbPath := filepath.Join(tempDir, "benchmark.db")
 
-	db, err := sql.Open("sqlite3", dbPath)
+	sqlDB, err := sql.Open("sqlite3", dbPath)
 	if err != nil {
 		b.Fatalf("Failed to open benchmark database: %v", err)
 	}
 
-	if err := createTestTables(db); err != nil {
+	if err := createTestTables(sqlDB); err != nil {
 		b.Fatalf("Failed to create benchmark tables: %v", err)
 	}
 
-	testDB := &TestDatabase{DB: db, Path: dbPath}
+	testDB := &TestDatabase{DB: database.WrapDB(sqlDB, database.DialectSQLite), Path: dbPath}
 
 	// Create repositories
 	userRepo := repository.NewUserRepository(testDB.DB)

@@ -47,10 +47,28 @@ func RegisterAll(svc *services.ChallengeService) error {
 		}
 	}
 
+	// Populate challenge (triggers full scan pipeline via API)
+	svc.Register(NewFirstCatalogPopulateChallenge())
+
 	// Browsing challenges (validate the running API and web app)
 	svc.Register(NewBrowsingAPIHealthChallenge())
 	svc.Register(NewBrowsingAPICatalogChallenge())
 	svc.Register(NewBrowsingWebAppChallenge())
+
+	// Asset challenges (validate asset lazy loading pipeline)
+	svc.Register(NewAssetServingChallenge())
+	svc.Register(NewAssetLazyLoadingChallenge())
+
+	// Database challenges (validate database connectivity and schema)
+	svc.Register(NewDatabaseConnectivityChallenge())
+	svc.Register(NewDatabaseSchemaValidationChallenge())
+
+	// Entity challenges (validate entity system after scan)
+	svc.Register(NewEntityAggregationChallenge())
+	svc.Register(NewEntityBrowsingChallenge())
+	svc.Register(NewEntityMetadataChallenge())
+	svc.Register(NewEntityDuplicatesChallenge())
+	svc.Register(NewEntityHierarchyChallenge())
 
 	return nil
 }

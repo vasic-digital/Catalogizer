@@ -11,8 +11,9 @@ import (
 	"github.com/stretchr/testify/require"
 	"go.uber.org/zap"
 
-	"catalogizer/models"
+	"catalogizer/database"
 	"catalogizer/internal/services"
+	"catalogizer/models"
 )
 
 // MockFileRepository implements services.FileRepositoryInterface for testing
@@ -32,13 +33,14 @@ func TestRecommendationService_GetSimilarItems(t *testing.T) {
 	ctx := context.Background()
 
 	// Setup services with database
-	db, _ := sql.Open("sqlite3", ":memory:")
+	sqlDB, _ := sql.Open("sqlite3", ":memory:")
+	db := database.WrapDB(sqlDB, database.DialectSQLite)
 	logger := zap.NewNop()
-	
+
 	mediaRecognitionService := services.NewMediaRecognitionService(
-		db, logger, nil, nil, 
-		"http://mock-movie-api", "http://mock-music-api", 
-		"http://mock-book-api", "http://mock-game-api", 
+		db, logger, nil, nil,
+		"http://mock-movie-api", "http://mock-music-api",
+		"http://mock-book-api", "http://mock-game-api",
 		"http://mock-ocr-api", "http://mock-fingerprint-api",
 	)
 	duplicateDetectionService := services.NewDuplicateDetectionService(db, logger, nil)
@@ -289,8 +291,9 @@ func TestRecommendationService_ExternalProviders(t *testing.T) {
 	// 	}
 	// }()
 
-	db, _ := sql.Open("sqlite3", ":memory:")
-	defer db.Close()
+	sqlDB, _ := sql.Open("sqlite3", ":memory:")
+	defer sqlDB.Close()
+	db := database.WrapDB(sqlDB, database.DialectSQLite)
 
 	mediaRecognitionService := services.NewMediaRecognitionService(
 		db, zap.NewNop(), nil, nil,
@@ -434,8 +437,9 @@ func TestRecommendationService_ExternalProviders(t *testing.T) {
 func TestRecommendationService_Performance(t *testing.T) {
 	ctx := context.Background()
 
-	db, _ := sql.Open("sqlite3", ":memory:")
-	defer db.Close()
+	sqlDB, _ := sql.Open("sqlite3", ":memory:")
+	defer sqlDB.Close()
+	db := database.WrapDB(sqlDB, database.DialectSQLite)
 
 	mediaRecognitionService := services.NewMediaRecognitionService(
 		db, zap.NewNop(), nil, nil,
@@ -516,8 +520,9 @@ func TestRecommendationService_Performance(t *testing.T) {
 func TestRecommendationService_EdgeCases(t *testing.T) {
 	ctx := context.Background()
 
-	db, _ := sql.Open("sqlite3", ":memory:")
-	defer db.Close()
+	sqlDB, _ := sql.Open("sqlite3", ":memory:")
+	defer sqlDB.Close()
+	db := database.WrapDB(sqlDB, database.DialectSQLite)
 
 	mediaRecognitionService := services.NewMediaRecognitionService(
 		db, zap.NewNop(), nil, nil,
@@ -664,7 +669,8 @@ func TestRecommendationService_SimilarityAlgorithms(t *testing.T) {
 	ctx := context.Background()
 
 	// Setup services with database
-	db, _ := sql.Open("sqlite3", ":memory:")
+	sqlDB, _ := sql.Open("sqlite3", ":memory:")
+	db := database.WrapDB(sqlDB, database.DialectSQLite)
 	logger := zap.NewNop()
 
 	mediaRecognitionService := services.NewMediaRecognitionService(
@@ -832,14 +838,15 @@ func BenchmarkRecommendationService(b *testing.B) {
 	ctx := context.Background()
 	
 	// In-memory database for benchmarking
-	db, _ := sql.Open("sqlite3", ":memory:")
+	sqlDB, _ := sql.Open("sqlite3", ":memory:")
+	defer sqlDB.Close()
+	db := database.WrapDB(sqlDB, database.DialectSQLite)
 	logger, _ := zap.NewDevelopment()
-	defer db.Close()
 
 	mediaRecognitionService := services.NewMediaRecognitionService(
-		db, logger, nil, nil, 
-		"http://mock-movie-api", "http://mock-music-api", 
-		"http://mock-book-api", "http://mock-game-api", 
+		db, logger, nil, nil,
+		"http://mock-movie-api", "http://mock-music-api",
+		"http://mock-book-api", "http://mock-game-api",
 		"http://mock-ocr-api", "http://mock-fingerprint-api",
 	)
 	duplicateDetectionService := services.NewDuplicateDetectionService(db, logger, nil)

@@ -7,3 +7,6 @@
 [submodule "Challenges"]
 	path = Challenges
 	url = git@github.com:vasic-digital/Challenges.git
+[submodule "Assets"]
+	path = Assets
+	url = git@github.com:vasic-digital/Assets.git

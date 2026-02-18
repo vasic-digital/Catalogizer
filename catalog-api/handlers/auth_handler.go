@@ -90,6 +90,68 @@ func (h *AuthHandler) GetCurrentUserGin(c *gin.Context) {
 	c.JSON(http.StatusOK, user)
 }
 
+// GetAuthStatusGin returns the authentication status of the current user.
+// Used by the frontend to check if the stored token is still valid.
+func (h *AuthHandler) GetAuthStatusGin(c *gin.Context) {
+	token := extractTokenFromGin(c)
+	if token == "" {
+		c.JSON(http.StatusOK, gin.H{
+			"authenticated": false,
+		})
+		return
+	}
+
+	user, err := h.authService.GetCurrentUser(token)
+	if err != nil {
+		c.JSON(http.StatusOK, gin.H{
+			"authenticated": false,
+			"error":         "invalid or expired token",
+		})
+		return
+	}
+
+	perms := []string{}
+	if user.Role != nil {
+		perms = []string(user.Role.Permissions)
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"authenticated": true,
+		"user":          user,
+		"permissions":   perms,
+	})
+}
+
+// GetPermissionsGin returns the permissions for the current user.
+func (h *AuthHandler) GetPermissionsGin(c *gin.Context) {
+	token := extractTokenFromGin(c)
+	if token == "" {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "Authorization token required"})
+		return
+	}
+
+	user, err := h.authService.GetCurrentUser(token)
+	if err != nil {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid token"})
+		return
+	}
+
+	roleName := "User"
+	perms := []string{}
+	isAdmin := false
+	if user.Role != nil {
+		roleName = user.Role.Name
+		perms = []string(user.Role.Permissions)
+		isAdmin = user.Role.Permissions.HasPermission("*")
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"role":        roleName,
+		"permissions": perms,
+		"is_admin":    isAdmin,
+	})
+}
+
 // RegisterGin handles user registration with gin
 func (h *AuthHandler) RegisterGin(c *gin.Context, userRepo *repository.UserRepository) {
 	var req struct {

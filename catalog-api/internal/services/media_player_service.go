@@ -9,12 +9,14 @@ import (
 	"strings"
 	"time"
 
+	"catalogizer/database"
+
 	"go.uber.org/zap"
 )
 
 // MediaPlayerService handles all media playback functionality
 type MediaPlayerService struct {
-	db                 *sql.DB
+	db                 *database.DB
 	logger             *zap.Logger
 	lyricsService      *LyricsService
 	subtitleService    *SubtitleService
@@ -202,7 +204,7 @@ type PlaybackUpdateRequest struct {
 }
 
 // NewMediaPlayerService creates a new media player service
-func NewMediaPlayerService(db *sql.DB, logger *zap.Logger) *MediaPlayerService {
+func NewMediaPlayerService(db *database.DB, logger *zap.Logger) *MediaPlayerService {
 	cacheService := NewCacheService(db, logger)
 	return &MediaPlayerService{
 		db:                 db,

@@ -1,8 +1,8 @@
 package services
 
 import (
+	"catalogizer/database"
 	"context"
-	"database/sql"
 	"testing"
 	"time"
 
@@ -50,7 +50,7 @@ func (m *MockTranslationService) DetectLanguage(ctx context.Context, text string
 }
 
 func TestNewSubtitleService(t *testing.T) {
-	mockDB := &sql.DB{}
+	mockDB := database.WrapDB(nil, database.DialectSQLite)
 	mockLogger := zap.NewNop()
 	mockCache := &MockCacheService{}
 
@@ -67,7 +67,7 @@ func TestNewSubtitleService(t *testing.T) {
 }
 
 func TestSubtitleService_SearchSubtitles(t *testing.T) {
-	mockDB := &sql.DB{}
+	mockDB := database.WrapDB(nil, database.DialectSQLite)
 	mockLogger := zap.NewNop()
 	mockCache := &MockCacheService{}
 
@@ -91,7 +91,7 @@ func TestSubtitleService_SearchSubtitles(t *testing.T) {
 }
 
 func TestSubtitleService_SearchSubtitles_MultipleProviders(t *testing.T) {
-	mockDB := &sql.DB{}
+	mockDB := database.WrapDB(nil, database.DialectSQLite)
 	mockLogger := zap.NewNop()
 	mockCache := &MockCacheService{}
 
@@ -112,7 +112,7 @@ func TestSubtitleService_SearchSubtitles_MultipleProviders(t *testing.T) {
 }
 
 func TestSubtitleService_ParseSRT(t *testing.T) {
-	mockDB := &sql.DB{}
+	mockDB := database.WrapDB(nil, database.DialectSQLite)
 	mockLogger := zap.NewNop()
 	mockCache := &MockCacheService{}
 
@@ -139,7 +139,7 @@ This is a test
 }
 
 func TestSubtitleService_ParseSubtitle(t *testing.T) {
-	mockDB := &sql.DB{}
+	mockDB := database.WrapDB(nil, database.DialectSQLite)
 	mockLogger := zap.NewNop()
 	mockCache := &MockCacheService{}
 
@@ -162,7 +162,7 @@ Test subtitle
 }
 
 func TestSubtitleService_ReconstructSRT(t *testing.T) {
-	mockDB := &sql.DB{}
+	mockDB := database.WrapDB(nil, database.DialectSQLite)
 	mockLogger := zap.NewNop()
 	mockCache := &MockCacheService{}
 
@@ -195,7 +195,7 @@ func TestSubtitleService_ReconstructSRT(t *testing.T) {
 }
 
 func TestSubtitleService_SortSubtitleResults(t *testing.T) {
-	mockDB := &sql.DB{}
+	mockDB := database.WrapDB(nil, database.DialectSQLite)
 	mockLogger := zap.NewNop()
 	mockCache := &MockCacheService{}
 
@@ -228,7 +228,7 @@ func TestSubtitleService_SortSubtitleResults(t *testing.T) {
 }
 
 func TestSubtitleService_GetDownloadInfo_OpenSubtitles(t *testing.T) {
-	mockDB := &sql.DB{}
+	mockDB := database.WrapDB(nil, database.DialectSQLite)
 	mockLogger := zap.NewNop()
 	mockCache := &MockCacheService{}
 
@@ -251,7 +251,7 @@ func TestSubtitleService_GetDownloadInfo_OpenSubtitles(t *testing.T) {
 }
 
 func TestSubtitleService_GetDownloadInfo_SubDB(t *testing.T) {
-	mockDB := &sql.DB{}
+	mockDB := database.WrapDB(nil, database.DialectSQLite)
 	mockLogger := zap.NewNop()
 	mockCache := &MockCacheService{}
 
@@ -271,7 +271,7 @@ func TestSubtitleService_GetDownloadInfo_SubDB(t *testing.T) {
 }
 
 func TestSubtitleService_GetDownloadInfo_InvalidFormat(t *testing.T) {
-	mockDB := &sql.DB{}
+	mockDB := database.WrapDB(nil, database.DialectSQLite)
 	mockLogger := zap.NewNop()
 	mockCache := &MockCacheService{}
 
@@ -287,7 +287,7 @@ func TestSubtitleService_GetDownloadInfo_InvalidFormat(t *testing.T) {
 }
 
 func TestSubtitleService_GetDownloadInfo_UnsupportedProvider(t *testing.T) {
-	mockDB := &sql.DB{}
+	mockDB := database.WrapDB(nil, database.DialectSQLite)
 	mockLogger := zap.NewNop()
 	mockCache := &MockCacheService{}
 
@@ -303,7 +303,7 @@ func TestSubtitleService_GetDownloadInfo_UnsupportedProvider(t *testing.T) {
 }
 
 func TestSubtitleService_ExtractSamplePoints(t *testing.T) {
-	mockDB := &sql.DB{}
+	mockDB := database.WrapDB(nil, database.DialectSQLite)
 	mockLogger := zap.NewNop()
 	mockCache := &MockCacheService{}
 
@@ -330,7 +330,7 @@ func TestSubtitleService_ExtractSamplePoints(t *testing.T) {
 }
 
 func TestSubtitleService_CalculateSyncOffset(t *testing.T) {
-	mockDB := &sql.DB{}
+	mockDB := database.WrapDB(nil, database.DialectSQLite)
 	mockLogger := zap.NewNop()
 	mockCache := &MockCacheService{}
 
@@ -404,7 +404,7 @@ func TestGenerateSubtitleID(t *testing.T) {
 }
 
 func TestSubtitleService_ParseVTT(t *testing.T) {
-	mockDB := &sql.DB{}
+	mockDB := database.WrapDB(nil, database.DialectSQLite)
 	mockLogger := zap.NewNop()
 	mockCache := &MockCacheService{}
 
@@ -436,7 +436,7 @@ This is a test
 }
 
 func TestSubtitleService_ParseVTT_WithCueIdentifiers(t *testing.T) {
-	mockDB := &sql.DB{}
+	mockDB := database.WrapDB(nil, database.DialectSQLite)
 	mockLogger := zap.NewNop()
 	mockCache := &MockCacheService{}
 
@@ -464,7 +464,7 @@ Second line
 }
 
 func TestSubtitleService_ParseVTT_WithCueSettings(t *testing.T) {
-	mockDB := &sql.DB{}
+	mockDB := database.WrapDB(nil, database.DialectSQLite)
 	mockLogger := zap.NewNop()
 	mockCache := &MockCacheService{}
 
@@ -490,7 +490,7 @@ Vertical text
 }
 
 func TestSubtitleService_ParseVTT_WithTags(t *testing.T) {
-	mockDB := &sql.DB{}
+	mockDB := database.WrapDB(nil, database.DialectSQLite)
 	mockLogger := zap.NewNop()
 	mockCache := &MockCacheService{}
 
@@ -517,7 +517,7 @@ func TestSubtitleService_ParseVTT_WithTags(t *testing.T) {
 }
 
 func TestSubtitleService_ParseVTT_ShortTimestamps(t *testing.T) {
-	mockDB := &sql.DB{}
+	mockDB := database.WrapDB(nil, database.DialectSQLite)
 	mockLogger := zap.NewNop()
 	mockCache := &MockCacheService{}
 
@@ -540,7 +540,7 @@ Short timestamp format
 }
 
 func TestSubtitleService_ParseVTT_MissingHeader(t *testing.T) {
-	mockDB := &sql.DB{}
+	mockDB := database.WrapDB(nil, database.DialectSQLite)
 	mockLogger := zap.NewNop()
 	mockCache := &MockCacheService{}
 
@@ -558,7 +558,7 @@ Invalid VTT
 }
 
 func TestSubtitleService_ParseVTT_EmptyCues(t *testing.T) {
-	mockDB := &sql.DB{}
+	mockDB := database.WrapDB(nil, database.DialectSQLite)
 	mockLogger := zap.NewNop()
 	mockCache := &MockCacheService{}
 
@@ -577,7 +577,7 @@ NOTE This is a comment
 }
 
 func TestSubtitleService_ParseASS(t *testing.T) {
-	mockDB := &sql.DB{}
+	mockDB := database.WrapDB(nil, database.DialectSQLite)
 	mockLogger := zap.NewNop()
 	mockCache := &MockCacheService{}
 
@@ -615,7 +615,7 @@ Dialogue: 0,0:00:05.00,0:00:08.00,Default,,0,0,0,,This is a test
 }
 
 func TestSubtitleService_ParseASS_WithFormattingCodes(t *testing.T) {
-	mockDB := &sql.DB{}
+	mockDB := database.WrapDB(nil, database.DialectSQLite)
 	mockLogger := zap.NewNop()
 	mockCache := &MockCacheService{}
 
@@ -641,7 +641,7 @@ Dialogue: 0,0:00:09.00,0:00:12.00,Default,,0,0,0,,{\pos(192,144)}Positioned text
 }
 
 func TestSubtitleService_ParseASS_WithNewlines(t *testing.T) {
-	mockDB := &sql.DB{}
+	mockDB := database.WrapDB(nil, database.DialectSQLite)
 	mockLogger := zap.NewNop()
 	mockCache := &MockCacheService{}
 
@@ -665,7 +665,7 @@ Dialogue: 0,0:00:05.00,0:00:08.00,Default,,0,0,0,,Line A\nLine B
 }
 
 func TestSubtitleService_ParseASS_WithCommasInText(t *testing.T) {
-	mockDB := &sql.DB{}
+	mockDB := database.WrapDB(nil, database.DialectSQLite)
 	mockLogger := zap.NewNop()
 	mockCache := &MockCacheService{}
 
@@ -688,7 +688,7 @@ Dialogue: 0,0:00:05.00,0:00:08.00,Default,,0,0,0,,Yes, I am fine, thank you!
 }
 
 func TestSubtitleService_ParseASS_MissingEvents(t *testing.T) {
-	mockDB := &sql.DB{}
+	mockDB := database.WrapDB(nil, database.DialectSQLite)
 	mockLogger := zap.NewNop()
 	mockCache := &MockCacheService{}
 
@@ -706,7 +706,7 @@ ScriptType: v4.00+
 }
 
 func TestSubtitleService_ParseASS_EmptyDialogues(t *testing.T) {
-	mockDB := &sql.DB{}
+	mockDB := database.WrapDB(nil, database.DialectSQLite)
 	mockLogger := zap.NewNop()
 	mockCache := &MockCacheService{}
 
@@ -751,7 +751,7 @@ func TestSubtitleService_ParseASS_Timestamp(t *testing.T) {
 }
 
 func TestSubtitleService_ParseSubtitle_VTT(t *testing.T) {
-	mockDB := &sql.DB{}
+	mockDB := database.WrapDB(nil, database.DialectSQLite)
 	mockLogger := zap.NewNop()
 	mockCache := &MockCacheService{}
 
@@ -774,7 +774,7 @@ Test VTT subtitle
 }
 
 func TestSubtitleService_ParseSubtitle_ASS(t *testing.T) {
-	mockDB := &sql.DB{}
+	mockDB := database.WrapDB(nil, database.DialectSQLite)
 	mockLogger := zap.NewNop()
 	mockCache := &MockCacheService{}
 
@@ -796,7 +796,7 @@ Dialogue: 0,0:00:01.00,0:00:04.00,Default,,0,0,0,,Test ASS subtitle
 }
 
 func TestSubtitleService_ParseSubtitle_SSA(t *testing.T) {
-	mockDB := &sql.DB{}
+	mockDB := database.WrapDB(nil, database.DialectSQLite)
 	mockLogger := zap.NewNop()
 	mockCache := &MockCacheService{}
 

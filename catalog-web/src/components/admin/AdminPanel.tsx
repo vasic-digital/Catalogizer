@@ -304,7 +304,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
                     <tr key={user.id} className="border-b">
                       <td className="p-2 font-medium">{user.username}</td>
                       <td className="p-2">{user.email}</td>
-                      <td className="p-2">{getUserRoleBadge(user.role)}</td>
+                      <td className="p-2">{getUserRoleBadge(user.role || 'user')}</td>
                       <td className="p-2">{getUserStatusBadge(user.status)}</td>
                       <td className="p-2">
                         {user.lastLogin ? new Date(user.lastLogin).toLocaleDateString() : 'Never'}

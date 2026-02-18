@@ -1,6 +1,7 @@
 package realtime
 
 import (
+	catalogDB "catalogizer/database"
 	"catalogizer/internal/media/analyzer"
 	"catalogizer/internal/media/database"
 	"catalogizer/internal/services"
@@ -82,10 +83,11 @@ func setupTestComponents(t *testing.T) (*EnhancedChangeWatcher, *database.MediaD
 	mediaDB := setupTestMediaDB(t)
 
 	// Create mock analyzer
-	analyzer := analyzer.NewMediaAnalyzer(mediaDB.GetDB(), nil, nil, logger)
+	wrappedDB := catalogDB.WrapDB(mediaDB.GetDB(), catalogDB.DialectSQLite)
+	analyzer := analyzer.NewMediaAnalyzer(wrappedDB, nil, nil, logger)
 
 	// Create rename tracker
-	renameTracker := services.NewRenameTracker(mediaDB.GetDB(), logger)
+	renameTracker := services.NewRenameTracker(wrappedDB, logger)
 	if err := renameTracker.InitializeTables(); err != nil {
 		t.Fatalf("Failed to initialize rename tracker tables: %v", err)
 	}

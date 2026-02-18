@@ -1,19 +1,21 @@
 package repository
 
 import (
+	"context"
 	"database/sql"
 	"encoding/json"
 	"fmt"
 	"time"
 
+	"catalogizer/database"
 	"catalogizer/models"
 )
 
 type ConfigurationRepository struct {
-	db *sql.DB
+	db *database.DB
 }
 
-func NewConfigurationRepository(db *sql.DB) *ConfigurationRepository {
+func NewConfigurationRepository(db *database.DB) *ConfigurationRepository {
 	return &ConfigurationRepository{db: db}
 }
 
@@ -327,17 +329,12 @@ func (r *ConfigurationRepository) CreateConfigurationTemplate(template *models.C
 			name, description, category, configuration, created_at
 		) VALUES (?, ?, ?, ?, ?)`
 
-	result, err := r.db.Exec(query,
+	id, err := r.db.InsertReturningID(context.Background(), query,
 		template.Name, template.Description, template.Category,
 		string(configJSON), template.CreatedAt)
 
 	if err != nil {
 		return fmt.Errorf("failed to create configuration template: %w", err)
-	}
-
-	id, err := result.LastInsertId()
-	if err != nil {
-		return fmt.Errorf("failed to get last insert ID: %w", err)
 	}
 
 	template.ID = int(id)

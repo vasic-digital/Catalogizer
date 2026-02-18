@@ -22,17 +22,39 @@ func NewStatsRepository(db *database.DB) *StatsRepository {
 
 // GetOverallStats retrieves overall catalog statistics
 func (r *StatsRepository) GetOverallStats(ctx context.Context) (*models.OverallStats, error) {
-	query := `
+	// Dialect-aware timestamp extraction
+	lastScanExpr := "COALESCE(CAST(strftime('%s', MAX(last_scan_at)) AS INTEGER), 0)"
+	enabledExpr := "enabled = 1"
+	deletedExpr := "deleted = 0"
+	isDirFalse := "is_directory = 0"
+	isDirTrue := "is_directory = 1"
+	isDupTrue := "is_duplicate = 1"
+	if r.db.Dialect().IsPostgres() {
+		lastScanExpr = "COALESCE(EXTRACT(EPOCH FROM MAX(last_scan_at))::BIGINT, 0)"
+		enabledExpr = "enabled = true"
+		deletedExpr = "deleted = false"
+		isDirFalse = "is_directory = false"
+		isDirTrue = "is_directory = true"
+		isDupTrue = "is_duplicate = true"
+	}
+
+	query := fmt.Sprintf(`
 		SELECT
-			COUNT(CASE WHEN is_directory = 0 AND deleted = 0 THEN 1 END) as total_files,
-			COUNT(CASE WHEN is_directory = 1 AND deleted = 0 THEN 1 END) as total_directories,
-			COALESCE(SUM(CASE WHEN is_directory = 0 AND deleted = 0 THEN size ELSE 0 END), 0) as total_size,
-			COUNT(CASE WHEN is_duplicate = 1 AND deleted = 0 THEN 1 END) as total_duplicates,
+			COUNT(CASE WHEN %s AND %s THEN 1 END) as total_files,
+			COUNT(CASE WHEN %s AND %s THEN 1 END) as total_directories,
+			COALESCE(SUM(CASE WHEN %s AND %s THEN size ELSE 0 END), 0) as total_size,
+			COUNT(CASE WHEN %s AND %s THEN 1 END) as total_duplicates,
 			COUNT(DISTINCT duplicate_group_id) as duplicate_groups,
 			(SELECT COUNT(*) FROM storage_roots) as storage_roots_count,
-			(SELECT COUNT(*) FROM storage_roots WHERE enabled = 1) as active_storage_roots,
-			COALESCE(MAX(last_scan_at), 0) as last_scan_time
-		FROM files`
+			(SELECT COUNT(*) FROM storage_roots WHERE %s) as active_storage_roots,
+			%s as last_scan_time
+		FROM files`,
+		isDirFalse, deletedExpr,
+		isDirTrue, deletedExpr,
+		isDirFalse, deletedExpr,
+		isDupTrue, deletedExpr,
+		enabledExpr,
+		lastScanExpr)
 
 	var stats models.OverallStats
 	err := r.db.QueryRowContext(ctx, query).Scan(
@@ -55,7 +77,12 @@ func (r *StatsRepository) GetOverallStats(ctx context.Context) (*models.OverallS
 
 // GetStorageRootStats retrieves statistics for a specific storage root
 func (r *StatsRepository) GetStorageRootStats(ctx context.Context, storageRootName string) (*models.StorageRootStats, error) {
-	query := `
+	lastScanExpr := "COALESCE(CAST(strftime('%s', MAX(f.last_scan_at)) AS INTEGER), 0)"
+	if r.db.Dialect().IsPostgres() {
+		lastScanExpr = "COALESCE(EXTRACT(EPOCH FROM MAX(f.last_scan_at))::BIGINT, 0)"
+	}
+
+	query := fmt.Sprintf(`
 		SELECT
 			sr.name,
 			COUNT(CASE WHEN f.is_directory = 0 AND f.deleted = 0 THEN 1 END) as total_files,
@@ -63,12 +90,12 @@ func (r *StatsRepository) GetStorageRootStats(ctx context.Context, storageRootNa
 			COALESCE(SUM(CASE WHEN f.is_directory = 0 AND f.deleted = 0 THEN f.size ELSE 0 END), 0) as total_size,
 			COUNT(CASE WHEN f.is_duplicate = 1 AND f.deleted = 0 THEN 1 END) as duplicate_files,
 			COUNT(DISTINCT f.duplicate_group_id) as duplicate_groups,
-			COALESCE(MAX(f.last_scan_at), 0) as last_scan_time,
+			%s as last_scan_time,
 			sr.enabled as is_online
 		FROM storage_roots sr
 		LEFT JOIN files f ON sr.id = f.storage_root_id
 		WHERE sr.name = ?
-		GROUP BY sr.id, sr.name, sr.enabled`
+		GROUP BY sr.id, sr.name, sr.enabled`, lastScanExpr)
 
 	var stats models.StorageRootStats
 	err := r.db.QueryRowContext(ctx, query, storageRootName).Scan(
@@ -341,12 +368,17 @@ func (r *StatsRepository) GetAccessPatterns(ctx context.Context, storageRootName
 func (r *StatsRepository) GetGrowthTrends(ctx context.Context, storageRootName string, months int) (*models.GrowthTrends, error) {
 	// This is a simplified implementation
 	// In a real scenario, you'd need historical data tracking
-	baseQuery := `
+	monthExpr := "strftime('%Y-%m', datetime(created_at, 'unixepoch'))"
+	if r.db.Dialect().IsPostgres() {
+		monthExpr = "to_char(to_timestamp(EXTRACT(EPOCH FROM created_at)::BIGINT), 'YYYY-MM')"
+	}
+
+	baseQuery := fmt.Sprintf(`
 		SELECT
-			strftime('%Y-%m', datetime(created_at, 'unixepoch')) as month,
+			%s as month,
 			COUNT(*) as files_added,
 			SUM(size) as size_added
-		FROM files f`
+		FROM files f`, monthExpr)
 
 	args := []interface{}{}
 	whereClause := " WHERE f.is_directory = 0 AND f.deleted = 0 AND created_at > ?"

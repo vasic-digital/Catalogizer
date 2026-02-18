@@ -20,6 +20,8 @@ const Admin = React.lazy(() => import('@/pages/Admin').then(m => ({ default: m.A
 const FavoritesPage = React.lazy(() => import('@/pages/Favorites'))
 const PlaylistsPage = React.lazy(() => import('@/pages/Playlists').then(m => ({ default: m.PlaylistsPage })))
 const AIDashboard = React.lazy(() => import('@/pages/AIDashboard'))
+const EntityBrowser = React.lazy(() => import('@/pages/EntityBrowser').then(m => ({ default: m.EntityBrowser })))
+const EntityDetail = React.lazy(() => import('@/pages/EntityDetail').then(m => ({ default: m.EntityDetail })))
 
 const PageLoader: React.FC = () => (
   <div className="flex items-center justify-center min-h-[400px]">
@@ -32,7 +34,7 @@ function App() {
     <ErrorBoundary>
       <AuthProvider>
         <WebSocketProvider>
-          <Router>
+          <Router future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
             <ConnectionStatus />
             <Suspense fallback={<PageLoader />}>
               <Routes>
@@ -115,6 +117,22 @@ function App() {
                      </ProtectedRoute>
                    }
                  />
+                <Route
+                  path="/browse"
+                  element={
+                    <ProtectedRoute requiredPermission="read:media">
+                      <EntityBrowser />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/entity/:id"
+                  element={
+                    <ProtectedRoute requiredPermission="read:media">
+                      <EntityDetail />
+                    </ProtectedRoute>
+                  }
+                />
                 <Route
                   path="/ai"
                   element={

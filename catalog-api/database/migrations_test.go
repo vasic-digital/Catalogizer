@@ -18,6 +18,7 @@ func newTestDB(t *testing.T) (*DB, func()) {
 	tmpFile.Close()
 
 	cfg := &config.DatabaseConfig{
+		Type:               "sqlite",
 		Path:               tmpFile.Name(),
 		MaxOpenConnections: 1,
 		MaxIdleConnections: 1,
@@ -270,14 +271,14 @@ func TestMigrationSequence_AllVersionsApplied(t *testing.T) {
 	err := db.RunMigrations(ctx)
 	require.NoError(t, err)
 
-	// Verify all 6 migrations were recorded
+	// Verify all 8 migrations were recorded
 	var count int
 	err = db.QueryRowContext(ctx, "SELECT COUNT(*) FROM migrations").Scan(&count)
 	assert.NoError(t, err)
-	assert.Equal(t, 6, count)
+	assert.Equal(t, 8, count)
 
 	// Verify each version exists
-	for v := 1; v <= 6; v++ {
+	for v := 1; v <= 8; v++ {
 		var exists int
 		err := db.QueryRowContext(ctx, "SELECT COUNT(*) FROM migrations WHERE version = ?", v).Scan(&exists)
 		assert.NoError(t, err)
@@ -313,6 +314,106 @@ func TestCreateSubtitleTables(t *testing.T) {
 // ---------------------------------------------------------------------------
 // MigrationStruct
 // ---------------------------------------------------------------------------
+
+// ---------------------------------------------------------------------------
+// createMediaEntityTables (v8)
+// ---------------------------------------------------------------------------
+
+func TestCreateMediaEntityTables(t *testing.T) {
+	db, cleanup := newTestDB(t)
+	defer cleanup()
+
+	ctx := context.Background()
+
+	// Need initial tables + auth tables first (files, users FKs)
+	err := db.RunMigrations(ctx)
+	require.NoError(t, err)
+
+	// Verify media entity tables exist
+	entityTables := []string{
+		"media_types", "media_items", "media_files",
+		"media_collections", "media_collection_items",
+		"external_metadata", "user_metadata",
+		"directory_analyses", "detection_rules",
+	}
+	for _, table := range entityTables {
+		var count int
+		err := db.QueryRowContext(ctx, "SELECT COUNT(*) FROM sqlite_master WHERE type='table' AND name=?", table).Scan(&count)
+		assert.NoError(t, err, "checking table %s", table)
+		assert.Equal(t, 1, count, "table %s should exist", table)
+	}
+
+	// Verify media types were seeded
+	var typeCount int
+	err = db.QueryRowContext(ctx, "SELECT COUNT(*) FROM media_types").Scan(&typeCount)
+	assert.NoError(t, err)
+	assert.Equal(t, 11, typeCount, "should have 11 seeded media types")
+
+	// Verify specific media types
+	var movieName string
+	err = db.QueryRowContext(ctx, "SELECT name FROM media_types WHERE name = 'movie'").Scan(&movieName)
+	assert.NoError(t, err)
+	assert.Equal(t, "movie", movieName)
+
+	// Verify indexes exist
+	var indexCount int
+	err = db.QueryRowContext(ctx, "SELECT COUNT(*) FROM sqlite_master WHERE type='index' AND name LIKE 'idx_media_%'").Scan(&indexCount)
+	assert.NoError(t, err)
+	assert.GreaterOrEqual(t, indexCount, 7)
+}
+
+func TestCreateMediaEntityTables_CanInsertAndQuery(t *testing.T) {
+	db, cleanup := newTestDB(t)
+	defer cleanup()
+
+	ctx := context.Background()
+	err := db.RunMigrations(ctx)
+	require.NoError(t, err)
+
+	// Insert a media item
+	var movieTypeID int64
+	err = db.QueryRowContext(ctx, "SELECT id FROM media_types WHERE name = 'movie'").Scan(&movieTypeID)
+	require.NoError(t, err)
+
+	id, err := db.InsertReturningID(ctx,
+		"INSERT INTO media_items (media_type_id, title, year, status) VALUES (?, ?, ?, ?)",
+		movieTypeID, "The Matrix", 1999, "detected")
+	require.NoError(t, err)
+	assert.Greater(t, id, int64(0))
+
+	// Query it back
+	var title string
+	var year int
+	err = db.QueryRowContext(ctx, "SELECT title, year FROM media_items WHERE id = ?", id).Scan(&title, &year)
+	assert.NoError(t, err)
+	assert.Equal(t, "The Matrix", title)
+	assert.Equal(t, 1999, year)
+
+	// Insert a child (tv_episode of a tv_show) to test parent_id
+	var tvShowTypeID int64
+	err = db.QueryRowContext(ctx, "SELECT id FROM media_types WHERE name = 'tv_show'").Scan(&tvShowTypeID)
+	require.NoError(t, err)
+
+	showID, err := db.InsertReturningID(ctx,
+		"INSERT INTO media_items (media_type_id, title, status) VALUES (?, ?, ?)",
+		tvShowTypeID, "Breaking Bad", "detected")
+	require.NoError(t, err)
+
+	var epTypeID int64
+	err = db.QueryRowContext(ctx, "SELECT id FROM media_types WHERE name = 'tv_episode'").Scan(&epTypeID)
+	require.NoError(t, err)
+
+	epID, err := db.InsertReturningID(ctx,
+		"INSERT INTO media_items (media_type_id, title, parent_id, season_number, episode_number, status) VALUES (?, ?, ?, ?, ?, ?)",
+		epTypeID, "Pilot", showID, 1, 1, "detected")
+	require.NoError(t, err)
+
+	// Verify parent_id
+	var parentID int64
+	err = db.QueryRowContext(ctx, "SELECT parent_id FROM media_items WHERE id = ?", epID).Scan(&parentID)
+	assert.NoError(t, err)
+	assert.Equal(t, showID, parentID)
+}
 
 func TestMigrationStruct(t *testing.T) {
 	m := Migration{

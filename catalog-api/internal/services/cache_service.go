@@ -10,11 +10,13 @@ import (
 	"sync"
 	"time"
 
+	"catalogizer/database"
+
 	"go.uber.org/zap"
 )
 
 type CacheService struct {
-	db       *sql.DB
+	db       *database.DB
 	logger   *zap.Logger
 	wg       sync.WaitGroup // Tracks background goroutines for graceful shutdown
 	shutdown chan struct{}  // Signals shutdown to prevent new goroutines
@@ -93,7 +95,7 @@ const (
 	CoverArtCacheTTL    = 30 * 24 * time.Hour
 )
 
-func NewCacheService(db *sql.DB, logger *zap.Logger) *CacheService {
+func NewCacheService(db *database.DB, logger *zap.Logger) *CacheService {
 	return &CacheService{
 		db:       db,
 		logger:   logger,

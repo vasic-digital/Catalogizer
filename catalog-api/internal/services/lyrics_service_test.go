@@ -1,7 +1,7 @@
 package services
 
 import (
-	"database/sql"
+	"catalogizer/database"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -9,7 +9,7 @@ import (
 )
 
 func TestNewLyricsService(t *testing.T) {
-	var mockDB *sql.DB
+	mockDB := database.WrapDB(nil, database.DialectSQLite)
 	mockLogger := zap.NewNop()
 
 	service := NewLyricsService(mockDB, mockLogger)
@@ -18,7 +18,7 @@ func TestNewLyricsService(t *testing.T) {
 }
 
 func TestLyricsService_ParseLyricsLines(t *testing.T) {
-	var mockDB *sql.DB
+	mockDB := database.WrapDB(nil, database.DialectSQLite)
 	mockLogger := zap.NewNop()
 	service := NewLyricsService(mockDB, mockLogger)
 
@@ -63,7 +63,7 @@ func TestLyricsService_ParseLyricsLines(t *testing.T) {
 }
 
 func TestLyricsService_FilterSyncedLyrics(t *testing.T) {
-	var mockDB *sql.DB
+	mockDB := database.WrapDB(nil, database.DialectSQLite)
 	mockLogger := zap.NewNop()
 	service := NewLyricsService(mockDB, mockLogger)
 
@@ -113,7 +113,7 @@ func TestLyricsService_FilterSyncedLyrics(t *testing.T) {
 }
 
 func TestLyricsService_SortLyricsResults(t *testing.T) {
-	var mockDB *sql.DB
+	mockDB := database.WrapDB(nil, database.DialectSQLite)
 	mockLogger := zap.NewNop()
 	service := NewLyricsService(mockDB, mockLogger)
 

@@ -82,23 +82,98 @@ export interface MediaSearchResponse {
 export const MEDIA_TYPES = [
   'movie',
   'tv_show',
-  'music',
+  'tv_season',
+  'tv_episode',
+  'music_artist',
+  'music_album',
+  'song',
   'game',
   'software',
-  'documentary',
-  'concert',
-  'training',
-  'audiobook',
-  'ebook',
-  'podcast',
-  'youtube_video',
-  'adult_content',
-  'anime',
-  'sports',
-  'news',
+  'book',
+  'comic',
 ] as const
 
 export type MediaType = typeof MEDIA_TYPES[number]
+
+// --- Entity types for structured media browsing ---
+
+export interface MediaEntity {
+  id: number
+  media_type_id: number
+  title: string
+  original_title?: string
+  year?: number
+  description?: string
+  genre?: string[]
+  director?: string
+  rating?: number
+  runtime?: number
+  language?: string
+  status: string
+  parent_id?: number
+  season_number?: number
+  episode_number?: number
+  track_number?: number
+  first_detected: string
+  last_updated: string
+}
+
+export interface MediaEntityDetail extends MediaEntity {
+  media_type: string
+  file_count: number
+  children_count: number
+  external_metadata: EntityExternalMetadata[]
+}
+
+export interface EntityExternalMetadata {
+  id: number
+  media_item_id: number
+  provider: string
+  external_id: string
+  data?: Record<string, any>
+  rating?: number
+  review_url?: string
+  cover_url?: string
+  trailer_url?: string
+  last_fetched: string
+}
+
+export interface EntityUserMetadata {
+  user_rating?: number
+  watched_status?: string
+  favorite?: boolean
+  personal_notes?: string
+  tags?: string[]
+}
+
+export interface MediaTypeInfo {
+  id: number
+  name: string
+  description: string
+  count: number
+}
+
+export interface EntityListResponse {
+  items: MediaEntity[]
+  total: number
+  limit: number
+  offset: number
+}
+
+export interface EntityStatsResponse {
+  total_entities: number
+  by_type: Record<string, number>
+}
+
+export interface EntityFile {
+  id: number
+  media_item_id: number
+  file_id: number
+  quality_info?: string
+  language?: string
+  is_primary: boolean
+  created_at: string
+}
 
 export const QUALITY_LEVELS = [
   'cam',

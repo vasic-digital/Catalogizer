@@ -6,14 +6,15 @@ import (
 	"fmt"
 	"time"
 
+	"catalogizer/database"
 	"catalogizer/models"
 )
 
 type AnalyticsRepository struct {
-	db *sql.DB
+	db *database.DB
 }
 
-func NewAnalyticsRepository(db *sql.DB) *AnalyticsRepository {
+func NewAnalyticsRepository(db *database.DB) *AnalyticsRepository {
 	return &AnalyticsRepository{db: db}
 }
 

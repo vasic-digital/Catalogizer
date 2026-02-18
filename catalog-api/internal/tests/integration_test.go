@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"testing"
 
+	"catalogizer/database"
 	"catalogizer/internal/models"
 	"catalogizer/internal/services"
 	"go.uber.org/zap"
@@ -12,11 +13,12 @@ import (
 
 // TestMediaRecognitionIntegration tests the media recognition service
 func TestMediaRecognitionIntegration(t *testing.T) {
-	db, err := sql.Open("sqlite3", ":memory:")
+	sqlDB, err := sql.Open("sqlite3", ":memory:")
 	if err != nil {
 		t.Fatalf("Failed to open database: %v", err)
 	}
-	defer db.Close()
+	defer sqlDB.Close()
+	db := database.WrapDB(sqlDB, database.DialectSQLite)
 
 	logger := zap.NewNop()
 	cacheService := services.NewCacheService(db, logger)
@@ -57,11 +59,12 @@ func TestMediaRecognitionIntegration(t *testing.T) {
 
 // TestDuplicateDetectionIntegration tests the duplicate detection service
 func TestDuplicateDetectionIntegration(t *testing.T) {
-	db, err := sql.Open("sqlite3", ":memory:")
+	sqlDB, err := sql.Open("sqlite3", ":memory:")
 	if err != nil {
 		t.Fatalf("Failed to open database: %v", err)
 	}
-	defer db.Close()
+	defer sqlDB.Close()
+	db := database.WrapDB(sqlDB, database.DialectSQLite)
 
 	logger := zap.NewNop()
 	cacheService := services.NewCacheService(db, logger)
@@ -112,9 +115,10 @@ func TestDuplicateDetectionIntegration(t *testing.T) {
 
 // Basic service creation test to ensure services can be instantiated
 func TestServiceCreation(t *testing.T) {
-	db, _ := sql.Open("sqlite3", ":memory:")
+	sqlDB, _ := sql.Open("sqlite3", ":memory:")
+	db := database.WrapDB(sqlDB, database.DialectSQLite)
 	logger := zap.NewNop()
-	
+
 	// Test that services can be created with required parameters
 	cacheService := services.NewCacheService(db, logger)
 	translationService := services.NewTranslationService(logger)

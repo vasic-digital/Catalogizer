@@ -1,12 +1,14 @@
 package services
 
 import (
+	"catalogizer/database"
 	"catalogizer/filesystem"
 	"catalogizer/models"
 	"context"
-	"database/sql"
 	"fmt"
+	"mime"
 	"path/filepath"
+	"strings"
 	"sync"
 	"time"
 
@@ -15,18 +17,19 @@ import (
 
 // UniversalScanner handles file system scanning across all supported protocols
 type UniversalScanner struct {
-	db                 *sql.DB
-	logger             *zap.Logger
-	renameTracker      *UniversalRenameTracker
-	clientFactory      filesystem.ClientFactory
-	scanQueue          chan ScanJob
-	workers            int
-	stopCh             chan struct{}
-	wg                 sync.WaitGroup
-	protocolScannersMu sync.RWMutex
-	protocolScanners   map[string]ProtocolScanner
-	activeScansMu      sync.RWMutex
-	activeScans        map[string]*ScanStatus
+	db                  *database.DB
+	logger              *zap.Logger
+	renameTracker       *UniversalRenameTracker
+	clientFactory       filesystem.ClientFactory
+	aggregationService  *AggregationService
+	scanQueue           chan ScanJob
+	workers             int
+	stopCh              chan struct{}
+	wg                  sync.WaitGroup
+	protocolScannersMu  sync.RWMutex
+	protocolScanners    map[string]ProtocolScanner
+	activeScansMu       sync.RWMutex
+	activeScans         map[string]*ScanStatus
 }
 
 // ScanJob represents a scan operation for any protocol
@@ -84,7 +87,7 @@ type ScanStrategy struct {
 }
 
 // NewUniversalScanner creates a new universal file system scanner
-func NewUniversalScanner(db *sql.DB, logger *zap.Logger, renameTracker *UniversalRenameTracker, clientFactory filesystem.ClientFactory) *UniversalScanner {
+func NewUniversalScanner(db *database.DB, logger *zap.Logger, renameTracker *UniversalRenameTracker, clientFactory filesystem.ClientFactory) *UniversalScanner {
 	scanner := &UniversalScanner{
 		db:               db,
 		logger:           logger,
@@ -98,13 +101,18 @@ func NewUniversalScanner(db *sql.DB, logger *zap.Logger, renameTracker *Universa
 	}
 
 	// Register protocol scanners
-	scanner.RegisterProtocolScanner("local", NewLocalScanner(logger))
-	scanner.RegisterProtocolScanner("smb", NewSMBScanner(logger))
+	scanner.RegisterProtocolScanner("local", NewLocalScanner(db, logger))
+	scanner.RegisterProtocolScanner("smb", NewSMBScanner(db, logger))
 	scanner.RegisterProtocolScanner("ftp", NewFTPScanner(logger))
 	scanner.RegisterProtocolScanner("nfs", NewNFSScanner(logger))
 	scanner.RegisterProtocolScanner("webdav", NewWebDAVScanner(logger))
 
 	return scanner
+}
+
+// SetAggregationService sets the aggregation service for post-scan entity creation.
+func (s *UniversalScanner) SetAggregationService(svc *AggregationService) {
+	s.aggregationService = svc
 }
 
 // RegisterProtocolScanner registers a protocol-specific scanner
@@ -188,11 +196,15 @@ func (s *UniversalScanner) processScanJob(job ScanJob, workerID int) {
 	s.activeScans[job.ID] = status
 	s.activeScansMu.Unlock()
 
-	// Cleanup on completion
+	// Retain completed scan status for 60 seconds so polling clients
+	// can read the final result before it is garbage-collected.
 	defer func() {
-		s.activeScansMu.Lock()
-		delete(s.activeScans, job.ID)
-		s.activeScansMu.Unlock()
+		go func() {
+			time.Sleep(60 * time.Second)
+			s.activeScansMu.Lock()
+			delete(s.activeScans, job.ID)
+			s.activeScansMu.Unlock()
+		}()
 	}()
 
 	// Get protocol scanner
@@ -250,6 +262,17 @@ func (s *UniversalScanner) processScanJob(job ScanJob, workerID int) {
 		zap.String("storage_root", job.StorageRoot.Name),
 		zap.Int64("files_processed", snapshot.FilesProcessed),
 		zap.Duration("duration", time.Since(snapshot.StartTime)))
+
+	// Run post-scan aggregation to create media entities from scanned files
+	if s.aggregationService != nil {
+		go func() {
+			if err := s.aggregationService.AggregateAfterScan(job.Context, int64(job.StorageRoot.ID)); err != nil {
+				s.logger.Error("Post-scan aggregation failed",
+					zap.String("job_id", job.ID),
+					zap.Error(err))
+			}
+		}()
+	}
 }
 
 // GetActiveScanStatus returns the status of an active scan
@@ -393,11 +416,12 @@ func (s *ScanStatus) GetSnapshot() ScanStatus {
 
 // LocalScanner implements protocol-specific scanning for local filesystem
 type LocalScanner struct {
+	db     *database.DB
 	logger *zap.Logger
 }
 
-func NewLocalScanner(logger *zap.Logger) *LocalScanner {
-	return &LocalScanner{logger: logger}
+func NewLocalScanner(db *database.DB, logger *zap.Logger) *LocalScanner {
+	return &LocalScanner{db: db, logger: logger}
 }
 
 func (s *LocalScanner) ScanPath(ctx context.Context, client filesystem.FileSystemClient, job ScanJob, status *ScanStatus) error {
@@ -448,10 +472,7 @@ func (s *LocalScanner) scanDirectory(ctx context.Context, client filesystem.File
 }
 
 func (s *LocalScanner) processFileInfo(ctx context.Context, client filesystem.FileSystemClient, path string, file *filesystem.FileInfo, job ScanJob, status *ScanStatus) error {
-	// Implementation would update database with file information
-	// For now, just increment counters
-	status.incrementCounters(1, 1, 0, 0, 0)
-	return nil
+	return insertFileRecord(ctx, s.db, path, file, job, status, s.logger)
 }
 
 func (s *LocalScanner) GetScanStrategy() ScanStrategy {
@@ -475,11 +496,12 @@ func (s *LocalScanner) GetOptimalBatchSize() int {
 
 // SMBScanner implements protocol-specific scanning for SMB
 type SMBScanner struct {
+	db     *database.DB
 	logger *zap.Logger
 }
 
-func NewSMBScanner(logger *zap.Logger) *SMBScanner {
-	return &SMBScanner{logger: logger}
+func NewSMBScanner(db *database.DB, logger *zap.Logger) *SMBScanner {
+	return &SMBScanner{db: db, logger: logger}
 }
 
 func (s *SMBScanner) ScanPath(ctx context.Context, client filesystem.FileSystemClient, job ScanJob, status *ScanStatus) error {
@@ -518,7 +540,13 @@ func (s *SMBScanner) scanDirectory(ctx context.Context, client filesystem.FileSy
 			}
 
 			fullPath := filepath.Join(path, file.Name)
-			status.incrementCounters(1, 1, 0, 0, 0)
+
+			if err := insertFileRecord(ctx, s.db, fullPath, file, job, status, s.logger); err != nil {
+				s.logger.Error("Failed to insert file record",
+					zap.String("path", fullPath),
+					zap.Error(err))
+				status.incrementCounters(0, 0, 0, 0, 1)
+			}
 
 			if file.IsDir {
 				if err := s.scanDirectory(ctx, client, fullPath, job, status, depth+1); err != nil {
@@ -550,6 +578,148 @@ func (s *SMBScanner) SupportsIncrementalScan() bool {
 
 func (s *SMBScanner) GetOptimalBatchSize() int {
 	return 500
+}
+
+// insertFileRecord inserts or updates a file record in the database.
+// This is the core function that makes the scanner actually populate
+// the catalog, shared by all protocol scanners.
+func insertFileRecord(ctx context.Context, db *database.DB, path string, file *filesystem.FileInfo, job ScanJob, status *ScanStatus, logger *zap.Logger) error {
+	if db == nil {
+		status.incrementCounters(1, 1, 0, 0, 0)
+		return nil
+	}
+
+	// Resolve storage root ID
+	var storageRootID int64
+	err := db.QueryRowContext(ctx,
+		"SELECT id FROM storage_roots WHERE name = ? LIMIT 1",
+		job.StorageRoot.Name,
+	).Scan(&storageRootID)
+	if err != nil {
+		// Storage root not in DB yet — insert it
+		if db.Dialect().IsPostgres() {
+			// PostgreSQL: use INSERT ... ON CONFLICT DO NOTHING + RETURNING
+			err2 := db.QueryRowContext(ctx,
+				`INSERT INTO storage_roots (name, protocol, host, port, path, username, password, domain, enabled, max_depth)
+				 VALUES (?, ?, ?, ?, ?, ?, ?, ?, true, ?)
+				 ON CONFLICT (name) DO NOTHING
+				 RETURNING id`,
+				job.StorageRoot.Name, job.StorageRoot.Protocol,
+				job.StorageRoot.Host, job.StorageRoot.Port, job.StorageRoot.Path,
+				job.StorageRoot.Username, job.StorageRoot.Password, job.StorageRoot.Domain,
+				job.StorageRoot.MaxDepth,
+			).Scan(&storageRootID)
+			if err2 != nil {
+				// ON CONFLICT DO NOTHING returns no rows — re-query
+				_ = db.QueryRowContext(ctx,
+					"SELECT id FROM storage_roots WHERE name = ? LIMIT 1",
+					job.StorageRoot.Name,
+				).Scan(&storageRootID)
+			}
+		} else {
+			// SQLite path
+			insertedID, insertErr := db.InsertReturningID(ctx,
+				`INSERT OR IGNORE INTO storage_roots (name, protocol, host, port, path, username, password, domain, enabled, max_depth)
+				 VALUES (?, ?, ?, ?, ?, ?, ?, ?, 1, ?)`,
+				job.StorageRoot.Name, job.StorageRoot.Protocol,
+				job.StorageRoot.Host, job.StorageRoot.Port, job.StorageRoot.Path,
+				job.StorageRoot.Username, job.StorageRoot.Password, job.StorageRoot.Domain,
+				job.StorageRoot.MaxDepth,
+			)
+			if insertErr != nil {
+				return fmt.Errorf("insert storage root: %w", insertErr)
+			}
+			storageRootID = insertedID
+			if storageRootID == 0 {
+				_ = db.QueryRowContext(ctx,
+					"SELECT id FROM storage_roots WHERE name = ? LIMIT 1",
+					job.StorageRoot.Name,
+				).Scan(&storageRootID)
+			}
+		}
+	}
+
+	name := file.Name
+	ext := strings.TrimPrefix(filepath.Ext(name), ".")
+	mimeType := mime.TypeByExtension("." + ext)
+	fileType := classifyFileType(ext)
+
+	// Resolve parent directory ID (if path has a parent)
+	var parentID *int64
+	parentPath := filepath.Dir(path)
+	if parentPath != "." && parentPath != "/" && parentPath != "" {
+		var pid int64
+		err := db.QueryRowContext(ctx,
+			"SELECT id FROM files WHERE path = ? AND storage_root_id = ? AND is_directory = 1 LIMIT 1",
+			parentPath, storageRootID,
+		).Scan(&pid)
+		if err == nil {
+			parentID = &pid
+		}
+	}
+
+	modifiedAt := file.ModTime
+	if modifiedAt.IsZero() {
+		modifiedAt = time.Now()
+	}
+
+	isDir := file.IsDir
+
+	// Upsert: insert or update on conflict (same storage_root + path)
+	_, err = db.ExecContext(ctx,
+		`INSERT INTO files (storage_root_id, path, name, extension, mime_type, file_type, size, is_directory, modified_at, last_scan_at, parent_id)
+		 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP, ?)
+		 ON CONFLICT(storage_root_id, path) DO UPDATE SET
+		   size = excluded.size,
+		   modified_at = excluded.modified_at,
+		   last_scan_at = CURRENT_TIMESTAMP,
+		   deleted = false,
+		   deleted_at = NULL`,
+		storageRootID, path, name, ext, mimeType, fileType, file.Size,
+		isDir, modifiedAt, parentID,
+	)
+	if err != nil && db.Dialect().IsSQLite() {
+		// SQLite fallback if UNIQUE constraint doesn't exist yet
+		_, err = db.ExecContext(ctx,
+			`INSERT OR REPLACE INTO files (storage_root_id, path, name, extension, mime_type, file_type, size, is_directory, modified_at, last_scan_at, parent_id)
+			 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP, ?)`,
+			storageRootID, path, name, ext, mimeType, fileType, file.Size,
+			isDir, modifiedAt, parentID,
+		)
+		if err != nil {
+			return fmt.Errorf("insert file %s: %w", path, err)
+		}
+	} else if err != nil {
+		return fmt.Errorf("insert file %s: %w", path, err)
+	}
+
+	status.incrementCounters(1, 1, 0, 0, 0)
+	return nil
+}
+
+// classifyFileType returns a file_type category based on extension.
+func classifyFileType(ext string) string {
+	ext = strings.ToLower(ext)
+	switch ext {
+	case "mp4", "mkv", "avi", "mov", "wmv", "flv", "m4v", "ts", "webm", "mpg", "mpeg":
+		return "video"
+	case "mp3", "flac", "wav", "m4a", "aac", "ogg", "wma", "ape", "opus":
+		return "audio"
+	case "jpg", "jpeg", "png", "gif", "bmp", "webp", "svg", "tiff", "ico":
+		return "image"
+	case "pdf", "epub", "mobi", "djvu", "cbr", "cbz", "cb7", "cbt":
+		return "book"
+	case "exe", "msi", "dmg", "pkg", "iso", "img", "deb", "rpm", "apk", "appimage":
+		return "software"
+	case "zip", "rar", "7z", "tar", "gz", "bz2", "xz", "zst":
+		return "archive"
+	case "txt", "md", "doc", "docx", "rtf", "odt", "csv", "xls", "xlsx":
+		return "document"
+	case "html", "htm", "css", "js", "go", "py", "java", "c", "cpp", "rs", "sh":
+		return "code"
+	default:
+		return "other"
+	}
 }
 
 // Similar implementations for FTP, NFS, and WebDAV scanners...

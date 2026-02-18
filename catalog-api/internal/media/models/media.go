@@ -33,10 +33,14 @@ type MediaItem struct {
 	Language      *string    `json:"language,omitempty" db:"language"`
 	Country       *string    `json:"country,omitempty" db:"country"`
 	Status        string     `json:"status" db:"status"`
+	ParentID      *int64     `json:"parent_id,omitempty" db:"parent_id"`
+	SeasonNumber  *int       `json:"season_number,omitempty" db:"season_number"`
+	EpisodeNumber *int       `json:"episode_number,omitempty" db:"episode_number"`
+	TrackNumber   *int       `json:"track_number,omitempty" db:"track_number"`
 	FirstDetected time.Time  `json:"first_detected" db:"first_detected"`
 	LastUpdated   time.Time  `json:"last_updated" db:"last_updated"`
 
-	// Aggregated data
+	// Aggregated data (not stored in media_items table, populated by joins)
 	ExternalMetadata []ExternalMetadata `json:"external_metadata,omitempty"`
 	Files            []MediaFile        `json:"files,omitempty"`
 	Collections      []MediaCollection  `json:"collections,omitempty"`
@@ -102,10 +106,13 @@ type AnalysisData struct {
 	AlternativeTitles []string         `json:"alternative_titles"`
 }
 
-// MediaFile represents individual file versions
+// MediaFile represents individual file versions linked to a media entity.
+// FileID links to the existing files table; the other fields are denormalized for display.
 type MediaFile struct {
 	ID             int64           `json:"id" db:"id"`
 	MediaItemID    int64           `json:"media_item_id" db:"media_item_id"`
+	FileID         *int64          `json:"file_id,omitempty" db:"file_id"`
+	IsPrimary      bool            `json:"is_primary" db:"is_primary"`
 	FilePath       string          `json:"file_path" db:"file_path"`
 	SmbRoot        string          `json:"smb_root" db:"smb_root"`
 	Filename       string          `json:"filename" db:"filename"`
@@ -205,6 +212,7 @@ type MediaCollectionItem struct {
 type UserMetadata struct {
 	ID            int64      `json:"id" db:"id"`
 	MediaItemID   int64      `json:"media_item_id" db:"media_item_id"`
+	UserID        int64      `json:"user_id" db:"user_id"`
 	UserRating    *float64   `json:"user_rating,omitempty" db:"user_rating"`
 	WatchedStatus *string    `json:"watched_status,omitempty" db:"watched_status"`
 	WatchedDate   *time.Time `json:"watched_date,omitempty" db:"watched_date"`

@@ -8,11 +8,13 @@ import (
 	"github.com/stretchr/testify/require"
 	"go.uber.org/zap"
 
+	"catalogizer/database"
 	"catalogizer/internal/services"
 )
 
 func TestDuplicateDetectionService_Basic(t *testing.T) {
-	db, _ := sql.Open("sqlite3", ":memory:")
+	sqlDB, _ := sql.Open("sqlite3", ":memory:")
+	db := database.WrapDB(sqlDB, database.DialectSQLite)
 	logger := zap.NewNop()
 	service := services.NewDuplicateDetectionService(db, logger, nil)
 
