@@ -40,7 +40,8 @@ const mockUser: User = {
   email: 'test@example.com',
   first_name: 'Test',
   last_name: 'User',
-  role: 'user',
+  role_id: 2,
+  role: { id: 2, name: 'user', description: 'Regular user', permissions: [], is_system: false, created_at: '2024-01-01T00:00:00Z', updated_at: '2024-01-01T00:00:00Z' },
   is_active: true,
   created_at: '2024-01-01T00:00:00Z',
   updated_at: '2024-01-01T00:00:00Z',
@@ -50,7 +51,8 @@ const mockAdminUser: User = {
   ...mockUser,
   id: 2,
   username: 'admin',
-  role: 'admin',
+  role_id: 1,
+  role: { id: 1, name: 'Admin', description: 'Administrator', permissions: ['admin:system'], is_system: true, created_at: '2024-01-01T00:00:00Z', updated_at: '2024-01-01T00:00:00Z' },
 }
 
 function AuthStateDisplay() {
@@ -71,7 +73,7 @@ function AuthStateDisplay() {
       <div data-testid="authenticated">{String(isAuthenticated)}</div>
       <div data-testid="is-admin">{String(isAdmin)}</div>
       <div data-testid="user-info">{user ? user.username : 'none'}</div>
-      <div data-testid="user-role">{user ? user.role : 'none'}</div>
+      <div data-testid="user-role">{user ? user.role?.name : 'none'}</div>
       <div data-testid="permissions">{permissions.join(',')}</div>
       <div data-testid="has-read-media">{String(hasPermission('read:media'))}</div>
       <div data-testid="can-read-media">{String(canAccess('media', 'read'))}</div>
@@ -264,7 +266,7 @@ describe('AuthContext Integration Tests', () => {
       await waitFor(() => {
         expect(screen.getByTestId('is-admin')).toHaveTextContent('true')
       })
-      expect(screen.getByTestId('user-role')).toHaveTextContent('admin')
+      expect(screen.getByTestId('user-role')).toHaveTextContent('Admin')
     })
 
     it('clears user state when auth status check fails with 401', async () => {
@@ -289,9 +291,9 @@ describe('AuthContext Integration Tests', () => {
       const user = userEvent.setup()
       const loginResponse: LoginResponse = {
         user: mockUser,
-        token: 'jwt-token-123',
+        session_token: 'jwt-token-123',
         refresh_token: 'refresh-token-456',
-        expires_in: 3600,
+        expires_at: '2024-01-01T01:00:00Z',
       }
       mockAuthApi.login.mockResolvedValue(loginResponse)
 
@@ -760,9 +762,9 @@ describe('AuthContext Integration Tests', () => {
       mockAuthApi.getAuthStatus.mockResolvedValue({ authenticated: false })
       mockAuthApi.login.mockResolvedValue({
         user: mockUser,
-        token: 'new-jwt-token',
+        session_token: 'new-jwt-token',
         refresh_token: 'new-refresh-token',
-        expires_in: 3600,
+        expires_at: '2024-01-01T01:00:00Z',
       })
 
       renderWithProviders(<LoginTrigger />)
@@ -812,9 +814,9 @@ describe('AuthContext Integration Tests', () => {
       mockAuthApi.getAuthStatus.mockResolvedValue({ authenticated: false })
       mockAuthApi.login.mockResolvedValue({
         user: mockUser,
-        token: 'jwt-token',
+        session_token: 'jwt-token',
         refresh_token: 'refresh-token',
-        expires_in: 3600,
+        expires_at: '2024-01-01T01:00:00Z',
       })
 
       renderWithProviders(<LoginTrigger />)
@@ -897,9 +899,9 @@ describe('AuthContext Integration Tests', () => {
       mockAuthApi.getAuthStatus.mockResolvedValue({ authenticated: false })
       mockAuthApi.login.mockResolvedValue({
         user: mockUser,
-        token: 'jwt-token',
+        session_token: 'jwt-token',
         refresh_token: 'refresh-token',
-        expires_in: 3600,
+        expires_at: '2024-01-01T01:00:00Z',
       })
       mockAuthApi.logout.mockResolvedValue(undefined)
 

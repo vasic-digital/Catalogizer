@@ -275,7 +275,7 @@ describe('Auth Flow Integration Tests', () => {
   describe('Admin Route Access Control', () => {
     it('admin can access admin routes', () => {
       setAuthState({
-        user: { id: 1, username: 'admin', role: 'admin' },
+        user: { id: 1, username: 'admin', role: { id: 1, name: 'Admin' }, role_id: 1 },
         isAuthenticated: true,
         isAdmin: true,
       })

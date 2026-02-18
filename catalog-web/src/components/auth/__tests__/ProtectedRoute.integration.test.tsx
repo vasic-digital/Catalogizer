@@ -202,7 +202,7 @@ describe('ProtectedRoute Integration Tests', () => {
       mockUseAuth.mockReturnValue({
         isAuthenticated: true,
         isLoading: false,
-        user: { id: 1, username: 'admin', role: 'admin' },
+        user: { id: 1, username: 'admin', role: { id: 1, name: 'Admin' }, role_id: 1 },
         hasPermission: vi.fn(),
       })
 
@@ -251,7 +251,7 @@ describe('ProtectedRoute Integration Tests', () => {
       mockUseAuth.mockReturnValue({
         isAuthenticated: true,
         isLoading: false,
-        user: { id: 1, username: 'editor1', role: 'editor' },
+        user: { id: 1, username: 'editor1', role: { id: 3, name: 'editor' }, role_id: 3 },
         hasPermission: vi.fn(),
       })
 
@@ -448,7 +448,7 @@ describe('ProtectedRoute Integration Tests', () => {
       mockUseAuth.mockReturnValue({
         isAuthenticated: true,
         isLoading: false,
-        user: { id: 1, username: 'admin', role: 'admin' },
+        user: { id: 1, username: 'admin', role: { id: 1, name: 'Admin' }, role_id: 1 },
         hasPermission: vi.fn().mockReturnValue(true),
       })
 

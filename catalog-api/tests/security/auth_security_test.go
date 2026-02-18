@@ -1,6 +1,8 @@
 package security
 
 import (
+	"crypto/rand"
+	"math/big"
 	"testing"
 	"time"
 
@@ -540,12 +542,17 @@ func markCSRFTokenUsed(token string) {
 }
 
 func generateAPIKey() string {
-	// Generate 64-character alphanumeric key
+	// Generate 64-character alphanumeric key using crypto/rand
 	const chars = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
 	key := make([]byte, 64)
-	timestamp := time.Now().UnixNano()
 	for i := range key {
-		key[i] = chars[(timestamp+int64(i))%int64(len(chars))]
+		n, err := rand.Int(rand.Reader, big.NewInt(int64(len(chars))))
+		if err != nil {
+			// Fallback to time-based if crypto/rand fails
+			key[i] = chars[(time.Now().UnixNano()+int64(i))%int64(len(chars))]
+			continue
+		}
+		key[i] = chars[n.Int64()]
 	}
 	return string(key)
 }
