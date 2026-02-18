@@ -279,15 +279,10 @@ func (h *MediaEntityHandler) BrowseByType(c *gin.Context) {
 		return
 	}
 
-	// Only return top-level items (no children)
-	items, total, err := h.itemRepo.GetByParent(ctx, typeID, limit, offset)
+	items, total, err := h.itemRepo.GetByType(ctx, typeID, limit, offset)
 	if err != nil {
-		// Fallback: GetByType returns all items of that type
-		items, total, err = h.itemRepo.GetByType(ctx, typeID, limit, offset)
-		if err != nil {
-			utils.SendErrorResponse(c, http.StatusInternalServerError, "Failed to browse type", err)
-			return
-		}
+		utils.SendErrorResponse(c, http.StatusInternalServerError, "Failed to browse type", err)
+		return
 	}
 
 	c.JSON(http.StatusOK, gin.H{
