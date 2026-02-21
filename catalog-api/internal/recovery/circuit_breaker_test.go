@@ -160,15 +160,12 @@ func TestCircuitBreaker_OpenAllowsRequestAfterTimeout(t *testing.T) {
 	// Wait for reset timeout
 	time.Sleep(100 * time.Millisecond)
 
-	// Should allow a request through after timeout expires
-	// Note: the implementation does not explicitly transition to HalfOpen.
-	// allowRequest returns true when Open and timeout has passed,
-	// but recordSuccess only handles HalfOpen and Closed cases,
-	// so the state remains Open and failures are not reset.
+	// Should allow a request through after timeout expires.
+	// The underlying vasic breaker transitions Open → HalfOpen on timeout,
+	// then a successful HalfOpen request transitions to Closed.
 	err := cb.Execute(func() error { return nil })
 	assert.NoError(t, err)
-	// State remains Open because recordSuccess does not handle the Open case
-	assert.Equal(t, StateOpen, cb.GetState())
+	assert.Equal(t, StateClosed, cb.GetState())
 }
 
 func TestCircuitBreaker_OpenFailureAfterTimeoutStaysOpen(t *testing.T) {

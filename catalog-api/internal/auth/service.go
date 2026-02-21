@@ -10,26 +10,40 @@ import (
 
 	"catalogizer/database"
 
+	jwtmod "digital.vasic.auth/pkg/jwt"
 	"github.com/golang-jwt/jwt/v5"
 	"go.uber.org/zap"
 	"golang.org/x/crypto/bcrypt"
 )
 
-// AuthService handles authentication operations
+// AuthService handles authentication operations.
+// Token generation delegates to digital.vasic.auth/pkg/jwt.Manager;
+// validation keeps typed Claims parsing via ParseWithClaims.
 type AuthService struct {
-	db        *database.DB
-	jwtSecret []byte
-	logger    *zap.Logger
-	tokenTTL  time.Duration
+	db            *database.DB
+	jwtSecret     []byte
+	jwtMgr        *jwtmod.Manager // access-token manager (24h TTL)
+	jwtRefreshMgr *jwtmod.Manager // refresh-token manager (7d TTL)
+	logger        *zap.Logger
+	tokenTTL      time.Duration
 }
 
-// NewAuthService creates a new authentication service
+// NewAuthService creates a new authentication service backed by
+// digital.vasic.auth/pkg/jwt for token generation.
 func NewAuthService(db *database.DB, jwtSecret string, logger *zap.Logger) *AuthService {
+	accessCfg := jwtmod.DefaultConfig(jwtSecret)
+	accessCfg.Expiration = 24 * time.Hour
+
+	refreshCfg := jwtmod.DefaultConfig(jwtSecret)
+	refreshCfg.Expiration = 7 * 24 * time.Hour
+
 	return &AuthService{
-		db:        db,
-		jwtSecret: []byte(jwtSecret),
-		logger:    logger,
-		tokenTTL:  24 * time.Hour, // 24 hours
+		db:            db,
+		jwtSecret:     []byte(jwtSecret),
+		jwtMgr:        jwtmod.NewManager(accessCfg),
+		jwtRefreshMgr: jwtmod.NewManager(refreshCfg),
+		logger:        logger,
+		tokenTTL:      24 * time.Hour,
 	}
 }
 
@@ -373,28 +387,21 @@ func (s *AuthService) getUserByUsernameOrEmail(identifier string) (*User, error)
 	return user, err
 }
 
+// generateToken creates a signed JWT using digital.vasic.auth/pkg/jwt.Manager.
+// Access tokens use the 24h manager; refresh tokens use the 7-day manager.
 func (s *AuthService) generateToken(user *User, tokenType string) (string, error) {
-	now := time.Now()
-	var expiresAt time.Time
-
+	mgr := s.jwtMgr
 	if tokenType == "refresh" {
-		expiresAt = now.Add(7 * 24 * time.Hour) // 7 days for refresh tokens
-	} else {
-		expiresAt = now.Add(s.tokenTTL)
+		mgr = s.jwtRefreshMgr
 	}
 
-	claims := Claims{
-		UserID:      user.ID,
-		Username:    user.Username,
-		Role:        user.Role,
-		Permissions: user.Permissions,
-		Type:        tokenType,
-		IssuedAt:    now.Unix(),
-		ExpiresAt:   expiresAt.Unix(),
-	}
-
-	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
-	return token.SignedString(s.jwtSecret)
+	return mgr.Create(map[string]interface{}{
+		"user_id":     user.ID,
+		"username":    user.Username,
+		"role":        user.Role,
+		"permissions": user.Permissions,
+		"type":        tokenType,
+	})
 }
 
 func (s *AuthService) validateToken(tokenString string) (*Claims, error) {

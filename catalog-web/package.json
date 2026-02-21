@@ -34,6 +34,9 @@
     "tailwind-merge": "^1.10.0",
     "@vasic-digital/websocket-client": "file:../WebSocket-Client-TS",
     "@vasic-digital/ui-components": "file:../UI-Components-React",
+    "@vasic-digital/media-types": "file:../Media-Types-TS",
+    "@vasic-digital/catalogizer-api-client": "file:../Catalogizer-API-Client-TS",
+    "@vasic-digital/auth-context": "file:../Auth-Context-React",
     "web-vitals": "^5.1.0",
     "zod": "^3.20.6",
     "zustand": "^4.3.6"

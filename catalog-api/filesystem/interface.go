@@ -1,83 +1,51 @@
+// Package filesystem provides unified filesystem client types for multi-protocol
+// storage access (SMB, FTP, NFS, WebDAV, Local).
+//
+// The core types (FileInfo, FileSystemClient, StorageConfig, ClientFactory,
+// CopyOperation, CopyResult, ConnectionPool) are type aliases to
+// digital.vasic.filesystem/pkg/client, ensuring compatibility with the
+// reusable vasic-digital module ecosystem.
+//
+// DirectoryTreeInfo is a Catalogizer-specific extension not present in
+// the base module.
 package filesystem
 
 import (
-	"context"
-	"io"
-	"os"
-	"time"
+	"digital.vasic.filesystem/pkg/client"
 )
 
-// FileInfo represents file information from any filesystem
-type FileInfo struct {
-	Name    string
-	Size    int64
-	ModTime time.Time
-	IsDir   bool
-	Mode    os.FileMode
-	Path    string
-}
+// FileInfo represents file information from any filesystem.
+// Type alias to digital.vasic.filesystem/pkg/client.FileInfo.
+type FileInfo = client.FileInfo
 
-// FileSystemClient defines the interface for filesystem operations
-// This abstraction allows supporting multiple protocols (SMB, FTP, NFS, WebDAV, Local)
-type FileSystemClient interface {
-	// Connection management
-	Connect(ctx context.Context) error
-	Disconnect(ctx context.Context) error
-	IsConnected() bool
-	TestConnection(ctx context.Context) error
+// FileSystemClient defines the interface for filesystem operations.
+// Supports multiple protocols: SMB, FTP, NFS, WebDAV, Local.
+//
+// Type alias to digital.vasic.filesystem/pkg/client.Client.
+type FileSystemClient = client.Client
 
-	// File operations
-	ReadFile(ctx context.Context, path string) (io.ReadCloser, error)
-	WriteFile(ctx context.Context, path string, data io.Reader) error
-	GetFileInfo(ctx context.Context, path string) (*FileInfo, error)
-	FileExists(ctx context.Context, path string) (bool, error)
-	DeleteFile(ctx context.Context, path string) error
-	CopyFile(ctx context.Context, srcPath, dstPath string) error
+// StorageConfig represents the configuration for a storage backend.
+// Type alias to digital.vasic.filesystem/pkg/client.StorageConfig.
+type StorageConfig = client.StorageConfig
 
-	// Directory operations
-	ListDirectory(ctx context.Context, path string) ([]*FileInfo, error)
-	CreateDirectory(ctx context.Context, path string) error
-	DeleteDirectory(ctx context.Context, path string) error
+// ClientFactory creates filesystem clients based on protocol.
+// Type alias to digital.vasic.filesystem/pkg/client.Factory.
+type ClientFactory = client.Factory
 
-	// Utility methods
-	GetProtocol() string
-	GetConfig() interface{}
-}
+// CopyOperation represents a file copy operation.
+// Type alias to digital.vasic.filesystem/pkg/client.CopyOperation.
+type CopyOperation = client.CopyOperation
 
-// StorageConfig represents the configuration for a storage backend
-type StorageConfig struct {
-	ID        string                 `json:"id"`
-	Name      string                 `json:"name"`
-	Protocol  string                 `json:"protocol"` // "smb", "ftp", "nfs", "webdav", "local"
-	Enabled   bool                   `json:"enabled"`
-	MaxDepth  int                    `json:"max_depth"`
-	Settings  map[string]interface{} `json:"settings"` // Protocol-specific settings
-	CreatedAt time.Time              `json:"created_at"`
-	UpdatedAt time.Time              `json:"updated_at"`
-}
+// CopyResult represents the result of a copy operation.
+// Type alias to digital.vasic.filesystem/pkg/client.CopyResult.
+type CopyResult = client.CopyResult
 
-// ClientFactory creates filesystem clients based on protocol
-type ClientFactory interface {
-	CreateClient(config *StorageConfig) (FileSystemClient, error)
-	SupportedProtocols() []string
-}
+// ConnectionPool manages multiple connections for a protocol.
+// Type alias to digital.vasic.filesystem/pkg/client.ConnectionPool.
+type ConnectionPool = client.ConnectionPool
 
-// CopyOperation represents a file copy operation
-type CopyOperation struct {
-	SourcePath        string
-	DestinationPath   string
-	OverwriteExisting bool
-}
-
-// CopyResult represents the result of a copy operation
-type CopyResult struct {
-	Success     bool
-	BytesCopied int64
-	Error       error
-	TimeTaken   time.Duration
-}
-
-// DirectoryTreeInfo represents directory tree information
+// DirectoryTreeInfo represents directory tree information.
+// This is a Catalogizer-specific extension not present in the base module.
 type DirectoryTreeInfo struct {
 	Path       string
 	TotalFiles int
@@ -86,11 +54,4 @@ type DirectoryTreeInfo struct {
 	MaxDepth   int
 	Files      []*FileInfo
 	Subdirs    []*DirectoryTreeInfo
-}
-
-// ConnectionPool manages multiple connections for a protocol
-type ConnectionPool interface {
-	GetClient(config *StorageConfig) (FileSystemClient, error)
-	ReturnClient(client FileSystemClient) error
-	CloseAll() error
 }

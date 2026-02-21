@@ -10,3 +10,63 @@
 [submodule "Assets"]
 	path = Assets
 	url = git@github.com:vasic-digital/Assets.git
+[submodule "Concurrency"]
+	path = Concurrency
+	url = git@github.com:vasic-digital/Concurrency.git
+[submodule "Config"]
+	path = Config
+	url = git@github.com:vasic-digital/Config.git
+[submodule "Filesystem"]
+	path = Filesystem
+	url = git@github.com:vasic-digital/Filesystem.git
+[submodule "Database"]
+	path = Database
+	url = git@github.com:vasic-digital/Database.git
+[submodule "Auth"]
+	path = Auth
+	url = git@github.com:vasic-digital/Auth.git
+[submodule "Middleware"]
+	path = Middleware
+	url = git@github.com:vasic-digital/Middleware.git
+[submodule "RateLimiter"]
+	path = RateLimiter
+	url = git@github.com:vasic-digital/RateLimiter.git
+[submodule "Observability"]
+	path = Observability
+	url = git@github.com:vasic-digital/Observability.git
+[submodule "Media"]
+	path = Media
+	url = git@github.com:vasic-digital/Media.git
+[submodule "Watcher"]
+	path = Watcher
+	url = git@github.com:vasic-digital/Watcher.git
+[submodule "EventBus"]
+	path = EventBus
+	url = git@github.com:vasic-digital/EventBus.git
+[submodule "Cache"]
+	path = Cache
+	url = git@github.com:vasic-digital/Cache.git
+[submodule "Security"]
+	path = Security
+	url = git@github.com:vasic-digital/Security.git
+[submodule "Storage"]
+	path = Storage
+	url = git@github.com:vasic-digital/Storage.git
+[submodule "Streaming"]
+	path = Streaming
+	url = git@github.com:vasic-digital/Streaming.git
+[submodule "Discovery"]
+	path = Discovery
+	url = git@github.com:vasic-digital/Discovery.git
+[submodule "Entities"]
+	path = Entities
+	url = git@github.com:vasic-digital/Entities.git
+[submodule "Media-Types-TS"]
+	path = Media-Types-TS
+	url = git@github.com:vasic-digital/Media-Types-TS.git
+[submodule "Catalogizer-API-Client-TS"]
+	path = Catalogizer-API-Client-TS
+	url = git@github.com:vasic-digital/Catalogizer-API-Client-TS.git
+[submodule "Auth-Context-React"]
+	path = Auth-Context-React
+	url = git@github.com:vasic-digital/Auth-Context-React.git

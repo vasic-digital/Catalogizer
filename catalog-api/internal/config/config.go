@@ -1,9 +1,10 @@
 package config
 
 import (
-	"encoding/json"
 	"fmt"
 	"os"
+
+	digitalconfig "digital.vasic.config/pkg/config"
 )
 
 type Config struct {
@@ -79,16 +80,9 @@ func Load() (*Config, error) {
 }
 
 func LoadFromFile(path string) (*Config, error) {
-	file, err := os.Open(path)
-	if err != nil {
-		return nil, fmt.Errorf("failed to open config file: %w", err)
-	}
-	defer file.Close()
-
 	var config Config
-	decoder := json.NewDecoder(file)
-	if err := decoder.Decode(&config); err != nil {
-		return nil, fmt.Errorf("failed to decode config: %w", err)
+	if err := digitalconfig.LoadFile(path, &config); err != nil {
+		return nil, fmt.Errorf("failed to load config: %w", err)
 	}
 
 	if err := config.validate(); err != nil {

@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"path/filepath"
+	"regexp"
 	"strings"
 
 	"catalogizer/database"
@@ -12,6 +13,10 @@ import (
 
 	"go.uber.org/zap"
 )
+
+// gamePlatformRe detects game platform hints in directory names.
+// Kept here after title_parser.go was refactored to use digital.vasic.entities.
+var gamePlatformRe = regexp.MustCompile(`(?i)\b(?:PC|Windows|Linux|Mac|macOS|PS[2-5]|PlayStation[\s._-]*[2-5]?|Xbox(?:[\s._-]*(?:One|360|Series[\s._-]*[XS]))?|Switch|Nintendo|GOG|Steam)\b`)
 
 // AggregationService bridges the scan pipeline to structured media entities.
 // After a scan completes, it analyzes scanned directories, detects media types,

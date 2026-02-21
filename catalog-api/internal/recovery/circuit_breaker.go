@@ -1,22 +1,28 @@
+// Package recovery provides fault-tolerance primitives for Catalogizer services.
+//
+// CircuitBreaker and CircuitBreakerManager wrap digital.vasic.concurrency/pkg/breaker,
+// adding Catalogizer-specific features: zap logger integration, named circuit breakers,
+// state change callbacks, and a centralized manager.
 package recovery
 
 import (
-	"errors"
 	"sync"
 	"time"
 
+	vasicbreaker "digital.vasic.concurrency/pkg/breaker"
 	"go.uber.org/zap"
 )
 
-// CircuitState represents the state of a circuit breaker
+// CircuitState represents the state of a circuit breaker.
 type CircuitState int
 
 const (
-	StateClosed CircuitState = iota
-	StateHalfOpen
-	StateOpen
+	StateClosed   CircuitState = iota // Normal operation — requests pass through
+	StateHalfOpen                     // Probing — limited requests pass through
+	StateOpen                         // Failing — requests are rejected immediately
 )
 
+// String returns a human-readable state name.
 func (s CircuitState) String() string {
 	switch s {
 	case StateClosed:
@@ -30,21 +36,21 @@ func (s CircuitState) String() string {
 	}
 }
 
-// CircuitBreaker implements the circuit breaker pattern for fault tolerance
-type CircuitBreaker struct {
-	name            string
-	maxFailures     int
-	resetTimeout    time.Duration
-	state           CircuitState
-	failures        int
-	lastFailureTime time.Time
-	nextAttempt     time.Time
-	mutex           sync.RWMutex
-	logger          *zap.Logger
-	onStateChange   func(string, CircuitState, CircuitState)
+// mapBreakState translates vasicbreaker.State to CircuitState.
+func mapBreakState(s vasicbreaker.State) CircuitState {
+	switch s {
+	case vasicbreaker.Closed:
+		return StateClosed
+	case vasicbreaker.HalfOpen:
+		return StateHalfOpen
+	case vasicbreaker.Open:
+		return StateOpen
+	default:
+		return StateClosed
+	}
 }
 
-// CircuitBreakerConfig contains configuration for a circuit breaker
+// CircuitBreakerConfig contains configuration for a circuit breaker.
 type CircuitBreakerConfig struct {
 	Name         string
 	MaxFailures  int
@@ -52,174 +58,130 @@ type CircuitBreakerConfig struct {
 	Logger       *zap.Logger
 }
 
-// NewCircuitBreaker creates a new circuit breaker
+// CircuitBreaker wraps digital.vasic.concurrency/pkg/breaker.CircuitBreaker
+// with Catalogizer-specific features: logger integration, named identification,
+// and state change callbacks.
+//
+// Design patterns applied:
+//   - Decorator: adds logging/callbacks to the base vasic breaker
+//   - Facade: simplifies the breaker API surface for Catalogizer callers
+type CircuitBreaker struct {
+	name          string
+	inner         *vasicbreaker.CircuitBreaker
+	logger        *zap.Logger
+	onStateChange func(string, CircuitState, CircuitState)
+	maxFailures   int           // stored for GetStats
+	resetTimeout  time.Duration // stored for GetStats
+}
+
+// NewCircuitBreaker creates a new circuit breaker backed by
+// digital.vasic.concurrency/pkg/breaker.
 func NewCircuitBreaker(config CircuitBreakerConfig) *CircuitBreaker {
-	if config.MaxFailures <= 0 {
-		config.MaxFailures = 5
+	maxFailures := config.MaxFailures
+	if maxFailures <= 0 {
+		maxFailures = 5
 	}
-	if config.ResetTimeout <= 0 {
-		config.ResetTimeout = 60 * time.Second
+	resetTimeout := config.ResetTimeout
+	if resetTimeout <= 0 {
+		resetTimeout = 60 * time.Second
+	}
+
+	cfg := &vasicbreaker.Config{
+		MaxFailures:      maxFailures,
+		Timeout:          resetTimeout,
+		HalfOpenRequests: 1,
 	}
 
 	return &CircuitBreaker{
 		name:         config.Name,
-		maxFailures:  config.MaxFailures,
-		resetTimeout: config.ResetTimeout,
-		state:        StateClosed,
+		inner:        vasicbreaker.New(cfg),
 		logger:       config.Logger,
+		maxFailures:  maxFailures,
+		resetTimeout: resetTimeout,
 	}
 }
 
-// SetStateChangeCallback sets a callback for state changes
+// SetStateChangeCallback registers a callback invoked on every state transition.
 func (cb *CircuitBreaker) SetStateChangeCallback(callback func(string, CircuitState, CircuitState)) {
 	cb.onStateChange = callback
 }
 
-// Execute executes a function with circuit breaker protection
+// Execute wraps fn with circuit breaker protection, delegating to the
+// digital.vasic.concurrency breaker engine and adding logging and callbacks.
 func (cb *CircuitBreaker) Execute(fn func() error) error {
-	if !cb.allowRequest() {
-		return errors.New("circuit breaker is open")
+	prevState := mapBreakState(cb.inner.State())
+
+	err := cb.inner.Execute(fn)
+
+	newState := mapBreakState(cb.inner.State())
+
+	if cb.logger != nil {
+		if err != nil {
+			cb.logger.Warn("Circuit breaker recorded failure",
+				zap.String("name", cb.name),
+				zap.Int("failures", cb.inner.Failures()),
+				zap.String("state", newState.String()))
+		} else {
+			cb.logger.Debug("Circuit breaker recorded success",
+				zap.String("name", cb.name),
+				zap.String("state", newState.String()))
+		}
 	}
 
-	err := fn()
-	cb.recordResult(err)
+	if prevState != newState {
+		if cb.logger != nil {
+			cb.logger.Info("Circuit breaker state changed",
+				zap.String("name", cb.name),
+				zap.String("old_state", prevState.String()),
+				zap.String("new_state", newState.String()))
+		}
+		if cb.onStateChange != nil {
+			cb.onStateChange(cb.name, prevState, newState)
+		}
+	}
+
 	return err
 }
 
-// allowRequest determines if a request should be allowed
-func (cb *CircuitBreaker) allowRequest() bool {
-	cb.mutex.RLock()
-	defer cb.mutex.RUnlock()
-
-	switch cb.state {
-	case StateClosed:
-		return true
-	case StateOpen:
-		return time.Now().After(cb.nextAttempt)
-	case StateHalfOpen:
-		return true
-	default:
-		return false
-	}
-}
-
-// recordResult records the result of an operation
-func (cb *CircuitBreaker) recordResult(err error) {
-	cb.mutex.Lock()
-	defer cb.mutex.Unlock()
-
-	if err != nil {
-		cb.recordFailure()
-	} else {
-		cb.recordSuccess()
-	}
-}
-
-// recordFailure records a failure
-func (cb *CircuitBreaker) recordFailure() {
-	cb.failures++
-	cb.lastFailureTime = time.Now()
-
-	switch cb.state {
-	case StateClosed:
-		if cb.failures >= cb.maxFailures {
-			cb.setState(StateOpen)
-			cb.nextAttempt = time.Now().Add(cb.resetTimeout)
-		}
-	case StateHalfOpen:
-		cb.setState(StateOpen)
-		cb.nextAttempt = time.Now().Add(cb.resetTimeout)
-	}
-
-	cb.logger.Warn("Circuit breaker recorded failure",
-		zap.String("name", cb.name),
-		zap.Int("failures", cb.failures),
-		zap.String("state", cb.state.String()))
-}
-
-// recordSuccess records a success
-func (cb *CircuitBreaker) recordSuccess() {
-	switch cb.state {
-	case StateHalfOpen:
-		cb.failures = 0
-		cb.setState(StateClosed)
-	case StateClosed:
-		cb.failures = 0
-	}
-
-	cb.logger.Debug("Circuit breaker recorded success",
-		zap.String("name", cb.name),
-		zap.String("state", cb.state.String()))
-}
-
-// setState changes the circuit breaker state
-func (cb *CircuitBreaker) setState(newState CircuitState) {
-	if cb.state == newState {
-		return
-	}
-
-	oldState := cb.state
-	cb.state = newState
-
-	cb.logger.Info("Circuit breaker state changed",
-		zap.String("name", cb.name),
-		zap.String("old_state", oldState.String()),
-		zap.String("new_state", newState.String()))
-
-	if cb.onStateChange != nil {
-		cb.onStateChange(cb.name, oldState, newState)
-	}
-}
-
-// GetState returns the current state
+// GetState returns the current circuit breaker state.
 func (cb *CircuitBreaker) GetState() CircuitState {
-	cb.mutex.RLock()
-	defer cb.mutex.RUnlock()
-	return cb.state
+	return mapBreakState(cb.inner.State())
 }
 
-// GetFailures returns the current failure count
+// GetFailures returns the current consecutive failure count.
 func (cb *CircuitBreaker) GetFailures() int {
-	cb.mutex.RLock()
-	defer cb.mutex.RUnlock()
-	return cb.failures
+	return cb.inner.Failures()
 }
 
-// GetStats returns circuit breaker statistics
+// GetStats returns circuit breaker statistics as a map.
 func (cb *CircuitBreaker) GetStats() map[string]interface{} {
-	cb.mutex.RLock()
-	defer cb.mutex.RUnlock()
-
 	return map[string]interface{}{
-		"name":              cb.name,
-		"state":             cb.state.String(),
-		"failures":          cb.failures,
-		"max_failures":      cb.maxFailures,
-		"last_failure_time": cb.lastFailureTime,
-		"next_attempt":      cb.nextAttempt,
-		"reset_timeout":     cb.resetTimeout,
+		"name":          cb.name,
+		"state":         mapBreakState(cb.inner.State()).String(),
+		"failures":      cb.inner.Failures(),
+		"max_failures":  cb.maxFailures,
+		"reset_timeout": cb.resetTimeout,
 	}
 }
 
-// Reset manually resets the circuit breaker
+// Reset forces the circuit breaker back to the closed state.
 func (cb *CircuitBreaker) Reset() {
-	cb.mutex.Lock()
-	defer cb.mutex.Unlock()
-
-	cb.failures = 0
-	cb.setState(StateClosed)
-
-	cb.logger.Info("Circuit breaker manually reset", zap.String("name", cb.name))
+	cb.inner.Reset()
+	if cb.logger != nil {
+		cb.logger.Info("Circuit breaker manually reset", zap.String("name", cb.name))
+	}
 }
 
-// CircuitBreakerManager manages multiple circuit breakers
+// CircuitBreakerManager manages a named registry of circuit breakers.
+//
+// Design pattern: Registry — centralized lookup and creation of named breakers.
 type CircuitBreakerManager struct {
 	breakers map[string]*CircuitBreaker
 	mutex    sync.RWMutex
 	logger   *zap.Logger
 }
 
-// NewCircuitBreakerManager creates a new circuit breaker manager
+// NewCircuitBreakerManager creates a new circuit breaker manager.
 func NewCircuitBreakerManager(logger *zap.Logger) *CircuitBreakerManager {
 	return &CircuitBreakerManager{
 		breakers: make(map[string]*CircuitBreaker),
@@ -227,13 +189,13 @@ func NewCircuitBreakerManager(logger *zap.Logger) *CircuitBreakerManager {
 	}
 }
 
-// GetOrCreate gets an existing circuit breaker or creates a new one
+// GetOrCreate retrieves an existing circuit breaker by name, or creates a new one.
 func (m *CircuitBreakerManager) GetOrCreate(name string, config CircuitBreakerConfig) *CircuitBreaker {
 	m.mutex.Lock()
 	defer m.mutex.Unlock()
 
-	if breaker, exists := m.breakers[name]; exists {
-		return breaker
+	if cb, exists := m.breakers[name]; exists {
+		return cb
 	}
 
 	config.Name = name
@@ -241,53 +203,56 @@ func (m *CircuitBreakerManager) GetOrCreate(name string, config CircuitBreakerCo
 		config.Logger = m.logger
 	}
 
-	breaker := NewCircuitBreaker(config)
-	m.breakers[name] = breaker
+	cb := NewCircuitBreaker(config)
+	m.breakers[name] = cb
 
-	m.logger.Info("Created new circuit breaker", zap.String("name", name))
-	return breaker
+	if m.logger != nil {
+		m.logger.Info("Created new circuit breaker", zap.String("name", name))
+	}
+	return cb
 }
 
-// Get retrieves a circuit breaker by name
+// Get retrieves a circuit breaker by name. Returns nil if not found.
 func (m *CircuitBreakerManager) Get(name string) *CircuitBreaker {
 	m.mutex.RLock()
 	defer m.mutex.RUnlock()
-
 	return m.breakers[name]
 }
 
-// GetAll returns all circuit breakers
+// GetAll returns a snapshot of all managed circuit breakers.
 func (m *CircuitBreakerManager) GetAll() map[string]*CircuitBreaker {
 	m.mutex.RLock()
 	defer m.mutex.RUnlock()
 
-	result := make(map[string]*CircuitBreaker)
-	for name, breaker := range m.breakers {
-		result[name] = breaker
+	result := make(map[string]*CircuitBreaker, len(m.breakers))
+	for name, cb := range m.breakers {
+		result[name] = cb
 	}
 	return result
 }
 
-// GetStats returns statistics for all circuit breakers
+// GetStats returns aggregated statistics for all managed circuit breakers.
 func (m *CircuitBreakerManager) GetStats() map[string]interface{} {
 	m.mutex.RLock()
 	defer m.mutex.RUnlock()
 
-	stats := make(map[string]interface{})
-	for name, breaker := range m.breakers {
-		stats[name] = breaker.GetStats()
+	stats := make(map[string]interface{}, len(m.breakers))
+	for name, cb := range m.breakers {
+		stats[name] = cb.GetStats()
 	}
 	return stats
 }
 
-// Reset resets all circuit breakers
+// Reset resets all managed circuit breakers to the closed state.
 func (m *CircuitBreakerManager) Reset() {
 	m.mutex.RLock()
 	defer m.mutex.RUnlock()
 
-	for _, breaker := range m.breakers {
-		breaker.Reset()
+	for _, cb := range m.breakers {
+		cb.Reset()
 	}
 
-	m.logger.Info("All circuit breakers reset")
+	if m.logger != nil {
+		m.logger.Info("All circuit breakers reset")
+	}
 }

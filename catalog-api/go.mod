@@ -8,10 +8,31 @@ replace digital.vasic.challenges => ../Challenges
 
 replace digital.vasic.assets => ../Assets
 
+replace digital.vasic.concurrency => ../Concurrency
+
+replace digital.vasic.config => ../Config
+
+replace digital.vasic.filesystem => ../Filesystem
+
+replace digital.vasic.auth => ../Auth
+
+replace digital.vasic.cache => ../Cache
+
+replace digital.vasic.entities => ../Entities
+
+replace digital.vasic.eventbus => ../EventBus
+
 require (
 	cloud.google.com/go/storage v1.59.2
 	digital.vasic.assets v0.0.0-00010101000000-000000000000
+	digital.vasic.auth v0.0.0-00010101000000-000000000000
+	digital.vasic.cache v0.0.0-00010101000000-000000000000
 	digital.vasic.challenges v0.0.0-00010101000000-000000000000
+	digital.vasic.concurrency v0.0.0-00010101000000-000000000000
+	digital.vasic.config v0.0.0-00010101000000-000000000000
+	digital.vasic.entities v0.0.0-00010101000000-000000000000
+	digital.vasic.eventbus v0.0.0-00010101000000-000000000000
+	digital.vasic.filesystem v0.0.0-00010101000000-000000000000
 	github.com/DATA-DOG/go-sqlmock v1.5.2
 	github.com/alicebob/miniredis/v2 v2.36.1
 	github.com/aws/aws-sdk-go-v2 v1.41.1
@@ -29,7 +50,7 @@ require (
 	github.com/jlaffaye/ftp v0.2.0
 	github.com/jung-kurt/gofpdf v1.16.2
 	github.com/ledongthuc/pdf v0.0.0-20250511090121-5959a4027728
-	github.com/mattn/go-sqlite3 v1.14.33
+	github.com/lib/pq v1.10.9
 	github.com/mutecomm/go-sqlcipher v0.0.0-20190227152316-55dbde17881f
 	github.com/prometheus/client_golang v1.23.2
 	github.com/prometheus/client_model v0.6.2
@@ -102,7 +123,6 @@ require (
 	github.com/jupiterrider/ffi v0.5.0 // indirect
 	github.com/klauspost/cpuid/v2 v2.3.0 // indirect
 	github.com/leodido/go-urn v1.4.0 // indirect
-	github.com/lib/pq v1.10.9 // indirect
 	github.com/mattn/go-isatty v0.0.20 // indirect
 	github.com/modern-go/concurrent v0.0.0-20180306012644-bacd9c7ef1dd // indirect
 	github.com/modern-go/reflect2 v1.0.2 // indirect
