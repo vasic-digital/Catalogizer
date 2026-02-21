@@ -37,6 +37,10 @@
     "@vasic-digital/media-types": "file:../Media-Types-TS",
     "@vasic-digital/catalogizer-api-client": "file:../Catalogizer-API-Client-TS",
     "@vasic-digital/auth-context": "file:../Auth-Context-React",
+    "@vasic-digital/media-browser": "file:../Media-Browser-React",
+    "@vasic-digital/media-player": "file:../Media-Player-React",
+    "@vasic-digital/collection-manager": "file:../Collection-Manager-React",
+    "@vasic-digital/dashboard-analytics": "file:../Dashboard-Analytics-React",
     "web-vitals": "^5.1.0",
     "zod": "^3.20.6",
     "zustand": "^4.3.6"

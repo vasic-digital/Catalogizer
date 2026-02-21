@@ -70,3 +70,15 @@
 [submodule "Auth-Context-React"]
 	path = Auth-Context-React
 	url = git@github.com:vasic-digital/Auth-Context-React.git
+[submodule "Media-Browser-React"]
+	path = Media-Browser-React
+	url = git@github.com:vasic-digital/Media-Browser-React.git
+[submodule "Dashboard-Analytics-React"]
+	path = Dashboard-Analytics-React
+	url = git@github.com:vasic-digital/Dashboard-Analytics-React.git
+[submodule "Media-Player-React"]
+	path = Media-Player-React
+	url = git@github.com:vasic-digital/Media-Player-React.git
+[submodule "Collection-Manager-React"]
+	path = Collection-Manager-React
+	url = git@github.com:vasic-digital/Collection-Manager-React.git
