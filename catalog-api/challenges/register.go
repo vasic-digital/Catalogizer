@@ -70,5 +70,13 @@ func RegisterAll(svc *services.ChallengeService) error {
 	svc.Register(NewEntityDuplicatesChallenge())
 	svc.Register(NewEntityHierarchyChallenge())
 
+	// Module integration challenges (CH-021 to CH-025)
+	// Validate the API endpoints used by vasic-digital TypeScript modules
+	svc.Register(NewCollectionsAPIChallenge())        // CH-021: @vasic-digital/collection-manager
+	svc.Register(NewEntityUserMetadataChallenge())    // CH-022: @vasic-digital/media-browser
+	svc.Register(NewEntitySearchChallenge())          // CH-023: @vasic-digital/media-browser
+	svc.Register(NewStorageRootsAPIChallenge())       // CH-024: @vasic-digital/catalogizer-api-client
+	svc.Register(NewAuthTokenRefreshChallenge())      // CH-025: @vasic-digital/catalogizer-api-client
+
 	return nil
 }
