@@ -1,13 +1,35 @@
 package com.catalogizer.androidtv.data.remote
 
 import com.catalogizer.androidtv.data.repository.AuthRepository
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.runBlocking
-import kotlinx.coroutines.withTimeout
+import kotlinx.coroutines.*
+import kotlinx.coroutines.sync.Mutex
 import okhttp3.Interceptor
 import okhttp3.Response
 
 class AuthInterceptor(private val authRepository: AuthRepository) : Interceptor {
+    private val scope = CoroutineScope(Dispatchers.IO)
+    private val refreshMutex = Mutex()
+    private var refreshJob: Job? = null
+
+    private fun refreshTokenIfNeeded() {
+        if (!authRepository.shouldRefreshToken()) return
+        synchronized(this) {
+            if (refreshJob?.isActive == true) return
+            refreshJob = scope.launch {
+                try {
+                    withTimeout(10_000L) {
+                        authRepository.refreshToken()
+                    }
+                } catch (e: Exception) {
+                    // Token refresh failed, will retry on next request
+                } finally {
+                    synchronized(this@AuthInterceptor) {
+                        refreshJob = null
+                    }
+                }
+            }
+        }
+    }
 
     override fun intercept(chain: Interceptor.Chain): Response {
         val originalRequest = chain.request()
@@ -17,14 +39,8 @@ class AuthInterceptor(private val authRepository: AuthRepository) : Interceptor 
             return chain.proceed(originalRequest)
         }
 
-        // Refresh token if needed, with timeout to prevent blocking indefinitely
-        if (authRepository.shouldRefreshToken()) {
-            runBlocking(Dispatchers.IO) {
-                withTimeout(10_000L) {
-                    authRepository.refreshToken()
-                }
-            }
-        }
+        // Refresh token if needed, without blocking the network thread
+        refreshTokenIfNeeded()
 
         // Add authorization header if we have a token (synchronous StateFlow access)
         val authState = authRepository.authState.value

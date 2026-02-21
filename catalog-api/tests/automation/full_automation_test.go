@@ -12,17 +12,19 @@ import (
 	"time"
 
 	"catalogizer/handlers"
+	"catalogizer/models"
 	"catalogizer/services"
 	"catalogizer/tests"
 
+	"github.com/chromedp/chromedp"
 	"github.com/gorilla/mux"
 )
 
 // FullAutomationTest represents comprehensive automation testing with screenshots
 type FullAutomationTest struct {
-	server          *httptest.Server
-	screenshotTool  *ScreenshotCapture
-	testSuite       *tests.TestSuite
+	server           *httptest.Server
+	screenshotTool   *ScreenshotCapture
+	testSuite        *tests.TestSuite
 	documentationDir string
 }
 
@@ -39,9 +41,9 @@ func NewFullAutomationTest(t *testing.T) *FullAutomationTest {
 	screenshotTool := NewScreenshotCapture(server.URL, docDir)
 
 	return &FullAutomationTest{
-		server:          server,
-		screenshotTool:  screenshotTool,
-		testSuite:       testSuite,
+		server:           server,
+		screenshotTool:   screenshotTool,
+		testSuite:        testSuite,
 		documentationDir: docDir,
 	}
 }
@@ -538,12 +540,6 @@ func createTestServer(testSuite *tests.TestSuite) *httptest.Server {
 	// Setup route handlers
 	analyticsHandler := handlers.NewAnalyticsHandler(testSuite.AnalyticsService, permissionService)
 	favoritesHandler := handlers.NewFavoritesHandler(testSuite.FavoritesService, permissionService)
-	conversionHandler := handlers.NewConversionHandler(testSuite.ConversionService, permissionService)
-	syncHandler := handlers.NewSyncHandler(testSuite.SyncService, permissionService)
-	stressTestHandler := handlers.NewStressTestHandler(testSuite.StressTestService, permissionService)
-	errorHandler := handlers.NewErrorReportingHandler(testSuite.ErrorReportingService, permissionService)
-	logHandler := handlers.NewLogManagementHandler(testSuite.LogManagementService, permissionService)
-	configHandler := handlers.NewConfigurationHandler(testSuite.ConfigurationService, permissionService)
 
 	// API routes
 	api := router.PathPrefix("/api").Subrouter()

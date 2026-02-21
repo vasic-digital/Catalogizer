@@ -70,7 +70,20 @@ async fn make_http_request(
     method: String,
     headers: HashMap<String, String>,
     body: Option<String>,
+    config: State<'_, ConfigState>,
 ) -> Result<String, String> {
+    // Validate URL against configured server URL to prevent SSRF
+    let config_guard = config.lock().await;
+    let server_url = config_guard.server_url.as_ref().ok_or("Server URL not configured")?;
+    
+    // Normalize URLs for comparison (remove trailing slashes)
+    let normalized_server_url = server_url.trim_end_matches('/');
+    let normalized_request_url = url.trim_end_matches('/');
+    
+    if !normalized_request_url.starts_with(normalized_server_url) {
+        return Err(format!("URL must be within configured server: {}", server_url));
+    }
+
     let client = reqwest::Client::new();
 
     let mut request = match method.to_uppercase().as_str() {
@@ -124,7 +137,7 @@ fn main() {
 
     let config = ConfigState::default();
 
-    tauri::Builder::default()
+    let app = tauri::Builder::default()
         .plugin(tauri_plugin_shell::init())
         .manage(config)
         .invoke_handler(tauri::generate_handler![
@@ -138,8 +151,15 @@ fn main() {
             get_platform,
             get_arch
         ])
-        .run(tauri::generate_context!())
-        .expect("error while running tauri application");
+        .run(tauri::generate_context!());
+    
+    match app {
+        Ok(_) => (),
+        Err(e) => {
+            eprintln!("Failed to start Tauri application: {}", e);
+            std::process::exit(1);
+        }
+    }
 }
 
 #[cfg(test)]

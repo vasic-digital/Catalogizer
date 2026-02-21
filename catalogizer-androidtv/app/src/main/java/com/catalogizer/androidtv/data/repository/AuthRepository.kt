@@ -6,6 +6,7 @@ import com.catalogizer.androidtv.data.remote.CatalogizerApi
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.sync.Mutex
 import java.text.SimpleDateFormat
 import java.util.Locale
 import java.util.TimeZone
@@ -15,6 +16,8 @@ class AuthRepository(private val context: Context, private var api: CatalogizerA
     fun setApi(api: CatalogizerApi) {
         this.api = api
     }
+    
+    private val refreshMutex = Mutex()
     
     private val _authState = MutableStateFlow<AuthState>(AuthState.Unauthenticated)
     val authState: StateFlow<AuthState> = _authState.asStateFlow()
@@ -58,27 +61,29 @@ class AuthRepository(private val context: Context, private var api: CatalogizerA
     }
 
     suspend fun refreshToken() {
-        try {
-            val current = _authState.value
-            if (current.isAuthenticated && current.token != null) {
-                val tokenBody = mapOf("token" to current.token)
-                val response = api?.refreshToken(tokenBody) ?: throw IllegalStateException("API not initialized")
+        refreshMutex.withLock {
+            try {
+                val current = _authState.value
+                if (current.isAuthenticated && current.token != null) {
+                    val tokenBody = mapOf("token" to current.token)
+                    val response = api?.refreshToken(tokenBody) ?: throw IllegalStateException("API not initialized")
 
-                if (response.isSuccessful) {
-                    response.body()?.let { loginResponse ->
-                        _authState.value = current.copy(
-                            token = loginResponse.token,
-                            expiresAt = loginResponse.expiresAt?.let { parseExpiresAt(it) }
-                        )
+                    if (response.isSuccessful) {
+                        response.body()?.let { loginResponse ->
+                            _authState.value = current.copy(
+                                token = loginResponse.token,
+                                expiresAt = loginResponse.expiresAt?.let { parseExpiresAt(it) }
+                            )
+                        }
+                    } else {
+                        // If refresh fails, logout user
+                        _authState.value = AuthState.Unauthenticated
                     }
-                } else {
-                    // If refresh fails, logout user
-                    _authState.value = AuthState.Unauthenticated
                 }
+            } catch (e: Exception) {
+                // If refresh fails, logout user
+                _authState.value = AuthState.Unauthenticated
             }
-        } catch (e: Exception) {
-            // If refresh fails, logout user
-            _authState.value = AuthState.Unauthenticated
         }
     }
 

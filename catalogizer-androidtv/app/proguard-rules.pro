@@ -46,6 +46,11 @@
     kotlinx.serialization.KSerializer serializer(...);
 }
 
+# Room
+-keep class * extends androidx.room.RoomDatabase
+-keep @androidx.room.Entity class *
+-dontwarn androidx.room.paging.**
+
 # Data models — keep fields for JSON serialization
 -keep class com.catalogizer.androidtv.data.models.** { *; }
 -keep class com.catalogizer.androidtv.data.remote.** { *; }

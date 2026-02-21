@@ -52,17 +52,15 @@ import { CollectionSharing } from '../components/collections/CollectionSharing';
 import { CollectionExport } from '../components/collections/CollectionExport';
 import { CollectionRealTime } from '../components/collections/CollectionRealTime';
 import { 
-  ComponentLoader,
   preloadComponent,
   CollectionTemplates,
   AdvancedSearch,
   CollectionAutomation,
   ExternalIntegrations,
-  CollectionAnalytics as LazyCollectionAnalytics
 } from '../components/performance/LazyComponents';
-import { VirtualList, VirtualizedTable } from '../components/performance/VirtualScroller';
+
 import { useMemoized, useOptimizedData, usePagination } from '../components/performance/MemoCache';
-import { BundleAnalyzer } from '../components/performance/BundleAnalyzer';
+
 import { 
   AICollectionSuggestions,
   AINaturalSearch,

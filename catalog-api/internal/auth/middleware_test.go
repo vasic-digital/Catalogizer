@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"net/http"
 	"net/http/httptest"
+	"os"
 	"testing"
 	"time"
 
@@ -30,6 +31,9 @@ func setupMiddlewareTestWithRealDB(t *testing.T) (*AuthService, *AuthMiddleware)
 
 	db := database.WrapDB(sqlDB, database.DialectSQLite)
 	logger := zap.NewNop()
+	// Set admin credentials for tests (matches hardcoded values in test expectations)
+	os.Setenv("ADMIN_USERNAME", "admin")
+	os.Setenv("ADMIN_PASSWORD", "admin123")
 	service := NewAuthService(db, "integration-test-secret", logger)
 	err = service.Initialize()
 	require.NoError(t, err)

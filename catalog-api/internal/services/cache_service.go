@@ -710,7 +710,7 @@ func (s *CacheService) recordCacheActivity(ctx context.Context, activityType, ke
 	s.wg.Add(1)
 	go func() {
 		defer s.wg.Done()
-		writeCtx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+		writeCtx, cancel := context.WithTimeout(ctx, 5*time.Second)
 		defer cancel()
 		query := `
 			INSERT INTO cache_activity (type, cache_key, provider, hit, timestamp)

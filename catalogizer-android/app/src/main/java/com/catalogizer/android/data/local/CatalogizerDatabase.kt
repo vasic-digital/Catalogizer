@@ -49,7 +49,6 @@ abstract class CatalogizerDatabase : RoomDatabase() {
                     "catalogizer_database"
                 )
                     .addMigrations(*ALL_MIGRATIONS)
-                    .fallbackToDestructiveMigration()
                     .build()
                 INSTANCE = instance
                 instance

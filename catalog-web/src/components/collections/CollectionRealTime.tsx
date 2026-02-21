@@ -149,6 +149,7 @@ export const CollectionRealTime: React.FC<CollectionRealTimeProps> = ({
   const wsRef = useRef<WebSocket | null>(null)
   const reconnectTimeoutRef = useRef<NodeJS.Timeout | null>(null)
   const heartbeatIntervalRef = useRef<NodeJS.Timeout | null>(null)
+  const connectionTimeoutRef = useRef<NodeJS.Timeout | null>(null)
   
   const { collectionItems, refetchItems } = useCollection(collection?.id || '')
 
@@ -160,7 +161,8 @@ export const CollectionRealTime: React.FC<CollectionRealTimeProps> = ({
     setConnectionStatus({ status: 'connecting' })
     
     // Simulate connection delay
-    setTimeout(() => {
+    if (connectionTimeoutRef.current) clearTimeout(connectionTimeoutRef.current);
+    connectionTimeoutRef.current = setTimeout(() => {
       setIsConnected(true)
       setConnectionStatus({
         status: 'connected',
@@ -262,6 +264,10 @@ export const CollectionRealTime: React.FC<CollectionRealTimeProps> = ({
     
     if (heartbeatIntervalRef.current) {
       clearInterval(heartbeatIntervalRef.current)
+    }
+    
+    if (connectionTimeoutRef.current) {
+      clearTimeout(connectionTimeoutRef.current)
     }
   }, [])
 

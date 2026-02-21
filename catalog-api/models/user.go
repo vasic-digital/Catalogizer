@@ -1628,7 +1628,6 @@ type AuthenticationConfig struct {
 type FeatureConfig struct {
 	MediaConversion bool `json:"media_conversion"`
 	WebDAVSync      bool `json:"webdav_sync"`
-	StressTesting   bool `json:"stress_testing"`
 	ErrorReporting  bool `json:"error_reporting"`
 	LogManagement   bool `json:"log_management"`
 }

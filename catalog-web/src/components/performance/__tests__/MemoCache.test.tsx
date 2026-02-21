@@ -3,29 +3,11 @@ import { render, screen, act, waitFor } from '@testing-library/react'
 import { renderHook } from '@testing-library/react'
 import {
   useMemoized,
-  useDebounceSearch,
-  usePerformanceMonitor,
   useOptimizedData,
-  useIntersectionObserver,
   usePagination,
-  memoCache,
-  measurePerformance,
-  measureAsyncPerformance,
 } from '../MemoCache'
 
-vi.mock('lodash/debounce', () => {
-  return {
-    default: (fn: any, delay: number) => {
-      let timeout: any
-      const debounced = (...args: any[]) => {
-        clearTimeout(timeout)
-        timeout = setTimeout(() => fn(...args), delay)
-      }
-      debounced.cancel = () => clearTimeout(timeout)
-      return debounced
-    },
-  }
-})
+
 
 describe('useMemoized', () => {
   afterEach(() => {

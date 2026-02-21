@@ -36,10 +36,10 @@ import (
 	asset_store "digital.vasic.assets/pkg/store"
 	"github.com/gin-gonic/gin"
 	_ "github.com/mutecomm/go-sqlcipher"
-	"golang.org/x/crypto/bcrypt"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"github.com/redis/go-redis/v9"
 	"go.uber.org/zap"
+	"golang.org/x/crypto/bcrypt"
 )
 
 // Version information injected via ldflags at build time
@@ -215,7 +215,7 @@ func main() {
 
 	// Initialize authentication and conversion services
 	jwtSecret := cfg.Auth.JWTSecret
-	if jwtSecret == "" || jwtSecret == "change-this-secret-in-production" {
+	if jwtSecret == "" {
 		// Generate a cryptographically secure random secret at startup
 		secretBytes := make([]byte, 32)
 		if _, err := rand.Read(secretBytes); err != nil {
@@ -251,7 +251,7 @@ func main() {
 	} else {
 		log.Println("Redis connected successfully for distributed rate limiting")
 	}
-	
+
 	// Initialize challenge service
 	challengeService := root_services.NewChallengeService(
 		filepath.Join(".", "data", "challenge_results"),
@@ -290,13 +290,13 @@ func main() {
 	conversionHandler := root_handlers.NewConversionHandler(conversionService, authService)
 	authHandler := root_handlers.NewAuthHandler(authService)
 	androidTVMediaHandler := root_handlers.NewAndroidTVMediaHandler(databaseDB)
-	
+
 	// Simple recommendation handler for testing
 	simpleRecHandler := root_handlers.NewSimpleRecommendationHandler()
-	
+
 	// Recommendation handler
 	recommendationHandler := root_handlers.NewRecommendationHandler(recommendationService)
-	
+
 	// Subtitle handler
 	subtitleHandler := root_handlers.NewSubtitleHandler(subtitleService, logger)
 
@@ -462,11 +462,11 @@ func main() {
 		api.GET("/media/:id", androidTVMediaHandler.GetMediaByID)
 		api.PUT("/media/:id/progress", androidTVMediaHandler.UpdateWatchProgress)
 		api.PUT("/media/:id/favorite", androidTVMediaHandler.UpdateFavoriteStatus)
-		
+
 		// Test recommendation endpoints
 		api.GET("/recommendations/test", simpleRecHandler.GetSimpleRecommendation)
 		api.GET("/recommendations/error", simpleRecHandler.GetTest)
-		
+
 		// Recommendation endpoints
 		recGroup := api.Group("/recommendations")
 		{
@@ -474,7 +474,7 @@ func main() {
 			recGroup.GET("/trending", recommendationHandler.GetTrendingItems)
 			recGroup.GET("/personalized/:user_id", recommendationHandler.GetPersonalizedRecommendations)
 		}
-		
+
 		// Subtitle endpoints
 		subGroup := api.Group("/subtitles")
 		{

@@ -1,5 +1,5 @@
 import React, { useMemo, useCallback, useState, useRef, useEffect } from 'react';
-import debounce from 'lodash/debounce';
+
 
 // Memoization cache for expensive computations
 interface MemoCache {
@@ -94,80 +94,9 @@ export const useMemoized = <T,>(
   return computedValue;
 };
 
-// Debounced search hook
-export const useDebounceSearch = <T,>(
-  searchFunction: (query: string) => Promise<T>,
-  delay = 300
-) => {
-  const [searchQuery, setSearchQuery] = useState('');
-  const [results, setResults] = useState<T | null>(null);
-  const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState<Error | null>(null);
 
-  const debouncedSearch = useMemo(
-    () => debounce(async (query: string) => {
-      if (!query.trim()) {
-        setResults(null);
-        return;
-      }
 
-      setIsLoading(true);
-      setError(null);
 
-      try {
-        const result = await searchFunction(query);
-        setResults(result);
-      } catch (err) {
-        setError(err as Error);
-      } finally {
-        setIsLoading(false);
-      }
-    }, delay),
-    [searchFunction, delay]
-  );
-
-  useEffect(() => {
-    debouncedSearch(searchQuery);
-    return () => debouncedSearch.cancel();
-  }, [searchQuery, debouncedSearch]);
-
-  return {
-    searchQuery,
-    setSearchQuery,
-    results,
-    isLoading,
-    error
-  };
-};
-
-// Component to monitor and optimize render performance
-export const usePerformanceMonitor = (componentName: string) => {
-  const renderCount = useRef(0);
-  const renderTimes = useRef<number[]>([]);
-  const lastRenderTime = useRef(Date.now());
-
-  useEffect(() => {
-    renderCount.current++;
-    const now = Date.now();
-    const renderTime = now - lastRenderTime.current;
-    renderTimes.current.push(renderTime);
-    lastRenderTime.current = now;
-
-    // Keep only last 10 renders
-    if (renderTimes.current.length > 10) {
-      renderTimes.current.shift();
-    }
-
-    // Performance data available via returned renderCount and averageRenderTime
-  });
-
-  return {
-    renderCount: renderCount.current,
-    averageRenderTime: renderTimes.current.length > 0 
-      ? renderTimes.current.reduce((a, b) => a + b, 0) / renderTimes.current.length
-      : 0
-  };
-};
 
 // Optimized data filtering and sorting hook
 export const useOptimizedData = <T,>(
@@ -225,43 +154,7 @@ export const useOptimizedData = <T,>(
   return processedData;
 };
 
-// Intersection Observer hook for lazy loading
-export const useIntersectionObserver = (
-  options: IntersectionObserverInit = {}
-) => {
-  const [entries, setEntries] = useState<IntersectionObserverEntry[]>([]);
-  const observer = useRef<IntersectionObserver>();
 
-  const observe = useCallback((element: Element) => {
-    if (observer.current) {
-      observer.current.observe(element);
-    }
-  }, []);
-
-  const unobserve = useCallback((element: Element) => {
-    if (observer.current) {
-      observer.current.unobserve(element);
-    }
-  }, []);
-
-  useEffect(() => {
-    if (typeof IntersectionObserver === 'undefined') {
-      return;
-    }
-
-    observer.current = new IntersectionObserver((entries) => {
-      setEntries(entries);
-    }, options);
-
-    return () => {
-      if (observer.current) {
-        observer.current.disconnect();
-      }
-    };
-  }, [options]);
-
-  return { entries, observe, unobserve };
-};
 
 // Pagination hook with caching
 export const usePagination = <T,>(
@@ -307,23 +200,3 @@ export const usePagination = <T,>(
   };
 };
 
-// Export cache manager for direct usage if needed
-export { globalCache as memoCache };
-
-// Performance monitoring utility
-export const measurePerformance = <T,>(
-  name: string,
-  fn: () => T
-): T => {
-  const result = fn();
-  return result;
-};
-
-// Async performance monitoring
-export const measureAsyncPerformance = async <T,>(
-  name: string,
-  fn: () => Promise<T>
-): Promise<T> => {
-  const result = await fn();
-  return result;
-};

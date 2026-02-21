@@ -298,13 +298,6 @@ func (s *ConfigurationService) initializeWizardSteps() {
 					DefaultValue: false,
 				},
 				{
-					Name:         "enable_stress_testing",
-					Label:        "Enable Stress Testing",
-					Type:         "checkbox",
-					Required:     false,
-					DefaultValue: false,
-				},
-				{
 					Name:         "enable_error_reporting",
 					Label:        "Enable Error Reporting",
 					Type:         "checkbox",

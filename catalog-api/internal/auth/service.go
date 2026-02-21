@@ -5,6 +5,7 @@ import (
 	"crypto/rand"
 	"encoding/hex"
 	"fmt"
+	"os"
 	"strings"
 	"time"
 
@@ -194,8 +195,27 @@ func (s *AuthService) createDefaultAdmin() error {
 		return nil
 	}
 
-	// Create default admin user
-	passwordHash, err := bcrypt.GenerateFromPassword([]byte("admin123"), bcrypt.DefaultCost)
+	// Read admin credentials from environment variables
+	adminUsername := os.Getenv("ADMIN_USERNAME")
+	if adminUsername == "" {
+		adminUsername = "admin"
+	}
+	adminPassword := os.Getenv("ADMIN_PASSWORD")
+	if adminPassword == "" {
+		// Generate a cryptographically secure random password
+		passwordBytes := make([]byte, 12)
+		if _, err := rand.Read(passwordBytes); err != nil {
+			return fmt.Errorf("failed to generate admin password: %w", err)
+		}
+		adminPassword = hex.EncodeToString(passwordBytes)
+		s.logger.Warn("No ADMIN_PASSWORD set. Generated random password. Set ADMIN_PASSWORD environment variable for production.",
+			zap.String("username", adminUsername),
+			zap.String("password", adminPassword))
+	} else if adminPassword == "admin123" {
+		s.logger.Warn("Using default password 'admin123'. Change ADMIN_PASSWORD for production security.")
+	}
+
+	passwordHash, err := bcrypt.GenerateFromPassword([]byte(adminPassword), bcrypt.DefaultCost)
 	if err != nil {
 		return err
 	}
@@ -205,13 +225,13 @@ func (s *AuthService) createDefaultAdmin() error {
 		VALUES (?, ?, ?, ?, ?, ?, ?)
 	`
 
-	_, err = s.db.Exec(query, "admin", "admin@catalogizer.local", string(passwordHash), "System", "Administrator", "admin", 1)
+	_, err = s.db.Exec(query, adminUsername, adminUsername+"@catalogizer.local", string(passwordHash), "System", "Administrator", "admin", 1)
 	if err != nil {
 		return err
 	}
 
-	s.logger.Info("Default admin user created - change default password immediately",
-		zap.String("username", "admin"))
+	s.logger.Info("Default admin user created",
+		zap.String("username", adminUsername))
 
 	return nil
 }

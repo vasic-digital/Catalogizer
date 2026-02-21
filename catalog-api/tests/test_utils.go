@@ -37,7 +37,6 @@ type TestSuite struct {
 	FavoritesRepo         *repository.FavoritesRepository
 	ConversionRepo        *repository.ConversionRepository
 	SyncRepo              *repository.SyncRepository
-	StressTestRepo        *repository.StressTestRepository
 	ErrorRepo             *repository.ErrorReportingRepository
 	CrashRepo             *repository.CrashReportingRepository
 	LogRepo               *repository.LogManagementRepository
@@ -46,7 +45,6 @@ type TestSuite struct {
 	FavoritesService      *services.FavoritesService
 	ConversionService     *services.ConversionService
 	SyncService           *services.SyncService
-	StressTestService     *services.StressTestService
 	ErrorReportingService *services.ErrorReportingService
 	LogManagementService  *services.LogManagementService
 	ConfigurationService  *services.ConfigurationService
@@ -97,7 +95,6 @@ func SetupTestSuite(t *testing.T) *TestSuite {
 	favoritesRepo := repository.NewFavoritesRepository(testDB.DB)
 	conversionRepo := repository.NewConversionRepository(testDB.DB)
 	syncRepo := repository.NewSyncRepository(testDB.DB)
-	stressTestRepo := repository.NewStressTestRepository(testDB.DB)
 	errorRepo := repository.NewErrorReportingRepository(testDB.DB)
 	crashRepo := repository.NewCrashReportingRepository(testDB.DB)
 	logRepo := repository.NewLogManagementRepository(testDB.DB)
@@ -111,7 +108,6 @@ func SetupTestSuite(t *testing.T) *TestSuite {
 	favoritesService := services.NewFavoritesService(favoritesRepo, authService)
 	conversionService := services.NewConversionService(conversionRepo, userRepo, authService)
 	syncService := services.NewSyncService(syncRepo, userRepo, authService)
-	stressTestService := services.NewStressTestService(stressTestRepo, authService)
 	errorReportingService := services.NewErrorReportingService(errorRepo, crashRepo)
 	logManagementService := services.NewLogManagementService(logRepo)
 	configurationService := services.NewConfigurationService(configRepo, "/tmp/test_config.json")
@@ -124,7 +120,6 @@ func SetupTestSuite(t *testing.T) *TestSuite {
 		FavoritesRepo:         favoritesRepo,
 		ConversionRepo:        conversionRepo,
 		SyncRepo:              syncRepo,
-		StressTestRepo:        stressTestRepo,
 		ErrorRepo:             errorRepo,
 		CrashRepo:             crashRepo,
 		LogRepo:               logRepo,
@@ -133,7 +128,6 @@ func SetupTestSuite(t *testing.T) *TestSuite {
 		FavoritesService:      favoritesService,
 		ConversionService:     conversionService,
 		SyncService:           syncService,
-		StressTestService:     stressTestService,
 		ErrorReportingService: errorReportingService,
 		LogManagementService:  logManagementService,
 		ConfigurationService:  configurationService,
@@ -619,7 +613,6 @@ func BenchmarkSetup(b *testing.B) *TestSuite {
 	favoritesRepo := repository.NewFavoritesRepository(testDB.DB)
 	conversionRepo := repository.NewConversionRepository(testDB.DB)
 	syncRepo := repository.NewSyncRepository(testDB.DB)
-	stressTestRepo := repository.NewStressTestRepository(testDB.DB)
 	errorRepo := repository.NewErrorReportingRepository(testDB.DB)
 	crashRepo := repository.NewCrashReportingRepository(testDB.DB)
 	logRepo := repository.NewLogManagementRepository(testDB.DB)
@@ -633,7 +626,6 @@ func BenchmarkSetup(b *testing.B) *TestSuite {
 	favoritesService := services.NewFavoritesService(favoritesRepo, authService)
 	conversionService := services.NewConversionService(conversionRepo, userRepo, authService)
 	syncService := services.NewSyncService(syncRepo, userRepo, authService)
-	stressTestService := services.NewStressTestService(stressTestRepo, authService)
 	errorReportingService := services.NewErrorReportingService(errorRepo, crashRepo)
 	logManagementService := services.NewLogManagementService(logRepo)
 	configurationService := services.NewConfigurationService(configRepo, "/tmp/benchmark_config.json")
@@ -646,7 +638,6 @@ func BenchmarkSetup(b *testing.B) *TestSuite {
 		FavoritesRepo:         favoritesRepo,
 		ConversionRepo:        conversionRepo,
 		SyncRepo:              syncRepo,
-		StressTestRepo:        stressTestRepo,
 		ErrorRepo:             errorRepo,
 		CrashRepo:             crashRepo,
 		LogRepo:               logRepo,
@@ -655,7 +646,6 @@ func BenchmarkSetup(b *testing.B) *TestSuite {
 		FavoritesService:      favoritesService,
 		ConversionService:     conversionService,
 		SyncService:           syncService,
-		StressTestService:     stressTestService,
 		ErrorReportingService: errorReportingService,
 		LogManagementService:  logManagementService,
 		ConfigurationService:  configurationService,

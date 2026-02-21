@@ -2,6 +2,7 @@ package services
 
 import (
 	"fmt"
+	"strings"
 	"testing"
 	"time"
 
@@ -22,12 +23,12 @@ func TestAuthService_ValidatePassword(t *testing.T) {
 	}{
 		{
 			name:     "valid password with 8 characters",
-			password: "abcdefgh",
+			password: "Abcdefg1!",
 			wantErr:  false,
 		},
 		{
 			name:     "valid long password",
-			password: "a_very_strong_password_123!",
+			password: "A_very_strong_password_123!",
 			wantErr:  false,
 		},
 		{
@@ -49,9 +50,39 @@ func TestAuthService_ValidatePassword(t *testing.T) {
 			errMsg:   "password must be at least 8 characters long",
 		},
 		{
-			name:     "exactly 8 characters",
-			password: "12345678",
+			name:     "exactly 8 characters with all requirements",
+			password: "Abcdefg1!",
 			wantErr:  false,
+		},
+		{
+			name:     "missing uppercase",
+			password: "abcdefg1!",
+			wantErr:  true,
+			errMsg:   "password must contain at least one uppercase letter",
+		},
+		{
+			name:     "missing lowercase",
+			password: "ABCDEFG1!",
+			wantErr:  true,
+			errMsg:   "password must contain at least one lowercase letter",
+		},
+		{
+			name:     "missing digit",
+			password: "Abcdefg!!",
+			wantErr:  true,
+			errMsg:   "password must contain at least one digit",
+		},
+		{
+			name:     "missing special character",
+			password: "Abcdefg12",
+			wantErr:  true,
+			errMsg:   "password must contain at least one special character",
+		},
+		{
+			name:     "too long password",
+			password: "Abcdefg1!" + strings.Repeat("a", 120),
+			wantErr:  true,
+			errMsg:   "password must be at most 128 characters long",
 		},
 	}
 

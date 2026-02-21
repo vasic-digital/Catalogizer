@@ -76,44 +76,20 @@ pub async fn scan_shares_with_credentials(
             }).collect())
         }
         Ok(resp) => {
-            // API call failed, fallback to common shares
+            // API call failed, return error
             log::warn!("SMB discovery API failed with status: {}", resp.status());
-            Ok(get_common_shares(host))
+            Err(anyhow!("SMB discovery API failed with status: {}", resp.status()))
         }
         Err(e) => {
-            // Network error, fallback to common shares
+            // Network error, return error
             log::warn!("SMB discovery API network error: {}", e);
-            Ok(get_common_shares(host))
+            Err(anyhow!("SMB discovery API network error: {}", e))
         }
     }
 }
 
 
-/// Get common SMB share names to try
-fn get_common_shares(host: &str) -> Vec<SMBShare> {
-    let common_shares = vec![
-        ("shared", "Shared folder"),
-        ("public", "Public folder"),
-        ("media", "Media files"),
-        ("downloads", "Downloads"),
-        ("documents", "Documents"),
-        ("music", "Music files"),
-        ("videos", "Video files"),
-        ("pictures", "Pictures"),
-        ("backup", "Backup files"),
-    ];
 
-    common_shares
-        .into_iter()
-        .map(|(name, desc)| SMBShare {
-            host: host.to_string(),
-            share_name: name.to_string(),
-            path: format!("\\\\{}\\{}", host, name),
-            writable: false,
-            description: Some(desc.to_string()),
-        })
-        .collect()
-}
 
 /// Browse files and directories in an SMB share
 pub async fn browse_share(
@@ -175,41 +151,16 @@ pub async fn browse_share_with_credentials(
         }
         Ok(resp) => {
             log::warn!("SMB browse API failed with status: {}", resp.status());
-            Ok(get_mock_entries())
+            Err(anyhow!("SMB browse API failed with status: {}", resp.status()))
         }
         Err(e) => {
             log::warn!("SMB browse API network error: {}", e);
-            Ok(get_mock_entries())
+            Err(anyhow!("SMB browse API network error: {}", e))
         }
     }
 }
 
-/// Get mock entries for fallback
-fn get_mock_entries() -> Vec<FileEntry> {
-    vec![
-        FileEntry {
-            name: "..".to_string(),
-            path: "..".to_string(),
-            is_directory: true,
-            size: None,
-            modified: None,
-        },
-        FileEntry {
-            name: "Example Folder".to_string(),
-            path: "Example Folder".to_string(),
-            is_directory: true,
-            size: None,
-            modified: Some("2024-01-01 12:00:00".to_string()),
-        },
-        FileEntry {
-            name: "example.txt".to_string(),
-            path: "example.txt".to_string(),
-            is_directory: false,
-            size: Some(1024),
-            modified: Some("2024-01-01 12:00:00".to_string()),
-        },
-    ]
-}
+
 
 
 /// Test SMB connection with credentials
@@ -322,106 +273,9 @@ mod tests {
         }
     }
 
-    /// Tests for get_common_shares
-    mod common_shares_tests {
-        use super::*;
 
-        #[test]
-        fn test_get_common_shares_returns_expected_count() {
-            let shares = get_common_shares("192.168.1.10");
-            assert_eq!(shares.len(), 9);
-        }
 
-        #[test]
-        fn test_get_common_shares_has_expected_names() {
-            let shares = get_common_shares("testhost");
-            let names: Vec<&str> = shares.iter().map(|s| s.share_name.as_str()).collect();
 
-            assert!(names.contains(&"shared"));
-            assert!(names.contains(&"public"));
-            assert!(names.contains(&"media"));
-            assert!(names.contains(&"downloads"));
-            assert!(names.contains(&"documents"));
-            assert!(names.contains(&"music"));
-            assert!(names.contains(&"videos"));
-            assert!(names.contains(&"pictures"));
-            assert!(names.contains(&"backup"));
-        }
-
-        #[test]
-        fn test_get_common_shares_host_is_set() {
-            let host = "192.168.1.100";
-            let shares = get_common_shares(host);
-
-            for share in &shares {
-                assert_eq!(share.host, host);
-            }
-        }
-
-        #[test]
-        fn test_get_common_shares_path_format() {
-            let shares = get_common_shares("myhost");
-
-            for share in &shares {
-                assert!(share.path.starts_with("\\\\myhost\\"));
-                assert!(share.path.contains(&share.share_name));
-            }
-        }
-
-        #[test]
-        fn test_get_common_shares_all_read_only() {
-            let shares = get_common_shares("host");
-
-            for share in &shares {
-                assert!(!share.writable, "Share {} should not be writable", share.share_name);
-            }
-        }
-
-        #[test]
-        fn test_get_common_shares_all_have_descriptions() {
-            let shares = get_common_shares("host");
-
-            for share in &shares {
-                assert!(share.description.is_some(), "Share {} should have a description", share.share_name);
-            }
-        }
-    }
-
-    /// Tests for get_mock_entries
-    mod mock_entries_tests {
-        use super::*;
-
-        #[test]
-        fn test_get_mock_entries_returns_three_entries() {
-            let entries = get_mock_entries();
-            assert_eq!(entries.len(), 3);
-        }
-
-        #[test]
-        fn test_get_mock_entries_has_parent_directory() {
-            let entries = get_mock_entries();
-            let parent = &entries[0];
-            assert_eq!(parent.name, "..");
-            assert!(parent.is_directory);
-        }
-
-        #[test]
-        fn test_get_mock_entries_has_folder() {
-            let entries = get_mock_entries();
-            let folder = &entries[1];
-            assert_eq!(folder.name, "Example Folder");
-            assert!(folder.is_directory);
-        }
-
-        #[test]
-        fn test_get_mock_entries_has_file() {
-            let entries = get_mock_entries();
-            let file = &entries[2];
-            assert_eq!(file.name, "example.txt");
-            assert!(!file.is_directory);
-            assert_eq!(file.size, Some(1024));
-        }
-    }
 
     /// Tests for API base URL
     mod api_url_tests {
