@@ -70,6 +70,7 @@ func (db *DB) createInitialTablesSQLite(ctx context.Context) error {
 			is_duplicate BOOLEAN DEFAULT 0,
 			duplicate_group_id INTEGER,
 			parent_id INTEGER,
+			UNIQUE(storage_root_id, path),
 			FOREIGN KEY (storage_root_id) REFERENCES storage_roots(id),
 			FOREIGN KEY (parent_id) REFERENCES files(id),
 			FOREIGN KEY (duplicate_group_id) REFERENCES duplicate_groups(id)

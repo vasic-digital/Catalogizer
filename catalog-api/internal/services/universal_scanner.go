@@ -633,10 +633,13 @@ func insertFileRecord(ctx context.Context, db *database.DB, path string, file *f
 			).Scan(&storageRootID)
 			if err2 != nil {
 				// ON CONFLICT DO NOTHING returns no rows — re-query
-				_ = db.QueryRowContext(ctx,
+				err3 := db.QueryRowContext(ctx,
 					"SELECT id FROM storage_roots WHERE name = ? LIMIT 1",
 					job.StorageRoot.Name,
 				).Scan(&storageRootID)
+				if err3 != nil {
+					return fmt.Errorf("storage root %q not found and could not be created: %w", job.StorageRoot.Name, err)
+				}
 			}
 		} else {
 			// SQLite path
@@ -653,12 +656,20 @@ func insertFileRecord(ctx context.Context, db *database.DB, path string, file *f
 			}
 			storageRootID = insertedID
 			if storageRootID == 0 {
-				_ = db.QueryRowContext(ctx,
+				err2 := db.QueryRowContext(ctx,
 					"SELECT id FROM storage_roots WHERE name = ? LIMIT 1",
 					job.StorageRoot.Name,
 				).Scan(&storageRootID)
+				if err2 != nil {
+					return fmt.Errorf("storage root %q not found and could not be created: %w", job.StorageRoot.Name, err)
+				}
 			}
 		}
+	}
+
+	// Validate storage root ID
+	if storageRootID <= 0 {
+		return fmt.Errorf("invalid storage root ID %d for %q", storageRootID, job.StorageRoot.Name)
 	}
 
 	name := file.Name
@@ -676,7 +687,21 @@ func insertFileRecord(ctx context.Context, db *database.DB, path string, file *f
 			parentPath, storageRootID,
 		).Scan(&pid)
 		if err == nil {
-			parentID = &pid
+			// Verify parent actually exists (defensive check)
+			var exists bool
+			checkErr := db.QueryRowContext(ctx,
+				"SELECT 1 FROM files WHERE id = ?",
+				pid,
+			).Scan(&exists)
+			if checkErr == nil {
+				parentID = &pid
+			} else {
+				logger.Warn("Parent directory ID not found, will insert with NULL parent_id",
+					zap.String("path", path),
+					zap.String("parent_path", parentPath),
+					zap.Int64("parent_id", pid),
+					zap.Error(checkErr))
+			}
 		}
 	}
 
@@ -702,6 +727,9 @@ func insertFileRecord(ctx context.Context, db *database.DB, path string, file *f
 	)
 	if err != nil && db.Dialect().IsSQLite() {
 		// SQLite fallback if UNIQUE constraint doesn't exist yet
+		logger.Warn("ON CONFLICT failed, falling back to INSERT OR REPLACE",
+			zap.String("path", path),
+			zap.Error(err))
 		_, err = db.ExecContext(ctx,
 			`INSERT OR REPLACE INTO files (storage_root_id, path, name, extension, mime_type, file_type, size, is_directory, modified_at, last_scan_at, parent_id)
 			 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP, ?)`,
