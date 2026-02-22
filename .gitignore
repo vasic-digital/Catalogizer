@@ -240,3 +240,8 @@ challenges/results/
 
 # Challenge endpoint config with credentials
 catalog-api/challenges/config/endpoints.json
+
+# Local development tools (JDK, Android SDK) - auto-installed by scripts
+tools/
+catalog-api/catalog-api
+releases/

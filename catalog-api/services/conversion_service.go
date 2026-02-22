@@ -16,7 +16,8 @@ import (
 	"catalogizer/repository"
 
 	"github.com/gen2brain/go-fitz"
-	"github.com/ledongthuc/pdf"
+	"github.com/unidoc/unipdf/v3/extractor"
+	"github.com/unidoc/unipdf/v3/model"
 )
 
 type ConversionService struct {
@@ -293,7 +294,7 @@ func (s *ConversionService) convertPDFToImage(job *models.ConversionJob, format 
 	return nil
 }
 
-// convertPDFToText converts PDF to plain text using pdf reader
+// convertPDFToText converts PDF to plain text using unipdf
 func (s *ConversionService) convertPDFToText(job *models.ConversionJob) error {
 	file, err := os.Open(job.SourcePath)
 	if err != nil {
@@ -301,13 +302,7 @@ func (s *ConversionService) convertPDFToText(job *models.ConversionJob) error {
 	}
 	defer file.Close()
 
-	// Get file info for pdf.NewReader
-	fileInfo, err := file.Stat()
-	if err != nil {
-		return fmt.Errorf("failed to get file info: %w", err)
-	}
-
-	pdfReader, err := pdf.NewReader(file, fileInfo.Size())
+	pdfReader, err := model.NewPdfReader(file)
 	if err != nil {
 		return fmt.Errorf("failed to create PDF reader: %w", err)
 	}
@@ -321,7 +316,10 @@ func (s *ConversionService) convertPDFToText(job *models.ConversionJob) error {
 	}
 
 	// Determine page range
-	totalPages := pdfReader.NumPage()
+	totalPages, err := pdfReader.GetNumPages()
+	if err != nil {
+		return fmt.Errorf("failed to get total pages: %w", err)
+	}
 	startPage := 1
 	endPage := totalPages
 
@@ -344,17 +342,17 @@ func (s *ConversionService) convertPDFToText(job *models.ConversionJob) error {
 
 	// Extract text from pages
 	for i := startPage; i <= endPage; i++ {
-		page := pdfReader.Page(i)
-
-		// Get fonts for the page
-		fonts := make(map[string]*pdf.Font)
-		fontNames := page.Fonts()
-		for _, fontName := range fontNames {
-			font := page.Font(fontName)
-			fonts[fontName] = &font
+		page, err := pdfReader.GetPage(i)
+		if err != nil {
+			return fmt.Errorf("failed to get page %d: %w", i, err)
 		}
 
-		content, err := page.GetPlainText(fonts)
+		extractor, err := extractor.New(page)
+		if err != nil {
+			return fmt.Errorf("failed to create extractor for page %d: %w", i, err)
+		}
+
+		content, err := extractor.ExtractText()
 		if err != nil {
 			return fmt.Errorf("failed to extract text from page %d: %w", i, err)
 		}

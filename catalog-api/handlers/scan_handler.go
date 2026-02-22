@@ -7,21 +7,29 @@ import (
 	"context"
 	"fmt"
 	"net/http"
+	"strconv"
 	"time"
 
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
 )
 
+// scannerInterface defines the scanner methods used by ScanHandler
+type scannerInterface interface {
+	QueueScan(job services.ScanJob) error
+	GetAllActiveScanStatuses() map[string]*services.ScanStatus
+	GetActiveScanStatus(jobID string) (*services.ScanStatus, bool)
+}
+
 // ScanHandler wraps UniversalScanner with REST API endpoints for
 // managing storage roots and triggering scan operations.
 type ScanHandler struct {
-	scanner *services.UniversalScanner
+	scanner scannerInterface
 	db      *database.DB
 }
 
 // NewScanHandler creates a new ScanHandler.
-func NewScanHandler(scanner *services.UniversalScanner, db *database.DB) *ScanHandler {
+func NewScanHandler(scanner scannerInterface, db *database.DB) *ScanHandler {
 	return &ScanHandler{scanner: scanner, db: db}
 }
 
@@ -110,15 +118,15 @@ func (h *ScanHandler) GetStorageRoots(c *gin.Context) {
 	var roots []gin.H
 	for rows.Next() {
 		var (
-			id                    int64
-			name, protocol        string
-			host, path, username  *string
-			domain                *string
-			port                  *int
-			enabled               bool
-			maxDepth              int
-			createdAt, updatedAt  time.Time
-			lastScanAt            *time.Time
+			id                   int64
+			name, protocol       string
+			host, path, username *string
+			domain               *string
+			port                 *int
+			enabled              bool
+			maxDepth             int
+			createdAt, updatedAt time.Time
+			lastScanAt           *time.Time
 		)
 		if err := rows.Scan(&id, &name, &protocol, &host, &port, &path, &username, &domain, &enabled, &maxDepth, &createdAt, &updatedAt, &lastScanAt); err != nil {
 			continue
@@ -145,6 +153,34 @@ func (h *ScanHandler) GetStorageRoots(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, gin.H{"roots": roots})
+}
+
+// GetStorageRootStatus handles GET /api/v1/storage-roots/:id/status.
+// Returns connectivity status for a storage root.
+func (h *ScanHandler) GetStorageRootStatus(c *gin.Context) {
+	idStr := c.Param("id")
+	id, err := strconv.ParseInt(idStr, 10, 64)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid storage root ID"})
+		return
+	}
+
+	// Check if storage root exists
+	var exists bool
+	err = h.db.QueryRowContext(c.Request.Context(),
+		"SELECT 1 FROM storage_roots WHERE id = ?", id).Scan(&exists)
+	if err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "Storage root not found"})
+		return
+	}
+
+	// For now, return dummy connectivity status
+	c.JSON(http.StatusOK, gin.H{
+		"id":         id,
+		"connected":  true,
+		"status":     "online",
+		"checked_at": time.Now().Format(time.RFC3339),
+	})
 }
 
 // queueScanRequest is the JSON body for POST /scans.
@@ -254,17 +290,17 @@ func (h *ScanHandler) loadStorageRoot(ctx context.Context, id int64) (*models.St
 func scanStatusToJSON(jobID string, s *services.ScanStatus) gin.H {
 	elapsed := time.Since(s.StartTime).Milliseconds()
 	return gin.H{
-		"job_id":           jobID,
-		"storage_root":     s.StorageRootName,
-		"protocol":         s.Protocol,
-		"status":           s.Status,
-		"start_time":       s.StartTime,
-		"elapsed_ms":       elapsed,
-		"current_path":     s.CurrentPath,
-		"files_processed":  s.FilesProcessed,
-		"files_found":      s.FilesFound,
-		"files_updated":    s.FilesUpdated,
-		"files_deleted":    s.FilesDeleted,
-		"error_count":      s.ErrorCount,
+		"job_id":          jobID,
+		"storage_root":    s.StorageRootName,
+		"protocol":        s.Protocol,
+		"status":          s.Status,
+		"start_time":      s.StartTime,
+		"elapsed_ms":      elapsed,
+		"current_path":    s.CurrentPath,
+		"files_processed": s.FilesProcessed,
+		"files_found":     s.FilesFound,
+		"files_updated":   s.FilesUpdated,
+		"files_deleted":   s.FilesDeleted,
+		"error_count":     s.ErrorCount,
 	}
 }

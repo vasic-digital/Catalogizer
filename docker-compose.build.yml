@@ -18,6 +18,11 @@ services:
       timeout: 5s
       retries: 10
       start_period: 10s
+    deploy:
+      resources:
+        limits:
+          cpus: '1'
+          memory: 2G
     ports:
       - "5432:5432"
     tmpfs:
@@ -34,6 +39,11 @@ services:
       timeout: 5s
       retries: 10
       start_period: 5s
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 512M
     ports:
       - "6379:6379"
     tmpfs:
@@ -88,6 +98,11 @@ services:
       # Android SDK
       ANDROID_HOME: /opt/android-sdk
       ANDROID_SDK_ROOT: /opt/android-sdk
+    deploy:
+      resources:
+        limits:
+          cpus: '3'
+          memory: 8G
     volumes:
       - .:/project
       - go-cache:/root/go

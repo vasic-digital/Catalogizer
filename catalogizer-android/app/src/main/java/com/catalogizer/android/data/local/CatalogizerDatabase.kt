@@ -20,7 +20,7 @@ import kotlinx.serialization.decodeFromString
 @Database(
     entities = [MediaItem::class, SearchHistory::class, DownloadItem::class, SyncOperation::class, WatchProgress::class, Favorite::class],
     version = 1,
-    exportSchema = false
+    exportSchema = true
 )
 @TypeConverters(Converters::class)
 abstract class CatalogizerDatabase : RoomDatabase() {
@@ -36,9 +36,16 @@ abstract class CatalogizerDatabase : RoomDatabase() {
         private var INSTANCE: CatalogizerDatabase? = null
 
         // Define migrations here as the schema evolves
+        val MIGRATION_1_2: Migration = object : Migration(1, 2) {
+            override fun migrate(database: SupportSQLiteDatabase) {
+                // No schema changes in version 2, but this shows the pattern
+                // For actual schema changes, add SQL statements here
+                // Example: database.execSQL("ALTER TABLE MediaItem ADD COLUMN new_column TEXT")
+            }
+        }
+
         val ALL_MIGRATIONS: Array<Migration> = arrayOf(
-            // Example for future use:
-            // MIGRATION_1_2
+            MIGRATION_1_2
         )
 
         fun getDatabase(context: Context): CatalogizerDatabase {

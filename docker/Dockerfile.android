@@ -1,0 +1,72 @@
+# Catalogizer Android Builder Image
+# Based on official Android Docker image with complete JDK toolchain
+# Provides JDK 21 + Android SDK 34 for building Android apps
+
+FROM docker.io/library/openjdk:21-jdk
+
+LABEL maintainer="Catalogizer Team"
+LABEL description="Android builder for Catalogizer project"
+
+# Use bash shell
+SHELL ["/bin/bash", "-c"]
+
+# Set environment variables
+ENV DEBIAN_FRONTEND=noninteractive
+ENV TZ=UTC
+ENV ANDROID_HOME=/opt/android-sdk
+ENV ANDROID_SDK_ROOT=${ANDROID_HOME}
+ENV PATH="${ANDROID_HOME}/cmdline-tools/latest/bin:${ANDROID_HOME}/platform-tools:${PATH}"
+
+# Install basic dependencies
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    curl \
+    wget \
+    unzip \
+    zip \
+    git \
+    ca-certificates \
+    gnupg \
+    lsb-release \
+    && rm -rf /var/lib/apt/lists/*
+
+# Download and install Android Command Line Tools
+RUN mkdir -p "${ANDROID_HOME}/cmdline-tools" \
+    && cd "${ANDROID_HOME}/cmdline-tools" \
+    && for i in 1 2 3 4 5; do \
+        echo "Attempt $i: Downloading Android cmdline-tools..." && \
+        curl --retry 5 --retry-delay 10 --retry-all-errors -fL \
+            "https://dl.google.com/android/repository/commandlinetools-linux-11076708_latest.zip" -o cmdline-tools.zip && \
+        break || (echo "Attempt $i failed, waiting 15s..." && sleep 15); \
+    done \
+    && unzip -q cmdline-tools.zip \
+    && mv cmdline-tools latest \
+    && rm cmdline-tools.zip
+
+# Accept licenses and install required SDK components
+RUN yes | sdkmanager --licenses >/dev/null 2>&1 || true
+
+# Install Android SDK components with retry logic
+RUN for i in 1 2 3; do \
+    echo "Attempt $i to install Android SDK components..." && \
+    sdkmanager \
+        "platform-tools" \
+        "build-tools;34.0.0" \
+        "platforms;android-34" \
+        "sources;android-34" \
+        "extras;android;m2repository" \
+        "extras;google;m2repository" \
+        && break || (echo "Attempt $i failed, waiting 10s..." && sleep 10); \
+    done
+
+# Clean up
+RUN apt-get clean && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
+
+# Verify installation
+RUN java -version && echo "Java version check complete"
+RUN sdkmanager --list_installed 2>/dev/null | head -20 && echo "Android SDK check complete"
+
+# Set working directory
+WORKDIR /project
+
+# Default command
+CMD ["bash"]

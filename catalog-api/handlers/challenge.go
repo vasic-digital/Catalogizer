@@ -1,22 +1,33 @@
 package handlers
 
 import (
+	"context"
 	"net/http"
 
 	"catalogizer/services"
 	"catalogizer/utils"
+	"digital.vasic.challenges/pkg/challenge"
 
 	"github.com/gin-gonic/gin"
 )
 
+// challengeService defines the methods needed by ChallengeHandler.
+type challengeService interface {
+	ListChallenges() []services.ChallengeSummary
+	RunChallenge(ctx context.Context, id string) (*challenge.Result, error)
+	RunAll(ctx context.Context) ([]*challenge.Result, error)
+	RunByCategory(ctx context.Context, category string) ([]*challenge.Result, error)
+	GetResults() []*challenge.Result
+}
+
 // ChallengeHandler handles challenge API endpoints.
 type ChallengeHandler struct {
-	service *services.ChallengeService
+	service challengeService
 }
 
 // NewChallengeHandler creates a new challenge handler.
 func NewChallengeHandler(
-	service *services.ChallengeService,
+	service challengeService,
 ) *ChallengeHandler {
 	return &ChallengeHandler{service: service}
 }

@@ -6,6 +6,7 @@ import (
 	"sync"
 	"time"
 
+	"catalogizer/internal/metrics"
 	"go.uber.org/zap"
 )
 
@@ -31,6 +32,20 @@ func (s ConnectionState) String() string {
 		return "offline"
 	default:
 		return "unknown"
+	}
+}
+
+// HealthMetric returns the Prometheus health metric value for this state.
+func (s ConnectionState) HealthMetric() float64 {
+	switch s {
+	case StateConnected:
+		return metrics.SMBHealthy
+	case StateReconnecting:
+		return metrics.SMBDegraded
+	case StateDisconnected, StateOffline:
+		return metrics.SMBOffline
+	default:
+		return metrics.SMBOffline
 	}
 }
 
@@ -198,6 +213,7 @@ func (m *ResilientSMBManager) AddSource(source *SMBSource) error {
 	}
 
 	source.State = StateDisconnected
+	metrics.SetSMBHealth(source.ID, source.State.HealthMetric())
 	source.IsEnabled = true
 
 	m.sources[source.ID] = source
@@ -229,6 +245,7 @@ func (m *ResilientSMBManager) RemoveSource(sourceID string) error {
 
 	source.mutex.Lock()
 	source.IsEnabled = false
+	metrics.SetSMBHealth(source.ID, metrics.SMBOffline)
 	source.mutex.Unlock()
 	delete(m.sources, sourceID)
 
@@ -290,6 +307,7 @@ func (m *ResilientSMBManager) connectSource(source *SMBSource) error {
 	}
 
 	source.State = StateReconnecting
+	metrics.SetSMBHealth(source.ID, source.State.HealthMetric())
 	m.sendEvent(SMBEvent{
 		Type:      EventReconnecting,
 		SourceID:  source.ID,
@@ -303,6 +321,7 @@ func (m *ResilientSMBManager) connectSource(source *SMBSource) error {
 	err := m.attemptConnection(ctx, source)
 	if err != nil {
 		source.State = StateDisconnected
+		metrics.SetSMBHealth(source.ID, source.State.HealthMetric())
 		source.LastError = err.Error()
 		source.RetryAttempts++
 
@@ -328,6 +347,7 @@ func (m *ResilientSMBManager) connectSource(source *SMBSource) error {
 			}()
 		} else {
 			source.State = StateOffline
+			metrics.SetSMBHealth(source.ID, source.State.HealthMetric())
 			m.sendEvent(SMBEvent{
 				Type:      EventOffline,
 				SourceID:  source.ID,
@@ -340,6 +360,7 @@ func (m *ResilientSMBManager) connectSource(source *SMBSource) error {
 
 	// Connection successful
 	source.State = StateConnected
+	metrics.SetSMBHealth(source.ID, source.State.HealthMetric())
 	source.LastConnected = time.Now()
 	source.LastError = ""
 	source.RetryAttempts = 0
@@ -443,6 +464,7 @@ func (m *ResilientSMBManager) checkSourceHealth(source *SMBSource) {
 
 		source.mutex.Lock()
 		source.State = StateDisconnected
+		metrics.SetSMBHealth(source.ID, source.State.HealthMetric())
 		source.LastError = err.Error()
 		source.mutex.Unlock()
 

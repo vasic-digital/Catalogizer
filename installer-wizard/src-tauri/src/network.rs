@@ -82,10 +82,10 @@ async fn is_host_alive(ip: Ipv4Addr) -> bool {
     let ports = vec![22, 80, 135, 139, 443, 445]; // Include SMB ports 135, 139, 445
 
     for port in ports {
-        if timeout(
-            Duration::from_millis(100),
-            TcpStream::connect((ip, port))
-        ).await.is_ok() {
+        if timeout(Duration::from_millis(100), TcpStream::connect((ip, port)))
+            .await
+            .is_ok()
+        {
             return true;
         }
     }
@@ -130,14 +130,11 @@ async fn scan_host(ip: Ipv4Addr) -> Result<NetworkHost> {
 
 /// Resolve hostname for an IP address
 async fn resolve_hostname(ip: Ipv4Addr) -> Option<String> {
-    use trust_dns_resolver::TokioAsyncResolver;
     use trust_dns_resolver::config::*;
+    use trust_dns_resolver::TokioAsyncResolver;
 
     // TokioAsyncResolver::tokio() returns the resolver directly, not a Result
-    let resolver = TokioAsyncResolver::tokio(
-        ResolverConfig::default(),
-        ResolverOpts::default(),
-    );
+    let resolver = TokioAsyncResolver::tokio(ResolverConfig::default(), ResolverOpts::default());
 
     if let Ok(response) = resolver.reverse_lookup(IpAddr::V4(ip)).await {
         return response.iter().next().map(|name| name.to_string());
@@ -178,17 +175,17 @@ async fn get_mac_address(ip: Ipv4Addr) -> Option<String> {
 /// Scan common ports on a host
 async fn scan_ports(ip: Ipv4Addr) -> Result<Vec<u16>> {
     let common_ports = vec![
-        21, 22, 23, 25, 53, 80, 110, 135, 139, 143, 443, 445, 993, 995, 3389, 5985, 5986
+        21, 22, 23, 25, 53, 80, 110, 135, 139, 143, 443, 445, 993, 995, 3389, 5985, 5986,
     ];
     let mut open_ports = Vec::new();
     let mut tasks = Vec::new();
 
     for port in common_ports {
         let task = tokio::spawn(async move {
-            if timeout(
-                Duration::from_millis(200),
-                TcpStream::connect((ip, port))
-            ).await.is_ok() {
+            if timeout(Duration::from_millis(200), TcpStream::connect((ip, port)))
+                .await
+                .is_ok()
+            {
                 Some(port)
             } else {
                 None
@@ -213,7 +210,15 @@ async fn scan_smb_shares_for_host(_ip: Ipv4Addr) -> Result<Vec<String>> {
     let mut shares = Vec::new();
 
     // Try common share names
-    let common_shares = vec!["C$", "ADMIN$", "IPC$", "shared", "public", "media", "downloads"];
+    let common_shares = vec![
+        "C$",
+        "ADMIN$",
+        "IPC$",
+        "shared",
+        "public",
+        "media",
+        "downloads",
+    ];
 
     for share in common_shares {
         // This is a placeholder - in reality you'd need to implement SMB enumeration
@@ -249,7 +254,15 @@ mod tests {
     #[test]
     fn test_common_smb_shares_list() {
         // Verify the common shares list has expected entries
-        let expected = vec!["C$", "ADMIN$", "IPC$", "shared", "public", "media", "downloads"];
+        let expected = vec![
+            "C$",
+            "ADMIN$",
+            "IPC$",
+            "shared",
+            "public",
+            "media",
+            "downloads",
+        ];
         assert_eq!(expected.len(), 7);
         assert!(expected.contains(&"media"));
         assert!(expected.contains(&"shared"));
@@ -271,7 +284,7 @@ mod tests {
     #[test]
     fn test_common_port_list_includes_smb_ports() {
         let common_ports: Vec<u16> = vec![
-            21, 22, 23, 25, 53, 80, 110, 135, 139, 143, 443, 445, 993, 995, 3389, 5985, 5986
+            21, 22, 23, 25, 53, 80, 110, 135, 139, 143, 443, 445, 993, 995, 3389, 5985, 5986,
         ];
 
         // SMB ports
@@ -290,7 +303,7 @@ mod tests {
         let ports: Vec<u16> = vec![22, 80, 135, 139, 443, 445];
         assert_eq!(ports.len(), 6);
         assert!(ports.contains(&445)); // SMB
-        assert!(ports.contains(&22));  // SSH
+        assert!(ports.contains(&22)); // SSH
     }
 
     #[test]

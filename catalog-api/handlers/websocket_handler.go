@@ -11,31 +11,31 @@ import (
 	"github.com/gorilla/websocket"
 )
 
-var upgrader = websocket.Upgrader{
-	ReadBufferSize:  1024,
-	WriteBufferSize: 1024,
-	CheckOrigin: func(r *http.Request) bool {
-		return true // Allow all origins in development
-	},
-}
-
 // WebSocketHandler manages WebSocket connections for real-time updates.
 type WebSocketHandler struct {
-	clients map[*websocket.Conn]bool
-	mu      sync.Mutex
+	clients  map[*websocket.Conn]bool
+	mu       sync.Mutex
+	upgrader *websocket.Upgrader
 }
 
 // NewWebSocketHandler creates a new WebSocket handler.
 func NewWebSocketHandler() *WebSocketHandler {
 	return &WebSocketHandler{
 		clients: make(map[*websocket.Conn]bool),
+		upgrader: &websocket.Upgrader{
+			ReadBufferSize:  1024,
+			WriteBufferSize: 1024,
+			CheckOrigin: func(r *http.Request) bool {
+				return true // Allow all origins in development
+			},
+		},
 	}
 }
 
 // HandleConnection upgrades an HTTP request to a WebSocket connection
 // and manages the connection lifecycle.
 func (h *WebSocketHandler) HandleConnection(c *gin.Context) {
-	conn, err := upgrader.Upgrade(c.Writer, c.Request, nil)
+	conn, err := h.upgrader.Upgrade(c.Writer, c.Request, nil)
 	if err != nil {
 		log.Printf("WebSocket upgrade failed: %v", err)
 		return

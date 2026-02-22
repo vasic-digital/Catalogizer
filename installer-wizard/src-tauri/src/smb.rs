@@ -1,7 +1,7 @@
 use crate::SMBShare;
 use anyhow::{anyhow, Result};
-use serde::{Deserialize, Serialize};
 use reqwest;
+use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -64,21 +64,29 @@ pub async fn scan_shares_with_credentials(
 
     match response {
         Ok(resp) if resp.status().is_success() => {
-            let shares: Vec<SMBShareApiResponse> = resp.json().await
+            let shares: Vec<SMBShareApiResponse> = resp
+                .json()
+                .await
                 .map_err(|e| anyhow!("Failed to parse API response: {}", e))?;
 
-            Ok(shares.into_iter().map(|s| SMBShare {
-                host: s.host,
-                share_name: s.share_name,
-                path: s.path,
-                writable: s.writable,
-                description: s.description,
-            }).collect())
+            Ok(shares
+                .into_iter()
+                .map(|s| SMBShare {
+                    host: s.host,
+                    share_name: s.share_name,
+                    path: s.path,
+                    writable: s.writable,
+                    description: s.description,
+                })
+                .collect())
         }
         Ok(resp) => {
             // API call failed, return error
             log::warn!("SMB discovery API failed with status: {}", resp.status());
-            Err(anyhow!("SMB discovery API failed with status: {}", resp.status()))
+            Err(anyhow!(
+                "SMB discovery API failed with status: {}",
+                resp.status()
+            ))
         }
         Err(e) => {
             // Network error, return error
@@ -88,15 +96,8 @@ pub async fn scan_shares_with_credentials(
     }
 }
 
-
-
-
 /// Browse files and directories in an SMB share
-pub async fn browse_share(
-    host: &str,
-    share: &str,
-    path: Option<&str>,
-) -> Result<Vec<FileEntry>> {
+pub async fn browse_share(host: &str, share: &str, path: Option<&str>) -> Result<Vec<FileEntry>> {
     browse_share_with_credentials(host, share, path, "guest", "", None).await
 }
 
@@ -138,20 +139,28 @@ pub async fn browse_share_with_credentials(
 
     match response {
         Ok(resp) if resp.status().is_success() => {
-            let entries: Vec<FileEntryApiResponse> = resp.json().await
+            let entries: Vec<FileEntryApiResponse> = resp
+                .json()
+                .await
                 .map_err(|e| anyhow!("Failed to parse API response: {}", e))?;
 
-            Ok(entries.into_iter().map(|e| FileEntry {
-                name: e.name,
-                path: e.path,
-                is_directory: e.is_directory,
-                size: e.size.map(|s| s as u64),
-                modified: e.modified,
-            }).collect())
+            Ok(entries
+                .into_iter()
+                .map(|e| FileEntry {
+                    name: e.name,
+                    path: e.path,
+                    is_directory: e.is_directory,
+                    size: e.size.map(|s| s as u64),
+                    modified: e.modified,
+                })
+                .collect())
         }
         Ok(resp) => {
             log::warn!("SMB browse API failed with status: {}", resp.status());
-            Err(anyhow!("SMB browse API failed with status: {}", resp.status()))
+            Err(anyhow!(
+                "SMB browse API failed with status: {}",
+                resp.status()
+            ))
         }
         Err(e) => {
             log::warn!("SMB browse API network error: {}", e);
@@ -159,9 +168,6 @@ pub async fn browse_share_with_credentials(
         }
     }
 }
-
-
-
 
 /// Test SMB connection with credentials
 pub async fn test_connection(
@@ -194,10 +200,15 @@ pub async fn test_connection(
 
     match response {
         Ok(resp) if resp.status().is_success() => {
-            let result: serde_json::Value = resp.json().await
+            let result: serde_json::Value = resp
+                .json()
+                .await
                 .map_err(|e| anyhow!("Failed to parse API response: {}", e))?;
 
-            Ok(result.get("success").and_then(|v| v.as_bool()).unwrap_or(false))
+            Ok(result
+                .get("success")
+                .and_then(|v| v.as_bool())
+                .unwrap_or(false))
         }
         Ok(resp) => {
             log::warn!("SMB test API failed with status: {}", resp.status());
@@ -272,10 +283,6 @@ mod tests {
             assert!(debug.contains("test.txt"));
         }
     }
-
-
-
-
 
     /// Tests for API base URL
     mod api_url_tests {

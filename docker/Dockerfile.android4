@@ -1,0 +1,87 @@
+# Catalogizer Android Builder Image with JDK 17
+# Ubuntu 22.04 with JDK 17 + Android SDK
+# JDK 17 is more stable with AGP 8.1.0 and avoids JDK image transform issues
+
+FROM ubuntu:22.04
+
+LABEL maintainer="Catalogizer Team"
+LABEL description="Android builder for Catalogizer project with JDK 17"
+
+# Use bash shell
+SHELL ["/bin/bash", "-c"]
+
+# Set environment variables
+ENV DEBIAN_FRONTEND=noninteractive
+ENV TZ=UTC
+ENV ANDROID_HOME=/opt/android-sdk
+ENV ANDROID_SDK_ROOT=${ANDROID_HOME}
+ENV PATH="${ANDROID_HOME}/cmdline-tools/latest/bin:${ANDROID_HOME}/platform-tools:${PATH}"
+
+# Install OpenJDK 17 with full development tools (includes jlink, jmods)
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    openjdk-17-jdk \
+    openjdk-17-jdk-headless \
+    curl \
+    wget \
+    unzip \
+    zip \
+    git \
+    ca-certificates \
+    gnupg \
+    lsb-release \
+    software-properties-common \
+    && rm -rf /var/lib/apt/lists/*
+
+# Verify JDK installation has jmods
+RUN java -version && \
+    jlink --version && \
+    echo "JDK 17 toolchain verified" && \
+    ls -la /usr/lib/jvm/java-17-openjdk-amd64/jmods/
+
+# Set Gradle properties to disable JDK image transform
+ENV GRADLE_OPTS="-Dandroid.useNewJdkImageTransform=false -Dandroid.experimental.jdkImageTransform=false -Dandroid.enableNewJdkImageTransform=false -Dandroid.experimental.useNewJdkImageTransform=false"
+ENV ORG_GRADLE_JAVA_HOME=/usr/lib/jvm/java-17-openjdk-amd64
+ENV ANDROID_JDK_HOME=/usr/lib/jvm/java-17-openjdk-amd64
+
+# Download and install Android Command Line Tools with retry
+RUN mkdir -p "${ANDROID_HOME}/cmdline-tools" \
+    && cd "${ANDROID_HOME}/cmdline-tools" \
+    && for i in 1 2 3 4 5; do \
+        echo "Attempt $i: Downloading Android cmdline-tools..." && \
+        curl --retry 5 --retry-delay 10 --retry-all-errors -fL \
+            "https://dl.google.com/android/repository/commandlinetools-linux-11076708_latest.zip" -o cmdline-tools.zip && \
+        break || (echo "Attempt $i failed, waiting 15s..." && sleep 15); \
+    done \
+    && unzip -q cmdline-tools.zip \
+    && mv cmdline-tools latest \
+    && rm cmdline-tools.zip
+
+# Accept licenses and install required SDK components
+RUN yes | sdkmanager --licenses >/dev/null 2>&1 || true
+
+# Install Android SDK components with retry
+RUN for i in 1 2 3; do \
+    echo "Attempt $i to install Android SDK components..." && \
+    sdkmanager \
+        "platform-tools" \
+        "build-tools;34.0.0" \
+        "platforms;android-33" \
+        "sources;android-33" \
+        "platforms;android-34" \
+        "sources;android-34" \
+        "extras;android;m2repository" \
+        "extras;google;m2repository" \
+        && break || (echo "Attempt $i failed, waiting 10s..." && sleep 10); \
+    done
+
+# Clean up
+RUN apt-get clean && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
+
+# Verify Android SDK installation
+RUN sdkmanager --list_installed 2>/dev/null | head -20 && echo "Android SDK installation verified"
+
+# Set working directory
+WORKDIR /project
+
+# Default command
+CMD ["bash"]

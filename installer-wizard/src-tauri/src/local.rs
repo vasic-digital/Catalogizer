@@ -13,8 +13,7 @@ pub async fn test_connection(base_path: &str) -> Result<bool> {
     }
 
     // Check read permission by trying to read the directory
-    std::fs::read_dir(path)
-        .map_err(|e| anyhow!("Cannot read directory '{}': {}", base_path, e))?;
+    std::fs::read_dir(path).map_err(|e| anyhow!("Cannot read directory '{}': {}", base_path, e))?;
 
     Ok(true)
 }

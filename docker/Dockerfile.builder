@@ -54,9 +54,9 @@ RUN go version
 # ============================================================
 # Layer 3: Node.js 18 LTS
 # ============================================================
-RUN curl --retry 5 --retry-delay 10 -fsSL https://deb.nodesource.com/setup_18.x | bash - \
-    && apt-get install -y nodejs \
-    && rm -rf /var/lib/apt/lists/*
+RUN for i in $(seq 1 10); do \
+    curl -fsSL https://deb.nodesource.com/setup_18.x && break || (echo "Attempt $i failed, waiting 15s..." && sleep 15); \
+    done | bash - && apt-get install -y nodejs && rm -rf /var/lib/apt/lists/*
 
 RUN node --version && npm --version
 

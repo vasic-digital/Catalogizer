@@ -4,6 +4,7 @@ import (
 	"net/http"
 	"os"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/gin-gonic/gin"
@@ -108,6 +109,7 @@ func RequestID() gin.HandlerFunc {
 }
 
 type RateLimiter struct {
+	mu       sync.RWMutex
 	requests map[string][]time.Time
 	limit    int
 	window   time.Duration
@@ -123,6 +125,9 @@ func NewRateLimiter(limit int, window time.Duration) *RateLimiter {
 
 func (rl *RateLimiter) Middleware() gin.HandlerFunc {
 	return func(c *gin.Context) {
+		rl.mu.Lock()
+		defer rl.mu.Unlock()
+
 		clientIP := c.ClientIP()
 		now := time.Now()
 

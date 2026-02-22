@@ -12,7 +12,9 @@ pub async fn test_connection(
     // Test NFS by checking if the host is reachable on port 2049 (standard NFS port)
     let addr = format!("{}:2049", host);
     TcpStream::connect_timeout(
-        &addr.parse().map_err(|e| anyhow!("Invalid address: {}", e))?,
+        &addr
+            .parse()
+            .map_err(|e| anyhow!("Invalid address: {}", e))?,
         Duration::from_secs(10),
     )
     .map_err(|e| anyhow!("NFS host not reachable on port 2049: {}", e))?;

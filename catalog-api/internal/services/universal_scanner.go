@@ -13,23 +13,26 @@ import (
 	"time"
 
 	"go.uber.org/zap"
+	"golang.org/x/sync/semaphore"
 )
 
 // UniversalScanner handles file system scanning across all supported protocols
 type UniversalScanner struct {
-	db                  *database.DB
-	logger              *zap.Logger
-	renameTracker       *UniversalRenameTracker
-	clientFactory       filesystem.ClientFactory
-	aggregationService  *AggregationService
-	scanQueue           chan ScanJob
-	workers             int
-	stopCh              chan struct{}
-	wg                  sync.WaitGroup
-	protocolScannersMu  sync.RWMutex
-	protocolScanners    map[string]ProtocolScanner
-	activeScansMu       sync.RWMutex
-	activeScans         map[string]*ScanStatus
+	db                 *database.DB
+	logger             *zap.Logger
+	renameTracker      *UniversalRenameTracker
+	clientFactory      filesystem.ClientFactory
+	aggregationService *AggregationService
+	scanQueue          chan ScanJob
+	workers            int
+	maxConcurrentScans int
+	scanSem            *semaphore.Weighted
+	stopCh             chan struct{}
+	wg                 sync.WaitGroup
+	protocolScannersMu sync.RWMutex
+	protocolScanners   map[string]ProtocolScanner
+	activeScansMu      sync.RWMutex
+	activeScans        map[string]*ScanStatus
 }
 
 // ScanJob represents a scan operation for any protocol
@@ -89,15 +92,17 @@ type ScanStrategy struct {
 // NewUniversalScanner creates a new universal file system scanner
 func NewUniversalScanner(db *database.DB, logger *zap.Logger, renameTracker *UniversalRenameTracker, clientFactory filesystem.ClientFactory) *UniversalScanner {
 	scanner := &UniversalScanner{
-		db:               db,
-		logger:           logger,
-		renameTracker:    renameTracker,
-		clientFactory:    clientFactory,
-		scanQueue:        make(chan ScanJob, 1000),
-		workers:          4,
-		stopCh:           make(chan struct{}),
-		protocolScanners: make(map[string]ProtocolScanner),
-		activeScans:      make(map[string]*ScanStatus),
+		db:                 db,
+		logger:             logger,
+		renameTracker:      renameTracker,
+		clientFactory:      clientFactory,
+		scanQueue:          make(chan ScanJob, 1000),
+		workers:            4,
+		maxConcurrentScans: 4,
+		scanSem:            semaphore.NewWeighted(4),
+		stopCh:             make(chan struct{}),
+		protocolScanners:   make(map[string]ProtocolScanner),
+		activeScans:        make(map[string]*ScanStatus),
 	}
 
 	// Register protocol scanners
@@ -176,6 +181,15 @@ func (s *UniversalScanner) scanWorker(workerID int) {
 
 // processScanJob processes a single scan job
 func (s *UniversalScanner) processScanJob(job ScanJob, workerID int) {
+	// Acquire semaphore to limit concurrent scans
+	if err := s.scanSem.Acquire(job.Context, 1); err != nil {
+		s.logger.Debug("Scan job cancelled before acquiring semaphore",
+			zap.String("job_id", job.ID),
+			zap.Error(err))
+		return
+	}
+	defer s.scanSem.Release(1)
+
 	s.logger.Debug("Processing scan job",
 		zap.Int("worker_id", workerID),
 		zap.String("job_id", job.ID),
@@ -416,12 +430,20 @@ func (s *ScanStatus) GetSnapshot() ScanStatus {
 
 // LocalScanner implements protocol-specific scanning for local filesystem
 type LocalScanner struct {
-	db     *database.DB
-	logger *zap.Logger
+	db             *database.DB
+	logger         *zap.Logger
+	sem            *semaphore.Weighted
+	maxConcurrency int
 }
 
 func NewLocalScanner(db *database.DB, logger *zap.Logger) *LocalScanner {
-	return &LocalScanner{db: db, logger: logger}
+	maxConcurrency := 10 // optimal for local filesystem
+	return &LocalScanner{
+		db:             db,
+		logger:         logger,
+		sem:            semaphore.NewWeighted(int64(maxConcurrency)),
+		maxConcurrency: maxConcurrency,
+	}
 }
 
 func (s *LocalScanner) ScanPath(ctx context.Context, client filesystem.FileSystemClient, job ScanJob, status *ScanStatus) error {

@@ -17,10 +17,17 @@ import (
 	root_services "catalogizer/services"
 	"context"
 	"crypto/rand"
+	"crypto/rsa"
+	"crypto/tls"
+	"crypto/x509"
+	"crypto/x509/pkix"
 	"encoding/hex"
+	"encoding/pem"
 	"flag"
 	"fmt"
 	"log"
+	"math/big"
+	"net"
 	"net/http"
 	"os"
 	"os/signal"
@@ -37,6 +44,7 @@ import (
 	"github.com/gin-gonic/gin"
 	_ "github.com/mutecomm/go-sqlcipher"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
+	"github.com/quic-go/quic-go/http3"
 	"github.com/redis/go-redis/v9"
 	"go.uber.org/zap"
 	"golang.org/x/crypto/bcrypt"
@@ -55,6 +63,54 @@ func atoi(s string) int {
 		return i
 	}
 	return 8080 // default port
+}
+
+// generateSelfSignedCert creates a self-signed TLS certificate for development.
+func generateSelfSignedCert() (tls.Certificate, error) {
+	// Generate RSA key.
+	priv, err := rsa.GenerateKey(rand.Reader, 2048)
+	if err != nil {
+		return tls.Certificate{}, fmt.Errorf("failed to generate private key: %w", err)
+	}
+
+	// Create certificate template.
+	template := x509.Certificate{
+		SerialNumber: big.NewInt(1),
+		Subject: pkix.Name{
+			Organization: []string{"Catalogizer Development"},
+		},
+		NotBefore:             time.Now(),
+		NotAfter:              time.Now().Add(365 * 24 * time.Hour), // Valid for 1 year
+		KeyUsage:              x509.KeyUsageKeyEncipherment | x509.KeyUsageDigitalSignature,
+		ExtKeyUsage:           []x509.ExtKeyUsage{x509.ExtKeyUsageServerAuth},
+		BasicConstraintsValid: true,
+		IPAddresses:           []net.IP{net.IPv4(127, 0, 0, 1), net.IPv6loopback},
+		DNSNames:              []string{"localhost"},
+	}
+
+	// Create self-signed certificate.
+	derBytes, err := x509.CreateCertificate(rand.Reader, &template, &template, &priv.PublicKey, priv)
+	if err != nil {
+		return tls.Certificate{}, fmt.Errorf("failed to create certificate: %w", err)
+	}
+
+	// Encode certificate and key to PEM.
+	certPEM := pem.EncodeToMemory(&pem.Block{
+		Type:  "CERTIFICATE",
+		Bytes: derBytes,
+	})
+	keyPEM := pem.EncodeToMemory(&pem.Block{
+		Type:  "RSA PRIVATE KEY",
+		Bytes: x509.MarshalPKCS1PrivateKey(priv),
+	})
+
+	// Load TLS certificate from PEM.
+	cert, err := tls.X509KeyPair(certPEM, keyPEM)
+	if err != nil {
+		return tls.Certificate{}, fmt.Errorf("failed to load key pair: %w", err)
+	}
+
+	return cert, nil
 }
 
 // @title Catalog API
@@ -264,6 +320,7 @@ func main() {
 	extMetaRepo := root_repository.NewExternalMetadataRepository(databaseDB)
 	userMetaRepo := root_repository.NewUserMetadataRepository(databaseDB)
 	dirAnalysisRepo := root_repository.NewDirectoryAnalysisRepository(databaseDB)
+	mediaCollectionRepo := root_repository.NewMediaCollectionRepository(databaseDB)
 
 	// Initialize universal scanner for file system scanning
 	clientFactory := filesystem.NewDefaultClientFactory()
@@ -299,6 +356,9 @@ func main() {
 
 	// Subtitle handler
 	subtitleHandler := root_handlers.NewSubtitleHandler(subtitleService, logger)
+
+	// Collection handler
+	collectionHandler := root_handlers.NewCollectionHandler(mediaCollectionRepo)
 
 	// Challenge handler
 	challengeHandler := root_handlers.NewChallengeHandler(challengeService)
@@ -390,6 +450,7 @@ func main() {
 	router.Use(middleware.ErrorHandler())
 	router.Use(root_middleware.RequestID())
 	router.Use(root_middleware.InputValidation(root_middleware.DefaultInputValidationConfig()))
+	router.Use(middleware.CompressionMiddleware(middleware.DefaultCompressionConfig()))
 
 	// Start runtime metrics collector (goroutines, memory)
 	metrics.StartRuntimeCollector(15 * time.Second)
@@ -490,6 +551,8 @@ func main() {
 		api.GET("/storage/list/*path", copyHandler.ListStoragePath)
 		api.GET("/storage/roots", scanHandler.GetStorageRoots)
 		api.POST("/storage/roots", scanHandler.CreateStorageRoot)
+		api.GET("/storage-roots", scanHandler.GetStorageRoots)
+		api.GET("/storage-roots/:id/status", scanHandler.GetStorageRootStatus)
 
 		// Statistics and sorting
 		api.GET("/stats/directories/by-size", catalogHandler.GetDirectoriesBySize)
@@ -607,6 +670,16 @@ func main() {
 			logsGroup.GET("/statistics", wrap(logManagementHandler.GetLogStatistics))
 		}
 
+		// Media collection endpoints
+		collectionsGroup := api.Group("/collections")
+		{
+			collectionsGroup.GET("", collectionHandler.ListCollections)
+			collectionsGroup.POST("", collectionHandler.CreateCollection)
+			collectionsGroup.GET("/:id", collectionHandler.GetCollection)
+			collectionsGroup.PUT("/:id", collectionHandler.UpdateCollection)
+			collectionsGroup.DELETE("/:id", collectionHandler.DeleteCollection)
+		}
+
 		// Asset management endpoints (authenticated)
 		assetsGroup := api.Group("/assets")
 		{
@@ -632,6 +705,7 @@ func main() {
 			entityGroup.GET("/:id/install-info", mediaEntityHandler.GetInstallInfo)
 			entityGroup.POST("/:id/metadata/refresh", mediaEntityHandler.RefreshEntityMetadata)
 			entityGroup.PUT("/:id/user-metadata", mediaEntityHandler.UpdateUserMetadata)
+			entityGroup.POST("/:id/user-metadata", mediaEntityHandler.UpdateUserMetadata)
 		}
 
 		// Challenge endpoints
@@ -653,6 +727,54 @@ func main() {
 		ReadTimeout:  time.Duration(cfg.Server.ReadTimeout) * time.Second,
 		WriteTimeout: time.Duration(cfg.Server.WriteTimeout) * time.Second,
 		IdleTimeout:  time.Duration(cfg.Server.IdleTimeout) * time.Second,
+	}
+	// HTTPS server for TLS and HTTP/2 (future HTTP/3)
+	var httpsServer *http.Server
+	var http3Server *http3.Server
+
+	// Generate self-signed TLS certificate for HTTP/3 development
+	cert, err := generateSelfSignedCert()
+	if err != nil {
+		logger.Error("Failed to generate self-signed certificate for HTTP/3", zap.Error(err))
+	} else {
+		// Create TLS config with the certificate
+		tlsConfig := &tls.Config{
+			Certificates: []tls.Certificate{cert},
+			NextProtos:   []string{"h3", "h2", "http/1.1"},
+		}
+
+		// Start HTTPS server on port 8443 (HTTP/2 with TLS, fallback for HTTP/3)
+		httpsAddr := fmt.Sprintf("%s:%d", cfg.Server.Host, 8443)
+		httpsServer = &http.Server{
+			Addr:      httpsAddr,
+			Handler:   router,
+			TLSConfig: tlsConfig,
+		}
+		go func() {
+			logger.Info("Starting HTTPS server (HTTP/2 with TLS)", zap.String("address", httpsAddr))
+			if err := httpsServer.ListenAndServeTLS("", ""); err != nil && err != http.ErrServerClosed {
+				logger.Error("HTTPS server failed", zap.Error(err))
+			}
+		}()
+
+		// Add Alt-Svc header to advertise HTTP/3 support
+		router.Use(func(c *gin.Context) {
+			c.Header("Alt-Svc", `h3=":8443"; ma=86400`)
+			c.Next()
+		})
+
+		// Start HTTP/3 server on UDP port 8443
+		http3Server = &http3.Server{
+			Addr:      httpsAddr,
+			Handler:   router,
+			TLSConfig: tlsConfig,
+		}
+		go func() {
+			logger.Info("Starting HTTP/3 (QUIC) server", zap.String("address", httpsAddr))
+			if err := http3Server.ListenAndServe(); err != nil && err != http.ErrServerClosed {
+				logger.Error("HTTP/3 server failed", zap.Error(err))
+			}
+		}()
 	}
 
 	// Start server in a goroutine
@@ -680,6 +802,24 @@ func main() {
 	// Shutdown HTTP server (stops accepting new connections, waits for in-flight requests)
 	if err := srv.Shutdown(shutdownCtx); err != nil {
 		logger.Error("HTTP server shutdown error", zap.Error(err))
+	}
+
+	// Shutdown HTTPS server if started
+	if httpsServer != nil {
+		if err := httpsServer.Shutdown(shutdownCtx); err != nil {
+			logger.Error("HTTPS server shutdown error", zap.Error(err))
+		} else {
+			logger.Info("HTTPS server shut down gracefully")
+		}
+	}
+
+	// Shutdown HTTP/3 server if started
+	if http3Server != nil {
+		if err := http3Server.Close(); err != nil {
+			logger.Error("HTTP/3 server shutdown error", zap.Error(err))
+		} else {
+			logger.Info("HTTP/3 server shut down gracefully")
+		}
 	}
 
 	// Close Redis connection if available

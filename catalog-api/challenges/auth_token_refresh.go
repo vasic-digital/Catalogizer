@@ -56,10 +56,11 @@ func (c *AuthTokenRefreshChallenge) Execute(
 		"password": c.config.Password,
 	})
 	loginCode, loginBytes, loginErr := client.PostJSON(
-		ctx, "/auth/login", string(loginPayload),
+		ctx, "/api/v1/auth/login", string(loginPayload),
 	)
 	loginOK := loginErr == nil && loginCode == 200
 	sessionToken := ""
+	refreshToken := ""
 	if loginOK && len(loginBytes) > 0 {
 		var resp map[string]interface{}
 		if jsonErr := json.Unmarshal(loginBytes, &resp); jsonErr == nil {
@@ -71,6 +72,10 @@ func (c *AuthTokenRefreshChallenge) Execute(
 				if t, ok := data["session_token"].(string); ok {
 					sessionToken = t
 				}
+			}
+			if t, ok := resp["refresh_token"].(string); ok {
+				refreshToken = t
+				fmt.Printf("DEBUG: refresh token length %d\n", len(refreshToken))
 			}
 		}
 	}
@@ -90,7 +95,7 @@ func (c *AuthTokenRefreshChallenge) Execute(
 	}
 
 	// 2. GET /auth/status — expect authenticated=true
-	statusCode, statusBody, statusErr := client.Get(ctx, "/auth/status")
+	statusCode, statusBody, statusErr := client.Get(ctx, "/api/v1/auth/status")
 	statusOK := statusErr == nil && statusCode == 200
 	isAuthenticated := false
 	hasUser := false
@@ -122,8 +127,10 @@ func (c *AuthTokenRefreshChallenge) Execute(
 	})
 
 	// 3. POST /auth/refresh — expect new session_token
+	refreshPayload := fmt.Sprintf(`{"refresh_token": "%s"}`, refreshToken)
+	fmt.Printf("DEBUG: refresh payload length %d\n", len(refreshPayload))
 	refreshCode, refreshBytes, refreshErr := client.PostJSON(
-		ctx, "/auth/refresh", "{}",
+		ctx, "/api/v1/auth/refresh", refreshPayload,
 	)
 	refreshOK := refreshErr == nil && (refreshCode == 200 || refreshCode == 201)
 	newToken := ""

@@ -6,6 +6,7 @@ import (
 	"testing"
 	"time"
 
+	"catalogizer/internal/metrics"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"go.uber.org/zap"
@@ -56,11 +57,11 @@ func TestAddSourceWithCustomValues(t *testing.T) {
 	manager := NewResilientSMBManager(logger, 100)
 
 	source := &SMBSource{
-		ID:               "custom-id",
-		Name:             "Custom Share",
-		Path:             "//server/share",
-		MaxRetryAttempts: 10,
-		RetryDelay:       10 * time.Second,
+		ID:                "custom-id",
+		Name:              "Custom Share",
+		Path:              "//server/share",
+		MaxRetryAttempts:  10,
+		RetryDelay:        10 * time.Second,
 		ConnectionTimeout: 15 * time.Second,
 	}
 
@@ -176,6 +177,25 @@ func TestConnectionState_String(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.expected, func(t *testing.T) {
 			assert.Equal(t, tt.expected, tt.state.String())
+		})
+	}
+}
+
+func TestConnectionState_HealthMetric(t *testing.T) {
+	tests := []struct {
+		state    ConnectionState
+		expected float64
+	}{
+		{StateConnected, metrics.SMBHealthy},
+		{StateReconnecting, metrics.SMBDegraded},
+		{StateDisconnected, metrics.SMBOffline},
+		{StateOffline, metrics.SMBOffline},
+		{ConnectionState(99), metrics.SMBOffline},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.state.String(), func(t *testing.T) {
+			assert.Equal(t, tt.expected, tt.state.HealthMetric())
 		})
 	}
 }

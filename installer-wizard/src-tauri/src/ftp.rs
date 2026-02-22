@@ -13,7 +13,9 @@ pub async fn test_connection(
 ) -> Result<bool> {
     let addr = format!("{}:{}", host, port);
     let stream = TcpStream::connect_timeout(
-        &addr.parse().map_err(|e| anyhow!("Invalid address: {}", e))?,
+        &addr
+            .parse()
+            .map_err(|e| anyhow!("Invalid address: {}", e))?,
         Duration::from_secs(10),
     )
     .map_err(|e| anyhow!("FTP connection failed: {}", e))?;
@@ -34,15 +36,17 @@ pub async fn test_connection(
     }
 
     // Send USER command
-    write!(stream, "USER {}\r\n", username)
-        .map_err(|e| anyhow!("Failed to send USER: {}", e))?;
-    let n = stream.read(&mut buf).map_err(|e| anyhow!("Failed to read: {}", e))?;
+    write!(stream, "USER {}\r\n", username).map_err(|e| anyhow!("Failed to send USER: {}", e))?;
+    let n = stream
+        .read(&mut buf)
+        .map_err(|e| anyhow!("Failed to read: {}", e))?;
     let _response = String::from_utf8_lossy(&buf[..n]);
 
     // Send PASS command
-    write!(stream, "PASS {}\r\n", password)
-        .map_err(|e| anyhow!("Failed to send PASS: {}", e))?;
-    let n = stream.read(&mut buf).map_err(|e| anyhow!("Failed to read: {}", e))?;
+    write!(stream, "PASS {}\r\n", password).map_err(|e| anyhow!("Failed to send PASS: {}", e))?;
+    let n = stream
+        .read(&mut buf)
+        .map_err(|e| anyhow!("Failed to read: {}", e))?;
     let response = String::from_utf8_lossy(&buf[..n]);
 
     if !response.starts_with("230") {
@@ -51,9 +55,10 @@ pub async fn test_connection(
 
     // If path specified, try CWD
     if let Some(p) = path {
-        write!(stream, "CWD {}\r\n", p)
-            .map_err(|e| anyhow!("Failed to send CWD: {}", e))?;
-        let n = stream.read(&mut buf).map_err(|e| anyhow!("Failed to read: {}", e))?;
+        write!(stream, "CWD {}\r\n", p).map_err(|e| anyhow!("Failed to send CWD: {}", e))?;
+        let n = stream
+            .read(&mut buf)
+            .map_err(|e| anyhow!("Failed to read: {}", e))?;
         let response = String::from_utf8_lossy(&buf[..n]);
         if !response.starts_with("250") {
             return Err(anyhow!("FTP path not accessible: {}", response.trim()));

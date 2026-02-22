@@ -14,9 +14,9 @@ import (
 
 // MediaEntityHandler handles entity-level media browsing endpoints.
 type MediaEntityHandler struct {
-	itemRepo    *repository.MediaItemRepository
-	fileRepo    *repository.MediaFileRepository
-	extMetaRepo *repository.ExternalMetadataRepository
+	itemRepo     *repository.MediaItemRepository
+	fileRepo     *repository.MediaFileRepository
+	extMetaRepo  *repository.ExternalMetadataRepository
 	userMetaRepo *repository.UserMetadataRepository
 }
 
@@ -322,6 +322,7 @@ func (h *MediaEntityHandler) UpdateUserMetadata(c *gin.Context) {
 		UserRating    *float64 `json:"user_rating"`
 		WatchedStatus *string  `json:"watched_status"`
 		Favorite      *bool    `json:"favorite"`
+		IsFavorite    *bool    `json:"is_favorite"`
 		PersonalNotes *string  `json:"personal_notes"`
 		Tags          []string `json:"tags"`
 	}
@@ -346,7 +347,10 @@ func (h *MediaEntityHandler) UpdateUserMetadata(c *gin.Context) {
 		PersonalNotes: req.PersonalNotes,
 		Tags:          req.Tags,
 	}
-	if req.Favorite != nil {
+	// Determine favorite value from either field
+	if req.IsFavorite != nil {
+		um.Favorite = *req.IsFavorite
+	} else if req.Favorite != nil {
 		um.Favorite = *req.Favorite
 	}
 
@@ -356,7 +360,8 @@ func (h *MediaEntityHandler) UpdateUserMetadata(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, gin.H{
-		"message": "User metadata updated",
+		"message":     "User metadata updated",
+		"is_favorite": um.Favorite,
 	})
 }
 

@@ -3,12 +3,12 @@
 
 use serde::{Deserialize, Serialize};
 
-mod network;
-mod smb;
 mod ftp;
-mod nfs;
-mod webdav;
 mod local;
+mod network;
+mod nfs;
+mod smb;
+mod webdav;
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct NetworkHost {
@@ -62,8 +62,14 @@ async fn scan_smb_shares(host: String) -> Result<Vec<SMBShare>, String> {
 }
 
 #[tauri::command]
-async fn browse_smb_share(host: String, share: String, path: Option<String>) -> Result<Vec<smb::FileEntry>, String> {
-    smb::browse_share(&host, &share, path.as_deref()).await.map_err(|e| e.to_string())
+async fn browse_smb_share(
+    host: String,
+    share: String,
+    path: Option<String>,
+) -> Result<Vec<smb::FileEntry>, String> {
+    smb::browse_share(&host, &share, path.as_deref())
+        .await
+        .map_err(|e| e.to_string())
 }
 
 #[tauri::command]
@@ -83,11 +89,11 @@ async fn test_smb_connection(
 async fn load_configuration(file_path: String) -> Result<Configuration, String> {
     use std::fs;
 
-    let content = fs::read_to_string(&file_path)
-        .map_err(|e| format!("Failed to read file: {}", e))?;
+    let content =
+        fs::read_to_string(&file_path).map_err(|e| format!("Failed to read file: {}", e))?;
 
-    let config: Configuration = serde_json::from_str(&content)
-        .map_err(|e| format!("Failed to parse JSON: {}", e))?;
+    let config: Configuration =
+        serde_json::from_str(&content).map_err(|e| format!("Failed to parse JSON: {}", e))?;
 
     Ok(config)
 }
@@ -99,8 +105,7 @@ async fn save_configuration(file_path: String, config: Configuration) -> Result<
     let content = serde_json::to_string_pretty(&config)
         .map_err(|e| format!("Failed to serialize configuration: {}", e))?;
 
-    fs::write(&file_path, content)
-        .map_err(|e| format!("Failed to write file: {}", e))?;
+    fs::write(&file_path, content).map_err(|e| format!("Failed to write file: {}", e))?;
 
     Ok(())
 }
@@ -168,7 +173,7 @@ async fn get_default_config_path() -> Result<String, String> {
 fn main() {
     // Initialize basic logging to stderr
     env_logger::init();
-    
+
     let app = tauri::Builder::default()
         .plugin(tauri_plugin_shell::init())
         .plugin(tauri_plugin_dialog::init())
@@ -187,7 +192,7 @@ fn main() {
             get_default_config_path
         ])
         .run(tauri::generate_context!());
-    
+
     match app {
         Ok(_) => (),
         Err(e) => {
@@ -221,7 +226,10 @@ mod tests {
 
             assert_eq!(deserialized.ip, "192.168.1.100");
             assert_eq!(deserialized.hostname, Some("fileserver".to_string()));
-            assert_eq!(deserialized.mac_address, Some("AA:BB:CC:DD:EE:FF".to_string()));
+            assert_eq!(
+                deserialized.mac_address,
+                Some("AA:BB:CC:DD:EE:FF".to_string())
+            );
             assert!(deserialized.vendor.is_none());
             assert_eq!(deserialized.open_ports, vec![22, 80, 445]);
             assert_eq!(deserialized.smb_shares.len(), 2);
@@ -382,21 +390,17 @@ mod tests {
         #[test]
         fn test_configuration_serialization_roundtrip() {
             let config = Configuration {
-                accesses: vec![
-                    ConfigurationAccess {
-                        name: "NAS".to_string(),
-                        r#type: "smb".to_string(),
-                        account: "admin".to_string(),
-                        secret: "pass".to_string(),
-                    },
-                ],
-                sources: vec![
-                    ConfigurationSource {
-                        r#type: "smb".to_string(),
-                        url: "smb://nas/media".to_string(),
-                        access: "NAS".to_string(),
-                    },
-                ],
+                accesses: vec![ConfigurationAccess {
+                    name: "NAS".to_string(),
+                    r#type: "smb".to_string(),
+                    account: "admin".to_string(),
+                    secret: "pass".to_string(),
+                }],
+                sources: vec![ConfigurationSource {
+                    r#type: "smb".to_string(),
+                    url: "smb://nas/media".to_string(),
+                    access: "NAS".to_string(),
+                }],
             };
 
             let json = serde_json::to_string_pretty(&config).unwrap();

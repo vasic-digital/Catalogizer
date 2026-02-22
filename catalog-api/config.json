@@ -6,24 +6,31 @@
     "write_timeout": 900,
     "idle_timeout": 120,
     "enable_cors": true,
-    "enable_https": false
+    "enable_https": true
   },
   "database": {
+    "type": "postgres",
+    "host": "localhost",
+    "port": 5433,
+    "name": "catalogizer",
+    "user": "catalogizer",
+    "password": "catalogizer_dev",
+    "ssl_mode": "disable",
     "path": "./catalog.db",
+    "enable_wal": true,
+    "cache_size": -2000,
+    "busy_timeout": 5000,
     "max_open_connections": 25,
     "max_idle_connections": 5,
     "conn_max_lifetime": 300,
-    "conn_max_idle_time": 60,
-    "enable_wal": true,
-    "cache_size": -2000,
-    "busy_timeout": 5000
+    "conn_max_idle_time": 60
   },
   "auth": {
-    "jwt_secret": "${JWT_SECRET}",
+    "jwt_secret": "",
     "jwt_expiration_hours": 24,
     "enable_auth": true,
-    "admin_username": "${ADMIN_USERNAME:-admin}",
-    "admin_password": "${ADMIN_PASSWORD}"
+    "admin_username": "",
+    "admin_password": ""
   },
   "catalog": {
     "default_page_size": 100,
@@ -33,77 +40,16 @@
     "max_concurrent_scans": 3,
     "download_chunk_size": 1048576,
     "max_archive_size": 5368709120,
-    "allowed_download_types": ["*"],
-    "temp_dir": "/tmp/catalog-api"
+    "allowed_download_types": [
+      "*"
+    ],
+    "temp_dir": "/tmp/.private/milosvasic/catalog-api"
   },
   "storage": {
     "roots": [
       {
-        "id": "smb-nas1",
-        "name": "NAS1 SMB Share",
-        "protocol": "smb",
-        "enabled": true,
-        "max_depth": 10,
-        "enable_duplicate_detection": true,
-        "enable_metadata_extraction": true,
-        "settings": {
-          "host": "192.168.1.100",
-          "port": 445,
-          "share": "shared",
-          "username": "user",
-          "password": "${SMB_PASSWORD:-password}",
-          "domain": "WORKGROUP"
-        }
-      },
-      {
-        "id": "ftp-server1",
-        "name": "FTP Server",
-        "protocol": "ftp",
-        "enabled": false,
-        "max_depth": 5,
-        "enable_duplicate_detection": true,
-        "enable_metadata_extraction": false,
-        "settings": {
-          "host": "ftp.example.com",
-          "port": 21,
-          "username": "ftpuser",
-          "password": "${FTP_PASSWORD:-ftppass}",
-          "path": "/"
-        }
-      },
-      {
-        "id": "nfs-share1",
-        "name": "NFS Share",
-        "protocol": "nfs",
-        "enabled": false,
-        "max_depth": 8,
-        "enable_duplicate_detection": true,
-        "enable_metadata_extraction": true,
-        "settings": {
-          "host": "nfs.example.com",
-          "path": "/export/data",
-          "mount_point": "/mnt/nfs",
-          "options": "vers=3"
-        }
-      },
-      {
-        "id": "webdav-server1",
-        "name": "WebDAV Server",
-        "protocol": "webdav",
-        "enabled": false,
-        "max_depth": 6,
-        "enable_duplicate_detection": true,
-        "enable_metadata_extraction": false,
-        "settings": {
-          "url": "https://webdav.example.com/remote.php/dav/files/user/",
-          "username": "webdavuser",
-          "password": "${WEBDAV_PASSWORD:-webdavpass}",
-          "path": "/"
-        }
-      },
-      {
-        "id": "local-storage",
-        "name": "Local Storage",
+        "id": "local-example",
+        "name": "Local Files",
         "protocol": "local",
         "enabled": true,
         "max_depth": 10,

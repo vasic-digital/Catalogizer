@@ -11,7 +11,8 @@ import (
 	"catalogizer/models"
 	"catalogizer/repository"
 
-	"github.com/jung-kurt/gofpdf"
+	"github.com/unidoc/unipdf/v3/creator"
+	"github.com/unidoc/unipdf/v3/model"
 )
 
 type ReportingService struct {
@@ -438,38 +439,70 @@ func (s *ReportingService) formatAsHTML(data interface{}, reportType string) ([]
 }
 
 func (s *ReportingService) formatAsPDF(data interface{}, reportType string) ([]byte, error) {
-	// Create new PDF
-	pdf := gofpdf.New("P", "mm", "A4", "")
-	pdf.AddPage()
+	// Create new PDF creator
+	c := creator.New()
+	page := model.NewPdfPage()
+	if err := c.AddPage(page); err != nil {
+		return nil, fmt.Errorf("failed to add page: %w", err)
+	}
+
+	// Load standard fonts
+	arialBold, err := model.NewStandard14Font(model.HelveticaBoldName)
+	if err != nil {
+		return nil, fmt.Errorf("failed to load Arial Bold font: %w", err)
+	}
+	arialItalic, err := model.NewStandard14Font(model.HelveticaObliqueName)
+	if err != nil {
+		return nil, fmt.Errorf("failed to load Arial Italic font: %w", err)
+	}
+	courier, err := model.NewStandard14Font(model.CourierName)
+	if err != nil {
+		return nil, fmt.Errorf("failed to load Courier font: %w", err)
+	}
+
+	// Helper to create paragraph
+	createParagraph := func(text string, font *model.PdfFont, fontSize float64, x, y float64) error {
+		para := &creator.Paragraph{}
+		para.SetText(text)
+		para.SetFont(font)
+		para.SetFontSize(fontSize)
+		para.SetColor(creator.ColorBlack)
+		para.SetPos(x, y)
+		return c.Draw(para)
+	}
 
 	// Set title
-	pdf.SetFont("Arial", "B", 16)
-	title := fmt.Sprintf("%s Report", strings.Replace(reportType, "_", " ", -1))
-	pdf.Cell(40, 10, title)
-	pdf.Ln(15)
+	if err := createParagraph(
+		fmt.Sprintf("%s Report", strings.Replace(reportType, "_", " ", -1)),
+		arialBold, 16, 50, 50,
+	); err != nil {
+		return nil, fmt.Errorf("failed to draw title: %w", err)
+	}
 
 	// Add generation timestamp
-	pdf.SetFont("Arial", "I", 10)
-	pdf.Cell(40, 8, fmt.Sprintf("Generated: %s", time.Now().Format("2006-01-02 15:04:05")))
-	pdf.Ln(12)
+	if err := createParagraph(
+		fmt.Sprintf("Generated: %s", time.Now().Format("2006-01-02 15:04:05")),
+		arialItalic, 10, 50, 70,
+	); err != nil {
+		return nil, fmt.Errorf("failed to draw timestamp: %w", err)
+	}
 
 	// Format content based on report type
 	switch reportType {
 	case "user_analytics":
-		return s.formatUserAnalyticsPDF(pdf, data)
+		return s.formatUserAnalyticsPDF(c, data, arialBold, arialItalic, courier)
 	case "system_overview":
-		return s.formatSystemOverviewPDF(pdf, data)
+		return s.formatSystemOverviewPDF(c, data, arialBold, arialItalic, courier)
 	case "media_analytics":
-		return s.formatMediaAnalyticsPDF(pdf, data)
+		return s.formatMediaAnalyticsPDF(c, data, arialBold, arialItalic, courier)
 	case "user_activity":
-		return s.formatUserActivityPDF(pdf, data)
+		return s.formatUserActivityPDF(c, data, arialBold, arialItalic, courier)
 	case "security_audit":
-		return s.formatSecurityAuditPDF(pdf, data)
+		return s.formatSecurityAuditPDF(c, data, arialBold, arialItalic, courier)
 	case "performance_metrics":
-		return s.formatPerformanceMetricsPDF(pdf, data)
+		return s.formatPerformanceMetricsPDF(c, data, arialBold, arialItalic, courier)
 	default:
 		// Fallback to JSON representation
-		pdf.SetFont("Courier", "", 10)
 		jsonData, err := json.MarshalIndent(data, "", "  ")
 		if err != nil {
 			return nil, fmt.Errorf("failed to marshal data for PDF: %w", err)
@@ -477,6 +510,7 @@ func (s *ReportingService) formatAsPDF(data interface{}, reportType string) ([]b
 
 		// Split JSON into lines and add to PDF
 		lines := strings.Split(string(jsonData), "\n")
+		y := 90.0
 		for _, line := range lines {
 			// Truncate long lines to fit page
 			if len(line) > 80 {
@@ -485,97 +519,180 @@ func (s *ReportingService) formatAsPDF(data interface{}, reportType string) ([]b
 					if end > len(line) {
 						end = len(line)
 					}
-					pdf.Cell(40, 5, line[i:end])
-					pdf.Ln(5)
+					if err := createParagraph(line[i:end], courier, 10, 50, y); err != nil {
+						return nil, fmt.Errorf("failed to draw JSON line: %w", err)
+					}
+					y += 12
 				}
 			} else {
-				pdf.Cell(40, 5, line)
-				pdf.Ln(5)
+				if err := createParagraph(line, courier, 10, 50, y); err != nil {
+					return nil, fmt.Errorf("failed to draw JSON line: %w", err)
+				}
+				y += 12
 			}
 		}
 
 		// Output PDF to bytes
-		return s.outputPDFToBytes(pdf)
+		var buf bytes.Buffer
+		if err := c.Write(&buf); err != nil {
+			return nil, fmt.Errorf("failed to generate PDF: %w", err)
+		}
+		return buf.Bytes(), nil
 	}
 }
 
-// Helper function to output PDF to bytes
-func (s *ReportingService) outputPDFToBytes(pdf *gofpdf.Fpdf) ([]byte, error) {
+// Helper methods for specific report types
+func (s *ReportingService) formatUserAnalyticsPDF(c *creator.Creator, data interface{}, arialBold, arialItalic, courier *model.PdfFont) ([]byte, error) {
+	report := data.(*models.UserAnalyticsReport)
+
+	// Helper to create paragraph
+	createParagraph := func(text string, font *model.PdfFont, fontSize float64, x, y float64) error {
+		para := &creator.Paragraph{}
+		para.SetText(text)
+		para.SetFont(font)
+		para.SetFontSize(fontSize)
+		para.SetColor(creator.ColorBlack)
+		para.SetPos(x, y)
+		return c.Draw(para)
+	}
+
+	y := 90.0
+
+	// User Information heading
+	if err := createParagraph("User Information", arialBold, 12, 50, y); err != nil {
+		return nil, fmt.Errorf("failed to draw heading: %w", err)
+	}
+	y += 15
+
+	// User details
+	if err := createParagraph(fmt.Sprintf("User ID: %d", report.User.ID), arialItalic, 10, 50, y); err != nil {
+		return nil, fmt.Errorf("failed to draw user id: %w", err)
+	}
+	y += 12
+	if err := createParagraph(fmt.Sprintf("Username: %s", report.User.Username), arialItalic, 10, 50, y); err != nil {
+		return nil, fmt.Errorf("failed to draw username: %w", err)
+	}
+	y += 12
+	if err := createParagraph(fmt.Sprintf("Email: %s", report.User.Email), arialItalic, 10, 50, y); err != nil {
+		return nil, fmt.Errorf("failed to draw email: %w", err)
+	}
+	y += 12
+	if err := createParagraph(fmt.Sprintf("Period: %s to %s",
+		report.StartDate.Format("2006-01-02"),
+		report.EndDate.Format("2006-01-02")), arialItalic, 10, 50, y); err != nil {
+		return nil, fmt.Errorf("failed to draw period: %w", err)
+	}
+	y += 20
+
+	// Summary Statistics heading
+	if err := createParagraph("Summary Statistics", arialBold, 12, 50, y); err != nil {
+		return nil, fmt.Errorf("failed to draw summary heading: %w", err)
+	}
+	y += 15
+
+	// Statistics
+	if err := createParagraph(fmt.Sprintf("Total Media Accesses: %d", report.TotalMediaAccesses), arialItalic, 10, 50, y); err != nil {
+		return nil, fmt.Errorf("failed to draw total media accesses: %w", err)
+	}
+	y += 12
+	if err := createParagraph(fmt.Sprintf("Total Events: %d", report.TotalEvents), arialItalic, 10, 50, y); err != nil {
+		return nil, fmt.Errorf("failed to draw total events: %w", err)
+	}
+	y += 12
+	if err := createParagraph(fmt.Sprintf("Access Logs: %d", len(report.MediaAccessLogs)), arialItalic, 10, 50, y); err != nil {
+		return nil, fmt.Errorf("failed to draw access logs: %w", err)
+	}
+	y += 12
+	if err := createParagraph(fmt.Sprintf("User Events: %d", len(report.Events)), arialItalic, 10, 50, y); err != nil {
+		return nil, fmt.Errorf("failed to draw user events: %w", err)
+	}
+
+	// Output PDF to bytes
 	var buf bytes.Buffer
-	if err := pdf.Output(&buf); err != nil {
+	if err := c.Write(&buf); err != nil {
 		return nil, fmt.Errorf("failed to generate PDF: %w", err)
 	}
 	return buf.Bytes(), nil
 }
 
-// Helper methods for specific report types
-func (s *ReportingService) formatUserAnalyticsPDF(pdf *gofpdf.Fpdf, data interface{}) ([]byte, error) {
-	report := data.(*models.UserAnalyticsReport)
-
-	pdf.SetFont("Arial", "B", 12)
-	pdf.Cell(40, 8, "User Information")
-	pdf.Ln(8)
-
-	pdf.SetFont("Arial", "", 10)
-	pdf.Cell(40, 6, fmt.Sprintf("User ID: %d", report.User.ID))
-	pdf.Ln(6)
-	pdf.Cell(40, 6, fmt.Sprintf("Username: %s", report.User.Username))
-	pdf.Ln(6)
-	pdf.Cell(40, 6, fmt.Sprintf("Email: %s", report.User.Email))
-	pdf.Ln(6)
-	pdf.Cell(40, 6, fmt.Sprintf("Period: %s to %s",
-		report.StartDate.Format("2006-01-02"),
-		report.EndDate.Format("2006-01-02")))
-	pdf.Ln(12)
-
-	pdf.SetFont("Arial", "B", 12)
-	pdf.Cell(40, 8, "Summary Statistics")
-	pdf.Ln(8)
-
-	pdf.SetFont("Arial", "", 10)
-	pdf.Cell(40, 6, fmt.Sprintf("Total Media Accesses: %d", report.TotalMediaAccesses))
-	pdf.Ln(6)
-	pdf.Cell(40, 6, fmt.Sprintf("Total Events: %d", report.TotalEvents))
-	pdf.Ln(6)
-	pdf.Cell(40, 6, fmt.Sprintf("Access Logs: %d", len(report.MediaAccessLogs)))
-	pdf.Ln(6)
-	pdf.Cell(40, 6, fmt.Sprintf("User Events: %d", len(report.Events)))
-
-	return s.outputPDFToBytes(pdf)
-}
-
-func (s *ReportingService) formatSystemOverviewPDF(pdf *gofpdf.Fpdf, data interface{}) ([]byte, error) {
+func (s *ReportingService) formatSystemOverviewPDF(c *creator.Creator, data interface{}, arialBold, arialItalic, courier *model.PdfFont) ([]byte, error) {
 	report := data.(*models.SystemOverviewReport)
 
-	pdf.SetFont("Arial", "B", 12)
-	pdf.Cell(40, 8, "System Statistics")
-	pdf.Ln(8)
+	// Helper to create paragraph
+	createParagraph := func(text string, font *model.PdfFont, fontSize float64, x, y float64) error {
+		para := &creator.Paragraph{}
+		para.SetText(text)
+		para.SetFont(font)
+		para.SetFontSize(fontSize)
+		para.SetColor(creator.ColorBlack)
+		para.SetPos(x, y)
+		return c.Draw(para)
+	}
 
-	pdf.SetFont("Arial", "", 10)
-	pdf.Cell(40, 6, fmt.Sprintf("Total Users: %d", report.TotalUsers))
-	pdf.Ln(6)
-	pdf.Cell(40, 6, fmt.Sprintf("Active Users: %d", report.ActiveUsers))
-	pdf.Ln(6)
-	pdf.Cell(40, 6, fmt.Sprintf("Total Media Accesses: %d", report.TotalMediaAccesses))
-	pdf.Ln(6)
-	pdf.Cell(40, 6, fmt.Sprintf("Total Events: %d", report.TotalEvents))
-	pdf.Ln(6)
-	pdf.Cell(40, 6, fmt.Sprintf("Report Period: %s to %s",
+	y := 90.0
+
+	// System Statistics heading
+	if err := createParagraph("System Statistics", arialBold, 12, 50, y); err != nil {
+		return nil, fmt.Errorf("failed to draw heading: %w", err)
+	}
+	y += 15
+
+	// Statistics
+	if err := createParagraph(fmt.Sprintf("Total Users: %d", report.TotalUsers), arialItalic, 10, 50, y); err != nil {
+		return nil, fmt.Errorf("failed to draw total users: %w", err)
+	}
+	y += 12
+	if err := createParagraph(fmt.Sprintf("Active Users: %d", report.ActiveUsers), arialItalic, 10, 50, y); err != nil {
+		return nil, fmt.Errorf("failed to draw active users: %w", err)
+	}
+	y += 12
+	if err := createParagraph(fmt.Sprintf("Total Media Accesses: %d", report.TotalMediaAccesses), arialItalic, 10, 50, y); err != nil {
+		return nil, fmt.Errorf("failed to draw total media accesses: %w", err)
+	}
+	y += 12
+	if err := createParagraph(fmt.Sprintf("Total Events: %d", report.TotalEvents), arialItalic, 10, 50, y); err != nil {
+		return nil, fmt.Errorf("failed to draw total events: %w", err)
+	}
+	y += 12
+	if err := createParagraph(fmt.Sprintf("Report Period: %s to %s",
 		report.StartDate.Format("2006-01-02"),
-		report.EndDate.Format("2006-01-02")))
+		report.EndDate.Format("2006-01-02")), arialItalic, 10, 50, y); err != nil {
+		return nil, fmt.Errorf("failed to draw report period: %w", err)
+	}
 
-	return s.outputPDFToBytes(pdf)
+	// Output PDF to bytes
+	var buf bytes.Buffer
+	if err := c.Write(&buf); err != nil {
+		return nil, fmt.Errorf("failed to generate PDF: %w", err)
+	}
+	return buf.Bytes(), nil
 }
 
-func (s *ReportingService) formatMediaAnalyticsPDF(pdf *gofpdf.Fpdf, data interface{}) ([]byte, error) {
-	// Generic media analytics formatting
-	pdf.SetFont("Arial", "B", 12)
-	pdf.Cell(40, 8, "Media Analytics")
-	pdf.Ln(8)
+func (s *ReportingService) formatMediaAnalyticsPDF(c *creator.Creator, data interface{}, arialBold, arialItalic, courier *model.PdfFont) ([]byte, error) {
+	// Helper to create paragraph
+	createParagraph := func(text string, font *model.PdfFont, fontSize float64, x, y float64) error {
+		para := &creator.Paragraph{}
+		para.SetText(text)
+		para.SetFont(font)
+		para.SetFontSize(fontSize)
+		para.SetColor(creator.ColorBlack)
+		para.SetPos(x, y)
+		return c.Draw(para)
+	}
 
-	pdf.SetFont("Arial", "", 10)
-	pdf.Cell(40, 6, "Media statistics and analytics data")
-	pdf.Ln(6)
+	y := 90.0
+
+	// Media Analytics heading
+	if err := createParagraph("Media Analytics", arialBold, 12, 50, y); err != nil {
+		return nil, fmt.Errorf("failed to draw heading: %w", err)
+	}
+	y += 15
+
+	// Description
+	if err := createParagraph("Media statistics and analytics data", arialItalic, 10, 50, y); err != nil {
+		return nil, fmt.Errorf("failed to draw description: %w", err)
+	}
+	y += 15
 
 	// Add JSON data for now (can be enhanced later)
 	jsonData, err := json.MarshalIndent(data, "", "  ")
@@ -584,27 +701,49 @@ func (s *ReportingService) formatMediaAnalyticsPDF(pdf *gofpdf.Fpdf, data interf
 	}
 
 	lines := strings.Split(string(jsonData), "\n")
-	pdf.SetFont("Courier", "", 8)
 	for _, line := range lines {
 		if len(line) > 100 {
 			line = line[:100] + "..."
 		}
-		pdf.Cell(40, 3, line)
-		pdf.Ln(3)
+		if err := createParagraph(line, courier, 10, 50, y); err != nil {
+			return nil, fmt.Errorf("failed to draw JSON line: %w", err)
+		}
+		y += 12
 	}
 
-	return s.outputPDFToBytes(pdf)
+	// Output PDF to bytes
+	var buf bytes.Buffer
+	if err := c.Write(&buf); err != nil {
+		return nil, fmt.Errorf("failed to generate PDF: %w", err)
+	}
+	return buf.Bytes(), nil
 }
 
-func (s *ReportingService) formatUserActivityPDF(pdf *gofpdf.Fpdf, data interface{}) ([]byte, error) {
-	// Generic user activity formatting
-	pdf.SetFont("Arial", "B", 12)
-	pdf.Cell(40, 8, "User Activity Report")
-	pdf.Ln(8)
+func (s *ReportingService) formatUserActivityPDF(c *creator.Creator, data interface{}, arialBold, arialItalic, courier *model.PdfFont) ([]byte, error) {
+	// Helper to create paragraph
+	createParagraph := func(text string, font *model.PdfFont, fontSize float64, x, y float64) error {
+		para := &creator.Paragraph{}
+		para.SetText(text)
+		para.SetFont(font)
+		para.SetFontSize(fontSize)
+		para.SetColor(creator.ColorBlack)
+		para.SetPos(x, y)
+		return c.Draw(para)
+	}
 
-	pdf.SetFont("Arial", "", 10)
-	pdf.Cell(40, 6, "User activity logs and events")
-	pdf.Ln(6)
+	y := 90.0
+
+	// User Activity Report heading
+	if err := createParagraph("User Activity Report", arialBold, 12, 50, y); err != nil {
+		return nil, fmt.Errorf("failed to draw heading: %w", err)
+	}
+	y += 15
+
+	// Description
+	if err := createParagraph("User activity logs and events", arialItalic, 10, 50, y); err != nil {
+		return nil, fmt.Errorf("failed to draw description: %w", err)
+	}
+	y += 15
 
 	// Add summary information
 	jsonData, err := json.Marshal(data)
@@ -612,7 +751,6 @@ func (s *ReportingService) formatUserActivityPDF(pdf *gofpdf.Fpdf, data interfac
 		return nil, fmt.Errorf("failed to marshal user activity data: %w", err)
 	}
 
-	pdf.SetFont("Courier", "", 8)
 	text := string(jsonData)
 	if len(text) > 3000 { // Limit text to reasonable size
 		text = text[:3000] + "...[truncated]"
@@ -623,28 +761,57 @@ func (s *ReportingService) formatUserActivityPDF(pdf *gofpdf.Fpdf, data interfac
 		if len(line) > 100 {
 			line = line[:100] + "..."
 		}
-		pdf.Cell(40, 3, line)
-		pdf.Ln(3)
+		if err := createParagraph(line, courier, 10, 50, y); err != nil {
+			return nil, fmt.Errorf("failed to draw JSON line: %w", err)
+		}
+		y += 12
 	}
 
-	return s.outputPDFToBytes(pdf)
+	// Output PDF to bytes
+	var buf bytes.Buffer
+	if err := c.Write(&buf); err != nil {
+		return nil, fmt.Errorf("failed to generate PDF: %w", err)
+	}
+	return buf.Bytes(), nil
 }
 
-func (s *ReportingService) formatSecurityAuditPDF(pdf *gofpdf.Fpdf, data interface{}) ([]byte, error) {
-	// Security audit specific formatting
-	pdf.SetFont("Arial", "B", 12)
-	pdf.Cell(40, 8, "Security Audit Report")
-	pdf.Ln(8)
+func (s *ReportingService) formatSecurityAuditPDF(c *creator.Creator, data interface{}, arialBold, arialItalic, courier *model.PdfFont) ([]byte, error) {
+	// Helper to create paragraph
+	createParagraph := func(text string, font *model.PdfFont, fontSize float64, x, y float64) error {
+		para := &creator.Paragraph{}
+		para.SetText(text)
+		para.SetFont(font)
+		para.SetFontSize(fontSize)
+		para.SetColor(creator.ColorBlack)
+		para.SetPos(x, y)
+		return c.Draw(para)
+	}
 
-	pdf.SetFont("Arial", "B", 10)
-	pdf.Cell(40, 6, "Security Events and Audit Information")
-	pdf.Ln(10)
+	y := 90.0
 
-	pdf.SetFont("Arial", "", 10)
-	pdf.Cell(40, 6, "This report contains security audit information")
-	pdf.Ln(6)
-	pdf.Cell(40, 6, fmt.Sprintf("Generated on: %s", time.Now().Format("2006-01-02 15:04:05")))
-	pdf.Ln(10)
+	// Security Audit Report heading
+	if err := createParagraph("Security Audit Report", arialBold, 12, 50, y); err != nil {
+		return nil, fmt.Errorf("failed to draw heading: %w", err)
+	}
+	y += 15
+
+	// Subheading
+	if err := createParagraph("Security Events and Audit Information", arialBold, 10, 50, y); err != nil {
+		return nil, fmt.Errorf("failed to draw subheading: %w", err)
+	}
+	y += 12
+
+	// Description
+	if err := createParagraph("This report contains security audit information", arialItalic, 10, 50, y); err != nil {
+		return nil, fmt.Errorf("failed to draw description: %w", err)
+	}
+	y += 12
+
+	// Generation timestamp
+	if err := createParagraph(fmt.Sprintf("Generated on: %s", time.Now().Format("2006-01-02 15:04:05")), arialItalic, 10, 50, y); err != nil {
+		return nil, fmt.Errorf("failed to draw timestamp: %w", err)
+	}
+	y += 15
 
 	// Add audit data as formatted JSON
 	jsonData, err := json.MarshalIndent(data, "", "  ")
@@ -652,34 +819,62 @@ func (s *ReportingService) formatSecurityAuditPDF(pdf *gofpdf.Fpdf, data interfa
 		return nil, fmt.Errorf("failed to marshal security audit data: %w", err)
 	}
 
-	pdf.SetFont("Courier", "", 8)
 	lines := strings.Split(string(jsonData), "\n")
 	for _, line := range lines {
 		if len(line) > 95 {
 			line = line[:95] + "..."
 		}
-		pdf.Cell(40, 3, line)
-		pdf.Ln(3)
+		if err := createParagraph(line, courier, 10, 50, y); err != nil {
+			return nil, fmt.Errorf("failed to draw JSON line: %w", err)
+		}
+		y += 12
 	}
 
-	return s.outputPDFToBytes(pdf)
+	// Output PDF to bytes
+	var buf bytes.Buffer
+	if err := c.Write(&buf); err != nil {
+		return nil, fmt.Errorf("failed to generate PDF: %w", err)
+	}
+	return buf.Bytes(), nil
 }
 
-func (s *ReportingService) formatPerformanceMetricsPDF(pdf *gofpdf.Fpdf, data interface{}) ([]byte, error) {
-	// Performance metrics specific formatting
-	pdf.SetFont("Arial", "B", 12)
-	pdf.Cell(40, 8, "Performance Metrics Report")
-	pdf.Ln(8)
+func (s *ReportingService) formatPerformanceMetricsPDF(c *creator.Creator, data interface{}, arialBold, arialItalic, courier *model.PdfFont) ([]byte, error) {
+	// Helper to create paragraph
+	createParagraph := func(text string, font *model.PdfFont, fontSize float64, x, y float64) error {
+		para := &creator.Paragraph{}
+		para.SetText(text)
+		para.SetFont(font)
+		para.SetFontSize(fontSize)
+		para.SetColor(creator.ColorBlack)
+		para.SetPos(x, y)
+		return c.Draw(para)
+	}
 
-	pdf.SetFont("Arial", "B", 10)
-	pdf.Cell(40, 6, "System Performance Metrics")
-	pdf.Ln(10)
+	y := 90.0
 
-	pdf.SetFont("Arial", "", 10)
-	pdf.Cell(40, 6, "This report contains performance metrics for the system")
-	pdf.Ln(6)
-	pdf.Cell(40, 6, fmt.Sprintf("Generated on: %s", time.Now().Format("2006-01-02 15:04:05")))
-	pdf.Ln(10)
+	// Performance Metrics Report heading
+	if err := createParagraph("Performance Metrics Report", arialBold, 12, 50, y); err != nil {
+		return nil, fmt.Errorf("failed to draw heading: %w", err)
+	}
+	y += 15
+
+	// Subheading
+	if err := createParagraph("System Performance Metrics", arialBold, 10, 50, y); err != nil {
+		return nil, fmt.Errorf("failed to draw subheading: %w", err)
+	}
+	y += 12
+
+	// Description
+	if err := createParagraph("This report contains performance metrics for the system", arialItalic, 10, 50, y); err != nil {
+		return nil, fmt.Errorf("failed to draw description: %w", err)
+	}
+	y += 12
+
+	// Generation timestamp
+	if err := createParagraph(fmt.Sprintf("Generated on: %s", time.Now().Format("2006-01-02 15:04:05")), arialItalic, 10, 50, y); err != nil {
+		return nil, fmt.Errorf("failed to draw timestamp: %w", err)
+	}
+	y += 15
 
 	// Add performance data as formatted JSON
 	jsonData, err := json.MarshalIndent(data, "", "  ")
@@ -687,17 +882,23 @@ func (s *ReportingService) formatPerformanceMetricsPDF(pdf *gofpdf.Fpdf, data in
 		return nil, fmt.Errorf("failed to marshal performance metrics data: %w", err)
 	}
 
-	pdf.SetFont("Courier", "", 8)
 	lines := strings.Split(string(jsonData), "\n")
 	for _, line := range lines {
 		if len(line) > 95 {
 			line = line[:95] + "..."
 		}
-		pdf.Cell(40, 3, line)
-		pdf.Ln(3)
+		if err := createParagraph(line, courier, 10, 50, y); err != nil {
+			return nil, fmt.Errorf("failed to draw JSON line: %w", err)
+		}
+		y += 12
 	}
 
-	return s.outputPDFToBytes(pdf)
+	// Output PDF to bytes
+	var buf bytes.Buffer
+	if err := c.Write(&buf); err != nil {
+		return nil, fmt.Errorf("failed to generate PDF: %w", err)
+	}
+	return buf.Bytes(), nil
 }
 
 func (s *ReportingService) extractDateRange(params map[string]interface{}) (time.Time, time.Time, error) {

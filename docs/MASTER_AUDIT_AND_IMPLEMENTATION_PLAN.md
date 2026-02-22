@@ -232,24 +232,29 @@
 | 3A.6 Enable noUnusedLocals and noUnusedParameters in tsconfig | catalog-web | tsconfig.json |
 
 #### 3B: Backend Performance
-| Task | Module | Action |
-|------|--------|--------|
-| 3B.1 Add connection pooling / semaphore for concurrent scans | catalog-api | internal/media |
-| 3B.2 Add graceful shutdown with WaitGroup drain | catalog-api | main.go |
-| 3B.3 Add event channel backpressure with buffered ring | catalog-api | resilience.go |
-| 3B.4 Remove duplicate PDF library from go.mod | catalog-api | go.mod |
+| Task | Module | Action | Status |
+|------|--------|--------|--------|
+| 3B.1 Add connection pooling / semaphore for concurrent scans | catalog-api | internal/media | ✅ |
+| 3B.2 Add graceful shutdown with WaitGroup drain | catalog-api | main.go | ✅ |
+| 3B.3 Add event channel backpressure with buffered ring | catalog-api | resilience.go | ✅ |
+| 3B.4 Remove duplicate PDF library from go.mod | catalog-api | go.mod | ✅ |
 
 #### 3C: Mobile Performance
-| Task | Module | Action |
-|------|--------|--------|
-| 3C.1 Implement proper Room migration strategy | catalogizer-android | New migration files |
-| 3C.2 Add Kotlinx.coroutines flow debouncing for search | catalogizer-android | ViewModels |
+| Task | Module | Action | Status |
+|------|--------|--------|--------|
+| 3C.1 Implement proper Room migration strategy | catalogizer-android | New migration files | ✅ Schema config added, schema generated; ✅ Build succeeds, unit tests pass |
+| 3C.2 Add Kotlinx.coroutines flow debouncing for search | catalogizer-android | ViewModels | ✅ Implementation added; ✅ Verified with unit tests |
+| 3C.3 Create local Android environment setup scripts | scripts/android/ | Self-contained JDK + SDK installation | ✅ Scripts created: setup.sh, build.sh, env.sh; tools/ directory ignored by git |
+
+**Note:** Android build fixed by commenting out invalid `org.gradle.java.home` property in `catalogizer-android/gradle.properties` and using containerized builder with JDK 17 (AGP 8.1.0, compileSdk 34). JDK image transform disabled via Gradle properties. APK builds successfully, unit tests pass. Lint reports missing MediaPlayerActivity (pre-existing issue).
 
 ---
 
 ### Phase 4: Test Coverage Expansion
 
 **Goal:** Achieve maximum test coverage across all modules with all supported test types.
+
+**Progress:** ✅ Scan handler tests added (12 comprehensive test cases with interface extraction). ✅ WebSocket handler tests added. ✅ Service adapter tests fixed. ✅ Conversion handler tests pass. PDF library replacement verified. ✅ Android unit tests pass.
 
 #### Test Types to Implement:
 1. **Unit Tests** - Per function/method isolation

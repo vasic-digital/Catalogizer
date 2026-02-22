@@ -50,7 +50,7 @@ func (suite *ServiceAdaptersTestSuite) TestAuthServiceAdapter_HashPassword_NilIn
 func (suite *ServiceAdaptersTestSuite) TestAuthServiceAdapter_ValidatePassword_NilInner() {
 	// ValidatePassword only checks string length, no struct fields accessed
 	adapter := &AuthServiceAdapter{Inner: nil}
-	err := adapter.ValidatePassword("password123")
+	err := adapter.ValidatePassword("Password123!")
 	assert.NoError(suite.T(), err)
 }
 

@@ -9,7 +9,14 @@ plugins {
     id("jacoco")
 }
 
+// project.ext.set("android.useNewJdkImageTransform", false)
+// project.ext.set("android.experimental.jdkImageTransform", false)
+
 android {
+    // Disable JDK image transform to avoid jlink issues
+    // project.ext.set("android.useNewJdkImageTransform", false)
+    // project.ext.set("android.experimental.jdkImageTransform", false)
+    
     namespace = "com.catalogizer.android"
     compileSdk = 34
 
@@ -23,6 +30,12 @@ android {
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         vectorDrawables {
             useSupportLibrary = true
+        }
+
+        javaCompileOptions {
+            annotationProcessorOptions {
+                arguments += mapOf("room.schemaLocation" to "$projectDir/schemas")
+            }
         }
     }
 
@@ -59,13 +72,22 @@ android {
     }
 
     compileOptions {
-        sourceCompatibility = JavaVersion.VERSION_11
-        targetCompatibility = JavaVersion.VERSION_11
+        sourceCompatibility = JavaVersion.VERSION_17
+        targetCompatibility = JavaVersion.VERSION_17
     }
 
+
     kotlinOptions {
-        jvmTarget = "11"
+        jvmTarget = "17"
     }
+
+    // Kotlin toolchain for JDK 17 compatibility with AGP 8.1.0
+    kotlin {
+        jvmToolchain(17)
+    }
+
+    // Disable JDK image transform to avoid jlink issues
+    // useNewJdkImageTransform.set(false)
 
     buildFeatures {
         compose = true
@@ -75,6 +97,8 @@ android {
     composeOptions {
         kotlinCompilerExtensionVersion = "1.5.8"
     }
+
+
 
     packaging {
         resources {
