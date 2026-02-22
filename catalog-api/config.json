@@ -1,6 +1,6 @@
 {
   "server": {
-    "host": "localhost",
+    "host": "0.0.0.0",
     "port": 8080,
     "read_timeout": 900,
     "write_timeout": 900,
@@ -9,28 +9,28 @@
     "enable_https": true
   },
   "database": {
-    "type": "postgres",
+    "type": "sqlite",
     "host": "localhost",
     "port": 5433,
     "name": "catalogizer",
     "user": "catalogizer",
     "password": "catalogizer_dev",
     "ssl_mode": "disable",
-    "path": "./catalog.db",
+    "path": "./data/catalogizer.db",
     "enable_wal": true,
     "cache_size": -2000,
-    "busy_timeout": 5000,
+    "busy_timeout": 30000,
     "max_open_connections": 25,
     "max_idle_connections": 5,
     "conn_max_lifetime": 300,
     "conn_max_idle_time": 60
   },
   "auth": {
-    "jwt_secret": "",
+    "jwt_secret": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
     "jwt_expiration_hours": 24,
     "enable_auth": true,
-    "admin_username": "",
-    "admin_password": ""
+    "admin_username": "admin",
+    "admin_password": "admin123"
   },
   "catalog": {
     "default_page_size": 100,

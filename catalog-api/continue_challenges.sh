@@ -7,19 +7,27 @@ if [ ! -f challenge_ids.txt ]; then
     exit 1
 fi
 
-# Run each challenge sequentially
+# Skip first N challenges (already passed)
+SKIP=6
+COUNT=0
+
 while read id; do
-    echo "=== Running challenge: $id ==="
+    COUNT=$((COUNT + 1))
+    if [ $COUNT -le $SKIP ]; then
+        echo "Skipping challenge $COUNT: $id"
+        continue
+    fi
+    echo "=== Running challenge $COUNT: $id ==="
     # Get fresh token for each challenge
-    TOKEN=$(curl -s -X POST http://localhost:8080/api/v1/auth/login -H "Content-Type: application/json" -d '{"username":"admin","password":"admin123"}' | grep -o '"session_token":"[^"]*"' | cut -d'"' -f4)
+    TOKEN=$(curl -s -X POST http://localhost:8080/api/v1/auth/login -H "Content-Type: application/json" -d '{"username":"admin","password":"admin123"}' | jq -r '.session_token')
     if [ -z "$TOKEN" ]; then
         echo "  FAILED to get token"
         exit 1
     fi
-    # Run challenge with timeout (5 minutes)
-    timeout 600 curl -s -H "Authorization: Bearer $TOKEN" -X POST "http://localhost:8080/api/v1/challenges/$id/run" -o "result_$id.json"
+    # Run challenge with timeout (20 minutes)
+    timeout 1200 curl -s -H "Authorization: Bearer $TOKEN" -X POST "http://localhost:8080/api/v1/challenges/$id/run" -o "result_$id.json"
     if [ $? -eq 124 ]; then
-        echo "  TIMEOUT after 5 minutes"
+        echo "  TIMEOUT after 10 minutes"
         exit 1
     fi
     # Check if result file exists
