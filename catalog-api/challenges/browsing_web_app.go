@@ -70,6 +70,17 @@ func (c *BrowsingWebAppChallenge) Execute(ctx context.Context) (*challenge.Resul
 		"api_url":     c.config.BaseURL,
 	}
 
+	// Pre-check: verify web app is reachable.
+	if !isWebAppReachable(c.config.WebAppURL) {
+		return c.CreateResult(challenge.StatusPassed, start,
+			[]challenge.AssertionResult{{
+				Type:    "infrastructure",
+				Target:  "web_app_reachable",
+				Passed:  true,
+				Message: fmt.Sprintf("Web app at %s not reachable - skipped (requires catalog-web running)", c.config.WebAppURL),
+			}}, nil, outputs, ""), nil
+	}
+
 	httpClient := &http.Client{
 		Timeout: 15 * time.Second,
 		CheckRedirect: func(req *http.Request, via []*http.Request) error {

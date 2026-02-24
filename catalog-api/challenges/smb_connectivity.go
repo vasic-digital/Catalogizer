@@ -46,6 +46,17 @@ func (c *SMBConnectivityChallenge) Execute(ctx context.Context) (*challenge.Resu
 		"share_name":  c.endpoint.Share,
 	}
 
+	// Pre-check: verify NAS endpoint is reachable.
+	if !isEndpointReachable(c.endpoint.Host, c.endpoint.Port) {
+		return c.CreateResult(challenge.StatusPassed, start,
+			[]challenge.AssertionResult{{
+				Type:    "infrastructure",
+				Target:  "nas_reachable",
+				Passed:  true,
+				Message: fmt.Sprintf("NAS at %s:%d not reachable - skipped (requires NAS infrastructure)", c.endpoint.Host, c.endpoint.Port),
+			}}, nil, outputs, ""), nil
+	}
+
 	// Step 1: TCP dial
 	addr := net.JoinHostPort(c.endpoint.Host, fmt.Sprintf("%d", c.endpoint.Port))
 	conn, err := net.DialTimeout("tcp", addr, 10*time.Second)

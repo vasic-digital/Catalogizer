@@ -1,7 +1,11 @@
 package challenges
 
 import (
+	"fmt"
+	"net"
+	"net/http"
 	"strings"
+	"time"
 
 	"digital.vasic.challenges/pkg/env"
 )
@@ -50,4 +54,30 @@ func IsInvalidTitle(title string) bool {
 // be present in a fully cataloged collection.
 var requiredMediaTypes = []string{
 	"music", "tv_show", "movie", "software", "comic",
+}
+
+// isEndpointReachable performs a quick TCP dial to check if the
+// NAS endpoint is network-reachable. Returns false if the host
+// cannot be contacted within 3 seconds.
+func isEndpointReachable(host string, port int) bool {
+	addr := net.JoinHostPort(host, fmt.Sprintf("%d", port))
+	conn, err := net.DialTimeout("tcp", addr, 3*time.Second)
+	if err != nil {
+		return false
+	}
+	conn.Close()
+	return true
+}
+
+// isWebAppReachable performs a quick HTTP GET to check if the
+// web application is running. Returns false if the request fails
+// or times out within 3 seconds.
+func isWebAppReachable(url string) bool {
+	client := &http.Client{Timeout: 3 * time.Second}
+	resp, err := client.Get(url)
+	if err != nil {
+		return false
+	}
+	resp.Body.Close()
+	return resp.StatusCode < 500
 }

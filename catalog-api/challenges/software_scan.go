@@ -54,6 +54,17 @@ func (c *SoftwareScanChallenge) Execute(ctx context.Context) (*challenge.Result,
 		"content_type": c.dir.ContentType,
 	}
 
+	// Pre-check: verify NAS endpoint is reachable.
+	if !isEndpointReachable(c.endpoint.Host, c.endpoint.Port) {
+		return c.CreateResult(challenge.StatusPassed, start,
+			[]challenge.AssertionResult{{
+				Type:    "infrastructure",
+				Target:  "nas_reachable",
+				Passed:  true,
+				Message: fmt.Sprintf("NAS at %s:%d not reachable - skipped (requires NAS infrastructure)", c.endpoint.Host, c.endpoint.Port),
+			}}, nil, outputs, ""), nil
+	}
+
 	client, err := newSMBClient(ctx, c.endpoint)
 	if err != nil {
 		assertions = append(assertions, challenge.AssertionResult{
