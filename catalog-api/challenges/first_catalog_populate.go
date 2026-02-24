@@ -280,7 +280,22 @@ func (c *FirstCatalogPopulateChallenge) Execute(ctx context.Context) (*challenge
 	outputs["scan_files_found"] = fmt.Sprintf("%.0f", totalFilesFound)
 
 	// Step 6: GET /api/v1/stats/overall — verify total_files > 0 and total_size > 0
-	overallCode, overallBody, overallErr := client.Get(ctx, "/api/v1/stats/overall")
+	// Retry up to 5 times with 5-second intervals to handle transient
+	// database lock errors from concurrent post-scan aggregation.
+	var overallCode int
+	var overallBody map[string]interface{}
+	var overallErr error
+	for retry := 0; retry < 5; retry++ {
+		overallCode, overallBody, overallErr = client.Get(ctx, "/api/v1/stats/overall")
+		if overallErr == nil && overallCode == 200 {
+			break
+		}
+		c.ReportProgress("stats retry", map[string]any{
+			"retry": retry + 1,
+			"code":  overallCode,
+		})
+		time.Sleep(5 * time.Second)
+	}
 	overallOK := overallErr == nil && overallCode == 200
 	var totalFiles, totalSize float64
 	if overallBody != nil {
