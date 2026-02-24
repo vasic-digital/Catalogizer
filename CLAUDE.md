@@ -149,6 +149,23 @@ Key constraints:
 - Progress-based liveness detection: 5-minute stale threshold kills stuck challenges.
 - `challenge.NewConfig()` sets Timeout=5min by default — zero it to use runner's timeout.
 
+### User Flow Automation
+
+Multi-platform user flow automation via `Challenges/pkg/userflow/`. 174 Catalogizer-specific challenges in `catalog-api/challenges/userflow_*.go` across 4 platform groups:
+
+| File | Platform | Challenges |
+|------|----------|-----------|
+| `userflow_api.go` | Go API (HTTP) | 49 |
+| `userflow_web.go` | React web (Playwright) | 59 |
+| `userflow_desktop.go` | Tauri desktop + wizard | 28 |
+| `userflow_mobile.go` | Android + Android TV | 38 |
+
+Registered via `RegisterUserFlowAPIChallenges()`, `RegisterUserFlowWebChallenges()`, `RegisterUserFlowDesktopChallenges()`, `RegisterUserFlowMobileChallenges()` in `register.go`.
+
+CLI runner: `Challenges/cmd/userflow-runner` — flags: `--platform`, `--report`, `--compose`, `--root`, `--timeout`, `--output`.
+
+Container test stack: `docker-compose.test.yml` (catalog-api, catalog-web, playwright; all `network_mode: host`).
+
 ## Media Entity System
 
 Scanned files are transformed into structured media entities via a post-scan aggregation pipeline:
