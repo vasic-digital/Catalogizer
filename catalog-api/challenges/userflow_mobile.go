@@ -1697,10 +1697,10 @@ func registerUserFlowMobileChallenges() []challenge.Challenge {
 // Android TV user flow challenges with the given service.
 func RegisterUserFlowMobileChallenges(
 	svc interface {
-		Register(challenge.Challenge)
+		Register(challenge.Challenge) error
 	},
 ) {
 	for _, ch := range registerUserFlowMobileChallenges() {
-		svc.Register(ch)
+		_ = svc.Register(ch)
 	}
 }

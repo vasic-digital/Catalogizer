@@ -1157,10 +1157,10 @@ func registerUserFlowDesktopChallenges() []challenge.Challenge {
 // wizard user flow challenges with the given challenge service.
 func RegisterUserFlowDesktopChallenges(
 	svc interface {
-		Register(challenge.Challenge)
+		Register(challenge.Challenge) error
 	},
 ) {
 	for _, ch := range registerUserFlowDesktopChallenges() {
-		svc.Register(ch)
+		_ = svc.Register(ch)
 	}
 }

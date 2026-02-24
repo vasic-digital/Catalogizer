@@ -1500,10 +1500,10 @@ func registerUserFlowAPIChallenges() []challenge.Challenge {
 // RegisterAll in register.go to wire in the user flow suite.
 func RegisterUserFlowAPIChallenges(
 	svc interface {
-		Register(challenge.Challenge)
+		Register(challenge.Challenge) error
 	},
 ) {
 	for _, ch := range registerUserFlowAPIChallenges() {
-		svc.Register(ch)
+		_ = svc.Register(ch)
 	}
 }

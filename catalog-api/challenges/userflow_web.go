@@ -2768,3 +2768,16 @@ func loginThenSteps(
 	}
 	return append(login, extra...)
 }
+
+// RegisterUserFlowWebChallenges registers all web browser
+// flow challenges with the given challenge service. Call this
+// from RegisterAll in register.go to wire in the web suite.
+func RegisterUserFlowWebChallenges(
+	svc interface {
+		Register(challenge.Challenge) error
+	},
+) {
+	for _, ch := range registerUserFlowWebChallenges() {
+		_ = svc.Register(ch)
+	}
+}

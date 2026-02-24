@@ -90,5 +90,12 @@ func RegisterAll(svc *services.ChallengeService) error {
 	svc.Register(NewSecurityChallenge())               // CH-034: Security
 	svc.Register(NewConfigWizardChallenge())           // CH-035: Configuration wizard
 
+	// User flow challenges (UF-*): exhaustive multi-platform
+	// user flow automation across all 6 Catalogizer applications
+	RegisterUserFlowAPIChallenges(svc)     // 49 API challenges
+	RegisterUserFlowWebChallenges(svc)     // 59 web browser challenges
+	RegisterUserFlowDesktopChallenges(svc) // 28 desktop + wizard challenges
+	RegisterUserFlowMobileChallenges(svc)  // 38 Android + TV challenges
+
 	return nil
 }
