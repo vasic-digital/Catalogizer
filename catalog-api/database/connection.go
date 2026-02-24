@@ -77,6 +77,15 @@ func NewConnection(cfg *config.DatabaseConfig) (*DB, error) {
 		return nil, fmt.Errorf("failed to ping database: %w", err)
 	}
 
+	// Ensure WAL mode is active for SQLite (connection string
+	// pragma may not be applied by go-sqlcipher).
+	if dbType != "postgres" {
+		if _, err := sqlDB.Exec("PRAGMA journal_mode=WAL"); err != nil {
+			sqlDB.Close()
+			return nil, fmt.Errorf("failed to enable WAL mode: %w", err)
+		}
+	}
+
 	db := &DB{
 		DB:      sqlDB,
 		config:  cfg,

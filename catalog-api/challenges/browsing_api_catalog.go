@@ -45,8 +45,8 @@ func (c *BrowsingAPICatalogChallenge) Execute(ctx context.Context) (*challenge.R
 
 	client := httpclient.NewAPIClient(c.config.BaseURL)
 
-	// Authenticate first
-	_, err := client.LoginWithRetry(ctx, c.config.Username, c.config.Password, 3)
+	// Authenticate first (more retries to handle DB lock during NAS scan)
+	_, err := client.LoginWithRetry(ctx, c.config.Username, c.config.Password, 5)
 	if err != nil {
 		assertions = append(assertions, challenge.AssertionResult{
 			Type:    "not_empty",
@@ -305,7 +305,17 @@ func (c *BrowsingAPICatalogChallenge) Execute(ctx context.Context) (*challenge.R
 	outputs["media_stats_total_items"] = fmt.Sprintf("%.0f", msTotalItems)
 
 	// 11. GET /api/v1/media/search?limit=5 - validate search returns actual items
-	mxCode, mxBody, mxErr := client.Get(ctx, "/api/v1/media/search?limit=5&offset=0&sort_by=name&sort_order=asc")
+	// Retry up to 5 times with 5s intervals to handle transient DB lock.
+	var mxCode int
+	var mxBody map[string]interface{}
+	var mxErr error
+	for retry := 0; retry < 5; retry++ {
+		mxCode, mxBody, mxErr = client.Get(ctx, "/api/v1/media/search?limit=5&offset=0&sort_by=name&sort_order=asc")
+		if mxErr == nil && mxCode == 200 {
+			break
+		}
+		time.Sleep(5 * time.Second)
+	}
 	mxResponds := mxErr == nil && mxCode == 200
 	mxItemCount := 0
 	mxTotal := float64(0)
