@@ -1,245 +1,446 @@
 import { Page } from '@playwright/test';
 
-/**
- * Mock media data for E2E tests
- */
-export const mockMedia = {
-  items: [
-    {
-      id: 1,
-      title: 'Test Movie 1',
-      media_type: 'movie',
-      year: 2023,
-      rating: 8.5,
-      poster_url: 'https://example.com/poster1.jpg',
-      description: 'A test movie for E2E testing',
-      duration: 120,
-      created_at: new Date().toISOString(),
-    },
-    {
-      id: 2,
-      title: 'Test TV Show',
-      media_type: 'tv_show',
-      year: 2022,
-      rating: 9.0,
-      poster_url: 'https://example.com/poster2.jpg',
-      description: 'A test TV show for E2E testing',
-      seasons: 3,
-      created_at: new Date().toISOString(),
-    },
-    {
-      id: 3,
-      title: 'Test Music Album',
-      media_type: 'music',
-      year: 2024,
-      artist: 'Test Artist',
-      poster_url: 'https://example.com/poster3.jpg',
-      tracks: 12,
-      created_at: new Date().toISOString(),
-    },
-  ],
-  total: 3,
-  limit: 20,
-  offset: 0,
-};
-
-/**
- * Mock collections data
- */
-export const mockCollections = [
+// Sample media data used across tests
+export const mockMedia = [
   {
     id: 1,
-    name: 'Favorites',
-    description: 'My favorite media',
-    item_count: 5,
-    cover_image: 'https://example.com/collection1.jpg',
+    title: 'The Matrix',
+    media_type: 'movie',
+    year: 1999,
+    rating: 8.7,
+    description: 'A computer hacker learns about the true nature of reality.',
+    poster_url: '/placeholder-poster.jpg',
+    file_count: 2,
+    total_size: 4500000000,
     created_at: new Date().toISOString(),
+    updated_at: new Date().toISOString(),
   },
   {
     id: 2,
-    name: 'Watch Later',
-    description: 'Media to watch later',
-    item_count: 10,
-    cover_image: 'https://example.com/collection2.jpg',
+    title: 'Breaking Bad',
+    media_type: 'tv_show',
+    year: 2008,
+    rating: 9.5,
+    description: 'A chemistry teacher turned drug lord.',
+    poster_url: '/placeholder-poster2.jpg',
+    file_count: 62,
+    total_size: 45000000000,
     created_at: new Date().toISOString(),
+    updated_at: new Date().toISOString(),
+  },
+  {
+    id: 3,
+    title: 'Dark Side of the Moon',
+    media_type: 'music_album',
+    year: 1973,
+    rating: 9.3,
+    description: 'Pink Floyd classic album.',
+    poster_url: '/placeholder-cover.jpg',
+    file_count: 10,
+    total_size: 800000000,
+    created_at: new Date().toISOString(),
+    updated_at: new Date().toISOString(),
   },
 ];
 
 /**
- * Mock dashboard stats
+ * Mock dashboard-related API endpoints.
  */
-export const mockDashboardStats = {
-  total_items: 150,
-  movies_count: 80,
-  tv_shows_count: 40,
-  music_count: 30,
-  total_size: '250 GB',
-  recent_additions: 12,
-  storage_used: 75,
-};
-
-/**
- * Mock recent activity
- */
-export const mockActivity = [
-  {
-    id: 1,
-    type: 'media_added',
-    title: 'New movie added',
-    description: 'Test Movie 1 was added to the library',
-    timestamp: new Date().toISOString(),
-  },
-  {
-    id: 2,
-    type: 'scan_completed',
-    title: 'Library scan completed',
-    description: 'Scanned 50 new files',
-    timestamp: new Date(Date.now() - 3600000).toISOString(),
-  },
-];
-
-/**
- * Setup all API mocks for media browsing
- */
-export async function mockMediaEndpoints(page: Page) {
-  // Mock media list/search endpoint
-  await page.route('**/api/v1/media**', async (route) => {
-    const url = new URL(route.request().url());
-    const query = url.searchParams.get('q') || url.searchParams.get('query');
-
-    let filteredItems = [...mockMedia.items];
-
-    // Filter by search query
-    if (query) {
-      filteredItems = filteredItems.filter(item =>
-        item.title.toLowerCase().includes(query.toLowerCase())
-      );
-    }
-
-    // Filter by media type
-    const mediaType = url.searchParams.get('media_type') || url.searchParams.get('type');
-    if (mediaType) {
-      filteredItems = filteredItems.filter(item => item.media_type === mediaType);
-    }
-
+export async function mockDashboardEndpoints(page: Page) {
+  // Dashboard stats
+  await page.route('**/api/v1/stats**', async (route) => {
     await route.fulfill({
       status: 200,
       contentType: 'application/json',
       body: JSON.stringify({
-        items: filteredItems,
-        total: filteredItems.length,
-        limit: 20,
+        total_files: 1250,
+        total_size: 536870912000,
+        total_entities: 340,
+        total_collections: 5,
+        total_favorites: 12,
+        storage_roots: 3,
+        recent_scans: [],
+        media_by_type: {
+          movie: 150,
+          tv_show: 80,
+          music_album: 60,
+          song: 200,
+          game: 30,
+          software: 20,
+        },
+      }),
+    });
+  });
+
+  // Health endpoint
+  await page.route('**/api/v1/health', async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        status: 'healthy',
+        uptime: 86400,
+        version: '1.0.0',
+        database: 'ok',
+      }),
+    });
+  });
+
+  // Config endpoint
+  await page.route('**/api/v1/config**', async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        version: '1.0.0',
+        features: {
+          ai_enabled: true,
+          collections_enabled: true,
+          favorites_enabled: true,
+          conversion_enabled: true,
+        },
+      }),
+    });
+  });
+
+  // Storage roots
+  await page.route('**/api/v1/storage-roots**', async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        roots: [
+          { id: 1, path: '//synology.local/media', protocol: 'smb', status: 'connected' },
+          { id: 2, path: '/data/local', protocol: 'local', status: 'connected' },
+        ],
+      }),
+    });
+  });
+
+  // Scan status
+  await page.route('**/api/v1/scan/status**', async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        scanning: false,
+        last_scan: new Date().toISOString(),
+        files_scanned: 1250,
+      }),
+    });
+  });
+
+  // Recent activity
+  await page.route('**/api/v1/activity**', async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({ activities: [], total: 0 }),
+    });
+  });
+}
+
+/**
+ * Mock media/entity browsing API endpoints.
+ */
+export async function mockMediaEndpoints(page: Page) {
+  // Entity types
+  await page.route('**/api/v1/entities/types', async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        types: [
+          { id: 1, name: 'movie', display_name: 'Movies', count: 150 },
+          { id: 2, name: 'tv_show', display_name: 'TV Shows', count: 80 },
+          { id: 3, name: 'music_album', display_name: 'Music Albums', count: 60 },
+          { id: 4, name: 'song', display_name: 'Songs', count: 200 },
+          { id: 5, name: 'game', display_name: 'Games', count: 30 },
+          { id: 6, name: 'software', display_name: 'Software', count: 20 },
+        ],
+      }),
+    });
+  });
+
+  // Entity listing/browse
+  await page.route('**/api/v1/entities?**', async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        items: mockMedia,
+        total: mockMedia.length,
+        limit: 24,
         offset: 0,
       }),
     });
   });
 
-  // Mock single media item endpoint
-  await page.route('**/api/v1/media/*', async (route) => {
-    const url = route.request().url();
-    const idMatch = url.match(/\/media\/(\d+)/);
-    const id = idMatch ? parseInt(idMatch[1]) : 1;
-
-    const item = mockMedia.items.find(m => m.id === id) || mockMedia.items[0];
-
+  // Entity stats
+  await page.route('**/api/v1/entities/stats', async (route) => {
     await route.fulfill({
       status: 200,
       contentType: 'application/json',
-      body: JSON.stringify(item),
+      body: JSON.stringify({
+        total_entities: 340,
+        total_files: 1250,
+        by_type: { movie: 150, tv_show: 80, music_album: 60, song: 200, game: 30, software: 20 },
+      }),
+    });
+  });
+
+  // Entity search
+  await page.route('**/api/v1/entities/search**', async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        items: mockMedia,
+        total: mockMedia.length,
+        limit: 24,
+        offset: 0,
+      }),
+    });
+  });
+
+  // Single entity detail
+  await page.route('**/api/v1/entities/*', async (route) => {
+    const url = route.request().url();
+    if (url.includes('/types') || url.includes('/search') || url.includes('/stats')) {
+      return route.fallback();
+    }
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        ...mockMedia[0],
+        files: [
+          { id: 1, name: 'The.Matrix.1999.BluRay.mkv', size: 4500000000, path: '/movies/The.Matrix.1999.BluRay.mkv' },
+        ],
+      }),
+    });
+  });
+
+  // Media browse (legacy endpoint)
+  await page.route('**/api/v1/media**', async (route) => {
+    const url = route.request().url();
+    if (url.includes('/stats') || url.includes('/search')) {
+      return route.fallback();
+    }
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        items: mockMedia,
+        total: mockMedia.length,
+        limit: 24,
+        offset: 0,
+      }),
+    });
+  });
+
+  // Media stats
+  await page.route('**/api/v1/media/stats**', async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        total_items: 340,
+        by_type: { movie: 150, tv_show: 80, music_album: 60, song: 200, game: 30, software: 20 },
+        total_size: 536870912000,
+        recent_additions: 8,
+      }),
+    });
+  });
+
+  // Media search
+  await page.route('**/api/v1/media/search**', async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        items: mockMedia,
+        total: mockMedia.length,
+        limit: 24,
+        offset: 0,
+      }),
+    });
+  });
+
+  // Catalog browse
+  await page.route('**/api/v1/catalog/browse**', async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        items: [],
+        path: '/',
+        total: 0,
+      }),
     });
   });
 }
 
 /**
- * Setup collection API mocks
+ * Mock collection-related API endpoints.
  */
 export async function mockCollectionEndpoints(page: Page) {
-  // Mock collections list
-  await page.route('**/api/v1/collections', async (route) => {
-    if (route.request().method() === 'GET') {
-      await route.fulfill({
-        status: 200,
-        contentType: 'application/json',
-        body: JSON.stringify({
-          collections: mockCollections,
-          total: mockCollections.length,
-        }),
-      });
-    } else if (route.request().method() === 'POST') {
-      const body = route.request().postDataJSON();
+  await page.route('**/api/v1/collections**', async (route) => {
+    const url = route.request().url();
+    const method = route.request().method();
+
+    if (method === 'POST') {
       await route.fulfill({
         status: 201,
         contentType: 'application/json',
         body: JSON.stringify({
-          id: Date.now(),
-          ...body,
+          id: 'col-new',
+          name: 'New Collection',
+          description: '',
           item_count: 0,
+          is_smart: false,
+          is_public: false,
           created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
         }),
       });
+      return;
     }
-  });
 
-  // Mock single collection
-  await page.route('**/api/v1/collections/*', async (route) => {
-    if (route.request().method() === 'GET') {
+    // Specific collection by ID
+    if (url.match(/\/collections\/[^/?]+$/)) {
       await route.fulfill({
         status: 200,
         contentType: 'application/json',
-        body: JSON.stringify(mockCollections[0]),
+        body: JSON.stringify({
+          id: 'col-1',
+          name: 'Action Movies',
+          description: 'Best action films',
+          item_count: 25,
+          is_smart: false,
+          is_public: false,
+          media_type: 'video',
+          items: mockMedia.slice(0, 2),
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+        }),
       });
-    } else if (route.request().method() === 'DELETE') {
-      await route.fulfill({
-        status: 204,
-        body: '',
-      });
+      return;
     }
-  });
-}
 
-/**
- * Setup dashboard API mocks
- */
-export async function mockDashboardEndpoints(page: Page) {
-  // Mock stats endpoint
-  await page.route('**/api/v1/stats**', async (route) => {
-    await route.fulfill({
-      status: 200,
-      contentType: 'application/json',
-      body: JSON.stringify(mockDashboardStats),
-    });
-  });
-
-  // Mock activity endpoint
-  await page.route('**/api/v1/activity**', async (route) => {
+    // Collections list
     await route.fulfill({
       status: 200,
       contentType: 'application/json',
       body: JSON.stringify({
-        activities: mockActivity,
-        total: mockActivity.length,
-      }),
-    });
-  });
-
-  // Mock recent media endpoint
-  await page.route('**/api/v1/media/recent**', async (route) => {
-    await route.fulfill({
-      status: 200,
-      contentType: 'application/json',
-      body: JSON.stringify({
-        items: mockMedia.items.slice(0, 5),
-        total: 5,
+        collections: [
+          {
+            id: 'col-1',
+            name: 'Action Movies',
+            description: 'Best action films',
+            item_count: 25,
+            is_smart: false,
+            is_public: false,
+            media_type: 'video',
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString(),
+          },
+          {
+            id: 'col-2',
+            name: 'Jazz Collection',
+            description: 'Smooth jazz albums',
+            item_count: 42,
+            is_smart: true,
+            is_public: true,
+            media_type: 'music',
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString(),
+          },
+        ],
+        total: 2,
       }),
     });
   });
 }
 
 /**
- * Setup all API mocks
+ * Mock all API endpoints. Combines dashboard, media, collection, and favorites mocks.
  */
 export async function mockAllEndpoints(page: Page) {
+  await mockDashboardEndpoints(page);
   await mockMediaEndpoints(page);
   await mockCollectionEndpoints(page);
-  await mockDashboardEndpoints(page);
+
+  // Favorites
+  await page.route('**/api/v1/favorites**', async (route) => {
+    const url = route.request().url();
+    if (url.includes('/stats')) {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          total_count: 2,
+          media_type_breakdown: { movie: 1, tv_show: 1 },
+          recent_additions: [],
+        }),
+      });
+      return;
+    }
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        items: [
+          { id: 1, media_id: 1, title: 'The Matrix', media_type: 'movie', added_at: new Date().toISOString() },
+          { id: 2, media_id: 2, title: 'Breaking Bad', media_type: 'tv_show', added_at: new Date().toISOString() },
+        ],
+        total: 2,
+      }),
+    });
+  });
+
+  // Playlists
+  await page.route('**/api/v1/playlists**', async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({ playlists: [], total: 0 }),
+    });
+  });
+
+  // Challenges
+  await page.route('**/api/v1/challenges**', async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({ challenges: [], total: 0 }),
+    });
+  });
+
+  // Admin settings
+  await page.route('**/api/v1/admin/**', async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({ settings: {}, message: 'OK' }),
+    });
+  });
+
+  // Conversion jobs
+  await page.route('**/api/v1/conversion/**', async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({ jobs: [], total: 0 }),
+    });
+  });
+
+  // Subtitles
+  await page.route('**/api/v1/subtitles/**', async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({ subtitles: [], total: 0 }),
+    });
+  });
 }

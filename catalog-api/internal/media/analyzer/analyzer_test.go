@@ -2,6 +2,7 @@ package analyzer
 
 import (
 	"catalogizer/internal/media/models"
+	"context"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -316,6 +317,258 @@ func TestContains(t *testing.T) {
 			assert.Equal(t, tc.expected, contains(tc.slice, tc.item))
 		})
 	}
+}
+
+// --- NewMediaAnalyzer tests ---
+
+func TestNewMediaAnalyzer(t *testing.T) {
+	logger := testLogger(t)
+	ma := NewMediaAnalyzer(nil, nil, nil, logger)
+
+	assert.NotNil(t, ma)
+	assert.Nil(t, ma.db)
+	assert.Nil(t, ma.detector)
+	assert.Nil(t, ma.providerManager)
+	assert.NotNil(t, ma.logger)
+	assert.NotNil(t, ma.analysisQueue)
+	assert.Equal(t, 4, ma.workers)
+	assert.NotNil(t, ma.stopCh)
+	assert.NotNil(t, ma.pendingAnalysis)
+	assert.Empty(t, ma.pendingAnalysis)
+}
+
+// --- Start/Stop lifecycle tests ---
+
+func TestMediaAnalyzer_StartStop(t *testing.T) {
+	logger := testLogger(t)
+	ma := NewMediaAnalyzer(nil, nil, nil, logger)
+
+	// Start workers
+	ma.Start()
+
+	// Workers should be running now, stop them
+	ma.Stop()
+	// If we get here without hanging, the test passes
+}
+
+func TestMediaAnalyzer_StopWithoutStart(t *testing.T) {
+	logger := testLogger(t)
+	ma := NewMediaAnalyzer(nil, nil, nil, logger)
+
+	// Closing stopCh when no workers are running should not deadlock
+	close(ma.stopCh)
+	ma.wg.Wait()
+}
+
+// --- AnalyzeDirectory queue tests ---
+
+func TestMediaAnalyzer_AnalyzeDirectory_QueueRequest(t *testing.T) {
+	logger := testLogger(t)
+	ma := NewMediaAnalyzer(nil, nil, nil, logger)
+
+	ctx := context.Background()
+
+	// Queue a request (don't start workers so it stays in channel)
+	err := ma.AnalyzeDirectory(ctx, "/test/path", "root1", 5)
+	assert.NoError(t, err)
+
+	// Verify it is in pending map
+	ma.mu.RLock()
+	_, exists := ma.pendingAnalysis["/test/path"]
+	ma.mu.RUnlock()
+	assert.True(t, exists)
+}
+
+func TestMediaAnalyzer_AnalyzeDirectory_DuplicateRequest(t *testing.T) {
+	logger := testLogger(t)
+	ma := NewMediaAnalyzer(nil, nil, nil, logger)
+
+	ctx := context.Background()
+
+	// Queue first request
+	err := ma.AnalyzeDirectory(ctx, "/test/path", "root1", 5)
+	assert.NoError(t, err)
+
+	// Queue duplicate request with same path - should not error, should update priority
+	err = ma.AnalyzeDirectory(ctx, "/test/path", "root1", 10)
+	assert.NoError(t, err)
+
+	// Verify only one pending entry
+	ma.mu.RLock()
+	pending := ma.pendingAnalysis["/test/path"]
+	ma.mu.RUnlock()
+	assert.NotNil(t, pending)
+	assert.Equal(t, 10, pending.Priority) // Updated to higher priority
+}
+
+func TestMediaAnalyzer_AnalyzeDirectory_DuplicateWithLowerPriority(t *testing.T) {
+	logger := testLogger(t)
+	ma := NewMediaAnalyzer(nil, nil, nil, logger)
+
+	ctx := context.Background()
+
+	// Queue first request with high priority
+	err := ma.AnalyzeDirectory(ctx, "/test/path", "root1", 10)
+	assert.NoError(t, err)
+
+	// Queue duplicate with lower priority - priority should NOT be lowered
+	err = ma.AnalyzeDirectory(ctx, "/test/path", "root1", 3)
+	assert.NoError(t, err)
+
+	ma.mu.RLock()
+	pending := ma.pendingAnalysis["/test/path"]
+	ma.mu.RUnlock()
+	assert.NotNil(t, pending)
+	assert.Equal(t, 10, pending.Priority) // Should retain higher priority
+}
+
+func TestMediaAnalyzer_AnalyzeDirectory_CancelledContext(t *testing.T) {
+	logger := testLogger(t)
+	// Create analyzer with very small queue to force blocking
+	ma := &MediaAnalyzer{
+		logger:          logger,
+		analysisQueue:   make(chan AnalysisRequest, 0), // unbuffered channel
+		stopCh:          make(chan struct{}),
+		pendingAnalysis: make(map[string]*AnalysisRequest),
+	}
+
+	ctx, cancel := context.WithCancel(context.Background())
+	cancel() // Cancel immediately
+
+	err := ma.AnalyzeDirectory(ctx, "/test/path", "root1", 5)
+	assert.Error(t, err)
+	assert.Equal(t, context.Canceled, err)
+
+	// Verify the pending entry was cleaned up
+	ma.mu.RLock()
+	_, exists := ma.pendingAnalysis["/test/path"]
+	ma.mu.RUnlock()
+	assert.False(t, exists)
+}
+
+// --- analyzeQuality tests ---
+
+func TestMediaAnalyzer_AnalyzeQuality_NilMediaType(t *testing.T) {
+	ma := &MediaAnalyzer{logger: testLogger(t)}
+
+	item := &models.MediaItem{
+		MediaType: nil, // nil media type
+	}
+
+	result, err := ma.analyzeQuality(nil, item)
+	assert.Error(t, err)
+	assert.Nil(t, result)
+	assert.Contains(t, err.Error(), "media type not available")
+}
+
+// --- extractQualityFromFilename edge cases ---
+
+func TestExtractQualityFromFilename_WAVFile(t *testing.T) {
+	ma := &MediaAnalyzer{logger: testLogger(t)}
+
+	ext := ".wav"
+	qi := ma.extractQualityFromFilename("recording.wav", &ext)
+
+	require.NotNil(t, qi)
+	assert.Equal(t, 90, qi.QualityScore)
+	assert.NotNil(t, qi.QualityProfile)
+	assert.Equal(t, "Audio_Lossless", *qi.QualityProfile)
+}
+
+func TestExtractQualityFromFilename_NilExtension(t *testing.T) {
+	ma := &MediaAnalyzer{logger: testLogger(t)}
+
+	qi := ma.extractQualityFromFilename("movie.2160p.x265.mkv", nil)
+
+	require.NotNil(t, qi)
+	// Should still detect resolution and codec from filename
+	assert.NotNil(t, qi.Resolution)
+	assert.Equal(t, 3840, qi.Resolution.Width)
+	assert.Equal(t, 2160, qi.Resolution.Height)
+	assert.NotNil(t, qi.VideoCodec)
+	assert.Equal(t, "H.265/HEVC", *qi.VideoCodec)
+}
+
+func TestExtractQualityFromFilename_FHDAlias(t *testing.T) {
+	ma := &MediaAnalyzer{logger: testLogger(t)}
+
+	ext := ".mkv"
+	qi := ma.extractQualityFromFilename("Movie.FHD.mkv", &ext)
+
+	require.NotNil(t, qi)
+	assert.NotNil(t, qi.Resolution)
+	assert.Equal(t, 1920, qi.Resolution.Width)
+	assert.Equal(t, 1080, qi.Resolution.Height)
+}
+
+func TestExtractQualityFromFilename_UHDAlias(t *testing.T) {
+	ma := &MediaAnalyzer{logger: testLogger(t)}
+
+	ext := ".mkv"
+	qi := ma.extractQualityFromFilename("Movie.UHD.BluRay.mkv", &ext)
+
+	require.NotNil(t, qi)
+	assert.NotNil(t, qi.Resolution)
+	assert.Equal(t, 3840, qi.Resolution.Width)
+	assert.Equal(t, 2160, qi.Resolution.Height)
+	assert.NotNil(t, qi.Source)
+	assert.Equal(t, "BluRay", *qi.Source)
+}
+
+func TestExtractQualityFromFilename_H264AVC(t *testing.T) {
+	ma := &MediaAnalyzer{logger: testLogger(t)}
+
+	ext := ".mkv"
+	qi := ma.extractQualityFromFilename("Movie.1080p.AVC.mkv", &ext)
+
+	require.NotNil(t, qi)
+	assert.NotNil(t, qi.VideoCodec)
+	assert.Equal(t, "H.264/AVC", *qi.VideoCodec)
+}
+
+func TestExtractQualityFromFilename_AC3Audio(t *testing.T) {
+	ma := &MediaAnalyzer{logger: testLogger(t)}
+
+	ext := ".mkv"
+	qi := ma.extractQualityFromFilename("Movie.720p.AC3.mkv", &ext)
+
+	require.NotNil(t, qi)
+	assert.NotNil(t, qi.AudioCodec)
+	assert.Equal(t, "AC3", *qi.AudioCodec)
+}
+
+// --- Resolution.GetDisplayName tests ---
+
+func TestResolution_GetDisplayName(t *testing.T) {
+	tests := []struct {
+		name     string
+		res      models.Resolution
+		expected string
+	}{
+		{"4K", models.Resolution{Width: 3840, Height: 2160}, "4K/UHD"},
+		{"1080p", models.Resolution{Width: 1920, Height: 1080}, "1080p"},
+		{"720p", models.Resolution{Width: 1280, Height: 720}, "720p"},
+		{"480p", models.Resolution{Width: 720, Height: 480}, "480p/DVD"},
+		{"low quality", models.Resolution{Width: 640, Height: 360}, "Low Quality"},
+	}
+
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			assert.Equal(t, tc.expected, tc.res.GetDisplayName())
+		})
+	}
+}
+
+// --- contains edge cases ---
+
+func TestContains_NilSlice(t *testing.T) {
+	var nilSlice []string
+	assert.False(t, contains(nilSlice, "a"))
+}
+
+func TestContains_SingleElement(t *testing.T) {
+	assert.True(t, contains([]string{"x"}, "x"))
+	assert.False(t, contains([]string{"x"}, "y"))
 }
 
 // --- Helpers ---

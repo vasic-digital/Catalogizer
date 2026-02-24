@@ -1,0 +1,3499 @@
+openapi: 3.0.3
+info:
+  title: Catalogizer API
+  description: |
+    REST API for the Catalogizer multi-platform media collection manager.
+    Detects, categorizes, and organizes media across SMB, FTP, NFS, WebDAV,
+    and local filesystems. Provides structured media entity browsing,
+    duplicate detection, collection management, and real-time scan monitoring.
+  version: 2.0.0
+  contact:
+    name: Catalogizer Support
+  license:
+    name: Apache 2.0
+    url: https://www.apache.org/licenses/LICENSE-2.0.html
+
+servers:
+  - url: http://localhost:8080
+    description: Development server (HTTP)
+  - url: https://localhost:8443
+    description: Development server (HTTPS/HTTP2/HTTP3)
+
+tags:
+  - name: health
+    description: Health and metrics endpoints
+  - name: auth
+    description: Authentication and session management
+  - name: catalog
+    description: Catalog browsing and file info
+  - name: search
+    description: File search and duplicate detection
+  - name: download
+    description: File and directory download
+  - name: copy
+    description: File copy and upload operations
+  - name: media
+    description: Media browsing and stats
+  - name: entities
+    description: Structured media entity browsing
+  - name: collections
+    description: Media collection management
+  - name: assets
+    description: Asset management (cover art, thumbnails)
+  - name: storage
+    description: Storage roots and scanning
+  - name: scans
+    description: Scan job management
+  - name: stats
+    description: Catalog statistics and analytics
+  - name: smb
+    description: SMB network share discovery
+  - name: recommendations
+    description: Media recommendations
+  - name: subtitles
+    description: Subtitle management
+  - name: conversion
+    description: Media format conversion
+  - name: users
+    description: User management
+  - name: roles
+    description: Role and permission management
+  - name: configuration
+    description: System configuration and setup wizard
+  - name: errors
+    description: Error and crash reporting
+  - name: logs
+    description: Log collection and management
+  - name: challenges
+    description: Challenge-based testing framework
+  - name: websocket
+    description: WebSocket real-time updates
+  - name: discovery
+    description: Service discovery
+
+components:
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: JWT token obtained from /api/v1/auth/login
+
+  schemas:
+    Error:
+      type: object
+      properties:
+        error:
+          type: string
+        details:
+          type: string
+
+    HealthResponse:
+      type: object
+      properties:
+        status:
+          type: string
+          example: healthy
+        time:
+          type: string
+          format: date-time
+        version:
+          type: string
+        build_number:
+          type: string
+        build_date:
+          type: string
+
+    LoginRequest:
+      type: object
+      required:
+        - username
+        - password
+      properties:
+        username:
+          type: string
+        password:
+          type: string
+        device_info:
+          $ref: '#/components/schemas/DeviceInfo'
+        remember_me:
+          type: boolean
+
+    LoginResponse:
+      type: object
+      properties:
+        user:
+          $ref: '#/components/schemas/User'
+        session_token:
+          type: string
+        refresh_token:
+          type: string
+        expires_at:
+          type: string
+          format: date-time
+
+    RefreshTokenRequest:
+      type: object
+      required:
+        - refresh_token
+      properties:
+        refresh_token:
+          type: string
+
+    RegisterRequest:
+      type: object
+      required:
+        - username
+        - email
+        - password
+        - first_name
+        - last_name
+      properties:
+        username:
+          type: string
+          minLength: 3
+        email:
+          type: string
+          format: email
+        password:
+          type: string
+          minLength: 8
+        first_name:
+          type: string
+        last_name:
+          type: string
+
+    User:
+      type: object
+      properties:
+        id:
+          type: integer
+        username:
+          type: string
+        email:
+          type: string
+        role_id:
+          type: integer
+        role:
+          $ref: '#/components/schemas/Role'
+        first_name:
+          type: string
+        last_name:
+          type: string
+        display_name:
+          type: string
+        avatar_url:
+          type: string
+        is_active:
+          type: boolean
+        is_locked:
+          type: boolean
+        last_login_at:
+          type: string
+          format: date-time
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+
+    Role:
+      type: object
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        description:
+          type: string
+        permissions:
+          type: array
+          items:
+            type: string
+        is_system:
+          type: boolean
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+
+    DeviceInfo:
+      type: object
+      properties:
+        device_type:
+          type: string
+        platform:
+          type: string
+        platform_version:
+          type: string
+        app_version:
+          type: string
+        device_model:
+          type: string
+
+    AuthStatusResponse:
+      type: object
+      properties:
+        authenticated:
+          type: boolean
+        user:
+          $ref: '#/components/schemas/User'
+        permissions:
+          type: array
+          items:
+            type: string
+        error:
+          type: string
+
+    PermissionsResponse:
+      type: object
+      properties:
+        role:
+          type: string
+        permissions:
+          type: array
+          items:
+            type: string
+        is_admin:
+          type: boolean
+
+    DiscoveryResponse:
+      type: object
+      properties:
+        host:
+          type: string
+        port:
+          type: integer
+
+    StorageRoot:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+        name:
+          type: string
+        protocol:
+          type: string
+          enum: [smb, ftp, nfs, webdav, local]
+        host:
+          type: string
+        port:
+          type: integer
+        path:
+          type: string
+        username:
+          type: string
+        domain:
+          type: string
+        enabled:
+          type: boolean
+        max_depth:
+          type: integer
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+        last_scan_at:
+          type: string
+          format: date-time
+
+    CreateStorageRootRequest:
+      type: object
+      required:
+        - name
+        - protocol
+      properties:
+        name:
+          type: string
+        protocol:
+          type: string
+          enum: [smb, ftp, nfs, webdav, local]
+        host:
+          type: string
+        port:
+          type: integer
+        path:
+          type: string
+        username:
+          type: string
+        password:
+          type: string
+        domain:
+          type: string
+        max_depth:
+          type: integer
+          default: 10
+
+    QueueScanRequest:
+      type: object
+      required:
+        - storage_root_id
+      properties:
+        storage_root_id:
+          type: integer
+          format: int64
+        path:
+          type: string
+        scan_type:
+          type: string
+          default: full
+        max_depth:
+          type: integer
+          default: 10
+
+    ScanStatus:
+      type: object
+      properties:
+        job_id:
+          type: string
+        storage_root:
+          type: string
+        protocol:
+          type: string
+        status:
+          type: string
+        start_time:
+          type: string
+          format: date-time
+        elapsed_ms:
+          type: integer
+          format: int64
+        current_path:
+          type: string
+        files_processed:
+          type: integer
+        files_found:
+          type: integer
+        files_updated:
+          type: integer
+        files_deleted:
+          type: integer
+        error_count:
+          type: integer
+
+    MediaEntity:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+        media_type_id:
+          type: integer
+          format: int64
+        title:
+          type: string
+        original_title:
+          type: string
+        year:
+          type: integer
+        description:
+          type: string
+        genre:
+          type: array
+          items:
+            type: string
+        director:
+          type: string
+        rating:
+          type: number
+          format: float
+        runtime:
+          type: integer
+        language:
+          type: string
+        parent_id:
+          type: integer
+          format: int64
+        season_number:
+          type: integer
+        episode_number:
+          type: integer
+        track_number:
+          type: integer
+        status:
+          type: string
+        first_detected:
+          type: string
+          format: date-time
+        last_updated:
+          type: string
+          format: date-time
+
+    MediaEntityDetail:
+      allOf:
+        - $ref: '#/components/schemas/MediaEntity'
+        - type: object
+          properties:
+            media_type:
+              type: string
+            file_count:
+              type: integer
+              format: int64
+            children_count:
+              type: integer
+              format: int64
+            external_metadata:
+              type: array
+              items:
+                $ref: '#/components/schemas/ExternalMetadata'
+
+    ExternalMetadata:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+        media_item_id:
+          type: integer
+          format: int64
+        provider:
+          type: string
+        external_id:
+          type: string
+        title:
+          type: string
+        description:
+          type: string
+        poster_url:
+          type: string
+        rating:
+          type: number
+          format: float
+
+    MediaType:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+        name:
+          type: string
+        description:
+          type: string
+        count:
+          type: integer
+          format: int64
+
+    EntityStats:
+      type: object
+      properties:
+        total_entities:
+          type: integer
+          format: int64
+        by_type:
+          type: object
+          additionalProperties:
+            type: integer
+            format: int64
+
+    UpdateUserMetadataRequest:
+      type: object
+      properties:
+        user_rating:
+          type: number
+          format: float
+        watched_status:
+          type: string
+        favorite:
+          type: boolean
+        is_favorite:
+          type: boolean
+        personal_notes:
+          type: string
+        tags:
+          type: array
+          items:
+            type: string
+
+    MediaCollection:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+        name:
+          type: string
+        collection_type:
+          type: string
+        description:
+          type: string
+        total_items:
+          type: integer
+        external_ids:
+          type: object
+          additionalProperties:
+            type: string
+        cover_url:
+          type: string
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+
+    CreateCollectionRequest:
+      type: object
+      required:
+        - name
+      properties:
+        name:
+          type: string
+        collection_type:
+          type: string
+          default: custom
+        description:
+          type: string
+        is_public:
+          type: boolean
+        is_smart:
+          type: boolean
+        external_ids:
+          type: object
+          additionalProperties:
+            type: string
+        cover_url:
+          type: string
+
+    AssetRequestBody:
+      type: object
+      required:
+        - type
+        - entity_type
+        - entity_id
+      properties:
+        type:
+          type: string
+        source_hint:
+          type: string
+        entity_type:
+          type: string
+        entity_id:
+          type: string
+
+    AssetMetadata:
+      type: object
+      properties:
+        id:
+          type: string
+        type:
+          type: string
+        status:
+          type: string
+        content_type:
+          type: string
+        size:
+          type: integer
+          format: int64
+        entity_type:
+          type: string
+        entity_id:
+          type: string
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+        resolved_at:
+          type: string
+          format: date-time
+
+    OverallStats:
+      type: object
+      properties:
+        total_files:
+          type: integer
+          format: int64
+        total_directories:
+          type: integer
+          format: int64
+        total_size:
+          type: integer
+          format: int64
+        total_duplicates:
+          type: integer
+          format: int64
+        duplicate_groups:
+          type: integer
+          format: int64
+        storage_roots_count:
+          type: integer
+          format: int64
+        active_storage_roots:
+          type: integer
+          format: int64
+        last_scan_time:
+          type: integer
+          format: int64
+
+    ChallengeSummary:
+      type: object
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        description:
+          type: string
+        category:
+          type: string
+        depends_on:
+          type: array
+          items:
+            type: string
+
+    ChallengeResult:
+      type: object
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        status:
+          type: string
+          enum: [passed, failed, stuck, timed_out]
+        duration_ms:
+          type: integer
+          format: int64
+        assertions:
+          type: array
+          items:
+            type: object
+        error:
+          type: string
+
+    PaginatedResponse:
+      type: object
+      properties:
+        items:
+          type: array
+          items: {}
+        total:
+          type: integer
+        limit:
+          type: integer
+        offset:
+          type: integer
+
+    CreateUserRequest:
+      type: object
+      required:
+        - username
+        - email
+        - password
+        - role_id
+      properties:
+        username:
+          type: string
+          minLength: 3
+          maxLength: 50
+        email:
+          type: string
+          format: email
+        password:
+          type: string
+          minLength: 8
+        role_id:
+          type: integer
+        first_name:
+          type: string
+        last_name:
+          type: string
+        display_name:
+          type: string
+
+    UpdateUserRequest:
+      type: object
+      properties:
+        username:
+          type: string
+        email:
+          type: string
+          format: email
+        role_id:
+          type: integer
+        first_name:
+          type: string
+        last_name:
+          type: string
+        display_name:
+          type: string
+        avatar_url:
+          type: string
+        is_active:
+          type: boolean
+
+    CreateRoleRequest:
+      type: object
+      required:
+        - name
+        - permissions
+      properties:
+        name:
+          type: string
+          minLength: 2
+          maxLength: 50
+        description:
+          type: string
+        permissions:
+          type: array
+          items:
+            type: string
+
+    UpdateRoleRequest:
+      type: object
+      properties:
+        name:
+          type: string
+        description:
+          type: string
+        permissions:
+          type: array
+          items:
+            type: string
+
+    ConversionRequest:
+      type: object
+      properties:
+        source_path:
+          type: string
+        target_path:
+          type: string
+        source_format:
+          type: string
+        target_format:
+          type: string
+        conversion_type:
+          type: string
+          enum: [video, audio, document, image]
+        quality:
+          type: string
+        priority:
+          type: integer
+
+    ConversionJob:
+      type: object
+      properties:
+        id:
+          type: integer
+        user_id:
+          type: integer
+        source_path:
+          type: string
+        target_path:
+          type: string
+        source_format:
+          type: string
+        target_format:
+          type: string
+        conversion_type:
+          type: string
+        quality:
+          type: string
+        priority:
+          type: integer
+        status:
+          type: string
+          enum: [pending, running, completed, failed, cancelled]
+        created_at:
+          type: string
+          format: date-time
+
+    MediaBrowseItem:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+        title:
+          type: string
+        media_type:
+          type: string
+        quality:
+          type: string
+        file_size:
+          type: integer
+          format: int64
+        directory_path:
+          type: string
+        storage_root_name:
+          type: string
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+
+    MediaStatsResponse:
+      type: object
+      properties:
+        total_items:
+          type: integer
+          format: int64
+        by_type:
+          type: object
+          additionalProperties:
+            type: integer
+        by_quality:
+          type: object
+          additionalProperties:
+            type: integer
+        total_size:
+          type: integer
+          format: int64
+        recent_additions:
+          type: integer
+
+paths:
+  /health:
+    get:
+      tags: [health]
+      summary: Health check
+      description: Returns service health status, version, and build info.
+      responses:
+        '200':
+          description: Service is healthy
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HealthResponse'
+
+  /metrics:
+    get:
+      tags: [health]
+      summary: Prometheus metrics
+      description: Exposes Prometheus-compatible metrics for monitoring.
+      responses:
+        '200':
+          description: Prometheus metrics in text format
+          content:
+            text/plain:
+              schema:
+                type: string
+
+  /ws:
+    get:
+      tags: [websocket]
+      summary: WebSocket connection
+      description: |
+        Establishes a WebSocket connection for real-time updates.
+        Authentication is via query parameter token, not the Authorization header.
+        Events include scan progress, asset updates, and entity changes.
+      parameters:
+        - name: token
+          in: query
+          schema:
+            type: string
+          description: JWT token for authentication
+      responses:
+        '101':
+          description: WebSocket connection established
+
+  /api/v1/auth/login:
+    post:
+      tags: [auth]
+      summary: User login
+      description: Authenticates a user and returns JWT tokens.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LoginRequest'
+      responses:
+        '200':
+          description: Login successful
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LoginResponse'
+        '400':
+          description: Invalid request format
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '401':
+          description: Invalid credentials
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /api/v1/auth/register:
+    post:
+      tags: [auth]
+      summary: User registration
+      description: Registers a new user account.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RegisterRequest'
+      responses:
+        '201':
+          description: User created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+        '400':
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '409':
+          description: Username or email already exists
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /api/v1/auth/refresh:
+    post:
+      tags: [auth]
+      summary: Refresh JWT token
+      description: Exchanges a refresh token for a new access token.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RefreshTokenRequest'
+      responses:
+        '200':
+          description: Token refreshed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LoginResponse'
+        '401':
+          description: Invalid refresh token
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /api/v1/auth/logout:
+    post:
+      tags: [auth]
+      summary: User logout
+      description: Invalidates the current session token.
+      responses:
+        '200':
+          description: Logged out successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+        '401':
+          description: Authorization token required
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /api/v1/auth/me:
+    get:
+      tags: [auth]
+      summary: Get current user
+      description: Returns the authenticated user's profile.
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: Current user
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+        '401':
+          description: Invalid token
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /api/v1/auth/status:
+    get:
+      tags: [auth]
+      summary: Check auth status
+      description: Returns whether the current token is valid. Does not require authentication.
+      responses:
+        '200':
+          description: Auth status
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthStatusResponse'
+
+  /api/v1/auth/permissions:
+    get:
+      tags: [auth]
+      summary: Get current user permissions
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: User permissions
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PermissionsResponse'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /api/v1/auth/profile:
+    get:
+      tags: [auth]
+      summary: Get user profile (alias for /me)
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: User profile
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+
+  /api/v1/discovery:
+    get:
+      tags: [discovery]
+      summary: Service discovery
+      description: Returns the current host and port of the API server.
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: Service endpoint info
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DiscoveryResponse'
+
+  /api/v1/catalog:
+    get:
+      tags: [catalog]
+      summary: List catalog root
+      description: Lists the root level of the file catalog (storage roots).
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: Root catalog listing
+          content:
+            application/json:
+              schema:
+                type: object
+
+  /api/v1/catalog/{path}:
+    get:
+      tags: [catalog]
+      summary: List catalog path
+      description: Lists files and directories at the specified catalog path.
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: path
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Directory listing
+          content:
+            application/json:
+              schema:
+                type: object
+
+  /api/v1/catalog-info/{path}:
+    get:
+      tags: [catalog]
+      summary: Get file info
+      description: Returns metadata for a specific file at the given path.
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: path
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: File information
+          content:
+            application/json:
+              schema:
+                type: object
+
+  /api/v1/search:
+    get:
+      tags: [search]
+      summary: Search files
+      description: Searches for files matching the given query across all storage roots.
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: query
+          in: query
+          schema:
+            type: string
+        - name: file_type
+          in: query
+          schema:
+            type: string
+        - name: extension
+          in: query
+          schema:
+            type: string
+        - name: min_size
+          in: query
+          schema:
+            type: integer
+        - name: max_size
+          in: query
+          schema:
+            type: integer
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 24
+        - name: offset
+          in: query
+          schema:
+            type: integer
+            default: 0
+      responses:
+        '200':
+          description: Search results
+          content:
+            application/json:
+              schema:
+                type: object
+
+  /api/v1/search/duplicates:
+    get:
+      tags: [search]
+      summary: Search duplicates
+      description: Finds duplicate files based on hash matching.
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: Duplicate search results
+          content:
+            application/json:
+              schema:
+                type: object
+
+  /api/v1/download/file/{id}:
+    get:
+      tags: [download]
+      summary: Download file by ID
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: File content
+          content:
+            application/octet-stream:
+              schema:
+                type: string
+                format: binary
+        '404':
+          description: File not found
+
+  /api/v1/download/directory/{path}:
+    get:
+      tags: [download]
+      summary: Download directory as archive
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: path
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Archive file
+          content:
+            application/zip:
+              schema:
+                type: string
+                format: binary
+
+  /api/v1/download/archive:
+    post:
+      tags: [download]
+      summary: Download multiple files as archive
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                paths:
+                  type: array
+                  items:
+                    type: string
+      responses:
+        '200':
+          description: Archive file
+          content:
+            application/zip:
+              schema:
+                type: string
+                format: binary
+
+  /api/v1/copy/storage:
+    post:
+      tags: [copy]
+      summary: Copy to storage
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+      responses:
+        '200':
+          description: Copy initiated
+
+  /api/v1/copy/local:
+    post:
+      tags: [copy]
+      summary: Copy to local filesystem
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+      responses:
+        '200':
+          description: Copy initiated
+
+  /api/v1/copy/upload:
+    post:
+      tags: [copy]
+      summary: Upload file
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+      responses:
+        '200':
+          description: Upload initiated
+
+  /api/v1/media/search:
+    get:
+      tags: [media]
+      summary: Search media items
+      description: Searches scanned files as media items with type-based filtering and sorting.
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: query
+          in: query
+          schema:
+            type: string
+        - name: media_type
+          in: query
+          schema:
+            type: string
+        - name: sort_by
+          in: query
+          schema:
+            type: string
+            default: name
+        - name: sort_order
+          in: query
+          schema:
+            type: string
+            default: asc
+            enum: [asc, desc]
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 24
+        - name: offset
+          in: query
+          schema:
+            type: integer
+            default: 0
+      responses:
+        '200':
+          description: Media search results
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  items:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/MediaBrowseItem'
+                  total:
+                    type: integer
+                  limit:
+                    type: integer
+                  offset:
+                    type: integer
+
+  /api/v1/media/stats:
+    get:
+      tags: [media]
+      summary: Get media statistics
+      description: Returns aggregated media statistics including counts by type and recent additions.
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: Media statistics
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MediaStatsResponse'
+
+  /api/v1/media/{id}:
+    get:
+      tags: [media]
+      summary: Get media by ID
+      description: Returns media catalog item details for Android TV and other clients.
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Media item
+          content:
+            application/json:
+              schema:
+                type: object
+
+  /api/v1/media/{id}/progress:
+    put:
+      tags: [media]
+      summary: Update watch progress
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                progress:
+                  type: number
+                  format: float
+      responses:
+        '200':
+          description: Progress updated
+
+  /api/v1/media/{id}/favorite:
+    put:
+      tags: [media]
+      summary: Update favorite status
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                is_favorite:
+                  type: boolean
+      responses:
+        '200':
+          description: Favorite status updated
+
+  /api/v1/recommendations/test:
+    get:
+      tags: [recommendations]
+      summary: Test recommendation endpoint
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: Test recommendation data
+
+  /api/v1/recommendations/similar/{media_id}:
+    get:
+      tags: [recommendations]
+      summary: Get similar items
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: media_id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Similar items
+
+  /api/v1/recommendations/trending:
+    get:
+      tags: [recommendations]
+      summary: Get trending items
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: Trending items
+
+  /api/v1/recommendations/personalized/{user_id}:
+    get:
+      tags: [recommendations]
+      summary: Get personalized recommendations
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: user_id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Personalized recommendations
+
+  /api/v1/subtitles/search:
+    get:
+      tags: [subtitles]
+      summary: Search subtitles
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: query
+          in: query
+          schema:
+            type: string
+        - name: language
+          in: query
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Subtitle search results
+
+  /api/v1/subtitles/download:
+    post:
+      tags: [subtitles]
+      summary: Download subtitle
+      security:
+        - BearerAuth: []
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+      responses:
+        '200':
+          description: Subtitle downloaded
+
+  /api/v1/subtitles/media/{media_id}:
+    get:
+      tags: [subtitles]
+      summary: Get subtitles for media
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: media_id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Available subtitles
+
+  /api/v1/subtitles/{subtitle_id}/verify-sync/{media_id}:
+    get:
+      tags: [subtitles]
+      summary: Verify subtitle synchronization
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: subtitle_id
+          in: path
+          required: true
+          schema:
+            type: integer
+        - name: media_id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Sync verification result
+
+  /api/v1/subtitles/translate:
+    post:
+      tags: [subtitles]
+      summary: Translate subtitle
+      security:
+        - BearerAuth: []
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+      responses:
+        '200':
+          description: Translated subtitle
+
+  /api/v1/subtitles/upload:
+    post:
+      tags: [subtitles]
+      summary: Upload subtitle
+      security:
+        - BearerAuth: []
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+      responses:
+        '200':
+          description: Subtitle uploaded
+
+  /api/v1/subtitles/languages:
+    get:
+      tags: [subtitles]
+      summary: Get supported languages
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: Supported languages list
+
+  /api/v1/subtitles/providers:
+    get:
+      tags: [subtitles]
+      summary: Get supported subtitle providers
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: Supported providers list
+
+  /api/v1/storage/list/{path}:
+    get:
+      tags: [storage]
+      summary: List storage path
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: path
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Storage path listing
+
+  /api/v1/storage/roots:
+    get:
+      tags: [storage]
+      summary: List storage roots
+      description: Returns all configured storage roots.
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: Storage roots list
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  roots:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/StorageRoot'
+    post:
+      tags: [storage]
+      summary: Create storage root
+      description: Creates or updates a storage root configuration.
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateStorageRootRequest'
+      responses:
+        '201':
+          description: Storage root created
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  id:
+                    type: integer
+                    format: int64
+                  name:
+                    type: string
+                  protocol:
+                    type: string
+                  message:
+                    type: string
+        '400':
+          description: Invalid request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /api/v1/storage-roots:
+    get:
+      tags: [storage]
+      summary: List storage roots (alias)
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: Storage roots list
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  roots:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/StorageRoot'
+
+  /api/v1/storage-roots/{id}/status:
+    get:
+      tags: [storage]
+      summary: Get storage root connectivity status
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Connectivity status
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  id:
+                    type: integer
+                  connected:
+                    type: boolean
+                  status:
+                    type: string
+                  checked_at:
+                    type: string
+                    format: date-time
+        '404':
+          description: Storage root not found
+
+  /api/v1/stats/directories/by-size:
+    get:
+      tags: [stats]
+      summary: Get directories sorted by size
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: Directories by size
+
+  /api/v1/stats/duplicates/count:
+    get:
+      tags: [stats]
+      summary: Get duplicate files count
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: Duplicate count
+
+  /api/v1/stats/overall:
+    get:
+      tags: [stats]
+      summary: Get overall catalog statistics
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: Overall stats
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  data:
+                    $ref: '#/components/schemas/OverallStats'
+
+  /api/v1/stats/smb/{smb_root}:
+    get:
+      tags: [stats]
+      summary: Get storage root statistics
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: smb_root
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Storage root stats
+        '404':
+          description: Storage root not found
+
+  /api/v1/stats/filetypes:
+    get:
+      tags: [stats]
+      summary: Get file type statistics
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: smb_root
+          in: query
+          schema:
+            type: string
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 50
+      responses:
+        '200':
+          description: File type stats
+
+  /api/v1/stats/sizes:
+    get:
+      tags: [stats]
+      summary: Get file size distribution
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: smb_root
+          in: query
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Size distribution
+
+  /api/v1/stats/duplicates:
+    get:
+      tags: [stats]
+      summary: Get duplicate file statistics
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: smb_root
+          in: query
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Duplicate stats
+
+  /api/v1/stats/duplicates/groups:
+    get:
+      tags: [stats]
+      summary: Get top duplicate groups
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: sort_by
+          in: query
+          schema:
+            type: string
+            default: count
+            enum: [count, size]
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 20
+        - name: smb_root
+          in: query
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Top duplicate groups
+
+  /api/v1/stats/access:
+    get:
+      tags: [stats]
+      summary: Get file access patterns
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: smb_root
+          in: query
+          schema:
+            type: string
+        - name: days
+          in: query
+          schema:
+            type: integer
+            default: 30
+      responses:
+        '200':
+          description: Access patterns
+
+  /api/v1/stats/growth:
+    get:
+      tags: [stats]
+      summary: Get storage growth trends
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: smb_root
+          in: query
+          schema:
+            type: string
+        - name: months
+          in: query
+          schema:
+            type: integer
+            default: 12
+      responses:
+        '200':
+          description: Growth trends
+
+  /api/v1/stats/scans:
+    get:
+      tags: [stats]
+      summary: Get scan history
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: smb_root
+          in: query
+          schema:
+            type: string
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 50
+        - name: offset
+          in: query
+          schema:
+            type: integer
+            default: 0
+      responses:
+        '200':
+          description: Scan history
+
+  /api/v1/smb/discover:
+    post:
+      tags: [smb]
+      summary: Discover SMB shares
+      security:
+        - BearerAuth: []
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+      responses:
+        '200':
+          description: Discovered shares
+    get:
+      tags: [smb]
+      summary: Discover SMB shares (GET)
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: Discovered shares
+
+  /api/v1/smb/test:
+    post:
+      tags: [smb]
+      summary: Test SMB connection
+      security:
+        - BearerAuth: []
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+      responses:
+        '200':
+          description: Connection test result
+    get:
+      tags: [smb]
+      summary: Test SMB connection (GET)
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: Connection test result
+
+  /api/v1/smb/browse:
+    post:
+      tags: [smb]
+      summary: Browse SMB share
+      security:
+        - BearerAuth: []
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+      responses:
+        '200':
+          description: Share contents
+
+  /api/v1/scans:
+    post:
+      tags: [scans]
+      summary: Queue a new scan
+      description: Queues a scan job for the specified storage root.
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/QueueScanRequest'
+      responses:
+        '202':
+          description: Scan job queued
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  job_id:
+                    type: string
+                  storage_root_id:
+                    type: integer
+                  scan_type:
+                    type: string
+                  status:
+                    type: string
+                  message:
+                    type: string
+        '404':
+          description: Storage root not found
+        '503':
+          description: Scanner unavailable
+    get:
+      tags: [scans]
+      summary: List active scans
+      description: Returns all currently active scan jobs.
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: Active scans
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  scans:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/ScanStatus'
+
+  /api/v1/scans/{job_id}:
+    get:
+      tags: [scans]
+      summary: Get scan status
+      description: Returns the status of a specific scan job.
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: job_id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Scan status
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ScanStatus'
+        '404':
+          description: Scan job not found
+
+  /api/v1/conversion/jobs:
+    post:
+      tags: [conversion]
+      summary: Create conversion job
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ConversionRequest'
+      responses:
+        '201':
+          description: Job created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ConversionJob'
+    get:
+      tags: [conversion]
+      summary: List conversion jobs
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: Conversion jobs list
+
+  /api/v1/conversion/jobs/{id}:
+    get:
+      tags: [conversion]
+      summary: Get conversion job
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Conversion job details
+
+  /api/v1/conversion/jobs/{id}/cancel:
+    post:
+      tags: [conversion]
+      summary: Cancel conversion job
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Job cancelled
+
+  /api/v1/conversion/formats:
+    get:
+      tags: [conversion]
+      summary: Get supported formats
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: Supported formats
+
+  /api/v1/users:
+    post:
+      tags: [users]
+      summary: Create user
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateUserRequest'
+      responses:
+        '201':
+          description: User created
+        '400':
+          description: Validation error
+        '409':
+          description: Username/email conflict
+    get:
+      tags: [users]
+      summary: List users
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: Users list
+
+  /api/v1/users/{id}:
+    get:
+      tags: [users]
+      summary: Get user
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: User details
+        '404':
+          description: User not found
+    put:
+      tags: [users]
+      summary: Update user
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateUserRequest'
+      responses:
+        '200':
+          description: User updated
+    delete:
+      tags: [users]
+      summary: Delete user
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: User deleted
+
+  /api/v1/users/{id}/reset-password:
+    post:
+      tags: [users]
+      summary: Reset user password
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Password reset
+
+  /api/v1/users/{id}/lock:
+    post:
+      tags: [users]
+      summary: Lock user account
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Account locked
+
+  /api/v1/users/{id}/unlock:
+    post:
+      tags: [users]
+      summary: Unlock user account
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Account unlocked
+
+  /api/v1/roles:
+    post:
+      tags: [roles]
+      summary: Create role
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateRoleRequest'
+      responses:
+        '201':
+          description: Role created
+    get:
+      tags: [roles]
+      summary: List roles
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: Roles list
+
+  /api/v1/roles/{id}:
+    get:
+      tags: [roles]
+      summary: Get role
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Role details
+    put:
+      tags: [roles]
+      summary: Update role
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateRoleRequest'
+      responses:
+        '200':
+          description: Role updated
+    delete:
+      tags: [roles]
+      summary: Delete role
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Role deleted
+
+  /api/v1/roles/permissions:
+    get:
+      tags: [roles]
+      summary: List all available permissions
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: Permissions list
+
+  /api/v1/configuration:
+    get:
+      tags: [configuration]
+      summary: Get system configuration
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: Configuration data
+
+  /api/v1/configuration/test:
+    post:
+      tags: [configuration]
+      summary: Test configuration
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: Test results
+
+  /api/v1/configuration/status:
+    get:
+      tags: [configuration]
+      summary: Get system status
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: System status
+
+  /api/v1/configuration/wizard/step/{step_id}:
+    get:
+      tags: [configuration]
+      summary: Get wizard step
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: step_id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Wizard step data
+
+  /api/v1/configuration/wizard/step/{step_id}/validate:
+    post:
+      tags: [configuration]
+      summary: Validate wizard step
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: step_id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Validation result
+
+  /api/v1/configuration/wizard/step/{step_id}/save:
+    post:
+      tags: [configuration]
+      summary: Save wizard step progress
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: step_id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Progress saved
+
+  /api/v1/configuration/wizard/progress:
+    get:
+      tags: [configuration]
+      summary: Get wizard progress
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: Wizard progress
+
+  /api/v1/configuration/wizard/complete:
+    post:
+      tags: [configuration]
+      summary: Complete wizard
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: Wizard completed
+
+  /api/v1/errors/report:
+    post:
+      tags: [errors]
+      summary: Report an error
+      security:
+        - BearerAuth: []
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+      responses:
+        '201':
+          description: Error reported
+
+  /api/v1/errors/crash:
+    post:
+      tags: [errors]
+      summary: Report a crash
+      security:
+        - BearerAuth: []
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+      responses:
+        '201':
+          description: Crash reported
+
+  /api/v1/errors/reports:
+    get:
+      tags: [errors]
+      summary: List error reports
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: Error reports list
+
+  /api/v1/errors/reports/{id}:
+    get:
+      tags: [errors]
+      summary: Get error report
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Error report details
+
+  /api/v1/errors/reports/{id}/status:
+    put:
+      tags: [errors]
+      summary: Update error report status
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Status updated
+
+  /api/v1/errors/crashes:
+    get:
+      tags: [errors]
+      summary: List crash reports
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: Crash reports list
+
+  /api/v1/errors/crashes/{id}:
+    get:
+      tags: [errors]
+      summary: Get crash report
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Crash report details
+
+  /api/v1/errors/crashes/{id}/status:
+    put:
+      tags: [errors]
+      summary: Update crash report status
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Status updated
+
+  /api/v1/errors/statistics:
+    get:
+      tags: [errors]
+      summary: Get error statistics
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: Error statistics
+
+  /api/v1/errors/crash-statistics:
+    get:
+      tags: [errors]
+      summary: Get crash statistics
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: Crash statistics
+
+  /api/v1/errors/health:
+    get:
+      tags: [errors]
+      summary: Get system health
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: System health
+
+  /api/v1/logs/collect:
+    post:
+      tags: [logs]
+      summary: Create log collection
+      security:
+        - BearerAuth: []
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+      responses:
+        '201':
+          description: Collection created
+
+  /api/v1/logs/collections:
+    get:
+      tags: [logs]
+      summary: List log collections
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: Log collections list
+
+  /api/v1/logs/collections/{id}:
+    get:
+      tags: [logs]
+      summary: Get log collection
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Log collection details
+
+  /api/v1/logs/collections/{id}/entries:
+    get:
+      tags: [logs]
+      summary: Get log entries
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Log entries
+
+  /api/v1/logs/collections/{id}/export:
+    post:
+      tags: [logs]
+      summary: Export logs
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Exported log data
+
+  /api/v1/logs/collections/{id}/analyze:
+    get:
+      tags: [logs]
+      summary: Analyze logs
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Log analysis results
+
+  /api/v1/logs/share:
+    post:
+      tags: [logs]
+      summary: Create log share
+      security:
+        - BearerAuth: []
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+      responses:
+        '201':
+          description: Share created
+
+  /api/v1/logs/share/{token}:
+    get:
+      tags: [logs]
+      summary: Get shared log
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: token
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Shared log data
+
+  /api/v1/logs/share/{id}:
+    delete:
+      tags: [logs]
+      summary: Revoke log share
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Share revoked
+
+  /api/v1/logs/stream:
+    get:
+      tags: [logs]
+      summary: Stream logs
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: Log stream (SSE)
+
+  /api/v1/logs/statistics:
+    get:
+      tags: [logs]
+      summary: Get log statistics
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: Log statistics
+
+  /api/v1/collections:
+    get:
+      tags: [collections]
+      summary: List media collections
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 24
+        - name: offset
+          in: query
+          schema:
+            type: integer
+            default: 0
+      responses:
+        '200':
+          description: Collections list
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  items:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/MediaCollection'
+                  total:
+                    type: integer
+                  limit:
+                    type: integer
+                  offset:
+                    type: integer
+    post:
+      tags: [collections]
+      summary: Create media collection
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateCollectionRequest'
+      responses:
+        '201':
+          description: Collection created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MediaCollection'
+
+  /api/v1/collections/{id}:
+    get:
+      tags: [collections]
+      summary: Get collection
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Collection details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MediaCollection'
+        '404':
+          description: Collection not found
+    put:
+      tags: [collections]
+      summary: Update collection
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+      responses:
+        '200':
+          description: Collection updated
+    delete:
+      tags: [collections]
+      summary: Delete collection
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Collection deleted
+
+  /api/v1/assets/{id}:
+    get:
+      tags: [assets]
+      summary: Serve asset content
+      description: |
+        Serves asset content by ID. Does not require authentication.
+        Returns the asset binary (image, etc.) with appropriate Content-Type.
+        X-Asset-Status header indicates "ready" or "pending" (default placeholder).
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Asset content
+          headers:
+            X-Asset-Status:
+              schema:
+                type: string
+                enum: [ready, pending]
+            Cache-Control:
+              schema:
+                type: string
+          content:
+            image/*:
+              schema:
+                type: string
+                format: binary
+        '404':
+          description: Asset not found
+
+  /api/v1/assets/request:
+    post:
+      tags: [assets]
+      summary: Request asset resolution
+      description: Submits an asset for background resolution (cover art, thumbnails).
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AssetRequestBody'
+      responses:
+        '200':
+          description: Asset request accepted
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  asset_id:
+                    type: string
+                  status:
+                    type: string
+
+  /api/v1/assets/by-entity/{type}/{id}:
+    get:
+      tags: [assets]
+      summary: Get assets for entity
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: type
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Assets for entity
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/AssetMetadata'
+
+  /api/v1/entities:
+    get:
+      tags: [entities]
+      summary: List media entities
+      description: Lists structured media entities with filtering and pagination.
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: query
+          in: query
+          schema:
+            type: string
+          description: Search query (title match)
+        - name: type
+          in: query
+          schema:
+            type: string
+          description: Media type filter (movie, tv_show, music_album, etc.)
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 24
+        - name: offset
+          in: query
+          schema:
+            type: integer
+            default: 0
+      responses:
+        '200':
+          description: Entities list
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  items:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/MediaEntity'
+                  total:
+                    type: integer
+                  limit:
+                    type: integer
+                  offset:
+                    type: integer
+
+  /api/v1/entities/types:
+    get:
+      tags: [entities]
+      summary: List entity types
+      description: Returns all 11 media types with item counts.
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: Media types
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  types:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/MediaType'
+
+  /api/v1/entities/stats:
+    get:
+      tags: [entities]
+      summary: Get entity statistics
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: Entity stats
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EntityStats'
+
+  /api/v1/entities/duplicates:
+    get:
+      tags: [entities]
+      summary: List duplicate entity groups
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 50
+        - name: offset
+          in: query
+          schema:
+            type: integer
+            default: 0
+      responses:
+        '200':
+          description: Duplicate groups
+
+  /api/v1/entities/browse/{type}:
+    get:
+      tags: [entities]
+      summary: Browse entities by type
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: type
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 24
+        - name: offset
+          in: query
+          schema:
+            type: integer
+            default: 0
+      responses:
+        '200':
+          description: Entities of type
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  items:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/MediaEntity'
+                  total:
+                    type: integer
+                  type:
+                    type: string
+                  limit:
+                    type: integer
+                  offset:
+                    type: integer
+
+  /api/v1/entities/{id}:
+    get:
+      tags: [entities]
+      summary: Get entity detail
+      description: Returns a media entity with full details including file count, children count, and external metadata.
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Entity details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MediaEntityDetail'
+        '404':
+          description: Entity not found
+
+  /api/v1/entities/{id}/children:
+    get:
+      tags: [entities]
+      summary: Get entity children
+      description: Returns child entities (e.g., seasons of a TV show, tracks of an album).
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 100
+        - name: offset
+          in: query
+          schema:
+            type: integer
+            default: 0
+      responses:
+        '200':
+          description: Child entities
+
+  /api/v1/entities/{id}/files:
+    get:
+      tags: [entities]
+      summary: Get entity files
+      description: Returns files associated with a media entity.
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Entity files
+
+  /api/v1/entities/{id}/metadata:
+    get:
+      tags: [entities]
+      summary: Get entity external metadata
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: External metadata
+
+  /api/v1/entities/{id}/duplicates:
+    get:
+      tags: [entities]
+      summary: Get entity duplicates
+      description: Returns other entities with the same title, type, and year.
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Duplicate entities
+
+  /api/v1/entities/{id}/stream:
+    get:
+      tags: [entities]
+      summary: Get stream URL for entity
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Stream info
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  entity_id:
+                    type: integer
+                  file_id:
+                    type: integer
+                  stream_url:
+                    type: string
+        '404':
+          description: No files available
+
+  /api/v1/entities/{id}/download:
+    get:
+      tags: [entities]
+      summary: Get download URL for entity
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+        - name: file_id
+          in: query
+          schema:
+            type: integer
+          description: Specific file ID to download
+      responses:
+        '200':
+          description: Download info
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  entity_id:
+                    type: integer
+                  file_id:
+                    type: integer
+                  download_url:
+                    type: string
+                  total_files:
+                    type: integer
+
+  /api/v1/entities/{id}/install-info:
+    get:
+      tags: [entities]
+      summary: Get software install info
+      description: Returns installation details for software entities only.
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Install information
+        '400':
+          description: Not a software entity
+
+  /api/v1/entities/{id}/metadata/refresh:
+    post:
+      tags: [entities]
+      summary: Refresh entity metadata
+      description: Queues a metadata refresh from external providers.
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '202':
+          description: Refresh queued
+
+  /api/v1/entities/{id}/user-metadata:
+    put:
+      tags: [entities]
+      summary: Update user metadata for entity
+      description: Sets user-specific metadata like ratings, favorites, and watch status.
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateUserMetadataRequest'
+      responses:
+        '200':
+          description: Metadata updated
+    post:
+      tags: [entities]
+      summary: Update user metadata for entity (POST alias)
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateUserMetadataRequest'
+      responses:
+        '200':
+          description: Metadata updated
+
+  /api/v1/challenges:
+    get:
+      tags: [challenges]
+      summary: List all challenges
+      description: Returns all registered challenge definitions.
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: Challenges list
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/ChallengeSummary'
+                  count:
+                    type: integer
+
+  /api/v1/challenges/{id}:
+    get:
+      tags: [challenges]
+      summary: Get challenge details
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Challenge details
+        '404':
+          description: Challenge not found
+
+  /api/v1/challenges/{id}/run:
+    post:
+      tags: [challenges]
+      summary: Run a single challenge
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Challenge result
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  data:
+                    $ref: '#/components/schemas/ChallengeResult'
+
+  /api/v1/challenges/run:
+    post:
+      tags: [challenges]
+      summary: Run all challenges
+      description: |
+        Executes all registered challenges in dependency order.
+        WARNING: This is a synchronous, blocking operation that can take
+        25+ minutes for large catalogs. No other challenge can run until
+        completion.
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: All challenge results
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/ChallengeResult'
+                  summary:
+                    type: object
+                    properties:
+                      total:
+                        type: integer
+                      passed:
+                        type: integer
+                      failed:
+                        type: integer
+
+  /api/v1/challenges/run/category/{category}:
+    post:
+      tags: [challenges]
+      summary: Run challenges by category
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: category
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Category challenge results
+
+  /api/v1/challenges/results:
+    get:
+      tags: [challenges]
+      summary: Get stored challenge results
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: Stored results
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/ChallengeResult'
+                  count:
+                    type: integer

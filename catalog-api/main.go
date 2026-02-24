@@ -41,6 +41,7 @@ import (
 	"digital.vasic.assets/pkg/manager"
 	"digital.vasic.assets/pkg/resolver"
 	asset_store "digital.vasic.assets/pkg/store"
+	"digital.vasic.containers/pkg/discovery"
 	"github.com/gin-gonic/gin"
 	_ "github.com/mutecomm/go-sqlcipher"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
@@ -63,6 +64,34 @@ func atoi(s string) int {
 		return i
 	}
 	return 8080 // default port
+}
+
+// findAvailablePort tries to bind to a port starting from startPort and returns the first available port.
+func findAvailablePort(host string, startPort, maxAttempts int) (int, error) {
+	discoverer := discovery.NewTCPDiscoverer()
+	for i := 0; i < maxAttempts; i++ {
+		port := startPort + i
+		target := discovery.DiscoveryTarget{
+			Name:    "catalog-api",
+			Host:    host,
+			Port:    strconv.Itoa(port),
+			Method:  "tcp",
+			Timeout: 100 * time.Millisecond,
+		}
+		reachable, err := discoverer.Discover(context.Background(), target)
+		if err != nil || !reachable {
+			// Port is free or unreachable
+			return port, nil
+		}
+	}
+	return 0, fmt.Errorf("no available port in range %d-%d", startPort, startPort+maxAttempts-1)
+}
+
+// writePortFile writes the bound port to a file for service discovery.
+func writePortFile(port int) error {
+	portFile := ".service-port"
+	data := fmt.Sprintf("%d", port)
+	return os.WriteFile(portFile, []byte(data), 0644)
 }
 
 // generateSelfSignedCert creates a self-signed TLS certificate for development.
@@ -324,7 +353,11 @@ func main() {
 
 	// Initialize universal scanner for file system scanning
 	clientFactory := filesystem.NewDefaultClientFactory()
-	universalScanner := services.NewUniversalScanner(databaseDB, logger, nil, clientFactory)
+	scannerConcurrency := cfg.Catalog.ScannerConcurrency
+	if scannerConcurrency <= 0 {
+		scannerConcurrency = 4 // default
+	}
+	universalScanner := services.NewUniversalScanner(databaseDB, logger, nil, clientFactory, scannerConcurrency)
 	if err := universalScanner.Start(); err != nil {
 		log.Fatalf("Failed to start universal scanner: %v", err)
 	}
@@ -427,6 +460,9 @@ func main() {
 	configurationHandler := root_handlers.NewConfigurationHandler(configAdapter, authAdapter)
 	errorReportingHandler := root_handlers.NewErrorReportingHandler(errorAdapter, authAdapter)
 	logManagementHandler := root_handlers.NewLogManagementHandler(logAdapter, authAdapter)
+	discoveryHandler := func(c *gin.Context) {
+		c.JSON(200, gin.H{"host": cfg.Server.Host, "port": cfg.Server.Port})
+	}
 
 	// Analytics and reporting services used by stats handler via repositories
 	_ = analyticsService
@@ -473,7 +509,7 @@ func main() {
 	router.GET("/ws", wsHandler.HandleConnection)
 
 	// Asset serving (public — no auth needed for serving images)
-	router.GET("/api/v1/assets/:id", assetHandler.ServeAsset)
+	router.GET("/api/v1/assets/:id", root_middleware.StaticCacheHeaders(), assetHandler.ServeAsset)
 
 	// Authentication routes (no auth required)
 	authGroup := router.Group("/api/v1/auth")
@@ -496,6 +532,7 @@ func main() {
 	api.Use(jwtMiddleware.RequireAuth()) // Apply auth middleware to all API routes
 	api.Use(defaultRateLimiter)          // Apply general rate limiting to API
 	{
+		api.GET("/discovery", discoveryHandler)
 		// Catalog browsing endpoints
 		api.GET("/catalog", catalogHandler.ListRoot)
 		api.GET("/catalog/*path", catalogHandler.ListPath)
@@ -560,6 +597,7 @@ func main() {
 
 		// Advanced statistics endpoints
 		statsGroup := api.Group("/stats")
+		statsGroup.Use(root_middleware.CacheHeaders(60)) // 1-minute cache for statistics
 		{
 			statsGroup.GET("/overall", statsHandler.GetOverallStats)
 			statsGroup.GET("/smb/:smb_root", statsHandler.GetSmbRootStats)
@@ -689,6 +727,7 @@ func main() {
 
 		// Media entity endpoints (structured media browsing)
 		entityGroup := api.Group("/entities")
+		entityGroup.Use(root_middleware.CacheHeaders(300)) // 5-minute cache for entity browsing
 		{
 			entityGroup.GET("", mediaEntityHandler.ListEntities)
 			entityGroup.GET("/types", mediaEntityHandler.GetEntityTypes)
@@ -720,9 +759,28 @@ func main() {
 		}
 	}
 
+	// Find available port for HTTP server
+	startPort := cfg.Server.Port
+	if startPort <= 0 {
+		startPort = 8080
+	}
+	port, err := findAvailablePort(cfg.Server.Host, startPort, 10)
+	if err != nil {
+		logger.Fatal("Failed to find available port", zap.Error(err))
+	}
+	cfg.Server.Port = port
+	addr := cfg.GetServerAddress()
+
+	// Write port to file for service discovery
+	if err := writePortFile(port); err != nil {
+		logger.Warn("Failed to write port file", zap.Error(err))
+	}
+
+	logger.Info("Selected HTTP port", zap.Int("port", port))
+
 	// Create HTTP server
 	srv := &http.Server{
-		Addr:         cfg.GetServerAddress(),
+		Addr:         addr,
 		Handler:      router,
 		ReadTimeout:  time.Duration(cfg.Server.ReadTimeout) * time.Second,
 		WriteTimeout: time.Duration(cfg.Server.WriteTimeout) * time.Second,

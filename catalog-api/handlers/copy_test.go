@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"testing"
+	"time"
 
 	"catalogizer/repository"
 
@@ -227,4 +228,136 @@ func (suite *CopyHandlerTestSuite) TestCopyFromLocal_MissingFile() {
 // Run the test suite
 func TestCopyHandlerTestSuite(t *testing.T) {
 	suite.Run(t, new(CopyHandlerTestSuite))
+}
+
+// --- validateSmbCopyRequest tests ---
+
+func TestValidateSmbCopyRequest(t *testing.T) {
+	handler := NewCopyHandler(nil, "/tmp")
+
+	tests := []struct {
+		name      string
+		req       SmbCopyRequest
+		expectErr bool
+		errMsg    string
+	}{
+		{
+			name:      "valid request",
+			req:       SmbCopyRequest{SourceFileID: 1, DestinationSmbRoot: "main", DestinationPath: "/dest"},
+			expectErr: false,
+		},
+		{
+			name:      "zero source file ID",
+			req:       SmbCopyRequest{SourceFileID: 0, DestinationSmbRoot: "main", DestinationPath: "/dest"},
+			expectErr: true,
+			errMsg:    "source_file_id is required",
+		},
+		{
+			name:      "negative source file ID",
+			req:       SmbCopyRequest{SourceFileID: -1, DestinationSmbRoot: "main", DestinationPath: "/dest"},
+			expectErr: true,
+			errMsg:    "source_file_id is required",
+		},
+		{
+			name:      "empty destination smb root",
+			req:       SmbCopyRequest{SourceFileID: 1, DestinationSmbRoot: "", DestinationPath: "/dest"},
+			expectErr: true,
+			errMsg:    "destination_smb_root is required",
+		},
+		{
+			name:      "empty destination path",
+			req:       SmbCopyRequest{SourceFileID: 1, DestinationSmbRoot: "main", DestinationPath: ""},
+			expectErr: true,
+			errMsg:    "destination_path is required",
+		},
+	}
+
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			err := handler.validateSmbCopyRequest(&tc.req)
+			if tc.expectErr {
+				assert.Error(t, err)
+				assert.Contains(t, err.Error(), tc.errMsg)
+			} else {
+				assert.NoError(t, err)
+			}
+		})
+	}
+}
+
+func TestValidateLocalCopyRequest(t *testing.T) {
+	handler := NewCopyHandler(nil, "/tmp")
+
+	tests := []struct {
+		name      string
+		req       LocalCopyRequest
+		expectErr bool
+		errMsg    string
+	}{
+		{
+			name:      "valid request",
+			req:       LocalCopyRequest{SourceFileID: 1, DestinationPath: "/local/dest"},
+			expectErr: false,
+		},
+		{
+			name:      "zero source file ID",
+			req:       LocalCopyRequest{SourceFileID: 0, DestinationPath: "/local/dest"},
+			expectErr: true,
+			errMsg:    "source_file_id is required",
+		},
+		{
+			name:      "negative source file ID",
+			req:       LocalCopyRequest{SourceFileID: -1, DestinationPath: "/local/dest"},
+			expectErr: true,
+			errMsg:    "source_file_id is required",
+		},
+		{
+			name:      "empty destination path",
+			req:       LocalCopyRequest{SourceFileID: 1, DestinationPath: ""},
+			expectErr: true,
+			errMsg:    "destination_path is required",
+		},
+	}
+
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			err := handler.validateLocalCopyRequest(&tc.req)
+			if tc.expectErr {
+				assert.Error(t, err)
+				assert.Contains(t, err.Error(), tc.errMsg)
+			} else {
+				assert.NoError(t, err)
+			}
+		})
+	}
+}
+
+// --- CopyResponse struct test ---
+
+func TestCopyResponse_Fields(t *testing.T) {
+	resp := CopyResponse{
+		Success:     true,
+		BytesCopied: 1024,
+		FilesCount:  5,
+		TimeTaken:   100 * time.Millisecond,
+		SourcePath:  "/source/path",
+		DestPath:    "/dest/path",
+	}
+
+	assert.True(t, resp.Success)
+	assert.Equal(t, int64(1024), resp.BytesCopied)
+	assert.Equal(t, 5, resp.FilesCount)
+	assert.Equal(t, 100*time.Millisecond, resp.TimeTaken)
+	assert.Equal(t, "/source/path", resp.SourcePath)
+	assert.Equal(t, "/dest/path", resp.DestPath)
+}
+
+// --- Close method test ---
+
+func TestCopyHandler_Close(t *testing.T) {
+	handler := NewCopyHandler(nil, "/tmp")
+	// Close should not panic with a fresh pool
+	assert.NotPanics(t, func() {
+		handler.Close()
+	})
 }

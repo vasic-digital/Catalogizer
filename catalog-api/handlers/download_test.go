@@ -4,6 +4,7 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"testing"
+	"time"
 
 	"catalogizer/repository"
 
@@ -190,6 +191,91 @@ func (suite *DownloadHandlerTestSuite) TestDownloadFile_InlineQueryParameter() {
 	suite.router.ServeHTTP(w, req)
 
 	// Should still fail on invalid ID, not on query parameter
+	assert.Equal(suite.T(), http.StatusBadRequest, w.Code)
+}
+
+// Test DownloadInfo struct fields
+
+func (suite *DownloadHandlerTestSuite) TestDownloadInfo_StructFields() {
+	mimeType := "application/pdf"
+	ext := "pdf"
+	now := time.Now()
+
+	info := DownloadInfo{
+		FileID:               123,
+		Name:                 "test.pdf",
+		Path:                 "/docs/test.pdf",
+		Size:                 1024,
+		IsDirectory:          false,
+		MimeType:             &mimeType,
+		Extension:            &ext,
+		ModifiedAt:           now,
+		Deleted:              false,
+		EstimatedArchiveSize: 0,
+	}
+
+	assert.Equal(suite.T(), int64(123), info.FileID)
+	assert.Equal(suite.T(), "test.pdf", info.Name)
+	assert.Equal(suite.T(), "/docs/test.pdf", info.Path)
+	assert.Equal(suite.T(), int64(1024), info.Size)
+	assert.False(suite.T(), info.IsDirectory)
+	assert.Equal(suite.T(), &mimeType, info.MimeType)
+	assert.Equal(suite.T(), &ext, info.Extension)
+	assert.Equal(suite.T(), now, info.ModifiedAt)
+	assert.False(suite.T(), info.Deleted)
+	assert.Equal(suite.T(), int64(0), info.EstimatedArchiveSize)
+}
+
+func (suite *DownloadHandlerTestSuite) TestDownloadInfo_Directory() {
+	info := DownloadInfo{
+		FileID:               456,
+		Name:                 "docs",
+		Path:                 "/docs",
+		Size:                 5000,
+		IsDirectory:          true,
+		EstimatedArchiveSize: 4000,
+	}
+
+	assert.True(suite.T(), info.IsDirectory)
+	assert.Equal(suite.T(), int64(4000), info.EstimatedArchiveSize)
+}
+
+func (suite *DownloadHandlerTestSuite) TestDownloadInfo_NilOptionalFields() {
+	info := DownloadInfo{
+		FileID: 789,
+		Name:   "unknown",
+	}
+
+	assert.Nil(suite.T(), info.MimeType)
+	assert.Nil(suite.T(), info.Extension)
+}
+
+// Test Close method
+
+func (suite *DownloadHandlerTestSuite) TestDownloadHandler_Close() {
+	handler := NewDownloadHandler(nil, "/tmp", 1024, 4096)
+	assert.NotPanics(suite.T(), func() {
+		handler.Close()
+	})
+}
+
+// Test DownloadFile with overflow ID
+
+func (suite *DownloadHandlerTestSuite) TestDownloadFile_OverflowID() {
+	req := httptest.NewRequest("GET", "/api/download/file/99999999999999999999", nil)
+	w := httptest.NewRecorder()
+	suite.router.ServeHTTP(w, req)
+
+	assert.Equal(suite.T(), http.StatusBadRequest, w.Code)
+}
+
+// Test GetDownloadInfo with overflow ID
+
+func (suite *DownloadHandlerTestSuite) TestGetDownloadInfo_OverflowID() {
+	req := httptest.NewRequest("GET", "/api/download/info/99999999999999999999", nil)
+	w := httptest.NewRecorder()
+	suite.router.ServeHTTP(w, req)
+
 	assert.Equal(suite.T(), http.StatusBadRequest, w.Code)
 }
 

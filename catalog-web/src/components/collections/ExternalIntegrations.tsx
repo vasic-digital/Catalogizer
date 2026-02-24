@@ -778,40 +778,153 @@ const ExternalIntegrations: React.FC = () => {
         )}
       </div>
 
-      {/* Create/Edit Modal would go here */}
+      {/* Create Modal */}
       {isCreateModalOpen && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-lg max-w-4xl w-full max-h-[90vh] overflow-y-auto p-6">
+          <div className="bg-white dark:bg-gray-800 rounded-lg max-w-4xl w-full max-h-[90vh] overflow-y-auto p-6">
             <h3 className="text-xl font-bold mb-4">Add External Integration</h3>
-            <p className="text-gray-500 mb-6">
-              Integration setup interface would be implemented here with service discovery
-            </p>
-            <div className="flex justify-end gap-2">
-              <Button variant="outline" onClick={() => setIsCreateModalOpen(false)}>
-                Cancel
-              </Button>
-              <Button onClick={() => setIsCreateModalOpen(false)}>
-                Add Integration
-              </Button>
+
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Select Service</label>
+                <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+                  {INTEGRATION_EXAMPLES.map(example => (
+                    <button
+                      key={example.name}
+                      onClick={() => {
+                        const newIntegration: ExternalIntegration = {
+                          id: Date.now().toString(),
+                          name: example.name,
+                          provider: example.name.toLowerCase().replace(/\s+/g, '_'),
+                          type: example.type as ExternalIntegration['type'],
+                          status: 'disconnected',
+                          description: example.description,
+                          config: {},
+                          syncSettings: {
+                            enabled: false,
+                            frequency: 'daily',
+                            direction: 'import',
+                            filters: [],
+                          },
+                          statistics: {
+                            totalSyncs: 0,
+                            successfulSyncs: 0,
+                            failedSyncs: 0,
+                            lastSyncStatus: 'pending',
+                            itemsProcessed: 0,
+                          },
+                          createdAt: new Date().toISOString(),
+                          enabled: true,
+                        }
+                        setIntegrations(prev => [...prev, newIntegration])
+                        setIsCreateModalOpen(false)
+                        setEditingIntegration(newIntegration)
+                        toast.success(`${example.name} integration added. Configure credentials to connect.`)
+                      }}
+                      className="p-4 border rounded-lg hover:border-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/20 text-left transition-colors"
+                    >
+                      <div className="font-medium text-sm">{example.name}</div>
+                      <div className="text-xs text-gray-500 mt-1">{example.description}</div>
+                      <div className="flex flex-wrap gap-1 mt-2">
+                        {example.features.slice(0, 2).map(f => (
+                          <span key={f} className="text-xs bg-gray-100 dark:bg-gray-700 px-1.5 py-0.5 rounded">{f}</span>
+                        ))}
+                      </div>
+                    </button>
+                  ))}
+                </div>
+              </div>
+            </div>
+
+            <div className="flex justify-end gap-2 mt-6 pt-4 border-t">
+              <Button variant="outline" onClick={() => setIsCreateModalOpen(false)}>Cancel</Button>
             </div>
           </div>
         </div>
       )}
-      
+
+      {/* Edit Modal */}
       {editingIntegration && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-lg max-w-4xl w-full max-h-[90vh] overflow-y-auto p-6">
+          <div className="bg-white dark:bg-gray-800 rounded-lg max-w-4xl w-full max-h-[90vh] overflow-y-auto p-6">
             <h3 className="text-xl font-bold mb-4">Edit Integration</h3>
-            <p className="text-gray-500 mb-6">
-              Integration configuration interface would be implemented here
-            </p>
-            <div className="flex justify-end gap-2">
-              <Button variant="outline" onClick={() => setEditingIntegration(null)}>
-                Cancel
-              </Button>
-              <Button onClick={() => setEditingIntegration(null)}>
-                Save Changes
-              </Button>
+            <p className="text-sm text-gray-500 mb-4">Configure {editingIntegration.name}</p>
+
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">API Key</label>
+                <Input
+                  type="password"
+                  placeholder="Enter API key"
+                  defaultValue={editingIntegration.config.apiKey || ''}
+                  onChange={(e) => {
+                    setEditingIntegration(prev => prev ? { ...prev, config: { ...prev.config, apiKey: e.target.value } } : null)
+                  }}
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">API Endpoint (optional)</label>
+                <Input
+                  placeholder="https://api.example.com"
+                  defaultValue={editingIntegration.config.endpoint || ''}
+                  onChange={(e) => {
+                    setEditingIntegration(prev => prev ? { ...prev, config: { ...prev.config, endpoint: e.target.value } } : null)
+                  }}
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Webhook URL (optional)</label>
+                <Input
+                  placeholder="https://hooks.example.com/callback"
+                  defaultValue={editingIntegration.config.webhookUrl || ''}
+                  onChange={(e) => {
+                    setEditingIntegration(prev => prev ? { ...prev, config: { ...prev.config, webhookUrl: e.target.value } } : null)
+                  }}
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Sync Frequency</label>
+                <select
+                  className="w-full border rounded-lg p-2 text-sm"
+                  defaultValue={editingIntegration.syncSettings.frequency}
+                  onChange={(e) => {
+                    setEditingIntegration(prev => prev ? { ...prev, syncSettings: { ...prev.syncSettings, frequency: e.target.value as SyncSettings['frequency'] } } : null)
+                  }}
+                >
+                  <option value="realtime">Real-time</option>
+                  <option value="hourly">Hourly</option>
+                  <option value="daily">Daily</option>
+                  <option value="weekly">Weekly</option>
+                  <option value="manual">Manual only</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Sync Direction</label>
+                <select
+                  className="w-full border rounded-lg p-2 text-sm"
+                  defaultValue={editingIntegration.syncSettings.direction}
+                  onChange={(e) => {
+                    setEditingIntegration(prev => prev ? { ...prev, syncSettings: { ...prev.syncSettings, direction: e.target.value as SyncSettings['direction'] } } : null)
+                  }}
+                >
+                  <option value="import">Import only</option>
+                  <option value="export">Export only</option>
+                  <option value="bidirectional">Bidirectional</option>
+                </select>
+              </div>
+            </div>
+
+            <div className="flex justify-end gap-2 mt-6 pt-4 border-t">
+              <Button variant="outline" onClick={() => setEditingIntegration(null)}>Cancel</Button>
+              <Button onClick={() => {
+                setIntegrations(prev => prev.map(i => i.id === editingIntegration.id ? editingIntegration : i))
+                setEditingIntegration(null)
+                toast.success('Integration updated')
+              }}>Save Changes</Button>
             </div>
           </div>
         </div>

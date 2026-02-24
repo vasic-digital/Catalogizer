@@ -655,46 +655,203 @@ const CollectionAutomation: React.FC = () => {
         )}
       </div>
 
-      {/* Create/Edit Modal would go here */}
+      {/* Create Modal */}
       {isCreateModalOpen && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-lg max-w-4xl w-full max-h-[90vh] overflow-y-auto p-6">
-            <h3 className="text-xl font-bold mb-4">Create Automation Rule</h3>
-            <p className="text-gray-500 mb-6">
-              Rule creation interface would be implemented here with a comprehensive form
-            </p>
-            <div className="flex justify-end gap-2">
-              <Button variant="outline" onClick={() => setIsCreateModalOpen(false)}>
-                Cancel
-              </Button>
-              <Button onClick={() => setIsCreateModalOpen(false)}>
-                Create Rule
-              </Button>
-            </div>
-          </div>
-        </div>
+        <AutomationRuleModal
+          onSave={(rule) => {
+            const newRule: AutomationRule = {
+              id: Date.now().toString(),
+              name: rule.name || 'Untitled Rule',
+              description: rule.description || '',
+              enabled: rule.enabled ?? true,
+              trigger: rule.trigger || { type: 'manual' },
+              actions: rule.actions || [],
+              createdAt: new Date().toISOString(),
+              runCount: 0,
+              successCount: 0,
+              errorCount: 0,
+              status: 'idle',
+            }
+            setRules(prev => [...prev, newRule])
+            setIsCreateModalOpen(false)
+            toast.success('Automation rule created')
+          }}
+          onClose={() => setIsCreateModalOpen(false)}
+        />
       )}
-      
+
+      {/* Edit Modal */}
       {editingRule && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-lg max-w-4xl w-full max-h-[90vh] overflow-y-auto p-6">
-            <h3 className="text-xl font-bold mb-4">Edit Automation Rule</h3>
-            <p className="text-gray-500 mb-6">
-              Rule editing interface would be implemented here with current rule values
-            </p>
-            <div className="flex justify-end gap-2">
-              <Button variant="outline" onClick={() => setEditingRule(null)}>
-                Cancel
-              </Button>
-              <Button onClick={() => setEditingRule(null)}>
-                Save Changes
-              </Button>
-            </div>
-          </div>
-        </div>
+        <AutomationRuleModal
+          rule={editingRule}
+          onSave={(updated) => {
+            setRules(prev => prev.map(r => r.id === editingRule.id ? { ...r, ...updated } : r))
+            setEditingRule(null)
+            toast.success('Automation rule updated')
+          }}
+          onClose={() => setEditingRule(null)}
+        />
       )}
     </div>
-  );
-};
+  )
+}
+
+// Automation Rule Create/Edit Modal
+const AutomationRuleModal: React.FC<{
+  rule?: AutomationRule
+  onSave: (rule: Partial<AutomationRule>) => void
+  onClose: () => void
+}> = ({ rule, onSave, onClose }) => {
+  const [name, setName] = useState(rule?.name || '')
+  const [description, setDescription] = useState(rule?.description || '')
+  const [enabled, setEnabled] = useState(rule?.enabled ?? true)
+  const [triggerType, setTriggerType] = useState<'schedule' | 'event' | 'manual'>(rule?.trigger?.type || 'manual')
+  const [schedule, setSchedule] = useState(rule?.trigger?.schedule || '0 0 * * *')
+  const [eventType, setEventType] = useState(rule?.trigger?.eventType || 'file_added')
+  const [actions, setActions] = useState<AutomationAction[]>(rule?.actions || [])
+
+  const addAction = () => {
+    setActions(prev => [...prev, {
+      id: Date.now().toString(),
+      type: 'add_to_collection',
+      parameters: {},
+      order: prev.length + 1,
+    }])
+  }
+
+  const removeAction = (id: string) => {
+    setActions(prev => prev.filter(a => a.id !== id))
+  }
+
+  const updateActionType = (id: string, type: AutomationAction['type']) => {
+    setActions(prev => prev.map(a => a.id === id ? { ...a, type, parameters: {} } : a))
+  }
+
+  const handleSubmit = () => {
+    if (!name.trim()) {
+      toast.error('Rule name is required')
+      return
+    }
+    onSave({
+      name,
+      description,
+      enabled,
+      trigger: {
+        type: triggerType,
+        ...(triggerType === 'schedule' && { schedule }),
+        ...(triggerType === 'event' && { eventType }),
+      },
+      actions,
+    })
+  }
+
+  return (
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+      <div className="bg-white dark:bg-gray-800 rounded-lg max-w-4xl w-full max-h-[90vh] overflow-y-auto p-6">
+        <h3 className="text-xl font-bold mb-4">{rule ? 'Edit' : 'Create'} Automation Rule</h3>
+
+        <div className="space-y-4">
+          <div>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Rule Name</label>
+            <Input value={name} onChange={(e) => setName(e.target.value)} placeholder="Enter rule name" />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Description</label>
+            <Input value={description} onChange={(e) => setDescription(e.target.value)} placeholder="Describe what this rule does" />
+          </div>
+
+          <div className="flex items-center gap-3">
+            <Switch checked={enabled} onCheckedChange={setEnabled} />
+            <span className="text-sm text-gray-700 dark:text-gray-300">Enabled</span>
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Trigger Type</label>
+            <div className="grid grid-cols-3 gap-3">
+              {TRIGGER_TYPES.map(t => (
+                <button
+                  key={t.value}
+                  onClick={() => setTriggerType(t.value as typeof triggerType)}
+                  className={`p-3 rounded-lg border text-left transition-colors ${
+                    triggerType === t.value
+                      ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/20'
+                      : 'border-gray-200 hover:border-gray-300'
+                  }`}
+                >
+                  <div className="font-medium text-sm">{t.label}</div>
+                  <div className="text-xs text-gray-500 mt-1">{t.description}</div>
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {triggerType === 'schedule' && (
+            <div>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Cron Schedule</label>
+              <Input value={schedule} onChange={(e) => setSchedule(e.target.value)} placeholder="0 0 * * *" />
+              <p className="text-xs text-gray-500 mt-1">Standard cron format: minute hour day month weekday</p>
+            </div>
+          )}
+
+          {triggerType === 'event' && (
+            <div>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Event Type</label>
+              <select
+                value={eventType}
+                onChange={(e) => setEventType(e.target.value)}
+                className="w-full border rounded-lg p-2 text-sm"
+              >
+                <option value="file_added">File Added</option>
+                <option value="file_removed">File Removed</option>
+                <option value="file_modified">File Modified</option>
+                <option value="scan_complete">Scan Complete</option>
+                <option value="collection_updated">Collection Updated</option>
+              </select>
+            </div>
+          )}
+
+          <div>
+            <div className="flex items-center justify-between mb-2">
+              <label className="text-sm font-medium text-gray-700 dark:text-gray-300">Actions</label>
+              <Button variant="outline" onClick={addAction}>
+                <Plus className="w-3 h-3 mr-1" />
+                Add Action
+              </Button>
+            </div>
+            <div className="space-y-2">
+              {actions.map((action, idx) => (
+                <div key={action.id} className="flex items-center gap-2 p-3 border rounded-lg">
+                  <span className="text-xs text-gray-500 w-6">{idx + 1}.</span>
+                  <select
+                    value={action.type}
+                    onChange={(e) => updateActionType(action.id, e.target.value as AutomationAction['type'])}
+                    className="flex-1 border rounded p-2 text-sm"
+                  >
+                    {ACTION_TYPES.map(a => (
+                      <option key={a.value} value={a.value}>{a.label}</option>
+                    ))}
+                  </select>
+                  <Button variant="outline" onClick={() => removeAction(action.id)}>
+                    <Trash2 className="w-3 h-3" />
+                  </Button>
+                </div>
+              ))}
+              {actions.length === 0 && (
+                <p className="text-sm text-gray-500 text-center py-4">No actions added. Click "Add Action" above.</p>
+              )}
+            </div>
+          </div>
+        </div>
+
+        <div className="flex justify-end gap-2 mt-6 pt-4 border-t">
+          <Button variant="outline" onClick={onClose}>Cancel</Button>
+          <Button onClick={handleSubmit}>{rule ? 'Save Changes' : 'Create Rule'}</Button>
+        </div>
+      </div>
+    </div>
+  )
+}
+
 
 export default CollectionAutomation;

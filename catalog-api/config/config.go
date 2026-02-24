@@ -71,6 +71,7 @@ type CatalogConfig struct {
 	EnableCache          bool     `json:"enable_cache"`
 	CacheTTLMinutes      int      `json:"cache_ttl_minutes"`
 	MaxConcurrentScans   int      `json:"max_concurrent_scans"`
+	ScannerConcurrency   int      `json:"scanner_concurrency"`
 	DownloadChunkSize    int      `json:"download_chunk_size"`
 	MaxArchiveSize       int64    `json:"max_archive_size"`
 	AllowedDownloadTypes []string `json:"allowed_download_types"`
@@ -180,6 +181,7 @@ func getDefaultConfig() *Config {
 			EnableCache:          true,
 			CacheTTLMinutes:      15,
 			MaxConcurrentScans:   3,
+			ScannerConcurrency:   4,
 			DownloadChunkSize:    1024 * 1024,            // 1MB
 			MaxArchiveSize:       1024 * 1024 * 1024 * 5, // 5GB
 			AllowedDownloadTypes: []string{"*"},

@@ -47,7 +47,7 @@ func (c *SMBConnectivityChallenge) Execute(ctx context.Context) (*challenge.Resu
 	}
 
 	// Step 1: TCP dial
-	addr := fmt.Sprintf("%s:%d", c.endpoint.Host, c.endpoint.Port)
+	addr := net.JoinHostPort(c.endpoint.Host, fmt.Sprintf("%d", c.endpoint.Port))
 	conn, err := net.DialTimeout("tcp", addr, 10*time.Second)
 	assertions = append(assertions, challenge.AssertionResult{
 		Type:     "not_empty",

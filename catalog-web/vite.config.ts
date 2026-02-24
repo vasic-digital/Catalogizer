@@ -2,6 +2,16 @@
 import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
 import path from 'path'
+import fs from 'fs'
+
+function getApiPort(): number {
+  try {
+    const port = fs.readFileSync('../catalog-api/.service-port', 'utf8').trim();
+    return parseInt(port, 10);
+  } catch {
+    return 8080;
+  }
+}
 
 export default defineConfig({
   plugins: [react()],
@@ -42,12 +52,12 @@ export default defineConfig({
     host: true,
     proxy: {
       '/api': {
-        target: 'http://localhost:8080',
+        target: 'http://localhost:' + getApiPort(),
         changeOrigin: true,
         secure: false,
       },
       '/ws': {
-        target: 'ws://localhost:8080',
+        target: 'ws://localhost:' + getApiPort(),
         ws: true,
         changeOrigin: true,
       },

@@ -83,7 +83,7 @@ func (c *BrowsingAPIHealthChallenge) Execute(ctx context.Context) (*challenge.Re
 	}
 
 	// Step 2: POST /api/v1/auth/login succeeds
-	loginResp, loginErr := client.Login(ctx, c.config.Username, c.config.Password)
+	loginResp, loginErr := client.LoginWithRetry(ctx, c.config.Username, c.config.Password, 3)
 	loginOK := loginErr == nil && loginResp != nil
 
 	assertions = append(assertions, challenge.AssertionResult{

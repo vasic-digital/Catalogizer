@@ -2,6 +2,15 @@
 
 High-level system architecture showing all components, their interactions, and technology stack.
 
+## Rendered SVG Diagrams
+
+| Diagram | SVG |
+|---------|-----|
+| System Overview | ![System Overview](images/system-architecture-1.svg) |
+| Backend Layered Architecture | ![Backend Architecture](images/system-architecture-2.svg) |
+| Deployment Architecture | ![Deployment](images/system-architecture-3.svg) |
+| Technology Stack | ![Technology Stack](images/system-architecture-4.svg) |
+
 ## System Overview
 
 ```mermaid

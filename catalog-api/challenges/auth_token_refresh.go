@@ -50,15 +50,34 @@ func (c *AuthTokenRefreshChallenge) Execute(
 
 	client := httpclient.NewAPIClient(c.config.BaseURL)
 
-	// 1. POST /auth/login — expect session_token in response
+	// 1. POST /auth/login — expect session_token in response (with retry for DB contention)
 	loginPayload, _ := json.Marshal(map[string]string{
 		"username": c.config.Username,
 		"password": c.config.Password,
 	})
-	loginCode, loginBytes, loginErr := client.PostJSON(
-		ctx, "/api/v1/auth/login", string(loginPayload),
-	)
-	loginOK := loginErr == nil && loginCode == 200
+	var loginCode int
+	var loginBytes []byte
+	var loginErr error
+	loginOK := false
+	for attempt := 0; attempt <= 3; attempt++ {
+		if attempt > 0 {
+			select {
+			case <-ctx.Done():
+				loginErr = ctx.Err()
+			case <-time.After(time.Duration(1<<uint(attempt-1)) * 5 * time.Second):
+			}
+			if ctx.Err() != nil {
+				break
+			}
+		}
+		loginCode, loginBytes, loginErr = client.PostJSON(
+			ctx, "/api/v1/auth/login", string(loginPayload),
+		)
+		if loginErr == nil && loginCode == 200 {
+			loginOK = true
+			break
+		}
+	}
 	sessionToken := ""
 	refreshToken := ""
 	if loginOK && len(loginBytes) > 0 {

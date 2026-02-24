@@ -2,6 +2,16 @@
 
 Complete ER diagram covering all database tables across the core catalog, media detection, authentication, subtitles, conversion, and multi-user subsystems.
 
+## Rendered SVG Diagrams
+
+| Diagram | SVG |
+|---------|-----|
+| Full ER Diagram | ![Full ER](images/entity-relationship-1.svg) |
+| Core File Catalog | ![Core Catalog](images/entity-relationship-2.svg) |
+| Authentication & Users | ![Auth](images/entity-relationship-3.svg) |
+| Media Detection | ![Media Detection](images/entity-relationship-4.svg) |
+| Subtitle Management | ![Subtitles](images/entity-relationship-5.svg) |
+
 ## Full ER Diagram
 
 ```mermaid

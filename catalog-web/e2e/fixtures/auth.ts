@@ -1,90 +1,102 @@
-import { test as base, expect, Page } from '@playwright/test';
+import { Page } from '@playwright/test';
 
-/**
- * Test user credentials for E2E testing
- */
 export const testUser = {
-  username: 'testuser',
-  password: 'testpassword123',
-  firstName: 'Test',
-  lastName: 'User',
+  username: 'admin',
+  password: 'admin123',
+  role: 'admin',
 };
 
 export const adminUser = {
   username: 'admin',
-  password: 'adminpassword123',
-  firstName: 'Admin',
-  lastName: 'User',
+  password: 'admin123',
+  role: 'admin',
 };
 
 /**
- * Extended test fixtures with authentication helpers
+ * Mock all authentication-related API endpoints.
  */
-export const test = base.extend<{
-  authenticatedPage: Page;
-  adminPage: Page;
-}>({
-  /**
-   * A page that is already authenticated as a regular user
-   */
-  authenticatedPage: async ({ page }, use) => {
-    await mockAuthEndpoints(page);
-    await loginAs(page, testUser);
-    await use(page);
-  },
+export async function mockAuthEndpoints(page: Page) {
+  // Init status
+  await page.route('**/api/v1/auth/init-status', async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({ initialized: true, admin_exists: true }),
+    });
+  });
 
-  /**
-   * A page that is already authenticated as an admin user
-   */
-  adminPage: async ({ page }, use) => {
-    await mockAuthEndpoints(page, true);
-    await loginAs(page, adminUser);
-    await use(page);
-  },
-});
-
-/**
- * Mock authentication API endpoints
- * The auth state is determined by checking if auth_token exists in localStorage
- */
-export async function mockAuthEndpoints(page: Page, isAdmin = false) {
-  const mockUser = {
-    id: isAdmin ? 1 : 2,
-    username: isAdmin ? adminUser.username : testUser.username,
-    email: isAdmin ? 'admin@example.com' : 'test@example.com',
-    first_name: isAdmin ? 'Admin' : 'Test',
-    last_name: 'User',
-    role: isAdmin ? 'admin' : 'user',
-    permissions: isAdmin
-      ? ['read:media', 'write:media', 'delete:media', 'admin:all']
-      : ['read:media', 'write:media'],
-    created_at: new Date().toISOString(),
-  };
-
-  // Mock login endpoint
+  // Login
   await page.route('**/api/v1/auth/login', async (route) => {
-    const request = route.request();
-    const body = request.postDataJSON();
+    let postData: { username?: string; password?: string } = {};
+    try {
+      postData = JSON.parse(route.request().postData() || '{}');
+    } catch {
+      postData = {};
+    }
 
-    if (body.username && body.password) {
+    if (
+      (postData.username === testUser.username && postData.password === testUser.password) ||
+      (postData.username === adminUser.username && postData.password === adminUser.password)
+    ) {
       await route.fulfill({
         status: 200,
         contentType: 'application/json',
         body: JSON.stringify({
           token: 'mock-jwt-token-' + Date.now(),
-          user: mockUser,
+          refresh_token: 'mock-refresh-token-' + Date.now(),
+          user: {
+            id: postData.username === adminUser.username ? 1 : 2,
+            username: postData.username,
+            role: postData.username === adminUser.username ? 'admin' : 'user',
+          },
         }),
       });
     } else {
       await route.fulfill({
         status: 401,
         contentType: 'application/json',
-        body: JSON.stringify({ error: 'Invalid credentials' }),
+        body: JSON.stringify({ error: 'Invalid username or password' }),
       });
     }
   });
 
-  // Mock logout endpoint
+  // Auth status check
+  await page.route('**/api/v1/auth/status', async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        authenticated: true,
+        user: { id: 1, username: testUser.username, role: 'admin' },
+      }),
+    });
+  });
+
+  // Token refresh
+  await page.route('**/api/v1/auth/refresh', async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        token: 'mock-refreshed-jwt-token-' + Date.now(),
+        refresh_token: 'mock-refreshed-refresh-token-' + Date.now(),
+      }),
+    });
+  });
+
+  // Register
+  await page.route('**/api/v1/auth/register', async (route) => {
+    await route.fulfill({
+      status: 201,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        message: 'User created successfully',
+        user: { id: 3, username: 'newuser', role: 'user' },
+      }),
+    });
+  });
+
+  // Logout
   await page.route('**/api/v1/auth/logout', async (route) => {
     await route.fulfill({
       status: 200,
@@ -93,115 +105,44 @@ export async function mockAuthEndpoints(page: Page, isAdmin = false) {
     });
   });
 
-  // Mock profile endpoint
-  await page.route('**/api/v1/auth/profile', async (route) => {
-    await route.fulfill({
-      status: 200,
-      contentType: 'application/json',
-      body: JSON.stringify(mockUser),
-    });
-  });
-
-  // Mock auth status endpoint - always return authenticated with user data
-  // The actual auth state is managed by localStorage in the browser
-  await page.route('**/api/v1/auth/status', async (route) => {
+  // Users list (admin)
+  await page.route('**/api/v1/auth/users**', async (route) => {
     await route.fulfill({
       status: 200,
       contentType: 'application/json',
       body: JSON.stringify({
-        authenticated: true,
-        user: mockUser,
-        permissions: mockUser.permissions,
-      }),
-    });
-  });
-
-  // Mock permissions endpoint
-  await page.route('**/api/v1/auth/permissions', async (route) => {
-    await route.fulfill({
-      status: 200,
-      contentType: 'application/json',
-      body: JSON.stringify({
-        permissions: mockUser.permissions,
-      }),
-    });
-  });
-
-  // Mock register endpoint
-  await page.route('**/api/v1/auth/register', async (route) => {
-    const body = route.request().postDataJSON();
-    await route.fulfill({
-      status: 201,
-      contentType: 'application/json',
-      body: JSON.stringify({
-        token: 'mock-jwt-token-' + Date.now(),
-        user: {
-          id: 3,
-          username: body.username,
-          email: body.email,
-          first_name: body.first_name,
-          last_name: body.last_name,
-          role: 'user',
-          permissions: ['read:media', 'write:media'],
-          created_at: new Date().toISOString(),
-        },
-      }),
-    });
-  });
-
-  // Mock init-status endpoint
-  await page.route('**/api/v1/auth/init-status', async (route) => {
-    await route.fulfill({
-      status: 200,
-      contentType: 'application/json',
-      body: JSON.stringify({
-        initialized: true,
-        admin_exists: true,
+        users: [
+          { id: 1, username: 'admin', role: 'admin', created_at: new Date().toISOString() },
+          { id: 2, username: 'user', role: 'user', created_at: new Date().toISOString() },
+        ],
+        total: 2,
       }),
     });
   });
 }
 
 /**
- * Login as a specific user
+ * Login as a specific user. Navigates to /login, fills credentials, submits,
+ * and waits for redirect to dashboard.
  */
-export async function loginAs(page: Page, user: typeof testUser) {
+export async function loginAs(page: Page, user: { username: string; password: string }) {
   await page.goto('/login');
   await page.waitForLoadState('networkidle');
-
-  // Fill login form - target by placeholder text since the form uses custom Input component
-  const usernameInput = page.locator('input[placeholder*="username" i]');
-  const passwordInput = page.locator('input[placeholder*="password" i]');
-
-  await usernameInput.fill(user.username);
-  await passwordInput.fill(user.password);
-
-  // Submit form - click the Sign in button
+  await page.locator('input[placeholder*="username" i]').fill(user.username);
+  await page.locator('input[placeholder*="password" i]').fill(user.password);
   await page.click('button[type="submit"]');
-
-  // Wait for navigation to dashboard
-  await page.waitForURL('**/dashboard', { timeout: 10000 });
+  await page.waitForURL(/.*dashboard/, { timeout: 10000 });
 }
 
 /**
- * Logout the current user
+ * Log out the current user by clicking the logout button.
  */
 export async function logout(page: Page) {
-  // Click user menu or logout button
-  const logoutButton = page.locator('[data-testid="logout-button"], button:has-text("Logout"), button:has-text("Sign out")');
-  if (await logoutButton.isVisible()) {
-    await logoutButton.click();
-  } else {
-    // Try user menu dropdown
-    const userMenu = page.locator('[data-testid="user-menu"], [aria-label="User menu"]');
-    if (await userMenu.isVisible()) {
-      await userMenu.click();
-      await page.click('text=Logout');
-    }
+  const logoutButton = page.locator(
+    'button:has-text("Logout"), button:has-text("Sign out")'
+  );
+  if (await logoutButton.first().isVisible({ timeout: 3000 })) {
+    await logoutButton.first().click();
+    await page.waitForTimeout(1000);
   }
-
-  // Wait for redirect to login
-  await page.waitForURL('**/login', { timeout: 10000 });
 }
-
-export { expect };

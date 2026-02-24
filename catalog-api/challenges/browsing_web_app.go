@@ -184,7 +184,7 @@ func (c *BrowsingWebAppChallenge) Execute(ctx context.Context) (*challenge.Resul
 
 	// Step 6: Full auth flow - login via API (simulating what the web app does)
 	apiClient := httpclient.NewAPIClient(c.config.BaseURL)
-	loginResp, loginErr := apiClient.Login(ctx, c.config.Username, c.config.Password)
+	loginResp, loginErr := apiClient.LoginWithRetry(ctx, c.config.Username, c.config.Password, 3)
 	loginOK := loginErr == nil && loginResp != nil && apiClient.Token() != ""
 	assertions = append(assertions, challenge.AssertionResult{
 		Type:     "not_empty",

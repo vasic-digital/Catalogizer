@@ -24,8 +24,16 @@ const EntityBrowser = React.lazy(() => import('@/pages/EntityBrowser').then(m =>
 const EntityDetail = React.lazy(() => import('@/pages/EntityDetail').then(m => ({ default: m.EntityDetail })))
 
 const PageLoader: React.FC = () => (
-  <div className="flex items-center justify-center min-h-[400px]">
-    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600" />
+  <div className="p-6 space-y-4 animate-pulse min-h-[400px]">
+    <div className="h-8 bg-gray-200 dark:bg-gray-700 rounded w-1/3" />
+    <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-2/3" />
+    <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-6">
+      <div className="h-32 bg-gray-200 dark:bg-gray-700 rounded" />
+      <div className="h-32 bg-gray-200 dark:bg-gray-700 rounded" />
+      <div className="h-32 bg-gray-200 dark:bg-gray-700 rounded" />
+    </div>
+    <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-1/2 mt-4" />
+    <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-3/4" />
   </div>
 )
 

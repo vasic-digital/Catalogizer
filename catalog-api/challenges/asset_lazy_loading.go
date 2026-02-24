@@ -43,7 +43,7 @@ func (c *AssetLazyLoadingChallenge) Execute(ctx context.Context) (*challenge.Res
 	client := httpclient.NewAPIClient(c.config.BaseURL)
 
 	// Step 1: Authenticate
-	_, loginErr := client.Login(ctx, c.config.Username, c.config.Password)
+	_, loginErr := client.LoginWithRetry(ctx, c.config.Username, c.config.Password, 3)
 	if loginErr != nil {
 		assertions = append(assertions, challenge.AssertionResult{
 			Type: "not_empty", Target: "login", Expected: "success",

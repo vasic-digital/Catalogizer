@@ -6,9 +6,15 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"os"
 )
 
 func testAuth() {
+	baseURL := os.Getenv("API_BASE_URL")
+	if baseURL == "" {
+		baseURL = "http://localhost:8080"
+	}
+
 	// Test registration
 	registerData := map[string]interface{}{
 		"username":   "testuser",
@@ -20,7 +26,7 @@ func testAuth() {
 
 	jsonData, _ := json.Marshal(registerData)
 
-	resp, err := http.Post("http://localhost:8080/api/v1/auth/register", "application/json", bytes.NewBuffer(jsonData))
+	resp, err := http.Post(baseURL+"/api/v1/auth/register", "application/json", bytes.NewBuffer(jsonData))
 	if err != nil {
 		fmt.Printf("Error: %v\n", err)
 		return
@@ -38,7 +44,7 @@ func testAuth() {
 
 	loginJson, _ := json.Marshal(loginData)
 
-	resp2, err := http.Post("http://localhost:8080/api/v1/auth/login", "application/json", bytes.NewBuffer(loginJson))
+	resp2, err := http.Post(baseURL+"/api/v1/auth/login", "application/json", bytes.NewBuffer(loginJson))
 	if err != nil {
 		fmt.Printf("Error: %v\n", err)
 		return
@@ -49,7 +55,7 @@ func testAuth() {
 	fmt.Printf("Login Response: %s\n", string(body2))
 
 	// Test protected endpoint
-	resp3, err := http.Get("http://localhost:8080/api/v1/catalog")
+	resp3, err := http.Get(baseURL + "/api/v1/catalog")
 	if err != nil {
 		fmt.Printf("Error: %v\n", err)
 		return

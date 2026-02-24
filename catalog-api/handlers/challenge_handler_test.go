@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"context"
+	"encoding/json"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -94,7 +95,19 @@ func (suite *ChallengeHandlerTestSuite) TestListChallenges() {
 	suite.router.ServeHTTP(w, req)
 
 	assert.Equal(suite.T(), http.StatusOK, w.Code)
-	// TODO: parse response body and verify
+
+	var response struct {
+		Success bool                       `json:"success"`
+		Data    []services.ChallengeSummary `json:"data"`
+		Count   int                        `json:"count"`
+	}
+	err := json.Unmarshal(w.Body.Bytes(), &response)
+	assert.NoError(suite.T(), err)
+	assert.True(suite.T(), response.Success)
+	assert.Equal(suite.T(), 1, response.Count)
+	assert.Len(suite.T(), response.Data, 1)
+	assert.Equal(suite.T(), "ch-001", response.Data[0].ID)
+	assert.Equal(suite.T(), "Test Challenge", response.Data[0].Name)
 }
 
 func (suite *ChallengeHandlerTestSuite) TestGetChallenge_EmptyID() {

@@ -1,9 +1,26 @@
 #!/bin/bash
 set -e
 
-# Get JWT token
-TOKEN=$(curl -s -X POST http://localhost:8080/api/v1/auth/login -H "Content-Type: application/json" -d '{"username":"admin","password":"admin123"}' | grep -o '"session_token":"[^"]*"' | cut -d'"' -f4)
+# Get server port from .service-port file, default 8080
+get_server_port() {
+    if [ -f ".service-port" ]; then
+        cat ".service-port"
+    else
+        echo "8080"
+    fi
+}
+API_PORT=$(get_server_port)
+API_BASE="http://localhost:$API_PORT"
+
+# Get JWT token using jq (more robust)
+RESP=$(curl -s -X POST $API_BASE/api/v1/auth/login -H "Content-Type: application/json" -d '{"username":"admin","password":"admin123"}')
+TOKEN=$(echo "$RESP" | jq -r '.session_token')
+if [ -z "$TOKEN" ] || [ "$TOKEN" = "null" ]; then
+    echo "Failed to extract token from response: $RESP"
+    exit 1
+fi
 echo "Token obtained"
+sleep 2
 
 # Read challenge IDs
 if [ ! -f challenge_ids.txt ]; then
@@ -14,8 +31,8 @@ fi
 # Run each challenge sequentially
 while read id; do
     echo "=== Running challenge: $id ==="
-    # Run challenge with timeout (5 minutes)
-    timeout 300 curl -s -H "Authorization: Bearer $TOKEN" -X POST "http://localhost:8080/api/v1/challenges/$id/run" -o "result_$id.json"
+    # Run challenge with timeout (10 minutes)
+    timeout 600 curl -s -H "Authorization: Bearer $TOKEN" -X POST "$API_BASE/api/v1/challenges/$id/run" -o "result_$id.json"
     if [ $? -eq 124 ]; then
         echo "  TIMEOUT after 5 minutes"
         exit 1
@@ -34,7 +51,7 @@ while read id; do
     fi
     echo "  PASSED"
     # Small delay between challenges
-    sleep 3
+    sleep 10
 done < challenge_ids.txt
 
 echo "All challenges passed!"

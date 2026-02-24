@@ -82,3 +82,6 @@
 [submodule "Collection-Manager-React"]
 	path = Collection-Manager-React
 	url = git@github.com:vasic-digital/Collection-Manager-React.git
+[submodule "Containers"]
+	path = Containers
+	url = git@github.com:vasic-digital/Containers.git

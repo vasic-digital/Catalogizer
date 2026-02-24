@@ -294,6 +294,239 @@ func TestCopyHandler_NewCopyHandler(t *testing.T) {
 	assert.Equal(t, tempDir, handler.tempDir)
 }
 
+// --- parseHostPath tests ---
+
+func TestCopyHandler_ParseHostPath(t *testing.T) {
+	logger := zap.NewNop()
+	handler := &CopyHandler{logger: logger}
+
+	tests := []struct {
+		name         string
+		hostPath     string
+		expectedHost string
+		expectedPath string
+	}{
+		{
+			name:         "valid host:path",
+			hostPath:     "server:/share/path",
+			expectedHost: "server",
+			expectedPath: "/share/path",
+		},
+		{
+			name:         "host only, no path",
+			hostPath:     "server:",
+			expectedHost: "server",
+			expectedPath: "",
+		},
+		{
+			name:         "no colon separator",
+			hostPath:     "no-colon",
+			expectedHost: "",
+			expectedPath: "",
+		},
+		{
+			name:         "empty string",
+			hostPath:     "",
+			expectedHost: "",
+			expectedPath: "",
+		},
+		{
+			name:         "multiple colons",
+			hostPath:     "server:path:with:colons",
+			expectedHost: "server",
+			expectedPath: "path:with:colons",
+		},
+		{
+			name:         "colon at start",
+			hostPath:     ":/path",
+			expectedHost: "",
+			expectedPath: "/path",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			host, path := handler.parseHostPath(tt.hostPath)
+			assert.Equal(t, tt.expectedHost, host)
+			assert.Equal(t, tt.expectedPath, path)
+		})
+	}
+}
+
+// --- CopyToSMB validation tests ---
+
+func TestCopyHandler_CopyToSMB_InvalidJSON(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+	logger := zap.NewNop()
+	handler := &CopyHandler{logger: logger}
+
+	w := httptest.NewRecorder()
+	c, _ := gin.CreateTestContext(w)
+	c.Request = httptest.NewRequest("POST", "/copy/smb", bytes.NewBufferString("not json"))
+	c.Request.Header.Set("Content-Type", "application/json")
+
+	handler.CopyToSMB(c)
+
+	assert.Equal(t, http.StatusBadRequest, w.Code)
+	var resp map[string]interface{}
+	err := json.Unmarshal(w.Body.Bytes(), &resp)
+	assert.NoError(t, err)
+	assert.Contains(t, resp, "error")
+}
+
+func TestCopyHandler_CopyToSMB_EmptySourcePath(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+	logger := zap.NewNop()
+	handler := &CopyHandler{logger: logger}
+
+	body := `{"source_path":"","destination_path":"server:/dest"}`
+	w := httptest.NewRecorder()
+	c, _ := gin.CreateTestContext(w)
+	c.Request = httptest.NewRequest("POST", "/copy/smb", bytes.NewBufferString(body))
+	c.Request.Header.Set("Content-Type", "application/json")
+
+	handler.CopyToSMB(c)
+
+	assert.Equal(t, http.StatusBadRequest, w.Code)
+}
+
+func TestCopyHandler_CopyToSMB_EmptyDestinationPath(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+	logger := zap.NewNop()
+	handler := &CopyHandler{logger: logger}
+
+	body := `{"source_path":"server:/source","destination_path":""}`
+	w := httptest.NewRecorder()
+	c, _ := gin.CreateTestContext(w)
+	c.Request = httptest.NewRequest("POST", "/copy/smb", bytes.NewBufferString(body))
+	c.Request.Header.Set("Content-Type", "application/json")
+
+	handler.CopyToSMB(c)
+
+	assert.Equal(t, http.StatusBadRequest, w.Code)
+}
+
+func TestCopyHandler_CopyToSMB_InvalidHostFormat(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+	logger := zap.NewNop()
+	handler := &CopyHandler{logger: logger}
+
+	// Source path without colon separator
+	body := `{"source_path":"no-colon-path","destination_path":"server:/dest"}`
+	w := httptest.NewRecorder()
+	c, _ := gin.CreateTestContext(w)
+	c.Request = httptest.NewRequest("POST", "/copy/smb", bytes.NewBufferString(body))
+	c.Request.Header.Set("Content-Type", "application/json")
+
+	handler.CopyToSMB(c)
+
+	assert.Equal(t, http.StatusBadRequest, w.Code)
+}
+
+// --- CopyToLocal validation tests ---
+
+func TestCopyHandler_CopyToLocal_InvalidJSON(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+	logger := zap.NewNop()
+	handler := &CopyHandler{logger: logger}
+
+	w := httptest.NewRecorder()
+	c, _ := gin.CreateTestContext(w)
+	c.Request = httptest.NewRequest("POST", "/copy/local", bytes.NewBufferString("not json"))
+	c.Request.Header.Set("Content-Type", "application/json")
+
+	handler.CopyToLocal(c)
+
+	assert.Equal(t, http.StatusBadRequest, w.Code)
+}
+
+func TestCopyHandler_CopyToLocal_EmptySourcePath(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+	logger := zap.NewNop()
+	handler := &CopyHandler{logger: logger}
+
+	body := `{"source_path":"","destination_path":"/local/dest"}`
+	w := httptest.NewRecorder()
+	c, _ := gin.CreateTestContext(w)
+	c.Request = httptest.NewRequest("POST", "/copy/local", bytes.NewBufferString(body))
+	c.Request.Header.Set("Content-Type", "application/json")
+
+	handler.CopyToLocal(c)
+
+	assert.Equal(t, http.StatusBadRequest, w.Code)
+}
+
+func TestCopyHandler_CopyToLocal_InvalidSourceFormat(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+	logger := zap.NewNop()
+	handler := &CopyHandler{logger: logger}
+
+	body := `{"source_path":"no-colon","destination_path":"/local/dest"}`
+	w := httptest.NewRecorder()
+	c, _ := gin.CreateTestContext(w)
+	c.Request = httptest.NewRequest("POST", "/copy/local", bytes.NewBufferString(body))
+	c.Request.Header.Set("Content-Type", "application/json")
+
+	handler.CopyToLocal(c)
+
+	assert.Equal(t, http.StatusBadRequest, w.Code)
+}
+
+// --- CopyFromLocal validation tests ---
+
+func TestCopyHandler_CopyFromLocal_NoFile(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+	logger := zap.NewNop()
+	handler := &CopyHandler{logger: logger}
+
+	w := httptest.NewRecorder()
+	c, _ := gin.CreateTestContext(w)
+	c.Request = httptest.NewRequest("POST", "/copy/upload", nil)
+	c.Request.Header.Set("Content-Type", "multipart/form-data")
+
+	handler.CopyFromLocal(c)
+
+	assert.Equal(t, http.StatusBadRequest, w.Code)
+}
+
+// --- ListSMBPath validation tests ---
+
+func TestCopyHandler_ListSMBPath_MissingHost(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+	logger := zap.NewNop()
+	handler := &CopyHandler{logger: logger}
+
+	w := httptest.NewRecorder()
+	c, _ := gin.CreateTestContext(w)
+	c.Request = httptest.NewRequest("GET", "/smb/list/test", nil)
+	c.Params = gin.Params{{Key: "path", Value: "test"}}
+	// No host query param
+
+	handler.ListSMBPath(c)
+
+	assert.Equal(t, http.StatusBadRequest, w.Code)
+	var resp map[string]interface{}
+	err := json.Unmarshal(w.Body.Bytes(), &resp)
+	assert.NoError(t, err)
+	assert.Equal(t, "Host name is required", resp["error"])
+}
+
+// --- GetSMBHosts tests ---
+
+func TestCopyHandler_GetSMBHosts_NilService(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+	logger := zap.NewNop()
+	handler := &CopyHandler{logger: logger}
+
+	// With nil smbService, this will panic
+	assert.Panics(t, func() {
+		w := httptest.NewRecorder()
+		c, _ := gin.CreateTestContext(w)
+		c.Request = httptest.NewRequest("GET", "/smb/hosts", nil)
+		handler.GetSMBHosts(c)
+	})
+}
+
 func TestCopyHandler_StorageOperations_Integration(t *testing.T) {
 	gin.SetMode(gin.TestMode)
 	logger := zap.NewNop()

@@ -20,6 +20,7 @@ func (db *DB) RunMigrations(ctx context.Context) error {
 		{Version: 6, Name: "fix_subtitle_foreign_keys", Up: db.fixSubtitleForeignKeys},
 		{Version: 7, Name: "create_assets_table", Up: db.createAssetsTable},
 		{Version: 8, Name: "create_media_entity_tables", Up: db.createMediaEntityTables},
+		{Version: 9, Name: "create_performance_indexes", Up: db.createPerformanceIndexes},
 	}
 
 	for _, migration := range migrations {

@@ -2,6 +2,14 @@
 
 Mermaid component diagram showing all 7 application components and their interactions, shared libraries, and external dependencies.
 
+## Rendered SVG Diagrams
+
+| Diagram | SVG |
+|---------|-----|
+| Full Component Interaction | ![Full Components](images/component-interaction-1.svg) |
+| Communication Patterns | ![Communication](images/component-interaction-2.svg) |
+| Data Flow | ![Data Flow](images/component-interaction-3.svg) |
+
 ## Full Component Interaction Diagram
 
 ```mermaid

@@ -78,5 +78,17 @@ func RegisterAll(svc *services.ChallengeService) error {
 	svc.Register(NewStorageRootsAPIChallenge())       // CH-024: @vasic-digital/catalogizer-api-client
 	svc.Register(NewAuthTokenRefreshChallenge())      // CH-025: @vasic-digital/catalogizer-api-client
 
+	// Extended validation challenges (CH-026 to CH-035)
+	svc.Register(NewStressTestChallenge())             // CH-026: API stress test
+	svc.Register(NewRateLimitingChallenge())           // CH-027: Rate limiting
+	svc.Register(NewFavoritesWorkflowChallenge())      // CH-028: Favorites workflow
+	svc.Register(NewCollectionManagementChallenge())   // CH-029: Collection management
+	svc.Register(NewMediaPlaybackChallenge())          // CH-030: Media playback
+	svc.Register(NewSearchFilterChallenge())           // CH-031: Search & filter
+	svc.Register(NewCoverArtChallenge())               // CH-032: Cover art
+	svc.Register(NewWebSocketEventsChallenge())        // CH-033: WebSocket events
+	svc.Register(NewSecurityChallenge())               // CH-034: Security
+	svc.Register(NewConfigWizardChallenge())           // CH-035: Configuration wizard
+
 	return nil
 }

@@ -89,6 +89,10 @@ export const SmartCollectionBuilder: React.FC<SmartCollectionBuilderProps> = ({
   const [showAdvanced, setShowAdvanced] = useState(false);
   const [testResults, setTestResults] = useState<any>(null);
   const [isTesting, setIsTesting] = useState(false);
+  const [refreshFrequency, setRefreshFrequency] = useState('daily');
+  const [sortOrder, setSortOrder] = useState('date_added');
+  const [maxItems, setMaxItems] = useState('0');
+  const [cacheResults, setCacheResults] = useState(true);
 
   // Generate unique ID for new rules
   const generateRuleId = () => `rule_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
@@ -662,8 +666,8 @@ export const SmartCollectionBuilder: React.FC<SmartCollectionBuilderProps> = ({
                       Auto-refresh frequency
                     </label>
                     <Select
-                      value="daily"
-                      onChange={() => {}}
+                      value={refreshFrequency}
+                      onChange={(value) => setRefreshFrequency(value)}
                       options={[
                         { value: 'hourly', label: 'Hourly' },
                         { value: 'daily', label: 'Daily' },
@@ -679,8 +683,8 @@ export const SmartCollectionBuilder: React.FC<SmartCollectionBuilderProps> = ({
                       Sort order
                     </label>
                     <Select
-                      value="date_added"
-                      onChange={() => {}}
+                      value={sortOrder}
+                      onChange={(value) => setSortOrder(value)}
                       options={[
                         { value: 'date_added', label: 'Date Added' },
                         { value: 'title', label: 'Title' },
@@ -700,8 +704,8 @@ export const SmartCollectionBuilder: React.FC<SmartCollectionBuilderProps> = ({
                     </label>
                     <Input
                       type="number"
-                      value="0"
-                      onChange={() => {}}
+                      value={maxItems}
+                      onChange={(e) => setMaxItems(e.target.value)}
                       placeholder="0"
                       className="w-full"
                     />
@@ -712,8 +716,8 @@ export const SmartCollectionBuilder: React.FC<SmartCollectionBuilderProps> = ({
                       Cache results
                     </label>
                     <Switch
-                      checked={true}
-                      onCheckedChange={() => {}}
+                      checked={cacheResults}
+                      onCheckedChange={setCacheResults}
                     />
                     <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
                       Improve performance by caching query results

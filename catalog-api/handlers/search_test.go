@@ -138,3 +138,36 @@ func (suite *SearchHandlerTestSuite) TestAdvancedSearch_InvalidJSON() {
 func TestSearchHandlerTestSuite(t *testing.T) {
 	suite.Run(t, new(SearchHandlerTestSuite))
 }
+
+// --- parseBool helper function tests ---
+
+func TestParseBool(t *testing.T) {
+	tests := []struct {
+		name         string
+		value        string
+		defaultValue bool
+		expected     bool
+	}{
+		{"empty string returns default true", "", true, true},
+		{"empty string returns default false", "", false, false},
+		{"true string", "true", false, true},
+		{"false string", "false", true, false},
+		{"TRUE string", "TRUE", false, true},
+		{"FALSE string", "FALSE", true, false},
+		{"1 string", "1", false, true},
+		{"0 string", "0", true, false},
+		{"invalid string returns default true", "invalid", true, true},
+		{"invalid string returns default false", "invalid", false, false},
+		{"yes returns default (not valid bool)", "yes", false, false},
+		{"no returns default (not valid bool)", "no", true, true},
+		{"t string", "t", false, true},
+		{"f string", "f", true, false},
+	}
+
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			result := parseBool(tc.value, tc.defaultValue)
+			assert.Equal(t, tc.expected, result)
+		})
+	}
+}

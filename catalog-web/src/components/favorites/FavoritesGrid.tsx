@@ -1,10 +1,11 @@
-import { useState, useMemo } from 'react'
-import { 
-  Grid, 
-  List, 
-  Heart, 
-  Filter, 
-  SortAsc, 
+import { useState, useMemo, useCallback } from 'react'
+import { useNavigate } from 'react-router-dom'
+import {
+  Grid,
+  List,
+  Heart,
+  Filter,
+  SortAsc,
   SortDesc,
   Star,
   Calendar,
@@ -17,6 +18,7 @@ import { Select } from '@/components/ui/Select'
 import { MediaGrid } from '@/components/media/MediaGrid'
 import { FavoriteToggle } from './FavoriteToggle'
 import { useFavorites } from '@/hooks/useFavorites'
+import { mediaApi } from '@/lib/mediaApi'
 import type { Favorite } from '@/types/favorites'
 import type { MediaItem } from '@/types/media'
 
@@ -42,13 +44,16 @@ export const FavoritesGrid: React.FC<FavoritesGridProps> = ({
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc')
   const [selectedItems, setSelectedItems] = useState<number[]>([])
 
+  const navigate = useNavigate()
+
   const {
     favorites,
     total,
     isLoading,
     error,
     stats,
-    toggleFavorite
+    toggleFavorite,
+    bulkRemoveFromFavorites
   } = useFavorites({
     sort_by: sortBy,
     sort_order: sortOrder,
@@ -126,10 +131,21 @@ export const FavoritesGrid: React.FC<FavoritesGridProps> = ({
 
   const handleBulkRemoveFromFavorites = () => {
     if (selectedItems.length === 0) return
-    
-    // TODO: Use bulk remove from favorites hook
+    bulkRemoveFromFavorites(selectedItems)
     setSelectedItems([])
   }
+
+  const handleMediaView = useCallback((media: MediaItem) => {
+    navigate(`/entity/${media.id}`)
+  }, [navigate])
+
+  const handleMediaPlay = useCallback((media: MediaItem) => {
+    navigate(`/entity/${media.id}?autoplay=true`)
+  }, [navigate])
+
+  const handleMediaDownload = useCallback((media: MediaItem) => {
+    mediaApi.downloadMedia(media)
+  }, [])
 
   if (error) {
     return (
@@ -332,9 +348,9 @@ export const FavoritesGrid: React.FC<FavoritesGridProps> = ({
             <MediaGrid
               media={enhancedMediaItems}
               viewMode={viewMode}
-              onMediaView={() => {/* TODO: implement media view */}}
-              onMediaPlay={() => {/* TODO: implement media play */}}
-              onMediaDownload={() => {/* TODO: implement media download */}}
+              onMediaView={handleMediaView}
+              onMediaPlay={handleMediaPlay}
+              onMediaDownload={handleMediaDownload}
               onSelect={selectable ? handleSelectItem : undefined}
               selectedItems={selectedItems}
               showActions={true}

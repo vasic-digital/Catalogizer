@@ -42,6 +42,16 @@ print_error() {
     echo -e "${RED}[ERROR]${NC} $1"
 }
 
+# Function to get server port from .service-port file
+get_server_port() {
+    local port_file=".service-port"
+    if [ -f "$port_file" ]; then
+        cat "$port_file"
+    else
+        echo "8080"
+    fi
+}
+
 # Function to check if command exists
 check_command() {
     if ! command -v "$1" &> /dev/null; then
@@ -203,8 +213,27 @@ print_status "Starting test server..."
 go run main.go --test-mode &
 SERVER_PID=$!
 
-# Wait for server to start
-sleep 5
+# Wait for server to start and write port file
+print_status "Waiting for server port..."
+for i in {1..30}; do
+    if [ -f ".service-port" ]; then
+        break
+    fi
+    sleep 1
+done
+
+if [ ! -f ".service-port" ]; then
+    print_error "Server failed to write port file"
+    kill $SERVER_PID 2>/dev/null || true
+    FAILED_TESTS+=("API Integration")
+    return 1
+fi
+
+SERVER_PORT=$(get_server_port)
+print_status "Server running on port $SERVER_PORT"
+
+# Wait for server to be ready
+sleep 2
 
 # Check if server is still running
 if ! kill -0 $SERVER_PID 2>/dev/null; then
@@ -214,7 +243,7 @@ if ! kill -0 $SERVER_PID 2>/dev/null; then
 fi
 
 # API endpoint tests
-API_BASE_URL="http://localhost:8080"
+API_BASE_URL="http://localhost:$SERVER_PORT"
 
 test_api_endpoint() {
     local endpoint="$1"
@@ -273,8 +302,29 @@ if [ "$SKIP_UI_TESTS" = false ]; then
     go run main.go --test-mode &
     UI_SERVER_PID=$!
 
-    # Wait for server to start
-    sleep 10
+    # Wait for server to start and write port file
+    print_status "Waiting for UI server port..."
+    for i in {1..30}; do
+        if [ -f ".service-port" ]; then
+            break
+        fi
+        sleep 1
+    done
+
+    if [ ! -f ".service-port" ]; then
+        print_error "UI server failed to write port file"
+        kill $UI_SERVER_PID 2>/dev/null || true
+        FAILED_TESTS+=("UI Automation")
+        cd tests/automation
+        return 1
+    fi
+
+    UI_SERVER_PORT=$(get_server_port)
+    print_status "UI server running on port $UI_SERVER_PORT"
+    export API_BASE_URL="http://localhost:$UI_SERVER_PORT/api/v1"
+
+    # Wait for server to be ready
+    sleep 2
 
     # Check if UI server is still running
     if ! kill -0 $UI_SERVER_PID 2>/dev/null; then

@@ -137,6 +137,63 @@ func (suite *BrowseHandlerTestSuite) TestGetFileInfo_InvalidID_Decimal() {
 	assert.Equal(suite.T(), http.StatusBadRequest, w.Code)
 }
 
+// Test GetDirectorySizes - method not allowed
+
+func (suite *BrowseHandlerTestSuite) TestGetDirectorySizes_MethodNotAllowed() {
+	req := httptest.NewRequest("POST", "/api/browse/main/sizes", nil)
+	w := httptest.NewRecorder()
+	suite.router.ServeHTTP(w, req)
+
+	assert.Equal(suite.T(), http.StatusNotFound, w.Code)
+}
+
+// Test GetDirectoryDuplicates - method not allowed
+
+func (suite *BrowseHandlerTestSuite) TestGetDirectoryDuplicates_MethodNotAllowed() {
+	req := httptest.NewRequest("POST", "/api/browse/main/duplicates", nil)
+	w := httptest.NewRecorder()
+	suite.router.ServeHTTP(w, req)
+
+	assert.Equal(suite.T(), http.StatusNotFound, w.Code)
+}
+
+// Test GetFileInfo with various invalid IDs
+
+func (suite *BrowseHandlerTestSuite) TestGetFileInfo_OverflowID_Positive() {
+	// Exceeds int64 max
+	req := httptest.NewRequest("GET", "/api/browse/file/99999999999999999999", nil)
+	w := httptest.NewRecorder()
+	suite.router.ServeHTTP(w, req)
+
+	assert.Equal(suite.T(), http.StatusBadRequest, w.Code)
+}
+
+func (suite *BrowseHandlerTestSuite) TestGetFileInfo_HexID() {
+	req := httptest.NewRequest("GET", "/api/browse/file/0xFF", nil)
+	w := httptest.NewRecorder()
+	suite.router.ServeHTTP(w, req)
+
+	assert.Equal(suite.T(), http.StatusBadRequest, w.Code)
+}
+
+func (suite *BrowseHandlerTestSuite) TestGetFileInfo_EmptyString() {
+	req := httptest.NewRequest("GET", "/api/browse/file/test-string", nil)
+	w := httptest.NewRecorder()
+	suite.router.ServeHTTP(w, req)
+
+	assert.Equal(suite.T(), http.StatusBadRequest, w.Code)
+	assert.Contains(suite.T(), w.Body.String(), "Invalid file ID")
+}
+
+func (suite *BrowseHandlerTestSuite) TestGetFileInfo_OverflowID() {
+	// This number exceeds int64 max
+	req := httptest.NewRequest("GET", "/api/browse/file/99999999999999999999999", nil)
+	w := httptest.NewRecorder()
+	suite.router.ServeHTTP(w, req)
+
+	assert.Equal(suite.T(), http.StatusBadRequest, w.Code)
+}
+
 //Note: Tests for valid IDs and storage roots that would succeed (return 2xx/5xx)
 // cannot be tested without a working repository, as the handlers don't validate
 // parameters before calling repository methods. These tests focus on input

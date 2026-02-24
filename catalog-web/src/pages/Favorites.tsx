@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useRef } from 'react'
 import { Heart, Settings, Download, Upload } from 'lucide-react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card'
 import { Button } from '@/components/ui/Button'
@@ -7,17 +7,62 @@ import { FavoritesGrid } from '@/components/favorites/FavoritesGrid'
 import { PageHeader } from '@/components/layout/PageHeader'
 import { useFavorites } from '@/hooks/useFavorites'
 import { cn } from '@/lib/utils'
+import toast from 'react-hot-toast'
 
 const FavoritesPage: React.FC = () => {
   const [showBulkActions, setShowBulkActions] = useState(false)
-  const { stats, refetchStats } = useFavorites()
+  const fileInputRef = useRef<HTMLInputElement>(null)
+  const { favorites, stats, refetchStats, refetchFavorites, bulkAddToFavorites } = useFavorites()
 
   const handleExportFavorites = () => {
-    // TODO: implement export favorites to JSON/CSV
+    if (!favorites || favorites.length === 0) {
+      toast.error('No favorites to export')
+      return
+    }
+    const exportData = favorites.map(fav => ({
+      media_id: fav.media_id,
+      title: fav.media_item?.title,
+      media_type: fav.media_item?.media_type,
+      year: fav.media_item?.year,
+      added_at: fav.created_at,
+    }))
+    const blob = new Blob([JSON.stringify(exportData, null, 2)], { type: 'application/json' })
+    const url = URL.createObjectURL(blob)
+    const link = document.createElement('a')
+    link.href = url
+    link.download = `favorites-${new Date().toISOString().split('T')[0]}.json`
+    link.click()
+    URL.revokeObjectURL(url)
+    toast.success(`Exported ${exportData.length} favorites`)
   }
 
   const handleImportFavorites = () => {
-    // TODO: implement import favorites from file
+    fileInputRef.current?.click()
+  }
+
+  const handleFileSelected = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0]
+    if (!file) return
+    const reader = new FileReader()
+    reader.onload = (e) => {
+      try {
+        const data = JSON.parse(e.target?.result as string)
+        const mediaIds = Array.isArray(data)
+          ? data.map((item: { media_id?: number }) => item.media_id).filter(Boolean) as number[]
+          : []
+        if (mediaIds.length === 0) {
+          toast.error('No valid media IDs found in file')
+          return
+        }
+        bulkAddToFavorites(mediaIds)
+        refetchFavorites()
+        refetchStats()
+      } catch {
+        toast.error('Invalid JSON file')
+      }
+    }
+    reader.readAsText(file)
+    event.target.value = ''
   }
 
   const handleBulkOperations = () => {
@@ -26,6 +71,13 @@ const FavoritesPage: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
+      <input
+        ref={fileInputRef}
+        type="file"
+        accept=".json"
+        className="hidden"
+        onChange={handleFileSelected}
+      />
       <PageHeader
         title="My Favorites"
         subtitle="Manage your favorite media items"

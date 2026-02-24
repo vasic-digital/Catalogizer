@@ -1,0 +1,14 @@
+{
+  "name": "catalogizer-website",
+  "version": "1.0.0",
+  "type": "module",
+  "description": "Catalogizer project website",
+  "scripts": {
+    "dev": "vitepress dev",
+    "build": "vitepress build",
+    "preview": "vitepress preview"
+  },
+  "devDependencies": {
+    "vitepress": "^1.5.0"
+  }
+}

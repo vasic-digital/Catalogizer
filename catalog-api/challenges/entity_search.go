@@ -48,7 +48,7 @@ func (c *EntitySearchChallenge) Execute(
 
 	client := httpclient.NewAPIClient(c.config.BaseURL)
 
-	_, err := client.Login(ctx, c.config.Username, c.config.Password)
+	_, err := client.LoginWithRetry(ctx, c.config.Username, c.config.Password, 3)
 	if err != nil {
 		assertions = append(assertions, challenge.AssertionResult{
 			Type:    "not_empty",

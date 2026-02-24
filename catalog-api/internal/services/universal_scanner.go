@@ -89,17 +89,24 @@ type ScanStrategy struct {
 	RealTimeChangeDetection bool
 }
 
-// NewUniversalScanner creates a new universal file system scanner
-func NewUniversalScanner(db *database.DB, logger *zap.Logger, renameTracker *UniversalRenameTracker, clientFactory filesystem.ClientFactory) *UniversalScanner {
+// NewUniversalScanner creates a new universal file system scanner.
+// The scannerConcurrency parameter controls the semaphore weight for
+// concurrent scan operations. If <= 0, it defaults to 4.
+func NewUniversalScanner(db *database.DB, logger *zap.Logger, renameTracker *UniversalRenameTracker, clientFactory filesystem.ClientFactory, scannerConcurrency ...int) *UniversalScanner {
+	concurrency := 4
+	if len(scannerConcurrency) > 0 && scannerConcurrency[0] > 0 {
+		concurrency = scannerConcurrency[0]
+	}
+
 	scanner := &UniversalScanner{
 		db:                 db,
 		logger:             logger,
 		renameTracker:      renameTracker,
 		clientFactory:      clientFactory,
 		scanQueue:          make(chan ScanJob, 1000),
-		workers:            4,
-		maxConcurrentScans: 4,
-		scanSem:            semaphore.NewWeighted(4),
+		workers:            concurrency,
+		maxConcurrentScans: concurrency,
+		scanSem:            semaphore.NewWeighted(int64(concurrency)),
 		stopCh:             make(chan struct{}),
 		protocolScanners:   make(map[string]ProtocolScanner),
 		activeScans:        make(map[string]*ScanStatus),
@@ -571,6 +578,7 @@ func (s *SMBScanner) scanDirectory(ctx context.Context, client filesystem.FileSy
 			}
 
 			if file.IsDir {
+				s.logger.Warn("Scanning directory recursively", zap.String("path", fullPath))
 				if err := s.scanDirectory(ctx, client, fullPath, job, status, depth+1); err != nil {
 					s.logger.Error("Failed to scan SMB subdirectory",
 						zap.String("path", fullPath),
@@ -602,14 +610,152 @@ func (s *SMBScanner) GetOptimalBatchSize() int {
 	return 500
 }
 
+// ensureDirectoryPathExists ensures all directory components in a path exist in the database,
+// creating them if necessary, and returns the parent directory ID for the given path.
+// Returns nil if the path has no parent (root directory).
+func ensureDirectoryPathExists(ctx context.Context, db *database.DB, storageRootID int64, fullPath string, logger *zap.Logger) (*int64, error) {
+	logger.Info("ensureDirectoryPathExists called", zap.String("fullPath", fullPath), zap.Int64("storageRootID", storageRootID))
+	if fullPath == "" || fullPath == "." || fullPath == "/" {
+		return nil, nil
+	}
+
+	parentPath := filepath.Dir(fullPath)
+	if parentPath == "." || parentPath == "/" || parentPath == "" {
+		return nil, nil
+	}
+
+	// Split parentPath into components
+	components := strings.Split(parentPath, "/")
+	var currentPath string
+	var parentID *int64 = nil
+
+	for _, comp := range components {
+		if comp == "" {
+			continue
+		}
+		if currentPath == "" {
+			currentPath = comp
+		} else {
+			currentPath = currentPath + "/" + comp
+		}
+
+		// Check if directory exists
+		logger.Warn("Checking directory existence", zap.String("currentPath", currentPath), zap.Int64("storageRootID", storageRootID), zap.Any("parentID", parentID))
+		var dirID int64
+		err := db.QueryRowContext(ctx,
+			"SELECT id FROM files WHERE path = ? AND storage_root_id = ? AND is_directory = 1 LIMIT 1",
+			currentPath, storageRootID,
+		).Scan(&dirID)
+		if err == nil {
+			// Directory exists
+			logger.Warn("Directory already exists", zap.String("path", currentPath), zap.Int64("id", dirID))
+			parentID = &dirID
+			continue
+		}
+		logger.Warn("Directory does not exist, will create", zap.String("path", currentPath), zap.Error(err))
+
+		// Directory doesn't exist, create it
+		logger.Warn("Creating directory", zap.String("path", currentPath), zap.Any("parentID", parentID))
+		var insertedID int64
+		if db.Dialect().IsSQLite() {
+			// Use INSERT OR IGNORE with transaction
+			tx, err := db.BeginTx(ctx, nil)
+			if err != nil {
+				return nil, fmt.Errorf("begin transaction for directory %s: %w", currentPath, err)
+			}
+			defer tx.Rollback()
+
+			// Temporarily disable foreign key checks for SQLite
+			_, _ = tx.ExecContext(ctx, "PRAGMA foreign_keys = OFF")
+
+			_, err = tx.ExecContext(ctx,
+				`INSERT OR IGNORE INTO files (storage_root_id, path, name, extension, mime_type, file_type, size, is_directory, modified_at, last_scan_at, parent_id)
+				 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP, ?)`,
+				storageRootID, currentPath, comp, "", "", "other", 0, true, time.Now(), parentID,
+			)
+			if err != nil {
+				return nil, fmt.Errorf("insert directory %s: %w", currentPath, err)
+			}
+
+			// Get the inserted ID
+			err = tx.QueryRowContext(ctx,
+				"SELECT id FROM files WHERE path = ? AND storage_root_id = ?",
+				currentPath, storageRootID,
+			).Scan(&insertedID)
+			if err != nil {
+				return nil, fmt.Errorf("get directory ID for %s: %w", currentPath, err)
+			}
+
+			_, _ = tx.ExecContext(ctx, "PRAGMA foreign_keys = ON")
+			if err := tx.Commit(); err != nil {
+				return nil, fmt.Errorf("commit directory creation transaction: %w", err)
+			}
+		} else {
+			// PostgreSQL path
+			err = db.QueryRowContext(ctx,
+				`INSERT INTO files (storage_root_id, path, name, extension, mime_type, file_type, size, is_directory, modified_at, last_scan_at, parent_id)
+				 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP, ?)
+				 ON CONFLICT(storage_root_id, path) DO UPDATE SET
+				   last_scan_at = CURRENT_TIMESTAMP,
+				   deleted = false
+				 RETURNING id`,
+				storageRootID, currentPath, comp, "", "", "other", 0, true, time.Now(), parentID,
+			).Scan(&insertedID)
+			if err != nil {
+				return nil, fmt.Errorf("insert directory %s: %w", currentPath, err)
+			}
+		}
+
+		logger.Info("Created directory record",
+			zap.String("path", currentPath),
+			zap.Int64("id", insertedID),
+			zap.Any("parent_id", parentID))
+		parentID = &insertedID
+	}
+
+	logger.Warn("ensureDirectoryPathExists returning", zap.String("fullPath", fullPath), zap.Any("parentID", parentID))
+	return parentID, nil
+}
+
 // insertFileRecord inserts or updates a file record in the database.
 // This is the core function that makes the scanner actually populate
 // the catalog, shared by all protocol scanners.
+//
+// PERFORMANCE OPTIMIZATION OPPORTUNITY: Batch Inserts
+// Currently each file is inserted individually, requiring one round-trip
+// per file (or two for SQLite due to the transaction + PRAGMA pattern).
+// For large scans (85K+ files on NAS), this is the primary bottleneck.
+//
+// Recommended approach:
+//  1. Accumulate files in a slice up to GetOptimalBatchSize() (e.g., 500 for SMB, 1000 for local).
+//  2. Build a single multi-row INSERT ... VALUES (...), (...), ... statement.
+//  3. For PostgreSQL, use ON CONFLICT(storage_root_id, path) DO UPDATE SET ... on the batch.
+//  4. For SQLite, use a single transaction wrapping all INSERTs in the batch.
+//  5. Requires pre-resolving storageRootID and parentIDs for the batch,
+//     which can be done via a single directory-existence query per batch.
+//
+// Estimated improvement: 5-10x throughput for network protocols (SMB, FTP, WebDAV)
+// where per-statement overhead dominates, and 2-3x for local filesystem.
+//
+// PERFORMANCE OPTIMIZATION OPPORTUNITY: Incremental Scanning
+// Currently every scan re-processes all files. Incremental scanning would:
+//  1. Query files.last_scan_at for the storage root to get the previous scan timestamp.
+//  2. Compare file modified_at against the previous scan timestamp.
+//  3. Only INSERT/UPDATE files that are new or modified since the last scan.
+//  4. Mark files not seen in the current scan as deleted (soft delete).
+//  5. Skip unchanged directories entirely when their modified_at is older than last_scan_at.
+//
+// The ScanJob.ScanType field already supports "incremental" but the logic
+// is not yet implemented in the protocol scanners.
 func insertFileRecord(ctx context.Context, db *database.DB, path string, file *filesystem.FileInfo, job ScanJob, status *ScanStatus, logger *zap.Logger) error {
 	if db == nil {
 		status.incrementCounters(1, 1, 0, 0, 0)
 		return nil
 	}
+	logger.Warn("insertFileRecord dialect check",
+		zap.Bool("is_sqlite", db.Dialect().IsSQLite()),
+		zap.Bool("is_postgres", db.Dialect().IsPostgres()),
+		zap.String("db_type", db.DatabaseType()))
 
 	// Resolve storage root ID
 	var storageRootID int64
@@ -619,6 +765,7 @@ func insertFileRecord(ctx context.Context, db *database.DB, path string, file *f
 	).Scan(&storageRootID)
 	if err != nil {
 		// Storage root not in DB yet — insert it
+		logger.Warn("Inserting storage root", zap.String("name", job.StorageRoot.Name), zap.Bool("is_postgres", db.Dialect().IsPostgres()), zap.Bool("is_sqlite", db.Dialect().IsSQLite()))
 		if db.Dialect().IsPostgres() {
 			// PostgreSQL: use INSERT ... ON CONFLICT DO NOTHING + RETURNING
 			err2 := db.QueryRowContext(ctx,
@@ -681,27 +828,18 @@ func insertFileRecord(ctx context.Context, db *database.DB, path string, file *f
 	var parentID *int64
 	parentPath := filepath.Dir(path)
 	if parentPath != "." && parentPath != "/" && parentPath != "" {
-		var pid int64
-		err := db.QueryRowContext(ctx,
-			"SELECT id FROM files WHERE path = ? AND storage_root_id = ? AND is_directory = 1 LIMIT 1",
-			parentPath, storageRootID,
-		).Scan(&pid)
-		if err == nil {
-			// Verify parent actually exists (defensive check)
-			var exists bool
-			checkErr := db.QueryRowContext(ctx,
-				"SELECT 1 FROM files WHERE id = ?",
-				pid,
-			).Scan(&exists)
-			if checkErr == nil {
-				parentID = &pid
-			} else {
-				logger.Warn("Parent directory ID not found, will insert with NULL parent_id",
-					zap.String("path", path),
-					zap.String("parent_path", parentPath),
-					zap.Int64("parent_id", pid),
-					zap.Error(checkErr))
-			}
+		logger.Warn("Calling ensureDirectoryPathExists for file", zap.String("path", path), zap.String("parentPath", parentPath))
+		pid, err := ensureDirectoryPathExists(ctx, db, storageRootID, parentPath, logger)
+		if err != nil {
+			logger.Error("Failed to ensure parent directory exists",
+				zap.String("path", path),
+				zap.String("parent_path", parentPath),
+				zap.Error(err))
+			// Continue with NULL parent_id rather than failing entirely
+			status.incrementCounters(0, 0, 0, 0, 1)
+		} else {
+			parentID = pid
+			logger.Warn("Parent directory resolved", zap.String("path", path), zap.Any("parentID", parentID))
 		}
 	}
 
@@ -713,24 +851,20 @@ func insertFileRecord(ctx context.Context, db *database.DB, path string, file *f
 	isDir := file.IsDir
 
 	// Upsert: insert or update on conflict (same storage_root + path)
-	_, err = db.ExecContext(ctx,
-		`INSERT INTO files (storage_root_id, path, name, extension, mime_type, file_type, size, is_directory, modified_at, last_scan_at, parent_id)
-		 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP, ?)
-		 ON CONFLICT(storage_root_id, path) DO UPDATE SET
-		   size = excluded.size,
-		   modified_at = excluded.modified_at,
-		   last_scan_at = CURRENT_TIMESTAMP,
-		   deleted = false,
-		   deleted_at = NULL`,
-		storageRootID, path, name, ext, mimeType, fileType, file.Size,
-		isDir, modifiedAt, parentID,
-	)
-	if err != nil && db.Dialect().IsSQLite() {
-		// SQLite fallback if UNIQUE constraint doesn't exist yet
-		logger.Warn("ON CONFLICT failed, falling back to INSERT OR REPLACE",
-			zap.String("path", path),
-			zap.Error(err))
-		_, err = db.ExecContext(ctx,
+	// Use transaction for SQLite to handle foreign key constraints safely
+	logger.Warn("File upsert dialect", zap.Bool("is_sqlite", db.Dialect().IsSQLite()), zap.Bool("is_postgres", db.Dialect().IsPostgres()), zap.String("path", path))
+	if db.Dialect().IsSQLite() {
+		tx, err := db.BeginTx(ctx, nil)
+		if err != nil {
+			return fmt.Errorf("begin transaction for file insertion: %w", err)
+		}
+		defer tx.Rollback()
+
+		// Temporarily disable foreign key checks for SQLite
+		_, _ = tx.ExecContext(ctx, "PRAGMA foreign_keys = OFF")
+
+		logger.Warn("SQLite file insertion", zap.String("path", path), zap.Bool("isDir", isDir), zap.Any("parentID", parentID), zap.Int64("storageRootID", storageRootID))
+		_, err = tx.ExecContext(ctx,
 			`INSERT OR REPLACE INTO files (storage_root_id, path, name, extension, mime_type, file_type, size, is_directory, modified_at, last_scan_at, parent_id)
 			 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP, ?)`,
 			storageRootID, path, name, ext, mimeType, fileType, file.Size,
@@ -739,8 +873,29 @@ func insertFileRecord(ctx context.Context, db *database.DB, path string, file *f
 		if err != nil {
 			return fmt.Errorf("insert file %s: %w", path, err)
 		}
-	} else if err != nil {
-		return fmt.Errorf("insert file %s: %w", path, err)
+
+		_, _ = tx.ExecContext(ctx, "PRAGMA foreign_keys = ON")
+
+		if err := tx.Commit(); err != nil {
+			return fmt.Errorf("commit file insertion transaction: %w", err)
+		}
+	} else {
+		// PostgreSQL: use ON CONFLICT
+		_, err = db.ExecContext(ctx,
+			`INSERT INTO files (storage_root_id, path, name, extension, mime_type, file_type, size, is_directory, modified_at, last_scan_at, parent_id)
+			 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP, ?)
+			 ON CONFLICT(storage_root_id, path) DO UPDATE SET
+			   size = excluded.size,
+			   modified_at = excluded.modified_at,
+			   last_scan_at = CURRENT_TIMESTAMP,
+			   deleted = false,
+			   deleted_at = NULL`,
+			storageRootID, path, name, ext, mimeType, fileType, file.Size,
+			isDir, modifiedAt, parentID,
+		)
+		if err != nil {
+			return fmt.Errorf("insert file %s: %w", path, err)
+		}
 	}
 
 	status.incrementCounters(1, 1, 0, 0, 0)

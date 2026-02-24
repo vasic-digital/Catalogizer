@@ -2,6 +2,21 @@
 
 Mermaid sequence diagrams for the key operational flows in the Catalogizer system.
 
+## Rendered SVG Diagrams
+
+| Diagram | SVG |
+|---------|-----|
+| Login Flow | ![Login](images/sequence-diagrams-1.svg) |
+| Authenticated Request | ![Auth Request](images/sequence-diagrams-2.svg) |
+| Token Refresh | ![Token Refresh](images/sequence-diagrams-3.svg) |
+| Full Scan | ![Full Scan](images/sequence-diagrams-4.svg) |
+| Media Detection | ![Media Detection](images/sequence-diagrams-5.svg) |
+| WebSocket Events | ![WebSocket](images/sequence-diagrams-6.svg) |
+| SSE Events | ![SSE](images/sequence-diagrams-7.svg) |
+| Subtitle Search/Download | ![Subtitle Search](images/sequence-diagrams-8.svg) |
+| Subtitle Sync | ![Subtitle Sync](images/sequence-diagrams-9.svg) |
+| Subtitle Lifecycle | ![Subtitle Lifecycle](images/sequence-diagrams-10.svg) |
+
 ## Table of Contents
 
 - [Authentication Flow](#authentication-flow)
