@@ -1,20 +1,49 @@
-# Podman-compose file for user flow test container stack.
-# Usage: podman-compose -f docker-compose.test.yml up -d
+# Podman-compose file for multi-platform user flow test container stack.
+#
+# Usage:
+#   podman-compose -f docker-compose.test.yml --profile web up -d
+#   podman-compose -f docker-compose.test.yml --profile android up -d
+#   podman-compose -f docker-compose.test.yml --profile desktop up -d
+#
+# Profiles (not all services run simultaneously):
+#   api      - catalog-api only (backend testing)
+#   web      - catalog-api + catalog-web + playwright (browser testing)
+#   desktop  - catalog-api + tauri-desktop (desktop app testing)
+#   wizard   - catalog-api + tauri-wizard (installer wizard testing)
+#   android  - catalog-api + android-emulator (Android phone testing)
+#   tv       - catalog-api + android-emulator (Android TV testing)
 #
 # Total resource budget: 4 CPUs, 8 GB RAM (30-40% of host).
+# Services within a profile stay within budget; profiles are not
+# designed to run concurrently.
+#
 # All services use network_mode: host for reliable inter-service
-# communication and SSL connectivity.
+# communication and SSL connectivity (required by Podman).
 
 version: "3.8"
 
+volumes:
+  test-results:
+    driver: local
+  api-data:
+    driver: local
+  api-logs:
+    driver: local
+
 services:
+  # ---------------------------------------------------------------------------
+  # catalog-api: Go/Gin backend (all profiles need this)
+  # ---------------------------------------------------------------------------
   catalog-api:
     build:
-      context: ./catalog-api
-      dockerfile: Dockerfile
+      context: .
+      dockerfile: catalog-api/Dockerfile
       network: host
+    image: catalogizer-api:test
     container_name: catalogizer-api-test
     network_mode: host
+    extra_hosts:
+      - "synology.local:192.168.0.241"
     environment:
       - GIN_MODE=release
       - DB_TYPE=sqlite
@@ -23,6 +52,11 @@ services:
       - ADMIN_PASSWORD=admin123
       - GOTOOLCHAIN=local
       - PORT=8080
+      - WRITE_TIMEOUT=900
+    volumes:
+      - api-data:/app/data
+      - api-logs:/app/logs
+      - test-results:/app/test-results
     deploy:
       resources:
         limits:
@@ -32,23 +66,194 @@ services:
           cpus: "1"
           memory: 2g
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8080/health"]
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8080/health"]
       interval: 10s
       timeout: 5s
       retries: 5
       start_period: 15s
     restart: unless-stopped
+    profiles:
+      - api
+      - web
+      - desktop
+      - wizard
+      - android
+      - tv
 
+  # ---------------------------------------------------------------------------
+  # catalog-web: React/Vite frontend (web profile only)
+  # ---------------------------------------------------------------------------
   catalog-web:
     build:
       context: ./catalog-web
       dockerfile: Dockerfile
       network: host
+    image: catalogizer-web:test
     container_name: catalogizer-web-test
     network_mode: host
     environment:
-      - NODE_ENV=development
+      - NODE_ENV=production
       - VITE_API_URL=http://localhost:8080
+    volumes:
+      - test-results:/app/test-results
+    deploy:
+      resources:
+        limits:
+          cpus: "0.5"
+          memory: 1g
+        reservations:
+          cpus: "0.25"
+          memory: 512m
+    depends_on:
+      catalog-api:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:3000"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
+    restart: unless-stopped
+    profiles:
+      - web
+
+  # ---------------------------------------------------------------------------
+  # playwright: Browser automation for web E2E tests (web profile only)
+  # ---------------------------------------------------------------------------
+  playwright:
+    image: docker.io/mcr.microsoft.com/playwright:v1.40.0-jammy
+    container_name: catalogizer-playwright-test
+    network_mode: host
+    command: >-
+      npx playwright launch-server
+      --browser chromium
+      --port 9222
+    environment:
+      - DISPLAY=:99
+      - PLAYWRIGHT_BROWSERS_PATH=/ms-playwright
+      - TEST_API_URL=http://localhost:8080
+      - TEST_WEB_URL=http://localhost:3000
+    volumes:
+      - test-results:/test-results
+    deploy:
+      resources:
+        limits:
+          cpus: "1"
+          memory: 2g
+        reservations:
+          cpus: "0.5"
+          memory: 1g
+    depends_on:
+      catalog-web:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "node -e \"const n=require('net');const c=n.connect(9222,'localhost',()=>{c.end();process.exit(0)});c.on('error',()=>process.exit(1))\""]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+    restart: unless-stopped
+    profiles:
+      - web
+
+  # ---------------------------------------------------------------------------
+  # android-emulator: Android phone/TV testing via ADB
+  #   - Shares the emulator for both 'android' and 'tv' profiles.
+  #   - Requires KVM for hardware acceleration (/dev/kvm).
+  #   - ADB listens on port 5555 for remote connection.
+  # ---------------------------------------------------------------------------
+  android-emulator:
+    build:
+      context: ./docker
+      dockerfile: Dockerfile.android4
+      network: host
+    image: catalogizer-android-emulator:test
+    container_name: catalogizer-android-emulator-test
+    network_mode: host
+    devices:
+      - /dev/kvm:/dev/kvm
+    environment:
+      - ANDROID_HOME=/opt/android-sdk
+      - ANDROID_SDK_ROOT=/opt/android-sdk
+      - EMULATOR_DEVICE=pixel_6
+      - EMULATOR_API_LEVEL=34
+      - ADB_PORT=5555
+      - TEST_API_URL=http://localhost:8080
+      - DISPLAY=:99
+    command: >-
+      bash -c "
+        echo 'Starting Android emulator...' &&
+        nohup Xvfb :99 -screen 0 1080x1920x24 &
+        avdmanager create avd -n test_device -k 'system-images;android-34;google_apis;x86_64' -d pixel_6 --force 2>/dev/null || true &&
+        emulator -avd test_device -no-window -no-audio -no-boot-anim -gpu swiftshader_indirect -port 5554 &
+        adb wait-for-device &&
+        adb shell 'while [[ -z $(getprop sys.boot_completed) ]]; do sleep 1; done' &&
+        echo 'Emulator ready' &&
+        tail -f /dev/null
+      "
+    volumes:
+      - test-results:/test-results
+    deploy:
+      resources:
+        limits:
+          cpus: "2"
+          memory: 4g
+        reservations:
+          cpus: "1"
+          memory: 2g
+    depends_on:
+      catalog-api:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "adb devices | grep -q 'emulator.*device' || exit 1"]
+      interval: 15s
+      timeout: 10s
+      retries: 10
+      start_period: 120s
+    restart: unless-stopped
+    profiles:
+      - android
+      - tv
+
+  # ---------------------------------------------------------------------------
+  # tauri-desktop: Desktop app testing via WebDriver
+  #   - Runs the Catalogizer Desktop Tauri app in headless mode.
+  #   - Requires a virtual display server (Xvfb).
+  #   - WebDriver endpoint on port 4444 for automation.
+  # ---------------------------------------------------------------------------
+  tauri-desktop:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.builder
+      network: host
+    image: catalogizer-tauri-desktop:test
+    container_name: catalogizer-tauri-desktop-test
+    network_mode: host
+    environment:
+      - DISPLAY=:99
+      - WEBKIT_DISABLE_COMPOSITING_MODE=1
+      - TEST_API_URL=http://localhost:8080
+      - TAURI_WEBDRIVER_PORT=4444
+      - XDG_RUNTIME_DIR=/tmp/runtime
+      - APPIMAGE_EXTRACT_AND_RUN=1
+    command: >-
+      bash -c "
+        mkdir -p /tmp/runtime &&
+        nohup Xvfb :99 -screen 0 1920x1080x24 &
+        sleep 2 &&
+        echo 'Building desktop app...' &&
+        cd /project/catalogizer-desktop &&
+        npm install && npm run tauri:build 2>&1 &&
+        echo 'Launching desktop app for testing...' &&
+        nohup ./src-tauri/target/release/catalogizer-desktop &
+        sleep 5 &&
+        echo 'Desktop app ready for WebDriver testing' &&
+        tail -f /dev/null
+      "
+    volumes:
+      - ./catalogizer-desktop:/project/catalogizer-desktop:ro
+      - ./catalog-api:/project/catalog-api:ro
+      - test-results:/test-results
     deploy:
       resources:
         limits:
@@ -60,27 +265,72 @@ services:
     depends_on:
       catalog-api:
         condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "curl -sf http://localhost:4444/status || exit 1"]
+      interval: 15s
+      timeout: 5s
+      retries: 10
+      start_period: 120s
     restart: unless-stopped
+    profiles:
+      - desktop
 
-  playwright:
-    image: docker.io/mcr.microsoft.com/playwright:v1.40.0-jammy
-    container_name: catalogizer-playwright-test
+  # ---------------------------------------------------------------------------
+  # tauri-wizard: Installer wizard testing via WebDriver
+  #   - Runs the Catalogizer Installer Wizard Tauri app.
+  #   - Similar to tauri-desktop but for the installer flow.
+  #   - WebDriver endpoint on port 4445 to avoid conflict.
+  # ---------------------------------------------------------------------------
+  tauri-wizard:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.builder
+      network: host
+    image: catalogizer-tauri-wizard:test
+    container_name: catalogizer-tauri-wizard-test
     network_mode: host
-    command: >
-      npx playwright launch-server
-      --browser chromium
-      --port 9222
     environment:
       - DISPLAY=:99
+      - WEBKIT_DISABLE_COMPOSITING_MODE=1
+      - TEST_API_URL=http://localhost:8080
+      - TAURI_WEBDRIVER_PORT=4445
+      - XDG_RUNTIME_DIR=/tmp/runtime
+      - APPIMAGE_EXTRACT_AND_RUN=1
+    command: >-
+      bash -c "
+        mkdir -p /tmp/runtime &&
+        nohup Xvfb :99 -screen 0 1920x1080x24 &
+        sleep 2 &&
+        echo 'Building installer wizard...' &&
+        cd /project/installer-wizard &&
+        npm install && npm run tauri:build 2>&1 &&
+        echo 'Launching installer wizard for testing...' &&
+        nohup ./src-tauri/target/release/installer-wizard &
+        sleep 5 &&
+        echo 'Installer wizard ready for WebDriver testing' &&
+        tail -f /dev/null
+      "
+    volumes:
+      - ./installer-wizard:/project/installer-wizard:ro
+      - ./catalog-api:/project/catalog-api:ro
+      - test-results:/test-results
     deploy:
       resources:
         limits:
-          cpus: "1"
-          memory: 2g
-        reservations:
           cpus: "0.5"
           memory: 1g
+        reservations:
+          cpus: "0.25"
+          memory: 512m
     depends_on:
-      catalog-web:
-        condition: service_started
+      catalog-api:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "curl -sf http://localhost:4445/status || exit 1"]
+      interval: 15s
+      timeout: 5s
+      retries: 10
+      start_period: 120s
     restart: unless-stopped
+    profiles:
+      - wizard
