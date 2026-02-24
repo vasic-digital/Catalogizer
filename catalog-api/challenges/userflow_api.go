@@ -29,7 +29,7 @@ func userFlowCredentials() userflow.Credentials {
 			"ADMIN_USERNAME", "admin",
 		),
 		Password: env.GetOrDefault(
-			"ADMIN_PASSWORD", "",
+			"ADMIN_PASSWORD", "admin123",
 		),
 	}
 }

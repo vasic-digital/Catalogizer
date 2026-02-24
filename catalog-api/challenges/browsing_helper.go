@@ -22,7 +22,7 @@ func LoadBrowsingConfig() *BrowsingConfig {
 	return &BrowsingConfig{
 		BaseURL:   env.GetOrDefault("BROWSING_API_URL", "http://localhost:8080"),
 		Username:  env.GetOrDefault("ADMIN_USERNAME", "admin"),
-		Password:  env.GetOrDefault("ADMIN_PASSWORD", ""), // ADMIN_PASSWORD must be set via environment variable
+		Password:  env.GetOrDefault("ADMIN_PASSWORD", "admin123"),
 		WebAppURL: env.GetOrDefault("BROWSING_WEB_URL", "http://localhost:3000"),
 		WebAppDir: env.GetOrDefault("CATALOG_WEB_DIR", "../catalog-web"),
 	}
