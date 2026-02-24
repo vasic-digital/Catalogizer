@@ -1,0 +1,86 @@
+# Podman-compose file for user flow test container stack.
+# Usage: podman-compose -f docker-compose.test.yml up -d
+#
+# Total resource budget: 4 CPUs, 8 GB RAM (30-40% of host).
+# All services use network_mode: host for reliable inter-service
+# communication and SSL connectivity.
+
+version: "3.8"
+
+services:
+  catalog-api:
+    build:
+      context: ./catalog-api
+      dockerfile: Dockerfile
+      network: host
+    container_name: catalogizer-api-test
+    network_mode: host
+    environment:
+      - GIN_MODE=release
+      - DB_TYPE=sqlite
+      - JWT_SECRET=test-secret-key-for-userflow
+      - ADMIN_USERNAME=admin
+      - ADMIN_PASSWORD=admin123
+      - GOTOOLCHAIN=local
+      - PORT=8080
+    deploy:
+      resources:
+        limits:
+          cpus: "2"
+          memory: 4g
+        reservations:
+          cpus: "1"
+          memory: 2g
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 15s
+    restart: unless-stopped
+
+  catalog-web:
+    build:
+      context: ./catalog-web
+      dockerfile: Dockerfile
+      network: host
+    container_name: catalogizer-web-test
+    network_mode: host
+    environment:
+      - NODE_ENV=development
+      - VITE_API_URL=http://localhost:8080
+    deploy:
+      resources:
+        limits:
+          cpus: "1"
+          memory: 2g
+        reservations:
+          cpus: "0.5"
+          memory: 1g
+    depends_on:
+      catalog-api:
+        condition: service_healthy
+    restart: unless-stopped
+
+  playwright:
+    image: docker.io/mcr.microsoft.com/playwright:v1.40.0-jammy
+    container_name: catalogizer-playwright-test
+    network_mode: host
+    command: >
+      npx playwright launch-server
+      --browser chromium
+      --port 9222
+    environment:
+      - DISPLAY=:99
+    deploy:
+      resources:
+        limits:
+          cpus: "1"
+          memory: 2g
+        reservations:
+          cpus: "0.5"
+          memory: 1g
+    depends_on:
+      catalog-web:
+        condition: service_started
+    restart: unless-stopped
