@@ -245,3 +245,6 @@ catalog-api/challenges/config/endpoints.json
 tools/
 catalog-api/catalog-api
 releases/
+
+# Worktrees
+.worktrees/
