@@ -147,6 +147,43 @@ podman-compose down                           # stop services
 - `catalog-api/filesystem/interface.go` – Unified filesystem interface
 - `catalog-web/src/App.tsx` – React root component
 - `catalog-web/vite.config.ts` – Vite configuration with path aliases
+
+## Database Dialect Handling
+
+The project supports both SQLite (development) and PostgreSQL (production). Use the database wrapper for dialect-aware SQL:
+
+```go
+// Instead of SQLite-specific datetime functions:
+// WRONG: "WHERE created_at > datetime('now', '-24 hours')"
+// RIGHT: Use parameterized time values calculated in Go
+cutoffTime := time.Now().Add(-24 * time.Hour)
+db.Query("SELECT * FROM table WHERE created_at > ?", cutoffTime)
+
+// For dialect-aware date expressions:
+durationExpr := "(julianday(MAX(t)) - julianday(MIN(t))) * 24 * 60 * 60"
+if db.Dialect().IsPostgres() {
+    durationExpr = "EXTRACT(EPOCH FROM (MAX(t) - MIN(t)))"
+}
+```
+
+Key patterns:
+- Always use `?` placeholders - the database wrapper converts to `$1, $2, ...` for PostgreSQL
+- Use Go's `time` package for date arithmetic instead of SQL datetime functions
+- Check `db.Dialect().IsPostgres()` for database-specific expressions
+- The `database.DB` wrapper handles `INSERT OR IGNORE` → `ON CONFLICT DO NOTHING` conversion
+
+## Test Coverage Guidelines
+
+Current coverage targets:
+- services: 27% (target: 95%)
+- repository: 53% (target: 95%)
+- handlers: ~30% (target: 95%)
+
+Testing patterns:
+- Repository tests use sqlmock for database mocking
+- Service tests use direct struct creation for helper functions
+- Integration tests require actual database connections
+- Use `database.WrapDB(sqlDB, dialect)` for test databases
 - `catalogizer-android/app/src/main/java/com/catalogizer/android/CatalogizerApplication.kt` – Android entry
 
 **Note**: Always run linting and type checking before committing. Ensure zero console warnings/errors.
