@@ -18,11 +18,11 @@ func TestErrorReportingService_FilterSensitiveData(t *testing.T) {
 	}
 
 	tests := []struct {
-		name           string
-		report         *models.ErrorReport
-		checkMessage   string
-		checkStack     string
-		checkContext   map[string]interface{}
+		name         string
+		report       *models.ErrorReport
+		checkMessage string
+		checkStack   string
+		checkContext map[string]interface{}
 	}{
 		{
 			name: "redacts password in message",
@@ -554,6 +554,70 @@ func TestEscapeCSVField(t *testing.T) {
 			assert.Equal(t, tt.expected, result)
 		})
 	}
+}
+
+func TestErrorReportingService_ExportToCSV_MixedReports(t *testing.T) {
+	service := NewErrorReportingService(nil, nil)
+
+	now := time.Now()
+	resolvedAt := now.Add(1 * time.Hour)
+
+	// Put an unknown type first to trigger the "mixed" format
+	reports := []interface{}{
+		"unknown type first",
+		&models.ErrorReport{
+			ID:          1,
+			UserID:      100,
+			Level:       "error",
+			Message:     "Database connection failed",
+			ErrorCode:   "DB001",
+			Component:   "database",
+			StackTrace:  "stack trace here",
+			UserAgent:   "Mozilla/5.0",
+			URL:         "/api/data",
+			Fingerprint: "fp123",
+			Status:      "resolved",
+			ReportedAt:  now,
+			ResolvedAt:  &resolvedAt,
+		},
+		&models.CrashReport{
+			ID:          2,
+			UserID:      200,
+			Signal:      "SIGSEGV",
+			Message:     "Segmentation fault",
+			StackTrace:  "crash stack trace",
+			Fingerprint: "cfp456",
+			Status:      "open",
+			ReportedAt:  now,
+			ResolvedAt:  nil,
+		},
+	}
+
+	csvData, err := service.exportToCSV(reports)
+	assert.NoError(t, err)
+	assert.NotNil(t, csvData)
+
+	csvString := string(csvData)
+	assert.Contains(t, csvString, "Type,") // Combined format header
+	assert.Contains(t, csvString, "error")
+	assert.Contains(t, csvString, "crash")
+	assert.Contains(t, csvString, "Database connection failed")
+	assert.Contains(t, csvString, "Segmentation fault")
+}
+
+func TestErrorReportingService_ExportToCSV_UnknownReportType(t *testing.T) {
+	service := NewErrorReportingService(nil, nil)
+
+	reports := []interface{}{
+		"not a report",
+	}
+
+	csvData, err := service.exportToCSV(reports)
+	assert.NoError(t, err)
+	assert.NotNil(t, csvData)
+
+	csvString := string(csvData)
+	assert.Contains(t, csvString, "Type,") // Combined format header for unknown type
 }
 
 // Helper functions for tests
