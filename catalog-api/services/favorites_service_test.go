@@ -184,3 +184,10 @@ func TestFavoritesService_ExportFavoritesToCSV_Empty(t *testing.T) {
 	assert.NotNil(t, data)
 	assert.Contains(t, string(data), "ID,UserID") // Header only
 }
+
+func TestFavoritesService_ImportFavoritesFromJSON_InvalidJSON(t *testing.T) {
+	service := NewFavoritesService(nil, nil)
+
+	_, err := service.importFavoritesFromJSON(123, []byte(`invalid json`))
+	assert.Error(t, err)
+}
