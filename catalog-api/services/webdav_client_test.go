@@ -142,7 +142,7 @@ func TestWebDAVQuota_Struct(t *testing.T) {
 		{
 			name: "partially used quota",
 			quota: WebDAVQuota{
-				Used:      5368709120, // 5 GB
+				Used:      5368709120,  // 5 GB
 				Available: 10737418240, // 10 GB
 			},
 			wantUsed:  5368709120,
