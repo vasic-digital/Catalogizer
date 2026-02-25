@@ -453,6 +453,37 @@ func TestAnalyticsService_CalculateUserRetention(t *testing.T) {
 			},
 			expected: 15.0, // (10 + 20) / 2
 		},
+		{
+			name: "out of order timestamps for same user",
+			logs: []models.MediaAccessLog{
+				{UserID: 1, AccessTime: time.Date(2025, 1, 15, 0, 0, 0, 0, time.UTC)}, // later date first
+				{UserID: 1, AccessTime: time.Date(2025, 1, 1, 0, 0, 0, 0, time.UTC)},  // earlier date later
+				{UserID: 1, AccessTime: time.Date(2025, 1, 10, 0, 0, 0, 0, time.UTC)}, // middle date
+			},
+			expected: 14.0, // Jan 1 to Jan 15 = 14 days
+		},
+		{
+			name: "multiple users with same retention period",
+			logs: []models.MediaAccessLog{
+				{UserID: 1, AccessTime: time.Date(2025, 1, 1, 0, 0, 0, 0, time.UTC)},
+				{UserID: 1, AccessTime: time.Date(2025, 1, 6, 0, 0, 0, 0, time.UTC)}, // 5 days
+				{UserID: 2, AccessTime: time.Date(2025, 1, 1, 0, 0, 0, 0, time.UTC)},
+				{UserID: 2, AccessTime: time.Date(2025, 1, 6, 0, 0, 0, 0, time.UTC)}, // 5 days
+				{UserID: 3, AccessTime: time.Date(2025, 1, 1, 0, 0, 0, 0, time.UTC)},
+				{UserID: 3, AccessTime: time.Date(2025, 1, 11, 0, 0, 0, 0, time.UTC)}, // 10 days
+			},
+			expected: (5.0 + 5.0 + 10.0) / 3.0, // average of 5, 5, 10 = 6.666...
+		},
+		{
+			name: "user with zero retention (same timestamp)",
+			logs: []models.MediaAccessLog{
+				{UserID: 1, AccessTime: time.Date(2025, 1, 1, 0, 0, 0, 0, time.UTC)},
+				{UserID: 1, AccessTime: time.Date(2025, 1, 1, 0, 0, 0, 0, time.UTC)}, // same time
+				{UserID: 2, AccessTime: time.Date(2025, 1, 1, 0, 0, 0, 0, time.UTC)},
+				{UserID: 2, AccessTime: time.Date(2025, 1, 2, 0, 0, 0, 0, time.UTC)}, // 1 day
+			},
+			expected: (0.0 + 1.0) / 2.0, // average of 0 and 1 = 0.5
+		},
 	}
 
 	for _, tt := range tests {

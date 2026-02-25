@@ -50,6 +50,17 @@ func TestConversionService_ValidateConversionRequest(t *testing.T) {
 			expect: false,
 		},
 		{
+			name: "missing source path",
+			input: &models.ConversionRequest{
+				SourcePath:     "",
+				TargetPath:     "/output/video.mp4",
+				SourceFormat:   "avi",
+				TargetFormat:   "mp4",
+				ConversionType: "video",
+			},
+			expect: false,
+		},
+		{
 			name: "missing target path",
 			input: &models.ConversionRequest{
 				SourcePath:     "/input/video.avi",
@@ -59,6 +70,105 @@ func TestConversionService_ValidateConversionRequest(t *testing.T) {
 				ConversionType: "video",
 			},
 			expect: false,
+		},
+		{
+			name: "missing source format",
+			input: &models.ConversionRequest{
+				SourcePath:     "/input/video.avi",
+				TargetPath:     "/output/video.mp4",
+				SourceFormat:   "",
+				TargetFormat:   "mp4",
+				ConversionType: "video",
+			},
+			expect: false,
+		},
+		{
+			name: "missing target format",
+			input: &models.ConversionRequest{
+				SourcePath:     "/input/video.avi",
+				TargetPath:     "/output/video.mp4",
+				SourceFormat:   "avi",
+				TargetFormat:   "",
+				ConversionType: "video",
+			},
+			expect: false,
+		},
+		{
+			name: "missing conversion type",
+			input: &models.ConversionRequest{
+				SourcePath:     "/input/video.avi",
+				TargetPath:     "/output/video.mp4",
+				SourceFormat:   "avi",
+				TargetFormat:   "mp4",
+				ConversionType: "",
+			},
+			expect: false,
+		},
+		{
+			name: "invalid conversion type",
+			input: &models.ConversionRequest{
+				SourcePath:     "/input/video.avi",
+				TargetPath:     "/output/video.mp4",
+				SourceFormat:   "avi",
+				TargetFormat:   "mp4",
+				ConversionType: "unknown",
+			},
+			expect: false,
+		},
+		{
+			name: "unsupported format",
+			input: &models.ConversionRequest{
+				SourcePath:     "/input/video.xyz",
+				TargetPath:     "/output/video.abc",
+				SourceFormat:   "xyz",
+				TargetFormat:   "abc",
+				ConversionType: "video",
+			},
+			expect: false,
+		},
+		{
+			name: "valid video conversion",
+			input: &models.ConversionRequest{
+				SourcePath:     "/input/video.avi",
+				TargetPath:     "/output/video.mp4",
+				SourceFormat:   "avi",
+				TargetFormat:   "mp4",
+				ConversionType: "video",
+			},
+			expect: true,
+		},
+		{
+			name: "valid audio conversion",
+			input: &models.ConversionRequest{
+				SourcePath:     "/input/audio.wav",
+				TargetPath:     "/output/audio.mp3",
+				SourceFormat:   "wav",
+				TargetFormat:   "mp3",
+				ConversionType: "audio",
+			},
+			expect: true,
+		},
+		{
+			name: "valid image conversion",
+			input: &models.ConversionRequest{
+				SourcePath:     "/input/image.png",
+				TargetPath:     "/output/image.jpg",
+				SourceFormat:   "png",
+				TargetFormat:   "jpg",
+				ConversionType: "image",
+			},
+			expect: true,
+		},
+		{
+			name: "valid document conversion",
+			input: &models.ConversionRequest{
+				SourcePath:     "/input/doc.pdf",
+				TargetPath:     "/output/doc.txt",
+				SourceFormat:   "pdf",
+				TargetFormat:   "txt",
+				ConversionType: "document",
+			},
+			expect: true,
 		},
 	}
 
@@ -149,6 +259,48 @@ func TestConversionService_IsSupportedFormat(t *testing.T) {
 			conversionType: "video",
 			expected:       false,
 		},
+		{
+			name:           "jpg image format",
+			sourceFormat:   "jpg",
+			targetFormat:   "png",
+			conversionType: "image",
+			expected:       true,
+		},
+		{
+			name:           "png image format uppercase",
+			sourceFormat:   "PNG",
+			targetFormat:   "JPG",
+			conversionType: "image",
+			expected:       true,
+		},
+		{
+			name:           "epub document format",
+			sourceFormat:   "epub",
+			targetFormat:   "pdf",
+			conversionType: "document",
+			expected:       true,
+		},
+		{
+			name:           "source supported target unsupported video",
+			sourceFormat:   "mp4",
+			targetFormat:   "xyz",
+			conversionType: "video",
+			expected:       false,
+		},
+		{
+			name:           "source unsupported target supported video",
+			sourceFormat:   "xyz",
+			targetFormat:   "mp4",
+			conversionType: "video",
+			expected:       false,
+		},
+		{
+			name:           "invalid conversion type",
+			sourceFormat:   "mp4",
+			targetFormat:   "mp4",
+			conversionType: "invalid",
+			expected:       false,
+		},
 	}
 
 	for _, tt := range tests {
@@ -165,36 +317,130 @@ func TestConversionService_BuildFFmpegVideoArgs(t *testing.T) {
 	tests := []struct {
 		name     string
 		job      *models.ConversionJob
-		wantArgs bool
+		expected []string
 	}{
 		{
-			name: "basic video conversion",
+			name: "basic video conversion medium quality",
 			job: &models.ConversionJob{
 				SourcePath:   "/input/video.avi",
 				TargetPath:   "/output/video.mp4",
 				TargetFormat: "mp4",
 				Quality:      "medium",
 			},
-			wantArgs: true,
+			expected: []string{"-i", "/input/video.avi", "-y", "-crf", "23", "-preset", "medium", "/output/video.mp4"},
+		},
+		{
+			name: "low quality video",
+			job: &models.ConversionJob{
+				SourcePath:   "/input/video.avi",
+				TargetPath:   "/output/video.mp4",
+				TargetFormat: "mp4",
+				Quality:      "low",
+			},
+			expected: []string{"-i", "/input/video.avi", "-y", "-crf", "28", "-preset", "fast", "/output/video.mp4"},
 		},
 		{
 			name: "high quality video",
 			job: &models.ConversionJob{
-				SourcePath:   "/input/video.mkv",
+				SourcePath:   "/input/video.avi",
 				TargetPath:   "/output/video.mp4",
 				TargetFormat: "mp4",
 				Quality:      "high",
 			},
-			wantArgs: true,
+			expected: []string{"-i", "/input/video.avi", "-y", "-crf", "18", "-preset", "slow", "/output/video.mp4"},
+		},
+		{
+			name: "lossless quality video",
+			job: &models.ConversionJob{
+				SourcePath:   "/input/video.avi",
+				TargetPath:   "/output/video.mp4",
+				TargetFormat: "mp4",
+				Quality:      "lossless",
+			},
+			expected: []string{"-i", "/input/video.avi", "-y", "-crf", "0", "-preset", "veryslow", "/output/video.mp4"},
+		},
+		{
+			name: "default quality when unknown",
+			job: &models.ConversionJob{
+				SourcePath:   "/input/video.avi",
+				TargetPath:   "/output/video.mp4",
+				TargetFormat: "mp4",
+				Quality:      "unknown",
+			},
+			expected: []string{"-i", "/input/video.avi", "-y", "-crf", "23", "-preset", "medium", "/output/video.mp4"},
+		},
+		{
+			name: "with resolution setting",
+			job: &models.ConversionJob{
+				SourcePath:   "/input/video.avi",
+				TargetPath:   "/output/video.mp4",
+				TargetFormat: "mp4",
+				Quality:      "medium",
+				Settings:     ptr(`{"resolution": "1920x1080"}`),
+			},
+			expected: []string{"-i", "/input/video.avi", "-y", "-crf", "23", "-preset", "medium", "-s", "1920x1080", "/output/video.mp4"},
+		},
+		{
+			name: "with framerate setting",
+			job: &models.ConversionJob{
+				SourcePath:   "/input/video.avi",
+				TargetPath:   "/output/video.mp4",
+				TargetFormat: "mp4",
+				Quality:      "medium",
+				Settings:     ptr(`{"framerate": "30"}`),
+			},
+			expected: []string{"-i", "/input/video.avi", "-y", "-crf", "23", "-preset", "medium", "-r", "30", "/output/video.mp4"},
+		},
+		{
+			name: "with bitrate setting",
+			job: &models.ConversionJob{
+				SourcePath:   "/input/video.avi",
+				TargetPath:   "/output/video.mp4",
+				TargetFormat: "mp4",
+				Quality:      "medium",
+				Settings:     ptr(`{"bitrate": "2M"}`),
+			},
+			expected: []string{"-i", "/input/video.avi", "-y", "-crf", "23", "-preset", "medium", "-b:v", "2M", "/output/video.mp4"},
+		},
+		{
+			name: "with all settings",
+			job: &models.ConversionJob{
+				SourcePath:   "/input/video.avi",
+				TargetPath:   "/output/video.mp4",
+				TargetFormat: "mp4",
+				Quality:      "medium",
+				Settings:     ptr(`{"resolution": "1280x720", "framerate": "24", "bitrate": "1M"}`),
+			},
+			expected: []string{"-i", "/input/video.avi", "-y", "-crf", "23", "-preset", "medium", "-s", "1280x720", "-r", "24", "-b:v", "1M", "/output/video.mp4"},
+		},
+		{
+			name: "invalid settings json",
+			job: &models.ConversionJob{
+				SourcePath:   "/input/video.avi",
+				TargetPath:   "/output/video.mp4",
+				TargetFormat: "mp4",
+				Quality:      "medium",
+				Settings:     ptr(`invalid json`),
+			},
+			expected: []string{"-i", "/input/video.avi", "-y", "-crf", "23", "-preset", "medium", "/output/video.mp4"},
+		},
+		{
+			name: "nil settings",
+			job: &models.ConversionJob{
+				SourcePath:   "/input/video.avi",
+				TargetPath:   "/output/video.mp4",
+				TargetFormat: "mp4",
+				Quality:      "medium",
+				Settings:     nil,
+			},
+			expected: []string{"-i", "/input/video.avi", "-y", "-crf", "23", "-preset", "medium", "/output/video.mp4"},
 		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			args := service.buildFFmpegVideoArgs(tt.job)
-			if tt.wantArgs {
-				assert.NotEmpty(t, args)
-			}
+			assert.Equal(t, tt.expected, args)
 		})
 	}
 }
@@ -205,36 +451,119 @@ func TestConversionService_BuildFFmpegAudioArgs(t *testing.T) {
 	tests := []struct {
 		name     string
 		job      *models.ConversionJob
-		wantArgs bool
+		expected []string
 	}{
 		{
-			name: "basic audio conversion",
+			name: "basic audio conversion medium quality",
 			job: &models.ConversionJob{
 				SourcePath:   "/input/audio.wav",
 				TargetPath:   "/output/audio.mp3",
 				TargetFormat: "mp3",
 				Quality:      "medium",
 			},
-			wantArgs: true,
+			expected: []string{"-i", "/input/audio.wav", "-y", "-ab", "192k", "/output/audio.mp3"},
 		},
 		{
-			name: "flac conversion",
+			name: "low quality audio",
+			job: &models.ConversionJob{
+				SourcePath:   "/input/audio.wav",
+				TargetPath:   "/output/audio.mp3",
+				TargetFormat: "mp3",
+				Quality:      "low",
+			},
+			expected: []string{"-i", "/input/audio.wav", "-y", "-ab", "96k", "/output/audio.mp3"},
+		},
+		{
+			name: "high quality audio",
+			job: &models.ConversionJob{
+				SourcePath:   "/input/audio.wav",
+				TargetPath:   "/output/audio.mp3",
+				TargetFormat: "mp3",
+				Quality:      "high",
+			},
+			expected: []string{"-i", "/input/audio.wav", "-y", "-ab", "320k", "/output/audio.mp3"},
+		},
+		{
+			name: "lossless quality audio (flac)",
 			job: &models.ConversionJob{
 				SourcePath:   "/input/audio.wav",
 				TargetPath:   "/output/audio.flac",
 				TargetFormat: "flac",
-				Quality:      "high",
+				Quality:      "lossless",
 			},
-			wantArgs: true,
+			expected: []string{"-i", "/input/audio.wav", "-y", "-c:a", "flac", "/output/audio.flac"},
+		},
+		{
+			name: "default quality when unknown",
+			job: &models.ConversionJob{
+				SourcePath:   "/input/audio.wav",
+				TargetPath:   "/output/audio.mp3",
+				TargetFormat: "mp3",
+				Quality:      "unknown",
+			},
+			expected: []string{"-i", "/input/audio.wav", "-y", "-ab", "192k", "/output/audio.mp3"},
+		},
+		{
+			name: "with sample rate setting",
+			job: &models.ConversionJob{
+				SourcePath:   "/input/audio.wav",
+				TargetPath:   "/output/audio.mp3",
+				TargetFormat: "mp3",
+				Quality:      "medium",
+				Settings:     ptr(`{"sample_rate": "44100"}`),
+			},
+			expected: []string{"-i", "/input/audio.wav", "-y", "-ab", "192k", "-ar", "44100", "/output/audio.mp3"},
+		},
+		{
+			name: "with channels setting",
+			job: &models.ConversionJob{
+				SourcePath:   "/input/audio.wav",
+				TargetPath:   "/output/audio.mp3",
+				TargetFormat: "mp3",
+				Quality:      "medium",
+				Settings:     ptr(`{"channels": "2"}`),
+			},
+			expected: []string{"-i", "/input/audio.wav", "-y", "-ab", "192k", "-ac", "2", "/output/audio.mp3"},
+		},
+		{
+			name: "with both settings",
+			job: &models.ConversionJob{
+				SourcePath:   "/input/audio.wav",
+				TargetPath:   "/output/audio.mp3",
+				TargetFormat: "mp3",
+				Quality:      "medium",
+				Settings:     ptr(`{"sample_rate": "48000", "channels": "1"}`),
+			},
+			expected: []string{"-i", "/input/audio.wav", "-y", "-ab", "192k", "-ar", "48000", "-ac", "1", "/output/audio.mp3"},
+		},
+		{
+			name: "invalid settings json",
+			job: &models.ConversionJob{
+				SourcePath:   "/input/audio.wav",
+				TargetPath:   "/output/audio.mp3",
+				TargetFormat: "mp3",
+				Quality:      "medium",
+				Settings:     ptr(`invalid json`),
+			},
+			expected: []string{"-i", "/input/audio.wav", "-y", "-ab", "192k", "/output/audio.mp3"},
+		},
+		{
+			name: "nil settings",
+			job: &models.ConversionJob{
+				SourcePath:   "/input/audio.wav",
+				TargetPath:   "/output/audio.mp3",
+				TargetFormat: "mp3",
+				Quality:      "medium",
+				Settings:     nil,
+			},
+			expected: []string{"-i", "/input/audio.wav", "-y", "-ab", "192k", "/output/audio.mp3"},
 		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			args := service.buildFFmpegAudioArgs(tt.job)
-			if tt.wantArgs {
-				assert.NotEmpty(t, args)
-			}
+			assert.Equal(t, tt.expected, args)
 		})
 	}
 }
