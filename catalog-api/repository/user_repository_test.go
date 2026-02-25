@@ -39,6 +39,14 @@ func sampleUserRow(now time.Time) *sqlmock.Rows {
 	)
 }
 
+func sampleRoleRow(now time.Time) *sqlmock.Rows {
+	return sqlmock.NewRows([]string{
+		"id", "name", "description", "permissions", "is_system", "created_at", "updated_at",
+	}).AddRow(
+		1, "admin", "Administrator role", `["users.create","users.delete","media.manage"]`, true, now, now,
+	)
+}
+
 // ---------------------------------------------------------------------------
 // GetByID
 // ---------------------------------------------------------------------------
@@ -603,6 +611,231 @@ func TestUserRepository_GetByEmail(t *testing.T) {
 			require.NoError(t, err)
 			require.NotNil(t, user)
 			tt.check(t, user)
+			assert.NoError(t, mock.ExpectationsWereMet())
+		})
+	}
+}
+
+// ---------------------------------------------------------------------------
+// GetByUsernameOrEmail
+// ---------------------------------------------------------------------------
+
+func TestUserRepository_GetByUsernameOrEmail(t *testing.T) {
+	now := time.Now()
+
+	tests := []struct {
+		name            string
+		usernameOrEmail string
+		setup           func(mock sqlmock.Sqlmock)
+		wantErr         bool
+		check           func(t *testing.T, user *models.User)
+	}{
+		{
+			name:            "success with username",
+			usernameOrEmail: "testuser",
+			setup: func(mock sqlmock.Sqlmock) {
+				mock.ExpectQuery("SELECT .+ FROM users WHERE username = \\? OR email = \\?").
+					WithArgs("testuser", "testuser").
+					WillReturnRows(sampleUserRow(now))
+			},
+			check: func(t *testing.T, user *models.User) {
+				assert.Equal(t, "testuser", user.Username)
+				assert.Equal(t, "test@example.com", user.Email)
+			},
+		},
+		{
+			name:            "success with email",
+			usernameOrEmail: "test@example.com",
+			setup: func(mock sqlmock.Sqlmock) {
+				mock.ExpectQuery("SELECT .+ FROM users WHERE username = \\? OR email = \\?").
+					WithArgs("test@example.com", "test@example.com").
+					WillReturnRows(sampleUserRow(now))
+			},
+			check: func(t *testing.T, user *models.User) {
+				assert.Equal(t, "testuser", user.Username)
+				assert.Equal(t, "test@example.com", user.Email)
+			},
+		},
+		{
+			name:            "not found",
+			usernameOrEmail: "nonexistent",
+			setup: func(mock sqlmock.Sqlmock) {
+				mock.ExpectQuery("SELECT .+ FROM users WHERE username = \\? OR email = \\?").
+					WithArgs("nonexistent", "nonexistent").
+					WillReturnError(sql.ErrNoRows)
+			},
+			wantErr: true,
+		},
+		{
+			name:            "database error",
+			usernameOrEmail: "testuser",
+			setup: func(mock sqlmock.Sqlmock) {
+				mock.ExpectQuery("SELECT .+ FROM users WHERE username = \\? OR email = \\?").
+					WithArgs("testuser", "testuser").
+					WillReturnError(sql.ErrConnDone)
+			},
+			wantErr: true,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			repo, mock := newMockUserRepo(t)
+			tt.setup(mock)
+
+			user, err := repo.GetByUsernameOrEmail(tt.usernameOrEmail)
+			if tt.wantErr {
+				assert.Error(t, err)
+				return
+			}
+			require.NoError(t, err)
+			require.NotNil(t, user)
+			tt.check(t, user)
+			assert.NoError(t, mock.ExpectationsWereMet())
+		})
+	}
+}
+
+// ---------------------------------------------------------------------------
+// UpdateLastLogin
+// ---------------------------------------------------------------------------
+
+func TestUserRepository_UpdateLastLogin(t *testing.T) {
+	tests := []struct {
+		name      string
+		userID    int
+		ipAddress string
+		setup     func(mock sqlmock.Sqlmock)
+		wantErr   bool
+	}{
+		{
+			name:      "success",
+			userID:    1,
+			ipAddress: "192.168.1.100",
+			setup: func(mock sqlmock.Sqlmock) {
+				mock.ExpectExec("UPDATE users SET last_login_at = \\?, last_login_ip = \\? WHERE id = \\?").
+					WithArgs(sqlmock.AnyArg(), "192.168.1.100", 1).
+					WillReturnResult(sqlmock.NewResult(0, 1))
+			},
+		},
+		{
+			name:      "database error",
+			userID:    1,
+			ipAddress: "192.168.1.100",
+			setup: func(mock sqlmock.Sqlmock) {
+				mock.ExpectExec("UPDATE users SET last_login_at = \\?, last_login_ip = \\? WHERE id = \\?").
+					WithArgs(sqlmock.AnyArg(), "192.168.1.100", 1).
+					WillReturnError(sql.ErrConnDone)
+			},
+			wantErr: true,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			repo, mock := newMockUserRepo(t)
+			tt.setup(mock)
+
+			err := repo.UpdateLastLogin(tt.userID, tt.ipAddress)
+			if tt.wantErr {
+				assert.Error(t, err)
+			} else {
+				assert.NoError(t, err)
+			}
+			assert.NoError(t, mock.ExpectationsWereMet())
+		})
+	}
+}
+
+// ---------------------------------------------------------------------------
+// GetRole
+// ---------------------------------------------------------------------------
+
+func TestUserRepository_GetRole(t *testing.T) {
+	now := time.Now()
+
+	tests := []struct {
+		name    string
+		roleID  int
+		setup   func(mock sqlmock.Sqlmock)
+		wantErr bool
+		errMsg  string
+		check   func(t *testing.T, role *models.Role)
+	}{
+		{
+			name:   "success",
+			roleID: 1,
+			setup: func(mock sqlmock.Sqlmock) {
+				mock.ExpectQuery("SELECT .+ FROM roles WHERE id = \\?").
+					WithArgs(1).
+					WillReturnRows(sampleRoleRow(now))
+			},
+			check: func(t *testing.T, role *models.Role) {
+				assert.Equal(t, 1, role.ID)
+				assert.Equal(t, "admin", role.Name)
+				assert.Equal(t, "Administrator role", *role.Description)
+				assert.Equal(t, true, role.IsSystem)
+				assert.Len(t, role.Permissions, 3)
+				assert.Contains(t, role.Permissions, "users.create")
+				assert.Contains(t, role.Permissions, "users.delete")
+				assert.Contains(t, role.Permissions, "media.manage")
+			},
+		},
+		{
+			name:   "not found",
+			roleID: 999,
+			setup: func(mock sqlmock.Sqlmock) {
+				mock.ExpectQuery("SELECT .+ FROM roles WHERE id = \\?").
+					WithArgs(999).
+					WillReturnError(sql.ErrNoRows)
+			},
+			wantErr: true,
+			errMsg:  "role not found",
+		},
+		{
+			name:   "database error",
+			roleID: 1,
+			setup: func(mock sqlmock.Sqlmock) {
+				mock.ExpectQuery("SELECT .+ FROM roles WHERE id = \\?").
+					WithArgs(1).
+					WillReturnError(sql.ErrConnDone)
+			},
+			wantErr: true,
+		},
+		{
+			name:   "invalid permissions JSON",
+			roleID: 1,
+			setup: func(mock sqlmock.Sqlmock) {
+				rows := sqlmock.NewRows([]string{
+					"id", "name", "description", "permissions", "is_system", "created_at", "updated_at",
+				}).AddRow(
+					1, "admin", "Administrator role", "invalid json", true, now, now,
+				)
+				mock.ExpectQuery("SELECT .+ FROM roles WHERE id = \\?").
+					WithArgs(1).
+					WillReturnRows(rows)
+			},
+			wantErr: true,
+			errMsg:  "failed to unmarshal permissions",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			repo, mock := newMockUserRepo(t)
+			tt.setup(mock)
+
+			role, err := repo.GetRole(tt.roleID)
+			if tt.wantErr {
+				assert.Error(t, err)
+				if tt.errMsg != "" {
+					assert.Contains(t, err.Error(), tt.errMsg)
+				}
+				return
+			}
+			require.NoError(t, err)
+			require.NotNil(t, role)
+			tt.check(t, role)
 			assert.NoError(t, mock.ExpectationsWereMet())
 		})
 	}

@@ -300,7 +300,7 @@ func TestErrorReportingRepository_GetErrorCountInLastHour(t *testing.T) {
 			userID: 1,
 			setup: func(mock sqlmock.Sqlmock) {
 				mock.ExpectQuery("SELECT COUNT").
-					WithArgs(1).
+					WithArgs(1, sqlmock.AnyArg()).
 					WillReturnRows(sqlmock.NewRows([]string{"count"}).AddRow(3))
 			},
 			wantCount: 3,
@@ -484,4 +484,77 @@ func TestErrorReportingRepository_GetErrorsByFingerprint(t *testing.T) {
 	assert.Len(t, reports, 1)
 	assert.Equal(t, "fp-abc", reports[0].Fingerprint)
 	assert.NoError(t, mock.ExpectationsWereMet())
+}
+
+// ---------------------------------------------------------------------------
+// GetErrorStatistics
+// ---------------------------------------------------------------------------
+
+func TestErrorReportingRepository_GetErrorStatistics(t *testing.T) {
+	userID := 1
+
+	t.Run("success", func(t *testing.T) {
+		repo, mock := newMockErrorRepo(t)
+
+		// Total errors
+		mock.ExpectQuery("SELECT COUNT\\(\\*\\) FROM error_reports WHERE user_id = \\?").
+			WithArgs(userID).
+			WillReturnRows(sqlmock.NewRows([]string{"count"}).AddRow(10))
+
+		// Errors by level
+		levelRows := sqlmock.NewRows([]string{"level", "count"}).
+			AddRow("error", 5).
+			AddRow("warning", 3).
+			AddRow("info", 2)
+		mock.ExpectQuery("SELECT level, COUNT").
+			WithArgs(userID).
+			WillReturnRows(levelRows)
+
+		// Errors by component
+		componentRows := sqlmock.NewRows([]string{"component", "count"}).
+			AddRow("api", 4).
+			AddRow("database", 3)
+		mock.ExpectQuery("SELECT component, COUNT").
+			WithArgs(userID).
+			WillReturnRows(componentRows)
+
+		// Recent errors (with time parameter)
+		mock.ExpectQuery("SELECT COUNT\\(\\*\\) FROM error_reports").
+			WithArgs(userID, sqlmock.AnyArg()).
+			WillReturnRows(sqlmock.NewRows([]string{"count"}).AddRow(2))
+
+		// Resolved errors
+		mock.ExpectQuery("SELECT COUNT\\(\\*\\) FROM error_reports WHERE user_id = \\? AND status").
+			WithArgs(userID, models.ErrorStatusResolved).
+			WillReturnRows(sqlmock.NewRows([]string{"count"}).AddRow(6))
+
+		// Average resolution time
+		mock.ExpectQuery("SELECT AVG").
+			WithArgs(userID).
+			WillReturnRows(sqlmock.NewRows([]string{"avg"}).AddRow(2.5))
+
+		stats, err := repo.GetErrorStatistics(userID)
+		require.NoError(t, err)
+		assert.NotNil(t, stats)
+		assert.Equal(t, 10, stats.TotalErrors)
+		assert.Equal(t, 2, stats.RecentErrors)
+		assert.Equal(t, 6, stats.ResolvedErrors)
+		assert.Equal(t, 2.5, stats.AvgResolutionTime)
+		assert.Equal(t, map[string]int{"error": 5, "warning": 3, "info": 2}, stats.ErrorsByLevel)
+		assert.Equal(t, map[string]int{"api": 4, "database": 3}, stats.ErrorsByComponent)
+		assert.NoError(t, mock.ExpectationsWereMet())
+	})
+
+	t.Run("database error on total errors", func(t *testing.T) {
+		repo, mock := newMockErrorRepo(t)
+
+		mock.ExpectQuery("SELECT COUNT\\(\\*\\) FROM error_reports WHERE user_id").
+			WithArgs(userID).
+			WillReturnError(sql.ErrConnDone)
+
+		stats, err := repo.GetErrorStatistics(userID)
+		assert.Error(t, err)
+		assert.Nil(t, stats)
+		assert.NoError(t, mock.ExpectationsWereMet())
+	})
 }

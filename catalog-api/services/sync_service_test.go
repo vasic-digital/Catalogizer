@@ -154,6 +154,10 @@ func TestSyncService_ShouldRunSchedule(t *testing.T) {
 	service := NewSyncService(nil, nil, nil)
 
 	pastTime := time.Now().Add(-2 * time.Hour)
+	recentTime := time.Now().Add(-30 * time.Minute)
+	dayAgo := time.Now().Add(-25 * time.Hour)
+	weekAgo := time.Now().Add(-8 * 24 * time.Hour)
+	monthAgo := time.Now().AddDate(0, -1, -1)
 
 	tests := []struct {
 		name     string
@@ -173,7 +177,79 @@ func TestSyncService_ShouldRunSchedule(t *testing.T) {
 			name: "hourly schedule not due",
 			schedule: &models.SyncSchedule{
 				Frequency: models.SyncFrequencyHourly,
-				LastRun:   func() *time.Time { t := time.Now(); return &t }(),
+				LastRun:   &recentTime,
+				IsActive:  true,
+			},
+			expected: false,
+		},
+		{
+			name: "hourly schedule never run",
+			schedule: &models.SyncSchedule{
+				Frequency: models.SyncFrequencyHourly,
+				LastRun:   nil,
+				IsActive:  true,
+			},
+			expected: true,
+		},
+		{
+			name: "daily schedule due",
+			schedule: &models.SyncSchedule{
+				Frequency: models.SyncFrequencyDaily,
+				LastRun:   &dayAgo,
+				IsActive:  true,
+			},
+			expected: true,
+		},
+		{
+			name: "daily schedule not due",
+			schedule: &models.SyncSchedule{
+				Frequency: models.SyncFrequencyDaily,
+				LastRun:   &recentTime,
+				IsActive:  true,
+			},
+			expected: false,
+		},
+		{
+			name: "weekly schedule due",
+			schedule: &models.SyncSchedule{
+				Frequency: models.SyncFrequencyWeekly,
+				LastRun:   &weekAgo,
+				IsActive:  true,
+			},
+			expected: true,
+		},
+		{
+			name: "weekly schedule not due",
+			schedule: &models.SyncSchedule{
+				Frequency: models.SyncFrequencyWeekly,
+				LastRun:   &dayAgo,
+				IsActive:  true,
+			},
+			expected: false,
+		},
+		{
+			name: "monthly schedule due",
+			schedule: &models.SyncSchedule{
+				Frequency: models.SyncFrequencyMonthly,
+				LastRun:   &monthAgo,
+				IsActive:  true,
+			},
+			expected: true,
+		},
+		{
+			name: "monthly schedule not due",
+			schedule: &models.SyncSchedule{
+				Frequency: models.SyncFrequencyMonthly,
+				LastRun:   &weekAgo,
+				IsActive:  true,
+			},
+			expected: false,
+		},
+		{
+			name: "unknown frequency returns false",
+			schedule: &models.SyncSchedule{
+				Frequency: "unknown",
+				LastRun:   nil,
 				IsActive:  true,
 			},
 			expected: false,
@@ -209,4 +285,208 @@ func TestSyncService_CalculateChecksum(t *testing.T) {
 	// Non-existent file should return error
 	_, err = service.calculateChecksum("/nonexistent/file.txt")
 	assert.Error(t, err)
+}
+
+func TestSyncService_ValidateSyncEndpoint_AllFields(t *testing.T) {
+	service := NewSyncService(nil, nil, nil)
+
+	tests := []struct {
+		name     string
+		endpoint *models.SyncEndpoint
+		wantErr  bool
+		errMsg   string
+	}{
+		{
+			name: "valid endpoint with all fields",
+			endpoint: &models.SyncEndpoint{
+				Name:          "Test Endpoint",
+				Type:          models.SyncTypeWebDAV,
+				URL:           "https://example.com/api",
+				SyncDirection: models.SyncDirectionUpload,
+				LocalPath:     "/tmp/sync",
+				RemotePath:    "/remote/sync",
+			},
+			wantErr: false,
+		},
+		{
+			name: "valid endpoint with bidirectional sync",
+			endpoint: &models.SyncEndpoint{
+				Name:          "Test",
+				Type:          models.SyncTypeLocal,
+				URL:           "https://example.com",
+				SyncDirection: models.SyncDirectionBidirectional,
+				LocalPath:     "/data",
+			},
+			wantErr: false,
+		},
+		{
+			name: "missing type",
+			endpoint: &models.SyncEndpoint{
+				Name:          "Test",
+				URL:           "https://example.com",
+				SyncDirection: models.SyncDirectionUpload,
+				LocalPath:     "/tmp",
+			},
+			wantErr: true,
+			errMsg:  "type is required",
+		},
+		{
+			name: "missing sync direction",
+			endpoint: &models.SyncEndpoint{
+				Name:      "Test",
+				Type:      models.SyncTypeWebDAV,
+				URL:       "https://example.com",
+				LocalPath: "/tmp",
+			},
+			wantErr: true,
+			errMsg:  "sync direction is required",
+		},
+		{
+			name: "missing local path",
+			endpoint: &models.SyncEndpoint{
+				Name:          "Test",
+				Type:          models.SyncTypeWebDAV,
+				URL:           "https://example.com",
+				SyncDirection: models.SyncDirectionUpload,
+			},
+			wantErr: true,
+			errMsg:  "local path is required",
+		},
+		{
+			name: "invalid sync type",
+			endpoint: &models.SyncEndpoint{
+				Name:          "Test",
+				Type:          "invalid_type",
+				URL:           "https://example.com",
+				SyncDirection: models.SyncDirectionUpload,
+				LocalPath:     "/tmp",
+			},
+			wantErr: true,
+			errMsg:  "invalid sync type",
+		},
+		{
+			name: "invalid sync direction",
+			endpoint: &models.SyncEndpoint{
+				Name:          "Test",
+				Type:          models.SyncTypeWebDAV,
+				URL:           "https://example.com",
+				SyncDirection: "invalid_direction",
+				LocalPath:     "/tmp",
+			},
+			wantErr: true,
+			errMsg:  "invalid sync direction",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			err := service.validateSyncEndpoint(tt.endpoint)
+			if tt.wantErr {
+				assert.Error(t, err)
+				if tt.errMsg != "" {
+					assert.Contains(t, err.Error(), tt.errMsg)
+				}
+			} else {
+				assert.NoError(t, err)
+			}
+		})
+	}
+}
+
+func TestSyncService_ShouldSkipRemoteFile(t *testing.T) {
+	service := NewSyncService(nil, nil, nil)
+
+	tests := []struct {
+		name     string
+		file     *WebDAVFile
+		expected bool
+	}{
+		{
+			name:     "normal file not skipped",
+			file:     &WebDAVFile{Path: "/path/to/file.txt"},
+			expected: false,
+		},
+		{
+			name:     "hidden file skipped",
+			file:     &WebDAVFile{Path: "/path/to/.hidden"},
+			expected: true,
+		},
+		{
+			name:     "temp file skipped",
+			file:     &WebDAVFile{Path: "/path/to/file.tmp"},
+			expected: true,
+		},
+		{
+			name:     "temp file with .temp extension skipped",
+			file:     &WebDAVFile{Path: "/path/to/file.temp"},
+			expected: true,
+		},
+		{
+			name:     "config file not skipped (not hidden basename)",
+			file:     &WebDAVFile{Path: "/path/config"},
+			expected: false,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			result := service.shouldSkipRemoteFile(tt.file, &models.SyncEndpoint{})
+			assert.Equal(t, tt.expected, result)
+		})
+	}
+}
+
+func TestSyncService_GetWebDAVClient(t *testing.T) {
+	service := NewSyncService(nil, nil, nil)
+
+	endpoint := &models.SyncEndpoint{
+		ID:       1,
+		URL:      "https://example.com/webdav",
+		Username: "user",
+		Password: "pass",
+	}
+
+	// First call creates client
+	client1, err := service.getWebDAVClient(endpoint)
+	assert.NoError(t, err)
+	assert.NotNil(t, client1)
+
+	// Second call returns cached client
+	client2, err := service.getWebDAVClient(endpoint)
+	assert.NoError(t, err)
+	assert.Equal(t, client1, client2)
+
+	// Different endpoint creates new client
+	endpoint2 := &models.SyncEndpoint{
+		ID:       2,
+		URL:      "https://other.example.com/webdav",
+		Username: "user2",
+		Password: "pass2",
+	}
+	client3, err := service.getWebDAVClient(endpoint2)
+	assert.NoError(t, err)
+	assert.NotNil(t, client3)
+}
+
+func TestSyncService_ScanLocalFiles(t *testing.T) {
+	service := NewSyncService(nil, nil, nil)
+
+	// Create temp directory structure
+	tmpDir := t.TempDir()
+	require.NoError(t, os.WriteFile(filepath.Join(tmpDir, "file1.txt"), []byte("content1"), 0644))
+	require.NoError(t, os.WriteFile(filepath.Join(tmpDir, "file2.txt"), []byte("content2"), 0644))
+	require.NoError(t, os.Mkdir(filepath.Join(tmpDir, "subdir"), 0755))
+	require.NoError(t, os.WriteFile(filepath.Join(tmpDir, "subdir", "file3.txt"), []byte("content3"), 0644))
+
+	files, err := service.scanLocalFiles(tmpDir)
+	assert.NoError(t, err)
+	assert.Len(t, files, 3)
+}
+
+func TestSyncService_ScanLocalFiles_NonexistentPath(t *testing.T) {
+	service := NewSyncService(nil, nil, nil)
+
+	files, err := service.scanLocalFiles("/nonexistent/path")
+	assert.Error(t, err)
+	assert.Nil(t, files)
 }

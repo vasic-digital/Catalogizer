@@ -1,34 +1,32 @@
-// DISABLED: This test requires PostgreSQL
+// ENABLED: Tests now work with SQLite after fixing datetime() usage
 //
-// The MusicPlayerService, VideoPlayerService, and related services use PostgreSQL-specific SQL syntax:
-// - NOW() function instead of datetime('now')
-// - INTERVAL '24 hours' syntax for time arithmetic
-// - $1, $2 placeholders already converted to ? for SQLite
+// Previously required PostgreSQL due to datetime() SQLite-specific functions.
+// Now uses parameterized time values for database-agnostic queries.
 //
-// To enable these tests, either:
-// 1. Set up a PostgreSQL test database and update SetupTestDB to connect to it
-// 2. Refactor the services to use database-agnostic SQL (via repository pattern or SQL builder)
+// All services use database wrapper that handles dialect conversion:
+// - Placeholder rewriting (? → $1, $2, ...)
+// - Boolean literal rewriting (0/1 → FALSE/TRUE)
+// - INSERT OR IGNORE → ON CONFLICT DO NOTHING
 //
-// The SQL helper functions at the bottom have been converted to SQLite syntax,
-// but the underlying services still use PostgreSQL-specific queries.
+// Date arithmetic is handled in Go, not SQL.
 
 package tests
 
 import (
 	"context"
-	"database/sql"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"go.uber.org/zap/zaptest"
 
+	"catalogizer/database"
 	"catalogizer/internal/services"
 )
 
 func TestMusicPlayerService(t *testing.T) {
 	// Setup test database and dependencies
-	db := SetupTestDB(t)
+	db := SetupWrappedTestDB(t)
 	defer db.Close()
 
 	logger := zaptest.NewLogger(t)
@@ -55,10 +53,10 @@ func TestMusicPlayerService(t *testing.T) {
 		trackID := insertTestTrack(t, db, "Test Artist", "Test Song", "Test Album")
 
 		req := &services.PlayTrackRequest{
-			UserID:     1,
-			TrackID:    trackID,
-			PlayMode:   services.PlayModeTrack,
-			Quality:    services.QualityLossless,
+			UserID:   1,
+			TrackID:  trackID,
+			PlayMode: services.PlayModeTrack,
+			Quality:  services.QualityLossless,
 			DeviceInfo: services.DeviceInfo{
 				DeviceID:   "test-device-1",
 				DeviceName: "Test Device",
@@ -88,10 +86,10 @@ func TestMusicPlayerService(t *testing.T) {
 		_ = insertTestTrackWithAlbum(t, db, "Test Artist", "Song 3", "Test Album", albumID, 3)
 
 		req := &services.PlayAlbumRequest{
-			UserID:     1,
-			AlbumID:    albumID,
-			Shuffle:    false,
-			Quality:    services.QualityLossless,
+			UserID:  1,
+			AlbumID: albumID,
+			Shuffle: false,
+			Quality: services.QualityLossless,
 			DeviceInfo: services.DeviceInfo{
 				DeviceID:   "test-device-1",
 				DeviceName: "Test Device",
@@ -223,7 +221,7 @@ func TestMusicPlayerService(t *testing.T) {
 
 func TestVideoPlayerService(t *testing.T) {
 	// Setup test database and dependencies
-	db := SetupTestDB(t)
+	db := SetupWrappedTestDB(t)
 	defer db.Close()
 
 	logger := zaptest.NewLogger(t)
@@ -248,10 +246,10 @@ func TestVideoPlayerService(t *testing.T) {
 		videoID := insertTestVideo(t, db, "Test Movie", services.VideoTypeMovie)
 
 		req := &services.PlayVideoRequest{
-			UserID:     1,
-			VideoID:    videoID,
-			PlayMode:   services.VideoPlayModeSingle,
-			Quality:    services.Quality1080p,
+			UserID:   1,
+			VideoID:  videoID,
+			PlayMode: services.VideoPlayModeSingle,
+			Quality:  services.Quality1080p,
 			DeviceInfo: services.DeviceInfo{
 				DeviceID:   "test-device-1",
 				DeviceName: "Test Device",
@@ -386,7 +384,7 @@ func TestVideoPlayerService(t *testing.T) {
 
 func TestPlaylistService(t *testing.T) {
 	// Setup test database and dependencies
-	db := SetupTestDB(t)
+	db := SetupWrappedTestDB(t)
 	defer db.Close()
 
 	logger := zaptest.NewLogger(t)
@@ -536,7 +534,7 @@ func TestPlaylistService(t *testing.T) {
 
 func TestPositionService(t *testing.T) {
 	// Setup test database
-	db := SetupTestDB(t)
+	db := SetupWrappedTestDB(t)
 	defer db.Close()
 
 	logger := zaptest.NewLogger(t)
@@ -677,7 +675,7 @@ func TestPositionService(t *testing.T) {
 
 // Helper functions - using SQLite syntax with correct schema column names
 
-func insertTestTrack(t *testing.T, db *sql.DB, artist, title, album string) int64 {
+func insertTestTrack(t *testing.T, db *database.DB, artist, title, album string) int64 {
 	query := `
 		INSERT INTO media_items (path, type, title, artist, album, duration, date_added)
 		VALUES ('/test/path.mp3', 'audio', ?, ?, ?, 180000, datetime('now'))
@@ -691,7 +689,7 @@ func insertTestTrack(t *testing.T, db *sql.DB, artist, title, album string) int6
 	return id
 }
 
-func insertTestTrackWithAlbum(t *testing.T, db *sql.DB, artist, title, album string, albumID int64, trackNumber int) int64 {
+func insertTestTrackWithAlbum(t *testing.T, db *database.DB, artist, title, album string, albumID int64, trackNumber int) int64 {
 	query := `
 		INSERT INTO media_items (path, type, title, artist, album, album_id, track_number, duration, date_added)
 		VALUES ('/test/path.mp3', 'audio', ?, ?, ?, ?, ?, 180000, datetime('now'))
@@ -705,7 +703,7 @@ func insertTestTrackWithAlbum(t *testing.T, db *sql.DB, artist, title, album str
 	return id
 }
 
-func insertTestAlbum(t *testing.T, db *sql.DB, artist, title string) int64 {
+func insertTestAlbum(t *testing.T, db *database.DB, artist, title string) int64 {
 	query := `
 		INSERT INTO albums (title, artist, created_at)
 		VALUES (?, ?, datetime('now'))
@@ -719,7 +717,7 @@ func insertTestAlbum(t *testing.T, db *sql.DB, artist, title string) int64 {
 	return id
 }
 
-func insertTestVideo(t *testing.T, db *sql.DB, title string, videoType services.VideoType) int64 {
+func insertTestVideo(t *testing.T, db *database.DB, title string, videoType services.VideoType) int64 {
 	_ = videoType // Video type not stored in media_items table directly
 	query := `
 		INSERT INTO media_items (path, type, title, duration, date_added)

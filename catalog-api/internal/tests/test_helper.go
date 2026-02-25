@@ -4,6 +4,8 @@ import (
 	"database/sql"
 	"testing"
 
+	"catalogizer/database"
+
 	// Import SQLite driver once for all tests (use go-sqlcipher to avoid linker
 	// conflict with catalogizer/database which also imports go-sqlcipher)
 	_ "github.com/mutecomm/go-sqlcipher"
@@ -446,4 +448,10 @@ func runTestMigrations(db *sql.DB) error {
 	}
 
 	return nil
+}
+
+// SetupWrappedTestDB creates an in-memory SQLite database for testing and wraps it with database.DB
+func SetupWrappedTestDB(t *testing.T) *database.DB {
+	sqlDB := SetupTestDB(t)
+	return database.WrapDB(sqlDB, database.DialectSQLite)
 }

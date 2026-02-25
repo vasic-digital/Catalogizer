@@ -9,6 +9,7 @@ import (
 	"net/http"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/gin-gonic/gin"
 	"go.uber.org/zap"
@@ -616,11 +617,13 @@ func (h *MediaHandler) getQualityDistribution() (map[string]int, error) {
 
 func (h *MediaHandler) getRecentActivity() (map[string]interface{}, error) {
 	activity := make(map[string]interface{})
+	cutoffTime := time.Now().Add(-24 * time.Hour)
 
 	// Recent analyses
 	var recentAnalyses int
 	err := h.mediaDB.GetDB().QueryRow(
-		"SELECT COUNT(*) FROM directory_analysis WHERE last_analyzed > datetime('now', '-24 hours')",
+		"SELECT COUNT(*) FROM directory_analysis WHERE last_analyzed > ?",
+		cutoffTime,
 	).Scan(&recentAnalyses)
 	if err == nil {
 		activity["analyses_24h"] = recentAnalyses
@@ -629,7 +632,8 @@ func (h *MediaHandler) getRecentActivity() (map[string]interface{}, error) {
 	// Recent media items
 	var recentItems int
 	err = h.mediaDB.GetDB().QueryRow(
-		"SELECT COUNT(*) FROM media_items WHERE first_detected > datetime('now', '-24 hours')",
+		"SELECT COUNT(*) FROM media_items WHERE first_detected > ?",
+		cutoffTime,
 	).Scan(&recentItems)
 	if err == nil {
 		activity["new_items_24h"] = recentItems
@@ -638,7 +642,8 @@ func (h *MediaHandler) getRecentActivity() (map[string]interface{}, error) {
 	// Recent metadata updates
 	var recentMetadata int
 	err = h.mediaDB.GetDB().QueryRow(
-		"SELECT COUNT(*) FROM external_metadata WHERE last_fetched > datetime('now', '-24 hours')",
+		"SELECT COUNT(*) FROM external_metadata WHERE last_fetched > ?",
+		cutoffTime,
 	).Scan(&recentMetadata)
 	if err == nil {
 		activity["metadata_updates_24h"] = recentMetadata

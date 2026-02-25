@@ -800,15 +800,16 @@ func (s *CacheService) getCachesByProvider(ctx context.Context, stats *CacheStat
 }
 
 func (s *CacheService) getRecentActivity(ctx context.Context, stats *CacheStats) error {
+	cutoff := time.Now().Add(-1 * time.Hour)
 	query := `
 		SELECT type, cache_key, provider, hit, timestamp
 		FROM cache_activity
-		WHERE timestamp > datetime('now', '-1 hour')
+		WHERE timestamp > ?
 		ORDER BY timestamp DESC
 		LIMIT 100
 	`
 
-	rows, err := s.db.QueryContext(ctx, query)
+	rows, err := s.db.QueryContext(ctx, query, cutoff)
 	if err != nil {
 		return err
 	}
@@ -825,17 +826,18 @@ func (s *CacheService) getRecentActivity(ctx context.Context, stats *CacheStats)
 }
 
 func (s *CacheService) calculateHitRate(ctx context.Context, stats *CacheStats) error {
+	cutoff24h := time.Now().Add(-24 * time.Hour)
 	query := `
 		SELECT
 			COUNT(CASE WHEN hit = true THEN 1 END) as hits,
 			COUNT(CASE WHEN hit = false THEN 1 END) as misses,
 			COUNT(*) as total
 		FROM cache_activity
-		WHERE timestamp > datetime('now', '-24 hours')
+		WHERE timestamp > ?
 	`
 
 	var hits, misses, total int64
-	err := s.db.QueryRowContext(ctx, query).Scan(&hits, &misses, &total)
+	err := s.db.QueryRowContext(ctx, query, cutoff24h).Scan(&hits, &misses, &total)
 	if err != nil {
 		return err
 	}

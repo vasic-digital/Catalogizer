@@ -492,3 +492,115 @@ func TestCrashReportingRepository_GetTopCrashes(t *testing.T) {
 		})
 	}
 }
+
+// ---------------------------------------------------------------------------
+// GetCrashStatistics
+// ---------------------------------------------------------------------------
+
+func TestCrashReportingRepository_GetCrashStatistics(t *testing.T) {
+	userID := 1
+
+	t.Run("success", func(t *testing.T) {
+		repo, mock := newMockCrashRepo(t)
+
+		// Total crashes
+		mock.ExpectQuery("SELECT COUNT\\(\\*\\) FROM crash_reports WHERE user_id = \\?").
+			WithArgs(userID).
+			WillReturnRows(sqlmock.NewRows([]string{"count"}).AddRow(15))
+
+		// Crashes by signal
+		signalRows := sqlmock.NewRows([]string{"signal", "count"}).
+			AddRow("SIGSEGV", 8).
+			AddRow("SIGABRT", 5).
+			AddRow("SIGFPE", 2)
+		mock.ExpectQuery("SELECT signal, COUNT").
+			WithArgs(userID).
+			WillReturnRows(signalRows)
+
+		// Recent crashes (with time parameter)
+		mock.ExpectQuery("SELECT COUNT\\(\\*\\) FROM crash_reports").
+			WithArgs(userID, sqlmock.AnyArg()).
+			WillReturnRows(sqlmock.NewRows([]string{"count"}).AddRow(3))
+
+		// Resolved crashes
+		mock.ExpectQuery("SELECT COUNT\\(\\*\\) FROM crash_reports WHERE user_id = \\? AND status").
+			WithArgs(userID, models.CrashStatusResolved).
+			WillReturnRows(sqlmock.NewRows([]string{"count"}).AddRow(9))
+
+		// Average resolution time
+		mock.ExpectQuery("SELECT AVG").
+			WithArgs(userID).
+			WillReturnRows(sqlmock.NewRows([]string{"avg"}).AddRow(3.5))
+
+		// Crash rate (with time parameter)
+		mock.ExpectQuery("SELECT CAST\\(COUNT\\(\\*\\) AS FLOAT\\)").
+			WithArgs(userID, sqlmock.AnyArg()).
+			WillReturnRows(sqlmock.NewRows([]string{"crash_rate"}).AddRow(0.5))
+
+		stats, err := repo.GetCrashStatistics(userID)
+		require.NoError(t, err)
+		assert.NotNil(t, stats)
+		assert.Equal(t, 15, stats.TotalCrashes)
+		assert.Equal(t, 3, stats.RecentCrashes)
+		assert.Equal(t, 9, stats.ResolvedCrashes)
+		assert.Equal(t, 3.5, stats.AvgResolutionTime)
+		assert.Equal(t, 0.5, stats.CrashRate)
+		assert.Equal(t, map[string]int{"SIGSEGV": 8, "SIGABRT": 5, "SIGFPE": 2}, stats.CrashesBySignal)
+		assert.NoError(t, mock.ExpectationsWereMet())
+	})
+
+	t.Run("database error on total crashes", func(t *testing.T) {
+		repo, mock := newMockCrashRepo(t)
+
+		mock.ExpectQuery("SELECT COUNT\\(\\*\\) FROM crash_reports WHERE user_id").
+			WithArgs(userID).
+			WillReturnError(sql.ErrConnDone)
+
+		stats, err := repo.GetCrashStatistics(userID)
+		assert.Error(t, err)
+		assert.Nil(t, stats)
+		assert.NoError(t, mock.ExpectationsWereMet())
+	})
+}
+
+// ---------------------------------------------------------------------------
+// GetCrashTrends
+// ---------------------------------------------------------------------------
+
+func TestCrashReportingRepository_GetCrashTrends(t *testing.T) {
+	userID := 1
+	days := 7
+
+	t.Run("success", func(t *testing.T) {
+		repo, mock := newMockCrashRepo(t)
+
+		rows := sqlmock.NewRows([]string{"date", "count"}).
+			AddRow("2026-02-20", 5).
+			AddRow("2026-02-21", 3).
+			AddRow("2026-02-22", 7)
+		mock.ExpectQuery("SELECT DATE\\(reported_at\\)").
+			WithArgs(userID, sqlmock.AnyArg()).
+			WillReturnRows(rows)
+
+		trends, err := repo.GetCrashTrends(userID, days)
+		require.NoError(t, err)
+		assert.Len(t, trends, 3)
+		assert.Equal(t, 5, trends[0].Count)
+		assert.Equal(t, 3, trends[1].Count)
+		assert.Equal(t, 7, trends[2].Count)
+		assert.NoError(t, mock.ExpectationsWereMet())
+	})
+
+	t.Run("database error", func(t *testing.T) {
+		repo, mock := newMockCrashRepo(t)
+
+		mock.ExpectQuery("SELECT DATE\\(reported_at\\)").
+			WithArgs(userID, sqlmock.AnyArg()).
+			WillReturnError(sql.ErrConnDone)
+
+		trends, err := repo.GetCrashTrends(userID, days)
+		assert.Error(t, err)
+		assert.Nil(t, trends)
+		assert.NoError(t, mock.ExpectationsWereMet())
+	})
+}

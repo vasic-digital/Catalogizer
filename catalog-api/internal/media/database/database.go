@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"time"
 
 	_ "github.com/mutecomm/go-sqlcipher"
 	"go.uber.org/zap"
@@ -238,7 +239,8 @@ func (mdb *MediaDatabase) GetStats() (map[string]interface{}, error) {
 
 	// Recent activity
 	var recentAnalysis int64
-	if err := mdb.db.QueryRow("SELECT COUNT(*) FROM directory_analysis WHERE last_analyzed > datetime('now', '-24 hours')").Scan(&recentAnalysis); err == nil {
+	cutoffTime := time.Now().Add(-24 * time.Hour)
+	if err := mdb.db.QueryRow("SELECT COUNT(*) FROM directory_analysis WHERE last_analyzed > ?", cutoffTime).Scan(&recentAnalysis); err == nil {
 		stats["recent_analysis_24h"] = recentAnalysis
 	}
 

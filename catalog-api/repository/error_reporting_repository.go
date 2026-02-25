@@ -216,13 +216,14 @@ func (r *ErrorReportingRepository) DeleteErrorReport(id int) error {
 }
 
 func (r *ErrorReportingRepository) GetErrorCountInLastHour(userID int) (int, error) {
+	cutoffTime := time.Now().Add(-1 * time.Hour)
 	query := `
 		SELECT COUNT(*)
 		FROM error_reports
-		WHERE user_id = ? AND reported_at > datetime('now', '-1 hour')`
+		WHERE user_id = ? AND reported_at > ?`
 
 	var count int
-	err := r.db.QueryRow(query, userID).Scan(&count)
+	err := r.db.QueryRow(query, userID, cutoffTime).Scan(&count)
 	if err != nil {
 		return 0, fmt.Errorf("failed to get error count: %w", err)
 	}
@@ -304,10 +305,11 @@ func (r *ErrorReportingRepository) GetErrorStatistics(userID int) (*models.Error
 	}
 
 	// Recent errors (last 24 hours)
+	cutoffTime := time.Now().Add(-24 * time.Hour)
 	err = r.db.QueryRow(`
 		SELECT COUNT(*)
 		FROM error_reports
-		WHERE user_id = ? AND reported_at > datetime('now', '-1 day')`, userID).Scan(&stats.RecentErrors)
+		WHERE user_id = ? AND reported_at > ?`, userID, cutoffTime).Scan(&stats.RecentErrors)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get recent errors: %w", err)
 	}
@@ -322,16 +324,21 @@ func (r *ErrorReportingRepository) GetErrorStatistics(userID int) (*models.Error
 	}
 
 	// Average resolution time (in hours)
-	err = r.db.QueryRow(`
+	avgDurationExpr := "(julianday(resolved_at) - julianday(reported_at)) * 24"
+	if r.db.Dialect().IsPostgres() {
+		avgDurationExpr = "EXTRACT(EPOCH FROM (resolved_at - reported_at)) / 3600"
+	}
+	avgQuery := fmt.Sprintf(`
 		SELECT AVG(
 			CASE
 				WHEN resolved_at IS NOT NULL
-				THEN (julianday(resolved_at) - julianday(reported_at)) * 24
+				THEN %s
 				ELSE NULL
 			END
 		)
 		FROM error_reports
-		WHERE user_id = ? AND resolved_at IS NOT NULL`, userID).Scan(&stats.AvgResolutionTime)
+		WHERE user_id = ? AND resolved_at IS NOT NULL`, avgDurationExpr)
+	err = r.db.QueryRow(avgQuery, userID).Scan(&stats.AvgResolutionTime)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get average resolution time: %w", err)
 	}

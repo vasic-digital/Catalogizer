@@ -190,6 +190,7 @@ func (s *PlaybackPositionService) GetContinueWatching(ctx context.Context, userI
 		zap.Int64("user_id", userID),
 		zap.Int("limit", limit))
 
+	cutoff := time.Now().Add(-30 * 24 * time.Hour)
 	query := `
 		SELECT pp.id, pp.user_id, pp.media_item_id, pp.position, pp.duration,
 			   pp.percent_complete, pp.last_played, pp.is_completed,
@@ -198,12 +199,12 @@ func (s *PlaybackPositionService) GetContinueWatching(ctx context.Context, userI
 		INNER JOIN media_items mi ON pp.media_item_id = mi.id
 		WHERE pp.user_id = ?
 		  AND pp.percent_complete BETWEEN 5 AND 90
-		  AND pp.last_played > datetime('now', '-30 days')
+		  AND pp.last_played > ?
 		ORDER BY pp.last_played DESC
 		LIMIT ?
 	`
 
-	rows, err := s.db.QueryContext(ctx, query, userID, limit)
+	rows, err := s.db.QueryContext(ctx, query, userID, cutoff, limit)
 	if err != nil {
 		s.logger.Error("Failed to get continue watching list", zap.Error(err))
 		return nil, fmt.Errorf("failed to get continue watching: %w", err)
@@ -359,18 +360,18 @@ func (s *PlaybackPositionService) GetPlaybackStats(ctx context.Context, req *Pla
 }
 
 func (s *PlaybackPositionService) recordPlaybackHistory(ctx context.Context, req *UpdatePositionRequest, completed bool) error {
+	startTime := time.Now().Add(-time.Duration(req.Position) * time.Millisecond)
+	percentWatched := float64(req.Position) / float64(req.Duration) * 100
+
 	query := `
 		INSERT INTO playback_history (
 			user_id, media_item_id, start_time, end_time, duration,
 			percent_watched, device_info, playback_quality, was_completed
-		) VALUES (?, ?, datetime('now', ?), CURRENT_TIMESTAMP, ?, ?, ?, ?, ?)
+		) VALUES (?, ?, ?, CURRENT_TIMESTAMP, ?, ?, ?, ?, ?)
 	`
 
-	percentWatched := float64(req.Position) / float64(req.Duration) * 100
-	offsetSeconds := fmt.Sprintf("-%d seconds", req.Position/1000)
-
 	_, err := s.db.ExecContext(ctx, query,
-		req.UserID, req.MediaItemID, offsetSeconds, req.Duration, percentWatched,
+		req.UserID, req.MediaItemID, startTime, req.Duration, percentWatched,
 		req.DeviceInfo, req.PlaybackQuality, completed)
 
 	return err

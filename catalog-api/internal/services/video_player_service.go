@@ -40,7 +40,7 @@ type VideoPlaybackSession struct {
 	Duration         int64           `json:"duration"`
 	BufferedRanges   []BufferedRange `json:"buffered_ranges"`
 	SubtitleTracks   []SubtitleTrack `json:"subtitle_tracks"`
-	ActiveSubtitle   *int64          `json:"active_subtitle"`
+	ActiveSubtitle   *string         `json:"active_subtitle"`
 	AudioTracks      []AudioTrack    `json:"audio_tracks"`
 	ActiveAudioTrack *int64          `json:"active_audio_track"`
 	VideoQuality     VideoQuality    `json:"video_quality"`
@@ -290,7 +290,7 @@ type UpdateVideoPlaybackRequest struct {
 	IsMuted        *bool          `json:"is_muted"`
 	PlaybackSpeed  *float64       `json:"playback_speed"`
 	Quality        *VideoQuality  `json:"quality"`
-	ActiveSubtitle *int64         `json:"active_subtitle"`
+	ActiveSubtitle *string        `json:"active_subtitle"`
 	ActiveAudio    *int64         `json:"active_audio"`
 }
 
@@ -862,6 +862,7 @@ func (s *VideoPlayerService) GetWatchHistory(ctx context.Context, req *WatchHist
 func (s *VideoPlayerService) GetContinueWatching(ctx context.Context, userID int64, limit int) ([]VideoContent, error) {
 	s.logger.Debug("Getting continue watching", zap.Int64("user_id", userID))
 
+	cutoff := time.Now().Add(-30 * 24 * time.Hour)
 	query := `
 		SELECT DISTINCT pp.media_item_id
 		FROM playback_positions pp
@@ -869,12 +870,12 @@ func (s *VideoPlayerService) GetContinueWatching(ctx context.Context, userID int
 		WHERE pp.user_id = ?
 		  AND mi.type = 'video'
 		  AND pp.percent_complete BETWEEN 5 AND 90
-		  AND pp.last_played > datetime('now', '-30 days')
+		  AND pp.last_played > ?
 		ORDER BY pp.last_played DESC
 		LIMIT ?
 	`
 
-	rows, err := s.db.QueryContext(ctx, query, userID, limit)
+	rows, err := s.db.QueryContext(ctx, query, userID, cutoff, limit)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get continue watching: %w", err)
 	}
@@ -1359,14 +1360,12 @@ func (s *VideoPlayerService) loadSubtitles(ctx context.Context, session *VideoPl
 		session.SubtitleTracks = subtitleTracks
 
 		// Set active subtitle to the default track if available
-		for i, track := range subtitleTracks {
+		for _, track := range subtitleTracks {
 			if track.IsDefault && session.ActiveSubtitle == nil {
-				// Use track index as the active subtitle identifier
-				// ActiveSubtitle stores the index into the SubtitleTracks array
-				trackIndex := int64(i)
-				session.ActiveSubtitle = &trackIndex
+				// Use track ID as the active subtitle identifier
+				session.ActiveSubtitle = &track.ID
 				s.logger.Debug("Set default subtitle track",
-					zap.Int64("index", trackIndex),
+					zap.String("id", track.ID),
 					zap.String("language", track.Language))
 				break
 			}
@@ -1581,17 +1580,18 @@ func (s *VideoPlayerService) saveVideoSession(ctx context.Context, session *Vide
 		return fmt.Errorf("failed to marshal session: %w", err)
 	}
 
+	expiresAt := time.Now().Add(24 * time.Hour)
 	query := `
 		INSERT INTO video_playback_sessions (id, user_id, session_data, expires_at, updated_at)
-		VALUES (?, ?, ?, datetime('now', '+24 hours'), CURRENT_TIMESTAMP)
+		VALUES (?, ?, ?, ?, CURRENT_TIMESTAMP)
 		ON CONFLICT (id)
 		DO UPDATE SET
 			session_data = EXCLUDED.session_data,
-			expires_at = datetime('now', '+24 hours'),
+			expires_at = ?,
 			updated_at = CURRENT_TIMESTAMP
 	`
 
-	_, err = s.db.ExecContext(ctx, query, session.ID, session.UserID, string(sessionData))
+	_, err = s.db.ExecContext(ctx, query, session.ID, session.UserID, string(sessionData), expiresAt, expiresAt)
 	return err
 }
 

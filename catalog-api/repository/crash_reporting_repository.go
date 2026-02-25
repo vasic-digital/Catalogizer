@@ -252,10 +252,11 @@ func (r *CrashReportingRepository) GetCrashStatistics(userID int) (*models.Crash
 	}
 
 	// Recent crashes (last 24 hours)
+	cutoffTime := time.Now().Add(-24 * time.Hour)
 	err = r.db.QueryRow(`
 		SELECT COUNT(*)
 		FROM crash_reports
-		WHERE user_id = ? AND reported_at > datetime('now', '-1 day')`, userID).Scan(&stats.RecentCrashes)
+		WHERE user_id = ? AND reported_at > ?`, userID, cutoffTime).Scan(&stats.RecentCrashes)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get recent crashes: %w", err)
 	}
@@ -270,25 +271,31 @@ func (r *CrashReportingRepository) GetCrashStatistics(userID int) (*models.Crash
 	}
 
 	// Average resolution time (in hours)
-	err = r.db.QueryRow(`
+	avgDurationExpr := "(julianday(resolved_at) - julianday(reported_at)) * 24"
+	if r.db.Dialect().IsPostgres() {
+		avgDurationExpr = "EXTRACT(EPOCH FROM (resolved_at - reported_at)) / 3600"
+	}
+	avgQuery := fmt.Sprintf(`
 		SELECT AVG(
 			CASE
 				WHEN resolved_at IS NOT NULL
-				THEN (julianday(resolved_at) - julianday(reported_at)) * 24
+				THEN %s
 				ELSE NULL
 			END
 		)
 		FROM crash_reports
-		WHERE user_id = ? AND resolved_at IS NOT NULL`, userID).Scan(&stats.AvgResolutionTime)
+		WHERE user_id = ? AND resolved_at IS NOT NULL`, avgDurationExpr)
+	err = r.db.QueryRow(avgQuery, userID).Scan(&stats.AvgResolutionTime)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get average resolution time: %w", err)
 	}
 
 	// Crash rate (crashes per day over last 30 days)
+	cutoffTime30Days := time.Now().Add(-30 * 24 * time.Hour)
 	err = r.db.QueryRow(`
 		SELECT CAST(COUNT(*) AS FLOAT) / 30
 		FROM crash_reports
-		WHERE user_id = ? AND reported_at > datetime('now', '-30 days')`, userID).Scan(&stats.CrashRate)
+		WHERE user_id = ? AND reported_at > ?`, userID, cutoffTime30Days).Scan(&stats.CrashRate)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get crash rate: %w", err)
 	}
@@ -388,14 +395,15 @@ func (r *CrashReportingRepository) GetTopCrashes(userID int, limit int, timeRang
 }
 
 func (r *CrashReportingRepository) GetCrashTrends(userID int, days int) ([]*models.CrashTrend, error) {
+	cutoffTime := time.Now().Add(-time.Duration(days) * 24 * time.Hour)
 	query := `
 		SELECT DATE(reported_at) as date, COUNT(*) as count
 		FROM crash_reports
-		WHERE user_id = ? AND reported_at > datetime('now', '-' || ? || ' days')
+		WHERE user_id = ? AND reported_at > ?
 		GROUP BY DATE(reported_at)
 		ORDER BY date ASC`
 
-	rows, err := r.db.Query(query, userID, days)
+	rows, err := r.db.Query(query, userID, cutoffTime)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get crash trends: %w", err)
 	}

@@ -293,14 +293,21 @@ func (m *AuthMiddleware) RateLimitByUser(requests int, window string) gin.Handle
 	rateLimiters := &sync.Map{}
 
 	return func(c *gin.Context) {
+		// Get client identifier (IP address for unauthenticated, user ID for authenticated)
+		var key string
 		user, exists := GetCurrentUser(c)
-		if !exists {
-			c.Next()
-			return
+		if exists {
+			key = fmt.Sprintf("ratelimit:user:%d", user.ID)
+		} else {
+			// Use IP address for unauthenticated requests
+			clientIP := c.ClientIP()
+			if clientIP == "" {
+				clientIP = "unknown"
+			}
+			key = fmt.Sprintf("ratelimit:ip:%s", clientIP)
 		}
 
-		// Get or create rate limiter for this user
-		key := fmt.Sprintf("ratelimit:%d", user.ID)
+		// Get or create rate limiter for this client
 		val, _ := rateLimiters.LoadOrStore(key, &rateLimitEntry{
 			timestamps: make([]time.Time, 0, requests),
 		})
@@ -323,13 +330,21 @@ func (m *AuthMiddleware) RateLimitByUser(requests int, window string) gin.Handle
 
 		// Check if rate limit exceeded
 		if len(entry.timestamps) >= requests {
-			m.logger.Warn("Rate limit exceeded",
-				zap.String("username", user.Username),
-				zap.Int64("user_id", user.ID),
+			logFields := []zap.Field{
+				zap.String("key", key),
 				zap.Int("requests", len(entry.timestamps)),
 				zap.Int("limit", requests),
 				zap.String("window", window),
-			)
+			}
+
+			if exists {
+				logFields = append(logFields,
+					zap.String("username", user.Username),
+					zap.Int64("user_id", user.ID),
+				)
+			}
+
+			m.logger.Warn("Rate limit exceeded", logFields...)
 			c.JSON(http.StatusTooManyRequests, gin.H{
 				"error":       "Rate limit exceeded. Please try again later.",
 				"retry_after": windowDuration.Seconds(),

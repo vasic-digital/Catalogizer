@@ -2,6 +2,9 @@ package services
 
 import (
 	"testing"
+	"time"
+
+	"catalogizer/models"
 
 	"github.com/stretchr/testify/assert"
 )
@@ -113,4 +116,71 @@ func TestFavoritesService_ImportFavorites_EmptyData(t *testing.T) {
 			}
 		})
 	}
+}
+
+// ---------------------------------------------------------------------------
+// ExportFavorites tests
+// ---------------------------------------------------------------------------
+
+func TestFavoritesService_ExportFavoritesToJSON(t *testing.T) {
+	service := NewFavoritesService(nil, nil)
+
+	favorites := []models.Favorite{
+		{
+			ID:         1,
+			UserID:     1,
+			EntityType: "movie",
+			EntityID:   100,
+			CreatedAt:  time.Now(),
+		},
+	}
+
+	data, err := service.exportFavoritesToJSON(favorites)
+	assert.NoError(t, err)
+	assert.NotNil(t, data)
+	assert.Contains(t, string(data), `"version"`)
+	assert.Contains(t, string(data), `"count": 1`)
+}
+
+func TestFavoritesService_ExportFavoritesToJSON_Empty(t *testing.T) {
+	service := NewFavoritesService(nil, nil)
+
+	data, err := service.exportFavoritesToJSON([]models.Favorite{})
+	assert.NoError(t, err)
+	assert.NotNil(t, data)
+	assert.Contains(t, string(data), `"count": 0`)
+}
+
+func TestFavoritesService_ExportFavoritesToCSV(t *testing.T) {
+	service := NewFavoritesService(nil, nil)
+
+	category := "movies"
+	notes := "Great movie"
+	favorites := []models.Favorite{
+		{
+			ID:         1,
+			UserID:     1,
+			EntityType: "movie",
+			EntityID:   100,
+			Category:   &category,
+			Notes:      &notes,
+			IsPublic:   true,
+			CreatedAt:  time.Now(),
+		},
+	}
+
+	data, err := service.exportFavoritesToCSV(favorites)
+	assert.NoError(t, err)
+	assert.NotNil(t, data)
+	assert.Contains(t, string(data), "ID,UserID")
+	assert.Contains(t, string(data), "movie")
+}
+
+func TestFavoritesService_ExportFavoritesToCSV_Empty(t *testing.T) {
+	service := NewFavoritesService(nil, nil)
+
+	data, err := service.exportFavoritesToCSV([]models.Favorite{})
+	assert.NoError(t, err)
+	assert.NotNil(t, data)
+	assert.Contains(t, string(data), "ID,UserID") // Header only
 }

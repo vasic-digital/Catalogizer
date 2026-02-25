@@ -547,3 +547,27 @@ func TestAnalyticsRepository_GetSessionData(t *testing.T) {
 		})
 	}
 }
+
+func TestAnalyticsRepository_GetSessionData_PostgreSQLDialect(t *testing.T) {
+	startDate := time.Now().Add(-24 * time.Hour)
+	endDate := time.Now()
+	sessionStart := time.Now().Add(-2 * time.Hour)
+	sessionEnd := time.Now().Add(-1 * time.Hour)
+
+	sqlDB, mock, err := sqlmock.New()
+	require.NoError(t, err)
+	db := database.WrapDB(sqlDB, database.DialectPostgres)
+	repo := NewAnalyticsRepository(db)
+
+	rows := sqlmock.NewRows([]string{"user_id", "session_start", "session_end", "duration_seconds"}).
+		AddRow(1, sessionStart, sessionEnd, 3600.0)
+	mock.ExpectQuery("SELECT user_id").
+		WithArgs(startDate, endDate).
+		WillReturnRows(rows)
+
+	results, err := repo.GetSessionData(startDate, endDate)
+	require.NoError(t, err)
+	assert.Len(t, results, 1)
+	assert.Equal(t, 1, results[0].UserID)
+	assert.NoError(t, mock.ExpectationsWereMet())
+}

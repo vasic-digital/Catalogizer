@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"catalogizer/models"
+	"catalogizer/repository"
 
 	"github.com/stretchr/testify/assert"
 )
@@ -495,8 +496,8 @@ func TestAnalyticsService_AnalyzeDeviceUsage(t *testing.T) {
 				{DeviceInfo: &models.DeviceInfo{Platform: &ios, DeviceModel: &iphone}},
 			},
 			expected: map[string]int{
-				"Android Pixel 7":  2,
-				"iOS iPhone 15":    1,
+				"Android Pixel 7": 2,
+				"iOS iPhone 15":   1,
 			},
 		},
 	}
@@ -894,4 +895,18 @@ func TestAnalyticsService_GetTopLocations(t *testing.T) {
 			assert.Len(t, result, tt.expectedCount)
 		})
 	}
+}
+
+// ---------------------------------------------------------------------------
+// Constructor tests
+// ---------------------------------------------------------------------------
+
+func TestNewAnalyticsService(t *testing.T) {
+	svc := NewAnalyticsService(nil)
+	assert.NotNil(t, svc)
+}
+
+func TestNewAnalyticsService_WithRepository(t *testing.T) {
+	svc := NewAnalyticsService(&repository.AnalyticsRepository{})
+	assert.NotNil(t, svc)
 }

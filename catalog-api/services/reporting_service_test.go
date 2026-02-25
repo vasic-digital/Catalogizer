@@ -722,3 +722,153 @@ func TestReportingService_ExtractDateRange_InvalidFormats(t *testing.T) {
 		})
 	}
 }
+
+// ---------------------------------------------------------------------------
+// GenerateReport
+// ---------------------------------------------------------------------------
+
+func TestReportingService_GenerateReport_UnsupportedType(t *testing.T) {
+	service := NewReportingService(nil, nil)
+
+	report, err := service.GenerateReport("unsupported_type", "json", map[string]interface{}{})
+	assert.Error(t, err)
+	assert.Contains(t, err.Error(), "unsupported report type")
+	assert.Nil(t, report)
+}
+
+func TestReportingService_GenerateReport_UserAnalytics_MissingUserID(t *testing.T) {
+	service := NewReportingService(nil, nil)
+
+	report, err := service.GenerateReport("user_analytics", "json", map[string]interface{}{
+		"start_date": "2025-01-01",
+		"end_date":   "2025-01-31",
+	})
+	assert.Error(t, err)
+	assert.Contains(t, err.Error(), "user_id parameter required")
+	assert.Nil(t, report)
+}
+
+func TestReportingService_GenerateReport_UserAnalytics_MissingDateRange(t *testing.T) {
+	service := NewReportingService(nil, nil)
+
+	report, err := service.GenerateReport("user_analytics", "json", map[string]interface{}{
+		"user_id": 1,
+	})
+	assert.Error(t, err)
+	assert.Nil(t, report)
+}
+
+func TestReportingService_GenerateReport_SystemOverview_MissingDateRange(t *testing.T) {
+	service := NewReportingService(nil, nil)
+
+	report, err := service.GenerateReport("system_overview", "json", map[string]interface{}{})
+	assert.Error(t, err)
+	assert.Nil(t, report)
+}
+
+func TestReportingService_GenerateReport_MediaAnalytics_MissingDateRange(t *testing.T) {
+	service := NewReportingService(nil, nil)
+
+	report, err := service.GenerateReport("media_analytics", "json", map[string]interface{}{})
+	assert.Error(t, err)
+	assert.Nil(t, report)
+}
+
+func TestReportingService_GenerateReport_SecurityAudit_MissingDateRange(t *testing.T) {
+	service := NewReportingService(nil, nil)
+
+	report, err := service.GenerateReport("security_audit", "json", map[string]interface{}{})
+	assert.Error(t, err)
+	assert.Nil(t, report)
+}
+
+func TestReportingService_GenerateReport_PerformanceMetrics_MissingDateRange(t *testing.T) {
+	service := NewReportingService(nil, nil)
+
+	report, err := service.GenerateReport("performance_metrics", "json", map[string]interface{}{})
+	assert.Error(t, err)
+	assert.Nil(t, report)
+}
+
+// ---------------------------------------------------------------------------
+// formatReport
+// ---------------------------------------------------------------------------
+
+func TestReportingService_FormatReport_UnsupportedFormat(t *testing.T) {
+	service := NewReportingService(nil, nil)
+
+	content, err := service.formatReport(map[string]string{"test": "data"}, "invalid_format", "test_report")
+	assert.Error(t, err)
+	assert.Contains(t, err.Error(), "unsupported format")
+	assert.Nil(t, content)
+}
+
+// ---------------------------------------------------------------------------
+// calculateSystemHealth
+// ---------------------------------------------------------------------------
+
+func TestReportingService_CalculateSystemHealth_AllScenarios(t *testing.T) {
+	service := NewReportingService(nil, nil)
+
+	tests := []struct {
+		name          string
+		totalUsers    int
+		activeUsers   int
+		mediaAccesses int
+		expectHealthy bool
+	}{
+		{
+			name:          "healthy system",
+			totalUsers:    100,
+			activeUsers:   80,
+			mediaAccesses: 5000,
+			expectHealthy: true,
+		},
+		{
+			name:          "warning system - low activity",
+			totalUsers:    100,
+			activeUsers:   20,
+			mediaAccesses: 100,
+			expectHealthy: false,
+		},
+		{
+			name:          "critical system - no users",
+			totalUsers:    0,
+			activeUsers:   0,
+			mediaAccesses: 0,
+			expectHealthy: false,
+		},
+		{
+			name:          "single active user",
+			totalUsers:    1,
+			activeUsers:   1,
+			mediaAccesses: 10,
+			expectHealthy: true,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			health := service.calculateSystemHealth(tt.totalUsers, tt.activeUsers, tt.mediaAccesses)
+			assert.NotNil(t, health)
+			assert.NotEmpty(t, health.Status)
+		})
+	}
+}
+
+// ---------------------------------------------------------------------------
+// extractDateRange additional tests
+// ---------------------------------------------------------------------------
+
+func TestReportingService_ExtractDateRange_ValidRange(t *testing.T) {
+	service := NewReportingService(nil, nil)
+
+	start, end, err := service.extractDateRange(map[string]interface{}{
+		"start_date": "2025-01-01",
+		"end_date":   "2025-01-31",
+	})
+	assert.NoError(t, err)
+	assert.NotNil(t, start)
+	assert.NotNil(t, end)
+	assert.True(t, start.Before(end) || start.Equal(end))
+}

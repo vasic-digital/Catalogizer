@@ -684,15 +684,15 @@ func TestConfigurationService_ValidateWizardStep(t *testing.T) {
 		wantErr   bool
 	}{
 		{
-			name:      "non-existent step",
-			stepID:    "nonexistent",
-			data:      map[string]interface{}{},
-			wantErr:   true,
+			name:    "non-existent step",
+			stepID:  "nonexistent",
+			data:    map[string]interface{}{},
+			wantErr: true,
 		},
 		{
-			name:   "welcome step - always valid (no fields)",
-			stepID: "welcome",
-			data:   map[string]interface{}{},
+			name:      "welcome step - always valid (no fields)",
+			stepID:    "welcome",
+			data:      map[string]interface{}{},
 			wantValid: true,
 		},
 		{
@@ -726,4 +726,67 @@ func TestConfigurationService_ValidateWizardStep(t *testing.T) {
 			assert.Equal(t, tt.wantValid, validation.Valid)
 		})
 	}
+}
+
+// ---------------------------------------------------------------------------
+// Constructor tests
+// ---------------------------------------------------------------------------
+
+// Note: NewConfigurationService requires a valid repository to load configuration.
+// Testing with nil repository would cause a panic. This test verifies the method exists.
+
+func TestConfigurationService_GetDatabaseFields(t *testing.T) {
+	svc := &ConfigurationService{}
+
+	fields := svc.getDatabaseFields()
+	assert.NotNil(t, fields)
+	assert.NotEmpty(t, fields)
+}
+
+// ---------------------------------------------------------------------------
+// GetStorageFields tests
+// ---------------------------------------------------------------------------
+
+func TestConfigurationService_GetStorageFields(t *testing.T) {
+	svc := &ConfigurationService{}
+
+	fields := svc.getStorageFields()
+	assert.NotNil(t, fields)
+	assert.NotEmpty(t, fields)
+}
+
+// ---------------------------------------------------------------------------
+// GetNetworkFields tests
+// ---------------------------------------------------------------------------
+
+func TestConfigurationService_GetNetworkFields(t *testing.T) {
+	svc := &ConfigurationService{}
+
+	fields := svc.getNetworkFields()
+	assert.NotNil(t, fields)
+	assert.NotEmpty(t, fields)
+}
+
+// ---------------------------------------------------------------------------
+// GetAuthenticationFields tests
+// ---------------------------------------------------------------------------
+
+func TestConfigurationService_GetAuthenticationFields(t *testing.T) {
+	svc := &ConfigurationService{}
+
+	fields := svc.getAuthenticationFields()
+	assert.NotNil(t, fields)
+	assert.NotEmpty(t, fields)
+}
+
+// ---------------------------------------------------------------------------
+// GetFeatureFields tests
+// ---------------------------------------------------------------------------
+
+func TestConfigurationService_GetFeatureFields(t *testing.T) {
+	svc := &ConfigurationService{}
+
+	fields := svc.getFeatureFields()
+	assert.NotNil(t, fields)
+	assert.NotEmpty(t, fields)
 }

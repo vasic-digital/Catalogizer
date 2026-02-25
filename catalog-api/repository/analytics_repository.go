@@ -327,16 +327,21 @@ func (r *AnalyticsRepository) GetUserGrowthData(startDate, endDate time.Time) ([
 }
 
 func (r *AnalyticsRepository) GetSessionData(startDate, endDate time.Time) ([]models.SessionData, error) {
-	query := `
+	durationExpr := "(julianday(MAX(last_activity_at)) - julianday(MIN(last_activity_at))) * 24 * 60 * 60"
+	if r.db.Dialect().IsPostgres() {
+		durationExpr = "EXTRACT(EPOCH FROM (MAX(last_activity_at) - MIN(last_activity_at)))"
+	}
+
+	query := fmt.Sprintf(`
 		SELECT user_id,
 			   MIN(last_activity_at) as session_start,
 			   MAX(last_activity_at) as session_end,
-			   (julianday(MAX(last_activity_at)) - julianday(MIN(last_activity_at))) * 24 * 60 * 60 as duration_seconds
+			   %s as duration_seconds
 		FROM user_sessions
 		WHERE created_at BETWEEN ? AND ? AND is_active = 1
 		GROUP BY user_id, DATE(created_at)
 		ORDER BY session_start ASC
-	`
+	`, durationExpr)
 
 	rows, err := r.db.Query(query, startDate, endDate)
 	if err != nil {

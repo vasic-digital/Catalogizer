@@ -520,8 +520,8 @@ func (r *LogManagementRepository) CleanupOldCollections(olderThan time.Time) err
 }
 
 func (r *LogManagementRepository) CleanupExpiredShares() error {
-	query := "UPDATE log_shares SET is_active = 0 WHERE expires_at < datetime('now') AND is_active = 1"
-	_, err := r.db.Exec(query)
+	query := "UPDATE log_shares SET is_active = 0 WHERE expires_at < ? AND is_active = 1"
+	_, err := r.db.Exec(query, time.Now())
 	if err != nil {
 		return fmt.Errorf("failed to cleanup expired shares: %w", err)
 	}
@@ -550,7 +550,7 @@ func (r *LogManagementRepository) GetLogStatistics(userID int) (*models.LogStati
 	err = r.db.QueryRow(`
 		SELECT COUNT(*)
 		FROM log_shares
-		WHERE user_id = ? AND is_active = 1 AND expires_at > datetime('now')`, userID).Scan(&stats.ActiveShares)
+		WHERE user_id = ? AND is_active = 1 AND expires_at > ?`, userID, time.Now()).Scan(&stats.ActiveShares)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get active shares: %w", err)
 	}
@@ -579,10 +579,11 @@ func (r *LogManagementRepository) GetLogStatistics(userID int) (*models.LogStati
 	}
 
 	// Recent collections (last 7 days)
+	cutoffTime := time.Now().Add(-7 * 24 * time.Hour)
 	err = r.db.QueryRow(`
 		SELECT COUNT(*)
 		FROM log_collections
-		WHERE user_id = ? AND created_at > datetime('now', '-7 days')`, userID).Scan(&stats.RecentCollections)
+		WHERE user_id = ? AND created_at > ?`, userID, cutoffTime).Scan(&stats.RecentCollections)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get recent collections: %w", err)
 	}

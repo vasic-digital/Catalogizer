@@ -979,7 +979,7 @@ func (s *MusicPlayerService) getArtistAllTracks(ctx context.Context, artistID in
 	query := `
 		SELECT id, title, artist, album, album_artist, genre, year, track_number,
 			   disc_number, duration, file_path, file_size, format, bitrate,
-			   sample_rate, channels, bmp, key, rating, play_count, last_played,
+			   sample_rate, channels, bpm, key, rating, play_count, last_played,
 			   date_added
 		FROM media_items
 		WHERE artist_id = ? AND type = 'audio'
@@ -1106,7 +1106,7 @@ func (s *MusicPlayerService) loadFolderQueue(ctx context.Context, session *Music
 	query := `
 		SELECT id, title, artist, album, album_artist, genre, year, track_number,
 			   disc_number, duration, file_path, file_size, format, bitrate,
-			   sample_rate, channels, bmp, key, rating, play_count, last_played,
+			   sample_rate, channels, bpm, key, rating, play_count, last_played,
 			   date_added
 		FROM media_items
 		WHERE file_path LIKE ? AND type = 'audio'
@@ -1219,17 +1219,18 @@ func (s *MusicPlayerService) saveSession(ctx context.Context, session *MusicPlay
 		return fmt.Errorf("failed to marshal session: %w", err)
 	}
 
+	expiresAt := time.Now().Add(24 * time.Hour)
 	query := `
 		INSERT INTO music_playback_sessions (id, user_id, session_data, expires_at, updated_at)
-		VALUES (?, ?, ?, datetime('now', '+24 hours'), CURRENT_TIMESTAMP)
+		VALUES (?, ?, ?, ?, CURRENT_TIMESTAMP)
 		ON CONFLICT (id)
 		DO UPDATE SET
 			session_data = EXCLUDED.session_data,
-			expires_at = datetime('now', '+24 hours'),
+			expires_at = ?,
 			updated_at = CURRENT_TIMESTAMP
 	`
 
-	_, err = s.db.ExecContext(ctx, query, session.ID, session.UserID, string(sessionData))
+	_, err = s.db.ExecContext(ctx, query, session.ID, session.UserID, string(sessionData), expiresAt, expiresAt)
 	return err
 }
 
@@ -1345,7 +1346,7 @@ func (s *MusicPlayerService) getRecentlyAdded(ctx context.Context, userID int64,
 	query := `
 		SELECT id, title, artist, album, album_artist, genre, year, track_number,
 			   disc_number, duration, file_path, file_size, format, bitrate,
-			   sample_rate, channels, bmp, key, rating, play_count, last_played,
+			   sample_rate, channels, bpm, key, rating, play_count, last_played,
 			   date_added
 		FROM media_items
 		WHERE type = 'audio' AND user_id = ?
@@ -1372,7 +1373,7 @@ func (s *MusicPlayerService) getMostPlayed(ctx context.Context, userID int64, st
 	query := `
 		SELECT id, title, artist, album, album_artist, genre, year, track_number,
 			   disc_number, duration, file_path, file_size, format, bitrate,
-			   sample_rate, channels, bmp, key, rating, play_count, last_played,
+			   sample_rate, channels, bpm, key, rating, play_count, last_played,
 			   date_added
 		FROM media_items
 		WHERE type = 'audio' AND user_id = ? AND play_count > 0

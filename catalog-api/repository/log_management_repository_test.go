@@ -456,6 +456,7 @@ func TestLogManagementRepository_CleanupExpiredShares(t *testing.T) {
 			name: "success",
 			setup: func(mock sqlmock.Sqlmock) {
 				mock.ExpectExec("UPDATE log_shares SET is_active = 0").
+					WithArgs(sqlmock.AnyArg()).
 					WillReturnResult(sqlmock.NewResult(0, 2))
 			},
 		},
@@ -463,6 +464,7 @@ func TestLogManagementRepository_CleanupExpiredShares(t *testing.T) {
 			name: "database error",
 			setup: func(mock sqlmock.Sqlmock) {
 				mock.ExpectExec("UPDATE log_shares SET is_active = 0").
+					WithArgs(sqlmock.AnyArg()).
 					WillReturnError(sql.ErrConnDone)
 			},
 			wantErr: true,
@@ -483,4 +485,67 @@ func TestLogManagementRepository_CleanupExpiredShares(t *testing.T) {
 			assert.NoError(t, mock.ExpectationsWereMet())
 		})
 	}
+}
+
+// ---------------------------------------------------------------------------
+// GetLogStatistics
+// ---------------------------------------------------------------------------
+
+func TestLogManagementRepository_GetLogStatistics(t *testing.T) {
+	userID := 1
+
+	t.Run("success", func(t *testing.T) {
+		repo, mock := newMockLogMgmtRepo(t)
+
+		// Total collections
+		mock.ExpectQuery("SELECT COUNT\\(\\*\\) FROM log_collections WHERE user_id = \\?").
+			WithArgs(userID).
+			WillReturnRows(sqlmock.NewRows([]string{"count"}).AddRow(5))
+
+		// Total entries
+		mock.ExpectQuery("SELECT COALESCE").
+			WithArgs(userID).
+			WillReturnRows(sqlmock.NewRows([]string{"sum"}).AddRow(150))
+
+		// Active shares (with time parameter)
+		mock.ExpectQuery("SELECT COUNT\\(\\*\\) FROM log_shares").
+			WithArgs(userID, sqlmock.AnyArg()).
+			WillReturnRows(sqlmock.NewRows([]string{"count"}).AddRow(3))
+
+		// Collections by status
+		statusRows := sqlmock.NewRows([]string{"status", "count"}).
+			AddRow("active", 3).
+			AddRow("archived", 2)
+		mock.ExpectQuery("SELECT status, COUNT").
+			WithArgs(userID).
+			WillReturnRows(statusRows)
+
+		// Recent collections (with time parameter)
+		mock.ExpectQuery("SELECT COUNT\\(\\*\\) FROM log_collections").
+			WithArgs(userID, sqlmock.AnyArg()).
+			WillReturnRows(sqlmock.NewRows([]string{"count"}).AddRow(1))
+
+		stats, err := repo.GetLogStatistics(userID)
+		require.NoError(t, err)
+		assert.NotNil(t, stats)
+		assert.Equal(t, 5, stats.TotalCollections)
+		assert.Equal(t, 150, stats.TotalEntries)
+		assert.Equal(t, 3, stats.ActiveShares)
+		assert.Equal(t, 1, stats.RecentCollections)
+		assert.Equal(t, map[string]int{"active": 3, "archived": 2}, stats.CollectionsByStatus)
+		assert.NoError(t, mock.ExpectationsWereMet())
+	})
+
+	t.Run("database error on total collections", func(t *testing.T) {
+		repo, mock := newMockLogMgmtRepo(t)
+
+		mock.ExpectQuery("SELECT COUNT\\(\\*\\) FROM log_collections").
+			WithArgs(userID).
+			WillReturnError(sql.ErrConnDone)
+
+		stats, err := repo.GetLogStatistics(userID)
+		assert.Error(t, err)
+		assert.Nil(t, stats)
+		assert.NoError(t, mock.ExpectationsWereMet())
+	})
 }

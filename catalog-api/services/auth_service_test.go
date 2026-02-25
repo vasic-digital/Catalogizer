@@ -410,9 +410,19 @@ func TestAuthService_GenerateSalt(t *testing.T) {
 
 	salt, err := svc.generateSalt()
 	require.NoError(t, err)
-	assert.Len(t, salt, 32) // 16 bytes = 32 hex chars
+	assert.Len(t, salt, 32) // 16 bytes = 32 hex char
 
 	salt2, err := svc.generateSalt()
 	require.NoError(t, err)
 	assert.NotEqual(t, salt, salt2)
+}
+
+func TestNewAuthService(t *testing.T) {
+	svc := NewAuthService(nil, "test-secret")
+	assert.NotNil(t, svc)
+}
+
+func TestNewAuthService_WithEmptySecret(t *testing.T) {
+	svc := NewAuthService(nil, "")
+	assert.NotNil(t, svc)
 }
