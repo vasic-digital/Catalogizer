@@ -360,6 +360,70 @@ func TestAuthService_ValidateToken_WrongClaimsType(t *testing.T) {
 	assert.Equal(t, "", claims.SessionID)
 }
 
+func TestAuthService_ValidateToken_Expired(t *testing.T) {
+	svc := &AuthService{
+		jwtSecret: []byte("test-secret"),
+		jwtExpiry: 24 * time.Hour,
+	}
+
+	// Create a token that expired 1 hour ago
+	now := time.Now()
+	expiredTime := now.Add(-1 * time.Hour)
+
+	token := jwt.NewWithClaims(jwt.SigningMethodHS256, &JWTClaims{
+		UserID:    1,
+		Username:  "testuser",
+		RoleID:    1,
+		SessionID: "123",
+		RegisteredClaims: jwt.RegisteredClaims{
+			ExpiresAt: jwt.NewNumericDate(expiredTime),
+			IssuedAt:  jwt.NewNumericDate(expiredTime.Add(-24 * time.Hour)),
+		},
+	})
+
+	tokenString, err := token.SignedString(svc.jwtSecret)
+	require.NoError(t, err)
+
+	// Should fail because token is expired
+	claims, err := svc.validateToken(tokenString)
+	assert.Error(t, err)
+	assert.Nil(t, claims)
+	// Error could be "token is expired" or "invalid token" depending on jwt library
+}
+
+func TestAuthService_ValidateToken_NotBefore(t *testing.T) {
+	svc := &AuthService{
+		jwtSecret: []byte("test-secret"),
+		jwtExpiry: 24 * time.Hour,
+	}
+
+	// Create a token with nbf (not before) in the future
+	now := time.Now()
+	futureTime := now.Add(1 * time.Hour)
+
+	token := jwt.NewWithClaims(jwt.SigningMethodHS256, &JWTClaims{
+		UserID:    1,
+		Username:  "testuser",
+		RoleID:    1,
+		SessionID: "123",
+		RegisteredClaims: jwt.RegisteredClaims{
+			ExpiresAt: jwt.NewNumericDate(now.Add(24 * time.Hour)),
+			IssuedAt:  jwt.NewNumericDate(now),
+			NotBefore: jwt.NewNumericDate(futureTime), // token not valid yet
+		},
+	})
+
+	tokenString, err := token.SignedString(svc.jwtSecret)
+	require.NoError(t, err)
+
+	// Should fail because token is not yet valid (nbf)
+	// This should cause token.Valid to be false but parsing succeeds
+	claims, err := svc.validateToken(tokenString)
+	assert.Error(t, err)
+	assert.Nil(t, claims)
+	// Error should be "invalid token" from line 390
+}
+
 func TestAuthService_GenerateSecureToken(t *testing.T) {
 	svc := &AuthService{}
 

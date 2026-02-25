@@ -484,6 +484,61 @@ func TestAnalyticsService_CalculateUserRetention(t *testing.T) {
 			},
 			expected: (0.0 + 1.0) / 2.0, // average of 0 and 1 = 0.5
 		},
+		{
+			name: "fractional day retention (12 hours = 0.5 days)",
+			logs: []models.MediaAccessLog{
+				{UserID: 1, AccessTime: time.Date(2025, 1, 1, 0, 0, 0, 0, time.UTC)},
+				{UserID: 1, AccessTime: time.Date(2025, 1, 1, 12, 0, 0, 0, time.UTC)}, // 12 hours later
+			},
+			expected: 0.5,
+		},
+		{
+			name: "negative user id (edge case)",
+			logs: []models.MediaAccessLog{
+				{UserID: -1, AccessTime: time.Date(2025, 1, 1, 0, 0, 0, 0, time.UTC)},
+				{UserID: -1, AccessTime: time.Date(2025, 1, 3, 0, 0, 0, 0, time.UTC)}, // 2 days
+				{UserID: -2, AccessTime: time.Date(2025, 1, 1, 0, 0, 0, 0, time.UTC)},
+				{UserID: -2, AccessTime: time.Date(2025, 1, 4, 0, 0, 0, 0, time.UTC)}, // 3 days
+			},
+			expected: (2.0 + 3.0) / 2.0, // average 2.5
+		},
+		{
+			name: "large user id values",
+			logs: []models.MediaAccessLog{
+				{UserID: 1000000, AccessTime: time.Date(2025, 1, 1, 0, 0, 0, 0, time.UTC)},
+				{UserID: 1000000, AccessTime: time.Date(2025, 1, 5, 0, 0, 0, 0, time.UTC)}, // 4 days
+				{UserID: 2000000, AccessTime: time.Date(2025, 1, 1, 0, 0, 0, 0, time.UTC)},
+				{UserID: 2000000, AccessTime: time.Date(2025, 1, 6, 0, 0, 0, 0, time.UTC)}, // 5 days
+			},
+			expected: (4.0 + 5.0) / 2.0, // average 4.5
+		},
+		{
+			name: "user id zero",
+			logs: []models.MediaAccessLog{
+				{UserID: 0, AccessTime: time.Date(2025, 1, 1, 0, 0, 0, 0, time.UTC)},
+				{UserID: 0, AccessTime: time.Date(2025, 1, 2, 0, 0, 0, 0, time.UTC)}, // 1 day
+			},
+			expected: 1.0,
+		},
+		{
+			name: "many users (10 users) to test average calculation",
+			logs: func() []models.MediaAccessLog {
+				var logs []models.MediaAccessLog
+				// Create 10 users with retention 1-10 days
+				for i := 1; i <= 10; i++ {
+					logs = append(logs, models.MediaAccessLog{
+						UserID:     i,
+						AccessTime: time.Date(2025, 1, 1, 0, 0, 0, 0, time.UTC),
+					})
+					logs = append(logs, models.MediaAccessLog{
+						UserID:     i,
+						AccessTime: time.Date(2025, 1, 1+i, 0, 0, 0, 0, time.UTC), // i days later
+					})
+				}
+				return logs
+			}(),
+			expected: (1.0 + 2.0 + 3.0 + 4.0 + 5.0 + 6.0 + 7.0 + 8.0 + 9.0 + 10.0) / 10.0, // average 5.5
+		},
 	}
 
 	for _, tt := range tests {

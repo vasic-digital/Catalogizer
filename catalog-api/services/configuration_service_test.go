@@ -1,6 +1,8 @@
 package services
 
 import (
+	"errors"
+	"os"
 	"testing"
 
 	"catalogizer/models"
@@ -8,6 +10,12 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
+
+type errorValidator struct{}
+
+func (e *errorValidator) Validate(value interface{}) error {
+	return errors.New("step validation failed")
+}
 
 func TestConfigurationService_IsEmptyValue(t *testing.T) {
 	svc := &ConfigurationService{}
@@ -913,6 +921,65 @@ func TestConfigurationService_ValidateWizardStep_EdgeCases(t *testing.T) {
 	assert.True(t, validation.Valid)
 }
 
+func TestConfigurationService_ValidateWizardStep_StepValidation(t *testing.T) {
+	// Test step validation edge cases
+	svc := &ConfigurationService{
+		validators: make(map[string]ConfigValidator),
+	}
+	svc.validators["test"] = &PathValidator{} // any validator
+	svc.initializeWizardSteps()
+
+	// Find a step and modify its Validation for testing
+	for _, step := range svc.wizardSteps {
+		if step.ID == "database" {
+			// Test 1: step.Validation exists but validator is not a string
+			originalValidation := step.Validation
+			step.Validation = map[string]interface{}{
+				"validator": 42, // non-string
+			}
+
+			validation, err := svc.ValidateWizardStep("database", map[string]interface{}{
+				"database_type": "sqlite",
+				"database_name": "test.db",
+			})
+			require.NoError(t, err)
+			require.NotNil(t, validation)
+			assert.True(t, validation.Valid, "non-string validator should be skipped")
+
+			// Test 2: step.Validation exists, validator is string but not in validators map
+			step.Validation = map[string]interface{}{
+				"validator": "nonexistent",
+			}
+
+			validation, err = svc.ValidateWizardStep("database", map[string]interface{}{
+				"database_type": "sqlite",
+				"database_name": "test.db",
+			})
+			require.NoError(t, err)
+			require.NotNil(t, validation)
+			assert.True(t, validation.Valid, "non-existent validator should be skipped")
+
+			// Test 3: step.Validation exists, validator exists but validator.Validate returns error
+			svc.validators["error"] = &errorValidator{}
+			step.Validation = map[string]interface{}{
+				"validator": "error",
+			}
+			validation, err = svc.ValidateWizardStep("database", map[string]interface{}{
+				"database_type": "sqlite",
+				"database_name": "test.db",
+			})
+			require.NoError(t, err)
+			require.NotNil(t, validation)
+			assert.False(t, validation.Valid, "validator error should make step invalid")
+			assert.Contains(t, validation.Errors["_general"], "step validation failed")
+
+			// Restore original validation
+			step.Validation = originalValidation
+			break
+		}
+	}
+}
+
 // ---------------------------------------------------------------------------
 // Constructor tests
 // ---------------------------------------------------------------------------
@@ -974,4 +1041,138 @@ func TestConfigurationService_GetFeatureFields(t *testing.T) {
 	fields := svc.getFeatureFields()
 	assert.NotNil(t, fields)
 	assert.NotEmpty(t, fields)
+}
+
+func TestConfigurationService_TestStoragePaths(t *testing.T) {
+	svc := &ConfigurationService{}
+
+	// Create a temporary directory for testing
+	tempDir := t.TempDir()
+
+	tests := []struct {
+		name           string
+		mediaDir       string
+		thumbnailDir   string
+		tempDir        string
+		expectedStatus string
+		expectedMsg    string
+	}{
+		{
+			name:           "all directories exist",
+			mediaDir:       tempDir + "/media",
+			thumbnailDir:   tempDir + "/thumbnails",
+			tempDir:        tempDir + "/tmp",
+			expectedStatus: "passed",
+			expectedMsg:    "All storage paths are accessible",
+		},
+		{
+			name:           "media directory missing",
+			mediaDir:       tempDir + "/nonexistent/media",
+			thumbnailDir:   tempDir + "/thumbnails",
+			tempDir:        tempDir + "/tmp",
+			expectedStatus: "warning",
+			expectedMsg:    "Directory does not exist: " + tempDir + "/nonexistent/media",
+		},
+		{
+			name:           "thumbnail directory missing",
+			mediaDir:       tempDir + "/media",
+			thumbnailDir:   tempDir + "/nonexistent/thumbnails",
+			tempDir:        tempDir + "/tmp",
+			expectedStatus: "warning",
+			expectedMsg:    "Directory does not exist: " + tempDir + "/nonexistent/thumbnails",
+		},
+		{
+			name:           "temp directory missing",
+			mediaDir:       tempDir + "/media",
+			thumbnailDir:   tempDir + "/thumbnails",
+			tempDir:        tempDir + "/nonexistent/tmp",
+			expectedStatus: "warning",
+			expectedMsg:    "Directory does not exist: " + tempDir + "/nonexistent/tmp",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			// Create directories that should exist
+			if tt.expectedStatus == "passed" {
+				os.MkdirAll(tt.mediaDir, 0755)
+				os.MkdirAll(tt.thumbnailDir, 0755)
+				os.MkdirAll(tt.tempDir, 0755)
+			} else {
+				// Create only the directories that exist in the test case
+				// For simplicity, create parent tempDir
+				os.MkdirAll(tempDir, 0755)
+			}
+
+			config := &models.SystemConfiguration{
+				Storage: &models.StorageConfig{
+					MediaDirectory:     tt.mediaDir,
+					ThumbnailDirectory: tt.thumbnailDir,
+					TempDirectory:      tt.tempDir,
+				},
+			}
+
+			result := svc.testStoragePaths(config)
+			require.NotNil(t, result)
+			assert.Equal(t, tt.expectedStatus, result.Status)
+			assert.Contains(t, result.Message, tt.expectedMsg)
+		})
+	}
+}
+
+func TestConfigurationService_TestNetworkConfiguration(t *testing.T) {
+	svc := &ConfigurationService{}
+
+	tests := []struct {
+		name           string
+		port           int
+		expectedStatus string
+		expectedMsg    string
+	}{
+		{
+			name:           "port above 1023 - normal user",
+			port:           1024,
+			expectedStatus: "passed",
+			expectedMsg:    "Network configuration is valid",
+		},
+		{
+			name:           "port 80 - normal user (warning)",
+			port:           80,
+			expectedStatus: "warning",
+			expectedMsg:    "Port below 1024 requires root privileges",
+		},
+		{
+			name:           "port 443 - normal user (warning)",
+			port:           443,
+			expectedStatus: "warning",
+			expectedMsg:    "Port below 1024 requires root privileges",
+		},
+		{
+			name:           "port 0 - warning (port < 1024, not root)",
+			port:           0,
+			expectedStatus: "warning", // Port 0 is < 1024 and we're not root
+			expectedMsg:    "Port below 1024 requires root privileges",
+		},
+		{
+			name:           "port 1023 - warning (port < 1024, not root)",
+			port:           1023,
+			expectedStatus: "warning",
+			expectedMsg:    "Port below 1024 requires root privileges",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			config := &models.SystemConfiguration{
+				Network: &models.NetworkConfig{
+					Port: tt.port,
+				},
+			}
+
+			result := svc.testNetworkConfiguration(config)
+			require.NotNil(t, result)
+			assert.Equal(t, tt.expectedStatus, result.Status)
+			assert.Contains(t, result.Message, tt.expectedMsg)
+		})
+	}
 }

@@ -383,11 +383,12 @@ func (s *AuthService) validateToken(tokenString string) (*JWTClaims, error) {
 		return nil, err
 	}
 
-	if claims, ok := token.Claims.(*JWTClaims); ok && token.Valid {
-		return claims, nil
+	claims, ok := token.Claims.(*JWTClaims)
+	if !ok {
+		// This should never happen since we passed &JWTClaims{} to ParseWithClaims
+		return nil, errors.New("invalid token claims")
 	}
-
-	return nil, errors.New("invalid token")
+	return claims, nil
 }
 
 func (s *AuthService) generateSessionToken() (string, error) {

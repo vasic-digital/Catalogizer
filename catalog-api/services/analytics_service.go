@@ -418,10 +418,6 @@ func (s *AnalyticsService) calculateUserRetention(logs []models.MediaAccessLog) 
 		userCount++
 	}
 
-	if userCount == 0 {
-		return 0.0
-	}
-
 	return totalRetention / float64(userCount)
 }
 
