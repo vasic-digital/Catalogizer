@@ -365,6 +365,83 @@ func TestConfigurationService_GenerateConfiguration(t *testing.T) {
 				assert.True(t, config.Network.HTTPS.Enabled)
 			},
 		},
+		{
+			name: "database username and password",
+			wizardData: map[string]interface{}{
+				"database_type":     "mysql",
+				"database_username": "myuser",
+				"database_password": "mypassword",
+			},
+			checks: func(t *testing.T, config *models.SystemConfiguration) {
+				assert.Equal(t, "mysql", config.Database.Type)
+				assert.Equal(t, "myuser", config.Database.Username)
+				assert.Equal(t, "mypassword", config.Database.Password)
+			},
+		},
+		{
+			name: "wrong type for string field - silently ignored",
+			wizardData: map[string]interface{}{
+				"database_type": 42, // int instead of string
+				"database_name": "test.db",
+			},
+			checks: func(t *testing.T, config *models.SystemConfiguration) {
+				// database_type should remain default (sqlite) because 42 is not a string
+				assert.Equal(t, "sqlite", config.Database.Type)
+				// database_name should be set because it's a string
+				assert.Equal(t, "test.db", config.Database.Name)
+			},
+		},
+		{
+			name: "wrong type for bool field - silently ignored",
+			wizardData: map[string]interface{}{
+				"enable_https": "yes", // string instead of bool
+			},
+			checks: func(t *testing.T, config *models.SystemConfiguration) {
+				// HTTPS should remain nil because "yes" is not a bool
+				assert.Nil(t, config.Network.HTTPS)
+			},
+		},
+		{
+			name: "wrong type for port field - silently ignored",
+			wizardData: map[string]interface{}{
+				"database_port": "3306", // string instead of float64
+			},
+			checks: func(t *testing.T, config *models.SystemConfiguration) {
+				// Port should remain default (0 for database port)
+				assert.Equal(t, 0, config.Database.Port)
+			},
+		},
+		{
+			name: "wrong type for server port - silently ignored",
+			wizardData: map[string]interface{}{
+				"server_port": 8080, // int instead of float64 (JSON numbers are float64)
+			},
+			checks: func(t *testing.T, config *models.SystemConfiguration) {
+				// Server port should be set because int can be converted to float64 in Go?
+				// Actually, int value will be float64(8080) when passed as interface{} from JSON unmarshal
+				// But in test, int is int, not float64, so type assertion will fail
+				// So port should remain default (8080)
+				assert.Equal(t, 8080, config.Network.Port) // default is 8080
+			},
+		},
+		{
+			name: "mixed correct and wrong types",
+			wizardData: map[string]interface{}{
+				"database_type":       "postgresql", // correct string
+				"database_host":       12345,        // wrong type (int)
+				"media_directory":     "/media",     // correct string
+				"thumbnail_directory": 999,          // wrong type (int)
+				"enable_https":        false,        // correct bool
+			},
+			checks: func(t *testing.T, config *models.SystemConfiguration) {
+				assert.Equal(t, "postgresql", config.Database.Type)
+				assert.Equal(t, "", config.Database.Host) // default (empty string), wrong type ignored
+				assert.Equal(t, "/media", config.Storage.MediaDirectory)
+				assert.Equal(t, "/var/lib/catalogizer/thumbnails", config.Storage.ThumbnailDirectory) // default, wrong type ignored
+				require.NotNil(t, config.Network.HTTPS)
+				assert.False(t, config.Network.HTTPS.Enabled)
+			},
+		},
 	}
 
 	for _, tt := range tests {

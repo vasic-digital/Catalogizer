@@ -1,6 +1,8 @@
 package services
 
 import (
+	"crypto/rand"
+	"crypto/rsa"
 	"fmt"
 	"strings"
 	"testing"
@@ -8,6 +10,7 @@ import (
 
 	"catalogizer/models"
 
+	"github.com/golang-jwt/jwt/v5"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -304,6 +307,57 @@ func TestAuthService_ValidateToken_WrongSecret(t *testing.T) {
 	claims, err := svc2.validateToken(token)
 	assert.Error(t, err)
 	assert.Nil(t, claims)
+}
+
+func TestAuthService_ValidateToken_WrongSigningMethod(t *testing.T) {
+	svc := &AuthService{
+		jwtSecret: []byte("test-secret"),
+	}
+
+	// Generate RSA key for RS256 signing
+	privKey, err := rsa.GenerateKey(rand.Reader, 2048)
+	require.NoError(t, err)
+
+	// Create token with RS256 signing method
+	token := jwt.NewWithClaims(jwt.SigningMethodRS256, jwt.RegisteredClaims{
+		Subject: "test",
+	})
+	tokenString, err := token.SignedString(privKey)
+	require.NoError(t, err)
+
+	// Should fail because we expect HMAC signing method
+	claims, err := svc.validateToken(tokenString)
+	assert.Error(t, err)
+	assert.Nil(t, claims)
+	assert.Contains(t, err.Error(), "unexpected signing method")
+}
+
+func TestAuthService_ValidateToken_WrongClaimsType(t *testing.T) {
+	svc := &AuthService{
+		jwtSecret: []byte("test-secret"),
+		jwtExpiry: 24 * time.Hour,
+	}
+
+	// Create token with standard RegisteredClaims instead of JWTClaims
+	// JWTClaims embeds RegisteredClaims, so this should parse successfully
+	now := time.Now()
+	token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.RegisteredClaims{
+		ExpiresAt: jwt.NewNumericDate(now.Add(24 * time.Hour)),
+		IssuedAt:  jwt.NewNumericDate(now),
+		Subject:   "123",
+	})
+	tokenString, err := token.SignedString(svc.jwtSecret)
+	require.NoError(t, err)
+
+	// Should succeed because JWTClaims embeds RegisteredClaims
+	claims, err := svc.validateToken(tokenString)
+	require.NoError(t, err)
+	require.NotNil(t, claims)
+	assert.Equal(t, "123", claims.Subject)
+	assert.Equal(t, 0, claims.UserID) // custom fields zero
+	assert.Equal(t, "", claims.Username)
+	assert.Equal(t, 0, claims.RoleID)
+	assert.Equal(t, "", claims.SessionID)
 }
 
 func TestAuthService_GenerateSecureToken(t *testing.T) {

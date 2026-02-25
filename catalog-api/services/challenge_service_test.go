@@ -100,6 +100,32 @@ func TestChallengeService_ListChallenges_Multiple(t *testing.T) {
 	assert.Equal(t, "c", challenges[2].ID)
 }
 
+func TestChallengeService_ListChallenges_WithDependencies(t *testing.T) {
+	svc := NewChallengeService(t.TempDir())
+
+	// Create a challenge with dependencies
+	challengeWithDeps := &testChallenge{
+		BaseChallenge: challenge.NewBaseChallenge(
+			challenge.ID("with_deps"),
+			"Challenge With Dependencies",
+			"Test challenge with dependencies",
+			"integration",
+			[]challenge.ID{"dep1", "dep2"},
+		),
+		shouldFail: false,
+	}
+
+	err := svc.Register(challengeWithDeps)
+	require.NoError(t, err)
+
+	challenges := svc.ListChallenges()
+	require.Len(t, challenges, 1)
+	assert.Equal(t, "with_deps", challenges[0].ID)
+	assert.Equal(t, "Challenge With Dependencies", challenges[0].Name)
+	assert.Equal(t, "integration", challenges[0].Category)
+	assert.Equal(t, []string{"dep1", "dep2"}, challenges[0].Dependencies)
+}
+
 func TestChallengeService_RunChallenge(t *testing.T) {
 	svc := NewChallengeService(t.TempDir())
 

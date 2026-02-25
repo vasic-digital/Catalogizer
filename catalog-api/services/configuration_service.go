@@ -732,34 +732,54 @@ func (s *ConfigurationService) generateConfiguration(wizardData map[string]inter
 	for key, value := range wizardData {
 		switch key {
 		case "database_type":
-			config.Database.Type = value.(string)
+			if s, ok := value.(string); ok {
+				config.Database.Type = s
+			}
 		case "database_host":
-			config.Database.Host = value.(string)
+			if s, ok := value.(string); ok {
+				config.Database.Host = s
+			}
 		case "database_port":
 			if port, ok := value.(float64); ok {
 				config.Database.Port = int(port)
 			}
 		case "database_name":
-			config.Database.Name = value.(string)
+			if s, ok := value.(string); ok {
+				config.Database.Name = s
+			}
 		case "database_username":
-			config.Database.Username = value.(string)
+			if s, ok := value.(string); ok {
+				config.Database.Username = s
+			}
 		case "database_password":
-			config.Database.Password = value.(string)
+			if s, ok := value.(string); ok {
+				config.Database.Password = s
+			}
 		case "media_directory":
-			config.Storage.MediaDirectory = value.(string)
+			if s, ok := value.(string); ok {
+				config.Storage.MediaDirectory = s
+			}
 		case "thumbnail_directory":
-			config.Storage.ThumbnailDirectory = value.(string)
+			if s, ok := value.(string); ok {
+				config.Storage.ThumbnailDirectory = s
+			}
 		case "temp_directory":
-			config.Storage.TempDirectory = value.(string)
+			if s, ok := value.(string); ok {
+				config.Storage.TempDirectory = s
+			}
 		case "server_host":
-			config.Network.Host = value.(string)
+			if s, ok := value.(string); ok {
+				config.Network.Host = s
+			}
 		case "server_port":
 			if port, ok := value.(float64); ok {
 				config.Network.Port = int(port)
 			}
 		case "enable_https":
-			config.Network.HTTPS = &models.HTTPSConfig{
-				Enabled: value.(bool),
+			if b, ok := value.(bool); ok {
+				config.Network.HTTPS = &models.HTTPSConfig{
+					Enabled: b,
+				}
 			}
 		}
 	}
