@@ -872,3 +872,88 @@ func TestReportingService_ExtractDateRange_ValidRange(t *testing.T) {
 	assert.NotNil(t, end)
 	assert.True(t, start.Before(end) || start.Equal(end))
 }
+
+// ---------------------------------------------------------------------------
+// Wrapper function tests
+// ---------------------------------------------------------------------------
+
+func TestReportingService_AnalyzeUserTimePatterns(t *testing.T) {
+	service := NewReportingService(nil, nil)
+
+	logs := []models.MediaAccessLog{
+		{AccessTime: time.Date(2025, 1, 1, 9, 0, 0, 0, time.UTC)},
+		{AccessTime: time.Date(2025, 1, 1, 14, 0, 0, 0, time.UTC)},
+	}
+
+	result := service.analyzeUserTimePatterns(logs)
+	assert.NotNil(t, result)
+
+	hourly, ok := result["hourly"].(map[int]int)
+	assert.True(t, ok)
+	assert.Equal(t, 1, hourly[9])
+	assert.Equal(t, 1, hourly[14])
+}
+
+func TestReportingService_AnalyzeAccessPatterns(t *testing.T) {
+	service := NewReportingService(nil, nil)
+
+	logs := []models.MediaAccessLog{
+		{AccessTime: time.Date(2025, 1, 6, 9, 0, 0, 0, time.UTC)}, // Monday
+	}
+
+	result := service.analyzeAccessPatterns(logs)
+	assert.NotNil(t, result)
+
+	hourly, ok := result["hourly"].(map[int]int)
+	assert.True(t, ok)
+	assert.Equal(t, 1, hourly[9])
+}
+
+func TestReportingService_AnalyzeGeographicDistribution(t *testing.T) {
+	service := NewReportingService(nil, nil)
+
+	logs := []models.MediaAccessLog{
+		{Location: &models.Location{Latitude: 40.71, Longitude: -74.01}},
+		{Location: &models.Location{Latitude: 51.51, Longitude: -0.13}},
+	}
+
+	result := service.analyzeGeographicDistribution(logs)
+	assert.NotNil(t, result)
+	assert.Equal(t, 1, result["40.71,-74.01"])
+	assert.Equal(t, 1, result["51.51,-0.13"])
+}
+
+func TestReportingService_AnalyzeGeographicDistribution_Empty(t *testing.T) {
+	service := NewReportingService(nil, nil)
+
+	result := service.analyzeGeographicDistribution([]models.MediaAccessLog{})
+	assert.NotNil(t, result)
+	assert.Empty(t, result)
+}
+
+func TestReportingService_AnalyzeDeviceDistribution(t *testing.T) {
+	service := NewReportingService(nil, nil)
+
+	android := "Android"
+	pixel := "Pixel 7"
+	ios := "iOS"
+	iphone := "iPhone 15"
+
+	logs := []models.MediaAccessLog{
+		{DeviceInfo: &models.DeviceInfo{Platform: &android, DeviceModel: &pixel}},
+		{DeviceInfo: &models.DeviceInfo{Platform: &ios, DeviceModel: &iphone}},
+	}
+
+	result := service.analyzeDeviceDistribution(logs)
+	assert.NotNil(t, result)
+	assert.Equal(t, 1, result["Android Pixel 7"])
+	assert.Equal(t, 1, result["iOS iPhone 15"])
+}
+
+func TestReportingService_AnalyzeDeviceDistribution_Empty(t *testing.T) {
+	service := NewReportingService(nil, nil)
+
+	result := service.analyzeDeviceDistribution([]models.MediaAccessLog{})
+	assert.NotNil(t, result)
+	assert.Empty(t, result)
+}
