@@ -170,20 +170,20 @@ func TestConversionService_BuildFFmpegVideoArgs(t *testing.T) {
 		{
 			name: "basic video conversion",
 			job: &models.ConversionJob{
-				SourcePath: "/input/video.avi",
-				TargetPath: "/output/video.mp4",
+				SourcePath:   "/input/video.avi",
+				TargetPath:   "/output/video.mp4",
 				TargetFormat: "mp4",
-				Quality:    "medium",
+				Quality:      "medium",
 			},
 			wantArgs: true,
 		},
 		{
 			name: "high quality video",
 			job: &models.ConversionJob{
-				SourcePath: "/input/video.mkv",
-				TargetPath: "/output/video.mp4",
+				SourcePath:   "/input/video.mkv",
+				TargetPath:   "/output/video.mp4",
 				TargetFormat: "mp4",
-				Quality:    "high",
+				Quality:      "high",
 			},
 			wantArgs: true,
 		},
@@ -210,20 +210,20 @@ func TestConversionService_BuildFFmpegAudioArgs(t *testing.T) {
 		{
 			name: "basic audio conversion",
 			job: &models.ConversionJob{
-				SourcePath: "/input/audio.wav",
-				TargetPath: "/output/audio.mp3",
+				SourcePath:   "/input/audio.wav",
+				TargetPath:   "/output/audio.mp3",
 				TargetFormat: "mp3",
-				Quality:    "medium",
+				Quality:      "medium",
 			},
 			wantArgs: true,
 		},
 		{
 			name: "flac conversion",
 			job: &models.ConversionJob{
-				SourcePath: "/input/audio.wav",
-				TargetPath: "/output/audio.flac",
+				SourcePath:   "/input/audio.wav",
+				TargetPath:   "/output/audio.flac",
 				TargetFormat: "flac",
-				Quality:    "high",
+				Quality:      "high",
 			},
 			wantArgs: true,
 		},
@@ -237,4 +237,131 @@ func TestConversionService_BuildFFmpegAudioArgs(t *testing.T) {
 			}
 		})
 	}
+}
+
+func TestConversionService_BuildImageMagickArgs(t *testing.T) {
+	service := NewConversionService(nil, nil, nil)
+
+	tests := []struct {
+		name           string
+		job            *models.ConversionJob
+		expectedArgLen int
+	}{
+		{
+			name: "basic image conversion",
+			job: &models.ConversionJob{
+				SourcePath: "/input/image.png",
+				TargetPath: "/output/image.jpg",
+			},
+			expectedArgLen: 2,
+		},
+		{
+			name: "with resize setting",
+			job: &models.ConversionJob{
+				SourcePath: "/input/image.png",
+				TargetPath: "/output/image.jpg",
+				Settings:   ptr(`{"resize": "1920x1080"}`),
+			},
+			expectedArgLen: 4,
+		},
+		{
+			name: "with quality setting",
+			job: &models.ConversionJob{
+				SourcePath: "/input/image.png",
+				TargetPath: "/output/image.jpg",
+				Settings:   ptr(`{"quality": "90"}`),
+			},
+			expectedArgLen: 4,
+		},
+		{
+			name: "with compress setting",
+			job: &models.ConversionJob{
+				SourcePath: "/input/image.png",
+				TargetPath: "/output/image.jpg",
+				Settings:   ptr(`{"compress": true}`),
+			},
+			expectedArgLen: 4,
+		},
+		{
+			name: "with all settings",
+			job: &models.ConversionJob{
+				SourcePath: "/input/image.png",
+				TargetPath: "/output/image.jpg",
+				Settings:   ptr(`{"resize": "800x600", "quality": "85", "compress": true}`),
+			},
+			expectedArgLen: 8,
+		},
+		{
+			name: "invalid settings json",
+			job: &models.ConversionJob{
+				SourcePath: "/input/image.png",
+				TargetPath: "/output/image.jpg",
+				Settings:   ptr(`invalid json`),
+			},
+			expectedArgLen: 2,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			args := service.buildImageMagickArgs(tt.job)
+			assert.Len(t, args, tt.expectedArgLen)
+		})
+	}
+}
+
+func TestConversionService_IsEbookConversion(t *testing.T) {
+	service := NewConversionService(nil, nil, nil)
+
+	tests := []struct {
+		name         string
+		job          *models.ConversionJob
+		expectedBool bool
+	}{
+		{"epub to mobi", &models.ConversionJob{SourceFormat: "epub", TargetFormat: "mobi"}, true},
+		{"mobi to epub", &models.ConversionJob{SourceFormat: "mobi", TargetFormat: "epub"}, true},
+		{"pdf to epub", &models.ConversionJob{SourceFormat: "pdf", TargetFormat: "epub"}, true},
+		{"epub to pdf", &models.ConversionJob{SourceFormat: "epub", TargetFormat: "pdf"}, true},
+		{"epub to txt", &models.ConversionJob{SourceFormat: "epub", TargetFormat: "txt"}, true},
+		{"txt to epub", &models.ConversionJob{SourceFormat: "txt", TargetFormat: "epub"}, true},
+		{"pdf to jpg", &models.ConversionJob{SourceFormat: "pdf", TargetFormat: "jpg"}, false},
+		{"mp4 to webm", &models.ConversionJob{SourceFormat: "mp4", TargetFormat: "webm"}, false},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			result := service.isEbookConversion(tt.job)
+			assert.Equal(t, tt.expectedBool, result)
+		})
+	}
+}
+
+func TestConversionService_IsPDFConversion(t *testing.T) {
+	service := NewConversionService(nil, nil, nil)
+
+	tests := []struct {
+		name         string
+		job          *models.ConversionJob
+		expectedBool bool
+	}{
+		{"pdf to jpg", &models.ConversionJob{SourceFormat: "pdf", TargetFormat: "jpg"}, true},
+		{"pdf to png", &models.ConversionJob{SourceFormat: "pdf", TargetFormat: "png"}, true},
+		{"pdf to txt", &models.ConversionJob{SourceFormat: "pdf", TargetFormat: "txt"}, true},
+		{"pdf to html", &models.ConversionJob{SourceFormat: "pdf", TargetFormat: "html"}, true},
+		{"jpg to pdf", &models.ConversionJob{SourceFormat: "jpg", TargetFormat: "pdf"}, true},
+		{"epub to pdf", &models.ConversionJob{SourceFormat: "epub", TargetFormat: "pdf"}, true},
+		{"doc to pdf", &models.ConversionJob{SourceFormat: "doc", TargetFormat: "pdf"}, true},
+		{"mp4 to webm", &models.ConversionJob{SourceFormat: "mp4", TargetFormat: "webm"}, false},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			result := service.isPDFConversion(tt.job)
+			assert.Equal(t, tt.expectedBool, result)
+		})
+	}
+}
+
+func ptr(s string) *string {
+	return &s
 }
