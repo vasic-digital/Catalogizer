@@ -568,3 +568,145 @@ func TestLogManagementService_MatchesFilters_LevelFilter(t *testing.T) {
 	result = service.matchesFilters(entry, map[string]interface{}{"message_contains": "TEST"})
 	assert.True(t, result)
 }
+
+func TestLogManagementService_ExportToCSV_Empty(t *testing.T) {
+	service := NewLogManagementService(nil)
+
+	data, err := service.exportToCSV([]*models.LogEntry{})
+	assert.NoError(t, err)
+	assert.NotNil(t, data)
+	assert.Contains(t, string(data), "Timestamp,Level,Component")
+}
+
+func TestLogManagementService_ExportToText_Empty(t *testing.T) {
+	service := NewLogManagementService(nil)
+
+	data, err := service.exportToText([]*models.LogEntry{})
+	assert.NoError(t, err)
+	assert.Equal(t, "", string(data))
+}
+
+func TestLogManagementService_FilterLogEntries_ByLogLevel(t *testing.T) {
+	service := NewLogManagementService(nil)
+
+	now := time.Now()
+	entries := []*models.LogEntry{
+		{Timestamp: now, Level: "debug", Message: "debug msg"},
+		{Timestamp: now, Level: "info", Message: "info msg"},
+		{Timestamp: now, Level: "error", Message: "error msg"},
+	}
+
+	collection := &models.LogCollection{
+		LogLevel: "error",
+	}
+
+	filtered := service.filterLogEntries(entries, collection)
+	assert.Len(t, filtered, 1) // only error (error level >= error)
+	assert.Equal(t, "error msg", filtered[0].Message)
+}
+
+func TestLogManagementService_FilterLogEntries_ByTimeRange(t *testing.T) {
+	service := NewLogManagementService(nil)
+
+	now := time.Now()
+	past := now.Add(-2 * time.Hour)
+	future := now.Add(2 * time.Hour)
+
+	entries := []*models.LogEntry{
+		{Timestamp: past, Level: "info", Message: "past"},
+		{Timestamp: now, Level: "info", Message: "now"},
+		{Timestamp: future, Level: "info", Message: "future"},
+	}
+
+	startTime := now.Add(-1 * time.Hour)
+	endTime := now.Add(1 * time.Hour)
+	collection := &models.LogCollection{
+		StartTime: &startTime,
+		EndTime:   &endTime,
+	}
+
+	filtered := service.filterLogEntries(entries, collection)
+	assert.Len(t, filtered, 1)
+	assert.Equal(t, "now", filtered[0].Message)
+}
+
+func TestLogManagementService_GenerateInsights_LowErrorRate(t *testing.T) {
+	service := NewLogManagementService(nil)
+
+	analysis := &models.LogAnalysis{
+		TotalEntries:       100,
+		EntriesByLevel:     map[string]int{"error": 5, "info": 95},
+		EntriesByComponent: map[string]int{"api": 50},
+	}
+
+	entries := []*models.LogEntry{}
+	insights := service.generateInsights(entries, analysis)
+
+	assert.NotEmpty(t, insights)
+	assert.Contains(t, insights[0], "api")
+}
+
+func TestDatabaseLogCollector_GetComponentName(t *testing.T) {
+	collector := &DatabaseLogCollector{
+		componentName: "database",
+	}
+
+	assert.Equal(t, "database", collector.GetComponentName())
+}
+
+func TestDatabaseLogCollector_GetLogPath(t *testing.T) {
+	collector := &DatabaseLogCollector{
+		componentName: "database",
+	}
+
+	// Database collector returns "database" as path identifier
+	assert.Equal(t, "database", collector.GetLogPath())
+}
+
+func TestLogManagementService_matchesFilters(t *testing.T) {
+	service := NewLogManagementService(nil)
+
+	entry := &models.LogEntry{
+		Level:     "error",
+		Component: "api",
+		Message:   "Test error message",
+	}
+
+	// No filters - should match
+	result := service.matchesFilters(entry, nil)
+	assert.True(t, result)
+
+	// Empty filters - should match
+	result = service.matchesFilters(entry, map[string]interface{}{})
+	assert.True(t, result)
+
+	// Component filter mismatch
+	result = service.matchesFilters(entry, map[string]interface{}{"component": "auth"})
+	assert.False(t, result)
+
+	// Component filter match
+	result = service.matchesFilters(entry, map[string]interface{}{"component": "api"})
+	assert.True(t, result)
+
+	// Case-insensitive message contains
+	result = service.matchesFilters(entry, map[string]interface{}{"message_contains": "TEST"})
+	assert.True(t, result)
+
+	// Message contains - no match
+	result = service.matchesFilters(entry, map[string]interface{}{"message_contains": "xyz"})
+	assert.False(t, result)
+
+	// Multiple filters - all match
+	result = service.matchesFilters(entry, map[string]interface{}{
+		"component":        "api",
+		"message_contains": "error",
+	})
+	assert.True(t, result)
+
+	// Multiple filters - one mismatch
+	result = service.matchesFilters(entry, map[string]interface{}{
+		"component":        "auth",
+		"message_contains": "error",
+	})
+	assert.False(t, result)
+}
