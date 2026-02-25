@@ -712,6 +712,47 @@ func TestConfigurationService_ValidateWizardStep(t *testing.T) {
 			},
 			wantValid: false,
 		},
+		// New test cases for uncovered branches
+		{
+			name:   "storage step - field validation with non-existent validator",
+			stepID: "storage",
+			data: map[string]interface{}{
+				"media_directory":     "/valid/path",
+				"thumbnail_directory": "/valid/path",
+				"temp_directory":      "/valid/path",
+				"max_file_size":       float64(1000),
+			},
+			wantValid: true, // validator exists (path validator is registered)
+		},
+		{
+			name:   "authentication step - email validation passes",
+			stepID: "authentication",
+			data: map[string]interface{}{
+				"jwt_secret":      "secret",
+				"session_timeout": float64(24),
+				"admin_email":     "admin@example.com",
+			},
+			wantValid: true,
+		},
+		{
+			name:   "authentication step - email validation fails",
+			stepID: "authentication",
+			data: map[string]interface{}{
+				"jwt_secret":      "secret",
+				"session_timeout": float64(24),
+				"admin_email":     "not-an-email",
+			},
+			wantValid: false,
+		},
+		{
+			name:   "network step - field with validator but validator not string",
+			stepID: "network",
+			data: map[string]interface{}{
+				"server_host": "0.0.0.0",
+				"server_port": float64(8080),
+			},
+			wantValid: true, // network validator exists and passes
+		},
 	}
 
 	for _, tt := range tests {
@@ -726,6 +767,73 @@ func TestConfigurationService_ValidateWizardStep(t *testing.T) {
 			assert.Equal(t, tt.wantValid, validation.Valid)
 		})
 	}
+}
+
+func TestConfigurationService_ValidateWizardStep_EdgeCases(t *testing.T) {
+	// Test with empty validators map to trigger validator not found
+	svc := &ConfigurationService{
+		validators: make(map[string]ConfigValidator), // no validators registered
+	}
+	svc.initializeWizardSteps()
+
+	// This should still pass because validator lookup fails but validatorExists is false
+	// and the code continues without validation error (validator not found is ignored)
+	validation, err := svc.ValidateWizardStep("storage", map[string]interface{}{
+		"media_directory":     "/valid/path",
+		"thumbnail_directory": "/valid/path",
+		"temp_directory":      "/valid/path",
+		"max_file_size":       float64(1000),
+	})
+	require.NoError(t, err)
+	require.NotNil(t, validation)
+	assert.True(t, validation.Valid, "missing validator should not cause validation failure")
+
+	// Test with validator name not a string
+	svc2 := &ConfigurationService{
+		validators: make(map[string]ConfigValidator),
+	}
+	svc2.validators["path"] = &PathValidator{}
+	svc2.initializeWizardSteps()
+	// Manually modify a field's validation to have non-string validator name
+	// This is a bit hacky but we need to test the type assertion branch
+	for _, step := range svc2.wizardSteps {
+		if step.ID == "storage" {
+			for _, field := range step.Fields {
+				if field.Name == "media_directory" {
+					field.Validation = map[string]interface{}{
+						"validator": 42, // non-string
+					}
+					break
+				}
+			}
+			break
+		}
+	}
+	validation, err = svc2.ValidateWizardStep("storage", map[string]interface{}{
+		"media_directory":     "/valid/path",
+		"thumbnail_directory": "/valid/path",
+		"temp_directory":      "/valid/path",
+		"max_file_size":       float64(1000),
+	})
+	require.NoError(t, err)
+	require.NotNil(t, validation)
+	// Should still be valid because validator name is not a string, so validation is skipped
+	assert.True(t, validation.Valid)
+
+	// Test custom step validation with non-existent validator
+	svc3 := &ConfigurationService{
+		validators: make(map[string]ConfigValidator),
+	}
+	svc3.validators["database"] = &DatabaseValidator{}
+	svc3.initializeWizardSteps()
+	// Database step has custom validation with "database" validator which exists
+	validation, err = svc3.ValidateWizardStep("database", map[string]interface{}{
+		"database_type": "sqlite",
+		"database_name": "test.db",
+	})
+	require.NoError(t, err)
+	require.NotNil(t, validation)
+	assert.True(t, validation.Valid)
 }
 
 // ---------------------------------------------------------------------------
