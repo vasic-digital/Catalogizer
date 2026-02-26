@@ -1,18 +1,14 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
-  ArrowLeft, 
   Save, 
   X, 
   Plus, 
   Trash2, 
   Search,
-  Filter,
-  Shuffle,
   Play,
   Music,
   Film,
-  Image,
   FileText
 } from 'lucide-react';
 
@@ -22,9 +18,7 @@ import { Input } from '../components/ui/Input';
 import { Select } from '../components/ui/Select';
 import { Tabs } from '../components/ui/Tabs';
 import { PlaylistGrid } from '../components/playlists/PlaylistGrid';
-import { PlaylistManager } from '../components/playlists/PlaylistManager';
 import { PlaylistPlayer } from '../components/playlists/PlaylistPlayer';
-import { PlaylistItemComponent } from '../components/playlists/PlaylistItem';
 import { SmartPlaylistBuilder } from '../components/playlists/SmartPlaylistBuilder';
 import { playlistsApi } from '../lib/playlistsApi';
 import { mediaApi } from '../lib/mediaApi';
@@ -77,7 +71,6 @@ export const PlaylistsPage: React.FC = () => {
 
   const {
     playlists,
-    isLoading,
     error,
     refetchPlaylists
   } = usePlaylists();
@@ -423,7 +416,7 @@ export const PlaylistsPage: React.FC = () => {
                 <div className="mt-3 max-h-48 overflow-y-auto border border-gray-200 dark:border-gray-700 rounded-lg">
                   {mediaSearchResults.map((media) => {
                     const isAdded = formData.selectedItems.some(item => item.media_id === media.id);
-                    const MediaIcon = MEDIA_TYPE_ICONS[media.media_type as keyof typeof MEDIA_TYPE_ICONS] || FileText;
+                    const MediaIcon = (MEDIA_TYPE_ICONS[media.media_type as keyof typeof MEDIA_TYPE_ICONS] || FileText) as React.ComponentType<{ className?: string }>;
                     return (
                       <div
                         key={media.id}

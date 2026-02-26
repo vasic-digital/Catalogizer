@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { Brain, Search, TrendingUp, Settings, FileText, Zap, Sparkles, Activity, RefreshCw, Info, ChevronDown, ChevronRight } from 'lucide-react';
 
 // Import all AI components
@@ -6,7 +6,6 @@ import {
   AICollectionSuggestions,
   AINaturalSearch,
   AIContentCategorizer,
-  AIService,
   type AISuggestion,
   type AICategorizationResult,
   type AISearchQuery
@@ -16,9 +15,6 @@ import {
   AIUserBehaviorAnalytics,
   AIPredictions,
   AISmartOrganization,
-  AIAnalyticsService,
-  type UserBehaviorPattern,
-  type AIPrediction,
   type AIOrganizationSuggestion
 } from '../components/ai/AIAnalytics';
 
@@ -26,11 +22,7 @@ import {
   AIMetadataExtractor,
   AIAutomationRules,
   AIContentQualityAnalyzer,
-  AIMetadataService,
-  type ExtractedMetadata,
-  type AutomationRule,
-  type ContentQuality,
-  type SmartContent
+  type ExtractedMetadata
 } from '../components/ai/AIMetadata';
 
 // Types for AI Dashboard state
@@ -66,7 +58,6 @@ const AIDashboard: React.FC = () => {
     alerts: []
   });
 
-  const [loading, setLoading] = useState(false);
   const [expandedSections, setExpandedSections] = useState<Record<string, boolean>>({
     overview: true,
     suggestions: true,
@@ -212,7 +203,7 @@ const AIDashboard: React.FC = () => {
   }, []);
 
   // Handle metadata extraction
-  const handleMetadataExtracted = useCallback((metadata: ExtractedMetadata) => {
+  const handleMetadataExtracted = useCallback((_metadata: ExtractedMetadata) => {
     setState(prev => ({
       ...prev,
       metrics: {

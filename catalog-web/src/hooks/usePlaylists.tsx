@@ -1,11 +1,8 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { playlistsApi } from '@/lib/playlistsApi'
 import type { 
-  Playlist, 
-  PlaylistItem, 
   PlaylistCreateRequest, 
-  PlaylistUpdateRequest, 
-  PlaylistAnalytics 
+  PlaylistUpdateRequest
 } from '@/types/playlists'
 import toast from 'react-hot-toast'
 
@@ -155,8 +152,6 @@ export const usePlaylistItems = (playlistId: string, params?: {
   sort_by?: 'position' | 'added_at' | 'title' | 'duration'
   sort_order?: 'asc' | 'desc'
 }) => {
-  const queryClient = useQueryClient()
-
   const {
     data: playlistItemsData,
     isLoading: isLoadingItems,
