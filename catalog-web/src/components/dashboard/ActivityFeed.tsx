@@ -1,5 +1,4 @@
 import { useState, useEffect } from 'react'
-import { useWebSocket } from '@/lib/websocket'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card'
 import { Button } from '@/components/ui/Button'
 import { 
@@ -9,13 +8,10 @@ import {
   Download, 
   Users, 
   Settings,
-  Eye,
-  Clock,
-  Filter
+  Eye
 } from 'lucide-react'
 import { formatDistanceToNow } from 'date-fns'
 import type { ActivityItem } from '@/types/dashboard'
-import type { WebSocketMessage } from '@/lib/websocket'
 
 interface ActivityFeedProps {
   limit?: number
@@ -41,12 +37,12 @@ const ACTIVITY_COLORS = {
 }
 
 const ACTIVITY_MESSAGES = {
-  media_played: (data: any) => `Started watching "${data.title}"`,
-  media_uploaded: (data: any) => `Uploaded "${data.title}"`,
-  media_downloaded: (data: any) => `Downloaded "${data.title}"`,
-  user_login: (data: any) => `User "${data.username}" logged in`,
-  system_event: (data: any) => data.message,
-  media_viewed: (data: any) => `Viewed "${data.title}"`
+  media_played: (data: Record<string, unknown>) => `Started watching "${data.title as string}"`,
+  media_uploaded: (data: Record<string, unknown>) => `Uploaded "${data.title as string}"`,
+  media_downloaded: (data: Record<string, unknown>) => `Downloaded "${data.title as string}"`,
+  user_login: (data: Record<string, unknown>) => `User "${data.username as string}" logged in`,
+  system_event: (data: Record<string, unknown>) => data.message as string,
+  media_viewed: (data: Record<string, unknown>) => `Viewed "${data.title as string}"`
 }
 
 export const ActivityFeed: React.FC<ActivityFeedProps> = ({
@@ -131,7 +127,7 @@ export const ActivityFeed: React.FC<ActivityFeedProps> = ({
   const ActivityItem: React.FC<{ activity: ActivityItem }> = ({ activity }) => {
     const Icon = ACTIVITY_ICONS[activity.type] || Activity
     const colorClass = ACTIVITY_COLORS[activity.type] || ACTIVITY_COLORS.system_event
-    const getMessage = ACTIVITY_MESSAGES[activity.type] || ((data: any) => data.title)
+    const getMessage = ACTIVITY_MESSAGES[activity.type] || ((data: Record<string, unknown>) => data.title as string)
 
     return (
       <div className="flex items-start space-x-3 p-4 hover:bg-gray-50 transition-colors">

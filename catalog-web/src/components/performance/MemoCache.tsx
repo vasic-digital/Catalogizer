@@ -2,12 +2,14 @@ import React, { useMemo, useCallback, useState, useRef, useEffect } from 'react'
 
 
 // Memoization cache for expensive computations
+interface MemoCacheEntry {
+  value: unknown;
+  timestamp: number;
+  ttl: number;
+}
+
 interface MemoCache {
-  [key: string]: {
-    value: any;
-    timestamp: number;
-    ttl: number;
-  };
+  [key: string]: MemoCacheEntry;
 }
 
 class MemoCacheManager {
@@ -20,7 +22,7 @@ class MemoCacheManager {
     this.cleanupInterval = setInterval(() => this.cleanup(), cleanupIntervalMs);
   }
 
-  get(key: string): any {
+  get(key: string): unknown {
     const entry = this.cache[key];
     if (!entry) return null;
 
@@ -32,7 +34,7 @@ class MemoCacheManager {
     return entry.value;
   }
 
-  set(key: string, value: any, ttl = 300000): void { // Default TTL: 5 minutes
+  set(key: string, value: unknown, ttl = 300000): void { // Default TTL: 5 minutes
     if (Object.keys(this.cache).length >= this.maxSize) {
       // Remove oldest entry
       const oldestKey = Object.keys(this.cache).reduce((oldest, current) => {
@@ -81,6 +83,7 @@ export const useMemoized = <T,>(
   const cacheKey = key || dependencies.map(dep => String(dep)).join('|');
 
   // Always call useMemo first (hooks must be called unconditionally)
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   const computedValue = useMemo(computation, dependencies);
 
   // Try to get from cache first
@@ -102,7 +105,7 @@ export const useMemoized = <T,>(
 // Optimized data filtering and sorting hook
 export const useOptimizedData = <T,>(
   data: T[],
-  filters: Record<string, any>,
+  filters: Record<string, unknown>,
   sortBy?: string,
   sortDirection: 'asc' | 'desc' = 'asc'
 ) => {
@@ -115,7 +118,7 @@ export const useOptimizedData = <T,>(
     Object.entries(filters).forEach(([field, value]) => {
       if (value !== null && value !== undefined && value !== '') {
         result = result.filter(item => {
-          const itemValue = (item as Record<string, any>)[field];
+          const itemValue = (item as Record<string, unknown>)[field];
           if (typeof value === 'string') {
             return String(itemValue).toLowerCase().includes(value.toLowerCase());
           }
@@ -127,8 +130,8 @@ export const useOptimizedData = <T,>(
     // Apply sorting
     if (sortBy) {
       result.sort((a, b) => {
-        const aVal = (a as Record<string, any>)[sortBy];
-        const bVal = (b as Record<string, any>)[sortBy];
+        const aVal = (a as Record<string, unknown>)[sortBy];
+        const bVal = (b as Record<string, unknown>)[sortBy];
         
         if (aVal === null || aVal === undefined) return sortDirection === 'asc' ? -1 : 1;
         if (bVal === null || bVal === undefined) return sortDirection === 'asc' ? 1 : -1;
@@ -202,8 +205,8 @@ export const usePagination = <T,>(
 };
 
 // IntersectionObserver hook
-export const useIntersectionObserver = (options?: IntersectionObserverInit) => {
-  const [entries, setEntries] = useState<IntersectionObserverEntry[]>([]);
+export const useIntersectionObserver = (_options?: IntersectionObserverInit) => {
+  const [entries] = useState<IntersectionObserverEntry[]>([]);
   
   const observe = useCallback((element: Element) => {
     // Mock implementation for tests
@@ -271,7 +274,7 @@ export const useDebounceSearch = <T,>(
 };
 
 // Performance monitor hook
-export const usePerformanceMonitor = (componentName: string) => {
+export const usePerformanceMonitor = (_componentName: string) => {
   const renderCountRef = useRef(0);
   renderCountRef.current += 1;
 
