@@ -1,5 +1,5 @@
 import { useEffect, useRef, useCallback } from 'react'
-import { useQueryClient } from '@tanstack/react-query'
+import { useQueryClient, type QueryClient } from '@tanstack/react-query'
 import toast from 'react-hot-toast'
 import {
   WebSocketClient as BaseWebSocketClient,
@@ -12,7 +12,7 @@ export type { WebSocketMessage }
 export interface MediaUpdate {
   action: 'created' | 'updated' | 'deleted' | 'analyzed'
   media_id: number
-  media: any
+  media: Record<string, unknown>
   analysis_id?: string
 }
 
@@ -21,7 +21,7 @@ export interface SystemUpdate {
   component: string
   status: 'healthy' | 'warning' | 'error'
   message?: string
-  details?: any
+  details?: Record<string, unknown>
 }
 
 const WS_URL = import.meta.env.VITE_WS_URL || 'ws://localhost:8080/ws'
@@ -70,13 +70,13 @@ export const useWebSocket = () => {
           handleSystemUpdate(message.payload as SystemUpdate)
           break
         case 'analysis_complete':
-          handleAnalysisComplete(message.payload, queryClient)
+          handleAnalysisComplete(message.payload as Record<string, unknown>, queryClient)
           break
         case 'asset_update':
-          handleAssetUpdate(message.payload, queryClient)
+          handleAssetUpdate(message.payload as Record<string, unknown>, queryClient)
           break
         case 'notification':
-          handleNotification(message.payload)
+          handleNotification(message.payload as Record<string, unknown>)
           break
       }
     })
@@ -108,7 +108,7 @@ export const useWebSocket = () => {
     }
   }, [])
 
-  const send = useCallback((message: any) => {
+  const send = useCallback((message: unknown) => {
     clientRef.current?.sendJSON(message)
   }, [])
 
@@ -142,7 +142,7 @@ export const useWebSocket = () => {
 }
 
 // Message handlers
-const handleMediaUpdate = (update: MediaUpdate, queryClient: any) => {
+const handleMediaUpdate = (update: MediaUpdate, queryClient: QueryClient) => {
   switch (update.action) {
     case 'created':
       toast.success(`New ${update.media.media_type} added: ${update.media.title}`)
@@ -190,13 +190,13 @@ const handleSystemUpdate = (update: SystemUpdate) => {
   }
 }
 
-const handleAnalysisComplete = (data: any, queryClient: any) => {
+const handleAnalysisComplete = (data: Record<string, unknown>, queryClient: QueryClient) => {
   toast.success(`Analysis complete for ${data.items_processed} items`)
   queryClient.invalidateQueries({ queryKey: ['media-search'] })
   queryClient.invalidateQueries({ queryKey: ['media-stats'] })
 }
 
-const handleAssetUpdate = (data: any, queryClient: any) => {
+const handleAssetUpdate = (data: Record<string, unknown>, queryClient: QueryClient) => {
   if (data.action === 'asset_ready') {
     queryClient.invalidateQueries({ queryKey: ['asset', data.asset_id] })
     queryClient.invalidateQueries({ queryKey: [data.entity_type, data.entity_id] })
@@ -204,8 +204,8 @@ const handleAssetUpdate = (data: any, queryClient: any) => {
   }
 }
 
-const handleNotification = (notification: any) => {
-  const { type, title, message, level } = notification
+const handleNotification = (notification: Record<string, unknown>) => {
+  const { message, level } = notification as { message: string; level: string }
 
   switch (level) {
     case 'info':
