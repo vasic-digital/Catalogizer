@@ -381,9 +381,6 @@ func main() {
 	authHandler := root_handlers.NewAuthHandler(authService)
 	androidTVMediaHandler := root_handlers.NewAndroidTVMediaHandler(databaseDB)
 
-	// Simple recommendation handler for testing
-	simpleRecHandler := root_handlers.NewSimpleRecommendationHandler()
-
 	// Recommendation handler
 	recommendationHandler := root_handlers.NewRecommendationHandler(recommendationService)
 
@@ -560,10 +557,6 @@ func main() {
 		api.GET("/media/:id", androidTVMediaHandler.GetMediaByID)
 		api.PUT("/media/:id/progress", androidTVMediaHandler.UpdateWatchProgress)
 		api.PUT("/media/:id/favorite", androidTVMediaHandler.UpdateFavoriteStatus)
-
-		// Test recommendation endpoints
-		api.GET("/recommendations/test", simpleRecHandler.GetSimpleRecommendation)
-		api.GET("/recommendations/error", simpleRecHandler.GetTest)
 
 		// Recommendation endpoints
 		recGroup := api.Group("/recommendations")

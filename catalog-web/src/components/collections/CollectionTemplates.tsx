@@ -1,50 +1,29 @@
 import React, { useState, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
-  Plus,
   Search,
-  Filter,
   Star,
-  Heart,
-  Clock,
   TrendingUp,
   Folder,
-  Music,
-  Video,
-  Image,
   FileText,
   Grid,
   List,
-  Copy,
-  Download,
-  Eye,
   Calendar,
-  Tag,
-  BarChart3,
-  Settings,
   ChevronRight,
   Zap,
-  BookOpen,
   Film,
   Tv,
   Headphones,
   Camera,
-  Archive,
   Users,
-  Globe,
-  Shield,
   Sparkles,
-  Package,
   X
 } from 'lucide-react';
 import { Button } from '../ui/Button';
 import { Input } from '../ui/Input';
-import { Card } from '../ui/Card';
 import { Select } from '../ui/Select';
-import { Switch } from '../ui/Switch';
 import { Badge } from '../ui/Badge';
 
-import { SmartCollection } from '../../types/collections';
 import { toast } from 'react-hot-toast';
 
 interface CollectionTemplate {
@@ -53,8 +32,8 @@ interface CollectionTemplate {
   description: string;
   category: 'media' | 'workflow' | 'organization' | 'automation';
   icon: React.ReactNode;
-  rules?: any[];
-  settings?: any;
+  rules?: Array<Record<string, unknown>>;
+  settings?: Record<string, unknown>;
   metrics?: {
     popularity: number;
     complexity: 'simple' | 'medium' | 'advanced';
@@ -346,11 +325,9 @@ export const CollectionTemplates: React.FC<CollectionTemplatesProps> = ({
   const [searchQuery, setSearchQuery] = useState('');
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
   const [selectedTemplate, setSelectedTemplate] = useState<CollectionTemplate | null>(null);
-  const [showPreview, setShowPreview] = useState(false);
   const [collectionName, setCollectionName] = useState('');
   const [isCreating, setIsCreating] = useState(false);
   const [sortBy, setSortBy] = useState<'popularity' | 'name' | 'complexity' | 'updated'>('popularity');
-  const [showAdvanced, setShowAdvanced] = useState(false);
 
   const filteredTemplates = useMemo(() => {
     const filtered = COLLECTION_TEMPLATES.filter(template => {
@@ -405,8 +382,6 @@ export const CollectionTemplates: React.FC<CollectionTemplatesProps> = ({
   const handleClose = () => {
     setSelectedTemplate(null);
     setCollectionName('');
-    setShowPreview(false);
-    setShowAdvanced(false);
     onClose();
   };
 
@@ -465,7 +440,7 @@ export const CollectionTemplates: React.FC<CollectionTemplatesProps> = ({
             
             <Select
               value={sortBy}
-              onChange={(value) => setSortBy(value as any)}
+              onChange={(value) => setSortBy(value as 'popularity' | 'name' | 'complexity' | 'updated')}
               options={[
                 { value: 'popularity', label: 'Most Popular' },
                 { value: 'name', label: 'Name' },
@@ -700,12 +675,16 @@ export const CollectionTemplates: React.FC<CollectionTemplatesProps> = ({
                       <div>
                         <h4 className="font-semibold text-gray-900 dark:text-white mb-2">Rules</h4>
                         <div className="bg-gray-50 dark:bg-gray-800 rounded-lg p-4 space-y-2">
-                          {selectedTemplate.rules.map((rule, index) => (
-                            <div key={index} className="text-sm text-gray-600 dark:text-gray-300">
-                              {rule.field} {rule.operator} {rule.value}
-                              {rule.timeBased && <Badge className="ml-2" variant="outline">Time-based</Badge>}
-                            </div>
-                          ))}
+                          {selectedTemplate.rules.map((rule, index) => {
+                            const r = rule as Record<string, unknown>;
+                            const timeBasedText = r.timeBased ? <span className="ml-2 text-xs text-blue-600">(Time-based)</span> : null;
+                            return (
+                              <div key={index} className="text-sm text-gray-600 dark:text-gray-300">
+                                {String(r.field)} {String(r.operator)} {String(r.value)}
+                                {timeBasedText}
+                              </div>
+                            );
+                          })}
                         </div>
                       </div>
                     )}

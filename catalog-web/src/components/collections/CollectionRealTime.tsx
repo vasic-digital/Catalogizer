@@ -6,7 +6,6 @@ import {
   Bell,
   BellOff,
   RefreshCw,
-  Users,
   UserPlus,
   UserMinus,
   FilePlus,
@@ -20,23 +19,13 @@ import {
   MessageSquare,
   Heart,
   Share2,
-  Clock,
-  Check,
-  X,
-  AlertCircle,
   Activity,
-  Server,
-  Database,
-  Cloud,
-  Zap,
-  Volume2,
-  VolumeX
+  X
 } from 'lucide-react'
 import { Button } from '../ui/Button'
 import { Switch } from '../ui/Switch'
 import { Card } from '../ui/Card'
 import { SmartCollection } from '../../types/collections'
-import { useCollection } from '../../hooks/useCollections'
 import { toast } from 'react-hot-toast'
 
 interface CollectionRealTimeProps {
@@ -56,7 +45,7 @@ interface RealtimeEvent {
     itemTitle?: string
     itemType?: string
     action?: string
-    details?: any
+    details?: unknown
   }
   collectionId: string
   collectionName: string
@@ -146,15 +135,9 @@ export const CollectionRealTime: React.FC<CollectionRealTimeProps> = ({
     peakConcurrent: 0
   })
   
-  const wsRef = useRef<WebSocket | null>(null)
   const reconnectTimeoutRef = useRef<NodeJS.Timeout | null>(null)
   const heartbeatIntervalRef = useRef<NodeJS.Timeout | null>(null)
   const connectionTimeoutRef = useRef<NodeJS.Timeout | null>(null)
-  
-  const { collectionItems, refetchItems } = useCollection(collection?.id || '')
-
-  // Use collection items from props if available
-  const items = collectionItems || []
 
   // Simulate WebSocket connection
   const connectWebSocket = useCallback(() => {
@@ -336,7 +319,8 @@ export const CollectionRealTime: React.FC<CollectionRealTimeProps> = ({
           // Play sound (simplified)
           const audio = new Audio('/notification.mp3')
           audio.volume = 0.3
-          audio.play().catch(() => {}) // Ignore errors
+          // eslint-disable-next-line @typescript-eslint/no-empty-function
+          audio.play().catch(() => { /* Audio play failed - ignore */ })
         }
         
         toast(description)
@@ -358,11 +342,12 @@ export const CollectionRealTime: React.FC<CollectionRealTimeProps> = ({
     const descriptionFn = EVENT_DESCRIPTIONS[event.type]
     if (descriptionFn) {
       if (event.type === 'rating_added') {
-        return (descriptionFn as any)(event.userName, event.data.itemTitle || '', event.data.details?.rating || 5)
+        const details = event.data.details as { rating?: number } | undefined
+        return (descriptionFn as (user: string, item: string, rating: number) => string)(event.userName, event.data.itemTitle || '', details?.rating || 5)
       } else if (event.type === 'user_joined' || event.type === 'user_left' || event.type === 'share_created') {
-        return (descriptionFn as any)(event.userName)
+        return (descriptionFn as (user: string) => string)(event.userName)
       } else {
-        return (descriptionFn as any)(event.userName, event.data.itemTitle || '')
+        return (descriptionFn as (user: string, item: string) => string)(event.userName, event.data.itemTitle || '')
       }
     }
     return `${event.userName} performed an action`
@@ -381,16 +366,6 @@ export const CollectionRealTime: React.FC<CollectionRealTimeProps> = ({
     if (diffHours < 24) return `${diffHours}h ago`
     
     return date.toLocaleDateString()
-  }
-
-  const getStatusColor = (status: string): string => {
-    switch (status) {
-      case 'connected': return 'text-green-600 dark:text-green-400'
-      case 'connecting': return 'text-yellow-600 dark:text-yellow-400'
-      case 'reconnecting': return 'text-orange-600 dark:text-orange-400'
-      case 'error': return 'text-red-600 dark:text-red-400'
-      default: return 'text-gray-600 dark:text-gray-400'
-    }
   }
 
   const requestDesktopNotifications = useCallback(async () => {

@@ -490,3 +490,135 @@ func TestSyncService_ScanLocalFiles_NonexistentPath(t *testing.T) {
 	assert.Error(t, err)
 	assert.Nil(t, files)
 }
+
+// ============================================================================
+// ADDITIONAL TESTS FOR 95% COVERAGE
+// ============================================================================
+
+func TestSyncService_CreateSyncEndpoint(t *testing.T) {
+	tests := []struct {
+		name        string
+		userID      int
+		endpoint    *models.SyncEndpoint
+		wantErr     bool
+		errContains string
+	}{
+		{
+			name:   "successful creation with WebDAV",
+			userID: 1,
+			endpoint: &models.SyncEndpoint{
+				Name:          "Test Endpoint",
+				Type:          models.SyncTypeWebDAV,
+				URL:           "https://example.com/webdav",
+				Username:      "user",
+				Password:      "pass",
+				SyncDirection: models.SyncDirectionUpload,
+				LocalPath:     "/tmp/local",
+				RemotePath:    "/remote",
+			},
+			wantErr: false,
+		},
+		{
+			name:   "successful creation with Cloud Storage",
+			userID: 1,
+			endpoint: &models.SyncEndpoint{
+				Name:          "Cloud Endpoint",
+				Type:          models.SyncTypeCloudStorage,
+				URL:           "s3://bucket-name",
+				Username:      "access-key",
+				Password:      "secret-key",
+				SyncDirection: models.SyncDirectionBidirectional,
+				LocalPath:     "/data/cloud",
+				RemotePath:    "/",
+			},
+			wantErr: false,
+		},
+		{
+			name:   "missing name",
+			userID: 1,
+			endpoint: &models.SyncEndpoint{
+				Type:          models.SyncTypeWebDAV,
+				URL:           "https://example.com/webdav",
+				SyncDirection: models.SyncDirectionUpload,
+				LocalPath:     "/tmp/local",
+				RemotePath:    "/remote",
+			},
+			wantErr:     true,
+			errContains: "name is required",
+		},
+		{
+			name:   "missing URL",
+			userID: 1,
+			endpoint: &models.SyncEndpoint{
+				Name:          "Test",
+				Type:          models.SyncTypeWebDAV,
+				SyncDirection: models.SyncDirectionUpload,
+				LocalPath:     "/tmp/local",
+				RemotePath:    "/remote",
+			},
+			wantErr:     true,
+			errContains: "URL is required",
+		},
+		{
+			name:   "missing local path",
+			userID: 1,
+			endpoint: &models.SyncEndpoint{
+				Name:          "Test",
+				Type:          models.SyncTypeWebDAV,
+				URL:           "https://example.com/webdav",
+				SyncDirection: models.SyncDirectionUpload,
+				RemotePath:    "/remote",
+			},
+			wantErr:     true,
+			errContains: "local path is required",
+		},
+		{
+			name:   "invalid sync type",
+			userID: 1,
+			endpoint: &models.SyncEndpoint{
+				Name:          "Test",
+				Type:          "invalid_type",
+				URL:           "https://example.com/webdav",
+				SyncDirection: models.SyncDirectionUpload,
+				LocalPath:     "/tmp/local",
+				RemotePath:    "/remote",
+			},
+			wantErr:     true,
+			errContains: "invalid sync type",
+		},
+		{
+			name:   "local sync without remote path",
+			userID: 1,
+			endpoint: &models.SyncEndpoint{
+				Name:          "Local Sync",
+				Type:          models.SyncTypeLocal,
+				URL:           "/source/path",
+				SyncDirection: models.SyncDirectionUpload,
+				LocalPath:     "/dest/path",
+			},
+			wantErr:     true,
+			errContains: "remote path is required",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			service := NewSyncService(nil, nil, nil)
+			got, err := service.CreateSyncEndpoint(tt.userID, tt.endpoint)
+
+			if tt.wantErr {
+				assert.Error(t, err)
+				if tt.errContains != "" {
+					assert.Contains(t, err.Error(), tt.errContains)
+				}
+			} else {
+				assert.NoError(t, err)
+				assert.NotNil(t, got)
+				assert.Equal(t, tt.userID, got.UserID)
+				assert.Equal(t, models.SyncStatusActive, got.Status)
+				assert.NotZero(t, got.CreatedAt)
+				assert.NotZero(t, got.UpdatedAt)
+			}
+		})
+	}
+}

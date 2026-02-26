@@ -1,57 +1,30 @@
-import React, { useState, useMemo, useCallback } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import React, { useState } from 'react';
 import {
   Search,
-  Filter,
   Plus,
   Minus,
   Settings,
-  Calendar,
-  Clock,
-  Star,
-  Tag,
-  FileText,
-  Music,
   Video,
   Image,
-  Globe,
-  Download,
   Eye,
   Heart,
-  BarChart3,
-  Zap,
-  Grid,
-  List,
-  X,
-  ChevronDown,
-  ChevronUp,
-  SlidersHorizontal,
   Save,
   RotateCcw,
   Bookmark,
-  Share2,
-  TrendingUp,
-  Hash,
-  User,
-  Folder,
-  Shield,
-  AlertCircle
+  Folder
 } from 'lucide-react';
 import { Button } from '../ui/Button';
 import { Input } from '../ui/Input';
-import { Card } from '../ui/Card';
 import { Select } from '../ui/Select';
 import { Switch } from '../ui/Switch';
 import { Badge } from '../ui/Badge';
-import { Tabs } from '../ui/Tabs';
-import { SmartCollection } from '../../types/collections';
 import { toast } from 'react-hot-toast';
 
 interface SearchRule {
   id: string;
   field: string;
   operator: string;
-  value: any;
+  value: unknown;
   enabled: boolean;
   condition?: 'and' | 'or';
 }
@@ -95,28 +68,6 @@ interface SearchPreset {
 const SEARCH_FIELDS = [
   { value: 'title', label: 'Title', type: 'text' },
   { value: 'description', label: 'Description', type: 'text' },
-  { value: 'file_type', label: 'File Type', type: 'select', options: ['video', 'audio', 'image', 'document'] },
-  { value: 'size', label: 'File Size', type: 'number' },
-  { value: 'duration', label: 'Duration', type: 'number' },
-  { value: 'created_at', label: 'Created Date', type: 'date' },
-  { value: 'updated_at', label: 'Updated Date', type: 'date' },
-  { value: 'rating', label: 'Rating', type: 'number' },
-  { value: 'tags', label: 'Tags', type: 'text' },
-  { value: 'year', label: 'Year', type: 'number' },
-  { value: 'genre', label: 'Genre', type: 'text' },
-  { value: 'resolution', label: 'Resolution', type: 'select', options: ['720p', '1080p', '4K', '8K'] },
-  { value: 'codec', label: 'Codec', type: 'text' },
-  { value: 'language', label: 'Language', type: 'text' },
-  { value: 'watch_count', label: 'Watch Count', type: 'number' },
-  { value: 'download_count', label: 'Download Count', type: 'number' },
-  { value: 'is_favorite', label: 'Favorite', type: 'boolean' },
-  { value: 'is_archived', label: 'Archived', type: 'boolean' }
-];
-
-const SEARCHABLE_FIELDS: SearchField[] = [
-  { value: 'name', label: 'Name', type: 'text' },
-  { value: 'path', label: 'Path', type: 'text' },
-  { value: 'extension', label: 'Extension', type: 'text' },
   { value: 'file_type', label: 'File Type', type: 'select', options: ['video', 'audio', 'image', 'document'] },
   { value: 'size', label: 'File Size', type: 'number' },
   { value: 'duration', label: 'Duration', type: 'number' },

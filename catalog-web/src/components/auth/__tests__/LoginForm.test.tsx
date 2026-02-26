@@ -322,7 +322,7 @@ describe('LoginForm', () => {
       const user = userEvent.setup()
       const mockLogin = vi.fn().mockRejectedValue(new Error('Invalid credentials'))
       mockUseAuth.mockReturnValue({ login: mockLogin })
-      const consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => {})
+      const consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => { /* Suppress error output during test */ })
 
       render(
         <MemoryRouter>

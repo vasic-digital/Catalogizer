@@ -1,5 +1,5 @@
 import React from 'react'
-import { render, screen, waitFor } from '@testing-library/react'
+import { render, screen } from '@testing-library/react'
 import { MemoryRouter, Routes, Route } from 'react-router-dom'
 import { ProtectedRoute } from '../ProtectedRoute'
 import { useAuth } from '@/contexts/AuthContext'

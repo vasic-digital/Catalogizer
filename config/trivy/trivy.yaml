@@ -1,0 +1,26 @@
+# Trivy Configuration
+severity:
+  - HIGH
+  - CRITICAL
+
+scan:
+  scanners:
+    - vuln
+    - misconfig
+    - secret
+  skip-dirs:
+    - vendor
+    - node_modules
+    - .git
+    - releases
+    - reports
+    - cache
+    - temp
+    - build
+
+report:
+  formats:
+    - table
+    - json
+    - sarif
+  output: reports/security/trivy-report

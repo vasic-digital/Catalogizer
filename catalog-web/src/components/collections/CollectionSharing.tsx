@@ -1,32 +1,19 @@
 import React, { useState, useEffect, useCallback } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import {
-  Share2,
-  Link,
   Mail,
-  MessageCircle,
-  Globe,
-  Lock,
-  Users,
   Copy,
-  Download,
   Upload,
   QrCode,
   ExternalLink,
-  Clock,
-  Calendar,
-  Shield,
-  Eye,
   EyeOff,
-  Edit,
   Trash2,
   Plus,
   X,
-  Check,
-  AlertCircle,
   RefreshCw,
   Wifi,
-  WifiOff
+  WifiOff,
+  Link
 } from 'lucide-react'
 import { Button } from '../ui/Button'
 import { Input } from '../ui/Input'
@@ -263,7 +250,7 @@ export const CollectionSharing: React.FC<CollectionSharingProps> = ({
       }
       
       setShareLinks(prev => [newLink, ...prev])
-      onShareUpdate?.(shareLinks.concat(newLink) as any)
+      onShareUpdate?.(shareLinks.concat(newLink) as unknown as CollectionShare[])
       toast.success('Share link created successfully')
       
       // Reset form
@@ -279,6 +266,7 @@ export const CollectionSharing: React.FC<CollectionSharingProps> = ({
     } finally {
       setIsCreating(false)
     }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [collection.id, selectedPermission, expiryTime, requirePassword, password, allowAnonymous, maxDownloads, shareLinks, onShareUpdate])
 
   const copyToClipboard = useCallback((text: string) => {
@@ -329,7 +317,7 @@ export const CollectionSharing: React.FC<CollectionSharingProps> = ({
     } catch (error) {
       toast.error('Failed to send invitations')
     }
-  }, [emailRecipients, customMessage])
+  }, [emailRecipients])
 
   const getEmbedCode = useCallback(() => {
     return `<iframe src="${window.location.origin}/embed/${collection.id}" width="${embedSize.width}" height="${embedSize.height}" frameborder="0" allowfullscreen></iframe>`

@@ -142,7 +142,7 @@ async function setupSearchMocks(page: Page) {
     const url = new URL(route.request().url());
     const query = url.searchParams.get('query') || '';
 
-    let results = allMedia.map((m, idx) => ({
+    let results = allMedia.map((m) => ({
       id: m.id,
       title: m.title,
       media_type: m.media_type,

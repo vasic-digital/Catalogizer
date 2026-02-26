@@ -1,6 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { collectionsApi } from '../lib/collectionsApi';
-import { SmartCollection, CreateCollectionRequest, UpdateCollectionRequest, CollectionAnalytics, ShareCollectionRequest, CollectionShareInfo } from '../types/collections';
+import { CreateCollectionRequest, UpdateCollectionRequest, ShareCollectionRequest } from '../types/collections';
 import { toast } from 'react-hot-toast';
 
 export const useCollections = () => {
@@ -24,7 +24,7 @@ export const useCollections = () => {
       queryClient.invalidateQueries({ queryKey: ['collections'] });
       toast.success(`Created collection: ${newCollection.name}`);
     },
-    onError: (error: any) => {
+    onError: (error: Error) => {
       toast.error(error.message || 'Failed to create collection');
     },
   });
@@ -37,7 +37,7 @@ export const useCollections = () => {
       queryClient.invalidateQueries({ queryKey: ['collection', updatedCollection.id] });
       toast.success(`Updated collection: ${updatedCollection.name}`);
     },
-    onError: (error: any) => {
+    onError: (error: Error) => {
       toast.error(error.message || 'Failed to update collection');
     },
   });
@@ -49,7 +49,7 @@ export const useCollections = () => {
       queryClient.removeQueries({ queryKey: ['collection', id] });
       toast.success('Collection deleted successfully');
     },
-    onError: (error: any) => {
+    onError: (error: Error) => {
       toast.error(error.message || 'Failed to delete collection');
     },
   });
@@ -61,7 +61,7 @@ export const useCollections = () => {
       queryClient.invalidateQueries({ queryKey: ['collection', refreshedCollection.id] });
       toast.success('Collection refreshed successfully');
     },
-    onError: (error: any) => {
+    onError: (error: Error) => {
       toast.error(error.message || 'Failed to refresh collection');
     },
   });
@@ -78,7 +78,7 @@ export const useCollections = () => {
         console.error('Failed to copy to clipboard:', error);
       }
     },
-    onError: (error: any) => {
+    onError: (error: Error) => {
       toast.error(error.message || 'Failed to share collection');
     },
   });
@@ -90,7 +90,7 @@ export const useCollections = () => {
       queryClient.invalidateQueries({ queryKey: ['collections'] });
       toast.success(`Duplicated collection: ${duplicatedCollection.name}`);
     },
-    onError: (error: any) => {
+    onError: (error: Error) => {
       toast.error(error.message || 'Failed to duplicate collection');
     },
   });
@@ -109,7 +109,7 @@ export const useCollections = () => {
       document.body.removeChild(a);
       toast.success('Collection exported successfully');
     },
-    onError: (error: any) => {
+    onError: (error: Error) => {
       toast.error(error.message || 'Failed to export collection');
     },
   });
@@ -123,7 +123,7 @@ export const useCollections = () => {
         queryClient.removeQueries({ queryKey: ['collection', id] });
       });
     },
-    onError: (error: any) => {
+    onError: (error: Error) => {
       toast.error(error.message || 'Failed to delete collections');
     },
   });
@@ -134,7 +134,7 @@ export const useCollections = () => {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['collections'] });
     },
-    onError: (error: any) => {
+    onError: (error: Error) => {
       toast.error(error.message || 'Failed to share collections');
     },
   });
@@ -153,7 +153,7 @@ export const useCollections = () => {
       document.body.removeChild(a);
       toast.success('Collections exported successfully');
     },
-    onError: (error: any) => {
+    onError: (error: Error) => {
       toast.error(error.message || 'Failed to export collections');
     },
   });
@@ -164,7 +164,7 @@ export const useCollections = () => {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['collections'] });
     },
-    onError: (error: any) => {
+    onError: (error: Error) => {
       toast.error(error.message || 'Failed to update collections');
     },
   });
@@ -200,8 +200,6 @@ export const useCollections = () => {
 };
 
 export const useCollection = (id: string) => {
-  const queryClient = useQueryClient();
-
   const {
     data: collection,
     isLoading,

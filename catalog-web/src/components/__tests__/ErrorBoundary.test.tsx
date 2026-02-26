@@ -10,15 +10,6 @@ const ThrowingComponent = ({ shouldThrow = true }: { shouldThrow?: boolean }) =>
   return <div>Child content rendered</div>
 }
 
-// A component that can be toggled to throw
-let shouldThrow = false
-const ConditionallyThrowingComponent = () => {
-  if (shouldThrow) {
-    throw new Error('Conditional error')
-  }
-  return <div>Working component</div>
-}
-
 describe('ErrorBoundary', () => {
   // Suppress console.error for expected error boundary logs
   const originalError = console.error
@@ -28,10 +19,6 @@ describe('ErrorBoundary', () => {
 
   afterAll(() => {
     console.error = originalError
-  })
-
-  beforeEach(() => {
-    shouldThrow = false
   })
 
   describe('Rendering children', () => {

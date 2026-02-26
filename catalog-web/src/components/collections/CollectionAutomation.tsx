@@ -3,8 +3,6 @@ import { motion, AnimatePresence } from 'framer-motion';
 import {
   Bot,
   Play,
-  Pause,
-  Settings,
   Plus,
   Trash2,
   Edit,
@@ -13,17 +11,10 @@ import {
   AlertCircle,
   CheckCircle,
   Calendar,
-  Filter,
-  Folder,
-  Tag,
-  FileText,
-  Download,
-  Upload,
+  Settings,
   RefreshCw,
-  Save,
   ChevronDown,
   ChevronUp,
-  Info,
   TestTube,
   Activity
 } from 'lucide-react';
@@ -58,14 +49,14 @@ interface AutomationRule {
 interface AutomationAction {
   id: string;
   type: 'add_to_collection' | 'remove_from_collection' | 'tag_files' | 'move_files' | 'copy_files' | 'notify' | 'run_script';
-  parameters: Record<string, any>;
+  parameters: Record<string, unknown>;
   order: number;
 }
 
 interface RuleCondition {
   field: string;
   operator: string;
-  value: any;
+  value: unknown;
   logic?: 'AND' | 'OR';
 }
 
@@ -597,8 +588,8 @@ const CollectionAutomation: React.FC = () => {
                                 <p className="text-xs text-gray-500 mb-1">Conditions:</p>
                                 {rule.trigger.conditions.map((condition, index) => (
                                   <div key={index} className="text-xs text-gray-600 ml-4">
-                                    {condition.field} {condition.operator} {condition.value}
-                                    {condition.logic && <span className="ml-2 text-blue-600">{condition.logic}</span>}
+                                    {condition.field} {condition.operator} {String(condition.value)}
+                                    {condition.logic ? <span className="ml-2 text-blue-600">{condition.logic}</span> : null}
                                   </div>
                                 ))}
                               </div>

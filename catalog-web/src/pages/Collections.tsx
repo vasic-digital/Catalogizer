@@ -1,37 +1,26 @@
-import React, { useState, useCallback, useMemo } from 'react';
+import React, { useState, useCallback } from 'react';
 import { motion } from 'framer-motion';
 import {
   Plus,
   Search,
-  Filter,
   Grid,
   List,
-  Heart,
   Clock,
   BarChart3,
   Share,
   Share2,
-  MoreHorizontal,
-  Edit,
   Trash2,
   Copy,
   Download,
   Eye,
   Settings,
   CheckSquare,
-  Square,
   X,
   Users,
   Bot,
   FileText,
   Zap,
-  Play,
-  Globe,
-  AlertCircle,
   Database,
-  Link,
-  Shield,
-  RefreshCw,
   Activity,
   Loader2,
   Brain,
@@ -41,7 +30,6 @@ import { Button } from '../components/ui/Button';
 import { Input } from '../components/ui/Input';
 import { Select } from '../components/ui/Select';
 import { Tabs } from '../components/ui/Tabs';
-import { Card } from '../components/ui/Card';
 import { SmartCollectionBuilder } from '../components/collections/SmartCollectionBuilder';
 import { CollectionPreview } from '../components/collections/CollectionPreview';
 import { BulkOperations } from '../components/collections/BulkOperations';
@@ -74,10 +62,11 @@ import {
 import { 
   AIMetadataExtractor,
   AIAutomationRules,
-  AIContentQualityAnalyzer
+  AIContentQualityAnalyzer,
+  type ExtractedMetadata
 } from '../components/ai/AIMetadata';
 import { useCollections } from '../hooks/useCollections';
-import { SmartCollection } from '../types/collections';
+import { SmartCollection, CollectionRule, ShareCollectionRequest } from '../types/collections';
 import { toast } from 'react-hot-toast';
 
 const COLLECTIONS_TABS = [
@@ -143,7 +132,7 @@ export const Collections: React.FC = () => {
   });
 
   // Performance monitoring
-  const measurePerformance = useCallback((name: string) => {
+  const measurePerformance = useCallback((_name: string) => {
     const startTime = performance.now();
     return () => {
       const endTime = performance.now();
@@ -163,8 +152,8 @@ export const Collections: React.FC = () => {
   const {
     collections,
     isLoading,
-    error,
-    refetchCollections,
+    error: _error,
+    refetchCollections: _refetchCollections,
     createCollection,
     updateCollection,
     deleteCollection,
@@ -177,7 +166,7 @@ export const Collections: React.FC = () => {
     bulkUpdateCollections,
     isSharing,
     isDuplicating,
-    isExporting,
+    isExporting: _isExporting,
   } = useCollections();
 
   // Debounced search for performance
@@ -289,7 +278,7 @@ export const Collections: React.FC = () => {
     setShowSmartBuilder(true);
   };
 
-  const handleSaveSmartCollection = async (name: string, description: string, rules: any[]) => {
+  const handleSaveSmartCollection = async (name: string, description: string, rules: CollectionRule[]) => {
     try {
       await createCollection({
         collection: {
@@ -332,17 +321,6 @@ export const Collections: React.FC = () => {
     }
   };
 
-  const handleExportCollection = async (collection: SmartCollection, format: 'json' | 'csv' | 'm3u') => {
-    try {
-      await exportCollection({
-        id: collection.id,
-        format
-      });
-    } catch (error) {
-      console.error('Failed to export collection:', error);
-    }
-  };
-
   const handleDeleteCollection = async (collection: SmartCollection) => {
     if (window.confirm(`Are you sure you want to delete "${collection.name}"? This action cannot be undone.`)) {
       try {
@@ -357,7 +335,7 @@ export const Collections: React.FC = () => {
     }
   };
 
-  const handleBulkOperation = async (operation: string, options?: any) => {
+  const handleBulkOperation = async (operation: string, options?: unknown) => {
     try {
       switch (operation) {
         case 'delete':
@@ -367,14 +345,14 @@ export const Collections: React.FC = () => {
         case 'share':
           await bulkShareCollections({ 
             collectionIds: selectedCollections,
-            shareRequest: options || { can_view: true, can_comment: false, can_download: false }
+            shareRequest: ((options as unknown) as ShareCollectionRequest | undefined) || { can_view: true, can_comment: false, can_download: false }
           });
           toast.success(`${selectedCollections.length} collections shared`);
           break;
         case 'export':
           await bulkExportCollections({ 
             collectionIds: selectedCollections,
-            format: options?.format || 'json'
+            format: ((options as { format?: string } | undefined)?.format as 'json' | 'csv' | 'm3u') || 'json'
           });
           toast.success(`${selectedCollections.length} collections exported`);
           break;
@@ -436,15 +414,15 @@ export const Collections: React.FC = () => {
   };
 
   // AI Feature Handlers
-  const handleAISuggestionAccept = (suggestion: any) => {
+  const handleAISuggestionAccept = (suggestion: { title: string }) => {
     toast.success(`AI suggestion applied: ${suggestion.title}`);
   };
 
-  const handleAINaturalSearch = (query: any) => {
+  const handleAINaturalSearch = (query: { query: string }) => {
     toast.success(`AI search executed: ${query.query}`);
   };
 
-  const handleAICategorizationComplete = (result: any) => {
+  const handleAICategorizationComplete = (result: { category: string }) => {
     toast.success(`Content categorized as: ${result.category}`);
   };
 
@@ -460,8 +438,8 @@ export const Collections: React.FC = () => {
     toast.success(`AI organization suggestion applied: ${suggestionId}`);
   };
 
-  const handleAIMetadataExtracted = (metadata: any) => {
-    toast.success('AI metadata extraction completed');
+  const handleAIMetadataExtracted = (metadata: ExtractedMetadata) => {
+    toast.success(`AI metadata extraction completed for: ${metadata.title}`);
   };
 
   const handleAIRuleToggle = (ruleId: string, enabled: boolean) => {
@@ -1173,7 +1151,6 @@ export const Collections: React.FC = () => {
       {showBulkOperations && (
         <BulkOperations
           selectedCollections={selectedCollections}
-          collections={filteredCollections}
           onOperation={handleBulkOperation}
           onClose={() => setShowBulkOperations(false)}
         />

@@ -68,7 +68,7 @@ class AIAnalyticsService {
   }
 
   // Analyze user behavior patterns
-  static async analyzeUserBehavior(userId: string): Promise<UserBehaviorPattern[]> {
+  static async analyzeUserBehavior(_userId: string): Promise<UserBehaviorPattern[]> {
     await this.delay(1200);
 
     return [
@@ -115,10 +115,10 @@ class AIAnalyticsService {
   }
 
   // Generate AI predictions
-  static async generatePredictions(context: {
-    userHistory: any[];
-    contentMetrics: any;
-    currentTrends: any;
+  static async generatePredictions(_context: {
+    userHistory: unknown[];
+    contentMetrics: unknown;
+    currentTrends: unknown;
   }): Promise<AIPrediction[]> {
     await this.delay(1000);
 
@@ -217,7 +217,7 @@ class AIAnalyticsService {
   }
 
   // Generate organization suggestions
-  static async generateOrganizationSuggestions(collections: any[]): Promise<AIOrganizationSuggestion[]> {
+  static async generateOrganizationSuggestions(_collections: unknown[]): Promise<AIOrganizationSuggestion[]> {
     await this.delay(1500);
 
     return [
@@ -593,7 +593,7 @@ export const AIPredictions: React.FC<AIPredictionsProps> = ({
 
 // Smart Organization Suggestions Component
 interface AISmartOrganizationProps {
-  collections: any[];
+  collections: unknown[];
   onSuggestionApply: (suggestionId: string) => void;
 }
 

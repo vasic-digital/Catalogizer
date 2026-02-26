@@ -1,37 +1,17 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import {
-  DndContext,
-  closestCenter,
-  KeyboardSensor,
-  PointerSensor,
-  useSensor,
-  useSensors,
-  DragEndEvent,
-} from '@dnd-kit/core';
-import {
-  arrayMove,
-  SortableContext,
-  sortableKeyboardCoordinates,
-  verticalListSortingStrategy,
-} from '@dnd-kit/sortable';
 import { 
   Plus, 
   Search, 
-  Filter, 
   MoreVertical,
   Play,
   Shuffle,
   Edit3,
   Trash2,
-  Share,
   Lock,
   Unlock,
   Clock,
   Music,
-  Film,
-  Image,
-  FileText,
   Grid,
   List
 } from 'lucide-react';
@@ -40,10 +20,8 @@ import { Input } from '../ui/Input';
 import { Select } from '../ui/Select';
 import { playlistApi } from '../../lib/playlistsApi';
 import { usePlaylists } from '../../hooks/usePlaylists';
-import { usePlaylistReorder } from '../../hooks/usePlaylistReorder';
 import { Playlist, PlaylistViewMode, PlaylistSortBy, getMediaIconWithMap } from '../../types/playlists';
 import { toast } from 'react-hot-toast';
-import { SortablePlaylistItem } from './SortablePlaylistItem';
 
 interface PlaylistManagerProps {
   onCreatePlaylist: () => void;
@@ -51,20 +29,6 @@ interface PlaylistManagerProps {
   onPlaylistSelect: (playlist: Playlist) => void;
   className?: string;
 }
-
-const MEDIA_TYPE_ICONS = {
-  music: Music,
-  video: Film,
-  image: Image,
-  document: FileText,
-};
-
-const DURATION_FORMATTER = new Intl.DateTimeFormat('en-US', {
-  hour: 'numeric',
-  minute: '2-digit',
-  second: '2-digit',
-  hour12: false
-});
 
 export const PlaylistManager: React.FC<PlaylistManagerProps> = ({
   onCreatePlaylist,
@@ -75,7 +39,6 @@ export const PlaylistManager: React.FC<PlaylistManagerProps> = ({
   const [searchQuery, setSearchQuery] = useState('');
   const [viewMode, setViewMode] = useState<PlaylistViewMode>('grid');
   const [sortBy, setSortBy] = useState<PlaylistSortBy>('name');
-  const [selectedPlaylist, setSelectedPlaylist] = useState<Playlist | null>(null);
   const [showDropdown, setShowDropdown] = useState<string | null>(null);
 
   const {

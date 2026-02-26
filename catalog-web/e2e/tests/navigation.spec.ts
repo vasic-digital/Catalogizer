@@ -230,9 +230,6 @@ test.describe('Navigation', () => {
       await page.goto('/login');
 
       // The header for unauthenticated state shows Login and Sign Up
-      const loginButton = page.locator('text=Login');
-      const signUpButton = page.locator('text=Sign Up');
-
       // These may or may not be visible depending on whether the header renders on login page
       await expect(page.locator('body')).toBeVisible();
     });

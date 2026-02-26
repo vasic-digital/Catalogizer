@@ -5,19 +5,15 @@ import { BulkOperations } from '../BulkOperations'
 // Mock framer-motion
 vi.mock('framer-motion', () => ({
   motion: {
-    div: ({ children, className, onClick, ...props }: any) => (
+    div: ({ children, className, onClick }: { children: React.ReactNode; className?: string; onClick?: () => void }) => (
       <div className={className} onClick={onClick}>{children}</div>
     ),
   },
-  AnimatePresence: ({ children }: any) => <>{children}</>,
+  AnimatePresence: ({ children }: { children: React.ReactNode }) => <>{children}</>,
 }))
 
 const defaultProps = {
   selectedCollections: ['1', '2'],
-  collections: [
-    { id: '1', name: 'Collection A' },
-    { id: '2', name: 'Collection B' },
-  ],
   onOperation: vi.fn(),
   onClose: vi.fn(),
 }

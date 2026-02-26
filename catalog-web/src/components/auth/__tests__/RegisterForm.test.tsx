@@ -502,7 +502,7 @@ describe('RegisterForm', () => {
       const user = userEvent.setup()
       const mockRegister = vi.fn().mockRejectedValue(new Error('Registration failed'))
       mockUseAuth.mockReturnValue({ register: mockRegister })
-      const consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => {})
+      const consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => { /* Suppress error output during test */ })
 
       render(
         <MemoryRouter>

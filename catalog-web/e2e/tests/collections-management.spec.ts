@@ -1,6 +1,6 @@
 import { test, expect, Page } from '@playwright/test';
 import { mockAuthEndpoints, testUser, loginAs } from '../fixtures/auth';
-import { mockCollectionEndpoints, mockDashboardEndpoints } from '../fixtures/api-mocks';
+import { mockDashboardEndpoints } from '../fixtures/api-mocks';
 
 /**
  * Setup extended collection mocks for management tests

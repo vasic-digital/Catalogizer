@@ -4,35 +4,29 @@ import {
   Plus,
   X,
   Save,
-  Play,
-  Shuffle,
   Filter,
-  Search,
-  Calendar,
   Clock,
   Star,
-  Tag,
   Music,
   Film,
-  Image,
   FileText,
+  Image,
+  Heart,
+  HardDrive,
+  Mic,
+  Play,
   ChevronDown,
   ChevronUp,
-  HelpCircle,
   Trash2,
   Copy,
   TestTube,
   Lightbulb,
-  Zap,
-  Heart,
-  HardDrive,
-  Mic
+  Zap
 } from 'lucide-react';
 import { Button } from '../ui/Button';
 import { Input } from '../ui/Input';
 import { Select } from '../ui/Select';
 import { Textarea } from '../ui/Textarea';
-import { Card } from '../ui/Card';
 import { Switch } from '../ui/Switch';
 import { 
   COLLECTION_TEMPLATES, 
@@ -84,7 +78,6 @@ export const SmartCollectionBuilder: React.FC<SmartCollectionBuilderProps> = ({
   const [name, setName] = useState(initialName);
   const [description, setDescription] = useState(initialDescription);
   const [rules, setRules] = useState<CollectionRule[]>(initialRules);
-  const [expandedRules, setExpandedRules] = useState<Set<string>>(new Set());
   const [showTemplates, setShowTemplates] = useState(false);
   const [showAdvanced, setShowAdvanced] = useState(false);
   const [testResults, setTestResults] = useState<any>(null);
@@ -213,35 +206,7 @@ export const SmartCollectionBuilder: React.FC<SmartCollectionBuilderProps> = ({
     toast.success(`Loaded template: ${template.name}`);
   };
 
-  const toggleRuleExpansion = (ruleId: string) => {
-    setExpandedRules(prev => {
-      const newSet = new Set(prev);
-      if (newSet.has(ruleId)) {
-        newSet.delete(ruleId);
-      } else {
-        newSet.add(ruleId);
-      }
-      return newSet;
-    });
-  };
-
   const duplicateRule = (ruleId: string) => {
-    const findAndDuplicateRule = (rules: CollectionRule[]): CollectionRule[] => {
-      return rules.map(rule => {
-        if (rule.id === ruleId) {
-          const duplicatedRule = {
-            ...rule,
-            id: generateRuleId(),
-          };
-          return duplicatedRule;
-        }
-        if (rule.nested_rules) {
-          return { ...rule, nested_rules: findAndDuplicateRule(rule.nested_rules) };
-        }
-        return rule;
-      });
-    };
-
     const originalRule = rules.find(r => r.id === ruleId);
     if (originalRule) {
       const ruleIndex = rules.findIndex(r => r.id === ruleId);
@@ -295,8 +260,7 @@ export const SmartCollectionBuilder: React.FC<SmartCollectionBuilderProps> = ({
     onSave(name.trim(), description.trim(), rules);
   };
 
-  const renderRule = (rule: CollectionRule, level = 0, parentRule?: CollectionRule) => {
-    const isExpanded = expandedRules.has(rule.id);
+  const renderRule = (rule: CollectionRule, level = 0, _parentRule?: CollectionRule) => {
     const fieldType = getFieldType(rule.field);
     const operators = COLLECTION_OPERATORS[fieldType as keyof typeof COLLECTION_OPERATORS] || [];
     const fieldOptions = getFieldOptions(rule.field);

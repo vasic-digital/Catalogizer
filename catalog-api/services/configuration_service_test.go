@@ -161,12 +161,6 @@ func TestConfigurationService_CreateDefaultConfiguration(t *testing.T) {
 	require.NotNil(t, config.Authentication)
 	assert.True(t, config.Authentication.EnableRegistration)
 	assert.False(t, config.Authentication.RequireEmailVerification)
-
-	// Feature defaults
-	require.NotNil(t, config.Features)
-	assert.True(t, config.Features.MediaConversion)
-	assert.True(t, config.Features.ErrorReporting)
-	assert.True(t, config.Features.LogManagement)
 }
 
 func TestConfigurationService_ValidateConfiguration(t *testing.T) {

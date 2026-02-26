@@ -1,6 +1,6 @@
 import { test, expect } from '@playwright/test';
 import { mockAuthEndpoints, testUser, loginAs } from '../fixtures/auth';
-import { mockMediaEndpoints, mockMedia, mockDashboardEndpoints } from '../fixtures/api-mocks';
+import { mockMediaEndpoints, mockDashboardEndpoints } from '../fixtures/api-mocks';
 
 test.describe('Media Browsing', () => {
   test.beforeEach(async ({ page }) => {

@@ -1,0 +1,13 @@
+{
+  "G101": {
+    "pattern": "(?i)passwd|pass|password|pwd|secret|key|token",
+    "ignore_entropy": false,
+    "entropy_threshold": "80.0",
+    "per_char_threshold": "3.0",
+    "truncate": "32"
+  },
+  "severity": "medium",
+  "confidence": "medium",
+  "cwe": true,
+  "nosec": true
+}

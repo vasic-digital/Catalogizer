@@ -1,24 +1,18 @@
 import React, { useState, useEffect } from 'react'
 import { motion } from 'framer-motion'
 import {
-  Settings,
-  Palette,
-  Layout,
-  Clock,
-  Filter,
-  Download,
-  Share2,
-  Bell,
-  Shield,
-  Zap,
   Save,
   X,
-  Eye,
   Grid,
   List,
-  Play
+  Layout,
+  Settings,
+  Play,
+  Download,
+  Share2,
+  Shield
 } from 'lucide-react'
-import { SmartCollection } from '../../types/collections'
+import { SmartCollection, UpdateCollectionRequest } from '../../types/collections'
 import { Button } from '../ui/Button'
 import { Switch } from '../ui/Switch'
 import { Select } from '../ui/Select'
@@ -26,7 +20,7 @@ import { Select } from '../ui/Select'
 interface CollectionSettingsProps {
   collection: SmartCollection
   onClose: () => void
-  onSave: (settings: any) => void
+  onSave: (settings: UpdateCollectionRequest) => void
 }
 
 interface CollectionPreferences {
@@ -203,14 +197,14 @@ export const CollectionSettings: React.FC<CollectionSettingsProps> = ({
   // Update nested preferences
   const updateNestedPreference = (
     path: string,
-    value: any
+    value: unknown
   ) => {
     setPreferences(prev => {
       const [parent, child] = path.split('.')
       return {
         ...prev,
         [parent]: {
-          ...(prev as any)[parent],
+          ...((prev as unknown) as Record<string, Record<string, unknown>>)[parent],
           [child]: value
         }
       }
@@ -273,7 +267,7 @@ export const CollectionSettings: React.FC<CollectionSettingsProps> = ({
                 return (
                   <button
                     key={tab.id}
-                    onClick={() => setActiveTab(tab.id as any)}
+                    onClick={() => setActiveTab(tab.id as 'display' | 'behavior' | 'playback' | 'download' | 'sharing' | 'privacy')}
                     className={`
                       w-full flex items-center gap-3 px-3 py-2 rounded-lg text-left transition-colors
                       ${isActive 
@@ -359,7 +353,7 @@ export const CollectionSettings: React.FC<CollectionSettingsProps> = ({
                       </label>
                       <Select
                         value={preferences.thumbnailSize}
-                        onChange={(value) => updatePreference('thumbnailSize', value as any)}
+                        onChange={(value) => updatePreference('thumbnailSize', value as CollectionPreferences['thumbnailSize'])}
                         options={VIEW_SIZE_OPTIONS}
                       />
                     </div>
@@ -461,7 +455,7 @@ export const CollectionSettings: React.FC<CollectionSettingsProps> = ({
                       </label>
                       <Select
                         value={preferences.sortOrder}
-                        onChange={(value) => updatePreference('sortOrder', value as any)}
+                        onChange={(value) => updatePreference('sortOrder', value as CollectionPreferences['sortOrder'])}
                         options={SORT_OPTIONS}
                       />
                     </div>
@@ -472,7 +466,7 @@ export const CollectionSettings: React.FC<CollectionSettingsProps> = ({
                       </label>
                       <Select
                         value={preferences.sortDirection}
-                        onChange={(value) => updatePreference('sortDirection', value as any)}
+                        onChange={(value) => updatePreference('sortDirection', value as CollectionPreferences['sortDirection'])}
                         options={[
                           { value: 'asc', label: 'Ascending' },
                           { value: 'desc', label: 'Descending' }
@@ -486,7 +480,7 @@ export const CollectionSettings: React.FC<CollectionSettingsProps> = ({
                       </label>
                       <Select
                         value={preferences.groupBy || ''}
-                        onChange={(value) => updatePreference('groupBy', value as any)}
+                        onChange={(value) => updatePreference('groupBy', value as CollectionPreferences['groupBy'])}
                         options={GROUP_BY_OPTIONS}
                       />
                     </div>
@@ -581,7 +575,7 @@ export const CollectionSettings: React.FC<CollectionSettingsProps> = ({
                       </label>
                       <Select
                         value={preferences.downloadQuality}
-                        onChange={(value) => updatePreference('downloadQuality', value as any)}
+                        onChange={(value) => updatePreference('downloadQuality', value as CollectionPreferences['downloadQuality'])}
                         options={DOWNLOAD_QUALITY_OPTIONS}
                       />
                     </div>
@@ -592,7 +586,7 @@ export const CollectionSettings: React.FC<CollectionSettingsProps> = ({
                       </label>
                       <Select
                         value={preferences.downloadLocation}
-                        onChange={(value) => updatePreference('downloadLocation', value as any)}
+                        onChange={(value) => updatePreference('downloadLocation', value as CollectionPreferences['downloadLocation'])}
                         options={[
                           { value: 'default', label: 'Default Downloads Folder' },
                           { value: 'custom', label: 'Custom Location' }

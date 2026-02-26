@@ -319,6 +319,7 @@ test.describe('Entity Browsing', () => {
         await page.waitForTimeout(1000);
 
         // Should return to unfiltered view (no type param)
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
         const url = page.url();
         // Type selector should be visible again (movies text from the card, not from results)
         await expect(page.locator('body')).toBeVisible();

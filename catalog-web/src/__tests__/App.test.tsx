@@ -111,7 +111,7 @@ describe('App', () => {
     })
 
     it('renders with provider hierarchy', () => {
-      const { container } = render(<App />)
+      render(<App />)
       const authProvider = screen.getByTestId('auth-provider')
       const websocketProvider = screen.getByTestId('websocket-provider')
 

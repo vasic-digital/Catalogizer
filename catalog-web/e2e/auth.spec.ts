@@ -1,5 +1,5 @@
-import { test, expect, Page } from '@playwright/test';
-import { mockAuthEndpoints, testUser, loginAs, logout } from './fixtures/auth';
+import { test, expect } from '@playwright/test';
+import { mockAuthEndpoints, testUser, loginAs } from './fixtures/auth';
 import { mockDashboardEndpoints } from './fixtures/api-mocks';
 
 /**

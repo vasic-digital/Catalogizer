@@ -478,8 +478,8 @@ test.describe('Accessibility', () => {
       await page.waitForLoadState('networkidle');
 
       // Check if inputs have autocomplete attributes
-      const usernameAutocomplete = await page.locator('input[placeholder*="username" i]').getAttribute('autocomplete');
-      const passwordAutocomplete = await page.locator('input[placeholder*="password" i]').getAttribute('autocomplete');
+      await page.locator('input[placeholder*="username" i]').getAttribute('autocomplete');
+      await page.locator('input[placeholder*="password" i]').getAttribute('autocomplete');
 
       // Autocomplete is recommended but not strictly required
       // At minimum, the inputs should exist and be fillable

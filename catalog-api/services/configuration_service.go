@@ -716,11 +716,6 @@ func (s *ConfigurationService) createDefaultConfiguration() *models.SystemConfig
 			EnableRegistration:       true,
 			RequireEmailVerification: false,
 		},
-		Features: &models.FeatureConfig{
-			MediaConversion: true,
-			ErrorReporting:  true,
-			LogManagement:   true,
-		},
 	}
 }
 

@@ -9,7 +9,6 @@ import {
   Archive, 
   FolderOpen,
   MoreHorizontal,
-  Check,
   X
 } from 'lucide-react'
 import { Collection } from '../../types/collections'
@@ -18,18 +17,17 @@ import { Switch } from '../ui/Switch'
 
 interface BulkOperationsProps {
   selectedCollections: string[]
-  collections: any[]
-  onOperation: (operation: string, options?: any) => void
+  onOperation: (operation: string, options?: unknown) => void
   onClose: () => void
 }
 
 type BulkAction = {
   id: string
   label: string
-  icon: React.ComponentType<any>
+  icon: React.ComponentType<{ className?: string }>
   description: string
   requiresConfirmation: boolean
-  options?: React.ComponentType<{ value: any; onChange: (value: any) => void }>
+  options?: React.ComponentType<{ value: unknown; onChange: (value: unknown) => void }>
 }
 
 interface ActionOptions {
@@ -46,11 +44,9 @@ interface ActionOptions {
 
 export const BulkOperations: React.FC<BulkOperationsProps> = ({
   selectedCollections,
-  collections,
   onOperation,
   onClose
 }) => {
-  const [showActions, setShowActions] = useState(false)
   const [selectedAction, setSelectedAction] = useState<string | null>(null)
   const [actionOptions, setActionOptions] = useState<ActionOptions>({})
   const [showConfirmation, setShowConfirmation] = useState(false)
@@ -70,7 +66,7 @@ export const BulkOperations: React.FC<BulkOperationsProps> = ({
       icon: Share2,
       description: 'Share selected collections with others',
       requiresConfirmation: false,
-      options: ShareOptions
+      options: ShareOptions as React.ComponentType<{ value: unknown; onChange: (value: unknown) => void }>
     },
     {
       id: 'export',
@@ -78,7 +74,7 @@ export const BulkOperations: React.FC<BulkOperationsProps> = ({
       icon: Download,
       description: 'Export selected collections to file',
       requiresConfirmation: false,
-      options: ExportOptions
+      options: ExportOptions as React.ComponentType<{ value: unknown; onChange: (value: unknown) => void }>
     },
     {
       id: 'duplicate',
@@ -86,7 +82,7 @@ export const BulkOperations: React.FC<BulkOperationsProps> = ({
       icon: Copy,
       description: 'Create copies of selected collections',
       requiresConfirmation: false,
-      options: DuplicateOptions
+      options: DuplicateOptions as React.ComponentType<{ value: unknown; onChange: (value: unknown) => void }>
     },
     {
       id: 'tag',
@@ -94,7 +90,7 @@ export const BulkOperations: React.FC<BulkOperationsProps> = ({
       icon: Tag,
       description: 'Add tags to selected collections',
       requiresConfirmation: false,
-      options: TagOptions
+      options: TagOptions as React.ComponentType<{ value: unknown; onChange: (value: unknown) => void }>
     },
     {
       id: 'archive',
@@ -102,7 +98,7 @@ export const BulkOperations: React.FC<BulkOperationsProps> = ({
       icon: Archive,
       description: 'Archive selected collections to storage',
       requiresConfirmation: false,
-      options: ArchiveOptions
+      options: ArchiveOptions as React.ComponentType<{ value: unknown; onChange: (value: unknown) => void }>
     },
     {
       id: 'move',
@@ -110,7 +106,7 @@ export const BulkOperations: React.FC<BulkOperationsProps> = ({
       icon: FolderOpen,
       description: 'Move selected collections to folder',
       requiresConfirmation: false,
-      options: MoveOptions
+      options: MoveOptions as React.ComponentType<{ value: unknown; onChange: (value: unknown) => void }>
     }
   ]
 
@@ -133,7 +129,6 @@ export const BulkOperations: React.FC<BulkOperationsProps> = ({
     try {
       setIsActionInProgress(true)
       onOperation(actionId, options || actionOptions)
-      setShowActions(false)
       setSelectedAction(null)
       setActionOptions({})
       setShowConfirmation(false)
@@ -246,13 +241,13 @@ export const BulkOperations: React.FC<BulkOperationsProps> = ({
 
               {/* Action Options */}
               <div className="mb-6">
-                {selectedAction === 'share' && <ShareOptions value={actionOptions} onChange={setActionOptions} />}
-                {selectedAction === 'export' && <ExportOptions value={actionOptions} onChange={setActionOptions} />}
-                {selectedAction === 'duplicate' && <DuplicateOptions value={actionOptions} onChange={setActionOptions} />}
-                {selectedAction === 'tag' && <TagOptions value={actionOptions} onChange={setActionOptions} />}
-                {selectedAction === 'archive' && <ArchiveOptions value={actionOptions} onChange={setActionOptions} />}
-                {selectedAction === 'move' && <MoveOptions value={actionOptions} onChange={setActionOptions} />}
-                {selectedAction === 'delete' && <DeleteOptions value={actionOptions} onChange={setActionOptions} />}
+                {selectedAction === 'share' && <ShareOptions value={actionOptions as ShareOptionsValue} onChange={(v) => setActionOptions(v as ActionOptions)} />}
+                {selectedAction === 'export' && <ExportOptions value={actionOptions as ExportOptionsValue} onChange={(v) => setActionOptions(v as ActionOptions)} />}
+                {selectedAction === 'duplicate' && <DuplicateOptions value={actionOptions as DuplicateOptionsValue} onChange={(v) => setActionOptions(v as ActionOptions)} />}
+                {selectedAction === 'tag' && <TagOptions value={actionOptions as TagOptionsValue} onChange={(v) => setActionOptions(v as ActionOptions)} />}
+                {selectedAction === 'archive' && <ArchiveOptions value={actionOptions as ArchiveOptionsValue} onChange={(v) => setActionOptions(v as ActionOptions)} />}
+                {selectedAction === 'move' && <MoveOptions value={actionOptions as MoveOptionsValue} onChange={(v) => setActionOptions(v as ActionOptions)} />}
+                {selectedAction === 'delete' && <DeleteOptions value={actionOptions as DeleteOptionsValue} onChange={(v) => setActionOptions(v as ActionOptions)} />}
               </div>
               
               {/* Actions */}
@@ -339,8 +334,15 @@ export const BulkOperations: React.FC<BulkOperationsProps> = ({
   )
 }
 
+interface ShareOptionsValue {
+  shareWithPermissions?: {
+    can_download?: boolean;
+    can_reshare?: boolean;
+  };
+}
+
 // Action Options Components
-const ShareOptions: React.FC<{ value: any; onChange: (value: any) => void }> = ({ value, onChange }) => (
+const ShareOptions: React.FC<{ value: ShareOptionsValue; onChange: (value: ShareOptionsValue) => void }> = ({ value, onChange }) => (
   <div className="space-y-4">
     <div>
       <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
@@ -380,7 +382,11 @@ const ShareOptions: React.FC<{ value: any; onChange: (value: any) => void }> = (
   </div>
 )
 
-const ExportOptions: React.FC<{ value: any; onChange: (value: any) => void }> = ({ value, onChange }) => (
+interface ExportOptionsValue {
+  exportFormat?: string;
+}
+
+const ExportOptions: React.FC<{ value: ExportOptionsValue; onChange: (value: ExportOptionsValue) => void }> = ({ value, onChange }) => (
   <div>
     <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
       Export Format
@@ -397,7 +403,11 @@ const ExportOptions: React.FC<{ value: any; onChange: (value: any) => void }> = 
   </div>
 )
 
-const DuplicateOptions: React.FC<{ value: any; onChange: (value: any) => void }> = ({ value, onChange }) => (
+interface DuplicateOptionsValue {
+  suffix?: string;
+}
+
+const DuplicateOptions: React.FC<{ value: DuplicateOptionsValue; onChange: (value: DuplicateOptionsValue) => void }> = ({ value, onChange }) => (
   <div>
     <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
       Suffix
@@ -412,7 +422,11 @@ const DuplicateOptions: React.FC<{ value: any; onChange: (value: any) => void }>
   </div>
 )
 
-const TagOptions: React.FC<{ value: any; onChange: (value: any) => void }> = ({ value, onChange }) => (
+interface TagOptionsValue {
+  addTags?: string[];
+}
+
+const TagOptions: React.FC<{ value: TagOptionsValue; onChange: (value: TagOptionsValue) => void }> = ({ value, onChange }) => (
   <div>
     <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
       Tags
@@ -430,7 +444,12 @@ const TagOptions: React.FC<{ value: any; onChange: (value: any) => void }> = ({ 
   </div>
 )
 
-const ArchiveOptions: React.FC<{ value: any; onChange: (value: any) => void }> = ({ value, onChange }) => (
+interface ArchiveOptionsValue {
+  archiveLocation?: string;
+  compressArchive?: boolean;
+}
+
+const ArchiveOptions: React.FC<{ value: ArchiveOptionsValue; onChange: (value: ArchiveOptionsValue) => void }> = ({ value, onChange }) => (
   <div className="space-y-4">
     <div>
       <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
@@ -458,7 +477,11 @@ const ArchiveOptions: React.FC<{ value: any; onChange: (value: any) => void }> =
   </div>
 )
 
-const MoveOptions: React.FC<{ value: any; onChange: (value: any) => void }> = ({ value, onChange }) => (
+interface MoveOptionsValue {
+  moveTo?: string;
+}
+
+const MoveOptions: React.FC<{ value: MoveOptionsValue; onChange: (value: MoveOptionsValue) => void }> = ({ value, onChange }) => (
   <div>
     <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
       Destination Folder
@@ -473,7 +496,11 @@ const MoveOptions: React.FC<{ value: any; onChange: (value: any) => void }> = ({
   </div>
 )
 
-const DeleteOptions: React.FC<{ value: any; onChange: (value: any) => void }> = ({ value, onChange }) => (
+interface DeleteOptionsValue {
+  deleteForever?: boolean;
+}
+
+const DeleteOptions: React.FC<{ value: DeleteOptionsValue; onChange: (value: DeleteOptionsValue) => void }> = ({ value, onChange }) => (
   <div>
     <label className="flex items-center gap-2">
       <input

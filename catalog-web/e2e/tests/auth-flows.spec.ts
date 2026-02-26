@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test';
-import { mockAuthEndpoints, testUser, adminUser, loginAs } from '../fixtures/auth';
+import { mockAuthEndpoints, testUser, loginAs } from '../fixtures/auth';
 
 test.describe('Authentication Flows', () => {
   test.describe('Login Page UI', () => {
@@ -33,9 +33,6 @@ test.describe('Authentication Flows', () => {
       await expect(passwordInput).toHaveAttribute('type', 'password');
 
       // Click the eye toggle button (button sibling near the password input)
-      const toggleButton = page.locator('button:has(svg)').filter({
-        has: page.locator('[class*="h-4 w-4"]')
-      }).last();
       // Use a more specific selector for the password visibility toggle
       const eyeButton = passwordInput.locator('..').locator('button[type="button"]');
       await eyeButton.click();

@@ -1,4 +1,4 @@
-import { test, expect, Page } from '@playwright/test';
+import { test, expect } from '@playwright/test';
 import { mockAuthEndpoints, testUser, loginAs } from '../fixtures/auth';
 import { mockDashboardEndpoints } from '../fixtures/api-mocks';
 
@@ -15,7 +15,6 @@ test.describe('Responsive Layout', () => {
       await page.setViewportSize({ width: 1280, height: 720 });
       await page.waitForTimeout(300);
 
-      const navLinks = page.locator('nav.hidden.md\\:flex a');
       // Desktop nav should be visible
       const dashboardLink = page.locator('nav a[href="/dashboard"]');
       await expect(dashboardLink).toBeVisible();

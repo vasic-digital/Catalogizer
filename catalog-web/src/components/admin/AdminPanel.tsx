@@ -66,7 +66,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
   onCreateBackup,
   onRestoreBackup,
   onScanStorage,
-  onUpdateUser
+  onUpdateUser: _onUpdateUser
 }) => {
   const [activeTab, setActiveTab] = useState<'overview' | 'users' | 'storage' | 'backups'>('overview');
 
@@ -137,7 +137,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
           ].map(({ id, label, icon: Icon }) => (
             <button
               key={id}
-              onClick={() => setActiveTab(id as any)}
+              onClick={() => setActiveTab(id as 'overview' | 'users' | 'storage' | 'backups')}
               className={`flex items-center gap-2 py-2 px-1 border-b-2 font-medium text-sm transition-colors ${
                 activeTab === id
                   ? 'border-blue-500 text-blue-600'

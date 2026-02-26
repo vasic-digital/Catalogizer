@@ -181,15 +181,14 @@ type UIPrefs struct {
 
 // UserSettings represents user-specific settings
 type UserSettings struct {
-	DefaultShare         string                 `json:"default_share,omitempty"`
-	AutoSync             bool                   `json:"auto_sync"`
-	SyncIntervalMinutes  int                    `json:"sync_interval_minutes"`
-	DownloadQuality      string                 `json:"download_quality"`
-	CacheSettings        CacheSettings          `json:"cache,omitempty"`
-	ConversionSettings   ConversionSettings     `json:"conversion,omitempty"`
-	BackupSettings       BackupSettings         `json:"backup,omitempty"`
-	SecuritySettings     SecuritySettings       `json:"security,omitempty"`
-	ExperimentalFeatures map[string]interface{} `json:"experimental_features,omitempty"`
+	DefaultShare        string             `json:"default_share,omitempty"`
+	AutoSync            bool               `json:"auto_sync"`
+	SyncIntervalMinutes int                `json:"sync_interval_minutes"`
+	DownloadQuality     string             `json:"download_quality"`
+	CacheSettings       CacheSettings      `json:"cache,omitempty"`
+	ConversionSettings  ConversionSettings `json:"conversion,omitempty"`
+	BackupSettings      BackupSettings     `json:"backup,omitempty"`
+	SecuritySettings    SecuritySettings   `json:"security,omitempty"`
 }
 
 // CacheSettings represents caching preferences
@@ -594,7 +593,6 @@ func GetDefaultSettings() UserSettings {
 			RequirePasswordFor: []string{"delete", "share"},
 			LoginNotifications: true,
 		},
-		ExperimentalFeatures: make(map[string]interface{}),
 	}
 }
 
@@ -1570,7 +1568,6 @@ type SystemConfiguration struct {
 	Storage          *StorageConfig          `json:"storage,omitempty"`
 	Network          *NetworkConfig          `json:"network,omitempty"`
 	Authentication   *AuthenticationConfig   `json:"authentication,omitempty"`
-	Features         *FeatureConfig          `json:"features,omitempty"`
 	ExternalServices *ExternalServicesConfig `json:"external_services,omitempty"`
 }
 
@@ -1622,14 +1619,6 @@ type AuthenticationConfig struct {
 	EnableRegistration       bool          `json:"enable_registration"`
 	RequireEmailVerification bool          `json:"require_email_verification"`
 	AdminEmail               string        `json:"admin_email,omitempty"`
-}
-
-// FeatureConfig represents feature toggles
-type FeatureConfig struct {
-	MediaConversion bool `json:"media_conversion"`
-	WebDAVSync      bool `json:"webdav_sync"`
-	ErrorReporting  bool `json:"error_reporting"`
-	LogManagement   bool `json:"log_management"`
 }
 
 // ExternalServicesConfig represents external service configurations

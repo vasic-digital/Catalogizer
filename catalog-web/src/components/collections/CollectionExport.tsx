@@ -6,28 +6,12 @@ import {
   FileText,
   FileSpreadsheet,
   Music,
-  Video,
-  Image,
   Archive,
   Settings,
-  Check,
   X,
-  AlertCircle,
-  Clock,
-  HardDrive,
   FileJson,
   File,
-  Folder,
-  FolderOpen,
-  Copy,
-  ExternalLink,
-  RefreshCw,
-  Filter,
-  Search,
-  ChevronDown,
-  ChevronRight,
-  Plus,
-  Minus
+  RefreshCw
 } from 'lucide-react'
 import { Button } from '../ui/Button'
 import { Input } from '../ui/Input'
@@ -83,8 +67,30 @@ interface ImportPreview {
   invalidItems: number
   duplicates: number
   newItems: number
-  sampleItems: any[]
-  conflicts: any[]
+  sampleItems: Array<{
+    title?: string;
+    name?: string;
+    id?: string;
+    path?: string;
+    type?: string;
+  }>
+  conflicts: Array<{
+    type: string;
+    description: string;
+  }>
+}
+
+interface CollectionItem {
+  id: string;
+  title?: string;
+  name?: string;
+  media_type?: string;
+  path?: string;
+  size?: number;
+  duration?: number;
+  rating?: number;
+  metadata?: Record<string, unknown>;
+  thumbnail?: string;
 }
 
 const EXPORT_FORMATS = [
@@ -197,8 +203,6 @@ export const CollectionExport: React.FC<CollectionExportProps> = ({
   const [importPreview, setImportPreview] = useState<ImportPreview | null>(null)
   const [importFile, setImportFile] = useState<File | null>(null)
   const [showAdvanced, setShowAdvanced] = useState(false)
-  const [searchTerm, setSearchTerm] = useState('')
-  const [selectedFields, setSelectedFields] = useState<string[]>([])
   const fileInputRef = useRef<HTMLInputElement>(null)
   
   const { collectionItems, isLoading } = useCollection(collection?.id || '')
@@ -236,7 +240,7 @@ export const CollectionExport: React.FC<CollectionExportProps> = ({
           created_at: collection.created_at,
           updated_at: collection.updated_at
         },
-        items: items.map((item: any) => ({
+        items: items.map((item: CollectionItem) => ({
           id: item.id,
           title: item.title || item.name,
           type: item.media_type,
@@ -261,7 +265,7 @@ export const CollectionExport: React.FC<CollectionExportProps> = ({
         const headers = ['id', 'title', 'type', 'path', 'size', 'duration', 'rating']
         const csvContent = [
           headers.join(','),
-          ...items.map((item: any) => [
+          ...items.map((item: CollectionItem) => [
             item.id,
             `"${item.title || item.name}"`,
             item.media_type,
@@ -279,7 +283,7 @@ export const CollectionExport: React.FC<CollectionExportProps> = ({
         // M3U playlist generation
         const m3uContent = [
           '#EXTM3U',
-          ...items.map((item: any) => `#EXTINF:${item.duration || 0},${item.title || item.name}\n${item.path}`)
+          ...items.map((item: CollectionItem) => `#EXTINF:${item.duration || 0},${item.title || item.name}\n${item.path}`)
         ].join('\n')
         
         content = m3uContent
@@ -317,10 +321,10 @@ export const CollectionExport: React.FC<CollectionExportProps> = ({
       reader.onload = (e) => {
         try {
           const content = e.target?.result as string
-          let parsedContent: any
+          let parsedContent: { items?: Array<Record<string, string>> } | null = null
           
           if (file.name.endsWith('.json')) {
-            parsedContent = JSON.parse(content)
+            parsedContent = JSON.parse(content) as { items?: Array<Record<string, string>> }
           } else if (file.name.endsWith('.csv')) {
             // Simple CSV parsing
             const lines = content.split('\n')
@@ -328,21 +332,21 @@ export const CollectionExport: React.FC<CollectionExportProps> = ({
             parsedContent = {
               items: lines.slice(1).map(line => {
                 const values = line.split(',')
-                return headers.reduce((obj, header, index) => {
+                return headers.reduce<Record<string, string>>((obj, header, index) => {
                   obj[header.trim()] = values[index]?.replace(/"/g, '') || ''
                   return obj
-                }, {} as any)
+                }, {})
               }).filter(item => item.title)
             }
           }
           
           const preview: ImportPreview = {
-            totalItems: parsedContent.items?.length || 0,
-            validItems: parsedContent.items?.length || 0,
+            totalItems: parsedContent?.items?.length || 0,
+            validItems: parsedContent?.items?.length || 0,
             invalidItems: 0,
             duplicates: 0,
-            newItems: parsedContent.items?.length || 0,
-            sampleItems: (parsedContent.items || []).slice(0, 5),
+            newItems: parsedContent?.items?.length || 0,
+            sampleItems: (parsedContent?.items || []).slice(0, 5),
             conflicts: []
           }
           
@@ -665,13 +669,13 @@ export const CollectionExport: React.FC<CollectionExportProps> = ({
                         <div>
                           <div className="font-medium text-gray-900 dark:text-white">Collection Summary</div>
                           <div className="text-sm text-gray-600 dark:text-gray-400">
-                            {items.length} items • {formatFileSize(items.reduce((sum: any, item: any) => sum + (item.size || 0), 0))}
+                            {items.length} items • {formatFileSize(items.reduce((sum: number, item: CollectionItem) => sum + (item.size || 0), 0))}
                           </div>
                         </div>
                         <div className="text-right">
                           <div className="font-medium text-gray-900 dark:text-white">Est. Export Size</div>
                           <div className="text-sm text-gray-600 dark:text-gray-400">
-                            ~{formatFileSize(items.reduce((sum: any, item: any) => sum + (item.size || 0), 0))}
+                            ~{formatFileSize(items.reduce((sum: number, item: CollectionItem) => sum + (item.size || 0), 0))}
                           </div>
                         </div>
                       </div>

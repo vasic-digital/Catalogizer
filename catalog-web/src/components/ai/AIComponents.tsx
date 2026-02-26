@@ -36,7 +36,7 @@ interface AISearchQuery {
   query: string;
   intent: 'browse' | 'search' | 'compare' | 'organize';
   entities: string[];
-  filters: Record<string, any>;
+  filters: Record<string, unknown>;
   naturalLanguage: boolean;
 }
 
@@ -48,11 +48,11 @@ class AIService {
   }
 
   // Generate collection suggestions based on user behavior and content patterns
-  static async generateCollectionSuggestions(context: {
+  static async generateCollectionSuggestions(_context: {
     recentSearches: string[];
     existingCollections: string[];
-    contentAnalysis: any[];
-    userBehavior: any;
+    contentAnalysis: unknown[];
+    userBehavior: unknown;
   }): Promise<AISuggestion[]> {
     await this.delay(1000);
 
@@ -108,7 +108,7 @@ class AIService {
   static async categorizeContent(item: {
     title: string;
     description?: string;
-    metadata?: any;
+    metadata?: unknown;
   }): Promise<AICategorizationResult> {
     await this.delay(600);
 
@@ -141,7 +141,6 @@ class AIService {
 
     // Simple intent detection based on keywords
     const isBrowse = /show|browse|list|view|see/.test(query.toLowerCase());
-    const isSearch = /find|search|look for|where is/.test(query.toLowerCase());
     const isCompare = /compare|difference|better|versus|vs/.test(query.toLowerCase());
     const isOrganize = /organize|group|sort|arrange/.test(query.toLowerCase());
 
@@ -429,7 +428,7 @@ interface AIContentCategorizerProps {
   item: {
     title: string;
     description?: string;
-    metadata?: any;
+    metadata?: unknown;
   };
   onCategorizationComplete: (result: AICategorizationResult) => void;
 }
@@ -439,7 +438,6 @@ export const AIContentCategorizer: React.FC<AIContentCategorizerProps> = ({
   onCategorizationComplete
 }) => {
   const [categorization, setCategorization] = useState<AICategorizationResult | null>(null);
-  const [loading, setLoading] = useState(false);
   const [categorizing, setCategorizing] = useState(false);
 
   const categorizeContent = async () => {

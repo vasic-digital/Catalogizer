@@ -28,5 +28,17 @@ module.exports = {
     '@typescript-eslint/no-empty-function': 'warn',
     // Allow inferrable types (helpful for documentation but not required)
     '@typescript-eslint/no-inferrable-types': 'off',
+    // Non-null assertions are acceptable in test files
+    '@typescript-eslint/no-non-null-assertion': 'warn',
   },
+  overrides: [
+    {
+      // Test files can use 'any' more liberally
+      files: ['**/*.test.ts', '**/*.test.tsx', '**/e2e/**/*.ts', '**/test/**/*.ts'],
+      rules: {
+        '@typescript-eslint/no-explicit-any': 'off',
+        '@typescript-eslint/no-non-null-assertion': 'off',
+      },
+    },
+  ],
 }

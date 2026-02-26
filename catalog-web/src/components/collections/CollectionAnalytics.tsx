@@ -1,27 +1,24 @@
-import React, { useState, useEffect, useMemo } from 'react'
-import { motion, AnimatePresence } from 'framer-motion'
+import React, { useState, useMemo } from 'react'
+import { motion } from 'framer-motion'
 import {
   BarChart3,
   TrendingUp,
   TrendingDown,
   Play,
   Clock,
-  Users,
   Share2,
   Download,
   Star,
   Eye,
-  Filter,
-  Calendar,
-  PieChart,
   Activity,
-  FileAudio,
-  FileVideo,
-  FileImage,
-  FileText,
   RefreshCw,
   Download as DownloadIcon,
   Upload,
+  Users,
+  FileVideo,
+  FileAudio,
+  FileImage,
+  FileText,
   Link,
   Mail,
   MessageCircle,
@@ -30,8 +27,6 @@ import {
 import { Button } from '../ui/Button'
 import { Card } from '../ui/Card'
 import { Select } from '../ui/Select'
-import { Input } from '../ui/Input'
-import { Switch } from '../ui/Switch'
 import { SmartCollection } from '../../types/collections'
 import { useCollection } from '../../hooks/useCollections'
 
@@ -58,9 +53,9 @@ interface AnalyticsData {
     document: number
   }
   activity: {
-    daily: Array<{ date: string; plays: number; downloads: number; shares: number }>
-    weekly: Array<{ week: string; plays: number; downloads: number; shares: number }>
-    monthly: Array<{ month: string; plays: number; downloads: number; shares: number }>
+    daily: Array<{ date: string; plays: number; downloads: number; shares: number } | Record<string, string | number>>
+    weekly: Array<{ week: string; plays: number; downloads: number; shares: number } | Record<string, string | number>>
+    monthly: Array<{ month: string; plays: number; downloads: number; shares: number } | Record<string, string | number>>
   }
   topItems: Array<{
     id: string
@@ -99,6 +94,16 @@ interface AnalyticsData {
   }
 }
 
+interface CollectionItem {
+  id: string
+  title?: string
+  name?: string
+  media_type?: string
+  size?: number
+  rating?: number
+  duration?: number
+}
+
 const MEDIA_ICONS = {
   music: FileAudio,
   video: FileVideo,
@@ -127,25 +132,24 @@ export const CollectionAnalytics: React.FC<CollectionAnalyticsProps> = ({
 }) => {
   const [timeRange, setTimeRange] = useState('30d')
   const [chartType, setChartType] = useState('plays')
-  const [isLoading, setIsLoading] = useState(false)
   const [showComparison, setShowComparison] = useState(false)
   const [activeTab, setActiveTab] = useState<'overview' | 'activity' | 'content' | 'sharing' | 'engagement'>('overview')
   
   const { collectionItems, isLoading: itemsLoading } = useCollection(collection?.id || '')
 
   // Use collection items from props if available
-  const items = collectionItems || []
+  const items = useMemo(() => collectionItems || [], [collectionItems])
 
   // Mock analytics data generation
   const analyticsData = useMemo((): AnalyticsData => {
     const totalItems = items.length
-    const totalSize = items.reduce((sum: any, item: any) => sum + (item.size || 0), 0)
-    const averageRating = items.reduce((sum: any, item: any) => sum + (item.rating || 0), 0) / totalItems || 0
+    const totalSize = items.reduce((sum: number, item: CollectionItem) => sum + (item.size || 0), 0)
+    const averageRating = items.reduce((sum: number, item: CollectionItem) => sum + (item.rating || 0), 0) / totalItems || 0
     
     // Generate activity data based on time range
-    const generateActivityData = (period: 'daily' | 'weekly' | 'monthly'): any[] => {
+    const generateActivityData = (period: 'daily' | 'weekly' | 'monthly'): Array<Record<string, string | number>> => {
       const now = new Date()
-      const data: any[] = []
+      const data: Array<Record<string, string | number>> = []
       let periods = 30
       
       if (timeRange === '7d') periods = period === 'daily' ? 7 : period === 'weekly' ? 1 : 1
@@ -187,7 +191,7 @@ export const CollectionAnalytics: React.FC<CollectionAnalyticsProps> = ({
     }
 
     // Generate media breakdown
-    const mediaTypes = items.reduce((acc: any, item: any) => {
+    const mediaTypes = items.reduce((acc: Record<string, number>, item: CollectionItem) => {
       const type = item.media_type || 'document'
       acc[type] = (acc[type] || 0) + 1
       return acc
@@ -195,9 +199,9 @@ export const CollectionAnalytics: React.FC<CollectionAnalyticsProps> = ({
 
     // Generate top items
     const topItems = items
-      .filter((item: any) => item.rating || Math.random() > 0.5)
+      .filter((item: CollectionItem) => item.rating || Math.random() > 0.5)
       .slice(0, 10)
-      .map((item: any) => ({
+      .map((item: CollectionItem) => ({
         id: item.id,
         title: item.title || item.name || 'Unknown',
         type: item.media_type || 'document',
@@ -205,13 +209,13 @@ export const CollectionAnalytics: React.FC<CollectionAnalyticsProps> = ({
         rating: item.rating || Math.random() * 5,
         size: formatFileSize(item.size || Math.random() * 1000000000)
       }))
-      .sort((a: any, b: any) => b.plays - a.plays)
+      .sort((a: { plays: number }, b: { plays: number }) => b.plays - a.plays)
 
     return {
       overview: {
         totalItems,
         totalSize: formatFileSize(totalSize),
-        totalDuration: formatDuration(items.reduce((sum: any, item: any) => sum + (item.duration || 0), 0)),
+        totalDuration: formatDuration(items.reduce((sum: number, item: CollectionItem) => sum + (item.duration || 0), 0)),
         averageRating,
         playCount: Math.floor(Math.random() * 10000) + 1000,
         downloadCount: Math.floor(Math.random() * 1000) + 100,
@@ -317,7 +321,7 @@ export const CollectionAnalytics: React.FC<CollectionAnalyticsProps> = ({
   const StatCard = ({ title, value, icon: Icon, change, changeType }: {
     title: string
     value: string | number
-    icon: any
+    icon: React.ComponentType<{ className?: string }>
     change?: number
     changeType?: 'increase' | 'decrease'
   }) => (
@@ -523,7 +527,7 @@ export const CollectionAnalytics: React.FC<CollectionAnalyticsProps> = ({
                   {analyticsData.activity[period as keyof typeof analyticsData.activity].slice(0, 5).map((data, index) => (
                     <div key={index} className="flex justify-between text-sm">
                       <span className="text-gray-600 dark:text-gray-400">
-                        {period === 'daily' ? (data as any).date : period === 'weekly' ? (data as any).week : (data as any).month}
+                        {period === 'daily' ? (data as Record<string, string | number>).date : period === 'weekly' ? (data as Record<string, string | number>).week : (data as Record<string, string | number>).month}
                       </span>
                       <span className="font-medium text-gray-900 dark:text-white">
                         {data[chartType as keyof typeof data] || 0}
@@ -862,7 +866,7 @@ export const CollectionAnalytics: React.FC<CollectionAnalyticsProps> = ({
               return (
                 <button
                   key={tab.id}
-                  onClick={() => setActiveTab(tab.id as any)}
+                  onClick={() => setActiveTab(tab.id as 'overview' | 'activity' | 'content' | 'sharing' | 'engagement')}
                   className={`flex items-center gap-2 px-4 py-3 border-b-2 transition-colors whitespace-nowrap ${
                     activeTab === tab.id
                       ? 'border-blue-500 text-blue-600 dark:text-blue-400'
