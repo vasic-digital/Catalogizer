@@ -25,6 +25,9 @@ func NewFavoritesService(favoritesRepo *repository.FavoritesRepository, authServ
 }
 
 func (s *FavoritesService) AddFavorite(userID int, favorite *models.Favorite) (*models.Favorite, error) {
+	if s.favoritesRepo == nil {
+		return nil, fmt.Errorf("favorites repository not configured")
+	}
 	existing, err := s.favoritesRepo.GetFavorite(userID, favorite.EntityType, favorite.EntityID)
 	if err == nil && existing != nil {
 		return existing, fmt.Errorf("item already in favorites")
@@ -43,6 +46,9 @@ func (s *FavoritesService) AddFavorite(userID int, favorite *models.Favorite) (*
 }
 
 func (s *FavoritesService) RemoveFavorite(userID int, entityType string, entityID int) error {
+	if s.favoritesRepo == nil {
+		return fmt.Errorf("favorites repository not configured")
+	}
 	favorite, err := s.favoritesRepo.GetFavorite(userID, entityType, entityID)
 	if err != nil {
 		return fmt.Errorf("favorite not found: %w", err)
@@ -56,14 +62,23 @@ func (s *FavoritesService) RemoveFavorite(userID int, entityType string, entityI
 }
 
 func (s *FavoritesService) GetUserFavorites(userID int, entityType *string, category *string, limit, offset int) ([]models.Favorite, error) {
+	if s.favoritesRepo == nil {
+		return nil, fmt.Errorf("favorites repository not configured")
+	}
 	return s.favoritesRepo.GetUserFavorites(userID, entityType, category, limit, offset)
 }
 
 func (s *FavoritesService) GetFavoritesByEntity(userID int, entityType string, entityID int) (*models.Favorite, error) {
+	if s.favoritesRepo == nil {
+		return nil, fmt.Errorf("favorites repository not configured")
+	}
 	return s.favoritesRepo.GetFavorite(userID, entityType, entityID)
 }
 
 func (s *FavoritesService) IsFavorite(userID int, entityType string, entityID int) (bool, error) {
+	if s.favoritesRepo == nil {
+		return false, fmt.Errorf("favorites repository not configured")
+	}
 	favorite, err := s.favoritesRepo.GetFavorite(userID, entityType, entityID)
 	if err != nil {
 		return false, nil
@@ -72,6 +87,9 @@ func (s *FavoritesService) IsFavorite(userID int, entityType string, entityID in
 }
 
 func (s *FavoritesService) UpdateFavorite(userID int, favoriteID int, updates *models.UpdateFavoriteRequest) (*models.Favorite, error) {
+	if s.favoritesRepo == nil {
+		return nil, fmt.Errorf("favorites repository not configured")
+	}
 	favorite, err := s.favoritesRepo.GetFavoriteByID(favoriteID)
 	if err != nil {
 		return nil, fmt.Errorf("favorite not found: %w", err)
@@ -109,10 +127,16 @@ func (s *FavoritesService) UpdateFavorite(userID int, favoriteID int, updates *m
 }
 
 func (s *FavoritesService) GetFavoriteCategories(userID int, entityType *string) ([]models.FavoriteCategory, error) {
+	if s.favoritesRepo == nil {
+		return nil, fmt.Errorf("favorites repository not configured")
+	}
 	return s.favoritesRepo.GetFavoriteCategories(userID, entityType)
 }
 
 func (s *FavoritesService) CreateFavoriteCategory(userID int, category *models.FavoriteCategory) (*models.FavoriteCategory, error) {
+	if s.favoritesRepo == nil {
+		return nil, fmt.Errorf("favorites repository not configured")
+	}
 	category.UserID = userID
 	category.CreatedAt = time.Now()
 
@@ -126,6 +150,9 @@ func (s *FavoritesService) CreateFavoriteCategory(userID int, category *models.F
 }
 
 func (s *FavoritesService) UpdateFavoriteCategory(userID int, categoryID int, updates *models.UpdateFavoriteCategoryRequest) (*models.FavoriteCategory, error) {
+	if s.favoritesRepo == nil {
+		return nil, fmt.Errorf("favorites repository not configured")
+	}
 	category, err := s.favoritesRepo.GetFavoriteCategoryByID(categoryID)
 	if err != nil {
 		return nil, fmt.Errorf("category not found: %w", err)
@@ -167,6 +194,9 @@ func (s *FavoritesService) UpdateFavoriteCategory(userID int, categoryID int, up
 }
 
 func (s *FavoritesService) DeleteFavoriteCategory(userID int, categoryID int) error {
+	if s.favoritesRepo == nil {
+		return fmt.Errorf("favorites repository not configured")
+	}
 	category, err := s.favoritesRepo.GetFavoriteCategoryByID(categoryID)
 	if err != nil {
 		return fmt.Errorf("category not found: %w", err)
@@ -189,14 +219,23 @@ func (s *FavoritesService) DeleteFavoriteCategory(userID int, categoryID int) er
 }
 
 func (s *FavoritesService) GetPublicFavorites(entityType *string, category *string, limit, offset int) ([]models.Favorite, error) {
+	if s.favoritesRepo == nil {
+		return nil, fmt.Errorf("favorites repository not configured")
+	}
 	return s.favoritesRepo.GetPublicFavorites(entityType, category, limit, offset)
 }
 
 func (s *FavoritesService) SearchFavorites(userID int, query string, entityType *string, limit, offset int) ([]models.Favorite, error) {
+	if s.favoritesRepo == nil {
+		return nil, fmt.Errorf("favorites repository not configured")
+	}
 	return s.favoritesRepo.SearchFavorites(userID, query, entityType, limit, offset)
 }
 
 func (s *FavoritesService) GetFavoriteStatistics(userID int) (*models.FavoriteStatistics, error) {
+	if s.favoritesRepo == nil {
+		return nil, fmt.Errorf("favorites repository not configured")
+	}
 	stats := &models.FavoriteStatistics{
 		UserID: userID,
 	}
@@ -229,6 +268,9 @@ func (s *FavoritesService) GetFavoriteStatistics(userID int) (*models.FavoriteSt
 }
 
 func (s *FavoritesService) GetRecommendedFavorites(userID int, limit int) ([]models.RecommendedFavorite, error) {
+	if s.favoritesRepo == nil {
+		return nil, fmt.Errorf("favorites repository not configured")
+	}
 	userFavorites, err := s.favoritesRepo.GetUserFavorites(userID, nil, nil, 100, 0)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get user favorites: %w", err)
@@ -269,6 +311,9 @@ func (s *FavoritesService) GetRecommendedFavorites(userID int, limit int) ([]mod
 }
 
 func (s *FavoritesService) ShareFavorite(userID int, favoriteID int, shareWith []int, permissions models.SharePermissions) (*models.FavoriteShare, error) {
+	if s.favoritesRepo == nil {
+		return nil, fmt.Errorf("favorites repository not configured")
+	}
 	favorite, err := s.favoritesRepo.GetFavoriteByID(favoriteID)
 	if err != nil {
 		return nil, fmt.Errorf("favorite not found: %w", err)
@@ -297,10 +342,16 @@ func (s *FavoritesService) ShareFavorite(userID int, favoriteID int, shareWith [
 }
 
 func (s *FavoritesService) GetSharedFavorites(userID int, limit, offset int) ([]models.Favorite, error) {
+	if s.favoritesRepo == nil {
+		return nil, fmt.Errorf("favorites repository not configured")
+	}
 	return s.favoritesRepo.GetSharedFavorites(userID, limit, offset)
 }
 
 func (s *FavoritesService) RevokeFavoriteShare(userID int, shareID int) error {
+	if s.favoritesRepo == nil {
+		return fmt.Errorf("favorites repository not configured")
+	}
 	share, err := s.favoritesRepo.GetFavoriteShareByID(shareID)
 	if err != nil {
 		return fmt.Errorf("share not found: %w", err)
@@ -361,6 +412,9 @@ func (s *FavoritesService) BulkRemoveFavorites(userID int, favorites []models.Bu
 }
 
 func (s *FavoritesService) ExportFavorites(userID int, format string) ([]byte, error) {
+	if s.favoritesRepo == nil {
+		return nil, fmt.Errorf("favorites repository not configured")
+	}
 	favorites, err := s.favoritesRepo.GetUserFavorites(userID, nil, nil, 10000, 0)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get user favorites: %w", err)

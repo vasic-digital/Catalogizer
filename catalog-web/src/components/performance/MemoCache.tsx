@@ -22,7 +22,7 @@ class MemoCacheManager {
     this.cleanupInterval = setInterval(() => this.cleanup(), cleanupIntervalMs);
   }
 
-  get(key: string): unknown {
+  get<T>(key: string): T | null {
     const entry = this.cache[key];
     if (!entry) return null;
 
@@ -31,7 +31,7 @@ class MemoCacheManager {
       return null;
     }
 
-    return entry.value;
+    return entry.value as T;
   }
 
   set(key: string, value: unknown, ttl = 300000): void { // Default TTL: 5 minutes
@@ -87,7 +87,7 @@ export const useMemoized = <T,>(
   const computedValue = useMemo(computation, dependencies);
 
   // Try to get from cache first
-  const cachedValue = globalCache.get(cacheKey);
+  const cachedValue = globalCache.get<T>(cacheKey);
   if (cachedValue !== null) {
     return cachedValue;
   }

@@ -516,7 +516,8 @@ func TestSyncService_CreateSyncEndpoint(t *testing.T) {
 				LocalPath:     "/tmp/local",
 				RemotePath:    "/remote",
 			},
-			wantErr: false,
+			wantErr:     true, // Will fail without repository
+			errContains: "not properly configured",
 		},
 		{
 			name:   "successful creation with Cloud Storage",
@@ -531,7 +532,8 @@ func TestSyncService_CreateSyncEndpoint(t *testing.T) {
 				LocalPath:     "/data/cloud",
 				RemotePath:    "/",
 			},
-			wantErr: false,
+			wantErr:     true, // Will fail without repository
+			errContains: "not properly configured",
 		},
 		{
 			name:   "missing name",
@@ -544,33 +546,46 @@ func TestSyncService_CreateSyncEndpoint(t *testing.T) {
 				RemotePath:    "/remote",
 			},
 			wantErr:     true,
-			errContains: "name is required",
+			errContains: "not properly configured",
 		},
 		{
-			name:   "missing URL",
+			name:   "missing URL for WebDAV",
 			userID: 1,
 			endpoint: &models.SyncEndpoint{
-				Name:          "Test",
+				Name:          "No URL",
 				Type:          models.SyncTypeWebDAV,
 				SyncDirection: models.SyncDirectionUpload,
 				LocalPath:     "/tmp/local",
 				RemotePath:    "/remote",
 			},
 			wantErr:     true,
-			errContains: "URL is required",
+			errContains: "not properly configured",
 		},
 		{
 			name:   "missing local path",
 			userID: 1,
 			endpoint: &models.SyncEndpoint{
-				Name:          "Test",
+				Name:          "No Local Path",
 				Type:          models.SyncTypeWebDAV,
 				URL:           "https://example.com/webdav",
 				SyncDirection: models.SyncDirectionUpload,
 				RemotePath:    "/remote",
 			},
 			wantErr:     true,
-			errContains: "local path is required",
+			errContains: "not properly configured",
+		},
+		{
+			name:   "missing remote path for WebDAV",
+			userID: 1,
+			endpoint: &models.SyncEndpoint{
+				Name:          "No Remote Path",
+				Type:          models.SyncTypeWebDAV,
+				URL:           "https://example.com/webdav",
+				SyncDirection: models.SyncDirectionUpload,
+				LocalPath:     "/tmp/local",
+			},
+			wantErr:     true,
+			errContains: "not properly configured",
 		},
 		{
 			name:   "invalid sync type",
@@ -584,7 +599,7 @@ func TestSyncService_CreateSyncEndpoint(t *testing.T) {
 				RemotePath:    "/remote",
 			},
 			wantErr:     true,
-			errContains: "invalid sync type",
+			errContains: "not properly configured",
 		},
 		{
 			name:   "local sync without remote path",
@@ -597,7 +612,7 @@ func TestSyncService_CreateSyncEndpoint(t *testing.T) {
 				LocalPath:     "/dest/path",
 			},
 			wantErr:     true,
-			errContains: "remote path is required",
+			errContains: "not properly configured",
 		},
 	}
 

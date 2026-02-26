@@ -262,8 +262,13 @@ func runTestMigrations(db *sql.DB) error {
 			description TEXT,
 			is_public BOOLEAN DEFAULT FALSE,
 			is_smart BOOLEAN DEFAULT FALSE,
+			is_smart_playlist BOOLEAN DEFAULT FALSE,
 			smart_criteria TEXT,
 			cover_art_id INTEGER,
+			cover_art_url TEXT,
+			track_count INTEGER DEFAULT 0,
+			total_duration INTEGER DEFAULT 0,
+			play_count INTEGER DEFAULT 0,
 			created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
 			updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
 			FOREIGN KEY (user_id) REFERENCES users(id),
@@ -278,9 +283,32 @@ func runTestMigrations(db *sql.DB) error {
 			position INTEGER NOT NULL,
 			added_at DATETIME DEFAULT CURRENT_TIMESTAMP,
 			added_by INTEGER,
+			custom_title TEXT DEFAULT '',
+			start_time INTEGER DEFAULT 0,
+			end_time INTEGER DEFAULT 0,
 			FOREIGN KEY (playlist_id) REFERENCES playlists(id) ON DELETE CASCADE,
 			FOREIGN KEY (media_item_id) REFERENCES media_items(id) ON DELETE CASCADE,
 			UNIQUE(playlist_id, position)
+		)`,
+
+		// Playlist tags table
+		`CREATE TABLE IF NOT EXISTS playlist_tags (
+			id INTEGER PRIMARY KEY AUTOINCREMENT,
+			playlist_id INTEGER NOT NULL,
+			tag TEXT NOT NULL,
+			FOREIGN KEY (playlist_id) REFERENCES playlists(id) ON DELETE CASCADE,
+			UNIQUE(playlist_id, tag)
+		)`,
+
+		// Playlist collaborators table
+		`CREATE TABLE IF NOT EXISTS playlist_collaborators (
+			id INTEGER PRIMARY KEY AUTOINCREMENT,
+			playlist_id INTEGER NOT NULL,
+			user_id INTEGER NOT NULL,
+			added_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+			FOREIGN KEY (playlist_id) REFERENCES playlists(id) ON DELETE CASCADE,
+			FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+			UNIQUE(playlist_id, user_id)
 		)`,
 
 		// Playback sessions table
@@ -307,19 +335,43 @@ func runTestMigrations(db *sql.DB) error {
 			FOREIGN KEY (current_audio_id) REFERENCES audio_tracks(id)
 		)`,
 
+		// Music playback sessions table (for MusicPlayerService)
+		`CREATE TABLE IF NOT EXISTS music_playback_sessions (
+			id TEXT PRIMARY KEY,
+			user_id INTEGER NOT NULL,
+			session_data TEXT NOT NULL,
+			expires_at DATETIME NOT NULL,
+			updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+			FOREIGN KEY (user_id) REFERENCES users(id)
+		)`,
+
+		// Video playback sessions table (for VideoPlayerService)
+		`CREATE TABLE IF NOT EXISTS video_playback_sessions (
+			id TEXT PRIMARY KEY,
+			user_id INTEGER NOT NULL,
+			session_data TEXT NOT NULL,
+			expires_at DATETIME NOT NULL,
+			updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+			FOREIGN KEY (user_id) REFERENCES users(id)
+		)`,
+
 		// Playback positions table (for tracking playback progress)
 		`CREATE TABLE IF NOT EXISTS playback_positions (
 			id INTEGER PRIMARY KEY AUTOINCREMENT,
 			user_id INTEGER NOT NULL,
 			media_item_id INTEGER NOT NULL,
-			position REAL NOT NULL DEFAULT 0.0,
-			duration REAL,
-			progress REAL DEFAULT 0.0,
-			device_id TEXT,
+			position INTEGER NOT NULL DEFAULT 0,
+			duration INTEGER NOT NULL DEFAULT 0,
+			percent_complete REAL DEFAULT 0.0,
+			last_played DATETIME,
+			is_completed BOOLEAN DEFAULT 0,
+			device_info TEXT,
+			playback_quality TEXT,
+			created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
 			updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
 			FOREIGN KEY (user_id) REFERENCES users(id),
 			FOREIGN KEY (media_item_id) REFERENCES media_items(id) ON DELETE CASCADE,
-			UNIQUE(user_id, media_item_id, device_id)
+			UNIQUE(user_id, media_item_id)
 		)`,
 
 		// Translation cache table
@@ -437,8 +489,223 @@ func runTestMigrations(db *sql.DB) error {
 		`CREATE INDEX IF NOT EXISTS idx_deep_links_short_code ON deep_links(short_code)`,
 		`CREATE INDEX IF NOT EXISTS idx_files_storage_root_path ON files(storage_root_id, path)`,
 
+		// Video player related tables
+		`CREATE TABLE IF NOT EXISTS video_bookmarks (
+			id INTEGER PRIMARY KEY AUTOINCREMENT,
+			user_id INTEGER NOT NULL,
+			video_id INTEGER NOT NULL,
+			position INTEGER NOT NULL,
+			title TEXT,
+			description TEXT,
+			thumbnail_url TEXT,
+			created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+			FOREIGN KEY (user_id) REFERENCES users(id)
+		)`,
+		`CREATE TABLE IF NOT EXISTS video_streams (
+			id INTEGER PRIMARY KEY AUTOINCREMENT,
+			media_item_id INTEGER NOT NULL,
+			stream_index INTEGER NOT NULL,
+			stream_type TEXT NOT NULL,
+			codec TEXT,
+			bitrate INTEGER,
+			width INTEGER,
+			height INTEGER,
+			framerate REAL,
+			fps REAL,
+			language TEXT,
+			is_default BOOLEAN DEFAULT 0,
+			FOREIGN KEY (media_item_id) REFERENCES media_items(id) ON DELETE CASCADE
+		)`,
+		`CREATE TABLE IF NOT EXISTS subtitle_streams (
+			id INTEGER PRIMARY KEY AUTOINCREMENT,
+			media_item_id INTEGER NOT NULL,
+			stream_index INTEGER NOT NULL,
+			language TEXT,
+			title TEXT,
+			codec TEXT,
+			is_default BOOLEAN DEFAULT 0,
+			is_forced BOOLEAN DEFAULT 0,
+			FOREIGN KEY (media_item_id) REFERENCES media_items(id) ON DELETE CASCADE
+		)`,
+		`CREATE TABLE IF NOT EXISTS video_chapters (
+			id INTEGER PRIMARY KEY AUTOINCREMENT,
+			media_item_id INTEGER NOT NULL,
+			chapter_index INTEGER NOT NULL,
+			start_time INTEGER NOT NULL,
+			end_time INTEGER NOT NULL,
+			title TEXT,
+			thumbnail_url TEXT,
+			FOREIGN KEY (media_item_id) REFERENCES media_items(id) ON DELETE CASCADE
+		)`,
+		`CREATE TABLE IF NOT EXISTS video_watch_history (
+			id INTEGER PRIMARY KEY AUTOINCREMENT,
+			user_id INTEGER NOT NULL,
+			media_item_id INTEGER NOT NULL,
+			video_id INTEGER NOT NULL,
+			position INTEGER NOT NULL,
+			duration INTEGER NOT NULL,
+			watched_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+			FOREIGN KEY (user_id) REFERENCES users(id),
+			FOREIGN KEY (media_item_id) REFERENCES media_items(id) ON DELETE CASCADE
+		)`,
+		`CREATE TABLE IF NOT EXISTS media_recognition_results (
+			id INTEGER PRIMARY KEY AUTOINCREMENT,
+			media_item_id INTEGER NOT NULL,
+			provider TEXT NOT NULL,
+			external_id TEXT,
+			title TEXT,
+			recognition_data TEXT,
+			created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+			FOREIGN KEY (media_item_id) REFERENCES media_items(id) ON DELETE CASCADE
+		)`,
+
+		// Cache entries table (for CacheService)
+		`CREATE TABLE IF NOT EXISTS cache_entries (
+			id INTEGER PRIMARY KEY AUTOINCREMENT,
+			cache_key TEXT NOT NULL UNIQUE,
+			value TEXT NOT NULL,
+			expires_at DATETIME,
+			created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+			updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+		)`,
+
+		// Playback bookmarks table (for PlaybackPositionService)
+		`CREATE TABLE IF NOT EXISTS playback_bookmarks (
+			id INTEGER PRIMARY KEY AUTOINCREMENT,
+			user_id INTEGER NOT NULL,
+			media_item_id INTEGER NOT NULL,
+			position INTEGER NOT NULL,
+			name TEXT,
+			description TEXT,
+			created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+			FOREIGN KEY (user_id) REFERENCES users(id),
+			FOREIGN KEY (media_item_id) REFERENCES media_items(id) ON DELETE CASCADE
+		)`,
+
+		// Playback history table (for PlaybackPositionService)
+		`CREATE TABLE IF NOT EXISTS playback_history (
+			id INTEGER PRIMARY KEY AUTOINCREMENT,
+			user_id INTEGER NOT NULL,
+			media_item_id INTEGER NOT NULL,
+			start_time DATETIME NOT NULL,
+			end_time DATETIME DEFAULT CURRENT_TIMESTAMP,
+			duration INTEGER NOT NULL,
+			percent_watched REAL DEFAULT 0.0,
+			device_info TEXT,
+			playback_quality TEXT,
+			was_completed BOOLEAN DEFAULT 0,
+			FOREIGN KEY (user_id) REFERENCES users(id),
+			FOREIGN KEY (media_item_id) REFERENCES media_items(id) ON DELETE CASCADE
+		)`,
+
+		// Thumbnail cache table (for CacheService)
+		`CREATE TABLE IF NOT EXISTS thumbnail_cache (
+			id INTEGER PRIMARY KEY AUTOINCREMENT,
+			video_id INTEGER NOT NULL,
+			position INTEGER NOT NULL,
+			url TEXT,
+			width INTEGER,
+			height INTEGER,
+			file_size INTEGER,
+			created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+			UNIQUE(video_id, position, width, height)
+		)`,
+
+		// Media metadata cache table (for CacheService)
+		`CREATE TABLE IF NOT EXISTS media_metadata_cache (
+			id INTEGER PRIMARY KEY AUTOINCREMENT,
+			media_item_id INTEGER NOT NULL,
+			metadata_type TEXT NOT NULL,
+			provider TEXT NOT NULL,
+			data TEXT NOT NULL,
+			quality REAL DEFAULT 0.0,
+			created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+			expires_at DATETIME,
+			UNIQUE(media_item_id, metadata_type, provider)
+		)`,
+
+		// API cache table (for CacheService)
+		`CREATE TABLE IF NOT EXISTS api_cache (
+			id INTEGER PRIMARY KEY AUTOINCREMENT,
+			provider TEXT NOT NULL,
+			endpoint TEXT NOT NULL,
+			request_hash TEXT NOT NULL,
+			response TEXT NOT NULL,
+			status_code INTEGER DEFAULT 0,
+			expires_at DATETIME,
+			created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+			UNIQUE(provider, endpoint, request_hash)
+		)`,
+
+		// User localization table (for LocalizationService)
+		`CREATE TABLE IF NOT EXISTS user_localization (
+			id INTEGER PRIMARY KEY AUTOINCREMENT,
+			user_id INTEGER NOT NULL UNIQUE,
+			primary_language TEXT NOT NULL DEFAULT 'en',
+			secondary_languages TEXT DEFAULT '[]',
+			subtitle_languages TEXT DEFAULT '[]',
+			lyrics_languages TEXT DEFAULT '[]',
+			metadata_languages TEXT DEFAULT '[]',
+			auto_translate BOOLEAN DEFAULT 0,
+			auto_download_subtitles BOOLEAN DEFAULT 0,
+			auto_download_lyrics BOOLEAN DEFAULT 0,
+			preferred_region TEXT DEFAULT '',
+			date_format TEXT DEFAULT 'MM/DD/YYYY',
+			time_format TEXT DEFAULT '12h',
+			number_format TEXT DEFAULT '#,###.##',
+			currency_code TEXT DEFAULT 'USD',
+			created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+			updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+			FOREIGN KEY (user_id) REFERENCES users(id)
+		)`,
+
+		// Content language preferences table (for LocalizationService)
+		`CREATE TABLE IF NOT EXISTS content_language_preferences (
+			id INTEGER PRIMARY KEY AUTOINCREMENT,
+			user_id INTEGER NOT NULL,
+			content_type TEXT NOT NULL,
+			languages TEXT DEFAULT '[]',
+			priority INTEGER DEFAULT 1,
+			auto_apply BOOLEAN DEFAULT 0,
+			created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+			updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+			FOREIGN KEY (user_id) REFERENCES users(id),
+			UNIQUE(user_id, content_type)
+		)`,
+
+		// Localization settings table (for LocalizationService)
+		`CREATE TABLE IF NOT EXISTS localization_settings (
+			id INTEGER PRIMARY KEY AUTOINCREMENT,
+			user_id INTEGER NOT NULL UNIQUE,
+			language TEXT NOT NULL DEFAULT 'en',
+			region TEXT DEFAULT '',
+			date_format TEXT DEFAULT 'MM/DD/YYYY',
+			time_format TEXT DEFAULT '12h',
+			timezone TEXT DEFAULT 'UTC',
+			currency TEXT DEFAULT 'USD',
+			number_format TEXT DEFAULT '#,###.##',
+			first_day_of_week INTEGER DEFAULT 0,
+			created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+			updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+			FOREIGN KEY (user_id) REFERENCES users(id)
+		)`,
+
+		// Content localization table (for LocalizationService)
+		`CREATE TABLE IF NOT EXISTS content_localization (
+			id INTEGER PRIMARY KEY AUTOINCREMENT,
+			content_type TEXT NOT NULL,
+			content_id INTEGER NOT NULL,
+			language TEXT NOT NULL,
+			title TEXT,
+			description TEXT,
+			created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+			updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+			UNIQUE(content_type, content_id, language)
+		)`,
+
 		// Insert default test user
 		`INSERT OR IGNORE INTO users (id, username, email, is_active) VALUES (1, 'testuser', 'test@example.com', 1)`,
+		`INSERT OR IGNORE INTO users (id, username, email, is_active) VALUES (2, 'testuser2', 'test2@example.com', 1)`,
 	}
 
 	for _, migration := range migrations {

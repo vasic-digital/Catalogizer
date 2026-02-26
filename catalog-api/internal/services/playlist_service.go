@@ -217,7 +217,7 @@ func (s *PlaylistService) GetPlaylist(ctx context.Context, playlistID, userID in
 		FROM playlists p
 		LEFT JOIN playlist_collaborators pc ON p.id = pc.playlist_id
 		WHERE p.id = ?
-		  AND (p.user_id = ? OR p.is_public = true OR pc.user_id = ?)
+		  AND (p.user_id = ? OR p.is_public = 1 OR pc.user_id = ?)
 	`
 
 	var playlist Playlist
@@ -258,7 +258,7 @@ func (s *PlaylistService) GetUserPlaylists(ctx context.Context, userID int64, in
 	`
 
 	if includePublic {
-		baseQuery += " OR p.is_public = true"
+		baseQuery += " OR p.is_public = 1"
 	}
 
 	baseQuery += " ORDER BY p.updated_at DESC"
@@ -429,13 +429,29 @@ func (s *PlaylistService) ReorderPlaylist(ctx context.Context, req *ReorderPlayl
 		return fmt.Errorf("playlist item not found: %w", err)
 	}
 
+	if currentPosition == req.NewPosition {
+		return nil
+	}
+
+	// Step 1: Move the item to a temporary position outside the valid range
+	// This frees up its current position
+	_, err = tx.ExecContext(ctx,
+		"UPDATE playlist_items SET position = -10000 WHERE id = ?",
+		req.ItemID)
+	if err != nil {
+		return fmt.Errorf("failed to move item to temp position: %w", err)
+	}
+
+	// Step 2: Shift items to close the gap and make room at new position
 	if currentPosition < req.NewPosition {
+		// Moving down: shift items between currentPosition and newPosition up by 1
 		_, err = tx.ExecContext(ctx, `
 			UPDATE playlist_items
 			SET position = position - 1
 			WHERE playlist_id = ? AND position > ? AND position <= ?
 		`, req.PlaylistID, currentPosition, req.NewPosition)
-	} else if currentPosition > req.NewPosition {
+	} else {
+		// Moving up: shift items between newPosition and currentPosition down by 1
 		_, err = tx.ExecContext(ctx, `
 			UPDATE playlist_items
 			SET position = position + 1
@@ -444,14 +460,15 @@ func (s *PlaylistService) ReorderPlaylist(ctx context.Context, req *ReorderPlayl
 	}
 
 	if err != nil {
-		return fmt.Errorf("failed to update positions: %w", err)
+		return fmt.Errorf("failed to shift positions: %w", err)
 	}
 
+	// Step 3: Move the item to its final position
 	_, err = tx.ExecContext(ctx,
 		"UPDATE playlist_items SET position = ? WHERE id = ?",
 		req.NewPosition, req.ItemID)
 	if err != nil {
-		return fmt.Errorf("failed to update item position: %w", err)
+		return fmt.Errorf("failed to set final position: %w", err)
 	}
 
 	if err := tx.Commit(); err != nil {
@@ -474,7 +491,7 @@ func (s *PlaylistService) GetPlaylistItems(ctx context.Context, playlistID, user
 		INNER JOIN playlists p ON pi.playlist_id = p.id
 		LEFT JOIN playlist_collaborators pc ON p.id = pc.playlist_id
 		WHERE pi.playlist_id = ?
-		  AND (p.user_id = ? OR p.is_public = true OR pc.user_id = ?)
+		  AND (p.user_id = ? OR p.is_public = 1 OR pc.user_id = ?)
 		ORDER BY pi.position ASC
 		LIMIT ? OFFSET ?
 	`

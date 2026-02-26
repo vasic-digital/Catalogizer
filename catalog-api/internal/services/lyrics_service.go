@@ -674,14 +674,8 @@ func (s *LyricsService) saveLyricsData(ctx context.Context, lyrics *LyricsData) 
 	}
 
 	query := `
-		INSERT INTO lyrics_data (id, media_item_id, source, language, content, is_synced, sync_data, translations, created_at, cached_at)
+		INSERT OR REPLACE INTO lyrics_data (id, media_item_id, source, language, content, is_synced, sync_data, translations, created_at, cached_at)
 		VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-		ON CONFLICT(id) DO UPDATE SET
-			content = excluded.content,
-			is_synced = excluded.is_synced,
-			sync_data = excluded.sync_data,
-			translations = excluded.translations,
-			cached_at = excluded.cached_at
 	`
 
 	var cachedAt interface{}

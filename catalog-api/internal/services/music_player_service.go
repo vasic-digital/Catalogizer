@@ -1221,16 +1221,11 @@ func (s *MusicPlayerService) saveSession(ctx context.Context, session *MusicPlay
 
 	expiresAt := time.Now().Add(24 * time.Hour)
 	query := `
-		INSERT INTO music_playback_sessions (id, user_id, session_data, expires_at, updated_at)
+		INSERT OR REPLACE INTO music_playback_sessions (id, user_id, session_data, expires_at, updated_at)
 		VALUES (?, ?, ?, ?, CURRENT_TIMESTAMP)
-		ON CONFLICT (id)
-		DO UPDATE SET
-			session_data = EXCLUDED.session_data,
-			expires_at = ?,
-			updated_at = CURRENT_TIMESTAMP
 	`
 
-	_, err = s.db.ExecContext(ctx, query, session.ID, session.UserID, string(sessionData), expiresAt, expiresAt)
+	_, err = s.db.ExecContext(ctx, query, session.ID, session.UserID, string(sessionData), expiresAt)
 	return err
 }
 

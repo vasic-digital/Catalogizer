@@ -39,6 +39,9 @@ func NewSyncService(syncRepo *repository.SyncRepository, userRepo *repository.Us
 }
 
 func (s *SyncService) CreateSyncEndpoint(userID int, endpoint *models.SyncEndpoint) (*models.SyncEndpoint, error) {
+	if s == nil || s.syncRepo == nil {
+		return nil, fmt.Errorf("sync service not properly configured")
+	}
 	endpoint.UserID = userID
 	endpoint.CreatedAt = time.Now()
 	endpoint.UpdatedAt = time.Now()

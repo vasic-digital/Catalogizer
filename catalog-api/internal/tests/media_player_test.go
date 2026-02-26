@@ -590,6 +590,9 @@ func TestPositionService(t *testing.T) {
 	})
 
 	t.Run("GetContinueWatching", func(t *testing.T) {
+		// Use user_id=2 to isolate from other subtests that use user_id=1
+		userID := int64(2)
+
 		// Create multiple tracks with different completion percentages
 		track1ID := insertTestTrack(t, db, "Artist 1", "Song 1", "Album 1")
 		track2ID := insertTestTrack(t, db, "Artist 2", "Song 2", "Album 2")
@@ -597,7 +600,7 @@ func TestPositionService(t *testing.T) {
 
 		// Track 1: 25% complete (should appear in continue watching)
 		positionService.UpdatePosition(context.Background(), &services.UpdatePositionRequest{
-			UserID:      1,
+			UserID:      userID,
 			MediaItemID: track1ID,
 			Position:    45000,
 			Duration:    180000,
@@ -606,7 +609,7 @@ func TestPositionService(t *testing.T) {
 
 		// Track 2: 50% complete (should appear in continue watching)
 		positionService.UpdatePosition(context.Background(), &services.UpdatePositionRequest{
-			UserID:      1,
+			UserID:      userID,
 			MediaItemID: track2ID,
 			Position:    90000,
 			Duration:    180000,
@@ -615,14 +618,14 @@ func TestPositionService(t *testing.T) {
 
 		// Track 3: 95% complete (should NOT appear in continue watching)
 		positionService.UpdatePosition(context.Background(), &services.UpdatePositionRequest{
-			UserID:      1,
+			UserID:      userID,
 			MediaItemID: track3ID,
 			Position:    171000,
 			Duration:    180000,
 			DeviceInfo:  "test-device",
 		})
 
-		positions, err := positionService.GetContinueWatching(context.Background(), 1, 10)
+		positions, err := positionService.GetContinueWatching(context.Background(), userID, 10)
 		require.NoError(t, err)
 
 		// Should only get tracks 1 and 2 (track 3 is >90% complete)
@@ -668,7 +671,9 @@ func TestPositionService(t *testing.T) {
 		require.NoError(t, err)
 		require.NotNil(t, stats)
 
-		assert.True(t, stats.TotalMediaItems >= 2)
+		// TotalMediaItems counts items in playback_history (only completed items >= 90%)
+		// track1 is 100% complete, track2 is 50% complete (not recorded)
+		assert.True(t, stats.TotalMediaItems >= 1)
 		assert.True(t, stats.CompletedItems >= 1)
 	})
 }
@@ -677,8 +682,8 @@ func TestPositionService(t *testing.T) {
 
 func insertTestTrack(t *testing.T, db *database.DB, artist, title, album string) int64 {
 	query := `
-		INSERT INTO media_items (path, type, title, artist, album, duration, date_added)
-		VALUES ('/test/path.mp3', 'audio', ?, ?, ?, 180000, datetime('now'))
+		INSERT INTO media_items (path, type, title, artist, album, duration, date_added, user_id)
+		VALUES ('/test/path.mp3', 'audio', ?, ?, ?, 180000, datetime('now'), 1)
 	`
 
 	result, err := db.Exec(query, title, artist, album)

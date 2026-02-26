@@ -209,28 +209,12 @@ func (s *LocalizationService) SetupUserLocalization(ctx context.Context, req *Wi
 	metadataLanguagesJSON, _ := json.Marshal(req.MetadataLanguages)
 
 	query := `
-		INSERT INTO user_localization (
+		INSERT OR REPLACE INTO user_localization (
 			user_id, primary_language, secondary_languages, subtitle_languages,
 			lyrics_languages, metadata_languages, auto_translate, auto_download_subtitles,
 			auto_download_lyrics, preferred_region, date_format, time_format,
 			number_format, currency_code, created_at, updated_at
 		) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
-		ON CONFLICT (user_id)
-		DO UPDATE SET
-			primary_language = EXCLUDED.primary_language,
-			secondary_languages = EXCLUDED.secondary_languages,
-			subtitle_languages = EXCLUDED.subtitle_languages,
-			lyrics_languages = EXCLUDED.lyrics_languages,
-			metadata_languages = EXCLUDED.metadata_languages,
-			auto_translate = EXCLUDED.auto_translate,
-			auto_download_subtitles = EXCLUDED.auto_download_subtitles,
-			auto_download_lyrics = EXCLUDED.auto_download_lyrics,
-			preferred_region = EXCLUDED.preferred_region,
-			date_format = EXCLUDED.date_format,
-			time_format = EXCLUDED.time_format,
-			number_format = EXCLUDED.number_format,
-			currency_code = EXCLUDED.currency_code,
-			updated_at = CURRENT_TIMESTAMP
 	`
 
 	var localization UserLocalization
@@ -539,13 +523,8 @@ func (s *LocalizationService) setupContentPreferences(ctx context.Context, local
 		languagesJSON, _ := json.Marshal(ct.Languages)
 
 		query := `
-			INSERT INTO content_language_preferences (user_id, content_type, languages, priority, auto_apply, created_at, updated_at)
+			INSERT OR REPLACE INTO content_language_preferences (user_id, content_type, languages, priority, auto_apply, created_at, updated_at)
 			VALUES (?, ?, ?, 1, true, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
-			ON CONFLICT (user_id, content_type)
-			DO UPDATE SET
-				languages = EXCLUDED.languages,
-				auto_apply = EXCLUDED.auto_apply,
-				updated_at = CURRENT_TIMESTAMP
 		`
 
 		_, err := s.db.ExecContext(ctx, query, localization.UserID, ct.Type, string(languagesJSON))

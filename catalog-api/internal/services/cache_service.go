@@ -127,13 +127,8 @@ func (s *CacheService) Set(ctx context.Context, key string, value interface{}, t
 	expiresAt := time.Now().Add(ttl)
 
 	query := `
-		INSERT INTO cache_entries (cache_key, value, expires_at, created_at, updated_at)
+		INSERT OR REPLACE INTO cache_entries (cache_key, value, expires_at, created_at, updated_at)
 		VALUES (?, ?, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
-		ON CONFLICT (cache_key)
-		DO UPDATE SET
-			value = EXCLUDED.value,
-			expires_at = EXCLUDED.expires_at,
-			updated_at = CURRENT_TIMESTAMP
 	`
 
 	_, err = s.db.ExecContext(ctx, query, key, string(valueJSON), expiresAt)
@@ -255,15 +250,9 @@ func (s *CacheService) SetMediaMetadata(ctx context.Context, mediaItemID int64, 
 	expiresAt := time.Now().Add(MetadataCacheTTL)
 
 	query := `
-		INSERT INTO media_metadata_cache (
+		INSERT OR REPLACE INTO media_metadata_cache (
 			media_item_id, metadata_type, provider, data, quality, expires_at, created_at, updated_at
 		) VALUES (?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
-		ON CONFLICT (media_item_id, metadata_type, provider)
-		DO UPDATE SET
-			data = EXCLUDED.data,
-			quality = EXCLUDED.quality,
-			expires_at = EXCLUDED.expires_at,
-			updated_at = CURRENT_TIMESTAMP
 	`
 
 	_, err = s.db.ExecContext(ctx, query, mediaItemID, metadataType, provider, string(dataJSON), quality, expiresAt)
@@ -347,14 +336,8 @@ func (s *CacheService) SetAPIResponse(ctx context.Context, provider, endpoint st
 	expiresAt := time.Now().Add(ttl)
 
 	query := `
-		INSERT INTO api_cache (provider, endpoint, request_hash, response, status_code, expires_at, created_at)
+		INSERT OR REPLACE INTO api_cache (provider, endpoint, request_hash, response, status_code, expires_at, created_at)
 		VALUES (?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)
-		ON CONFLICT (provider, endpoint, request_hash)
-		DO UPDATE SET
-			response = EXCLUDED.response,
-			status_code = EXCLUDED.status_code,
-			expires_at = EXCLUDED.expires_at,
-			created_at = CURRENT_TIMESTAMP
 	`
 
 	_, err = s.db.ExecContext(ctx, query, provider, endpoint, requestHash, string(responseJSON), statusCode, expiresAt)
@@ -428,13 +411,8 @@ func (s *CacheService) SetThumbnail(ctx context.Context, videoID, position int64
 		zap.Int64("position", position))
 
 	query := `
-		INSERT INTO thumbnail_cache (video_id, position, url, width, height, file_size, created_at)
+		INSERT OR REPLACE INTO thumbnail_cache (video_id, position, url, width, height, file_size, created_at)
 		VALUES (?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)
-		ON CONFLICT (video_id, position, width, height)
-		DO UPDATE SET
-			url = EXCLUDED.url,
-			file_size = EXCLUDED.file_size,
-			created_at = CURRENT_TIMESTAMP
 	`
 
 	_, err := s.db.ExecContext(ctx, query, videoID, position, url, width, height, fileSize)

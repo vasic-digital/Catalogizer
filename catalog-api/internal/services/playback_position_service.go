@@ -120,20 +120,10 @@ func (s *PlaybackPositionService) UpdatePosition(ctx context.Context, req *Updat
 	isCompleted := percentComplete >= 90.0
 
 	query := `
-		INSERT INTO playback_positions (
+		INSERT OR REPLACE INTO playback_positions (
 			user_id, media_item_id, position, duration, percent_complete,
 			last_played, is_completed, device_info, playback_quality, created_at, updated_at
 		) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
-		ON CONFLICT (user_id, media_item_id)
-		DO UPDATE SET
-			position = EXCLUDED.position,
-			duration = EXCLUDED.duration,
-			percent_complete = EXCLUDED.percent_complete,
-			last_played = EXCLUDED.last_played,
-			is_completed = EXCLUDED.is_completed,
-			device_info = EXCLUDED.device_info,
-			playback_quality = EXCLUDED.playback_quality,
-			updated_at = CURRENT_TIMESTAMP
 	`
 
 	_, err := s.db.ExecContext(ctx, query,

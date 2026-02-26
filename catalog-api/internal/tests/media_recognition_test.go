@@ -16,9 +16,35 @@ import (
 	"catalogizer/internal/services"
 )
 
+func createTestTables(t *testing.T, db *database.DB) {
+	_, err := db.Exec(`
+		CREATE TABLE IF NOT EXISTS cache_entries (
+			id INTEGER PRIMARY KEY AUTOINCREMENT,
+			cache_key TEXT NOT NULL UNIQUE,
+			value TEXT NOT NULL,
+			expires_at DATETIME,
+			created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+			updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+		)
+	`)
+	require.NoError(t, err, "Failed to create cache_entries table")
+
+	_, err = db.Exec(`
+		CREATE TABLE IF NOT EXISTS cache_activity (
+			id INTEGER PRIMARY KEY AUTOINCREMENT,
+			type TEXT NOT NULL,
+			cache_key TEXT NOT NULL,
+			provider TEXT,
+			hit BOOLEAN NOT NULL,
+			timestamp DATETIME DEFAULT CURRENT_TIMESTAMP
+		)
+	`)
+	require.NoError(t, err, "Failed to create cache_activity table")
+}
+
 func TestMediaRecognitionService_Movies(t *testing.T) {
 	ctx := context.Background()
-	
+
 	// For now, skip mock servers and test with real service
 	mockServers := make([]*httptest.Server, 0)
 	defer func() {
@@ -33,6 +59,7 @@ func TestMediaRecognitionService_Movies(t *testing.T) {
 	defer sqlDB.Close()
 
 	db := database.WrapDB(sqlDB, database.DialectSQLite)
+	createTestTables(t, db)
 
 	// Create logger
 	logger, _ := zap.NewDevelopment()
@@ -58,7 +85,7 @@ func TestMediaRecognitionService_Movies(t *testing.T) {
 	// Test movie recognition
 	t.Run("recognize movie file", func(t *testing.T) {
 		mediaPath := "/movies/The.Matrix.1999.1080p.BluRay.x264.mkv"
-		
+
 		req := &services.MediaRecognitionRequest{
 			FilePath:  mediaPath,
 			FileName:  "The.Matrix.1999.1080p.BluRay.x264.mkv",
@@ -85,7 +112,7 @@ func TestMediaRecognitionService_Movies(t *testing.T) {
 
 	t.Run("recognize TV series", func(t *testing.T) {
 		mediaPath := "/tv/Breaking.Bad.S01E01.Pilot.1080p.mkv"
-		
+
 		req := &services.MediaRecognitionRequest{
 			FilePath:  mediaPath,
 			FileName:  "Breaking.Bad.S01E01.Pilot.1080p.mkv",
@@ -119,6 +146,7 @@ func TestMediaRecognitionService_Music(t *testing.T) {
 	defer sqlDB.Close()
 
 	db := database.WrapDB(sqlDB, database.DialectSQLite)
+	createTestTables(t, db)
 
 	// Create logger
 	logger, _ := zap.NewDevelopment()
@@ -143,7 +171,7 @@ func TestMediaRecognitionService_Music(t *testing.T) {
 
 	t.Run("recognize music file", func(t *testing.T) {
 		mediaPath := "/music/TheBeatles/Abbey Road/01 - Come Together.mp3"
-		
+
 		req := &services.MediaRecognitionRequest{
 			FilePath:  mediaPath,
 			FileName:  "01 - Come Together.mp3",
@@ -169,7 +197,7 @@ func TestMediaRecognitionService_Music(t *testing.T) {
 
 	t.Run("recognize audio book", func(t *testing.T) {
 		mediaPath := "/audiobooks/Dune/Part1.mp3"
-		
+
 		req := &services.MediaRecognitionRequest{
 			FilePath:  mediaPath,
 			FileName:  "Part1.mp3",
@@ -205,6 +233,7 @@ func TestMediaRecognitionService_ErrorCases(t *testing.T) {
 	defer sqlDB.Close()
 
 	db := database.WrapDB(sqlDB, database.DialectSQLite)
+	createTestTables(t, db)
 
 	// Create logger
 	logger, _ := zap.NewDevelopment()
@@ -269,6 +298,7 @@ func TestMediaRecognitionService_Cache(t *testing.T) {
 	defer sqlDB.Close()
 
 	db := database.WrapDB(sqlDB, database.DialectSQLite)
+	createTestTables(t, db)
 
 	// Create logger
 	logger, _ := zap.NewDevelopment()
