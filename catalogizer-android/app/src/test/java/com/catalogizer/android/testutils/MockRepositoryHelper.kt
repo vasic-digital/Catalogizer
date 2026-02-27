@@ -1,13 +1,10 @@
 package com.catalogizer.android.testutils
 
 import com.catalogizer.android.data.models.MediaItem
-import com.catalogizer.android.data.models.MediaType
 import com.catalogizer.android.data.models.User
 import com.catalogizer.android.data.remote.ApiResult
 import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.flowOf
-import java.util.*
 
 /**
  * Helper class for creating mock data in tests.
@@ -18,22 +15,28 @@ object MockRepositoryHelper {
     fun createMockMediaItem(
         id: Long = 1L,
         title: String = "Test Movie",
-        type: MediaType = MediaType.MOVIE,
+        mediaType: String = "movie",
         year: Int = 2023
     ): MediaItem {
         return MediaItem(
             id = id,
             title = title,
-            type = type,
+            mediaType = mediaType,
             year = year,
-            posterPath = "/test/poster.jpg",
-            backdropPath = "/test/backdrop.jpg",
-            overview = "Test overview",
+            description = "Test description",
+            coverImage = "/test/cover.jpg",
             rating = 8.5,
-            runtime = 120,
-            genres = listOf("Action", "Adventure"),
-            createdAt = Date(),
-            updatedAt = Date()
+            quality = "1080p",
+            fileSize = 1024L * 1024 * 1024,
+            duration = 120,
+            directoryPath = "/test/media",
+            smbPath = "smb://server/test",
+            createdAt = "2024-01-15T10:00:00Z",
+            updatedAt = "2024-02-15T10:00:00Z",
+            isFavorite = false,
+            watchProgress = 0.0,
+            lastWatched = null,
+            isDownloaded = false
         )
     }
     
@@ -57,22 +60,24 @@ object MockRepositoryHelper {
             id = id,
             username = username,
             email = email,
-            createdAt = Date(),
-            updatedAt = Date()
+            firstName = "Test",
+            lastName = "User",
+            role = "user",
+            isActive = true,
+            lastLogin = "2024-02-15T10:00:00Z",
+            createdAt = "2024-01-15T10:00:00Z",
+            updatedAt = "2024-02-15T10:00:00Z",
+            permissions = listOf("read:media")
         )
     }
     
     // Mock API Results
-    fun <T> createSuccessApiResult(data: T): ApiResult.Success<T> {
-        return ApiResult.Success(data)
+    fun <T> createSuccessApiResult(data: T): ApiResult<T> {
+        return ApiResult.success(data)
     }
     
-    fun <T> createErrorApiResult(message: String = "Test error"): ApiResult.Error<T> {
-        return ApiResult.Error(message)
-    }
-    
-    fun <T> createLoadingApiResult(): ApiResult.Loading<T> {
-        return ApiResult.Loading()
+    fun <T> createErrorApiResult(message: String = "Test error"): ApiResult<T> {
+        return ApiResult.error(message)
     }
     
     // Mock Flows
@@ -81,7 +86,7 @@ object MockRepositoryHelper {
     }
     
     fun <T> createMockFlowSequence(vararg items: T): Flow<T> {
-        return flow {
+        return kotlinx.coroutines.flow.flow {
             items.forEach { emit(it) }
         }
     }

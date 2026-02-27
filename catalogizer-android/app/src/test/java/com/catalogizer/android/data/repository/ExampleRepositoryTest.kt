@@ -1,7 +1,7 @@
 package com.catalogizer.android.data.repository
 
+import com.catalogizer.android.data.models.MediaItem
 import com.catalogizer.android.testutils.MockRepositoryHelper
-import com.catalogizer.android.testutils.TestDataGenerator
 import com.catalogizer.android.data.remote.ApiResult
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.runTest
@@ -17,11 +17,11 @@ class ExampleRepositoryTest {
         val mockData = MockRepositoryHelper.createMockMediaItems(3)
         
         // When - simulate repository call
-        val result: ApiResult<List<MediaItem>> = ApiResult.Success(mockData)
+        val result: ApiResult<List<MediaItem>> = ApiResult.success(mockData)
         
         // Then
-        assertTrue(result is ApiResult.Success)
-        assertEquals(3, (result as ApiResult.Success).data.size)
+        assertTrue(result.isSuccess)
+        assertEquals(3, result.data?.size)
     }
     
     @Test
@@ -30,11 +30,11 @@ class ExampleRepositoryTest {
         val emptyList = emptyList<MediaItem>()
         
         // When
-        val result: ApiResult<List<MediaItem>> = ApiResult.Success(emptyList)
+        val result: ApiResult<List<MediaItem>> = ApiResult.success(emptyList)
         
         // Then
-        assertTrue(result is ApiResult.Success)
-        assertTrue((result as ApiResult.Success).data.isEmpty())
+        assertTrue(result.isSuccess)
+        assertTrue(result.data?.isEmpty() ?: false)
     }
     
     @Test
@@ -43,10 +43,10 @@ class ExampleRepositoryTest {
         val errorMessage = "Network error"
         
         // When
-        val result: ApiResult<List<MediaItem>> = ApiResult.Error(errorMessage)
+        val result: ApiResult<List<MediaItem>> = ApiResult.error(errorMessage)
         
         // Then
-        assertTrue(result is ApiResult.Error)
-        assertEquals(errorMessage, (result as ApiResult.Error).message)
+        assertFalse(result.isSuccess)
+        assertEquals(errorMessage, result.error)
     }
 }

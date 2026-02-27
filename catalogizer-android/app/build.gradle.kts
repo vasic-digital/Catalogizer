@@ -1,5 +1,11 @@
 import java.util.Properties
 
+// Disable JDK image transform at project level to avoid jlink issues
+project.ext.set("android.useNewJdkImageTransform", false)
+project.ext.set("android.experimental.jdkImageTransform", false)
+project.ext.set("android.enableNewJdkImageTransform", false)
+project.ext.set("android.experimental.useNewJdkImageTransform", false)
+
 plugins {
     id("com.android.application")
     id("org.jetbrains.kotlin.android")
@@ -9,13 +15,13 @@ plugins {
     id("jacoco")
 }
 
-// project.ext.set("android.useNewJdkImageTransform", false)
-// project.ext.set("android.experimental.jdkImageTransform", false)
-
 android {
-    // Disable JDK image transform to avoid jlink issues
-    // project.ext.set("android.useNewJdkImageTransform", false)
-    // project.ext.set("android.experimental.jdkImageTransform", false)
+    
+    // Disable JDK image transform - must be set before any android configuration
+    project.extensions.extraProperties["android.useNewJdkImageTransform"] = false
+    project.extensions.extraProperties["android.experimental.jdkImageTransform"] = false
+    project.extensions.extraProperties["android.enableNewJdkImageTransform"] = false
+    project.extensions.extraProperties["android.experimental.useNewJdkImageTransform"] = false
     
     namespace = "com.catalogizer.android"
     compileSdk = 34
@@ -72,19 +78,18 @@ android {
     }
 
     compileOptions {
-        sourceCompatibility = JavaVersion.VERSION_17
-        targetCompatibility = JavaVersion.VERSION_17
+        sourceCompatibility = JavaVersion.VERSION_21
+        targetCompatibility = JavaVersion.VERSION_21
     }
-
 
     kotlinOptions {
-        jvmTarget = "17"
+        jvmTarget = "21"
     }
 
-    // Kotlin toolchain for JDK 17 compatibility with AGP 8.1.0
-    kotlin {
-        jvmToolchain(17)
-    }
+    // Disable explicit toolchain to use system JVM
+    // kotlin {
+    //     jvmToolchain(21)
+    // }
 
     // Disable JDK image transform to avoid jlink issues
     // useNewJdkImageTransform.set(false)
@@ -214,4 +219,10 @@ tasks.register<JacocoReport>("jacocoTestReport") {
     sourceDirectories.setFrom(files(mainSrc))
     classDirectories.setFrom(files(debugTree))
     executionData.setFrom(fileTree(layout.buildDirectory) { include("jacoco/testDebugUnitTest.exec") })
+}
+// Workaround for JDK image transform issue with Java 21
+// This is a known issue with AGP 8.1.0 and Java 21
+tasks.withType<JavaCompile> {
+    // Disable JDK image transform
+    options.isFork = false
 }

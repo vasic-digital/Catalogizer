@@ -10,7 +10,7 @@ object TestDataGenerator {
     // Generate test media items
     fun generateMediaItems(count: Int = 10): List<MediaItem> {
         val items = mutableListOf<MediaItem>()
-        val types = MediaType.values()
+        val types = listOf("movie", "tv_show", "music", "game", "book")
         val genres = listOf(
             "Action", "Adventure", "Comedy", "Drama", "Horror",
             "Sci-Fi", "Fantasy", "Romance", "Thriller", "Documentary"
@@ -19,30 +19,34 @@ object TestDataGenerator {
         for (i in 1..count) {
             val type = types[i % types.size]
             val title = when (type) {
-                MediaType.MOVIE -> "Test Movie $i"
-                MediaType.TV_SHOW -> "Test TV Show $i"
-                MediaType.MUSIC_ALBUM -> "Test Album $i"
-                MediaType.GAME -> "Test Game $i"
-                MediaType.BOOK -> "Test Book $i"
+                "movie" -> "Test Movie $i"
+                "tv_show" -> "Test TV Show $i"
+                "music" -> "Test Album $i"
+                "game" -> "Test Game $i"
+                "book" -> "Test Book $i"
                 else -> "Test Item $i"
             }
-            
-            val itemGenres = genres.shuffled().take(3)
             
             items.add(
                 MediaItem(
                     id = i.toLong(),
                     title = title,
-                    type = type,
+                    mediaType = type,
                     year = 2010 + (i % 15),
-                    posterPath = "/posters/poster_$i.jpg",
-                    backdropPath = "/backdrops/backdrop_$i.jpg",
-                    overview = "This is a test overview for $title. It's a great piece of media that everyone should experience.",
+                    description = "This is a test description for $title. It's a great piece of media that everyone should experience.",
+                    coverImage = "/covers/cover_$i.jpg",
                     rating = 5.0 + (i % 5).toDouble(),
-                    runtime = 90 + (i % 60),
-                    genres = itemGenres,
-                    createdAt = java.util.Date(System.currentTimeMillis() - i * 86400000L),
-                    updatedAt = java.util.Date()
+                    quality = listOf("720p", "1080p", "4k")[i % 3],
+                    fileSize = 1024L * 1024 * 1024 * (i % 10 + 1),
+                    duration = 90 + (i % 60),
+                    directoryPath = "/test/media/$type",
+                    smbPath = "smb://server/media/$type/$title",
+                    createdAt = "2024-01-${(i % 28 + 1).toString().padStart(2, '0')}T10:00:00Z",
+                    updatedAt = "2024-02-${(i % 28 + 1).toString().padStart(2, '0')}T10:00:00Z",
+                    isFavorite = i % 3 == 0,
+                    watchProgress = (i % 100).toDouble(),
+                    lastWatched = if (i % 2 == 0) "2024-02-${(i % 28 + 1).toString().padStart(2, '0')}T10:00:00Z" else null,
+                    isDownloaded = i % 4 == 0
                 )
             )
         }
@@ -60,8 +64,12 @@ object TestDataGenerator {
                     id = i.toLong(),
                     username = "user$i",
                     email = "user$i@example.com",
-                    createdAt = java.util.Date(System.currentTimeMillis() - i * 86400000L),
-                    updatedAt = java.util.Date()
+                    firstName = "First$i",
+                    lastName = "Last$i",
+                    role = if (i == 1) "admin" else "user",
+                    isActive = true,
+                    createdAt = "2024-01-${(i % 28 + 1).toString().padStart(2, '0')}T10:00:00Z",
+                    updatedAt = "2024-02-${(i % 28 + 1).toString().padStart(2, '0')}T10:00:00Z"
                 )
             )
         }

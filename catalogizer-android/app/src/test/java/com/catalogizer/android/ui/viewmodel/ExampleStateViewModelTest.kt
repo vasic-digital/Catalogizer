@@ -1,17 +1,13 @@
 package com.catalogizer.android.ui.viewmodel
 
-import androidx.lifecycle.viewModelScope
-import com.catalogizer.android.testutils.TestDispatcherRule
-import com.catalogizer.android.testutils.ViewModelTestBase
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.launch
+import kotlinx.coroutines.test.runTest
 import org.junit.Test
-import kotlin.test.assertEquals
-import kotlin.test.assertTrue
+import org.junit.Assert.*
 
-class ExampleStateViewModelTest : ViewModelTestBase() {
+class ExampleStateViewModelTest {
     
     // Example ViewModel for testing
     class ExampleViewModel {
