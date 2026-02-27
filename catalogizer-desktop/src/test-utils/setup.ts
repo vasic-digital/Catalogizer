@@ -5,11 +5,9 @@ import '@testing-library/jest-dom';
 import { vi } from 'vitest';
 import { cleanup } from '@testing-library/react';
 
-// Mock Tauri API
-vi.mock('@tauri-apps/api', () => ({
+// Mock Tauri API v2 - core module
+vi.mock('@tauri-apps/api/core', () => ({
   invoke: vi.fn(),
-  listen: vi.fn(),
-  emit: vi.fn(),
 }));
 
 // Mock Tauri plugin shell

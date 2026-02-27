@@ -2,12 +2,14 @@
  * Example tests for Tauri commands
  */
 import { vi, describe, it, expect, beforeEach } from 'vitest';
-import { invoke } from '@tauri-apps/api';
-import { mockTauriApi, setupTauriSuccessResponse, setupTauriErrorResponse } from '@/test-utils/testData';
+import { invoke } from '@tauri-apps/api/core';
 
-// Mock the Tauri API
-vi.mock('@tauri-apps/api', () => ({
-  invoke: mockTauriApi.invoke,
+// Create local mock to avoid hoisting issues
+const mockInvoke = vi.fn();
+
+// Mock the Tauri API v2 - core module
+vi.mock('@tauri-apps/api/core', () => ({
+  invoke: (...args: any[]) => mockInvoke(...args),
 }));
 
 describe('Tauri Commands', () => {
@@ -23,20 +25,20 @@ describe('Tauri Commands', () => {
         version: '1.0.0',
         author: 'Catalogizer Team',
       };
-      setupTauriSuccessResponse(mockAppInfo);
+      mockInvoke.mockResolvedValue(mockAppInfo);
 
       // When
       const result = await invoke('get_app_info');
 
       // Then
       expect(result).toEqual(mockAppInfo);
-      expect(mockTauriApi.invoke).toHaveBeenCalledWith('get_app_info');
+      expect(mockInvoke).toHaveBeenCalledWith('get_app_info');
     });
 
     it('should handle errors when getting app info', async () => {
       // Given
       const errorMessage = 'Failed to get app info';
-      setupTauriErrorResponse(errorMessage);
+      mockInvoke.mockRejectedValue(new Error(errorMessage));
 
       // When & Then
       await expect(invoke('get_app_info')).rejects.toThrow(errorMessage);
@@ -52,14 +54,14 @@ describe('Tauri Commands', () => {
         memory: 8192,
         cores: 8,
       };
-      setupTauriSuccessResponse(mockSystemInfo);
+      mockInvoke.mockResolvedValue(mockSystemInfo);
 
       // When
       const result = await invoke('get_system_info');
 
       // Then
       expect(result).toEqual(mockSystemInfo);
-      expect(mockTauriApi.invoke).toHaveBeenCalledWith('get_system_info');
+      expect(mockInvoke).toHaveBeenCalledWith('get_system_info');
     });
   });
 });
