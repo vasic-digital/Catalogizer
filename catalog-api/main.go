@@ -461,10 +461,10 @@ func main() {
 		c.JSON(200, gin.H{"host": cfg.Server.Host, "port": cfg.Server.Port})
 	}
 
-	// Analytics and reporting services used by stats handler via repositories
-	_ = analyticsService
-	_ = reportingService
-	_ = favoritesService
+	// Analytics, reporting, and favorites handlers
+	analyticsHandler := root_handlers.NewAnalyticsHandler(analyticsService, logger)
+	reportingHandler := root_handlers.NewReportingHandler(reportingService, logger)
+	favoritesHandler := root_handlers.NewFavoritesHandler(favoritesService, logger)
 
 	// Initialize JWT middleware
 	jwtMiddleware := root_middleware.NewJWTMiddleware(jwtSecret)
@@ -738,6 +738,33 @@ func main() {
 			entityGroup.POST("/:id/metadata/refresh", mediaEntityHandler.RefreshEntityMetadata)
 			entityGroup.PUT("/:id/user-metadata", mediaEntityHandler.UpdateUserMetadata)
 			entityGroup.POST("/:id/user-metadata", mediaEntityHandler.UpdateUserMetadata)
+		}
+
+		// Analytics endpoints
+		analyticsGroup := api.Group("/analytics")
+		{
+			analyticsGroup.POST("/access", analyticsHandler.LogMediaAccess)
+			analyticsGroup.POST("/event", analyticsHandler.LogEvent)
+			analyticsGroup.GET("/user/:user_id", analyticsHandler.GetUserAnalytics)
+			analyticsGroup.GET("/system", analyticsHandler.GetSystemAnalytics)
+			analyticsGroup.GET("/media/:media_id", analyticsHandler.GetMediaAnalytics)
+			analyticsGroup.POST("/reports", analyticsHandler.CreateReport)
+		}
+
+		// Reporting endpoints
+		reportingGroup := api.Group("/reports")
+		{
+			reportingGroup.GET("/usage", reportingHandler.GetUsageReport)
+			reportingGroup.GET("/performance", reportingHandler.GetPerformanceReport)
+		}
+
+		// Favorites endpoints
+		favoritesGroup := api.Group("/favorites")
+		{
+			favoritesGroup.GET("", favoritesHandler.ListFavorites)
+			favoritesGroup.POST("", favoritesHandler.AddFavorite)
+			favoritesGroup.DELETE("/:entity_type/:entity_id", favoritesHandler.RemoveFavorite)
+			favoritesGroup.GET("/check/:entity_type/:entity_id", favoritesHandler.CheckFavorite)
 		}
 
 		// Challenge endpoints

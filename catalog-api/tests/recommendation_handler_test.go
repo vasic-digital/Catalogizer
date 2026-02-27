@@ -1,7 +1,6 @@
 package tests
 
 import (
-	"encoding/json"
 	"net/http"
 	"net/http/httptest"
 	"os"
@@ -10,7 +9,6 @@ import (
 	"catalogizer/config"
 	"catalogizer/database"
 	"catalogizer/handlers"
-	root_handlers "catalogizer/handlers"
 	"catalogizer/internal/middleware"
 	"catalogizer/internal/services"
 	root_repository "catalogizer/repository"
@@ -23,11 +21,10 @@ import (
 
 type RecommendationTestSuite struct {
 	suite.Suite
-	router               *gin.Engine
+	router                *gin.Engine
 	recommendationHandler *handlers.RecommendationHandler
-	simpleRecHandler     *root_handlers.SimpleRecommendationHandler
-	db                   *database.DB
-	tmpDBPath            string
+	db                    *database.DB
+	tmpDBPath             string
 }
 
 func (suite *RecommendationTestSuite) TearDownSuite() {
@@ -41,7 +38,7 @@ func (suite *RecommendationTestSuite) TearDownSuite() {
 
 func (suite *RecommendationTestSuite) SetupSuite() {
 	gin.SetMode(gin.TestMode)
-	
+
 	// Create a temporary test database file
 	tmpFile, err := os.CreateTemp("", "catalogizer-rec-test-*.db")
 	suite.Require().NoError(err)
@@ -55,7 +52,7 @@ func (suite *RecommendationTestSuite) SetupSuite() {
 	suite.Require().NoError(err)
 	// Don't close the database here - it will be closed in TearDownSuite
 	suite.db = db
-	
+
 	// Create the media_items table for tests
 	_, err = db.DB.Exec(`
 		CREATE TABLE IF NOT EXISTS media_items (
@@ -88,7 +85,7 @@ func (suite *RecommendationTestSuite) SetupSuite() {
 
 	// Create test logger
 	logger, _ := zap.NewDevelopment()
-	
+
 	// Initialize services
 	mediaRecognitionService := services.NewMediaRecognitionService(db, logger, nil, nil, "", "", "", "", "", "")
 	duplicateDetectionService := services.NewDuplicateDetectionService(db, logger, nil)
@@ -99,22 +96,17 @@ func (suite *RecommendationTestSuite) SetupSuite() {
 		fileRepository,
 		db,
 	)
-	
+
 	// Create handlers
 	suite.recommendationHandler = handlers.NewRecommendationHandler(recommendationService)
-	suite.simpleRecHandler = root_handlers.NewSimpleRecommendationHandler()
-	
+
 	// Setup router
 	suite.router = gin.New()
 	suite.router.Use(middleware.Logger(logger))
-	
+
 	// Add routes
 	api := suite.router.Group("/api/v1")
-	
-	// Simple test routes
-	api.GET("/recommendations/test", suite.simpleRecHandler.GetSimpleRecommendation)
-	api.GET("/recommendations/error", suite.simpleRecHandler.GetTest)
-	
+
 	// Full recommendation routes
 	recGroup := api.Group("/recommendations")
 	recGroup.GET("/similar/:media_id", suite.recommendationHandler.GetSimilarItems)
@@ -122,24 +114,11 @@ func (suite *RecommendationTestSuite) SetupSuite() {
 	recGroup.GET("/personalized/:user_id", suite.recommendationHandler.GetPersonalizedRecommendations)
 }
 
-func (suite *RecommendationTestSuite) TestSimpleRecommendationEndpoint() {
-	req, _ := http.NewRequest("GET", "/api/v1/recommendations/test", nil)
-	w := httptest.NewRecorder()
-	suite.router.ServeHTTP(w, req)
-	
-	assert.Equal(suite.T(), http.StatusOK, w.Code)
-	
-	var response map[string]interface{}
-	err := json.Unmarshal(w.Body.Bytes(), &response)
-	assert.NoError(suite.T(), err)
-	assert.Equal(suite.T(), "Simple recommendation works!", response["message"])
-}
-
 func (suite *RecommendationTestSuite) TestSimilarItemsEndpoint() {
 	req, _ := http.NewRequest("GET", "/api/v1/recommendations/similar/123", nil)
 	w := httptest.NewRecorder()
 	suite.router.ServeHTTP(w, req)
-	
+
 	// Should return 200 even if no similar items found
 	assert.Equal(suite.T(), http.StatusOK, w.Code)
 }
@@ -148,7 +127,7 @@ func (suite *RecommendationTestSuite) TestTrendingItemsEndpoint() {
 	req, _ := http.NewRequest("GET", "/api/v1/recommendations/trending", nil)
 	w := httptest.NewRecorder()
 	suite.router.ServeHTTP(w, req)
-	
+
 	// Should return 200 even if no trending items found
 	assert.Equal(suite.T(), http.StatusOK, w.Code)
 }
@@ -157,7 +136,7 @@ func (suite *RecommendationTestSuite) TestPersonalizedRecommendationsEndpoint() 
 	req, _ := http.NewRequest("GET", "/api/v1/recommendations/personalized/456", nil)
 	w := httptest.NewRecorder()
 	suite.router.ServeHTTP(w, req)
-	
+
 	// Should return 200 even if no recommendations found
 	assert.Equal(suite.T(), http.StatusOK, w.Code)
 }

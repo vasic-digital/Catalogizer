@@ -319,7 +319,6 @@ export const CollectionRealTime: React.FC<CollectionRealTimeProps> = ({
           // Play sound (simplified)
           const audio = new Audio('/notification.mp3')
           audio.volume = 0.3
-          // eslint-disable-next-line @typescript-eslint/no-empty-function
           audio.play().catch(() => { /* Audio play failed - ignore */ })
         }
         

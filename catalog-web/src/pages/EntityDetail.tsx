@@ -103,7 +103,7 @@ export function EntityDetail() {
       />
 
       <ChildrenList
-        children={children}
+        items={children}
         mediaType={entity.media_type}
         onChildClick={(childId) => navigate(`/entity/${childId}`)}
       />

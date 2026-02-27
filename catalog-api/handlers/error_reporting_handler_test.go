@@ -436,3 +436,283 @@ func TestErrorReportingHandler_NewErrorReportingHandler(t *testing.T) {
 	assert.Equal(t, mockErrorService, handler.errorReportingService)
 	assert.Equal(t, mockAuthService, handler.authService)
 }
+
+func TestErrorReportingHandler_ListErrorReports(t *testing.T) {
+	mockErrorService := new(MockErrorReportingService)
+	mockAuthService := new(MockErrorReportingAuthService)
+
+	handler := &ErrorReportingHandler{
+		errorReportingService: mockErrorService,
+		authService:           mockAuthService,
+	}
+
+	mockAuthService.On("CheckPermission", 1, models.PermissionReportView).Return(true, nil)
+	mockErrorService.On("GetErrorReportsByUser", 1, mock.AnythingOfType("*models.ErrorReportFilters")).Return([]models.ErrorReport{{ID: 1}}, nil)
+
+	req := httptest.NewRequest("GET", "/error-reports", nil)
+	req = req.WithContext(context.WithValue(context.Background(), "user_id", 1))
+	rr := httptest.NewRecorder()
+
+	handler.ListErrorReports(rr, req)
+
+	assert.Equal(t, 200, rr.Code)
+	mockAuthService.AssertExpectations(t)
+	mockErrorService.AssertExpectations(t)
+}
+
+func TestErrorReportingHandler_ListErrorReports_PermissionDenied(t *testing.T) {
+	mockErrorService := new(MockErrorReportingService)
+	mockAuthService := new(MockErrorReportingAuthService)
+
+	handler := &ErrorReportingHandler{
+		errorReportingService: mockErrorService,
+		authService:           mockAuthService,
+	}
+
+	mockAuthService.On("CheckPermission", 1, models.PermissionReportView).Return(false, nil)
+
+	req := httptest.NewRequest("GET", "/error-reports", nil)
+	req = req.WithContext(context.WithValue(context.Background(), "user_id", 1))
+	rr := httptest.NewRecorder()
+
+	handler.ListErrorReports(rr, req)
+
+	assert.Equal(t, 403, rr.Code)
+	mockAuthService.AssertExpectations(t)
+}
+
+func TestErrorReportingHandler_GetCrashReport(t *testing.T) {
+	mockErrorService := new(MockErrorReportingService)
+	mockAuthService := new(MockErrorReportingAuthService)
+
+	handler := &ErrorReportingHandler{
+		errorReportingService: mockErrorService,
+		authService:           mockAuthService,
+	}
+
+	mockAuthService.On("CheckPermission", 1, models.PermissionReportView).Return(true, nil)
+	mockErrorService.On("GetCrashReport", 1, 1).Return(&models.CrashReport{ID: 1}, nil)
+
+	req := httptest.NewRequest("GET", "/crash-report/1", nil)
+	req = req.WithContext(context.WithValue(context.Background(), "user_id", 1))
+	req = mux.SetURLVars(req, map[string]string{"id": "1"})
+	rr := httptest.NewRecorder()
+
+	handler.GetCrashReport(rr, req)
+
+	assert.Equal(t, 200, rr.Code)
+	mockAuthService.AssertExpectations(t)
+	mockErrorService.AssertExpectations(t)
+}
+
+func TestErrorReportingHandler_ListCrashReports(t *testing.T) {
+	mockErrorService := new(MockErrorReportingService)
+	mockAuthService := new(MockErrorReportingAuthService)
+
+	handler := &ErrorReportingHandler{
+		errorReportingService: mockErrorService,
+		authService:           mockAuthService,
+	}
+
+	mockAuthService.On("CheckPermission", 1, models.PermissionReportView).Return(true, nil)
+	mockErrorService.On("GetCrashReportsByUser", 1, mock.AnythingOfType("*models.CrashReportFilters")).Return([]models.CrashReport{{ID: 1}}, nil)
+
+	req := httptest.NewRequest("GET", "/crash-reports", nil)
+	req = req.WithContext(context.WithValue(context.Background(), "user_id", 1))
+	rr := httptest.NewRecorder()
+
+	handler.ListCrashReports(rr, req)
+
+	assert.Equal(t, 200, rr.Code)
+	mockAuthService.AssertExpectations(t)
+	mockErrorService.AssertExpectations(t)
+}
+
+func TestErrorReportingHandler_UpdateErrorStatus(t *testing.T) {
+	mockErrorService := new(MockErrorReportingService)
+	mockAuthService := new(MockErrorReportingAuthService)
+
+	handler := &ErrorReportingHandler{
+		errorReportingService: mockErrorService,
+		authService:           mockAuthService,
+	}
+
+	mockAuthService.On("CheckPermission", 1, models.PermissionReportCreate).Return(true, nil)
+	mockErrorService.On("UpdateErrorStatus", 1, 1, "resolved").Return(nil)
+
+	req := httptest.NewRequest("PUT", "/error-report/1/status", bytes.NewBufferString(`{"status": "resolved"}`))
+	req.Header.Set("Content-Type", "application/json")
+	req = req.WithContext(context.WithValue(context.Background(), "user_id", 1))
+	req = mux.SetURLVars(req, map[string]string{"id": "1"})
+	rr := httptest.NewRecorder()
+
+	handler.UpdateErrorStatus(rr, req)
+
+	assert.Equal(t, 204, rr.Code)
+	mockAuthService.AssertExpectations(t)
+	mockErrorService.AssertExpectations(t)
+}
+
+func TestErrorReportingHandler_UpdateCrashStatus(t *testing.T) {
+	mockErrorService := new(MockErrorReportingService)
+	mockAuthService := new(MockErrorReportingAuthService)
+
+	handler := &ErrorReportingHandler{
+		errorReportingService: mockErrorService,
+		authService:           mockAuthService,
+	}
+
+	mockAuthService.On("CheckPermission", 1, models.PermissionReportCreate).Return(true, nil)
+	mockErrorService.On("UpdateCrashStatus", 1, 1, "resolved").Return(nil)
+
+	req := httptest.NewRequest("PUT", "/crash-report/1/status", bytes.NewBufferString(`{"status": "resolved"}`))
+	req.Header.Set("Content-Type", "application/json")
+	req = req.WithContext(context.WithValue(context.Background(), "user_id", 1))
+	req = mux.SetURLVars(req, map[string]string{"id": "1"})
+	rr := httptest.NewRecorder()
+
+	handler.UpdateCrashStatus(rr, req)
+
+	assert.Equal(t, 204, rr.Code)
+	mockAuthService.AssertExpectations(t)
+	mockErrorService.AssertExpectations(t)
+}
+
+func TestErrorReportingHandler_GetErrorStatistics(t *testing.T) {
+	mockErrorService := new(MockErrorReportingService)
+	mockAuthService := new(MockErrorReportingAuthService)
+
+	handler := &ErrorReportingHandler{
+		errorReportingService: mockErrorService,
+		authService:           mockAuthService,
+	}
+
+	mockAuthService.On("CheckPermission", 1, models.PermissionReportView).Return(true, nil)
+	mockErrorService.On("GetErrorStatistics", 1).Return(&models.ErrorStatistics{TotalErrors: 10}, nil)
+
+	req := httptest.NewRequest("GET", "/error-statistics", nil)
+	req = req.WithContext(context.WithValue(context.Background(), "user_id", 1))
+	rr := httptest.NewRecorder()
+
+	handler.GetErrorStatistics(rr, req)
+
+	assert.Equal(t, 200, rr.Code)
+	mockAuthService.AssertExpectations(t)
+	mockErrorService.AssertExpectations(t)
+}
+
+func TestErrorReportingHandler_GetCrashStatistics(t *testing.T) {
+	mockErrorService := new(MockErrorReportingService)
+	mockAuthService := new(MockErrorReportingAuthService)
+
+	handler := &ErrorReportingHandler{
+		errorReportingService: mockErrorService,
+		authService:           mockAuthService,
+	}
+
+	mockAuthService.On("CheckPermission", 1, models.PermissionReportView).Return(true, nil)
+	mockErrorService.On("GetCrashStatistics", 1).Return(&models.CrashStatistics{TotalCrashes: 5}, nil)
+
+	req := httptest.NewRequest("GET", "/crash-statistics", nil)
+	req = req.WithContext(context.WithValue(context.Background(), "user_id", 1))
+	rr := httptest.NewRecorder()
+
+	handler.GetCrashStatistics(rr, req)
+
+	assert.Equal(t, 200, rr.Code)
+	mockAuthService.AssertExpectations(t)
+	mockErrorService.AssertExpectations(t)
+}
+
+func TestErrorReportingHandler_GetSystemHealth(t *testing.T) {
+	mockErrorService := new(MockErrorReportingService)
+	mockAuthService := new(MockErrorReportingAuthService)
+
+	handler := &ErrorReportingHandler{
+		errorReportingService: mockErrorService,
+		authService:           mockAuthService,
+	}
+
+	mockAuthService.On("CheckPermission", 1, models.PermissionSystemAdmin).Return(true, nil)
+	mockErrorService.On("GetSystemHealth").Return(&models.SystemHealth{Status: "healthy"}, nil)
+
+	req := httptest.NewRequest("GET", "/system-health", nil)
+	req = req.WithContext(context.WithValue(context.Background(), "user_id", 1))
+	rr := httptest.NewRecorder()
+
+	handler.GetSystemHealth(rr, req)
+
+	assert.Equal(t, 200, rr.Code)
+	mockAuthService.AssertExpectations(t)
+	mockErrorService.AssertExpectations(t)
+}
+
+func TestErrorReportingHandler_GetConfiguration(t *testing.T) {
+	mockErrorService := new(MockErrorReportingService)
+	mockAuthService := new(MockErrorReportingAuthService)
+
+	handler := &ErrorReportingHandler{
+		errorReportingService: mockErrorService,
+		authService:           mockAuthService,
+	}
+
+	mockAuthService.On("CheckPermission", 1, models.PermissionSystemAdmin).Return(true, nil)
+	mockErrorService.On("GetConfiguration").Return(&services.ErrorReportingConfig{AutoReporting: true}, nil)
+
+	req := httptest.NewRequest("GET", "/error-config", nil)
+	req = req.WithContext(context.WithValue(context.Background(), "user_id", 1))
+	rr := httptest.NewRecorder()
+
+	handler.GetConfiguration(rr, req)
+
+	assert.Equal(t, 200, rr.Code)
+	mockAuthService.AssertExpectations(t)
+	mockErrorService.AssertExpectations(t)
+}
+
+func TestErrorReportingHandler_CleanupOldReports(t *testing.T) {
+	mockErrorService := new(MockErrorReportingService)
+	mockAuthService := new(MockErrorReportingAuthService)
+
+	handler := &ErrorReportingHandler{
+		errorReportingService: mockErrorService,
+		authService:           mockAuthService,
+	}
+
+	mockAuthService.On("CheckPermission", 1, models.PermissionSystemAdmin).Return(true, nil)
+	mockErrorService.On("CleanupOldReports", mock.AnythingOfType("time.Time")).Return(nil)
+
+	req := httptest.NewRequest("POST", "/cleanup-reports", bytes.NewBufferString(`{"days_old": 30}`))
+	req.Header.Set("Content-Type", "application/json")
+	req = req.WithContext(context.WithValue(context.Background(), "user_id", 1))
+	rr := httptest.NewRecorder()
+
+	handler.CleanupOldReports(rr, req)
+
+	assert.Equal(t, 200, rr.Code)
+	mockAuthService.AssertExpectations(t)
+	mockErrorService.AssertExpectations(t)
+}
+
+func TestErrorReportingHandler_ExportReports(t *testing.T) {
+	mockErrorService := new(MockErrorReportingService)
+	mockAuthService := new(MockErrorReportingAuthService)
+
+	handler := &ErrorReportingHandler{
+		errorReportingService: mockErrorService,
+		authService:           mockAuthService,
+	}
+
+	mockAuthService.On("CheckPermission", 1, models.PermissionReportView).Return(true, nil)
+	mockErrorService.On("ExportReports", 1, mock.AnythingOfType("*models.ExportFilters")).Return([]byte("csv,data"), nil)
+
+	req := httptest.NewRequest("GET", "/export-reports", nil)
+	req = req.WithContext(context.WithValue(context.Background(), "user_id", 1))
+	rr := httptest.NewRecorder()
+
+	handler.ExportReports(rr, req)
+
+	assert.Equal(t, 200, rr.Code)
+	mockAuthService.AssertExpectations(t)
+	mockErrorService.AssertExpectations(t)
+}

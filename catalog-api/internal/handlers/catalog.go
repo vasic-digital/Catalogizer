@@ -295,30 +295,3 @@ func (h *CatalogHandler) GetDuplicatesCount(c *gin.Context) {
 		"smb_root":           smbRoot,
 	})
 }
-
-// Placeholder implementations for other endpoints
-// Delegated to specialized handlers
-func (h *CatalogHandler) DownloadFile(c *gin.Context) {
-	// Delegate to DownloadHandler
-	c.JSON(http.StatusSeeOther, gin.H{"redirect": "/api/v1/download/file/" + c.Param("path")})
-}
-
-func (h *CatalogHandler) DownloadArchive(c *gin.Context) {
-	// Delegate to DownloadHandler
-	c.JSON(http.StatusSeeOther, gin.H{"redirect": "/api/v1/download/archive"})
-}
-
-func (h *CatalogHandler) CopyToSMB(c *gin.Context) {
-	// Delegate to CopyHandler
-	c.JSON(http.StatusSeeOther, gin.H{"redirect": "/api/v1/copy/smb"})
-}
-
-func (h *CatalogHandler) CopyFromSMB(c *gin.Context) {
-	// Delegate to CopyHandler
-	c.JSON(http.StatusSeeOther, gin.H{"redirect": "/api/v1/copy/local"})
-}
-
-func (h *CatalogHandler) ListSMBPath(c *gin.Context) {
-	// Delegate to CopyHandler
-	c.JSON(http.StatusSeeOther, gin.H{"redirect": "/api/v1/smb/list/" + c.Param("path")})
-}

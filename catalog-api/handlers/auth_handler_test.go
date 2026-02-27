@@ -2,10 +2,12 @@ package handlers
 
 import (
 	"bytes"
+	"encoding/json"
 	"net/http"
 	"net/http/httptest"
 	"testing"
 
+	"github.com/gin-gonic/gin"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
 
@@ -318,6 +320,194 @@ func (suite *AuthHandlerTestSuite) TestGetClientIPFromRemoteAddr() {
 // 	// This test would require a proper UserRepository with database
 // 	// For now, we test the HTTP layer with the other tests
 // }
+
+// Gin Handler Tests
+
+func setupGinTestRouter() *gin.Engine {
+	gin.SetMode(gin.TestMode)
+	return gin.New()
+}
+
+func TestLoginGin_InvalidJSON(t *testing.T) {
+	authService := services.NewAuthService(nil, "test-secret")
+	handler := NewAuthHandler(authService)
+
+	router := setupGinTestRouter()
+	router.POST("/login", handler.LoginGin)
+
+	req := httptest.NewRequest(http.MethodPost, "/login", bytes.NewBufferString("invalid json"))
+	req.Header.Set("Content-Type", "application/json")
+	w := httptest.NewRecorder()
+
+	router.ServeHTTP(w, req)
+
+	assert.Equal(t, http.StatusBadRequest, w.Code)
+	assert.Contains(t, w.Body.String(), "Invalid request format")
+}
+
+func TestRefreshTokenGin_InvalidJSON(t *testing.T) {
+	authService := services.NewAuthService(nil, "test-secret")
+	handler := NewAuthHandler(authService)
+
+	router := setupGinTestRouter()
+	router.POST("/refresh", handler.RefreshTokenGin)
+
+	req := httptest.NewRequest(http.MethodPost, "/refresh", bytes.NewBufferString("invalid json"))
+	req.Header.Set("Content-Type", "application/json")
+	w := httptest.NewRecorder()
+
+	router.ServeHTTP(w, req)
+
+	assert.Equal(t, http.StatusBadRequest, w.Code)
+	assert.Contains(t, w.Body.String(), "Invalid request format")
+}
+
+func TestLogoutGin_MissingToken(t *testing.T) {
+	authService := services.NewAuthService(nil, "test-secret")
+	handler := NewAuthHandler(authService)
+
+	router := setupGinTestRouter()
+	router.POST("/logout", handler.LogoutGin)
+
+	req := httptest.NewRequest(http.MethodPost, "/logout", nil)
+	w := httptest.NewRecorder()
+
+	router.ServeHTTP(w, req)
+
+	assert.Equal(t, http.StatusUnauthorized, w.Code)
+	assert.Contains(t, w.Body.String(), "Authorization token required")
+}
+
+func TestLogoutGin_InvalidTokenFormat(t *testing.T) {
+	authService := services.NewAuthService(nil, "test-secret")
+	handler := NewAuthHandler(authService)
+
+	router := setupGinTestRouter()
+	router.POST("/logout", handler.LogoutGin)
+
+	req := httptest.NewRequest(http.MethodPost, "/logout", nil)
+	req.Header.Set("Authorization", "InvalidFormat token123")
+	w := httptest.NewRecorder()
+
+	router.ServeHTTP(w, req)
+
+	assert.Equal(t, http.StatusUnauthorized, w.Code)
+}
+
+func TestGetCurrentUserGin_MissingToken(t *testing.T) {
+	authService := services.NewAuthService(nil, "test-secret")
+	handler := NewAuthHandler(authService)
+
+	router := setupGinTestRouter()
+	router.GET("/user", handler.GetCurrentUserGin)
+
+	req := httptest.NewRequest(http.MethodGet, "/user", nil)
+	w := httptest.NewRecorder()
+
+	router.ServeHTTP(w, req)
+
+	assert.Equal(t, http.StatusUnauthorized, w.Code)
+	assert.Contains(t, w.Body.String(), "Authorization token required")
+}
+
+func TestGetCurrentUserGin_InvalidToken(t *testing.T) {
+	authService := services.NewAuthService(nil, "test-secret")
+	handler := NewAuthHandler(authService)
+
+	router := setupGinTestRouter()
+	router.GET("/user", handler.GetCurrentUserGin)
+
+	req := httptest.NewRequest(http.MethodGet, "/user", nil)
+	req.Header.Set("Authorization", "Bearer invalid-token")
+	w := httptest.NewRecorder()
+
+	router.ServeHTTP(w, req)
+
+	assert.Equal(t, http.StatusUnauthorized, w.Code)
+}
+
+func TestGetAuthStatusGin_NoToken(t *testing.T) {
+	authService := services.NewAuthService(nil, "test-secret")
+	handler := NewAuthHandler(authService)
+
+	router := setupGinTestRouter()
+	router.GET("/auth/status", handler.GetAuthStatusGin)
+
+	req := httptest.NewRequest(http.MethodGet, "/auth/status", nil)
+	w := httptest.NewRecorder()
+
+	router.ServeHTTP(w, req)
+
+	assert.Equal(t, http.StatusOK, w.Code)
+
+	var response map[string]interface{}
+	json.Unmarshal(w.Body.Bytes(), &response)
+	assert.Equal(t, false, response["authenticated"])
+}
+
+func TestGetAuthStatusGin_InvalidToken(t *testing.T) {
+	authService := services.NewAuthService(nil, "test-secret")
+	handler := NewAuthHandler(authService)
+
+	router := setupGinTestRouter()
+	router.GET("/auth/status", handler.GetAuthStatusGin)
+
+	req := httptest.NewRequest(http.MethodGet, "/auth/status", nil)
+	req.Header.Set("Authorization", "Bearer invalid-token")
+	w := httptest.NewRecorder()
+
+	router.ServeHTTP(w, req)
+
+	assert.Equal(t, http.StatusOK, w.Code)
+
+	var response map[string]interface{}
+	json.Unmarshal(w.Body.Bytes(), &response)
+	assert.Equal(t, false, response["authenticated"])
+}
+
+func TestGetPermissionsGin_MissingToken(t *testing.T) {
+	authService := services.NewAuthService(nil, "test-secret")
+	handler := NewAuthHandler(authService)
+
+	router := setupGinTestRouter()
+	router.GET("/permissions", handler.GetPermissionsGin)
+
+	req := httptest.NewRequest(http.MethodGet, "/permissions", nil)
+	w := httptest.NewRecorder()
+
+	router.ServeHTTP(w, req)
+
+	assert.Equal(t, http.StatusUnauthorized, w.Code)
+	assert.Contains(t, w.Body.String(), "Authorization token required")
+}
+
+func TestExtractTokenFromGin(t *testing.T) {
+	tests := []struct {
+		name          string
+		authHeader    string
+		expectedToken string
+	}{
+		{"valid bearer token", "Bearer test-token-123", "test-token-123"},
+		{"missing bearer prefix", "test-token-123", ""},
+		{"wrong prefix", "Basic test-token-123", ""},
+		{"empty header", "", ""},
+		{"bearer with extra spaces returns empty", "Bearer  token-with-spaces", ""},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			w := httptest.NewRecorder()
+			c, _ := gin.CreateTestContext(w)
+			c.Request = httptest.NewRequest(http.MethodGet, "/test", nil)
+			if tt.authHeader != "" {
+				c.Request.Header.Set("Authorization", tt.authHeader)
+			}
+
+			token := extractTokenFromGin(c)
+			assert.Equal(t, tt.expectedToken, token)
+		})
+	}
+}
 
 func TestAuthHandlerTestSuite(t *testing.T) {
 	suite.Run(t, new(AuthHandlerTestSuite))

@@ -300,7 +300,7 @@ describe('EntityHero', () => {
 describe('ChildrenList', () => {
   it('renders children with Seasons label for tv_show', () => {
     render(
-      <ChildrenList children={mockChildren} mediaType="tv_show" onChildClick={vi.fn()} />
+      <ChildrenList items={mockChildren} mediaType="tv_show" onChildClick={vi.fn()} />
     )
     expect(screen.getByText('Seasons')).toBeInTheDocument()
     expect(screen.getByText('Season 1')).toBeInTheDocument()
@@ -320,7 +320,7 @@ describe('ChildrenList', () => {
       },
     ]
     render(
-      <ChildrenList children={episodes} mediaType="tv_season" onChildClick={vi.fn()} />
+      <ChildrenList items={episodes} mediaType="tv_season" onChildClick={vi.fn()} />
     )
     expect(screen.getByText('Episodes')).toBeInTheDocument()
     expect(screen.getByText('Pilot')).toBeInTheDocument()
@@ -339,7 +339,7 @@ describe('ChildrenList', () => {
       },
     ]
     render(
-      <ChildrenList children={tracks} mediaType="music_album" onChildClick={vi.fn()} />
+      <ChildrenList items={tracks} mediaType="music_album" onChildClick={vi.fn()} />
     )
     expect(screen.getByText('Tracks')).toBeInTheDocument()
     expect(screen.getByText('Track 1')).toBeInTheDocument()
@@ -357,21 +357,21 @@ describe('ChildrenList', () => {
       },
     ]
     render(
-      <ChildrenList children={children} mediaType="game" onChildClick={vi.fn()} />
+      <ChildrenList items={children} mediaType="game" onChildClick={vi.fn()} />
     )
     expect(screen.getByText('Children')).toBeInTheDocument()
   })
 
   it('shows the count in parentheses', () => {
     render(
-      <ChildrenList children={mockChildren} mediaType="tv_show" onChildClick={vi.fn()} />
+      <ChildrenList items={mockChildren} mediaType="tv_show" onChildClick={vi.fn()} />
     )
     expect(screen.getByText('(2)')).toBeInTheDocument()
   })
 
   it('returns null when children array is empty', () => {
     const { container } = render(
-      <ChildrenList children={[]} mediaType="tv_show" onChildClick={vi.fn()} />
+      <ChildrenList items={[]} mediaType="tv_show" onChildClick={vi.fn()} />
     )
     expect(container.innerHTML).toBe('')
   })
@@ -380,7 +380,7 @@ describe('ChildrenList', () => {
     const user = userEvent.setup()
     const handleChildClick = vi.fn()
     render(
-      <ChildrenList children={mockChildren} mediaType="tv_show" onChildClick={handleChildClick} />
+      <ChildrenList items={mockChildren} mediaType="tv_show" onChildClick={handleChildClick} />
     )
 
     await user.click(screen.getByText('Season 1'))
@@ -392,7 +392,7 @@ describe('ChildrenList', () => {
 
   it('shows season number for seasons', () => {
     render(
-      <ChildrenList children={mockChildren} mediaType="tv_show" onChildClick={vi.fn()} />
+      <ChildrenList items={mockChildren} mediaType="tv_show" onChildClick={vi.fn()} />
     )
     expect(screen.getByText('1')).toBeInTheDocument()
     expect(screen.getByText('2')).toBeInTheDocument()
@@ -400,7 +400,7 @@ describe('ChildrenList', () => {
 
   it('shows year when present on a child', () => {
     render(
-      <ChildrenList children={mockChildren} mediaType="tv_show" onChildClick={vi.fn()} />
+      <ChildrenList items={mockChildren} mediaType="tv_show" onChildClick={vi.fn()} />
     )
     expect(screen.getByText('2020')).toBeInTheDocument()
     expect(screen.getByText('2021')).toBeInTheDocument()

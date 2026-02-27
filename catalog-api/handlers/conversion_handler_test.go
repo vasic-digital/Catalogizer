@@ -148,3 +148,297 @@ func TestCreateJob(t *testing.T) {
 		})
 	}
 }
+
+func TestGetJob(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+
+	tests := []struct {
+		name           string
+		userID         int
+		jobID          string
+		mockJob        *models.ConversionJob
+		serviceError   error
+		expectedStatus int
+		setupMock      bool
+	}{
+		{
+			name:   "Success",
+			userID: 1,
+			jobID:  "123",
+			mockJob: &models.ConversionJob{
+				ID:     123,
+				Status: "completed",
+			},
+			serviceError:   nil,
+			expectedStatus: 200,
+			setupMock:      true,
+		},
+		{
+			name:           "InvalidJobID",
+			userID:         1,
+			jobID:          "invalid",
+			mockJob:        nil,
+			serviceError:   nil,
+			expectedStatus: 400,
+			setupMock:      false,
+		},
+		{
+			name:           "JobNotFound",
+			userID:         1,
+			jobID:          "999",
+			mockJob:        nil,
+			serviceError:   assert.AnError,
+			expectedStatus: 500,
+			setupMock:      true,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			mockConversionService := &MockConversionService{}
+			mockAuthService := &MockConversionAuthService{}
+
+			mockAuthService.On("GetCurrentUser", "test-token").Return(&models.User{ID: tt.userID}, nil)
+			if tt.setupMock {
+				mockConversionService.On("GetJob", mock.AnythingOfType("int"), tt.userID).Return(tt.mockJob, tt.serviceError)
+			}
+
+			handler := NewConversionHandler(mockConversionService, mockAuthService)
+
+			w := httptest.NewRecorder()
+			c, _ := gin.CreateTestContext(w)
+			c.Request, _ = http.NewRequest("GET", "/conversion/jobs/"+tt.jobID, nil)
+			c.Request.Header.Set("Authorization", "Bearer test-token")
+			c.Params = gin.Params{{Key: "id", Value: tt.jobID}}
+
+			handler.GetJob(c)
+
+			assert.Equal(t, tt.expectedStatus, w.Code)
+			mockAuthService.AssertExpectations(t)
+		})
+	}
+}
+
+func TestListJobs(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+
+	tests := []struct {
+		name           string
+		userID         int
+		hasPermission  bool
+		mockJobs       []models.ConversionJob
+		serviceError   error
+		expectedStatus int
+	}{
+		{
+			name:          "Success",
+			userID:        1,
+			hasPermission: true,
+			mockJobs: []models.ConversionJob{
+				{ID: 1, Status: "completed"},
+				{ID: 2, Status: "pending"},
+			},
+			serviceError:   nil,
+			expectedStatus: 200,
+		},
+		{
+			name:           "NoPermission",
+			userID:         1,
+			hasPermission:  false,
+			mockJobs:       nil,
+			serviceError:   nil,
+			expectedStatus: 403,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			mockConversionService := &MockConversionService{}
+			mockAuthService := &MockConversionAuthService{}
+
+			mockAuthService.On("GetCurrentUser", "test-token").Return(&models.User{ID: tt.userID}, nil)
+			mockAuthService.On("CheckPermission", tt.userID, models.PermissionConversionView).Return(tt.hasPermission, nil)
+			if tt.hasPermission {
+				mockConversionService.On("GetUserJobs", tt.userID, mock.AnythingOfType("*string"), 50, 0).Return(tt.mockJobs, tt.serviceError)
+			}
+
+			handler := NewConversionHandler(mockConversionService, mockAuthService)
+
+			w := httptest.NewRecorder()
+			c, _ := gin.CreateTestContext(w)
+			c.Request, _ = http.NewRequest("GET", "/conversion/jobs", nil)
+			c.Request.Header.Set("Authorization", "Bearer test-token")
+
+			handler.ListJobs(c)
+
+			assert.Equal(t, tt.expectedStatus, w.Code)
+			mockAuthService.AssertExpectations(t)
+		})
+	}
+}
+
+func TestCancelJob(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+
+	tests := []struct {
+		name           string
+		userID         int
+		jobID          string
+		hasPermission  bool
+		serviceError   error
+		expectedStatus int
+	}{
+		{
+			name:           "Success",
+			userID:         1,
+			jobID:          "123",
+			hasPermission:  true,
+			serviceError:   nil,
+			expectedStatus: 200,
+		},
+		{
+			name:           "NoPermission",
+			userID:         1,
+			jobID:          "123",
+			hasPermission:  false,
+			serviceError:   nil,
+			expectedStatus: 403,
+		},
+		{
+			name:           "InvalidJobID",
+			userID:         1,
+			jobID:          "invalid",
+			hasPermission:  true,
+			serviceError:   nil,
+			expectedStatus: 400,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			mockConversionService := &MockConversionService{}
+			mockAuthService := &MockConversionAuthService{}
+
+			mockAuthService.On("GetCurrentUser", "test-token").Return(&models.User{ID: tt.userID}, nil)
+			mockAuthService.On("CheckPermission", tt.userID, models.PermissionConversionManage).Return(tt.hasPermission, nil)
+			if tt.hasPermission && tt.jobID == "123" {
+				mockConversionService.On("CancelJob", 123, tt.userID).Return(tt.serviceError)
+			}
+
+			handler := NewConversionHandler(mockConversionService, mockAuthService)
+
+			w := httptest.NewRecorder()
+			c, _ := gin.CreateTestContext(w)
+			c.Request, _ = http.NewRequest("DELETE", "/conversion/jobs/"+tt.jobID, nil)
+			c.Request.Header.Set("Authorization", "Bearer test-token")
+			c.Params = gin.Params{{Key: "id", Value: tt.jobID}}
+
+			handler.CancelJob(c)
+
+			assert.Equal(t, tt.expectedStatus, w.Code)
+			mockAuthService.AssertExpectations(t)
+		})
+	}
+}
+
+func TestGetSupportedFormats(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+
+	tests := []struct {
+		name           string
+		userID         int
+		hasPermission  bool
+		mockFormats    *models.SupportedFormats
+		expectedStatus int
+	}{
+		{
+			name:          "Success",
+			userID:        1,
+			hasPermission: true,
+			mockFormats: &models.SupportedFormats{
+				Audio: models.AudioFormats{
+					Input:  []string{"mp3", "wav"},
+					Output: []string{"mp3", "wav"},
+				},
+				Video: models.VideoFormats{
+					Input:  []string{"mp4", "mkv"},
+					Output: []string{"mp4", "mkv"},
+				},
+			},
+			expectedStatus: 200,
+		},
+		{
+			name:           "NoPermission",
+			userID:         1,
+			hasPermission:  false,
+			mockFormats:    nil,
+			expectedStatus: 403,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			mockConversionService := &MockConversionService{}
+			mockAuthService := &MockConversionAuthService{}
+
+			mockAuthService.On("GetCurrentUser", "test-token").Return(&models.User{ID: tt.userID}, nil)
+			mockAuthService.On("CheckPermission", tt.userID, models.PermissionConversionView).Return(tt.hasPermission, nil)
+			if tt.hasPermission {
+				mockConversionService.On("GetSupportedFormats").Return(tt.mockFormats)
+			}
+
+			handler := NewConversionHandler(mockConversionService, mockAuthService)
+
+			w := httptest.NewRecorder()
+			c, _ := gin.CreateTestContext(w)
+			c.Request, _ = http.NewRequest("GET", "/conversion/formats", nil)
+			c.Request.Header.Set("Authorization", "Bearer test-token")
+
+			handler.GetSupportedFormats(c)
+
+			assert.Equal(t, tt.expectedStatus, w.Code)
+			mockAuthService.AssertExpectations(t)
+		})
+	}
+}
+
+func TestConversionHandler_GetCurrentUser_NoToken(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+
+	mockConversionService := &MockConversionService{}
+	mockAuthService := &MockConversionAuthService{}
+
+	handler := NewConversionHandler(mockConversionService, mockAuthService)
+
+	w := httptest.NewRecorder()
+	c, _ := gin.CreateTestContext(w)
+	c.Request, _ = http.NewRequest("GET", "/conversion/jobs", nil)
+
+	user, err := handler.getCurrentUser(c)
+
+	assert.Nil(t, user)
+	assert.Error(t, err)
+}
+
+func TestConversionHandler_GetCurrentUser_WithToken(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+
+	mockConversionService := &MockConversionService{}
+	mockAuthService := &MockConversionAuthService{}
+
+	mockAuthService.On("GetCurrentUser", "valid-token").Return(&models.User{ID: 1}, nil)
+
+	handler := NewConversionHandler(mockConversionService, mockAuthService)
+
+	w := httptest.NewRecorder()
+	c, _ := gin.CreateTestContext(w)
+	c.Request, _ = http.NewRequest("GET", "/conversion/jobs", nil)
+	c.Request.Header.Set("Authorization", "Bearer valid-token")
+
+	user, err := handler.getCurrentUser(c)
+
+	assert.NoError(t, err)
+	assert.NotNil(t, user)
+	assert.Equal(t, 1, user.ID)
+	mockAuthService.AssertExpectations(t)
+}

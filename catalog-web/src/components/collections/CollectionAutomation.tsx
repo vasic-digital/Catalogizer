@@ -829,7 +829,7 @@ const AutomationRuleModal: React.FC<{
                 </div>
               ))}
               {actions.length === 0 && (
-                <p className="text-sm text-gray-500 text-center py-4">No actions added. Click "Add Action" above.</p>
+                <p className="text-sm text-gray-500 text-center py-4">No actions added. Click &quot;Add Action&quot; above.</p>
               )}
             </div>
           </div>

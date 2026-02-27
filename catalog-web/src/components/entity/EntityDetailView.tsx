@@ -142,15 +142,15 @@ export function EntityHero({
 }
 
 export function ChildrenList({
-  children,
+  items,
   mediaType,
   onChildClick,
 }: {
-  children: MediaEntity[]
+  items: MediaEntity[]
   mediaType: string
   onChildClick: (id: number) => void
 }) {
-  if (children.length === 0) return null
+  if (items.length === 0) return null
 
   const label =
     mediaType === 'tv_show' ? 'Seasons'
@@ -164,12 +164,12 @@ export function ChildrenList({
         <CardTitle className="flex items-center gap-2">
           <Folder className="h-5 w-5" />
           {label}
-          <span className="text-sm font-normal text-gray-500">({children.length})</span>
+          <span className="text-sm font-normal text-gray-500">({items.length})</span>
         </CardTitle>
       </CardHeader>
       <CardContent>
         <div className="space-y-2">
-          {children.map((child) => (
+          {items.map((child) => (
             <button
               key={child.id}
               onClick={() => onChildClick(child.id)}

@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"regexp"
 	"strings"
 	"time"
 
@@ -452,67 +453,367 @@ func (s *MediaRecognitionService) detectMediaType(req *MediaRecognitionRequest) 
 
 // Helper methods for media type detection
 func (s *MediaRecognitionService) looksLikeTVEpisode(fileName string) bool {
-	// Pattern matching for TV episodes (S01E01, 1x01, etc.)
-	// Implementation would use regex patterns
-	return false // Placeholder
-}
-
-func (s *MediaRecognitionService) looksLikeConcert(fileName string) bool {
-	// Look for concert-related keywords
-	return false // Placeholder
-}
-
-func (s *MediaRecognitionService) looksLikeDocumentary(fileName string) bool {
-	// Look for documentary keywords
-	return false // Placeholder
-}
-
-func (s *MediaRecognitionService) looksLikeCourse(fileName string) bool {
-	// Look for course/training keywords
-	return false // Placeholder
-}
-
-func (s *MediaRecognitionService) looksLikeAudiobook(fileName string) bool {
-	// Look for audiobook patterns
-	return false // Placeholder
-}
-
-func (s *MediaRecognitionService) looksLikePodcast(fileName string) bool {
-	// Look for podcast patterns
-	return false // Placeholder
-}
-
-func (s *MediaRecognitionService) looksLikeComicBook(fileName string) bool {
-	// Look for comic book patterns
-	return false // Placeholder
-}
-
-func (s *MediaRecognitionService) looksLikeMagazine(fileName string) bool {
-	// Look for magazine patterns
-	return false // Placeholder
-}
-
-func (s *MediaRecognitionService) looksLikeManual(fileName string) bool {
-	// Look for manual/documentation patterns
-	return false // Placeholder
-}
-
-func (s *MediaRecognitionService) looksLikeBook(fileName string) bool {
-	// Look for book-related patterns in filename
-	// This is a simple check - could be enhanced with more sophisticated logic
-	bookKeywords := []string{"book", "novel", "story", "tale", "epub", "mobi", "azw"}
 	fileNameLower := strings.ToLower(fileName)
-	for _, keyword := range bookKeywords {
-		if strings.Contains(fileNameLower, keyword) {
+
+	tvPatterns := []string{
+		`[sS](\d{1,2})[eE](\d{1,2})`,
+		`[sS]eason[\s._]*(\d{1,2})[\s._]*[eE]pisode[\s._]*(\d{1,2})`,
+		`(\d{1,2})[xX](\d{2,})`,
+		`[eE][pP]?(\d{1,3})[\s._-]+[oO][fF][\s._-]+\d{1,3}`,
+		`[sS]eries[\s._]*(\d{1,2})[\s._]*[eE][pP]?(\d{1,2})`,
+	}
+
+	for _, pattern := range tvPatterns {
+		matched, _ := regexp.MatchString(pattern, fileNameLower)
+		if matched {
 			return true
 		}
 	}
-	return false // Placeholder - could implement more logic
+
+	tvKeywords := []string{"hdtv", "pdtv", "dsr", "webrip", "web-dl", "bluray", "blu-ray"}
+	for _, kw := range tvKeywords {
+		if strings.Contains(fileNameLower, kw) {
+			for _, p := range []string{`[sS]\d{1,2}`, `[eE]\d{1,2}`, `\d{1,2}x\d{2,}`} {
+				if matched, _ := regexp.MatchString(p, fileNameLower); matched {
+					return true
+				}
+			}
+		}
+	}
+
+	return false
+}
+
+func (s *MediaRecognitionService) looksLikeConcert(fileName string) bool {
+	fileNameLower := strings.ToLower(fileName)
+
+	concertKeywords := []string{
+		"concert", "live tour", "live at", "live from",
+		"world tour", "tour live", "acoustic live",
+		"unplugged", "session live", "live performance",
+		"music hall", "symphony", "orchestra live",
+	}
+
+	for _, kw := range concertKeywords {
+		if strings.Contains(fileNameLower, kw) {
+			videoExts := []string{".mp4", ".avi", ".mkv", ".mov", ".wmv", ".flv", ".webm", ".m4v"}
+			for _, ext := range videoExts {
+				if strings.HasSuffix(fileNameLower, ext) {
+					return true
+				}
+			}
+		}
+	}
+
+	concertPatterns := []string{
+		`live[\s._-]+at[\s._-]+\w+`,
+		`\w+[\s._-]+tour[\s._-]+\d{4}`,
+		`\w+[\s._-]+in[\s._-]+concert`,
+	}
+	for _, p := range concertPatterns {
+		if matched, _ := regexp.MatchString(p, fileNameLower); matched {
+			return true
+		}
+	}
+
+	return false
+}
+
+func (s *MediaRecognitionService) looksLikeDocumentary(fileName string) bool {
+	fileNameLower := strings.ToLower(fileName)
+
+	docKeywords := []string{
+		"documentary", "docu", "doc.", "nat geo",
+		"national geographic", "discovery", "history channel",
+		"bbc documentary", "pbs", "nova", "frontline",
+		"investigation", "exposed", "the truth about",
+		"behind the", "making of", "story of", "secrets of",
+	}
+
+	for _, kw := range docKeywords {
+		if strings.Contains(fileNameLower, kw) {
+			return true
+		}
+	}
+
+	return false
+}
+
+func (s *MediaRecognitionService) looksLikeCourse(fileName string) bool {
+	fileNameLower := strings.ToLower(fileName)
+
+	courseKeywords := []string{
+		"course", "tutorial", "training", "learn",
+		"masterclass", "workshop", "bootcamp", "boot camp",
+		"lesson", "lecture", "class", "module",
+		"chapter", "section", "unit", "part",
+		"udemy", "coursera", "lynda", "pluralsight",
+		"linkedin learning", "edx", "skillshare",
+	}
+
+	coursePatterns := []string{
+		`part[\s._-]*\d{1,2}`,
+		`module[\s._-]*\d{1,2}`,
+		`lesson[\s._-]*\d{1,2}`,
+		`chapter[\s._-]*\d{1,2}`,
+		`lecture[\s._-]*\d{1,2}`,
+		`week[\s._-]*\d{1,2}`,
+	}
+
+	for _, p := range coursePatterns {
+		if matched, _ := regexp.MatchString(p, fileNameLower); matched {
+			return true
+		}
+	}
+
+	for _, kw := range courseKeywords {
+		if strings.Contains(fileNameLower, kw) {
+			return true
+		}
+	}
+
+	return false
+}
+
+func (s *MediaRecognitionService) looksLikeAudiobook(fileName string) bool {
+	fileNameLower := strings.ToLower(fileName)
+
+	audioExts := []string{".mp3", ".m4a", ".m4b", ".wav", ".flac", ".aac", ".ogg", ".wma"}
+	hasAudioExt := false
+	for _, ext := range audioExts {
+		if strings.HasSuffix(fileNameLower, ext) {
+			hasAudioExt = true
+			break
+		}
+	}
+
+	audiobookKeywords := []string{
+		"audiobook", "audio book", "unabridged", "abridged",
+		"narrated by", "read by", "narrator",
+	}
+
+	for _, kw := range audiobookKeywords {
+		if strings.Contains(fileNameLower, kw) {
+			return true
+		}
+	}
+
+	audiobookPatterns := []string{
+		`track[\s._-]*\d{1,3}`,
+		`chapter[\s._-]*\d{1,3}`,
+		`part[\s._-]*\d{1,2}[\s._-]*of[\s._-]*\d{1,2}`,
+	}
+
+	if hasAudioExt {
+		for _, p := range audiobookPatterns {
+			if matched, _ := regexp.MatchString(p, fileNameLower); matched {
+				return true
+			}
+		}
+	}
+
+	return false
+}
+
+func (s *MediaRecognitionService) looksLikePodcast(fileName string) bool {
+	fileNameLower := strings.ToLower(fileName)
+
+	podcastKeywords := []string{
+		"podcast", "pod cast", "episode", "ep.",
+		"show notes", "podcast ep",
+	}
+
+	podcastPatterns := []string{
+		`[\w\s]+[\s._-]*ep[\s._-]*\d{1,4}`,
+		`[\w\s]+[\s._-]*episode[\s._-]*\d{1,4}`,
+		`podcast[\s._-]*\d{1,4}`,
+	}
+
+	for _, p := range podcastPatterns {
+		if matched, _ := regexp.MatchString(p, fileNameLower); matched {
+			audioExts := []string{".mp3", ".m4a", ".wav", ".flac", ".aac", ".ogg"}
+			for _, ext := range audioExts {
+				if strings.HasSuffix(fileNameLower, ext) {
+					return true
+				}
+			}
+		}
+	}
+
+	for _, kw := range podcastKeywords {
+		if strings.Contains(fileNameLower, kw) {
+			return true
+		}
+	}
+
+	return false
+}
+
+func (s *MediaRecognitionService) looksLikeComicBook(fileName string) bool {
+	fileNameLower := strings.ToLower(fileName)
+
+	comicExts := []string{".cbz", ".cbr", ".cb7", ".cbt", ".pdf"}
+	for _, ext := range comicExts {
+		if strings.HasSuffix(fileNameLower, ext) {
+			return true
+		}
+	}
+
+	comicKeywords := []string{
+		"comic", "manga", "graphic novel", "trade paperback",
+		"issue", "#", "vol.", "volume",
+	}
+
+	comicPatterns := []string{
+		`#\d{1,4}`,
+		`issue[\s._-]*\d{1,4}`,
+		`vol[\s._-]*\d{1,2}`,
+		`volume[\s._-]*\d{1,2}`,
+		`ch[\s._-]*\d{1,4}`,
+		`chapter[\s._-]*\d{1,4}`,
+	}
+
+	for _, p := range comicPatterns {
+		if matched, _ := regexp.MatchString(p, fileNameLower); matched {
+			imageExts := []string{".jpg", ".jpeg", ".png", ".webp", ".gif"}
+			for _, ext := range imageExts {
+				if strings.HasSuffix(fileNameLower, ext) {
+					return true
+				}
+			}
+			if strings.HasSuffix(fileNameLower, ".pdf") {
+				return true
+			}
+		}
+	}
+
+	for _, kw := range comicKeywords {
+		if strings.Contains(fileNameLower, kw) {
+			return true
+		}
+	}
+
+	return false
+}
+
+func (s *MediaRecognitionService) looksLikeMagazine(fileName string) bool {
+	fileNameLower := strings.ToLower(fileName)
+
+	magazineKeywords := []string{
+		"magazine", "mag.", "monthly", "weekly",
+		"issue", "edition", "journal", "periodical",
+	}
+
+	magazinePatterns := []string{
+		`\w+[\s._-]*magazine[\s._-]*(january|february|march|april|may|june|july|august|september|october|november|december)`,
+		`\w+[\s._-]*magazine[\s._-]*\d{4}`,
+		`\w+[\s._-]*[\s._-]*(jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)[\s._-]*\d{4}`,
+		`issue[\s._-]*\d{1,4}[\s._-]*\d{4}`,
+	}
+
+	for _, p := range magazinePatterns {
+		if matched, _ := regexp.MatchString(p, fileNameLower); matched {
+			return true
+		}
+	}
+
+	if strings.HasSuffix(fileNameLower, ".pdf") {
+		for _, kw := range magazineKeywords {
+			if strings.Contains(fileNameLower, kw) {
+				return true
+			}
+		}
+	}
+
+	return false
+}
+
+func (s *MediaRecognitionService) looksLikeManual(fileName string) bool {
+	fileNameLower := strings.ToLower(fileName)
+
+	manualKeywords := []string{
+		"manual", "handbook", "guide", "documentation", "docs",
+		"instruction", "tutorial", "how to", "readme",
+		"user guide", "quick start", "reference", "specification",
+		"spec", "white paper", "technical report",
+	}
+
+	for _, kw := range manualKeywords {
+		if strings.Contains(fileNameLower, kw) {
+			docExts := []string{".pdf", ".doc", ".docx", ".txt", ".md", ".rtf"}
+			for _, ext := range docExts {
+				if strings.HasSuffix(fileNameLower, ext) {
+					return true
+				}
+			}
+		}
+	}
+
+	return false
+}
+
+func (s *MediaRecognitionService) looksLikeBook(fileName string) bool {
+	fileNameLower := strings.ToLower(fileName)
+
+	bookExts := []string{".epub", ".mobi", ".azw", ".azw3", ".fb2", ".lit"}
+	for _, ext := range bookExts {
+		if strings.HasSuffix(fileNameLower, ext) {
+			return true
+		}
+	}
+
+	bookKeywords := []string{
+		"book", "novel", "story", "tale", "ebook", "e-book",
+		"fiction", "non-fiction", "biography", "autobiography",
+		"memoir", "anthology", "collection",
+	}
+
+	for _, kw := range bookKeywords {
+		if strings.Contains(fileNameLower, kw) {
+			return true
+		}
+	}
+
+	return false
 }
 
 func (s *MediaRecognitionService) looksLikeGame(fileName string) bool {
-	// Look for game-related patterns
-	return false // Placeholder
+	fileNameLower := strings.ToLower(fileName)
+
+	gameExts := []string{".iso", ".rom", ".gba", ".gbc", ".gb", ".nes",
+		".snes", ".n64", ".psx", ".ps2", ".ps3", ".xbox",
+		".wii", ".switch", ".3ds", ".nds", ".cia", ".xci", ".nsp"}
+	for _, ext := range gameExts {
+		if strings.HasSuffix(fileNameLower, ext) {
+			return true
+		}
+	}
+
+	gameKeywords := []string{
+		"game", "gaming", "steam", "gog", "epic games",
+		"playstation", "xbox", "nintendo", "pc game",
+		"crack", "repack", "proper", "FLT", "CODEX", "SKIDROW",
+	}
+
+	gamePatterns := []string{
+		`[\w\s]+[\s._-]*(repack|proper|crack|rip)`,
+		`steam[\s._-]*rip`,
+		`\w+[\s._-]*edition`,
+	}
+
+	for _, p := range gamePatterns {
+		if matched, _ := regexp.MatchString(p, fileNameLower); matched {
+			return true
+		}
+	}
+
+	for _, kw := range gameKeywords {
+		if strings.Contains(fileNameLower, kw) {
+			return true
+		}
+	}
+
+	return false
 }
 
 func (s *MediaRecognitionService) detectFromFileName(fileName string) MediaType {
