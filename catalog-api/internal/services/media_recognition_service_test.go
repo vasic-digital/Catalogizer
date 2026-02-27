@@ -188,18 +188,26 @@ func TestMediaRecognitionService_DetectMediaType(t *testing.T) {
 			expectedType: MediaTypeMusic,
 		},
 		{
-			name: "Document file",
+			name: "Document file (docx)",
 			req: &MediaRecognitionRequest{
-				MimeType: "application/pdf",
-				FileName: "document.pdf",
+				MimeType: "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+				FileName: "document.docx",
 			},
 			expectedType: MediaTypeDocument,
 		},
 		{
-			name: "Document file",
+			name: "Comic book (pdf)",
 			req: &MediaRecognitionRequest{
 				MimeType: "application/pdf",
-				FileName: "book.pdf",
+				FileName: "comic.pdf",
+			},
+			expectedType: MediaTypeComicBook,
+		},
+		{
+			name: "Book file (epub)",
+			req: &MediaRecognitionRequest{
+				MimeType: "application/epub+zip",
+				FileName: "book.epub",
 			},
 			expectedType: MediaTypeBook,
 		},

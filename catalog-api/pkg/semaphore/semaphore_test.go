@@ -67,12 +67,16 @@ func TestAcquireWithContextCancellation(t *testing.T) {
 func TestAcquireWithCancelledContext(t *testing.T) {
 	s := New(1)
 
+	require.NoError(t, s.Acquire(context.Background()))
+
 	ctx, cancel := context.WithCancel(context.Background())
 	cancel()
 
 	err := s.Acquire(ctx)
 	assert.Error(t, err)
 	assert.Equal(t, context.Canceled, err)
+
+	s.Release()
 }
 
 func TestClose(t *testing.T) {

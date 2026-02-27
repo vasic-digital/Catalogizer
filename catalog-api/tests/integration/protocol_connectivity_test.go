@@ -245,6 +245,9 @@ func TestLocalFilesystem(t *testing.T) {
 		client := filesystem.NewLocalClient(config)
 		require.NotNil(t, client)
 
+		connErr := client.Connect(ctx)
+		require.NoError(t, connErr)
+
 		files, err := client.ListDirectory(ctx, "/")
 		require.NoError(t, err)
 		assert.GreaterOrEqual(t, len(files), 1)

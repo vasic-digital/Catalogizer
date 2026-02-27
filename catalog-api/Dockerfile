@@ -20,6 +20,14 @@ WORKDIR /build
 # Copy submodules (required by go.mod replace directives)
 COPY Challenges/ /build/Challenges/
 COPY Assets/ /build/Assets/
+COPY Containers/ /build/Containers/
+COPY Concurrency/ /build/Concurrency/
+COPY Config/ /build/Config/
+COPY Filesystem/ /build/Filesystem/
+COPY Auth/ /build/Auth/
+COPY Cache/ /build/Cache/
+COPY Entities/ /build/Entities/
+COPY EventBus/ /build/EventBus/
 
 # Copy catalog-api source
 COPY catalog-api/go.mod catalog-api/go.sum /build/catalog-api/

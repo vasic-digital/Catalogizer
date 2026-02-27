@@ -194,6 +194,9 @@ func main() {
 	if port := os.Getenv("PORT"); port != "" {
 		cfg.Server.Port = atoi(port) // Use helper function
 	}
+	if host := os.Getenv("HOST"); host != "" {
+		cfg.Server.Host = host // Allow overriding bind address (e.g., 0.0.0.0 for containers)
+	}
 	if ginMode := os.Getenv("GIN_MODE"); ginMode != "" {
 		gin.SetMode(ginMode)
 	}
