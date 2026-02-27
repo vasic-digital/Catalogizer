@@ -104,8 +104,8 @@ vi.mock('@/components/entity/EntityDetailView', async () => ({
       <button onClick={onRefresh} disabled={refreshPending}>Refresh</button>
     </div>
   ),
-  ChildrenList: ({ children }: { children: MediaEntity[] }) => (
-    children.length > 0 ? <div data-testid="children-list">{children.length} children</div> : null
+  ChildrenList: ({ items }: { items: MediaEntity[] }) => (
+    items.length > 0 ? <div data-testid="children-list">{items.length} children</div> : null
   ),
   FilesList: ({ files }: { files: EntityFile[] }) => (
     files.length > 0 ? (
