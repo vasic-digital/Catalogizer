@@ -630,8 +630,145 @@ When adding new features:
 
 ---
 
-**Last Updated**: November 11, 2024
-**Test Suite Status**: ✅ 469/469 tests passing (100% pass rate)
-**Overall Coverage**: ~45-50% across platforms (steadily improving)
-**Recent Improvements**: +343 tests from initial (+272.2%), Android Gradle wrapper fixed
-**Major Milestone**: ✅ **Surpassed 450 tests! Approaching 500!** 🎊🚀
+## Fuzz Tests (Go)
+
+Fuzz testing uses Go's built-in `testing.F` framework to generate random inputs and verify invariants hold for all inputs. The project has **14 fuzz functions** across 4 test files.
+
+### Fuzz Test Inventory
+
+| File | Functions | Target |
+|------|-----------|--------|
+| `database/dialect_fuzz_test.go` | `FuzzRewritePlaceholders`, `FuzzRewriteInsertOrIgnore`, `FuzzRewriteBooleanLiterals`, `FuzzRewriteInsertOrReplace` | SQL dialect rewriting (SQLite to PostgreSQL) |
+| `filesystem/factory_fuzz_test.go` | `FuzzGetStringSetting`, `FuzzGetIntSetting` | Configuration setting extraction |
+| `internal/services/title_parser_fuzz_test.go` | `FuzzParseMovieTitle`, `FuzzParseTVShow`, `FuzzParseMusicAlbum`, `FuzzParseGameTitle`, `FuzzParseSoftwareTitle`, `FuzzCleanTitle`, `FuzzExtractYear` | Media title parsing from filenames |
+| `internal/handlers/download_fuzz_test.go` | `FuzzSanitizeArchivePath`, `FuzzSanitizeContentDisposition` | Path traversal and header injection prevention |
+
+### Running Fuzz Tests
+
+```bash
+cd catalog-api
+
+# Run a single fuzz target for 30 seconds
+go test -fuzz=FuzzRewritePlaceholders -fuzztime=30s ./database/
+
+# Run a specific title parser fuzz target
+go test -fuzz=FuzzParseMovieTitle -fuzztime=30s ./internal/services/
+
+# Run security-critical fuzz targets (download handler)
+go test -fuzz=FuzzSanitizeArchivePath -fuzztime=60s ./internal/handlers/
+
+# Run all fuzz targets in a package (one at a time -- Go only runs one fuzz target per invocation)
+go test -fuzz=FuzzRewritePlaceholders -fuzztime=10s ./database/
+go test -fuzz=FuzzRewriteInsertOrIgnore -fuzztime=10s ./database/
+go test -fuzz=FuzzRewriteBooleanLiterals -fuzztime=10s ./database/
+go test -fuzz=FuzzRewriteInsertOrReplace -fuzztime=10s ./database/
+```
+
+Fuzz corpus files are stored in `testdata/fuzz/<FunctionName>/` directories. Go saves any crash-triggering inputs there automatically.
+
+For detailed guidance on writing new fuzz tests, see [FUZZ_TESTING_GUIDE.md](FUZZ_TESTING_GUIDE.md).
+
+---
+
+## Contract Tests
+
+Contract tests verify that API responses match the shapes expected by the TypeScript API client (`catalogizer-api-client`). The project has **8 contract test functions** in `tests/integration/contract_test.go`.
+
+### Contract Test Inventory
+
+| Function | Validates |
+|----------|-----------|
+| `TestContract_HealthResponse` | Health endpoint returns `{ status, timestamp, version }` |
+| `TestContract_StorageRootsResponse` | Storage roots listing returns `{ storage_roots[], total }` |
+| `TestContract_FilesListResponse` | Files listing returns `{ files[], total, page, per_page }` |
+| `TestContract_EntitiesResponse` | Entities listing returns `{ entities[], total }` with valid media types |
+| `TestContract_ScanHistoryResponse` | Scan history returns `{ scans[], total }` with valid statuses |
+| `TestContract_ErrorResponse` | Error responses consistently use `{ error: string }` with no stack traces |
+| `TestContract_PaginationResponse` | Paginated endpoints include `total`, `page`, `per_page` |
+| `TestContract_ContentType` | All API endpoints return `application/json` content type |
+
+### Running Contract Tests
+
+```bash
+cd catalog-api
+
+# Run all contract tests
+go test -v -run TestContract ./tests/integration/
+
+# Run a specific contract test
+go test -v -run TestContract_HealthResponse ./tests/integration/
+
+# Skip contract tests in short mode
+go test -short ./tests/integration/
+```
+
+Contract tests use an in-memory SQLite database with the same schema and seeded data as production. They are skipped in `-short` mode.
+
+For detailed guidance, see [CONTRACT_TESTING_GUIDE.md](CONTRACT_TESTING_GUIDE.md).
+
+---
+
+## Chaos Tests
+
+Chaos tests verify the system handles failure conditions gracefully. The project has **6 chaos test functions** in `tests/integration/chaos_test.go`.
+
+### Chaos Test Inventory
+
+| Function | Failure Scenario |
+|----------|------------------|
+| `TestChaos_DatabaseUnavailable` | API responds with 503 when the database connection is closed |
+| `TestChaos_DatabaseReconnection` | Application recovers after a temporary database outage |
+| `TestChaos_ContextCancellation` | Handlers respect context cancellation without leaking goroutines |
+| `TestChaos_PanicRecovery` | Gin recovery middleware catches panics and returns 500 without crashing |
+| `TestChaos_ConcurrentDatabaseAccess` | Database handles concurrent reads and writes without corruption |
+| `TestChaos_ConnectionPoolExhaustion` | Graceful handling when the connection pool is exhausted |
+
+### Running Chaos Tests
+
+```bash
+cd catalog-api
+
+# Run all chaos tests
+go test -v -run TestChaos ./tests/integration/
+
+# Run a specific chaos test
+go test -v -run TestChaos_PanicRecovery ./tests/integration/
+
+# Chaos tests with race detection (recommended)
+go test -race -v -run TestChaos ./tests/integration/
+
+# Skip chaos tests in short mode
+go test -short ./tests/integration/
+```
+
+Chaos tests are skipped in `-short` mode. They use in-memory SQLite and test real concurrency scenarios with goroutines.
+
+---
+
+## Resources
+
+- [Go Testing Documentation](https://golang.org/pkg/testing/)
+- [Go Fuzz Testing](https://go.dev/doc/fuzz/)
+- [Testify Documentation](https://github.com/stretchr/testify)
+- [React Testing Library](https://testing-library.com/react)
+- [Vitest Documentation](https://vitest.dev/)
+- [MockK Documentation](https://mockk.io/)
+
+---
+
+## Contributing
+
+When adding new features:
+
+1. Write tests first (TDD)
+2. Ensure tests pass locally
+3. Check coverage doesn't decrease
+4. Follow existing test patterns
+5. Add tests to CI/CD if needed
+
+---
+
+**Last Updated**: March 4, 2026
+**Test Suite Status**: 1623+ frontend tests, 38 Go packages, all passing
+**Test Types**: Unit, Integration, Contract (8), Chaos (6), Fuzz (14), E2E (Playwright)
+**Overall Coverage**: Steadily improving across all platforms

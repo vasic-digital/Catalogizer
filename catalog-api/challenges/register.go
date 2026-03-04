@@ -90,6 +90,29 @@ func RegisterAll(svc *services.ChallengeService) error {
 	svc.Register(NewSecurityChallenge())               // CH-034: Security
 	svc.Register(NewConfigWizardChallenge())           // CH-035: Configuration wizard
 
+	// Security validation challenges (CH-036 to CH-040)
+	svc.Register(NewAuthRequiredChallenge())        // CH-036: Auth required on endpoints
+	svc.Register(NewJWTExpirationChallenge())       // CH-037: JWT expiration enforced
+	svc.Register(NewRateLimitAuthChallenge())       // CH-038: Rate limiting on auth
+	svc.Register(NewCORSHeadersChallenge())         // CH-039: CORS headers
+	svc.Register(NewNoSensitiveErrorsChallenge())   // CH-040: No sensitive data in errors
+
+	// Performance regression challenges (CH-041 to CH-044)
+	svc.Register(NewHealthLatencyChallenge())       // CH-041: Health < 10ms
+	svc.Register(NewFileListingLatencyChallenge())  // CH-042: File listing < 200ms
+	svc.Register(NewEntitySearchLatencyChallenge()) // CH-043: Entity search < 500ms
+	svc.Register(NewWebSocketLatencyChallenge())    // CH-044: WebSocket < 50ms
+
+	// Documentation completeness challenges (CH-045 to CH-047)
+	svc.Register(NewAPIDocsChallenge())             // CH-045: API docs
+	svc.Register(NewDatabaseDocsChallenge())        // CH-046: Database docs
+	svc.Register(NewConfigDocsChallenge())          // CH-047: Config docs
+
+	// System resilience challenges (CH-048 to CH-050)
+	svc.Register(NewDBErrorRecoveryChallenge())     // CH-048: DB error recovery
+	svc.Register(NewScannerRecoveryChallenge())     // CH-049: Scanner recovery
+	svc.Register(NewGracefulShutdownChallenge())    // CH-050: Graceful shutdown
+
 	// User flow challenges (UF-*): exhaustive multi-platform
 	// user flow automation across all 6 Catalogizer applications
 	RegisterUserFlowAPIChallenges(svc)     // 49 API challenges

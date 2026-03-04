@@ -957,3 +957,295 @@ func TestReportingService_AnalyzeDeviceDistribution_Empty(t *testing.T) {
 	assert.NotNil(t, result)
 	assert.Empty(t, result)
 }
+
+// ---------------------------------------------------------------------------
+// formatAsMarkdown tests
+// ---------------------------------------------------------------------------
+
+func TestReportingService_FormatAsMarkdown_UserAnalytics(t *testing.T) {
+	service := NewReportingService(nil, nil)
+
+	displayName := "Test User"
+	report := &models.UserAnalyticsReport{
+		User: &models.User{
+			ID:          1,
+			Username:    "testuser",
+			DisplayName: &displayName,
+			Email:       "test@example.com",
+			CreatedAt:   time.Date(2025, 1, 1, 0, 0, 0, 0, time.UTC),
+		},
+		StartDate:          time.Date(2025, 1, 1, 0, 0, 0, 0, time.UTC),
+		EndDate:            time.Date(2025, 1, 31, 0, 0, 0, 0, time.UTC),
+		TotalMediaAccesses: 150,
+		TotalEvents:        42,
+	}
+
+	content, err := service.formatAsMarkdown(report, "user_analytics")
+	assert.NoError(t, err)
+	assert.NotNil(t, content)
+
+	contentStr := string(content)
+	assert.Contains(t, contentStr, "# User Analytics Report")
+	assert.Contains(t, contentStr, "Test User")
+	assert.Contains(t, contentStr, "testuser")
+	assert.Contains(t, contentStr, "Total Media Accesses: 150")
+	assert.Contains(t, contentStr, "Total Events: 42")
+	assert.Contains(t, contentStr, "2025-01-01")
+}
+
+func TestReportingService_FormatAsMarkdown_UserAnalytics_NilDisplayName(t *testing.T) {
+	service := NewReportingService(nil, nil)
+
+	report := &models.UserAnalyticsReport{
+		User: &models.User{
+			ID:          1,
+			Username:    "testuser",
+			DisplayName: nil,
+			Email:       "test@example.com",
+			CreatedAt:   time.Date(2025, 1, 1, 0, 0, 0, 0, time.UTC),
+		},
+		StartDate:          time.Date(2025, 1, 1, 0, 0, 0, 0, time.UTC),
+		EndDate:            time.Date(2025, 1, 31, 0, 0, 0, 0, time.UTC),
+		TotalMediaAccesses: 0,
+		TotalEvents:        0,
+	}
+
+	content, err := service.formatAsMarkdown(report, "user_analytics")
+	assert.NoError(t, err)
+	assert.NotNil(t, content)
+	assert.Contains(t, string(content), "# User Analytics Report")
+}
+
+func TestReportingService_FormatAsMarkdown_SystemOverview(t *testing.T) {
+	service := NewReportingService(nil, nil)
+
+	report := &models.SystemOverviewReport{
+		StartDate:          time.Date(2025, 1, 1, 0, 0, 0, 0, time.UTC),
+		EndDate:            time.Date(2025, 1, 31, 0, 0, 0, 0, time.UTC),
+		TotalUsers:         100,
+		ActiveUsers:        80,
+		TotalMediaAccesses: 5000,
+		TotalEvents:        200,
+	}
+
+	content, err := service.formatAsMarkdown(report, "system_overview")
+	assert.NoError(t, err)
+	assert.NotNil(t, content)
+
+	contentStr := string(content)
+	assert.Contains(t, contentStr, "# System Overview Report")
+	assert.Contains(t, contentStr, "Total Users: 100")
+	assert.Contains(t, contentStr, "Active Users: 80")
+	assert.Contains(t, contentStr, "Total Media Accesses: 5000")
+	assert.Contains(t, contentStr, "Total Events: 200")
+}
+
+func TestReportingService_FormatAsMarkdown_DefaultType(t *testing.T) {
+	service := NewReportingService(nil, nil)
+
+	data := map[string]string{"key": "value"}
+
+	content, err := service.formatAsMarkdown(data, "unknown_type")
+	assert.NoError(t, err)
+	assert.NotNil(t, content)
+
+	contentStr := string(content)
+	assert.Contains(t, contentStr, "# unknown_type Report")
+	assert.Contains(t, contentStr, "```json")
+}
+
+// ---------------------------------------------------------------------------
+// formatAsHTML tests
+// ---------------------------------------------------------------------------
+
+func TestReportingService_FormatAsHTML_UserAnalytics(t *testing.T) {
+	service := NewReportingService(nil, nil)
+
+	displayName := "Test User"
+	report := &models.UserAnalyticsReport{
+		User: &models.User{
+			ID:          1,
+			Username:    "testuser",
+			DisplayName: &displayName,
+			Email:       "test@example.com",
+			CreatedAt:   time.Date(2025, 1, 1, 0, 0, 0, 0, time.UTC),
+		},
+		StartDate:          time.Date(2025, 1, 1, 0, 0, 0, 0, time.UTC),
+		EndDate:            time.Date(2025, 1, 31, 0, 0, 0, 0, time.UTC),
+		TotalMediaAccesses: 150,
+		TotalEvents:        42,
+	}
+
+	content, err := service.formatAsHTML(report, "user_analytics")
+	assert.NoError(t, err)
+	assert.NotNil(t, content)
+
+	contentStr := string(content)
+	assert.Contains(t, contentStr, "<!DOCTYPE html>")
+	assert.Contains(t, contentStr, "testuser")
+	assert.Contains(t, contentStr, "Test User")
+	assert.Contains(t, contentStr, "test@example.com")
+	assert.Contains(t, contentStr, "Total Media Accesses: 150")
+	assert.Contains(t, contentStr, "Total Events: 42")
+}
+
+func TestReportingService_FormatAsHTML_UserAnalytics_NilDisplayName(t *testing.T) {
+	service := NewReportingService(nil, nil)
+
+	report := &models.UserAnalyticsReport{
+		User: &models.User{
+			ID:          1,
+			Username:    "testuser",
+			DisplayName: nil,
+			Email:       "test@example.com",
+			CreatedAt:   time.Date(2025, 1, 1, 0, 0, 0, 0, time.UTC),
+		},
+		StartDate:          time.Date(2025, 1, 1, 0, 0, 0, 0, time.UTC),
+		EndDate:            time.Date(2025, 1, 31, 0, 0, 0, 0, time.UTC),
+		TotalMediaAccesses: 0,
+		TotalEvents:        0,
+	}
+
+	content, err := service.formatAsHTML(report, "user_analytics")
+	assert.NoError(t, err)
+	assert.NotNil(t, content)
+	assert.Contains(t, string(content), "<!DOCTYPE html>")
+}
+
+func TestReportingService_FormatAsHTML_SystemOverview(t *testing.T) {
+	service := NewReportingService(nil, nil)
+
+	report := &models.SystemOverviewReport{
+		StartDate:          time.Date(2025, 1, 1, 0, 0, 0, 0, time.UTC),
+		EndDate:            time.Date(2025, 1, 31, 0, 0, 0, 0, time.UTC),
+		TotalUsers:         100,
+		ActiveUsers:        80,
+		TotalMediaAccesses: 5000,
+		TotalEvents:        200,
+	}
+
+	content, err := service.formatAsHTML(report, "system_overview")
+	assert.NoError(t, err)
+	assert.NotNil(t, content)
+
+	contentStr := string(content)
+	assert.Contains(t, contentStr, "<!DOCTYPE html>")
+	assert.Contains(t, contentStr, "Total Users: 100")
+	assert.Contains(t, contentStr, "Active Users: 80")
+	assert.Contains(t, contentStr, "Total Media Accesses: 5000")
+	assert.Contains(t, contentStr, "Total Events: 200")
+}
+
+func TestReportingService_FormatAsHTML_DefaultType(t *testing.T) {
+	service := NewReportingService(nil, nil)
+
+	data := map[string]string{"key": "value"}
+
+	content, err := service.formatAsHTML(data, "unknown_type")
+	assert.NoError(t, err)
+	assert.NotNil(t, content)
+
+	contentStr := string(content)
+	assert.Contains(t, contentStr, "<!DOCTYPE html>")
+	assert.Contains(t, contentStr, "<pre>")
+}
+
+// ---------------------------------------------------------------------------
+// formatReport with markdown and html
+// ---------------------------------------------------------------------------
+
+func TestReportingService_FormatReport_Markdown(t *testing.T) {
+	service := NewReportingService(nil, nil)
+
+	data := map[string]string{"test": "data"}
+	content, err := service.formatReport(data, "markdown", "generic_report")
+	assert.NoError(t, err)
+	assert.NotNil(t, content)
+	assert.Contains(t, string(content), "# generic_report Report")
+}
+
+func TestReportingService_FormatReport_HTML(t *testing.T) {
+	service := NewReportingService(nil, nil)
+
+	data := map[string]string{"test": "data"}
+	content, err := service.formatReport(data, "html", "generic_report")
+	assert.NoError(t, err)
+	assert.NotNil(t, content)
+	assert.Contains(t, string(content), "<!DOCTYPE html>")
+}
+
+// ---------------------------------------------------------------------------
+// Additional helper method tests
+// ---------------------------------------------------------------------------
+
+func TestReportingService_GenerateActivitySummary_SingleActivity(t *testing.T) {
+	service := NewReportingService(nil, nil)
+
+	activities := []models.UserActivitySummary{
+		{TotalAccesses: 50},
+	}
+
+	summary := service.generateActivitySummary(activities)
+	assert.Equal(t, 1, summary.TotalUsers)
+	assert.Equal(t, 50, summary.TotalAccesses)
+	assert.Equal(t, 50.0, summary.AverageAccesses)
+}
+
+func TestReportingService_GetMostActiveHour_SingleAccess(t *testing.T) {
+	service := NewReportingService(nil, nil)
+
+	logs := []models.MediaAccessLog{
+		{AccessTime: time.Date(2025, 1, 1, 15, 0, 0, 0, time.UTC)},
+	}
+
+	hour := service.getMostActiveHour(logs)
+	assert.Equal(t, 15, hour)
+}
+
+func TestReportingService_AnalyzeTimeDistribution_AllSlots(t *testing.T) {
+	service := NewReportingService(nil, nil)
+
+	logs := []models.MediaAccessLog{
+		{AccessTime: time.Date(2025, 1, 1, 8, 0, 0, 0, time.UTC)},  // morning
+		{AccessTime: time.Date(2025, 1, 1, 14, 0, 0, 0, time.UTC)}, // afternoon
+		{AccessTime: time.Date(2025, 1, 1, 19, 0, 0, 0, time.UTC)}, // evening
+		{AccessTime: time.Date(2025, 1, 1, 2, 0, 0, 0, time.UTC)},  // night
+	}
+
+	dist := service.analyzeTimeDistribution(logs)
+	assert.Equal(t, 1, dist["morning"])
+	assert.Equal(t, 1, dist["afternoon"])
+	assert.Equal(t, 1, dist["evening"])
+	assert.Equal(t, 1, dist["night"])
+}
+
+// ===========================================================================
+// Additional formatReport tests
+// ===========================================================================
+
+func TestReportingService_FormatReport_JSON_Complex(t *testing.T) {
+	service := NewReportingService(nil, nil)
+
+	data := map[string]interface{}{
+		"nested": map[string]interface{}{
+			"key": "value",
+		},
+		"array": []int{1, 2, 3},
+	}
+
+	result, err := service.formatReport(data, "json", "default")
+	assert.NoError(t, err)
+	assert.NotNil(t, result)
+	assert.Contains(t, string(result), "nested")
+	assert.Contains(t, string(result), "key")
+}
+
+func TestReportingService_FormatReport_PDF_ReturnsError(t *testing.T) {
+	service := NewReportingService(nil, nil)
+
+	data := map[string]interface{}{"test": "data"}
+
+	// PDF generation fails without unipdf license
+	_, err := service.formatReport(data, "pdf", "default")
+	assert.Error(t, err)
+}

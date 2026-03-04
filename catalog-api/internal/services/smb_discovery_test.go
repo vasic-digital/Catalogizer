@@ -10,6 +10,9 @@ import (
 )
 
 func TestSMBDiscoveryService_GetCommonShares(t *testing.T) {
+	if testing.Short() {
+		t.Skip("skipping network-dependent test in short mode")
+	}
 	logger := zap.NewNop()
 	service := NewSMBDiscoveryService(logger)
 
@@ -38,6 +41,9 @@ func TestSMBDiscoveryService_GetCommonShares(t *testing.T) {
 }
 
 func TestSMBDiscoveryService_TestConnection_InvalidHost(t *testing.T) {
+	if testing.Short() {
+		t.Skip("skipping network-dependent test in short mode")
+	}
 	logger := zap.NewNop()
 	service := NewSMBDiscoveryService(logger)
 

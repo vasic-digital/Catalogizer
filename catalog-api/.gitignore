@@ -11,6 +11,13 @@
 # Output of the go coverage tool
 *.out
 coverage.out
+coverage.html
+**/coverage.html
+**/coverage.out
+
+# Profiling data
+*.prof
+profiles/
 
 # Go workspace file
 go.work

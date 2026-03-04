@@ -57,7 +57,7 @@ cd SubmoduleName && install_upstreams       # install upstream remotes
 cd catalog-api
 go run main.go                              # dev server (dynamic port, writes .service-port)
 go build -o catalog-api                     # build binary
-go test ./...                               # all tests
+GOMAXPROCS=3 go test ./... -p 2 -parallel 2 # all tests (resource-limited)
 go test -v -run TestName ./path/to/pkg/     # single test
 
 # Frontend (catalog-web) — port 3000, proxies /api to catalog-api
@@ -89,7 +89,12 @@ podman-compose -f docker-compose.dev.yml up # dev env
 ./scripts/services-up.sh                    # start all services
 ./scripts/services-down.sh                  # stop all services
 ./scripts/run-all-tests.sh                  # all tests + security
+
+# Release build (containerized, all 7 components)
+./scripts/release-build.sh --container --force --skip-tests
 ```
+
+Test helper in `catalog-api/internal/tests/test_helper.go` provides SQLite test database setup via `database.WrapDB()`.
 
 ## Architecture
 
@@ -122,6 +127,7 @@ Dual-dialect abstraction supporting SQLite (dev) and PostgreSQL (production).
 - `database.WrapDB(sqlDB, DialectSQLite)` for unit tests (in-memory SQLite).
 - Migrations in `database/migrations/` — separate SQLite and PostgreSQL variants per migration.
 - SQLCipher support imported for encrypted SQLite.
+- **SQLite WAL mode**: Explicit `PRAGMA journal_mode=WAL` after connection in `database/connection.go` — go-sqlcipher ignores connection string pragmas.
 
 ### catalog-web (React/TypeScript/Vite)
 
@@ -134,9 +140,23 @@ AuthProvider → WebSocketProvider → Router. Key tech: React Query (`@tanstack
 
 ### Other Components
 
-**Android**: MVVM — Compose UI → ViewModel (StateFlow) → Repository → Room + Retrofit. Hilt DI.
+**Android**: MVVM — Compose UI → ViewModel (StateFlow) → Repository → Room + Retrofit. Hilt DI. Requires `jvmToolchain(17)` and `--add-opens` JVM args for kapt + JDK 21 compatibility.
 
 **Tauri apps**: React frontend ↔ Rust backend via IPC commands/events.
+
+### Build Framework
+
+`Build/` submodule provides a generic, reusable shell-based build framework. `scripts/release-build.sh` orchestrates all 7 components using per-component builders in `scripts/lib/build-*.sh`.
+
+```bash
+# Source the framework in build scripts
+source Build/lib/common.sh      # logging, container runtime detection, git helpers
+source Build/lib/version.sh     # semantic versioning via versions.json
+source Build/lib/hash.sh        # SHA256 change detection (skip unchanged components)
+source Build/lib/orchestrator.sh # CLI parsing, build loop
+```
+
+Projects must define `BUILD_COMPONENTS`, `BUILD_COMPONENT_PATTERNS`, and `build_single_component()`.
 
 ### Challenge System
 
@@ -148,6 +168,7 @@ Key constraints:
 - `RunAll` is synchronous/blocking — no other challenge can run until it finishes.
 - Progress-based liveness detection: 5-minute stale threshold kills stuck challenges.
 - `challenge.NewConfig()` sets Timeout=5min by default — zero it to use runner's timeout.
+- `config.json` `write_timeout` must be 900 (not 30) for long-running challenge RunAll.
 
 ### User Flow Automation
 
@@ -204,11 +225,29 @@ New files MUST be placed in the correct directory. Do NOT add files to the proje
 | `challenges/` | Challenge bank definitions and runtime results |
 | `config/` | Infrastructure config files (nginx.conf, redis.conf) |
 | `scripts/` | Shell scripts (install, setup, CI/CD, testing runners) |
+| `scripts/lib/` | Per-component build scripts (`build-*.sh`) used by release-build.sh |
 | `tests/` | Standalone/integration test files |
 | `docs/` | All documentation markdown files, organized by subdirectory |
 | `Assets/` | Static assets (images, HTML tutorials) — also a Go submodule |
+| `Build/` | Generic build framework submodule (versioning, change detection, orchestration) |
+| `build/` | Build output and container build context |
+| `deployment/` | Deployment configurations |
+| `monitoring/` | Monitoring and observability configs |
+| `tools/` | Development tooling |
+| `Upstreams/` | Git upstream remote configurations for submodules |
 
 Docker Compose files reference `config/` for nginx and redis configs. Do NOT move these config files without updating the Compose volume mounts.
+
+### Docker Compose Files
+
+| File | Purpose |
+|---|---|
+| `docker-compose.yml` | Production stack |
+| `docker-compose.dev.yml` | Development environment |
+| `docker-compose.build.yml` | Containerized build pipeline |
+| `docker-compose.test.yml` | Test stack (API, web, Playwright; `network_mode: host`) |
+| `docker-compose.test-infra.yml` | Test infrastructure services |
+| `docker-compose.security.yml` | Security scanning tools |
 
 ## Container Runtime
 
@@ -226,6 +265,7 @@ Critical container notes:
 - Set `GOTOOLCHAIN=local` to prevent Go auto-downloading newer toolchain versions.
 - Use fully qualified image names (`docker.io/library/...`) — short names fail without TTY.
 - Set `APPIMAGE_EXTRACT_AND_RUN=1` in containers for Tauri AppImage bundling (no FUSE).
+- API container needs `--add-host=synology.local:192.168.0.241` for NAS access.
 
 ## Constraints
 
@@ -258,6 +298,9 @@ OMDB_API_KEY=your_omdb_key     # optional
 ### Running the Full Stack
 
 ```bash
+# Kill anything on port 3000 first (e.g., Bear Messenger)
+ss -tlnp | grep :3000
+
 # Terminal 1: Backend (writes .service-port for frontend discovery)
 cd catalog-api && go run main.go
 
@@ -266,29 +309,6 @@ cd catalog-web && npm install && npm run dev
 
 # Access: http://localhost:3000 (frontend) / http://localhost:8080 (API)
 ```
-
-## Testing
-
-```bash
-# Go tests (resource-limited)
-cd catalog-api && GOMAXPROCS=3 go test ./... -p 2 -parallel 2
-
-# Go single test
-cd catalog-api && go test -v -run TestFunctionName ./path/to/package/
-
-# Web unit tests (Vitest)
-cd catalog-web && npm run test           # single run
-cd catalog-web && npm run test:watch     # watch mode
-cd catalog-web && npm run test:coverage  # with coverage
-
-# Web E2E tests (Playwright)
-cd catalog-web && npm run test:e2e
-
-# All tests
-./scripts/run-all-tests.sh
-```
-
-Test helper in `catalog-api/internal/tests/test_helper.go` provides SQLite test database setup via `database.WrapDB()`.
 
 ## Zero Warning / Zero Error Policy
 

@@ -30,25 +30,29 @@ vi.mock('../mockCollectionsApi', () => ({
 }))
 
 import { api } from '../api'
+import { shouldUseMockCollections, mockCollectionsApi as mockCollections } from '../mockCollectionsApi'
 const mockApi = vi.mocked(api)
+const mockShouldUseMock = vi.mocked(shouldUseMockCollections)
+const mockedCollections = vi.mocked(mockCollections)
 
 describe('collectionsApi', () => {
   beforeEach(() => {
     vi.clearAllMocks()
+    mockShouldUseMock.mockReturnValue(false)
   })
 
   describe('getCollections', () => {
     it('calls GET /api/collections and returns collections array', async () => {
-      const mockCollections = [
+      const mockCollectionsList = [
         { id: '1', name: 'Test Collection', item_count: 5 },
         { id: '2', name: 'Second Collection', item_count: 10 },
       ]
-      mockApi.get.mockResolvedValue({ data: mockCollections })
+      mockApi.get.mockResolvedValue({ data: mockCollectionsList })
 
       const result = await collectionsApi.getCollections()
 
       expect(mockApi.get).toHaveBeenCalledWith('/api/collections')
-      expect(result).toEqual(mockCollections)
+      expect(result).toEqual(mockCollectionsList)
     })
 
     it('propagates errors on failure', async () => {
@@ -57,6 +61,29 @@ describe('collectionsApi', () => {
       mockApi.get.mockRejectedValue(error)
 
       await expect(collectionsApi.getCollections()).rejects.toThrow('Server error')
+    })
+
+    it('falls back to mock on 404', async () => {
+      const error = new Error('Not found')
+      ;(error as any).response = { status: 404 }
+      mockApi.get.mockRejectedValue(error)
+      const mockResult = [{ id: '1', name: 'Mock Collection' }]
+      mockedCollections.getSmartCollections.mockResolvedValue(mockResult as any)
+
+      const result = await collectionsApi.getCollections()
+
+      expect(result).toEqual(mockResult)
+    })
+
+    it('uses mock API when shouldUseMockCollections returns true', async () => {
+      mockShouldUseMock.mockReturnValue(true)
+      const mockResult = [{ id: '1', name: 'Mock Collection' }]
+      mockedCollections.getSmartCollections.mockResolvedValue(mockResult as any)
+
+      const result = await collectionsApi.getCollections()
+
+      expect(mockApi.get).not.toHaveBeenCalled()
+      expect(result).toEqual(mockResult)
     })
   })
 
@@ -69,6 +96,19 @@ describe('collectionsApi', () => {
 
       expect(mockApi.get).toHaveBeenCalledWith('/api/collections/1')
       expect(result).toEqual(mockCollection)
+    })
+
+    it('falls back to mock on 404', async () => {
+      const error = new Error('Not found')
+      ;(error as any).response = { status: 404 }
+      mockApi.get.mockRejectedValue(error)
+      const mockResult = { id: '1', name: 'Mock' }
+      mockedCollections.getSmartCollection.mockResolvedValue(mockResult as any)
+
+      const result = await collectionsApi.getCollection('1')
+
+      expect(mockedCollections.getSmartCollection).toHaveBeenCalledWith('1')
+      expect(result).toEqual(mockResult)
     })
   })
 
@@ -141,6 +181,16 @@ describe('collectionsApi', () => {
         params: { page: 1, limit: 50 },
       })
     })
+
+    it('passes custom page and limit', async () => {
+      mockApi.get.mockResolvedValue({ data: { items: [], total: 0 } })
+
+      await collectionsApi.getCollectionItems('2', 3, 25)
+
+      expect(mockApi.get).toHaveBeenCalledWith('/api/collections/2/items', {
+        params: { page: 3, limit: 25 },
+      })
+    })
   })
 
   describe('refreshCollection', () => {
@@ -188,6 +238,26 @@ describe('collectionsApi', () => {
     })
   })
 
+  describe('getSharedCollection', () => {
+    it('calls GET /api/collections/shared/:shareId', async () => {
+      const mockShared = { id: '3', name: 'Shared Collection' }
+      mockApi.get.mockResolvedValue({ data: mockShared })
+
+      const result = await collectionsApi.getSharedCollection('share_abc')
+
+      expect(mockApi.get).toHaveBeenCalledWith('/api/collections/shared/share_abc')
+      expect(result).toEqual(mockShared)
+    })
+
+    it('propagates errors on failure', async () => {
+      const error = new Error('Unauthorized')
+      ;(error as any).response = { status: 403 }
+      mockApi.get.mockRejectedValue(error)
+
+      await expect(collectionsApi.getSharedCollection('invalid')).rejects.toThrow('Unauthorized')
+    })
+  })
+
   describe('exportCollection', () => {
     it('calls GET /api/collections/:id/export with format param', async () => {
       const blob = new Blob(['test data'], { type: 'application/json' })
@@ -213,6 +283,59 @@ describe('collectionsApi', () => {
         responseType: 'blob',
       })
     })
+
+    it('supports csv format', async () => {
+      const blob = new Blob(['name,desc'], { type: 'text/csv' })
+      mockApi.get.mockResolvedValue({ data: blob })
+
+      await collectionsApi.exportCollection('1', 'csv')
+
+      expect(mockApi.get).toHaveBeenCalledWith('/api/collections/1/export', {
+        params: { format: 'csv' },
+        responseType: 'blob',
+      })
+    })
+
+    it('supports m3u format', async () => {
+      const blob = new Blob(['#EXTM3U'], { type: 'audio/x-mpegurl' })
+      mockApi.get.mockResolvedValue({ data: blob })
+
+      await collectionsApi.exportCollection('1', 'm3u')
+
+      expect(mockApi.get).toHaveBeenCalledWith('/api/collections/1/export', {
+        params: { format: 'm3u' },
+        responseType: 'blob',
+      })
+    })
+  })
+
+  describe('importCollection', () => {
+    it('calls POST /api/collections/import with FormData', async () => {
+      const mockFile = new File(['{"name":"imported"}'], 'collection.json', {
+        type: 'application/json',
+      })
+      const imported = { id: 'imported-1', name: 'imported' }
+      mockApi.post.mockResolvedValue({ data: imported })
+
+      const result = await collectionsApi.importCollection(mockFile)
+
+      expect(mockApi.post).toHaveBeenCalledWith(
+        '/api/collections/import',
+        expect.any(FormData),
+        { headers: { 'Content-Type': 'multipart/form-data' } }
+      )
+      expect(result).toEqual(imported)
+    })
+
+    it('sends FormData with the file appended', async () => {
+      const mockFile = new File(['{}'], 'test.json', { type: 'application/json' })
+      mockApi.post.mockResolvedValue({ data: {} })
+
+      await collectionsApi.importCollection(mockFile)
+
+      const formData = mockApi.post.mock.calls[0][1] as FormData
+      expect(formData.get('file')).toEqual(mockFile)
+    })
   })
 
   describe('duplicateCollection', () => {
@@ -226,6 +349,109 @@ describe('collectionsApi', () => {
         name: 'Copy of Collection',
       })
       expect(result).toEqual(duplicated)
+    })
+
+    it('sends undefined name when not provided', async () => {
+      const duplicated = { id: '5', name: 'Original (Copy)' }
+      mockApi.post.mockResolvedValue({ data: duplicated })
+
+      await collectionsApi.duplicateCollection('1')
+
+      expect(mockApi.post).toHaveBeenCalledWith('/api/collections/1/duplicate', {
+        name: undefined,
+      })
+    })
+  })
+
+  describe('addItemsToCollection', () => {
+    it('calls POST /api/collections/:id/items with item IDs', async () => {
+      mockApi.post.mockResolvedValue({})
+
+      await collectionsApi.addItemsToCollection('1', ['item-a', 'item-b', 'item-c'])
+
+      expect(mockApi.post).toHaveBeenCalledWith('/api/collections/1/items', {
+        item_ids: ['item-a', 'item-b', 'item-c'],
+      })
+    })
+
+    it('handles empty item IDs array', async () => {
+      mockApi.post.mockResolvedValue({})
+
+      await collectionsApi.addItemsToCollection('1', [])
+
+      expect(mockApi.post).toHaveBeenCalledWith('/api/collections/1/items', {
+        item_ids: [],
+      })
+    })
+  })
+
+  describe('removeItemsFromCollection', () => {
+    it('calls DELETE /api/collections/:id/items with item IDs', async () => {
+      mockApi.delete.mockResolvedValue({})
+
+      await collectionsApi.removeItemsFromCollection('1', ['item-a', 'item-b'])
+
+      expect(mockApi.delete).toHaveBeenCalledWith('/api/collections/1/items', {
+        data: { item_ids: ['item-a', 'item-b'] },
+      })
+    })
+  })
+
+  describe('getCollectionSuggestions', () => {
+    it('calls GET /api/collections/suggestions and returns string array', async () => {
+      const suggestions = ['Summer Hits', 'Best of 2024']
+      mockApi.get.mockResolvedValue({ data: suggestions })
+
+      const result = await collectionsApi.getCollectionSuggestions()
+
+      expect(mockApi.get).toHaveBeenCalledWith('/api/collections/suggestions')
+      expect(result).toEqual(suggestions)
+    })
+
+    it('propagates errors on failure', async () => {
+      const error = new Error('Network error')
+      ;(error as any).response = { status: 500 }
+      mockApi.get.mockRejectedValue(error)
+
+      await expect(collectionsApi.getCollectionSuggestions()).rejects.toThrow('Network error')
+    })
+  })
+
+  describe('getTemplates', () => {
+    it('calls GET /api/collections/templates and returns templates', async () => {
+      const templates = [
+        { id: 'recently_added', name: 'Recently Added', description: 'Last 30 days' },
+      ]
+      mockApi.get.mockResolvedValue({ data: templates })
+
+      const result = await collectionsApi.getTemplates()
+
+      expect(mockApi.get).toHaveBeenCalledWith('/api/collections/templates')
+      expect(result).toEqual(templates)
+    })
+  })
+
+  describe('testRules', () => {
+    it('calls POST /api/collections/test-rules with rules array', async () => {
+      const rules = [{ field: 'genre', operator: 'equals', value: 'rock' }]
+      const testResult = { valid: true, sample_count: 25 }
+      mockApi.post.mockResolvedValue({ data: testResult })
+
+      const result = await collectionsApi.testRules(rules as any)
+
+      expect(mockApi.post).toHaveBeenCalledWith('/api/collections/test-rules', { rules })
+      expect(result).toEqual(testResult)
+    })
+
+    it('returns errors for invalid rules', async () => {
+      const rules = [{ field: 'rating', operator: 'equals', value: '' }]
+      const testResult = { valid: false, sample_count: 0, errors: ['Value is required'] }
+      mockApi.post.mockResolvedValue({ data: testResult })
+
+      const result = await collectionsApi.testRules(rules as any)
+
+      expect(result.valid).toBe(false)
+      expect(result.errors).toContain('Value is required')
     })
   })
 
@@ -241,16 +467,114 @@ describe('collectionsApi', () => {
     })
   })
 
-  describe('testRules', () => {
-    it('calls POST /api/collections/test-rules with rules array', async () => {
-      const rules = [{ field: 'genre', operator: 'equals', value: 'rock' }]
-      const testResult = { valid: true, sample_count: 25 }
-      mockApi.post.mockResolvedValue({ data: testResult })
+  describe('bulkShareCollections', () => {
+    it('calls POST /api/collections/bulk/share with IDs and share request', async () => {
+      const shareRequest = { can_view: true, can_comment: false, can_download: true }
+      const shareInfos = [
+        { share_id: 'share_1', share_url: 'http://localhost/shared/1' },
+        { share_id: 'share_2', share_url: 'http://localhost/shared/2' },
+      ]
+      mockApi.post.mockResolvedValue({ data: shareInfos })
 
-      const result = await collectionsApi.testRules(rules as any)
+      const result = await collectionsApi.bulkShareCollections(['1', '2'], shareRequest)
 
-      expect(mockApi.post).toHaveBeenCalledWith('/api/collections/test-rules', { rules })
-      expect(result).toEqual(testResult)
+      expect(mockApi.post).toHaveBeenCalledWith('/api/collections/bulk/share', {
+        collection_ids: ['1', '2'],
+        share_request: shareRequest,
+      })
+      expect(result).toEqual(shareInfos)
+    })
+  })
+
+  describe('bulkExportCollections', () => {
+    it('calls POST /api/collections/bulk/export with IDs and format', async () => {
+      const blob = new Blob(['[{}]'], { type: 'application/json' })
+      mockApi.post.mockResolvedValue({ data: blob })
+
+      const result = await collectionsApi.bulkExportCollections(['1', '2'], 'json')
+
+      expect(mockApi.post).toHaveBeenCalledWith(
+        '/api/collections/bulk/export',
+        { collection_ids: ['1', '2'], format: 'json' },
+        { responseType: 'blob' }
+      )
+      expect(result).toBeInstanceOf(Blob)
+    })
+
+    it('defaults to json format', async () => {
+      const blob = new Blob(['[]'], { type: 'application/json' })
+      mockApi.post.mockResolvedValue({ data: blob })
+
+      await collectionsApi.bulkExportCollections(['1'])
+
+      expect(mockApi.post).toHaveBeenCalledWith(
+        '/api/collections/bulk/export',
+        { collection_ids: ['1'], format: 'json' },
+        { responseType: 'blob' }
+      )
+    })
+
+    it('supports csv format', async () => {
+      const blob = new Blob(['name,desc'], { type: 'text/csv' })
+      mockApi.post.mockResolvedValue({ data: blob })
+
+      await collectionsApi.bulkExportCollections(['1', '2'], 'csv')
+
+      expect(mockApi.post).toHaveBeenCalledWith(
+        '/api/collections/bulk/export',
+        { collection_ids: ['1', '2'], format: 'csv' },
+        { responseType: 'blob' }
+      )
+    })
+  })
+
+  describe('bulkUpdateCollections', () => {
+    it('calls PUT /api/collections/bulk with IDs, action, and updates', async () => {
+      const updates = { name: 'Bulk Updated' }
+      const result_data = [{ id: '1', name: 'Bulk Updated' }, { id: '2', name: 'Bulk Updated' }]
+      mockApi.put.mockResolvedValue({ data: result_data })
+
+      const result = await collectionsApi.bulkUpdateCollections(['1', '2'], 'update', updates)
+
+      expect(mockApi.put).toHaveBeenCalledWith('/api/collections/bulk', {
+        collection_ids: ['1', '2'],
+        action: 'update',
+        updates,
+      })
+      expect(result).toEqual(result_data)
+    })
+
+    it('calls with duplicate action and no updates', async () => {
+      const result_data = [{ id: '3', name: 'Copy' }]
+      mockApi.put.mockResolvedValue({ data: result_data })
+
+      const result = await collectionsApi.bulkUpdateCollections(['1'], 'duplicate')
+
+      expect(mockApi.put).toHaveBeenCalledWith('/api/collections/bulk', {
+        collection_ids: ['1'],
+        action: 'duplicate',
+        updates: undefined,
+      })
+      expect(result).toEqual(result_data)
+    })
+  })
+
+  describe('tryApiCall fallback behavior', () => {
+    it('does not fall back to mock on non-404 errors', async () => {
+      const error = new Error('Internal server error')
+      ;(error as any).response = { status: 500 }
+      mockApi.get.mockRejectedValue(error)
+
+      await expect(collectionsApi.getCollection('1')).rejects.toThrow('Internal server error')
+      expect(mockedCollections.getSmartCollection).not.toHaveBeenCalled()
+    })
+
+    it('falls back to mock when error has no response status', async () => {
+      const error = new Error('Network error')
+      mockApi.get.mockRejectedValue(error)
+
+      // Without response.status, it should not match 404, so it throws
+      await expect(collectionsApi.getCollection('1')).rejects.toThrow('Network error')
     })
   })
 })

@@ -1824,5 +1824,40 @@ Ranked view of popular content combining access statistics with favorite counts.
 | 4 | create_conversion_jobs_table | Media conversion job queue |
 | 5 | create_subtitle_tables | Subtitle management: tracks, sync status, cache, downloads, associations |
 | 6 | fix_subtitle_foreign_keys | Corrects subtitle table foreign keys to reference files instead of media_items |
+| 7 | create_assets_table | Static asset management table for images, thumbnails, and served files |
+| 8 | create_media_entity_tables | Media entity system: media_types (11 seeded types), media_items (self-referential hierarchy), media_files (junction to files), media_collections, media_collection_items, external_metadata, user_metadata, directory_analyses, detection_rules. Includes 13 indexes for foreign keys and lookups |
+| 9 | create_performance_indexes | Adds performance-critical indexes: `idx_files_file_type`, `idx_files_extension`, `idx_files_is_directory`, `idx_files_name` on files; `idx_media_items_title_type` (compound), `idx_media_items_status`, `idx_media_items_year` on media_items; `idx_user_metadata_user_watched` (compound) on user_metadata; `idx_media_files_item_file` (UNIQUE) on media_files. Deduplicates media_files before creating the unique index |
+
+### Migration v8: Media Entity Tables
+
+The v8 migration creates the structured media entity system. Key tables:
+
+**media_types** -- 11 seeded media types: `movie`, `tv_show`, `tv_season`, `tv_episode`, `music_artist`, `music_album`, `song`, `game`, `software`, `book`, `comic`.
+
+**media_items** -- Central entity table with self-referential hierarchy via `parent_id`. Supports TV hierarchy (show -> season -> episode) and music hierarchy (artist -> album -> song). Includes `season_number`, `episode_number`, `track_number` for ordered items. Status field defaults to `detected`.
+
+**media_files** -- Junction table linking `media_items` to `files`. Each row associates a media entity with a cataloged file, with `quality_info`, `language`, and `is_primary` fields.
+
+**directory_analyses** -- Tracks which directories have been analyzed for media content, including confidence scores and detection methods.
+
+**detection_rules** -- Configurable rules per media type for content detection, with pattern matching, confidence weights, and priority ordering.
+
+### Migration v9: Performance Indexes
+
+The v9 migration adds indexes identified from repository query patterns:
+
+| Index | Table | Columns | Purpose |
+|-------|-------|---------|---------|
+| `idx_files_file_type` | files | file_type | SearchFiles filtering |
+| `idx_files_extension` | files | extension | Extension-based queries |
+| `idx_files_is_directory` | files | is_directory | Directory listing |
+| `idx_files_name` | files | name | Name search |
+| `idx_media_items_title_type` | media_items | title, media_type_id | GetByTitle, GetDuplicates (compound) |
+| `idx_media_items_status` | media_items | status | Status filtering |
+| `idx_media_items_year` | media_items | year | Year filtering |
+| `idx_user_metadata_user_watched` | user_metadata | user_id, watched_status | Watched media queries (compound) |
+| `idx_media_files_item_file` | media_files | media_item_id, file_id | Prevents duplicate links (UNIQUE) |
+
+The v9 migration deduplicates `media_files` before creating the unique index. On SQLite, it keeps the lowest `rowid` per `(media_item_id, file_id)` pair. On PostgreSQL, it uses `ctid` for the same purpose.
 
 For detailed migration documentation including how to create new migrations, rollback procedures, and troubleshooting, see the [SQL Migrations Guide](SQL_MIGRATIONS.md).

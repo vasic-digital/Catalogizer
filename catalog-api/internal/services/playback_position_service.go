@@ -502,7 +502,7 @@ func (s *PlaybackPositionService) CleanupOldPositions(ctx context.Context, older
 
 	query := `
 		DELETE FROM playback_positions
-		WHERE last_played < ? AND is_completed = true
+		WHERE last_played < ? AND is_completed = 1
 	`
 
 	cutoff := time.Now().Add(-olderThan)

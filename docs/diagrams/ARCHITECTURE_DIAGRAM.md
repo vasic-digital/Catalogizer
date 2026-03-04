@@ -297,6 +297,75 @@ graph TB
     API -->|"fs"| LOCAL_DIR
 ```
 
+## Challenge System and User Flow Automation
+
+```mermaid
+graph TB
+    subgraph "Challenge Framework (Challenges/ submodule)"
+        REG["Registry<br/>Register challenges by ID"]
+        RUNNER["Runner<br/>Sequential execution<br/>72h timeout, 5min stale"]
+        RESULT["Result<br/>Status, Duration, Assertions"]
+    end
+
+    subgraph "Challenge Service (catalog-api)"
+        CSVC["ChallengeService<br/>services/challenge_service.go"]
+        CHANDLER["Challenge Handler<br/>/api/v1/challenges"]
+    end
+
+    subgraph "Challenge Categories"
+        ORIG["Original Challenges<br/>CH-001 to CH-035<br/>Connectivity, Scan, Detect"]
+        UFAPI["User Flow: API<br/>UF-API-* (49)<br/>HTTP endpoint flows"]
+        UFWEB["User Flow: Web<br/>UF-WEB-* (59)<br/>Playwright browser flows"]
+        UFDESK["User Flow: Desktop<br/>UF-DESKTOP-* (28)<br/>Tauri + Wizard flows"]
+        UFMOB["User Flow: Mobile<br/>UF-MOBILE-* (38)<br/>Android + TV flows"]
+    end
+
+    subgraph "User Flow Adapters (Challenges/pkg/userflow/)"
+        BROWSER_A["Browser Adapter<br/>(Playwright)"]
+        API_A["API Adapter<br/>(HTTP Client)"]
+        MOBILE_A["Mobile Adapter<br/>(ADB)"]
+        DESKTOP_A["Desktop Adapter<br/>(Tauri CLI)"]
+        BUILD_A["Build Adapters<br/>(Go, npm, Cargo, Gradle)"]
+    end
+
+    subgraph "Test Infrastructure"
+        COMPOSE["docker-compose.test.yml<br/>catalog-api + catalog-web + playwright<br/>network_mode: host"]
+        CLIRUNNER["userflow-runner CLI<br/>--platform, --report,<br/>--compose, --timeout"]
+    end
+
+    CHANDLER -->|"List, Run, RunAll,<br/>RunByCategory"| CSVC
+    CSVC --> REG
+    CSVC --> RUNNER
+    RUNNER --> RESULT
+
+    REG --- ORIG
+    REG --- UFAPI
+    REG --- UFWEB
+    REG --- UFDESK
+    REG --- UFMOB
+
+    UFWEB -.->|"uses"| BROWSER_A
+    UFAPI -.->|"uses"| API_A
+    UFMOB -.->|"uses"| MOBILE_A
+    UFDESK -.->|"uses"| DESKTOP_A
+    UFAPI -.->|"uses"| BUILD_A
+
+    CLIRUNNER --> COMPOSE
+    CLIRUNNER --> RUNNER
+
+    classDef framework fill:#50C878,stroke:#2E8B57,color:#fff
+    classDef service fill:#4A90D9,stroke:#2C5F8A,color:#fff
+    classDef challenge fill:#FFD700,stroke:#DAA520,color:#000
+    classDef adapter fill:#DDA0DD,stroke:#BA55D3,color:#000
+    classDef infra fill:#87CEEB,stroke:#4682B4,color:#000
+
+    class REG,RUNNER,RESULT framework
+    class CSVC,CHANDLER service
+    class ORIG,UFAPI,UFWEB,UFDESK,UFMOB challenge
+    class BROWSER_A,API_A,MOBILE_A,DESKTOP_A,BUILD_A adapter
+    class COMPOSE,CLIRUNNER infra
+```
+
 ## Technology Stack
 
 ```mermaid

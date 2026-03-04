@@ -441,10 +441,7 @@ func (s *ReportingService) formatAsHTML(data interface{}, reportType string) ([]
 func (s *ReportingService) formatAsPDF(data interface{}, reportType string) ([]byte, error) {
 	// Create new PDF creator
 	c := creator.New()
-	page := model.NewPdfPage()
-	if err := c.AddPage(page); err != nil {
-		return nil, fmt.Errorf("failed to add page: %w", err)
-	}
+	c.SetPageSize(creator.PageSizeLetter)
 
 	// Load standard fonts
 	arialBold, err := model.NewStandard14Font(model.HelveticaBoldName)

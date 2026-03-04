@@ -93,7 +93,7 @@ func (h *DownloadHandler) DownloadFile(c *gin.Context) {
 	}
 
 	// Stream file to client
-	c.Header("Content-Disposition", fmt.Sprintf("attachment; filename=\"%s\"", fileInfo.Name))
+	c.Header("Content-Disposition", fmt.Sprintf("attachment; filename=\"%s\"", sanitizeContentDisposition(fileInfo.Name)))
 	c.Header("Content-Type", "application/octet-stream")
 	c.Header("Content-Length", strconv.FormatInt(fileInfo.Size, 10))
 
@@ -130,8 +130,13 @@ func (h *DownloadHandler) DownloadDirectory(c *gin.Context) {
 		return
 	}
 
-	// Clean the path
+	// Clean and validate path to prevent traversal attacks
 	path = strings.TrimPrefix(path, "/")
+	path = filepath.Clean(path)
+	if path == ".." || strings.HasPrefix(path, "../") || strings.Contains(path, "/../") {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid path"})
+		return
+	}
 
 	// Get directory listing recursively
 	files, err := h.getDirectoryContentsRecursive(path)
@@ -282,8 +287,8 @@ func (h *DownloadHandler) createZipArchive(w io.Writer, files []models.FileInfo)
 			continue
 		}
 
-		// Add to zip
-		zipFile, err := zipWriter.Create(file.Path)
+		// Add to zip (sanitize path to prevent Zip Slip)
+		zipFile, err := zipWriter.Create(sanitizeArchivePath(file.Path))
 		if err != nil {
 			h.logger.Error("Failed to create zip entry", zap.String("path", file.Path), zap.Error(err))
 			tempFile.Close()
@@ -337,9 +342,9 @@ func (h *DownloadHandler) createTarArchive(w io.Writer, files []models.FileInfo,
 			continue
 		}
 
-		// Create tar header
+		// Create tar header (sanitize path to prevent Tar Slip)
 		header := &tar.Header{
-			Name:    file.Path,
+			Name:    sanitizeArchivePath(file.Path),
 			Size:    file.Size,
 			Mode:    0644,
 			ModTime: file.LastModified,
@@ -365,6 +370,29 @@ func (h *DownloadHandler) createTarArchive(w io.Writer, files []models.FileInfo,
 	}
 
 	return nil
+}
+
+// sanitizeArchivePath prevents path traversal (Zip Slip / Tar Slip) attacks
+// by removing any ../ components from archive entry names.
+func sanitizeArchivePath(p string) string {
+	cleaned := filepath.Clean(p)
+	cleaned = strings.TrimPrefix(cleaned, "/")
+	for strings.HasPrefix(cleaned, "../") {
+		cleaned = strings.TrimPrefix(cleaned, "../")
+	}
+	if cleaned == ".." || cleaned == "" {
+		cleaned = "unnamed"
+	}
+	return cleaned
+}
+
+// sanitizeContentDisposition removes characters that could be used for
+// header injection in Content-Disposition filenames.
+func sanitizeContentDisposition(name string) string {
+	name = strings.ReplaceAll(name, "\"", "_")
+	name = strings.ReplaceAll(name, "\r", "")
+	name = strings.ReplaceAll(name, "\n", "")
+	return name
 }
 
 // Helper functions

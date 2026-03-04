@@ -270,7 +270,7 @@ erDiagram
     }
 
     %% =========================================
-    %% MEDIA DETECTION (Encrypted DB)
+    %% MEDIA ENTITY SYSTEM (v8 Migration)
     %% =========================================
 
     media_types {
@@ -279,6 +279,8 @@ erDiagram
         TEXT description
         TEXT detection_patterns
         TEXT metadata_providers
+        DATETIME created_at
+        DATETIME updated_at
     }
 
     media_items {
@@ -287,11 +289,52 @@ erDiagram
         TEXT title
         TEXT original_title
         INTEGER year
+        TEXT description
         TEXT genre
         TEXT director
+        TEXT cast_crew
         REAL rating
         INTEGER runtime
+        TEXT language
+        TEXT country
         TEXT status
+        INTEGER parent_id FK
+        INTEGER season_number
+        INTEGER episode_number
+        INTEGER track_number
+        DATETIME first_detected
+        DATETIME last_updated
+    }
+
+    media_files {
+        INTEGER id PK
+        INTEGER media_item_id FK
+        INTEGER file_id FK
+        TEXT quality_info
+        TEXT language
+        INTEGER is_primary
+        DATETIME created_at
+    }
+
+    media_collections {
+        INTEGER id PK
+        TEXT name
+        TEXT collection_type
+        TEXT description
+        INTEGER total_items
+        TEXT external_ids
+        TEXT cover_url
+        DATETIME created_at
+        DATETIME updated_at
+    }
+
+    media_collection_items {
+        INTEGER id PK
+        INTEGER collection_id FK
+        INTEGER media_item_id FK
+        INTEGER sequence_number
+        INTEGER season_number
+        INTEGER release_order
     }
 
     external_metadata {
@@ -301,63 +344,37 @@ erDiagram
         TEXT external_id
         TEXT data
         REAL rating
+        TEXT review_url
         TEXT cover_url
         TEXT trailer_url
-    }
-
-    directory_analysis {
-        INTEGER id PK
-        TEXT directory_path UK
-        TEXT smb_root
-        INTEGER media_item_id FK
-        REAL confidence_score
-        TEXT detection_method
-        INTEGER files_count
-        INTEGER total_size
-    }
-
-    media_files {
-        INTEGER id PK
-        INTEGER media_item_id FK
-        TEXT file_path
-        TEXT filename
-        INTEGER file_size
-        TEXT quality_info
-        TEXT language
-        INTEGER duration
-    }
-
-    quality_profiles {
-        INTEGER id PK
-        TEXT name UK
-        INTEGER resolution_width
-        INTEGER resolution_height
-        INTEGER quality_score
-    }
-
-    media_collections {
-        INTEGER id PK
-        TEXT name
-        TEXT collection_type
-        INTEGER total_items
-        TEXT cover_url
-    }
-
-    media_collection_items {
-        INTEGER id PK
-        INTEGER collection_id FK
-        INTEGER media_item_id FK
-        INTEGER sequence_number
-        INTEGER season_number
+        DATETIME last_fetched
     }
 
     user_metadata {
         INTEGER id PK
         INTEGER media_item_id FK
+        INTEGER user_id FK
         REAL user_rating
         TEXT watched_status
+        DATETIME watched_date
+        TEXT personal_notes
         TEXT tags
-        BOOLEAN favorite
+        INTEGER favorite
+        DATETIME created_at
+        DATETIME updated_at
+    }
+
+    directory_analyses {
+        INTEGER id PK
+        TEXT directory_path
+        TEXT smb_root
+        INTEGER media_item_id FK
+        REAL confidence_score
+        TEXT detection_method
+        TEXT analysis_data
+        DATETIME last_analyzed
+        INTEGER files_count
+        INTEGER total_size
     }
 
     detection_rules {
@@ -367,8 +384,9 @@ erDiagram
         TEXT rule_type
         TEXT pattern
         REAL confidence_weight
-        BOOLEAN enabled
+        INTEGER enabled
         INTEGER priority
+        DATETIME created_at
     }
 
     change_log {
@@ -578,13 +596,16 @@ erDiagram
     users ||--o{ conversion_jobs : "creates jobs"
     users ||--o{ conversion_profiles : "creates profiles"
 
-    %% Media Detection
+    %% Media Entity System (v8)
     media_types ||--o{ media_items : "classifies"
     media_types ||--o{ detection_rules : "has rules"
+    media_items ||--o{ media_items : "parent hierarchy"
     media_items ||--o{ external_metadata : "has external data"
     media_items ||--o{ media_files : "has files"
-    media_items ||--o{ directory_analysis : "analyzed as"
+    files ||--o{ media_files : "linked to entities"
+    media_items ||--o{ directory_analyses : "analyzed as"
     media_items ||--o{ user_metadata : "user prefs"
+    users ||--o{ user_metadata : "user ratings"
     media_items ||--o{ media_collection_items : "in collections"
     media_collections ||--o{ media_collection_items : "contains"
 
@@ -711,22 +732,26 @@ erDiagram
     }
 ```
 
-### Media Detection Pipeline
+### Media Entity System (v8/v9)
 
 ```mermaid
 erDiagram
     media_types ||--o{ media_items : "classifies"
     media_types ||--o{ detection_rules : "rules"
+    media_items ||--o{ media_items : "parent hierarchy"
     media_items ||--o{ external_metadata : "metadata"
-    media_items ||--o{ media_files : "files"
-    media_items ||--o{ directory_analysis : "analysis"
+    media_items ||--o{ media_files : "linked files"
+    files ||--o{ media_files : "catalog files"
+    media_items ||--o{ directory_analyses : "analysis"
     media_items ||--o{ media_collection_items : "collections"
     media_collections ||--o{ media_collection_items : "items"
     media_items ||--o{ user_metadata : "user data"
+    users ||--o{ user_metadata : "ratings"
 
     media_types {
         INTEGER id PK
         TEXT name UK
+        TEXT description
         TEXT detection_patterns
         TEXT metadata_providers
     }
@@ -735,8 +760,11 @@ erDiagram
         INTEGER media_type_id FK
         TEXT title
         INTEGER year
-        REAL rating
         TEXT status
+        INTEGER parent_id FK
+        INTEGER season_number
+        INTEGER episode_number
+        INTEGER track_number
     }
     external_metadata {
         INTEGER id PK
@@ -748,13 +776,13 @@ erDiagram
     media_files {
         INTEGER id PK
         INTEGER media_item_id FK
-        TEXT file_path
+        INTEGER file_id FK
         TEXT quality_info
-        INTEGER file_size
+        INTEGER is_primary
     }
-    directory_analysis {
+    directory_analyses {
         INTEGER id PK
-        TEXT directory_path UK
+        TEXT directory_path
         INTEGER media_item_id FK
         REAL confidence_score
         TEXT detection_method
@@ -780,10 +808,18 @@ erDiagram
     user_metadata {
         INTEGER id PK
         INTEGER media_item_id FK
+        INTEGER user_id FK
         REAL user_rating
         TEXT watched_status
     }
 ```
+
+**v9 Performance Indexes** (not shown in diagram):
+- `idx_media_items_title_type` -- compound on (title, media_type_id)
+- `idx_media_items_status`, `idx_media_items_year` -- single-column
+- `idx_user_metadata_user_watched` -- compound on (user_id, watched_status)
+- `idx_media_files_item_file` -- UNIQUE on (media_item_id, file_id)
+- `idx_files_file_type`, `idx_files_extension`, `idx_files_is_directory`, `idx_files_name` on files table
 
 ### Subtitle Management
 

@@ -123,13 +123,16 @@ func TestMemoryMonitor_StartStop(t *testing.T) {
 }
 
 func TestMemoryMonitor_AlertCallback(t *testing.T) {
+	var mu sync.Mutex
 	alertReceived := false
 	var receivedReport LeakReport
 
 	monitor := NewMemoryMonitor(10*time.Millisecond, 0.001)
 	monitor.SetAlertCallback(func(r LeakReport) {
+		mu.Lock()
 		alertReceived = true
 		receivedReport = r
+		mu.Unlock()
 	})
 
 	ctx, cancel := context.WithTimeout(context.Background(), 100*time.Millisecond)
@@ -142,8 +145,10 @@ func TestMemoryMonitor_AlertCallback(t *testing.T) {
 
 	monitor.Stop()
 
+	mu.Lock()
 	assert.True(t, alertReceived)
 	assert.NotZero(t, receivedReport.Timestamp)
+	mu.Unlock()
 }
 
 func TestLeakReport_Fields(t *testing.T) {

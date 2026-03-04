@@ -1,6 +1,7 @@
-import { render, screen, waitFor } from '@testing-library/react'
+import { render, screen, waitFor, act } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { Collections } from '../Collections'
+import { toast } from 'react-hot-toast'
 
 // Mock all heavy dependencies
 vi.mock('framer-motion', () => ({
@@ -10,54 +11,54 @@ vi.mock('framer-motion', () => ({
   AnimatePresence: ({ children }: any) => <>{children}</>,
 }))
 
+const mockCreateCollection = vi.fn()
+const mockUpdateCollection = vi.fn()
+const mockDeleteCollection = vi.fn()
+const mockShareCollection = vi.fn()
+const mockDuplicateCollection = vi.fn()
+const mockExportCollection = vi.fn()
+const mockBulkDeleteCollections = vi.fn()
+const mockBulkShareCollections = vi.fn()
+const mockBulkExportCollections = vi.fn()
+const mockBulkUpdateCollections = vi.fn()
+const mockRefetchCollections = vi.fn()
+const mockUseCollections = vi.fn()
+
 vi.mock('../../hooks/useCollections', () => ({
-  useCollections: vi.fn(() => ({
-    collections: [
-      {
-        id: '1',
-        name: 'Test Collection',
-        description: 'A test collection',
-        is_smart: true,
-        smart_rules: [],
-        item_count: 42,
-        created_at: '2024-01-01T00:00:00Z',
-        updated_at: '2024-01-01T00:00:00Z',
-        is_public: false,
-        primary_media_type: 'music',
-        owner_id: 'user1',
-      },
-    ],
-    isLoading: false,
-    error: null,
-    refetchCollections: vi.fn(),
-    createCollection: vi.fn(),
-    updateCollection: vi.fn(),
-    deleteCollection: vi.fn(),
-    shareCollection: vi.fn(),
-    duplicateCollection: vi.fn(),
-    exportCollection: vi.fn(),
-    bulkDeleteCollections: vi.fn(),
-    bulkShareCollections: vi.fn(),
-    bulkExportCollections: vi.fn(),
-    bulkUpdateCollections: vi.fn(),
-    isSharing: false,
-    isDuplicating: false,
-    isExporting: false,
-  })),
+  useCollections: (...args: any[]) => mockUseCollections(...args),
 }))
 
 vi.mock('../../components/collections/SmartCollectionBuilder', () => ({
   SmartCollectionBuilder: ({ onSave, onCancel }: any) => (
-    <div data-testid="smart-builder">Smart Collection Builder</div>
+    <div data-testid="smart-builder">
+      Smart Collection Builder
+      <button onClick={() => onSave('Smart Col', 'Smart desc', [{ field: 'genre', operator: 'equals', value: 'rock' }])}>Save Smart</button>
+      <button onClick={onCancel}>Cancel Smart</button>
+    </div>
   ),
 }))
 
 vi.mock('../../components/collections/CollectionPreview', () => ({
-  CollectionPreview: () => <div data-testid="collection-preview">Collection Preview</div>,
+  CollectionPreview: ({ onClose }: any) => (
+    <div data-testid="collection-preview">
+      Collection Preview
+      <button onClick={onClose}>Close Preview</button>
+    </div>
+  ),
 }))
 
 vi.mock('../../components/collections/BulkOperations', () => ({
-  BulkOperations: () => <div data-testid="bulk-ops">Bulk Operations</div>,
+  BulkOperations: ({ selectedCollections, onOperation, onClose }: any) => (
+    <div data-testid="bulk-ops">
+      Bulk Operations ({selectedCollections.length} selected)
+      <button onClick={() => onOperation('delete')}>Bulk Delete</button>
+      <button onClick={() => onOperation('share')}>Bulk Share</button>
+      <button onClick={() => onOperation('export', { format: 'csv' })}>Bulk Export</button>
+      <button onClick={() => onOperation('duplicate')}>Bulk Duplicate</button>
+      <button onClick={() => onOperation('unknown')}>Bulk Unknown</button>
+      <button onClick={onClose}>Close Bulk</button>
+    </div>
+  ),
 }))
 
 vi.mock('../../components/collections/PerformanceOptimizer', () => ({
@@ -65,32 +66,63 @@ vi.mock('../../components/collections/PerformanceOptimizer', () => ({
 }))
 
 vi.mock('../../components/collections/CollectionSettings', () => ({
-  CollectionSettings: () => <div>Collection Settings</div>,
+  CollectionSettings: ({ onClose, onSave }: any) => (
+    <div data-testid="collection-settings">
+      Collection Settings
+      <button onClick={() => onSave({ name: 'Updated' })}>Save Settings</button>
+      <button onClick={onClose}>Close Settings</button>
+    </div>
+  ),
 }))
 
 vi.mock('../../components/collections/CollectionAnalytics', () => ({
-  CollectionAnalytics: () => <div>Collection Analytics</div>,
+  CollectionAnalytics: ({ onClose }: any) => (
+    <div data-testid="collection-analytics">
+      Collection Analytics
+      <button onClick={onClose}>Close Analytics</button>
+    </div>
+  ),
 }))
 
 vi.mock('../../components/collections/CollectionSharing', () => ({
-  CollectionSharing: () => <div>Collection Sharing</div>,
+  CollectionSharing: ({ onClose }: any) => (
+    <div data-testid="collection-sharing">
+      Collection Sharing
+      <button onClick={onClose}>Close Sharing</button>
+    </div>
+  ),
 }))
 
 vi.mock('../../components/collections/CollectionExport', () => ({
-  CollectionExport: () => <div>Collection Export</div>,
+  CollectionExport: ({ onClose }: any) => (
+    <div data-testid="collection-export">
+      Collection Export
+      <button onClick={onClose}>Close Export</button>
+    </div>
+  ),
 }))
 
 vi.mock('../../components/collections/CollectionRealTime', () => ({
-  CollectionRealTime: () => <div>Collection RealTime</div>,
+  CollectionRealTime: ({ onClose }: any) => (
+    <div data-testid="collection-realtime">
+      Collection RealTime
+      <button onClick={onClose}>Close RealTime</button>
+    </div>
+  ),
 }))
 
 vi.mock('../../components/performance/LazyComponents', () => ({
   ComponentLoader: ({ children }: any) => <>{children}</>,
   preloadComponent: vi.fn(),
-  CollectionTemplates: () => <div>Collection Templates</div>,
-  AdvancedSearch: () => <div>Advanced Search</div>,
-  CollectionAutomation: () => <div>Collection Automation</div>,
-  ExternalIntegrations: () => <div>External Integrations</div>,
+  CollectionTemplates: ({ onClose }: any) => (
+    <div data-testid="collection-templates">
+      Collection Templates
+      <button onClick={onClose}>Close Templates</button>
+    </div>
+  ),
+  AdvancedSearch: () => <div data-testid="advanced-search">Advanced Search</div>,
+  CollectionAutomation: () => <div data-testid="collection-automation">Collection Automation</div>,
+  ExternalIntegrations: () => <div data-testid="external-integrations">External Integrations</div>,
   CollectionAnalytics: () => <div>Lazy Analytics</div>,
 }))
 
@@ -100,9 +132,9 @@ vi.mock('../../components/performance/VirtualScroller', () => ({
 }))
 
 vi.mock('../../components/performance/MemoCache', () => ({
-  useMemoized: (fn: any, deps: any[]) => fn(),
+  useMemoized: (fn: any, _deps: any[]) => fn(),
   useOptimizedData: (data: any) => data,
-  usePagination: (data: any, pageSize: number) => ({
+  usePagination: (data: any, _pageSize: number) => ({
     page: 1,
     paginatedData: data,
     totalPages: 1,
@@ -141,7 +173,73 @@ vi.mock('react-hot-toast', () => ({
   },
 }))
 
+const testCollection = {
+  id: '1',
+  name: 'Test Collection',
+  description: 'A test collection',
+  is_smart: true,
+  smart_rules: [],
+  item_count: 42,
+  created_at: '2024-01-01T00:00:00Z',
+  updated_at: '2024-01-01T00:00:00Z',
+  is_public: false,
+  primary_media_type: 'music',
+  owner_id: 'user1',
+}
+
+const secondCollection = {
+  id: '2',
+  name: 'Video Collection',
+  description: 'Videos here',
+  is_smart: false,
+  smart_rules: [],
+  item_count: 15,
+  created_at: '2024-02-01T00:00:00Z',
+  updated_at: '2024-02-15T00:00:00Z',
+  is_public: true,
+  primary_media_type: 'video',
+  owner_id: 'user1',
+}
+
+const defaultUseCollectionsReturn = {
+  collections: [testCollection, secondCollection],
+  isLoading: false,
+  error: null,
+  refetchCollections: mockRefetchCollections,
+  createCollection: mockCreateCollection,
+  updateCollection: mockUpdateCollection,
+  deleteCollection: mockDeleteCollection,
+  shareCollection: mockShareCollection,
+  duplicateCollection: mockDuplicateCollection,
+  exportCollection: mockExportCollection,
+  bulkDeleteCollections: mockBulkDeleteCollections,
+  bulkShareCollections: mockBulkShareCollections,
+  bulkExportCollections: mockBulkExportCollections,
+  bulkUpdateCollections: mockBulkUpdateCollections,
+  isSharing: false,
+  isDuplicating: false,
+  isExporting: false,
+}
+
 describe('Collections Page', () => {
+  beforeEach(() => {
+    vi.clearAllMocks()
+    mockUseCollections.mockReturnValue(defaultUseCollectionsReturn)
+    mockCreateCollection.mockResolvedValue(undefined)
+    mockDeleteCollection.mockResolvedValue(undefined)
+    mockShareCollection.mockResolvedValue(undefined)
+    mockDuplicateCollection.mockResolvedValue(undefined)
+    mockBulkDeleteCollections.mockResolvedValue(undefined)
+    mockBulkShareCollections.mockResolvedValue(undefined)
+    mockBulkExportCollections.mockResolvedValue(undefined)
+    mockBulkUpdateCollections.mockResolvedValue(undefined)
+    vi.spyOn(window, 'confirm').mockReturnValue(true)
+  })
+
+  afterEach(() => {
+    vi.restoreAllMocks()
+  })
+
   it('renders page heading', () => {
     render(<Collections />)
     expect(screen.getByText('Collections')).toBeInTheDocument()
@@ -195,29 +293,522 @@ describe('Collections Page', () => {
     expect(screen.getByText(/Select all/)).toBeInTheDocument()
   })
 
-  it('shows empty state when no collections match filter', async () => {
-    const { useCollections } = await import('../../hooks/useCollections')
-    vi.mocked(useCollections).mockReturnValue({
+  it('shows empty state when no collections match filter', () => {
+    mockUseCollections.mockReturnValue({
+      ...defaultUseCollectionsReturn,
       collections: [],
-      isLoading: false,
-      error: null,
-      refetchCollections: vi.fn(),
-      createCollection: vi.fn(),
-      updateCollection: vi.fn(),
-      deleteCollection: vi.fn(),
-      shareCollection: vi.fn(),
-      duplicateCollection: vi.fn(),
-      exportCollection: vi.fn(),
-      bulkDeleteCollections: vi.fn(),
-      bulkShareCollections: vi.fn(),
-      bulkExportCollections: vi.fn(),
-      bulkUpdateCollections: vi.fn(),
-      isSharing: false,
-      isDuplicating: false,
-      isExporting: false,
-    } as any)
+    })
 
     render(<Collections />)
     expect(screen.getByText('No collections found')).toBeInTheDocument()
+  })
+
+  // --- New tests for increased coverage ---
+
+  it('shows loading state', () => {
+    mockUseCollections.mockReturnValue({
+      ...defaultUseCollectionsReturn,
+      collections: [],
+      isLoading: true,
+    })
+    render(<Collections />)
+    // Loading spinner should be present (animate-spin class)
+    const spinner = document.querySelector('.animate-spin')
+    expect(spinner).toBeInTheDocument()
+  })
+
+  it('shows empty state message for filtered results', () => {
+    mockUseCollections.mockReturnValue({
+      ...defaultUseCollectionsReturn,
+      collections: [],
+    })
+    render(<Collections />)
+    expect(screen.getByText('Create your first collection to get started')).toBeInTheDocument()
+  })
+
+  it('opens smart builder when Smart Collection button is clicked', async () => {
+    const user = userEvent.setup()
+    render(<Collections />)
+
+    await user.click(screen.getByText('Smart Collection'))
+
+    expect(screen.getByTestId('smart-builder')).toBeInTheDocument()
+  })
+
+  it('saves a smart collection via the builder', async () => {
+    const user = userEvent.setup()
+    render(<Collections />)
+
+    await user.click(screen.getByText('Smart Collection'))
+    expect(screen.getByTestId('smart-builder')).toBeInTheDocument()
+
+    await user.click(screen.getByText('Save Smart'))
+
+    await waitFor(() => {
+      expect(mockCreateCollection).toHaveBeenCalledWith(expect.objectContaining({
+        collection: expect.objectContaining({
+          name: 'Smart Col',
+          is_smart: true,
+        }),
+      }))
+    })
+  })
+
+  it('cancels the smart builder and returns to main view', async () => {
+    const user = userEvent.setup()
+    render(<Collections />)
+
+    await user.click(screen.getByText('Smart Collection'))
+    expect(screen.getByTestId('smart-builder')).toBeInTheDocument()
+
+    await user.click(screen.getByText('Cancel Smart'))
+    expect(screen.queryByTestId('smart-builder')).not.toBeInTheDocument()
+    expect(screen.getByText('Test Collection')).toBeInTheDocument()
+  })
+
+  it('opens Templates view when Templates button is clicked', async () => {
+    const user = userEvent.setup()
+    render(<Collections />)
+
+    // Find the Templates button (not the tab) - the button has a FileText icon
+    const templatesButtons = screen.getAllByText('Templates')
+    // The action button is the one inside a <button> element with gap-2 class
+    const templateBtn = templatesButtons.find(el => {
+      const btn = el.closest('button')
+      return btn && btn.classList.contains('gap-2')
+    })
+    expect(templateBtn).toBeTruthy()
+    await user.click(templateBtn!)
+
+    expect(screen.getByTestId('collection-templates')).toBeInTheDocument()
+  })
+
+  it('opens Advanced Search view', async () => {
+    const user = userEvent.setup()
+    render(<Collections />)
+
+    // The Advanced Search button has gap-2 class
+    const searchButtons = screen.getAllByText('Advanced Search')
+    const btn = searchButtons.find(el => el.closest('button')?.classList.contains('gap-2'))
+    expect(btn).toBeTruthy()
+    await user.click(btn!)
+
+    expect(screen.getByTestId('advanced-search')).toBeInTheDocument()
+  })
+
+  it('opens Automation view', async () => {
+    const user = userEvent.setup()
+    render(<Collections />)
+
+    // Find the Automation button (not the tab) - button with gap-2 class
+    const automationElements = screen.getAllByText('Automation')
+    const btn = automationElements.find(el => {
+      const button = el.closest('button')
+      return button && button.classList.contains('gap-2')
+    })
+    expect(btn).toBeTruthy()
+    await user.click(btn!)
+
+    expect(screen.getByTestId('collection-automation')).toBeInTheDocument()
+  })
+
+  it('opens Integrations view', async () => {
+    const user = userEvent.setup()
+    render(<Collections />)
+
+    // Find the Integrations button (not the tab) - button with gap-2 class
+    const integrationsElements = screen.getAllByText('Integrations')
+    const btn = integrationsElements.find(el => {
+      const button = el.closest('button')
+      return button && button.classList.contains('gap-2')
+    })
+    expect(btn).toBeTruthy()
+    await user.click(btn!)
+
+    expect(screen.getByTestId('external-integrations')).toBeInTheDocument()
+  })
+
+  it('opens AI Features view', async () => {
+    const user = userEvent.setup()
+    render(<Collections />)
+
+    // Click the AI Features button (the one with bg-indigo-50 class)
+    const aiButtons = screen.getAllByText('AI Features')
+    const aiBtn = aiButtons.find(el => {
+      const button = el.closest('button')
+      return button && button.classList.contains('bg-indigo-50')
+    })
+    expect(aiBtn).toBeTruthy()
+    await user.click(aiBtn!)
+
+    expect(screen.getByText('AI-Powered Features')).toBeInTheDocument()
+    expect(screen.getByText('AI Suggestions')).toBeInTheDocument()
+    expect(screen.getByText('AI Search')).toBeInTheDocument()
+  })
+
+  it('returns from AI Features view via Back button', async () => {
+    const user = userEvent.setup()
+    render(<Collections />)
+
+    const aiButtons = screen.getAllByText('AI Features')
+    const aiBtn = aiButtons.find(el => {
+      const button = el.closest('button')
+      return button && button.classList.contains('bg-indigo-50')
+    })
+    expect(aiBtn).toBeTruthy()
+    await user.click(aiBtn!)
+
+    expect(screen.getByText('AI-Powered Features')).toBeInTheDocument()
+
+    await user.click(screen.getByText('Back to Collections'))
+    expect(screen.getByText('Test Collection')).toBeInTheDocument()
+  })
+
+  it('selects a collection via checkbox', async () => {
+    const user = userEvent.setup()
+    render(<Collections />)
+
+    // Each collection card has a selection checkbox button
+    const checkboxButtons = document.querySelectorAll('.absolute.top-2.left-2 button')
+    expect(checkboxButtons.length).toBeGreaterThanOrEqual(1)
+
+    await user.click(checkboxButtons[0] as HTMLElement)
+
+    // Should show the bulk operations bar
+    expect(screen.getByText(/1 collection selected/)).toBeInTheDocument()
+  })
+
+  it('selects all collections via Select all checkbox', async () => {
+    const user = userEvent.setup()
+    render(<Collections />)
+
+    const selectAllCheckbox = screen.getByText(/Select all/).closest('label')?.querySelector('input')
+    if (selectAllCheckbox) {
+      await user.click(selectAllCheckbox)
+    }
+
+    expect(screen.getByText(/2 collections selected/)).toBeInTheDocument()
+  })
+
+  it('deselects all collections when Select all is toggled off', async () => {
+    const user = userEvent.setup()
+    render(<Collections />)
+
+    const selectAllCheckbox = screen.getByText(/Select all/).closest('label')?.querySelector('input')
+    if (selectAllCheckbox) {
+      // Select all
+      await user.click(selectAllCheckbox)
+      expect(screen.getByText(/2 collections selected/)).toBeInTheDocument()
+
+      // Deselect all
+      await user.click(selectAllCheckbox)
+      expect(screen.queryByText(/collections selected/)).not.toBeInTheDocument()
+    }
+  })
+
+  it('clears selection via X button in bulk bar', async () => {
+    const user = userEvent.setup()
+    render(<Collections />)
+
+    // Select a collection
+    const checkboxButtons = document.querySelectorAll('.absolute.top-2.left-2 button')
+    await user.click(checkboxButtons[0] as HTMLElement)
+    expect(screen.getByText(/1 collection selected/)).toBeInTheDocument()
+
+    // Click the X to clear selection
+    const clearBtn = screen.getByText(/1 collection/).closest('.flex')?.querySelector('button')
+    if (clearBtn) {
+      await user.click(clearBtn)
+    }
+
+    expect(screen.queryByText(/collection selected/)).not.toBeInTheDocument()
+  })
+
+  it('opens bulk operations dialog', async () => {
+    const user = userEvent.setup()
+    render(<Collections />)
+
+    // Select a collection first
+    const checkboxButtons = document.querySelectorAll('.absolute.top-2.left-2 button')
+    await user.click(checkboxButtons[0] as HTMLElement)
+
+    // Click Bulk Actions
+    await user.click(screen.getByText('Bulk Actions'))
+
+    expect(screen.getByTestId('bulk-ops')).toBeInTheDocument()
+  })
+
+  it('executes bulk delete operation', async () => {
+    const user = userEvent.setup()
+    render(<Collections />)
+
+    // Select a collection
+    const checkboxButtons = document.querySelectorAll('.absolute.top-2.left-2 button')
+    await user.click(checkboxButtons[0] as HTMLElement)
+
+    // Open bulk ops
+    await user.click(screen.getByText('Bulk Actions'))
+
+    // Execute bulk delete
+    await user.click(screen.getByText('Bulk Delete'))
+
+    await waitFor(() => {
+      expect(mockBulkDeleteCollections).toHaveBeenCalled()
+    })
+
+    await waitFor(() => {
+      expect(toast.success).toHaveBeenCalledWith(expect.stringContaining('deleted'))
+    })
+  })
+
+  it('executes bulk share operation', async () => {
+    const user = userEvent.setup()
+    render(<Collections />)
+
+    const checkboxButtons = document.querySelectorAll('.absolute.top-2.left-2 button')
+    await user.click(checkboxButtons[0] as HTMLElement)
+    await user.click(screen.getByText('Bulk Actions'))
+    await user.click(screen.getByText('Bulk Share'))
+
+    await waitFor(() => {
+      expect(mockBulkShareCollections).toHaveBeenCalled()
+    })
+  })
+
+  it('executes bulk export operation', async () => {
+    const user = userEvent.setup()
+    render(<Collections />)
+
+    const checkboxButtons = document.querySelectorAll('.absolute.top-2.left-2 button')
+    await user.click(checkboxButtons[0] as HTMLElement)
+    await user.click(screen.getByText('Bulk Actions'))
+    await user.click(screen.getByText('Bulk Export'))
+
+    await waitFor(() => {
+      expect(mockBulkExportCollections).toHaveBeenCalled()
+    })
+  })
+
+  it('executes bulk duplicate operation', async () => {
+    const user = userEvent.setup()
+    render(<Collections />)
+
+    const checkboxButtons = document.querySelectorAll('.absolute.top-2.left-2 button')
+    await user.click(checkboxButtons[0] as HTMLElement)
+    await user.click(screen.getByText('Bulk Actions'))
+    await user.click(screen.getByText('Bulk Duplicate'))
+
+    await waitFor(() => {
+      expect(mockBulkUpdateCollections).toHaveBeenCalled()
+    })
+  })
+
+  it('shows error for unknown bulk operation', async () => {
+    const user = userEvent.setup()
+    render(<Collections />)
+
+    const checkboxButtons = document.querySelectorAll('.absolute.top-2.left-2 button')
+    await user.click(checkboxButtons[0] as HTMLElement)
+    await user.click(screen.getByText('Bulk Actions'))
+    await user.click(screen.getByText('Bulk Unknown'))
+
+    await waitFor(() => {
+      expect(toast.error).toHaveBeenCalledWith('Unknown operation')
+    })
+  })
+
+  it('shows error toast when bulk operation fails', async () => {
+    mockBulkDeleteCollections.mockRejectedValue(new Error('Bulk delete failed'))
+    const user = userEvent.setup()
+    render(<Collections />)
+
+    const checkboxButtons = document.querySelectorAll('.absolute.top-2.left-2 button')
+    await user.click(checkboxButtons[0] as HTMLElement)
+    await user.click(screen.getByText('Bulk Actions'))
+    await user.click(screen.getByText('Bulk Delete'))
+
+    await waitFor(() => {
+      expect(toast.error).toHaveBeenCalledWith('Bulk operation failed')
+    })
+  })
+
+  it('deletes a collection via the delete button on card', async () => {
+    const user = userEvent.setup()
+    render(<Collections />)
+
+    // Find the delete button (the Trash2 icon button with red text)
+    const deleteButtons = document.querySelectorAll('button[title="Delete collection"]')
+    expect(deleteButtons.length).toBeGreaterThanOrEqual(1)
+
+    await user.click(deleteButtons[0] as HTMLElement)
+
+    await waitFor(() => {
+      expect(mockDeleteCollection).toHaveBeenCalledWith({ id: '1' })
+    })
+
+    expect(toast.success).toHaveBeenCalledWith('Collection deleted successfully')
+  })
+
+  it('cancels delete when confirm dialog is rejected', async () => {
+    vi.spyOn(window, 'confirm').mockReturnValue(false)
+    const user = userEvent.setup()
+    render(<Collections />)
+
+    const deleteButtons = document.querySelectorAll('button[title="Delete collection"]')
+    await user.click(deleteButtons[0] as HTMLElement)
+
+    expect(mockDeleteCollection).not.toHaveBeenCalled()
+  })
+
+  it('shows error toast when delete fails', async () => {
+    mockDeleteCollection.mockRejectedValue(new Error('Delete failed'))
+    const user = userEvent.setup()
+    render(<Collections />)
+
+    const deleteButtons = document.querySelectorAll('button[title="Delete collection"]')
+    await user.click(deleteButtons[0] as HTMLElement)
+
+    await waitFor(() => {
+      expect(toast.error).toHaveBeenCalledWith('Failed to delete collection')
+    })
+  })
+
+  it('opens collection preview when preview button is clicked', async () => {
+    const user = userEvent.setup()
+    render(<Collections />)
+
+    const previewButtons = document.querySelectorAll('button[title="Preview collection"]')
+    expect(previewButtons.length).toBeGreaterThanOrEqual(1)
+
+    await user.click(previewButtons[0] as HTMLElement)
+
+    expect(screen.getByTestId('collection-preview')).toBeInTheDocument()
+  })
+
+  it('closes collection preview', async () => {
+    const user = userEvent.setup()
+    render(<Collections />)
+
+    const previewButtons = document.querySelectorAll('button[title="Preview collection"]')
+    await user.click(previewButtons[0] as HTMLElement)
+    expect(screen.getByTestId('collection-preview')).toBeInTheDocument()
+
+    await user.click(screen.getByText('Close Preview'))
+    expect(screen.queryByTestId('collection-preview')).not.toBeInTheDocument()
+  })
+
+  it('shares a collection via the share button on card', async () => {
+    const user = userEvent.setup()
+    render(<Collections />)
+
+    const shareButtons = document.querySelectorAll('button[title="Share collection"]')
+    expect(shareButtons.length).toBeGreaterThanOrEqual(1)
+
+    await user.click(shareButtons[0] as HTMLElement)
+
+    await waitFor(() => {
+      expect(mockShareCollection).toHaveBeenCalledWith(expect.objectContaining({
+        id: '1',
+        shareRequest: expect.objectContaining({ can_view: true }),
+      }))
+    })
+  })
+
+  it('duplicates a collection via the duplicate button on card', async () => {
+    const user = userEvent.setup()
+    render(<Collections />)
+
+    const duplicateButtons = document.querySelectorAll('button[title="Duplicate collection"]')
+    expect(duplicateButtons.length).toBeGreaterThanOrEqual(1)
+
+    await user.click(duplicateButtons[0] as HTMLElement)
+
+    await waitFor(() => {
+      expect(mockDuplicateCollection).toHaveBeenCalledWith({
+        id: '1',
+        newName: 'Test Collection (Copy)',
+      })
+    })
+  })
+
+  it('opens settings modal when settings button is clicked', async () => {
+    const user = userEvent.setup()
+    render(<Collections />)
+
+    const settingsButtons = document.querySelectorAll('button[title="Collection settings"]')
+    expect(settingsButtons.length).toBeGreaterThanOrEqual(1)
+
+    await user.click(settingsButtons[0] as HTMLElement)
+
+    expect(screen.getByTestId('collection-settings')).toBeInTheDocument()
+  })
+
+  it('saves settings and closes modal', async () => {
+    const user = userEvent.setup()
+    render(<Collections />)
+
+    const settingsButtons = document.querySelectorAll('button[title="Collection settings"]')
+    await user.click(settingsButtons[0] as HTMLElement)
+
+    await user.click(screen.getByText('Save Settings'))
+
+    expect(mockUpdateCollection).toHaveBeenCalledWith({
+      id: '1',
+      updates: { name: 'Updated' },
+    })
+  })
+
+  it('switches to list view mode', async () => {
+    const user = userEvent.setup()
+    render(<Collections />)
+
+    // Find the list view toggle button
+    const listButton = document.querySelector('button[title="List View"]')
+    expect(listButton).toBeInTheDocument()
+
+    if (listButton) {
+      await user.click(listButton as HTMLElement)
+    }
+
+    // In list view, collections should still be displayed
+    expect(screen.getByText('Test Collection')).toBeInTheDocument()
+    expect(screen.getByText('Video Collection')).toBeInTheDocument()
+  })
+
+  it('displays description in collection card', () => {
+    render(<Collections />)
+    expect(screen.getByText('A test collection')).toBeInTheDocument()
+  })
+
+  it('displays collection count', () => {
+    render(<Collections />)
+    expect(screen.getByText('42 items')).toBeInTheDocument()
+    expect(screen.getByText('15 items')).toBeInTheDocument()
+  })
+
+  it('shows performance metrics in header', () => {
+    render(<Collections />)
+    expect(screen.getByText(/Render:/)).toBeInTheDocument()
+    expect(screen.getByText(/Items:/)).toBeInTheDocument()
+    expect(screen.getByText(/Page/)).toBeInTheDocument()
+  })
+
+  it('updates search query in input field', async () => {
+    const user = userEvent.setup()
+    render(<Collections />)
+
+    const searchInput = screen.getByPlaceholderText('Search collections...')
+    await user.type(searchInput, 'test query')
+
+    expect(searchInput).toHaveValue('test query')
+  })
+
+  it('shows Create Smart Collection button in empty state', () => {
+    mockUseCollections.mockReturnValue({
+      ...defaultUseCollectionsReturn,
+      collections: [],
+    })
+    render(<Collections />)
+    expect(screen.getByText('Create Smart Collection')).toBeInTheDocument()
   })
 })

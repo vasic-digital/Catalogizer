@@ -620,6 +620,207 @@ func TestErrorReportingService_ExportToCSV_UnknownReportType(t *testing.T) {
 	assert.Contains(t, csvString, "Type,") // Combined format header for unknown type
 }
 
+// ---------------------------------------------------------------------------
+// Placeholder notification/integration method tests
+// ---------------------------------------------------------------------------
+
+func TestErrorReportingService_SendEmailNotification(t *testing.T) {
+	svc := &ErrorReportingService{
+		config: &ErrorReportingConfig{
+			EmailNotifications: true,
+		},
+	}
+
+	report := &models.ErrorReport{
+		Level:      "error",
+		Message:    "test error",
+		Component:  "auth",
+		ErrorCode:  "AUTH_001",
+		ReportedAt: time.Now(),
+	}
+
+	err := svc.sendEmailNotification(report)
+	assert.NoError(t, err)
+}
+
+func TestErrorReportingService_SendEmailCrashNotification(t *testing.T) {
+	svc := &ErrorReportingService{
+		config: &ErrorReportingConfig{
+			EmailNotifications: true,
+		},
+	}
+
+	report := &models.CrashReport{
+		Signal:     "SIGSEGV",
+		Message:    "segmentation fault",
+		ReportedAt: time.Now(),
+	}
+
+	err := svc.sendEmailCrashNotification(report)
+	assert.NoError(t, err)
+}
+
+func TestErrorReportingService_SendToSentry(t *testing.T) {
+	svc := &ErrorReportingService{
+		config: &ErrorReportingConfig{
+			SentryDSN: "https://sentry.example.com/1",
+		},
+	}
+
+	report := &models.ErrorReport{
+		Level:     "error",
+		Message:   "test error",
+		Component: "db",
+	}
+
+	err := svc.sendToSentry(report)
+	assert.NoError(t, err)
+}
+
+func TestErrorReportingService_SendToSentry_EmptyDSN(t *testing.T) {
+	svc := &ErrorReportingService{
+		config: &ErrorReportingConfig{
+			SentryDSN: "",
+		},
+	}
+
+	err := svc.sendToSentry(&models.ErrorReport{})
+	assert.NoError(t, err)
+}
+
+func TestErrorReportingService_SendToCrashlytics(t *testing.T) {
+	svc := &ErrorReportingService{
+		config: &ErrorReportingConfig{
+			CrashlyticsEnabled: true,
+			CrashlyticsAPIKey:  "test-api-key",
+		},
+	}
+
+	report := &models.CrashReport{
+		Signal:  "SIGABRT",
+		Message: "abort",
+	}
+
+	err := svc.sendToCrashlytics(report)
+	assert.NoError(t, err)
+}
+
+func TestErrorReportingService_SendToCrashlytics_EmptyKey(t *testing.T) {
+	svc := &ErrorReportingService{
+		config: &ErrorReportingConfig{
+			CrashlyticsEnabled: true,
+			CrashlyticsAPIKey:  "",
+		},
+	}
+
+	err := svc.sendToCrashlytics(&models.CrashReport{})
+	assert.NoError(t, err)
+}
+
+func TestErrorReportingService_SendNotifications(t *testing.T) {
+	svc := &ErrorReportingService{
+		config: &ErrorReportingConfig{
+			SlackWebhookURL:    "",
+			EmailNotifications: true,
+		},
+	}
+
+	report := &models.ErrorReport{
+		Level:      "error",
+		Message:    "test error",
+		Component:  "api",
+		ErrorCode:  "API_500",
+		ReportedAt: time.Now(),
+	}
+
+	// Should not panic - exercises both branches
+	svc.sendNotifications(report)
+}
+
+func TestErrorReportingService_SendNotifications_NoEmail(t *testing.T) {
+	svc := &ErrorReportingService{
+		config: &ErrorReportingConfig{
+			SlackWebhookURL:    "",
+			EmailNotifications: false,
+		},
+	}
+
+	report := &models.ErrorReport{
+		Level:   "warning",
+		Message: "test",
+	}
+
+	// Should not panic
+	svc.sendNotifications(report)
+}
+
+func TestErrorReportingService_SendCrashNotifications(t *testing.T) {
+	svc := &ErrorReportingService{
+		config: &ErrorReportingConfig{
+			SlackWebhookURL:    "",
+			EmailNotifications: true,
+		},
+	}
+
+	report := &models.CrashReport{
+		Signal:     "SIGSEGV",
+		Message:    "segfault",
+		ReportedAt: time.Now(),
+	}
+
+	// Should not panic
+	svc.sendCrashNotifications(report)
+}
+
+func TestErrorReportingService_SendCrashNotifications_NoEmail(t *testing.T) {
+	svc := &ErrorReportingService{
+		config: &ErrorReportingConfig{
+			SlackWebhookURL:    "",
+			EmailNotifications: false,
+		},
+	}
+
+	report := &models.CrashReport{
+		Signal:  "SIGTERM",
+		Message: "terminated",
+	}
+
+	// Should not panic
+	svc.sendCrashNotifications(report)
+}
+
+func TestErrorReportingService_SendToExternalServices(t *testing.T) {
+	svc := &ErrorReportingService{
+		config: &ErrorReportingConfig{
+			SentryDSN: "",
+		},
+	}
+
+	report := &models.ErrorReport{
+		Level:   "error",
+		Message: "test",
+	}
+
+	// Should not panic - Sentry DSN is empty so sendToSentry won't be called
+	svc.sendToExternalServices(report)
+}
+
+func TestErrorReportingService_SendToExternalServices_WithSentry(t *testing.T) {
+	svc := &ErrorReportingService{
+		config: &ErrorReportingConfig{
+			SentryDSN: "https://sentry.io/123",
+		},
+	}
+
+	report := &models.ErrorReport{
+		Level:   "error",
+		Message: "test with sentry",
+	}
+
+	// Should not panic - calls sendToSentry which is a no-op placeholder
+	svc.sendToExternalServices(report)
+}
+
 // Helper functions for tests
 func mustParseTime(s string) time.Time {
 	t, err := time.Parse(time.RFC3339, s)

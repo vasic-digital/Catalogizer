@@ -1,4 +1,4 @@
-import { mediaApi } from '../mediaApi'
+import { mediaApi, entityApi } from '../mediaApi'
 import apiDefault from '../api'
 
 // Mock the api module
@@ -339,6 +339,246 @@ describe('mediaApi', () => {
       appendChildMock.mockRestore()
       removeChildMock.mockRestore()
       ;(document.createElement as vi.Mock).mockRestore()
+    })
+
+    it('extracts filename from directory path', async () => {
+      const blobData = new Blob(['data'])
+      mockApi.get.mockResolvedValue({ data: blobData })
+
+      let capturedDownloadAttr = ''
+      const appendChildMock = vi.spyOn(document.body, 'appendChild').mockImplementation((node) => {
+        capturedDownloadAttr = (node as HTMLAnchorElement).getAttribute('download') || ''
+        return node as any
+      })
+      const removeChildMock = vi.spyOn(document.body, 'removeChild').mockImplementation((node) => node as any)
+
+      const media = {
+        id: 2,
+        title: 'My Song',
+        media_type: 'audio',
+        directory_path: '/music/artist/album/track01.mp3',
+        storage_root_name: 'nas',
+      }
+
+      await mediaApi.downloadMedia(media as any)
+
+      expect(capturedDownloadAttr).toBe('track01.mp3')
+
+      appendChildMock.mockRestore()
+      removeChildMock.mockRestore()
+    })
+  })
+})
+
+describe('entityApi', () => {
+  beforeEach(() => {
+    vi.clearAllMocks()
+  })
+
+  describe('getEntities', () => {
+    it('calls GET /entities with query params', async () => {
+      const mockResponse = {
+        entities: [{ id: 1, title: 'Movie Entity', type: 'movie' }],
+        total: 1,
+      }
+      mockApi.get.mockResolvedValue({ data: mockResponse })
+
+      const params = { query: 'movie', type: 'movie', limit: 20, offset: 0 }
+      const result = await entityApi.getEntities(params)
+
+      expect(mockApi.get).toHaveBeenCalledWith('/entities', { params })
+      expect(result).toEqual(mockResponse)
+    })
+
+    it('calls GET /entities with no params', async () => {
+      mockApi.get.mockResolvedValue({ data: { entities: [], total: 0 } })
+
+      await entityApi.getEntities({})
+
+      expect(mockApi.get).toHaveBeenCalledWith('/entities', { params: {} })
+    })
+  })
+
+  describe('getEntity', () => {
+    it('calls GET /entities/:id and returns entity detail', async () => {
+      const mockEntity = { id: 5, title: 'Inception', type: 'movie', year: 2010 }
+      mockApi.get.mockResolvedValue({ data: mockEntity })
+
+      const result = await entityApi.getEntity(5)
+
+      expect(mockApi.get).toHaveBeenCalledWith('/entities/5')
+      expect(result).toEqual(mockEntity)
+    })
+
+    it('propagates errors for non-existent entity', async () => {
+      mockApi.get.mockRejectedValue(new Error('Not found'))
+
+      await expect(entityApi.getEntity(999)).rejects.toThrow('Not found')
+    })
+  })
+
+  describe('getEntityChildren', () => {
+    it('calls GET /entities/:id/children with params', async () => {
+      const mockResponse = {
+        entities: [{ id: 10, title: 'Season 1' }],
+        total: 1,
+      }
+      mockApi.get.mockResolvedValue({ data: mockResponse })
+
+      const result = await entityApi.getEntityChildren(5, { limit: 10, offset: 0 })
+
+      expect(mockApi.get).toHaveBeenCalledWith('/entities/5/children', {
+        params: { limit: 10, offset: 0 },
+      })
+      expect(result).toEqual(mockResponse)
+    })
+
+    it('calls GET /entities/:id/children without params', async () => {
+      mockApi.get.mockResolvedValue({ data: { entities: [], total: 0 } })
+
+      await entityApi.getEntityChildren(5)
+
+      expect(mockApi.get).toHaveBeenCalledWith('/entities/5/children', { params: undefined })
+    })
+  })
+
+  describe('getEntityFiles', () => {
+    it('calls GET /entities/:id/files', async () => {
+      const mockResponse = {
+        files: [{ id: 1, path: '/media/movie.mkv', size: 1000000 }],
+        total: 1,
+      }
+      mockApi.get.mockResolvedValue({ data: mockResponse })
+
+      const result = await entityApi.getEntityFiles(5)
+
+      expect(mockApi.get).toHaveBeenCalledWith('/entities/5/files')
+      expect(result).toEqual(mockResponse)
+    })
+  })
+
+  describe('getEntityMetadata', () => {
+    it('calls GET /entities/:id/metadata', async () => {
+      const mockResponse = {
+        metadata: [{ provider: 'tmdb', external_id: '12345' }],
+      }
+      mockApi.get.mockResolvedValue({ data: mockResponse })
+
+      const result = await entityApi.getEntityMetadata(5)
+
+      expect(mockApi.get).toHaveBeenCalledWith('/entities/5/metadata')
+      expect(result).toEqual(mockResponse)
+    })
+  })
+
+  describe('getEntityDuplicates', () => {
+    it('calls GET /entities/:id/duplicates', async () => {
+      const mockResponse = {
+        duplicates: [{ id: 6, title: 'Inception (Duplicate)' }],
+        total: 1,
+      }
+      mockApi.get.mockResolvedValue({ data: mockResponse })
+
+      const result = await entityApi.getEntityDuplicates(5)
+
+      expect(mockApi.get).toHaveBeenCalledWith('/entities/5/duplicates')
+      expect(result).toEqual(mockResponse)
+    })
+  })
+
+  describe('getEntityTypes', () => {
+    it('calls GET /entities/types', async () => {
+      const mockResponse = {
+        types: [
+          { type: 'movie', label: 'Movies', count: 100 },
+          { type: 'tv_show', label: 'TV Shows', count: 50 },
+        ],
+      }
+      mockApi.get.mockResolvedValue({ data: mockResponse })
+
+      const result = await entityApi.getEntityTypes()
+
+      expect(mockApi.get).toHaveBeenCalledWith('/entities/types')
+      expect(result).toEqual(mockResponse)
+    })
+  })
+
+  describe('browseByType', () => {
+    it('calls GET /entities/browse/:type with params', async () => {
+      const mockResponse = {
+        entities: [{ id: 1, title: 'Action Movie' }],
+        total: 50,
+        type: 'movie',
+      }
+      mockApi.get.mockResolvedValue({ data: mockResponse })
+
+      const result = await entityApi.browseByType('movie', { limit: 20, offset: 0 })
+
+      expect(mockApi.get).toHaveBeenCalledWith('/entities/browse/movie', {
+        params: { limit: 20, offset: 0 },
+      })
+      expect(result).toEqual(mockResponse)
+    })
+
+    it('calls GET /entities/browse/:type without params', async () => {
+      mockApi.get.mockResolvedValue({ data: { entities: [], total: 0, type: 'tv_show' } })
+
+      await entityApi.browseByType('tv_show')
+
+      expect(mockApi.get).toHaveBeenCalledWith('/entities/browse/tv_show', {
+        params: undefined,
+      })
+    })
+  })
+
+  describe('getEntityStats', () => {
+    it('calls GET /entities/stats', async () => {
+      const mockStats = {
+        total_entities: 500,
+        by_type: { movie: 200, tv_show: 100, music_album: 200 },
+      }
+      mockApi.get.mockResolvedValue({ data: mockStats })
+
+      const result = await entityApi.getEntityStats()
+
+      expect(mockApi.get).toHaveBeenCalledWith('/entities/stats')
+      expect(result).toEqual(mockStats)
+    })
+  })
+
+  describe('refreshEntityMetadata', () => {
+    it('calls POST /entities/:id/metadata/refresh', async () => {
+      const mockResponse = { message: 'Metadata refresh started', entity_id: 5 }
+      mockApi.post.mockResolvedValue({ data: mockResponse })
+
+      const result = await entityApi.refreshEntityMetadata(5)
+
+      expect(mockApi.post).toHaveBeenCalledWith('/entities/5/metadata/refresh')
+      expect(result).toEqual(mockResponse)
+    })
+
+    it('propagates errors on refresh failure', async () => {
+      mockApi.post.mockRejectedValue(new Error('Service unavailable'))
+
+      await expect(entityApi.refreshEntityMetadata(5)).rejects.toThrow('Service unavailable')
+    })
+  })
+
+  describe('updateUserMetadata', () => {
+    it('calls PUT /entities/:id/user-metadata with data', async () => {
+      const userMetadata = { rating: 5, notes: 'Great movie' }
+      mockApi.put.mockResolvedValue({ data: { message: 'Metadata updated' } })
+
+      const result = await entityApi.updateUserMetadata(5, userMetadata as any)
+
+      expect(mockApi.put).toHaveBeenCalledWith('/entities/5/user-metadata', userMetadata)
+      expect(result).toEqual({ message: 'Metadata updated' })
+    })
+
+    it('propagates errors on update failure', async () => {
+      mockApi.put.mockRejectedValue(new Error('Forbidden'))
+
+      await expect(entityApi.updateUserMetadata(5, {} as any)).rejects.toThrow('Forbidden')
     })
   })
 })

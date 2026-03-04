@@ -1,6 +1,7 @@
 package services
 
 import (
+	"os"
 	"testing"
 	"time"
 
@@ -725,3 +726,266 @@ func TestConfigurationWizardService_ValidateCustomRule(t *testing.T) {
 		})
 	}
 }
+
+// ---------------------------------------------------------------------------
+// File I/O and action method tests
+// ---------------------------------------------------------------------------
+
+func TestConfigurationWizardService_WriteConfigFile(t *testing.T) {
+	service := NewConfigurationWizardService(nil)
+
+	tmpDir := t.TempDir()
+	filename := tmpDir + "/test_config.json"
+
+	data := map[string]interface{}{
+		"key1": "value1",
+		"key2": 42,
+	}
+
+	err := service.writeConfigFile(filename, data)
+	assert.NoError(t, err)
+
+	content, err := os.ReadFile(filename)
+	assert.NoError(t, err)
+	assert.Contains(t, string(content), "key1")
+	assert.Contains(t, string(content), "value1")
+}
+
+func TestConfigurationWizardService_WriteConfigFile_InvalidPath(t *testing.T) {
+	service := NewConfigurationWizardService(nil)
+
+	err := service.writeConfigFile("/nonexistent/path/that/should/fail/config.json", map[string]interface{}{"key": "value"})
+	assert.Error(t, err)
+}
+
+func TestConfigurationWizardService_ExecutePostInstallAction(t *testing.T) {
+	service := NewConfigurationWizardService(nil)
+
+	tests := []struct {
+		name    string
+		action  PostInstallAction
+		session *models.WizardSession
+		wantErr bool
+		errMsg  string
+	}{
+		{
+			name: "unknown action type",
+			action: PostInstallAction{
+				ActionType: "unknown_action",
+				Parameters: map[string]interface{}{},
+			},
+			session: &models.WizardSession{},
+			wantErr: true,
+			errMsg:  "unknown post-install action",
+		},
+		{
+			name: "service_restart with valid service name",
+			action: PostInstallAction{
+				ActionType: "service_restart",
+				Parameters: map[string]interface{}{
+					"service_name": "test-service",
+				},
+			},
+			session: &models.WizardSession{},
+			wantErr: false,
+		},
+		{
+			name: "service_restart with empty service name",
+			action: PostInstallAction{
+				ActionType: "service_restart",
+				Parameters: map[string]interface{}{},
+			},
+			session: &models.WizardSession{},
+			wantErr: true,
+			errMsg:  "service_name parameter required",
+		},
+		{
+			name: "command_run with valid command",
+			action: PostInstallAction{
+				ActionType: "command_run",
+				Parameters: map[string]interface{}{
+					"command": "echo hello",
+				},
+			},
+			session: &models.WizardSession{},
+			wantErr: false,
+		},
+		{
+			name: "command_run with empty command",
+			action: PostInstallAction{
+				ActionType: "command_run",
+				Parameters: map[string]interface{}{},
+			},
+			session: &models.WizardSession{},
+			wantErr: true,
+			errMsg:  "command parameter required",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			err := service.executePostInstallAction(tt.action, tt.session)
+			if tt.wantErr {
+				assert.Error(t, err)
+				if tt.errMsg != "" {
+					assert.Contains(t, err.Error(), tt.errMsg)
+				}
+			} else {
+				assert.NoError(t, err)
+			}
+		})
+	}
+}
+
+func TestConfigurationWizardService_RestartService(t *testing.T) {
+	service := NewConfigurationWizardService(nil)
+
+	tests := []struct {
+		name    string
+		params  map[string]interface{}
+		wantErr bool
+	}{
+		{
+			name:    "valid service name",
+			params:  map[string]interface{}{"service_name": "catalog-api"},
+			wantErr: false,
+		},
+		{
+			name:    "empty service name",
+			params:  map[string]interface{}{},
+			wantErr: true,
+		},
+		{
+			name:    "nil params value",
+			params:  map[string]interface{}{"service_name": nil},
+			wantErr: true,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			err := service.restartService(tt.params)
+			if tt.wantErr {
+				assert.Error(t, err)
+			} else {
+				assert.NoError(t, err)
+			}
+		})
+	}
+}
+
+func TestConfigurationWizardService_RunCommand(t *testing.T) {
+	service := NewConfigurationWizardService(nil)
+
+	tests := []struct {
+		name    string
+		params  map[string]interface{}
+		wantErr bool
+	}{
+		{
+			name:    "valid command",
+			params:  map[string]interface{}{"command": "echo test"},
+			wantErr: false,
+		},
+		{
+			name:    "empty command",
+			params:  map[string]interface{}{},
+			wantErr: true,
+		},
+		{
+			name:    "nil command value",
+			params:  map[string]interface{}{"command": nil},
+			wantErr: true,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			err := service.runCommand(tt.params)
+			if tt.wantErr {
+				assert.Error(t, err)
+			} else {
+				assert.NoError(t, err)
+			}
+		})
+	}
+}
+
+func TestConfigurationWizardService_CreateConfigurationFile(t *testing.T) {
+	service := NewConfigurationWizardService(nil)
+
+	tmpDir := t.TempDir()
+
+	tests := []struct {
+		name    string
+		params  map[string]interface{}
+		session *models.WizardSession
+		wantErr bool
+		errMsg  string
+	}{
+		{
+			name: "valid file creation",
+			params: map[string]interface{}{
+				"file_path": tmpDir + "/new_config.json",
+			},
+			session: &models.WizardSession{
+				Configuration: map[string]interface{}{
+					"setting": "value",
+				},
+			},
+			wantErr: false,
+		},
+		{
+			name: "with template param",
+			params: map[string]interface{}{
+				"file_path": tmpDir + "/template_config.json",
+				"template":  "basic",
+			},
+			session: &models.WizardSession{
+				Configuration: map[string]interface{}{
+					"db_type": "sqlite",
+				},
+			},
+			wantErr: false,
+		},
+		{
+			name:   "missing file_path",
+			params: map[string]interface{}{},
+			session: &models.WizardSession{
+				Configuration: map[string]interface{}{},
+			},
+			wantErr: true,
+			errMsg:  "file_path parameter required",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			err := service.createConfigurationFile(tt.params, tt.session)
+			if tt.wantErr {
+				assert.Error(t, err)
+				if tt.errMsg != "" {
+					assert.Contains(t, err.Error(), tt.errMsg)
+				}
+			} else {
+				assert.NoError(t, err)
+			}
+		})
+	}
+}
+
+func TestConfigurationWizardService_GetSession_CurrentSession(t *testing.T) {
+	service := NewConfigurationWizardService(nil)
+
+	session := &models.WizardSession{
+		SessionID:   "test-session-123",
+		CurrentStep: 2,
+		TotalSteps:  5,
+	}
+	service.currentSession = session
+
+	result, err := service.getSession("test-session-123")
+	assert.NoError(t, err)
+	assert.Equal(t, session, result)
+}
+
