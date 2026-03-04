@@ -1441,6 +1441,274 @@ func TestMediaRecognition_GetProviders(t *testing.T) {
 	assert.Empty(t, svc.getGameProviders())
 }
 
+// ============================================================================
+// VideoPlayerService — DB-backed Tests
+// ============================================================================
+
+func TestVideoPlayer_PlayVideo_WithDB(t *testing.T) {
+	db := setupIntegrationTestDB(t)
+	defer db.Close()
+
+	positionSvc := NewPlaybackPositionService(db, zap.NewNop())
+	svc := NewVideoPlayerService(db, zap.NewNop(), nil, positionSvc, nil, nil, nil)
+	ctx := context.Background()
+
+	// Insert a video media item
+	_, err := db.ExecContext(ctx, `
+		INSERT INTO media_items (id, path, title, type, file_path, duration, resolution, codec,
+			aspect_ratio, frame_rate, bitrate, file_size, year, language, country,
+			genres, directors, actors, writers, imdb_id, tmdb_id, hdr, dolby_vision, dolby_atmos,
+			original_title, description, play_count, watched_percentage, is_favorite, user_rating, rating)
+		VALUES (100, '/movies/inception.mkv', 'Inception', 'video', '/movies/inception.mkv',
+			8880000, '1920x1080', 'h264', '16:9', 23.976, 8000000, 15000000000, 2010,
+			'en', 'US', '["Sci-Fi","Thriller"]', '["Christopher Nolan"]', '["Leonardo DiCaprio"]',
+			'["Christopher Nolan"]', 'tt1375666', '27205', 0, 0, 0,
+			'Inception', 'A mind-bending thriller', 5, 75.5, 0, 0, 0)
+	`)
+	require.NoError(t, err)
+
+	req := &PlayVideoRequest{
+		UserID:   1,
+		VideoID:  100,
+		PlayMode: VideoPlayModeSingle,
+		Quality:  Quality1080p,
+		AutoPlay: true,
+	}
+
+	session, err := svc.PlayVideo(ctx, req)
+	require.NoError(t, err)
+	require.NotNil(t, session)
+	assert.Equal(t, int64(1), session.UserID)
+	assert.Equal(t, "Inception", session.CurrentVideo.Title)
+	assert.Equal(t, VideoPlayModeSingle, session.PlayMode)
+	assert.Equal(t, PlaybackStatePlaying, session.PlaybackState)
+	assert.Equal(t, 1.0, session.Volume)
+	assert.Equal(t, 1.0, session.PlaybackSpeed)
+	assert.True(t, session.AutoPlay)
+
+	// Play with start time
+	startTime := int64(5000)
+	req2 := &PlayVideoRequest{
+		UserID:    1,
+		VideoID:   100,
+		PlayMode:  VideoPlayModeSingle,
+		Quality:   Quality720p,
+		AutoPlay:  false,
+		StartTime: &startTime,
+	}
+
+	session2, err := svc.PlayVideo(ctx, req2)
+	require.NoError(t, err)
+	assert.Equal(t, int64(5000), session2.Position)
+
+	// Play non-existent video
+	req3 := &PlayVideoRequest{
+		UserID:   1,
+		VideoID:  999,
+		PlayMode: VideoPlayModeSingle,
+	}
+	_, err = svc.PlayVideo(ctx, req3)
+	assert.Error(t, err)
+}
+
+func TestVideoPlayer_UpdatePlayback_WithDB(t *testing.T) {
+	db := setupIntegrationTestDB(t)
+	defer db.Close()
+
+	positionSvc := NewPlaybackPositionService(db, zap.NewNop())
+	svc := NewVideoPlayerService(db, zap.NewNop(), nil, positionSvc, nil, nil, nil)
+	ctx := context.Background()
+
+	// Insert video
+	_, err := db.ExecContext(ctx, `
+		INSERT INTO media_items (id, path, title, type, file_path, duration, resolution, codec,
+			aspect_ratio, frame_rate, bitrate, file_size, year, language, country,
+			genres, directors, actors, writers, imdb_id, tmdb_id, hdr, dolby_vision, dolby_atmos,
+			original_title, description, play_count, watched_percentage, is_favorite, user_rating, rating)
+		VALUES (200, '/movies/test.mkv', 'Test Video', 'video', '/movies/test.mkv',
+			120000, '1920x1080', 'h264', '16:9', 24.0, 5000000, 5000000000, 2024,
+			'en', 'US', '[]', '[]', '[]', '[]', '', '', 0, 0, 0,
+			'Test Video', 'A test video', 0, 0.0, 0, 0, 0)
+	`)
+	require.NoError(t, err)
+
+	// Create a session first
+	req := &PlayVideoRequest{
+		UserID:   1,
+		VideoID:  200,
+		PlayMode: VideoPlayModeSingle,
+		Quality:  Quality720p,
+	}
+	session, err := svc.PlayVideo(ctx, req)
+	require.NoError(t, err)
+
+	// Update playback
+	updateReq := &UpdateVideoPlaybackRequest{
+		SessionID:     session.ID,
+		UserID:        1,
+		Position:      60000,
+		PlaybackState: PlaybackStatePaused,
+		Volume:        0.8,
+	}
+
+	updated, err := svc.UpdateVideoPlayback(ctx, updateReq)
+	require.NoError(t, err)
+	require.NotNil(t, updated)
+	assert.Equal(t, int64(60000), updated.Position)
+	assert.Equal(t, PlaybackStatePaused, updated.PlaybackState)
+	assert.Equal(t, 0.8, updated.Volume)
+}
+
+func TestVideoPlayer_GetWatchHistory_WithDB(t *testing.T) {
+	db := setupIntegrationTestDB(t)
+	defer db.Close()
+
+	svc := NewVideoPlayerService(db, zap.NewNop(), nil, nil, nil, nil, nil)
+	ctx := context.Background()
+
+	// Insert watch history
+	_, err := db.ExecContext(ctx, `
+		INSERT INTO media_items (id, path, title, type, duration, resolution, codec,
+			aspect_ratio, frame_rate, bitrate, file_size, year, language, country,
+			genres, directors, actors, writers, imdb_id, tmdb_id, hdr, dolby_vision, dolby_atmos,
+			original_title, description, play_count, watched_percentage, is_favorite, user_rating, rating)
+		VALUES (301, '/movies/mov1.mkv', 'Movie 1', 'video', 100000, '1920x1080', 'h264',
+			'16:9', 24.0, 5000000, 5000000, 2024, 'en', 'US', '[]', '[]', '[]', '[]',
+			'', '', 0, 0, 0, '', '', 1, 50.0, 0, 0, 0)
+	`)
+	require.NoError(t, err)
+
+	_, err = db.ExecContext(ctx, `
+		INSERT INTO playback_history (user_id, media_item_id, start_time, duration, percent_watched, was_completed)
+		VALUES (1, 301, '2024-01-01 10:00:00', 50000, 50.0, 0)
+	`)
+	require.NoError(t, err)
+
+	history, err := svc.GetWatchHistory(ctx, 1, 10, 0)
+	require.NoError(t, err)
+	assert.NotNil(t, history)
+}
+
+func TestVideoPlayer_GetContinueWatching_WithDB(t *testing.T) {
+	db := setupIntegrationTestDB(t)
+	defer db.Close()
+
+	svc := NewVideoPlayerService(db, zap.NewNop(), nil, nil, nil, nil, nil)
+	ctx := context.Background()
+
+	items, err := svc.GetContinueWatching(ctx, 1, 10)
+	require.NoError(t, err)
+	assert.NotNil(t, items)
+}
+
+// ============================================================================
+// MusicPlayerService — DB-backed Tests
+// ============================================================================
+
+func TestMusicPlayer_PlayTrack_WithDB(t *testing.T) {
+	db := setupIntegrationTestDB(t)
+	defer db.Close()
+
+	// Create music_playback_sessions table
+	_, err := db.Exec(`CREATE TABLE IF NOT EXISTS music_playback_sessions (
+		id TEXT PRIMARY KEY, user_id INTEGER NOT NULL,
+		session_data TEXT NOT NULL, expires_at DATETIME NOT NULL,
+		updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+		FOREIGN KEY (user_id) REFERENCES users(id)
+	)`)
+	require.NoError(t, err)
+
+	positionSvc := NewPlaybackPositionService(db, zap.NewNop())
+	svc := NewMusicPlayerService(db, zap.NewNop(), nil, nil, positionSvc, nil, nil, nil)
+	ctx := context.Background()
+
+	// Insert a music track
+	_, err = db.ExecContext(ctx, `
+		INSERT INTO media_items (id, path, title, type, file_path, duration,
+			artist, album, genre, year, track_number, disc_number,
+			bitrate, sample_rate, channels, format, codec, file_size,
+			resolution, aspect_ratio, frame_rate, language, country,
+			genres, directors, actors, writers, imdb_id, tmdb_id,
+			hdr, dolby_vision, dolby_atmos, original_title, description,
+			play_count, watched_percentage, is_favorite, user_rating, rating)
+		VALUES (400, '/music/song.flac', 'Test Song', 'audio', '/music/song.flac', 240000,
+			'Test Artist', 'Test Album', 'Rock', 2024, 1, 1,
+			1411, 44100, 2, 'flac', 'flac', 30000000,
+			'', '', 0, 'en', 'US',
+			'["Rock"]', '[]', '[]', '[]', '', '',
+			0, 0, 0, '', '',
+			0, 0.0, 0, 0, 0)
+	`)
+	require.NoError(t, err)
+
+	session, err := svc.PlayTrack(ctx, 1, 400)
+	require.NoError(t, err)
+	require.NotNil(t, session)
+	assert.Equal(t, int64(1), session.UserID)
+	require.NotNil(t, session.CurrentTrack)
+	assert.Equal(t, "Test Song", session.CurrentTrack.Title)
+	assert.Equal(t, "Test Artist", session.CurrentTrack.Artist)
+	assert.Equal(t, PlaybackStatePlaying, session.PlaybackState)
+
+	// Play non-existent track
+	_, err = svc.PlayTrack(ctx, 1, 999)
+	assert.Error(t, err)
+}
+
+func TestMusicPlayer_SetEqualizer_WithDB(t *testing.T) {
+	db := setupIntegrationTestDB(t)
+	defer db.Close()
+
+	_, err := db.Exec(`CREATE TABLE IF NOT EXISTS music_playback_sessions (
+		id TEXT PRIMARY KEY, user_id INTEGER NOT NULL,
+		session_data TEXT NOT NULL, expires_at DATETIME NOT NULL,
+		updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+		FOREIGN KEY (user_id) REFERENCES users(id)
+	)`)
+	require.NoError(t, err)
+
+	positionSvc := NewPlaybackPositionService(db, zap.NewNop())
+	svc := NewMusicPlayerService(db, zap.NewNop(), nil, nil, positionSvc, nil, nil, nil)
+	ctx := context.Background()
+
+	// Insert a track
+	_, err = db.ExecContext(ctx, `
+		INSERT INTO media_items (id, path, title, type, file_path, duration,
+			artist, album, genre, year, track_number, disc_number,
+			bitrate, sample_rate, channels, format, codec, file_size,
+			resolution, aspect_ratio, frame_rate, language, country,
+			genres, directors, actors, writers, imdb_id, tmdb_id,
+			hdr, dolby_vision, dolby_atmos, original_title, description,
+			play_count, watched_percentage, is_favorite, user_rating, rating)
+		VALUES (500, '/music/eq.flac', 'EQ Test', 'audio', '/music/eq.flac', 180000,
+			'Artist', 'Album', 'Pop', 2024, 1, 1,
+			320, 44100, 2, 'mp3', 'mp3', 5000000,
+			'', '', 0, '', '',
+			'[]', '[]', '[]', '[]', '', '',
+			0, 0, 0, '', '',
+			0, 0.0, 0, 0, 0)
+	`)
+	require.NoError(t, err)
+
+	// Create session
+	session, err := svc.PlayTrack(ctx, 1, 500)
+	require.NoError(t, err)
+
+	// Set equalizer
+	eqBands := map[string]float64{
+		"60Hz":  2.0,
+		"230Hz": 1.5,
+		"910Hz": 0.0,
+		"4kHz":  -1.0,
+		"14kHz": 3.0,
+	}
+	updated, err := svc.SetEqualizer(ctx, session.ID, 1, "custom", eqBands)
+	require.NoError(t, err)
+	require.NotNil(t, updated)
+	assert.Equal(t, "custom", updated.EqualizerPreset)
+	assert.Equal(t, 2.0, updated.EqualizerBands["60Hz"])
+}
+
 func TestMediaRecognition_DetectFromFileName(t *testing.T) {
 	svc := newTestMediaRecognitionService()
 
