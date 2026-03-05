@@ -1543,12 +1543,14 @@ func TestVideoPlayer_UpdatePlayback_WithDB(t *testing.T) {
 	require.NoError(t, err)
 
 	// Update playback
+	pos := int64(60000)
+	vol := 0.8
+	pausedState := PlaybackStatePaused
 	updateReq := &UpdateVideoPlaybackRequest{
-		SessionID:     session.ID,
-		UserID:        1,
-		Position:      60000,
-		PlaybackState: PlaybackStatePaused,
-		Volume:        0.8,
+		SessionID: session.ID,
+		Position:  &pos,
+		State:     &pausedState,
+		Volume:    &vol,
 	}
 
 	updated, err := svc.UpdateVideoPlayback(ctx, updateReq)
@@ -1566,25 +1568,30 @@ func TestVideoPlayer_GetWatchHistory_WithDB(t *testing.T) {
 	svc := NewVideoPlayerService(db, zap.NewNop(), nil, nil, nil, nil, nil)
 	ctx := context.Background()
 
-	// Insert watch history
+	// Create video_watch_history table
 	_, err := db.ExecContext(ctx, `
-		INSERT INTO media_items (id, path, title, type, duration, resolution, codec,
-			aspect_ratio, frame_rate, bitrate, file_size, year, language, country,
-			genres, directors, actors, writers, imdb_id, tmdb_id, hdr, dolby_vision, dolby_atmos,
-			original_title, description, play_count, watched_percentage, is_favorite, user_rating, rating)
-		VALUES (301, '/movies/mov1.mkv', 'Movie 1', 'video', 100000, '1920x1080', 'h264',
-			'16:9', 24.0, 5000000, 5000000, 2024, 'en', 'US', '[]', '[]', '[]', '[]',
-			'', '', 0, 0, 0, '', '', 1, 50.0, 0, 0, 0)
+		CREATE TABLE IF NOT EXISTS video_watch_history (
+			id INTEGER PRIMARY KEY AUTOINCREMENT,
+			user_id INTEGER NOT NULL,
+			video_id INTEGER NOT NULL,
+			watched_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+			watch_duration INTEGER DEFAULT 0,
+			completion_rate REAL DEFAULT 0,
+			stopped_at INTEGER DEFAULT 0,
+			device_info TEXT DEFAULT '',
+			quality TEXT DEFAULT ''
+		)
 	`)
 	require.NoError(t, err)
 
+	// Insert watch history
 	_, err = db.ExecContext(ctx, `
-		INSERT INTO playback_history (user_id, media_item_id, start_time, duration, percent_watched, was_completed)
-		VALUES (1, 301, '2024-01-01 10:00:00', 50000, 50.0, 0)
+		INSERT INTO video_watch_history (user_id, video_id, watched_at, watch_duration, completion_rate, stopped_at, device_info, quality)
+		VALUES (1, 301, '2024-01-01 10:00:00', 50000, 50.0, 25000, 'desktop', '1080p')
 	`)
 	require.NoError(t, err)
 
-	history, err := svc.GetWatchHistory(ctx, 1, 10, 0)
+	history, err := svc.GetWatchHistory(ctx, &WatchHistoryRequest{UserID: 1, Limit: 10, Offset: 0})
 	require.NoError(t, err)
 	assert.NotNil(t, history)
 }
@@ -1641,7 +1648,7 @@ func TestMusicPlayer_PlayTrack_WithDB(t *testing.T) {
 	`)
 	require.NoError(t, err)
 
-	session, err := svc.PlayTrack(ctx, 1, 400)
+	session, err := svc.PlayTrack(ctx, &PlayTrackRequest{UserID: 1, TrackID: 400})
 	require.NoError(t, err)
 	require.NotNil(t, session)
 	assert.Equal(t, int64(1), session.UserID)
@@ -1651,7 +1658,7 @@ func TestMusicPlayer_PlayTrack_WithDB(t *testing.T) {
 	assert.Equal(t, PlaybackStatePlaying, session.PlaybackState)
 
 	// Play non-existent track
-	_, err = svc.PlayTrack(ctx, 1, 999)
+	_, err = svc.PlayTrack(ctx, &PlayTrackRequest{UserID: 1, TrackID: 999})
 	assert.Error(t, err)
 }
 
@@ -1691,7 +1698,7 @@ func TestMusicPlayer_SetEqualizer_WithDB(t *testing.T) {
 	require.NoError(t, err)
 
 	// Create session
-	session, err := svc.PlayTrack(ctx, 1, 500)
+	session, err := svc.PlayTrack(ctx, &PlayTrackRequest{UserID: 1, TrackID: 500})
 	require.NoError(t, err)
 
 	// Set equalizer
@@ -1702,11 +1709,8 @@ func TestMusicPlayer_SetEqualizer_WithDB(t *testing.T) {
 		"4kHz":  -1.0,
 		"14kHz": 3.0,
 	}
-	updated, err := svc.SetEqualizer(ctx, session.ID, 1, "custom", eqBands)
+	err = svc.SetEqualizer(ctx, session.ID, "custom", eqBands)
 	require.NoError(t, err)
-	require.NotNil(t, updated)
-	assert.Equal(t, "custom", updated.EqualizerPreset)
-	assert.Equal(t, 2.0, updated.EqualizerBands["60Hz"])
 }
 
 func TestMediaRecognition_DetectFromFileName(t *testing.T) {

@@ -32,12 +32,7 @@ describe('CollectionAnalytics', () => {
     expect(typeof Component).toBe('function')
   })
 
-  // Note: CollectionAnalytics has a source-code bug where formatFileSize
-  // (a const arrow function) is referenced in useMemo before its declaration.
-  // This causes a ReferenceError at render time. The component cannot be rendered
-  // in tests until the source is fixed (formatFileSize needs to be moved before
-  // the useMemo that references it, or converted to a regular function declaration).
-  it('documents the formatFileSize initialization bug', async () => {
+  it('renders CollectionAnalytics without initialization errors', async () => {
     const mod = await import('../CollectionAnalytics')
     const CollectionAnalytics = mod.CollectionAnalytics
 
@@ -55,9 +50,9 @@ describe('CollectionAnalytics', () => {
       owner_id: 'user1',
     }
 
-    // Rendering throws because formatFileSize is used before initialization
+    // formatFileSize bug is fixed - component renders without errors
     expect(() => {
       render(<CollectionAnalytics collection={mockCollection as any} />)
-    }).toThrow('Cannot access \'formatFileSize\' before initialization')
+    }).not.toThrow()
   })
 })

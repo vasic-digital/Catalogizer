@@ -12,6 +12,7 @@ import (
 
 type LeakDetector struct {
 	mu             sync.Mutex
+	wg             sync.WaitGroup
 	baselineStats  runtime.MemStats
 	samples        []runtime.MemStats
 	interval       time.Duration
@@ -57,21 +58,27 @@ func (d *LeakDetector) Start(ctx context.Context) error {
 	d.running = true
 	d.stopCh = make(chan struct{})
 
-	go d.monitorLoop(ctx)
+	d.wg.Add(1)
+	go func() {
+		defer d.wg.Done()
+		d.monitorLoop(ctx)
+	}()
 
 	return nil
 }
 
 func (d *LeakDetector) Stop() {
 	d.mu.Lock()
-	defer d.mu.Unlock()
-
 	if !d.running {
+		d.mu.Unlock()
 		return
 	}
 
 	close(d.stopCh)
 	d.running = false
+	d.mu.Unlock()
+
+	d.wg.Wait()
 }
 
 func (d *LeakDetector) monitorLoop(ctx context.Context) {
@@ -197,6 +204,7 @@ func ForceGC() {
 
 type MemoryMonitor struct {
 	detector      *LeakDetector
+	wg            sync.WaitGroup
 	reportCh      chan LeakReport
 	alertCallback func(LeakReport)
 }
@@ -217,13 +225,18 @@ func (m *MemoryMonitor) Start(ctx context.Context) error {
 		return err
 	}
 
-	go m.monitorReports(ctx)
+	m.wg.Add(1)
+	go func() {
+		defer m.wg.Done()
+		m.monitorReports(ctx)
+	}()
 
 	return nil
 }
 
 func (m *MemoryMonitor) Stop() {
 	m.detector.Stop()
+	m.wg.Wait()
 }
 
 func (m *MemoryMonitor) monitorReports(ctx context.Context) {

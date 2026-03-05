@@ -265,12 +265,16 @@ func (a *LogManagementServiceAdapter) StreamLogs(userID int, filters *models.Log
 	if err != nil {
 		return nil, err
 	}
-	ch := make(chan models.LogEntry)
+	ch := make(chan models.LogEntry, 64)
 	go func() {
 		defer close(ch)
 		for p := range ptrCh {
 			if p != nil {
-				ch <- *p
+				select {
+				case ch <- *p:
+				default:
+					// Drop entry if consumer is not keeping up to avoid goroutine leak
+				}
 			}
 		}
 	}()

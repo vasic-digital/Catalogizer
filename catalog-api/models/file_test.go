@@ -352,59 +352,6 @@ func TestStorageRoot_LastScanAt(t *testing.T) {
 }
 
 // =============================================================================
-// SmbRoot Model Tests (Deprecated)
-// =============================================================================
-
-func TestSmbRoot_BasicFields(t *testing.T) {
-	domain := "WORKGROUP"
-
-	root := SmbRoot{
-		ID:        1,
-		Name:      "Old SMB Root",
-		Host:      "server.local",
-		Port:      445,
-		Share:     "media",
-		Username:  "user",
-		Domain:    &domain,
-		Enabled:   true,
-		MaxDepth:  10,
-		CreatedAt: time.Now(),
-		UpdatedAt: time.Now(),
-	}
-
-	assert.Equal(t, "Old SMB Root", root.Name)
-	assert.Equal(t, "server.local", root.Host)
-	assert.Equal(t, 445, root.Port)
-	assert.Equal(t, "media", root.Share)
-	assert.NotNil(t, root.Domain)
-	assert.Equal(t, "WORKGROUP", *root.Domain)
-}
-
-func TestSmbRoot_JSONMarshaling(t *testing.T) {
-	root := SmbRoot{
-		ID:        1,
-		Name:      "SMB Test",
-		Host:      "host",
-		Port:      445,
-		Share:     "share",
-		Username:  "user",
-		Enabled:   true,
-		MaxDepth:  10,
-		CreatedAt: time.Now(),
-		UpdatedAt: time.Now(),
-	}
-
-	data, err := json.Marshal(root)
-	require.NoError(t, err)
-
-	var unmarshaled SmbRoot
-	err = json.Unmarshal(data, &unmarshaled)
-	require.NoError(t, err)
-	assert.Equal(t, root.Name, unmarshaled.Name)
-	assert.Equal(t, root.Host, unmarshaled.Host)
-}
-
-// =============================================================================
 // FileMetadata Model Tests
 // =============================================================================
 

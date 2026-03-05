@@ -69,26 +69,6 @@ type StorageRoot struct {
 	LastScanAt               *time.Time `json:"last_scan_at" db:"last_scan_at"`
 }
 
-// SmbRoot represents an SMB root configuration (deprecated - use StorageRoot)
-type SmbRoot struct {
-	ID                       int64      `json:"id" db:"id"`
-	Name                     string     `json:"name" db:"name"`
-	Host                     string     `json:"host" db:"host"`
-	Port                     int        `json:"port" db:"port"`
-	Share                    string     `json:"share" db:"share"`
-	Username                 string     `json:"username" db:"username"`
-	Domain                   *string    `json:"domain" db:"domain"`
-	Enabled                  bool       `json:"enabled" db:"enabled"`
-	MaxDepth                 int        `json:"max_depth" db:"max_depth"`
-	EnableDuplicateDetection bool       `json:"enable_duplicate_detection" db:"enable_duplicate_detection"`
-	EnableMetadataExtraction bool       `json:"enable_metadata_extraction" db:"enable_metadata_extraction"`
-	IncludePatterns          *string    `json:"include_patterns" db:"include_patterns"`
-	ExcludePatterns          *string    `json:"exclude_patterns" db:"exclude_patterns"`
-	CreatedAt                time.Time  `json:"created_at" db:"created_at"`
-	UpdatedAt                time.Time  `json:"updated_at" db:"updated_at"`
-	LastScanAt               *time.Time `json:"last_scan_at" db:"last_scan_at"`
-}
-
 // FileMetadata represents file metadata
 type FileMetadata struct {
 	ID       int64  `json:"id" db:"id"`

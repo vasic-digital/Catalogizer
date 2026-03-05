@@ -919,18 +919,12 @@ func main() {
 		logger.Info("Database connection closed")
 	}
 
+	// Clean up service port file
+	if err := os.Remove(".service-port"); err != nil && !os.IsNotExist(err) {
+		logger.Warn("Failed to remove service port file", zap.Error(err))
+	}
+
 	logger.Info("Server exited cleanly")
-}
-
-// NopCacheService is a no-operation cache service for when Redis is not available
-type NopCacheService struct{}
-
-func (n *NopCacheService) Get(ctx context.Context, key string, dest interface{}) (bool, error) {
-	return false, nil
-}
-
-func (n *NopCacheService) Set(ctx context.Context, key string, value interface{}, ttl time.Duration) error {
-	return nil
 }
 
 // seedDefaultAdmin creates a default admin user if none exists in the database.

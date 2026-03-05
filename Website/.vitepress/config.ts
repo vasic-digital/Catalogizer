@@ -10,6 +10,7 @@ export default defineConfig({
       { text: 'Features', link: '/features' },
       { text: 'Download', link: '/download' },
       { text: 'Documentation', link: '/documentation' },
+      { text: 'Video Course', link: '/course' },
       { text: 'FAQ', link: '/faq' },
       { text: 'Support', link: '/support' },
     ],
@@ -23,17 +24,39 @@ export default defineConfig({
         ]
       },
       {
-        text: 'Learn More',
+        text: 'User Guide',
         items: [
           { text: 'Features', link: '/features' },
-          { text: 'Documentation', link: '/documentation' },
-          { text: 'FAQ', link: '/faq' },
-          { text: 'Changelog', link: '/changelog' },
+          { text: 'Web App Guide', link: '/guides/web-app' },
+          { text: 'Desktop Guide', link: '/guides/desktop' },
+          { text: 'Android Guide', link: '/guides/android' },
+          { text: 'Android TV Guide', link: '/guides/android-tv' },
         ]
       },
       {
-        text: 'Community',
+        text: 'Administration',
         items: [
+          { text: 'Documentation', link: '/documentation' },
+          { text: 'Configuration', link: '/guides/configuration' },
+          { text: 'Security', link: '/guides/security' },
+          { text: 'Monitoring', link: '/guides/monitoring' },
+        ]
+      },
+      {
+        text: 'Developer',
+        items: [
+          { text: 'Architecture', link: '/developer/architecture' },
+          { text: 'API Reference', link: '/developer/api' },
+          { text: 'Testing', link: '/developer/testing' },
+          { text: 'Contributing', link: '/developer/contributing' },
+        ]
+      },
+      {
+        text: 'Resources',
+        items: [
+          { text: 'Video Course', link: '/course' },
+          { text: 'FAQ', link: '/faq' },
+          { text: 'Changelog', link: '/changelog' },
           { text: 'Support', link: '/support' },
         ]
       }
