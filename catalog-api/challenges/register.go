@@ -120,5 +120,9 @@ func RegisterAll(svc *services.ChallengeService) error {
 	RegisterUserFlowDesktopChallenges(svc) // 28 desktop + wizard challenges
 	RegisterUserFlowMobileChallenges(svc)  // 38 Android + TV challenges
 
+	// Module verification challenges (MOD-001 to MOD-015)
+	// Verify each decoupled Go module has proper structure and docs
+	RegisterModuleChallenges(svc)
+
 	return nil
 }
