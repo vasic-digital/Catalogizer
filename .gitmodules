@@ -85,3 +85,12 @@
 [submodule "Containers"]
 	path = Containers
 	url = git@github.com:vasic-digital/Containers.git
+[submodule "Lazy"]
+	path = Lazy
+	url = git@github.com:vasic-digital/Lazy.git
+[submodule "Memory"]
+	path = Memory
+	url = git@github.com:vasic-digital/Memory.git
+[submodule "Recovery"]
+	path = Recovery
+	url = git@github.com:vasic-digital/Recovery.git

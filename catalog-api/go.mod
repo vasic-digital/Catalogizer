@@ -26,6 +26,30 @@ replace digital.vasic.eventbus => ../EventBus
 
 replace digital.vasic.database => ../Database
 
+replace digital.vasic.discovery => ../Discovery
+
+replace digital.vasic.lazy => ../Lazy
+
+replace digital.vasic.media => ../Media
+
+replace digital.vasic.memory => ../Memory
+
+replace digital.vasic.middleware => ../Middleware
+
+replace digital.vasic.observability => ../Observability
+
+replace digital.vasic.ratelimiter => ../RateLimiter
+
+replace digital.vasic.recovery => ../Recovery
+
+replace digital.vasic.security => ../Security
+
+replace digital.vasic.storage => ../Storage
+
+replace digital.vasic.streaming => ../Streaming
+
+replace digital.vasic.watcher => ../Watcher
+
 require (
 	cloud.google.com/go/storage v1.59.2
 	digital.vasic.assets v0.0.0-00010101000000-000000000000
