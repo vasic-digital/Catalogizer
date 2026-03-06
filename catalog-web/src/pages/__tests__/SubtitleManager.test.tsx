@@ -6,7 +6,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 // Mock framer-motion
 vi.mock('framer-motion', () => ({
   motion: {
-    div: ({ children, className, ...props }: any) => <div className={className}>{children}</div>,
+    div: ({ children, className, ..._props }: any) => <div className={className}>{children}</div>,
   },
   AnimatePresence: ({ children }: any) => <>{children}</>,
 }))
@@ -55,9 +55,11 @@ const createWrapper = () => {
       queries: { retry: false, gcTime: 0 },
     },
   })
-  return ({ children }: { children: React.ReactNode }) => (
+  const Wrapper = ({ children }: { children: React.ReactNode }) => (
     <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>
   )
+  Wrapper.displayName = 'TestWrapper'
+  return Wrapper
 }
 
 describe('SubtitleManager Page', () => {

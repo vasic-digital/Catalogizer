@@ -86,19 +86,19 @@ export const adminApi = {
     ];
   },
 
-  async createBackup(type: 'full' | 'incremental'): Promise<void> {
+  async createBackup(_type: 'full' | 'incremental'): Promise<void> {
     // Mock implementation
   },
 
-  async restoreBackup(id: string): Promise<void> {
+  async restoreBackup(_id: string): Promise<void> {
     // Mock implementation
   },
 
-  async scanStorage(path: string): Promise<void> {
+  async scanStorage(_path: string): Promise<void> {
     // Mock implementation
   },
 
-  async updateUser(id: string, updates: Partial<User>): Promise<void> {
+  async updateUser(_id: string, _updates: Partial<User>): Promise<void> {
     // Mock implementation
   }
 };

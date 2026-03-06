@@ -1,6 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { favoritesApi } from '@/lib/favoritesApi'
-import type { Favorite, FavoriteToggleRequest, FavoriteStats } from '@/types/favorites'
+import type { Favorite, FavoriteToggleRequest } from '@/types/favorites'
 import toast from 'react-hot-toast'
 
 export const useFavorites = (params?: {
@@ -46,7 +46,7 @@ export const useFavorites = (params?: {
       const previousFavorites = queryClient.getQueryData(['favorites'])
       
       // Optimistically update
-      queryClient.setQueryData(['favorites'], (old: any) => {
+      queryClient.setQueryData(['favorites'], (old: { items?: Favorite[] } | undefined) => {
         if (!old?.items) return old
         
         if (request.is_favorite) {

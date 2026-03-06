@@ -355,7 +355,7 @@ describe('Card', () => {
           {false && <div>Hidden content</div>}
         </Card>
       )
-      const card = screen.getByTestId('boolean-card')
+      const _card = screen.getByTestId('boolean-card')
       expect(screen.getByText('Conditional content')).toBeInTheDocument()
       expect(screen.queryByText('Hidden content')).not.toBeInTheDocument()
     })

@@ -11,14 +11,6 @@ interface PerformanceOptimizerProps {
   onVisibleItemsChange?: (visibleIndices: [number, number]) => void
 }
 
-interface VirtualItem {
-  index: number
-  top: number
-  bottom: number
-  height: number
-  data: any
-}
-
 export const PerformanceOptimizer: React.FC<PerformanceOptimizerProps> = ({
   children,
   itemCount,
@@ -30,8 +22,8 @@ export const PerformanceOptimizer: React.FC<PerformanceOptimizerProps> = ({
 }) => {
   const containerRef = useRef<HTMLDivElement>(null)
   const [visibleRange, setVisibleRange] = useState<[number, number]>([0, Math.min(20, itemCount)])
-  const [scrollTop, setScrollTop] = useState(0)
-  const [isIntersecting, setIsIntersecting] = useState<Map<number, boolean>>(new Map())
+  const [_scrollTop, setScrollTop] = useState(0)
+  const [_isIntersecting, setIsIntersecting] = useState<Map<number, boolean>>(new Map())
   const [loadedItems, setLoadedItems] = useState<Set<number>>(new Set())
   const observerRef = useRef<IntersectionObserver | null>(null)
 
@@ -228,7 +220,7 @@ export const PerformanceOptimizer: React.FC<PerformanceOptimizerProps> = ({
 }
 
 // Performance monitoring hook
-export const usePerformanceMonitor = (componentName: string) => {
+export const usePerformanceMonitor = (_componentName: string) => {
   const renderCount = useRef(0)
   const startTime = useRef(Date.now())
   const lastRenderTime = useRef(Date.now())
@@ -236,8 +228,6 @@ export const usePerformanceMonitor = (componentName: string) => {
   useEffect(() => {
     renderCount.current++
     const now = Date.now()
-    const timeSinceLastRender = now - lastRenderTime.current
-    const totalTime = now - startTime.current
 
     // Performance metrics available via getMetrics()
 
@@ -257,10 +247,10 @@ export const usePerformanceMonitor = (componentName: string) => {
 
 // Memory optimization hook
 export const useMemoryOptimization = () => {
-  const [cache, setCache] = useState<Map<string, any>>(new Map())
+  const [cache, setCache] = useState<Map<string, unknown>>(new Map())
   const maxCacheSize = 100
 
-  const addToCache = useCallback((key: string, data: any) => {
+  const addToCache = useCallback((key: string, data: unknown) => {
     setCache(prev => {
       const newCache = new Map(prev)
       

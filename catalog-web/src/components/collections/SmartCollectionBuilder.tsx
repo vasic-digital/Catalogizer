@@ -80,7 +80,12 @@ export const SmartCollectionBuilder: React.FC<SmartCollectionBuilderProps> = ({
   const [rules, setRules] = useState<CollectionRule[]>(initialRules);
   const [showTemplates, setShowTemplates] = useState(false);
   const [showAdvanced, setShowAdvanced] = useState(false);
-  const [testResults, setTestResults] = useState<any>(null);
+  const [testResults, setTestResults] = useState<{
+    total_items: number;
+    matched_items: number;
+    performance_ms: number;
+    sample_items?: Array<{ id: string; title: string; artist?: string; media_type: string }>;
+  } | null>(null);
   const [isTesting, setIsTesting] = useState(false);
   const [refreshFrequency, setRefreshFrequency] = useState('daily');
   const [sortOrder, setSortOrder] = useState('date_added');
@@ -95,6 +100,7 @@ export const SmartCollectionBuilder: React.FC<SmartCollectionBuilderProps> = ({
     if (rules.length === 0) {
       addRule();
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const addRule = (parentId?: string, index?: number) => {
@@ -443,7 +449,7 @@ export const SmartCollectionBuilder: React.FC<SmartCollectionBuilderProps> = ({
               >
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
                   {COLLECTION_TEMPLATES.map(template => {
-                    const IconComponent = (TEMPLATE_ICONS as any)[template.icon || 'Star'];
+                    const IconComponent = (TEMPLATE_ICONS as Record<string, React.ComponentType<{ className?: string }>>)[template.icon || 'Star'];
                     return (
                       <motion.div
                         key={template.id}
@@ -570,7 +576,7 @@ export const SmartCollectionBuilder: React.FC<SmartCollectionBuilderProps> = ({
               <div>
                 <p className="text-sm text-green-600 dark:text-green-400 mb-2">Sample Items:</p>
                 <div className="space-y-1">
-                  {testResults.sample_items.map((item: any) => (
+                  {testResults.sample_items.map((item) => (
                     <div key={item.id} className="flex items-center gap-2 text-sm">
                       {FIELD_ICONS[item.media_type as keyof typeof FIELD_ICONS] && 
                         React.createElement(FIELD_ICONS[item.media_type as keyof typeof FIELD_ICONS], { className: 'w-4 h-4' })

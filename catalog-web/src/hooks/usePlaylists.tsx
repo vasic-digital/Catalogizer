@@ -33,21 +33,23 @@ export const usePlaylists = (params?: {
       queryClient.invalidateQueries({ queryKey: ['playlists'] })
       return playlist
     },
-    onError: (error: any) => {
-      toast.error(error.response?.data?.message || 'Failed to create playlist')
+    onError: (error: unknown) => {
+      const err = error as { response?: { data?: { message?: string } } }
+      toast.error(err.response?.data?.message || 'Failed to create playlist')
     }
   })
 
   const updatePlaylistMutation = useMutation({
-    mutationFn: ({ id, request }: { id: string; request: PlaylistUpdateRequest }) => 
+    mutationFn: ({ id, request }: { id: string; request: PlaylistUpdateRequest }) =>
       playlistsApi.updatePlaylist(id, request),
     onSuccess: (playlist) => {
       toast.success(`Playlist "${playlist.name}" updated successfully`)
       queryClient.invalidateQueries({ queryKey: ['playlists'] })
       queryClient.invalidateQueries({ queryKey: ['playlist', playlist.id] })
     },
-    onError: (error: any) => {
-      toast.error(error.response?.data?.message || 'Failed to update playlist')
+    onError: (error: unknown) => {
+      const err = error as { response?: { data?: { message?: string } } }
+      toast.error(err.response?.data?.message || 'Failed to update playlist')
     }
   })
 
@@ -58,45 +60,49 @@ export const usePlaylists = (params?: {
       queryClient.invalidateQueries({ queryKey: ['playlists'] })
       queryClient.removeQueries({ queryKey: ['playlist', playlistId] })
     },
-    onError: (error: any) => {
-      toast.error(error.response?.data?.message || 'Failed to delete playlist')
+    onError: (error: unknown) => {
+      const err = error as { response?: { data?: { message?: string } } }
+      toast.error(err.response?.data?.message || 'Failed to delete playlist')
     }
   })
 
   const addItemsMutation = useMutation({
-    mutationFn: ({ playlistId, mediaIds }: { playlistId: string; mediaIds: number[] }) => 
+    mutationFn: ({ playlistId, mediaIds }: { playlistId: string; mediaIds: number[] }) =>
       playlistsApi.addItemsToPlaylist(playlistId, mediaIds),
     onSuccess: (data, variables) => {
       toast.success(`Added ${data.added} items to playlist`)
       queryClient.invalidateQueries({ queryKey: ['playlist-items', variables.playlistId] })
       queryClient.invalidateQueries({ queryKey: ['playlists'] })
     },
-    onError: (error: any) => {
-      toast.error(error.response?.data?.message || 'Failed to add items to playlist')
+    onError: (error: unknown) => {
+      const err = error as { response?: { data?: { message?: string } } }
+      toast.error(err.response?.data?.message || 'Failed to add items to playlist')
     }
   })
 
   const removeItemMutation = useMutation({
-    mutationFn: ({ playlistId, itemId }: { playlistId: string; itemId: string }) => 
+    mutationFn: ({ playlistId, itemId }: { playlistId: string; itemId: string }) =>
       playlistsApi.removeFromPlaylist(playlistId, itemId),
     onSuccess: (_, variables) => {
       toast.success('Item removed from playlist')
       queryClient.invalidateQueries({ queryKey: ['playlist-items', variables.playlistId] })
       queryClient.invalidateQueries({ queryKey: ['playlists'] })
     },
-    onError: (error: any) => {
-      toast.error(error.response?.data?.message || 'Failed to remove item from playlist')
+    onError: (error: unknown) => {
+      const err = error as { response?: { data?: { message?: string } } }
+      toast.error(err.response?.data?.message || 'Failed to remove item from playlist')
     }
   })
 
   const reorderItemsMutation = useMutation({
-    mutationFn: ({ playlistId, itemOrders }: { playlistId: string; itemOrders: { id: string; position: number }[] }) => 
+    mutationFn: ({ playlistId, itemOrders }: { playlistId: string; itemOrders: { id: string; position: number }[] }) =>
       playlistsApi.reorderPlaylistItems(playlistId, itemOrders),
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: ['playlist-items', variables.playlistId] })
     },
-    onError: (error: any) => {
-      toast.error(error.response?.data?.message || 'Failed to reorder playlist')
+    onError: (error: unknown) => {
+      const err = error as { response?: { data?: { message?: string } } }
+      toast.error(err.response?.data?.message || 'Failed to reorder playlist')
     }
   })
 

@@ -29,13 +29,6 @@ interface SearchRule {
   condition?: 'and' | 'or';
 }
 
-interface SearchField {
-  value: string;
-  label: string;
-  type: 'text' | 'number' | 'date' | 'boolean' | 'select';
-  options?: string[];
-}
-
 interface SearchSettings {
   sortBy: string;
   sortOrder: 'asc' | 'desc';
@@ -197,9 +190,9 @@ const AdvancedSearch: React.FC = () => {
     viewMode: 'grid'
   });
   const [savedSearches, setSavedSearches] = useState<SavedSearch[]>([]);
-  const [showSaveDialog, setShowSaveDialog] = useState(false);
+  const [_showSaveDialog, setShowSaveDialog] = useState(false);
   const [saveName, setSaveName] = useState('');
-  const [isSaving, setIsSaving] = useState(false);
+  const [_isSaving, setIsSaving] = useState(false);
   const [activeTab, setActiveTab] = useState<'builder' | 'presets' | 'saved'>('builder');
   const [showAdvanced, setShowAdvanced] = useState(false);
 
@@ -322,7 +315,7 @@ const AdvancedSearch: React.FC = () => {
             {['builder', 'presets', 'saved'].map((tab) => (
               <button
                 key={tab}
-                onClick={() => setActiveTab(tab as any)}
+                onClick={() => setActiveTab(tab as 'builder' | 'presets' | 'saved')}
                 className={`py-2 px-1 border-b-2 font-medium text-sm ${
                   activeTab === tab
                     ? 'border-blue-500 text-blue-600'

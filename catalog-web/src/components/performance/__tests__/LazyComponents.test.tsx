@@ -1,4 +1,4 @@
-import React, { Suspense } from 'react'
+import React from 'react'
 import { render, screen } from '@testing-library/react'
 import { ComponentLoader, preloadComponent } from '../LazyComponents'
 
@@ -71,7 +71,7 @@ describe('ComponentLoader', () => {
   it('shows custom fallback when provided', () => {
     // Use a component that suspends
     const SuspendingComponent = React.lazy(
-      () => new Promise(() => {}) // Never resolves
+      () => new Promise(() => { /* noop */ }) // Never resolves
     )
 
     render(
@@ -89,7 +89,7 @@ describe('ComponentLoader', () => {
 
   it('uses default fallback with loader icon', () => {
     const SuspendingComponent = React.lazy(
-      () => new Promise(() => {}) // Never resolves
+      () => new Promise(() => { /* noop */ }) // Never resolves
     )
 
     render(

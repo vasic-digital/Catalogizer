@@ -102,7 +102,7 @@ export const usePlayerState = (): UsePlayerStateReturn => {
       setCurrentItem(queue[queue.length - 1]);
       play();
     }
-  }, [queue, queueIndex, play]);
+  }, [queue, queueIndex, repeatMode, play]);
 
   const seekTo = useCallback((time: number) => {
     setCurrentTime(time);

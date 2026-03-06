@@ -13,9 +13,10 @@ import './index.css'
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
-      retry: (failureCount, error: any) => {
+      retry: (failureCount, error: unknown) => {
         // Don't retry on 401/403 errors
-        if (error?.response?.status === 401 || error?.response?.status === 403) {
+        const err = error as { response?: { status?: number } }
+        if (err?.response?.status === 401 || err?.response?.status === 403) {
           return false
         }
         return failureCount < 3
@@ -29,7 +30,12 @@ const queryClient = new QueryClient({
   },
 })
 
-ReactDOM.createRoot(document.getElementById('root')!).render(
+const rootElement = document.getElementById('root')
+if (!rootElement) {
+  throw new Error('Root element not found')
+}
+
+ReactDOM.createRoot(rootElement).render(
   <React.StrictMode>
     <HelmetProvider>
       <QueryClientProvider client={queryClient}>

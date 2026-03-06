@@ -55,7 +55,7 @@ vi.mock('@/components/entity/TypeSelector', () => ({
 }))
 
 vi.mock('@/components/entity/EntityGrid', () => ({
-  EntityGrid: ({ entities, total, limit, offset, page, onEntityClick, onPageChange }: any) => (
+  EntityGrid: ({ entities, total, limit, offset, page: _page, onEntityClick, onPageChange: _onPageChange }: any) => (
     <div data-testid="entity-grid">
       {entities.length === 0 ? (
         <p>No entities found</p>
@@ -74,7 +74,7 @@ vi.mock('@/components/entity/EntityGrid', () => ({
 
 // Mock UI components
 vi.mock('@/components/ui/Button', async () => ({
-  Button: ({ children, onClick, disabled, variant, size, ...rest }: any) => (
+  Button: ({ children, onClick, disabled, variant: _variant, size: _size, ...rest }: any) => (
     <button onClick={onClick} disabled={disabled} {...rest}>
       {children}
     </button>

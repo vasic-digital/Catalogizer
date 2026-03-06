@@ -5,7 +5,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 
 // Mock the hooks
 vi.mock('@/hooks/useFavorites', () => ({
-  useFavoriteStatus: vi.fn((mediaId: number) => ({
+  useFavoriteStatus: vi.fn((_mediaId: number) => ({
     data: { is_favorite: false },
     isLoading: false,
   })),

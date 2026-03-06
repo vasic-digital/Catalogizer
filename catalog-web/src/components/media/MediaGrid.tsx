@@ -34,9 +34,9 @@ export const MediaGrid: React.FC<MediaGridProps> = ({
   onMediaView,
   onMediaPlay,
   onMediaDownload,
-  onSelect,
-  selectedItems = [],
-  showActions = true,
+  onSelect: _onSelect,
+  selectedItems: _selectedItems = [],
+  showActions: _showActions = true,
   className = ''
 }) => {
   // Always call hooks at the top level, before any early returns

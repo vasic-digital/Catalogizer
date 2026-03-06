@@ -36,7 +36,7 @@ export const SubtitleUploadModal: React.FC<SubtitleUploadModalProps> = ({
       
       // Auto-detect format from file extension
       const extension = file.name.split('.').pop()?.toLowerCase()
-      if (extension && SUBTITLE_FORMATS.includes(extension as any)) {
+      if (extension && (SUBTITLE_FORMATS as readonly string[]).includes(extension)) {
         setSelectedFormat(extension)
       }
       

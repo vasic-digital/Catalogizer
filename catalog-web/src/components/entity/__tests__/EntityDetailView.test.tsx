@@ -7,11 +7,15 @@ import type { MediaEntityDetail, MediaEntity, EntityFile } from '@/types/media'
 // Mock framer-motion to simplify rendering
 vi.mock('framer-motion', () => ({
   motion: {
-    div: React.forwardRef(({ children, className, ...props }: any, ref: any) => (
-      <div ref={ref} className={className} data-testid={props['data-testid']}>
-        {children}
-      </div>
-    )),
+    div: (() => {
+      const MotionDiv = React.forwardRef(({ children, className, ...props }: any, ref: any) => (
+        <div ref={ref} className={className} data-testid={props['data-testid']}>
+          {children}
+        </div>
+      ));
+      MotionDiv.displayName = 'MotionDiv';
+      return MotionDiv;
+    })(),
   },
 }))
 

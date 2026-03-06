@@ -13,8 +13,6 @@ import {
   Search,
   Settings,
   Activity,
-  HardDrive,
-  Zap,
   Clock,
   Tv,
   Music,
@@ -25,7 +23,7 @@ import {
 } from 'lucide-react'
 import { motion } from 'framer-motion'
 import toast from 'react-hot-toast'
-import type { MediaStats, UserStats, QuickAction } from '@/types/dashboard'
+import type { UserStats, QuickAction } from '@/types/dashboard'
 
 const QuickActions: React.FC = () => {
   const handleUploadMedia = () => {
@@ -118,7 +116,7 @@ const QuickActions: React.FC = () => {
 }
 
 const SystemStatus: React.FC = () => {
-  const [status, setStatus] = useState({
+  const [status, _setStatus] = useState({
     cpu: 45,
     memory: 62,
     disk: 78,

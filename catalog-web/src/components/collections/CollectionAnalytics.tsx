@@ -140,30 +140,30 @@ export const CollectionAnalytics: React.FC<CollectionAnalyticsProps> = ({
   // Use collection items from props if available
   const items = useMemo(() => collectionItems || [], [collectionItems])
 
-  const formatFileSize = (bytes: number): string => {
-    if (bytes === 0) return '0 B'
-    const k = 1024
-    const sizes = ['B', 'KB', 'MB', 'GB', 'TB']
-    const i = Math.floor(Math.log(bytes) / Math.log(k))
-    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i]
-  }
-
-  const formatDuration = (seconds: number): string => {
-    const hours = Math.floor(seconds / 3600)
-    const minutes = Math.floor((seconds % 3600) / 60)
-    const secs = Math.floor(seconds % 60)
-
-    if (hours > 0) {
-      return `${hours}h ${minutes}m`
-    } else if (minutes > 0) {
-      return `${minutes}m ${secs}s`
-    } else {
-      return `${secs}s`
-    }
-  }
-
   // Mock analytics data generation
   const analyticsData = useMemo((): AnalyticsData => {
+    const formatFileSize = (bytes: number): string => {
+      if (bytes === 0) return '0 B'
+      const k = 1024
+      const sizes = ['B', 'KB', 'MB', 'GB', 'TB']
+      const i = Math.floor(Math.log(bytes) / Math.log(k))
+      return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i]
+    }
+
+    const formatDuration = (seconds: number): string => {
+      const hours = Math.floor(seconds / 3600)
+      const minutes = Math.floor((seconds % 3600) / 60)
+      const secs = Math.floor(seconds % 60)
+
+      if (hours > 0) {
+        return `${hours}h ${minutes}m`
+      } else if (minutes > 0) {
+        return `${minutes}m ${secs}s`
+      } else {
+        return `${secs}s`
+      }
+    }
+
     const totalItems = items.length
     const totalSize = items.reduce((sum: number, item: CollectionItem) => sum + (item.size || 0), 0)
     const averageRating = items.reduce((sum: number, item: CollectionItem) => sum + (item.rating || 0), 0) / totalItems || 0
@@ -286,7 +286,7 @@ export const CollectionAnalytics: React.FC<CollectionAnalyticsProps> = ({
         likes: Math.floor(Math.random() * 500) + 100
       }
     }
-  }, [items, timeRange, formatFileSize, formatDuration])
+  }, [items, timeRange])
 
   const handleExportAnalytics = (format: 'csv' | 'json' | 'pdf') => {
     const data = {

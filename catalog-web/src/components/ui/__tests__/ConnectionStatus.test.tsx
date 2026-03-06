@@ -115,7 +115,7 @@ describe('ConnectionStatus', () => {
         getConnectionState,
       })
 
-      const { rerender } = render(<ConnectionStatus />)
+      const { rerender: _rerender } = render(<ConnectionStatus />)
 
       expect(screen.getByText('Connecting...')).toBeInTheDocument()
 

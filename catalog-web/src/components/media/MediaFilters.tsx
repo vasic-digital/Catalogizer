@@ -19,7 +19,7 @@ export const MediaFilters: React.FC<MediaFiltersProps> = ({
   onReset,
   className = ''
 }) => {
-  const updateFilter = (key: keyof MediaSearchRequest, value: any) => {
+  const updateFilter = (key: keyof MediaSearchRequest, value: string | number | undefined) => {
     onFiltersChange({
       ...filters,
       [key]: value,

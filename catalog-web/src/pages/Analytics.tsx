@@ -22,7 +22,6 @@ import {
   TrendingUp,
   Database,
   HardDrive,
-  Clock,
   Star,
   Film,
   Music,

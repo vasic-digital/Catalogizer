@@ -6,7 +6,7 @@ import { MediaDetailModal } from '@/components/media/MediaDetailModal'
 import { MediaPlayer } from '@/components/media/MediaPlayer'
 import { Button } from '@/components/ui/Button'
 import { Input } from '@/components/ui/Input'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card'
+import { Card, CardContent } from '@/components/ui/Card'
 import { mediaApi } from '@/lib/mediaApi'
 import { debounce } from '@/lib/utils'
 import toast from 'react-hot-toast'
@@ -16,11 +16,9 @@ import {
   Grid,
   List,
   SlidersHorizontal,
-  Download,
   RefreshCw,
   ChevronLeft,
   ChevronRight,
-  Play,
   Upload
 } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
@@ -40,7 +38,7 @@ export const MediaBrowser: React.FC = () => {
   const [selectedMedia, setSelectedMedia] = useState<MediaItem | null>(null)
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [isPlayerOpen, setIsPlayerOpen] = useState(false)
-  const [isDownloading, setIsDownloading] = useState(false)
+  const [_isDownloading, setIsDownloading] = useState(false)
   const [showUpload, setShowUpload] = useState(false)
 
   const debouncedSearch = useMemo(

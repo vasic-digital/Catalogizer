@@ -1,5 +1,4 @@
-import React from 'react'
-import { render, screen, act, waitFor } from '@testing-library/react'
+import { act } from '@testing-library/react'
 import { renderHook } from '@testing-library/react'
 import {
   useMemoized,
@@ -29,9 +28,7 @@ describe('useMemoized', () => {
   })
 
   it('caches values and returns cached on subsequent calls', () => {
-    let computeCount = 0
     const computation = () => {
-      computeCount++
       return 'result'
     }
 

@@ -25,7 +25,7 @@ class IntersectionObserverMock {
   unobserve = vi.fn();
   takeRecords = vi.fn().mockReturnValue([]);
 }
-global.IntersectionObserver = IntersectionObserverMock as any;
+global.IntersectionObserver = IntersectionObserverMock as unknown as typeof IntersectionObserver;
 
 // Mock ResizeObserver
 class ResizeObserverMock {
@@ -33,7 +33,7 @@ class ResizeObserverMock {
   disconnect = vi.fn();
   unobserve = vi.fn();
 }
-global.ResizeObserver = ResizeObserverMock as any;
+global.ResizeObserver = ResizeObserverMock as unknown as typeof ResizeObserver;
 
 // Mock WebSocket
 class WebSocketMock {
@@ -76,7 +76,7 @@ class WebSocketMock {
   removeEventListener = vi.fn();
   dispatchEvent = vi.fn();
 }
-global.WebSocket = WebSocketMock as any;
+global.WebSocket = WebSocketMock as unknown as typeof WebSocket;
 
 // Create proper Storage mock that works with spies on Storage.prototype
 class StorageMock implements Storage {
@@ -208,7 +208,7 @@ HTMLCanvasElement.prototype.getContext = vi.fn().mockReturnValue({
 // Suppress specific console warnings in tests
 const originalError = console.error;
 beforeAll(() => {
-  console.error = (...args: any[]) => {
+  console.error = (...args: unknown[]) => {
     if (
       typeof args[0] === 'string' &&
       (args[0].includes('Warning: ReactDOM.render is deprecated') ||

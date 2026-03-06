@@ -1,18 +1,14 @@
 import React, { useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Search, Download, Globe, Clock, CheckCircle, AlertCircle, Trash2, Eye, RefreshCw, Languages, Filter, Upload, Film, X } from 'lucide-react'
+import { Search, Download, Globe, Clock, CheckCircle, Trash2, Eye, RefreshCw, Languages, Filter, Upload, Film, X } from 'lucide-react'
 import { subtitleApi } from '@/lib/subtitleApi'
 import { mediaApi } from '@/lib/mediaApi'
 import { SubtitleSyncModal } from '@/components/subtitles/SubtitleSyncModal'
 import { SubtitleUploadModal } from '@/components/subtitles/SubtitleUploadModal'
-import type { 
-  SubtitleSearchRequest, 
-  SubtitleSearchResult, 
-  SubtitleTrack, 
-  SubtitleMediaInfo, 
-  SupportedLanguage, 
-  SupportedProvider 
+import type {
+  SubtitleSearchRequest,
+  SubtitleSearchResult
 } from '@/types/subtitles'
 import type { MediaItem, MediaSearchRequest } from '@/types/media'
 import { COMMON_LANGUAGES } from '@/types/subtitles'
@@ -26,7 +22,7 @@ export const SubtitleManager: React.FC = () => {
   const [showSearchResults, setShowSearchResults] = useState(false)
   const [showMediaSelector, setShowMediaSelector] = useState(false)
   const [currentPage, setCurrentPage] = useState(1)
-  const [searchLimit, setSearchLimit] = useState(20)
+  const [searchLimit, _setSearchLimit] = useState(20)
   const [syncModalOpen, setSyncModalOpen] = useState(false)
   const [syncSubtitle, setSyncSubtitle] = useState<{ id: string; language: string } | null>(null)
   const [uploadModalOpen, setUploadModalOpen] = useState(false)

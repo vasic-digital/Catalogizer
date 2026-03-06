@@ -485,7 +485,7 @@ export const CollectionSharing: React.FC<CollectionSharingProps> = ({
               return (
                 <button
                   key={method.id}
-                  onClick={() => setActiveTab(method.id as any)}
+                  onClick={() => setActiveTab(method.id as 'link' | 'email' | 'embed' | 'qr')}
                   className={`flex items-center gap-2 px-4 py-3 border-b-2 transition-colors ${
                     activeTab === method.id
                       ? 'border-blue-500 text-blue-600 dark:text-blue-400'

@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion } from 'framer-motion';
 import {
   GripVertical,
   Play,
@@ -8,7 +8,6 @@ import {
   SkipBack,
   Volume2,
   Maximize2,
-  Heart,
   MoreHorizontal,
   Shuffle,
   Repeat,
@@ -19,16 +18,13 @@ import {
   ChevronLeft,
   ChevronRight,
   Music,
-  Film,
-  Image,
   FileText
 } from 'lucide-react';
 
 import { Button } from '../ui/Button';
-import { Playlist, PlaylistItem, flattenPlaylistItem, getMediaIconWithMap } from '../../types/playlists';
+import { Playlist, PlaylistItem, PlaylistAnalytics as PlaylistAnalyticsType, flattenPlaylistItem, getMediaIconWithMap } from '../../types/playlists';
 import { MediaPlayer } from '../media/MediaPlayer';
 import { FavoriteToggle } from '../favorites/FavoriteToggle';
-import { usePlayerState } from '../../hooks/usePlayerState';
 import { playlistsApi } from '../../lib/playlistsApi';
 import { toast } from 'react-hot-toast';
 import { PlaylistAnalytics } from './PlaylistAnalytics';
@@ -42,18 +38,6 @@ interface PlaylistPlayerProps {
   onRepeat?: () => void;
   className?: string;
 }
-
-const MEDIA_TYPE_ICONS = {
-  music: Music,
-  video: Film,
-  image: Image,
-  document: FileText,
-};
-
-const DURATION_FORMATTER = new Intl.DateTimeFormat('en-US', {
-  minute: '2-digit',
-  second: '2-digit'
-});
 
 export const PlaylistPlayer: React.FC<PlaylistPlayerProps> = ({
   playlist,
@@ -74,7 +58,7 @@ export const PlaylistPlayer: React.FC<PlaylistPlayerProps> = ({
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [showControls, setShowControls] = useState(true);
   const [showAnalytics, setShowAnalytics] = useState(false);
-  const [analytics, setAnalytics] = useState<any>(null);
+  const [analytics, setAnalytics] = useState<PlaylistAnalyticsType | null>(null);
   const [repeatMode, setRepeatMode] = useState<'off' | 'all' | 'one'>('off');
 
   const currentItem = items[currentIndex];
@@ -150,7 +134,6 @@ export const PlaylistPlayer: React.FC<PlaylistPlayerProps> = ({
   };
 
   const formatTimeRemaining = () => {
-    const itemsRemaining = items.length - currentIndex - 1;
     const totalDuration = items
       .slice(currentIndex + 1)
       .reduce((sum, item) => sum + (flattenPlaylistItem(item).duration || 0), 0);

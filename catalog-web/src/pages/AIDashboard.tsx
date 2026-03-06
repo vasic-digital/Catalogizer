@@ -14,8 +14,7 @@ import {
 import {
   AIUserBehaviorAnalytics,
   AIPredictions,
-  AISmartOrganization,
-  type AIOrganizationSuggestion
+  AISmartOrganization
 } from '../components/ai/AIAnalytics';
 
 import {

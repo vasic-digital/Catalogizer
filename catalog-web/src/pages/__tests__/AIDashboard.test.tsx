@@ -1,42 +1,42 @@
-import { render, screen, waitFor } from '@testing-library/react'
+import { render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import AIDashboard from '../AIDashboard'
 
 // Mock AI component modules
 vi.mock('../../components/ai/AIComponents', () => ({
-  AICollectionSuggestions: ({ onSuggestionAccept }: any) => (
+  AICollectionSuggestions: ({ onSuggestionAccept: _onSuggestionAccept }: any) => (
     <div data-testid="ai-suggestions">AI Collection Suggestions</div>
   ),
-  AINaturalSearch: ({ onSearch }: any) => (
+  AINaturalSearch: ({ onSearch: _onSearch }: any) => (
     <div data-testid="ai-search">AI Natural Search</div>
   ),
-  AIContentCategorizer: ({ onCategorizationComplete }: any) => (
+  AIContentCategorizer: ({ onCategorizationComplete: _onCategorizationComplete }: any) => (
     <div data-testid="ai-categorizer">AI Content Categorizer</div>
   ),
   AIService: {},
 }))
 
 vi.mock('../../components/ai/AIAnalytics', () => ({
-  AIUserBehaviorAnalytics: ({ onActionImplement }: any) => (
+  AIUserBehaviorAnalytics: ({ onActionImplement: _onActionImplement }: any) => (
     <div data-testid="ai-behavior">AI User Behavior Analytics</div>
   ),
-  AIPredictions: ({ onPredictionAction }: any) => (
+  AIPredictions: ({ onPredictionAction: _onPredictionAction }: any) => (
     <div data-testid="ai-predictions">AI Predictions</div>
   ),
-  AISmartOrganization: ({ onSuggestionApply }: any) => (
+  AISmartOrganization: ({ onSuggestionApply: _onSuggestionApply }: any) => (
     <div data-testid="ai-organization">AI Smart Organization</div>
   ),
   AIAnalyticsService: {},
 }))
 
 vi.mock('../../components/ai/AIMetadata', () => ({
-  AIMetadataExtractor: ({ onMetadataExtracted }: any) => (
+  AIMetadataExtractor: ({ onMetadataExtracted: _onMetadataExtracted }: any) => (
     <div data-testid="ai-metadata">AI Metadata Extractor</div>
   ),
-  AIAutomationRules: ({ onRuleToggle, onRuleExecute }: any) => (
+  AIAutomationRules: ({ onRuleToggle: _onRuleToggle, onRuleExecute: _onRuleExecute }: any) => (
     <div data-testid="ai-automation">AI Automation Rules</div>
   ),
-  AIContentQualityAnalyzer: ({ onQualityImprovement }: any) => (
+  AIContentQualityAnalyzer: ({ onQualityImprovement: _onQualityImprovement }: any) => (
     <div data-testid="ai-quality">AI Content Quality Analyzer</div>
   ),
   AIMetadataService: {},

@@ -4,6 +4,7 @@ export interface ActivityItem {
   title: string
   user: string
   timestamp: Date
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   metadata: Record<string, any>
 }
 
@@ -47,6 +48,7 @@ export interface QuickAction {
   id: string
   title: string
   description: string
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   icon: React.ComponentType<any>
   action: () => void
   variant?: 'default' | 'secondary' | 'outline' | 'ghost'

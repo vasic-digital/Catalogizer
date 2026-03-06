@@ -9,7 +9,6 @@ import {
 import type {
   Playlist,
   PlaylistItem,
-  PlaylistItemWithMedia,
   PlaylistCreateRequest,
   PlaylistUpdateRequest,
   SmartPlaylistRule,
@@ -17,7 +16,6 @@ import type {
   PlaylistItemsResponse,
   PlaylistShareInfo,
   PlaylistAnalytics,
-  PlaylistType,
   PlaylistViewMode,
   PlaylistSortBy,
   CreatePlaylistRequest,

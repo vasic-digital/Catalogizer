@@ -1,5 +1,5 @@
 import React from 'react'
-import { render, screen, waitFor, act } from '@testing-library/react'
+import { render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { AuthProvider, useAuth } from '../AuthContext'
@@ -195,8 +195,8 @@ let removeItemSpy: vi.SpyInstance
 describe('AuthContext Integration Tests', () => {
   beforeEach(() => {
     vi.clearAllMocks()
-    setItemSpy = vi.spyOn(Storage.prototype, 'setItem').mockImplementation(() => {})
-    removeItemSpy = vi.spyOn(Storage.prototype, 'removeItem').mockImplementation(() => {})
+    setItemSpy = vi.spyOn(Storage.prototype, 'setItem').mockImplementation(() => { /* noop */ })
+    removeItemSpy = vi.spyOn(Storage.prototype, 'removeItem').mockImplementation(() => { /* noop */ })
   })
 
   afterEach(() => {
@@ -206,7 +206,7 @@ describe('AuthContext Integration Tests', () => {
 
   describe('Initial State and Auth Status Check', () => {
     it('shows loading state while checking auth status', () => {
-      mockAuthApi.getAuthStatus.mockReturnValue(new Promise(() => {})) // never resolves
+      mockAuthApi.getAuthStatus.mockReturnValue(new Promise(() => { /* noop */ })) // never resolves
 
       renderWithProviders(<AuthStateDisplay />)
 
@@ -741,7 +741,7 @@ describe('AuthContext Integration Tests', () => {
 
   describe('useAuth Hook Error', () => {
     it('throws error when useAuth is used outside AuthProvider', () => {
-      const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {})
+      const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => { /* noop */ })
 
       expect(() => {
         const qc = createQueryClient()

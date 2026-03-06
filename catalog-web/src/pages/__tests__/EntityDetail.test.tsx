@@ -69,8 +69,8 @@ vi.mock('react-hot-toast', () => ({
 vi.mock('@/components/entity/EntityDetailView', async () => ({
   EntityHero: ({
     entity,
-    files,
-    duplicateCount,
+    files: _files,
+    duplicateCount: _duplicateCount,
     onFavorite,
     onRefresh,
     refreshPending,
@@ -142,7 +142,7 @@ vi.mock('@/components/ui/Card', async () => ({
 }))
 
 vi.mock('@/components/ui/Button', async () => ({
-  Button: ({ children, onClick, disabled, variant, size, className, ...rest }: any) => (
+  Button: ({ children, onClick, disabled, variant: _variant, size: _size, className, ...rest }: any) => (
     <button onClick={onClick} disabled={disabled} className={className} {...rest}>
       {children}
     </button>

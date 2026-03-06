@@ -36,10 +36,10 @@ vi.mock('../api', async () => {
   const authApi = {
     login: vi.fn((data: any) => mockApi.post('/auth/login', data).then((res: any) => res.data)),
     register: vi.fn((data: any) => mockApi.post('/auth/register', data).then((res: any) => res.data)),
-    logout: vi.fn(() => mockApi.post('/auth/logout').then(() => {})),
+    logout: vi.fn(() => mockApi.post('/auth/logout').then(() => { /* noop */ })),
     getProfile: vi.fn(() => mockApi.get('/auth/profile').then((res: any) => res.data)),
     updateProfile: vi.fn((data: any) => mockApi.put('/auth/profile', data).then((res: any) => res.data)),
-    changePassword: vi.fn((data: any) => mockApi.post('/auth/change-password', data).then(() => {})),
+    changePassword: vi.fn((data: any) => mockApi.post('/auth/change-password', data).then(() => { /* noop */ })),
     getAuthStatus: vi.fn(() => mockApi.get('/auth/status').then((res: any) => res.data)),
     getPermissions: vi.fn(() => mockApi.get('/auth/permissions').then((res: any) => res.data)),
     getInitStatus: vi.fn(() => mockApi.get('/auth/init-status').then((res: any) => res.data)),

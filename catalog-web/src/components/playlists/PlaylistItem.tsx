@@ -6,10 +6,6 @@ import {
   Pause,
   MoreHorizontal,
   X,
-  Music,
-  Film,
-  Image,
-  FileText,
   Clock,
   Star,
   Heart
@@ -17,9 +13,7 @@ import {
 
 import { Button } from '../ui/Button';
 import { PlaylistItem, flattenPlaylistItem, getMediaIconWithMap } from '../../types/playlists';
-import { MediaPlayer } from '../media/MediaPlayer';
 import { FavoriteToggle } from '../favorites/FavoriteToggle';
-import { usePlayerState } from '../../hooks/usePlayerState';
 
 interface PlaylistItemComponentProps {
   item: PlaylistItem;
@@ -36,18 +30,6 @@ interface PlaylistItemComponentProps {
   isFavorite?: boolean;
   className?: string;
 }
-
-const MEDIA_TYPE_ICONS = {
-  music: Music,
-  video: Film,
-  image: Image,
-  document: FileText,
-};
-
-const DURATION_FORMATTER = new Intl.DateTimeFormat('en-US', {
-  minute: '2-digit',
-  second: '2-digit'
-});
 
 export const PlaylistItemComponent: React.FC<PlaylistItemComponentProps> = ({
   item,
@@ -66,7 +48,7 @@ export const PlaylistItemComponent: React.FC<PlaylistItemComponentProps> = ({
 }) => {
   const [showDropdown, setShowDropdown] = useState(false);
   const [imageError, setImageError] = useState(false);
-  const [isHovered, setIsHovered] = useState(false);
+  const [_isHovered, setIsHovered] = useState(false);
 
   const flattenedItem = flattenPlaylistItem(item);
   const Icon = getMediaIconWithMap(flattenedItem.media_type);
@@ -104,14 +86,6 @@ export const PlaylistItemComponent: React.FC<PlaylistItemComponentProps> = ({
     const minutes = Math.floor(seconds / 60);
     const secs = Math.floor(seconds % 60);
     return `${minutes}:${secs.toString().padStart(2, '0')}`;
-  };
-
-  const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString('en-US', {
-      month: 'short',
-      day: 'numeric',
-      year: 'numeric'
-    });
   };
 
   const getQualityBadge = () => {

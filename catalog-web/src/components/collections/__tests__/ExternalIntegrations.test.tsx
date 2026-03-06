@@ -18,11 +18,15 @@ vi.mock('framer-motion', () => ({
 }))
 
 vi.mock('lucide-react', () => {
-  const icon = (name: string) => (props: any) => (
-    <span data-testid={`icon-${name}`} className={props.className}>
-      {name}
-    </span>
-  )
+  const icon = (name: string) => {
+    const IconComponent = (props: any) => (
+      <span data-testid={`icon-${name}`} className={props.className}>
+        {name}
+      </span>
+    )
+    IconComponent.displayName = `Icon_${name}`
+    return IconComponent
+  }
   return {
     Globe: icon('globe'),
     Cloud: icon('cloud'),
@@ -285,7 +289,7 @@ describe('ExternalIntegrations', () => {
   })
 
   it('toggles integration enabled status', async () => {
-    const user = userEvent.setup()
+    const _user = userEvent.setup()
     render(<ExternalIntegrations />)
 
     // Find switch components (they use checkbox role by default in our mocked Switch)

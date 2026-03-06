@@ -44,7 +44,7 @@ export const MediaDistributionChart: React.FC<MediaDistributionChartProps> = ({
 
   const chartData = formatData()
 
-  const CustomTooltip = ({ active, payload }: any) => {
+  const CustomTooltip = ({ active, payload }: { active?: boolean; payload?: Array<{ payload: MediaDistributionData }> }) => {
     if (active && payload && payload.length) {
       const data = payload[0].payload
       const total = chartData.reduce((sum, item) => sum + item.value, 0)
@@ -64,7 +64,7 @@ export const MediaDistributionChart: React.FC<MediaDistributionChartProps> = ({
 
   const renderCustomizedLabel = ({
     cx, cy, midAngle, innerRadius, outerRadius, percent
-  }: any) => {
+  }: { cx: number; cy: number; midAngle: number; innerRadius: number; outerRadius: number; percent: number }) => {
     const RADIAN = Math.PI / 180
     const radius = innerRadius + (outerRadius - innerRadius) * 0.5
     const x = cx + radius * Math.cos(-midAngle * RADIAN)
@@ -161,9 +161,9 @@ export const MediaDistributionChart: React.FC<MediaDistributionChartProps> = ({
             </Pie>
             <Tooltip content={<CustomTooltip />} />
             <Legend 
-              formatter={(value, entry: any) => (
+              formatter={(value, entry: { color?: string; payload?: MediaDistributionData }) => (
                 <span style={{ color: entry.color }}>
-                  {value}: {entry.payload.value.toLocaleString()}
+                  {value}: {entry.payload?.value.toLocaleString()}
                 </span>
               )}
               verticalAlign="bottom"

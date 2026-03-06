@@ -1,16 +1,13 @@
 import { api } from './api'
-import type { 
+import type {
   Playlist,
-  PlaylistItem,
-  PlaylistCreateRequest,
-  PlaylistUpdateRequest,
   PlaylistResponse,
   PlaylistItemsResponse,
   PlaylistShareInfo,
   PlaylistAnalytics,
   SmartPlaylistRule,
-  CreatePlaylistRequest,
-  UpdatePlaylistRequest
+  PlaylistCreateRequest,
+  PlaylistUpdateRequest
 } from '@/types/playlists'
 
 export const playlistsApi = {
@@ -122,7 +119,7 @@ export const playlistsApi = {
   },
 
   // Export playlist
-  async exportPlaylist(playlistId: string, format: 'json' | 'm3u' | 'csv' = 'json'): Promise<any> {
+  async exportPlaylist(playlistId: string, format: 'json' | 'm3u' | 'csv' = 'json'): Promise<Blob> {
     const response = await api.get(`/api/v1/playlists/${playlistId}/export?format=${format}`, {
       responseType: 'blob'
     })

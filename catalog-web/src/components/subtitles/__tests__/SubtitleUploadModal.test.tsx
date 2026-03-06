@@ -6,7 +6,7 @@ import { subtitleApi } from '@/lib/subtitleApi'
 // Mock framer-motion to render plain divs
 vi.mock('framer-motion', async () => ({
   motion: {
-    div: ({ children, onClick, className, ...props }: any) => {
+    div: ({ children, onClick, className, ..._props }: any) => {
       return <div onClick={onClick} className={className}>{children}</div>
     },
   },

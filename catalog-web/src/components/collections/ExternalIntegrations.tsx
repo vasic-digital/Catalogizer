@@ -3,7 +3,6 @@ import { motion, AnimatePresence } from 'framer-motion';
 import {
   Globe,
   Cloud,
-  Settings,
   Plus,
   Trash2,
   Edit,
@@ -12,18 +11,12 @@ import {
   XCircle,
   Clock,
   RefreshCw,
-  Download,
-  Upload,
   Link,
-  Unlink,
   Key,
-  Shield,
   Zap,
   Database,
   FolderSync,
   Share2,
-  Play,
-  Pause,
   Info,
   ExternalLink,
   TestTube,
@@ -58,7 +51,7 @@ interface IntegrationConfig {
   username?: string;
   password?: string;
   webhookUrl?: string;
-  customFields?: Record<string, any>;
+  customFields?: Record<string, unknown>;
 }
 
 interface SyncSettings {
@@ -72,7 +65,7 @@ interface SyncSettings {
 interface SyncFilter {
   field: string;
   operator: string;
-  value: any;
+  value: unknown;
 }
 
 interface IntegrationStats {
@@ -84,14 +77,6 @@ interface IntegrationStats {
   lastSyncDuration?: number;
   bytesTransferred?: number;
 }
-
-const INTEGRATION_TYPES = [
-  { value: 'storage', label: 'Storage', description: 'Cloud storage services', icon: 'Database' },
-  { value: 'metadata', label: 'Metadata', description: 'Metadata and information services', icon: 'Tag' },
-  { value: 'analytics', label: 'Analytics', description: 'Analytics and reporting services', icon: 'BarChart3' },
-  { value: 'automation', label: 'Automation', description: 'Automation and workflow services', icon: 'Zap' },
-  { value: 'sharing', label: 'Sharing', description: 'File sharing and social services', icon: 'Share' }
-];
 
 const INTEGRATION_EXAMPLES = [
   {

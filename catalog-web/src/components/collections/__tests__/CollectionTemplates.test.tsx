@@ -21,7 +21,11 @@ vi.mock('framer-motion', () => {
 })
 
 vi.mock('lucide-react', () => {
-  const icon = (name: string) => () => <span data-testid={`icon-${name}`}>{name}</span>
+  const icon = (name: string) => {
+    const IconComponent = () => <span data-testid={`icon-${name}`}>{name}</span>
+    IconComponent.displayName = `Icon_${name}`
+    return IconComponent
+  }
   return {
     Plus: icon('plus'),
     Search: icon('search'),

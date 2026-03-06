@@ -1,18 +1,16 @@
 import { useState, useRef, useEffect, useCallback } from 'react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card'
 import { Button } from '@/components/ui/Button'
-import { Input } from '@/components/ui/Input'
-import { 
-  Play, 
-  Pause, 
-  Volume2, 
-  VolumeX, 
-  Maximize2, 
-  Subtitles, 
+import {
+  Play,
+  Pause,
+  Volume2,
+  VolumeX,
+  Maximize2,
+  Subtitles,
   Settings,
   SkipForward,
-  SkipBack,
-  Square
+  SkipBack
 } from 'lucide-react'
 import type { MediaItem, MediaEntity } from '@/types/media'
 import type { SubtitleTrack } from '@/types/subtitles'

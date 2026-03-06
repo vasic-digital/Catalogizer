@@ -2,7 +2,6 @@ import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   Search,
-  Filter,
   Plus,
   Play,
   Shuffle,
@@ -16,9 +15,6 @@ import {
   Edit3,
   Trash2,
   Music,
-  Film,
-  Image,
-  FileText,
   Copy,
   ExternalLink
 } from 'lucide-react';
@@ -26,13 +22,11 @@ import {
 import { Button } from '../ui/Button';
 import { Input } from '../ui/Input';
 import { Select } from '../ui/Select';
-import { PlaylistManager } from './PlaylistManager';
 import { PlaylistPlayer } from './PlaylistPlayer';
-import { PlaylistItemComponent } from './PlaylistItem';
 import { playlistApi } from '../../lib/playlistsApi';
 import { usePlaylists } from '../../hooks/usePlaylists';
 import { useFavorites } from '../../hooks/useFavorites';
-import { Playlist, PlaylistItem, PlaylistViewMode, PlaylistSortBy, getMediaIconWithMap } from '../../types/playlists';
+import { Playlist, PlaylistViewMode, PlaylistSortBy, getMediaIconWithMap } from '../../types/playlists';
 import { toast } from 'react-hot-toast';
 
 interface PlaylistGridProps {
@@ -40,20 +34,6 @@ interface PlaylistGridProps {
   onEditPlaylist?: (playlist: Playlist) => void;
   className?: string;
 }
-
-const MEDIA_TYPE_ICONS = {
-  music: Music,
-  video: Film,
-  image: Image,
-  document: FileText,
-};
-
-const DURATION_FORMATTER = new Intl.DateTimeFormat('en-US', {
-  hour: 'numeric',
-  minute: '2-digit',
-  second: '2-digit',
-  hour12: false
-});
 
 export const PlaylistGrid: React.FC<PlaylistGridProps> = ({
   onCreatePlaylist,

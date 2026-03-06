@@ -34,6 +34,7 @@ export interface CollectionRule {
   id: string;
   field: string;
   operator: string;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   value: any;
   condition?: 'AND' | 'OR';
   nested_rules?: CollectionRule[];

@@ -1,4 +1,4 @@
-import { SmartCollection, CollectionRule, CreateCollectionRequest, UpdateCollectionRequest, CollectionAnalytics, ShareCollectionRequest, CollectionShareInfo, Collection, CollectionTemplate } from '../types/collections';
+import { SmartCollection, CollectionRule, CreateCollectionRequest, UpdateCollectionRequest, CollectionAnalytics, ShareCollectionRequest, CollectionShareInfo, CollectionTemplate } from '../types/collections';
 import { api } from './api';
 import { mockCollectionsApi, shouldUseMockCollections } from './mockCollectionsApi';
 
@@ -12,9 +12,10 @@ class CollectionsApi {
     
     try {
       return await apiCall();
-    } catch (error: any) {
+    } catch (error: unknown) {
       // If API endpoint not found (404), fall back to mock data
-      if (error.response?.status === 404) {
+      const err = error as { response?: { status?: number } }
+      if (err.response?.status === 404) {
         return mockCall();
       }
       throw error;
@@ -74,6 +75,7 @@ class CollectionsApi {
     );
   }
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   async getCollectionItems(id: string, page = 1, limit = 50): Promise<any> {
     return this.tryApiCall(
       async () => {

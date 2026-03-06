@@ -5,8 +5,8 @@ import { PlaylistPlayer } from '../PlaylistPlayer'
 // Mock framer-motion
 vi.mock('framer-motion', () => ({
   motion: {
-    div: ({ children, className, ...props }: any) => <div className={className}>{children}</div>,
-    button: ({ children, className, onClick, ...props }: any) => (
+    div: ({ children, className, ..._props }: any) => <div className={className}>{children}</div>,
+    button: ({ children, className, onClick, ..._props }: any) => (
       <button className={className} onClick={onClick}>{children}</button>
     ),
   },
@@ -60,7 +60,9 @@ vi.mock('../../../types/playlists', () => ({
     album: item.album || '',
   })),
   getMediaIconWithMap: vi.fn(() => {
-    return (props: any) => <span data-testid="media-icon" {...props} />
+    const MediaIcon = (props: any) => <span data-testid="media-icon" {...props} />
+    MediaIcon.displayName = 'MediaIcon'
+    return MediaIcon
   }),
 }))
 

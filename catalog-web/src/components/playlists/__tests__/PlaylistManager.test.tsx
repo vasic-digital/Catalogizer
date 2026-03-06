@@ -4,7 +4,7 @@ import { PlaylistManager } from '../PlaylistManager'
 // Mock framer-motion
 vi.mock('framer-motion', () => ({
   motion: {
-    div: ({ children, className, ...props }: any) => <div className={className}>{children}</div>,
+    div: ({ children, className, ..._props }: any) => <div className={className}>{children}</div>,
   },
   AnimatePresence: ({ children }: any) => <>{children}</>,
 }))

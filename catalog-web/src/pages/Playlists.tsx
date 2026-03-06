@@ -6,7 +6,6 @@ import {
   Plus, 
   Trash2, 
   Search,
-  Play,
   Music,
   Film,
   FileText
@@ -52,7 +51,7 @@ export const PlaylistsPage: React.FC = () => {
   const [isEditing, setIsEditing] = useState(false);
   const [editingPlaylist, setEditingPlaylist] = useState<Playlist | null>(null);
   const [showPlayer, setShowPlayer] = useState(false);
-  const [selectedPlaylist, setSelectedPlaylist] = useState<Playlist | null>(null);
+  const [selectedPlaylist, _setSelectedPlaylist] = useState<Playlist | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [filterMediaType, setFilterMediaType] = useState('all');
 
@@ -70,43 +69,10 @@ export const PlaylistsPage: React.FC = () => {
   });
 
   const {
-    playlists,
-    error,
+    playlists: _playlists,
+    error: _error,
     refetchPlaylists
   } = usePlaylists();
-
-  // Filter playlists based on active tab
-  const filteredPlaylists = React.useMemo(() => {
-    let filtered = playlists;
-
-    switch (activeTab) {
-      case 'my':
-        filtered = filtered.filter((p: Playlist) => !p.is_public);
-        break;
-      case 'public':
-        filtered = filtered.filter((p: Playlist) => p.is_public);
-        break;
-      case 'favorites':
-        // This would need favorites integration
-        filtered = filtered.filter(() => false); // Placeholder
-        break;
-    }
-
-    // Apply search filter
-    if (searchQuery) {
-      filtered = filtered.filter((p: Playlist) =>
-        p.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        p.description?.toLowerCase().includes(searchQuery.toLowerCase())
-      );
-    }
-
-    // Apply media type filter
-    if (filterMediaType !== 'all') {
-      filtered = filtered.filter((p: Playlist) => p.primary_media_type === filterMediaType);
-    }
-
-    return filtered;
-  }, [playlists, activeTab, searchQuery, filterMediaType]);
 
   const handleCreatePlaylist = async () => {
     try {
@@ -150,21 +116,6 @@ export const PlaylistsPage: React.FC = () => {
     }
   };
 
-  const handleDeletePlaylist = async (playlist: Playlist) => {
-    if (!window.confirm(`Are you sure you want to delete "${playlist.name}"?`)) {
-      return;
-    }
-
-    try {
-      await playlistsApi.deletePlaylist(playlist.id);
-      toast.success(`Deleted playlist: ${playlist.name}`);
-      refetchPlaylists();
-    } catch (error) {
-      console.error('Failed to delete playlist:', error);
-      toast.error('Failed to delete playlist');
-    }
-  };
-
   const handleEditPlaylist = (playlist: Playlist) => {
     setEditingPlaylist(playlist);
     setFormData({
@@ -176,16 +127,6 @@ export const PlaylistsPage: React.FC = () => {
     setIsEditing(true);
   };
 
-  const handlePlayPlaylist = async (playlist: Playlist) => {
-    try {
-      const items = await playlistsApi.getPlaylistItems(playlist.id);
-      setSelectedPlaylist({ ...playlist, items: items.items });
-      setShowPlayer(true);
-    } catch (error) {
-      console.error('Failed to load playlist items:', error);
-      toast.error('Failed to load playlist items');
-    }
-  };
 
   // Media item search function
   const handleMediaSearch = async () => {
@@ -256,7 +197,7 @@ export const PlaylistsPage: React.FC = () => {
     setMediaSearchResults([]);
   };
 
-  const handleFormChange = (field: keyof CreatePlaylistFormData, value: any) => {
+  const handleFormChange = (field: keyof CreatePlaylistFormData, value: string | boolean | MediaItem[]) => {
     setFormData(prev => ({ ...prev, [field]: value }));
   };
 
@@ -510,7 +451,7 @@ export const PlaylistsPage: React.FC = () => {
             { id: 'smart', label: 'Smart Builder' }
           ]}
           activeTab={activeTab}
-          onChangeTab={(tab) => setActiveTab(tab as any)}
+          onChangeTab={(tab) => setActiveTab(tab as 'all' | 'my' | 'public' | 'favorites' | 'smart')}
         />
 
         {/* Filters and Controls */}

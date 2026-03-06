@@ -1,4 +1,4 @@
-import { CollectionRule, CollectionTemplate, CollectionTemplateRule } from '../types/collections';
+import { CollectionRule, CollectionTemplate } from '../types/collections';
 
 export const COLLECTION_FIELD_OPTIONS = [
   { value: 'title', label: 'Title', type: 'text' },
@@ -382,7 +382,7 @@ export const validateRule = (rule: CollectionRule): string[] => {
     if (rule.operator === 'between' || rule.operator === 'not_between') {
       if (!Array.isArray(rule.value) || rule.value.length !== 2) {
         errors.push('Date range must have 2 values');
-      } else if (rule.value.some((v: any) => isNaN(Date.parse(v)))) {
+      } else if (rule.value.some((v: string) => isNaN(Date.parse(v)))) {
         errors.push('Invalid date format in range');
       }
     } else if (rule.operator !== 'today' && 

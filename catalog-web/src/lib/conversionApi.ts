@@ -62,15 +62,15 @@ export const conversionApi = {
     return newJob;
   },
 
-  async cancelConversion(id: string): Promise<void> {
+  async cancelConversion(_id: string): Promise<void> {
     // Mock implementation
   },
 
-  async retryConversion(id: string): Promise<void> {
+  async retryConversion(_id: string): Promise<void> {
     // Mock implementation
   },
 
-  async downloadFile(path: string): Promise<void> {
+  async downloadFile(_path: string): Promise<void> {
     // Mock implementation - would trigger file download
   }
 };

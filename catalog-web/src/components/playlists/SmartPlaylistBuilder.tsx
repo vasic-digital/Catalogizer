@@ -4,10 +4,7 @@ import {
   Plus,
   X,
   Save,
-  Play,
-  Shuffle,
   Filter,
-  Search,
   Calendar,
   Clock,
   Star,
@@ -23,8 +20,7 @@ import {
 import { Button } from '../ui/Button';
 import { Input } from '../ui/Input';
 import { Select } from '../ui/Select';
-import { Switch } from '../ui/Switch';
-import { SmartPlaylistRule, PlaylistType } from '../../types/playlists';
+import { SmartPlaylistRule } from '../../types/playlists';
 import { toast } from 'react-hot-toast';
 
 interface SmartPlaylistBuilderProps {

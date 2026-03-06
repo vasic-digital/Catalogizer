@@ -1,6 +1,6 @@
-import React, { useState, useEffect } from 'react'
+import React, { useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Play, Pause, SkipForward, Volume2, Download, Eye, MoreHorizontal, Music, Film, Image, FileText, Clock, Star, X, Loader2 } from 'lucide-react'
+import { Play, Pause, Volume2, Download, Eye, MoreHorizontal, Music, Film, Image, FileText, Clock, Star, X } from 'lucide-react'
 import { SmartCollection } from '../../types/collections'
 import { useCollection } from '../../hooks/useCollections'
 import { Button } from '../ui/Button'
@@ -55,15 +55,6 @@ const formatFileSize = (bytes: number) => {
   }
   
   return `${size.toFixed(1)} ${units[unitIndex]}`
-}
-
-const formatDate = (dateString: string) => {
-  const date = new Date(dateString)
-  return date.toLocaleDateString('en-US', { 
-    month: 'short', 
-    day: 'numeric', 
-    year: 'numeric' 
-  })
 }
 
 const renderStars = (rating?: number) => {
@@ -199,7 +190,7 @@ export const CollectionPreview: React.FC<CollectionPreviewProps> = ({
           <div className="p-6 overflow-y-auto max-h-[calc(80vh-120px)]">
             <div className="space-y-2">
               <AnimatePresence>
-                {items.map((item: any, index: number) => {
+                {items.map((item: CollectionItem, index: number) => {
                   const Icon = MEDIA_ICONS[item.media_type as keyof typeof MEDIA_ICONS]
                   const isHovered = hoveredItem === item.id
                   const isSelected = selectedItems.has(item.id)
@@ -220,7 +211,7 @@ export const CollectionPreview: React.FC<CollectionPreviewProps> = ({
                       `}
                       onMouseEnter={() => setHoveredItem(item.id)}
                       onMouseLeave={() => setHoveredItem(null)}
-                      onClick={() => handlePreviewItem(item.id, { stopPropagation: () => {} } as any)}
+                      onClick={() => handlePreviewItem(item.id, { stopPropagation: () => { /* noop */ } } as React.MouseEvent)}
                     >
                       {/* Selection Checkbox */}
                       <div 

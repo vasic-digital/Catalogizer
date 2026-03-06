@@ -193,7 +193,7 @@ export const FormatConverter: React.FC<FormatConverterProps> = ({
                         <Button
                           variant="outline"
                           size="sm"
-                          onClick={() => onDownloadFile?.(job.outputFile!)}
+                          onClick={() => { if (job.outputFile) onDownloadFile?.(job.outputFile) }}
                         >
                           <Download className="w-4 h-4 mr-1" />
                           Download
@@ -355,7 +355,7 @@ export const FormatConverter: React.FC<FormatConverterProps> = ({
                         name="quality"
                         value={key}
                         checked={quality === key}
-                        onChange={(e) => setQuality(e.target.value as any)}
+                        onChange={(e) => setQuality(e.target.value as 'low' | 'medium' | 'high' | 'ultra')}
                         className="sr-only"
                       />
                       <div>

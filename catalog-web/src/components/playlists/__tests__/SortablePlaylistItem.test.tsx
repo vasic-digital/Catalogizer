@@ -4,7 +4,7 @@ import { SortablePlaylistItem } from '../SortablePlaylistItem'
 // Mock framer-motion
 vi.mock('framer-motion', () => ({
   motion: {
-    div: ({ children, className, onClick, ...props }: any) => (
+    div: ({ children, className, onClick, ..._props }: any) => (
       <div className={className} onClick={onClick}>{children}</div>
     ),
   },
@@ -45,7 +45,9 @@ vi.mock('../../../types/playlists', () => ({
   })),
   getMediaIconWithMap: vi.fn(() => {
     // Return a React component function, not an object
-    return (props: any) => <span data-testid="media-icon" {...props} />
+    const MediaIcon = (props: any) => <span data-testid="media-icon" {...props} />
+    MediaIcon.displayName = 'MediaIcon'
+    return MediaIcon
   }),
 }))
 

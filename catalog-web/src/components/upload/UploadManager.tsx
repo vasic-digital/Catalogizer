@@ -1,5 +1,5 @@
 import React, { useState, useCallback } from 'react';
-import { Upload, X, File, CheckCircle, AlertCircle, Trash2 } from 'lucide-react';
+import { Upload, File, CheckCircle, AlertCircle, Trash2 } from 'lucide-react';
 import { Button } from '../ui/Button';
 import { Card, CardContent, CardHeader, CardTitle } from '../ui/Card';
 import { Progress } from '../ui/Progress';
@@ -24,10 +24,10 @@ interface UploadManagerProps {
 export const UploadManager: React.FC<UploadManagerProps> = ({
   onUpload,
   onRemove,
-  onRetry,
+  onRetry: _onRetry,
   maxFileSize = 100 * 1024 * 1024, // 100MB
   acceptedTypes = ['video/*', 'audio/*', 'image/*'],
-  maxConcurrentUploads = 3
+  maxConcurrentUploads: _maxConcurrentUploads = 3
 }) => {
   const [uploadQueue, setUploadQueue] = useState<UploadItem[]>([]);
   const [isDragOver, setIsDragOver] = useState(false);
@@ -44,6 +44,7 @@ export const UploadManager: React.FC<UploadManagerProps> = ({
     
     // Auto-start uploads
     setTimeout(() => startUploads(newItems), 100);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const startUploads = useCallback(async (items: UploadItem[]) => {
@@ -100,7 +101,7 @@ export const UploadManager: React.FC<UploadManagerProps> = ({
       return true;
     });
 
-    processFiles(validFiles as any);
+    processFiles(validFiles as unknown as FileList);
   }, [processFiles, maxFileSize, acceptedTypes]);
 
   const handleDragOver = useCallback((e: React.DragEvent<HTMLDivElement>) => {

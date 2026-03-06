@@ -1,31 +1,31 @@
-import React, { useState, useEffect } from 'react';
+import React from 'react';
 import { AdminPanel } from '@/components/admin/AdminPanel';
 import { adminApi } from '@/lib/adminApi';
 import { useQuery } from '@tanstack/react-query';
 import toast from 'react-hot-toast';
-import type { SystemInfo, User, StorageInfo, Backup } from '@/types/admin';
+import type { User } from '@/types/admin';
 
 export const Admin: React.FC = () => {
-  const { data: systemInfo, isLoading: systemLoading } = useQuery({
+  const { data: systemInfo, isLoading: _systemLoading } = useQuery({
     queryKey: ['admin-system-info'],
     queryFn: () => adminApi.getSystemInfo(),
     staleTime: 1000 * 60 * 2,
     refetchInterval: 1000 * 30, // Refresh every 30 seconds
   });
 
-  const { data: users, isLoading: usersLoading } = useQuery({
+  const { data: users, isLoading: _usersLoading } = useQuery({
     queryKey: ['admin-users'],
     queryFn: () => adminApi.getUsers(),
     staleTime: 1000 * 60 * 5,
   });
 
-  const { data: storageInfo, isLoading: storageLoading } = useQuery({
+  const { data: storageInfo, isLoading: _storageLoading } = useQuery({
     queryKey: ['admin-storage'],
     queryFn: () => adminApi.getStorageInfo(),
     staleTime: 1000 * 60 * 5,
   });
 
-  const { data: backups, isLoading: backupsLoading } = useQuery({
+  const { data: backups, isLoading: _backupsLoading } = useQuery({
     queryKey: ['admin-backups'],
     queryFn: () => adminApi.getBackups(),
     staleTime: 1000 * 60 * 2,

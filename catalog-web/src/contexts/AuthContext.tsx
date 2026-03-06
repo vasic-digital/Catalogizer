@@ -10,10 +10,10 @@ interface AuthContextType {
   isLoading: boolean
   permissions: string[]
   isAdmin: boolean
-  login: (data: LoginRequest) => Promise<any>
-  register: (data: RegisterRequest) => Promise<any>
+  login: (data: LoginRequest) => Promise<unknown>
+  register: (data: RegisterRequest) => Promise<unknown>
   logout: () => Promise<void>
-  updateProfile: (data: UpdateProfileRequest) => Promise<any>
+  updateProfile: (data: UpdateProfileRequest) => Promise<unknown>
   changePassword: (data: ChangePasswordRequest) => Promise<void>
   hasPermission: (permission: string) => boolean
   canAccess: (resource: string, action: string) => boolean
@@ -41,8 +41,9 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const { data: authStatus, isLoading } = useQuery({
     queryKey: ['auth-status'],
     queryFn: authApi.getAuthStatus,
-    retry: (failureCount, error: any) => {
-      if (error?.response?.status === 401) return false
+    retry: (failureCount, error: unknown) => {
+      const err = error as { response?: { status?: number } }
+      if (err?.response?.status === 401) return false
       return failureCount < 2
     },
     staleTime: 1000 * 60 * 5,
@@ -81,8 +82,9 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       queryClient.invalidateQueries({ queryKey: ['permissions'] })
       toast.success('Successfully logged in!')
     },
-    onError: (error: any) => {
-      const message = error?.response?.data?.error || 'Login failed'
+    onError: (error: unknown) => {
+      const err = error as { response?: { data?: { error?: string } } }
+      const message = err?.response?.data?.error || 'Login failed'
       toast.error(message)
     },
   })
@@ -92,8 +94,9 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     onSuccess: () => {
       toast.success('Registration successful! Please log in.')
     },
-    onError: (error: any) => {
-      const message = error?.response?.data?.error || 'Registration failed'
+    onError: (error: unknown) => {
+      const err = error as { response?: { data?: { error?: string } } }
+      const message = err?.response?.data?.error || 'Registration failed'
       toast.error(message)
     },
   })
@@ -124,8 +127,9 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       queryClient.invalidateQueries({ queryKey: ['auth-status'] })
       toast.success('Profile updated successfully!')
     },
-    onError: (error: any) => {
-      const message = error?.response?.data?.error || 'Profile update failed'
+    onError: (error: unknown) => {
+      const err = error as { response?: { data?: { error?: string } } }
+      const message = err?.response?.data?.error || 'Profile update failed'
       toast.error(message)
     },
   })
@@ -135,8 +139,9 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     onSuccess: () => {
       toast.success('Password changed successfully!')
     },
-    onError: (error: any) => {
-      const message = error?.response?.data?.error || 'Password change failed'
+    onError: (error: unknown) => {
+      const err = error as { response?: { data?: { error?: string } } }
+      const message = err?.response?.data?.error || 'Password change failed'
       toast.error(message)
     },
   })

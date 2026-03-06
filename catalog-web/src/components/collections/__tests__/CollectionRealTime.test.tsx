@@ -1,11 +1,10 @@
 import { render, screen, waitFor } from '@testing-library/react'
-import userEvent from '@testing-library/user-event'
 import { CollectionRealTime } from '../CollectionRealTime'
 
 // Mock framer-motion
 vi.mock('framer-motion', () => ({
   motion: {
-    div: ({ children, className, onClick, ...props }: any) => (
+    div: ({ children, className, onClick, ..._props }: any) => (
       <div className={className} onClick={onClick}>{children}</div>
     ),
   },

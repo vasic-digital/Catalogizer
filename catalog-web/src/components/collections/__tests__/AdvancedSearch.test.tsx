@@ -89,7 +89,7 @@ describe('AdvancedSearch', () => {
   })
 
   it('renders search settings section', async () => {
-    const user = userEvent.setup()
+    const _user = userEvent.setup()
     render(<AdvancedSearch />)
 
     expect(screen.getByText('Search Settings')).toBeInTheDocument()

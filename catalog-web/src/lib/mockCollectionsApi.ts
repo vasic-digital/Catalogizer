@@ -292,7 +292,7 @@ export const mockCollectionsApi = {
   },
 
   // Test Rules
-  testRules: async (rules: CollectionRule[]): Promise<{ valid: boolean; sample_count: number; errors?: string[] }> => {
+  testRules: async (_rules: CollectionRule[]): Promise<{ valid: boolean; sample_count: number; errors?: string[] }> => {
     await new Promise(resolve => setTimeout(resolve, 100));
     // Mock rule validation - always return success for testing
     return {

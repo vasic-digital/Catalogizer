@@ -5,10 +5,10 @@ import { CollectionExport } from '../CollectionExport'
 // Mock framer-motion
 vi.mock('framer-motion', () => ({
   motion: {
-    div: ({ children, className, onClick, ...props }: any) => (
+    div: ({ children, className, onClick, ..._props }: any) => (
       <div className={className} onClick={onClick}>{children}</div>
     ),
-    button: ({ children, className, onClick, ...props }: any) => (
+    button: ({ children, className, onClick, ..._props }: any) => (
       <button className={className} onClick={onClick}>{children}</button>
     ),
   },

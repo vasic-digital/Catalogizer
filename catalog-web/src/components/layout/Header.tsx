@@ -2,7 +2,7 @@ import React, { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { useAuth } from '@/contexts/AuthContext'
 import { Button } from '@/components/ui/Button'
-import { Menu, X, User, LogOut, Settings, Search, Languages, Folder, Settings2, Heart, ListMusic, Library } from 'lucide-react'
+import { Menu, X, User, LogOut, Settings, Search, Folder, Heart, ListMusic, Library } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
 
 export const Header: React.FC = () => {

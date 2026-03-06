@@ -5,11 +5,7 @@ import {
   Play,
   Pause,
   MoreHorizontal,
-  X,
-  Music,
-  Film,
-  Image,
-  FileText
+  X
 } from 'lucide-react';
 import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
@@ -42,7 +38,7 @@ export const SortablePlaylistItem: React.FC<SortablePlaylistItemProps> = ({
   onPause,
   onRemove,
   onToggleFavorite,
-  isFavorite,
+  isFavorite: _isFavorite,
 }) => {
   const {
     attributes,
@@ -78,12 +74,6 @@ export const SortablePlaylistItem: React.FC<SortablePlaylistItemProps> = ({
   const handleRemoveClick = (e: React.MouseEvent) => {
     e.stopPropagation();
     if (onRemove) onRemove(item, index);
-  };
-
-  const handleToggleFavorite = () => {
-    if (onToggleFavorite) {
-      onToggleFavorite(item.id, 'playlist_item');
-    }
   };
 
   const duration = flattenedItem.duration ? parseInt(String(flattenedItem.duration)) : null;

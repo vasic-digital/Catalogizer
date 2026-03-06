@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Plus, Search, Grid, List, PlayCircle, Star, Clock, MoreHorizontal, Edit2, Trash2 } from 'lucide-react';
+import { Plus, Search, Grid, List, PlayCircle, Edit2, Trash2 } from 'lucide-react';
 import { Button } from '../ui/Button';
 import { Input } from '../ui/Input';
 import { Card, CardContent, CardHeader, CardTitle } from '../ui/Card';
@@ -57,12 +57,12 @@ export const CollectionsManager: React.FC<CollectionsManagerProps> = ({
     return `${minutes}m`;
   };
 
-  const handleCreateCollection = (collectionData: any) => {
+  const handleCreateCollection = (collectionData: Omit<Collection, 'id' | 'createdAt' | 'updatedAt'>) => {
     onCreateCollection?.(collectionData);
     setShowCreateModal(false);
   };
 
-  const handleUpdateCollection = (collectionData: any) => {
+  const handleUpdateCollection = (collectionData: Partial<Collection>) => {
     if (editingCollection) {
       onUpdateCollection?.(editingCollection.id, collectionData);
       setEditingCollection(null);

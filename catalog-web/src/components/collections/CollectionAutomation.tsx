@@ -427,7 +427,7 @@ const CollectionAutomation: React.FC = () => {
           
           <select
             value={sortBy}
-            onChange={(e) => setSortBy(e.target.value as any)}
+            onChange={(e) => setSortBy(e.target.value as 'name' | 'created' | 'lastRun' | 'status')}
             className="px-3 py-2 border rounded-lg bg-white"
           >
             <option value="created">Created</option>
@@ -601,7 +601,7 @@ const CollectionAutomation: React.FC = () => {
                         <div>
                           <h5 className="font-medium text-sm text-gray-700 mb-2">Actions</h5>
                           <div className="space-y-2">
-                            {rule.actions.map((action, index) => (
+                            {rule.actions.map((action, _index) => (
                               <div key={action.id} className="bg-white rounded p-3 text-sm">
                                 <div className="flex items-center gap-2 mb-2">
                                   <span className="font-medium capitalize">

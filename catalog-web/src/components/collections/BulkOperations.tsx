@@ -11,7 +11,6 @@ import {
   MoreHorizontal,
   X
 } from 'lucide-react'
-import { Collection } from '../../types/collections'
 import { Button } from '../ui/Button'
 import { Switch } from '../ui/Switch'
 

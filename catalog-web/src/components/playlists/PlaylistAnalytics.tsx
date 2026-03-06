@@ -1,16 +1,10 @@
 import React from 'react';
 import { motion } from 'framer-motion';
 import {
-  BarChart3,
   Play,
-  Clock,
   Users,
   TrendingUp,
-  Calendar,
-  Music,
-  Film,
-  Image,
-  FileText
+  Calendar
 } from 'lucide-react';
 import { PlaylistAnalytics as PlaylistAnalyticsType } from '../../types/playlists';
 import { Card } from '../ui/Card';
@@ -19,13 +13,6 @@ interface PlaylistAnalyticsProps {
   analytics: PlaylistAnalyticsType;
   className?: string;
 }
-
-const MEDIA_TYPE_ICONS = {
-  music: Music,
-  video: Film,
-  image: Image,
-  document: FileText,
-};
 
 export const PlaylistAnalytics: React.FC<PlaylistAnalyticsProps> = ({
   analytics,
@@ -39,17 +26,6 @@ export const PlaylistAnalytics: React.FC<PlaylistAnalyticsProps> = ({
       return (num / 1000).toFixed(1) + 'K';
     }
     return num.toString();
-  };
-
-  const formatDuration = (seconds: number) => {
-    const hours = Math.floor(seconds / 3600);
-    const minutes = Math.floor((seconds % 3600) / 60);
-    const secs = Math.floor(seconds % 60);
-    
-    if (hours > 0) {
-      return `${hours}h ${minutes}m`;
-    }
-    return `${minutes}m ${secs}s`;
   };
 
   const formatDate = (dateString: string) => {

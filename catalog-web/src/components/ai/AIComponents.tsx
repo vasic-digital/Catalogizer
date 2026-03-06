@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { Search, Brain, Lightbulb, Tag, Grid, Folder, Sparkles, TrendingUp } from 'lucide-react';
 import { debounce } from '@/lib/utils';
 
@@ -335,8 +335,8 @@ export const AINaturalSearch: React.FC<AINaturalSearchProps> = ({
   const [loading, setLoading] = useState(false);
   const [showSuggestions, setShowSuggestions] = useState(false);
 
-  const debouncedGetSuggestions = useCallback(
-    debounce(async (input: string) => {
+  const debouncedGetSuggestions = useMemo(
+    () => debounce(async (input: string) => {
       if (input.length < 3) {
         setSuggestions([]);
         return;

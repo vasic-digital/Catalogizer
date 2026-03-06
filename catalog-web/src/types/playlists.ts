@@ -94,7 +94,7 @@ export const getMediaIconName = (mediaType: string): string => {
 }
 
 // Helper function to get media type icon component (for generic use)
-export const getMediaIcon = (mediaType: string, iconMap: { [key: string]: any }) => {
+export const getMediaIcon = (mediaType: string, iconMap: { [key: string]: unknown }) => {
   const iconName = getMediaIconName(mediaType)
   return iconMap[iconName] || iconMap.document
 }

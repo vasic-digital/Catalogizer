@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useRef } from 'react'
+import React, { useState, useCallback, useRef, useMemo } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import {
   Download,
@@ -208,7 +208,7 @@ export const CollectionExport: React.FC<CollectionExportProps> = ({
   const { collectionItems, isLoading } = useCollection(collection?.id || '')
 
   // Use collection items from props if available
-  const items = collectionItems || []
+  const items = useMemo(() => collectionItems || [], [collectionItems])
 
   const selectedFormat = EXPORT_FORMATS.find(f => f.value === exportOptions.format)
 
@@ -507,7 +507,7 @@ export const CollectionExport: React.FC<CollectionExportProps> = ({
                         key={format.value}
                         format={format}
                         isSelected={exportOptions.format === format.value}
-                        onClick={() => setExportOptions(prev => ({ ...prev, format: format.value as any }))}
+                        onClick={() => setExportOptions(prev => ({ ...prev, format: format.value as ExportOptions['format'] }))}
                       />
                     ))}
                   </div>
@@ -594,7 +594,7 @@ export const CollectionExport: React.FC<CollectionExportProps> = ({
                               </label>
                               <Select
                                 value={exportOptions.compression}
-                                onChange={(value) => setExportOptions(prev => ({ ...prev, compression: value as any }))}
+                                onChange={(value) => setExportOptions(prev => ({ ...prev, compression: value as ExportOptions['compression'] }))}
                                 options={COMPRESSION_OPTIONS}
                                 className="w-full"
                               />
@@ -606,7 +606,7 @@ export const CollectionExport: React.FC<CollectionExportProps> = ({
                               </label>
                               <Select
                                 value={exportOptions.quality}
-                                onChange={(value) => setExportOptions(prev => ({ ...prev, quality: value as any }))}
+                                onChange={(value) => setExportOptions(prev => ({ ...prev, quality: value as ExportOptions['quality'] }))}
                                 options={QUALITY_OPTIONS}
                                 className="w-full"
                               />
@@ -809,7 +809,7 @@ export const CollectionExport: React.FC<CollectionExportProps> = ({
                           </label>
                           <Select
                             value={importOptions.mergeStrategy}
-                            onChange={(value) => setImportOptions(prev => ({ ...prev, mergeStrategy: value as any }))}
+                            onChange={(value) => setImportOptions(prev => ({ ...prev, mergeStrategy: value as ImportOptions['mergeStrategy'] }))}
                             options={[
                               { value: 'replace', label: 'Replace Collection' },
                               { value: 'merge', label: 'Merge with Existing' },
@@ -825,7 +825,7 @@ export const CollectionExport: React.FC<CollectionExportProps> = ({
                           </label>
                           <Select
                             value={importOptions.duplicateHandling}
-                            onChange={(value) => setImportOptions(prev => ({ ...prev, duplicateHandling: value as any }))}
+                            onChange={(value) => setImportOptions(prev => ({ ...prev, duplicateHandling: value as ImportOptions['duplicateHandling'] }))}
                             options={[
                               { value: 'skip', label: 'Skip Duplicates' },
                               { value: 'replace', label: 'Replace Existing' },

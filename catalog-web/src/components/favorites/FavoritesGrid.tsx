@@ -4,7 +4,6 @@ import {
   Grid,
   List,
   Heart,
-  Filter,
   SortAsc,
   SortDesc,
   Star,
@@ -19,7 +18,6 @@ import { MediaGrid } from '@/components/media/MediaGrid'
 import { FavoriteToggle } from './FavoriteToggle'
 import { useFavorites } from '@/hooks/useFavorites'
 import { mediaApi } from '@/lib/mediaApi'
-import type { Favorite } from '@/types/favorites'
 import type { MediaItem } from '@/types/media'
 
 interface FavoritesGridProps {
@@ -35,7 +33,7 @@ export const FavoritesGrid: React.FC<FavoritesGridProps> = ({
   showFilters = true,
   showStats = true,
   selectable = false,
-  onSelectChange
+  onSelectChange: _onSelectChange
 }) => {
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid')
   const [searchQuery, setSearchQuery] = useState('')
@@ -48,11 +46,11 @@ export const FavoritesGrid: React.FC<FavoritesGridProps> = ({
 
   const {
     favorites,
-    total,
+    total: _total,
     isLoading,
     error,
     stats,
-    toggleFavorite,
+    toggleFavorite: _toggleFavorite,
     bulkRemoveFromFavorites
   } = useFavorites({
     sort_by: sortBy,
@@ -247,7 +245,7 @@ export const FavoritesGrid: React.FC<FavoritesGridProps> = ({
               
               {/* Sort Options */}
               <div className="flex gap-2">
-                <Select value={sortBy} onValueChange={(value: any) => setSortBy(value)}>
+                <Select value={sortBy} onValueChange={(value: string) => setSortBy(value as 'created_at' | 'title' | 'rating' | 'year')}>
                   <option value="created_at">Date Added</option>
                   <option value="title">Title</option>
                   <option value="rating">Rating</option>

@@ -1,11 +1,11 @@
 import React, { act } from 'react'
-import { render, screen, fireEvent, waitFor, within } from '@testing-library/react'
+import { render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { MediaBrowser } from '../MediaBrowser'
 import { mediaApi } from '@/lib/mediaApi'
 import * as utils from '@/lib/utils'
-import type { MediaSearchRequest, MediaItem } from '@/types/media'
+import type { MediaItem } from '@/types/media'
 
 // Mock dependencies
 vi.mock('@/lib/mediaApi', async () => ({
@@ -38,7 +38,7 @@ vi.mock('@/lib/utils', async () => ({
 
 // Mock child components
 vi.mock('@/components/media/MediaGrid', async () => ({
-  MediaGrid: ({ media, onMediaView, onMediaDownload, loading, viewMode }: any) => {
+  MediaGrid: ({ media, onMediaView, onMediaDownload, loading, viewMode: _viewMode }: any) => {
     return (
       <div data-testid="media-grid">
         {loading && <div data-testid="loading-indicator">Loading...</div>}
@@ -241,7 +241,7 @@ describe('MediaBrowser', () => {
     })
 
     it('shows loading state while fetching media', () => {
-      mockMediaApi.searchMedia.mockImplementation(() => new Promise(() => {})) // Never resolves
+      mockMediaApi.searchMedia.mockImplementation(() => new Promise(() => { /* noop */ })) // Never resolves
       
       renderWithQueryClient(<MediaBrowser />)
       
@@ -510,7 +510,7 @@ describe('MediaBrowser', () => {
           limit: 24,
         })
       
-      const { container } = renderWithQueryClient(<MediaBrowser />)
+      const { container: _container } = renderWithQueryClient(<MediaBrowser />)
       
       // Wait for component to load and show pagination
       await waitFor(() => {

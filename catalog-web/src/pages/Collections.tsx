@@ -159,7 +159,7 @@ export const Collections: React.FC = () => {
     deleteCollection,
     shareCollection,
     duplicateCollection,
-    exportCollection,
+    exportCollection: _exportCollection,
     bulkDeleteCollections,
     bulkShareCollections,
     bulkExportCollections,

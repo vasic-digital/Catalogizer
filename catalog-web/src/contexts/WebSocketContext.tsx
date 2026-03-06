@@ -5,7 +5,7 @@ import { useWebSocket } from '@/lib/websocket'
 interface WebSocketContextType {
   connect: () => void
   disconnect: () => void
-  send: (message: any) => void
+  send: (message: unknown) => void
   subscribe: (channel: string) => void
   unsubscribe: (channel: string) => void
   getConnectionState: () => 'connecting' | 'open' | 'closing' | 'closed'

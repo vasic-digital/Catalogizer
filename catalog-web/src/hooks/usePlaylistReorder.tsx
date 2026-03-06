@@ -31,20 +31,20 @@ export const usePlaylistReorder = () => {
       const previousPlaylists = queryClient.getQueryData(['playlists']);
       
       // Optimistically update the playlist in cache
-      queryClient.setQueryData(['playlists'], (old: any) => {
+      queryClient.setQueryData(['playlists'], (old: { playlists: { id: string; items?: PlaylistItem[] }[] } | undefined) => {
         if (!old) return old;
-        
+
         return {
           ...old,
-          playlists: old.playlists.map((playlist: any) => 
-            playlist.id === playlistId 
+          playlists: old.playlists.map((playlist) =>
+            playlist.id === playlistId
               ? { ...playlist, items }
               : playlist
           )
         };
       });
 
-      queryClient.setQueryData(['playlist', playlistId], (old: any) => {
+      queryClient.setQueryData(['playlist', playlistId], (old: { items?: PlaylistItem[] } | undefined) => {
         if (!old) return old;
         return {
           ...old,

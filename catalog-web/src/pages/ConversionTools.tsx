@@ -9,7 +9,7 @@ export const ConversionTools: React.FC = () => {
   const [jobs, setJobs] = useState<ConversionJob[]>([]);
   const [supportedFormats] = useState(['mp4', 'mkv', 'avi', 'mov', 'webm', 'mp3', 'wav', 'flac']);
 
-  const { data, isLoading, refetch } = useQuery({
+  const { data, refetch } = useQuery({
     queryKey: ['conversion-jobs'],
     queryFn: () => conversionApi.getConversionJobs(),
     staleTime: 1000 * 60 * 2,
@@ -22,7 +22,7 @@ export const ConversionTools: React.FC = () => {
     }
   }, [data]);
 
-  const handleStartConversion = async (jobData: any) => {
+  const handleStartConversion = async (jobData: Record<string, unknown>) => {
     try {
       const newJob = await conversionApi.startConversion(jobData);
       setJobs(prev => [newJob, ...prev]);

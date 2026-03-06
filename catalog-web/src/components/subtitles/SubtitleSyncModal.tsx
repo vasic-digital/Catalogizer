@@ -1,6 +1,6 @@
 import React, { useState } from 'react'
 import { motion } from 'framer-motion'
-import { X, CheckCircle, AlertCircle, Clock, RefreshCw, Play, Pause } from 'lucide-react'
+import { X, CheckCircle, AlertCircle, Clock, RefreshCw, Play } from 'lucide-react'
 import { subtitleApi } from '@/lib/subtitleApi'
 import type { SubtitleSyncVerificationResponse } from '@/types/subtitles'
 

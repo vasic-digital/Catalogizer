@@ -63,11 +63,13 @@ const createTestWrapper = () => {
     },
   })
 
-  return ({ children }: { children: React.ReactNode }) => (
+  const Wrapper = ({ children }: { children: React.ReactNode }) => (
     <QueryClientProvider client={queryClient}>
       {children}
     </QueryClientProvider>
   )
+  Wrapper.displayName = 'TestWrapper'
+  return Wrapper
 }
 
 describe('Analytics', () => {
@@ -77,8 +79,8 @@ describe('Analytics', () => {
 
   describe('Loading State', () => {
     it('renders loading skeleton when stats are loading', () => {
-      mockMediaApi.getMediaStats.mockReturnValue(new Promise(() => {})) // Never resolves
-      mockMediaApi.getRecentMedia.mockReturnValue(new Promise(() => {}))
+      mockMediaApi.getMediaStats.mockReturnValue(new Promise(() => { /* noop */ })) // Never resolves
+      mockMediaApi.getRecentMedia.mockReturnValue(new Promise(() => { /* noop */ }))
 
       const TestWrapper = createTestWrapper()
       render(

@@ -272,3 +272,5 @@ export const MediaCard: React.FC<MediaCardProps> = React.memo(({
     </motion.div>
   )
 })
+
+MediaCard.displayName = 'MediaCard'
