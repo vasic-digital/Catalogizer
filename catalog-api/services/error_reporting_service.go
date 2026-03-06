@@ -508,18 +508,92 @@ func (s *ErrorReportingService) sendToExternalServices(report *models.ErrorRepor
 }
 
 func (s *ErrorReportingService) sendToSentry(report *models.ErrorReport) error {
-	// Sentry integration would go here
-	// This is a placeholder for Sentry integration
+	if s.config.SentryDSN == "" || s.httpClient == nil {
+		return nil
+	}
+
+	event := map[string]interface{}{
+		"event_id":  fmt.Sprintf("%x", report.ReportedAt.UnixNano()),
+		"timestamp": report.ReportedAt.UTC().Format(time.RFC3339),
+		"level":     strings.ToLower(report.Level),
+		"logger":    "catalogizer",
+		"platform":  "go",
+		"message": map[string]interface{}{
+			"formatted": report.Message,
+		},
+		"tags": map[string]string{
+			"component":  report.Component,
+			"error_code": report.ErrorCode,
+		},
+	}
+	if report.StackTrace != "" {
+		event["extra"] = map[string]interface{}{
+			"stack_trace": report.StackTrace,
+		}
+	}
+	if report.SystemInfo != nil {
+		event["contexts"] = map[string]interface{}{
+			"os": report.SystemInfo,
+		}
+	}
+
+	jsonData, err := json.Marshal(event)
+	if err != nil {
+		return fmt.Errorf("failed to marshal sentry event: %w", err)
+	}
+
+	resp, err := s.httpClient.Post(s.config.SentryDSN, "application/json", bytes.NewBuffer(jsonData))
+	if err != nil {
+		return fmt.Errorf("failed to send to sentry: %w", err)
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode >= 400 {
+		return fmt.Errorf("sentry returned status %d", resp.StatusCode)
+	}
+
 	return nil
 }
 
 func (s *ErrorReportingService) sendToCrashlytics(report *models.CrashReport) error {
-	if s.config.CrashlyticsAPIKey == "" {
+	if s.config.CrashlyticsAPIKey == "" || s.httpClient == nil {
 		return nil
 	}
 
-	// Crashlytics integration would go here
-	// This is a placeholder for Firebase Crashlytics integration
+	event := map[string]interface{}{
+		"event_id":    fmt.Sprintf("%x", report.ReportedAt.UnixNano()),
+		"timestamp":   report.ReportedAt.UTC().Format(time.RFC3339),
+		"signal":      report.Signal,
+		"message":     report.Message,
+		"stack_trace": report.StackTrace,
+		"fingerprint": report.Fingerprint,
+	}
+	if report.SystemInfo != nil {
+		event["system_info"] = report.SystemInfo
+	}
+
+	jsonData, err := json.Marshal(event)
+	if err != nil {
+		return fmt.Errorf("failed to marshal crashlytics event: %w", err)
+	}
+
+	req, err := http.NewRequest("POST", "https://firebase-crashlytics.googleapis.com/v1/events", bytes.NewBuffer(jsonData))
+	if err != nil {
+		return fmt.Errorf("failed to create crashlytics request: %w", err)
+	}
+	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("Authorization", "Bearer "+s.config.CrashlyticsAPIKey)
+
+	resp, err := s.httpClient.Do(req)
+	if err != nil {
+		return fmt.Errorf("failed to send to crashlytics: %w", err)
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode >= 400 {
+		return fmt.Errorf("crashlytics returned status %d", resp.StatusCode)
+	}
+
 	return nil
 }
 

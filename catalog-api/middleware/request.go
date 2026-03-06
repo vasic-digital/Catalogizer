@@ -1,12 +1,20 @@
 package middleware
 
 import (
+	"net/http"
 	"os"
 	"strings"
+	"sync"
+	"time"
 
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
 )
+
+type ipBucket struct {
+	tokens    float64
+	lastCheck time.Time
+}
 
 // RequestID adds a unique request ID to each request
 func RequestID() gin.HandlerFunc {
@@ -22,12 +30,58 @@ func RequestID() gin.HandlerFunc {
 	}
 }
 
-// RateLimiter implements basic rate limiting
+// RateLimiter implements token-bucket rate limiting per client IP
 func RateLimiter(requestsPerMinute int) gin.HandlerFunc {
-	// This is a simplified rate limiter
-	// In production, you'd want to use Redis or similar for distributed rate limiting
+	var mu sync.Mutex
+	buckets := make(map[string]*ipBucket)
+	rate := float64(requestsPerMinute) / 60.0
+
+	go func() {
+		for {
+			time.Sleep(5 * time.Minute)
+			mu.Lock()
+			now := time.Now()
+			for ip, b := range buckets {
+				if now.Sub(b.lastCheck) > 10*time.Minute {
+					delete(buckets, ip)
+				}
+			}
+			mu.Unlock()
+		}
+	}()
+
 	return func(c *gin.Context) {
-		// Placeholder for rate limiting logic
+		ip := c.ClientIP()
+
+		mu.Lock()
+		b, exists := buckets[ip]
+		if !exists {
+			b = &ipBucket{
+				tokens:    float64(requestsPerMinute),
+				lastCheck: time.Now(),
+			}
+			buckets[ip] = b
+		}
+
+		now := time.Now()
+		elapsed := now.Sub(b.lastCheck).Seconds()
+		b.tokens += elapsed * rate
+		if b.tokens > float64(requestsPerMinute) {
+			b.tokens = float64(requestsPerMinute)
+		}
+		b.lastCheck = now
+
+		if b.tokens < 1.0 {
+			mu.Unlock()
+			c.AbortWithStatusJSON(http.StatusTooManyRequests, gin.H{
+				"error": "rate limit exceeded",
+			})
+			return
+		}
+
+		b.tokens -= 1.0
+		mu.Unlock()
+
 		c.Next()
 	}
 }

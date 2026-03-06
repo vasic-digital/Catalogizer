@@ -539,14 +539,33 @@ func (s *LogManagementService) exportToZip(entries []*models.LogEntry) ([]byte, 
 func (s *LogManagementService) streamLogEntries(channel chan<- *models.LogEntry, filters *models.LogStreamFilters) {
 	defer close(channel)
 
-	// This is a simplified implementation
-	// In a real system, you would tail log files or watch for new database entries
 	ticker := time.NewTicker(1 * time.Second)
 	defer ticker.Stop()
 
+	var lastID int
 	for range ticker.C {
-		// Check for new log entries and send them to the channel
-		// This is a placeholder implementation
+		if s.logRepo == nil {
+			continue
+		}
+
+		entries, err := s.logRepo.GetRecentLogEntries(filters.Component, 50)
+		if err != nil {
+			continue
+		}
+
+		for _, entry := range entries {
+			if entry.ID <= lastID {
+				continue
+			}
+			if filters.Level != "" && entry.Level != filters.Level {
+				continue
+			}
+			if filters.Search != "" && !strings.Contains(entry.Message, filters.Search) {
+				continue
+			}
+			lastID = entry.ID
+			channel <- entry
+		}
 	}
 }
 

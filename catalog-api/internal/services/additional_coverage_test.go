@@ -1401,7 +1401,7 @@ func TestMediaRecognition_CalculateSimilarity_Stub(t *testing.T) {
 
 	result := &MediaRecognitionResult{Title: "Test"}
 	score := svc.calculateSimilarity(result, "Test", "{}", "{}")
-	assert.Equal(t, 0.0, score) // Placeholder returns 0.0
+	assert.Equal(t, 0.6, score) // Exact title match scores 0.6 (title weight)
 }
 
 func TestMediaRecognition_LooksLikeGame(t *testing.T) {

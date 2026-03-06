@@ -397,14 +397,45 @@ func sanitizeContentDisposition(name string) string {
 
 // Helper functions
 func (h *DownloadHandler) getDirectoryContentsRecursive(path string) ([]models.FileInfo, error) {
-	// This is a placeholder implementation
-	// You would need to implement recursive directory traversal
-	// using your catalog service
-	return []models.FileInfo{}, nil
+	if h.catalogService == nil {
+		return []models.FileInfo{}, nil
+	}
+
+	var result []models.FileInfo
+	files, err := h.catalogService.ListDirectory(path)
+	if err != nil {
+		return nil, err
+	}
+
+	for _, f := range files {
+		result = append(result, f)
+		if f.IsDirectory {
+			subFiles, err := h.getDirectoryContentsRecursive(f.Path)
+			if err != nil {
+				continue
+			}
+			result = append(result, subFiles...)
+		}
+	}
+
+	return result, nil
 }
 
 func (h *DownloadHandler) getFilesByPath(path, smbRoot string) ([]models.FileInfo, error) {
-	// This is a placeholder implementation
-	// You would need to implement path-based file lookup
-	return []models.FileInfo{}, nil
+	if h.catalogService == nil {
+		return []models.FileInfo{}, nil
+	}
+
+	files, err := h.catalogService.ListDirectory(path)
+	if err != nil {
+		return nil, err
+	}
+
+	var result []models.FileInfo
+	for _, f := range files {
+		if !f.IsDirectory {
+			result = append(result, f)
+		}
+	}
+	return result, nil
 }

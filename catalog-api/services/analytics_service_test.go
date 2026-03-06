@@ -1107,7 +1107,8 @@ func TestAnalyticsService_GenerateReport(t *testing.T) {
 			assert.NotNil(t, report)
 			assert.Equal(t, tt.request.ReportType, report.Type)
 			assert.Equal(t, "completed", report.Status)
-			assert.Equal(t, "{}", report.Data)
+			assert.NotEmpty(t, report.Data)
+			assert.Contains(t, report.Data, tt.request.ReportType)
 		})
 	}
 }

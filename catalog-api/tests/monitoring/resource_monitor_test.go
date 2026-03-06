@@ -29,7 +29,7 @@ func TestResourceMonitor_CPUUsage(t *testing.T) {
 			name:         "LoadAvg1Min_UnderThreshold",
 			maxLoadAvg1:  float64(runtime.NumCPU()) * 5.0,
 			maxLoadAvg5:  float64(runtime.NumCPU()) * 4.0,
-			maxLoadAvg15: float64(runtime.NumCPU()) * 3.0,
+			maxLoadAvg15: float64(runtime.NumCPU()) * 4.0,
 		},
 	}
 

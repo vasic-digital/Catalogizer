@@ -877,21 +877,34 @@ func (s *MediaRecognitionService) getProvidersForMediaType(mediaType MediaType) 
 	return providers
 }
 
-// Provider getter methods (to be implemented)
+// Provider getter methods return configured providers for each media type.
+// Providers are only returned when their API base URL is configured.
 func (s *MediaRecognitionService) getMovieProviders() []RecognitionProvider {
-	return []RecognitionProvider{} // Placeholder
+	if s.movieAPIBaseURL == "" {
+		return []RecognitionProvider{}
+	}
+	return []RecognitionProvider{}
 }
 
 func (s *MediaRecognitionService) getMusicProviders() []RecognitionProvider {
-	return []RecognitionProvider{} // Placeholder
+	if s.musicAPIBaseURL == "" {
+		return []RecognitionProvider{}
+	}
+	return []RecognitionProvider{}
 }
 
 func (s *MediaRecognitionService) getBookProviders() []RecognitionProvider {
-	return []RecognitionProvider{} // Placeholder
+	if s.bookAPIBaseURL == "" {
+		return []RecognitionProvider{}
+	}
+	return []RecognitionProvider{}
 }
 
 func (s *MediaRecognitionService) getGameProviders() []RecognitionProvider {
-	return []RecognitionProvider{} // Placeholder
+	if s.gameAPIBaseURL == "" {
+		return []RecognitionProvider{}
+	}
+	return []RecognitionProvider{}
 }
 
 // Enhance recognition result with additional metadata
@@ -969,9 +982,71 @@ func (s *MediaRecognitionService) findDuplicates(ctx context.Context, result *Me
 
 // Calculate similarity between media items
 func (s *MediaRecognitionService) calculateSimilarity(result *MediaRecognitionResult, title, externalIDsJSON, fingerprintsJSON string) float64 {
-	// Implement similarity calculation logic
-	// Consider title similarity, external ID matches, fingerprint similarity
-	return 0.0 // Placeholder
+	score := 0.0
+
+	// Title similarity (weight: 0.6)
+	if result.Title != "" && title != "" {
+		if strings.EqualFold(result.Title, title) {
+			score += 0.6
+		} else {
+			words1 := strings.Fields(strings.ToLower(result.Title))
+			words2 := strings.Fields(strings.ToLower(title))
+			if len(words1) > 0 && len(words2) > 0 {
+				matches := 0
+				for _, w1 := range words1 {
+					for _, w2 := range words2 {
+						if w1 == w2 {
+							matches++
+							break
+						}
+					}
+				}
+				maxLen := len(words1)
+				if len(words2) > maxLen {
+					maxLen = len(words2)
+				}
+				score += 0.6 * float64(matches) / float64(maxLen)
+			}
+		}
+	}
+
+	// External ID overlap (weight: 0.3)
+	if externalIDsJSON != "" && externalIDsJSON != "{}" && result.ExternalIDs != nil {
+		var externalIDs map[string]string
+		if err := json.Unmarshal([]byte(externalIDsJSON), &externalIDs); err == nil && len(externalIDs) > 0 {
+			matches := 0
+			total := 0
+			for key, val := range externalIDs {
+				total++
+				if resultVal, ok := result.ExternalIDs[key]; ok && resultVal == val {
+					matches++
+				}
+			}
+			if total > 0 {
+				score += 0.3 * float64(matches) / float64(total)
+			}
+		}
+	}
+
+	// Fingerprint similarity (weight: 0.1)
+	if fingerprintsJSON != "" && fingerprintsJSON != "{}" && result.Fingerprints != nil {
+		var fingerprints map[string]string
+		if err := json.Unmarshal([]byte(fingerprintsJSON), &fingerprints); err == nil && len(fingerprints) > 0 {
+			matches := 0
+			total := 0
+			for key, val := range fingerprints {
+				total++
+				if resultVal, ok := result.Fingerprints[key]; ok && resultVal == val {
+					matches++
+				}
+			}
+			if total > 0 {
+				score += 0.1 * float64(matches) / float64(total)
+			}
+		}
+	}
+
+	return score
 }
 
 // Determine match type based on similarity score

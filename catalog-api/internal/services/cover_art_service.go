@@ -12,7 +12,9 @@ import (
 	"io"
 	"net/http"
 	"os"
+	"os/exec"
 	"path/filepath"
+	"strconv"
 	"strings"
 	"time"
 
@@ -622,8 +624,22 @@ func (s *CoverArtService) getCachedCoverArt(ctx context.Context, request *CoverA
 
 // getCoverArtDownloadInfo retrieves cover art download information
 func (s *CoverArtService) getCoverArtDownloadInfo(ctx context.Context, resultID string) (*CoverArtSearchResult, error) {
-	// For now, return a placeholder - in a real implementation, this would query the database
-	// or search results cache for the specific result ID
+	if s.db != nil {
+		var url, provider, quality string
+		err := s.db.QueryRowContext(ctx,
+			"SELECT url, source, quality FROM cover_art WHERE id = ?", resultID,
+		).Scan(&url, &provider, &quality)
+		if err == nil {
+			return &CoverArtSearchResult{
+				ID:       resultID,
+				Provider: CoverArtProvider(provider),
+				URL:      url,
+				Quality:  CoverArtQuality(quality),
+				Source:   provider,
+			}, nil
+		}
+	}
+
 	return &CoverArtSearchResult{
 		ID:       resultID,
 		Provider: CoverArtProviderLocal,
@@ -782,20 +798,66 @@ func (s *CoverArtService) setDefaultCoverArt(ctx context.Context, mediaItemID in
 	return err
 }
 
-// getVideoDuration gets the duration of a video file
+// getVideoDuration gets the duration of a video file using ffprobe
 func (s *CoverArtService) getVideoDuration(videoPath string) (float64, error) {
-	// In a real implementation, this would use ffprobe or similar tool to get video duration
-	// For now, return a placeholder duration
+	output, err := exec.Command("ffprobe",
+		"-v", "error",
+		"-show_entries", "format=duration",
+		"-of", "default=noprint_wrappers=1:nokey=1",
+		videoPath,
+	).Output()
+	if err == nil {
+		if duration, parseErr := strconv.ParseFloat(strings.TrimSpace(string(output)), 64); parseErr == nil && duration > 0 {
+			return duration, nil
+		}
+	}
+
+	// Fallback: estimate from file size (assume ~5 Mbps bitrate)
+	if info, statErr := os.Stat(videoPath); statErr == nil {
+		estimated := float64(info.Size()) / (5 * 1024 * 1024 / 8)
+		if estimated > 0 {
+			return estimated, nil
+		}
+	}
+
 	return 120.0, nil
 }
 
 // generateVideoThumbnail generates a thumbnail for a video at a specific timestamp
 func (s *CoverArtService) generateVideoThumbnail(ctx context.Context, request *VideoThumbnailRequest, timestamp float64, index int) (*CoverArt, error) {
-	// In a real implementation, this would use ffmpeg to extract a frame from the video
-	// For now, return a placeholder
 	coverID := fmt.Sprintf("video_thumb_%d_%d", request.MediaItemID, index)
 	now := time.Now()
 
+	outputPath := filepath.Join(s.cacheDir, coverID+".jpg")
+
+	// Try ffmpeg to extract a frame
+	err := exec.CommandContext(ctx, "ffmpeg",
+		"-ss", fmt.Sprintf("%.2f", timestamp),
+		"-i", request.VideoPath,
+		"-vframes", "1",
+		"-q:v", "2",
+		"-y",
+		outputPath,
+	).Run()
+
+	if err == nil {
+		if info, statErr := os.Stat(outputPath); statErr == nil {
+			size := info.Size()
+			return &CoverArt{
+				ID:          coverID,
+				MediaItemID: request.MediaItemID,
+				Source:      "video_thumbnail",
+				LocalPath:   &outputPath,
+				Format:      "jpeg",
+				Size:        &size,
+				Quality:     string(request.Quality),
+				CreatedAt:   now,
+				CachedAt:    &now,
+			}, nil
+		}
+	}
+
+	// Fallback: return metadata-only cover art record
 	return &CoverArt{
 		ID:          coverID,
 		MediaItemID: request.MediaItemID,
