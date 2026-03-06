@@ -24,6 +24,8 @@ replace digital.vasic.entities => ../Entities
 
 replace digital.vasic.eventbus => ../EventBus
 
+replace digital.vasic.database => ../Database
+
 require (
 	cloud.google.com/go/storage v1.59.2
 	digital.vasic.assets v0.0.0-00010101000000-000000000000
