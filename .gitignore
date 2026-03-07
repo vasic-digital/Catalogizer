@@ -254,6 +254,7 @@ catalog-api/.service-port
 
 # Release binaries (built artifacts)
 catalog-api/catalog-api-release
+catalog-api/catalogizer
 
 # Backup and temporary data files
 *.backup
