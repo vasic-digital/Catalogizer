@@ -253,6 +253,7 @@ func (r *FavoritesRepository) CountUserFavorites(userID int, entityType *string)
 		args = append(args, *entityType)
 	}
 
+	// Safe: whereClause is built from hardcoded SQL fragments with parameterized ? placeholders; user values are passed via args
 	query := fmt.Sprintf("SELECT COUNT(*) FROM favorites %s", whereClause)
 
 	var count int

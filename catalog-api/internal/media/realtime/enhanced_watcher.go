@@ -6,7 +6,7 @@ import (
 	"catalogizer/internal/models"
 	"catalogizer/internal/services"
 	"context"
-	"crypto/md5"
+	"crypto/sha256"
 	"encoding/hex"
 	"encoding/json"
 	"io"
@@ -155,12 +155,17 @@ func (w *EnhancedChangeWatcher) UnwatchPath(smbRoot string) {
 
 // addPathRecursively adds a path and all its subdirectories to the watcher
 func (w *EnhancedChangeWatcher) addPathRecursively(watcher *fsnotify.Watcher, rootPath string) error {
+	const maxWatchDepth = 20
 	return filepath.Walk(rootPath, func(path string, info os.FileInfo, err error) error {
 		if err != nil {
 			return nil // Skip problematic paths
 		}
 
 		if info.IsDir() {
+			rel, relErr := filepath.Rel(rootPath, path)
+			if relErr == nil && strings.Count(rel, string(filepath.Separator)) >= maxWatchDepth {
+				return filepath.SkipDir
+			}
 			return watcher.Add(path)
 		}
 		return nil
@@ -320,7 +325,7 @@ func (w *EnhancedChangeWatcher) getFileInfoFromDB(path, smbRoot string) *models.
 	return &file
 }
 
-// calculateFileHash calculates MD5 hash of a file
+// calculateFileHash calculates SHA-256 hash of a file
 func (w *EnhancedChangeWatcher) calculateFileHash(filePath string) string {
 	file, err := os.Open(filePath)
 	if err != nil {
@@ -328,7 +333,7 @@ func (w *EnhancedChangeWatcher) calculateFileHash(filePath string) string {
 	}
 	defer file.Close()
 
-	hash := md5.New()
+	hash := sha256.New()
 	if _, err := io.Copy(hash, file); err != nil {
 		return ""
 	}

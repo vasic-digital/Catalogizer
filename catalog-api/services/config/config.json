@@ -1,0 +1,6 @@
+{
+  "config": {
+    "db_type": "sqlite",
+    "server_port": 8080
+  }
+}

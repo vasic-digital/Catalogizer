@@ -1,6 +1,7 @@
 package services
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"image/jpeg"
@@ -18,12 +19,14 @@ import (
 	"github.com/gen2brain/go-fitz"
 	"github.com/unidoc/unipdf/v3/extractor"
 	"github.com/unidoc/unipdf/v3/model"
+	"golang.org/x/sync/semaphore"
 )
 
 type ConversionService struct {
 	conversionRepo *repository.ConversionRepository
 	userRepo       *repository.UserRepository
 	authService    *AuthService
+	sem            *semaphore.Weighted // Limits concurrent conversion processes
 }
 
 func NewConversionService(conversionRepo *repository.ConversionRepository, userRepo *repository.UserRepository, authService *AuthService) *ConversionService {
@@ -31,6 +34,7 @@ func NewConversionService(conversionRepo *repository.ConversionRepository, userR
 		conversionRepo: conversionRepo,
 		userRepo:       userRepo,
 		authService:    authService,
+		sem:            semaphore.NewWeighted(3), // Max 3 concurrent conversions
 	}
 }
 
@@ -88,6 +92,13 @@ func (s *ConversionService) StartConversion(jobID int) error {
 }
 
 func (s *ConversionService) processConversion(job *models.ConversionJob) {
+	// Limit concurrent conversion processes (ffmpeg, LibreOffice, etc.)
+	if err := s.sem.Acquire(context.Background(), 1); err != nil {
+		s.handleConversionError(job, fmt.Errorf("failed to acquire conversion semaphore: %w", err))
+		return
+	}
+	defer s.sem.Release(1)
+
 	var err error
 
 	defer func() {
@@ -752,6 +763,17 @@ func (s *ConversionService) GetSupportedFormats() *models.SupportedFormats {
 func (s *ConversionService) validateConversionRequest(request *models.ConversionRequest) bool {
 	if request.SourcePath == "" || request.TargetPath == "" {
 		return false
+	}
+
+	// Sanitize paths: reject path traversal and null bytes
+	for _, p := range []string{request.SourcePath, request.TargetPath} {
+		if strings.Contains(p, "\x00") {
+			return false
+		}
+		cleaned := filepath.Clean(p)
+		if strings.Contains(cleaned, "..") {
+			return false
+		}
 	}
 
 	if request.SourceFormat == "" || request.TargetFormat == "" {

@@ -2,7 +2,7 @@ package services
 
 import (
 	"context"
-	"crypto/md5"
+	"crypto/sha256"
 	"database/sql"
 	"encoding/hex"
 	"encoding/json"
@@ -19,7 +19,8 @@ type CacheService struct {
 	db       *database.DB
 	logger   *zap.Logger
 	wg       sync.WaitGroup // Tracks background goroutines for graceful shutdown
-	shutdown chan struct{}  // Signals shutdown to prevent new goroutines
+	shutdown chan struct{}   // Signals shutdown to prevent new goroutines
+	closeMu  sync.Mutex     // Guards shutdown-check + wg.Add atomicity
 }
 
 type CacheEntry struct {
@@ -105,8 +106,20 @@ func NewCacheService(db *database.DB, logger *zap.Logger) *CacheService {
 
 // Close gracefully shuts down the cache service, waiting for pending operations
 func (s *CacheService) Close() {
+	s.closeMu.Lock()
 	close(s.shutdown)
-	s.wg.Wait()
+	s.closeMu.Unlock()
+
+	done := make(chan struct{})
+	go func() {
+		s.wg.Wait()
+		close(done)
+	}()
+	select {
+	case <-done:
+	case <-time.After(10 * time.Second):
+		s.logger.Warn("Cache service shutdown timed out after 10s, some goroutines may still be running")
+	}
 }
 
 func (s *CacheService) Set(ctx context.Context, key string, value interface{}, ttl time.Duration) error {
@@ -642,6 +655,7 @@ func (s *CacheService) CleanupExpired(ctx context.Context) error {
 	totalCleaned := int64(0)
 
 	for _, table := range tables {
+		// Safe: table names are hardcoded string constants defined in the tables slice above, not user input
 		query := fmt.Sprintf("DELETE FROM %s WHERE expires_at <= CURRENT_TIMESTAMP", table)
 		result, err := s.db.ExecContext(ctx, query)
 		if err != nil {
@@ -672,20 +686,22 @@ func (s *CacheService) hashRequest(data interface{}) (string, error) {
 }
 
 func (s *CacheService) hashString(text string) string {
-	hash := md5.Sum([]byte(text))
+	hash := sha256.Sum256([]byte(text))
 	return hex.EncodeToString(hash[:])
 }
 
 func (s *CacheService) recordCacheActivity(ctx context.Context, activityType, key, provider string, hit bool) {
-	// Check if shutdown has been initiated
+	// Atomically check shutdown and register goroutine to prevent race with Close()
+	s.closeMu.Lock()
 	select {
 	case <-s.shutdown:
-		return // Don't start new goroutines during shutdown
+		s.closeMu.Unlock()
+		return
 	default:
 	}
-
-	// Track goroutine for graceful shutdown
 	s.wg.Add(1)
+	s.closeMu.Unlock()
+
 	go func() {
 		defer s.wg.Done()
 		writeCtx, cancel := context.WithTimeout(ctx, 5*time.Second)

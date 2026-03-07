@@ -2,7 +2,7 @@ package middleware
 
 import (
 	"bytes"
-	"crypto/md5"
+	"crypto/sha256"
 	"fmt"
 	"net/http"
 
@@ -53,7 +53,7 @@ func CacheHeaders(maxAge int) gin.HandlerFunc {
 		// Compute ETag from the buffered response body.
 		bodyBytes := bw.body.Bytes()
 		if len(bodyBytes) > 0 {
-			hash := md5.Sum(bodyBytes)
+			hash := sha256.Sum256(bodyBytes)
 			etag := fmt.Sprintf(`"%x"`, hash)
 
 			// Check If-None-Match from the client.

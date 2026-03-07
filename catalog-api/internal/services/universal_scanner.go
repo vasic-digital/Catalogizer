@@ -103,7 +103,7 @@ func NewUniversalScanner(db *database.DB, logger *zap.Logger, renameTracker *Uni
 		logger:             logger,
 		renameTracker:      renameTracker,
 		clientFactory:      clientFactory,
-		scanQueue:          make(chan ScanJob, 1000),
+		scanQueue:          make(chan ScanJob, 100),
 		workers:            concurrency,
 		maxConcurrentScans: concurrency,
 		scanSem:            semaphore.NewWeighted(int64(concurrency)),
@@ -220,8 +220,13 @@ func (s *UniversalScanner) processScanJob(job ScanJob, workerID int) {
 	// Retain completed scan status for 60 seconds so polling clients
 	// can read the final result before it is garbage-collected.
 	defer func() {
+		s.wg.Add(1)
 		go func() {
-			time.Sleep(60 * time.Second)
+			defer s.wg.Done()
+			select {
+			case <-time.After(60 * time.Second):
+			case <-s.stopCh:
+			}
 			s.activeScansMu.Lock()
 			delete(s.activeScans, job.ID)
 			s.activeScansMu.Unlock()
@@ -286,7 +291,9 @@ func (s *UniversalScanner) processScanJob(job ScanJob, workerID int) {
 
 	// Run post-scan aggregation to create media entities from scanned files
 	if s.aggregationService != nil {
+		s.wg.Add(1)
 		go func() {
+			defer s.wg.Done()
 			if err := s.aggregationService.AggregateAfterScan(job.Context, int64(job.StorageRoot.ID)); err != nil {
 				s.logger.Error("Post-scan aggregation failed",
 					zap.String("job_id", job.ID),

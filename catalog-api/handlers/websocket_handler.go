@@ -102,10 +102,15 @@ func (h *WebSocketHandler) BroadcastToClients(msg map[string]interface{}) {
 		return
 	}
 
+	// Snapshot client list under lock, then release before writing
 	h.mu.Lock()
-	defer h.mu.Unlock()
-
+	clients := make([]*wsConn, 0, len(h.clients))
 	for wc := range h.clients {
+		clients = append(clients, wc)
+	}
+	h.mu.Unlock()
+
+	for _, wc := range clients {
 		if err := wc.writeMessage(websocket.TextMessage, data); err != nil {
 			log.Printf("WebSocket broadcast error: %v", err)
 		}

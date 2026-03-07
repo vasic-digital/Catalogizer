@@ -539,6 +539,10 @@ func (s *LogManagementService) exportToZip(entries []*models.LogEntry) ([]byte, 
 func (s *LogManagementService) streamLogEntries(channel chan<- *models.LogEntry, filters *models.LogStreamFilters) {
 	defer close(channel)
 
+	if filters == nil {
+		filters = &models.LogStreamFilters{}
+	}
+
 	ticker := time.NewTicker(1 * time.Second)
 	defer ticker.Stop()
 

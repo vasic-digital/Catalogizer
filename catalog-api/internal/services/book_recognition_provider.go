@@ -2,7 +2,7 @@ package services
 
 import (
 	"context"
-	"crypto/md5"
+	"crypto/sha256"
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
@@ -1493,7 +1493,7 @@ func (p *BookRecognitionProvider) calculateOpenLibraryConfidence(editionCount, e
 }
 
 func (p *BookRecognitionProvider) generateID(input string) string {
-	hash := md5.Sum([]byte(input))
+	hash := sha256.Sum256([]byte(input))
 	return hex.EncodeToString(hash[:])[:12]
 }
 

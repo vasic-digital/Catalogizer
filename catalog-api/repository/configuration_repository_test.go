@@ -9,6 +9,7 @@ import (
 	"catalogizer/models"
 
 	"github.com/DATA-DOG/go-sqlmock"
+	_ "github.com/mutecomm/go-sqlcipher"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -489,4 +490,461 @@ func TestConfigurationRepository_DeleteConfigurationTemplate(t *testing.T) {
 	err := repo.DeleteConfigurationTemplate(1)
 	assert.NoError(t, err)
 	assert.NoError(t, mock.ExpectationsWereMet())
+}
+
+// ===========================================================================
+// Real SQLite-backed tests for uncovered functions
+// ===========================================================================
+
+func newRealConfigRepo(t *testing.T) *ConfigurationRepository {
+	t.Helper()
+	sqlDB, err := sql.Open("sqlite3", ":memory:")
+	require.NoError(t, err)
+	t.Cleanup(func() { sqlDB.Close() })
+
+	db := database.WrapDB(sqlDB, database.DialectSQLite)
+
+	_, err = sqlDB.Exec(`
+		CREATE TABLE system_configuration (
+			id INTEGER PRIMARY KEY,
+			version TEXT NOT NULL,
+			configuration TEXT NOT NULL,
+			created_at DATETIME NOT NULL,
+			updated_at DATETIME NOT NULL
+		)
+	`)
+	require.NoError(t, err)
+
+	_, err = sqlDB.Exec(`
+		CREATE TABLE system_configuration_history (
+			id INTEGER PRIMARY KEY AUTOINCREMENT,
+			version TEXT NOT NULL,
+			configuration TEXT NOT NULL,
+			created_at DATETIME NOT NULL,
+			updated_at DATETIME NOT NULL
+		)
+	`)
+	require.NoError(t, err)
+
+	_, err = sqlDB.Exec(`
+		CREATE TABLE configuration_backups (
+			id INTEGER PRIMARY KEY AUTOINCREMENT,
+			name TEXT NOT NULL,
+			version TEXT NOT NULL,
+			configuration TEXT NOT NULL,
+			created_at DATETIME NOT NULL
+		)
+	`)
+	require.NoError(t, err)
+
+	_, err = sqlDB.Exec(`
+		CREATE TABLE configuration_templates (
+			id INTEGER PRIMARY KEY AUTOINCREMENT,
+			name TEXT NOT NULL,
+			description TEXT NOT NULL,
+			category TEXT NOT NULL,
+			configuration TEXT NOT NULL,
+			created_at DATETIME NOT NULL
+		)
+	`)
+	require.NoError(t, err)
+
+	_, err = sqlDB.Exec(`
+		CREATE TABLE wizard_progress (
+			user_id INTEGER PRIMARY KEY,
+			current_step TEXT NOT NULL,
+			step_data TEXT NOT NULL,
+			all_data TEXT NOT NULL,
+			updated_at DATETIME NOT NULL
+		)
+	`)
+	require.NoError(t, err)
+
+	_, err = sqlDB.Exec(`
+		CREATE TABLE wizard_completion (
+			user_id INTEGER PRIMARY KEY,
+			completed_at DATETIME NOT NULL
+		)
+	`)
+	require.NoError(t, err)
+
+	_, err = sqlDB.Exec(`
+		CREATE TABLE wizard_sessions (
+			session_id TEXT PRIMARY KEY,
+			user_id INTEGER NOT NULL,
+			current_step INTEGER NOT NULL,
+			total_steps INTEGER NOT NULL,
+			step_data TEXT NOT NULL,
+			configuration TEXT NOT NULL,
+			started_at DATETIME NOT NULL,
+			last_activity DATETIME NOT NULL,
+			is_completed INTEGER NOT NULL DEFAULT 0,
+			config_type TEXT NOT NULL
+		)
+	`)
+	require.NoError(t, err)
+
+	_, err = sqlDB.Exec(`
+		CREATE TABLE configuration_profiles (
+			profile_id TEXT PRIMARY KEY,
+			name TEXT NOT NULL,
+			description TEXT NOT NULL,
+			user_id INTEGER NOT NULL,
+			configuration TEXT NOT NULL,
+			created_at DATETIME NOT NULL,
+			updated_at DATETIME NOT NULL,
+			is_active INTEGER NOT NULL DEFAULT 1,
+			tags TEXT NOT NULL
+		)
+	`)
+	require.NoError(t, err)
+
+	return NewConfigurationRepository(db)
+}
+
+// ---------------------------------------------------------------------------
+// SaveConfigurationHistory
+// ---------------------------------------------------------------------------
+
+func TestConfigurationRepository_SaveConfigurationHistory_Real(t *testing.T) {
+	repo := newRealConfigRepo(t)
+
+	now := time.Now().Truncate(time.Second)
+	config := &models.SystemConfiguration{
+		Version:   "1.0.0",
+		CreatedAt: now,
+		UpdatedAt: now,
+	}
+
+	err := repo.SaveConfigurationHistory(config)
+	require.NoError(t, err)
+
+	// Verify by reading back
+	history, err := repo.GetConfigurationHistory(10)
+	require.NoError(t, err)
+	require.Len(t, history, 1)
+	assert.Equal(t, "1.0.0", history[0].Version)
+}
+
+// ---------------------------------------------------------------------------
+// CreateConfigurationBackup
+// ---------------------------------------------------------------------------
+
+func TestConfigurationRepository_CreateConfigurationBackup_Real(t *testing.T) {
+	repo := newRealConfigRepo(t)
+
+	now := time.Now().Truncate(time.Second)
+	config := &models.SystemConfiguration{
+		Version:   "2.0.0",
+		CreatedAt: now,
+		UpdatedAt: now,
+	}
+
+	err := repo.CreateConfigurationBackup("my-backup", config)
+	require.NoError(t, err)
+
+	// Verify via GetConfigurationBackups
+	backups, err := repo.GetConfigurationBackups()
+	require.NoError(t, err)
+	require.Len(t, backups, 1)
+	assert.Equal(t, "my-backup", backups[0].Name)
+	assert.Equal(t, "2.0.0", backups[0].Version)
+}
+
+// ---------------------------------------------------------------------------
+// RestoreConfigurationBackup
+// ---------------------------------------------------------------------------
+
+func TestConfigurationRepository_RestoreConfigurationBackup_Real(t *testing.T) {
+	repo := newRealConfigRepo(t)
+
+	now := time.Now().Truncate(time.Second)
+	config := &models.SystemConfiguration{
+		Version:   "3.0.0",
+		CreatedAt: now,
+		UpdatedAt: now,
+	}
+
+	err := repo.CreateConfigurationBackup("restore-test", config)
+	require.NoError(t, err)
+
+	backups, err := repo.GetConfigurationBackups()
+	require.NoError(t, err)
+	require.Len(t, backups, 1)
+
+	t.Run("restore succeeds", func(t *testing.T) {
+		restored, err := repo.RestoreConfigurationBackup(backups[0].ID)
+		require.NoError(t, err)
+		assert.Equal(t, "3.0.0", restored.Version)
+
+		// Verify it's set as current config
+		current, err := repo.GetConfiguration()
+		require.NoError(t, err)
+		assert.Equal(t, "3.0.0", current.Version)
+	})
+
+	t.Run("restore nonexistent backup", func(t *testing.T) {
+		_, err := repo.RestoreConfigurationBackup(999)
+		assert.Error(t, err)
+	})
+}
+
+// ---------------------------------------------------------------------------
+// GetConfigurationBackups (real) + DeleteConfigurationBackup (real)
+// ---------------------------------------------------------------------------
+
+func TestConfigurationRepository_GetAndDeleteConfigurationBackups_Real(t *testing.T) {
+	repo := newRealConfigRepo(t)
+
+	now := time.Now().Truncate(time.Second)
+	config := &models.SystemConfiguration{Version: "1.0", CreatedAt: now, UpdatedAt: now}
+
+	err := repo.CreateConfigurationBackup("b1", config)
+	require.NoError(t, err)
+	err = repo.CreateConfigurationBackup("b2", config)
+	require.NoError(t, err)
+
+	backups, err := repo.GetConfigurationBackups()
+	require.NoError(t, err)
+	assert.Len(t, backups, 2)
+
+	err = repo.DeleteConfigurationBackup(backups[0].ID)
+	require.NoError(t, err)
+
+	backups, err = repo.GetConfigurationBackups()
+	require.NoError(t, err)
+	assert.Len(t, backups, 1)
+}
+
+// ---------------------------------------------------------------------------
+// GetConfigurationTemplates
+// ---------------------------------------------------------------------------
+
+func TestConfigurationRepository_GetConfigurationTemplates_Real(t *testing.T) {
+	repo := newRealConfigRepo(t)
+
+	now := time.Now().Truncate(time.Second)
+	tmpl := &models.ConfigurationTemplate{
+		Name:        "Default",
+		Description: "Default configuration",
+		Category:    "general",
+		Configuration: &models.SystemConfiguration{
+			Version: "1.0.0",
+		},
+		CreatedAt: now,
+	}
+
+	err := repo.CreateConfigurationTemplate(tmpl)
+	require.NoError(t, err)
+
+	t.Run("returns templates", func(t *testing.T) {
+		templates, err := repo.GetConfigurationTemplates()
+		require.NoError(t, err)
+		require.Len(t, templates, 1)
+		assert.Equal(t, "Default", templates[0].Name)
+		assert.Equal(t, "general", templates[0].Category)
+		assert.NotNil(t, templates[0].Configuration)
+	})
+
+	t.Run("empty when all deleted", func(t *testing.T) {
+		err := repo.DeleteConfigurationTemplate(tmpl.ID)
+		require.NoError(t, err)
+
+		templates, err := repo.GetConfigurationTemplates()
+		require.NoError(t, err)
+		assert.Empty(t, templates)
+	})
+}
+
+// ---------------------------------------------------------------------------
+// SaveWizardSession / GetWizardSession
+// ---------------------------------------------------------------------------
+
+func TestConfigurationRepository_SaveAndGetWizardSession_Real(t *testing.T) {
+	repo := newRealConfigRepo(t)
+
+	now := time.Now().Truncate(time.Second)
+	session := &models.WizardSession{
+		SessionID:     "sess-123",
+		UserID:        1,
+		CurrentStep:   2,
+		TotalSteps:    5,
+		StepData:      map[string]interface{}{"name": "test"},
+		Configuration: map[string]interface{}{"db_type": "sqlite"},
+		StartedAt:     now,
+		LastActivity:  now,
+		IsCompleted:   false,
+		ConfigType:    "initial",
+	}
+
+	err := repo.SaveWizardSession(session)
+	require.NoError(t, err)
+
+	t.Run("get existing session", func(t *testing.T) {
+		got, err := repo.GetWizardSession("sess-123")
+		require.NoError(t, err)
+		assert.Equal(t, "sess-123", got.SessionID)
+		assert.Equal(t, 1, got.UserID)
+		assert.Equal(t, 2, got.CurrentStep)
+		assert.Equal(t, 5, got.TotalSteps)
+		assert.Equal(t, "initial", got.ConfigType)
+		assert.False(t, got.IsCompleted)
+	})
+
+	t.Run("session not found", func(t *testing.T) {
+		_, err := repo.GetWizardSession("nonexistent")
+		assert.Error(t, err)
+		assert.Contains(t, err.Error(), "wizard session not found")
+	})
+
+	t.Run("update existing session", func(t *testing.T) {
+		session.CurrentStep = 4
+		session.IsCompleted = true
+		err := repo.SaveWizardSession(session)
+		require.NoError(t, err)
+
+		got, err := repo.GetWizardSession("sess-123")
+		require.NoError(t, err)
+		assert.Equal(t, 4, got.CurrentStep)
+		assert.True(t, got.IsCompleted)
+	})
+}
+
+// ---------------------------------------------------------------------------
+// GetConfigurationHistory (real, with data)
+// ---------------------------------------------------------------------------
+
+func TestConfigurationRepository_GetConfigurationHistory_Real(t *testing.T) {
+	repo := newRealConfigRepo(t)
+
+	now := time.Now().Truncate(time.Second)
+
+	for i := 0; i < 3; i++ {
+		config := &models.SystemConfiguration{
+			Version:   "1.0." + string(rune('0'+i)),
+			CreatedAt: now.Add(time.Duration(i) * time.Hour),
+			UpdatedAt: now.Add(time.Duration(i) * time.Hour),
+		}
+		err := repo.SaveConfigurationHistory(config)
+		require.NoError(t, err)
+	}
+
+	t.Run("returns history limited", func(t *testing.T) {
+		history, err := repo.GetConfigurationHistory(2)
+		require.NoError(t, err)
+		assert.Len(t, history, 2)
+	})
+
+	t.Run("returns all history", func(t *testing.T) {
+		history, err := repo.GetConfigurationHistory(10)
+		require.NoError(t, err)
+		assert.Len(t, history, 3)
+	})
+}
+
+// ---------------------------------------------------------------------------
+// ApplyConfigurationTemplate
+// ---------------------------------------------------------------------------
+
+func TestConfigurationRepository_ApplyConfigurationTemplate_Real(t *testing.T) {
+	repo := newRealConfigRepo(t)
+
+	now := time.Now().Truncate(time.Second)
+	tmpl := &models.ConfigurationTemplate{
+		Name:        "Production",
+		Description: "Production config",
+		Category:    "production",
+		Configuration: &models.SystemConfiguration{
+			Version: "5.0.0",
+		},
+		CreatedAt: now,
+	}
+
+	err := repo.CreateConfigurationTemplate(tmpl)
+	require.NoError(t, err)
+
+	t.Run("apply template", func(t *testing.T) {
+		applied, err := repo.ApplyConfigurationTemplate(tmpl.ID)
+		require.NoError(t, err)
+		assert.Equal(t, "5.0.0", applied.Version)
+
+		// Verify current configuration was updated
+		current, err := repo.GetConfiguration()
+		require.NoError(t, err)
+		assert.Equal(t, "5.0.0", current.Version)
+	})
+
+	t.Run("apply nonexistent template", func(t *testing.T) {
+		_, err := repo.ApplyConfigurationTemplate(999)
+		assert.Error(t, err)
+	})
+}
+
+// ---------------------------------------------------------------------------
+// SaveConfigurationProfile / GetConfigurationProfile / GetUserConfigurationProfiles
+// ---------------------------------------------------------------------------
+
+func TestConfigurationRepository_ConfigurationProfiles_Real(t *testing.T) {
+	repo := newRealConfigRepo(t)
+
+	now := time.Now().Truncate(time.Second)
+	profile := &models.ConfigurationProfile{
+		ProfileID:     "prof-1",
+		Name:          "Dev Profile",
+		Description:   "Development settings",
+		UserID:        1,
+		Configuration: map[string]interface{}{"debug": true},
+		CreatedAt:     now,
+		UpdatedAt:     now,
+		IsActive:      true,
+		Tags:          []string{"dev", "local"},
+	}
+
+	t.Run("save profile", func(t *testing.T) {
+		err := repo.SaveConfigurationProfile(profile)
+		require.NoError(t, err)
+	})
+
+	t.Run("get profile by ID", func(t *testing.T) {
+		got, err := repo.GetConfigurationProfile("prof-1")
+		require.NoError(t, err)
+		assert.Equal(t, "Dev Profile", got.Name)
+		assert.Equal(t, "Development settings", got.Description)
+		assert.Equal(t, 1, got.UserID)
+		assert.True(t, got.IsActive)
+		assert.Equal(t, []string{"dev", "local"}, got.Tags)
+	})
+
+	t.Run("get nonexistent profile", func(t *testing.T) {
+		_, err := repo.GetConfigurationProfile("nonexistent")
+		assert.Error(t, err)
+		assert.Contains(t, err.Error(), "configuration profile not found")
+	})
+
+	t.Run("get user profiles", func(t *testing.T) {
+		// Add another profile for user 1
+		profile2 := &models.ConfigurationProfile{
+			ProfileID:     "prof-2",
+			Name:          "Test Profile",
+			Description:   "Test settings",
+			UserID:        1,
+			Configuration: map[string]interface{}{"test": true},
+			CreatedAt:     now.Add(time.Hour),
+			UpdatedAt:     now.Add(time.Hour),
+			IsActive:      false,
+			Tags:          []string{"test"},
+		}
+		err := repo.SaveConfigurationProfile(profile2)
+		require.NoError(t, err)
+
+		profiles, err := repo.GetUserConfigurationProfiles(1)
+		require.NoError(t, err)
+		assert.Len(t, profiles, 2)
+	})
+
+	t.Run("get user profiles empty", func(t *testing.T) {
+		profiles, err := repo.GetUserConfigurationProfiles(999)
+		require.NoError(t, err)
+		assert.Empty(t, profiles)
+	})
 }

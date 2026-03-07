@@ -4,11 +4,13 @@ import (
 	"context"
 	"database/sql"
 	"testing"
+	"time"
 
 	"catalogizer/database"
 	"catalogizer/internal/models"
 
 	"github.com/DATA-DOG/go-sqlmock"
+	_ "github.com/mutecomm/go-sqlcipher"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -440,4 +442,284 @@ func TestStatsRepository_GetDuplicateStats(t *testing.T) {
 			assert.NoError(t, mock.ExpectationsWereMet())
 		})
 	}
+}
+
+// ===========================================================================
+// Real SQLite-backed tests for uncovered functions
+// ===========================================================================
+
+func newRealStatsRepo(t *testing.T) *StatsRepository {
+	t.Helper()
+	sqlDB, err := sql.Open("sqlite3", ":memory:")
+	require.NoError(t, err)
+	t.Cleanup(func() { sqlDB.Close() })
+
+	db := database.WrapDB(sqlDB, database.DialectSQLite)
+
+	_, err = sqlDB.Exec(`
+		CREATE TABLE storage_roots (
+			id INTEGER PRIMARY KEY AUTOINCREMENT,
+			name TEXT NOT NULL,
+			path TEXT NOT NULL,
+			enabled INTEGER NOT NULL DEFAULT 1
+		)
+	`)
+	require.NoError(t, err)
+
+	_, err = sqlDB.Exec(`
+		CREATE TABLE files (
+			id INTEGER PRIMARY KEY AUTOINCREMENT,
+			name TEXT NOT NULL,
+			path TEXT NOT NULL,
+			size INTEGER NOT NULL DEFAULT 0,
+			file_type TEXT,
+			extension TEXT,
+			is_directory INTEGER NOT NULL DEFAULT 0,
+			is_duplicate INTEGER NOT NULL DEFAULT 0,
+			duplicate_group_id INTEGER,
+			deleted INTEGER NOT NULL DEFAULT 0,
+			storage_root_id INTEGER,
+			created_at INTEGER NOT NULL DEFAULT 0,
+			accessed_at INTEGER,
+			last_scan_at DATETIME
+		)
+	`)
+	require.NoError(t, err)
+
+	_, err = sqlDB.Exec(`
+		CREATE TABLE duplicate_groups (
+			id INTEGER PRIMARY KEY AUTOINCREMENT,
+			file_count INTEGER NOT NULL DEFAULT 0,
+			total_size INTEGER NOT NULL DEFAULT 0
+		)
+	`)
+	require.NoError(t, err)
+
+	_, err = sqlDB.Exec(`
+		CREATE TABLE scan_history (
+			id INTEGER PRIMARY KEY AUTOINCREMENT,
+			storage_root_id INTEGER NOT NULL,
+			scan_type TEXT NOT NULL,
+			status TEXT NOT NULL,
+			start_time DATETIME NOT NULL,
+			end_time DATETIME,
+			files_processed INTEGER NOT NULL DEFAULT 0,
+			files_added INTEGER NOT NULL DEFAULT 0,
+			files_updated INTEGER NOT NULL DEFAULT 0,
+			files_deleted INTEGER NOT NULL DEFAULT 0,
+			error_count INTEGER NOT NULL DEFAULT 0,
+			error_message TEXT
+		)
+	`)
+	require.NoError(t, err)
+
+	return NewStatsRepository(db)
+}
+
+func seedStatsData(t *testing.T, repo *StatsRepository) {
+	t.Helper()
+	now := time.Now().Unix()
+
+	// Create storage roots
+	_, err := repo.db.Exec(`INSERT INTO storage_roots (name, path, enabled) VALUES (?, ?, ?)`, "root1", "/data/root1", 1)
+	require.NoError(t, err)
+	_, err = repo.db.Exec(`INSERT INTO storage_roots (name, path, enabled) VALUES (?, ?, ?)`, "root2", "/data/root2", 1)
+	require.NoError(t, err)
+
+	// Create duplicate groups
+	_, err = repo.db.Exec(`INSERT INTO duplicate_groups (file_count, total_size) VALUES (?, ?)`, 3, 9000)
+	require.NoError(t, err)
+	_, err = repo.db.Exec(`INSERT INTO duplicate_groups (file_count, total_size) VALUES (?, ?)`, 2, 4000)
+	require.NoError(t, err)
+
+	// Create files: regular files, directories, duplicates
+	files := []struct {
+		name, path, fileType, ext string
+		size                      int64
+		isDir, isDup              int
+		dupGroupID                *int
+		storageRootID             int
+		createdAt                 int64
+		accessedAt                *int64
+	}{
+		{"movie.mp4", "/data/root1/movie.mp4", "video", "mp4", 5000, 0, 1, intPtr(1), 1, now - 86400, int64Ptr(now)},
+		{"movie_copy.mp4", "/data/root1/movie_copy.mp4", "video", "mp4", 5000, 0, 1, intPtr(1), 1, now - 86400, nil},
+		{"movie_copy2.mp4", "/data/root2/movie_copy2.mp4", "video", "mp4", 5000, 0, 1, intPtr(1), 2, now - 86400, nil},
+		{"song.mp3", "/data/root1/song.mp3", "audio", "mp3", 2000, 0, 1, intPtr(2), 1, now - 172800, nil},
+		{"song_copy.mp3", "/data/root1/song_copy.mp3", "audio", "mp3", 2000, 0, 1, intPtr(2), 1, now - 172800, nil},
+		{"photo.jpg", "/data/root1/photo.jpg", "image", "jpg", 1000, 0, 0, nil, 1, now - 2592000, int64Ptr(now - 3600)},
+		{"docs", "/data/root1/docs", "", "", 0, 1, 0, nil, 1, now - 86400, nil},
+	}
+
+	for _, f := range files {
+		_, err := repo.db.Exec(
+			`INSERT INTO files (name, path, file_type, extension, size, is_directory, is_duplicate, duplicate_group_id, deleted, storage_root_id, created_at, accessed_at)
+			 VALUES (?, ?, ?, ?, ?, ?, ?, ?, 0, ?, ?, ?)`,
+			f.name, f.path, f.fileType, f.ext, f.size, f.isDir, f.isDup, f.dupGroupID, f.storageRootID, f.createdAt, f.accessedAt,
+		)
+		require.NoError(t, err)
+	}
+
+	// Create scan history entries
+	scanNow := time.Now().Truncate(time.Second)
+	scanEnd := scanNow.Add(5 * time.Minute)
+	_, err = repo.db.Exec(
+		`INSERT INTO scan_history (storage_root_id, scan_type, status, start_time, end_time, files_processed, files_added, files_updated, files_deleted, error_count)
+		 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+		1, "full", "completed", scanNow.Add(-time.Hour), scanEnd.Add(-time.Hour), 100, 50, 30, 5, 0,
+	)
+	require.NoError(t, err)
+	_, err = repo.db.Exec(
+		`INSERT INTO scan_history (storage_root_id, scan_type, status, start_time, end_time, files_processed, files_added, files_updated, files_deleted, error_count, error_message)
+		 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+		2, "incremental", "failed", scanNow, scanEnd, 10, 2, 1, 0, 3, "timeout",
+	)
+	require.NoError(t, err)
+}
+
+func intPtr(i int) *int       { return &i }
+func int64Ptr(i int64) *int64 { return &i }
+
+// ---------------------------------------------------------------------------
+// GetTopDuplicateGroups
+// ---------------------------------------------------------------------------
+
+func TestStatsRepository_GetTopDuplicateGroups_Real(t *testing.T) {
+	repo := newRealStatsRepo(t)
+	seedStatsData(t, repo)
+	ctx := context.Background()
+
+	t.Run("sort by count", func(t *testing.T) {
+		groups, err := repo.GetTopDuplicateGroups(ctx, "count", 10, "")
+		require.NoError(t, err)
+		require.Len(t, groups, 2)
+		// First group should have higher file_count (3)
+		assert.Equal(t, int64(3), groups[0].FileCount)
+		assert.Equal(t, int64(2), groups[1].FileCount)
+	})
+
+	t.Run("sort by size", func(t *testing.T) {
+		groups, err := repo.GetTopDuplicateGroups(ctx, "size", 10, "")
+		require.NoError(t, err)
+		require.Len(t, groups, 2)
+		// First group should have higher total_size (9000)
+		assert.Equal(t, int64(9000), groups[0].TotalSize)
+	})
+
+	t.Run("limit results", func(t *testing.T) {
+		groups, err := repo.GetTopDuplicateGroups(ctx, "count", 1, "")
+		require.NoError(t, err)
+		assert.Len(t, groups, 1)
+	})
+
+	t.Run("filter by storage root", func(t *testing.T) {
+		groups, err := repo.GetTopDuplicateGroups(ctx, "count", 10, "root2")
+		require.NoError(t, err)
+		// Only group 1 has files in root2
+		assert.Len(t, groups, 1)
+		assert.Equal(t, int64(1), groups[0].GroupID)
+	})
+
+	t.Run("empty result for nonexistent root", func(t *testing.T) {
+		groups, err := repo.GetTopDuplicateGroups(ctx, "count", 10, "nonexistent")
+		require.NoError(t, err)
+		assert.Empty(t, groups)
+	})
+}
+
+// ---------------------------------------------------------------------------
+// GetAccessPatterns
+// ---------------------------------------------------------------------------
+
+func TestStatsRepository_GetAccessPatterns_Real(t *testing.T) {
+	repo := newRealStatsRepo(t)
+	seedStatsData(t, repo)
+	ctx := context.Background()
+
+	t.Run("all storage roots", func(t *testing.T) {
+		patterns, err := repo.GetAccessPatterns(ctx, "", 30)
+		require.NoError(t, err)
+		require.NotNil(t, patterns)
+		// Files with accessed_at != nil and > threshold: movie.mp4, photo.jpg
+		assert.Equal(t, int64(2), patterns.RecentlyAccessed)
+		// Files with no accessed_at: movie_copy.mp4, movie_copy2.mp4, song.mp3, song_copy.mp3
+		assert.Equal(t, int64(4), patterns.NeverAccessed)
+		assert.Len(t, patterns.AccessFrequency, 30)
+		assert.NotNil(t, patterns.PopularExtensions)
+		assert.NotNil(t, patterns.PopularDirectories)
+	})
+
+	t.Run("filter by storage root", func(t *testing.T) {
+		patterns, err := repo.GetAccessPatterns(ctx, "root1", 30)
+		require.NoError(t, err)
+		require.NotNil(t, patterns)
+		// root1 has: movie.mp4 (accessed), movie_copy.mp4 (null), song.mp3 (null), song_copy.mp3 (null), photo.jpg (accessed)
+		assert.Equal(t, int64(2), patterns.RecentlyAccessed)
+		assert.Equal(t, int64(3), patterns.NeverAccessed)
+	})
+}
+
+// ---------------------------------------------------------------------------
+// GetGrowthTrends
+// ---------------------------------------------------------------------------
+
+func TestStatsRepository_GetGrowthTrends_Real(t *testing.T) {
+	repo := newRealStatsRepo(t)
+	seedStatsData(t, repo)
+	ctx := context.Background()
+
+	t.Run("all storage roots", func(t *testing.T) {
+		trends, err := repo.GetGrowthTrends(ctx, "", 12)
+		require.NoError(t, err)
+		require.NotNil(t, trends)
+		assert.NotNil(t, trends.MonthlyGrowth)
+		assert.Equal(t, 0.0, trends.TotalGrowthRate) // simplified implementation
+	})
+
+	t.Run("filter by storage root", func(t *testing.T) {
+		trends, err := repo.GetGrowthTrends(ctx, "root1", 12)
+		require.NoError(t, err)
+		require.NotNil(t, trends)
+	})
+
+	t.Run("narrow window", func(t *testing.T) {
+		trends, err := repo.GetGrowthTrends(ctx, "", 1)
+		require.NoError(t, err)
+		require.NotNil(t, trends)
+	})
+}
+
+// ---------------------------------------------------------------------------
+// GetScanHistory
+// ---------------------------------------------------------------------------
+
+func TestStatsRepository_GetScanHistory_Real(t *testing.T) {
+	repo := newRealStatsRepo(t)
+	seedStatsData(t, repo)
+	ctx := context.Background()
+
+	t.Run("all scan history", func(t *testing.T) {
+		history, totalCount, err := repo.GetScanHistory(ctx, "", 10, 0)
+		require.NoError(t, err)
+		assert.Equal(t, int64(2), totalCount)
+		assert.Len(t, history, 2)
+		// Most recent first
+		assert.Equal(t, "incremental", history[0].ScanType)
+		assert.Equal(t, "failed", history[0].Status)
+		assert.Equal(t, int64(3), history[0].ErrorCount)
+		assert.NotNil(t, history[0].ErrorMessage)
+		assert.Equal(t, "timeout", *history[0].ErrorMessage)
+	})
+
+	t.Run("pagination", func(t *testing.T) {
+		history, totalCount, err := repo.GetScanHistory(ctx, "", 1, 0)
+		require.NoError(t, err)
+		assert.Equal(t, int64(2), totalCount)
+		assert.Len(t, history, 1)
+
+		history2, _, err := repo.GetScanHistory(ctx, "", 1, 1)
+		require.NoError(t, err)
+		assert.Len(t, history2, 1)
+		assert.NotEqual(t, history[0].ID, history2[0].ID)
+	})
 }

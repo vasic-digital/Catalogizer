@@ -113,6 +113,18 @@ func RegisterAll(svc *services.ChallengeService) error {
 	svc.Register(NewScannerRecoveryChallenge())     // CH-049: Scanner recovery
 	svc.Register(NewGracefulShutdownChallenge())    // CH-050: Graceful shutdown
 
+	// Extended API validation challenges (CH-051 to CH-060)
+	svc.Register(NewInputValidationChallenge())     // CH-051: Input validation & sanitization
+	svc.Register(NewPaginationChallenge())          // CH-052: Pagination consistency
+	svc.Register(NewContentTypesChallenge())        // CH-053: Content-Type validation
+	svc.Register(NewUserManagementChallenge())      // CH-054: User management API
+	svc.Register(NewAnalyticsAPIChallenge())        // CH-055: Analytics & statistics API
+	svc.Register(NewEntityCRUDChallenge())          // CH-056: Entity CRUD operations
+	svc.Register(NewSyncAPIChallenge())             // CH-057: Synchronization API
+	svc.Register(NewSubtitleAPIChallenge())         // CH-058: Subtitle management API
+	svc.Register(NewRecommendationAPIChallenge())   // CH-059: Recommendation engine API
+	svc.Register(NewLocalizationAPIChallenge())     // CH-060: Localization & i18n API
+
 	// User flow challenges (UF-*): exhaustive multi-platform
 	// user flow automation across all 6 Catalogizer applications
 	RegisterUserFlowAPIChallenges(svc)     // 49 API challenges

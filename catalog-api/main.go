@@ -94,22 +94,57 @@ func writePortFile(port int) error {
 	return os.WriteFile(portFile, []byte(data), 0644)
 }
 
-// generateSelfSignedCert creates a self-signed TLS certificate for development.
-func generateSelfSignedCert() (tls.Certificate, error) {
-	// Generate RSA key.
-	priv, err := rsa.GenerateKey(rand.Reader, 2048)
-	if err != nil {
-		return tls.Certificate{}, fmt.Errorf("failed to generate private key: %w", err)
+// getOrCreateSelfSignedCert loads a cached TLS certificate or generates a new one.
+func getOrCreateSelfSignedCert() (tls.Certificate, error) {
+	cacheDir := filepath.Join(".", "cache", "tls")
+	certPath := filepath.Join(cacheDir, "cert.pem")
+	keyPath := filepath.Join(cacheDir, "key.pem")
+
+	// Try loading cached cert
+	if certPEM, err := os.ReadFile(certPath); err == nil {
+		if keyPEM, err := os.ReadFile(keyPath); err == nil {
+			cert, err := tls.X509KeyPair(certPEM, keyPEM)
+			if err == nil {
+				// Verify cert is not expired
+				if len(cert.Certificate) > 0 {
+					x509Cert, err := x509.ParseCertificate(cert.Certificate[0])
+					if err == nil && time.Now().Before(x509Cert.NotAfter) {
+						return cert, nil
+					}
+				}
+			}
+		}
 	}
 
-	// Create certificate template.
+	// Generate new cert
+	cert, certPEM, keyPEM, err := generateSelfSignedCert()
+	if err != nil {
+		return tls.Certificate{}, err
+	}
+
+	// Cache to disk
+	if err := os.MkdirAll(cacheDir, 0700); err == nil {
+		_ = os.WriteFile(certPath, certPEM, 0600)
+		_ = os.WriteFile(keyPath, keyPEM, 0600)
+	}
+
+	return cert, nil
+}
+
+// generateSelfSignedCert creates a self-signed TLS certificate for development.
+func generateSelfSignedCert() (tls.Certificate, []byte, []byte, error) {
+	priv, err := rsa.GenerateKey(rand.Reader, 2048)
+	if err != nil {
+		return tls.Certificate{}, nil, nil, fmt.Errorf("failed to generate private key: %w", err)
+	}
+
 	template := x509.Certificate{
 		SerialNumber: big.NewInt(1),
 		Subject: pkix.Name{
 			Organization: []string{"Catalogizer Development"},
 		},
 		NotBefore:             time.Now(),
-		NotAfter:              time.Now().Add(365 * 24 * time.Hour), // Valid for 1 year
+		NotAfter:              time.Now().Add(365 * 24 * time.Hour),
 		KeyUsage:              x509.KeyUsageKeyEncipherment | x509.KeyUsageDigitalSignature,
 		ExtKeyUsage:           []x509.ExtKeyUsage{x509.ExtKeyUsageServerAuth},
 		BasicConstraintsValid: true,
@@ -117,13 +152,11 @@ func generateSelfSignedCert() (tls.Certificate, error) {
 		DNSNames:              []string{"localhost"},
 	}
 
-	// Create self-signed certificate.
 	derBytes, err := x509.CreateCertificate(rand.Reader, &template, &template, &priv.PublicKey, priv)
 	if err != nil {
-		return tls.Certificate{}, fmt.Errorf("failed to create certificate: %w", err)
+		return tls.Certificate{}, nil, nil, fmt.Errorf("failed to create certificate: %w", err)
 	}
 
-	// Encode certificate and key to PEM.
 	certPEM := pem.EncodeToMemory(&pem.Block{
 		Type:  "CERTIFICATE",
 		Bytes: derBytes,
@@ -133,13 +166,12 @@ func generateSelfSignedCert() (tls.Certificate, error) {
 		Bytes: x509.MarshalPKCS1PrivateKey(priv),
 	})
 
-	// Load TLS certificate from PEM.
 	cert, err := tls.X509KeyPair(certPEM, keyPEM)
 	if err != nil {
-		return tls.Certificate{}, fmt.Errorf("failed to load key pair: %w", err)
+		return tls.Certificate{}, nil, nil, fmt.Errorf("failed to load key pair: %w", err)
 	}
 
-	return cert, nil
+	return cert, certPEM, keyPEM, nil
 }
 
 // @title Catalog API
@@ -464,6 +496,15 @@ func main() {
 		c.JSON(200, gin.H{"host": cfg.Server.Host, "port": cfg.Server.Port})
 	}
 
+	// Search and browse handlers (file-level search and directory browsing)
+	searchHandler := root_handlers.NewSearchHandler(fileRepository)
+	browseHandler := root_handlers.NewBrowseHandler(fileRepository)
+
+	// Sync handler (remote synchronization via WebDAV, S3, GCS, local)
+	syncRepo := root_repository.NewSyncRepository(databaseDB)
+	syncService := root_services.NewSyncService(syncRepo, userRepo, authService)
+	syncHandler := root_handlers.NewSyncHandler(syncService, authService)
+
 	// Analytics, reporting, and favorites handlers
 	analyticsHandler := root_handlers.NewAnalyticsHandler(analyticsService, logger)
 	reportingHandler := root_handlers.NewReportingHandler(reportingService, logger)
@@ -480,6 +521,9 @@ func main() {
 	router := gin.Default()
 
 	// Middleware
+	router.Use(root_middleware.SecurityHeaders())
+	router.Use(root_middleware.ConcurrencyLimiter(100))
+	router.Use(root_middleware.RequestTimeout(60 * time.Second))
 	router.Use(root_middleware.CORS())
 	router.Use(metrics.GinMiddleware())
 	router.Use(middleware.Logger(logger))
@@ -541,6 +585,9 @@ func main() {
 		// Search endpoints
 		api.GET("/search", catalogHandler.Search)
 		api.GET("/search/duplicates", catalogHandler.SearchDuplicates)
+		api.GET("/search/files", searchHandler.SearchFiles)
+		api.GET("/search/files/duplicates", searchHandler.SearchDuplicates)
+		api.POST("/search/advanced", searchHandler.AdvancedSearch)
 
 		// Download endpoints
 		api.GET("/download/file/:id", downloadHandler.DownloadFile)
@@ -770,6 +817,32 @@ func main() {
 			favoritesGroup.GET("/check/:entity_type/:entity_id", favoritesHandler.CheckFavorite)
 		}
 
+		// Browse endpoints (directory browsing and file info)
+		browseGroup := api.Group("/browse")
+		{
+			browseGroup.GET("/roots", browseHandler.GetStorageRoots)
+			browseGroup.GET("/directory/*path", browseHandler.BrowseDirectory)
+			browseGroup.GET("/file-info/*path", browseHandler.GetFileInfo)
+			browseGroup.GET("/directory-sizes/*path", browseHandler.GetDirectorySizes)
+			browseGroup.GET("/duplicates/*path", browseHandler.GetDirectoryDuplicates)
+		}
+
+		// Sync endpoints (remote synchronization)
+		syncGroup := api.Group("/sync")
+		{
+			syncGroup.POST("/endpoints", syncHandler.CreateEndpoint)
+			syncGroup.GET("/endpoints", syncHandler.GetUserEndpoints)
+			syncGroup.GET("/endpoints/:id", syncHandler.GetEndpoint)
+			syncGroup.PUT("/endpoints/:id", syncHandler.UpdateEndpoint)
+			syncGroup.DELETE("/endpoints/:id", syncHandler.DeleteEndpoint)
+			syncGroup.POST("/endpoints/:id/sync", syncHandler.StartSync)
+			syncGroup.GET("/sessions", syncHandler.GetUserSessions)
+			syncGroup.GET("/sessions/:id", syncHandler.GetSession)
+			syncGroup.POST("/schedules", syncHandler.ScheduleSync)
+			syncGroup.GET("/statistics", syncHandler.GetSyncStatistics)
+			syncGroup.POST("/cleanup", syncHandler.CleanupOldSessions)
+		}
+
 		// Challenge endpoints
 		challengeGroup := api.Group("/challenges")
 		{
@@ -813,10 +886,10 @@ func main() {
 	var httpsServer *http.Server
 	var http3Server *http3.Server
 
-	// Generate self-signed TLS certificate for HTTP/3 development
-	cert, err := generateSelfSignedCert()
+	// Load or generate TLS certificate for HTTP/3 (cached across restarts)
+	cert, err := getOrCreateSelfSignedCert()
 	if err != nil {
-		logger.Error("Failed to generate self-signed certificate for HTTP/3", zap.Error(err))
+		logger.Error("Failed to get TLS certificate for HTTP/3", zap.Error(err))
 	} else {
 		// Create TLS config with the certificate
 		tlsConfig := &tls.Config{

@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useEffect, useRef } from 'react';
 import { Upload, File, CheckCircle, AlertCircle, Trash2 } from 'lucide-react';
 import { Button } from '../ui/Button';
 import { Card, CardContent, CardHeader, CardTitle } from '../ui/Card';
@@ -31,6 +31,15 @@ export const UploadManager: React.FC<UploadManagerProps> = ({
 }) => {
   const [uploadQueue, setUploadQueue] = useState<UploadItem[]>([]);
   const [isDragOver, setIsDragOver] = useState(false);
+  const pendingTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  useEffect(() => {
+    return () => {
+      if (pendingTimerRef.current) {
+        clearTimeout(pendingTimerRef.current);
+      }
+    };
+  }, []);
 
   const processFiles = useCallback((files: FileList) => {
     const newItems: UploadItem[] = Array.from(files).map(file => ({
@@ -41,9 +50,9 @@ export const UploadManager: React.FC<UploadManagerProps> = ({
     }));
 
     setUploadQueue(prev => [...prev, ...newItems]);
-    
+
     // Auto-start uploads
-    setTimeout(() => startUploads(newItems), 100);
+    pendingTimerRef.current = setTimeout(() => startUploads(newItems), 100);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 

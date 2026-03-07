@@ -128,21 +128,23 @@ func (s *AggregationService) getTopLevelDirectories(ctx context.Context, storage
 		}
 
 		dir.fileTypes = make(map[string]int)
-		for childRows.Next() {
-			var fileID, size int64
-			var ext *string
-			if err := childRows.Scan(&fileID, &ext, &size); err != nil {
-				continue
+		func() {
+			defer childRows.Close()
+			for childRows.Next() {
+				var fileID, size int64
+				var ext *string
+				if err := childRows.Scan(&fileID, &ext, &size); err != nil {
+					continue
+				}
+				dir.fileIDs = append(dir.fileIDs, fileID)
+				dir.totalSize += size
+				dir.fileCount++
+				if ext != nil {
+					dir.fileTypes[*ext]++
+					dir.extensions = append(dir.extensions, *ext)
+				}
 			}
-			dir.fileIDs = append(dir.fileIDs, fileID)
-			dir.totalSize += size
-			dir.fileCount++
-			if ext != nil {
-				dir.fileTypes[*ext]++
-				dir.extensions = append(dir.extensions, *ext)
-			}
-		}
-		childRows.Close()
+		}()
 
 		if dir.fileCount > 0 {
 			dirs = append(dirs, dir)

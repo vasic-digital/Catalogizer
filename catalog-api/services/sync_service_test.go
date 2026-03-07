@@ -495,6 +495,423 @@ func TestSyncService_ScanLocalFiles_NonexistentPath(t *testing.T) {
 // ADDITIONAL TESTS FOR 95% COVERAGE
 // ============================================================================
 
+// ============================================================================
+// FILESYSTEM SYNC TESTS (copyFile, performMirrorSync, performIncrementalSync,
+// performBidirectionalSync, cleanupDestination, performLocalSync)
+// ============================================================================
+
+func TestSyncService_CopyFile_Scenarios(t *testing.T) {
+	service := NewSyncService(nil, nil, nil)
+
+	t.Run("copy file successfully", func(t *testing.T) {
+		srcDir := t.TempDir()
+		dstDir := t.TempDir()
+
+		srcPath := filepath.Join(srcDir, "source.txt")
+		dstPath := filepath.Join(dstDir, "dest.txt")
+		content := []byte("hello world copy test")
+		require.NoError(t, os.WriteFile(srcPath, content, 0644))
+
+		err := service.copyFile(srcPath, dstPath, 0644)
+		assert.NoError(t, err)
+
+		copied, err := os.ReadFile(dstPath)
+		assert.NoError(t, err)
+		assert.Equal(t, content, copied)
+	})
+
+	t.Run("copy file creates destination directory", func(t *testing.T) {
+		srcDir := t.TempDir()
+		dstDir := t.TempDir()
+
+		srcPath := filepath.Join(srcDir, "source.txt")
+		dstPath := filepath.Join(dstDir, "sub", "dir", "dest.txt")
+		content := []byte("nested directory test")
+		require.NoError(t, os.WriteFile(srcPath, content, 0644))
+
+		err := service.copyFile(srcPath, dstPath, 0644)
+		assert.NoError(t, err)
+
+		copied, err := os.ReadFile(dstPath)
+		assert.NoError(t, err)
+		assert.Equal(t, content, copied)
+	})
+
+	t.Run("copy file nonexistent source returns error", func(t *testing.T) {
+		dstDir := t.TempDir()
+		dstPath := filepath.Join(dstDir, "dest.txt")
+
+		err := service.copyFile("/nonexistent/source.txt", dstPath, 0644)
+		assert.Error(t, err)
+	})
+}
+
+func TestSyncService_PerformMirrorSync(t *testing.T) {
+	service := NewSyncService(nil, nil, nil)
+	session := &models.SyncSession{ID: 1, UserID: 1}
+
+	t.Run("mirror sync copies files from source to destination", func(t *testing.T) {
+		srcDir := t.TempDir()
+		dstDir := t.TempDir()
+
+		// Create source files
+		require.NoError(t, os.WriteFile(filepath.Join(srcDir, "file1.txt"), []byte("content1"), 0644))
+		require.NoError(t, os.WriteFile(filepath.Join(srcDir, "file2.txt"), []byte("content2"), 0644))
+
+		err := service.performMirrorSync(srcDir, dstDir, session)
+		assert.NoError(t, err)
+
+		// Verify files were copied
+		content1, err := os.ReadFile(filepath.Join(dstDir, "file1.txt"))
+		assert.NoError(t, err)
+		assert.Equal(t, "content1", string(content1))
+
+		content2, err := os.ReadFile(filepath.Join(dstDir, "file2.txt"))
+		assert.NoError(t, err)
+		assert.Equal(t, "content2", string(content2))
+	})
+
+	t.Run("mirror sync copies subdirectories", func(t *testing.T) {
+		srcDir := t.TempDir()
+		dstDir := t.TempDir()
+
+		require.NoError(t, os.MkdirAll(filepath.Join(srcDir, "subdir"), 0755))
+		require.NoError(t, os.WriteFile(filepath.Join(srcDir, "subdir", "nested.txt"), []byte("nested"), 0644))
+
+		err := service.performMirrorSync(srcDir, dstDir, session)
+		assert.NoError(t, err)
+
+		content, err := os.ReadFile(filepath.Join(dstDir, "subdir", "nested.txt"))
+		assert.NoError(t, err)
+		assert.Equal(t, "nested", string(content))
+	})
+
+	t.Run("mirror sync removes files not in source", func(t *testing.T) {
+		srcDir := t.TempDir()
+		dstDir := t.TempDir()
+
+		// Create source file
+		require.NoError(t, os.WriteFile(filepath.Join(srcDir, "keep.txt"), []byte("keep"), 0644))
+		// Create destination-only file
+		require.NoError(t, os.WriteFile(filepath.Join(dstDir, "keep.txt"), []byte("keep"), 0644))
+		require.NoError(t, os.WriteFile(filepath.Join(dstDir, "remove.txt"), []byte("remove"), 0644))
+
+		err := service.performMirrorSync(srcDir, dstDir, session)
+		assert.NoError(t, err)
+
+		// File not in source should be removed
+		_, err = os.Stat(filepath.Join(dstDir, "remove.txt"))
+		assert.True(t, os.IsNotExist(err))
+	})
+}
+
+func TestSyncService_PerformIncrementalSync(t *testing.T) {
+	service := NewSyncService(nil, nil, nil)
+	session := &models.SyncSession{ID: 1, UserID: 1}
+
+	t.Run("incremental sync copies new files", func(t *testing.T) {
+		srcDir := t.TempDir()
+		dstDir := t.TempDir()
+
+		require.NoError(t, os.WriteFile(filepath.Join(srcDir, "new.txt"), []byte("new content"), 0644))
+
+		err := service.performIncrementalSync(srcDir, dstDir, session)
+		assert.NoError(t, err)
+
+		content, err := os.ReadFile(filepath.Join(dstDir, "new.txt"))
+		assert.NoError(t, err)
+		assert.Equal(t, "new content", string(content))
+	})
+
+	t.Run("incremental sync skips older source files", func(t *testing.T) {
+		srcDir := t.TempDir()
+		dstDir := t.TempDir()
+
+		srcFile := filepath.Join(srcDir, "old.txt")
+		dstFile := filepath.Join(dstDir, "old.txt")
+
+		// Create destination file first (newer)
+		require.NoError(t, os.WriteFile(dstFile, []byte("destination"), 0644))
+		// Wait briefly then create source file, but set modtime to the past
+		require.NoError(t, os.WriteFile(srcFile, []byte("source"), 0644))
+		pastTime := time.Now().Add(-1 * time.Hour)
+		require.NoError(t, os.Chtimes(srcFile, pastTime, pastTime))
+
+		err := service.performIncrementalSync(srcDir, dstDir, session)
+		assert.NoError(t, err)
+
+		// Destination file should remain unchanged
+		content, err := os.ReadFile(dstFile)
+		assert.NoError(t, err)
+		assert.Equal(t, "destination", string(content))
+	})
+
+	t.Run("incremental sync does not remove destination-only files", func(t *testing.T) {
+		srcDir := t.TempDir()
+		dstDir := t.TempDir()
+
+		require.NoError(t, os.WriteFile(filepath.Join(dstDir, "extra.txt"), []byte("extra"), 0644))
+
+		err := service.performIncrementalSync(srcDir, dstDir, session)
+		assert.NoError(t, err)
+
+		// extra.txt should still be present
+		_, err = os.Stat(filepath.Join(dstDir, "extra.txt"))
+		assert.NoError(t, err)
+	})
+}
+
+func TestSyncService_PerformBidirectionalSync(t *testing.T) {
+	service := NewSyncService(nil, nil, nil)
+	session := &models.SyncSession{ID: 1, UserID: 1}
+
+	t.Run("bidirectional sync copies in both directions", func(t *testing.T) {
+		srcDir := t.TempDir()
+		dstDir := t.TempDir()
+
+		require.NoError(t, os.WriteFile(filepath.Join(srcDir, "from_src.txt"), []byte("from source"), 0644))
+		require.NoError(t, os.WriteFile(filepath.Join(dstDir, "from_dst.txt"), []byte("from destination"), 0644))
+
+		err := service.performBidirectionalSync(srcDir, dstDir, session)
+		assert.NoError(t, err)
+
+		// Source file should be in destination
+		content1, err := os.ReadFile(filepath.Join(dstDir, "from_src.txt"))
+		assert.NoError(t, err)
+		assert.Equal(t, "from source", string(content1))
+
+		// Destination file should be in source
+		content2, err := os.ReadFile(filepath.Join(srcDir, "from_dst.txt"))
+		assert.NoError(t, err)
+		assert.Equal(t, "from destination", string(content2))
+	})
+}
+
+func TestSyncService_CleanupDestination(t *testing.T) {
+	service := NewSyncService(nil, nil, nil)
+	session := &models.SyncSession{ID: 1, UserID: 1}
+
+	t.Run("removes files not in source", func(t *testing.T) {
+		srcDir := t.TempDir()
+		dstDir := t.TempDir()
+
+		require.NoError(t, os.WriteFile(filepath.Join(srcDir, "keep.txt"), []byte("keep"), 0644))
+		require.NoError(t, os.WriteFile(filepath.Join(dstDir, "keep.txt"), []byte("keep"), 0644))
+		require.NoError(t, os.WriteFile(filepath.Join(dstDir, "orphan.txt"), []byte("orphan"), 0644))
+
+		err := service.cleanupDestination(srcDir, dstDir, session)
+		assert.NoError(t, err)
+
+		_, err = os.Stat(filepath.Join(dstDir, "orphan.txt"))
+		assert.True(t, os.IsNotExist(err))
+
+		_, err = os.Stat(filepath.Join(dstDir, "keep.txt"))
+		assert.NoError(t, err)
+	})
+
+	t.Run("handles empty directories gracefully", func(t *testing.T) {
+		srcDir := t.TempDir()
+		dstDir := t.TempDir()
+
+		err := service.cleanupDestination(srcDir, dstDir, session)
+		assert.NoError(t, err)
+	})
+}
+
+func TestSyncService_PerformLocalSync(t *testing.T) {
+	service := NewSyncService(nil, nil, nil)
+
+	t.Run("local sync with mirror mode", func(t *testing.T) {
+		srcDir := t.TempDir()
+		dstDir := t.TempDir()
+		require.NoError(t, os.WriteFile(filepath.Join(srcDir, "data.txt"), []byte("mirror data"), 0644))
+
+		settings := `{"source_directory":"` + srcDir + `","destination_directory":"` + dstDir + `","sync_mode":"mirror"}`
+		session := &models.SyncSession{ID: 1, UserID: 1}
+		endpoint := &models.SyncEndpoint{
+			LocalPath:    srcDir,
+			SyncSettings: &settings,
+		}
+
+		err := service.performLocalSync(session, endpoint)
+		assert.NoError(t, err)
+
+		content, err := os.ReadFile(filepath.Join(dstDir, "data.txt"))
+		assert.NoError(t, err)
+		assert.Equal(t, "mirror data", string(content))
+	})
+
+	t.Run("local sync with incremental mode", func(t *testing.T) {
+		srcDir := t.TempDir()
+		dstDir := t.TempDir()
+		require.NoError(t, os.WriteFile(filepath.Join(srcDir, "inc.txt"), []byte("incremental data"), 0644))
+
+		settings := `{"source_directory":"` + srcDir + `","destination_directory":"` + dstDir + `","sync_mode":"incremental"}`
+		session := &models.SyncSession{ID: 1, UserID: 1}
+		endpoint := &models.SyncEndpoint{
+			LocalPath:    srcDir,
+			SyncSettings: &settings,
+		}
+
+		err := service.performLocalSync(session, endpoint)
+		assert.NoError(t, err)
+
+		content, err := os.ReadFile(filepath.Join(dstDir, "inc.txt"))
+		assert.NoError(t, err)
+		assert.Equal(t, "incremental data", string(content))
+	})
+
+	t.Run("local sync with bidirectional mode", func(t *testing.T) {
+		srcDir := t.TempDir()
+		dstDir := t.TempDir()
+		require.NoError(t, os.WriteFile(filepath.Join(srcDir, "a.txt"), []byte("a"), 0644))
+		require.NoError(t, os.WriteFile(filepath.Join(dstDir, "b.txt"), []byte("b"), 0644))
+
+		settings := `{"source_directory":"` + srcDir + `","destination_directory":"` + dstDir + `","sync_mode":"bidirectional"}`
+		session := &models.SyncSession{ID: 1, UserID: 1}
+		endpoint := &models.SyncEndpoint{
+			LocalPath:    srcDir,
+			SyncSettings: &settings,
+		}
+
+		err := service.performLocalSync(session, endpoint)
+		assert.NoError(t, err)
+
+		// Both files should exist in both directories
+		_, err = os.Stat(filepath.Join(dstDir, "a.txt"))
+		assert.NoError(t, err)
+		_, err = os.Stat(filepath.Join(srcDir, "b.txt"))
+		assert.NoError(t, err)
+	})
+
+	t.Run("local sync with unsupported mode returns error", func(t *testing.T) {
+		srcDir := t.TempDir()
+		dstDir := t.TempDir()
+
+		settings := `{"source_directory":"` + srcDir + `","destination_directory":"` + dstDir + `","sync_mode":"unknown"}`
+		session := &models.SyncSession{ID: 1, UserID: 1}
+		endpoint := &models.SyncEndpoint{
+			LocalPath:    srcDir,
+			SyncSettings: &settings,
+		}
+
+		err := service.performLocalSync(session, endpoint)
+		assert.Error(t, err)
+		assert.Contains(t, err.Error(), "unsupported sync mode")
+	})
+
+	t.Run("local sync missing destination directory returns error", func(t *testing.T) {
+		srcDir := t.TempDir()
+
+		settings := `{"source_directory":"` + srcDir + `"}`
+		session := &models.SyncSession{ID: 1, UserID: 1}
+		endpoint := &models.SyncEndpoint{
+			LocalPath:    srcDir,
+			SyncSettings: &settings,
+		}
+
+		err := service.performLocalSync(session, endpoint)
+		assert.Error(t, err)
+		assert.Contains(t, err.Error(), "destination directory not specified")
+	})
+
+	t.Run("local sync missing source directory returns error", func(t *testing.T) {
+		settings := `{"destination_directory":"/tmp/dst"}`
+		session := &models.SyncSession{ID: 1, UserID: 1}
+		endpoint := &models.SyncEndpoint{
+			SyncSettings: &settings,
+		}
+
+		err := service.performLocalSync(session, endpoint)
+		assert.Error(t, err)
+		assert.Contains(t, err.Error(), "source directory not specified")
+	})
+
+	t.Run("local sync nonexistent source directory returns error", func(t *testing.T) {
+		dstDir := t.TempDir()
+
+		settings := `{"source_directory":"/nonexistent/src/dir","destination_directory":"` + dstDir + `"}`
+		session := &models.SyncSession{ID: 1, UserID: 1}
+		endpoint := &models.SyncEndpoint{
+			LocalPath:    "/nonexistent/src/dir",
+			SyncSettings: &settings,
+		}
+
+		err := service.performLocalSync(session, endpoint)
+		assert.Error(t, err)
+		assert.Contains(t, err.Error(), "source directory does not exist")
+	})
+
+	t.Run("local sync source is file not directory returns error", func(t *testing.T) {
+		srcDir := t.TempDir()
+		dstDir := t.TempDir()
+		srcFile := filepath.Join(srcDir, "afile.txt")
+		require.NoError(t, os.WriteFile(srcFile, []byte("file"), 0644))
+
+		settings := `{"source_directory":"` + srcFile + `","destination_directory":"` + dstDir + `"}`
+		session := &models.SyncSession{ID: 1, UserID: 1}
+		endpoint := &models.SyncEndpoint{
+			LocalPath:    srcFile,
+			SyncSettings: &settings,
+		}
+
+		err := service.performLocalSync(session, endpoint)
+		assert.Error(t, err)
+		assert.Contains(t, err.Error(), "source path is not a directory")
+	})
+
+	t.Run("local sync default mode is mirror", func(t *testing.T) {
+		srcDir := t.TempDir()
+		dstDir := t.TempDir()
+		require.NoError(t, os.WriteFile(filepath.Join(srcDir, "def.txt"), []byte("default"), 0644))
+
+		settings := `{"source_directory":"` + srcDir + `","destination_directory":"` + dstDir + `"}`
+		session := &models.SyncSession{ID: 1, UserID: 1}
+		endpoint := &models.SyncEndpoint{
+			LocalPath:    srcDir,
+			SyncSettings: &settings,
+		}
+
+		err := service.performLocalSync(session, endpoint)
+		assert.NoError(t, err)
+
+		content, err := os.ReadFile(filepath.Join(dstDir, "def.txt"))
+		assert.NoError(t, err)
+		assert.Equal(t, "default", string(content))
+	})
+
+	t.Run("local sync with invalid JSON settings returns error", func(t *testing.T) {
+		settings := `invalid json`
+		session := &models.SyncSession{ID: 1, UserID: 1}
+		endpoint := &models.SyncEndpoint{
+			LocalPath:    "/tmp",
+			SyncSettings: &settings,
+		}
+
+		err := service.performLocalSync(session, endpoint)
+		assert.Error(t, err)
+		assert.Contains(t, err.Error(), "failed to parse local sync config")
+	})
+}
+
+func TestSyncService_CalculateChecksum_DifferentContent(t *testing.T) {
+	service := NewSyncService(nil, nil, nil)
+
+	tmpDir := t.TempDir()
+	file1 := filepath.Join(tmpDir, "file1.txt")
+	file2 := filepath.Join(tmpDir, "file2.txt")
+	require.NoError(t, os.WriteFile(file1, []byte("content A"), 0644))
+	require.NoError(t, os.WriteFile(file2, []byte("content B"), 0644))
+
+	checksum1, err := service.calculateChecksum(file1)
+	assert.NoError(t, err)
+
+	checksum2, err := service.calculateChecksum(file2)
+	assert.NoError(t, err)
+
+	assert.NotEqual(t, checksum1, checksum2, "Different content should produce different checksums")
+}
+
 func TestSyncService_CreateSyncEndpoint(t *testing.T) {
 	tests := []struct {
 		name        string

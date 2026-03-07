@@ -316,7 +316,7 @@ func TestUniversalScanner_QueueCapacity(t *testing.T) {
 	scanner := NewUniversalScanner(mockDB, mockLogger, nil, nil)
 
 	assert.NotNil(t, scanner)
-	assert.Equal(t, 1000, cap(scanner.scanQueue), "scan queue must have capacity for multiple concurrent scans")
+	assert.Equal(t, 100, cap(scanner.scanQueue), "scan queue must have capacity for multiple concurrent scans")
 }
 
 func TestUniversalScanner_QueueMultipleScans(t *testing.T) {

@@ -34,6 +34,8 @@ type SMBChangeWatcher struct {
 	debounceMap   map[string]*debounceEntry
 	debounceMu    sync.Mutex
 	debounceDelay time.Duration
+	ctx           context.Context
+	cancel        context.CancelFunc
 }
 
 // ChangeEvent represents a file system change
@@ -48,6 +50,7 @@ type ChangeEvent struct {
 
 // NewSMBChangeWatcher creates a new change watcher
 func NewSMBChangeWatcher(mediaDB *database.MediaDatabase, analyzer *analyzer.MediaAnalyzer, logger *zap.Logger) *SMBChangeWatcher {
+	ctx, cancel := context.WithCancel(context.Background())
 	return &SMBChangeWatcher{
 		mediaDB:       mediaDB,
 		analyzer:      analyzer,
@@ -58,6 +61,8 @@ func NewSMBChangeWatcher(mediaDB *database.MediaDatabase, analyzer *analyzer.Med
 		debounceMap:   make(map[string]*debounceEntry),
 		debounceDelay: 2 * time.Second, // Wait 2 seconds before processing changes
 		stopCh:        make(chan struct{}),
+		ctx:           ctx,
+		cancel:        cancel,
 	}
 }
 
@@ -77,6 +82,9 @@ func (w *SMBChangeWatcher) Start() error {
 // Stop stops the change watcher
 func (w *SMBChangeWatcher) Stop() {
 	w.logger.Info("Stopping SMB change watcher")
+
+	// Cancel context for in-progress operations
+	w.cancel()
 
 	// Stop all file watchers
 	w.watcherMu.Lock()
@@ -214,6 +222,19 @@ func (w *SMBChangeWatcher) handleFileSystemEvent(smbRoot string, event fsnotify.
 func (w *SMBChangeWatcher) debounceChange(event ChangeEvent) {
 	w.debounceMu.Lock()
 
+	// Evict oldest entries if debounce map grows too large
+	if len(w.debounceMap) > 10000 {
+		for k, entry := range w.debounceMap {
+			entry.timer.Stop()
+			delete(w.debounceMap, k)
+			if len(w.debounceMap) <= 5000 {
+				break
+			}
+		}
+		w.logger.Warn("Debounce map exceeded limit, evicted entries",
+			zap.Int("remaining", len(w.debounceMap)))
+	}
+
 	key := event.SmbRoot + ":" + event.Path
 
 	// Cancel existing timer and increment generation
@@ -229,6 +250,9 @@ func (w *SMBChangeWatcher) debounceChange(event ChangeEvent) {
 	// The generation ensures that old timer callbacks don't delete newer entries
 	currentGeneration := generation
 	timer := time.AfterFunc(w.debounceDelay, func() {
+		w.wg.Add(1)
+		defer w.wg.Done()
+
 		w.debounceMu.Lock()
 		// Only delete if this is still the current generation
 		if entry, exists := w.debounceMap[key]; exists && entry.generation == currentGeneration {
@@ -239,6 +263,7 @@ func (w *SMBChangeWatcher) debounceChange(event ChangeEvent) {
 		// Send to processing queue
 		select {
 		case w.changeQueue <- event:
+		case <-w.stopCh:
 		default:
 			w.logger.Warn("Change queue full, dropping event",
 				zap.String("path", event.Path),
@@ -274,7 +299,7 @@ func (w *SMBChangeWatcher) changeWorker(workerID int) {
 
 // processChange processes a single change event
 func (w *SMBChangeWatcher) processChange(event ChangeEvent, workerID int) {
-	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+	ctx, cancel := context.WithTimeout(w.ctx, 30*time.Second)
 	defer cancel()
 
 	w.logger.Debug("Processing change event",

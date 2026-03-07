@@ -36,3 +36,12 @@ go.work
 
 # Challenge result files
 result_*.json
+
+# Environment files (contain secrets)
+.env
+.env.local
+.env.security
+
+# Stale test artifact directories
+old_results/
+test-results/

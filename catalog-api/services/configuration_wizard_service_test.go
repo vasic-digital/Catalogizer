@@ -974,6 +974,557 @@ func TestConfigurationWizardService_CreateConfigurationFile(t *testing.T) {
 	}
 }
 
+// ============================================================================
+// ADDITIONAL TESTS FOR 0% COVERAGE FUNCTIONS
+// ============================================================================
+
+func TestConfigurationWizardService_TestSQLiteConnection(t *testing.T) {
+	service := NewConfigurationWizardService(nil)
+
+	t.Run("valid writable directory", func(t *testing.T) {
+		tmpDir := t.TempDir()
+		dbPath := tmpDir + "/test.db"
+		err := service.testSQLiteConnection(dbPath)
+		assert.NoError(t, err)
+	})
+
+	t.Run("nested directory creation", func(t *testing.T) {
+		tmpDir := t.TempDir()
+		dbPath := tmpDir + "/sub/dir/test.db"
+		err := service.testSQLiteConnection(dbPath)
+		assert.NoError(t, err)
+	})
+
+	t.Run("unwritable directory returns error", func(t *testing.T) {
+		// Use a path that can't be created
+		err := service.testSQLiteConnection("/proc/nonexistent/dir/test.db")
+		assert.Error(t, err)
+	})
+}
+
+func TestConfigurationWizardService_TestNetworkDatabaseConnection(t *testing.T) {
+	service := NewConfigurationWizardService(nil)
+
+	t.Run("all required fields present", func(t *testing.T) {
+		config := map[string]interface{}{
+			"db_host":     "localhost",
+			"db_port":     5432,
+			"db_name":     "testdb",
+			"db_username": "user",
+			"db_password": "pass",
+		}
+		err := service.testNetworkDatabaseConnection(config)
+		assert.NoError(t, err)
+	})
+
+	t.Run("missing db_host", func(t *testing.T) {
+		config := map[string]interface{}{
+			"db_port":     5432,
+			"db_name":     "testdb",
+			"db_username": "user",
+			"db_password": "pass",
+		}
+		err := service.testNetworkDatabaseConnection(config)
+		assert.Error(t, err)
+		assert.Contains(t, err.Error(), "db_host")
+	})
+
+	t.Run("missing db_port", func(t *testing.T) {
+		config := map[string]interface{}{
+			"db_host":     "localhost",
+			"db_name":     "testdb",
+			"db_username": "user",
+			"db_password": "pass",
+		}
+		err := service.testNetworkDatabaseConnection(config)
+		assert.Error(t, err)
+		assert.Contains(t, err.Error(), "db_port")
+	})
+
+	t.Run("missing db_name", func(t *testing.T) {
+		config := map[string]interface{}{
+			"db_host":     "localhost",
+			"db_port":     5432,
+			"db_username": "user",
+			"db_password": "pass",
+		}
+		err := service.testNetworkDatabaseConnection(config)
+		assert.Error(t, err)
+		assert.Contains(t, err.Error(), "db_name")
+	})
+
+	t.Run("empty config missing all fields", func(t *testing.T) {
+		config := map[string]interface{}{}
+		err := service.testNetworkDatabaseConnection(config)
+		assert.Error(t, err)
+	})
+}
+
+func TestConfigurationWizardService_TestDatabaseConnection(t *testing.T) {
+	service := NewConfigurationWizardService(nil)
+
+	t.Run("sqlite type with valid path", func(t *testing.T) {
+		tmpDir := t.TempDir()
+		config := map[string]interface{}{
+			"db_type": "sqlite",
+			"db_path": tmpDir + "/test.db",
+		}
+		err := service.testDatabaseConnection(config)
+		assert.NoError(t, err)
+	})
+
+	t.Run("sqlite type with empty path", func(t *testing.T) {
+		config := map[string]interface{}{
+			"db_type": "sqlite",
+			"db_path": "",
+		}
+		err := service.testDatabaseConnection(config)
+		assert.Error(t, err)
+		assert.Contains(t, err.Error(), "database path not specified")
+	})
+
+	t.Run("sqlite type with missing path key", func(t *testing.T) {
+		config := map[string]interface{}{
+			"db_type": "sqlite",
+		}
+		err := service.testDatabaseConnection(config)
+		assert.Error(t, err)
+		assert.Contains(t, err.Error(), "database path not specified")
+	})
+
+	t.Run("mysql type", func(t *testing.T) {
+		config := map[string]interface{}{
+			"db_type":     "mysql",
+			"db_host":     "localhost",
+			"db_port":     3306,
+			"db_name":     "testdb",
+			"db_username": "user",
+			"db_password": "pass",
+		}
+		err := service.testDatabaseConnection(config)
+		assert.NoError(t, err)
+	})
+
+	t.Run("postgresql type", func(t *testing.T) {
+		config := map[string]interface{}{
+			"db_type":     "postgresql",
+			"db_host":     "localhost",
+			"db_port":     5432,
+			"db_name":     "testdb",
+			"db_username": "user",
+			"db_password": "pass",
+		}
+		err := service.testDatabaseConnection(config)
+		assert.NoError(t, err)
+	})
+
+	t.Run("unsupported database type", func(t *testing.T) {
+		config := map[string]interface{}{
+			"db_type": "oracle",
+		}
+		err := service.testDatabaseConnection(config)
+		assert.Error(t, err)
+		assert.Contains(t, err.Error(), "unsupported database type")
+	})
+
+	t.Run("missing db_type key defaults to empty", func(t *testing.T) {
+		config := map[string]interface{}{}
+		err := service.testDatabaseConnection(config)
+		assert.Error(t, err)
+		assert.Contains(t, err.Error(), "unsupported database type")
+	})
+}
+
+func TestConfigurationWizardService_TestMediaStorage(t *testing.T) {
+	service := NewConfigurationWizardService(nil)
+
+	t.Run("local storage with valid path", func(t *testing.T) {
+		tmpDir := t.TempDir()
+		config := map[string]interface{}{
+			"storage_type": "local",
+			"media_path":   tmpDir,
+		}
+		err := service.testMediaStorage(config)
+		assert.NoError(t, err)
+	})
+
+	t.Run("local storage with new directory path", func(t *testing.T) {
+		tmpDir := t.TempDir()
+		config := map[string]interface{}{
+			"storage_type": "local",
+			"media_path":   tmpDir + "/new/media/dir",
+		}
+		err := service.testMediaStorage(config)
+		assert.NoError(t, err)
+
+		// Directory should have been created
+		_, err = os.Stat(tmpDir + "/new/media/dir")
+		assert.NoError(t, err)
+	})
+
+	t.Run("local storage with empty media_path", func(t *testing.T) {
+		config := map[string]interface{}{
+			"storage_type": "local",
+			"media_path":   "",
+		}
+		err := service.testMediaStorage(config)
+		assert.Error(t, err)
+		assert.Contains(t, err.Error(), "media path not specified")
+	})
+
+	t.Run("local storage with missing media_path key", func(t *testing.T) {
+		config := map[string]interface{}{
+			"storage_type": "local",
+		}
+		err := service.testMediaStorage(config)
+		assert.Error(t, err)
+		assert.Contains(t, err.Error(), "media path not specified")
+	})
+
+	t.Run("non-local storage type logs and returns nil", func(t *testing.T) {
+		config := map[string]interface{}{
+			"storage_type": "s3",
+		}
+		err := service.testMediaStorage(config)
+		assert.NoError(t, err)
+	})
+
+	t.Run("empty config defaults to empty storage_type", func(t *testing.T) {
+		config := map[string]interface{}{}
+		err := service.testMediaStorage(config)
+		assert.NoError(t, err) // Non-local types return nil
+	})
+}
+
+func TestConfigurationWizardService_TestServiceConfiguration(t *testing.T) {
+	service := NewConfigurationWizardService(nil)
+
+	t.Run("valid port within range", func(t *testing.T) {
+		config := map[string]interface{}{
+			"server_port": float64(8080),
+		}
+		err := service.testServiceConfiguration(config)
+		assert.NoError(t, err)
+	})
+
+	t.Run("port too low", func(t *testing.T) {
+		config := map[string]interface{}{
+			"server_port": float64(80),
+		}
+		err := service.testServiceConfiguration(config)
+		assert.Error(t, err)
+		assert.Contains(t, err.Error(), "invalid port number")
+	})
+
+	t.Run("port too high", func(t *testing.T) {
+		config := map[string]interface{}{
+			"server_port": float64(70000),
+		}
+		err := service.testServiceConfiguration(config)
+		assert.Error(t, err)
+		assert.Contains(t, err.Error(), "invalid port number")
+	})
+
+	t.Run("missing server_port returns no error", func(t *testing.T) {
+		config := map[string]interface{}{}
+		err := service.testServiceConfiguration(config)
+		assert.NoError(t, err)
+	})
+
+	t.Run("boundary port 1024", func(t *testing.T) {
+		config := map[string]interface{}{
+			"server_port": float64(1024),
+		}
+		err := service.testServiceConfiguration(config)
+		assert.NoError(t, err)
+	})
+
+	t.Run("boundary port 65535", func(t *testing.T) {
+		config := map[string]interface{}{
+			"server_port": float64(65535),
+		}
+		err := service.testServiceConfiguration(config)
+		assert.NoError(t, err)
+	})
+}
+
+func TestConfigurationWizardService_PerformFinalTest(t *testing.T) {
+	service := NewConfigurationWizardService(nil)
+
+	t.Run("all tests pass with valid config", func(t *testing.T) {
+		tmpDir := t.TempDir()
+		dbDir := t.TempDir()
+		session := &models.WizardSession{
+			Configuration: map[string]interface{}{
+				"db_type":      "sqlite",
+				"db_path":      dbDir + "/test.db",
+				"storage_type": "local",
+				"media_path":   tmpDir,
+				"server_port":  float64(8080),
+			},
+		}
+		err := service.performFinalTest(nil, session)
+		assert.NoError(t, err)
+	})
+
+	t.Run("database test failure propagates", func(t *testing.T) {
+		session := &models.WizardSession{
+			Configuration: map[string]interface{}{
+				"db_type":      "sqlite",
+				"db_path":      "",
+				"storage_type": "local",
+				"media_path":   "/tmp",
+				"server_port":  float64(8080),
+			},
+		}
+		err := service.performFinalTest(nil, session)
+		assert.Error(t, err)
+		assert.Contains(t, err.Error(), "database connection test failed")
+	})
+
+	t.Run("media storage failure propagates", func(t *testing.T) {
+		dbDir := t.TempDir()
+		session := &models.WizardSession{
+			Configuration: map[string]interface{}{
+				"db_type":      "sqlite",
+				"db_path":      dbDir + "/test.db",
+				"storage_type": "local",
+				"media_path":   "",
+			},
+		}
+		err := service.performFinalTest(nil, session)
+		assert.Error(t, err)
+		assert.Contains(t, err.Error(), "media storage test failed")
+	})
+
+	t.Run("service config failure propagates", func(t *testing.T) {
+		tmpDir := t.TempDir()
+		dbDir := t.TempDir()
+		session := &models.WizardSession{
+			Configuration: map[string]interface{}{
+				"db_type":      "sqlite",
+				"db_path":      dbDir + "/test.db",
+				"storage_type": "local",
+				"media_path":   tmpDir,
+				"server_port":  float64(80),
+			},
+		}
+		err := service.performFinalTest(nil, session)
+		assert.Error(t, err)
+		assert.Contains(t, err.Error(), "service configuration test failed")
+	})
+}
+
+func TestConfigurationWizardService_FinalizeConfiguration(t *testing.T) {
+	service := NewConfigurationWizardService(nil)
+
+	t.Run("finalize writes config file", func(t *testing.T) {
+		tmpDir := t.TempDir()
+		service.configPath = tmpDir
+
+		session := &models.WizardSession{
+			UserID:     1,
+			ConfigType: "basic",
+			Configuration: map[string]interface{}{
+				"db_type":    "sqlite",
+				"server_port": 8080,
+			},
+		}
+
+		err := service.finalizeConfiguration(session)
+		assert.NoError(t, err)
+
+		// Config file should exist
+		configFile := tmpDir + "/config.json"
+		_, err = os.Stat(configFile)
+		assert.NoError(t, err)
+
+		content, err := os.ReadFile(configFile)
+		assert.NoError(t, err)
+		assert.Contains(t, string(content), "version")
+		assert.Contains(t, string(content), "configuration")
+	})
+
+	t.Run("finalize with unwritable config path returns error", func(t *testing.T) {
+		service2 := NewConfigurationWizardService(nil)
+		service2.configPath = "/proc/nonexistent/config"
+
+		session := &models.WizardSession{
+			UserID:        1,
+			ConfigType:    "basic",
+			Configuration: map[string]interface{}{},
+		}
+
+		err := service2.finalizeConfiguration(session)
+		assert.Error(t, err)
+	})
+}
+
+func TestConfigurationWizardService_ProcessTestStep(t *testing.T) {
+	service := NewConfigurationWizardService(nil)
+
+	t.Run("system_check step", func(t *testing.T) {
+		session := &models.WizardSession{
+			Configuration: make(map[string]interface{}),
+		}
+		step := WizardStep{StepID: "system_check"}
+		data := map[string]interface{}{"auto_fix": true}
+
+		err := service.processTestStep(step, data, session)
+		assert.NoError(t, err)
+
+		// System info should be stored in config
+		_, exists := session.Configuration["system_info"]
+		assert.True(t, exists)
+	})
+
+	t.Run("final_test step with valid config", func(t *testing.T) {
+		tmpDir := t.TempDir()
+		dbDir := t.TempDir()
+		session := &models.WizardSession{
+			Configuration: map[string]interface{}{
+				"db_type":      "sqlite",
+				"db_path":      dbDir + "/test.db",
+				"storage_type": "local",
+				"media_path":   tmpDir,
+				"server_port":  float64(8080),
+			},
+		}
+		step := WizardStep{StepID: "final_test"}
+
+		err := service.processTestStep(step, nil, session)
+		assert.NoError(t, err)
+	})
+
+	t.Run("unknown test step returns error", func(t *testing.T) {
+		session := &models.WizardSession{
+			Configuration: make(map[string]interface{}),
+		}
+		step := WizardStep{StepID: "unknown_step"}
+
+		err := service.processTestStep(step, nil, session)
+		assert.Error(t, err)
+		assert.Contains(t, err.Error(), "unknown test step")
+	})
+}
+
+func TestConfigurationWizardService_DetectInstalledTools(t *testing.T) {
+	service := NewConfigurationWizardService(nil)
+
+	tools := service.detectInstalledTools()
+	assert.NotNil(t, tools)
+	// At minimum, "go" should be detected since we're running Go tests
+	assert.Contains(t, tools, "go")
+}
+
+func TestConfigurationWizardService_GenerateSystemRecommendations(t *testing.T) {
+	service := NewConfigurationWizardService(nil)
+
+	t.Run("low memory recommendation", func(t *testing.T) {
+		info := SystemInfo{
+			MemoryGB:       1.0,
+			CPUCores:       4,
+			OS:             "linux",
+			InstalledTools: []string{"go", "git", "docker"},
+		}
+		recs := service.generateSystemRecommendations(info)
+		assert.NotNil(t, recs)
+		found := false
+		for _, r := range recs {
+			if assert.NotEmpty(t, r) && len(r) > 0 {
+				if r[0] == 'C' && len(r) > 10 {
+					found = true
+				}
+			}
+		}
+		assert.True(t, found, "Expected memory recommendation")
+	})
+
+	t.Run("low CPU cores recommendation", func(t *testing.T) {
+		info := SystemInfo{
+			MemoryGB:       8.0,
+			CPUCores:       1,
+			OS:             "linux",
+			InstalledTools: []string{"go", "git", "docker"},
+		}
+		recs := service.generateSystemRecommendations(info)
+		foundCPU := false
+		for _, r := range recs {
+			if len(r) > 20 && r[0] == 'C' {
+				foundCPU = true
+			}
+		}
+		assert.True(t, foundCPU, "Expected CPU recommendation")
+	})
+
+	t.Run("windows recommendation", func(t *testing.T) {
+		info := SystemInfo{
+			MemoryGB:       8.0,
+			CPUCores:       4,
+			OS:             "windows",
+			InstalledTools: []string{"go", "git", "docker"},
+		}
+		recs := service.generateSystemRecommendations(info)
+		foundWSL := false
+		for _, r := range recs {
+			if len(r) > 0 && (r[0] == 'C') {
+				foundWSL = true
+			}
+		}
+		assert.True(t, foundWSL, "Expected WSL recommendation")
+	})
+
+	t.Run("few tools recommendation", func(t *testing.T) {
+		info := SystemInfo{
+			MemoryGB:       8.0,
+			CPUCores:       4,
+			OS:             "linux",
+			InstalledTools: []string{"go"},
+		}
+		recs := service.generateSystemRecommendations(info)
+		foundTools := false
+		for _, r := range recs {
+			if len(r) > 0 && r[0] == 'I' {
+				foundTools = true
+			}
+		}
+		assert.True(t, foundTools, "Expected tool installation recommendation")
+	})
+
+	t.Run("no recommendations for healthy system", func(t *testing.T) {
+		info := SystemInfo{
+			MemoryGB:       16.0,
+			CPUCores:       8,
+			OS:             "linux",
+			InstalledTools: []string{"go", "git", "docker", "make"},
+		}
+		recs := service.generateSystemRecommendations(info)
+		assert.Empty(t, recs)
+	})
+}
+
+func TestConfigurationWizardService_GetCompletedSteps(t *testing.T) {
+	service := NewConfigurationWizardService(nil)
+
+	t.Run("returns completed step titles", func(t *testing.T) {
+		session := &models.WizardSession{
+			CurrentStep: 3,
+			ConfigType:  "basic",
+		}
+		completed := service.getCompletedSteps(session)
+		assert.Equal(t, 3, len(completed))
+	})
+
+	t.Run("zero completed steps", func(t *testing.T) {
+		session := &models.WizardSession{
+			CurrentStep: 0,
+			ConfigType:  "basic",
+		}
+		completed := service.getCompletedSteps(session)
+		assert.Empty(t, completed)
+	})
+}
+
 func TestConfigurationWizardService_GetSession_CurrentSession(t *testing.T) {
 	service := NewConfigurationWizardService(nil)
 

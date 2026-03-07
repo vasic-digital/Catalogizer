@@ -2,7 +2,7 @@ package services
 
 import (
 	"context"
-	"crypto/md5"
+	"crypto/sha256"
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
@@ -1035,7 +1035,7 @@ func (p *GameSoftwareRecognitionProvider) calculateGitHubConfidence(stars, forks
 }
 
 func (p *GameSoftwareRecognitionProvider) generateID(name string) string {
-	hash := md5.Sum([]byte(name))
+	hash := sha256.Sum256([]byte(name))
 	return hex.EncodeToString(hash[:])[:12]
 }
 

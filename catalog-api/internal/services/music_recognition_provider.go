@@ -2,7 +2,7 @@ package services
 
 import (
 	"context"
-	"crypto/md5"
+	"crypto/sha256"
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
@@ -738,14 +738,14 @@ func (p *MusicRecognitionProvider) generateAudioFingerprint(audioSample []byte) 
 	// In production, you would use libraries like chromaprint or similar
 
 	// Generate MD5 hash of audio sample as basic fingerprint
-	hash := md5.Sum(audioSample)
+	hash := sha256.Sum256(audioSample)
 	fingerprintHash := hex.EncodeToString(hash[:])
 
 	// Extract basic audio features (simplified)
 	analysis := p.analyzeAudioFeatures(audioSample)
 
 	fingerprint := &AudioFingerprint{
-		Algorithm:  "md5_basic",
+		Algorithm:  "sha256_basic",
 		Hash:       fingerprintHash,
 		Duration:   analysis.Duration,
 		SampleRate: analysis.SampleRate,
@@ -811,7 +811,7 @@ func (p *MusicRecognitionProvider) generateFingerprintSegments(audioSample []byt
 		}
 
 		segmentData := audioSample[segmentStart:segmentEnd]
-		hash := md5.Sum(segmentData)
+		hash := sha256.Sum256(segmentData)
 		segmentHash := hex.EncodeToString(hash[:])
 
 		segment := FingerprintSegment{
@@ -961,7 +961,7 @@ func (p *MusicRecognitionProvider) calculateLastFMConfidence(listeners, playcoun
 
 func (p *MusicRecognitionProvider) generateID(title, artist string) string {
 	combined := fmt.Sprintf("%s_%s", title, artist)
-	hash := md5.Sum([]byte(combined))
+	hash := sha256.Sum256([]byte(combined))
 	return hex.EncodeToString(hash[:])[:12]
 }
 

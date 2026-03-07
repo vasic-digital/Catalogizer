@@ -226,3 +226,404 @@ func TestInputValidation_SecurityHeaders(t *testing.T) {
 	assert.Equal(t, "1; mode=block", w.Header().Get("X-XSS-Protection"))
 	assert.Equal(t, "strict-origin-when-cross-origin", w.Header().Get("Referrer-Policy"))
 }
+
+// SanitizeInput additional coverage
+
+func TestSanitizeInput_InvalidUTF8(t *testing.T) {
+	// Create a string with invalid UTF-8 byte sequence
+	invalidUTF8 := "hello\xc0\xafworld"
+	result := SanitizeInput(invalidUTF8)
+	// Should remove invalid sequences
+	assert.NotContains(t, result, "\xc0")
+	assert.Contains(t, result, "hello")
+	assert.Contains(t, result, "world")
+}
+
+func TestSanitizeInput_NullBytesAndWhitespace(t *testing.T) {
+	input := "  \x00hello\x00  "
+	result := SanitizeInput(input)
+	assert.Equal(t, "hello", result)
+}
+
+func TestSanitizeInput_EmptyString(t *testing.T) {
+	result := SanitizeInput("")
+	assert.Equal(t, "", result)
+}
+
+func TestSanitizeInput_OnlyWhitespace(t *testing.T) {
+	result := SanitizeInput("   \t\n  ")
+	assert.Equal(t, "", result)
+}
+
+func TestSanitizeInput_ValidUTF8PassesThrough(t *testing.T) {
+	input := "Hello, 世界! 🌍"
+	result := SanitizeInput(input)
+	assert.Equal(t, input, result)
+}
+
+// validateJSONValues edge cases
+
+func TestValidateJSONValues_NestedObjects(t *testing.T) {
+	config := DefaultInputValidationConfig()
+	data := map[string]interface{}{
+		"outer": map[string]interface{}{
+			"inner": "SELECT * FROM users",
+		},
+	}
+	err := validateJSONValues(config, data)
+	assert.Error(t, err)
+	assert.Contains(t, err.Error(), "potential SQL injection")
+}
+
+func TestValidateJSONValues_ArrayOfStrings(t *testing.T) {
+	config := DefaultInputValidationConfig()
+	data := map[string]interface{}{
+		"tags": []interface{}{"<script>alert(1)</script>", "normal"},
+	}
+	err := validateJSONValues(config, data)
+	assert.Error(t, err)
+	assert.Contains(t, err.Error(), "potential SQL injection")
+}
+
+func TestValidateJSONValues_ArrayWithSafeStrings(t *testing.T) {
+	config := DefaultInputValidationConfig()
+	data := map[string]interface{}{
+		"tags": []interface{}{"music", "rock", "classic"},
+	}
+	err := validateJSONValues(config, data)
+	assert.NoError(t, err)
+}
+
+func TestValidateJSONValues_MixedTypes(t *testing.T) {
+	config := DefaultInputValidationConfig()
+	data := map[string]interface{}{
+		"name":     "John Doe",
+		"age":      float64(30),
+		"is_admin": true,
+		"scores":   []interface{}{float64(1), float64(2), float64(3)},
+		"address": map[string]interface{}{
+			"city":    "New York",
+			"country": "US",
+		},
+	}
+	err := validateJSONValues(config, data)
+	assert.NoError(t, err)
+}
+
+func TestValidateJSONValues_PathTraversalInNested(t *testing.T) {
+	config := DefaultInputValidationConfig()
+	data := map[string]interface{}{
+		"config": map[string]interface{}{
+			"path": "../../../etc/passwd",
+		},
+	}
+	err := validateJSONValues(config, data)
+	assert.Error(t, err)
+	assert.Contains(t, err.Error(), "potential path traversal")
+}
+
+func TestValidateJSONValues_XSSInArray(t *testing.T) {
+	config := DefaultInputValidationConfig()
+	data := map[string]interface{}{
+		"comments": []interface{}{"great", "javascript:alert('xss')"},
+	}
+	err := validateJSONValues(config, data)
+	assert.Error(t, err)
+	assert.Contains(t, err.Error(), "potential XSS")
+}
+
+func TestValidateJSONValues_EmptyMap(t *testing.T) {
+	config := DefaultInputValidationConfig()
+	data := map[string]interface{}{}
+	err := validateJSONValues(config, data)
+	assert.NoError(t, err)
+}
+
+func TestValidateJSONValues_CustomRuleMatch(t *testing.T) {
+	config := DefaultInputValidationConfig()
+	config.CustomRules = map[string]string{
+		"email": `^[a-zA-Z0-9._%+\-]+@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,}$`,
+	}
+	data := map[string]interface{}{
+		"email": "user@example.com",
+	}
+	err := validateJSONValues(config, data)
+	assert.NoError(t, err)
+}
+
+func TestValidateJSONValues_CustomRuleNoMatch(t *testing.T) {
+	config := DefaultInputValidationConfig()
+	config.CustomRules = map[string]string{
+		"zipcode": `^\d{5}$`,
+	}
+	data := map[string]interface{}{
+		"zipcode": "not-a-zip",
+	}
+	err := validateJSONValues(config, data)
+	assert.Error(t, err)
+	assert.Contains(t, err.Error(), "does not match required pattern")
+}
+
+// Additional middleware tests for various attack payloads
+
+func TestInputValidation_PathTraversalViaMiddleware(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+
+	router := gin.New()
+	router.Use(InputValidation(DefaultInputValidationConfig()))
+
+	router.POST("/test", func(c *gin.Context) {
+		c.JSON(http.StatusOK, gin.H{"status": "ok"})
+	})
+
+	jsonData := `{"file_path": "../../../etc/passwd"}`
+	req := httptest.NewRequest("POST", "/test", strings.NewReader(jsonData))
+	req.Header.Set("Content-Type", "application/json")
+	w := httptest.NewRecorder()
+
+	router.ServeHTTP(w, req)
+
+	assert.Equal(t, http.StatusBadRequest, w.Code)
+	assert.Contains(t, w.Body.String(), "path traversal")
+}
+
+func TestInputValidation_InvalidJSON(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+
+	router := gin.New()
+	router.Use(InputValidation(DefaultInputValidationConfig()))
+
+	router.POST("/test", func(c *gin.Context) {
+		c.JSON(http.StatusOK, gin.H{"status": "ok"})
+	})
+
+	req := httptest.NewRequest("POST", "/test", strings.NewReader("{invalid json"))
+	req.Header.Set("Content-Type", "application/json")
+	w := httptest.NewRecorder()
+
+	router.ServeHTTP(w, req)
+
+	assert.Equal(t, http.StatusBadRequest, w.Code)
+	assert.Contains(t, w.Body.String(), "invalid JSON format")
+}
+
+func TestInputValidation_GETRequestSkipsBodyValidation(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+
+	router := gin.New()
+	router.Use(InputValidation(DefaultInputValidationConfig()))
+
+	router.GET("/test", func(c *gin.Context) {
+		c.JSON(http.StatusOK, gin.H{"status": "ok"})
+	})
+
+	req := httptest.NewRequest("GET", "/test", nil)
+	w := httptest.NewRecorder()
+
+	router.ServeHTTP(w, req)
+
+	assert.Equal(t, http.StatusOK, w.Code)
+}
+
+func TestInputValidation_NonJSONContentType(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+
+	router := gin.New()
+	router.Use(InputValidation(DefaultInputValidationConfig()))
+
+	router.POST("/test", func(c *gin.Context) {
+		c.JSON(http.StatusOK, gin.H{"status": "ok"})
+	})
+
+	req := httptest.NewRequest("POST", "/test", strings.NewReader("some binary data"))
+	req.Header.Set("Content-Type", "application/octet-stream")
+	w := httptest.NewRecorder()
+
+	router.ServeHTTP(w, req)
+
+	assert.Equal(t, http.StatusOK, w.Code)
+}
+
+func TestInputValidation_ZeroConfigUsesDefaults(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+
+	// Pass a zero-value config to trigger the default
+	router := gin.New()
+	router.Use(InputValidation(InputValidationConfig{}))
+
+	router.POST("/test", func(c *gin.Context) {
+		c.JSON(http.StatusOK, gin.H{"status": "ok"})
+	})
+
+	jsonData := `{"name": "John"}`
+	req := httptest.NewRequest("POST", "/test", strings.NewReader(jsonData))
+	req.Header.Set("Content-Type", "application/json")
+	w := httptest.NewRecorder()
+
+	router.ServeHTTP(w, req)
+
+	assert.Equal(t, http.StatusOK, w.Code)
+}
+
+func TestInputValidation_ContentLengthExceedsLimit(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+
+	config := DefaultInputValidationConfig()
+	config.MaxRequestBodySize = 50
+
+	router := gin.New()
+	router.Use(InputValidation(config))
+
+	router.POST("/test", func(c *gin.Context) {
+		c.JSON(http.StatusOK, gin.H{"status": "ok"})
+	})
+
+	jsonData := `{"data": "this is a sufficiently long piece of text to exceed the limit of 50 bytes"}`
+	req := httptest.NewRequest("POST", "/test", strings.NewReader(jsonData))
+	req.Header.Set("Content-Type", "application/json")
+	req.ContentLength = int64(len(jsonData))
+	w := httptest.NewRecorder()
+
+	router.ServeHTTP(w, req)
+
+	assert.Equal(t, http.StatusBadRequest, w.Code)
+	assert.Contains(t, w.Body.String(), "request body too large")
+}
+
+func TestInputValidation_SQLInjectionWithWaitfor(t *testing.T) {
+	assert.True(t, DetectSQLInjection("WAITFOR DELAY '0:0:5'"))
+}
+
+func TestInputValidation_SQLInjectionWithBenchmark(t *testing.T) {
+	assert.True(t, DetectSQLInjection("BENCHMARK(5000000,SHA1('test'))"))
+}
+
+func TestInputValidation_SQLInjectionWithSleep(t *testing.T) {
+	assert.True(t, DetectSQLInjection("1; SLEEP(5)"))
+}
+
+func TestInputValidation_SQLInjectionWithExec(t *testing.T) {
+	assert.True(t, DetectSQLInjection("EXEC(xp_cmdshell 'dir')"))
+}
+
+func TestInputValidation_XSSWithObjectTag(t *testing.T) {
+	assert.True(t, DetectXSS("<object data='evil.swf'></object>"))
+}
+
+func TestInputValidation_XSSWithEmbedTag(t *testing.T) {
+	assert.True(t, DetectXSS("<embed src='evil.swf'></embed>"))
+}
+
+func TestInputValidation_XSSWithEventHandler(t *testing.T) {
+	assert.True(t, DetectXSS(`<div onmouseover="alert(1)">`))
+}
+
+func TestInputValidation_XSSWithConfirm(t *testing.T) {
+	assert.True(t, DetectXSS("confirm('are you sure?')"))
+}
+
+func TestInputValidation_XSSWithPrompt(t *testing.T) {
+	assert.True(t, DetectXSS("prompt('enter value')"))
+}
+
+func TestInputValidation_XSSWithDataURI(t *testing.T) {
+	assert.True(t, DetectXSS("data:text/html,<script>alert(1)</script>"))
+}
+
+func TestInputValidation_XSSWithVBScript(t *testing.T) {
+	assert.True(t, DetectXSS("vbscript:msgbox(1)"))
+}
+
+func TestInputValidation_PathTraversalURLEncoded(t *testing.T) {
+	assert.True(t, DetectPathTraversal("%2e%2e%5c%2e%2e%5cwindows"))
+}
+
+func TestInputValidation_PathTraversalWindowsSystem32(t *testing.T) {
+	assert.True(t, DetectPathTraversal("c:/windows/system32/config"))
+}
+
+func TestInputValidation_PathTraversalWinIni(t *testing.T) {
+	assert.True(t, DetectPathTraversal("c:\\win.ini"))
+}
+
+func TestInputValidation_PathTraversalBootIni(t *testing.T) {
+	assert.True(t, DetectPathTraversal("c:\\boot.ini"))
+}
+
+func TestInputValidation_PathTraversalEtcShadow(t *testing.T) {
+	assert.True(t, DetectPathTraversal("/etc/shadow"))
+}
+
+func TestInputValidation_PathTraversalEtcHosts(t *testing.T) {
+	assert.True(t, DetectPathTraversal("/etc/hosts"))
+}
+
+func TestInputValidation_SafeStringPassesAll(t *testing.T) {
+	input := "This is a perfectly normal string with no attacks."
+	assert.False(t, DetectSQLInjection(input))
+	assert.False(t, DetectXSS(input))
+	assert.False(t, DetectPathTraversal(input))
+}
+
+// ValidateStruct and ValidateVar coverage
+
+func TestValidateStruct(t *testing.T) {
+	type TestStruct struct {
+		Name  string `validate:"required"`
+		Email string `validate:"required,email"`
+	}
+
+	// Valid struct
+	err := ValidateStruct(TestStruct{Name: "John", Email: "john@example.com"})
+	assert.NoError(t, err)
+
+	// Invalid struct
+	err = ValidateStruct(TestStruct{Name: "", Email: "not-an-email"})
+	assert.Error(t, err)
+}
+
+func TestValidateVar(t *testing.T) {
+	// Valid email
+	err := ValidateVar("john@example.com", "email")
+	assert.NoError(t, err)
+
+	// Invalid email
+	err = ValidateVar("not-an-email", "email")
+	assert.Error(t, err)
+}
+
+func TestDefaultInputValidationConfig(t *testing.T) {
+	config := DefaultInputValidationConfig()
+	assert.Equal(t, int64(10*1024*1024), config.MaxRequestBodySize)
+	assert.True(t, config.EnableSQLInjectionDetection)
+	assert.True(t, config.EnableXSSDetection)
+	assert.True(t, config.EnablePathTraversalDetection)
+	assert.NotNil(t, config.CustomRules)
+}
+
+// validateStringValue with detections disabled
+
+func TestValidateStringValue_SQLDetectionDisabled(t *testing.T) {
+	config := DefaultInputValidationConfig()
+	config.EnableSQLInjectionDetection = false
+	err := validateStringValue(config, "search", "SELECT * FROM users")
+	// SQL injection detection is disabled, should pass
+	assert.NoError(t, err)
+}
+
+func TestValidateStringValue_XSSDetectionDisabled(t *testing.T) {
+	config := DefaultInputValidationConfig()
+	config.EnableXSSDetection = false
+	config.EnableSQLInjectionDetection = false
+	err := validateStringValue(config, "comment", "<script>alert(1)</script>")
+	assert.NoError(t, err)
+}
+
+func TestValidateStringValue_PathTraversalDetectionDisabled(t *testing.T) {
+	config := DefaultInputValidationConfig()
+	config.EnablePathTraversalDetection = false
+	config.EnableSQLInjectionDetection = false
+	config.EnableXSSDetection = false
+	err := validateStringValue(config, "path", "../../../etc/passwd")
+	assert.NoError(t, err)
+}

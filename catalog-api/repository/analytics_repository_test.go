@@ -2,6 +2,7 @@ package repository
 
 import (
 	"database/sql"
+	"encoding/json"
 	"testing"
 	"time"
 
@@ -9,6 +10,7 @@ import (
 	"catalogizer/models"
 
 	"github.com/DATA-DOG/go-sqlmock"
+	_ "github.com/mutecomm/go-sqlcipher"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -570,4 +572,282 @@ func TestAnalyticsRepository_GetSessionData_PostgreSQLDialect(t *testing.T) {
 	assert.Len(t, results, 1)
 	assert.Equal(t, 1, results[0].UserID)
 	assert.NoError(t, mock.ExpectationsWereMet())
+}
+
+// ===========================================================================
+// Real SQLite-backed tests for uncovered functions
+// ===========================================================================
+
+func newRealAnalyticsRepo(t *testing.T) *AnalyticsRepository {
+	t.Helper()
+	sqlDB, err := sql.Open("sqlite3", ":memory:")
+	require.NoError(t, err)
+	t.Cleanup(func() { sqlDB.Close() })
+
+	db := database.WrapDB(sqlDB, database.DialectSQLite)
+
+	_, err = sqlDB.Exec(`
+		CREATE TABLE media_access_logs (
+			id INTEGER PRIMARY KEY AUTOINCREMENT,
+			user_id INTEGER NOT NULL,
+			media_id INTEGER NOT NULL,
+			action TEXT NOT NULL,
+			device_info TEXT,
+			location TEXT,
+			ip_address TEXT,
+			user_agent TEXT,
+			playback_duration INTEGER,
+			access_time DATETIME NOT NULL
+		)
+	`)
+	require.NoError(t, err)
+
+	_, err = sqlDB.Exec(`
+		CREATE TABLE analytics_events (
+			id INTEGER PRIMARY KEY AUTOINCREMENT,
+			user_id INTEGER NOT NULL,
+			event_type TEXT NOT NULL,
+			event_category TEXT NOT NULL,
+			data TEXT,
+			device_info TEXT,
+			location TEXT,
+			ip_address TEXT,
+			user_agent TEXT,
+			timestamp DATETIME NOT NULL
+		)
+	`)
+	require.NoError(t, err)
+
+	_, err = sqlDB.Exec(`
+		CREATE TABLE users (
+			id INTEGER PRIMARY KEY AUTOINCREMENT,
+			username TEXT NOT NULL,
+			created_at DATETIME NOT NULL
+		)
+	`)
+	require.NoError(t, err)
+
+	return NewAnalyticsRepository(db)
+}
+
+func seedAnalyticsData(t *testing.T, repo *AnalyticsRepository) time.Time {
+	t.Helper()
+	now := time.Now().Truncate(time.Second)
+
+	// Seed users
+	_, err := repo.db.Exec(`INSERT INTO users (username, created_at) VALUES (?, ?)`, "alice", now.Add(-24*time.Hour))
+	require.NoError(t, err)
+	_, err = repo.db.Exec(`INSERT INTO users (username, created_at) VALUES (?, ?)`, "bob", now.Add(-12*time.Hour))
+	require.NoError(t, err)
+
+	// Seed media access logs
+	logs := []models.MediaAccessLog{
+		{UserID: 1, MediaID: 10, Action: "play", AccessTime: now.Add(-1 * time.Hour)},
+		{UserID: 1, MediaID: 11, Action: "view", AccessTime: now.Add(-2 * time.Hour)},
+		{UserID: 2, MediaID: 10, Action: "play", AccessTime: now.Add(-3 * time.Hour)},
+	}
+	for _, log := range logs {
+		err := repo.LogMediaAccess(&log)
+		require.NoError(t, err)
+	}
+
+	// Seed analytics events
+	events := []models.AnalyticsEvent{
+		{UserID: 1, EventType: "media_access", EventCategory: "playback", Data: `{"file_type":"video"}`, Timestamp: now.Add(-1 * time.Hour)},
+		{UserID: 1, EventType: "search", EventCategory: "navigation", Data: `{"query":"test"}`, Timestamp: now.Add(-2 * time.Hour)},
+		{UserID: 2, EventType: "media_access", EventCategory: "playback", Data: `{"file_type":"audio"}`, Timestamp: now.Add(-3 * time.Hour)},
+	}
+	for _, event := range events {
+		err := repo.LogEvent(&event)
+		require.NoError(t, err)
+	}
+
+	return now
+}
+
+// ---------------------------------------------------------------------------
+// GetUserMediaAccessLogs
+// ---------------------------------------------------------------------------
+
+func TestAnalyticsRepository_GetUserMediaAccessLogs_Real(t *testing.T) {
+	repo := newRealAnalyticsRepo(t)
+	now := seedAnalyticsData(t, repo)
+
+	startDate := now.Add(-5 * time.Hour)
+	endDate := now.Add(time.Hour)
+
+	t.Run("returns logs for user 1", func(t *testing.T) {
+		logs, err := repo.GetUserMediaAccessLogs(1, startDate, endDate)
+		require.NoError(t, err)
+		assert.Len(t, logs, 2)
+		for _, log := range logs {
+			assert.Equal(t, 1, log.UserID)
+		}
+	})
+
+	t.Run("returns logs for user 2", func(t *testing.T) {
+		logs, err := repo.GetUserMediaAccessLogs(2, startDate, endDate)
+		require.NoError(t, err)
+		assert.Len(t, logs, 1)
+		assert.Equal(t, 2, logs[0].UserID)
+	})
+
+	t.Run("empty for nonexistent user", func(t *testing.T) {
+		logs, err := repo.GetUserMediaAccessLogs(999, startDate, endDate)
+		require.NoError(t, err)
+		assert.Empty(t, logs)
+	})
+
+	t.Run("empty for narrow date range", func(t *testing.T) {
+		logs, err := repo.GetUserMediaAccessLogs(1, now.Add(-10*time.Hour), now.Add(-9*time.Hour))
+		require.NoError(t, err)
+		assert.Empty(t, logs)
+	})
+}
+
+// ---------------------------------------------------------------------------
+// GetUserEvents
+// ---------------------------------------------------------------------------
+
+func TestAnalyticsRepository_GetUserEvents_Real(t *testing.T) {
+	repo := newRealAnalyticsRepo(t)
+	now := seedAnalyticsData(t, repo)
+
+	startDate := now.Add(-5 * time.Hour)
+	endDate := now.Add(time.Hour)
+
+	t.Run("returns events for user 1", func(t *testing.T) {
+		events, err := repo.GetUserEvents(1, startDate, endDate)
+		require.NoError(t, err)
+		assert.Len(t, events, 2)
+		for _, event := range events {
+			assert.Equal(t, 1, event.UserID)
+		}
+	})
+
+	t.Run("returns events for user 2", func(t *testing.T) {
+		events, err := repo.GetUserEvents(2, startDate, endDate)
+		require.NoError(t, err)
+		assert.Len(t, events, 1)
+	})
+
+	t.Run("empty for nonexistent user", func(t *testing.T) {
+		events, err := repo.GetUserEvents(999, startDate, endDate)
+		require.NoError(t, err)
+		assert.Empty(t, events)
+	})
+}
+
+// ---------------------------------------------------------------------------
+// GetUserGrowthData
+// ---------------------------------------------------------------------------
+
+func TestAnalyticsRepository_GetUserGrowthData_Real(t *testing.T) {
+	repo := newRealAnalyticsRepo(t)
+	now := seedAnalyticsData(t, repo)
+
+	startDate := now.Add(-48 * time.Hour)
+	endDate := now.Add(time.Hour)
+
+	t.Run("returns growth data", func(t *testing.T) {
+		data, err := repo.GetUserGrowthData(startDate, endDate)
+		require.NoError(t, err)
+		assert.NotEmpty(t, data)
+		totalUsers := 0
+		for _, point := range data {
+			totalUsers += point.UserCount
+		}
+		assert.Equal(t, 2, totalUsers)
+	})
+
+	t.Run("empty for future date range", func(t *testing.T) {
+		futureStart := now.Add(24 * time.Hour)
+		futureEnd := now.Add(48 * time.Hour)
+		data, err := repo.GetUserGrowthData(futureStart, futureEnd)
+		require.NoError(t, err)
+		assert.Empty(t, data)
+	})
+}
+
+// ---------------------------------------------------------------------------
+// GetAllMediaAccessLogs
+// ---------------------------------------------------------------------------
+
+func TestAnalyticsRepository_GetAllMediaAccessLogs_Real(t *testing.T) {
+	repo := newRealAnalyticsRepo(t)
+	now := seedAnalyticsData(t, repo)
+
+	startDate := now.Add(-5 * time.Hour)
+	endDate := now.Add(time.Hour)
+
+	t.Run("returns all logs in range", func(t *testing.T) {
+		logs, err := repo.GetAllMediaAccessLogs(startDate, endDate)
+		require.NoError(t, err)
+		assert.Len(t, logs, 3)
+	})
+
+	t.Run("returns subset for narrow range", func(t *testing.T) {
+		narrowStart := now.Add(-90 * time.Minute)
+		narrowEnd := now.Add(-30 * time.Minute)
+		logs, err := repo.GetAllMediaAccessLogs(narrowStart, narrowEnd)
+		require.NoError(t, err)
+		assert.Len(t, logs, 1)
+	})
+
+	t.Run("empty for out-of-range", func(t *testing.T) {
+		logs, err := repo.GetAllMediaAccessLogs(now.Add(-20*time.Hour), now.Add(-10*time.Hour))
+		require.NoError(t, err)
+		assert.Empty(t, logs)
+	})
+}
+
+// ---------------------------------------------------------------------------
+// GetGeographicData
+// ---------------------------------------------------------------------------
+
+func TestAnalyticsRepository_GetGeographicData_Real(t *testing.T) {
+	repo := newRealAnalyticsRepo(t)
+
+	now := time.Now().Truncate(time.Second)
+	country := "US"
+	city := "New York"
+	location := models.Location{Latitude: 40.7, Longitude: -74.0, Country: &country, City: &city}
+	locationJSON, _ := json.Marshal(location)
+
+	_, err := repo.db.Exec(
+		`INSERT INTO media_access_logs (user_id, media_id, action, location, access_time) VALUES (?, ?, ?, ?, ?)`,
+		1, 10, "play", string(locationJSON), now,
+	)
+	require.NoError(t, err)
+
+	_, err = repo.db.Exec(
+		`INSERT INTO media_access_logs (user_id, media_id, action, location, access_time) VALUES (?, ?, ?, ?, ?)`,
+		2, 11, "view", string(locationJSON), now.Add(-time.Hour),
+	)
+	require.NoError(t, err)
+
+	startDate := now.Add(-2 * time.Hour)
+	endDate := now.Add(time.Hour)
+
+	t.Run("returns geographic data", func(t *testing.T) {
+		result, err := repo.GetGeographicData(startDate, endDate)
+		require.NoError(t, err)
+		assert.NotNil(t, result)
+
+		locations, ok := result["locations"].([]map[string]interface{})
+		assert.True(t, ok)
+		assert.NotEmpty(t, locations)
+
+		countries, ok := result["countries"].(map[string]int)
+		assert.True(t, ok)
+		assert.Equal(t, 2, countries["US"])
+	})
+
+	t.Run("empty for no-location data range", func(t *testing.T) {
+		result, err := repo.GetGeographicData(now.Add(-20*time.Hour), now.Add(-10*time.Hour))
+		require.NoError(t, err)
+		assert.NotNil(t, result)
+		locations := result["locations"]
+		assert.Nil(t, locations)
+	})
 }

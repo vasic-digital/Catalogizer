@@ -516,6 +516,7 @@ func (s *AuthService) UpdateUser(userID int64, req *UpdateUserRequest) (*User, e
 	args = append(args, time.Now())
 	args = append(args, userID)
 
+	// Safe: setParts contains only hardcoded column names, not user input
 	query := fmt.Sprintf("UPDATE users SET %s WHERE id = ?", strings.Join(setParts, ", "))
 	_, err := s.db.Exec(query, args...)
 	if err != nil {

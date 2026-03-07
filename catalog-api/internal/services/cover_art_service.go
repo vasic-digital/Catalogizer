@@ -2,7 +2,7 @@ package services
 
 import (
 	"context"
-	"crypto/md5"
+	"crypto/sha256"
 	"database/sql"
 	"encoding/hex"
 	"fmt"
@@ -556,7 +556,7 @@ func (s *CoverArtService) generateCoverArtID() string {
 func (s *CoverArtService) generateCacheKey(request *CoverArtSearchRequest) string {
 	data := fmt.Sprintf("%s_%s_%s_%s", request.Artist, request.Title,
 		getStringValue(request.Album), request.Quality)
-	hash := md5.Sum([]byte(data))
+	hash := sha256.Sum256([]byte(data))
 	return hex.EncodeToString(hash[:])
 }
 

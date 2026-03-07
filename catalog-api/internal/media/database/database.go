@@ -161,6 +161,7 @@ func (mdb *MediaDatabase) Backup(backupPath string) error {
 
 	// Copy each table
 	for _, table := range tables {
+		// Safe: table names come from getTables() which reads from sqlite_master (database-internal metadata, not user input)
 		copyQuery := fmt.Sprintf("CREATE TABLE backup.%s AS SELECT * FROM main.%s", table, table)
 		if _, err := tx.Exec(copyQuery); err != nil {
 			return fmt.Errorf("failed to copy table %s: %w", table, err)
@@ -228,6 +229,7 @@ func (mdb *MediaDatabase) GetStats() (map[string]interface{}, error) {
 
 	for table := range tableCounts {
 		var count int64
+		// Safe: table names are hardcoded string keys in the tableCounts map above, not user input
 		query := fmt.Sprintf("SELECT COUNT(*) FROM %s", table)
 		if err := mdb.db.QueryRow(query).Scan(&count); err != nil {
 			mdb.logger.Error("Failed to count table", zap.String("table", table), zap.Error(err))

@@ -3,7 +3,7 @@ package recovery
 import (
 	"context"
 	"math"
-	"math/rand"
+	"math/rand/v2" // non-cryptographic: used only for jitter in retry backoff delays
 	"sync"
 	"time"
 
@@ -155,8 +155,8 @@ func calculateDelay(config RetryConfig, attempt int) time.Duration {
 
 	// Apply jitter if enabled
 	if config.Jitter {
-		// #nosec G404 - math/rand is appropriate for retry jitter (non-cryptographic use)
-		// Using crypto/rand would be overkill for adding randomness to avoid thundering herd
+		// math/rand/v2 is appropriate for retry jitter (non-cryptographic use).
+		// crypto/rand would be overkill for adding randomness to avoid thundering herd.
 		jitter := rand.Float64() * 0.1 * delay // 10% jitter
 		delay += jitter
 	}

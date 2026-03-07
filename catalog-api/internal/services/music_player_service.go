@@ -5,7 +5,7 @@ import (
 	"database/sql"
 	"encoding/json"
 	"fmt"
-	"math/rand"
+	"math/rand/v2" // non-cryptographic: used only for shuffling playback queue order
 	"sort"
 	"strings"
 	"time"
