@@ -3,7 +3,6 @@ package services
 import (
 	"catalogizer/filesystem"
 	"context"
-	"crypto/md5"
 	"fmt"
 	"path/filepath"
 	"strings"
@@ -22,9 +21,10 @@ func NewLocalProtocolHandler(logger *zap.Logger) *LocalProtocolHandler {
 }
 
 func (h *LocalProtocolHandler) GetFileIdentifier(ctx context.Context, path string, size int64, isDir bool) (string, error) {
-	// For local filesystem, use inode information if available
-	// Fallback to path + size + modification time
-	return fmt.Sprintf("local:%s:%d:%t", path, size, isDir), nil
+	// Use content-based identifier (size + isDir) so renames are detectable.
+	// Path is excluded because it changes during a rename.
+	// When a file hash is available, the caller's fallback key provides more precision.
+	return fmt.Sprintf("local:%d:%t", size, isDir), nil
 }
 
 func (h *LocalProtocolHandler) PerformMove(ctx context.Context, client filesystem.FileSystemClient, oldPath, newPath string, isDir bool) error {
@@ -70,9 +70,9 @@ func NewSMBProtocolHandler(logger *zap.Logger) *SMBProtocolHandler {
 }
 
 func (h *SMBProtocolHandler) GetFileIdentifier(ctx context.Context, path string, size int64, isDir bool) (string, error) {
-	// For SMB, use file path, size, and directory flag
-	// SMB doesn't have reliable inode-like identifiers across all implementations
-	return fmt.Sprintf("smb:%s:%d:%t", path, size, isDir), nil
+	// Use content-based identifier (size + isDir) so renames are detectable.
+	// SMB doesn't have reliable inode-like identifiers across all implementations.
+	return fmt.Sprintf("smb:%d:%t", size, isDir), nil
 }
 
 func (h *SMBProtocolHandler) PerformMove(ctx context.Context, client filesystem.FileSystemClient, oldPath, newPath string, isDir bool) error {
@@ -171,9 +171,8 @@ func NewFTPProtocolHandler(logger *zap.Logger) *FTPProtocolHandler {
 }
 
 func (h *FTPProtocolHandler) GetFileIdentifier(ctx context.Context, path string, size int64, isDir bool) (string, error) {
-	// For FTP, use path + size + directory flag
-	// Some FTP servers provide modification time which could be added
-	return fmt.Sprintf("ftp:%s:%d:%t", path, size, isDir), nil
+	// Use content-based identifier (size + isDir) so renames are detectable.
+	return fmt.Sprintf("ftp:%d:%t", size, isDir), nil
 }
 
 func (h *FTPProtocolHandler) PerformMove(ctx context.Context, client filesystem.FileSystemClient, oldPath, newPath string, isDir bool) error {
@@ -261,9 +260,9 @@ func NewNFSProtocolHandler(logger *zap.Logger) *NFSProtocolHandler {
 }
 
 func (h *NFSProtocolHandler) GetFileIdentifier(ctx context.Context, path string, size int64, isDir bool) (string, error) {
-	// NFS can potentially provide inode information
-	// For now, use path + size + directory flag
-	return fmt.Sprintf("nfs:%s:%d:%t", path, size, isDir), nil
+	// Use content-based identifier (size + isDir) so renames are detectable.
+	// NFS can potentially provide inode information in future.
+	return fmt.Sprintf("nfs:%d:%t", size, isDir), nil
 }
 
 func (h *NFSProtocolHandler) PerformMove(ctx context.Context, client filesystem.FileSystemClient, oldPath, newPath string, isDir bool) error {
@@ -353,15 +352,9 @@ func NewWebDAVProtocolHandler(logger *zap.Logger) *WebDAVProtocolHandler {
 }
 
 func (h *WebDAVProtocolHandler) GetFileIdentifier(ctx context.Context, path string, size int64, isDir bool) (string, error) {
-	// WebDAV can provide ETags for some servers
-	// For now, use path + size + directory flag
-	pathHash := h.hashString(path)
-	return fmt.Sprintf("webdav:%s:%d:%t", pathHash, size, isDir), nil
-}
-
-func (h *WebDAVProtocolHandler) hashString(s string) string {
-	hash := md5.Sum([]byte(s))
-	return fmt.Sprintf("%x", hash)
+	// Use content-based identifier (size + isDir) so renames are detectable.
+	// WebDAV can provide ETags for some servers in future.
+	return fmt.Sprintf("webdav:%d:%t", size, isDir), nil
 }
 
 func (h *WebDAVProtocolHandler) PerformMove(ctx context.Context, client filesystem.FileSystemClient, oldPath, newPath string, isDir bool) error {

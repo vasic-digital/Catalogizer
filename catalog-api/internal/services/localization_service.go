@@ -585,7 +585,7 @@ func (s *LocalizationService) getBasicLocalizationStats(ctx context.Context, sta
 		SELECT
 			(SELECT COUNT(*) FROM users) as total_users,
 			COUNT(*) as users_with_localization,
-			COUNT(CASE WHEN auto_translate = true THEN 1 END) as auto_translation_enabled
+			COUNT(CASE WHEN auto_translate = 1 THEN 1 END) as auto_translation_enabled
 		FROM user_localization
 	`
 

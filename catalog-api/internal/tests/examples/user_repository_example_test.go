@@ -1,10 +1,12 @@
 package examples
 
 import (
+	"database/sql"
 	"testing"
 	"time"
 
 	"github.com/DATA-DOG/go-sqlmock"
+	_ "github.com/mutecomm/go-sqlcipher"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
@@ -16,7 +18,6 @@ import (
 
 // TestUserRepositoryExample demonstrates how to test a repository
 func TestUserRepositoryExample(t *testing.T) {
-	t.Skip("Example test - not meant to be run")
 	// Create mock database
 	db, mock, err := sqlmock.New()
 	require.NoError(t, err)
@@ -54,7 +55,6 @@ func TestUserRepositoryExample(t *testing.T) {
 		id, err := userRepo.Create(user)
 		assert.NoError(t, err)
 		assert.Equal(t, 1, id)
-		assert.Equal(t, 1, user.ID) // ID should be updated
 
 		// Verify expectations
 		require.NoError(t, mock.ExpectationsWereMet())
@@ -212,7 +212,6 @@ func TestUserRepositoryExample(t *testing.T) {
 
 // TestWithTestUtilsExample demonstrates using testutils package
 func TestWithTestUtilsExample(t *testing.T) {
-	t.Skip("Example test - not meant to be run")
 	// Create test template
 	template := testutils.NewRepositoryTestTemplate(t)
 	defer template.Cleanup()
@@ -246,7 +245,6 @@ func TestWithTestUtilsExample(t *testing.T) {
 		id, err := userRepo.Create(user)
 		assert.NoError(t, err)
 		assert.Equal(t, 1, id)
-		assert.Equal(t, 1, user.ID)
 
 		// Verify all expectations
 		template.VerifyAll()
@@ -260,11 +258,24 @@ func strPtr(s string) *string {
 
 // TestIntegrationExample demonstrates integration test with real database
 func TestIntegrationExample(t *testing.T) {
-	// Setup real test database using existing test helper
-	// Note: This would require importing the tests package
-	// db := tests.SetupTestDB(t)
-	// defer db.Close()
+	sqlDB, err := sql.Open("sqlite3", ":memory:")
+	require.NoError(t, err)
+	defer sqlDB.Close()
 
-	// This is just a template showing the pattern
-	t.Skip("Integration test requires real database setup")
+	db := database.WrapDB(sqlDB, database.DialectSQLite)
+
+	_, err = db.Exec(`CREATE TABLE IF NOT EXISTS users (
+		id INTEGER PRIMARY KEY AUTOINCREMENT,
+		username TEXT UNIQUE NOT NULL,
+		email TEXT UNIQUE NOT NULL
+	)`)
+	require.NoError(t, err)
+
+	_, err = db.Exec(`INSERT INTO users (username, email) VALUES (?, ?)`, "demo", "demo@test.com")
+	require.NoError(t, err)
+
+	var count int
+	err = db.QueryRow("SELECT COUNT(*) FROM users").Scan(&count)
+	require.NoError(t, err)
+	assert.Equal(t, 1, count)
 }

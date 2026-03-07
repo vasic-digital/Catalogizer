@@ -1415,11 +1415,15 @@ func TestLocalizationService_IsLanguageSupported_DB(t *testing.T) {
 }
 
 func TestLocalizationService_GetLocalizationStats(t *testing.T) {
-	// Skip: getBasicLocalizationStats uses "auto_translate = true" which is valid PostgreSQL
-	// but invalid SQLite (SQLite treats "true" as a column name, not a boolean literal).
-	// The dialect rewriter only converts "= 0/1" -> "= TRUE/FALSE" for PostgreSQL,
-	// not the reverse. This is a known SQLite incompatibility in the service code.
-	t.Skip("Skipped: service uses '= true' boolean literal incompatible with SQLite")
+	db := setupIntegrationTestDB(t)
+	logger := zap.NewNop()
+	svc := NewLocalizationService(db, logger, nil, nil)
+
+	stats, err := svc.GetLocalizationStats(context.Background())
+	require.NoError(t, err)
+	assert.NotNil(t, stats)
+	// Test DB has 2 seeded users
+	assert.Equal(t, int64(2), stats.TotalUsers)
 }
 
 // ============================================================================

@@ -362,9 +362,12 @@ func (s *LocalProtocolTestSuite) SetupProtocol(t *testing.T) (filesystem.FileSys
 	}
 
 	client := filesystem.NewLocalClient(config)
+	if err := client.Connect(context.Background()); err != nil {
+		t.Fatalf("Failed to connect local client: %v", err)
+	}
 
 	return client, func() {
-		// Cleanup handled by t.TempDir()
+		client.Disconnect(context.Background())
 	}
 }
 
@@ -427,9 +430,15 @@ func (s *FTPProtocolTestSuite) SetupProtocol(t *testing.T) (filesystem.FileSyste
 		t.Skip("FTP_TEST_SERVER not set, skipping FTP tests")
 	}
 
-	// Mock FTP client setup
-	t.Skip("FTP client implementation pending")
-	return nil, func() {}
+	config := &filesystem.FTPConfig{
+		Host:     os.Getenv("FTP_TEST_HOST"),
+		Port:     21,
+		Username: os.Getenv("FTP_TEST_USER"),
+		Password: os.Getenv("FTP_TEST_PASS"),
+	}
+
+	client := filesystem.NewFTPClient(config)
+	return client, func() {}
 }
 
 func (s *FTPProtocolTestSuite) GetProtocolName() string {
@@ -454,9 +463,17 @@ func (s *NFSProtocolTestSuite) SetupProtocol(t *testing.T) (filesystem.FileSyste
 		t.Skip("NFS_TEST_SERVER not set, skipping NFS tests")
 	}
 
-	// Mock NFS client setup
-	t.Skip("NFS client implementation pending")
-	return nil, func() {}
+	config := filesystem.NFSConfig{
+		Host:       os.Getenv("NFS_TEST_HOST"),
+		Path:       os.Getenv("NFS_TEST_EXPORT"),
+		MountPoint: "/tmp/nfs_test_mount",
+	}
+
+	client, err := filesystem.NewNFSClient(config)
+	if err != nil {
+		t.Fatalf("Failed to create NFS client: %v", err)
+	}
+	return client, func() {}
 }
 
 func (s *NFSProtocolTestSuite) GetProtocolName() string {
@@ -481,9 +498,14 @@ func (s *WebDAVProtocolTestSuite) SetupProtocol(t *testing.T) (filesystem.FileSy
 		t.Skip("WEBDAV_TEST_SERVER not set, skipping WebDAV tests")
 	}
 
-	// Mock WebDAV client setup
-	t.Skip("WebDAV client implementation pending")
-	return nil, func() {}
+	config := &filesystem.WebDAVConfig{
+		URL:      os.Getenv("WEBDAV_TEST_URL"),
+		Username: os.Getenv("WEBDAV_TEST_USER"),
+		Password: os.Getenv("WEBDAV_TEST_PASS"),
+	}
+
+	client := filesystem.NewWebDAVClient(config)
+	return client, func() {}
 }
 
 func (s *WebDAVProtocolTestSuite) GetProtocolName() string {

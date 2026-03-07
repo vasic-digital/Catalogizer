@@ -116,14 +116,21 @@ func (rt *UniversalRenameTracker) TrackDelete(ctx context.Context, fileID int64,
 		return
 	}
 
-	// Get protocol-specific file identifier
-	identifier, err := handler.GetFileIdentifier(ctx, path, size, isDirectory)
-	if err != nil {
-		rt.logger.Error("Failed to get file identifier",
-			zap.String("protocol", protocol),
-			zap.String("path", path),
-			zap.Error(err))
+	// Use hash-based key when available for precise matching;
+	// fall back to protocol handler identifier (size-based).
+	var identifier string
+	if fileHash != nil {
 		identifier = rt.createFallbackKey(protocol, storageRoot, fileHash, size, isDirectory)
+	} else {
+		var err error
+		identifier, err = handler.GetFileIdentifier(ctx, path, size, isDirectory)
+		if err != nil {
+			rt.logger.Error("Failed to get file identifier",
+				zap.String("protocol", protocol),
+				zap.String("path", path),
+				zap.Error(err))
+			identifier = rt.createFallbackKey(protocol, storageRoot, fileHash, size, isDirectory)
+		}
 	}
 
 	key := fmt.Sprintf("%s:%s:%s", protocol, storageRoot, identifier)
@@ -157,14 +164,21 @@ func (rt *UniversalRenameTracker) DetectCreate(ctx context.Context, newPath, sto
 		return nil, false
 	}
 
-	// Get protocol-specific file identifier
-	identifier, err := handler.GetFileIdentifier(ctx, newPath, size, isDirectory)
-	if err != nil {
-		rt.logger.Error("Failed to get file identifier for create detection",
-			zap.String("protocol", protocol),
-			zap.String("path", newPath),
-			zap.Error(err))
+	// Use hash-based key when available for precise matching;
+	// fall back to protocol handler identifier (size-based).
+	var identifier string
+	if fileHash != nil {
 		identifier = rt.createFallbackKey(protocol, storageRoot, fileHash, size, isDirectory)
+	} else {
+		var err error
+		identifier, err = handler.GetFileIdentifier(ctx, newPath, size, isDirectory)
+		if err != nil {
+			rt.logger.Error("Failed to get file identifier for create detection",
+				zap.String("protocol", protocol),
+				zap.String("path", newPath),
+				zap.Error(err))
+			identifier = rt.createFallbackKey(protocol, storageRoot, fileHash, size, isDirectory)
+		}
 	}
 
 	key := fmt.Sprintf("%s:%s:%s", protocol, storageRoot, identifier)
