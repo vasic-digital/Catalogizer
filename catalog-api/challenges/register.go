@@ -125,6 +125,48 @@ func RegisterAll(svc *services.ChallengeService) error {
 	svc.Register(NewRecommendationAPIChallenge())   // CH-059: Recommendation engine API
 	svc.Register(NewLocalizationAPIChallenge())     // CH-060: Localization & i18n API
 
+	// Search and browse challenges (CH-061 to CH-065)
+	svc.Register(NewSearchAPIBasicQueryChallenge())           // CH-061: Search API basic query
+	svc.Register(NewSearchAPIDuplicateDetectionChallenge())   // CH-062: Search API duplicate detection
+	svc.Register(NewSearchAPIAdvancedFiltersChallenge())      // CH-063: Search API advanced filters
+	svc.Register(NewBrowseAPIStorageRootsChallenge())         // CH-064: Browse API storage roots
+	svc.Register(NewBrowseAPIDirectoryListingChallenge())     // CH-065: Browse API directory listing
+
+	// Sync and security challenges (CH-066 to CH-070)
+	svc.Register(NewSyncAPIEndpointCreationChallenge())       // CH-066: Sync API endpoint creation
+	svc.Register(NewSyncAPICloudProvidersChallenge())         // CH-067: Sync API cloud providers
+	svc.Register(NewSyncAPIUserEndpointsChallenge())          // CH-068: Sync API user endpoints
+	svc.Register(NewSecurityHeadersAllChallenge())            // CH-069: Security headers present
+	svc.Register(NewCORSRejectsUnauthorizedChallenge())       // CH-070: CORS rejects unauthorized origins
+
+	// Security validation challenges (CH-071 to CH-075)
+	svc.Register(NewInputValidationRejectsInjectionChallenge()) // CH-071: Input validation rejects injection
+	svc.Register(NewRateLimitAuthEndpointsChallenge())        // CH-072: Rate limit auth endpoints
+	svc.Register(NewJWTTokenLifecycleChallenge())             // CH-073: JWT token lifecycle
+	svc.Register(NewFileUploadMagicBytesChallenge())          // CH-074: File upload magic bytes
+	svc.Register(NewConversionRejectsPathTraversalChallenge()) // CH-075: Path traversal rejection
+
+	// Performance challenges (CH-076 to CH-078)
+	svc.Register(NewAPIResponseLatencyChallenge())            // CH-076: API response latency
+	svc.Register(NewAPIConcurrentRequestsChallenge())         // CH-077: API concurrent requests
+	svc.Register(NewGracefulDegradationChallenge())           // CH-078: Graceful degradation
+
+	// Resilience challenges (CH-079 to CH-080)
+	svc.Register(NewMemoryStableDuringLoadChallenge())        // CH-079: Memory stable during load
+	svc.Register(NewDBPoolRecoveryChallenge())                // CH-080: DB pool recovery
+
+	// WebSocket and runtime challenges (CH-081 to CH-083)
+	svc.Register(NewWebSocketReconnectionChallenge())         // CH-081: WebSocket reconnection
+	svc.Register(NewLazyInitOnFirstRequestChallenge())        // CH-082: Lazy init on first request
+	svc.Register(NewSemaphorePreventsOverloadChallenge())     // CH-083: Semaphore prevents overload
+
+	// Observability challenges (CH-084 to CH-088)
+	svc.Register(NewPrometheusMetricsEndpointChallenge())     // CH-084: Prometheus metrics endpoint
+	svc.Register(NewHTTPRequestMetricsIncrementChallenge())   // CH-085: HTTP request metrics increment
+	svc.Register(NewRuntimeMetricsCurrentChallenge())         // CH-086: Runtime metrics current
+	svc.Register(NewDBQueryDurationTrackedChallenge())        // CH-087: DB query duration tracked
+	svc.Register(NewGrafanaDashboardRendersChallenge())       // CH-088: Grafana dashboard config exists
+
 	// User flow challenges (UF-*): exhaustive multi-platform
 	// user flow automation across all 6 Catalogizer applications
 	RegisterUserFlowAPIChallenges(svc)     // 49 API challenges
@@ -135,6 +177,10 @@ func RegisterAll(svc *services.ChallengeService) error {
 	// Module verification challenges (MOD-001 to MOD-015)
 	// Verify each decoupled Go module has proper structure and docs
 	RegisterModuleChallenges(svc)
+
+	// Module functional verification challenges (MOD-016 to MOD-021)
+	// Verify specific module capabilities (types, functions, patterns)
+	RegisterModuleFuncChallenges(svc)
 
 	return nil
 }

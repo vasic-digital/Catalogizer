@@ -4,7 +4,7 @@
 
 **Title**: Mastering Catalogizer - Building a Multi-Platform Media Collection Manager
 
-**Duration**: 8-10 hours (across 12 modules)
+**Duration**: 9-11 hours (across 14 modules)
 
 **Audience**: Intermediate to advanced Go and TypeScript developers
 
@@ -288,6 +288,61 @@
 - Horizontal scaling
 - Backup strategies
 - Monitoring alerts
+
+---
+
+## Module 13: Search, Browse & Cloud Sync (45 min)
+
+### Video 13.1: Search API (15 min)
+- Full-text search with query parameters
+- Advanced search with JSON body
+- Search filters: extension, type, size, date range
+- Media entity search and statistics
+- Pagination and sorting
+
+### Video 13.2: Browse API (10 min)
+- Storage root listing
+- Directory navigation and file info
+- Directory size aggregation
+- Duplicate detection within directory trees
+- Entity browsing by media type
+
+### Video 13.3: Cloud Sync (20 min)
+- Sync endpoint CRUD (S3, GCS, WebDAV, local)
+- Sync directions: push, pull, bidirectional
+- Sync sessions and progress tracking
+- Scheduling recurring syncs
+- Sync statistics and cleanup
+
+---
+
+## Module 14: Challenge System Deep Dive (45 min)
+
+### Video 14.1: Challenge Framework Architecture (15 min)
+- Challenge interface lifecycle (Configure, Validate, Execute, Cleanup)
+- BaseChallenge template method pattern
+- Result struct: status, assertions, metrics, duration
+- Assertion engine with 16 built-in evaluators
+
+### Video 14.2: Writing Custom Challenges (10 min)
+- Embedding BaseChallenge
+- Implementing Execute with assertions
+- Challenge bank JSON configuration
+- RegisterAll and challenge registration
+
+### Video 14.3: Running Challenges (10 min)
+- REST API endpoints for challenge execution
+- RunAll blocking constraint and write_timeout
+- Progress-based liveness detection
+- StatusStuck vs StatusTimedOut
+- CLI runner with platform and report flags
+
+### Video 14.4: User Flow Automation and Module Verification (10 min)
+- pkg/userflow adapter-per-platform pattern
+- 174 user flow challenges across 4 platforms
+- Module verification challenges (MOD-001 to MOD-015)
+- Container test stack with docker-compose.test.yml
+- Report generation: Markdown, JSON, HTML
 
 ---
 

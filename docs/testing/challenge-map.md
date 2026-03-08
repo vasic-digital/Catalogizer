@@ -1,4 +1,112 @@
-# User Flow Challenge Map
+# Challenge Map
+
+Complete listing of all registered challenges organized by category, including dependency chains.
+
+## Original Challenges (CH-001 to CH-060)
+
+| Range | Category | Count |
+|-------|----------|-------|
+| CH-001 to CH-010 | SMB Connectivity & Scanning | ~10 (per-endpoint) |
+| CH-011 to CH-015 | Browsing, Assets, Database | 7 |
+| CH-016 to CH-020 | Entity System | 5 |
+| CH-021 to CH-025 | Module Integration | 5 |
+| CH-026 to CH-035 | Extended Validation | 10 |
+| CH-036 to CH-040 | Security Validation | 5 |
+| CH-041 to CH-044 | Performance Regression | 4 |
+| CH-045 to CH-047 | Documentation Completeness | 3 |
+| CH-048 to CH-050 | System Resilience | 3 |
+| CH-051 to CH-060 | Extended API Validation | 10 |
+
+---
+
+## Feature & Security Challenges (CH-061 to CH-088)
+
+### Feature Validation (CH-061 to CH-068)
+
+| ID | Name | Category | Validates |
+|----|------|----------|-----------|
+| CH-061 | Search API Basic Query | feature | GET /api/v1/search?q=test |
+| CH-062 | Search API Duplicate Detection | feature | GET /api/v1/entities/duplicates |
+| CH-063 | Search API Advanced Filters | feature | Filtered search with type+year |
+| CH-064 | Browse API Storage Roots | feature | GET /api/v1/storage-roots |
+| CH-065 | Browse API Directory Listing | feature | GET /api/v1/files?path=/ |
+| CH-066 | Sync API Endpoint Creation | feature | POST /api/v1/sync/endpoints |
+| CH-067 | Sync API Cloud Providers | feature | GET /api/v1/sync/providers |
+| CH-068 | Sync API User Endpoints | feature | GET /api/v1/sync/endpoints |
+
+### Security Validation (CH-069 to CH-075)
+
+| ID | Name | Category | Validates |
+|----|------|----------|-----------|
+| CH-069 | Security Headers All Responses | security | X-Content-Type-Options, X-Frame-Options |
+| CH-070 | CORS Rejects Unauthorized Origins | security | Bad Origin header rejected |
+| CH-071 | Input Validation Rejects Injection | security | SQL injection payloads blocked |
+| CH-072 | Rate Limit Auth Endpoints | security | 429 after rapid auth attempts |
+| CH-073 | JWT Token Lifecycle | security | Login, use, invalid token = 401 |
+| CH-074 | File Upload Magic Bytes | security | Wrong extension rejection |
+| CH-075 | Conversion Rejects Path Traversal | security | ../../etc/passwd blocked |
+
+### Performance & Resilience (CH-076 to CH-083)
+
+| ID | Name | Category | Validates |
+|----|------|----------|-----------|
+| CH-076 | API Response Latency | performance | avg < 100ms for health |
+| CH-077 | API Concurrent Requests | performance | 50 concurrent GET /health |
+| CH-078 | Graceful Degradation | resilience | No 500s under load |
+| CH-079 | Memory Stable During Load | resilience | Health OK before and after load |
+| CH-080 | DB Pool Recovery | resilience | Recovery after heavy DB usage |
+| CH-081 | WebSocket Reconnection | resilience | WS connect/disconnect/reconnect |
+| CH-082 | Lazy Init On First Request | performance | First request triggers init |
+| CH-083 | Semaphore Prevents Overload | performance | Rate limiting under concurrency |
+
+### Monitoring (CH-084 to CH-088)
+
+| ID | Name | Category | Validates |
+|----|------|----------|-----------|
+| CH-084 | Prometheus Metrics Endpoint | monitoring | GET /metrics has go_ metrics |
+| CH-085 | HTTP Request Metrics Increment | monitoring | http_requests counter |
+| CH-086 | Runtime Metrics Current | monitoring | go_goroutines > 0 |
+| CH-087 | DB Query Duration Tracked | monitoring | db_query_duration metric |
+| CH-088 | Grafana Dashboard Renders | monitoring | Dashboard config exists |
+
+---
+
+## Module Verification (MOD-001 to MOD-021)
+
+### Documentation Checks (MOD-001 to MOD-015)
+
+| ID | Module | Checks |
+|----|--------|--------|
+| MOD-001 | Database | ARCHITECTURE.md, CLAUDE.md, tests, go.mod |
+| MOD-002 | Concurrency | ARCHITECTURE.md, CLAUDE.md, tests, go.mod |
+| MOD-003 | Observability | ARCHITECTURE.md, CLAUDE.md, tests, go.mod |
+| MOD-004 | Security | ARCHITECTURE.md, CLAUDE.md, tests, go.mod |
+| MOD-005 | Middleware | ARCHITECTURE.md, CLAUDE.md, tests, go.mod |
+| MOD-006 | Media | ARCHITECTURE.md, CLAUDE.md, tests, go.mod |
+| MOD-007 | Discovery | ARCHITECTURE.md, CLAUDE.md, tests, go.mod |
+| MOD-008 | Streaming | ARCHITECTURE.md, CLAUDE.md, tests, go.mod |
+| MOD-009 | Lazy | ARCHITECTURE.md, CLAUDE.md, tests, go.mod |
+| MOD-010 | Memory | ARCHITECTURE.md, CLAUDE.md, tests, go.mod |
+| MOD-011 | Recovery | ARCHITECTURE.md, CLAUDE.md, tests, go.mod |
+| MOD-012 | Storage | ARCHITECTURE.md, CLAUDE.md, tests, go.mod |
+| MOD-013 | Cache | ARCHITECTURE.md, CLAUDE.md, tests, go.mod |
+| MOD-014 | Watcher | ARCHITECTURE.md, CLAUDE.md, tests, go.mod |
+| MOD-015 | RateLimiter | ARCHITECTURE.md, CLAUDE.md, tests, go.mod |
+
+### Functional Checks (MOD-016 to MOD-021)
+
+| ID | Module | Checks |
+|----|--------|--------|
+| MOD-016 | Lazy | Value[T] with Get, MustGet, Reset + sync.Mutex |
+| MOD-017 | Lazy | Service[T] with Get, Initialized + sync.Once |
+| MOD-018 | Recovery | CircuitBreaker state transitions (closed/open) |
+| MOD-019 | Recovery | HealthChecker verification |
+| MOD-020 | Memory | LeakDetector tracking |
+| MOD-021 | Memory | KnowledgeGraph BFS |
+
+---
+
+## User Flow Challenges (174 + 2 environment)
 
 Complete listing of all 174 user flow challenges (plus 2 environment bookends) organized by platform and category, including dependency chains.
 
@@ -459,3 +567,22 @@ The longest dependency chains per platform:
 | Wizard | BUILD -> LAUNCH -> WELCOME -> PROTOCOL -> SERVER -> COMPLETE (6 deep) |
 | Android | BUILD -> LAUNCH -> AUTH-LOGIN -> BROWSE-LOAD -> BROWSE-SEARCH (5 deep) |
 | Android TV | BUILD -> LAUNCH -> BROWSE-LOAD -> BROWSE-ROW (4 deep) |
+
+---
+
+## Challenge Totals
+
+| Category | Count |
+|----------|-------|
+| Original (CH-001 to CH-060) | ~60 |
+| Feature & Security (CH-061 to CH-088) | 28 |
+| Module Doc Verification (MOD-001 to MOD-015) | 15 |
+| Module Functional Verification (MOD-016 to MOD-021) | 6 |
+| User Flow - API (UF-API-*) | 49 |
+| User Flow - Web (UF-WEB-*) | 59 |
+| User Flow - Desktop (UF-DESKTOP-*) | 18 |
+| User Flow - Wizard (UF-WIZARD-*) | 10 |
+| User Flow - Android (UF-ANDROID-*) | 22 |
+| User Flow - Android TV (UF-ANDROIDTV-*) | 16 |
+| User Flow - Environment | 2 |
+| **Total** | **~285** |
