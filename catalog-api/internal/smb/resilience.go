@@ -3,6 +3,8 @@ package smb
 import (
 	"context"
 	"fmt"
+	"net"
+	"strings"
 	"sync"
 	"time"
 
@@ -378,25 +380,45 @@ func (m *ResilientSMBManager) connectSource(source *SMBSource) error {
 	return nil
 }
 
-// attemptConnection performs the actual SMB connection
-func (m *ResilientSMBManager) attemptConnection(ctx context.Context, source *SMBSource) error {
-	// This is a placeholder for actual SMB connection logic
-	// In a real implementation, you would:
-	// 1. Parse the SMB URL
-	// 2. Create SMB connection with credentials
-	// 3. Test connectivity with a simple operation
-	// 4. Set up file system watcher
-
-	select {
-	case <-ctx.Done():
-		return fmt.Errorf("connection timeout: %s", source.Path)
-	case <-time.After(100 * time.Millisecond): // Simulate connection time
-		// Simulate random connection failures for testing
-		if time.Now().Unix()%7 == 0 {
-			return fmt.Errorf("simulated connection failure")
-		}
-		return nil
+// extractHost parses the hostname from an SMB path (UNC \\host\share or //host/share format).
+// Returns the host string, or an error if the path cannot be parsed.
+func extractHost(path string) (string, error) {
+	// Normalize: accept both \\host\share and //host/share
+	normalized := strings.ReplaceAll(path, "\\", "/")
+	normalized = strings.TrimPrefix(normalized, "//")
+	parts := strings.SplitN(normalized, "/", 2)
+	if len(parts) == 0 || parts[0] == "" {
+		return "", fmt.Errorf("cannot parse host from SMB path: %s", path)
 	}
+	return parts[0], nil
+}
+
+// attemptConnection performs the actual SMB connection by dialing TCP port 445
+func (m *ResilientSMBManager) attemptConnection(ctx context.Context, source *SMBSource) error {
+	host, err := extractHost(source.Path)
+	if err != nil {
+		return fmt.Errorf("invalid SMB path %q: %w", source.Path, err)
+	}
+
+	// If host doesn't already include a port, default to SMB port 445
+	address := host
+	if _, _, splitErr := net.SplitHostPort(host); splitErr != nil {
+		address = net.JoinHostPort(host, "445")
+	}
+
+	m.logger.Debug("Attempting TCP connection to SMB endpoint",
+		zap.String("address", address),
+		zap.String("source_id", source.ID))
+
+	// Use a dialer that respects the context deadline
+	dialer := &net.Dialer{}
+	conn, err := dialer.DialContext(ctx, "tcp", address)
+	if err != nil {
+		return fmt.Errorf("TCP connection to %s failed: %w", address, err)
+	}
+	conn.Close()
+
+	return nil
 }
 
 // scheduleRetry schedules a retry attempt for a failed source
@@ -477,24 +499,26 @@ func (m *ResilientSMBManager) checkSourceHealth(source *SMBSource) {
 	}
 }
 
-// performHealthCheck performs the actual health check operation
+// performHealthCheck verifies SMB endpoint reachability via TCP dial to port 445
 func (m *ResilientSMBManager) performHealthCheck(ctx context.Context, source *SMBSource) error {
-	// This is a placeholder for actual health check logic
-	// In a real implementation, you would:
-	// 1. Try to list a directory
-	// 2. Check if the connection is still alive
-	// 3. Verify read/write permissions
-
-	select {
-	case <-ctx.Done():
-		return fmt.Errorf("health check timeout")
-	case <-time.After(50 * time.Millisecond): // Simulate check time
-		// Simulate random health check failures
-		if time.Now().Unix()%20 == 0 {
-			return fmt.Errorf("simulated health check failure")
-		}
-		return nil
+	host, err := extractHost(source.Path)
+	if err != nil {
+		return fmt.Errorf("health check failed, invalid SMB path %q: %w", source.Path, err)
 	}
+
+	address := host
+	if _, _, splitErr := net.SplitHostPort(host); splitErr != nil {
+		address = net.JoinHostPort(host, "445")
+	}
+
+	dialer := &net.Dialer{}
+	conn, err := dialer.DialContext(ctx, "tcp", address)
+	if err != nil {
+		return fmt.Errorf("health check TCP dial to %s failed: %w", address, err)
+	}
+	conn.Close()
+
+	return nil
 }
 
 // processEvents processes SMB events

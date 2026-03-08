@@ -252,3 +252,233 @@ func TestSaveConfig(t *testing.T) {
 	info, _ := os.Stat(configPath)
 	assert.Equal(t, os.FileMode(0600), info.Mode().Perm())
 }
+
+func TestLoadConfig_CreatesDefaultFile(t *testing.T) {
+	tmpDir := t.TempDir()
+	configPath := filepath.Join(tmpDir, "new-config.json")
+
+	config, err := LoadConfig(configPath)
+	require.NoError(t, err)
+	assert.NotNil(t, config)
+	assert.Equal(t, 8080, config.Server.Port)
+
+	// File should now exist
+	_, err = os.Stat(configPath)
+	assert.NoError(t, err)
+}
+
+func TestLoadConfig_LoadsExistingValidConfig(t *testing.T) {
+	tmpDir := t.TempDir()
+	configPath := filepath.Join(tmpDir, "config.json")
+
+	// Set env vars for validation
+	os.Setenv("JWT_SECRET", "this-is-a-super-long-secret-key-for-testing-purposes")
+	os.Setenv("ADMIN_USERNAME", "admin")
+	os.Setenv("ADMIN_PASSWORD", "password123")
+	defer func() {
+		os.Unsetenv("JWT_SECRET")
+		os.Unsetenv("ADMIN_USERNAME")
+		os.Unsetenv("ADMIN_PASSWORD")
+	}()
+
+	// Create a valid config file first
+	config := getDefaultConfig()
+	err := saveConfig(config, configPath)
+	require.NoError(t, err)
+
+	// Load it back
+	loaded, err := LoadConfig(configPath)
+	require.NoError(t, err)
+	assert.Equal(t, config.Server.Port, loaded.Server.Port)
+	assert.Equal(t, config.Database.Path, loaded.Database.Path)
+}
+
+func TestLoadConfig_InvalidConfig(t *testing.T) {
+	tmpDir := t.TempDir()
+	configPath := filepath.Join(tmpDir, "config.json")
+
+	// Create config with invalid port
+	config := getDefaultConfig()
+	config.Server.Port = -1
+	config.Auth.EnableAuth = false
+	err := saveConfig(config, configPath)
+	require.NoError(t, err)
+
+	_, err = LoadConfig(configPath)
+	assert.Error(t, err)
+	assert.Contains(t, err.Error(), "invalid configuration")
+}
+
+func TestValidateConfig_SQLiteValid(t *testing.T) {
+	config := getDefaultConfig()
+	config.Database.Type = "sqlite"
+	config.Database.Path = "./test.db"
+	config.Auth.EnableAuth = false
+
+	err := validateConfig(config)
+	assert.NoError(t, err)
+}
+
+func TestValidateConfig_SQLiteMissingPath(t *testing.T) {
+	config := getDefaultConfig()
+	config.Database.Type = "sqlite"
+	config.Database.Path = ""
+	config.Auth.EnableAuth = false
+
+	err := validateConfig(config)
+	assert.Error(t, err)
+	assert.Contains(t, err.Error(), "database path cannot be empty")
+}
+
+func TestValidateConfig_UnsupportedDBType(t *testing.T) {
+	config := getDefaultConfig()
+	config.Database.Type = "mysql"
+	config.Auth.EnableAuth = false
+
+	err := validateConfig(config)
+	assert.Error(t, err)
+	assert.Contains(t, err.Error(), "unsupported database type")
+}
+
+func TestValidateConfig_PostgresMissingHost(t *testing.T) {
+	config := getDefaultConfig()
+	config.Database.Type = "postgres"
+	config.Database.Host = ""
+	config.Auth.EnableAuth = false
+
+	err := validateConfig(config)
+	assert.Error(t, err)
+	assert.Contains(t, err.Error(), "database host cannot be empty")
+}
+
+func TestValidateConfig_PostgresMissingName(t *testing.T) {
+	config := getDefaultConfig()
+	config.Database.Type = "postgres"
+	config.Database.Host = "localhost"
+	config.Database.Name = ""
+	config.Auth.EnableAuth = false
+
+	err := validateConfig(config)
+	assert.Error(t, err)
+	assert.Contains(t, err.Error(), "database name cannot be empty")
+}
+
+func TestValidateConfig_DatabaseEnvOverrides(t *testing.T) {
+	os.Setenv("DATABASE_TYPE", "sqlite")
+	os.Setenv("DATABASE_HOST", "override-host")
+	os.Setenv("DATABASE_PORT", "9999")
+	os.Setenv("DATABASE_NAME", "override-db")
+	os.Setenv("DATABASE_USER", "override-user")
+	os.Setenv("DATABASE_PASSWORD", "override-pass")
+	os.Setenv("DATABASE_SSL_MODE", "require")
+	defer func() {
+		os.Unsetenv("DATABASE_TYPE")
+		os.Unsetenv("DATABASE_HOST")
+		os.Unsetenv("DATABASE_PORT")
+		os.Unsetenv("DATABASE_NAME")
+		os.Unsetenv("DATABASE_USER")
+		os.Unsetenv("DATABASE_PASSWORD")
+		os.Unsetenv("DATABASE_SSL_MODE")
+	}()
+
+	config := getDefaultConfig()
+	config.Auth.EnableAuth = false
+	err := validateConfig(config)
+	assert.NoError(t, err)
+
+	assert.Equal(t, "sqlite", config.Database.Type)
+	assert.Equal(t, "override-host", config.Database.Host)
+	assert.Equal(t, 9999, config.Database.Port)
+	assert.Equal(t, "override-db", config.Database.Name)
+	assert.Equal(t, "override-user", config.Database.User)
+	assert.Equal(t, "override-pass", config.Database.Password)
+	assert.Equal(t, "require", config.Database.SSLMode)
+}
+
+func TestValidateConfig_AuthEnvOverrides(t *testing.T) {
+	os.Setenv("JWT_SECRET", "this-is-a-very-long-jwt-secret-for-test-purposes-only")
+	os.Setenv("ADMIN_USERNAME", "env-admin")
+	os.Setenv("ADMIN_PASSWORD", "env-password")
+	defer func() {
+		os.Unsetenv("JWT_SECRET")
+		os.Unsetenv("ADMIN_USERNAME")
+		os.Unsetenv("ADMIN_PASSWORD")
+	}()
+
+	config := getDefaultConfig()
+	config.Auth.EnableAuth = true
+	err := validateConfig(config)
+	assert.NoError(t, err)
+
+	assert.Equal(t, "this-is-a-very-long-jwt-secret-for-test-purposes-only", config.Auth.JWTSecret)
+	assert.Equal(t, "env-admin", config.Auth.AdminUsername)
+	assert.Equal(t, "env-password", config.Auth.AdminPassword)
+}
+
+func TestValidateConfig_ShortJWTSecret(t *testing.T) {
+	os.Setenv("JWT_SECRET", "short")
+	os.Setenv("ADMIN_USERNAME", "admin")
+	os.Setenv("ADMIN_PASSWORD", "password")
+	defer func() {
+		os.Unsetenv("JWT_SECRET")
+		os.Unsetenv("ADMIN_USERNAME")
+		os.Unsetenv("ADMIN_PASSWORD")
+	}()
+
+	config := getDefaultConfig()
+	config.Auth.EnableAuth = true
+	err := validateConfig(config)
+	assert.Error(t, err)
+	assert.Contains(t, err.Error(), "at least 32 characters")
+}
+
+func TestValidateConfig_MissingAdminCredentials(t *testing.T) {
+	os.Setenv("JWT_SECRET", "this-is-a-very-long-jwt-secret-for-test-purposes-only")
+	os.Unsetenv("ADMIN_USERNAME")
+	os.Unsetenv("ADMIN_PASSWORD")
+	defer os.Unsetenv("JWT_SECRET")
+
+	config := getDefaultConfig()
+	config.Auth.EnableAuth = true
+	config.Auth.AdminUsername = ""
+	config.Auth.AdminPassword = ""
+	err := validateConfig(config)
+	assert.Error(t, err)
+	assert.Contains(t, err.Error(), "admin credentials")
+}
+
+func TestValidateConfig_InvalidPageSize(t *testing.T) {
+	config := getDefaultConfig()
+	config.Auth.EnableAuth = false
+	config.Catalog.DefaultPageSize = 0
+	err := validateConfig(config)
+	assert.Error(t, err)
+	assert.Contains(t, err.Error(), "default page size must be positive")
+}
+
+func TestValidateConfig_MaxPageSizeLessThanDefault(t *testing.T) {
+	config := getDefaultConfig()
+	config.Auth.EnableAuth = false
+	config.Catalog.DefaultPageSize = 100
+	config.Catalog.MaxPageSize = 50
+	err := validateConfig(config)
+	assert.Error(t, err)
+	assert.Contains(t, err.Error(), "max page size must be >= default page size")
+}
+
+func TestGetDatabaseURL_EmptyType(t *testing.T) {
+	config := getDefaultConfig()
+	config.Database.Type = ""
+
+	url := config.GetDatabaseURL()
+	assert.Contains(t, url, "postgres://")
+}
+
+func TestGetDatabaseURL_EmptySSLMode(t *testing.T) {
+	config := getDefaultConfig()
+	config.Database.Type = "postgres"
+	config.Database.SSLMode = ""
+
+	url := config.GetDatabaseURL()
+	assert.Contains(t, url, "sslmode=disable")
+}

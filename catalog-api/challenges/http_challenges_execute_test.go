@@ -188,6 +188,9 @@ func TestCORSHeadersChallenge_Execute_MockServer(t *testing.T) {
 }
 
 func TestCORSHeadersChallenge_Execute_Unreachable(t *testing.T) {
+	if testing.Short() {
+		t.Skip("Skipping unreachable endpoint test in short mode")
+	}
 	ch := &CORSHeadersChallenge{
 		BaseChallenge: challenge.NewBaseChallenge(
 			"cors-headers", "CORS Headers",
@@ -196,7 +199,9 @@ func TestCORSHeadersChallenge_Execute_Unreachable(t *testing.T) {
 		config: &BrowsingConfig{BaseURL: "http://127.0.0.1:1"},
 	}
 
-	result, err := ch.Execute(context.Background())
+	ctx, cancel := shortCtx()
+	defer cancel()
+	result, err := ch.Execute(ctx)
 	require.NoError(t, err)
 	assert.Equal(t, challenge.StatusFailed, result.Status)
 }
@@ -307,6 +312,9 @@ func TestNoSensitiveErrorsChallenge_Execute_MockServer(t *testing.T) {
 // --- Unreachable server tests for HTTP challenges ---
 
 func TestAuthRequiredChallenge_Execute_Unreachable(t *testing.T) {
+	if testing.Short() {
+		t.Skip("Skipping unreachable endpoint test in short mode")
+	}
 	ch := &AuthRequiredChallenge{
 		BaseChallenge: challenge.NewBaseChallenge(
 			"auth-required", "Auth Required",
@@ -319,12 +327,17 @@ func TestAuthRequiredChallenge_Execute_Unreachable(t *testing.T) {
 		},
 	}
 
-	result, err := ch.Execute(context.Background())
+	ctx, cancel := shortCtx()
+	defer cancel()
+	result, err := ch.Execute(ctx)
 	require.NoError(t, err)
 	assert.Equal(t, challenge.StatusFailed, result.Status)
 }
 
 func TestHealthLatencyChallenge_Execute_Unreachable(t *testing.T) {
+	if testing.Short() {
+		t.Skip("Skipping unreachable endpoint test in short mode")
+	}
 	ch := &HealthLatencyChallenge{
 		BaseChallenge: challenge.NewBaseChallenge(
 			"health-latency", "Health Latency",
@@ -333,7 +346,9 @@ func TestHealthLatencyChallenge_Execute_Unreachable(t *testing.T) {
 		config: &BrowsingConfig{BaseURL: "http://127.0.0.1:1"},
 	}
 
-	result, err := ch.Execute(context.Background())
+	ctx, cancel := shortCtx()
+	defer cancel()
+	result, err := ch.Execute(ctx)
 	require.NoError(t, err)
 	assert.Equal(t, challenge.StatusFailed, result.Status)
 }
@@ -535,6 +550,9 @@ func TestJWTExpirationChallenge_Execute_MockServer(t *testing.T) {
 }
 
 func TestJWTExpirationChallenge_Execute_Unreachable(t *testing.T) {
+	if testing.Short() {
+		t.Skip("Skipping unreachable endpoint test in short mode")
+	}
 	ch := NewJWTExpirationChallenge()
 	ch.config = &BrowsingConfig{
 		BaseURL:  "http://127.0.0.1:1",
@@ -542,7 +560,9 @@ func TestJWTExpirationChallenge_Execute_Unreachable(t *testing.T) {
 		Password: "admin123",
 	}
 
-	result, err := ch.Execute(context.Background())
+	ctx, cancel := shortCtx()
+	defer cancel()
+	result, err := ch.Execute(ctx)
 	require.NoError(t, err)
 	assert.Equal(t, challenge.StatusFailed, result.Status)
 }
@@ -601,6 +621,9 @@ func TestRateLimitAuthChallenge_Execute_MockServer(t *testing.T) {
 }
 
 func TestRateLimitAuthChallenge_Execute_Unreachable(t *testing.T) {
+	if testing.Short() {
+		t.Skip("Skipping unreachable endpoint test in short mode")
+	}
 	ch := NewRateLimitAuthChallenge()
 	ch.config = &BrowsingConfig{
 		BaseURL:  "http://127.0.0.1:1",
@@ -608,7 +631,9 @@ func TestRateLimitAuthChallenge_Execute_Unreachable(t *testing.T) {
 		Password: "admin123",
 	}
 
-	result, err := ch.Execute(context.Background())
+	ctx, cancel := shortCtx()
+	defer cancel()
+	result, err := ch.Execute(ctx)
 	require.NoError(t, err)
 	assert.Equal(t, challenge.StatusFailed, result.Status)
 }
@@ -637,6 +662,9 @@ func TestFileListingLatencyChallenge_Execute_MockServer(t *testing.T) {
 }
 
 func TestFileListingLatencyChallenge_Execute_Unreachable(t *testing.T) {
+	if testing.Short() {
+		t.Skip("Skipping unreachable endpoint test in short mode")
+	}
 	ch := NewFileListingLatencyChallenge()
 	ch.config = &BrowsingConfig{
 		BaseURL:  "http://127.0.0.1:1",
@@ -644,7 +672,9 @@ func TestFileListingLatencyChallenge_Execute_Unreachable(t *testing.T) {
 		Password: "admin123",
 	}
 
-	result, err := ch.Execute(context.Background())
+	ctx, cancel := shortCtx()
+	defer cancel()
+	result, err := ch.Execute(ctx)
 	require.NoError(t, err)
 	assert.Equal(t, challenge.StatusFailed, result.Status)
 }
@@ -672,6 +702,9 @@ func TestEntitySearchLatencyChallenge_Execute_MockServer(t *testing.T) {
 }
 
 func TestEntitySearchLatencyChallenge_Execute_Unreachable(t *testing.T) {
+	if testing.Short() {
+		t.Skip("Skipping unreachable endpoint test in short mode")
+	}
 	ch := NewEntitySearchLatencyChallenge()
 	ch.config = &BrowsingConfig{
 		BaseURL:  "http://127.0.0.1:1",
@@ -679,7 +712,9 @@ func TestEntitySearchLatencyChallenge_Execute_Unreachable(t *testing.T) {
 		Password: "admin123",
 	}
 
-	result, err := ch.Execute(context.Background())
+	ctx, cancel := shortCtx()
+	defer cancel()
+	result, err := ch.Execute(ctx)
 	require.NoError(t, err)
 	assert.Equal(t, challenge.StatusFailed, result.Status)
 }
@@ -687,6 +722,9 @@ func TestEntitySearchLatencyChallenge_Execute_Unreachable(t *testing.T) {
 // --- CH-044: WebSocket Latency Execute Test (login-failure path only) ---
 
 func TestWebSocketLatencyChallenge_Execute_Unreachable(t *testing.T) {
+	if testing.Short() {
+		t.Skip("Skipping unreachable endpoint test in short mode")
+	}
 	ch := NewWebSocketLatencyChallenge()
 	ch.config = &BrowsingConfig{
 		BaseURL:  "http://127.0.0.1:1",
@@ -694,7 +732,9 @@ func TestWebSocketLatencyChallenge_Execute_Unreachable(t *testing.T) {
 		Password: "admin123",
 	}
 
-	result, err := ch.Execute(context.Background())
+	ctx, cancel := shortCtx()
+	defer cancel()
+	result, err := ch.Execute(ctx)
 	require.NoError(t, err)
 	assert.Equal(t, challenge.StatusFailed, result.Status)
 }
@@ -725,6 +765,9 @@ func TestDBErrorRecoveryChallenge_Execute_MockServer(t *testing.T) {
 }
 
 func TestDBErrorRecoveryChallenge_Execute_Unreachable(t *testing.T) {
+	if testing.Short() {
+		t.Skip("Skipping unreachable endpoint test in short mode")
+	}
 	ch := NewDBErrorRecoveryChallenge()
 	ch.config = &BrowsingConfig{
 		BaseURL:  "http://127.0.0.1:1",
@@ -732,7 +775,9 @@ func TestDBErrorRecoveryChallenge_Execute_Unreachable(t *testing.T) {
 		Password: "admin123",
 	}
 
-	result, err := ch.Execute(context.Background())
+	ctx, cancel := shortCtx()
+	defer cancel()
+	result, err := ch.Execute(ctx)
 	require.NoError(t, err)
 	assert.Equal(t, challenge.StatusFailed, result.Status)
 }
@@ -802,6 +847,9 @@ func TestScannerRecoveryChallenge_Execute_MockServer(t *testing.T) {
 }
 
 func TestScannerRecoveryChallenge_Execute_Unreachable(t *testing.T) {
+	if testing.Short() {
+		t.Skip("Skipping unreachable endpoint test in short mode")
+	}
 	ch := NewScannerRecoveryChallenge()
 	ch.config = &BrowsingConfig{
 		BaseURL:  "http://127.0.0.1:1",
@@ -809,7 +857,9 @@ func TestScannerRecoveryChallenge_Execute_Unreachable(t *testing.T) {
 		Password: "admin123",
 	}
 
-	result, err := ch.Execute(context.Background())
+	ctx, cancel := shortCtx()
+	defer cancel()
+	result, err := ch.Execute(ctx)
 	require.NoError(t, err)
 	assert.Equal(t, challenge.StatusFailed, result.Status)
 }

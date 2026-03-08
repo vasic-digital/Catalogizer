@@ -5,6 +5,7 @@ import (
 	"encoding/csv"
 	"encoding/json"
 	"fmt"
+	"log"
 	"net/http"
 	"os"
 	"runtime"
@@ -488,15 +489,27 @@ func (s *ErrorReportingService) sendSlackCrashNotification(report *models.CrashR
 	return err
 }
 
+// Log-based notification: upgrade to SMTP by implementing EmailSender interface
 func (s *ErrorReportingService) sendEmailNotification(report *models.ErrorReport) error {
-	// Email implementation would go here
-	// This is a placeholder for email notification logic
+	subject := fmt.Sprintf("[%s] Error in %s: %s", report.Level, report.Component, report.ErrorCode)
+	bodySummary := report.Message
+	if len(bodySummary) > 200 {
+		bodySummary = bodySummary[:200] + "..."
+	}
+	log.Printf("[EMAIL NOTIFICATION] To: admin | Subject: %s | Body: %s | ReportedAt: %s | Fingerprint: %s",
+		subject, bodySummary, report.ReportedAt.Format(time.RFC3339), report.Fingerprint)
 	return nil
 }
 
+// Log-based notification: upgrade to SMTP by implementing EmailSender interface
 func (s *ErrorReportingService) sendEmailCrashNotification(report *models.CrashReport) error {
-	// Email implementation would go here
-	// This is a placeholder for email notification logic
+	subject := fmt.Sprintf("[CRASH] Signal: %s", report.Signal)
+	bodySummary := report.Message
+	if len(bodySummary) > 200 {
+		bodySummary = bodySummary[:200] + "..."
+	}
+	log.Printf("[EMAIL CRASH NOTIFICATION] To: admin | Subject: %s | Body: %s | ReportedAt: %s | Fingerprint: %s",
+		subject, bodySummary, report.ReportedAt.Format(time.RFC3339), report.Fingerprint)
 	return nil
 }
 

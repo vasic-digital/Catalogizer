@@ -63,9 +63,17 @@ RUN npm run build || npm run build -- --skipLibCheck
 
 FROM docker.io/nginx:alpine
 
-COPY --from=builder /app/catalog-web/dist /usr/share/nginx/html
-COPY catalog-web/nginx.conf /etc/nginx/conf.d/default.conf
+# Copy built assets and nginx config with proper ownership
+COPY --from=builder --chown=nginx:nginx /app/catalog-web/dist /usr/share/nginx/html
+COPY --chown=nginx:nginx catalog-web/nginx.conf /etc/nginx/conf.d/default.conf
+
+# Create required directories with nginx user ownership for non-root operation
+RUN chown -R nginx:nginx /var/cache/nginx /var/log/nginx && \
+    touch /var/run/nginx.pid && chown nginx:nginx /var/run/nginx.pid
 
 EXPOSE 3000
+
+# Switch to non-root user
+USER nginx
 
 CMD ["nginx", "-g", "daemon off;"]

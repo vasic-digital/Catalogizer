@@ -1184,3 +1184,106 @@ func TestAnalyticsService_AnalyzeDevicePreferences(t *testing.T) {
 		})
 	}
 }
+
+func TestAnalyticsService_GenerateReport_Fallback(t *testing.T) {
+	// No analyticsRepo — exercises the fallback path
+	svc := &AnalyticsService{}
+
+	tests := []struct {
+		name       string
+		reportType string
+		params     map[string]interface{}
+	}{
+		{
+			name:       "fallback without params",
+			reportType: "user_activity",
+			params:     nil,
+		},
+		{
+			name:       "fallback with params",
+			reportType: "system_overview",
+			params:     map[string]interface{}{"period": "daily"},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			report, err := svc.GenerateReport(1, &models.ReportRequest{
+				ReportType: tt.reportType,
+				Params:     tt.params,
+			})
+			assert.NoError(t, err)
+			assert.NotNil(t, report)
+			assert.Equal(t, tt.reportType, report.Type)
+			assert.Equal(t, "completed", report.Status)
+			assert.NotEmpty(t, report.Data)
+			assert.False(t, report.CreatedAt.IsZero())
+		})
+	}
+}
+
+func TestAnalyticsService_ExtractDateRange_AllBranches(t *testing.T) {
+	svc := &AnalyticsService{}
+
+	tests := []struct {
+		name    string
+		params  map[string]interface{}
+		wantErr bool
+		errMsg  string
+	}{
+		{
+			name: "valid dates",
+			params: map[string]interface{}{
+				"start_date": "2026-01-01",
+				"end_date":   "2026-01-31",
+			},
+			wantErr: false,
+		},
+		{
+			name:    "missing start_date",
+			params:  map[string]interface{}{"end_date": "2026-01-31"},
+			wantErr: true,
+			errMsg:  "start_date",
+		},
+		{
+			name:    "missing end_date",
+			params:  map[string]interface{}{"start_date": "2026-01-01"},
+			wantErr: true,
+			errMsg:  "end_date",
+		},
+		{
+			name: "invalid start_date format",
+			params: map[string]interface{}{
+				"start_date": "not-a-date",
+				"end_date":   "2026-01-31",
+			},
+			wantErr: true,
+			errMsg:  "invalid start_date",
+		},
+		{
+			name: "invalid end_date format",
+			params: map[string]interface{}{
+				"start_date": "2026-01-01",
+				"end_date":   "not-a-date",
+			},
+			wantErr: true,
+			errMsg:  "invalid end_date",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			start, end, err := svc.extractDateRange(tt.params)
+			if tt.wantErr {
+				assert.Error(t, err)
+				assert.Contains(t, err.Error(), tt.errMsg)
+			} else {
+				assert.NoError(t, err)
+				assert.False(t, start.IsZero())
+				assert.False(t, end.IsZero())
+			}
+		})
+	}
+}
+
+

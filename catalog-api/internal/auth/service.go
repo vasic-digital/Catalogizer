@@ -482,6 +482,35 @@ func generateRandomString(length int) (string, error) {
 
 // Additional methods for user management...
 
+// validUserColumns is a whitelist of column names allowed in dynamic UPDATE queries.
+// Defense-in-depth: even though setParts are built from hardcoded strings,
+// this prevents any future refactoring from accidentally introducing SQL injection.
+var validUserColumns = map[string]bool{
+	"first_name": true,
+	"last_name":  true,
+	"email":      true,
+	"role":       true,
+	"is_active":  true,
+	"updated_at": true,
+}
+
+// validateSetParts checks that every SET clause in setParts references only
+// whitelisted column names. Returns an error if any column is not allowed.
+func validateSetParts(setParts []string) error {
+	for _, part := range setParts {
+		// Each part is "column_name = ?"; extract the column name
+		eqIdx := strings.Index(part, " = ?")
+		if eqIdx < 0 {
+			return fmt.Errorf("invalid SET clause format: %s", part)
+		}
+		col := strings.TrimSpace(part[:eqIdx])
+		if !validUserColumns[col] {
+			return fmt.Errorf("disallowed column in UPDATE: %s", col)
+		}
+	}
+	return nil
+}
+
 // UpdateUser updates user information
 func (s *AuthService) UpdateUser(userID int64, req *UpdateUserRequest) (*User, error) {
 	var setParts []string
@@ -516,7 +545,11 @@ func (s *AuthService) UpdateUser(userID int64, req *UpdateUserRequest) (*User, e
 	args = append(args, time.Now())
 	args = append(args, userID)
 
-	// Safe: setParts contains only hardcoded column names, not user input
+	// Defense-in-depth: validate all column names against whitelist
+	if err := validateSetParts(setParts); err != nil {
+		return nil, fmt.Errorf("security validation failed: %w", err)
+	}
+
 	query := fmt.Sprintf("UPDATE users SET %s WHERE id = ?", strings.Join(setParts, ", "))
 	_, err := s.db.Exec(query, args...)
 	if err != nil {

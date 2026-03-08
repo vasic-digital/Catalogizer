@@ -711,3 +711,248 @@ func TestSyncRepository_GetEndpointsByType(t *testing.T) {
 	require.NoError(t, err)
 	assert.Equal(t, 0, len(cloudEPs))
 }
+
+// ---------------------------------------------------------------------------
+// SyncService — UpdateEndpoint (0% coverage)
+// ---------------------------------------------------------------------------
+
+func TestSyncService_UpdateEndpoint(t *testing.T) {
+	db, cleanup := newSyncTestDB(t)
+	defer cleanup()
+
+	repo := repository.NewSyncRepository(db)
+	service := NewSyncService(repo, nil, nil)
+
+	// Create a local-type endpoint (avoids network in testConnection)
+	endpoint := &models.SyncEndpoint{
+		UserID:        1,
+		Name:          "Original",
+		Type:          models.SyncTypeLocal,
+		URL:           "file:///tmp/sync",
+		SyncDirection: models.SyncDirectionUpload,
+		LocalPath:     "/data/local",
+		Status:        models.SyncStatusActive,
+		CreatedAt:     time.Now(),
+		UpdatedAt:     time.Now(),
+	}
+
+	id, err := repo.CreateEndpoint(endpoint)
+	require.NoError(t, err)
+
+	t.Run("owner can update own endpoint", func(t *testing.T) {
+		updated, err := service.UpdateEndpoint(id, 1, &models.UpdateSyncEndpointRequest{
+			Name: "Updated Name",
+			URL:  "file:///tmp/new-sync",
+		})
+		require.NoError(t, err)
+		assert.Equal(t, "Updated Name", updated.Name)
+		assert.Equal(t, "file:///tmp/new-sync", updated.URL)
+	})
+
+	t.Run("update with multiple fields", func(t *testing.T) {
+		isActive := true
+		updated, err := service.UpdateEndpoint(id, 1, &models.UpdateSyncEndpointRequest{
+			Username:      "newuser",
+			Password:      "newpass",
+			SyncDirection: models.SyncDirectionDownload,
+			LocalPath:     "/new/local",
+			IsActive:      &isActive,
+		})
+		require.NoError(t, err)
+		assert.Equal(t, "newuser", updated.Username)
+		assert.Equal(t, models.SyncDirectionDownload, updated.SyncDirection)
+		assert.Equal(t, "/new/local", updated.LocalPath)
+	})
+
+	t.Run("nonexistent endpoint returns error", func(t *testing.T) {
+		_, err := service.UpdateEndpoint(9999, 1, &models.UpdateSyncEndpointRequest{
+			Name: "Ghost",
+		})
+		assert.Error(t, err)
+	})
+
+	t.Run("set inactive via IsActive pointer", func(t *testing.T) {
+		isActive := false
+		updated, err := service.UpdateEndpoint(id, 1, &models.UpdateSyncEndpointRequest{
+			IsActive: &isActive,
+		})
+		require.NoError(t, err)
+		assert.Equal(t, models.SyncStatusInactive, updated.Status)
+	})
+
+	t.Run("set sync settings", func(t *testing.T) {
+		settings := `{"key":"value"}`
+		updated, err := service.UpdateEndpoint(id, 1, &models.UpdateSyncEndpointRequest{
+			SyncSettings: &settings,
+		})
+		require.NoError(t, err)
+		require.NotNil(t, updated.SyncSettings)
+		assert.Equal(t, settings, *updated.SyncSettings)
+	})
+}
+
+// ---------------------------------------------------------------------------
+// SyncService — GetSession (37.5% coverage)
+// ---------------------------------------------------------------------------
+
+func TestSyncService_GetSession(t *testing.T) {
+	db, cleanup := newSyncTestDB(t)
+	defer cleanup()
+
+	repo := repository.NewSyncRepository(db)
+	service := NewSyncService(repo, nil, nil)
+
+	session := &models.SyncSession{
+		EndpointID: 1,
+		UserID:     1,
+		Status:     models.SyncSessionStatusRunning,
+		SyncType:   models.SyncTypeManual,
+		StartedAt:  time.Now(),
+	}
+
+	id, err := repo.CreateSession(session)
+	require.NoError(t, err)
+
+	t.Run("owner can view own session", func(t *testing.T) {
+		got, err := service.GetSession(id, 1)
+		require.NoError(t, err)
+		assert.Equal(t, id, got.ID)
+	})
+
+	t.Run("nonexistent session returns error", func(t *testing.T) {
+		_, err := service.GetSession(9999, 1)
+		assert.Error(t, err)
+	})
+}
+
+// ---------------------------------------------------------------------------
+// SyncService — ScheduleSync (0% coverage)
+// ---------------------------------------------------------------------------
+
+func TestSyncService_ScheduleSync(t *testing.T) {
+	db, cleanup := newSyncTestDB(t)
+	defer cleanup()
+
+	repo := repository.NewSyncRepository(db)
+	service := NewSyncService(repo, nil, nil)
+
+	// Create an endpoint first
+	endpoint := &models.SyncEndpoint{
+		UserID:        1,
+		Name:          "Schedule Test",
+		Type:          models.SyncTypeLocal,
+		URL:           "file:///tmp",
+		SyncDirection: models.SyncDirectionUpload,
+		LocalPath:     "/data",
+		Status:        models.SyncStatusActive,
+		CreatedAt:     time.Now(),
+		UpdatedAt:     time.Now(),
+	}
+
+	epID, err := repo.CreateEndpoint(endpoint)
+	require.NoError(t, err)
+
+	t.Run("owner can schedule sync", func(t *testing.T) {
+		schedule, err := service.ScheduleSync(epID, 1, &models.SyncSchedule{
+			Frequency: models.SyncFrequencyDaily,
+		})
+		require.NoError(t, err)
+		assert.Equal(t, epID, schedule.EndpointID)
+		assert.Equal(t, 1, schedule.UserID)
+		assert.True(t, schedule.IsActive)
+		assert.Equal(t, models.SyncFrequencyDaily, schedule.Frequency)
+		assert.Greater(t, schedule.ID, 0)
+	})
+
+	t.Run("nonexistent endpoint returns error", func(t *testing.T) {
+		_, err := service.ScheduleSync(9999, 1, &models.SyncSchedule{
+			Frequency: models.SyncFrequencyWeekly,
+		})
+		assert.Error(t, err)
+	})
+}
+
+// ---------------------------------------------------------------------------
+// SyncService — GetEndpoint (37.5% coverage)
+// ---------------------------------------------------------------------------
+
+func TestSyncService_GetEndpoint(t *testing.T) {
+	db, cleanup := newSyncTestDB(t)
+	defer cleanup()
+
+	repo := repository.NewSyncRepository(db)
+	service := NewSyncService(repo, nil, nil)
+
+	endpoint := &models.SyncEndpoint{
+		UserID:        1,
+		Name:          "Get Test",
+		Type:          models.SyncTypeLocal,
+		URL:           "file:///tmp",
+		SyncDirection: models.SyncDirectionUpload,
+		LocalPath:     "/data",
+		Status:        models.SyncStatusActive,
+		CreatedAt:     time.Now(),
+		UpdatedAt:     time.Now(),
+	}
+
+	epID, err := repo.CreateEndpoint(endpoint)
+	require.NoError(t, err)
+
+	t.Run("owner can get own endpoint", func(t *testing.T) {
+		got, err := service.GetEndpoint(epID, 1)
+		require.NoError(t, err)
+		assert.Equal(t, "Get Test", got.Name)
+	})
+
+	t.Run("nonexistent endpoint returns error", func(t *testing.T) {
+		_, err := service.GetEndpoint(9999, 1)
+		assert.Error(t, err)
+	})
+}
+
+// ---------------------------------------------------------------------------
+// SyncService — logSyncError / updateSyncProgress / notifyUser (0% coverage)
+// ---------------------------------------------------------------------------
+
+func TestSyncService_LogSyncError(t *testing.T) {
+	service := NewSyncService(nil, nil, nil)
+	session := &models.SyncSession{ID: 42, UserID: 1}
+
+	// These are simple fmt.Printf wrappers — just verify they don't panic
+	service.logSyncError(session, "test error message")
+	service.updateSyncProgress(session, "50% complete")
+	service.notifyUser(session, "sync completed")
+}
+
+// ---------------------------------------------------------------------------
+// SyncService — GetSyncStatistics
+// ---------------------------------------------------------------------------
+
+func TestSyncService_GetSyncStatistics(t *testing.T) {
+	db, cleanup := newSyncTestDB(t)
+	defer cleanup()
+
+	repo := repository.NewSyncRepository(db)
+	service := NewSyncService(repo, nil, nil)
+
+	stats, err := service.GetSyncStatistics(nil, time.Now().Add(-24*time.Hour), time.Now())
+	require.NoError(t, err)
+	assert.NotNil(t, stats)
+	assert.Equal(t, 0, stats.TotalSessions)
+}
+
+// ---------------------------------------------------------------------------
+// SyncService — GetUserSessions
+// ---------------------------------------------------------------------------
+
+func TestSyncService_GetUserSessions(t *testing.T) {
+	db, cleanup := newSyncTestDB(t)
+	defer cleanup()
+
+	repo := repository.NewSyncRepository(db)
+	service := NewSyncService(repo, nil, nil)
+
+	sessions, err := service.GetUserSessions(1, 10, 0)
+	require.NoError(t, err)
+	assert.Empty(t, sessions)
+}

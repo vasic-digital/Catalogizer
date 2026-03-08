@@ -1,0 +1,74 @@
+# golangci-lint configuration for catalog-api
+# Run: golangci-lint run ./...
+
+run:
+  timeout: 5m
+  go: '1.24'
+  skip-dirs:
+    - vendor
+    - node_modules
+  skip-files:
+    - ".*\\.pb\\.go$"
+    - ".*_generated\\.go$"
+
+linters:
+  disable-all: true
+  enable:
+    - govet
+    - gosec
+    - staticcheck
+    - gocritic
+    - errcheck
+    - ineffassign
+    - unused
+    - typecheck
+
+linters-settings:
+  govet:
+    enable-all: true
+    disable:
+      - fieldalignment
+  gosec:
+    severity: medium
+    confidence: medium
+  gocritic:
+    enabled-tags:
+      - diagnostic
+      - style
+      - performance
+    disabled-checks:
+      - hugeParam
+      - rangeValCopy
+  staticcheck:
+    checks:
+      - all
+      - -SA1019  # allow deprecated usage (review periodically)
+  errcheck:
+    check-type-assertions: true
+    check-blank: false
+
+issues:
+  exclude-use-default: false
+  max-issues-per-linter: 0
+  max-same-issues: 0
+  exclude-rules:
+    # Test files: relax gosec (hardcoded credentials, etc.) and errcheck
+    - path: _test\.go
+      linters:
+        - gosec
+        - errcheck
+    # Test helpers
+    - path: internal/tests/
+      linters:
+        - gosec
+        - errcheck
+    # Challenge definitions may use unchecked errors for brevity
+    - path: challenges/
+      linters:
+        - errcheck
+    # Allow dot imports in test files (testify, etc.)
+    - path: _test\.go
+      text: "dot-import"
+    # Exclude "G104: Errors unhandled" in test files
+    - path: _test\.go
+      text: "G104"

@@ -1041,7 +1041,7 @@ func TestChallengeHandler_RunByCategory_Error(t *testing.T) {
 	assert.Equal(t, http.StatusInternalServerError, w.Code)
 }
 
-func TestChallengeHandler_GetResults(t *testing.T) {
+func TestChallengeHandler_GetResults_CoverageBoost(t *testing.T) {
 	mock := &mockChallengeService{
 		getResultsFunc: func() []*challengepkg.Result {
 			return []*challengepkg.Result{{Status: "passed"}}

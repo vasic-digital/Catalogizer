@@ -57,8 +57,13 @@ COPY --from=builder /build/catalog-api/catalogizer-api /app/catalogizer-api
 COPY --from=builder /build/catalog-api/migrations /app/migrations
 COPY --from=builder /build/catalog-api/challenges/config /app/challenges/config
 
+# Create a dedicated non-root user
+RUN addgroup --system --gid 1001 appgroup && \
+    adduser --system --uid 1001 --ingroup appgroup --no-create-home appuser
+
 # Create necessary directories with proper permissions
-RUN mkdir -p /app/data /app/logs /app/temp
+RUN mkdir -p /app/data /app/logs /app/temp && \
+    chown -R appuser:appgroup /app
 
 # Expose API port
 EXPOSE 8080
@@ -66,6 +71,9 @@ EXPOSE 8080
 # Health check
 HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
   CMD wget --no-verbose --tries=1 --spider http://localhost:8080/health || exit 1
+
+# Switch to non-root user
+USER appuser
 
 # Run the application
 ENTRYPOINT ["/app/catalogizer-api"]

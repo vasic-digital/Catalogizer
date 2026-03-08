@@ -630,3 +630,166 @@ func TestModeratorOrAdmin_RegularUserDenied(t *testing.T) {
 
 	assert.Equal(t, http.StatusForbidden, w.Code)
 }
+
+// TestLogUserActivity verifies the activity logging middleware does not interfere with requests.
+func TestLogUserActivity_AuthenticatedUser(t *testing.T) {
+	service, mw := setupMiddlewareTestWithRealDB(t)
+
+	loginResp := createTestUserAndLogin(t, service, "loguser", "password123")
+
+	router := gin.New()
+	router.GET("/activity", mw.RequireAuth(), mw.LogUserActivity(), func(c *gin.Context) {
+		c.JSON(http.StatusOK, gin.H{"message": "logged"})
+	})
+
+	w := httptest.NewRecorder()
+	req := httptest.NewRequest(http.MethodGet, "/activity", nil)
+	req.Header.Set("Authorization", "Bearer "+loginResp.Token)
+	router.ServeHTTP(w, req)
+
+	assert.Equal(t, http.StatusOK, w.Code)
+}
+
+func TestLogUserActivity_UnauthenticatedUser(t *testing.T) {
+	logger := zap.NewNop()
+	mw := NewAuthMiddleware(nil, logger)
+
+	router := gin.New()
+	router.GET("/activity", mw.LogUserActivity(), func(c *gin.Context) {
+		c.JSON(http.StatusOK, gin.H{"message": "ok"})
+	})
+
+	w := httptest.NewRecorder()
+	req := httptest.NewRequest(http.MethodGet, "/activity", nil)
+	router.ServeHTTP(w, req)
+
+	assert.Equal(t, http.StatusOK, w.Code)
+}
+
+// TestRateLimitByUser verifies per-user rate limiting.
+func TestRateLimitByUser_AllowsUnderLimit(t *testing.T) {
+	logger := zap.NewNop()
+	mw := NewAuthMiddleware(nil, logger)
+
+	router := gin.New()
+	router.GET("/limited", mw.RateLimitByUser(5, "1m"), func(c *gin.Context) {
+		c.JSON(http.StatusOK, gin.H{"message": "ok"})
+	})
+
+	// Send 5 requests (at the limit)
+	for i := 0; i < 5; i++ {
+		w := httptest.NewRecorder()
+		req := httptest.NewRequest(http.MethodGet, "/limited", nil)
+		req.RemoteAddr = "192.0.2.1:12345"
+		router.ServeHTTP(w, req)
+		assert.Equal(t, http.StatusOK, w.Code)
+	}
+}
+
+func TestRateLimitByUser_RejectsOverLimit(t *testing.T) {
+	logger := zap.NewNop()
+	mw := NewAuthMiddleware(nil, logger)
+
+	router := gin.New()
+	router.GET("/limited", mw.RateLimitByUser(3, "1m"), func(c *gin.Context) {
+		c.JSON(http.StatusOK, gin.H{"message": "ok"})
+	})
+
+	// Send 3 requests (at the limit)
+	for i := 0; i < 3; i++ {
+		w := httptest.NewRecorder()
+		req := httptest.NewRequest(http.MethodGet, "/limited", nil)
+		req.RemoteAddr = "192.0.2.2:12345"
+		router.ServeHTTP(w, req)
+		assert.Equal(t, http.StatusOK, w.Code)
+	}
+
+	// 4th request should be rejected
+	w := httptest.NewRecorder()
+	req := httptest.NewRequest(http.MethodGet, "/limited", nil)
+	req.RemoteAddr = "192.0.2.2:12345"
+	router.ServeHTTP(w, req)
+	assert.Equal(t, http.StatusTooManyRequests, w.Code)
+
+	var body map[string]interface{}
+	err := json.Unmarshal(w.Body.Bytes(), &body)
+	require.NoError(t, err)
+	assert.Contains(t, body["error"], "Rate limit exceeded")
+}
+
+func TestRateLimitByUser_InvalidWindow(t *testing.T) {
+	logger := zap.NewNop()
+	mw := NewAuthMiddleware(nil, logger)
+
+	// Invalid window should default to 1 minute
+	router := gin.New()
+	router.GET("/limited", mw.RateLimitByUser(100, "invalid"), func(c *gin.Context) {
+		c.JSON(http.StatusOK, gin.H{"message": "ok"})
+	})
+
+	w := httptest.NewRecorder()
+	req := httptest.NewRequest(http.MethodGet, "/limited", nil)
+	req.RemoteAddr = "192.0.2.3:12345"
+	router.ServeHTTP(w, req)
+	assert.Equal(t, http.StatusOK, w.Code)
+}
+
+func TestRateLimitByUser_AuthenticatedUser(t *testing.T) {
+	service, mw := setupMiddlewareTestWithRealDB(t)
+
+	loginResp := createTestUserAndLogin(t, service, "ratelimituser", "password123")
+
+	router := gin.New()
+	router.GET("/limited", mw.RequireAuth(), mw.RateLimitByUser(2, "1m"), func(c *gin.Context) {
+		c.JSON(http.StatusOK, gin.H{"message": "ok"})
+	})
+
+	// 2 requests should succeed
+	for i := 0; i < 2; i++ {
+		w := httptest.NewRecorder()
+		req := httptest.NewRequest(http.MethodGet, "/limited", nil)
+		req.Header.Set("Authorization", "Bearer "+loginResp.Token)
+		router.ServeHTTP(w, req)
+		assert.Equal(t, http.StatusOK, w.Code)
+	}
+
+	// 3rd should be rate limited
+	w := httptest.NewRecorder()
+	req := httptest.NewRequest(http.MethodGet, "/limited", nil)
+	req.Header.Set("Authorization", "Bearer "+loginResp.Token)
+	router.ServeHTTP(w, req)
+	assert.Equal(t, http.StatusTooManyRequests, w.Code)
+}
+
+func TestRateLimitByUser_DifferentClientsIndependent(t *testing.T) {
+	logger := zap.NewNop()
+	mw := NewAuthMiddleware(nil, logger)
+
+	router := gin.New()
+	router.GET("/limited", mw.RateLimitByUser(2, "1m"), func(c *gin.Context) {
+		c.JSON(http.StatusOK, gin.H{"message": "ok"})
+	})
+
+	// Client A: 2 requests
+	for i := 0; i < 2; i++ {
+		w := httptest.NewRecorder()
+		req := httptest.NewRequest(http.MethodGet, "/limited", nil)
+		req.RemoteAddr = "10.0.0.1:12345"
+		router.ServeHTTP(w, req)
+		assert.Equal(t, http.StatusOK, w.Code)
+	}
+
+	// Client A rate limited
+	w := httptest.NewRecorder()
+	req := httptest.NewRequest(http.MethodGet, "/limited", nil)
+	req.RemoteAddr = "10.0.0.1:12345"
+	router.ServeHTTP(w, req)
+	assert.Equal(t, http.StatusTooManyRequests, w.Code)
+
+	// Client B should NOT be rate limited
+	w2 := httptest.NewRecorder()
+	req2 := httptest.NewRequest(http.MethodGet, "/limited", nil)
+	req2.RemoteAddr = "10.0.0.2:12345"
+	router.ServeHTTP(w2, req2)
+	assert.Equal(t, http.StatusOK, w2.Code)
+}

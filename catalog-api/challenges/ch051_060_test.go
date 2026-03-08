@@ -6,24 +6,30 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
+// shortCtx returns a context with a 3-second timeout for unreachable endpoint tests.
+func shortCtx() (context.Context, context.CancelFunc) {
+	return context.WithTimeout(context.Background(), 3*time.Second)
+}
+
 // setupCH051MockServer creates a mock API server for input validation tests
 func setupCH051MockServer() *httptest.Server {
 	mux := http.NewServeMux()
-	mux.HandleFunc("/api/v1/health", func(w http.ResponseWriter, r *http.Request) {
+	mux.HandleFunc("/health", func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
 		fmt.Fprint(w, `{"status":"healthy"}`)
 	})
-	mux.HandleFunc("/api/v1/search", func(w http.ResponseWriter, r *http.Request) {
+	mux.HandleFunc("/search", func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
 		// Sanitized response - no XSS reflection
 		fmt.Fprint(w, `{"results":[],"query":"sanitized"}`)
 	})
-	mux.HandleFunc("/api/v1/catalog/files", func(w http.ResponseWriter, r *http.Request) {
+	mux.HandleFunc("/catalog/files", func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
 		fmt.Fprint(w, `{"files":[],"total":0}`)
 	})
@@ -36,7 +42,7 @@ func TestInputValidationChallenge_Execute_MockServer(t *testing.T) {
 
 	ch := NewInputValidationChallenge()
 	ch.config = &BrowsingConfig{
-		BaseURL:        server.URL + "/api/v1",
+		BaseURL:  server.URL,
 		Username:     "admin",
 		Password: "admin123",
 	}
@@ -48,10 +54,15 @@ func TestInputValidationChallenge_Execute_MockServer(t *testing.T) {
 }
 
 func TestInputValidationChallenge_Execute_Unreachable(t *testing.T) {
+	if testing.Short() {
+		t.Skip("Skipping unreachable endpoint test in short mode")
+	}
 	ch := NewInputValidationChallenge()
 	ch.config = &BrowsingConfig{BaseURL: "http://127.0.0.1:1"}
 
-	result, err := ch.Execute(context.Background())
+	ctx, cancel := shortCtx()
+	defer cancel()
+	result, err := ch.Execute(ctx)
 	require.NoError(t, err)
 	assert.NotNil(t, result)
 }
@@ -71,15 +82,15 @@ func setupCH052MockServer() *httptest.Server {
 		w.Header().Set("Content-Type", "application/json")
 		fmt.Fprint(w, `{"session_token":"test-jwt-token"}`)
 	})
-	mux.HandleFunc("/api/v1/catalog/files", func(w http.ResponseWriter, r *http.Request) {
+	mux.HandleFunc("/catalog/files", func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
 		fmt.Fprint(w, `{"files":[],"total":0}`)
 	})
-	mux.HandleFunc("/api/v1/entities", func(w http.ResponseWriter, r *http.Request) {
+	mux.HandleFunc("/entities", func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
 		fmt.Fprint(w, `{"items":[],"total":0}`)
 	})
-	mux.HandleFunc("/api/v1/storage-roots", func(w http.ResponseWriter, r *http.Request) {
+	mux.HandleFunc("/storage-roots", func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
 		fmt.Fprint(w, `{"items":[]}`)
 	})
@@ -92,7 +103,7 @@ func TestPaginationChallenge_Execute_MockServer(t *testing.T) {
 
 	ch := NewPaginationChallenge()
 	ch.config = &BrowsingConfig{
-		BaseURL:        server.URL + "/api/v1",
+		BaseURL:  server.URL,
 		Username:     "admin",
 		Password: "admin123",
 	}
@@ -104,10 +115,15 @@ func TestPaginationChallenge_Execute_MockServer(t *testing.T) {
 }
 
 func TestPaginationChallenge_Execute_Unreachable(t *testing.T) {
+	if testing.Short() {
+		t.Skip("Skipping unreachable endpoint test in short mode")
+	}
 	ch := NewPaginationChallenge()
 	ch.config = &BrowsingConfig{BaseURL: "http://127.0.0.1:1"}
 
-	result, err := ch.Execute(context.Background())
+	ctx, cancel := shortCtx()
+	defer cancel()
+	result, err := ch.Execute(ctx)
 	require.NoError(t, err)
 	assert.NotNil(t, result)
 }
@@ -122,11 +138,11 @@ func TestNewPaginationChallenge(t *testing.T) {
 
 func setupCH053MockServer() *httptest.Server {
 	mux := http.NewServeMux()
-	mux.HandleFunc("/api/v1/health", func(w http.ResponseWriter, r *http.Request) {
+	mux.HandleFunc("/health", func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
 		fmt.Fprint(w, `{"status":"healthy"}`)
 	})
-	mux.HandleFunc("/api/v1/users/me", func(w http.ResponseWriter, r *http.Request) {
+	mux.HandleFunc("/users/me", func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusUnauthorized)
 		fmt.Fprint(w, `{"error":"unauthorized"}`)
 	})
@@ -139,7 +155,7 @@ func TestContentTypesChallenge_Execute_MockServer(t *testing.T) {
 
 	ch := NewContentTypesChallenge()
 	ch.config = &BrowsingConfig{
-		BaseURL:        server.URL + "/api/v1",
+		BaseURL:  server.URL,
 		Username:     "admin",
 		Password: "admin123",
 	}
@@ -151,10 +167,15 @@ func TestContentTypesChallenge_Execute_MockServer(t *testing.T) {
 }
 
 func TestContentTypesChallenge_Execute_Unreachable(t *testing.T) {
+	if testing.Short() {
+		t.Skip("Skipping unreachable endpoint test in short mode")
+	}
 	ch := NewContentTypesChallenge()
 	ch.config = &BrowsingConfig{BaseURL: "http://127.0.0.1:1"}
 
-	result, err := ch.Execute(context.Background())
+	ctx, cancel := shortCtx()
+	defer cancel()
+	result, err := ch.Execute(ctx)
 	require.NoError(t, err)
 	assert.NotNil(t, result)
 }
@@ -173,7 +194,7 @@ func setupCH054MockServer() *httptest.Server {
 		w.Header().Set("Content-Type", "application/json")
 		fmt.Fprint(w, `{"session_token":"test-jwt-token"}`)
 	})
-	mux.HandleFunc("/api/v1/users/me", func(w http.ResponseWriter, r *http.Request) {
+	mux.HandleFunc("/users/me", func(w http.ResponseWriter, r *http.Request) {
 		auth := r.Header.Get("Authorization")
 		if auth == "" {
 			w.WriteHeader(http.StatusUnauthorized)
@@ -183,7 +204,7 @@ func setupCH054MockServer() *httptest.Server {
 		w.Header().Set("Content-Type", "application/json")
 		fmt.Fprint(w, `{"id":1,"username":"admin","email":"admin@test.com"}`)
 	})
-	mux.HandleFunc("/api/v1/users", func(w http.ResponseWriter, r *http.Request) {
+	mux.HandleFunc("/users", func(w http.ResponseWriter, r *http.Request) {
 		auth := r.Header.Get("Authorization")
 		if auth == "" {
 			w.WriteHeader(http.StatusUnauthorized)
@@ -193,7 +214,7 @@ func setupCH054MockServer() *httptest.Server {
 		w.Header().Set("Content-Type", "application/json")
 		fmt.Fprint(w, `{"users":[{"id":1,"username":"admin"}],"total":1}`)
 	})
-	mux.HandleFunc("/api/v1/auth/init-status", func(w http.ResponseWriter, r *http.Request) {
+	mux.HandleFunc("/auth/init-status", func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
 		fmt.Fprint(w, `{"initialized":true}`)
 	})
@@ -206,8 +227,8 @@ func TestUserManagementChallenge_Execute_MockServer(t *testing.T) {
 
 	ch := NewUserManagementChallenge()
 	ch.config = &BrowsingConfig{
-		BaseURL:        server.URL + "/api/v1",
-		Username:     "admin",
+		BaseURL:  server.URL,
+		Username: "admin",
 		Password: "admin123",
 	}
 
@@ -218,10 +239,15 @@ func TestUserManagementChallenge_Execute_MockServer(t *testing.T) {
 }
 
 func TestUserManagementChallenge_Execute_Unreachable(t *testing.T) {
+	if testing.Short() {
+		t.Skip("Skipping unreachable endpoint test in short mode")
+	}
 	ch := NewUserManagementChallenge()
 	ch.config = &BrowsingConfig{BaseURL: "http://127.0.0.1:1"}
 
-	result, err := ch.Execute(context.Background())
+	ctx, cancel := shortCtx()
+	defer cancel()
+	result, err := ch.Execute(ctx)
 	require.NoError(t, err)
 	assert.NotNil(t, result)
 }
@@ -240,19 +266,19 @@ func setupCH055MockServer() *httptest.Server {
 		w.Header().Set("Content-Type", "application/json")
 		fmt.Fprint(w, `{"session_token":"test-jwt-token"}`)
 	})
-	mux.HandleFunc("/api/v1/stats/overall", func(w http.ResponseWriter, r *http.Request) {
+	mux.HandleFunc("/stats/overall", func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
 		fmt.Fprint(w, `{"total_files":100,"total_size":1024}`)
 	})
-	mux.HandleFunc("/api/v1/stats/duplicates", func(w http.ResponseWriter, r *http.Request) {
+	mux.HandleFunc("/stats/duplicates", func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
 		fmt.Fprint(w, `{"duplicate_count":5}`)
 	})
-	mux.HandleFunc("/api/v1/stats/media-types", func(w http.ResponseWriter, r *http.Request) {
+	mux.HandleFunc("/stats/media-types", func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
 		fmt.Fprint(w, `{"types":{"movie":10,"tv_show":20}}`)
 	})
-	mux.HandleFunc("/api/v1/stats/scan-history", func(w http.ResponseWriter, r *http.Request) {
+	mux.HandleFunc("/stats/scan-history", func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
 		fmt.Fprint(w, `{"scans":[]}`)
 	})
@@ -265,7 +291,7 @@ func TestAnalyticsAPIChallenge_Execute_MockServer(t *testing.T) {
 
 	ch := NewAnalyticsAPIChallenge()
 	ch.config = &BrowsingConfig{
-		BaseURL:        server.URL + "/api/v1",
+		BaseURL:  server.URL,
 		Username:     "admin",
 		Password: "admin123",
 	}
@@ -277,10 +303,15 @@ func TestAnalyticsAPIChallenge_Execute_MockServer(t *testing.T) {
 }
 
 func TestAnalyticsAPIChallenge_Execute_Unreachable(t *testing.T) {
+	if testing.Short() {
+		t.Skip("Skipping unreachable endpoint test in short mode")
+	}
 	ch := NewAnalyticsAPIChallenge()
 	ch.config = &BrowsingConfig{BaseURL: "http://127.0.0.1:1"}
 
-	result, err := ch.Execute(context.Background())
+	ctx, cancel := shortCtx()
+	defer cancel()
+	result, err := ch.Execute(ctx)
 	require.NoError(t, err)
 	assert.NotNil(t, result)
 }
@@ -299,15 +330,15 @@ func setupCH056MockServer() *httptest.Server {
 		w.Header().Set("Content-Type", "application/json")
 		fmt.Fprint(w, `{"session_token":"test-jwt-token"}`)
 	})
-	mux.HandleFunc("/api/v1/entities", func(w http.ResponseWriter, r *http.Request) {
+	mux.HandleFunc("/entities", func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
 		fmt.Fprint(w, `{"items":[{"id":1,"title":"Test Movie"}],"total":1}`)
 	})
-	mux.HandleFunc("/api/v1/entities/99999999", func(w http.ResponseWriter, r *http.Request) {
+	mux.HandleFunc("/entities/99999999", func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusNotFound)
 		fmt.Fprint(w, `{"error":"not found"}`)
 	})
-	mux.HandleFunc("/api/v1/media-types", func(w http.ResponseWriter, r *http.Request) {
+	mux.HandleFunc("/media-types", func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
 		fmt.Fprint(w, `{"types":["movie","tv_show","music_album"]}`)
 	})
@@ -320,7 +351,7 @@ func TestEntityCRUDChallenge_Execute_MockServer(t *testing.T) {
 
 	ch := NewEntityCRUDChallenge()
 	ch.config = &BrowsingConfig{
-		BaseURL:        server.URL + "/api/v1",
+		BaseURL:  server.URL,
 		Username:     "admin",
 		Password: "admin123",
 	}
@@ -332,10 +363,15 @@ func TestEntityCRUDChallenge_Execute_MockServer(t *testing.T) {
 }
 
 func TestEntityCRUDChallenge_Execute_Unreachable(t *testing.T) {
+	if testing.Short() {
+		t.Skip("Skipping unreachable endpoint test in short mode")
+	}
 	ch := NewEntityCRUDChallenge()
 	ch.config = &BrowsingConfig{BaseURL: "http://127.0.0.1:1"}
 
-	result, err := ch.Execute(context.Background())
+	ctx, cancel := shortCtx()
+	defer cancel()
+	result, err := ch.Execute(ctx)
 	require.NoError(t, err)
 	assert.NotNil(t, result)
 }
@@ -354,19 +390,19 @@ func setupCH057MockServer() *httptest.Server {
 		w.Header().Set("Content-Type", "application/json")
 		fmt.Fprint(w, `{"session_token":"test-jwt-token"}`)
 	})
-	mux.HandleFunc("/api/v1/sync/status", func(w http.ResponseWriter, r *http.Request) {
+	mux.HandleFunc("/sync/status", func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
 		fmt.Fprint(w, `{"status":"idle","last_sync":null}`)
 	})
-	mux.HandleFunc("/api/v1/sync/history", func(w http.ResponseWriter, r *http.Request) {
+	mux.HandleFunc("/sync/history", func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
 		fmt.Fprint(w, `{"sessions":[]}`)
 	})
-	mux.HandleFunc("/api/v1/sync/devices", func(w http.ResponseWriter, r *http.Request) {
+	mux.HandleFunc("/sync/devices", func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
 		fmt.Fprint(w, `{"devices":[]}`)
 	})
-	mux.HandleFunc("/api/v1/sync/conflicts", func(w http.ResponseWriter, r *http.Request) {
+	mux.HandleFunc("/sync/conflicts", func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
 		fmt.Fprint(w, `{"conflicts":[]}`)
 	})
@@ -379,7 +415,7 @@ func TestSyncAPIChallenge_Execute_MockServer(t *testing.T) {
 
 	ch := NewSyncAPIChallenge()
 	ch.config = &BrowsingConfig{
-		BaseURL:        server.URL + "/api/v1",
+		BaseURL:  server.URL,
 		Username:     "admin",
 		Password: "admin123",
 	}
@@ -391,10 +427,15 @@ func TestSyncAPIChallenge_Execute_MockServer(t *testing.T) {
 }
 
 func TestSyncAPIChallenge_Execute_Unreachable(t *testing.T) {
+	if testing.Short() {
+		t.Skip("Skipping unreachable endpoint test in short mode")
+	}
 	ch := NewSyncAPIChallenge()
 	ch.config = &BrowsingConfig{BaseURL: "http://127.0.0.1:1"}
 
-	result, err := ch.Execute(context.Background())
+	ctx, cancel := shortCtx()
+	defer cancel()
+	result, err := ch.Execute(ctx)
 	require.NoError(t, err)
 	assert.NotNil(t, result)
 }
@@ -413,15 +454,15 @@ func setupCH058MockServer() *httptest.Server {
 		w.Header().Set("Content-Type", "application/json")
 		fmt.Fprint(w, `{"session_token":"test-jwt-token"}`)
 	})
-	mux.HandleFunc("/api/v1/subtitles", func(w http.ResponseWriter, r *http.Request) {
+	mux.HandleFunc("/subtitles", func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
 		fmt.Fprint(w, `{"subtitles":[]}`)
 	})
-	mux.HandleFunc("/api/v1/subtitles/languages", func(w http.ResponseWriter, r *http.Request) {
+	mux.HandleFunc("/subtitles/languages", func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
 		fmt.Fprint(w, `{"languages":["en","es","fr","de"]}`)
 	})
-	mux.HandleFunc("/api/v1/subtitles/99999999", func(w http.ResponseWriter, r *http.Request) {
+	mux.HandleFunc("/subtitles/99999999", func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusNotFound)
 		fmt.Fprint(w, `{"error":"not found"}`)
 	})
@@ -434,7 +475,7 @@ func TestSubtitleAPIChallenge_Execute_MockServer(t *testing.T) {
 
 	ch := NewSubtitleAPIChallenge()
 	ch.config = &BrowsingConfig{
-		BaseURL:        server.URL + "/api/v1",
+		BaseURL:  server.URL,
 		Username:     "admin",
 		Password: "admin123",
 	}
@@ -446,10 +487,15 @@ func TestSubtitleAPIChallenge_Execute_MockServer(t *testing.T) {
 }
 
 func TestSubtitleAPIChallenge_Execute_Unreachable(t *testing.T) {
+	if testing.Short() {
+		t.Skip("Skipping unreachable endpoint test in short mode")
+	}
 	ch := NewSubtitleAPIChallenge()
 	ch.config = &BrowsingConfig{BaseURL: "http://127.0.0.1:1"}
 
-	result, err := ch.Execute(context.Background())
+	ctx, cancel := shortCtx()
+	defer cancel()
+	result, err := ch.Execute(ctx)
 	require.NoError(t, err)
 	assert.NotNil(t, result)
 }
@@ -468,11 +514,11 @@ func setupCH059MockServer() *httptest.Server {
 		w.Header().Set("Content-Type", "application/json")
 		fmt.Fprint(w, `{"session_token":"test-jwt-token"}`)
 	})
-	mux.HandleFunc("/api/v1/recommendations", func(w http.ResponseWriter, r *http.Request) {
+	mux.HandleFunc("/recommendations", func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
 		fmt.Fprint(w, `{"recommendations":[]}`)
 	})
-	mux.HandleFunc("/api/v1/entities/99999999/similar", func(w http.ResponseWriter, r *http.Request) {
+	mux.HandleFunc("/entities/99999999/similar", func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusNotFound)
 		fmt.Fprint(w, `{"error":"entity not found"}`)
 	})
@@ -485,7 +531,7 @@ func TestRecommendationAPIChallenge_Execute_MockServer(t *testing.T) {
 
 	ch := NewRecommendationAPIChallenge()
 	ch.config = &BrowsingConfig{
-		BaseURL:        server.URL + "/api/v1",
+		BaseURL:  server.URL,
 		Username:     "admin",
 		Password: "admin123",
 	}
@@ -497,10 +543,15 @@ func TestRecommendationAPIChallenge_Execute_MockServer(t *testing.T) {
 }
 
 func TestRecommendationAPIChallenge_Execute_Unreachable(t *testing.T) {
+	if testing.Short() {
+		t.Skip("Skipping unreachable endpoint test in short mode")
+	}
 	ch := NewRecommendationAPIChallenge()
 	ch.config = &BrowsingConfig{BaseURL: "http://127.0.0.1:1"}
 
-	result, err := ch.Execute(context.Background())
+	ctx, cancel := shortCtx()
+	defer cancel()
+	result, err := ch.Execute(ctx)
 	require.NoError(t, err)
 	assert.NotNil(t, result)
 }
@@ -519,15 +570,15 @@ func setupCH060MockServer() *httptest.Server {
 		w.Header().Set("Content-Type", "application/json")
 		fmt.Fprint(w, `{"session_token":"test-jwt-token"}`)
 	})
-	mux.HandleFunc("/api/v1/localization/languages", func(w http.ResponseWriter, r *http.Request) {
+	mux.HandleFunc("/localization/languages", func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
 		fmt.Fprint(w, `{"languages":["en","es","fr","de","ru","sr"]}`)
 	})
-	mux.HandleFunc("/api/v1/localization/translations", func(w http.ResponseWriter, r *http.Request) {
+	mux.HandleFunc("/localization/translations", func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
 		fmt.Fprint(w, `{"locale":"en","translations":{"hello":"Hello"}}`)
 	})
-	mux.HandleFunc("/api/v1/localization/stats", func(w http.ResponseWriter, r *http.Request) {
+	mux.HandleFunc("/localization/stats", func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
 		fmt.Fprint(w, `{"total_languages":6,"total_keys":100}`)
 	})
@@ -540,7 +591,7 @@ func TestLocalizationAPIChallenge_Execute_MockServer(t *testing.T) {
 
 	ch := NewLocalizationAPIChallenge()
 	ch.config = &BrowsingConfig{
-		BaseURL:        server.URL + "/api/v1",
+		BaseURL:  server.URL,
 		Username:     "admin",
 		Password: "admin123",
 	}
@@ -552,10 +603,15 @@ func TestLocalizationAPIChallenge_Execute_MockServer(t *testing.T) {
 }
 
 func TestLocalizationAPIChallenge_Execute_Unreachable(t *testing.T) {
+	if testing.Short() {
+		t.Skip("Skipping unreachable endpoint test in short mode")
+	}
 	ch := NewLocalizationAPIChallenge()
 	ch.config = &BrowsingConfig{BaseURL: "http://127.0.0.1:1"}
 
-	result, err := ch.Execute(context.Background())
+	ctx, cancel := shortCtx()
+	defer cancel()
+	result, err := ch.Execute(ctx)
 	require.NoError(t, err)
 	assert.NotNil(t, result)
 }
