@@ -58,6 +58,7 @@ Guides for deploying, configuring, and maintaining Catalogizer.
 - **Backup and Recovery** -- Data backup strategies and restoration procedures
 - **Scaling Guide** -- Scaling Catalogizer for larger deployments
 - **Production Runbook** -- Operational procedures for production environments
+- **Performance Tuning Guide** -- Optimizing API response times, database queries, and resource usage
 
 ### Troubleshooting
 - **Troubleshooting Guide** -- Common issues and solutions
@@ -66,6 +67,9 @@ Guides for deploying, configuring, and maintaining Catalogizer.
 ### Security
 - **Security Testing Guide** -- Running security tests
 - **Freemium Security Setup** -- Security configuration for freemium deployments
+- **Security Headers** -- X-Frame-Options, X-Content-Type-Options, CSP, HSTS configuration
+- **CORS Configuration** -- Origin validation and cross-origin resource sharing setup
+- **Secrets Management** -- Environment variable handling, encryption keys, and credential storage
 
 ---
 
@@ -81,9 +85,14 @@ Guides for contributing to Catalogizer and understanding its architecture.
 - **Tauri IPC Guide** -- Desktop app IPC communication
 - **Auth Flow** -- Authentication and authorization flow
 - **Database Schema** -- Database tables and relationships
+- **Lazy Loading Architecture** -- Generic lazy loading with the Lazy module
+- **Concurrency Control** -- Semaphore, worker pools, and concurrency utilities
 
 ### API Reference
 - **API Documentation** -- REST API endpoints and usage
+- **Search API Reference** -- Full-text search, advanced filters, and duplicate detection
+- **Browse API Reference** -- Storage root browsing and directory listing
+- **Sync API Reference** -- Cloud synchronization with Amazon S3 and Google Cloud Storage
 - **WebSocket Events** -- Real-time event documentation
 - **Swagger UI** -- Available at `/swagger` on a running API instance
 
@@ -91,6 +100,7 @@ Guides for contributing to Catalogizer and understanding its architecture.
 - **Testing Guide** -- Running tests across all components
 - **Test Strategy** -- Testing approach and coverage goals
 - **QA Testing Guide** -- Quality assurance procedures
+- **Stress Test Results** -- 50k request load testing results and analysis
 
 ### Contributing
 - **Contributing Guide** -- How to contribute to the project

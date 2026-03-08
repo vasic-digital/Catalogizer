@@ -65,8 +65,8 @@ Enterprise-grade security for your media catalog.
 
 Track your catalog's health and growth.
 
-- **Prometheus metrics**: The API exposes a `/metrics` endpoint with HTTP request rates, latencies, and custom application metrics
-- **Grafana dashboards**: Pre-configured dashboard for API performance, resource utilization, and Go runtime statistics
+- **Prometheus metrics**: The API exposes a `/metrics` endpoint with HTTP request counts and latencies, database query durations, Go runtime statistics (goroutines, memory, GC), and custom application metrics
+- **Grafana dashboards**: Pre-configured dashboards for API performance, resource utilization, Go runtime statistics, and database query analysis
 - **Collection analytics**: Total files, storage usage, quality distribution, growth trends, and source reliability
 - **Real-time status**: WebSocket-based live updates for connection health, scan progress, and new media notifications
 - **Alerting**: Configure alerts in Grafana for API latency, error rates, and availability
@@ -164,11 +164,33 @@ Generate professional reports and analytics exports.
 
 Built for extensibility with a submodule-based architecture.
 
-- **19 Go modules**: Auth, Cache, Database, Concurrency, Storage, EventBus, Streaming, Security, Observability, Formatters, Plugins, Challenges, Filesystem, RateLimiter, Config, Discovery, Media, Middleware, Watcher
-- **2 TypeScript modules**: WebSocket-Client, UI-Components-React
+- **29 Go modules**: Auth, Cache, Database, Concurrency, Storage, EventBus, Streaming, Security, Observability, Formatters, Plugins, Challenges, Filesystem, RateLimiter, Config, Discovery, Media, Middleware, Watcher, Containers, Assets, Entities, Lazy, Memory, Recovery, and more
+- **9 TypeScript modules**: WebSocket-Client, UI-Components-React, Media-Types, Catalogizer-API-Client, Auth-Context, Media-Browser, Media-Player, Collection-Manager, Dashboard-Analytics
 - **1 Kotlin module**: Android-Toolkit
-- Each module is an independent git repository with its own tests and documentation
+- **3 new modules** added in v1.1.0: Lazy (generic lazy loading), Memory (leak detection), Recovery (circuit breaker with automatic state restoration)
+- Each module is an independent git repository with its own tests, documentation, and ARCHITECTURE.md
 - Shared across projects for consistent behavior and reduced duplication
+
+## Search and Browse API
+
+Find and explore media across all storage sources from a single interface.
+
+- **Full-text search**: Query media by title, description, or filename with ranked results
+- **Advanced filters**: Filter by media type, quality, date range, file size, and storage source
+- **Duplicate detection**: Identify the same content across different storage sources using hash-based and metadata matching
+- **Advanced query language**: Combine filters with boolean operators for precise results
+- **Storage root browsing**: List and explore storage roots with summary statistics
+- **Directory listing with pagination**: Browse directory trees with configurable page sizes and content type detection
+
+## Cloud Sync
+
+Synchronize your catalog with cloud storage providers.
+
+- **Amazon S3**: Sync files and metadata with S3 buckets, including IAM credential management
+- **Google Cloud Storage**: Sync with GCS buckets with service account authentication
+- **Endpoint management**: Create, update, and delete sync endpoints via the REST API
+- **User-specific sync config**: Per-user synchronization settings and credential storage
+- **Background sync**: Sync operations run asynchronously with progress reporting via WebSocket
 
 ## Additional Features
 

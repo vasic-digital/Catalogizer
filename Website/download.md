@@ -77,7 +77,7 @@ When using Podman, keep these points in mind:
 Build and run each component individually.
 
 ### Requirements
-- Go 1.21+ (backend)
+- Go 1.24+ (backend)
 - Node.js 18+ (frontend and TypeScript projects)
 - SQLCipher (encrypted database)
 - Git
@@ -103,7 +103,7 @@ CGO_ENABLED=1 go build -o catalog-api main.go
 ```bash
 cd catalog-web
 npm install
-npm run dev      # Development server on port 5173
+npm run dev      # Development server on port 3000
 npm run build    # Production build
 ```
 

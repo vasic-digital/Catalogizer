@@ -83,6 +83,10 @@ Yes. The SMB discovery feature can auto-detect available SMB shares on your loca
 
 Catalogizer operates in read-only mode by default. It reads files to detect types and extract metadata but does not modify, move, or delete files on storage sources unless you explicitly initiate a file operation (such as copy, rename, or conversion).
 
+### Can Catalogizer sync with cloud storage?
+
+Yes. The Sync API supports Amazon S3 and Google Cloud Storage. You can create sync endpoints, configure provider credentials, and manage per-user synchronization settings. Sync operations run in the background with progress reporting via WebSocket.
+
 ---
 
 ## Media Detection and Metadata
@@ -110,6 +114,10 @@ The detection pipeline uses heuristics and may occasionally misidentify a file. 
 ### Does Catalogizer detect video quality?
 
 Yes. The analyzer component of the detection pipeline extracts technical metadata including resolution (720p, 1080p, 4K/UHD), codec (H.264, H.265, VP9), bitrate, and container format. Quality profiles allow comparison and ranking across versions of the same content.
+
+### Does Catalogizer have a search API?
+
+Yes. The Search API supports full-text queries, advanced filters (by media type, quality, date range, size), duplicate detection, and paginated results. You can search across all storage sources from a single endpoint. The Browse API complements this with storage root listing and directory-level browsing.
 
 ---
 
@@ -207,6 +215,14 @@ Store the DB_ENCRYPTION_KEY separately from the database backup for security. Te
 ### How do I monitor Catalogizer in production?
 
 Catalogizer exposes Prometheus-compatible metrics. The project includes a pre-configured Prometheus configuration and Grafana dashboards in the `monitoring/` directory. Dashboards cover API performance, media detection throughput, and storage source health.
+
+### How do I monitor API performance?
+
+Catalogizer exposes Prometheus-compatible metrics at `/metrics`. Tracked metrics include HTTP request counts and latencies, database query durations, Go runtime statistics (goroutines, memory, GC), and custom application metrics. Pre-configured Grafana dashboards are included in the `monitoring/` directory.
+
+### What testing framework does Catalogizer use?
+
+Catalogizer uses a challenge-based testing framework with 285+ registered challenges covering connectivity, scanning, security, performance, resilience, and observability. Challenges are Go structs that execute against the running system and report structured results with assertions and metrics. Run challenges via the REST API at `/api/v1/challenges`.
 
 ### How do I troubleshoot connection issues?
 

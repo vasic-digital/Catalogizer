@@ -68,6 +68,10 @@ tags:
     description: Challenge-based testing framework
   - name: websocket
     description: WebSocket real-time updates
+  - name: browse
+    description: Directory browsing and file info
+  - name: sync
+    description: Remote synchronization endpoints
   - name: discovery
     description: Service discovery
 
@@ -852,6 +856,376 @@ components:
         recent_additions:
           type: integer
 
+    SearchFilter:
+      type: object
+      description: Search filter criteria for advanced file search
+      properties:
+        query:
+          type: string
+          description: Search query (searches in filename and path)
+        path:
+          type: string
+          description: Path filter (partial match)
+        name:
+          type: string
+          description: Name filter (partial match)
+        extension:
+          type: string
+          description: File extension filter (exact match)
+        file_type:
+          type: string
+          description: File type filter (exact match)
+        mime_type:
+          type: string
+          description: MIME type filter (exact match)
+        storage_roots:
+          type: array
+          items:
+            type: string
+          description: Storage roots filter
+        min_size:
+          type: integer
+          format: int64
+          description: Minimum file size in bytes
+        max_size:
+          type: integer
+          format: int64
+          description: Maximum file size in bytes
+        modified_after:
+          type: string
+          format: date-time
+          description: Modified after date (RFC3339 format)
+        modified_before:
+          type: string
+          format: date-time
+          description: Modified before date (RFC3339 format)
+        include_deleted:
+          type: boolean
+          default: false
+        only_duplicates:
+          type: boolean
+          default: false
+        exclude_duplicates:
+          type: boolean
+          default: false
+        include_directories:
+          type: boolean
+          default: true
+
+    FileWithMetadata:
+      type: object
+      description: A file entry with optional metadata key-value pairs
+      properties:
+        id:
+          type: integer
+          format: int64
+        name:
+          type: string
+        path:
+          type: string
+        size:
+          type: integer
+          format: int64
+        extension:
+          type: string
+        file_type:
+          type: string
+        mime_type:
+          type: string
+        is_directory:
+          type: boolean
+        storage_root_name:
+          type: string
+        created_at:
+          type: string
+          format: date-time
+        modified_at:
+          type: string
+          format: date-time
+        metadata:
+          type: array
+          items:
+            type: object
+            properties:
+              id:
+                type: integer
+                format: int64
+              file_id:
+                type: integer
+                format: int64
+              key:
+                type: string
+              value:
+                type: string
+              data_type:
+                type: string
+
+    SearchResult:
+      type: object
+      description: Paginated search results
+      properties:
+        files:
+          type: array
+          items:
+            $ref: '#/components/schemas/FileWithMetadata'
+        total_count:
+          type: integer
+          format: int64
+        page:
+          type: integer
+        limit:
+          type: integer
+        total_pages:
+          type: integer
+
+    AdvancedSearchRequest:
+      type: object
+      description: Request body for advanced search
+      properties:
+        filter:
+          $ref: '#/components/schemas/SearchFilter'
+        page:
+          type: integer
+          default: 1
+        limit:
+          type: integer
+          default: 100
+        sort_by:
+          type: string
+          default: name
+          enum: [name, size, modified_at, created_at, path, extension]
+        sort_order:
+          type: string
+          default: asc
+          enum: [asc, desc]
+
+    DirectoryInfo:
+      type: object
+      description: Directory information with statistics
+      properties:
+        path:
+          type: string
+        name:
+          type: string
+        storage_root_name:
+          type: string
+        file_count:
+          type: integer
+        directory_count:
+          type: integer
+        total_size:
+          type: integer
+          format: int64
+        duplicate_count:
+          type: integer
+        modified_at:
+          type: string
+          format: date-time
+
+    SyncEndpoint:
+      type: object
+      description: Remote synchronization endpoint configuration
+      properties:
+        id:
+          type: integer
+        user_id:
+          type: integer
+        name:
+          type: string
+        type:
+          type: string
+          description: Sync provider type (webdav, s3, gcs, local)
+        url:
+          type: string
+        username:
+          type: string
+        sync_direction:
+          type: string
+          description: Direction of sync (push, pull, bidirectional)
+        local_path:
+          type: string
+        remote_path:
+          type: string
+        sync_settings:
+          type: string
+          description: JSON-encoded sync settings
+        status:
+          type: string
+          enum: [active, inactive, error]
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+        last_sync_at:
+          type: string
+          format: date-time
+
+    CreateSyncEndpointRequest:
+      type: object
+      description: Request body for creating a sync endpoint
+      required:
+        - name
+        - type
+        - url
+        - sync_direction
+        - local_path
+        - remote_path
+      properties:
+        name:
+          type: string
+        type:
+          type: string
+        url:
+          type: string
+        username:
+          type: string
+        password:
+          type: string
+        sync_direction:
+          type: string
+        local_path:
+          type: string
+        remote_path:
+          type: string
+        sync_settings:
+          type: string
+
+    UpdateSyncEndpointRequest:
+      type: object
+      description: Request body for updating a sync endpoint
+      properties:
+        name:
+          type: string
+        url:
+          type: string
+        username:
+          type: string
+        password:
+          type: string
+        sync_direction:
+          type: string
+        local_path:
+          type: string
+        remote_path:
+          type: string
+        sync_settings:
+          type: string
+        is_active:
+          type: boolean
+
+    SyncSession:
+      type: object
+      description: A sync operation session record
+      properties:
+        id:
+          type: integer
+        endpoint_id:
+          type: integer
+        user_id:
+          type: integer
+        status:
+          type: string
+        sync_type:
+          type: string
+        started_at:
+          type: string
+          format: date-time
+        completed_at:
+          type: string
+          format: date-time
+        duration:
+          type: integer
+          format: int64
+          description: Duration in nanoseconds
+        total_files:
+          type: integer
+        synced_files:
+          type: integer
+        failed_files:
+          type: integer
+        skipped_files:
+          type: integer
+        error_message:
+          type: string
+
+    SyncSchedule:
+      type: object
+      description: Scheduled sync configuration
+      properties:
+        id:
+          type: integer
+        endpoint_id:
+          type: integer
+        user_id:
+          type: integer
+        frequency:
+          type: string
+        last_run:
+          type: string
+          format: date-time
+        next_run:
+          type: string
+          format: date-time
+        is_active:
+          type: boolean
+        created_at:
+          type: string
+          format: date-time
+
+    SyncStatistics:
+      type: object
+      description: Aggregated sync statistics over a time period
+      properties:
+        start_date:
+          type: string
+          format: date-time
+        end_date:
+          type: string
+          format: date-time
+        total_sessions:
+          type: integer
+        total_files_synced:
+          type: integer
+        total_files_failed:
+          type: integer
+        by_status:
+          type: object
+          additionalProperties:
+            type: integer
+        by_type:
+          type: object
+          additionalProperties:
+            type: integer
+        average_duration:
+          type: integer
+          format: int64
+          description: Average duration in nanoseconds
+        success_rate:
+          type: number
+          format: float
+
+    ScheduleSyncRequest:
+      type: object
+      description: Request body for scheduling a sync
+      required:
+        - endpoint_id
+        - frequency
+      properties:
+        endpoint_id:
+          type: integer
+        frequency:
+          type: string
+
+    CleanupSessionsRequest:
+      type: object
+      description: Request body for cleaning up old sync sessions
+      properties:
+        older_than_days:
+          type: integer
+          default: 30
+
 paths:
   /health:
     get:
@@ -1206,6 +1580,614 @@ paths:
             application/json:
               schema:
                 type: object
+
+  /api/v1/search/files:
+    get:
+      tags: [search]
+      summary: Search files with advanced filters
+      description: |
+        Performs advanced file search with filters, sorting, and pagination.
+        Searches across all storage roots with support for name, path, extension,
+        file type, MIME type, size range, and date range filters.
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: q
+          in: query
+          description: Search query (searches in filename and path)
+          schema:
+            type: string
+        - name: path
+          in: query
+          description: Path filter (partial match)
+          schema:
+            type: string
+        - name: name
+          in: query
+          description: Name filter (partial match)
+          schema:
+            type: string
+        - name: extension
+          in: query
+          description: File extension filter (exact match)
+          schema:
+            type: string
+        - name: file_type
+          in: query
+          description: File type filter (exact match)
+          schema:
+            type: string
+        - name: mime_type
+          in: query
+          description: MIME type filter (exact match)
+          schema:
+            type: string
+        - name: smb_roots
+          in: query
+          description: Storage roots filter (comma-separated list)
+          schema:
+            type: string
+        - name: min_size
+          in: query
+          description: Minimum file size in bytes
+          schema:
+            type: integer
+            format: int64
+        - name: max_size
+          in: query
+          description: Maximum file size in bytes
+          schema:
+            type: integer
+            format: int64
+        - name: modified_after
+          in: query
+          description: Modified after date (RFC3339 format)
+          schema:
+            type: string
+            format: date-time
+        - name: modified_before
+          in: query
+          description: Modified before date (RFC3339 format)
+          schema:
+            type: string
+            format: date-time
+        - name: include_deleted
+          in: query
+          description: Include deleted files
+          schema:
+            type: boolean
+            default: false
+        - name: only_duplicates
+          in: query
+          description: Only show duplicate files
+          schema:
+            type: boolean
+            default: false
+        - name: exclude_duplicates
+          in: query
+          description: Exclude duplicate files
+          schema:
+            type: boolean
+            default: false
+        - name: include_directories
+          in: query
+          description: Include directories in results
+          schema:
+            type: boolean
+            default: true
+        - name: page
+          in: query
+          description: Page number
+          schema:
+            type: integer
+            default: 1
+        - name: limit
+          in: query
+          description: Items per page (max 1000)
+          schema:
+            type: integer
+            default: 100
+        - name: sort_by
+          in: query
+          description: Sort field
+          schema:
+            type: string
+            default: name
+            enum: [name, size, modified_at, created_at, path, extension]
+        - name: sort_order
+          in: query
+          description: Sort order
+          schema:
+            type: string
+            default: asc
+            enum: [asc, desc]
+      responses:
+        '200':
+          description: Search results
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  data:
+                    $ref: '#/components/schemas/SearchResult'
+        '400':
+          description: Invalid filter parameters
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /api/v1/search/files/duplicates:
+    get:
+      tags: [search]
+      summary: Search duplicate files
+      description: |
+        Finds duplicate files across all storage roots or within specific roots.
+        Returns only files that have duplicates (same hash). Directories are excluded.
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: smb_roots
+          in: query
+          description: Storage roots filter (comma-separated list)
+          schema:
+            type: string
+        - name: min_size
+          in: query
+          description: Minimum file size in bytes
+          schema:
+            type: integer
+            format: int64
+        - name: max_size
+          in: query
+          description: Maximum file size in bytes
+          schema:
+            type: integer
+            format: int64
+        - name: file_type
+          in: query
+          description: File type filter
+          schema:
+            type: string
+        - name: extension
+          in: query
+          description: File extension filter
+          schema:
+            type: string
+        - name: page
+          in: query
+          description: Page number
+          schema:
+            type: integer
+            default: 1
+        - name: limit
+          in: query
+          description: Items per page (max 1000)
+          schema:
+            type: integer
+            default: 100
+        - name: sort_by
+          in: query
+          description: Sort field
+          schema:
+            type: string
+            default: name
+            enum: [name, size, modified_at, path]
+        - name: sort_order
+          in: query
+          description: Sort order
+          schema:
+            type: string
+            default: asc
+            enum: [asc, desc]
+      responses:
+        '200':
+          description: Duplicate file search results
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  data:
+                    $ref: '#/components/schemas/SearchResult'
+        '400':
+          description: Invalid filter parameters
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /api/v1/search/advanced:
+    post:
+      tags: [search]
+      summary: Advanced search with complex filters
+      description: |
+        Performs advanced file search using a POST body for complex filter combinations.
+        Supports the same filter fields as GET /search/files but via structured JSON body,
+        making it easier to specify multiple filters and complex queries.
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AdvancedSearchRequest'
+      responses:
+        '200':
+          description: Search results
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  data:
+                    $ref: '#/components/schemas/SearchResult'
+        '400':
+          description: Invalid request body
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  # ── Browse API ──────────────────────────────────────────────
+
+  /api/v1/browse/roots:
+    get:
+      tags: [browse]
+      summary: List storage roots
+      description: Returns all configured storage roots the current user can access.
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: List of storage roots
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  roots:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        id:
+                          type: integer
+                        name:
+                          type: string
+                        protocol:
+                          type: string
+                        path:
+                          type: string
+        '401':
+          description: Unauthorized
+
+  /api/v1/browse/directory/{path}:
+    get:
+      tags: [browse]
+      summary: Browse directory contents
+      description: Lists files and subdirectories at the given path.
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: path
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: page
+          in: query
+          schema:
+            type: integer
+            default: 1
+        - name: page_size
+          in: query
+          schema:
+            type: integer
+            default: 50
+      responses:
+        '200':
+          description: Directory listing
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  path:
+                    type: string
+                  entries:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        name:
+                          type: string
+                        is_dir:
+                          type: boolean
+                        size:
+                          type: integer
+                          format: int64
+                        content_type:
+                          type: string
+        '404':
+          description: Directory not found
+
+  /api/v1/browse/file-info/{path}:
+    get:
+      tags: [browse]
+      summary: Get file information
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: path
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: File metadata
+        '404':
+          description: File not found
+
+  /api/v1/browse/directory-sizes/{path}:
+    get:
+      tags: [browse]
+      summary: Get directory sizes
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: path
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Directory size breakdown
+        '404':
+          description: Directory not found
+
+  /api/v1/browse/duplicates/{path}:
+    get:
+      tags: [browse]
+      summary: Find duplicates in directory
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: path
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Duplicate file groups
+        '404':
+          description: Directory not found
+
+  # ── Sync API ───────────────────────────────────────────────
+
+  /api/v1/sync/endpoints:
+    post:
+      tags: [sync]
+      summary: Create sync endpoint
+      description: Creates a new cloud or local sync endpoint configuration.
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name:
+                  type: string
+                provider:
+                  type: string
+                  enum: [s3, gcs, local]
+                config:
+                  type: object
+      responses:
+        '201':
+          description: Endpoint created
+        '400':
+          description: Invalid configuration
+    get:
+      tags: [sync]
+      summary: List user sync endpoints
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: List of sync endpoints
+
+  /api/v1/sync/endpoints/{id}:
+    get:
+      tags: [sync]
+      summary: Get sync endpoint details
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Endpoint details
+        '404':
+          description: Endpoint not found
+    put:
+      tags: [sync]
+      summary: Update sync endpoint
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+      responses:
+        '200':
+          description: Endpoint updated
+    delete:
+      tags: [sync]
+      summary: Delete sync endpoint
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '204':
+          description: Endpoint deleted
+
+  /api/v1/sync/endpoints/{id}/sync:
+    post:
+      tags: [sync]
+      summary: Start sync operation
+      description: Triggers a sync for the specified endpoint. Progress via WebSocket.
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '202':
+          description: Sync started
+        '409':
+          description: Sync already in progress
+
+  /api/v1/sync/sessions:
+    get:
+      tags: [sync]
+      summary: List sync sessions
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: Recent sync sessions
+
+  /api/v1/sync/sessions/{id}:
+    get:
+      tags: [sync]
+      summary: Get sync session details
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Session details
+        '404':
+          description: Session not found
+
+  /api/v1/sync/schedules:
+    post:
+      tags: [sync]
+      summary: Schedule recurring sync
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                endpoint_id:
+                  type: integer
+                cron:
+                  type: string
+      responses:
+        '201':
+          description: Schedule created
+
+  /api/v1/sync/statistics:
+    get:
+      tags: [sync]
+      summary: Get sync statistics
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: Aggregate sync statistics
+
+  /api/v1/sync/cleanup:
+    post:
+      tags: [sync]
+      summary: Cleanup old sync sessions
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: Cleanup completed
+
+  # ── Download API ───────────────────────────────────────────
 
   /api/v1/download/file/{id}:
     get:
@@ -3497,3 +4479,869 @@ paths:
                       $ref: '#/components/schemas/ChallengeResult'
                   count:
                     type: integer
+
+  # ── Browse endpoints ──────────────────────────────────────────────────
+
+  /api/v1/browse/roots:
+    get:
+      tags: [browse]
+      summary: List storage roots for browsing
+      description: Retrieves all configured storage roots available for directory browsing.
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: Storage roots list
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/StorageRoot'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /api/v1/browse/directory/{path}:
+    get:
+      tags: [browse]
+      summary: Browse directory contents
+      description: |
+        Lists files and directories within a specific path under a storage root.
+        The path parameter should include the storage root name as the first segment
+        (e.g., /MyNAS/movies). Supports pagination and sorting.
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: path
+          in: path
+          required: true
+          description: Directory path including storage root prefix
+          schema:
+            type: string
+        - name: path
+          in: query
+          description: Sub-directory path within the storage root
+          schema:
+            type: string
+            default: /
+        - name: page
+          in: query
+          description: Page number
+          schema:
+            type: integer
+            default: 1
+        - name: limit
+          in: query
+          description: Items per page (max 1000)
+          schema:
+            type: integer
+            default: 100
+        - name: sort_by
+          in: query
+          description: Sort field
+          schema:
+            type: string
+            default: name
+            enum: [name, size, modified_at, created_at, path, extension]
+        - name: sort_order
+          in: query
+          description: Sort order
+          schema:
+            type: string
+            default: asc
+            enum: [asc, desc]
+      responses:
+        '200':
+          description: Directory contents
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  data:
+                    $ref: '#/components/schemas/SearchResult'
+        '400':
+          description: Invalid parameters
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /api/v1/browse/file-info/{path}:
+    get:
+      tags: [browse]
+      summary: Get file information
+      description: Returns detailed information about a specific file identified by its path.
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: path
+          in: path
+          required: true
+          description: File path (path segment used as file ID)
+          schema:
+            type: string
+      responses:
+        '200':
+          description: File information
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  data:
+                    $ref: '#/components/schemas/FileWithMetadata'
+        '400':
+          description: Invalid file ID
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: File not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /api/v1/browse/directory-sizes/{path}:
+    get:
+      tags: [browse]
+      summary: Get directories sorted by size
+      description: Retrieves directories within a storage root sorted by their total size.
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: path
+          in: path
+          required: true
+          description: Storage root name
+          schema:
+            type: string
+        - name: page
+          in: query
+          description: Page number
+          schema:
+            type: integer
+            default: 1
+        - name: limit
+          in: query
+          description: Items per page (max 500)
+          schema:
+            type: integer
+            default: 50
+        - name: ascending
+          in: query
+          description: Sort in ascending order (default descending)
+          schema:
+            type: boolean
+            default: false
+      responses:
+        '200':
+          description: Directories sorted by size
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/DirectoryInfo'
+        '400':
+          description: Storage root name required
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /api/v1/browse/duplicates/{path}:
+    get:
+      tags: [browse]
+      summary: Get directories sorted by duplicate count
+      description: Retrieves directories within a storage root sorted by the number of duplicate files they contain.
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: path
+          in: path
+          required: true
+          description: Storage root name
+          schema:
+            type: string
+        - name: page
+          in: query
+          description: Page number
+          schema:
+            type: integer
+            default: 1
+        - name: limit
+          in: query
+          description: Items per page (max 500)
+          schema:
+            type: integer
+            default: 50
+        - name: ascending
+          in: query
+          description: Sort in ascending order (default descending)
+          schema:
+            type: boolean
+            default: false
+      responses:
+        '200':
+          description: Directories sorted by duplicate count
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/DirectoryInfo'
+        '400':
+          description: Storage root name required
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  # ── Sync endpoints ────────────────────────────────────────────────────
+
+  /api/v1/sync/endpoints:
+    post:
+      tags: [sync]
+      summary: Create sync endpoint
+      description: |
+        Creates a new remote synchronization endpoint. The endpoint is validated
+        with a connection test before being saved. Supported types include
+        WebDAV, S3, GCS, and local filesystem.
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateSyncEndpointRequest'
+      responses:
+        '201':
+          description: Sync endpoint created
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  data:
+                    $ref: '#/components/schemas/SyncEndpoint'
+        '400':
+          description: Invalid request body or endpoint configuration
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '502':
+          description: Connection test to remote endpoint failed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+    get:
+      tags: [sync]
+      summary: List user sync endpoints
+      description: Returns all sync endpoints belonging to the authenticated user.
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: User sync endpoints
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/SyncEndpoint'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /api/v1/sync/endpoints/{id}:
+    get:
+      tags: [sync]
+      summary: Get sync endpoint
+      description: Returns a specific sync endpoint by ID. Only accessible by the endpoint owner.
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: Sync endpoint ID
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Sync endpoint details
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  data:
+                    $ref: '#/components/schemas/SyncEndpoint'
+        '400':
+          description: Invalid endpoint ID
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '403':
+          description: Access denied (not endpoint owner)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: Endpoint not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+    put:
+      tags: [sync]
+      summary: Update sync endpoint
+      description: Updates an existing sync endpoint configuration. Only accessible by the endpoint owner.
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: Sync endpoint ID
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateSyncEndpointRequest'
+      responses:
+        '200':
+          description: Sync endpoint updated
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  data:
+                    $ref: '#/components/schemas/SyncEndpoint'
+        '400':
+          description: Invalid request body or endpoint configuration
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '403':
+          description: Access denied (not endpoint owner)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: Endpoint not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '502':
+          description: Connection test to remote endpoint failed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+    delete:
+      tags: [sync]
+      summary: Delete sync endpoint
+      description: Deletes a sync endpoint. Only accessible by the endpoint owner.
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: Sync endpoint ID
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Sync endpoint deleted
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  data:
+                    type: object
+                    properties:
+                      message:
+                        type: string
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '403':
+          description: Access denied (not endpoint owner)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: Endpoint not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /api/v1/sync/endpoints/{id}/sync:
+    post:
+      tags: [sync]
+      summary: Start sync operation
+      description: |
+        Initiates a synchronization operation for the specified endpoint.
+        The endpoint must be active. Returns a sync session object to track progress.
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: Sync endpoint ID
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Sync started
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  data:
+                    $ref: '#/components/schemas/SyncSession'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '403':
+          description: Access denied (not endpoint owner)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: Endpoint not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '409':
+          description: Endpoint not active
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /api/v1/sync/sessions:
+    get:
+      tags: [sync]
+      summary: List user sync sessions
+      description: Returns sync sessions for the authenticated user with pagination.
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: limit
+          in: query
+          description: Maximum number of sessions to return (max 200)
+          schema:
+            type: integer
+            default: 50
+        - name: offset
+          in: query
+          description: Number of sessions to skip
+          schema:
+            type: integer
+            default: 0
+      responses:
+        '200':
+          description: User sync sessions
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/SyncSession'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /api/v1/sync/sessions/{id}:
+    get:
+      tags: [sync]
+      summary: Get sync session
+      description: Returns a specific sync session by ID. Only accessible by the session owner.
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: Sync session ID
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Sync session details
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  data:
+                    $ref: '#/components/schemas/SyncSession'
+        '400':
+          description: Invalid session ID
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '403':
+          description: Access denied (not session owner)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: Session not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /api/v1/sync/schedules:
+    post:
+      tags: [sync]
+      summary: Schedule a sync
+      description: Creates a scheduled sync for a specific endpoint with a given frequency.
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ScheduleSyncRequest'
+      responses:
+        '201':
+          description: Sync schedule created
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  data:
+                    $ref: '#/components/schemas/SyncSchedule'
+        '400':
+          description: Invalid request body
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '403':
+          description: Access denied (not endpoint owner)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: Endpoint not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /api/v1/sync/statistics:
+    get:
+      tags: [sync]
+      summary: Get sync statistics
+      description: |
+        Returns aggregated sync statistics for the authenticated user over a date range.
+        Defaults to the last 30 days. Includes totals, success rates, and breakdowns by status and type.
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: start_date
+          in: query
+          description: Start date (RFC3339 or YYYY-MM-DD format, defaults to 30 days ago)
+          schema:
+            type: string
+            format: date-time
+        - name: end_date
+          in: query
+          description: End date (RFC3339 or YYYY-MM-DD format, defaults to now)
+          schema:
+            type: string
+            format: date-time
+      responses:
+        '200':
+          description: Sync statistics
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  data:
+                    $ref: '#/components/schemas/SyncStatistics'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /api/v1/sync/cleanup:
+    post:
+      tags: [sync]
+      summary: Cleanup old sync sessions
+      description: Deletes sync sessions older than the specified number of days. Defaults to 30 days.
+      security:
+        - BearerAuth: []
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CleanupSessionsRequest'
+      responses:
+        '200':
+          description: Cleanup completed
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  data:
+                    type: object
+                    properties:
+                      message:
+                        type: string
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'

@@ -47,6 +47,9 @@ export default defineConfig({
         items: [
           { text: 'Architecture', link: '/developer/architecture' },
           { text: 'API Reference', link: '/developer/api' },
+          { text: 'Security', link: '/docs/developer-guide/security' },
+          { text: 'Monitoring', link: '/docs/developer-guide/monitoring' },
+          { text: 'API Reference (Full)', link: '/docs/developer-guide/api-reference' },
           { text: 'Testing', link: '/developer/testing' },
           { text: 'Contributing', link: '/developer/contributing' },
         ]

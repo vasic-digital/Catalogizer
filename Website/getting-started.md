@@ -104,6 +104,8 @@ Now that you have Catalogizer running with your media:
 - **Play media** directly in the browser with the built-in player
 - **Set up monitoring** with Prometheus and Grafana for production deployments
 - **Install native apps** for [desktop](/download#desktop-application), [Android](/download#android), or [Android TV](/download#android-tv-app)
+- **Monitor performance** with [Prometheus metrics](/documentation#monitoring) and Grafana dashboards
+- **Run challenges** to validate your deployment via the [challenge API](/documentation#testing)
 
 ## Running Tests
 

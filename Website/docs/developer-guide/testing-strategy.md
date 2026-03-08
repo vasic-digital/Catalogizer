@@ -42,6 +42,9 @@ Purpose: Verify system performance under various load conditions
 
 **Implementation:**
 - **Load Testing**: k6 for HTTP load testing
+- **Stress Testing**: Custom 50k request stress tests in `tests/stress/` validating API stability under sustained load
+- **Benchmark Testing**: Go benchmark tests in `middleware/benchmark_test.go` measuring middleware overhead and request processing latency
+- **Fuzz Testing**: Go fuzz tests in `middleware/fuzz_test.go` for input validation and edge case discovery
 - **Memory Profiling**: Go pprof for backend memory analysis
 - **Frontend Performance**: Lighthouse for web performance
 - **Database Performance**: Query optimization and connection pool testing
@@ -55,7 +58,24 @@ Purpose: Identify vulnerabilities and ensure security best practices
 - **Authentication Testing**: Test JWT, OAuth, and other auth mechanisms
 - **Penetration Testing**: Manual security assessment
 
-### 6. Accessibility Tests
+### 6. Challenge-Based Testing
+Purpose: Validate the running system end-to-end with structured challenges
+
+Catalogizer uses a custom challenge framework with **285+ registered challenges** that execute against the running system and report structured results with assertions and metrics.
+
+**Challenge Categories:**
+- **Core challenges (CH-001 to CH-050)**: Connectivity, scanning, media detection, organization, and playback validation
+- **Feature challenges (CH-061 to CH-088)**: Search API, Browse API, Cloud Sync, security headers, CORS, input validation, rate limiting, performance, resilience, and observability
+- **Module verification challenges (MOD-001 to MOD-021)**: Validate specific capabilities of Go modules including Lazy (generic lazy loading), Recovery (circuit breaker), and Memory (leak detection)
+- **User flow challenges (UF-*)**: 174 challenges across API, Web, Desktop, and Mobile platforms
+
+**Execution:**
+- Run via REST API at `/api/v1/challenges`
+- Sequential execution (RunAll is synchronous/blocking)
+- Progress-based liveness detection with 5-minute stale threshold
+- Structured reports with assertions, metrics, and timing data
+
+### 7. Accessibility Tests
 Purpose: Ensure WCAG 2.1 AA compliance for accessibility
 
 **Implementation:**

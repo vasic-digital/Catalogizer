@@ -42,8 +42,10 @@ In-depth technical training for building and extending Catalogizer.
 | 10 | Testing and Quality | 45 min |
 | 11 | Security and Monitoring | 30 min |
 | 12 | Deployment and DevOps | 45 min |
+| 13 | Remediation and Security Hardening | 60 min |
+| 14 | Modular Architecture and Decoupling | 60 min |
 
-**Total Duration**: ~8-10 hours
+**Total Duration**: ~10-12 hours
 
 ## Certification Levels
 

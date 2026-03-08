@@ -34,6 +34,8 @@ The best starting point for resolving issues is the project documentation.
 ### Developer Resources
 - **Architecture Overview** -- System design and components
 - **API Documentation** -- REST API endpoint reference
+- **Security Guide** -- Authentication, encryption, and security headers
+- **Monitoring Guide** -- Prometheus, Grafana, and alerting
 - **WebSocket Events** -- Real-time event documentation
 - **Contributing Guide** -- How to contribute to the project
 
@@ -169,7 +171,7 @@ If you discover a security vulnerability, do not report it publicly. Instead:
 
 ## Video Course
 
-For structured learning, the Catalogizer video course covers six modules:
+For structured learning, the Catalogizer video course covers fourteen modules:
 
 | Module | Topic | Duration |
 |--------|-------|----------|
@@ -179,6 +181,14 @@ For structured learning, the Catalogizer video course covers six modules:
 | Module 4 | Multi-Platform | ~55 minutes |
 | Module 5 | Administration | ~65 minutes |
 | Module 6 | Developer Guide | ~70 minutes |
+| Module 7 | Advanced Architecture | ~60 minutes |
+| Module 8 | Security Deep Dive | ~55 minutes |
+| Module 9 | Search and Sync | ~50 minutes |
+| Module 10 | Advanced Testing | ~60 minutes |
+| Module 11 | Module Development | ~65 minutes |
+| Module 12 | Deployment and Operations | ~60 minutes |
+| Module 13 | Search, Browse and Cloud Sync | ~55 minutes |
+| Module 14 | Challenge System Deep Dive | ~60 minutes |
 
 Course materials including scripts, slide outlines, and exercises are available in the `docs/courses/` directory.
 

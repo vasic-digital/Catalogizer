@@ -9,6 +9,61 @@ All notable changes to the Catalogizer project are documented here. This page pr
 
 ---
 
+## Version 1.1.0 -- March 8, 2026
+
+Comprehensive remediation, security hardening, and feature expansion.
+
+### New Features
+
+- **Search API**: Full-text search with advanced filters, duplicate detection, and paginated results
+- **Browse API**: Storage root browsing and directory listing with content type detection
+- **Cloud Sync API**: Synchronization with Amazon S3 and Google Cloud Storage
+- **Prometheus Metrics**: HTTP request metrics, DB query duration, runtime metrics, Grafana dashboard
+- **28 new challenges** (CH-061 to CH-088): Feature validation, security, performance, resilience, observability
+- **6 module functional challenges** (MOD-016 to MOD-021): Lazy, Recovery, Memory module verification
+
+### Security
+
+- Security headers validation (X-Frame-Options, X-Content-Type-Options, CSP, HSTS)
+- CORS origin validation and rejection of unauthorized origins
+- Input validation rejecting SQL injection, XSS, and path traversal
+- Rate limiting on authentication endpoints
+- JWT token lifecycle validation
+- File upload magic bytes verification
+
+### Performance
+
+- API response latency benchmarks
+- Concurrent request handling validation
+- Graceful degradation under load
+- Memory stability during load testing
+- Database connection pool recovery
+
+### Architecture
+
+- 3 new Go modules: Lazy (generic lazy loading), Memory (leak detection), Recovery (circuit breaker)
+- Total Go modules: 29 (up from 19)
+- Module functional verification challenges validate specific capabilities
+- 285+ registered challenges (up from 249)
+
+### Documentation
+
+- 10 new documentation files: API reference (Search, Browse, Sync), Security (headers, CORS, secrets), Architecture (lazy loading, concurrency), Guides (performance tuning), Testing (stress results)
+- 4 new video course modules (13-14) with slide decks (9-10)
+- 11 CLAUDE.md files for TS/React and other submodules
+- Comprehensive remediation report
+
+### Test Coverage Improvements
+
+- Database coverage: 61.9% → 90.8% (+28.9%)
+- Config coverage: 73.8% → 92.9% (+19.1%)
+- Auth coverage: 74.4% → 84.8% (+10.4%)
+- Internal/handlers coverage: 48.9% → 66.5% (+17.6%)
+- 38/38 Go packages pass, 0 failures, 0 races
+- 102 frontend test files, 1795 tests pass
+
+---
+
 ## Version 1.0.0 -- February 2, 2026
 
 The first stable release of Catalogizer, delivering a complete multi-platform media collection management system.
@@ -95,7 +150,7 @@ Features planned for future releases:
 
 - iOS application
 - Apple TV application
-- Expanded cloud storage provider integrations
+- Expanded cloud storage provider integrations (beyond S3 and GCS)
 - Machine learning-based media classification
 - Collaborative collections with shared editing
 - Plugin system for community extensions
