@@ -60,6 +60,15 @@ podman-compose down                           # stop services
 ./scripts/services-down.sh                    # stop all
 ```
 
+### HelixQA Testing
+```bash
+cd HelixQA
+go run ./cmd/helixqa list --banks ../challenges/helixqa-banks      # list all test cases
+go run ./cmd/helixqa run --banks ../challenges/helixqa-banks       # run tests
+go run ./cmd/helixqa run --banks ../challenges/helixqa-banks --filter platform=api  # filter by platform
+go run ./cmd/helixqa autonomous --banks ../challenges/helixqa-banks  # LLM-driven testing
+```
+
 ## Code Style Guidelines
 
 ### Go Backend
@@ -145,6 +154,15 @@ if db.Dialect().IsPostgres() {
 
 All challenge operations executed by compiled binaries only (catalog-api service). Never use curl/scripts for API endpoints. Challenges registered in `catalog-api/challenges/register.go`.
 
+### HelixQA Integration
+
+HelixQA is a QA orchestration framework for structured test execution. Test banks located at `challenges/helixqa-banks/`:
+
+- `catalogizer-api-simple.yaml` - 5 API tests
+- `catalogizer-web-simple.yaml` - 3 Web UI tests
+- `catalogizer-desktop-simple.yaml` - 3 Desktop tests
+- `catalogizer-android-simple.yaml` - 3 Android tests
+
 ## Quick Setup
 
 1. `git submodule init && git submodule update --recursive`
@@ -157,6 +175,7 @@ All challenge operations executed by compiled binaries only (catalog-api service
 - `catalog-api/filesystem/interface.go` - Unified filesystem interface
 - `catalog-web/src/App.tsx` - React root
 - `catalog-web/vite.config.ts` - Path aliases, proxy config
+- `challenges/helixqa-banks/` - HelixQA test banks (14 tests across 4 platforms)
 
 ## Pre-Commit Checklist
 
