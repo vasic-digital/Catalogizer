@@ -4,186 +4,163 @@ Essential commands and style guidelines for AI agents working in the Catalogizer
 
 ## Project Overview
 
-Catalogizer is a multi-platform media collection manager with Go backend (catalog-api), React web frontend (catalog-web), Tauri desktop apps, Android apps, and TypeScript API client. Uses submodules for shared libraries.
+Multi-platform media collection manager: **catalog-api** (Go/Gin backend), **catalog-web** (React/TS/Vite), **catalogizer-desktop** & **installer-wizard** (Tauri), **catalogizer-android** & **catalogizer-androidtv** (Kotlin/Compose), **catalogizer-api-client** (TS library).
 
 ## Essential Commands
 
 ### Backend (catalog-api)
 ```bash
 cd catalog-api
-go run main.go                    # dev server (dynamic port, writes .service-port)
-go build -o catalog-api           # build binary
-go test ./...                     # all tests
-go test -v -run TestName ./pkg    # single test
-go test -cover ./...              # coverage
-go fmt ./...                      # format code
-go vet ./...                      # static analysis
-go mod tidy                       # dependencies
+go run main.go                              # dev server (dynamic port, writes .service-port)
+go build -o catalog-api                     # build binary
+go test ./...                               # all tests
+go test -v -run TestFunctionName ./path/    # single test
+go test -cover ./...                        # coverage
+go fmt ./... && go vet ./...                # format + lint
 ```
 
 ### Frontend (catalog-web)
 ```bash
 cd catalog-web
-npm run dev                       # dev server (port 3000)
-npm run build                     # production build
-npm run lint                      # ESLint
-npm run lint:fix                  # auto-fix lint issues
-npm run format                    # Prettier formatting
-npm run type-check                # TypeScript type checking
-npm run test                      # Vitest unit tests
-npm run test:watch                # watch mode
-npm run test:coverage             # coverage report
-npm run test:e2e                  # Playwright E2E tests
-# Single test: `npm run test -- -t "test name"`
+npm run dev                                 # dev server (port 3000)
+npm run build                               # production build (tsc + vite)
+npm run lint                                # ESLint
+npm run lint:fix                            # auto-fix lint issues
+npm run type-check                          # TypeScript check
+npm run test                                # Vitest (single run)
+npm run test -- -t "test name"              # single test
+npm run test:watch                          # watch mode
+npm run test:coverage                       # coverage
+npm run test:e2e                            # Playwright E2E
+npm run test:e2e -- --grep "test title"     # single E2E test
 ```
 
-### Desktop App (catalogizer-desktop)
+### Desktop Apps (Tauri)
 ```bash
-cd catalogizer-desktop
-npm run tauri:dev                 # dev with hot reload
-npm run tauri:build               # build for current platform
-npm run test                      # unit tests
+cd catalogizer-desktop  # or installer-wizard
+npm run tauri:dev       # dev with hot reload
+npm run tauri:build     # build for platform
+npm run test            # unit tests
 ```
 
-### Installer Wizard (installer-wizard)
+### Android
 ```bash
-cd installer-wizard
-npm run tauri:dev
-npm run tauri:build
-npm run test
-npm run test:coverage
-npm run health:check
+cd catalogizer-android  # or catalogizer-androidtv
+./gradlew test          # unit tests
+./gradlew test --tests "*TestClassName"   # single test
+./gradlew assembleDebug                    # debug APK
+./gradlew lintKotlin                      # lint
 ```
 
-### Android Apps
-```bash
-cd catalogizer-android   # or catalogizer-androidtv
-./gradlew assembleDebug   # debug APK
-./gradlew test            # unit tests
-./gradlew lintKotlin      # linting
-./gradlew installDebug    # build and install on emulator
-```
-
-### API Client Library (catalogizer-api-client)
-```bash
-cd catalogizer-api-client
-npm run build
-npm run test
-npm run lint
-```
-
-### Docker/Podman Operations
+### Container Operations
 ```bash
 podman-compose -f docker-compose.dev.yml up   # dev environment
 podman-compose down                           # stop services
-./scripts/services-up.sh                      # start all services
-./scripts/services-down.sh                    # stop all services
+./scripts/services-up.sh                      # start all
+./scripts/services-down.sh                    # stop all
 ```
-
-### Running a Single Test
-- **Go**: `go test -v -run TestFunctionName ./path/to/package`
-- **TypeScript (Vitest)**: `npm run test -- -t "test name"`
-- **Android (JUnit)**: `./gradlew test --tests "*TestClassName"`
-- **Playwright (E2E)**: `npm run test:e2e -- --grep "test title"`
 
 ## Code Style Guidelines
 
 ### Go Backend
-- **Naming**: PascalCase for exported identifiers, camelCase for unexported.
-- **Interfaces**: `Reader`, `Writer`, `Service` suffixes.
+- **Naming**: PascalCase exported, camelCase unexported. Interfaces: `Reader`, `Writer`, `Service` suffixes.
 - **Receivers**: Single-letter (e.g., `s *Service`).
-- **Error handling**: Wrap errors with `fmt.Errorf` and `%w`. Use `errors.New` for simple errors.
-- **Imports**: Group standard library, third-party, local imports separated by blank line.
-- **Formatting**: `go fmt` standard. Use `gofumpt` if available.
-- **Testing**: Table-driven tests with `t.Run` subtests. Use `*_test.go` files beside source.
-- **Documentation**: Export all public functions with doc comments.
+- **Imports**: Group stdlib, third-party, local with blank lines:
+  ```go
+  import (
+      "encoding/json"
+      "net/http"
+      
+      "github.com/gin-gonic/gin"
+      
+      "catalogizer/models"
+  )
+  ```
+- **Error handling**: Wrap with `fmt.Errorf("context: %w", err)`. Use `errors.New` for simple errors.
+- **Testing**: Table-driven tests with `t.Run`. Use `testify/suite` for test suites. Files: `*_test.go` beside source.
+- **Constructors**: `NewService(dep Dependency) *Service` pattern with dependency injection.
+- **Formatting**: `go fmt` (or `gofumpt`). All public functions need doc comments.
 
 ### TypeScript/React Frontend
-- **Naming**: PascalCase for components/interfaces, camelCase for functions/variables, SCREAMING_SNAKE_CASE for constants.
-- **Components**: Functional components with TypeScript interfaces for props.
-- **Imports**: Group React, third-party, local imports. Use path aliases (`@/components`, `@/hooks`).
-- **Formatting**: Prettier with Tailwind plugin. Line length 100.
-- **Linting**: ESLint with React/TypeScript plugins. Rules: no-explicit-any warning, unused vars allowed with underscore prefix.
-- **Error handling**: Use try/catch with proper error types. React Query for API errors.
-- **State management**: React Query for server state, Zustand for client state.
+- **Naming**: PascalCase components/interfaces, camelCase functions/variables, SCREAMING_SNAKE_CASE constants.
+- **Components**: Functional components with TypeScript interfaces:
+  ```tsx
+  interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
+    loading?: boolean
+  }
+  const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
+    ({ className, loading, children, ...props }, ref) => { ... }
+  )
+  ```
+- **Imports**: Group React, third-party, local. Use path aliases:
+  ```tsx
+  import React from 'react'
+  import { cva, type VariantProps } from 'class-variance-authority'
+  import { cn } from '@/lib/utils'
+  ```
+- **Path aliases**: `@/components`, `@/hooks`, `@/lib`, `@/types`, `@/services`, `@/store`, `@/pages`, `@/assets`.
+- **Formatting**: Prettier. Tailwind classes via `cn()` utility from `@/lib/utils`.
+- **Linting**: ESLint with `@typescript-eslint`, `react`, `react-hooks`. Unused vars with `_` prefix allowed.
+- **State**: React Query for server state, Zustand for client state.
+- **Forms**: React Hook Form + Zod validation (`@hookform/resolvers`).
+- **Testing**: Vitest + React Testing Library. Test files: `__tests__/` or `.test.tsx` beside source.
 
 ### Kotlin/Android
-- **Naming**: PascalCase for classes, camelCase for functions/variables.
-- **Architecture**: MVVM with ViewModel, Repository pattern.
-- **Dependency injection**: Hilt.
-- **Coroutines**: Use `suspend` functions and `Flow` for asynchronous operations.
-- **Testing**: JUnit for unit tests, Mockito for mocking.
+- **Naming**: PascalCase classes, camelCase functions/variables.
+- **Architecture**: MVVM with ViewModel, Repository pattern, Hilt DI.
+- **Async**: `suspend` functions, `Flow` for streams, Paging 3 for lists.
+- **Testing**: JUnit, Mockito.
+- **Error handling**: Sealed `Result` classes for operation outcomes.
 
 ## Constraints
 
-**All builds and services MUST use containers.** Use Podman (not Docker). Run builds with `podman run --network host`. Use `podman-compose` for multi-service environments.
+**Container Runtime**: Use Podman exclusively (not Docker). Build with `podman run --network host`.
 
-**GitHub Actions are PERMANENTLY DISABLED.** No CI/CD workflows.
+**GitHub Actions**: PERMANENTLY DISABLED. No CI/CD workflows.
 
-**Host Resource Limits (30‑40% Maximum):**
+**Host Resource Limits (30-40% max)**:
 - Go tests: `GOMAXPROCS=3 go test ./... -p 2 -parallel 2`
-- Container limits: PostgreSQL `--cpus=1 --memory=2g`, API `--cpus=2 --memory=4g`, Web `--cpus=1 --memory=2g`.
-- Total container budget: max 4 CPUs, 8 GB RAM across all containers.
+- Containers: PostgreSQL `--cpus=1 --memory=2g`, API `--cpus=2 --memory=4g`, Web `--cpus=1 --memory=2g`.
+- Total budget: max 4 CPUs, 8 GB RAM.
 
-**HTTP/3 (QUIC) with Brotli Compression (Mandatory):**
-- All network communication must use HTTP/3 (QUIC) with Brotli compression.
-- HTTP/2 with gzip is acceptable fallback. Never HTTP/1.1 in production.
-- Implemented via `quic-go` (Go), HTTP/3-capable reverse proxy (web), Cronet (Android), and Brotli middleware.
+**HTTP/3 (QUIC) with Brotli**: Mandatory for all network communication. Fallback: HTTP/2 + gzip.
 
-## Challenge System
+## Database Dialect
 
-- **Challenge Execution Policy**: All challenge operations MUST be executed exclusively by system deliverables (compiled binaries) — the catalog-api service and other Catalogizer applications. Never use custom scripts, curl commands, or third-party tools to trigger API endpoints within challenge execution.
-- **Running Challenges**: Use the API client built into the catalog-api binary. Challenges are registered in `catalog-api/challenges/register.go` and exposed via `/api/v1/challenges`.
-
-## Quick Development Setup
-
-1. Clone repository (with `--recursive` or run `git submodule init && git submodule update --recursive`) and run `./scripts/install.sh --mode=development`
-2. Backend: `cd catalog-api && go run main.go`
-3. Frontend: `cd catalog-web && npm run dev`
-4. Access: Web UI at http://localhost:3000, API at http://localhost:8080
-
-## Key Files for Reference
-- `catalog-api/main.go` – API server entry point
-- `catalog-api/filesystem/interface.go` – Unified filesystem interface
-- `catalog-web/src/App.tsx` – React root component
-- `catalog-web/vite.config.ts` – Vite configuration with path aliases
-
-## Database Dialect Handling
-
-The project supports both SQLite (development) and PostgreSQL (production). Use the database wrapper for dialect-aware SQL:
-
+SQLite (dev) and PostgreSQL (prod). Use the `database.DB` wrapper:
 ```go
-// Instead of SQLite-specific datetime functions:
-// WRONG: "WHERE created_at > datetime('now', '-24 hours')"
-// RIGHT: Use parameterized time values calculated in Go
-cutoffTime := time.Now().Add(-24 * time.Hour)
-db.Query("SELECT * FROM table WHERE created_at > ?", cutoffTime)
+// Use ? placeholders - auto-converted to $1, $2... for Postgres
+cutoff := time.Now().Add(-24 * time.Hour)
+db.Query("SELECT * FROM table WHERE created_at > ?", cutoff)
 
-// For dialect-aware date expressions:
-durationExpr := "(julianday(MAX(t)) - julianday(MIN(t))) * 24 * 60 * 60"
+// Dialect-specific expressions
 if db.Dialect().IsPostgres() {
-    durationExpr = "EXTRACT(EPOCH FROM (MAX(t) - MIN(t)))"
+    expr = "EXTRACT(EPOCH FROM (MAX(t) - MIN(t)))"
+} else {
+    expr = "(julianday(MAX(t)) - julianday(MIN(t))) * 86400"
 }
 ```
 
-Key patterns:
-- Always use `?` placeholders - the database wrapper converts to `$1, $2, ...` for PostgreSQL
-- Use Go's `time` package for date arithmetic instead of SQL datetime functions
-- Check `db.Dialect().IsPostgres()` for database-specific expressions
-- The `database.DB` wrapper handles `INSERT OR IGNORE` → `ON CONFLICT DO NOTHING` conversion
+## Challenge System
 
-## Test Coverage Guidelines
+All challenge operations executed by compiled binaries only (catalog-api service). Never use curl/scripts for API endpoints. Challenges registered in `catalog-api/challenges/register.go`.
 
-Current coverage targets:
-- services: 27% (target: 95%)
-- repository: 53% (target: 95%)
-- handlers: ~30% (target: 95%)
+## Quick Setup
 
-Testing patterns:
-- Repository tests use sqlmock for database mocking
-- Service tests use direct struct creation for helper functions
-- Integration tests require actual database connections
-- Use `database.WrapDB(sqlDB, dialect)` for test databases
-- `catalogizer-android/app/src/main/java/com/catalogizer/android/CatalogizerApplication.kt` – Android entry
+1. `git submodule init && git submodule update --recursive`
+2. Backend: `cd catalog-api && go run main.go`
+3. Frontend: `cd catalog-web && npm run dev`
+4. Access: http://localhost:3000 (web), http://localhost:8080 (API)
 
-**Note**: Always run linting and type checking before committing. Ensure zero console warnings/errors.
+## Key Files
+- `catalog-api/main.go` - API entry point
+- `catalog-api/filesystem/interface.go` - Unified filesystem interface
+- `catalog-web/src/App.tsx` - React root
+- `catalog-web/vite.config.ts` - Path aliases, proxy config
+
+## Pre-Commit Checklist
+
+Run linting and type checking before committing:
+- Go: `go fmt ./... && go vet ./...`
+- TypeScript: `npm run lint && npm run type-check`
+- Ensure zero console warnings/errors in browser
