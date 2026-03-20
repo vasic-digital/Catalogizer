@@ -161,9 +161,9 @@ export const MediaDistributionChart: React.FC<MediaDistributionChartProps> = ({
             </Pie>
             <Tooltip content={<CustomTooltip />} />
             <Legend 
-              formatter={(value, entry: { color?: string; payload?: MediaDistributionData }) => (
+              formatter={(value: string, entry: any) => (
                 <span style={{ color: entry.color }}>
-                  {value}: {entry.payload?.value.toLocaleString()}
+                  {value}: {entry?.payload?.value?.toLocaleString()}
                 </span>
               )}
               verticalAlign="bottom"

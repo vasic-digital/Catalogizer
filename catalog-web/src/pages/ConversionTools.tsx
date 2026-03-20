@@ -22,7 +22,7 @@ export const ConversionTools: React.FC = () => {
     }
   }, [data]);
 
-  const handleStartConversion = async (jobData: Record<string, unknown>) => {
+  const handleStartConversion = async (jobData: Omit<ConversionJob, 'id' | 'status' | 'progress'>) => {
     try {
       const newJob = await conversionApi.startConversion(jobData);
       setJobs(prev => [newJob, ...prev]);

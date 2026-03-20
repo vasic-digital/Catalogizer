@@ -237,8 +237,8 @@ export const SmartCollectionBuilder: React.FC<SmartCollectionBuilderProps> = ({
         matched_items: 87,
         sample_items: [
           { id: '1', title: 'Sample Song 1', artist: 'Artist A', media_type: 'music' },
-          { id: '2', title: 'Sample Movie 1', director: 'Director B', media_type: 'video' },
-          { id: '3', title: 'Sample Image 1', filename: 'image.jpg', media_type: 'image' },
+          { id: '2', title: 'Sample Movie 1', artist: 'Director B', media_type: 'video' },
+          { id: '3', title: 'Sample Image 1', artist: 'image.jpg', media_type: 'image' },
         ],
         performance_ms: 245,
       });

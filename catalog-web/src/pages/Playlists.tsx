@@ -197,7 +197,7 @@ export const PlaylistsPage: React.FC = () => {
     setMediaSearchResults([]);
   };
 
-  const handleFormChange = (field: keyof CreatePlaylistFormData, value: string | boolean | MediaItem[]) => {
+  const handleFormChange = (field: keyof CreatePlaylistFormData, value: string | boolean | MediaItem[] | PlaylistItem[]) => {
     setFormData(prev => ({ ...prev, [field]: value }));
   };
 
