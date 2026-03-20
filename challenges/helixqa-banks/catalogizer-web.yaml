@@ -1,0 +1,166 @@
+name: "Catalogizer Web UI Test Suite"
+description: "Comprehensive UI testing for catalog-web application"
+version: "1.0.0"
+platforms:
+  - web
+
+tests:
+  - id: "web-home-load"
+    name: "Home Page Load"
+    description: "Verify web app loads without errors"
+    platform: web
+    priority: critical
+    steps:
+      - action: navigate
+        target: "${WEB_URL:-http://localhost:3000}"
+        assertions:
+          - page_loaded: true
+          - element_exists: "[data-testid='app-container']"
+          - console_errors: 0
+          - network_errors: 0
+          - load_time_ms: < 5000
+
+  - id: "web-login-flow"
+    name: "Login Flow"
+    description: "Test user login process"
+    platform: web
+    priority: critical
+    steps:
+      - action: navigate
+        target: "${WEB_URL:-http://localhost:3000}/login"
+      - action: input
+        target: "#username"
+        value: "admin"
+      - action: input
+        target: "#password"
+        value: "${ADMIN_PASSWORD:-admin123}"
+      - action: click
+        target: "[data-testid='login-button']"
+      - action: wait
+        duration: 2000
+        assertions:
+          - url_contains: "/dashboard"
+          - element_exists: "[data-testid='user-menu']"
+          - console_errors: 0
+
+  - id: "web-dashboard"
+    name: "Dashboard Display"
+    description: "Verify dashboard renders correctly"
+    platform: web
+    priority: high
+    steps:
+      - action: navigate
+        target: "${WEB_URL:-http://localhost:3000}/dashboard"
+        assertions:
+          - element_exists: "[data-testid='dashboard-container']"
+          - element_count:
+              selector: "[data-testid='stat-card']"
+              min: 1
+          - console_errors: 0
+
+  - id: "web-browse-entities"
+    name: "Entity Browser"
+    description: "Test entity browsing functionality"
+    platform: web
+    priority: high
+    steps:
+      - action: navigate
+        target: "${WEB_URL:-http://localhost:3000}/browse"
+      - action: wait
+        duration: 1000
+        assertions:
+          - element_exists: "[data-testid='entity-grid']"
+          - element_count:
+              selector: "[data-testid='entity-card']"
+              min: 0
+          - network_errors: 0
+
+  - id: "web-search"
+    name: "Search Functionality"
+    description: "Test search interface"
+    platform: web
+    priority: high
+    steps:
+      - action: navigate
+        target: "${WEB_URL:-http://localhost:3000}/browse"
+      - action: input
+        target: "[data-testid='search-input']"
+        value: "test"
+      - action: wait
+        duration: 500
+        assertions:
+          - network_errors: 0
+
+  - id: "web-collections"
+    name: "Collections Page"
+    description: "Verify collections management"
+    platform: web
+    priority: medium
+    steps:
+      - action: navigate
+        target: "${WEB_URL:-http://localhost:3000}/collections"
+        assertions:
+          - element_exists: "[data-testid='collections-container']"
+          - console_errors: 0
+
+  - id: "web-settings"
+    name: "Settings Page"
+    description: "Test settings interface"
+    platform: web
+    priority: medium
+    steps:
+      - action: navigate
+        target: "${WEB_URL:-http://localhost:3000}/settings"
+        assertions:
+          - element_exists: "[data-testid='settings-form']"
+          - console_errors: 0
+
+  - id: "web-responsive-mobile"
+    name: "Mobile Responsive"
+    description: "Verify mobile viewport rendering"
+    platform: web
+    priority: medium
+    steps:
+      - action: set_viewport
+        width: 375
+        height: 667
+      - action: navigate
+        target: "${WEB_URL:-http://localhost:3000}"
+        assertions:
+          - element_exists: "[data-testid='mobile-nav']"
+          - no_horizontal_scroll: true
+
+  - id: "web-dark-mode"
+    name: "Dark Mode Toggle"
+    description: "Test theme switching"
+    platform: web
+    priority: low
+    steps:
+      - action: navigate
+        target: "${WEB_URL:-http://localhost:3000}"
+      - action: click
+        target: "[data-testid='theme-toggle']"
+      - action: wait
+        duration: 500
+        assertions:
+          - element_attribute:
+              selector: "html"
+              attribute: "class"
+              contains: "dark"
+
+  - id: "web-websocket-indicator"
+    name: "WebSocket Status"
+    description: "Verify real-time connection indicator"
+    platform: web
+    priority: high
+    steps:
+      - action: navigate
+        target: "${WEB_URL:-http://localhost:3000}"
+      - action: wait
+        duration: 3000
+        assertions:
+          - element_exists: "[data-testid='connection-status']"
+          - element_attribute:
+              selector: "[data-testid='connection-status']"
+              attribute: "data-connected"
+              expected: "true"

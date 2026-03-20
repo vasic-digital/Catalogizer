@@ -1,0 +1,92 @@
+name: "Catalogizer Integration Tests"
+description: "End-to-end integration tests across all platforms"
+version: "1.0.0"
+platforms:
+  - api
+  - web
+  - desktop
+  - android
+
+tests:
+  - id: "integration-api-to-web"
+    name: "API-Web Integration"
+    description: "Verify web app communicates with API correctly"
+    platform: web
+    priority: critical
+    steps:
+      - action: navigate
+        target: "${WEB_URL:-http://localhost:3000}/login"
+      - action: input
+        target: "#username"
+        value: "admin"
+      - action: input
+        target: "#password"
+        value: "${ADMIN_PASSWORD:-admin123}"
+      - action: click
+        target: "[data-testid='login-button']"
+      - action: wait
+        duration: 2000
+        assertions:
+          - url_contains: "/dashboard"
+          - local_storage:
+              key: "auth_token"
+              not_empty: true
+
+  - id: "integration-crud-operations"
+    name: "Full CRUD Cycle"
+    description: "Test create, read, update, delete operations"
+    platform: api
+    priority: high
+    steps:
+      - action: http_post
+        target: "${API_URL:-http://localhost:8080}/api/v1/collections"
+        headers:
+          Authorization: "Bearer ${api_token}"
+        body:
+          name: "Test Collection"
+          description: "Created by HelixQA"
+        save_response:
+          collection_id: "$.id"
+        assertions:
+          - status_code: 201
+      - action: http_get
+        target: "${API_URL:-http://localhost:8080}/api/v1/collections/${collection_id}"
+        headers:
+          Authorization: "Bearer ${api_token}"
+        assertions:
+          - status_code: 200
+          - json_path: "$.name"
+            contains: "Test Collection"
+      - action: http_delete
+        target: "${API_URL:-http://localhost:8080}/api/v1/collections/${collection_id}"
+        headers:
+          Authorization: "Bearer ${api_token}"
+        assertions:
+          - status_code: 204
+
+  - id: "integration-desktop-api"
+    name: "Desktop-API Integration"
+    description: "Verify desktop app uses API correctly"
+    platform: desktop
+    priority: high
+    steps:
+      - action: launch_app
+        target: "catalogizer-desktop"
+      - action: wait
+        duration: 2000
+        assertions:
+          - api_connected: true
+
+  - id: "integration-android-api"
+    name: "Android-API Integration"
+    description: "Verify Android app connects to API"
+    platform: android
+    priority: high
+    steps:
+      - action: launch_app
+        package: "com.catalogizer.android"
+        activity: ".MainActivity"
+      - action: wait
+        duration: 3000
+        assertions:
+          - api_connected: true

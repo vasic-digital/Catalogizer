@@ -1,0 +1,122 @@
+name: "Catalogizer Desktop Test Suite"
+description: "Comprehensive testing for Tauri desktop applications"
+version: "1.0.0"
+platforms:
+  - desktop
+
+tests:
+  - id: "desktop-app-launch"
+    name: "Application Launch"
+    description: "Verify desktop app starts correctly"
+    platform: desktop
+    priority: critical
+    steps:
+      - action: launch_app
+        target: "catalogizer-desktop"
+        assertions:
+          - window_visible: true
+          - process_running: true
+          - startup_time_ms: < 10000
+
+  - id: "desktop-window-size"
+    name: "Window Dimensions"
+    description: "Verify default window size"
+    platform: desktop
+    priority: medium
+    steps:
+      - action: get_window_size
+        assertions:
+          - width: ">= 800"
+          - height: ">= 600"
+
+  - id: "desktop-api-connection"
+    name: "API Connection"
+    description: "Test connection to catalog-api"
+    platform: desktop
+    priority: critical
+    steps:
+      - action: wait
+        duration: 2000
+        assertions:
+          - api_connected: true
+          - element_exists: "[data-testid='connection-status'][data-connected='true']"
+
+  - id: "desktop-file-dialog"
+    name: "File Dialog"
+    description: "Test native file dialog integration"
+    platform: desktop
+    priority: high
+    steps:
+      - action: click
+        target: "[data-testid='add-storage-root']"
+      - action: wait
+        duration: 500
+        assertions:
+          - dialog_open: true
+
+  - id: "desktop-system-tray"
+    name: "System Tray"
+    description: "Verify system tray integration"
+    platform: desktop
+    priority: medium
+    steps:
+      - action: check_tray_icon
+        assertions:
+          - tray_icon_visible: true
+
+  - id: "desktop-menu-file"
+    name: "File Menu"
+    description: "Test native menu access"
+    platform: desktop
+    priority: medium
+    steps:
+      - action: click_menu
+        target: "File"
+        assertions:
+          - menu_visible: true
+          - menu_items:
+              - "New Window"
+              - "Preferences"
+              - "Quit"
+
+  - id: "desktop-autoupdate-check"
+    name: "Auto-update Check"
+    description: "Verify update mechanism"
+    platform: desktop
+    priority: low
+    steps:
+      - action: click_menu
+        target: "Help"
+      - action: click
+        target: "Check for Updates"
+        assertions:
+          - dialog_visible: true
+
+  - id: "installer-wizard-launch"
+    name: "Installer Wizard Launch"
+    description: "Verify installer wizard starts"
+    platform: desktop
+    priority: high
+    steps:
+      - action: launch_app
+        target: "installer-wizard"
+        assertions:
+          - window_visible: true
+          - startup_time_ms: < 5000
+
+  - id: "installer-wizard-steps"
+    name: "Installation Flow"
+    description: "Test wizard navigation"
+    platform: desktop
+    priority: high
+    steps:
+      - action: launch_app
+        target: "installer-wizard"
+      - action: click
+        target: "[data-testid='next-button']"
+        assertions:
+          - element_exists: "[data-testid='step-2']"
+      - action: click
+        target: "[data-testid='back-button']"
+        assertions:
+          - element_exists: "[data-testid='step-1']"
