@@ -1,0 +1,36 @@
+version: "1.0"
+name: "Catalogizer Android Tests"
+description: "Core tests for Catalogizer Android application"
+test_cases:
+  - id: android-app-launch
+    name: "App Launch"
+    category: functional
+    priority: critical
+    platforms:
+      - android
+    steps:
+      - name: "Start app"
+        action: "Launch Catalogizer app from launcher"
+        expected: "Main activity displays within 3 seconds"
+  
+  - id: android-login
+    name: "User Login"
+    category: authentication
+    priority: critical
+    platforms:
+      - android
+    steps:
+      - name: "Enter credentials"
+        action: "Enter username and password, tap login"
+        expected: "Navigation to main screen"
+  
+  - id: android-media-list
+    name: "Media List Display"
+    category: functional
+    priority: high
+    platforms:
+      - android
+    steps:
+      - name: "View media"
+        action: "Navigate to media list screen"
+        expected: "RecyclerView with media items"

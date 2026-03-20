@@ -1,0 +1,58 @@
+version: "1.0"
+name: "Catalogizer API Tests"
+description: "Core API endpoint tests for Catalogizer backend"
+test_cases:
+  - id: api-health-check
+    name: "Health Check"
+    category: functional
+    priority: critical
+    platforms:
+      - api
+    steps:
+      - name: "Check API health"
+        action: "GET /api/v1/health"
+        expected: "200 OK with status healthy"
+  
+  - id: api-auth-login
+    name: "User Login"
+    category: authentication
+    priority: critical
+    platforms:
+      - api
+    steps:
+      - name: "Authenticate user"
+        action: "POST /api/v1/auth/login with valid credentials"
+        expected: "200 OK with JWT token"
+  
+  - id: api-list-catalogs
+    name: "List Catalogs"
+    category: functional
+    priority: high
+    platforms:
+      - api
+    steps:
+      - name: "Get catalog list"
+        action: "GET /api/v1/catalogs with auth header"
+        expected: "200 OK with catalog array"
+  
+  - id: api-scan-directory
+    name: "Directory Scan"
+    category: functional
+    priority: high
+    platforms:
+      - api
+    steps:
+      - name: "Start directory scan"
+        action: "POST /api/v1/scan with directory path"
+        expected: "202 Accepted with scan job ID"
+  
+  - id: api-websocket-connect
+    name: "WebSocket Connection"
+    category: functional
+    priority: medium
+    platforms:
+      - api
+    steps:
+      - name: "Connect to WebSocket"
+        action: "WebSocket handshake to /ws endpoint"
+        expected: "101 Switching Protocols"

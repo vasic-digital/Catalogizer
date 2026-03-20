@@ -1,0 +1,36 @@
+version: "1.0"
+name: "Catalogizer Desktop Tests"
+description: "Core tests for Catalogizer desktop application"
+test_cases:
+  - id: desktop-app-launch
+    name: "Application Launch"
+    category: functional
+    priority: critical
+    platforms:
+      - desktop
+    steps:
+      - name: "Start application"
+        action: "Launch catalogizer-desktop binary"
+        expected: "Main window appears within 5 seconds"
+  
+  - id: desktop-settings
+    name: "Settings Access"
+    category: functional
+    priority: high
+    platforms:
+      - desktop
+    steps:
+      - name: "Open settings"
+        action: "Click settings menu item"
+        expected: "Settings dialog appears"
+  
+  - id: desktop-file-picker
+    name: "File Picker"
+    category: functional
+    priority: high
+    platforms:
+      - desktop
+    steps:
+      - name: "Select directory"
+        action: "Open native file picker for directory selection"
+        expected: "System file dialog appears"
