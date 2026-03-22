@@ -1,90 +1,306 @@
 package handlers
 
 import (
+	"context"
 	"encoding/json"
-	"log"
 	"net/http"
 	"sync"
 	"time"
 
 	"github.com/gin-gonic/gin"
 	"github.com/gorilla/websocket"
+	"go.uber.org/zap"
 )
 
-// wsConn wraps a websocket.Conn with a write mutex to prevent concurrent writes.
+// WebSocketConfig holds configuration for the WebSocket handler
+type WebSocketConfig struct {
+	MaxConnections    int
+	ReadBufferSize    int
+	WriteBufferSize   int
+	PingInterval      time.Duration
+	PongWait          time.Duration
+	WriteWait         time.Duration
+	MaxMessageSize    int64
+	EnableCompression bool
+}
+
+// DefaultWebSocketConfig returns default configuration
+func DefaultWebSocketConfig() WebSocketConfig {
+	return WebSocketConfig{
+		MaxConnections:    1000,
+		ReadBufferSize:    1024,
+		WriteBufferSize:   1024,
+		PingInterval:      30 * time.Second,
+		PongWait:          60 * time.Second,
+		WriteWait:         10 * time.Second,
+		MaxMessageSize:    512 * 1024, // 512KB
+		EnableCompression: false,
+	}
+}
+
+// wsConn wraps a websocket.Conn with thread-safe operations and lifecycle management.
 // gorilla/websocket connections do not support concurrent writers, so all
 // WriteMessage calls must be serialized per connection.
 type wsConn struct {
-	conn *websocket.Conn
-	wmu  sync.Mutex
+	conn      *websocket.Conn
+	wmu       sync.Mutex
+	id        string
+	connected time.Time
+	lastPing  time.Time
+	send      chan []byte
+	done      chan struct{}
+	logger    *zap.Logger
 }
 
-// writeMessage safely writes a message to the WebSocket connection.
+// writeMessage safely writes a message to the WebSocket connection with timeout.
 func (wc *wsConn) writeMessage(messageType int, data []byte) error {
 	wc.wmu.Lock()
 	defer wc.wmu.Unlock()
+
+	// Set write deadline
+	wc.conn.SetWriteDeadline(time.Now().Add(10 * time.Second))
+	defer wc.conn.SetWriteDeadline(time.Time{})
+
 	return wc.conn.WriteMessage(messageType, data)
+}
+
+// close safely closes the WebSocket connection.
+func (wc *wsConn) close() {
+	wc.wmu.Lock()
+	defer wc.wmu.Unlock()
+
+	select {
+	case <-wc.done:
+		// Already closed
+	default:
+		close(wc.done)
+	}
+
+	wc.conn.Close()
 }
 
 // WebSocketHandler manages WebSocket connections for real-time updates.
 type WebSocketHandler struct {
 	clients  map[*wsConn]bool
-	mu       sync.Mutex
+	mu       sync.RWMutex
 	upgrader *websocket.Upgrader
+	config   WebSocketConfig
+	logger   *zap.Logger
+
+	// Connection management
+	connCount  int64
+	maxReached int64
+
+	// Cleanup
+	ticker   *time.Ticker
+	stopChan chan struct{}
+	wg       sync.WaitGroup
 }
 
-// NewWebSocketHandler creates a new WebSocket handler.
-func NewWebSocketHandler() *WebSocketHandler {
-	return &WebSocketHandler{
-		clients: make(map[*wsConn]bool),
+// NewWebSocketHandler creates a new WebSocket handler with lifecycle management.
+func NewWebSocketHandler(logger *zap.Logger) *WebSocketHandler {
+	return NewWebSocketHandlerWithConfig(logger, DefaultWebSocketConfig())
+}
+
+// NewWebSocketHandlerWithConfig creates a new WebSocket handler with custom configuration.
+func NewWebSocketHandlerWithConfig(logger *zap.Logger, config WebSocketConfig) *WebSocketHandler {
+	if logger == nil {
+		logger = zap.NewNop()
+	}
+
+	h := &WebSocketHandler{
+		clients:  make(map[*wsConn]bool),
+		config:   config,
+		logger:   logger,
+		stopChan: make(chan struct{}),
 		upgrader: &websocket.Upgrader{
-			ReadBufferSize:  1024,
-			WriteBufferSize: 1024,
+			ReadBufferSize:  config.ReadBufferSize,
+			WriteBufferSize: config.WriteBufferSize,
 			CheckOrigin: func(r *http.Request) bool {
 				return true // Allow all origins in development
 			},
+			EnableCompression: config.EnableCompression,
 		},
+	}
+
+	// Start cleanup goroutine
+	h.ticker = time.NewTicker(config.PingInterval)
+	h.wg.Add(1)
+	go h.cleanupLoop()
+
+	logger.Info("WebSocket handler created",
+		zap.Int("max_connections", config.MaxConnections),
+		zap.Duration("ping_interval", config.PingInterval))
+
+	return h
+}
+
+// Stop gracefully shuts down the WebSocket handler.
+func (h *WebSocketHandler) Stop() {
+	h.logger.Info("Stopping WebSocket handler")
+
+	// Signal stop
+	close(h.stopChan)
+
+	// Stop ticker
+	h.ticker.Stop()
+
+	// Close all connections
+	h.mu.Lock()
+	clients := make([]*wsConn, 0, len(h.clients))
+	for wc := range h.clients {
+		clients = append(clients, wc)
+	}
+	h.mu.Unlock()
+
+	for _, wc := range clients {
+		wc.close()
+	}
+
+	// Wait for cleanup goroutine
+	h.wg.Wait()
+
+	h.logger.Info("WebSocket handler stopped")
+}
+
+// cleanupLoop periodically cleans up stale connections.
+func (h *WebSocketHandler) cleanupLoop() {
+	defer h.wg.Done()
+
+	for {
+		select {
+		case <-h.ticker.C:
+			h.cleanupStaleConnections()
+		case <-h.stopChan:
+			return
+		}
 	}
 }
 
+// cleanupStaleConnections removes connections that haven't responded to pings.
+func (h *WebSocketHandler) cleanupStaleConnections() {
+	h.mu.Lock()
+	defer h.mu.Unlock()
+
+	now := time.Now()
+	stale := make([]*wsConn, 0)
+
+	for wc := range h.clients {
+		if now.Sub(wc.lastPing) > h.config.PongWait {
+			stale = append(stale, wc)
+		}
+	}
+
+	for _, wc := range stale {
+		delete(h.clients, wc)
+		wc.close()
+		h.connCount--
+	}
+
+	if len(stale) > 0 {
+		h.logger.Info("Cleaned up stale WebSocket connections",
+			zap.Int("count", len(stale)),
+			zap.Int64("active", h.connCount))
+	}
+}
+
+// GetStats returns WebSocket connection statistics.
+func (h *WebSocketHandler) GetStats() WebSocketStats {
+	h.mu.RLock()
+	defer h.mu.RUnlock()
+
+	return WebSocketStats{
+		ActiveConnections: int64(len(h.clients)),
+		MaxConnections:    int64(h.config.MaxConnections),
+		MaxReached:        h.maxReached,
+	}
+}
+
+// WebSocketStats holds connection statistics.
+type WebSocketStats struct {
+	ActiveConnections int64
+	MaxConnections    int64
+	MaxReached        int64
+}
+
 // HandleConnection upgrades an HTTP request to a WebSocket connection
-// and manages the connection lifecycle.
+// and manages the connection lifecycle with proper cleanup.
 func (h *WebSocketHandler) HandleConnection(c *gin.Context) {
+	// Check connection limit
+	h.mu.Lock()
+	if len(h.clients) >= h.config.MaxConnections {
+		h.mu.Unlock()
+		h.logger.Warn("WebSocket connection limit reached",
+			zap.Int("limit", h.config.MaxConnections))
+		c.JSON(http.StatusServiceUnavailable, gin.H{
+			"error":       "Server at capacity",
+			"retry_after": 30,
+		})
+		return
+	}
+	h.mu.Unlock()
+
 	conn, err := h.upgrader.Upgrade(c.Writer, c.Request, nil)
 	if err != nil {
-		log.Printf("WebSocket upgrade failed: %v", err)
+		h.logger.Error("WebSocket upgrade failed", zap.Error(err))
 		return
 	}
 
-	wc := &wsConn{conn: conn}
+	// Configure connection
+	conn.SetReadLimit(h.config.MaxMessageSize)
+	conn.SetReadDeadline(time.Now().Add(h.config.PongWait))
+	conn.SetPongHandler(func(string) error {
+		conn.SetReadDeadline(time.Now().Add(h.config.PongWait))
+		return nil
+	})
+
+	wc := &wsConn{
+		conn:      conn,
+		id:        generateConnID(),
+		connected: time.Now(),
+		lastPing:  time.Now(),
+		send:      make(chan []byte, 256),
+		done:      make(chan struct{}),
+		logger:    h.logger,
+	}
 
 	h.mu.Lock()
 	h.clients[wc] = true
+	h.connCount++
+	if h.connCount > h.maxReached {
+		h.maxReached = h.connCount
+	}
 	h.mu.Unlock()
 
+	h.logger.Info("WebSocket client connected",
+		zap.String("id", wc.id),
+		zap.Int64("active", h.connCount))
+
+	// Start goroutines for reading and writing
+	go h.writePump(wc)
+	h.readPump(wc)
+}
+
+// readPump pumps messages from the WebSocket connection to the hub.
+func (h *WebSocketHandler) readPump(wc *wsConn) {
 	defer func() {
-		h.mu.Lock()
-		delete(h.clients, wc)
-		h.mu.Unlock()
-		conn.Close()
+		h.removeClient(wc)
+		wc.close()
 	}()
 
-	// Send welcome message
-	welcome := map[string]interface{}{
-		"type":      "connected",
-		"timestamp": time.Now().UTC().Format(time.RFC3339),
-		"message":   "Connected to Catalogizer real-time updates",
-	}
-	if data, err := json.Marshal(welcome); err == nil {
-		wc.writeMessage(websocket.TextMessage, data)
-	}
+	wc.conn.SetReadLimit(h.config.MaxMessageSize)
+	wc.conn.SetReadDeadline(time.Now().Add(h.config.PongWait))
+	wc.conn.SetPongHandler(func(string) error {
+		wc.lastPing = time.Now()
+		wc.conn.SetReadDeadline(time.Now().Add(h.config.PongWait))
+		return nil
+	})
 
-	// Read loop - handle incoming messages
 	for {
-		messageType, message, err := conn.ReadMessage()
+		messageType, message, err := wc.conn.ReadMessage()
 		if err != nil {
 			if websocket.IsUnexpectedCloseError(err, websocket.CloseGoingAway, websocket.CloseNormalClosure) {
-				log.Printf("WebSocket error: %v", err)
+				h.logger.Error("WebSocket error", zap.Error(err), zap.String("id", wc.id))
 			}
 			break
 		}
@@ -95,32 +311,134 @@ func (h *WebSocketHandler) HandleConnection(c *gin.Context) {
 	}
 }
 
+// writePump pumps messages from the hub to the WebSocket connection.
+func (h *WebSocketHandler) writePump(wc *wsConn) {
+	ticker := time.NewTicker(h.config.PingInterval)
+	defer func() {
+		ticker.Stop()
+		wc.close()
+	}()
+
+	for {
+		select {
+		case message, ok := <-wc.send:
+			wc.conn.SetWriteDeadline(time.Now().Add(h.config.WriteWait))
+			if !ok {
+				wc.conn.WriteMessage(websocket.CloseMessage, []byte{})
+				return
+			}
+
+			if err := wc.writeMessage(websocket.TextMessage, message); err != nil {
+				h.logger.Error("WebSocket write error", zap.Error(err), zap.String("id", wc.id))
+				return
+			}
+
+		case <-ticker.C:
+			wc.conn.SetWriteDeadline(time.Now().Add(h.config.WriteWait))
+			if err := wc.conn.WriteMessage(websocket.PingMessage, nil); err != nil {
+				return
+			}
+
+		case <-wc.done:
+			return
+
+		case <-h.stopChan:
+			return
+		}
+	}
+}
+
+// removeClient removes a client from the hub.
+func (h *WebSocketHandler) removeClient(wc *wsConn) {
+	h.mu.Lock()
+	defer h.mu.Unlock()
+
+	if _, ok := h.clients[wc]; ok {
+		delete(h.clients, wc)
+		h.connCount--
+
+		h.logger.Info("WebSocket client disconnected",
+			zap.String("id", wc.id),
+			zap.Int64("active", h.connCount))
+	}
+}
+
+// generateConnID generates a unique connection ID.
+func generateConnID() string {
+	return time.Now().Format("20060102150405") + "-" + randomString(8)
+}
+
+// randomString generates a random string of specified length.
+func randomString(n int) string {
+	const letters = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
+	b := make([]byte, n)
+	for i := range b {
+		b[i] = letters[time.Now().UnixNano()%int64(len(letters))]
+	}
+	return string(b)
+}
+
 // BroadcastToClients sends a message to all connected WebSocket clients.
 func (h *WebSocketHandler) BroadcastToClients(msg map[string]interface{}) {
 	data, err := json.Marshal(msg)
 	if err != nil {
+		h.logger.Error("Failed to marshal broadcast message", zap.Error(err))
 		return
 	}
 
 	// Snapshot client list under lock, then release before writing
-	h.mu.Lock()
+	h.mu.RLock()
 	clients := make([]*wsConn, 0, len(h.clients))
 	for wc := range h.clients {
 		clients = append(clients, wc)
 	}
-	h.mu.Unlock()
+	h.mu.RUnlock()
 
 	for _, wc := range clients {
-		if err := wc.writeMessage(websocket.TextMessage, data); err != nil {
-			log.Printf("WebSocket broadcast error: %v", err)
+		select {
+		case wc.send <- data:
+		default:
+			// Client send buffer full, skip
+			h.logger.Warn("WebSocket client send buffer full, dropping message",
+				zap.String("id", wc.id))
 		}
 	}
+}
+
+// BroadcastToClientsContext sends a message with context cancellation support.
+func (h *WebSocketHandler) BroadcastToClientsContext(ctx context.Context, msg map[string]interface{}) error {
+	data, err := json.Marshal(msg)
+	if err != nil {
+		return err
+	}
+
+	// Snapshot client list
+	h.mu.RLock()
+	clients := make([]*wsConn, 0, len(h.clients))
+	for wc := range h.clients {
+		clients = append(clients, wc)
+	}
+	h.mu.RUnlock()
+
+	// Send with context
+	for _, wc := range clients {
+		select {
+		case <-ctx.Done():
+			return ctx.Err()
+		case wc.send <- data:
+		default:
+			// Buffer full
+		}
+	}
+
+	return nil
 }
 
 // handleMessage processes incoming WebSocket messages.
 func (h *WebSocketHandler) handleMessage(wc *wsConn, message []byte) {
 	var msg map[string]interface{}
 	if err := json.Unmarshal(message, &msg); err != nil {
+		h.logger.Error("Failed to unmarshal WebSocket message", zap.Error(err))
 		return
 	}
 
@@ -134,8 +452,12 @@ func (h *WebSocketHandler) handleMessage(wc *wsConn, message []byte) {
 			"timestamp": time.Now().UTC().Format(time.RFC3339),
 		}
 		if data, err := json.Marshal(ack); err == nil {
-			wc.writeMessage(websocket.TextMessage, data)
+			select {
+			case wc.send <- data:
+			default:
+			}
 		}
+
 	case "unsubscribe":
 		channel, _ := msg["channel"].(string)
 		ack := map[string]interface{}{
@@ -144,15 +466,28 @@ func (h *WebSocketHandler) handleMessage(wc *wsConn, message []byte) {
 			"timestamp": time.Now().UTC().Format(time.RFC3339),
 		}
 		if data, err := json.Marshal(ack); err == nil {
-			wc.writeMessage(websocket.TextMessage, data)
+			select {
+			case wc.send <- data:
+			default:
+			}
 		}
+
 	case "ping":
+		wc.lastPing = time.Now()
 		pong := map[string]interface{}{
 			"type":      "pong",
 			"timestamp": time.Now().UTC().Format(time.RFC3339),
 		}
 		if data, err := json.Marshal(pong); err == nil {
-			wc.writeMessage(websocket.TextMessage, data)
+			select {
+			case wc.send <- data:
+			default:
+			}
 		}
+
+	default:
+		h.logger.Warn("Unknown WebSocket message type",
+			zap.String("type", msgType),
+			zap.String("id", wc.id))
 	}
 }
