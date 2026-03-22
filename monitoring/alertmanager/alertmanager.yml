@@ -1,0 +1,24 @@
+global:
+  smtp_smarthost: 'localhost:587'
+  smtp_from: 'alertmanager@catalogizer.local'
+
+route:
+  receiver: 'default'
+  group_by: ['alertname', 'severity']
+  group_wait: 10s
+  group_interval: 5m
+  repeat_interval: 12h
+
+receivers:
+  - name: 'default'
+    email_configs:
+      - to: 'admin@catalogizer.local'
+        headers:
+          Subject: 'Catalogizer Alert: {{ .GroupLabels.alertname }}'
+
+inhibit_rules:
+  - source_match:
+      severity: 'critical'
+    target_match:
+      severity: 'warning'
+    equal: ['alertname']

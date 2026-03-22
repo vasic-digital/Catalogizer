@@ -1,0 +1,62 @@
+groups:
+  - name: catalogizer-alerts
+    rules:
+      # High Error Rate
+      - alert: HighErrorRate
+        expr: sum(rate(http_requests_total{status=~"5.."}[5m])) / sum(rate(http_requests_total[5m])) > 0.05
+        for: 5m
+        labels:
+          severity: critical
+        annotations:
+          summary: "High error rate detected"
+          description: "Error rate is above 5% for more than 5 minutes"
+
+      # High Latency
+      - alert: HighLatency
+        expr: histogram_quantile(0.95, sum(rate(http_request_duration_seconds_bucket[5m])) by (le)) > 1
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High latency detected"
+          description: "P95 latency is above 1 second"
+
+      # Low Cache Hit Ratio
+      - alert: LowCacheHitRatio
+        expr: sum(rate(cache_hits_total[5m])) / (sum(rate(cache_hits_total[5m])) + sum(rate(cache_misses_total[5m]))) < 0.5
+        for: 10m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Low cache hit ratio"
+          description: "Cache hit ratio is below 50%"
+
+      # High Memory Usage
+      - alert: HighMemoryUsage
+        expr: memory_usage_bytes / 1024 / 1024 / 1024 > 4
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High memory usage"
+          description: "Memory usage is above 4GB"
+
+      # Too Many Goroutines
+      - alert: TooManyGoroutines
+        expr: goroutines_count > 1000
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High goroutine count"
+          description: "Number of goroutines is above 1000"
+
+      # Database Connection Issues
+      - alert: DatabaseErrors
+        expr: rate(database_errors_total[5m]) > 0.1
+        for: 2m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Database errors detected"
+          description: "Database error rate is elevated"
