@@ -19,7 +19,7 @@ type CacheService struct {
 	db       *database.DB
 	logger   *zap.Logger
 	wg       sync.WaitGroup // Tracks background goroutines for graceful shutdown
-	shutdown chan struct{}   // Signals shutdown to prevent new goroutines
+	shutdown chan struct{}  // Signals shutdown to prevent new goroutines
 	closeMu  sync.Mutex     // Guards shutdown-check + wg.Add atomicity
 }
 
@@ -94,13 +94,60 @@ const (
 	SubtitleCacheTTL    = 7 * 24 * time.Hour
 	LyricsCacheTTL      = 14 * 24 * time.Hour
 	CoverArtCacheTTL    = 30 * 24 * time.Hour
+
+	// Cache size limits to prevent unbounded growth
+	MaxCacheEntriesTotal    = 100000 // Maximum total cache entries
+	MaxCacheEntriesPerTable = 25000  // Maximum entries per table
+	CacheSizeCheckInterval  = 100    // Check size every N operations
 )
 
+// CacheCleanupInterval is the interval between automatic cache cleanups
+const CacheCleanupInterval = 1 * time.Hour
+
+// NewCacheService creates a new cache service with automatic cleanup
 func NewCacheService(db *database.DB, logger *zap.Logger) *CacheService {
-	return &CacheService{
+	s := &CacheService{
 		db:       db,
 		logger:   logger,
 		shutdown: make(chan struct{}),
+	}
+
+	// Start automatic cleanup goroutine
+	s.wg.Add(1)
+	go s.cleanupLoop()
+
+	logger.Info("Cache service created",
+		zap.Duration("cleanup_interval", CacheCleanupInterval))
+
+	return s
+}
+
+// cleanupLoop runs periodic cache cleanup
+func (s *CacheService) cleanupLoop() {
+	defer s.wg.Done()
+
+	ticker := time.NewTicker(CacheCleanupInterval)
+	defer ticker.Stop()
+
+	// Run initial cleanup
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Minute)
+	if err := s.CleanupExpired(ctx); err != nil {
+		s.logger.Error("Initial cache cleanup failed", zap.Error(err))
+	}
+	cancel()
+
+	for {
+		select {
+		case <-ticker.C:
+			ctx, cancel := context.WithTimeout(context.Background(), 5*time.Minute)
+			if err := s.CleanupExpired(ctx); err != nil {
+				s.logger.Error("Cache cleanup failed", zap.Error(err))
+			}
+			cancel()
+		case <-s.shutdown:
+			s.logger.Info("Cache cleanup loop stopping")
+			return
+		}
 	}
 }
 
@@ -126,6 +173,12 @@ func (s *CacheService) Set(ctx context.Context, key string, value interface{}, t
 	// If no database is available (e.g., in tests), skip operation
 	if s.db == nil {
 		return nil
+	}
+
+	// Check cache size limits
+	if err := s.enforceCacheSizeLimit(ctx); err != nil {
+		s.logger.Warn("Failed to enforce cache size limit", zap.Error(err))
+		// Continue anyway, don't fail the Set operation
 	}
 
 	s.logger.Debug("Setting cache entry",
@@ -190,6 +243,44 @@ func (s *CacheService) Get(ctx context.Context, key string, dest interface{}) (b
 
 	s.recordCacheActivity(ctx, "GET", key, "", true)
 	return true, nil
+}
+
+// enforceCacheSizeLimit removes oldest entries if cache exceeds limits
+func (s *CacheService) enforceCacheSizeLimit(ctx context.Context) error {
+	if s.db == nil {
+		return nil
+	}
+
+	// Check total entries count
+	var totalCount int64
+	countQuery := `SELECT COUNT(*) FROM cache_entries`
+	if err := s.db.QueryRowContext(ctx, countQuery).Scan(&totalCount); err != nil {
+		return fmt.Errorf("failed to count cache entries: %w", err)
+	}
+
+	if totalCount >= MaxCacheEntriesTotal {
+		// Remove oldest 10% of entries
+		entriesToRemove := int64(float64(MaxCacheEntriesTotal) * 0.1)
+		deleteQuery := `
+			DELETE FROM cache_entries 
+			WHERE id IN (
+				SELECT id FROM cache_entries 
+				ORDER BY created_at ASC 
+				LIMIT ?
+			)
+		`
+		result, err := s.db.ExecContext(ctx, deleteQuery, entriesToRemove)
+		if err != nil {
+			return fmt.Errorf("failed to remove old cache entries: %w", err)
+		}
+
+		rowsAffected, _ := result.RowsAffected()
+		s.logger.Warn("Cache size limit reached, removed oldest entries",
+			zap.Int64("removed", rowsAffected),
+			zap.Int64("total_remaining", totalCount-rowsAffected))
+	}
+
+	return nil
 }
 
 func (s *CacheService) Delete(ctx context.Context, key string) error {
