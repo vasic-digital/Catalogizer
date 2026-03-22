@@ -1,0 +1,369 @@
+package utils
+
+import (
+	"testing"
+
+	"github.com/stretchr/testify/assert"
+)
+
+func TestNewStringValidator(t *testing.T) {
+	validator := NewStringValidator(3, 10, "^[a-z]+$")
+
+	assert.NotNil(t, validator)
+	assert.Equal(t, 3, validator.MinLength)
+	assert.Equal(t, 10, validator.MaxLength)
+	assert.NotNil(t, validator.Pattern)
+}
+
+func TestStringValidator_Validate(t *testing.T) {
+	validator := NewStringValidator(3, 10, "^[a-z]+$")
+
+	tests := []struct {
+		name      string
+		input     string
+		wantValid bool
+	}{
+		{"valid string", "hello", true},
+		{"too short", "ab", false},
+		{"too long", "helloworld123", false},
+		{"invalid chars", "hello123", false},
+		{"empty", "", false},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			result := validator.Validate(tt.input)
+			assert.Equal(t, tt.wantValid, result.Valid)
+		})
+	}
+}
+
+func TestIsAlphanumeric(t *testing.T) {
+	tests := []struct {
+		input    string
+		expected bool
+	}{
+		{"abc123", true},
+		{"ABC", true},
+		{"123", true},
+		{"abc-123", false},
+		{"abc 123", false},
+		{"", false},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.input, func(t *testing.T) {
+			assert.Equal(t, tt.expected, IsAlphanumeric(tt.input))
+		})
+	}
+}
+
+func TestIsSafeString(t *testing.T) {
+	tests := []struct {
+		input    string
+		expected bool
+	}{
+		{"Hello World!", true},
+		{"Test-123_test.", true},
+		{"Hello<script>", false},
+		{"Hello|World", false},
+		{"", false},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.input, func(t *testing.T) {
+			assert.Equal(t, tt.expected, IsSafeString(tt.input))
+		})
+	}
+}
+
+func TestIsValidEmail(t *testing.T) {
+	tests := []struct {
+		input    string
+		expected bool
+	}{
+		{"test@example.com", true},
+		{"user.name@example.co.uk", true},
+		{"user+tag@example.com", true},
+		{"invalid", false},
+		{"@example.com", false},
+		{"test@", false},
+		{"", false},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.input, func(t *testing.T) {
+			assert.Equal(t, tt.expected, IsValidEmail(tt.input))
+		})
+	}
+}
+
+func TestIsValidUUID(t *testing.T) {
+	tests := []struct {
+		input    string
+		expected bool
+	}{
+		{"550e8400-e29b-41d4-a716-446655440000", true},
+		{"550E8400-E29B-41D4-A716-446655440000", true},
+		{"550e8400e29b41d4a716446655440000", false},
+		{"invalid", false},
+		{"", false},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.input, func(t *testing.T) {
+			assert.Equal(t, tt.expected, IsValidUUID(tt.input))
+		})
+	}
+}
+
+func TestIsSafeFilename(t *testing.T) {
+	tests := []struct {
+		input    string
+		expected bool
+	}{
+		{"file.txt", true},
+		{"document.pdf", true},
+		{"../etc/passwd", false},
+		{"file/../../passwd", false},
+		{"file:test", false},
+		{"", true}, // Empty is technically valid
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.input, func(t *testing.T) {
+			assert.Equal(t, tt.expected, IsSafeFilename(tt.input))
+		})
+	}
+}
+
+func TestIsValidHexColor(t *testing.T) {
+	tests := []struct {
+		input    string
+		expected bool
+	}{
+		{"#FFFFFF", true},
+		{"#ffffff", true},
+		{"#FFF", true},
+		{"#123456", true},
+		{"FFFFFF", false},
+		{"#GGGGGG", false},
+		{"", false},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.input, func(t *testing.T) {
+			assert.Equal(t, tt.expected, IsValidHexColor(tt.input))
+		})
+	}
+}
+
+func TestIsValidIPv4(t *testing.T) {
+	tests := []struct {
+		input    string
+		expected bool
+	}{
+		{"192.168.1.1", true},
+		{"10.0.0.1", true},
+		{"255.255.255.255", true},
+		{"0.0.0.0", true},
+		{"256.1.1.1", false},
+		{"192.168.1", false},
+		{"invalid", false},
+		{"", false},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.input, func(t *testing.T) {
+			assert.Equal(t, tt.expected, IsValidIPv4(tt.input))
+		})
+	}
+}
+
+func TestIsValidURL(t *testing.T) {
+	tests := []struct {
+		input    string
+		expected bool
+	}{
+		{"http://example.com", true},
+		{"https://example.com/path", true},
+		{"https://example.com:8080/path?query=1", true},
+		{"ftp://example.com", false},
+		{"not-a-url", false},
+		{"", false},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.input, func(t *testing.T) {
+			assert.Equal(t, tt.expected, IsValidURL(tt.input))
+		})
+	}
+}
+
+func TestSanitizeString(t *testing.T) {
+	tests := []struct {
+		input    string
+		expected string
+	}{
+		{"  hello  ", "hello"},
+		{"hello\x00world", "helloworld"},
+		{"hello\nworld", "hello\nworld"},
+		{"", ""},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.input, func(t *testing.T) {
+			assert.Equal(t, tt.expected, SanitizeString(tt.input))
+		})
+	}
+}
+
+func TestSanitizeHTML(t *testing.T) {
+	tests := []struct {
+		input    string
+		expected string
+	}{
+		{"<p>Hello</p>", "Hello"},
+		{"<script>alert('xss')</script>", "alert('xss')"},
+		{"Hello <b>World</b>", "Hello World"},
+		{"Plain text", "Plain text"},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.input, func(t *testing.T) {
+			assert.Equal(t, tt.expected, SanitizeHTML(tt.input))
+		})
+	}
+}
+
+func TestEscapeHTML(t *testing.T) {
+	tests := []struct {
+		input    string
+		expected string
+	}{
+		{"<script>", "&lt;script&gt;"},
+		{"hello & world", "hello &amp; world"},
+		{`"quoted"`, "&quot;quoted&quot;"},
+		{"'single'", "&#x27;single&#x27;"},
+		{"normal", "normal"},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.input, func(t *testing.T) {
+			assert.Equal(t, tt.expected, EscapeHTML(tt.input))
+		})
+	}
+}
+
+func TestContainsSQLInjection(t *testing.T) {
+	tests := []struct {
+		input    string
+		expected bool
+	}{
+		{"SELECT * FROM users", true},
+		{"'; DROP TABLE users; --", true},
+		{"admin' OR '1'='1", true},
+		{"normal text", false},
+		{"selection", false},
+		{"", false},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.input, func(t *testing.T) {
+			assert.Equal(t, tt.expected, ContainsSQLInjection(tt.input))
+		})
+	}
+}
+
+func TestContainsXSS(t *testing.T) {
+	tests := []struct {
+		input    string
+		expected bool
+	}{
+		{"<script>alert('xss')</script>", true},
+		{"javascript:alert('xss')", true},
+		{"<img onerror=alert('xss')>", true},
+		{"normal text", false},
+		{"<b>bold</b>", false},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.input, func(t *testing.T) {
+			assert.Equal(t, tt.expected, ContainsXSS(tt.input))
+		})
+	}
+}
+
+func TestContainsPathTraversal(t *testing.T) {
+	tests := []struct {
+		input    string
+		expected bool
+	}{
+		{"../../../etc/passwd", true},
+		{"..\\windows\\system32", true},
+		{"file.txt", false},
+		{"/path/to/file", false},
+		{"", false},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.input, func(t *testing.T) {
+			assert.Equal(t, tt.expected, ContainsPathTraversal(tt.input))
+		})
+	}
+}
+
+func TestTruncate(t *testing.T) {
+	tests := []struct {
+		input    string
+		maxLen   int
+		expected string
+	}{
+		{"hello", 10, "hello"},
+		{"hello world", 8, "hello..."},
+		{"hi", 2, "hi"},
+		{"hello", 3, "..."},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.input, func(t *testing.T) {
+			assert.Equal(t, tt.expected, Truncate(tt.input, tt.maxLen))
+		})
+	}
+}
+
+func TestRemoveWhitespace(t *testing.T) {
+	tests := []struct {
+		input    string
+		expected string
+	}{
+		{"hello world", "helloworld"},
+		{"  hello   world  ", "helloworld"},
+		{"hello\nworld\t!", "helloworld!"},
+		{"", ""},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.input, func(t *testing.T) {
+			assert.Equal(t, tt.expected, RemoveWhitespace(tt.input))
+		})
+	}
+}
+
+func TestCompactWhitespace(t *testing.T) {
+	tests := []struct {
+		input    string
+		expected string
+	}{
+		{"hello   world", "hello world"},
+		{"  hello   world  ", "hello world"},
+		{"hello\n\n\nworld", "hello world"},
+		{"", ""},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.input, func(t *testing.T) {
+			assert.Equal(t, tt.expected, CompactWhitespace(tt.input))
+		})
+	}
+}
