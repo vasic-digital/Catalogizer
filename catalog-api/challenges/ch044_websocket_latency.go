@@ -66,8 +66,9 @@ func (c *WebSocketLatencyChallenge) Execute(
 
 	// Attempt WebSocket connection
 	c.ReportProgress("connecting", nil)
-	wsURL := strings.Replace(c.config.BaseURL, "http://", "ws://", 1)
-	wsURL = strings.Replace(wsURL, "https://", "wss://", 1)
+	// Build WebSocket URL from base URL, preferring secure WebSocket (wss)
+	wsURL := strings.Replace(c.config.BaseURL, "https://", "wss://", 1)
+	wsURL = strings.Replace(wsURL, "http://", "ws://", 1)
 
 	wsPaths := []string{"/api/v1/ws", "/ws", "/api/v1/events"}
 	dialer := websocket.Dialer{HandshakeTimeout: 5 * time.Second}

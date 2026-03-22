@@ -64,9 +64,9 @@ func (c *WebSocketEventsChallenge) Execute(
 
 	token := apiClient.Token()
 
-	// Step 1: Determine WebSocket URL
-	wsURL := strings.Replace(c.config.BaseURL, "http://", "ws://", 1)
-	wsURL = strings.Replace(wsURL, "https://", "wss://", 1)
+	// Step 1: Determine WebSocket URL, preferring secure WebSocket (wss)
+	wsURL := strings.Replace(c.config.BaseURL, "https://", "wss://", 1)
+	wsURL = strings.Replace(wsURL, "http://", "ws://", 1)
 
 	// Try common WebSocket paths
 	wsPaths := []string{
