@@ -236,20 +236,32 @@ func (m *ResilientSMBManager) AddSource(source *SMBSource) error {
 }
 
 // RemoveSource removes an SMB source from the manager
+// Lock ordering: source.mutex -> manager.mutex (to avoid deadlock)
 func (m *ResilientSMBManager) RemoveSource(sourceID string) error {
+	// First acquire manager lock to get the source
 	m.mutex.Lock()
-	defer m.mutex.Unlock()
-
 	source, exists := m.sources[sourceID]
 	if !exists {
+		m.mutex.Unlock()
 		return fmt.Errorf("source not found: %s", sourceID)
 	}
 
+	// Snapshot source ID before releasing manager lock
+	sourceIDCopy := source.ID
+
+	// Release manager lock before acquiring source lock (avoid nested locking)
+	m.mutex.Unlock()
+
+	// Now safely lock the source and disable it
 	source.mutex.Lock()
 	source.IsEnabled = false
-	metrics.SetSMBHealth(source.ID, metrics.SMBOffline)
+	metrics.SetSMBHealth(sourceIDCopy, metrics.SMBOffline)
 	source.mutex.Unlock()
+
+	// Re-acquire manager lock to remove from map
+	m.mutex.Lock()
 	delete(m.sources, sourceID)
+	m.mutex.Unlock()
 
 	m.logger.Info("SMB source removed", zap.String("id", sourceID))
 	return nil
@@ -619,19 +631,23 @@ func (m *ResilientSMBManager) onError(sourceID string, err error) {
 }
 
 // Utility methods
+// Lock ordering: manager.mutex -> source.mutex (RLock both)
 func (m *ResilientSMBManager) isSourceConnected(sourceID string) bool {
+	// First acquire manager read lock
 	m.mutex.RLock()
-	defer m.mutex.RUnlock()
-
 	source, exists := m.sources[sourceID]
 	if !exists {
+		m.mutex.RUnlock()
 		return false
 	}
+	m.mutex.RUnlock()
 
+	// Now safely check source state
 	source.mutex.RLock()
-	defer source.mutex.RUnlock()
+	isConnected := source.State == StateConnected
+	source.mutex.RUnlock()
 
-	return source.State == StateConnected
+	return isConnected
 }
 
 func (m *ResilientSMBManager) processFileChange(sourceID, path string) {
@@ -642,12 +658,19 @@ func (m *ResilientSMBManager) processFileChange(sourceID, path string) {
 }
 
 // GetSourceStatus returns the status of all sources
+// Lock ordering: manager.mutex (RLock) -> iterate sources -> source.mutex (RLock each)
 func (m *ResilientSMBManager) GetSourceStatus() map[string]interface{} {
+	// First, snapshot all sources under manager lock
 	m.mutex.RLock()
-	defer m.mutex.RUnlock()
-
-	status := make(map[string]interface{})
+	sourcesSnapshot := make(map[string]*SMBSource)
 	for id, source := range m.sources {
+		sourcesSnapshot[id] = source
+	}
+	m.mutex.RUnlock()
+
+	// Now safely read each source's status
+	status := make(map[string]interface{})
+	for id, source := range sourcesSnapshot {
 		source.mutex.RLock()
 		status[id] = map[string]interface{}{
 			"name":           source.Name,
