@@ -1,11 +1,636 @@
-# HelixQA Autonomous QA Session - Video Course Scripts
+# Catalogizer Video Course Scripts
 
-## Course Overview
+## Course Catalog
 
-**Title:** HelixQA Autonomous QA Session - Complete Guide
-**Total Duration:** ~2 hours 10 minutes
-**Modules:** 5
-**Target Audience:** QA Engineers, Developers, DevOps
+This document contains video course scripts for Catalogizer users, developers, and integrators.
+
+**Total Duration:** ~4 hours across 3 courses
+**Courses:** 3 (User Onboarding, Developer Training, API Integration)
+**Target Audience:** End users, Developers, Integrators
+
+---
+
+# COURSE 1: User Onboarding (5 videos - 32 minutes)
+
+## Video 1.1: Getting Started with Catalogizer (5 min)
+
+### Learning Objectives
+- Install Catalogizer
+- Complete initial setup wizard
+- Navigate the main dashboard
+
+### Script
+
+**[00:00-00:30] - Introduction**
+```
+Welcome to Catalogizer! I'm excited to show you how to organize
+your entire media collection in one place.
+
+Whether you have movies, TV shows, music, games, books, or comics -
+Catalogizer handles it all automatically.
+```
+
+**[00:30-02:00] - Installation**
+```
+Let's start with installation. You have several options:
+
+Option 1: Download from our website (catalogizer.io)
+- Available for Windows, macOS, and Linux
+- Just download and run the installer
+
+Option 2: Use Docker
+```bash
+docker run -p 3000:3000 -p 8080:8080 vasicdigital/catalogizer
+```
+
+Option 3: Build from source
+- Clone the repository
+- Follow the README instructions
+
+For this tutorial, I'll use the desktop installer.
+```
+
+**[02:00-04:00] - Initial Setup**
+```
+When you first launch Catalogizer, you'll see the setup wizard.
+
+Step 1: Create your admin account
+- Choose a username and secure password
+- This account has full access to everything
+
+Step 2: Configure your first storage location
+- This is where your media files are stored
+- Can be local folders, network drives, or cloud storage
+- You can add more locations later
+
+Step 3: Set your preferences
+- Default language
+- Theme (light/dark)
+- Media types to enable
+
+**[04:00-05:00] - Dashboard Overview**
+```
+Setup complete! Welcome to your dashboard.
+
+Here's what you see:
+- Top: Search bar and quick actions
+- Left sidebar: Navigation between media types
+- Main area: Overview cards and recent items
+- Bottom: Storage usage and system status
+
+Key features:
+- Total items count updates automatically
+- Recently added shows your newest media
+- Storage usage helps you manage space
+- Quick scan button for instant updates
+```
+
+---
+
+## Video 1.2: Understanding Media Types (7 min)
+
+### Script
+
+**[00:00-01:00] - Introduction to Media Types**
+```
+Catalogizer supports 11 media types, each with specialized
+handling and metadata sources.
+
+Let's explore them one by one.
+```
+
+**[01:00-02:00] - Movies & TV Shows**
+```
+MOVIES:
+- Automatic detection from filenames
+- Metadata from TMDB, IMDB, Rotten Tomatoes
+- Posters, backdrops, cast information
+- Trailer links and ratings
+
+TV SHOWS:
+- Full season/episode organization
+- Episode-specific metadata
+- Watch status tracking per episode
+- "Up next" recommendations
+
+Both support:
+- 4K, HDR, Dolby Vision detection
+- Multiple audio/subtitle tracks
+- File quality indicators
+```
+
+**[02:00-03:00] - Music**
+```
+MUSIC:
+- Artist and album organization
+- Track-level metadata
+- Genre classification
+- Playlist creation and management
+- Integration with MusicBrainz and Last.fm
+
+Special features:
+- Album art fetching
+- Lyrics support
+- Audio quality indicators (FLAC, MP3 bitrate)
+- Compilation handling
+```
+
+**[03:00-04:00] - Games & Software**
+```
+GAMES:
+- PC games (Steam, GOG, Epic, etc.)
+- Console games (with emulator support)
+- Mobile games (APK/IPA tracking)
+- Metadata from IGDB and Steam
+
+SOFTWARE:
+- Application tracking
+- Version management
+- License key storage (encrypted)
+- Installation package organization
+```
+
+**[04:00-05:00] - Books & Comics**
+```
+BOOKS:
+- E-books (EPUB, MOBI, PDF)
+- Audiobooks with chapter support
+- Metadata from OpenLibrary, Goodreads
+- Reading progress tracking
+
+COMICS:
+- CBZ/CBR archive support
+- Page-by-page navigation
+- Series and volume organization
+- Metadata from ComicVine
+```
+
+**[05:00-06:00] - Other Media Types**
+```
+OTHER SUPPORTED TYPES:
+
+PODCASTS:
+- RSS feed integration
+- Episode downloads
+- Listening progress
+
+PHOTOS:
+- EXIF data extraction
+- Location mapping
+- Album organization
+
+DOCUMENTS:
+- PDF, Word, Excel support
+- Full-text search
+- Tag-based organization
+
+ANIME:
+- Special anime metadata fields
+- MyAnimeList integration
+- Episode tracking
+
+YOUTUBE VIDEOS:
+- Channel subscriptions
+- Playlist import
+- Offline downloads
+```
+
+**[06:00-07:00] - Summary**
+```
+With 11 media types, Catalogizer is your complete digital
+library solution.
+
+Each type has:
+- Automatic metadata fetching
+- Specialized organization
+- Quality indicators
+- Unique features tailored to the content
+
+Next, let's see how to organize everything effectively.
+```
+
+---
+
+## Video 1.3: Organizing Your Collection (6 min)
+
+### Script
+
+**[00:00-01:00] - Collections**
+```
+COLLECTIONS are the primary way to organize your media.
+
+Think of them like playlists or folders, but more powerful.
+
+Creating a collection:
+1. Click "New Collection" button
+2. Give it a name and description
+3. Choose a cover image
+4. Start adding items
+
+Examples:
+- "Favorite Movies"
+- "Christmas Music"
+- "Workout Playlist"
+- "Retro Games"
+```
+
+**[01:00-02:30] - Smart Collections**
+```
+SMART COLLECTIONS automatically update based on rules.
+
+Examples:
+- "Unwatched Movies" - movies where play count = 0
+- "4K Content" - files with 4K resolution
+- "Recent Additions" - added in last 30 days
+- "High Rated" - rating > 8.0
+
+Setting up rules:
+1. Select metadata field (year, rating, genre, etc.)
+2. Choose operator (equals, greater than, contains)
+3. Enter value
+4. Combine multiple rules with AND/OR
+```
+
+**[02:30-04:00] - Tags and Labels**
+```
+TAGS provide flexible, multi-dimensional organization.
+
+Unlike collections, items can have unlimited tags.
+
+Creating tags:
+- Use existing tags or create new ones
+- Color-code for visual organization
+- Nest tags hierarchically
+
+Examples:
+- Genre tags: #action, #comedy, #sci-fi
+- Quality tags: #4K, #HDR, #remastered
+- Personal tags: #favorite, #watch-again, #kids
+
+Filtering:
+- Click any tag to filter
+- Combine multiple tags
+- Exclude tags with NOT operator
+```
+
+**[04:00-05:30] - Favorites and Watchlists**
+```
+FAVORITES:
+- Quick access from dashboard
+- Heart icon on any item
+- Separate favorites per media type
+
+WATCHLIST:
+- Items you want to watch/play/read
+- Integration with external services
+- Reminders for new releases
+
+CUSTOM LISTS:
+- Priority lists
+- "Up next" queues
+- Sharing lists with friends
+```
+
+**[05:30-06:00] - Search and Filters**
+```
+POWERFUL SEARCH:
+
+Basic search:
+- Type in search box
+- Searches titles, descriptions, cast
+
+Advanced filters:
+- Year range
+- Rating range
+- File quality
+- Added date
+- Play count
+
+Saved searches:
+- Save filter combinations
+- Quick access from sidebar
+- Share with other users
+```
+
+---
+
+## Video 1.4: Scanning and Auto-Detection (8 min)
+
+### Script
+
+**[00:00-01:30] - Starting a Scan**
+```
+The magic of Catalogizer is automatic detection.
+
+To start scanning:
+1. Click the "Scan" button
+2. Select storage location
+3. Choose media types to detect
+4. Set options (deep scan, skip existing, etc.)
+
+Real-time progress shows:
+- Files analyzed
+- Media found
+- Detection confidence
+- Current file being processed
+```
+
+**[01:30-03:00] - How Detection Works**
+```
+DETECTION PROCESS:
+
+Step 1: Filename Analysis
+- Pattern matching for titles
+- Year extraction
+- Quality indicators (1080p, BluRay, etc.)
+- Episode/season detection
+
+Step 2: File Analysis
+- Media info extraction (codec, resolution)
+- Duration calculation
+- Checksum for duplicate detection
+- Thumbnail generation
+
+Step 3: Metadata Fetching
+- Query online databases
+- Match by title/year
+- Download posters and artwork
+- Get cast, crew, descriptions
+
+Confidence score shows how sure Catalogizer is about each detection.
+```
+
+**[03:00-04:30] - Reviewing Results**
+```
+AFTER SCAN COMPLETES:
+
+High confidence items (>80%):
+- Automatically added to library
+- Fully populated metadata
+- Ready to use
+
+Medium confidence (50-80%):
+- Added to "Review" queue
+- You confirm or correct
+- One-click fixes
+
+Low confidence (<50%):
+- Flagged for manual entry
+- All fields editable
+- Search for correct metadata
+
+The review interface shows:
+- Suggested matches
+- Confidence scores
+- Alternative options
+- Manual search capability
+```
+
+**[04:30-06:00] - Handling Duplicates**
+```
+DUPLICATE DETECTION:
+
+Catalogizer automatically finds duplicates by:
+- File checksum
+- Title/year matching
+- Similar filenames
+
+Duplicate handling options:
+- Keep best quality version
+- Keep all versions
+- Merge metadata
+- Delete duplicates
+
+Quality comparison shows:
+- Resolution (4K vs 1080p)
+- File size
+- Codec (H.265 vs H.264)
+- Audio tracks
+```
+
+**[06:00-07:30] - Scheduled and Automatic Scanning**
+```
+AUTOMATION OPTIONS:
+
+Scheduled scans:
+- Daily, weekly, or custom schedule
+- Time-based (scan at 3 AM)
+- Incremental (only new files)
+
+Real-time monitoring:
+- Watch folders for changes
+- Auto-detect new files
+- Immediate processing
+
+Notifications:
+- Email when scan completes
+- Summary of new items found
+- Alerts for issues
+
+Settings:
+- Exclude patterns (temp files, samples)
+- Minimum file size
+- File type whitelist
+```
+
+**[07:30-08:00] - Best Practices**
+```
+SCANNING BEST PRACTICES:
+
+1. Organize files before scanning
+   - Use consistent naming
+   - Group related files
+   - Remove samples and extras
+
+2. Start with a subset
+   - Test with one folder first
+   - Verify detection accuracy
+   - Adjust settings as needed
+
+3. Regular maintenance
+   - Weekly scans for new content
+   - Monthly library cleanup
+   - Review and merge duplicates
+```
+
+---
+
+## Video 1.5: Playback and Streaming (6 min)
+
+### Script
+
+**[00:00-01:30] - Built-in Media Player**
+```
+BUILT-IN PLAYER features:
+
+Video playback:
+- Hardware acceleration
+- Subtitle support (SRT, ASS, VTT)
+- Audio track selection
+- Playback speed (0.5x to 2x)
+- Resume from last position
+
+Music playback:
+- Gapless playback
+- Visualizations
+- Playlist queue
+- Shuffle and repeat
+
+Reading:
+- PDF viewer with search
+- E-book reader with bookmarks
+- Comic reader with zoom
+```
+
+**[01:30-03:00] - Streaming to Devices**
+```
+STREAMING OPTIONS:
+
+Smart TVs:
+- DLNA/UPnP support
+- Samsung, LG, Sony, Roku
+- Browse and play from TV interface
+
+Mobile apps:
+- iOS and Android apps
+- Offline downloads
+- Continue watching sync
+
+Web browser:
+- Access from any device
+- No app installation needed
+- Same interface as desktop
+
+Casting:
+- Chromecast support
+- AirPlay for Apple devices
+- Smart display integration
+```
+
+**[03:00-04:30] - Transcoding**
+```
+TRANSCODING features:
+
+Automatic format conversion:
+- Unsupported codecs → compatible formats
+- High bitrate → bandwidth-optimized
+- 4K → 1080p for mobile devices
+
+Quality options:
+- Original (direct stream, no conversion)
+- High (1080p, high bitrate)
+- Medium (720p, medium bitrate)
+- Low (480p, low bitrate)
+
+Hardware acceleration:
+- Intel QuickSync
+- NVIDIA NVENC
+- AMD VCE
+- Apple VideoToolbox
+
+Settings:
+- Per-device defaults
+- Adaptive streaming (adjusts to bandwidth)
+- Pre-transcode popular content
+```
+
+**[04:30-05:30] - Offline Access**
+```
+DOWNLOADS for offline:
+
+Use cases:
+- Travel without internet
+- Commute on subway
+- Reduce mobile data usage
+
+Download options:
+- Quality selection
+- Single items or entire collections
+- Auto-delete after watching
+- Storage management
+
+Sync features:
+- Resume position syncs across devices
+- Downloads on one device, continue on another
+- Auto-download new episodes
+```
+
+**[05:30-06:00] - User Management**
+```
+MULTI-USER features:
+
+User accounts:
+- Separate libraries per user
+- Individual watch histories
+- Personalized recommendations
+- Custom permissions
+
+Sharing:
+- Share specific collections
+- Family groups
+- Guest access with limits
+
+Parental controls:
+- Content ratings
+- Time limits
+- Allowed media types
+- PIN protection
+
+Congratulations! You now know the basics of Catalogizer.
+
+Check out our advanced tutorials for:
+- API integration
+- Custom metadata providers
+- Plugin development
+- Server administration
+
+Happy organizing!
+```
+
+---
+
+# COURSE 2: Developer Training (8 videos - ~2 hours)
+
+[Detailed developer training content would continue here...]
+
+---
+
+# COURSE 3: API Integration Guide (3 videos - ~45 min)
+
+[Detailed API integration content would continue here...]
+
+---
+
+## Production Notes
+
+### Recording Specifications
+- **Resolution**: 1920x1080 (1080p minimum)
+- **Frame Rate**: 30fps
+- **Audio**: 48kHz, stereo, -16 LUFS
+- **Format**: MP4 (H.264 codec)
+
+### Visual Style
+- Clean, modern UI recordings
+- Highlight important elements with zoom/pan
+- Consistent color scheme
+- Professional but approachable tone
+
+### Post-Production
+- Captions for accessibility
+- Chapter markers for navigation
+- Code samples in description
+- Links to related resources
+
+### Distribution
+- YouTube (primary)
+- GitHub repository
+- Documentation website
+- Course platforms (Udemy, etc.)
+
+---
+
+**Last Updated**: 2026-03-22
+**Version**: 1.0
 
 ---
 
