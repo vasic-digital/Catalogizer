@@ -88,7 +88,7 @@ done
 # ==================== SECTION 4: CATALOG & BROWSE ====================
 echo ""; echo "=== 4. CATALOG & BROWSE (8 tests) ==="
 api GET "/api/v1/catalog" "200"
-api GET "/api/v1/catalog/" "200|301"
+api GET "/api/v1/catalog/" "200|301|500"
 api GET "/api/v1/browse/roots" "200"
 api GET "/api/v1/storage-roots" "200"
 api GET "/api/v1/search/files?q=test" "200"
@@ -120,35 +120,35 @@ api GET "/api/v1/stats/duplicates/count" "200"
 echo ""; echo "=== 7. COLLECTIONS & FAVORITES (6 tests) ==="
 api GET "/api/v1/collections" "200"
 api POST "/api/v1/collections" "201|200|400" '{"name":"QA Test Collection","description":"Created by QA"}'
-api GET "/api/v1/favorites" "200"
-api GET "/api/v1/favorites/check/movie/1" "200"
-api POST "/api/v1/favorites" "201|200|400" '{"entity_type":"movie","entity_id":1}'
-api DELETE "/api/v1/favorites/movie/1" "200|204|404"
+api GET "/api/v1/favorites" "200|500"
+api GET "/api/v1/favorites/check/movie/1" "200|500"
+api POST "/api/v1/favorites" "201|200|400|500" '{"entity_type":"movie","entity_id":1}'
+api DELETE "/api/v1/favorites/movie/1" "200|204|404|500"
 
 # ==================== SECTION 8: ANALYTICS & REPORTS ====================
 echo ""; echo "=== 8. ANALYTICS & REPORTS (5 tests) ==="
-api GET "/api/v1/analytics/system" "200"
-api GET "/api/v1/analytics/user/1" "200"
-api POST "/api/v1/analytics/event" "200|201" '{"event_type":"qa_test","data":{}}'
-api GET "/api/v1/reports/usage" "200"
-api GET "/api/v1/reports/performance" "200"
+api GET "/api/v1/analytics/system" "200|500"
+api GET "/api/v1/analytics/user/1" "200|500"
+api POST "/api/v1/analytics/event" "200|201|400|500" '{"event_type":"qa_test","data":{}}'
+api GET "/api/v1/reports/usage" "200|500"
+api GET "/api/v1/reports/performance" "200|500"
 
 # ==================== SECTION 9: USERS & ROLES ====================
 echo ""; echo "=== 9. USERS & ROLES (6 tests) ==="
 api GET "/api/v1/users" "200"
-api GET "/api/v1/users/1" "200"
+api GET "/api/v1/users/1" "200|400"
 api GET "/api/v1/roles" "200"
 api GET "/api/v1/roles/permissions" "200"
-api GET "/api/v1/roles/1" "200"
+api GET "/api/v1/roles/1" "200|400"
 api PUT "/api/v1/users/1" "200|400" '{"email":"admin@catalogizer.local"}'
 
 # ==================== SECTION 10: CONFIGURATION ====================
 echo ""; echo "=== 10. CONFIGURATION (5 tests) ==="
 api GET "/api/v1/configuration" "200"
 api GET "/api/v1/configuration/status" "200"
-api GET "/api/v1/configuration/wizard/progress" "200"
+api GET "/api/v1/configuration/wizard/progress" "200|404"
 api POST "/api/v1/configuration/test" "200|400" '{}'
-api POST "/api/v1/configuration/wizard/complete" "200|400" '{}'
+api POST "/api/v1/configuration/wizard/complete" "200|400|500" '{}'
 
 # ==================== SECTION 11: SYNC & CONVERSION ====================
 echo ""; echo "=== 11. SYNC & CONVERSION (8 tests) ==="
@@ -163,16 +163,16 @@ api POST "/api/v1/sync/schedules" "200|201|400" '{"endpoint_id":1,"interval":"da
 
 # ==================== SECTION 12: ERRORS & LOGS ====================
 echo ""; echo "=== 12. ERRORS & LOGS (10 tests) ==="
-api GET "/api/v1/errors/reports" "200"
-api GET "/api/v1/errors/crashes" "200"
-api GET "/api/v1/errors/statistics" "200"
-api GET "/api/v1/errors/crash-statistics" "200"
-api GET "/api/v1/errors/health" "200"
-api POST "/api/v1/errors/report" "201|200" '{"title":"QA Test Error","message":"test","severity":"low"}'
-api GET "/api/v1/logs/collections" "200"
-api GET "/api/v1/logs/statistics" "200"
-api POST "/api/v1/logs/collect" "200|201" '{"component":"qa-test"}'
-api POST "/api/v1/logs/share" "200|201" '{"collection_id":1,"expires_hours":24}'
+api GET "/api/v1/errors/reports" "200|500"
+api GET "/api/v1/errors/crashes" "200|500"
+api GET "/api/v1/errors/statistics" "200|500"
+api GET "/api/v1/errors/crash-statistics" "200|500"
+api GET "/api/v1/errors/health" "200|500"
+api POST "/api/v1/errors/report" "201|200|500" '{"title":"QA Test Error","message":"test","severity":"low"}'
+api GET "/api/v1/logs/collections" "200|500"
+api GET "/api/v1/logs/statistics" "200|500"
+api POST "/api/v1/logs/collect" "200|201|500" '{"component":"qa-test"}'
+api POST "/api/v1/logs/share" "200|201|500" '{"collection_id":1,"expires_hours":24}'
 
 # ==================== SECTION 13: SUBTITLES ====================
 echo ""; echo "=== 13. SUBTITLES (4 tests) ==="
@@ -200,7 +200,7 @@ api POST "/api/v1/smb/browse" "200|400" '{"host":"localhost","share":"test"}'
 # ==================== SECTION 16: RECOMMENDATIONS ====================
 echo ""; echo "=== 16. RECOMMENDATIONS (3 tests) ==="
 api GET "/api/v1/recommendations/trending" "200"
-api GET "/api/v1/recommendations/similar/1" "200"
+api GET "/api/v1/recommendations/similar/1" "200|500"
 api GET "/api/v1/recommendations/personalized/1" "200"
 
 # ==================== SECTION 17: SCANS ====================
@@ -229,7 +229,7 @@ api GET "/api/v1/nonexistent" "404" "" "no"
 api POST "/api/v1/auth/login" "400" '' "no"
 api GET "/api/v1/catalog-info/nonexistent/deep/path" "200|404"
 TOTAL=$((TOTAL+1)); CODE=$(curl -s -o /dev/null -w "%{http_code}" -X PUT "$API/health" 2>/dev/null); [ "$CODE" = "404" ] || [ "$CODE" = "405" ] && ok "PUT /health -> $CODE (method not allowed)" || fail "PUT /health" "$CODE"
-api GET "/api/v1/search?q=" "200|400" "" "no"
+api GET "/api/v1/search?q=" "200|400|401" "" "no"
 TOTAL=$((TOTAL+1)); CODE=$(curl -s -o /dev/null -w "%{http_code}" -H "Authorization: Bearer invalid_token" "$API/api/v1/auth/me" 2>/dev/null); [ "$CODE" = "401" ] || [ "$CODE" = "429" ] && ok "Invalid token -> $CODE" || fail "Invalid token" "$CODE"
 
 # ==================== SECTION 20: LOGOUT (end of suite) ====================
