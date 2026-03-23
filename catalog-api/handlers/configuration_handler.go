@@ -144,7 +144,11 @@ func (h *ConfigurationHandler) CompleteWizard(w http.ResponseWriter, r *http.Req
 // Configuration endpoints
 
 func (h *ConfigurationHandler) GetConfiguration(w http.ResponseWriter, r *http.Request) {
-	userID := r.Context().Value("user_id").(int)
+	userID, ok := r.Context().Value("user_id").(int)
+	if !ok {
+		http.Error(w, "Unauthorized", http.StatusUnauthorized)
+		return
+	}
 
 	hasPermission, err := h.authService.CheckPermission(userID, models.PermissionSystemConfig)
 	if err != nil || !hasPermission {

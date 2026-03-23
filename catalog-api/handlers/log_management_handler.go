@@ -50,7 +50,11 @@ func NewLogManagementHandler(logManagementService LogManagementServiceInterface,
 }
 
 func (h *LogManagementHandler) CreateLogCollection(w http.ResponseWriter, r *http.Request) {
-	userID := r.Context().Value("user_id").(int)
+	userID, ok := r.Context().Value("user_id").(int)
+	if !ok {
+		http.Error(w, "Unauthorized", http.StatusUnauthorized)
+		return
+	}
 
 	hasPermission, err := h.authService.CheckPermission(userID, models.PermissionSystemAdmin)
 	if err != nil || !hasPermission {
@@ -75,7 +79,11 @@ func (h *LogManagementHandler) CreateLogCollection(w http.ResponseWriter, r *htt
 }
 
 func (h *LogManagementHandler) GetLogCollection(w http.ResponseWriter, r *http.Request) {
-	userID := r.Context().Value("user_id").(int)
+	userID, ok := r.Context().Value("user_id").(int)
+	if !ok {
+		http.Error(w, "Unauthorized", http.StatusUnauthorized)
+		return
+	}
 	vars := mux.Vars(r)
 	collectionID, err := strconv.Atoi(vars["id"])
 	if err != nil {
@@ -100,7 +108,11 @@ func (h *LogManagementHandler) GetLogCollection(w http.ResponseWriter, r *http.R
 }
 
 func (h *LogManagementHandler) ListLogCollections(w http.ResponseWriter, r *http.Request) {
-	userID := r.Context().Value("user_id").(int)
+	userID, ok := r.Context().Value("user_id").(int)
+	if !ok {
+		http.Error(w, "Unauthorized", http.StatusUnauthorized)
+		return
+	}
 
 	hasPermission, err := h.authService.CheckPermission(userID, models.PermissionSystemAdmin)
 	if err != nil || !hasPermission {
@@ -142,7 +154,11 @@ func (h *LogManagementHandler) ListLogCollections(w http.ResponseWriter, r *http
 }
 
 func (h *LogManagementHandler) GetLogEntries(w http.ResponseWriter, r *http.Request) {
-	userID := r.Context().Value("user_id").(int)
+	userID, ok := r.Context().Value("user_id").(int)
+	if !ok {
+		http.Error(w, "Unauthorized", http.StatusUnauthorized)
+		return
+	}
 	vars := mux.Vars(r)
 	collectionID, err := strconv.Atoi(vars["id"])
 	if err != nil {
@@ -171,7 +187,11 @@ func (h *LogManagementHandler) GetLogEntries(w http.ResponseWriter, r *http.Requ
 }
 
 func (h *LogManagementHandler) CreateLogShare(w http.ResponseWriter, r *http.Request) {
-	userID := r.Context().Value("user_id").(int)
+	userID, ok := r.Context().Value("user_id").(int)
+	if !ok {
+		http.Error(w, "Unauthorized", http.StatusUnauthorized)
+		return
+	}
 
 	hasPermission, err := h.authService.CheckPermission(userID, models.PermissionSystemAdmin)
 	if err != nil || !hasPermission {
@@ -234,7 +254,11 @@ func (h *LogManagementHandler) GetLogShare(w http.ResponseWriter, r *http.Reques
 }
 
 func (h *LogManagementHandler) RevokeLogShare(w http.ResponseWriter, r *http.Request) {
-	userID := r.Context().Value("user_id").(int)
+	userID, ok := r.Context().Value("user_id").(int)
+	if !ok {
+		http.Error(w, "Unauthorized", http.StatusUnauthorized)
+		return
+	}
 	vars := mux.Vars(r)
 	shareID, err := strconv.Atoi(vars["id"])
 	if err != nil {
@@ -258,7 +282,11 @@ func (h *LogManagementHandler) RevokeLogShare(w http.ResponseWriter, r *http.Req
 }
 
 func (h *LogManagementHandler) ExportLogs(w http.ResponseWriter, r *http.Request) {
-	userID := r.Context().Value("user_id").(int)
+	userID, ok := r.Context().Value("user_id").(int)
+	if !ok {
+		http.Error(w, "Unauthorized", http.StatusUnauthorized)
+		return
+	}
 	vars := mux.Vars(r)
 	collectionID, err := strconv.Atoi(vars["id"])
 	if err != nil {
@@ -306,7 +334,11 @@ func (h *LogManagementHandler) ExportLogs(w http.ResponseWriter, r *http.Request
 }
 
 func (h *LogManagementHandler) StreamLogs(w http.ResponseWriter, r *http.Request) {
-	userID := r.Context().Value("user_id").(int)
+	userID, ok := r.Context().Value("user_id").(int)
+	if !ok {
+		http.Error(w, "Unauthorized", http.StatusUnauthorized)
+		return
+	}
 
 	hasPermission, err := h.authService.CheckPermission(userID, models.PermissionSystemAdmin)
 	if err != nil || !hasPermission {
@@ -373,7 +405,11 @@ func (h *LogManagementHandler) StreamLogs(w http.ResponseWriter, r *http.Request
 }
 
 func (h *LogManagementHandler) AnalyzeLogs(w http.ResponseWriter, r *http.Request) {
-	userID := r.Context().Value("user_id").(int)
+	userID, ok := r.Context().Value("user_id").(int)
+	if !ok {
+		http.Error(w, "Unauthorized", http.StatusUnauthorized)
+		return
+	}
 	vars := mux.Vars(r)
 	collectionID, err := strconv.Atoi(vars["id"])
 	if err != nil {
@@ -398,7 +434,11 @@ func (h *LogManagementHandler) AnalyzeLogs(w http.ResponseWriter, r *http.Reques
 }
 
 func (h *LogManagementHandler) GetLogStatistics(w http.ResponseWriter, r *http.Request) {
-	userID := r.Context().Value("user_id").(int)
+	userID, ok := r.Context().Value("user_id").(int)
+	if !ok {
+		http.Error(w, "Unauthorized", http.StatusUnauthorized)
+		return
+	}
 
 	hasPermission, err := h.authService.CheckPermission(userID, models.PermissionSystemAdmin)
 	if err != nil || !hasPermission {
@@ -417,7 +457,11 @@ func (h *LogManagementHandler) GetLogStatistics(w http.ResponseWriter, r *http.R
 }
 
 func (h *LogManagementHandler) GetConfiguration(w http.ResponseWriter, r *http.Request) {
-	userID := r.Context().Value("user_id").(int)
+	userID, ok := r.Context().Value("user_id").(int)
+	if !ok {
+		http.Error(w, "Unauthorized", http.StatusUnauthorized)
+		return
+	}
 
 	hasPermission, err := h.authService.CheckPermission(userID, models.PermissionSystemAdmin)
 	if err != nil || !hasPermission {
@@ -432,7 +476,11 @@ func (h *LogManagementHandler) GetConfiguration(w http.ResponseWriter, r *http.R
 }
 
 func (h *LogManagementHandler) UpdateConfiguration(w http.ResponseWriter, r *http.Request) {
-	userID := r.Context().Value("user_id").(int)
+	userID, ok := r.Context().Value("user_id").(int)
+	if !ok {
+		http.Error(w, "Unauthorized", http.StatusUnauthorized)
+		return
+	}
 
 	hasPermission, err := h.authService.CheckPermission(userID, models.PermissionSystemAdmin)
 	if err != nil || !hasPermission {
@@ -459,7 +507,11 @@ func (h *LogManagementHandler) UpdateConfiguration(w http.ResponseWriter, r *htt
 }
 
 func (h *LogManagementHandler) CleanupOldLogs(w http.ResponseWriter, r *http.Request) {
-	userID := r.Context().Value("user_id").(int)
+	userID, ok := r.Context().Value("user_id").(int)
+	if !ok {
+		http.Error(w, "Unauthorized", http.StatusUnauthorized)
+		return
+	}
 
 	hasPermission, err := h.authService.CheckPermission(userID, models.PermissionSystemAdmin)
 	if err != nil || !hasPermission {

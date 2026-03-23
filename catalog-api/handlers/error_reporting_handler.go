@@ -49,7 +49,11 @@ func NewErrorReportingHandler(errorReportingService ErrorReportingServiceInterfa
 }
 
 func (h *ErrorReportingHandler) ReportError(w http.ResponseWriter, r *http.Request) {
-	userID := r.Context().Value("user_id").(int)
+	userID, ok := r.Context().Value("user_id").(int)
+	if !ok {
+		http.Error(w, "Unauthorized", http.StatusUnauthorized)
+		return
+	}
 
 	hasPermission, err := h.authService.CheckPermission(userID, models.PermissionReportCreate)
 	if err != nil || !hasPermission {
@@ -74,7 +78,11 @@ func (h *ErrorReportingHandler) ReportError(w http.ResponseWriter, r *http.Reque
 }
 
 func (h *ErrorReportingHandler) ReportCrash(w http.ResponseWriter, r *http.Request) {
-	userID := r.Context().Value("user_id").(int)
+	userID, ok := r.Context().Value("user_id").(int)
+	if !ok {
+		http.Error(w, "Unauthorized", http.StatusUnauthorized)
+		return
+	}
 
 	hasPermission, err := h.authService.CheckPermission(userID, models.PermissionReportCreate)
 	if err != nil || !hasPermission {
@@ -99,7 +107,11 @@ func (h *ErrorReportingHandler) ReportCrash(w http.ResponseWriter, r *http.Reque
 }
 
 func (h *ErrorReportingHandler) GetErrorReport(w http.ResponseWriter, r *http.Request) {
-	userID := r.Context().Value("user_id").(int)
+	userID, ok := r.Context().Value("user_id").(int)
+	if !ok {
+		http.Error(w, "Unauthorized", http.StatusUnauthorized)
+		return
+	}
 	vars := mux.Vars(r)
 	reportID, err := strconv.Atoi(vars["id"])
 	if err != nil {
@@ -124,7 +136,11 @@ func (h *ErrorReportingHandler) GetErrorReport(w http.ResponseWriter, r *http.Re
 }
 
 func (h *ErrorReportingHandler) GetCrashReport(w http.ResponseWriter, r *http.Request) {
-	userID := r.Context().Value("user_id").(int)
+	userID, ok := r.Context().Value("user_id").(int)
+	if !ok {
+		http.Error(w, "Unauthorized", http.StatusUnauthorized)
+		return
+	}
 	vars := mux.Vars(r)
 	reportID, err := strconv.Atoi(vars["id"])
 	if err != nil {
@@ -149,7 +165,11 @@ func (h *ErrorReportingHandler) GetCrashReport(w http.ResponseWriter, r *http.Re
 }
 
 func (h *ErrorReportingHandler) ListErrorReports(w http.ResponseWriter, r *http.Request) {
-	userID := r.Context().Value("user_id").(int)
+	userID, ok := r.Context().Value("user_id").(int)
+	if !ok {
+		http.Error(w, "Unauthorized", http.StatusUnauthorized)
+		return
+	}
 
 	hasPermission, err := h.authService.CheckPermission(userID, models.PermissionReportView)
 	if err != nil || !hasPermission {
@@ -172,7 +192,11 @@ func (h *ErrorReportingHandler) ListErrorReports(w http.ResponseWriter, r *http.
 }
 
 func (h *ErrorReportingHandler) ListCrashReports(w http.ResponseWriter, r *http.Request) {
-	userID := r.Context().Value("user_id").(int)
+	userID, ok := r.Context().Value("user_id").(int)
+	if !ok {
+		http.Error(w, "Unauthorized", http.StatusUnauthorized)
+		return
+	}
 
 	hasPermission, err := h.authService.CheckPermission(userID, models.PermissionReportView)
 	if err != nil || !hasPermission {
@@ -195,7 +219,11 @@ func (h *ErrorReportingHandler) ListCrashReports(w http.ResponseWriter, r *http.
 }
 
 func (h *ErrorReportingHandler) UpdateErrorStatus(w http.ResponseWriter, r *http.Request) {
-	userID := r.Context().Value("user_id").(int)
+	userID, ok := r.Context().Value("user_id").(int)
+	if !ok {
+		http.Error(w, "Unauthorized", http.StatusUnauthorized)
+		return
+	}
 	vars := mux.Vars(r)
 	reportID, err := strconv.Atoi(vars["id"])
 	if err != nil {
@@ -228,7 +256,11 @@ func (h *ErrorReportingHandler) UpdateErrorStatus(w http.ResponseWriter, r *http
 }
 
 func (h *ErrorReportingHandler) UpdateCrashStatus(w http.ResponseWriter, r *http.Request) {
-	userID := r.Context().Value("user_id").(int)
+	userID, ok := r.Context().Value("user_id").(int)
+	if !ok {
+		http.Error(w, "Unauthorized", http.StatusUnauthorized)
+		return
+	}
 	vars := mux.Vars(r)
 	reportID, err := strconv.Atoi(vars["id"])
 	if err != nil {
@@ -261,7 +293,11 @@ func (h *ErrorReportingHandler) UpdateCrashStatus(w http.ResponseWriter, r *http
 }
 
 func (h *ErrorReportingHandler) GetErrorStatistics(w http.ResponseWriter, r *http.Request) {
-	userID := r.Context().Value("user_id").(int)
+	userID, ok := r.Context().Value("user_id").(int)
+	if !ok {
+		http.Error(w, "Unauthorized", http.StatusUnauthorized)
+		return
+	}
 
 	hasPermission, err := h.authService.CheckPermission(userID, models.PermissionReportView)
 	if err != nil || !hasPermission {
@@ -280,7 +316,11 @@ func (h *ErrorReportingHandler) GetErrorStatistics(w http.ResponseWriter, r *htt
 }
 
 func (h *ErrorReportingHandler) GetCrashStatistics(w http.ResponseWriter, r *http.Request) {
-	userID := r.Context().Value("user_id").(int)
+	userID, ok := r.Context().Value("user_id").(int)
+	if !ok {
+		http.Error(w, "Unauthorized", http.StatusUnauthorized)
+		return
+	}
 
 	hasPermission, err := h.authService.CheckPermission(userID, models.PermissionReportView)
 	if err != nil || !hasPermission {
@@ -299,7 +339,11 @@ func (h *ErrorReportingHandler) GetCrashStatistics(w http.ResponseWriter, r *htt
 }
 
 func (h *ErrorReportingHandler) GetSystemHealth(w http.ResponseWriter, r *http.Request) {
-	userID := r.Context().Value("user_id").(int)
+	userID, ok := r.Context().Value("user_id").(int)
+	if !ok {
+		http.Error(w, "Unauthorized", http.StatusUnauthorized)
+		return
+	}
 
 	hasPermission, err := h.authService.CheckPermission(userID, models.PermissionSystemAdmin)
 	if err != nil || !hasPermission {
@@ -318,7 +362,11 @@ func (h *ErrorReportingHandler) GetSystemHealth(w http.ResponseWriter, r *http.R
 }
 
 func (h *ErrorReportingHandler) UpdateConfiguration(w http.ResponseWriter, r *http.Request) {
-	userID := r.Context().Value("user_id").(int)
+	userID, ok := r.Context().Value("user_id").(int)
+	if !ok {
+		http.Error(w, "Unauthorized", http.StatusUnauthorized)
+		return
+	}
 
 	hasPermission, err := h.authService.CheckPermission(userID, models.PermissionSystemAdmin)
 	if err != nil || !hasPermission {
@@ -345,7 +393,11 @@ func (h *ErrorReportingHandler) UpdateConfiguration(w http.ResponseWriter, r *ht
 }
 
 func (h *ErrorReportingHandler) GetConfiguration(w http.ResponseWriter, r *http.Request) {
-	userID := r.Context().Value("user_id").(int)
+	userID, ok := r.Context().Value("user_id").(int)
+	if !ok {
+		http.Error(w, "Unauthorized", http.StatusUnauthorized)
+		return
+	}
 
 	hasPermission, err := h.authService.CheckPermission(userID, models.PermissionSystemAdmin)
 	if err != nil || !hasPermission {
@@ -364,7 +416,11 @@ func (h *ErrorReportingHandler) GetConfiguration(w http.ResponseWriter, r *http.
 }
 
 func (h *ErrorReportingHandler) CleanupOldReports(w http.ResponseWriter, r *http.Request) {
-	userID := r.Context().Value("user_id").(int)
+	userID, ok := r.Context().Value("user_id").(int)
+	if !ok {
+		http.Error(w, "Unauthorized", http.StatusUnauthorized)
+		return
+	}
 
 	hasPermission, err := h.authService.CheckPermission(userID, models.PermissionSystemAdmin)
 	if err != nil || !hasPermission {
@@ -399,7 +455,11 @@ func (h *ErrorReportingHandler) CleanupOldReports(w http.ResponseWriter, r *http
 }
 
 func (h *ErrorReportingHandler) ExportReports(w http.ResponseWriter, r *http.Request) {
-	userID := r.Context().Value("user_id").(int)
+	userID, ok := r.Context().Value("user_id").(int)
+	if !ok {
+		http.Error(w, "Unauthorized", http.StatusUnauthorized)
+		return
+	}
 
 	hasPermission, err := h.authService.CheckPermission(userID, models.PermissionReportView)
 	if err != nil || !hasPermission {
