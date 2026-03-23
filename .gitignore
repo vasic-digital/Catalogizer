@@ -246,6 +246,13 @@ tools/
 catalog-api/catalog-api
 releases/
 
+# QA test results, video recordings, and session evidence (generated at runtime)
+qa-results/
+*.mp4
+*.webm
+*.avi
+*.mkv
+
 # Worktrees
 .worktrees/
 

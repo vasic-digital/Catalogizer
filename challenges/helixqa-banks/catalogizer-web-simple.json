@@ -1,0 +1,55 @@
+{
+  "challenges": [
+    {
+      "id": "web-login-page",
+      "name": "Login Page Load",
+      "description": "",
+      "category": "functional",
+      "priority": "critical",
+      "platforms": [
+        "web"
+      ],
+      "steps": [
+        {
+          "name": "Navigate to login",
+          "action": "Navigate to /login",
+          "expected": "Login form visible with username and password fields"
+        }
+      ]
+    },
+    {
+      "id": "web-dashboard",
+      "name": "Dashboard Access",
+      "description": "",
+      "category": "functional",
+      "priority": "high",
+      "platforms": [
+        "web"
+      ],
+      "steps": [
+        {
+          "name": "Access dashboard",
+          "action": "Login and navigate to /dashboard",
+          "expected": "Dashboard with catalog overview visible"
+        }
+      ]
+    },
+    {
+      "id": "web-media-browser",
+      "name": "Media Browser",
+      "description": "",
+      "category": "functional",
+      "priority": "high",
+      "platforms": [
+        "web"
+      ],
+      "steps": [
+        {
+          "name": "Browse media",
+          "action": "Navigate to /browse",
+          "expected": "Media grid with filtering options"
+        }
+      ]
+    }
+  ]
+}
