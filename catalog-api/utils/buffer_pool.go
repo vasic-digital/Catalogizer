@@ -117,13 +117,16 @@ func (bp *BufferPool) Stats() BufferPoolStats {
 	}
 }
 
-// Reset clears all pools and statistics
+// Reset reinitializes all pools and resets statistics.
+// Note: sync.Pool cannot be drained when it has a New func, so we replace the pools.
 func (bp *BufferPool) Reset() {
-	for _, pool := range bp.pools {
-		for {
-			if pool.Get() == nil {
-				break
-			}
+	for i, size := range bp.sizes {
+		bufSize := size
+		bp.pools[i] = &sync.Pool{
+			New: func() interface{} {
+				buf := make([]byte, 0, bufSize)
+				return &buf
+			},
 		}
 	}
 	bp.hits.Store(0)
