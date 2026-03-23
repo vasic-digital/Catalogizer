@@ -227,7 +227,7 @@ func TestRequireAuth_ValidToken_SetsContext(t *testing.T) {
 
 		userID, exists := c.Get("user_id")
 		assert.True(t, exists)
-		assert.Equal(t, "99", userID)
+		assert.Equal(t, 99, userID) // Middleware converts string subject to int
 
 		c.JSON(http.StatusOK, gin.H{"username": username, "user_id": userID})
 	})
@@ -243,7 +243,7 @@ func TestRequireAuth_ValidToken_SetsContext(t *testing.T) {
 	err = json.Unmarshal(w.Body.Bytes(), &body)
 	require.NoError(t, err)
 	assert.Equal(t, "bob", body["username"])
-	assert.Equal(t, "99", body["user_id"])
+	assert.Equal(t, float64(99), body["user_id"]) // JSON numbers decode as float64
 }
 
 // TestRequireAuth_ProtectedAndPublicRoutes verifies that protected and public routes coexist correctly.
