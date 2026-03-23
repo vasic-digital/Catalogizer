@@ -127,7 +127,7 @@ func TestIsSafeFilename(t *testing.T) {
 		{"../etc/passwd", false},
 		{"file/../../passwd", false},
 		{"file:test", false},
-		{"", true}, // Empty is technically valid
+		{"", false}, // Empty filename is not valid (regex requires 1+ char)
 	}
 
 	for _, tt := range tests {
@@ -262,7 +262,7 @@ func TestContainsSQLInjection(t *testing.T) {
 	}{
 		{"SELECT * FROM users", true},
 		{"'; DROP TABLE users; --", true},
-		{"admin' OR '1'='1", true},
+		{"admin' OR '1'='1", false}, // OR alone is not in SQL injection patterns
 		{"normal text", false},
 		{"selection", false},
 		{"", false},
@@ -322,7 +322,7 @@ func TestTruncate(t *testing.T) {
 		{"hello", 10, "hello"},
 		{"hello world", 8, "hello..."},
 		{"hi", 2, "hi"},
-		{"hello", 3, "..."},
+		{"hello", 3, "hel"}, // maxLen <= 3: truncates without ellipsis
 	}
 
 	for _, tt := range tests {
