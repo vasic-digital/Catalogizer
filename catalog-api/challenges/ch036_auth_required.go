@@ -50,7 +50,7 @@ func (c *AuthRequiredChallenge) Execute(
 	// Public endpoints that should NOT require auth
 	publicEndpoints := []string{
 		"/health",
-		"/api/v1/health",
+		"/metrics",
 	}
 
 	c.ReportProgress("public-endpoints", nil)
@@ -78,10 +78,10 @@ func (c *AuthRequiredChallenge) Execute(
 	// Protected endpoints that MUST require auth (401 or 403 without token)
 	protectedEndpoints := []string{
 		"/api/v1/auth/me",
-		"/api/v1/storage/roots",
-		"/api/v1/entities",
-		"/api/v1/stats/overall",
-		"/api/v1/files",
+		"/api/v1/storage-roots",
+		"/api/v1/catalog",
+		"/api/v1/media/stats",
+		"/api/v1/search",
 	}
 
 	c.ReportProgress("protected-endpoints", nil)
