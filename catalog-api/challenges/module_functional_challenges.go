@@ -204,11 +204,11 @@ func RegisterModuleFuncChallenges(svc interface{ Register(challenge.Challenge) e
 		{
 			id:   "MOD-020",
 			name: "Memory LeakDetector Tracking",
-			desc: "Verifies the Memory module has leak detection and resource tracking capabilities.",
+			desc: "Verifies the Memory module has leak detection and memory monitoring capabilities.",
 			path: "../Memory",
 			requiredTypes: []string{
 				"LeakDetector",
-				"Track",
+				"MemoryMonitor",
 			},
 			requiredFiles: []string{
 				"CLAUDE.md",
@@ -217,11 +217,11 @@ func RegisterModuleFuncChallenges(svc interface{ Register(challenge.Challenge) e
 		},
 		{
 			id:   "MOD-021",
-			name: "Memory KnowledgeGraph BFS",
-			desc: "Verifies the Memory module has knowledge graph with breadth-first search.",
+			name: "Memory Graph BFS",
+			desc: "Verifies the Memory module has graph with breadth-first search.",
 			path: "../Memory",
 			requiredTypes: []string{
-				"KnowledgeGraph",
+				"Graph",
 			},
 			requiredFiles: []string{
 				"CLAUDE.md",
