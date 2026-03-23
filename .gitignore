@@ -281,3 +281,5 @@ catalog-api/monitor_scan.sh
 
 # Development PID files
 dev.pid
+catalog-api/catalogizer-bin
+catalog-api/cache/
