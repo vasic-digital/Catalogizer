@@ -22,6 +22,8 @@ func (db *DB) RunMigrations(ctx context.Context) error {
 		{Version: 8, Name: "create_media_entity_tables", Up: db.createMediaEntityTables},
 		{Version: 9, Name: "create_performance_indexes", Up: db.createPerformanceIndexes},
 		{Version: 10, Name: "create_sync_tables", Up: db.createSyncTables},
+		{Version: 11, Name: "create_service_tables", Up: db.createServiceTables},
+		{Version: 12, Name: "fix_service_table_columns", Up: db.fixServiceTableColumns},
 	}
 
 	for _, migration := range migrations {
