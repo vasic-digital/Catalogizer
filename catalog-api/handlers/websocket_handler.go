@@ -72,10 +72,14 @@ func (wc *wsConn) close() {
 	select {
 	case <-wc.done:
 		// Already closed
+		return
 	default:
 		close(wc.done)
 	}
 
+	// Set an immediate read deadline to unblock any ReadMessage call,
+	// then close the underlying connection
+	wc.conn.SetReadDeadline(time.Now())
 	wc.conn.Close()
 }
 
@@ -94,6 +98,7 @@ type WebSocketHandler struct {
 	// Cleanup
 	ticker   *time.Ticker
 	stopChan chan struct{}
+	stopOnce sync.Once
 	wg       sync.WaitGroup
 }
 
@@ -137,30 +142,32 @@ func NewWebSocketHandlerWithConfig(logger *zap.Logger, config WebSocketConfig) *
 
 // Stop gracefully shuts down the WebSocket handler.
 func (h *WebSocketHandler) Stop() {
-	h.logger.Info("Stopping WebSocket handler")
+	h.stopOnce.Do(func() {
+		h.logger.Info("Stopping WebSocket handler")
 
-	// Signal stop
-	close(h.stopChan)
+		// Signal stop
+		close(h.stopChan)
 
-	// Stop ticker
-	h.ticker.Stop()
+		// Stop ticker
+		h.ticker.Stop()
 
-	// Close all connections
-	h.mu.Lock()
-	clients := make([]*wsConn, 0, len(h.clients))
-	for wc := range h.clients {
-		clients = append(clients, wc)
-	}
-	h.mu.Unlock()
+		// Close all connections
+		h.mu.Lock()
+		clients := make([]*wsConn, 0, len(h.clients))
+		for wc := range h.clients {
+			clients = append(clients, wc)
+		}
+		h.mu.Unlock()
 
-	for _, wc := range clients {
-		wc.close()
-	}
+		for _, wc := range clients {
+			wc.close()
+		}
 
-	// Wait for cleanup goroutine
-	h.wg.Wait()
+		// Wait for cleanup goroutine
+		h.wg.Wait()
 
-	h.logger.Info("WebSocket handler stopped")
+		h.logger.Info("WebSocket handler stopped")
+	})
 }
 
 // cleanupLoop periodically cleans up stale connections.
@@ -270,11 +277,12 @@ func (h *WebSocketHandler) HandleConnection(c *gin.Context) {
 	if h.connCount > h.maxReached {
 		h.maxReached = h.connCount
 	}
+	active := h.connCount
 	h.mu.Unlock()
 
 	h.logger.Info("WebSocket client connected",
 		zap.String("id", wc.id),
-		zap.Int64("active", h.connCount))
+		zap.Int64("active", active))
 
 	// Start goroutines for reading and writing
 	go h.writePump(wc)

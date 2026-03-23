@@ -1281,6 +1281,374 @@ receivers:
       {{ end }}
 ```
 
+## Goroutine Leak Detection and Resolution
+
+### Symptoms
+
+- Steadily increasing memory usage over time
+- Prometheus metric `go_goroutines` climbing without plateau
+- Application becomes unresponsive under load
+
+### Detection
+
+```bash
+# Check current goroutine count via Prometheus
+curl -s http://localhost:8080/metrics | grep go_goroutines
+
+# Get a goroutine dump via pprof
+curl -s http://localhost:8080/debug/pprof/goroutine?debug=1 > goroutines.txt
+wc -l goroutines.txt
+
+# Get a full goroutine profile for analysis
+curl -s http://localhost:8080/debug/pprof/goroutine?debug=2 > goroutines_full.txt
+
+# Analyze with go tool pprof
+go tool pprof http://localhost:8080/debug/pprof/goroutine
+```
+
+### Common Causes in Catalogizer
+
+1. **Unclosed WebSocket connections**: The WebSocket handler (`handlers/websocket_handler.go`) manages client connections. If a client disconnects abnormally, the cleanup goroutine may not fire.
+
+```bash
+# Check active WebSocket connections
+curl -s http://localhost:8080/metrics | grep websocket
+```
+
+2. **Scanner goroutines not cleaned up**: The `UniversalScanner` spawns goroutines per storage root. If a scan hangs on an unreachable network share, goroutines accumulate.
+
+```bash
+# Check active scans
+TOKEN="your_jwt_token"
+curl -s -H "Authorization: Bearer $TOKEN" http://localhost:8080/api/v1/scans | jq '.[] | select(.status == "running")'
+```
+
+3. **CacheService goroutine leak**: The `CacheService` in `internal/services/cache_service.go` spawns background cleanup goroutines. The `Close()` method must be called during shutdown.
+
+### Resolution
+
+```bash
+# Restart the service to clear leaked goroutines
+sudo systemctl restart catalogizer
+
+# For persistent issues, enable the Memory leak detection module
+# (digital.vasic.memory) which provides runtime leak tracking
+```
+
+### Prevention
+
+- The `CacheService.Close()` pattern is called in `main.go` deferred cleanup. Verify this is in place.
+- Scanner goroutines use `context.WithCancel` for cancellation. Ensure all contexts are properly cancelled.
+- The `ConcurrencyLimiter(100)` middleware caps concurrent request handling.
+- The `Recovery` module (`digital.vasic.recovery`) provides circuit breaker patterns that prevent goroutine accumulation on failing network calls.
+
+---
+
+## Database Lock Issues
+
+### SQLite WAL Mode Locks
+
+SQLite in WAL (Write-Ahead Logging) mode allows concurrent reads but serializes writes. Lock contention is the most common SQLite issue in production.
+
+**Symptoms:**
+- "database is locked" errors in logs
+- Write operations timing out
+- Scan operations stalling
+
+**Diagnosis:**
+
+```bash
+# Check WAL mode is active
+sqlite3 catalog-api/data/catalogizer.db "PRAGMA journal_mode;"
+# Should return: wal
+
+# Check WAL file size (large WAL = checkpoint needed)
+ls -lh catalog-api/data/catalogizer.db-wal
+
+# Check busy timeout
+sqlite3 catalog-api/data/catalogizer.db "PRAGMA busy_timeout;"
+# Should return: 30000 (30 seconds, set in connection.go)
+```
+
+**Resolution:**
+
+```bash
+# Force a WAL checkpoint
+sqlite3 catalog-api/data/catalogizer.db "PRAGMA wal_checkpoint(TRUNCATE);"
+
+# If the database is stuck, stop the service and checkpoint
+sudo systemctl stop catalogizer
+sqlite3 catalog-api/data/catalogizer.db "PRAGMA wal_checkpoint(TRUNCATE);"
+sudo systemctl start catalogizer
+```
+
+**Prevention:**
+- The connection string in `database/connection.go` sets `_busy_timeout=30000` and `_journal_mode=WAL`
+- WAL auto-checkpoint is configured: `_wal_autocheckpoint=1000`
+- Explicit `PRAGMA journal_mode=WAL` is executed after connection because go-sqlcipher ignores connection string pragmas
+
+### PostgreSQL Lock Issues
+
+**Symptoms:**
+- Queries hanging indefinitely
+- "deadlock detected" errors
+- Connection pool exhaustion
+
+**Diagnosis:**
+
+```sql
+-- Find blocking queries
+SELECT blocked_locks.pid AS blocked_pid,
+       blocked_activity.usename AS blocked_user,
+       blocking_locks.pid AS blocking_pid,
+       blocking_activity.usename AS blocking_user,
+       blocked_activity.query AS blocked_statement,
+       blocking_activity.query AS blocking_statement
+FROM pg_catalog.pg_locks blocked_locks
+JOIN pg_catalog.pg_stat_activity blocked_activity ON blocked_activity.pid = blocked_locks.pid
+JOIN pg_catalog.pg_locks blocking_locks
+  ON blocking_locks.locktype = blocked_locks.locktype
+  AND blocking_locks.relation IS NOT DISTINCT FROM blocked_locks.relation
+  AND blocking_locks.pid != blocked_locks.pid
+JOIN pg_catalog.pg_stat_activity blocking_activity ON blocking_activity.pid = blocking_locks.pid
+WHERE NOT blocked_locks.granted;
+
+-- Check for long-running transactions
+SELECT pid, now() - xact_start AS duration, query, state
+FROM pg_stat_activity
+WHERE state != 'idle'
+  AND xact_start IS NOT NULL
+ORDER BY duration DESC;
+
+-- Check connection pool usage
+SELECT count(*) FILTER (WHERE state = 'active') AS active,
+       count(*) FILTER (WHERE state = 'idle') AS idle,
+       count(*) AS total
+FROM pg_stat_activity
+WHERE usename = 'catalogizer_user';
+```
+
+**Resolution:**
+
+```sql
+-- Kill a blocking query
+SELECT pg_terminate_backend(<blocking_pid>);
+
+-- Kill all idle connections older than 1 hour
+SELECT pg_terminate_backend(pid)
+FROM pg_stat_activity
+WHERE state = 'idle'
+  AND state_change < now() - interval '1 hour'
+  AND usename = 'catalogizer_user';
+```
+
+**Prevention:**
+- Connection pool defaults in `database/connection.go`: MaxOpen=25, MaxIdle=10, ConnMaxLifetime=5min
+- The `RequestTimeout(60s)` middleware ensures queries do not run indefinitely
+- Use the `config.json` `write_timeout` setting (should be 900 for long-running challenge RunAll)
+
+---
+
+## WebSocket Connection Problems
+
+### Symptoms
+
+- Frontend shows "Disconnected" status
+- Real-time scan progress not updating
+- Browser console shows WebSocket errors
+
+### Diagnosis
+
+```bash
+# Test WebSocket connectivity
+# Use websocat or wscat
+wscat -c ws://localhost:8080/ws
+
+# Check if the WebSocket handler is registered
+curl -s http://localhost:8080/metrics | grep websocket
+
+# Check for proxy issues (nginx must be configured for WebSocket)
+grep -i "upgrade" /etc/nginx/conf.d/catalogizer.conf
+```
+
+### Common Causes
+
+1. **Nginx proxy not configured for WebSocket upgrade:**
+
+```nginx
+# Required nginx configuration for WebSocket
+location /ws {
+    proxy_pass http://localhost:8080/ws;
+    proxy_http_version 1.1;
+    proxy_set_header Upgrade $http_upgrade;
+    proxy_set_header Connection "upgrade";
+    proxy_set_header Host $host;
+    proxy_read_timeout 86400;
+}
+```
+
+2. **Authentication via query parameter**: The WebSocket endpoint authenticates via query parameter, not the `Authorization` header. Ensure the frontend passes `?token=<jwt>` in the WebSocket URL.
+
+3. **Connection timeout**: The WebSocket connection may be closed by intermediate proxies. Configure `proxy_read_timeout` in nginx to a high value (86400 seconds = 24 hours).
+
+4. **HTTP/3 (QUIC) and WebSocket**: WebSocket over HTTP/3 uses WebTransport. If the client does not support WebTransport, it falls back to HTTP/2 or HTTP/1.1 for WebSocket connections.
+
+### Resolution
+
+```bash
+# Restart the service to reset all WebSocket connections
+sudo systemctl restart catalogizer
+
+# Clear browser state (frontend reconnects automatically)
+# The @vasic-digital/websocket-client package handles reconnection with backoff
+```
+
+---
+
+## Cache Invalidation Issues
+
+### Symptoms
+
+- Stale data shown in the UI after updates
+- Media entity metadata not reflecting recent scans
+- Statistics showing outdated counts
+
+### Diagnosis
+
+```bash
+# Check Redis connectivity (if Redis is configured)
+redis-cli ping
+redis-cli info memory
+
+# Check cache headers on API responses
+curl -I -H "Authorization: Bearer $TOKEN" http://localhost:8080/api/v1/entities/stats
+# Look for Cache-Control headers
+
+# Check entity cache age
+curl -I -H "Authorization: Bearer $TOKEN" http://localhost:8080/api/v1/stats/overall
+# Statistics are cached for 60 seconds (CacheHeaders middleware)
+# Entity browsing is cached for 300 seconds (5 minutes)
+```
+
+### Common Causes
+
+1. **Browser cache**: The frontend may serve cached responses. Entity endpoints have 5-minute cache headers; statistics have 1-minute cache.
+
+2. **Redis stale data**: If Redis is enabled, cached data may persist after database changes.
+
+3. **CDN or proxy cache**: Intermediate caches may hold stale responses.
+
+### Resolution
+
+```bash
+# Clear Redis cache
+redis-cli FLUSHDB
+
+# Force cache bypass from the client
+# Add Cache-Control: no-cache header to requests
+
+# Clear browser cache
+# Ctrl+Shift+Delete in the browser, or hard refresh with Ctrl+Shift+R
+
+# For persistent issues, restart the service
+sudo systemctl restart catalogizer
+```
+
+### Prevention
+
+- The `CacheHeaders` middleware sets appropriate `Cache-Control` headers
+- The `StaticCacheHeaders` middleware is only used for asset serving
+- WebSocket events broadcast changes in real-time, triggering React Query invalidation in the frontend
+- The asset event bus (`event.AssetReady`, `event.AssetFailed`) pushes updates to WebSocket clients
+
+---
+
+## Container Networking Issues
+
+### Symptoms
+
+- Backend cannot reach PostgreSQL or Redis in containers
+- SSL errors during container builds
+- DNS resolution failures inside containers
+- `crun exec.fifo` errors with podman-compose
+
+### Diagnosis
+
+```bash
+# Check container status
+podman ps -a
+
+# Check container logs
+podman logs catalogizer-api
+podman logs catalogizer-db
+
+# Check container networking
+podman network ls
+podman inspect catalogizer-api | jq '.[0].NetworkSettings'
+
+# Test connectivity from inside a container
+podman exec catalogizer-api ping -c 1 catalogizer-db
+podman exec catalogizer-api curl -s http://localhost:8080/health
+```
+
+### Common Causes and Solutions
+
+1. **SSL errors during build**: Podman's default container networking has issues with some SSL endpoints (dl.google.com, crates.io). Always use `--network host` for builds:
+
+```bash
+podman build --network host -t catalogizer-api .
+```
+
+2. **crun exec.fifo errors**: Running PostgreSQL and Redis via podman-compose can cause `crun exec.fifo` errors. Use `podman run --network host` instead of compose for builds:
+
+```bash
+podman run --network host --cpus=2 --memory=4g catalogizer-api
+```
+
+3. **Short image names failing**: Podman without a TTY cannot prompt for registry selection. Use fully qualified names:
+
+```bash
+# Wrong:
+podman pull golang:1.24
+
+# Correct:
+podman pull docker.io/library/golang:1.24
+```
+
+4. **Container resource limits**: The host has a 30-40% resource budget. Exceeding limits freezes the system:
+
+```bash
+# Check container resource usage
+podman stats --no-stream
+
+# Recommended limits:
+# PostgreSQL: --cpus=1 --memory=2g
+# API: --cpus=2 --memory=4g
+# Web: --cpus=1 --memory=2g
+# Builder: --cpus=3 --memory=8g
+# Total budget: max 4 CPUs, 8 GB RAM across all containers
+```
+
+5. **NAS access from containers**: The API container needs explicit host mapping for NAS devices:
+
+```bash
+podman run --add-host=synology.local:192.168.0.241 catalogizer-api
+```
+
+6. **GOTOOLCHAIN auto-download**: Inside containers, Go may try to download a newer toolchain, causing build failures. Set:
+
+```bash
+export GOTOOLCHAIN=local
+```
+
+7. **Tauri AppImage in containers**: Containers lack FUSE support. Set:
+
+```bash
+export APPIMAGE_EXTRACT_AND_RUN=1
+```
+
+---
+
 For additional help with specific issues not covered in this guide, please:
 
 1. Check the [Configuration Guide](CONFIGURATION_GUIDE.md) for setup issues

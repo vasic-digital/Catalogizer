@@ -165,6 +165,60 @@ Built for extensibility with a submodule-based architecture.
 - Each module is an independent git repository with its own tests and documentation
 - Shared across projects for consistent behavior and reduced duplication
 
+## Concurrency Safety
+
+Production-grade concurrency patterns ensure reliability under load.
+
+- **Goroutine lifecycle management**: Every background goroutine has a clear owner, cancellation context, and shutdown path using `context.WithCancel` and `sync.WaitGroup`
+- **Bounded parallelism**: Semaphore-based concurrency limiting prevents resource exhaustion during scans and asset resolution
+- **ConcurrencyLimiter middleware**: Caps in-flight HTTP requests at a configurable limit (default: 100) to protect the backend from overload
+- **Lazy initialization**: Generic lazy loading pattern (`digital.vasic.lazy`) defers expensive operations (database connections, resolver chains) until first use
+- **Race-free caching**: Read-write mutex protected in-memory cache with idempotent `Close()` shutdown pattern
+- **Memory leak detection**: The `digital.vasic.memory` module provides runtime leak tracking and alerting
+
+## Security Scanning
+
+Continuous security verification across six integrated tools.
+
+- **govulncheck**: Go's official vulnerability scanner with call graph analysis -- only reports vulnerabilities in functions your code actually calls
+- **Semgrep**: Static analysis with OWASP and language-specific rulesets for SQL injection, XSS, path traversal, and hardcoded secrets
+- **SonarQube**: Deep static analysis with security hotspot detection, code quality metrics, and technical debt estimates
+- **Snyk**: Dependency and container image vulnerability scanning with continuous monitoring
+- **Trivy**: Container image scanning for OS package and application dependency vulnerabilities
+- **npm audit**: Frontend dependency vulnerability scanning with automatic fix suggestions
+- **Zero-vulnerability policy**: All scans must pass with zero critical findings before any release
+
+## Load Testing
+
+Validate performance under realistic conditions.
+
+- **k6 integration**: JavaScript-based load test scripts in `tests/k6/` covering load, stress, soak, and spike scenarios
+- **Authenticated testing**: Tests use JWT authentication to exercise the full middleware stack
+- **Threshold enforcement**: Automated pass/fail criteria for p95 latency (< 500ms), error rate (< 1%), and throughput (> 100 req/s)
+- **Grafana correlation**: k6 results feed into the same Prometheus/Grafana stack as application metrics for unified performance analysis
+- **Resource-limited execution**: Tests respect the 30-40% host resource budget to prevent system impact
+
+## Monitoring and Observability
+
+Comprehensive visibility into system health and behavior.
+
+- **Prometheus metrics**: HTTP request rates, latencies, response sizes, plus custom scan, entity, and WebSocket metrics at `/metrics`
+- **Runtime metrics collector**: Background sampler (15-second interval) exports goroutine count, heap allocation, GC pause duration, and thread count
+- **Pre-built Grafana dashboards**: Request overview, latency distribution, Go runtime, application-specific panels with PromQL queries
+- **Alerting rules**: Pre-configured alerts for high error rate (> 5%), high latency (p95 > 1s), goroutine leak (> 500), memory growth (> 1 GB), and service down
+- **Structured logging**: JSON-formatted logs via Zap with field-level searching and aggregation support
+- **Built-in log management API**: Log collection, analysis, sharing, and real-time streaming through REST endpoints
+
+## Database Connection Pooling
+
+Optimized database access for both SQLite and PostgreSQL.
+
+- **Configurable pool sizes**: MaxOpenConnections (default 25), MaxIdleConnections (default 10), ConnMaxLifetime (default 5 minutes)
+- **Connection health monitoring**: Automatic connection validation and recycling
+- **Dual-dialect abstraction**: The `database.DB` wrapper transparently rewrites SQL between SQLite and PostgreSQL dialects
+- **WAL mode for SQLite**: Write-Ahead Logging with configurable auto-checkpoint for concurrent read access
+- **Performance indexes**: Migration v9 adds targeted indexes based on actual query patterns (compound indexes for common lookups)
+
 ## Additional Features
 
 - **Duplicate detection**: Identify the same content across different storage sources using hash-based matching

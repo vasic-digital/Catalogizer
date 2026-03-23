@@ -15,7 +15,7 @@ import (
 )
 
 // Mock implementations for testing - not needed with real services
-func createTestReaderService() *services.ReaderService {
+func createTestReaderService() (*services.ReaderService, *services.CacheService) {
 	// Create in-memory database for testing
 	sqlDB := SetupTestDB(nil)
 
@@ -114,12 +114,13 @@ func createTestReaderService() *services.ReaderService {
 	translationService := services.NewTranslationService(logger)
 	localizationService := services.NewLocalizationService(db, logger, translationService, cacheService)
 
-	return services.NewReaderService(db, logger, cacheService, translationService, localizationService)
+	return services.NewReaderService(db, logger, cacheService, translationService, localizationService), cacheService
 }
 
 func TestReaderService_ReadingSession(t *testing.T) {
 	ctx := context.Background()
-	readerService := createTestReaderService()
+	readerService, cacheService := createTestReaderService()
+	defer cacheService.Close()
 
 	t.Run("start reading session", func(t *testing.T) {
 		userID := int64(123)

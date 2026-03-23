@@ -20,7 +20,7 @@ describe('EmptyState', () => {
   });
 
   it('renders icon when provided', () => {
-    const { container } = render(
+    render(
       <EmptyState 
         title="No items" 
         icon={<FolderIcon data-testid="folder-icon" />}

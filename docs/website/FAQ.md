@@ -209,6 +209,170 @@ Set `LOG_LEVEL=debug` in your `.env` file and restart the backend. Check the log
 
 ---
 
+## Security Scanning
+
+### What security scanning tools does Catalogizer use?
+
+Catalogizer integrates six security scanning tools for defense in depth:
+
+1. **govulncheck**: Go's official vulnerability scanner. Unlike generic dependency scanners, it performs call graph analysis and only reports vulnerabilities in functions your code actually calls.
+2. **Semgrep**: Static analysis that matches code patterns for SQL injection, XSS, path traversal, hardcoded secrets, and insecure cryptography.
+3. **SonarQube**: Deep static analysis with security hotspot detection, code quality metrics, and technical debt estimation.
+4. **Snyk**: Scans both dependencies and container images for known vulnerabilities.
+5. **Trivy**: Scans container images for OS package and application dependency vulnerabilities.
+6. **npm audit**: Scans frontend Node.js dependencies for known vulnerabilities.
+
+Run all scans via `scripts/security-test.sh` or individually via the tool-specific scripts in `scripts/`.
+
+### How does Catalogizer prevent SQL injection?
+
+All database queries use parameterized placeholders (`?`). The dual-dialect abstraction layer in `database/dialect.go` automatically rewrites `?` to `$1, $2, ...` for PostgreSQL. No raw string concatenation is used in SQL construction. The input validation middleware sanitizes all incoming request data, and Semgrep rules verify that no new code introduces concatenation-based queries.
+
+### How often should I run security scans?
+
+Run `govulncheck` and `npm audit` before every deployment. Run Semgrep and SonarQube weekly or after significant code changes. Run Trivy after building new container images. Snyk can be configured for continuous monitoring. The release build pipeline includes security checks as a mandatory step.
+
+---
+
+## Load Testing
+
+### How do I load test Catalogizer?
+
+Catalogizer includes k6 load test scripts in `tests/k6/`. Install k6, then run:
+
+```bash
+k6 run tests/k6/load-test.js
+```
+
+The load test authenticates via JWT, exercises key API endpoints (storage roots, media search, entities, statistics), and reports latency, error rate, and throughput metrics.
+
+### What load test scenarios are available?
+
+Four scenarios are provided:
+
+- **Load test**: Gradual ramp to normal capacity (10-20 virtual users over 16 minutes). Validates production-level performance.
+- **Stress test**: Pushes beyond capacity (up to 150 virtual users) to find the breaking point and verify recovery.
+- **Soak test**: Sustained moderate load (20 virtual users for 4+ hours) to detect memory leaks and resource exhaustion.
+- **Spike test**: Sudden load increase to test how the system handles traffic bursts.
+
+### What are the performance targets?
+
+| Metric | Target |
+|--------|--------|
+| p95 latency | < 500ms |
+| p99 latency | < 1 second |
+| Error rate | < 1% |
+| Throughput | > 100 requests/second |
+
+The `ConcurrencyLimiter(100)` middleware protects the backend from overload by capping in-flight requests. The connection pool (MaxOpen=25, MaxIdle=10) prevents database saturation.
+
+---
+
+## Monitoring
+
+### How do I monitor Catalogizer in production?
+
+Catalogizer exposes Prometheus-compatible metrics at `/metrics`. The recommended monitoring stack is:
+
+1. **Prometheus**: Scrapes metrics every 10-15 seconds
+2. **Grafana**: Visualizes metrics with pre-built dashboards
+3. **Alertmanager**: Routes alerts to email, Slack, or webhooks
+
+Start the monitoring stack with `podman-compose -f docker-compose.dev.yml up prometheus grafana`. Import the dashboard from `monitoring/grafana/dashboards/`.
+
+### What metrics are available?
+
+Three categories of metrics are exported:
+
+- **HTTP metrics**: Request count, duration histogram, request/response sizes -- per method and path
+- **Go runtime metrics**: Goroutine count, heap allocation, GC pause duration, thread count -- sampled every 15 seconds
+- **Application metrics**: Scan operations, files processed, media entity counts, WebSocket connections
+
+### What alerts should I configure?
+
+The recommended alert rules (included in `monitoring/alerts.yml`):
+
+| Alert | Condition | Severity |
+|-------|-----------|----------|
+| HighErrorRate | Server error rate > 5% for 5 min | Critical |
+| HighLatency | p95 latency > 1s for 5 min | Warning |
+| GoroutineLeak | Goroutine count > 500 for 10 min | Warning |
+| HighMemoryUsage | Heap > 1 GB for 15 min | Warning |
+| ServiceDown | Health check failing for 1 min | Critical |
+
+### How do I detect goroutine leaks?
+
+Monitor the `go_goroutines` Prometheus metric. Under stable load, this value should remain roughly constant. A steadily increasing count that does not decrease after load drops indicates a goroutine leak. Normal values for Catalogizer under moderate load are 50-200 goroutines. If the count exceeds 500, investigate with `go tool pprof http://localhost:8080/debug/pprof/goroutine`.
+
+---
+
+## Performance Tuning
+
+### How do I tune database performance?
+
+For SQLite (development):
+- WAL mode is enabled automatically (`PRAGMA journal_mode=WAL`)
+- Busy timeout is set to 30 seconds to handle write contention
+- Cache size is configurable via `config.json`
+
+For PostgreSQL (production):
+- Connection pool: MaxOpen=25, MaxIdle=10, ConnMaxLifetime=5min (configurable)
+- Run `VACUUM ANALYZE` periodically to update statistics
+- Monitor slow queries via `pg_stat_statements`
+- The performance indexes added in migration v9 target the most common query patterns
+
+### How do I tune the API for high throughput?
+
+Key configuration settings:
+
+| Setting | Default | Description |
+|---------|---------|-------------|
+| `ConcurrencyLimiter` | 100 | Maximum in-flight HTTP requests |
+| `RequestTimeout` | 60s | Maximum request processing time |
+| `write_timeout` | 900s | Must be 900 (not 30) for RunAll challenges |
+| `MaxOpenConnections` | 25 | Database connection pool size |
+| `ScannerConcurrency` | 4 | Concurrent scan workers per storage root |
+| `AssetWorkers` | 4 | Concurrent asset resolution workers |
+
+For containerized deployments, enforce resource limits: API container at `--cpus=2 --memory=4g`, PostgreSQL at `--cpus=1 --memory=2g`. Total container budget: max 4 CPUs, 8 GB RAM.
+
+### How do I optimize media entity queries?
+
+Migration v9 adds performance indexes tailored to the most common query patterns:
+
+- `idx_media_items_title_type` (compound): Accelerates `GetByTitle` and `GetDuplicates` which always filter by title and type together
+- `idx_media_items_status` and `idx_media_items_year`: Accelerates search and duplicate detection filters
+- `idx_user_metadata_user_watched` (compound): Accelerates watched media queries
+- `idx_media_files_item_file` (unique): Prevents duplicate file-entity links and accelerates junction lookups
+
+---
+
+## Database Migration
+
+### How do I migrate from SQLite to PostgreSQL?
+
+The [Migration Guide](../MIGRATION_GUIDE.md) provides detailed steps:
+
+1. Create the PostgreSQL database and user
+2. Set `DATABASE_TYPE=postgres` and connection parameters in `.env`
+3. Start Catalogizer to create the schema (migrations run automatically)
+4. Export data from SQLite using `sqlite3 -csv`
+5. Import into PostgreSQL using `\COPY` with CSV
+6. Reset PostgreSQL sequences to match imported data
+7. Verify row counts and run the challenge suite
+
+The dialect abstraction layer handles SQL differences (placeholders, boolean literals, upsert syntax) transparently, so application code works unchanged with either database.
+
+### Do I need to migrate my database when upgrading?
+
+No manual migration is needed. Catalogizer runs migrations automatically on startup. The `migrations` table tracks which versions have been applied. When you update the binary, new migrations run the next time the service starts. Always back up your database before upgrading as a precaution.
+
+### Can I downgrade after upgrading?
+
+There is no built-in rollback mechanism. If you need to downgrade, restore the database from a pre-upgrade backup. This is why backing up before every upgrade is important. See the [Disaster Recovery Guide](../DISASTER_RECOVERY.md) for backup and restore procedures.
+
+---
+
 ## Development
 
 ### How do I contribute?

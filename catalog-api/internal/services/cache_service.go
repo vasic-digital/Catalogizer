@@ -16,11 +16,12 @@ import (
 )
 
 type CacheService struct {
-	db       *database.DB
-	logger   *zap.Logger
-	wg       sync.WaitGroup // Tracks background goroutines for graceful shutdown
-	shutdown chan struct{}  // Signals shutdown to prevent new goroutines
-	closeMu  sync.Mutex     // Guards shutdown-check + wg.Add atomicity
+	db        *database.DB
+	logger    *zap.Logger
+	wg        sync.WaitGroup // Tracks background goroutines for graceful shutdown
+	shutdown  chan struct{}   // Signals shutdown to prevent new goroutines
+	closeMu   sync.Mutex     // Guards shutdown-check + wg.Add atomicity
+	closeOnce sync.Once      // Ensures Close() is safe to call multiple times
 }
 
 type CacheEntry struct {
@@ -151,22 +152,25 @@ func (s *CacheService) cleanupLoop() {
 	}
 }
 
-// Close gracefully shuts down the cache service, waiting for pending operations
+// Close gracefully shuts down the cache service, waiting for pending operations.
+// Safe to call multiple times.
 func (s *CacheService) Close() {
-	s.closeMu.Lock()
-	close(s.shutdown)
-	s.closeMu.Unlock()
+	s.closeOnce.Do(func() {
+		s.closeMu.Lock()
+		close(s.shutdown)
+		s.closeMu.Unlock()
 
-	done := make(chan struct{})
-	go func() {
-		s.wg.Wait()
-		close(done)
-	}()
-	select {
-	case <-done:
-	case <-time.After(10 * time.Second):
-		s.logger.Warn("Cache service shutdown timed out after 10s, some goroutines may still be running")
-	}
+		done := make(chan struct{})
+		go func() {
+			s.wg.Wait()
+			close(done)
+		}()
+		select {
+		case <-done:
+		case <-time.After(10 * time.Second):
+			s.logger.Warn("Cache service shutdown timed out after 10s, some goroutines may still be running")
+		}
+	})
 }
 
 func (s *CacheService) Set(ctx context.Context, key string, value interface{}, ttl time.Duration) error {

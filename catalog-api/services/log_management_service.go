@@ -117,10 +117,14 @@ func (s *LogManagementService) CollectLogs(userID int, request *models.LogCollec
 		return nil, fmt.Errorf("failed to create log collection: %w", err)
 	}
 
+	// Return a snapshot copy to the caller so the goroutine can
+	// safely mutate the original collection without a data race.
+	returnCopy := *collection
+
 	// Start collection process
 	go s.performLogCollection(collection)
 
-	return collection, nil
+	return &returnCopy, nil
 }
 
 func (s *LogManagementService) performLogCollection(collection *models.LogCollection) {

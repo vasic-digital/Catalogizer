@@ -17,6 +17,7 @@ func TestDuplicateDetectionService_BasicCreation(t *testing.T) {
 
 	// Create cache service first
 	cacheService := services.NewCacheService(db, logger)
+	defer cacheService.Close()
 
 	// Test service creation
 	service := services.NewDuplicateDetectionService(db, logger, cacheService)
@@ -30,6 +31,7 @@ func TestDuplicateDetectionService_DetectDuplicates(t *testing.T) {
 
 	// Create cache service first
 	cacheService := services.NewCacheService(db, logger)
+	defer cacheService.Close()
 
 	service := services.NewDuplicateDetectionService(db, logger, cacheService)
 

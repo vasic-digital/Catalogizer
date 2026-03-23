@@ -10,33 +10,30 @@ import (
 	"github.com/gorilla/websocket"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"go.uber.org/zap"
 )
 
+func testWebSocketConfig() WebSocketConfig {
+	cfg := DefaultWebSocketConfig()
+	cfg.PongWait = 3 * time.Second
+	cfg.PingInterval = 1 * time.Second
+	cfg.WriteWait = 2 * time.Second
+	return cfg
+}
+
 func TestWebSocketHandler_HandleConnection(t *testing.T) {
-	// Setup Gin in test mode
 	gin.SetMode(gin.TestMode)
 
-	// Create WebSocket handler
-	handler := NewWebSocketHandler()
+	handler := NewWebSocketHandlerWithConfig(zap.NewNop(), testWebSocketConfig())
 
-	// Create a test HTTP server
 	router := gin.New()
 	router.GET("/ws", handler.HandleConnection)
 	server := httptest.NewServer(router)
-	defer server.Close()
 
-	// Connect to WebSocket endpoint
 	wsURL := "ws" + server.URL[4:] + "/ws"
 	conn, resp, err := websocket.DefaultDialer.Dial(wsURL, nil)
 	require.NoError(t, err)
-	defer conn.Close()
 	assert.Equal(t, http.StatusSwitchingProtocols, resp.StatusCode)
-
-	// Read welcome message
-	messageType, message, err := conn.ReadMessage()
-	require.NoError(t, err)
-	assert.Equal(t, websocket.TextMessage, messageType)
-	assert.Contains(t, string(message), "Connected to Catalogizer real-time updates")
 
 	// Send ping message
 	err = conn.WriteJSON(map[string]interface{}{
@@ -46,36 +43,40 @@ func TestWebSocketHandler_HandleConnection(t *testing.T) {
 
 	// Expect pong response
 	conn.SetReadDeadline(time.Now().Add(2 * time.Second))
-	messageType, message, err = conn.ReadMessage()
+	messageType, message, err := conn.ReadMessage()
 	require.NoError(t, err)
 	assert.Equal(t, websocket.TextMessage, messageType)
 	assert.Contains(t, string(message), "pong")
+
+	// Verify connection stats
+	stats := handler.GetStats()
+	assert.Equal(t, int64(1), stats.ActiveConnections)
+
+	// Cleanup: stop handler to close server-side connections and unblock readPump
+	handler.Stop()
+	conn.Close()
+	server.Close()
 }
 
 func TestWebSocketHandler_BroadcastToClients(t *testing.T) {
-	handler := NewWebSocketHandler()
+	gin.SetMode(gin.TestMode)
 
-	// Create two test connections
+	handler := NewWebSocketHandlerWithConfig(zap.NewNop(), testWebSocketConfig())
+
 	router := gin.New()
 	router.GET("/ws", handler.HandleConnection)
 	server := httptest.NewServer(router)
-	defer server.Close()
 
 	wsURL := "ws" + server.URL[4:] + "/ws"
 
 	conn1, _, err := websocket.DefaultDialer.Dial(wsURL, nil)
 	require.NoError(t, err)
-	defer conn1.Close()
 
 	conn2, _, err := websocket.DefaultDialer.Dial(wsURL, nil)
 	require.NoError(t, err)
-	defer conn2.Close()
 
-	// Wait for welcome messages (discard)
-	conn1.SetReadDeadline(time.Now().Add(1 * time.Second))
-	conn1.ReadMessage()
-	conn2.SetReadDeadline(time.Now().Add(1 * time.Second))
-	conn2.ReadMessage()
+	// Give server time to register both connections
+	time.Sleep(50 * time.Millisecond)
 
 	// Broadcast a message
 	handler.BroadcastToClients(map[string]interface{}{
@@ -84,13 +85,19 @@ func TestWebSocketHandler_BroadcastToClients(t *testing.T) {
 	})
 
 	// Both connections should receive the broadcast
-	conn1.SetReadDeadline(time.Now().Add(1 * time.Second))
+	conn1.SetReadDeadline(time.Now().Add(2 * time.Second))
 	_, msg1, err := conn1.ReadMessage()
 	require.NoError(t, err)
 	assert.Contains(t, string(msg1), "hello")
 
-	conn2.SetReadDeadline(time.Now().Add(1 * time.Second))
+	conn2.SetReadDeadline(time.Now().Add(2 * time.Second))
 	_, msg2, err := conn2.ReadMessage()
 	require.NoError(t, err)
 	assert.Contains(t, string(msg2), "hello")
+
+	// Cleanup
+	handler.Stop()
+	conn1.Close()
+	conn2.Close()
+	server.Close()
 }

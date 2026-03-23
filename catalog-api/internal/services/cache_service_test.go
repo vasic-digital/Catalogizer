@@ -15,6 +15,7 @@ func TestNewCacheService(t *testing.T) {
 	mockLogger := zap.NewNop()
 
 	service := NewCacheService(mockDB, mockLogger)
+	defer service.Close()
 
 	assert.NotNil(t, service)
 	assert.Equal(t, mockDB, service.db)
@@ -25,6 +26,7 @@ func TestCacheService_Set(t *testing.T) {
 	mockDB := database.WrapDB(nil, database.DialectSQLite)
 	mockLogger := zap.NewNop()
 	service := NewCacheService(mockDB, mockLogger)
+	defer service.Close()
 
 	// With nil DB, this should not panic and should return nil
 	testData := map[string]string{"key": "value"}
@@ -38,6 +40,7 @@ func TestCacheService_Get(t *testing.T) {
 	mockDB := database.WrapDB(nil, database.DialectSQLite)
 	mockLogger := zap.NewNop()
 	service := NewCacheService(mockDB, mockLogger)
+	defer service.Close()
 
 	var result map[string]string
 	found, err := service.Get(context.Background(), "test_key", &result)
@@ -51,6 +54,7 @@ func TestCacheService_Delete(t *testing.T) {
 	mockDB := database.WrapDB(nil, database.DialectSQLite)
 	mockLogger := zap.NewNop()
 	service := NewCacheService(mockDB, mockLogger)
+	defer service.Close()
 
 	err := service.Delete(context.Background(), "test_key")
 
@@ -62,6 +66,7 @@ func TestCacheService_Clear(t *testing.T) {
 	mockDB := database.WrapDB(nil, database.DialectSQLite)
 	mockLogger := zap.NewNop()
 	service := NewCacheService(mockDB, mockLogger)
+	defer service.Close()
 
 	err := service.Clear(context.Background(), "")
 
@@ -73,6 +78,7 @@ func TestCacheService_Clear_WithPattern(t *testing.T) {
 	mockDB := database.WrapDB(nil, database.DialectSQLite)
 	mockLogger := zap.NewNop()
 	service := NewCacheService(mockDB, mockLogger)
+	defer service.Close()
 
 	err := service.Clear(context.Background(), "test_%")
 
@@ -84,6 +90,7 @@ func TestCacheService_SetMediaMetadata(t *testing.T) {
 	mockDB := database.WrapDB(nil, database.DialectSQLite)
 	mockLogger := zap.NewNop()
 	service := NewCacheService(mockDB, mockLogger)
+	defer service.Close()
 
 	testData := map[string]string{"title": "Test Movie"}
 	err := service.SetMediaMetadata(context.Background(), 123, "movie", "tmdb", testData, 0.95)
@@ -96,6 +103,7 @@ func TestCacheService_GetMediaMetadata(t *testing.T) {
 	mockDB := database.WrapDB(nil, database.DialectSQLite)
 	mockLogger := zap.NewNop()
 	service := NewCacheService(mockDB, mockLogger)
+	defer service.Close()
 
 	var result map[string]string
 	found, quality, err := service.GetMediaMetadata(context.Background(), 123, "movie", "tmdb", &result)
@@ -110,6 +118,7 @@ func TestCacheService_SetAPIResponse(t *testing.T) {
 	mockDB := database.WrapDB(nil, database.DialectSQLite)
 	mockLogger := zap.NewNop()
 	service := NewCacheService(mockDB, mockLogger)
+	defer service.Close()
 
 	requestData := map[string]string{"query": "test"}
 	responseData := map[string]interface{}{"results": []string{"item1", "item2"}}
@@ -124,6 +133,7 @@ func TestCacheService_GetAPIResponse(t *testing.T) {
 	mockDB := database.WrapDB(nil, database.DialectSQLite)
 	mockLogger := zap.NewNop()
 	service := NewCacheService(mockDB, mockLogger)
+	defer service.Close()
 
 	requestData := map[string]string{"query": "test"}
 	var result map[string]interface{}
@@ -140,6 +150,7 @@ func TestCacheService_SetThumbnail(t *testing.T) {
 	mockDB := database.WrapDB(nil, database.DialectSQLite)
 	mockLogger := zap.NewNop()
 	service := NewCacheService(mockDB, mockLogger)
+	defer service.Close()
 
 	err := service.SetThumbnail(context.Background(), 123, 30, "http://example.com/thumb.jpg", 320, 240, 10240)
 
@@ -151,6 +162,7 @@ func TestCacheService_GetThumbnail(t *testing.T) {
 	mockDB := database.WrapDB(nil, database.DialectSQLite)
 	mockLogger := zap.NewNop()
 	service := NewCacheService(mockDB, mockLogger)
+	defer service.Close()
 
 	thumbnail, err := service.GetThumbnail(context.Background(), 123, 30, 320, 240)
 
@@ -163,6 +175,7 @@ func TestCacheService_SetTranslation(t *testing.T) {
 	mockDB := database.WrapDB(nil, database.DialectSQLite)
 	mockLogger := zap.NewNop()
 	service := NewCacheService(mockDB, mockLogger)
+	defer service.Close()
 
 	err := service.SetTranslation(context.Background(), "Hello", "en", "es", "google", "Hola")
 
@@ -174,6 +187,7 @@ func TestCacheService_GetTranslation(t *testing.T) {
 	mockDB := database.WrapDB(nil, database.DialectSQLite)
 	mockLogger := zap.NewNop()
 	service := NewCacheService(mockDB, mockLogger)
+	defer service.Close()
 
 	translation, found, err := service.GetTranslation(context.Background(), "Hello", "en", "es", "google")
 
@@ -187,6 +201,7 @@ func TestCacheService_SetSubtitle(t *testing.T) {
 	mockDB := database.WrapDB(nil, database.DialectSQLite)
 	mockLogger := zap.NewNop()
 	service := NewCacheService(mockDB, mockLogger)
+	defer service.Close()
 
 	content := "Test subtitle content"
 	subtitle := &SubtitleTrack{
@@ -205,6 +220,7 @@ func TestCacheService_GetSubtitle(t *testing.T) {
 	mockDB := database.WrapDB(nil, database.DialectSQLite)
 	mockLogger := zap.NewNop()
 	service := NewCacheService(mockDB, mockLogger)
+	defer service.Close()
 
 	subtitle, found, err := service.GetSubtitle(context.Background(), 123, "en", "opensubtitles")
 
@@ -218,6 +234,7 @@ func TestCacheService_SetLyrics(t *testing.T) {
 	mockDB := database.WrapDB(nil, database.DialectSQLite)
 	mockLogger := zap.NewNop()
 	service := NewCacheService(mockDB, mockLogger)
+	defer service.Close()
 
 	lyrics := &LyricsData{
 		Source:  "genius",
@@ -234,6 +251,7 @@ func TestCacheService_GetLyrics(t *testing.T) {
 	mockDB := database.WrapDB(nil, database.DialectSQLite)
 	mockLogger := zap.NewNop()
 	service := NewCacheService(mockDB, mockLogger)
+	defer service.Close()
 
 	lyrics, found, err := service.GetLyrics(context.Background(), "Test Artist", "Test Song", "genius")
 
@@ -247,6 +265,7 @@ func TestCacheService_SetCoverArt(t *testing.T) {
 	mockDB := database.WrapDB(nil, database.DialectSQLite)
 	mockLogger := zap.NewNop()
 	service := NewCacheService(mockDB, mockLogger)
+	defer service.Close()
 
 	url := "http://example.com/cover.jpg"
 	width := 500
@@ -270,6 +289,7 @@ func TestCacheService_GetCoverArt(t *testing.T) {
 	mockDB := database.WrapDB(nil, database.DialectSQLite)
 	mockLogger := zap.NewNop()
 	service := NewCacheService(mockDB, mockLogger)
+	defer service.Close()
 
 	coverArt, found, err := service.GetCoverArt(context.Background(), "Test Artist", "Test Album", "itunes")
 
@@ -283,6 +303,7 @@ func TestCacheService_GetStats(t *testing.T) {
 	mockDB := database.WrapDB(nil, database.DialectSQLite)
 	mockLogger := zap.NewNop()
 	service := NewCacheService(mockDB, mockLogger)
+	defer service.Close()
 
 	stats, err := service.GetStats(context.Background())
 
@@ -295,6 +316,7 @@ func TestCacheService_CleanupExpired(t *testing.T) {
 	mockDB := database.WrapDB(nil, database.DialectSQLite)
 	mockLogger := zap.NewNop()
 	service := NewCacheService(mockDB, mockLogger)
+	defer service.Close()
 
 	err := service.CleanupExpired(context.Background())
 
@@ -306,6 +328,7 @@ func TestCacheService_Warmup(t *testing.T) {
 	mockDB := database.WrapDB(nil, database.DialectSQLite)
 	mockLogger := zap.NewNop()
 	service := NewCacheService(mockDB, mockLogger)
+	defer service.Close()
 
 	err := service.Warmup(context.Background())
 
@@ -317,6 +340,7 @@ func TestCacheService_InvalidateByPattern(t *testing.T) {
 	mockDB := database.WrapDB(nil, database.DialectSQLite)
 	mockLogger := zap.NewNop()
 	service := NewCacheService(mockDB, mockLogger)
+	defer service.Close()
 
 	err := service.InvalidateByPattern(context.Background(), "test_%")
 
@@ -328,6 +352,7 @@ func TestCacheService_HashString(t *testing.T) {
 	mockDB := database.WrapDB(nil, database.DialectSQLite)
 	mockLogger := zap.NewNop()
 	service := NewCacheService(mockDB, mockLogger)
+	defer service.Close()
 
 	hash1 := service.hashString("test")
 	hash2 := service.hashString("test")
@@ -342,6 +367,7 @@ func TestCacheService_HashRequest(t *testing.T) {
 	mockDB := database.WrapDB(nil, database.DialectSQLite)
 	mockLogger := zap.NewNop()
 	service := NewCacheService(mockDB, mockLogger)
+	defer service.Close()
 
 	request1 := map[string]string{"query": "test"}
 	request2 := map[string]string{"query": "test"}

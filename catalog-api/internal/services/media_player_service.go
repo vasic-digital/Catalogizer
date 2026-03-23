@@ -18,6 +18,7 @@ import (
 type MediaPlayerService struct {
 	db                 *database.DB
 	logger             *zap.Logger
+	cacheService       *CacheService
 	lyricsService      *LyricsService
 	subtitleService    *SubtitleService
 	coverArtService    *CoverArtService
@@ -209,12 +210,20 @@ func NewMediaPlayerService(db *database.DB, logger *zap.Logger) *MediaPlayerServ
 	return &MediaPlayerService{
 		db:                 db,
 		logger:             logger,
+		cacheService:       cacheService,
 		lyricsService:      NewLyricsService(db, logger),
 		subtitleService:    NewSubtitleService(db, logger, cacheService),
 		coverArtService:    NewCoverArtService(db, logger),
 		translationService: NewTranslationService(logger),
 		positionTracker:    NewPlaybackPositionService(db, logger),
 		playlistService:    NewPlaylistService(db, logger),
+	}
+}
+
+// Close gracefully shuts down the media player service and its internal cache service
+func (s *MediaPlayerService) Close() {
+	if s.cacheService != nil {
+		s.cacheService.Close()
 	}
 }
 

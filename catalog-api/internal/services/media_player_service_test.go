@@ -13,6 +13,7 @@ func TestNewMediaPlayerService(t *testing.T) {
 	mockLogger := zap.NewNop()
 
 	service := NewMediaPlayerService(mockDB, mockLogger)
+	defer service.Close()
 
 	assert.NotNil(t, service)
 }
@@ -21,6 +22,7 @@ func TestMediaPlayerService_GetSupportedMediaTypes(t *testing.T) {
 	mockDB := database.WrapDB(nil, database.DialectSQLite)
 	mockLogger := zap.NewNop()
 	service := NewMediaPlayerService(mockDB, mockLogger)
+	defer service.Close()
 
 	types := service.GetSupportedMediaTypes()
 	assert.NotEmpty(t, types)
@@ -88,6 +90,7 @@ func TestMediaPlayerService_FindSubtitleByLanguage(t *testing.T) {
 	mockDB := database.WrapDB(nil, database.DialectSQLite)
 	mockLogger := zap.NewNop()
 	service := NewMediaPlayerService(mockDB, mockLogger)
+	defer service.Close()
 
 	subtitles := []SubtitleTrack{
 		{ID: "1", Language: "English", LanguageCode: "en"},
@@ -134,6 +137,7 @@ func TestMediaPlayerService_FindSubtitleByID(t *testing.T) {
 	mockDB := database.WrapDB(nil, database.DialectSQLite)
 	mockLogger := zap.NewNop()
 	service := NewMediaPlayerService(mockDB, mockLogger)
+	defer service.Close()
 
 	subtitles := []SubtitleTrack{
 		{ID: "sub_1", Language: "English"},
@@ -141,9 +145,9 @@ func TestMediaPlayerService_FindSubtitleByID(t *testing.T) {
 	}
 
 	tests := []struct {
-		name     string
-		id       string
-		wantNil  bool
+		name    string
+		id      string
+		wantNil bool
 	}{
 		{
 			name:    "existing subtitle",

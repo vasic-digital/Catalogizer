@@ -436,7 +436,7 @@ func main() {
 	mediaBrowseHandler := root_handlers.NewMediaBrowseHandler(fileRepository, statsRepo, databaseDB)
 
 	// WebSocket handler for real-time updates
-	wsHandler := root_handlers.NewWebSocketHandler()
+	wsHandler := root_handlers.NewWebSocketHandler(logger)
 
 	// Initialize asset management system
 	assetRepo := root_repository.NewAssetRepository(databaseDB)
@@ -952,6 +952,12 @@ func main() {
 
 	// Stop runtime metrics collector
 	metrics.StopRuntimeCollector()
+
+	// Stop WebSocket handler (closes all client connections, stops cleanup goroutine)
+	wsHandler.Stop()
+
+	// Stop cache service cleanup goroutine
+	cacheService.Close()
 
 	// Shutdown HTTP server (stops accepting new connections, waits for in-flight requests)
 	if err := srv.Shutdown(shutdownCtx); err != nil {

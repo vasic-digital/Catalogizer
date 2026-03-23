@@ -203,9 +203,12 @@ func (s *SyncService) StartSync(endpointID int, userID int) (*models.SyncSession
 
 	session.ID = sessionID
 
+	// Return a snapshot copy to the caller so the goroutine can
+	// safely mutate the original session without a data race.
+	returnCopy := *session
 	go s.performSync(session, endpoint)
 
-	return session, nil
+	return &returnCopy, nil
 }
 
 func (s *SyncService) performSync(session *models.SyncSession, endpoint *models.SyncEndpoint) {

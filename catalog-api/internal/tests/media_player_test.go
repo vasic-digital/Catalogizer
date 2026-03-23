@@ -36,12 +36,14 @@ func TestMusicPlayerService(t *testing.T) {
 	// Create services with mock dependencies
 	translationService := services.NewTranslationService(logger)
 	cacheService := services.NewCacheService(db, logger)
+	defer cacheService.Close()
 	coverArtService := services.NewCoverArtService(db, logger)
 	lyricsService := services.NewLyricsService(db, logger)
 	_ = services.NewSubtitleService(db, logger, cacheService) // Create but don't use for now
 	positionService := services.NewPlaybackPositionService(db, logger)
 	playlistService := services.NewPlaylistService(db, logger)
 	mediaPlayerService := services.NewMediaPlayerService(db, logger)
+	defer mediaPlayerService.Close()
 
 	musicPlayerService := services.NewMusicPlayerService(
 		db, logger, mediaPlayerService, playlistService, positionService,
@@ -231,10 +233,12 @@ func TestVideoPlayerService(t *testing.T) {
 	// Create services
 	translationService := services.NewTranslationService(logger)
 	cacheService := services.NewCacheService(db, logger)
+	defer cacheService.Close()
 	subtitleService := services.NewSubtitleService(db, logger, cacheService)
 	coverArtService := services.NewCoverArtService(db, logger)
 	positionService := services.NewPlaybackPositionService(db, logger)
 	mediaPlayerService := services.NewMediaPlayerService(db, logger)
+	defer mediaPlayerService.Close()
 
 	videoPlayerService := services.NewVideoPlayerService(
 		db, logger, mediaPlayerService, positionService,

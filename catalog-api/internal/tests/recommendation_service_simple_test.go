@@ -23,6 +23,7 @@ func TestRecommendationServiceConstruction(t *testing.T) {
 
 	// Create required service dependencies
 	cacheService := services.NewCacheService(db, logger)
+	defer cacheService.Close()
 	translationService := services.NewTranslationService(logger)
 	mediaRecognitionService := services.NewMediaRecognitionService(
 		db, logger, cacheService, translationService,

@@ -57,19 +57,30 @@ func NewConnection(cfg *config.DatabaseConfig) (*DB, error) {
 		}
 	}
 
-	// Configure connection pool
-	if cfg.MaxOpenConnections > 0 {
-		sqlDB.SetMaxOpenConns(cfg.MaxOpenConnections)
+	// Configure connection pool with sensible defaults
+	maxOpen := cfg.MaxOpenConnections
+	if maxOpen <= 0 {
+		maxOpen = 25
 	}
-	if cfg.MaxIdleConnections > 0 {
-		sqlDB.SetMaxIdleConns(cfg.MaxIdleConnections)
+	sqlDB.SetMaxOpenConns(maxOpen)
+
+	maxIdle := cfg.MaxIdleConnections
+	if maxIdle <= 0 {
+		maxIdle = 10
 	}
-	if cfg.ConnMaxLifetime > 0 {
-		sqlDB.SetConnMaxLifetime(time.Duration(cfg.ConnMaxLifetime) * time.Second)
+	sqlDB.SetMaxIdleConns(maxIdle)
+
+	connMaxLifetime := time.Duration(cfg.ConnMaxLifetime) * time.Second
+	if cfg.ConnMaxLifetime <= 0 {
+		connMaxLifetime = 5 * time.Minute
 	}
-	if cfg.ConnMaxIdleTime > 0 {
-		sqlDB.SetConnMaxIdleTime(time.Duration(cfg.ConnMaxIdleTime) * time.Second)
+	sqlDB.SetConnMaxLifetime(connMaxLifetime)
+
+	connMaxIdleTime := time.Duration(cfg.ConnMaxIdleTime) * time.Second
+	if cfg.ConnMaxIdleTime <= 0 {
+		connMaxIdleTime = 3 * time.Minute
 	}
+	sqlDB.SetConnMaxIdleTime(connMaxIdleTime)
 
 	// Test connection
 	if err := sqlDB.Ping(); err != nil {

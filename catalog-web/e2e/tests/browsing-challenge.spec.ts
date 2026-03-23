@@ -129,14 +129,14 @@ test.describe('Browsing Challenge', () => {
       const lowerContent = content.toLowerCase();
       for (const pattern of invalidPatterns) {
         // Check for standalone occurrences (not part of other words)
-        const regex = new RegExp(`\\b${pattern}\\b`, 'i');
+        const regex = new RegExp(`\\b${pattern}\\b`, 'i'); // eslint-disable-line security/detect-non-literal-regexp
         // This is a soft check - the content might legitimately contain these words
         // in different contexts, so we just log if found
         if (regex.test(lowerContent)) {
           // Check if it's in a title/heading context
           const headings = await page.locator('h1, h2, h3, h4, h5, h6, [class*="title" i]').allTextContents();
           const invalidHeadings = headings.filter((h) =>
-            new RegExp(`^\\s*${pattern}\\s*$`, 'i').test(h)
+            new RegExp(`^\\s*${pattern}\\s*$`, 'i').test(h) // eslint-disable-line security/detect-non-literal-regexp
           );
           expect(invalidHeadings).toHaveLength(0);
         }

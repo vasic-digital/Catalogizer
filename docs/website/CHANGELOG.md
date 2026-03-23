@@ -4,6 +4,64 @@ All notable changes to the Catalogizer project are documented here. This page pr
 
 ---
 
+## Version 1.1.0 -- March 23, 2026
+
+A comprehensive remediation and documentation release spanning 12 phases, covering concurrency safety, security hardening, performance optimization, monitoring, and complete documentation coverage.
+
+### Concurrency and Reliability
+
+- Goroutine lifecycle management with context-based cancellation across all background workers
+- Bounded parallelism using semaphore patterns in scanner, asset manager, and middleware
+- ConcurrencyLimiter middleware caps in-flight HTTP requests at 100
+- Idempotent CacheService Close() pattern prevents goroutine leaks on shutdown
+- Lazy initialization via the digital.vasic.lazy module for deferred expensive operations
+- Memory leak detection via the digital.vasic.memory module
+- Circuit breaker recovery patterns via the digital.vasic.recovery module
+
+### Security Scanning
+
+- Six-tool security scanning stack: govulncheck, Semgrep, SonarQube, Snyk, Trivy, npm audit
+- Zero known vulnerabilities in Go dependencies (govulncheck verified)
+- Zero critical or production vulnerabilities in npm dependencies
+- Input validation middleware with configurable sanitization rules
+- Security headers middleware (X-Frame-Options, CSP, HSTS)
+
+### Performance
+
+- Database connection pooling with configurable MaxOpen (25), MaxIdle (10), ConnMaxLifetime (5 min)
+- SQLite WAL mode with explicit PRAGMA (go-sqlcipher ignores connection string pragmas)
+- Migration v9: performance indexes on files (file_type, extension, name), media_items (title+type compound), user_metadata (user+watched_status compound)
+- Unique index on media_files(media_item_id, file_id) with automatic deduplication
+- k6 load test suite: load, stress, soak, and spike test scenarios
+
+### Monitoring and Observability
+
+- Runtime metrics collector sampling goroutines, heap, and GC every 15 seconds
+- Pre-built Grafana dashboard panels for request rate, latency, Go runtime, and application metrics
+- Prometheus alerting rules for error rate, latency, goroutine leak, memory growth, and service down
+- Structured JSON logging via Zap with field-level search support
+- Built-in log management API: collection, analysis, sharing, real-time streaming
+
+### Documentation
+
+- Complete data dictionary documenting all 32 database tables with columns, types, constraints, relationships, and indexes
+- API changelog cataloging all REST endpoints (120+) grouped by domain with HTTP methods and descriptions
+- SQLite-to-PostgreSQL migration guide with step-by-step export/import procedures
+- Disaster recovery guide with backup procedures (SQLite, PostgreSQL), restore steps, verification, and scheduling
+- Security incident response plan: detection, containment, eradication, recovery, post-incident review
+- Troubleshooting guide expanded with goroutine leak detection, database lock issues, WebSocket problems, cache invalidation, and container networking
+- Four new video course modules (15-18): Concurrency Patterns, Security Scanning, Load Testing, Monitoring
+- Updated website features, changelog, and FAQ pages
+
+### Infrastructure
+
+- 32 git submodules: 29 original + 3 new (Lazy, Memory, Recovery) from decoupling refactoring
+- 22 replace directives in go.mod wiring reusable modules
+- Container build pipeline producing all 7 components in approximately 17 minutes
+- Host resource limits enforced: 30-40% maximum across all workloads
+
+---
+
 ## Version 1.0.0 -- February 2, 2026
 
 The first stable release of Catalogizer, delivering a complete multi-platform media collection management system.

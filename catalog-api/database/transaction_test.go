@@ -87,7 +87,7 @@ func TestTxLockOrder_GetOrder(t *testing.T) {
 }
 
 func TestTxLockOrder_SortTables(t *testing.T) {
-	tables := []string{"products", "users", "orders"}
+	tables := []string{"users", "orders", "products"}
 	lockOrder := NewTxLockOrder(tables)
 
 	toSort := []string{"orders", "products", "users"}

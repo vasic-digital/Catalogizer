@@ -389,6 +389,9 @@ func (lo *TxLockOrder) SortTables(tables []string) []string {
 
 // SafeCommit commits a transaction and handles rollback on error
 func SafeCommit(tx *sql.Tx) error {
+	if tx == nil {
+		return fmt.Errorf("cannot commit nil transaction")
+	}
 	if err := tx.Commit(); err != nil {
 		_ = tx.Rollback()
 		return err

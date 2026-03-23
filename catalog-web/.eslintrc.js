@@ -32,6 +32,8 @@ module.exports = {
     '@typescript-eslint/no-inferrable-types': 'off',
     // Non-null assertions are acceptable in test files
     '@typescript-eslint/no-non-null-assertion': 'warn',
+    // Disable overly noisy object injection rule — TypeScript's type system prevents real injection
+    'security/detect-object-injection': 'off',
   },
   overrides: [
     {

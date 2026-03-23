@@ -22,6 +22,7 @@ func TestMediaRecognitionIntegration(t *testing.T) {
 
 	logger := zap.NewNop()
 	cacheService := services.NewCacheService(db, logger)
+	defer cacheService.Close()
 	translationService := services.NewTranslationService(logger)
 
 	recognitionService := services.NewMediaRecognitionService(
@@ -68,6 +69,7 @@ func TestDuplicateDetectionIntegration(t *testing.T) {
 
 	logger := zap.NewNop()
 	cacheService := services.NewCacheService(db, logger)
+	defer cacheService.Close()
 
 	duplicateService := services.NewDuplicateDetectionService(db, logger, cacheService)
 
@@ -121,6 +123,7 @@ func TestServiceCreation(t *testing.T) {
 
 	// Test that services can be created with required parameters
 	cacheService := services.NewCacheService(db, logger)
+	defer cacheService.Close()
 	translationService := services.NewTranslationService(logger)
 	localizationService := services.NewLocalizationService(db, logger, translationService, cacheService)
 	

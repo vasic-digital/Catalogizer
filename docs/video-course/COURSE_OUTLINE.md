@@ -4,7 +4,7 @@
 
 **Title**: Mastering Catalogizer - Building a Multi-Platform Media Collection Manager
 
-**Duration**: 9-11 hours (across 14 modules)
+**Duration**: 12-14 hours (across 18 modules)
 
 **Audience**: Intermediate to advanced Go and TypeScript developers
 
@@ -343,6 +343,106 @@
 - Module verification challenges (MOD-001 to MOD-015)
 - Container test stack with docker-compose.test.yml
 - Report generation: Markdown, JSON, HTML
+
+---
+
+## Module 15: Concurrency Patterns in Go (45 min)
+
+### Video 15.1: Goroutine Lifecycle Management (15 min)
+- Context-based cancellation and propagation
+- WaitGroup patterns for coordinating goroutines
+- UniversalScanner worker pool design
+- Deferred cleanup in main.go
+
+### Video 15.2: Mutex Patterns and sync.Once (15 min)
+- sync.RWMutex for read-heavy workloads (CacheService)
+- The CacheService Close() idempotent shutdown pattern
+- sync.Once for lazy initialization
+- The Lazy module (digital.vasic.lazy) generic pattern
+- Semaphore pattern for bounded parallelism (digital.vasic.concurrency)
+
+### Video 15.3: Race Detection and Prevention (15 min)
+- Running the Go race detector with resource limits
+- Common race conditions: concurrent map access, closure captures, TOCTOU
+- Testing concurrent code with table-driven tests
+- Known flaky test: TestChaos_ConcurrentDatabaseAccess (SQLite WAL contention)
+
+---
+
+## Module 16: Security Scanning (40 min)
+
+### Video 16.1: Security Scanning Overview (10 min)
+- The six-tool security scanning stack
+- Defense in depth: code + dependencies + containers
+- Running all scans via scripts
+
+### Video 16.2: govulncheck for Go (10 min)
+- Call graph analysis vs simple dependency matching
+- Running and interpreting govulncheck results
+- Fixing vulnerabilities and verifying fixes
+
+### Video 16.3: Semgrep Static Analysis (10 min)
+- Pattern-based code scanning for security issues
+- SQL injection prevention via the dialect abstraction layer
+- Running Semgrep with OWASP and language-specific rulesets
+
+### Video 16.4: npm audit, Snyk, and Trivy (10 min)
+- npm audit for frontend dependency scanning
+- Snyk for comprehensive dependency and container scanning
+- Trivy for container image vulnerability detection
+- SonarQube for code quality and security hotspots
+- Integrating scans into the local release pipeline
+
+---
+
+## Module 17: Load Testing with k6 (45 min)
+
+### Video 17.1: k6 Setup and Configuration (10 min)
+- Installing k6 and project test structure
+- Authentication helper for JWT-protected endpoints
+- Threshold configuration for pass/fail criteria
+
+### Video 17.2: Load Test Scenarios (15 min)
+- Standard load test: gradual ramp to normal capacity
+- Stress test: finding the breaking point
+- Soak test: detecting memory leaks under sustained load
+- Running tests within host resource limits (30-40%)
+
+### Video 17.3: Interpreting Results (10 min)
+- Key metrics: p95 latency, error rate, throughput
+- Sending results to Prometheus/Grafana
+- Comparing results across runs for regression detection
+
+### Video 17.4: Grafana Dashboard for Load Testing (10 min)
+- Correlating k6 results with application metrics
+- Identifying capacity thresholds from dashboard data
+- Setting up automated performance baselines
+
+---
+
+## Module 18: Monitoring and Observability (45 min)
+
+### Video 18.1: Prometheus Metrics (15 min)
+- Metrics architecture: GinMiddleware to Prometheus to Grafana
+- Built-in HTTP metrics (requests, duration, size)
+- Custom application metrics (scans, entities, WebSocket)
+- Metric types: Counter, Gauge, Histogram
+
+### Video 18.2: Runtime Metrics Collector (10 min)
+- StartRuntimeCollector(15s) for goroutine and memory sampling
+- Detecting goroutine leaks via go_goroutines trends
+- GC pause monitoring and heap allocation patterns
+
+### Video 18.3: Grafana Dashboards (10 min)
+- Pre-built dashboard panels: request rate, latency, Go runtime, application
+- PromQL queries for endpoint-specific monitoring
+- Prometheus scrape configuration
+
+### Video 18.4: Alerting and Log Aggregation (10 min)
+- Prometheus alerting rules: error rate, latency, goroutine leak, service down
+- Alertmanager routing to email and webhooks
+- Structured logging with Zap (JSON output)
+- Built-in log management API for collection, analysis, and sharing
 
 ---
 

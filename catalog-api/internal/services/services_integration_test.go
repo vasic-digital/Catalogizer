@@ -1160,6 +1160,7 @@ func setupLocalizationService(t *testing.T) (*LocalizationService, *database.DB)
 	db := setupIntegrationTestDB(t)
 	logger := zap.NewNop()
 	cacheService := NewCacheService(nil, logger) // nil DB cache for simplicity
+	t.Cleanup(func() { cacheService.Close() })
 	translationService := NewTranslationService(logger)
 	svc := NewLocalizationService(db, logger, translationService, cacheService)
 	return svc, db

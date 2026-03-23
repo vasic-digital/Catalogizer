@@ -66,6 +66,7 @@ func TestMediaRecognitionService_Movies(t *testing.T) {
 
 	// Create cache and translation services
 	cacheService := services.NewCacheService(db, logger)
+	defer cacheService.Close()
 	translationService := services.NewTranslationService(logger)
 
 	// Create recognition service with all required parameters
@@ -153,6 +154,7 @@ func TestMediaRecognitionService_Music(t *testing.T) {
 
 	// Create cache and translation services
 	cacheService := services.NewCacheService(db, logger)
+	defer cacheService.Close()
 	translationService := services.NewTranslationService(logger)
 
 	// Create recognition service with all required parameters
@@ -240,6 +242,7 @@ func TestMediaRecognitionService_ErrorCases(t *testing.T) {
 
 	// Create cache and translation services
 	cacheService := services.NewCacheService(db, logger)
+	defer cacheService.Close()
 	translationService := services.NewTranslationService(logger)
 
 	// Create recognition service with all required parameters
@@ -305,6 +308,7 @@ func TestMediaRecognitionService_Cache(t *testing.T) {
 
 	// Create cache and translation services
 	cacheService := services.NewCacheService(db, logger)
+	defer cacheService.Close()
 	translationService := services.NewTranslationService(logger)
 
 	// Create recognition service with all required parameters

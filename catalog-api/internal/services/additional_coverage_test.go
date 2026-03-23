@@ -1033,7 +1033,9 @@ func TestLocalization_FormatDateTimeForUser_WithDB(t *testing.T) {
 	db := setupIntegrationTestDB(t)
 	defer db.Close()
 
-	svc := NewLocalizationService(db, zap.NewNop(), nil, NewCacheService(db, zap.NewNop()))
+	cacheService := NewCacheService(db, zap.NewNop())
+	defer cacheService.Close()
+	svc := NewLocalizationService(db, zap.NewNop(), nil, cacheService)
 	ctx := context.Background()
 
 	// Setup a localization with specific date/time formats
@@ -1090,7 +1092,9 @@ func TestLocalization_GetPreferredLanguagesForContent_WithDB(t *testing.T) {
 	db := setupIntegrationTestDB(t)
 	defer db.Close()
 
-	svc := NewLocalizationService(db, zap.NewNop(), nil, NewCacheService(db, zap.NewNop()))
+	cacheService := NewCacheService(db, zap.NewNop())
+	defer cacheService.Close()
+	svc := NewLocalizationService(db, zap.NewNop(), nil, cacheService)
 	ctx := context.Background()
 
 	step := &WizardLocalizationStep{
@@ -1135,7 +1139,9 @@ func TestLocalization_ShouldAutoDownload_WithDB(t *testing.T) {
 	db := setupIntegrationTestDB(t)
 	defer db.Close()
 
-	svc := NewLocalizationService(db, zap.NewNop(), nil, NewCacheService(db, zap.NewNop()))
+	cacheService := NewCacheService(db, zap.NewNop())
+	defer cacheService.Close()
+	svc := NewLocalizationService(db, zap.NewNop(), nil, cacheService)
 	ctx := context.Background()
 
 	step := &WizardLocalizationStep{
@@ -1192,7 +1198,9 @@ func TestLocalization_UpdateUserLocalization_WithDB(t *testing.T) {
 	db := setupIntegrationTestDB(t)
 	defer db.Close()
 
-	svc := NewLocalizationService(db, zap.NewNop(), nil, NewCacheService(db, zap.NewNop()))
+	cacheService := NewCacheService(db, zap.NewNop())
+	defer cacheService.Close()
+	svc := NewLocalizationService(db, zap.NewNop(), nil, cacheService)
 	ctx := context.Background()
 
 	step := &WizardLocalizationStep{
@@ -1247,7 +1255,9 @@ func TestLocalization_ExportConfiguration_WithDB(t *testing.T) {
 	)`)
 	require.NoError(t, err)
 
-	svc := NewLocalizationService(db, zap.NewNop(), nil, NewCacheService(db, zap.NewNop()))
+	cacheService := NewCacheService(db, zap.NewNop())
+	defer cacheService.Close()
+	svc := NewLocalizationService(db, zap.NewNop(), nil, cacheService)
 	ctx := context.Background()
 
 	step := &WizardLocalizationStep{
@@ -1320,7 +1330,9 @@ func TestLocalization_ImportConfiguration_WithDB(t *testing.T) {
 	)`)
 	require.NoError(t, err)
 
-	svc := NewLocalizationService(db, zap.NewNop(), nil, NewCacheService(db, zap.NewNop()))
+	cacheService := NewCacheService(db, zap.NewNop())
+	defer cacheService.Close()
+	svc := NewLocalizationService(db, zap.NewNop(), nil, cacheService)
 	ctx := context.Background()
 
 	// Setup initial localization

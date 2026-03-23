@@ -355,6 +355,30 @@ ssh-keyscan -p 2222 gitverse.ru >> ~/.ssh/known_hosts
 
 `releases/` and `reports/` are gitignored — build artifacts are not version-controlled.
 
+## Concurrency & Lifecycle Patterns
+
+- **CacheService**: Spawns cleanup goroutine in `NewCacheService()`. Tests MUST call `defer service.Close()`. Uses `sync.Once` for safe double-close.
+- **WebSocketHandler**: Spawns cleanup goroutine in constructor. Uses `sync.Once` for safe `Stop()`. Tests must call `handler.Stop()` before `server.Close()` to unblock `readPump`.
+- **Production shutdown**: `main.go` shutdown calls `wsHandler.Stop()` and `cacheService.Close()` before HTTP server shutdown.
+- **Database pool**: Connection pool defaults: MaxOpen=25, MaxIdle=10, MaxLifetime=5m, MaxIdleTime=3m. Overridable via config.
+- **Race safety**: `connCount` reads in WebSocketHandler protected by mutex. `SyncService.StartSync()` and `LogManagementService.CollectLogs()` return copies to prevent shared-pointer races.
+
+## Load Testing
+
+k6 test scripts in `tests/k6/`:
+- `load_test.js` — Ramp to 50 users, verify p95 < 500ms
+- `stress_test.js` — Ramp to 300 users, find breaking point
+- `soak_test.js` — 20 users for 30 minutes, detect memory leaks
+
+Run via: `podman run --rm --network host -v $(pwd)/tests/k6:/scripts docker.io/grafana/k6:latest run /scripts/load_test.js`
+
+## Security Scanning
+
+Run `./scripts/security-scan.sh` for automated scanning. Available tools:
+- `govulncheck` — Go stdlib/dependency vulnerabilities
+- `npm audit` — Frontend dependency vulnerabilities
+- Semgrep, Snyk, Trivy, Gosec via `docker-compose.security.yml`
+
 ## Conventions
 
 - **Go**: `NewService` constructor injection, error wrapping, table-driven tests, `*_test.go` beside source
