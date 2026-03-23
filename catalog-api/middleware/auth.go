@@ -2,6 +2,7 @@ package middleware
 
 import (
 	"net/http"
+	"strconv"
 	"strings"
 	"time"
 
@@ -67,9 +68,13 @@ func (m *JWTMiddleware) RequireAuth() gin.HandlerFunc {
 			return
 		}
 
-		// Set user info in context
+		// Set user info in context — convert user_id to int for handler compatibility
 		c.Set("username", claims.Username)
-		c.Set("user_id", claims.Subject)
+		if uid, err := strconv.Atoi(claims.Subject); err == nil {
+			c.Set("user_id", uid)
+		} else {
+			c.Set("user_id", claims.Subject)
+		}
 
 		c.Next()
 	}
