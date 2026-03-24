@@ -42,6 +42,7 @@ import (
 	"digital.vasic.assets/pkg/resolver"
 	asset_store "digital.vasic.assets/pkg/store"
 	"digital.vasic.containers/pkg/discovery"
+	"digital.vasic.discovery/pkg/broadcast"
 	"github.com/gin-gonic/gin"
 	_ "github.com/mutecomm/go-sqlcipher"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
@@ -92,6 +93,17 @@ func writePortFile(port int) error {
 	portFile := ".service-port"
 	data := fmt.Sprintf("%d", port)
 	return os.WriteFile(portFile, []byte(data), 0644)
+}
+
+// getOutboundIP returns the preferred outbound IP of this machine.
+func getOutboundIP() string {
+	conn, err := net.Dial("udp", "8.8.8.8:80")
+	if err != nil {
+		return "127.0.0.1"
+	}
+	defer conn.Close()
+	localAddr := conn.LocalAddr().(*net.UDPAddr)
+	return localAddr.IP.String()
 }
 
 // getOrCreateSelfSignedCert loads a cached TLS certificate or generates a new one.
@@ -492,8 +504,42 @@ func main() {
 	configurationHandler := root_handlers.NewConfigurationHandler(configAdapter, authAdapter)
 	errorReportingHandler := root_handlers.NewErrorReportingHandler(errorAdapter, authAdapter)
 	logManagementHandler := root_handlers.NewLogManagementHandler(logAdapter, authAdapter)
+	// Build service info for discovery announcements
+	serviceInfo := broadcast.ServiceInfo{
+		Service:      "catalogizer-api",
+		Version:      Version,
+		Build:        BuildNumber,
+		Host:         getOutboundIP(),
+		Port:         cfg.Server.Port,
+		Protocol:     "http",
+		Name:         "Catalogizer API",
+		InstanceID:   fmt.Sprintf("catalogizer-%d", time.Now().UnixNano()),
+		Capabilities: []string{"catalog", "media", "streaming", "sync", "websocket", "entities"},
+		Database:     cfg.Database.Type,
+	}
+
+	// Start UDP multicast announcer for LAN discovery
+	announcer := broadcast.NewAnnouncer(serviceInfo, broadcast.DefaultConfig())
+	if err := announcer.Start(); err != nil {
+		logger.Warn("Failed to start discovery announcer", zap.Error(err))
+	} else {
+		logger.Info("Discovery announcer started", zap.String("multicast", broadcast.DefaultMulticastGroup), zap.Int("port", broadcast.DefaultPort))
+	}
+	defer announcer.Stop()
+
 	discoveryHandler := func(c *gin.Context) {
-		c.JSON(200, gin.H{"host": cfg.Server.Host, "port": cfg.Server.Port})
+		c.JSON(200, gin.H{
+			"service":        serviceInfo.Service,
+			"version":        Version,
+			"build":          BuildNumber,
+			"build_date":     BuildDate,
+			"host":           serviceInfo.Host,
+			"port":           cfg.Server.Port,
+			"protocol":       "http",
+			"capabilities":   serviceInfo.Capabilities,
+			"database":       cfg.Database.Type,
+			"uptime_seconds": int(time.Since(time.Now()).Seconds()),
+		})
 	}
 
 	// Search and browse handlers (file-level search and directory browsing)
@@ -552,6 +598,12 @@ func main() {
 	// WebSocket endpoint (auth via query parameter, not header)
 	router.GET("/ws", wsHandler.HandleConnection)
 
+	// Service discovery (public — no auth needed for clients to find the API)
+	// Registered at /discovery (not /api/v1/) to avoid auth middleware from the api group
+	router.GET("/discovery", discoveryHandler)
+	router.GET("/api/v1/discovery", discoveryHandler)
+	router.GET("/api/v1/discovery/announce", discoveryHandler)
+
 	// Asset serving (public — no auth needed for serving images)
 	router.GET("/api/v1/assets/:id", root_middleware.StaticCacheHeaders(), assetHandler.ServeAsset)
 
@@ -577,7 +629,6 @@ func main() {
 	api.Use(jwtMiddleware.RequireAuth()) // Apply auth middleware to all API routes
 	api.Use(defaultRateLimiter)          // Apply general rate limiting to API
 	{
-		api.GET("/discovery", discoveryHandler)
 		// Catalog browsing endpoints
 		api.GET("/catalog", catalogHandler.ListRoot)
 		api.GET("/catalog/*path", catalogHandler.ListPath)
