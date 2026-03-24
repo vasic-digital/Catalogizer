@@ -123,7 +123,14 @@ go run ./cmd/helixqa autonomous --banks ../challenges/helixqa-banks  # LLM-drive
 
 ## Constraints
 
-**Container Runtime**: Use Podman exclusively (not Docker). Build with `podman run --network host`.
+**Container Runtime**: Use Podman exclusively (not Docker).
+
+**MANDATORY: All builds, services, and QA MUST use containers.**
+- **Builds**: `./scripts/release-build.sh --container` or `podman run --network host` with builder image.
+- **Services**: `podman-compose -f docker-compose.dev.yml up` or `podman-compose -f docker-compose.test.yml --profile web up`.
+- **QA Testing**: `./scripts/run-helixqa.sh` with containerized services. HelixQA sessions use Playwright in containers for video recording.
+- **Android Emulators**: `podman-compose -f docker-compose.test.yml --profile android up`.
+- **Never run production builds or QA on bare metal.** Local `go run` / `npm run dev` is only for rapid dev iteration.
 
 **GitHub Actions**: PERMANENTLY DISABLED. No CI/CD workflows.
 

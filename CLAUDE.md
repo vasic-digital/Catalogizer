@@ -271,7 +271,12 @@ Critical container notes:
 
 **GitHub Actions are PERMANENTLY DISABLED.** Do NOT create any GitHub Actions workflow files in `.github/workflows/`. CI/CD must be run locally.
 
-**All builds and services MUST use containers.** Use the containerized build pipeline (`./scripts/container-build.sh` or `podman-compose -f docker-compose.build.yml`) for builds, and `podman-compose` / `podman run` for running services. Use `podman run --network host` for single-container builds.
+**All builds, services, and QA testing MUST use containers (Podman).** This is a MANDATORY, NON-NEGOTIABLE rule:
+- **Builds**: Use `./scripts/release-build.sh --container` or `podman-compose -f docker-compose.build.yml`. Single-container builds: `podman run --network host`.
+- **Services**: Use `podman-compose` to run catalog-api, catalog-web, and all supporting services.
+- **QA Testing**: Use `./scripts/run-helixqa.sh` with containerized services. HelixQA sessions run against containers, not bare-metal processes.
+- **Android Emulators**: Run in containers via `docker-compose.test.yml --profile android`.
+- **Never build or run apps/services directly on bare metal** in production or QA contexts. Local `go run` / `npm run dev` is acceptable only for rapid development iteration.
 
 ## Local Development Setup
 
