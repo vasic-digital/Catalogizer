@@ -1235,6 +1235,134 @@
           "expected": "App resumes on the exact screen where user left off, no re-login, data intact, WebSocket reconnects if needed"
         }
       ]
+    },
+    {
+      "id": "tv-discovery-field-visible",
+      "name": "Server URL Field on Login",
+      "category": "functional",
+      "priority": "critical",
+      "platforms": [
+        "androidtv"
+      ],
+      "steps": [
+        {
+          "name": "Check login screen",
+          "action": "Launch app and check login screen",
+          "expected": "Server URL text field is visible"
+        }
+      ]
+    },
+    {
+      "id": "tv-discovery-button",
+      "name": "Discover Button Present",
+      "category": "functional",
+      "priority": "high",
+      "platforms": [
+        "androidtv"
+      ],
+      "steps": [
+        {
+          "name": "Check discover button",
+          "action": "Look for search icon button next to server URL",
+          "expected": "Discover button is visible and focusable"
+        }
+      ]
+    },
+    {
+      "id": "tv-discovery-auto-scan",
+      "name": "Auto-Discovery on Launch",
+      "category": "functional",
+      "priority": "high",
+      "platforms": [
+        "androidtv"
+      ],
+      "steps": [
+        {
+          "name": "Launch app fresh",
+          "action": "Clear app data and launch",
+          "expected": "Progress indicator shows while scanning, discovered server auto-populates"
+        }
+      ]
+    },
+    {
+      "id": "tv-discovery-manual-entry",
+      "name": "Manual Server URL Entry",
+      "category": "functional",
+      "priority": "critical",
+      "platforms": [
+        "androidtv"
+      ],
+      "steps": [
+        {
+          "name": "Enter custom URL",
+          "action": "Type http://192.168.0.1:8080 in server URL field",
+          "expected": "URL is accepted and saved"
+        }
+      ]
+    },
+    {
+      "id": "tv-discovery-persist-url",
+      "name": "Server URL Persists Across Restarts",
+      "category": "functional",
+      "priority": "high",
+      "platforms": [
+        "androidtv"
+      ],
+      "steps": [
+        {
+          "name": "Set URL, restart, check",
+          "action": "Set server URL, force-stop app, relaunch",
+          "expected": "Previously set URL is still shown"
+        }
+      ]
+    },
+    {
+      "id": "tv-discovery-server-picker",
+      "name": "Discovered Server Picker",
+      "category": "functional",
+      "priority": "high",
+      "platforms": [
+        "androidtv"
+      ],
+      "steps": [
+        {
+          "name": "Discover multiple servers",
+          "action": "Run discovery when multiple APIs are on network",
+          "expected": "List of discovered servers shown as buttons"
+        }
+      ]
+    },
+    {
+      "id": "tv-discovery-default-url",
+      "name": "Default URL is catalogizer.dev",
+      "category": "functional",
+      "priority": "medium",
+      "platforms": [
+        "androidtv"
+      ],
+      "steps": [
+        {
+          "name": "Check default URL",
+          "action": "Fresh install, check server URL field",
+          "expected": "Default value is https://catalogizer.dev"
+        }
+      ]
+    },
+    {
+      "id": "tv-discovery-switch-server",
+      "name": "Switch Server at Runtime",
+      "category": "functional",
+      "priority": "high",
+      "platforms": [
+        "androidtv"
+      ],
+      "steps": [
+        {
+          "name": "Change server URL and login",
+          "action": "Enter different server URL, tap apply, then login",
+          "expected": "Login uses the new server URL"
+        }
+      ]
     }
   ]
 }

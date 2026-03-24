@@ -4815,6 +4815,118 @@
           "expected": "Collection contains all 20 items, item count matches, no duplicates"
         }
       ]
+    },
+    {
+      "id": "api-discovery-public",
+      "name": "Discovery Endpoint Public Access",
+      "category": "functional",
+      "priority": "critical",
+      "platforms": [
+        "api"
+      ],
+      "steps": [
+        {
+          "name": "GET /discovery without auth",
+          "action": "GET /discovery without Authorization header",
+          "expected": "200 with service info JSON"
+        }
+      ]
+    },
+    {
+      "id": "api-discovery-service-info",
+      "name": "Discovery Returns Service Info",
+      "category": "functional",
+      "priority": "critical",
+      "platforms": [
+        "api"
+      ],
+      "steps": [
+        {
+          "name": "Verify discovery fields",
+          "action": "GET /discovery and check response",
+          "expected": "Contains service, version, host, port, protocol, capabilities"
+        }
+      ]
+    },
+    {
+      "id": "api-discovery-announce",
+      "name": "Discovery Announce Alias",
+      "category": "functional",
+      "priority": "high",
+      "platforms": [
+        "api"
+      ],
+      "steps": [
+        {
+          "name": "GET /api/v1/discovery/announce",
+          "action": "GET /api/v1/discovery/announce",
+          "expected": "200 with same service info as /discovery"
+        }
+      ]
+    },
+    {
+      "id": "api-discovery-capabilities",
+      "name": "Discovery Lists Capabilities",
+      "category": "functional",
+      "priority": "high",
+      "platforms": [
+        "api"
+      ],
+      "steps": [
+        {
+          "name": "Check capabilities array",
+          "action": "GET /discovery",
+          "expected": "capabilities array includes catalog, media, streaming, sync, websocket, entities"
+        }
+      ]
+    },
+    {
+      "id": "api-discovery-host-ip",
+      "name": "Discovery Returns Valid Host IP",
+      "category": "functional",
+      "priority": "high",
+      "platforms": [
+        "api"
+      ],
+      "steps": [
+        {
+          "name": "Verify host is valid IP",
+          "action": "GET /discovery and check host field",
+          "expected": "host is a valid IPv4 address, not 0.0.0.0 or empty"
+        }
+      ]
+    },
+    {
+      "id": "api-discovery-no-auth-required",
+      "name": "Discovery Does Not Require Auth",
+      "category": "security",
+      "priority": "critical",
+      "platforms": [
+        "api"
+      ],
+      "steps": [
+        {
+          "name": "Access without token",
+          "action": "GET /discovery with no Authorization header",
+          "expected": "200 OK, not 401"
+        }
+      ]
+    },
+    {
+      "id": "api-discovery-udp-broadcast",
+      "name": "UDP Multicast Announcement",
+      "category": "functional",
+      "priority": "high",
+      "platforms": [
+        "api"
+      ],
+      "steps": [
+        {
+          "name": "Listen on 239.42.42.42:42069",
+          "action": "Listen for UDP multicast on discovery group",
+          "expected": "Receive JSON announcement with type=catalogizer-announce"
+        }
+      ]
     }
   ]
 }
