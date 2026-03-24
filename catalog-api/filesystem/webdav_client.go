@@ -29,8 +29,11 @@ type WebDAVClient struct {
 }
 
 // NewWebDAVClient creates a new WebDAV client
-func NewWebDAVClient(config *WebDAVConfig) *WebDAVClient {
-	baseURL, _ := url.Parse(config.URL)
+func NewWebDAVClient(config *WebDAVConfig) (*WebDAVClient, error) {
+	baseURL, err := url.Parse(config.URL)
+	if err != nil {
+		return nil, fmt.Errorf("invalid WebDAV URL %q: %w", config.URL, err)
+	}
 	if config.Path != "" && config.Path != "/" {
 		baseURL.Path = config.Path
 	}
@@ -39,7 +42,7 @@ func NewWebDAVClient(config *WebDAVConfig) *WebDAVClient {
 		config:  config,
 		client:  &http.Client{Timeout: 30 * time.Second},
 		baseURL: baseURL,
-	}
+	}, nil
 }
 
 // Connect establishes the WebDAV connection

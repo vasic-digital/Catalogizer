@@ -504,7 +504,7 @@ func (s *WebDAVProtocolTestSuite) SetupProtocol(t *testing.T) (filesystem.FileSy
 		Password: os.Getenv("WEBDAV_TEST_PASS"),
 	}
 
-	client := filesystem.NewWebDAVClient(config)
+	client, _ := filesystem.NewWebDAVClient(config)
 	return client, func() {}
 }
 

@@ -171,7 +171,7 @@ func TestWebDAVProtocolConnectivity(t *testing.T) {
 			Password: password,
 		}
 
-		client := filesystem.NewWebDAVClient(config)
+		client, _ := filesystem.NewWebDAVClient(config)
 		require.NotNil(t, client)
 	})
 
@@ -182,7 +182,7 @@ func TestWebDAVProtocolConnectivity(t *testing.T) {
 			Password: password,
 		}
 
-		client := filesystem.NewWebDAVClient(config)
+		client, _ := filesystem.NewWebDAVClient(config)
 		require.NotNil(t, client)
 
 		ctx, cancel := context.WithTimeout(ctx, 10*time.Second)

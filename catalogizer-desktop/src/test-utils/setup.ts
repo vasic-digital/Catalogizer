@@ -2,7 +2,7 @@
  * Global test setup file for Vitest
  */
 import '@testing-library/jest-dom';
-import { vi } from 'vitest';
+import { vi, afterEach } from 'vitest';
 import { cleanup } from '@testing-library/react';
 
 // Mock Tauri API v2 - core module

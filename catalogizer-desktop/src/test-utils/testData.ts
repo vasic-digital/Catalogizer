@@ -1,6 +1,7 @@
 /**
  * Test data generator for Catalogizer Desktop tests
  */
+import { vi } from 'vitest';
 
 export interface MediaItem {
   id: number;

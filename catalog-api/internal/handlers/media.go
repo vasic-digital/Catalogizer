@@ -463,18 +463,34 @@ func (h *MediaHandler) getMediaItemWithDetails(id int64) (*models.MediaItem, err
 	}
 
 	// Parse JSON fields
-	json.Unmarshal([]byte(genreJSON), &item.Genre)
-	json.Unmarshal([]byte(castCrewJSON), &item.CastCrew)
+	if err := json.Unmarshal([]byte(genreJSON), &item.Genre); err != nil {
+		h.logger.Warn("Failed to parse genre JSON", zap.Int64("media_id", id), zap.Error(err))
+	}
+	if err := json.Unmarshal([]byte(castCrewJSON), &item.CastCrew); err != nil {
+		h.logger.Warn("Failed to parse cast/crew JSON", zap.Int64("media_id", id), zap.Error(err))
+	}
 	item.MediaType = &mediaType
 
-	// Get external metadata
-	item.ExternalMetadata, _ = h.getExternalMetadata(id)
+	// Get external metadata (non-fatal — item is valid without enrichment)
+	if extMeta, err := h.getExternalMetadata(id); err != nil {
+		h.logger.Warn("Failed to get external metadata", zap.Int64("media_id", id), zap.Error(err))
+	} else {
+		item.ExternalMetadata = extMeta
+	}
 
 	// Get files
-	item.Files, _ = h.getMediaFiles(id)
+	if files, err := h.getMediaFiles(id); err != nil {
+		h.logger.Warn("Failed to get media files", zap.Int64("media_id", id), zap.Error(err))
+	} else {
+		item.Files = files
+	}
 
 	// Get user metadata
-	item.UserMetadata, _ = h.getUserMetadata(id)
+	if userMeta, err := h.getUserMetadata(id); err != nil {
+		h.logger.Warn("Failed to get user metadata", zap.Int64("media_id", id), zap.Error(err))
+	} else {
+		item.UserMetadata = userMeta
+	}
 
 	return &item, nil
 }

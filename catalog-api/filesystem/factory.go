@@ -56,7 +56,7 @@ func (f *DefaultClientFactory) CreateClient(config *StorageConfig) (FileSystemCl
 			Password: getStringSetting(config.Settings, "password", ""),
 			Path:     getStringSetting(config.Settings, "path", ""),
 		}
-		return NewWebDAVClient(webdavConfig), nil
+		return NewWebDAVClient(webdavConfig)
 
 	case "local":
 		localConfig := &LocalConfig{

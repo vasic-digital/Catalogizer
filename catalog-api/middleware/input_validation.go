@@ -40,10 +40,16 @@ func DefaultInputValidationConfig() InputValidationConfig {
 	}
 }
 
-// Common injection patterns
+// Pre-compiled injection detection patterns
 var (
+	sqlInjectionRegexes    []*regexp.Regexp
+	xssRegexes             []*regexp.Regexp
+	pathTraversalRegexes   []*regexp.Regexp
+)
+
+func init() {
 	// SQL Injection patterns
-	sqlInjectionPatterns = []string{
+	for _, p := range []string{
 		`(?i)(\b(SELECT|INSERT|UPDATE|DELETE|DROP|CREATE|ALTER|EXEC|UNION|SCRIPT|OR)\b)`,
 		`(?i)(\b(FROM|WHERE|AND|OR|HAVING|GROUP BY|ORDER BY)\b)`,
 		`(?i)(['"]\s*;\s*(SELECT|INSERT|UPDATE|DELETE|DROP))`,
@@ -53,10 +59,12 @@ var (
 		`(?i)(\bBENCHMARK\b)`,
 		`(?i)(\bSLEEP\b)`,
 		`(?i)(\bEXEC\b\s*\(|\bXP_\w+\b)`,
+	} {
+		sqlInjectionRegexes = append(sqlInjectionRegexes, regexp.MustCompile(p))
 	}
 
 	// XSS patterns
-	xssPatterns = []string{
+	for _, p := range []string{
 		`(?i)(<script[^>]*>.*?</script>)`,
 		`(?i)(<iframe[^>]*>.*?</iframe>)`,
 		`(?i)(<object[^>]*>.*?</object>)`,
@@ -64,18 +72,22 @@ var (
 		`(?i)(javascript\s*:|vbscript\s*:|data\s*:|onload\s*=|onerror\s*=)`,
 		`(?i)(on\w+\s*=)`,
 		`(?i)(eval\s*\(|alert\s*\(|confirm\s*\(|prompt\s*\()`,
+	} {
+		xssRegexes = append(xssRegexes, regexp.MustCompile(p))
 	}
 
 	// Path traversal patterns
-	pathTraversalPatterns = []string{
+	for _, p := range []string{
 		`\.\./|\.\.\\`,
 		`%2e%2e%2f|%2e%2e\\`,
 		`\.\.%2f|\.\.%5c`,
 		`%2e%2e%5c|%2e%2e/`,
 		`/etc/passwd|/etc/shadow|/etc/hosts`,
 		`windows/system32|boot\.ini|win\.ini`,
+	} {
+		pathTraversalRegexes = append(pathTraversalRegexes, regexp.MustCompile(p))
 	}
-)
+}
 
 // SanitizeInput performs basic sanitization on input strings
 func SanitizeInput(input string) string {
@@ -106,9 +118,8 @@ func SanitizeInput(input string) string {
 
 // DetectSQLInjection checks for common SQL injection patterns
 func DetectSQLInjection(input string) bool {
-	for _, pattern := range sqlInjectionPatterns {
-		matched, _ := regexp.MatchString(pattern, input)
-		if matched {
+	for _, re := range sqlInjectionRegexes {
+		if re.MatchString(input) {
 			return true
 		}
 	}
@@ -117,9 +128,8 @@ func DetectSQLInjection(input string) bool {
 
 // DetectXSS checks for common XSS patterns
 func DetectXSS(input string) bool {
-	for _, pattern := range xssPatterns {
-		matched, _ := regexp.MatchString(pattern, input)
-		if matched {
+	for _, re := range xssRegexes {
+		if re.MatchString(input) {
 			return true
 		}
 	}
@@ -128,9 +138,8 @@ func DetectXSS(input string) bool {
 
 // DetectPathTraversal checks for path traversal attempts
 func DetectPathTraversal(input string) bool {
-	for _, pattern := range pathTraversalPatterns {
-		matched, _ := regexp.MatchString(pattern, input)
-		if matched {
+	for _, re := range pathTraversalRegexes {
+		if re.MatchString(input) {
 			return true
 		}
 	}
@@ -235,8 +244,11 @@ func validateStringValue(config InputValidationConfig, key, value string) error 
 
 	// Check custom rules
 	if pattern, exists := config.CustomRules[key]; exists {
-		matched, _ := regexp.MatchString(pattern, value)
-		if !matched {
+		re, err := regexp.Compile(pattern)
+		if err != nil {
+			return fmt.Errorf("invalid validation pattern for field %s", key)
+		}
+		if !re.MatchString(value) {
 			return fmt.Errorf("field %s does not match required pattern", key)
 		}
 	}

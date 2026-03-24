@@ -25,7 +25,7 @@ func newTestWebDAVServer(t *testing.T, handler http.Handler) (*httptest.Server, 
 		Username: "testuser",
 		Password: "testpass",
 	}
-	client := NewWebDAVClient(config)
+	client, _ := NewWebDAVClient(config)
 	// Manually mark as connected (Connect does a PROPFIND which our handler handles)
 	err := client.Connect(context.Background())
 	require.NoError(t, err)
@@ -53,7 +53,7 @@ func TestWebDAVClient_Connect_Success(t *testing.T) {
 		Password: "pass",
 	}
 
-	client := NewWebDAVClient(config)
+	client, _ := NewWebDAVClient(config)
 	ctx := context.Background()
 
 	err := client.Connect(ctx)
@@ -68,7 +68,7 @@ func TestWebDAVClient_Connect_OKStatus(t *testing.T) {
 	defer server.Close()
 
 	config := &WebDAVConfig{URL: server.URL}
-	client := NewWebDAVClient(config)
+	client, _ := NewWebDAVClient(config)
 
 	err := client.Connect(context.Background())
 	assert.NoError(t, err)
@@ -82,7 +82,7 @@ func TestWebDAVClient_Connect_BadStatus(t *testing.T) {
 	defer server.Close()
 
 	config := &WebDAVConfig{URL: server.URL}
-	client := NewWebDAVClient(config)
+	client, _ := NewWebDAVClient(config)
 
 	err := client.Connect(context.Background())
 	assert.Error(t, err)
@@ -99,7 +99,7 @@ func TestWebDAVClient_Connect_NoAuth(t *testing.T) {
 	defer server.Close()
 
 	config := &WebDAVConfig{URL: server.URL}
-	client := NewWebDAVClient(config)
+	client, _ := NewWebDAVClient(config)
 
 	err := client.Connect(context.Background())
 	assert.NoError(t, err)
@@ -669,7 +669,7 @@ func TestWebDAVClient_ReadFile_NoAuth(t *testing.T) {
 	defer server.Close()
 
 	config := &WebDAVConfig{URL: server.URL} // No username
-	client := NewWebDAVClient(config)
+	client, _ := NewWebDAVClient(config)
 	require.NoError(t, client.Connect(context.Background()))
 
 	reader, err := client.ReadFile(context.Background(), "public.txt")
@@ -696,7 +696,7 @@ func TestWebDAVClient_WriteFile_NoAuth(t *testing.T) {
 	defer server.Close()
 
 	config := &WebDAVConfig{URL: server.URL}
-	client := NewWebDAVClient(config)
+	client, _ := NewWebDAVClient(config)
 	require.NoError(t, client.Connect(context.Background()))
 
 	err := client.WriteFile(context.Background(), "file.txt", strings.NewReader("data"))
@@ -719,7 +719,7 @@ func TestWebDAVClient_GetFileInfo_NoAuth(t *testing.T) {
 	defer server.Close()
 
 	config := &WebDAVConfig{URL: server.URL}
-	client := NewWebDAVClient(config)
+	client, _ := NewWebDAVClient(config)
 	require.NoError(t, client.Connect(context.Background()))
 
 	info, err := client.GetFileInfo(context.Background(), "info.txt")
@@ -742,7 +742,7 @@ func TestWebDAVClient_FileExists_NoAuth(t *testing.T) {
 	defer server.Close()
 
 	config := &WebDAVConfig{URL: server.URL}
-	client := NewWebDAVClient(config)
+	client, _ := NewWebDAVClient(config)
 	require.NoError(t, client.Connect(context.Background()))
 
 	exists, err := client.FileExists(context.Background(), "check.txt")
@@ -765,7 +765,7 @@ func TestWebDAVClient_CreateDirectory_NoAuth(t *testing.T) {
 	defer server.Close()
 
 	config := &WebDAVConfig{URL: server.URL}
-	client := NewWebDAVClient(config)
+	client, _ := NewWebDAVClient(config)
 	require.NoError(t, client.Connect(context.Background()))
 
 	err := client.CreateDirectory(context.Background(), "newdir")
@@ -787,7 +787,7 @@ func TestWebDAVClient_DeleteFile_NoAuth(t *testing.T) {
 	defer server.Close()
 
 	config := &WebDAVConfig{URL: server.URL}
-	client := NewWebDAVClient(config)
+	client, _ := NewWebDAVClient(config)
 	require.NoError(t, client.Connect(context.Background()))
 
 	err := client.DeleteFile(context.Background(), "old.txt")
@@ -808,7 +808,7 @@ func TestWebDAVClient_DeleteDirectory_NoAuth(t *testing.T) {
 	defer server.Close()
 
 	config := &WebDAVConfig{URL: server.URL}
-	client := NewWebDAVClient(config)
+	client, _ := NewWebDAVClient(config)
 	require.NoError(t, client.Connect(context.Background()))
 
 	err := client.DeleteDirectory(context.Background(), "dir")
@@ -830,7 +830,7 @@ func TestWebDAVClient_CopyFile_NoAuth(t *testing.T) {
 	defer server.Close()
 
 	config := &WebDAVConfig{URL: server.URL}
-	client := NewWebDAVClient(config)
+	client, _ := NewWebDAVClient(config)
 	require.NoError(t, client.Connect(context.Background()))
 
 	err := client.CopyFile(context.Background(), "a.txt", "b.txt")
@@ -1044,7 +1044,7 @@ func TestWebDAVClient_Connect_ServerReturnsNonMultiStatusNonOK(t *testing.T) {
 		Username: "user",
 		Password: "pass",
 	}
-	client := NewWebDAVClient(config)
+	client, _ := NewWebDAVClient(config)
 
 	err := client.Connect(context.Background())
 	assert.Error(t, err)

@@ -34,7 +34,7 @@ export function mockRouterHooks() {
 /**
  * Mock Zustand store
  */
-export function createMockStore<T>(initialState: T) {
+export function createMockStore<T extends Record<string, unknown>>(initialState: T) {
   const state = { ...initialState };
   const listeners = new Set<() => void>();
 

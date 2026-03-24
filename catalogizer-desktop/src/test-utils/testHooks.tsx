@@ -14,7 +14,7 @@ export function createHookWrapper() {
     defaultOptions: {
       queries: {
         retry: false,
-        gcTime: 0,
+        cacheTime: 0,
       },
     },
   });

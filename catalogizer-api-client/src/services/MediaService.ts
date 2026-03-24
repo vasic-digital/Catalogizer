@@ -14,6 +14,7 @@ export class MediaService {
 
   /**
    * Search for media items
+   * Backend: GET /api/v1/media/search
    */
   public async search(request: MediaSearchRequest = {}): Promise<PaginatedResponse<MediaItem>> {
     const params = new URLSearchParams();
@@ -33,6 +34,7 @@ export class MediaService {
 
   /**
    * Get a specific media item by ID
+   * Backend: GET /api/v1/media/:id
    */
   public async getById(id: number): Promise<MediaItem> {
     return this.http.get<MediaItem>(`/media/${id}`);
@@ -40,6 +42,7 @@ export class MediaService {
 
   /**
    * Get media statistics
+   * Backend: GET /api/v1/media/stats
    */
   public async getStats(): Promise<MediaStats> {
     return this.http.get<MediaStats>('/media/stats');
@@ -59,14 +62,10 @@ export class MediaService {
 
   /**
    * Get trending/popular media
+   * Backend: GET /api/v1/recommendations/trending
    */
   public async getTrending(limit = 20): Promise<MediaItem[]> {
-    const response = await this.search({
-      sort_by: 'rating',
-      sort_order: 'desc',
-      limit,
-    });
-    return response.items;
+    return this.http.get<MediaItem[]>(`/recommendations/trending?limit=${limit}`);
   }
 
   /**
@@ -84,42 +83,42 @@ export class MediaService {
 
   /**
    * Get user's favorite media
+   * Backend: GET /api/v1/favorites
    */
   public async getFavorites(limit = 50): Promise<MediaItem[]> {
-    return this.http.get<MediaItem[]>(`/media/favorites?limit=${limit}`);
+    return this.http.get<MediaItem[]>(`/favorites?limit=${limit}`);
   }
 
   /**
-   * Toggle favorite status for a media item
+   * Add media item to favorites
+   * Backend: POST /api/v1/favorites
    */
-  public async toggleFavorite(mediaId: number): Promise<{ is_favorite: boolean }> {
-    return this.http.post<{ is_favorite: boolean }>(`/media/${mediaId}/favorite`);
+  public async addFavorite(entityType: string, entityId: number): Promise<void> {
+    return this.http.post<void>('/favorites', { entity_type: entityType, entity_id: entityId });
   }
 
   /**
-   * Get continue watching items (items with partial progress)
+   * Remove media item from favorites
+   * Backend: DELETE /api/v1/favorites/:entity_type/:entity_id
    */
-  public async getContinueWatching(limit = 20): Promise<MediaItem[]> {
-    return this.http.get<MediaItem[]>(`/media/continue-watching?limit=${limit}`);
+  public async removeFavorite(entityType: string, entityId: number): Promise<void> {
+    return this.http.delete<void>(`/favorites/${entityType}/${entityId}`);
+  }
+
+  /**
+   * Check if media item is favorited
+   * Backend: GET /api/v1/favorites/check/:entity_type/:entity_id
+   */
+  public async checkFavorite(entityType: string, entityId: number): Promise<{ is_favorite: boolean }> {
+    return this.http.get<{ is_favorite: boolean }>(`/favorites/check/${entityType}/${entityId}`);
   }
 
   /**
    * Update playback progress for a media item
+   * Backend: PUT /api/v1/media/:id/progress
    */
   public async updateProgress(mediaId: number, progress: PlaybackProgress): Promise<void> {
     return this.http.put<void>(`/media/${mediaId}/progress`, progress);
-  }
-
-  /**
-   * Get playback progress for a media item
-   */
-  public async getProgress(mediaId: number): Promise<PlaybackProgress | null> {
-    try {
-      return await this.http.get<PlaybackProgress>(`/media/${mediaId}/progress`);
-    } catch (error) {
-      // Return null if no progress found
-      return null;
-    }
   }
 
   /**
@@ -136,136 +135,98 @@ export class MediaService {
   }
 
   /**
-   * Get streaming URL for a media item
+   * Toggle favorite status for a media item
+   * Backend: PUT /api/v1/media/:id/favorite
    */
-  public async getStreamUrl(mediaId: number): Promise<StreamInfo> {
-    return this.http.get<StreamInfo>(`/media/${mediaId}/stream`);
+  public async toggleFavorite(mediaId: number): Promise<{ is_favorite: boolean }> {
+    return this.http.put<{ is_favorite: boolean }>(`/media/${mediaId}/favorite`);
   }
 
   /**
-   * Get download URL for a media item
+   * Get streaming URL for a media entity
+   * Backend: GET /api/v1/entities/:id/stream
    */
-  public async getDownloadUrl(mediaId: number): Promise<{ url: string; expires_at: string }> {
-    return this.http.get<{ url: string; expires_at: string }>(`/media/${mediaId}/download`);
+  public async getStreamUrl(entityId: number): Promise<StreamInfo> {
+    return this.http.get<StreamInfo>(`/entities/${entityId}/stream`);
   }
 
   /**
-   * Queue media for download
+   * Get download URL for a media entity
+   * Backend: GET /api/v1/entities/:id/download
    */
-  public async queueDownload(mediaId: number): Promise<DownloadJob> {
-    return this.http.post<DownloadJob>(`/media/${mediaId}/download`);
+  public async getDownloadUrl(entityId: number): Promise<{ url: string; expires_at: string }> {
+    return this.http.get<{ url: string; expires_at: string }>(`/entities/${entityId}/download`);
   }
 
   /**
-   * Get download jobs for the current user
+   * Download a file by ID
+   * Backend: GET /api/v1/download/file/:id
    */
-  public async getDownloadJobs(): Promise<DownloadJob[]> {
-    return this.http.get<DownloadJob[]>('/media/downloads');
+  public async downloadFile(fileId: number): Promise<ArrayBuffer> {
+    return this.http.downloadStream(`/download/file/${fileId}`);
   }
 
   /**
-   * Get specific download job
+   * Get asset (cover art, thumbnail) for a media entity
+   * Backend: GET /api/v1/assets/by-entity/:type/:id
    */
-  public async getDownloadJob(jobId: number): Promise<DownloadJob> {
-    return this.http.get<DownloadJob>(`/media/downloads/${jobId}`);
+  public async getEntityAsset(entityType: string, entityId: number): Promise<ArrayBuffer> {
+    return this.http.downloadStream(`/assets/by-entity/${entityType}/${entityId}`);
   }
 
   /**
-   * Cancel a download job
+   * Refresh metadata for a media entity
+   * Backend: POST /api/v1/entities/:id/metadata/refresh
    */
-  public async cancelDownload(jobId: number): Promise<void> {
-    return this.http.post<void>(`/media/downloads/${jobId}/cancel`);
-  }
-
-  /**
-   * Pause a download job
-   */
-  public async pauseDownload(jobId: number): Promise<void> {
-    return this.http.post<void>(`/media/downloads/${jobId}/pause`);
-  }
-
-  /**
-   * Resume a download job
-   */
-  public async resumeDownload(jobId: number): Promise<void> {
-    return this.http.post<void>(`/media/downloads/${jobId}/resume`);
-  }
-
-  /**
-   * Get media thumbnail
-   */
-  public async getThumbnail(mediaId: number, size?: 'small' | 'medium' | 'large'): Promise<ArrayBuffer> {
-    const params = size ? `?size=${size}` : '';
-    return this.http.downloadStream(`/media/${mediaId}/thumbnail${params}`);
-  }
-
-  /**
-   * Get media poster
-   */
-  public async getPoster(mediaId: number, size?: 'small' | 'medium' | 'large'): Promise<ArrayBuffer> {
-    const params = size ? `?size=${size}` : '';
-    return this.http.downloadStream(`/media/${mediaId}/poster${params}`);
-  }
-
-  /**
-   * Get media backdrop
-   */
-  public async getBackdrop(mediaId: number, size?: 'small' | 'medium' | 'large'): Promise<ArrayBuffer> {
-    const params = size ? `?size=${size}` : '';
-    return this.http.downloadStream(`/media/${mediaId}/backdrop${params}`);
-  }
-
-  /**
-   * Update media metadata
-   */
-  public async updateMetadata(mediaId: number, metadata: Partial<MediaItem>): Promise<MediaItem> {
-    return this.http.put<MediaItem>(`/media/${mediaId}`, metadata);
-  }
-
-  /**
-   * Delete a media item
-   */
-  public async delete(mediaId: number, deleteFiles = false): Promise<void> {
-    const params = deleteFiles ? '?delete_files=true' : '';
-    return this.http.delete<void>(`/media/${mediaId}${params}`);
-  }
-
-  /**
-   * Refresh metadata for a media item
-   */
-  public async refreshMetadata(mediaId: number): Promise<MediaItem> {
-    return this.http.post<MediaItem>(`/media/${mediaId}/refresh`);
+  public async refreshMetadata(entityId: number): Promise<MediaItem> {
+    return this.http.post<MediaItem>(`/entities/${entityId}/metadata/refresh`);
   }
 
   /**
    * Get similar media items
+   * Backend: GET /api/v1/recommendations/similar/:media_id
    */
   public async getSimilar(mediaId: number, limit = 10): Promise<MediaItem[]> {
-    return this.http.get<MediaItem[]>(`/media/${mediaId}/similar?limit=${limit}`);
+    return this.http.get<MediaItem[]>(`/recommendations/similar/${mediaId}?limit=${limit}`);
   }
 
   /**
-   * Get media recommendations for the user
+   * Get personalized recommendations for a user
+   * Backend: GET /api/v1/recommendations/personalized/:user_id
    */
-  public async getRecommendations(limit = 20): Promise<MediaItem[]> {
-    return this.http.get<MediaItem[]>(`/media/recommendations?limit=${limit}`);
+  public async getRecommendations(userId: number, limit = 20): Promise<MediaItem[]> {
+    return this.http.get<MediaItem[]>(`/recommendations/personalized/${userId}?limit=${limit}`);
   }
 
   /**
-   * Rate a media item
+   * Get media entity children (e.g., seasons of a show)
+   * Backend: GET /api/v1/entities/:id/children
    */
-  public async rate(mediaId: number, rating: number): Promise<{ rating: number }> {
-    return this.http.post<{ rating: number }>(`/media/${mediaId}/rate`, { rating });
+  public async getChildren(entityId: number): Promise<MediaItem[]> {
+    return this.http.get<MediaItem[]>(`/entities/${entityId}/children`);
   }
 
   /**
-   * Get user's rating for a media item
+   * Get files associated with a media entity
+   * Backend: GET /api/v1/entities/:id/files
    */
-  public async getRating(mediaId: number): Promise<{ rating: number } | null> {
-    try {
-      return await this.http.get<{ rating: number }>(`/media/${mediaId}/rating`);
-    } catch (error) {
-      return null;
-    }
+  public async getEntityFiles(entityId: number): Promise<unknown[]> {
+    return this.http.get<unknown[]>(`/entities/${entityId}/files`);
+  }
+
+  /**
+   * Get entity metadata from external providers
+   * Backend: GET /api/v1/entities/:id/metadata
+   */
+  public async getEntityMetadata(entityId: number): Promise<unknown> {
+    return this.http.get<unknown>(`/entities/${entityId}/metadata`);
+  }
+
+  /**
+   * Update user metadata for an entity
+   * Backend: PUT /api/v1/entities/:id/user-metadata
+   */
+  public async updateUserMetadata(entityId: number, metadata: Record<string, unknown>): Promise<void> {
+    return this.http.put<void>(`/entities/${entityId}/user-metadata`, metadata);
   }
 }

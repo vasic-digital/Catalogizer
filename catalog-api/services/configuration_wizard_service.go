@@ -1008,9 +1008,56 @@ func (s *ConfigurationWizardService) testMediaStorage(config map[string]interfac
 		}
 		os.Remove(testFile)
 
+	case "smb":
+		// Validate SMB connection parameters
+		host, _ := config["smb_host"].(string)
+		share, _ := config["smb_share"].(string)
+		if host == "" {
+			return fmt.Errorf("SMB host not specified")
+		}
+		if share == "" {
+			return fmt.Errorf("SMB share not specified")
+		}
+
+	case "ftp":
+		// Validate FTP connection parameters
+		host, _ := config["ftp_host"].(string)
+		if host == "" {
+			return fmt.Errorf("FTP host not specified")
+		}
+		port, _ := config["ftp_port"].(float64)
+		if port == 0 {
+			port = 21
+		}
+		if port < 1 || port > 65535 {
+			return fmt.Errorf("invalid FTP port: %v", port)
+		}
+
+	case "nfs":
+		// Validate NFS connection parameters
+		host, _ := config["nfs_host"].(string)
+		export, _ := config["nfs_export"].(string)
+		if host == "" {
+			return fmt.Errorf("NFS host not specified")
+		}
+		if export == "" {
+			return fmt.Errorf("NFS export path not specified")
+		}
+
+	case "webdav":
+		// Validate WebDAV connection parameters
+		urlStr, _ := config["webdav_url"].(string)
+		if urlStr == "" {
+			return fmt.Errorf("WebDAV URL not specified")
+		}
+		if !strings.HasPrefix(urlStr, "http://") && !strings.HasPrefix(urlStr, "https://") {
+			return fmt.Errorf("WebDAV URL must start with http:// or https://")
+		}
+
 	default:
-		// For other storage types, would implement specific tests
-		log.Printf("Storage type %s test not implemented", storageType)
+		if storageType != "" {
+			log.Printf("Storage type %s: no additional validation available", storageType)
+		}
 	}
 
 	return nil

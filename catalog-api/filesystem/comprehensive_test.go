@@ -1064,7 +1064,7 @@ func TestWebDAVClient_ResolveURL_NoBasePath(t *testing.T) {
 		URL: "https://example.com",
 	}
 
-	client := NewWebDAVClient(config)
+	client, _ := NewWebDAVClient(config)
 
 	result := client.resolveURL("file.txt")
 	assert.Contains(t, result, "https://example.com")
@@ -1077,7 +1077,7 @@ func TestWebDAVClient_ResolveURL_WithPort(t *testing.T) {
 		Path: "/dav",
 	}
 
-	client := NewWebDAVClient(config)
+	client, _ := NewWebDAVClient(config)
 
 	result := client.resolveURL("doc.pdf")
 	assert.Contains(t, result, "example.com:8443")
@@ -1206,9 +1206,10 @@ func TestWebDAVClient_NewWebDAVClient_InvalidURL(t *testing.T) {
 		URL: "://not-a-valid-url",
 	}
 
-	client := NewWebDAVClient(config)
-	// Should not panic; baseURL will be nil or partially parsed
-	assert.NotNil(t, client)
+	client, err := NewWebDAVClient(config)
+	// Should return an error for invalid URL
+	assert.Error(t, err)
+	assert.Nil(t, client)
 }
 
 // =============================================================================

@@ -109,14 +109,14 @@ describe('MediaService', () => {
   });
 
   describe('getTrending', () => {
-    it('gets trending media sorted by rating', async () => {
-      const response = { items: [{ id: 1, rating: 9.0 }], total: 1, limit: 20, offset: 0, has_next: false, has_previous: false };
-      mockHttp.get.mockResolvedValueOnce(response);
+    it('gets trending media from recommendations endpoint', async () => {
+      const items = [{ id: 1, rating: 9.0 }];
+      mockHttp.get.mockResolvedValueOnce(items);
 
       const result = await mediaService.getTrending();
 
-      expect(mockHttp.get).toHaveBeenCalledWith('/media/search?sort_by=rating&sort_order=desc&limit=20');
-      expect(result).toEqual(response.items);
+      expect(mockHttp.get).toHaveBeenCalledWith('/recommendations/trending?limit=20');
+      expect(result).toEqual(items);
     });
   });
 
@@ -139,17 +139,42 @@ describe('MediaService', () => {
 
       const result = await mediaService.getFavorites();
 
-      expect(mockHttp.get).toHaveBeenCalledWith('/media/favorites?limit=50');
+      expect(mockHttp.get).toHaveBeenCalledWith('/favorites?limit=50');
       expect(result).toEqual(favorites);
     });
 
-    it('toggles favorite status', async () => {
+    it('adds a favorite', async () => {
+      mockHttp.post.mockResolvedValueOnce(undefined);
+
+      await mediaService.addFavorite('movie', 42);
+
+      expect(mockHttp.post).toHaveBeenCalledWith('/favorites', { entity_type: 'movie', entity_id: 42 });
+    });
+
+    it('removes a favorite', async () => {
+      mockHttp.delete.mockResolvedValueOnce(undefined);
+
+      await mediaService.removeFavorite('movie', 42);
+
+      expect(mockHttp.delete).toHaveBeenCalledWith('/favorites/movie/42');
+    });
+
+    it('checks favorite status', async () => {
+      mockHttp.get.mockResolvedValueOnce({ is_favorite: true });
+
+      const result = await mediaService.checkFavorite('movie', 42);
+
+      expect(mockHttp.get).toHaveBeenCalledWith('/favorites/check/movie/42');
+      expect(result).toEqual({ is_favorite: true });
+    });
+
+    it('toggles favorite status via media endpoint', async () => {
       const toggleResult = { is_favorite: true };
-      mockHttp.post.mockResolvedValueOnce(toggleResult);
+      mockHttp.put.mockResolvedValueOnce(toggleResult);
 
       const result = await mediaService.toggleFavorite(42);
 
-      expect(mockHttp.post).toHaveBeenCalledWith('/media/42/favorite');
+      expect(mockHttp.put).toHaveBeenCalledWith('/media/42/favorite');
       expect(result).toEqual(toggleResult);
     });
   });
@@ -164,24 +189,6 @@ describe('MediaService', () => {
       expect(mockHttp.put).toHaveBeenCalledWith('/media/1/progress', progress);
     });
 
-    it('gets playback progress', async () => {
-      const progress = { media_id: 1, position: 300, duration: 7200 };
-      mockHttp.get.mockResolvedValueOnce(progress);
-
-      const result = await mediaService.getProgress(1);
-
-      expect(mockHttp.get).toHaveBeenCalledWith('/media/1/progress');
-      expect(result).toEqual(progress);
-    });
-
-    it('returns null when no progress found', async () => {
-      mockHttp.get.mockRejectedValueOnce(new Error('Not found'));
-
-      const result = await mediaService.getProgress(1);
-
-      expect(result).toBeNull();
-    });
-
     it('marks media as watched', async () => {
       mockHttp.put.mockResolvedValueOnce(undefined);
 
@@ -193,212 +200,123 @@ describe('MediaService', () => {
         duration: 100,
       }));
     });
-
-    it('gets continue watching items', async () => {
-      const items = [{ id: 1, title: 'In Progress' }];
-      mockHttp.get.mockResolvedValueOnce(items);
-
-      const result = await mediaService.getContinueWatching();
-
-      expect(mockHttp.get).toHaveBeenCalledWith('/media/continue-watching?limit=20');
-      expect(result).toEqual(items);
-    });
   });
 
   describe('streaming and downloads', () => {
-    it('gets stream URL', async () => {
+    it('gets stream URL via entities endpoint', async () => {
       const streamInfo = { url: 'http://example.com/stream', mime_type: 'video/mp4', file_size: 1000000 };
       mockHttp.get.mockResolvedValueOnce(streamInfo);
 
       const result = await mediaService.getStreamUrl(1);
 
-      expect(mockHttp.get).toHaveBeenCalledWith('/media/1/stream');
+      expect(mockHttp.get).toHaveBeenCalledWith('/entities/1/stream');
       expect(result).toEqual(streamInfo);
     });
 
-    it('gets download URL', async () => {
+    it('gets download URL via entities endpoint', async () => {
       const downloadInfo = { url: 'http://example.com/dl', expires_at: '2024-01-01' };
       mockHttp.get.mockResolvedValueOnce(downloadInfo);
 
       const result = await mediaService.getDownloadUrl(1);
 
-      expect(mockHttp.get).toHaveBeenCalledWith('/media/1/download');
+      expect(mockHttp.get).toHaveBeenCalledWith('/entities/1/download');
       expect(result).toEqual(downloadInfo);
     });
 
-    it('queues media for download', async () => {
-      const job = { id: 1, media_id: 1, status: 'pending', progress: 0 };
-      mockHttp.post.mockResolvedValueOnce(job);
+    it('downloads a file by ID', async () => {
+      const buffer = new ArrayBuffer(100);
+      mockHttp.downloadStream.mockResolvedValueOnce(buffer);
 
-      const result = await mediaService.queueDownload(1);
+      const result = await mediaService.downloadFile(5);
 
-      expect(mockHttp.post).toHaveBeenCalledWith('/media/1/download');
-      expect(result).toEqual(job);
-    });
-
-    it('gets download jobs', async () => {
-      const jobs = [{ id: 1, status: 'downloading', progress: 50 }];
-      mockHttp.get.mockResolvedValueOnce(jobs);
-
-      const result = await mediaService.getDownloadJobs();
-
-      expect(mockHttp.get).toHaveBeenCalledWith('/media/downloads');
-      expect(result).toEqual(jobs);
-    });
-
-    it('cancels a download job', async () => {
-      mockHttp.post.mockResolvedValueOnce(undefined);
-      await mediaService.cancelDownload(1);
-      expect(mockHttp.post).toHaveBeenCalledWith('/media/downloads/1/cancel');
-    });
-
-    it('pauses a download job', async () => {
-      mockHttp.post.mockResolvedValueOnce(undefined);
-      await mediaService.pauseDownload(1);
-      expect(mockHttp.post).toHaveBeenCalledWith('/media/downloads/1/pause');
-    });
-
-    it('resumes a download job', async () => {
-      mockHttp.post.mockResolvedValueOnce(undefined);
-      await mediaService.resumeDownload(1);
-      expect(mockHttp.post).toHaveBeenCalledWith('/media/downloads/1/resume');
+      expect(mockHttp.downloadStream).toHaveBeenCalledWith('/download/file/5');
+      expect(result).toBe(buffer);
     });
   });
 
-  describe('media images', () => {
-    it('gets thumbnail without size', async () => {
+  describe('entity assets', () => {
+    it('gets entity asset', async () => {
       const buffer = new ArrayBuffer(100);
       mockHttp.downloadStream.mockResolvedValueOnce(buffer);
 
-      const result = await mediaService.getThumbnail(1);
+      const result = await mediaService.getEntityAsset('movie', 1);
 
-      expect(mockHttp.downloadStream).toHaveBeenCalledWith('/media/1/thumbnail');
+      expect(mockHttp.downloadStream).toHaveBeenCalledWith('/assets/by-entity/movie/1');
       expect(result).toBe(buffer);
-    });
-
-    it('gets thumbnail with size', async () => {
-      const buffer = new ArrayBuffer(100);
-      mockHttp.downloadStream.mockResolvedValueOnce(buffer);
-
-      await mediaService.getThumbnail(1, 'small');
-
-      expect(mockHttp.downloadStream).toHaveBeenCalledWith('/media/1/thumbnail?size=small');
-    });
-
-    it('gets poster', async () => {
-      const buffer = new ArrayBuffer(100);
-      mockHttp.downloadStream.mockResolvedValueOnce(buffer);
-
-      await mediaService.getPoster(1, 'large');
-
-      expect(mockHttp.downloadStream).toHaveBeenCalledWith('/media/1/poster?size=large');
-    });
-
-    it('gets backdrop', async () => {
-      const buffer = new ArrayBuffer(100);
-      mockHttp.downloadStream.mockResolvedValueOnce(buffer);
-
-      await mediaService.getBackdrop(1, 'medium');
-
-      expect(mockHttp.downloadStream).toHaveBeenCalledWith('/media/1/backdrop?size=medium');
     });
   });
 
   describe('metadata operations', () => {
-    it('updates media metadata', async () => {
-      const updated = { id: 1, title: 'Updated Title' };
-      mockHttp.put.mockResolvedValueOnce(updated);
-
-      const result = await mediaService.updateMetadata(1, { title: 'Updated Title' } as any);
-
-      expect(mockHttp.put).toHaveBeenCalledWith('/media/1', { title: 'Updated Title' });
-      expect(result).toEqual(updated);
-    });
-
-    it('refreshes media metadata', async () => {
+    it('refreshes entity metadata', async () => {
       const refreshed = { id: 1, title: 'Refreshed' };
       mockHttp.post.mockResolvedValueOnce(refreshed);
 
       const result = await mediaService.refreshMetadata(1);
 
-      expect(mockHttp.post).toHaveBeenCalledWith('/media/1/refresh');
+      expect(mockHttp.post).toHaveBeenCalledWith('/entities/1/metadata/refresh');
       expect(result).toEqual(refreshed);
     });
 
-    it('deletes media without files', async () => {
-      mockHttp.delete.mockResolvedValueOnce(undefined);
+    it('updates user metadata for an entity', async () => {
+      mockHttp.put.mockResolvedValueOnce(undefined);
 
-      await mediaService.delete(1);
+      await mediaService.updateUserMetadata(1, { rating: 8, notes: 'Great film' });
 
-      expect(mockHttp.delete).toHaveBeenCalledWith('/media/1');
+      expect(mockHttp.put).toHaveBeenCalledWith('/entities/1/user-metadata', { rating: 8, notes: 'Great film' });
     });
 
-    it('deletes media with files', async () => {
-      mockHttp.delete.mockResolvedValueOnce(undefined);
+    it('gets entity metadata', async () => {
+      const meta = { provider: 'tmdb', data: {} };
+      mockHttp.get.mockResolvedValueOnce(meta);
 
-      await mediaService.delete(1, true);
+      const result = await mediaService.getEntityMetadata(1);
 
-      expect(mockHttp.delete).toHaveBeenCalledWith('/media/1?delete_files=true');
+      expect(mockHttp.get).toHaveBeenCalledWith('/entities/1/metadata');
+      expect(result).toEqual(meta);
     });
   });
 
-  describe('recommendations and ratings', () => {
+  describe('recommendations', () => {
     it('gets similar media', async () => {
       const similar = [{ id: 2, title: 'Similar' }];
       mockHttp.get.mockResolvedValueOnce(similar);
 
       const result = await mediaService.getSimilar(1);
 
-      expect(mockHttp.get).toHaveBeenCalledWith('/media/1/similar?limit=10');
+      expect(mockHttp.get).toHaveBeenCalledWith('/recommendations/similar/1?limit=10');
       expect(result).toEqual(similar);
     });
 
-    it('gets recommendations', async () => {
+    it('gets personalized recommendations', async () => {
       const recs = [{ id: 3, title: 'Recommended' }];
       mockHttp.get.mockResolvedValueOnce(recs);
 
-      const result = await mediaService.getRecommendations();
+      const result = await mediaService.getRecommendations(42);
 
-      expect(mockHttp.get).toHaveBeenCalledWith('/media/recommendations?limit=20');
+      expect(mockHttp.get).toHaveBeenCalledWith('/recommendations/personalized/42?limit=20');
       expect(result).toEqual(recs);
-    });
-
-    it('rates a media item', async () => {
-      mockHttp.post.mockResolvedValueOnce({ rating: 8 });
-
-      const result = await mediaService.rate(1, 8);
-
-      expect(mockHttp.post).toHaveBeenCalledWith('/media/1/rate', { rating: 8 });
-      expect(result).toEqual({ rating: 8 });
-    });
-
-    it('gets user rating', async () => {
-      mockHttp.get.mockResolvedValueOnce({ rating: 7 });
-
-      const result = await mediaService.getRating(1);
-
-      expect(mockHttp.get).toHaveBeenCalledWith('/media/1/rating');
-      expect(result).toEqual({ rating: 7 });
-    });
-
-    it('returns null when no rating exists', async () => {
-      mockHttp.get.mockRejectedValueOnce(new Error('Not found'));
-
-      const result = await mediaService.getRating(1);
-
-      expect(result).toBeNull();
     });
   });
 
-  describe('download job details', () => {
-    it('gets specific download job', async () => {
-      const job = { id: 5, media_id: 1, status: 'completed', progress: 100 };
-      mockHttp.get.mockResolvedValueOnce(job);
+  describe('entity hierarchy', () => {
+    it('gets entity children', async () => {
+      const children = [{ id: 2, title: 'Season 1' }];
+      mockHttp.get.mockResolvedValueOnce(children);
 
-      const result = await mediaService.getDownloadJob(5);
+      const result = await mediaService.getChildren(1);
 
-      expect(mockHttp.get).toHaveBeenCalledWith('/media/downloads/5');
-      expect(result).toEqual(job);
+      expect(mockHttp.get).toHaveBeenCalledWith('/entities/1/children');
+      expect(result).toEqual(children);
+    });
+
+    it('gets entity files', async () => {
+      const files = [{ id: 10, path: '/media/file.mkv' }];
+      mockHttp.get.mockResolvedValueOnce(files);
+
+      const result = await mediaService.getEntityFiles(1);
+
+      expect(mockHttp.get).toHaveBeenCalledWith('/entities/1/files');
+      expect(result).toEqual(files);
     });
   });
 });

@@ -136,7 +136,7 @@ func TestWebDAVClient_WriteFile_ServerErrorB2(t *testing.T) {
 
 func TestWebDAVClient_WriteFile_NotConnectedB2(t *testing.T) {
 	config := &WebDAVConfig{URL: "http://localhost:0"}
-	client := NewWebDAVClient(config)
+	client, _ := NewWebDAVClient(config)
 	ctx := context.Background()
 
 	data := strings.NewReader("some data")
@@ -660,7 +660,7 @@ func TestWebDAVClient_ListDirectory_BadStatusB2(t *testing.T) {
 
 func TestWebDAVClient_ListDirectory_NotConnectedB2(t *testing.T) {
 	config := &WebDAVConfig{URL: "http://localhost:0"}
-	client := NewWebDAVClient(config)
+	client, _ := NewWebDAVClient(config)
 	ctx := context.Background()
 
 	_, err := client.ListDirectory(ctx, "/")
@@ -825,7 +825,7 @@ func TestWebDAVClient_ResolveURL_TraversalPreventionB2(t *testing.T) {
 		URL:  "http://localhost:8080",
 		Path: "/webdav",
 	}
-	client := NewWebDAVClient(config)
+	client, _ := NewWebDAVClient(config)
 
 	result := client.resolveURL("../../../etc/passwd")
 	assert.NotContains(t, result, "..")
@@ -835,7 +835,7 @@ func TestWebDAVClient_ResolveURL_CleanPathB2(t *testing.T) {
 	config := &WebDAVConfig{
 		URL: "http://localhost:8080",
 	}
-	client := NewWebDAVClient(config)
+	client, _ := NewWebDAVClient(config)
 
 	result := client.resolveURL("dir/./subdir/../file.txt")
 	assert.Contains(t, result, "dir")
@@ -866,7 +866,7 @@ func TestNewWebDAVClient_WithPathB2(t *testing.T) {
 		Path:     "/files/media",
 	}
 
-	client := NewWebDAVClient(config)
+	client, _ := NewWebDAVClient(config)
 	assert.NotNil(t, client)
 	assert.Equal(t, "webdav", client.GetProtocol())
 	assert.Equal(t, config, client.GetConfig().(*WebDAVConfig))
@@ -879,7 +879,7 @@ func TestNewWebDAVClient_WithRootPathB2(t *testing.T) {
 		URL:  "http://dav.example.com",
 		Path: "/",
 	}
-	client := NewWebDAVClient(config)
+	client, _ := NewWebDAVClient(config)
 	assert.NotNil(t, client)
 }
 
@@ -887,7 +887,7 @@ func TestNewWebDAVClient_WithEmptyPathB2(t *testing.T) {
 	config := &WebDAVConfig{
 		URL: "http://dav.example.com",
 	}
-	client := NewWebDAVClient(config)
+	client, _ := NewWebDAVClient(config)
 	assert.NotNil(t, client)
 }
 
@@ -897,7 +897,7 @@ func TestWebDAVClient_Connect_ServerDownB2(t *testing.T) {
 	server.Close()
 
 	config := &WebDAVConfig{URL: serverURL}
-	client := NewWebDAVClient(config)
+	client, _ := NewWebDAVClient(config)
 	ctx := context.Background()
 
 	err := client.Connect(ctx)
@@ -913,7 +913,7 @@ func TestWebDAVClient_ReadFile_NetworkErrorB2(t *testing.T) {
 		}
 	}))
 	config := &WebDAVConfig{URL: server.URL}
-	client := NewWebDAVClient(config)
+	client, _ := NewWebDAVClient(config)
 	client.connected = true
 	server.Close()
 
@@ -1301,7 +1301,7 @@ func newClosedWebDAVClient(t *testing.T) *WebDAVClient {
 		w.WriteHeader(http.StatusMultiStatus)
 	}))
 	config := &WebDAVConfig{URL: server.URL, Username: "u", Password: "p"}
-	client := NewWebDAVClient(config)
+	client, _ := NewWebDAVClient(config)
 	client.connected = true
 	server.Close() // Close immediately to trigger network errors
 	return client

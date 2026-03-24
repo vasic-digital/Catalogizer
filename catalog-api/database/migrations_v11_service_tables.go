@@ -3,6 +3,8 @@ package database
 import (
 	"context"
 	"fmt"
+	"log"
+	"strings"
 )
 
 // createServiceTables creates tables for analytics, favorites, error reporting,
@@ -252,8 +254,14 @@ func (db *DB) fixServiceTableColumns(ctx context.Context) error {
 		"ALTER TABLE favorites ADD COLUMN updated_at DATETIME DEFAULT CURRENT_TIMESTAMP",
 	}
 	for _, stmt := range alterStmts {
-		// Ignore "duplicate column" errors — column may already exist
-		_, _ = db.ExecContext(ctx, stmt)
+		if _, err := db.ExecContext(ctx, stmt); err != nil {
+			errMsg := strings.ToLower(err.Error())
+			// Ignore "duplicate column" errors — column may already exist
+			if strings.Contains(errMsg, "duplicate column") || strings.Contains(errMsg, "already exists") {
+				continue
+			}
+			log.Printf("Warning: migration v12 ALTER failed: %s: %v", stmt, err)
+		}
 	}
 
 	return nil

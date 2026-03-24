@@ -169,19 +169,16 @@ describe('CatalogizerClient', () => {
     });
 
     describe('getTrending', () => {
-      it('gets trending media', async () => {
+      it('gets trending media from recommendations endpoint', async () => {
         const mockResponse = {
-          data: {
-            items: [{ id: 1, title: 'Popular Movie', rating: 9.0 }],
-            total: 1, limit: 20, offset: 0
-          }
+          data: [{ id: 1, title: 'Popular Movie', rating: 9.0 }]
         };
         mockAxiosInstance.get.mockResolvedValueOnce(mockResponse);
 
         const result = await client.media.getTrending();
 
-        expect(mockAxiosInstance.get).toHaveBeenCalledWith('/media/search?sort_by=rating&sort_order=desc&limit=20', undefined);
-        expect(result).toEqual(mockResponse.data.items);
+        expect(mockAxiosInstance.get).toHaveBeenCalledWith('/recommendations/trending?limit=20', undefined);
+        expect(result).toEqual(mockResponse.data);
       });
     });
 
@@ -211,7 +208,7 @@ describe('CatalogizerClient', () => {
 
         const result = await client.media.getFavorites();
 
-        expect(mockAxiosInstance.get).toHaveBeenCalledWith('/media/favorites?limit=50', undefined);
+        expect(mockAxiosInstance.get).toHaveBeenCalledWith('/favorites?limit=50', undefined);
         expect(result).toEqual(mockResponse.data);
       });
     });
@@ -219,25 +216,11 @@ describe('CatalogizerClient', () => {
     describe('toggleFavorite', () => {
       it('toggles favorite status', async () => {
         const mockResponse = { data: { is_favorite: true } };
-        mockAxiosInstance.post.mockResolvedValueOnce(mockResponse);
+        mockAxiosInstance.put.mockResolvedValueOnce(mockResponse);
 
         const result = await client.media.toggleFavorite(1);
 
-        expect(mockAxiosInstance.post).toHaveBeenCalledWith('/media/1/favorite', undefined, undefined);
-        expect(result).toEqual(mockResponse.data);
-      });
-    });
-
-    describe('getContinueWatching', () => {
-      it('gets continue watching items', async () => {
-        const mockResponse = {
-          data: [{ id: 1, title: 'In Progress Movie', progress: 50 }]
-        };
-        mockAxiosInstance.get.mockResolvedValueOnce(mockResponse);
-
-        const result = await client.media.getContinueWatching();
-
-        expect(mockAxiosInstance.get).toHaveBeenCalledWith('/media/continue-watching?limit=20', undefined);
+        expect(mockAxiosInstance.put).toHaveBeenCalledWith('/media/1/favorite', undefined, undefined);
         expect(result).toEqual(mockResponse.data);
       });
     });
@@ -250,26 +233,6 @@ describe('CatalogizerClient', () => {
         await client.media.updateProgress(1, progress);
 
         expect(mockAxiosInstance.put).toHaveBeenCalledWith('/media/1/progress', progress, undefined);
-      });
-    });
-
-    describe('getProgress', () => {
-      it('gets playback progress', async () => {
-        const mockResponse = { data: { media_id: 1, position: 300, duration: 7200 } };
-        mockAxiosInstance.get.mockResolvedValueOnce(mockResponse);
-
-        const result = await client.media.getProgress(1);
-
-        expect(mockAxiosInstance.get).toHaveBeenCalledWith('/media/1/progress', undefined);
-        expect(result).toEqual(mockResponse.data);
-      });
-
-      it('returns null when no progress found', async () => {
-        mockAxiosInstance.get.mockRejectedValueOnce(new Error('Not found'));
-
-        const result = await client.media.getProgress(1);
-
-        expect(result).toBeNull();
       });
     });
 
@@ -288,133 +251,59 @@ describe('CatalogizerClient', () => {
     });
 
     describe('getStreamUrl', () => {
-      it('gets stream URL', async () => {
+      it('gets stream URL via entities endpoint', async () => {
         const mockResponse = { data: { url: 'http://example.com/stream', quality: '1080p' } };
         mockAxiosInstance.get.mockResolvedValueOnce(mockResponse);
 
         const result = await client.media.getStreamUrl(1);
 
-        expect(mockAxiosInstance.get).toHaveBeenCalledWith('/media/1/stream', undefined);
+        expect(mockAxiosInstance.get).toHaveBeenCalledWith('/entities/1/stream', undefined);
         expect(result).toEqual(mockResponse.data);
       });
     });
 
     describe('getDownloadUrl', () => {
-      it('gets download URL', async () => {
+      it('gets download URL via entities endpoint', async () => {
         const mockResponse = { data: { url: 'http://example.com/download', expires_at: '2024-01-01T00:00:00Z' } };
         mockAxiosInstance.get.mockResolvedValueOnce(mockResponse);
 
         const result = await client.media.getDownloadUrl(1);
 
-        expect(mockAxiosInstance.get).toHaveBeenCalledWith('/media/1/download', undefined);
+        expect(mockAxiosInstance.get).toHaveBeenCalledWith('/entities/1/download', undefined);
         expect(result).toEqual(mockResponse.data);
       });
     });
 
-    describe('queueDownload', () => {
-      it('queues media for download', async () => {
-        const mockResponse = { data: { id: 1, status: 'pending', progress: 0 } };
-        mockAxiosInstance.post.mockResolvedValueOnce(mockResponse);
+    describe('downloadFile', () => {
+      it('downloads a file by ID', async () => {
+        const buffer = new ArrayBuffer(100);
+        mockAxiosInstance.get.mockResolvedValueOnce({ data: buffer });
 
-        const result = await client.media.queueDownload(1);
+        const result = await client.media.downloadFile(5);
 
-        expect(mockAxiosInstance.post).toHaveBeenCalledWith('/media/1/download', undefined, undefined);
-        expect(result).toEqual(mockResponse.data);
+        expect(mockAxiosInstance.get).toHaveBeenCalledWith('/download/file/5', { responseType: 'arraybuffer' });
       });
     });
 
-    describe('getDownloadJobs', () => {
-      it('gets download jobs', async () => {
-        const mockResponse = { data: [{ id: 1, status: 'in_progress', progress: 50 }] };
-        mockAxiosInstance.get.mockResolvedValueOnce(mockResponse);
+    describe('getEntityAsset', () => {
+      it('gets entity asset', async () => {
+        const buffer = new ArrayBuffer(100);
+        mockAxiosInstance.get.mockResolvedValueOnce({ data: buffer });
 
-        const result = await client.media.getDownloadJobs();
+        const result = await client.media.getEntityAsset('movie', 1);
 
-        expect(mockAxiosInstance.get).toHaveBeenCalledWith('/media/downloads', undefined);
-        expect(result).toEqual(mockResponse.data);
-      });
-    });
-
-    describe('getDownloadJob', () => {
-      it('gets specific download job', async () => {
-        const mockResponse = { data: { id: 1, status: 'in_progress', progress: 75 } };
-        mockAxiosInstance.get.mockResolvedValueOnce(mockResponse);
-
-        const result = await client.media.getDownloadJob(1);
-
-        expect(mockAxiosInstance.get).toHaveBeenCalledWith('/media/downloads/1', undefined);
-        expect(result).toEqual(mockResponse.data);
-      });
-    });
-
-    describe('cancelDownload', () => {
-      it('cancels download job', async () => {
-        mockAxiosInstance.post.mockResolvedValueOnce({ data: {} });
-
-        await client.media.cancelDownload(1);
-
-        expect(mockAxiosInstance.post).toHaveBeenCalledWith('/media/downloads/1/cancel', undefined, undefined);
-      });
-    });
-
-    describe('pauseDownload', () => {
-      it('pauses download job', async () => {
-        mockAxiosInstance.post.mockResolvedValueOnce({ data: {} });
-
-        await client.media.pauseDownload(1);
-
-        expect(mockAxiosInstance.post).toHaveBeenCalledWith('/media/downloads/1/pause', undefined, undefined);
-      });
-    });
-
-    describe('resumeDownload', () => {
-      it('resumes download job', async () => {
-        mockAxiosInstance.post.mockResolvedValueOnce({ data: {} });
-
-        await client.media.resumeDownload(1);
-
-        expect(mockAxiosInstance.post).toHaveBeenCalledWith('/media/downloads/1/resume', undefined, undefined);
-      });
-    });
-
-    describe('updateMetadata', () => {
-      it('updates media metadata', async () => {
-        const mockResponse = { data: { id: 1, title: 'Updated Movie' } };
-        mockAxiosInstance.put.mockResolvedValueOnce(mockResponse);
-
-        const result = await client.media.updateMetadata(1, { title: 'Updated Movie' });
-
-        expect(mockAxiosInstance.put).toHaveBeenCalledWith('/media/1', { title: 'Updated Movie' }, undefined);
-        expect(result).toEqual(mockResponse.data);
-      });
-    });
-
-    describe('delete', () => {
-      it('deletes media item', async () => {
-        mockAxiosInstance.delete.mockResolvedValueOnce({ data: {} });
-
-        await client.media.delete(1);
-
-        expect(mockAxiosInstance.delete).toHaveBeenCalledWith('/media/1', undefined);
-      });
-
-      it('deletes media item with files', async () => {
-        mockAxiosInstance.delete.mockResolvedValueOnce({ data: {} });
-
-        await client.media.delete(1, true);
-
-        expect(mockAxiosInstance.delete).toHaveBeenCalledWith('/media/1?delete_files=true', undefined);
+        expect(mockAxiosInstance.get).toHaveBeenCalledWith('/assets/by-entity/movie/1', { responseType: 'arraybuffer' });
       });
     });
 
     describe('refreshMetadata', () => {
-      it('refreshes media metadata', async () => {
+      it('refreshes entity metadata', async () => {
         const mockResponse = { data: { id: 1, title: 'Refreshed Movie' } };
         mockAxiosInstance.post.mockResolvedValueOnce(mockResponse);
 
         const result = await client.media.refreshMetadata(1);
 
-        expect(mockAxiosInstance.post).toHaveBeenCalledWith('/media/1/refresh', undefined, undefined);
+        expect(mockAxiosInstance.post).toHaveBeenCalledWith('/entities/1/metadata/refresh', undefined, undefined);
         expect(result).toEqual(mockResponse.data);
       });
     });
@@ -426,7 +315,7 @@ describe('CatalogizerClient', () => {
 
         const result = await client.media.getSimilar(1);
 
-        expect(mockAxiosInstance.get).toHaveBeenCalledWith('/media/1/similar?limit=10', undefined);
+        expect(mockAxiosInstance.get).toHaveBeenCalledWith('/recommendations/similar/1?limit=10', undefined);
         expect(result).toEqual(mockResponse.data);
       });
     });
@@ -436,42 +325,60 @@ describe('CatalogizerClient', () => {
         const mockResponse = { data: [{ id: 1, title: 'Recommended Movie' }] };
         mockAxiosInstance.get.mockResolvedValueOnce(mockResponse);
 
-        const result = await client.media.getRecommendations();
+        const result = await client.media.getRecommendations(42);
 
-        expect(mockAxiosInstance.get).toHaveBeenCalledWith('/media/recommendations?limit=20', undefined);
+        expect(mockAxiosInstance.get).toHaveBeenCalledWith('/recommendations/personalized/42?limit=20', undefined);
         expect(result).toEqual(mockResponse.data);
       });
     });
 
-    describe('rate', () => {
-      it('rates media item', async () => {
-        const mockResponse = { data: { rating: 8 } };
-        mockAxiosInstance.post.mockResolvedValueOnce(mockResponse);
+    describe('addFavorite', () => {
+      it('adds a favorite', async () => {
+        mockAxiosInstance.post.mockResolvedValueOnce({ data: {} });
 
-        const result = await client.media.rate(1, 8);
+        await client.media.addFavorite('movie', 1);
 
-        expect(mockAxiosInstance.post).toHaveBeenCalledWith('/media/1/rate', { rating: 8 }, undefined);
-        expect(result).toEqual(mockResponse.data);
+        expect(mockAxiosInstance.post).toHaveBeenCalledWith('/favorites', { entity_type: 'movie', entity_id: 1 }, undefined);
       });
     });
 
-    describe('getRating', () => {
-      it('gets user rating', async () => {
-        const mockResponse = { data: { rating: 8 } };
+    describe('removeFavorite', () => {
+      it('removes a favorite', async () => {
+        mockAxiosInstance.delete.mockResolvedValueOnce({ data: {} });
+
+        await client.media.removeFavorite('movie', 1);
+
+        expect(mockAxiosInstance.delete).toHaveBeenCalledWith('/favorites/movie/1', undefined);
+      });
+    });
+
+    describe('entity operations', () => {
+      it('gets entity children', async () => {
+        const mockResponse = { data: [{ id: 2, title: 'Season 1' }] };
         mockAxiosInstance.get.mockResolvedValueOnce(mockResponse);
 
-        const result = await client.media.getRating(1);
+        const result = await client.media.getChildren(1);
 
-        expect(mockAxiosInstance.get).toHaveBeenCalledWith('/media/1/rating', undefined);
+        expect(mockAxiosInstance.get).toHaveBeenCalledWith('/entities/1/children', undefined);
         expect(result).toEqual(mockResponse.data);
       });
 
-      it('returns null when no rating found', async () => {
-        mockAxiosInstance.get.mockRejectedValueOnce(new Error('Not found'));
+      it('gets entity files', async () => {
+        const mockResponse = { data: [{ id: 10, path: '/media/file.mkv' }] };
+        mockAxiosInstance.get.mockResolvedValueOnce(mockResponse);
 
-        const result = await client.media.getRating(1);
+        const result = await client.media.getEntityFiles(1);
 
-        expect(result).toBeNull();
+        expect(mockAxiosInstance.get).toHaveBeenCalledWith('/entities/1/files', undefined);
+        expect(result).toEqual(mockResponse.data);
+      });
+
+      it('updates user metadata', async () => {
+        mockAxiosInstance.put.mockResolvedValueOnce({ data: {} });
+
+        await client.media.updateUserMetadata(1, { rating: 9 });
+
+        expect(mockAxiosInstance.put).toHaveBeenCalledWith('/entities/1/user-metadata', { rating: 9 }, undefined);
       });
     });
   });

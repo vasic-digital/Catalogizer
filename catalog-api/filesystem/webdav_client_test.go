@@ -20,7 +20,7 @@ func TestWebDAVClient_NewWebDAVClient(t *testing.T) {
 		Path:     "/remote/path",
 	}
 
-	client := NewWebDAVClient(config)
+	client, _ := NewWebDAVClient(config)
 
 	assert.NotNil(t, client)
 	assert.Equal(t, config, client.config)
@@ -35,7 +35,7 @@ func TestWebDAVClient_NewWebDAVClient_MinimalConfig(t *testing.T) {
 		URL: "https://localhost:8080/webdav",
 	}
 
-	client := NewWebDAVClient(config)
+	client, _ := NewWebDAVClient(config)
 
 	assert.NotNil(t, client)
 	assert.Equal(t, "https://localhost:8080/webdav", config.URL)
@@ -50,7 +50,7 @@ func TestWebDAVClient_NewWebDAVClient_WithBasePath(t *testing.T) {
 		Path: "/dav/files",
 	}
 
-	client := NewWebDAVClient(config)
+	client, _ := NewWebDAVClient(config)
 
 	assert.Equal(t, "/dav/files", client.baseURL.Path)
 }
@@ -61,7 +61,7 @@ func TestWebDAVClient_NewWebDAVClient_RootPath(t *testing.T) {
 		Path: "/",
 	}
 
-	client := NewWebDAVClient(config)
+	client, _ := NewWebDAVClient(config)
 
 	// Root path should be empty after processing
 	assert.Equal(t, "", client.baseURL.Path)
@@ -72,7 +72,7 @@ func TestWebDAVClient_GetProtocol(t *testing.T) {
 		URL: "https://localhost",
 	}
 
-	client := NewWebDAVClient(config)
+	client, _ := NewWebDAVClient(config)
 	assert.Equal(t, "webdav", client.GetProtocol())
 }
 
@@ -84,7 +84,7 @@ func TestWebDAVClient_GetConfig(t *testing.T) {
 		Path:     "/files",
 	}
 
-	client := NewWebDAVClient(config)
+	client, _ := NewWebDAVClient(config)
 	retrievedConfig := client.GetConfig().(*WebDAVConfig)
 
 	assert.Equal(t, config.URL, retrievedConfig.URL)
@@ -98,7 +98,7 @@ func TestWebDAVClient_IsConnected_Initial(t *testing.T) {
 		URL: "https://localhost",
 	}
 
-	client := NewWebDAVClient(config)
+	client, _ := NewWebDAVClient(config)
 	assert.False(t, client.IsConnected())
 }
 
@@ -111,7 +111,7 @@ func TestWebDAVClient_TestConnection_NotConnected(t *testing.T) {
 		URL: "https://localhost",
 	}
 
-	client := NewWebDAVClient(config)
+	client, _ := NewWebDAVClient(config)
 	ctx := context.Background()
 
 	err := client.TestConnection(ctx)
@@ -124,7 +124,7 @@ func TestWebDAVClient_ReadFile_NotConnected(t *testing.T) {
 		URL: "https://localhost",
 	}
 
-	client := NewWebDAVClient(config)
+	client, _ := NewWebDAVClient(config)
 	ctx := context.Background()
 
 	_, err := client.ReadFile(ctx, "/test/file.txt")
@@ -137,7 +137,7 @@ func TestWebDAVClient_WriteFile_NotConnected(t *testing.T) {
 		URL: "https://localhost",
 	}
 
-	client := NewWebDAVClient(config)
+	client, _ := NewWebDAVClient(config)
 	ctx := context.Background()
 	data := bytes.NewReader([]byte("test data"))
 
@@ -151,7 +151,7 @@ func TestWebDAVClient_GetFileInfo_NotConnected(t *testing.T) {
 		URL: "https://localhost",
 	}
 
-	client := NewWebDAVClient(config)
+	client, _ := NewWebDAVClient(config)
 	ctx := context.Background()
 
 	_, err := client.GetFileInfo(ctx, "/test/file.txt")
@@ -164,7 +164,7 @@ func TestWebDAVClient_ListDirectory_NotConnected(t *testing.T) {
 		URL: "https://localhost",
 	}
 
-	client := NewWebDAVClient(config)
+	client, _ := NewWebDAVClient(config)
 	ctx := context.Background()
 
 	_, err := client.ListDirectory(ctx, "/test")
@@ -177,7 +177,7 @@ func TestWebDAVClient_FileExists_NotConnected(t *testing.T) {
 		URL: "https://localhost",
 	}
 
-	client := NewWebDAVClient(config)
+	client, _ := NewWebDAVClient(config)
 	ctx := context.Background()
 
 	_, err := client.FileExists(ctx, "/test/file.txt")
@@ -190,7 +190,7 @@ func TestWebDAVClient_CreateDirectory_NotConnected(t *testing.T) {
 		URL: "https://localhost",
 	}
 
-	client := NewWebDAVClient(config)
+	client, _ := NewWebDAVClient(config)
 	ctx := context.Background()
 
 	err := client.CreateDirectory(ctx, "/test/newdir")
@@ -203,7 +203,7 @@ func TestWebDAVClient_DeleteDirectory_NotConnected(t *testing.T) {
 		URL: "https://localhost",
 	}
 
-	client := NewWebDAVClient(config)
+	client, _ := NewWebDAVClient(config)
 	ctx := context.Background()
 
 	err := client.DeleteDirectory(ctx, "/test/olddir")
@@ -216,7 +216,7 @@ func TestWebDAVClient_DeleteFile_NotConnected(t *testing.T) {
 		URL: "https://localhost",
 	}
 
-	client := NewWebDAVClient(config)
+	client, _ := NewWebDAVClient(config)
 	ctx := context.Background()
 
 	err := client.DeleteFile(ctx, "/test/file.txt")
@@ -229,7 +229,7 @@ func TestWebDAVClient_CopyFile_NotConnected(t *testing.T) {
 		URL: "https://localhost",
 	}
 
-	client := NewWebDAVClient(config)
+	client, _ := NewWebDAVClient(config)
 	ctx := context.Background()
 
 	err := client.CopyFile(ctx, "/test/src.txt", "/test/dst.txt")
@@ -351,7 +351,7 @@ func TestWebDAVClient_Disconnect_NotConnected(t *testing.T) {
 		URL: "https://localhost",
 	}
 
-	client := NewWebDAVClient(config)
+	client, _ := NewWebDAVClient(config)
 	ctx := context.Background()
 
 	err := client.Disconnect(ctx)
@@ -364,7 +364,7 @@ func TestWebDAVClient_StatePersistence(t *testing.T) {
 		URL: "https://localhost",
 	}
 
-	client := NewWebDAVClient(config)
+	client, _ := NewWebDAVClient(config)
 
 	// Verify initial state
 	assert.False(t, client.IsConnected())
@@ -385,8 +385,8 @@ func TestWebDAVClient_MultipleInstances(t *testing.T) {
 		Path: "/files2",
 	}
 
-	client1 := NewWebDAVClient(config1)
-	client2 := NewWebDAVClient(config2)
+	client1, _ := NewWebDAVClient(config1)
+	client2, _ := NewWebDAVClient(config2)
 
 	assert.NotEqual(t, client1, client2)
 	assert.Equal(t, "https://server1.example.com", client1.config.URL)
@@ -405,7 +405,7 @@ func TestWebDAVClient_ResolveURL_SimplePaths(t *testing.T) {
 		Path: "/webdav",
 	}
 
-	client := NewWebDAVClient(config)
+	client, _ := NewWebDAVClient(config)
 
 	testCases := []struct {
 		name     string
@@ -431,7 +431,7 @@ func TestWebDAVClient_ResolveURL_DirectoryTraversal(t *testing.T) {
 		Path: "/webdav",
 	}
 
-	client := NewWebDAVClient(config)
+	client, _ := NewWebDAVClient(config)
 
 	// Test directory traversal prevention
 	testCases := []string{
@@ -461,7 +461,7 @@ func TestWebDAVClient_Connect_InvalidServer(t *testing.T) {
 		URL: "https://nonexistent.invalid.test",
 	}
 
-	client := NewWebDAVClient(config)
+	client, _ := NewWebDAVClient(config)
 	ctx := context.Background()
 
 	err := client.Connect(ctx)
@@ -476,7 +476,7 @@ func TestWebDAVClient_Connect_WithAuthentication(t *testing.T) {
 		Password: "pass",
 	}
 
-	client := NewWebDAVClient(config)
+	client, _ := NewWebDAVClient(config)
 	ctx := context.Background()
 
 	err := client.Connect(ctx)
@@ -489,7 +489,7 @@ func TestWebDAVClient_Connect_WithCanceledContext(t *testing.T) {
 		URL: "https://example.com",
 	}
 
-	client := NewWebDAVClient(config)
+	client, _ := NewWebDAVClient(config)
 	ctx, cancel := context.WithCancel(context.Background())
 	cancel() // Cancel immediately
 
@@ -507,7 +507,7 @@ func TestWebDAVClient_HTTPClientInitialization(t *testing.T) {
 		URL: "https://example.com",
 	}
 
-	client := NewWebDAVClient(config)
+	client, _ := NewWebDAVClient(config)
 
 	assert.NotNil(t, client.client)
 	assert.Equal(t, 30000000000, int(client.client.Timeout)) // 30 seconds in nanoseconds
@@ -532,7 +532,7 @@ func TestWebDAVClient_BaseURLParsing(t *testing.T) {
 				URL: tc.url,
 			}
 
-			client := NewWebDAVClient(config)
+			client, _ := NewWebDAVClient(config)
 
 			assert.Equal(t, tc.expectedHost, client.baseURL.Host)
 			assert.Equal(t, tc.expectedScheme, client.baseURL.Scheme)
@@ -559,7 +559,7 @@ func TestWebDAVClient_IntegrationConnect(t *testing.T) {
 		Password: "testpass",
 	}
 
-	client := NewWebDAVClient(config)
+	client, _ := NewWebDAVClient(config)
 	ctx := context.Background()
 
 	err := client.Connect(ctx)
@@ -581,7 +581,7 @@ func TestWebDAVClient_IntegrationListDirectory(t *testing.T) {
 		Path:     "/",
 	}
 
-	client := NewWebDAVClient(config)
+	client, _ := NewWebDAVClient(config)
 	ctx := context.Background()
 
 	err := client.Connect(ctx)
