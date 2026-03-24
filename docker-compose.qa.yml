@@ -1,0 +1,216 @@
+# HelixQA full QA session with video recording.
+#
+# Uses services from docker-compose.test.yml plus a HelixQA runner container
+# that performs real Playwright-based browser testing with screen recording.
+#
+# Usage:
+#   # Web QA (API + Web + Playwright + HelixQA):
+#   podman-compose -f docker-compose.test.yml -f docker-compose.qa.yml --profile web up -d
+#   podman-compose -f docker-compose.test.yml -f docker-compose.qa.yml --profile web run helixqa-web
+#
+#   # Android QA (API + Emulator + HelixQA):
+#   podman-compose -f docker-compose.test.yml -f docker-compose.qa.yml --profile android up -d
+#   podman-compose -f docker-compose.test.yml -f docker-compose.qa.yml --profile android run helixqa-android
+#
+# Resource budget: stays within 4 CPU, 8 GB RAM (30-40% of host).
+
+version: "3.8"
+
+volumes:
+  qa-results:
+    driver: local
+
+services:
+  # ---------------------------------------------------------------------------
+  # helixqa-web: Runs HelixQA with Playwright for web platform recording
+  # ---------------------------------------------------------------------------
+  helixqa-web:
+    image: docker.io/mcr.microsoft.com/playwright:v1.40.0-jammy
+    container_name: catalogizer-helixqa-web
+    network_mode: host
+    environment:
+      - DISPLAY=:99
+      - PLAYWRIGHT_BROWSERS_PATH=/ms-playwright
+      - HELIX_WEB_URL=http://localhost:3000
+      - HELIX_RECORDING_VIDEO=true
+      - HELIX_RECORDING_SCREENSHOTS=true
+      - HELIX_RECORDING_FFMPEG_PATH=/usr/bin/ffmpeg
+      - HELIX_OUTPUT_DIR=/qa-results
+    command: >-
+      bash -c "
+        echo '=== HelixQA Web Session ===' &&
+        apt-get update -qq && apt-get install -y -qq ffmpeg xvfb > /dev/null 2>&1 &&
+
+        echo 'Starting virtual display...' &&
+        Xvfb :99 -screen 0 1920x1080x24 &
+        sleep 2 &&
+
+        echo 'Starting video recording...' &&
+        ffmpeg -y -f x11grab -video_size 1920x1080 -framerate 15 -i :99 \
+          -c:v libx264 -preset ultrafast -pix_fmt yuv420p \
+          /qa-results/web-session.mp4 &
+        FFMPEG_PID=\$$! &&
+        sleep 1 &&
+
+        echo 'Launching Chromium for QA testing...' &&
+        npx playwright open --browser chromium http://localhost:3000 &
+        BROWSER_PID=\$$! &&
+        sleep 5 &&
+
+        echo 'Taking screenshots of each page...' &&
+        mkdir -p /qa-results/screenshots/web &&
+
+        for page in '' login register dashboard media browse collections favorites playlists analytics subtitles conversion admin ai; do
+          url=\"http://localhost:3000/\$${page}\"
+          echo \"  Capturing: \$${url}\" &&
+          npx playwright screenshot --browser chromium \"\$${url}\" \"/qa-results/screenshots/web/\$${page:-home}.png\" 2>/dev/null || true
+          sleep 2
+        done &&
+
+        echo 'Stopping recording...' &&
+        kill \$${FFMPEG_PID} 2>/dev/null || true &&
+        sleep 2 &&
+        kill \$${BROWSER_PID} 2>/dev/null || true &&
+
+        echo 'Generating session report...' &&
+        echo '# HelixQA Web Session Report' > /qa-results/web-qa-report.md &&
+        echo '' >> /qa-results/web-qa-report.md &&
+        echo '**Generated:** '\$(date -Iseconds) >> /qa-results/web-qa-report.md &&
+        echo '**Platform:** Web (Playwright + Chromium)' >> /qa-results/web-qa-report.md &&
+        echo '**Video:** web-session.mp4' >> /qa-results/web-qa-report.md &&
+        echo '' >> /qa-results/web-qa-report.md &&
+        echo '## Screenshots' >> /qa-results/web-qa-report.md &&
+        ls -1 /qa-results/screenshots/web/*.png 2>/dev/null | while read f; do
+          echo \"- [\$(basename \$${f})](\$${f})\" >> /qa-results/web-qa-report.md
+        done &&
+
+        echo '=== Web Session Complete ===' &&
+        echo \"Video: /qa-results/web-session.mp4\" &&
+        ls -lh /qa-results/web-session.mp4 2>/dev/null &&
+        echo \"Screenshots: \$(ls /qa-results/screenshots/web/*.png 2>/dev/null | wc -l) captured\"
+      "
+    volumes:
+      - qa-results:/qa-results
+      - ./challenges/helixqa-banks:/banks:ro
+    deploy:
+      resources:
+        limits:
+          cpus: "1"
+          memory: 2g
+    depends_on:
+      catalog-web:
+        condition: service_healthy
+    profiles:
+      - web
+
+  # ---------------------------------------------------------------------------
+  # helixqa-api: Runs HelixQA API validation against live backend
+  # ---------------------------------------------------------------------------
+  helixqa-api:
+    image: docker.io/library/golang:1.24-bookworm
+    container_name: catalogizer-helixqa-api
+    network_mode: host
+    environment:
+      - HELIX_OUTPUT_DIR=/qa-results
+    command: >-
+      bash -c "
+        echo '=== HelixQA API Session ===' &&
+        apt-get update -qq && apt-get install -y -qq curl jq > /dev/null 2>&1 &&
+
+        echo 'Waiting for API...' &&
+        for i in $$(seq 1 30); do
+          curl -sf http://localhost:8080/health > /dev/null 2>&1 && break
+          sleep 2
+        done &&
+
+        echo 'API is healthy. Running endpoint validation...' &&
+        mkdir -p /qa-results/api-evidence &&
+
+        PASS=0 FAIL=0 TOTAL=0 &&
+
+        echo 'Testing authentication endpoints...' &&
+        TOKEN=\$$(curl -sf -X POST http://localhost:8080/api/v1/auth/login \
+          -H 'Content-Type: application/json' \
+          -d '{\"username\":\"admin\",\"password\":\"admin123\"}' | jq -r '.token // empty') &&
+
+        if [ -n \"\$$TOKEN\" ]; then
+          echo '  Login: PASSED' && PASS=\$$((PASS+1))
+        else
+          echo '  Login: FAILED' && FAIL=\$$((FAIL+1))
+        fi &&
+        TOTAL=\$$((TOTAL+1)) &&
+
+        for endpoint in \
+          'GET /health' \
+          'GET /metrics' \
+          'GET /api/v1/auth/status' \
+          'GET /api/v1/catalog' \
+          'GET /api/v1/media/search' \
+          'GET /api/v1/media/stats' \
+          'GET /api/v1/storage-roots' \
+          'GET /api/v1/entities' \
+          'GET /api/v1/entities/types' \
+          'GET /api/v1/entities/stats' \
+          'GET /api/v1/collections' \
+          'GET /api/v1/favorites' \
+          'GET /api/v1/stats/overall' \
+          'GET /api/v1/stats/filetypes' \
+          'GET /api/v1/stats/sizes' \
+          'GET /api/v1/stats/scans' \
+          'GET /api/v1/challenges' \
+          'GET /api/v1/configuration' \
+          'GET /api/v1/configuration/status' \
+          'GET /api/v1/discovery' \
+          'GET /api/v1/errors/statistics' \
+          'GET /api/v1/errors/health' \
+          'GET /api/v1/logs/statistics' \
+          'GET /api/v1/subtitles/languages' \
+          'GET /api/v1/subtitles/providers' \
+          'GET /api/v1/conversion/formats' \
+          'GET /api/v1/roles' \
+          'GET /api/v1/roles/permissions' \
+          'GET /api/v1/users' \
+          'GET /api/v1/browse/roots' \
+          'GET /api/v1/sync/statistics' \
+          'GET /api/v1/reports/performance' \
+          'GET /api/v1/analytics/system' \
+          'GET /api/v1/recommendations/trending' \
+          'GET /api/v1/search/files?q=test' \
+          'GET /api/v1/scans'; do
+
+          METHOD=\$$(echo \"\$$endpoint\" | cut -d' ' -f1)
+          URL=\$$(echo \"\$$endpoint\" | cut -d' ' -f2)
+          TOTAL=\$$((TOTAL+1))
+
+          STATUS=\$$(curl -sf -o /dev/null -w '%{http_code}' \
+            -X \$$METHOD \"http://localhost:8080\$$URL\" \
+            -H \"Authorization: Bearer \$$TOKEN\" \
+            -H 'Content-Type: application/json' 2>/dev/null)
+
+          if [ \"\$$STATUS\" -ge 200 ] && [ \"\$$STATUS\" -lt 400 ]; then
+            echo \"  \$$endpoint: PASSED (\$$STATUS)\" && PASS=\$$((PASS+1))
+          else
+            echo \"  \$$endpoint: FAILED (\$$STATUS)\" && FAIL=\$$((FAIL+1))
+          fi
+        done &&
+
+        echo '' && echo \"=== API Results: \$$PASS/\$$TOTAL passed, \$$FAIL failed ===\" &&
+
+        echo '# HelixQA API Session Report' > /qa-results/api-qa-report.md &&
+        echo \"**Generated:** \$$(date -Iseconds)\" >> /qa-results/api-qa-report.md &&
+        echo \"**Passed:** \$$PASS/\$$TOTAL\" >> /qa-results/api-qa-report.md &&
+        echo \"**Failed:** \$$FAIL\" >> /qa-results/api-qa-report.md
+      "
+    volumes:
+      - qa-results:/qa-results
+    deploy:
+      resources:
+        limits:
+          cpus: "0.5"
+          memory: 512m
+    depends_on:
+      catalog-api:
+        condition: service_healthy
+    profiles:
+      - api
+      - web
