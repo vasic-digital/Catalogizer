@@ -1,6 +1,7 @@
 @file:OptIn(ExperimentalTvMaterial3Api::class, ExperimentalComposeUiApi::class)
 package com.catalogizer.androidtv.ui.screens.login
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.focusable
 import androidx.compose.foundation.text.KeyboardActions
@@ -8,7 +9,10 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Settings
-import androidx.compose.material3.*
+import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.TextField
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.ExperimentalComposeUiApi
@@ -21,7 +25,11 @@ import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import androidx.tv.material3.*
+import androidx.tv.material3.Button
+import androidx.tv.material3.ExperimentalTvMaterial3Api
+import androidx.tv.material3.MaterialTheme
+import androidx.tv.material3.Surface
+import androidx.tv.material3.Text
 import com.catalogizer.androidtv.DependencyContainer
 import com.catalogizer.androidtv.data.models.ServerEntry
 import com.catalogizer.androidtv.ui.viewmodel.AuthViewModel
@@ -178,9 +186,7 @@ fun LoginScreen(
                     style = androidx.tv.material3.MaterialTheme.typography.bodySmall
                 )
                 discoveredServers.forEach { server ->
-                    Surface(
-                        modifier = Modifier.width(400.dp),
-                        shape = androidx.tv.material3.MaterialTheme.shapes.small,
+                    Button(
                         onClick = {
                             serverUrl = server.url
                             container.switchServer(server.url)
@@ -189,22 +195,20 @@ fun LoginScreen(
                                 container.settingsRepository.addServer(server)
                             }
                             discoveredServers = emptyList()
-                        }
+                        },
+                        modifier = Modifier.width(400.dp)
                     ) {
                         Row(
-                            modifier = Modifier.padding(12.dp).fillMaxWidth(),
+                            modifier = Modifier.fillMaxWidth(),
                             horizontalArrangement = Arrangement.SpaceBetween
                         ) {
                             Text(
-                                text = server.name.ifBlank { server.url },
+                                text = server.name.ifBlank { "Catalogizer API" },
                                 maxLines = 1,
                                 overflow = TextOverflow.Ellipsis,
                                 modifier = Modifier.weight(1f)
                             )
-                            Text(
-                                text = server.url,
-                                style = androidx.tv.material3.MaterialTheme.typography.bodySmall
-                            )
+                            Text(text = server.url)
                         }
                     }
                 }
@@ -258,16 +262,19 @@ fun LoginScreen(
 
             // Error message
             errorMessage?.let { error ->
-                Surface(
-                    modifier = Modifier.width(400.dp).padding(8.dp),
-                    shape = androidx.tv.material3.MaterialTheme.shapes.medium,
-                    color = androidx.tv.material3.MaterialTheme.colorScheme.errorContainer,
-                    onClick = {}
+                Box(
+                    modifier = Modifier
+                        .width(400.dp)
+                        .padding(8.dp)
+                        .background(
+                            MaterialTheme.colorScheme.errorContainer,
+                            MaterialTheme.shapes.medium
+                        )
                 ) {
                     Text(
                         text = error,
                         modifier = Modifier.padding(16.dp),
-                        style = androidx.tv.material3.MaterialTheme.typography.bodyMedium
+                        style = MaterialTheme.typography.bodyMedium
                     )
                 }
             }
