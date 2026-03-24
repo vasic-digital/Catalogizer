@@ -7,6 +7,7 @@ class MediaService {
     }
     /**
      * Search for media items
+     * Backend: GET /api/v1/media/search
      */
     async search(request = {}) {
         const params = new URLSearchParams();
@@ -22,12 +23,14 @@ class MediaService {
     }
     /**
      * Get a specific media item by ID
+     * Backend: GET /api/v1/media/:id
      */
     async getById(id) {
         return this.http.get(`/media/${id}`);
     }
     /**
      * Get media statistics
+     * Backend: GET /api/v1/media/stats
      */
     async getStats() {
         return this.http.get('/media/stats');
@@ -45,14 +48,10 @@ class MediaService {
     }
     /**
      * Get trending/popular media
+     * Backend: GET /api/v1/recommendations/trending
      */
     async getTrending(limit = 20) {
-        const response = await this.search({
-            sort_by: 'rating',
-            sort_order: 'desc',
-            limit,
-        });
-        return response.items;
+        return this.http.get(`/recommendations/trending?limit=${limit}`);
     }
     /**
      * Get media by type
@@ -68,39 +67,38 @@ class MediaService {
     }
     /**
      * Get user's favorite media
+     * Backend: GET /api/v1/favorites
      */
     async getFavorites(limit = 50) {
-        return this.http.get(`/media/favorites?limit=${limit}`);
+        return this.http.get(`/favorites?limit=${limit}`);
     }
     /**
-     * Toggle favorite status for a media item
+     * Add media item to favorites
+     * Backend: POST /api/v1/favorites
      */
-    async toggleFavorite(mediaId) {
-        return this.http.post(`/media/${mediaId}/favorite`);
+    async addFavorite(entityType, entityId) {
+        return this.http.post('/favorites', { entity_type: entityType, entity_id: entityId });
     }
     /**
-     * Get continue watching items (items with partial progress)
+     * Remove media item from favorites
+     * Backend: DELETE /api/v1/favorites/:entity_type/:entity_id
      */
-    async getContinueWatching(limit = 20) {
-        return this.http.get(`/media/continue-watching?limit=${limit}`);
+    async removeFavorite(entityType, entityId) {
+        return this.http.delete(`/favorites/${entityType}/${entityId}`);
+    }
+    /**
+     * Check if media item is favorited
+     * Backend: GET /api/v1/favorites/check/:entity_type/:entity_id
+     */
+    async checkFavorite(entityType, entityId) {
+        return this.http.get(`/favorites/check/${entityType}/${entityId}`);
     }
     /**
      * Update playback progress for a media item
+     * Backend: PUT /api/v1/media/:id/progress
      */
     async updateProgress(mediaId, progress) {
         return this.http.put(`/media/${mediaId}/progress`, progress);
-    }
-    /**
-     * Get playback progress for a media item
-     */
-    async getProgress(mediaId) {
-        try {
-            return await this.http.get(`/media/${mediaId}/progress`);
-        }
-        catch (error) {
-            // Return null if no progress found
-            return null;
-        }
     }
     /**
      * Mark media as watched (100% progress)
@@ -115,121 +113,88 @@ class MediaService {
         return this.updateProgress(mediaId, progress);
     }
     /**
-     * Get streaming URL for a media item
+     * Toggle favorite status for a media item
+     * Backend: PUT /api/v1/media/:id/favorite
      */
-    async getStreamUrl(mediaId) {
-        return this.http.get(`/media/${mediaId}/stream`);
+    async toggleFavorite(mediaId) {
+        return this.http.put(`/media/${mediaId}/favorite`);
     }
     /**
-     * Get download URL for a media item
+     * Get streaming URL for a media entity
+     * Backend: GET /api/v1/entities/:id/stream
      */
-    async getDownloadUrl(mediaId) {
-        return this.http.get(`/media/${mediaId}/download`);
+    async getStreamUrl(entityId) {
+        return this.http.get(`/entities/${entityId}/stream`);
     }
     /**
-     * Queue media for download
+     * Get download URL for a media entity
+     * Backend: GET /api/v1/entities/:id/download
      */
-    async queueDownload(mediaId) {
-        return this.http.post(`/media/${mediaId}/download`);
+    async getDownloadUrl(entityId) {
+        return this.http.get(`/entities/${entityId}/download`);
     }
     /**
-     * Get download jobs for the current user
+     * Download a file by ID
+     * Backend: GET /api/v1/download/file/:id
      */
-    async getDownloadJobs() {
-        return this.http.get('/media/downloads');
+    async downloadFile(fileId) {
+        return this.http.downloadStream(`/download/file/${fileId}`);
     }
     /**
-     * Get specific download job
+     * Get asset (cover art, thumbnail) for a media entity
+     * Backend: GET /api/v1/assets/by-entity/:type/:id
      */
-    async getDownloadJob(jobId) {
-        return this.http.get(`/media/downloads/${jobId}`);
+    async getEntityAsset(entityType, entityId) {
+        return this.http.downloadStream(`/assets/by-entity/${entityType}/${entityId}`);
     }
     /**
-     * Cancel a download job
+     * Refresh metadata for a media entity
+     * Backend: POST /api/v1/entities/:id/metadata/refresh
      */
-    async cancelDownload(jobId) {
-        return this.http.post(`/media/downloads/${jobId}/cancel`);
-    }
-    /**
-     * Pause a download job
-     */
-    async pauseDownload(jobId) {
-        return this.http.post(`/media/downloads/${jobId}/pause`);
-    }
-    /**
-     * Resume a download job
-     */
-    async resumeDownload(jobId) {
-        return this.http.post(`/media/downloads/${jobId}/resume`);
-    }
-    /**
-     * Get media thumbnail
-     */
-    async getThumbnail(mediaId, size) {
-        const params = size ? `?size=${size}` : '';
-        return this.http.downloadStream(`/media/${mediaId}/thumbnail${params}`);
-    }
-    /**
-     * Get media poster
-     */
-    async getPoster(mediaId, size) {
-        const params = size ? `?size=${size}` : '';
-        return this.http.downloadStream(`/media/${mediaId}/poster${params}`);
-    }
-    /**
-     * Get media backdrop
-     */
-    async getBackdrop(mediaId, size) {
-        const params = size ? `?size=${size}` : '';
-        return this.http.downloadStream(`/media/${mediaId}/backdrop${params}`);
-    }
-    /**
-     * Update media metadata
-     */
-    async updateMetadata(mediaId, metadata) {
-        return this.http.put(`/media/${mediaId}`, metadata);
-    }
-    /**
-     * Delete a media item
-     */
-    async delete(mediaId, deleteFiles = false) {
-        const params = deleteFiles ? '?delete_files=true' : '';
-        return this.http.delete(`/media/${mediaId}${params}`);
-    }
-    /**
-     * Refresh metadata for a media item
-     */
-    async refreshMetadata(mediaId) {
-        return this.http.post(`/media/${mediaId}/refresh`);
+    async refreshMetadata(entityId) {
+        return this.http.post(`/entities/${entityId}/metadata/refresh`);
     }
     /**
      * Get similar media items
+     * Backend: GET /api/v1/recommendations/similar/:media_id
      */
     async getSimilar(mediaId, limit = 10) {
-        return this.http.get(`/media/${mediaId}/similar?limit=${limit}`);
+        return this.http.get(`/recommendations/similar/${mediaId}?limit=${limit}`);
     }
     /**
-     * Get media recommendations for the user
+     * Get personalized recommendations for a user
+     * Backend: GET /api/v1/recommendations/personalized/:user_id
      */
-    async getRecommendations(limit = 20) {
-        return this.http.get(`/media/recommendations?limit=${limit}`);
+    async getRecommendations(userId, limit = 20) {
+        return this.http.get(`/recommendations/personalized/${userId}?limit=${limit}`);
     }
     /**
-     * Rate a media item
+     * Get media entity children (e.g., seasons of a show)
+     * Backend: GET /api/v1/entities/:id/children
      */
-    async rate(mediaId, rating) {
-        return this.http.post(`/media/${mediaId}/rate`, { rating });
+    async getChildren(entityId) {
+        return this.http.get(`/entities/${entityId}/children`);
     }
     /**
-     * Get user's rating for a media item
+     * Get files associated with a media entity
+     * Backend: GET /api/v1/entities/:id/files
      */
-    async getRating(mediaId) {
-        try {
-            return await this.http.get(`/media/${mediaId}/rating`);
-        }
-        catch (error) {
-            return null;
-        }
+    async getEntityFiles(entityId) {
+        return this.http.get(`/entities/${entityId}/files`);
+    }
+    /**
+     * Get entity metadata from external providers
+     * Backend: GET /api/v1/entities/:id/metadata
+     */
+    async getEntityMetadata(entityId) {
+        return this.http.get(`/entities/${entityId}/metadata`);
+    }
+    /**
+     * Update user metadata for an entity
+     * Backend: PUT /api/v1/entities/:id/user-metadata
+     */
+    async updateUserMetadata(entityId, metadata) {
+        return this.http.put(`/entities/${entityId}/user-metadata`, metadata);
     }
 }
 exports.MediaService = MediaService;

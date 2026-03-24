@@ -1,18 +1,21 @@
 import { HttpClient } from '../utils/http';
-import { MediaItem, MediaSearchRequest, PaginatedResponse, MediaStats, PlaybackProgress, StreamInfo, DownloadJob } from '../types';
+import { MediaItem, MediaSearchRequest, PaginatedResponse, MediaStats, PlaybackProgress, StreamInfo } from '../types';
 export declare class MediaService {
     private http;
     constructor(http: HttpClient);
     /**
      * Search for media items
+     * Backend: GET /api/v1/media/search
      */
     search(request?: MediaSearchRequest): Promise<PaginatedResponse<MediaItem>>;
     /**
      * Get a specific media item by ID
+     * Backend: GET /api/v1/media/:id
      */
     getById(id: number): Promise<MediaItem>;
     /**
      * Get media statistics
+     * Backend: GET /api/v1/media/stats
      */
     getStats(): Promise<MediaStats>;
     /**
@@ -21,6 +24,7 @@ export declare class MediaService {
     getRecentlyAdded(limit?: number): Promise<MediaItem[]>;
     /**
      * Get trending/popular media
+     * Backend: GET /api/v1/recommendations/trending
      */
     getTrending(limit?: number): Promise<MediaItem[]>;
     /**
@@ -29,108 +33,99 @@ export declare class MediaService {
     getByType(mediaType: string, limit?: number): Promise<MediaItem[]>;
     /**
      * Get user's favorite media
+     * Backend: GET /api/v1/favorites
      */
     getFavorites(limit?: number): Promise<MediaItem[]>;
     /**
-     * Toggle favorite status for a media item
+     * Add media item to favorites
+     * Backend: POST /api/v1/favorites
      */
-    toggleFavorite(mediaId: number): Promise<{
+    addFavorite(entityType: string, entityId: number): Promise<void>;
+    /**
+     * Remove media item from favorites
+     * Backend: DELETE /api/v1/favorites/:entity_type/:entity_id
+     */
+    removeFavorite(entityType: string, entityId: number): Promise<void>;
+    /**
+     * Check if media item is favorited
+     * Backend: GET /api/v1/favorites/check/:entity_type/:entity_id
+     */
+    checkFavorite(entityType: string, entityId: number): Promise<{
         is_favorite: boolean;
     }>;
     /**
-     * Get continue watching items (items with partial progress)
-     */
-    getContinueWatching(limit?: number): Promise<MediaItem[]>;
-    /**
      * Update playback progress for a media item
+     * Backend: PUT /api/v1/media/:id/progress
      */
     updateProgress(mediaId: number, progress: PlaybackProgress): Promise<void>;
-    /**
-     * Get playback progress for a media item
-     */
-    getProgress(mediaId: number): Promise<PlaybackProgress | null>;
     /**
      * Mark media as watched (100% progress)
      */
     markAsWatched(mediaId: number): Promise<void>;
     /**
-     * Get streaming URL for a media item
+     * Toggle favorite status for a media item
+     * Backend: PUT /api/v1/media/:id/favorite
      */
-    getStreamUrl(mediaId: number): Promise<StreamInfo>;
+    toggleFavorite(mediaId: number): Promise<{
+        is_favorite: boolean;
+    }>;
     /**
-     * Get download URL for a media item
+     * Get streaming URL for a media entity
+     * Backend: GET /api/v1/entities/:id/stream
      */
-    getDownloadUrl(mediaId: number): Promise<{
+    getStreamUrl(entityId: number): Promise<StreamInfo>;
+    /**
+     * Get download URL for a media entity
+     * Backend: GET /api/v1/entities/:id/download
+     */
+    getDownloadUrl(entityId: number): Promise<{
         url: string;
         expires_at: string;
     }>;
     /**
-     * Queue media for download
+     * Download a file by ID
+     * Backend: GET /api/v1/download/file/:id
      */
-    queueDownload(mediaId: number): Promise<DownloadJob>;
+    downloadFile(fileId: number): Promise<ArrayBuffer>;
     /**
-     * Get download jobs for the current user
+     * Get asset (cover art, thumbnail) for a media entity
+     * Backend: GET /api/v1/assets/by-entity/:type/:id
      */
-    getDownloadJobs(): Promise<DownloadJob[]>;
+    getEntityAsset(entityType: string, entityId: number): Promise<ArrayBuffer>;
     /**
-     * Get specific download job
+     * Refresh metadata for a media entity
+     * Backend: POST /api/v1/entities/:id/metadata/refresh
      */
-    getDownloadJob(jobId: number): Promise<DownloadJob>;
-    /**
-     * Cancel a download job
-     */
-    cancelDownload(jobId: number): Promise<void>;
-    /**
-     * Pause a download job
-     */
-    pauseDownload(jobId: number): Promise<void>;
-    /**
-     * Resume a download job
-     */
-    resumeDownload(jobId: number): Promise<void>;
-    /**
-     * Get media thumbnail
-     */
-    getThumbnail(mediaId: number, size?: 'small' | 'medium' | 'large'): Promise<ArrayBuffer>;
-    /**
-     * Get media poster
-     */
-    getPoster(mediaId: number, size?: 'small' | 'medium' | 'large'): Promise<ArrayBuffer>;
-    /**
-     * Get media backdrop
-     */
-    getBackdrop(mediaId: number, size?: 'small' | 'medium' | 'large'): Promise<ArrayBuffer>;
-    /**
-     * Update media metadata
-     */
-    updateMetadata(mediaId: number, metadata: Partial<MediaItem>): Promise<MediaItem>;
-    /**
-     * Delete a media item
-     */
-    delete(mediaId: number, deleteFiles?: boolean): Promise<void>;
-    /**
-     * Refresh metadata for a media item
-     */
-    refreshMetadata(mediaId: number): Promise<MediaItem>;
+    refreshMetadata(entityId: number): Promise<MediaItem>;
     /**
      * Get similar media items
+     * Backend: GET /api/v1/recommendations/similar/:media_id
      */
     getSimilar(mediaId: number, limit?: number): Promise<MediaItem[]>;
     /**
-     * Get media recommendations for the user
+     * Get personalized recommendations for a user
+     * Backend: GET /api/v1/recommendations/personalized/:user_id
      */
-    getRecommendations(limit?: number): Promise<MediaItem[]>;
+    getRecommendations(userId: number, limit?: number): Promise<MediaItem[]>;
     /**
-     * Rate a media item
+     * Get media entity children (e.g., seasons of a show)
+     * Backend: GET /api/v1/entities/:id/children
      */
-    rate(mediaId: number, rating: number): Promise<{
-        rating: number;
-    }>;
+    getChildren(entityId: number): Promise<MediaItem[]>;
     /**
-     * Get user's rating for a media item
+     * Get files associated with a media entity
+     * Backend: GET /api/v1/entities/:id/files
      */
-    getRating(mediaId: number): Promise<{
-        rating: number;
-    } | null>;
+    getEntityFiles(entityId: number): Promise<unknown[]>;
+    /**
+     * Get entity metadata from external providers
+     * Backend: GET /api/v1/entities/:id/metadata
+     */
+    getEntityMetadata(entityId: number): Promise<unknown>;
+    /**
+     * Update user metadata for an entity
+     * Backend: PUT /api/v1/entities/:id/user-metadata
+     */
+    updateUserMetadata(entityId: number, metadata: Record<string, unknown>): Promise<void>;
 }
 //# sourceMappingURL=MediaService.d.ts.map
