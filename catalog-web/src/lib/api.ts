@@ -9,7 +9,9 @@ import type {
   User
 } from '@/types/auth'
 
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080'
+// In dev mode (Vite proxy), use relative URL so requests go through the proxy.
+// In production or when VITE_API_BASE_URL is set, use absolute URL.
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || ''
 
 export const api = axios.create({
   baseURL: `${API_BASE_URL}/api/v1`,

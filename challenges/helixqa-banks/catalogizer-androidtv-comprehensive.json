@@ -1,40 +1,1240 @@
 {
   "challenges": [
-    {"id": "tv-cold-start", "name": "TV Cold Start Launch", "category": "launch", "priority": "critical", "platforms": ["androidtv"], "steps": [{"name": "Force stop app", "action": "adb shell am force-stop com.vasic.catalogizer.tv", "expected": "App process terminated"}, {"name": "Launch from launcher", "action": "Select Catalogizer from Android TV launcher", "expected": "App launches and displays splash screen within 3 seconds"}]},
-    {"id": "tv-splash-screen", "name": "TV Splash Screen Display", "category": "launch", "priority": "high", "platforms": ["androidtv"], "steps": [{"name": "Launch app", "action": "Start Catalogizer from launcher", "expected": "Splash screen appears with app logo and loading indicator"}, {"name": "Splash completes", "action": "Wait for splash screen to dismiss", "expected": "Splash transitions to home screen or login within 5 seconds"}]},
-    {"id": "tv-home-focus", "name": "TV Home Initial Focus", "category": "launch", "priority": "critical", "platforms": ["androidtv"], "steps": [{"name": "Launch to home", "action": "Start app and wait for home screen", "expected": "Home screen loads"}, {"name": "Verify initial focus", "action": "Check which UI element has focus", "expected": "First focusable media item in top row has visible focus indicator"}]},
-    {"id": "tv-login-page", "name": "TV Login Page Display", "category": "authentication", "priority": "critical", "platforms": ["androidtv"], "steps": [{"name": "Open app without session", "action": "Clear app data and launch on TV", "expected": "Login screen renders with server URL, username, password fields and login button"}, {"name": "Verify TV layout", "action": "Check layout is optimized for TV (large text, readable from distance)", "expected": "Fields and labels are large enough for 10-foot viewing experience"}]},
-    {"id": "tv-login-dpad-nav", "name": "TV Login D-Pad Navigation", "category": "authentication", "priority": "critical", "platforms": ["androidtv"], "steps": [{"name": "Focus on username", "action": "Navigate to username field with D-pad", "expected": "Username field is focused with visible highlight"}, {"name": "Navigate to password", "action": "Press D-pad down", "expected": "Focus moves to password field"}, {"name": "Navigate to login button", "action": "Press D-pad down", "expected": "Focus moves to login button"}, {"name": "Navigate back up", "action": "Press D-pad up twice", "expected": "Focus returns to username field"}]},
-    {"id": "tv-login-success", "name": "TV Login Success", "category": "authentication", "priority": "critical", "platforms": ["androidtv"], "steps": [{"name": "Enter credentials via remote", "action": "Use D-pad and on-screen keyboard to enter admin/admin123", "expected": "Credentials entered in fields"}, {"name": "Submit login", "action": "Focus Login button and press Select/Enter", "expected": "Loading indicator shows, then navigates to TV home screen"}]},
-    {"id": "tv-login-error", "name": "TV Login Error Display", "category": "authentication", "priority": "high", "platforms": ["androidtv"], "steps": [{"name": "Enter wrong credentials", "action": "Type admin/wrongpassword and press Login", "expected": "Error message displayed prominently on screen, readable from 10 feet"}, {"name": "Verify error dismissal", "action": "Press any D-pad direction", "expected": "Error message dismisses, focus returns to input fields"}]},
-    {"id": "tv-home-loads", "name": "TV Home Screen Loads", "category": "home", "priority": "critical", "platforms": ["androidtv"], "steps": [{"name": "Verify home screen", "action": "Login and wait for home screen", "expected": "Leanback-style home screen renders with horizontal rows of media content"}, {"name": "Check all rows visible", "action": "Inspect home screen layout", "expected": "Multiple category rows visible with media cards"}]},
-    {"id": "tv-media-carousel", "name": "TV Media Carousel", "category": "home", "priority": "high", "platforms": ["androidtv"], "steps": [{"name": "Check hero carousel", "action": "Look for featured/hero carousel at top of home", "expected": "Hero carousel shows featured media with large backdrop images"}, {"name": "Navigate carousel", "action": "Press D-pad left and right on carousel", "expected": "Carousel scrolls between featured items smoothly"}, {"name": "Select carousel item", "action": "Press Select/Enter on focused carousel item", "expected": "Navigates to media detail for that item"}]},
-    {"id": "tv-category-rows", "name": "TV Category Rows", "category": "home", "priority": "high", "platforms": ["androidtv"], "steps": [{"name": "Verify category rows", "action": "Scroll down on home screen", "expected": "Multiple rows visible: Recent, Movies, TV Shows, Music, etc."}, {"name": "Scroll within row", "action": "Press D-pad right to scroll through a row", "expected": "Row scrolls horizontally to reveal more items"}, {"name": "Select item from row", "action": "Press Select/Enter on focused item", "expected": "Navigates to media detail screen"}]},
-    {"id": "tv-focus-management", "name": "TV Focus Management", "category": "home", "priority": "critical", "platforms": ["androidtv"], "steps": [{"name": "Navigate between rows", "action": "Press D-pad down to move between category rows", "expected": "Focus moves to nearest item in next row"}, {"name": "Focus ring visible", "action": "Check focus indicator on each item", "expected": "Currently focused item has clearly visible border/highlight/scale effect"}, {"name": "Return to previous row", "action": "Press D-pad up", "expected": "Focus returns to previously focused item in upper row (focus memory)"}]},
-    {"id": "tv-top-bar", "name": "TV Top Bar Navigation", "category": "home", "priority": "high", "platforms": ["androidtv"], "steps": [{"name": "Navigate to top bar", "action": "Press D-pad up from first row until top bar is focused", "expected": "Top navigation bar receives focus"}, {"name": "Browse top bar items", "action": "Press D-pad left/right through top bar", "expected": "Focus moves between Home, Search, Settings icons"}, {"name": "Select item", "action": "Press Select on Search", "expected": "Navigates to search screen"}]},
-    {"id": "tv-continue-watching", "name": "TV Continue Watching Row", "category": "home", "priority": "high", "platforms": ["androidtv"], "steps": [{"name": "Find continue watching", "action": "Look for continue watching row on home screen", "expected": "Row shows previously started media with progress bars on cards"}, {"name": "Select item", "action": "Focus and select a continue watching item", "expected": "Media player opens and resumes from saved position"}]},
-    {"id": "tv-search-opens", "name": "TV Search Screen Opens", "category": "search", "priority": "critical", "platforms": ["androidtv"], "steps": [{"name": "Navigate to search", "action": "Select search from top bar or press search button on remote", "expected": "Search screen opens with on-screen keyboard or search input"}]},
-    {"id": "tv-search-voice", "name": "TV Voice Search", "category": "search", "priority": "medium", "platforms": ["androidtv"], "steps": [{"name": "Activate voice search", "action": "Press microphone button on remote or focus voice search icon", "expected": "Voice search overlay or system voice input activates"}, {"name": "Speak query", "action": "Say 'batman' into remote microphone", "expected": "Voice input is transcribed and search executes"}]},
-    {"id": "tv-search-results", "name": "TV Search Results Display", "category": "search", "priority": "high", "platforms": ["androidtv"], "steps": [{"name": "Execute search", "action": "Search for a known media title", "expected": "Results grid/row appears with matching media items"}, {"name": "Navigate results", "action": "Use D-pad to browse through results", "expected": "Focus moves between result cards with visible focus indicator"}, {"name": "Select result", "action": "Press Select on a result", "expected": "Navigates to media detail"}]},
-    {"id": "tv-search-no-results", "name": "TV Search No Results", "category": "search", "priority": "high", "platforms": ["androidtv"], "steps": [{"name": "Search nonexistent", "action": "Search for 'zzzznonexistent99999'", "expected": "Empty state message: 'No results found' displayed in large TV-friendly text"}]},
-    {"id": "tv-detail-opens", "name": "TV Detail Screen Opens", "category": "detail", "priority": "critical", "platforms": ["androidtv"], "steps": [{"name": "Select media item", "action": "Press Select on any media card from home screen", "expected": "Detail screen opens with Leanback detail layout (backdrop, poster, info)"}, {"name": "Verify loading", "action": "Check for loading state", "expected": "Content loads without error, all sections rendered"}]},
-    {"id": "tv-detail-poster", "name": "TV Detail Poster and Backdrop", "category": "detail", "priority": "high", "platforms": ["androidtv"], "steps": [{"name": "Check poster", "action": "Inspect media detail screen imagery", "expected": "Poster image displayed on left side"}, {"name": "Check backdrop", "action": "Inspect background", "expected": "Full-width backdrop image behind detail content"}]},
-    {"id": "tv-detail-play", "name": "TV Detail Play Action", "category": "detail", "priority": "critical", "platforms": ["androidtv"], "steps": [{"name": "Find play action", "action": "Check action buttons on detail screen", "expected": "Play button is the first/primary action, focused by default"}, {"name": "Press play", "action": "Press Select/Enter on Play button", "expected": "Media player launches and begins playback"}]},
-    {"id": "tv-detail-metadata", "name": "TV Detail Metadata", "category": "detail", "priority": "high", "platforms": ["androidtv"], "steps": [{"name": "Check metadata", "action": "Read metadata on detail screen", "expected": "Title, year, duration, type, file size displayed in large readable text"}, {"name": "Check description", "action": "Look for description or synopsis", "expected": "Description text visible if available, truncated with 'more' option for long text"}]},
-    {"id": "tv-detail-related", "name": "TV Detail Related Items", "category": "detail", "priority": "medium", "platforms": ["androidtv"], "steps": [{"name": "Scroll to related", "action": "D-pad down past action buttons", "expected": "Related/similar media row appears below detail info"}, {"name": "Navigate related", "action": "D-pad right through related items", "expected": "Can browse related media cards"}, {"name": "Select related item", "action": "Press Select on a related item", "expected": "Navigates to that item's detail screen"}]},
-    {"id": "tv-player-starts", "name": "TV Player Starts Playback", "category": "player", "priority": "critical", "platforms": ["androidtv"], "steps": [{"name": "Start playback", "action": "Select Play from media detail", "expected": "Player activity opens, buffering indicator shown"}, {"name": "Verify playback", "action": "Wait for buffering to complete", "expected": "Video plays fullscreen with audio, no black screen"}]},
-    {"id": "tv-player-dpad-controls", "name": "TV Player D-Pad Controls", "category": "player", "priority": "critical", "platforms": ["androidtv"], "steps": [{"name": "Show transport controls", "action": "Press Select/Enter during playback", "expected": "Transport bar overlay appears with play/pause, seek bar, time"}, {"name": "Pause with D-pad", "action": "Press Select/Enter on pause button or press Play/Pause key", "expected": "Playback pauses"}, {"name": "Seek with D-pad", "action": "Press D-pad left/right", "expected": "Seek position moves backward/forward in increments"}, {"name": "Resume", "action": "Press Select/Enter or Play key", "expected": "Playback resumes from new position"}]},
-    {"id": "tv-player-progress", "name": "TV Player Progress Tracking", "category": "player", "priority": "high", "platforms": ["androidtv"], "steps": [{"name": "Play to midpoint", "action": "Seek to approximately 50% of media duration", "expected": "Player shows correct time position"}, {"name": "Exit player", "action": "Press Back button", "expected": "Player closes, returns to detail screen"}, {"name": "Check progress saved", "action": "Look at media card on home screen", "expected": "Progress bar visible on the media card showing ~50%"}]},
-    {"id": "tv-player-resume", "name": "TV Player Resume Playback", "category": "player", "priority": "high", "platforms": ["androidtv"], "steps": [{"name": "Reopen partially watched", "action": "Navigate to previously watched media and press Play", "expected": "Resume prompt appears or playback starts from saved position"}, {"name": "Verify position", "action": "Check current playback time", "expected": "Playback is at or near the previously saved position"}]},
-    {"id": "tv-player-back-exit", "name": "TV Player Back Button Exit", "category": "player", "priority": "high", "platforms": ["androidtv"], "steps": [{"name": "Play media", "action": "Start playback of any media item", "expected": "Media is playing"}, {"name": "Press Back", "action": "Press Back button on remote during playback", "expected": "If controls are showing: controls dismiss. If controls are hidden: player exits to detail screen"}, {"name": "Verify return", "action": "Check current screen", "expected": "User is back on media detail screen, progress was saved"}]},
-    {"id": "tv-settings-opens", "name": "TV Settings Screen Opens", "category": "settings", "priority": "critical", "platforms": ["androidtv"], "steps": [{"name": "Navigate to settings", "action": "Select Settings from top bar or side menu", "expected": "Settings screen opens with Leanback-style preference layout"}]},
-    {"id": "tv-settings-dpad-nav", "name": "TV Settings D-Pad Navigation", "category": "settings", "priority": "high", "platforms": ["androidtv"], "steps": [{"name": "Navigate settings list", "action": "Press D-pad up/down through settings options", "expected": "Focus moves between setting items with visible indicator"}, {"name": "Select a setting", "action": "Press Select/Enter on a setting", "expected": "Setting expands or opens sub-screen for editing"}, {"name": "Go back", "action": "Press Back", "expected": "Returns to settings list with focus preserved"}]},
-    {"id": "tv-settings-server", "name": "TV Settings Server Configuration", "category": "settings", "priority": "critical", "platforms": ["androidtv"], "steps": [{"name": "Find server setting", "action": "Navigate to server URL/address setting", "expected": "Server address setting visible with current value"}, {"name": "Edit server", "action": "Press Select to edit, type new URL via on-screen keyboard", "expected": "On-screen keyboard appears, accepts input"}, {"name": "Save", "action": "Confirm input", "expected": "New server URL is saved and persisted"}]},
-    {"id": "tv-settings-theme", "name": "TV Settings Theme", "category": "settings", "priority": "medium", "platforms": ["androidtv"], "steps": [{"name": "Find theme setting", "action": "Navigate to theme/appearance setting", "expected": "Theme option visible"}, {"name": "Change theme", "action": "Select alternate theme (Light/Dark)", "expected": "App theme changes to reflect new selection"}]},
-    {"id": "tv-dpad-navigation", "name": "TV D-Pad Full Navigation", "category": "focus", "priority": "critical", "platforms": ["androidtv"], "steps": [{"name": "Navigate entire app", "action": "Use only D-pad (up/down/left/right/select/back) to navigate from home to search to detail to settings", "expected": "Every screen and interactive element is reachable via D-pad alone"}, {"name": "No focus traps", "action": "Attempt to navigate out of each section", "expected": "No focus traps where D-pad cannot leave a section"}]},
-    {"id": "tv-focus-visible", "name": "TV Focus Always Visible", "category": "focus", "priority": "critical", "platforms": ["androidtv"], "steps": [{"name": "Check home screen focus", "action": "Navigate home screen with D-pad", "expected": "Focused item always has clearly visible highlight (border, scale, glow)"}, {"name": "Check detail screen focus", "action": "Navigate detail screen action buttons", "expected": "Focused button has visible focus state"}, {"name": "Check settings focus", "action": "Navigate settings list", "expected": "Focused setting has visible highlight"}, {"name": "Verify contrast", "action": "Check focus indicator in both light and dark themes", "expected": "Focus indicator meets accessibility contrast requirements"}]},
-    {"id": "tv-back-key", "name": "TV Back Key Behavior", "category": "focus", "priority": "critical", "platforms": ["androidtv"], "steps": [{"name": "Navigate deep", "action": "Home -> Category -> Detail -> Player", "expected": "User navigated 4 levels deep"}, {"name": "Press Back repeatedly", "action": "Press Back button 4 times", "expected": "Navigates back through: Player -> Detail -> Category -> Home"}, {"name": "Back from home", "action": "Press Back on home screen", "expected": "Exit confirmation dialog or app exits to TV launcher"}]},
-    {"id": "tv-home-key", "name": "TV Home Key Returns to Launcher", "category": "focus", "priority": "high", "platforms": ["androidtv"], "steps": [{"name": "Navigate into app", "action": "Go to media detail screen within app", "expected": "User is deep in app"}, {"name": "Press Home key", "action": "Press Home button on remote", "expected": "Returns to Android TV launcher, app goes to background"}, {"name": "Return to app", "action": "Select Catalogizer from recents or launcher", "expected": "App resumes on the same screen (media detail) where user left off"}]},
-    {"id": "tv-focus-restore", "name": "TV Focus Restore After Navigation", "category": "focus", "priority": "high", "platforms": ["androidtv"], "steps": [{"name": "Focus item in row", "action": "Navigate to 3rd item in a category row", "expected": "3rd item is focused"}, {"name": "Enter and return", "action": "Press Select to enter detail, then press Back", "expected": "Returns to home screen"}, {"name": "Verify focus restored", "action": "Check which item has focus", "expected": "Focus is restored to the 3rd item in the same row where user left"}]}
+    {
+      "id": "tv-cold-start",
+      "name": "TV Cold Start Launch",
+      "category": "launch",
+      "priority": "critical",
+      "platforms": [
+        "androidtv"
+      ],
+      "steps": [
+        {
+          "name": "Force stop app",
+          "action": "adb shell am force-stop com.vasic.catalogizer.tv",
+          "expected": "App process terminated"
+        },
+        {
+          "name": "Launch from launcher",
+          "action": "Select Catalogizer from Android TV launcher",
+          "expected": "App launches and displays splash screen within 3 seconds"
+        }
+      ]
+    },
+    {
+      "id": "tv-splash-screen",
+      "name": "TV Splash Screen Display",
+      "category": "launch",
+      "priority": "high",
+      "platforms": [
+        "androidtv"
+      ],
+      "steps": [
+        {
+          "name": "Launch app",
+          "action": "Start Catalogizer from launcher",
+          "expected": "Splash screen appears with app logo and loading indicator"
+        },
+        {
+          "name": "Splash completes",
+          "action": "Wait for splash screen to dismiss",
+          "expected": "Splash transitions to home screen or login within 5 seconds"
+        }
+      ]
+    },
+    {
+      "id": "tv-home-focus",
+      "name": "TV Home Initial Focus",
+      "category": "launch",
+      "priority": "critical",
+      "platforms": [
+        "androidtv"
+      ],
+      "steps": [
+        {
+          "name": "Launch to home",
+          "action": "Start app and wait for home screen",
+          "expected": "Home screen loads"
+        },
+        {
+          "name": "Verify initial focus",
+          "action": "Check which UI element has focus",
+          "expected": "First focusable media item in top row has visible focus indicator"
+        }
+      ]
+    },
+    {
+      "id": "tv-login-page",
+      "name": "TV Login Page Display",
+      "category": "authentication",
+      "priority": "critical",
+      "platforms": [
+        "androidtv"
+      ],
+      "steps": [
+        {
+          "name": "Open app without session",
+          "action": "Clear app data and launch on TV",
+          "expected": "Login screen renders with server URL, username, password fields and login button"
+        },
+        {
+          "name": "Verify TV layout",
+          "action": "Check layout is optimized for TV (large text, readable from distance)",
+          "expected": "Fields and labels are large enough for 10-foot viewing experience"
+        }
+      ]
+    },
+    {
+      "id": "tv-login-dpad-nav",
+      "name": "TV Login D-Pad Navigation",
+      "category": "authentication",
+      "priority": "critical",
+      "platforms": [
+        "androidtv"
+      ],
+      "steps": [
+        {
+          "name": "Focus on username",
+          "action": "Navigate to username field with D-pad",
+          "expected": "Username field is focused with visible highlight"
+        },
+        {
+          "name": "Navigate to password",
+          "action": "Press D-pad down",
+          "expected": "Focus moves to password field"
+        },
+        {
+          "name": "Navigate to login button",
+          "action": "Press D-pad down",
+          "expected": "Focus moves to login button"
+        },
+        {
+          "name": "Navigate back up",
+          "action": "Press D-pad up twice",
+          "expected": "Focus returns to username field"
+        }
+      ]
+    },
+    {
+      "id": "tv-login-success",
+      "name": "TV Login Success",
+      "category": "authentication",
+      "priority": "critical",
+      "platforms": [
+        "androidtv"
+      ],
+      "steps": [
+        {
+          "name": "Enter credentials via remote",
+          "action": "Use D-pad and on-screen keyboard to enter admin/admin123",
+          "expected": "Credentials entered in fields"
+        },
+        {
+          "name": "Submit login",
+          "action": "Focus Login button and press Select/Enter",
+          "expected": "Loading indicator shows, then navigates to TV home screen"
+        }
+      ]
+    },
+    {
+      "id": "tv-login-error",
+      "name": "TV Login Error Display",
+      "category": "authentication",
+      "priority": "high",
+      "platforms": [
+        "androidtv"
+      ],
+      "steps": [
+        {
+          "name": "Enter wrong credentials",
+          "action": "Type admin/wrongpassword and press Login",
+          "expected": "Error message displayed prominently on screen, readable from 10 feet"
+        },
+        {
+          "name": "Verify error dismissal",
+          "action": "Press any D-pad direction",
+          "expected": "Error message dismisses, focus returns to input fields"
+        }
+      ]
+    },
+    {
+      "id": "tv-home-loads",
+      "name": "TV Home Screen Loads",
+      "category": "home",
+      "priority": "critical",
+      "platforms": [
+        "androidtv"
+      ],
+      "steps": [
+        {
+          "name": "Verify home screen",
+          "action": "Login and wait for home screen",
+          "expected": "Leanback-style home screen renders with horizontal rows of media content"
+        },
+        {
+          "name": "Check all rows visible",
+          "action": "Inspect home screen layout",
+          "expected": "Multiple category rows visible with media cards"
+        }
+      ]
+    },
+    {
+      "id": "tv-media-carousel",
+      "name": "TV Media Carousel",
+      "category": "home",
+      "priority": "high",
+      "platforms": [
+        "androidtv"
+      ],
+      "steps": [
+        {
+          "name": "Check hero carousel",
+          "action": "Look for featured/hero carousel at top of home",
+          "expected": "Hero carousel shows featured media with large backdrop images"
+        },
+        {
+          "name": "Navigate carousel",
+          "action": "Press D-pad left and right on carousel",
+          "expected": "Carousel scrolls between featured items smoothly"
+        },
+        {
+          "name": "Select carousel item",
+          "action": "Press Select/Enter on focused carousel item",
+          "expected": "Navigates to media detail for that item"
+        }
+      ]
+    },
+    {
+      "id": "tv-category-rows",
+      "name": "TV Category Rows",
+      "category": "home",
+      "priority": "high",
+      "platforms": [
+        "androidtv"
+      ],
+      "steps": [
+        {
+          "name": "Verify category rows",
+          "action": "Scroll down on home screen",
+          "expected": "Multiple rows visible: Recent, Movies, TV Shows, Music, etc."
+        },
+        {
+          "name": "Scroll within row",
+          "action": "Press D-pad right to scroll through a row",
+          "expected": "Row scrolls horizontally to reveal more items"
+        },
+        {
+          "name": "Select item from row",
+          "action": "Press Select/Enter on focused item",
+          "expected": "Navigates to media detail screen"
+        }
+      ]
+    },
+    {
+      "id": "tv-focus-management",
+      "name": "TV Focus Management",
+      "category": "home",
+      "priority": "critical",
+      "platforms": [
+        "androidtv"
+      ],
+      "steps": [
+        {
+          "name": "Navigate between rows",
+          "action": "Press D-pad down to move between category rows",
+          "expected": "Focus moves to nearest item in next row"
+        },
+        {
+          "name": "Focus ring visible",
+          "action": "Check focus indicator on each item",
+          "expected": "Currently focused item has clearly visible border/highlight/scale effect"
+        },
+        {
+          "name": "Return to previous row",
+          "action": "Press D-pad up",
+          "expected": "Focus returns to previously focused item in upper row (focus memory)"
+        }
+      ]
+    },
+    {
+      "id": "tv-top-bar",
+      "name": "TV Top Bar Navigation",
+      "category": "home",
+      "priority": "high",
+      "platforms": [
+        "androidtv"
+      ],
+      "steps": [
+        {
+          "name": "Navigate to top bar",
+          "action": "Press D-pad up from first row until top bar is focused",
+          "expected": "Top navigation bar receives focus"
+        },
+        {
+          "name": "Browse top bar items",
+          "action": "Press D-pad left/right through top bar",
+          "expected": "Focus moves between Home, Search, Settings icons"
+        },
+        {
+          "name": "Select item",
+          "action": "Press Select on Search",
+          "expected": "Navigates to search screen"
+        }
+      ]
+    },
+    {
+      "id": "tv-continue-watching",
+      "name": "TV Continue Watching Row",
+      "category": "home",
+      "priority": "high",
+      "platforms": [
+        "androidtv"
+      ],
+      "steps": [
+        {
+          "name": "Find continue watching",
+          "action": "Look for continue watching row on home screen",
+          "expected": "Row shows previously started media with progress bars on cards"
+        },
+        {
+          "name": "Select item",
+          "action": "Focus and select a continue watching item",
+          "expected": "Media player opens and resumes from saved position"
+        }
+      ]
+    },
+    {
+      "id": "tv-search-opens",
+      "name": "TV Search Screen Opens",
+      "category": "search",
+      "priority": "critical",
+      "platforms": [
+        "androidtv"
+      ],
+      "steps": [
+        {
+          "name": "Navigate to search",
+          "action": "Select search from top bar or press search button on remote",
+          "expected": "Search screen opens with on-screen keyboard or search input"
+        }
+      ]
+    },
+    {
+      "id": "tv-search-voice",
+      "name": "TV Voice Search",
+      "category": "search",
+      "priority": "medium",
+      "platforms": [
+        "androidtv"
+      ],
+      "steps": [
+        {
+          "name": "Activate voice search",
+          "action": "Press microphone button on remote or focus voice search icon",
+          "expected": "Voice search overlay or system voice input activates"
+        },
+        {
+          "name": "Speak query",
+          "action": "Say 'batman' into remote microphone",
+          "expected": "Voice input is transcribed and search executes"
+        }
+      ]
+    },
+    {
+      "id": "tv-search-results",
+      "name": "TV Search Results Display",
+      "category": "search",
+      "priority": "high",
+      "platforms": [
+        "androidtv"
+      ],
+      "steps": [
+        {
+          "name": "Execute search",
+          "action": "Search for a known media title",
+          "expected": "Results grid/row appears with matching media items"
+        },
+        {
+          "name": "Navigate results",
+          "action": "Use D-pad to browse through results",
+          "expected": "Focus moves between result cards with visible focus indicator"
+        },
+        {
+          "name": "Select result",
+          "action": "Press Select on a result",
+          "expected": "Navigates to media detail"
+        }
+      ]
+    },
+    {
+      "id": "tv-search-no-results",
+      "name": "TV Search No Results",
+      "category": "search",
+      "priority": "high",
+      "platforms": [
+        "androidtv"
+      ],
+      "steps": [
+        {
+          "name": "Search nonexistent",
+          "action": "Search for 'zzzznonexistent99999'",
+          "expected": "Empty state message: 'No results found' displayed in large TV-friendly text"
+        }
+      ]
+    },
+    {
+      "id": "tv-detail-opens",
+      "name": "TV Detail Screen Opens",
+      "category": "detail",
+      "priority": "critical",
+      "platforms": [
+        "androidtv"
+      ],
+      "steps": [
+        {
+          "name": "Select media item",
+          "action": "Press Select on any media card from home screen",
+          "expected": "Detail screen opens with Leanback detail layout (backdrop, poster, info)"
+        },
+        {
+          "name": "Verify loading",
+          "action": "Check for loading state",
+          "expected": "Content loads without error, all sections rendered"
+        }
+      ]
+    },
+    {
+      "id": "tv-detail-poster",
+      "name": "TV Detail Poster and Backdrop",
+      "category": "detail",
+      "priority": "high",
+      "platforms": [
+        "androidtv"
+      ],
+      "steps": [
+        {
+          "name": "Check poster",
+          "action": "Inspect media detail screen imagery",
+          "expected": "Poster image displayed on left side"
+        },
+        {
+          "name": "Check backdrop",
+          "action": "Inspect background",
+          "expected": "Full-width backdrop image behind detail content"
+        }
+      ]
+    },
+    {
+      "id": "tv-detail-play",
+      "name": "TV Detail Play Action",
+      "category": "detail",
+      "priority": "critical",
+      "platforms": [
+        "androidtv"
+      ],
+      "steps": [
+        {
+          "name": "Find play action",
+          "action": "Check action buttons on detail screen",
+          "expected": "Play button is the first/primary action, focused by default"
+        },
+        {
+          "name": "Press play",
+          "action": "Press Select/Enter on Play button",
+          "expected": "Media player launches and begins playback"
+        }
+      ]
+    },
+    {
+      "id": "tv-detail-metadata",
+      "name": "TV Detail Metadata",
+      "category": "detail",
+      "priority": "high",
+      "platforms": [
+        "androidtv"
+      ],
+      "steps": [
+        {
+          "name": "Check metadata",
+          "action": "Read metadata on detail screen",
+          "expected": "Title, year, duration, type, file size displayed in large readable text"
+        },
+        {
+          "name": "Check description",
+          "action": "Look for description or synopsis",
+          "expected": "Description text visible if available, truncated with 'more' option for long text"
+        }
+      ]
+    },
+    {
+      "id": "tv-detail-related",
+      "name": "TV Detail Related Items",
+      "category": "detail",
+      "priority": "medium",
+      "platforms": [
+        "androidtv"
+      ],
+      "steps": [
+        {
+          "name": "Scroll to related",
+          "action": "D-pad down past action buttons",
+          "expected": "Related/similar media row appears below detail info"
+        },
+        {
+          "name": "Navigate related",
+          "action": "D-pad right through related items",
+          "expected": "Can browse related media cards"
+        },
+        {
+          "name": "Select related item",
+          "action": "Press Select on a related item",
+          "expected": "Navigates to that item's detail screen"
+        }
+      ]
+    },
+    {
+      "id": "tv-player-starts",
+      "name": "TV Player Starts Playback",
+      "category": "player",
+      "priority": "critical",
+      "platforms": [
+        "androidtv"
+      ],
+      "steps": [
+        {
+          "name": "Start playback",
+          "action": "Select Play from media detail",
+          "expected": "Player activity opens, buffering indicator shown"
+        },
+        {
+          "name": "Verify playback",
+          "action": "Wait for buffering to complete",
+          "expected": "Video plays fullscreen with audio, no black screen"
+        }
+      ]
+    },
+    {
+      "id": "tv-player-dpad-controls",
+      "name": "TV Player D-Pad Controls",
+      "category": "player",
+      "priority": "critical",
+      "platforms": [
+        "androidtv"
+      ],
+      "steps": [
+        {
+          "name": "Show transport controls",
+          "action": "Press Select/Enter during playback",
+          "expected": "Transport bar overlay appears with play/pause, seek bar, time"
+        },
+        {
+          "name": "Pause with D-pad",
+          "action": "Press Select/Enter on pause button or press Play/Pause key",
+          "expected": "Playback pauses"
+        },
+        {
+          "name": "Seek with D-pad",
+          "action": "Press D-pad left/right",
+          "expected": "Seek position moves backward/forward in increments"
+        },
+        {
+          "name": "Resume",
+          "action": "Press Select/Enter or Play key",
+          "expected": "Playback resumes from new position"
+        }
+      ]
+    },
+    {
+      "id": "tv-player-progress",
+      "name": "TV Player Progress Tracking",
+      "category": "player",
+      "priority": "high",
+      "platforms": [
+        "androidtv"
+      ],
+      "steps": [
+        {
+          "name": "Play to midpoint",
+          "action": "Seek to approximately 50% of media duration",
+          "expected": "Player shows correct time position"
+        },
+        {
+          "name": "Exit player",
+          "action": "Press Back button",
+          "expected": "Player closes, returns to detail screen"
+        },
+        {
+          "name": "Check progress saved",
+          "action": "Look at media card on home screen",
+          "expected": "Progress bar visible on the media card showing ~50%"
+        }
+      ]
+    },
+    {
+      "id": "tv-player-resume",
+      "name": "TV Player Resume Playback",
+      "category": "player",
+      "priority": "high",
+      "platforms": [
+        "androidtv"
+      ],
+      "steps": [
+        {
+          "name": "Reopen partially watched",
+          "action": "Navigate to previously watched media and press Play",
+          "expected": "Resume prompt appears or playback starts from saved position"
+        },
+        {
+          "name": "Verify position",
+          "action": "Check current playback time",
+          "expected": "Playback is at or near the previously saved position"
+        }
+      ]
+    },
+    {
+      "id": "tv-player-back-exit",
+      "name": "TV Player Back Button Exit",
+      "category": "player",
+      "priority": "high",
+      "platforms": [
+        "androidtv"
+      ],
+      "steps": [
+        {
+          "name": "Play media",
+          "action": "Start playback of any media item",
+          "expected": "Media is playing"
+        },
+        {
+          "name": "Press Back",
+          "action": "Press Back button on remote during playback",
+          "expected": "If controls are showing: controls dismiss. If controls are hidden: player exits to detail screen"
+        },
+        {
+          "name": "Verify return",
+          "action": "Check current screen",
+          "expected": "User is back on media detail screen, progress was saved"
+        }
+      ]
+    },
+    {
+      "id": "tv-settings-opens",
+      "name": "TV Settings Screen Opens",
+      "category": "settings",
+      "priority": "critical",
+      "platforms": [
+        "androidtv"
+      ],
+      "steps": [
+        {
+          "name": "Navigate to settings",
+          "action": "Select Settings from top bar or side menu",
+          "expected": "Settings screen opens with Leanback-style preference layout"
+        }
+      ]
+    },
+    {
+      "id": "tv-settings-dpad-nav",
+      "name": "TV Settings D-Pad Navigation",
+      "category": "settings",
+      "priority": "high",
+      "platforms": [
+        "androidtv"
+      ],
+      "steps": [
+        {
+          "name": "Navigate settings list",
+          "action": "Press D-pad up/down through settings options",
+          "expected": "Focus moves between setting items with visible indicator"
+        },
+        {
+          "name": "Select a setting",
+          "action": "Press Select/Enter on a setting",
+          "expected": "Setting expands or opens sub-screen for editing"
+        },
+        {
+          "name": "Go back",
+          "action": "Press Back",
+          "expected": "Returns to settings list with focus preserved"
+        }
+      ]
+    },
+    {
+      "id": "tv-settings-server",
+      "name": "TV Settings Server Configuration",
+      "category": "settings",
+      "priority": "critical",
+      "platforms": [
+        "androidtv"
+      ],
+      "steps": [
+        {
+          "name": "Find server setting",
+          "action": "Navigate to server URL/address setting",
+          "expected": "Server address setting visible with current value"
+        },
+        {
+          "name": "Edit server",
+          "action": "Press Select to edit, type new URL via on-screen keyboard",
+          "expected": "On-screen keyboard appears, accepts input"
+        },
+        {
+          "name": "Save",
+          "action": "Confirm input",
+          "expected": "New server URL is saved and persisted"
+        }
+      ]
+    },
+    {
+      "id": "tv-settings-theme",
+      "name": "TV Settings Theme",
+      "category": "settings",
+      "priority": "medium",
+      "platforms": [
+        "androidtv"
+      ],
+      "steps": [
+        {
+          "name": "Find theme setting",
+          "action": "Navigate to theme/appearance setting",
+          "expected": "Theme option visible"
+        },
+        {
+          "name": "Change theme",
+          "action": "Select alternate theme (Light/Dark)",
+          "expected": "App theme changes to reflect new selection"
+        }
+      ]
+    },
+    {
+      "id": "tv-dpad-navigation",
+      "name": "TV D-Pad Full Navigation",
+      "category": "focus",
+      "priority": "critical",
+      "platforms": [
+        "androidtv"
+      ],
+      "steps": [
+        {
+          "name": "Navigate entire app",
+          "action": "Use only D-pad (up/down/left/right/select/back) to navigate from home to search to detail to settings",
+          "expected": "Every screen and interactive element is reachable via D-pad alone"
+        },
+        {
+          "name": "No focus traps",
+          "action": "Attempt to navigate out of each section",
+          "expected": "No focus traps where D-pad cannot leave a section"
+        }
+      ]
+    },
+    {
+      "id": "tv-focus-visible",
+      "name": "TV Focus Always Visible",
+      "category": "focus",
+      "priority": "critical",
+      "platforms": [
+        "androidtv"
+      ],
+      "steps": [
+        {
+          "name": "Check home screen focus",
+          "action": "Navigate home screen with D-pad",
+          "expected": "Focused item always has clearly visible highlight (border, scale, glow)"
+        },
+        {
+          "name": "Check detail screen focus",
+          "action": "Navigate detail screen action buttons",
+          "expected": "Focused button has visible focus state"
+        },
+        {
+          "name": "Check settings focus",
+          "action": "Navigate settings list",
+          "expected": "Focused setting has visible highlight"
+        },
+        {
+          "name": "Verify contrast",
+          "action": "Check focus indicator in both light and dark themes",
+          "expected": "Focus indicator meets accessibility contrast requirements"
+        }
+      ]
+    },
+    {
+      "id": "tv-back-key",
+      "name": "TV Back Key Behavior",
+      "category": "focus",
+      "priority": "critical",
+      "platforms": [
+        "androidtv"
+      ],
+      "steps": [
+        {
+          "name": "Navigate deep",
+          "action": "Home -> Category -> Detail -> Player",
+          "expected": "User navigated 4 levels deep"
+        },
+        {
+          "name": "Press Back repeatedly",
+          "action": "Press Back button 4 times",
+          "expected": "Navigates back through: Player -> Detail -> Category -> Home"
+        },
+        {
+          "name": "Back from home",
+          "action": "Press Back on home screen",
+          "expected": "Exit confirmation dialog or app exits to TV launcher"
+        }
+      ]
+    },
+    {
+      "id": "tv-home-key",
+      "name": "TV Home Key Returns to Launcher",
+      "category": "focus",
+      "priority": "high",
+      "platforms": [
+        "androidtv"
+      ],
+      "steps": [
+        {
+          "name": "Navigate into app",
+          "action": "Go to media detail screen within app",
+          "expected": "User is deep in app"
+        },
+        {
+          "name": "Press Home key",
+          "action": "Press Home button on remote",
+          "expected": "Returns to Android TV launcher, app goes to background"
+        },
+        {
+          "name": "Return to app",
+          "action": "Select Catalogizer from recents or launcher",
+          "expected": "App resumes on the same screen (media detail) where user left off"
+        }
+      ]
+    },
+    {
+      "id": "tv-focus-restore",
+      "name": "TV Focus Restore After Navigation",
+      "category": "focus",
+      "priority": "high",
+      "platforms": [
+        "androidtv"
+      ],
+      "steps": [
+        {
+          "name": "Focus item in row",
+          "action": "Navigate to 3rd item in a category row",
+          "expected": "3rd item is focused"
+        },
+        {
+          "name": "Enter and return",
+          "action": "Press Select to enter detail, then press Back",
+          "expected": "Returns to home screen"
+        },
+        {
+          "name": "Verify focus restored",
+          "action": "Check which item has focus",
+          "expected": "Focus is restored to the 3rd item in the same row where user left"
+        }
+      ]
+    },
+    {
+      "id": "tv-flow-launch",
+      "name": "User Flow: Launch TV App",
+      "category": "user-flow",
+      "priority": "critical",
+      "platforms": [
+        "androidtv"
+      ],
+      "steps": [
+        {
+          "name": "Launch from launcher",
+          "action": "Select Catalogizer from Android TV launcher",
+          "expected": "App launches, splash screen shows, transitions to login or home within 5 seconds"
+        }
+      ]
+    },
+    {
+      "id": "tv-flow-login",
+      "name": "User Flow: Login on TV",
+      "category": "user-flow",
+      "priority": "critical",
+      "platforms": [
+        "androidtv"
+      ],
+      "steps": [
+        {
+          "name": "Login via D-pad",
+          "action": "Navigate fields with D-pad, enter admin/admin123 using on-screen keyboard",
+          "expected": "Login succeeds, navigates to TV home screen with content rows"
+        }
+      ]
+    },
+    {
+      "id": "tv-flow-navigate-home",
+      "name": "User Flow: Navigate Home Rows",
+      "category": "user-flow",
+      "priority": "critical",
+      "platforms": [
+        "androidtv"
+      ],
+      "steps": [
+        {
+          "name": "Browse home content",
+          "action": "Use D-pad to navigate between category rows and items",
+          "expected": "Focus moves smoothly between rows and items, all content cards visible with focus indicators"
+        }
+      ]
+    },
+    {
+      "id": "tv-flow-carousel-browse",
+      "name": "User Flow: Browse Hero Carousel",
+      "category": "user-flow",
+      "priority": "high",
+      "platforms": [
+        "androidtv"
+      ],
+      "steps": [
+        {
+          "name": "Navigate carousel",
+          "action": "Press D-pad left/right on hero carousel at top of home",
+          "expected": "Carousel scrolls between featured items with backdrop image transitions"
+        }
+      ]
+    },
+    {
+      "id": "tv-flow-select-and-detail",
+      "name": "User Flow: Select Item and View Detail",
+      "category": "user-flow",
+      "priority": "critical",
+      "platforms": [
+        "androidtv"
+      ],
+      "steps": [
+        {
+          "name": "Select item",
+          "action": "Focus a media card and press Select/Enter",
+          "expected": "Detail screen opens with Leanback layout showing poster, metadata, and action buttons"
+        }
+      ]
+    },
+    {
+      "id": "tv-flow-play-and-back",
+      "name": "User Flow: Play Media and Return",
+      "category": "user-flow",
+      "priority": "critical",
+      "platforms": [
+        "androidtv"
+      ],
+      "steps": [
+        {
+          "name": "Play and exit",
+          "action": "Press Play on detail, watch for 5 seconds, press Back twice",
+          "expected": "Player starts, Back first shows/hides controls, second Back exits to detail, then Back to home"
+        }
+      ]
+    },
+    {
+      "id": "tv-dpad-rapid-direction",
+      "name": "D-pad Stress: Rapid Direction Changes",
+      "category": "dpad-stress",
+      "priority": "high",
+      "platforms": [
+        "androidtv"
+      ],
+      "steps": [
+        {
+          "name": "Rapid D-pad presses",
+          "action": "Press D-pad up/down/left/right rapidly (10 presses per second) on home screen",
+          "expected": "Focus moves correctly without getting stuck, no ANR, no crash, UI remains responsive"
+        }
+      ]
+    },
+    {
+      "id": "tv-dpad-hold-direction",
+      "name": "D-pad Stress: Hold Direction Key",
+      "category": "dpad-stress",
+      "priority": "high",
+      "platforms": [
+        "androidtv"
+      ],
+      "steps": [
+        {
+          "name": "Hold D-pad right",
+          "action": "Press and hold D-pad right for 5 seconds on a long category row",
+          "expected": "Focus scrolls continuously through items, stops at end of row, no jank or missed frames"
+        }
+      ]
+    },
+    {
+      "id": "tv-dpad-diagonal",
+      "name": "D-pad Stress: Diagonal Presses",
+      "category": "dpad-stress",
+      "priority": "medium",
+      "platforms": [
+        "androidtv"
+      ],
+      "steps": [
+        {
+          "name": "Press diagonal",
+          "action": "Press D-pad up+right simultaneously on home screen grid",
+          "expected": "Focus moves in one direction (up or right, not diagonal), no crash or undefined behavior"
+        }
+      ]
+    },
+    {
+      "id": "tv-focus-chain-home",
+      "name": "Focus Chain: Home Screen Elements",
+      "category": "focus-chain",
+      "priority": "critical",
+      "platforms": [
+        "androidtv"
+      ],
+      "steps": [
+        {
+          "name": "Tab through home",
+          "action": "Navigate through all interactive elements on home screen using D-pad",
+          "expected": "All media cards, navigation items, and action buttons are reachable in logical order"
+        }
+      ]
+    },
+    {
+      "id": "tv-focus-chain-detail",
+      "name": "Focus Chain: Detail Screen Elements",
+      "category": "focus-chain",
+      "priority": "critical",
+      "platforms": [
+        "androidtv"
+      ],
+      "steps": [
+        {
+          "name": "Tab through detail",
+          "action": "Navigate through all interactive elements on detail screen using D-pad",
+          "expected": "Play, Favorite, Related items all reachable; focus order: actions row then related content row"
+        }
+      ]
+    },
+    {
+      "id": "tv-focus-chain-search",
+      "name": "Focus Chain: Search Screen Elements",
+      "category": "focus-chain",
+      "priority": "high",
+      "platforms": [
+        "androidtv"
+      ],
+      "steps": [
+        {
+          "name": "Tab through search",
+          "action": "Navigate through search input, keyboard, and results using D-pad",
+          "expected": "Keyboard, search results, and navigation are all reachable without focus traps"
+        }
+      ]
+    },
+    {
+      "id": "tv-focus-chain-settings",
+      "name": "Focus Chain: Settings Screen Elements",
+      "category": "focus-chain",
+      "priority": "high",
+      "platforms": [
+        "androidtv"
+      ],
+      "steps": [
+        {
+          "name": "Tab through settings",
+          "action": "Navigate through all settings options using D-pad",
+          "expected": "All setting items reachable, expandable settings work, focus returns correctly after editing"
+        }
+      ]
+    },
+    {
+      "id": "tv-remote-play-pause",
+      "name": "Remote: Play/Pause Button",
+      "category": "remote-control",
+      "priority": "critical",
+      "platforms": [
+        "androidtv"
+      ],
+      "steps": [
+        {
+          "name": "Press Play/Pause",
+          "action": "Press Play/Pause button on remote during playback",
+          "expected": "Playback toggles between play and pause states"
+        }
+      ]
+    },
+    {
+      "id": "tv-remote-stop",
+      "name": "Remote: Stop Button",
+      "category": "remote-control",
+      "priority": "high",
+      "platforms": [
+        "androidtv"
+      ],
+      "steps": [
+        {
+          "name": "Press Stop",
+          "action": "Press Stop button on remote during playback",
+          "expected": "Playback stops completely, returns to detail screen, progress saved"
+        }
+      ]
+    },
+    {
+      "id": "tv-remote-back",
+      "name": "Remote: Back Button",
+      "category": "remote-control",
+      "priority": "critical",
+      "platforms": [
+        "androidtv"
+      ],
+      "steps": [
+        {
+          "name": "Press Back",
+          "action": "Press Back button from various screens",
+          "expected": "Navigates to previous screen in back stack, from home shows exit dialog"
+        }
+      ]
+    },
+    {
+      "id": "tv-remote-home",
+      "name": "Remote: Home Button",
+      "category": "remote-control",
+      "priority": "high",
+      "platforms": [
+        "androidtv"
+      ],
+      "steps": [
+        {
+          "name": "Press Home",
+          "action": "Press Home button from any screen in the app",
+          "expected": "Returns to Android TV launcher, app goes to background, resumes correctly when re-selected"
+        }
+      ]
+    },
+    {
+      "id": "tv-remote-menu",
+      "name": "Remote: Menu Button",
+      "category": "remote-control",
+      "priority": "medium",
+      "platforms": [
+        "androidtv"
+      ],
+      "steps": [
+        {
+          "name": "Press Menu",
+          "action": "Press Menu button on remote from home and detail screens",
+          "expected": "Context menu or options overlay appears with relevant actions for current screen"
+        }
+      ]
+    },
+    {
+      "id": "tv-voice-search-query",
+      "name": "Voice Search: Speak Query",
+      "category": "voice-search",
+      "priority": "medium",
+      "platforms": [
+        "androidtv"
+      ],
+      "steps": [
+        {
+          "name": "Speak search query",
+          "action": "Press microphone button on remote, say 'batman movies'",
+          "expected": "Voice input transcribed to text, search executes, results for batman movies displayed"
+        }
+      ]
+    },
+    {
+      "id": "tv-voice-search-results-display",
+      "name": "Voice Search: Results Display Correctly",
+      "category": "voice-search",
+      "priority": "medium",
+      "platforms": [
+        "androidtv"
+      ],
+      "steps": [
+        {
+          "name": "Verify voice results",
+          "action": "Complete voice search and inspect results",
+          "expected": "Results displayed in TV-optimized grid, each card focusable, matching voice query content"
+        }
+      ]
+    },
+    {
+      "id": "tv-10foot-text-readable",
+      "name": "10-Foot UI: Text Readable at Distance",
+      "category": "10-foot-ui",
+      "priority": "critical",
+      "platforms": [
+        "androidtv"
+      ],
+      "steps": [
+        {
+          "name": "Check text sizes",
+          "action": "View all screens from 10 feet distance on a standard TV",
+          "expected": "All text is readable: titles >= 24sp, body >= 18sp, labels >= 16sp, no tiny text anywhere"
+        }
+      ]
+    },
+    {
+      "id": "tv-10foot-buttons-large",
+      "name": "10-Foot UI: Buttons Large Enough",
+      "category": "10-foot-ui",
+      "priority": "critical",
+      "platforms": [
+        "androidtv"
+      ],
+      "steps": [
+        {
+          "name": "Check button sizes",
+          "action": "Inspect all interactive elements for minimum touch/focus target size",
+          "expected": "All buttons and focusable elements are at least 48dp in both dimensions, clear focus highlight"
+        }
+      ]
+    },
+    {
+      "id": "tv-10foot-contrast-sufficient",
+      "name": "10-Foot UI: Contrast Sufficient",
+      "category": "10-foot-ui",
+      "priority": "high",
+      "platforms": [
+        "androidtv"
+      ],
+      "steps": [
+        {
+          "name": "Check contrast ratios",
+          "action": "Inspect text and background colors on all screens",
+          "expected": "Text meets WCAG AA contrast ratio (4.5:1 for body, 3:1 for large text) in both light and dark themes"
+        }
+      ]
+    },
+    {
+      "id": "tv-idle-screensaver-handle",
+      "name": "Idle: App Handles Screensaver Activation",
+      "category": "idle",
+      "priority": "medium",
+      "platforms": [
+        "androidtv"
+      ],
+      "steps": [
+        {
+          "name": "Let device idle",
+          "action": "Leave app idle until Android TV screensaver activates",
+          "expected": "Screensaver activates normally, app state preserved in background"
+        }
+      ]
+    },
+    {
+      "id": "tv-idle-resume-from-screensaver",
+      "name": "Idle: Resume After Screensaver",
+      "category": "idle",
+      "priority": "medium",
+      "platforms": [
+        "androidtv"
+      ],
+      "steps": [
+        {
+          "name": "Dismiss screensaver",
+          "action": "Press any button on remote to dismiss screensaver",
+          "expected": "App resumes on the exact screen where user left off, no re-login, data intact, WebSocket reconnects if needed"
+        }
+      ]
+    }
   ]
 }

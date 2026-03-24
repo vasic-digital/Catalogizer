@@ -557,18 +557,19 @@ func main() {
 
 	// Authentication routes (no auth required)
 	authGroup := router.Group("/api/v1/auth")
-	authGroup.Use(authRateLimiter) // Apply strict rate limiting to auth endpoints
 	{
-		authGroup.POST("/login", authHandler.LoginGin)
-		authGroup.POST("/register", func(c *gin.Context) {
+		// Strict rate limiting for write operations (brute-force protection)
+		authGroup.POST("/login", authRateLimiter, authHandler.LoginGin)
+		authGroup.POST("/register", authRateLimiter, func(c *gin.Context) {
 			authHandler.RegisterGin(c, userRepo)
 		})
-		authGroup.POST("/refresh", authHandler.RefreshTokenGin)
-		authGroup.POST("/logout", authHandler.LogoutGin)
-		authGroup.GET("/me", jwtMiddleware.RequireAuth(), authHandler.GetCurrentUserGin)
-		authGroup.GET("/status", authHandler.GetAuthStatusGin)
-		authGroup.GET("/permissions", jwtMiddleware.RequireAuth(), authHandler.GetPermissionsGin)
-		authGroup.GET("/profile", jwtMiddleware.RequireAuth(), authHandler.GetCurrentUserGin)
+		// Standard rate limiting for token operations and read-only endpoints
+		authGroup.POST("/refresh", defaultRateLimiter, authHandler.RefreshTokenGin)
+		authGroup.POST("/logout", defaultRateLimiter, authHandler.LogoutGin)
+		authGroup.GET("/me", defaultRateLimiter, jwtMiddleware.RequireAuth(), authHandler.GetCurrentUserGin)
+		authGroup.GET("/status", defaultRateLimiter, authHandler.GetAuthStatusGin)
+		authGroup.GET("/permissions", defaultRateLimiter, jwtMiddleware.RequireAuth(), authHandler.GetPermissionsGin)
+		authGroup.GET("/profile", defaultRateLimiter, jwtMiddleware.RequireAuth(), authHandler.GetCurrentUserGin)
 	}
 
 	// API routes

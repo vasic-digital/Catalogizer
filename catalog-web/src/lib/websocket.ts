@@ -24,7 +24,9 @@ export interface SystemUpdate {
   details?: Record<string, unknown>
 }
 
-const WS_URL = import.meta.env.VITE_WS_URL || 'ws://localhost:8080/ws'
+// In dev mode, derive WS URL from current page origin so it goes through Vite proxy.
+// In production or when VITE_WS_URL is set, use the explicit URL.
+const WS_URL = import.meta.env.VITE_WS_URL || `${window.location.protocol === 'https:' ? 'wss:' : 'ws:'}//${window.location.host}/ws`
 
 /** Map submodule connection states to legacy state names used by ConnectionStatus */
 function toLegacyState(state: ConnectionState): 'connecting' | 'open' | 'closing' | 'closed' {
