@@ -107,7 +107,11 @@ fun TVNavigation(
         }
 
         composable(TVScreen.Settings.route) {
+            val container = com.catalogizer.androidtv.DependencyContainer.getInstance(
+                androidx.compose.ui.platform.LocalContext.current
+            )
             SettingsScreen(
+                settingsViewModel = container.createSettingsViewModel(),
                 onNavigateBack = {
                     navController.popBackStack()
                 },
