@@ -5,6 +5,8 @@ import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.PreferenceDataStoreFactory
 import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.preferencesDataStoreFile
+import com.catalogizer.androidtv.data.discovery.NetworkDiscoveryService
+import com.catalogizer.androidtv.data.models.Settings
 import com.catalogizer.androidtv.data.remote.CatalogizerApi
 import com.catalogizer.androidtv.data.repository.AuthRepository
 import com.catalogizer.androidtv.data.repository.MediaRepository
@@ -14,8 +16,6 @@ import com.catalogizer.androidtv.ui.viewmodel.HomeViewModel
 import com.catalogizer.androidtv.ui.viewmodel.MainViewModel
 import com.catalogizer.androidtv.ui.viewmodel.SettingsViewModel
 import com.catalogizer.androidtv.ui.screens.search.SearchViewModel
-import androidx.lifecycle.ViewModelProvider
-import androidx.lifecycle.ViewModelStoreOwner
 import com.catalogizer.androidtv.data.remote.AuthInterceptor
 import okhttp3.OkHttpClient
 import okhttp3.logging.HttpLoggingInterceptor
@@ -25,83 +25,118 @@ import java.util.concurrent.TimeUnit
 
 class DependencyContainer(private val context: Context) {
 
-    // DataStore
     private val dataStore: DataStore<Preferences> by lazy {
         PreferenceDataStoreFactory.create {
             context.preferencesDataStoreFile("catalogizer_tv_prefs")
         }
     }
 
-    // Initialization order: authRepository is created with null API, then api lazy
-    // creates AuthInterceptor (reads authState synchronously) and calls setApi().
-    // The API is guaranteed to be set before any HTTP call because the interceptor
-    // is part of the OkHttp client inside api, so by the time it executes, setApi()
-    // has already been called at the end of the api lazy block.
+    val settingsRepository: SettingsRepository by lazy {
+        SettingsRepository(dataStore)
+    }
+
+    val discoveryService: NetworkDiscoveryService by lazy {
+        NetworkDiscoveryService()
+    }
+
     val authRepository: AuthRepository by lazy {
         AuthRepository(context, null)
     }
 
-    private val api: CatalogizerApi by lazy {
-        val logging = HttpLoggingInterceptor().apply {
-            level = HttpLoggingInterceptor.Level.BODY
-        }
+    // Current active base URL — read from settings or default
+    private var currentBaseUrl: String = BuildConfig.API_BASE_URL
 
+    /**
+     * Build OkHttpClient with auth interceptor and logging.
+     */
+    private fun buildOkHttpClient(): OkHttpClient {
+        val logging = HttpLoggingInterceptor().apply {
+            level = if (BuildConfig.DEBUG) HttpLoggingInterceptor.Level.BODY
+                    else HttpLoggingInterceptor.Level.NONE
+        }
         val authInterceptor = AuthInterceptor(authRepository)
 
-        val client = OkHttpClient.Builder()
+        return OkHttpClient.Builder()
             .addInterceptor(authInterceptor)
             .addInterceptor(logging)
             .connectTimeout(30, TimeUnit.SECONDS)
             .readTimeout(30, TimeUnit.SECONDS)
             .writeTimeout(30, TimeUnit.SECONDS)
             .build()
+    }
 
-        val apiInstance = Retrofit.Builder()
-            .baseUrl(BuildConfig.API_BASE_URL)
-            .client(client)
+    /**
+     * Create a Retrofit API instance pointing to the given base URL.
+     */
+    private fun buildApi(baseUrl: String): CatalogizerApi {
+        return Retrofit.Builder()
+            .baseUrl(baseUrl.trimEnd('/') + "/")
+            .client(buildOkHttpClient())
             .addConverterFactory(GsonConverterFactory.create())
             .build()
             .create(CatalogizerApi::class.java)
-
-        // Set the API on the repository after creation
-        authRepository.setApi(apiInstance)
-
-        apiInstance
     }
+
+    private var _api: CatalogizerApi? = null
+
+    val api: CatalogizerApi
+        get() {
+            if (_api == null) {
+                _api = buildApi(currentBaseUrl)
+                authRepository.setApi(_api!!)
+            }
+            return _api!!
+        }
 
     val mediaRepository: MediaRepository by lazy {
         MediaRepository(context, api)
     }
 
-    val settingsRepository: SettingsRepository by lazy {
-        SettingsRepository(dataStore)
-    }
-
     // ViewModels
-    fun createAuthViewModel(): AuthViewModel {
-        return AuthViewModel(authRepository)
+    fun createAuthViewModel(): AuthViewModel = AuthViewModel(authRepository)
+    fun createMainViewModel(): MainViewModel = MainViewModel(authRepository)
+    fun createHomeViewModel(): HomeViewModel = HomeViewModel(mediaRepository)
+    fun createSettingsViewModel(): SettingsViewModel = SettingsViewModel(settingsRepository)
+    fun createSearchViewModel(): SearchViewModel = SearchViewModel(mediaRepository)
+
+    /**
+     * Change the API base URL at runtime. Recreates the Retrofit client.
+     * Call this when the user selects a discovered or manually entered server.
+     */
+    fun switchServer(newBaseUrl: String) {
+        currentBaseUrl = newBaseUrl.trimEnd('/')
+        _api = buildApi(currentBaseUrl)
+        authRepository.setApi(_api!!)
     }
 
-    fun createMainViewModel(): MainViewModel {
-        return MainViewModel(authRepository)
+    /**
+     * Get the currently configured API base URL.
+     */
+    fun getServerUrl(): String = currentBaseUrl
+
+    /**
+     * Initialize the container: load saved server URL, create API client.
+     * Call from Application.onCreate().
+     */
+    suspend fun initializeAsync() {
+        // Load server URL from persisted settings
+        try {
+            val settings = settingsRepository.getSettingsAsync()
+            if (settings.serverUrl.isNotBlank() && settings.serverUrl != Settings.DEFAULT_SERVER_URL) {
+                currentBaseUrl = settings.serverUrl
+            }
+        } catch (_: Exception) {
+            // Use default/BuildConfig URL on first launch
+        }
+        // Trigger API creation
+        api
     }
 
-    fun createHomeViewModel(): HomeViewModel {
-        return HomeViewModel(mediaRepository)
-    }
-
-    fun createSettingsViewModel(): SettingsViewModel {
-        return SettingsViewModel(settingsRepository)
-    }
-
-    fun createSearchViewModel(): SearchViewModel {
-        return SearchViewModel(mediaRepository)
-    }
-
-    // Eagerly initialize the API to resolve the circular dependency early.
-    // Call from Application.onCreate() to fail fast if configuration is wrong.
+    /**
+     * Synchronous initialize (uses BuildConfig URL, settings loaded later).
+     */
     fun initialize() {
-        api // triggers lazy initialization, which also calls authRepository.setApi()
+        api
     }
 
     companion object {

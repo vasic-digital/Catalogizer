@@ -5,6 +5,9 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.focusable
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Search
+import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -15,10 +18,14 @@ import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.PasswordVisualTransformation
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.tv.material3.*
+import com.catalogizer.androidtv.DependencyContainer
+import com.catalogizer.androidtv.data.models.ServerEntry
 import com.catalogizer.androidtv.ui.viewmodel.AuthViewModel
+import kotlinx.coroutines.launch
 
 @Composable
 fun LoginScreen(
@@ -30,7 +37,15 @@ fun LoginScreen(
     var password by remember { mutableStateOf("") }
     var isLoading by remember { mutableStateOf(false) }
     var errorMessage by remember { mutableStateOf<String?>(null) }
-    
+
+    // Server configuration state
+    val container = DependencyContainer.getInstance(androidx.compose.ui.platform.LocalContext.current)
+    var serverUrl by remember { mutableStateOf(container.getServerUrl()) }
+    var showServerConfig by remember { mutableStateOf(false) }
+    var isDiscovering by remember { mutableStateOf(false) }
+    var discoveredServers by remember { mutableStateOf<List<ServerEntry>>(emptyList()) }
+    val coroutineScope = rememberCoroutineScope()
+
     val usernameFocusRequester = remember { FocusRequester() }
     val passwordFocusRequester = remember { FocusRequester() }
     val keyboardController = LocalSoftwareKeyboardController.current
@@ -39,6 +54,27 @@ fun LoginScreen(
     LaunchedEffect(authState) {
         if (authState.isAuthenticated) {
             onLoginSuccess()
+        }
+    }
+
+    // Auto-discover on first launch
+    LaunchedEffect(Unit) {
+        val settings = container.settingsRepository.getSettingsAsync()
+        if (settings.autoDiscovery) {
+            isDiscovering = true
+            try {
+                val results = container.discoveryService.discoverViaMulticast(3000L)
+                discoveredServers = results
+                if (results.size == 1) {
+                    // Auto-select single discovered server
+                    val server = results.first()
+                    serverUrl = server.url
+                    container.switchServer(server.url)
+                    container.settingsRepository.updateServerUrl(server.url)
+                    container.settingsRepository.addServer(server)
+                }
+            } catch (_: Exception) { }
+            isDiscovering = false
         }
     }
 
@@ -67,25 +103,130 @@ fun LoginScreen(
                 style = androidx.tv.material3.MaterialTheme.typography.bodyLarge
             )
 
-            // Username field
+            // ─── Server URL section ─────────────────────────────────────
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                modifier = Modifier.width(400.dp)
+            ) {
+                TextField(
+                    value = serverUrl,
+                    onValueChange = { newUrl ->
+                        serverUrl = newUrl
+                    },
+                    label = { Text("Server URL") },
+                    modifier = Modifier.weight(1f).focusable(),
+                    singleLine = true,
+                    enabled = !isLoading,
+                    trailingIcon = {
+                        if (isDiscovering) {
+                            CircularProgressIndicator(
+                                modifier = Modifier.size(20.dp),
+                                strokeWidth = 2.dp
+                            )
+                        }
+                    }
+                )
+
+                // Discover button
+                IconButton(
+                    onClick = {
+                        coroutineScope.launch {
+                            isDiscovering = true
+                            discoveredServers = emptyList()
+                            try {
+                                val results = container.discoveryService.discoverViaMulticast(5000L)
+                                discoveredServers = results
+                                if (results.isEmpty()) {
+                                    errorMessage = "No servers found on the network"
+                                }
+                            } catch (e: Exception) {
+                                errorMessage = "Discovery failed: ${e.message}"
+                            }
+                            isDiscovering = false
+                        }
+                    },
+                    enabled = !isDiscovering && !isLoading
+                ) {
+                    Icon(Icons.Default.Search, contentDescription = "Discover servers")
+                }
+
+                // Apply server URL button
+                IconButton(
+                    onClick = {
+                        if (serverUrl.isNotBlank()) {
+                            container.switchServer(serverUrl)
+                            coroutineScope.launch {
+                                container.settingsRepository.updateServerUrl(serverUrl)
+                                container.settingsRepository.addServer(
+                                    ServerEntry(url = serverUrl, name = "Manual entry")
+                                )
+                            }
+                            errorMessage = null
+                        }
+                    },
+                    enabled = serverUrl.isNotBlank() && !isLoading
+                ) {
+                    Icon(Icons.Default.Settings, contentDescription = "Apply server")
+                }
+            }
+
+            // Discovered servers list
+            if (discoveredServers.isNotEmpty()) {
+                Text(
+                    text = "Discovered servers:",
+                    style = androidx.tv.material3.MaterialTheme.typography.bodySmall
+                )
+                discoveredServers.forEach { server ->
+                    Surface(
+                        modifier = Modifier.width(400.dp),
+                        shape = androidx.tv.material3.MaterialTheme.shapes.small,
+                        onClick = {
+                            serverUrl = server.url
+                            container.switchServer(server.url)
+                            coroutineScope.launch {
+                                container.settingsRepository.updateServerUrl(server.url)
+                                container.settingsRepository.addServer(server)
+                            }
+                            discoveredServers = emptyList()
+                        }
+                    ) {
+                        Row(
+                            modifier = Modifier.padding(12.dp).fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween
+                        ) {
+                            Text(
+                                text = server.name.ifBlank { server.url },
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis,
+                                modifier = Modifier.weight(1f)
+                            )
+                            Text(
+                                text = server.url,
+                                style = androidx.tv.material3.MaterialTheme.typography.bodySmall
+                            )
+                        }
+                    }
+                }
+            }
+
+            Spacer(modifier = Modifier.height(8.dp))
+
+            // ─── Username field ──────────────────────────────────────────
             TextField(
                 value = username,
-                onValueChange = { newValue: String -> 
+                onValueChange = { newValue: String ->
                     username = newValue
                     errorMessage = null
                 },
                 label = { Text("Username") },
                 modifier = Modifier
-                    .width(300.dp)
+                    .width(400.dp)
                     .focusRequester(usernameFocusRequester)
                     .focusable(),
-                keyboardOptions = KeyboardOptions(
-                    imeAction = ImeAction.Next
-                ),
+                keyboardOptions = KeyboardOptions(imeAction = ImeAction.Next),
                 keyboardActions = KeyboardActions(
-                    onNext = {
-                        passwordFocusRequester.requestFocus()
-                    }
+                    onNext = { passwordFocusRequester.requestFocus() }
                 ),
                 singleLine = true,
                 enabled = !isLoading
@@ -94,18 +235,16 @@ fun LoginScreen(
             // Password field
             TextField(
                 value = password,
-                onValueChange = { newValue: String -> 
+                onValueChange = { newValue: String ->
                     password = newValue
                     errorMessage = null
                 },
                 label = { Text("Password") },
                 modifier = Modifier
-                    .width(300.dp)
+                    .width(400.dp)
                     .focusRequester(passwordFocusRequester)
                     .focusable(),
-                keyboardOptions = KeyboardOptions(
-                    imeAction = ImeAction.Done
-                ),
+                keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
                 keyboardActions = KeyboardActions(
                     onDone = {
                         keyboardController?.hide()
@@ -120,12 +259,10 @@ fun LoginScreen(
             // Error message
             errorMessage?.let { error ->
                 Surface(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(8.dp),
+                    modifier = Modifier.width(400.dp).padding(8.dp),
                     shape = androidx.tv.material3.MaterialTheme.shapes.medium,
                     color = androidx.tv.material3.MaterialTheme.colorScheme.errorContainer,
-                    onClick = {} // Empty onClick for compatibility
+                    onClick = {}
                 ) {
                     Text(
                         text = error,
@@ -141,61 +278,47 @@ fun LoginScreen(
                     keyboardController?.hide()
                     performLogin(username, password, authViewModel, { isLoading = it }, { errorMessage = it })
                 },
-                modifier = Modifier.width(300.dp),
+                modifier = Modifier.width(400.dp),
                 enabled = !isLoading && username.isNotBlank() && password.isNotBlank()
             ) {
                 if (isLoading) {
-                    CircularProgressIndicator(
-                        modifier = Modifier.size(24.dp),
-                        strokeWidth = 2.dp
-                    )
+                    CircularProgressIndicator(modifier = Modifier.size(24.dp), strokeWidth = 2.dp)
                 } else {
                     Text("Login")
                 }
             }
 
-            // Demo login button (for development)
-            Button(
-                onClick = {
-                    username = "demo"
-                    password = "demo"
-                },
-                modifier = Modifier.width(300.dp),
-                enabled = !isLoading
-            ) {
-                Text("Use Demo Credentials")
-            }
+            // Connected server indicator
+            Text(
+                text = "Connected to: $serverUrl",
+                style = androidx.tv.material3.MaterialTheme.typography.bodySmall
+            )
         }
     }
 
     // Focus username field on launch
     LaunchedEffect(Unit) {
-        kotlinx.coroutines.delay(100) // Small delay to ensure layout is ready
+        kotlinx.coroutines.delay(100)
         usernameFocusRequester.requestFocus()
     }
 
     DisposableEffect(Unit) {
-        onDispose {
-            // Clear any state when screen is disposed
-            authViewModel.clearError()
-        }
+        onDispose { authViewModel.clearError() }
     }
 }
 
 private fun performLogin(
-    username: String, 
-    password: String, 
-    authViewModel: AuthViewModel, 
-    setIsLoading: (Boolean) -> Unit, 
+    username: String,
+    password: String,
+    authViewModel: AuthViewModel,
+    setIsLoading: (Boolean) -> Unit,
     setErrorMessage: (String?) -> Unit
 ) {
     if (username.isBlank() || password.isBlank()) {
         setErrorMessage("Please enter username and password")
         return
     }
-
     setIsLoading(true)
     setErrorMessage(null)
-    
     authViewModel.login(username, password)
 }

@@ -23,8 +23,8 @@ android {
         applicationId = "com.catalogizer.androidtv"
         minSdk = 26
         targetSdk = 34
-        versionCode = 2
-        versionName = "1.0.1"
+        versionCode = 3
+        versionName = "1.1.0"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         vectorDrawables {
@@ -49,8 +49,8 @@ android {
     buildTypes {
         debug {
             isDebuggable = true
-            buildConfigField("String", "API_BASE_URL", "\"http://192.168.0.213:8080\"")
-            buildConfigField("String", "WS_URL", "\"ws://192.168.0.213:8080/ws\"")
+            buildConfigField("String", "API_BASE_URL", "\"https://catalogizer.dev\"")
+            buildConfigField("String", "WS_URL", "\"wss://catalogizer.dev/ws\"")
         }
         release {
             isMinifyEnabled = true
@@ -59,8 +59,8 @@ android {
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"
             )
-            buildConfigField("String", "API_BASE_URL", "\"https://your-catalogizer-api.com\"")
-            buildConfigField("String", "WS_URL", "\"wss://your-catalogizer-api.com/ws\"")
+            buildConfigField("String", "API_BASE_URL", "\"https://catalogizer.dev\"")
+            buildConfigField("String", "WS_URL", "\"wss://catalogizer.dev/ws\"")
         }
     }
 
