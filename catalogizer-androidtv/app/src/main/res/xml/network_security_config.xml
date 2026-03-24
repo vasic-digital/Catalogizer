@@ -1,16 +1,14 @@
 <?xml version="1.0" encoding="utf-8"?>
 <network-security-config>
-    <!-- Disallow cleartext traffic by default -->
-    <base-config cleartextTrafficPermitted="false">
+    <!--
+        Allow cleartext HTTP for LAN API discovery and local network communication.
+        Production traffic to catalogizer.dev uses HTTPS.
+        The Catalogizer API is typically discovered on LAN via IP addresses
+        which require cleartext HTTP since they can't have TLS certificates.
+    -->
+    <base-config cleartextTrafficPermitted="true">
         <trust-anchors>
             <certificates src="system" />
         </trust-anchors>
     </base-config>
-    <!-- Allow cleartext only for local network ranges (SMB/FTP/NFS devices) -->
-    <domain-config cleartextTrafficPermitted="true">
-        <domain includeSubdomains="true">10.0.0.0</domain>
-        <domain includeSubdomains="true">172.16.0.0</domain>
-        <domain includeSubdomains="true">192.168.0.0</domain>
-        <domain includeSubdomains="true">localhost</domain>
-    </domain-config>
 </network-security-config>

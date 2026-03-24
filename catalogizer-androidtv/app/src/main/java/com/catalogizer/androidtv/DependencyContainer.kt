@@ -125,10 +125,15 @@ class DependencyContainer(private val context: Context) {
             if (settings.serverUrl.isNotBlank() && settings.serverUrl != Settings.DEFAULT_SERVER_URL) {
                 currentBaseUrl = settings.serverUrl
             }
+            // Ensure DataStore file exists by writing defaults on first launch
+            if (settings.serverUrl == Settings.DEFAULT_SERVER_URL) {
+                settingsRepository.saveSettings(settings)
+            }
         } catch (_: Exception) {
             // Use default/BuildConfig URL on first launch
         }
-        // Trigger API creation
+        // Trigger API creation with the loaded URL
+        _api = null // Force recreation with correct URL
         api
     }
 

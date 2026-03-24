@@ -52,10 +52,24 @@ fun LoginScreen(
     var errorMessage by remember { mutableStateOf<String?>(null) }
 
     val container = DependencyContainer.getInstance(androidx.compose.ui.platform.LocalContext.current)
+    val settings by container.settingsRepository.settingsFlow.collectAsStateWithLifecycle(
+        initialValue = com.catalogizer.androidtv.data.models.Settings(
+            enableNotifications = true, enableAutoPlay = false, streamingQuality = "Auto",
+            enableSubtitles = true, subtitleLanguage = "English"
+        )
+    )
     var serverUrl by remember { mutableStateOf(container.getServerUrl()) }
     var isDiscovering by remember { mutableStateOf(false) }
     var discoveredServers by remember { mutableStateOf<List<ServerEntry>>(emptyList()) }
     val coroutineScope = rememberCoroutineScope()
+
+    // Sync server URL from DataStore when settings load
+    LaunchedEffect(settings.serverUrl) {
+        if (settings.serverUrl.isNotBlank() && settings.serverUrl != serverUrl) {
+            serverUrl = settings.serverUrl
+            container.switchServer(settings.serverUrl)
+        }
+    }
 
     val usernameFocusRequester = remember { FocusRequester() }
     val passwordFocusRequester = remember { FocusRequester() }

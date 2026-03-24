@@ -17,6 +17,7 @@ import com.catalogizer.androidtv.ui.screens.search.SearchViewModel
 import com.catalogizer.androidtv.ui.viewmodel.AuthViewModel
 import com.catalogizer.androidtv.ui.viewmodel.HomeViewModel
 import com.catalogizer.androidtv.ui.viewmodel.MainViewModel
+import kotlinx.coroutines.launch
 
 class MainActivity : ComponentActivity() {
 
@@ -29,8 +30,18 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-        // Initialize ViewModels
+        // Handle server URL from intent extra (for ADB testing)
         val dependencyContainer = (application as CatalogizerTVApplication).dependencyContainer
+        intent.getStringExtra("server_url")?.let { url ->
+            if (url.isNotBlank()) {
+                dependencyContainer.switchServer(url)
+                kotlinx.coroutines.CoroutineScope(kotlinx.coroutines.Dispatchers.IO).launch {
+                    dependencyContainer.settingsRepository.updateServerUrl(url)
+                }
+            }
+        }
+
+        // Initialize ViewModels
         authViewModel = dependencyContainer.createAuthViewModel()
         mainViewModel = dependencyContainer.createMainViewModel()
         homeViewModel = dependencyContainer.createHomeViewModel()
