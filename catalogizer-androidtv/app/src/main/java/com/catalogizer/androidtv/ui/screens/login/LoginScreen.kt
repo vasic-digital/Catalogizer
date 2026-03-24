@@ -98,30 +98,36 @@ fun LoginScreen(
     ) {
         Column(
             horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.spacedBy(16.dp),
-            modifier = Modifier.padding(48.dp)
+            verticalArrangement = Arrangement.spacedBy(20.dp),
+            modifier = Modifier.padding(horizontal = 64.dp, vertical = 48.dp)
         ) {
+            // App branding
             Text(
-                text = "Welcome to Catalogizer TV",
-                style = androidx.tv.material3.MaterialTheme.typography.headlineLarge
+                text = "Catalogizer",
+                style = MaterialTheme.typography.displaySmall
             )
 
+            Spacer(modifier = Modifier.height(4.dp))
+
             Text(
-                text = "Please enter your credentials",
-                style = androidx.tv.material3.MaterialTheme.typography.bodyLarge
+                text = "Sign in to access your media collection",
+                style = MaterialTheme.typography.bodyLarge,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
             )
 
-            // ─── Server URL section ─────────────────────────────────────
+            // ─── Server URL section (TV-sized: 600dp wide) ────────────
+            Text(
+                text = "Server",
+                style = MaterialTheme.typography.titleSmall
+            )
             Row(
                 verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
-                modifier = Modifier.width(400.dp)
+                horizontalArrangement = Arrangement.spacedBy(12.dp),
+                modifier = Modifier.width(600.dp)
             ) {
                 TextField(
                     value = serverUrl,
-                    onValueChange = { newUrl ->
-                        serverUrl = newUrl
-                    },
+                    onValueChange = { newUrl -> serverUrl = newUrl },
                     label = { Text("Server URL") },
                     modifier = Modifier.weight(1f).focusable(),
                     singleLine = true,
@@ -129,15 +135,19 @@ fun LoginScreen(
                     trailingIcon = {
                         if (isDiscovering) {
                             CircularProgressIndicator(
-                                modifier = Modifier.size(20.dp),
+                                modifier = Modifier.size(24.dp),
                                 strokeWidth = 2.dp
                             )
                         }
                     }
                 )
-
+            }
+            Row(
+                horizontalArrangement = Arrangement.spacedBy(12.dp),
+                modifier = Modifier.width(600.dp)
+            ) {
                 // Discover button
-                IconButton(
+                Button(
                     onClick = {
                         coroutineScope.launch {
                             isDiscovering = true
@@ -154,13 +164,16 @@ fun LoginScreen(
                             isDiscovering = false
                         }
                     },
+                    modifier = Modifier.weight(1f),
                     enabled = !isDiscovering && !isLoading
                 ) {
-                    Icon(Icons.Default.Search, contentDescription = "Discover servers")
+                    Icon(Icons.Default.Search, contentDescription = null, modifier = Modifier.size(20.dp))
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text("Discover")
                 }
 
                 // Apply server URL button
-                IconButton(
+                Button(
                     onClick = {
                         if (serverUrl.isNotBlank()) {
                             container.switchServer(serverUrl)
@@ -173,9 +186,12 @@ fun LoginScreen(
                             errorMessage = null
                         }
                     },
+                    modifier = Modifier.weight(1f),
                     enabled = serverUrl.isNotBlank() && !isLoading
                 ) {
-                    Icon(Icons.Default.Settings, contentDescription = "Apply server")
+                    Icon(Icons.Default.Settings, contentDescription = null, modifier = Modifier.size(20.dp))
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text("Connect")
                 }
             }
 
@@ -196,7 +212,7 @@ fun LoginScreen(
                             }
                             discoveredServers = emptyList()
                         },
-                        modifier = Modifier.width(400.dp)
+                        modifier = Modifier.width(600.dp)
                     ) {
                         Row(
                             modifier = Modifier.fillMaxWidth(),
@@ -285,7 +301,7 @@ fun LoginScreen(
                     keyboardController?.hide()
                     performLogin(username, password, authViewModel, { isLoading = it }, { errorMessage = it })
                 },
-                modifier = Modifier.width(400.dp),
+                modifier = Modifier.width(600.dp),
                 enabled = !isLoading && username.isNotBlank() && password.isNotBlank()
             ) {
                 if (isLoading) {
