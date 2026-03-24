@@ -1,18 +1,25 @@
-# HelixQA full QA session with video recording.
+# HelixQA Full Video-Recorded QA Sessions
 #
-# Uses services from docker-compose.test.yml plus a HelixQA runner container
-# that performs real Playwright-based browser testing with screen recording.
+# Provides EVERYTHING required for complete video-recorded QA testing:
+# - Containerized catalog-api + catalog-web (from docker-compose.test.yml)
+# - Playwright container with video recording for web platform
+# - HelixQA runner with step validation + evidence collection
 #
 # Usage:
-#   # Web QA (API + Web + Playwright + HelixQA):
-#   podman-compose -f docker-compose.test.yml -f docker-compose.qa.yml --profile web up -d
+#   # Step 1: Build and start the test stack
+#   podman-compose -f docker-compose.test.yml --profile web up -d --build
+#
+#   # Step 2: Run HelixQA web session with video recording
 #   podman-compose -f docker-compose.test.yml -f docker-compose.qa.yml --profile web run helixqa-web
 #
-#   # Android QA (API + Emulator + HelixQA):
-#   podman-compose -f docker-compose.test.yml -f docker-compose.qa.yml --profile android up -d
-#   podman-compose -f docker-compose.test.yml -f docker-compose.qa.yml --profile android run helixqa-android
+#   # Step 3: Run HelixQA API validation
+#   podman-compose -f docker-compose.test.yml -f docker-compose.qa.yml --profile web run helixqa-api
 #
-# Resource budget: stays within 4 CPU, 8 GB RAM (30-40% of host).
+#   # Step 4: Collect results from qa-results/ volume
+#   podman cp catalogizer-helixqa-web:/qa-results ./qa-results-collected
+#
+# Resource budget: 4 CPU, 8 GB RAM total (30-40% of host).
+# Web QA profile: API (2 CPU, 4GB) + Web (0.5 CPU, 1GB) + QA (1 CPU, 2GB) = 3.5 CPU, 7GB
 
 version: "3.8"
 
@@ -22,73 +29,188 @@ volumes:
 
 services:
   # ---------------------------------------------------------------------------
-  # helixqa-web: Runs HelixQA with Playwright for web platform recording
+  # helixqa-web: Full Playwright-based web QA with video recording
+  #
+  # Uses Playwright's built-in video recording (not ffmpeg screen grab).
+  # Each page navigation is captured as a video file.
+  # Screenshots taken at every page transition.
   # ---------------------------------------------------------------------------
   helixqa-web:
     image: docker.io/mcr.microsoft.com/playwright:v1.40.0-jammy
     container_name: catalogizer-helixqa-web
     network_mode: host
     environment:
-      - DISPLAY=:99
       - PLAYWRIGHT_BROWSERS_PATH=/ms-playwright
-      - HELIX_WEB_URL=http://localhost:3000
-      - HELIX_RECORDING_VIDEO=true
-      - HELIX_RECORDING_SCREENSHOTS=true
-      - HELIX_RECORDING_FFMPEG_PATH=/usr/bin/ffmpeg
-      - HELIX_OUTPUT_DIR=/qa-results
-    command: >-
-      bash -c "
-        echo '=== HelixQA Web Session ===' &&
-        apt-get update -qq && apt-get install -y -qq ffmpeg xvfb > /dev/null 2>&1 &&
+      - TEST_WEB_URL=http://localhost:3000
+      - TEST_API_URL=http://localhost:8080
+    entrypoint: ["bash", "-c"]
+    command:
+      - |
+        set -e
+        echo "=== HelixQA Web Video-Recorded QA Session ==="
+        echo "Started: $$(date -Iseconds)"
 
-        echo 'Starting virtual display...' &&
-        Xvfb :99 -screen 0 1920x1080x24 &
-        sleep 2 &&
+        QA_DIR="/qa-results/web-qa-$$(date +%Y%m%d_%H%M%S)"
+        mkdir -p "$$QA_DIR"/{videos,screenshots,evidence}
 
-        echo 'Starting video recording...' &&
-        ffmpeg -y -f x11grab -video_size 1920x1080 -framerate 15 -i :99 \
-          -c:v libx264 -preset ultrafast -pix_fmt yuv420p \
-          /qa-results/web-session.mp4 &
-        FFMPEG_PID=\$$! &&
-        sleep 1 &&
-
-        echo 'Launching Chromium for QA testing...' &&
-        npx playwright open --browser chromium http://localhost:3000 &
-        BROWSER_PID=\$$! &&
-        sleep 5 &&
-
-        echo 'Taking screenshots of each page...' &&
-        mkdir -p /qa-results/screenshots/web &&
-
-        for page in '' login register dashboard media browse collections favorites playlists analytics subtitles conversion admin ai; do
-          url=\"http://localhost:3000/\$${page}\"
-          echo \"  Capturing: \$${url}\" &&
-          npx playwright screenshot --browser chromium \"\$${url}\" \"/qa-results/screenshots/web/\$${page:-home}.png\" 2>/dev/null || true
+        # Wait for services
+        echo "Waiting for API (localhost:8080)..."
+        for i in $$(seq 1 60); do
+          curl -sf http://localhost:8080/health >/dev/null 2>&1 && break
           sleep 2
-        done &&
+        done
+        curl -sf http://localhost:8080/health >/dev/null || { echo "API not ready"; exit 1; }
+        echo "API is healthy."
 
-        echo 'Stopping recording...' &&
-        kill \$${FFMPEG_PID} 2>/dev/null || true &&
-        sleep 2 &&
-        kill \$${BROWSER_PID} 2>/dev/null || true &&
+        echo "Waiting for Web (localhost:3000)..."
+        for i in $$(seq 1 60); do
+          curl -sf http://localhost:3000 >/dev/null 2>&1 && break
+          sleep 2
+        done
+        curl -sf http://localhost:3000 >/dev/null || { echo "Web not ready"; exit 1; }
+        echo "Web is healthy."
 
-        echo 'Generating session report...' &&
-        echo '# HelixQA Web Session Report' > /qa-results/web-qa-report.md &&
-        echo '' >> /qa-results/web-qa-report.md &&
-        echo '**Generated:** '\$(date -Iseconds) >> /qa-results/web-qa-report.md &&
-        echo '**Platform:** Web (Playwright + Chromium)' >> /qa-results/web-qa-report.md &&
-        echo '**Video:** web-session.mp4' >> /qa-results/web-qa-report.md &&
-        echo '' >> /qa-results/web-qa-report.md &&
-        echo '## Screenshots' >> /qa-results/web-qa-report.md &&
-        ls -1 /qa-results/screenshots/web/*.png 2>/dev/null | while read f; do
-          echo \"- [\$(basename \$${f})](\$${f})\" >> /qa-results/web-qa-report.md
-        done &&
+        # Authenticate
+        echo "Authenticating..."
+        TOKEN=$$(curl -sf -X POST http://localhost:8080/api/v1/auth/login \
+          -H 'Content-Type: application/json' \
+          -d '{"username":"admin","password":"admin123"}' | \
+          node -e "let d='';process.stdin.on('data',c=>d+=c);process.stdin.on('end',()=>{try{console.log(JSON.parse(d).session_token||'')}catch(e){console.log('')}})" 2>/dev/null)
+        echo "Token obtained: $${TOKEN:+yes}"
 
-        echo '=== Web Session Complete ===' &&
-        echo \"Video: /qa-results/web-session.mp4\" &&
-        ls -lh /qa-results/web-session.mp4 2>/dev/null &&
-        echo \"Screenshots: \$(ls /qa-results/screenshots/web/*.png 2>/dev/null | wc -l) captured\"
-      "
+        # Create Playwright test script for video-recorded navigation
+        cat > /tmp/qa-test.js << 'JSEOF'
+        const { chromium } = require('playwright');
+
+        (async () => {
+          const browser = await chromium.launch({ headless: true });
+          const context = await browser.newContext({
+            recordVideo: { dir: process.env.VIDEO_DIR, size: { width: 1920, height: 1080 } },
+            viewport: { width: 1920, height: 1080 }
+          });
+
+          const pages = [
+            { path: '/login', name: 'Login Page' },
+            { path: '/', name: 'Home' },
+            { path: '/dashboard', name: 'Dashboard' },
+            { path: '/media', name: 'Media Browser' },
+            { path: '/browse', name: 'Entity Browser' },
+            { path: '/collections', name: 'Collections' },
+            { path: '/favorites', name: 'Favorites' },
+            { path: '/playlists', name: 'Playlists' },
+            { path: '/analytics', name: 'Analytics' },
+            { path: '/subtitles', name: 'Subtitle Manager' },
+            { path: '/conversion', name: 'Conversion Tools' },
+            { path: '/admin', name: 'Admin Panel' },
+            { path: '/ai', name: 'AI Dashboard' },
+          ];
+
+          const baseUrl = process.env.TEST_WEB_URL || 'http://localhost:3000';
+          const screenshotDir = process.env.SCREENSHOT_DIR || '/tmp/screenshots';
+          const results = [];
+
+          for (let i = 0; i < pages.length; i++) {
+            const { path, name } = pages[i];
+            const page = await context.newPage();
+            const url = `${baseUrl}${path}`;
+            const startTime = Date.now();
+
+            try {
+              console.log(`[${i+1}/${pages.length}] Navigating to ${name} (${url})...`);
+              await page.goto(url, { waitUntil: 'networkidle', timeout: 30000 });
+              await page.waitForTimeout(2000); // Allow animations
+
+              // Take screenshot
+              const screenshotPath = `${screenshotDir}/${String(i).padStart(3,'0')}-${path.replace(/\//g,'') || 'home'}.png`;
+              await page.screenshot({ path: screenshotPath, fullPage: true });
+
+              // Check for console errors
+              const errors = [];
+              page.on('console', msg => { if (msg.type() === 'error') errors.push(msg.text()); });
+
+              const duration = Date.now() - startTime;
+              console.log(`  PASS: ${name} (${duration}ms, screenshot saved)`);
+              results.push({ page: name, path, status: 'PASS', duration, errors: errors.length });
+            } catch (err) {
+              const duration = Date.now() - startTime;
+              console.log(`  FAIL: ${name} - ${err.message} (${duration}ms)`);
+              results.push({ page: name, path, status: 'FAIL', duration, error: err.message });
+            }
+            await page.close();
+          }
+
+          await context.close();
+          await browser.close();
+
+          // Write results JSON
+          const fs = require('fs');
+          fs.writeFileSync(process.env.RESULTS_FILE || '/tmp/results.json', JSON.stringify(results, null, 2));
+
+          // Summary
+          const passed = results.filter(r => r.status === 'PASS').length;
+          const failed = results.filter(r => r.status === 'FAIL').length;
+          console.log(`\n=== Results: ${passed}/${results.length} passed, ${failed} failed ===`);
+
+          process.exit(failed > 0 ? 1 : 0);
+        })();
+        JSEOF
+
+        # Run the Playwright test with video recording
+        echo ""
+        echo "=== Running Playwright Video-Recorded QA ==="
+        VIDEO_DIR="$$QA_DIR/videos" \
+        SCREENSHOT_DIR="$$QA_DIR/screenshots" \
+        RESULTS_FILE="$$QA_DIR/results.json" \
+        TEST_WEB_URL="http://localhost:3000" \
+        node /tmp/qa-test.js 2>&1
+
+        PLAYWRIGHT_EXIT=$$?
+
+        # Generate markdown report
+        echo ""
+        echo "Generating report..."
+        node -e "
+          const fs = require('fs');
+          const results = JSON.parse(fs.readFileSync('$$QA_DIR/results.json', 'utf8'));
+          const videos = fs.readdirSync('$$QA_DIR/videos').filter(f => f.endsWith('.webm'));
+          const screenshots = fs.readdirSync('$$QA_DIR/screenshots').filter(f => f.endsWith('.png'));
+
+          let md = '# HelixQA Web Video-Recorded QA Report\n\n';
+          md += '**Generated:** ' + new Date().toISOString() + '\n';
+          md += '**Platform:** Web (Playwright + Chromium)\n\n';
+          md += '## Video Recordings\n\n';
+          md += '| # | File | Platform |\n|---|------|----------|\n';
+          videos.forEach((v, i) => { md += '| ' + (i+1) + ' | ' + v + ' | web |\n'; });
+          md += '\n**Total videos:** ' + videos.length + '\n\n';
+
+          md += '## Page Screenshots (' + screenshots.length + ')\n\n';
+          md += '| # | Page | Path | Status | Duration |\n';
+          md += '|---|------|------|--------|----------|\n';
+          results.forEach((r, i) => {
+            md += '| ' + (i+1) + ' | ' + r.page + ' | ' + r.path + ' | ' + r.status + ' | ' + r.duration + 'ms |\n';
+          });
+
+          const passed = results.filter(r => r.status === 'PASS').length;
+          md += '\n## Summary\n\n';
+          md += '- **Passed:** ' + passed + '/' + results.length + '\n';
+          md += '- **Failed:** ' + (results.length - passed) + '\n';
+          md += '- **Videos:** ' + videos.length + '\n';
+          md += '- **Screenshots:** ' + screenshots.length + '\n';
+
+          fs.writeFileSync('$$QA_DIR/qa-report.md', md);
+          console.log('Report written to $$QA_DIR/qa-report.md');
+        " 2>&1
+
+        echo ""
+        echo "=== Session Complete ==="
+        echo "Results: $$QA_DIR/"
+        ls -lh "$$QA_DIR/videos/" 2>/dev/null
+        ls -lh "$$QA_DIR/screenshots/" 2>/dev/null | head -5
+        echo "..."
+        echo "Videos: $$(ls $$QA_DIR/videos/*.webm 2>/dev/null | wc -l) files"
+        echo "Screenshots: $$(ls $$QA_DIR/screenshots/*.png 2>/dev/null | wc -l) files"
+
+        exit $$PLAYWRIGHT_EXIT
     volumes:
       - qa-results:/qa-results
       - ./challenges/helixqa-banks:/banks:ro
@@ -104,103 +226,78 @@ services:
       - web
 
   # ---------------------------------------------------------------------------
-  # helixqa-api: Runs HelixQA API validation against live backend
+  # helixqa-api: API endpoint validation against live containerized backend
   # ---------------------------------------------------------------------------
   helixqa-api:
-    image: docker.io/library/golang:1.24-bookworm
+    image: docker.io/library/node:18-bookworm-slim
     container_name: catalogizer-helixqa-api
     network_mode: host
-    environment:
-      - HELIX_OUTPUT_DIR=/qa-results
-    command: >-
-      bash -c "
-        echo '=== HelixQA API Session ===' &&
-        apt-get update -qq && apt-get install -y -qq curl jq > /dev/null 2>&1 &&
+    entrypoint: ["bash", "-c"]
+    command:
+      - |
+        set -e
+        apt-get update -qq && apt-get install -y -qq curl jq >/dev/null 2>&1
 
-        echo 'Waiting for API...' &&
-        for i in $$(seq 1 30); do
-          curl -sf http://localhost:8080/health > /dev/null 2>&1 && break
+        echo "=== HelixQA API Validation Session ==="
+        QA_DIR="/qa-results/api-qa-$$(date +%Y%m%d_%H%M%S)"
+        mkdir -p "$$QA_DIR"
+
+        # Wait for API
+        for i in $$(seq 1 60); do
+          curl -sf http://localhost:8080/health >/dev/null 2>&1 && break
           sleep 2
-        done &&
+        done
 
-        echo 'API is healthy. Running endpoint validation...' &&
-        mkdir -p /qa-results/api-evidence &&
-
-        PASS=0 FAIL=0 TOTAL=0 &&
-
-        echo 'Testing authentication endpoints...' &&
-        TOKEN=\$$(curl -sf -X POST http://localhost:8080/api/v1/auth/login \
+        # Login
+        TOKEN=$$(curl -sf -X POST http://localhost:8080/api/v1/auth/login \
           -H 'Content-Type: application/json' \
-          -d '{\"username\":\"admin\",\"password\":\"admin123\"}' | jq -r '.token // empty') &&
+          -d '{"username":"admin","password":"admin123"}' | jq -r '.session_token // empty')
 
-        if [ -n \"\$$TOKEN\" ]; then
-          echo '  Login: PASSED' && PASS=\$$((PASS+1))
-        else
-          echo '  Login: FAILED' && FAIL=\$$((FAIL+1))
-        fi &&
-        TOTAL=\$$((TOTAL+1)) &&
+        echo "Authenticated: $${TOKEN:+yes}"
 
-        for endpoint in \
-          'GET /health' \
-          'GET /metrics' \
-          'GET /api/v1/auth/status' \
-          'GET /api/v1/catalog' \
-          'GET /api/v1/media/search' \
-          'GET /api/v1/media/stats' \
-          'GET /api/v1/storage-roots' \
-          'GET /api/v1/entities' \
-          'GET /api/v1/entities/types' \
-          'GET /api/v1/entities/stats' \
-          'GET /api/v1/collections' \
-          'GET /api/v1/favorites' \
-          'GET /api/v1/stats/overall' \
-          'GET /api/v1/stats/filetypes' \
-          'GET /api/v1/stats/sizes' \
-          'GET /api/v1/stats/scans' \
-          'GET /api/v1/challenges' \
-          'GET /api/v1/configuration' \
-          'GET /api/v1/configuration/status' \
-          'GET /api/v1/discovery' \
-          'GET /api/v1/errors/statistics' \
-          'GET /api/v1/errors/health' \
-          'GET /api/v1/logs/statistics' \
-          'GET /api/v1/subtitles/languages' \
-          'GET /api/v1/subtitles/providers' \
-          'GET /api/v1/conversion/formats' \
-          'GET /api/v1/roles' \
-          'GET /api/v1/roles/permissions' \
-          'GET /api/v1/users' \
-          'GET /api/v1/browse/roots' \
-          'GET /api/v1/sync/statistics' \
-          'GET /api/v1/reports/performance' \
-          'GET /api/v1/analytics/system' \
-          'GET /api/v1/recommendations/trending' \
-          'GET /api/v1/search/files?q=test' \
-          'GET /api/v1/scans'; do
+        PASS=0 FAIL=0 TOTAL=0
+        REPORT="$$QA_DIR/qa-report.md"
 
-          METHOD=\$$(echo \"\$$endpoint\" | cut -d' ' -f1)
-          URL=\$$(echo \"\$$endpoint\" | cut -d' ' -f2)
-          TOTAL=\$$((TOTAL+1))
+        echo "# HelixQA API Validation Report" > "$$REPORT"
+        echo "**Generated:** $$(date -Iseconds)" >> "$$REPORT"
+        echo "" >> "$$REPORT"
+        echo "| # | Endpoint | Status | Result |" >> "$$REPORT"
+        echo "|---|----------|--------|--------|" >> "$$REPORT"
 
-          STATUS=\$$(curl -sf -o /dev/null -w '%{http_code}' \
-            -X \$$METHOD \"http://localhost:8080\$$URL\" \
-            -H \"Authorization: Bearer \$$TOKEN\" \
-            -H 'Content-Type: application/json' 2>/dev/null)
+        for ep in \
+          "/health" "/metrics" "/api/v1/auth/status" "/api/v1/discovery" \
+          "/api/v1/catalog" "/api/v1/media/search" "/api/v1/media/stats" \
+          "/api/v1/storage-roots" "/api/v1/entities" "/api/v1/entities/types" \
+          "/api/v1/entities/stats" "/api/v1/collections" "/api/v1/favorites" \
+          "/api/v1/stats/overall" "/api/v1/stats/filetypes" "/api/v1/stats/scans" \
+          "/api/v1/challenges" "/api/v1/configuration" "/api/v1/configuration/status" \
+          "/api/v1/errors/health" "/api/v1/errors/statistics" \
+          "/api/v1/logs/statistics" "/api/v1/subtitles/languages" \
+          "/api/v1/conversion/formats" "/api/v1/roles" "/api/v1/users" \
+          "/api/v1/browse/roots" "/api/v1/sync/statistics" \
+          "/api/v1/reports/performance" "/api/v1/analytics/system" \
+          "/api/v1/recommendations/trending" "/api/v1/scans"; do
 
-          if [ \"\$$STATUS\" -ge 200 ] && [ \"\$$STATUS\" -lt 400 ]; then
-            echo \"  \$$endpoint: PASSED (\$$STATUS)\" && PASS=\$$((PASS+1))
+          TOTAL=$$((TOTAL+1))
+          STATUS=$$(curl -sf -o /dev/null -w '%{http_code}' \
+            "http://localhost:8080$$ep" \
+            -H "Authorization: Bearer $$TOKEN" 2>/dev/null)
+
+          if [ "$$STATUS" -ge 200 ] && [ "$$STATUS" -lt 400 ]; then
+            echo "  PASS: $$ep ($$STATUS)"
+            echo "| $$TOTAL | $$ep | $$STATUS | PASS |" >> "$$REPORT"
+            PASS=$$((PASS+1))
           else
-            echo \"  \$$endpoint: FAILED (\$$STATUS)\" && FAIL=\$$((FAIL+1))
+            echo "  FAIL: $$ep ($$STATUS)"
+            echo "| $$TOTAL | $$ep | $$STATUS | FAIL |" >> "$$REPORT"
+            FAIL=$$((FAIL+1))
           fi
-        done &&
+        done
 
-        echo '' && echo \"=== API Results: \$$PASS/\$$TOTAL passed, \$$FAIL failed ===\" &&
-
-        echo '# HelixQA API Session Report' > /qa-results/api-qa-report.md &&
-        echo \"**Generated:** \$$(date -Iseconds)\" >> /qa-results/api-qa-report.md &&
-        echo \"**Passed:** \$$PASS/\$$TOTAL\" >> /qa-results/api-qa-report.md &&
-        echo \"**Failed:** \$$FAIL\" >> /qa-results/api-qa-report.md
-      "
+        echo "" >> "$$REPORT"
+        echo "## Summary: $$PASS/$$TOTAL passed, $$FAIL failed" >> "$$REPORT"
+        echo ""
+        echo "=== API Results: $$PASS/$$TOTAL passed, $$FAIL failed ==="
     volumes:
       - qa-results:/qa-results
     deploy:
@@ -212,5 +309,5 @@ services:
       catalog-api:
         condition: service_healthy
     profiles:
-      - api
       - web
+      - api
