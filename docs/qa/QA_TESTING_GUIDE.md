@@ -74,13 +74,15 @@ Run the full test suite with:
 
 ## 🧪 Test Coverage
 
-### Current Coverage Metrics
+### Unit / Integration Test Metrics
 
-The project tracks test coverage for:
-
-- **Go API:** `go test -coverprofile=coverage.out ./...`
-- **Frontend (catalog-web):** 80% minimum threshold enforced
-- **Database:** Migration and schema validation tests
+| Component | Tests | Files | Status |
+|-----------|-------|-------|--------|
+| Go API (catalog-api) | 38 packages | 275 test files | All pass |
+| Frontend (catalog-web) | 1811 tests | 105 test files | All pass |
+| Desktop (catalogizer-desktop) | 189 tests | 15 test files | All pass |
+| Installer Wizard | 178 tests | 19 test files | All pass |
+| API Client (catalogizer-api-client) | 240 tests | 7 test files | All pass |
 
 View coverage reports:
 ```bash
@@ -92,13 +94,31 @@ go tool cover -html=coverage.out
 cd catalog-web && npm run test:coverage
 ```
 
-### Coverage Goals
+### HelixQA Cross-Platform Test Banks (517 Test Cases)
 
-| Component | Current | Target |
-|-----------|---------|--------|
-| Go API | Measured | 70%+ |
-| Frontend | 80%+ | 80%+ |
-| Integration | Growing | 60%+ |
+Comprehensive end-to-end test banks in `challenges/helixqa-banks/`:
+
+| Test Bank | Cases | Platform | Coverage |
+|-----------|-------|----------|----------|
+| catalogizer-api-comprehensive.json | 196 | API | All 139 endpoints + 12 edge cases (SQL injection, XSS, path traversal, token expiry, Unicode, pagination) |
+| catalogizer-web-comprehensive.json | 167 | Web | All 13 routes, responsive (375px/768px/1920px), dark mode, a11y, keyboard nav, empty states, error boundary |
+| catalogizer-android-comprehensive.json | 45 | Android | Launch, auth, home, search, detail, player, offline, navigation, edge cases |
+| catalogizer-androidtv-comprehensive.json | 36 | Android TV | D-pad nav, focus management, carousel, remote control, media player |
+| catalogizer-desktop-comprehensive.json | 36 | Desktop | IPC commands, file picker, settings, offline, resize, config persistence |
+| catalogizer-wizard-comprehensive.json | 37 | Desktop | All 11 wizard steps, SMB/FTP/NFS/WebDAV/Local config, network scan, validation |
+
+Run HelixQA sessions:
+```bash
+# Start services first
+cd catalog-api && go run main.go &
+cd catalog-web && npm run dev &
+
+# Run specific platform sessions
+./HelixQA/helixqa run -platform web -banks challenges/helixqa-banks/catalogizer-web-comprehensive.json -browser-url http://localhost:3000 -output qa-results/web-session -record -validate
+./HelixQA/helixqa run -platform web -banks challenges/helixqa-banks/catalogizer-api-comprehensive.json -browser-url http://localhost:8080 -output qa-results/api-session -record -validate
+./HelixQA/helixqa run -platform android -banks challenges/helixqa-banks/catalogizer-android-comprehensive.json -output qa-results/android-session -record -validate
+./HelixQA/helixqa run -platform desktop -banks challenges/helixqa-banks/catalogizer-desktop-comprehensive.json -output qa-results/desktop-session -record -validate
+```
 
 ## 🔧 Component-Specific Testing
 
