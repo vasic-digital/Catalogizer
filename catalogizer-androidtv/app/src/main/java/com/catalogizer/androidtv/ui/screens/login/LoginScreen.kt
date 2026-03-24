@@ -84,7 +84,7 @@ fun LoginScreen(
         if (settings.autoDiscovery) {
             isDiscovering = true
             try {
-                val results = container.discoveryService.discoverViaMulticast(3000L)
+                val results = container.discoveryService.discoverAll(8000L)
                 discoveredServers = results
                 if (results.size == 1) {
                     val server = results.first()

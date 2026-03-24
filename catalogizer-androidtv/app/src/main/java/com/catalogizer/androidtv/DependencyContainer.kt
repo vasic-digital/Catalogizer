@@ -36,7 +36,7 @@ class DependencyContainer(private val context: Context) {
     }
 
     val discoveryService: NetworkDiscoveryService by lazy {
-        NetworkDiscoveryService()
+        NetworkDiscoveryService(context)
     }
 
     val authRepository: AuthRepository by lazy {

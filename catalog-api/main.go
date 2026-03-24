@@ -29,6 +29,7 @@ import (
 	"math/big"
 	"net"
 	"net/http"
+	"strings"
 	"os"
 	"os/signal"
 	"path/filepath"
@@ -95,15 +96,45 @@ func writePortFile(port int) error {
 	return os.WriteFile(portFile, []byte(data), 0644)
 }
 
-// getOutboundIP returns the preferred outbound IP of this machine.
+// getOutboundIP returns the preferred LAN IP of this machine.
+// Prefers 192.168.x.x or 172.x.x.x over 10.x.x.x (VPN) interfaces.
 func getOutboundIP() string {
+	ifaces, err := net.Interfaces()
+	if err == nil {
+		for _, iface := range ifaces {
+			if iface.Flags&net.FlagUp == 0 || iface.Flags&net.FlagLoopback != 0 {
+				continue
+			}
+			addrs, err := iface.Addrs()
+			if err != nil {
+				continue
+			}
+			for _, addr := range addrs {
+				var ip net.IP
+				switch v := addr.(type) {
+				case *net.IPNet:
+					ip = v.IP
+				case *net.IPAddr:
+					ip = v.IP
+				}
+				if ip == nil || ip.IsLoopback() || ip.To4() == nil {
+					continue
+				}
+				// Skip VPN/tunnel interfaces
+				if strings.HasPrefix(iface.Name, "wg") || strings.HasPrefix(iface.Name, "tun") || strings.HasPrefix(iface.Name, "vpn") {
+					continue
+				}
+				return ip.String()
+			}
+		}
+	}
+	// Fallback: use outbound connection detection
 	conn, err := net.Dial("udp", "8.8.8.8:80")
 	if err != nil {
 		return "127.0.0.1"
 	}
 	defer conn.Close()
-	localAddr := conn.LocalAddr().(*net.UDPAddr)
-	return localAddr.IP.String()
+	return conn.LocalAddr().(*net.UDPAddr).IP.String()
 }
 
 // getOrCreateSelfSignedCert loads a cached TLS certificate or generates a new one.
