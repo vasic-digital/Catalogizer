@@ -2,6 +2,7 @@ package com.catalogizer.androidtv.data.remote
 
 import com.catalogizer.androidtv.data.models.MediaItem
 import com.catalogizer.androidtv.data.models.MediaSearchRequest
+import com.catalogizer.androidtv.data.models.MediaSearchResponse
 import retrofit2.Response
 import retrofit2.http.*
 
@@ -18,8 +19,8 @@ interface CatalogizerApi {
     @GET("api/v1/catalog")
     suspend fun getCatalog(): Response<List<String>>
 
-    @GET("api/v1/search")
-    suspend fun searchMedia(@QueryMap params: Map<String, String>): Response<List<MediaItem>>
+    @GET("api/v1/media/search")
+    suspend fun searchMedia(@QueryMap params: Map<String, String>): Response<MediaSearchResponse>
 
     @GET("api/v1/media/{id}")
     suspend fun getMediaById(@Path("id") id: Long): Response<MediaItem>
@@ -40,11 +41,22 @@ interface CatalogizerApi {
 
 // Auth response models
 @kotlinx.serialization.Serializable
-data class LoginResponse(
-    val token: String,
-    @kotlinx.serialization.SerialName("user_id")
-    val userId: Long,
+data class LoginUser(
+    val id: Long,
     val username: String,
-    @kotlinx.serialization.SerialName("expires_at")
-    val expiresAt: String? = null
+    val email: String? = null,
+    val display_name: String? = null
 )
+
+data class LoginResponse(
+    val user: LoginUser,
+    val session_token: String,
+    val refresh_token: String? = null,
+    val expires_at: String? = null
+) {
+    // Convenience properties for backward compatibility
+    val token: String get() = session_token
+    val userId: Long get() = user.id
+    val username: String get() = user.username
+    val expiresAt: String? get() = expires_at
+}

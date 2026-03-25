@@ -44,6 +44,7 @@ class AuthInterceptor(private val authRepository: AuthRepository) : Interceptor 
 
         // Add authorization header if we have a token (synchronous StateFlow access)
         val authState = authRepository.authState.value
+        android.util.Log.d("AuthInterceptor", "isAuthenticated=${authState.isAuthenticated}, hasToken=${authState.token != null}, url=${originalRequest.url.encodedPath}")
         val newRequest = if (authState.isAuthenticated && authState.token != null) {
             originalRequest.newBuilder()
                 .addHeader("Authorization", "Bearer ${authState.token}")

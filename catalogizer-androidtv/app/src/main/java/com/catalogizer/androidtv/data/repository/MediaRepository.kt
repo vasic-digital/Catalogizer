@@ -15,16 +15,20 @@ class MediaRepository(private val context: Context, private val api: Catalogizer
     suspend fun searchMedia(request: MediaSearchRequest): Flow<List<MediaItem>> {
         try {
             val params = mutableMapOf<String, String>()
-            request.query?.let { params["q"] = it }
+            request.query?.let { params["query"] = it }
             request.limit?.let { params["limit"] = it.toString() }
             request.offset?.let { params["offset"] = it.toString() }
             request.mediaType?.let { params["media_type"] = it }
+            request.sortBy?.let { params["sort_by"] = it }
+            request.sortOrder?.let { params["sort_order"] = it }
 
             val response = api.searchMedia(params)
             if (response.isSuccessful) {
-                val mediaItems = response.body() ?: emptyList()
+                val searchResponse = response.body()
+                val mediaItems = searchResponse?.items ?: emptyList()
                 return flowOf(mediaItems)
             } else {
+                android.util.Log.w("MediaRepo", "Search failed: ${response.code()} ${response.message()}")
                 return flowOf(emptyList())
             }
         } catch (e: Exception) {

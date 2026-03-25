@@ -88,9 +88,8 @@ class DependencyContainer(private val context: Context) {
             return _api!!
         }
 
-    val mediaRepository: MediaRepository by lazy {
-        MediaRepository(context, api)
-    }
+    val mediaRepository: MediaRepository
+        get() = MediaRepository(context, api)
 
     // ViewModels
     fun createAuthViewModel(): AuthViewModel = AuthViewModel(authRepository)
