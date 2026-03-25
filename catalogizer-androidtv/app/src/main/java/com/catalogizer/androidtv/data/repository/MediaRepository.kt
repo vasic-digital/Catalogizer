@@ -11,7 +11,27 @@ import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.first
 
 class MediaRepository(private val context: Context, private val api: CatalogizerApi) {
-    
+
+    /**
+     * Browse entities by type (movie, tv_show, etc.) — includes external metadata with cover URLs.
+     */
+    suspend fun browseEntities(type: String, limit: Int = 20, sortBy: String = "title", sortOrder: String = "asc"): Flow<List<MediaItem>> {
+        try {
+            val params = mapOf("limit" to limit.toString(), "sort_by" to sortBy, "sort_order" to sortOrder)
+            val response = api.browseEntities(type, params)
+            if (response.isSuccessful) {
+                val items = response.body()?.items ?: emptyList()
+                return flowOf(items)
+            } else {
+                android.util.Log.w("MediaRepo", "Browse entities failed: ${response.code()}")
+                return flowOf(emptyList())
+            }
+        } catch (e: Exception) {
+            android.util.Log.w("MediaRepo", "Browse entities error: ${e.message}")
+            return flowOf(emptyList())
+        }
+    }
+
     suspend fun searchMedia(request: MediaSearchRequest): Flow<List<MediaItem>> {
         try {
             val params = mutableMapOf<String, String>()

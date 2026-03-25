@@ -22,6 +22,12 @@ interface CatalogizerApi {
     @GET("api/v1/media/search")
     suspend fun searchMedia(@QueryMap params: Map<String, String>): Response<MediaSearchResponse>
 
+    @GET("api/v1/entities/browse/{type}")
+    suspend fun browseEntities(@Path("type") type: String, @QueryMap params: Map<String, String>): Response<MediaSearchResponse>
+
+    @GET("api/v1/entities/{id}")
+    suspend fun getEntityById(@Path("id") id: Long): Response<MediaItem>
+
     @GET("api/v1/media/{id}")
     suspend fun getMediaById(@Path("id") id: Long): Response<MediaItem>
 

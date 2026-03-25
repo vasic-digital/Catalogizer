@@ -300,8 +300,28 @@ func (h *MediaEntityHandler) BrowseByType(c *gin.Context) {
 		return
 	}
 
+	// Enrich items with cover_url from external_metadata
+	jsonItems := itemsToJSON(items)
+	if h.db != nil {
+		for _, itemMap := range jsonItems {
+			id, _ := itemMap["id"].(int64)
+			if id > 0 {
+				var coverURL *string
+				_ = h.db.QueryRowContext(ctx,
+					`SELECT cover_url FROM external_metadata WHERE media_item_id = ? AND cover_url IS NOT NULL LIMIT 1`,
+					id).Scan(&coverURL)
+				if coverURL != nil && *coverURL != "" {
+					itemMap["cover_url"] = *coverURL
+					itemMap["external_metadata"] = []map[string]interface{}{
+						{"cover_url": *coverURL, "provider": "tmdb"},
+					}
+				}
+			}
+		}
+	}
+
 	c.JSON(http.StatusOK, gin.H{
-		"items":  itemsToJSON(items),
+		"items":  jsonItems,
 		"total":  total,
 		"type":   typeName,
 		"limit":  limit,

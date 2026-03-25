@@ -97,14 +97,8 @@ class HomeViewModel(
 
     private suspend fun loadMovies(): List<MediaItem> {
         return try {
-            mediaRepository.searchMedia(
-                MediaSearchRequest(
-                    mediaType = MediaType.MOVIE.value,
-                    sortBy = "rating",
-                    sortOrder = "desc",
-                    limit = 20
-                )
-            ).first()
+            // Use entity browse to get TMDB poster URLs
+            mediaRepository.browseEntities("movie", limit = 20, sortBy = "rating", sortOrder = "desc").first()
         } catch (e: Exception) {
             emptyList()
         }
@@ -112,14 +106,7 @@ class HomeViewModel(
 
     private suspend fun loadTVShows(): List<MediaItem> {
         return try {
-            mediaRepository.searchMedia(
-                MediaSearchRequest(
-                    mediaType = MediaType.TV_SHOW.value,
-                    sortBy = "rating",
-                    sortOrder = "desc",
-                    limit = 20
-                )
-            ).first()
+            mediaRepository.browseEntities("tv_show", limit = 20, sortBy = "rating", sortOrder = "desc").first()
         } catch (e: Exception) {
             emptyList()
         }
