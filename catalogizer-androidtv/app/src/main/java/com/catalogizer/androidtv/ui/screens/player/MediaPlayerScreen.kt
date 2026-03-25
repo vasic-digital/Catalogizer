@@ -24,7 +24,7 @@ import kotlinx.coroutines.launch
 @Suppress("UnsafeOptInUsageError")
 fun MediaPlayerScreen(
     mediaId: Long,
-    mediaUrl: String = "", // URL to media file
+    mediaUrl: String = "",
     mediaTitle: String = "Media $mediaId",
     onNavigateBack: () -> Unit
 ) {
@@ -34,20 +34,49 @@ fun MediaPlayerScreen(
     var isPlaying by remember { mutableStateOf(false) }
     var currentPosition by remember { mutableStateOf(0L) }
     var duration by remember { mutableStateOf(0L) }
+    var resolvedUrl by remember { mutableStateOf(mediaUrl) }
+    var streamError by remember { mutableStateOf<String?>(null) }
 
-    // Initialize ExoPlayer with proper lifecycle management
-    DisposableEffect(mediaUrl) {
+    // Fetch stream URL from entity endpoint if not provided
+    LaunchedEffect(mediaId) {
+        if (resolvedUrl.isEmpty()) {
+            try {
+                val container = com.catalogizer.androidtv.DependencyContainer.getInstance(context)
+                val baseUrl = container.getServerUrl().trimEnd('/')
+                // Call /api/v1/entities/:id/stream to get the stream URL
+                val response = container.api.getEntityStream(mediaId)
+                if (response.isSuccessful) {
+                    val body = response.body()
+                    val streamPath = body?.get("stream_url")?.asString
+                    if (streamPath != null) {
+                        resolvedUrl = if (streamPath.startsWith("/")) "$baseUrl$streamPath" else streamPath
+                        android.util.Log.d("Player", "Stream URL resolved: $resolvedUrl")
+                    } else {
+                        streamError = "No stream URL in response"
+                    }
+                } else {
+                    streamError = "Stream unavailable (${response.code()})"
+                }
+            } catch (e: Exception) {
+                streamError = "Failed to get stream: ${e.message}"
+                android.util.Log.e("Player", "Stream fetch error", e)
+            }
+        }
+    }
+
+    // Initialize ExoPlayer when URL is resolved
+    DisposableEffect(resolvedUrl) {
         var player: ExoPlayer? = null
-        if (mediaUrl.isNotEmpty()) {
+        if (resolvedUrl.isNotEmpty()) {
             try {
                 player = ExoPlayer.Builder(context).build().apply {
-                    setMediaItem(MediaItem.fromUri(mediaUrl))
+                    setMediaItem(MediaItem.fromUri(resolvedUrl))
                     prepare()
                     playWhenReady = true
                 }
                 exoPlayer = player
             } catch (e: Exception) {
-                // Handle error
+                streamError = "Player error: ${e.message}"
             }
         }
         onDispose {
@@ -143,19 +172,27 @@ fun MediaPlayerScreen(
                 horizontalAlignment = Alignment.CenterHorizontally,
                 verticalArrangement = Arrangement.Center
             ) {
-                if (mediaUrl.isEmpty()) {
+                if (streamError != null) {
                     Text(
-                        text = "Media URL not available",
-                        style = MaterialTheme.typography.headlineMedium
+                        text = streamError ?: "Playback unavailable",
+                        style = MaterialTheme.typography.headlineSmall
                     )
+                    Spacer(modifier = Modifier.height(8.dp))
                     Text(
                         text = "Media ID: $mediaId",
+                        style = MaterialTheme.typography.bodyLarge
+                    )
+                } else if (resolvedUrl.isEmpty()) {
+                    CircularProgressIndicator()
+                    Spacer(modifier = Modifier.height(8.dp))
+                    Text(
+                        text = "Loading stream...",
                         style = MaterialTheme.typography.bodyLarge
                     )
                 } else {
                     CircularProgressIndicator()
                     Text(
-                        text = "Loading media...",
+                        text = "Buffering...",
                         style = MaterialTheme.typography.bodyLarge
                     )
                 }

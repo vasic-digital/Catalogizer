@@ -28,6 +28,9 @@ interface CatalogizerApi {
     @GET("api/v1/entities/{id}")
     suspend fun getEntityById(@Path("id") id: Long): Response<MediaItem>
 
+    @GET("api/v1/entities/{id}/stream")
+    suspend fun getEntityStream(@Path("id") id: Long): Response<com.google.gson.JsonObject>
+
     @GET("api/v1/media/{id}")
     suspend fun getMediaById(@Path("id") id: Long): Response<MediaItem>
 
