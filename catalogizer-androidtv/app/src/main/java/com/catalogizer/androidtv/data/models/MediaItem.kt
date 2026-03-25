@@ -71,13 +71,13 @@ data class MediaItem(
 @Parcelize
 @Serializable
 data class ExternalMetadata(
-    val id: Long,
+    val id: Long = 0,
     @com.google.gson.annotations.SerializedName("media_id")
-    val mediaId: Long,
-    val provider: String,
+    val mediaId: Long = 0,
+    val provider: String = "",
     @com.google.gson.annotations.SerializedName("external_id")
-    val externalId: String,
-    val title: String,
+    val externalId: String = "",
+    val title: String = "",
     val description: String? = null,
     val year: Int? = null,
     val rating: Double? = null,
@@ -92,7 +92,7 @@ data class ExternalMetadata(
     val crew: List<String>? = null,
     val metadata: Map<String, String>? = null,
     @com.google.gson.annotations.SerializedName("last_updated")
-    val lastUpdated: String
+    val lastUpdated: String = ""
 ) : Parcelable
 
 @Parcelize
