@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -319,6 +320,15 @@ func (h *MediaEntityHandler) BrowseByType(c *gin.Context) {
 			}
 		}
 	}
+
+	// Trigger lazy enrichment for items without metadata
+	var unenrichedIDs []int64
+	for _, item := range items {
+		if item != nil {
+			unenrichedIDs = append(unenrichedIDs, item.ID)
+		}
+	}
+	h.lazyEnrichEntities(unenrichedIDs)
 
 	c.JSON(http.StatusOK, gin.H{
 		"items":  jsonItems,
@@ -940,4 +950,57 @@ func entityDetailJSON(item *models.MediaItem, typeName string, fileCount, childr
 
 func strPtr(s string) *string {
 	return &s
+}
+
+// lazyEnrichEntities triggers background TMDB enrichment for entities without metadata.
+// Called from browse/detail handlers to populate data on first access.
+func (h *MediaEntityHandler) lazyEnrichEntities(entityIDs []int64) {
+	if h.db == nil || os.Getenv("TMDB_API_KEY") == "" {
+		return
+	}
+	go func() {
+		ctx := context.Background()
+		for _, id := range entityIDs {
+			// Check if already has metadata
+			var count int
+			_ = h.db.QueryRowContext(ctx,
+				`SELECT COUNT(*) FROM external_metadata WHERE media_item_id = ?`, id).Scan(&count)
+			if count > 0 {
+				continue // Already enriched
+			}
+			// Check cache staleness (re-enrich if older than 30 days)
+			var title string
+			var year int
+			var mediaTypeID int
+			err := h.db.QueryRowContext(ctx,
+				`SELECT title, COALESCE(year, 0), media_type_id FROM media_items WHERE id = ?`,
+				id).Scan(&title, &year, &mediaTypeID)
+			if err != nil || title == "" {
+				continue
+			}
+			result := fetchTMDBMetadata(title, year, mediaTypeID)
+			if result != nil && result.posterURL != "" {
+				meta := &models.ExternalMetadata{
+					MediaItemID: id,
+					Provider:    "tmdb",
+					ExternalID:  fmt.Sprintf("tmdb:%d", result.tmdbID),
+					CoverURL:    &result.posterURL,
+					Data:        result.overview,
+					Rating:      result.rating,
+				}
+				_ = h.extMetaRepo.Upsert(ctx, meta)
+				if result.overview != "" {
+					_, _ = h.db.ExecContext(ctx,
+						`UPDATE media_items SET description = ? WHERE id = ? AND (description IS NULL OR description = '')`,
+						result.overview, id)
+				}
+				if result.rating != nil && *result.rating > 0 {
+					_, _ = h.db.ExecContext(ctx,
+						`UPDATE media_items SET rating = ? WHERE id = ? AND (rating IS NULL OR rating = 0)`,
+						*result.rating, id)
+				}
+				time.Sleep(250 * time.Millisecond) // TMDB rate limit
+			}
+		}
+	}()
 }
