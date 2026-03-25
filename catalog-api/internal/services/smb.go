@@ -114,7 +114,7 @@ func (s *SMBService) ListFiles(hostName, path string) ([]os.FileInfo, error) {
 // StreamFile opens a remote file for reading and returns a ReadCloser that
 // streams directly from the SMB share. The caller MUST call Close() on the
 // returned reader when done; Close tears down the share mount and session.
-func (s *SMBService) StreamFile(hostName, remotePath string) (io.ReadCloser, int64, error) {
+func (s *SMBService) StreamFile(hostName, remotePath string) (*smbStreamCloser, int64, error) {
 	session, err := s.getConnection(hostName)
 	if err != nil {
 		return nil, 0, err
@@ -168,6 +168,10 @@ type smbStreamCloser struct {
 
 func (sc *smbStreamCloser) Read(p []byte) (int, error) {
 	return sc.file.Read(p)
+}
+
+func (sc *smbStreamCloser) Seek(offset int64, whence int) (int64, error) {
+	return sc.file.Seek(offset, whence)
 }
 
 func (sc *smbStreamCloser) Close() error {

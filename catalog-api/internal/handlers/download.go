@@ -74,8 +74,8 @@ func (h *DownloadHandler) DownloadFile(c *gin.Context) {
 		return
 	}
 
-	// Stream directly from SMB to HTTP response (no temp file buffering)
-	reader, size, err := h.smbService.StreamFile(fileInfo.SmbRoot, fileInfo.Path)
+	// Stream directly from SMB to HTTP response with Range support
+	reader, _, err := h.smbService.StreamFile(fileInfo.SmbRoot, fileInfo.Path)
 	if err != nil {
 		h.logger.Error("Failed to open SMB stream", zap.Error(err))
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to stream file"})
@@ -103,29 +103,19 @@ func (h *DownloadHandler) DownloadFile(c *gin.Context) {
 		}
 	}
 
-	// Set streaming headers — inline for media, attachment otherwise
+	// Set streaming headers
 	disposition := "inline"
 	if c.Query("download") == "true" {
 		disposition = "attachment"
 	}
 	c.Header("Content-Disposition", fmt.Sprintf(`%s; filename="%s"`, disposition, sanitizeContentDisposition(fileInfo.Name)))
 	c.Header("Content-Type", contentType)
-	c.Header("Content-Length", strconv.FormatInt(size, 10))
-	c.Header("Accept-Ranges", "none")
 
-	// Stream SMB data directly to HTTP response
-	chunkSize := h.chunkSize
-	if chunkSize <= 0 {
-		chunkSize = 1024 * 1024 // 1MB default
-	}
-	c.Status(http.StatusOK)
-	_, err = io.CopyBuffer(c.Writer, reader, make([]byte, chunkSize))
-	if err != nil {
-		h.logger.Error("Failed to stream file", zap.Error(err))
-		return
-	}
+	// Use http.ServeContent which handles Range requests, If-Modified-Since, etc.
+	// This is critical for video players (ExoPlayer) that need seeking support.
+	http.ServeContent(c.Writer, c.Request, fileInfo.Name, fileInfo.LastModified, reader)
 
-	h.logger.Info("File streamed successfully", zap.String("file", fileInfo.Name), zap.Int64("id", id), zap.Int64("size", size))
+	h.logger.Info("File streamed successfully", zap.String("file", fileInfo.Name), zap.Int64("id", id))
 }
 
 // @Summary Download directory as archive
