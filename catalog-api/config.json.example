@@ -14,7 +14,7 @@
     "port": 5433,
     "name": "catalogizer",
     "user": "catalogizer",
-    "password": "catalogizer_dev",
+    "password": "change_me",
     "ssl_mode": "disable",
     "path": "./data/catalogizer.db",
     "enable_wal": true,
@@ -26,11 +26,11 @@
     "conn_max_idle_time": 60
   },
   "auth": {
-    "jwt_secret": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+    "jwt_secret": "change_me_to_a_random_32_char_string",
     "jwt_expiration_hours": 24,
     "enable_auth": true,
     "admin_username": "admin",
-    "admin_password": "admin123"
+    "admin_password": "change_me"
   },
   "catalog": {
     "default_page_size": 100,
@@ -44,7 +44,7 @@
     "allowed_download_types": [
       "*"
     ],
-    "temp_dir": "/tmp/.private/milosvasic/catalog-api"
+    "temp_dir": "/tmp/.private/catalog-api"
   },
   "storage": {
     "roots": [
@@ -70,5 +70,18 @@
     "max_backups": 3,
     "max_age": 28,
     "compress": true
+  },
+  "smb": {
+    "hosts": [
+      {
+        "name": "Example NAS",
+        "host": "nas.local",
+        "port": 445,
+        "username": "your_username",
+        "password": "your_password",
+        "domain": "",
+        "share": "share_name"
+      }
+    ]
   }
 }

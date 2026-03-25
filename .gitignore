@@ -283,3 +283,6 @@ catalog-api/monitor_scan.sh
 dev.pid
 catalog-api/catalogizer-bin
 catalog-api/cache/
+
+# Runtime config with real credentials (use config.json.example as reference)
+catalog-api/config.json

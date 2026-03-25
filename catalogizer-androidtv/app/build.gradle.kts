@@ -82,6 +82,22 @@ android {
     tasks.withType<org.jetbrains.kotlin.gradle.tasks.KotlinCompile> {
         kotlinOptions {
             jvmTarget = "17"
+            freeCompilerArgs = freeCompilerArgs + listOf(
+                "-Xjvm-default=all"
+            )
+        }
+    }
+
+    // JDK 21 requires --add-opens for kapt (Room compiler)
+    kapt {
+        javacOptions {
+            option("--add-opens", "jdk.compiler/com.sun.tools.javac.api=ALL-UNNAMED")
+            option("--add-opens", "jdk.compiler/com.sun.tools.javac.code=ALL-UNNAMED")
+            option("--add-opens", "jdk.compiler/com.sun.tools.javac.comp=ALL-UNNAMED")
+            option("--add-opens", "jdk.compiler/com.sun.tools.javac.main=ALL-UNNAMED")
+            option("--add-opens", "jdk.compiler/com.sun.tools.javac.processing=ALL-UNNAMED")
+            option("--add-opens", "jdk.compiler/com.sun.tools.javac.tree=ALL-UNNAMED")
+            option("--add-opens", "jdk.compiler/com.sun.tools.javac.util=ALL-UNNAMED")
         }
     }
 
