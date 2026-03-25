@@ -111,6 +111,72 @@ func (s *SMBService) ListFiles(hostName, path string) ([]os.FileInfo, error) {
 	return files, nil
 }
 
+// StreamFile opens a remote file for reading and returns a ReadCloser that
+// streams directly from the SMB share. The caller MUST call Close() on the
+// returned reader when done; Close tears down the share mount and session.
+func (s *SMBService) StreamFile(hostName, remotePath string) (io.ReadCloser, int64, error) {
+	session, err := s.getConnection(hostName)
+	if err != nil {
+		return nil, 0, err
+	}
+
+	var smbHost *config.SMBHost
+	for _, host := range s.config.SMB.Hosts {
+		if host.Name == hostName {
+			smbHost = &host
+			break
+		}
+	}
+
+	share, err := session.Mount(smbHost.Share)
+	if err != nil {
+		session.Logoff()
+		return nil, 0, fmt.Errorf("failed to mount share: %w", err)
+	}
+
+	remoteFile, err := share.Open(remotePath)
+	if err != nil {
+		share.Umount()
+		session.Logoff()
+		return nil, 0, fmt.Errorf("failed to open remote file: %w", err)
+	}
+
+	stat, err := remoteFile.Stat()
+	if err != nil {
+		remoteFile.Close()
+		share.Umount()
+		session.Logoff()
+		return nil, 0, fmt.Errorf("failed to stat remote file: %w", err)
+	}
+	size := stat.Size()
+
+	// Wrap in a closer that tears down SMB resources
+	closer := &smbStreamCloser{
+		file:    remoteFile,
+		share:   share,
+		session: session,
+	}
+	return closer, size, nil
+}
+
+// smbStreamCloser wraps an SMB file reader with cleanup of share + session.
+type smbStreamCloser struct {
+	file    *smb2.File
+	share   *smb2.Share
+	session *smb2.Session
+}
+
+func (sc *smbStreamCloser) Read(p []byte) (int, error) {
+	return sc.file.Read(p)
+}
+
+func (sc *smbStreamCloser) Close() error {
+	sc.file.Close()
+	sc.share.Umount()
+	sc.session.Logoff()
+	return nil
+}
+
 func (s *SMBService) DownloadFile(hostName, remotePath, localPath string) error {
 	session, err := s.getConnection(hostName)
 	if err != nil {

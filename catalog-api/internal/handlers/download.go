@@ -74,37 +74,58 @@ func (h *DownloadHandler) DownloadFile(c *gin.Context) {
 		return
 	}
 
-	// Create temporary file for download
-	tempFile, err := os.CreateTemp(h.tempDir, "download_*")
+	// Stream directly from SMB to HTTP response (no temp file buffering)
+	reader, size, err := h.smbService.StreamFile(fileInfo.SmbRoot, fileInfo.Path)
 	if err != nil {
-		h.logger.Error("Failed to create temp file", zap.Error(err))
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to prepare download"})
+		h.logger.Error("Failed to open SMB stream", zap.Error(err))
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to stream file"})
 		return
 	}
-	defer os.Remove(tempFile.Name())
-	defer tempFile.Close()
+	defer reader.Close()
 
-	// Download from SMB to temp file
-	err = h.smbService.DownloadFile(fileInfo.SmbRoot, fileInfo.Path, tempFile.Name())
-	if err != nil {
-		h.logger.Error("Failed to download from SMB", zap.Error(err))
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to download file"})
-		return
+	// Determine content type from file extension
+	contentType := "application/octet-stream"
+	if fileInfo.MimeType != nil && *fileInfo.MimeType != "" {
+		contentType = *fileInfo.MimeType
+	} else {
+		ext := strings.ToLower(filepath.Ext(fileInfo.Name))
+		switch ext {
+		case ".mp4":
+			contentType = "video/mp4"
+		case ".mkv":
+			contentType = "video/x-matroska"
+		case ".avi":
+			contentType = "video/x-msvideo"
+		case ".mp3":
+			contentType = "audio/mpeg"
+		case ".flac":
+			contentType = "audio/flac"
+		}
 	}
 
-	// Stream file to client
-	c.Header("Content-Disposition", fmt.Sprintf("attachment; filename=\"%s\"", sanitizeContentDisposition(fileInfo.Name)))
-	c.Header("Content-Type", "application/octet-stream")
-	c.Header("Content-Length", strconv.FormatInt(fileInfo.Size, 10))
+	// Set streaming headers — inline for media, attachment otherwise
+	disposition := "inline"
+	if c.Query("download") == "true" {
+		disposition = "attachment"
+	}
+	c.Header("Content-Disposition", fmt.Sprintf(`%s; filename="%s"`, disposition, sanitizeContentDisposition(fileInfo.Name)))
+	c.Header("Content-Type", contentType)
+	c.Header("Content-Length", strconv.FormatInt(size, 10))
+	c.Header("Accept-Ranges", "none")
 
-	tempFile.Seek(0, 0)
-	_, err = io.CopyBuffer(c.Writer, tempFile, make([]byte, h.chunkSize))
+	// Stream SMB data directly to HTTP response
+	chunkSize := h.chunkSize
+	if chunkSize <= 0 {
+		chunkSize = 1024 * 1024 // 1MB default
+	}
+	c.Status(http.StatusOK)
+	_, err = io.CopyBuffer(c.Writer, reader, make([]byte, chunkSize))
 	if err != nil {
 		h.logger.Error("Failed to stream file", zap.Error(err))
 		return
 	}
 
-	h.logger.Info("File downloaded successfully", zap.String("file", fileInfo.Name), zap.Int64("id", id))
+	h.logger.Info("File streamed successfully", zap.String("file", fileInfo.Name), zap.Int64("id", id), zap.Int64("size", size))
 }
 
 // @Summary Download directory as archive

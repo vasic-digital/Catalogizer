@@ -331,6 +331,35 @@ func main() {
 
 	// Initialize services
 	// Convert config to internal format
+	// Load SMB hosts from storage_roots table (authoritative source of SMB credentials)
+	var smbHosts []internal_config.SMBHost
+	smbRows, smbErr := databaseDB.Query(
+		`SELECT name, host, port, path, username, password, domain FROM storage_roots WHERE protocol = 'smb' AND enabled = 1`,
+	)
+	if smbErr == nil {
+		for smbRows.Next() {
+			var name string
+			var host, share, username, password, domain *string
+			var port *int
+			if err := smbRows.Scan(&name, &host, &port, &share, &username, &password, &domain); err != nil {
+				log.Printf("Warning: failed to scan SMB storage root: %v", err)
+				continue
+			}
+			h := internal_config.SMBHost{Name: name, Port: 445}
+			if host != nil { h.Host = *host }
+			if port != nil { h.Port = *port }
+			if share != nil { h.Share = *share }
+			if username != nil { h.Username = *username }
+			if password != nil { h.Password = *password }
+			if domain != nil { h.Domain = *domain }
+			smbHosts = append(smbHosts, h)
+			log.Printf("Loaded SMB host from DB: %s (%s:%d/%s)", h.Name, h.Host, h.Port, h.Share)
+		}
+		smbRows.Close()
+	} else {
+		log.Printf("Warning: failed to query SMB storage roots: %v", smbErr)
+	}
+
 	internalCfg := &internal_config.Config{
 		Server: internal_config.ServerConfig{
 			Host:         cfg.Server.Host,
@@ -343,6 +372,11 @@ func main() {
 		},
 		Database: internal_config.DatabaseConfig{
 			Database: cfg.Database.Path,
+		},
+		SMB: internal_config.SMBConfig{
+			Hosts:     smbHosts,
+			Timeout:   30,
+			ChunkSize: cfg.Catalog.DownloadChunkSize,
 		},
 		Catalog: internal_config.CatalogConfig{
 			TempDir:           cfg.Catalog.TempDir,
