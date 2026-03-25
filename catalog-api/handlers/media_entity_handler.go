@@ -509,7 +509,7 @@ func fetchTMDBMetadata(title string, year int, mediaTypeID int) *tmdbSearchResul
 
 	var posterURL string
 	if best.PosterPath != "" {
-		posterURL = "https://image.tmdb.org/t/p/w500" + best.PosterPath
+		posterURL = "/api/v1/image-proxy?url=https://image.tmdb.org/t/p/w500" + best.PosterPath
 	}
 
 	rating := best.VoteAverage

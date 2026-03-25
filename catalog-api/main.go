@@ -25,6 +25,7 @@ import (
 	"encoding/pem"
 	"flag"
 	"fmt"
+	"io"
 	"log"
 	"math/big"
 	"net"
@@ -630,8 +631,40 @@ func main() {
 	router.GET("/ws", wsHandler.HandleConnection)
 
 	// Service discovery (public — no auth needed for clients to find the API)
-	// Registered at /discovery (not /api/v1/) to avoid auth middleware from the api group
 	router.GET("/discovery", discoveryHandler)
+
+	// Image proxy — serves external images (TMDB, etc.) through the API
+	// Needed when devices can't reach external CDNs directly (DNS blocking, etc.)
+	router.GET("/api/v1/image-proxy", func(c *gin.Context) {
+		imageURL := c.Query("url")
+		if imageURL == "" {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "url parameter required"})
+			return
+		}
+		// Only allow known image CDN domains
+		allowed := false
+		for _, domain := range []string{"image.tmdb.org", "img.omdbapi.com", "images.igdb.com"} {
+			if strings.Contains(imageURL, domain) {
+				allowed = true
+				break
+			}
+		}
+		if !allowed {
+			c.JSON(http.StatusForbidden, gin.H{"error": "domain not allowed"})
+			return
+		}
+		proxyClient := &http.Client{Timeout: 15 * time.Second}
+		resp, err := proxyClient.Get(imageURL)
+		if err != nil {
+			c.JSON(http.StatusBadGateway, gin.H{"error": "failed to fetch image"})
+			return
+		}
+		defer resp.Body.Close()
+		c.Header("Content-Type", resp.Header.Get("Content-Type"))
+		c.Header("Cache-Control", "public, max-age=86400") // Cache 24h
+		c.Status(resp.StatusCode)
+		io.Copy(c.Writer, resp.Body)
+	})
 	router.GET("/api/v1/discovery", discoveryHandler)
 	router.GET("/api/v1/discovery/announce", discoveryHandler)
 

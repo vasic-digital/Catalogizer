@@ -66,7 +66,14 @@ fun MediaCard(
                     .clip(RoundedCornerShape(topStart = 8.dp, topEnd = 8.dp)),
                 contentAlignment = Alignment.Center
             ) {
-                val coverUrl = mediaItem.thumbnailUrl
+                val rawUrl = mediaItem.thumbnailUrl
+                val coverUrl = if (rawUrl != null && rawUrl.startsWith("/")) {
+                    // Relative URL — prefix with server base URL
+                    val container = com.catalogizer.androidtv.DependencyContainer.getInstance(
+                        androidx.compose.ui.platform.LocalContext.current
+                    )
+                    container.getServerUrl().trimEnd('/') + rawUrl
+                } else rawUrl
                 if (coverUrl != null) {
                     AsyncImage(
                         model = coverUrl,
