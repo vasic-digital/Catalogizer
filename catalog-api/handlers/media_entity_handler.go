@@ -4,7 +4,9 @@ import (
 	"fmt"
 	"net/http"
 	"strconv"
+	"strings"
 
+	"catalogizer/database"
 	"catalogizer/internal/media/models"
 	"catalogizer/repository"
 	"catalogizer/utils"
@@ -18,6 +20,7 @@ type MediaEntityHandler struct {
 	fileRepo     *repository.MediaFileRepository
 	extMetaRepo  *repository.ExternalMetadataRepository
 	userMetaRepo *repository.UserMetadataRepository
+	db           *database.DB
 }
 
 // NewMediaEntityHandler creates a new media entity handler.
@@ -26,13 +29,21 @@ func NewMediaEntityHandler(
 	fileRepo *repository.MediaFileRepository,
 	extMetaRepo *repository.ExternalMetadataRepository,
 	userMetaRepo *repository.UserMetadataRepository,
+	dbArgs ...*database.DB,
 ) *MediaEntityHandler {
-	return &MediaEntityHandler{
+	h := &MediaEntityHandler{
 		itemRepo:     itemRepo,
 		fileRepo:     fileRepo,
 		extMetaRepo:  extMetaRepo,
 		userMetaRepo: userMetaRepo,
 	}
+	if len(dbArgs) > 0 && dbArgs[0] != nil {
+		h.db = dbArgs[0]
+		fmt.Println("[MediaEntityHandler] Database connected for metadata enrichment")
+	} else {
+		fmt.Println("[MediaEntityHandler] WARNING: No database provided, enrichment disabled")
+	}
+	return h
 }
 
 // ListEntities handles GET /api/v1/entities — list entities with filters and pagination.
@@ -295,16 +306,156 @@ func (h *MediaEntityHandler) BrowseByType(c *gin.Context) {
 }
 
 // RefreshEntityMetadata handles POST /api/v1/entities/:id/metadata/refresh.
+// Finds cover images in the entity's directory and stores as external metadata.
 func (h *MediaEntityHandler) RefreshEntityMetadata(c *gin.Context) {
+	ctx := c.Request.Context()
+
 	id, err := strconv.ParseInt(c.Param("id"), 10, 64)
 	if err != nil {
 		utils.SendErrorResponse(c, http.StatusBadRequest, "Invalid entity ID", err)
 		return
 	}
 
-	c.JSON(http.StatusAccepted, gin.H{
-		"message":   "Metadata refresh queued",
-		"entity_id": id,
+	if h.db == nil {
+		c.JSON(http.StatusAccepted, gin.H{"message": "Metadata refresh queued", "entity_id": id})
+		return
+	}
+
+	// Find the directory path for this entity via directory_analyses
+	var dirPath string
+	err = h.db.QueryRowContext(ctx,
+		`SELECT da.directory_path FROM directory_analyses da
+		 WHERE da.media_item_id = ? LIMIT 1`, id).Scan(&dirPath)
+	if err != nil || dirPath == "" {
+		// Fallback: try media_files junction
+		err = h.db.QueryRowContext(ctx,
+			`SELECT f.directory_path FROM files f
+			 JOIN media_files mf ON mf.file_id = f.id
+			 WHERE mf.media_item_id = ? LIMIT 1`, id).Scan(&dirPath)
+	}
+	if err != nil || dirPath == "" {
+		c.JSON(http.StatusOK, gin.H{"message": "No directory found", "entity_id": id})
+		return
+	}
+
+	parentDir := dirPath
+
+	// Search for cover images: directory_path stores full path like "Dir/Sub/cover.jpg"
+	// So we look for files where the path starts with the entity dir and ends with a cover name
+	coverNames := []string{"cover.jpg", "folder.jpg", "poster.jpg", "cover.png", "folder.png", "poster.png"}
+	var coverFileID int64
+	var coverTitle string
+	for _, name := range coverNames {
+		err := h.db.QueryRowContext(ctx,
+			`SELECT id, title FROM files
+			 WHERE directory_path LIKE ? LIMIT 1`,
+			parentDir+"/%"+name).Scan(&coverFileID, &coverTitle)
+		if err == nil && coverFileID > 0 {
+			break
+		}
+		coverFileID = 0
+	}
+
+	if coverFileID > 0 {
+		// Build a cover URL using the asset endpoint
+		coverURL := fmt.Sprintf("/api/v1/download/file/%d", coverFileID)
+
+		meta := &models.ExternalMetadata{
+			MediaItemID: id,
+			Provider:    "local_scan",
+			ExternalID:  fmt.Sprintf("local:%d", id),
+			CoverURL:    &coverURL,
+		}
+		if err := h.extMetaRepo.Upsert(ctx, meta); err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": fmt.Sprintf("store metadata: %v", err)})
+			return
+		}
+		c.JSON(http.StatusOK, gin.H{
+			"message":    "Cover art found",
+			"entity_id":  id,
+			"cover_url":  coverURL,
+			"cover_file": coverTitle,
+		})
+	} else {
+		c.JSON(http.StatusOK, gin.H{
+			"message":   "No cover art in directory",
+			"entity_id": id,
+			"directory": parentDir,
+		})
+	}
+}
+
+// EnrichAllEntities handles POST /api/v1/entities/enrich — batch metadata enrichment.
+// Scans all entities for local cover art and stores results.
+func (h *MediaEntityHandler) EnrichAllEntities(c *gin.Context) {
+	ctx := c.Request.Context()
+
+	if h.db == nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Database not available"})
+		return
+	}
+
+	// Get all entities that don't have external metadata yet
+	rows, err := h.db.QueryContext(ctx,
+		`SELECT mi.id, da.directory_path
+		 FROM media_items mi
+		 JOIN directory_analyses da ON da.media_item_id = mi.id
+		 LEFT JOIN external_metadata em ON em.media_item_id = mi.id
+		 WHERE em.id IS NULL
+		 GROUP BY mi.id
+		 LIMIT 500`)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": fmt.Sprintf("query: %v", err)})
+		return
+	}
+	defer rows.Close()
+
+	type entityDir struct {
+		ID      int64
+		DirPath string
+	}
+	var entities []entityDir
+	for rows.Next() {
+		var ed entityDir
+		if err := rows.Scan(&ed.ID, &ed.DirPath); err != nil {
+			continue
+		}
+		entities = append(entities, ed)
+	}
+
+	enriched := 0
+	coverNames := []string{"cover.jpg", "folder.jpg", "poster.jpg", "cover.png"}
+
+	for _, ent := range entities {
+		parentDir := ent.DirPath
+		if idx := strings.LastIndex(parentDir, "/"); idx > 0 {
+			parentDir = parentDir[:idx]
+		}
+
+		for _, name := range coverNames {
+			var coverFileID int64
+			err := h.db.QueryRowContext(ctx,
+				`SELECT id FROM files WHERE directory_path LIKE ? LIMIT 1`,
+				parentDir+"/%"+name).Scan(&coverFileID)
+			if err == nil && coverFileID > 0 {
+				coverURL := fmt.Sprintf("/api/v1/download/file/%d", coverFileID)
+				meta := &models.ExternalMetadata{
+					MediaItemID: ent.ID,
+					Provider:    "local_scan",
+					ExternalID:  fmt.Sprintf("local:%d", ent.ID),
+					CoverURL:    &coverURL,
+				}
+				_ = h.extMetaRepo.Upsert(ctx, meta)
+				enriched++
+				break
+			}
+		}
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"message":  "Batch enrichment complete",
+		"scanned":  len(entities),
+		"enriched": enriched,
 	})
 }
 

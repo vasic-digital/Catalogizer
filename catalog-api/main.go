@@ -518,7 +518,7 @@ func main() {
 	})
 
 	// Media entity handler for structured media browsing
-	mediaEntityHandler := root_handlers.NewMediaEntityHandler(mediaItemRepo, mediaFileRepo, extMetaRepo, userMetaRepo)
+	mediaEntityHandler := root_handlers.NewMediaEntityHandler(mediaItemRepo, mediaFileRepo, extMetaRepo, userMetaRepo, databaseDB)
 
 	// Scan handler for storage roots and scan operations
 	scanHandler := root_handlers.NewScanHandler(universalScanner, databaseDB)
@@ -871,6 +871,7 @@ func main() {
 			entityGroup.POST("/:id/metadata/refresh", mediaEntityHandler.RefreshEntityMetadata)
 			entityGroup.PUT("/:id/user-metadata", mediaEntityHandler.UpdateUserMetadata)
 			entityGroup.POST("/:id/user-metadata", mediaEntityHandler.UpdateUserMetadata)
+			entityGroup.POST("/enrich", mediaEntityHandler.EnrichAllEntities)
 		}
 
 		// Analytics endpoints
