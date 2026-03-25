@@ -2,6 +2,7 @@
 package com.catalogizer.androidtv.ui.screens.media
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.focusable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -15,6 +16,8 @@ import androidx.compose.material3.Icon as M3Icon
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
@@ -39,6 +42,7 @@ fun MediaDetailScreen(
     var isLoading by remember { mutableStateOf(true) }
     var error by remember { mutableStateOf<String?>(null) }
     val scrollState = rememberScrollState()
+    val playButtonFocus = remember { FocusRequester() }
     val config = LocalConfiguration.current
     val isCompact = config.screenWidthDp < 600
 
@@ -180,9 +184,12 @@ fun MediaDetailScreen(
 
                         Spacer(Modifier.height(20.dp))
 
-                        // Play + Back buttons
+                        // Play + Back buttons (Play gets auto-focus for D-pad)
                         Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                            Button(onClick = { onNavigateToPlayer(mediaId) }, modifier = Modifier.height(48.dp)) {
+                            Button(
+                                onClick = { onNavigateToPlayer(mediaId) },
+                                modifier = Modifier.height(48.dp).focusRequester(playButtonFocus).focusable()
+                            ) {
                                 M3Icon(Icons.Default.PlayArrow, "Play", Modifier.size(24.dp))
                                 Spacer(Modifier.width(8.dp))
                                 Text("Play", style = MaterialTheme.typography.titleSmall)
@@ -221,6 +228,14 @@ fun MediaDetailScreen(
                     }
                 }
             }
+        }
+    }
+
+    // Auto-focus Play button when content loads
+    LaunchedEffect(mediaItem) {
+        if (mediaItem != null) {
+            kotlinx.coroutines.delay(300)
+            try { playButtonFocus.requestFocus() } catch (_: Exception) {}
         }
     }
 }

@@ -64,19 +64,37 @@ fun MediaPlayerScreen(
         }
     }
 
-    // Initialize ExoPlayer when URL is resolved
+    // Initialize ExoPlayer when URL is resolved, with auth headers
     DisposableEffect(resolvedUrl) {
         var player: ExoPlayer? = null
         if (resolvedUrl.isNotEmpty()) {
             try {
-                player = ExoPlayer.Builder(context).build().apply {
-                    setMediaItem(MediaItem.fromUri(resolvedUrl))
-                    prepare()
-                    playWhenReady = true
+                // Get auth token for authenticated streaming
+                val container = com.catalogizer.androidtv.DependencyContainer.getInstance(context)
+                val token = container.authRepository.authState.value.token
+
+                // Build data source factory with Authorization header
+                val dataSourceFactory = androidx.media3.datasource.DefaultHttpDataSource.Factory()
+                if (token != null) {
+                    dataSourceFactory.setDefaultRequestProperties(
+                        mapOf("Authorization" to "Bearer $token")
+                    )
                 }
+
+                val mediaSourceFactory = androidx.media3.exoplayer.source.DefaultMediaSourceFactory(dataSourceFactory)
+
+                player = ExoPlayer.Builder(context)
+                    .setMediaSourceFactory(mediaSourceFactory)
+                    .build().apply {
+                        setMediaItem(MediaItem.fromUri(resolvedUrl))
+                        prepare()
+                        playWhenReady = true
+                    }
                 exoPlayer = player
+                android.util.Log.d("Player", "ExoPlayer initialized with auth, URL: $resolvedUrl")
             } catch (e: Exception) {
                 streamError = "Player error: ${e.message}"
+                android.util.Log.e("Player", "ExoPlayer init failed", e)
             }
         }
         onDispose {
