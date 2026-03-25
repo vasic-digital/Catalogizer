@@ -70,5 +70,18 @@
     "max_backups": 3,
     "max_age": 28,
     "compress": true
+  },
+  "smb": {
+    "hosts": [
+      {
+        "name": "Synology NAS Data8-data8",
+        "host": "synology.local",
+        "port": 445,
+        "username": "reader",
+        "password": "WhiteSnake8587",
+        "domain": "",
+        "share": "data8"
+      }
+    ]
   }
 }
