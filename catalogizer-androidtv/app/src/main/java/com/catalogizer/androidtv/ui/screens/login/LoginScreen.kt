@@ -23,11 +23,14 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.min
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.tv.material3.Button
 import androidx.tv.material3.ExperimentalTvMaterial3Api
@@ -37,8 +40,6 @@ import com.catalogizer.androidtv.DependencyContainer
 import com.catalogizer.androidtv.data.models.ServerEntry
 import com.catalogizer.androidtv.ui.viewmodel.AuthViewModel
 import kotlinx.coroutines.launch
-
-private val FORM_WIDTH = 520.dp
 
 @Composable
 fun LoginScreen(
@@ -117,29 +118,38 @@ fun LoginScreen(
         isLoading = false
     }
 
+    // Responsive sizing: adapt to screen width
+    val configuration = LocalConfiguration.current
+    val screenWidthDp = configuration.screenWidthDp.dp
+    val isCompact = screenWidthDp < 600.dp  // Phone
+    val formWidth = if (isCompact) screenWidthDp - 48.dp else min(520.dp, screenWidthDp * 0.5f)
+    val horizontalPad = if (isCompact) 24.dp else 80.dp
+    val verticalPad = if (isCompact) 24.dp else 40.dp
+
     Box(
         modifier = Modifier
             .fillMaxSize()
             .background(Color(0xFF121212)),
-        contentAlignment = Alignment.Center
+        contentAlignment = Alignment.TopCenter
     ) {
         Column(
             horizontalAlignment = Alignment.CenterHorizontally,
             modifier = Modifier
                 .verticalScroll(scrollState)
-                .padding(horizontal = 80.dp, vertical = 40.dp)
+                .padding(horizontal = horizontalPad, vertical = verticalPad)
+                .widthIn(max = 600.dp)
         ) {
             // ─── Branding ───────────────────────────────────────────
-            Spacer(modifier = Modifier.height(24.dp))
+            Spacer(modifier = Modifier.height(if (isCompact) 8.dp else 24.dp))
 
             Text(
                 text = "CATALOGIZER",
-                style = MaterialTheme.typography.headlineLarge,
+                style = if (isCompact) MaterialTheme.typography.headlineMedium else MaterialTheme.typography.headlineLarge,
                 color = Color.White,
-                letterSpacing = androidx.compose.ui.unit.TextUnit(4f, androidx.compose.ui.unit.TextUnitType.Sp)
+                letterSpacing = androidx.compose.ui.unit.TextUnit(if (isCompact) 2f else 4f, androidx.compose.ui.unit.TextUnitType.Sp)
             )
 
-            Spacer(modifier = Modifier.height(8.dp))
+            Spacer(modifier = Modifier.height(4.dp))
 
             Text(
                 text = "Media Collection Manager",
@@ -147,7 +157,7 @@ fun LoginScreen(
                 color = Color.White.copy(alpha = 0.5f)
             )
 
-            Spacer(modifier = Modifier.height(32.dp))
+            Spacer(modifier = Modifier.height(if (isCompact) 16.dp else 32.dp))
 
             // ─── Credentials ────────────────────────────────────────
             OutlinedTextField(
@@ -155,7 +165,7 @@ fun LoginScreen(
                 onValueChange = { username = it; errorMessage = null },
                 label = { Text("Username", color = Color.White.copy(alpha = 0.5f)) },
                 modifier = Modifier
-                    .width(FORM_WIDTH)
+                    .width(formWidth)
                     .focusRequester(usernameFocusRequester)
                     .focusable(),
                 keyboardOptions = KeyboardOptions(imeAction = ImeAction.Next),
@@ -172,7 +182,7 @@ fun LoginScreen(
                 onValueChange = { password = it; errorMessage = null },
                 label = { Text("Password", color = Color.White.copy(alpha = 0.5f)) },
                 modifier = Modifier
-                    .width(FORM_WIDTH)
+                    .width(formWidth)
                     .focusRequester(passwordFocusRequester)
                     .focusable(),
                 keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
@@ -192,7 +202,7 @@ fun LoginScreen(
             errorMessage?.let { error ->
                 Box(
                     modifier = Modifier
-                        .width(FORM_WIDTH)
+                        .width(formWidth)
                         .background(Color(0xFF442222), MaterialTheme.shapes.small)
                         .padding(12.dp)
                 ) {
@@ -211,7 +221,7 @@ fun LoginScreen(
                     keyboardController?.hide()
                     performLogin(username, password, authViewModel, { isLoading = it }, { errorMessage = it })
                 },
-                modifier = Modifier.width(FORM_WIDTH).height(52.dp),
+                modifier = Modifier.width(formWidth).height(if (isCompact) 48.dp else 52.dp),
                 enabled = !isLoading && username.isNotBlank() && password.isNotBlank()
             ) {
                 if (isLoading) {
@@ -221,10 +231,10 @@ fun LoginScreen(
                 }
             }
 
-            Spacer(modifier = Modifier.height(28.dp))
+            Spacer(modifier = Modifier.height(if (isCompact) 16.dp else 28.dp))
 
             // ─── Server Configuration (collapsible section) ─────────
-            Divider(color = Color.White.copy(alpha = 0.1f), modifier = Modifier.width(FORM_WIDTH))
+            Divider(color = Color.White.copy(alpha = 0.1f), modifier = Modifier.width(formWidth))
 
             Spacer(modifier = Modifier.height(16.dp))
 
@@ -241,7 +251,7 @@ fun LoginScreen(
                 value = serverUrl,
                 onValueChange = { serverUrl = it },
                 label = { Text("Server URL", color = Color.White.copy(alpha = 0.5f)) },
-                modifier = Modifier.width(FORM_WIDTH).focusable(),
+                modifier = Modifier.width(formWidth).focusable(),
                 singleLine = true,
                 enabled = !isLoading,
                 colors = textFieldColors,
@@ -256,7 +266,7 @@ fun LoginScreen(
 
             Row(
                 horizontalArrangement = Arrangement.spacedBy(12.dp),
-                modifier = Modifier.width(FORM_WIDTH)
+                modifier = Modifier.width(formWidth)
             ) {
                 Button(
                     onClick = {
@@ -315,7 +325,7 @@ fun LoginScreen(
                             }
                             discoveredServers = emptyList()
                         },
-                        modifier = Modifier.width(FORM_WIDTH).height(44.dp)
+                        modifier = Modifier.width(formWidth).height(44.dp)
                     ) {
                         Text(
                             text = "${server.name.ifBlank { "API" }} — ${server.url}",
