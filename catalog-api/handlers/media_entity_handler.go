@@ -1,10 +1,14 @@
 package handlers
 
 import (
+	"encoding/json"
 	"fmt"
+	"io"
 	"net/http"
+	"net/url"
+	"os"
 	"strconv"
-	"strings"
+	"time"
 
 	"catalogizer/database"
 	"catalogizer/internal/media/models"
@@ -357,31 +361,145 @@ func (h *MediaEntityHandler) RefreshEntityMetadata(c *gin.Context) {
 	}
 
 	if coverFileID > 0 {
-		// Build a cover URL using the asset endpoint
 		coverURL := fmt.Sprintf("/api/v1/download/file/%d", coverFileID)
-
 		meta := &models.ExternalMetadata{
 			MediaItemID: id,
 			Provider:    "local_scan",
 			ExternalID:  fmt.Sprintf("local:%d", id),
 			CoverURL:    &coverURL,
 		}
-		if err := h.extMetaRepo.Upsert(ctx, meta); err != nil {
-			c.JSON(http.StatusInternalServerError, gin.H{"error": fmt.Sprintf("store metadata: %v", err)})
+		_ = h.extMetaRepo.Upsert(ctx, meta)
+		c.JSON(http.StatusOK, gin.H{
+			"message": "Cover art found (local)", "entity_id": id, "cover_url": coverURL,
+		})
+		return
+	}
+
+	// Fallback: try TMDB for movies/TV
+	entity, err := h.itemRepo.GetByID(ctx, id)
+	if err == nil && entity != nil {
+		year := 0
+		if entity.Year != nil {
+			year = *entity.Year
+		}
+		tmdbResult := fetchTMDBMetadata(entity.Title, year, int(entity.MediaTypeID))
+		if tmdbResult != nil {
+			meta := &models.ExternalMetadata{
+				MediaItemID: id,
+				Provider:    "tmdb",
+				ExternalID:  fmt.Sprintf("tmdb:%d", tmdbResult.tmdbID),
+				CoverURL:    &tmdbResult.posterURL,
+				Data:        tmdbResult.overview,
+				Rating:      tmdbResult.rating,
+			}
+			_ = h.extMetaRepo.Upsert(ctx, meta)
+
+			// Also update the entity description/rating if empty
+			if (entity.Description == nil || *entity.Description == "") && tmdbResult.overview != "" {
+				_, _ = h.db.ExecContext(ctx,
+					`UPDATE media_items SET description = ? WHERE id = ? AND (description IS NULL OR description = '')`,
+					tmdbResult.overview, id)
+			}
+			if (entity.Rating == nil || *entity.Rating == 0) && tmdbResult.rating != nil {
+				_, _ = h.db.ExecContext(ctx,
+					`UPDATE media_items SET rating = ? WHERE id = ? AND (rating IS NULL OR rating = 0)`,
+					*tmdbResult.rating, id)
+			}
+
+			c.JSON(http.StatusOK, gin.H{
+				"message": "Metadata enriched from TMDB", "entity_id": id,
+				"cover_url": tmdbResult.posterURL, "title": tmdbResult.title,
+			})
 			return
 		}
-		c.JSON(http.StatusOK, gin.H{
-			"message":    "Cover art found",
-			"entity_id":  id,
-			"cover_url":  coverURL,
-			"cover_file": coverTitle,
-		})
-	} else {
-		c.JSON(http.StatusOK, gin.H{
-			"message":   "No cover art in directory",
-			"entity_id": id,
-			"directory": parentDir,
-		})
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"message": "No metadata sources available", "entity_id": id, "directory": parentDir,
+	})
+}
+
+// tmdbSearchResult holds parsed TMDB API response data.
+type tmdbSearchResult struct {
+	tmdbID    int
+	title     string
+	overview  string
+	posterURL string
+	rating    *float64
+	year      string
+}
+
+// fetchTMDBMetadata searches TMDB for a movie/TV show and returns poster + metadata.
+func fetchTMDBMetadata(title string, year int, mediaTypeID int) *tmdbSearchResult {
+	apiKey := os.Getenv("TMDB_API_KEY")
+	if apiKey == "" {
+		return nil
+	}
+
+	// Determine search type
+	searchType := "movie"
+	if mediaTypeID == 2 { // tv_show
+		searchType = "tv"
+	}
+
+	// Build search URL
+	searchURL := fmt.Sprintf("https://api.themoviedb.org/3/search/%s?api_key=%s&query=%s",
+		searchType, apiKey, url.QueryEscape(title))
+	if year > 0 {
+		if searchType == "movie" {
+			searchURL += fmt.Sprintf("&year=%d", year)
+		} else {
+			searchURL += fmt.Sprintf("&first_air_date_year=%d", year)
+		}
+	}
+
+	client := &http.Client{Timeout: 10 * time.Second}
+	resp, err := client.Get(searchURL)
+	if err != nil || resp.StatusCode != 200 {
+		return nil
+	}
+	defer resp.Body.Close()
+
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return nil
+	}
+
+	var searchResp struct {
+		Results []struct {
+			ID          int     `json:"id"`
+			Title       string  `json:"title"`
+			Name        string  `json:"name"`
+			Overview    string  `json:"overview"`
+			PosterPath  string  `json:"poster_path"`
+			VoteAverage float64 `json:"vote_average"`
+			ReleaseDate string  `json:"release_date"`
+			FirstAirDate string `json:"first_air_date"`
+		} `json:"results"`
+	}
+	if err := json.Unmarshal(body, &searchResp); err != nil || len(searchResp.Results) == 0 {
+		return nil
+	}
+
+	best := searchResp.Results[0]
+	resultTitle := best.Title
+	if resultTitle == "" {
+		resultTitle = best.Name
+	}
+
+	var posterURL string
+	if best.PosterPath != "" {
+		posterURL = "https://image.tmdb.org/t/p/w500" + best.PosterPath
+	}
+
+	rating := best.VoteAverage
+	return &tmdbSearchResult{
+		tmdbID:    best.ID,
+		title:     resultTitle,
+		overview:  best.Overview,
+		posterURL: posterURL,
+		rating:    &rating,
+		year:      best.ReleaseDate,
 	}
 }
 
@@ -424,14 +542,14 @@ func (h *MediaEntityHandler) EnrichAllEntities(c *gin.Context) {
 	}
 
 	enriched := 0
+	tmdbEnriched := 0
+	localEnriched := 0
 	coverNames := []string{"cover.jpg", "folder.jpg", "poster.jpg", "cover.png"}
 
 	for _, ent := range entities {
+		// Try local cover first
 		parentDir := ent.DirPath
-		if idx := strings.LastIndex(parentDir, "/"); idx > 0 {
-			parentDir = parentDir[:idx]
-		}
-
+		found := false
 		for _, name := range coverNames {
 			var coverFileID int64
 			err := h.db.QueryRowContext(ctx,
@@ -446,16 +564,60 @@ func (h *MediaEntityHandler) EnrichAllEntities(c *gin.Context) {
 					CoverURL:    &coverURL,
 				}
 				_ = h.extMetaRepo.Upsert(ctx, meta)
+				localEnriched++
 				enriched++
+				found = true
 				break
+			}
+		}
+
+		// Try TMDB if no local cover
+		if !found {
+			// Get entity details for TMDB search
+			var title string
+			var year int
+			var mediaTypeID int
+			err := h.db.QueryRowContext(ctx,
+				`SELECT title, COALESCE(year, 0), media_type_id FROM media_items WHERE id = ?`,
+				ent.ID).Scan(&title, &year, &mediaTypeID)
+			if err == nil && title != "" {
+				result := fetchTMDBMetadata(title, year, mediaTypeID)
+				if result != nil && result.posterURL != "" {
+					meta := &models.ExternalMetadata{
+						MediaItemID: ent.ID,
+						Provider:    "tmdb",
+						ExternalID:  fmt.Sprintf("tmdb:%d", result.tmdbID),
+						CoverURL:    &result.posterURL,
+						Data:        result.overview,
+						Rating:      result.rating,
+					}
+					_ = h.extMetaRepo.Upsert(ctx, meta)
+					// Update entity description
+					if result.overview != "" {
+						_, _ = h.db.ExecContext(ctx,
+							`UPDATE media_items SET description = ? WHERE id = ? AND (description IS NULL OR description = '')`,
+							result.overview, ent.ID)
+					}
+					if result.rating != nil && *result.rating > 0 {
+						_, _ = h.db.ExecContext(ctx,
+							`UPDATE media_items SET rating = ? WHERE id = ? AND (rating IS NULL OR rating = 0)`,
+							*result.rating, ent.ID)
+					}
+					tmdbEnriched++
+					enriched++
+					// Rate limit TMDB API (40 requests per 10 seconds)
+					time.Sleep(250 * time.Millisecond)
+				}
 			}
 		}
 	}
 
 	c.JSON(http.StatusOK, gin.H{
-		"message":  "Batch enrichment complete",
-		"scanned":  len(entities),
-		"enriched": enriched,
+		"message":        "Batch enrichment complete",
+		"scanned":        len(entities),
+		"enriched":       enriched,
+		"local_covers":   localEnriched,
+		"tmdb_enriched":  tmdbEnriched,
 	})
 }
 
@@ -754,4 +916,8 @@ func entityDetailJSON(item *models.MediaItem, typeName string, fileCount, childr
 		h["external_metadata"] = []interface{}{}
 	}
 	return h
+}
+
+func strPtr(s string) *string {
+	return &s
 }

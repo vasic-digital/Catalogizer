@@ -8,6 +8,7 @@ import (
 	"io"
 	"net/http"
 	"net/url"
+	"os"
 	"strings"
 	"time"
 
@@ -283,8 +284,12 @@ type TMDBProvider struct {
 }
 
 func NewTMDBProvider(client *http.Client, logger *zap.Logger) *TMDBProvider {
-	// API key should be loaded from config
-	apiKey := "" // Load from environment or config
+	apiKey := os.Getenv("TMDB_API_KEY")
+	if apiKey == "" {
+		if logger != nil {
+			logger.Warn("TMDB_API_KEY not set, TMDB provider disabled")
+		}
+	}
 	return &TMDBProvider{
 		BaseProvider: NewBaseProvider("tmdb", "https://api.themoviedb.org/3", apiKey, client, logger),
 	}
