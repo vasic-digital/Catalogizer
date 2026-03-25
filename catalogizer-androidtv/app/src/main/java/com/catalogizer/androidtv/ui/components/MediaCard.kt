@@ -6,7 +6,14 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Album
+import androidx.compose.material.icons.filled.Book
+import androidx.compose.material.icons.filled.Gamepad
+import androidx.compose.material.icons.filled.Movie
+import androidx.compose.material.icons.filled.MusicNote
 import androidx.compose.material.icons.filled.PlayArrow
+import androidx.compose.material.icons.filled.Tv
+import androidx.compose.material3.Icon as M3Icon
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -46,36 +53,52 @@ fun MediaCard(
         )
     ) {
         Column {
-            // Thumbnail placeholder
+            // Thumbnail / cover art area
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
                     .aspectRatio(16f/9f)
-                    .background(MaterialTheme.colorScheme.surfaceVariant)
+                    .background(
+                        brush = androidx.compose.ui.graphics.Brush.verticalGradient(
+                            colors = mediaTypeGradient(mediaItem.mediaType)
+                        )
+                    )
                     .clip(RoundedCornerShape(topStart = 8.dp, topEnd = 8.dp)),
                 contentAlignment = Alignment.Center
             ) {
-                mediaItem.thumbnailUrl?.let { url ->
+                val coverUrl = mediaItem.thumbnailUrl
+                if (coverUrl != null) {
                     AsyncImage(
-                        model = url,
+                        model = coverUrl,
                         contentDescription = mediaItem.title,
                         modifier = Modifier.fillMaxSize(),
                         contentScale = ContentScale.Crop
                     )
+                } else {
+                    // Type-specific placeholder icon
+                    M3Icon(
+                        imageVector = mediaTypeIcon(mediaItem.mediaType),
+                        contentDescription = mediaItem.mediaType,
+                        modifier = Modifier.size(48.dp),
+                        tint = Color.White.copy(alpha = 0.4f)
+                    )
                 }
 
-                // Play button overlay
+                // Play button overlay (bottom-right)
                 Box(
                     modifier = Modifier
+                        .align(Alignment.BottomEnd)
+                        .padding(8.dp)
                         .background(
                             color = Color.Black.copy(alpha = 0.6f),
                             shape = RoundedCornerShape(50)
                         )
+                        .padding(4.dp)
                 ) {
-                    Icon(
+                    M3Icon(
                         imageVector = Icons.Default.PlayArrow,
                         contentDescription = "Play",
-                        modifier = Modifier.size(32.dp),
+                        modifier = Modifier.size(20.dp),
                         tint = Color.White
                     )
                 }
@@ -321,4 +344,25 @@ fun CompactMediaCard(
         }  // Close Column
         }  // Close Row
     }  // Close Surface
+}
+
+// ─── Media type visual helpers ──────────────────────────────────────────
+
+private fun mediaTypeIcon(type: String?) = when (type?.lowercase()) {
+    "movie", "video" -> Icons.Default.Movie
+    "tv_show", "tv_season", "tv_episode" -> Icons.Default.Tv
+    "music", "music_album", "music_artist", "song", "audio", "mp3" -> Icons.Default.MusicNote
+    "game", "software" -> Icons.Default.Gamepad
+    "book", "comic", "document", "ebook" -> Icons.Default.Book
+    else -> Icons.Default.Album
+}
+
+private fun mediaTypeGradient(type: String?): List<Color> = when (type?.lowercase()) {
+    "movie", "video" -> listOf(Color(0xFF1A237E), Color(0xFF283593))      // Deep blue
+    "tv_show", "tv_season", "tv_episode" -> listOf(Color(0xFF4A148C), Color(0xFF6A1B9A))  // Purple
+    "music", "music_album", "song", "audio", "mp3" -> listOf(Color(0xFF1B5E20), Color(0xFF2E7D32))  // Green
+    "game", "software" -> listOf(Color(0xFFE65100), Color(0xFFF57C00))    // Orange
+    "book", "comic", "document", "ebook" -> listOf(Color(0xFF4E342E), Color(0xFF6D4C41))  // Brown
+    "image", "jpg", "png" -> listOf(Color(0xFF00695C), Color(0xFF00897B)) // Teal
+    else -> listOf(Color(0xFF37474F), Color(0xFF455A64))                  // Blue-grey
 }
