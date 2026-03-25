@@ -1,47 +1,224 @@
+@file:OptIn(ExperimentalTvMaterial3Api::class)
 package com.catalogizer.androidtv.ui.screens.media
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.filled.PlayArrow
+import androidx.compose.material.icons.filled.Star
+import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.Icon as M3Icon
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalConfiguration
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.tv.material3.*
+import coil.compose.AsyncImage
+import com.catalogizer.androidtv.DependencyContainer
+import com.catalogizer.androidtv.data.models.MediaItem
+import kotlinx.coroutines.flow.first
 
-@OptIn(ExperimentalTvMaterial3Api::class)
 @Composable
 fun MediaDetailScreen(
     mediaId: Long,
     onNavigateBack: () -> Unit,
     onNavigateToPlayer: (Long) -> Unit
 ) {
+    val container = DependencyContainer.getInstance(androidx.compose.ui.platform.LocalContext.current)
+    var mediaItem by remember { mutableStateOf<MediaItem?>(null) }
+    var isLoading by remember { mutableStateOf(true) }
+    var error by remember { mutableStateOf<String?>(null) }
+    val scrollState = rememberScrollState()
+    val config = LocalConfiguration.current
+    val isCompact = config.screenWidthDp < 600
+
+    // Fetch entity details from API
+    LaunchedEffect(mediaId) {
+        isLoading = true
+        try {
+            val result = container.mediaRepository.getMediaById(mediaId).first()
+            mediaItem = result
+            error = if (result == null) "Media not found" else null
+        } catch (e: Exception) {
+            error = "Failed to load: ${e.message}"
+        }
+        isLoading = false
+    }
+
     Box(
-        modifier = Modifier.fillMaxSize(),
-        contentAlignment = Alignment.Center
+        modifier = Modifier
+            .fillMaxSize()
+            .background(Color(0xFF0A0A0A))
     ) {
-        Column(
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.spacedBy(16.dp),
-            modifier = Modifier.padding(48.dp)
-        ) {
-            Text(
-                text = "Media Details",
-                style = MaterialTheme.typography.headlineLarge
-            )
-
-            Text(
-                text = "Media ID: $mediaId",
-                style = MaterialTheme.typography.bodyLarge
-            )
-
-            Row(
-                horizontalArrangement = Arrangement.spacedBy(16.dp)
-            ) {
-                Button(onClick = { onNavigateToPlayer(mediaId) }) {
-                    Text("Play")
+        when {
+            isLoading -> {
+                Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                    CircularProgressIndicator(color = Color.White)
+                }
+            }
+            error != null -> {
+                Column(
+                    Modifier.fillMaxSize(),
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.Center
+                ) {
+                    Text(error ?: "Error", style = MaterialTheme.typography.bodyLarge, color = Color.White)
+                    Spacer(Modifier.height(16.dp))
+                    Button(onClick = onNavigateBack) { Text("Back") }
+                }
+            }
+            mediaItem != null -> {
+                val item = mediaItem!!
+                val coverUrl = item.thumbnailUrl?.let { url ->
+                    if (url.startsWith("/")) container.getServerUrl().trimEnd('/') + url else url
                 }
 
-                Button(onClick = onNavigateBack) {
-                    Text("Back")
+                Column(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .verticalScroll(scrollState)
+                ) {
+                    // Hero poster section
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(if (isCompact) 280.dp else 400.dp)
+                    ) {
+                        if (coverUrl != null) {
+                            AsyncImage(
+                                model = coverUrl,
+                                contentDescription = item.title,
+                                modifier = Modifier.fillMaxSize(),
+                                contentScale = ContentScale.Crop
+                            )
+                        } else {
+                            Box(
+                                Modifier.fillMaxSize().background(
+                                    Brush.verticalGradient(listOf(Color(0xFF1A237E), Color(0xFF0A0A0A)))
+                                )
+                            )
+                        }
+                        // Gradient overlay for text readability
+                        Box(
+                            Modifier.fillMaxSize().background(
+                                Brush.verticalGradient(
+                                    listOf(Color.Transparent, Color(0xCC0A0A0A), Color(0xFF0A0A0A)),
+                                    startY = 100f
+                                )
+                            )
+                        )
+                        // Back button
+                        Button(
+                            onClick = onNavigateBack,
+                            modifier = Modifier.padding(16.dp).align(Alignment.TopStart)
+                        ) {
+                            M3Icon(Icons.Default.ArrowBack, "Back", Modifier.size(20.dp))
+                            Spacer(Modifier.width(8.dp))
+                            Text("Back")
+                        }
+                    }
+
+                    // Metadata content
+                    Column(modifier = Modifier.padding(horizontal = if (isCompact) 24.dp else 48.dp)) {
+                        // Title
+                        Text(
+                            text = item.title,
+                            style = if (isCompact) MaterialTheme.typography.headlineSmall
+                                    else MaterialTheme.typography.headlineMedium,
+                            color = Color.White,
+                            fontWeight = FontWeight.Bold,
+                            maxLines = 2,
+                            overflow = TextOverflow.Ellipsis
+                        )
+
+                        Spacer(Modifier.height(8.dp))
+
+                        // Year + Rating + Type badges
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(12.dp)
+                        ) {
+                            item.year?.let {
+                                Text(it.toString(), color = Color.White.copy(0.7f), style = MaterialTheme.typography.bodyMedium)
+                            }
+                            item.rating?.let { r ->
+                                if (r > 0) {
+                                    Row(verticalAlignment = Alignment.CenterVertically) {
+                                        M3Icon(Icons.Default.Star, "Rating", Modifier.size(16.dp), tint = Color(0xFFFFD700))
+                                        Spacer(Modifier.width(4.dp))
+                                        Text(String.format("%.1f", r), color = Color(0xFFFFD700),
+                                            style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.Bold)
+                                    }
+                                }
+                            }
+                            Box(
+                                Modifier.background(Color.White.copy(0.15f), RoundedCornerShape(4.dp))
+                                    .padding(horizontal = 8.dp, vertical = 2.dp)
+                            ) {
+                                Text(item.mediaType.replace("_", " ").uppercase(),
+                                    color = Color.White.copy(0.8f), style = MaterialTheme.typography.labelSmall)
+                            }
+                            item.quality?.let { q ->
+                                Box(
+                                    Modifier.background(Color(0xFF1B5E20).copy(0.8f), RoundedCornerShape(4.dp))
+                                        .padding(horizontal = 8.dp, vertical = 2.dp)
+                                ) {
+                                    Text(q.uppercase(), color = Color.White, style = MaterialTheme.typography.labelSmall)
+                                }
+                            }
+                        }
+
+                        Spacer(Modifier.height(20.dp))
+
+                        // Play + Back buttons
+                        Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                            Button(onClick = { onNavigateToPlayer(mediaId) }, modifier = Modifier.height(48.dp)) {
+                                M3Icon(Icons.Default.PlayArrow, "Play", Modifier.size(24.dp))
+                                Spacer(Modifier.width(8.dp))
+                                Text("Play", style = MaterialTheme.typography.titleSmall)
+                            }
+                            Button(onClick = onNavigateBack, modifier = Modifier.height(48.dp)) {
+                                Text("Back to Library", style = MaterialTheme.typography.titleSmall)
+                            }
+                        }
+
+                        Spacer(Modifier.height(24.dp))
+
+                        // Synopsis
+                        item.description?.let { desc ->
+                            if (desc.isNotBlank()) {
+                                Text("Synopsis", style = MaterialTheme.typography.titleMedium,
+                                    color = Color.White, fontWeight = FontWeight.Bold)
+                                Spacer(Modifier.height(8.dp))
+                                Text(desc, style = MaterialTheme.typography.bodyMedium,
+                                    color = Color.White.copy(0.8f))
+                                Spacer(Modifier.height(24.dp))
+                            }
+                        }
+
+                        // File info
+                        item.fileSize?.let { size ->
+                            if (size > 0) {
+                                val s = when {
+                                    size > 1073741824 -> String.format("%.1f GB", size.toFloat() / 1073741824)
+                                    size > 1048576 -> String.format("%.1f MB", size.toFloat() / 1048576)
+                                    else -> String.format("%.1f KB", size.toFloat() / 1024)
+                                }
+                                Text("File Size: $s", color = Color.White.copy(0.5f), style = MaterialTheme.typography.bodySmall)
+                            }
+                        }
+                        Spacer(Modifier.height(48.dp))
+                    }
                 }
             }
         }

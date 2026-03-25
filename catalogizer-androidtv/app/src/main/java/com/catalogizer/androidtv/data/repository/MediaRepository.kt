@@ -59,15 +59,20 @@ class MediaRepository(private val context: Context, private val api: Catalogizer
 
     suspend fun getMediaById(mediaId: Long): Flow<MediaItem?> {
         try {
+            // Try entity endpoint first (for entities from browse)
+            val entityResponse = api.getEntityById(mediaId)
+            if (entityResponse.isSuccessful) {
+                return flowOf(entityResponse.body())
+            }
+            // Fallback to media/file endpoint
             val response = api.getMediaById(mediaId)
             if (response.isSuccessful) {
-                val mediaItem = response.body()
-                return flowOf(mediaItem)
-            } else {
-                return flowOf(null)
+                return flowOf(response.body())
             }
+            android.util.Log.w("MediaRepo", "getMediaById failed: entity=${entityResponse.code()} media=${response.code()}")
+            return flowOf(null)
         } catch (e: Exception) {
-            // Handle error and return null
+            android.util.Log.w("MediaRepo", "getMediaById error: ${e.message}")
             return flowOf(null)
         }
     }
