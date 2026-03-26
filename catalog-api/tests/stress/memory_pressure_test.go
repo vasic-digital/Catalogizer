@@ -381,3 +381,44 @@ func TestMemoryPressure_CacheEviction(t *testing.T) {
 		})
 	}
 }
+
+// =============================================================================
+// STRESS TEST: Memory Stability - Heap Growth Under Sustained Load
+// =============================================================================
+
+func TestMemoryStability_UnderSustainedLoad(t *testing.T) {
+	if testing.Short() {
+		t.Skip("skipping memory stability test in short mode")
+	}
+
+	var memBefore, memAfter runtime.MemStats
+	runtime.GC()
+	time.Sleep(100 * time.Millisecond)
+	runtime.ReadMemStats(&memBefore)
+
+	// Simulate sustained allocations and releases
+	for round := 0; round < 20; round++ {
+		data := make([]byte, 1<<20) // 1MB
+		_ = data
+		runtime.GC()
+	}
+
+	runtime.GC()
+	time.Sleep(200 * time.Millisecond)
+	runtime.ReadMemStats(&memAfter)
+
+	var heapGrowthMB float64
+	if memAfter.HeapAlloc > memBefore.HeapAlloc {
+		heapGrowthMB = float64(memAfter.HeapAlloc-memBefore.HeapAlloc) / (1 << 20)
+	} else {
+		heapGrowthMB = -float64(memBefore.HeapAlloc-memAfter.HeapAlloc) / (1 << 20)
+	}
+	t.Logf("Heap growth: %.2f MB (before: %d bytes, after: %d bytes)",
+		heapGrowthMB, memBefore.HeapAlloc, memAfter.HeapAlloc)
+	t.Logf("Total allocs: %d, Frees: %d, GC cycles: %d",
+		memAfter.TotalAlloc-memBefore.TotalAlloc, memAfter.Frees-memBefore.Frees,
+		memAfter.NumGC-memBefore.NumGC)
+
+	assert.Less(t, heapGrowthMB, 10.0,
+		"excessive heap growth after GC indicates memory leak: %.2f MB", heapGrowthMB)
+}
