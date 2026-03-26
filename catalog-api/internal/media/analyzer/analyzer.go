@@ -111,7 +111,10 @@ func (ma *MediaAnalyzer) AnalyzeDirectory(ctx context.Context, directoryPath, sm
 			}
 			return false // Already pending, don't queue again
 		}
-		ma.pendingAnalysis[directoryPath] = &request
+		// Store a separate copy in the map to avoid racing with the local
+		// request variable that will be sent on the channel outside the lock.
+		mapCopy := request
+		ma.pendingAnalysis[directoryPath] = &mapCopy
 		return true // New request, should queue
 	}()
 

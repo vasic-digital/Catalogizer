@@ -435,7 +435,13 @@ func (m *ResilientSMBManager) attemptConnection(ctx context.Context, source *SMB
 
 // scheduleRetry schedules a retry attempt for a failed source
 func (m *ResilientSMBManager) scheduleRetry(source *SMBSource) {
-	delay := source.RetryDelay * time.Duration(source.RetryAttempts)
+	// Read retry fields under source mutex to avoid racing with ForceReconnect
+	source.mutex.RLock()
+	retryAttempts := source.RetryAttempts
+	retryDelay := source.RetryDelay
+	source.mutex.RUnlock()
+
+	delay := retryDelay * time.Duration(retryAttempts)
 	if delay > 5*time.Minute {
 		delay = 5 * time.Minute // Cap maximum delay
 	}
@@ -443,7 +449,7 @@ func (m *ResilientSMBManager) scheduleRetry(source *SMBSource) {
 	m.logger.Info("Scheduling retry for SMB source",
 		zap.String("id", source.ID),
 		zap.Duration("delay", delay),
-		zap.Int("attempt", source.RetryAttempts+1))
+		zap.Int("attempt", retryAttempts+1))
 
 	timer := time.NewTimer(delay)
 	defer timer.Stop()
