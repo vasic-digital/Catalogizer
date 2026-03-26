@@ -3,7 +3,9 @@ package com.catalogizer.androidtv.ui.splash
 import android.content.Context
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Text
 import androidx.compose.runtime.*
@@ -104,7 +106,9 @@ fun SplashContent(
                 Image(
                     painter = painterResource(R.drawable.vasic_digital_logo),
                     contentDescription = "Vasic Digital",
-                    modifier = Modifier.size(24.dp)
+                    modifier = Modifier
+                        .size(24.dp)
+                        .border(1.dp, Color(0xFFDC2626), RoundedCornerShape(6.dp))
                 )
                 Text(
                     text = "Made with \u2764\uFE0F by Vasic Digital",

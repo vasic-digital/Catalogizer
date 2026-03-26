@@ -59,7 +59,7 @@ export function SplashScreen({
           <img
             src={vdLogo}
             alt="Vasic Digital logo"
-            className="w-6 h-6 rounded-full"
+            className="w-6 h-6 rounded-lg border border-red-600"
           />
           <span className="text-slate-500 text-xs">
             Made with &#9829; by Vasic Digital
