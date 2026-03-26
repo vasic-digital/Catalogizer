@@ -37,7 +37,7 @@ Automatically identify and categorize your media collection.
 
 - **50+ media types detected**: Movies, TV shows, music, games, software, documentaries, and more
 - **Quality analysis**: Automatic resolution, codec, and bitrate detection with version tracking
-- **External metadata integration**: Enriches your catalog with data from TMDB, IMDB, TVDB, MusicBrainz, Spotify, and Steam
+- **External metadata integration**: Enriches your catalog with data from 13 providers including TMDB, IMDB, TVDB, MusicBrainz, Spotify, Steam, OpenLibrary, and more, with graceful degradation when providers are unavailable
 - **Real-time monitoring**: Continuously watches storage sources for new, changed, or removed files
 - **Media detection pipeline**: Detector identifies file types, analyzer extracts quality metadata, providers fetch external information
 
@@ -60,6 +60,8 @@ Enterprise-grade security for your media catalog.
 - **SQLCipher encrypted database**: Media metadata is stored in an encrypted SQLite database
 - **CORS configuration**: Configurable cross-origin resource sharing for web deployments
 - **Security testing**: Built-in security testing suite via Docker Compose security profile
+- **Enhanced security scanning**: SonarQube static analysis, Semgrep SAST, Snyk dependency scanning, Trivy container scanning, and OWASP Dependency Check for comprehensive vulnerability coverage
+- **Accessibility compliance**: WCAG 2.0 AA testing with axe-core integration in Playwright end-to-end tests
 
 ## Monitoring and Analytics
 
@@ -165,6 +167,8 @@ Generate professional reports and analytics exports.
 Built for extensibility with a submodule-based architecture.
 
 - **29 Go modules**: Auth, Cache, Database, Concurrency, Storage, EventBus, Streaming, Security, Observability, Formatters, Plugins, Challenges, Filesystem, RateLimiter, Config, Discovery, Media, Middleware, Watcher, Containers, Assets, Entities, Lazy, Memory, Recovery, and more
+- **Lazy service initialization**: LazyServiceRegistry defers expensive service creation until first use, improving startup time and reducing resource consumption for unused features
+- **Semaphore-based concurrency control**: Bounded parallelism for scan operations prevents resource exhaustion on large libraries
 - **9 TypeScript modules**: WebSocket-Client, UI-Components-React, Media-Types, Catalogizer-API-Client, Auth-Context, Media-Browser, Media-Player, Collection-Manager, Dashboard-Analytics
 - **1 Kotlin module**: Android-Toolkit
 - **3 new modules** added in v1.1.0: Lazy (generic lazy loading), Memory (leak detection), Recovery (circuit breaker with automatic state restoration)
@@ -198,5 +202,5 @@ Synchronize your catalog with cloud storage providers.
 - **Recommendation engine**: Suggests media based on user interaction patterns
 - **AI Dashboard**: Intelligent insights derived from library patterns and usage data
 - **WebSocket Event Bus**: Real-time event system connecting backend changes to all connected clients
-- **Connection Pooling**: Managed connection pools for storage protocols
-- **Crash Recovery**: Automatic state restoration from persistent storage after unexpected termination
+- **Connection Pooling**: Managed connection pools for HTTP, Redis, and SMB with configurable limits, idle timeouts, and health checks
+- **Circuit Breaker Resilience**: Automatic failure detection with configurable thresholds, half-open probing, and state restoration from persistent storage after unexpected termination

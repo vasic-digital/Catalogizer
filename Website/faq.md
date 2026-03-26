@@ -104,8 +104,14 @@ Metadata is fetched from external providers:
 - **MusicBrainz**: Music albums and tracks
 - **Spotify**: Music metadata and album art
 - **Steam**: Games and software
+- **OpenLibrary**: Books and ebooks
+- And additional providers with graceful degradation when unavailable
 
 You need API keys for some providers (TMDB is free). Metadata is cached locally to minimize external API calls.
+
+### How do I configure metadata providers?
+
+Set API keys via environment variables in your `.env` file (e.g., `TMDB_API_KEY`, `OMDB_API_KEY`). OpenLibrary and MusicBrainz work without any API keys and are enabled by default. When a provider is unavailable or rate-limited, Catalogizer gracefully degrades by falling back to other providers and serving cached metadata.
 
 ### What if metadata is wrong for a file?
 
@@ -177,6 +183,8 @@ Catalogizer includes scripts for automated security testing:
 - `scripts/security-test.sh` for security-focused tests
 - `scripts/snyk-scan.sh` for dependency vulnerability scanning
 - `scripts/sonarqube-scan.sh` for static code analysis
+- `./scripts/run-sonarqube-scan.sh` for SonarQube static analysis with consolidated reporting
+- `podman-compose -f docker-compose.security.yml --profile semgrep-scan run --rm semgrep-scanner` for Semgrep SAST scanning
 
 ---
 
