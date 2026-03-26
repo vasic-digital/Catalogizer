@@ -9,6 +9,7 @@ import (
 	"catalogizer/internal/auth"
 	internal_config "catalogizer/internal/config"
 	"catalogizer/internal/handlers"
+	"catalogizer/internal/lifecycle"
 	"catalogizer/internal/metrics"
 	"catalogizer/internal/middleware"
 	"catalogizer/internal/services"
@@ -328,6 +329,10 @@ func main() {
 	if err := seedDefaultAdmin(databaseDB, cfg.Auth.AdminUsername, cfg.Auth.AdminPassword); err != nil {
 		log.Printf("Warning: failed to seed admin user: %v", err)
 	}
+
+	// Lazy service registry for on-demand initialization
+	lazyServices := lifecycle.NewLazyServiceRegistry()
+	_ = lazyServices // Will be used as more services migrate to lazy init
 
 	// Initialize services
 	// Convert config to internal format
