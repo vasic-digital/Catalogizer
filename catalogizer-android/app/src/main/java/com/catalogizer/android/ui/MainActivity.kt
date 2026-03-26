@@ -13,6 +13,7 @@ import androidx.core.view.WindowCompat
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.catalogizer.android.CatalogizerApplication
 import com.catalogizer.android.ui.navigation.CatalogizerNavigation
+import com.catalogizer.android.ui.splash.SplashContent
 import com.catalogizer.android.ui.theme.CatalogizerTheme
 import com.catalogizer.android.ui.viewmodel.AuthViewModel
 import com.catalogizer.android.ui.viewmodel.HomeViewModel
@@ -79,7 +80,14 @@ fun CatalogizerApp(
         mainViewModel.initializeApp()
     }
 
-    if (!isLoading) {
+    var splashComplete by remember { mutableStateOf(false) }
+
+    if (!splashComplete) {
+        SplashContent(
+            isAppReady = !isLoading,
+            onSplashComplete = { splashComplete = true }
+        )
+    } else {
         CatalogizerNavigation(
             isAuthenticated = authState.isAuthenticated,
             authViewModel = authViewModel,
