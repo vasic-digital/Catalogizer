@@ -376,6 +376,35 @@ ssh-keyscan -p 2222 gitverse.ru >> ~/.ssh/known_hosts
 - **Database pool**: Connection pool defaults: MaxOpen=25, MaxIdle=10, MaxLifetime=5m, MaxIdleTime=3m. Overridable via config.
 - **Race safety**: `connCount` reads in WebSocketHandler protected by mutex. `SyncService.StartSync()` and `LogManagementService.CollectLogs()` return copies to prevent shared-pointer races.
 
+## CRITICAL: Mandatory Video Recording for Device/Emulator QA
+
+**All HelixQA sessions involving Android devices or emulators MUST include video recording.** This is a MANDATORY, NON-NEGOTIABLE rule for enterprise-grade quality assurance.
+
+### Recording Methods
+- **Android 9 and below** (Mi Box, emulators): `adb shell screenrecord --bit-rate 4000000 /sdcard/qa_session.mp4`
+- **Android 10+** (phones): Use rapid screenshot capture (`adb shell screencap`) assembled into video via ffmpeg
+- **Web sessions**: Playwright `--video on` or ffmpeg x11grab when X display available
+- **Desktop (Tauri)**: ffmpeg x11grab or Xvfb-based recording
+
+### Post-Recording Analysis (MANDATORY)
+Every recorded video and screenshot sequence MUST be deeply analyzed for:
+- **Visual inconsistencies**: misaligned elements, clipped text, wrong colors, missing assets
+- **UI/UX issues**: unresponsive buttons, incorrect focus states, broken animations
+- **Content issues**: empty screens that should have data, placeholder text in production
+- **Brand compliance**: Vasic Digital logo must display in rounded square with red border
+- **Performance issues**: visible jank, slow transitions, loading states lasting too long
+- **Crash indicators**: black screens, frozen frames, unexpected app restarts
+
+### Recording Output
+- Videos stored in `qa-results/video-sessions-<timestamp>/`
+- Screenshot sequences stored in `qa-results/video-sessions-<timestamp>/<device>-frames/`
+- Analysis reports stored alongside videos as markdown files
+
+### Device-Specific Notes
+- Android 15 (SDK 35): `screenrecord` fails with `Encoder failed (err=-38)` from ADB — use screenshot-to-video approach
+- Mi Box (Android 9): Native `screenrecord` works, use `--bit-rate 4000000 --time-limit 120`
+- Always pull videos from device after recording: `adb pull /sdcard/qa_session.mp4`
+
 ## Load Testing
 
 k6 test scripts in `tests/k6/`:
