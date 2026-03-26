@@ -3,6 +3,7 @@ package services
 import (
 	"catalogizer/database"
 	"catalogizer/filesystem"
+	scancontrol "catalogizer/internal/concurrency"
 	"catalogizer/models"
 	"context"
 	"fmt"
@@ -26,7 +27,7 @@ type UniversalScanner struct {
 	scanQueue          chan ScanJob
 	workers            int
 	maxConcurrentScans int
-	scanSem            *semaphore.Weighted
+	scanSem            *scancontrol.Semaphore
 	stopCh             chan struct{}
 	wg                 sync.WaitGroup
 	protocolScannersMu sync.RWMutex
@@ -106,7 +107,7 @@ func NewUniversalScanner(db *database.DB, logger *zap.Logger, renameTracker *Uni
 		scanQueue:          make(chan ScanJob, 100),
 		workers:            concurrency,
 		maxConcurrentScans: concurrency,
-		scanSem:            semaphore.NewWeighted(int64(concurrency)),
+		scanSem:            scancontrol.NewSemaphore(concurrency),
 		stopCh:             make(chan struct{}),
 		protocolScanners:   make(map[string]ProtocolScanner),
 		activeScans:        make(map[string]*ScanStatus),
@@ -189,13 +190,13 @@ func (s *UniversalScanner) scanWorker(workerID int) {
 // processScanJob processes a single scan job
 func (s *UniversalScanner) processScanJob(job ScanJob, workerID int) {
 	// Acquire semaphore to limit concurrent scans
-	if err := s.scanSem.Acquire(job.Context, 1); err != nil {
+	if err := s.scanSem.Acquire(job.Context); err != nil {
 		s.logger.Debug("Scan job cancelled before acquiring semaphore",
 			zap.String("job_id", job.ID),
 			zap.Error(err))
 		return
 	}
-	defer s.scanSem.Release(1)
+	defer s.scanSem.Release()
 
 	s.logger.Debug("Processing scan job",
 		zap.Int("worker_id", workerID),
