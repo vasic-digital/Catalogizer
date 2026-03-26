@@ -1,0 +1,17 @@
+version: "3.8"
+services:
+  helixqa-robot:
+    build: ./HelixQA
+    network_mode: host
+    volumes:
+      - .:/project:ro
+      - ./qa-results:/output
+      - ./HelixQA/data:/data
+      - ./docs/issues:/issues
+    environment:
+      - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY}
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+      - HELIX_OLLAMA_URL=${HELIX_OLLAMA_URL}
+    devices:
+      - /dev/bus/usb
+    command: autonomous --project /project --platforms all --timeout 4h --output /output
