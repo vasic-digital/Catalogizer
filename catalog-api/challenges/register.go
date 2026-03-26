@@ -174,6 +174,13 @@ func RegisterAll(svc *services.ChallengeService) error {
 	svc.Register(NewGoroutineLeakDetectionChallenge())     // CH-092: Goroutine leak detection
 	svc.Register(NewHealthEndpointLatencyChallenge())      // CH-093: Health endpoint < 100ms
 
+	// Provider verification challenges (CH-094 to CH-098)
+	svc.Register(NewOpenLibraryProviderChallenge())             // CH-094: OpenLibrary provider search
+	svc.Register(NewMusicBrainzProviderChallenge())             // CH-095: MusicBrainz provider search
+	svc.Register(NewProviderGracefulDegradationChallenge())     // CH-096: Provider graceful degradation
+	svc.Register(NewProviderManagerRoutingChallenge())           // CH-097: Provider manager routing
+	svc.Register(NewLazyServiceRegistryChallenge())             // CH-098: LazyServiceRegistry init
+
 	// User flow challenges (UF-*): exhaustive multi-platform
 	// user flow automation across all 6 Catalogizer applications
 	RegisterUserFlowAPIChallenges(svc)     // 49 API challenges
