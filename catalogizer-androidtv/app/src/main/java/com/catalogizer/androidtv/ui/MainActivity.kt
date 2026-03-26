@@ -1,6 +1,7 @@
 package com.catalogizer.androidtv.ui
 
 import android.os.Bundle
+import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.layout.fillMaxSize
@@ -26,6 +27,20 @@ class MainActivity : ComponentActivity() {
     private lateinit var mainViewModel: MainViewModel
     private lateinit var homeViewModel: HomeViewModel
     private lateinit var searchViewModel: SearchViewModel
+    private var backPressedOnce = false
+
+    // Prevent accidental exit on Android TV — intercept finish() call
+    // Back presses flow normally through Compose navigation; only when navigation
+    // exhausts its stack does the system call finish(). We guard that final exit.
+    override fun finish() {
+        if (backPressedOnce) {
+            super.finish()
+            return
+        }
+        backPressedOnce = true
+        Toast.makeText(this, "Press back again to exit", Toast.LENGTH_SHORT).show()
+        window.decorView.postDelayed({ backPressedOnce = false }, 2000)
+    }
 
     @OptIn(ExperimentalTvMaterial3Api::class)
     override fun onCreate(savedInstanceState: Bundle?) {

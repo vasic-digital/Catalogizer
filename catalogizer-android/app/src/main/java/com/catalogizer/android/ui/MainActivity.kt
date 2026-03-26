@@ -1,7 +1,9 @@
 package com.catalogizer.android.ui
 
 import android.os.Bundle
+import android.widget.Toast
 import androidx.activity.ComponentActivity
+import androidx.activity.addCallback
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.MaterialTheme
@@ -26,12 +28,25 @@ class MainActivity : ComponentActivity() {
     private lateinit var mainViewModel: MainViewModel
     private lateinit var homeViewModel: HomeViewModel
     private lateinit var searchViewModel: SearchViewModel
+    private var backPressedOnce = false
 
     override fun onCreate(savedInstanceState: Bundle?) {
         // Install splash screen
         val splashScreen = installSplashScreen()
 
         super.onCreate(savedInstanceState)
+
+        // Double-back-press to exit — prevents accidental exits
+        onBackPressedDispatcher.addCallback(this) {
+            if (backPressedOnce) {
+                isEnabled = false
+                onBackPressedDispatcher.onBackPressed()
+                return@addCallback
+            }
+            backPressedOnce = true
+            Toast.makeText(this@MainActivity, "Press back again to exit", Toast.LENGTH_SHORT).show()
+            window.decorView.postDelayed({ backPressedOnce = false }, 2000)
+        }
 
         // Initialize ViewModels
         val dependencyContainer = (application as CatalogizerApplication).dependencyContainer

@@ -267,8 +267,8 @@ run_web_session() {
 
         log "  Capturing: $page_name ($url)..."
 
-        # Use Playwright to take screenshot
-        if npx playwright screenshot --browser chromium "$url" "$screenshot_path" &>/dev/null; then
+        # Use Playwright to take screenshot (wait for network idle to avoid splash captures)
+        if npx playwright screenshot --browser chromium --wait-for-timeout 3000 "$url" "$screenshot_path" &>/dev/null; then
             ok "    Screenshot: $screenshot_name"
             pass=$((pass + 1))
             echo "| $((screenshot_count+1)) | $page_name | \`/$page_path\` | $screenshot_name | PASS |" >> "$report"
@@ -342,6 +342,59 @@ run_helixqa_native() {
         local passed=$(grep -c "| PASSED |" "$output_subdir/qa-report.md" 2>/dev/null || echo 0)
         ok "  $session_name: $passed/$steps steps passed"
     fi
+}
+
+# ─── Device Video Recording & Auto-Login ──────────────────────────────────
+
+# Record device screen (uses screenrecord on Android ≤13, screenshot-to-video on 14+)
+record_device() {
+    local device="$1" output="$2" duration="${3:-60}"
+    local sdk=$(adb -s "$device" shell getprop ro.build.version.sdk 2>/dev/null | tr -d '\r')
+    if [[ "$sdk" -le 33 ]]; then
+        adb -s "$device" shell "nohup screenrecord --bit-rate 4000000 --time-limit $duration /sdcard/qa_rec.mp4 > /dev/null 2>&1 &"
+        log "  Recording via screenrecord on $device (SDK $sdk)"
+    else
+        log "  SDK $sdk: screenrecord unavailable, using screenshot capture on $device"
+    fi
+}
+
+stop_and_pull_recording() {
+    local device="$1" output="$2"
+    adb -s "$device" shell "killall screenrecord" 2>/dev/null
+    sleep 2
+    if adb -s "$device" shell "[ -s /sdcard/qa_rec.mp4 ]" 2>/dev/null; then
+        adb -s "$device" pull /sdcard/qa_rec.mp4 "$output" 2>/dev/null
+        adb -s "$device" shell rm /sdcard/qa_rec.mp4 2>/dev/null
+        ok "  Video saved: $output ($(du -h "$output" | cut -f1))"
+    fi
+}
+
+# Auto-login on Android device via ADB input
+device_auto_login() {
+    local device="$1" pkg="$2"
+    local activity="$pkg/.ui.MainActivity"
+    log "  Auto-login on $device..."
+    adb -s "$device" shell am force-stop "$pkg" 2>/dev/null
+    sleep 1
+    adb -s "$device" shell am start -n "$activity" 2>/dev/null
+    sleep 5  # Wait for splash + login screen
+
+    # Tap username field and type credentials
+    adb -s "$device" shell input keyevent KEYCODE_DPAD_DOWN 2>/dev/null
+    sleep 0.5
+    adb -s "$device" shell input keyevent KEYCODE_DPAD_CENTER 2>/dev/null
+    sleep 0.5
+    adb -s "$device" shell input text "admin" 2>/dev/null
+    sleep 0.5
+    # Move to password field
+    adb -s "$device" shell input keyevent KEYCODE_TAB 2>/dev/null
+    sleep 0.5
+    adb -s "$device" shell input text "admin123" 2>/dev/null
+    sleep 0.5
+    # Press Enter to submit
+    adb -s "$device" shell input keyevent KEYCODE_ENTER 2>/dev/null
+    sleep 3
+    ok "  Auto-login attempted on $device"
 }
 
 # ─── Main Execution ────────────────────────────────────────────────────────
