@@ -167,6 +167,13 @@ func RegisterAll(svc *services.ChallengeService) error {
 	svc.Register(NewDBQueryDurationTrackedChallenge())        // CH-087: DB query duration tracked
 	svc.Register(NewGrafanaDashboardRendersChallenge())       // CH-088: Grafana dashboard config exists
 
+	// Performance verification challenges (CH-089 to CH-093)
+	svc.Register(NewScanSemaphoreLimitsChallenge())        // CH-089: Scan semaphore limits
+	svc.Register(NewRedisConnectionPoolingChallenge())     // CH-090: Redis connection pooling
+	svc.Register(NewHTTPClientPooledTransportChallenge())  // CH-091: HTTP client pooled transport
+	svc.Register(NewGoroutineLeakDetectionChallenge())     // CH-092: Goroutine leak detection
+	svc.Register(NewHealthEndpointLatencyChallenge())      // CH-093: Health endpoint < 100ms
+
 	// User flow challenges (UF-*): exhaustive multi-platform
 	// user flow automation across all 6 Catalogizer applications
 	RegisterUserFlowAPIChallenges(svc)     // 49 API challenges
