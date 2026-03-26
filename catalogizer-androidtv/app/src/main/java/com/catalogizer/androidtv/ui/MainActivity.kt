@@ -12,6 +12,7 @@ import androidx.tv.material3.ExperimentalTvMaterial3Api
 import androidx.tv.material3.Surface
 import com.catalogizer.androidtv.CatalogizerTVApplication
 import com.catalogizer.androidtv.ui.navigation.TVNavigation
+import com.catalogizer.androidtv.ui.splash.SplashContent
 import com.catalogizer.androidtv.ui.theme.CatalogizerTVTheme
 import com.catalogizer.androidtv.ui.screens.search.SearchViewModel
 import com.catalogizer.androidtv.ui.viewmodel.AuthViewModel
@@ -79,7 +80,14 @@ fun CatalogizerTVApp(
         mainViewModel.initializeApp()
     }
 
-    if (!isLoading) {
+    var splashComplete by remember { mutableStateOf(false) }
+
+    if (!splashComplete) {
+        SplashContent(
+            isAppReady = !isLoading,
+            onSplashComplete = { splashComplete = true }
+        )
+    } else {
         TVNavigation(
             isAuthenticated = authState.isAuthenticated,
             authViewModel = authViewModel,
