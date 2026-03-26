@@ -437,9 +437,16 @@ func main() {
 
 	// Initialize Redis client for distributed rate limiting
 	redisClient := redis.NewClient(&redis.Options{
-		Addr:     os.Getenv("REDIS_ADDR"),
-		Password: os.Getenv("REDIS_PASSWORD"),
-		DB:       0,
+		Addr:         os.Getenv("REDIS_ADDR"),
+		Password:     os.Getenv("REDIS_PASSWORD"),
+		DB:           0,
+		PoolSize:     10,
+		MinIdleConns: 3,
+		MaxRetries:   3,
+		DialTimeout:  5 * time.Second,
+		ReadTimeout:  3 * time.Second,
+		WriteTimeout: 3 * time.Second,
+		PoolTimeout:  4 * time.Second,
 	})
 
 	// Test Redis connection
