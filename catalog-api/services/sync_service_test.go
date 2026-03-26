@@ -1054,3 +1054,362 @@ func TestSyncService_CreateSyncEndpoint(t *testing.T) {
 		})
 	}
 }
+
+// ============================================================================
+// EXPANDED COVERAGE — edge cases for skip filters, sync modes, validation
+// ============================================================================
+
+func TestSyncService_ShouldSkipFile_EdgeCases(t *testing.T) {
+	service := NewSyncService(nil, nil, nil)
+
+	tests := []struct {
+		name     string
+		filename string
+		expected bool
+	}{
+		{name: "hidden .DS_Store", filename: ".DS_Store", expected: true},
+		{name: "hidden .env", filename: ".env", expected: true},
+		{name: "tmp uppercase not matched", filename: "FILE.TMP", expected: false},
+		{name: "temp extension", filename: "backup.temp", expected: true},
+		{name: "normal pdf", filename: "report.pdf", expected: false},
+		{name: "normal mp4", filename: "video.mp4", expected: false},
+		{name: "dotfile in path", filename: "/path/to/.config", expected: true},
+		{name: "tmp in path", filename: "/path/to/data.tmp", expected: true},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			result := service.shouldSkipFile(tt.filename, &models.SyncEndpoint{})
+			assert.Equal(t, tt.expected, result)
+		})
+	}
+}
+
+func TestSyncService_IsValidType_Directions(t *testing.T) {
+	service := NewSyncService(nil, nil, nil)
+
+	validDirections := []string{models.SyncDirectionUpload, models.SyncDirectionDownload, models.SyncDirectionBidirectional}
+
+	tests := []struct {
+		name      string
+		direction string
+		expected  bool
+	}{
+		{name: "upload is valid", direction: models.SyncDirectionUpload, expected: true},
+		{name: "download is valid", direction: models.SyncDirectionDownload, expected: true},
+		{name: "bidirectional is valid", direction: models.SyncDirectionBidirectional, expected: true},
+		{name: "push is invalid", direction: "push", expected: false},
+		{name: "pull is invalid", direction: "pull", expected: false},
+		{name: "empty is invalid", direction: "", expected: false},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			result := service.isValidType(tt.direction, validDirections)
+			assert.Equal(t, tt.expected, result)
+		})
+	}
+}
+
+func TestSyncService_MirrorSync_SkipsUnchangedFiles(t *testing.T) {
+	service := NewSyncService(nil, nil, nil)
+	session := &models.SyncSession{ID: 1, UserID: 1}
+
+	srcDir := t.TempDir()
+	dstDir := t.TempDir()
+
+	content := []byte("same content")
+	srcFile := filepath.Join(srcDir, "same.txt")
+	dstFile := filepath.Join(dstDir, "same.txt")
+
+	require.NoError(t, os.WriteFile(srcFile, content, 0644))
+	require.NoError(t, os.WriteFile(dstFile, content, 0644))
+
+	// Set destination file to be same time as source (not older)
+	srcInfo, err := os.Stat(srcFile)
+	require.NoError(t, err)
+	require.NoError(t, os.Chtimes(dstFile, srcInfo.ModTime(), srcInfo.ModTime()))
+
+	err = service.performMirrorSync(srcDir, dstDir, session)
+	assert.NoError(t, err)
+
+	// Destination should still have original content
+	got, err := os.ReadFile(dstFile)
+	require.NoError(t, err)
+	assert.Equal(t, content, got)
+}
+
+func TestSyncService_IncrementalSync_CopiesNewerFiles(t *testing.T) {
+	service := NewSyncService(nil, nil, nil)
+	session := &models.SyncSession{ID: 1, UserID: 1}
+
+	srcDir := t.TempDir()
+	dstDir := t.TempDir()
+
+	srcFile := filepath.Join(srcDir, "updated.txt")
+	dstFile := filepath.Join(dstDir, "updated.txt")
+
+	// Create destination file first
+	require.NoError(t, os.WriteFile(dstFile, []byte("old"), 0644))
+
+	// Set destination to the past
+	pastTime := time.Now().Add(-2 * time.Hour)
+	require.NoError(t, os.Chtimes(dstFile, pastTime, pastTime))
+
+	// Create newer source file
+	require.NoError(t, os.WriteFile(srcFile, []byte("new content"), 0644))
+
+	err := service.performIncrementalSync(srcDir, dstDir, session)
+	assert.NoError(t, err)
+
+	// Destination should have new content
+	got, err := os.ReadFile(dstFile)
+	require.NoError(t, err)
+	assert.Equal(t, "new content", string(got))
+}
+
+func TestSyncService_MirrorSync_NonexistentSource(t *testing.T) {
+	service := NewSyncService(nil, nil, nil)
+	session := &models.SyncSession{ID: 1, UserID: 1}
+
+	dstDir := t.TempDir()
+
+	err := service.performMirrorSync("/nonexistent/source/dir", dstDir, session)
+	assert.Error(t, err)
+}
+
+func TestSyncService_IncrementalSync_NonexistentSource(t *testing.T) {
+	service := NewSyncService(nil, nil, nil)
+	session := &models.SyncSession{ID: 1, UserID: 1}
+
+	dstDir := t.TempDir()
+
+	err := service.performIncrementalSync("/nonexistent/source/dir", dstDir, session)
+	assert.Error(t, err)
+}
+
+func TestSyncService_CleanupDestination_WithSubdirectories(t *testing.T) {
+	service := NewSyncService(nil, nil, nil)
+	session := &models.SyncSession{ID: 1, UserID: 1}
+
+	srcDir := t.TempDir()
+	dstDir := t.TempDir()
+
+	// Create matching structure
+	require.NoError(t, os.MkdirAll(filepath.Join(srcDir, "subdir"), 0755))
+	require.NoError(t, os.WriteFile(filepath.Join(srcDir, "subdir", "keep.txt"), []byte("keep"), 0644))
+
+	require.NoError(t, os.MkdirAll(filepath.Join(dstDir, "subdir"), 0755))
+	require.NoError(t, os.WriteFile(filepath.Join(dstDir, "subdir", "keep.txt"), []byte("keep"), 0644))
+	require.NoError(t, os.WriteFile(filepath.Join(dstDir, "subdir", "orphan.txt"), []byte("orphan"), 0644))
+
+	err := service.cleanupDestination(srcDir, dstDir, session)
+	assert.NoError(t, err)
+
+	// orphan.txt should be removed
+	_, err = os.Stat(filepath.Join(dstDir, "subdir", "orphan.txt"))
+	assert.True(t, os.IsNotExist(err))
+
+	// keep.txt should remain
+	_, err = os.Stat(filepath.Join(dstDir, "subdir", "keep.txt"))
+	assert.NoError(t, err)
+}
+
+func TestSyncService_PerformLocalSync_WithNilSettings(t *testing.T) {
+	service := NewSyncService(nil, nil, nil)
+	session := &models.SyncSession{ID: 1, UserID: 1}
+
+	// nil SyncSettings with a valid LocalPath
+	endpoint := &models.SyncEndpoint{
+		LocalPath: "/tmp/src",
+	}
+
+	err := service.performLocalSync(session, endpoint)
+	assert.Error(t, err)
+	assert.Contains(t, err.Error(), "destination directory not specified")
+}
+
+func TestSyncService_ShouldSkipRemoteFile_EdgeCases(t *testing.T) {
+	service := NewSyncService(nil, nil, nil)
+
+	tests := []struct {
+		name     string
+		file     *WebDAVFile
+		expected bool
+	}{
+		{
+			name:     "dotfile .DS_Store",
+			file:     &WebDAVFile{Path: "/remote/.DS_Store"},
+			expected: true,
+		},
+		{
+			name:     "dotfile .env",
+			file:     &WebDAVFile{Path: "/remote/.env"},
+			expected: true,
+		},
+		{
+			name:     "regular text file",
+			file:     &WebDAVFile{Path: "/remote/notes.txt"},
+			expected: false,
+		},
+		{
+			name:     "regular binary file",
+			file:     &WebDAVFile{Path: "/remote/video.mp4"},
+			expected: false,
+		},
+		{
+			name:     "temp file deep path",
+			file:     &WebDAVFile{Path: "/a/b/c/d/work.temp"},
+			expected: true,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			result := service.shouldSkipRemoteFile(tt.file, &models.SyncEndpoint{})
+			assert.Equal(t, tt.expected, result)
+		})
+	}
+}
+
+func TestSyncService_ValidateEndpoint_AllDirections(t *testing.T) {
+	service := NewSyncService(nil, nil, nil)
+
+	base := models.SyncEndpoint{
+		Name:      "Test",
+		Type:      models.SyncTypeLocal,
+		URL:       "file:///tmp",
+		LocalPath: "/data",
+	}
+
+	t.Run("upload direction valid", func(t *testing.T) {
+		ep := base
+		ep.SyncDirection = models.SyncDirectionUpload
+		assert.NoError(t, service.validateSyncEndpoint(&ep))
+	})
+
+	t.Run("download direction valid", func(t *testing.T) {
+		ep := base
+		ep.SyncDirection = models.SyncDirectionDownload
+		assert.NoError(t, service.validateSyncEndpoint(&ep))
+	})
+
+	t.Run("bidirectional direction valid", func(t *testing.T) {
+		ep := base
+		ep.SyncDirection = models.SyncDirectionBidirectional
+		assert.NoError(t, service.validateSyncEndpoint(&ep))
+	})
+
+	t.Run("custom direction invalid", func(t *testing.T) {
+		ep := base
+		ep.SyncDirection = "sync"
+		err := service.validateSyncEndpoint(&ep)
+		assert.Error(t, err)
+		assert.Contains(t, err.Error(), "invalid sync direction")
+	})
+}
+
+func TestSyncService_ValidateEndpoint_AllTypes(t *testing.T) {
+	service := NewSyncService(nil, nil, nil)
+
+	base := models.SyncEndpoint{
+		Name:          "Test",
+		URL:           "file:///tmp",
+		SyncDirection: models.SyncDirectionUpload,
+		LocalPath:     "/data",
+	}
+
+	t.Run("webdav type valid", func(t *testing.T) {
+		ep := base
+		ep.Type = models.SyncTypeWebDAV
+		assert.NoError(t, service.validateSyncEndpoint(&ep))
+	})
+
+	t.Run("cloud_storage type valid", func(t *testing.T) {
+		ep := base
+		ep.Type = models.SyncTypeCloudStorage
+		assert.NoError(t, service.validateSyncEndpoint(&ep))
+	})
+
+	t.Run("local type valid", func(t *testing.T) {
+		ep := base
+		ep.Type = models.SyncTypeLocal
+		assert.NoError(t, service.validateSyncEndpoint(&ep))
+	})
+
+	t.Run("manual type invalid for endpoint", func(t *testing.T) {
+		ep := base
+		ep.Type = models.SyncTypeManual
+		err := service.validateSyncEndpoint(&ep)
+		assert.Error(t, err)
+		assert.Contains(t, err.Error(), "invalid sync type")
+	})
+
+	t.Run("scheduled type invalid for endpoint", func(t *testing.T) {
+		ep := base
+		ep.Type = models.SyncTypeScheduled
+		err := service.validateSyncEndpoint(&ep)
+		assert.Error(t, err)
+		assert.Contains(t, err.Error(), "invalid sync type")
+	})
+}
+
+func TestSyncService_CopyFile_OverwritesExistingFile(t *testing.T) {
+	service := NewSyncService(nil, nil, nil)
+
+	srcDir := t.TempDir()
+	dstDir := t.TempDir()
+
+	srcPath := filepath.Join(srcDir, "source.txt")
+	dstPath := filepath.Join(dstDir, "dest.txt")
+
+	// Create destination first with old content
+	require.NoError(t, os.WriteFile(dstPath, []byte("old content"), 0644))
+
+	// Create source with new content
+	require.NoError(t, os.WriteFile(srcPath, []byte("new content"), 0644))
+
+	err := service.copyFile(srcPath, dstPath, 0644)
+	assert.NoError(t, err)
+
+	content, err := os.ReadFile(dstPath)
+	require.NoError(t, err)
+	assert.Equal(t, "new content", string(content))
+}
+
+func TestSyncService_CalculateChecksum_EmptyFile(t *testing.T) {
+	service := NewSyncService(nil, nil, nil)
+
+	tmpDir := t.TempDir()
+	emptyFile := filepath.Join(tmpDir, "empty.txt")
+	require.NoError(t, os.WriteFile(emptyFile, []byte{}, 0644))
+
+	checksum, err := service.calculateChecksum(emptyFile)
+	assert.NoError(t, err)
+	assert.NotEmpty(t, checksum)
+	// SHA256 of empty input is a known value
+	assert.Equal(t, "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855", checksum)
+}
+
+func TestSyncService_ScanLocalFiles_EmptyDirectory(t *testing.T) {
+	service := NewSyncService(nil, nil, nil)
+
+	tmpDir := t.TempDir()
+	files, err := service.scanLocalFiles(tmpDir)
+	assert.NoError(t, err)
+	assert.Empty(t, files)
+}
+
+func TestSyncService_ScanLocalFiles_DeepNesting(t *testing.T) {
+	service := NewSyncService(nil, nil, nil)
+
+	tmpDir := t.TempDir()
+	deepDir := filepath.Join(tmpDir, "a", "b", "c", "d")
+	require.NoError(t, os.MkdirAll(deepDir, 0755))
+	require.NoError(t, os.WriteFile(filepath.Join(deepDir, "deep.txt"), []byte("deep"), 0644))
+	require.NoError(t, os.WriteFile(filepath.Join(tmpDir, "root.txt"), []byte("root"), 0644))
+
+	files, err := service.scanLocalFiles(tmpDir)
+	assert.NoError(t, err)
+	assert.Len(t, files, 2)
+}
