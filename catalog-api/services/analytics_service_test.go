@@ -1286,4 +1286,848 @@ func TestAnalyticsService_ExtractDateRange_AllBranches(t *testing.T) {
 	}
 }
 
+// ---------------------------------------------------------------------------
+// Extended edge-case and data-scenario tests
+// ---------------------------------------------------------------------------
+
+func TestAnalyticsService_AnalyzeAccessPatterns_EdgeCases(t *testing.T) {
+	svc := newTestAnalyticsService()
+
+	t.Run("empty logs returns empty patterns", func(t *testing.T) {
+		result := svc.analyzeAccessPatterns(nil)
+
+		hourly, ok := result["hourly"].(map[string]int)
+		assert.True(t, ok)
+		assert.Empty(t, hourly)
+
+		daily, ok := result["daily"].(map[string]int)
+		assert.True(t, ok)
+		assert.Empty(t, daily)
+	})
+
+	t.Run("single log entry", func(t *testing.T) {
+		logs := []models.MediaAccessLog{
+			{AccessTime: time.Date(2025, 3, 5, 22, 15, 0, 0, time.UTC)}, // Wednesday, 22:00
+		}
+		result := svc.analyzeAccessPatterns(logs)
+
+		hourly := result["hourly"].(map[string]int)
+		assert.Equal(t, 1, hourly["22"])
+		assert.Len(t, hourly, 1)
+
+		daily := result["daily"].(map[string]int)
+		assert.Equal(t, 1, daily["Wednesday"])
+		assert.Len(t, daily, 1)
+	})
+
+	t.Run("all seven weekdays covered", func(t *testing.T) {
+		// 2025-01-06 is Monday
+		var logs []models.MediaAccessLog
+		for i := 0; i < 7; i++ {
+			logs = append(logs, models.MediaAccessLog{
+				AccessTime: time.Date(2025, 1, 6+i, 12, 0, 0, 0, time.UTC),
+			})
+		}
+		result := svc.analyzeAccessPatterns(logs)
+
+		daily := result["daily"].(map[string]int)
+		assert.Len(t, daily, 7)
+		for _, day := range []string{"Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"} {
+			assert.Equal(t, 1, daily[day], "expected 1 access on %s", day)
+		}
+	})
+
+	t.Run("all 24 hours covered", func(t *testing.T) {
+		var logs []models.MediaAccessLog
+		for h := 0; h < 24; h++ {
+			logs = append(logs, models.MediaAccessLog{
+				AccessTime: time.Date(2025, 1, 1, h, 0, 0, 0, time.UTC),
+			})
+		}
+		result := svc.analyzeAccessPatterns(logs)
+
+		hourly := result["hourly"].(map[string]int)
+		assert.Len(t, hourly, 24)
+	})
+}
+
+func TestAnalyticsService_CalculateUserRetention_SingleUser(t *testing.T) {
+	svc := newTestAnalyticsService()
+
+	t.Run("single user many accesses same day", func(t *testing.T) {
+		var logs []models.MediaAccessLog
+		for h := 0; h < 24; h++ {
+			logs = append(logs, models.MediaAccessLog{
+				UserID:     1,
+				AccessTime: time.Date(2025, 1, 1, h, 0, 0, 0, time.UTC),
+			})
+		}
+		// First access 00:00, last access 23:00 => 23/24 = 0.9583... days
+		result := svc.calculateUserRetention(logs)
+		assert.InDelta(t, 23.0/24.0, result, 0.01)
+	})
+}
+
+func TestAnalyticsService_AnalyzeDeviceUsage_PartialDeviceInfo(t *testing.T) {
+	svc := newTestAnalyticsService()
+
+	t.Run("nil platform and nil model", func(t *testing.T) {
+		logs := []models.MediaAccessLog{
+			{DeviceInfo: &models.DeviceInfo{Platform: nil, DeviceModel: nil}},
+		}
+		result := svc.analyzeDeviceUsage(logs)
+		// Both nil => " " (space between two empty strings)
+		assert.Equal(t, map[string]int{" ": 1}, result)
+	})
+
+	t.Run("platform set but model nil", func(t *testing.T) {
+		android := "Android"
+		logs := []models.MediaAccessLog{
+			{DeviceInfo: &models.DeviceInfo{Platform: &android, DeviceModel: nil}},
+		}
+		result := svc.analyzeDeviceUsage(logs)
+		assert.Equal(t, map[string]int{"Android ": 1}, result)
+	})
+
+	t.Run("model set but platform nil", func(t *testing.T) {
+		pixel := "Pixel 7"
+		logs := []models.MediaAccessLog{
+			{DeviceInfo: &models.DeviceInfo{Platform: nil, DeviceModel: &pixel}},
+		}
+		result := svc.analyzeDeviceUsage(logs)
+		assert.Equal(t, map[string]int{" Pixel 7": 1}, result)
+	})
+
+	t.Run("mixed device info and nil entries", func(t *testing.T) {
+		android := "Android"
+		pixel := "Pixel 7"
+		logs := []models.MediaAccessLog{
+			{DeviceInfo: &models.DeviceInfo{Platform: &android, DeviceModel: &pixel}},
+			{DeviceInfo: nil},
+			{DeviceInfo: &models.DeviceInfo{Platform: &android, DeviceModel: &pixel}},
+			{DeviceInfo: nil},
+			{DeviceInfo: nil},
+		}
+		result := svc.analyzeDeviceUsage(logs)
+		assert.Equal(t, map[string]int{"Android Pixel 7": 2}, result)
+	})
+}
+
+func TestAnalyticsService_FilterLogsByDate_SingleLogJustInsideRange(t *testing.T) {
+	svc := newTestAnalyticsService()
+
+	startDate := time.Date(2025, 6, 1, 0, 0, 0, 0, time.UTC)
+	endDate := time.Date(2025, 6, 30, 0, 0, 0, 0, time.UTC)
+
+	t.Run("one nanosecond after start", func(t *testing.T) {
+		logs := []models.MediaAccessLog{
+			{AccessTime: startDate.Add(1 * time.Nanosecond)},
+		}
+		result := svc.filterLogsByDate(logs, startDate, endDate)
+		assert.Len(t, result, 1)
+	})
+
+	t.Run("one nanosecond before end", func(t *testing.T) {
+		logs := []models.MediaAccessLog{
+			{AccessTime: endDate.Add(-1 * time.Nanosecond)},
+		}
+		result := svc.filterLogsByDate(logs, startDate, endDate)
+		assert.Len(t, result, 1)
+	})
+
+	t.Run("exactly at start is excluded", func(t *testing.T) {
+		logs := []models.MediaAccessLog{
+			{AccessTime: startDate},
+		}
+		result := svc.filterLogsByDate(logs, startDate, endDate)
+		assert.Len(t, result, 0)
+	})
+
+	t.Run("exactly at end is excluded", func(t *testing.T) {
+		logs := []models.MediaAccessLog{
+			{AccessTime: endDate},
+		}
+		result := svc.filterLogsByDate(logs, startDate, endDate)
+		assert.Len(t, result, 0)
+	})
+
+	t.Run("nil logs returns empty", func(t *testing.T) {
+		result := svc.filterLogsByDate(nil, startDate, endDate)
+		assert.Empty(t, result)
+	})
+
+	t.Run("inverted date range returns empty", func(t *testing.T) {
+		logs := []models.MediaAccessLog{
+			{AccessTime: time.Date(2025, 6, 15, 0, 0, 0, 0, time.UTC)},
+		}
+		// end before start — nothing passes
+		result := svc.filterLogsByDate(logs, endDate, startDate)
+		assert.Empty(t, result)
+	})
+}
+
+func TestAnalyticsService_FindMostAccessedMedia_AccessCounts(t *testing.T) {
+	svc := newTestAnalyticsService()
+
+	t.Run("nil logs returns empty", func(t *testing.T) {
+		result := svc.findMostAccessedMedia(nil)
+		assert.Empty(t, result)
+	})
+
+	t.Run("single media accessed once has count 1", func(t *testing.T) {
+		logs := []models.MediaAccessLog{{MediaID: 42}}
+		result := svc.findMostAccessedMedia(logs)
+		assert.Len(t, result, 1)
+		assert.Equal(t, 42, result[0].MediaID)
+		assert.Equal(t, 1, result[0].AccessCount)
+	})
+
+	t.Run("large dataset with many unique media", func(t *testing.T) {
+		var logs []models.MediaAccessLog
+		for i := 1; i <= 100; i++ {
+			// Each media accessed i times
+			for j := 0; j < i; j++ {
+				logs = append(logs, models.MediaAccessLog{MediaID: i})
+			}
+		}
+		result := svc.findMostAccessedMedia(logs)
+		assert.Len(t, result, 100)
+
+		countMap := make(map[int]int)
+		for _, r := range result {
+			countMap[r.MediaID] = r.AccessCount
+		}
+		assert.Equal(t, 1, countMap[1])
+		assert.Equal(t, 50, countMap[50])
+		assert.Equal(t, 100, countMap[100])
+	})
+}
+
+func TestAnalyticsService_CalculateAveragePlaybackTime_MixedNilDurations(t *testing.T) {
+	svc := newTestAnalyticsService()
+
+	dur5 := 5 * time.Minute
+	dur15 := 15 * time.Minute
+
+	t.Run("all nil durations divides total zero by log count", func(t *testing.T) {
+		logs := []models.MediaAccessLog{
+			{PlaybackDuration: nil},
+			{PlaybackDuration: nil},
+			{PlaybackDuration: nil},
+		}
+		result := svc.calculateAveragePlaybackTime(logs)
+		assert.Equal(t, time.Duration(0), result)
+	})
+
+	t.Run("mixed nil and valid — average includes nils in denominator", func(t *testing.T) {
+		logs := []models.MediaAccessLog{
+			{PlaybackDuration: &dur5},
+			{PlaybackDuration: nil},
+			{PlaybackDuration: &dur15},
+			{PlaybackDuration: nil},
+		}
+		// Total = 20min, count = 4 => 5min average
+		result := svc.calculateAveragePlaybackTime(logs)
+		assert.Equal(t, 5*time.Minute, result)
+	})
+
+	t.Run("single nil duration", func(t *testing.T) {
+		logs := []models.MediaAccessLog{
+			{PlaybackDuration: nil},
+		}
+		result := svc.calculateAveragePlaybackTime(logs)
+		assert.Equal(t, time.Duration(0), result)
+	})
+}
+
+func TestAnalyticsService_AnalyzeLocations_DuplicatesAndPrecision(t *testing.T) {
+	svc := newTestAnalyticsService()
+
+	t.Run("nil logs returns empty", func(t *testing.T) {
+		result := svc.analyzeLocations(nil)
+		assert.Empty(t, result)
+	})
+
+	t.Run("many accesses from same location", func(t *testing.T) {
+		var logs []models.MediaAccessLog
+		for i := 0; i < 50; i++ {
+			logs = append(logs, models.MediaAccessLog{
+				Location: &models.Location{Latitude: 37.77, Longitude: -122.42},
+			})
+		}
+		result := svc.analyzeLocations(logs)
+		assert.Len(t, result, 1)
+		assert.Equal(t, 50, result["37.77,-122.42"])
+	})
+
+	t.Run("locations with different precision collapse to 2 decimals", func(t *testing.T) {
+		// Both round to 40.71, -74.01 in fmt.Sprintf("%.2f,%.2f")
+		logs := []models.MediaAccessLog{
+			{Location: &models.Location{Latitude: 40.7128, Longitude: -74.0060}},
+			{Location: &models.Location{Latitude: 40.7100, Longitude: -74.0100}},
+		}
+		result := svc.analyzeLocations(logs)
+		assert.Equal(t, 2, result["40.71,-74.01"])
+	})
+}
+
+func TestAnalyticsService_GetTopLocations_ZeroLimit(t *testing.T) {
+	svc := newTestAnalyticsService()
+
+	data := map[string]interface{}{
+		"locations": []map[string]interface{}{
+			{"city": "New York"},
+			{"city": "London"},
+		},
+	}
+
+	result := svc.getTopLocations(data, 0)
+	assert.Empty(t, result)
+}
+
+func TestAnalyticsService_GetTopLocations_LimitOne(t *testing.T) {
+	svc := newTestAnalyticsService()
+
+	data := map[string]interface{}{
+		"locations": []map[string]interface{}{
+			{"city": "New York"},
+			{"city": "London"},
+			{"city": "Tokyo"},
+		},
+	}
+
+	result := svc.getTopLocations(data, 1)
+	assert.Len(t, result, 1)
+	assert.Equal(t, "New York", result[0]["city"])
+}
+
+func TestAnalyticsService_GetTopLocations_WrongTypeForLocations(t *testing.T) {
+	svc := newTestAnalyticsService()
+
+	data := map[string]interface{}{
+		"locations": "not-a-slice",
+	}
+
+	result := svc.getTopLocations(data, 10)
+	assert.Empty(t, result)
+}
+
+func TestAnalyticsService_CalculateSystemHealthScore_EdgeCases(t *testing.T) {
+	svc := newTestAnalyticsService()
+
+	tests := []struct {
+		name      string
+		analytics *models.SystemAnalytics
+		expected  float64
+	}{
+		{
+			name: "only accesses — no events, no session",
+			analytics: &models.SystemAnalytics{
+				TotalUsers:             10,
+				ActiveUsers:            5,
+				TotalMediaAccesses:     100,
+				TotalEvents:            0,
+				AverageSessionDuration: 0,
+			},
+			expected: 50.0, // 20 (50% active) + 30 (accesses>0) + 0 + 0
+		},
+		{
+			name: "only events — no accesses",
+			analytics: &models.SystemAnalytics{
+				TotalUsers:             10,
+				ActiveUsers:            10,
+				TotalMediaAccesses:     0,
+				TotalEvents:            50,
+				AverageSessionDuration: 0,
+			},
+			expected: 60.0, // 40 (100% active) + 0 + 20 (events>0) + 0
+		},
+		{
+			name: "session exactly 5 minutes — does not earn bonus",
+			analytics: &models.SystemAnalytics{
+				TotalUsers:             10,
+				ActiveUsers:            10,
+				TotalMediaAccesses:     1,
+				TotalEvents:            1,
+				AverageSessionDuration: 5 * time.Minute,
+			},
+			expected: 90.0, // 40 + 30 + 20 + 0 (not >5min)
+		},
+		{
+			name: "session 5 minutes and 1 second — earns bonus",
+			analytics: &models.SystemAnalytics{
+				TotalUsers:             10,
+				ActiveUsers:            10,
+				TotalMediaAccesses:     1,
+				TotalEvents:            1,
+				AverageSessionDuration: 5*time.Minute + 1*time.Second,
+			},
+			expected: 100.0, // 40 + 30 + 20 + 10
+		},
+		{
+			name: "single user who is active",
+			analytics: &models.SystemAnalytics{
+				TotalUsers:             1,
+				ActiveUsers:            1,
+				TotalMediaAccesses:     1,
+				TotalEvents:            1,
+				AverageSessionDuration: 10 * time.Minute,
+			},
+			expected: 100.0,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			result := svc.calculateSystemHealthScore(tt.analytics)
+			assert.InDelta(t, tt.expected, result, 0.01)
+		})
+	}
+}
+
+func TestAnalyticsService_CalculateGrowthRate_EdgeCases(t *testing.T) {
+	svc := newTestAnalyticsService()
+
+	tests := []struct {
+		name       string
+		growthData []models.UserGrowthPoint
+		expected   float64
+	}{
+		{
+			name:       "nil data",
+			growthData: nil,
+			expected:   0.0,
+		},
+		{
+			name: "no growth (same count)",
+			growthData: []models.UserGrowthPoint{
+				{UserCount: 50},
+				{UserCount: 50},
+			},
+			expected: 0.0,
+		},
+		{
+			name: "many points — only first and last matter",
+			growthData: []models.UserGrowthPoint{
+				{UserCount: 100},
+				{UserCount: 500},
+				{UserCount: 1},
+				{UserCount: 200}, // last
+			},
+			expected: 100.0, // (200-100)/100 * 100
+		},
+		{
+			name: "very large growth",
+			growthData: []models.UserGrowthPoint{
+				{UserCount: 1},
+				{UserCount: 1000001},
+			},
+			expected: 100000000.0, // (1000001-1)/1 * 100
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			result := svc.calculateGrowthRate(tt.growthData)
+			assert.InDelta(t, tt.expected, result, 0.01)
+		})
+	}
+}
+
+func TestAnalyticsService_CalculateEngagementLevel_BoundaryValues(t *testing.T) {
+	svc := newTestAnalyticsService()
+
+	tests := []struct {
+		name      string
+		analytics *models.SystemAnalytics
+		expected  string
+	}{
+		{
+			name: "just below medium threshold (19.99 per user)",
+			analytics: &models.SystemAnalytics{
+				TotalUsers:         100,
+				TotalMediaAccesses: 1999,
+			},
+			expected: "low",
+		},
+		{
+			name: "just below high threshold (49.99 per user)",
+			analytics: &models.SystemAnalytics{
+				TotalUsers:         100,
+				TotalMediaAccesses: 4999,
+			},
+			expected: "medium",
+		},
+		{
+			name: "single user single access",
+			analytics: &models.SystemAnalytics{
+				TotalUsers:         1,
+				TotalMediaAccesses: 1,
+			},
+			expected: "low",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			result := svc.calculateEngagementLevel(tt.analytics)
+			assert.Equal(t, tt.expected, result)
+		})
+	}
+}
+
+func TestAnalyticsService_AnalyzePopularTimeRanges_AllBoundaries(t *testing.T) {
+	svc := newTestAnalyticsService()
+
+	t.Run("boundary hour 6 is morning", func(t *testing.T) {
+		logs := []models.MediaAccessLog{
+			{AccessTime: time.Date(2025, 1, 1, 6, 0, 0, 0, time.UTC)},
+		}
+		result := svc.analyzePopularTimeRanges(logs)
+		assert.Equal(t, 1, result["morning"])
+	})
+
+	t.Run("boundary hour 11 is morning", func(t *testing.T) {
+		logs := []models.MediaAccessLog{
+			{AccessTime: time.Date(2025, 1, 1, 11, 59, 0, 0, time.UTC)},
+		}
+		result := svc.analyzePopularTimeRanges(logs)
+		assert.Equal(t, 1, result["morning"])
+	})
+
+	t.Run("boundary hour 12 is afternoon", func(t *testing.T) {
+		logs := []models.MediaAccessLog{
+			{AccessTime: time.Date(2025, 1, 1, 12, 0, 0, 0, time.UTC)},
+		}
+		result := svc.analyzePopularTimeRanges(logs)
+		assert.Equal(t, 1, result["afternoon"])
+	})
+
+	t.Run("boundary hour 18 is evening", func(t *testing.T) {
+		logs := []models.MediaAccessLog{
+			{AccessTime: time.Date(2025, 1, 1, 18, 0, 0, 0, time.UTC)},
+		}
+		result := svc.analyzePopularTimeRanges(logs)
+		assert.Equal(t, 1, result["evening"])
+	})
+
+	t.Run("boundary hour 22 is night", func(t *testing.T) {
+		logs := []models.MediaAccessLog{
+			{AccessTime: time.Date(2025, 1, 1, 22, 0, 0, 0, time.UTC)},
+		}
+		result := svc.analyzePopularTimeRanges(logs)
+		assert.Equal(t, 1, result["night"])
+	})
+
+	t.Run("boundary hour 5 is night", func(t *testing.T) {
+		logs := []models.MediaAccessLog{
+			{AccessTime: time.Date(2025, 1, 1, 5, 0, 0, 0, time.UTC)},
+		}
+		result := svc.analyzePopularTimeRanges(logs)
+		assert.Equal(t, 1, result["night"])
+	})
+
+	t.Run("hour 0 midnight is night", func(t *testing.T) {
+		logs := []models.MediaAccessLog{
+			{AccessTime: time.Date(2025, 1, 1, 0, 0, 0, 0, time.UTC)},
+		}
+		result := svc.analyzePopularTimeRanges(logs)
+		assert.Equal(t, 1, result["night"])
+	})
+
+	t.Run("nil logs", func(t *testing.T) {
+		result := svc.analyzePopularTimeRanges(nil)
+		assert.Empty(t, result)
+	})
+}
+
+func TestAnalyticsService_CountUniqueMedia_LargeDataset(t *testing.T) {
+	svc := newTestAnalyticsService()
+
+	t.Run("1000 unique media", func(t *testing.T) {
+		var logs []models.MediaAccessLog
+		for i := 1; i <= 1000; i++ {
+			logs = append(logs, models.MediaAccessLog{MediaID: i})
+		}
+		result := svc.countUniqueMedia(logs)
+		assert.Equal(t, 1000, result)
+	})
+
+	t.Run("1000 logs all same media", func(t *testing.T) {
+		var logs []models.MediaAccessLog
+		for i := 0; i < 1000; i++ {
+			logs = append(logs, models.MediaAccessLog{MediaID: 42})
+		}
+		result := svc.countUniqueMedia(logs)
+		assert.Equal(t, 1, result)
+	})
+}
+
+func TestAnalyticsService_CountUniqueUsers_LargeDataset(t *testing.T) {
+	svc := newTestAnalyticsService()
+
+	t.Run("500 unique users with duplicates", func(t *testing.T) {
+		var logs []models.MediaAccessLog
+		for i := 1; i <= 500; i++ {
+			// Each user appears twice
+			logs = append(logs, models.MediaAccessLog{UserID: i})
+			logs = append(logs, models.MediaAccessLog{UserID: i})
+		}
+		result := svc.countUniqueUsers(logs)
+		assert.Equal(t, 500, result)
+	})
+}
+
+func TestAnalyticsService_CalculateTotalPlaybackTime_LargeDataset(t *testing.T) {
+	svc := newTestAnalyticsService()
+
+	t.Run("100 entries each 1 minute", func(t *testing.T) {
+		dur := 1 * time.Minute
+		var logs []models.MediaAccessLog
+		for i := 0; i < 100; i++ {
+			logs = append(logs, models.MediaAccessLog{PlaybackDuration: &dur})
+		}
+		result := svc.calculateTotalPlaybackTime(logs)
+		assert.Equal(t, 100*time.Minute, result)
+	})
+}
+
+func TestAnalyticsService_GenerateReport_FallbackAllTypes(t *testing.T) {
+	// No repository — all report types go through the fallback path
+	svc := &AnalyticsService{}
+
+	reportTypes := []string{
+		"user_activity",
+		"media_popularity",
+		"system_overview",
+		"geographic_analysis",
+		"unknown_type",
+		"",
+	}
+
+	for _, rt := range reportTypes {
+		t.Run("fallback_"+rt, func(t *testing.T) {
+			report, err := svc.GenerateReport(1, &models.ReportRequest{
+				ReportType: rt,
+				Params:     map[string]interface{}{"key": "value"},
+			})
+			assert.NoError(t, err)
+			assert.NotNil(t, report)
+			assert.Equal(t, rt, report.Type)
+			assert.Equal(t, "completed", report.Status)
+			assert.NotEmpty(t, report.Data)
+			assert.False(t, report.CreatedAt.IsZero())
+		})
+	}
+}
+
+func TestAnalyticsService_CreateReport_MissingDates(t *testing.T) {
+	svc := newTestAnalyticsService()
+
+	reportTypes := []string{"user_activity", "media_popularity", "system_overview", "geographic_analysis"}
+
+	for _, rt := range reportTypes {
+		t.Run(rt+"_missing_dates", func(t *testing.T) {
+			report, err := svc.CreateReport(rt, map[string]interface{}{})
+			assert.Error(t, err)
+			assert.Nil(t, report)
+			assert.Contains(t, err.Error(), "start_date parameter required")
+		})
+	}
+}
+
+func TestAnalyticsService_CleanupOldEvents_EdgeCases(t *testing.T) {
+	svc := newTestAnalyticsService()
+
+	tests := []struct {
+		name    string
+		daysOld int
+	}{
+		{name: "negative days", daysOld: -1},
+		{name: "very large days", daysOld: 100000},
+		{name: "one day", daysOld: 1},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			err := svc.CleanupOldEvents(tt.daysOld)
+			assert.NoError(t, err)
+		})
+	}
+}
+
+func TestAnalyticsService_GetDashboardMetrics_EdgeCases(t *testing.T) {
+	svc := newTestAnalyticsService()
+
+	tests := []struct {
+		name   string
+		userID int
+	}{
+		{name: "negative user ID", userID: -1},
+		{name: "max int32", userID: 2147483647},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			metrics, err := svc.GetDashboardMetrics(tt.userID)
+			assert.NoError(t, err)
+			assert.NotNil(t, metrics)
+		})
+	}
+}
+
+func TestAnalyticsService_GetRealtimeMetrics_EdgeCases(t *testing.T) {
+	svc := newTestAnalyticsService()
+
+	tests := []struct {
+		name   string
+		userID int
+	}{
+		{name: "negative user ID", userID: -1},
+		{name: "max int32", userID: 2147483647},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			metrics, err := svc.GetRealtimeMetrics(tt.userID)
+			assert.NoError(t, err)
+			assert.NotNil(t, metrics)
+		})
+	}
+}
+
+func TestAnalyticsService_GetEventsByUser_EdgeCases(t *testing.T) {
+	svc := newTestAnalyticsService()
+
+	t.Run("negative user ID", func(t *testing.T) {
+		events, err := svc.GetEventsByUser(-1, nil)
+		assert.NoError(t, err)
+		assert.Empty(t, events)
+	})
+
+	t.Run("with all filter fields set", func(t *testing.T) {
+		now := time.Now()
+		events, err := svc.GetEventsByUser(1, &models.AnalyticsFilters{
+			StartDate:   &now,
+			EndDate:     &now,
+			EventTypes:  []string{"page_view", "click"},
+			EntityTypes: []string{"media", "user"},
+			Limit:       100,
+			Offset:      0,
+		})
+		assert.NoError(t, err)
+		assert.Empty(t, events)
+	})
+}
+
+func TestAnalyticsService_GetAnalytics_EdgeCases(t *testing.T) {
+	svc := newTestAnalyticsService()
+
+	t.Run("negative user ID with nil filters", func(t *testing.T) {
+		data, err := svc.GetAnalytics(-1, nil)
+		assert.NoError(t, err)
+		assert.NotNil(t, data)
+	})
+
+	t.Run("zero user ID", func(t *testing.T) {
+		data, err := svc.GetAnalytics(0, &models.AnalyticsFilters{})
+		assert.NoError(t, err)
+		assert.NotNil(t, data)
+	})
+}
+
+func TestAnalyticsService_GenerateReport_WithDateParams(t *testing.T) {
+	// No repo — exercises fallback path with date params in request
+	svc := &AnalyticsService{}
+
+	report, err := svc.GenerateReport(1, &models.ReportRequest{
+		ReportType: "user_activity",
+		Params: map[string]interface{}{
+			"start_date": "2025-01-01",
+			"end_date":   "2025-01-31",
+			"extra_key":  "extra_value",
+		},
+	})
+	assert.NoError(t, err)
+	assert.NotNil(t, report)
+	assert.Equal(t, "user_activity", report.Type)
+	assert.Equal(t, "completed", report.Status)
+}
+
+func TestAnalyticsService_GenerateReport_NilParamsCustomType(t *testing.T) {
+	svc := &AnalyticsService{}
+
+	report, err := svc.GenerateReport(1, &models.ReportRequest{
+		ReportType: "custom_report",
+		Params:     nil,
+	})
+	assert.NoError(t, err)
+	assert.NotNil(t, report)
+	assert.Equal(t, "custom_report", report.Type)
+}
+
+func TestAnalyticsService_AnalyzeAccessTimes_MidnightAndNoon(t *testing.T) {
+	svc := newTestAnalyticsService()
+
+	logs := []models.MediaAccessLog{
+		{AccessTime: time.Date(2025, 1, 1, 0, 0, 0, 0, time.UTC)},  // midnight
+		{AccessTime: time.Date(2025, 1, 1, 12, 0, 0, 0, time.UTC)}, // noon
+		{AccessTime: time.Date(2025, 1, 1, 23, 59, 59, 0, time.UTC)},
+	}
+	result := svc.analyzeAccessTimes(logs)
+	assert.Equal(t, 1, result["00"])
+	assert.Equal(t, 1, result["12"])
+	assert.Equal(t, 1, result["23"])
+}
+
+func TestAnalyticsService_CalculateUserRetention_ManyUsersNoRepeatAccess(t *testing.T) {
+	svc := newTestAnalyticsService()
+
+	// Each user has only one access — but there are 2+ logs total, so len(logs) > 1.
+	// All users have zero retention (first == last for each user).
+	logs := []models.MediaAccessLog{
+		{UserID: 1, AccessTime: time.Date(2025, 1, 1, 0, 0, 0, 0, time.UTC)},
+		{UserID: 2, AccessTime: time.Date(2025, 1, 2, 0, 0, 0, 0, time.UTC)},
+		{UserID: 3, AccessTime: time.Date(2025, 1, 3, 0, 0, 0, 0, time.UTC)},
+	}
+	result := svc.calculateUserRetention(logs)
+	// Each user: last-first = 0 days; average = 0
+	assert.InDelta(t, 0.0, result, 0.01)
+}
+
+func TestAnalyticsService_ExtractDateRange_NonStringTypes(t *testing.T) {
+	svc := newTestAnalyticsService()
+
+	t.Run("start_date is integer", func(t *testing.T) {
+		_, _, err := svc.extractDateRange(map[string]interface{}{
+			"start_date": 12345,
+			"end_date":   "2025-01-31",
+		})
+		assert.Error(t, err)
+		assert.Contains(t, err.Error(), "start_date")
+	})
+
+	t.Run("end_date is integer", func(t *testing.T) {
+		_, _, err := svc.extractDateRange(map[string]interface{}{
+			"start_date": "2025-01-01",
+			"end_date":   12345,
+		})
+		assert.Error(t, err)
+		assert.Contains(t, err.Error(), "end_date")
+	})
+
+	t.Run("both non-string", func(t *testing.T) {
+		_, _, err := svc.extractDateRange(map[string]interface{}{
+			"start_date": true,
+			"end_date":   3.14,
+		})
+		assert.Error(t, err)
+	})
+
+	t.Run("nil params map", func(t *testing.T) {
+		_, _, err := svc.extractDateRange(nil)
+		assert.Error(t, err)
+	})
+}
+
 
