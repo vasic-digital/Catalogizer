@@ -10,10 +10,11 @@ import LibraryPage from "./pages/LibraryPage";
 import SearchPage from "./pages/SearchPage";
 import SettingsPage from "./pages/SettingsPage";
 import MediaDetailPage from "./pages/MediaDetailPage";
-import LoadingScreen from "./components/LoadingScreen";
+import { SplashScreen } from "./components/SplashScreen";
 
 function App() {
   const [isInitialized, setIsInitialized] = useState(false);
+  const [splashComplete, setSplashComplete] = useState(false);
   const { isAuthenticated, setAuthToken } = useAuthStore();
   const { loadConfig, serverUrl } = useConfigStore();
 
@@ -39,8 +40,8 @@ function App() {
     initializeApp();
   }, [loadConfig, setAuthToken]);
 
-  if (!isInitialized) {
-    return <LoadingScreen />;
+  if (!isInitialized || !splashComplete) {
+    return <SplashScreen onComplete={() => setSplashComplete(true)} />;
   }
 
   // If no server URL is configured, redirect to settings

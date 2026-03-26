@@ -1,3 +1,4 @@
+import React from 'react'
 import { describe, it, expect, vi } from 'vitest'
 import { render, screen, waitFor } from '@testing-library/react'
 import { BrowserRouter, MemoryRouter } from 'react-router-dom'
@@ -41,8 +42,11 @@ vi.mock('../components/Layout', () => ({
   default: ({ children }: any) => <div data-testid="layout">{children}</div>,
 }))
 
-vi.mock('../components/LoadingScreen', () => ({
-  default: () => <div data-testid="loading-screen">Loading...</div>,
+vi.mock('../components/SplashScreen', () => ({
+  SplashScreen: ({ onComplete }: { onComplete: () => void }) => {
+    React.useEffect(() => { onComplete() }, [onComplete])
+    return <div data-testid="splash-screen">Splash</div>
+  },
 }))
 
 vi.mock('../pages/LoginPage', () => ({
@@ -102,13 +106,13 @@ describe('App', () => {
     })
   })
 
-  it('shows loading screen initially', () => {
+  it('shows splash screen initially', () => {
     // Make invoke never resolve to keep loading state
     mockLoadConfig.mockImplementation(() => new Promise(() => {}))
 
     renderApp()
 
-    expect(screen.getByTestId('loading-screen')).toBeInTheDocument()
+    expect(screen.getByTestId('splash-screen')).toBeInTheDocument()
   })
 
   it('redirects to settings when no server URL is configured', async () => {
@@ -183,8 +187,8 @@ describe('App', () => {
 
     // Should still render (setIsInitialized(true) in catch block)
     await waitFor(() => {
-      // App should not be stuck on loading screen
-      expect(screen.queryByTestId('loading-screen')).not.toBeInTheDocument()
+      // App should not be stuck on splash screen
+      expect(screen.queryByTestId('splash-screen')).not.toBeInTheDocument()
     })
   })
 })
