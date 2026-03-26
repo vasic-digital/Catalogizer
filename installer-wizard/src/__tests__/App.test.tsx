@@ -1,6 +1,15 @@
+import React from 'react'
 import { describe, it, expect, vi } from 'vitest'
 import { render, screen } from '@testing-library/react'
 import App from '../App'
+
+// Mock SplashScreen to immediately call onComplete
+vi.mock('../components/SplashScreen', () => ({
+  SplashScreen: ({ onComplete }: { onComplete: () => void }) => {
+    React.useEffect(() => { onComplete() }, [onComplete])
+    return null
+  },
+}))
 
 // Mock lucide-react icons
 vi.mock('lucide-react', () => ({

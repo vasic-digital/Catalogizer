@@ -1,3 +1,4 @@
+import { useState } from 'react'
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom'
 import WizardLayout from './components/layout/WizardLayout'
 import WelcomeStep from './components/wizard/WelcomeStep'
@@ -12,8 +13,21 @@ import ConfigurationManagementStep from './components/wizard/ConfigurationManage
 import SummaryStep from './components/wizard/SummaryStep'
 import { WizardProvider } from './contexts/WizardContext'
 import { ConfigurationProvider } from './contexts/ConfigurationContext'
+import { SplashScreen } from './components/SplashScreen'
 
 function App() {
+  const [splashComplete, setSplashComplete] = useState(false)
+
+  if (!splashComplete) {
+    return (
+      <SplashScreen
+        onComplete={() => setSplashComplete(true)}
+        appTitle="Catalogizer Installation Wizard"
+        subtitle="Configure your media storage"
+      />
+    )
+  }
+
   return (
     <ConfigurationProvider>
       <WizardProvider>
