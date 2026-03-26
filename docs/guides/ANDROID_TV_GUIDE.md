@@ -75,6 +75,15 @@ When launching the app for the first time (or after logging out), you see the Lo
 
 After successful authentication, you are taken to the Home screen.
 
+### Server URL Configuration via BuildConfig
+
+The app now uses `BuildConfig` to auto-detect the server URL based on the build type:
+
+- **Debug builds** -- the server URL defaults to `http://10.0.2.2:8080` (the Android emulator alias for the host machine's localhost), so developers do not need to manually enter a server address during testing.
+- **Release builds** -- the server URL defaults to the production server address configured in `build.gradle.kts`.
+
+You can still override the server URL manually on the Login screen if needed. The `BuildConfig`-provided default simply pre-fills the Server URL field for convenience.
+
 ### Tips for TV Login
 
 - If you have a USB or Bluetooth keyboard connected to your TV, typing credentials is much faster.

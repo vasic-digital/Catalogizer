@@ -147,7 +147,7 @@ Click on any media item to open the **Media Detail Modal**, which shows:
 
 - Title, year, and quality information
 - Media type and file size
-- Description and metadata from external providers (TMDB, IMDB)
+- Description and metadata from external providers (TMDB, IMDB, OpenLibrary, MusicBrainz)
 - Action buttons: Play, Download, Close
 
 ### Playing Media
@@ -201,7 +201,7 @@ Collections let you organize media items into themed groups.
 For each collection, you can:
 
 - **Preview** -- see collection contents
-- **Share** -- share with other users (set view, comment, download permissions)
+- **Share** -- share with other users (set view, comment, download permissions). Share links now use dynamic URLs based on the server's actual hostname rather than hardcoded localhost addresses, so links work correctly when shared with users on other devices or networks.
 - **Duplicate** -- create a copy of the collection
 - **Export** -- export as JSON, CSV, or M3U format
 - **Settings** -- edit collection name, description, and rules
@@ -472,3 +472,27 @@ The web interface supports the following keyboard interactions:
 3. Choose the desired output format and quality.
 4. Start the conversion and monitor progress.
 5. Download the converted file when complete.
+
+---
+
+## Accessibility
+
+The web application is tested with [axe-core](https://github.com/dequelabs/axe-core) to ensure compliance with WCAG accessibility standards. Key accessibility features include:
+
+- Proper ARIA labels and roles on interactive elements
+- Keyboard-navigable controls throughout the interface
+- Sufficient color contrast ratios for text and UI elements
+- Screen reader compatible markup for media cards, modals, and navigation
+
+Accessibility tests run as part of the frontend test suite to prevent regressions.
+
+---
+
+## Enhanced Metadata Providers
+
+In addition to TMDB and IMDB, the web app enriches media items with metadata from:
+
+- **OpenLibrary** -- provides book metadata including author, publisher, cover art, ISBN, and edition details for items detected as books
+- **MusicBrainz** -- provides music metadata including artist, album, track listing, release date, and genre information for music items
+
+Metadata is fetched automatically during the post-scan aggregation pipeline. You can view enriched metadata on the Media Detail modal for any supported media item.

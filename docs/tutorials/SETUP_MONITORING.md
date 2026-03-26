@@ -142,6 +142,32 @@ To receive alert notifications via email, Slack, or other channels:
 
 **Expected result:** When alerts fire, notifications are sent to the configured channel.
 
+## Static Analysis and Security Scanning
+
+In addition to runtime monitoring, Catalogizer provides static analysis tools to detect code quality issues and security vulnerabilities.
+
+### SonarQube Scanning
+
+Run SonarQube analysis against the codebase using the provided script:
+
+```bash
+./scripts/run-sonarqube-scan.sh
+```
+
+This starts a SonarQube container, runs the scanner against Go and TypeScript source code, and produces a quality report. Results are accessible in the SonarQube web UI (default port 9000).
+
+### Semgrep SAST Scanner
+
+Semgrep is available as a SAST (Static Application Security Testing) scanner via the security compose file:
+
+```bash
+podman-compose -f docker-compose.security.yml run semgrep
+```
+
+Semgrep scans for common vulnerability patterns, insecure coding practices, and project-specific rules across all supported languages in the repository. Results are printed to the console and can be exported in SARIF or JSON format for integration with other tools.
+
+---
+
 ## Monitoring Architecture
 
 ```
