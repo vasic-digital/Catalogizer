@@ -533,3 +533,460 @@ func TestGetBestMatch_WithMockProviders(t *testing.T) {
 	assert.Equal(t, "tmdb", provider)
 	assert.Equal(t, "Inception", result.Title)
 }
+
+// --- OpenLibrary Provider tests with mock server ---
+
+func TestOpenLibraryProvider_Search(t *testing.T) {
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		assert.Contains(t, r.URL.Path, "/search.json")
+		assert.Equal(t, "Lord of the Rings", r.URL.Query().Get("q"))
+		assert.Equal(t, "10", r.URL.Query().Get("limit"))
+
+		resp := map[string]interface{}{
+			"docs": []map[string]interface{}{
+				{
+					"key":                "/works/OL27448W",
+					"title":              "The Lord of the Rings",
+					"first_publish_year": 1954,
+					"author_name":        []string{"J.R.R. Tolkien"},
+					"cover_i":            123456,
+				},
+				{
+					"key":                "/works/OL99999W",
+					"title":              "The Lord of the Rings: The Two Towers",
+					"first_publish_year": 1954,
+					"author_name":        []string{"J.R.R. Tolkien"},
+				},
+				{
+					"key":   "/works/OL88888W",
+					"title": "Lord of the Rings Study Guide",
+				},
+			},
+		}
+
+		w.Header().Set("Content-Type", "application/json")
+		json.NewEncoder(w).Encode(resp)
+	}))
+	defer server.Close()
+
+	provider := &OpenLibraryProvider{
+		BaseProvider: NewBaseProvider("openlibrary", server.URL, "", server.Client(), testLogger(t)),
+	}
+	provider.enabled = true
+
+	results, err := provider.Search(context.Background(), "Lord of the Rings", "ebook", nil)
+	require.NoError(t, err)
+	require.Len(t, results, 3)
+
+	// First result: has author and cover
+	assert.Equal(t, "/works/OL27448W", results[0].ExternalID)
+	assert.Equal(t, "The Lord of the Rings", results[0].Title)
+	require.NotNil(t, results[0].Year)
+	assert.Equal(t, 1954, *results[0].Year)
+	require.NotNil(t, results[0].Description)
+	assert.Contains(t, *results[0].Description, "J.R.R. Tolkien")
+	require.NotNil(t, results[0].CoverURL)
+	assert.Contains(t, *results[0].CoverURL, "123456")
+	assert.Contains(t, *results[0].CoverURL, "-M.jpg")
+	assert.Equal(t, 0.7, results[0].Relevance)
+
+	// Second result: has author, no cover
+	assert.Equal(t, "/works/OL99999W", results[1].ExternalID)
+	require.NotNil(t, results[1].Description)
+	assert.Nil(t, results[1].CoverURL)
+
+	// Third result: no author, no cover
+	assert.Equal(t, "/works/OL88888W", results[2].ExternalID)
+	assert.Nil(t, results[2].Description)
+	assert.Nil(t, results[2].Year)
+}
+
+func TestOpenLibraryProvider_Search_ServerError(t *testing.T) {
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusInternalServerError)
+	}))
+	defer server.Close()
+
+	provider := &OpenLibraryProvider{
+		BaseProvider: NewBaseProvider("openlibrary", server.URL, "", server.Client(), testLogger(t)),
+	}
+	provider.enabled = true
+
+	_, err := provider.Search(context.Background(), "test", "ebook", nil)
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), "500")
+}
+
+func TestOpenLibraryProvider_Search_InvalidJSON(t *testing.T) {
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusOK)
+		w.Write([]byte("not json"))
+	}))
+	defer server.Close()
+
+	provider := &OpenLibraryProvider{
+		BaseProvider: NewBaseProvider("openlibrary", server.URL, "", server.Client(), testLogger(t)),
+	}
+	provider.enabled = true
+
+	_, err := provider.Search(context.Background(), "test", "ebook", nil)
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), "parse")
+}
+
+func TestOpenLibraryProvider_GetDetails(t *testing.T) {
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		assert.Contains(t, r.URL.Path, "/works/OL27448W.json")
+
+		resp := map[string]interface{}{
+			"title":       "The Lord of the Rings",
+			"description": "An epic high-fantasy novel by J.R.R. Tolkien.",
+			"covers":      []int{123456, 789012},
+		}
+		w.Header().Set("Content-Type", "application/json")
+		json.NewEncoder(w).Encode(resp)
+	}))
+	defer server.Close()
+
+	provider := &OpenLibraryProvider{
+		BaseProvider: NewBaseProvider("openlibrary", server.URL, "", server.Client(), testLogger(t)),
+	}
+	provider.enabled = true
+
+	metadata, err := provider.GetDetails(context.Background(), "/works/OL27448W")
+	require.NoError(t, err)
+	require.NotNil(t, metadata)
+
+	assert.Equal(t, "openlibrary", metadata.Provider)
+	assert.Equal(t, "/works/OL27448W", metadata.ExternalID)
+	assert.NotEmpty(t, metadata.Data)
+	require.NotNil(t, metadata.CoverURL)
+	assert.Contains(t, *metadata.CoverURL, "123456")
+	assert.Contains(t, *metadata.CoverURL, "-L.jpg")
+}
+
+func TestOpenLibraryProvider_GetDetails_DescriptionAsObject(t *testing.T) {
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		resp := map[string]interface{}{
+			"title": "Some Book",
+			"description": map[string]interface{}{
+				"type":  "/type/text",
+				"value": "A description in object form.",
+			},
+			"covers": []int{555},
+		}
+		w.Header().Set("Content-Type", "application/json")
+		json.NewEncoder(w).Encode(resp)
+	}))
+	defer server.Close()
+
+	provider := &OpenLibraryProvider{
+		BaseProvider: NewBaseProvider("openlibrary", server.URL, "", server.Client(), testLogger(t)),
+	}
+	provider.enabled = true
+
+	metadata, err := provider.GetDetails(context.Background(), "/works/OL11111W")
+	require.NoError(t, err)
+	require.NotNil(t, metadata)
+	require.NotNil(t, metadata.CoverURL)
+	assert.Contains(t, *metadata.CoverURL, "555")
+}
+
+func TestOpenLibraryProvider_GetDetails_NoCover(t *testing.T) {
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		resp := map[string]interface{}{
+			"title":  "No Cover Book",
+			"covers": []int{},
+		}
+		w.Header().Set("Content-Type", "application/json")
+		json.NewEncoder(w).Encode(resp)
+	}))
+	defer server.Close()
+
+	provider := &OpenLibraryProvider{
+		BaseProvider: NewBaseProvider("openlibrary", server.URL, "", server.Client(), testLogger(t)),
+	}
+	provider.enabled = true
+
+	metadata, err := provider.GetDetails(context.Background(), "/works/OL22222W")
+	require.NoError(t, err)
+	require.NotNil(t, metadata)
+	assert.Nil(t, metadata.CoverURL)
+}
+
+func TestOpenLibraryProvider_GetDetails_ServerError(t *testing.T) {
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusNotFound)
+	}))
+	defer server.Close()
+
+	provider := &OpenLibraryProvider{
+		BaseProvider: NewBaseProvider("openlibrary", server.URL, "", server.Client(), testLogger(t)),
+	}
+	provider.enabled = true
+
+	_, err := provider.GetDetails(context.Background(), "/works/NONEXISTENT")
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), "404")
+}
+
+// --- MusicBrainz Provider tests with mock server ---
+
+func TestMusicBrainzProvider_Search(t *testing.T) {
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		assert.Contains(t, r.URL.Path, "/recording")
+		assert.Equal(t, "Bohemian Rhapsody", r.URL.Query().Get("query"))
+		assert.Equal(t, "json", r.URL.Query().Get("fmt"))
+		assert.Equal(t, "10", r.URL.Query().Get("limit"))
+		// Verify User-Agent header is set
+		assert.Contains(t, r.Header.Get("User-Agent"), "Catalogizer")
+
+		resp := map[string]interface{}{
+			"recordings": []map[string]interface{}{
+				{
+					"id":    "uuid-1234-5678",
+					"title": "Bohemian Rhapsody",
+					"artist-credit": []map[string]interface{}{
+						{"name": "Queen"},
+					},
+					"releases": []map[string]interface{}{
+						{"title": "A Night at the Opera", "date": "1975-10-31"},
+					},
+				},
+				{
+					"id":    "uuid-9999-0000",
+					"title": "Bohemian Rhapsody (Live)",
+					"artist-credit": []map[string]interface{}{
+						{"name": "Queen"},
+						{"name": "Adam Lambert"},
+					},
+					"releases": []map[string]interface{}{},
+				},
+			},
+		}
+
+		w.Header().Set("Content-Type", "application/json")
+		json.NewEncoder(w).Encode(resp)
+	}))
+	defer server.Close()
+
+	provider := &MusicBrainzProvider{
+		BaseProvider: NewBaseProvider("musicbrainz", server.URL, "", server.Client(), testLogger(t)),
+	}
+	provider.enabled = true
+
+	results, err := provider.Search(context.Background(), "Bohemian Rhapsody", "music", nil)
+	require.NoError(t, err)
+	require.Len(t, results, 2)
+
+	// First result: has artist, release with date
+	assert.Equal(t, "uuid-1234-5678", results[0].ExternalID)
+	assert.Equal(t, "Bohemian Rhapsody", results[0].Title)
+	require.NotNil(t, results[0].Year)
+	assert.Equal(t, 1975, *results[0].Year)
+	require.NotNil(t, results[0].Description)
+	assert.Contains(t, *results[0].Description, "Queen")
+	assert.Contains(t, *results[0].Description, "A Night at the Opera")
+	assert.Equal(t, 0.7, results[0].Relevance)
+
+	// Second result: multiple artists, no releases → no year
+	assert.Equal(t, "uuid-9999-0000", results[1].ExternalID)
+	assert.Nil(t, results[1].Year)
+	require.NotNil(t, results[1].Description)
+	assert.Contains(t, *results[1].Description, "Queen")
+	assert.Contains(t, *results[1].Description, "Adam Lambert")
+}
+
+func TestMusicBrainzProvider_Search_EmptyResults(t *testing.T) {
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		resp := map[string]interface{}{
+			"recordings": []map[string]interface{}{},
+		}
+		json.NewEncoder(w).Encode(resp)
+	}))
+	defer server.Close()
+
+	provider := &MusicBrainzProvider{
+		BaseProvider: NewBaseProvider("musicbrainz", server.URL, "", server.Client(), testLogger(t)),
+	}
+	provider.enabled = true
+
+	results, err := provider.Search(context.Background(), "nonexistent track xyz", "music", nil)
+	require.NoError(t, err)
+	assert.Empty(t, results)
+}
+
+func TestMusicBrainzProvider_Search_ServerError(t *testing.T) {
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusServiceUnavailable)
+	}))
+	defer server.Close()
+
+	provider := &MusicBrainzProvider{
+		BaseProvider: NewBaseProvider("musicbrainz", server.URL, "", server.Client(), testLogger(t)),
+	}
+	provider.enabled = true
+
+	_, err := provider.Search(context.Background(), "test", "music", nil)
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), "503")
+}
+
+func TestMusicBrainzProvider_Search_InvalidJSON(t *testing.T) {
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusOK)
+		w.Write([]byte("invalid json"))
+	}))
+	defer server.Close()
+
+	provider := &MusicBrainzProvider{
+		BaseProvider: NewBaseProvider("musicbrainz", server.URL, "", server.Client(), testLogger(t)),
+	}
+	provider.enabled = true
+
+	_, err := provider.Search(context.Background(), "test", "music", nil)
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), "parse")
+}
+
+func TestMusicBrainzProvider_GetDetails(t *testing.T) {
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		assert.Contains(t, r.URL.Path, "/recording/uuid-1234-5678")
+		assert.Equal(t, "artists+releases", r.URL.Query().Get("inc"))
+		assert.Equal(t, "json", r.URL.Query().Get("fmt"))
+		assert.Contains(t, r.Header.Get("User-Agent"), "Catalogizer")
+
+		resp := map[string]interface{}{
+			"title": "Bohemian Rhapsody",
+			"artist-credit": []map[string]interface{}{
+				{"name": "Queen"},
+			},
+			"releases": []map[string]interface{}{
+				{"title": "A Night at the Opera", "date": "1975-10-31"},
+			},
+		}
+		w.Header().Set("Content-Type", "application/json")
+		json.NewEncoder(w).Encode(resp)
+	}))
+	defer server.Close()
+
+	provider := &MusicBrainzProvider{
+		BaseProvider: NewBaseProvider("musicbrainz", server.URL, "", server.Client(), testLogger(t)),
+	}
+	provider.enabled = true
+
+	metadata, err := provider.GetDetails(context.Background(), "uuid-1234-5678")
+	require.NoError(t, err)
+	require.NotNil(t, metadata)
+
+	assert.Equal(t, "musicbrainz", metadata.Provider)
+	assert.Equal(t, "uuid-1234-5678", metadata.ExternalID)
+	assert.NotEmpty(t, metadata.Data)
+	require.NotNil(t, metadata.ReviewURL)
+	assert.Contains(t, *metadata.ReviewURL, "musicbrainz.org/recording/uuid-1234-5678")
+	// MusicBrainz doesn't provide cover art or ratings
+	assert.Nil(t, metadata.CoverURL)
+	assert.Nil(t, metadata.Rating)
+}
+
+func TestMusicBrainzProvider_GetDetails_ServerError(t *testing.T) {
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusNotFound)
+	}))
+	defer server.Close()
+
+	provider := &MusicBrainzProvider{
+		BaseProvider: NewBaseProvider("musicbrainz", server.URL, "", server.Client(), testLogger(t)),
+	}
+	provider.enabled = true
+
+	_, err := provider.GetDetails(context.Background(), "nonexistent-uuid")
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), "404")
+}
+
+// --- Stub provider graceful degradation tests ---
+
+func TestStubProvider_SearchReturnsNilWhenDisabled(t *testing.T) {
+	logger := testLogger(t)
+	client := http.DefaultClient
+
+	// All these providers have no API key → disabled
+	stubProviders := []MetadataProvider{
+		NewIMDBProvider(client, logger),
+		NewTVDBProvider(client, logger),
+		NewSpotifyProvider(client, logger),
+		NewLastFMProvider(client, logger),
+		NewIGDBProvider(client, logger),
+		NewSteamProvider(client, logger),
+		NewGoodreadsProvider(client, logger),
+		NewAniDBProvider(client, logger),
+		NewMyAnimeListProvider(client, logger),
+		NewYouTubeProvider(client, logger),
+		NewGitHubProvider(client, logger),
+	}
+
+	for _, provider := range stubProviders {
+		t.Run(provider.GetName()+"_search", func(t *testing.T) {
+			assert.False(t, provider.IsEnabled())
+			results, err := provider.Search(context.Background(), "test query", "movie", nil)
+			require.NoError(t, err)
+			assert.Nil(t, results)
+		})
+	}
+}
+
+func TestStubProvider_GetDetailsReturnsNilWhenDisabled(t *testing.T) {
+	logger := testLogger(t)
+	client := http.DefaultClient
+
+	stubProviders := []MetadataProvider{
+		NewIMDBProvider(client, logger),
+		NewTVDBProvider(client, logger),
+		NewSpotifyProvider(client, logger),
+		NewLastFMProvider(client, logger),
+		NewIGDBProvider(client, logger),
+		NewSteamProvider(client, logger),
+		NewGoodreadsProvider(client, logger),
+		NewAniDBProvider(client, logger),
+		NewMyAnimeListProvider(client, logger),
+		NewYouTubeProvider(client, logger),
+		NewGitHubProvider(client, logger),
+	}
+
+	for _, provider := range stubProviders {
+		t.Run(provider.GetName()+"_get_details", func(t *testing.T) {
+			assert.False(t, provider.IsEnabled())
+			metadata, err := provider.GetDetails(context.Background(), "some-id")
+			require.NoError(t, err)
+			assert.Nil(t, metadata)
+		})
+	}
+}
+
+// --- Free provider enabled-by-default tests ---
+
+func TestFreeProviders_EnabledByDefault(t *testing.T) {
+	logger := testLogger(t)
+	client := http.DefaultClient
+
+	// OpenLibrary and MusicBrainz should be enabled even without API keys
+	olProvider := NewOpenLibraryProvider(client, logger)
+	assert.True(t, olProvider.IsEnabled(), "OpenLibrary should be enabled by default (free API)")
+
+	mbProvider := NewMusicBrainzProvider(client, logger)
+	assert.True(t, mbProvider.IsEnabled(), "MusicBrainz should be enabled by default (free API)")
+}
+
+func TestProviderManager_FreeProvidersRegistered(t *testing.T) {
+	pm := NewProviderManager(testLogger(t))
+
+	// Verify free providers are enabled in the manager
+	olProvider, exists := pm.providers["openlibrary"]
+	require.True(t, exists)
+	assert.True(t, olProvider.IsEnabled())
+
+	mbProvider, exists := pm.providers["musicbrainz"]
+	require.True(t, exists)
+	assert.True(t, mbProvider.IsEnabled())
+}

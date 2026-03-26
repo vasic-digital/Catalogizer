@@ -479,7 +479,9 @@ func NewTVDBProvider(client *http.Client, logger *zap.Logger) *TVDBProvider {
 }
 
 func NewMusicBrainzProvider(client *http.Client, logger *zap.Logger) *MusicBrainzProvider {
-	return &MusicBrainzProvider{NewBaseProvider("musicbrainz", "https://musicbrainz.org/ws/2", "", client, logger)}
+	bp := NewBaseProvider("musicbrainz", "https://musicbrainz.org/ws/2", "", client, logger)
+	bp.enabled = true // MusicBrainz is free, no API key required
+	return &MusicBrainzProvider{bp}
 }
 
 func NewSpotifyProvider(client *http.Client, logger *zap.Logger) *SpotifyProvider {
@@ -503,7 +505,9 @@ func NewGoodreadsProvider(client *http.Client, logger *zap.Logger) *GoodreadsPro
 }
 
 func NewOpenLibraryProvider(client *http.Client, logger *zap.Logger) *OpenLibraryProvider {
-	return &OpenLibraryProvider{NewBaseProvider("openlibrary", "https://openlibrary.org", "", client, logger)}
+	bp := NewBaseProvider("openlibrary", "https://openlibrary.org", "", client, logger)
+	bp.enabled = true // OpenLibrary is free, no API key required
+	return &OpenLibraryProvider{bp}
 }
 
 func NewAniDBProvider(client *http.Client, logger *zap.Logger) *AniDBProvider {
@@ -526,120 +530,474 @@ func NewGitHubProvider(client *http.Client, logger *zap.Logger) *GitHubProvider 
 // (Similar pattern to TMDBProvider, customized for each API)
 
 func (p *IMDBProvider) Search(ctx context.Context, query string, mediaType string, year *int) ([]SearchResult, error) {
-	// IMDB API implementation
-	return []SearchResult{}, nil
+	if !p.IsEnabled() {
+		p.logger.Debug("provider not enabled, skipping", zap.String("provider", p.GetName()), zap.String("query", query))
+		return nil, nil
+	}
+	// API integration placeholder - implement when API key is available
+	p.logger.Info("provider search not yet implemented", zap.String("provider", p.GetName()))
+	return nil, nil
 }
 
 func (p *IMDBProvider) GetDetails(ctx context.Context, externalID string) (*models.ExternalMetadata, error) {
-	// IMDB details implementation
-	return &models.ExternalMetadata{}, nil
+	if !p.IsEnabled() {
+		p.logger.Debug("provider not enabled, skipping", zap.String("provider", p.GetName()), zap.String("externalID", externalID))
+		return nil, nil
+	}
+	// API integration placeholder - implement when API key is available
+	p.logger.Info("provider get details not yet implemented", zap.String("provider", p.GetName()))
+	return nil, nil
 }
 
 // TVDBProvider GetDetails implementation
 func (p *TVDBProvider) GetDetails(ctx context.Context, externalID string) (*models.ExternalMetadata, error) {
-	return &models.ExternalMetadata{}, nil
+	if !p.IsEnabled() {
+		p.logger.Debug("provider not enabled, skipping", zap.String("provider", p.GetName()), zap.String("externalID", externalID))
+		return nil, nil
+	}
+	p.logger.Info("provider get details not yet implemented", zap.String("provider", p.GetName()))
+	return nil, nil
 }
 
 // MusicBrainzProvider GetDetails implementation
 func (p *MusicBrainzProvider) GetDetails(ctx context.Context, externalID string) (*models.ExternalMetadata, error) {
-	return &models.ExternalMetadata{}, nil
+	if !p.IsEnabled() {
+		p.logger.Debug("provider not enabled, skipping", zap.String("provider", p.GetName()), zap.String("externalID", externalID))
+		return nil, nil
+	}
+
+	params := url.Values{}
+	params.Add("inc", "artists+releases")
+	params.Add("fmt", "json")
+
+	requestURL := p.baseURL + "/recording/" + externalID + "?" + params.Encode()
+
+	headers := map[string]string{
+		"User-Agent": "Catalogizer/1.0 (https://github.com/vasic-digital/Catalogizer)",
+		"Accept":     "application/json",
+	}
+
+	body, err := p.makeRequest(ctx, requestURL, headers)
+	if err != nil {
+		return nil, err
+	}
+
+	metadata := &models.ExternalMetadata{
+		Provider:    p.name,
+		ExternalID:  externalID,
+		Data:        string(body),
+		LastFetched: time.Now(),
+	}
+
+	// Parse for structured fields
+	var details struct {
+		Title        string `json:"title"`
+		ArtistCredit []struct {
+			Name string `json:"name"`
+		} `json:"artist-credit"`
+		Releases []struct {
+			Title string `json:"title"`
+			Date  string `json:"date"`
+		} `json:"releases"`
+	}
+
+	if err := json.Unmarshal(body, &details); err == nil {
+		// MusicBrainz doesn't provide cover art directly; CoverURL remains nil
+		// Rating is not available from MusicBrainz recording endpoint
+		// ReviewURL could link to the MusicBrainz page
+		mbURL := fmt.Sprintf("https://musicbrainz.org/recording/%s", externalID)
+		metadata.ReviewURL = &mbURL
+	}
+
+	return metadata, nil
 }
 
 // SpotifyProvider GetDetails implementation
 func (p *SpotifyProvider) GetDetails(ctx context.Context, externalID string) (*models.ExternalMetadata, error) {
-	return &models.ExternalMetadata{}, nil
+	if !p.IsEnabled() {
+		p.logger.Debug("provider not enabled, skipping", zap.String("provider", p.GetName()), zap.String("externalID", externalID))
+		return nil, nil
+	}
+	p.logger.Info("provider get details not yet implemented", zap.String("provider", p.GetName()))
+	return nil, nil
 }
 
 // LastFMProvider GetDetails implementation
 func (p *LastFMProvider) GetDetails(ctx context.Context, externalID string) (*models.ExternalMetadata, error) {
-	return &models.ExternalMetadata{}, nil
+	if !p.IsEnabled() {
+		p.logger.Debug("provider not enabled, skipping", zap.String("provider", p.GetName()), zap.String("externalID", externalID))
+		return nil, nil
+	}
+	p.logger.Info("provider get details not yet implemented", zap.String("provider", p.GetName()))
+	return nil, nil
 }
 
 // IGDBProvider GetDetails implementation
 func (p *IGDBProvider) GetDetails(ctx context.Context, externalID string) (*models.ExternalMetadata, error) {
-	return &models.ExternalMetadata{}, nil
+	if !p.IsEnabled() {
+		p.logger.Debug("provider not enabled, skipping", zap.String("provider", p.GetName()), zap.String("externalID", externalID))
+		return nil, nil
+	}
+	p.logger.Info("provider get details not yet implemented", zap.String("provider", p.GetName()))
+	return nil, nil
 }
 
 // SteamProvider GetDetails implementation
 func (p *SteamProvider) GetDetails(ctx context.Context, externalID string) (*models.ExternalMetadata, error) {
-	return &models.ExternalMetadata{}, nil
+	if !p.IsEnabled() {
+		p.logger.Debug("provider not enabled, skipping", zap.String("provider", p.GetName()), zap.String("externalID", externalID))
+		return nil, nil
+	}
+	p.logger.Info("provider get details not yet implemented", zap.String("provider", p.GetName()))
+	return nil, nil
 }
 
 // GoodreadsProvider GetDetails implementation
 func (p *GoodreadsProvider) GetDetails(ctx context.Context, externalID string) (*models.ExternalMetadata, error) {
-	return &models.ExternalMetadata{}, nil
+	if !p.IsEnabled() {
+		p.logger.Debug("provider not enabled, skipping", zap.String("provider", p.GetName()), zap.String("externalID", externalID))
+		return nil, nil
+	}
+	p.logger.Info("provider get details not yet implemented", zap.String("provider", p.GetName()))
+	return nil, nil
 }
 
 // OpenLibraryProvider GetDetails implementation
 func (p *OpenLibraryProvider) GetDetails(ctx context.Context, externalID string) (*models.ExternalMetadata, error) {
-	return &models.ExternalMetadata{}, nil
+	if !p.IsEnabled() {
+		p.logger.Debug("provider not enabled, skipping", zap.String("provider", p.GetName()), zap.String("externalID", externalID))
+		return nil, nil
+	}
+
+	// externalID is the OpenLibrary key (e.g., "/works/OL12345W")
+	requestURL := p.baseURL + externalID + ".json"
+
+	body, err := p.makeRequest(ctx, requestURL, nil)
+	if err != nil {
+		return nil, err
+	}
+
+	metadata := &models.ExternalMetadata{
+		Provider:    p.name,
+		ExternalID:  externalID,
+		Data:        string(body),
+		LastFetched: time.Now(),
+	}
+
+	// Parse specific fields — description can be a string or {type, value} object
+	var details struct {
+		Title       string          `json:"title"`
+		Description json.RawMessage `json:"description"`
+		Covers      []int           `json:"covers"`
+	}
+
+	if err := json.Unmarshal(body, &details); err == nil {
+		// Parse description: can be a plain string or an object with "value" field
+		if len(details.Description) > 0 {
+			var descStr string
+			if err := json.Unmarshal(details.Description, &descStr); err != nil {
+				// Try object form: {"type": "...", "value": "..."}
+				var descObj struct {
+					Value string `json:"value"`
+				}
+				if err := json.Unmarshal(details.Description, &descObj); err == nil {
+					descStr = descObj.Value
+				}
+			}
+			// Description is stored in Data field (raw JSON), no separate field in ExternalMetadata
+			_ = descStr
+		}
+
+		if len(details.Covers) > 0 {
+			coverURL := fmt.Sprintf("https://covers.openlibrary.org/b/id/%d-L.jpg", details.Covers[0])
+			metadata.CoverURL = &coverURL
+		}
+	}
+
+	return metadata, nil
 }
 
 // AniDBProvider GetDetails implementation
 func (p *AniDBProvider) GetDetails(ctx context.Context, externalID string) (*models.ExternalMetadata, error) {
-	return &models.ExternalMetadata{}, nil
+	if !p.IsEnabled() {
+		p.logger.Debug("provider not enabled, skipping", zap.String("provider", p.GetName()), zap.String("externalID", externalID))
+		return nil, nil
+	}
+	p.logger.Info("provider get details not yet implemented", zap.String("provider", p.GetName()))
+	return nil, nil
 }
 
 // MyAnimeListProvider GetDetails implementation
 func (p *MyAnimeListProvider) GetDetails(ctx context.Context, externalID string) (*models.ExternalMetadata, error) {
-	return &models.ExternalMetadata{}, nil
+	if !p.IsEnabled() {
+		p.logger.Debug("provider not enabled, skipping", zap.String("provider", p.GetName()), zap.String("externalID", externalID))
+		return nil, nil
+	}
+	p.logger.Info("provider get details not yet implemented", zap.String("provider", p.GetName()))
+	return nil, nil
 }
 
 // YouTubeProvider GetDetails implementation
 func (p *YouTubeProvider) GetDetails(ctx context.Context, externalID string) (*models.ExternalMetadata, error) {
-	return &models.ExternalMetadata{}, nil
+	if !p.IsEnabled() {
+		p.logger.Debug("provider not enabled, skipping", zap.String("provider", p.GetName()), zap.String("externalID", externalID))
+		return nil, nil
+	}
+	p.logger.Info("provider get details not yet implemented", zap.String("provider", p.GetName()))
+	return nil, nil
 }
 
 // GitHubProvider GetDetails implementation
 func (p *GitHubProvider) GetDetails(ctx context.Context, externalID string) (*models.ExternalMetadata, error) {
-	return &models.ExternalMetadata{}, nil
+	if !p.IsEnabled() {
+		p.logger.Debug("provider not enabled, skipping", zap.String("provider", p.GetName()), zap.String("externalID", externalID))
+		return nil, nil
+	}
+	p.logger.Info("provider get details not yet implemented", zap.String("provider", p.GetName()))
+	return nil, nil
 }
 
 // Search method implementations for all providers
 func (p *TVDBProvider) Search(ctx context.Context, query string, mediaType string, year *int) ([]SearchResult, error) {
-	return []SearchResult{}, nil
+	if !p.IsEnabled() {
+		p.logger.Debug("provider not enabled, skipping", zap.String("provider", p.GetName()), zap.String("query", query))
+		return nil, nil
+	}
+	p.logger.Info("provider search not yet implemented", zap.String("provider", p.GetName()))
+	return nil, nil
 }
 
 func (p *MusicBrainzProvider) Search(ctx context.Context, query string, mediaType string, year *int) ([]SearchResult, error) {
-	return []SearchResult{}, nil
+	if !p.IsEnabled() {
+		p.logger.Debug("provider not enabled, skipping", zap.String("provider", p.GetName()), zap.String("query", query))
+		return nil, nil
+	}
+
+	params := url.Values{}
+	params.Add("query", query)
+	params.Add("fmt", "json")
+	params.Add("limit", "10")
+
+	requestURL := p.baseURL + "/recording?" + params.Encode()
+
+	headers := map[string]string{
+		"User-Agent": "Catalogizer/1.0 (https://github.com/vasic-digital/Catalogizer)",
+		"Accept":     "application/json",
+	}
+
+	body, err := p.makeRequest(ctx, requestURL, headers)
+	if err != nil {
+		return nil, err
+	}
+
+	var response struct {
+		Recordings []struct {
+			ID           string `json:"id"`
+			Title        string `json:"title"`
+			ArtistCredit []struct {
+				Name string `json:"name"`
+			} `json:"artist-credit"`
+			Releases []struct {
+				Title string `json:"title"`
+				Date  string `json:"date"`
+			} `json:"releases"`
+		} `json:"recordings"`
+	}
+
+	if err := json.Unmarshal(body, &response); err != nil {
+		return nil, fmt.Errorf("failed to parse MusicBrainz response: %w", err)
+	}
+
+	results := make([]SearchResult, 0, len(response.Recordings))
+	for _, rec := range response.Recordings {
+		// Build artist string
+		var artists []string
+		for _, ac := range rec.ArtistCredit {
+			artists = append(artists, ac.Name)
+		}
+
+		// Extract year from first release date
+		var year *int
+		if len(rec.Releases) > 0 && len(rec.Releases[0].Date) >= 4 {
+			y := parseInt(rec.Releases[0].Date[:4])
+			if y > 1900 {
+				year = &y
+			}
+		}
+
+		// Build description from artist + release info
+		var desc string
+		if len(artists) > 0 {
+			desc = "by " + strings.Join(artists, ", ")
+		}
+		if len(rec.Releases) > 0 {
+			desc += " (from " + rec.Releases[0].Title + ")"
+		}
+
+		result := SearchResult{
+			ExternalID: rec.ID,
+			Title:      rec.Title,
+			Year:       year,
+			Relevance:  0.7,
+		}
+
+		if desc != "" {
+			result.Description = &desc
+		}
+
+		results = append(results, result)
+	}
+
+	return results, nil
 }
 
 func (p *SpotifyProvider) Search(ctx context.Context, query string, mediaType string, year *int) ([]SearchResult, error) {
-	return []SearchResult{}, nil
+	if !p.IsEnabled() {
+		p.logger.Debug("provider not enabled, skipping", zap.String("provider", p.GetName()), zap.String("query", query))
+		return nil, nil
+	}
+	p.logger.Info("provider search not yet implemented", zap.String("provider", p.GetName()))
+	return nil, nil
 }
 
 func (p *LastFMProvider) Search(ctx context.Context, query string, mediaType string, year *int) ([]SearchResult, error) {
-	return []SearchResult{}, nil
+	if !p.IsEnabled() {
+		p.logger.Debug("provider not enabled, skipping", zap.String("provider", p.GetName()), zap.String("query", query))
+		return nil, nil
+	}
+	p.logger.Info("provider search not yet implemented", zap.String("provider", p.GetName()))
+	return nil, nil
 }
 
 func (p *IGDBProvider) Search(ctx context.Context, query string, mediaType string, year *int) ([]SearchResult, error) {
-	return []SearchResult{}, nil
+	if !p.IsEnabled() {
+		p.logger.Debug("provider not enabled, skipping", zap.String("provider", p.GetName()), zap.String("query", query))
+		return nil, nil
+	}
+	p.logger.Info("provider search not yet implemented", zap.String("provider", p.GetName()))
+	return nil, nil
 }
 
 func (p *SteamProvider) Search(ctx context.Context, query string, mediaType string, year *int) ([]SearchResult, error) {
-	return []SearchResult{}, nil
+	if !p.IsEnabled() {
+		p.logger.Debug("provider not enabled, skipping", zap.String("provider", p.GetName()), zap.String("query", query))
+		return nil, nil
+	}
+	p.logger.Info("provider search not yet implemented", zap.String("provider", p.GetName()))
+	return nil, nil
 }
 
 func (p *GoodreadsProvider) Search(ctx context.Context, query string, mediaType string, year *int) ([]SearchResult, error) {
-	return []SearchResult{}, nil
+	if !p.IsEnabled() {
+		p.logger.Debug("provider not enabled, skipping", zap.String("provider", p.GetName()), zap.String("query", query))
+		return nil, nil
+	}
+	p.logger.Info("provider search not yet implemented", zap.String("provider", p.GetName()))
+	return nil, nil
 }
 
 func (p *OpenLibraryProvider) Search(ctx context.Context, query string, mediaType string, year *int) ([]SearchResult, error) {
-	return []SearchResult{}, nil
+	if !p.IsEnabled() {
+		p.logger.Debug("provider not enabled, skipping", zap.String("provider", p.GetName()), zap.String("query", query))
+		return nil, nil
+	}
+
+	params := url.Values{}
+	params.Add("q", query)
+	params.Add("limit", "10")
+
+	requestURL := p.baseURL + "/search.json?" + params.Encode()
+
+	body, err := p.makeRequest(ctx, requestURL, nil)
+	if err != nil {
+		return nil, err
+	}
+
+	var response struct {
+		Docs []struct {
+			Key              string   `json:"key"`
+			Title            string   `json:"title"`
+			FirstPublishYear *int     `json:"first_publish_year"`
+			AuthorName       []string `json:"author_name"`
+			CoverI           *int     `json:"cover_i"`
+		} `json:"docs"`
+	}
+
+	if err := json.Unmarshal(body, &response); err != nil {
+		return nil, fmt.Errorf("failed to parse OpenLibrary response: %w", err)
+	}
+
+	results := make([]SearchResult, 0, len(response.Docs))
+	for _, doc := range response.Docs {
+		title := doc.Title
+		if len(doc.AuthorName) > 0 {
+			desc := "by " + strings.Join(doc.AuthorName, ", ")
+			result := SearchResult{
+				ExternalID:  doc.Key,
+				Title:       title,
+				Year:        doc.FirstPublishYear,
+				Description: &desc,
+				Relevance:   0.7,
+			}
+
+			if doc.CoverI != nil {
+				coverURL := fmt.Sprintf("https://covers.openlibrary.org/b/id/%d-M.jpg", *doc.CoverI)
+				result.CoverURL = &coverURL
+			}
+
+			results = append(results, result)
+		} else {
+			result := SearchResult{
+				ExternalID: doc.Key,
+				Title:      title,
+				Year:       doc.FirstPublishYear,
+				Relevance:  0.7,
+			}
+
+			if doc.CoverI != nil {
+				coverURL := fmt.Sprintf("https://covers.openlibrary.org/b/id/%d-M.jpg", *doc.CoverI)
+				result.CoverURL = &coverURL
+			}
+
+			results = append(results, result)
+		}
+	}
+
+	return results, nil
 }
 
 func (p *AniDBProvider) Search(ctx context.Context, query string, mediaType string, year *int) ([]SearchResult, error) {
-	return []SearchResult{}, nil
+	if !p.IsEnabled() {
+		p.logger.Debug("provider not enabled, skipping", zap.String("provider", p.GetName()), zap.String("query", query))
+		return nil, nil
+	}
+	p.logger.Info("provider search not yet implemented", zap.String("provider", p.GetName()))
+	return nil, nil
 }
 
 func (p *MyAnimeListProvider) Search(ctx context.Context, query string, mediaType string, year *int) ([]SearchResult, error) {
-	return []SearchResult{}, nil
+	if !p.IsEnabled() {
+		p.logger.Debug("provider not enabled, skipping", zap.String("provider", p.GetName()), zap.String("query", query))
+		return nil, nil
+	}
+	p.logger.Info("provider search not yet implemented", zap.String("provider", p.GetName()))
+	return nil, nil
 }
 
 func (p *YouTubeProvider) Search(ctx context.Context, query string, mediaType string, year *int) ([]SearchResult, error) {
-	return []SearchResult{}, nil
+	if !p.IsEnabled() {
+		p.logger.Debug("provider not enabled, skipping", zap.String("provider", p.GetName()), zap.String("query", query))
+		return nil, nil
+	}
+	p.logger.Info("provider search not yet implemented", zap.String("provider", p.GetName()))
+	return nil, nil
 }
 
 func (p *GitHubProvider) Search(ctx context.Context, query string, mediaType string, year *int) ([]SearchResult, error) {
-	return []SearchResult{}, nil
+	if !p.IsEnabled() {
+		p.logger.Debug("provider not enabled, skipping", zap.String("provider", p.GetName()), zap.String("query", query))
+		return nil, nil
+	}
+	p.logger.Info("provider search not yet implemented", zap.String("provider", p.GetName()))
+	return nil, nil
 }
