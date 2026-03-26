@@ -1145,18 +1145,45 @@ kubectl exec -it deployment/catalogizer-api -n catalogizer -- /bin/sh
 
 ### Monitoring Setup
 
-#### Prometheus Metrics (Future Enhancement)
+#### Prometheus Metrics
 
-Add to `catalog-api/main.go`:
+Prometheus metrics are fully implemented and exposed at the `/metrics` endpoint. The API server registers metrics via `promhttp.Handler()` in `main.go`:
 
-```go
-// TODO: Implement Prometheus metrics export
-// Metrics to track:
-// - HTTP request duration
-// - Active connections
-// - Database query duration
-// - Cache hit/miss ratio
-// - Error rates by endpoint
+```
+GET /metrics
+```
+
+**Available metric families:**
+
+| Metric | Type | Description |
+|--------|------|-------------|
+| `catalogizer_http_request_duration_seconds` | Histogram | HTTP request latency by method, path, status |
+| `catalogizer_http_requests_total` | Counter | Total HTTP requests by method, path, status |
+| `catalogizer_http_request_size_bytes` | Summary | Request body sizes |
+| `catalogizer_http_response_size_bytes` | Summary | Response body sizes |
+| `catalogizer_active_connections` | Gauge | Current active HTTP connections |
+| `catalogizer_db_queries_total` | Counter | Database queries by operation and table |
+| `catalogizer_db_query_duration_seconds` | Histogram | Database query latency |
+| `catalogizer_db_connections_active` | Gauge | Active database connections |
+| `catalogizer_db_connections_idle` | Gauge | Idle database connections |
+| `catalogizer_cache_hits_total` | Counter | Cache hits by cache name |
+| `catalogizer_cache_misses_total` | Counter | Cache misses by cache name |
+| `catalogizer_media_files_scanned_total` | Counter | Total media files scanned |
+| `catalogizer_media_files_analyzed_total` | Counter | Total media files analyzed |
+| `catalogizer_media_analysis_duration_seconds` | Histogram | Media analysis duration |
+| `catalogizer_media_by_type` | Gauge | Media count by type |
+| `catalogizer_memory_usage_bytes` | Gauge | Process memory usage |
+| `catalogizer_goroutines` | Gauge | Current goroutine count |
+
+**Prometheus scrape config example:**
+
+```yaml
+scrape_configs:
+  - job_name: 'catalogizer-api'
+    scrape_interval: 15s
+    static_configs:
+      - targets: ['localhost:8080']
+    metrics_path: /metrics
 ```
 
 #### Simple Monitoring Script
@@ -1557,7 +1584,7 @@ sudo systemctl reload nginx
 - [ ] Enable automatic security updates
 - [ ] Configure fail2ban for brute force protection
 - [ ] Use non-root user for application
-- [ ] Implement database connection encryption
+- [ ] Configure database connection encryption (SSL mode for PostgreSQL)
 - [ ] Regular security audits
 - [ ] Monitor logs for suspicious activity
 - [ ] Set up intrusion detection (OSSEC/Wazuh)
