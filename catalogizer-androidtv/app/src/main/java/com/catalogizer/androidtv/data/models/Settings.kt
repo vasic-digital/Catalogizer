@@ -1,5 +1,7 @@
 package com.catalogizer.androidtv.data.models
 
+import com.catalogizer.androidtv.BuildConfig
+
 /**
  * Server entry represents a saved API endpoint.
  */
@@ -22,6 +24,6 @@ data class Settings(
     val autoDiscovery: Boolean = true
 ) {
     companion object {
-        const val DEFAULT_SERVER_URL = "https://catalogizer.dev"
+        val DEFAULT_SERVER_URL: String = BuildConfig.API_BASE_URL
     }
 }
