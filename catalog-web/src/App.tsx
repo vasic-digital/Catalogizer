@@ -1,4 +1,4 @@
-import React, { Suspense } from 'react'
+import React, { Suspense, useState } from 'react'
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom'
 import { AuthProvider } from '@/contexts/AuthContext'
 import { WebSocketProvider } from '@/contexts/WebSocketContext'
@@ -6,6 +6,7 @@ import { ConnectionStatus } from '@/components/ui/ConnectionStatus'
 import { Layout } from '@/components/layout/Layout'
 import { ProtectedRoute } from '@/components/auth/ProtectedRoute'
 import { ErrorBoundary } from '@/components/ErrorBoundary'
+import { SplashScreen } from '@/components/SplashScreen'
 
 // Lazy-loaded page components for code splitting
 const LoginForm = React.lazy(() => import('@/components/auth/LoginForm').then(m => ({ default: m.LoginForm })))
@@ -38,6 +39,12 @@ const PageLoader: React.FC = () => (
 )
 
 function App() {
+  const [splashComplete, setSplashComplete] = useState(false)
+
+  if (!splashComplete) {
+    return <SplashScreen onComplete={() => setSplashComplete(true)} />
+  }
+
   return (
     <ErrorBoundary>
       <AuthProvider>

@@ -2,6 +2,14 @@ import React from 'react'
 import { render, screen, waitFor } from '@testing-library/react'
 import App from '../App'
 
+// Mock SplashScreen to immediately call onComplete
+vi.mock('@/components/SplashScreen', async () => ({
+  SplashScreen: ({ onComplete }: { onComplete: () => void }) => {
+    React.useEffect(() => { onComplete() }, [onComplete])
+    return null
+  },
+}))
+
 // Mock BrowserRouter to use MemoryRouter for testing
 vi.mock('react-router-dom', async () => {
   const actual = await vi.importActual('react-router-dom')
