@@ -1,6 +1,7 @@
 package services
 
 import (
+	"fmt"
 	"testing"
 	"time"
 
@@ -1247,5 +1248,1037 @@ func TestReportingService_FormatReport_PDF_ReturnsError(t *testing.T) {
 
 	// PDF generation fails without unipdf license
 	_, err := service.formatReport(data, "pdf", "default")
+	assert.Error(t, err)
+}
+
+// ===========================================================================
+// Format methods: edge cases, special characters, empty data, large data
+// ===========================================================================
+
+func TestReportingService_FormatAsMarkdown_SpecialCharacters(t *testing.T) {
+	service := NewReportingService(nil, nil)
+
+	displayName := "Test <User> & \"Special\" 'Chars'"
+	report := &models.UserAnalyticsReport{
+		User: &models.User{
+			ID:          1,
+			Username:    "user<script>alert(1)</script>",
+			DisplayName: &displayName,
+			Email:       "test+special@example.com",
+			CreatedAt:   time.Date(2025, 1, 1, 0, 0, 0, 0, time.UTC),
+		},
+		StartDate:          time.Date(2025, 1, 1, 0, 0, 0, 0, time.UTC),
+		EndDate:            time.Date(2025, 1, 31, 0, 0, 0, 0, time.UTC),
+		TotalMediaAccesses: 42,
+		TotalEvents:        7,
+	}
+
+	content, err := service.formatAsMarkdown(report, "user_analytics")
+	assert.NoError(t, err)
+	assert.NotNil(t, content)
+
+	contentStr := string(content)
+	assert.Contains(t, contentStr, "Test <User> & \"Special\" 'Chars'")
+	assert.Contains(t, contentStr, "user<script>alert(1)</script>")
+	assert.Contains(t, contentStr, "Total Media Accesses: 42")
+}
+
+func TestReportingService_FormatAsMarkdown_UnicodeCharacters(t *testing.T) {
+	service := NewReportingService(nil, nil)
+
+	displayName := "\u041c\u0438\u043b\u043e\u0448 \u0412\u0430\u0441\u0438\u0107"
+	report := &models.UserAnalyticsReport{
+		User: &models.User{
+			ID:          1,
+			Username:    "\u7528\u6237\u540d",
+			DisplayName: &displayName,
+			Email:       "unicode@\u4f8b\u3048.jp",
+			CreatedAt:   time.Date(2025, 1, 1, 0, 0, 0, 0, time.UTC),
+		},
+		StartDate:          time.Date(2025, 1, 1, 0, 0, 0, 0, time.UTC),
+		EndDate:            time.Date(2025, 1, 31, 0, 0, 0, 0, time.UTC),
+		TotalMediaAccesses: 10,
+		TotalEvents:        5,
+	}
+
+	content, err := service.formatAsMarkdown(report, "user_analytics")
+	assert.NoError(t, err)
+	assert.NotNil(t, content)
+
+	contentStr := string(content)
+	assert.Contains(t, contentStr, "\u041c\u0438\u043b\u043e\u0448 \u0412\u0430\u0441\u0438\u0107")
+	assert.Contains(t, contentStr, "\u7528\u6237\u540d")
+}
+
+func TestReportingService_FormatAsHTML_SpecialCharacters(t *testing.T) {
+	service := NewReportingService(nil, nil)
+
+	displayName := "User <b>Bold</b> & \"Quoted\""
+	report := &models.UserAnalyticsReport{
+		User: &models.User{
+			ID:          1,
+			Username:    "user&name",
+			DisplayName: &displayName,
+			Email:       "test@example.com",
+			CreatedAt:   time.Date(2025, 1, 1, 0, 0, 0, 0, time.UTC),
+		},
+		StartDate:          time.Date(2025, 1, 1, 0, 0, 0, 0, time.UTC),
+		EndDate:            time.Date(2025, 1, 31, 0, 0, 0, 0, time.UTC),
+		TotalMediaAccesses: 10,
+		TotalEvents:        5,
+	}
+
+	content, err := service.formatAsHTML(report, "user_analytics")
+	assert.NoError(t, err)
+	assert.NotNil(t, content)
+
+	contentStr := string(content)
+	assert.Contains(t, contentStr, "<!DOCTYPE html>")
+	// Content is injected as template.HTML (raw), so & is NOT escaped
+	assert.Contains(t, contentStr, "user&name")
+	assert.Contains(t, contentStr, "User <b>Bold</b>")
+}
+
+func TestReportingService_FormatAsHTML_UnicodeCharacters(t *testing.T) {
+	service := NewReportingService(nil, nil)
+
+	displayName := "\u65e5\u672c\u8a9e\u30e6\u30fc\u30b6\u30fc"
+	report := &models.UserAnalyticsReport{
+		User: &models.User{
+			ID:          1,
+			Username:    "\u0422\u0435\u0441\u0442",
+			DisplayName: &displayName,
+			Email:       "test@example.com",
+			CreatedAt:   time.Date(2025, 1, 1, 0, 0, 0, 0, time.UTC),
+		},
+		StartDate:          time.Date(2025, 1, 1, 0, 0, 0, 0, time.UTC),
+		EndDate:            time.Date(2025, 1, 31, 0, 0, 0, 0, time.UTC),
+		TotalMediaAccesses: 0,
+		TotalEvents:        0,
+	}
+
+	content, err := service.formatAsHTML(report, "user_analytics")
+	assert.NoError(t, err)
+	assert.NotNil(t, content)
+	assert.Contains(t, string(content), "<!DOCTYPE html>")
+}
+
+func TestReportingService_FormatAsMarkdown_EmptyUserAnalytics(t *testing.T) {
+	service := NewReportingService(nil, nil)
+
+	report := &models.UserAnalyticsReport{
+		User: &models.User{
+			ID:          0,
+			Username:    "",
+			DisplayName: nil,
+			Email:       "",
+			CreatedAt:   time.Time{},
+		},
+		StartDate:          time.Time{},
+		EndDate:            time.Time{},
+		TotalMediaAccesses: 0,
+		TotalEvents:        0,
+		MediaAccessLogs:    nil,
+		Events:             nil,
+	}
+
+	content, err := service.formatAsMarkdown(report, "user_analytics")
+	assert.NoError(t, err)
+	assert.NotNil(t, content)
+	assert.Contains(t, string(content), "# User Analytics Report")
+	assert.Contains(t, string(content), "Total Media Accesses: 0")
+	assert.Contains(t, string(content), "Total Events: 0")
+}
+
+func TestReportingService_FormatAsHTML_EmptySystemOverview(t *testing.T) {
+	service := NewReportingService(nil, nil)
+
+	report := &models.SystemOverviewReport{
+		StartDate:          time.Time{},
+		EndDate:            time.Time{},
+		TotalUsers:         0,
+		ActiveUsers:        0,
+		TotalMediaAccesses: 0,
+		TotalEvents:        0,
+	}
+
+	content, err := service.formatAsHTML(report, "system_overview")
+	assert.NoError(t, err)
+	assert.NotNil(t, content)
+
+	contentStr := string(content)
+	assert.Contains(t, contentStr, "<!DOCTYPE html>")
+	assert.Contains(t, contentStr, "Total Users: 0")
+	assert.Contains(t, contentStr, "Active Users: 0")
+	assert.Contains(t, contentStr, "Total Media Accesses: 0")
+	assert.Contains(t, contentStr, "Total Events: 0")
+}
+
+func TestReportingService_FormatAsMarkdown_EmptySystemOverview(t *testing.T) {
+	service := NewReportingService(nil, nil)
+
+	report := &models.SystemOverviewReport{
+		StartDate:          time.Time{},
+		EndDate:            time.Time{},
+		TotalUsers:         0,
+		ActiveUsers:        0,
+		TotalMediaAccesses: 0,
+		TotalEvents:        0,
+	}
+
+	content, err := service.formatAsMarkdown(report, "system_overview")
+	assert.NoError(t, err)
+	assert.NotNil(t, content)
+
+	contentStr := string(content)
+	assert.Contains(t, contentStr, "# System Overview Report")
+	assert.Contains(t, contentStr, "Total Users: 0")
+	assert.Contains(t, contentStr, "Active Users: 0")
+}
+
+func TestReportingService_FormatAsMarkdown_SecurityAuditFallback(t *testing.T) {
+	service := NewReportingService(nil, nil)
+
+	report := &models.SecurityAuditReport{
+		StartDate:           time.Date(2025, 1, 1, 0, 0, 0, 0, time.UTC),
+		EndDate:             time.Date(2025, 1, 31, 0, 0, 0, 0, time.UTC),
+		FailedLoginAttempts: 5,
+		SuccessfulLogins:    100,
+		SuspiciousActivity:  []models.SecurityIncident{},
+	}
+
+	content, err := service.formatAsMarkdown(report, "security_audit")
+	assert.NoError(t, err)
+	assert.NotNil(t, content)
+
+	contentStr := string(content)
+	assert.Contains(t, contentStr, "# security_audit Report")
+	assert.Contains(t, contentStr, "```json")
+}
+
+func TestReportingService_FormatAsMarkdown_PerformanceMetricsFallback(t *testing.T) {
+	service := NewReportingService(nil, nil)
+
+	report := &models.PerformanceMetricsReport{
+		StartDate:              time.Date(2025, 1, 1, 0, 0, 0, 0, time.UTC),
+		EndDate:                time.Date(2025, 1, 31, 0, 0, 0, 0, time.UTC),
+		AverageSessionDuration: 10 * time.Minute,
+		TotalSessions:          50,
+	}
+
+	content, err := service.formatAsMarkdown(report, "performance_metrics")
+	assert.NoError(t, err)
+	assert.NotNil(t, content)
+
+	contentStr := string(content)
+	assert.Contains(t, contentStr, "# performance_metrics Report")
+	assert.Contains(t, contentStr, "```json")
+}
+
+func TestReportingService_FormatAsMarkdown_MediaAnalyticsFallback(t *testing.T) {
+	service := NewReportingService(nil, nil)
+
+	report := &models.MediaAnalyticsReport{
+		MediaID:       42,
+		StartDate:     time.Date(2025, 1, 1, 0, 0, 0, 0, time.UTC),
+		EndDate:       time.Date(2025, 1, 31, 0, 0, 0, 0, time.UTC),
+		TotalAccesses: 100,
+		UniqueUsers:   25,
+	}
+
+	content, err := service.formatAsMarkdown(report, "media_analytics")
+	assert.NoError(t, err)
+	assert.NotNil(t, content)
+
+	contentStr := string(content)
+	assert.Contains(t, contentStr, "# media_analytics Report")
+	assert.Contains(t, contentStr, "```json")
+	assert.Contains(t, contentStr, "42")
+}
+
+func TestReportingService_FormatAsMarkdown_UserActivityFallback(t *testing.T) {
+	service := NewReportingService(nil, nil)
+
+	report := &models.UserActivityReport{
+		StartDate:     time.Date(2025, 1, 1, 0, 0, 0, 0, time.UTC),
+		EndDate:       time.Date(2025, 1, 31, 0, 0, 0, 0, time.UTC),
+		TotalUsers:    10,
+		TotalAccesses: 500,
+	}
+
+	content, err := service.formatAsMarkdown(report, "user_activity")
+	assert.NoError(t, err)
+	assert.NotNil(t, content)
+
+	contentStr := string(content)
+	assert.Contains(t, contentStr, "# user_activity Report")
+	assert.Contains(t, contentStr, "```json")
+}
+
+func TestReportingService_FormatAsHTML_SecurityAuditFallback(t *testing.T) {
+	service := NewReportingService(nil, nil)
+
+	report := &models.SecurityAuditReport{
+		StartDate:           time.Date(2025, 1, 1, 0, 0, 0, 0, time.UTC),
+		EndDate:             time.Date(2025, 1, 31, 0, 0, 0, 0, time.UTC),
+		FailedLoginAttempts: 3,
+		SuccessfulLogins:    50,
+		SuspiciousActivity:  []models.SecurityIncident{},
+	}
+
+	content, err := service.formatAsHTML(report, "security_audit")
+	assert.NoError(t, err)
+	assert.NotNil(t, content)
+
+	contentStr := string(content)
+	assert.Contains(t, contentStr, "<!DOCTYPE html>")
+	assert.Contains(t, contentStr, "<pre>")
+}
+
+func TestReportingService_FormatAsHTML_MediaAnalyticsFallback(t *testing.T) {
+	service := NewReportingService(nil, nil)
+
+	report := &models.MediaAnalyticsReport{
+		MediaID:       7,
+		StartDate:     time.Date(2025, 1, 1, 0, 0, 0, 0, time.UTC),
+		EndDate:       time.Date(2025, 1, 31, 0, 0, 0, 0, time.UTC),
+		TotalAccesses: 200,
+		UniqueUsers:   50,
+	}
+
+	content, err := service.formatAsHTML(report, "media_analytics")
+	assert.NoError(t, err)
+	assert.NotNil(t, content)
+
+	contentStr := string(content)
+	assert.Contains(t, contentStr, "<!DOCTYPE html>")
+	assert.Contains(t, contentStr, "<pre>")
+}
+
+func TestReportingService_FormatAsHTML_PerformanceMetricsFallback(t *testing.T) {
+	service := NewReportingService(nil, nil)
+
+	report := &models.PerformanceMetricsReport{
+		StartDate:              time.Date(2025, 1, 1, 0, 0, 0, 0, time.UTC),
+		EndDate:                time.Date(2025, 1, 31, 0, 0, 0, 0, time.UTC),
+		AverageSessionDuration: 5 * time.Minute,
+		TotalSessions:          20,
+	}
+
+	content, err := service.formatAsHTML(report, "performance_metrics")
+	assert.NoError(t, err)
+	assert.NotNil(t, content)
+
+	contentStr := string(content)
+	assert.Contains(t, contentStr, "<!DOCTYPE html>")
+	assert.Contains(t, contentStr, "<pre>")
+}
+
+func TestReportingService_FormatAsHTML_UserActivityFallback(t *testing.T) {
+	service := NewReportingService(nil, nil)
+
+	report := &models.UserActivityReport{
+		StartDate:     time.Date(2025, 1, 1, 0, 0, 0, 0, time.UTC),
+		EndDate:       time.Date(2025, 1, 31, 0, 0, 0, 0, time.UTC),
+		TotalUsers:    5,
+		TotalAccesses: 100,
+	}
+
+	content, err := service.formatAsHTML(report, "user_activity")
+	assert.NoError(t, err)
+	assert.NotNil(t, content)
+
+	contentStr := string(content)
+	assert.Contains(t, contentStr, "<!DOCTYPE html>")
+	assert.Contains(t, contentStr, "<pre>")
+}
+
+// ===========================================================================
+// formatReport via public API with typed report data
+// ===========================================================================
+
+func TestReportingService_FormatReport_Markdown_UserAnalytics(t *testing.T) {
+	service := NewReportingService(nil, nil)
+
+	displayName := "Report User"
+	report := &models.UserAnalyticsReport{
+		User: &models.User{
+			ID:          5,
+			Username:    "reportuser",
+			DisplayName: &displayName,
+			Email:       "report@example.com",
+			CreatedAt:   time.Date(2025, 1, 1, 0, 0, 0, 0, time.UTC),
+		},
+		StartDate:          time.Date(2025, 1, 1, 0, 0, 0, 0, time.UTC),
+		EndDate:            time.Date(2025, 1, 31, 0, 0, 0, 0, time.UTC),
+		TotalMediaAccesses: 300,
+		TotalEvents:        75,
+	}
+
+	content, err := service.formatReport(report, "markdown", "user_analytics")
+	assert.NoError(t, err)
+	assert.NotNil(t, content)
+
+	contentStr := string(content)
+	assert.Contains(t, contentStr, "# User Analytics Report")
+	assert.Contains(t, contentStr, "reportuser")
+	assert.Contains(t, contentStr, "Total Media Accesses: 300")
+}
+
+func TestReportingService_FormatReport_HTML_UserAnalytics(t *testing.T) {
+	service := NewReportingService(nil, nil)
+
+	displayName := "HTML User"
+	report := &models.UserAnalyticsReport{
+		User: &models.User{
+			ID:          3,
+			Username:    "htmluser",
+			DisplayName: &displayName,
+			Email:       "html@example.com",
+			CreatedAt:   time.Date(2025, 1, 1, 0, 0, 0, 0, time.UTC),
+		},
+		StartDate:          time.Date(2025, 1, 1, 0, 0, 0, 0, time.UTC),
+		EndDate:            time.Date(2025, 1, 31, 0, 0, 0, 0, time.UTC),
+		TotalMediaAccesses: 50,
+		TotalEvents:        10,
+	}
+
+	content, err := service.formatReport(report, "html", "user_analytics")
+	assert.NoError(t, err)
+	assert.NotNil(t, content)
+
+	contentStr := string(content)
+	assert.Contains(t, contentStr, "<!DOCTYPE html>")
+	assert.Contains(t, contentStr, "htmluser")
+	assert.Contains(t, contentStr, "Total Media Accesses: 50")
+}
+
+func TestReportingService_FormatReport_Markdown_SystemOverview(t *testing.T) {
+	service := NewReportingService(nil, nil)
+
+	report := &models.SystemOverviewReport{
+		StartDate:          time.Date(2025, 1, 1, 0, 0, 0, 0, time.UTC),
+		EndDate:            time.Date(2025, 1, 31, 0, 0, 0, 0, time.UTC),
+		TotalUsers:         500,
+		ActiveUsers:        400,
+		TotalMediaAccesses: 25000,
+		TotalEvents:        10000,
+	}
+
+	content, err := service.formatReport(report, "markdown", "system_overview")
+	assert.NoError(t, err)
+	assert.NotNil(t, content)
+
+	contentStr := string(content)
+	assert.Contains(t, contentStr, "# System Overview Report")
+	assert.Contains(t, contentStr, "Total Users: 500")
+	assert.Contains(t, contentStr, "Active Users: 400")
+}
+
+func TestReportingService_FormatReport_HTML_SystemOverview(t *testing.T) {
+	service := NewReportingService(nil, nil)
+
+	report := &models.SystemOverviewReport{
+		StartDate:          time.Date(2025, 1, 1, 0, 0, 0, 0, time.UTC),
+		EndDate:            time.Date(2025, 1, 31, 0, 0, 0, 0, time.UTC),
+		TotalUsers:         250,
+		ActiveUsers:        200,
+		TotalMediaAccesses: 12000,
+		TotalEvents:        5000,
+	}
+
+	content, err := service.formatReport(report, "html", "system_overview")
+	assert.NoError(t, err)
+	assert.NotNil(t, content)
+
+	contentStr := string(content)
+	assert.Contains(t, contentStr, "<!DOCTYPE html>")
+	assert.Contains(t, contentStr, "Total Users: 250")
+	assert.Contains(t, contentStr, "Total Media Accesses: 12000")
+}
+
+func TestReportingService_FormatReport_JSON_UserAnalytics(t *testing.T) {
+	service := NewReportingService(nil, nil)
+
+	displayName := "JSON User"
+	report := &models.UserAnalyticsReport{
+		User: &models.User{
+			ID:          10,
+			Username:    "jsonuser",
+			DisplayName: &displayName,
+			Email:       "json@example.com",
+			CreatedAt:   time.Date(2025, 1, 1, 0, 0, 0, 0, time.UTC),
+		},
+		StartDate:          time.Date(2025, 1, 1, 0, 0, 0, 0, time.UTC),
+		EndDate:            time.Date(2025, 1, 31, 0, 0, 0, 0, time.UTC),
+		TotalMediaAccesses: 999,
+		TotalEvents:        111,
+	}
+
+	content, err := service.formatReport(report, "json", "user_analytics")
+	assert.NoError(t, err)
+	assert.NotNil(t, content)
+
+	contentStr := string(content)
+	assert.Contains(t, contentStr, "jsonuser")
+	assert.Contains(t, contentStr, "999")
+}
+
+func TestReportingService_FormatReport_JSON_SystemOverview(t *testing.T) {
+	service := NewReportingService(nil, nil)
+
+	report := &models.SystemOverviewReport{
+		StartDate:          time.Date(2025, 1, 1, 0, 0, 0, 0, time.UTC),
+		EndDate:            time.Date(2025, 1, 31, 0, 0, 0, 0, time.UTC),
+		TotalUsers:         1000,
+		ActiveUsers:        750,
+		TotalMediaAccesses: 50000,
+		TotalEvents:        20000,
+	}
+
+	content, err := service.formatReport(report, "json", "system_overview")
+	assert.NoError(t, err)
+	assert.NotNil(t, content)
+
+	contentStr := string(content)
+	assert.Contains(t, contentStr, "1000")
+	assert.Contains(t, contentStr, "50000")
+}
+
+// ===========================================================================
+// GenerateReport: unsupported format error propagation
+// ===========================================================================
+
+func TestReportingService_GenerateReport_UnsupportedFormat(t *testing.T) {
+	service := NewReportingService(nil, nil)
+
+	report, err := service.GenerateReport("security_audit", "xml", map[string]interface{}{
+		"start_date": "2025-01-01",
+		"end_date":   "2025-01-31",
+	})
+	assert.Error(t, err)
+	assert.Contains(t, err.Error(), "unsupported format")
+	assert.Nil(t, report)
+}
+
+func TestReportingService_GenerateReport_MediaAnalytics_MissingMediaID(t *testing.T) {
+	service := NewReportingService(nil, nil)
+
+	report, err := service.GenerateReport("media_analytics", "json", map[string]interface{}{
+		"start_date": "2025-01-01",
+		"end_date":   "2025-01-31",
+	})
+	assert.Error(t, err)
+	assert.Contains(t, err.Error(), "media_id parameter required")
+	assert.Nil(t, report)
+}
+
+func TestReportingService_GenerateReport_UserActivity_MissingDates(t *testing.T) {
+	service := NewReportingService(nil, nil)
+
+	report, err := service.GenerateReport("user_activity", "json", map[string]interface{}{})
+	assert.Error(t, err)
+	assert.Nil(t, report)
+}
+
+// ===========================================================================
+// calculateSystemHealth: threshold boundary tests
+// ===========================================================================
+
+func TestReportingService_CalculateSystemHealth_ExcellentThreshold(t *testing.T) {
+	service := NewReportingService(nil, nil)
+
+	// 100 total, 80 active => activeRatio=0.8 => 0.8*50=40, mediaAccesses>0 => +30, activeUsers>10 => +20 => 90 => excellent
+	health := service.calculateSystemHealth(100, 80, 5000)
+	assert.Equal(t, "excellent", health.Status)
+	assert.GreaterOrEqual(t, health.Score, 80.0)
+}
+
+func TestReportingService_CalculateSystemHealth_GoodThreshold(t *testing.T) {
+	service := NewReportingService(nil, nil)
+
+	// 100 total, 20 active => activeRatio=0.2 => 0.2*50=10, mediaAccesses>0 => +30, activeUsers>10 => +20 => 60 => good
+	health := service.calculateSystemHealth(100, 20, 100)
+	assert.Equal(t, "good", health.Status)
+	assert.GreaterOrEqual(t, health.Score, 60.0)
+	assert.Less(t, health.Score, 80.0)
+}
+
+func TestReportingService_CalculateSystemHealth_FairThreshold(t *testing.T) {
+	service := NewReportingService(nil, nil)
+
+	// 100 total, 5 active => activeRatio=0.05 => 0.05*50=2.5, mediaAccesses>0 => +30, activeUsers<=10 => +0 => 32.5
+	// Wait: 5 is not > 10, so no +20. Score = 2.5 + 30 = 32.5 => poor (< 40)
+	// Let's get fair: need score >= 40 and < 60
+	// 100 total, 10 active => 0.1*50=5, +30=35, 10 is not > 10 => 35 => poor
+	// 100 total, 15 active, 100 accesses => 0.15*50=7.5, +30=37.5, 15>10 => +20 => 57.5 => fair? No, 57.5 < 60 => fair
+	health := service.calculateSystemHealth(100, 15, 100)
+	assert.Equal(t, "fair", health.Status)
+	assert.GreaterOrEqual(t, health.Score, 40.0)
+	assert.Less(t, health.Score, 60.0)
+}
+
+func TestReportingService_CalculateSystemHealth_PoorThreshold(t *testing.T) {
+	service := NewReportingService(nil, nil)
+
+	// 0 total => no active ratio bonus, 0 accesses => no +30, 0 active => no +20 => 0 => poor
+	health := service.calculateSystemHealth(0, 0, 0)
+	assert.Equal(t, "poor", health.Status)
+	assert.Less(t, health.Score, 40.0)
+}
+
+func TestReportingService_CalculateSystemHealth_ZeroTotalUsersNonZeroActive(t *testing.T) {
+	service := NewReportingService(nil, nil)
+
+	// Edge: totalUsers=0 but activeUsers=5 (inconsistent data)
+	health := service.calculateSystemHealth(0, 5, 100)
+	assert.NotEmpty(t, health.Status)
+}
+
+// ===========================================================================
+// Large data sets
+// ===========================================================================
+
+func TestReportingService_FormatReport_JSON_LargeData(t *testing.T) {
+	service := NewReportingService(nil, nil)
+
+	largeData := make(map[string]interface{})
+	for i := 0; i < 1000; i++ {
+		largeData[fmt.Sprintf("key_%d", i)] = fmt.Sprintf("value_%d", i)
+	}
+
+	content, err := service.formatReport(largeData, "json", "generic")
+	assert.NoError(t, err)
+	assert.NotNil(t, content)
+	assert.Greater(t, len(content), 10000) // Should be substantial output
+}
+
+func TestReportingService_FormatAsMarkdown_LargeData(t *testing.T) {
+	service := NewReportingService(nil, nil)
+
+	largeData := make(map[string]interface{})
+	for i := 0; i < 500; i++ {
+		largeData[fmt.Sprintf("item_%d", i)] = fmt.Sprintf("data_%d", i)
+	}
+
+	content, err := service.formatAsMarkdown(largeData, "unknown_type")
+	assert.NoError(t, err)
+	assert.NotNil(t, content)
+	assert.Contains(t, string(content), "# unknown_type Report")
+	assert.Contains(t, string(content), "```json")
+}
+
+func TestReportingService_FormatAsHTML_LargeData(t *testing.T) {
+	service := NewReportingService(nil, nil)
+
+	largeData := make(map[string]interface{})
+	for i := 0; i < 500; i++ {
+		largeData[fmt.Sprintf("field_%d", i)] = i
+	}
+
+	content, err := service.formatAsHTML(largeData, "unknown_type")
+	assert.NoError(t, err)
+	assert.NotNil(t, content)
+	assert.Contains(t, string(content), "<!DOCTYPE html>")
+	assert.Contains(t, string(content), "<pre>")
+}
+
+func TestReportingService_CountUniqueUsers_LargeDataSet(t *testing.T) {
+	service := NewReportingService(nil, nil)
+
+	var logs []models.MediaAccessLog
+	for i := 0; i < 10000; i++ {
+		logs = append(logs, models.MediaAccessLog{
+			UserID:     i % 100, // 100 unique users
+			MediaID:    i % 50,
+			AccessTime: time.Now(),
+		})
+	}
+
+	count := service.countUniqueUsers(logs)
+	assert.Equal(t, 100, count)
+}
+
+func TestReportingService_FilterLogsByDateRange_LargeDataSet(t *testing.T) {
+	service := NewReportingService(nil, nil)
+
+	startDate := time.Date(2025, 1, 10, 0, 0, 0, 0, time.UTC)
+	endDate := time.Date(2025, 1, 20, 0, 0, 0, 0, time.UTC)
+
+	var logs []models.MediaAccessLog
+	for i := 0; i < 1000; i++ {
+		day := (i % 31) + 1
+		logs = append(logs, models.MediaAccessLog{
+			UserID:     i,
+			MediaID:    i,
+			AccessTime: time.Date(2025, 1, day, 12, 0, 0, 0, time.UTC),
+		})
+	}
+
+	filtered := service.filterLogsByDateRange(logs, startDate, endDate)
+	for _, log := range filtered {
+		assert.True(t, log.AccessTime.After(startDate))
+		assert.True(t, log.AccessTime.Before(endDate))
+	}
+}
+
+// ===========================================================================
+// filterLogsByDateRange: boundary conditions
+// ===========================================================================
+
+func TestReportingService_FilterLogsByDateRange_BoundaryExact(t *testing.T) {
+	service := NewReportingService(nil, nil)
+
+	startDate := time.Date(2025, 1, 10, 0, 0, 0, 0, time.UTC)
+	endDate := time.Date(2025, 1, 20, 0, 0, 0, 0, time.UTC)
+
+	logs := []models.MediaAccessLog{
+		{UserID: 1, MediaID: 1, AccessTime: startDate},                                          // exactly at start (not After)
+		{UserID: 2, MediaID: 2, AccessTime: endDate},                                            // exactly at end (not Before)
+		{UserID: 3, MediaID: 3, AccessTime: startDate.Add(1 * time.Second)},                     // just after start
+		{UserID: 4, MediaID: 4, AccessTime: endDate.Add(-1 * time.Second)},                      // just before end
+		{UserID: 5, MediaID: 5, AccessTime: time.Date(2025, 1, 15, 12, 0, 0, 0, time.UTC)},     // middle
+	}
+
+	filtered := service.filterLogsByDateRange(logs, startDate, endDate)
+	// filterLogsByDateRange uses strictly After(start) AND Before(end)
+	// So exact start and exact end should be excluded
+	assert.Equal(t, 3, len(filtered))
+}
+
+func TestReportingService_FilterLogsByDateRange_SameStartEnd(t *testing.T) {
+	service := NewReportingService(nil, nil)
+
+	sameDate := time.Date(2025, 1, 15, 0, 0, 0, 0, time.UTC)
+
+	logs := []models.MediaAccessLog{
+		{UserID: 1, MediaID: 1, AccessTime: sameDate},
+	}
+
+	// When start == end, nothing can be both After(start) and Before(end) simultaneously
+	filtered := service.filterLogsByDateRange(logs, sameDate, sameDate)
+	assert.Equal(t, 0, len(filtered))
+}
+
+// ===========================================================================
+// calculateUsageStatistics edge cases
+// ===========================================================================
+
+func TestReportingService_CalculateUsageStatistics_SameDay(t *testing.T) {
+	service := NewReportingService(nil, nil)
+
+	sameDate := time.Date(2025, 6, 15, 0, 0, 0, 0, time.UTC)
+	stats := service.calculateUsageStatistics(sameDate, sameDate)
+	assert.NotEmpty(t, stats.PeakHours)
+	assert.Greater(t, stats.AverageDaily, 0)
+}
+
+func TestReportingService_CalculateUsageStatistics_InvertedRange(t *testing.T) {
+	service := NewReportingService(nil, nil)
+
+	// End before start -- days will be < 1, should use fallback of 1
+	start := time.Date(2025, 6, 15, 0, 0, 0, 0, time.UTC)
+	end := time.Date(2025, 6, 1, 0, 0, 0, 0, time.UTC)
+	stats := service.calculateUsageStatistics(start, end)
+	assert.NotEmpty(t, stats.PeakHours)
+	assert.Greater(t, stats.AverageDaily, 0)
+}
+
+// ===========================================================================
+// calculateErrorRates edge cases
+// ===========================================================================
+
+func TestReportingService_CalculateErrorRates_SameDay(t *testing.T) {
+	service := NewReportingService(nil, nil)
+
+	sameDate := time.Date(2025, 1, 15, 0, 0, 0, 0, time.UTC)
+	result := service.calculateErrorRates(sameDate, sameDate)
+	assert.Greater(t, result.Total, 0.0)
+	assert.Greater(t, result.HTTP4xx, 0.0)
+	assert.Greater(t, result.HTTP5xx, 0.0)
+	assert.Greater(t, result.Timeouts, 0.0)
+}
+
+func TestReportingService_CalculateErrorRates_LongPeriod(t *testing.T) {
+	service := NewReportingService(nil, nil)
+
+	start := time.Date(2025, 1, 1, 0, 0, 0, 0, time.UTC)
+	end := time.Date(2025, 12, 31, 0, 0, 0, 0, time.UTC)
+	result := service.calculateErrorRates(start, end)
+	assert.Greater(t, result.Total, 0.0)
+	// Longer period should have higher rates
+	assert.Greater(t, result.HTTP4xx, 1.0)
+}
+
+// ===========================================================================
+// calculateSecurityMetrics edge cases
+// ===========================================================================
+
+func TestReportingService_CalculateSecurityMetrics_LongPeriod(t *testing.T) {
+	service := NewReportingService(nil, nil)
+
+	start := time.Date(2024, 1, 1, 0, 0, 0, 0, time.UTC)
+	end := time.Date(2025, 12, 31, 0, 0, 0, 0, time.UTC)
+	metrics := service.calculateSecurityMetrics(start, end)
+	assert.NotEmpty(t, metrics.ThreatLevel)
+	assert.GreaterOrEqual(t, metrics.SecurityScore, 50.0)
+}
+
+func TestReportingService_CalculateSecurityMetrics_SameDay(t *testing.T) {
+	service := NewReportingService(nil, nil)
+
+	sameDate := time.Date(2025, 1, 15, 0, 0, 0, 0, time.UTC)
+	metrics := service.calculateSecurityMetrics(sameDate, sameDate)
+	assert.NotEmpty(t, metrics.ThreatLevel)
+	assert.Greater(t, metrics.SecurityScore, 0.0)
+}
+
+// ===========================================================================
+// analyzeTimeDistribution edge cases
+// ===========================================================================
+
+func TestReportingService_AnalyzeTimeDistribution_BoundaryHours(t *testing.T) {
+	service := NewReportingService(nil, nil)
+
+	logs := []models.MediaAccessLog{
+		{AccessTime: time.Date(2025, 1, 1, 0, 0, 0, 0, time.UTC)},  // midnight = night
+		{AccessTime: time.Date(2025, 1, 1, 5, 59, 59, 0, time.UTC)}, // just before morning = night
+		{AccessTime: time.Date(2025, 1, 1, 6, 0, 0, 0, time.UTC)},   // morning boundary
+		{AccessTime: time.Date(2025, 1, 1, 11, 59, 59, 0, time.UTC)}, // end of morning
+		{AccessTime: time.Date(2025, 1, 1, 12, 0, 0, 0, time.UTC)},  // afternoon boundary
+		{AccessTime: time.Date(2025, 1, 1, 17, 59, 59, 0, time.UTC)}, // end of afternoon
+		{AccessTime: time.Date(2025, 1, 1, 18, 0, 0, 0, time.UTC)},  // evening boundary
+		{AccessTime: time.Date(2025, 1, 1, 21, 59, 59, 0, time.UTC)}, // end of evening
+		{AccessTime: time.Date(2025, 1, 1, 22, 0, 0, 0, time.UTC)},  // night boundary
+		{AccessTime: time.Date(2025, 1, 1, 23, 59, 59, 0, time.UTC)}, // end of night
+	}
+
+	dist := service.analyzeTimeDistribution(logs)
+	assert.Equal(t, 4, dist["night"])    // 0:00, 5:59, 22:00, 23:59
+	assert.Equal(t, 2, dist["morning"])  // 6:00, 11:59
+	assert.Equal(t, 2, dist["afternoon"]) // 12:00, 17:59
+	assert.Equal(t, 2, dist["evening"])  // 18:00, 21:59
+}
+
+// ===========================================================================
+// getMostActiveHour edge cases
+// ===========================================================================
+
+func TestReportingService_GetMostActiveHour_TiedHours(t *testing.T) {
+	service := NewReportingService(nil, nil)
+
+	logs := []models.MediaAccessLog{
+		{AccessTime: time.Date(2025, 1, 1, 10, 0, 0, 0, time.UTC)},
+		{AccessTime: time.Date(2025, 1, 1, 15, 0, 0, 0, time.UTC)},
+	}
+
+	hour := service.getMostActiveHour(logs)
+	// With a tie, any valid hour is acceptable
+	assert.True(t, hour == 10 || hour == 15)
+}
+
+// ===========================================================================
+// analyzeUserPopularContent edge cases
+// ===========================================================================
+
+func TestReportingService_AnalyzeUserPopularContent_SingleMedia(t *testing.T) {
+	service := NewReportingService(nil, nil)
+
+	logs := []models.MediaAccessLog{
+		{UserID: 1, MediaID: 42, AccessTime: time.Now()},
+		{UserID: 2, MediaID: 42, AccessTime: time.Now()},
+		{UserID: 3, MediaID: 42, AccessTime: time.Now()},
+	}
+
+	result := service.analyzeUserPopularContent(logs)
+	assert.Equal(t, 1, len(result))
+	assert.Equal(t, 42, result[0].MediaID)
+	assert.Equal(t, 3, result[0].AccessCount)
+}
+
+// ===========================================================================
+// generateActivitySummary edge cases
+// ===========================================================================
+
+func TestReportingService_GenerateActivitySummary_LargeDataSet(t *testing.T) {
+	service := NewReportingService(nil, nil)
+
+	var activities []models.UserActivitySummary
+	for i := 0; i < 1000; i++ {
+		activities = append(activities, models.UserActivitySummary{
+			TotalAccesses: 10,
+		})
+	}
+
+	summary := service.generateActivitySummary(activities)
+	assert.Equal(t, 1000, summary.TotalUsers)
+	assert.Equal(t, 10000, summary.TotalAccesses)
+	assert.Equal(t, 10.0, summary.AverageAccesses)
+}
+
+func TestReportingService_GenerateActivitySummary_UnevenDistribution(t *testing.T) {
+	service := NewReportingService(nil, nil)
+
+	activities := []models.UserActivitySummary{
+		{TotalAccesses: 0},
+		{TotalAccesses: 0},
+		{TotalAccesses: 0},
+		{TotalAccesses: 100},
+	}
+
+	summary := service.generateActivitySummary(activities)
+	assert.Equal(t, 4, summary.TotalUsers)
+	assert.Equal(t, 100, summary.TotalAccesses)
+	assert.Equal(t, 25.0, summary.AverageAccesses)
+}
+
+// ===========================================================================
+// calculateAverageSessionDuration edge cases
+// ===========================================================================
+
+func TestReportingService_CalculateAverageSessionDuration_VeryLongSessions(t *testing.T) {
+	service := NewReportingService(nil, nil)
+
+	sessions := []models.SessionData{
+		{Duration: 24 * time.Hour},
+		{Duration: 48 * time.Hour},
+	}
+
+	avg := service.calculateAverageSessionDuration(sessions)
+	assert.Equal(t, 36*time.Hour, avg)
+}
+
+func TestReportingService_CalculateAverageSessionDuration_ZeroDuration(t *testing.T) {
+	service := NewReportingService(nil, nil)
+
+	sessions := []models.SessionData{
+		{Duration: 0},
+		{Duration: 0},
+	}
+
+	avg := service.calculateAverageSessionDuration(sessions)
+	assert.Equal(t, time.Duration(0), avg)
+}
+
+// ===========================================================================
+// FormatReport with nil/empty data
+// ===========================================================================
+
+func TestReportingService_FormatReport_JSON_NilData(t *testing.T) {
+	service := NewReportingService(nil, nil)
+
+	content, err := service.formatReport(nil, "json", "generic")
+	assert.NoError(t, err)
+	assert.Equal(t, "null", string(content))
+}
+
+func TestReportingService_FormatAsMarkdown_NilData(t *testing.T) {
+	service := NewReportingService(nil, nil)
+
+	content, err := service.formatAsMarkdown(nil, "unknown_type")
+	assert.NoError(t, err)
+	assert.NotNil(t, content)
+	assert.Contains(t, string(content), "# unknown_type Report")
+}
+
+func TestReportingService_FormatAsHTML_NilData(t *testing.T) {
+	service := NewReportingService(nil, nil)
+
+	content, err := service.formatAsHTML(nil, "unknown_type")
+	assert.NoError(t, err)
+	assert.NotNil(t, content)
+	assert.Contains(t, string(content), "<!DOCTYPE html>")
+}
+
+// ===========================================================================
+// getLastActivityTime edge cases
+// ===========================================================================
+
+func TestReportingService_GetLastActivityTime_UnorderedLogs(t *testing.T) {
+	service := NewReportingService(nil, nil)
+
+	logs := []models.MediaAccessLog{
+		{UserID: 1, MediaID: 1, AccessTime: time.Date(2025, 6, 15, 12, 0, 0, 0, time.UTC)},
+		{UserID: 1, MediaID: 2, AccessTime: time.Date(2025, 1, 1, 0, 0, 0, 0, time.UTC)},
+		{UserID: 1, MediaID: 3, AccessTime: time.Date(2025, 12, 31, 23, 59, 59, 0, time.UTC)},
+		{UserID: 1, MediaID: 4, AccessTime: time.Date(2025, 3, 10, 8, 0, 0, 0, time.UTC)},
+	}
+
+	result := service.getLastActivityTime(logs)
+	assert.Equal(t, time.Date(2025, 12, 31, 23, 59, 59, 0, time.UTC), result)
+}
+
+// ===========================================================================
+// analyzeUserDeviceUsage edge cases
+// ===========================================================================
+
+func TestReportingService_AnalyzeUserDeviceUsage_NilFields(t *testing.T) {
+	service := NewReportingService(nil, nil)
+
+	logs := []models.MediaAccessLog{
+		{UserID: 1, MediaID: 1, AccessTime: time.Now(), DeviceInfo: &models.DeviceInfo{Platform: nil, DeviceModel: nil}},
+	}
+
+	result := service.analyzeUserDeviceUsage(logs)
+	// Should still count the device, with empty strings
+	assert.Equal(t, 1, len(result))
+	assert.Equal(t, 1, result[" "])
+}
+
+func TestReportingService_AnalyzeUserDeviceUsage_MixedNilAndValid(t *testing.T) {
+	service := NewReportingService(nil, nil)
+
+	platform := "Web"
+	model := "Chrome"
+
+	logs := []models.MediaAccessLog{
+		{UserID: 1, MediaID: 1, AccessTime: time.Now(), DeviceInfo: nil},
+		{UserID: 2, MediaID: 2, AccessTime: time.Now(), DeviceInfo: &models.DeviceInfo{Platform: &platform, DeviceModel: &model}},
+		{UserID: 3, MediaID: 3, AccessTime: time.Now(), DeviceInfo: nil},
+	}
+
+	result := service.analyzeUserDeviceUsage(logs)
+	assert.Equal(t, 1, len(result))
+	assert.Equal(t, 1, result["Web Chrome"])
+}
+
+// ===========================================================================
+// analyzeUserLocations edge cases
+// ===========================================================================
+
+func TestReportingService_AnalyzeUserLocations_DuplicateLocations(t *testing.T) {
+	service := NewReportingService(nil, nil)
+
+	logs := []models.MediaAccessLog{
+		{UserID: 1, MediaID: 1, AccessTime: time.Now(), Location: &models.Location{Latitude: 40.71, Longitude: -74.00}},
+		{UserID: 2, MediaID: 2, AccessTime: time.Now(), Location: &models.Location{Latitude: 40.71, Longitude: -74.00}},
+		{UserID: 3, MediaID: 3, AccessTime: time.Now(), Location: &models.Location{Latitude: 51.51, Longitude: -0.13}},
+	}
+
+	result := service.analyzeUserLocations(logs)
+	assert.Equal(t, 2, len(result))
+	assert.Equal(t, 2, result["40.71,-74.00"])
+	assert.Equal(t, 1, result["51.51,-0.13"])
+}
+
+// ===========================================================================
+// extractDateRange edge cases
+// ===========================================================================
+
+func TestReportingService_ExtractDateRange_BothNonString(t *testing.T) {
+	service := NewReportingService(nil, nil)
+
+	_, _, err := service.extractDateRange(map[string]interface{}{
+		"start_date": 20250101,
+		"end_date":   20250131,
+	})
+	assert.Error(t, err)
+	assert.Contains(t, err.Error(), "start_date parameter required")
+}
+
+func TestReportingService_ExtractDateRange_NilParams(t *testing.T) {
+	service := NewReportingService(nil, nil)
+
+	_, _, err := service.extractDateRange(nil)
 	assert.Error(t, err)
 }
