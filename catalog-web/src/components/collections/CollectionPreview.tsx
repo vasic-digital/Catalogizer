@@ -12,7 +12,7 @@ interface CollectionItem {
   artist?: string
   album?: string
   duration?: number
-  media_type: 'music' | 'video' | 'image' | 'document'
+  media_type: string
   file_size: number
   date_added: string
   thumbnail_url?: string

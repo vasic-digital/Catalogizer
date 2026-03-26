@@ -208,7 +208,7 @@ export const CollectionExport: React.FC<CollectionExportProps> = ({
   const { collectionItems, isLoading } = useCollection(collection?.id || '')
 
   // Use collection items from props if available
-  const items = useMemo(() => collectionItems || [], [collectionItems])
+  const items = useMemo(() => collectionItems?.items || [], [collectionItems])
 
   const selectedFormat = EXPORT_FORMATS.find(f => f.value === exportOptions.format)
 

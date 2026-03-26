@@ -2,6 +2,24 @@ import { SmartCollection, CollectionRule, CreateCollectionRequest, UpdateCollect
 import { api } from './api';
 import { mockCollectionsApi, shouldUseMockCollections } from './mockCollectionsApi';
 
+export interface CollectionItem {
+  id: string;
+  title: string;
+  artist?: string;
+  album?: string;
+  duration?: number;
+  media_type: string;
+  file_size: number;
+  date_added: string;
+}
+
+export interface CollectionItemsResponse {
+  items: CollectionItem[];
+  total: number;
+  page: number;
+  limit: number;
+}
+
 class CollectionsApi {
   private baseUrl = '/api/collections';
 
@@ -75,8 +93,7 @@ class CollectionsApi {
     );
   }
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  async getCollectionItems(id: string, page = 1, limit = 50): Promise<any> {
+  async getCollectionItems(id: string, page = 1, limit = 50): Promise<CollectionItemsResponse> {
     return this.tryApiCall(
       async () => {
         const response = await api.get(`${this.baseUrl}/${id}/items`, {
@@ -142,7 +159,7 @@ class CollectionsApi {
       async () => {
         const mockShareInfo: CollectionShareInfo = {
           share_id: `share_${id}_${Date.now()}`,
-          share_url: `http://localhost:3006/shared/share_${id}_${Date.now()}`,
+          share_url: `${window.location.origin}/shared/share_${id}_${Date.now()}`,
           expires_at: shareRequest.expires_at || new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
           created_at: new Date().toISOString(),
           access_count: 0,
@@ -325,7 +342,7 @@ class CollectionsApi {
         for (const id of collectionIds) {
           const mockShareInfo: CollectionShareInfo = {
             share_id: `share_${id}_${Date.now()}`,
-            share_url: `http://localhost:3006/shared/share_${id}_${Date.now()}`,
+            share_url: `${window.location.origin}/shared/share_${id}_${Date.now()}`,
             expires_at: shareRequest.expires_at || new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
             created_at: new Date().toISOString(),
             access_count: 0,

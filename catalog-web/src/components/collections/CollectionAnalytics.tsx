@@ -138,7 +138,7 @@ export const CollectionAnalytics: React.FC<CollectionAnalyticsProps> = ({
   const { collectionItems, isLoading: itemsLoading } = useCollection(collection?.id || '')
 
   // Use collection items from props if available
-  const items = useMemo(() => collectionItems || [], [collectionItems])
+  const items = useMemo(() => collectionItems?.items || [], [collectionItems])
 
   // Mock analytics data generation
   const analyticsData = useMemo((): AnalyticsData => {

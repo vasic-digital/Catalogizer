@@ -236,6 +236,17 @@ describe('collectionsApi', () => {
       expect(mockApi.post).toHaveBeenCalledWith('/api/collections/1/share', shareRequest)
       expect(result).toEqual(shareInfo)
     })
+
+    it('mock fallback generates share URL using window.location.origin, not hardcoded localhost', async () => {
+      mockShouldUseMock.mockReturnValue(true)
+      const shareRequest = { can_view: true, can_comment: false, can_download: true }
+
+      const result = await collectionsApi.shareCollection('42', shareRequest)
+
+      expect(result.share_url).toContain(window.location.origin)
+      expect(result.share_url).not.toContain('localhost:3006')
+      expect(result.share_url).toMatch(/\/shared\/share_42_\d+/)
+    })
   })
 
   describe('getSharedCollection', () => {
