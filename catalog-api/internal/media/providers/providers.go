@@ -92,6 +92,12 @@ func (pm *ProviderManager) registerProviders() {
 	pm.logger.Info("Metadata providers registered", zap.Int("count", len(pm.providers)))
 }
 
+// RegisterProvider registers or replaces a named metadata provider.
+// This is primarily useful for testing with mock providers.
+func (pm *ProviderManager) RegisterProvider(name string, provider MetadataProvider) {
+	pm.providers[name] = provider
+}
+
 // SearchAll searches across all relevant providers
 func (pm *ProviderManager) SearchAll(ctx context.Context, query string, mediaType string, year *int, providers []string) (map[string][]SearchResult, error) {
 	results := make(map[string][]SearchResult)
@@ -241,6 +247,16 @@ func (bp *BaseProvider) GetName() string {
 
 func (bp *BaseProvider) IsEnabled() bool {
 	return bp.enabled
+}
+
+// GetBaseURL returns the provider's base URL. Useful for testing with mock servers.
+func (bp *BaseProvider) GetBaseURL() string {
+	return bp.baseURL
+}
+
+// MakeRequest is the exported version of makeRequest for use by external test providers.
+func (bp *BaseProvider) MakeRequest(ctx context.Context, url string, headers map[string]string) ([]byte, error) {
+	return bp.makeRequest(ctx, url, headers)
 }
 
 // makeRequest makes an HTTP request with error handling
