@@ -368,20 +368,20 @@ func (r *StatsRepository) GetAccessPatterns(ctx context.Context, storageRootName
 func (r *StatsRepository) GetGrowthTrends(ctx context.Context, storageRootName string, months int) (*models.GrowthTrends, error) {
 	// This is a simplified implementation
 	// In a real scenario, you'd need historical data tracking
-	monthExpr := "strftime('%Y-%m', datetime(created_at, 'unixepoch'))"
+	monthExpr := "COALESCE(strftime('%Y-%m', datetime(created_at, 'unixepoch')), 'unknown')"
 	if r.db.Dialect().IsPostgres() {
-		monthExpr = "to_char(to_timestamp(EXTRACT(EPOCH FROM created_at)::BIGINT), 'YYYY-MM')"
+		monthExpr = "COALESCE(to_char(to_timestamp(EXTRACT(EPOCH FROM created_at)::BIGINT), 'YYYY-MM'), 'unknown')"
 	}
 
 	baseQuery := fmt.Sprintf(`
 		SELECT
 			%s as month,
 			COUNT(*) as files_added,
-			SUM(size) as size_added
+			COALESCE(SUM(size), 0) as size_added
 		FROM files f`, monthExpr)
 
 	args := []interface{}{}
-	whereClause := " WHERE f.is_directory = 0 AND f.deleted = 0 AND created_at > ?"
+	whereClause := " WHERE f.is_directory = 0 AND f.deleted = 0 AND created_at IS NOT NULL AND created_at > 0 AND created_at > ?"
 
 	monthsAgo := time.Now().AddDate(0, -months, 0).Unix()
 	args = append(args, monthsAgo)
