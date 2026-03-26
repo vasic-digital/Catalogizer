@@ -60,6 +60,17 @@ podman-compose down                           # stop services
 ./scripts/services-down.sh                    # stop all
 ```
 
+### Security & Quality Scanning
+```bash
+./scripts/run-sonarqube-scan.sh                                    # SonarQube code quality scan
+podman-compose -f docker-compose.security.yml --profile semgrep-scan run --rm semgrep-scanner  # Semgrep static analysis
+```
+
+### Load Testing
+```bash
+podman run --rm --network host -v $(pwd)/tests/k6:/scripts docker.io/grafana/k6:latest run /scripts/spike_test.js  # k6 spike test
+```
+
 ### HelixQA Testing
 ```bash
 cd HelixQA

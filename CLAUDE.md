@@ -92,6 +92,9 @@ podman-compose -f docker-compose.dev.yml up # dev env
 
 # Release build (containerized, all 7 components)
 ./scripts/release-build.sh --container --force --skip-tests
+
+# SonarQube code quality scan
+./scripts/run-sonarqube-scan.sh
 ```
 
 Test helper in `catalog-api/internal/tests/test_helper.go` provides SQLite test database setup via `database.WrapDB()`.
@@ -113,6 +116,9 @@ Handler → Service → Repository → SQLite/PostgreSQL. Routes under `/api/v1`
 - **HTTP/3 (QUIC)**: Uses `quic-go/http3` with self-signed TLS certs generated at startup.
 - **Redis**: Optional caching layer via `go-redis/v9`.
 - **Version injection**: `Version`, `BuildNumber`, `BuildDate` via `-ldflags` at build time.
+- `internal/lifecycle/`: `LazyServiceRegistry` for deferred service initialization with dependency ordering.
+- `internal/concurrency/`: Semaphore-based concurrency control for limiting parallel operations.
+- `internal/httpclient/`: Pooled HTTP client with connection reuse, timeouts, and retry logic.
 
 ### Database Layer
 
@@ -211,6 +217,8 @@ Entity Browser UI (/browse, /entity/:id)
 **Entity tables**: media_types, media_items (parent_id self-ref for hierarchy), media_files (junction to files), media_collections, media_collection_items, external_metadata, user_metadata, directory_analyses, detection_rules.
 
 Entity API routes are defined in `handlers/media_entity_handler.go`. Key entity files: `repository/media_item_repository.go` (CRUD, search, hierarchy), `internal/services/aggregation_service.go` (post-scan creation), `internal/services/title_parser.go` (regex parsers).
+
+**Metadata providers**: OpenLibrary (books) and MusicBrainz (music) are fully implemented. TMDB and OMDB provide movie/TV metadata. Other providers (IGDB, GiantBomb, etc.) have graceful degradation — missing API keys or unavailable services do not block the pipeline.
 
 Entity constraints:
 - All scanned files MUST be associated with a recognized media entity after aggregation.
@@ -379,10 +387,11 @@ Run via: `podman run --rm --network host -v $(pwd)/tests/k6:/scripts docker.io/g
 
 ## Security Scanning
 
-Run `./scripts/security-scan.sh` for automated scanning. Available tools:
+Run `./scripts/security-scan.sh` for automated scanning. Run `./scripts/run-sonarqube-scan.sh` for SonarQube code quality analysis. Available tools:
 - `govulncheck` — Go stdlib/dependency vulnerabilities
 - `npm audit` — Frontend dependency vulnerabilities
-- Semgrep, Snyk, Trivy, Gosec via `docker-compose.security.yml`
+- Semgrep — Static analysis for security anti-patterns: `podman-compose -f docker-compose.security.yml --profile semgrep-scan run --rm semgrep-scanner`
+- Snyk, Trivy, Gosec via `docker-compose.security.yml`
 
 ## Conventions
 
