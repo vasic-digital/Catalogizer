@@ -175,6 +175,7 @@ export default function WizardLayout() {
           </Button>
         </div>
       </div>
+      <span className="fixed bottom-2 left-1/2 -translate-x-1/2 text-[10px] text-slate-400/40 select-none pointer-events-none">v1.1.0</span>
     </div>
   )
 }

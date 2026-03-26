@@ -112,6 +112,7 @@ export default function Layout({ children }: LayoutProps) {
           {children}
         </main>
       </div>
+      <span className="fixed bottom-2 left-3 text-[10px] text-slate-400/40 select-none pointer-events-none">v1.1.0</span>
     </div>
   );
 }
