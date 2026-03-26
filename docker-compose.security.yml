@@ -186,6 +186,42 @@ services:
           cpus: '0.5'
           memory: 512M
 
+  # Semgrep SAST Scanner
+  semgrep-scanner:
+    image: docker.io/semgrep/semgrep:latest
+    container_name: catalogizer-semgrep
+    volumes:
+      - ..:/project:ro
+      - ./reports:/reports
+    working_dir: /project
+    command: [
+      "semgrep", "scan",
+      "--config", "auto",
+      "--json",
+      "--output", "/reports/semgrep-results.json",
+      "--exclude", "node_modules",
+      "--exclude", "vendor",
+      "--exclude", "dist",
+      "--exclude", "build",
+      "--exclude", "target",
+      "--exclude", "releases",
+      "--exclude", ".git",
+      "--severity", "WARNING",
+      "."
+    ]
+    profiles:
+      - semgrep-scan
+    networks:
+      - security-testing-network
+    deploy:
+      resources:
+        limits:
+          cpus: '2'
+          memory: 2G
+        reservations:
+          cpus: '1'
+          memory: 1G
+
 volumes:
   sonarqube_data:
     driver: local
