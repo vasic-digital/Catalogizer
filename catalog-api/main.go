@@ -690,6 +690,45 @@ func main() {
 		})
 	})
 
+	// Deep health check — pings the database with a 100ms timeout so
+	// a slow DB never blocks callers for an unreasonable duration.
+	deepHealthChecker := metrics.NewHealthChecker(databaseDB, Version)
+	router.GET("/health/deep", root_middleware.CacheHeaders(5), func(c *gin.Context) {
+		const deepTimeout = 100 * time.Millisecond
+
+		type result struct {
+			resp metrics.HealthCheckResponse
+		}
+
+		ch := make(chan result, 1)
+		go func() {
+			ch <- result{resp: deepHealthChecker.Check(c.Request.Context())}
+		}()
+
+		select {
+		case r := <-ch:
+			status := http.StatusOK
+			if r.resp.Status == metrics.HealthStatusUnhealthy {
+				status = http.StatusServiceUnavailable
+			}
+			c.JSON(status, r.resp)
+
+		case <-time.After(deepTimeout):
+			c.JSON(http.StatusOK, gin.H{
+				"status":    "degraded",
+				"time":      time.Now().UTC(),
+				"version":   Version,
+				"message":   "health check exceeded 100ms timeout",
+				"components": gin.H{
+					"timeout": gin.H{
+						"status":  "degraded",
+						"message": "deep health check took too long",
+					},
+				},
+			})
+		}
+	})
+
 	// WebSocket endpoint (auth via query parameter, not header)
 	router.GET("/ws", wsHandler.HandleConnection)
 

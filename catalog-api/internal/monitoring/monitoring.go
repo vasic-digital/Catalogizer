@@ -259,17 +259,45 @@ func (h *HealthChecker) Check() *HealthCheck {
 	return result
 }
 
-// GinHealthHandler returns Gin handler for health checks
+// healthCheckTimeout is the maximum time a deep health check may take
+// before the handler returns a degraded/timeout response.
+const healthCheckTimeout = 100 * time.Millisecond
+
+// GinHealthHandler returns Gin handler for health checks.
+// The handler enforces a 100 ms timeout so that a slow database or
+// external dependency never blocks callers for an unreasonable time.
 func (h *HealthChecker) GinHealthHandler() gin.HandlerFunc {
 	return func(c *gin.Context) {
-		health := h.Check()
-
-		status := http.StatusOK
-		if health.Status == "unhealthy" {
-			status = http.StatusServiceUnavailable
+		type result struct {
+			health *HealthCheck
 		}
 
-		c.JSON(status, health)
+		ch := make(chan result, 1)
+		go func() {
+			ch <- result{health: h.Check()}
+		}()
+
+		select {
+		case r := <-ch:
+			status := http.StatusOK
+			if r.health.Status == "unhealthy" {
+				status = http.StatusServiceUnavailable
+			}
+			c.JSON(status, r.health)
+
+		case <-time.After(healthCheckTimeout):
+			c.JSON(http.StatusOK, &HealthCheck{
+				Status:    "degraded",
+				Timestamp: time.Now(),
+				Version:   h.version,
+				Checks: map[string]interface{}{
+					"timeout": map[string]interface{}{
+						"status": "degraded",
+						"error":  "health check exceeded 100ms timeout",
+					},
+				},
+			})
+		}
 	}
 }
 

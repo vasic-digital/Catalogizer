@@ -1,6 +1,7 @@
 package providers
 
 import (
+	"catalogizer/internal/concurrency"
 	"catalogizer/internal/media/models"
 	"context"
 	"encoding/json"
@@ -10,6 +11,7 @@ import (
 	"net/url"
 	"os"
 	"strings"
+	"sync"
 	"time"
 
 	"go.uber.org/zap"
@@ -34,96 +36,180 @@ type SearchResult struct {
 	Relevance   float64  `json:"relevance"`
 }
 
-// ProviderManager manages all metadata providers
+// ProviderManager manages all metadata providers.
+// Providers are lazily initialized on first use via LazyProvider
+// wrappers, and concurrent provider searches are bounded by a
+// semaphore to avoid overwhelming external APIs.
 type ProviderManager struct {
-	providers map[string]MetadataProvider
-	logger    *zap.Logger
-	client    *http.Client
+	providers     map[string]MetadataProvider
+	lazyProviders map[string]*LazyProvider
+	logger        *zap.Logger
+	client        *http.Client
+	searchSem     *concurrency.BoundedSemaphore
 }
 
-// NewProviderManager creates a new provider manager
+// DefaultMaxConcurrentSearches is the default number of provider
+// searches that may run in parallel inside SearchAll.
+const DefaultMaxConcurrentSearches int64 = 3
+
+// NewProviderManager creates a new provider manager.
+// Providers are registered lazily — their constructors run on first
+// use rather than at startup.
 func NewProviderManager(logger *zap.Logger) *ProviderManager {
 	client := &http.Client{
 		Timeout: 30 * time.Second,
 	}
 
 	pm := &ProviderManager{
-		providers: make(map[string]MetadataProvider),
-		logger:    logger,
-		client:    client,
+		providers:     make(map[string]MetadataProvider),
+		lazyProviders: make(map[string]*LazyProvider),
+		logger:        logger,
+		client:        client,
+		searchSem: concurrency.NewBoundedSemaphore(
+			"provider-search",
+			DefaultMaxConcurrentSearches,
+			30*time.Second,
+		),
 	}
 
-	// Initialize all providers
+	// Register all providers (lazy — no actual construction yet)
 	pm.registerProviders()
 
 	return pm
 }
 
-// registerProviders registers all available providers
+// registerProviders registers all available providers using lazy
+// initialization.  The actual provider constructors only execute when
+// the provider is first looked up via resolveProvider().
 func (pm *ProviderManager) registerProviders() {
+	cl, lg := pm.client, pm.logger
+
 	// Movie/TV providers
-	pm.providers["tmdb"] = NewTMDBProvider(pm.client, pm.logger)
-	pm.providers["imdb"] = NewIMDBProvider(pm.client, pm.logger)
-	pm.providers["tvdb"] = NewTVDBProvider(pm.client, pm.logger)
+	pm.lazyProviders["tmdb"] = NewLazyProvider(func() MetadataProvider { return NewTMDBProvider(cl, lg) })
+	pm.lazyProviders["imdb"] = NewLazyProvider(func() MetadataProvider { return NewIMDBProvider(cl, lg) })
+	pm.lazyProviders["tvdb"] = NewLazyProvider(func() MetadataProvider { return NewTVDBProvider(cl, lg) })
 
 	// Music providers
-	pm.providers["musicbrainz"] = NewMusicBrainzProvider(pm.client, pm.logger)
-	pm.providers["spotify"] = NewSpotifyProvider(pm.client, pm.logger)
-	pm.providers["lastfm"] = NewLastFMProvider(pm.client, pm.logger)
+	pm.lazyProviders["musicbrainz"] = NewLazyProvider(func() MetadataProvider { return NewMusicBrainzProvider(cl, lg) })
+	pm.lazyProviders["spotify"] = NewLazyProvider(func() MetadataProvider { return NewSpotifyProvider(cl, lg) })
+	pm.lazyProviders["lastfm"] = NewLazyProvider(func() MetadataProvider { return NewLastFMProvider(cl, lg) })
 
 	// Gaming providers
-	pm.providers["igdb"] = NewIGDBProvider(pm.client, pm.logger)
-	pm.providers["steam"] = NewSteamProvider(pm.client, pm.logger)
+	pm.lazyProviders["igdb"] = NewLazyProvider(func() MetadataProvider { return NewIGDBProvider(cl, lg) })
+	pm.lazyProviders["steam"] = NewLazyProvider(func() MetadataProvider { return NewSteamProvider(cl, lg) })
 
 	// Books providers
-	pm.providers["goodreads"] = NewGoodreadsProvider(pm.client, pm.logger)
-	pm.providers["openlibrary"] = NewOpenLibraryProvider(pm.client, pm.logger)
+	pm.lazyProviders["goodreads"] = NewLazyProvider(func() MetadataProvider { return NewGoodreadsProvider(cl, lg) })
+	pm.lazyProviders["openlibrary"] = NewLazyProvider(func() MetadataProvider { return NewOpenLibraryProvider(cl, lg) })
 
 	// Anime providers
-	pm.providers["anidb"] = NewAniDBProvider(pm.client, pm.logger)
-	pm.providers["myanimelist"] = NewMyAnimeListProvider(pm.client, pm.logger)
+	pm.lazyProviders["anidb"] = NewLazyProvider(func() MetadataProvider { return NewAniDBProvider(cl, lg) })
+	pm.lazyProviders["myanimelist"] = NewLazyProvider(func() MetadataProvider { return NewMyAnimeListProvider(cl, lg) })
 
 	// YouTube/Social providers
-	pm.providers["youtube"] = NewYouTubeProvider(pm.client, pm.logger)
+	pm.lazyProviders["youtube"] = NewLazyProvider(func() MetadataProvider { return NewYouTubeProvider(cl, lg) })
 
 	// Software providers
-	pm.providers["github"] = NewGitHubProvider(pm.client, pm.logger)
+	pm.lazyProviders["github"] = NewLazyProvider(func() MetadataProvider { return NewGitHubProvider(cl, lg) })
 
-	pm.logger.Info("Metadata providers registered", zap.Int("count", len(pm.providers)))
+	pm.logger.Info("Metadata providers registered (lazy)",
+		zap.Int("count", len(pm.lazyProviders)))
+}
+
+// resolveProvider returns the MetadataProvider for name, checking the
+// eagerly-registered map first (for test mocks), then falling back to
+// lazy initialization.
+func (pm *ProviderManager) resolveProvider(name string) (MetadataProvider, bool) {
+	// Eagerly registered providers take precedence (used by tests / mocks).
+	if p, ok := pm.providers[name]; ok {
+		return p, true
+	}
+	if lp, ok := pm.lazyProviders[name]; ok {
+		return lp.Get(), true
+	}
+	return nil, false
 }
 
 // RegisterProvider registers or replaces a named metadata provider.
 // This is primarily useful for testing with mock providers.
+// Eagerly registered providers take precedence over lazy ones.
 func (pm *ProviderManager) RegisterProvider(name string, provider MetadataProvider) {
 	pm.providers[name] = provider
 }
 
-// SearchAll searches across all relevant providers
+// SearchAll searches across all relevant providers concurrently,
+// bounded by the provider-search semaphore so that at most
+// DefaultMaxConcurrentSearches external calls run in parallel.
 func (pm *ProviderManager) SearchAll(ctx context.Context, query string, mediaType string, year *int, providers []string) (map[string][]SearchResult, error) {
-	results := make(map[string][]SearchResult)
-
-	// If no specific providers requested, use all relevant ones
+	// If no specific providers requested, use all relevant ones.
 	if len(providers) == 0 {
 		providers = pm.getProvidersForMediaType(mediaType)
 	}
 
-	for _, providerName := range providers {
-		provider, exists := pm.providers[providerName]
-		if !exists || !provider.IsEnabled() {
+	// Collect the enabled providers we will actually query.
+	type target struct {
+		name     string
+		provider MetadataProvider
+	}
+	targets := make([]target, 0, len(providers))
+	for _, name := range providers {
+		p, exists := pm.resolveProvider(name)
+		if !exists || !p.IsEnabled() {
 			continue
 		}
+		targets = append(targets, target{name: name, provider: p})
+	}
 
-		providerResults, err := provider.Search(ctx, query, mediaType, year)
-		if err != nil {
+	if len(targets) == 0 {
+		return make(map[string][]SearchResult), nil
+	}
+
+	// Run searches concurrently with semaphore-bounded parallelism.
+	type searchResult struct {
+		name    string
+		results []SearchResult
+		err     error
+	}
+
+	resultsCh := make(chan searchResult, len(targets))
+	var wg sync.WaitGroup
+
+	for _, tgt := range targets {
+		wg.Add(1)
+		go func(t target) {
+			defer wg.Done()
+
+			// Acquire a semaphore slot before calling the external API.
+			if err := pm.searchSem.Acquire(ctx); err != nil {
+				pm.logger.Warn("Semaphore acquire failed, skipping provider",
+					zap.String("provider", t.name),
+					zap.Error(err))
+				return
+			}
+			defer pm.searchSem.Release()
+
+			providerResults, err := t.provider.Search(ctx, query, mediaType, year)
+			resultsCh <- searchResult{name: t.name, results: providerResults, err: err}
+		}(tgt)
+	}
+
+	// Close the channel once all goroutines finish.
+	go func() {
+		wg.Wait()
+		close(resultsCh)
+	}()
+
+	results := make(map[string][]SearchResult)
+	for sr := range resultsCh {
+		if sr.err != nil {
 			pm.logger.Error("Provider search failed",
-				zap.String("provider", providerName),
+				zap.String("provider", sr.name),
 				zap.String("query", query),
-				zap.Error(err))
+				zap.Error(sr.err))
 			continue
 		}
-
-		if len(providerResults) > 0 {
-			results[providerName] = providerResults
+		if len(sr.results) > 0 {
+			results[sr.name] = sr.results
 		}
 	}
 
@@ -157,7 +243,7 @@ func (pm *ProviderManager) GetBestMatch(ctx context.Context, query string, media
 
 // GetDetails gets detailed metadata from a specific provider
 func (pm *ProviderManager) GetDetails(ctx context.Context, providerName, externalID string) (*models.ExternalMetadata, error) {
-	provider, exists := pm.providers[providerName]
+	provider, exists := pm.resolveProvider(providerName)
 	if !exists {
 		return nil, fmt.Errorf("provider not found: %s", providerName)
 	}

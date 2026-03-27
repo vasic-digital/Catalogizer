@@ -1,6 +1,7 @@
 package providers
 
 import (
+	"catalogizer/internal/concurrency"
 	mediamodels "catalogizer/internal/media/models"
 	"context"
 	"encoding/json"
@@ -106,13 +107,19 @@ func TestBaseProvider_MakeRequest(t *testing.T) {
 func TestNewProviderManager(t *testing.T) {
 	pm := NewProviderManager(testLogger(t))
 	require.NotNil(t, pm)
-	assert.NotEmpty(t, pm.providers)
-	// Verify key providers are registered
-	assert.Contains(t, pm.providers, "tmdb")
-	assert.Contains(t, pm.providers, "imdb")
-	assert.Contains(t, pm.providers, "musicbrainz")
-	assert.Contains(t, pm.providers, "igdb")
-	assert.Contains(t, pm.providers, "github")
+	assert.NotEmpty(t, pm.lazyProviders)
+	// Verify key providers are registered (lazily)
+	assert.Contains(t, pm.lazyProviders, "tmdb")
+	assert.Contains(t, pm.lazyProviders, "imdb")
+	assert.Contains(t, pm.lazyProviders, "musicbrainz")
+	assert.Contains(t, pm.lazyProviders, "igdb")
+	assert.Contains(t, pm.lazyProviders, "github")
+
+	// Verify lazy resolution works
+	tmdb, ok := pm.resolveProvider("tmdb")
+	assert.True(t, ok)
+	assert.NotNil(t, tmdb)
+	assert.Equal(t, "tmdb", tmdb.GetName())
 }
 
 func TestGetProvidersForMediaType(t *testing.T) {
@@ -463,9 +470,11 @@ func (m *mockProvider) GetDetails(_ context.Context, _ string) (*mediamodels.Ext
 func TestSearchAll_WithMockProviders(t *testing.T) {
 	logger := testLogger(t)
 	pm := &ProviderManager{
-		providers: make(map[string]MetadataProvider),
-		logger:    logger,
-		client:    http.DefaultClient,
+		providers:     make(map[string]MetadataProvider),
+		lazyProviders: make(map[string]*LazyProvider),
+		logger:        logger,
+		client:        http.DefaultClient,
+		searchSem:     concurrency.NewBoundedSemaphore("test", DefaultMaxConcurrentSearches, 5*time.Second),
 	}
 
 	year2010 := 2010
@@ -504,9 +513,11 @@ func TestSearchAll_WithMockProviders(t *testing.T) {
 func TestGetBestMatch_WithMockProviders(t *testing.T) {
 	logger := testLogger(t)
 	pm := &ProviderManager{
-		providers: make(map[string]MetadataProvider),
-		logger:    logger,
-		client:    http.DefaultClient,
+		providers:     make(map[string]MetadataProvider),
+		lazyProviders: make(map[string]*LazyProvider),
+		logger:        logger,
+		client:        http.DefaultClient,
+		searchSem:     concurrency.NewBoundedSemaphore("test", DefaultMaxConcurrentSearches, 5*time.Second),
 	}
 
 	year := 2010
@@ -981,12 +992,12 @@ func TestFreeProviders_EnabledByDefault(t *testing.T) {
 func TestProviderManager_FreeProvidersRegistered(t *testing.T) {
 	pm := NewProviderManager(testLogger(t))
 
-	// Verify free providers are enabled in the manager
-	olProvider, exists := pm.providers["openlibrary"]
+	// Verify free providers are enabled in the manager (resolved lazily)
+	olProvider, exists := pm.resolveProvider("openlibrary")
 	require.True(t, exists)
 	assert.True(t, olProvider.IsEnabled())
 
-	mbProvider, exists := pm.providers["musicbrainz"]
+	mbProvider, exists := pm.resolveProvider("musicbrainz")
 	require.True(t, exists)
 	assert.True(t, mbProvider.IsEnabled())
 }

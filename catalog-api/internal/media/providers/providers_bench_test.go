@@ -3,6 +3,9 @@ package providers
 import (
 	"net/http"
 	"testing"
+	"time"
+
+	"catalogizer/internal/concurrency"
 
 	"go.uber.org/zap"
 )
@@ -10,9 +13,11 @@ import (
 func newBenchProviderManager() *ProviderManager {
 	logger, _ := zap.NewProduction()
 	return &ProviderManager{
-		providers: make(map[string]MetadataProvider),
-		logger:    logger,
-		client:    http.DefaultClient,
+		providers:     make(map[string]MetadataProvider),
+		lazyProviders: make(map[string]*LazyProvider),
+		logger:        logger,
+		client:        http.DefaultClient,
+		searchSem:     concurrency.NewBoundedSemaphore("bench", DefaultMaxConcurrentSearches, 5*time.Second),
 	}
 }
 
