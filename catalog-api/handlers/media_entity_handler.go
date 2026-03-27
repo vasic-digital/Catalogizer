@@ -959,7 +959,8 @@ func (h *MediaEntityHandler) lazyEnrichEntities(entityIDs []int64) {
 		return
 	}
 	go func() {
-		ctx := context.Background()
+		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Minute)
+		defer cancel()
 		for _, id := range entityIDs {
 			// Check if already has metadata
 			var count int

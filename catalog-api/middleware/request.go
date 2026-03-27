@@ -37,8 +37,9 @@ func RateLimiter(requestsPerMinute int) gin.HandlerFunc {
 	rate := float64(requestsPerMinute) / 60.0
 
 	go func() {
-		for {
-			time.Sleep(5 * time.Minute)
+		ticker := time.NewTicker(5 * time.Minute)
+		defer ticker.Stop()
+		for range ticker.C {
 			mu.Lock()
 			now := time.Now()
 			for ip, b := range buckets {

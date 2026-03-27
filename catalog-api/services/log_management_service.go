@@ -121,7 +121,9 @@ func (s *LogManagementService) CollectLogs(userID int, request *models.LogCollec
 	// safely mutate the original collection without a data race.
 	returnCopy := *collection
 
-	// Start collection process
+	// Start collection process asynchronously. performLogCollection is
+	// naturally bounded: it iterates the requested components, writes a
+	// finite number of DB entries, updates the collection status, and returns.
 	go s.performLogCollection(collection)
 
 	return &returnCopy, nil
@@ -298,18 +300,22 @@ func (s *LogManagementService) ExportLogs(collectionID int, userID int, format s
 	}
 }
 
-func (s *LogManagementService) StreamLogs(userID int, filters *models.LogStreamFilters) (<-chan *models.LogEntry, error) {
+func (s *LogManagementService) StreamLogs(userID int, filters *models.LogStreamFilters) (<-chan *models.LogEntry, chan<- struct{}, error) {
 	if !s.config.RealTimeLogging {
-		return nil, fmt.Errorf("real-time logging is disabled")
+		return nil, nil, fmt.Errorf("real-time logging is disabled")
 	}
 
 	// Create a channel for streaming
 	logChannel := make(chan *models.LogEntry, 100)
 
-	// Start streaming goroutine
-	go s.streamLogEntries(logChannel, filters)
+	// done allows the caller to stop the streaming goroutine.
+	// Close this channel when log streaming is no longer needed.
+	done := make(chan struct{})
 
-	return logChannel, nil
+	// Start streaming goroutine
+	go s.streamLogEntries(logChannel, filters, done)
+
+	return logChannel, done, nil
 }
 
 func (s *LogManagementService) AnalyzeLogs(collectionID int, userID int) (*models.LogAnalysis, error) {
@@ -540,7 +546,7 @@ func (s *LogManagementService) exportToZip(entries []*models.LogEntry) ([]byte, 
 	return buffer.Bytes(), nil
 }
 
-func (s *LogManagementService) streamLogEntries(channel chan<- *models.LogEntry, filters *models.LogStreamFilters) {
+func (s *LogManagementService) streamLogEntries(channel chan<- *models.LogEntry, filters *models.LogStreamFilters, done <-chan struct{}) {
 	defer close(channel)
 
 	if filters == nil {
@@ -551,7 +557,13 @@ func (s *LogManagementService) streamLogEntries(channel chan<- *models.LogEntry,
 	defer ticker.Stop()
 
 	var lastID int
-	for range ticker.C {
+	for {
+		select {
+		case <-done:
+			return
+		case <-ticker.C:
+		}
+
 		if s.logRepo == nil {
 			continue
 		}

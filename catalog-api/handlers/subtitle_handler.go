@@ -1,7 +1,6 @@
 package handlers
 
 import (
-	"context"
 	"io"
 	"net/http"
 	"path/filepath"
@@ -150,7 +149,7 @@ func (h *SubtitleHandler) SearchSubtitles(c *gin.Context) {
 	}
 
 	// Search for subtitles
-	ctx := context.Background()
+	ctx := c.Request.Context()
 	results, err := h.subtitleService.SearchSubtitles(ctx, request)
 	if err != nil {
 		h.logger.Error("Failed to search subtitles", zap.Error(err))
@@ -205,7 +204,7 @@ func (h *SubtitleHandler) DownloadSubtitle(c *gin.Context) {
 	}
 
 	// Download subtitle
-	ctx := context.Background()
+	ctx := c.Request.Context()
 	track, err := h.subtitleService.DownloadSubtitle(ctx, &request)
 	if err != nil {
 		h.logger.Error("Failed to download subtitle", 
@@ -266,7 +265,7 @@ func (h *SubtitleHandler) GetSubtitles(c *gin.Context) {
 	h.logger.Info("Get subtitles request", zap.Int64("media_id", mediaID))
 
 	// Get subtitles
-	ctx := context.Background()
+	ctx := c.Request.Context()
 	subtitles, err := h.subtitleService.GetSubtitles(ctx, mediaID)
 	if err != nil {
 		h.logger.Error("Failed to get subtitles", 
@@ -328,7 +327,7 @@ func (h *SubtitleHandler) VerifySubtitleSync(c *gin.Context) {
 		zap.Int64("media_id", mediaID))
 
 	// Get subtitle track
-	ctx := context.Background()
+	ctx := c.Request.Context()
 	track, err := h.subtitleService.GetSubtitleTrack(ctx, subtitleID)
 	if err != nil {
 		h.logger.Error("Failed to get subtitle track", 
@@ -399,7 +398,7 @@ func (h *SubtitleHandler) TranslateSubtitle(c *gin.Context) {
 	}
 
 	// Translate subtitle
-	ctx := context.Background()
+	ctx := c.Request.Context()
 	translatedTrack, err := h.subtitleService.TranslateSubtitle(ctx, &request)
 	if err != nil {
 		h.logger.Error("Failed to translate subtitle", 
@@ -681,7 +680,7 @@ func (h *SubtitleHandler) UploadSubtitle(c *gin.Context) {
 	}
 
 	// Save to database
-	ctx := context.Background()
+	ctx := c.Request.Context()
 	response, err := h.subtitleService.SaveUploadedSubtitle(ctx, request)
 	if err != nil {
 		h.logger.Error("Failed to save uploaded subtitle", 

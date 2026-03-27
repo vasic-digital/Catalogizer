@@ -295,8 +295,14 @@ func (s *MediaPlayerService) StartPlayback(ctx context.Context, userID string, r
 		return nil, fmt.Errorf("failed to save playback session: %w", err)
 	}
 
-	// Update play count and last played
-	go s.updatePlaybackStats(ctx, mediaItem.ID)
+	// Update play count and last played asynchronously.
+	// Use a dedicated timeout context since the request context may be
+	// cancelled before the DB write completes.
+	go func() {
+		bgCtx, bgCancel := context.WithTimeout(context.Background(), 30*time.Second)
+		defer bgCancel()
+		s.updatePlaybackStats(bgCtx, mediaItem.ID)
+	}()
 
 	return session, nil
 }
@@ -315,14 +321,20 @@ func (s *MediaPlayerService) UpdatePlayback(ctx context.Context, userID string, 
 	// Update fields if provided
 	if request.Position != nil {
 		session.CurrentPosition = *request.Position
-		// Save position to database for resume functionality
+		// Save position to database for resume functionality.
+		// Use a dedicated timeout context since the request context may be
+		// cancelled before the DB write completes.
 		userIDInt, _ := strconv.ParseInt(userID, 10, 64)
-		go s.positionTracker.UpdatePosition(ctx, &UpdatePositionRequest{
-			UserID:      userIDInt,
-			MediaItemID: session.MediaItem.ID,
-			Position:    int64(*request.Position * 1000), // Convert seconds to milliseconds
-			Duration:    0,                               // Duration unknown at this point
-		})
+		go func() {
+			bgCtx, bgCancel := context.WithTimeout(context.Background(), 30*time.Second)
+			defer bgCancel()
+			s.positionTracker.UpdatePosition(bgCtx, &UpdatePositionRequest{
+				UserID:      userIDInt,
+				MediaItemID: session.MediaItem.ID,
+				Position:    int64(*request.Position * 1000), // Convert seconds to milliseconds
+				Duration:    0,                               // Duration unknown at this point
+			})
+		}()
 	}
 
 	if request.State != nil {

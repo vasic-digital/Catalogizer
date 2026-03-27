@@ -206,6 +206,10 @@ func (s *SyncService) StartSync(endpointID int, userID int) (*models.SyncSession
 	// Return a snapshot copy to the caller so the goroutine can
 	// safely mutate the original session without a data race.
 	returnCopy := *session
+
+	// performSync is naturally bounded: it dispatches to a protocol-specific
+	// handler (WebDAV/Cloud/Local), performs finite file operations, updates
+	// the session status in the DB, and returns.
 	go s.performSync(session, endpoint)
 
 	return &returnCopy, nil

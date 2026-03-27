@@ -24,7 +24,7 @@ type LogManagementServiceInterface interface {
 	GetLogShare(token string) (*models.LogShare, error)
 	RevokeLogShare(shareID int, userID int) error
 	ExportLogs(collectionID int, userID int, format string) ([]byte, error)
-	StreamLogs(userID int, filters *models.LogStreamFilters) (<-chan models.LogEntry, error)
+	StreamLogs(userID int, filters *models.LogStreamFilters) (<-chan models.LogEntry, chan<- struct{}, error)
 	AnalyzeLogs(collectionID int, userID int) (*models.LogAnalysis, error)
 	GetLogStatistics(userID int) (*models.LogStatistics, error)
 	GetConfiguration() *services.LogManagementConfig
@@ -368,11 +368,13 @@ func (h *LogManagementHandler) StreamLogs(w http.ResponseWriter, r *http.Request
 	}
 
 	// Get log stream
-	logChannel, err := h.logManagementService.StreamLogs(userID, filters)
+	logChannel, done, err := h.logManagementService.StreamLogs(userID, filters)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
+	// Ensure the streaming goroutine is stopped when the client disconnects.
+	defer close(done)
 
 	// Stream logs to client
 	flusher, ok := w.(http.Flusher)

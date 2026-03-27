@@ -93,7 +93,10 @@ func (s *ConversionService) StartConversion(jobID int) error {
 
 func (s *ConversionService) processConversion(job *models.ConversionJob) {
 	// Limit concurrent conversion processes (ffmpeg, LibreOffice, etc.)
-	if err := s.sem.Acquire(context.Background(), 1); err != nil {
+	// Use a timeout to prevent blocking forever if all semaphore slots are occupied.
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Minute)
+	defer cancel()
+	if err := s.sem.Acquire(ctx, 1); err != nil {
 		s.handleConversionError(job, fmt.Errorf("failed to acquire conversion semaphore: %w", err))
 		return
 	}

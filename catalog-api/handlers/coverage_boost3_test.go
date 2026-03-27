@@ -902,12 +902,13 @@ func (m *mockLogManagementService) ExportLogs(collectionID int, userID int, form
 	return args.Get(0).([]byte), args.Error(1)
 }
 
-func (m *mockLogManagementService) StreamLogs(userID int, filters *models.LogStreamFilters) (<-chan models.LogEntry, error) {
+func (m *mockLogManagementService) StreamLogs(userID int, filters *models.LogStreamFilters) (<-chan models.LogEntry, chan<- struct{}, error) {
 	args := m.Called(userID, filters)
+	done := make(chan struct{})
 	if args.Get(0) == nil {
-		return nil, args.Error(1)
+		return nil, done, args.Error(1)
 	}
-	return args.Get(0).(<-chan models.LogEntry), args.Error(1)
+	return args.Get(0).(<-chan models.LogEntry), done, args.Error(1)
 }
 
 func (m *mockLogManagementService) AnalyzeLogs(collectionID int, userID int) (*models.LogAnalysis, error) {

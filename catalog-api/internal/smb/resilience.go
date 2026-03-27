@@ -289,6 +289,7 @@ func (m *ResilientSMBManager) Start() error {
 	m.mutex.RUnlock()
 
 	for _, source := range sources {
+		m.wg.Add(1)
 		go m.monitorSource(source)
 	}
 
@@ -462,9 +463,9 @@ func (m *ResilientSMBManager) scheduleRetry(source *SMBSource) {
 	}
 }
 
-// monitorSource continuously monitors an SMB source
+// monitorSource continuously monitors an SMB source.
+// The caller must call m.wg.Add(1) before launching this goroutine.
 func (m *ResilientSMBManager) monitorSource(source *SMBSource) {
-	m.wg.Add(1)
 	defer m.wg.Done()
 
 	ticker := time.NewTicker(10 * time.Second) // Monitor every 10 seconds

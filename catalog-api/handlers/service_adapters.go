@@ -260,10 +260,10 @@ func (a *LogManagementServiceAdapter) ExportLogs(collectionID int, userID int, f
 	return a.Inner.ExportLogs(collectionID, userID, format)
 }
 
-func (a *LogManagementServiceAdapter) StreamLogs(userID int, filters *models.LogStreamFilters) (<-chan models.LogEntry, error) {
-	ptrCh, err := a.Inner.StreamLogs(userID, filters)
+func (a *LogManagementServiceAdapter) StreamLogs(userID int, filters *models.LogStreamFilters) (<-chan models.LogEntry, chan<- struct{}, error) {
+	ptrCh, done, err := a.Inner.StreamLogs(userID, filters)
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 	ch := make(chan models.LogEntry, 64)
 	go func() {
@@ -278,7 +278,7 @@ func (a *LogManagementServiceAdapter) StreamLogs(userID int, filters *models.Log
 			}
 		}
 	}()
-	return ch, nil
+	return ch, done, nil
 }
 
 func (a *LogManagementServiceAdapter) AnalyzeLogs(collectionID int, userID int) (*models.LogAnalysis, error) {

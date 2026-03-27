@@ -96,7 +96,8 @@ func UserRedisRateLimiterConfig(client *redis.Client) RedisRateLimiterConfig {
 func RedisRateLimit(config RedisRateLimiterConfig) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		key := "rate_limit:" + config.KeyGenerator(c)
-		ctx := context.Background()
+		ctx, cancel := context.WithTimeout(c.Request.Context(), 500*time.Millisecond)
+		defer cancel()
 
 		// Use Redis pipeline for atomic operations
 		pipe := config.Client.Pipeline()
@@ -180,7 +181,8 @@ func RedisRateLimit(config RedisRateLimiterConfig) gin.HandlerFunc {
 func SlidingWindowRedisRateLimit(config RedisRateLimiterConfig) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		key := "sliding_rate_limit:" + config.KeyGenerator(c)
-		ctx := context.Background()
+		ctx, cancel := context.WithTimeout(c.Request.Context(), 500*time.Millisecond)
+		defer cancel()
 		now := time.Now().UnixNano()
 		windowStart := now - config.Window.Nanoseconds()
 
@@ -261,7 +263,8 @@ func TokenBucketRedisRateLimit(
 ) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		key := "token_bucket:" + keyGenerator(c)
-		ctx := context.Background()
+		ctx, cancel := context.WithTimeout(c.Request.Context(), 500*time.Millisecond)
+		defer cancel()
 
 		// Use Lua script for atomic token bucket operations
 		luaScript := `

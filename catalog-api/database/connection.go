@@ -140,19 +140,29 @@ func (db *DB) QueryRowContext(ctx context.Context, query string, args ...interfa
 	return db.DB.QueryRowContext(ctx, db.rewriteQuery(query), args...)
 }
 
-// Exec executes a query with dialect rewriting.
+// defaultQueryTimeout is the safety timeout for context-free database operations.
+// Prevents indefinite hangs from lock contention or network issues.
+const defaultQueryTimeout = 30 * time.Second
+
+// Exec executes a query with dialect rewriting and a default timeout.
 func (db *DB) Exec(query string, args ...interface{}) (sql.Result, error) {
-	return db.DB.ExecContext(context.Background(), db.rewriteQuery(query), args...)
+	ctx, cancel := context.WithTimeout(context.Background(), defaultQueryTimeout)
+	defer cancel()
+	return db.DB.ExecContext(ctx, db.rewriteQuery(query), args...)
 }
 
-// Query executes a query with dialect rewriting.
+// Query executes a query with dialect rewriting and a default timeout.
 func (db *DB) Query(query string, args ...interface{}) (*sql.Rows, error) {
-	return db.DB.QueryContext(context.Background(), db.rewriteQuery(query), args...)
+	ctx, cancel := context.WithTimeout(context.Background(), defaultQueryTimeout)
+	defer cancel()
+	return db.DB.QueryContext(ctx, db.rewriteQuery(query), args...)
 }
 
-// QueryRow executes a query returning a single row with dialect rewriting.
+// QueryRow executes a query returning a single row with dialect rewriting and a default timeout.
 func (db *DB) QueryRow(query string, args ...interface{}) *sql.Row {
-	return db.DB.QueryRowContext(context.Background(), db.rewriteQuery(query), args...)
+	ctx, cancel := context.WithTimeout(context.Background(), defaultQueryTimeout)
+	defer cancel()
+	return db.DB.QueryRowContext(ctx, db.rewriteQuery(query), args...)
 }
 
 // --- Dialect-aware helpers ---

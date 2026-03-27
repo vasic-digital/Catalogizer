@@ -1860,7 +1860,7 @@ func TestLogManagementServiceAdapter_StreamLogs_WithRealService(t *testing.T) {
 	logSvc := services.NewLogManagementService(logRepo)
 	adapter := &LogManagementServiceAdapter{Inner: logSvc}
 
-	ch, err := adapter.StreamLogs(1, nil)
+	ch, done, err := adapter.StreamLogs(1, nil)
 	if err == nil && ch != nil {
 		// Just read what we can without blocking
 		select {
@@ -1868,6 +1868,7 @@ func TestLogManagementServiceAdapter_StreamLogs_WithRealService(t *testing.T) {
 			_ = ok
 		default:
 		}
+		close(done)
 	}
 }
 
