@@ -286,6 +286,24 @@ Critical container notes:
 - All submodules MUST have `.env` in their `.gitignore`
 - Pre-commit hooks should scan for secrets when available
 
+**CRITICAL: HelixQA Screenshot/Video Validation — MANDATORY.** Every HelixQA QA session MUST validate captured evidence:
+- **Screenshots MUST be analyzed** — visually inspect every captured screenshot to verify expected screen state
+- **Login verification**: After login attempt, the UI dump MUST NOT contain "Sign In" text. If it does, login FAILED regardless of what the script reports
+- **Data validation**: Compare what the API returns (backend data) against what is displayed on screen. Empty screens when the API has data = BUG
+- **Video recordings MUST be reviewed** — check for visual glitches, frozen frames, unexpected screens, navigation to wrong apps
+- **False positives are UNACCEPTABLE** — a QA session that reports "success" while the app is stuck on the login screen is a critical test infrastructure failure
+- **Every phase transition MUST be verified** — before starting Phase 2, confirm Phase 1 actually achieved its goal (e.g., login succeeded, not just "app is in foreground")
+- **Business logic validation**: Cross-reference screen content against codebase logic, database state, and project documentation/specs
+
+**CRITICAL: HelixQA Autonomous Testing — NO Hardcoded Flows.** This is a MANDATORY, NON-NEGOTIABLE rule:
+- **NEVER write hardcoded tap coordinates, sleep timers, or keystroke sequences** for QA automation. These are brittle, break on different devices, and produce false positives
+- **ALL QA testing MUST be driven by the HelixQA LLM autonomous pipeline** (`helixqa autonomous --platforms androidtv`). The LLM takes screenshots, analyzes them with vision, decides actions, and validates results
+- **No bash scripts with fixed UI coordinates** — the `helixqa autonomous` Go binary handles device detection, screen analysis, navigation, and reporting
+- If the LLM pipeline doesn't work, **fix the HelixQA Go code** — do NOT work around it with hardcoded scripts
+- **Stay in the testing loop**: Run HelixQA → analyze results → fix discovered bugs → rebuild → redeploy → run again. Only stop when HelixQA completes a full session with verified screenshots showing the app navigated through ALL screens with real data
+- **Every connected device MUST be tested** — HelixQA detects all ADB devices and runs tests on each one
+- **`uiautomator dump` failures are real bugs** — investigate and fix them, don't ignore them
+
 **GitHub Actions are PERMANENTLY DISABLED.** Do NOT create any GitHub Actions workflow files in `.github/workflows/`. CI/CD must be run locally.
 
 **All builds, services, and QA testing MUST use containers (Podman).** This is a MANDATORY, NON-NEGOTIABLE rule:

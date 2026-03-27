@@ -132,6 +132,87 @@ done
 ok "ADB reverse port forwarding set"
 
 # Launch app, configure server URL, and login on each device
+# login_on_device: Uses uiautomator to find exact field coordinates, types credentials,
+# and verifies login succeeded by checking UI state. Returns 0 on success, 1 on failure.
+login_on_device() {
+    local SERIAL="$1"
+    local DIR="$2"
+    local ATTEMPT="$3"
+
+    # Dump UI to find exact field coordinates
+    adb -s "$SERIAL" shell uiautomator dump /sdcard/helixqa_ui.xml 2>/dev/null
+    local ui_xml
+    ui_xml=$(adb -s "$SERIAL" shell cat /sdcard/helixqa_ui.xml 2>/dev/null)
+
+    # Extract Username field center coordinates
+    local username_bounds
+    username_bounds=$(echo "$ui_xml" | grep -oP 'text="Username"[^/]*bounds="\K[^"]+' | head -1)
+    # Extract Password field center coordinates
+    local password_bounds
+    password_bounds=$(echo "$ui_xml" | grep -oP 'text="Password"[^/]*bounds="\K[^"]+' | head -1)
+    # Extract Sign In button center
+    local signin_bounds
+    signin_bounds=$(echo "$ui_xml" | grep -oP 'text="Sign In"[^/]*bounds="\K[^"]+' | head -1)
+
+    if [[ -z "$username_bounds" ]] || [[ -z "$password_bounds" ]]; then
+        warn "  Could not find login fields in UI dump (attempt $ATTEMPT)"
+        return 1
+    fi
+
+    # Parse bounds [left,top][right,bottom] -> center (x,y)
+    # Username field is the EditText ABOVE the "Username" label
+    local u_left u_top u_right u_bottom
+    u_left=$(echo "$ui_xml" | grep -B1 'text="Username"' | grep 'EditText' | grep -oP 'bounds="\[\K\d+' | head -1)
+    u_top=$(echo "$ui_xml" | grep -B1 'text="Username"' | grep 'EditText' | grep -oP 'bounds="\[\d+,\K\d+' | head -1)
+    u_right=$(echo "$ui_xml" | grep -B1 'text="Username"' | grep 'EditText' | grep -oP '\]\[\K\d+' | head -1)
+    u_bottom=$(echo "$ui_xml" | grep -B1 'text="Username"' | grep 'EditText' | grep -oP '\]\[\d+,\K\d+' | head -1)
+
+    local p_left p_top p_right p_bottom
+    p_left=$(echo "$ui_xml" | grep -B1 'text="Password"' | grep 'EditText' | grep -oP 'bounds="\[\K\d+' | head -1)
+    p_top=$(echo "$ui_xml" | grep -B1 'text="Password"' | grep 'EditText' | grep -oP 'bounds="\[\d+,\K\d+' | head -1)
+    p_right=$(echo "$ui_xml" | grep -B1 'text="Password"' | grep 'EditText' | grep -oP '\]\[\K\d+' | head -1)
+    p_bottom=$(echo "$ui_xml" | grep -B1 'text="Password"' | grep 'EditText' | grep -oP '\]\[\d+,\K\d+' | head -1)
+
+    # Use fallback coordinates if parsing fails
+    local ux=$((${u_left:-480} + (${u_right:-1440} - ${u_left:-480}) / 2))
+    local uy=$((${u_top:-323} + (${u_bottom:-451} - ${u_top:-323}) / 2))
+    local px=$((${p_left:-480} + (${p_right:-1440} - ${p_left:-480}) / 2))
+    local py=$((${p_top:-475} + (${p_bottom:-603} - ${p_top:-475}) / 2))
+
+    log "    Attempt $ATTEMPT: Username@($ux,$uy) Password@($px,$py)"
+
+    # Clear any existing text in fields first
+    adb -s "$SERIAL" shell input tap "$ux" "$uy"; sleep 1
+    adb -s "$SERIAL" shell input keyevent KEYCODE_MOVE_END; sleep 0.2
+    for _ in $(seq 1 20); do adb -s "$SERIAL" shell input keyevent KEYCODE_DEL; done
+    adb -s "$SERIAL" shell input text "admin"; sleep 0.5
+    adb -s "$SERIAL" shell input keyevent KEYCODE_BACK; sleep 0.5
+
+    adb -s "$SERIAL" shell input tap "$px" "$py"; sleep 1
+    adb -s "$SERIAL" shell input keyevent KEYCODE_MOVE_END; sleep 0.2
+    for _ in $(seq 1 20); do adb -s "$SERIAL" shell input keyevent KEYCODE_DEL; done
+    adb -s "$SERIAL" shell input text "admin123"; sleep 0.5
+    adb -s "$SERIAL" shell input keyevent KEYCODE_BACK; sleep 0.5
+
+    # TAB to Sign In, ENTER to submit
+    adb -s "$SERIAL" shell input keyevent KEYCODE_TAB; sleep 0.5
+    adb -s "$SERIAL" shell input keyevent KEYCODE_ENTER; sleep 8
+
+    adb -s "$SERIAL" exec-out screencap -p > "$DIR/screenshots/00${ATTEMPT}-login-attempt.png" 2>/dev/null
+
+    # VERIFY login: dump UI and check if "Sign In" text is still present
+    adb -s "$SERIAL" shell uiautomator dump /sdcard/helixqa_ui2.xml 2>/dev/null
+    local post_ui
+    post_ui=$(adb -s "$SERIAL" shell cat /sdcard/helixqa_ui2.xml 2>/dev/null)
+    if echo "$post_ui" | grep -q "Sign In"; then
+        warn "    Login attempt $ATTEMPT FAILED — still on login screen"
+        return 1
+    else
+        ok "    Login attempt $ATTEMPT SUCCEEDED — past login screen"
+        return 0
+    fi
+}
+
 setup_device() {
     local SERIAL="$1"
     local LABEL="$2"
@@ -143,56 +224,27 @@ setup_device() {
     adb -s "$SERIAL" shell am force-stop "$PKG" 2>/dev/null
     sleep 1
     adb -s "$SERIAL" shell am start -n "$PKG/.ui.MainActivity" 2>/dev/null
-    sleep 20
+    sleep 25  # Mi Box is SLOW — 15s splash + compose render
 
-    # Screenshot: login screen (should be fully rendered now)
-    adb -s "$SERIAL" exec-out screencap -p > "$DIR/screenshots/001-login-screen.png" 2>/dev/null
+    # Screenshot: initial state
+    adb -s "$SERIAL" exec-out screencap -p > "$DIR/screenshots/001-initial.png" 2>/dev/null
 
-    # Server URL is auto-discovered via localhost probe (ADB reverse).
-    # Login: tap each field, type, dismiss keyboard, then TAB+ENTER for Sign In.
-    # On Android TV SDK 28, TAB doesn't navigate between Compose fields with keyboard open.
-    adb -s "$SERIAL" shell input tap 960 387; sleep 1        # tap Username field
-    adb -s "$SERIAL" shell input text "admin"; sleep 0.5
-    adb -s "$SERIAL" shell input keyevent KEYCODE_BACK; sleep 0.5  # dismiss keyboard
-    adb -s "$SERIAL" shell input tap 960 539; sleep 1        # tap Password field
-    adb -s "$SERIAL" shell input text "admin123"; sleep 0.5
-    adb -s "$SERIAL" shell input keyevent KEYCODE_BACK; sleep 0.5  # dismiss keyboard
-    adb -s "$SERIAL" shell input keyevent KEYCODE_TAB; sleep 0.5   # focus Sign In
-    adb -s "$SERIAL" shell input keyevent KEYCODE_ENTER; sleep 8   # submit
-    adb -s "$SERIAL" exec-out screencap -p > "$DIR/screenshots/002-after-login.png" 2>/dev/null
-
-    # Verify we're past the login screen by checking for home screen elements
-    local ui_check
-    ui_check=$(adb -s "$SERIAL" shell "dumpsys activity activities 2>/dev/null | grep mResumedActivity" 2>/dev/null | tr -d '\r')
-    if [[ "$ui_check" == *"$PKG"* ]]; then
-        # Check if login screen is still showing by looking for "Sign In" in UI
-        local still_login
-        still_login=$(adb -s "$SERIAL" shell uiautomator dump /dev/fd/1 2>/dev/null | grep -c "Sign In" || echo "0")
-        if [[ "$still_login" -gt 0 ]]; then
-            warn "  $LABEL: Still on login screen, retrying login..."
-            adb -s "$SERIAL" shell input keyevent KEYCODE_BACK; sleep 0.5
-            adb -s "$SERIAL" shell input tap 960 387; sleep 1
-            adb -s "$SERIAL" shell input text "admin"; sleep 0.5
-            adb -s "$SERIAL" shell input keyevent KEYCODE_BACK; sleep 0.5
-            adb -s "$SERIAL" shell input tap 960 539; sleep 1
-            adb -s "$SERIAL" shell input text "admin123"; sleep 0.5
-            adb -s "$SERIAL" shell input keyevent KEYCODE_BACK; sleep 0.5
-            adb -s "$SERIAL" shell input keyevent KEYCODE_TAB; sleep 0.5
-            adb -s "$SERIAL" shell input keyevent KEYCODE_ENTER; sleep 8
-            adb -s "$SERIAL" exec-out screencap -p > "$DIR/screenshots/003-retry-login.png" 2>/dev/null
+    # Retry login up to 3 times with UI dump-based coordinate finding
+    local login_ok=false
+    for attempt in 2 3 4; do
+        if login_on_device "$SERIAL" "$DIR" "$attempt"; then
+            login_ok=true
+            break
         fi
-    fi
-
-    # Verify login: check if we're past the login screen
-    local fg_activity
-    fg_activity=$(adb -s "$SERIAL" shell "dumpsys activity activities 2>/dev/null | grep mResumedActivity | head -1" 2>/dev/null | tr -d '\r')
-    if [[ "$fg_activity" == *"$PKG"* ]]; then
-        ok "  $LABEL setup complete (app in foreground)"
-    else
-        warn "  $LABEL setup: app may not be in foreground, attempting relaunch..."
-        adb -s "$SERIAL" shell am start -n "$PKG/.ui.MainActivity" 2>/dev/null
+        warn "  $LABEL: Retrying login (attempt $attempt failed)..."
         sleep 3
-        ok "  $LABEL setup complete (relaunched)"
+    done
+
+    if $login_ok; then
+        ok "  $LABEL setup complete (VERIFIED past login screen)"
+    else
+        fail "  $LABEL setup FAILED — could not log in after 3 attempts"
+        adb -s "$SERIAL" exec-out screencap -p > "$DIR/screenshots/005-login-FAILED.png" 2>/dev/null
     fi
 }
 

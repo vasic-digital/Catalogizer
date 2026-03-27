@@ -136,6 +136,10 @@ go run ./cmd/helixqa autonomous --banks ../challenges/helixqa-banks  # LLM-drive
 
 **CRITICAL: API Keys and Secrets — NEVER Commit to Git.** API keys, tokens, secrets, and credentials MUST NEVER be committed to git. Use `.env.example` with placeholders only. Verify `.gitignore` covers `.env` before every commit. If a key is accidentally committed, rotate it immediately.
 
+**CRITICAL: HelixQA Screenshot/Video Validation — MANDATORY.** Every QA session MUST analyze captured screenshots and videos. A "successful" session where the app is stuck on the login screen is a critical failure. Login MUST be verified via UI dump (no "Sign In" text after login). Screen content MUST be validated against API/database data. False positives are UNACCEPTABLE.
+
+**CRITICAL: HelixQA Autonomous Testing — NO Hardcoded Flows.** NEVER write hardcoded tap coordinates, sleep timers, or keystroke sequences for QA. ALL testing MUST be driven by the HelixQA LLM autonomous pipeline (`helixqa autonomous`). The LLM takes screenshots, analyzes with vision, decides actions, validates results. If the pipeline doesn't work, fix the HelixQA Go code — do NOT work around it with scripts. Stay in testing loop until HelixQA completes full sessions with verified evidence on ALL connected devices.
+
 **Container Runtime**: Use Podman exclusively (not Docker).
 
 **MANDATORY: All builds, services, and QA MUST use containers.**
