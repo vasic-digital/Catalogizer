@@ -48,7 +48,6 @@ class ScreenRoutesTest {
 
         assertEquals(4, screens.size)
         screens.forEach { screen ->
-            assertTrue(screen is Screen)
             assertTrue(screen.route.isNotBlank())
         }
     }

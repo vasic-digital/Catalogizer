@@ -230,7 +230,6 @@ class SearchScreenTest {
 
     @Test
     fun `search should cancel previous search when new query arrives`() = runTest {
-        val slowData = listOf(createTestMediaItem(1L, "Slow"))
         val fastData = listOf(createTestMediaItem(2L, "Fast"))
 
         coEvery { mockMediaRepository.getRecentMedia(any()) } returns ApiResult.success(fastData)

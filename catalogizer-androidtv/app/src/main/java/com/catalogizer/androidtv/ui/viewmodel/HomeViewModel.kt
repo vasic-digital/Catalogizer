@@ -71,7 +71,7 @@ class HomeViewModel(
         return try {
             mediaRepository.searchMedia(
                 MediaSearchRequest(
-                    sortBy = "last_watched",
+                    sortBy = "created",
                     sortOrder = "desc",
                     limit = 10
                 )
@@ -85,7 +85,7 @@ class HomeViewModel(
         return try {
             mediaRepository.searchMedia(
                 MediaSearchRequest(
-                    sortBy = "created_at",
+                    sortBy = "created",
                     sortOrder = "desc",
                     limit = 20
                 )
@@ -117,7 +117,7 @@ class HomeViewModel(
             mediaRepository.searchMedia(
                 MediaSearchRequest(
                     mediaType = MediaType.MUSIC.value,
-                    sortBy = "created_at",
+                    sortBy = "created",
                     sortOrder = "desc",
                     limit = 20
                 )
@@ -132,7 +132,7 @@ class HomeViewModel(
             mediaRepository.searchMedia(
                 MediaSearchRequest(
                     mediaType = MediaType.EBOOK.value,
-                    sortBy = "created_at",
+                    sortBy = "created",
                     sortOrder = "desc",
                     limit = 20
                 )

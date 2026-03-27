@@ -48,7 +48,8 @@ class CatalogizerTVApplicationTest {
     fun `application should extend Application class`() {
         val app = CatalogizerTVApplication()
 
-        assertTrue(app is android.app.Application)
+        assertNotNull(app)
+        assertTrue(android.app.Application::class.java.isAssignableFrom(app.javaClass))
     }
 
     @Test
@@ -63,7 +64,7 @@ class CatalogizerTVApplicationTest {
         val app = CatalogizerTVApplication()
 
         assertNotNull(app)
-        assertTrue(app is CatalogizerTVApplication)
+        assertTrue(CatalogizerTVApplication::class.java.isAssignableFrom(app.javaClass))
     }
 
     @Test
@@ -77,7 +78,8 @@ class CatalogizerTVApplicationTest {
     fun `CatalogizerTVTestApplication should extend Application`() {
         val testApp = CatalogizerTVTestApplication()
 
-        assertTrue(testApp is android.app.Application)
+        assertNotNull(testApp)
+        assertTrue(android.app.Application::class.java.isAssignableFrom(testApp.javaClass))
     }
 
     @Test
@@ -85,7 +87,8 @@ class CatalogizerTVApplicationTest {
         val app = CatalogizerTVApplication()
 
         // The property exists as lazy-initialized
-        val methods = CatalogizerTVApplication::class.java.declaredMethods
+        val declaredMethods = CatalogizerTVApplication::class.java.declaredMethods
+        assertTrue(declaredMethods.isNotEmpty())
         assertNotNull(app)
     }
 

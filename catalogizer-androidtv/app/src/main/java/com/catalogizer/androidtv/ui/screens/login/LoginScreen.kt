@@ -95,8 +95,8 @@ fun LoginScreen(
     }
 
     LaunchedEffect(Unit) {
-        val settings = container.settingsRepository.getSettingsAsync()
-        if (settings.autoDiscovery) {
+        val initialSettings = container.settingsRepository.getSettingsAsync()
+        if (initialSettings.autoDiscovery) {
             isDiscovering = true
             try {
                 val results = container.discoveryService.discoverAll(8000L)
@@ -274,7 +274,7 @@ fun LoginScreen(
                             isDiscovering = true
                             discoveredServers = emptyList()
                             try {
-                                val results = container.discoveryService.discoverViaMulticast(5000L)
+                                val results = container.discoveryService.discoverAll(10000L)
                                 discoveredServers = results
                                 if (results.isEmpty()) errorMessage = "No servers found on the network"
                             } catch (e: Exception) {
@@ -346,7 +346,26 @@ fun LoginScreen(
                 color = Color.White.copy(alpha = 0.3f)
             )
 
-            Spacer(modifier = Modifier.height(24.dp))
+            Spacer(modifier = Modifier.height(32.dp))
+
+            // ─── Vasic Digital Branding Footer ─────────────────────────
+            Divider(
+                color = Color.White.copy(alpha = 0.1f),
+                modifier = Modifier.width(formWidth)
+            )
+            Spacer(modifier = Modifier.height(16.dp))
+            Text(
+                text = "Made with \u2764 by Vasic Digital",
+                style = MaterialTheme.typography.bodySmall,
+                color = Color.White.copy(alpha = 0.4f)
+            )
+            Spacer(modifier = Modifier.height(4.dp))
+            Text(
+                text = "\u00A9 ${java.util.Calendar.getInstance().get(java.util.Calendar.YEAR)} Vasic Digital. All rights reserved.",
+                style = MaterialTheme.typography.labelSmall,
+                color = Color.White.copy(alpha = 0.25f)
+            )
+            Spacer(modifier = Modifier.height(16.dp))
         }
     }
 

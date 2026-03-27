@@ -1,8 +1,33 @@
 import { conversionApi } from '../conversionApi'
+import { api } from '../api'
+
+// Mock the api module — all HTTP calls rejected with 404 to trigger fallback logic
+vi.mock('../api', async () => {
+  const error404 = { response: { status: 404 } }
+  const mockApi = {
+    get: vi.fn().mockRejectedValue(error404),
+    post: vi.fn().mockRejectedValue(error404),
+    put: vi.fn().mockRejectedValue(error404),
+    delete: vi.fn().mockRejectedValue(error404),
+  }
+  return {
+    __esModule: true,
+    default: mockApi,
+    api: mockApi,
+  }
+})
+
+const mockApi = vi.mocked(api)
 
 describe('conversionApi', () => {
   beforeEach(() => {
     vi.clearAllMocks()
+    // Re-apply 404 rejection after clearAllMocks resets implementations
+    const error404 = { response: { status: 404 } }
+    mockApi.get.mockRejectedValue(error404)
+    mockApi.post.mockRejectedValue(error404)
+    mockApi.put.mockRejectedValue(error404)
+    mockApi.delete.mockRejectedValue(error404)
   })
 
   describe('getConversionJobs', () => {

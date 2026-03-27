@@ -59,9 +59,13 @@ app/
 
 ## Configuration
 
-Debug builds connect to `http://10.0.2.2:8080` (localhost from emulator).
+Debug builds start with no server URL configured. On first launch:
+1. The app tries `http://localhost:8080` (works with `adb reverse tcp:8080 tcp:8080`)
+2. If that fails, the login screen shows server URL input and a Discover button
+3. Once a server URL is entered and connected, it is persisted across app restarts
 
-For physical devices, update `API_BASE_URL` in `app/build.gradle.kts` or use network configuration.
+For emulators, use `http://10.0.2.2:8080` as the server URL.
+For physical devices, enter the server's LAN IP (e.g., `http://192.168.0.100:8080`).
 
 ## Network Security
 

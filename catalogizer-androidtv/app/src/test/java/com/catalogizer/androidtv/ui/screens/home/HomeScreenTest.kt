@@ -119,8 +119,9 @@ class HomeScreenTest {
         val movies = listOf(
             createTestMediaItem(1L, "Action Movie", MediaType.MOVIE.value)
         )
+        // loadMovies() now uses browseEntities instead of searchMedia
         coEvery {
-            mockMediaRepository.searchMedia(match { it.mediaType == MediaType.MOVIE.value })
+            mockMediaRepository.browseEntities("movie", any(), any(), any())
         } returns flowOf(movies)
 
         homeViewModel.loadHomeData()
@@ -136,8 +137,9 @@ class HomeScreenTest {
         val tvShows = listOf(
             createTestMediaItem(1L, "TV Show 1", MediaType.TV_SHOW.value)
         )
+        // loadTVShows() now uses browseEntities instead of searchMedia
         coEvery {
-            mockMediaRepository.searchMedia(match { it.mediaType == MediaType.TV_SHOW.value })
+            mockMediaRepository.browseEntities("tv_show", any(), any(), any())
         } returns flowOf(tvShows)
 
         homeViewModel.loadHomeData()

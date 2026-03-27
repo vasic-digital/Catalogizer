@@ -134,6 +134,8 @@ go run ./cmd/helixqa autonomous --banks ../challenges/helixqa-banks  # LLM-drive
 
 ## Constraints
 
+**CRITICAL: API Keys and Secrets — NEVER Commit to Git.** API keys, tokens, secrets, and credentials MUST NEVER be committed to git. Use `.env.example` with placeholders only. Verify `.gitignore` covers `.env` before every commit. If a key is accidentally committed, rotate it immediately.
+
 **Container Runtime**: Use Podman exclusively (not Docker).
 
 **MANDATORY: All builds, services, and QA MUST use containers.**

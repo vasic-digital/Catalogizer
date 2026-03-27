@@ -178,8 +178,11 @@ class MediaItemTest {
         val item = createTestMediaItem()
         val jsonStr = json.encodeToString(item)
 
-        assertTrue(jsonStr.contains("\"media_type\":\"movie\""))
-        assertTrue(jsonStr.contains("\"directory_path\":\"/media/movies/test\""))
+        // kotlinx.serialization uses Kotlin property names (camelCase) since
+        // the class uses Gson @SerializedName annotations (not kotlinx @SerialName).
+        // Gson handles snake_case for Retrofit; kotlinx uses camelCase field names.
+        assertTrue(jsonStr.contains("\"mediaType\":\"movie\""))
+        assertTrue(jsonStr.contains("\"directoryPath\":\"/media/movies/test\""))
     }
 
     @Test

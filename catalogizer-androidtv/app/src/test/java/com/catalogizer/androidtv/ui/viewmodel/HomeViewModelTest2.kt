@@ -70,7 +70,8 @@ class HomeViewModelTest2 {
     @Test
     fun `loadHomeData populates movies`() = runTest {
         val movies = listOf(createTestMediaItem(1, "Movie 1"), createTestMediaItem(2, "Movie 2"))
-        coEvery { mockMediaRepository.searchMedia(match { it.mediaType == "movie" }) } returns flowOf(movies)
+        // loadMovies() now uses browseEntities instead of searchMedia
+        coEvery { mockMediaRepository.browseEntities("movie", any(), any(), any()) } returns flowOf(movies)
 
         viewModel.loadHomeData()
         advanceUntilIdle()

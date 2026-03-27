@@ -169,7 +169,7 @@ fun MediaDetailScreen(
                                 Modifier.background(Color.White.copy(0.15f), RoundedCornerShape(4.dp))
                                     .padding(horizontal = 8.dp, vertical = 2.dp)
                             ) {
-                                Text(item.mediaType.replace("_", " ").uppercase(),
+                                Text((item.mediaType ?: "unknown").replace("_", " ").uppercase(),
                                     color = Color.White.copy(0.8f), style = MaterialTheme.typography.labelSmall)
                             }
                             item.quality?.let { q ->

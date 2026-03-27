@@ -3,13 +3,13 @@
     "host": "localhost",
     "port": 8080,
     "read_timeout": 30,
-    "write_timeout": 30,
+    "write_timeout": 900,
     "idle_timeout": 120,
     "enable_cors": true,
     "enable_https": false
   },
   "database": {
-    "path": "./catalog.db",
+    "path": "./data/catalogizer.db",
     "max_open_connections": 25,
     "max_idle_connections": 5,
     "conn_max_lifetime": 300,

@@ -286,6 +286,6 @@ class SearchScreenTest {
 
     @Test
     fun `SearchViewModel should extend ViewModel`() {
-        assertTrue(searchViewModel is androidx.lifecycle.ViewModel)
+        assertTrue(androidx.lifecycle.ViewModel::class.java.isAssignableFrom(searchViewModel.javaClass))
     }
 }

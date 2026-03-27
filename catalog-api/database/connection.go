@@ -145,24 +145,39 @@ func (db *DB) QueryRowContext(ctx context.Context, query string, args ...interfa
 const defaultQueryTimeout = 30 * time.Second
 
 // Exec executes a query with dialect rewriting and a default timeout.
+// Unlike Query/QueryRow, the operation completes before this method returns,
+// so defer cancel() is safe here.
 func (db *DB) Exec(query string, args ...interface{}) (sql.Result, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), defaultQueryTimeout)
 	defer cancel()
 	return db.DB.ExecContext(ctx, db.rewriteQuery(query), args...)
 }
 
-// Query executes a query with dialect rewriting and a default timeout.
+// Query executes a query with dialect rewriting.
+//
+// The returned *sql.Rows is consumed by the caller after this method returns
+// (via rows.Next/Scan).  We cannot use context.WithTimeout + defer cancel()
+// here because that would cancel the context before the caller iterates the
+// result set, producing spurious "context canceled" errors.
+//
+// Timeout safety is provided by the database driver itself: SQLite uses
+// _busy_timeout (30 s), PostgreSQL uses statement_timeout.
 func (db *DB) Query(query string, args ...interface{}) (*sql.Rows, error) {
-	ctx, cancel := context.WithTimeout(context.Background(), defaultQueryTimeout)
-	defer cancel()
-	return db.DB.QueryContext(ctx, db.rewriteQuery(query), args...)
+	return db.DB.QueryContext(context.Background(), db.rewriteQuery(query), args...)
 }
 
-// QueryRow executes a query returning a single row with dialect rewriting and a default timeout.
+// QueryRow executes a query returning a single row with dialect rewriting.
+//
+// *sql.Row buffers its result lazily — the actual read happens inside Scan(),
+// which the caller invokes after this method returns.  Using
+// context.WithTimeout + defer cancel() here races with Scan: the context may
+// be canceled before the driver finishes reading the row, causing spurious
+// "context canceled" errors.
+//
+// Timeout safety is provided by the database driver itself: SQLite uses
+// _busy_timeout (30 s), PostgreSQL uses statement_timeout.
 func (db *DB) QueryRow(query string, args ...interface{}) *sql.Row {
-	ctx, cancel := context.WithTimeout(context.Background(), defaultQueryTimeout)
-	defer cancel()
-	return db.DB.QueryRowContext(ctx, db.rewriteQuery(query), args...)
+	return db.DB.QueryRowContext(context.Background(), db.rewriteQuery(query), args...)
 }
 
 // --- Dialect-aware helpers ---

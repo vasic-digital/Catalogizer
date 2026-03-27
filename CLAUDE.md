@@ -277,6 +277,15 @@ Critical container notes:
 
 ## Constraints
 
+**CRITICAL: API Keys and Secrets — NEVER Commit to Git.** This is a MANDATORY, NON-NEGOTIABLE security rule:
+- **Never** commit `.env` files containing real API keys, tokens, or secrets
+- **Never** hardcode API keys in source code, CLAUDE.md, AGENTS.md, or any tracked file
+- Use `.env.example` with placeholder values only (e.g., `YOUR_API_KEY_HERE`)
+- Verify `.gitignore` covers all `.env` files before every commit
+- If an API key is accidentally committed, **rotate it immediately**
+- All submodules MUST have `.env` in their `.gitignore`
+- Pre-commit hooks should scan for secrets when available
+
 **GitHub Actions are PERMANENTLY DISABLED.** Do NOT create any GitHub Actions workflow files in `.github/workflows/`. CI/CD must be run locally.
 
 **All builds, services, and QA testing MUST use containers (Podman).** This is a MANDATORY, NON-NEGOTIABLE rule:

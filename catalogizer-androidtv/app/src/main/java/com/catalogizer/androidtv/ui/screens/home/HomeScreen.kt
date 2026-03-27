@@ -12,9 +12,6 @@ import androidx.tv.material3.MaterialTheme
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.focus.FocusRequester
-import androidx.compose.ui.focus.focusRequester
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.tv.foundation.lazy.list.TvLazyColumn
@@ -36,7 +33,6 @@ fun HomeScreen(
     viewModel: HomeViewModel
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
-    val searchFocusRequester = remember { FocusRequester() }
 
     LaunchedEffect(Unit) {
         viewModel.loadHomeData()
@@ -86,6 +82,35 @@ fun HomeScreen(
                             onClick = { viewModel.loadHomeData() }
                         ) {
                             Text("Retry")
+                        }
+                    }
+                }
+            }
+
+            uiState.continueWatching.isEmpty() && uiState.recentlyAdded.isEmpty() &&
+                uiState.movies.isEmpty() && uiState.tvShows.isEmpty() &&
+                uiState.music.isEmpty() && uiState.documents.isEmpty() -> {
+                Box(
+                    modifier = Modifier.fillMaxSize(),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Column(
+                        horizontalAlignment = Alignment.CenterHorizontally
+                    ) {
+                        Text(
+                            text = "No content available",
+                            style = MaterialTheme.typography.headlineSmall
+                        )
+                        Spacer(modifier = Modifier.height(8.dp))
+                        Text(
+                            text = "Scan your media collection to populate the catalog",
+                            style = MaterialTheme.typography.bodyMedium
+                        )
+                        Spacer(modifier = Modifier.height(16.dp))
+                        Button(
+                            onClick = { viewModel.loadHomeData() }
+                        ) {
+                            Text("Refresh")
                         }
                     }
                 }

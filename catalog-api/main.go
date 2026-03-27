@@ -240,6 +240,8 @@ func generateSelfSignedCert() (tls.Certificate, []byte, []byte, error) {
 // @description Type "Bearer" followed by a space and JWT token.
 
 func main() {
+	startTime := time.Now()
+
 	// Parse command line flags
 	testMode := flag.Bool("test-mode", false, "Run in test mode with additional logging")
 	flag.Parse()
@@ -609,18 +611,34 @@ func main() {
 	}
 	defer announcer.Stop()
 
+	// Start UDP broadcast responder for on-demand discovery
+	// Clients send "CATALOGIZER_DISCOVER" to UDP port 19820 and get service info back
+	responder := broadcast.NewResponder(serviceInfo, broadcast.DefaultResponderPort)
+	if err := responder.Start(); err != nil {
+		logger.Warn("Failed to start discovery responder", zap.Error(err))
+	} else {
+		logger.Info("Discovery responder started", zap.Int("port", broadcast.DefaultResponderPort))
+	}
+	defer responder.Stop()
+
 	discoveryHandler := func(c *gin.Context) {
+		host := serviceInfo.Host
+		port := cfg.Server.Port
 		c.JSON(200, gin.H{
 			"service":        serviceInfo.Service,
+			"name":           serviceInfo.Name,
 			"version":        Version,
 			"build":          BuildNumber,
 			"build_date":     BuildDate,
-			"host":           serviceInfo.Host,
-			"port":           cfg.Server.Port,
+			"host":           host,
+			"port":           port,
 			"protocol":       "http",
+			"websocket_url":  fmt.Sprintf("ws://%s:%d/ws", host, port),
+			"api_base_url":   fmt.Sprintf("http://%s:%d/api/v1", host, port),
 			"capabilities":   serviceInfo.Capabilities,
 			"database":       cfg.Database.Type,
-			"uptime_seconds": int(time.Since(time.Now()).Seconds()),
+			"instance_id":    serviceInfo.InstanceID,
+			"uptime_seconds": int(time.Since(startTime).Seconds()),
 		})
 	}
 

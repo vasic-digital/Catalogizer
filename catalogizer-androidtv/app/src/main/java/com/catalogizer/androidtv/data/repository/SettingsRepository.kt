@@ -164,6 +164,7 @@ class SettingsRepository(private val dataStore: DataStore<Preferences>) {
     // ─── JSON Serialization for ServerEntry list ────────────────────────
 
     private fun serializeServers(servers: List<ServerEntry>): String {
+        if (servers.isEmpty()) return "[]"
         val arr = JSONArray()
         for (s in servers) {
             val obj = JSONObject()
@@ -174,7 +175,8 @@ class SettingsRepository(private val dataStore: DataStore<Preferences>) {
             obj.put("lastConnected", s.lastConnected)
             arr.put(obj)
         }
-        return arr.toString()
+        @Suppress("USELESS_ELVIS")
+        return arr.toString() ?: "[]"
     }
 
     private fun deserializeServers(json: String?): List<ServerEntry> {

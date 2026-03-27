@@ -1,6 +1,7 @@
 package stress
 
 import (
+	"database/sql"
 	"fmt"
 	"sync"
 	"sync/atomic"
@@ -9,6 +10,7 @@ import (
 
 	"catalogizer/internal/tests"
 
+	_ "github.com/mutecomm/go-sqlcipher"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -246,9 +248,32 @@ func TestCacheStress_ExpirationCleanup(t *testing.T) {
 	})
 
 	t.Run("ConcurrentCleanupNoDeadlock", func(t *testing.T) {
+		// Use a file-based SQLite with WAL mode so multiple connections can
+		// operate concurrently without starving on MaxOpenConns(1).
+		tmpDir := t.TempDir()
+		dbPath := tmpDir + "/deadlock_test.db"
+		fileDB, err := sql.Open("sqlite3", dbPath+"?_journal_mode=WAL&cache=shared")
+		require.NoError(t, err)
+		t.Cleanup(func() { fileDB.Close() })
+
+		_, _ = fileDB.Exec("PRAGMA journal_mode=WAL")
+		_, _ = fileDB.Exec("PRAGMA foreign_keys = ON")
+		_, err = fileDB.Exec(`CREATE TABLE IF NOT EXISTS cache_entries (
+			id INTEGER PRIMARY KEY AUTOINCREMENT,
+			cache_key TEXT NOT NULL UNIQUE,
+			value TEXT NOT NULL,
+			expires_at DATETIME,
+			created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+			updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+		)`)
+		require.NoError(t, err)
+
+		fileDB.SetMaxOpenConns(10)
+		fileDB.SetMaxIdleConns(5)
+
 		// Insert test data
 		for i := 0; i < 200; i++ {
-			db.Exec(
+			fileDB.Exec(
 				`INSERT OR REPLACE INTO cache_entries
 				 (cache_key, value, expires_at)
 				 VALUES (?, 'test_val',
@@ -270,7 +295,7 @@ func TestCacheStress_ExpirationCleanup(t *testing.T) {
 				case <-done:
 					return
 				default:
-					db.Exec(
+					fileDB.Exec(
 						`DELETE FROM cache_entries
 						 WHERE expires_at < datetime('now')
 						 AND cache_key LIKE 'deadlock_test_%'`)
@@ -289,7 +314,7 @@ func TestCacheStress_ExpirationCleanup(t *testing.T) {
 					case <-done:
 						return
 					default:
-						db.Exec(
+						fileDB.Exec(
 							`INSERT OR REPLACE INTO cache_entries
 							 (cache_key, value, expires_at)
 							 VALUES (?, 'new_val',
@@ -313,18 +338,30 @@ func TestCacheStress_ExpirationCleanup(t *testing.T) {
 					case <-done:
 						return
 					default:
-						db.QueryRow(
-							`SELECT COUNT(*) FROM cache_entries`)
+						var count int
+						fileDB.QueryRow(
+							`SELECT COUNT(*) FROM cache_entries`).Scan(&count)
 						time.Sleep(5 * time.Millisecond)
 					}
 				}
 			}()
 		}
 
-		// Let it run for 3 seconds - if no deadlock, test passes
-		time.Sleep(3 * time.Second)
+		// Let it run for 1 second - if no deadlock, test passes
+		time.Sleep(1 * time.Second)
 		close(done)
-		wg.Wait()
+
+		// Wait with a hard deadline to prevent hanging
+		wgDone := make(chan struct{})
+		go func() {
+			wg.Wait()
+			close(wgDone)
+		}()
+		select {
+		case <-wgDone:
+		case <-time.After(10 * time.Second):
+			t.Fatal("ConcurrentCleanupNoDeadlock: goroutines did not finish within deadline")
+		}
 
 		// If we got here without hanging, no deadlock occurred
 		t.Log("Concurrent cleanup completed without deadlock")
@@ -336,12 +373,32 @@ func TestCacheStress_HighThroughput(t *testing.T) {
 		t.Skip("Skipping stress test in short mode")
 	}
 
-	db := tests.SetupTestDB(t)
-	defer db.Close()
+	// Use file-based SQLite with WAL mode for concurrent write throughput testing.
+	// In-memory SQLite with MaxOpenConns(1) serializes all operations through a single
+	// connection, which causes goroutines to block indefinitely waiting for the connection.
+	tmpDir := t.TempDir()
+	dbPath := tmpDir + "/throughput_test.db"
+	db, err := sql.Open("sqlite3", dbPath+"?_journal_mode=WAL&cache=shared")
+	require.NoError(t, err)
+	t.Cleanup(func() { db.Close() })
+
+	_, _ = db.Exec("PRAGMA journal_mode=WAL")
+	_, err = db.Exec(`CREATE TABLE IF NOT EXISTS cache_entries (
+		id INTEGER PRIMARY KEY AUTOINCREMENT,
+		cache_key TEXT NOT NULL UNIQUE,
+		value TEXT NOT NULL,
+		expires_at DATETIME,
+		created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+		updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+	)`)
+	require.NoError(t, err)
+
+	db.SetMaxOpenConns(10)
+	db.SetMaxIdleConns(5)
 
 	t.Run("CacheWriteThroughput", func(t *testing.T) {
 		workers := 10
-		duration := 5 * time.Second
+		duration := 2 * time.Second
 		var ops int64
 
 		done := make(chan struct{})
@@ -375,7 +432,18 @@ func TestCacheStress_HighThroughput(t *testing.T) {
 
 		time.Sleep(duration)
 		close(done)
-		wg.Wait()
+
+		// Wait with a hard deadline to prevent hanging
+		wgDone := make(chan struct{})
+		go func() {
+			wg.Wait()
+			close(wgDone)
+		}()
+		select {
+		case <-wgDone:
+		case <-time.After(10 * time.Second):
+			t.Fatal("CacheWriteThroughput: goroutines did not finish within deadline")
+		}
 
 		totalOps := atomic.LoadInt64(&ops)
 		opsPerSec := float64(totalOps) / duration.Seconds()

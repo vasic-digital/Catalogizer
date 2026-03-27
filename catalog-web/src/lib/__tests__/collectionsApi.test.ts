@@ -51,7 +51,7 @@ describe('collectionsApi', () => {
 
       const result = await collectionsApi.getCollections()
 
-      expect(mockApi.get).toHaveBeenCalledWith('/api/collections')
+      expect(mockApi.get).toHaveBeenCalledWith('/collections')
       expect(result).toEqual(mockCollectionsList)
     })
 
@@ -94,7 +94,7 @@ describe('collectionsApi', () => {
 
       const result = await collectionsApi.getCollection('1')
 
-      expect(mockApi.get).toHaveBeenCalledWith('/api/collections/1')
+      expect(mockApi.get).toHaveBeenCalledWith('/collections/1')
       expect(result).toEqual(mockCollection)
     })
 
@@ -126,7 +126,7 @@ describe('collectionsApi', () => {
 
       const result = await collectionsApi.createCollection(newCollection)
 
-      expect(mockApi.post).toHaveBeenCalledWith('/api/collections', newCollection)
+      expect(mockApi.post).toHaveBeenCalledWith('/collections', newCollection)
       expect(result).toEqual(created)
     })
   })
@@ -139,7 +139,7 @@ describe('collectionsApi', () => {
 
       const result = await collectionsApi.updateCollection('1', updates)
 
-      expect(mockApi.put).toHaveBeenCalledWith('/api/collections/1', updates)
+      expect(mockApi.put).toHaveBeenCalledWith('/collections/1', updates)
       expect(result).toEqual(updated)
     })
   })
@@ -150,7 +150,7 @@ describe('collectionsApi', () => {
 
       await collectionsApi.deleteCollection('1')
 
-      expect(mockApi.delete).toHaveBeenCalledWith('/api/collections/1')
+      expect(mockApi.delete).toHaveBeenCalledWith('/collections/1')
     })
   })
 
@@ -166,7 +166,7 @@ describe('collectionsApi', () => {
 
       const result = await collectionsApi.getCollectionItems('1', 1, 50)
 
-      expect(mockApi.get).toHaveBeenCalledWith('/api/collections/1/items', {
+      expect(mockApi.get).toHaveBeenCalledWith('/collections/1/items', {
         params: { page: 1, limit: 50 },
       })
       expect(result).toEqual(mockItems)
@@ -177,7 +177,7 @@ describe('collectionsApi', () => {
 
       await collectionsApi.getCollectionItems('1')
 
-      expect(mockApi.get).toHaveBeenCalledWith('/api/collections/1/items', {
+      expect(mockApi.get).toHaveBeenCalledWith('/collections/1/items', {
         params: { page: 1, limit: 50 },
       })
     })
@@ -187,7 +187,7 @@ describe('collectionsApi', () => {
 
       await collectionsApi.getCollectionItems('2', 3, 25)
 
-      expect(mockApi.get).toHaveBeenCalledWith('/api/collections/2/items', {
+      expect(mockApi.get).toHaveBeenCalledWith('/collections/2/items', {
         params: { page: 3, limit: 25 },
       })
     })
@@ -200,7 +200,7 @@ describe('collectionsApi', () => {
 
       const result = await collectionsApi.refreshCollection('1')
 
-      expect(mockApi.post).toHaveBeenCalledWith('/api/collections/1/refresh')
+      expect(mockApi.post).toHaveBeenCalledWith('/collections/1/refresh')
       expect(result).toEqual(refreshed)
     })
   })
@@ -216,7 +216,7 @@ describe('collectionsApi', () => {
 
       const result = await collectionsApi.getCollectionAnalytics('1')
 
-      expect(mockApi.get).toHaveBeenCalledWith('/api/collections/1/analytics')
+      expect(mockApi.get).toHaveBeenCalledWith('/collections/1/analytics')
       expect(result).toEqual(mockAnalytics)
     })
   })
@@ -233,7 +233,7 @@ describe('collectionsApi', () => {
 
       const result = await collectionsApi.shareCollection('1', shareRequest)
 
-      expect(mockApi.post).toHaveBeenCalledWith('/api/collections/1/share', shareRequest)
+      expect(mockApi.post).toHaveBeenCalledWith('/collections/1/share', shareRequest)
       expect(result).toEqual(shareInfo)
     })
 
@@ -256,7 +256,7 @@ describe('collectionsApi', () => {
 
       const result = await collectionsApi.getSharedCollection('share_abc')
 
-      expect(mockApi.get).toHaveBeenCalledWith('/api/collections/shared/share_abc')
+      expect(mockApi.get).toHaveBeenCalledWith('/collections/shared/share_abc')
       expect(result).toEqual(mockShared)
     })
 
@@ -276,7 +276,7 @@ describe('collectionsApi', () => {
 
       const result = await collectionsApi.exportCollection('1', 'json')
 
-      expect(mockApi.get).toHaveBeenCalledWith('/api/collections/1/export', {
+      expect(mockApi.get).toHaveBeenCalledWith('/collections/1/export', {
         params: { format: 'json' },
         responseType: 'blob',
       })
@@ -289,7 +289,7 @@ describe('collectionsApi', () => {
 
       await collectionsApi.exportCollection('1')
 
-      expect(mockApi.get).toHaveBeenCalledWith('/api/collections/1/export', {
+      expect(mockApi.get).toHaveBeenCalledWith('/collections/1/export', {
         params: { format: 'json' },
         responseType: 'blob',
       })
@@ -301,7 +301,7 @@ describe('collectionsApi', () => {
 
       await collectionsApi.exportCollection('1', 'csv')
 
-      expect(mockApi.get).toHaveBeenCalledWith('/api/collections/1/export', {
+      expect(mockApi.get).toHaveBeenCalledWith('/collections/1/export', {
         params: { format: 'csv' },
         responseType: 'blob',
       })
@@ -313,7 +313,7 @@ describe('collectionsApi', () => {
 
       await collectionsApi.exportCollection('1', 'm3u')
 
-      expect(mockApi.get).toHaveBeenCalledWith('/api/collections/1/export', {
+      expect(mockApi.get).toHaveBeenCalledWith('/collections/1/export', {
         params: { format: 'm3u' },
         responseType: 'blob',
       })
@@ -331,7 +331,7 @@ describe('collectionsApi', () => {
       const result = await collectionsApi.importCollection(mockFile)
 
       expect(mockApi.post).toHaveBeenCalledWith(
-        '/api/collections/import',
+        '/collections/import',
         expect.any(FormData),
         { headers: { 'Content-Type': 'multipart/form-data' } }
       )
@@ -356,7 +356,7 @@ describe('collectionsApi', () => {
 
       const result = await collectionsApi.duplicateCollection('1', 'Copy of Collection')
 
-      expect(mockApi.post).toHaveBeenCalledWith('/api/collections/1/duplicate', {
+      expect(mockApi.post).toHaveBeenCalledWith('/collections/1/duplicate', {
         name: 'Copy of Collection',
       })
       expect(result).toEqual(duplicated)
@@ -368,7 +368,7 @@ describe('collectionsApi', () => {
 
       await collectionsApi.duplicateCollection('1')
 
-      expect(mockApi.post).toHaveBeenCalledWith('/api/collections/1/duplicate', {
+      expect(mockApi.post).toHaveBeenCalledWith('/collections/1/duplicate', {
         name: undefined,
       })
     })
@@ -380,7 +380,7 @@ describe('collectionsApi', () => {
 
       await collectionsApi.addItemsToCollection('1', ['item-a', 'item-b', 'item-c'])
 
-      expect(mockApi.post).toHaveBeenCalledWith('/api/collections/1/items', {
+      expect(mockApi.post).toHaveBeenCalledWith('/collections/1/items', {
         item_ids: ['item-a', 'item-b', 'item-c'],
       })
     })
@@ -390,7 +390,7 @@ describe('collectionsApi', () => {
 
       await collectionsApi.addItemsToCollection('1', [])
 
-      expect(mockApi.post).toHaveBeenCalledWith('/api/collections/1/items', {
+      expect(mockApi.post).toHaveBeenCalledWith('/collections/1/items', {
         item_ids: [],
       })
     })
@@ -402,7 +402,7 @@ describe('collectionsApi', () => {
 
       await collectionsApi.removeItemsFromCollection('1', ['item-a', 'item-b'])
 
-      expect(mockApi.delete).toHaveBeenCalledWith('/api/collections/1/items', {
+      expect(mockApi.delete).toHaveBeenCalledWith('/collections/1/items', {
         data: { item_ids: ['item-a', 'item-b'] },
       })
     })
@@ -415,7 +415,7 @@ describe('collectionsApi', () => {
 
       const result = await collectionsApi.getCollectionSuggestions()
 
-      expect(mockApi.get).toHaveBeenCalledWith('/api/collections/suggestions')
+      expect(mockApi.get).toHaveBeenCalledWith('/collections/suggestions')
       expect(result).toEqual(suggestions)
     })
 
@@ -437,7 +437,7 @@ describe('collectionsApi', () => {
 
       const result = await collectionsApi.getTemplates()
 
-      expect(mockApi.get).toHaveBeenCalledWith('/api/collections/templates')
+      expect(mockApi.get).toHaveBeenCalledWith('/collections/templates')
       expect(result).toEqual(templates)
     })
   })
@@ -450,7 +450,7 @@ describe('collectionsApi', () => {
 
       const result = await collectionsApi.testRules(rules as any)
 
-      expect(mockApi.post).toHaveBeenCalledWith('/api/collections/test-rules', { rules })
+      expect(mockApi.post).toHaveBeenCalledWith('/collections/test-rules', { rules })
       expect(result).toEqual(testResult)
     })
 
@@ -472,7 +472,7 @@ describe('collectionsApi', () => {
 
       await collectionsApi.bulkDeleteCollections(['1', '2', '3'])
 
-      expect(mockApi.delete).toHaveBeenCalledWith('/api/collections/bulk', {
+      expect(mockApi.delete).toHaveBeenCalledWith('/collections/bulk', {
         data: { collection_ids: ['1', '2', '3'] },
       })
     })
@@ -489,7 +489,7 @@ describe('collectionsApi', () => {
 
       const result = await collectionsApi.bulkShareCollections(['1', '2'], shareRequest)
 
-      expect(mockApi.post).toHaveBeenCalledWith('/api/collections/bulk/share', {
+      expect(mockApi.post).toHaveBeenCalledWith('/collections/bulk/share', {
         collection_ids: ['1', '2'],
         share_request: shareRequest,
       })
@@ -505,7 +505,7 @@ describe('collectionsApi', () => {
       const result = await collectionsApi.bulkExportCollections(['1', '2'], 'json')
 
       expect(mockApi.post).toHaveBeenCalledWith(
-        '/api/collections/bulk/export',
+        '/collections/bulk/export',
         { collection_ids: ['1', '2'], format: 'json' },
         { responseType: 'blob' }
       )
@@ -519,7 +519,7 @@ describe('collectionsApi', () => {
       await collectionsApi.bulkExportCollections(['1'])
 
       expect(mockApi.post).toHaveBeenCalledWith(
-        '/api/collections/bulk/export',
+        '/collections/bulk/export',
         { collection_ids: ['1'], format: 'json' },
         { responseType: 'blob' }
       )
@@ -532,7 +532,7 @@ describe('collectionsApi', () => {
       await collectionsApi.bulkExportCollections(['1', '2'], 'csv')
 
       expect(mockApi.post).toHaveBeenCalledWith(
-        '/api/collections/bulk/export',
+        '/collections/bulk/export',
         { collection_ids: ['1', '2'], format: 'csv' },
         { responseType: 'blob' }
       )
@@ -547,7 +547,7 @@ describe('collectionsApi', () => {
 
       const result = await collectionsApi.bulkUpdateCollections(['1', '2'], 'update', updates)
 
-      expect(mockApi.put).toHaveBeenCalledWith('/api/collections/bulk', {
+      expect(mockApi.put).toHaveBeenCalledWith('/collections/bulk', {
         collection_ids: ['1', '2'],
         action: 'update',
         updates,
@@ -561,7 +561,7 @@ describe('collectionsApi', () => {
 
       const result = await collectionsApi.bulkUpdateCollections(['1'], 'duplicate')
 
-      expect(mockApi.put).toHaveBeenCalledWith('/api/collections/bulk', {
+      expect(mockApi.put).toHaveBeenCalledWith('/collections/bulk', {
         collection_ids: ['1'],
         action: 'duplicate',
         updates: undefined,

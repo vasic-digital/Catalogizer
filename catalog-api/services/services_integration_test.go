@@ -1857,7 +1857,7 @@ func TestLogManagementService_StreamLogs_Disabled(t *testing.T) {
 	// Explicitly disable real-time logging to test the disabled path
 	service.config.RealTimeLogging = false
 
-	_, err := service.StreamLogs(1, &models.LogStreamFilters{})
+	_, _, err := service.StreamLogs(1, &models.LogStreamFilters{})
 	assert.Error(t, err)
 	assert.Contains(t, err.Error(), "disabled")
 }
@@ -2405,7 +2405,7 @@ func TestLogManagementService_StreamLogs_Enabled(t *testing.T) {
 	service := NewLogManagementService(logRepo)
 
 	// Default config has RealTimeLogging=true
-	ch, err := service.StreamLogs(1, &models.LogStreamFilters{})
+	ch, _, err := service.StreamLogs(1, &models.LogStreamFilters{})
 	require.NoError(t, err)
 	assert.NotNil(t, ch)
 }

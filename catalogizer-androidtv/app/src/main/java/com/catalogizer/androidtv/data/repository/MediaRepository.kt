@@ -20,7 +20,7 @@ class MediaRepository(private val context: Context, private val api: Catalogizer
             val params = mapOf("limit" to limit.toString(), "sort_by" to sortBy, "sort_order" to sortOrder)
             val response = api.browseEntities(type, params)
             if (response.isSuccessful) {
-                val items = response.body()?.items ?: emptyList()
+                val items = response.body()?.allItems ?: emptyList()
                 return flowOf(items)
             } else {
                 android.util.Log.w("MediaRepo", "Browse entities failed: ${response.code()}")
@@ -36,16 +36,16 @@ class MediaRepository(private val context: Context, private val api: Catalogizer
         try {
             val params = mutableMapOf<String, String>()
             request.query?.let { params["query"] = it }
-            request.limit?.let { params["limit"] = it.toString() }
-            request.offset?.let { params["offset"] = it.toString() }
-            request.mediaType?.let { params["media_type"] = it }
+            params["limit"] = request.limit.toString()
+            params["offset"] = request.offset.toString()
+            request.mediaType?.let { params["media_types"] = it }
             request.sortBy?.let { params["sort_by"] = it }
             request.sortOrder?.let { params["sort_order"] = it }
 
             val response = api.searchMedia(params)
             if (response.isSuccessful) {
                 val searchResponse = response.body()
-                val mediaItems = searchResponse?.items ?: emptyList()
+                val mediaItems = searchResponse?.allItems ?: emptyList()
                 return flowOf(mediaItems)
             } else {
                 android.util.Log.w("MediaRepo", "Search failed: ${response.code()} ${response.message()}")

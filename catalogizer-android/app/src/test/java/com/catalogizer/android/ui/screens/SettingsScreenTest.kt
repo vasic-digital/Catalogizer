@@ -152,6 +152,7 @@ class SettingsScreenTest {
     fun `onLogout should trigger only logout and not navigation`() {
         var backCalled = false
         var logoutInvoked = false
+        @Suppress("UNUSED_VARIABLE")
         val onBack: () -> Unit = { backCalled = true }
         val onLogout: () -> Unit = { logoutInvoked = true }
 
@@ -166,6 +167,7 @@ class SettingsScreenTest {
         var backInvoked = false
         var logoutCalled = false
         val onBack: () -> Unit = { backInvoked = true }
+        @Suppress("UNUSED_VARIABLE")
         val onLogout: () -> Unit = { logoutCalled = true }
 
         onBack()

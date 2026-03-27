@@ -170,13 +170,16 @@ func (c *MiddlewareRequestIDChallenge) Execute(
 
 	hasRequestID := len(ids) > 0
 	outputs["request_ids"] = strings.Join(ids, ", ")
+	actualID := "missing"
+	if hasRequestID {
+		actualID = ids[0]
+	}
 	assertions = append(assertions, challenge.AssertionResult{
 		Type:     "not_empty",
 		Target:   "request_id_present",
 		Expected: "X-Request-Id header present",
-		Actual: challenge.Ternary(hasRequestID,
-			ids[0], "missing"),
-		Passed: hasRequestID,
+		Actual:   actualID,
+		Passed:   hasRequestID,
 		Message: challenge.Ternary(hasRequestID,
 			"Request ID header present on responses",
 			"Request ID header missing from responses"),

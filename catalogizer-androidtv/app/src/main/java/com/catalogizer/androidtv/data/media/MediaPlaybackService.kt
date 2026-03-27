@@ -56,12 +56,12 @@ class MediaPlaybackService : MediaSessionService() {
 
     // Remember to release player and media session in onDestroy
     override fun onDestroy() {
+        player?.release()
+        player = null
         mediaSession?.run {
-            player?.release()
             release()
             mediaSession = null
         }
-        player = null
         super.onDestroy()
     }
 

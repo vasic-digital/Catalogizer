@@ -5,6 +5,7 @@ import com.catalogizer.androidtv.MainDispatcherRule
 import com.catalogizer.androidtv.data.models.AuthState
 import com.catalogizer.androidtv.data.remote.CatalogizerApi
 import com.catalogizer.androidtv.data.remote.LoginResponse
+import com.catalogizer.androidtv.data.remote.LoginUser
 import io.mockk.coEvery
 import io.mockk.mockk
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -49,10 +50,9 @@ class AuthRepositoryTest {
     @Test
     fun `login success should update auth state with user data`() = runTest {
         val loginResponse = LoginResponse(
-            token = "test-token",
-            userId = 123L,
-            username = "testuser",
-            expiresAt = "2024-12-31T23:59:59Z"
+            user = LoginUser(id = 123L, username = "testuser"),
+            session_token = "test-token",
+            expires_at = "2024-12-31T23:59:59Z"
         )
         val successResponse = Response.success(loginResponse)
 
@@ -128,9 +128,8 @@ class AuthRepositoryTest {
     fun `logout should reset auth state to unauthenticated`() = runTest {
         // First login
         val loginResponse = LoginResponse(
-            token = "test-token",
-            userId = 123L,
-            username = "testuser"
+            user = LoginUser(id = 123L, username = "testuser"),
+            session_token = "test-token"
         )
         val successResponse = Response.success(loginResponse)
         coEvery { api.login(any()) } returns successResponse
@@ -150,10 +149,9 @@ class AuthRepositoryTest {
     fun `refresh token success should update token and expiry`() = runTest {
         // First login
         val loginResponse = LoginResponse(
-            token = "old-token",
-            userId = 123L,
-            username = "testuser",
-            expiresAt = "2024-01-01T00:00:00Z"
+            user = LoginUser(id = 123L, username = "testuser"),
+            session_token = "old-token",
+            expires_at = "2024-01-01T00:00:00Z"
         )
         val successResponse = Response.success(loginResponse)
         coEvery { api.login(any()) } returns successResponse
@@ -162,10 +160,9 @@ class AuthRepositoryTest {
 
         // Refresh token
         val refreshResponse = LoginResponse(
-            token = "new-token",
-            userId = 123L,
-            username = "testuser",
-            expiresAt = "2024-12-31T23:59:59Z"
+            user = LoginUser(id = 123L, username = "testuser"),
+            session_token = "new-token",
+            expires_at = "2024-12-31T23:59:59Z"
         )
         val refreshSuccessResponse = Response.success(refreshResponse)
         coEvery { api.refreshToken(any()) } returns refreshSuccessResponse
@@ -182,9 +179,8 @@ class AuthRepositoryTest {
     fun `refresh token failure should logout user`() = runTest {
         // First login
         val loginResponse = LoginResponse(
-            token = "test-token",
-            userId = 123L,
-            username = "testuser"
+            user = LoginUser(id = 123L, username = "testuser"),
+            session_token = "test-token"
         )
         val successResponse = Response.success(loginResponse)
         coEvery { api.login(any()) } returns successResponse
@@ -253,9 +249,8 @@ class AuthRepositoryTest {
     @Test
     fun `clear error with no error should do nothing`() = runTest {
         val loginResponse = LoginResponse(
-            token = "test-token",
-            userId = 123L,
-            username = "testuser"
+            user = LoginUser(id = 123L, username = "testuser"),
+            session_token = "test-token"
         )
         val successResponse = Response.success(loginResponse)
         coEvery { api.login(any()) } returns successResponse
@@ -271,9 +266,8 @@ class AuthRepositoryTest {
     @Test
     fun `isTokenExpired with no expiry should return true`() = runTest {
         val loginResponse = LoginResponse(
-            token = "test-token",
-            userId = 123L,
-            username = "testuser"
+            user = LoginUser(id = 123L, username = "testuser"),
+            session_token = "test-token"
         )
         val successResponse = Response.success(loginResponse)
         coEvery { api.login(any()) } returns successResponse
@@ -291,10 +285,9 @@ class AuthRepositoryTest {
         val expiresAt = format.format(java.util.Date(futureTime))
 
         val loginResponse = LoginResponse(
-            token = "test-token",
-            userId = 123L,
-            username = "testuser",
-            expiresAt = expiresAt
+            user = LoginUser(id = 123L, username = "testuser"),
+            session_token = "test-token",
+            expires_at = expiresAt
         )
         val successResponse = Response.success(loginResponse)
         coEvery { api.login(any()) } returns successResponse
@@ -312,10 +305,9 @@ class AuthRepositoryTest {
         val expiresAt = format.format(java.util.Date(pastTime))
 
         val loginResponse = LoginResponse(
-            token = "test-token",
-            userId = 123L,
-            username = "testuser",
-            expiresAt = expiresAt
+            user = LoginUser(id = 123L, username = "testuser"),
+            session_token = "test-token",
+            expires_at = expiresAt
         )
         val successResponse = Response.success(loginResponse)
         coEvery { api.login(any()) } returns successResponse
@@ -333,10 +325,9 @@ class AuthRepositoryTest {
         val expiresAt = format.format(java.util.Date(futureTime))
 
         val loginResponse = LoginResponse(
-            token = "test-token",
-            userId = 123L,
-            username = "testuser",
-            expiresAt = expiresAt
+            user = LoginUser(id = 123L, username = "testuser"),
+            session_token = "test-token",
+            expires_at = expiresAt
         )
         val successResponse = Response.success(loginResponse)
         coEvery { api.login(any()) } returns successResponse
@@ -354,10 +345,9 @@ class AuthRepositoryTest {
         val expiresAt = format.format(java.util.Date(futureTime))
 
         val loginResponse = LoginResponse(
-            token = "test-token",
-            userId = 123L,
-            username = "testuser",
-            expiresAt = expiresAt
+            user = LoginUser(id = 123L, username = "testuser"),
+            session_token = "test-token",
+            expires_at = expiresAt
         )
         val successResponse = Response.success(loginResponse)
         coEvery { api.login(any()) } returns successResponse
@@ -370,9 +360,8 @@ class AuthRepositoryTest {
     @Test
     fun `shouldRefreshToken with no expiry should return false`() = runTest {
         val loginResponse = LoginResponse(
-            token = "test-token",
-            userId = 123L,
-            username = "testuser"
+            user = LoginUser(id = 123L, username = "testuser"),
+            session_token = "test-token"
         )
         val successResponse = Response.success(loginResponse)
         coEvery { api.login(any()) } returns successResponse
@@ -389,9 +378,8 @@ class AuthRepositoryTest {
 
         // Test that the new api is used
         val loginResponse = LoginResponse(
-            token = "test-token",
-            userId = 123L,
-            username = "testuser"
+            user = LoginUser(id = 123L, username = "testuser"),
+            session_token = "test-token"
         )
         val successResponse = Response.success(loginResponse)
         coEvery { newApi.login(any()) } returns successResponse

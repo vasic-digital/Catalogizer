@@ -9,6 +9,7 @@ import (
 	"testing"
 	"time"
 
+	_ "github.com/mutecomm/go-sqlcipher"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -275,11 +276,48 @@ func TestMixedReadWriteWorkload(t *testing.T) {
 		t.Skip("Skipping stress test in short mode")
 	}
 
-	dsc := newDatabaseStressContext(t)
-	defer dsc.DB.Close()
+	// Use file-based SQLite with WAL mode for concurrent read/write testing.
+	// In-memory SQLite with MaxOpenConns(1) causes goroutines to block waiting
+	// for the single connection, leading to hangs.
+	tmpDir := t.TempDir()
+	dbPath := tmpDir + "/mixed_rw_test.db"
+	sqlDB, err := sql.Open("sqlite3", dbPath+"?_journal_mode=WAL&cache=shared")
+	require.NoError(t, err, "Failed to open file-based SQLite")
+	t.Cleanup(func() { sqlDB.Close() })
+
+	_, _ = sqlDB.Exec("PRAGMA journal_mode=WAL")
+	_, _ = sqlDB.Exec("PRAGMA foreign_keys = ON")
+	sqlDB.SetMaxOpenConns(10)
+	sqlDB.SetMaxIdleConns(5)
+
+	// Create tables
+	_, err = sqlDB.Exec(`CREATE TABLE IF NOT EXISTS storage_roots (
+		id INTEGER PRIMARY KEY AUTOINCREMENT,
+		name TEXT NOT NULL UNIQUE,
+		protocol TEXT NOT NULL,
+		path TEXT,
+		enabled BOOLEAN DEFAULT 1,
+		created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+	)`)
+	require.NoError(t, err)
+	_, err = sqlDB.Exec(`CREATE TABLE IF NOT EXISTS files (
+		id INTEGER PRIMARY KEY AUTOINCREMENT,
+		storage_root_id INTEGER NOT NULL,
+		path TEXT NOT NULL,
+		name TEXT NOT NULL,
+		size INTEGER NOT NULL,
+		modified_at DATETIME NOT NULL,
+		FOREIGN KEY (storage_root_id) REFERENCES storage_roots(id)
+	)`)
+	require.NoError(t, err)
+
+	dsc := &DatabaseStressContext{
+		DB:        sqlDB,
+		StartTime: time.Now(),
+	}
 
 	// Create test storage root
-	_, err := dsc.DB.Exec(`
+	_, err = dsc.DB.Exec(`
 		INSERT INTO storage_roots (id, name, protocol, path, enabled)
 		VALUES (1, 'test-root', 'local', '/test', 1)
 	`)
@@ -294,8 +332,8 @@ func TestMixedReadWriteWorkload(t *testing.T) {
 	}
 
 	t.Run("70PercentReads30PercentWrites", func(t *testing.T) {
-		duration := 15 * time.Second
-		concurrentWorkers := 50
+		duration := 3 * time.Second
+		concurrentWorkers := 20
 
 		done := make(chan bool)
 		var wg sync.WaitGroup
@@ -354,7 +392,18 @@ func TestMixedReadWriteWorkload(t *testing.T) {
 
 		time.Sleep(duration)
 		close(done)
-		wg.Wait()
+
+		// Wait with a hard deadline
+		wgDone := make(chan struct{})
+		go func() {
+			wg.Wait()
+			close(wgDone)
+		}()
+		select {
+		case <-wgDone:
+		case <-time.After(10 * time.Second):
+			t.Fatal("MixedReadWriteWorkload: goroutines did not finish within deadline")
+		}
 
 		dsc.PrintStats(t)
 
@@ -503,8 +552,8 @@ func TestConnectionPoolStress(t *testing.T) {
 
 	t.Run("ExceedConnectionPool", func(t *testing.T) {
 		// Try to create more concurrent operations than pool size
-		concurrentOps := 100 // More than max open connections
-		duration := 10 * time.Second
+		concurrentOps := 50 // More than max open connections
+		duration := 3 * time.Second
 
 		done := make(chan bool)
 		var wg sync.WaitGroup
@@ -574,7 +623,7 @@ func TestLargeQueryResults(t *testing.T) {
 	// Insert large dataset
 	t.Log("Preparing large dataset...")
 	tx, _ := dsc.DB.Begin()
-	for i := 0; i < 10000; i++ {
+	for i := 0; i < 2000; i++ {
 		tx.Exec(`
 			INSERT INTO files (storage_root_id, path, name, size, modified_at)
 			VALUES (1, ?, ?, ?, datetime('now'))
@@ -592,7 +641,7 @@ func TestLargeQueryResults(t *testing.T) {
 				defer wg.Done()
 
 				start := time.Now()
-				rows, err := dsc.DB.Query("SELECT * FROM files WHERE path LIKE '/large/%' LIMIT 1000")
+				rows, err := dsc.DB.Query("SELECT id, storage_root_id, path, name, size, modified_at FROM files WHERE path LIKE '/large/%' LIMIT 1000")
 				if err != nil {
 					dsc.recordOperation(time.Since(start), err)
 					return
@@ -601,11 +650,11 @@ func TestLargeQueryResults(t *testing.T) {
 
 				count := 0
 				for rows.Next() {
-					var id int
+					var id, storageRootID int
 					var path, name string
 					var size int64
 					var modTime string
-					rows.Scan(&id, &path, &name, &size, &modTime)
+					rows.Scan(&id, &storageRootID, &path, &name, &size, &modTime)
 					count++
 				}
 

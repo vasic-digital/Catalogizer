@@ -20,31 +20,28 @@ class LoginResponseTest {
     }
 
     @Test
-    fun `LoginResponse deserializes correctly`() {
-        val jsonStr = """{
-            "token": "jwt-token-123",
-            "user_id": 42,
-            "username": "admin",
-            "expires_at": "2026-01-01T00:00:00Z"
-        }"""
-
-        val response = json.decodeFromString<LoginResponse>(jsonStr)
+    fun `LoginResponse constructs correctly with new API shape`() {
+        val user = LoginUser(id = 42L, username = "admin", email = "admin@test.com")
+        val response = LoginResponse(
+            user = user,
+            session_token = "jwt-token-123",
+            expires_at = "2026-01-01T00:00:00Z"
+        )
 
         assertEquals("jwt-token-123", response.token)
         assertEquals(42L, response.userId)
         assertEquals("admin", response.username)
         assertEquals("2026-01-01T00:00:00Z", response.expiresAt)
+        assertEquals("jwt-token-123", response.session_token)
     }
 
     @Test
-    fun `LoginResponse deserializes without expiresAt`() {
-        val jsonStr = """{
-            "token": "jwt-token-123",
-            "user_id": 42,
-            "username": "admin"
-        }"""
-
-        val response = json.decodeFromString<LoginResponse>(jsonStr)
+    fun `LoginResponse constructs without expiresAt`() {
+        val user = LoginUser(id = 42L, username = "admin")
+        val response = LoginResponse(
+            user = user,
+            session_token = "jwt-token-123"
+        )
 
         assertEquals("jwt-token-123", response.token)
         assertEquals(42L, response.userId)
@@ -53,51 +50,80 @@ class LoginResponseTest {
     }
 
     @Test
-    fun `LoginResponse serializes correctly`() {
+    fun `LoginResponse convenience properties map correctly`() {
+        val user = LoginUser(id = 1L, username = "testuser")
         val response = LoginResponse(
-            token = "test-token",
-            userId = 1L,
-            username = "testuser",
-            expiresAt = "2026-12-31T23:59:59Z"
+            user = user,
+            session_token = "test-token",
+            expires_at = "2026-12-31T23:59:59Z"
         )
 
-        val jsonStr = json.encodeToString(response)
-
-        assertTrue(jsonStr.contains("\"token\":\"test-token\""))
-        assertTrue(jsonStr.contains("\"user_id\":1"))
-        assertTrue(jsonStr.contains("\"username\":\"testuser\""))
-        assertTrue(jsonStr.contains("\"expires_at\":\"2026-12-31T23:59:59Z\""))
+        // Verify convenience properties
+        assertEquals("test-token", response.token)
+        assertEquals(1L, response.userId)
+        assertEquals("testuser", response.username)
+        assertEquals("2026-12-31T23:59:59Z", response.expiresAt)
     }
 
     @Test
-    fun `LoginResponse round-trip serialization`() {
+    fun `LoginResponse round-trip equality`() {
+        val user = LoginUser(id = 99L, username = "roundtrip")
         val original = LoginResponse(
-            token = "roundtrip-token",
-            userId = 99L,
-            username = "roundtrip",
-            expiresAt = "2026-06-15T12:00:00Z"
+            user = user,
+            session_token = "roundtrip-token",
+            expires_at = "2026-06-15T12:00:00Z"
         )
 
-        val serialized = json.encodeToString(original)
-        val deserialized = json.decodeFromString<LoginResponse>(serialized)
+        val copy = original.copy()
 
-        assertEquals(original, deserialized)
+        assertEquals(original, copy)
+        assertEquals(original.token, copy.token)
+        assertEquals(original.userId, copy.userId)
+        assertEquals(original.username, copy.username)
+        assertEquals(original.expiresAt, copy.expiresAt)
     }
 
     @Test
-    fun `LoginResponse with unknown fields ignores them`() {
+    fun `LoginUser serializes and deserializes correctly`() {
+        val user = LoginUser(id = 1L, username = "user", email = "user@test.com", display_name = "Test User")
+
+        val serialized = json.encodeToString(user)
+        val deserialized = json.decodeFromString<LoginUser>(serialized)
+
+        assertEquals(user, deserialized)
+        assertEquals(1L, deserialized.id)
+        assertEquals("user", deserialized.username)
+        assertEquals("user@test.com", deserialized.email)
+        assertEquals("Test User", deserialized.display_name)
+    }
+
+    @Test
+    fun `LoginUser deserializes with unknown fields`() {
         val jsonStr = """{
-            "token": "jwt-token",
-            "user_id": 1,
+            "id": 1,
             "username": "user",
             "unknown_field": "ignored",
             "another_unknown": 123
         }"""
 
-        val response = json.decodeFromString<LoginResponse>(jsonStr)
+        val user = json.decodeFromString<LoginUser>(jsonStr)
 
-        assertEquals("jwt-token", response.token)
-        assertEquals(1L, response.userId)
-        assertEquals("user", response.username)
+        assertEquals(1L, user.id)
+        assertEquals("user", user.username)
+        assertNull(user.email)
+        assertNull(user.display_name)
+    }
+
+    @Test
+    fun `LoginResponse optional fields default to null`() {
+        val user = LoginUser(id = 5L, username = "minimal")
+        val response = LoginResponse(
+            user = user,
+            session_token = "tok"
+        )
+
+        assertNull(response.refresh_token)
+        assertNull(response.expires_at)
+        assertNull(response.expiresAt)
     }
 }

@@ -43,8 +43,8 @@ class DependencyContainer(private val context: Context) {
         AuthRepository(context, null)
     }
 
-    // Current active base URL — read from settings or default
-    private var currentBaseUrl: String = BuildConfig.API_BASE_URL
+    // Current active base URL — read from settings or discovered at runtime
+    private var currentBaseUrl: String = BuildConfig.API_BASE_URL.ifBlank { "" }
 
     /**
      * Build OkHttpClient with auth interceptor and logging.
@@ -69,8 +69,12 @@ class DependencyContainer(private val context: Context) {
      * Create a Retrofit API instance pointing to the given base URL.
      */
     private fun buildApi(baseUrl: String): CatalogizerApi {
+        // Retrofit requires a non-empty base URL. Use a placeholder when unconfigured;
+        // all calls will fail with a connection error, which is the expected behavior
+        // until the user configures a real server URL.
+        val effectiveUrl = baseUrl.ifBlank { "http://localhost:8080" }
         return Retrofit.Builder()
-            .baseUrl(baseUrl.trimEnd('/') + "/")
+            .baseUrl(effectiveUrl.trimEnd('/') + "/")
             .client(buildOkHttpClient())
             .addConverterFactory(GsonConverterFactory.create())
             .build()
@@ -116,24 +120,36 @@ class DependencyContainer(private val context: Context) {
     /**
      * Initialize the container: load saved server URL, create API client.
      * Call from Application.onCreate().
+     *
+     * Priority:
+     * 1. Persisted server URL from DataStore (previous user selection)
+     * 2. Probe localhost:8080 (works when ADB reverse is active)
+     * 3. Leave empty — LoginScreen will prompt for manual entry or discovery
      */
     suspend fun initializeAsync() {
         // Load server URL from persisted settings
         try {
             val settings = settingsRepository.getSettingsAsync()
-            if (settings.serverUrl.isNotBlank() && settings.serverUrl != Settings.DEFAULT_SERVER_URL) {
+            if (settings.serverUrl.isNotBlank()) {
                 currentBaseUrl = settings.serverUrl
-            }
-            // Ensure DataStore file exists by writing defaults on first launch
-            if (settings.serverUrl == Settings.DEFAULT_SERVER_URL) {
-                settingsRepository.saveSettings(settings)
+            } else {
+                // No saved URL — try localhost (ADB reverse proxy)
+                val localhostUrl = "http://localhost:8080"
+                val probe = discoveryService.probeServer(localhostUrl)
+                if (probe != null) {
+                    currentBaseUrl = localhostUrl
+                    settingsRepository.updateServerUrl(localhostUrl)
+                    settingsRepository.addServer(probe)
+                }
             }
         } catch (_: Exception) {
-            // Use default/BuildConfig URL on first launch
+            // Leave empty — LoginScreen handles unconfigured state
         }
-        // Trigger API creation with the loaded URL
+        // Trigger API creation with the loaded URL (if any)
         _api = null // Force recreation with correct URL
-        api
+        if (currentBaseUrl.isNotBlank()) {
+            api // Only create API if we have a URL
+        }
     }
 
     /**

@@ -4,6 +4,7 @@ import android.content.Context
 import com.catalogizer.androidtv.MainDispatcherRule
 import com.catalogizer.androidtv.data.models.MediaItem
 import com.catalogizer.androidtv.data.models.MediaSearchRequest
+import com.catalogizer.androidtv.data.models.MediaSearchResponse
 import com.catalogizer.androidtv.data.remote.CatalogizerApi
 import io.mockk.coEvery
 import io.mockk.mockk
@@ -57,7 +58,8 @@ class MediaRepositoryTest {
             )
         )
 
-        val successResponse = Response.success(mediaItems)
+        val searchResponse = MediaSearchResponse(items = mediaItems, total = mediaItems.size, limit = 10, offset = 0)
+        val successResponse = Response.success(searchResponse)
         coEvery { api.searchMedia(any()) } returns successResponse
 
         val result = repository.searchMedia(searchRequest).first()
@@ -69,7 +71,7 @@ class MediaRepositoryTest {
     fun `searchMedia with null response body should return empty list`() = runTest {
         val searchRequest = MediaSearchRequest(query = "test")
 
-        val successResponse = Response.success<List<MediaItem>>(null)
+        val successResponse = Response.success<MediaSearchResponse>(null)
         coEvery { api.searchMedia(any()) } returns successResponse
 
         val result = repository.searchMedia(searchRequest).first()
@@ -81,7 +83,7 @@ class MediaRepositoryTest {
     fun `searchMedia failure should return empty list`() = runTest {
         val searchRequest = MediaSearchRequest(query = "test")
 
-        val errorResponse = Response.error<List<MediaItem>>(
+        val errorResponse = Response.error<MediaSearchResponse>(
             500,
             "Server error".toResponseBody(null)
         )
@@ -113,8 +115,8 @@ class MediaRepositoryTest {
             offset = 20
         )
 
-        val mediaItems = emptyList<MediaItem>()
-        val successResponse = Response.success(mediaItems)
+        val searchResponse = MediaSearchResponse(items = emptyList(), total = 0, limit = 50, offset = 20)
+        val successResponse = Response.success(searchResponse)
         coEvery { api.searchMedia(any()) } returns successResponse
 
         repository.searchMedia(searchRequest).first()
@@ -137,7 +139,7 @@ class MediaRepositoryTest {
         )
 
         val successResponse = Response.success(mediaItem)
-        coEvery { api.getMediaById(mediaId) } returns successResponse
+        coEvery { api.getEntityById(mediaId) } returns successResponse
 
         val result = repository.getMediaById(mediaId).first()
 
@@ -148,11 +150,17 @@ class MediaRepositoryTest {
     fun `getMediaById failure should return null flow`() = runTest {
         val mediaId = 123L
 
-        val errorResponse = Response.error<MediaItem>(
+        val entityError = Response.error<MediaItem>(
             404,
             "Not found".toResponseBody(null)
         )
-        coEvery { api.getMediaById(mediaId) } returns errorResponse
+        coEvery { api.getEntityById(mediaId) } returns entityError
+
+        val mediaError = Response.error<MediaItem>(
+            404,
+            "Not found".toResponseBody(null)
+        )
+        coEvery { api.getMediaById(mediaId) } returns mediaError
 
         val result = repository.getMediaById(mediaId).first()
 
@@ -164,7 +172,7 @@ class MediaRepositoryTest {
         val mediaId = 123L
 
         val exception = RuntimeException("Network error")
-        coEvery { api.getMediaById(mediaId) } throws exception
+        coEvery { api.getEntityById(mediaId) } throws exception
 
         val result = repository.getMediaById(mediaId).first()
 
@@ -269,8 +277,8 @@ class MediaRepositoryTest {
     fun `searchMedia with empty request should work correctly`() = runTest {
         val searchRequest = MediaSearchRequest()
 
-        val mediaItems = emptyList<MediaItem>()
-        val successResponse = Response.success(mediaItems)
+        val searchResponse = MediaSearchResponse(items = emptyList(), total = 0, limit = 20, offset = 0)
+        val successResponse = Response.success(searchResponse)
         coEvery { api.searchMedia(any()) } returns successResponse
 
         val result = repository.searchMedia(searchRequest).first()
@@ -307,7 +315,8 @@ class MediaRepositoryTest {
             )
         )
 
-        val successResponse = Response.success(mediaItems)
+        val searchResponse = MediaSearchResponse(items = mediaItems, total = 1, limit = 25, offset = 50)
+        val successResponse = Response.success(searchResponse)
         coEvery { api.searchMedia(any()) } returns successResponse
 
         val result = repository.searchMedia(searchRequest).first()

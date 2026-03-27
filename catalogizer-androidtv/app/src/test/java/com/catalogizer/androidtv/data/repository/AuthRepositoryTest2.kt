@@ -3,7 +3,9 @@ package com.catalogizer.androidtv.data.repository
 import com.catalogizer.androidtv.data.models.AuthState
 import com.catalogizer.androidtv.data.remote.CatalogizerApi
 import com.catalogizer.androidtv.data.remote.LoginResponse
+import com.catalogizer.androidtv.data.remote.LoginUser
 import io.mockk.*
+import okhttp3.ResponseBody.Companion.toResponseBody
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.runTest
 import org.junit.After
@@ -37,10 +39,9 @@ class AuthRepositoryTest2 {
     @Test
     fun `login success sets authenticated state`() = runTest {
         val loginResponse = LoginResponse(
-            token = "test-token",
-            userId = 1L,
-            username = "admin",
-            expiresAt = "2026-12-31T23:59:59Z"
+            user = LoginUser(id = 1L, username = "admin"),
+            session_token = "test-token",
+            expires_at = "2026-12-31T23:59:59Z"
         )
         coEvery { mockApi.login(any()) } returns Response.success(loginResponse)
 
@@ -57,7 +58,7 @@ class AuthRepositoryTest2 {
     fun `login failure sets error state`() = runTest {
         coEvery { mockApi.login(any()) } returns Response.error(
             401,
-            okhttp3.ResponseBody.create(null, "Unauthorized")
+            "Unauthorized".toResponseBody(null)
         )
 
         authRepository.login("admin", "wrong")
@@ -81,7 +82,10 @@ class AuthRepositoryTest2 {
     @Test
     fun `logout sets unauthenticated state`() = runTest {
         // First login
-        val loginResponse = LoginResponse(token = "tok", userId = 1L, username = "admin")
+        val loginResponse = LoginResponse(
+            user = LoginUser(id = 1L, username = "admin"),
+            session_token = "tok"
+        )
         coEvery { mockApi.login(any()) } returns Response.success(loginResponse)
         authRepository.login("admin", "pass")
         assertTrue(authRepository.authState.value.isAuthenticated)

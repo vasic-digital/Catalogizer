@@ -76,7 +76,7 @@ class TVScreenRoutesTest {
 
         assertEquals(6, screens.size)
         screens.forEach { screen ->
-            assertTrue(screen is TVScreen)
+            assertTrue(TVScreen::class.java.isAssignableFrom(screen.javaClass))
             assertTrue(screen.route.isNotBlank())
         }
     }

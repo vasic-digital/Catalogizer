@@ -139,6 +139,11 @@ export default function LoginPage() {
               Configure server connection
             </button>
           </div>
+
+          <div className="mt-8 pt-6 border-t border-border text-center text-xs text-muted-foreground/60">
+            <p>Made with &#10084; by Vasic Digital</p>
+            <p className="mt-1">&copy; {new Date().getFullYear()} Vasic Digital. All rights reserved.</p>
+          </div>
         </div>
       </div>
     </div>

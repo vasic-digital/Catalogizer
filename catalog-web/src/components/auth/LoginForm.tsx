@@ -151,6 +151,10 @@ export const LoginForm: React.FC = () => {
           </CardContent>
         </Card>
       </motion.div>
+      <div className="mt-8 text-center text-xs text-muted-foreground/60">
+        <p>Made with &#10084; by Vasic Digital</p>
+        <p className="mt-1">&copy; {new Date().getFullYear()} Vasic Digital. All rights reserved.</p>
+      </div>
     </div>
   )
 }

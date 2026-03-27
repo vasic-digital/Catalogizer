@@ -193,8 +193,10 @@ class HomeViewModelTest {
         advanceUntilIdle()
 
         coVerify { mediaRepository.updateWatchProgress(mediaId, 1.0) }
-        // loadHomeData calls searchMedia 6 times (one per content section)
-        coVerify(atLeast = 6) { mediaRepository.searchMedia(any()) }
+        // loadHomeData calls searchMedia 4 times (continueWatching, recentlyAdded, music, documents)
+        // and browseEntities 2 times (movies, tvShows)
+        coVerify(atLeast = 4) { mediaRepository.searchMedia(any()) }
+        coVerify(atLeast = 2) { mediaRepository.browseEntities(any(), any(), any(), any()) }
     }
 
     @Test
@@ -228,8 +230,9 @@ class HomeViewModelTest {
 
         coVerify { mediaRepository.getMediaById(mediaId) }
         coVerify { mediaRepository.updateFavoriteStatus(mediaId, true) }
-        // loadHomeData calls searchMedia 6 times (one per content section) for refresh
-        coVerify(atLeast = 6) { mediaRepository.searchMedia(any()) }
+        // loadHomeData calls searchMedia 4 times and browseEntities 2 times for refresh
+        coVerify(atLeast = 4) { mediaRepository.searchMedia(any()) }
+        coVerify(atLeast = 2) { mediaRepository.browseEntities(any(), any(), any(), any()) }
     }
 
     @Test
@@ -259,13 +262,13 @@ class HomeViewModelTest {
             mediaRepository.searchMedia(match { it.sortBy == "created_at" && it.mediaType == null })
         } returns flowOf(recentlyAddedItems)
 
-        // Mock other calls to fail
+        // Mock other calls to fail (movies and TV shows use browseEntities)
         coEvery {
-            mediaRepository.searchMedia(match { it.mediaType == "movie" })
+            mediaRepository.browseEntities("movie", any(), any(), any())
         } throws RuntimeException("Movies failed")
 
         coEvery {
-            mediaRepository.searchMedia(match { it.mediaType == "tv_show" })
+            mediaRepository.browseEntities("tv_show", any(), any(), any())
         } throws RuntimeException("TV shows failed")
 
         coEvery {
@@ -322,14 +325,14 @@ class HomeViewModelTest {
             mediaRepository.searchMedia(match { it.sortBy == "created_at" && it.mediaType == null })
         } returns flowOf(recentlyAdded)
 
-        // Mock movies
+        // Mock movies (now uses browseEntities)
         coEvery {
-            mediaRepository.searchMedia(match { it.mediaType == "movie" })
+            mediaRepository.browseEntities("movie", any(), any(), any())
         } returns flowOf(movies)
 
-        // Mock TV shows
+        // Mock TV shows (now uses browseEntities)
         coEvery {
-            mediaRepository.searchMedia(match { it.mediaType == "tv_show" })
+            mediaRepository.browseEntities("tv_show", any(), any(), any())
         } returns flowOf(tvShows)
 
         // Mock music

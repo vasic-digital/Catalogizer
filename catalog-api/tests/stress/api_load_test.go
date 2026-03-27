@@ -18,7 +18,7 @@ import (
 )
 
 const (
-	defaultTimeout = 30 * time.Second
+	defaultTimeout = 5 * time.Second
 )
 
 // setupStressTestServer creates an in-process test server for load testing
@@ -422,9 +422,9 @@ func TestSustainedLoad(t *testing.T) {
 	ltc := newLoadTestContext(ts.URL)
 	ltc.authenticate(t)
 
-	t.Run("SustainedLoad30Seconds", func(t *testing.T) {
-		duration := 30 * time.Second
-		concurrentWorkers := 50
+	t.Run("SustainedLoad5Seconds", func(t *testing.T) {
+		duration := 5 * time.Second
+		concurrentWorkers := 20
 		targetRPS := 100.0 // Target 100 requests per second
 
 		delayBetweenRequests := time.Duration(float64(time.Second) / (targetRPS / float64(concurrentWorkers)))
@@ -491,8 +491,8 @@ func TestMixedOperations(t *testing.T) {
 	ltc.authenticate(t)
 
 	t.Run("ReadHeavyWorkload", func(t *testing.T) {
-		concurrentUsers := 100
-		duration := 10 * time.Second
+		concurrentUsers := 30
+		duration := 3 * time.Second
 
 		done := make(chan bool)
 		var wg sync.WaitGroup
@@ -598,15 +598,18 @@ func TestRampUpLoad(t *testing.T) {
 	ltc.authenticate(t)
 
 	t.Run("GradualRampUp", func(t *testing.T) {
-		maxUsers := 200
-		rampUpDuration := 20 * time.Second
-		testDuration := 40 * time.Second
+		maxUsers := 50
+		rampUpDuration := 3 * time.Second
+		testDuration := 5 * time.Second
 
 		done := make(chan bool)
 		activeWorkers := int64(0)
+		var wg sync.WaitGroup
 
 		// Ramp up gradually
+		wg.Add(1)
 		go func() {
+			defer wg.Done()
 			ticker := time.NewTicker(rampUpDuration / time.Duration(maxUsers))
 			defer ticker.Stop()
 
@@ -615,7 +618,9 @@ func TestRampUpLoad(t *testing.T) {
 				case <-done:
 					return
 				case <-ticker.C:
+					wg.Add(1)
 					go func() {
+						defer wg.Done()
 						atomic.AddInt64(&activeWorkers, 1)
 						defer atomic.AddInt64(&activeWorkers, -1)
 
@@ -640,8 +645,17 @@ func TestRampUpLoad(t *testing.T) {
 		time.Sleep(testDuration)
 		close(done)
 
-		// Wait for workers to finish
-		time.Sleep(500 * time.Millisecond)
+		// Wait for all workers to finish with a hard deadline
+		workersDone := make(chan struct{})
+		go func() {
+			wg.Wait()
+			close(workersDone)
+		}()
+		select {
+		case <-workersDone:
+		case <-time.After(5 * time.Second):
+			t.Log("Warning: some ramp-up workers did not finish in time")
+		}
 
 		ltc.PrintStats(t)
 

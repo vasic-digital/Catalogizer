@@ -352,7 +352,7 @@ func TestLogManagementService_StreamLogs_DisabledBoost(t *testing.T) {
 	svc := NewLogManagementService(nil)
 	svc.config.RealTimeLogging = false
 
-	_, err := svc.StreamLogs(1, nil)
+	_, _, err := svc.StreamLogs(1, nil)
 	assert.Error(t, err)
 	assert.Contains(t, err.Error(), "real-time logging is disabled")
 }
@@ -361,7 +361,7 @@ func TestLogManagementService_StreamLogs_EnabledBoost(t *testing.T) {
 	svc := NewLogManagementService(nil)
 	svc.config.RealTimeLogging = true
 
-	ch, err := svc.StreamLogs(1, &models.LogStreamFilters{})
+	ch, _, err := svc.StreamLogs(1, &models.LogStreamFilters{})
 	require.NoError(t, err)
 	assert.NotNil(t, ch)
 }

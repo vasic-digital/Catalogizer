@@ -1,5 +1,22 @@
 import { adminApi } from '../adminApi'
 
+// Mock the api module so axios does not make real HTTP requests.
+// All calls reject with a 404-like error, triggering adminApi's fallback mock data.
+vi.mock('../api', async () => {
+  const notFoundError = { response: { status: 404 } }
+  const mockApi = {
+    get: vi.fn().mockRejectedValue(notFoundError),
+    post: vi.fn().mockRejectedValue(notFoundError),
+    put: vi.fn().mockRejectedValue(notFoundError),
+    delete: vi.fn().mockRejectedValue(notFoundError),
+  }
+  return {
+    __esModule: true,
+    default: mockApi,
+    api: mockApi,
+  }
+})
+
 describe('adminApi', () => {
   beforeEach(() => {
     vi.clearAllMocks()

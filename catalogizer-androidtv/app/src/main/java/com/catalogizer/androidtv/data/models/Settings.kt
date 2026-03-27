@@ -24,6 +24,7 @@ data class Settings(
     val autoDiscovery: Boolean = true
 ) {
     companion object {
-        val DEFAULT_SERVER_URL: String = BuildConfig.API_BASE_URL
+        /** Empty by default — forces user to configure or discover the server URL. */
+        val DEFAULT_SERVER_URL: String = BuildConfig.API_BASE_URL.ifBlank { "" }
     }
 }

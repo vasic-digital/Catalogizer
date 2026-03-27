@@ -16,38 +16,54 @@ import kotlinx.serialization.Serializable
 )
 data class MediaItem(
     @PrimaryKey
-    val id: Long,
-    val title: String,
+    val id: Long = 0,
+    val title: String = "",
     @com.google.gson.annotations.SerializedName("media_type")
-    val mediaType: String,
+    val mediaType: String? = null,
+    @com.google.gson.annotations.SerializedName("media_type_id")
+    val mediaTypeId: Int? = null,
     val year: Int? = null,
     val description: String? = null,
     @com.google.gson.annotations.SerializedName("cover_image")
     val coverImage: String? = null,
+    @com.google.gson.annotations.SerializedName("cover_url")
+    val coverUrl: String? = null,
     val rating: Double? = null,
     val quality: String? = null,
     @com.google.gson.annotations.SerializedName("file_size")
     val fileSize: Long? = null,
     val duration: Long? = null,
     @com.google.gson.annotations.SerializedName("directory_path")
-    val directoryPath: String,
+    val directoryPath: String = "",
     @com.google.gson.annotations.SerializedName("smb_path")
     val smbPath: String? = null,
     @com.google.gson.annotations.SerializedName("created_at")
-    val createdAt: String,
+    val createdAt: String = "",
     @com.google.gson.annotations.SerializedName("updated_at")
-    val updatedAt: String,
+    val updatedAt: String = "",
+    @com.google.gson.annotations.SerializedName("first_detected")
+    val firstDetected: String? = null,
+    @com.google.gson.annotations.SerializedName("last_updated")
+    val lastUpdated: String? = null,
     @com.google.gson.annotations.SerializedName("external_metadata")
     val externalMetadata: List<ExternalMetadata>? = null,
     val versions: List<MediaVersion>? = null,
     val isFavorite: Boolean = false,
     val watchProgress: Double = 0.0,
     val lastWatched: String? = null,
-    val isDownloaded: Boolean = false
+    val isDownloaded: Boolean = false,
+    val status: String? = null,
+    @com.google.gson.annotations.SerializedName("original_title")
+    val originalTitle: String? = null,
+    val genre: List<String>? = null,
+    val director: String? = null,
+    val runtime: Int? = null,
+    val language: String? = null,
+    val country: String? = null
 ) : Parcelable {
 
     val posterUrl: String?
-        get() = externalMetadata?.firstOrNull()?.let { it.coverUrl ?: it.posterUrl } ?: coverImage
+        get() = externalMetadata?.firstOrNull()?.let { it.coverUrl ?: it.posterUrl } ?: coverUrl ?: coverImage
 
     val backdropUrl: String?
         get() = externalMetadata?.firstOrNull()?.backdropUrl
@@ -141,11 +157,19 @@ data class MediaSearchRequest(
 
 @Serializable
 data class MediaSearchResponse(
-    val items: List<MediaItem>,
-    val total: Int,
-    val limit: Int,
-    val offset: Int
-)
+    // Entity browse endpoint uses "items"; media search endpoint uses "media_items"
+    @com.google.gson.annotations.SerializedName("items")
+    val items: List<MediaItem>? = null,
+    @com.google.gson.annotations.SerializedName("media_items")
+    val mediaItems: List<MediaItem>? = null,
+    val total: Int = 0,
+    val limit: Int = 20,
+    val offset: Int = 0
+) {
+    /** Unified accessor — prefers "items" (entity browse), falls back to "media_items" (media search). */
+    val allItems: List<MediaItem>
+        get() = items?.takeIf { it.isNotEmpty() } ?: mediaItems ?: emptyList()
+}
 
 @Serializable
 data class MediaStats(

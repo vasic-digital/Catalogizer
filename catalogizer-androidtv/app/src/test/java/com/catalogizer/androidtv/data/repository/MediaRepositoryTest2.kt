@@ -2,8 +2,10 @@ package com.catalogizer.androidtv.data.repository
 
 import com.catalogizer.androidtv.data.models.MediaItem
 import com.catalogizer.androidtv.data.models.MediaSearchRequest
+import com.catalogizer.androidtv.data.models.MediaSearchResponse
 import com.catalogizer.androidtv.data.remote.CatalogizerApi
 import io.mockk.*
+import okhttp3.ResponseBody.Companion.toResponseBody
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.test.runTest
@@ -42,7 +44,8 @@ class MediaRepositoryTest2 {
     @Test
     fun `searchMedia returns items on success`() = runTest {
         val items = listOf(testItem, testItem.copy(id = 2, title = "Movie 2"))
-        coEvery { mockApi.searchMedia(any()) } returns Response.success(items)
+        val searchResponse = MediaSearchResponse(items = items, total = items.size, limit = 20, offset = 0)
+        coEvery { mockApi.searchMedia(any()) } returns Response.success(searchResponse)
 
         val result = repository.searchMedia(MediaSearchRequest(query = "test")).first()
 
@@ -52,9 +55,9 @@ class MediaRepositoryTest2 {
 
     @Test
     fun `searchMedia returns empty list on API failure`() = runTest {
-        coEvery { mockApi.searchMedia(any()) } returns Response.error(
+        coEvery { mockApi.searchMedia(any()) } returns Response.error<MediaSearchResponse>(
             500,
-            okhttp3.ResponseBody.create(null, "Server error")
+            "Server error".toResponseBody(null)
         )
 
         val result = repository.searchMedia(MediaSearchRequest(query = "test")).first()
@@ -73,7 +76,7 @@ class MediaRepositoryTest2 {
 
     @Test
     fun `getMediaById returns item on success`() = runTest {
-        coEvery { mockApi.getMediaById(1L) } returns Response.success(testItem)
+        coEvery { mockApi.getEntityById(1L) } returns Response.success(testItem)
 
         val result = repository.getMediaById(1L).first()
 
@@ -83,9 +86,13 @@ class MediaRepositoryTest2 {
 
     @Test
     fun `getMediaById returns null on API failure`() = runTest {
+        coEvery { mockApi.getEntityById(1L) } returns Response.error(
+            404,
+            "Not found".toResponseBody(null)
+        )
         coEvery { mockApi.getMediaById(1L) } returns Response.error(
             404,
-            okhttp3.ResponseBody.create(null, "Not found")
+            "Not found".toResponseBody(null)
         )
 
         val result = repository.getMediaById(1L).first()
@@ -95,7 +102,7 @@ class MediaRepositoryTest2 {
 
     @Test
     fun `getMediaById returns null on exception`() = runTest {
-        coEvery { mockApi.getMediaById(1L) } throws RuntimeException("Network error")
+        coEvery { mockApi.getEntityById(1L) } throws RuntimeException("Network error")
 
         val result = repository.getMediaById(1L).first()
 
@@ -115,7 +122,7 @@ class MediaRepositoryTest2 {
     fun `updateWatchProgress throws on API failure`() = runTest {
         coEvery { mockApi.updateWatchProgress(any(), any()) } returns Response.error(
             500,
-            okhttp3.ResponseBody.create(null, "Server error")
+            "Server error".toResponseBody(null)
         )
 
         try {
@@ -139,7 +146,7 @@ class MediaRepositoryTest2 {
     fun `updateFavoriteStatus throws on API failure`() = runTest {
         coEvery { mockApi.updateFavoriteStatus(any(), any()) } returns Response.error(
             500,
-            okhttp3.ResponseBody.create(null, "Server error")
+            "Server error".toResponseBody(null)
         )
 
         try {
@@ -152,7 +159,8 @@ class MediaRepositoryTest2 {
 
     @Test
     fun `searchMedia passes correct params to API`() = runTest {
-        coEvery { mockApi.searchMedia(any()) } returns Response.success(emptyList())
+        val searchResponse = MediaSearchResponse(items = emptyList(), total = 0, limit = 50, offset = 10)
+        coEvery { mockApi.searchMedia(any()) } returns Response.success(searchResponse)
 
         val request = MediaSearchRequest(
             query = "inception",
@@ -165,7 +173,7 @@ class MediaRepositoryTest2 {
 
         coVerify {
             mockApi.searchMedia(match { params ->
-                params["q"] == "inception" &&
+                params["query"] == "inception" &&
                     params["media_type"] == "movie" &&
                     params["limit"] == "50" &&
                     params["offset"] == "10"

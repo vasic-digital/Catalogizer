@@ -247,17 +247,19 @@ func TestEnsureDirectoryPathExists_CreatesHierarchy(t *testing.T) {
 	`)
 	require.NoError(t, err)
 
-	parentID, err := ensureDirectoryPathExists(context.Background(), db, 1, "media/movies/2024/film.mp4", logger)
+	// ensureDirectoryPathExists receives a directory path (the caller uses filepath.Dir),
+	// so pass the parent directory, not the full file path.
+	parentID, err := ensureDirectoryPathExists(context.Background(), db, 1, "media/movies/2024", logger)
 	assert.NoError(t, err)
 	assert.NotNil(t, parentID)
 
 	var count int
 	err = db.QueryRow("SELECT COUNT(*) FROM files WHERE is_directory = 1").Scan(&count)
 	require.NoError(t, err)
-	assert.GreaterOrEqual(t, count, 3)
+	assert.GreaterOrEqual(t, count, 3) // media, movies, 2024
 
-	// Idempotent: calling again returns the same parent ID
-	parentID2, err := ensureDirectoryPathExists(context.Background(), db, 1, "media/movies/2024/another.mp4", logger)
+	// Idempotent: calling again with same directory returns the same parent ID
+	parentID2, err := ensureDirectoryPathExists(context.Background(), db, 1, "media/movies/2024", logger)
 	assert.NoError(t, err)
 	assert.NotNil(t, parentID2)
 	assert.Equal(t, *parentID, *parentID2)

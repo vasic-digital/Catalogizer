@@ -54,6 +54,11 @@ func (m *MockConversionService) GetSupportedFormats() *models.SupportedFormats {
 	return nil
 }
 
+func (m *MockConversionService) RetryJob(jobID int, userID int) error {
+	args := m.Called(jobID, userID)
+	return args.Error(0)
+}
+
 // MockAuthService is a mock for the auth service
 type MockAuthService struct {
 	mock.Mock

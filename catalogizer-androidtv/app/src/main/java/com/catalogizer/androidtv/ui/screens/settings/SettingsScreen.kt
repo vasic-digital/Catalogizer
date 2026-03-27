@@ -1,6 +1,7 @@
 package com.catalogizer.androidtv.ui.screens.settings
 
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.selection.selectable
@@ -12,6 +13,10 @@ import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.unit.dp
+import androidx.compose.material3.RadioButton
+import androidx.compose.material3.RadioButtonDefaults
+import androidx.compose.material3.Switch
+import androidx.compose.material3.SwitchDefaults
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.tv.foundation.lazy.list.TvLazyColumn
 import androidx.tv.material3.*
@@ -93,7 +98,9 @@ private fun ToggleRow(
 }
 
 /**
- * Section card with a visible section title for context (HELIX-011).
+ * Section container with a visible section title for context (HELIX-011).
+ * Uses a non-interactive Box instead of Card so that inner elements (toggles,
+ * radio buttons, chips) are individually focusable via DPAD navigation.
  */
 @OptIn(ExperimentalTvMaterial3Api::class)
 @Composable
@@ -102,23 +109,24 @@ private fun SettingsSection(
     modifier: Modifier = Modifier,
     content: @Composable ColumnScope.() -> Unit
 ) {
-    Card(
-        modifier = modifier.fillMaxWidth(),
-        onClick = {}
-    ) {
-        Column(
-            modifier = Modifier.padding(16.dp),
-            verticalArrangement = Arrangement.spacedBy(4.dp)
-        ) {
-            // Section title — white, bold, clearly visible (HELIX-011)
-            Text(
-                text = title,
-                style = MaterialTheme.typography.titleMedium, // 20sp
-                color = TextPrimary
+    Column(
+        modifier = modifier
+            .fillMaxWidth()
+            .background(
+                color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f),
+                shape = RoundedCornerShape(12.dp)
             )
-            Spacer(modifier = Modifier.height(8.dp))
-            content()
-        }
+            .padding(16.dp),
+        verticalArrangement = Arrangement.spacedBy(4.dp)
+    ) {
+        // Section title — white, bold, clearly visible (HELIX-011)
+        Text(
+            text = title,
+            style = MaterialTheme.typography.titleMedium, // 20sp
+            color = TextPrimary
+        )
+        Spacer(modifier = Modifier.height(8.dp))
+        content()
     }
 }
 

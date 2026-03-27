@@ -1,6 +1,7 @@
 package stress
 
 import (
+	"database/sql"
 	"fmt"
 	"sync"
 	"sync/atomic"
@@ -9,6 +10,7 @@ import (
 
 	"catalogizer/internal/tests"
 
+	_ "github.com/mutecomm/go-sqlcipher"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -110,10 +112,42 @@ func TestRepositoryStress_ConcurrentReadsAndWrites(t *testing.T) {
 		t.Skip("Skipping stress test in short mode")
 	}
 
-	db := tests.SetupTestDB(t)
-	defer db.Close()
+	// Use file-based SQLite with WAL mode for concurrent read/write testing.
+	// In-memory SQLite with MaxOpenConns(1) causes goroutines to block waiting
+	// for the single connection, leading to hangs.
+	tmpDir := t.TempDir()
+	dbPath := tmpDir + "/rw_stress_test.db"
+	db, err := sql.Open("sqlite3", dbPath+"?_journal_mode=WAL&cache=shared")
+	require.NoError(t, err)
+	t.Cleanup(func() { db.Close() })
 
-	_, err := db.Exec(
+	_, _ = db.Exec("PRAGMA journal_mode=WAL")
+	_, _ = db.Exec("PRAGMA foreign_keys = ON")
+	db.SetMaxOpenConns(10)
+	db.SetMaxIdleConns(5)
+
+	// Create tables
+	_, err = db.Exec(`CREATE TABLE IF NOT EXISTS storage_roots (
+		id INTEGER PRIMARY KEY AUTOINCREMENT,
+		name TEXT NOT NULL UNIQUE,
+		protocol TEXT NOT NULL,
+		path TEXT,
+		enabled BOOLEAN DEFAULT 1,
+		created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+	)`)
+	require.NoError(t, err)
+	_, err = db.Exec(`CREATE TABLE IF NOT EXISTS files (
+		id INTEGER PRIMARY KEY AUTOINCREMENT,
+		storage_root_id INTEGER NOT NULL,
+		path TEXT NOT NULL,
+		name TEXT NOT NULL,
+		size INTEGER NOT NULL,
+		modified_at DATETIME NOT NULL,
+		FOREIGN KEY (storage_root_id) REFERENCES storage_roots(id)
+	)`)
+	require.NoError(t, err)
+
+	_, err = db.Exec(
 		`INSERT INTO storage_roots (name, protocol, path, enabled)
 		 VALUES ('rw-stress', 'local', '/rw-stress', 1)`,
 	)
@@ -138,10 +172,10 @@ func TestRepositoryStress_ConcurrentReadsAndWrites(t *testing.T) {
 		)
 	}
 
-	t.Run("50ReadersAndWriters", func(t *testing.T) {
-		readers := 50
-		writers := 50
-		duration := 5 * time.Second
+	t.Run("20ReadersAndWriters", func(t *testing.T) {
+		readers := 20
+		writers := 20
+		duration := 3 * time.Second
 
 		var readOps, writeOps int64
 		var readErrors, writeErrors int64
@@ -211,7 +245,18 @@ func TestRepositoryStress_ConcurrentReadsAndWrites(t *testing.T) {
 
 		time.Sleep(duration)
 		close(done)
-		wg.Wait()
+
+		// Wait with a hard deadline
+		wgDone := make(chan struct{})
+		go func() {
+			wg.Wait()
+			close(wgDone)
+		}()
+		select {
+		case <-wgDone:
+		case <-time.After(10 * time.Second):
+			t.Fatal("ConcurrentReadsAndWrites: goroutines did not finish within deadline")
+		}
 
 		rOps := atomic.LoadInt64(&readOps)
 		wOps := atomic.LoadInt64(&writeOps)

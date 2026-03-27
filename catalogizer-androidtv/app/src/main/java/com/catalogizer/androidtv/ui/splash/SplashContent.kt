@@ -56,7 +56,7 @@ fun SplashContent(
             .fillMaxSize()
             .background(
                 Brush.verticalGradient(
-                    colors = listOf(Color(0xFF0F172A), Color(0xFF1E293B))
+                    colors = listOf(Color(0xFF101214), Color(0xFF1A1C1E))
                 )
             )
     ) {

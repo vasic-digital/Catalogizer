@@ -627,13 +627,15 @@ func ensureDirectoryPathExists(ctx context.Context, db *database.DB, storageRoot
 		return nil, nil
 	}
 
-	parentPath := filepath.Dir(fullPath)
-	if parentPath == "." || parentPath == "/" || parentPath == "" {
+	// If the path has no directory separator, it's a single filename — no directories to create.
+	if !strings.Contains(fullPath, "/") {
 		return nil, nil
 	}
 
-	// Split parentPath into components
-	components := strings.Split(parentPath, "/")
+	// Split fullPath into components and create each directory in the chain.
+	// fullPath is the parent directory path of the file being inserted (e.g. "media/movies"),
+	// so we iterate over ALL its components to ensure each directory exists.
+	components := strings.Split(fullPath, "/")
 	var currentPath string
 	var parentID *int64 = nil
 

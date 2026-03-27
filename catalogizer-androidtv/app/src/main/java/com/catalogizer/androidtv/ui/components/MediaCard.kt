@@ -18,6 +18,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
@@ -38,7 +39,9 @@ fun MediaCard(
 ) {
     Card(
         onClick = onClick,
-        modifier = modifier.aspectRatio(2f/3f),
+        modifier = modifier
+            .aspectRatio(2f/3f)
+            .onFocusChanged { if (it.isFocused) onFocus() },
         scale = CardDefaults.scale(
             scale = if (isFocused) 1.05f else 1.0f
         ),

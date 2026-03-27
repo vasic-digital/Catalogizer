@@ -131,6 +131,10 @@ class AuthInterceptorTest {
             .build()
         client.newCall(request).execute()
 
+        // refreshToken is launched asynchronously on Dispatchers.IO, so we need
+        // to wait briefly for the coroutine to execute before verifying
+        Thread.sleep(500)
+
         coVerify { mockAuthRepository.refreshToken() }
     }
 

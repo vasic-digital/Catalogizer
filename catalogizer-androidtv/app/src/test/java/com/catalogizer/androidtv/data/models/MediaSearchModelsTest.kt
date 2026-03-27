@@ -46,9 +46,11 @@ class MediaSearchModelsTest {
 
         val jsonStr = json.encodeToString(request)
 
-        assertTrue(jsonStr.contains("\"media_type\":\"movie\""))
-        assertTrue(jsonStr.contains("\"year_min\":2010"))
-        assertTrue(jsonStr.contains("\"sort_by\":\"rating\""))
+        // kotlinx.serialization uses Kotlin property names (camelCase) since
+        // the class uses Gson @SerializedName annotations (not kotlinx @SerialName).
+        assertTrue(jsonStr.contains("\"mediaType\":\"movie\""))
+        assertTrue(jsonStr.contains("\"yearMin\":2010"))
+        assertTrue(jsonStr.contains("\"sortBy\":\"rating\""))
     }
 
     @Test
@@ -69,12 +71,14 @@ class MediaSearchModelsTest {
 
     @Test
     fun `MediaStats deserializes correctly`() {
+        // kotlinx.serialization uses Kotlin property names (camelCase) since
+        // the class uses Gson @SerializedName annotations (not kotlinx @SerialName).
         val jsonStr = """{
-            "total_items": 500,
-            "by_type": {"movie": 200, "music": 300},
-            "by_quality": {"1080p": 300, "720p": 200},
-            "total_size": 5000000000000,
-            "recent_additions": 25
+            "totalItems": 500,
+            "byType": {"movie": 200, "music": 300},
+            "byQuality": {"1080p": 300, "720p": 200},
+            "totalSize": 5000000000000,
+            "recentAdditions": 25
         }"""
 
         val stats = json.decodeFromString<MediaStats>(jsonStr)
