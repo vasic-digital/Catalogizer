@@ -9,6 +9,15 @@ import com.catalogizer.androidtv.data.repository.MediaRepository
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 
+/**
+ * Represents a single content rail on the home screen.
+ * Each rail has a title and a list of media items.
+ */
+data class ContentRail(
+    val title: String,
+    val items: List<MediaItem> = emptyList()
+)
+
 data class HomeUiState(
     val isLoading: Boolean = false,
     val error: String? = null,
@@ -18,7 +27,21 @@ data class HomeUiState(
     val tvShows: List<MediaItem> = emptyList(),
     val music: List<MediaItem> = emptyList(),
     val documents: List<MediaItem> = emptyList(),
-    val featuredItem: MediaItem? = null
+    val featuredItem: MediaItem? = null,
+    // Category-specific rails: recently added
+    val recentMovies: List<MediaItem> = emptyList(),
+    val recentMusicAlbums: List<MediaItem> = emptyList(),
+    val recentTvShows: List<MediaItem> = emptyList(),
+    val recentGames: List<MediaItem> = emptyList(),
+    val recentConcerts: List<MediaItem> = emptyList(),
+    val recentBooks: List<MediaItem> = emptyList(),
+    val recentSoftware: List<MediaItem> = emptyList(),
+    // Recently played rails
+    val playedMovies: List<MediaItem> = emptyList(),
+    val playedMusicAlbums: List<MediaItem> = emptyList(),
+    val playedTvShows: List<MediaItem> = emptyList(),
+    val playedGames: List<MediaItem> = emptyList(),
+    val playedConcerts: List<MediaItem> = emptyList()
 )
 
 class HomeViewModel(
@@ -41,6 +64,22 @@ class HomeViewModel(
                 val music = loadMusic()
                 val documents = loadDocuments()
 
+                // Category-specific "Recently Added" rails
+                val recentMovies = loadRecentByType("movie")
+                val recentMusicAlbums = loadRecentByType("music_album")
+                val recentTvShows = loadRecentByType("tv_show")
+                val recentGames = loadRecentByType("game")
+                val recentConcerts = loadRecentByType("concert")
+                val recentBooks = loadRecentByType("book")
+                val recentSoftware = loadRecentByType("software")
+
+                // "Recently Played" rails
+                val playedMovies = loadRecentlyPlayedByType("movie")
+                val playedMusicAlbums = loadRecentlyPlayedByType("music_album")
+                val playedTvShows = loadRecentlyPlayedByType("tv_show")
+                val playedGames = loadRecentlyPlayedByType("game")
+                val playedConcerts = loadRecentlyPlayedByType("concert")
+
                 // Set featured item from recently added or continue watching
                 val featuredItem = continueWatching.firstOrNull() ?: recentlyAdded.firstOrNull()
 
@@ -53,7 +92,19 @@ class HomeViewModel(
                         tvShows = tvShows,
                         music = music,
                         documents = documents,
-                        featuredItem = featuredItem
+                        featuredItem = featuredItem,
+                        recentMovies = recentMovies,
+                        recentMusicAlbums = recentMusicAlbums,
+                        recentTvShows = recentTvShows,
+                        recentGames = recentGames,
+                        recentConcerts = recentConcerts,
+                        recentBooks = recentBooks,
+                        recentSoftware = recentSoftware,
+                        playedMovies = playedMovies,
+                        playedMusicAlbums = playedMusicAlbums,
+                        playedTvShows = playedTvShows,
+                        playedGames = playedGames,
+                        playedConcerts = playedConcerts
                     )
                 }
             } catch (e: Exception) {
@@ -137,6 +188,36 @@ class HomeViewModel(
                     limit = 20
                 )
             ).first()
+        } catch (e: Exception) {
+            emptyList()
+        }
+    }
+
+    /**
+     * Load recently added items for a specific entity type via the browse endpoint.
+     */
+    private suspend fun loadRecentByType(type: String): List<MediaItem> {
+        return try {
+            mediaRepository.browseEntities(type, limit = 20, sortBy = "created", sortOrder = "desc").first()
+        } catch (e: Exception) {
+            emptyList()
+        }
+    }
+
+    /**
+     * Load recently played items for a specific entity type.
+     * Uses the search endpoint with last_played sort — items with watch progress.
+     */
+    private suspend fun loadRecentlyPlayedByType(type: String): List<MediaItem> {
+        return try {
+            mediaRepository.searchMedia(
+                MediaSearchRequest(
+                    mediaType = type,
+                    sortBy = "updated_at",
+                    sortOrder = "desc",
+                    limit = 20
+                )
+            ).first().filter { it.hasWatchProgress }
         } catch (e: Exception) {
             emptyList()
         }

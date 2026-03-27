@@ -23,6 +23,17 @@ import com.catalogizer.androidtv.ui.components.MediaCard
 import com.catalogizer.androidtv.ui.components.TopBar
 import com.catalogizer.androidtv.ui.viewmodel.HomeViewModel
 
+/**
+ * Internal data holder for building the home screen rail list dynamically.
+ * @param navigateToPlayer true for "Continue Watching" / "Recently Played" rails
+ *                         (clicking opens the player directly).
+ */
+private data class ContentRailData(
+    val title: String,
+    val items: List<MediaItem>,
+    val navigateToPlayer: Boolean = false
+)
+
 @OptIn(ExperimentalTvMaterial3Api::class)
 @Composable
 fun HomeScreen(
@@ -89,7 +100,11 @@ fun HomeScreen(
 
             uiState.continueWatching.isEmpty() && uiState.recentlyAdded.isEmpty() &&
                 uiState.movies.isEmpty() && uiState.tvShows.isEmpty() &&
-                uiState.music.isEmpty() && uiState.documents.isEmpty() -> {
+                uiState.music.isEmpty() && uiState.documents.isEmpty() &&
+                uiState.recentMovies.isEmpty() && uiState.recentMusicAlbums.isEmpty() &&
+                uiState.recentTvShows.isEmpty() && uiState.recentGames.isEmpty() &&
+                uiState.recentConcerts.isEmpty() && uiState.recentBooks.isEmpty() &&
+                uiState.recentSoftware.isEmpty() -> {
                 Box(
                     modifier = Modifier.fillMaxSize(),
                     contentAlignment = Alignment.Center
@@ -117,80 +132,64 @@ fun HomeScreen(
             }
 
             else -> {
+                // Build the list of content rails dynamically — only non-empty rails are shown
+                val rails = buildList {
+                    if (uiState.continueWatching.isNotEmpty())
+                        add(ContentRailData("Continue Watching", uiState.continueWatching, navigateToPlayer = true))
+                    if (uiState.recentlyAdded.isNotEmpty())
+                        add(ContentRailData("Recently Added", uiState.recentlyAdded))
+
+                    // Recently Added by category
+                    if (uiState.recentMovies.isNotEmpty())
+                        add(ContentRailData("Recently Added Movies", uiState.recentMovies))
+                    if (uiState.recentMusicAlbums.isNotEmpty())
+                        add(ContentRailData("Recently Added Music Albums", uiState.recentMusicAlbums))
+                    if (uiState.recentTvShows.isNotEmpty())
+                        add(ContentRailData("Recently Added TV Shows", uiState.recentTvShows))
+                    if (uiState.recentGames.isNotEmpty())
+                        add(ContentRailData("Recently Added Games", uiState.recentGames))
+                    if (uiState.recentConcerts.isNotEmpty())
+                        add(ContentRailData("Recently Added Concerts", uiState.recentConcerts))
+                    if (uiState.recentBooks.isNotEmpty())
+                        add(ContentRailData("Recently Added Books", uiState.recentBooks))
+                    if (uiState.recentSoftware.isNotEmpty())
+                        add(ContentRailData("Recently Added Software", uiState.recentSoftware))
+
+                    // Recently Played by category
+                    if (uiState.playedMovies.isNotEmpty())
+                        add(ContentRailData("Recently Played Movies", uiState.playedMovies, navigateToPlayer = true))
+                    if (uiState.playedMusicAlbums.isNotEmpty())
+                        add(ContentRailData("Recently Played Music Albums", uiState.playedMusicAlbums, navigateToPlayer = true))
+                    if (uiState.playedTvShows.isNotEmpty())
+                        add(ContentRailData("Recently Played TV Shows", uiState.playedTvShows, navigateToPlayer = true))
+                    if (uiState.playedGames.isNotEmpty())
+                        add(ContentRailData("Recently Played Games", uiState.playedGames, navigateToPlayer = true))
+                    if (uiState.playedConcerts.isNotEmpty())
+                        add(ContentRailData("Recently Played Concerts", uiState.playedConcerts, navigateToPlayer = true))
+
+                    // Top-rated category rails (original rails)
+                    if (uiState.movies.isNotEmpty())
+                        add(ContentRailData("Top Rated Movies", uiState.movies))
+                    if (uiState.tvShows.isNotEmpty())
+                        add(ContentRailData("Top Rated TV Shows", uiState.tvShows))
+                    if (uiState.music.isNotEmpty())
+                        add(ContentRailData("Music", uiState.music))
+                    if (uiState.documents.isNotEmpty())
+                        add(ContentRailData("Documents", uiState.documents))
+                }
+
                 TvLazyColumn(
                     modifier = Modifier.fillMaxSize(),
                     verticalArrangement = Arrangement.spacedBy(24.dp)
                 ) {
-                    // Continue Watching Section
-                    if (uiState.continueWatching.isNotEmpty()) {
-                        item {
-                            MediaSection(
-                                title = "Continue Watching",
-                                items = uiState.continueWatching,
-                                onItemClick = onNavigateToPlayer,
-                                onItemFocus = { /* Handle focus */ }
-                            )
-                        }
-                    }
-
-                    // Recently Added Section
-                    if (uiState.recentlyAdded.isNotEmpty()) {
-                        item {
-                            MediaSection(
-                                title = "Recently Added",
-                                items = uiState.recentlyAdded,
-                                onItemClick = onNavigateToMediaDetail,
-                                onItemFocus = { /* Handle focus */ }
-                            )
-                        }
-                    }
-
-                    // Movies Section
-                    if (uiState.movies.isNotEmpty()) {
-                        item {
-                            MediaSection(
-                                title = "Movies",
-                                items = uiState.movies,
-                                onItemClick = onNavigateToMediaDetail,
-                                onItemFocus = { /* Handle focus */ }
-                            )
-                        }
-                    }
-
-                    // TV Shows Section
-                    if (uiState.tvShows.isNotEmpty()) {
-                        item {
-                            MediaSection(
-                                title = "TV Shows",
-                                items = uiState.tvShows,
-                                onItemClick = onNavigateToMediaDetail,
-                                onItemFocus = { /* Handle focus */ }
-                            )
-                        }
-                    }
-
-                    // Music Section
-                    if (uiState.music.isNotEmpty()) {
-                        item {
-                            MediaSection(
-                                title = "Music",
-                                items = uiState.music,
-                                onItemClick = onNavigateToMediaDetail,
-                                onItemFocus = { /* Handle focus */ }
-                            )
-                        }
-                    }
-
-                    // Documents Section
-                    if (uiState.documents.isNotEmpty()) {
-                        item {
-                            MediaSection(
-                                title = "Documents",
-                                items = uiState.documents,
-                                onItemClick = onNavigateToMediaDetail,
-                                onItemFocus = { /* Handle focus */ }
-                            )
-                        }
+                    items(rails.size) { index ->
+                        val rail = rails[index]
+                        MediaSection(
+                            title = rail.title,
+                            items = rail.items,
+                            onItemClick = if (rail.navigateToPlayer) onNavigateToPlayer else onNavigateToMediaDetail,
+                            onItemFocus = { /* Handle focus */ }
+                        )
                     }
                 }
             }

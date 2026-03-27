@@ -361,7 +361,7 @@ fun CompactMediaCard(
 private fun mediaTypeIcon(type: String?) = when (type?.lowercase()) {
     "movie", "video" -> Icons.Default.Movie
     "tv_show", "tv_season", "tv_episode" -> Icons.Default.Tv
-    "music", "music_album", "music_artist", "song", "audio", "mp3" -> Icons.Default.MusicNote
+    "music", "music_album", "music_artist", "song", "audio", "mp3", "concert" -> Icons.Default.MusicNote
     "game", "software" -> Icons.Default.Gamepad
     "book", "comic", "document", "ebook" -> Icons.Default.Book
     else -> Icons.Default.Album
@@ -371,6 +371,7 @@ private fun mediaTypeGradient(type: String?): List<Color> = when (type?.lowercas
     "movie", "video" -> listOf(Color(0xFF1A237E), Color(0xFF283593))      // Deep blue
     "tv_show", "tv_season", "tv_episode" -> listOf(Color(0xFF4A148C), Color(0xFF6A1B9A))  // Purple
     "music", "music_album", "song", "audio", "mp3" -> listOf(Color(0xFF1B5E20), Color(0xFF2E7D32))  // Green
+    "concert" -> listOf(Color(0xFF880E4F), Color(0xFFAD1457))             // Pink/Magenta
     "game", "software" -> listOf(Color(0xFFE65100), Color(0xFFF57C00))    // Orange
     "book", "comic", "document", "ebook" -> listOf(Color(0xFF4E342E), Color(0xFF6D4C41))  // Brown
     "image", "jpg", "png" -> listOf(Color(0xFF00695C), Color(0xFF00897B)) // Teal

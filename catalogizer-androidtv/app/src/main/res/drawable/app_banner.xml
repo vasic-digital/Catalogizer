@@ -1,4 +1,21 @@
 <?xml version="1.0" encoding="utf-8"?>
-<bitmap xmlns:android="http://schemas.android.com/apk/res/android"
-    android:src="@mipmap/ic_launcher"
-    android:gravity="center" />
+<layer-list xmlns:android="http://schemas.android.com/apk/res/android">
+    <!-- Dark gray background (not black) for launcher card visibility.
+         Standard Android TV banner size is 320x180dp. -->
+    <item>
+        <shape android:shape="rectangle">
+            <size android:width="320dp" android:height="180dp" />
+            <solid android:color="#FF303030" />
+            <corners android:radius="4dp" />
+        </shape>
+    </item>
+    <!-- Centered app icon -->
+    <item
+        android:gravity="center"
+        android:width="96dp"
+        android:height="96dp">
+        <bitmap
+            android:src="@mipmap/ic_launcher"
+            android:gravity="center" />
+    </item>
+</layer-list>
