@@ -21,7 +21,7 @@ export interface CollectionItemsResponse {
 }
 
 class CollectionsApi {
-  private baseUrl = '/api/collections';
+  private baseUrl = '/collections';
 
   private async tryApiCall<T>(apiCall: () => Promise<T>, mockCall: () => Promise<T>): Promise<T> {
     if (shouldUseMockCollections()) {

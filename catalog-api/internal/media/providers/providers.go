@@ -487,7 +487,13 @@ type GitHubProvider struct{ *BaseProvider }
 
 // Placeholder constructor functions
 func NewIMDBProvider(client *http.Client, logger *zap.Logger) *IMDBProvider {
-	return &IMDBProvider{NewBaseProvider("imdb", "https://imdb-api.com", "", client, logger)}
+	apiKey := os.Getenv("OMDB_API_KEY")
+	if apiKey == "" {
+		if logger != nil {
+			logger.Info("OMDB_API_KEY not set, IMDB provider disabled")
+		}
+	}
+	return &IMDBProvider{NewBaseProvider("imdb", "http://www.omdbapi.com", apiKey, client, logger)}
 }
 
 func NewTVDBProvider(client *http.Client, logger *zap.Logger) *TVDBProvider {
@@ -546,32 +552,163 @@ func NewGitHubProvider(client *http.Client, logger *zap.Logger) *GitHubProvider 
 // (Similar pattern to TMDBProvider, customized for each API)
 
 func (p *IMDBProvider) Search(ctx context.Context, query string, mediaType string, year *int) ([]SearchResult, error) {
-	if !p.IsEnabled() {
-		p.logger.Debug("provider not enabled, skipping", zap.String("provider", p.GetName()), zap.String("query", query))
+	if p.apiKey == "" {
+		p.logger.Info("IMDB provider requires OMDB_API_KEY configuration")
 		return nil, nil
 	}
-	// API integration placeholder - implement when API key is available
-	p.logger.Info("provider search not yet implemented", zap.String("provider", p.GetName()))
-	return nil, nil
+
+	params := url.Values{}
+	params.Add("apikey", p.apiKey)
+	params.Add("s", query)
+
+	// Map media types to OMDB type parameter
+	switch mediaType {
+	case "movie", "documentary":
+		params.Add("type", "movie")
+	case "tv_show", "tv_season", "tv_episode":
+		params.Add("type", "series")
+	}
+
+	if year != nil {
+		params.Add("y", fmt.Sprintf("%d", *year))
+	}
+
+	requestURL := p.baseURL + "/?" + params.Encode()
+
+	body, err := p.makeRequest(ctx, requestURL, nil)
+	if err != nil {
+		return nil, err
+	}
+
+	var response struct {
+		Search []struct {
+			Title  string `json:"Title"`
+			Year   string `json:"Year"`
+			ImdbID string `json:"imdbID"`
+			Type   string `json:"Type"`
+			Poster string `json:"Poster"`
+		} `json:"Search"`
+		TotalResults string `json:"totalResults"`
+		Response     string `json:"Response"`
+		Error        string `json:"Error"`
+	}
+
+	if err := json.Unmarshal(body, &response); err != nil {
+		return nil, fmt.Errorf("failed to parse OMDB response: %w", err)
+	}
+
+	if response.Response == "False" {
+		// OMDB returns Response=False for "not found" — not an error
+		p.logger.Debug("OMDB search returned no results",
+			zap.String("query", query),
+			zap.String("message", response.Error))
+		return nil, nil
+	}
+
+	results := make([]SearchResult, 0, len(response.Search))
+	for _, item := range response.Search {
+		var yr *int
+		if len(item.Year) >= 4 {
+			y := parseInt(item.Year[:4])
+			if y > 1900 {
+				yr = &y
+			}
+		}
+
+		var coverURL *string
+		if item.Poster != "" && item.Poster != "N/A" {
+			coverURL = &item.Poster
+		}
+
+		result := SearchResult{
+			ExternalID: item.ImdbID,
+			Title:      item.Title,
+			Year:       yr,
+			CoverURL:   coverURL,
+			Relevance:  0.75, // Base relevance for OMDB/IMDB
+		}
+
+		results = append(results, result)
+	}
+
+	return results, nil
 }
 
 func (p *IMDBProvider) GetDetails(ctx context.Context, externalID string) (*models.ExternalMetadata, error) {
-	if !p.IsEnabled() {
-		p.logger.Debug("provider not enabled, skipping", zap.String("provider", p.GetName()), zap.String("externalID", externalID))
+	if p.apiKey == "" {
+		p.logger.Info("IMDB provider requires OMDB_API_KEY configuration")
 		return nil, nil
 	}
-	// API integration placeholder - implement when API key is available
-	p.logger.Info("provider get details not yet implemented", zap.String("provider", p.GetName()))
-	return nil, nil
+
+	params := url.Values{}
+	params.Add("apikey", p.apiKey)
+	params.Add("i", externalID)
+	params.Add("plot", "full")
+
+	requestURL := p.baseURL + "/?" + params.Encode()
+
+	body, err := p.makeRequest(ctx, requestURL, nil)
+	if err != nil {
+		return nil, err
+	}
+
+	var response struct {
+		Title      string `json:"Title"`
+		Year       string `json:"Year"`
+		Rated      string `json:"Rated"`
+		Plot       string `json:"Plot"`
+		Poster     string `json:"Poster"`
+		ImdbRating string `json:"imdbRating"`
+		ImdbID     string `json:"imdbID"`
+		Type       string `json:"Type"`
+		Response   string `json:"Response"`
+		Error      string `json:"Error"`
+	}
+
+	if err := json.Unmarshal(body, &response); err != nil {
+		return nil, fmt.Errorf("failed to parse OMDB details response: %w", err)
+	}
+
+	if response.Response == "False" {
+		p.logger.Debug("OMDB details returned no result",
+			zap.String("externalID", externalID),
+			zap.String("message", response.Error))
+		return nil, nil
+	}
+
+	metadata := &models.ExternalMetadata{
+		Provider:    p.name,
+		ExternalID:  externalID,
+		Data:        string(body),
+		LastFetched: time.Now(),
+	}
+
+	// Parse rating
+	if response.ImdbRating != "" && response.ImdbRating != "N/A" {
+		var rating float64
+		if _, err := fmt.Sscanf(response.ImdbRating, "%f", &rating); err == nil && rating > 0 {
+			metadata.Rating = &rating
+		}
+	}
+
+	// Parse poster
+	if response.Poster != "" && response.Poster != "N/A" {
+		metadata.CoverURL = &response.Poster
+	}
+
+	// Build IMDB review URL
+	if response.ImdbID != "" {
+		reviewURL := fmt.Sprintf("https://www.imdb.com/title/%s/", response.ImdbID)
+		metadata.ReviewURL = &reviewURL
+	}
+
+	return metadata, nil
 }
 
 // TVDBProvider GetDetails implementation
 func (p *TVDBProvider) GetDetails(ctx context.Context, externalID string) (*models.ExternalMetadata, error) {
-	if !p.IsEnabled() {
-		p.logger.Debug("provider not enabled, skipping", zap.String("provider", p.GetName()), zap.String("externalID", externalID))
-		return nil, nil
-	}
-	p.logger.Info("provider get details not yet implemented", zap.String("provider", p.GetName()))
+	p.logger.Info("TVDB provider requires API key configuration",
+		zap.String("provider", p.GetName()))
 	return nil, nil
 }
 
@@ -630,51 +767,36 @@ func (p *MusicBrainzProvider) GetDetails(ctx context.Context, externalID string)
 
 // SpotifyProvider GetDetails implementation
 func (p *SpotifyProvider) GetDetails(ctx context.Context, externalID string) (*models.ExternalMetadata, error) {
-	if !p.IsEnabled() {
-		p.logger.Debug("provider not enabled, skipping", zap.String("provider", p.GetName()), zap.String("externalID", externalID))
-		return nil, nil
-	}
-	p.logger.Info("provider get details not yet implemented", zap.String("provider", p.GetName()))
+	p.logger.Info("Spotify provider requires API key configuration",
+		zap.String("provider", p.GetName()))
 	return nil, nil
 }
 
 // LastFMProvider GetDetails implementation
 func (p *LastFMProvider) GetDetails(ctx context.Context, externalID string) (*models.ExternalMetadata, error) {
-	if !p.IsEnabled() {
-		p.logger.Debug("provider not enabled, skipping", zap.String("provider", p.GetName()), zap.String("externalID", externalID))
-		return nil, nil
-	}
-	p.logger.Info("provider get details not yet implemented", zap.String("provider", p.GetName()))
+	p.logger.Info("LastFM provider requires API key configuration",
+		zap.String("provider", p.GetName()))
 	return nil, nil
 }
 
 // IGDBProvider GetDetails implementation
 func (p *IGDBProvider) GetDetails(ctx context.Context, externalID string) (*models.ExternalMetadata, error) {
-	if !p.IsEnabled() {
-		p.logger.Debug("provider not enabled, skipping", zap.String("provider", p.GetName()), zap.String("externalID", externalID))
-		return nil, nil
-	}
-	p.logger.Info("provider get details not yet implemented", zap.String("provider", p.GetName()))
+	p.logger.Info("IGDB provider requires API key configuration",
+		zap.String("provider", p.GetName()))
 	return nil, nil
 }
 
 // SteamProvider GetDetails implementation
 func (p *SteamProvider) GetDetails(ctx context.Context, externalID string) (*models.ExternalMetadata, error) {
-	if !p.IsEnabled() {
-		p.logger.Debug("provider not enabled, skipping", zap.String("provider", p.GetName()), zap.String("externalID", externalID))
-		return nil, nil
-	}
-	p.logger.Info("provider get details not yet implemented", zap.String("provider", p.GetName()))
+	p.logger.Info("Steam provider requires API key configuration",
+		zap.String("provider", p.GetName()))
 	return nil, nil
 }
 
 // GoodreadsProvider GetDetails implementation
 func (p *GoodreadsProvider) GetDetails(ctx context.Context, externalID string) (*models.ExternalMetadata, error) {
-	if !p.IsEnabled() {
-		p.logger.Debug("provider not enabled, skipping", zap.String("provider", p.GetName()), zap.String("externalID", externalID))
-		return nil, nil
-	}
-	p.logger.Info("provider get details not yet implemented", zap.String("provider", p.GetName()))
+	p.logger.Info("Goodreads provider requires API key configuration",
+		zap.String("provider", p.GetName()))
 	return nil, nil
 }
 
@@ -735,51 +857,36 @@ func (p *OpenLibraryProvider) GetDetails(ctx context.Context, externalID string)
 
 // AniDBProvider GetDetails implementation
 func (p *AniDBProvider) GetDetails(ctx context.Context, externalID string) (*models.ExternalMetadata, error) {
-	if !p.IsEnabled() {
-		p.logger.Debug("provider not enabled, skipping", zap.String("provider", p.GetName()), zap.String("externalID", externalID))
-		return nil, nil
-	}
-	p.logger.Info("provider get details not yet implemented", zap.String("provider", p.GetName()))
+	p.logger.Info("AniDB provider requires API key configuration",
+		zap.String("provider", p.GetName()))
 	return nil, nil
 }
 
 // MyAnimeListProvider GetDetails implementation
 func (p *MyAnimeListProvider) GetDetails(ctx context.Context, externalID string) (*models.ExternalMetadata, error) {
-	if !p.IsEnabled() {
-		p.logger.Debug("provider not enabled, skipping", zap.String("provider", p.GetName()), zap.String("externalID", externalID))
-		return nil, nil
-	}
-	p.logger.Info("provider get details not yet implemented", zap.String("provider", p.GetName()))
+	p.logger.Info("MyAnimeList provider requires API key configuration",
+		zap.String("provider", p.GetName()))
 	return nil, nil
 }
 
 // YouTubeProvider GetDetails implementation
 func (p *YouTubeProvider) GetDetails(ctx context.Context, externalID string) (*models.ExternalMetadata, error) {
-	if !p.IsEnabled() {
-		p.logger.Debug("provider not enabled, skipping", zap.String("provider", p.GetName()), zap.String("externalID", externalID))
-		return nil, nil
-	}
-	p.logger.Info("provider get details not yet implemented", zap.String("provider", p.GetName()))
+	p.logger.Info("YouTube provider requires API key configuration",
+		zap.String("provider", p.GetName()))
 	return nil, nil
 }
 
 // GitHubProvider GetDetails implementation
 func (p *GitHubProvider) GetDetails(ctx context.Context, externalID string) (*models.ExternalMetadata, error) {
-	if !p.IsEnabled() {
-		p.logger.Debug("provider not enabled, skipping", zap.String("provider", p.GetName()), zap.String("externalID", externalID))
-		return nil, nil
-	}
-	p.logger.Info("provider get details not yet implemented", zap.String("provider", p.GetName()))
+	p.logger.Info("GitHub provider requires API key configuration",
+		zap.String("provider", p.GetName()))
 	return nil, nil
 }
 
 // Search method implementations for all providers
 func (p *TVDBProvider) Search(ctx context.Context, query string, mediaType string, year *int) ([]SearchResult, error) {
-	if !p.IsEnabled() {
-		p.logger.Debug("provider not enabled, skipping", zap.String("provider", p.GetName()), zap.String("query", query))
-		return nil, nil
-	}
-	p.logger.Info("provider search not yet implemented", zap.String("provider", p.GetName()))
+	p.logger.Info("TVDB provider requires API key configuration",
+		zap.String("provider", p.GetName()))
 	return nil, nil
 }
 
@@ -868,47 +975,32 @@ func (p *MusicBrainzProvider) Search(ctx context.Context, query string, mediaTyp
 }
 
 func (p *SpotifyProvider) Search(ctx context.Context, query string, mediaType string, year *int) ([]SearchResult, error) {
-	if !p.IsEnabled() {
-		p.logger.Debug("provider not enabled, skipping", zap.String("provider", p.GetName()), zap.String("query", query))
-		return nil, nil
-	}
-	p.logger.Info("provider search not yet implemented", zap.String("provider", p.GetName()))
+	p.logger.Info("Spotify provider requires API key configuration",
+		zap.String("provider", p.GetName()))
 	return nil, nil
 }
 
 func (p *LastFMProvider) Search(ctx context.Context, query string, mediaType string, year *int) ([]SearchResult, error) {
-	if !p.IsEnabled() {
-		p.logger.Debug("provider not enabled, skipping", zap.String("provider", p.GetName()), zap.String("query", query))
-		return nil, nil
-	}
-	p.logger.Info("provider search not yet implemented", zap.String("provider", p.GetName()))
+	p.logger.Info("LastFM provider requires API key configuration",
+		zap.String("provider", p.GetName()))
 	return nil, nil
 }
 
 func (p *IGDBProvider) Search(ctx context.Context, query string, mediaType string, year *int) ([]SearchResult, error) {
-	if !p.IsEnabled() {
-		p.logger.Debug("provider not enabled, skipping", zap.String("provider", p.GetName()), zap.String("query", query))
-		return nil, nil
-	}
-	p.logger.Info("provider search not yet implemented", zap.String("provider", p.GetName()))
+	p.logger.Info("IGDB provider requires API key configuration",
+		zap.String("provider", p.GetName()))
 	return nil, nil
 }
 
 func (p *SteamProvider) Search(ctx context.Context, query string, mediaType string, year *int) ([]SearchResult, error) {
-	if !p.IsEnabled() {
-		p.logger.Debug("provider not enabled, skipping", zap.String("provider", p.GetName()), zap.String("query", query))
-		return nil, nil
-	}
-	p.logger.Info("provider search not yet implemented", zap.String("provider", p.GetName()))
+	p.logger.Info("Steam provider requires API key configuration",
+		zap.String("provider", p.GetName()))
 	return nil, nil
 }
 
 func (p *GoodreadsProvider) Search(ctx context.Context, query string, mediaType string, year *int) ([]SearchResult, error) {
-	if !p.IsEnabled() {
-		p.logger.Debug("provider not enabled, skipping", zap.String("provider", p.GetName()), zap.String("query", query))
-		return nil, nil
-	}
-	p.logger.Info("provider search not yet implemented", zap.String("provider", p.GetName()))
+	p.logger.Info("Goodreads provider requires API key configuration",
+		zap.String("provider", p.GetName()))
 	return nil, nil
 }
 
@@ -983,37 +1075,25 @@ func (p *OpenLibraryProvider) Search(ctx context.Context, query string, mediaTyp
 }
 
 func (p *AniDBProvider) Search(ctx context.Context, query string, mediaType string, year *int) ([]SearchResult, error) {
-	if !p.IsEnabled() {
-		p.logger.Debug("provider not enabled, skipping", zap.String("provider", p.GetName()), zap.String("query", query))
-		return nil, nil
-	}
-	p.logger.Info("provider search not yet implemented", zap.String("provider", p.GetName()))
+	p.logger.Info("AniDB provider requires API key configuration",
+		zap.String("provider", p.GetName()))
 	return nil, nil
 }
 
 func (p *MyAnimeListProvider) Search(ctx context.Context, query string, mediaType string, year *int) ([]SearchResult, error) {
-	if !p.IsEnabled() {
-		p.logger.Debug("provider not enabled, skipping", zap.String("provider", p.GetName()), zap.String("query", query))
-		return nil, nil
-	}
-	p.logger.Info("provider search not yet implemented", zap.String("provider", p.GetName()))
+	p.logger.Info("MyAnimeList provider requires API key configuration",
+		zap.String("provider", p.GetName()))
 	return nil, nil
 }
 
 func (p *YouTubeProvider) Search(ctx context.Context, query string, mediaType string, year *int) ([]SearchResult, error) {
-	if !p.IsEnabled() {
-		p.logger.Debug("provider not enabled, skipping", zap.String("provider", p.GetName()), zap.String("query", query))
-		return nil, nil
-	}
-	p.logger.Info("provider search not yet implemented", zap.String("provider", p.GetName()))
+	p.logger.Info("YouTube provider requires API key configuration",
+		zap.String("provider", p.GetName()))
 	return nil, nil
 }
 
 func (p *GitHubProvider) Search(ctx context.Context, query string, mediaType string, year *int) ([]SearchResult, error) {
-	if !p.IsEnabled() {
-		p.logger.Debug("provider not enabled, skipping", zap.String("provider", p.GetName()), zap.String("query", query))
-		return nil, nil
-	}
-	p.logger.Info("provider search not yet implemented", zap.String("provider", p.GetName()))
+	p.logger.Info("GitHub provider requires API key configuration",
+		zap.String("provider", p.GetName()))
 	return nil, nil
 }

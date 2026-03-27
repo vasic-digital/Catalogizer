@@ -641,6 +641,23 @@ func main() {
 	authRateLimiter := authMiddleware.RateLimitByUser(5, "1m")      // 5 requests per minute for auth
 	defaultRateLimiter := authMiddleware.RateLimitByUser(100, "1m") // 100 requests per minute default
 
+	// Optional: Redis-based rate limiting when Redis is available
+	if redisClient != nil {
+		logger.Info("Redis available — Redis rate limiting can be enabled via config")
+		// To switch to Redis-based distributed rate limiting, replace the above limiters:
+		// authRateLimiter = root_middleware.RedisRateLimit(root_middleware.AuthRedisRateLimiterConfig(redisClient))
+		// defaultRateLimiter = root_middleware.RedisRateLimit(root_middleware.DefaultRedisRateLimiterConfig(redisClient))
+		//
+		// For sliding window algorithm (more accurate under burst traffic):
+		// authRateLimiter = root_middleware.SlidingWindowRedisRateLimit(root_middleware.AuthRedisRateLimiterConfig(redisClient))
+		// defaultRateLimiter = root_middleware.SlidingWindowRedisRateLimit(root_middleware.DefaultRedisRateLimiterConfig(redisClient))
+	}
+
+	// Alternative rate limiting strategies (uncomment to switch):
+	// router.Use(root_middleware.AdvancedRateLimit(root_middleware.DefaultRateLimiterConfig()))
+	// router.Use(root_middleware.UserBasedRateLimit(root_middleware.AuthRateLimiterConfig()))
+	// router.Use(root_middleware.IPRateLimit(10, 20))
+
 	// Setup Gin router
 	router := gin.Default()
 
@@ -662,8 +679,8 @@ func main() {
 	// Prometheus metrics endpoint
 	router.GET("/metrics", gin.WrapH(promhttp.Handler()))
 
-	// Health check
-	router.GET("/health", func(c *gin.Context) {
+	// Health check (short-lived cache to reduce redundant health polling)
+	router.GET("/health", root_middleware.CacheHeaders(5), func(c *gin.Context) {
 		c.JSON(http.StatusOK, gin.H{
 			"status":       "healthy",
 			"time":         time.Now().UTC(),
@@ -677,7 +694,8 @@ func main() {
 	router.GET("/ws", wsHandler.HandleConnection)
 
 	// Service discovery (public — no auth needed for clients to find the API)
-	router.GET("/discovery", discoveryHandler)
+	// Cache discovery info for 1 minute (rarely changes during runtime)
+	router.GET("/discovery", root_middleware.CacheHeaders(60), discoveryHandler)
 
 	// Image proxy — serves external images (TMDB, etc.) through the API
 	// Needed when devices can't reach external CDNs directly (DNS blocking, etc.)
@@ -711,10 +729,13 @@ func main() {
 		c.Status(resp.StatusCode)
 		io.Copy(c.Writer, resp.Body)
 	})
-	router.GET("/api/v1/discovery", discoveryHandler)
-	router.GET("/api/v1/discovery/announce", discoveryHandler)
+	router.GET("/api/v1/discovery", root_middleware.CacheHeaders(60), discoveryHandler)
+	router.GET("/api/v1/discovery/announce", root_middleware.CacheHeaders(60), discoveryHandler)
 
 	// Asset serving (public — no auth needed for serving images)
+	// StaticCacheHeaders() sets Cache-Control: public, max-age=31536000, immutable
+	// for fingerprinted/content-hashed assets. Also suitable for future static file
+	// server routes (e.g., router.Static("/static", "./public", root_middleware.StaticCacheHeaders())).
 	router.GET("/api/v1/assets/:id", root_middleware.StaticCacheHeaders(), assetHandler.ServeAsset)
 
 	// Authentication routes (no auth required)

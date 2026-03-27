@@ -6,6 +6,7 @@ import { ConnectionStatus } from '@/components/ui/ConnectionStatus'
 import { Layout } from '@/components/layout/Layout'
 import { ProtectedRoute } from '@/components/auth/ProtectedRoute'
 import { ErrorBoundary } from '@/components/ErrorBoundary'
+import { PageErrorBoundary } from '@/components/PageErrorBoundary'
 import { SplashScreen } from '@/components/SplashScreen'
 
 // Lazy-loaded page components for code splitting
@@ -64,7 +65,9 @@ function App() {
                   path="/dashboard"
                   element={
                     <ProtectedRoute>
-                      <Dashboard />
+                      <PageErrorBoundary pageName="Dashboard">
+                        <Dashboard />
+                      </PageErrorBoundary>
                     </ProtectedRoute>
                   }
                 />
@@ -72,7 +75,9 @@ function App() {
                   path="/media"
                   element={
                     <ProtectedRoute requiredPermission="read:media">
-                      <MediaBrowser />
+                      <PageErrorBoundary pageName="Media Browser">
+                        <MediaBrowser />
+                      </PageErrorBoundary>
                     </ProtectedRoute>
                   }
                 />
@@ -80,7 +85,9 @@ function App() {
                   path="/analytics"
                   element={
                     <ProtectedRoute requiredPermission="view:analysis">
-                      <Analytics />
+                      <PageErrorBoundary pageName="Analytics">
+                        <Analytics />
+                      </PageErrorBoundary>
                     </ProtectedRoute>
                   }
                 />
@@ -88,7 +95,9 @@ function App() {
                   path="/subtitles"
                   element={
                     <ProtectedRoute requiredPermission="manage:subtitles">
-                      <SubtitleManager />
+                      <PageErrorBoundary pageName="Subtitle Manager">
+                        <SubtitleManager />
+                      </PageErrorBoundary>
                     </ProtectedRoute>
                   }
                 />
@@ -96,7 +105,9 @@ function App() {
                   path="/collections"
                   element={
                     <ProtectedRoute requiredPermission="read:collections">
-                      <Collections />
+                      <PageErrorBoundary pageName="Collections">
+                        <Collections />
+                      </PageErrorBoundary>
                     </ProtectedRoute>
                   }
                 />
@@ -104,7 +115,9 @@ function App() {
                   path="/favorites"
                   element={
                     <ProtectedRoute>
-                      <FavoritesPage />
+                      <PageErrorBoundary pageName="Favorites">
+                        <FavoritesPage />
+                      </PageErrorBoundary>
                     </ProtectedRoute>
                   }
                 />
@@ -112,7 +125,9 @@ function App() {
                   path="/playlists"
                   element={
                     <ProtectedRoute>
-                      <PlaylistsPage />
+                      <PageErrorBoundary pageName="Playlists">
+                        <PlaylistsPage />
+                      </PageErrorBoundary>
                     </ProtectedRoute>
                   }
                 />
@@ -120,7 +135,9 @@ function App() {
                   path="/conversion"
                   element={
                     <ProtectedRoute requiredPermission="convert:media">
-                      <ConversionTools />
+                      <PageErrorBoundary pageName="Conversion Tools">
+                        <ConversionTools />
+                      </PageErrorBoundary>
                     </ProtectedRoute>
                   }
                 />
@@ -128,7 +145,9 @@ function App() {
                    path="/admin"
                    element={
                      <ProtectedRoute requireAdmin>
-                       <Admin />
+                       <PageErrorBoundary pageName="Admin">
+                         <Admin />
+                       </PageErrorBoundary>
                      </ProtectedRoute>
                    }
                  />
@@ -136,7 +155,9 @@ function App() {
                   path="/browse"
                   element={
                     <ProtectedRoute requiredPermission="read:media">
-                      <EntityBrowser />
+                      <PageErrorBoundary pageName="Entity Browser">
+                        <EntityBrowser />
+                      </PageErrorBoundary>
                     </ProtectedRoute>
                   }
                 />
@@ -144,7 +165,9 @@ function App() {
                   path="/entity/:id"
                   element={
                     <ProtectedRoute requiredPermission="read:media">
-                      <EntityDetail />
+                      <PageErrorBoundary pageName="Entity Detail">
+                        <EntityDetail />
+                      </PageErrorBoundary>
                     </ProtectedRoute>
                   }
                 />
@@ -152,7 +175,9 @@ function App() {
                   path="/ai"
                   element={
                     <ProtectedRoute>
-                      <AIDashboard />
+                      <PageErrorBoundary pageName="AI Dashboard">
+                        <AIDashboard />
+                      </PageErrorBoundary>
                     </ProtectedRoute>
                   }
                 />
