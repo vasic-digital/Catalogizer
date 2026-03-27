@@ -110,8 +110,8 @@ val TVTypography = Typography(
     labelSmall = TextStyle(
         fontFamily = FontFamily.Default,
         fontWeight = FontWeight.Medium,
-        fontSize = 12.sp,
-        lineHeight = 16.sp,
+        fontSize = 14.sp,  // Bumped from 12sp — minimum readable size on TV (HELIX-009)
+        lineHeight = 20.sp,
         letterSpacing = 0.5.sp,
     )
 )

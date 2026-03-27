@@ -1,14 +1,22 @@
 package com.catalogizer.androidtv.ui.components
 
+import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.focus.onFocusChanged
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import androidx.tv.material3.*
 import com.catalogizer.androidtv.data.models.AuthState
+
+// Focus ring color matches theme primary for WCAG-visible focus indicators (HELIX-005, 015)
+private val FocusBorderColor = Color(0xFF9ECAFF)
 
 @OptIn(ExperimentalTvMaterial3Api::class)
 @Composable
@@ -24,11 +32,11 @@ fun TopBar(
         horizontalArrangement = Arrangement.SpaceBetween,
         verticalAlignment = Alignment.CenterVertically
     ) {
-        // App title/logo
+        // App title/logo — full white for maximum contrast on dark background (HELIX-002, 008)
         Text(
             text = title,
             style = MaterialTheme.typography.headlineMedium,
-            color = MaterialTheme.colorScheme.onBackground
+            color = Color.White
         )
 
         // Action buttons
@@ -42,14 +50,24 @@ fun TopBar(
                     Text(
                         text = state.username ?: "User",
                         style = MaterialTheme.typography.bodyMedium,
+                        color = Color(0xFFE0E0E0),
                         modifier = Modifier.padding(end = 16.dp)
                     )
                 }
             }
 
-            // Search button
+            // Search button — with visible focus indicator (HELIX-005, 015)
+            var searchFocused by remember { mutableStateOf(false) }
             Surface(
                 onClick = onSearchClick,
+                modifier = Modifier
+                    .onFocusChanged { searchFocused = it.isFocused }
+                    .then(
+                        if (searchFocused) Modifier.border(
+                            BorderStroke(2.dp, FocusBorderColor),
+                            shape = RoundedCornerShape(8.dp)
+                        ) else Modifier
+                    ),
                 shape = ClickableSurfaceDefaults.shape(),
                 colors = ClickableSurfaceDefaults.colors(
                     containerColor = MaterialTheme.colorScheme.surfaceVariant
@@ -59,13 +77,22 @@ fun TopBar(
                     imageVector = Icons.Default.Search,
                     contentDescription = "Search",
                     modifier = Modifier.padding(12.dp),
-                    tint = MaterialTheme.colorScheme.onSurfaceVariant
+                    tint = Color.White
                 )
             }
 
-            // Settings button
+            // Settings button — with visible focus indicator (HELIX-005, 015)
+            var settingsFocused by remember { mutableStateOf(false) }
             Surface(
                 onClick = onSettingsClick,
+                modifier = Modifier
+                    .onFocusChanged { settingsFocused = it.isFocused }
+                    .then(
+                        if (settingsFocused) Modifier.border(
+                            BorderStroke(2.dp, FocusBorderColor),
+                            shape = RoundedCornerShape(8.dp)
+                        ) else Modifier
+                    ),
                 shape = ClickableSurfaceDefaults.shape(),
                 colors = ClickableSurfaceDefaults.colors(
                     containerColor = MaterialTheme.colorScheme.surfaceVariant
@@ -75,7 +102,7 @@ fun TopBar(
                     imageVector = Icons.Default.Settings,
                     contentDescription = "Settings",
                     modifier = Modifier.padding(12.dp),
-                    tint = MaterialTheme.colorScheme.onSurfaceVariant
+                    tint = Color.White
                 )
             }
         }
@@ -91,9 +118,9 @@ fun ConnectionStatus(
     Surface(
         modifier = modifier,
         colors = NonInteractiveSurfaceDefaults.colors(
-            containerColor = if (isConnected) 
-                MaterialTheme.colorScheme.primaryContainer 
-            else 
+            containerColor = if (isConnected)
+                MaterialTheme.colorScheme.primaryContainer
+            else
                 MaterialTheme.colorScheme.errorContainer
         ),
         shape = NonInteractiveSurfaceDefaults.shape
@@ -104,24 +131,24 @@ fun ConnectionStatus(
             horizontalArrangement = Arrangement.spacedBy(6.dp)
         ) {
             Icon(
-                imageVector = if (isConnected) 
-                    Icons.Default.Wifi 
-                else 
+                imageVector = if (isConnected)
+                    Icons.Default.Wifi
+                else
                     Icons.Default.WifiOff,
                 contentDescription = if (isConnected) "Connected" else "Disconnected",
-                modifier = Modifier.size(16.dp),
-                tint = if (isConnected) 
-                    MaterialTheme.colorScheme.onPrimaryContainer 
-                else 
+                modifier = Modifier.size(20.dp), // bumped from 16dp for TV readability (HELIX-009)
+                tint = if (isConnected)
+                    MaterialTheme.colorScheme.onPrimaryContainer
+                else
                     MaterialTheme.colorScheme.onError
             )
-            
+
             Text(
                 text = if (isConnected) "Connected" else "Offline",
-                style = MaterialTheme.typography.labelSmall,
-                color = if (isConnected) 
-                    MaterialTheme.colorScheme.onPrimaryContainer 
-                else 
+                style = MaterialTheme.typography.labelMedium, // 14sp — bumped from labelSmall/12sp (HELIX-009)
+                color = if (isConnected)
+                    MaterialTheme.colorScheme.onPrimaryContainer
+                else
                     MaterialTheme.colorScheme.onError
             )
         }
