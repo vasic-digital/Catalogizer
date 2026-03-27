@@ -74,6 +74,8 @@ tags:
     description: Remote synchronization endpoints
   - name: discovery
     description: Service discovery
+  - name: admin
+    description: System administration (requires admin role)
 
 components:
   securitySchemes:
@@ -1226,6 +1228,102 @@ components:
           type: integer
           default: 30
 
+    SystemInfo:
+      type: object
+      description: System runtime information for admin dashboard
+      properties:
+        version:
+          type: string
+        build_number:
+          type: string
+        build_date:
+          type: string
+        uptime_seconds:
+          type: integer
+          format: int64
+        goroutines:
+          type: integer
+        memory_alloc_mb:
+          type: number
+          format: float
+        memory_sys_mb:
+          type: number
+          format: float
+        gc_cycles:
+          type: integer
+        db_open_connections:
+          type: integer
+        db_idle_connections:
+          type: integer
+        db_wait_count:
+          type: integer
+          format: int64
+
+    AdminUserUpdate:
+      type: object
+      description: Admin-level user update (role, active status, lock status)
+      properties:
+        role_id:
+          type: integer
+        is_active:
+          type: boolean
+        is_locked:
+          type: boolean
+
+    StorageOverview:
+      type: object
+      description: Aggregated storage root statistics
+      properties:
+        id:
+          type: integer
+          format: int64
+        name:
+          type: string
+        protocol:
+          type: string
+        enabled:
+          type: boolean
+        file_count:
+          type: integer
+          format: int64
+        total_size:
+          type: integer
+          format: int64
+        last_scan_at:
+          type: string
+          format: date-time
+
+    BackupInfo:
+      type: object
+      description: Database backup file metadata
+      properties:
+        id:
+          type: string
+        filename:
+          type: string
+        size:
+          type: integer
+          format: int64
+        created_at:
+          type: string
+          format: date-time
+
+    DeepHealthResponse:
+      type: object
+      description: Comprehensive health check with per-component status
+      properties:
+        status:
+          type: string
+          enum: [healthy, degraded, unhealthy]
+        checks:
+          type: object
+          additionalProperties:
+            type: string
+            enum: [healthy, degraded, unhealthy]
+        timestamp:
+          type: string
+          format: date-time
+
 paths:
   /health:
     get:
@@ -1239,6 +1337,23 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/HealthResponse'
+
+  /health/deep:
+    get:
+      tags: [health]
+      summary: Deep health check
+      description: |
+        Performs a comprehensive health check of all subsystems (database, Redis,
+        storage, metadata providers) with a 100ms per-component timeout. Returns
+        per-component status so load balancers can make routing decisions. Always
+        responds within 200ms even if subsystems are unresponsive.
+      responses:
+        '200':
+          description: Deep health check results
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DeepHealthResponse'
 
   /metrics:
     get:
@@ -3122,6 +3237,42 @@ paths:
       responses:
         '200':
           description: Conversion job details
+    delete:
+      tags: [conversion]
+      summary: Delete a conversion job
+      description: |
+        Deletes a conversion job. Only jobs with status 'pending' or 'failed'
+        can be deleted. Running or completed jobs are protected from deletion.
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Job deleted
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+        '400':
+          description: Job cannot be deleted (wrong status)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: Job not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
 
   /api/v1/conversion/jobs/{id}/cancel:
     post:
@@ -3139,6 +3290,79 @@ paths:
         '200':
           description: Job cancelled
 
+  /api/v1/conversion/jobs/{id}/retry:
+    post:
+      tags: [conversion]
+      summary: Retry a failed conversion job
+      description: |
+        Resets a failed or cancelled conversion job back to pending status,
+        clearing the error message and resetting timing fields. Only jobs
+        with status 'failed' or 'cancelled' can be retried.
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Job reset to pending
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ConversionJob'
+        '400':
+          description: Job cannot be retried (wrong status)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: Job not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /api/v1/conversion/jobs/{id}/download:
+    get:
+      tags: [conversion]
+      summary: Download conversion output
+      description: |
+        Streams the converted file for download. Only available when the job
+        status is 'completed' and the target file exists on disk. Returns
+        the file with appropriate Content-Type and Content-Disposition headers.
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Converted file stream
+          content:
+            application/octet-stream:
+              schema:
+                type: string
+                format: binary
+        '400':
+          description: Job not completed or file not available
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: Job not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
   /api/v1/conversion/formats:
     get:
       tags: [conversion]
@@ -3148,6 +3372,253 @@ paths:
       responses:
         '200':
           description: Supported formats
+
+  /api/v1/admin/system-info:
+    get:
+      tags: [admin]
+      summary: Get system runtime information
+      description: |
+        Returns runtime metrics including Go version, memory allocation,
+        goroutine count, database connection pool statistics, and uptime.
+        Requires admin role.
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: System information
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SystemInfo'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '403':
+          description: Forbidden (admin role required)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /api/v1/admin/users:
+    get:
+      tags: [admin]
+      summary: List all users (admin view)
+      description: |
+        Returns all users with their roles, login history, and account status.
+        Unlike the standard /users endpoint, this includes locked/inactive users
+        and detailed security fields. Requires admin role.
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: All users with admin-level detail
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/User'
+        '401':
+          description: Unauthorized
+        '403':
+          description: Forbidden (admin role required)
+
+  /api/v1/admin/users/{id}:
+    put:
+      tags: [admin]
+      summary: Update user (admin)
+      description: |
+        Updates a user's role, active status, or lock status. Admin users
+        cannot modify their own account to prevent self-lockout. Requires
+        admin role.
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AdminUserUpdate'
+      responses:
+        '200':
+          description: User updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+        '400':
+          description: Cannot modify own account
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '401':
+          description: Unauthorized
+        '403':
+          description: Forbidden (admin role required)
+        '404':
+          description: User not found
+
+  /api/v1/admin/storage:
+    get:
+      tags: [admin]
+      summary: Get storage overview
+      description: |
+        Returns aggregated statistics for all storage roots including
+        file counts, total sizes, and last scan times. Requires admin role.
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: Storage overview
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/StorageOverview'
+        '401':
+          description: Unauthorized
+        '403':
+          description: Forbidden (admin role required)
+
+  /api/v1/admin/storage/scan:
+    post:
+      tags: [admin]
+      summary: Trigger storage scan (admin)
+      description: |
+        Initiates a scan on a specified storage root from the admin panel.
+        Accepts a storage_root_id in the request body. Requires admin role.
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - storage_root_id
+              properties:
+                storage_root_id:
+                  type: integer
+                  format: int64
+      responses:
+        '200':
+          description: Scan initiated
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                  job_id:
+                    type: string
+        '400':
+          description: Invalid storage root
+        '401':
+          description: Unauthorized
+        '403':
+          description: Forbidden (admin role required)
+
+  /api/v1/admin/backups:
+    get:
+      tags: [admin]
+      summary: List database backups
+      description: |
+        Lists all available database backup files with their sizes and
+        creation timestamps. Requires admin role.
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: Backup list
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/BackupInfo'
+        '401':
+          description: Unauthorized
+        '403':
+          description: Forbidden (admin role required)
+    post:
+      tags: [admin]
+      summary: Create database backup
+      description: |
+        Creates a new SQLite database backup using VACUUM INTO for a
+        consistent snapshot. The backup is stored in the configured backup
+        directory. Requires admin role.
+      security:
+        - BearerAuth: []
+      responses:
+        '201':
+          description: Backup created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BackupInfo'
+        '401':
+          description: Unauthorized
+        '403':
+          description: Forbidden (admin role required)
+        '500':
+          description: Backup failed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /api/v1/admin/backups/{id}/restore:
+    post:
+      tags: [admin]
+      summary: Restore database from backup
+      description: |
+        Restores the database from a specified backup file. This operation
+        replaces the current database and requires a service restart.
+        Requires admin role.
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Restore initiated
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+        '401':
+          description: Unauthorized
+        '403':
+          description: Forbidden (admin role required)
+        '404':
+          description: Backup not found
+        '500':
+          description: Restore failed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
 
   /api/v1/users:
     post:

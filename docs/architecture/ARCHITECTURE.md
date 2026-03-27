@@ -863,6 +863,165 @@ CREATE INDEX idx_media_2024_type ON media_items_2024(media_type);
 
 This architecture provides a robust, scalable, and resilient foundation for the Catalogizer system, with comprehensive error handling and recovery mechanisms to ensure high availability even in the face of various failure scenarios.
 
+## Lazy Initialization Pattern
+
+### LazyServiceRegistry
+
+The `LazyServiceRegistry` in `internal/lifecycle/` provides deferred service initialization with dependency ordering. Services are registered with their constructors but not instantiated until first use. This reduces startup time and memory consumption by avoiding initialization of services that may never be called during a given request lifecycle.
+
+```go
+// internal/lifecycle/lazy_registry.go
+type LazyServiceRegistry struct {
+    mu        sync.RWMutex
+    factories map[string]func() (interface{}, error)
+    instances map[string]interface{}
+}
+
+func (r *LazyServiceRegistry) Register(name string, factory func() (interface{}, error)) {
+    r.mu.Lock()
+    defer r.mu.Unlock()
+    r.factories[name] = factory
+}
+
+func (r *LazyServiceRegistry) Get(name string) (interface{}, error) {
+    r.mu.RLock()
+    if inst, ok := r.instances[name]; ok {
+        r.mu.RUnlock()
+        return inst, nil
+    }
+    r.mu.RUnlock()
+
+    r.mu.Lock()
+    defer r.mu.Unlock()
+    // Double-check after acquiring write lock
+    if inst, ok := r.instances[name]; ok {
+        return inst, nil
+    }
+    factory, ok := r.factories[name]
+    if !ok {
+        return nil, fmt.Errorf("service %q not registered", name)
+    }
+    inst, err := factory()
+    if err != nil {
+        return nil, fmt.Errorf("failed to initialize %q: %w", name, err)
+    }
+    r.instances[name] = inst
+    return inst, nil
+}
+```
+
+**Key properties:**
+- Thread-safe double-checked locking pattern avoids redundant initialization.
+- Services are only created when `Get()` is first called.
+- Factory functions capture dependencies via closures, enabling natural dependency ordering.
+- Used in `main.go` to register metadata providers, the aggregation service, and optional services like Redis caching.
+
+### LazyProvider
+
+The `LazyProvider` pattern extends lazy initialization to metadata providers (TMDB, OMDB, OpenLibrary, MusicBrainz). Each provider is wrapped in a `LazyProvider` that defers API client creation until the first metadata lookup. If a provider's API key is missing, the provider is never instantiated, saving memory and avoiding startup errors.
+
+## BoundedSemaphore Concurrency Control
+
+The `BoundedSemaphore` in `internal/concurrency/` limits the number of concurrent operations system-wide. Unlike a simple channel-based semaphore, `BoundedSemaphore` supports context-aware acquisition with timeout, preventing goroutine leaks when the system is under pressure.
+
+```go
+// internal/concurrency/semaphore.go
+type BoundedSemaphore struct {
+    sem chan struct{}
+}
+
+func NewBoundedSemaphore(limit int) *BoundedSemaphore {
+    return &BoundedSemaphore{sem: make(chan struct{}, limit)}
+}
+
+func (s *BoundedSemaphore) Acquire(ctx context.Context) error {
+    select {
+    case s.sem <- struct{}{}:
+        return nil
+    case <-ctx.Done():
+        return ctx.Err()
+    }
+}
+
+func (s *BoundedSemaphore) Release() {
+    <-s.sem
+}
+```
+
+**Usage:** The `SearchAll` function in the media entity service uses `BoundedSemaphore` to limit concurrent provider searches to a configurable maximum (default: 5), preventing API rate limit exhaustion and excessive goroutine creation.
+
+## Non-Blocking Health Check Pattern
+
+The `/health/deep` endpoint performs a comprehensive health check of all subsystems (database, Redis, filesystem, metadata providers) with a 100ms timeout per check. This ensures the health endpoint never blocks the caller even when a subsystem is unresponsive.
+
+```go
+// Health deep check with per-component timeout
+func (h *HealthHandler) DeepHealthCheck(c *gin.Context) {
+    ctx, cancel := context.WithTimeout(c.Request.Context(), 100*time.Millisecond)
+    defer cancel()
+
+    checks := map[string]func(context.Context) error{
+        "database": h.checkDatabase,
+        "redis":    h.checkRedis,
+        "storage":  h.checkStorage,
+    }
+
+    results := make(map[string]string)
+    for name, check := range checks {
+        if err := check(ctx); err != nil {
+            results[name] = "degraded"
+        } else {
+            results[name] = "healthy"
+        }
+    }
+    c.JSON(http.StatusOK, gin.H{"status": overallStatus(results), "checks": results})
+}
+```
+
+**Design rationale:** Load balancers and orchestrators poll health endpoints frequently. A slow health check can cascade into false-positive failures. The 100ms timeout ensures the endpoint always responds promptly, marking slow subsystems as "degraded" rather than blocking.
+
+## Admin Handler Architecture
+
+The `AdminHandler` in `internal/handlers/admin_handler.go` provides privileged system administration operations. It is wired into the router under `/api/v1/admin` with admin-role middleware applied to the entire group.
+
+**Capabilities:**
+- **System info**: Runtime memory statistics, goroutine count, version, uptime, database pool stats.
+- **User management**: List all users with roles, update user roles, activate/deactivate/lock accounts.
+- **Storage overview**: Aggregated storage root statistics with file counts and total sizes.
+- **Backup/restore**: Create database backups via SQLite `VACUUM INTO`, list available backups, restore from backup.
+- **Scan triggering**: Initiate storage root scans from the admin panel without navigating to the storage management page.
+
+**Security model:** All admin endpoints require the `admin` role (checked by `RequireRole("admin")` middleware). The handler validates that admin users cannot lock their own account to prevent self-lockout scenarios. Backup operations are audited in the `auth_audit_log` table.
+
+## Safety Improvements
+
+### Database Query Timeout (30s Default)
+
+All database queries are executed with a default 30-second context timeout. This prevents runaway queries from holding database connections indefinitely, which could exhaust the connection pool.
+
+```go
+// Applied at the DB wrapper level
+func (db *DB) QueryContext(ctx context.Context, query string, args ...any) (*sql.Rows, error) {
+    if _, hasDeadline := ctx.Deadline(); !hasDeadline {
+        var cancel context.CancelFunc
+        ctx, cancel = context.WithTimeout(ctx, 30*time.Second)
+        defer cancel()
+    }
+    // ... dialect rewriting and execution
+}
+```
+
+### Redis Middleware Timeout (500ms)
+
+The Redis rate limiter middleware uses a 500ms timeout for all Redis operations. If Redis is slow or unreachable, the middleware allows the request to proceed rather than blocking it, implementing a fail-open pattern for availability.
+
+```go
+// middleware/redis_rate_limiter.go
+ctx, cancel := context.WithTimeout(c.Request.Context(), 500*time.Millisecond)
+defer cancel()
+// If Redis check fails, allow the request through
+```
+
 ## Related Documentation
 
 - [Database Schema](DATABASE_SCHEMA.md) - Complete database table and index reference

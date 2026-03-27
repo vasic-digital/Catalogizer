@@ -273,3 +273,134 @@ Security:  govulncheck 0 vulns, npm audit 0 critical
 
 4. What are the resource constraints for running the Go test suite?
    **Answer**: `GOMAXPROCS=3` limits Go to 3 OS threads. `-p 2` runs at most 2 packages in parallel. `-parallel 2` limits per-package test parallelism to 2. This ensures tests use no more than 30-40% of host resources, preventing system freezes on the development machine.
+
+---
+
+## Addendum: Stress Tests, Integration Tests, and the 517-Case Test Bank
+
+**[Visual: Test pyramid diagram with unit tests at the base, integration in the middle, stress/load at the top, and the 517-case test bank spanning all levels]**
+
+**Narrator**: Beyond the unit tests and challenge system covered earlier, Catalogizer includes dedicated stress tests, comprehensive integration tests, and a structured test bank containing 517 test case definitions across multiple domains. Let us examine each layer.
+
+### Stress Tests
+
+**[Visual: Terminal output from a k6 stress test showing ramp-up to 300 virtual users]**
+
+**Narrator**: Stress tests live in `tests/k6/` and use the k6 load testing framework. Three test scripts target different scenarios:
+
+```bash
+# Load test: ramp to 50 users, verify p95 < 500ms
+podman run --rm --network host \
+  -v $(pwd)/tests/k6:/scripts docker.io/grafana/k6:latest \
+  run /scripts/load_test.js
+
+# Stress test: ramp to 300 users, find breaking point
+podman run --rm --network host \
+  -v $(pwd)/tests/k6:/scripts docker.io/grafana/k6:latest \
+  run /scripts/stress_test.js
+
+# Soak test: 20 users for 30 minutes, detect memory leaks
+podman run --rm --network host \
+  -v $(pwd)/tests/k6:/scripts docker.io/grafana/k6:latest \
+  run /scripts/soak_test.js
+```
+
+**Narrator**: The load test verifies that the API meets its SLO: p95 response time under 500ms with 50 concurrent users. The stress test ramps to 300 users to find the breaking point -- where error rates exceed 1%. The soak test runs for 30 minutes at moderate load to detect memory leaks and goroutine leaks by comparing memory metrics at start and end.
+
+**[Visual: k6 results dashboard showing thresholds]**
+
+**Narrator**: Key thresholds enforced by the tests:
+
+| Test | Metric | Threshold |
+|------|--------|-----------|
+| Load | p95 response time | < 500ms |
+| Load | Error rate | < 1% |
+| Stress | Requests/second at peak | > 200 |
+| Soak | Memory growth over 30 min | < 50MB |
+| Soak | Goroutine count delta | < 10 |
+
+### Integration Tests
+
+**[Visual: Show `services_integration_test.go` test file structure]**
+
+**Narrator**: Integration tests verify complete service workflows with a real database. They live in `services/services_integration_test.go` and `internal/services/services_integration_test.go`. Each test creates a fresh in-memory SQLite database, seeds it with known data, and exercises the full service stack.
+
+```go
+func TestScanAndAggregateWorkflow(t *testing.T) {
+    db := tests.SetupTestDB(t)
+    fileRepo := repository.NewFileRepository(db)
+    entityRepo := repository.NewMediaItemRepository(db)
+    scanSvc := services.NewScanService(fileRepo, db)
+    aggSvc := services.NewAggregationService(entityRepo, fileRepo, db)
+
+    // 1. Create a storage root
+    root, err := scanSvc.CreateStorageRoot(ctx, rootRequest)
+    require.NoError(t, err)
+
+    // 2. Insert files simulating a scan
+    for _, file := range testFiles {
+        _, err := fileRepo.InsertFile(ctx, root.ID, file)
+        require.NoError(t, err)
+    }
+
+    // 3. Run aggregation
+    err = aggSvc.AggregateAfterScan(ctx, root.ID)
+    require.NoError(t, err)
+
+    // 4. Verify entities were created
+    entities, err := entityRepo.GetAll(ctx, 100, 0)
+    require.NoError(t, err)
+    assert.GreaterOrEqual(t, len(entities), 5)
+}
+```
+
+**Narrator**: Integration tests cover workflows that span multiple services: scan-then-aggregate, create-user-then-authenticate, convert-then-download, and admin-backup-then-restore. They catch inter-service contract violations that unit tests miss.
+
+### The 517-Case Test Bank
+
+**[Visual: Table showing test bank files and case counts]**
+
+**Narrator**: The test bank is a structured collection of 517 test case definitions organized by domain. These are not executable tests -- they are YAML/JSON specifications that define inputs, expected outputs, and validation criteria. The challenge system and integration tests consume these definitions.
+
+| Domain | File | Cases | Description |
+|--------|------|-------|-------------|
+| Entity detection | `testbank_entity.yaml` | 127 | Title parsing, media type detection, hierarchy building |
+| Admin operations | `testbank_admin.yaml` | 68 | User management, backup/restore, system info |
+| Security | `testbank_security.yaml` | 94 | Auth flows, permission checks, input validation, injection |
+| Performance | `testbank_performance.yaml` | 52 | Response time, throughput, connection pool behavior |
+| Conversion | `testbank_conversion.yaml` | 43 | Format support, quality presets, error handling |
+| API contracts | `testbank_api.yaml` | 89 | Endpoint existence, response shapes, status codes |
+| Search | `testbank_search.yaml` | 44 | Full-text search, filters, pagination, sorting |
+
+```yaml
+# Example test case from testbank_entity.yaml
+- id: ENT-042
+  name: "TV show hierarchy detection"
+  input:
+    filename: "Breaking Bad S01E01 Pilot.mkv"
+    path: "/tv/Breaking Bad/Season 1/"
+  expected:
+    media_type: tv_episode
+    title: "Pilot"
+    series: "Breaking Bad"
+    season: 1
+    episode: 1
+    hierarchy:
+      - type: tv_show
+        title: "Breaking Bad"
+      - type: tv_season
+        title: "Season 1"
+        parent: "Breaking Bad"
+```
+
+**Narrator**: The test bank serves multiple purposes. First, it documents expected behavior in a human-readable format. Second, the challenge system's assertion engine reads these definitions to verify API responses. Third, the title parser's table-driven tests are generated from the entity test bank, ensuring consistency between the test bank specification and the actual unit tests.
+
+**[Visual: Diagram showing test bank -> challenge assertions -> integration tests -> unit tests]**
+
+**Narrator**: The 517 cases are not a replacement for the 1623 frontend tests or the 38 Go test packages. They are a specification layer that sits above executable tests. When a new media format or edge case is discovered, it is added to the test bank first, then the appropriate unit test and challenge are updated to cover it. This top-down approach ensures no test case exists without a specification, and no specification exists without a test.
+
+**Key takeaways:**
+- Stress tests run in containers via k6 with strict SLO thresholds.
+- Integration tests use real in-memory databases for full workflow verification.
+- The 517-case test bank is a specification layer consumed by challenges and unit tests.
+- Test bank cases span 7 domains: entity, admin, security, performance, conversion, API contracts, and search.

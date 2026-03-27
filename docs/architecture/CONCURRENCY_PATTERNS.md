@@ -771,6 +771,216 @@ Uses channels and fan-out pattern to broadcast events to multiple WebSocket clie
 
 Implements concurrent state management for circuit breaker pattern with atomic operations.
 
+## BoundedSemaphore Pattern
+
+### Overview
+
+The `BoundedSemaphore` in `internal/concurrency/semaphore.go` extends the basic channel-based semaphore pattern (shown above in [Bounded Concurrency with Semaphore](#pattern-bounded-concurrency-with-semaphore)) with context-aware acquisition. This prevents goroutine leaks when the system is under heavy load or shutting down.
+
+### Implementation
+
+```go
+// internal/concurrency/semaphore.go
+type BoundedSemaphore struct {
+    sem chan struct{}
+}
+
+func NewBoundedSemaphore(limit int) *BoundedSemaphore {
+    return &BoundedSemaphore{sem: make(chan struct{}, limit)}
+}
+
+// Acquire blocks until a slot is available or the context is cancelled.
+// Returns ctx.Err() if the context expires before a slot opens.
+func (s *BoundedSemaphore) Acquire(ctx context.Context) error {
+    select {
+    case s.sem <- struct{}{}:
+        return nil
+    case <-ctx.Done():
+        return ctx.Err()
+    }
+}
+
+// TryAcquire attempts to acquire without blocking.
+// Returns true if a slot was available, false otherwise.
+func (s *BoundedSemaphore) TryAcquire() bool {
+    select {
+    case s.sem <- struct{}{}:
+        return true
+    default:
+        return false
+    }
+}
+
+func (s *BoundedSemaphore) Release() {
+    <-s.sem
+}
+```
+
+### Usage in SearchAll
+
+The media entity service's `SearchAll` function uses `BoundedSemaphore` to limit concurrent metadata provider queries:
+
+```go
+func (s *EntityService) SearchAll(ctx context.Context, query string) ([]Result, error) {
+    sem := concurrency.NewBoundedSemaphore(5) // Max 5 concurrent provider calls
+    var mu sync.Mutex
+    var results []Result
+    var wg sync.WaitGroup
+
+    for _, provider := range s.providers {
+        wg.Add(1)
+        go func(p MetadataProvider) {
+            defer wg.Done()
+            if err := sem.Acquire(ctx); err != nil {
+                return // Context cancelled, stop gracefully
+            }
+            defer sem.Release()
+
+            res, err := p.Search(ctx, query)
+            if err != nil {
+                return // Provider failure does not block others
+            }
+            mu.Lock()
+            results = append(results, res...)
+            mu.Unlock()
+        }(provider)
+    }
+
+    wg.Wait()
+    return results, nil
+}
+```
+
+**Key benefits over the basic semaphore:**
+- Context cancellation prevents goroutine pile-up during shutdown.
+- `TryAcquire()` enables non-blocking "best-effort" patterns for optional work.
+- The pattern prevents API rate limit exhaustion by capping concurrent outbound requests.
+
+### Where Used
+
+| Location | Limit | Purpose |
+|----------|-------|---------|
+| `SearchAll` (entity service) | 5 | Concurrent metadata provider searches |
+| File scanning worker pool | 10 | Concurrent filesystem operations |
+| Thumbnail generation | 3 | Concurrent image processing |
+
+## Default Query Timeout on Database Wrappers
+
+### Problem
+
+Without a default timeout, a runaway SQL query (e.g., a full table scan on a large database or a query blocked by SQLite's single-writer lock) can hold a database connection indefinitely. With a connection pool of 25, just 25 stuck queries exhaust the pool and freeze the entire application.
+
+### Solution
+
+The `database.DB` wrapper applies a default 30-second timeout to every query if the caller has not already set a deadline on the context:
+
+```go
+// database/connection.go
+func (db *DB) QueryContext(ctx context.Context, query string, args ...any) (*sql.Rows, error) {
+    if _, hasDeadline := ctx.Deadline(); !hasDeadline {
+        var cancel context.CancelFunc
+        ctx, cancel = context.WithTimeout(ctx, 30*time.Second)
+        defer cancel()
+    }
+    rewritten := db.dialect.Rewrite(query)
+    return db.DB.QueryContext(ctx, rewritten, args...)
+}
+```
+
+The same pattern is applied to `ExecContext` and `QueryRowContext`.
+
+**Design decisions:**
+- 30 seconds is generous enough for complex joins across large tables but short enough to prevent connection pool starvation.
+- Callers can override by passing a context with a tighter deadline (e.g., health checks use 100ms).
+- The timeout produces a clear `context.DeadlineExceeded` error that is logged and returned to the client as a 504 Gateway Timeout.
+
+## Redis Middleware Timeout Pattern
+
+### Problem
+
+The Redis-based rate limiter middleware runs on every authenticated request. If Redis becomes slow or unresponsive, every request blocks waiting for Redis, effectively taking down the entire API.
+
+### Solution: Fail-Open with 500ms Timeout
+
+```go
+// middleware/redis_rate_limiter.go
+func RateLimitMiddleware(rdb *redis.Client, limit int, window time.Duration) gin.HandlerFunc {
+    return func(c *gin.Context) {
+        ctx, cancel := context.WithTimeout(c.Request.Context(), 500*time.Millisecond)
+        defer cancel()
+
+        key := fmt.Sprintf("ratelimit:%s", c.ClientIP())
+        count, err := rdb.Incr(ctx, key).Result()
+        if err != nil {
+            // Redis unavailable: fail open, allow the request
+            c.Next()
+            return
+        }
+
+        if count == 1 {
+            rdb.Expire(ctx, key, window)
+        }
+
+        if count > int64(limit) {
+            c.JSON(http.StatusTooManyRequests, gin.H{"error": "rate limit exceeded"})
+            c.Abort()
+            return
+        }
+
+        c.Next()
+    }
+}
+```
+
+**Key properties:**
+- The 500ms timeout prevents Redis latency from blocking requests.
+- Fail-open means Redis outages do not cause a service-wide outage (availability over strictness).
+- When Redis recovers, rate limiting resumes automatically with no manual intervention.
+- The pattern is also used in the Redis cache middleware for similar reasons.
+
+## Goroutine Lifecycle Management Fixes
+
+Several goroutine lifecycle issues were identified and fixed during the safety improvement pass:
+
+### CacheService Cleanup Goroutine
+
+**Before:** The `CacheService` spawned a background goroutine in `NewCacheService()` for expired entry cleanup but had no way to stop it.
+
+**After:** Added `sync.Once`-guarded `Close()` method with a `done` channel:
+
+```go
+type CacheService struct {
+    done     chan struct{}
+    closeOnce sync.Once
+}
+
+func (s *CacheService) Close() {
+    s.closeOnce.Do(func() {
+        close(s.done)
+    })
+}
+
+// In the cleanup goroutine:
+select {
+case <-s.done:
+    return
+case <-ticker.C:
+    s.cleanupExpired()
+}
+```
+
+### WebSocketHandler Stop
+
+**Before:** The `WebSocketHandler` cleanup goroutine had no shutdown path. Tests calling `server.Close()` before `handler.Stop()` caused `readPump` to block indefinitely.
+
+**After:** Added `sync.Once`-guarded `Stop()` method. Production shutdown in `main.go` now calls `wsHandler.Stop()` before `httpServer.Shutdown()` to unblock `readPump`.
+
+### SyncService and LogManagementService
+
+**Before:** `StartSync()` and `CollectLogs()` returned pointers to internal state, creating shared-pointer races when the caller read the result while the service continued modifying it.
+
+**After:** Both methods now return deep copies of their results, eliminating the shared-pointer race.
+
 ## References
 
 - [Go Concurrency Patterns](https://go.dev/blog/pipelines)

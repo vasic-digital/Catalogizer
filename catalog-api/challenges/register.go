@@ -196,5 +196,78 @@ func RegisterAll(svc *services.ChallengeService) error {
 	// Verify specific module capabilities (types, functions, patterns)
 	RegisterModuleFuncChallenges(svc)
 
+	// Admin API challenges (CH-100 to CH-110)
+	RegisterAdminChallenges(svc)
+
+	// Conversion API challenges (CH-111 to CH-120)
+	RegisterConversionChallenges(svc)
+
+	// Entity system challenges (CH-121 to CH-130)
+	RegisterEntityChallenges(svc)
+
+	// Middleware stack challenges (CH-131 to CH-140)
+	RegisterMiddlewareChallenges(svc)
+
 	return nil
+}
+
+// RegisterAdminChallenges registers admin API challenges
+// CH-100 to CH-110.
+func RegisterAdminChallenges(svc *services.ChallengeService) {
+	svc.Register(NewAdminSystemInfoChallenge())         // CH-100
+	svc.Register(NewAdminUsersListChallenge())          // CH-101
+	svc.Register(NewAdminUserUpdateChallenge())         // CH-102
+	svc.Register(NewAdminStorageInfoChallenge())        // CH-103
+	svc.Register(NewAdminBackupsListChallenge())        // CH-104
+	svc.Register(NewAdminBackupCreateChallenge())       // CH-105
+	svc.Register(NewAdminBackupRestoreChallenge())      // CH-106
+	svc.Register(NewAdminStorageScanChallenge())        // CH-107
+	svc.Register(NewAdminAuthRequiredChallenge())       // CH-108
+	svc.Register(NewAdminNonAdminRejectedChallenge())   // CH-109
+	svc.Register(NewAdminSystemInfoVersionChallenge())  // CH-110
+}
+
+// RegisterConversionChallenges registers conversion API
+// challenges CH-111 to CH-120.
+func RegisterConversionChallenges(svc *services.ChallengeService) {
+	svc.Register(NewConversionJobsListChallenge())             // CH-111
+	svc.Register(NewConversionJobCreateChallenge())            // CH-112
+	svc.Register(NewConversionJobCancelChallenge())            // CH-113
+	svc.Register(NewConversionJobRetryChallenge())             // CH-114
+	svc.Register(NewConversionJobDownloadChallenge())          // CH-115
+	svc.Register(NewConversionAuthRequiredChallenge())         // CH-116
+	svc.Register(NewConversionJobStatusTransitionChallenge())  // CH-117
+	svc.Register(NewConversionFormatsListChallenge())          // CH-118
+	svc.Register(NewConversionInvalidJobIDChallenge())         // CH-119
+	svc.Register(NewConversionRateLimitChallenge())            // CH-120
+}
+
+// RegisterEntityChallenges registers entity system challenges
+// CH-121 to CH-130.
+func RegisterEntityChallenges(svc *services.ChallengeService) {
+	svc.Register(NewEntityListChallenge())                // CH-121
+	svc.Register(NewEntityDetailChallenge())              // CH-122
+	svc.Register(NewEntityTypesChallenge())               // CH-123
+	svc.Register(NewEntityStatsChallenge())               // CH-124
+	svc.Register(NewEntitySearchByTitleChallenge())       // CH-125
+	svc.Register(NewEntityFilterByTypeChallenge())        // CH-126
+	svc.Register(NewEntityHierarchyCorrectChallenge())    // CH-127
+	svc.Register(NewEntityDuplicateDetectionChallenge())  // CH-128
+	svc.Register(NewEntityPaginationChallenge())          // CH-129
+	svc.Register(NewEntitySortingChallenge())             // CH-130
+}
+
+// RegisterMiddlewareChallenges registers middleware stack
+// challenges CH-131 to CH-140.
+func RegisterMiddlewareChallenges(svc *services.ChallengeService) {
+	svc.Register(NewMiddlewareSecurityHeadersChallenge())        // CH-131
+	svc.Register(NewMiddlewareRequestIDChallenge())              // CH-132
+	svc.Register(NewMiddlewareCacheHeadersHealthChallenge())     // CH-133
+	svc.Register(NewMiddlewareCacheHeadersDiscoveryChallenge())  // CH-134
+	svc.Register(NewMiddlewareRateLimitingChallenge())           // CH-135
+	svc.Register(NewMiddlewareRequestTimeoutChallenge())         // CH-136
+	svc.Register(NewMiddlewareCORSHeadersChallenge())            // CH-137
+	svc.Register(NewMiddlewareCompressionChallenge())            // CH-138
+	svc.Register(NewMiddlewareSQLInjectionChallenge())           // CH-139
+	svc.Register(NewMiddlewareXSSChallenge())                    // CH-140
 }

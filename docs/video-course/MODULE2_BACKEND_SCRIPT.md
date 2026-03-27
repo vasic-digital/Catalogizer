@@ -361,3 +361,82 @@ func SetupTestDB(t *testing.T) *database.DB {
 
 4. How does the migration system ensure idempotency?
    **Answer**: Each migration has a unique version number. Before running a migration, the system checks the `migrations` table for that version. If it has already been applied, it is skipped. Each migration also has separate SQLite and PostgreSQL implementations.
+
+---
+
+## Addendum: Lazy Initialization and LazyServiceRegistry
+
+**[Visual: Diagram showing startup without lazy init (all services created) vs with lazy init (only used services created)]**
+
+**Narrator**: As Catalogizer grew from a handful of services to dozens -- metadata providers, aggregation pipelines, subtitle engines, conversion workers -- startup time became a concern. Initializing every service eagerly at boot added seconds of delay and consumed memory for services that might never be called during a given session.
+
+**[Visual: Open `catalog-api/internal/lifecycle/lazy_registry.go`]**
+
+**Narrator**: The solution is the `LazyServiceRegistry`. Services register a factory function -- a closure that creates the service -- but the actual instantiation is deferred until the first call to `Get()`.
+
+```go
+// internal/lifecycle/lazy_registry.go
+type LazyServiceRegistry struct {
+    mu        sync.RWMutex
+    factories map[string]func() (interface{}, error)
+    instances map[string]interface{}
+}
+
+func (r *LazyServiceRegistry) Register(name string, factory func() (interface{}, error)) {
+    r.mu.Lock()
+    defer r.mu.Unlock()
+    r.factories[name] = factory
+}
+
+func (r *LazyServiceRegistry) Get(name string) (interface{}, error) {
+    // Fast path: read lock for already-initialized services
+    r.mu.RLock()
+    if inst, ok := r.instances[name]; ok {
+        r.mu.RUnlock()
+        return inst, nil
+    }
+    r.mu.RUnlock()
+
+    // Slow path: write lock for first initialization
+    r.mu.Lock()
+    defer r.mu.Unlock()
+    if inst, ok := r.instances[name]; ok {
+        return inst, nil // Double-check after lock upgrade
+    }
+    inst, err := r.factories[name]()
+    if err != nil {
+        return nil, err
+    }
+    r.instances[name] = inst
+    return inst, nil
+}
+```
+
+**[Visual: Show `main.go` registering services with the registry]**
+
+**Narrator**: In `main.go`, services are registered with closures that capture their dependencies. The TMDB provider, for example, is registered with a factory that reads the API key and creates the HTTP client. If TMDB is never queried during a session, that HTTP client is never created.
+
+```go
+// main.go
+registry.Register("tmdb", func() (interface{}, error) {
+    apiKey := cfg.TMDBAPIKey
+    if apiKey == "" {
+        return nil, errors.New("TMDB API key not configured")
+    }
+    return providers.NewTMDBProvider(apiKey, httpClient), nil
+})
+```
+
+**[Visual: Show the LazyProvider wrapper for metadata providers]**
+
+**Narrator**: The `LazyProvider` pattern takes this further for metadata providers specifically. Each provider is wrapped so that `Search()` and `GetDetails()` trigger initialization on the first call using `sync.Once`. This means a provider with a missing API key does not block startup -- it simply returns an error when someone tries to use it.
+
+**[Visual: Performance comparison chart: startup with vs without lazy init]**
+
+**Narrator**: The impact is measurable. Application startup dropped from approximately 4.5 seconds to 1.8 seconds -- a 60% improvement. Memory usage for idle providers dropped to zero. And the double-checked locking pattern in `Get()` ensures thread-safe initialization without contention on the hot read path.
+
+**Key takeaways:**
+- Factory closures capture dependencies naturally, replacing explicit dependency ordering.
+- `sync.RWMutex` with double-checked locking avoids write lock contention after initialization.
+- `sync.Once` in `LazyProvider` guarantees single initialization even under concurrent access.
+- Missing configuration surfaces as a clear error at first use, not a startup crash.

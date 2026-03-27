@@ -272,3 +272,141 @@ This sequence is part of the release build pipeline and runs before any deployme
 - `catalog-api/database/dialect.go` -- SQL injection prevention via parameterized queries
 - `catalog-api/middleware/input_validation.go` -- Input validation middleware
 - `catalog-api/middleware/security_headers.go` -- Security headers middleware
+
+---
+
+## Addendum: Phase 1 Scanning Methodology and CVE Fixes
+
+**[Visual: Timeline showing Phase 1 security audit: scan -> triage -> fix -> verify -> document]**
+
+**Narrator**: The initial security scanning effort -- Phase 1 -- established the baseline methodology and resolved the first wave of findings. This addendum documents the process, the specific CVE fixes applied, and the ongoing scanning discipline.
+
+### Phase 1 Scanning Methodology
+
+**[Visual: Flowchart: Inventory -> Scan -> Triage -> Prioritize -> Fix -> Verify -> Report]**
+
+**Narrator**: The Phase 1 approach follows a structured seven-step methodology:
+
+1. **Inventory**: Enumerate all dependencies across Go modules (`go.sum`), Node.js packages (`package-lock.json`), container base images, and system libraries.
+
+2. **Scan**: Run all six tools in sequence:
+   ```bash
+   # Go dependencies
+   cd catalog-api && govulncheck ./...
+
+   # Node.js dependencies
+   cd catalog-web && npm audit --omit=dev
+   cd installer-wizard && npm audit --omit=dev
+
+   # Static analysis
+   semgrep --config auto --config p/owasp-top-ten catalog-api/ catalog-web/
+
+   # Container images
+   trivy image --severity HIGH,CRITICAL catalogizer-api:latest
+   trivy image --severity HIGH,CRITICAL catalogizer-web:latest
+
+   # Code quality and security hotspots
+   ./scripts/run-sonarqube-scan.sh
+   ```
+
+3. **Triage**: Classify each finding by severity (critical, high, medium, low), exploitability (is the vulnerable code path reachable?), and impact (data exposure, denial of service, remote code execution).
+
+4. **Prioritize**: Fix critical and high findings immediately. Medium findings are scheduled for the next sprint. Low findings are documented and tracked.
+
+5. **Fix**: Apply the fix -- dependency upgrade, code change, or configuration adjustment.
+
+6. **Verify**: Re-run the specific scanner that found the issue to confirm the fix.
+
+7. **Report**: Document the finding, fix, and verification in `docs/security/`.
+
+### CVE Fixes Applied in Phase 1
+
+**[Visual: Table of resolved CVEs with severity badges]**
+
+The following categories of vulnerabilities were identified and resolved during Phase 1:
+
+#### Go Dependency Upgrades
+
+| Category | Action | Impact |
+|----------|--------|--------|
+| HTTP/2 rapid reset (CVE class) | Upgraded `golang.org/x/net` | Prevented DoS via HTTP/2 stream reset floods |
+| QUIC handshake vulnerability | Upgraded `quic-go` to latest | Fixed TLS handshake edge case in HTTP/3 |
+| Crypto timing side-channel | Upgraded `golang.org/x/crypto` | Eliminated timing leak in bcrypt comparison |
+| YAML parsing DoS | Upgraded `gopkg.in/yaml.v3` | Fixed billion-laughs-style entity expansion |
+
+```bash
+# Typical fix workflow for Go dependencies
+cd catalog-api
+go get golang.org/x/net@latest
+go get golang.org/x/crypto@latest
+go mod tidy
+govulncheck ./...     # Verify: 0 vulnerabilities
+GOMAXPROCS=3 go test ./... -p 2 -parallel 2  # Verify: 0 failures
+```
+
+#### Node.js Dependency Upgrades
+
+| Category | Action | Impact |
+|----------|--------|--------|
+| Prototype pollution in dev deps | Upgraded transitive dependencies | Eliminated prototype pollution vectors |
+| ReDoS in validation libraries | Upgraded `zod`, `semver` | Fixed regex denial-of-service patterns |
+| Path traversal in build tools | Upgraded `vite`, `esbuild` | Prevented directory escape in dev server |
+
+```bash
+# Typical fix workflow for Node.js dependencies
+cd catalog-web
+npm audit fix
+npm audit --omit=dev  # Verify: 0 vulnerabilities in production deps
+npm run test          # Verify: 1623 tests pass
+npm run build         # Verify: clean build
+```
+
+#### Static Analysis Fixes (Semgrep)
+
+| Finding | Severity | Fix |
+|---------|----------|-----|
+| Hardcoded JWT secret in test file | Medium | Moved to environment variable, added `.env.test` |
+| Missing error check on `db.Close()` | Low | Added deferred error check with logging |
+| Potential path traversal in file handler | High | Added `filepath.Clean()` and base directory validation |
+| Insecure TLS minimum version | Medium | Set `tls.Config.MinVersion = tls.VersionTLS13` |
+
+### Safety Improvements from Phase 1
+
+**[Visual: Before/after comparison of safety patterns]**
+
+Beyond CVE fixes, Phase 1 established several defensive patterns that prevent future vulnerabilities:
+
+**Database query timeout (30s default):** Every database query now has a 30-second context timeout applied at the `database.DB` wrapper level. This prevents a single slow query from exhausting the connection pool.
+
+**Redis middleware fail-open (500ms timeout):** The Redis rate limiter uses a 500ms timeout. If Redis is slow or down, requests pass through rather than blocking. This is a deliberate availability-over-strictness trade-off -- rate limiting is a best-effort defense, not a hard security boundary.
+
+**Goroutine lifecycle cleanup:** All background goroutines (`CacheService`, `WebSocketHandler`, `SyncService`) now have explicit shutdown paths with `sync.Once`-guarded `Close()`/`Stop()` methods. This prevents goroutine leaks that could lead to memory exhaustion (a denial-of-service vector).
+
+**Shared-pointer race elimination:** `SyncService.StartSync()` and `LogManagementService.CollectLogs()` now return deep copies instead of pointers to internal state, eliminating data races that could cause inconsistent security decisions.
+
+### Ongoing Scanning Discipline
+
+**[Visual: Checklist showing pre-release security gate]**
+
+**Narrator**: Phase 1 established the scanning cadence that all subsequent releases must follow:
+
+```bash
+# Pre-release security gate (mandatory before any deployment)
+cd catalog-api && govulncheck ./...                          # 0 findings
+cd catalog-web && npm audit --omit=dev                       # 0 critical/high
+semgrep --config auto --severity ERROR catalog-api/          # 0 errors
+trivy image --severity CRITICAL catalogizer-api:latest       # 0 critical
+
+# Periodic deep scan (weekly)
+./scripts/run-sonarqube-scan.sh                              # Review hotspots
+podman-compose -f docker-compose.security.yml \
+  --profile semgrep-scan run --rm semgrep-scanner            # Full ruleset
+```
+
+**Narrator**: The pre-release gate runs four fast scans that complete in under 2 minutes. The weekly deep scan runs SonarQube and the full Semgrep ruleset, which takes 10-15 minutes but catches subtler issues like code complexity, maintainability risks, and security hotspots that require human review.
+
+**Key takeaways:**
+- Phase 1 resolved all critical and high CVEs across Go, Node.js, and container images.
+- Safety patterns (query timeout, Redis fail-open, goroutine lifecycle) prevent new vulnerability classes.
+- The pre-release security gate is a mandatory 2-minute check before any deployment.
+- Weekly deep scans with SonarQube and Semgrep catch issues that fast scans miss.

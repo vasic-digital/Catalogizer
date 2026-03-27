@@ -366,6 +366,48 @@ graph TB
     class COMPOSE,CLIRUNNER infra
 ```
 
+## Lazy Initialization and Concurrency Control
+
+```mermaid
+graph TD
+    subgraph "Lazy Initialization"
+        REQ[First Request] --> LSR[LazyServiceRegistry]
+        LSR --> |sync.Once| SVC[Service Instance]
+        LSR --> |dependency order| DEP[Dependencies]
+    end
+
+    subgraph "Concurrency Control"
+        SCAN[Scan Request] --> SEM[BoundedSemaphore]
+        SEM --> |acquire| WORKER[Worker Pool]
+        WORKER --> |release| SEM
+    end
+
+    subgraph "Admin Handler Flow"
+        ADMIN_REQ[Admin Request] --> ADMIN_HANDLER[AdminHandler]
+        ADMIN_HANDLER --> |system-info| RUNTIME[Runtime Metrics]
+        ADMIN_HANDLER --> |users/config| ADMIN_DB[(Database)]
+    end
+
+    subgraph "Conversion Handler Flow"
+        CONV_REQ[Conversion Request] --> CONV_HANDLER[ConversionHandler]
+        CONV_HANDLER --> CONV_SERVICE[ConversionService]
+        CONV_SERVICE --> CONV_REPO[ConversionRepository]
+        CONV_REPO --> CONV_DB[(Database)]
+    end
+
+    classDef init fill:#50C878,stroke:#2E8B57,color:#fff
+    classDef concurrency fill:#FFD700,stroke:#DAA520,color:#000
+    classDef admin fill:#4A90D9,stroke:#2C5F8A,color:#fff
+    classDef conversion fill:#FFA07A,stroke:#E9967A,color:#000
+    classDef db fill:#87CEEB,stroke:#4682B4,color:#000
+
+    class REQ,LSR,SVC,DEP init
+    class SCAN,SEM,WORKER concurrency
+    class ADMIN_REQ,ADMIN_HANDLER,RUNTIME admin
+    class CONV_REQ,CONV_HANDLER,CONV_SERVICE,CONV_REPO conversion
+    class ADMIN_DB,CONV_DB db
+```
+
 ## Technology Stack
 
 ```mermaid

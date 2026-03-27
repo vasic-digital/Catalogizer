@@ -16,6 +16,9 @@ Mermaid sequence diagrams for the key operational flows in the Catalogizer syste
 | Subtitle Search/Download | ![Subtitle Search](images/sequence-diagrams-8.svg) |
 | Subtitle Sync | ![Subtitle Sync](images/sequence-diagrams-9.svg) |
 | Subtitle Lifecycle | ![Subtitle Lifecycle](images/sequence-diagrams-10.svg) |
+| Admin System Info | ![Admin System Info](images/sequence-diagrams-11.svg) |
+| Lazy Provider Search | ![Lazy Provider Search](images/sequence-diagrams-12.svg) |
+| Non-Blocking Health Check | ![Non-Blocking Health Check](images/sequence-diagrams-13.svg) |
 
 ## Table of Contents
 
@@ -24,6 +27,9 @@ Mermaid sequence diagrams for the key operational flows in the Catalogizer syste
 - [Media Detection Pipeline](#media-detection-pipeline)
 - [WebSocket Real-Time Updates](#websocket-real-time-updates)
 - [Subtitle Management Flow](#subtitle-management-flow)
+- [Admin System Info Flow](#admin-system-info-flow)
+- [Lazy Provider Search Flow](#lazy-provider-search-flow)
+- [Non-Blocking Health Check Flow](#non-blocking-health-check-flow)
 
 ---
 
@@ -590,4 +596,109 @@ sequenceDiagram
     Note over SubS,DB: Phase 3: Cache maintenance
 
     SubS->>DB: DELETE FROM subtitle_cache WHERE expires_at < NOW()
+```
+
+---
+
+## Admin System Info Flow
+
+### Admin System Information Request
+
+```mermaid
+sequenceDiagram
+    participant Client as Client App
+    participant Router as Gin Router
+    participant AuthMW as Auth Middleware
+    participant AdminH as Admin Handler
+    participant Runtime as Go Runtime
+
+    Client->>Router: GET /api/v1/admin/system-info<br/>Authorization: Bearer <token>
+    Router->>AuthMW: Validate JWT
+    AuthMW->>AdminH: Forward with user context
+
+    AdminH->>AdminH: Check admin permission
+    alt Not admin role
+        AdminH-->>Client: 403 Forbidden
+    else Admin authorized
+        AdminH->>+Runtime: Collect metrics
+        Runtime-->>-AdminH: version, uptime, memory, goroutines
+        AdminH->>AdminH: Build system info response
+        AdminH-->>Client: 200 OK (system info JSON)
+    end
+```
+
+---
+
+## Lazy Provider Search Flow
+
+### Concurrent Provider Search with BoundedSemaphore
+
+```mermaid
+sequenceDiagram
+    participant Client as Client App
+    participant PM as ProviderManager
+    participant SEM as BoundedSemaphore
+    participant TMDB as TMDB Provider
+    participant OMDB as OMDB Provider
+    participant MB as MusicBrainz Provider
+
+    Client->>+PM: SearchAll(query)
+    PM->>+SEM: Acquire (max 3)
+    SEM-->>-PM: slot granted
+
+    par Concurrent Provider Searches
+        PM->>TMDB: Search(query)
+        TMDB-->>PM: TMDB results
+    and
+        PM->>OMDB: Search(query)
+        OMDB-->>PM: OMDB results
+    and
+        PM->>MB: Search(query)
+        MB-->>PM: MusicBrainz results
+    end
+
+    PM->>PM: Merge and deduplicate results
+    PM->>+SEM: Release
+    SEM-->>-PM: slot freed
+    PM-->>-Client: merged results
+```
+
+---
+
+## Non-Blocking Health Check Flow
+
+### Deep Health Check with Timeout
+
+```mermaid
+sequenceDiagram
+    participant Client as Client App
+    participant HH as Health Handler
+    participant G as Goroutine
+    participant DB as Database
+    participant Redis as Redis
+    participant FS as Filesystem
+
+    Client->>+HH: GET /health/deep
+    HH->>+G: RunChecks()
+
+    par Health Check Probes
+        G->>DB: Ping()
+        DB-->>G: OK
+    and
+        G->>Redis: Ping()
+        Redis-->>G: OK
+    and
+        G->>FS: Stat(root)
+        FS-->>G: OK
+    end
+
+    alt Completes within 100ms
+        G-->>HH: checks complete (all healthy)
+        HH-->>Client: 200 OK {status: "healthy", checks: [...]}
+    else Exceeds 100ms
+        HH-->>Client: 200 OK {status: "degraded", message: "health check timeout"}
+        G-->>-HH: (late result, discarded)
+    end
+
+    deactivate HH
 ```

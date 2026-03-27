@@ -1828,6 +1828,54 @@ Ranked view of popular content combining access statistics with favorite counts.
 | 8 | create_media_entity_tables | Media entity system: media_types (11 seeded types), media_items (self-referential hierarchy), media_files (junction to files), media_collections, media_collection_items, external_metadata, user_metadata, directory_analyses, detection_rules. Includes 13 indexes for foreign keys and lookups |
 | 9 | create_performance_indexes | Adds performance-critical indexes: `idx_files_file_type`, `idx_files_extension`, `idx_files_is_directory`, `idx_files_name` on files; `idx_media_items_title_type` (compound), `idx_media_items_status`, `idx_media_items_year` on media_items; `idx_user_metadata_user_watched` (compound) on user_metadata; `idx_media_files_item_file` (UNIQUE) on media_files. Deduplicates media_files before creating the unique index |
 
+---
+
+## Admin and Conversion Handler Table Dependencies
+
+The admin and conversion handlers rely on existing tables documented above. This section clarifies which tables back each handler group and any additional columns or constraints assumed by the handler layer.
+
+### Tables Used by Admin Endpoints
+
+The `AdminHandler` in `internal/handlers/admin_handler.go` provides system administration capabilities. It reads from and writes to the following tables:
+
+| Endpoint | Table(s) | Operations |
+|----------|----------|------------|
+| `GET /admin/system-info` | (none -- reads runtime metrics) | Runtime memory stats, goroutine count, version info |
+| `GET /admin/users` | `users`, `roles` | SELECT with JOIN to resolve role names |
+| `PUT /admin/users/{id}` | `users` | UPDATE role_id, is_active, is_locked fields |
+| `GET /admin/storage` | `storage_roots`, `files` | SELECT with aggregated file counts and sizes |
+| `GET /admin/backups` | (filesystem) | Lists backup files from the configured backup directory |
+| `POST /admin/backups` | (filesystem + `storage_roots`, `files`, `users`) | Creates SQLite database backup via `VACUUM INTO` |
+| `POST /admin/backups/{id}/restore` | (filesystem) | Restores database from backup file |
+| `POST /admin/storage/scan` | `storage_roots`, `scan_history` | Triggers scan via `ScanService` for specified root |
+
+**Key constraints for admin operations:**
+- All admin endpoints require the `admin` role (role_id=1) enforced via middleware.
+- User updates via `PUT /admin/users/{id}` cannot modify the caller's own account to prevent self-lockout.
+- Backup operations use SQLite's `VACUUM INTO` for consistent snapshots, which briefly locks the database.
+
+### Tables Used by Conversion Endpoints
+
+The `ConversionHandler` (both `handlers/conversion_handler.go` and `internal/handlers/conversion_handler.go`) manages media format conversion jobs. All operations target the `conversion_jobs` table documented in the [Media Conversion Tables](#media-conversion-tables) section.
+
+| Endpoint | Table(s) | Operations |
+|----------|----------|------------|
+| `POST /conversion/jobs` | `conversion_jobs` | INSERT new job with status='pending' |
+| `GET /conversion/jobs` | `conversion_jobs` | SELECT with optional status/user_id filters |
+| `GET /conversion/jobs/{id}` | `conversion_jobs` | SELECT by primary key |
+| `DELETE /conversion/jobs/{id}` | `conversion_jobs` | DELETE job (only if status is pending or failed) |
+| `POST /conversion/jobs/{id}/retry` | `conversion_jobs` | UPDATE status='pending', clear error_message |
+| `POST /conversion/jobs/{id}/cancel` | `conversion_jobs` | UPDATE status='cancelled' |
+| `GET /conversion/jobs/{id}/download` | `conversion_jobs` | SELECT target_path, then stream file |
+| `GET /conversion/formats` | (none -- static configuration) | Returns hardcoded format support matrix |
+| `GET /conversion/profiles` | `conversion_profiles` | SELECT active profiles |
+
+**Key constraints for conversion operations:**
+- Jobs can only be deleted if their status is `pending` or `failed`. Running or completed jobs are protected.
+- Retry resets `status` to `pending`, clears `error_message`, `started_at`, and `completed_at`.
+- Download is only available when `status='completed'` and `target_path` exists on disk.
+- The `conversion_profiles` table provides reusable presets (documented in the [Multi-User v3 Tables](#multi-user-v3-tables) section).
+
 ### Migration v8: Media Entity Tables
 
 The v8 migration creates the structured media entity system. Key tables:

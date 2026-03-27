@@ -179,6 +179,16 @@ graph TB
             RT_WS["WebSocket Server"]
             RT_SSE["SSE Server"]
         end
+
+        subgraph "Concurrency & Lifecycle"
+            BSEM["BoundedSemaphore<br/>Max parallel operations<br/>(acquire/release)"]
+            LAZY["LazyProvider<br/>sync.Once init<br/>Deferred service creation"]
+            LSR["LazyServiceRegistry<br/>Dependency-ordered<br/>service initialization"]
+        end
+    end
+
+    subgraph "Frontend Infrastructure (catalog-web)"
+        PAGE_ERR["PageErrorBoundary<br/>React Error Boundary<br/>Per-route error isolation"]
     end
 
     subgraph "Data Stores"
@@ -304,6 +314,25 @@ graph TB
     RT_BUS --> RT_SSE
     S_CATALOG --> RT_WATCHER
 
+    %% Concurrency & Lifecycle
+    LSR --> LAZY
+    LAZY -->|"sync.Once"| S_MEDIA
+    LAZY -->|"sync.Once"| S_CONV
+    LAZY -->|"sync.Once"| S_SUB
+    BSEM --> S_CATALOG
+    S_MEDIA --> BSEM
+
+    %% Admin handler extended flow
+    H_ADMIN --> R_USER
+    H_ADMIN --> S_AUTH_SVC
+
+    %% Conversion handler extended flow
+    H_CONV --> R_CONV
+
+    %% Frontend error boundary
+    CW_ROUTER --> PAGE_ERR
+    PAGE_ERR --> CW_PAGES
+
     %% Data store connections
     R_FILE --> DB_SQLITE
     R_FILE --> DB_POSTGRES
@@ -321,8 +350,9 @@ graph TB
     classDef datastore fill:#87CEEB,stroke:#4682B4,color:#000
     classDef external fill:#F0E68C,stroke:#BDB76B,color:#000
     classDef network fill:#DDA0DD,stroke:#BA55D3,color:#000
+    classDef lifecycle fill:#FF6B6B,stroke:#CC5555,color:#fff
 
-    class CW_AUTH,CW_WS,CW_ROUTER,CW_RQ,CW_PAGES,CW_COMP,CD_REACT,CD_RUST,CD_IPC,CD_PAGES_D,IW_REACT,IW_RUST,IW_IPC,IW_STEPS frontend
+    class CW_AUTH,CW_WS,CW_ROUTER,CW_RQ,CW_PAGES,CW_COMP,CD_REACT,CD_RUST,CD_IPC,CD_PAGES_D,IW_REACT,IW_RUST,IW_IPC,IW_STEPS,PAGE_ERR frontend
     class CA_UI,CA_VM,CA_REPO,CA_ROOM,CA_RETRO,CA_SYNC,CA_HILT,TV_UI,TV_VM,TV_REPO,TV_ROOM,TV_RETRO,TV_SYNC mobile
     class APICLIENT,WSCLIENT,UICOMP,ANDROIDTK library
     class H_CATALOG,H_DOWNLOAD,H_COPY,H_AUTH,H_MEDIA,H_CONV,H_SUB,H_REC,H_STATS,H_ADMIN,H_SMB_DISC handler
@@ -331,6 +361,7 @@ graph TB
     class DB_SQLITE,DB_POSTGRES,DB_CIPHER,DB_REDIS datastore
     class EXT_TMDB,EXT_OMDB,EXT_OSUB,EXT_MBRAINZ external
     class NET_SMB,NET_FTP,NET_NFS,NET_WEBDAV,NET_LOCAL network
+    class BSEM,LAZY,LSR lifecycle
 ```
 
 ## Component Summary
