@@ -16,6 +16,7 @@ type ConversionServiceInterface interface {
 	GetJob(jobID int, userID int) (*models.ConversionJob, error)
 	GetUserJobs(userID int, status *string, limit, offset int) ([]models.ConversionJob, error)
 	CancelJob(jobID int, userID int) error
+	RetryJob(jobID int, userID int) error
 	GetSupportedFormats() *models.SupportedFormats
 }
 
@@ -195,6 +196,125 @@ func (h *ConversionHandler) GetSupportedFormats(c *gin.Context) {
 	formats := h.conversionService.GetSupportedFormats()
 
 	c.JSON(http.StatusOK, formats)
+}
+
+// DeleteJob cancels and removes a conversion job.
+// The frontend calls DELETE /conversion/jobs/:id which maps to CancelJob.
+func (h *ConversionHandler) DeleteJob(c *gin.Context) {
+	currentUser, err := h.getCurrentUser(c)
+	if err != nil {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized"})
+		return
+	}
+
+	hasPermission, err := h.authService.CheckPermission(currentUser.ID, models.PermissionConversionManage)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to check permissions"})
+		return
+	}
+
+	if !hasPermission {
+		c.JSON(http.StatusForbidden, gin.H{"error": "Insufficient permissions"})
+		return
+	}
+
+	jobIDStr := c.Param("id")
+	jobID, err := strconv.Atoi(jobIDStr)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid job ID"})
+		return
+	}
+
+	err = h.conversionService.CancelJob(jobID, currentUser.ID)
+	if err != nil {
+		if strings.Contains(err.Error(), "not found") {
+			c.JSON(http.StatusNotFound, gin.H{"error": "Job not found"})
+			return
+		}
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to delete job"})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"message": "Job deleted successfully"})
+}
+
+// RetryJob retries a failed conversion job.
+// POST /conversion/jobs/:id/retry
+func (h *ConversionHandler) RetryJob(c *gin.Context) {
+	currentUser, err := h.getCurrentUser(c)
+	if err != nil {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized"})
+		return
+	}
+
+	hasPermission, err := h.authService.CheckPermission(currentUser.ID, models.PermissionConversionManage)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to check permissions"})
+		return
+	}
+
+	if !hasPermission {
+		c.JSON(http.StatusForbidden, gin.H{"error": "Insufficient permissions"})
+		return
+	}
+
+	jobIDStr := c.Param("id")
+	jobID, err := strconv.Atoi(jobIDStr)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid job ID"})
+		return
+	}
+
+	err = h.conversionService.RetryJob(jobID, currentUser.ID)
+	if err != nil {
+		if strings.Contains(err.Error(), "not found") {
+			c.JSON(http.StatusNotFound, gin.H{"error": "Job not found"})
+			return
+		}
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to retry job"})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"message": "Job retry started"})
+}
+
+// DownloadJobFile serves the output file of a completed conversion job.
+// GET /conversion/jobs/:id/download
+func (h *ConversionHandler) DownloadJobFile(c *gin.Context) {
+	currentUser, err := h.getCurrentUser(c)
+	if err != nil {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized"})
+		return
+	}
+
+	jobIDStr := c.Param("id")
+	jobID, err := strconv.Atoi(jobIDStr)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid job ID"})
+		return
+	}
+
+	job, err := h.conversionService.GetJob(jobID, currentUser.ID)
+	if err != nil {
+		if strings.Contains(err.Error(), "not found") {
+			c.JSON(http.StatusNotFound, gin.H{"error": "Job not found"})
+			return
+		}
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to get job"})
+		return
+	}
+
+	if job.Status != "completed" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Job is not completed"})
+		return
+	}
+
+	if job.TargetPath == "" {
+		c.JSON(http.StatusNotFound, gin.H{"error": "No output file available"})
+		return
+	}
+
+	c.File(job.TargetPath)
 }
 
 func (h *ConversionHandler) getCurrentUser(c *gin.Context) (*models.User, error) {

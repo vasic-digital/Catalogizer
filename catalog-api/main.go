@@ -582,6 +582,10 @@ func main() {
 	configurationHandler := root_handlers.NewConfigurationHandler(configAdapter, authAdapter)
 	errorReportingHandler := root_handlers.NewErrorReportingHandler(errorAdapter, authAdapter)
 	logManagementHandler := root_handlers.NewLogManagementHandler(logAdapter, authAdapter)
+
+	// Admin handler for system info, user management, storage and backup administration
+	adminHandler := root_handlers.NewAdminHandler(authAdapter, userRepo, databaseDB, Version)
+
 	// Build service info for discovery announcements
 	serviceInfo := broadcast.ServiceInfo{
 		Service:      "catalogizer-api",
@@ -900,7 +904,23 @@ func main() {
 			conversionGroup.GET("/jobs", conversionHandler.ListJobs)
 			conversionGroup.GET("/jobs/:id", conversionHandler.GetJob)
 			conversionGroup.POST("/jobs/:id/cancel", conversionHandler.CancelJob)
+			conversionGroup.DELETE("/jobs/:id", conversionHandler.DeleteJob)
+			conversionGroup.POST("/jobs/:id/retry", conversionHandler.RetryJob)
+			conversionGroup.GET("/jobs/:id/download", conversionHandler.DownloadJobFile)
 			conversionGroup.GET("/formats", conversionHandler.GetSupportedFormats)
+		}
+
+		// Admin endpoints (system info, user management, storage, backups)
+		adminGroup := api.Group("/admin")
+		{
+			adminGroup.GET("/system-info", adminHandler.GetSystemInfo)
+			adminGroup.GET("/users", adminHandler.GetUsers)
+			adminGroup.PUT("/users/:id", adminHandler.UpdateUser)
+			adminGroup.GET("/storage", adminHandler.GetStorageInfo)
+			adminGroup.GET("/backups", adminHandler.GetBackups)
+			adminGroup.POST("/backups", adminHandler.CreateBackup)
+			adminGroup.POST("/backups/:id/restore", adminHandler.RestoreBackup)
+			adminGroup.POST("/storage/scan", adminHandler.ScanStorage)
 		}
 
 		// User management endpoints
