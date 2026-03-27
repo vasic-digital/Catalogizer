@@ -4,7 +4,7 @@ severity: high
 category: accessibility
 platform: 
 screen: android-curiosity-004.png
-status: open
+status: fixed
 found_date: 2026-03-26
 ---
 

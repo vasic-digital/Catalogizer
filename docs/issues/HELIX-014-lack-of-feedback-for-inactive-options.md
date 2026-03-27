@@ -4,7 +4,7 @@ severity: medium
 category: ux
 platform: 
 screen: android-curiosity-005.png
-status: open
+status: fixed
 found_date: 2026-03-26
 ---
 
