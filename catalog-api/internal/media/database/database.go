@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"strings"
 	"time"
 
 	_ "github.com/mutecomm/go-sqlcipher"
@@ -133,10 +134,16 @@ func (mdb *MediaDatabase) Close() error {
 
 // Backup creates an encrypted backup of the database
 func (mdb *MediaDatabase) Backup(backupPath string) error {
+	// Sanitize inputs for ATTACH DATABASE which cannot use parameterized queries.
+	// Reject single quotes to prevent SQL injection via path or password.
+	if strings.ContainsRune(backupPath, '\'') {
+		return fmt.Errorf("backup path contains invalid character")
+	}
+	sanitizedPassword := strings.ReplaceAll(mdb.password, "'", "''")
 	_, err := mdb.db.Exec(fmt.Sprintf(`
 		ATTACH DATABASE '%s' AS backup KEY '%s';
 		INSERT INTO backup.sqlite_master SELECT * FROM main.sqlite_master WHERE type='table';
-	`, backupPath, mdb.password))
+	`, backupPath, sanitizedPassword))
 
 	if err != nil {
 		return fmt.Errorf("backup failed: %w", err)
@@ -382,7 +389,9 @@ func (mdb *MediaDatabase) ChangePassword(newPassword string) error {
 		return fmt.Errorf("new password cannot be empty")
 	}
 
-	pragma := fmt.Sprintf("PRAGMA rekey = '%s'", newPassword)
+	// Escape single quotes for PRAGMA which cannot use parameterized queries
+	sanitized := strings.ReplaceAll(newPassword, "'", "''")
+	pragma := fmt.Sprintf("PRAGMA rekey = '%s'", sanitized)
 	if _, err := mdb.db.Exec(pragma); err != nil {
 		return fmt.Errorf("failed to change password: %w", err)
 	}
