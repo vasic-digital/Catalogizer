@@ -90,7 +90,7 @@ fun MediaCard(
                         imageVector = mediaTypeIcon(mediaItem.mediaType),
                         contentDescription = mediaItem.mediaType,
                         modifier = Modifier.size(48.dp),
-                        tint = Color.White.copy(alpha = 0.4f)
+                        tint = Color.White.copy(alpha = 0.8f)
                     )
                 }
 
@@ -145,7 +145,7 @@ fun MediaCard(
                             Text(
                                 text = year.toString(),
                                 style = MaterialTheme.typography.bodySmall,
-                                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
+                                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.8f)
                             )
                         }
 
@@ -163,13 +163,13 @@ fun MediaCard(
                                 Text(
                                     text = " • $durationText",
                                     style = MaterialTheme.typography.bodySmall,
-                                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
+                                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.8f)
                                 )
                             } else {
                                 Text(
                                     text = durationText,
                                     style = MaterialTheme.typography.bodySmall,
-                                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
+                                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.8f)
                                 )
                             }
                         }
@@ -323,7 +323,7 @@ fun CompactMediaCard(
                     Text(
                         text = year.toString(),
                         style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
+                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.8f)
                     )
                 }
 
@@ -332,13 +332,13 @@ fun CompactMediaCard(
                         Text(
                             text = " • $quality",
                             style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
+                            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.8f)
                         )
                     } else {
                         Text(
                             text = quality,
                             style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
+                            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.8f)
                         )
                     }
                 }

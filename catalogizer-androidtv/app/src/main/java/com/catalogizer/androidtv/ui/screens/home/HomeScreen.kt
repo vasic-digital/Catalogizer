@@ -67,7 +67,17 @@ fun HomeScreen(
                     modifier = Modifier.fillMaxSize(),
                     contentAlignment = Alignment.Center
                 ) {
-                    CircularProgressIndicator()
+                    Column(
+                        horizontalAlignment = Alignment.CenterHorizontally
+                    ) {
+                        CircularProgressIndicator(color = MaterialTheme.colorScheme.primary)
+                        Spacer(modifier = Modifier.height(16.dp))
+                        Text(
+                            text = "Loading your media collection…",
+                            style = MaterialTheme.typography.bodyLarge,
+                            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
+                        )
+                    }
                 }
             }
 
@@ -86,7 +96,8 @@ fun HomeScreen(
                         Spacer(modifier = Modifier.height(8.dp))
                         Text(
                             text = uiState.error ?: "Unknown error",
-                            style = MaterialTheme.typography.bodyMedium
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
                         )
                         Spacer(modifier = Modifier.height(16.dp))
                         Button(
@@ -113,13 +124,20 @@ fun HomeScreen(
                         horizontalAlignment = Alignment.CenterHorizontally
                     ) {
                         Text(
-                            text = "No content available",
+                            text = "Your Library is Empty",
                             style = MaterialTheme.typography.headlineSmall
                         )
                         Spacer(modifier = Modifier.height(8.dp))
                         Text(
-                            text = "Scan your media collection to populate the catalog",
-                            style = MaterialTheme.typography.bodyMedium
+                            text = "Add storage roots and scan your media collection to get started.",
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
+                        )
+                        Spacer(modifier = Modifier.height(8.dp))
+                        Text(
+                            text = "Use the web dashboard to configure storage and trigger scans.",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f)
                         )
                         Spacer(modifier = Modifier.height(16.dp))
                         Button(

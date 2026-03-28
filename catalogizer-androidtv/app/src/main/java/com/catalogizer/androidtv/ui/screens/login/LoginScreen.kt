@@ -84,9 +84,9 @@ fun LoginScreen(
         focusedContainerColor = Color.White.copy(alpha = 0.06f),
         unfocusedContainerColor = Color.White.copy(alpha = 0.04f),
         focusedBorderColor = MaterialTheme.colorScheme.primary,
-        unfocusedBorderColor = Color.White.copy(alpha = 0.2f),
+        unfocusedBorderColor = Color.White.copy(alpha = 0.3f),
         focusedLabelColor = MaterialTheme.colorScheme.primary,
-        unfocusedLabelColor = Color.White.copy(alpha = 0.5f),
+        unfocusedLabelColor = Color.White.copy(alpha = 0.7f),
         cursorColor = MaterialTheme.colorScheme.primary
     )
 
@@ -154,7 +154,7 @@ fun LoginScreen(
             Text(
                 text = "Media Collection Manager",
                 style = MaterialTheme.typography.bodyMedium,
-                color = Color.White.copy(alpha = 0.5f)
+                color = Color.White.copy(alpha = 0.7f)
             )
 
             Spacer(modifier = Modifier.height(if (isCompact) 16.dp else 32.dp))
@@ -163,7 +163,7 @@ fun LoginScreen(
             OutlinedTextField(
                 value = username,
                 onValueChange = { username = it; errorMessage = null },
-                label = { Text("Username", color = Color.White.copy(alpha = 0.5f)) },
+                label = { Text("Username", color = Color.White.copy(alpha = 0.7f)) },
                 modifier = Modifier
                     .width(formWidth)
                     .focusRequester(usernameFocusRequester)
@@ -180,7 +180,7 @@ fun LoginScreen(
             OutlinedTextField(
                 value = password,
                 onValueChange = { password = it; errorMessage = null },
-                label = { Text("Password", color = Color.White.copy(alpha = 0.5f)) },
+                label = { Text("Password", color = Color.White.copy(alpha = 0.7f)) },
                 modifier = Modifier
                     .width(formWidth)
                     .focusRequester(passwordFocusRequester)
@@ -241,7 +241,7 @@ fun LoginScreen(
             Text(
                 text = "SERVER CONNECTION",
                 style = MaterialTheme.typography.labelSmall,
-                color = Color.White.copy(alpha = 0.4f),
+                color = Color.White.copy(alpha = 0.6f),
                 letterSpacing = androidx.compose.ui.unit.TextUnit(2f, androidx.compose.ui.unit.TextUnitType.Sp)
             )
 
@@ -250,7 +250,7 @@ fun LoginScreen(
             OutlinedTextField(
                 value = serverUrl,
                 onValueChange = { serverUrl = it },
-                label = { Text("Server URL", color = Color.White.copy(alpha = 0.5f)) },
+                label = { Text("Server URL", color = Color.White.copy(alpha = 0.7f)) },
                 modifier = Modifier.width(formWidth).focusable(),
                 singleLine = true,
                 enabled = !isLoading,
@@ -286,7 +286,7 @@ fun LoginScreen(
                     modifier = Modifier.weight(1f).height(44.dp),
                     enabled = !isDiscovering && !isLoading
                 ) {
-                    Icon(Icons.Default.Search, contentDescription = null, modifier = Modifier.size(18.dp))
+                    Icon(Icons.Default.Search, contentDescription = "Discover servers", modifier = Modifier.size(18.dp))
                     Spacer(modifier = Modifier.width(8.dp))
                     Text("Discover", style = MaterialTheme.typography.bodyMedium)
                 }
@@ -305,7 +305,7 @@ fun LoginScreen(
                     modifier = Modifier.weight(1f).height(44.dp),
                     enabled = serverUrl.isNotBlank() && !isLoading
                 ) {
-                    Icon(Icons.Default.Settings, contentDescription = null, modifier = Modifier.size(18.dp))
+                    Icon(Icons.Default.Settings, contentDescription = "Connect to server", modifier = Modifier.size(18.dp))
                     Spacer(modifier = Modifier.width(8.dp))
                     Text("Connect", style = MaterialTheme.typography.bodyMedium)
                 }
@@ -343,7 +343,7 @@ fun LoginScreen(
             Text(
                 text = serverUrl,
                 style = MaterialTheme.typography.bodySmall,
-                color = Color.White.copy(alpha = 0.3f)
+                color = Color.White.copy(alpha = 0.5f)
             )
 
             Spacer(modifier = Modifier.height(32.dp))
@@ -357,13 +357,13 @@ fun LoginScreen(
             Text(
                 text = "Made with \u2764 by Vasic Digital",
                 style = MaterialTheme.typography.bodySmall,
-                color = Color.White.copy(alpha = 0.4f)
+                color = Color.White.copy(alpha = 0.5f)
             )
             Spacer(modifier = Modifier.height(4.dp))
             Text(
                 text = "\u00A9 ${java.util.Calendar.getInstance().get(java.util.Calendar.YEAR)} Vasic Digital. All rights reserved.",
                 style = MaterialTheme.typography.labelSmall,
-                color = Color.White.copy(alpha = 0.25f)
+                color = Color.White.copy(alpha = 0.4f)
             )
             Spacer(modifier = Modifier.height(16.dp))
         }

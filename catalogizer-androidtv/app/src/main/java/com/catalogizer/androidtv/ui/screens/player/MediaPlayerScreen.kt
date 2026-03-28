@@ -31,9 +31,10 @@ fun MediaPlayerScreen(
     var duration by remember { mutableStateOf(0L) }
     var resolvedUrl by remember { mutableStateOf(mediaUrl) }
     var streamError by remember { mutableStateOf<String?>(null) }
+    var retryCount by remember { mutableStateOf(0) }
 
     // Fetch stream URL from entity endpoint if not provided
-    LaunchedEffect(mediaId) {
+    LaunchedEffect(mediaId, retryCount) {
         if (resolvedUrl.isEmpty()) {
             try {
                 val container = com.catalogizer.androidtv.DependencyContainer.getInstance(context)
@@ -186,30 +187,45 @@ fun MediaPlayerScreen(
             ) {
                 if (streamError != null) {
                     Text(
+                        text = "Unable to Play Media",
+                        style = MaterialTheme.typography.headlineSmall,
+                        color = Color.White
+                    )
+                    Spacer(modifier = Modifier.height(12.dp))
+                    Text(
                         text = streamError ?: "Playback unavailable",
-                        style = MaterialTheme.typography.headlineSmall
+                        style = MaterialTheme.typography.bodyLarge,
+                        color = Color.White.copy(alpha = 0.7f)
                     )
-                    Spacer(modifier = Modifier.height(8.dp))
-                    Text(
-                        text = "Media ID: $mediaId",
-                        style = MaterialTheme.typography.bodyLarge
-                    )
+                    Spacer(modifier = Modifier.height(24.dp))
+                    Row(horizontalArrangement = Arrangement.spacedBy(16.dp)) {
+                        Button(onClick = {
+                            streamError = null
+                            resolvedUrl = ""
+                            retryCount++
+                        }) {
+                            Text("Retry")
+                        }
+                        Button(onClick = onNavigateBack) {
+                            Text("Back to Library")
+                        }
+                    }
                 } else if (resolvedUrl.isEmpty()) {
-                    CircularProgressIndicator()
-                    Spacer(modifier = Modifier.height(8.dp))
+                    CircularProgressIndicator(color = Color.White)
+                    Spacer(modifier = Modifier.height(12.dp))
                     Text(
-                        text = "Loading stream...",
-                        style = MaterialTheme.typography.bodyLarge
+                        text = "Loading stream…",
+                        style = MaterialTheme.typography.bodyLarge,
+                        color = Color.White.copy(alpha = 0.7f)
                     )
                 } else {
-                    CircularProgressIndicator()
+                    CircularProgressIndicator(color = Color.White)
+                    Spacer(modifier = Modifier.height(8.dp))
                     Text(
-                        text = "Buffering...",
-                        style = MaterialTheme.typography.bodyLarge
+                        text = "Buffering…",
+                        style = MaterialTheme.typography.bodyLarge,
+                        color = Color.White.copy(alpha = 0.7f)
                     )
-                }
-                Button(onClick = onNavigateBack) {
-                    Text("Back")
                 }
             }
         }

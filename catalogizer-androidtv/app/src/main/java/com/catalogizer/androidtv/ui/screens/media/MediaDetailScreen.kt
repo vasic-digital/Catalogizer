@@ -9,6 +9,8 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.filled.Favorite
+import androidx.compose.material.icons.filled.FavoriteBorder
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.Star
 import androidx.compose.material3.CircularProgressIndicator
@@ -41,13 +43,15 @@ fun MediaDetailScreen(
     var mediaItem by remember { mutableStateOf<MediaItem?>(null) }
     var isLoading by remember { mutableStateOf(true) }
     var error by remember { mutableStateOf<String?>(null) }
+    var retryCount by remember { mutableStateOf(0) }
+    var isFavorite by remember { mutableStateOf(false) }
     val scrollState = rememberScrollState()
     val playButtonFocus = remember { FocusRequester() }
     val config = LocalConfiguration.current
     val isCompact = config.screenWidthDp < 600
 
     // Fetch entity details from API
-    LaunchedEffect(mediaId) {
+    LaunchedEffect(mediaId, retryCount) {
         isLoading = true
         try {
             val result = container.mediaRepository.getMediaById(mediaId).first()
@@ -76,9 +80,31 @@ fun MediaDetailScreen(
                     horizontalAlignment = Alignment.CenterHorizontally,
                     verticalArrangement = Arrangement.Center
                 ) {
-                    Text(error ?: "Error", style = MaterialTheme.typography.bodyLarge, color = Color.White)
-                    Spacer(Modifier.height(16.dp))
-                    Button(onClick = onNavigateBack) { Text("Back") }
+                    Text(
+                        "Unable to Load Media",
+                        style = MaterialTheme.typography.headlineMedium,
+                        color = Color.White,
+                        fontWeight = FontWeight.Bold
+                    )
+                    Spacer(Modifier.height(12.dp))
+                    Text(
+                        error ?: "An unknown error occurred",
+                        style = MaterialTheme.typography.bodyLarge,
+                        color = Color.White.copy(alpha = 0.7f)
+                    )
+                    Spacer(Modifier.height(32.dp))
+                    Row(horizontalArrangement = Arrangement.spacedBy(16.dp)) {
+                        Button(onClick = {
+                            error = null
+                            isLoading = true
+                            retryCount++
+                        }) {
+                            Text("Retry")
+                        }
+                        Button(onClick = onNavigateBack) {
+                            Text("Back to Library")
+                        }
+                    }
                 }
             }
             mediaItem != null -> {
@@ -197,6 +223,18 @@ fun MediaDetailScreen(
                             Button(onClick = onNavigateBack, modifier = Modifier.height(48.dp)) {
                                 Text("Back to Library", style = MaterialTheme.typography.titleSmall)
                             }
+                            Button(
+                                onClick = { isFavorite = !isFavorite },
+                                modifier = Modifier.height(48.dp)
+                            ) {
+                                M3Icon(
+                                    if (isFavorite) Icons.Default.Favorite else Icons.Default.FavoriteBorder,
+                                    contentDescription = if (isFavorite) "Remove from Favorites" else "Add to Favorites",
+                                    modifier = Modifier.size(24.dp)
+                                )
+                                Spacer(Modifier.width(8.dp))
+                                Text("Favorite", style = MaterialTheme.typography.titleSmall)
+                            }
                         }
 
                         Spacer(Modifier.height(24.dp))
@@ -221,7 +259,7 @@ fun MediaDetailScreen(
                                     size > 1048576 -> String.format("%.1f MB", size.toFloat() / 1048576)
                                     else -> String.format("%.1f KB", size.toFloat() / 1024)
                                 }
-                                Text("File Size: $s", color = Color.White.copy(0.5f), style = MaterialTheme.typography.bodySmall)
+                                Text("File Size: $s", color = Color.White.copy(0.7f), style = MaterialTheme.typography.bodySmall)
                             }
                         }
                         Spacer(Modifier.height(48.dp))
