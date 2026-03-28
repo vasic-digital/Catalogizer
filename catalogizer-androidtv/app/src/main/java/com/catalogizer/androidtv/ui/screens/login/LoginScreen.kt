@@ -359,12 +359,6 @@ fun LoginScreen(
                 style = MaterialTheme.typography.bodySmall,
                 color = Color.White.copy(alpha = 0.5f)
             )
-            Spacer(modifier = Modifier.height(4.dp))
-            Text(
-                text = "\u00A9 ${java.util.Calendar.getInstance().get(java.util.Calendar.YEAR)} Vasic Digital. All rights reserved.",
-                style = MaterialTheme.typography.labelSmall,
-                color = Color.White.copy(alpha = 0.4f)
-            )
             Spacer(modifier = Modifier.height(16.dp))
         }
     }

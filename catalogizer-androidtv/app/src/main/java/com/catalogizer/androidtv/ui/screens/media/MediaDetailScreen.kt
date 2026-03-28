@@ -32,6 +32,7 @@ import coil.compose.AsyncImage
 import com.catalogizer.androidtv.DependencyContainer
 import com.catalogizer.androidtv.data.models.MediaItem
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.launch
 
 @Composable
 fun MediaDetailScreen(
@@ -45,6 +46,7 @@ fun MediaDetailScreen(
     var error by remember { mutableStateOf<String?>(null) }
     var retryCount by remember { mutableStateOf(0) }
     var isFavorite by remember { mutableStateOf(false) }
+    val coroutineScope = rememberCoroutineScope()
     val scrollState = rememberScrollState()
     val playButtonFocus = remember { FocusRequester() }
     val config = LocalConfiguration.current
@@ -56,6 +58,7 @@ fun MediaDetailScreen(
         try {
             val result = container.mediaRepository.getMediaById(mediaId).first()
             mediaItem = result
+            isFavorite = result?.isFavorite ?: false
             error = if (result == null) "Media not found" else null
         } catch (e: Exception) {
             error = "Failed to load: ${e.message}"
@@ -224,7 +227,18 @@ fun MediaDetailScreen(
                                 Text("Back to Library", style = MaterialTheme.typography.titleSmall)
                             }
                             Button(
-                                onClick = { isFavorite = !isFavorite },
+                                onClick = {
+                                    val newState = !isFavorite
+                                    isFavorite = newState
+                                    coroutineScope.launch {
+                                        try {
+                                            container.mediaRepository.updateFavoriteStatus(mediaId, newState)
+                                        } catch (e: Exception) {
+                                            isFavorite = !newState // revert on failure
+                                            android.util.Log.e("MediaDetail", "Favorite toggle failed", e)
+                                        }
+                                    }
+                                },
                                 modifier = Modifier.height(48.dp)
                             ) {
                                 M3Icon(

@@ -14,6 +14,7 @@ import androidx.media3.common.util.UnstableApi
 import androidx.media3.exoplayer.ExoPlayer
 import androidx.media3.ui.PlayerView
 import androidx.tv.material3.*
+import kotlinx.coroutines.flow.first
 
 @OptIn(ExperimentalTvMaterial3Api::class)
 @androidx.annotation.OptIn(UnstableApi::class)
@@ -30,15 +31,26 @@ fun MediaPlayerScreen(
     var currentPosition by remember { mutableStateOf(0L) }
     var duration by remember { mutableStateOf(0L) }
     var resolvedUrl by remember { mutableStateOf(mediaUrl) }
+    var resolvedTitle by remember { mutableStateOf(mediaTitle) }
     var streamError by remember { mutableStateOf<String?>(null) }
     var retryCount by remember { mutableStateOf(0) }
 
-    // Fetch stream URL from entity endpoint if not provided
+    // Fetch stream URL and real title from entity endpoint
     LaunchedEffect(mediaId, retryCount) {
         if (resolvedUrl.isEmpty()) {
             try {
                 val container = com.catalogizer.androidtv.DependencyContainer.getInstance(context)
                 val baseUrl = container.getServerUrl().trimEnd('/')
+
+                // Fetch the real media title from the entity
+                try {
+                    val mediaFlow = container.mediaRepository.getMediaById(mediaId)
+                    val item = mediaFlow.first()
+                    if (item != null && item.title.isNotBlank()) {
+                        resolvedTitle = item.title
+                    }
+                } catch (_: Exception) { /* keep default title */ }
+
                 // Call /api/v1/entities/:id/stream to get the stream URL
                 val response = container.api.getEntityStream(mediaId)
                 if (response.isSuccessful) {
@@ -81,6 +93,8 @@ fun MediaPlayerScreen(
 
                 player = ExoPlayer.Builder(context)
                     .setMediaSourceFactory(mediaSourceFactory)
+                    .setSeekForwardIncrementMs(10_000)
+                    .setSeekBackIncrementMs(10_000)
                     .build().apply {
                         setMediaItem(MediaItem.fromUri(resolvedUrl))
                         prepare()
@@ -121,7 +135,12 @@ fun MediaPlayerScreen(
                     player = exoPlayer
                     useController = true
                     controllerAutoShow = true
+                    controllerShowTimeoutMs = 5000
+                    controllerHideOnTouch = false
                 }
+            },
+            update = { playerView ->
+                playerView.player = exoPlayer
             },
             modifier = Modifier.fillMaxSize()
         )
@@ -144,7 +163,7 @@ fun MediaPlayerScreen(
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Text(
-                        text = mediaTitle,
+                        text = resolvedTitle,
                         style = MaterialTheme.typography.headlineMedium,
                         color = Color.White
                     )

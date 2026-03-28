@@ -41,7 +41,10 @@ data class HomeUiState(
     val playedMusicAlbums: List<MediaItem> = emptyList(),
     val playedTvShows: List<MediaItem> = emptyList(),
     val playedGames: List<MediaItem> = emptyList(),
-    val playedConcerts: List<MediaItem> = emptyList()
+    val playedConcerts: List<MediaItem> = emptyList(),
+    // Catalog stats
+    val totalEntities: Int = 0,
+    val statsByType: Map<String, Int> = emptyMap()
 )
 
 class HomeViewModel(
@@ -83,6 +86,9 @@ class HomeViewModel(
                 // Set featured item from recently added or continue watching
                 val featuredItem = continueWatching.firstOrNull() ?: recentlyAdded.firstOrNull()
 
+                // Load catalog stats
+                val stats = loadStats()
+
                 _uiState.update {
                     it.copy(
                         isLoading = false,
@@ -104,7 +110,9 @@ class HomeViewModel(
                         playedMusicAlbums = playedMusicAlbums,
                         playedTvShows = playedTvShows,
                         playedGames = playedGames,
-                        playedConcerts = playedConcerts
+                        playedConcerts = playedConcerts,
+                        totalEntities = stats.first,
+                        statsByType = stats.second
                     )
                 }
             } catch (e: Exception) {
@@ -138,7 +146,7 @@ class HomeViewModel(
                 MediaSearchRequest(
                     sortBy = "created",
                     sortOrder = "desc",
-                    limit = 20
+                    limit = 50
                 )
             ).first()
         } catch (e: Exception) {
@@ -149,7 +157,7 @@ class HomeViewModel(
     private suspend fun loadMovies(): List<MediaItem> {
         return try {
             // Use entity browse to get TMDB poster URLs
-            mediaRepository.browseEntities("movie", limit = 20, sortBy = "rating", sortOrder = "desc").first()
+            mediaRepository.browseEntities("movie", limit = 50, sortBy = "rating", sortOrder = "desc").first()
         } catch (e: Exception) {
             emptyList()
         }
@@ -157,7 +165,7 @@ class HomeViewModel(
 
     private suspend fun loadTVShows(): List<MediaItem> {
         return try {
-            mediaRepository.browseEntities("tv_show", limit = 20, sortBy = "rating", sortOrder = "desc").first()
+            mediaRepository.browseEntities("tv_show", limit = 50, sortBy = "rating", sortOrder = "desc").first()
         } catch (e: Exception) {
             emptyList()
         }
@@ -170,7 +178,7 @@ class HomeViewModel(
                     mediaType = MediaType.MUSIC.value,
                     sortBy = "created",
                     sortOrder = "desc",
-                    limit = 20
+                    limit = 50
                 )
             ).first()
         } catch (e: Exception) {
@@ -185,7 +193,7 @@ class HomeViewModel(
                     mediaType = MediaType.EBOOK.value,
                     sortBy = "created",
                     sortOrder = "desc",
-                    limit = 20
+                    limit = 50
                 )
             ).first()
         } catch (e: Exception) {
@@ -198,7 +206,7 @@ class HomeViewModel(
      */
     private suspend fun loadRecentByType(type: String): List<MediaItem> {
         return try {
-            mediaRepository.browseEntities(type, limit = 20, sortBy = "created", sortOrder = "desc").first()
+            mediaRepository.browseEntities(type, limit = 50, sortBy = "created", sortOrder = "desc").first()
         } catch (e: Exception) {
             emptyList()
         }
@@ -215,7 +223,7 @@ class HomeViewModel(
                     mediaType = type,
                     sortBy = "updated_at",
                     sortOrder = "desc",
-                    limit = 20
+                    limit = 50
                 )
             ).first().filter { it.hasWatchProgress }
         } catch (e: Exception) {
@@ -246,6 +254,15 @@ class HomeViewModel(
             } catch (e: Exception) {
                 // Handle error
             }
+        }
+    }
+
+    private suspend fun loadStats(): Pair<Int, Map<String, Int>> {
+        return try {
+            val response = mediaRepository.getEntityStats()
+            Pair(response.first, response.second)
+        } catch (_: Exception) {
+            Pair(0, emptyMap())
         }
     }
 

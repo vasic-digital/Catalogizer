@@ -102,4 +102,13 @@ class MediaRepository(private val context: Context, private val api: Catalogizer
             throw e
         }
     }
+
+    suspend fun getEntityStats(): Pair<Int, Map<String, Int>> {
+        val response = api.getEntityStats()
+        if (response.isSuccessful) {
+            val body = response.body()
+            return Pair(body?.totalEntities ?: 0, body?.byType ?: emptyMap())
+        }
+        return Pair(0, emptyMap())
+    }
 }

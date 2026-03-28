@@ -46,7 +46,18 @@ interface CatalogizerApi {
 
     @PUT("api/v1/media/{id}/favorite")
     suspend fun updateFavoriteStatus(@Path("id") id: Long, @Body favorite: Map<String, Boolean>): Response<Unit>
+
+    // Stats endpoint
+    @GET("api/v1/entities/stats")
+    suspend fun getEntityStats(): Response<EntityStatsResponse>
 }
+
+data class EntityStatsResponse(
+    @com.google.gson.annotations.SerializedName("total_entities")
+    val totalEntities: Int = 0,
+    @com.google.gson.annotations.SerializedName("by_type")
+    val byType: Map<String, Int> = emptyMap()
+)
 
 // Auth response models
 @kotlinx.serialization.Serializable

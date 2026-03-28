@@ -17,6 +17,10 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.tv.foundation.lazy.list.TvLazyColumn
 import androidx.tv.foundation.lazy.list.items
 import androidx.tv.material3.*
+import androidx.compose.foundation.background
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.font.FontWeight
 import com.catalogizer.androidtv.data.models.MediaItem
 import com.catalogizer.androidtv.ui.components.MediaCarousel
 import com.catalogizer.androidtv.ui.components.MediaCard
@@ -200,6 +204,16 @@ fun HomeScreen(
                     modifier = Modifier.fillMaxSize(),
                     verticalArrangement = Arrangement.spacedBy(24.dp)
                 ) {
+                    // Stats header
+                    if (uiState.totalEntities > 0) {
+                        item {
+                            CatalogStatsHeader(
+                                totalEntities = uiState.totalEntities,
+                                statsByType = uiState.statsByType
+                            )
+                        }
+                    }
+
                     items(rails.size) { index ->
                         val rail = rails[index]
                         MediaSection(
@@ -242,6 +256,83 @@ private fun MediaSection(
                     onFocus = { onItemFocus(item) },
                     modifier = Modifier.width(200.dp)
                 )
+            }
+        }
+    }
+}
+
+private val statsTypeLabels = mapOf(
+    "movie" to "Movies",
+    "tv_show" to "TV Shows",
+    "tv_season" to "Seasons",
+    "tv_episode" to "Episodes",
+    "music_artist" to "Artists",
+    "music_album" to "Albums",
+    "song" to "Songs",
+    "game" to "Games",
+    "software" to "Software",
+    "book" to "Books",
+    "comic" to "Comics"
+)
+
+@OptIn(ExperimentalTvMaterial3Api::class)
+@Composable
+private fun CatalogStatsHeader(
+    totalEntities: Int,
+    statsByType: Map<String, Int>,
+    modifier: Modifier = Modifier
+) {
+    Column(modifier = modifier.fillMaxWidth()) {
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Text(
+                text = "Your Library — $totalEntities items",
+                style = MaterialTheme.typography.titleLarge,
+                fontWeight = FontWeight.Bold
+            )
+        }
+
+        Spacer(modifier = Modifier.height(12.dp))
+
+        // Stats chips in a horizontal row
+        LazyRow(
+            horizontalArrangement = Arrangement.spacedBy(12.dp)
+        ) {
+            val nonZero = statsByType.filter { it.value > 0 }
+                .entries.sortedByDescending { it.value }
+            items(nonZero.size) { index ->
+                val entry = nonZero[index]
+                val label = statsTypeLabels[entry.key]
+                    ?: entry.key.replace("_", " ")
+                        .replaceFirstChar { it.uppercase() }
+                Box(
+                    modifier = Modifier
+                        .background(
+                            color = Color.White.copy(alpha = 0.1f),
+                            shape = RoundedCornerShape(8.dp)
+                        )
+                        .padding(horizontal = 16.dp, vertical = 8.dp)
+                ) {
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        Text(
+                            text = "${entry.value}",
+                            style = MaterialTheme.typography.titleMedium,
+                            fontWeight = FontWeight.Bold,
+                            color = MaterialTheme.colorScheme.primary
+                        )
+                        Text(
+                            text = label,
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = Color.White.copy(alpha = 0.8f)
+                        )
+                    }
+                }
             }
         }
     }
