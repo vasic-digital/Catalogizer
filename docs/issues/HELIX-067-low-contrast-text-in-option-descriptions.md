@@ -4,7 +4,7 @@ severity: high
 category: accessibility
 platform: 
 screen: androidtv-002-registerform.png
-status: open
+status: resolved
 found_date: 2026-03-27
 ---
 

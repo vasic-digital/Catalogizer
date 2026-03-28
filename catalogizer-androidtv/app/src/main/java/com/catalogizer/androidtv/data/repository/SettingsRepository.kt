@@ -24,6 +24,7 @@ class SettingsRepository(private val dataStore: DataStore<Preferences>) {
         private val SERVER_URL = stringPreferencesKey("server_url")
         private val SAVED_SERVERS = stringPreferencesKey("saved_servers_json")
         private val AUTO_DISCOVERY = booleanPreferencesKey("auto_discovery")
+        private val LAST_USERNAME = stringPreferencesKey("last_username")
     }
 
     private var cachedSettings: Settings = Settings(
@@ -43,7 +44,8 @@ class SettingsRepository(private val dataStore: DataStore<Preferences>) {
             subtitleLanguage = preferences[SUBTITLE_LANGUAGE] ?: "English",
             serverUrl = preferences[SERVER_URL] ?: Settings.DEFAULT_SERVER_URL,
             savedServers = deserializeServers(preferences[SAVED_SERVERS]),
-            autoDiscovery = preferences[AUTO_DISCOVERY] ?: true
+            autoDiscovery = preferences[AUTO_DISCOVERY] ?: true,
+            lastUsername = preferences[LAST_USERNAME]
         ).also { cachedSettings = it }
     }
 
@@ -80,6 +82,13 @@ class SettingsRepository(private val dataStore: DataStore<Preferences>) {
             preferences[SERVER_URL] = url
         }
         cachedSettings = cachedSettings.copy(serverUrl = url)
+    }
+
+    suspend fun updateLastUsername(username: String) {
+        dataStore.edit { preferences ->
+            preferences[LAST_USERNAME] = username
+        }
+        cachedSettings = cachedSettings.copy(lastUsername = username)
     }
 
     /**

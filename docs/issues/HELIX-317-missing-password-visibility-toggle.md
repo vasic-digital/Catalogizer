@@ -4,7 +4,7 @@ severity: high
 category: ux
 platform: 
 screen: androidtv-001-loginform.png
-status: open
+status: resolved
 found_date: 2026-03-28
 ---
 

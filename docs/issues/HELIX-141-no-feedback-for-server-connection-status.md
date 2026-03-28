@@ -4,7 +4,7 @@ severity: medium
 category: ux
 platform: 
 screen: androidtv-009-layout.png
-status: open
+status: resolved
 found_date: 2026-03-28
 ---
 

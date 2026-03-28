@@ -4,7 +4,7 @@ severity: high
 category: accessibility
 platform: 
 screen: androidtv-008-navigate.png
-status: open
+status: resolved
 found_date: 2026-03-28
 ---
 

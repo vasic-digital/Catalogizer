@@ -4,7 +4,7 @@ severity: medium
 category: accessibility
 platform: 
 screen: android-curiosity-002.png
-status: open
+status: resolved
 found_date: 2026-03-27
 ---
 

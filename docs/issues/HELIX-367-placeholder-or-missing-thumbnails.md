@@ -4,7 +4,7 @@ severity: cosmetic
 category: visual
 platform: 
 screen: androidtv-curiosity-015.png
-status: open
+status: resolved
 found_date: 2026-03-28
 ---
 

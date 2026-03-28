@@ -21,7 +21,8 @@ data class Settings(
     val subtitleLanguage: String,
     val serverUrl: String = DEFAULT_SERVER_URL,
     val savedServers: List<ServerEntry> = emptyList(),
-    val autoDiscovery: Boolean = true
+    val autoDiscovery: Boolean = true,
+    val lastUsername: String? = null
 ) {
     companion object {
         /** Empty by default — forces user to configure or discover the server URL. */

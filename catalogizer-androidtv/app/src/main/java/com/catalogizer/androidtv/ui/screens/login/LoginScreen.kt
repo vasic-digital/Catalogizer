@@ -5,15 +5,21 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.focusable
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Settings
+import androidx.compose.material.icons.filled.Visibility
+import androidx.compose.material.icons.filled.VisibilityOff
+import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Divider
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.runtime.*
@@ -24,9 +30,11 @@ import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalConfiguration
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.PasswordVisualTransformation
+import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
@@ -47,12 +55,19 @@ fun LoginScreen(
     onLoginSuccess: () -> Unit
 ) {
     val authState by authViewModel.authState.collectAsStateWithLifecycle()
+    val context = LocalContext.current
+    val container = DependencyContainer.getInstance(context)
+
+    // Load saved username from DataStore (remember credentials)
     var username by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
     var isLoading by remember { mutableStateOf(false) }
     var errorMessage by remember { mutableStateOf<String?>(null) }
+    var passwordVisible by remember { mutableStateOf(false) }
+    var serverConnected by remember { mutableStateOf<Boolean?>(null) } // null=unknown, true=ok, false=fail
+    var usernameError by remember { mutableStateOf<String?>(null) }
+    var passwordError by remember { mutableStateOf<String?>(null) }
 
-    val container = DependencyContainer.getInstance(androidx.compose.ui.platform.LocalContext.current)
     val settings by container.settingsRepository.settingsFlow.collectAsStateWithLifecycle(
         initialValue = com.catalogizer.androidtv.data.models.Settings(
             enableNotifications = true, enableAutoPlay = false, streamingQuality = "Auto",
@@ -63,6 +78,15 @@ fun LoginScreen(
     var isDiscovering by remember { mutableStateOf(false) }
     var discoveredServers by remember { mutableStateOf<List<ServerEntry>>(emptyList()) }
     val coroutineScope = rememberCoroutineScope()
+
+    // Load saved username on first compose
+    LaunchedEffect(Unit) {
+        val savedSettings = container.settingsRepository.getSettingsAsync()
+        val savedUser = savedSettings.lastUsername
+        if (!savedUser.isNullOrBlank()) {
+            username = savedUser
+        }
+    }
 
     // Sync server URL from DataStore when settings load
     LaunchedEffect(settings.serverUrl) {
@@ -87,11 +111,19 @@ fun LoginScreen(
         unfocusedBorderColor = Color.White.copy(alpha = 0.3f),
         focusedLabelColor = MaterialTheme.colorScheme.primary,
         unfocusedLabelColor = Color.White.copy(alpha = 0.7f),
-        cursorColor = MaterialTheme.colorScheme.primary
+        cursorColor = MaterialTheme.colorScheme.primary,
+        errorBorderColor = Color(0xFFFF6B6B),
+        errorLabelColor = Color(0xFFFF6B6B)
     )
 
     LaunchedEffect(authState) {
-        if (authState.isAuthenticated) onLoginSuccess()
+        if (authState.isAuthenticated) {
+            // Save username for next launch
+            coroutineScope.launch {
+                container.settingsRepository.updateLastUsername(username)
+            }
+            onLoginSuccess()
+        }
     }
 
     LaunchedEffect(Unit) {
@@ -107,6 +139,7 @@ fun LoginScreen(
                     container.switchServer(server.url)
                     container.settingsRepository.updateServerUrl(server.url)
                     container.settingsRepository.addServer(server)
+                    serverConnected = true
                 }
             } catch (_: Exception) { }
             isDiscovering = false
@@ -118,10 +151,10 @@ fun LoginScreen(
         isLoading = false
     }
 
-    // Responsive sizing: adapt to screen width
+    // Responsive sizing
     val configuration = LocalConfiguration.current
     val screenWidthDp = configuration.screenWidthDp.dp
-    val isCompact = screenWidthDp < 600.dp  // Phone
+    val isCompact = screenWidthDp < 600.dp
     val formWidth = if (isCompact) screenWidthDp - 48.dp else min(520.dp, screenWidthDp * 0.5f)
     val horizontalPad = if (isCompact) 24.dp else 80.dp
     val verticalPad = if (isCompact) 24.dp else 40.dp
@@ -162,7 +195,11 @@ fun LoginScreen(
             // ─── Credentials ────────────────────────────────────────
             OutlinedTextField(
                 value = username,
-                onValueChange = { username = it; errorMessage = null },
+                onValueChange = {
+                    username = it
+                    errorMessage = null
+                    usernameError = null
+                },
                 label = { Text("Username", color = Color.White.copy(alpha = 0.7f)) },
                 modifier = Modifier
                     .width(formWidth)
@@ -172,6 +209,8 @@ fun LoginScreen(
                 keyboardActions = KeyboardActions(onNext = { passwordFocusRequester.requestFocus() }),
                 singleLine = true,
                 enabled = !isLoading,
+                isError = usernameError != null,
+                supportingText = usernameError?.let { { Text(it, color = Color(0xFFFF6B6B)) } },
                 colors = textFieldColors
             )
 
@@ -179,7 +218,11 @@ fun LoginScreen(
 
             OutlinedTextField(
                 value = password,
-                onValueChange = { password = it; errorMessage = null },
+                onValueChange = {
+                    password = it
+                    errorMessage = null
+                    passwordError = null
+                },
                 label = { Text("Password", color = Color.White.copy(alpha = 0.7f)) },
                 modifier = Modifier
                     .width(formWidth)
@@ -188,11 +231,23 @@ fun LoginScreen(
                 keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
                 keyboardActions = KeyboardActions(onDone = {
                     keyboardController?.hide()
-                    performLogin(username, password, authViewModel, { isLoading = it }, { errorMessage = it })
+                    validateAndLogin(username, password, authViewModel, { isLoading = it }, { errorMessage = it },
+                        { usernameError = it }, { passwordError = it })
                 }),
-                visualTransformation = PasswordVisualTransformation(),
+                visualTransformation = if (passwordVisible) VisualTransformation.None else PasswordVisualTransformation(),
+                trailingIcon = {
+                    IconButton(onClick = { passwordVisible = !passwordVisible }) {
+                        Icon(
+                            imageVector = if (passwordVisible) Icons.Default.VisibilityOff else Icons.Default.Visibility,
+                            contentDescription = if (passwordVisible) "Hide password" else "Show password",
+                            tint = Color.White.copy(alpha = 0.7f)
+                        )
+                    }
+                },
                 singleLine = true,
                 enabled = !isLoading,
+                isError = passwordError != null,
+                supportingText = passwordError?.let { { Text(it, color = Color(0xFFFF6B6B)) } },
                 colors = textFieldColors
             )
 
@@ -219,10 +274,11 @@ fun LoginScreen(
             Button(
                 onClick = {
                     keyboardController?.hide()
-                    performLogin(username, password, authViewModel, { isLoading = it }, { errorMessage = it })
+                    validateAndLogin(username, password, authViewModel, { isLoading = it }, { errorMessage = it },
+                        { usernameError = it }, { passwordError = it })
                 },
                 modifier = Modifier.width(formWidth).height(if (isCompact) 48.dp else 52.dp),
-                enabled = !isLoading && username.isNotBlank() && password.isNotBlank()
+                enabled = !isLoading
             ) {
                 if (isLoading) {
                     CircularProgressIndicator(modifier = Modifier.size(24.dp), strokeWidth = 2.dp, color = Color.White)
@@ -233,7 +289,7 @@ fun LoginScreen(
 
             Spacer(modifier = Modifier.height(if (isCompact) 16.dp else 28.dp))
 
-            // ─── Server Configuration (collapsible section) ─────────
+            // ─── Server Configuration ──────────────────────────────
             Divider(color = Color.White.copy(alpha = 0.1f), modifier = Modifier.width(formWidth))
 
             Spacer(modifier = Modifier.height(16.dp))
@@ -249,18 +305,39 @@ fun LoginScreen(
 
             OutlinedTextField(
                 value = serverUrl,
-                onValueChange = { serverUrl = it },
+                onValueChange = { serverUrl = it; serverConnected = null },
                 label = { Text("Server URL", color = Color.White.copy(alpha = 0.7f)) },
                 modifier = Modifier.width(formWidth).focusable(),
                 singleLine = true,
                 enabled = !isLoading,
                 colors = textFieldColors,
                 trailingIcon = {
-                    if (isDiscovering) {
-                        CircularProgressIndicator(modifier = Modifier.size(20.dp), strokeWidth = 2.dp, color = MaterialTheme.colorScheme.primary)
+                    when {
+                        isDiscovering -> CircularProgressIndicator(
+                            modifier = Modifier.size(20.dp), strokeWidth = 2.dp,
+                            color = MaterialTheme.colorScheme.primary
+                        )
+                        serverConnected == true -> Icon(
+                            Icons.Default.CheckCircle, "Connected",
+                            tint = Color(0xFF4CAF50), modifier = Modifier.size(20.dp)
+                        )
+                        serverConnected == false -> Icon(
+                            Icons.Default.Warning, "Connection failed",
+                            tint = Color(0xFFFF6B6B), modifier = Modifier.size(20.dp)
+                        )
                     }
                 }
             )
+
+            // Connection status text
+            if (serverConnected != null) {
+                Spacer(modifier = Modifier.height(4.dp))
+                Text(
+                    text = if (serverConnected == true) "Connected to server" else "Unable to reach server",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = if (serverConnected == true) Color(0xFF4CAF50) else Color(0xFFFF6B6B)
+                )
+            }
 
             Spacer(modifier = Modifier.height(12.dp))
 
@@ -273,6 +350,7 @@ fun LoginScreen(
                         coroutineScope.launch {
                             isDiscovering = true
                             discoveredServers = emptyList()
+                            serverConnected = null
                             try {
                                 val results = container.discoveryService.discoverAll(10000L)
                                 discoveredServers = results
@@ -302,6 +380,13 @@ fun LoginScreen(
                             coroutineScope.launch {
                                 container.settingsRepository.updateServerUrl(serverUrl)
                                 container.settingsRepository.addServer(ServerEntry(url = serverUrl, name = "Manual"))
+                                // Test connection
+                                try {
+                                    val testResp = container.api.getCatalog()
+                                    serverConnected = testResp.isSuccessful
+                                } catch (_: Exception) {
+                                    serverConnected = false
+                                }
                             }
                             errorMessage = null
                         }
@@ -327,6 +412,7 @@ fun LoginScreen(
                         onClick = {
                             serverUrl = server.url
                             container.switchServer(server.url)
+                            serverConnected = true
                             coroutineScope.launch {
                                 container.settingsRepository.updateServerUrl(server.url)
                                 container.settingsRepository.addServer(server)
@@ -345,18 +431,9 @@ fun LoginScreen(
                 }
             }
 
-            Spacer(modifier = Modifier.height(16.dp))
-
-            // Connection status
-            Text(
-                text = serverUrl,
-                style = MaterialTheme.typography.bodySmall,
-                color = Color.White.copy(alpha = 0.5f)
-            )
-
             Spacer(modifier = Modifier.height(32.dp))
 
-            // ─── Vasic Digital Branding Footer ─────────────────────────
+            // ─── Footer ───────────────────────────────────────────────
             Divider(
                 color = Color.White.copy(alpha = 0.1f),
                 modifier = Modifier.width(formWidth)
@@ -381,18 +458,39 @@ fun LoginScreen(
     }
 }
 
-private fun performLogin(
+private fun validateAndLogin(
     username: String,
     password: String,
     authViewModel: AuthViewModel,
     setIsLoading: (Boolean) -> Unit,
-    setErrorMessage: (String?) -> Unit
+    setErrorMessage: (String?) -> Unit,
+    setUsernameError: (String?) -> Unit,
+    setPasswordError: (String?) -> Unit
 ) {
-    if (username.isBlank() || password.isBlank()) {
-        setErrorMessage("Please enter username and password")
-        return
-    }
-    setIsLoading(true)
+    // Clear previous errors
+    setUsernameError(null)
+    setPasswordError(null)
     setErrorMessage(null)
+
+    // Validate inputs
+    var valid = true
+    if (username.isBlank()) {
+        setUsernameError("Username is required")
+        valid = false
+    } else if (username.length < 2) {
+        setUsernameError("Username must be at least 2 characters")
+        valid = false
+    }
+    if (password.isBlank()) {
+        setPasswordError("Password is required")
+        valid = false
+    } else if (password.length < 4) {
+        setPasswordError("Password must be at least 4 characters")
+        valid = false
+    }
+
+    if (!valid) return
+
+    setIsLoading(true)
     authViewModel.login(username, password)
 }
