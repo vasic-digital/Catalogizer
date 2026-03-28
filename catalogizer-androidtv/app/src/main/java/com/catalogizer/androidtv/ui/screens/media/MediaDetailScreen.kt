@@ -155,9 +155,13 @@ fun MediaDetailScreen(
                             onClick = onNavigateBack,
                             modifier = Modifier.padding(16.dp).align(Alignment.TopStart)
                         ) {
-                            M3Icon(Icons.Default.ArrowBack, "Back", Modifier.size(20.dp))
-                            Spacer(Modifier.width(8.dp))
-                            Text("Back")
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.spacedBy(8.dp)
+                            ) {
+                                M3Icon(Icons.Default.ArrowBack, "Back", Modifier.size(20.dp))
+                                Text("Back")
+                            }
                         }
                     }
 
@@ -219,9 +223,13 @@ fun MediaDetailScreen(
                                 onClick = { onNavigateToPlayer(mediaId) },
                                 modifier = Modifier.height(48.dp).focusRequester(playButtonFocus).focusable()
                             ) {
-                                M3Icon(Icons.Default.PlayArrow, "Play", Modifier.size(24.dp))
-                                Spacer(Modifier.width(8.dp))
-                                Text("Play", style = MaterialTheme.typography.titleSmall)
+                                Row(
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                                ) {
+                                    M3Icon(Icons.Default.PlayArrow, "Play", Modifier.size(24.dp))
+                                    Text("Play", style = MaterialTheme.typography.titleSmall)
+                                }
                             }
                             Button(onClick = onNavigateBack, modifier = Modifier.height(48.dp)) {
                                 Text("Back to Library", style = MaterialTheme.typography.titleSmall)
@@ -241,13 +249,17 @@ fun MediaDetailScreen(
                                 },
                                 modifier = Modifier.height(48.dp)
                             ) {
-                                M3Icon(
-                                    if (isFavorite) Icons.Default.Favorite else Icons.Default.FavoriteBorder,
-                                    contentDescription = if (isFavorite) "Remove from Favorites" else "Add to Favorites",
-                                    modifier = Modifier.size(24.dp)
-                                )
-                                Spacer(Modifier.width(8.dp))
-                                Text("Favorite", style = MaterialTheme.typography.titleSmall)
+                                Row(
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                                ) {
+                                    M3Icon(
+                                        if (isFavorite) Icons.Default.Favorite else Icons.Default.FavoriteBorder,
+                                        contentDescription = if (isFavorite) "Remove from Favorites" else "Add to Favorites",
+                                        modifier = Modifier.size(24.dp)
+                                    )
+                                    Text("Favorite", style = MaterialTheme.typography.titleSmall)
+                                }
                             }
                         }
 

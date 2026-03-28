@@ -286,9 +286,13 @@ fun LoginScreen(
                     modifier = Modifier.weight(1f).height(44.dp),
                     enabled = !isDiscovering && !isLoading
                 ) {
-                    Icon(Icons.Default.Search, contentDescription = "Discover servers", modifier = Modifier.size(18.dp))
-                    Spacer(modifier = Modifier.width(8.dp))
-                    Text("Discover", style = MaterialTheme.typography.bodyMedium)
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        Icon(Icons.Default.Search, contentDescription = "Discover servers", modifier = Modifier.size(18.dp))
+                        Text("Discover", style = MaterialTheme.typography.bodyMedium)
+                    }
                 }
 
                 Button(
@@ -305,9 +309,13 @@ fun LoginScreen(
                     modifier = Modifier.weight(1f).height(44.dp),
                     enabled = serverUrl.isNotBlank() && !isLoading
                 ) {
-                    Icon(Icons.Default.Settings, contentDescription = "Connect to server", modifier = Modifier.size(18.dp))
-                    Spacer(modifier = Modifier.width(8.dp))
-                    Text("Connect", style = MaterialTheme.typography.bodyMedium)
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        Icon(Icons.Default.Settings, contentDescription = "Connect to server", modifier = Modifier.size(18.dp))
+                        Text("Connect", style = MaterialTheme.typography.bodyMedium)
+                    }
                 }
             }
 

@@ -94,6 +94,21 @@ fun MediaCard(
                     )
                 }
 
+                // Shadow gradient overlay for readability of overlaid elements
+                Box(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .background(
+                            brush = androidx.compose.ui.graphics.Brush.verticalGradient(
+                                colors = listOf(
+                                    Color.Transparent,
+                                    Color.Black.copy(alpha = 0.5f)
+                                ),
+                                startY = 0f
+                            )
+                        )
+                )
+
                 // Play button overlay (bottom-right)
                 Box(
                     modifier = Modifier
@@ -107,9 +122,27 @@ fun MediaCard(
                 ) {
                     M3Icon(
                         imageVector = Icons.Default.PlayArrow,
-                        contentDescription = "Play",
+                        contentDescription = "Play ${mediaItem.title}",
                         modifier = Modifier.size(20.dp),
                         tint = Color.White
+                    )
+                }
+
+                // Media type badge (top-left)
+                Box(
+                    modifier = Modifier
+                        .align(Alignment.TopStart)
+                        .padding(6.dp)
+                        .background(
+                            color = Color.Black.copy(alpha = 0.6f),
+                            shape = RoundedCornerShape(4.dp)
+                        )
+                        .padding(horizontal = 6.dp, vertical = 2.dp)
+                ) {
+                    Text(
+                        text = (mediaItem.mediaType ?: "").replace("_", " ").lowercase(),
+                        style = MaterialTheme.typography.labelSmall,
+                        color = Color.White.copy(alpha = 0.9f)
                     )
                 }
             }
