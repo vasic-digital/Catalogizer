@@ -4,7 +4,7 @@ severity: low
 category: ux
 platform: 
 screen: androidtv-curiosity-007.png
-status: open
+status: resolved
 found_date: 2026-03-28
 ---
 

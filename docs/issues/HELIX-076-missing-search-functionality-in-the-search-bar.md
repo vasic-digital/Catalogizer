@@ -4,7 +4,7 @@ severity: high
 category: functional
 platform: 
 screen: androidtv-003-loginform.png
-status: open
+status: resolved
 found_date: 2026-03-27
 ---
 

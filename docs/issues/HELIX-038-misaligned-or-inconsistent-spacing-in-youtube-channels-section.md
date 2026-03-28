@@ -4,7 +4,7 @@ severity: low
 category: visual
 platform: 
 screen: android-curiosity-003.png
-status: open
+status: resolved
 found_date: 2026-03-27
 ---
 

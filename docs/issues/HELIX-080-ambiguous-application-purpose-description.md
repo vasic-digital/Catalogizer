@@ -4,7 +4,7 @@ severity: low
 category: content
 platform: 
 screen: androidtv-007-layout.png
-status: open
+status: resolved
 found_date: 2026-03-27
 ---
 
