@@ -66,6 +66,45 @@ interface CatalogizerApi {
     // Stats endpoint
     @GET("api/v1/entities/stats")
     suspend fun getEntityStats(): Response<EntityStatsResponse>
+
+    // Collections endpoints
+    @GET("api/v1/collections")
+    suspend fun getCollections(): Response<Map<String, Any>>
+
+    @GET("api/v1/collections/{id}")
+    suspend fun getCollection(@Path("id") id: Long): Response<Map<String, Any>>
+
+    // Recommendations endpoints
+    @GET("api/v1/recommendations/similar/{mediaId}")
+    suspend fun getSimilarMedia(@Path("mediaId") mediaId: Long): Response<Map<String, Any>>
+
+    @GET("api/v1/recommendations/trending")
+    suspend fun getTrendingMedia(): Response<Map<String, Any>>
+
+    // Scan status endpoint
+    @GET("api/v1/scans")
+    suspend fun getScans(): Response<Map<String, Any>>
+
+    // Playlists endpoints
+    @GET("api/v1/playlists")
+    suspend fun getPlaylists(): Response<Map<String, Any>>
+
+    @POST("api/v1/playlists")
+    suspend fun createPlaylist(@Body body: Map<String, String>): Response<Map<String, Any>>
+
+    @POST("api/v1/playlists/{id}/items")
+    suspend fun addPlaylistItem(@Path("id") id: Long, @Body body: Map<String, @JvmSuppressWildcards Any>): Response<Map<String, Any>>
+
+    // Overall statistics endpoint
+    @GET("api/v1/stats/overall")
+    suspend fun getOverallStats(): Response<Map<String, Any>>
+
+    // Subtitles endpoints
+    @GET("api/v1/subtitles/media/{mediaId}")
+    suspend fun getSubtitles(@Path("mediaId") mediaId: Long): Response<Map<String, Any>>
+
+    @GET("api/v1/subtitles/languages")
+    suspend fun getSubtitleLanguages(): Response<Map<String, Any>>
 }
 
 data class EntityStatsResponse(

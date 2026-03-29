@@ -7,6 +7,7 @@ import { ActivityFeed } from '@/components/dashboard/ActivityFeed'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card'
 import { Button } from '@/components/ui/Button'
 import { mediaApi, entityApi } from '@/lib/mediaApi'
+import { statsApi } from '@/lib/statsApi'
 import {
   Film,
   Upload,
@@ -20,6 +21,11 @@ import {
   Monitor,
   BookOpen,
   Book,
+  HardDrive,
+  FolderTree,
+  Copy,
+  TrendingUp,
+  FileType,
 } from 'lucide-react'
 import { motion } from 'framer-motion'
 import toast from 'react-hot-toast'
@@ -229,6 +235,31 @@ export const Dashboard: React.FC = () => {
     }
   )
 
+  // Fetch detailed statistics from stats API
+  const { data: overallStats } = useQuery({
+    queryKey: ['stats-overall'],
+    queryFn: () => statsApi.getOverallStats(),
+    staleTime: 30000,
+  })
+
+  const { data: duplicateStats } = useQuery({
+    queryKey: ['stats-duplicates'],
+    queryFn: () => statsApi.getDuplicateStats(),
+    staleTime: 60000,
+  })
+
+  const { data: growthTrends } = useQuery({
+    queryKey: ['stats-growth'],
+    queryFn: () => statsApi.getGrowthTrends(7),
+    staleTime: 60000,
+  })
+
+  const { data: scanHistory } = useQuery({
+    queryKey: ['stats-scans'],
+    queryFn: () => statsApi.getScanHistory(5),
+    staleTime: 30000,
+  })
+
   // Fetch user statistics (mock for now)
   const userStats: UserStats = {
     active_users: 3,
@@ -318,6 +349,89 @@ export const Dashboard: React.FC = () => {
                     )
                   })}
               </div>
+            </CardContent>
+          </Card>
+        </motion.div>
+      )}
+
+      {/* Storage & Scan Statistics */}
+      {(overallStats || duplicateStats || scanHistory) && (
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.17 }}
+        >
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <HardDrive className="h-5 w-5" />
+                Storage Statistics
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4">
+                {overallStats && (
+                  <>
+                    <div className="p-3 rounded-lg bg-gray-50 dark:bg-gray-800">
+                      <FolderTree className="h-4 w-4 text-gray-500 mb-1" />
+                      <div className="text-lg font-semibold text-gray-900 dark:text-white">
+                        {overallStats.total_directories.toLocaleString()}
+                      </div>
+                      <div className="text-xs text-gray-500">Directories</div>
+                    </div>
+                    <div className="p-3 rounded-lg bg-gray-50 dark:bg-gray-800">
+                      <FileType className="h-4 w-4 text-gray-500 mb-1" />
+                      <div className="text-lg font-semibold text-gray-900 dark:text-white">
+                        {overallStats.total_files.toLocaleString()}
+                      </div>
+                      <div className="text-xs text-gray-500">Total Files</div>
+                    </div>
+                    <div className="p-3 rounded-lg bg-gray-50 dark:bg-gray-800">
+                      <HardDrive className="h-4 w-4 text-gray-500 mb-1" />
+                      <div className="text-lg font-semibold text-gray-900 dark:text-white">
+                        {((overallStats.total_size || 0) / (1024 ** 3)).toFixed(1)} GB
+                      </div>
+                      <div className="text-xs text-gray-500">Total Size</div>
+                    </div>
+                  </>
+                )}
+                {duplicateStats && (
+                  <div className="p-3 rounded-lg bg-gray-50 dark:bg-gray-800">
+                    <Copy className="h-4 w-4 text-gray-500 mb-1" />
+                    <div className="text-lg font-semibold text-gray-900 dark:text-white">
+                      {duplicateStats.total_duplicate_groups}
+                    </div>
+                    <div className="text-xs text-gray-500">Duplicate Groups</div>
+                  </div>
+                )}
+                {growthTrends && growthTrends.length > 0 && (
+                  <div className="p-3 rounded-lg bg-gray-50 dark:bg-gray-800">
+                    <TrendingUp className="h-4 w-4 text-gray-500 mb-1" />
+                    <div className="text-lg font-semibold text-gray-900 dark:text-white">
+                      +{growthTrends.reduce((sum, t) => sum + t.files_added, 0)}
+                    </div>
+                    <div className="text-xs text-gray-500">Files This Week</div>
+                  </div>
+                )}
+              </div>
+              {scanHistory && scanHistory.length > 0 && (
+                <div className="mt-4 pt-4 border-t border-gray-200 dark:border-gray-700">
+                  <h4 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Recent Scans</h4>
+                  <div className="space-y-2">
+                    {scanHistory.slice(0, 3).map((scan) => (
+                      <div key={scan.id} className="flex items-center justify-between text-sm">
+                        <span className="text-gray-900 dark:text-white">{scan.storage_root_name}</span>
+                        <div className="flex items-center gap-3 text-gray-500">
+                          <span>{scan.files_found} files</span>
+                          <span className={scan.status === 'completed' ? 'text-green-600' : scan.status === 'failed' ? 'text-red-600' : ''}>
+                            {scan.status}
+                          </span>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
             </CardContent>
           </Card>
         </motion.div>

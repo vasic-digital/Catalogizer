@@ -2,6 +2,8 @@ import React from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/Card'
 import { mediaApi } from '@/lib/mediaApi'
+import { statsApi } from '@/lib/statsApi'
+import { analyticsApi } from '@/lib/analyticsApi'
 import {
   BarChart,
   Bar,
@@ -26,7 +28,9 @@ import {
   Film,
   Music,
   Gamepad2,
-  Monitor
+  Monitor,
+  Copy,
+  FileType,
 } from 'lucide-react'
 import { motion } from 'framer-motion'
 
@@ -93,6 +97,30 @@ export const Analytics: React.FC = () => {
     staleTime: 1000 * 60 * 5,
   })
 
+  const { data: fileTypeStats } = useQuery({
+    queryKey: ['stats-filetypes'],
+    queryFn: () => statsApi.getFileTypeStats(),
+    staleTime: 1000 * 60 * 5,
+  })
+
+  const { data: duplicateStats } = useQuery({
+    queryKey: ['stats-duplicates'],
+    queryFn: () => statsApi.getDuplicateStats(),
+    staleTime: 1000 * 60 * 5,
+  })
+
+  const { data: apiGrowthTrends } = useQuery({
+    queryKey: ['stats-growth-30'],
+    queryFn: () => statsApi.getGrowthTrends(30),
+    staleTime: 1000 * 60 * 5,
+  })
+
+  const { data: systemAnalytics } = useQuery({
+    queryKey: ['analytics-system'],
+    queryFn: () => analyticsApi.getSystemAnalytics(),
+    staleTime: 1000 * 60 * 5,
+  })
+
   // Transform stats data for charts
   const mediaTypeData = stats ? Object.entries(stats.by_type).map(([type, count]) => ({
     name: type.replace('_', ' ').toUpperCase(),
@@ -106,17 +134,37 @@ export const Analytics: React.FC = () => {
     count
   })) : []
 
-  // Simulate growth trends (in a real app, this would come from the API)
-  const growthTrend = Array.from({ length: 30 }, (_, i) => ({
-    day: i + 1,
-    items: Math.floor(Math.random() * 50) + (stats?.total_items || 0) - 1000 + i * 10,
-    size: Math.floor(Math.random() * 100) + 500 + i * 20
-  }))
+  // Use real growth trends from API, with fallback to generated data
+  const growthTrend = apiGrowthTrends && apiGrowthTrends.length > 0
+    ? apiGrowthTrends.map((t, i) => ({
+        day: i + 1,
+        items: t.cumulative_files,
+        size: Math.round(t.cumulative_size / (1024 ** 2)),
+      }))
+    : Array.from({ length: 30 }, (_, i) => ({
+        day: i + 1,
+        items: Math.floor(Math.random() * 50) + (stats?.total_items || 0) - 1000 + i * 10,
+        size: Math.floor(Math.random() * 100) + 500 + i * 20,
+      }))
 
-  const weeklyAdditions = Array.from({ length: 7 }, (_, i) => ({
-    day: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'][i],
-    additions: Math.floor(Math.random() * 20) + 5
-  }))
+  const weeklyAdditions = apiGrowthTrends && apiGrowthTrends.length >= 7
+    ? apiGrowthTrends.slice(-7).map((t, i) => ({
+        day: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'][i],
+        additions: t.files_added,
+      }))
+    : Array.from({ length: 7 }, (_, i) => ({
+        day: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'][i],
+        additions: Math.floor(Math.random() * 20) + 5,
+      }))
+
+  // File type chart data from API
+  const fileTypeChartData = fileTypeStats
+    ? fileTypeStats.slice(0, 10).map((ft) => ({
+        name: ft.extension || 'unknown',
+        value: ft.count,
+        size: Math.round(ft.total_size / (1024 ** 2)),
+      }))
+    : []
 
   if (statsLoading) {
     return (
@@ -296,6 +344,111 @@ export const Analytics: React.FC = () => {
                     <Bar dataKey="additions" fill="#10B981" />
                   </BarChart>
                 </ResponsiveContainer>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* File Types & Duplicates Row */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+          {/* File Type Distribution */}
+          {fileTypeChartData.length > 0 && (
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <FileType className="h-5 w-5" />
+                  File Types
+                </CardTitle>
+                <CardDescription>
+                  Top file extensions in your collection
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="h-80">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <BarChart data={fileTypeChartData} layout="vertical">
+                      <CartesianGrid strokeDasharray="3 3" />
+                      <XAxis type="number" />
+                      <YAxis dataKey="name" type="category" width={60} />
+                      <Tooltip formatter={(value, name) => [value, name === 'value' ? 'Files' : 'Size (MB)']} />
+                      <Bar dataKey="value" fill="#8B5CF6" />
+                    </BarChart>
+                  </ResponsiveContainer>
+                </div>
+              </CardContent>
+            </Card>
+          )}
+
+          {/* Duplicate & System Stats */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Copy className="h-5 w-5" />
+                Storage Insights
+              </CardTitle>
+              <CardDescription>
+                Duplicate detection and system analytics
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-6">
+                {duplicateStats && (
+                  <div>
+                    <h4 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">Duplicates</h4>
+                    <div className="grid grid-cols-3 gap-3">
+                      <div className="p-3 rounded-lg bg-gray-50 dark:bg-gray-800 text-center">
+                        <div className="text-xl font-bold text-gray-900 dark:text-white">
+                          {duplicateStats.total_duplicate_groups}
+                        </div>
+                        <div className="text-xs text-gray-500">Groups</div>
+                      </div>
+                      <div className="p-3 rounded-lg bg-gray-50 dark:bg-gray-800 text-center">
+                        <div className="text-xl font-bold text-gray-900 dark:text-white">
+                          {duplicateStats.total_duplicate_files}
+                        </div>
+                        <div className="text-xs text-gray-500">Files</div>
+                      </div>
+                      <div className="p-3 rounded-lg bg-gray-50 dark:bg-gray-800 text-center">
+                        <div className="text-xl font-bold text-orange-600">
+                          {((duplicateStats.wasted_space || 0) / (1024 ** 3)).toFixed(1)} GB
+                        </div>
+                        <div className="text-xs text-gray-500">Wasted</div>
+                      </div>
+                    </div>
+                  </div>
+                )}
+                {systemAnalytics && (
+                  <div>
+                    <h4 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">System Activity</h4>
+                    <div className="grid grid-cols-2 gap-3">
+                      <div className="p-3 rounded-lg bg-gray-50 dark:bg-gray-800">
+                        <div className="text-xl font-bold text-gray-900 dark:text-white">
+                          {systemAnalytics.total_events.toLocaleString()}
+                        </div>
+                        <div className="text-xs text-gray-500">Total Events</div>
+                      </div>
+                      <div className="p-3 rounded-lg bg-gray-50 dark:bg-gray-800">
+                        <div className="text-xl font-bold text-green-600">
+                          {systemAnalytics.active_users_24h}
+                        </div>
+                        <div className="text-xs text-gray-500">Active Users (24h)</div>
+                      </div>
+                    </div>
+                    {systemAnalytics.popular_media && systemAnalytics.popular_media.length > 0 && (
+                      <div className="mt-3">
+                        <h5 className="text-xs font-medium text-gray-500 mb-2">Most Popular</h5>
+                        <div className="space-y-1">
+                          {systemAnalytics.popular_media.slice(0, 5).map((m) => (
+                            <div key={m.media_id} className="flex items-center justify-between text-sm">
+                              <span className="text-gray-900 dark:text-white truncate flex-1">{m.title}</span>
+                              <span className="text-gray-500 ml-2">{m.access_count} views</span>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                )}
               </div>
             </CardContent>
           </Card>

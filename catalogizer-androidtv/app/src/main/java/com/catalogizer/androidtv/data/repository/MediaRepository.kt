@@ -152,4 +152,139 @@ class MediaRepository(private val context: Context, private val api: Catalogizer
         }
         return Pair(0, emptyMap())
     }
+
+    // --- Collections ---
+
+    /**
+     * Fetch all collections from the server.
+     */
+    suspend fun getCollections(): Map<String, Any>? {
+        return try {
+            val response = api.getCollections()
+            if (response.isSuccessful) {
+                response.body()
+            } else {
+                android.util.Log.w("MediaRepo", "getCollections failed: ${response.code()}")
+                null
+            }
+        } catch (e: Exception) {
+            android.util.Log.w("MediaRepo", "getCollections error: ${e.message}")
+            null
+        }
+    }
+
+    /**
+     * Fetch a single collection by ID.
+     */
+    suspend fun getCollection(id: Long): Map<String, Any>? {
+        return try {
+            val response = api.getCollection(id)
+            if (response.isSuccessful) {
+                response.body()
+            } else {
+                android.util.Log.w("MediaRepo", "getCollection failed: ${response.code()}")
+                null
+            }
+        } catch (e: Exception) {
+            android.util.Log.w("MediaRepo", "getCollection error: ${e.message}")
+            null
+        }
+    }
+
+    // --- Recommendations ---
+
+    /**
+     * Fetch media items similar to the given media ID.
+     */
+    suspend fun getSimilarMedia(mediaId: Long): Map<String, Any>? {
+        return try {
+            val response = api.getSimilarMedia(mediaId)
+            if (response.isSuccessful) {
+                response.body()
+            } else {
+                android.util.Log.w("MediaRepo", "getSimilarMedia failed: ${response.code()}")
+                null
+            }
+        } catch (e: Exception) {
+            android.util.Log.w("MediaRepo", "getSimilarMedia error: ${e.message}")
+            null
+        }
+    }
+
+    /**
+     * Fetch currently trending media.
+     */
+    suspend fun getTrendingMedia(): Map<String, Any>? {
+        return try {
+            val response = api.getTrendingMedia()
+            if (response.isSuccessful) {
+                response.body()
+            } else {
+                android.util.Log.w("MediaRepo", "getTrendingMedia failed: ${response.code()}")
+                null
+            }
+        } catch (e: Exception) {
+            android.util.Log.w("MediaRepo", "getTrendingMedia error: ${e.message}")
+            null
+        }
+    }
+
+    // --- Playlists ---
+
+    /**
+     * Fetch all playlists for the current user.
+     */
+    suspend fun getPlaylists(): Map<String, Any>? {
+        return try {
+            val response = api.getPlaylists()
+            if (response.isSuccessful) {
+                response.body()
+            } else {
+                android.util.Log.w("MediaRepo", "getPlaylists failed: ${response.code()}")
+                null
+            }
+        } catch (e: Exception) {
+            android.util.Log.w("MediaRepo", "getPlaylists error: ${e.message}")
+            null
+        }
+    }
+
+    /**
+     * Create a new playlist with the given name (and optional description).
+     */
+    suspend fun createPlaylist(name: String, description: String? = null): Map<String, Any>? {
+        return try {
+            val body = mutableMapOf("name" to name)
+            description?.let { body["description"] = it }
+            val response = api.createPlaylist(body)
+            if (response.isSuccessful) {
+                response.body()
+            } else {
+                android.util.Log.w("MediaRepo", "createPlaylist failed: ${response.code()}")
+                null
+            }
+        } catch (e: Exception) {
+            android.util.Log.w("MediaRepo", "createPlaylist error: ${e.message}")
+            null
+        }
+    }
+
+    /**
+     * Add a media item to a playlist.
+     */
+    suspend fun addPlaylistItem(playlistId: Long, mediaId: Long): Map<String, Any>? {
+        return try {
+            val body = mapOf<String, Any>("media_id" to mediaId)
+            val response = api.addPlaylistItem(playlistId, body)
+            if (response.isSuccessful) {
+                response.body()
+            } else {
+                android.util.Log.w("MediaRepo", "addPlaylistItem failed: ${response.code()}")
+                null
+            }
+        } catch (e: Exception) {
+            android.util.Log.w("MediaRepo", "addPlaylistItem error: ${e.message}")
+            null
+        }
+    }
 }

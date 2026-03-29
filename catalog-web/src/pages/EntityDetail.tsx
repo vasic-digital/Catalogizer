@@ -1,8 +1,11 @@
 import { useParams, useNavigate } from 'react-router-dom'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { entityApi } from '@/lib/mediaApi'
+import { recommendationsApi } from '@/lib/recommendationsApi'
+import { downloadApi } from '@/lib/downloadApi'
+import { analyticsApi } from '@/lib/analyticsApi'
 import { Button } from '@/components/ui/Button'
-import { ArrowLeft, ChevronRight, Globe, Star } from 'lucide-react'
+import { ArrowLeft, ChevronRight, Globe, Star, Download, Sparkles } from 'lucide-react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card'
 import { EntityHero, ChildrenList, FilesList, DuplicatesList } from '@/components/entity/EntityDetailView'
 import toast from 'react-hot-toast'
@@ -35,6 +38,27 @@ export function EntityDetail() {
     queryKey: ['entityDuplicates', entityId],
     queryFn: () => entityApi.getEntityDuplicates(entityId),
     enabled: entityId > 0,
+  })
+
+  const { data: similarItems } = useQuery({
+    queryKey: ['recommendations-similar', entityId],
+    queryFn: () => recommendationsApi.getSimilar(entityId),
+    enabled: entityId > 0,
+  })
+
+  // Track page view via analytics
+  useQuery({
+    queryKey: ['analytics-track-view', entityId],
+    queryFn: () => analyticsApi.trackAccess({ media_id: entityId, action: 'view' }),
+    enabled: entityId > 0,
+    staleTime: Infinity,
+    retry: false,
+  })
+
+  const downloadMutation = useMutation({
+    mutationFn: () => downloadApi.downloadEntity(entityId, entity?.title),
+    onSuccess: () => toast.success('Download started'),
+    onError: () => toast.error('Download failed'),
   })
 
   const refreshMutation = useMutation({
@@ -147,6 +171,73 @@ export function EntityDetail() {
         duplicates={duplicates}
         onDuplicateClick={(dupId) => navigate(`/entity/${dupId}`)}
       />
+
+      {/* Download Button */}
+      <Card>
+        <CardContent className="p-4 flex items-center justify-between">
+          <div>
+            <span className="font-medium text-gray-900 dark:text-white">Download</span>
+            <span className="text-sm text-gray-500 ml-2">
+              {files.length} file{files.length !== 1 ? 's' : ''} available
+            </span>
+          </div>
+          <Button
+            onClick={() => downloadMutation.mutate()}
+            loading={downloadMutation.isPending}
+            disabled={files.length === 0}
+          >
+            <Download className="h-4 w-4 mr-2" />
+            Download
+          </Button>
+        </CardContent>
+      </Card>
+
+      {/* Similar Items / Recommendations */}
+      {similarItems && similarItems.length > 0 && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Sparkles className="h-5 w-5" />
+              Similar Items
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+              {similarItems.slice(0, 6).map((item) => (
+                <button
+                  key={item.id}
+                  onClick={() => navigate(`/entity/${item.id}`)}
+                  className="flex items-center gap-3 p-3 rounded-lg bg-gray-50 dark:bg-gray-800 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors text-left"
+                >
+                  <div className="flex-1 min-w-0">
+                    <div className="font-medium text-gray-900 dark:text-white truncate">
+                      {item.title}
+                    </div>
+                    <div className="flex items-center gap-2 text-xs text-gray-500">
+                      <span className="capitalize">{item.media_type.replace(/_/g, ' ')}</span>
+                      {item.year && <span>({item.year})</span>}
+                      {item.similarity_score != null && (
+                        <span className="text-blue-600 dark:text-blue-400">
+                          {Math.round(item.similarity_score * 100)}% match
+                        </span>
+                      )}
+                    </div>
+                    {item.reason && (
+                      <div className="text-xs text-gray-400 mt-1 truncate">{item.reason}</div>
+                    )}
+                  </div>
+                  {item.rating != null && (
+                    <div className="flex items-center gap-1 text-sm text-yellow-600">
+                      <Star className="h-3 w-3" />
+                      {item.rating}
+                    </div>
+                  )}
+                </button>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      )}
     </div>
   )
 }

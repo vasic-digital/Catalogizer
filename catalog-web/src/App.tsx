@@ -24,6 +24,7 @@ const PlaylistsPage = React.lazy(() => import('@/pages/Playlists').then(m => ({ 
 const AIDashboard = React.lazy(() => import('@/pages/AIDashboard'))
 const EntityBrowser = React.lazy(() => import('@/pages/EntityBrowser').then(m => ({ default: m.EntityBrowser })))
 const EntityDetail = React.lazy(() => import('@/pages/EntityDetail').then(m => ({ default: m.EntityDetail })))
+const SettingsPage = React.lazy(() => import('@/pages/Settings').then(m => ({ default: m.Settings })))
 
 const PageLoader: React.FC = () => (
   <div className="p-6 space-y-4 animate-pulse min-h-[400px]">
@@ -167,6 +168,16 @@ function App() {
                     <ProtectedRoute requiredPermission="read:media">
                       <PageErrorBoundary pageName="Entity Detail">
                         <EntityDetail />
+                      </PageErrorBoundary>
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/settings"
+                  element={
+                    <ProtectedRoute>
+                      <PageErrorBoundary pageName="Settings">
+                        <SettingsPage />
                       </PageErrorBoundary>
                     </ProtectedRoute>
                   }
