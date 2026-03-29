@@ -44,8 +44,24 @@ interface CatalogizerApi {
     @PUT("api/v1/media/{id}/progress")
     suspend fun updateWatchProgress(@Path("id") id: Long, @Body progress: Map<String, Double>): Response<Unit>
 
-    @PUT("api/v1/media/{id}/favorite")
-    suspend fun updateFavoriteStatus(@Path("id") id: Long, @Body favorite: Map<String, Boolean>): Response<Unit>
+    // Favorites endpoints
+    @POST("api/v1/favorites")
+    suspend fun addFavorite(@Body body: Map<String, @JvmSuppressWildcards Any>): Response<Map<String, String>>
+
+    @DELETE("api/v1/favorites/{entity_type}/{entity_id}")
+    suspend fun removeFavorite(
+        @Path("entity_type") entityType: String,
+        @Path("entity_id") entityId: Long
+    ): Response<Map<String, String>>
+
+    @GET("api/v1/favorites/check/{entity_type}/{entity_id}")
+    suspend fun checkFavorite(
+        @Path("entity_type") entityType: String,
+        @Path("entity_id") entityId: Long
+    ): Response<Map<String, Boolean>>
+
+    @GET("api/v1/favorites")
+    suspend fun listFavorites(): Response<Map<String, @JvmSuppressWildcards Any>>
 
     // Stats endpoint
     @GET("api/v1/entities/stats")

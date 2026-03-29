@@ -52,14 +52,18 @@ fun MediaDetailScreen(
     val config = LocalConfiguration.current
     val isCompact = config.screenWidthDp < 600
 
-    // Fetch entity details from API
+    // Fetch entity details from API, then check favorite status
     LaunchedEffect(mediaId, retryCount) {
         isLoading = true
         try {
             val result = container.mediaRepository.getMediaById(mediaId).first()
             mediaItem = result
-            isFavorite = result?.isFavorite ?: false
             error = if (result == null) "Media not found" else null
+            // Check favorite status via dedicated endpoint
+            if (result != null) {
+                val entityType = result.mediaType ?: "movie"
+                isFavorite = container.mediaRepository.checkFavorite(entityType, mediaId)
+            }
         } catch (e: Exception) {
             error = "Failed to load: ${e.message}"
         }
@@ -236,13 +240,14 @@ fun MediaDetailScreen(
                             }
                             Button(
                                 onClick = {
-                                    val newState = !isFavorite
-                                    isFavorite = newState
+                                    val oldState = isFavorite
+                                    isFavorite = !oldState // optimistic update
                                     coroutineScope.launch {
                                         try {
-                                            container.mediaRepository.updateFavoriteStatus(mediaId, newState)
+                                            val entityType = item.mediaType ?: "movie"
+                                            container.mediaRepository.toggleFavorite(entityType, mediaId, oldState)
                                         } catch (e: Exception) {
-                                            isFavorite = !newState // revert on failure
+                                            isFavorite = oldState // revert on failure
                                             android.util.Log.e("MediaDetail", "Favorite toggle failed", e)
                                         }
                                     }

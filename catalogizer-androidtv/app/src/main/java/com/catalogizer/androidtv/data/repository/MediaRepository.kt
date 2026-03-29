@@ -90,16 +90,57 @@ class MediaRepository(private val context: Context, private val api: Catalogizer
         }
     }
 
-    suspend fun updateFavoriteStatus(mediaId: Long, isFavorite: Boolean) {
-        try {
-            val favoriteBody = mapOf("favorite" to isFavorite)
-            val response = api.updateFavoriteStatus(mediaId, favoriteBody)
-            if (!response.isSuccessful) {
-                throw Exception("Failed to update favorite status: ${response.message()}")
+    /**
+     * Check whether an entity is favorited by the current user.
+     * Returns false on any error (network, auth, etc.) so the UI degrades gracefully.
+     */
+    suspend fun checkFavorite(entityType: String, entityId: Long): Boolean {
+        return try {
+            val response = api.checkFavorite(entityType, entityId)
+            if (response.isSuccessful) {
+                response.body()?.get("is_favorite") ?: false
+            } else {
+                android.util.Log.w("MediaRepo", "checkFavorite failed: ${response.code()}")
+                false
             }
         } catch (e: Exception) {
-            // Handle error
-            throw e
+            android.util.Log.w("MediaRepo", "checkFavorite error: ${e.message}")
+            false
+        }
+    }
+
+    /**
+     * Add an entity to the current user's favorites.
+     */
+    suspend fun addFavorite(entityType: String, entityId: Long) {
+        val body = mapOf<String, Any>("entity_type" to entityType, "entity_id" to entityId)
+        val response = api.addFavorite(body)
+        if (!response.isSuccessful) {
+            throw Exception("Failed to add favorite: ${response.code()} ${response.message()}")
+        }
+    }
+
+    /**
+     * Remove an entity from the current user's favorites.
+     */
+    suspend fun removeFavorite(entityType: String, entityId: Long) {
+        val response = api.removeFavorite(entityType, entityId)
+        if (!response.isSuccessful) {
+            throw Exception("Failed to remove favorite: ${response.code()} ${response.message()}")
+        }
+    }
+
+    /**
+     * Toggle favorite status: adds if not favorited, removes if already favorited.
+     * Returns the new favorite state.
+     */
+    suspend fun toggleFavorite(entityType: String, entityId: Long, currentlyFavorite: Boolean): Boolean {
+        if (currentlyFavorite) {
+            removeFavorite(entityType, entityId)
+            return false
+        } else {
+            addFavorite(entityType, entityId)
+            return true
         }
     }
 

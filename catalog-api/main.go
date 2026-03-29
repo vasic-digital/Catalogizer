@@ -656,6 +656,9 @@ func main() {
 	reportingHandler := root_handlers.NewReportingHandler(reportingService, logger)
 	favoritesHandler := root_handlers.NewFavoritesHandler(favoritesService, logger)
 
+	// Stub handler for not-yet-implemented endpoints (Zero Warning / Zero Error Policy)
+	stubHandler := root_handlers.NewStubHandler()
+
 	// Initialize JWT middleware
 	jwtMiddleware := root_middleware.NewJWTMiddleware(jwtSecret)
 
@@ -814,6 +817,8 @@ func main() {
 		authGroup.GET("/status", defaultRateLimiter, authHandler.GetAuthStatusGin)
 		authGroup.GET("/permissions", defaultRateLimiter, jwtMiddleware.RequireAuth(), authHandler.GetPermissionsGin)
 		authGroup.GET("/profile", defaultRateLimiter, jwtMiddleware.RequireAuth(), authHandler.GetCurrentUserGin)
+		authGroup.GET("/init-status", defaultRateLimiter, stubHandler.GetInitStatus)
+		authGroup.POST("/change-password", defaultRateLimiter, jwtMiddleware.RequireAuth(), stubHandler.ChangePassword)
 	}
 
 	// API routes
@@ -846,11 +851,17 @@ func main() {
 		// Media browsing endpoints (must be before :id to prevent route conflict)
 		api.GET("/media/search", mediaBrowseHandler.SearchMedia)
 		api.GET("/media/stats", mediaBrowseHandler.GetMediaStats)
+		api.GET("/media/recent", stubHandler.GetRecentMedia)
+		api.GET("/media/popular", stubHandler.GetPopularMedia)
+		api.GET("/media/by-path", stubHandler.GetMediaByPath)
+		api.POST("/media/analyze", stubHandler.AnalyzeMedia)
 
 		// Media operations
 		api.GET("/media/:id", androidTVMediaHandler.GetMediaByID)
 		api.PUT("/media/:id/progress", androidTVMediaHandler.UpdateWatchProgress)
 		api.PUT("/media/:id/favorite", androidTVMediaHandler.UpdateFavoriteStatus)
+		api.POST("/media/:id/refresh", stubHandler.RefreshMediaMetadata)
+		api.GET("/media/:id/quality", stubHandler.GetMediaQuality)
 
 		// Recommendation endpoints
 		recGroup := api.Group("/recommendations")

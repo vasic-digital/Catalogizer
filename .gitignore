@@ -286,3 +286,4 @@ catalog-api/cache/
 
 # Runtime config with real credentials (use config.json.example as reference)
 catalog-api/config.json
+qa-results/latest
