@@ -295,14 +295,16 @@ Critical container notes:
 - **Every phase transition MUST be verified** — before starting Phase 2, confirm Phase 1 actually achieved its goal (e.g., login succeeded, not just "app is in foreground")
 - **Business logic validation**: Cross-reference screen content against codebase logic, database state, and project documentation/specs
 
-**CRITICAL: HelixQA Autonomous Testing — NO Hardcoded Flows.** This is a MANDATORY, NON-NEGOTIABLE rule:
-- **NEVER write hardcoded tap coordinates, sleep timers, or keystroke sequences** for QA automation. These are brittle, break on different devices, and produce false positives
-- **ALL QA testing MUST be driven by the HelixQA LLM autonomous pipeline** (`helixqa autonomous --platforms androidtv`). The LLM takes screenshots, analyzes them with vision, decides actions, and validates results
-- **No bash scripts with fixed UI coordinates** — the `helixqa autonomous` Go binary handles device detection, screen analysis, navigation, and reporting
-- If the LLM pipeline doesn't work, **fix the HelixQA Go code** — do NOT work around it with hardcoded scripts
-- **Stay in the testing loop**: Run HelixQA → analyze results → fix discovered bugs → rebuild → redeploy → run again. Only stop when HelixQA completes a full session with verified screenshots showing the app navigated through ALL screens with real data
-- **Every connected device MUST be tested** — HelixQA detects all ADB devices and runs tests on each one
-- **`uiautomator dump` failures are real bugs** — investigate and fix them, don't ignore them
+**CRITICAL: HelixQA Autonomous Testing — FULLY LLM-DRIVEN, NO Hardcoded Flows.** This is a MANDATORY, NON-NEGOTIABLE rule:
+- **ALL navigation and interaction MUST be performed by real LLM vision models.** The LLM sees a screenshot, analyzes it, and decides the next action. Every single step.
+- **NEVER write hardcoded tap coordinates, sleep timers, keystroke sequences, or "fallback navigation" scripts.** These are brittle, break on different devices, and produce false positives. They were permanently removed from the codebase on 2026-03-29.
+- **NEVER implement "fallback actions" that bypass the LLM.** If vision providers are unavailable, the curiosity phase MUST skip — not fake results with scripted steps. A skipped QA session is honest; a scripted one is a lie.
+- **If the LLM returns malformed JSON, RETRY the vision call** — do not substitute a hardcoded action sequence.
+- **ALL QA testing MUST be driven by the HelixQA LLM autonomous pipeline** (`helixqa autonomous --platforms androidtv`). The LLM takes screenshots, analyzes them with vision, decides actions, and validates results.
+- If the LLM pipeline doesn't work, **fix the HelixQA Go code** (improve JSON parsing, retry logic, prompt engineering) — do NOT work around it with hardcoded scripts.
+- **Stay in the testing loop**: Run HelixQA → analyze results → fix discovered bugs → rebuild → redeploy → run again. Only stop when HelixQA completes a full session with verified screenshots showing the app navigated through ALL screens with real data.
+- **Every connected device MUST be tested** — HelixQA detects all ADB devices and runs tests on each one.
+- **ADB reverse proxy MUST be set up automatically** for every Android device before testing begins.
 
 **GitHub Actions are PERMANENTLY DISABLED.** Do NOT create any GitHub Actions workflow files in `.github/workflows/`. CI/CD must be run locally.
 
