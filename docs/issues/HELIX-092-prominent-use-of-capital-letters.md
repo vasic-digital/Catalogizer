@@ -4,7 +4,7 @@ severity: low
 category: ux
 platform: video-frame
 screen: frame_0001.png
-status: open
+status: fixed
 found_date: 2026-03-29
 ---
 

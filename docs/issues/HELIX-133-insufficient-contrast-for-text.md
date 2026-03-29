@@ -4,7 +4,7 @@ severity: high
 category: accessibility
 platform: 
 screen: androidtv-curiosity-022.png
-status: open
+status: fixed
 found_date: 2026-03-29
 ---
 

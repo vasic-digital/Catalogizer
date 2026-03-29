@@ -4,7 +4,7 @@ severity: medium
 category: ux
 platform: 
 screen: androidtv-curiosity-046.png
-status: open
+status: fixed
 found_date: 2026-03-29
 ---
 
