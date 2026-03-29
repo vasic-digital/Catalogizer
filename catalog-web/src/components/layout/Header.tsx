@@ -1,14 +1,30 @@
 import React, { useState } from 'react'
-import { Link, useNavigate } from 'react-router-dom'
+import { Link, useNavigate, useLocation } from 'react-router-dom'
 import { useAuth } from '@/contexts/AuthContext'
 import { Button } from '@/components/ui/Button'
-import { Menu, X, User, LogOut, Settings, Search, Folder, Heart, ListMusic, Library } from 'lucide-react'
+import { Menu, X, User, LogOut, Settings, Search, Folder, Heart, ListMusic, Library, XCircle } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
+
+const navLinkClass = (pathname: string, href: string) => {
+  const isActive = pathname === href || (href !== '/' && pathname.startsWith(href))
+  return isActive
+    ? 'text-blue-600 dark:text-blue-400 font-semibold transition-colors rounded-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2 dark:focus-visible:ring-offset-gray-900'
+    : 'text-gray-700 hover:text-gray-900 dark:text-gray-300 dark:hover:text-white transition-colors rounded-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2 dark:focus-visible:ring-offset-gray-900'
+}
+
+const mobileNavLinkClass = (pathname: string, href: string) => {
+  const isActive = pathname === href || (href !== '/' && pathname.startsWith(href))
+  return isActive
+    ? 'block px-3 py-2 text-blue-600 dark:text-blue-400 font-semibold bg-blue-50 dark:bg-blue-900/20 rounded-md transition-colors'
+    : 'block px-3 py-2 text-gray-700 hover:text-gray-900 hover:bg-gray-100 rounded-md dark:text-gray-300 dark:hover:text-white dark:hover:bg-gray-800 transition-colors'
+}
 
 export const Header: React.FC = () => {
   const { user, isAuthenticated, logout } = useAuth()
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
+  const [searchValue, setSearchValue] = useState('')
   const navigate = useNavigate()
+  const location = useLocation()
 
   const handleLogout = async () => {
     try {
@@ -39,77 +55,47 @@ export const Header: React.FC = () => {
           {/* Desktop Navigation */}
           {isAuthenticated && (
             <nav className="hidden md:flex items-center space-x-8">
-              <Link
-                to="/dashboard"
-                className="text-gray-700 hover:text-gray-900 dark:text-gray-300 dark:hover:text-white transition-colors rounded-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2 dark:focus-visible:ring-offset-gray-900"
-              >
+              <Link to="/dashboard" className={navLinkClass(location.pathname, '/dashboard')}>
                 Dashboard
               </Link>
-              <Link
-                to="/media"
-                className="text-gray-700 hover:text-gray-900 dark:text-gray-300 dark:hover:text-white transition-colors rounded-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2 dark:focus-visible:ring-offset-gray-900"
-              >
+              <Link to="/media" className={navLinkClass(location.pathname, '/media')}>
                 Media
               </Link>
-              <Link
-                to="/browse"
-                className="text-gray-700 hover:text-gray-900 dark:text-gray-300 dark:hover:text-white transition-colors rounded-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2 dark:focus-visible:ring-offset-gray-900"
-              >
+              <Link to="/browse" className={navLinkClass(location.pathname, '/browse')}>
                 <div className="flex items-center gap-1">
                   <Library className="h-4 w-4" />
                   Browse
                 </div>
               </Link>
-              <Link
-                to="/favorites"
-                className="text-gray-700 hover:text-gray-900 dark:text-gray-300 dark:hover:text-white transition-colors rounded-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2 dark:focus-visible:ring-offset-gray-900"
-              >
+              <Link to="/favorites" className={navLinkClass(location.pathname, '/favorites')}>
                 <div className="flex items-center gap-1">
                   <Heart className="h-4 w-4" />
                   Favorites
                 </div>
               </Link>
-              <Link
-                to="/playlists"
-                className="text-gray-700 hover:text-gray-900 dark:text-gray-300 dark:hover:text-white transition-colors rounded-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2 dark:focus-visible:ring-offset-gray-900"
-              >
+              <Link to="/playlists" className={navLinkClass(location.pathname, '/playlists')}>
                 <div className="flex items-center gap-1">
                   <ListMusic className="h-4 w-4" />
                   Playlists
                 </div>
               </Link>
-              <Link
-                to="/analytics"
-                className="text-gray-700 hover:text-gray-900 dark:text-gray-300 dark:hover:text-white transition-colors rounded-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2 dark:focus-visible:ring-offset-gray-900"
-              >
+              <Link to="/analytics" className={navLinkClass(location.pathname, '/analytics')}>
                 Analytics
               </Link>
-              <Link
-                to="/subtitles"
-                className="text-gray-700 hover:text-gray-900 dark:text-gray-300 dark:hover:text-white transition-colors rounded-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2 dark:focus-visible:ring-offset-gray-900"
-              >
+              <Link to="/subtitles" className={navLinkClass(location.pathname, '/subtitles')}>
                 Subtitles
               </Link>
-              <Link
-                to="/collections"
-                className="text-gray-700 hover:text-gray-900 dark:text-gray-300 dark:hover:text-white transition-colors rounded-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2 dark:focus-visible:ring-offset-gray-900"
-              >
+              <Link to="/collections" className={navLinkClass(location.pathname, '/collections')}>
                 <div className="flex items-center gap-1">
                   <Folder className="h-4 w-4" />
                   Collections
                 </div>
               </Link>
-              <Link
-                to="/conversion"
-                className="text-gray-700 hover:text-gray-900 dark:text-gray-300 dark:hover:text-white transition-colors rounded-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2 dark:focus-visible:ring-offset-gray-900"
-              >
+              <Link to="/conversion" className={navLinkClass(location.pathname, '/conversion')}>
                 Convert
               </Link>
               {user?.role?.name === 'Admin' && (
-                <Link
-                  to="/admin"
-                  className="text-gray-700 hover:text-gray-900 dark:text-gray-300 dark:hover:text-white transition-colors rounded-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2 dark:focus-visible:ring-offset-gray-900"
-                >
+                <Link to="/admin" className={navLinkClass(location.pathname, '/admin')}>
                   Admin
                 </Link>
               )}
@@ -125,9 +111,21 @@ export const Header: React.FC = () => {
                 <input
                   id="header-search"
                   type="text"
-                  placeholder="Search media..."
-                  className="w-full pl-10 pr-4 py-2 bg-gray-100 border border-gray-300 rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:border-transparent dark:bg-gray-800 dark:border-gray-600 dark:text-white dark:placeholder:text-gray-500"
+                  value={searchValue}
+                  onChange={(e) => setSearchValue(e.target.value)}
+                  placeholder="Search movies, shows, music..."
+                  className="w-full pl-10 pr-10 py-2 bg-gray-100 border border-gray-300 rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:border-transparent dark:bg-gray-800 dark:border-gray-600 dark:text-white dark:placeholder:text-gray-500"
                 />
+                {searchValue && (
+                  <button
+                    type="button"
+                    onClick={() => setSearchValue('')}
+                    className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
+                    aria-label="Clear search"
+                  >
+                    <XCircle className="h-4 w-4" />
+                  </button>
+                )}
               </div>
             </div>
           )}
@@ -208,33 +206,45 @@ export const Header: React.FC = () => {
                   <input
                     id="mobile-search"
                     type="text"
-                    placeholder="Search media..."
-                    className="w-full pl-10 pr-4 py-2 bg-gray-100 border border-gray-300 rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:border-transparent dark:bg-gray-800 dark:border-gray-600 dark:text-white dark:placeholder:text-gray-500"
+                    value={searchValue}
+                    onChange={(e) => setSearchValue(e.target.value)}
+                    placeholder="Search movies, shows, music..."
+                    className="w-full pl-10 pr-10 py-2 bg-gray-100 border border-gray-300 rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:border-transparent dark:bg-gray-800 dark:border-gray-600 dark:text-white dark:placeholder:text-gray-500"
                   />
+                  {searchValue && (
+                    <button
+                      type="button"
+                      onClick={() => setSearchValue('')}
+                      className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
+                      aria-label="Clear search"
+                    >
+                      <XCircle className="h-4 w-4" />
+                    </button>
+                  )}
                 </div>
               )}
 
               {/* Mobile Navigation */}
               {isAuthenticated ? (
                 <>
-                  <div className="space-y-2">
+                  <div className="space-y-1">
                     <Link
                       to="/dashboard"
-                      className="block px-3 py-2 text-gray-700 hover:text-gray-900 hover:bg-gray-100 rounded-md dark:text-gray-300 dark:hover:text-white dark:hover:bg-gray-800 transition-colors"
+                      className={mobileNavLinkClass(location.pathname, '/dashboard')}
                       onClick={() => setIsMobileMenuOpen(false)}
                     >
                       Dashboard
                     </Link>
                     <Link
                       to="/media"
-                      className="block px-3 py-2 text-gray-700 hover:text-gray-900 hover:bg-gray-100 rounded-md dark:text-gray-300 dark:hover:text-white dark:hover:bg-gray-800 transition-colors"
+                      className={mobileNavLinkClass(location.pathname, '/media')}
                       onClick={() => setIsMobileMenuOpen(false)}
                     >
                       Media
                     </Link>
                     <Link
                       to="/browse"
-                      className="block px-3 py-2 text-gray-700 hover:text-gray-900 hover:bg-gray-100 rounded-md dark:text-gray-300 dark:hover:text-white dark:hover:bg-gray-800 transition-colors"
+                      className={mobileNavLinkClass(location.pathname, '/browse')}
                       onClick={() => setIsMobileMenuOpen(false)}
                     >
                       <div className="flex items-center gap-2">
@@ -244,7 +254,7 @@ export const Header: React.FC = () => {
                     </Link>
                     <Link
                       to="/favorites"
-                      className="block px-3 py-2 text-gray-700 hover:text-gray-900 hover:bg-gray-100 rounded-md dark:text-gray-300 dark:hover:text-white dark:hover:bg-gray-800 transition-colors"
+                      className={mobileNavLinkClass(location.pathname, '/favorites')}
                       onClick={() => setIsMobileMenuOpen(false)}
                     >
                       <div className="flex items-center gap-2">
@@ -254,7 +264,7 @@ export const Header: React.FC = () => {
                     </Link>
                     <Link
                       to="/playlists"
-                      className="block px-3 py-2 text-gray-700 hover:text-gray-900 hover:bg-gray-100 rounded-md dark:text-gray-300 dark:hover:text-white dark:hover:bg-gray-800 transition-colors"
+                      className={mobileNavLinkClass(location.pathname, '/playlists')}
                       onClick={() => setIsMobileMenuOpen(false)}
                     >
                       <div className="flex items-center gap-2">
@@ -264,14 +274,14 @@ export const Header: React.FC = () => {
                     </Link>
                     <Link
                       to="/subtitles"
-                      className="block px-3 py-2 text-gray-700 hover:text-gray-900 hover:bg-gray-100 rounded-md dark:text-gray-300 dark:hover:text-white dark:hover:bg-gray-800 transition-colors"
+                      className={mobileNavLinkClass(location.pathname, '/subtitles')}
                       onClick={() => setIsMobileMenuOpen(false)}
                     >
                       Subtitles
                     </Link>
                     <Link
                       to="/collections"
-                      className="block px-3 py-2 text-gray-700 hover:text-gray-900 hover:bg-gray-100 rounded-md dark:text-gray-300 dark:hover:text-white dark:hover:bg-gray-800 transition-colors"
+                      className={mobileNavLinkClass(location.pathname, '/collections')}
                       onClick={() => setIsMobileMenuOpen(false)}
                     >
                       <div className="flex items-center gap-2">
@@ -281,7 +291,7 @@ export const Header: React.FC = () => {
                     </Link>
                     <Link
                       to="/conversion"
-                      className="block px-3 py-2 text-gray-700 hover:text-gray-900 hover:bg-gray-100 rounded-md dark:text-gray-300 dark:hover:text-white dark:hover:bg-gray-800 transition-colors"
+                      className={mobileNavLinkClass(location.pathname, '/conversion')}
                       onClick={() => setIsMobileMenuOpen(false)}
                     >
                       Convert
@@ -289,7 +299,7 @@ export const Header: React.FC = () => {
                     {user?.role?.name === 'Admin' && (
                       <Link
                         to="/admin"
-                        className="block px-3 py-2 text-gray-700 hover:text-gray-900 hover:bg-gray-100 rounded-md dark:text-gray-300 dark:hover:text-white dark:hover:bg-gray-800 transition-colors"
+                        className={mobileNavLinkClass(location.pathname, '/admin')}
                         onClick={() => setIsMobileMenuOpen(false)}
                       >
                         Admin

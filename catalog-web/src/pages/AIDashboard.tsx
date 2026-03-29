@@ -537,15 +537,15 @@ const AIDashboard: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 p-6">
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-900 p-6">
       <div className="max-w-7xl mx-auto">
         <div className="mb-8">
           <div className="flex items-center space-x-3">
             <Brain className="w-8 h-8 text-indigo-600" />
-            <h1 className="text-3xl font-bold text-gray-900">AI Dashboard</h1>
+            <h1 className="text-3xl font-bold text-gray-900 dark:text-white">AI Dashboard</h1>
             <Sparkles className="w-6 h-6 text-yellow-500" />
           </div>
-          <p className="text-gray-600 mt-2">
+          <p className="text-gray-600 dark:text-gray-400 mt-2">
             Advanced AI-powered features for intelligent content management and automation
           </p>
         </div>

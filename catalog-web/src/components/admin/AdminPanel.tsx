@@ -119,7 +119,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
     <div className="space-y-6">
       {/* Header */}
       <div className="flex items-center justify-between">
-        <h2 className="text-3xl font-bold">Admin Panel</h2>
+        <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Admin Panel</h1>
         <Button variant="outline">
           <RefreshCw className="w-4 h-4 mr-2" />
           Refresh

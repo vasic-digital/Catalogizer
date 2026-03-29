@@ -747,10 +747,10 @@ export const Collections: React.FC = () => {
         <div className="mb-8">
           <div className="flex items-center space-x-3">
             <Brain className="w-8 h-8 text-indigo-600" />
-            <h1 className="text-3xl font-bold text-gray-900">AI-Powered Features</h1>
+            <h1 className="text-3xl font-bold text-gray-900 dark:text-white">AI-Powered Features</h1>
             <Sparkles className="w-6 h-6 text-yellow-500" />
           </div>
-          <p className="text-gray-600 mt-2">
+          <p className="text-gray-600 dark:text-gray-400 mt-2">
             Leverage artificial intelligence for intelligent content management
           </p>
         </div>

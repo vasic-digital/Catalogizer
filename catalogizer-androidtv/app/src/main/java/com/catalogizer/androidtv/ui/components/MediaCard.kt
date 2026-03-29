@@ -37,18 +37,24 @@ fun MediaCard(
     modifier: Modifier = Modifier,
     isFocused: Boolean = false
 ) {
+    var isCardFocused by remember { mutableStateOf(isFocused) }
+
     Card(
         onClick = onClick,
         modifier = modifier
             .aspectRatio(2f/3f)
-            .onFocusChanged { if (it.isFocused) onFocus() },
+            .onFocusChanged { focusState ->
+                isCardFocused = focusState.isFocused || focusState.hasFocus
+                if (focusState.isFocused) onFocus()
+            },
         scale = CardDefaults.scale(
-            scale = if (isFocused) 1.05f else 1.0f
+            scale = if (isCardFocused) 1.05f else 1.0f,
+            focusedScale = 1.05f
         ),
         border = CardDefaults.border(
             focusedBorder = Border(
                 border = androidx.compose.foundation.BorderStroke(
-                    width = 2.dp,
+                    width = 3.dp,
                     color = MaterialTheme.colorScheme.primary
                 ),
                 shape = RoundedCornerShape(8.dp)

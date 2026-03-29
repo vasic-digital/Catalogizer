@@ -96,7 +96,7 @@ describe('Header', () => {
         </MemoryRouter>
       )
 
-      expect(screen.queryByPlaceholderText('Search media...')).not.toBeInTheDocument()
+      expect(screen.queryByPlaceholderText('Search movies, shows, music...')).not.toBeInTheDocument()
     })
 
     it('displays Login and Sign Up buttons when not authenticated', () => {
@@ -179,7 +179,7 @@ describe('Header', () => {
         </MemoryRouter>
       )
 
-      expect(screen.getAllByPlaceholderText('Search media...').length).toBeGreaterThan(0)
+      expect(screen.getAllByPlaceholderText('Search movies, shows, music...').length).toBeGreaterThan(0)
     })
 
     it('displays user greeting with first name', () => {
@@ -488,7 +488,7 @@ describe('Header', () => {
       }
 
       await waitFor(() => {
-        const searchInputs = screen.getAllByPlaceholderText('Search media...')
+        const searchInputs = screen.getAllByPlaceholderText('Search movies, shows, music...')
         // Should have both desktop and mobile search bars
         expect(searchInputs.length).toBeGreaterThan(1)
       })

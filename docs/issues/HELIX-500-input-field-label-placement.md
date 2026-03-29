@@ -4,7 +4,7 @@ severity: medium
 category: UX
 platform: 
 screen: web-005-navigate.png
-status: open
+status: fixed
 found_date: 2026-03-29
 ---
 

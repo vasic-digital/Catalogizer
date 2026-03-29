@@ -4,7 +4,7 @@ severity: high
 category: functional
 platform: 
 screen: web-001-loginform.png
-status: open
+status: fixed
 found_date: 2026-03-29
 ---
 

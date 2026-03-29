@@ -12,6 +12,34 @@ vi.mock('@/lib/mediaApi', async () => ({
   },
 }))
 
+vi.mock('@/lib/statsApi', async () => ({
+  statsApi: {
+    getGrowthTrends: vi.fn().mockResolvedValue([
+      { date: '2026-03-01', files_added: 10, bytes_added: 1000 },
+    ]),
+    getFileTypeStats: vi.fn().mockResolvedValue([
+      { extension: '.mp4', count: 100, total_size: 50000000 },
+      { extension: '.jpg', count: 200, total_size: 10000000 },
+    ]),
+    getDuplicateStats: vi.fn().mockResolvedValue({
+      total_groups: 5, total_duplicates: 12, wasted_bytes: 500000,
+    }),
+    getOverallStats: vi.fn().mockResolvedValue({
+      total_files: 1000, total_dirs: 50, total_size: 100000000,
+    }),
+    getScanHistory: vi.fn().mockResolvedValue([]),
+  },
+}))
+
+vi.mock('@/lib/analyticsApi', async () => ({
+  analyticsApi: {
+    getSystemAnalytics: vi.fn().mockResolvedValue({
+      popular_media: [], recent_activity: [],
+      total_views: 0, total_events: 0,
+    }),
+  },
+}))
+
 vi.mock('framer-motion', async () => {
   const MockMotionDiv = ({ children, ...props }: any) => <div {...props}>{children}</div>
   MockMotionDiv.displayName = 'MockMotionDiv'
@@ -49,6 +77,8 @@ vi.mock('lucide-react', async () => ({
   Music: () => <div data-testid="icon-music">Music Icon</div>,
   Gamepad2: () => <div data-testid="icon-gamepad">Gamepad Icon</div>,
   Monitor: () => <div data-testid="icon-monitor">Monitor Icon</div>,
+  Copy: () => <div data-testid="icon-copy">Copy Icon</div>,
+  FileType: () => <div data-testid="icon-filetype">FileType Icon</div>,
 }))
 
 const mockMediaApi = vi.mocked(mediaApi)

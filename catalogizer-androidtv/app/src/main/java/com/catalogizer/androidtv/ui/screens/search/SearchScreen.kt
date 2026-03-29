@@ -60,7 +60,7 @@ fun SearchScreen(
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(16.dp)
+                .padding(24.dp)
         ) {
             // Search Header
             Row(
@@ -77,7 +77,7 @@ fun SearchScreen(
                     label = { Text("Search Media") },
                     placeholder = {
                         Text(
-                            text = "Search movies, music, books...",
+                            text = "Search movies, shows, music, games, books...",
                             color = Color.White.copy(alpha = 0.5f)
                         )
                     },
@@ -159,7 +159,7 @@ fun SearchScreen(
                 Text(
                     text = "${searchResults.size} results found",
                     modifier = Modifier.padding(bottom = 16.dp),
-                    style = androidx.tv.material3.MaterialTheme.typography.bodyLarge,
+                    style = androidx.tv.material3.MaterialTheme.typography.labelLarge,
                     color = androidx.tv.material3.MaterialTheme.colorScheme.onSurface.copy(alpha = 0.8f)
                 )
 
@@ -214,8 +214,8 @@ fun SearchScreen(
                             style = androidx.tv.material3.MaterialTheme.typography.headlineMedium
                         )
                         Text(
-                            text = "Enter a title, actor, or keyword to find media",
-                            style = androidx.tv.material3.MaterialTheme.typography.bodyMedium,
+                            text = "Type a title, genre, or keyword above and press Search",
+                            style = androidx.tv.material3.MaterialTheme.typography.bodyLarge,
                             color = androidx.tv.material3.MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
                         )
                     }

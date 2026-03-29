@@ -4,7 +4,7 @@ severity: low
 category: functional
 platform: 
 screen: androidtv-curiosity-001.png
-status: open
+status: fixed
 found_date: 2026-03-29
 ---
 

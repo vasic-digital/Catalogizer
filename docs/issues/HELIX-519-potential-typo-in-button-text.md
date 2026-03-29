@@ -4,7 +4,7 @@ severity: low
 category: content
 platform: 
 screen: web-curiosity-032.png
-status: open
+status: fixed
 found_date: 2026-03-29
 ---
 

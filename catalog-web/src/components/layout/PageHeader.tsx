@@ -36,9 +36,9 @@ export const PageHeader: React.FC<PageHeaderProps> = ({
             <React.Fragment key={index}>
               {index > 0 && <span>/</span>}
               {crumb.href ? (
-                <Link 
+                <Link
                   to={crumb.href}
-                  className="hover:text-gray-900 dark:hover:text-white transition-colors"
+                  className="hover:text-gray-900 hover:underline dark:hover:text-white transition-colors"
                 >
                   {crumb.label}
                 </Link>

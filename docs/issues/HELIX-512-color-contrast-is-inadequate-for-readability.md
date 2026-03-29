@@ -4,7 +4,7 @@ severity: medium
 category: visual
 platform: 
 screen: web-curiosity-015.png
-status: open
+status: fixed
 found_date: 2026-03-29
 ---
 

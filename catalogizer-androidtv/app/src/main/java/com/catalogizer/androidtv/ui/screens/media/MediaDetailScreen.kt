@@ -93,6 +93,12 @@ fun MediaDetailScreen(
                         color = Color.White,
                         fontWeight = FontWeight.Bold
                     )
+                    Spacer(Modifier.height(8.dp))
+                    Text(
+                        "Please check your network connection and verify the server is reachable.",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = Color.White.copy(alpha = 0.6f)
+                    )
                     Spacer(Modifier.height(12.dp))
                     Text(
                         error ?: "An unknown error occurred",

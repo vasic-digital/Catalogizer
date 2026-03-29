@@ -115,7 +115,7 @@ export const LoginForm: React.FC = () => {
                 </div>
                 <Link
                   to="/forgot-password"
-                  className="text-sm text-blue-600 hover:text-blue-500 dark:text-blue-400 dark:hover:text-blue-300"
+                  className="text-sm text-blue-600 hover:text-blue-500 hover:underline dark:text-blue-400 dark:hover:text-blue-300"
                 >
                   Forgot password?
                 </Link>

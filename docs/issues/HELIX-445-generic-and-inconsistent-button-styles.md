@@ -4,7 +4,7 @@ severity: low
 category: visual
 platform: 
 screen: androidtv-007-entitydetail.png
-status: open
+status: fixed
 found_date: 2026-03-29
 ---
 
