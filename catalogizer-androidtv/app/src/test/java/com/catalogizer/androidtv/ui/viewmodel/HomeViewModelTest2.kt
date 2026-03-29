@@ -126,11 +126,11 @@ class HomeViewModelTest2 {
     fun `toggleFavorite calls repository with toggled value`() = runTest {
         val item = createTestMediaItem(42, isFavorite = false)
         coEvery { mockMediaRepository.getMediaById(42L) } returns flowOf(item)
-        coEvery { mockMediaRepository.updateFavoriteStatus(any(), any()) } just Runs
+        coEvery { mockMediaRepository.toggleFavorite(any(), any(), any()) } just Runs
 
         viewModel.toggleFavorite(42L)
         advanceUntilIdle()
 
-        coVerify { mockMediaRepository.updateFavoriteStatus(42L, true) }
+        coVerify { mockMediaRepository.toggleFavorite(any(), eq(42L), any()) }
     }
 }

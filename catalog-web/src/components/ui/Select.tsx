@@ -49,7 +49,7 @@ export const Select: React.FC<SelectProps> = ({
         onChange={handleChange}
         className={cn(
           'w-full px-3 py-2 bg-white border border-gray-300 rounded-lg shadow-sm',
-          'focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent',
+          'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:border-transparent dark:focus-visible:ring-offset-gray-900',
           'pr-8 appearance-none cursor-pointer',
           'text-gray-900',
           'dark:bg-gray-800 dark:border-gray-600 dark:text-white',

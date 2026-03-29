@@ -101,16 +101,16 @@ fun LoginScreen(
     val keyboardController = LocalSoftwareKeyboardController.current
     val scrollState = rememberScrollState()
 
-    // Muted text field colors for dark TV theme
+    // Accessible text field colors for dark TV theme (WCAG AA)
     val textFieldColors = OutlinedTextFieldDefaults.colors(
         focusedTextColor = Color.White,
-        unfocusedTextColor = Color.White.copy(alpha = 0.9f),
-        focusedContainerColor = Color.White.copy(alpha = 0.06f),
-        unfocusedContainerColor = Color.White.copy(alpha = 0.04f),
+        unfocusedTextColor = Color.White,
+        focusedContainerColor = Color.White.copy(alpha = 0.10f),
+        unfocusedContainerColor = Color.White.copy(alpha = 0.08f),
         focusedBorderColor = MaterialTheme.colorScheme.primary,
-        unfocusedBorderColor = Color.White.copy(alpha = 0.3f),
+        unfocusedBorderColor = Color.White.copy(alpha = 0.5f),
         focusedLabelColor = MaterialTheme.colorScheme.primary,
-        unfocusedLabelColor = Color.White.copy(alpha = 0.7f),
+        unfocusedLabelColor = Color.White.copy(alpha = 0.85f),
         cursorColor = MaterialTheme.colorScheme.primary,
         errorBorderColor = Color(0xFFFF6B6B),
         errorLabelColor = Color(0xFFFF6B6B)
@@ -187,7 +187,7 @@ fun LoginScreen(
             Text(
                 text = "Media Collection Manager",
                 style = MaterialTheme.typography.bodyMedium,
-                color = Color.White.copy(alpha = 0.7f)
+                color = Color.White.copy(alpha = 0.85f)
             )
 
             Spacer(modifier = Modifier.height(if (isCompact) 16.dp else 32.dp))
@@ -200,7 +200,7 @@ fun LoginScreen(
                     errorMessage = null
                     usernameError = null
                 },
-                label = { Text("Username", color = Color.White.copy(alpha = 0.7f)) },
+                label = { Text("Username", color = Color.White.copy(alpha = 0.85f)) },
                 modifier = Modifier
                     .width(formWidth)
                     .focusRequester(usernameFocusRequester)
@@ -223,7 +223,7 @@ fun LoginScreen(
                     errorMessage = null
                     passwordError = null
                 },
-                label = { Text("Password", color = Color.White.copy(alpha = 0.7f)) },
+                label = { Text("Password", color = Color.White.copy(alpha = 0.85f)) },
                 modifier = Modifier
                     .width(formWidth)
                     .focusRequester(passwordFocusRequester)
@@ -240,7 +240,7 @@ fun LoginScreen(
                         Icon(
                             imageVector = if (passwordVisible) Icons.Default.VisibilityOff else Icons.Default.Visibility,
                             contentDescription = if (passwordVisible) "Hide password" else "Show password",
-                            tint = Color.White.copy(alpha = 0.7f)
+                            tint = Color.White.copy(alpha = 0.85f)
                         )
                     }
                 },
@@ -306,7 +306,7 @@ fun LoginScreen(
             OutlinedTextField(
                 value = serverUrl,
                 onValueChange = { serverUrl = it; serverConnected = null },
-                label = { Text("Server URL", color = Color.White.copy(alpha = 0.7f)) },
+                label = { Text("Server URL", color = Color.White.copy(alpha = 0.85f)) },
                 modifier = Modifier.width(formWidth).focusable(),
                 singleLine = true,
                 enabled = !isLoading,

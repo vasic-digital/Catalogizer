@@ -220,7 +220,7 @@ class HomeViewModelTest {
 
         // Mock getMediaById
         coEvery { mediaRepository.getMediaById(mediaId) } returns flowOf(mediaItem)
-        coEvery { mediaRepository.updateFavoriteStatus(mediaId, true) } returns Unit
+        coEvery { mediaRepository.toggleFavorite(any(), any(), any()) } returns Unit
 
         // Mock load calls
         mockRepositoryCalls(continueWatchingItems, emptyList(), emptyList(), emptyList(), emptyList(), emptyList())
@@ -229,7 +229,7 @@ class HomeViewModelTest {
         advanceUntilIdle()
 
         coVerify { mediaRepository.getMediaById(mediaId) }
-        coVerify { mediaRepository.updateFavoriteStatus(mediaId, true) }
+        coVerify { mediaRepository.toggleFavorite(any(), any(), any()) }
         // loadHomeData calls searchMedia 4 times and browseEntities 2 times for refresh
         coVerify(atLeast = 4) { mediaRepository.searchMedia(any()) }
         coVerify(atLeast = 2) { mediaRepository.browseEntities(any(), any(), any(), any()) }
@@ -245,7 +245,7 @@ class HomeViewModelTest {
         advanceUntilIdle()
 
         coVerify { mediaRepository.getMediaById(mediaId) }
-        coVerify(exactly = 0) { mediaRepository.updateFavoriteStatus(any(), any()) }
+        coVerify(exactly = 0) { mediaRepository.toggleFavorite(any(), any(), any()) }
     }
 
     @Test

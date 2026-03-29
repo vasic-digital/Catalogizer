@@ -271,10 +271,16 @@ class HomeViewModel(
             try {
                 val mediaItem = mediaRepository.getMediaById(mediaId).first()
                 mediaItem?.let {
-                    mediaRepository.updateFavoriteStatus(mediaId, !it.isFavorite)
+                    val entityType = it.mediaType ?: "movie"
+                    val isFav = mediaRepository.checkFavorite(
+                        entityType, mediaId
+                    )
+                    mediaRepository.toggleFavorite(
+                        entityType, mediaId, isFav
+                    )
                     loadHomeData()
                 }
-            } catch (e: Exception) {
+            } catch (_: Exception) {
                 // Handle error
             }
         }

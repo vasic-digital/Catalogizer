@@ -134,23 +134,23 @@ class MediaRepositoryTest2 {
     }
 
     @Test
-    fun `updateFavoriteStatus calls API`() = runTest {
-        coEvery { mockApi.updateFavoriteStatus(any(), any()) } returns Response.success(Unit)
+    fun `favorites calls API`() = runTest {
+        coEvery { mockApi.addFavorite(any()) } returns Response.success(Unit)
 
-        repository.updateFavoriteStatus(1L, true)
+        repository.addFavorite("movie", 1L)
 
-        coVerify { mockApi.updateFavoriteStatus(1L, mapOf("favorite" to true)) }
+        coVerify { mockApi.addFavorite(any()) }
     }
 
     @Test
-    fun `updateFavoriteStatus throws on API failure`() = runTest {
-        coEvery { mockApi.updateFavoriteStatus(any(), any()) } returns Response.error(
+    fun `favorites throws on API failure`() = runTest {
+        coEvery { mockApi.addFavorite(any()) } returns Response.error(
             500,
             "Server error".toResponseBody(null)
         )
 
         try {
-            repository.updateFavoriteStatus(1L, false)
+            repository.removeFavorite("movie", 1L)
             fail("Expected exception")
         } catch (e: Exception) {
             assertTrue(e.message?.contains("Failed to update favorite status") == true)

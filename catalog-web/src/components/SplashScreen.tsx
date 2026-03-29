@@ -49,7 +49,7 @@ export function SplashScreen({
 
         <h1 className="text-3xl font-bold text-white mb-2">{appTitle}</h1>
 
-        <p className="text-slate-400 text-sm mb-8">{subtitle}</p>
+        <p className="text-slate-300 text-sm mb-8">{subtitle}</p>
 
         <div className="w-8 h-8 border-[3px] border-blue-500 border-t-transparent rounded-full animate-spin" />
       </div>
@@ -61,11 +61,11 @@ export function SplashScreen({
             alt="Vasic Digital logo"
             className="w-6 h-6 rounded-lg border border-red-600"
           />
-          <span className="text-slate-500 text-xs">
+          <span className="text-slate-400 text-xs">
             Made with &#9829; by Vasic Digital
           </span>
         </div>
-        <span className="text-slate-600 text-xs">v1.1.0</span>
+        <span className="text-slate-400 text-xs">v1.1.0</span>
       </div>
     </div>
   )

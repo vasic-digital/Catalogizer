@@ -76,12 +76,13 @@ export const LoginForm: React.FC = () => {
               />
 
               <div className="space-y-2">
-                <label className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                <label htmlFor="login-password" className="text-sm font-medium text-gray-700 dark:text-gray-200">
                   Password
                 </label>
                 <div className="relative">
-                  <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+                  <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-500 dark:text-gray-400" />
                   <Input
+                    id="login-password"
                     type={showPassword ? 'text' : 'password'}
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
@@ -92,7 +93,8 @@ export const LoginForm: React.FC = () => {
                   <button
                     type="button"
                     onClick={() => setShowPassword(!showPassword)}
-                    className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
+                    className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 rounded-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2"
+                    aria-label={showPassword ? 'Hide password' : 'Show password'}
                   >
                     {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                   </button>
@@ -105,7 +107,7 @@ export const LoginForm: React.FC = () => {
                     id="remember-me"
                     name="remember-me"
                     type="checkbox"
-                    className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                    className="h-4 w-4 text-blue-600 focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2 border-gray-300 rounded"
                   />
                   <label htmlFor="remember-me" className="ml-2 block text-sm text-gray-900 dark:text-gray-300">
                     Remember me
@@ -135,7 +137,7 @@ export const LoginForm: React.FC = () => {
                   <div className="w-full border-t border-gray-300 dark:border-gray-600" />
                 </div>
                 <div className="relative flex justify-center text-sm">
-                  <span className="px-2 bg-white text-gray-500 dark:bg-gray-800 dark:text-gray-400">
+                  <span className="px-2 bg-white text-gray-600 dark:bg-gray-800 dark:text-gray-300">
                     Don&apos;t have an account?
                   </span>
                 </div>
@@ -151,7 +153,7 @@ export const LoginForm: React.FC = () => {
           </CardContent>
         </Card>
       </motion.div>
-      <div className="mt-8 text-center text-xs text-muted-foreground/60">
+      <div className="mt-8 text-center text-xs text-gray-500 dark:text-gray-400">
         <p>Made with &#10084; by Vasic Digital</p>
         <p className="mt-1">&copy; {new Date().getFullYear()} Vasic Digital. All rights reserved.</p>
       </div>

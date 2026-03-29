@@ -25,7 +25,7 @@ export const Textarea: React.FC<TextareaProps> = ({
   return (
     <div className={cn('mb-4', className)}>
       {label && (
-        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+        <label className="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-2">
           {label}
         </label>
       )}
@@ -37,7 +37,7 @@ export const Textarea: React.FC<TextareaProps> = ({
         disabled={disabled}
         className={cn(
           'w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg',
-          'focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent',
+          'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:border-transparent dark:focus-visible:ring-offset-gray-900',
           'bg-white dark:bg-gray-800 text-gray-900 dark:text-white',
           'resize-none',
           disabled && 'opacity-50 cursor-not-allowed',

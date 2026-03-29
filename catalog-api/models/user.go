@@ -1795,6 +1795,47 @@ const (
 	ConfigCategoryDevelopment = "Development"
 )
 
+// Playlist represents a user-created playlist of media entities.
+type Playlist struct {
+	ID          int        `json:"id" db:"id"`
+	UserID      int        `json:"user_id" db:"user_id"`
+	Name        string     `json:"name" db:"name"`
+	Description string     `json:"description" db:"description"`
+	IsPublic    bool       `json:"is_public" db:"is_public"`
+	CreatedAt   time.Time  `json:"created_at" db:"created_at"`
+	UpdatedAt   time.Time  `json:"updated_at" db:"updated_at"`
+	Items       []PlaylistItem `json:"items,omitempty"`
+}
+
+// PlaylistItem represents a single item within a playlist.
+type PlaylistItem struct {
+	ID         int       `json:"id" db:"id"`
+	PlaylistID int       `json:"playlist_id" db:"playlist_id"`
+	EntityID   int       `json:"entity_id" db:"entity_id"`
+	EntityType string    `json:"entity_type" db:"entity_type"`
+	Position   int       `json:"position" db:"position"`
+	AddedAt    time.Time `json:"added_at" db:"added_at"`
+}
+
+// CreatePlaylistRequest represents a request to create a new playlist.
+type CreatePlaylistRequest struct {
+	Name        string `json:"name" binding:"required"`
+	Description string `json:"description"`
+}
+
+// UpdatePlaylistRequest represents a request to update an existing playlist.
+type UpdatePlaylistRequest struct {
+	Name        *string `json:"name,omitempty"`
+	Description *string `json:"description,omitempty"`
+	IsPublic    *bool   `json:"is_public,omitempty"`
+}
+
+// AddPlaylistItemRequest represents a request to add an item to a playlist.
+type AddPlaylistItemRequest struct {
+	EntityID   int    `json:"entity_id" binding:"required"`
+	EntityType string `json:"entity_type" binding:"required"`
+}
+
 // Common Error Variables
 var (
 	ErrUnauthorized = errors.New("unauthorized")

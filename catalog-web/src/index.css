@@ -57,6 +57,17 @@
     @apply bg-background text-foreground;
   }
 
+  /* Global focus-visible ring for all interactive elements (WCAG 2.1 Focus Visible) */
+  a:focus-visible,
+  button:focus-visible,
+  [role="switch"]:focus-visible,
+  select:focus-visible,
+  textarea:focus-visible,
+  input:focus-visible,
+  [tabindex]:focus-visible {
+    @apply outline-none ring-2 ring-blue-500 ring-offset-2 dark:ring-offset-gray-900;
+  }
+
   /* Custom scrollbar */
   .scrollbar-thin::-webkit-scrollbar {
     width: 6px;

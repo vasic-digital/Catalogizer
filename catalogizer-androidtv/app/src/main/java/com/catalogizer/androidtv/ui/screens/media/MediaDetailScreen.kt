@@ -97,7 +97,7 @@ fun MediaDetailScreen(
                     Text(
                         error ?: "An unknown error occurred",
                         style = MaterialTheme.typography.bodyLarge,
-                        color = Color.White.copy(alpha = 0.7f)
+                        color = Color.White.copy(alpha = 0.85f)
                     )
                     Spacer(Modifier.height(32.dp))
                     Row(horizontalArrangement = Arrangement.spacedBy(16.dp)) {

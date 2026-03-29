@@ -313,25 +313,25 @@ class HomeScreenTest {
     fun `toggleFavorite should call repository methods`() = runTest {
         val item = createTestMediaItem(1L, isFavorite = false)
         coEvery { mockMediaRepository.getMediaById(1L) } returns flowOf(item)
-        coEvery { mockMediaRepository.updateFavoriteStatus(any(), any()) } just Runs
+        coEvery { mockMediaRepository.toggleFavorite(any(), any(), any()) } just Runs
 
         homeViewModel.toggleFavorite(1L)
         advanceUntilIdle()
 
         coVerify { mockMediaRepository.getMediaById(1L) }
-        coVerify { mockMediaRepository.updateFavoriteStatus(1L, true) }
+        coVerify { mockMediaRepository.toggleFavorite(any(), eq(1L), any()) }
     }
 
     @Test
     fun `toggleFavorite should toggle from false to true`() = runTest {
         val item = createTestMediaItem(1L, isFavorite = false)
         coEvery { mockMediaRepository.getMediaById(1L) } returns flowOf(item)
-        coEvery { mockMediaRepository.updateFavoriteStatus(any(), any()) } just Runs
+        coEvery { mockMediaRepository.toggleFavorite(any(), any(), any()) } just Runs
 
         homeViewModel.toggleFavorite(1L)
         advanceUntilIdle()
 
-        coVerify { mockMediaRepository.updateFavoriteStatus(1L, true) }
+        coVerify { mockMediaRepository.toggleFavorite(any(), eq(1L), any()) }
     }
 
     @Test

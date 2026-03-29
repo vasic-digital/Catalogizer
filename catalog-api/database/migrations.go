@@ -24,6 +24,7 @@ func (db *DB) RunMigrations(ctx context.Context) error {
 		{Version: 10, Name: "create_sync_tables", Up: db.createSyncTables},
 		{Version: 11, Name: "create_service_tables", Up: db.createServiceTables},
 		{Version: 12, Name: "fix_service_table_columns", Up: db.fixServiceTableColumns},
+		{Version: 13, Name: "create_playlist_tables", Up: db.createPlaylistTables},
 	}
 
 	for _, migration := range migrations {

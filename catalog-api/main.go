@@ -417,6 +417,7 @@ func main() {
 	crashReportingRepo := root_repository.NewCrashReportingRepository(databaseDB)
 	logManagementRepo := root_repository.NewLogManagementRepository(databaseDB)
 	favoritesRepo := root_repository.NewFavoritesRepository(databaseDB)
+	playlistRepo := root_repository.NewPlaylistRepository(databaseDB)
 
 	// Initialize authentication and conversion services
 	jwtSecret := cfg.Auth.JWTSecret
@@ -437,6 +438,7 @@ func main() {
 	errorReportingService := root_services.NewErrorReportingService(errorReportingRepo, crashReportingRepo)
 	logManagementService := root_services.NewLogManagementService(logManagementRepo)
 	favoritesService := root_services.NewFavoritesService(favoritesRepo, authService)
+	playlistService := root_services.NewPlaylistService(playlistRepo)
 
 	// Initialize internal auth service and middleware for rate limiting
 	internalAuthService := auth.NewAuthService(databaseDB, jwtSecret, logger)
@@ -655,6 +657,7 @@ func main() {
 	analyticsHandler := root_handlers.NewAnalyticsHandler(analyticsService, logger)
 	reportingHandler := root_handlers.NewReportingHandler(reportingService, logger)
 	favoritesHandler := root_handlers.NewFavoritesHandler(favoritesService, logger)
+	playlistHandler := root_handlers.NewPlaylistHandler(playlistService, logger)
 
 	// Stub handler for not-yet-implemented endpoints (Zero Warning / Zero Error Policy)
 	stubHandler := root_handlers.NewStubHandler()
@@ -1087,6 +1090,18 @@ func main() {
 			favoritesGroup.POST("", favoritesHandler.AddFavorite)
 			favoritesGroup.DELETE("/:entity_type/:entity_id", favoritesHandler.RemoveFavorite)
 			favoritesGroup.GET("/check/:entity_type/:entity_id", favoritesHandler.CheckFavorite)
+		}
+
+		// Playlist endpoints
+		playlistGroup := api.Group("/playlists")
+		{
+			playlistGroup.GET("", playlistHandler.ListPlaylists)
+			playlistGroup.POST("", playlistHandler.CreatePlaylist)
+			playlistGroup.GET("/:id", playlistHandler.GetPlaylist)
+			playlistGroup.PUT("/:id", playlistHandler.UpdatePlaylist)
+			playlistGroup.DELETE("/:id", playlistHandler.DeletePlaylist)
+			playlistGroup.POST("/:id/items", playlistHandler.AddItem)
+			playlistGroup.DELETE("/:id/items/:item_id", playlistHandler.RemoveItem)
 		}
 
 		// Browse endpoints (directory browsing and file info)

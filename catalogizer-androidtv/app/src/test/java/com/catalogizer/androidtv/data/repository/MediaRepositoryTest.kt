@@ -227,19 +227,19 @@ class MediaRepositoryTest {
     }
 
     @Test
-    fun `updateFavoriteStatus success should complete without exception`() = runTest {
+    fun `addFavorite success should complete without exception`() = runTest {
         val mediaId = 123L
         val isFavorite = true
 
         val successResponse = Response.success(Unit)
-        coEvery { api.updateFavoriteStatus(mediaId, any()) } returns successResponse
+        coEvery { api.addFavorite(any()) } returns successResponse
 
         // Should not throw exception
-        repository.updateFavoriteStatus(mediaId, isFavorite)
+        repository.addFavorite("movie", mediaId)
     }
 
     @Test
-    fun `updateFavoriteStatus failure should throw exception`() = runTest {
+    fun `addFavorite failure should throw exception`() = runTest {
         val mediaId = 123L
         val isFavorite = false
 
@@ -247,10 +247,10 @@ class MediaRepositoryTest {
             500,
             "Server error".toResponseBody(null)
         )
-        coEvery { api.updateFavoriteStatus(mediaId, any()) } returns errorResponse
+        coEvery { api.addFavorite(any()) } returns errorResponse
 
         try {
-            repository.updateFavoriteStatus(mediaId, isFavorite)
+            repository.addFavorite("movie", mediaId)
             fail("Expected exception to be thrown")
         } catch (e: Exception) {
             assertTrue(e.message?.contains("Failed to update favorite status") == true)
@@ -258,15 +258,15 @@ class MediaRepositoryTest {
     }
 
     @Test
-    fun `updateFavoriteStatus with network exception should throw exception`() = runTest {
+    fun `addFavorite with network exception should throw exception`() = runTest {
         val mediaId = 123L
         val isFavorite = true
 
         val networkException = RuntimeException("Network error")
-        coEvery { api.updateFavoriteStatus(mediaId, any()) } throws networkException
+        coEvery { api.addFavorite(any()) } throws networkException
 
         try {
-            repository.updateFavoriteStatus(mediaId, isFavorite)
+            repository.addFavorite("movie", mediaId)
             fail("Expected exception to be thrown")
         } catch (e: RuntimeException) {
             assertEquals("Network error", e.message)
