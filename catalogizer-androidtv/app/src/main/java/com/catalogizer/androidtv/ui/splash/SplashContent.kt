@@ -68,7 +68,7 @@ fun SplashContent(
             Image(
                 painter = painterResource(R.drawable.app_icon),
                 contentDescription = "Catalogizer",
-                modifier = Modifier.size(120.dp),
+                modifier = Modifier.size(360.dp),
                 contentScale = ContentScale.Fit
             )
             Spacer(modifier = Modifier.height(24.dp))
@@ -107,8 +107,8 @@ fun SplashContent(
                     painter = painterResource(R.drawable.vasic_digital_logo),
                     contentDescription = "Vasic Digital",
                     modifier = Modifier
-                        .size(24.dp)
-                        .border(1.dp, Color(0xFFDC2626), RoundedCornerShape(6.dp))
+                        .size(36.dp)
+                        .border(1.dp, Color(0xFFDC2626), RoundedCornerShape(8.dp))
                 )
                 Text(
                     text = "Made with \u2764\uFE0F by Vasic Digital",

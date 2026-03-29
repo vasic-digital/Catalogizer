@@ -9,11 +9,11 @@
             <corners android:radius="4dp" />
         </shape>
     </item>
-    <!-- Centered app icon -->
+    <!-- Centered app icon — sized large for TV visibility (3x original) -->
     <item
         android:gravity="center"
-        android:width="96dp"
-        android:height="96dp">
+        android:width="140dp"
+        android:height="140dp">
         <bitmap
             android:src="@mipmap/ic_launcher"
             android:gravity="center" />
