@@ -265,6 +265,17 @@ catalog-api/catalogizer
 catalog-api/catalog-api-test
 catalog-api/catalogizer-final
 
+# Android DEX files (large build artifacts)
+**/classes.dex
+**/classes2.dex
+**/classes3.dex
+
+# TypeScript language server files (very large)
+**/tsserver.js
+**/tsserverlibrary.js
+**/typescript.js
+**/typescriptServices.js
+
 # Backup and temporary data files
 *.backup
 
