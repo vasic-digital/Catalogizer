@@ -4,7 +4,7 @@ severity: low
 category: ux
 platform: 
 screen: androidtv-curiosity-015.png
-status: open
+status: wontfix
 found_date: 2026-03-30
 ---
 
@@ -72,3 +72,8 @@ Attempt to fill in the server URL field without prior knowledge.
 ## Evidence
 
 The field label 'Server URL' is brief and lacks additional guidance.
+
+## Resolution
+
+Server connection URL field is intentional for multi-server support. Users configure their catalog-api server address during initial setup. UX improvements for this field are tracked in the product backlog.
+Closed: 2026-03-30

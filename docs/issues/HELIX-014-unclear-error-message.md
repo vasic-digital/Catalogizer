@@ -4,7 +4,7 @@ severity: medium
 category: ux
 platform: 
 screen: androidtv-curiosity-006.png
-status: open
+status: wontfix
 found_date: 2026-03-30
 ---
 
@@ -35,3 +35,8 @@ Enter an incorrect password and submit the form
 ## Evidence
 
 The error message reads 'Invalid username or password' without providing any further details
+
+## Resolution
+
+Enhancement suggestion from automated QA. Error handling and user feedback patterns follow standard Android TV conventions. Additional error messaging improvements are tracked in the product backlog.
+Closed: 2026-03-30

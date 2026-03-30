@@ -4,7 +4,7 @@ severity: medium
 category: ux
 platform: video-frame
 screen: frame_0001.png
-status: open
+status: wontfix
 found_date: 2026-03-30
 ---
 
@@ -29,3 +29,8 @@ Enter a search query that returns no results.
 ## Evidence
 
 The message is displayed below the search bar.
+
+## Resolution
+
+Enhancement suggestion from automated QA vision analysis. Not a functional defect. Noted for future UX improvements in the product backlog.
+Closed: 2026-03-30

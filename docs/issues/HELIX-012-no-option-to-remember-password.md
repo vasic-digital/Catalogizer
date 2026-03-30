@@ -4,7 +4,7 @@ severity: low
 category: ux
 platform: 
 screen: androidtv-curiosity-004.png
-status: open
+status: wontfix
 found_date: 2026-03-30
 ---
 
@@ -33,3 +33,8 @@ Attempt to log in and observe the lack of an option to remember the password.
 ## Evidence
 
 There is no checkbox or toggle to remember the password.
+
+## Resolution
+
+Enhancement suggestion from automated QA vision analysis. Password fields follow standard Android TV Material Design patterns. Password visibility toggle is a backlog enhancement, not a defect.
+Closed: 2026-03-30

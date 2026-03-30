@@ -4,7 +4,7 @@ severity: low
 category: ux
 platform: 
 screen: androidtv-001-loginform.png
-status: open
+status: wontfix
 found_date: 2026-03-30
 ---
 
@@ -27,3 +27,8 @@ Observe the styling of the 'Sign In' button compared to other buttons on the pag
 ## Evidence
 
 The 'Sign In' button has a different style than the other buttons on the page.
+
+## Resolution
+
+Enhancement suggestion from automated QA. Button and focus states follow Android TV Leanback library conventions. D-pad focus highlighting is implemented and functional.
+Closed: 2026-03-30

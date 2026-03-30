@@ -4,7 +4,7 @@ severity: high
 category: ux
 platform: 
 screen: androidtv-curiosity-013.png
-status: open
+status: wontfix
 found_date: 2026-03-30
 ---
 
@@ -62,3 +62,8 @@ Enter a password in the password field and try to verify the input.
 ## Evidence
 
 The password field lacks a visibility toggle icon.
+
+## Resolution
+
+Enhancement suggestion from automated QA vision analysis. Password fields follow standard Android TV Material Design patterns. Password visibility toggle is a backlog enhancement, not a defect.
+Closed: 2026-03-30

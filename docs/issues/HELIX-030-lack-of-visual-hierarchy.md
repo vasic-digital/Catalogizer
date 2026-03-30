@@ -4,7 +4,7 @@ severity: low
 category: ux
 platform: 
 screen: androidtv-curiosity-030.png
-status: open
+status: wontfix
 found_date: 2026-03-30
 ---
 
@@ -40,3 +40,8 @@ None
 ## Evidence
 
 The text on the screen is displayed in a single block without clear headings or subheadings.
+
+## Resolution
+
+Enhancement suggestion from automated QA vision analysis. Not a functional defect. Noted for future UX improvements in the product backlog.
+Closed: 2026-03-30

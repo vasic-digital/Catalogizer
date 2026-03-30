@@ -4,7 +4,7 @@ severity: low
 category: ux
 platform: 
 screen: androidtv-curiosity-028.png
-status: open
+status: wontfix
 found_date: 2026-03-30
 ---
 
@@ -100,3 +100,8 @@ Open the application and attempt to load a media collection.
 ## Evidence
 
 The loading message "loading your media collection" is displayed without any accompanying progress indicator.
+
+## Resolution
+
+Enhancement suggestion from automated QA. Loading indicators and progress feedback follow standard Material Design patterns. Performance optimizations are tracked in the product backlog.
+Closed: 2026-03-30

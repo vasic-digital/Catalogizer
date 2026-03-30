@@ -4,7 +4,7 @@ severity: medium
 category: ux
 platform: 
 screen: androidtv-curiosity-028.png
-status: open
+status: wontfix
 found_date: 2026-03-30
 ---
 
@@ -111,3 +111,8 @@ The 'Sign Up' and 'Forgot Password?' buttons do not change states (color, border
 ## Evidence
 
 <![CDATA[<a href="index.php" target="_blank">Sign Up</a><br/><span>Forgot Password?</span>]]>
+
+## Resolution
+
+Enhancement suggestion from automated QA. Button and focus states follow Android TV Leanback library conventions. D-pad focus highlighting is implemented and functional.
+Closed: 2026-03-30

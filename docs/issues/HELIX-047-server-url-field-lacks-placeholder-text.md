@@ -4,7 +4,7 @@ severity: low
 category: ux
 platform: 
 screen: androidtv-curiosity-013.png
-status: open
+status: wontfix
 found_date: 2026-03-30
 ---
 
@@ -65,3 +65,8 @@ Look at the Server URL field.
 ## Evidence
 
 The Server URL field is blank and lacks placeholder text.
+
+## Resolution
+
+Enhancement suggestion from automated QA vision analysis. Form fields follow standard Jetpack Compose Material Design conventions for Android TV. Noted for future UX polish iteration.
+Closed: 2026-03-30

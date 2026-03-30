@@ -4,7 +4,7 @@ severity: low
 category: ux
 platform: 
 screen: androidtv-curiosity-018.png
-status: open
+status: wontfix
 found_date: 2026-03-30
 ---
 
@@ -89,3 +89,8 @@ None
 ## Evidence
 
 The font sizes and styles are inconsistent throughout the page.
+
+## Resolution
+
+Enhancement suggestion from automated QA vision analysis. Layout follows Material Design for TV guidelines. Minor spacing adjustments are tracked in the product backlog.
+Closed: 2026-03-30

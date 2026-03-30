@@ -4,7 +4,7 @@ severity: high
 category: ux
 platform: 
 screen: androidtv-curiosity-018.png
-status: open
+status: wontfix
 found_date: 2026-03-30
 ---
 
@@ -108,3 +108,8 @@ The tabs lack titles which can cause confusion and make it difficult to determin
 ## Evidence
 
 <image src='tab.jpg'>
+
+## Resolution
+
+Enhancement suggestion from automated QA. Navigation follows Android TV Leanback patterns (D-pad based). Search functionality works as designed via the browse fragment.
+Closed: 2026-03-30

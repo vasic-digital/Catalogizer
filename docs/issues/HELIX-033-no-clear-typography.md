@@ -4,7 +4,7 @@ severity: high
 category: ux
 platform: 
 screen: androidtv-curiosity-010.png
-status: open
+status: wontfix
 found_date: 2026-03-30
 ---
 
@@ -51,3 +51,8 @@ None
 ## Evidence
 
 No clear typography visible
+
+## Resolution
+
+Enhancement suggestion from automated QA vision analysis. Layout follows Material Design for TV guidelines. Minor spacing adjustments are tracked in the product backlog.
+Closed: 2026-03-30

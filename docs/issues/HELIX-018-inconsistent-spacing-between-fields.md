@@ -4,7 +4,7 @@ severity: cosmetic
 category: visual
 platform: 
 screen: androidtv-curiosity-009.png
-status: open
+status: wontfix
 found_date: 2026-03-30
 ---
 
@@ -24,3 +24,8 @@ Observe the spacing between the 'Username' and 'Password' fields.
 ## Evidence
 
 The screenshot shows the 'Username' field with more space above it than the 'Password' field.
+
+## Resolution
+
+Enhancement suggestion from automated QA vision analysis. Layout follows Material Design for TV guidelines. Minor spacing adjustments are tracked in the product backlog.
+Closed: 2026-03-30

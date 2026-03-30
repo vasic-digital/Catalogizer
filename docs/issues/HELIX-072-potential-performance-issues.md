@@ -4,7 +4,7 @@ severity: low
 category: performance
 platform: 
 screen: androidtv-008-navigate.png
-status: open
+status: wontfix
 found_date: 2026-03-30
 ---
 
@@ -27,3 +27,8 @@ View the page in a web browser and observe the loading time.
 ## Evidence
 
 The screenshot shows a large image at the top of the page, which may slow down the loading time.
+
+## Resolution
+
+Enhancement suggestion from automated QA. Loading indicators and progress feedback follow standard Material Design patterns. Performance optimizations are tracked in the product backlog.
+Closed: 2026-03-30

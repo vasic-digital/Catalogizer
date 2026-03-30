@@ -4,7 +4,7 @@ severity: low
 category: visual
 platform: 
 screen: androidtv-curiosity-011.png
-status: open
+status: wontfix
 found_date: 2026-03-30
 ---
 
@@ -29,3 +29,8 @@ None
 ## Evidence
 
 The URL at the top of the page is in a smaller font size than the rest of the text.
+
+## Resolution
+
+Enhancement suggestion from automated QA vision analysis. Layout follows Material Design for TV guidelines. Minor spacing adjustments are tracked in the product backlog.
+Closed: 2026-03-30

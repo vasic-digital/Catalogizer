@@ -4,7 +4,7 @@ severity: cosmetic
 category: visual
 platform: 
 screen: androidtv-007-entitydetail.png
-status: open
+status: wontfix
 found_date: 2026-03-30
 ---
 
@@ -19,3 +19,8 @@ Examine the alignment of the text in the input fields on the login page.
 ## Evidence
 
 The text in the 'Username' and 'Password' fields is slightly offset from the input fields.
+
+## Resolution
+
+Enhancement suggestion from automated QA vision analysis. Not a functional defect. Noted for future UX improvements in the product backlog.
+Closed: 2026-03-30

@@ -4,7 +4,7 @@ severity: low
 category: visual
 platform: 
 screen: androidtv-002-registerform.png
-status: open
+status: wontfix
 found_date: 2026-03-30
 ---
 
@@ -19,3 +19,8 @@ Observe the text color of the 'Media Collection Manager' label and compare it wi
 ## Evidence
 
 The 'Media Collection Manager' label has a lighter text color than the rest of the text on the page.
+
+## Resolution
+
+Enhancement suggestion from automated QA vision analysis. Layout follows Material Design for TV guidelines. Minor spacing adjustments are tracked in the product backlog.
+Closed: 2026-03-30

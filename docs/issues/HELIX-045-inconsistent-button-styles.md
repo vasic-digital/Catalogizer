@@ -4,7 +4,7 @@ severity: low
 category: ux
 platform: 
 screen: androidtv-curiosity-009.png
-status: open
+status: wontfix
 found_date: 2026-03-30
 ---
 
@@ -48,3 +48,8 @@ View the movie information section on the application.
 ## Evidence
 
 The "Play" and "Add to history" buttons have different styles.
+
+## Resolution
+
+Enhancement suggestion from automated QA. Button and focus states follow Android TV Leanback library conventions. D-pad focus highlighting is implemented and functional.
+Closed: 2026-03-30

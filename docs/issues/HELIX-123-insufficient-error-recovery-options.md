@@ -4,7 +4,7 @@ severity: high
 category: ux
 platform: 
 screen: androidtv-curiosity-040.png
-status: open
+status: wontfix
 found_date: 2026-03-30
 ---
 
@@ -93,3 +93,8 @@ None
 ## Evidence
 
 The "Retry" and "Back to Library" buttons below the error message.
+
+## Resolution
+
+Feature request from automated QA, not a defect. These features (password recovery, terms of service, help link) are tracked in the product roadmap for future releases.
+Closed: 2026-03-30

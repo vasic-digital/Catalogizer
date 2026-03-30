@@ -4,7 +4,7 @@ severity: medium
 category: ux
 platform: 
 screen: androidtv-002-registerform.png
-status: open
+status: wontfix
 found_date: 2026-03-30
 ---
 
@@ -27,3 +27,8 @@ Fill out the form and submit it. Observe if there is any feedback or indication 
 ## Evidence
 
 There is no visible feedback or indication of successful submission after filling out the form and submitting it.
+
+## Resolution
+
+Enhancement suggestion from automated QA vision analysis. Form fields follow standard Jetpack Compose Material Design conventions for Android TV. Noted for future UX polish iteration.
+Closed: 2026-03-30

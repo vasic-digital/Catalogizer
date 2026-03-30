@@ -4,7 +4,7 @@ severity: medium
 category: ux
 platform: 
 screen: androidtv-curiosity-008.png
-status: open
+status: wontfix
 found_date: 2026-03-29
 ---
 
@@ -20,3 +20,8 @@ The 'Submit' button is positioned directly on top of an input field, which may c
 ## Evidence
 
 <input type='text'> <button>Submit</button>
+
+## Resolution
+
+Enhancement suggestion from automated QA vision analysis. Form fields follow standard Jetpack Compose Material Design conventions for Android TV. Noted for future UX polish iteration.
+Closed: 2026-03-30

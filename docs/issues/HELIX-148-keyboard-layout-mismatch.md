@@ -4,7 +4,7 @@ severity: high
 category: ux
 platform: 
 screen: androidtv-curiosity-016.png
-status: open
+status: wontfix
 found_date: 2026-03-30
 ---
 
@@ -110,3 +110,8 @@ Type in the input field and observe the keyboard layout.
 ## Evidence
 
 The keyboard layout is not consistent with the input field's language or region setting.
+
+## Resolution
+
+Android TV keyboard is controlled by the system IME, not the app. Layout and behavior are OS-level settings. Not a Catalogizer defect.
+Closed: 2026-03-30

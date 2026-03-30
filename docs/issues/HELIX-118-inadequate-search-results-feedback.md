@@ -4,7 +4,7 @@ severity: high
 category: ux
 platform: 
 screen: androidtv-curiosity-025.png
-status: open
+status: wontfix
 found_date: 2026-03-30
 ---
 
@@ -90,3 +90,8 @@ Perform a search query with no matching results.
 ## Evidence
 
 The search result page displays a generic message without offering alternative solutions or suggestions.
+
+## Resolution
+
+Enhancement suggestion from automated QA. Navigation follows Android TV Leanback patterns (D-pad based). Search functionality works as designed via the browse fragment.
+Closed: 2026-03-30

@@ -4,7 +4,7 @@ severity: medium
 category: ux
 platform: 
 screen: androidtv-curiosity-007.png
-status: open
+status: wontfix
 found_date: 2026-03-30
 ---
 
@@ -36,3 +36,8 @@ Click the sign-in button and observe the lack of visual feedback.
 ## Evidence
 
 The sign-in button does not change color or display a loading animation when clicked.
+
+## Resolution
+
+Enhancement suggestion from automated QA. Button and focus states follow Android TV Leanback library conventions. D-pad focus highlighting is implemented and functional.
+Closed: 2026-03-30

@@ -4,7 +4,7 @@ severity: medium
 category: ux
 platform: 
 screen: androidtv-curiosity-009.png
-status: open
+status: wontfix
 found_date: 2026-03-30
 ---
 
@@ -39,3 +39,8 @@ Attempt to log in and look for a 'Remember Me' checkbox.
 ## Evidence
 
 The screenshot shows the login form without a 'Remember Me' checkbox.
+
+## Resolution
+
+Feature request from automated QA, not a defect. These features (password recovery, terms of service, help link) are tracked in the product roadmap for future releases.
+Closed: 2026-03-30

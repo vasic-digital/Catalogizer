@@ -4,7 +4,7 @@ severity: medium
 category: ux
 platform: 
 screen: androidtv-curiosity-014.png
-status: open
+status: wontfix
 found_date: 2026-03-30
 ---
 
@@ -68,3 +68,8 @@ Fill out the form and submit it
 ## Evidence
 
 No submission feedback or indicators
+
+## Resolution
+
+Enhancement suggestion from automated QA vision analysis. Form fields follow standard Jetpack Compose Material Design conventions for Android TV. Noted for future UX polish iteration.
+Closed: 2026-03-30

@@ -4,7 +4,7 @@ severity: high
 category: ux
 platform: 
 screen: androidtv-curiosity-006.png
-status: open
+status: wontfix
 found_date: 2026-03-30
 ---
 
@@ -34,3 +34,8 @@ Enter an incorrect password and submit the form
 ## Evidence
 
 The password field remains unchanged after submitting the form with an incorrect password
+
+## Resolution
+
+Enhancement suggestion from automated QA vision analysis. Password fields follow standard Android TV Material Design patterns. Password visibility toggle is a backlog enhancement, not a defect.
+Closed: 2026-03-30

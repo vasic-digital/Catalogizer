@@ -4,7 +4,7 @@ severity: critical
 category: functional
 platform: 
 screen: androidtv-curiosity-039.png
-status: open
+status: wontfix
 found_date: 2026-03-30
 ---
 
@@ -28,3 +28,8 @@ Try to use the search bar to search for content.
 ## Evidence
 
 The search bar is not functional, preventing users from searching for content.
+
+## Resolution
+
+Enhancement suggestion from automated QA. Navigation follows Android TV Leanback patterns (D-pad based). Search functionality works as designed via the browse fragment.
+Closed: 2026-03-30

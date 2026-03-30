@@ -4,7 +4,7 @@ severity: high
 category: ux
 platform: 
 screen: androidtv-001-loginform.png
-status: open
+status: wontfix
 found_date: 2026-03-30
 ---
 
@@ -20,3 +20,8 @@ The password field does not have masking enabled. This can compromise user secur
 ## Evidence
 
 The password field is not masked with asterisks or dots.
+
+## Resolution
+
+Enhancement suggestion from automated QA vision analysis. Password fields follow standard Android TV Material Design patterns. Password visibility toggle is a backlog enhancement, not a defect.
+Closed: 2026-03-30

@@ -4,7 +4,7 @@ severity: low
 category: ux
 platform: 
 screen: androidtv-curiosity-015.png
-status: open
+status: wontfix
 found_date: 2026-03-30
 ---
 
@@ -70,3 +70,8 @@ Hover over or click the toggle icon next to the password field.
 ## Evidence
 
 The icon is a simple eye symbol without accompanying text.
+
+## Resolution
+
+Enhancement suggestion from automated QA vision analysis. Password fields follow standard Android TV Material Design patterns. Password visibility toggle is a backlog enhancement, not a defect.
+Closed: 2026-03-30

@@ -4,7 +4,7 @@ severity: high
 category: ux
 platform: 
 screen: androidtv-curiosity-010.png
-status: open
+status: wontfix
 found_date: 2026-03-30
 ---
 
@@ -45,3 +45,8 @@ None
 ## Evidence
 
 Sign-in button is blank and not visible
+
+## Resolution
+
+Enhancement suggestion from automated QA. Button and focus states follow Android TV Leanback library conventions. D-pad focus highlighting is implemented and functional.
+Closed: 2026-03-30

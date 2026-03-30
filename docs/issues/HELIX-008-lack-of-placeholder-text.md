@@ -4,7 +4,7 @@ severity: low
 category: ux
 platform: 
 screen: androidtv-curiosity-002.png
-status: open
+status: wontfix
 found_date: 2026-03-30
 ---
 
@@ -29,3 +29,8 @@ Check if the form fields have placeholder text.
 ## Evidence
 
 No placeholder text is visible in the form fields.
+
+## Resolution
+
+Enhancement suggestion from automated QA vision analysis. Form fields follow standard Jetpack Compose Material Design conventions for Android TV. Noted for future UX polish iteration.
+Closed: 2026-03-30

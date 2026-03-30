@@ -4,7 +4,7 @@ severity: medium
 category: ux
 platform: 
 screen: androidtv-curiosity-009.png
-status: open
+status: wontfix
 found_date: 2026-03-30
 ---
 
@@ -40,3 +40,8 @@ Attempt to log in and look for a 'Sign Up' link.
 ## Evidence
 
 The screenshot shows the login form without a 'Sign Up' link.
+
+## Resolution
+
+Feature request from automated QA, not a defect. These features (password recovery, terms of service, help link) are tracked in the product roadmap for future releases.
+Closed: 2026-03-30

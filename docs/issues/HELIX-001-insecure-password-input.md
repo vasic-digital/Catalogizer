@@ -4,7 +4,7 @@ severity: high
 category: ux
 platform: 
 screen: androidtv-001-loginform.png
-status: open
+status: wontfix
 found_date: 2026-03-30
 ---
 
@@ -19,3 +19,8 @@ None
 ## Evidence
 
 The password input field does not have a password visibility toggle button.
+
+## Resolution
+
+Enhancement suggestion from automated QA vision analysis. Password fields follow standard Android TV Material Design patterns. Password visibility toggle is a backlog enhancement, not a defect.
+Closed: 2026-03-30

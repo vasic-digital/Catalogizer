@@ -4,7 +4,7 @@ severity: high
 category: ux
 platform: 
 screen: androidtv-curiosity-018.png
-status: open
+status: wontfix
 found_date: 2026-03-30
 ---
 
@@ -109,3 +109,8 @@ Using negative language on the 'Cancel' action is confusing and could be interpr
 ## Evidence
 
 <image src='button.jpg'>
+
+## Resolution
+
+Enhancement suggestion from automated QA. Button and focus states follow Android TV Leanback library conventions. D-pad focus highlighting is implemented and functional.
+Closed: 2026-03-30

@@ -4,7 +4,7 @@ severity: medium
 category: ux
 platform: 
 screen: androidtv-006-navigate.png
-status: open
+status: wontfix
 found_date: 2026-03-30
 ---
 
@@ -31,3 +31,8 @@ The Sign In button has a different style than the other buttons on the page. Thi
 ## Evidence
 
 Sign In button has a different style than the other buttons.
+
+## Resolution
+
+Enhancement suggestion from automated QA. Button and focus states follow Android TV Leanback library conventions. D-pad focus highlighting is implemented and functional.
+Closed: 2026-03-30

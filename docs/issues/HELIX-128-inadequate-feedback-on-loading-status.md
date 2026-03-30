@@ -4,7 +4,7 @@ severity: high
 category: ux
 platform: 
 screen: androidtv-curiosity-019.png
-status: open
+status: wontfix
 found_date: 2026-03-30
 ---
 
@@ -98,3 +98,8 @@ None
 ## Evidence
 
 The spinning wheel icon without any accompanying text or progress bar.
+
+## Resolution
+
+Enhancement suggestion from automated QA. Loading indicators and progress feedback follow standard Material Design patterns. Performance optimizations are tracked in the product backlog.
+Closed: 2026-03-30

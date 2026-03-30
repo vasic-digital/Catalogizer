@@ -4,7 +4,7 @@ severity: high
 category: ux
 platform: 
 screen: androidtv-curiosity-012.png
-status: open
+status: wontfix
 found_date: 2026-03-30
 ---
 
@@ -105,3 +105,8 @@ None
 ## Evidence
 
 The progress indicator is spinning indefinitely without any visible progress.
+
+## Resolution
+
+Enhancement suggestion from automated QA. Loading indicators and progress feedback follow standard Material Design patterns. Performance optimizations are tracked in the product backlog.
+Closed: 2026-03-30

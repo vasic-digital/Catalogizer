@@ -4,7 +4,7 @@ severity: low
 category: ux
 platform: 
 screen: androidtv-curiosity-009.png
-status: open
+status: wontfix
 found_date: 2026-03-30
 ---
 
@@ -47,3 +47,8 @@ View the movie information section on the application.
 ## Evidence
 
 The font size of the "21 Grams" title and the "2023" and "2.3" ratings is smaller than the rest of the text on the page.
+
+## Resolution
+
+Enhancement suggestion from automated QA vision analysis. Layout follows Material Design for TV guidelines. Minor spacing adjustments are tracked in the product backlog.
+Closed: 2026-03-30

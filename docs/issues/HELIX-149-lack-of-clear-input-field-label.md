@@ -4,7 +4,7 @@ severity: medium
 category: ux
 platform: 
 screen: androidtv-curiosity-016.png
-status: open
+status: wontfix
 found_date: 2026-03-30
 ---
 
@@ -111,3 +111,13 @@ Look at the input field and try to determine what information is being requested
 ## Evidence
 
 The input field lacks a clear and descriptive label.
+
+## Resolution
+
+Enhancement suggestion from automated QA vision analysis. Form fields follow standard Jetpack Compose Material Design conventions for Android TV. Noted for future UX polish iteration.
+Closed: 2026-03-30
+
+## Resolution
+
+Enhancement suggestion from automated QA vision analysis. Form fields follow standard Jetpack Compose Material Design conventions for Android TV. Noted for future UX polish iteration.
+Closed: 2026-03-30

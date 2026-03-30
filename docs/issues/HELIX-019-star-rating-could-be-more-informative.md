@@ -4,7 +4,7 @@ severity: low
 category: content
 platform: 
 screen: androidtv-curiosity-012.png
-status: open
+status: wontfix
 found_date: 2026-03-29
 ---
 
@@ -22,3 +22,8 @@ The star rating is displayed without additional context, such as the total numbe
 ## Evidence
 
 The star rating is listed as '7.2' without information on the number of participant reviews.
+
+## Resolution
+
+Enhancement suggestion from automated QA vision analysis. Not a functional defect. Noted for future UX improvements in the product backlog.
+Closed: 2026-03-30

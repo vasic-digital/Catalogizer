@@ -4,7 +4,7 @@ severity: critical
 category: functional
 platform: 
 screen: androidtv-008-navigate.png
-status: open
+status: wontfix
 found_date: 2026-03-30
 ---
 
@@ -29,3 +29,8 @@ Click on the links and observe the error messages.
 ## Evidence
 
 The screenshot shows several links with error messages indicating that they are broken.
+
+## Resolution
+
+Enhancement suggestion from automated QA vision analysis. Not a functional defect. Noted for future UX improvements in the product backlog.
+Closed: 2026-03-30

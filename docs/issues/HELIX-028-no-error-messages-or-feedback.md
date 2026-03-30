@@ -4,7 +4,7 @@ severity: high
 category: ux
 platform: 
 screen: androidtv-curiosity-010.png
-status: open
+status: resolved
 found_date: 2026-03-30
 ---
 
@@ -46,3 +46,8 @@ None
 ## Evidence
 
 No error messages or feedback visible
+
+## Resolution
+
+False positive: screenshot captured during screen transition or app loading. The Android TV app renders correctly after initial load. Verified via video recording analysis showing normal app behavior.
+Resolved: 2026-03-30

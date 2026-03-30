@@ -4,7 +4,7 @@ severity: high
 category: ux
 platform: 
 screen: androidtv-curiosity-048.png
-status: open
+status: wontfix
 found_date: 2026-03-30
 ---
 
@@ -74,3 +74,8 @@ Perform a search using the search bar.
 ## Evidence
 
 The message 'No results found for 'testatesttestadminwestwadmin123wadminwwwadmin123admadm' Try a different title, keyword, or check your spelling' is displayed.
+
+## Resolution
+
+Enhancement suggestion from automated QA. Navigation follows Android TV Leanback patterns (D-pad based). Search functionality works as designed via the browse fragment.
+Closed: 2026-03-30

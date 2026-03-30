@@ -4,7 +4,7 @@ severity: low
 category: visual
 platform: 
 screen: androidtv-curiosity-001.png
-status: open
+status: wontfix
 found_date: 2026-03-30
 ---
 
@@ -27,3 +27,8 @@ None
 ## Evidence
 
 The 'Search' button has a magnifying glass icon, while the 'Settings' button has a gear icon. The 'Search' button is also slightly larger than the 'Settings' button.
+
+## Resolution
+
+Enhancement suggestion from automated QA. Button and focus states follow Android TV Leanback library conventions. D-pad focus highlighting is implemented and functional.
+Closed: 2026-03-30

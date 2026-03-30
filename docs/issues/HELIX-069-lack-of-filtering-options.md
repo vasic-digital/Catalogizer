@@ -4,7 +4,7 @@ severity: low
 category: ux
 platform: 
 screen: androidtv-curiosity-013.png
-status: open
+status: wontfix
 found_date: 2026-03-30
 ---
 
@@ -62,3 +62,8 @@ View the screenshot.
 ## Evidence
 
 There are no visible filtering options or dropdown menus.
+
+## Resolution
+
+Enhancement suggestion from automated QA vision analysis. Not a functional defect. Noted for future UX improvements in the product backlog.
+Closed: 2026-03-30

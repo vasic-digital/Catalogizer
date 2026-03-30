@@ -4,7 +4,7 @@ severity: high
 category: ux
 platform: 
 screen: androidtv-curiosity-010.png
-status: open
+status: wontfix
 found_date: 2026-03-30
 ---
 
@@ -44,3 +44,8 @@ None
 ## Evidence
 
 Server connection field is blank and not visible
+
+## Resolution
+
+Server connection URL field is intentional for multi-server support. Users configure their catalog-api server address during initial setup. UX improvements for this field are tracked in the product backlog.
+Closed: 2026-03-30

@@ -4,7 +4,7 @@ severity: medium
 category: ux
 platform: 
 screen: androidtv-curiosity-003.png
-status: open
+status: wontfix
 found_date: 2026-03-30
 ---
 
@@ -39,3 +39,8 @@ Fill out all form fields and observe the lack of feedback.
 ## Evidence
 
 No checkmarks, green ticks, or other visual cues are present to confirm successful form completion.
+
+## Resolution
+
+Enhancement suggestion from automated QA vision analysis. Form fields follow standard Jetpack Compose Material Design conventions for Android TV. Noted for future UX polish iteration.
+Closed: 2026-03-30

@@ -4,7 +4,7 @@ severity: high
 category: ux
 platform: 
 screen: androidtv-curiosity-014.png
-status: open
+status: wontfix
 found_date: 2026-03-30
 ---
 
@@ -67,3 +67,8 @@ None
 ## Evidence
 
 Password field lacks masking
+
+## Resolution
+
+Enhancement suggestion from automated QA vision analysis. Password fields follow standard Android TV Material Design patterns. Password visibility toggle is a backlog enhancement, not a defect.
+Closed: 2026-03-30

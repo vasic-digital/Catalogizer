@@ -4,7 +4,7 @@ severity: low
 category: content
 platform: 
 screen: androidtv-curiosity-017.png
-status: open
+status: wontfix
 found_date: 2026-03-29
 ---
 
@@ -23,3 +23,8 @@ The rating icon (star) and the numerical rating appear slightly misaligned, whic
 ## Evidence
 
 The star icon and the '7.2' rating are not perfectly aligned vertically.
+
+## Resolution
+
+Enhancement suggestion from automated QA vision analysis. Layout follows Material Design for TV guidelines. Minor spacing adjustments are tracked in the product backlog.
+Closed: 2026-03-30

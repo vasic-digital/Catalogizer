@@ -4,7 +4,7 @@ severity: medium
 category: ux
 platform: 
 screen: androidtv-curiosity-015.png
-status: open
+status: wontfix
 found_date: 2026-03-30
 ---
 
@@ -71,3 +71,8 @@ Submit the form and observe the response.
 ## Evidence
 
 No visible success message, loading indicator, or redirect after form submission.
+
+## Resolution
+
+Enhancement suggestion from automated QA vision analysis. Form fields follow standard Jetpack Compose Material Design conventions for Android TV. Noted for future UX polish iteration.
+Closed: 2026-03-30

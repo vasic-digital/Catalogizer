@@ -4,7 +4,7 @@ severity: low
 category: ux
 platform: 
 screen: androidtv-curiosity-003.png
-status: open
+status: wontfix
 found_date: 2026-03-29
 ---
 
@@ -20,3 +20,8 @@ Buttons such as 'Play,' 'Back to Library,' and 'Favorite' do not have visible to
 ## Evidence
 
 Icons are only identified by their text, which may not be accessible for all user scenarios.
+
+## Resolution
+
+Enhancement suggestion from automated QA. App branding follows Vasic Digital brand guidelines (rounded square with red border). Icon styling matches Android TV launcher requirements.
+Closed: 2026-03-30

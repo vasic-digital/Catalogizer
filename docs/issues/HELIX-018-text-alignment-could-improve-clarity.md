@@ -4,7 +4,7 @@ severity: low
 category: visual
 platform: 
 screen: androidtv-curiosity-012.png
-status: open
+status: wontfix
 found_date: 2026-03-29
 ---
 
@@ -24,3 +24,8 @@ The placement of the title text within the existing layout might not have enough
 ## Evidence
 
 The title text aligns very close to the bottom of the visible image area, with minimal spacing.
+
+## Resolution
+
+Enhancement suggestion from automated QA vision analysis. Layout follows Material Design for TV guidelines. Minor spacing adjustments are tracked in the product backlog.
+Closed: 2026-03-30

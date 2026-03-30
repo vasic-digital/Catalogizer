@@ -4,7 +4,7 @@ severity: medium
 category: ux
 platform: 
 screen: androidtv-006-navigate.png
-status: open
+status: wontfix
 found_date: 2026-03-30
 ---
 
@@ -30,3 +30,8 @@ The label for the username field is placed above the input field, while the labe
 ## Evidence
 
 Username label is above the input field, while Password label is inside the input field.
+
+## Resolution
+
+Enhancement suggestion from automated QA vision analysis. Not a functional defect. Noted for future UX improvements in the product backlog.
+Closed: 2026-03-30

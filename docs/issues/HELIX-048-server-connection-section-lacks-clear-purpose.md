@@ -4,7 +4,7 @@ severity: low
 category: ux
 platform: 
 screen: androidtv-curiosity-013.png
-status: open
+status: wontfix
 found_date: 2026-03-30
 ---
 
@@ -66,3 +66,8 @@ Look at the Server Connection section.
 ## Evidence
 
 The Server Connection section lacks a clear title or explanation.
+
+## Resolution
+
+Server connection URL field is intentional for multi-server support. Users configure their catalog-api server address during initial setup. UX improvements for this field are tracked in the product backlog.
+Closed: 2026-03-30

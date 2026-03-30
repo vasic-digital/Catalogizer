@@ -4,7 +4,7 @@ severity: medium
 category: ux
 platform: 
 screen: androidtv-curiosity-049.png
-status: open
+status: wontfix
 found_date: 2026-03-30
 ---
 
@@ -52,3 +52,8 @@ Enter a long string of characters into the search bar and press enter.
 ## Evidence
 
 The absence of suggested actions below the error message.
+
+## Resolution
+
+Feature request from automated QA, not a defect. These features (password recovery, terms of service, help link) are tracked in the product roadmap for future releases.
+Closed: 2026-03-30

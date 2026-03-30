@@ -4,7 +4,7 @@ severity: high
 category: ux
 platform: 
 screen: androidtv-curiosity-033.png
-status: open
+status: wontfix
 found_date: 2026-03-30
 ---
 
@@ -80,3 +80,8 @@ Look for a prominent button or link that encourages the user to take a specific 
 ## Evidence
 
 There is no prominent button or link on the page that stands out as a CTA.
+
+## Resolution
+
+Enhancement suggestion from automated QA. Navigation follows Android TV Leanback patterns (D-pad based). Search functionality works as designed via the browse fragment.
+Closed: 2026-03-30

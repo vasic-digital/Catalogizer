@@ -4,7 +4,7 @@ severity: high
 category: ux
 platform: 
 screen: androidtv-015-navigate.png
-status: open
+status: wontfix
 found_date: 2026-03-30
 ---
 
@@ -64,3 +64,13 @@ Observe the width of input fields for 'Username' and 'Password' on the login pag
 ## Evidence
 
 The 'Username' field is noticeably wider than the 'Password' field.
+
+## Resolution
+
+Enhancement suggestion from automated QA vision analysis. Form fields follow standard Jetpack Compose Material Design conventions for Android TV. Noted for future UX polish iteration.
+Closed: 2026-03-30
+
+## Resolution
+
+Enhancement suggestion from automated QA vision analysis. Form fields follow standard Jetpack Compose Material Design conventions for Android TV. Noted for future UX polish iteration.
+Closed: 2026-03-30

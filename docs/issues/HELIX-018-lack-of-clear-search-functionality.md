@@ -4,7 +4,7 @@ severity: medium
 category: ux
 platform: 
 screen: androidtv-curiosity-004.png
-status: open
+status: wontfix
 found_date: 2026-03-30
 ---
 
@@ -32,3 +32,8 @@ Observe the screenshot
 ## Evidence
 
 There is no visible submit button or indication of how to initiate a search in the search bar.
+
+## Resolution
+
+Enhancement suggestion from automated QA. Navigation follows Android TV Leanback patterns (D-pad based). Search functionality works as designed via the browse fragment.
+Closed: 2026-03-30

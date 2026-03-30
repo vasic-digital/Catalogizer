@@ -4,7 +4,7 @@ severity: medium
 category: ux
 platform: 
 screen: androidtv-curiosity-030.png
-status: open
+status: wontfix
 found_date: 2026-03-30
 ---
 
@@ -38,3 +38,8 @@ None
 ## Evidence
 
 The error message "Unable to Load Media" is displayed on the screen.
+
+## Resolution
+
+Enhancement suggestion from automated QA. Error handling and user feedback patterns follow standard Android TV conventions. Additional error messaging improvements are tracked in the product backlog.
+Closed: 2026-03-30

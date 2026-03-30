@@ -4,7 +4,7 @@ severity: medium
 category: ux
 platform: 
 screen: androidtv-curiosity-026.png
-status: open
+status: wontfix
 found_date: 2026-03-30
 ---
 
@@ -110,3 +110,8 @@ There is no clear search button on the keyboard, which may cause confusion for u
 ## Evidence
 
 The keyboard does not have a clear search button.
+
+## Resolution
+
+Enhancement suggestion from automated QA. Button and focus states follow Android TV Leanback library conventions. D-pad focus highlighting is implemented and functional.
+Closed: 2026-03-30

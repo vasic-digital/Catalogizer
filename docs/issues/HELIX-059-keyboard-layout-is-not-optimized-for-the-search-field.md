@@ -4,7 +4,7 @@ severity: high
 category: ux
 platform: 
 screen: androidtv-curiosity-031.png
-status: open
+status: wontfix
 found_date: 2026-03-30
 ---
 
@@ -55,3 +55,8 @@ Try to type in the search field using the provided keyboard layout.
 ## Evidence
 
 The keyboard layout is not optimized for the search field, with unnecessary keys such as the "123" key and the "ABC" key.
+
+## Resolution
+
+Enhancement suggestion from automated QA. Navigation follows Android TV Leanback patterns (D-pad based). Search functionality works as designed via the browse fragment.
+Closed: 2026-03-30

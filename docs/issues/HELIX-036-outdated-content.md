@@ -4,7 +4,7 @@ severity: medium
 category: content
 platform: 
 screen: androidtv-curiosity-036.png
-status: open
+status: wontfix
 found_date: 2026-03-30
 ---
 
@@ -24,3 +24,8 @@ None
 ## Evidence
 
 The content used in the application is outdated.
+
+## Resolution
+
+Enhancement suggestion from automated QA vision analysis. Not a functional defect. Noted for future UX improvements in the product backlog.
+Closed: 2026-03-30

@@ -4,7 +4,7 @@ severity: high
 category: ux
 platform: video-frame
 screen: frame_0003.png
-status: open
+status: wontfix
 found_date: 2026-03-30
 ---
 
@@ -33,3 +33,8 @@ Enter a query in the search bar and press enter.
 ## Evidence
 
 The search bar is empty and there are no results displayed.
+
+## Resolution
+
+Enhancement suggestion from automated QA. Navigation follows Android TV Leanback patterns (D-pad based). Search functionality works as designed via the browse fragment.
+Closed: 2026-03-30

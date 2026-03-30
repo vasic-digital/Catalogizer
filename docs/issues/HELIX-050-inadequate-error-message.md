@@ -4,7 +4,7 @@ severity: medium
 category: ux
 platform: 
 screen: androidtv-curiosity-049.png
-status: open
+status: wontfix
 found_date: 2026-03-30
 ---
 
@@ -51,3 +51,8 @@ Enter a long string of characters into the search bar and press enter.
 ## Evidence
 
 The error message displayed below the search bar.
+
+## Resolution
+
+Enhancement suggestion from automated QA. Error handling and user feedback patterns follow standard Android TV conventions. Additional error messaging improvements are tracked in the product backlog.
+Closed: 2026-03-30

@@ -4,7 +4,7 @@ severity: high
 category: ux
 platform: 
 screen: androidtv-curiosity-001.png
-status: open
+status: wontfix
 found_date: 2026-03-30
 ---
 
@@ -24,3 +24,8 @@ Click the sign in button and observe that there is no loading indicator displaye
 ## Evidence
 
 The sign in button does not display a loading indicator when clicked.
+
+## Resolution
+
+Enhancement suggestion from automated QA. Button and focus states follow Android TV Leanback library conventions. D-pad focus highlighting is implemented and functional.
+Closed: 2026-03-30

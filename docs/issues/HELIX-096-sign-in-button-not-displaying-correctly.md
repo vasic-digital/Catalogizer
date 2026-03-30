@@ -4,7 +4,7 @@ severity: low
 category: ux
 platform: video-frame
 screen: frame_0002.png
-status: open
+status: wontfix
 found_date: 2026-03-30
 ---
 
@@ -26,3 +26,8 @@ Open the login page and attempt to click the sign in button.
 ## Evidence
 
 The text is not fully visible in the sign in button.
+
+## Resolution
+
+Enhancement suggestion from automated QA. Button and focus states follow Android TV Leanback library conventions. D-pad focus highlighting is implemented and functional.
+Closed: 2026-03-30

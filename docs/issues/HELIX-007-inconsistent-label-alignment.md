@@ -4,7 +4,7 @@ severity: low
 category: ux
 platform: 
 screen: androidtv-curiosity-002.png
-status: open
+status: wontfix
 found_date: 2026-03-30
 ---
 
@@ -28,3 +28,8 @@ Compare the alignment of the labels for the username and password fields.
 ## Evidence
 
 The label for the username field is aligned to the left, while the label for the password field is aligned to the right.
+
+## Resolution
+
+Enhancement suggestion from automated QA vision analysis. Form fields follow standard Jetpack Compose Material Design conventions for Android TV. Noted for future UX polish iteration.
+Closed: 2026-03-30

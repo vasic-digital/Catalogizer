@@ -4,7 +4,7 @@ severity: low
 category: ux
 platform: 
 screen: androidtv-curiosity-003.png
-status: open
+status: wontfix
 found_date: 2026-03-30
 ---
 
@@ -104,3 +104,8 @@ None
 ## Evidence
 
 Button labels 'Retry' and 'Back to Library'.
+
+## Resolution
+
+Enhancement suggestion from automated QA. Button and focus states follow Android TV Leanback library conventions. D-pad focus highlighting is implemented and functional.
+Closed: 2026-03-30

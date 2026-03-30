@@ -286,6 +286,8 @@ Critical container notes:
 - All submodules MUST have `.env` in their `.gitignore`
 - Pre-commit hooks should scan for secrets when available
 
+**HelixQA Vision Architecture**: Dual-model system — **Vision models** (Astica.AI, Gemini 2.0 Flash, OpenAI GPT-4o, Ollama local) analyze screenshots and drive navigation; **Chat models** (any text provider) handle test planning and report generation. Models are selected dynamically by LLMsVerifier (no hardcoded preferences). Distributed vision across hosts (thinker.local GPU + amber.local CPU) via llama.cpp RPC. See `HelixQA/.env.example` for full provider configuration.
+
 **CRITICAL: HelixQA Screenshot/Video Validation — MANDATORY.** Every HelixQA QA session MUST validate captured evidence:
 - **Screenshots MUST be analyzed** — visually inspect every captured screenshot to verify expected screen state
 - **Login verification**: After login attempt, the UI dump MUST NOT contain "Sign In" text. If it does, login FAILED regardless of what the script reports

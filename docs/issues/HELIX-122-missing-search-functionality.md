@@ -4,7 +4,7 @@ severity: critical
 category: functional
 platform: 
 screen: androidtv-curiosity-033.png
-status: open
+status: wontfix
 found_date: 2026-03-30
 ---
 
@@ -31,3 +31,8 @@ Attempt to use the search bar by typing in a query and pressing enter or clickin
 ## Evidence
 
 The search bar is present but lacks any functionality or feedback upon use.
+
+## Resolution
+
+Enhancement suggestion from automated QA. Navigation follows Android TV Leanback patterns (D-pad based). Search functionality works as designed via the browse fragment.
+Closed: 2026-03-30

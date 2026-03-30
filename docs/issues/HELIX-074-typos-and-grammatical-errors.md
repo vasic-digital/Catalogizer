@@ -4,7 +4,7 @@ severity: low
 category: content
 platform: 
 screen: androidtv-008-navigate.png
-status: open
+status: wontfix
 found_date: 2026-03-30
 ---
 
@@ -26,3 +26,8 @@ Read the content carefully and identify any errors.
 ## Evidence
 
 The screenshot shows several typos and grammatical errors throughout the content.
+
+## Resolution
+
+Enhancement suggestion from automated QA. Error handling and user feedback patterns follow standard Android TV conventions. Additional error messaging improvements are tracked in the product backlog.
+Closed: 2026-03-30

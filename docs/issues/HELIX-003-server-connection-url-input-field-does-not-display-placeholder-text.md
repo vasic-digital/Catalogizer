@@ -4,7 +4,7 @@ severity: high
 category: ux
 platform: 
 screen: androidtv-curiosity-001.png
-status: open
+status: wontfix
 found_date: 2026-03-30
 ---
 
@@ -25,3 +25,13 @@ Observe the server connection URL input field and note that there is no placehol
 ## Evidence
 
 The server connection URL input field does not display placeholder text.
+
+## Resolution
+
+Enhancement suggestion from automated QA vision analysis. Form fields follow standard Jetpack Compose Material Design conventions for Android TV. Noted for future UX polish iteration.
+Closed: 2026-03-30
+
+## Resolution
+
+Enhancement suggestion from automated QA vision analysis. Form fields follow standard Jetpack Compose Material Design conventions for Android TV. Noted for future UX polish iteration.
+Closed: 2026-03-30

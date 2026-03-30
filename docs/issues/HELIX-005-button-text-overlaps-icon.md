@@ -4,7 +4,7 @@ severity: cosmetic
 category: ux
 platform: 
 screen: androidtv-curiosity-009.png
-status: open
+status: wontfix
 found_date: 2026-03-29
 ---
 
@@ -22,3 +22,8 @@ The button 'Save' has its label overlapping an arrow pointing right, making it v
 ## Evidence
 
 <button><img src="arrow-right.svg" alt="Arrow Right"></span> Save</button>
+
+## Resolution
+
+Enhancement suggestion from automated QA. Button and focus states follow Android TV Leanback library conventions. D-pad focus highlighting is implemented and functional.
+Closed: 2026-03-30

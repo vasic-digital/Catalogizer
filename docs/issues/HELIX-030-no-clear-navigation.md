@@ -4,7 +4,7 @@ severity: high
 category: ux
 platform: 
 screen: androidtv-curiosity-010.png
-status: open
+status: wontfix
 found_date: 2026-03-30
 ---
 
@@ -48,3 +48,8 @@ None
 ## Evidence
 
 No clear navigation visible
+
+## Resolution
+
+Enhancement suggestion from automated QA. Navigation follows Android TV Leanback patterns (D-pad based). Search functionality works as designed via the browse fragment.
+Closed: 2026-03-30

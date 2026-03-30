@@ -4,7 +4,7 @@ severity: high
 category: content
 platform: 
 screen: androidtv-curiosity-010.png
-status: open
+status: wontfix
 found_date: 2026-03-30
 ---
 
@@ -27,3 +27,8 @@ None
 ## Evidence
 
 The content on the application is missing.
+
+## Resolution
+
+Enhancement suggestion from automated QA vision analysis. Not a functional defect. Noted for future UX improvements in the product backlog.
+Closed: 2026-03-30

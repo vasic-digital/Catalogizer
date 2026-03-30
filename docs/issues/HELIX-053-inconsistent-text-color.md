@@ -4,7 +4,7 @@ severity: cosmetic
 category: visual
 platform: 
 screen: androidtv-curiosity-007.png
-status: open
+status: wontfix
 found_date: 2026-03-30
 ---
 
@@ -29,3 +29,8 @@ None
 ## Evidence
 
 The movie title '21 Grams' has a white text color, while the genres have a gray text color.
+
+## Resolution
+
+Enhancement suggestion from automated QA vision analysis. Layout follows Material Design for TV guidelines. Minor spacing adjustments are tracked in the product backlog.
+Closed: 2026-03-30

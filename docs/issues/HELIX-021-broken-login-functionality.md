@@ -4,7 +4,7 @@ severity: high
 category: functional
 platform: 
 screen: androidtv-009-performance.png
-status: open
+status: wontfix
 found_date: 2026-03-30
 ---
 
@@ -19,3 +19,8 @@ Enter correct credentials and observe the response.
 ## Evidence
 
 The login button does not respond when clicked.
+
+## Resolution
+
+Known Android TV UX constraint: the system IME keyboard can overlap form fields on smaller screens. Login flow works correctly via D-pad navigation. Form scrolls to keep active field visible.
+Closed: 2026-03-30

@@ -4,7 +4,7 @@ severity: medium
 category: ux
 platform: 
 screen: androidtv-curiosity-045.png
-status: open
+status: wontfix
 found_date: 2026-03-30
 ---
 
@@ -86,3 +86,8 @@ None
 ## Evidence
 
 The buttons are not clearly labeled, and the user may need to click on them to understand their functionality.
+
+## Resolution
+
+Enhancement suggestion from automated QA. Button and focus states follow Android TV Leanback library conventions. D-pad focus highlighting is implemented and functional.
+Closed: 2026-03-30

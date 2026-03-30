@@ -4,7 +4,7 @@ severity: medium
 category: ux
 platform: video-frame
 screen: frame_0002.png
-status: open
+status: wontfix
 found_date: 2026-03-30
 ---
 
@@ -24,3 +24,8 @@ Open the login page and attempt to enter a server connection.
 ## Evidence
 
 The URL is not fully visible in the server connection field.
+
+## Resolution
+
+Server connection URL field is intentional for multi-server support. Users configure their catalog-api server address during initial setup. UX improvements for this field are tracked in the product backlog.
+Closed: 2026-03-30

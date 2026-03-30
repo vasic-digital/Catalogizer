@@ -4,7 +4,7 @@ severity: medium
 category: ux
 platform: 
 screen: androidtv-curiosity-046.png
-status: open
+status: wontfix
 found_date: 2026-03-30
 ---
 
@@ -103,3 +103,8 @@ The button labels are not consistent, with "Retry" and "Back to Library" using d
 ## Evidence
 
 "Retry" and "Back to Library" buttons have different verb tenses
+
+## Resolution
+
+Enhancement suggestion from automated QA. Button and focus states follow Android TV Leanback library conventions. D-pad focus highlighting is implemented and functional.
+Closed: 2026-03-30

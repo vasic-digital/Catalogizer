@@ -4,7 +4,7 @@ severity: medium
 category: ux
 platform: 
 screen: androidtv-curiosity-005.png
-status: open
+status: wontfix
 found_date: 2026-03-30
 ---
 
@@ -59,3 +59,8 @@ Open the application and try to navigate to a specific section.
 ## Evidence
 
 The navigation menu is not clearly labeled, and the icons do not provide enough context.
+
+## Resolution
+
+Enhancement suggestion from automated QA. Navigation follows Android TV Leanback patterns (D-pad based). Search functionality works as designed via the browse fragment.
+Closed: 2026-03-30

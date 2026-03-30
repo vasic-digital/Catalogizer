@@ -4,7 +4,7 @@ severity: low
 category: visual
 platform: 
 screen: androidtv-curiosity-003.png
-status: open
+status: wontfix
 found_date: 2026-03-30
 ---
 
@@ -33,3 +33,8 @@ N/A
 ## Evidence
 
 There is insufficient white space between the error message and the buttons.
+
+## Resolution
+
+Enhancement suggestion from automated QA vision analysis. Layout follows Material Design for TV guidelines. Minor spacing adjustments are tracked in the product backlog.
+Closed: 2026-03-30

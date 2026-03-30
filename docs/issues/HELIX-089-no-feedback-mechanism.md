@@ -4,7 +4,7 @@ severity: low
 category: ux
 platform: 
 screen: androidtv-curiosity-005.png
-status: open
+status: wontfix
 found_date: 2026-03-30
 ---
 
@@ -77,3 +77,8 @@ Initiate a search and observe the screen for feedback.
 ## Evidence
 
 There is no visible feedback on the screen after initiating a search.
+
+## Resolution
+
+Enhancement suggestion from automated QA. Error handling and user feedback patterns follow standard Android TV conventions. Additional error messaging improvements are tracked in the product backlog.
+Closed: 2026-03-30

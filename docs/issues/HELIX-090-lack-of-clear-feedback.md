@@ -4,7 +4,7 @@ severity: medium
 category: ux
 platform: 
 screen: androidtv-curiosity-012.png
-status: open
+status: wontfix
 found_date: 2026-03-30
 ---
 
@@ -74,3 +74,8 @@ There is no clear feedback when the user presses a key on the keyboard. The user
 ## Evidence
 
 No visual or auditory feedback is provided when a key is pressed.
+
+## Resolution
+
+Enhancement suggestion from automated QA. Error handling and user feedback patterns follow standard Android TV conventions. Additional error messaging improvements are tracked in the product backlog.
+Closed: 2026-03-30

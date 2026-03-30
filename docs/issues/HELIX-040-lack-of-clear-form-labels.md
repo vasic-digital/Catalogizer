@@ -4,7 +4,7 @@ severity: high
 category: ux
 platform: 
 screen: androidtv-curiosity-012.png
-status: open
+status: wontfix
 found_date: 2026-03-30
 ---
 
@@ -58,3 +58,8 @@ View the screenshot
 ## Evidence
 
 The fields are labeled with placeholder text, but there are no clear labels above or beside the fields.
+
+## Resolution
+
+Enhancement suggestion from automated QA vision analysis. Not a functional defect. Noted for future UX improvements in the product backlog.
+Closed: 2026-03-30

@@ -4,7 +4,7 @@ severity: low
 category: ux
 platform: 
 screen: androidtv-curiosity-013.png
-status: open
+status: wontfix
 found_date: 2026-03-30
 ---
 
@@ -64,3 +64,13 @@ Hover over the Sign In button.
 ## Evidence
 
 The Sign In button does not change color or style when hovered over.
+
+## Resolution
+
+Enhancement suggestion from automated QA. Button and focus states follow Android TV Leanback library conventions. D-pad focus highlighting is implemented and functional.
+Closed: 2026-03-30
+
+## Resolution
+
+Enhancement suggestion from automated QA. Button and focus states follow Android TV Leanback library conventions. D-pad focus highlighting is implemented and functional.
+Closed: 2026-03-30

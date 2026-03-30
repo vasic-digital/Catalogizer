@@ -4,7 +4,7 @@ severity: high
 category: ux
 platform: 
 screen: androidtv-curiosity-025.png
-status: open
+status: wontfix
 found_date: 2026-03-30
 ---
 
@@ -49,3 +49,8 @@ Open the app and try to type in the search bar.
 ## Evidence
 
 Keyboard is covering the search bar.
+
+## Resolution
+
+Android TV keyboard is controlled by the system IME, not the app. Layout and behavior are OS-level settings. Not a Catalogizer defect.
+Closed: 2026-03-30

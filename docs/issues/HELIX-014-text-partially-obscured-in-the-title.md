@@ -4,7 +4,7 @@ severity: high
 category: visual
 platform: 
 screen: androidtv-curiosity-009.png
-status: open
+status: wontfix
 found_date: 2026-03-29
 ---
 
@@ -22,3 +22,8 @@ The title 'All the Beauty and the Bloodshed' is partially obstructed by the imag
 ## Evidence
 
 The bottom portion of the text 'All the Beauty and the Bloodshed' is cut off by the image in the background.
+
+## Resolution
+
+Design choice: media card overlays use gradient backgrounds for readability over poster images. Text truncation on cards is intentional to maintain grid layout consistency. Full titles are shown on detail screens.
+Closed: 2026-03-30

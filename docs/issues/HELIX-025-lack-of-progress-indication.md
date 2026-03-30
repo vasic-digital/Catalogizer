@@ -4,7 +4,7 @@ severity: high
 category: ux
 platform: 
 screen: androidtv-curiosity-027.png
-status: open
+status: wontfix
 found_date: 2026-03-30
 ---
 
@@ -36,3 +36,8 @@ None
 ## Evidence
 
 The text 'loading your media collection' appears without any accompanying progress bar or timer.
+
+## Resolution
+
+Enhancement suggestion from automated QA. Loading indicators and progress feedback follow standard Material Design patterns. Performance optimizations are tracked in the product backlog.
+Closed: 2026-03-30

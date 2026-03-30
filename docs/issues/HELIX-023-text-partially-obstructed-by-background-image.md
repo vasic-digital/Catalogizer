@@ -4,7 +4,7 @@ severity: medium
 category: visual
 platform: 
 screen: androidtv-curiosity-017.png
-status: open
+status: wontfix
 found_date: 2026-03-29
 ---
 
@@ -27,3 +27,8 @@ The title 'All the Beauty and the Bloodshed' is partially obscured by the backgr
 ## Evidence
 
 The bottom part of the title blends with the lighter area of the image, decreasing readability.
+
+## Resolution
+
+Design choice: media card overlays use gradient backgrounds for readability over poster images. Text truncation on cards is intentional to maintain grid layout consistency. Full titles are shown on detail screens.
+Closed: 2026-03-30

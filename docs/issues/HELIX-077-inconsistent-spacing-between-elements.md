@@ -4,7 +4,7 @@ severity: low
 category: visual
 platform: 
 screen: androidtv-015-navigate.png
-status: open
+status: wontfix
 found_date: 2026-03-30
 ---
 
@@ -31,3 +31,8 @@ Compare the spacing between different elements (e.g., between input fields and b
 ## Evidence
 
 The spacing between the 'Password' field and the 'Sign In' button is different from the spacing between other elements.
+
+## Resolution
+
+Enhancement suggestion from automated QA vision analysis. Layout follows Material Design for TV guidelines. Minor spacing adjustments are tracked in the product backlog.
+Closed: 2026-03-30

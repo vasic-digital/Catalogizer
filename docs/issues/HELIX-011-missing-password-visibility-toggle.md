@@ -4,7 +4,7 @@ severity: low
 category: ux
 platform: 
 screen: androidtv-003-api-endpoints.png
-status: open
+status: wontfix
 found_date: 2026-03-30
 ---
 
@@ -31,3 +31,8 @@ None
 ## Evidence
 
 No eye icon or password visibility toggle is present next to the password field.
+
+## Resolution
+
+Enhancement suggestion from automated QA vision analysis. Password fields follow standard Android TV Material Design patterns. Password visibility toggle is a backlog enhancement, not a defect.
+Closed: 2026-03-30

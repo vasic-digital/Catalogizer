@@ -4,7 +4,7 @@ severity: high
 category: ux
 platform: 
 screen: androidtv-curiosity-023.png
-status: open
+status: wontfix
 found_date: 2026-03-30
 ---
 
@@ -82,3 +82,8 @@ Enter a search query that has no matching results and press the search button.
 ## Evidence
 
 The message "No results found for 'qqqqqqqadmin'" is displayed below the search bar.
+
+## Resolution
+
+Enhancement suggestion from automated QA. Navigation follows Android TV Leanback patterns (D-pad based). Search functionality works as designed via the browse fragment.
+Closed: 2026-03-30

@@ -4,7 +4,7 @@ severity: high
 category: ux
 platform: 
 screen: androidtv-curiosity-005.png
-status: open
+status: wontfix
 found_date: 2026-03-30
 ---
 
@@ -58,3 +58,8 @@ Open the application and navigate to the "Recently Added" section.
 ## Evidence
 
 The image sizes vary significantly, with some being much larger than others.
+
+## Resolution
+
+Enhancement suggestion from automated QA vision analysis. Not a functional defect. Noted for future UX improvements in the product backlog.
+Closed: 2026-03-30

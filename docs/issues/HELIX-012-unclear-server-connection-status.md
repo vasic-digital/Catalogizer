@@ -4,7 +4,7 @@ severity: low
 category: ux
 platform: 
 screen: androidtv-003-api-endpoints.png
-status: open
+status: wontfix
 found_date: 2026-03-30
 ---
 
@@ -32,3 +32,8 @@ None
 ## Evidence
 
 The server connection status is represented by a URL, but its meaning is unclear to non-technical users.
+
+## Resolution
+
+Server connection URL field is intentional for multi-server support. Users configure their catalog-api server address during initial setup. UX improvements for this field are tracked in the product backlog.
+Closed: 2026-03-30

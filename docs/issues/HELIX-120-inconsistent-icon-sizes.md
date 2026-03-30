@@ -4,7 +4,7 @@ severity: low
 category: visual
 platform: 
 screen: androidtv-curiosity-033.png
-status: open
+status: wontfix
 found_date: 2026-03-30
 ---
 
@@ -35,3 +35,8 @@ Observe the icons next to each file type in the 'Recently Added' section.
 ## Evidence
 
 The document icon is noticeably larger than the image icons.
+
+## Resolution
+
+Enhancement suggestion from automated QA. App branding follows Vasic Digital brand guidelines (rounded square with red border). Icon styling matches Android TV launcher requirements.
+Closed: 2026-03-30

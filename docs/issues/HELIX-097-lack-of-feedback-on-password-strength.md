@@ -4,7 +4,7 @@ severity: low
 category: ux
 platform: video-frame
 screen: frame_0003.png
-status: open
+status: wontfix
 found_date: 2026-03-30
 ---
 
@@ -27,3 +27,8 @@ Enter a weak password in the password field.
 ## Evidence
 
 No password strength indicator is visible next to the password field.
+
+## Resolution
+
+Enhancement suggestion from automated QA vision analysis. Password fields follow standard Android TV Material Design patterns. Password visibility toggle is a backlog enhancement, not a defect.
+Closed: 2026-03-30

@@ -4,7 +4,7 @@ severity: cosmetic
 category: visual
 platform: 
 screen: androidtv-curiosity-003.png
-status: open
+status: wontfix
 found_date: 2026-03-30
 ---
 
@@ -36,3 +36,8 @@ Open a user account creation form and observe where the input fields are located
 ## Evidence
 
 <image src='path/to/image-1.jpg'>
+
+## Resolution
+
+Enhancement suggestion from automated QA. Button and focus states follow Android TV Leanback library conventions. D-pad focus highlighting is implemented and functional.
+Closed: 2026-03-30

@@ -4,7 +4,7 @@ severity: medium
 category: ux
 platform: 
 screen: androidtv-curiosity-033.png
-status: open
+status: wontfix
 found_date: 2026-03-30
 ---
 
@@ -92,3 +92,8 @@ Look at the list of files under 'Recently Added' and try to identify the file ty
 ## Evidence
 
 Only the first file has a clear document icon; subsequent files lack such indicators.
+
+## Resolution
+
+Enhancement suggestion from automated QA vision analysis. Not a functional defect. Noted for future UX improvements in the product backlog.
+Closed: 2026-03-30

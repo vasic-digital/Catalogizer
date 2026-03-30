@@ -4,7 +4,7 @@ severity: medium
 category: visual
 platform: 
 screen: androidtv-009-performance.png
-status: open
+status: wontfix
 found_date: 2026-03-30
 ---
 
@@ -24,3 +24,8 @@ Observe the font styles used for the labels and input fields.
 ## Evidence
 
 The "Username" label is in a different font style than the "Password" label.
+
+## Resolution
+
+Enhancement suggestion from automated QA vision analysis. Layout follows Material Design for TV guidelines. Minor spacing adjustments are tracked in the product backlog.
+Closed: 2026-03-30

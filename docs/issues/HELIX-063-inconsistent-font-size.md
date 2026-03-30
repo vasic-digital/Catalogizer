@@ -4,7 +4,7 @@ severity: low
 category: visual
 platform: 
 screen: androidtv-curiosity-047.png
-status: open
+status: wontfix
 found_date: 2026-03-30
 ---
 
@@ -30,3 +30,8 @@ Open the application and compare the font size of the text in the search bar wit
 ## Evidence
 
 The font size of the text in the search bar is 12px, while the font size of the text in the rest of the application is 14px.
+
+## Resolution
+
+Enhancement suggestion from automated QA vision analysis. Layout follows Material Design for TV guidelines. Minor spacing adjustments are tracked in the product backlog.
+Closed: 2026-03-30

@@ -4,7 +4,7 @@ severity: medium
 category: ux
 platform: 
 screen: androidtv-curiosity-014.png
-status: open
+status: wontfix
 found_date: 2026-03-30
 ---
 
@@ -33,3 +33,8 @@ Observe the application's interface and try to determine what action to take nex
 ## Evidence
 
 There is no prominent button or link that stands out as a clear call-to-action.
+
+## Resolution
+
+Enhancement suggestion from automated QA. Navigation follows Android TV Leanback patterns (D-pad based). Search functionality works as designed via the browse fragment.
+Closed: 2026-03-30

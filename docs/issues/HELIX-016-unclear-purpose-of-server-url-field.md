@@ -4,7 +4,7 @@ severity: low
 category: ux
 platform: 
 screen: androidtv-006-navigate.png
-status: open
+status: wontfix
 found_date: 2026-03-30
 ---
 
@@ -32,3 +32,8 @@ The purpose of the Server URL field is not clear. Users may not understand what 
 ## Evidence
 
 Server URL field has no label or description.
+
+## Resolution
+
+Server connection URL field is intentional for multi-server support. Users configure their catalog-api server address during initial setup. UX improvements for this field are tracked in the product backlog.
+Closed: 2026-03-30

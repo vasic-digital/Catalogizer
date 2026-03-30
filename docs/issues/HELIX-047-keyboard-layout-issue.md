@@ -4,7 +4,7 @@ severity: high
 category: ux
 platform: 
 screen: androidtv-curiosity-033.png
-status: open
+status: wontfix
 found_date: 2026-03-30
 ---
 
@@ -46,3 +46,8 @@ The keyboard layout is not optimized for the user's input needs, which can lead 
 ## Evidence
 
 The keyboard layout does not match the user's input needs, as evidenced by the presence of unnecessary keys and the lack of essential keys.
+
+## Resolution
+
+Android TV keyboard is controlled by the system IME, not the app. Layout and behavior are OS-level settings. Not a Catalogizer defect.
+Closed: 2026-03-30

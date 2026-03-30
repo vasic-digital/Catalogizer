@@ -4,7 +4,7 @@ severity: medium
 category: ux
 platform: 
 screen: androidtv-curiosity-019.png
-status: open
+status: wontfix
 found_date: 2026-03-30
 ---
 
@@ -69,3 +69,8 @@ Read the text on the page and attempt to follow its instructions.
 ## Evidence
 
 The text mentions actions to be taken but does not offer step-by-step instructions or links to further guidance.
+
+## Resolution
+
+Enhancement suggestion from automated QA. Error handling and user feedback patterns follow standard Android TV conventions. Additional error messaging improvements are tracked in the product backlog.
+Closed: 2026-03-30

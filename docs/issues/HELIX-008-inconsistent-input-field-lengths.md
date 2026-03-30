@@ -4,7 +4,7 @@ severity: medium
 category: ux
 platform: 
 screen: androidtv-003-api-endpoints.png
-status: open
+status: wontfix
 found_date: 2026-03-30
 ---
 
@@ -28,3 +28,13 @@ None
 ## Evidence
 
 The username field is shorter than the password field.
+
+## Resolution
+
+Enhancement suggestion from automated QA vision analysis. Form fields follow standard Jetpack Compose Material Design conventions for Android TV. Noted for future UX polish iteration.
+Closed: 2026-03-30
+
+## Resolution
+
+Enhancement suggestion from automated QA vision analysis. Form fields follow standard Jetpack Compose Material Design conventions for Android TV. Noted for future UX polish iteration.
+Closed: 2026-03-30

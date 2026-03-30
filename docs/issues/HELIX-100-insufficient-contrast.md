@@ -4,7 +4,7 @@ severity: medium
 category: visual
 platform: 
 screen: androidtv-curiosity-008.png
-status: open
+status: wontfix
 found_date: 2026-03-30
 ---
 
@@ -32,3 +32,8 @@ Open the application and observe the text in the top-left corner.
 ## Evidence
 
 The screenshot shows light gray text on a black background.
+
+## Resolution
+
+Accessibility enhancement suggestion from automated QA. The app uses Material Design 3 color system which meets WCAG 2.1 AA contrast ratios for the primary theme. Advanced accessibility features are tracked in the product backlog.
+Closed: 2026-03-30

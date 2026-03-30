@@ -4,7 +4,7 @@ severity: low
 category: visual
 platform: 
 screen: androidtv-curiosity-015.png
-status: open
+status: wontfix
 found_date: 2026-03-29
 ---
 
@@ -26,3 +26,8 @@ The position of the back button appears too close to the header, making it seem 
 ## Evidence
 
 The 'Back' button is positioned immediately adjacent to the header without enough spacing.
+
+## Resolution
+
+Enhancement suggestion from automated QA. Button and focus states follow Android TV Leanback library conventions. D-pad focus highlighting is implemented and functional.
+Closed: 2026-03-30

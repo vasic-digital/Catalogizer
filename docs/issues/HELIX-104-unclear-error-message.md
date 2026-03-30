@@ -4,7 +4,7 @@ severity: medium
 category: ux
 platform: 
 screen: androidtv-curiosity-023.png
-status: open
+status: wontfix
 found_date: 2026-03-30
 ---
 
@@ -83,3 +83,8 @@ Enter a search query that has no matching results and press the search button.
 ## Evidence
 
 The message "Try a different title, keyword, or check your spelling" is displayed below the search bar.
+
+## Resolution
+
+Enhancement suggestion from automated QA. Error handling and user feedback patterns follow standard Android TV conventions. Additional error messaging improvements are tracked in the product backlog.
+Closed: 2026-03-30

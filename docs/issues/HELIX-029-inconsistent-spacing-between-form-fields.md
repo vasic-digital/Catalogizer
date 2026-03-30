@@ -4,7 +4,7 @@ severity: low
 category: visual
 platform: 
 screen: androidtv-curiosity-003.png
-status: open
+status: wontfix
 found_date: 2026-03-30
 ---
 
@@ -28,3 +28,8 @@ Observe the form layout and note the varying distances between fields.
 ## Evidence
 
 The distance between the username and password fields differs from the distance between the password and sign-in button.
+
+## Resolution
+
+Enhancement suggestion from automated QA vision analysis. Form fields follow standard Jetpack Compose Material Design conventions for Android TV. Noted for future UX polish iteration.
+Closed: 2026-03-30

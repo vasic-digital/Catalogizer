@@ -4,7 +4,7 @@ severity: low
 category: brand
 platform: 
 screen: androidtv-curiosity-008.png
-status: open
+status: wontfix
 found_date: 2026-03-30
 ---
 
@@ -25,3 +25,8 @@ Open the application and observe the home screen.
 ## Evidence
 
 The screenshot shows a solid black background with no visible branding elements.
+
+## Resolution
+
+Enhancement suggestion from automated QA. App branding follows Vasic Digital brand guidelines (rounded square with red border). Icon styling matches Android TV launcher requirements.
+Closed: 2026-03-30

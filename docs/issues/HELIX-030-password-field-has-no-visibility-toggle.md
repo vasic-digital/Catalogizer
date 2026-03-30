@@ -4,7 +4,7 @@ severity: medium
 category: ux
 platform: 
 screen: androidtv-curiosity-006.png
-status: open
+status: wontfix
 found_date: 2026-03-30
 ---
 
@@ -36,3 +36,8 @@ The password field does not have a visibility toggle, making it difficult for us
 ## Evidence
 
 Password field does not have an eye icon to toggle password visibility
+
+## Resolution
+
+Enhancement suggestion from automated QA vision analysis. Password fields follow standard Android TV Material Design patterns. Password visibility toggle is a backlog enhancement, not a defect.
+Closed: 2026-03-30

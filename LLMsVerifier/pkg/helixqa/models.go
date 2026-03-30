@@ -12,6 +12,28 @@ import (
 // pipeline so that new providers are included in the verification matrix.
 func VisionModelRegistry() []strategy.ModelInfo {
 	return []strategy.ModelInfo{
+		// --- Tier 0: Specialized vision API ---
+		{
+			ID:               "astica-vision-25",
+			Name:             "Astica Vision 2.5",
+			Provider:         "astica",
+			Model:            "2.5_full",
+			SupportsVision:   true,
+			SupportsStreaming: false,
+			ContextWindow:    32768,
+			MaxOutputTokens:  4096,
+			AvgLatencyMs:     800,
+			InputCostPer1k:   0.0005,
+			OutputCostPer1k:  0.0005,
+			QualityScore:     0.97,
+			ReliabilityScore: 0.95,
+			Capabilities:     []string{"vision", "ocr", "object_detection", "face_detection", "content_moderation", "gui_analysis"},
+			Metadata: map[string]any{
+				"specialization": "comprehensive image understanding",
+				"api_format":     "native",
+			},
+		},
+
 		// --- Tier 1: Premium vision providers ---
 		{
 			ID:                      "openai-gpt4o",

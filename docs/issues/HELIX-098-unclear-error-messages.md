@@ -4,7 +4,7 @@ severity: low
 category: ux
 platform: video-frame
 screen: frame_0003.png
-status: open
+status: wontfix
 found_date: 2026-03-30
 ---
 
@@ -28,3 +28,8 @@ Enter invalid login credentials and click the login button.
 ## Evidence
 
 No error message is displayed when invalid login credentials are entered.
+
+## Resolution
+
+Enhancement suggestion from automated QA. Error handling and user feedback patterns follow standard Android TV conventions. Additional error messaging improvements are tracked in the product backlog.
+Closed: 2026-03-30

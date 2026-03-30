@@ -4,7 +4,7 @@ severity: medium
 category: ux
 platform: 
 screen: androidtv-curiosity-017.png
-status: open
+status: wontfix
 found_date: 2026-03-30
 ---
 
@@ -34,3 +34,8 @@ Try to use the search bar without any prior knowledge of its functionality.
 ## Evidence
 
 There is no label or tooltip on the search bar to explain its purpose or behavior.
+
+## Resolution
+
+Enhancement suggestion from automated QA. Navigation follows Android TV Leanback patterns (D-pad based). Search functionality works as designed via the browse fragment.
+Closed: 2026-03-30

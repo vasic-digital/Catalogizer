@@ -4,7 +4,7 @@ severity: medium
 category: ux
 platform: 
 screen: androidtv-curiosity-048.png
-status: open
+status: wontfix
 found_date: 2026-03-30
 ---
 
@@ -75,3 +75,8 @@ Enter invalid input into the search bar and press enter.
 ## Evidence
 
 No error message or indication of invalid input is displayed.
+
+## Resolution
+
+Enhancement suggestion from automated QA. Navigation follows Android TV Leanback patterns (D-pad based). Search functionality works as designed via the browse fragment.
+Closed: 2026-03-30

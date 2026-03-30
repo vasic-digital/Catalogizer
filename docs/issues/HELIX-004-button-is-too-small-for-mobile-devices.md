@@ -4,7 +4,7 @@ severity: cosmetic
 category: visual
 platform: 
 screen: androidtv-curiosity-008.png
-status: open
+status: wontfix
 found_date: 2026-03-29
 ---
 
@@ -15,3 +15,8 @@ The 'Submit' button appears to be smaller than what would typically allow a user
 ## Evidence
 
 <input type='text'> <button>Submit</button>
+
+## Resolution
+
+Enhancement suggestion from automated QA. Button and focus states follow Android TV Leanback library conventions. D-pad focus highlighting is implemented and functional.
+Closed: 2026-03-30

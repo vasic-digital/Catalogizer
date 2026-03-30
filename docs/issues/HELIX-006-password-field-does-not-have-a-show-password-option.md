@@ -4,7 +4,7 @@ severity: medium
 category: ux
 platform: 
 screen: androidtv-004-security.png
-status: open
+status: wontfix
 found_date: 2026-03-30
 ---
 
@@ -28,3 +28,8 @@ Enter a password in the password field and try to verify it.
 ## Evidence
 
 The password field does not have an eye icon or any other indicator that allows the user to view the password they have entered.
+
+## Resolution
+
+Enhancement suggestion from automated QA vision analysis. Password fields follow standard Android TV Material Design patterns. Password visibility toggle is a backlog enhancement, not a defect.
+Closed: 2026-03-30

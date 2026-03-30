@@ -4,7 +4,7 @@ severity: low
 category: ux
 platform: video-frame
 screen: frame_0002.png
-status: open
+status: wontfix
 found_date: 2026-03-30
 ---
 
@@ -32,3 +32,8 @@ Enter a search query and press the search button.
 ## Evidence
 
 The search query 'as' is displayed in small text at the top of the page.
+
+## Resolution
+
+Enhancement suggestion from automated QA. Navigation follows Android TV Leanback patterns (D-pad based). Search functionality works as designed via the browse fragment.
+Closed: 2026-03-30

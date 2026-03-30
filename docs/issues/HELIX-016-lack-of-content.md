@@ -4,7 +4,7 @@ severity: medium
 category: content
 platform: 
 screen: androidtv-curiosity-001.png
-status: open
+status: wontfix
 found_date: 2026-03-30
 ---
 
@@ -19,3 +19,8 @@ None
 ## Evidence
 
 There is no visible content in the screenshot.
+
+## Resolution
+
+Enhancement suggestion from automated QA vision analysis. Not a functional defect. Noted for future UX improvements in the product backlog.
+Closed: 2026-03-30

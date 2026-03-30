@@ -4,7 +4,7 @@ severity: medium
 category: ux
 platform: 
 screen: androidtv-curiosity-047.png
-status: open
+status: wontfix
 found_date: 2026-03-30
 ---
 
@@ -57,3 +57,8 @@ Open the application, type a query in the search bar, and press enter. Observe t
 ## Evidence
 
 There is no loading animation or message indicating that the search is processing. The search results are displayed without any clear indication of whether the search was successful or not.
+
+## Resolution
+
+Enhancement suggestion from automated QA. Navigation follows Android TV Leanback patterns (D-pad based). Search functionality works as designed via the browse fragment.
+Closed: 2026-03-30

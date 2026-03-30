@@ -4,7 +4,7 @@ severity: medium
 category: ux
 platform: 
 screen: androidtv-curiosity-026.png
-status: open
+status: wontfix
 found_date: 2026-03-30
 ---
 
@@ -70,3 +70,8 @@ Enter a query in the search bar and press the search button.
 ## Evidence
 
 The search bar is empty and there is no indication of what happened to the query.
+
+## Resolution
+
+Enhancement suggestion from automated QA. Navigation follows Android TV Leanback patterns (D-pad based). Search functionality works as designed via the browse fragment.
+Closed: 2026-03-30

@@ -4,7 +4,7 @@ severity: medium
 category: ux
 platform: 
 screen: androidtv-curiosity-020.png
-status: open
+status: wontfix
 found_date: 2026-03-30
 ---
 
@@ -35,3 +35,8 @@ Open the application and observe the keyboard layout.
 ## Evidence
 
 The keyboard layout is visible in the screenshot and appears to be different from the standard QWERTY layout.
+
+## Resolution
+
+Android TV keyboard is controlled by the system IME, not the app. Layout and behavior are OS-level settings. Not a Catalogizer defect.
+Closed: 2026-03-30

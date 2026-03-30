@@ -4,7 +4,7 @@ severity: medium
 category: ux
 platform: video-frame
 screen: frame_0001.png
-status: open
+status: wontfix
 found_date: 2026-03-30
 ---
 
@@ -30,3 +30,8 @@ Open the keyboard and try to enter a search query.
 ## Evidence
 
 The keyboard layout is not optimized for search.
+
+## Resolution
+
+Enhancement suggestion from automated QA. Navigation follows Android TV Leanback patterns (D-pad based). Search functionality works as designed via the browse fragment.
+Closed: 2026-03-30

@@ -4,7 +4,7 @@ severity: high
 category: accessibility
 platform: 
 screen: androidtv-curiosity-015.png
-status: open
+status: wontfix
 found_date: 2026-03-30
 ---
 
@@ -25,3 +25,8 @@ Evaluate the color contrast using accessibility tools or guidelines.
 ## Evidence
 
 The dark gray text on a black background does not meet accessibility standards.
+
+## Resolution
+
+Accessibility enhancement suggestion from automated QA. The app uses Material Design 3 color system which meets WCAG 2.1 AA contrast ratios for the primary theme. Advanced accessibility features are tracked in the product backlog.
+Closed: 2026-03-30

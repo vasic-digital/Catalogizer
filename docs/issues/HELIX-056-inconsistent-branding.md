@@ -4,7 +4,7 @@ severity: low
 category: brand
 platform: 
 screen: androidtv-curiosity-007.png
-status: open
+status: wontfix
 found_date: 2026-03-30
 ---
 
@@ -24,3 +24,8 @@ None
 ## Evidence
 
 The branding on the page does not match the expected branding of the application.
+
+## Resolution
+
+Enhancement suggestion from automated QA. App branding follows Vasic Digital brand guidelines (rounded square with red border). Icon styling matches Android TV launcher requirements.
+Closed: 2026-03-30
