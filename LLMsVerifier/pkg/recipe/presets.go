@@ -6,6 +6,7 @@ package recipe
 import (
 	"time"
 
+	"digital.vasic.llmsverifier/pkg/chat"
 	"digital.vasic.llmsverifier/pkg/strategy"
 	"digital.vasic.llmsverifier/pkg/vision"
 )
@@ -180,6 +181,34 @@ func VisionRecipe() *Recipe {
 // Execute/Curiosity phases, screenshot analysis, UI navigation).
 func VisionPreset() *vision.VisionStrategy {
 	return vision.NewVisionStrategy()
+}
+
+// NavigationPreset returns a NavigationStrategy instance configured
+// with default weights optimised for UI navigation tasks. It
+// prioritises JSON compliance (structured action arrays), GUI
+// understanding, speed, and cost. Use this for HelixQA Execute and
+// Curiosity phases where the model must produce machine-parseable
+// JSON actions from screenshots.
+func NavigationPreset() *vision.NavigationStrategy {
+	return vision.NewNavigationStrategy()
+}
+
+// AnalysisPreset returns an AnalysisStrategy instance configured
+// with default weights optimised for screenshot analysis tasks. It
+// prioritises description quality, OCR accuracy, object detection,
+// comprehensiveness, and cost. Use this for HelixQA Analyze phase
+// where the model must produce rich, detailed image descriptions.
+func AnalysisPreset() *vision.AnalysisStrategy {
+	return vision.NewAnalysisStrategy()
+}
+
+// PlanningPreset returns a PlanningStrategy instance configured
+// with default weights optimised for test plan generation. It
+// prioritises reasoning quality, context window size, structured
+// output, speed, and cost. Use this for HelixQA Learn and Plan
+// phases where the model must produce well-reasoned test cases.
+func PlanningPreset() *chat.PlanningStrategy {
+	return chat.NewPlanningStrategy()
 }
 
 // BalancedRecipe returns a balanced recipe for general use.

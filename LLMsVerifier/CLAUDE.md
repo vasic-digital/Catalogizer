@@ -30,12 +30,21 @@ go vet ./...
   - `interface.go` - `VerificationStrategy` interface, `ModelInfo`, `StrategyScore`, `Requirements` types
   - `default.go` - `DefaultStrategy` with configurable dimension weights
   - `default_test.go` - Table-driven tests for scoring, ranking, selection
-- `pkg/vision/` - Dedicated VisionStrategy for vision model selection (NOT default)
-  - `strategy.go` - VisionStrategy scoring: image quality, GUI detection, OCR, speed, cost
-  - `strategy_test.go` - Comprehensive tests (29 tests)
+- `pkg/vision/` - Vision-specialised strategies for model selection
+  - `strategy.go` - `VisionStrategy` scoring: image quality, GUI detection, OCR, speed, cost
+  - `navigation.go` - `NavigationStrategy` scoring: JSON compliance, GUI understanding, speed, cost
+  - `analysis.go` - `AnalysisStrategy` scoring: description quality, OCR, object detection, comprehensiveness, cost
+  - `strategy_test.go`, `navigation_test.go`, `analysis_test.go` - Comprehensive tests
+- `pkg/chat/` - Chat/reasoning-specialised strategies
+  - `planning.go` - `PlanningStrategy` scoring: reasoning quality, context window, structured output, speed, cost
+  - `planning_test.go` - Comprehensive tests
+- `pkg/bridge/` - Bridged CLI model discovery and scoring
+  - `discovery.go` - Discovers CLI coding assistants on PATH (Claude Code, Qwen Coder, OpenCode)
+  - `provider.go` - Converts bridged models to `strategy.ModelInfo`, filtering and sorting utilities
+  - `discovery_test.go` - Tests with injectable `LookPathFunc`
 - `pkg/recipe/` - Recipe builder for composing verification configurations
   - `builder.go` - Fluent builder API for strategy configuration
-  - `presets.go` - Pre-built strategy presets (includes `VisionPreset()`)
+  - `presets.go` - Pre-built strategy presets (`VisionPreset`, `NavigationPreset`, `AnalysisPreset`, `PlanningPreset`)
   - `validator.go` - Recipe validation
 - `pkg/helixqa/` - HelixQA-specific strategy and model definitions
   - `recipe.go` - HelixQA QA session strategy (vision-weighted)
@@ -63,6 +72,9 @@ LLMsVerifier provides four strategies, each optimised for a different use case:
 |----------|---------|-------------|
 | `DefaultStrategy` | `pkg/strategy/` | General-purpose model selection with balanced quality/speed/cost/reliability weights |
 | `VisionStrategy` | `pkg/vision/` | Vision model selection: screenshot analysis, UI element detection, OCR. Used by HelixQA Execute/Curiosity phases |
+| `NavigationStrategy` | `pkg/vision/` | JSON-action producing vision models for UI navigation. Prioritises JSON compliance, GUI understanding, speed, cost |
+| `AnalysisStrategy` | `pkg/vision/` | Rich image description models for screenshot analysis. Prioritises description quality, OCR accuracy, object detection |
+| `PlanningStrategy` | `pkg/chat/` | Strong reasoning models for test plan generation. Prioritises reasoning quality, context window, structured output |
 | `QAStrategy` | `pkg/helixqa/` | Autonomous QA sessions: weighs vision + speed + quality for interactive testing |
 | `CatalogizerStrategy` | `pkg/catalogizer/` | Catalog-api tasks: metadata enrichment, content analysis, recommendations |
 
@@ -73,7 +85,58 @@ The `VisionStrategy` scores models across five vision-specific dimensions:
 - **Speed** (15%) -- response latency normalised to 6s window
 - **Cost** (10%) -- free local models get 1.0; cloud models scaled by total token cost
 
-Access the VisionStrategy via `recipe.VisionPreset()` or `vision.NewVisionStrategy()`.
+Access strategies via presets or direct constructors:
+- `recipe.VisionPreset()` or `vision.NewVisionStrategy()` -- general vision model selection
+- `recipe.NavigationPreset()` or `vision.NewNavigationStrategy()` -- JSON-action navigation model selection
+- `recipe.AnalysisPreset()` or `vision.NewAnalysisStrategy()` -- rich description analysis model selection
+- `recipe.PlanningPreset()` or `chat.NewPlanningStrategy()` -- reasoning/planning model selection
+
+The `NavigationStrategy` scores models across four navigation-specific dimensions:
+- **JSON compliance** (40%) -- ability to produce structured JSON action arrays (not descriptions)
+- **GUI understanding** (25%) -- GUI element detection, focus tracking, layout comprehension
+- **Speed** (20%) -- response latency normalised to 5s window (interactive navigation needs fast responses)
+- **Cost** (15%) -- free local models get 1.0; cloud models scaled by total token cost
+
+The `AnalysisStrategy` scores models across five analysis-specific dimensions:
+- **Description quality** (35%) -- rich image description ability with vision capability bonuses
+- **OCR accuracy** (20%) -- text recognition capability (dedicated OCR models score highest)
+- **Object detection** (20%) -- UI element and object identification
+- **Comprehensiveness** (15%) -- breadth of vision analysis capabilities
+- **Cost** (10%) -- free local models get 1.0; cloud models scaled by total token cost
+
+The `PlanningStrategy` scores models across five planning-specific dimensions:
+- **Reasoning quality** (35%) -- multi-step reasoning ability with bonus for "reasoning" capability
+- **Context window** (25%) -- normalised against 1M tokens (larger = better for knowledge bases)
+- **Structured output** (20%) -- JSON/structured output or code generation capability
+- **Speed** (10%) -- normalised against 10s (planning tolerates higher latency)
+- **Cost** (10%) -- free local models get 1.0; cloud models scaled by total token cost
+
+## Bridged CLI Models
+
+`pkg/bridge/` discovers LLM models available via CLI coding assistant tools installed on the developer's machine. These models are not called via HTTP APIs but through their CLI binaries, which handle authentication and billing internally.
+
+### Discovered CLI Tools
+
+| CLI Binary | Provider | Model | Vision | Context |
+|------------|----------|-------|--------|---------|
+| `claude` | Anthropic | claude-sonnet-4 | Yes | 200K |
+| `qwen-coder` / `qwen` | Qwen | qwen3-coder | No | 128K |
+| `opencode` / `zen` | OpenCode | opencode | No | 128K |
+
+### How It Works
+
+1. `DiscoverBridgedModels()` searches `PATH` for known CLI binaries
+2. Found CLIs are converted to `BridgedModel` structs with capability metadata
+3. `BridgedModel.ToModelInfo()` converts to `strategy.ModelInfo` for unified scoring
+4. Bridged models get zero token cost (CLI handles billing) and a "bridged" capability tag
+5. They compete alongside cloud and local models in the scoring/ranking pipeline
+
+### Key Functions
+
+- `bridge.DiscoverBridgedModels()` -- discover all available CLI tools
+- `bridge.BridgedToModelInfos(models)` -- convert to `[]strategy.ModelInfo`
+- `bridge.FilterVisionCapable(models)` -- filter to vision-capable CLIs only
+- `bridge.GetProviderInfo(cliName)` -- get display metadata for a CLI tool
 
 ## Dual Model Types
 

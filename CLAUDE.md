@@ -286,7 +286,7 @@ Critical container notes:
 - All submodules MUST have `.env` in their `.gitignore`
 - Pre-commit hooks should scan for secrets when available
 
-**HelixQA Vision Architecture**: Dual-model system — **Vision models** analyze screenshots; **Chat models** handle planning/reporting. **MANDATORY: llama.cpp RPC distributed inference** is the primary local vision backend (superior to Ollama). It distributes model layers across ALL configured hosts. Cloud providers (Astica.AI, Gemini, OpenAI) complement the local model. Models scored dynamically by LLMsVerifier VisionStrategy (no hardcoded preferences). See `HelixQA/.env.example` for configuration.
+**HelixQA Vision Architecture**: Phase-specific model selection — each pipeline phase uses a dedicated LLMsVerifier strategy: **NavigationStrategy** (Execute/Curiosity) selects JSON-action-producing vision models; **AnalysisStrategy** (Analyze) selects rich-description vision models; **PlanningStrategy** (Learn/Plan) selects strong-reasoning chat models. Bridged CLI models (Claude Code, Qwen Coder) are discovered via `pkg/bridge/` and scored alongside cloud and local providers. **MANDATORY: llama.cpp RPC distributed inference** is the primary local vision backend (superior to Ollama). It distributes model layers across ALL configured hosts. Cloud providers (Astica.AI for analysis, Gemini/OpenAI for navigation) complement the local model. Models scored dynamically by phase-appropriate strategies (no hardcoded preferences). See `HelixQA/.env.example` for configuration.
 
 **CRITICAL: HelixQA Screenshot/Video Validation — MANDATORY.** Every HelixQA QA session MUST validate captured evidence:
 - **Screenshots MUST be analyzed** — visually inspect every captured screenshot to verify expected screen state

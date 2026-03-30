@@ -1,0 +1,1180 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+  <meta charset="utf-8" />
+  <meta name="generator" content="pandoc" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
+  <title>HelixQA Models Research</title>
+  <style>
+    /* Default styles provided by pandoc.
+    ** See https://pandoc.org/MANUAL.html#variables-for-html for config info.
+    */
+    html {
+      color: #1a1a1a;
+      background-color: #fdfdfd;
+    }
+    body {
+      margin: 0 auto;
+      max-width: 36em;
+      padding-left: 50px;
+      padding-right: 50px;
+      padding-top: 50px;
+      padding-bottom: 50px;
+      hyphens: auto;
+      overflow-wrap: break-word;
+      text-rendering: optimizeLegibility;
+      font-kerning: normal;
+    }
+    @media (max-width: 600px) {
+      body {
+        font-size: 0.9em;
+        padding: 12px;
+      }
+      h1 {
+        font-size: 1.8em;
+      }
+    }
+    @media print {
+      html {
+        background-color: white;
+      }
+      body {
+        background-color: transparent;
+        color: black;
+        font-size: 12pt;
+      }
+      p, h2, h3 {
+        orphans: 3;
+        widows: 3;
+      }
+      h2, h3, h4 {
+        page-break-after: avoid;
+      }
+    }
+    p {
+      margin: 1em 0;
+    }
+    a {
+      color: #1a1a1a;
+    }
+    a:visited {
+      color: #1a1a1a;
+    }
+    img {
+      max-width: 100%;
+    }
+    svg {
+      height: auto;
+      max-width: 100%;
+    }
+    h1, h2, h3, h4, h5, h6 {
+      margin-top: 1.4em;
+    }
+    h5, h6 {
+      font-size: 1em;
+      font-style: italic;
+    }
+    h6 {
+      font-weight: normal;
+    }
+    ol, ul {
+      padding-left: 1.7em;
+      margin-top: 1em;
+    }
+    li > ol, li > ul {
+      margin-top: 0;
+    }
+    blockquote {
+      margin: 1em 0 1em 1.7em;
+      padding-left: 1em;
+      border-left: 2px solid #e6e6e6;
+      color: #606060;
+    }
+    code {
+      font-family: Menlo, Monaco, Consolas, 'Lucida Console', monospace;
+      font-size: 85%;
+      margin: 0;
+      hyphens: manual;
+    }
+    pre {
+      margin: 1em 0;
+      overflow: auto;
+    }
+    pre code {
+      padding: 0;
+      overflow: visible;
+      overflow-wrap: normal;
+    }
+    .sourceCode {
+     background-color: transparent;
+     overflow: visible;
+    }
+    hr {
+      border: none;
+      border-top: 1px solid #1a1a1a;
+      height: 1px;
+      margin: 1em 0;
+    }
+    table {
+      margin: 1em 0;
+      border-collapse: collapse;
+      width: 100%;
+      overflow-x: auto;
+      display: block;
+      font-variant-numeric: lining-nums tabular-nums;
+    }
+    table caption {
+      margin-bottom: 0.75em;
+    }
+    tbody {
+      margin-top: 0.5em;
+      border-top: 1px solid #1a1a1a;
+      border-bottom: 1px solid #1a1a1a;
+    }
+    th {
+      border-top: 1px solid #1a1a1a;
+      padding: 0.25em 0.5em 0.25em 0.5em;
+    }
+    td {
+      padding: 0.125em 0.5em 0.25em 0.5em;
+    }
+    header {
+      margin-bottom: 4em;
+      text-align: center;
+    }
+    #TOC li {
+      list-style: none;
+    }
+    #TOC ul {
+      padding-left: 1.3em;
+    }
+    #TOC > ul {
+      padding-left: 0;
+    }
+    #TOC a:not(:hover) {
+      text-decoration: none;
+    }
+    code{white-space: pre-wrap;}
+    span.smallcaps{font-variant: small-caps;}
+    div.columns{display: flex; gap: min(4vw, 1.5em);}
+    div.column{flex: auto; overflow-x: auto;}
+    div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+    /* The extra [class] is a hack that increases specificity enough to
+       override a similar rule in reveal.js */
+    ul.task-list[class]{list-style: none;}
+    ul.task-list li input[type="checkbox"] {
+      font-size: inherit;
+      width: 0.8em;
+      margin: 0 0.8em 0.2em -1.6em;
+      vertical-align: middle;
+    }
+    .display.math{display: block; text-align: center; margin: 0.5rem auto;}
+  </style>
+</head>
+<body>
+<header id="title-block-header">
+<h1 class="title">HelixQA Models Research</h1>
+</header>
+<nav id="TOC" role="doc-toc">
+<ul>
+<li><a href="#helixqa-vision-chat-models-comprehensive-research"
+id="toc-helixqa-vision-chat-models-comprehensive-research">HelixQA
+Vision &amp; Chat Models — Comprehensive Research</a>
+<ul>
+<li><a href="#table-of-contents" id="toc-table-of-contents">Table of
+Contents</a></li>
+<li><a href="#executive-summary" id="toc-executive-summary">1. Executive
+Summary</a>
+<ul>
+<li><a href="#key-findings" id="toc-key-findings">Key Findings</a></li>
+<li><a href="#critical-insight" id="toc-critical-insight">Critical
+Insight</a></li>
+</ul></li>
+<li><a href="#phase-requirements-analysis"
+id="toc-phase-requirements-analysis">2. Phase Requirements Analysis</a>
+<ul>
+<li><a href="#phase-1-learn-knowledge-base-loading"
+id="toc-phase-1-learn-knowledge-base-loading">Phase 1: Learn (Knowledge
+Base Loading)</a></li>
+<li><a href="#phase-2-plan-test-generation"
+id="toc-phase-2-plan-test-generation">Phase 2: Plan (Test
+Generation)</a></li>
+<li><a href="#phase-3-execute-test-execution"
+id="toc-phase-3-execute-test-execution">Phase 3: Execute (Test
+Execution)</a></li>
+<li><a href="#phase-3.5-curiosity-free-exploration"
+id="toc-phase-3.5-curiosity-free-exploration">Phase 3.5: Curiosity (Free
+Exploration)</a></li>
+<li><a href="#phase-4-analyze-issue-detection"
+id="toc-phase-4-analyze-issue-detection">Phase 4: Analyze (Issue
+Detection)</a></li>
+</ul></li>
+<li><a href="#vision-models-for-navigation-executecuriosity"
+id="toc-vision-models-for-navigation-executecuriosity">3. Vision Models
+for Navigation (Execute/Curiosity)</a>
+<ul>
+<li><a href="#tier-1-best-for-navigation"
+id="toc-tier-1-best-for-navigation">Tier 1: Best for Navigation</a></li>
+<li><a href="#tier-2-acceptable-for-navigation"
+id="toc-tier-2-acceptable-for-navigation">Tier 2: Acceptable for
+Navigation</a></li>
+<li><a href="#not-suitable-for-navigation"
+id="toc-not-suitable-for-navigation">NOT Suitable for
+Navigation</a></li>
+</ul></li>
+<li><a href="#vision-models-for-analysis-analyze-phase"
+id="toc-vision-models-for-analysis-analyze-phase">4. Vision Models for
+Analysis (Analyze Phase)</a>
+<ul>
+<li><a href="#tier-1-best-for-analysis"
+id="toc-tier-1-best-for-analysis">Tier 1: Best for Analysis</a></li>
+<li><a href="#tier-2-good-for-analysis"
+id="toc-tier-2-good-for-analysis">Tier 2: Good for Analysis</a></li>
+</ul></li>
+<li><a href="#chat-models-for-planning-learnplan"
+id="toc-chat-models-for-planning-learnplan">5. Chat Models for Planning
+(Learn/Plan)</a>
+<ul>
+<li><a href="#tier-1-best-for-planning"
+id="toc-tier-1-best-for-planning">Tier 1: Best for Planning</a></li>
+<li><a href="#tier-2-budget-options" id="toc-tier-2-budget-options">Tier
+2: Budget Options</a></li>
+</ul></li>
+<li><a href="#local-open-source-models"
+id="toc-local-open-source-models">6. Local &amp; Open-Source Models</a>
+<ul>
+<li><a href="#vision-models-for-executecuriosity-when-used-locally"
+id="toc-vision-models-for-executecuriosity-when-used-locally">Vision
+Models (for Execute/Curiosity when used locally)</a></li>
+<li><a href="#chat-models-for-planlearn-when-used-locally"
+id="toc-chat-models-for-planlearn-when-used-locally">Chat Models (for
+Plan/Learn when used locally)</a></li>
+<li><a href="#distributed-inference-llama.cpp-rpc"
+id="toc-distributed-inference-llama.cpp-rpc">Distributed Inference
+(llama.cpp RPC)</a></li>
+</ul></li>
+<li><a href="#bridged-cli-models" id="toc-bridged-cli-models">7. Bridged
+CLI Models</a>
+<ul>
+<li><a href="#available-bridges" id="toc-available-bridges">Available
+Bridges</a></li>
+<li><a href="#when-to-use-bridged-models"
+id="toc-when-to-use-bridged-models">When to Use Bridged Models</a></li>
+</ul></li>
+<li><a href="#specialized-vision-apis"
+id="toc-specialized-vision-apis">8. Specialized Vision APIs</a>
+<ul>
+<li><a href="#astica.ai-vision" id="toc-astica.ai-vision">Astica.AI
+Vision</a></li>
+<li><a href="#google-cloud-vision-api"
+id="toc-google-cloud-vision-api">Google Cloud Vision API</a></li>
+</ul></li>
+<li><a href="#cost-analysis" id="toc-cost-analysis">9. Cost Analysis</a>
+<ul>
+<li><a
+href="#per-session-cost-estimate-50-step-curiosity-15-tests-analysis"
+id="toc-per-session-cost-estimate-50-step-curiosity-15-tests-analysis">Per-Session
+Cost Estimate (50-step curiosity + 15 tests + analysis)</a></li>
+<li><a href="#monthly-cost-at-10-sessionsday"
+id="toc-monthly-cost-at-10-sessionsday">Monthly Cost at 10
+Sessions/Day</a></li>
+</ul></li>
+<li><a href="#recommended-configuration"
+id="toc-recommended-configuration">10. Recommended Configuration</a>
+<ul>
+<li><a href="#primary-cloud-only-budget-optimized"
+id="toc-primary-cloud-only-budget-optimized">Primary (Cloud-Only,
+Budget-Optimized)</a></li>
+<li><a href="#with-local-fallback" id="toc-with-local-fallback">With
+Local Fallback</a></li>
+<li><a href="#enterprise-maximum-quality"
+id="toc-enterprise-maximum-quality">Enterprise (Maximum
+Quality)</a></li>
+</ul></li>
+<li><a href="#revolutionary-ideas" id="toc-revolutionary-ideas">11.
+Revolutionary Ideas</a>
+<ul>
+<li><a href="#multi-model-consensus-navigation"
+id="toc-multi-model-consensus-navigation">1. Multi-Model Consensus
+Navigation</a></li>
+<li><a href="#progressive-model-escalation"
+id="toc-progressive-model-escalation">2. Progressive Model
+Escalation</a></li>
+<li><a href="#screenshot-diffing-before-llm"
+id="toc-screenshot-diffing-before-llm">3. Screenshot Diffing Before
+LLM</a></li>
+<li><a href="#action-replay-buffer" id="toc-action-replay-buffer">4.
+Action Replay Buffer</a></li>
+<li><a href="#vision-model-fine-tuning"
+id="toc-vision-model-fine-tuning">5. Vision Model Fine-Tuning</a></li>
+<li><a href="#dual-screen-analysis" id="toc-dual-screen-analysis">6.
+Dual-Screen Analysis</a></li>
+<li><a href="#autonomous-bug-reproduction"
+id="toc-autonomous-bug-reproduction">7. Autonomous Bug
+Reproduction</a></li>
+<li><a href="#cross-device-visual-regression"
+id="toc-cross-device-visual-regression">8. Cross-Device Visual
+Regression</a></li>
+</ul></li>
+<li><a href="#sources" id="toc-sources">12. Sources</a></li>
+</ul></li>
+</ul>
+</nav>
+<h1 id="helixqa-vision-chat-models-comprehensive-research">HelixQA
+Vision &amp; Chat Models — Comprehensive Research</h1>
+<p><strong>Date</strong>: 2026-03-31 <strong>Author</strong>: AI
+Research (Claude Opus 4.6) <strong>Purpose</strong>: Guide model
+selection for each HelixQA autonomous QA pipeline phase</p>
+<hr />
+<h2 id="table-of-contents">Table of Contents</h2>
+<ol type="1">
+<li><a href="#1-executive-summary">Executive Summary</a></li>
+<li><a href="#2-phase-requirements-analysis">Phase Requirements
+Analysis</a></li>
+<li><a href="#3-vision-models-for-navigation">Vision Models for
+Navigation (Execute/Curiosity)</a></li>
+<li><a href="#4-vision-models-for-analysis">Vision Models for Analysis
+(Analyze Phase)</a></li>
+<li><a href="#5-chat-models-for-planning">Chat Models for Planning
+(Learn/Plan)</a></li>
+<li><a href="#6-local-open-source-models">Local &amp; Open-Source
+Models</a></li>
+<li><a href="#7-bridged-cli-models">Bridged CLI Models</a></li>
+<li><a href="#8-specialized-vision-apis">Specialized Vision
+APIs</a></li>
+<li><a href="#9-cost-analysis">Cost Analysis</a></li>
+<li><a href="#10-recommended-configuration">Recommended
+Configuration</a></li>
+<li><a href="#11-revolutionary-ideas">Revolutionary Ideas</a></li>
+<li><a href="#12-sources">Sources</a></li>
+</ol>
+<hr />
+<h2 id="executive-summary">1. Executive Summary</h2>
+<p>HelixQA’s autonomous QA pipeline has 5 distinct phases, each with
+different model requirements. Using a single model for all phases is
+suboptimal — <strong>navigation needs fast JSON-producing
+models</strong>, while <strong>analysis needs rich descriptive
+models</strong>, and <strong>planning needs strong reasoning
+models</strong>.</p>
+<h3 id="key-findings">Key Findings</h3>
+<table>
+<colgroup>
+<col style="width: 14%" />
+<col style="width: 33%" />
+<col style="width: 39%" />
+<col style="width: 12%" />
+</colgroup>
+<thead>
+<tr>
+<th>Phase</th>
+<th>Best Model Type</th>
+<th>Top Recommendation</th>
+<th>Cost</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Learn</strong></td>
+<td>Large-context chat</td>
+<td>Gemini 2.5 Flash (1M context)</td>
+<td>Free tier</td>
+</tr>
+<tr>
+<td><strong>Plan</strong></td>
+<td>Strong reasoning</td>
+<td>Claude Sonnet 4 / Gemini 2.5 Pro</td>
+<td>$0.003-2/1M tokens</td>
+</tr>
+<tr>
+<td><strong>Execute/Curiosity</strong></td>
+<td>Fast JSON vision</td>
+<td>Gemini 2.5 Flash / Kimi K2.5</td>
+<td>$0.10-0.60/1M tokens</td>
+</tr>
+<tr>
+<td><strong>Analyze</strong></td>
+<td>Rich vision description</td>
+<td>Astica Vision 2.5 / GPT-4o</td>
+<td>$0.001-5/1M tokens</td>
+</tr>
+</tbody>
+</table>
+<h3 id="critical-insight">Critical Insight</h3>
+<p><strong>Astica.AI excels at image analysis</strong> (OCR, object
+detection, captioning) but <strong>cannot produce structured JSON
+navigation commands</strong>. It must be used ONLY for the Analyze
+phase, NOT for Execute/Curiosity. This is the root cause of the “stuck
+on search screen” issue.</p>
+<hr />
+<h2 id="phase-requirements-analysis">2. Phase Requirements Analysis</h2>
+<h3 id="phase-1-learn-knowledge-base-loading">Phase 1: Learn (Knowledge
+Base Loading)</h3>
+<ul>
+<li><strong>Task</strong>: Load project documentation, parse screens,
+extract endpoints</li>
+<li><strong>Model needs</strong>: Large context window (&gt;100K
+tokens), fast processing, text-only</li>
+<li><strong>Vision needed</strong>: No</li>
+<li><strong>JSON output needed</strong>: No</li>
+<li><strong>Speed priority</strong>: Medium (runs once per session)</li>
+</ul>
+<h3 id="phase-2-plan-test-generation">Phase 2: Plan (Test
+Generation)</h3>
+<ul>
+<li><strong>Task</strong>: Generate test cases from knowledge base
+context</li>
+<li><strong>Model needs</strong>: Strong reasoning, structured output
+(test case format)</li>
+<li><strong>Vision needed</strong>: No</li>
+<li><strong>JSON output needed</strong>: Yes (test plan structure)</li>
+<li><strong>Speed priority</strong>: Low (runs once per session)</li>
+</ul>
+<h3 id="phase-3-execute-test-execution">Phase 3: Execute (Test
+Execution)</h3>
+<ul>
+<li><strong>Task</strong>: Take screenshots, analyze UI state, produce
+navigation actions</li>
+<li><strong>Model needs</strong>: Vision + JSON output + fast
+response</li>
+<li><strong>Vision needed</strong>: YES (critical)</li>
+<li><strong>JSON output needed</strong>: YES (critical — must produce
+<code>[{"type":"dpad_down","reason":"..."}]</code>)</li>
+<li><strong>Speed priority</strong>: HIGH (called per test step, 10-50
+times per session)</li>
+</ul>
+<h3 id="phase-3.5-curiosity-free-exploration">Phase 3.5: Curiosity (Free
+Exploration)</h3>
+<ul>
+<li><strong>Task</strong>: Same as Execute but open-ended
+exploration</li>
+<li><strong>Model needs</strong>: Same as Execute +
+creativity/exploration instinct</li>
+<li><strong>Vision needed</strong>: YES</li>
+<li><strong>JSON output needed</strong>: YES</li>
+<li><strong>Speed priority</strong>: HIGH (called 50+ times per
+session)</li>
+</ul>
+<h3 id="phase-4-analyze-issue-detection">Phase 4: Analyze (Issue
+Detection)</h3>
+<ul>
+<li><strong>Task</strong>: Analyze screenshots for visual bugs, UI
+issues, accessibility problems</li>
+<li><strong>Model needs</strong>: Rich image description, detail
+detection, OCR</li>
+<li><strong>Vision needed</strong>: YES (critical)</li>
+<li><strong>JSON output needed</strong>: No (natural language
+descriptions preferred)</li>
+<li><strong>Speed priority</strong>: Low (runs once on selected
+screenshots)</li>
+</ul>
+<hr />
+<h2 id="vision-models-for-navigation-executecuriosity">3. Vision Models
+for Navigation (Execute/Curiosity)</h2>
+<p>These models must produce <strong>valid JSON action arrays</strong>
+from screenshots. Natural language descriptions are USELESS here.</p>
+<h3 id="tier-1-best-for-navigation">Tier 1: Best for Navigation</h3>
+<table style="width:100%;">
+<colgroup>
+<col style="width: 12%" />
+<col style="width: 18%" />
+<col style="width: 23%" />
+<col style="width: 12%" />
+<col style="width: 16%" />
+<col style="width: 16%" />
+</colgroup>
+<thead>
+<tr>
+<th>Model</th>
+<th>Provider</th>
+<th>JSON Quality</th>
+<th>Speed</th>
+<th>Cost/1M</th>
+<th>Context</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Gemini 2.5 Flash</strong></td>
+<td>Google</td>
+<td>Excellent</td>
+<td>800ms</td>
+<td>$0.10</td>
+<td>1M tokens</td>
+</tr>
+<tr>
+<td><strong>Kimi K2.5</strong></td>
+<td>Moonshot</td>
+<td>Very Good</td>
+<td>1000ms</td>
+<td>$0.60</td>
+<td>256K tokens</td>
+</tr>
+<tr>
+<td><strong>GPT-4o</strong></td>
+<td>OpenAI</td>
+<td>Excellent</td>
+<td>1200ms</td>
+<td>$5.00</td>
+<td>128K tokens</td>
+</tr>
+<tr>
+<td><strong>Claude Sonnet 4</strong></td>
+<td>Anthropic</td>
+<td>Good</td>
+<td>1500ms</td>
+<td>$3.00</td>
+<td>200K tokens</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Gemini 2.5 Flash</strong> is the clear winner for navigation:
+- Produces clean JSON arrays consistently - Fastest response time
+(~800ms) - Cheapest ($0.10/1M tokens) - 1M token context window - Native
+multimodal (no separate vision API) - Free tier available (generous
+quota)</p>
+<p><strong>Kimi K2.5</strong> is the best budget alternative: -
+MIT-licensed architecture - $0.60/1M tokens - Native vision capabilities
+- Good JSON compliance</p>
+<h3 id="tier-2-acceptable-for-navigation">Tier 2: Acceptable for
+Navigation</h3>
+<table>
+<thead>
+<tr>
+<th>Model</th>
+<th>Provider</th>
+<th>Notes</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>NVIDIA Llama 3.2 90B</td>
+<td>NVIDIA</td>
+<td>Good but unreliable (500 errors)</td>
+</tr>
+<tr>
+<td>GitHub Models (GPT-4o)</td>
+<td>GitHub</td>
+<td>Free but rate-limited</td>
+</tr>
+<tr>
+<td>Qwen3-VL</td>
+<td>Alibaba</td>
+<td>~90% UI grounding accuracy</td>
+</tr>
+<tr>
+<td>Step-GUI</td>
+<td>Stepfun</td>
+<td>GUI-specialized but early stage</td>
+</tr>
+</tbody>
+</table>
+<h3 id="not-suitable-for-navigation">NOT Suitable for Navigation</h3>
+<table>
+<colgroup>
+<col style="width: 31%" />
+<col style="width: 45%" />
+<col style="width: 22%" />
+</colgroup>
+<thead>
+<tr>
+<th>Model</th>
+<th>Provider</th>
+<th>Why</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Astica Vision</strong></td>
+<td>Astica.AI</td>
+<td>Returns descriptions, NOT JSON arrays</td>
+</tr>
+<tr>
+<td><strong>xAI Grok</strong></td>
+<td>xAI</td>
+<td>Inconsistent JSON format</td>
+</tr>
+<tr>
+<td>Local Ollama (minicpm-v)</td>
+<td>Ollama</td>
+<td>Too slow for interactive navigation</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2 id="vision-models-for-analysis-analyze-phase">4. Vision Models for
+Analysis (Analyze Phase)</h2>
+<p>These models analyze screenshots for bugs and UI issues. Rich,
+detailed descriptions are REQUIRED.</p>
+<h3 id="tier-1-best-for-analysis">Tier 1: Best for Analysis</h3>
+<table>
+<colgroup>
+<col style="width: 10%" />
+<col style="width: 14%" />
+<col style="width: 28%" />
+<col style="width: 7%" />
+<col style="width: 25%" />
+<col style="width: 13%" />
+</colgroup>
+<thead>
+<tr>
+<th>Model</th>
+<th>Provider</th>
+<th>Description Quality</th>
+<th>OCR</th>
+<th>Object Detection</th>
+<th>Cost/1M</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Astica Vision 2.5</strong></td>
+<td>Astica.AI</td>
+<td>Excellent</td>
+<td>Yes</td>
+<td>Yes</td>
+<td>~$0.001</td>
+</tr>
+<tr>
+<td><strong>GPT-4o</strong></td>
+<td>OpenAI</td>
+<td>Excellent</td>
+<td>Good</td>
+<td>Good</td>
+<td>$5.00</td>
+</tr>
+<tr>
+<td><strong>Gemini 2.5 Pro</strong></td>
+<td>Google</td>
+<td>Very Good</td>
+<td>Good</td>
+<td>Good</td>
+<td>$2.00</td>
+</tr>
+<tr>
+<td><strong>Claude Sonnet 4</strong></td>
+<td>Anthropic</td>
+<td>Very Good</td>
+<td>Good</td>
+<td>Basic</td>
+<td>$3.00</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Astica Vision 2.5</strong> is the clear winner for analysis:
+- Specialized vision API (not a general LLM doing vision) - Native OCR
+with word-level bounding boxes - Object detection with coordinates -
+Face detection with age/gender estimation - Content moderation
+(adult/racy/gore detection) - Brand/logo detection - Landmark
+identification - Color extraction - Custom prompt support via
+<code>gpt_prompt</code> - Very cheap per call</p>
+<h3 id="tier-2-good-for-analysis">Tier 2: Good for Analysis</h3>
+<table>
+<colgroup>
+<col style="width: 29%" />
+<col style="width: 41%" />
+<col style="width: 29%" />
+</colgroup>
+<thead>
+<tr>
+<th>Model</th>
+<th>Provider</th>
+<th>Notes</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>InternVL3-78B</strong></td>
+<td>Open Source</td>
+<td>State-of-the-art open-source VLM, 72.2 MMMU</td>
+</tr>
+<tr>
+<td><strong>GLM-4.6V</strong></td>
+<td>ZhipuAI</td>
+<td>Native tool use, 128K context</td>
+</tr>
+<tr>
+<td><strong>Pixtral</strong></td>
+<td>Mistral</td>
+<td>Efficient, good for structured content</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2 id="chat-models-for-planning-learnplan">5. Chat Models for Planning
+(Learn/Plan)</h2>
+<p>Text-only models for reasoning, planning, and report generation.</p>
+<h3 id="tier-1-best-for-planning">Tier 1: Best for Planning</h3>
+<table>
+<colgroup>
+<col style="width: 10%" />
+<col style="width: 15%" />
+<col style="width: 16%" />
+<col style="width: 13%" />
+<col style="width: 13%" />
+<col style="width: 29%" />
+</colgroup>
+<thead>
+<tr>
+<th>Model</th>
+<th>Provider</th>
+<th>Reasoning</th>
+<th>Context</th>
+<th>Cost/1M</th>
+<th>Structured Output</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Gemini 2.5 Pro</strong></td>
+<td>Google</td>
+<td>94.3% GPQA</td>
+<td>1M</td>
+<td>$2.00</td>
+<td>Excellent</td>
+</tr>
+<tr>
+<td><strong>Claude Sonnet 4</strong></td>
+<td>Anthropic</td>
+<td>92.8% GPQA</td>
+<td>200K</td>
+<td>$3.00</td>
+<td>Excellent</td>
+</tr>
+<tr>
+<td><strong>GPT-5.4</strong></td>
+<td>OpenAI</td>
+<td>92.8% GPQA</td>
+<td>128K</td>
+<td>$2.50</td>
+<td>Excellent</td>
+</tr>
+<tr>
+<td><strong>Gemini 2.5 Flash</strong></td>
+<td>Google</td>
+<td>~88% GPQA</td>
+<td>1M</td>
+<td>$0.10</td>
+<td>Very Good</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Gemini 2.5 Flash</strong> offers the best value: - 1M token
+context (fits entire project KB) - $0.10/1M tokens (100x cheaper than
+GPT-5) - Strong reasoning capabilities - Fast response times - Free tier
+with generous quota</p>
+<h3 id="tier-2-budget-options">Tier 2: Budget Options</h3>
+<table>
+<colgroup>
+<col style="width: 21%" />
+<col style="width: 30%" />
+<col style="width: 21%" />
+<col style="width: 27%" />
+</colgroup>
+<thead>
+<tr>
+<th>Model</th>
+<th>Provider</th>
+<th>Notes</th>
+<th>Cost/1M</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>DeepSeek Chat</strong></td>
+<td>DeepSeek</td>
+<td>Excellent reasoning, very cheap</td>
+<td>$0.14</td>
+</tr>
+<tr>
+<td><strong>Groq Llama 3.3 70B</strong></td>
+<td>Groq</td>
+<td>Fast inference, free tier</td>
+<td>$0.06</td>
+</tr>
+<tr>
+<td><strong>Cerebras Llama 3.3 70B</strong></td>
+<td>Cerebras</td>
+<td>Ultra-fast inference</td>
+<td>Free</td>
+</tr>
+<tr>
+<td><strong>Kimi K2.5</strong></td>
+<td>Moonshot</td>
+<td>Good reasoning, cheap</td>
+<td>$0.60</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2 id="local-open-source-models">6. Local &amp; Open-Source Models</h2>
+<p>For when cloud APIs are unavailable or for privacy/cost reasons.</p>
+<h3 id="vision-models-for-executecuriosity-when-used-locally">Vision
+Models (for Execute/Curiosity when used locally)</h3>
+<table>
+<thead>
+<tr>
+<th>Model</th>
+<th>Size</th>
+<th>RAM Needed</th>
+<th>GPU Needed</th>
+<th>Quality</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>MiniCPM-V 2.6</strong></td>
+<td>8B</td>
+<td>8GB</td>
+<td>6GB VRAM</td>
+<td>Good for simple navigation</td>
+</tr>
+<tr>
+<td><strong>LLaVA 1.6 Mistral</strong></td>
+<td>7B</td>
+<td>8GB</td>
+<td>6GB VRAM</td>
+<td>Acceptable, slower</td>
+</tr>
+<tr>
+<td><strong>LLaVA 13B</strong></td>
+<td>13B</td>
+<td>16GB</td>
+<td>8GB VRAM</td>
+<td>Better quality, slower</td>
+</tr>
+<tr>
+<td><strong>InternVL2-8B</strong></td>
+<td>8B</td>
+<td>8GB</td>
+<td>6GB VRAM</td>
+<td>Strong UI understanding</td>
+</tr>
+<tr>
+<td><strong>Qwen2.5-VL-7B</strong></td>
+<td>7B</td>
+<td>8GB</td>
+<td>6GB VRAM</td>
+<td>~90% UI grounding</td>
+</tr>
+</tbody>
+</table>
+<h3 id="chat-models-for-planlearn-when-used-locally">Chat Models (for
+Plan/Learn when used locally)</h3>
+<table>
+<thead>
+<tr>
+<th>Model</th>
+<th>Size</th>
+<th>RAM</th>
+<th>Quality</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Llama 3.3 70B</strong></td>
+<td>70B (Q4)</td>
+<td>40GB</td>
+<td>Near-GPT-4 quality</td>
+</tr>
+<tr>
+<td><strong>Qwen3 8B</strong></td>
+<td>8B</td>
+<td>8GB</td>
+<td>Good for basic planning</td>
+</tr>
+<tr>
+<td><strong>DeepSeek R1 8B</strong></td>
+<td>8B</td>
+<td>8GB</td>
+<td>Strong reasoning</td>
+</tr>
+</tbody>
+</table>
+<h3 id="distributed-inference-llama.cpp-rpc">Distributed Inference
+(llama.cpp RPC)</h3>
+<p>When a single machine can’t run a large model, distribute across
+multiple hosts: - <strong>Master</strong> (GPU host): Runs
+<code>llama-server</code> with
+<code>--rpc worker1:port,worker2:port</code> - <strong>Workers</strong>
+(CPU/GPU hosts): Run <code>rpc-server</code> contributing RAM/VRAM -
+<strong>Model</strong>: Split across layers — each worker computes
+assigned layers</p>
+<p><strong>Tested configuration</strong>: thinker.local (RTX 3060 6GB) +
+amber.local (16GB RAM) = combined 22GB+ for model inference.</p>
+<p><strong>Important</strong>: Local models are 10-100x slower than
+cloud APIs for multimodal inference. Use them as fallback, not primary
+for interactive QA sessions.</p>
+<hr />
+<h2 id="bridged-cli-models">7. Bridged CLI Models</h2>
+<p>Models accessible via CLI tools running on the developer’s
+machine.</p>
+<h3 id="available-bridges">Available Bridges</h3>
+<table>
+<colgroup>
+<col style="width: 30%" />
+<col style="width: 24%" />
+<col style="width: 24%" />
+<col style="width: 21%" />
+</colgroup>
+<thead>
+<tr>
+<th>CLI Tool</th>
+<th>Models</th>
+<th>Vision</th>
+<th>Notes</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Claude Code</strong> (<code>claude</code>)</td>
+<td>Claude Sonnet 4, Opus 4.6</td>
+<td>Yes</td>
+<td>Uses OAuth token, product-restricted</td>
+</tr>
+<tr>
+<td><strong>Qwen Code</strong> (<code>qwen-coder</code>)</td>
+<td>Qwen3 Coder</td>
+<td>No</td>
+<td>Code-focused</td>
+</tr>
+<tr>
+<td><strong>OpenCode/Zen</strong> (<code>opencode</code>)</td>
+<td>Various</td>
+<td>No</td>
+<td>Multi-model orchestration</td>
+</tr>
+</tbody>
+</table>
+<h3 id="when-to-use-bridged-models">When to Use Bridged Models</h3>
+<p>Bridged models are useful when: 1. You have a CLI subscription but no
+API key 2. The CLI handles authentication (OAuth) 3. You want to use the
+same model the developer uses 4. Cost is handled by the CLI subscription
+(not per-token)</p>
+<p><strong>Limitations</strong>: Slower than direct API (CLI startup
+overhead), no streaming in some cases, session management
+complexity.</p>
+<hr />
+<h2 id="specialized-vision-apis">8. Specialized Vision APIs</h2>
+<h3 id="astica.ai-vision">Astica.AI Vision</h3>
+<p><strong>API Endpoint</strong>:
+<code>https://vision.astica.ai/describe</code>
+<strong>Authentication</strong>: Token in request body (<code>tkn</code>
+field) <strong>Features</strong>: - Image captioning (confidence-scored)
+- Detailed GPT-powered descriptions (<code>caption_GPTS</code>) - Object
+detection with bounding boxes - Face detection (age, gender) - Text
+recognition (OCR) with word-level bounding boxes - Content moderation
+(adult, racy, gore scores) - Brand/logo detection - Landmark
+identification - Color extraction (dominant + accent) - Custom prompts
+via <code>gpt_prompt</code> parameter</p>
+<p><strong>Best for</strong>: Phase 4 (Analyze) — rich, multi-faceted
+image analysis <strong>Not suitable for</strong>: Phase 3
+(Execute/Curiosity) — cannot produce JSON action arrays</p>
+<h3 id="google-cloud-vision-api">Google Cloud Vision API</h3>
+<p>Alternative specialized vision API with similar capabilities but
+higher cost.</p>
+<hr />
+<h2 id="cost-analysis">9. Cost Analysis</h2>
+<h3
+id="per-session-cost-estimate-50-step-curiosity-15-tests-analysis">Per-Session
+Cost Estimate (50-step curiosity + 15 tests + analysis)</h3>
+<table>
+<colgroup>
+<col style="width: 20%" />
+<col style="width: 25%" />
+<col style="width: 22%" />
+<col style="width: 22%" />
+<col style="width: 10%" />
+</colgroup>
+<thead>
+<tr>
+<th>Configuration</th>
+<th>Navigation Cost</th>
+<th>Analysis Cost</th>
+<th>Planning Cost</th>
+<th>Total</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Budget</strong> (Gemini Flash + Astica)</td>
+<td>$0.005</td>
+<td>$0.002</td>
+<td>$0.001</td>
+<td><strong>~$0.008</strong></td>
+</tr>
+<tr>
+<td><strong>Balanced</strong> (Gemini Flash + GPT-4o)</td>
+<td>$0.005</td>
+<td>$0.025</td>
+<td>$0.005</td>
+<td><strong>~$0.035</strong></td>
+</tr>
+<tr>
+<td><strong>Premium</strong> (GPT-4o + Astica + Claude)</td>
+<td>$0.025</td>
+<td>$0.002</td>
+<td>$0.015</td>
+<td><strong>~$0.042</strong></td>
+</tr>
+<tr>
+<td><strong>Free</strong> (Gemini free tier + Astica free)</td>
+<td>$0.00</td>
+<td>$0.00</td>
+<td>$0.00</td>
+<td><strong>$0.00</strong></td>
+</tr>
+<tr>
+<td><strong>Local only</strong> (Ollama)</td>
+<td>$0.00</td>
+<td>$0.00</td>
+<td>$0.00</td>
+<td><strong>$0.00</strong></td>
+</tr>
+</tbody>
+</table>
+<p><strong>Recommendation</strong>: Budget configuration
+($0.008/session) provides excellent results at negligible cost.</p>
+<h3 id="monthly-cost-at-10-sessionsday">Monthly Cost at 10
+Sessions/Day</h3>
+<table>
+<thead>
+<tr>
+<th>Config</th>
+<th>Daily</th>
+<th>Monthly</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Budget</td>
+<td>$0.08</td>
+<td>$2.40</td>
+</tr>
+<tr>
+<td>Balanced</td>
+<td>$0.35</td>
+<td>$10.50</td>
+</tr>
+<tr>
+<td>Premium</td>
+<td>$0.42</td>
+<td>$12.60</td>
+</tr>
+<tr>
+<td>Free/Local</td>
+<td>$0.00</td>
+<td>$0.00</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2 id="recommended-configuration">10. Recommended Configuration</h2>
+<h3 id="primary-cloud-only-budget-optimized">Primary (Cloud-Only,
+Budget-Optimized)</h3>
+<pre class="env"><code># Navigation (Execute/Curiosity) — Gemini Flash first
+GEMINI_API_KEY=your_key
+# Analysis (Analyze) — Astica first
+ASTICA_API_KEY=your_key
+# Planning (Learn/Plan) — Same Gemini (reasoning + context)
+# (uses GEMINI_API_KEY above)
+
+# Fallbacks
+KIMI_API_KEY=your_key      # Budget navigation fallback
+NVIDIA_API_KEY=your_key    # Free navigation fallback</code></pre>
+<h3 id="with-local-fallback">With Local Fallback</h3>
+<pre class="env"><code># Cloud (primary)
+GEMINI_API_KEY=your_key
+ASTICA_API_KEY=your_key
+KIMI_API_KEY=your_key
+
+# Local (fallback when cloud unavailable)
+HELIX_OLLAMA_URL=http://thinker.local:11434
+HELIX_OLLAMA_MODEL=minicpm-v:8b</code></pre>
+<h3 id="enterprise-maximum-quality">Enterprise (Maximum Quality)</h3>
+<pre class="env"><code>OPENAI_API_KEY=your_key        # GPT-4o for premium navigation
+ANTHROPIC_API_KEY=your_key     # Claude for planning
+GEMINI_API_KEY=your_key        # Gemini for large context
+ASTICA_API_KEY=your_key        # Astica for analysis
+KIMI_API_KEY=your_key          # Budget fallback</code></pre>
+<hr />
+<h2 id="revolutionary-ideas">11. Revolutionary Ideas</h2>
+<h3 id="multi-model-consensus-navigation">1. Multi-Model Consensus
+Navigation</h3>
+<p>Instead of using one model for navigation, send the same screenshot
+to 3 models simultaneously and use majority-vote on the action. This
+dramatically reduces wrong actions.</p>
+<h3 id="progressive-model-escalation">2. Progressive Model
+Escalation</h3>
+<p>Start with the cheapest model (Gemini Flash). If it returns
+empty/invalid JSON 3 times, escalate to the next tier (Kimi → GPT-4o →
+Claude). This minimizes cost while maximizing reliability.</p>
+<h3 id="screenshot-diffing-before-llm">3. Screenshot Diffing Before
+LLM</h3>
+<p>Before sending a screenshot to the LLM, diff it against the previous
+screenshot. If SSIM &gt; 0.99 (nearly identical), the action had no
+effect — retry with a different action WITHOUT calling the LLM again.
+Saves 30-50% of API calls.</p>
+<h3 id="action-replay-buffer">4. Action Replay Buffer</h3>
+<p>Record all successful action sequences (login → browse → detail →
+play). On subsequent sessions, try replaying known-good sequences before
+falling back to LLM navigation. Saves cost and improves speed.</p>
+<h3 id="vision-model-fine-tuning">5. Vision Model Fine-Tuning</h3>
+<p>Fine-tune a small local model (MiniCPM-V 2.6) specifically on
+Catalogizer screenshots + correct action pairs. After 100 sessions of
+data, the local model could handle 80% of navigation without cloud API
+calls.</p>
+<h3 id="dual-screen-analysis">6. Dual-Screen Analysis</h3>
+<p>For Android TV testing, capture BOTH the TV screen (via ADB
+screencap) AND the Android TV launcher state (via UI automator dump).
+Send both to the LLM for richer context.</p>
+<h3 id="autonomous-bug-reproduction">7. Autonomous Bug Reproduction</h3>
+<p>When the Analyze phase finds a bug, automatically attempt to
+reproduce it by replaying the action sequence that led to the buggy
+state. If reproducible, add it to a regression test suite.</p>
+<h3 id="cross-device-visual-regression">8. Cross-Device Visual
+Regression</h3>
+<p>Run the same test flow on multiple devices simultaneously, capture
+screenshots at each step, and use vision models to detect visual
+differences between devices (layout shifts, missing elements, scaling
+issues).</p>
+<hr />
+<h2 id="sources">12. Sources</h2>
+<ul>
+<li><a
+href="https://courses.cs.washington.edu/courses/cse503/25wi/final-reports/Using%20Vision%20LLMs%20For%20UI%20Testing.pdf">Using
+Vision LLMs For UI Testing (UW CSE 503)</a></li>
+<li><a
+href="https://www.ionio.ai/blog/how-we-automate-ui-testing-with-multimodal-llms-llama-3-2-and-gemini-api">UI
+Testing Automation with Llama 3.2 and Gemini API (Ionio)</a></li>
+<li><a
+href="https://www.drizz.dev/post/vision-language-models-the-next-frontier-in-ai-powered-mobile-app-testing">Vision
+Language Models in Mobile App Testing (Drizz)</a></li>
+<li><a
+href="https://www.datacamp.com/blog/top-vision-language-models">Top 10
+Vision Language Models 2026 (DataCamp)</a></li>
+<li><a
+href="https://www.bentoml.com/blog/multimodal-ai-a-guide-to-open-source-vision-language-models">Open-Source
+Vision Language Models (BentoML)</a></li>
+<li><a href="https://visionvix.com/best-llm-for-vision/">Best LLMs for
+Vision 2026 (VisionVix)</a></li>
+<li><a href="https://lmcouncil.ai/benchmarks">AI Model Benchmarks Mar
+2026 (LM Council)</a></li>
+<li><a
+href="https://intuitionlabs.ai/articles/ai-api-pricing-comparison-grok-gemini-openai-claude">AI
+API Pricing Comparison 2026 (IntuitionLabs)</a></li>
+<li><a href="https://artificialanalysis.ai">AI Model &amp; API Analysis
+(Artificial Analysis)</a></li>
+<li><a href="https://www.virtuosoqa.com/post/best-ai-testing-tools">Best
+AI Testing Tools 2026 (Virtuoso QA)</a></li>
+<li><a href="https://localllm.in/blog/best-local-llms-16gb-vram">Best
+Local LLMs for 16GB VRAM (LocalLLM)</a></li>
+<li><a
+href="https://www.labellerr.com/blog/top-open-source-vision-language-models/">Open-Source
+VLMs 2026 (Labellerr)</a></li>
+<li><a href="https://astica.ai/vision/documentation/">Astica Vision API
+Documentation</a></li>
+<li><a href="https://github.com/videolan/vlc">VLC Media Player Source
+Code (VideoLAN)</a></li>
+</ul>
+</body>
+</html>
