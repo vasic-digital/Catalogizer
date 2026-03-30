@@ -6,9 +6,19 @@ import androidx.compose.foundation.focusable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
-import androidx.compose.material3.*
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Clear
+import androidx.compose.material.icons.filled.Search
+// material3-only composables (no TV equivalent)
+import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.OutlinedTextFieldDefaults
+import androidx.compose.material3.Icon as M3Icon
+import androidx.compose.material3.Text as M3Text
+import androidx.compose.material3.IconButton as M3IconButton
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.ExperimentalComposeUiApi
@@ -25,6 +35,7 @@ import androidx.compose.ui.input.key.type
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.unit.dp
+// TV material3 for everything else
 import androidx.tv.material3.*
 import androidx.lifecycle.viewModelScope
 import com.catalogizer.androidtv.data.models.MediaItem
@@ -51,6 +62,15 @@ fun SearchScreen(
     val searchButtonFocusRequester = remember { FocusRequester() }
     val keyboardController = LocalSoftwareKeyboardController.current
 
+    // Colors derived from TV MaterialTheme for the OutlinedTextField
+    val tvColorScheme = MaterialTheme.colorScheme
+    val focusedBorderColor = tvColorScheme.primary
+    val unfocusedBorderColor = tvColorScheme.onSurface.copy(alpha = 0.5f)
+    val cursorColor = tvColorScheme.primary
+    val textColor = tvColorScheme.onSurface
+    val placeholderColor = tvColorScheme.onSurface.copy(alpha = 0.5f)
+    val containerColor = tvColorScheme.surface
+
     LaunchedEffect(Unit) {
         delay(100) // Small delay to ensure composable is laid out
         focusRequester.requestFocus()
@@ -70,19 +90,36 @@ fun SearchScreen(
                 horizontalArrangement = Arrangement.spacedBy(16.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                @OptIn(ExperimentalTvMaterial3Api::class)
-                TextField(
+                OutlinedTextField(
                     value = searchQuery,
                     onValueChange = { newValue: String -> viewModel.updateSearchQuery(newValue) },
-                    label = { Text("Search Media") },
                     placeholder = {
-                        Text(
+                        M3Text(
                             text = "Search movies, shows, music, games, books...",
-                            color = Color.White.copy(alpha = 0.5f)
+                            color = placeholderColor
                         )
+                    },
+                    leadingIcon = {
+                        M3Icon(
+                            imageVector = Icons.Default.Search,
+                            contentDescription = "Search",
+                            tint = unfocusedBorderColor
+                        )
+                    },
+                    trailingIcon = {
+                        if (searchQuery.isNotEmpty()) {
+                            M3IconButton(onClick = { viewModel.clearResults() }) {
+                                M3Icon(
+                                    imageVector = Icons.Default.Clear,
+                                    contentDescription = "Clear",
+                                    tint = unfocusedBorderColor
+                                )
+                            }
+                        }
                     },
                     modifier = Modifier
                         .weight(1f)
+                        .height(56.dp)
                         .focusRequester(focusRequester)
                         .focusable()
                         .onKeyEvent { keyEvent ->
@@ -106,7 +143,21 @@ fun SearchScreen(
                             viewModel.search()
                         }
                     ),
-                    singleLine = true
+                    singleLine = true,
+                    shape = RoundedCornerShape(12.dp),
+                    colors = OutlinedTextFieldDefaults.colors(
+                        focusedTextColor = textColor,
+                        unfocusedTextColor = textColor,
+                        focusedBorderColor = focusedBorderColor,
+                        unfocusedBorderColor = unfocusedBorderColor,
+                        cursorColor = cursorColor,
+                        focusedContainerColor = containerColor,
+                        unfocusedContainerColor = containerColor,
+                        focusedLeadingIconColor = focusedBorderColor,
+                        unfocusedLeadingIconColor = unfocusedBorderColor,
+                        focusedTrailingIconColor = focusedBorderColor,
+                        unfocusedTrailingIconColor = unfocusedBorderColor
+                    )
                 )
                 Button(
                     onClick = {
@@ -115,6 +166,7 @@ fun SearchScreen(
                     },
                     enabled = searchQuery.isNotBlank() && !isLoading,
                     modifier = Modifier
+                        .height(56.dp)
                         .focusRequester(searchButtonFocusRequester)
                         .onKeyEvent { keyEvent ->
                             if (keyEvent.type == KeyEventType.KeyDown && keyEvent.key == Key.DirectionLeft) {
@@ -128,7 +180,8 @@ fun SearchScreen(
                     if (isLoading) {
                         CircularProgressIndicator(
                             modifier = Modifier.size(24.dp),
-                            strokeWidth = 2.dp
+                            strokeWidth = 2.dp,
+                            color = tvColorScheme.onPrimary
                         )
                     } else {
                         Text("Search")
@@ -139,17 +192,19 @@ fun SearchScreen(
             // Error Message
             error?.let { errorMessage ->
                 Surface(
+                    onClick = {},
                     modifier = Modifier
                         .fillMaxWidth()
                         .padding(bottom = 16.dp),
-                    shape = androidx.tv.material3.MaterialTheme.shapes.medium,
-                    color = androidx.tv.material3.MaterialTheme.colorScheme.errorContainer,
-                    onClick = {} // Empty onClick for compatibility
+                    shape = ClickableSurfaceDefaults.shape(),
+                    colors = ClickableSurfaceDefaults.colors(
+                        containerColor = MaterialTheme.colorScheme.errorContainer
+                    )
                 ) {
                     Text(
                         text = errorMessage,
                         modifier = Modifier.padding(16.dp),
-                        style = androidx.tv.material3.MaterialTheme.typography.bodyMedium
+                        style = MaterialTheme.typography.bodyMedium
                     )
                 }
             }
@@ -159,8 +214,8 @@ fun SearchScreen(
                 Text(
                     text = "${searchResults.size} results found",
                     modifier = Modifier.padding(bottom = 16.dp),
-                    style = androidx.tv.material3.MaterialTheme.typography.labelLarge,
-                    color = androidx.tv.material3.MaterialTheme.colorScheme.onSurface.copy(alpha = 0.8f)
+                    style = MaterialTheme.typography.labelLarge,
+                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.8f)
                 )
 
                 LazyColumn(
@@ -188,13 +243,13 @@ fun SearchScreen(
                     ) {
                         Text(
                             text = "No results found for \"$searchQuery\"",
-                            style = androidx.tv.material3.MaterialTheme.typography.bodyLarge,
-                            color = androidx.tv.material3.MaterialTheme.colorScheme.onSurface.copy(alpha = 0.8f)
+                            style = MaterialTheme.typography.bodyLarge,
+                            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.8f)
                         )
                         Text(
                             text = "Try a different title, keyword, or check your spelling",
-                            style = androidx.tv.material3.MaterialTheme.typography.bodyMedium,
-                            color = androidx.tv.material3.MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
                         )
                     }
                 }
@@ -211,12 +266,12 @@ fun SearchScreen(
                     ) {
                         Text(
                             text = "Search for Media",
-                            style = androidx.tv.material3.MaterialTheme.typography.headlineMedium
+                            style = MaterialTheme.typography.headlineMedium
                         )
                         Text(
                             text = "Type a title, genre, or keyword above and press Search",
-                            style = androidx.tv.material3.MaterialTheme.typography.bodyLarge,
-                            color = androidx.tv.material3.MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
+                            style = MaterialTheme.typography.bodyLarge,
+                            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
                         )
                     }
                 }
@@ -232,16 +287,20 @@ fun SearchScreen(
                 contentAlignment = Alignment.Center
             ) {
                 Surface(
-                    shape = androidx.tv.material3.MaterialTheme.shapes.medium,
-                    color = androidx.tv.material3.MaterialTheme.colorScheme.surface,
-                    onClick = {}
+                    onClick = {},
+                    shape = ClickableSurfaceDefaults.shape(),
+                    colors = ClickableSurfaceDefaults.colors(
+                        containerColor = MaterialTheme.colorScheme.surface
+                    )
                 ) {
                     Column(
                         modifier = Modifier.padding(24.dp),
                         horizontalAlignment = Alignment.CenterHorizontally,
                         verticalArrangement = Arrangement.spacedBy(16.dp)
                     ) {
-                        CircularProgressIndicator()
+                        CircularProgressIndicator(
+                            color = tvColorScheme.primary
+                        )
                         Text("Searching...")
                     }
                 }

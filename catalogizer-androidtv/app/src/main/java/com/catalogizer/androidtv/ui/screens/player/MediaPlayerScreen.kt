@@ -1,29 +1,36 @@
+@file:OptIn(ExperimentalTvMaterial3Api::class)
 package com.catalogizer.androidtv.ui.screens.player
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.focusable
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
+// material3-only composables (no TV equivalent)
 import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.Icon as M3Icon
+import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.Slider
 import androidx.compose.material3.SliderDefaults
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.input.key.Key
 import androidx.compose.ui.input.key.KeyEventType
 import androidx.compose.ui.input.key.key
 import androidx.compose.ui.input.key.onKeyEvent
 import androidx.compose.ui.input.key.type
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.media3.common.C
 import androidx.media3.common.MediaItem
@@ -33,13 +40,19 @@ import androidx.media3.common.Tracks
 import androidx.media3.common.util.UnstableApi
 import androidx.media3.exoplayer.ExoPlayer
 import androidx.media3.ui.PlayerView
+// TV material3 for everything else
 import androidx.tv.material3.*
 import kotlinx.coroutines.flow.first
+
+// VLC-style accent color
+private val VlcOrange = Color(0xFFFF6600)
+private val OverlayDark = Color.Black.copy(alpha = 0.75f)
+private val OverlayGradientTop = listOf(Color.Black.copy(alpha = 0.85f), Color.Transparent)
+private val OverlayGradientBottom = listOf(Color.Transparent, Color.Black.copy(alpha = 0.85f))
 
 // Playback speed presets (VLC-style)
 private val speedOptions = listOf(0.25f, 0.5f, 0.75f, 1.0f, 1.25f, 1.5f, 2.0f, 3.0f)
 
-@OptIn(ExperimentalTvMaterial3Api::class)
 @androidx.annotation.OptIn(UnstableApi::class)
 @Composable
 fun MediaPlayerScreen(
@@ -229,7 +242,7 @@ fun MediaPlayerScreen(
                 }
             }
     ) {
-        // ExoPlayer View (native controls hidden — we use our own overlay)
+        // ExoPlayer View (native controls hidden -- we use our own overlay)
         if (exoPlayer != null) {
             AndroidView(
                 factory = { ctx ->
@@ -245,65 +258,101 @@ fun MediaPlayerScreen(
             )
         }
 
-        // Custom TV overlay controls
+        // VLC-style custom TV overlay controls
         if (exoPlayer != null && showControls) {
-            // Top gradient + title bar
+            // Full overlay container
             Column(
                 modifier = Modifier.fillMaxSize()
             ) {
-                // Top bar: Title + Back
+                // Top bar: Back + Title (VLC gradient)
                 Box(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .background(
-                            Brush.verticalGradient(
-                                listOf(Color.Black.copy(alpha = 0.8f), Color.Transparent)
-                            )
-                        )
+                        .background(Brush.verticalGradient(OverlayGradientTop))
                         .padding(horizontal = 24.dp, vertical = 16.dp)
                 ) {
                     Row(
                         modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(16.dp)
                     ) {
+                        // Back button (VLC style: circular)
+                        PlayerIconButton(
+                            icon = Icons.Default.ArrowBack,
+                            contentDescription = "Back",
+                            onClick = onNavigateBack,
+                            tint = Color.White,
+                            size = 36.dp
+                        )
                         Column(modifier = Modifier.weight(1f)) {
                             Text(
                                 text = resolvedTitle,
                                 style = MaterialTheme.typography.headlineSmall,
                                 color = Color.White,
                                 fontWeight = FontWeight.Bold,
-                                maxLines = 1
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis
                             )
                             if (playbackSpeed != 1.0f) {
                                 Text(
                                     text = "${playbackSpeed}x speed",
                                     style = MaterialTheme.typography.bodySmall,
-                                    color = Color.White.copy(alpha = 0.7f)
+                                    color = VlcOrange
                                 )
                             }
-                        }
-                        Button(onClick = onNavigateBack) {
-                            Text("Back")
                         }
                     }
                 }
 
                 Spacer(modifier = Modifier.weight(1f))
 
-                // Bottom bar: Progress + Controls
+                // Center play/pause button (large, VLC-style)
+                Box(
+                    modifier = Modifier.fillMaxWidth(),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Box(
+                        modifier = Modifier
+                            .size(72.dp)
+                            .clip(CircleShape)
+                            .background(VlcOrange.copy(alpha = 0.9f)),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Icon(
+                            imageVector = if (isPlaying) Icons.Default.Pause else Icons.Default.PlayArrow,
+                            contentDescription = if (isPlaying) "Pause" else "Play",
+                            tint = Color.White,
+                            modifier = Modifier.size(40.dp)
+                        )
+                    }
+                }
+
+                Spacer(modifier = Modifier.weight(1f))
+
+                // Bottom bar: Seekbar + Controls (VLC gradient)
                 Column(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .background(
-                            Brush.verticalGradient(
-                                listOf(Color.Transparent, Color.Black.copy(alpha = 0.8f))
-                            )
-                        )
+                        .background(Brush.verticalGradient(OverlayGradientBottom))
                         .padding(horizontal = 24.dp, vertical = 16.dp)
                 ) {
-                    // Progress bar
+                    // Progress / seek bar
                     if (duration > 0) {
+                        // Buffered progress underneath the slider
+                        Box(modifier = Modifier.fillMaxWidth()) {
+                            // Buffer indicator (thin bar behind slider)
+                            LinearProgressIndicator(
+                                progress = (bufferedPosition.toFloat() / duration.toFloat().coerceAtLeast(1f))
+                                    .coerceIn(0f, 1f),
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .height(4.dp)
+                                    .align(Alignment.Center),
+                                color = Color.White.copy(alpha = 0.3f),
+                                trackColor = Color.White.copy(alpha = 0.1f)
+                            )
+                        }
+
                         Row(
                             verticalAlignment = Alignment.CenterVertically,
                             modifier = Modifier.fillMaxWidth()
@@ -320,8 +369,8 @@ fun MediaPlayerScreen(
                                 valueRange = 0f..duration.toFloat().coerceAtLeast(1f),
                                 modifier = Modifier.weight(1f),
                                 colors = SliderDefaults.colors(
-                                    thumbColor = Color.White,
-                                    activeTrackColor = MaterialTheme.colorScheme.primary,
+                                    thumbColor = VlcOrange,
+                                    activeTrackColor = VlcOrange,
                                     inactiveTrackColor = Color.White.copy(alpha = 0.3f)
                                 )
                             )
@@ -336,86 +385,71 @@ fun MediaPlayerScreen(
 
                     Spacer(modifier = Modifier.height(8.dp))
 
-                    // Control buttons row
+                    // Control buttons row (VLC-style)
                     Row(
                         modifier = Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.SpaceEvenly,
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         // Seek backward 10s
-                        Button(onClick = { exoPlayer?.seekBack() }) {
-                            Row(
-                                verticalAlignment = Alignment.CenterVertically,
-                                horizontalArrangement = Arrangement.spacedBy(4.dp)
-                            ) {
-                                M3Icon(Icons.Default.Replay10, "Rewind 10s", Modifier.size(20.dp))
-                                Text("10s")
-                            }
-                        }
+                        PlayerControlButton(
+                            icon = Icons.Default.Replay10,
+                            label = "-10s",
+                            onClick = { exoPlayer?.seekBack() }
+                        )
 
                         // Play/Pause
-                        Button(
+                        PlayerControlButton(
+                            icon = if (isPlaying) Icons.Default.Pause else Icons.Default.PlayArrow,
+                            label = if (isPlaying) "Pause" else "Play",
                             onClick = {
-                                val p = exoPlayer ?: return@Button
+                                val p = exoPlayer ?: return@PlayerControlButton
                                 if (p.isPlaying) p.pause() else p.play()
-                            }
-                        ) {
-                            Row(
-                                verticalAlignment = Alignment.CenterVertically,
-                                horizontalArrangement = Arrangement.spacedBy(4.dp)
-                            ) {
-                                M3Icon(
-                                    if (isPlaying) Icons.Default.Pause else Icons.Default.PlayArrow,
-                                    if (isPlaying) "Pause" else "Play",
-                                    Modifier.size(24.dp)
-                                )
-                                Text(if (isPlaying) "Pause" else "Play")
-                            }
-                        }
+                            },
+                            accentColor = VlcOrange
+                        )
 
                         // Seek forward 10s
-                        Button(onClick = { exoPlayer?.seekForward() }) {
-                            Row(
-                                verticalAlignment = Alignment.CenterVertically,
-                                horizontalArrangement = Arrangement.spacedBy(4.dp)
-                            ) {
-                                M3Icon(Icons.Default.Forward10, "Forward 10s", Modifier.size(20.dp))
-                                Text("10s")
-                            }
-                        }
+                        PlayerControlButton(
+                            icon = Icons.Default.Forward10,
+                            label = "+10s",
+                            onClick = { exoPlayer?.seekForward() }
+                        )
 
                         // Speed control
-                        Button(onClick = { showSpeedMenu = !showSpeedMenu; showAudioMenu = false; showSubtitleMenu = false }) {
-                            Row(
-                                verticalAlignment = Alignment.CenterVertically,
-                                horizontalArrangement = Arrangement.spacedBy(4.dp)
-                            ) {
-                                M3Icon(Icons.Default.Speed, "Speed", Modifier.size(20.dp))
-                                Text("${playbackSpeed}x")
-                            }
-                        }
+                        PlayerControlButton(
+                            icon = Icons.Default.Speed,
+                            label = "${playbackSpeed}x",
+                            onClick = {
+                                showSpeedMenu = !showSpeedMenu
+                                showAudioMenu = false
+                                showSubtitleMenu = false
+                            },
+                            accentColor = if (playbackSpeed != 1.0f) VlcOrange else Color.White
+                        )
 
                         // Audio track
-                        Button(onClick = { showAudioMenu = !showAudioMenu; showSpeedMenu = false; showSubtitleMenu = false }) {
-                            Row(
-                                verticalAlignment = Alignment.CenterVertically,
-                                horizontalArrangement = Arrangement.spacedBy(4.dp)
-                            ) {
-                                M3Icon(Icons.Default.Audiotrack, "Audio", Modifier.size(20.dp))
-                                Text("Audio")
+                        PlayerControlButton(
+                            icon = Icons.Default.Audiotrack,
+                            label = "Audio",
+                            onClick = {
+                                showAudioMenu = !showAudioMenu
+                                showSpeedMenu = false
+                                showSubtitleMenu = false
                             }
-                        }
+                        )
 
                         // Subtitles
-                        Button(onClick = { showSubtitleMenu = !showSubtitleMenu; showSpeedMenu = false; showAudioMenu = false }) {
-                            Row(
-                                verticalAlignment = Alignment.CenterVertically,
-                                horizontalArrangement = Arrangement.spacedBy(4.dp)
-                            ) {
-                                M3Icon(Icons.Default.Subtitles, "Subtitles", Modifier.size(20.dp))
-                                Text(if (selectedSubtitleIndex >= 0) "On" else "Off")
-                            }
-                        }
+                        PlayerControlButton(
+                            icon = Icons.Default.Subtitles,
+                            label = if (selectedSubtitleIndex >= 0) "On" else "Off",
+                            onClick = {
+                                showSubtitleMenu = !showSubtitleMenu
+                                showSpeedMenu = false
+                                showAudioMenu = false
+                            },
+                            accentColor = if (selectedSubtitleIndex >= 0) VlcOrange else Color.White
+                        )
                     }
                 }
             }
@@ -444,7 +478,6 @@ fun MediaPlayerScreen(
                     selectedIndex = selectedAudioIndex,
                     onSelect = { index ->
                         selectedAudioIndex = index
-                        // ExoPlayer track selection would go here for real multi-audio content
                         showAudioMenu = false
                     },
                     onDismiss = { showAudioMenu = false }
@@ -460,10 +493,8 @@ fun MediaPlayerScreen(
                     selectedIndex = selectedSubtitleIndex + 1, // +1 for "Off" at index 0
                     onSelect = { index ->
                         selectedSubtitleIndex = index - 1
-                        // Disable/enable subtitle tracks
                         exoPlayer?.let { player ->
                             if (index == 0) {
-                                // Disable all text tracks
                                 player.trackSelectionParameters = player.trackSelectionParameters
                                     .buildUpon()
                                     .setTrackTypeDisabled(C.TRACK_TYPE_TEXT, true)
@@ -490,12 +521,19 @@ fun MediaPlayerScreen(
                 verticalArrangement = Arrangement.Center
             ) {
                 if (streamError != null) {
+                    Icon(
+                        imageVector = Icons.Default.ErrorOutline,
+                        contentDescription = "Error",
+                        tint = VlcOrange,
+                        modifier = Modifier.size(48.dp)
+                    )
+                    Spacer(modifier = Modifier.height(16.dp))
                     Text(
                         text = "Unable to Play Media",
                         style = MaterialTheme.typography.headlineSmall,
                         color = Color.White
                     )
-                    Spacer(modifier = Modifier.height(12.dp))
+                    Spacer(modifier = Modifier.height(8.dp))
                     Text(
                         text = streamError ?: "Playback unavailable",
                         style = MaterialTheme.typography.bodyLarge,
@@ -515,13 +553,21 @@ fun MediaPlayerScreen(
                         }
                     }
                 } else if (resolvedUrl.isEmpty()) {
-                    CircularProgressIndicator(color = Color.White)
+                    CircularProgressIndicator(color = VlcOrange)
                     Spacer(modifier = Modifier.height(12.dp))
-                    Text("Loading stream…", style = MaterialTheme.typography.bodyLarge, color = Color.White.copy(alpha = 0.7f))
+                    Text(
+                        text = "Loading stream...",
+                        style = MaterialTheme.typography.bodyLarge,
+                        color = Color.White.copy(alpha = 0.7f)
+                    )
                 } else {
-                    CircularProgressIndicator(color = Color.White)
+                    CircularProgressIndicator(color = VlcOrange)
                     Spacer(modifier = Modifier.height(8.dp))
-                    Text("Buffering…", style = MaterialTheme.typography.bodyLarge, color = Color.White.copy(alpha = 0.7f))
+                    Text(
+                        text = "Buffering...",
+                        style = MaterialTheme.typography.bodyLarge,
+                        color = Color.White.copy(alpha = 0.7f)
+                    )
                 }
             }
         }
@@ -536,6 +582,69 @@ fun MediaPlayerScreen(
     }
 }
 
+/**
+ * VLC-style control button using TV material3 Button with icon + label.
+ */
+@Composable
+private fun PlayerControlButton(
+    icon: ImageVector,
+    label: String,
+    onClick: () -> Unit,
+    accentColor: Color = Color.White
+) {
+    Button(onClick = onClick) {
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(4.dp)
+        ) {
+            Icon(
+                imageVector = icon,
+                contentDescription = label,
+                modifier = Modifier.size(20.dp),
+                tint = accentColor
+            )
+            Text(
+                text = label,
+                color = accentColor,
+                fontSize = 12.sp
+            )
+        }
+    }
+}
+
+/**
+ * Simple circular icon button for the top bar using a clickable Box.
+ */
+@Composable
+private fun PlayerIconButton(
+    icon: ImageVector,
+    contentDescription: String,
+    onClick: () -> Unit,
+    tint: Color = Color.White,
+    size: androidx.compose.ui.unit.Dp = 36.dp
+) {
+    Surface(
+        onClick = onClick,
+        modifier = Modifier.size(size),
+        shape = ClickableSurfaceDefaults.shape(shape = CircleShape),
+        colors = ClickableSurfaceDefaults.colors(
+            containerColor = Color.White.copy(alpha = 0.15f)
+        )
+    ) {
+        Box(
+            modifier = Modifier.fillMaxSize(),
+            contentAlignment = Alignment.Center
+        ) {
+            Icon(
+                imageVector = icon,
+                contentDescription = contentDescription,
+                tint = tint,
+                modifier = Modifier.size(size * 0.6f)
+            )
+        }
+    }
+}
+
 // Track info for audio/subtitle selection
 private data class TrackInfo(
     val label: String,
@@ -545,7 +654,6 @@ private data class TrackInfo(
 )
 
 // Overlay menu for speed/audio/subtitle selection (VLC-style)
-@OptIn(ExperimentalTvMaterial3Api::class)
 @Composable
 private fun OverlayMenu(
     title: String,
@@ -570,7 +678,7 @@ private fun OverlayMenu(
             Text(
                 text = title,
                 style = MaterialTheme.typography.titleMedium,
-                color = Color.White,
+                color = VlcOrange,
                 fontWeight = FontWeight.Bold
             )
             Spacer(modifier = Modifier.height(12.dp))
@@ -578,7 +686,9 @@ private fun OverlayMenu(
                 val isSelected = index == selectedIndex
                 Button(
                     onClick = { onSelect(index) },
-                    modifier = Modifier.fillMaxWidth().height(44.dp)
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(44.dp)
                 ) {
                     Row(
                         modifier = Modifier.fillMaxWidth(),
@@ -587,14 +697,14 @@ private fun OverlayMenu(
                     ) {
                         Text(
                             text = label,
-                            color = if (isSelected) MaterialTheme.colorScheme.primary else Color.White
+                            color = if (isSelected) VlcOrange else Color.White
                         )
                         if (isSelected) {
-                            M3Icon(
-                                Icons.Default.Check,
-                                "Selected",
+                            Icon(
+                                imageVector = Icons.Default.Check,
+                                contentDescription = "Selected",
                                 modifier = Modifier.size(18.dp),
-                                tint = MaterialTheme.colorScheme.primary
+                                tint = VlcOrange
                             )
                         }
                     }
@@ -604,7 +714,12 @@ private fun OverlayMenu(
                 }
             }
             Spacer(modifier = Modifier.height(8.dp))
-            Button(onClick = onDismiss, modifier = Modifier.fillMaxWidth().height(40.dp)) {
+            Button(
+                onClick = onDismiss,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(40.dp)
+            ) {
                 Text("Close")
             }
         }
