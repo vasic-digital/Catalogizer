@@ -507,6 +507,7 @@ func main() {
 	// Initialize handlers
 	catalogHandler := handlers.NewCatalogHandler(catalogService, smbService, logger)
 	downloadHandler := handlers.NewDownloadHandler(catalogService, smbService, cfg.Catalog.TempDir, cfg.Catalog.MaxArchiveSize, cfg.Catalog.DownloadChunkSize, logger)
+	streamHandler := handlers.NewStreamHandler(catalogService, databaseDB, clientFactory, logger)
 	copyHandler := handlers.NewCopyHandler(catalogService, smbService, cfg.Catalog.TempDir, logger)
 	smbDiscoveryHandler := handlers.NewSMBDiscoveryHandler(smbDiscoveryService, logger)
 	conversionHandler := root_handlers.NewConversionHandler(conversionService, authService)
@@ -862,6 +863,9 @@ func main() {
 		api.GET("/download/file/:id", downloadHandler.DownloadFile)
 		api.GET("/download/directory/*path", downloadHandler.DownloadDirectory)
 		api.POST("/download/archive", downloadHandler.DownloadArchive)
+
+		// Streaming endpoint — proxies file data from any storage backend (SMB, FTP, NFS, WebDAV, local)
+		api.GET("/stream/:id", streamHandler.StreamFile)
 
 		// File operations
 		api.POST("/copy/storage", copyHandler.CopyToStorage)

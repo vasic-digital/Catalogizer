@@ -752,7 +752,7 @@ func (h *MediaEntityHandler) StreamEntity(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{
 		"entity_id":  id,
 		"file_id":    primary.FileID,
-		"stream_url": fmt.Sprintf("/api/v1/download/file/%d", primary.FileID),
+		"stream_url": fmt.Sprintf("/api/v1/stream/%d", primary.FileID),
 	})
 }
 
