@@ -6,12 +6,8 @@ import androidx.compose.foundation.focusable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Clear
-import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -75,36 +71,18 @@ fun SearchScreen(
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 @OptIn(ExperimentalTvMaterial3Api::class)
-                OutlinedTextField(
+                TextField(
                     value = searchQuery,
                     onValueChange = { newValue: String -> viewModel.updateSearchQuery(newValue) },
+                    label = { Text("Search Media") },
                     placeholder = {
                         Text(
-                            text = "Search media...",
-                            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f)
+                            text = "Search movies, shows, music, games, books...",
+                            color = Color.White.copy(alpha = 0.5f)
                         )
-                    },
-                    leadingIcon = {
-                        Icon(
-                            imageVector = Icons.Default.Search,
-                            contentDescription = "Search",
-                            tint = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
-                        )
-                    },
-                    trailingIcon = {
-                        if (searchQuery.isNotEmpty()) {
-                            IconButton(onClick = { viewModel.updateSearchQuery("") }) {
-                                Icon(
-                                    imageVector = Icons.Default.Clear,
-                                    contentDescription = "Clear",
-                                    tint = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
-                                )
-                            }
-                        }
                     },
                     modifier = Modifier
                         .weight(1f)
-                        .height(56.dp)
                         .focusRequester(focusRequester)
                         .focusable()
                         .onKeyEvent { keyEvent ->
@@ -119,7 +97,6 @@ fun SearchScreen(
                                 false
                             }
                         },
-                    shape = RoundedCornerShape(12.dp),
                     keyboardOptions = KeyboardOptions(
                         imeAction = ImeAction.Search
                     ),
@@ -129,14 +106,7 @@ fun SearchScreen(
                             viewModel.search()
                         }
                     ),
-                    singleLine = true,
-                    colors = OutlinedTextFieldDefaults.colors(
-                        focusedBorderColor = MaterialTheme.colorScheme.primary,
-                        unfocusedBorderColor = MaterialTheme.colorScheme.outline,
-                        focusedContainerColor = MaterialTheme.colorScheme.surface,
-                        unfocusedContainerColor = MaterialTheme.colorScheme.surface,
-                        cursorColor = MaterialTheme.colorScheme.primary
-                    )
+                    singleLine = true
                 )
                 Button(
                     onClick = {
@@ -145,7 +115,6 @@ fun SearchScreen(
                     },
                     enabled = searchQuery.isNotBlank() && !isLoading,
                     modifier = Modifier
-                        .height(56.dp)
                         .focusRequester(searchButtonFocusRequester)
                         .onKeyEvent { keyEvent ->
                             if (keyEvent.type == KeyEventType.KeyDown && keyEvent.key == Key.DirectionLeft) {
@@ -154,8 +123,7 @@ fun SearchScreen(
                             } else {
                                 false
                             }
-                        },
-                    shape = RoundedCornerShape(12.dp)
+                        }
                 ) {
                     if (isLoading) {
                         CircularProgressIndicator(
