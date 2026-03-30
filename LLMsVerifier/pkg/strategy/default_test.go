@@ -176,10 +176,13 @@ func TestDefaultStrategy_Rank_Tiers(t *testing.T) {
 	ctx := context.Background()
 	s := NewDefaultStrategy()
 
+	// Models need realistic latency and cost values for tier
+	// boundaries to work correctly. Without them, speed and cost
+	// dimensions default to 0.5, pulling the overall score down.
 	models := []ModelInfo{
-		{ID: "tier1-model", QualityScore: 0.95, ReliabilityScore: 0.98},
-		{ID: "tier2-model", QualityScore: 0.7, ReliabilityScore: 0.85},
-		{ID: "tier3-model", QualityScore: 0.4, ReliabilityScore: 0.7},
+		{ID: "tier1-model", QualityScore: 0.95, ReliabilityScore: 0.98, AvgLatencyMs: 500, InputCostPer1k: 0.001, OutputCostPer1k: 0.002},
+		{ID: "tier2-model", QualityScore: 0.7, ReliabilityScore: 0.85, AvgLatencyMs: 3000, InputCostPer1k: 0.01, OutputCostPer1k: 0.02},
+		{ID: "tier3-model", QualityScore: 0.4, ReliabilityScore: 0.7, AvgLatencyMs: 8000, InputCostPer1k: 0.04, OutputCostPer1k: 0.05},
 	}
 
 	ranked, _ := s.Rank(ctx, models)

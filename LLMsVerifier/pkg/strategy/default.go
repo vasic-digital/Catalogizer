@@ -204,10 +204,14 @@ func (s *DefaultStrategy) Validate(ctx context.Context, model ModelInfo) Validat
 		Details:  make(map[string]any),
 	}
 
+	// Copy constraints under read lock, then release before
+	// calling Score (which acquires a write lock for caching).
 	s.mu.RLock()
-	defer s.mu.RUnlock()
+	constraints := make([]Constraint, len(s.constraints))
+	copy(constraints, s.constraints)
+	s.mu.RUnlock()
 
-	for _, c := range s.constraints {
+	for _, c := range constraints {
 		if !c.Required {
 			continue
 		}
