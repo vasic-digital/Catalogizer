@@ -1,0 +1,32 @@
+---
+id: HELIX-033
+severity: critical
+category: visual
+platform: 
+screen: androidtv-curiosity-029.png
+status: open
+found_date: 2026-03-29
+---
+
+# Black screen with no visible interface
+
+The screenshot shows a completely black screen with no visible UI components, which indicates that the application failed to render properly or encountered a critical issue.
+
+## Related Issues
+
+- HELIX-003: Inconsistent spacing between items
+- HELIX-004: Empty placeholder image on the fourth card
+- HELIX-013: Image cropping affects the composition and context
+- HELIX-014: Text partially obscured in the title
+- HELIX-017: Text partially obscured by a background image
+- HELIX-018: Text alignment could improve clarity
+- HELIX-020: Text on the image is partially obscured
+- HELIX-022: Back button overlaps the header UI
+- HELIX-023: Text partially obstructed by background image
+- HELIX-027: Blank screen displayed
+- HELIX-030: Completely black screen displayed
+
+
+## Evidence
+
+The screenshot is entirely black with no visible content or interface elements.
