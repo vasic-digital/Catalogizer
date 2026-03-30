@@ -111,7 +111,44 @@ func (h *StreamHandler) StreamFile(c *gin.Context) {
 	}
 	defer fsClient.Disconnect(ctx)
 
-	// Open the file for reading
+	// Determine content type and disposition early (used in all paths).
+	contentType := detectContentType(fileInfo)
+	disposition := "inline"
+	if c.Query("download") == "true" {
+		disposition = "attachment"
+	}
+
+	// Try seekable path first: protocols that support random access (SMB, local)
+	// get full HTTP Range request support via http.ServeContent. This mirrors how
+	// VLC handles SMB streaming — the SMB2 protocol natively supports random access
+	// via smb2_lseek/Seek, so the file is opened with seek capability and reads
+	// can start from any offset.
+	if seekableClient, ok := fsClient.(filesystem.SeekableClient); ok {
+		rs, err := seekableClient.OpenSeekable(ctx, fileInfo.Path)
+		if err != nil {
+			h.logger.Error("Failed to open seekable file for streaming",
+				zap.String("path", fileInfo.Path),
+				zap.String("protocol", storageRoot.Protocol),
+				zap.Error(err))
+			c.JSON(http.StatusNotFound, gin.H{"error": "File not accessible on storage"})
+			return
+		}
+		defer rs.Close()
+
+		c.Header("Content-Disposition", fmt.Sprintf(`%s; filename="%s"`, disposition, sanitizeContentDisposition(fileInfo.Name)))
+		c.Header("Content-Type", contentType)
+		c.Header("Accept-Ranges", "bytes")
+
+		// http.ServeContent handles Range, If-Modified-Since, Content-Length, 206 Partial Content, etc.
+		http.ServeContent(c.Writer, c.Request, fileInfo.Name, fileInfo.LastModified, rs)
+		h.logger.Info("File streamed with seek support",
+			zap.String("file", fileInfo.Name),
+			zap.String("protocol", storageRoot.Protocol),
+			zap.Int64("id", id))
+		return
+	}
+
+	// Fallback: open via ReadFile for protocols without SeekableClient (FTP, WebDAV, NFS).
 	reader, err := fsClient.ReadFile(ctx, fileInfo.Path)
 	if err != nil {
 		h.logger.Error("Failed to open file for streaming",
@@ -123,31 +160,23 @@ func (h *StreamHandler) StreamFile(c *gin.Context) {
 	}
 	defer reader.Close()
 
-	// Determine content type
-	contentType := detectContentType(fileInfo)
-
-	// Set streaming headers
-	disposition := "inline"
-	if c.Query("download") == "true" {
-		disposition = "attachment"
-	}
 	c.Header("Content-Disposition", fmt.Sprintf(`%s; filename="%s"`, disposition, sanitizeContentDisposition(fileInfo.Name)))
 	c.Header("Content-Type", contentType)
 
-	// Try to use http.ServeContent for Range request support.
-	// This works when the reader implements io.ReadSeeker (SMB and local protocols).
+	// Even for the ReadFile path, the underlying concrete type may support seeking
+	// (e.g., os.File, smb2.File). Try type assertion as a second chance.
 	if rs, ok := reader.(io.ReadSeeker); ok {
-		// ServeContent handles Range requests, If-Modified-Since, Content-Length, etc.
+		c.Header("Accept-Ranges", "bytes")
 		http.ServeContent(c.Writer, c.Request, fileInfo.Name, fileInfo.LastModified, rs)
-		h.logger.Info("File streamed with seek support",
+		h.logger.Info("File streamed with seek support (type assertion)",
 			zap.String("file", fileInfo.Name),
 			zap.String("protocol", storageRoot.Protocol),
 			zap.Int64("id", id))
 		return
 	}
 
-	// Fallback: simple streaming without Range support (FTP, WebDAV).
-	// Set Content-Length if we know the file size.
+	// No seek support: simple streaming without Range requests.
+	c.Header("Accept-Ranges", "none")
 	if fileInfo.Size > 0 {
 		c.Header("Content-Length", strconv.FormatInt(fileInfo.Size, 10))
 	}

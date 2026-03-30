@@ -145,6 +145,21 @@ func (m *mockFSClient) DeleteDirectory(ctx context.Context, path string) error  
 func (m *mockFSClient) GetProtocol() string                                     { return m.protocol }
 func (m *mockFSClient) GetConfig() interface{}                                  { return nil }
 
+// mockSeekableFSClient implements both filesystem.FileSystemClient and filesystem.SeekableClient.
+// This simulates protocols that support random access (SMB, local).
+type mockSeekableFSClient struct {
+	mockFSClient
+	seekableReader filesystem.ReadSeekCloser
+	openSeekErr    error
+}
+
+func (m *mockSeekableFSClient) OpenSeekable(ctx context.Context, path string) (filesystem.ReadSeekCloser, error) {
+	if m.openSeekErr != nil {
+		return nil, m.openSeekErr
+	}
+	return m.seekableReader, nil
+}
+
 // mockClientFactory returns a pre-configured mock filesystem client.
 type mockClientFactory struct {
 	client    filesystem.FileSystemClient
@@ -726,6 +741,216 @@ func TestStreamHandler_StorageRootToSettings_AllProtocols(t *testing.T) {
 	})
 }
 
+// --- SeekableClient Range Request Tests ---
+
+func TestStreamHandler_SeekableClient_FullStream(t *testing.T) {
+	logger, _ := zap.NewDevelopment()
+	db := setupStreamTestDB(t)
+	defer db.Close()
+
+	insertStorageRoot(t, db, "nas", "smb", "192.168.0.241", 445, "media", "user", "pass")
+
+	fileContent := []byte("fake video content for seekable client test")
+	mimeType := "video/mp4"
+
+	catalog := &streamMockCatalogService{
+		files: map[string]*models.FileInfo{
+			"10": {
+				ID:           10,
+				Name:         "seekable.mp4",
+				Path:         "/movies/seekable.mp4",
+				Size:         int64(len(fileContent)),
+				SmbRoot:      "nas",
+				MimeType:     &mimeType,
+				LastModified: time.Now(),
+			},
+		},
+	}
+	seekReader := newMockReadSeekCloser(fileContent)
+	fsClient := &mockSeekableFSClient{
+		mockFSClient:   mockFSClient{protocol: "smb"},
+		seekableReader: seekReader,
+	}
+	factory := &mockClientFactory{client: fsClient}
+
+	handler := NewStreamHandler(catalog, db, factory, logger)
+	router := setupStreamRouter(handler)
+
+	w := httptest.NewRecorder()
+	req, _ := http.NewRequest("GET", "/api/v1/stream/10", nil)
+	router.ServeHTTP(w, req)
+
+	assert.Equal(t, http.StatusOK, w.Code)
+	assert.Equal(t, "video/mp4", w.Header().Get("Content-Type"))
+	assert.Equal(t, "bytes", w.Header().Get("Accept-Ranges"))
+	assert.Contains(t, w.Header().Get("Content-Disposition"), "seekable.mp4")
+	assert.Equal(t, fileContent, w.Body.Bytes())
+}
+
+func TestStreamHandler_SeekableClient_RangeRequest_MidFile(t *testing.T) {
+	logger, _ := zap.NewDevelopment()
+	db := setupStreamTestDB(t)
+	defer db.Close()
+
+	insertStorageRoot(t, db, "nas", "smb", "192.168.0.241", 445, "media", "user", "pass")
+
+	// 32 bytes: "0123456789abcdef0123456789ABCDEF"
+	fileContent := []byte("0123456789abcdef0123456789ABCDEF")
+	mimeType := "video/mp4"
+
+	catalog := &streamMockCatalogService{
+		files: map[string]*models.FileInfo{
+			"11": {
+				ID:           11,
+				Name:         "range-test.mp4",
+				Path:         "/movies/range-test.mp4",
+				Size:         int64(len(fileContent)),
+				SmbRoot:      "nas",
+				MimeType:     &mimeType,
+				LastModified: time.Date(2026, 1, 15, 0, 0, 0, 0, time.UTC),
+			},
+		},
+	}
+	seekReader := newMockReadSeekCloser(fileContent)
+	fsClient := &mockSeekableFSClient{
+		mockFSClient:   mockFSClient{protocol: "smb"},
+		seekableReader: seekReader,
+	}
+	factory := &mockClientFactory{client: fsClient}
+
+	handler := NewStreamHandler(catalog, db, factory, logger)
+	router := setupStreamRouter(handler)
+
+	w := httptest.NewRecorder()
+	req, _ := http.NewRequest("GET", "/api/v1/stream/11", nil)
+	req.Header.Set("Range", "bytes=10-19")
+	router.ServeHTTP(w, req)
+
+	assert.Equal(t, http.StatusPartialContent, w.Code)
+	assert.Contains(t, w.Header().Get("Content-Range"), "bytes 10-19/32")
+	assert.Equal(t, "abcdef0123", w.Body.String())
+}
+
+func TestStreamHandler_SeekableClient_RangeRequest_EndOfFile(t *testing.T) {
+	logger, _ := zap.NewDevelopment()
+	db := setupStreamTestDB(t)
+	defer db.Close()
+
+	insertStorageRoot(t, db, "nas", "smb", "192.168.0.241", 445, "media", "user", "pass")
+
+	fileContent := []byte("0123456789abcdef") // 16 bytes
+	mimeType := "video/mp4"
+
+	catalog := &streamMockCatalogService{
+		files: map[string]*models.FileInfo{
+			"12": {
+				ID:           12,
+				Name:         "end-range.mp4",
+				Path:         "/movies/end-range.mp4",
+				Size:         int64(len(fileContent)),
+				SmbRoot:      "nas",
+				MimeType:     &mimeType,
+				LastModified: time.Date(2026, 2, 1, 0, 0, 0, 0, time.UTC),
+			},
+		},
+	}
+	seekReader := newMockReadSeekCloser(fileContent)
+	fsClient := &mockSeekableFSClient{
+		mockFSClient:   mockFSClient{protocol: "smb"},
+		seekableReader: seekReader,
+	}
+	factory := &mockClientFactory{client: fsClient}
+
+	handler := NewStreamHandler(catalog, db, factory, logger)
+	router := setupStreamRouter(handler)
+
+	// Request last 6 bytes using suffix range (bytes=-6)
+	w := httptest.NewRecorder()
+	req, _ := http.NewRequest("GET", "/api/v1/stream/12", nil)
+	req.Header.Set("Range", "bytes=-6")
+	router.ServeHTTP(w, req)
+
+	assert.Equal(t, http.StatusPartialContent, w.Code)
+	assert.Contains(t, w.Header().Get("Content-Range"), "bytes 10-15/16")
+	assert.Equal(t, "abcdef", w.Body.String())
+}
+
+func TestStreamHandler_SeekableClient_OpenSeekableError(t *testing.T) {
+	logger, _ := zap.NewDevelopment()
+	db := setupStreamTestDB(t)
+	defer db.Close()
+
+	insertStorageRoot(t, db, "nas", "smb", "192.168.0.241", 445, "media", "user", "pass")
+
+	catalog := &streamMockCatalogService{
+		files: map[string]*models.FileInfo{
+			"13": {
+				ID:      13,
+				Name:    "error.mp4",
+				Path:    "/movies/error.mp4",
+				Size:    1000,
+				SmbRoot: "nas",
+			},
+		},
+	}
+	fsClient := &mockSeekableFSClient{
+		mockFSClient: mockFSClient{protocol: "smb"},
+		openSeekErr:  fmt.Errorf("SMB seek open failed"),
+	}
+	factory := &mockClientFactory{client: fsClient}
+
+	handler := NewStreamHandler(catalog, db, factory, logger)
+	router := setupStreamRouter(handler)
+
+	w := httptest.NewRecorder()
+	req, _ := http.NewRequest("GET", "/api/v1/stream/13", nil)
+	router.ServeHTTP(w, req)
+
+	assert.Equal(t, http.StatusNotFound, w.Code)
+	var resp map[string]interface{}
+	err := json.Unmarshal(w.Body.Bytes(), &resp)
+	require.NoError(t, err)
+	assert.Equal(t, "File not accessible on storage", resp["error"])
+}
+
+func TestStreamHandler_NonSeekableClient_AcceptRangesNone(t *testing.T) {
+	logger, _ := zap.NewDevelopment()
+	db := setupStreamTestDB(t)
+	defer db.Close()
+
+	insertStorageRoot(t, db, "ftp-server", "ftp", "192.168.0.100", 21, "/media", "user", "pass")
+
+	fileContent := []byte("non-seekable stream data")
+
+	catalog := &streamMockCatalogService{
+		files: map[string]*models.FileInfo{
+			"14": {
+				ID:      14,
+				Name:    "stream.mp3",
+				Path:    "/music/stream.mp3",
+				Size:    int64(len(fileContent)),
+				SmbRoot: "ftp-server",
+			},
+		},
+	}
+	// mockFSClient does NOT implement SeekableClient, and mockReadCloser
+	// does NOT implement io.ReadSeeker — so this exercises the no-seek fallback.
+	mockReader := newMockReadCloser(fileContent)
+	fsClient := &mockFSClient{reader: mockReader, protocol: "ftp"}
+	factory := &mockClientFactory{client: fsClient}
+
+	handler := NewStreamHandler(catalog, db, factory, logger)
+	router := setupStreamRouter(handler)
+
+	w := httptest.NewRecorder()
+	req, _ := http.NewRequest("GET", "/api/v1/stream/14", nil)
+	router.ServeHTTP(w, req)
+
+	assert.Equal(t, http.StatusOK, w.Code)
+	assert.Equal(t, "none", w.Header().Get("Accept-Ranges"))
+	assert.Equal(t, fmt.Sprintf("%d", len(fileContent)), w.Header().Get("Content-Length"))
+	assert.Equal(t, fileContent, w.Body.Bytes())
+}
 
 // --- Helpers ---
 

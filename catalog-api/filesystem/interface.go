@@ -44,6 +44,17 @@ type CopyResult = client.CopyResult
 // Type alias to digital.vasic.filesystem/pkg/client.ConnectionPool.
 type ConnectionPool = client.ConnectionPool
 
+// ReadSeekCloser combines io.Reader, io.Seeker, and io.Closer.
+// Type alias to digital.vasic.filesystem/pkg/client.ReadSeekCloser.
+type ReadSeekCloser = client.ReadSeekCloser
+
+// SeekableClient is an optional extension of FileSystemClient for protocols
+// that support random-access reads (SMB, local). When a FileSystemClient also
+// implements SeekableClient, the stream handler can use OpenSeekable to get a
+// reader with Seek support, enabling HTTP Range requests for video seeking.
+// Type alias to digital.vasic.filesystem/pkg/client.SeekableClient.
+type SeekableClient = client.SeekableClient
+
 // DirectoryTreeInfo represents directory tree information.
 // This is a Catalogizer-specific extension not present in the base module.
 type DirectoryTreeInfo struct {

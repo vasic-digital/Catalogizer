@@ -146,17 +146,20 @@ func SelectAllWithLocalModels(
 // environment variables. Matches the keys used in
 // pkg/catalogizer and pkg/helixqa registries.
 var providerEnvKeys = map[string]string{
-	"anthropic": "ANTHROPIC_API_KEY",
-	"openai":    "OPENAI_API_KEY",
-	"google":    "GOOGLE_API_KEY",
-	"kimi":      "KIMI_API_KEY",
-	"deepseek":  "DEEPSEEK_API_KEY",
-	"groq":      "GROQ_API_KEY",
-	"cerebras":  "CEREBRAS_API_KEY",
-	"stepfun":   "STEPFUN_API_KEY",
-	"qwen":      "QWEN_API_KEY",
-	"astica":    "ASTICA_API_KEY",
-	"ollama":    "", // local, always available
+	"anthropic":    "ANTHROPIC_API_KEY",
+	"openai":       "OPENAI_API_KEY",
+	"google":       "GOOGLE_API_KEY",
+	"kimi":         "KIMI_API_KEY",
+	"deepseek":     "DEEPSEEK_API_KEY",
+	"groq":         "GROQ_API_KEY",
+	"cerebras":     "CEREBRAS_API_KEY",
+	"stepfun":      "STEPFUN_API_KEY",
+	"qwen":         "QWEN_API_KEY",
+	"astica":       "ASTICA_API_KEY",
+	"nvidia":       "NVIDIA_API_KEY",
+	"githubmodels": "GITHUB_MODELS_API_KEY",
+	"xai":          "XAI_API_KEY",
+	"ollama":       "", // local, always available
 }
 
 // isAvailable checks if a provider's API key is configured.

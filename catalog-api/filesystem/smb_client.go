@@ -128,6 +128,21 @@ func (c *SmbClient) ReadFile(ctx context.Context, path string) (io.ReadCloser, e
 	return file, nil
 }
 
+// OpenSeekable opens an SMB file with seek support for random access.
+// The SMB2 protocol natively supports random access via smb2.File.Seek(),
+// enabling HTTP Range requests for video streaming (like VLC does with libsmb2).
+func (c *SmbClient) OpenSeekable(ctx context.Context, path string) (ReadSeekCloser, error) {
+	if !c.IsConnected() {
+		return nil, fmt.Errorf("not connected")
+	}
+	file, err := c.share.Open(path)
+	if err != nil {
+		return nil, fmt.Errorf("failed to open SMB file %s: %w", path, err)
+	}
+	// smb2.File implements Read, Seek, and Close — it is a full ReadSeekCloser.
+	return file, nil
+}
+
 // WriteFile writes a file to the SMB share
 func (c *SmbClient) WriteFile(ctx context.Context, path string, data io.Reader) error {
 	if !c.IsConnected() {

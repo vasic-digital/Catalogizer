@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"digital.vasic.llmsverifier/pkg/strategy"
+	"digital.vasic.llmsverifier/pkg/vision"
 )
 
 // Predefined recipes for common use cases
@@ -143,17 +144,20 @@ func CodeGenerationRecipe() *Recipe {
 }
 
 // VisionRecipe returns a recipe optimized for vision tasks.
-// Requires vision capability with high quality.
+// Requires vision capability with high quality. Uses the dedicated
+// VisionStrategy which scores models on image understanding, GUI
+// detection, OCR accuracy, speed, and cost.
 func VisionRecipe() *Recipe {
 	return NewRecipeBuilder().
 		WithName("vision-optimized").
-		WithDescription("Optimized for image analysis and vision tasks").
-		WithStrategy(strategy.NewDefaultStrategy()).
+		WithDescription("Optimized for image analysis and vision tasks using VisionStrategy").
+		WithStrategy(VisionPreset()).
 		WithWeights(map[string]float64{
-			strategy.DimensionVision:      0.4,
-			strategy.DimensionQuality:     0.35,
-			strategy.DimensionReliability: 0.15,
-			strategy.DimensionSpeed:       0.1,
+			strategy.DimensionQuality: 0.35,
+			strategy.DimensionVision:  0.25,
+			strategy.DimensionContext: 0.15,
+			strategy.DimensionSpeed:   0.15,
+			strategy.DimensionCost:    0.10,
 		}).
 		WithMinQuality(0.75).
 		WithMinReliability(0.85).
@@ -166,8 +170,16 @@ func VisionRecipe() *Recipe {
 		WithTag("vision").
 		WithTag("multimodal").
 		WithTag("image-analysis").
-		WithVersion("1.0.0").
+		WithVersion("1.1.0").
 		BuildOrPanic()
+}
+
+// VisionPreset returns a VisionStrategy instance configured with
+// default weights optimised for vision model selection. Use this
+// when vision model selection is specifically needed (e.g., HelixQA
+// Execute/Curiosity phases, screenshot analysis, UI navigation).
+func VisionPreset() *vision.VisionStrategy {
+	return vision.NewVisionStrategy()
 }
 
 // BalancedRecipe returns a balanced recipe for general use.
