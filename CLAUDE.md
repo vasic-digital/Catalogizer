@@ -305,6 +305,10 @@ Critical container notes:
 - **Stay in the testing loop**: Run HelixQA → analyze results → fix discovered bugs → rebuild → redeploy → run again. Only stop when HelixQA completes a full session with verified screenshots showing the app navigated through ALL screens with real data.
 - **Every connected device MUST be tested** — HelixQA detects all ADB devices and runs tests on each one.
 - **ADB reverse proxy MUST be set up automatically** for every Android device before testing begins.
+- **QA Testing Priority Order (MANDATORY)**: (1) Happy paths first — login, browse, open details, play media. (2) Standard flows — search with context-appropriate terms, browse sections, test navigation. (3) Edge cases — empty states, error handling, back navigation. (4) Adversarial testing last.
+- **NEVER type credentials into non-login fields.** The LLM MUST understand which screen it is on and provide context-appropriate input.
+- **HelixQA is a GENERIC, UNIVERSAL tool** — it works with ANY app. No app-specific content is hardcoded in prompts or code. All context comes from screenshots, the knowledge base, and LLM vision analysis.
+- **Devices listed in `.devignore`** (project root) are excluded from testing.
 
 **GitHub Actions are PERMANENTLY DISABLED.** Do NOT create any GitHub Actions workflow files in `.github/workflows/`. CI/CD must be run locally.
 
