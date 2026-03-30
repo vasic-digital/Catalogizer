@@ -39,9 +39,9 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     && rm -rf /var/lib/apt/lists/*
 
 # ============================================================
-# Layer 2: Go 1.24
+# Layer 2: Go 1.26
 # ============================================================
-ENV GO_VERSION=1.24.1
+ENV GO_VERSION=1.26.1
 COPY docker/go${GO_VERSION}.linux-amd64.tar.gz /tmp/go.tar.gz
 RUN tar -C /usr/local -xzf /tmp/go.tar.gz \
     && rm /tmp/go.tar.gz
@@ -73,10 +73,10 @@ RUN cargo install tauri-cli
 RUN rustc --version && cargo --version
 
 # ============================================================
-# Layer 5: JDK 17 + Android SDK
+# Layer 5: JDK 21 + Android SDK
 # ============================================================
-RUN apt-get update && apt-get install -y --no-install-recommends openjdk-17-jdk && rm -rf /var/lib/apt/lists/*
-ENV JAVA_HOME="/usr/lib/jvm/java-17-openjdk-amd64"
+RUN apt-get update && apt-get install -y --no-install-recommends openjdk-21-jdk && rm -rf /var/lib/apt/lists/*
+ENV JAVA_HOME="/usr/lib/jvm/java-21-openjdk-amd64"
 
 ENV ANDROID_HOME="/opt/android-sdk"
 ENV ANDROID_SDK_ROOT="${ANDROID_HOME}"
