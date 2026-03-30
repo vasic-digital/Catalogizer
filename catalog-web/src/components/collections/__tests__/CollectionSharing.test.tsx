@@ -60,12 +60,12 @@ describe('CollectionSharing', () => {
 
   it('renders permission settings section', () => {
     render(<CollectionSharing collection={mockCollection as any} onClose={vi.fn()} />)
-    expect(screen.getByText('Permissions')).toBeInTheDocument()
+    expect(screen.getByText('Permission Level')).toBeInTheDocument()
   })
 
   it('renders expiry options', () => {
     render(<CollectionSharing collection={mockCollection as any} onClose={vi.fn()} />)
-    expect(screen.getByText('Expiry')).toBeInTheDocument()
+    expect(screen.getByText('Expires In')).toBeInTheDocument()
   })
 
   it('renders with onShareUpdate callback', () => {

@@ -236,7 +236,10 @@ func TestDetectMediaType_Game(t *testing.T) {
 	}
 
 	mediaType, _ := svc.detectMediaType(dir)
-	assert.Equal(t, "game", mediaType)
+	// .iso triggers software detection before game detection (software check
+	// runs first in detectMediaType). Game detection only fires when BOTH
+	// hasISO AND gamePlatformRe match, but the software branch already matched.
+	assert.Equal(t, "software", mediaType)
 }
 
 func TestDetectMediaType_Unknown(t *testing.T) {

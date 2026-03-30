@@ -27,26 +27,31 @@ describe('useLazyImage', () => {
   })
 
   it('creates an IntersectionObserver when src is provided', () => {
-    const observeSpy = vi.spyOn(IntersectionObserver.prototype, 'observe')
+    // The IntersectionObserver mock uses instance methods (not prototype),
+    // so we spy on the constructor instead to verify instantiation.
+    const constructorSpy = vi.fn(IntersectionObserver)
+    const OriginalIO = global.IntersectionObserver
+    global.IntersectionObserver = constructorSpy as unknown as typeof IntersectionObserver
 
     renderHook(() => useLazyImage('https://example.com/img.jpg'))
 
-    // imgRef.current is null in a hook-only render (no DOM element),
-    // so observe won't be called. This verifies no crash occurs.
-    expect(observeSpy).not.toHaveBeenCalled()
+    // Observer is created when src is provided (even if imgRef.current is null)
+    expect(constructorSpy).toHaveBeenCalled()
 
-    observeSpy.mockRestore()
+    global.IntersectionObserver = OriginalIO
   })
 
   it('does not create an IntersectionObserver when src is undefined', () => {
-    const disconnectSpy = vi.spyOn(IntersectionObserver.prototype, 'disconnect')
+    const constructorSpy = vi.fn(IntersectionObserver)
+    const OriginalIO = global.IntersectionObserver
+    global.IntersectionObserver = constructorSpy as unknown as typeof IntersectionObserver
 
     renderHook(() => useLazyImage(undefined))
 
     // No observer should have been created for undefined src
-    expect(disconnectSpy).not.toHaveBeenCalled()
+    expect(constructorSpy).not.toHaveBeenCalled()
 
-    disconnectSpy.mockRestore()
+    global.IntersectionObserver = OriginalIO
   })
 
   it('resets loaded and error when src changes', () => {

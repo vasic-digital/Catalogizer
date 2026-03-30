@@ -111,6 +111,11 @@ vi.mock('@/pages/AIDashboard', async () => ({
   default: () => <div data-testid="ai-dashboard-page">AI Dashboard Page</div>,
 }))
 
+vi.mock('@/pages/Settings', async () => ({
+  Settings: () => <div data-testid="settings-page">Settings Page</div>,
+  default: () => <div data-testid="settings-page">Settings Page</div>,
+}))
+
 describe('App', () => {
   describe('Rendering and Setup', () => {
     it('renders the App component', () => {

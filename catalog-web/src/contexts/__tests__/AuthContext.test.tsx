@@ -221,7 +221,12 @@ describe('AuthContext', () => {
   });
 
   it('handles auth status API error gracefully', async () => {
-    mockAuthApi.getAuthStatus.mockRejectedValue(new Error('Network error'));
+    // Use a 401 error so the AuthProvider retry logic bails immediately
+    // (non-401 errors trigger up to 2 retries with exponential backoff,
+    // which can exceed the default waitFor timeout).
+    const error401 = new Error('Unauthorized');
+    (error401 as any).response = { status: 401 };
+    mockAuthApi.getAuthStatus.mockRejectedValue(error401);
     const queryClient = createQueryClient();
 
     render(

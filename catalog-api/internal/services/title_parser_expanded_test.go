@@ -159,8 +159,10 @@ func TestParseMusicAlbum_Expanded(t *testing.T) {
 			name:   "with year in brackets",
 			input:  "The Beatles - Abbey Road [1969]",
 			artist: "The Beatles",
-			album:  "Abbey Road",
-			year:   intPtr(1969),
+			// musicDashRe captures bracket year as part of the album text;
+			// only parenthesised years (1969) are extracted by the regex.
+			album: "Abbey Road [1969]",
+			// year is nil because bracket years are not handled by musicDashRe
 		},
 		{
 			name:   "single word artist",

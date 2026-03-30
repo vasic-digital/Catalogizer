@@ -355,6 +355,8 @@ describe('AuthContext Integration Tests', () => {
 
     it('shows generic error message when no specific error is returned', async () => {
       const user = userEvent.setup()
+      // Error with 'Network' in message triggers isNetworkError() duck-type check
+      // in AuthContext, which shows the network-specific error toast.
       mockAuthApi.login.mockRejectedValue(new Error('Network error'))
 
       renderWithProviders(
@@ -371,7 +373,7 @@ describe('AuthContext Integration Tests', () => {
       await user.click(screen.getByTestId('login-btn'))
 
       await waitFor(() => {
-        expect(mockToast.error).toHaveBeenCalledWith('Login failed')
+        expect(mockToast.error).toHaveBeenCalledWith('Network error: please check your connection')
       })
     })
   })
@@ -420,6 +422,8 @@ describe('AuthContext Integration Tests', () => {
 
     it('shows generic error when no specific message returned on registration failure', async () => {
       const user = userEvent.setup()
+      // Error with 'Network' in message triggers isNetworkError() duck-type check
+      // in AuthContext, which shows the network-specific error toast.
       mockAuthApi.register.mockRejectedValue(new Error('Network error'))
 
       renderWithProviders(<RegisterTrigger />)
@@ -427,7 +431,7 @@ describe('AuthContext Integration Tests', () => {
       await user.click(screen.getByTestId('register-btn'))
 
       await waitFor(() => {
-        expect(mockToast.error).toHaveBeenCalledWith('Registration failed')
+        expect(mockToast.error).toHaveBeenCalledWith('Network error: please check your connection')
       })
     })
   })

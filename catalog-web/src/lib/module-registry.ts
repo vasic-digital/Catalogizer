@@ -23,8 +23,11 @@ export type { AuthContextType, AuthProviderProps } from '@vasic-digital/auth-con
 //    CatalogizerClient unifies all endpoints behind a single facade and could
 //    replace the individual API modules in a future refactor.
 // ---------------------------------------------------------------------------
-export { CatalogizerClient, HttpClient, CatalogizerError, AuthenticationError, NetworkError, ValidationError } from '@vasic-digital/catalogizer-api-client'
+// Runtime exports disabled — CatalogizerClient uses Node.js EventEmitter
+// which is not available in the browser bundle. Type exports only.
 export type { ClientConfig, ApiResponse } from '@vasic-digital/catalogizer-api-client'
+// To use at runtime, import individual error classes from the contexts that need them:
+// import { NetworkError } from '@vasic-digital/catalogizer-api-client'
 
 // ---------------------------------------------------------------------------
 // 3. Collection management components from shared package

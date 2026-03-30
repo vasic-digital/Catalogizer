@@ -80,11 +80,11 @@ describe('SmartPlaylistBuilder', () => {
     expect(input).toHaveValue('My Smart Playlist')
   })
 
-  it('renders description textarea', () => {
+  it('renders description input', () => {
     if (!SmartPlaylistBuilder) return
     render(<SmartPlaylistBuilder {...defaultProps} />)
-    const textarea = screen.getByPlaceholderText(/description/i)
-    expect(textarea).toBeInTheDocument()
+    const descriptionInput = screen.getByPlaceholderText(/describe your smart playlist/i)
+    expect(descriptionInput).toBeInTheDocument()
   })
 
   it('adds a rule when Add Rule is clicked', async () => {

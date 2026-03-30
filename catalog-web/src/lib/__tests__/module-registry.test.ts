@@ -11,24 +11,13 @@ describe('module-registry', () => {
     expect(typeof mod.useSharedAuth).toBe('function')
   })
 
-  it('exports CatalogizerClient from catalogizer-api-client', async () => {
+  it('exports type-only API client types from catalogizer-api-client', async () => {
+    // Runtime exports (CatalogizerClient, HttpClient, error classes) were
+    // removed because the shared package uses Node.js EventEmitter which is
+    // not available in the browser bundle. Only type exports remain
+    // (ClientConfig, ApiResponse). Verify the module still loads cleanly.
     const mod = await import('../module-registry')
-    expect(mod.CatalogizerClient).toBeDefined()
-    expect(typeof mod.CatalogizerClient).toBe('function')
-  })
-
-  it('exports HttpClient from catalogizer-api-client', async () => {
-    const mod = await import('../module-registry')
-    expect(mod.HttpClient).toBeDefined()
-    expect(typeof mod.HttpClient).toBe('function')
-  })
-
-  it('exports error classes from catalogizer-api-client', async () => {
-    const mod = await import('../module-registry')
-    expect(mod.CatalogizerError).toBeDefined()
-    expect(mod.AuthenticationError).toBeDefined()
-    expect(mod.NetworkError).toBeDefined()
-    expect(mod.ValidationError).toBeDefined()
+    expect(mod).toBeDefined()
   })
 
   it('exports collection-manager components', async () => {
