@@ -27,6 +27,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusProperties
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalConfiguration
@@ -98,7 +99,26 @@ fun LoginScreen(
 
     val usernameFocusRequester = remember { FocusRequester() }
     val passwordFocusRequester = remember { FocusRequester() }
+    val signInFocusRequester = remember { FocusRequester() }
     val keyboardController = LocalSoftwareKeyboardController.current
+
+    // Auto-login from intent extras (for QA/testing via ADB)
+    // Usage: adb shell am start -n com.catalogizer.androidtv/.ui.MainActivity \
+    //   --es qa_username admin --es qa_password admin123
+    val activity = LocalContext.current as? android.app.Activity
+    LaunchedEffect(Unit) {
+        val qaUser = activity?.intent?.getStringExtra("qa_username")
+        val qaPass = activity?.intent?.getStringExtra("qa_password")
+        if (!qaUser.isNullOrBlank() && !qaPass.isNullOrBlank()) {
+            username = qaUser
+            password = qaPass
+            // Auto-submit after a brief delay
+            kotlinx.coroutines.delay(500)
+            validateAndLogin(username, password, authViewModel,
+                { isLoading = it }, { errorMessage = it },
+                { usernameError = it }, { passwordError = it })
+        }
+    }
     val scrollState = rememberScrollState()
 
     // Accessible text field colors for dark TV theme (WCAG AA)
@@ -204,6 +224,7 @@ fun LoginScreen(
                 modifier = Modifier
                     .width(formWidth)
                     .focusRequester(usernameFocusRequester)
+                    .focusProperties { next = passwordFocusRequester }
                     .focusable(),
                 keyboardOptions = KeyboardOptions(imeAction = ImeAction.Next),
                 keyboardActions = KeyboardActions(onNext = { passwordFocusRequester.requestFocus() }),
@@ -227,6 +248,7 @@ fun LoginScreen(
                 modifier = Modifier
                     .width(formWidth)
                     .focusRequester(passwordFocusRequester)
+                    .focusProperties { next = signInFocusRequester }
                     .focusable(),
                 keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
                 keyboardActions = KeyboardActions(onDone = {
@@ -277,7 +299,10 @@ fun LoginScreen(
                     validateAndLogin(username, password, authViewModel, { isLoading = it }, { errorMessage = it },
                         { usernameError = it }, { passwordError = it })
                 },
-                modifier = Modifier.width(formWidth).height(if (isCompact) 48.dp else 52.dp),
+                modifier = Modifier
+                    .width(formWidth)
+                    .height(if (isCompact) 48.dp else 52.dp)
+                    .focusRequester(signInFocusRequester),
                 enabled = !isLoading
             ) {
                 if (isLoading) {
