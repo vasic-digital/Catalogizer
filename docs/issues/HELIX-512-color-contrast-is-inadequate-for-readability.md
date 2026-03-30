@@ -4,7 +4,8 @@ severity: medium
 category: visual
 platform: 
 screen: web-curiosity-015.png
-status: fixed
+status: wontfix
+resolution: cosmetic — the web app uses a dark theme (dark:from-gray-900 dark:to-gray-800) with white/light text; the LLM's vague claim of "white text on black background" lacking contrast is subjective and no specific WCAG violation is identified
 found_date: 2026-03-29
 ---
 

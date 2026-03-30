@@ -4,7 +4,8 @@ severity: high
 category: ux
 platform: 
 screen: web-curiosity-015.png
-status: fixed
+status: wontfix
+resolution: cosmetic — vague observation about button text styling on a web page; no specific button text or inconsistency is identified; the web app uses a consistent Tailwind CSS design system with intentional typographic hierarchy
 found_date: 2026-03-29
 ---
 

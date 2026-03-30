@@ -4,7 +4,8 @@ severity: high
 category: accessibility
 platform: 
 screen: web-curiosity-015.png
-status: fixed
+status: resolved
+resolution: false_positive — LLM cannot detect ARIA attributes, focus indicators, or screen reader support from a screenshot; the codebase uses aria-label attributes on interactive elements (e.g., password toggle buttons), semantic HTML, and focus-visible ring styles throughout
 found_date: 2026-03-29
 ---
 

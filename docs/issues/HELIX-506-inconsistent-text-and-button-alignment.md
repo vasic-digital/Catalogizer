@@ -4,7 +4,8 @@ severity: low
 category: UX
 platform: 
 screen: androidtv-curiosity-032.png
-status: fixed
+status: resolved
+resolution: false_positive — LLM observed the Android TV search "no results" empty state screen after typing garbage text; alignment is by design for this screen layout
 found_date: 2026-03-29
 ---
 

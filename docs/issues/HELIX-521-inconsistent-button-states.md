@@ -4,7 +4,8 @@ severity: medium
 category: UX
 platform: 
 screen: web-curiosity-048.png
-status: fixed
+status: resolved
+resolution: false_positive — LLM misinterpreted intentional active/inactive button states as inconsistency; the color change from white to blue on the active button is standard UI feedback indicating which button is currently selected or active
 found_date: 2026-03-29
 ---
 

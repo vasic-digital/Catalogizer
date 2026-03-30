@@ -68,7 +68,7 @@ fun SplashContent(
             Image(
                 painter = painterResource(R.drawable.app_icon),
                 contentDescription = "Catalogizer",
-                modifier = Modifier.size(360.dp),
+                modifier = Modifier.size(120.dp),
                 contentScale = ContentScale.Fit
             )
             Spacer(modifier = Modifier.height(24.dp))

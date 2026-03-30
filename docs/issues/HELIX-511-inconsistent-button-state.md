@@ -4,7 +4,8 @@ severity: low
 category: visual
 platform: 
 screen: web-curiosity-007.png
-status: fixed
+status: resolved
+resolution: false_positive — the Sign In button having a distinct blue fill with white text is intentional; it is the primary call-to-action and is deliberately styled differently from secondary/outline buttons to guide user attention
 found_date: 2026-03-29
 ---
 

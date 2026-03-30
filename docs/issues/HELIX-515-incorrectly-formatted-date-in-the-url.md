@@ -4,7 +4,8 @@ severity: low
 category: functional
 platform: 
 screen: web-curiosity-015.png
-status: fixed
+status: resolved
+resolution: false_positive — LLM misinterpreted a URL path segment as a malformed date; YYYY-MM-DD is the standard ISO 8601 date format and is correctly formatted; likely a route parameter for date-based content filtering
 found_date: 2026-03-29
 ---
 

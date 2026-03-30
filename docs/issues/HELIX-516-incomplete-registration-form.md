@@ -4,7 +4,8 @@ severity: critical
 category: functional
 platform: 
 screen: web-curiosity-023.png
-status: fixed
+status: resolved
+resolution: false_positive — the registration form is fully implemented with 6 fields (firstName, lastName, username, email, password, confirmPassword) plus validation; the LLM screenshot simply captured the form mid-entry with only one field filled, which is normal user behavior not a bug
 found_date: 2026-03-29
 ---
 

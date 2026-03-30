@@ -4,7 +4,8 @@ severity: medium
 category: ux
 platform: 
 screen: web-curiosity-032.png
-status: fixed
+status: wontfix
+resolution: cosmetic — the generic "Website" title is likely a browser tab default or Vite dev server title; this is a minor polish item, not a functional bug; the app content itself has proper headings and visual hierarchy
 found_date: 2026-03-29
 ---
 

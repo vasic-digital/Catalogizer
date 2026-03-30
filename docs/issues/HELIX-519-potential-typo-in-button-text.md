@@ -4,7 +4,8 @@ severity: low
 category: content
 platform: 
 screen: web-curiosity-032.png
-status: fixed
+status: resolved
+resolution: false_positive — LLM claims a "potential typo" but fails to identify which word is supposedly misspelled; the evidence ("unusual or potentially incorrect word") is entirely vague with no actionable finding
 found_date: 2026-03-29
 ---
 

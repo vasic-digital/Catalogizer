@@ -4,7 +4,8 @@ severity: high
 category: functional
 platform: 
 screen: web-curiosity-032.png
-status: fixed
+status: resolved
+resolution: false_positive — LLM vaguely claims a button lacks a "default action" with no specifics; buttons in the web app have proper click handlers and type attributes; the evidence ("no visible state indicators or underlined text") describes normal button styling, not a functional defect
 found_date: 2026-03-29
 ---
 

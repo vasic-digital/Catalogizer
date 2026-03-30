@@ -4,7 +4,8 @@ severity: low
 category: UX
 platform: 
 screen: androidtv-curiosity-032.png
-status: fixed
+status: resolved
+resolution: false_positive — LLM misinterpreted the Android TV search empty state; the "No results for..." message and result count are standard search UX, the query was LLM-generated garbage text
 found_date: 2026-03-29
 ---
 

@@ -4,7 +4,8 @@ severity: low
 category: UX
 platform: 
 screen: androidtv-curiosity-032.png
-status: fixed
+status: wontfix
+resolution: cosmetic — the "Try a different keyword" button being smaller than the search bar is intentional design; a secondary action button should not visually compete with the primary search input
 found_date: 2026-03-29
 ---
 

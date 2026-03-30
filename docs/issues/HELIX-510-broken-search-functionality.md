@@ -4,7 +4,8 @@ severity: high
 category: functional
 platform: 
 screen: androidtv-curiosity-040.png
-status: fixed
+status: resolved
+resolution: false_positive — LLM typed nonsense search query during autonomous curiosity phase; the search correctly returned no results for a garbage query; search functionality is not broken
 found_date: 2026-03-29
 ---
 

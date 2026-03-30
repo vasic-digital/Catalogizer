@@ -4,7 +4,8 @@ severity: low
 category: UX
 platform: 
 screen: web-curiosity-048.png
-status: fixed
+status: wontfix
+resolution: cosmetic — the ticket itself acknowledges "inconsistencies are minimal" and "do not have a significant impact on usability"; different button shapes serve different UI purposes (icon buttons vs text buttons vs full-width CTAs)
 found_date: 2026-03-29
 ---
 

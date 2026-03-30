@@ -4,7 +4,8 @@ severity: high
 category: UX
 platform: 
 screen: web-curiosity-040.png
-status: fixed
+status: wontfix
+resolution: cosmetic — "Sign up" CTA visibility is a subjective UX opinion; the registration link exists and is functional; the login page intentionally emphasizes Sign In as the primary action with Sign Up as a secondary option below
 found_date: 2026-03-29
 ---
 

@@ -312,15 +312,35 @@ fun CompactMediaCard(
             )
         ) {
             Box(
-                modifier = Modifier.size(80.dp, 60.dp),
+                modifier = Modifier
+                    .size(80.dp, 60.dp)
+                    .background(
+                        brush = androidx.compose.ui.graphics.Brush.verticalGradient(
+                            colors = mediaTypeGradient(mediaItem.mediaType)
+                        )
+                    ),
                 contentAlignment = Alignment.Center
             ) {
-                mediaItem.thumbnailUrl?.let { url ->
+                val rawUrl = mediaItem.thumbnailUrl
+                val coverUrl = if (rawUrl != null && rawUrl.startsWith("/")) {
+                    val container = com.catalogizer.androidtv.DependencyContainer.getInstance(
+                        androidx.compose.ui.platform.LocalContext.current
+                    )
+                    container.getServerUrl().trimEnd('/') + rawUrl
+                } else rawUrl
+                if (coverUrl != null) {
                     AsyncImage(
-                        model = url,
+                        model = coverUrl,
                         contentDescription = mediaItem.title,
                         modifier = Modifier.fillMaxSize(),
                         contentScale = ContentScale.Crop
+                    )
+                } else {
+                    M3Icon(
+                        imageVector = mediaTypeIcon(mediaItem.mediaType),
+                        contentDescription = mediaItem.mediaType,
+                        modifier = Modifier.size(28.dp),
+                        tint = Color.White.copy(alpha = 0.8f)
                     )
                 }
                 // Play button overlay (shown on top of thumbnail)
@@ -330,7 +350,7 @@ fun CompactMediaCard(
                         shape = RoundedCornerShape(50)
                     )
                 ) {
-                    Icon(
+                    M3Icon(
                         imageVector = Icons.Default.PlayArrow,
                         contentDescription = "Play",
                         modifier = Modifier.size(24.dp),

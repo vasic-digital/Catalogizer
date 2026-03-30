@@ -4,7 +4,8 @@ severity: low
 category: UX
 platform: 
 screen: androidtv-curiosity-032.png
-status: fixed
+status: resolved
+resolution: false_positive — LLM typed nonsense into Android TV search, got "no results" empty state; there are no search results to have hierarchy for because the query was garbage
 found_date: 2026-03-29
 ---
 

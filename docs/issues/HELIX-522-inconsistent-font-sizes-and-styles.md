@@ -4,7 +4,8 @@ severity: medium
 category: UX
 platform: 
 screen: web-curiosity-048.png
-status: fixed
+status: resolved
+resolution: false_positive — different font sizes and styles are intentional typographic hierarchy (headings, body text, labels, buttons); Tailwind CSS utility classes enforce a consistent design system; varying sizes communicate content importance, not inconsistency
 found_date: 2026-03-29
 ---
 
