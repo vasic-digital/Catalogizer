@@ -20,6 +20,11 @@ import (
 
 // EventBus provides publish/subscribe for system events.
 // Backed by digital.vasic.eventbus/pkg/bus.EventBus.
+//
+// Publish is non-blocking: each subscriber has a buffered channel (default 1000)
+// and trySend uses a configurable PublishTimeout (default 10ms). Slow subscribers
+// cause event drops (tracked in Metrics.EventsDropped) rather than blocking the
+// publisher, so no additional semaphore is needed.
 type EventBus = vasicbus.EventBus
 
 // Config holds configuration for the event bus.

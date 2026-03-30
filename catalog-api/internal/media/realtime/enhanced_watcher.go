@@ -72,7 +72,10 @@ func NewEnhancedChangeWatcher(mediaDB *database.MediaDatabase, analyzer *analyze
 	}
 }
 
-// Start starts the enhanced change watcher
+// Start starts the enhanced change watcher.
+// Concurrency safety: worker goroutines are bounded by w.workers and tracked
+// by w.wg. The monitorPath goroutines are also tracked. Stop() closes stopCh
+// and waits on w.wg, ensuring clean shutdown with no goroutine leaks.
 func (w *EnhancedChangeWatcher) Start() error {
 	w.logger.Info("Starting enhanced change watcher", zap.Int("workers", w.workers))
 

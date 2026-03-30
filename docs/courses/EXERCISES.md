@@ -765,6 +765,296 @@ console.log(`Total media items: ${media.length}`);
 
 ---
 
+## Advanced Exercises
+
+### Exercise 7.1: Create and Restore a Database Backup
+
+**Objective**: Use the Backup Management API to create a database backup, list available backups, and restore from one.
+
+**Prerequisites**: Module 5 completed, Catalogizer running, admin access
+
+**Steps**:
+
+1. Log in as admin and obtain a JWT token:
+
+   ```bash
+   TOKEN=$(curl -s -X POST http://localhost:8080/api/v1/auth/login \
+     -H "Content-Type: application/json" \
+     -d '{"username":"admin","password":"admin123"}' | python3 -c "import sys,json; print(json.load(sys.stdin)['token'])")
+   ```
+
+2. Create a database backup:
+
+   ```bash
+   curl -s -X POST http://localhost:8080/api/v1/admin/backup \
+     -H "Authorization: Bearer $TOKEN" | python3 -m json.tool
+   ```
+
+3. List all available backups:
+
+   ```bash
+   curl -s http://localhost:8080/api/v1/admin/backups \
+     -H "Authorization: Bearer $TOKEN" | python3 -m json.tool
+   ```
+
+4. Note the backup filename from the list. Restore from it:
+
+   ```bash
+   curl -s -X POST http://localhost:8080/api/v1/admin/backup/restore \
+     -H "Authorization: Bearer $TOKEN" \
+     -H "Content-Type: application/json" \
+     -d '{"filename":"<backup-filename>"}' | python3 -m json.tool
+   ```
+
+5. Verify the restore succeeded by checking the dashboard data is intact.
+
+**Expected Result**:
+
+- Backup creation returns a success response with the backup filename
+- Listing backups shows the newly created backup with timestamp and size
+- Restore completes without errors and data remains consistent
+- Attempting a second concurrent backup is blocked by the backup semaphore
+
+**Bonus Challenge**: Try restoring with a path traversal filename (e.g., `../../etc/passwd`). Verify the API rejects it with a security error.
+
+---
+
+### Exercise 7.2: Run Security Scans
+
+**Objective**: Execute security scans across backend and frontend components and interpret the results.
+
+**Prerequisites**: Go toolchain, Node.js, Catalogizer source code
+
+**Steps**:
+
+1. Run Go vulnerability scanning:
+
+   ```bash
+   cd catalog-api
+   govulncheck ./...
+   ```
+
+2. Run npm dependency audit on the frontend:
+
+   ```bash
+   cd catalog-web
+   npm audit --production
+   ```
+
+3. If Podman is available, run Semgrep SAST scanning:
+
+   ```bash
+   podman-compose -f docker-compose.security.yml --profile semgrep-scan run --rm semgrep-scanner
+   ```
+
+4. Run the consolidated security scan script:
+
+   ```bash
+   ./scripts/security-scan.sh
+   ```
+
+5. Document findings: number of vulnerabilities by severity, affected packages, and recommended actions.
+
+**Expected Result**:
+
+- `govulncheck` reports 0 known vulnerabilities in Go dependencies
+- `npm audit --production` reports 0 critical vulnerabilities in production dependencies
+- Semgrep reports findings categorized by severity (error, warning, info)
+- The consolidated scan script produces a summary report
+
+**Bonus Challenge**: Run SonarQube analysis with `./scripts/run-sonarqube-scan.sh` and review the quality gate results for code smells, duplications, and coverage metrics.
+
+---
+
+### Exercise 7.3: Load Test the API with k6
+
+**Objective**: Use k6 to run load tests against the Catalogizer API and verify performance under concurrent load.
+
+**Prerequisites**: Podman installed, Catalogizer backend running
+
+**Steps**:
+
+1. Review the available k6 test scripts:
+
+   ```bash
+   ls tests/k6/
+   ```
+
+2. Run the standard load test (ramps to 50 virtual users):
+
+   ```bash
+   podman run --rm --network host \
+     -v $(pwd)/tests/k6:/scripts:ro \
+     --cpus=1 --memory=2g \
+     docker.io/grafana/k6:latest run /scripts/load_test.js
+   ```
+
+3. Review the output. Check the `http_req_duration` p95 metric (target: under 500ms).
+
+4. Run the stress test to find the breaking point:
+
+   ```bash
+   podman run --rm --network host \
+     -v $(pwd)/tests/k6:/scripts:ro \
+     --cpus=1 --memory=2g \
+     docker.io/grafana/k6:latest run /scripts/stress_test.js
+   ```
+
+5. Monitor the backend during the test with `podman stats --no-stream` or `curl localhost:8080/metrics`.
+
+**Expected Result**:
+
+- The load test completes with p95 latency under 500ms for 50 users
+- The stress test identifies the breaking point (where error rate exceeds acceptable threshold)
+- Backend remains responsive and recovers after test completion
+- No goroutine leaks visible in `/metrics` after test ends
+
+**Bonus Challenge**: Run the soak test (`soak_test.js`) for 30 minutes with 20 users to check for memory leaks. Compare `go_memstats_alloc_bytes` at the start and end of the test.
+
+---
+
+### Exercise 7.4: Monitor Memory Usage with Prometheus Metrics
+
+**Objective**: Set up memory monitoring and interpret Go runtime metrics to detect potential memory issues.
+
+**Prerequisites**: Catalogizer running, Podman available
+
+**Steps**:
+
+1. Query current memory metrics from the API:
+
+   ```bash
+   curl -s http://localhost:8080/metrics | grep go_memstats
+   ```
+
+2. Note the key metrics:
+   - `go_memstats_alloc_bytes` -- currently allocated heap memory
+   - `go_memstats_sys_bytes` -- total memory obtained from the OS
+   - `go_goroutines` -- number of active goroutines
+
+3. Start Prometheus to collect metrics over time:
+
+   ```bash
+   podman run -d --name prom-memory \
+     --network host \
+     -v $(pwd)/monitoring/prometheus.yml:/etc/prometheus/prometheus.yml:ro \
+     --cpus=1 --memory=2g \
+     docker.io/prom/prometheus:latest
+   ```
+
+4. Trigger some load (browse the catalog, run a scan, search).
+
+5. Query memory trends in Prometheus at `http://localhost:9090`:
+   - `rate(go_memstats_alloc_bytes_total[5m])` -- allocation rate
+   - `go_goroutines` -- goroutine count over time
+   - `go_gc_duration_seconds` -- GC pause durations
+
+6. Clean up:
+
+   ```bash
+   podman stop prom-memory && podman rm prom-memory
+   ```
+
+**Expected Result**:
+
+- Memory metrics are exposed and scrapable by Prometheus
+- Heap allocation stabilizes after initial load (no unbounded growth)
+- Goroutine count remains stable (no goroutine leaks)
+- GC pauses stay under 10ms for typical workloads
+
+**Bonus Challenge**: Run `scripts/memory-leak-check.sh` and compare its heap snapshot analysis with the Prometheus metrics you collected.
+
+---
+
+### Exercise 7.5: Create a Custom Challenge
+
+**Objective**: Write a custom challenge that validates a specific aspect of the Catalogizer system using the challenge framework.
+
+**Prerequisites**: Module 6 completed, familiarity with Go
+
+**Steps**:
+
+1. Study an existing challenge for reference:
+
+   ```bash
+   cat catalog-api/challenges/register.go | head -40
+   ```
+
+2. Create a new challenge file `catalog-api/challenges/custom_health_challenge.go`:
+
+   ```go
+   package challenges
+
+   import (
+       "context"
+       "fmt"
+       "net/http"
+       "time"
+
+       "digital.vasic.challenges/pkg/challenge"
+   )
+
+   type HealthEndpointChallenge struct {
+       challenge.BaseChallenge
+       baseURL string
+   }
+
+   func NewHealthEndpointChallenge(baseURL string) *HealthEndpointChallenge {
+       return &HealthEndpointChallenge{
+           BaseChallenge: challenge.BaseChallenge{
+               ChallengeID:   "CH-CUSTOM-001",
+               ChallengeName: "Health Endpoint Validation",
+               Description:   "Verifies the health endpoint returns 200 OK within acceptable latency",
+           },
+           baseURL: baseURL,
+       }
+   }
+
+   func (c *HealthEndpointChallenge) Execute(ctx context.Context) (*challenge.Result, error) {
+       result := challenge.NewResult(c.ChallengeID, c.ChallengeName)
+
+       start := time.Now()
+       resp, err := http.Get(c.baseURL + "/api/v1/health")
+       elapsed := time.Since(start)
+
+       result.Assert("health endpoint reachable", err == nil,
+           fmt.Sprintf("GET /api/v1/health returned error: %v", err))
+
+       if resp != nil {
+           defer resp.Body.Close()
+           result.Assert("returns 200 OK", resp.StatusCode == 200,
+               fmt.Sprintf("expected 200, got %d", resp.StatusCode))
+       }
+
+       result.Assert("responds within 500ms", elapsed < 500*time.Millisecond,
+           fmt.Sprintf("took %v", elapsed))
+
+       return result, nil
+   }
+   ```
+
+3. Register the challenge in `register.go` (study existing registrations for the pattern).
+
+4. Build and run the backend, then execute your challenge via the API:
+
+   ```bash
+   curl -s -X POST http://localhost:8080/api/v1/challenges/CH-CUSTOM-001/run \
+     -H "Authorization: Bearer $TOKEN" | python3 -m json.tool
+   ```
+
+5. Review the challenge result: check assertion pass/fail status and any messages.
+
+**Expected Result**:
+
+- The challenge compiles and registers without errors
+- Executing via the API returns a structured result with 3 assertions
+- All 3 assertions pass (endpoint reachable, returns 200, responds within 500ms)
+- The challenge appears in the challenge list at `GET /api/v1/challenges`
+
+**Bonus Challenge**: Extend the challenge to also check that the response body contains valid JSON with a `"status": "healthy"` field. Add the assertion and re-run.
+
+---
+
 ## Capstone Project
 
 ### Project: Build a Custom Media Dashboard

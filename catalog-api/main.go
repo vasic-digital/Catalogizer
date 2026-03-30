@@ -9,9 +9,9 @@ import (
 	"catalogizer/internal/auth"
 	internal_config "catalogizer/internal/config"
 	"catalogizer/internal/handlers"
-	"catalogizer/internal/lifecycle"
 	"catalogizer/internal/metrics"
 	"catalogizer/internal/middleware"
+	"catalogizer/internal/modules"
 	"catalogizer/internal/services"
 	root_middleware "catalogizer/middleware"
 	root_repository "catalogizer/repository"
@@ -254,6 +254,10 @@ func main() {
 		logger.Info("Running in test mode")
 	}
 
+	// Register all external Go modules (digital.vasic.* family)
+	moduleRegistry := modules.RegisterModules()
+	defer moduleRegistry.Stop()
+
 	// Load configuration
 	cfg, err := root_config.LoadConfig("config.json")
 	if err != nil {
@@ -319,8 +323,11 @@ func main() {
 	}
 	log.Printf("Database connected: %s", databaseDB.DatabaseType())
 
-	// Run database migrations
+	// Start module background services (memory monitor, health checks)
 	ctx := context.Background()
+	moduleRegistry.StartBackgroundServices(ctx)
+
+	// Run database migrations
 	log.Println("Running database migrations...")
 	if err := databaseDB.RunMigrations(ctx); err != nil {
 		log.Fatal("Failed to run database migrations:", err)
@@ -331,10 +338,6 @@ func main() {
 	if err := seedDefaultAdmin(databaseDB, cfg.Auth.AdminUsername, cfg.Auth.AdminPassword); err != nil {
 		log.Printf("Warning: failed to seed admin user: %v", err)
 	}
-
-	// Lazy service registry for on-demand initialization
-	lazyServices := lifecycle.NewLazyServiceRegistry()
-	_ = lazyServices // Will be used as more services migrate to lazy init
 
 	// Initialize services
 	// Convert config to internal format
@@ -659,8 +662,8 @@ func main() {
 	favoritesHandler := root_handlers.NewFavoritesHandler(favoritesService, logger)
 	playlistHandler := root_handlers.NewPlaylistHandler(playlistService, logger)
 
-	// Stub handler for not-yet-implemented endpoints (Zero Warning / Zero Error Policy)
-	stubHandler := root_handlers.NewStubHandler()
+	// Media query handler — replaces former stub endpoints with real DB implementations
+	mediaQueryHandler := root_handlers.NewMediaQueryHandler(databaseDB, mediaItemRepo, userRepo)
 
 	// Initialize JWT middleware
 	jwtMiddleware := root_middleware.NewJWTMiddleware(jwtSecret)
@@ -681,7 +684,9 @@ func main() {
 		// defaultRateLimiter = root_middleware.SlidingWindowRedisRateLimit(root_middleware.DefaultRedisRateLimiterConfig(redisClient))
 	}
 
-	// Alternative rate limiting strategies (uncomment to switch):
+	// Alternative rate limiting strategies (documented for reference):
+	// These apply at the router level instead of per-route. Do not use
+	// simultaneously with the per-route limiters above.
 	// router.Use(root_middleware.AdvancedRateLimit(root_middleware.DefaultRateLimiterConfig()))
 	// router.Use(root_middleware.UserBasedRateLimit(root_middleware.AuthRateLimiterConfig()))
 	// router.Use(root_middleware.IPRateLimit(10, 20))
@@ -820,8 +825,8 @@ func main() {
 		authGroup.GET("/status", defaultRateLimiter, authHandler.GetAuthStatusGin)
 		authGroup.GET("/permissions", defaultRateLimiter, jwtMiddleware.RequireAuth(), authHandler.GetPermissionsGin)
 		authGroup.GET("/profile", defaultRateLimiter, jwtMiddleware.RequireAuth(), authHandler.GetCurrentUserGin)
-		authGroup.GET("/init-status", defaultRateLimiter, stubHandler.GetInitStatus)
-		authGroup.POST("/change-password", defaultRateLimiter, jwtMiddleware.RequireAuth(), stubHandler.ChangePassword)
+		authGroup.GET("/init-status", defaultRateLimiter, mediaQueryHandler.GetInitStatus)
+		authGroup.POST("/change-password", defaultRateLimiter, jwtMiddleware.RequireAuth(), mediaQueryHandler.ChangePassword)
 	}
 
 	// API routes
@@ -854,17 +859,17 @@ func main() {
 		// Media browsing endpoints (must be before :id to prevent route conflict)
 		api.GET("/media/search", mediaBrowseHandler.SearchMedia)
 		api.GET("/media/stats", mediaBrowseHandler.GetMediaStats)
-		api.GET("/media/recent", stubHandler.GetRecentMedia)
-		api.GET("/media/popular", stubHandler.GetPopularMedia)
-		api.GET("/media/by-path", stubHandler.GetMediaByPath)
-		api.POST("/media/analyze", stubHandler.AnalyzeMedia)
+		api.GET("/media/recent", mediaQueryHandler.GetRecentMedia)
+		api.GET("/media/popular", mediaQueryHandler.GetPopularMedia)
+		api.GET("/media/by-path", mediaQueryHandler.GetMediaByPath)
+		api.POST("/media/analyze", mediaQueryHandler.AnalyzeMedia)
 
 		// Media operations
 		api.GET("/media/:id", androidTVMediaHandler.GetMediaByID)
 		api.PUT("/media/:id/progress", androidTVMediaHandler.UpdateWatchProgress)
 		api.PUT("/media/:id/favorite", androidTVMediaHandler.UpdateFavoriteStatus)
-		api.POST("/media/:id/refresh", stubHandler.RefreshMediaMetadata)
-		api.GET("/media/:id/quality", stubHandler.GetMediaQuality)
+		api.POST("/media/:id/refresh", mediaQueryHandler.RefreshMediaMetadata)
+		api.GET("/media/:id/quality", mediaQueryHandler.GetMediaQuality)
 
 		// Recommendation endpoints
 		recGroup := api.Group("/recommendations")

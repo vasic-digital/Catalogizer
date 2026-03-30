@@ -502,12 +502,13 @@ func TestAdminHandler_CreateBackup(t *testing.T) {
 	c.Request.Header.Set("Authorization", "Bearer token")
 
 	h.CreateBackup(c)
-	assert.Equal(t, http.StatusOK, w.Code)
+	// With nil db, the handler returns 500 "Database not configured"
+	assert.Equal(t, http.StatusInternalServerError, w.Code)
 
 	var resp map[string]interface{}
 	err := json.Unmarshal(w.Body.Bytes(), &resp)
 	require.NoError(t, err)
-	assert.Contains(t, resp["message"], "full")
+	assert.Contains(t, resp["error"], "Database not configured")
 }
 
 func TestAdminHandler_CreateBackup_BadBody(t *testing.T) {
@@ -551,12 +552,13 @@ func TestAdminHandler_RestoreBackup(t *testing.T) {
 	c.Params = gin.Params{{Key: "id", Value: "42"}}
 
 	h.RestoreBackup(c)
-	assert.Equal(t, http.StatusOK, w.Code)
+	// Backup file "42" does not exist, so the handler returns 404.
+	assert.Equal(t, http.StatusNotFound, w.Code)
 
 	var resp map[string]interface{}
 	err := json.Unmarshal(w.Body.Bytes(), &resp)
 	require.NoError(t, err)
-	assert.Contains(t, resp["message"], "42")
+	assert.Contains(t, resp["error"], "not found")
 }
 
 func TestAdminHandler_ScanStorage(t *testing.T) {
@@ -578,12 +580,13 @@ func TestAdminHandler_ScanStorage(t *testing.T) {
 	c.Request.Header.Set("Authorization", "Bearer token")
 
 	h.ScanStorage(c)
-	assert.Equal(t, http.StatusOK, w.Code)
+	// ScanStorage now returns 202 Accepted (scan is queued, not completed immediately).
+	assert.Equal(t, http.StatusAccepted, w.Code)
 
 	var resp map[string]interface{}
 	err := json.Unmarshal(w.Body.Bytes(), &resp)
 	require.NoError(t, err)
-	assert.Contains(t, resp["message"], "/media")
+	assert.Equal(t, "accepted", resp["status"])
 }
 
 func TestAdminHandler_ScanStorage_BadBody(t *testing.T) {

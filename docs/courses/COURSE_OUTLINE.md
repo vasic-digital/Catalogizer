@@ -348,6 +348,9 @@ By the end of this module, students will be able to:
   - Generate professional PDF reports with charts and analytics (advanced reporting)
   - Configure automatic archiving rules for storage management
   - Restore from backups after data loss
+  - Use the Backup Management API to create, list, and restore database backups (`POST /api/v1/admin/backup`, `GET /api/v1/admin/backups`, `POST /api/v1/admin/backup/restore`)
+  - Understand the backup semaphore that prevents concurrent backup operations
+  - Verify path traversal protection on backup restore for security
 - **Prerequisites**: Lesson 5.1 completed
 
 ### Lesson 5.5: Troubleshooting & Resilience
@@ -422,9 +425,21 @@ By the end of this module, students will be able to:
   - Manage submodule dependencies and versioning
 - **Prerequisites**: Lesson 6.1 completed
 
-### Lesson 6.5: Build Pipeline & Packaging
+### Lesson 6.5: Password Change & Media Quality Analysis
 
-- **Duration**: 14 minutes
+- **Duration**: 12 minutes
+- **Learning Objectives**:
+  - Use the password change API (`POST /api/v1/auth/change-password`) to update user credentials
+  - Understand password validation rules and error responses
+  - Use the media quality analysis endpoint to inspect resolution, codec, and bitrate metadata
+  - Trigger media analysis and metadata refresh for individual items or entire storage roots
+  - Browse popular media (sorted by favorites) and recent media endpoints
+  - Search media by file path using the search API
+- **Prerequisites**: Lesson 6.1 completed
+
+### Lesson 6.6: Build Pipeline & Packaging
+
+- **Duration**: 12 minutes
 - **Learning Objectives**:
   - Use the build scripts in scripts/ for automated builds
   - Build the containerized pipeline with scripts/container-build.sh
@@ -555,7 +570,20 @@ By the end of this module, students will be able to:
   - Set up log aggregation and rotation policies
 - **Prerequisites**: Lesson 8.1 completed
 
-### Lesson 8.4: Maintenance, Upgrades & Disaster Recovery
+### Lesson 8.4: Security Scanning with Snyk, SonarQube & Semgrep
+
+- **Duration**: 14 minutes
+- **Learning Objectives**:
+  - Run `govulncheck ./...` to scan Go dependencies for known vulnerabilities
+  - Run `npm audit --production` to check frontend dependencies
+  - Execute Semgrep SAST scanning via `podman-compose -f docker-compose.security.yml --profile semgrep-scan run --rm semgrep-scanner`
+  - Run SonarQube analysis with `./scripts/run-sonarqube-scan.sh` and interpret the quality gate report
+  - Use Snyk for dependency scanning with `scripts/snyk-scan.sh`
+  - Use Trivy for container image scanning via `docker-compose.security.yml`
+  - Triage scan results: distinguish real vulnerabilities from false positives
+- **Prerequisites**: Lesson 8.1 completed
+
+### Lesson 8.5: Maintenance, Upgrades & Disaster Recovery
 
 - **Duration**: 12 minutes
 - **Learning Objectives**:
@@ -566,6 +594,142 @@ By the end of this module, students will be able to:
   - Establish a runbook for common operational procedures
   - Plan capacity based on analytics data and growth trends
 - **Prerequisites**: Module 8 lessons completed
+
+---
+
+## Advanced Module 9: Architecture Deep Dive (Optional)
+
+**Module Duration**: ~50 minutes
+**Description**: Explore the modular Go architecture, understand how 12 wired modules integrate, and learn concurrency patterns used throughout the system.
+**Prerequisites**: Module 6 completed
+
+### Learning Objectives
+
+By the end of this module, students will be able to:
+- Explain the module registry and how 12 Go modules are wired via `replace` directives
+- Identify concurrency patterns (semaphores, WaitGroups, lazy initialization) used in the codebase
+- Trace cross-module interactions through the service layer
+
+### Lesson 9.1: Module Registry & Integration
+
+- **Duration**: 18 minutes
+- **Learning Objectives**:
+  - Understand the 12 wired Go modules: Database, Lazy, Media, Memory, Middleware, Observability, RateLimiter, Recovery, Security, Storage, Streaming, Watcher
+  - Read `catalog-api/go.mod` `replace` directives to map module paths to local submodule directories
+  - Trace how `NewService` constructors inject module dependencies (e.g., `digital.vasic.cache`, `digital.vasic.auth`)
+  - Use `setup-submodule.sh` to scaffold a new Go module with upstream remotes
+- **Prerequisites**: Module 6 completed
+
+### Lesson 9.2: Semaphore & Concurrency Patterns
+
+- **Duration**: 16 minutes
+- **Learning Objectives**:
+  - Understand semaphore-based concurrency control in `internal/concurrency/` for bounding parallel scan operations
+  - Review the backup operation semaphore that prevents concurrent database backups
+  - Study `sync.Once` usage in CacheService and WebSocketHandler for safe shutdown
+  - Examine goroutine lifecycle management with `WaitGroup` and `Close()` methods
+  - Understand `LazyServiceRegistry` for deferred service initialization with dependency ordering
+- **Prerequisites**: Lesson 9.1 completed
+
+### Lesson 9.3: Cross-Module Patterns
+
+- **Duration**: 16 minutes
+- **Learning Objectives**:
+  - Identify design patterns: Strategy (dialect), Decorator (middleware), Facade (media pipeline), Observer (watcher), Composite (filter), Chain of Responsibility (handler)
+  - Trace a request from HTTP handler through middleware, service, repository, and back
+  - Understand event propagation: EventBus publishes, WebSocket relays to clients, Watcher triggers on filesystem changes
+  - Review non-blocking event patterns verified across all subsystems
+- **Prerequisites**: Lesson 9.1 completed
+
+---
+
+## Advanced Module 10: Advanced Features (Optional)
+
+**Module Duration**: ~45 minutes
+**Description**: Covers advanced features including the challenge system, user flow automation, and media entity aggregation pipeline.
+**Prerequisites**: Module 6 completed
+
+### Learning Objectives
+
+By the end of this module, students will be able to:
+- Run and create challenges using the challenge framework
+- Understand the user flow automation pipeline across platforms
+- Trace media entity aggregation from scan to structured entities
+
+### Lesson 10.1: Challenge System
+
+- **Duration**: 15 minutes
+- **Learning Objectives**:
+  - Understand the challenge framework: `BaseChallenge`, `Execute()`, `RegisterAll()`
+  - Run challenges via `/api/v1/challenges` REST endpoints
+  - Review 285+ registered challenges (CH-*, UF-*, MOD-*)
+  - Interpret challenge reports with assertions and metrics
+- **Prerequisites**: Module 6 completed
+
+### Lesson 10.2: User Flow Automation
+
+- **Duration**: 15 minutes
+- **Learning Objectives**:
+  - Understand the `pkg/userflow/` framework: 6 adapter interfaces, 9 CLI adapters, 13 challenge templates
+  - Run the CLI runner with `--platform`, `--report`, `--compose` flags
+  - Review 174 Catalogizer-specific user flow challenges across API, Web, Desktop, and Mobile
+- **Prerequisites**: Lesson 10.1 completed
+
+### Lesson 10.3: Media Entity Aggregation Pipeline
+
+- **Duration**: 15 minutes
+- **Learning Objectives**:
+  - Trace the aggregation pipeline: scan completes, title parser runs, MediaItem created, hierarchy built
+  - Understand 11 media types and the parent_id self-reference for hierarchies (TV Show -> Season -> Episode)
+  - Review duplicate detection and metadata provider integration (OpenLibrary, MusicBrainz, TMDB, OMDB)
+- **Prerequisites**: Lesson 10.1 completed
+
+---
+
+## Advanced Module 11: Monitoring & Observability (Optional)
+
+**Module Duration**: ~45 minutes
+**Description**: Production monitoring with Prometheus, Grafana, memory leak detection, and health aggregation.
+**Prerequisites**: Module 8 completed
+
+### Learning Objectives
+
+By the end of this module, students will be able to:
+- Configure and interpret Prometheus metrics for all subsystems
+- Use the memory monitor from `digital.vasic.memory` for leak detection
+- Set up health aggregation across services
+
+### Lesson 11.1: Memory Monitor & Leak Detection
+
+- **Duration**: 15 minutes
+- **Learning Objectives**:
+  - Understand the `digital.vasic.memory` module: heap tracking, goroutine monitoring, and leak detection
+  - Configure memory stability tests with heap snapshot comparison
+  - Review memory leak protections: rate limiter bucket cap, log entry cap, event channel drain
+  - Use `scripts/memory-leak-check.sh` for automated memory profiling
+  - Interpret Go runtime memory metrics exposed at `/metrics` (heap alloc, GC pause, goroutine count)
+- **Prerequisites**: Module 8 completed
+
+### Lesson 11.2: Health Aggregator & Service Status
+
+- **Duration**: 15 minutes
+- **Learning Objectives**:
+  - Understand the health aggregation pattern: individual service health checks rolled into a composite status
+  - Monitor database connection pool health (MaxOpen=25, MaxIdle=10, MaxLifetime=5m)
+  - Track circuit breaker states for SMB connections (closed, open, half-open)
+  - Review Redis cache health and connection pool metrics
+  - Use `podman stats --no-stream` and `/proc/loadavg` for host resource monitoring
+- **Prerequisites**: Lesson 11.1 completed
+
+### Lesson 11.3: Grafana Dashboards & Alerting
+
+- **Duration**: 15 minutes
+- **Learning Objectives**:
+  - Deploy pre-built Grafana dashboards from `monitoring/grafana/` and `config/grafana-dashboards/`
+  - Configure alerts for memory growth, goroutine leaks, API latency spikes, and error rate thresholds
+  - Set up log aggregation and rotation policies for production
+  - Use k6 load tests (`tests/k6/`) to generate metrics under controlled load for dashboard validation
+- **Prerequisites**: Lesson 11.1 completed
 
 ---
 
@@ -580,18 +744,21 @@ By the end of this module, students will be able to:
 | Module 3: Media Management | 6 | ~75 min |
 | Module 4: Multi-Platform | 4 | ~55 min |
 | Module 5: Administration | 5 | ~65 min |
-| Module 6: Developer Guide | 5 | ~70 min |
-| **Core Total** | **30** | **~6h 25min** |
+| Module 6: Developer Guide | 6 | ~82 min |
+| **Core Total** | **31** | **~6h 25min** |
 
-### Advanced Modules (Optional, ~1 hour 55 minutes)
+### Advanced Modules (Optional, ~4 hours 15 minutes)
 
 | Module | Lessons | Duration |
 |--------|---------|----------|
 | Module 7: Testing & Quality Assurance | 4 | ~60 min |
-| Module 8: Deployment & Production | 4 | ~55 min |
-| **Advanced Total** | **8** | **~1h 55min** |
+| Module 8: Deployment & Production | 5 | ~69 min |
+| Module 9: Architecture Deep Dive | 3 | ~50 min |
+| Module 10: Advanced Features | 3 | ~45 min |
+| Module 11: Monitoring & Observability | 3 | ~45 min |
+| **Advanced Total** | **18** | **~4h 29min** |
 
-### Complete Course Total: 38 lessons, ~9 hours 20 minutes
+### Complete Course Total: 50 lessons, ~10 hours 54 minutes
 
 ---
 

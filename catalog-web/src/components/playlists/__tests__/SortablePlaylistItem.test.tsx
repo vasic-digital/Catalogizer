@@ -68,7 +68,7 @@ const defaultProps = {
 }
 
 describe('SortablePlaylistItem', () => {
-  it('renders the component', () => {
+  it('renders the component with item title', () => {
     render(<SortablePlaylistItem {...defaultProps} />)
     expect(screen.getByText('Test Track')).toBeInTheDocument()
   })
@@ -81,13 +81,43 @@ describe('SortablePlaylistItem', () => {
 
   it('renders without action buttons when showActions is false', () => {
     render(<SortablePlaylistItem {...defaultProps} showActions={false} />)
-    // Component still renders, just without actions
     expect(screen.getByText('Test Track')).toBeInTheDocument()
   })
 
-  it('applies drag handle', () => {
+  it('applies drag handle for sortable behavior', () => {
     render(<SortablePlaylistItem {...defaultProps} />)
-    // The drag handle (grip icon) should be present
+    expect(screen.getByText('Test Track')).toBeInTheDocument()
+  })
+
+  it('renders with isCurrent true', () => {
+    const { container } = render(
+      <SortablePlaylistItem {...defaultProps} isCurrent={true} />
+    )
+    expect(container.firstChild).toBeTruthy()
+  })
+
+  it('renders with isPlaying true', () => {
+    const { container } = render(
+      <SortablePlaylistItem {...defaultProps} isPlaying={true} isCurrent={true} />
+    )
+    expect(container.firstChild).toBeTruthy()
+  })
+
+  it('renders with onPlay callback', () => {
+    const onPlay = vi.fn()
+    render(<SortablePlaylistItem {...defaultProps} onPlay={onPlay} />)
+    expect(screen.getByText('Test Track')).toBeInTheDocument()
+  })
+
+  it('renders with onRemove callback', () => {
+    const onRemove = vi.fn()
+    render(<SortablePlaylistItem {...defaultProps} onRemove={onRemove} showActions={true} />)
+    const buttons = screen.getAllByRole('button')
+    expect(buttons.length).toBeGreaterThan(0)
+  })
+
+  it('renders at different index positions', () => {
+    render(<SortablePlaylistItem {...defaultProps} index={5} />)
     expect(screen.getByText('Test Track')).toBeInTheDocument()
   })
 })

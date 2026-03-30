@@ -10,6 +10,7 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+	"sync"
 	"time"
 
 	"catalogizer/models"
@@ -27,15 +28,27 @@ type SyncService struct {
 	userRepo      *repository.UserRepository
 	authService   *AuthService
 	webdavClients map[int]*WebDAVClient
+	wg            sync.WaitGroup
+	ctx           context.Context
+	cancel        context.CancelFunc
 }
 
 func NewSyncService(syncRepo *repository.SyncRepository, userRepo *repository.UserRepository, authService *AuthService) *SyncService {
+	ctx, cancel := context.WithCancel(context.Background())
 	return &SyncService{
 		syncRepo:      syncRepo,
 		userRepo:      userRepo,
 		authService:   authService,
 		webdavClients: make(map[int]*WebDAVClient),
+		ctx:           ctx,
+		cancel:        cancel,
 	}
+}
+
+// Close cancels any in-flight sync goroutines and waits for them to finish.
+func (s *SyncService) Close() {
+	s.cancel()
+	s.wg.Wait()
 }
 
 func (s *SyncService) CreateSyncEndpoint(userID int, endpoint *models.SyncEndpoint) (*models.SyncEndpoint, error) {
@@ -210,7 +223,11 @@ func (s *SyncService) StartSync(endpointID int, userID int) (*models.SyncSession
 	// performSync is naturally bounded: it dispatches to a protocol-specific
 	// handler (WebDAV/Cloud/Local), performs finite file operations, updates
 	// the session status in the DB, and returns.
-	go s.performSync(session, endpoint)
+	s.wg.Add(1)
+	go func() {
+		defer s.wg.Done()
+		s.performSync(session, endpoint)
+	}()
 
 	return &returnCopy, nil
 }

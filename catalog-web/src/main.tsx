@@ -7,6 +7,7 @@ import { Toaster } from 'react-hot-toast'
 
 import App from './App'
 import { logWebVitals, sendToAnalytics } from './lib/webVitals'
+import '@/lib/module-registry'
 import './index.css'
 
 // Create a client

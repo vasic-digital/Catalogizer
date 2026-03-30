@@ -1293,6 +1293,101 @@ components:
           type: string
           format: date-time
 
+    ChangePasswordRequest:
+      type: object
+      required:
+        - current_password
+        - new_password
+      properties:
+        current_password:
+          type: string
+          description: The user's current password for verification
+        new_password:
+          type: string
+          minLength: 8
+          description: The new password (minimum 8 characters)
+
+    AnalyzeMediaRequest:
+      type: object
+      description: |
+        Provide either path or id (at least one is required). If both are
+        given, id takes precedence.
+      properties:
+        path:
+          type: string
+          description: File path to analyze
+        id:
+          type: integer
+          format: int64
+          description: Media item ID to analyze
+
+    AnalyzeMediaResponse:
+      type: object
+      properties:
+        analysis:
+          type: object
+          properties:
+            type:
+              type: string
+              description: Detected media type name (e.g., movie, tv_show, song, unknown)
+            files:
+              type: array
+              items:
+                type: object
+                properties:
+                  path:
+                    type: string
+                  size:
+                    type: integer
+                    format: int64
+                  mime_type:
+                    type: string
+            metadata:
+              type: object
+              description: Media item metadata (present when the file is linked to an entity)
+              properties:
+                id:
+                  type: integer
+                  format: int64
+                title:
+                  type: string
+                media_type_id:
+                  type: integer
+                status:
+                  type: string
+                first_detected:
+                  type: string
+                  format: date-time
+                last_updated:
+                  type: string
+                  format: date-time
+
+    MediaQualityResponse:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+        quality:
+          type: object
+          properties:
+            files:
+              type: array
+              items:
+                type: object
+                properties:
+                  path:
+                    type: string
+                  size:
+                    type: integer
+                    format: int64
+                  mime_type:
+                    type: string
+            total_size:
+              type: integer
+              format: int64
+              description: Sum of all associated file sizes in bytes
+
     BackupInfo:
       type: object
       description: Database backup file metadata
@@ -2562,6 +2657,403 @@ paths:
       responses:
         '200':
           description: Favorite status updated
+
+  /api/v1/media/recent:
+    get:
+      tags: [media]
+      summary: Get recent media items
+      description: |
+        Returns media items ordered by last_updated descending (most recently
+        added or updated first). Supports pagination via limit/offset query
+        parameters.
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: limit
+          in: query
+          description: Maximum number of items to return (1-200, default 20)
+          schema:
+            type: integer
+            default: 20
+            minimum: 1
+            maximum: 200
+        - name: offset
+          in: query
+          description: Number of items to skip for pagination
+          schema:
+            type: integer
+            default: 0
+            minimum: 0
+      responses:
+        '200':
+          description: Paginated list of recent media items
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  items:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/MediaBrowseItem'
+                  total:
+                    type: integer
+                    description: Total number of media items in the database
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /api/v1/media/popular:
+    get:
+      tags: [media]
+      summary: Get popular media items
+      description: |
+        Returns media items ordered by the number of user favorites
+        (descending), with last_updated as a tiebreaker. Items with zero
+        favorites still appear after favorited items.
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: limit
+          in: query
+          description: Maximum number of items to return (1-200, default 20)
+          schema:
+            type: integer
+            default: 20
+            minimum: 1
+            maximum: 200
+        - name: offset
+          in: query
+          description: Number of items to skip for pagination
+          schema:
+            type: integer
+            default: 0
+            minimum: 0
+      responses:
+        '200':
+          description: Paginated list of popular media items with favorite counts
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  items:
+                    type: array
+                    items:
+                      allOf:
+                        - $ref: '#/components/schemas/MediaBrowseItem'
+                        - type: object
+                          properties:
+                            favorite_count:
+                              type: integer
+                              description: Number of users who favorited this item
+                  total:
+                    type: integer
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /api/v1/media/by-path:
+    get:
+      tags: [media]
+      summary: Get media items by file path
+      description: |
+        Returns media items whose associated files match a given path prefix.
+        Joins media_items through media_files to files and filters on
+        files.path LIKE '{path}%'. Useful for browsing media within a
+        specific storage root or directory.
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: path
+          in: query
+          required: true
+          description: File path prefix to filter by (e.g., /media/movies/)
+          schema:
+            type: string
+        - name: limit
+          in: query
+          description: Maximum number of items to return (1-200, default 20)
+          schema:
+            type: integer
+            default: 20
+            minimum: 1
+            maximum: 200
+        - name: offset
+          in: query
+          description: Number of items to skip for pagination
+          schema:
+            type: integer
+            default: 0
+            minimum: 0
+      responses:
+        '200':
+          description: Paginated list of media items matching the path prefix
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  items:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/MediaBrowseItem'
+                  total:
+                    type: integer
+        '400':
+          description: Missing required path parameter
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /api/v1/media/analyze:
+    post:
+      tags: [media]
+      summary: Analyze media by path or ID
+      description: |
+        Analyzes a media item and returns its detected type, associated files,
+        and metadata. Provide either a file path or a media item ID in the
+        request body. When given a path, the endpoint looks up the file and
+        checks whether it is linked to a media entity. When given an ID, it
+        fetches the media item and its associated files directly.
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AnalyzeMediaRequest'
+      responses:
+        '200':
+          description: Analysis result with detected type, files, and metadata
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AnalyzeMediaResponse'
+        '400':
+          description: Invalid request body or missing both path and id
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: Media item or file not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /api/v1/media/{id}/refresh:
+    post:
+      tags: [media]
+      summary: Trigger metadata refresh
+      description: |
+        Triggers a metadata refresh for the specified media item by updating
+        its last_updated timestamp. This causes the enrichment pipeline to
+        re-fetch metadata from configured providers on its next pass.
+        Returns 202 Accepted immediately; the actual refresh happens
+        asynchronously.
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: Media item ID
+          schema:
+            type: integer
+            format: int64
+      responses:
+        '202':
+          description: Metadata refresh accepted and queued
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: accepted
+                  message:
+                    type: string
+                    example: Metadata refresh queued
+                  id:
+                    type: integer
+                    format: int64
+        '400':
+          description: Invalid media item ID
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: Media item not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /api/v1/media/{id}/quality:
+    get:
+      tags: [media]
+      summary: Get media quality analysis
+      description: |
+        Returns quality information about a media item's associated files,
+        including file paths, sizes, MIME types, and the aggregate total size
+        across all files linked to the media item.
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: Media item ID
+          schema:
+            type: integer
+            format: int64
+      responses:
+        '200':
+          description: Quality analysis for the media item
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MediaQualityResponse'
+        '400':
+          description: Invalid media item ID
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: Media item not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /api/v1/auth/change-password:
+    post:
+      tags: [auth]
+      summary: Change user password
+      description: |
+        Changes the authenticated user's password. Requires the current
+        password for verification (bcrypt with per-user salt). The new
+        password must be at least 8 characters. A new random salt is
+        generated for the updated password hash.
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ChangePasswordRequest'
+      responses:
+        '200':
+          description: Password changed successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: ok
+                  message:
+                    type: string
+                    example: Password changed successfully
+        '400':
+          description: Invalid request body or new password too short
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '401':
+          description: Unauthorized or current password incorrect
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: User not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
 
   /api/v1/recommendations/test:
     get:

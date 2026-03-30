@@ -3,6 +3,7 @@ package middleware
 import (
 	"net/http"
 	"os"
+	"sort"
 	"strings"
 	"sync"
 	"time"
@@ -30,8 +31,13 @@ func RequestID() gin.HandlerFunc {
 	}
 }
 
-// RateLimiter implements token-bucket rate limiting per client IP
+// RateLimiter implements token-bucket rate limiting per client IP.
+// The cleanup goroutine is intentional: it is created once at server startup
+// and lives for the entire server lifetime. It is not tracked by a WaitGroup
+// because it terminates naturally when the process exits.
 func RateLimiter(requestsPerMinute int) gin.HandlerFunc {
+	const maxBuckets = 10000
+
 	var mu sync.Mutex
 	buckets := make(map[string]*ipBucket)
 	rate := float64(requestsPerMinute) / 60.0
@@ -45,6 +51,26 @@ func RateLimiter(requestsPerMinute int) gin.HandlerFunc {
 			for ip, b := range buckets {
 				if now.Sub(b.lastCheck) > 10*time.Minute {
 					delete(buckets, ip)
+				}
+			}
+			// Evict oldest half if bucket map grows too large (e.g., under DDoS)
+			if len(buckets) > maxBuckets {
+				type ipTime struct {
+					ip string
+					t  time.Time
+				}
+				entries := make([]ipTime, 0, len(buckets))
+				for ip, b := range buckets {
+					entries = append(entries, ipTime{ip, b.lastCheck})
+				}
+				// Sort by lastCheck ascending (oldest first)
+				sort.Slice(entries, func(i, j int) bool {
+					return entries[i].t.Before(entries[j].t)
+				})
+				// Evict oldest half
+				evictCount := len(entries) / 2
+				for i := 0; i < evictCount; i++ {
+					delete(buckets, entries[i].ip)
 				}
 			}
 			mu.Unlock()

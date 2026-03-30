@@ -379,3 +379,98 @@ describe('useInfiniteScroll', () => {
     expect(onLoadMore).not.toHaveBeenCalled()
   })
 })
+
+describe('PerformanceOptimizer - IntersectionObserver singleton', () => {
+  it('creates only one IntersectionObserver for lazy strategy', () => {
+    const observerInstances: any[] = []
+    const OriginalObserver = global.IntersectionObserver
+
+    global.IntersectionObserver = class MockObserver {
+      observe = vi.fn()
+      disconnect = vi.fn()
+      unobserve = vi.fn()
+      takeRecords = vi.fn().mockReturnValue([])
+      root = null
+      rootMargin = ''
+      thresholds = [0]
+      constructor(_callback: any, _options?: any) {
+        observerInstances.push(this)
+      }
+    } as any
+
+    const manyChildren = Array.from({ length: 150 }, (_, i) => (
+      <div key={i}>Item {i}</div>
+    ))
+
+    const { rerender } = render(
+      <PerformanceOptimizer
+        itemCount={150}
+        threshold={100}
+        loadingStrategy="lazy"
+      >
+        {manyChildren}
+      </PerformanceOptimizer>
+    )
+
+    const countAfterFirstRender = observerInstances.length
+
+    // Re-render with same strategy - should not create a new observer
+    rerender(
+      <PerformanceOptimizer
+        itemCount={150}
+        threshold={100}
+        loadingStrategy="lazy"
+      >
+        {manyChildren}
+      </PerformanceOptimizer>
+    )
+
+    // The observer count should remain the same after re-render
+    // because the useEffect dependency only includes loadingStrategy
+    expect(observerInstances.length).toBe(countAfterFirstRender)
+
+    global.IntersectionObserver = OriginalObserver
+  })
+})
+
+describe('useMemoryOptimization - max size enforcement', () => {
+  it('enforces max cache size of 100 entries', () => {
+    const { result } = renderHook(() => useMemoryOptimization())
+
+    // Fill cache to maximum
+    act(() => {
+      for (let i = 0; i < 100; i++) {
+        result.current.addToCache(`key-${i}`, `value-${i}`)
+      }
+    })
+
+    expect(result.current.cacheSize).toBe(100)
+
+    // Adding beyond max should evict oldest and maintain max size
+    act(() => {
+      result.current.addToCache('key-overflow-1', 'overflow-value-1')
+      result.current.addToCache('key-overflow-2', 'overflow-value-2')
+    })
+
+    // Cache should never exceed 100
+    expect(result.current.cacheSize).toBeLessThanOrEqual(100)
+  })
+
+  it('maintains newest entries when evicting', () => {
+    const { result } = renderHook(() => useMemoryOptimization())
+
+    act(() => {
+      for (let i = 0; i < 100; i++) {
+        result.current.addToCache(`key-${i}`, `value-${i}`)
+      }
+    })
+
+    // Add a new entry which should evict the oldest
+    act(() => {
+      result.current.addToCache('newest-key', 'newest-value')
+    })
+
+    // The newest entry should be accessible
+    expect(result.current.getFromCache('newest-key')).toBe('newest-value')
+  })
+})

@@ -1,6 +1,6 @@
 module catalogizer
 
-go 1.25.0
+go 1.25.7
 
 replace digital.vasic.challenges => ../Challenges
 
@@ -54,13 +54,25 @@ require (
 	digital.vasic.auth v0.0.0-00010101000000-000000000000
 	digital.vasic.cache v0.0.0-00010101000000-000000000000
 	digital.vasic.challenges v0.0.0-00010101000000-000000000000
-	digital.vasic.concurrency v0.0.0-00010101000000-000000000000
+	digital.vasic.concurrency v0.0.0
 	digital.vasic.config v0.0.0-00010101000000-000000000000
 	digital.vasic.containers v0.0.0-00010101000000-000000000000
+	digital.vasic.database v0.0.0-00010101000000-000000000000
 	digital.vasic.discovery v0.0.0-00010101000000-000000000000
 	digital.vasic.entities v0.0.0-00010101000000-000000000000
 	digital.vasic.eventbus v0.0.0-00010101000000-000000000000
 	digital.vasic.filesystem v0.0.0-00010101000000-000000000000
+	digital.vasic.lazy v0.0.0-00010101000000-000000000000
+	digital.vasic.media v0.0.0-00010101000000-000000000000
+	digital.vasic.memory v0.0.0-00010101000000-000000000000
+	digital.vasic.middleware v0.0.0-00010101000000-000000000000
+	digital.vasic.observability v0.0.0-00010101000000-000000000000
+	digital.vasic.ratelimiter v0.0.0-00010101000000-000000000000
+	digital.vasic.recovery v0.0.0-00010101000000-000000000000
+	digital.vasic.security v0.0.0-00010101000000-000000000000
+	digital.vasic.storage v0.0.0-00010101000000-000000000000
+	digital.vasic.streaming v0.0.0-00010101000000-000000000000
+	digital.vasic.watcher v0.0.0-00010101000000-000000000000
 	github.com/DATA-DOG/go-sqlmock v1.5.2
 	github.com/alicebob/miniredis/v2 v2.36.1
 	github.com/andybalholm/brotli v1.2.0
@@ -182,11 +194,11 @@ require (
 	go.opentelemetry.io/contrib/detectors/gcp v1.39.0 // indirect
 	go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc v0.63.0 // indirect
 	go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp v0.61.0 // indirect
-	go.opentelemetry.io/otel v1.40.0 // indirect
-	go.opentelemetry.io/otel/metric v1.40.0 // indirect
-	go.opentelemetry.io/otel/sdk v1.40.0 // indirect
-	go.opentelemetry.io/otel/sdk/metric v1.40.0 // indirect
-	go.opentelemetry.io/otel/trace v1.40.0 // indirect
+	go.opentelemetry.io/otel v1.42.0 // indirect
+	go.opentelemetry.io/otel/metric v1.42.0 // indirect
+	go.opentelemetry.io/otel/sdk v1.42.0 // indirect
+	go.opentelemetry.io/otel/sdk/metric v1.42.0 // indirect
+	go.opentelemetry.io/otel/trace v1.42.0 // indirect
 	go.uber.org/multierr v1.10.0 // indirect
 	go.yaml.in/yaml/v2 v2.4.2 // indirect
 	golang.org/x/arch v0.22.0 // indirect

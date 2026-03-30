@@ -399,7 +399,9 @@ func (s *UniversalScanner) storageRootToSettings(root *models.StorageRoot) map[s
 	return settings
 }
 
-// updateStatus safely updates the scan status
+// updateStatus safely updates the scan status.
+// Progress updates use mutex-protected field writes rather than channel sends,
+// so they are inherently non-blocking and cannot stall the scanner.
 func (s *ScanStatus) updateStatus(newStatus string) {
 	s.mu.Lock()
 	defer s.mu.Unlock()

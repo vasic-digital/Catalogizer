@@ -1027,6 +1027,141 @@ func (h *HealthHandler) DeepHealthCheck(c *gin.Context) {
 
 ---
 
+## Non-Blocking Event Bus Publish
+
+**Implementation**: `internal/media/realtime/event_bus.go`
+
+The event bus broadcasts scan progress, entity changes, and asset updates to WebSocket clients. If a client's send channel is full (slow consumer), the publish must not block the publisher -- doing so would stall the scanner or aggregation pipeline.
+
+### Solution: select/default Drop Pattern
+
+```go
+func (eb *EventBus) Publish(event Event) {
+    eb.mu.RLock()
+    defer eb.mu.RUnlock()
+
+    for _, subscriber := range eb.subscribers {
+        select {
+        case subscriber.ch <- event:
+            // Delivered successfully
+        default:
+            // Subscriber channel full -- drop the event rather than blocking.
+            // The subscriber will catch up on the next event or via polling.
+            eb.metrics.droppedEvents.Add(1)
+        }
+    }
+}
+```
+
+**Why this matters:**
+- The scanner publishes progress events every 5 seconds during a scan that can take 25+ minutes. Blocking on a slow WebSocket client would stall the scan for all users.
+- Dropped events are acceptable because clients use React Query polling as a fallback and will reconcile state on the next successful delivery.
+- The `droppedEvents` counter is exposed via Prometheus metrics so operators can detect chronically slow clients.
+
+**Impact**: Scan throughput is decoupled from WebSocket client speed. A single slow client no longer degrades scan performance for the entire system.
+
+---
+
+## Connection Pool as Implicit Semaphore
+
+**Implementation**: `database/connection.go`
+
+The database connection pool (`sql.DB`) with `MaxOpenConns=25` acts as an implicit semaphore that bounds concurrent database operations system-wide. This provides backpressure without requiring explicit semaphore acquisition in every database caller.
+
+### How It Works
+
+```go
+// database/connection.go
+sqlDB.SetMaxOpenConns(25)   // At most 25 concurrent queries
+sqlDB.SetMaxIdleConns(10)   // Keep 10 connections warm
+sqlDB.SetConnMaxLifetime(5 * time.Minute)
+sqlDB.SetConnMaxIdleTime(3 * time.Minute)
+```
+
+When all 25 connections are in use, `db.QueryContext()` blocks until a connection is returned to the pool or the context deadline expires. This means:
+
+1. **No explicit semaphore needed** in handler code -- the pool itself limits concurrency.
+2. **Backpressure propagates naturally** -- if the database is overloaded, new requests queue at the pool level and eventually time out with the 30-second default query timeout.
+3. **Connection reuse** avoids the overhead of establishing new connections per request.
+
+### Monitoring
+
+```go
+stats := sqlDB.Stats()
+// stats.InUse       -- connections currently executing queries
+// stats.WaitCount   -- total number of times a caller had to wait for a connection
+// stats.WaitDuration -- cumulative time spent waiting for connections
+```
+
+If `WaitCount` grows steadily under normal load, it indicates the pool is too small. If `WaitDuration` is high, queries are holding connections too long (check for missing context timeouts or unscanned rows).
+
+**Impact**: Eliminates the need for a separate database semaphore layer. The 25-connection limit prevents SQLite writer starvation and PostgreSQL connection exhaustion simultaneously.
+
+---
+
+## Scan Progress via Mutex-Protected Fields
+
+**Implementation**: `internal/services/scan_service.go`
+
+Scan progress tracking uses mutex-protected struct fields instead of channels. This avoids the complexity of channel lifecycle management (who closes, when, buffered vs unbuffered) for what is fundamentally a shared-state problem.
+
+### Before (Channel-Based)
+
+```go
+// Problematic: who closes the channel? What if two goroutines write?
+type ScanJob struct {
+    progressCh chan ScanProgress
+}
+
+// Reader must drain the channel or risk goroutine leaks
+func (j *ScanJob) Progress() <-chan ScanProgress {
+    return j.progressCh
+}
+```
+
+### After (Mutex-Protected Fields)
+
+```go
+type ScanJob struct {
+    mu              sync.Mutex
+    totalFiles      int64
+    processedFiles  int64
+    currentPath     string
+    status          string
+    lastUpdated     time.Time
+}
+
+func (j *ScanJob) UpdateProgress(processed int64, path string) {
+    j.mu.Lock()
+    defer j.mu.Unlock()
+    j.processedFiles = processed
+    j.currentPath = path
+    j.lastUpdated = time.Now()
+}
+
+func (j *ScanJob) GetProgress() ScanProgress {
+    j.mu.Lock()
+    defer j.mu.Unlock()
+    return ScanProgress{
+        TotalFiles:     j.totalFiles,
+        ProcessedFiles: j.processedFiles,
+        CurrentPath:    j.currentPath,
+        Status:         j.status,
+        LastUpdated:    j.lastUpdated,
+    }
+}
+```
+
+**Why mutex over channels:**
+- **Multiple readers**: The REST API and WebSocket handler both read progress simultaneously. Channels support only one reader without fan-out complexity.
+- **No lifecycle management**: No channel to close, no goroutine to drain it, no risk of sending on a closed channel.
+- **Snapshot semantics**: `GetProgress()` returns a copy -- callers never hold a reference to shared mutable state.
+- **Low contention**: Progress is updated every 5 seconds by the scanner and read every 5 seconds by the WebSocket broadcast. The mutex is held for microseconds.
+
+**Impact**: Eliminated a class of goroutine leak bugs where the progress channel consumer exited before the producer, causing the producer goroutine to block forever on a full channel.
+
+---
+
 ## Future Optimizations
 
 ### Planned

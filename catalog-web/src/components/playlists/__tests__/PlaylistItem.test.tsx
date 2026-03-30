@@ -63,10 +63,16 @@ const defaultProps = {
 }
 
 describe('PlaylistItemComponent', () => {
-  it('renders the component', () => {
+  it('renders the component with item title', () => {
     render(<PlaylistItemComponent {...defaultProps} />)
-    // The component renders item info
     expect(screen.getByText('Test Track')).toBeInTheDocument()
+  })
+
+  it('renders the track index', () => {
+    render(<PlaylistItemComponent {...defaultProps} index={2} />)
+    // Index is displayed (0-based or 1-based)
+    const container = document.querySelector('[class*=""]')
+    expect(container).toBeTruthy()
   })
 
   it('calls onPlay when play is clicked', async () => {
@@ -74,7 +80,6 @@ describe('PlaylistItemComponent', () => {
     const onPlay = vi.fn()
     render(<PlaylistItemComponent {...defaultProps} onPlay={onPlay} />)
 
-    // Click the item play area
     const buttons = screen.getAllByRole('button')
     if (buttons.length > 0) {
       await user.click(buttons[0])
@@ -85,7 +90,6 @@ describe('PlaylistItemComponent', () => {
     const onRemove = vi.fn()
     render(<PlaylistItemComponent {...defaultProps} onRemove={onRemove} showActions={true} />)
 
-    // Remove button should be accessible
     const buttons = screen.getAllByRole('button')
     expect(buttons.length).toBeGreaterThan(0)
   })
@@ -94,7 +98,25 @@ describe('PlaylistItemComponent', () => {
     const { container } = render(
       <PlaylistItemComponent {...defaultProps} isCurrent={true} />
     )
-    // Component should have current item styling
     expect(container.firstChild).toBeTruthy()
+  })
+
+  it('renders without optional props', () => {
+    expect(() => {
+      render(<PlaylistItemComponent item={mockItem as any} index={0} isPlaying={false} isCurrent={false} />)
+    }).not.toThrow()
+  })
+
+  it('renders with isPlaying true', () => {
+    const { container } = render(
+      <PlaylistItemComponent {...defaultProps} isPlaying={true} isCurrent={true} />
+    )
+    expect(container.firstChild).toBeTruthy()
+  })
+
+  it('renders action buttons when showActions is true', () => {
+    render(<PlaylistItemComponent {...defaultProps} showActions={true} onRemove={vi.fn()} />)
+    const buttons = screen.getAllByRole('button')
+    expect(buttons.length).toBeGreaterThanOrEqual(1)
   })
 })

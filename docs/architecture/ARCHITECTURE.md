@@ -1022,6 +1022,54 @@ defer cancel()
 // If Redis check fails, allow the request through
 ```
 
+## Module Registry
+
+### Overview
+
+The Module Registry is a centralized initialization system that wires 12 independent Go modules into catalog-api at startup. Each module is a separate git submodule with its own repository, tests, and documentation. The registry ensures that all modules are initialized in the correct dependency order and that their services are available to handlers throughout the application lifecycle.
+
+### How It Integrates
+
+At application startup, `main.go` calls `RegisterModules()` which initializes each module's services and registers them with the `LazyServiceRegistry`. Modules that depend on other modules declare those dependencies through constructor injection -- the registry's factory closures capture references to already-initialized dependencies, ensuring natural ordering without a separate dependency graph resolver.
+
+```go
+// main.go (simplified)
+func main() {
+    db := database.Connect(cfg)
+    registry := lifecycle.NewLazyServiceRegistry()
+
+    RegisterModules(registry, db, cfg)
+
+    // Handlers receive the registry and pull services on demand
+    handler := handlers.NewMediaHandler(registry)
+    // ...
+}
+```
+
+### Registered Modules and Services
+
+| Module | Submodule Path | Service Provided | Purpose |
+|--------|---------------|------------------|---------|
+| Memory | `Memory/` | Memory monitor | Heap tracking, leak detection, GC pressure alerts |
+| Observability | `Observability/` | Health aggregator | Unified health status across all subsystems |
+| Recovery | `Recovery/` | Resilience facade | Circuit breakers, retry policies, fallback chains |
+| Security | `Security/` | Guardrail engine | Input validation, rate limiting rules, permission checks |
+| Storage | `Storage/` | Storage resolver | Maps storage root configs to protocol-specific clients |
+| Streaming | `Streaming/` | Transport factory | Creates streaming transports (HTTP range, WebSocket, HLS) |
+| Media | `Media/` | Media detector | File pattern analysis, type detection, quality scoring |
+| Database | `Database/` | Dialect manager | SQL rewriting, migration runner, connection pool stats |
+| Cache | `Cache/` | Cache coordinator | Multi-level caching (memory, Redis, database) |
+| Concurrency | `Concurrency/` | Semaphore pool | Bounded concurrency for parallel operations |
+| Watcher | `Watcher/` | File watcher | Filesystem event monitoring with debounce |
+| RateLimiter | `RateLimiter/` | Rate limiter | Token bucket rate limiting with configurable policies |
+
+### Design Decisions
+
+- **Lazy initialization**: Modules are not instantiated until first use. A module whose API key is missing or whose backing service is unavailable does not block startup.
+- **Fail-open for optional modules**: If Redis is unavailable, the Cache module degrades to in-memory caching. If a metadata provider API key is missing, that provider is skipped.
+- **Thread-safe access**: The `LazyServiceRegistry` uses double-checked locking (RWMutex) so concurrent handler goroutines can safely call `registry.Get("service-name")` without redundant initialization.
+- **Testability**: In unit tests, modules can be replaced with mocks by registering alternative factory functions before the handler under test is created.
+
 ## Related Documentation
 
 - [Database Schema](DATABASE_SCHEMA.md) - Complete database table and index reference

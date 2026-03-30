@@ -138,6 +138,7 @@ export const CollectionRealTime: React.FC<CollectionRealTimeProps> = ({
   const reconnectTimeoutRef = useRef<NodeJS.Timeout | null>(null)
   const heartbeatIntervalRef = useRef<NodeJS.Timeout | null>(null)
   const connectionTimeoutRef = useRef<NodeJS.Timeout | null>(null)
+  const audioRef = useRef<HTMLAudioElement | null>(null)
 
   // Simulate WebSocket connection
   const connectWebSocket = useCallback(() => {
@@ -316,10 +317,12 @@ export const CollectionRealTime: React.FC<CollectionRealTimeProps> = ({
         }
         
         if (notificationSettings.soundEnabled) {
-          // Play sound (simplified)
-          const audio = new Audio('/notification.mp3')
-          audio.volume = 0.3
-          audio.play().catch(() => { /* Audio play failed - ignore */ })
+          if (!audioRef.current) {
+            audioRef.current = new Audio('/notification.mp3')
+            audioRef.current.volume = 0.3
+          }
+          audioRef.current.currentTime = 0
+          audioRef.current.play().catch(() => { /* Audio play failed - ignore */ })
         }
         
         toast(description)

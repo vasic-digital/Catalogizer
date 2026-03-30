@@ -31,15 +31,18 @@ describe('SmartPlaylistBuilder', () => {
     onCancel: vi.fn(),
   }
 
+  beforeEach(() => {
+    vi.clearAllMocks()
+  })
+
   beforeAll(async () => {
     const mod = await import('../SmartPlaylistBuilder')
     SmartPlaylistBuilder = mod.SmartPlaylistBuilder || mod.default
   })
 
-  it('renders the component', () => {
+  it('renders the component with name input', () => {
     if (!SmartPlaylistBuilder) return
     render(<SmartPlaylistBuilder {...defaultProps} />)
-    // Placeholder is "Enter playlist name..."
     expect(screen.getByPlaceholderText('Enter playlist name...')).toBeInTheDocument()
   })
 
@@ -47,7 +50,6 @@ describe('SmartPlaylistBuilder', () => {
     if (!SmartPlaylistBuilder) return
     render(<SmartPlaylistBuilder {...defaultProps} />)
     expect(screen.getByText('Save Playlist')).toBeInTheDocument()
-    // Cancel appears in header and footer, use getAllByText
     const cancelElements = screen.getAllByText(/Cancel/)
     expect(cancelElements.length).toBeGreaterThanOrEqual(1)
   })
@@ -57,7 +59,6 @@ describe('SmartPlaylistBuilder', () => {
     const user = userEvent.setup()
     render(<SmartPlaylistBuilder {...defaultProps} />)
 
-    // Cancel appears multiple times; click the first one
     const cancelElements = screen.getAllByText(/Cancel/)
     await user.click(cancelElements[0])
 
@@ -68,5 +69,37 @@ describe('SmartPlaylistBuilder', () => {
     if (!SmartPlaylistBuilder) return
     render(<SmartPlaylistBuilder {...defaultProps} />)
     expect(screen.getByText('Add Rule')).toBeInTheDocument()
+  })
+
+  it('allows typing a playlist name', async () => {
+    if (!SmartPlaylistBuilder) return
+    const user = userEvent.setup()
+    render(<SmartPlaylistBuilder {...defaultProps} />)
+    const input = screen.getByPlaceholderText('Enter playlist name...')
+    await user.type(input, 'My Smart Playlist')
+    expect(input).toHaveValue('My Smart Playlist')
+  })
+
+  it('renders description textarea', () => {
+    if (!SmartPlaylistBuilder) return
+    render(<SmartPlaylistBuilder {...defaultProps} />)
+    const textarea = screen.getByPlaceholderText(/description/i)
+    expect(textarea).toBeInTheDocument()
+  })
+
+  it('adds a rule when Add Rule is clicked', async () => {
+    if (!SmartPlaylistBuilder) return
+    const user = userEvent.setup()
+    render(<SmartPlaylistBuilder {...defaultProps} />)
+    await user.click(screen.getByText('Add Rule'))
+    // After adding a rule, there should be rule field selectors
+    const selects = document.querySelectorAll('select')
+    expect(selects.length).toBeGreaterThan(0)
+  })
+
+  it('renders the Smart Playlist Builder heading', () => {
+    if (!SmartPlaylistBuilder) return
+    render(<SmartPlaylistBuilder {...defaultProps} />)
+    expect(screen.getByText('Smart Playlist Builder')).toBeInTheDocument()
   })
 })

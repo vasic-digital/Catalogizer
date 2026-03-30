@@ -11,6 +11,7 @@ import (
 	"runtime"
 	"strconv"
 	"strings"
+	"sync"
 	"time"
 
 	"catalogizer/models"
@@ -24,6 +25,7 @@ type ErrorReportingService struct {
 	httpClient       *http.Client
 	enabled          bool
 	crashlyticAPIKey string
+	wg               sync.WaitGroup
 }
 
 type ErrorReportingConfig struct {
@@ -59,6 +61,11 @@ func NewErrorReportingService(errorRepo *repository.ErrorReportingRepository, cr
 		httpClient: &http.Client{Timeout: 30 * time.Second},
 		enabled:    true,
 	}
+}
+
+// Close waits for all in-flight notification and external service goroutines to finish.
+func (s *ErrorReportingService) Close() {
+	s.wg.Wait()
 }
 
 func (s *ErrorReportingService) ReportError(userID int, errorReport *models.ErrorReportRequest) (*models.ErrorReport, error) {
@@ -109,11 +116,19 @@ func (s *ErrorReportingService) ReportError(userID int, errorReport *models.Erro
 
 	// Send notifications asynchronously
 	if s.config.AutoReporting {
-		go s.sendNotifications(report)
+		s.wg.Add(1)
+		go func() {
+			defer s.wg.Done()
+			s.sendNotifications(report)
+		}()
 	}
 
 	// Send to external services
-	go s.sendToExternalServices(report)
+	s.wg.Add(1)
+	go func() {
+		defer s.wg.Done()
+		s.sendToExternalServices(report)
+	}()
 
 	return report, nil
 }
@@ -146,11 +161,19 @@ func (s *ErrorReportingService) ReportCrash(userID int, crashReport *models.Cras
 	}
 
 	// Send critical notifications immediately
-	go s.sendCrashNotifications(report)
+	s.wg.Add(1)
+	go func() {
+		defer s.wg.Done()
+		s.sendCrashNotifications(report)
+	}()
 
 	// Send to Crashlytics
 	if s.config.CrashlyticsEnabled {
-		go s.sendToCrashlytics(report)
+		s.wg.Add(1)
+		go func() {
+			defer s.wg.Done()
+			s.sendToCrashlytics(report)
+		}()
 	}
 
 	return report, nil

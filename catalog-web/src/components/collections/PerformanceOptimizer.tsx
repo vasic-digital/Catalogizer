@@ -25,6 +25,8 @@ export const PerformanceOptimizer: React.FC<PerformanceOptimizerProps> = ({
   const [_scrollTop, setScrollTop] = useState(0)
   const [_isIntersecting, setIsIntersecting] = useState<Map<number, boolean>>(new Map())
   const [loadedItems, setLoadedItems] = useState<Set<number>>(new Set())
+  const loadedItemsRef = useRef(loadedItems)
+  loadedItemsRef.current = loadedItems
   const observerRef = useRef<IntersectionObserver | null>(null)
 
   // Calculate visible items for virtualization
@@ -55,14 +57,33 @@ export const PerformanceOptimizer: React.FC<PerformanceOptimizerProps> = ({
   useEffect(() => {
     if (loadingStrategy !== 'lazy') return
 
+    const MAX_INTERSECTING = 1000
+    const MAX_LOADED = 1000
+
     observerRef.current = new IntersectionObserver(
       (entries) => {
         entries.forEach((entry) => {
           const index = parseInt(entry.target.getAttribute('data-index') || '0')
-          setIsIntersecting(prev => new Map(prev.set(index, entry.isIntersecting)))
-          
-          if (entry.isIntersecting && !loadedItems.has(index)) {
-            setLoadedItems(prev => new Set(prev).add(index))
+          setIsIntersecting(prev => {
+            const next = new Map(prev)
+            next.set(index, entry.isIntersecting)
+            if (next.size > MAX_INTERSECTING) {
+              const entries = Array.from(next.entries())
+              return new Map(entries.slice(entries.length - MAX_INTERSECTING + 100))
+            }
+            return next
+          })
+
+          if (entry.isIntersecting && !loadedItemsRef.current.has(index)) {
+            setLoadedItems(prev => {
+              const next = new Set(prev)
+              next.add(index)
+              if (next.size > MAX_LOADED) {
+                const values = Array.from(next)
+                return new Set(values.slice(values.length - MAX_LOADED + 100))
+              }
+              return next
+            })
           }
         })
       },
@@ -76,7 +97,7 @@ export const PerformanceOptimizer: React.FC<PerformanceOptimizerProps> = ({
     return () => {
       observerRef.current?.disconnect()
     }
-  }, [loadingStrategy, loadedItems])
+  }, [loadingStrategy])
 
   // Debounced scroll handler
   useEffect(() => {
@@ -308,6 +329,8 @@ export const useInfiniteScroll = (
 ) => {
   const observerRef = useRef<IntersectionObserver | null>(null)
   const loadMoreRef = useRef<HTMLDivElement>(null)
+  const onLoadMoreRef = useRef(onLoadMore)
+  onLoadMoreRef.current = onLoadMore
 
   useEffect(() => {
     if (!hasMore || isLoading) return
@@ -315,7 +338,7 @@ export const useInfiniteScroll = (
     observerRef.current = new IntersectionObserver(
       (entries) => {
         if (entries[0].isIntersecting) {
-          onLoadMore()
+          onLoadMoreRef.current()
         }
       },
       {
@@ -331,7 +354,7 @@ export const useInfiniteScroll = (
     return () => {
       observerRef.current?.disconnect()
     }
-  }, [hasMore, isLoading, onLoadMore])
+  }, [hasMore, isLoading])
 
   return loadMoreRef
 }

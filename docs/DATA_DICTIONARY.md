@@ -885,6 +885,26 @@ Configures recurring synchronization schedules.
 
 ---
 
+## Backup Metadata (Runtime Structure)
+
+Backup metadata is not stored in a database table -- it is derived at runtime by scanning the backup directory for `.db` files created by the `VACUUM INTO` SQLite command. The admin handler constructs a `BackupInfo` object for each backup file found.
+
+| Field | Type | Description |
+|-------|------|-------------|
+| id | string | Backup identifier derived from the filename (timestamp-based, e.g., `20260330_143022`) |
+| filename | string | Full filename of the backup file (e.g., `catalogizer_backup_20260330_143022.db`) |
+| size | int64 | File size in bytes |
+| created_at | timestamp | File modification time from the filesystem |
+
+**Backup operations:**
+- **Create**: `VACUUM INTO '<backup_dir>/<filename>'` produces a consistent snapshot without locking the main database.
+- **Restore**: Copies the backup file over the current database file. Requires a service restart.
+- **List**: Scans the configured backup directory and returns `BackupInfo` for each `.db` file.
+
+**Audit**: All backup create and restore operations are recorded in the `auth_audit_log` table with the admin user's ID.
+
+---
+
 ## Entity Relationship Summary
 
 ```

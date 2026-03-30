@@ -157,7 +157,7 @@ func TestSyncService_ShouldRunSchedule(t *testing.T) {
 	recentTime := time.Now().Add(-30 * time.Minute)
 	dayAgo := time.Now().Add(-25 * time.Hour)
 	weekAgo := time.Now().Add(-8 * 24 * time.Hour)
-	monthAgo := time.Now().AddDate(0, -1, -1)
+	monthAgo := time.Now().Add(-32 * 24 * time.Hour) // 32 days ago avoids AddDate month-length edge cases
 
 	tests := []struct {
 		name     string

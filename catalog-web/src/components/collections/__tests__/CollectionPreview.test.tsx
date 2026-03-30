@@ -85,7 +85,6 @@ describe('CollectionPreview', () => {
 
   it('shows loading state when isLoading is true', () => {
     render(<CollectionPreview {...defaultProps} isLoading={true} />)
-    // Should show a loading indicator (pulse animation)
     const pulseElement = document.querySelector('.animate-pulse')
     expect(pulseElement).toBeTruthy()
   })
@@ -94,5 +93,27 @@ describe('CollectionPreview', () => {
     render(<CollectionPreview {...defaultProps} />)
     const buttons = screen.getAllByRole('button')
     expect(buttons.length).toBeGreaterThan(0)
+  })
+
+  it('displays media type for each item', () => {
+    render(<CollectionPreview {...defaultProps} />)
+    expect(screen.getByText('music')).toBeInTheDocument()
+    expect(screen.getByText('video')).toBeInTheDocument()
+  })
+
+  it('renders collection description', () => {
+    render(<CollectionPreview {...defaultProps} />)
+    expect(screen.getByText('A test collection')).toBeInTheDocument()
+  })
+
+  it('renders with a different collection', () => {
+    const differentCollection = {
+      ...mockCollection,
+      name: 'Another Collection',
+      description: 'Different description',
+      item_count: 10,
+    }
+    render(<CollectionPreview collection={differentCollection as any} onClose={vi.fn()} />)
+    expect(screen.getByText('Another Collection')).toBeInTheDocument()
   })
 })

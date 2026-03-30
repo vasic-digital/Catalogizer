@@ -208,6 +208,27 @@ func RegisterAll(svc *services.ChallengeService) error {
 	// Middleware stack challenges (CH-131 to CH-140)
 	RegisterMiddlewareChallenges(svc)
 
+	// Phase 1 endpoint challenges (CH-141 to CH-152)
+	RegisterPhase1Challenges(svc)
+
+	// Module integration challenges (CH-153 to CH-158)
+	RegisterModuleIntegrationChallenges(svc)
+
+	// Playlist challenges (CH-159 to CH-170)
+	RegisterPlaylistChallenges(svc)
+
+	// Media analysis challenges (CH-171 to CH-185)
+	RegisterMediaAnalysisChallenges(svc)
+
+	// Security challenges (CH-186 to CH-200)
+	RegisterSecurityChallenges(svc)
+
+	// Performance challenges (CH-201 to CH-220)
+	RegisterPerformanceChallenges(svc)
+
+	// Multiplatform challenges (CH-221 to CH-250)
+	RegisterMultiplatformChallenges(svc)
+
 	return nil
 }
 
@@ -270,4 +291,155 @@ func RegisterMiddlewareChallenges(svc *services.ChallengeService) {
 	svc.Register(NewMiddlewareCompressionChallenge())            // CH-138
 	svc.Register(NewMiddlewareSQLInjectionChallenge())           // CH-139
 	svc.Register(NewMiddlewareXSSChallenge())                    // CH-140
+}
+
+// RegisterPhase1Challenges registers Phase 1 endpoint
+// challenges CH-141 to CH-152.
+func RegisterPhase1Challenges(svc *services.ChallengeService) {
+	svc.Register(NewRecentMediaAPIChallenge())      // CH-141
+	svc.Register(NewPopularMediaAPIChallenge())     // CH-142
+	svc.Register(NewMediaByPathAPIChallenge())      // CH-143
+	svc.Register(NewMediaAnalysisChallenge())       // CH-144
+	svc.Register(NewMetadataRefreshChallenge())     // CH-145
+	svc.Register(NewMediaQualityChallenge())        // CH-146
+	svc.Register(NewChangePasswordChallenge())      // CH-147
+	svc.Register(NewBackupCreateChallenge())        // CH-148
+	svc.Register(NewBackupListChallenge())          // CH-149
+	svc.Register(NewBackupRestoreChallenge())       // CH-150
+	svc.Register(NewStorageScanAdminChallenge())    // CH-151
+	svc.Register(NewBackupSemaphoreChallenge())     // CH-152
+}
+
+// RegisterModuleIntegrationChallenges registers module
+// integration challenges CH-153 to CH-158.
+func RegisterModuleIntegrationChallenges(svc *services.ChallengeService) {
+	svc.Register(NewModuleRegistryInitChallenge())       // CH-153
+	svc.Register(NewMemoryMonitorActiveChallenge())      // CH-154
+	svc.Register(NewHealthAggregatorActiveChallenge())   // CH-155
+	svc.Register(NewResilienceFacadeActiveChallenge())   // CH-156
+	svc.Register(NewGuardrailEngineActiveChallenge())    // CH-157
+	svc.Register(NewStorageResolverActiveChallenge())    // CH-158
+}
+
+// RegisterPlaylistChallenges registers playlist API challenges
+// CH-159 to CH-170.
+func RegisterPlaylistChallenges(svc *services.ChallengeService) {
+	svc.Register(NewCreatePlaylistChallenge())          // CH-159
+	svc.Register(NewListPlaylistsChallenge())           // CH-160
+	svc.Register(NewGetPlaylistChallenge())             // CH-161
+	svc.Register(NewUpdatePlaylistChallenge())          // CH-162
+	svc.Register(NewDeletePlaylistChallenge())          // CH-163
+	svc.Register(NewAddPlaylistItemChallenge())         // CH-164
+	svc.Register(NewRemovePlaylistItemChallenge())      // CH-165
+	svc.Register(NewPlaylistOrderingChallenge())        // CH-166
+	svc.Register(NewPlaylistAccessControlChallenge())   // CH-167
+	svc.Register(NewPublicPlaylistAccessChallenge())    // CH-168
+	svc.Register(NewPlaylistPaginationChallenge())      // CH-169
+	svc.Register(NewPlaylistSearchChallenge())          // CH-170
+}
+
+// RegisterMediaAnalysisChallenges registers media analysis
+// challenges CH-171 to CH-185.
+func RegisterMediaAnalysisChallenges(svc *services.ChallengeService) {
+	svc.Register(NewMediaTypeDetectionChallenge())      // CH-171
+	svc.Register(NewTVShowHierarchyChallenge())         // CH-172
+	svc.Register(NewMusicHierarchyChallenge())          // CH-173
+	svc.Register(NewDuplicateDetectionChallenge())      // CH-174
+	svc.Register(NewEntitySearchAPIChallenge())         // CH-175
+	svc.Register(NewEntityPaginationAPIChallenge())     // CH-176
+	svc.Register(NewMediaItemCreateChallenge())         // CH-177
+	svc.Register(NewMediaItemUpdateChallenge())         // CH-178
+	svc.Register(NewMediaFileLinkChallenge())           // CH-179
+	svc.Register(NewExternalMetadataChallenge())        // CH-180
+	svc.Register(NewUserMetadataAPIChallenge())         // CH-181
+	svc.Register(NewCollectionCreateAPIChallenge())     // CH-182
+	svc.Register(NewCollectionItemsAPIChallenge())      // CH-183
+	svc.Register(NewCollectionSearchAPIChallenge())     // CH-184
+	svc.Register(NewDirectoryAnalysisChallenge())       // CH-185
+}
+
+// RegisterSecurityChallenges registers security validation
+// challenges CH-186 to CH-200.
+func RegisterSecurityChallenges(svc *services.ChallengeService) {
+	svc.Register(NewJWTValidationChallenge())              // CH-186
+	svc.Register(NewTokenRefreshSecurityChallenge())       // CH-187
+	svc.Register(NewRoleBasedAccessSecurityChallenge())    // CH-188
+	svc.Register(NewInputValidationSecurityChallenge())    // CH-189
+	svc.Register(NewSQLInjectionSecurityChallenge())       // CH-190
+	svc.Register(NewPathTraversalSecurityChallenge())      // CH-191
+	svc.Register(NewRateLimitingSecurityChallenge())       // CH-192
+	svc.Register(NewCORSHeadersSecurityChallenge())        // CH-193
+	svc.Register(NewSecurityHeadersPresentChallenge())     // CH-194
+	svc.Register(NewPasswordHashingChallenge())            // CH-195
+	svc.Register(NewSessionTimeoutChallenge())             // CH-196
+	svc.Register(NewBruteForceProtectionChallenge())       // CH-197
+	svc.Register(NewContentTypeValidationChallenge())      // CH-198
+	svc.Register(NewMaxBodySizeChallenge())                // CH-199
+	svc.Register(NewErrorInfoLeakChallenge())              // CH-200
+}
+
+// RegisterPerformanceChallenges registers performance
+// challenges CH-201 to CH-220.
+func RegisterPerformanceChallenges(svc *services.ChallengeService) {
+	svc.Register(NewHealthEndpointFastChallenge())         // CH-201
+	svc.Register(NewSearchLatencyChallenge())              // CH-202
+	svc.Register(NewBrowseLatencyChallenge())              // CH-203
+	svc.Register(NewEntityDetailLatencyChallenge())        // CH-204
+	svc.Register(NewStatsLatencyChallenge())               // CH-205
+	svc.Register(NewConcurrentReadsChallenge())            // CH-206
+	svc.Register(NewConcurrentSearchesChallenge())         // CH-207
+	svc.Register(NewGoroutineStabilityChallenge())         // CH-208
+	svc.Register(NewMemoryStabilityChallenge())            // CH-209
+	svc.Register(NewConnectionPoolHealthChallenge())       // CH-210
+	svc.Register(NewCacheEffectivenessChallenge())         // CH-211
+	svc.Register(NewCompressionActiveChallenge())          // CH-212
+	svc.Register(NewMetricsEndpointPerfChallenge())        // CH-213
+	svc.Register(NewDeepHealthCheckChallenge())            // CH-214
+	svc.Register(NewWebSocketConnectPerfChallenge())       // CH-215
+	svc.Register(NewWebSocketMessageChallenge())           // CH-216
+	svc.Register(NewScanQueueingChallenge())               // CH-217
+	svc.Register(NewBackupPerformanceChallenge())          // CH-218
+	svc.Register(NewPaginationPerformanceChallenge())      // CH-219
+	svc.Register(NewFilterPerformanceChallenge())          // CH-220
+}
+
+// RegisterMultiplatformChallenges registers API consistency,
+// data integrity, and admin operations challenges CH-221
+// to CH-250.
+func RegisterMultiplatformChallenges(svc *services.ChallengeService) {
+	// API consistency (CH-221 to CH-230)
+	svc.Register(NewConsistentJSONStructureChallenge())     // CH-221
+	svc.Register(NewConsistentErrorFormatChallenge())       // CH-222
+	svc.Register(NewConsistentPaginationChallenge())        // CH-223
+	svc.Register(NewConsistentStatusCodesChallenge())       // CH-224
+	svc.Register(NewConsistentContentTypeChallenge())       // CH-225
+	svc.Register(NewConsistentAuthRequiredChallenge())      // CH-226
+	svc.Register(NewConsistentTimestampFormatChallenge())   // CH-227
+	svc.Register(NewConsistentIDFormatChallenge())          // CH-228
+	svc.Register(NewConsistentMethodSupportChallenge())     // CH-229
+	svc.Register(NewConsistentEmptyResponseChallenge())     // CH-230
+
+	// Data integrity (CH-231 to CH-240)
+	svc.Register(NewEntityRelationshipsValidChallenge())    // CH-231
+	svc.Register(NewNoOrphanMediaFilesChallenge())          // CH-232
+	svc.Register(NewEntityTypeConsistencyChallenge())       // CH-233
+	svc.Register(NewCollectionIntegrityChallenge())         // CH-234
+	svc.Register(NewStorageRootIntegrityChallenge())        // CH-235
+	svc.Register(NewScanHistoryIntegrityChallenge())        // CH-236
+	svc.Register(NewUserDataIntegrityChallenge())           // CH-237
+	svc.Register(NewFavoritesIntegrityChallenge())          // CH-238
+	svc.Register(NewMediaStatsIntegrityChallenge())         // CH-239
+	svc.Register(NewDetectionRulesIntegrityChallenge())     // CH-240
+
+	// Admin operations (CH-241 to CH-250)
+	svc.Register(NewAdminSystemInfoAccessChallenge())       // CH-241
+	svc.Register(NewAdminUserListAccessChallenge())         // CH-242
+	svc.Register(NewAdminStorageOverviewChallenge())        // CH-243
+	svc.Register(NewAdminLogCollectionChallenge())          // CH-244
+	svc.Register(NewAdminErrorReportingChallenge())         // CH-245
+	svc.Register(NewAdminBackupListChallenge())             // CH-246
+	svc.Register(NewAdminUserUpdateOpsChallenge())           // CH-247
+	svc.Register(NewAdminChallengesListChallenge())         // CH-248
+	svc.Register(NewAdminConfigAccessChallenge())           // CH-249
+	svc.Register(NewAdminHealthDashboardChallenge())        // CH-250
 }

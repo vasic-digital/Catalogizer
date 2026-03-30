@@ -1,0 +1,129 @@
+rules:
+  - id: no-sql-string-concat
+    patterns:
+      - pattern-either:
+          - pattern: fmt.Sprintf("..." + "..." + "...", ...)
+          - pattern: |
+              $X + "SELECT " + ...
+          - pattern: |
+              $X + "INSERT " + ...
+          - pattern: |
+              $X + "UPDATE " + ...
+          - pattern: |
+              $X + "DELETE " + ...
+          - pattern: |
+              "SELECT " + $X
+          - pattern: |
+              "INSERT " + $X
+          - pattern: |
+              "UPDATE " + $X
+          - pattern: |
+              "DELETE " + $X
+    message: >-
+      Avoid string concatenation in SQL queries. Use parameterized queries
+      with placeholders (?) instead to prevent SQL injection.
+    languages: [go]
+    severity: ERROR
+    metadata:
+      category: security
+      cwe: "CWE-89: SQL Injection"
+
+  - id: no-hardcoded-credentials
+    patterns:
+      - pattern-either:
+          - pattern: |
+              $X = "password"
+          - pattern: |
+              $X = "secret"
+          - pattern: |
+              $X = "api_key"
+          - pattern: |
+              $X := "password"
+          - pattern: |
+              $X := "secret"
+          - pattern: |
+              $X := "api_key"
+    message: >-
+      Potential hardcoded credential detected. Use environment variables
+      or a secrets manager instead.
+    languages: [go, javascript, typescript]
+    severity: WARNING
+    metadata:
+      category: security
+      cwe: "CWE-798: Hard-coded Credentials"
+
+  - id: no-os-exec-user-input
+    pattern: exec.Command($CMD, ...)
+    message: >-
+      Verify that command arguments are not derived from user input.
+      Unsanitized input in exec.Command creates a command injection risk.
+    languages: [go]
+    severity: WARNING
+    metadata:
+      category: security
+      cwe: "CWE-78: OS Command Injection"
+
+  - id: missing-rows-close
+    patterns:
+      - pattern: |
+          $ROWS, $ERR := $DB.Query(...)
+          ...
+      - pattern-not-inside: |
+          $ROWS, $ERR := $DB.Query(...)
+          ...
+          defer $ROWS.Close()
+          ...
+    message: >-
+      Database rows should be closed with defer $ROWS.Close() to prevent
+      connection leaks. Always defer Close() immediately after error check.
+    languages: [go]
+    severity: ERROR
+    metadata:
+      category: correctness
+      cwe: "CWE-404: Resource Leak"
+
+  - id: no-default-http-client
+    pattern: http.DefaultClient
+    message: >-
+      Use the pooled HTTP client from internal/httpclient instead of
+      http.DefaultClient. The default client has no timeout and no
+      connection pooling configuration.
+    languages: [go]
+    severity: WARNING
+    metadata:
+      category: best-practice
+
+  - id: no-fmt-errorf-without-wrap
+    patterns:
+      - pattern: fmt.Errorf("...", ...)
+      - pattern-not: fmt.Errorf("...%w...", ...)
+    message: >-
+      Consider using %w verb for error wrapping to preserve the error
+      chain. This enables errors.Is() and errors.As() to work correctly.
+    languages: [go]
+    severity: INFO
+    metadata:
+      category: best-practice
+
+  - id: react-missing-key-prop
+    patterns:
+      - pattern: $ITEMS.map(($ITEM) => <$COMP ... />)
+      - pattern-not: $ITEMS.map(($ITEM) => <$COMP key={...} ... />)
+    message: >-
+      List items rendered with .map() should have a unique key prop
+      to help React identify which items changed.
+    languages: [typescript, javascript]
+    severity: WARNING
+    metadata:
+      category: correctness
+
+  - id: no-any-type
+    pattern: |
+      : any
+    message: >-
+      Avoid using the 'any' type. Use a specific type or 'unknown' for
+      better type safety.
+    languages: [typescript]
+    severity: WARNING
+    metadata:
+      category: best-practice

@@ -11,6 +11,7 @@ import (
 	"path/filepath"
 	"sort"
 	"strings"
+	"sync"
 	"time"
 
 	"catalogizer/models"
@@ -21,6 +22,7 @@ type LogManagementService struct {
 	logRepo       *repository.LogManagementRepository
 	config        *LogManagementConfig
 	logCollectors map[string]LogCollector
+	wg            sync.WaitGroup
 }
 
 type LogManagementConfig struct {
@@ -80,6 +82,11 @@ func NewLogManagementService(logRepo *repository.LogManagementRepository) *LogMa
 	return service
 }
 
+// Close waits for all in-flight log collection and streaming goroutines to finish.
+func (s *LogManagementService) Close() {
+	s.wg.Wait()
+}
+
 func (s *LogManagementService) initializeCollectors() {
 	// File-based collectors
 	components := []string{"api", "auth", "sync", "conversion", "stress_test", "error_reporting"}
@@ -124,16 +131,26 @@ func (s *LogManagementService) CollectLogs(userID int, request *models.LogCollec
 	// Start collection process asynchronously. performLogCollection is
 	// naturally bounded: it iterates the requested components, writes a
 	// finite number of DB entries, updates the collection status, and returns.
-	go s.performLogCollection(collection)
+	s.wg.Add(1)
+	go func() {
+		defer s.wg.Done()
+		s.performLogCollection(collection)
+	}()
 
 	return &returnCopy, nil
 }
+
+const maxLogEntries = 50000
 
 func (s *LogManagementService) performLogCollection(collection *models.LogCollection) {
 	var allEntries []*models.LogEntry
 
 	// Collect logs from each component
 	for _, component := range collection.Components {
+		if len(allEntries) >= maxLogEntries {
+			break // prevent unbounded memory growth
+		}
+
 		collector, exists := s.logCollectors[component]
 		if !exists {
 			s.logError(collection.ID, fmt.Sprintf("Unknown component: %s", component))
@@ -148,6 +165,12 @@ func (s *LogManagementService) performLogCollection(collection *models.LogCollec
 
 		// Filter entries
 		filteredEntries := s.filterLogEntries(entries, collection)
+
+		// Cap total entries to prevent unbounded memory growth
+		remaining := maxLogEntries - len(allEntries)
+		if len(filteredEntries) > remaining {
+			filteredEntries = filteredEntries[:remaining]
+		}
 		allEntries = append(allEntries, filteredEntries...)
 	}
 
@@ -313,7 +336,11 @@ func (s *LogManagementService) StreamLogs(userID int, filters *models.LogStreamF
 	done := make(chan struct{})
 
 	// Start streaming goroutine
-	go s.streamLogEntries(logChannel, filters, done)
+	s.wg.Add(1)
+	go func() {
+		defer s.wg.Done()
+		s.streamLogEntries(logChannel, filters, done)
+	}()
 
 	return logChannel, done, nil
 }

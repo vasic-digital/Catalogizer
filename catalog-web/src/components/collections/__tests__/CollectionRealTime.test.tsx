@@ -92,4 +92,32 @@ describe('CollectionRealTime', () => {
     render(<CollectionRealTime collection={mockCollection as any} />)
     expect(screen.getByText('Connection')).toBeInTheDocument()
   })
+
+  it('reuses audio element via ref instead of creating new Audio on each notification', async () => {
+    const audioInstances: any[] = []
+    const OriginalAudio = globalThis.Audio
+
+    // Track Audio constructor calls
+    globalThis.Audio = class MockAudio {
+      src: string
+      volume = 1
+      currentTime = 0
+      play = vi.fn().mockResolvedValue(undefined)
+      constructor(src?: string) {
+        this.src = src ?? ''
+        audioInstances.push(this)
+      }
+    } as any
+
+    render(<CollectionRealTime collection={mockCollection as any} />)
+
+    // Advance timers to trigger connection and potential notification sounds
+    await vi.advanceTimersByTimeAsync(20000)
+
+    // The component should create at most one Audio instance (via audioRef)
+    // rather than creating a new Audio for each notification event
+    expect(audioInstances.length).toBeLessThanOrEqual(1)
+
+    globalThis.Audio = OriginalAudio
+  })
 })

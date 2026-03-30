@@ -57,7 +57,10 @@ func NewConnection(cfg *config.DatabaseConfig) (*DB, error) {
 		}
 	}
 
-	// Configure connection pool with sensible defaults
+	// Configure connection pool with sensible defaults.
+	// MaxOpenConns acts as the query concurrency semaphore — the sql.DB pool
+	// blocks callers when all connections are in use, so an additional
+	// application-level semaphore is unnecessary.
 	maxOpen := cfg.MaxOpenConnections
 	if maxOpen <= 0 {
 		maxOpen = 25
@@ -241,6 +244,15 @@ func (db *DB) DatabaseType() string {
 		return "postgres"
 	}
 	return "sqlite"
+}
+
+// DBPath returns the configured SQLite database file path.
+// Returns an empty string for PostgreSQL connections or when no path is configured.
+func (db *DB) DBPath() string {
+	if db.config == nil {
+		return ""
+	}
+	return db.config.Path
 }
 
 // WrapDB wraps a raw *sql.DB in a *DB with the given dialect.

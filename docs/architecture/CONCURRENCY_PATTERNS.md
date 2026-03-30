@@ -981,6 +981,187 @@ case <-ticker.C:
 
 **After:** Both methods now return deep copies of their results, eliminating the shared-pointer race.
 
+## Backup Semaphore Pattern
+
+### Problem
+
+Database backup and restore are expensive, exclusive operations. Running two backups concurrently can corrupt the output file, and restoring while a backup is in progress produces an inconsistent snapshot.
+
+### Solution: Weighted Semaphore with Weight 1
+
+The admin handler uses `semaphore.NewWeighted(1)` to enforce mutual exclusion across all backup/restore operations without holding a mutex for the entire (potentially multi-second) I/O operation.
+
+```go
+// internal/handlers/admin_handler.go
+type AdminHandler struct {
+    backupSem *semaphore.Weighted
+    // ...
+}
+
+func NewAdminHandler(db *database.DB) *AdminHandler {
+    return &AdminHandler{
+        backupSem: semaphore.NewWeighted(1),
+        // ...
+    }
+}
+
+func (h *AdminHandler) CreateBackup(c *gin.Context) {
+    ctx := c.Request.Context()
+
+    // TryAcquire returns immediately if another backup/restore is running
+    if !h.backupSem.TryAcquire(1) {
+        c.JSON(http.StatusConflict, gin.H{"error": "another backup operation is in progress"})
+        return
+    }
+    defer h.backupSem.Release(1)
+
+    // Perform VACUUM INTO (may take seconds for large databases)
+    // ...
+}
+```
+
+**Key properties:**
+- `TryAcquire` is non-blocking -- the caller gets an immediate 409 Conflict rather than waiting.
+- The semaphore is shared between `CreateBackup` and `RestoreBackup`, so they are mutually exclusive.
+- Unlike a mutex, `semaphore.Weighted` supports context-aware `Acquire()` for callers that prefer to wait with a timeout rather than fail immediately.
+
+### Where Used
+
+| Operation | Behavior |
+|-----------|----------|
+| `CreateBackup` | `TryAcquire(1)` -- fail fast with 409 if busy |
+| `RestoreBackup` | `TryAcquire(1)` -- fail fast with 409 if busy |
+
+## Service Close() Pattern
+
+### Problem
+
+Services that spawn background goroutines (cache cleanup, file watchers, health check loops) must shut down those goroutines cleanly before the process exits. Without coordinated shutdown, goroutines can leak, hold database connections, or write to closed channels.
+
+### Solution: WaitGroup + Context Cancellation + sync.Once
+
+```go
+type Service struct {
+    ctx       context.Context
+    cancel    context.CancelFunc
+    wg        sync.WaitGroup
+    closeOnce sync.Once
+}
+
+func NewService() *Service {
+    ctx, cancel := context.WithCancel(context.Background())
+    s := &Service{ctx: ctx, cancel: cancel}
+
+    s.wg.Add(1)
+    go s.backgroundLoop()
+
+    return s
+}
+
+func (s *Service) backgroundLoop() {
+    defer s.wg.Done()
+    ticker := time.NewTicker(1 * time.Minute)
+    defer ticker.Stop()
+
+    for {
+        select {
+        case <-s.ctx.Done():
+            return
+        case <-ticker.C:
+            s.doWork()
+        }
+    }
+}
+
+func (s *Service) Close() {
+    s.closeOnce.Do(func() {
+        s.cancel()  // Signal all goroutines
+        s.wg.Wait() // Wait for all to finish
+    })
+}
+```
+
+**Key properties:**
+- `sync.Once` makes `Close()` idempotent -- safe to call from both `defer` in tests and the shutdown sequence in `main.go`.
+- `context.WithCancel` propagates the stop signal to all goroutines and any context-aware operations they call (database queries, HTTP requests).
+- `sync.WaitGroup` ensures `Close()` blocks until all goroutines have exited, preventing use-after-close races.
+- No `time.Sleep` polling -- goroutines wake immediately when the context is cancelled.
+
+**Services using this pattern:**
+- `CacheService` (cleanup goroutine)
+- `WebSocketHandler` (cleanup goroutine)
+- `ScanService` (progress reporting goroutine)
+- `WatcherService` (filesystem event loop)
+
+## Rate Limiter Bucket Cap Pattern
+
+### Problem
+
+The in-memory rate limiter creates a bucket (token counter) for each unique client IP. Without a cap, an attacker sending requests from thousands of spoofed IPs can exhaust server memory by creating unbounded map entries.
+
+### Solution: Maximum 10K Entries with LRU Eviction
+
+```go
+type RateLimiter struct {
+    mu      sync.Mutex
+    buckets map[string]*bucket
+    maxSize int // Hard cap: 10,000
+}
+
+func (rl *RateLimiter) getBucket(key string) *bucket {
+    rl.mu.Lock()
+    defer rl.mu.Unlock()
+
+    if b, ok := rl.buckets[key]; ok {
+        b.lastAccess = time.Now()
+        return b
+    }
+
+    // Evict oldest entry if at capacity
+    if len(rl.buckets) >= rl.maxSize {
+        rl.evictOldest()
+    }
+
+    b := &bucket{
+        tokens:     rl.limit,
+        lastAccess: time.Now(),
+        lastRefill: time.Now(),
+    }
+    rl.buckets[key] = b
+    return b
+}
+
+func (rl *RateLimiter) evictOldest() {
+    var oldestKey string
+    var oldestTime time.Time
+
+    for key, b := range rl.buckets {
+        if oldestKey == "" || b.lastAccess.Before(oldestTime) {
+            oldestKey = key
+            oldestTime = b.lastAccess
+        }
+    }
+
+    if oldestKey != "" {
+        delete(rl.buckets, oldestKey)
+    }
+}
+```
+
+**Key properties:**
+- The 10K cap bounds memory to approximately 2MB regardless of traffic patterns.
+- LRU eviction removes the least recently seen IP, preserving buckets for active legitimate clients.
+- The eviction scan is O(n) but runs only when the map is full, which is rare under normal traffic.
+- When Redis is available, the Redis-based rate limiter is preferred and this in-memory limiter serves as fallback.
+
+**Configuration:**
+
+| Parameter | Default | Description |
+|-----------|---------|-------------|
+| `maxSize` | 10,000 | Maximum number of tracked client IPs |
+| `limit` | 100 | Requests per window per client |
+| `window` | 1 minute | Rate limit window duration |
+
 ## References
 
 - [Go Concurrency Patterns](https://go.dev/blog/pipelines)

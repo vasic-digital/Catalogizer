@@ -9,6 +9,19 @@ Catalogizer is a multi-protocol media collection management system that detects,
 
 ---
 
+## What's New in v2.0
+
+- **Backup Management**: Create, list, and restore database backups via the REST API with concurrent-operation protection
+- **Password Change API**: Users can change their own passwords through a dedicated endpoint
+- **Media Quality Analysis**: Inspect resolution, codec, and bitrate metadata; trigger analysis and metadata refresh on demand
+- **Popular & Recent Media**: Browse media sorted by favorites count or discovery date
+- **File Path Search**: Search for media items by their storage file path
+- **12 Integrated Go Modules**: Database, Lazy, Media, Memory, Middleware, Observability, RateLimiter, Recovery, Security, Storage, Streaming, and Watcher -- all wired via `replace` directives
+- **Memory Leak Protections**: Rate limiter bucket caps, log entry limits, and event channel drain patterns prevent unbounded growth
+- **Zero Vulnerabilities**: Clean scans across govulncheck, npm audit, Semgrep, and SonarQube
+
+---
+
 ## Multi-Protocol Storage
 
 Connect to media stored anywhere on your network or cloud.

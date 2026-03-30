@@ -387,6 +387,9 @@ func randomString(n int) string {
 }
 
 // BroadcastToClients sends a message to all connected WebSocket clients.
+// Concurrency is bounded by each client's buffered send channel (capacity 256).
+// If a client's buffer is full the message is dropped for that client rather
+// than blocking the publisher, so no additional semaphore is needed here.
 func (h *WebSocketHandler) BroadcastToClients(msg map[string]interface{}) {
 	data, err := json.Marshal(msg)
 	if err != nil {

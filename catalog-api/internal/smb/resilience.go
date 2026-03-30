@@ -309,6 +309,16 @@ func (m *ResilientSMBManager) Stop() error {
 	// Wait for goroutines to finish
 	m.wg.Wait()
 
+	// Drain event channel to prevent goroutine leaks from blocked senders
+	for {
+		select {
+		case <-m.eventChannel:
+		default:
+			goto drained
+		}
+	}
+drained:
+
 	return nil
 }
 

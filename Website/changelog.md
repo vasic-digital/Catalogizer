@@ -9,6 +9,37 @@ All notable changes to the Catalogizer project are documented here. This page pr
 
 ---
 
+## v2.0.0 (2026-03-30)
+
+### New Features
+- Backup management (create, list, restore database backups)
+- Password change API
+- Media quality analysis endpoint
+- Media analysis and metadata refresh endpoints
+- Popular media (sorted by favorites)
+- Recent media browsing
+- Media search by file path
+
+### Improvements
+- 12 Go modules integrated (database, lazy, media, memory, middleware, observability, ratelimiter, recovery, security, storage, streaming, watcher)
+- Backup operation semaphore (prevents concurrent backups)
+- Goroutine lifecycle management with WaitGroup + Close() methods
+- Memory leak protections (rate limiter bucket cap, log entry cap, event channel drain)
+- React Audio ref reuse, IntersectionObserver optimization
+- Non-blocking event patterns verified across all subsystems
+
+### Security
+- Zero vulnerabilities (govulncheck, npm audit, all components)
+- Path traversal protection on backup restore
+
+### Documentation
+- CLAUDE.md for catalog-api, catalog-web, catalogizer-android, catalogizer-androidtv
+- AGENTS.md for 8 submodules
+- Architecture docs for VisionEngine, LLMProvider, DocProcessor, LLMOrchestrator
+- 42+ new unit tests
+
+---
+
 ## 2026-03-26 -- Project Completion Release
 
 ### New Features

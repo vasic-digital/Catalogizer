@@ -251,3 +251,15 @@ Implement the UnifiedClient interface defined in `filesystem/interface.go`. Crea
 ### How do I add a new metadata provider?
 
 Study the provider interface in `internal/media/providers/providers.go` and use existing providers like `movie_recognition_provider.go` as a reference. Create your provider, implement the interface, and register it in the provider system. Handle API authentication, rate limiting, and error cases.
+
+### How do I back up my database?
+
+Catalogizer provides a Backup Management API for database backups. Send `POST /api/v1/admin/backup` (with admin authentication) to create a backup. The response includes the backup filename and timestamp. List all available backups with `GET /api/v1/admin/backups`. To restore, send `POST /api/v1/admin/backup/restore` with a JSON body containing the backup filename. A semaphore prevents concurrent backup operations, and path traversal protection ensures restore filenames cannot escape the backup directory. Always test your restore procedure periodically.
+
+### How do I run security scans?
+
+Two primary tools are available without any external setup. Run `govulncheck ./...` in the `catalog-api/` directory to scan Go dependencies for known vulnerabilities. Run `npm audit --production` in `catalog-web/` to check frontend dependencies. For deeper analysis, use `./scripts/run-sonarqube-scan.sh` for SonarQube static analysis or run Semgrep via `podman-compose -f docker-compose.security.yml --profile semgrep-scan run --rm semgrep-scanner`. The consolidated script `./scripts/security-scan.sh` runs all available scanners and produces a summary report.
+
+### What monitoring is available?
+
+Catalogizer exposes Prometheus-compatible metrics at the `/metrics` endpoint, covering HTTP request counts and latencies, database query durations, Go runtime statistics (goroutines, heap memory, GC pauses), and custom application metrics. Pre-configured Prometheus scrape configuration is in `monitoring/prometheus.yml`, and pre-built Grafana dashboards are in `monitoring/grafana/` and `config/grafana-dashboards/`. Dashboards cover API performance, resource utilization, and storage source health. The `digital.vasic.memory` module provides heap tracking and goroutine monitoring for memory leak detection. Use `podman stats --no-stream` for quick container resource checks.

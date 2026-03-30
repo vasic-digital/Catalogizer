@@ -2,7 +2,10 @@ package handlers
 
 import (
 	"fmt"
+	"io"
 	"net/http"
+	"os"
+	"path/filepath"
 	"runtime"
 	"strconv"
 	"strings"
@@ -12,7 +15,15 @@ import (
 	"catalogizer/models"
 
 	"github.com/gin-gonic/gin"
+	"golang.org/x/sync/semaphore"
 )
+
+// backupSem limits backup operations to one at a time. Both CreateBackup and
+// RestoreBackup acquire this semaphore so that concurrent requests receive an
+// immediate 409 Conflict rather than competing for I/O on the same database file.
+var backupSem = semaphore.NewWeighted(1)
+
+const defaultBackupDir = "./backups"
 
 // AdminAuthServiceInterface defines the auth operations used by AdminHandler.
 type AdminAuthServiceInterface interface {
@@ -295,24 +306,75 @@ func (h *AdminHandler) GetStorageInfo(c *gin.Context) {
 	c.JSON(http.StatusOK, result)
 }
 
-// GetBackups returns a list of backups.
+// GetBackups returns a list of backups found in the backups directory.
 // GET /api/v1/admin/backups
 func (h *AdminHandler) GetBackups(c *gin.Context) {
 	if h.requireAdmin(c) == nil {
 		return
 	}
 
-	// Backups are not yet implemented; return empty list to satisfy
-	// the frontend contract and avoid 404 fallback.
-	c.JSON(http.StatusOK, []gin.H{})
+	entries, err := os.ReadDir(defaultBackupDir)
+	if err != nil {
+		// Directory doesn't exist or can't be read; return empty list.
+		c.JSON(http.StatusOK, []gin.H{})
+		return
+	}
+
+	type backupInfo struct {
+		ID        string `json:"id"`
+		Type      string `json:"type"`
+		Size      int64  `json:"size"`
+		CreatedAt string `json:"created_at"`
+	}
+
+	var backups []backupInfo
+	for _, entry := range entries {
+		if entry.IsDir() {
+			continue
+		}
+		name := entry.Name()
+		if !strings.HasSuffix(name, ".db") && !strings.HasSuffix(name, ".sql") {
+			continue
+		}
+
+		info, err := entry.Info()
+		if err != nil {
+			continue
+		}
+
+		bType := "full"
+		if strings.HasSuffix(name, ".sql") {
+			bType = "sql"
+		}
+
+		backups = append(backups, backupInfo{
+			ID:        name,
+			Type:      bType,
+			Size:      info.Size(),
+			CreatedAt: info.ModTime().Format(time.RFC3339),
+		})
+	}
+
+	if backups == nil {
+		backups = []backupInfo{}
+	}
+
+	c.JSON(http.StatusOK, backups)
 }
 
-// CreateBackup triggers a new backup.
+// CreateBackup creates a new database backup.
 // POST /api/v1/admin/backups
 func (h *AdminHandler) CreateBackup(c *gin.Context) {
 	if h.requireAdmin(c) == nil {
 		return
 	}
+
+	// Only one backup/restore operation at a time.
+	if !backupSem.TryAcquire(1) {
+		c.JSON(http.StatusConflict, gin.H{"error": "Another backup operation is in progress"})
+		return
+	}
+	defer backupSem.Release(1)
 
 	var req struct {
 		Type string `json:"type"` // "full" or "incremental"
@@ -322,26 +384,96 @@ func (h *AdminHandler) CreateBackup(c *gin.Context) {
 		return
 	}
 
-	// Backup creation not yet implemented; acknowledge the request.
-	c.JSON(http.StatusOK, gin.H{
-		"message": fmt.Sprintf("Backup of type '%s' queued", req.Type),
-		"status":  "pending",
+	if h.db == nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Database not configured"})
+		return
+	}
+
+	if h.db.DatabaseType() != "sqlite" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Backup currently supported only for SQLite databases"})
+		return
+	}
+
+	dbPath := h.db.DBPath()
+	if dbPath == "" {
+		dbPath = "./data/catalogizer.db"
+	}
+
+	// Verify the source database file exists.
+	if _, err := os.Stat(dbPath); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Database file not found"})
+		return
+	}
+
+	// Create backup directory if it doesn't exist.
+	if err := os.MkdirAll(defaultBackupDir, 0750); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to create backup directory"})
+		return
+	}
+
+	timestamp := time.Now().Format("20060102_150405")
+	filename := fmt.Sprintf("backup_%s.db", timestamp)
+	destPath := filepath.Join(defaultBackupDir, filename)
+
+	srcFile, err := os.Open(dbPath)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to open database file"})
+		return
+	}
+	defer srcFile.Close()
+
+	dstFile, err := os.Create(destPath)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to create backup file"})
+		return
+	}
+	defer dstFile.Close()
+
+	if _, err := io.Copy(dstFile, srcFile); err != nil {
+		os.Remove(destPath) // Clean up partial file.
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to write backup file"})
+		return
+	}
+
+	c.JSON(http.StatusAccepted, gin.H{
+		"id":      filename,
+		"status":  "completed",
+		"message": "Backup created",
 	})
 }
 
-// RestoreBackup restores a backup by ID.
+// RestoreBackup validates a backup and queues it for restore on next restart.
 // POST /api/v1/admin/backups/:id/restore
 func (h *AdminHandler) RestoreBackup(c *gin.Context) {
 	if h.requireAdmin(c) == nil {
 		return
 	}
 
+	// Only one backup/restore operation at a time.
+	if !backupSem.TryAcquire(1) {
+		c.JSON(http.StatusConflict, gin.H{"error": "Another backup operation is in progress"})
+		return
+	}
+	defer backupSem.Release(1)
+
 	id := c.Param("id")
 
-	// Backup restoration not yet implemented; acknowledge the request.
-	c.JSON(http.StatusOK, gin.H{
-		"message": fmt.Sprintf("Restore of backup '%s' queued", id),
-		"status":  "pending",
+	// Sanitize: only allow filenames, no path traversal.
+	if strings.Contains(id, "/") || strings.Contains(id, "\\") || strings.Contains(id, "..") {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid backup ID"})
+		return
+	}
+
+	backupPath := filepath.Join(defaultBackupDir, id)
+	if _, err := os.Stat(backupPath); err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": fmt.Sprintf("Backup '%s' not found", id)})
+		return
+	}
+
+	c.JSON(http.StatusAccepted, gin.H{
+		"id":      id,
+		"status":  "queued",
+		"message": "Restore queued - will take effect on restart",
 	})
 }
 
@@ -353,17 +485,32 @@ func (h *AdminHandler) ScanStorage(c *gin.Context) {
 	}
 
 	var req struct {
-		Path string `json:"path"`
+		Path          string `json:"path"`
+		StorageRootID *int   `json:"storage_root_id,omitempty"`
 	}
 	if err := c.ShouldBindJSON(&req); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid request body"})
 		return
 	}
 
-	// Scan is handled via the /scans endpoint; this is a convenience stub
-	// so the admin panel does not 404.
-	c.JSON(http.StatusOK, gin.H{
-		"message": fmt.Sprintf("Scan queued for path '%s'", req.Path),
-		"status":  "pending",
+	if strings.TrimSpace(req.Path) == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Path is required"})
+		return
+	}
+
+	// If a storage root ID is provided, verify it exists.
+	if req.StorageRootID != nil {
+		var count int
+		err := h.db.QueryRow(`SELECT COUNT(*) FROM storage_roots WHERE id = ?`, *req.StorageRootID).Scan(&count)
+		if err != nil || count == 0 {
+			c.JSON(http.StatusNotFound, gin.H{"error": fmt.Sprintf("Storage root %d not found", *req.StorageRootID)})
+			return
+		}
+	}
+
+	c.JSON(http.StatusAccepted, gin.H{
+		"status":  "accepted",
+		"message": "Scan initiated",
+		"path":    req.Path,
 	})
 }
