@@ -318,6 +318,10 @@ func (s *CoverArtService) ScanLocalCoverArt(ctx context.Context, request *LocalC
 
 // GetCoverArt returns cover art for a media item
 func (s *CoverArtService) GetCoverArt(ctx context.Context, mediaItemID int64) (*CoverArt, error) {
+	if s.db == nil {
+		return nil, nil
+	}
+
 	query := `
 		SELECT id, media_item_id, source, url, local_path, width, height,
 		       format, size, quality, created_at, cached_at
@@ -911,4 +915,200 @@ func (s *CoverArtService) processLocalCoverArt(ctx context.Context, mediaItemID 
 	}
 
 	return coverArt, nil
+}
+
+// GetCoverURL returns a cover image URL for any media item.
+// Tries in order:
+//  1. Cached cover art from cover_art table
+//  2. External metadata cover URL (TMDB, local_scan, etc.)
+//  3. Type-specific placeholder SVG
+func (s *CoverArtService) GetCoverURL(ctx context.Context, mediaItemID int64, mediaTypeName string) string {
+	// 1. Check if we have cover art in the cover_art table
+	if s.db != nil {
+		var localPath sql.NullString
+		var coverURL sql.NullString
+		err := s.db.QueryRowContext(ctx,
+			`SELECT local_path, url FROM cover_art
+			 WHERE media_item_id = ? AND is_default = 1
+			 ORDER BY created_at DESC LIMIT 1`, mediaItemID).Scan(&localPath, &coverURL)
+		if err == nil {
+			if coverURL.Valid && coverURL.String != "" {
+				return coverURL.String
+			}
+			if localPath.Valid && localPath.String != "" {
+				return fmt.Sprintf("/api/v1/cover/%d", mediaItemID)
+			}
+		}
+	}
+
+	// 2. Check external_metadata for a cover URL (TMDB, local scan, etc.)
+	if s.db != nil {
+		var coverURL sql.NullString
+		err := s.db.QueryRowContext(ctx,
+			`SELECT cover_url FROM external_metadata
+			 WHERE media_item_id = ? AND cover_url IS NOT NULL AND cover_url != ''
+			 ORDER BY last_fetched DESC LIMIT 1`, mediaItemID).Scan(&coverURL)
+		if err == nil && coverURL.Valid && coverURL.String != "" {
+			return coverURL.String
+		}
+	}
+
+	// 3. Fall back to type-specific placeholder
+	return fmt.Sprintf("/api/v1/cover/placeholder/%s", mediaTypeName)
+}
+
+// GetCoverURLsBatch returns cover image URLs for multiple media items at once.
+// This is more efficient than calling GetCoverURL in a loop because it batches
+// the database queries.
+func (s *CoverArtService) GetCoverURLsBatch(ctx context.Context, items []CoverURLRequest) map[int64]string {
+	result := make(map[int64]string, len(items))
+	if len(items) == 0 {
+		return result
+	}
+
+	// Set placeholder defaults for all items first
+	itemTypeMap := make(map[int64]string, len(items))
+	for _, item := range items {
+		itemTypeMap[item.ID] = item.MediaTypeName
+		result[item.ID] = fmt.Sprintf("/api/v1/cover/placeholder/%s", item.MediaTypeName)
+	}
+
+	if s.db == nil {
+		return result
+	}
+
+	// Build IN clause for IDs
+	ids := make([]interface{}, len(items))
+	placeholders := make([]string, len(items))
+	for i, item := range items {
+		ids[i] = item.ID
+		placeholders[i] = "?"
+	}
+	inClause := strings.Join(placeholders, ",")
+
+	// Batch query external_metadata cover URLs
+	query := fmt.Sprintf(
+		`SELECT media_item_id, cover_url FROM external_metadata
+		 WHERE media_item_id IN (%s) AND cover_url IS NOT NULL AND cover_url != ''
+		 ORDER BY last_fetched DESC`, inClause)
+
+	rows, err := s.db.QueryContext(ctx, query, ids...)
+	if err == nil {
+		defer rows.Close()
+		seen := make(map[int64]bool)
+		for rows.Next() {
+			var itemID int64
+			var coverURL string
+			if err := rows.Scan(&itemID, &coverURL); err == nil && !seen[itemID] {
+				result[itemID] = coverURL
+				seen[itemID] = true
+			}
+		}
+	}
+
+	// Batch query cover_art table (overrides external_metadata if present)
+	query = fmt.Sprintf(
+		`SELECT media_item_id, local_path, url FROM cover_art
+		 WHERE media_item_id IN (%s) AND is_default = 1
+		 ORDER BY created_at DESC`, inClause)
+
+	rows2, err := s.db.QueryContext(ctx, query, ids...)
+	if err == nil {
+		defer rows2.Close()
+		seen := make(map[int64]bool)
+		for rows2.Next() {
+			var itemID int64
+			var localPath, urlVal sql.NullString
+			if err := rows2.Scan(&itemID, &localPath, &urlVal); err == nil && !seen[itemID] {
+				if urlVal.Valid && urlVal.String != "" {
+					result[itemID] = urlVal.String
+					seen[itemID] = true
+				} else if localPath.Valid && localPath.String != "" {
+					result[itemID] = fmt.Sprintf("/api/v1/cover/%d", itemID)
+					seen[itemID] = true
+				}
+			}
+		}
+	}
+
+	return result
+}
+
+// CoverURLRequest is used by GetCoverURLsBatch to identify items and their types.
+type CoverURLRequest struct {
+	ID            int64
+	MediaTypeName string
+}
+
+// GeneratePlaceholderSVG generates a placeholder SVG image for a given media type.
+// Returns SVG bytes with a colored background and an icon representing the type.
+func GeneratePlaceholderSVG(mediaType string) []byte {
+	colors := map[string]string{
+		"movie":        "#E53E3E",
+		"tv_show":      "#3182CE",
+		"tv_season":    "#2B6CB0",
+		"tv_episode":   "#4299E1",
+		"music_artist": "#38A169",
+		"music_album":  "#2F855A",
+		"song":         "#48BB78",
+		"game":         "#805AD5",
+		"software":     "#DD6B20",
+		"book":         "#2B6CB0",
+		"comic":        "#ED64A6",
+	}
+
+	icons := map[string]string{
+		"movie":        "&#127916;", // film clapper
+		"tv_show":      "&#128250;", // TV
+		"tv_season":    "&#128250;", // TV
+		"tv_episode":   "&#128250;", // TV
+		"music_artist": "&#127908;", // microphone
+		"music_album":  "&#128191;", // CD
+		"song":         "&#127925;", // music notes
+		"game":         "&#127918;", // game controller
+		"software":     "&#128187;", // computer
+		"book":         "&#128214;", // book
+		"comic":        "&#128214;", // book
+	}
+
+	labels := map[string]string{
+		"movie":        "Movie",
+		"tv_show":      "TV Show",
+		"tv_season":    "Season",
+		"tv_episode":   "Episode",
+		"music_artist": "Artist",
+		"music_album":  "Album",
+		"song":         "Song",
+		"game":         "Game",
+		"software":     "Software",
+		"book":         "Book",
+		"comic":        "Comic",
+	}
+
+	color, ok := colors[mediaType]
+	if !ok {
+		color = "#718096" // gray fallback
+	}
+	icon, ok := icons[mediaType]
+	if !ok {
+		icon = "&#128196;" // generic document
+	}
+	label, ok := labels[mediaType]
+	if !ok {
+		label = strings.ReplaceAll(mediaType, "_", " ")
+	}
+
+	svg := fmt.Sprintf(`<svg xmlns="http://www.w3.org/2000/svg" width="300" height="300" viewBox="0 0 300 300">
+  <defs>
+    <linearGradient id="bg" x1="0%%" y1="0%%" x2="100%%" y2="100%%">
+      <stop offset="0%%" style="stop-color:%s;stop-opacity:1"/>
+      <stop offset="100%%" style="stop-color:%s;stop-opacity:0.8"/>
+    </linearGradient>
+  </defs>
+  <rect width="300" height="300" rx="12" fill="url(#bg)"/>
+  <text x="150" y="130" font-size="72" text-anchor="middle" dominant-baseline="middle" fill="white" opacity="0.9">%s</text>
+  <text x="150" y="200" font-size="20" font-family="Arial, Helvetica, sans-serif" font-weight="bold" text-anchor="middle" dominant-baseline="middle" fill="white" opacity="0.85">%s</text>
+</svg>`, color, color, icon, label)
+
+	return []byte(svg)
 }

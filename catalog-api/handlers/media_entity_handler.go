@@ -13,6 +13,7 @@ import (
 
 	"catalogizer/database"
 	"catalogizer/internal/media/models"
+	"catalogizer/internal/services"
 	"catalogizer/repository"
 	"catalogizer/utils"
 
@@ -21,11 +22,12 @@ import (
 
 // MediaEntityHandler handles entity-level media browsing endpoints.
 type MediaEntityHandler struct {
-	itemRepo     *repository.MediaItemRepository
-	fileRepo     *repository.MediaFileRepository
-	extMetaRepo  *repository.ExternalMetadataRepository
-	userMetaRepo *repository.UserMetadataRepository
-	db           *database.DB
+	itemRepo        *repository.MediaItemRepository
+	fileRepo        *repository.MediaFileRepository
+	extMetaRepo     *repository.ExternalMetadataRepository
+	userMetaRepo    *repository.UserMetadataRepository
+	coverArtService *services.CoverArtService
+	db              *database.DB
 }
 
 // NewMediaEntityHandler creates a new media entity handler.
@@ -49,6 +51,11 @@ func NewMediaEntityHandler(
 		fmt.Println("[MediaEntityHandler] WARNING: No database provided, enrichment disabled")
 	}
 	return h
+}
+
+// SetCoverArtService sets the cover art service for cover URL enrichment.
+func (h *MediaEntityHandler) SetCoverArtService(cas *services.CoverArtService) {
+	h.coverArtService = cas
 }
 
 // ListEntities handles GET /api/v1/entities — list entities with filters and pagination.
@@ -89,8 +96,11 @@ func (h *MediaEntityHandler) ListEntities(c *gin.Context) {
 		return
 	}
 
+	jsonItems := itemsToJSON(items)
+	h.enrichItemsWithCoverURLs(ctx, items, jsonItems)
+
 	c.JSON(http.StatusOK, gin.H{
-		"items":  itemsToJSON(items),
+		"items":  jsonItems,
 		"total":  total,
 		"limit":  limit,
 		"offset": offset,
@@ -134,6 +144,12 @@ func (h *MediaEntityHandler) GetEntity(c *gin.Context) {
 	}
 
 	result := entityDetailJSON(item, typeName, fileCount, int64(childrenCount), extMeta)
+
+	// Enrich with cover URL
+	if h.coverArtService != nil {
+		result["cover_url"] = h.coverArtService.GetCoverURL(ctx, item.ID, typeName)
+	}
+
 	c.JSON(http.StatusOK, result)
 }
 
@@ -156,8 +172,11 @@ func (h *MediaEntityHandler) GetEntityChildren(c *gin.Context) {
 		return
 	}
 
+	jsonItems := itemsToJSON(items)
+	h.enrichItemsWithCoverURLs(ctx, items, jsonItems)
+
 	c.JSON(http.StatusOK, gin.H{
-		"items":  itemsToJSON(items),
+		"items":  jsonItems,
 		"total":  total,
 		"limit":  limit,
 		"offset": offset,
@@ -301,25 +320,9 @@ func (h *MediaEntityHandler) BrowseByType(c *gin.Context) {
 		return
 	}
 
-	// Enrich items with cover_url from external_metadata
+	// Enrich items with cover URLs via the cover art service fallback chain
 	jsonItems := itemsToJSON(items)
-	if h.db != nil {
-		for _, itemMap := range jsonItems {
-			id, _ := itemMap["id"].(int64)
-			if id > 0 {
-				var coverURL *string
-				_ = h.db.QueryRowContext(ctx,
-					`SELECT cover_url FROM external_metadata WHERE media_item_id = ? AND cover_url IS NOT NULL LIMIT 1`,
-					id).Scan(&coverURL)
-				if coverURL != nil && *coverURL != "" {
-					itemMap["cover_url"] = *coverURL
-					itemMap["external_metadata"] = []map[string]interface{}{
-						{"cover_url": *coverURL, "provider": "tmdb"},
-					}
-				}
-			}
-		}
-	}
+	h.enrichItemsWithCoverURLs(ctx, items, jsonItems)
 
 	// Trigger lazy enrichment for items without metadata
 	var unenrichedIDs []int64
@@ -950,6 +953,75 @@ func entityDetailJSON(item *models.MediaItem, typeName string, fileCount, childr
 
 func strPtr(s string) *string {
 	return &s
+}
+
+// enrichItemsWithCoverURLs adds a cover_url field to each item in jsonItems.
+// Uses the CoverArtService batch method for efficiency, falling back to
+// per-item DB queries or placeholder URLs.
+func (h *MediaEntityHandler) enrichItemsWithCoverURLs(ctx context.Context, items []*models.MediaItem, jsonItems []gin.H) {
+	if h.coverArtService == nil || len(items) == 0 {
+		// No cover art service — use inline external_metadata fallback (legacy path)
+		if h.db != nil {
+			for i, itemMap := range jsonItems {
+				if i >= len(items) || items[i] == nil {
+					continue
+				}
+				id := items[i].ID
+				var coverURL *string
+				_ = h.db.QueryRowContext(ctx,
+					`SELECT cover_url FROM external_metadata WHERE media_item_id = ? AND cover_url IS NOT NULL LIMIT 1`,
+					id).Scan(&coverURL)
+				if coverURL != nil && *coverURL != "" {
+					itemMap["cover_url"] = *coverURL
+				}
+			}
+		}
+		return
+	}
+
+	// Build media type name lookup
+	typeNames := h.getMediaTypeNames(ctx)
+
+	// Build batch request
+	reqs := make([]services.CoverURLRequest, 0, len(items))
+	for _, item := range items {
+		if item == nil {
+			continue
+		}
+		typeName := typeNames[item.MediaTypeID]
+		if typeName == "" {
+			typeName = "movie"
+		}
+		reqs = append(reqs, services.CoverURLRequest{
+			ID:            item.ID,
+			MediaTypeName: typeName,
+		})
+	}
+
+	coverURLs := h.coverArtService.GetCoverURLsBatch(ctx, reqs)
+
+	// Apply cover URLs to JSON items
+	for i, itemMap := range jsonItems {
+		if i >= len(items) || items[i] == nil {
+			continue
+		}
+		if url, ok := coverURLs[items[i].ID]; ok {
+			itemMap["cover_url"] = url
+		}
+	}
+}
+
+// getMediaTypeNames returns a map of media type ID to name.
+func (h *MediaEntityHandler) getMediaTypeNames(ctx context.Context) map[int64]string {
+	types, err := h.itemRepo.GetMediaTypes(ctx)
+	if err != nil {
+		return map[int64]string{}
+	}
+	result := make(map[int64]string, len(types))
+	for _, mt := range types {
+		result[mt.ID] = mt.Name
+	}
+	return result
 }
 
 // lazyEnrichEntities triggers background TMDB enrichment for entities without metadata.

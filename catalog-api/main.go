@@ -571,8 +571,15 @@ func main() {
 		}
 	})
 
+	// Cover art service for universal cover images
+	coverArtService := services.NewCoverArtService(databaseDB, logger)
+
+	// Cover handler for placeholder SVGs and cover image serving
+	coverHandler := root_handlers.NewCoverHandler(coverArtService)
+
 	// Media entity handler for structured media browsing
 	mediaEntityHandler := root_handlers.NewMediaEntityHandler(mediaItemRepo, mediaFileRepo, extMetaRepo, userMetaRepo, databaseDB)
+	mediaEntityHandler.SetCoverArtService(coverArtService)
 
 	// Scan handler for storage roots and scan operations
 	scanHandler := root_handlers.NewScanHandler(universalScanner, databaseDB)
@@ -809,6 +816,11 @@ func main() {
 	// for fingerprinted/content-hashed assets. Also suitable for future static file
 	// server routes (e.g., router.Static("/static", "./public", root_middleware.StaticCacheHeaders())).
 	router.GET("/api/v1/assets/:id", root_middleware.StaticCacheHeaders(), assetHandler.ServeAsset)
+
+	// Cover image serving (public — no auth needed for serving cover images)
+	router.GET("/api/v1/cover/placeholder/:type", root_middleware.CacheHeaders(86400), coverHandler.ServePlaceholder)
+	router.GET("/api/v1/cover/url/:id", root_middleware.CacheHeaders(300), coverHandler.GetCoverURL)
+	router.GET("/api/v1/cover/:id", root_middleware.CacheHeaders(86400), coverHandler.ServeCover)
 
 	// Authentication routes (no auth required)
 	authGroup := router.Group("/api/v1/auth")
