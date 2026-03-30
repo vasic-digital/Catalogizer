@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"catalogizer/internal/metrics"
+	"digital.vasic.recovery/pkg/facade"
 	"go.uber.org/zap"
 )
 
@@ -71,7 +72,10 @@ type SMBSource struct {
 	mutex               sync.RWMutex
 }
 
-// ResilientSMBManager manages multiple SMB sources with automatic recovery
+// ResilientSMBManager manages multiple SMB sources with automatic recovery.
+// When ResilienceFacade is set (via SetResilienceFacade), connection attempts
+// are routed through the digital.vasic.recovery circuit breaker for each source,
+// providing centralized fault-tolerance metrics alongside the per-source retry logic.
 type ResilientSMBManager struct {
 	sources       map[string]*SMBSource
 	logger        *zap.Logger
@@ -82,6 +86,9 @@ type ResilientSMBManager struct {
 	wg            sync.WaitGroup
 	mutex         sync.RWMutex
 	startTime     time.Time
+	// resilience is the optional digital.vasic.recovery facade from the module registry.
+	// When set, connection attempts are wrapped in the module's circuit breaker.
+	resilience *facade.Resilience
 }
 
 // SMBEvent represents events from SMB operations
@@ -189,6 +196,13 @@ func NewHealthChecker(manager *ResilientSMBManager, interval, timeout time.Durat
 		ctx:      ctx,
 		cancel:   cancel,
 	}
+}
+
+// SetResilienceFacade injects the digital.vasic.recovery facade from the module
+// registry. When set, connectSource wraps TCP dials through the module's circuit
+// breaker, unifying SMB fault-tolerance with the centralized resilience layer.
+func (m *ResilientSMBManager) SetResilienceFacade(r *facade.Resilience) {
+	m.resilience = r
 }
 
 // AddSource adds a new SMB source to the manager
@@ -416,7 +430,9 @@ func extractHost(path string) (string, error) {
 	return parts[0], nil
 }
 
-// attemptConnection performs the actual SMB connection by dialing TCP port 445
+// attemptConnection performs the actual SMB connection by dialing TCP port 445.
+// When ResilienceFacade is set, the dial is wrapped in the module's circuit breaker
+// (keyed by "smb-<sourceID>"), providing centralized fault-tolerance metrics.
 func (m *ResilientSMBManager) attemptConnection(ctx context.Context, source *SMBSource) error {
 	host, err := extractHost(source.Path)
 	if err != nil {
@@ -433,15 +449,21 @@ func (m *ResilientSMBManager) attemptConnection(ctx context.Context, source *SMB
 		zap.String("address", address),
 		zap.String("source_id", source.ID))
 
-	// Use a dialer that respects the context deadline
-	dialer := &net.Dialer{}
-	conn, err := dialer.DialContext(ctx, "tcp", address)
-	if err != nil {
-		return fmt.Errorf("TCP connection to %s failed: %w", address, err)
+	dial := func() error {
+		dialer := &net.Dialer{}
+		conn, dialErr := dialer.DialContext(ctx, "tcp", address)
+		if dialErr != nil {
+			return fmt.Errorf("TCP connection to %s failed: %w", address, dialErr)
+		}
+		conn.Close()
+		return nil
 	}
-	conn.Close()
 
-	return nil
+	// Route through digital.vasic.recovery circuit breaker when available
+	if m.resilience != nil {
+		return m.resilience.Execute("smb-"+source.ID, dial)
+	}
+	return dial()
 }
 
 // scheduleRetry schedules a retry attempt for a failed source

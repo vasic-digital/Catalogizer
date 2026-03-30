@@ -16,6 +16,7 @@ import (
 	"sync"
 	"time"
 
+	watchermod "digital.vasic.watcher/pkg/watcher"
 	"github.com/fsnotify/fsnotify"
 	"go.uber.org/zap"
 )
@@ -54,6 +55,25 @@ type EnhancedChangeEvent struct {
 	FileHash     *string
 	FileID       *int64
 	PreviousPath *string // for move operations
+}
+
+// NewModuleWatcher creates a digital.vasic.watcher instance configured with the
+// same debounce delay and recursive watching as EnhancedChangeWatcher. This
+// provides a migration path: callers can use the module's Watcher interface
+// (with built-in filtering, handler chains, and debouncing) instead of the
+// internal fsnotify wiring.
+//
+// Interface mapping:
+//   EnhancedChangeWatcher.WatchPath    -> watcher.Watch(ctx, paths...)
+//   EnhancedChangeWatcher.Stop         -> watcher.Close()
+//   EnhancedChangeWatcher.changeQueue  -> watcher.Events() channel
+//   EnhancedChangeWatcher.debounceMap  -> watcher's built-in debouncing
+func NewModuleWatcher() (watchermod.Watcher, error) {
+	return watchermod.New(&watchermod.Config{
+		Recursive:     true,
+		DebounceDelay: 2 * time.Second,
+		BufferSize:    10000,
+	})
 }
 
 // NewEnhancedChangeWatcher creates a new enhanced change watcher

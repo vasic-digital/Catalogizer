@@ -9,6 +9,8 @@ import (
 	"strings"
 	"unicode/utf8"
 
+	"digital.vasic.security/pkg/guardrails"
+	obslogging "digital.vasic.observability/pkg/logging"
 	"github.com/gin-gonic/gin"
 	"github.com/go-playground/validator/v10"
 )
@@ -27,6 +29,10 @@ type InputValidationConfig struct {
 	EnablePathTraversalDetection bool
 	// Custom validation rules
 	CustomRules map[string]string
+	// GuardrailEngine is an optional digital.vasic.security guardrail engine.
+	// When set, content is additionally validated against the module's rule set
+	// (max length, forbidden patterns, etc.) before the built-in regex checks.
+	GuardrailEngine *guardrails.Engine
 }
 
 // DefaultInputValidationConfig returns secure defaults
@@ -227,6 +233,15 @@ func validateStringValue(config InputValidationConfig, key, value string) error 
 	// Sanitize input
 	value = SanitizeInput(value)
 
+	// Run digital.vasic.security guardrail checks when engine is configured.
+	// This adds module-based content validation (max length, forbidden patterns)
+	// before the built-in regex checks below.
+	if config.GuardrailEngine != nil {
+		if result := config.GuardrailEngine.Check(value); !result.Passed {
+			return fmt.Errorf("guardrail violation in field %s: %s", key, result.Results[0].Error)
+		}
+	}
+
 	// Check for SQL injection
 	if config.EnableSQLInjectionDetection && DetectSQLInjection(value) {
 		return fmt.Errorf("potential SQL injection detected in field: %s", key)
@@ -265,9 +280,13 @@ func InputValidation(config InputValidationConfig) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		// Validate request body
 		if err := ValidateRequestBody(config, c); err != nil {
-			// Log the attempt
-			fmt.Printf("Security validation failed: %v, IP: %s, Path: %s\n",
-				err, c.ClientIP(), c.Request.URL.Path)
+			// Log the attempt using digital.vasic.observability structured logging.
+			// This replaces the former fmt.Printf with JSON-formatted, field-rich output.
+			obslogging.NewLogrusAdapter(obslogging.DefaultConfig()).
+				WithField("ip", c.ClientIP()).
+				WithField("path", c.Request.URL.Path).
+				WithError(err).
+				Warn("Security validation failed")
 
 			c.JSON(http.StatusBadRequest, gin.H{
 				"error":   "validation_failed",

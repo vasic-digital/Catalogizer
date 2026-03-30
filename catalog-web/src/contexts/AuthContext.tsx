@@ -2,6 +2,12 @@ import React, { createContext, useContext, useEffect, useState, ReactNode } from
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { authApi } from '@/lib/api'
 import type { User, LoginRequest, RegisterRequest, ChangePasswordRequest, UpdateProfileRequest } from '@/types/auth'
+// Use NetworkError from the shared API client for typed error narrowing in mutations.
+import { NetworkError } from '@vasic-digital/catalogizer-api-client'
+// The shared AuthContextType defines the canonical contract for auth contexts.
+// The internal interface below extends the same shape; once react-query versions
+// are aligned, AuthProvider can be replaced with the shared package's version.
+import type { AuthContextType as SharedAuthContextType } from '@vasic-digital/auth-context'
 import toast from 'react-hot-toast'
 
 interface AuthContextType {
@@ -83,6 +89,11 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       toast.success('Successfully logged in!')
     },
     onError: (error: unknown) => {
+      // Use shared NetworkError for typed error narrowing
+      if (error instanceof NetworkError) {
+        toast.error('Network error: please check your connection')
+        return
+      }
       const err = error as { response?: { data?: { error?: string } } }
       const message = err?.response?.data?.error || 'Login failed'
       toast.error(message)
@@ -95,6 +106,10 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       toast.success('Registration successful! Please log in.')
     },
     onError: (error: unknown) => {
+      if (error instanceof NetworkError) {
+        toast.error('Network error: please check your connection')
+        return
+      }
       const err = error as { response?: { data?: { error?: string } } }
       const message = err?.response?.data?.error || 'Registration failed'
       toast.error(message)

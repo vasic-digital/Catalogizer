@@ -271,6 +271,17 @@ func RegisterModules() *Registry {
 	})
 
 	log.Printf("[modules] All %d external modules registered successfully", len(reg.Modules))
+
+	// Use digital.vasic.observability structured logger to record module registration.
+	// This provides JSON-formatted, correlation-ID-aware logging alongside the
+	// standard log.Printf calls above.
+	structuredLogger := obslogging.NewLogrusAdapter(&obslogging.Config{
+		Level:       obslogging.InfoLevel,
+		Format:      "json",
+		ServiceName: "catalogizer-api",
+	})
+	structuredLogger.WithField("module_count", len(reg.Modules)).Info("All external modules registered successfully")
+
 	return reg
 }
 
