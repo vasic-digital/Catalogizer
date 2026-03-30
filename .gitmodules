@@ -109,3 +109,15 @@
 [submodule "VisionEngine"]
 	path = VisionEngine
 	url = git@github.com:HelixDevelopment/VisionEngine.git
+[submodule "ScreenDiff"]
+	path = ScreenDiff
+	url = git@github.com:vasic-digital/ScreenDiff.git
+[submodule "ReplayBuffer"]
+	path = ReplayBuffer
+	url = git@github.com:vasic-digital/ReplayBuffer.git
+[submodule "VisualRegression"]
+	path = VisualRegression
+	url = git@github.com:vasic-digital/VisualRegression.git
+[submodule "TrainingCollector"]
+	path = TrainingCollector
+	url = git@github.com:vasic-digital/TrainingCollector.git
