@@ -95,7 +95,7 @@ func TestAnalyticsHandler_LogMediaAccess_WithDB(t *testing.T) {
 				"media_id": 100,
 				"action":   "play",
 			},
-			expectedStatus: http.StatusInternalServerError, // analytics tables not in migrations
+			expectedStatus: http.StatusOK,
 		},
 		{
 			name: "valid access log with zero time - no analytics table",
@@ -105,7 +105,7 @@ func TestAnalyticsHandler_LogMediaAccess_WithDB(t *testing.T) {
 				"action":      "download",
 				"access_time": "0001-01-01T00:00:00Z",
 			},
-			expectedStatus: http.StatusInternalServerError, // analytics tables not in migrations
+			expectedStatus: http.StatusOK,
 		},
 		{
 			name:           "invalid json",
@@ -157,7 +157,7 @@ func TestAnalyticsHandler_LogEvent_WithDB(t *testing.T) {
 				"user_id":    1,
 				"event_type": "page_view",
 			},
-			expectedStatus: http.StatusInternalServerError, // analytics tables not in migrations
+			expectedStatus: http.StatusOK,
 		},
 		{
 			name: "valid event with zero timestamp",
@@ -166,7 +166,7 @@ func TestAnalyticsHandler_LogEvent_WithDB(t *testing.T) {
 				"event_type": "button_click",
 				"timestamp":  "0001-01-01T00:00:00Z",
 			},
-			expectedStatus: http.StatusInternalServerError, // analytics tables not in migrations
+			expectedStatus: http.StatusOK,
 		},
 		{
 			name:           "invalid json",
@@ -220,12 +220,12 @@ func TestAnalyticsHandler_GetUserAnalytics_WithDB(t *testing.T) {
 		{
 			name:           "valid user ID with default dates",
 			url:            "/analytics/user/1",
-			expectedStatus: http.StatusInternalServerError, // analytics tables not in migrations
+			expectedStatus: http.StatusOK,
 		},
 		{
 			name:           "valid user ID with explicit dates",
 			url:            "/analytics/user/1?start_date=2024-01-01&end_date=2024-12-31",
-			expectedStatus: http.StatusInternalServerError, // analytics tables not in migrations
+			expectedStatus: http.StatusOK,
 		},
 		{
 			name:           "invalid start_date format",
@@ -270,12 +270,12 @@ func TestAnalyticsHandler_GetSystemAnalytics_WithDB(t *testing.T) {
 		{
 			name:           "default dates",
 			url:            "/analytics/system",
-			expectedStatus: http.StatusInternalServerError, // analytics tables not in migrations
+			expectedStatus: http.StatusOK,
 		},
 		{
 			name:           "explicit dates",
 			url:            "/analytics/system?start_date=2024-01-01&end_date=2024-12-31",
-			expectedStatus: http.StatusInternalServerError, // analytics tables not in migrations
+			expectedStatus: http.StatusOK,
 		},
 		{
 			name:           "invalid start_date",
@@ -325,12 +325,12 @@ func TestAnalyticsHandler_GetMediaAnalytics_WithDB(t *testing.T) {
 		{
 			name:           "valid media ID with default dates",
 			url:            "/analytics/media/1",
-			expectedStatus: http.StatusInternalServerError, // analytics tables not in migrations
+			expectedStatus: http.StatusOK,
 		},
 		{
 			name:           "valid media ID with explicit dates",
 			url:            "/analytics/media/1?start_date=2024-01-01&end_date=2024-12-31",
-			expectedStatus: http.StatusInternalServerError, // analytics tables not in migrations
+			expectedStatus: http.StatusOK,
 		},
 		{
 			name:           "invalid start_date format",
@@ -401,7 +401,7 @@ func TestAnalyticsHandler_CreateReport_WithDB(t *testing.T) {
 					"end_date":   "2024-12-31",
 				},
 			},
-			expectedStatus: http.StatusInternalServerError, // analytics tables not in migrations
+			expectedStatus: http.StatusOK,
 		},
 	}
 
@@ -450,12 +450,12 @@ func TestReportingHandler_GetUsageReport_WithDB(t *testing.T) {
 		{
 			name:           "default dates",
 			url:            "/reports/usage",
-			expectedStatus: http.StatusInternalServerError, // analytics tables not in migrations
+			expectedStatus: http.StatusInternalServerError, // user_id not in context (no auth middleware)
 		},
 		{
 			name:           "explicit dates",
 			url:            "/reports/usage?start_date=2024-01-01&end_date=2024-12-31",
-			expectedStatus: http.StatusInternalServerError, // analytics tables not in migrations
+			expectedStatus: http.StatusInternalServerError, // user_id not in context (no auth middleware)
 		},
 		{
 			name:           "invalid start_date",

@@ -37,7 +37,7 @@ func NewBrowsingAPIHealthChallenge() *BrowsingAPIHealthChallenge {
 			"Validates API health endpoint responds, admin login succeeds "+
 				"with JWT token, and /auth/me returns user data",
 			"e2e",
-			[]challenge.ID{"first-catalog-populate"},
+			nil,
 		),
 		config: LoadBrowsingConfig(),
 	}

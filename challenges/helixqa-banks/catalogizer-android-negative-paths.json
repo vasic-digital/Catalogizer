@@ -1,0 +1,1498 @@
+{
+  "challenges": [
+    {
+      "id": "neg-android-crash-recovery-anr",
+      "name": "Crash Recovery After ANR Dialog",
+      "category": "launch-lifecycle",
+      "priority": "critical",
+      "platforms": [
+        "android"
+      ],
+      "steps": [
+        {
+          "name": "Trigger ANR condition",
+          "action": "adb shell am start -n com.vasic.catalogizer/.MainActivity && adb shell input keyevent KEYCODE_WAKEUP && sleep 1 && adb shell kill -STOP $(adb shell pidof com.vasic.catalogizer)",
+          "expected": "System ANR dialog appears after ~5 seconds indicating app is not responding"
+        },
+        {
+          "name": "Dismiss ANR and wait",
+          "action": "Tap 'Wait' on ANR dialog, then resume process with adb shell kill -CONT",
+          "expected": "App resumes to its previous state without data loss or blank screen"
+        },
+        {
+          "name": "Verify app functional after ANR",
+          "action": "Navigate to any media list screen and scroll",
+          "expected": "App responds normally, no frozen UI, no repeated ANR dialogs"
+        }
+      ]
+    },
+    {
+      "id": "neg-android-launch-low-storage",
+      "name": "Launch With Low Storage Below 50MB Free",
+      "category": "launch-lifecycle",
+      "priority": "high",
+      "platforms": [
+        "android"
+      ],
+      "steps": [
+        {
+          "name": "Reduce available storage",
+          "action": "Fill device storage until less than 50MB remains free, then launch Catalogizer",
+          "expected": "App launches successfully despite low storage"
+        },
+        {
+          "name": "Verify graceful warning",
+          "action": "Check for any low storage notification or in-app warning",
+          "expected": "App displays a non-blocking warning about low storage rather than crashing. Core browse and search features remain functional"
+        },
+        {
+          "name": "Attempt cache write operation",
+          "action": "Browse media items to trigger image caching",
+          "expected": "App handles cache write failures gracefully, shows placeholder images instead of crashing with IOException"
+        }
+      ]
+    },
+    {
+      "id": "neg-android-launch-no-network",
+      "name": "Launch With No Network Connectivity",
+      "category": "launch-lifecycle",
+      "priority": "critical",
+      "platforms": [
+        "android"
+      ],
+      "steps": [
+        {
+          "name": "Disable all network",
+          "action": "adb shell svc wifi disable && adb shell svc data disable",
+          "expected": "Device has no network connectivity"
+        },
+        {
+          "name": "Launch app",
+          "action": "adb shell am start -n com.vasic.catalogizer/.MainActivity",
+          "expected": "App launches and displays a clear offline state message instead of crash or infinite loading spinner"
+        },
+        {
+          "name": "Verify offline UI",
+          "action": "Check screen content for error handling UI",
+          "expected": "App shows 'No connection' or 'Server unreachable' message with a retry button. No unhandled exception dialog"
+        },
+        {
+          "name": "Restore network and retry",
+          "action": "adb shell svc wifi enable && tap retry button",
+          "expected": "App reconnects and loads content normally within 10 seconds"
+        }
+      ]
+    },
+    {
+      "id": "neg-android-launch-during-system-update",
+      "name": "Launch During Active System Update",
+      "category": "launch-lifecycle",
+      "priority": "medium",
+      "platforms": [
+        "android"
+      ],
+      "steps": [
+        {
+          "name": "Simulate system update pressure",
+          "action": "Launch app while system update service is running and system resources are constrained",
+          "expected": "App launches albeit potentially slower, does not crash due to resource contention"
+        },
+        {
+          "name": "Verify UI responsiveness",
+          "action": "Navigate through app screens during high system load",
+          "expected": "App may be slower but remains responsive, no ANR triggered within 10 seconds"
+        }
+      ]
+    },
+    {
+      "id": "neg-android-force-stop-pending-ops",
+      "name": "Force Stop With Pending Operations",
+      "category": "launch-lifecycle",
+      "priority": "critical",
+      "platforms": [
+        "android"
+      ],
+      "steps": [
+        {
+          "name": "Start a long operation",
+          "action": "Begin browsing a large media library or trigger a search with many results",
+          "expected": "Operation starts and data begins loading"
+        },
+        {
+          "name": "Force stop mid-operation",
+          "action": "adb shell am force-stop com.vasic.catalogizer",
+          "expected": "App process terminates immediately"
+        },
+        {
+          "name": "Relaunch app",
+          "action": "adb shell am start -n com.vasic.catalogizer/.MainActivity",
+          "expected": "App launches cleanly to home or login screen with no partial/corrupted state. No crash on startup from interrupted operation"
+        }
+      ]
+    },
+    {
+      "id": "neg-android-oom-kill-restore",
+      "name": "OOM Kill and State Restoration",
+      "category": "launch-lifecycle",
+      "priority": "critical",
+      "platforms": [
+        "android"
+      ],
+      "steps": [
+        {
+          "name": "Navigate to deep screen",
+          "action": "Login, browse media, open a specific media detail page",
+          "expected": "User is on media detail screen with specific content"
+        },
+        {
+          "name": "Background and simulate OOM kill",
+          "action": "adb shell input keyevent KEYCODE_HOME && adb shell am kill com.vasic.catalogizer",
+          "expected": "App process is killed by system"
+        },
+        {
+          "name": "Restore from recents",
+          "action": "Open recent apps and tap Catalogizer",
+          "expected": "App restores to the media detail screen via onSaveInstanceState/ViewModel restoration. If restoration is not possible, app gracefully returns to home screen rather than crashing"
+        }
+      ]
+    },
+    {
+      "id": "neg-android-launch-old-api",
+      "name": "Launch on Minimum Supported API Level",
+      "category": "launch-lifecycle",
+      "priority": "medium",
+      "platforms": [
+        "android"
+      ],
+      "steps": [
+        {
+          "name": "Launch on oldest supported API",
+          "action": "Run app on device/emulator at minSdkVersion API level",
+          "expected": "App launches without ClassNotFoundException or MethodNotFoundException for newer APIs"
+        },
+        {
+          "name": "Verify core features",
+          "action": "Login, browse media, play media",
+          "expected": "All core features work. Features requiring higher APIs degrade gracefully with appropriate messaging"
+        }
+      ]
+    },
+    {
+      "id": "neg-android-app-update-preserve-data",
+      "name": "App Update Preserves Existing Data",
+      "category": "launch-lifecycle",
+      "priority": "critical",
+      "platforms": [
+        "android"
+      ],
+      "steps": [
+        {
+          "name": "Install and configure app",
+          "action": "Install current version, login, configure server URL, browse some media to populate cache",
+          "expected": "App is configured with user data, login session, and cached content"
+        },
+        {
+          "name": "Install updated version over existing",
+          "action": "adb install -r catalogizer-v2.apk (install updated APK without uninstall)",
+          "expected": "Installation succeeds without errors"
+        },
+        {
+          "name": "Launch updated app",
+          "action": "Launch app after update",
+          "expected": "User session is preserved (still logged in), server URL retained, cached data intact. No database migration crash"
+        }
+      ]
+    },
+    {
+      "id": "neg-android-clear-cache-behavior",
+      "name": "Clear Cache Does Not Lose User Data",
+      "category": "launch-lifecycle",
+      "priority": "high",
+      "platforms": [
+        "android"
+      ],
+      "steps": [
+        {
+          "name": "Login and use app",
+          "action": "Login, browse media, build up image cache",
+          "expected": "App has cached data and active session"
+        },
+        {
+          "name": "Clear cache from system settings",
+          "action": "Settings > Apps > Catalogizer > Storage > Clear Cache",
+          "expected": "Cache is cleared, SharedPreferences and database remain intact"
+        },
+        {
+          "name": "Relaunch after cache clear",
+          "action": "Launch Catalogizer",
+          "expected": "User is still logged in, server URL preserved. Images reload from network. No crash from missing cache files"
+        }
+      ]
+    },
+    {
+      "id": "neg-android-clear-data-behavior",
+      "name": "Clear Data Resets to Clean State",
+      "category": "launch-lifecycle",
+      "priority": "high",
+      "platforms": [
+        "android"
+      ],
+      "steps": [
+        {
+          "name": "Use app with full data",
+          "action": "Login, configure server, browse media",
+          "expected": "App has user data, session, preferences"
+        },
+        {
+          "name": "Clear all data from system settings",
+          "action": "Settings > Apps > Catalogizer > Storage > Clear Data",
+          "expected": "All app data wiped"
+        },
+        {
+          "name": "Relaunch after data clear",
+          "action": "Launch Catalogizer",
+          "expected": "App presents fresh login/setup screen as if first launch. No crash from null references to missing data. No stale state leaks"
+        }
+      ]
+    },
+    {
+      "id": "neg-android-launch-split-screen",
+      "name": "Launch in Split Screen Mode",
+      "category": "launch-lifecycle",
+      "priority": "medium",
+      "platforms": [
+        "android"
+      ],
+      "steps": [
+        {
+          "name": "Enter split screen with another app",
+          "action": "Open recents, drag Catalogizer to split screen",
+          "expected": "App resizes to half screen without crash"
+        },
+        {
+          "name": "Verify layout adaptation",
+          "action": "Check that UI elements are visible and not overlapping",
+          "expected": "UI adapts to constrained size. No clipped buttons, no overlapping text. Scrollable content remains scrollable"
+        }
+      ]
+    },
+    {
+      "id": "neg-android-auth-server-unreachable",
+      "name": "Login With Server Unreachable",
+      "category": "authentication",
+      "priority": "critical",
+      "platforms": [
+        "android"
+      ],
+      "steps": [
+        {
+          "name": "Enter unreachable server URL",
+          "action": "Type server URL pointing to non-existent host (e.g., http://192.168.99.99:8080)",
+          "expected": "Server URL field accepts the input"
+        },
+        {
+          "name": "Attempt login",
+          "action": "Enter valid credentials and tap Login",
+          "expected": "Loading indicator appears briefly, then a clear error message like 'Cannot reach server' or 'Connection refused' is shown. No infinite spinner. No unhandled exception"
+        },
+        {
+          "name": "Verify retry possible",
+          "action": "Correct the server URL and attempt login again",
+          "expected": "Login succeeds with correct URL. Previous error state does not block subsequent attempts"
+        }
+      ]
+    },
+    {
+      "id": "neg-android-auth-login-timeout",
+      "name": "Login Request Timeout",
+      "category": "authentication",
+      "priority": "high",
+      "platforms": [
+        "android"
+      ],
+      "steps": [
+        {
+          "name": "Simulate slow server response",
+          "action": "Configure network to add 30-second delay, then attempt login",
+          "expected": "Login request is initiated"
+        },
+        {
+          "name": "Wait for timeout",
+          "action": "Wait for client-side timeout to trigger",
+          "expected": "After reasonable timeout (15-30 seconds), app shows 'Request timed out' error. Login button becomes re-enabled. No ANR dialog"
+        }
+      ]
+    },
+    {
+      "id": "neg-android-auth-special-chars-password",
+      "name": "Login With Special Characters in Password",
+      "category": "authentication",
+      "priority": "high",
+      "platforms": [
+        "android"
+      ],
+      "steps": [
+        {
+          "name": "Enter credentials with special chars",
+          "action": "Enter username 'admin' and password containing special characters: p@$$w0rd!#%&*<>\"'",
+          "expected": "Password field accepts all special characters without escaping or truncation"
+        },
+        {
+          "name": "Submit login",
+          "action": "Tap Login button",
+          "expected": "Credentials are sent correctly to server. If password is wrong, error message shown. If correct, login succeeds. No JSON encoding errors or crashes from special characters"
+        }
+      ]
+    },
+    {
+      "id": "neg-android-auth-biometric-fallback",
+      "name": "Biometric Authentication Fallback",
+      "category": "authentication",
+      "priority": "medium",
+      "platforms": [
+        "android"
+      ],
+      "steps": [
+        {
+          "name": "Enable biometric login if available",
+          "action": "Configure biometric authentication in app settings",
+          "expected": "Biometric option is saved"
+        },
+        {
+          "name": "Fail biometric attempt",
+          "action": "Present wrong fingerprint or cancel biometric prompt 3 times",
+          "expected": "After max biometric failures, app falls back to password-based login without crashing. Biometric lockout does not permanently lock the app"
+        },
+        {
+          "name": "Login with password after biometric failure",
+          "action": "Enter username and password manually",
+          "expected": "Password login works normally as fallback. No stuck biometric state"
+        }
+      ]
+    },
+    {
+      "id": "neg-android-auth-session-expired-background",
+      "name": "Session Expires While App in Background",
+      "category": "authentication",
+      "priority": "critical",
+      "platforms": [
+        "android"
+      ],
+      "steps": [
+        {
+          "name": "Login and background app",
+          "action": "Login successfully, then press Home to background the app. Wait for JWT token to expire",
+          "expected": "App is backgrounded with active session"
+        },
+        {
+          "name": "Return to app after token expiry",
+          "action": "Open app from recents after token has expired",
+          "expected": "App detects expired session and redirects to login screen with message 'Session expired, please login again'. No 401 error toast spam. No infinite redirect loop"
+        }
+      ]
+    },
+    {
+      "id": "neg-android-auth-token-corruption",
+      "name": "Corrupted Auth Token in SharedPreferences",
+      "category": "authentication",
+      "priority": "high",
+      "platforms": [
+        "android"
+      ],
+      "steps": [
+        {
+          "name": "Corrupt stored token",
+          "action": "Use adb to modify SharedPreferences XML, replacing the JWT token with garbage data: adb shell run-as com.vasic.catalogizer sed -i 's/eyJ.*/CORRUPTED_TOKEN/' shared_prefs/auth.xml",
+          "expected": "Token value is corrupted on disk"
+        },
+        {
+          "name": "Launch app with corrupted token",
+          "action": "adb shell am start -n com.vasic.catalogizer/.MainActivity",
+          "expected": "App detects invalid token on API call, clears corrupt token, and redirects to login screen. No crash from malformed JWT parsing"
+        }
+      ]
+    },
+    {
+      "id": "neg-android-auth-rooted-device",
+      "name": "Login on Rooted Device Detection",
+      "category": "authentication",
+      "priority": "medium",
+      "platforms": [
+        "android"
+      ],
+      "steps": [
+        {
+          "name": "Launch on rooted device or emulator",
+          "action": "Install and launch Catalogizer on a rooted device or emulator with su binary present",
+          "expected": "App launches. If root detection is implemented, a warning is shown but app still functions (no hard block for media browsing app)"
+        },
+        {
+          "name": "Attempt login",
+          "action": "Enter valid credentials and login",
+          "expected": "Login works normally. Root status may be logged but does not prevent authentication"
+        }
+      ]
+    },
+    {
+      "id": "neg-android-auth-multi-account-conflict",
+      "name": "Multi-Account Login Conflict",
+      "category": "authentication",
+      "priority": "medium",
+      "platforms": [
+        "android"
+      ],
+      "steps": [
+        {
+          "name": "Login as first user",
+          "action": "Login with user 'admin' on server A",
+          "expected": "Login succeeds, media content loads"
+        },
+        {
+          "name": "Switch to different server and login",
+          "action": "Go to settings, change server URL to server B, login as different user",
+          "expected": "Previous session data is cleared. New server connection established. No stale data from server A displayed with server B session"
+        },
+        {
+          "name": "Verify data isolation",
+          "action": "Browse media content",
+          "expected": "Only media from server B is displayed. No cached items from server A leak into the view"
+        }
+      ]
+    },
+    {
+      "id": "neg-android-media-no-audio-codec",
+      "name": "Play Media With Unsupported Audio Codec",
+      "category": "media",
+      "priority": "high",
+      "platforms": [
+        "android"
+      ],
+      "steps": [
+        {
+          "name": "Attempt to play file with unsupported audio",
+          "action": "Open a media file that has a video track but uses an unsupported audio codec (e.g., DTS on a device without DTS support)",
+          "expected": "App either plays video without audio and shows a codec warning, or shows a clear error message about unsupported audio format. No crash or silent failure"
+        }
+      ]
+    },
+    {
+      "id": "neg-android-media-corrupted-file",
+      "name": "Play Corrupted Media File",
+      "category": "media",
+      "priority": "high",
+      "platforms": [
+        "android"
+      ],
+      "steps": [
+        {
+          "name": "Open corrupted media",
+          "action": "Attempt to play a media file whose container is corrupted (truncated, invalid headers)",
+          "expected": "Player shows clear error message like 'Unable to play this file' or 'File may be corrupted'. No app crash, no stuck loading state"
+        },
+        {
+          "name": "Navigate away from error",
+          "action": "Press back to return to media list",
+          "expected": "App returns to media list normally. Player resources are released. No lingering error state"
+        }
+      ]
+    },
+    {
+      "id": "neg-android-media-network-switch",
+      "name": "Network Switch During Media Playback",
+      "category": "media",
+      "priority": "critical",
+      "platforms": [
+        "android"
+      ],
+      "steps": [
+        {
+          "name": "Start streaming media on WiFi",
+          "action": "Begin playing a streaming media file over WiFi",
+          "expected": "Media plays normally"
+        },
+        {
+          "name": "Switch to mobile data",
+          "action": "adb shell svc wifi disable (switch to mobile data mid-stream)",
+          "expected": "Playback may briefly buffer but resumes on new connection. If mobile data is unavailable, a clear buffering/offline message is shown. No crash from socket disconnection"
+        },
+        {
+          "name": "Restore WiFi",
+          "action": "adb shell svc wifi enable",
+          "expected": "Playback resumes smoothly. No duplicate streams started"
+        }
+      ]
+    },
+    {
+      "id": "neg-android-media-buffer-exhaustion",
+      "name": "Streaming Buffer Exhaustion on Slow Network",
+      "category": "media",
+      "priority": "high",
+      "platforms": [
+        "android"
+      ],
+      "steps": [
+        {
+          "name": "Play media on very slow connection",
+          "action": "Throttle network to 50kbps and attempt to stream a high-bitrate video",
+          "expected": "Player shows buffering indicator. Does not crash or consume excessive memory trying to buffer"
+        },
+        {
+          "name": "Wait for buffer underrun",
+          "action": "Let playback continue until buffer is fully exhausted",
+          "expected": "Player pauses and shows buffering spinner or 'Slow connection' warning. Resumes automatically when enough data is buffered. No ANR"
+        }
+      ]
+    },
+    {
+      "id": "neg-android-media-seek-invalid",
+      "name": "Seek to Invalid Position in Media",
+      "category": "media",
+      "priority": "medium",
+      "platforms": [
+        "android"
+      ],
+      "steps": [
+        {
+          "name": "Play a media file",
+          "action": "Start playing a 60-second video",
+          "expected": "Video plays normally"
+        },
+        {
+          "name": "Seek past end of file",
+          "action": "Drag seek bar beyond the end position or tap at the very end",
+          "expected": "Player seeks to the end and either stops playback or loops, depending on settings. No crash from out-of-bounds seek"
+        },
+        {
+          "name": "Rapidly seek back and forth",
+          "action": "Drag seek bar rapidly from start to end and back multiple times in quick succession",
+          "expected": "Player handles rapid seek requests without crashing, leaking memory, or becoming unresponsive"
+        }
+      ]
+    },
+    {
+      "id": "neg-android-media-drm-no-license",
+      "name": "Play DRM Content Without License",
+      "category": "media",
+      "priority": "medium",
+      "platforms": [
+        "android"
+      ],
+      "steps": [
+        {
+          "name": "Attempt to play DRM-protected content",
+          "action": "Open a media file that requires DRM license that is not available",
+          "expected": "App shows clear error message about DRM/licensing requirement. No crash from DRM exception. Player does not expose raw encrypted content"
+        }
+      ]
+    },
+    {
+      "id": "neg-android-media-bluetooth-disconnect",
+      "name": "Bluetooth Audio Disconnect During Playback",
+      "category": "media",
+      "priority": "high",
+      "platforms": [
+        "android"
+      ],
+      "steps": [
+        {
+          "name": "Start playback with Bluetooth audio",
+          "action": "Connect Bluetooth headphones, start playing media with audio",
+          "expected": "Audio plays through Bluetooth device"
+        },
+        {
+          "name": "Disconnect Bluetooth mid-playback",
+          "action": "Turn off Bluetooth headphones or disable Bluetooth via adb shell settings put global bluetooth_on 0",
+          "expected": "Playback pauses automatically (Android AUDIO_BECOMING_NOISY behavior). Audio does not suddenly blast through phone speaker at full volume"
+        },
+        {
+          "name": "Resume after reconnect",
+          "action": "Re-enable Bluetooth and reconnect headphones, then tap play",
+          "expected": "Playback resumes through Bluetooth audio. No duplicate audio streams"
+        }
+      ]
+    },
+    {
+      "id": "neg-android-media-cast-failure",
+      "name": "Cast Media Failure Recovery",
+      "category": "media",
+      "priority": "medium",
+      "platforms": [
+        "android"
+      ],
+      "steps": [
+        {
+          "name": "Initiate cast to unavailable device",
+          "action": "Attempt to cast media to a Chromecast device that goes offline during connection",
+          "expected": "Cast connection fails with clear error message. Playback reverts to local device. No stuck cast UI state"
+        },
+        {
+          "name": "Resume local playback",
+          "action": "Dismiss error and play locally",
+          "expected": "Local playback resumes from where cast was attempted. Cast icon shows disconnected state"
+        }
+      ]
+    },
+    {
+      "id": "neg-android-nav-deeplink-deleted-entity",
+      "name": "Deep Link to Deleted or Non-Existent Entity",
+      "category": "navigation",
+      "priority": "high",
+      "platforms": [
+        "android"
+      ],
+      "steps": [
+        {
+          "name": "Follow deep link to deleted entity",
+          "action": "adb shell am start -a android.intent.action.VIEW -d catalogizer://media/999999",
+          "expected": "App launches and attempts to load entity 999999"
+        },
+        {
+          "name": "Verify error handling",
+          "action": "Wait for server 404 response",
+          "expected": "App shows 'Item not found' or 'This content is no longer available' message. Does not crash. Provides navigation to home screen"
+        }
+      ]
+    },
+    {
+      "id": "neg-android-nav-backstack-overflow",
+      "name": "Deep Back Stack Navigation",
+      "category": "navigation",
+      "priority": "medium",
+      "platforms": [
+        "android"
+      ],
+      "steps": [
+        {
+          "name": "Navigate deeply through many screens",
+          "action": "From home, navigate: Media List > Item 1 > Related > Item 2 > Related > Item 3 ... repeat 20+ times",
+          "expected": "App handles deep navigation without StackOverflowError or excessive memory consumption"
+        },
+        {
+          "name": "Press back repeatedly",
+          "action": "Press back button 20+ times to unwind the stack",
+          "expected": "Each back press returns to the previous screen in correct order. Eventually reaches home screen. No crash from stack depth"
+        }
+      ]
+    },
+    {
+      "id": "neg-android-nav-intent-filter-conflict",
+      "name": "Intent Filter Conflict With Other Apps",
+      "category": "navigation",
+      "priority": "medium",
+      "platforms": [
+        "android"
+      ],
+      "steps": [
+        {
+          "name": "Open media URL that Catalogizer handles",
+          "action": "Open a URL matching Catalogizer intent filter when another app also handles same scheme",
+          "expected": "Android shows app chooser dialog. Selecting Catalogizer opens the content correctly. No crash from ambiguous intent resolution"
+        }
+      ]
+    },
+    {
+      "id": "neg-android-nav-multi-window",
+      "name": "Multi-Window Split Screen Navigation",
+      "category": "navigation",
+      "priority": "medium",
+      "platforms": [
+        "android"
+      ],
+      "steps": [
+        {
+          "name": "Enter split screen mode",
+          "action": "Put Catalogizer in split screen with another app",
+          "expected": "App resizes and redraws correctly"
+        },
+        {
+          "name": "Navigate in split screen",
+          "action": "Browse media, open details, go back while in half-screen mode",
+          "expected": "Navigation works correctly. Touch targets are still reachable. Content is readable"
+        },
+        {
+          "name": "Exit split screen",
+          "action": "Drag divider to make Catalogizer full screen",
+          "expected": "App smoothly resizes to full screen. No overlapping fragments or blank areas"
+        }
+      ]
+    },
+    {
+      "id": "neg-android-nav-pip-transitions",
+      "name": "Picture-in-Picture Mode Transitions",
+      "category": "navigation",
+      "priority": "medium",
+      "platforms": [
+        "android"
+      ],
+      "steps": [
+        {
+          "name": "Enter PIP during playback",
+          "action": "Start playing a video and press Home to trigger PIP mode",
+          "expected": "If PIP is supported, video continues in small floating window. If not supported, playback pauses and app backgrounds normally"
+        },
+        {
+          "name": "Interact with PIP window",
+          "action": "Tap PIP window to show controls, then tap to return to full screen",
+          "expected": "App returns to full screen with playback continuing from correct position. No duplicate player instances"
+        }
+      ]
+    },
+    {
+      "id": "neg-android-nav-gesture-conflicts",
+      "name": "Gesture Navigation Conflicts",
+      "category": "navigation",
+      "priority": "high",
+      "platforms": [
+        "android"
+      ],
+      "steps": [
+        {
+          "name": "Use gesture navigation near screen edges",
+          "action": "With Android gesture navigation enabled, swipe from left edge (system back gesture) while app has a side drawer or swipeable content",
+          "expected": "System back gesture takes priority. App handles the onBackPressed correctly. No conflict between app swipe gestures and system gestures"
+        },
+        {
+          "name": "Bottom gesture conflict",
+          "action": "Swipe up from bottom of screen during media playback (system home gesture area)",
+          "expected": "System gesture triggers home. Player properly pauses and saves position. No stuck gesture state in the app"
+        }
+      ]
+    },
+    {
+      "id": "neg-android-nav-notification-tap-onboarding",
+      "name": "Notification Tap During Onboarding",
+      "category": "navigation",
+      "priority": "medium",
+      "platforms": [
+        "android"
+      ],
+      "steps": [
+        {
+          "name": "Trigger notification during first-run setup",
+          "action": "During initial server configuration/login flow, receive and tap a push notification that deep links into the app",
+          "expected": "App either defers the deep link until onboarding is complete, or safely interrupts onboarding and navigates. No crash from navigating to authenticated content before login is complete"
+        }
+      ]
+    },
+    {
+      "id": "neg-android-nav-share-intent-huge",
+      "name": "Share Intent With Very Large Payload",
+      "category": "navigation",
+      "priority": "low",
+      "platforms": [
+        "android"
+      ],
+      "steps": [
+        {
+          "name": "Send oversized share intent",
+          "action": "Send a share intent to Catalogizer with an extremely large text payload (>1MB) or many URIs",
+          "expected": "App handles the oversized intent gracefully. Either processes what it can or shows 'Content too large' error. No TransactionTooLargeException crash"
+        }
+      ]
+    },
+    {
+      "id": "neg-android-data-missing-fields",
+      "name": "Display Entity With Missing or Null Fields",
+      "category": "data",
+      "priority": "high",
+      "platforms": [
+        "android"
+      ],
+      "steps": [
+        {
+          "name": "Load entity with incomplete data",
+          "action": "Navigate to a media item that has null/empty title, description, year, genres, or poster URL",
+          "expected": "App renders the item with placeholder text ('Unknown Title', 'No description available') and placeholder image. No NullPointerException or blank screen"
+        },
+        {
+          "name": "Interact with incomplete entity",
+          "action": "Tap on the entity to open details",
+          "expected": "Detail screen renders with available fields populated and missing fields showing appropriate placeholders. No crash"
+        }
+      ]
+    },
+    {
+      "id": "neg-android-data-pagination-timeout",
+      "name": "Pagination Request Timeout",
+      "category": "data",
+      "priority": "high",
+      "platforms": [
+        "android"
+      ],
+      "steps": [
+        {
+          "name": "Scroll to trigger pagination",
+          "action": "Scroll down a media list until the app needs to load the next page of results",
+          "expected": "Pagination request is initiated with loading indicator"
+        },
+        {
+          "name": "Simulate pagination timeout",
+          "action": "Disconnect network right as pagination request fires",
+          "expected": "App shows error at bottom of list with retry option. Already loaded items remain visible. No crash or list reset to top"
+        }
+      ]
+    },
+    {
+      "id": "neg-android-data-scroll-large-list",
+      "name": "Scroll to 10000th Item in Large List",
+      "category": "data",
+      "priority": "medium",
+      "platforms": [
+        "android"
+      ],
+      "steps": [
+        {
+          "name": "Load a very large media library",
+          "action": "Connect to a server with 10000+ media items and start scrolling through the list",
+          "expected": "App uses lazy loading / RecyclerView with proper view recycling"
+        },
+        {
+          "name": "Scroll extensively",
+          "action": "Fast-scroll through thousands of items using scrollbar or fling gestures",
+          "expected": "Memory usage stays stable (no linear growth). Frame rate remains smooth (no jank). Items at position 10000 render correctly with images"
+        }
+      ]
+    },
+    {
+      "id": "neg-android-data-sort-identical-values",
+      "name": "Sort With Many Identical Values",
+      "category": "data",
+      "priority": "low",
+      "platforms": [
+        "android"
+      ],
+      "steps": [
+        {
+          "name": "Sort by a field with identical values",
+          "action": "Sort media list by year when many items share the same year (e.g., 100 items from 2024)",
+          "expected": "Sort completes without infinite loop or comparison error. Items with identical sort values maintain stable order. No crash from comparison contract violation"
+        }
+      ]
+    },
+    {
+      "id": "neg-android-data-filter-no-results",
+      "name": "Filter Returns Zero Results on Every Criteria",
+      "category": "data",
+      "priority": "medium",
+      "platforms": [
+        "android"
+      ],
+      "steps": [
+        {
+          "name": "Apply impossible filter combination",
+          "action": "Set multiple filters that together match zero items (e.g., genre='Documentary' AND year='1800' AND rating='10')",
+          "expected": "App displays empty state with message like 'No items match your filters' and option to clear filters. No crash from empty adapter"
+        },
+        {
+          "name": "Clear filters",
+          "action": "Tap 'Clear all filters' or reset individually",
+          "expected": "Full unfiltered list returns immediately. No stale filter state"
+        }
+      ]
+    },
+    {
+      "id": "neg-android-data-rapid-search",
+      "name": "Rapid Sequential Searches With Zero Results",
+      "category": "data",
+      "priority": "medium",
+      "platforms": [
+        "android"
+      ],
+      "steps": [
+        {
+          "name": "Search with no results",
+          "action": "Type 'xyznonexistent' in search field",
+          "expected": "Empty results shown with appropriate message"
+        },
+        {
+          "name": "Immediately search again",
+          "action": "Clear search field and immediately type 'abcnonexistent'",
+          "expected": "Previous search request is cancelled. New search executes. No race condition between responses. No results from first query appearing briefly for second query"
+        }
+      ]
+    },
+    {
+      "id": "neg-android-data-pull-refresh-error",
+      "name": "Pull to Refresh During Error State",
+      "category": "data",
+      "priority": "medium",
+      "platforms": [
+        "android"
+      ],
+      "steps": [
+        {
+          "name": "Trigger error state",
+          "action": "Load media list, then disconnect network to cause error state",
+          "expected": "Error state is displayed on the list"
+        },
+        {
+          "name": "Pull to refresh while in error state",
+          "action": "Pull down to trigger refresh with network still disconnected",
+          "expected": "Refresh attempt is made and fails gracefully. Error message updates or remains. Pull-to-refresh animation completes and is not stuck. No duplicate error messages stacked"
+        },
+        {
+          "name": "Restore network and pull to refresh",
+          "action": "Re-enable network and pull to refresh",
+          "expected": "Data loads successfully. Error state clears. List populates with fresh data"
+        }
+      ]
+    },
+    {
+      "id": "neg-android-data-very-long-text",
+      "name": "Display Very Long Text Without Truncation Bug",
+      "category": "data",
+      "priority": "medium",
+      "platforms": [
+        "android"
+      ],
+      "steps": [
+        {
+          "name": "Load entity with very long text",
+          "action": "Open a media item with a 5000+ character description and a 200+ character title",
+          "expected": "Title is appropriately truncated with ellipsis in list view. Description in detail view is fully scrollable. No layout overflow, no text overlapping other elements, no performance degradation from measuring huge text"
+        }
+      ]
+    },
+    {
+      "id": "neg-android-net-wifi-to-mobile",
+      "name": "WiFi to Mobile Data Mid-Request",
+      "category": "network",
+      "priority": "critical",
+      "platforms": [
+        "android"
+      ],
+      "steps": [
+        {
+          "name": "Start loading on WiFi",
+          "action": "Begin loading a media list over WiFi",
+          "expected": "Request is in progress"
+        },
+        {
+          "name": "Switch to mobile data",
+          "action": "adb shell svc wifi disable (mobile data takes over)",
+          "expected": "In-flight request may fail but app retries on new connection. No crash from SocketException. Data eventually loads or clear error is shown"
+        }
+      ]
+    },
+    {
+      "id": "neg-android-net-airplane-toggle",
+      "name": "Airplane Mode Toggle",
+      "category": "network",
+      "priority": "high",
+      "platforms": [
+        "android"
+      ],
+      "steps": [
+        {
+          "name": "Enable airplane mode while using app",
+          "action": "adb shell settings put global airplane_mode_on 1 && adb shell am broadcast -a android.intent.action.AIRPLANE_MODE",
+          "expected": "App detects connectivity loss. Shows offline indicator. Pending requests fail gracefully"
+        },
+        {
+          "name": "Disable airplane mode",
+          "action": "adb shell settings put global airplane_mode_on 0 && adb shell am broadcast -a android.intent.action.AIRPLANE_MODE",
+          "expected": "App detects connectivity restoration and either auto-reconnects or shows a retry option. No stale offline state"
+        }
+      ]
+    },
+    {
+      "id": "neg-android-net-captive-portal",
+      "name": "Captive Portal Detection",
+      "category": "network",
+      "priority": "medium",
+      "platforms": [
+        "android"
+      ],
+      "steps": [
+        {
+          "name": "Connect to captive portal WiFi",
+          "action": "Connect device to a WiFi network with captive portal (hotel/airport WiFi) that intercepts HTTP requests",
+          "expected": "App detects that API calls are being redirected (non-JSON responses). Shows meaningful error like 'Network login required' rather than JSON parse error crash"
+        }
+      ]
+    },
+    {
+      "id": "neg-android-net-dns-failure",
+      "name": "DNS Resolution Failure",
+      "category": "network",
+      "priority": "high",
+      "platforms": [
+        "android"
+      ],
+      "steps": [
+        {
+          "name": "Configure server with unresolvable hostname",
+          "action": "Set server URL to http://nonexistent.invalid.domain:8080",
+          "expected": "DNS resolution fails"
+        },
+        {
+          "name": "Attempt to load data",
+          "action": "Try to browse media or login",
+          "expected": "App shows clear error message about being unable to reach server. No UnknownHostException crash. Error message distinguishes DNS failure from connection refused"
+        }
+      ]
+    },
+    {
+      "id": "neg-android-net-cert-pinning",
+      "name": "Certificate Pinning Violation",
+      "category": "network",
+      "priority": "high",
+      "platforms": [
+        "android"
+      ],
+      "steps": [
+        {
+          "name": "Intercept HTTPS with proxy",
+          "action": "Route app traffic through a MITM proxy (Charles/mitmproxy) with its own certificate",
+          "expected": "If certificate pinning is implemented, connection is rejected with security error. If not pinned, connection works (development mode). No silent acceptance of invalid certificates in production builds"
+        }
+      ]
+    },
+    {
+      "id": "neg-android-net-proxy-detection",
+      "name": "HTTP Proxy Detection and Handling",
+      "category": "network",
+      "priority": "low",
+      "platforms": [
+        "android"
+      ],
+      "steps": [
+        {
+          "name": "Configure system proxy",
+          "action": "Set HTTP proxy in device WiFi settings pointing to a proxy server",
+          "expected": "App either works through proxy or detects proxy and warns user. API calls route through proxy if configured. No connection failure with unhelpful error"
+        }
+      ]
+    },
+    {
+      "id": "neg-android-net-very-slow-2g",
+      "name": "Very Slow Connection Simulation (2G)",
+      "category": "network",
+      "priority": "high",
+      "platforms": [
+        "android"
+      ],
+      "steps": [
+        {
+          "name": "Throttle to 2G speeds",
+          "action": "Use network emulation to limit bandwidth to 50kbps with 500ms latency",
+          "expected": "App starts and login screen eventually loads"
+        },
+        {
+          "name": "Attempt to browse",
+          "action": "Login and browse media list on 2G",
+          "expected": "Content loads very slowly but progressively. Images load as available. App remains responsive to touch (UI thread not blocked). Loading indicators visible. No timeout before any content appears (at least text/metadata loads first)"
+        }
+      ]
+    },
+    {
+      "id": "neg-android-net-connection-drop-upload",
+      "name": "Connection Drop During Upload",
+      "category": "network",
+      "priority": "high",
+      "platforms": [
+        "android"
+      ],
+      "steps": [
+        {
+          "name": "Start an upload or data modification",
+          "action": "Begin an operation that sends data to the server (e.g., updating collection, rating a media item)",
+          "expected": "Upload/modification request is in flight"
+        },
+        {
+          "name": "Kill network mid-upload",
+          "action": "adb shell svc wifi disable during the request",
+          "expected": "Request fails. App shows error with option to retry. No partial data corruption on server. Optimistic UI update is rolled back if server did not confirm"
+        }
+      ]
+    },
+    {
+      "id": "neg-android-device-rotation-dialog",
+      "name": "Screen Rotation During Dialog",
+      "category": "device",
+      "priority": "high",
+      "platforms": [
+        "android"
+      ],
+      "steps": [
+        {
+          "name": "Open a dialog",
+          "action": "Trigger any confirmation dialog (e.g., logout confirmation, delete confirmation)",
+          "expected": "Dialog is displayed"
+        },
+        {
+          "name": "Rotate screen",
+          "action": "adb shell settings put system accelerometer_rotation 1 && rotate device 90 degrees",
+          "expected": "Dialog survives configuration change. It is still visible after rotation with correct content. No WindowLeaked exception. No duplicate dialogs"
+        }
+      ]
+    },
+    {
+      "id": "neg-android-device-font-size-200",
+      "name": "System Font Size Over 200 Percent",
+      "category": "device",
+      "priority": "high",
+      "platforms": [
+        "android"
+      ],
+      "steps": [
+        {
+          "name": "Set maximum font scale",
+          "action": "adb shell settings put system font_scale 2.0",
+          "expected": "System font scale is set to 200%"
+        },
+        {
+          "name": "Launch and browse app",
+          "action": "Launch Catalogizer and navigate through screens",
+          "expected": "Text is enlarged but app remains usable. No text overlapping other elements. Buttons remain tappable. Scrollable content accommodates larger text. No text clipped by fixed-height containers"
+        },
+        {
+          "name": "Reset font scale",
+          "action": "adb shell settings put system font_scale 1.0",
+          "expected": "App returns to normal text size"
+        }
+      ]
+    },
+    {
+      "id": "neg-android-device-display-cutout",
+      "name": "Display Cutout and Notch Handling",
+      "category": "device",
+      "priority": "high",
+      "platforms": [
+        "android"
+      ],
+      "steps": [
+        {
+          "name": "Enable display cutout simulation",
+          "action": "adb shell settings put global display_cutout_emulation corner_cutout (or use device with physical notch)",
+          "expected": "Cutout simulation is active"
+        },
+        {
+          "name": "Verify content not hidden behind cutout",
+          "action": "Check all screens for content obscured by the cutout area",
+          "expected": "App respects WindowInsets and display cutout. No content hidden behind notch. Status bar content avoids cutout area. Full-screen mode (e.g., video player) handles cutout correctly"
+        }
+      ]
+    },
+    {
+      "id": "neg-android-device-rtl-layout",
+      "name": "RTL Language Layout Rendering",
+      "category": "device",
+      "priority": "high",
+      "platforms": [
+        "android"
+      ],
+      "steps": [
+        {
+          "name": "Switch to RTL locale",
+          "action": "adb shell settings put global development_settings_enabled 1 && adb shell setprop debug.layout.rtl true",
+          "expected": "Device is in RTL layout mode"
+        },
+        {
+          "name": "Navigate app in RTL mode",
+          "action": "Launch app and browse through screens",
+          "expected": "Layout mirrors correctly for RTL. Navigation drawer opens from right. Lists scroll from right. Back arrows point right. No overlapping elements or misaligned text. Media content (images, videos) renders correctly"
+        }
+      ]
+    },
+    {
+      "id": "neg-android-device-accessibility-service",
+      "name": "TalkBack Accessibility Service Enabled",
+      "category": "device",
+      "priority": "high",
+      "platforms": [
+        "android"
+      ],
+      "steps": [
+        {
+          "name": "Enable TalkBack",
+          "action": "Enable TalkBack accessibility service on the device",
+          "expected": "TalkBack is active and announcing screen content"
+        },
+        {
+          "name": "Navigate with TalkBack",
+          "action": "Use TalkBack gestures to navigate through media list, open a detail, and interact with player controls",
+          "expected": "All interactive elements have content descriptions. Focus order is logical. Custom views announce their role and state. No unlabeled buttons. Media player controls are accessible"
+        }
+      ]
+    },
+    {
+      "id": "neg-android-device-animations-off",
+      "name": "Developer Options Animations Disabled",
+      "category": "device",
+      "priority": "medium",
+      "platforms": [
+        "android"
+      ],
+      "steps": [
+        {
+          "name": "Disable all animations",
+          "action": "adb shell settings put global window_animation_scale 0 && adb shell settings put global transition_animation_scale 0 && adb shell settings put global animator_duration_scale 0",
+          "expected": "All system and app animations are disabled"
+        },
+        {
+          "name": "Navigate through app",
+          "action": "Browse media, open details, go back, switch tabs",
+          "expected": "App works correctly without animations. No functionality depends on animation completion callbacks. Transitions are instant but correct. No stuck states from onAnimationEnd never firing"
+        }
+      ]
+    },
+    {
+      "id": "neg-android-device-battery-saver",
+      "name": "Battery Saver Mode Restrictions",
+      "category": "device",
+      "priority": "medium",
+      "platforms": [
+        "android"
+      ],
+      "steps": [
+        {
+          "name": "Enable battery saver",
+          "action": "adb shell settings put global low_power 1",
+          "expected": "Battery saver mode is active"
+        },
+        {
+          "name": "Use app in battery saver",
+          "action": "Browse media, play content, check for background sync",
+          "expected": "App functions correctly with battery saver. Background network may be restricted but foreground operations work. No crash from restricted background execution. If background sync fails, app operates on cached data"
+        },
+        {
+          "name": "Disable battery saver",
+          "action": "adb shell settings put global low_power 0",
+          "expected": "Full functionality resumes. Any queued background operations execute"
+        }
+      ]
+    },
+    {
+      "id": "neg-android-device-thermal-throttle",
+      "name": "Thermal Throttling During Heavy Use",
+      "category": "device",
+      "priority": "medium",
+      "platforms": [
+        "android"
+      ],
+      "steps": [
+        {
+          "name": "Trigger heavy workload",
+          "action": "Play high-bitrate video while scrolling through large media list (stress CPU/GPU)",
+          "expected": "Device may throttle CPU frequency"
+        },
+        {
+          "name": "Verify graceful degradation",
+          "action": "Continue using app during thermal throttling",
+          "expected": "App adapts to reduced performance. Video may drop frames but does not crash. UI remains responsive even if slower. No watchdog kill"
+        }
+      ]
+    },
+    {
+      "id": "neg-android-device-locale-change",
+      "name": "Locale Change While App in Foreground",
+      "category": "device",
+      "priority": "medium",
+      "platforms": [
+        "android"
+      ],
+      "steps": [
+        {
+          "name": "Change system locale while app is open",
+          "action": "adb shell settings put system system_locales ja-JP while Catalogizer is in foreground",
+          "expected": "Activity is recreated due to configuration change"
+        },
+        {
+          "name": "Verify app survives locale change",
+          "action": "Check that app displays correctly after locale change",
+          "expected": "App restarts/recreates cleanly. If localization is supported, strings change to new locale. If not, English strings remain. No crash from missing locale resources. User session is preserved"
+        }
+      ]
+    },
+    {
+      "id": "neg-android-device-timezone-change",
+      "name": "Time Zone Change During Operation",
+      "category": "device",
+      "priority": "low",
+      "platforms": [
+        "android"
+      ],
+      "steps": [
+        {
+          "name": "Change timezone mid-use",
+          "action": "adb shell settings put global auto_time_zone 0 && adb shell setprop persist.sys.timezone America/New_York while viewing media with timestamps",
+          "expected": "App handles timezone change. Displayed timestamps update to new timezone or remain in server timezone. No crash from date parsing. JWT token expiry calculations remain correct"
+        }
+      ]
+    },
+    {
+      "id": "neg-android-device-do-not-disturb",
+      "name": "Do Not Disturb Mode and Notifications",
+      "category": "device",
+      "priority": "low",
+      "platforms": [
+        "android"
+      ],
+      "steps": [
+        {
+          "name": "Enable Do Not Disturb",
+          "action": "Enable DND mode on device",
+          "expected": "DND is active"
+        },
+        {
+          "name": "Trigger in-app notifications",
+          "action": "Perform actions that would trigger push notifications or in-app alerts (scan complete, new media detected)",
+          "expected": "In-app UI notifications still display within the app. System notifications are suppressed by DND as expected. App does not crash from notification delivery failure. No notification queue overflow"
+        }
+      ]
+    },
+    {
+      "id": "neg-android-device-storage-permission-revoked",
+      "name": "Storage Permission Revoked at Runtime",
+      "category": "device",
+      "priority": "high",
+      "platforms": [
+        "android"
+      ],
+      "steps": [
+        {
+          "name": "Revoke storage permission while app is open",
+          "action": "adb shell pm revoke com.vasic.catalogizer android.permission.READ_EXTERNAL_STORAGE while app is browsing local media",
+          "expected": "App may be killed and restarted by system"
+        },
+        {
+          "name": "Relaunch and check behavior",
+          "action": "If app was killed, relaunch it. Navigate to feature requiring storage",
+          "expected": "App detects missing permission and prompts user to re-grant. No crash from SecurityException. Features not requiring storage continue to work"
+        }
+      ]
+    },
+    {
+      "id": "neg-android-data-concurrent-modifications",
+      "name": "Concurrent Data Modifications From Multiple Sources",
+      "category": "data",
+      "priority": "medium",
+      "platforms": [
+        "android"
+      ],
+      "steps": [
+        {
+          "name": "View media item on phone",
+          "action": "Open a media item detail screen on the Android app",
+          "expected": "Detail screen shows current data"
+        },
+        {
+          "name": "Modify same item via web API",
+          "action": "Using the web interface, update the same media item metadata (title, description) simultaneously",
+          "expected": "No server-side conflict error"
+        },
+        {
+          "name": "Refresh on phone",
+          "action": "Pull to refresh or navigate away and back",
+          "expected": "Phone shows updated data from the web modification. No stale cached data displayed permanently. No merge conflict crash"
+        }
+      ]
+    },
+    {
+      "id": "neg-android-media-multiple-player-instances",
+      "name": "Prevent Multiple Simultaneous Player Instances",
+      "category": "media",
+      "priority": "high",
+      "platforms": [
+        "android"
+      ],
+      "steps": [
+        {
+          "name": "Start playing first media",
+          "action": "Open and play a video file",
+          "expected": "Video plays normally"
+        },
+        {
+          "name": "Quickly navigate back and play another",
+          "action": "Press back and immediately tap another media item to play",
+          "expected": "First player is properly released before second starts. No overlapping audio. No memory leak from abandoned player instances. Only one ExoPlayer/MediaPlayer instance exists at a time"
+        }
+      ]
+    },
+    {
+      "id": "neg-android-auth-concurrent-login-attempts",
+      "name": "Multiple Rapid Login Button Taps",
+      "category": "authentication",
+      "priority": "high",
+      "platforms": [
+        "android"
+      ],
+      "steps": [
+        {
+          "name": "Enter valid credentials",
+          "action": "Fill in server URL, username, and password",
+          "expected": "Login form is filled"
+        },
+        {
+          "name": "Tap login button rapidly 5 times",
+          "action": "Tap the Login button 5 times in quick succession",
+          "expected": "Only one login request is sent. Button is disabled after first tap or duplicate requests are debounced. No multiple simultaneous API calls. No duplicate home screen navigation"
+        }
+      ]
+    },
+    {
+      "id": "neg-android-nav-process-death-webview",
+      "name": "Process Death With WebView Content",
+      "category": "navigation",
+      "priority": "medium",
+      "platforms": [
+        "android"
+      ],
+      "steps": [
+        {
+          "name": "Open WebView-based content",
+          "action": "Navigate to any screen that uses a WebView (help, about, embedded web content)",
+          "expected": "WebView content loads"
+        },
+        {
+          "name": "Kill process and restore",
+          "action": "Background app, kill process via adb shell am kill, restore from recents",
+          "expected": "App recreates. WebView either reloads its URL or navigates to a safe fallback screen. No crash from null WebView state"
+        }
+      ]
+    },
+    {
+      "id": "neg-android-net-http3-fallback",
+      "name": "HTTP/3 QUIC Fallback to HTTP/2",
+      "category": "network",
+      "priority": "high",
+      "platforms": [
+        "android"
+      ],
+      "steps": [
+        {
+          "name": "Block UDP traffic",
+          "action": "Configure network to block UDP port 443 (QUIC), forcing HTTP/3 to fail",
+          "expected": "Initial QUIC connection attempt fails"
+        },
+        {
+          "name": "Verify fallback",
+          "action": "App should fallback to HTTP/2 over TCP and continue operating",
+          "expected": "All API calls succeed over HTTP/2. No user-visible error. Fallback is transparent. App does not continuously retry QUIC and waste battery"
+        }
+      ]
+    },
+    {
+      "id": "neg-android-device-memory-pressure",
+      "name": "Extreme Memory Pressure From Other Apps",
+      "category": "device",
+      "priority": "high",
+      "platforms": [
+        "android"
+      ],
+      "steps": [
+        {
+          "name": "Create memory pressure",
+          "action": "Open several memory-intensive apps (browser with many tabs, games) to create system memory pressure while Catalogizer is backgrounded",
+          "expected": "System may trim Catalogizer's memory or kill it"
+        },
+        {
+          "name": "Return to Catalogizer",
+          "action": "Switch back to Catalogizer from recents",
+          "expected": "If process was killed, app restores cleanly via saved state. If trimmed, app functions with reduced cache. No OutOfMemoryError on return. Image caches are rebuilt lazily"
+        }
+      ]
+    }
+  ]
+}

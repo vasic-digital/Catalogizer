@@ -104,6 +104,13 @@ func (r *ConfigurationRepository) GetWizardProgress(userID int) (*models.WizardP
 		&progress.UserID, &progress.CurrentStep, &stepDataJSON,
 		&allDataJSON, &progress.UpdatedAt)
 
+	if err == sql.ErrNoRows {
+		return &models.WizardProgress{
+			UserID:   userID,
+			StepData: map[string]interface{}{},
+			AllData:  map[string]interface{}{},
+		}, nil
+	}
 	if err != nil {
 		return nil, fmt.Errorf("failed to get wizard progress: %w", err)
 	}

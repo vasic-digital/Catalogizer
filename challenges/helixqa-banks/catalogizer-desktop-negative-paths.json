@@ -1,0 +1,374 @@
+{
+  "challenges": [
+    {
+      "id": "neg-desktop-crash-recovery",
+      "name": "Crash Recovery State Restore",
+      "category": "resilience",
+      "priority": "critical",
+      "platforms": ["desktop"],
+      "steps": [
+        {
+          "name": "Force kill during operation",
+          "action": "Kill Catalogizer desktop process while browsing library",
+          "expected": "Process terminates immediately"
+        },
+        {
+          "name": "Relaunch app",
+          "action": "Launch Catalogizer desktop again",
+          "expected": "App launches normally, previous state partially restored, no corruption errors"
+        }
+      ]
+    },
+    {
+      "id": "neg-desktop-offline-launch",
+      "name": "Launch Without Network",
+      "category": "resilience",
+      "priority": "high",
+      "platforms": ["desktop"],
+      "steps": [
+        {
+          "name": "Disconnect network",
+          "action": "Disable all network interfaces",
+          "expected": "Network is down"
+        },
+        {
+          "name": "Launch app",
+          "action": "Start Catalogizer desktop",
+          "expected": "App launches, shows connection error with retry button, no crash"
+        }
+      ]
+    },
+    {
+      "id": "neg-desktop-invalid-server-url",
+      "name": "Invalid Server URL in Settings",
+      "category": "validation",
+      "priority": "high",
+      "platforms": ["desktop"],
+      "steps": [
+        {
+          "name": "Enter invalid URL",
+          "action": "Set server URL to 'not-a-url' in settings",
+          "expected": "Validation error shown, URL not saved"
+        }
+      ]
+    },
+    {
+      "id": "neg-desktop-server-url-xss",
+      "name": "XSS in Server URL Field",
+      "category": "security",
+      "priority": "critical",
+      "platforms": ["desktop"],
+      "steps": [
+        {
+          "name": "Enter XSS payload",
+          "action": "Set server URL to '<script>alert(1)</script>' in settings",
+          "expected": "Input sanitized, no script execution, validation error displayed"
+        }
+      ]
+    },
+    {
+      "id": "neg-desktop-ipc-timeout",
+      "name": "IPC Command Timeout",
+      "category": "resilience",
+      "priority": "high",
+      "platforms": ["desktop"],
+      "steps": [
+        {
+          "name": "Trigger long IPC operation",
+          "action": "Request large file operation via IPC",
+          "expected": "Operation times out gracefully with user-friendly error, app remains responsive"
+        }
+      ]
+    },
+    {
+      "id": "neg-desktop-ipc-rapid-fire",
+      "name": "Rapid IPC Command Flooding",
+      "category": "performance",
+      "priority": "medium",
+      "platforms": ["desktop"],
+      "steps": [
+        {
+          "name": "Flood IPC",
+          "action": "Send 100 IPC commands in rapid succession",
+          "expected": "Commands are queued or debounced, app does not hang or crash"
+        }
+      ]
+    },
+    {
+      "id": "neg-desktop-large-library",
+      "name": "Library with 100K Items",
+      "category": "performance",
+      "priority": "high",
+      "platforms": ["desktop"],
+      "steps": [
+        {
+          "name": "Load large library",
+          "action": "Open library view with 100,000+ media items",
+          "expected": "Virtual scrolling active, UI remains responsive, memory usage bounded"
+        }
+      ]
+    },
+    {
+      "id": "neg-desktop-window-too-small",
+      "name": "Window Resized to Minimum",
+      "category": "ui",
+      "priority": "medium",
+      "platforms": ["desktop"],
+      "steps": [
+        {
+          "name": "Resize to minimum",
+          "action": "Resize window to 200x200 pixels",
+          "expected": "Content adapts gracefully, no overflow, minimum size enforced or scrollbars appear"
+        }
+      ]
+    },
+    {
+      "id": "neg-desktop-corrupted-config",
+      "name": "Corrupted Config File",
+      "category": "resilience",
+      "priority": "high",
+      "platforms": ["desktop"],
+      "steps": [
+        {
+          "name": "Corrupt config",
+          "action": "Replace app config file with invalid JSON",
+          "expected": "App launches with defaults, warns about corrupted config, does not crash"
+        }
+      ]
+    },
+    {
+      "id": "neg-desktop-disk-full",
+      "name": "Disk Full During File Save",
+      "category": "resilience",
+      "priority": "medium",
+      "platforms": ["desktop"],
+      "steps": [
+        {
+          "name": "Trigger save with no disk space",
+          "action": "Attempt to save config when disk is full",
+          "expected": "Error displayed to user, no data corruption, previous config preserved"
+        }
+      ]
+    },
+    {
+      "id": "neg-desktop-multiple-instances",
+      "name": "Launch Multiple Instances",
+      "category": "lifecycle",
+      "priority": "high",
+      "platforms": ["desktop"],
+      "steps": [
+        {
+          "name": "Launch second instance",
+          "action": "Try to launch Catalogizer while it is already running",
+          "expected": "Either prevents second instance or brings existing window to focus"
+        }
+      ]
+    },
+    {
+      "id": "neg-desktop-ssl-cert-mismatch",
+      "name": "SSL Certificate Mismatch",
+      "category": "security",
+      "priority": "high",
+      "platforms": ["desktop"],
+      "steps": [
+        {
+          "name": "Connect to server with bad cert",
+          "action": "Configure server URL with self-signed cert that doesn't match hostname",
+          "expected": "Warning displayed about certificate issue, connection not silently allowed"
+        }
+      ]
+    },
+    {
+      "id": "neg-desktop-login-expired-stored",
+      "name": "Launch with Expired Stored Credentials",
+      "category": "authentication",
+      "priority": "high",
+      "platforms": ["desktop"],
+      "steps": [
+        {
+          "name": "Launch with old token",
+          "action": "Launch app after stored JWT has expired",
+          "expected": "Token refresh attempted, if fails redirect to login page cleanly"
+        }
+      ]
+    },
+    {
+      "id": "neg-desktop-theme-switch-mid-operation",
+      "name": "Theme Switch During Operation",
+      "category": "ui",
+      "priority": "low",
+      "platforms": ["desktop"],
+      "steps": [
+        {
+          "name": "Switch theme during load",
+          "action": "Toggle dark/light mode while library is loading",
+          "expected": "Theme switches smoothly, loading continues, no visual artifacts"
+        }
+      ]
+    },
+    {
+      "id": "neg-desktop-search-special-chars",
+      "name": "Search with Special Characters",
+      "category": "validation",
+      "priority": "medium",
+      "platforms": ["desktop"],
+      "steps": [
+        {
+          "name": "Search with regex chars",
+          "action": "Enter '.*+?^${}()|[]\\' in search field",
+          "expected": "Search treated as literal text, no regex evaluation, results shown or empty state"
+        }
+      ]
+    },
+    {
+      "id": "neg-desktop-drag-drop-invalid-file",
+      "name": "Drag and Drop Invalid File",
+      "category": "validation",
+      "priority": "medium",
+      "platforms": ["desktop"],
+      "steps": [
+        {
+          "name": "Drop invalid file",
+          "action": "Drag and drop a .exe file onto the media library",
+          "expected": "File rejected with appropriate message, no processing attempted"
+        }
+      ]
+    },
+    {
+      "id": "neg-desktop-system-sleep-resume",
+      "name": "System Sleep and Resume",
+      "category": "lifecycle",
+      "priority": "high",
+      "platforms": ["desktop"],
+      "steps": [
+        {
+          "name": "System sleeps",
+          "action": "Put system to sleep while app is running",
+          "expected": "No error"
+        },
+        {
+          "name": "System wakes",
+          "action": "Wake system from sleep",
+          "expected": "App resumes, reconnects to server, refreshes data"
+        }
+      ]
+    },
+    {
+      "id": "neg-desktop-clipboard-binary",
+      "name": "Paste Binary Data into Search",
+      "category": "validation",
+      "priority": "low",
+      "platforms": ["desktop"],
+      "steps": [
+        {
+          "name": "Paste binary clipboard",
+          "action": "Copy binary content and paste into search field",
+          "expected": "Binary data handled gracefully, no crash, search field shows safe text or empty"
+        }
+      ]
+    },
+    {
+      "id": "neg-desktop-high-dpi-scaling",
+      "name": "High DPI Display Scaling Issues",
+      "category": "ui",
+      "priority": "medium",
+      "platforms": ["desktop"],
+      "steps": [
+        {
+          "name": "Set 200% scaling",
+          "action": "Run app on 200% DPI scaled display",
+          "expected": "All UI elements properly scaled, no blurry text, no clipped elements"
+        }
+      ]
+    },
+    {
+      "id": "neg-desktop-proxy-connection",
+      "name": "Connection Through HTTP Proxy",
+      "category": "network",
+      "priority": "medium",
+      "platforms": ["desktop"],
+      "steps": [
+        {
+          "name": "Connect via proxy",
+          "action": "Configure system HTTP proxy and launch app",
+          "expected": "App respects system proxy settings or shows proxy configuration option"
+        }
+      ]
+    },
+    {
+      "id": "neg-desktop-keyboard-only-navigation",
+      "name": "Full Keyboard-Only Navigation",
+      "category": "accessibility",
+      "priority": "high",
+      "platforms": ["desktop"],
+      "steps": [
+        {
+          "name": "Navigate with keyboard only",
+          "action": "Navigate all screens using only Tab, Enter, Escape, Arrow keys",
+          "expected": "All interactive elements reachable, focus visible, actions performable without mouse"
+        }
+      ]
+    },
+    {
+      "id": "neg-desktop-unicode-filename",
+      "name": "Files with Unicode Names in Library",
+      "category": "validation",
+      "priority": "medium",
+      "platforms": ["desktop"],
+      "steps": [
+        {
+          "name": "Display unicode filenames",
+          "action": "Browse library containing files with Chinese, Arabic, emoji characters in names",
+          "expected": "All filenames render correctly, no mojibake, sorting works"
+        }
+      ]
+    },
+    {
+      "id": "neg-desktop-concurrent-operations",
+      "name": "Multiple Concurrent Operations",
+      "category": "concurrency",
+      "priority": "high",
+      "platforms": ["desktop"],
+      "steps": [
+        {
+          "name": "Start multiple ops",
+          "action": "Trigger search, scan, and download simultaneously",
+          "expected": "All operations proceed independently, UI shows progress for each, no deadlocks"
+        }
+      ]
+    },
+    {
+      "id": "neg-desktop-auto-update-failure",
+      "name": "Auto-Update Download Failure",
+      "category": "resilience",
+      "priority": "medium",
+      "platforms": ["desktop"],
+      "steps": [
+        {
+          "name": "Simulate update failure",
+          "action": "Trigger auto-update check when update server is unreachable",
+          "expected": "Error shown gracefully, app continues working normally, retry option available"
+        }
+      ]
+    },
+    {
+      "id": "neg-desktop-tray-after-close",
+      "name": "Tray Icon After Window Close",
+      "category": "lifecycle",
+      "priority": "medium",
+      "platforms": ["desktop"],
+      "steps": [
+        {
+          "name": "Close window to tray",
+          "action": "Close the main window with minimize-to-tray enabled",
+          "expected": "Window closes, tray icon remains, app still accessible from tray"
+        },
+        {
+          "name": "Restore from tray",
+          "action": "Click tray icon to restore window",
+          "expected": "Window restores to previous size and position"
+        }
+      ]
+    }
+  ]
+}

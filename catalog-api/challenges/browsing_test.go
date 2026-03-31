@@ -44,8 +44,8 @@ func TestNewBrowsingAPIHealthChallenge(t *testing.T) {
 		t.Errorf("expected Category 'e2e', got '%s'", ch.Category())
 	}
 	deps := ch.Dependencies()
-	if len(deps) != 1 || deps[0] != "first-catalog-populate" {
-		t.Errorf("expected dependency [first-catalog-populate], got %v", deps)
+	if len(deps) != 0 {
+		t.Errorf("expected no dependencies, got %v", deps)
 	}
 }
 

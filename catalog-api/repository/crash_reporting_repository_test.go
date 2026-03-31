@@ -528,9 +528,9 @@ func TestCrashReportingRepository_GetCrashStatistics(t *testing.T) {
 			WillReturnRows(sqlmock.NewRows([]string{"count"}).AddRow(9))
 
 		// Average resolution time
-		mock.ExpectQuery("SELECT AVG").
+		mock.ExpectQuery("SELECT COALESCE").
 			WithArgs(userID).
-			WillReturnRows(sqlmock.NewRows([]string{"avg"}).AddRow(3.5))
+			WillReturnRows(sqlmock.NewRows([]string{"coalesce"}).AddRow(3.5))
 
 		// Crash rate (with time parameter)
 		mock.ExpectQuery("SELECT CAST\\(COUNT\\(\\*\\) AS FLOAT\\)").

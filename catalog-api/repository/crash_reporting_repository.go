@@ -276,19 +276,21 @@ func (r *CrashReportingRepository) GetCrashStatistics(userID int) (*models.Crash
 		avgDurationExpr = "EXTRACT(EPOCH FROM (resolved_at - reported_at)) / 3600"
 	}
 	avgQuery := fmt.Sprintf(`
-		SELECT AVG(
+		SELECT COALESCE(AVG(
 			CASE
 				WHEN resolved_at IS NOT NULL
 				THEN %s
 				ELSE NULL
 			END
-		)
+		), 0.0)
 		FROM crash_reports
 		WHERE user_id = ? AND resolved_at IS NOT NULL`, avgDurationExpr)
-	err = r.db.QueryRow(avgQuery, userID).Scan(&stats.AvgResolutionTime)
+	var avgResolution sql.NullFloat64
+	err = r.db.QueryRow(avgQuery, userID).Scan(&avgResolution)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get average resolution time: %w", err)
 	}
+	stats.AvgResolutionTime = avgResolution.Float64
 
 	// Crash rate (crashes per day over last 30 days)
 	cutoffTime30Days := time.Now().Add(-30 * 24 * time.Hour)

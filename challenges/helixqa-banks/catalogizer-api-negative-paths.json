@@ -1,0 +1,2085 @@
+{
+  "challenges": [
+    {
+      "id": "neg-api-auth-expired-refresh-token",
+      "name": "Refresh with expired refresh token",
+      "category": "authentication-edge-cases",
+      "priority": "critical",
+      "platforms": ["api"],
+      "steps": [
+        {
+          "name": "Login to obtain tokens",
+          "action": "POST /api/v1/auth/login with valid credentials to get session_token and refresh_token",
+          "expected": "200 with valid tokens"
+        },
+        {
+          "name": "Wait for or simulate refresh token expiry",
+          "action": "POST /api/v1/auth/refresh with a refresh_token that has been artificially expired or tampered with an expired exp claim",
+          "expected": "401 with error message indicating token is expired, no new tokens issued"
+        }
+      ]
+    },
+    {
+      "id": "neg-api-auth-revoked-session",
+      "name": "Access API with revoked session token",
+      "category": "authentication-edge-cases",
+      "priority": "critical",
+      "platforms": ["api"],
+      "steps": [
+        {
+          "name": "Login and then logout",
+          "action": "POST /api/v1/auth/login, then POST /api/v1/auth/logout with the obtained session_token",
+          "expected": "200 for both requests"
+        },
+        {
+          "name": "Use revoked token to access protected endpoint",
+          "action": "GET /api/v1/auth/me with the Authorization header set to the now-logged-out session_token",
+          "expected": "401 Unauthorized, token should be rejected as revoked or invalid"
+        }
+      ]
+    },
+    {
+      "id": "neg-api-auth-concurrent-login",
+      "name": "Concurrent login from multiple sessions",
+      "category": "authentication-edge-cases",
+      "priority": "high",
+      "platforms": ["api"],
+      "steps": [
+        {
+          "name": "Login from first session",
+          "action": "POST /api/v1/auth/login with admin credentials, store token as session_A",
+          "expected": "200 with valid session_token A"
+        },
+        {
+          "name": "Login from second session",
+          "action": "POST /api/v1/auth/login with same admin credentials, store token as session_B",
+          "expected": "200 with valid session_token B (different from A)"
+        },
+        {
+          "name": "Verify both sessions are independently valid",
+          "action": "GET /api/v1/auth/me with session_A, then GET /api/v1/auth/me with session_B",
+          "expected": "Both return 200 with the same user data, or if single-session policy, first session returns 401"
+        }
+      ]
+    },
+    {
+      "id": "neg-api-auth-brute-force-lockout",
+      "name": "Brute force login lockout via rate limiting",
+      "category": "authentication-edge-cases",
+      "priority": "critical",
+      "platforms": ["api"],
+      "steps": [
+        {
+          "name": "Send rapid failed login attempts",
+          "action": "POST /api/v1/auth/login with wrong password 6 times in rapid succession (within 1 minute)",
+          "expected": "First 5 return 401, 6th returns 429 Too Many Requests with Retry-After header"
+        },
+        {
+          "name": "Verify lockout persists",
+          "action": "POST /api/v1/auth/login with correct password immediately after lockout",
+          "expected": "429 Too Many Requests, rate limit still active even with correct credentials"
+        }
+      ]
+    },
+    {
+      "id": "neg-api-auth-token-replay",
+      "name": "Token replay attack with previously used refresh token",
+      "category": "authentication-edge-cases",
+      "priority": "critical",
+      "platforms": ["api"],
+      "steps": [
+        {
+          "name": "Login and obtain refresh token",
+          "action": "POST /api/v1/auth/login, store refresh_token_1",
+          "expected": "200 with refresh_token_1"
+        },
+        {
+          "name": "Use refresh token to get new tokens",
+          "action": "POST /api/v1/auth/refresh with refresh_token_1, receive new refresh_token_2",
+          "expected": "200 with new session_token and refresh_token_2"
+        },
+        {
+          "name": "Replay the old refresh token",
+          "action": "POST /api/v1/auth/refresh with refresh_token_1 (already consumed)",
+          "expected": "401 Unauthorized, old refresh token is rejected. Ideally, token family should be invalidated as a security measure"
+        }
+      ]
+    },
+    {
+      "id": "neg-api-auth-session-fixation",
+      "name": "Session fixation attempt with forged token",
+      "category": "authentication-edge-cases",
+      "priority": "critical",
+      "platforms": ["api"],
+      "steps": [
+        {
+          "name": "Craft a JWT with valid structure but wrong secret",
+          "action": "Create a JWT token with {\"sub\": \"admin\", \"role\": \"admin\"} signed with a different secret key, send as Authorization: Bearer <forged_token> to GET /api/v1/auth/me",
+          "expected": "401 Unauthorized, signature verification must fail"
+        }
+      ]
+    },
+    {
+      "id": "neg-api-auth-bearer-case-sensitivity",
+      "name": "Authorization header case variations",
+      "category": "authentication-edge-cases",
+      "priority": "medium",
+      "platforms": ["api"],
+      "steps": [
+        {
+          "name": "Login to get valid token",
+          "action": "POST /api/v1/auth/login with valid credentials",
+          "expected": "200 with valid session_token"
+        },
+        {
+          "name": "Use lowercase bearer prefix",
+          "action": "GET /api/v1/auth/me with header Authorization: bearer <token>",
+          "expected": "Either 200 (case-insensitive parsing) or 401 (strict Bearer parsing). Response must be consistent, not a 500"
+        },
+        {
+          "name": "Use uppercase BEARER prefix",
+          "action": "GET /api/v1/auth/me with header Authorization: BEARER <token>",
+          "expected": "Either 200 (case-insensitive parsing) or 401 (strict Bearer parsing). Response must be consistent, not a 500"
+        },
+        {
+          "name": "Use no prefix",
+          "action": "GET /api/v1/auth/me with header Authorization: <token> (no Bearer prefix)",
+          "expected": "401 Unauthorized, must not crash or return 500"
+        }
+      ]
+    },
+    {
+      "id": "neg-api-auth-double-logout",
+      "name": "Double logout attempt",
+      "category": "authentication-edge-cases",
+      "priority": "medium",
+      "platforms": ["api"],
+      "steps": [
+        {
+          "name": "Login and logout",
+          "action": "POST /api/v1/auth/login, then POST /api/v1/auth/logout",
+          "expected": "200 for both"
+        },
+        {
+          "name": "Logout again with same token",
+          "action": "POST /api/v1/auth/logout with the same token that was already logged out",
+          "expected": "401 Unauthorized or 200 (idempotent). Must not return 500 or crash"
+        }
+      ]
+    },
+    {
+      "id": "neg-api-auth-sql-injection-username",
+      "name": "SQL injection in login username field",
+      "category": "authentication-edge-cases",
+      "priority": "critical",
+      "platforms": ["api"],
+      "steps": [
+        {
+          "name": "Login with SQL injection payload in username",
+          "action": "POST /api/v1/auth/login with username: \"admin' OR '1'='1' --\" and password: \"anything\"",
+          "expected": "401 Unauthorized, SQL injection must be neutralized by parameterized queries, no database error leaked"
+        },
+        {
+          "name": "Login with UNION-based injection",
+          "action": "POST /api/v1/auth/login with username: \"' UNION SELECT * FROM users --\" and password: \"x\"",
+          "expected": "401 Unauthorized, no data exfiltration, no internal error details"
+        }
+      ]
+    },
+    {
+      "id": "neg-api-auth-empty-credentials",
+      "name": "Login with empty username and password",
+      "category": "authentication-edge-cases",
+      "priority": "high",
+      "platforms": ["api"],
+      "steps": [
+        {
+          "name": "Login with empty strings",
+          "action": "POST /api/v1/auth/login with {\"username\": \"\", \"password\": \"\"}",
+          "expected": "400 Bad Request or 401 Unauthorized with clear error message, not 500"
+        },
+        {
+          "name": "Login with null values",
+          "action": "POST /api/v1/auth/login with {\"username\": null, \"password\": null}",
+          "expected": "400 Bad Request with validation error, not 500 or panic"
+        }
+      ]
+    },
+    {
+      "id": "neg-api-auth-malformed-jwt",
+      "name": "Malformed JWT token formats",
+      "category": "authentication-edge-cases",
+      "priority": "high",
+      "platforms": ["api"],
+      "steps": [
+        {
+          "name": "Send completely invalid JWT",
+          "action": "GET /api/v1/auth/me with Authorization: Bearer not-a-jwt-at-all",
+          "expected": "401 Unauthorized with token parse error"
+        },
+        {
+          "name": "Send JWT with only two parts",
+          "action": "GET /api/v1/auth/me with Authorization: Bearer header.payload (missing signature)",
+          "expected": "401 Unauthorized"
+        },
+        {
+          "name": "Send empty Bearer token",
+          "action": "GET /api/v1/auth/me with Authorization: Bearer (empty string after Bearer)",
+          "expected": "401 Unauthorized"
+        }
+      ]
+    },
+    {
+      "id": "neg-api-auth-register-duplicate-username",
+      "name": "Register with already-existing username",
+      "category": "authentication-edge-cases",
+      "priority": "high",
+      "platforms": ["api"],
+      "steps": [
+        {
+          "name": "Register duplicate user",
+          "action": "POST /api/v1/auth/register with username: \"admin\" (already exists)",
+          "expected": "409 Conflict or 400 Bad Request with error indicating username already taken, no stack trace"
+        }
+      ]
+    },
+    {
+      "id": "neg-api-input-extremely-long-string",
+      "name": "Extremely long string input (10KB+)",
+      "category": "input-validation-extremes",
+      "priority": "high",
+      "platforms": ["api"],
+      "steps": [
+        {
+          "name": "Login with 10KB username",
+          "action": "POST /api/v1/auth/login with username set to a 10240-character string of repeated 'a' characters",
+          "expected": "400 Bad Request or 413 Payload Too Large, server must not hang or OOM"
+        },
+        {
+          "name": "Search with 10KB query",
+          "action": "GET /api/v1/search?q=<10240 characters> with valid auth token",
+          "expected": "400 Bad Request or 414 URI Too Long, must not cause database issues"
+        }
+      ]
+    },
+    {
+      "id": "neg-api-input-null-bytes",
+      "name": "Null bytes in string fields",
+      "category": "input-validation-extremes",
+      "priority": "high",
+      "platforms": ["api"],
+      "steps": [
+        {
+          "name": "Login with null byte in username",
+          "action": "POST /api/v1/auth/login with username: \"admin\\u0000injected\" and password: \"admin123\"",
+          "expected": "401 Unauthorized or 400 Bad Request, null byte must be sanitized, no string truncation vulnerability"
+        },
+        {
+          "name": "Create collection with null byte in name",
+          "action": "POST /api/v1/collections with {\"name\": \"test\\u0000hidden\", \"description\": \"test\"} with valid auth",
+          "expected": "400 Bad Request rejecting null bytes, or 201 with null byte stripped from name"
+        }
+      ]
+    },
+    {
+      "id": "neg-api-input-control-characters",
+      "name": "Control characters in input fields",
+      "category": "input-validation-extremes",
+      "priority": "medium",
+      "platforms": ["api"],
+      "steps": [
+        {
+          "name": "Create collection with control characters",
+          "action": "POST /api/v1/collections with name containing \\x01\\x02\\x03\\x07 (BEL, SOH, STX, ETX characters)",
+          "expected": "400 Bad Request or 201 with control characters stripped. Must not corrupt database"
+        },
+        {
+          "name": "Search with ANSI escape sequences",
+          "action": "GET /api/v1/search?q=\\x1b[31mhello with valid auth",
+          "expected": "200 with empty results or 400 Bad Request, escape sequences must not affect log output"
+        }
+      ]
+    },
+    {
+      "id": "neg-api-input-emoji-all-fields",
+      "name": "Emoji characters in all input fields",
+      "category": "input-validation-extremes",
+      "priority": "medium",
+      "platforms": ["api"],
+      "steps": [
+        {
+          "name": "Create storage root with emoji path",
+          "action": "POST /api/v1/storage/roots with path containing emoji: \"/mnt/data/\ud83c\udfac movies \ud83c\udfa5\"",
+          "expected": "400 Bad Request (invalid path) or 201 if filesystem supports it. Must not crash with encoding error"
+        },
+        {
+          "name": "Search with emoji query",
+          "action": "GET /api/v1/media/search?q=\ud83c\udfac with valid auth",
+          "expected": "200 with results (possibly empty), proper UTF-8 handling without encoding errors"
+        },
+        {
+          "name": "Register user with emoji username",
+          "action": "POST /api/v1/auth/register with username: \"\ud83d\ude00user\ud83d\ude00\"",
+          "expected": "400 Bad Request (invalid characters) or 201 if emoji usernames are allowed. No 500 error"
+        }
+      ]
+    },
+    {
+      "id": "neg-api-input-rtl-text",
+      "name": "Right-to-left and bidirectional text",
+      "category": "input-validation-extremes",
+      "priority": "low",
+      "platforms": ["api"],
+      "steps": [
+        {
+          "name": "Search with Arabic text",
+          "action": "GET /api/v1/search?q=\u0645\u0631\u062d\u0628\u0627 with valid auth",
+          "expected": "200 with results (possibly empty), proper RTL text handling"
+        },
+        {
+          "name": "Create collection with mixed RTL/LTR name",
+          "action": "POST /api/v1/collections with {\"name\": \"My \u0645\u062c\u0644\u062f Collection\", \"description\": \"Mixed direction\"}",
+          "expected": "201 Created with proper storage of bidirectional text, no encoding corruption"
+        }
+      ]
+    },
+    {
+      "id": "neg-api-input-zero-width-chars",
+      "name": "Zero-width characters in inputs",
+      "category": "input-validation-extremes",
+      "priority": "medium",
+      "platforms": ["api"],
+      "steps": [
+        {
+          "name": "Login with zero-width characters in username",
+          "action": "POST /api/v1/auth/login with username: \"a\\u200bd\\u200bm\\u200bi\\u200bn\" (admin with zero-width spaces)",
+          "expected": "401 Unauthorized, zero-width characters must not be silently stripped to match 'admin'"
+        },
+        {
+          "name": "Create collection with invisible name",
+          "action": "POST /api/v1/collections with name: \"\\u200b\\u200b\\u200b\" (only zero-width spaces)",
+          "expected": "400 Bad Request, name should be considered effectively empty"
+        }
+      ]
+    },
+    {
+      "id": "neg-api-input-binary-as-json-string",
+      "name": "Binary data submitted as JSON string value",
+      "category": "input-validation-extremes",
+      "priority": "medium",
+      "platforms": ["api"],
+      "steps": [
+        {
+          "name": "Send binary data in login payload",
+          "action": "POST /api/v1/auth/login with username field containing base64-decoded binary bytes (\\xff\\xfe\\xfd\\x00\\x01) as raw string",
+          "expected": "400 Bad Request (invalid JSON) or 401 Unauthorized, must not crash JSON parser"
+        }
+      ]
+    },
+    {
+      "id": "neg-api-input-deeply-nested-json",
+      "name": "Deeply nested JSON (100+ levels)",
+      "category": "input-validation-extremes",
+      "priority": "high",
+      "platforms": ["api"],
+      "steps": [
+        {
+          "name": "Send 100-level nested JSON to login",
+          "action": "POST /api/v1/auth/login with body being 100 levels of nested objects: {\"a\":{\"a\":{...{\"username\":\"admin\"}...}}}",
+          "expected": "400 Bad Request, server must reject excessively nested JSON without stack overflow or excessive memory use"
+        },
+        {
+          "name": "Send 200-level nested JSON to search",
+          "action": "POST /api/v1/search/advanced with 200 levels of nested filter objects",
+          "expected": "400 Bad Request or 413 Payload Too Large, no stack overflow"
+        }
+      ]
+    },
+    {
+      "id": "neg-api-input-array-instead-of-object",
+      "name": "Array submitted where object expected",
+      "category": "input-validation-extremes",
+      "priority": "high",
+      "platforms": ["api"],
+      "steps": [
+        {
+          "name": "Send array to login endpoint",
+          "action": "POST /api/v1/auth/login with body: [\"admin\", \"admin123\"]",
+          "expected": "400 Bad Request with clear error about expected object format, not 500"
+        },
+        {
+          "name": "Send array to create collection",
+          "action": "POST /api/v1/collections with body: [\"name\", \"description\"]",
+          "expected": "400 Bad Request with validation error"
+        }
+      ]
+    },
+    {
+      "id": "neg-api-input-number-overflow",
+      "name": "Integer overflow in numeric fields",
+      "category": "input-validation-extremes",
+      "priority": "high",
+      "platforms": ["api"],
+      "steps": [
+        {
+          "name": "Request entity with int64 max+1 ID",
+          "action": "GET /api/v1/entities/9223372036854775808 with valid auth",
+          "expected": "400 Bad Request or 404 Not Found, must not cause integer overflow panic"
+        },
+        {
+          "name": "Update watch progress with overflow value",
+          "action": "PUT /api/v1/media/1/progress with {\"progress\": 99999999999999999999999} (exceeds float64 precision)",
+          "expected": "400 Bad Request, must not silently truncate or wrap around"
+        }
+      ]
+    },
+    {
+      "id": "neg-api-input-negative-ids",
+      "name": "Negative IDs in path parameters",
+      "category": "input-validation-extremes",
+      "priority": "high",
+      "platforms": ["api"],
+      "steps": [
+        {
+          "name": "Get entity with negative ID",
+          "action": "GET /api/v1/entities/-1 with valid auth",
+          "expected": "400 Bad Request or 404 Not Found, must not expose database internals"
+        },
+        {
+          "name": "Get media with negative ID",
+          "action": "GET /api/v1/media/-999 with valid auth",
+          "expected": "400 Bad Request or 404 Not Found"
+        },
+        {
+          "name": "Download file with negative ID",
+          "action": "GET /api/v1/download/file/-1 with valid auth",
+          "expected": "400 Bad Request or 404 Not Found"
+        }
+      ]
+    },
+    {
+      "id": "neg-api-input-float-ids",
+      "name": "Float values where integer IDs expected",
+      "category": "input-validation-extremes",
+      "priority": "medium",
+      "platforms": ["api"],
+      "steps": [
+        {
+          "name": "Get entity with float ID",
+          "action": "GET /api/v1/entities/1.5 with valid auth",
+          "expected": "400 Bad Request, float must not be silently truncated to 1"
+        },
+        {
+          "name": "Get collection with float ID",
+          "action": "GET /api/v1/collections/3.14159 with valid auth",
+          "expected": "400 Bad Request or 404 Not Found"
+        }
+      ]
+    },
+    {
+      "id": "neg-api-input-boolean-where-string",
+      "name": "Boolean value where string expected",
+      "category": "input-validation-extremes",
+      "priority": "medium",
+      "platforms": ["api"],
+      "steps": [
+        {
+          "name": "Login with boolean username",
+          "action": "POST /api/v1/auth/login with {\"username\": true, \"password\": false}",
+          "expected": "400 Bad Request with type mismatch error, must not coerce true to string \"true\""
+        },
+        {
+          "name": "Create collection with boolean name",
+          "action": "POST /api/v1/collections with {\"name\": true, \"description\": 42}",
+          "expected": "400 Bad Request with validation error for wrong types"
+        }
+      ]
+    },
+    {
+      "id": "neg-api-input-special-sql-chars-search",
+      "name": "Special SQL characters in search queries",
+      "category": "input-validation-extremes",
+      "priority": "critical",
+      "platforms": ["api"],
+      "steps": [
+        {
+          "name": "Search with SQL wildcard characters",
+          "action": "GET /api/v1/search?q=%25%25 (URL-encoded %%) with valid auth",
+          "expected": "200 with results, SQL LIKE wildcards must be escaped in parameterized queries"
+        },
+        {
+          "name": "Search with semicolon and DROP TABLE",
+          "action": "GET /api/v1/search?q=test;DROP%20TABLE%20files with valid auth",
+          "expected": "200 with results for literal search text, no SQL execution"
+        },
+        {
+          "name": "Search with single quotes",
+          "action": "GET /api/v1/search?q=O'Brien with valid auth",
+          "expected": "200 with proper handling of apostrophe, no SQL syntax error"
+        }
+      ]
+    },
+    {
+      "id": "neg-api-input-missing-required-fields",
+      "name": "Missing required fields in POST requests",
+      "category": "input-validation-extremes",
+      "priority": "high",
+      "platforms": ["api"],
+      "steps": [
+        {
+          "name": "Login with missing password field",
+          "action": "POST /api/v1/auth/login with {\"username\": \"admin\"}",
+          "expected": "400 Bad Request with clear error about missing password field"
+        },
+        {
+          "name": "Create storage root with missing path",
+          "action": "POST /api/v1/storage/roots with {\"name\": \"test\"} (missing path field)",
+          "expected": "400 Bad Request with validation error for missing required path"
+        },
+        {
+          "name": "Queue scan with empty body",
+          "action": "POST /api/v1/scans with empty JSON object {}",
+          "expected": "400 Bad Request with error about missing scan parameters"
+        }
+      ]
+    },
+    {
+      "id": "neg-api-http-http10-request",
+      "name": "HTTP/1.0 request handling",
+      "category": "http-protocol-edge-cases",
+      "priority": "low",
+      "platforms": ["api"],
+      "steps": [
+        {
+          "name": "Send HTTP/1.0 request to health endpoint",
+          "action": "Send a raw HTTP/1.0 GET /health request (without Host header)",
+          "expected": "200 OK or 400 Bad Request, server must handle gracefully without crashing"
+        }
+      ]
+    },
+    {
+      "id": "neg-api-http-duplicate-content-type",
+      "name": "Duplicate Content-Type headers",
+      "category": "http-protocol-edge-cases",
+      "priority": "medium",
+      "platforms": ["api"],
+      "steps": [
+        {
+          "name": "Send request with two Content-Type headers",
+          "action": "POST /api/v1/auth/login with two Content-Type headers: application/json and text/plain, body is valid JSON",
+          "expected": "Either 400 Bad Request or 200 (using first Content-Type). Must not cause ambiguous parsing"
+        }
+      ]
+    },
+    {
+      "id": "neg-api-http-content-length-mismatch",
+      "name": "Content-Length header mismatch with actual body",
+      "category": "http-protocol-edge-cases",
+      "priority": "high",
+      "platforms": ["api"],
+      "steps": [
+        {
+          "name": "Send shorter body than Content-Length claims",
+          "action": "POST /api/v1/auth/login with Content-Length: 1000 but actual body is only 50 bytes",
+          "expected": "400 Bad Request or timeout, must not hang indefinitely waiting for remaining bytes"
+        },
+        {
+          "name": "Send longer body than Content-Length claims",
+          "action": "POST /api/v1/auth/login with Content-Length: 10 but actual body is 500 bytes",
+          "expected": "400 Bad Request, must not truncate and process partial JSON"
+        }
+      ]
+    },
+    {
+      "id": "neg-api-http-head-requests",
+      "name": "HEAD requests on all major endpoints",
+      "category": "http-protocol-edge-cases",
+      "priority": "medium",
+      "platforms": ["api"],
+      "steps": [
+        {
+          "name": "HEAD on health endpoint",
+          "action": "HEAD /health",
+          "expected": "200 with Content-Length header but empty body"
+        },
+        {
+          "name": "HEAD on authenticated endpoint",
+          "action": "HEAD /api/v1/entities with valid auth",
+          "expected": "200 with appropriate headers but no body, or 405 Method Not Allowed"
+        },
+        {
+          "name": "HEAD on protected endpoint without auth",
+          "action": "HEAD /api/v1/entities without auth token",
+          "expected": "401 Unauthorized with empty body"
+        }
+      ]
+    },
+    {
+      "id": "neg-api-http-options-non-cors",
+      "name": "OPTIONS request on non-CORS endpoints",
+      "category": "http-protocol-edge-cases",
+      "priority": "medium",
+      "platforms": ["api"],
+      "steps": [
+        {
+          "name": "OPTIONS on health endpoint",
+          "action": "OPTIONS /health",
+          "expected": "200 or 204 with Allow header listing supported methods, proper CORS headers if configured"
+        },
+        {
+          "name": "OPTIONS on authenticated endpoint",
+          "action": "OPTIONS /api/v1/collections",
+          "expected": "200 or 204, must work without auth token (preflight requests are unauthenticated)"
+        }
+      ]
+    },
+    {
+      "id": "neg-api-http-trace-track-blocked",
+      "name": "TRACE and TRACK HTTP methods blocked",
+      "category": "http-protocol-edge-cases",
+      "priority": "critical",
+      "platforms": ["api"],
+      "steps": [
+        {
+          "name": "TRACE method on any endpoint",
+          "action": "TRACE /health",
+          "expected": "405 Method Not Allowed or 404 Not Found, TRACE must be disabled to prevent XST attacks"
+        },
+        {
+          "name": "TRACK method on any endpoint",
+          "action": "TRACK /api/v1/auth/me",
+          "expected": "405 Method Not Allowed or 404 Not Found"
+        }
+      ]
+    },
+    {
+      "id": "neg-api-http-very-long-url",
+      "name": "Extremely long URL (8KB+)",
+      "category": "http-protocol-edge-cases",
+      "priority": "high",
+      "platforms": ["api"],
+      "steps": [
+        {
+          "name": "Send 8KB URL via GET request",
+          "action": "GET /api/v1/search?q=<8192 character query string> with valid auth",
+          "expected": "414 URI Too Long or 400 Bad Request, must not cause buffer overflow or memory exhaustion"
+        }
+      ]
+    },
+    {
+      "id": "neg-api-http-very-long-header",
+      "name": "Very long header values (64KB+)",
+      "category": "http-protocol-edge-cases",
+      "priority": "high",
+      "platforms": ["api"],
+      "steps": [
+        {
+          "name": "Send request with 64KB Authorization header",
+          "action": "GET /health with Authorization header containing 65536 characters",
+          "expected": "431 Request Header Fields Too Large or 400 Bad Request, must not cause memory issues"
+        },
+        {
+          "name": "Send request with 64KB custom header",
+          "action": "GET /health with X-Custom-Header containing 65536 characters",
+          "expected": "431 or 400, server must reject oversized headers gracefully"
+        }
+      ]
+    },
+    {
+      "id": "neg-api-http-smuggling-attempt",
+      "name": "HTTP request smuggling attempt",
+      "category": "http-protocol-edge-cases",
+      "priority": "critical",
+      "platforms": ["api"],
+      "steps": [
+        {
+          "name": "Send request with both Content-Length and Transfer-Encoding",
+          "action": "POST /api/v1/auth/login with both Content-Length: 50 and Transfer-Encoding: chunked headers simultaneously",
+          "expected": "400 Bad Request, server must reject ambiguous requests per RFC 7230 to prevent smuggling"
+        }
+      ]
+    },
+    {
+      "id": "neg-api-http-unsupported-method-on-get",
+      "name": "Wrong HTTP method on GET-only endpoints",
+      "category": "http-protocol-edge-cases",
+      "priority": "medium",
+      "platforms": ["api"],
+      "steps": [
+        {
+          "name": "POST to health endpoint",
+          "action": "POST /health with empty body",
+          "expected": "405 Method Not Allowed or 404, not 500"
+        },
+        {
+          "name": "DELETE to metrics endpoint",
+          "action": "DELETE /metrics",
+          "expected": "405 Method Not Allowed or 404, not 500"
+        },
+        {
+          "name": "PATCH to entity list",
+          "action": "PATCH /api/v1/entities with valid auth",
+          "expected": "405 Method Not Allowed or 404, not 500"
+        }
+      ]
+    },
+    {
+      "id": "neg-api-http-chunked-malformed",
+      "name": "Malformed chunked Transfer-Encoding",
+      "category": "http-protocol-edge-cases",
+      "priority": "medium",
+      "platforms": ["api"],
+      "steps": [
+        {
+          "name": "Send malformed chunk sizes",
+          "action": "POST /api/v1/auth/login with Transfer-Encoding: chunked and malformed chunk data (invalid hex size, missing CRLF terminators)",
+          "expected": "400 Bad Request, Go's HTTP server should reject malformed chunks without crashing"
+        }
+      ]
+    },
+    {
+      "id": "neg-api-resource-oversized-upload",
+      "name": "Upload file exceeding size limit (100MB+)",
+      "category": "resource-limits",
+      "priority": "high",
+      "platforms": ["api"],
+      "steps": [
+        {
+          "name": "Upload an extremely large file",
+          "action": "POST /api/v1/copy/upload with a 100MB+ file payload",
+          "expected": "413 Payload Too Large, server must reject early without reading entire body into memory"
+        }
+      ]
+    },
+    {
+      "id": "neg-api-resource-massive-websocket-connections",
+      "name": "Excessive WebSocket connection attempts",
+      "category": "resource-limits",
+      "priority": "high",
+      "platforms": ["api"],
+      "steps": [
+        {
+          "name": "Open 100 WebSocket connections rapidly",
+          "action": "Attempt to open 100 WebSocket connections to /ws in rapid succession from a single client",
+          "expected": "Server accepts connections up to its limit and rejects additional ones with 503 or closes them gracefully, no goroutine leak"
+        },
+        {
+          "name": "Verify server stability after mass connections",
+          "action": "GET /health after the mass connection attempt",
+          "expected": "200 with status=healthy, server must remain stable"
+        }
+      ]
+    },
+    {
+      "id": "neg-api-resource-large-entity-request",
+      "name": "Request for extremely large result sets",
+      "category": "resource-limits",
+      "priority": "high",
+      "platforms": ["api"],
+      "steps": [
+        {
+          "name": "Request entities with absurd limit",
+          "action": "GET /api/v1/entities?limit=1000000 with valid auth",
+          "expected": "200 with results capped at server maximum (e.g., 100 or 1000), must not attempt to return 1M records"
+        },
+        {
+          "name": "Request entities with negative limit",
+          "action": "GET /api/v1/entities?limit=-1 with valid auth",
+          "expected": "400 Bad Request or 200 with default limit applied"
+        }
+      ]
+    },
+    {
+      "id": "neg-api-resource-rapid-sequential-requests",
+      "name": "Rapid sequential requests (100/sec burst)",
+      "category": "resource-limits",
+      "priority": "high",
+      "platforms": ["api"],
+      "steps": [
+        {
+          "name": "Send 100 requests in 1 second to authenticated endpoint",
+          "action": "GET /api/v1/entities 100 times within 1 second with valid auth",
+          "expected": "First batch returns 200, then 429 Too Many Requests when rate limit exceeded. Retry-After header present"
+        },
+        {
+          "name": "Verify recovery after rate limit",
+          "action": "Wait for Retry-After duration, then GET /api/v1/entities",
+          "expected": "200 OK, rate limit window has reset"
+        }
+      ]
+    },
+    {
+      "id": "neg-api-resource-memory-exhaustion-json",
+      "name": "Memory exhaustion via extremely large JSON body",
+      "category": "resource-limits",
+      "priority": "critical",
+      "platforms": ["api"],
+      "steps": [
+        {
+          "name": "Send 50MB JSON body",
+          "action": "POST /api/v1/search/advanced with a 50MB JSON body containing an array with millions of filter entries",
+          "expected": "413 Payload Too Large, server must enforce body size limits before parsing. No OOM condition"
+        }
+      ]
+    },
+    {
+      "id": "neg-api-resource-oversized-body",
+      "name": "Oversized request body on various endpoints",
+      "category": "resource-limits",
+      "priority": "high",
+      "platforms": ["api"],
+      "steps": [
+        {
+          "name": "Send 5MB body to login",
+          "action": "POST /api/v1/auth/login with a 5MB JSON body (huge username string)",
+          "expected": "413 Payload Too Large or 400 Bad Request, rejected before full parsing"
+        },
+        {
+          "name": "Send 5MB body to collection create",
+          "action": "POST /api/v1/collections with a 5MB description field",
+          "expected": "413 Payload Too Large or 400 Bad Request"
+        }
+      ]
+    },
+    {
+      "id": "neg-api-resource-websocket-unclosed",
+      "name": "WebSocket connection not properly closed by client",
+      "category": "resource-limits",
+      "priority": "high",
+      "platforms": ["api"],
+      "steps": [
+        {
+          "name": "Open WebSocket and drop connection abruptly",
+          "action": "Open WebSocket to /ws, then immediately terminate TCP connection without sending close frame",
+          "expected": "Server detects dead connection via ping/pong timeout and cleans up resources, no goroutine leak"
+        },
+        {
+          "name": "Verify no resource leak",
+          "action": "GET /metrics and check go_goroutines metric",
+          "expected": "Goroutine count returns to baseline within 60 seconds"
+        }
+      ]
+    },
+    {
+      "id": "neg-api-resource-connection-pool-stress",
+      "name": "Database connection pool exhaustion simulation",
+      "category": "resource-limits",
+      "priority": "high",
+      "platforms": ["api"],
+      "steps": [
+        {
+          "name": "Send many concurrent slow queries",
+          "action": "Send 30 concurrent GET /api/v1/entities requests (exceeding MaxOpen=25 pool limit) with valid auth",
+          "expected": "Some requests may queue but all eventually complete or timeout. No permanent deadlock, no 500 errors from nil DB connection"
+        },
+        {
+          "name": "Verify pool recovery",
+          "action": "GET /api/v1/entities after concurrent batch completes",
+          "expected": "200 OK, connection pool has recovered"
+        }
+      ]
+    },
+    {
+      "id": "neg-api-resource-too-many-query-params",
+      "name": "Excessive number of query parameters",
+      "category": "resource-limits",
+      "priority": "medium",
+      "platforms": ["api"],
+      "steps": [
+        {
+          "name": "Send request with 1000 query parameters",
+          "action": "GET /api/v1/search?q=test&param1=v1&param2=v2&...&param1000=v1000 with valid auth",
+          "expected": "200 (ignoring unknown params) or 400 Bad Request. Must not cause excessive memory allocation"
+        }
+      ]
+    },
+    {
+      "id": "neg-api-resource-slow-client-read",
+      "name": "Slow client reading response (slowloris-style)",
+      "category": "resource-limits",
+      "priority": "high",
+      "platforms": ["api"],
+      "steps": [
+        {
+          "name": "Open connection and read response extremely slowly",
+          "action": "GET /api/v1/entities with valid auth, but read response body at 1 byte per second",
+          "expected": "Server must have write timeout that closes connection, freeing resources. Connection closed within write_timeout period"
+        }
+      ]
+    },
+    {
+      "id": "neg-api-integrity-duplicate-entity-name-different-type",
+      "name": "Create entity with duplicate name but different media type",
+      "category": "data-integrity-edge-cases",
+      "priority": "high",
+      "platforms": ["api"],
+      "steps": [
+        {
+          "name": "Verify entities with same title can exist for different types",
+          "action": "If entity 'Avatar' exists as movie, check whether 'Avatar' can also exist as tv_show via GET /api/v1/entities?type=movie and GET /api/v1/entities?type=tv_show",
+          "expected": "Both entity types can coexist, duplicate detection is scoped by type+year, not just name"
+        }
+      ]
+    },
+    {
+      "id": "neg-api-integrity-delete-entity-with-children",
+      "name": "Delete entity that has child entities",
+      "category": "data-integrity-edge-cases",
+      "priority": "critical",
+      "platforms": ["api"],
+      "steps": [
+        {
+          "name": "Attempt to delete a parent entity (TV show with seasons)",
+          "action": "DELETE /api/v1/entities/<tv_show_id> where the show has season and episode children",
+          "expected": "Either 409 Conflict (must delete children first) or 200 with cascade deletion of all children. No orphaned child entities"
+        },
+        {
+          "name": "Verify no orphaned children remain",
+          "action": "GET /api/v1/entities?parent_id=<deleted_show_id>",
+          "expected": "200 with empty results, no orphaned seasons or episodes"
+        }
+      ]
+    },
+    {
+      "id": "neg-api-integrity-circular-parent-reference",
+      "name": "Circular parent_id reference attempt",
+      "category": "data-integrity-edge-cases",
+      "priority": "critical",
+      "platforms": ["api"],
+      "steps": [
+        {
+          "name": "Attempt to set entity as its own parent",
+          "action": "PUT /api/v1/entities/<id> with {\"parent_id\": <same_id>} via valid auth",
+          "expected": "400 Bad Request, self-referencing parent must be rejected"
+        },
+        {
+          "name": "Attempt circular chain (A->B->A)",
+          "action": "Set entity A's parent to B, then attempt to set entity B's parent to A",
+          "expected": "400 Bad Request on the second update, circular reference detected and rejected"
+        }
+      ]
+    },
+    {
+      "id": "neg-api-integrity-storage-root-nonexistent-path",
+      "name": "Create storage root pointing to non-existent path",
+      "category": "data-integrity-edge-cases",
+      "priority": "high",
+      "platforms": ["api"],
+      "steps": [
+        {
+          "name": "Create storage root with fake path",
+          "action": "POST /api/v1/storage/roots with {\"path\": \"/nonexistent/path/that/does/not/exist\", \"name\": \"fake_root\"}",
+          "expected": "400 Bad Request or 422 Unprocessable Entity with error that path does not exist or is not accessible"
+        }
+      ]
+    },
+    {
+      "id": "neg-api-integrity-scan-deleted-root",
+      "name": "Scan on storage root that was just deleted",
+      "category": "data-integrity-edge-cases",
+      "priority": "high",
+      "platforms": ["api"],
+      "steps": [
+        {
+          "name": "Start scan referencing a non-existent storage root ID",
+          "action": "POST /api/v1/scans with {\"storage_root_id\": 99999} (ID that does not exist)",
+          "expected": "404 Not Found or 400 Bad Request, not a 500 internal error"
+        }
+      ]
+    },
+    {
+      "id": "neg-api-integrity-favorite-deleted-entity",
+      "name": "Favorite a deleted or non-existent entity",
+      "category": "data-integrity-edge-cases",
+      "priority": "medium",
+      "platforms": ["api"],
+      "steps": [
+        {
+          "name": "Favorite non-existent media",
+          "action": "PUT /api/v1/media/99999999/favorite with {\"is_favorite\": true} and valid auth",
+          "expected": "404 Not Found, cannot favorite non-existent media"
+        }
+      ]
+    },
+    {
+      "id": "neg-api-integrity-collection-deleted-items",
+      "name": "Collection referencing deleted media items",
+      "category": "data-integrity-edge-cases",
+      "priority": "medium",
+      "platforms": ["api"],
+      "steps": [
+        {
+          "name": "Get collection that may reference deleted items",
+          "action": "GET /api/v1/collections/<id> with valid auth, where some items in the collection may have been deleted",
+          "expected": "200 with collection data, deleted items either omitted from response or marked as unavailable. No 500 from dangling foreign key"
+        }
+      ]
+    },
+    {
+      "id": "neg-api-integrity-orphaned-media-files",
+      "name": "Query for orphaned media files (no entity association)",
+      "category": "data-integrity-edge-cases",
+      "priority": "medium",
+      "platforms": ["api"],
+      "steps": [
+        {
+          "name": "Check if orphaned files are handled",
+          "action": "GET /api/v1/entities/stats with valid auth",
+          "expected": "200 with statistics that may include unassociated file counts, proving orphaned files are tracked"
+        }
+      ]
+    },
+    {
+      "id": "neg-api-integrity-update-during-scan",
+      "name": "Modify entity metadata while scan is running",
+      "category": "data-integrity-edge-cases",
+      "priority": "high",
+      "platforms": ["api"],
+      "steps": [
+        {
+          "name": "Start a scan",
+          "action": "POST /api/v1/scans with valid storage root and auth",
+          "expected": "200 or 202 with scan job started"
+        },
+        {
+          "name": "Update entity while scan is active",
+          "action": "PUT /api/v1/entities/<id> with updated metadata while scan is in progress",
+          "expected": "200 OK or 409 Conflict. Must not corrupt entity data or cause deadlock between scan and update"
+        }
+      ]
+    },
+    {
+      "id": "neg-api-integrity-concurrent-entity-creation",
+      "name": "Concurrent creation of same entity",
+      "category": "data-integrity-edge-cases",
+      "priority": "high",
+      "platforms": ["api"],
+      "steps": [
+        {
+          "name": "Send two identical entity creation requests simultaneously",
+          "action": "POST /api/v1/collections with identical {\"name\": \"race-test\", \"description\": \"concurrent\"} sent twice simultaneously",
+          "expected": "One succeeds with 201, other gets 409 Conflict or both succeed with unique IDs. No duplicate entries with same name"
+        }
+      ]
+    },
+    {
+      "id": "neg-api-integrity-metadata-nonexistent-provider",
+      "name": "Request metadata from non-existent provider",
+      "category": "data-integrity-edge-cases",
+      "priority": "low",
+      "platforms": ["api"],
+      "steps": [
+        {
+          "name": "Refresh metadata for entity with unavailable provider",
+          "action": "POST /api/v1/media/<id>/refresh with valid auth, when external metadata providers are unreachable",
+          "expected": "200 with partial results or 503 Service Unavailable with graceful degradation message, not 500"
+        }
+      ]
+    },
+    {
+      "id": "neg-api-error-consistent-format-400",
+      "name": "400 error response format consistency",
+      "category": "error-response-validation",
+      "priority": "critical",
+      "platforms": ["api"],
+      "steps": [
+        {
+          "name": "Trigger 400 on login with missing fields",
+          "action": "POST /api/v1/auth/login with empty body",
+          "expected": "400 with JSON body containing 'error' field with user-friendly message, Content-Type: application/json"
+        },
+        {
+          "name": "Trigger 400 on search with invalid params",
+          "action": "GET /api/v1/search with no query parameter and valid auth",
+          "expected": "400 with same JSON error format as login 400, consistent structure across endpoints"
+        }
+      ]
+    },
+    {
+      "id": "neg-api-error-consistent-format-401",
+      "name": "401 error response format consistency",
+      "category": "error-response-validation",
+      "priority": "critical",
+      "platforms": ["api"],
+      "steps": [
+        {
+          "name": "Trigger 401 on protected endpoint",
+          "action": "GET /api/v1/entities without Authorization header",
+          "expected": "401 with JSON body containing 'error' field, no HTML error page"
+        },
+        {
+          "name": "Trigger 401 on another protected endpoint",
+          "action": "GET /api/v1/collections without Authorization header",
+          "expected": "401 with identical JSON error structure as previous 401"
+        }
+      ]
+    },
+    {
+      "id": "neg-api-error-no-stack-traces",
+      "name": "No stack traces leaked in error responses",
+      "category": "error-response-validation",
+      "priority": "critical",
+      "platforms": ["api"],
+      "steps": [
+        {
+          "name": "Trigger various errors and check for stack traces",
+          "action": "Send requests that cause 400, 401, 404, 500 responses: invalid JSON body, no auth, non-existent ID, malformed path",
+          "expected": "No response body contains 'goroutine', 'panic', 'runtime.', '.go:', or file path patterns like '/home/' or '/app/'"
+        }
+      ]
+    },
+    {
+      "id": "neg-api-error-no-internal-paths",
+      "name": "No internal file paths leaked in errors",
+      "category": "error-response-validation",
+      "priority": "critical",
+      "platforms": ["api"],
+      "steps": [
+        {
+          "name": "Trigger error and check for path leakage",
+          "action": "GET /api/v1/catalog/../../etc/passwd with valid auth",
+          "expected": "400 or 404, response body must not contain server filesystem paths like /home/, /app/, /usr/, /etc/"
+        },
+        {
+          "name": "Check error for database path leakage",
+          "action": "POST /api/v1/auth/login with body that causes a database error (if possible)",
+          "expected": "Error response must not contain database file path (catalogizer.db) or connection strings"
+        }
+      ]
+    },
+    {
+      "id": "neg-api-error-user-friendly-messages",
+      "name": "Error messages are user-friendly, not technical",
+      "category": "error-response-validation",
+      "priority": "high",
+      "platforms": ["api"],
+      "steps": [
+        {
+          "name": "Verify 401 message is friendly",
+          "action": "GET /api/v1/entities without auth",
+          "expected": "401 error message is something like 'Authentication required' or 'Unauthorized', not 'jwt: token is malformed'"
+        },
+        {
+          "name": "Verify 404 message is friendly",
+          "action": "GET /api/v1/entities/99999999 with valid auth",
+          "expected": "404 error message is something like 'Entity not found' or 'Resource not found', not 'sql: no rows in result set'"
+        }
+      ]
+    },
+    {
+      "id": "neg-api-error-rate-limit-retry-after",
+      "name": "Rate limit response includes Retry-After header",
+      "category": "error-response-validation",
+      "priority": "high",
+      "platforms": ["api"],
+      "steps": [
+        {
+          "name": "Trigger rate limit on login",
+          "action": "POST /api/v1/auth/login with wrong credentials 6+ times rapidly (exceeding 5/min auth rate limit)",
+          "expected": "429 Too Many Requests with Retry-After header containing number of seconds to wait"
+        },
+        {
+          "name": "Verify rate limit response body format",
+          "action": "Inspect the 429 response body",
+          "expected": "JSON body with 'error' field explaining rate limit, not a generic HTTP error page"
+        }
+      ]
+    },
+    {
+      "id": "neg-api-error-413-too-large",
+      "name": "413 Payload Too Large for oversized body",
+      "category": "error-response-validation",
+      "priority": "high",
+      "platforms": ["api"],
+      "steps": [
+        {
+          "name": "Send body exceeding max size",
+          "action": "POST /api/v1/collections with a 10MB JSON body with valid auth",
+          "expected": "413 Payload Too Large with JSON error body, server does not attempt to parse the full payload"
+        }
+      ]
+    },
+    {
+      "id": "neg-api-error-415-wrong-content-type",
+      "name": "415 Unsupported Media Type for wrong Content-Type",
+      "category": "error-response-validation",
+      "priority": "high",
+      "platforms": ["api"],
+      "steps": [
+        {
+          "name": "Send XML to JSON endpoint",
+          "action": "POST /api/v1/auth/login with Content-Type: application/xml and body <login><user>admin</user></login>",
+          "expected": "415 Unsupported Media Type or 400 Bad Request with clear error about expected Content-Type"
+        },
+        {
+          "name": "Send form data to JSON endpoint",
+          "action": "POST /api/v1/auth/login with Content-Type: application/x-www-form-urlencoded and body username=admin&password=admin123",
+          "expected": "415 or 400 with error about expected JSON content type"
+        }
+      ]
+    },
+    {
+      "id": "neg-api-error-404-consistent",
+      "name": "404 response for non-existent routes",
+      "category": "error-response-validation",
+      "priority": "high",
+      "platforms": ["api"],
+      "steps": [
+        {
+          "name": "Request completely non-existent path",
+          "action": "GET /api/v1/nonexistent/endpoint",
+          "expected": "404 Not Found with JSON error body, not an HTML page"
+        },
+        {
+          "name": "Request non-existent nested path",
+          "action": "GET /api/v1/entities/99999/children/99999/grandchildren with valid auth",
+          "expected": "404 Not Found with JSON error body"
+        }
+      ]
+    },
+    {
+      "id": "neg-api-error-405-method-not-allowed",
+      "name": "405 Method Not Allowed for wrong HTTP methods",
+      "category": "error-response-validation",
+      "priority": "medium",
+      "platforms": ["api"],
+      "steps": [
+        {
+          "name": "PUT to login endpoint",
+          "action": "PUT /api/v1/auth/login with valid body",
+          "expected": "405 Method Not Allowed or 404 Not Found, not 500"
+        },
+        {
+          "name": "DELETE to health endpoint",
+          "action": "DELETE /health",
+          "expected": "405 Method Not Allowed or 404 Not Found, not 500"
+        }
+      ]
+    },
+    {
+      "id": "neg-api-error-empty-json-responses",
+      "name": "Error responses always valid JSON, never empty",
+      "category": "error-response-validation",
+      "priority": "high",
+      "platforms": ["api"],
+      "steps": [
+        {
+          "name": "Collect multiple error responses and validate JSON",
+          "action": "Send 5 different invalid requests (no auth, bad JSON, non-existent route, wrong method, oversized body), collect all responses",
+          "expected": "Every error response has Content-Type: application/json and parseable JSON body, no empty bodies or plain text errors"
+        }
+      ]
+    },
+    {
+      "id": "neg-api-concurrency-simultaneous-scan-same-root",
+      "name": "Simultaneous scan start on same storage root",
+      "category": "concurrency-edge-cases",
+      "priority": "critical",
+      "platforms": ["api"],
+      "steps": [
+        {
+          "name": "Start two scans on same root simultaneously",
+          "action": "POST /api/v1/scans with same storage_root_id sent twice simultaneously with valid auth",
+          "expected": "One succeeds with 200/202, the other returns 409 Conflict or similar indicating scan already in progress. No duplicate scan jobs"
+        }
+      ]
+    },
+    {
+      "id": "neg-api-concurrency-collection-modifications",
+      "name": "Concurrent collection modification race condition",
+      "category": "concurrency-edge-cases",
+      "priority": "high",
+      "platforms": ["api"],
+      "steps": [
+        {
+          "name": "Update same collection from two clients simultaneously",
+          "action": "PUT /api/v1/collections/<id> with {\"name\": \"A\"} and PUT /api/v1/collections/<id> with {\"name\": \"B\"} sent simultaneously with valid auth",
+          "expected": "Both return 200, final name is either A or B (last write wins). No partial update or data corruption"
+        }
+      ]
+    },
+    {
+      "id": "neg-api-concurrency-favorite-toggle-race",
+      "name": "Race condition in favorite toggle",
+      "category": "concurrency-edge-cases",
+      "priority": "medium",
+      "platforms": ["api"],
+      "steps": [
+        {
+          "name": "Toggle favorite on and off simultaneously",
+          "action": "PUT /api/v1/media/<id>/favorite with {\"is_favorite\": true} and PUT /api/v1/media/<id>/favorite with {\"is_favorite\": false} sent simultaneously",
+          "expected": "Both return 200, final state is deterministic (last write wins). No database constraint violation"
+        }
+      ]
+    },
+    {
+      "id": "neg-api-concurrency-duplicate-username-creation",
+      "name": "Concurrent user creation with same username",
+      "category": "concurrency-edge-cases",
+      "priority": "critical",
+      "platforms": ["api"],
+      "steps": [
+        {
+          "name": "Create two users with same username simultaneously",
+          "action": "POST /api/v1/users with {\"username\": \"concurrent_test\", \"password\": \"pass123\"} sent twice simultaneously with admin auth",
+          "expected": "One succeeds with 201, the other gets 409 Conflict. No duplicate users in database"
+        },
+        {
+          "name": "Verify only one user exists",
+          "action": "GET /api/v1/users?search=concurrent_test with admin auth",
+          "expected": "Exactly one user returned, not two"
+        }
+      ]
+    },
+    {
+      "id": "neg-api-concurrency-simultaneous-challenge-execution",
+      "name": "Simultaneous challenge execution attempts",
+      "category": "concurrency-edge-cases",
+      "priority": "high",
+      "platforms": ["api"],
+      "steps": [
+        {
+          "name": "Start two challenge runs simultaneously",
+          "action": "POST /api/v1/challenges/run (or RunAll trigger) sent twice simultaneously with valid auth",
+          "expected": "One succeeds, the other returns 409 or 423 (Locked) indicating a run is already in progress. RunAll is blocking"
+        }
+      ]
+    },
+    {
+      "id": "neg-api-concurrency-parallel-metadata-refresh",
+      "name": "Parallel metadata refresh for same entity",
+      "category": "concurrency-edge-cases",
+      "priority": "medium",
+      "platforms": ["api"],
+      "steps": [
+        {
+          "name": "Refresh metadata for same entity concurrently",
+          "action": "POST /api/v1/media/<id>/refresh sent 5 times simultaneously with valid auth",
+          "expected": "All return 200 or one succeeds while others get 429/409. No duplicate metadata entries or data corruption"
+        }
+      ]
+    },
+    {
+      "id": "neg-api-concurrency-ws-subscribe-unsubscribe",
+      "name": "Concurrent WebSocket subscribe and unsubscribe",
+      "category": "concurrency-edge-cases",
+      "priority": "medium",
+      "platforms": ["api"],
+      "steps": [
+        {
+          "name": "Subscribe and unsubscribe rapidly on same connection",
+          "action": "Open WebSocket to /ws, send subscribe and unsubscribe messages for same topic in rapid alternation (10 times)",
+          "expected": "All operations complete without crash, final subscription state is consistent, no deadlock in event bus"
+        }
+      ]
+    },
+    {
+      "id": "neg-api-concurrency-password-change-race",
+      "name": "Simultaneous password change from two sessions",
+      "category": "concurrency-edge-cases",
+      "priority": "high",
+      "platforms": ["api"],
+      "steps": [
+        {
+          "name": "Change password from two sessions at once",
+          "action": "POST /api/v1/auth/change-password with {\"old_password\": \"admin123\", \"new_password\": \"newpass1\"} and same with new_password: \"newpass2\" sent simultaneously",
+          "expected": "One succeeds, the other may fail with 401 (old password no longer valid). No account lockout or corruption"
+        }
+      ]
+    },
+    {
+      "id": "neg-api-concurrency-token-refresh-race",
+      "name": "Concurrent token refresh with same refresh token",
+      "category": "concurrency-edge-cases",
+      "priority": "high",
+      "platforms": ["api"],
+      "steps": [
+        {
+          "name": "Refresh token from two requests simultaneously",
+          "action": "POST /api/v1/auth/refresh with same refresh_token sent twice simultaneously",
+          "expected": "One succeeds with new tokens, other gets 401 (token already consumed) or both get new tokens (if tokens are not single-use). No token duplication"
+        }
+      ]
+    },
+    {
+      "id": "neg-api-concurrency-simultaneous-delete-update",
+      "name": "Concurrent delete and update on same resource",
+      "category": "concurrency-edge-cases",
+      "priority": "high",
+      "platforms": ["api"],
+      "steps": [
+        {
+          "name": "Delete and update same collection simultaneously",
+          "action": "DELETE /api/v1/collections/<id> and PUT /api/v1/collections/<id> with {\"name\": \"updated\"} sent simultaneously with valid auth",
+          "expected": "One succeeds, the other gets 404 (if delete won) or 200 (if update won and delete follows). No 500 error"
+        }
+      ]
+    },
+    {
+      "id": "neg-api-backup-during-scan",
+      "name": "Create backup while scan is actively running",
+      "category": "backup-restore-edge-cases",
+      "priority": "high",
+      "platforms": ["api"],
+      "steps": [
+        {
+          "name": "Start a scan",
+          "action": "POST /api/v1/scans with valid storage root and auth",
+          "expected": "200/202 with scan started"
+        },
+        {
+          "name": "Create backup during active scan",
+          "action": "POST /api/v1/admin/backups with valid admin auth while scan is in progress",
+          "expected": "Either 200 with backup created (snapshot of current state) or 409 indicating backup blocked during scan. No corrupted backup"
+        }
+      ]
+    },
+    {
+      "id": "neg-api-backup-restore-schema-mismatch",
+      "name": "Restore backup with schema version mismatch",
+      "category": "backup-restore-edge-cases",
+      "priority": "critical",
+      "platforms": ["api"],
+      "steps": [
+        {
+          "name": "Attempt restore with incompatible backup",
+          "action": "POST /api/v1/admin/backups/<id>/restore where backup was from a different schema version",
+          "expected": "400 or 409 with error about schema version mismatch, must not partially apply incompatible migrations"
+        }
+      ]
+    },
+    {
+      "id": "neg-api-backup-restore-newer-version",
+      "name": "Restore backup from newer application version",
+      "category": "backup-restore-edge-cases",
+      "priority": "high",
+      "platforms": ["api"],
+      "steps": [
+        {
+          "name": "Attempt forward-incompatible restore",
+          "action": "POST /api/v1/admin/backups/<id>/restore where backup metadata indicates it came from a newer version of the application",
+          "expected": "400 or 409 with error about version incompatibility, must not attempt downgrade migration"
+        }
+      ]
+    },
+    {
+      "id": "neg-api-backup-corrupt-file",
+      "name": "Restore from corrupt backup file",
+      "category": "backup-restore-edge-cases",
+      "priority": "critical",
+      "platforms": ["api"],
+      "steps": [
+        {
+          "name": "Attempt restore with corrupted backup",
+          "action": "POST /api/v1/admin/backups/<id>/restore where the backup file has been corrupted (truncated or modified)",
+          "expected": "400 or 500 with clear error about corrupt backup, database must remain in its pre-restore state (atomic restore or rollback)"
+        },
+        {
+          "name": "Verify database integrity after failed restore",
+          "action": "GET /health/deep and GET /api/v1/entities with valid auth",
+          "expected": "Both return 200, database is intact after failed restore attempt"
+        }
+      ]
+    },
+    {
+      "id": "neg-api-backup-nonexistent-id",
+      "name": "Restore backup with non-existent backup ID",
+      "category": "backup-restore-edge-cases",
+      "priority": "medium",
+      "platforms": ["api"],
+      "steps": [
+        {
+          "name": "Attempt restore with fake backup ID",
+          "action": "POST /api/v1/admin/backups/99999/restore with valid admin auth",
+          "expected": "404 Not Found with error about backup not found, not 500"
+        }
+      ]
+    },
+    {
+      "id": "neg-api-path-traversal-catalog",
+      "name": "Path traversal attack on catalog endpoint",
+      "category": "security-edge-cases",
+      "priority": "critical",
+      "platforms": ["api"],
+      "steps": [
+        {
+          "name": "Traverse above storage root",
+          "action": "GET /api/v1/catalog/../../../etc/passwd with valid auth",
+          "expected": "400 Bad Request or 404 Not Found, must not serve files outside storage root boundaries"
+        },
+        {
+          "name": "Encoded path traversal",
+          "action": "GET /api/v1/catalog/%2e%2e/%2e%2e/%2e%2e/etc/passwd with valid auth",
+          "expected": "400 Bad Request or 404 Not Found, URL-encoded traversal must also be blocked"
+        },
+        {
+          "name": "Double-encoded path traversal",
+          "action": "GET /api/v1/catalog/%252e%252e/%252e%252e/etc/passwd with valid auth",
+          "expected": "400 Bad Request or 404 Not Found, double-encoded traversal must also be blocked"
+        }
+      ]
+    },
+    {
+      "id": "neg-api-xss-in-response",
+      "name": "XSS payload reflected in API responses",
+      "category": "security-edge-cases",
+      "priority": "critical",
+      "platforms": ["api"],
+      "steps": [
+        {
+          "name": "Send XSS in search query",
+          "action": "GET /api/v1/search?q=<script>alert('xss')</script> with valid auth",
+          "expected": "200 with results, the query is returned JSON-encoded (HTML entities escaped). Response has X-Content-Type-Options: nosniff header"
+        },
+        {
+          "name": "Send XSS in collection name",
+          "action": "POST /api/v1/collections with {\"name\": \"<img src=x onerror=alert(1)>\", \"description\": \"test\"} with valid auth",
+          "expected": "201 or 400. If 201, the name must be stored safely and returned JSON-encoded, never rendered as HTML"
+        }
+      ]
+    },
+    {
+      "id": "neg-api-security-jwt-algorithm-none",
+      "name": "JWT algorithm none attack",
+      "category": "security-edge-cases",
+      "priority": "critical",
+      "platforms": ["api"],
+      "steps": [
+        {
+          "name": "Send JWT with alg=none",
+          "action": "Craft a JWT with header {\"alg\": \"none\", \"typ\": \"JWT\"} and valid payload, no signature. Send as Authorization: Bearer <token> to GET /api/v1/auth/me",
+          "expected": "401 Unauthorized, server must reject alg=none tokens"
+        }
+      ]
+    },
+    {
+      "id": "neg-api-security-jwt-algorithm-confusion",
+      "name": "JWT algorithm confusion attack (RS256 to HS256)",
+      "category": "security-edge-cases",
+      "priority": "critical",
+      "platforms": ["api"],
+      "steps": [
+        {
+          "name": "Send JWT signed with wrong algorithm",
+          "action": "Craft a JWT with alg=HS256 but signed with a public key (algorithm confusion attack). Send to GET /api/v1/auth/me",
+          "expected": "401 Unauthorized, server must enforce the expected signing algorithm"
+        }
+      ]
+    },
+    {
+      "id": "neg-api-security-cors-origin-wildcard",
+      "name": "CORS does not allow wildcard with credentials",
+      "category": "security-edge-cases",
+      "priority": "high",
+      "platforms": ["api"],
+      "steps": [
+        {
+          "name": "Send request with evil origin",
+          "action": "GET /api/v1/entities with Origin: https://evil.example.com and valid auth",
+          "expected": "Response must not have Access-Control-Allow-Origin: * when credentials are included. Either no CORS headers or specific allowed origin"
+        }
+      ]
+    },
+    {
+      "id": "neg-api-security-command-injection",
+      "name": "Command injection attempt in SMB paths",
+      "category": "security-edge-cases",
+      "priority": "critical",
+      "platforms": ["api"],
+      "steps": [
+        {
+          "name": "SMB discover with command injection in host",
+          "action": "POST /api/v1/smb/discover with {\"host\": \"192.168.0.1; cat /etc/passwd\"} with valid auth",
+          "expected": "400 Bad Request, host field must be validated as hostname/IP only, no shell metacharacters executed"
+        },
+        {
+          "name": "SMB browse with command injection in path",
+          "action": "POST /api/v1/smb/browse with {\"path\": \"share/$(whoami)\"} with valid auth",
+          "expected": "400 Bad Request or connection error, no command substitution executed"
+        }
+      ]
+    },
+    {
+      "id": "neg-api-security-ssrf-image-proxy",
+      "name": "SSRF via image proxy endpoint",
+      "category": "security-edge-cases",
+      "priority": "critical",
+      "platforms": ["api"],
+      "steps": [
+        {
+          "name": "Request internal URL via image proxy",
+          "action": "GET /api/v1/image-proxy?url=http://localhost:8080/api/v1/admin/system-info",
+          "expected": "400 Bad Request or 403 Forbidden, internal/localhost URLs must be blocked to prevent SSRF"
+        },
+        {
+          "name": "Request metadata service via image proxy",
+          "action": "GET /api/v1/image-proxy?url=http://169.254.169.254/latest/meta-data/",
+          "expected": "400 Bad Request or 403 Forbidden, cloud metadata URLs must be blocked"
+        }
+      ]
+    },
+    {
+      "id": "neg-api-security-idor-user-access",
+      "name": "IDOR attempt to access another user's data",
+      "category": "security-edge-cases",
+      "priority": "critical",
+      "platforms": ["api"],
+      "steps": [
+        {
+          "name": "Access another user's profile",
+          "action": "GET /api/v1/users/<other_user_id> with non-admin auth token",
+          "expected": "403 Forbidden or limited data (own data only), non-admin users must not access other users' full profiles"
+        },
+        {
+          "name": "Access admin-only endpoint with regular user",
+          "action": "GET /api/v1/admin/system-info with regular (non-admin) auth token",
+          "expected": "403 Forbidden, admin endpoints must enforce role-based access"
+        }
+      ]
+    },
+    {
+      "id": "neg-api-security-header-injection",
+      "name": "HTTP header injection via user input",
+      "category": "security-edge-cases",
+      "priority": "high",
+      "platforms": ["api"],
+      "steps": [
+        {
+          "name": "CRLF injection in header",
+          "action": "GET /api/v1/search?q=test%0d%0aX-Injected:%20true with valid auth",
+          "expected": "Response must not contain X-Injected header. CRLF characters must be stripped from any value reflected in response headers"
+        }
+      ]
+    },
+    {
+      "id": "neg-api-malformed-json-variations",
+      "name": "Various malformed JSON body formats",
+      "category": "input-validation-extremes",
+      "priority": "high",
+      "platforms": ["api"],
+      "steps": [
+        {
+          "name": "Send trailing comma JSON",
+          "action": "POST /api/v1/auth/login with body: {\"username\": \"admin\", \"password\": \"admin123\",}",
+          "expected": "400 Bad Request, Go's JSON parser rejects trailing commas"
+        },
+        {
+          "name": "Send single-quoted JSON",
+          "action": "POST /api/v1/auth/login with body: {'username': 'admin', 'password': 'admin123'}",
+          "expected": "400 Bad Request, single quotes are invalid JSON"
+        },
+        {
+          "name": "Send unquoted keys",
+          "action": "POST /api/v1/auth/login with body: {username: \"admin\", password: \"admin123\"}",
+          "expected": "400 Bad Request, unquoted keys are invalid JSON"
+        },
+        {
+          "name": "Send just a string",
+          "action": "POST /api/v1/auth/login with body: \"just a string\"",
+          "expected": "400 Bad Request, endpoint expects an object not a string"
+        }
+      ]
+    },
+    {
+      "id": "neg-api-input-extra-unknown-fields",
+      "name": "Extra unknown fields in JSON requests",
+      "category": "input-validation-extremes",
+      "priority": "low",
+      "platforms": ["api"],
+      "steps": [
+        {
+          "name": "Login with extra fields",
+          "action": "POST /api/v1/auth/login with {\"username\": \"admin\", \"password\": \"admin123\", \"evil\": true, \"__proto__\": {\"admin\": true}}",
+          "expected": "200 OK (extra fields ignored) or 400 Bad Request. Extra fields must not cause privilege escalation or prototype pollution"
+        }
+      ]
+    },
+    {
+      "id": "neg-api-concurrency-scan-abort-restart",
+      "name": "Abort scan and immediately restart",
+      "category": "concurrency-edge-cases",
+      "priority": "high",
+      "platforms": ["api"],
+      "steps": [
+        {
+          "name": "Start a scan",
+          "action": "POST /api/v1/scans with valid storage root and auth",
+          "expected": "200/202 with scan job ID"
+        },
+        {
+          "name": "Immediately start another scan on same root",
+          "action": "POST /api/v1/scans with same storage root immediately (while first is still initializing)",
+          "expected": "409 Conflict or 200 (if first scan was cancelled). No zombie scan processes"
+        }
+      ]
+    },
+    {
+      "id": "neg-api-error-deep-health-degraded",
+      "name": "Deep health check during degraded state",
+      "category": "error-response-validation",
+      "priority": "high",
+      "platforms": ["api"],
+      "steps": [
+        {
+          "name": "Check deep health when services are partially unavailable",
+          "action": "GET /health/deep when Redis cache is unavailable",
+          "expected": "200 with degraded status or 503 Service Unavailable, must accurately report component health"
+        }
+      ]
+    },
+    {
+      "id": "neg-api-input-unicode-normalization",
+      "name": "Unicode normalization edge cases",
+      "category": "input-validation-extremes",
+      "priority": "medium",
+      "platforms": ["api"],
+      "steps": [
+        {
+          "name": "Login with decomposed unicode username",
+          "action": "POST /api/v1/auth/login with username using NFD form (e.g., e + combining acute accent instead of precomposed e-acute)",
+          "expected": "401 (different from NFC-normalized existing username) or 200 (if server normalizes). Must be consistent"
+        },
+        {
+          "name": "Search with mixed normalization forms",
+          "action": "GET /api/v1/search?q=caf\\u00e9 vs GET /api/v1/search?q=cafe\\u0301 with valid auth",
+          "expected": "Both return same results, or both return different results. Behavior must be consistent and predictable"
+        }
+      ]
+    },
+    {
+      "id": "neg-api-resource-scan-nonexistent-protocol",
+      "name": "Create storage root with unsupported protocol",
+      "category": "data-integrity-edge-cases",
+      "priority": "medium",
+      "platforms": ["api"],
+      "steps": [
+        {
+          "name": "Create storage root with invalid protocol",
+          "action": "POST /api/v1/storage/roots with {\"path\": \"gopher://server/share\", \"name\": \"invalid_proto\"} with valid auth",
+          "expected": "400 Bad Request with error about unsupported protocol, not 500"
+        }
+      ]
+    },
+    {
+      "id": "neg-api-security-response-headers",
+      "name": "Security headers present on all responses",
+      "category": "security-edge-cases",
+      "priority": "critical",
+      "platforms": ["api"],
+      "steps": [
+        {
+          "name": "Check security headers on success response",
+          "action": "GET /health and inspect response headers",
+          "expected": "X-Content-Type-Options: nosniff, X-Frame-Options: DENY or SAMEORIGIN, Strict-Transport-Security present"
+        },
+        {
+          "name": "Check security headers on error response",
+          "action": "GET /api/v1/entities without auth and inspect response headers",
+          "expected": "Same security headers present on 401 error as on 200 success responses"
+        }
+      ]
+    },
+    {
+      "id": "neg-api-input-json-bomb",
+      "name": "JSON bomb (exponential expansion)",
+      "category": "resource-limits",
+      "priority": "critical",
+      "platforms": ["api"],
+      "steps": [
+        {
+          "name": "Send JSON with huge repeated keys",
+          "action": "POST /api/v1/search/advanced with JSON containing 10000 identical filter objects in an array",
+          "expected": "400 Bad Request or 413 Payload Too Large, server must have body size limit that prevents processing massive JSON arrays"
+        }
+      ]
+    },
+    {
+      "id": "neg-api-concurrency-backup-during-restore",
+      "name": "Attempt backup while restore is in progress",
+      "category": "backup-restore-edge-cases",
+      "priority": "high",
+      "platforms": ["api"],
+      "steps": [
+        {
+          "name": "Start restore and immediately request backup",
+          "action": "POST /api/v1/admin/backups/<id>/restore, then immediately POST /api/v1/admin/backups with admin auth",
+          "expected": "Second request returns 409 Conflict or 423 Locked, backup during restore must be prevented"
+        }
+      ]
+    },
+    {
+      "id": "neg-api-http-accept-encoding-invalid",
+      "name": "Invalid Accept-Encoding header handling",
+      "category": "http-protocol-edge-cases",
+      "priority": "low",
+      "platforms": ["api"],
+      "steps": [
+        {
+          "name": "Send request with unsupported encoding",
+          "action": "GET /health with Accept-Encoding: deflate-only-invalid",
+          "expected": "200 with uncompressed response body, server falls back gracefully"
+        },
+        {
+          "name": "Send request with empty Accept-Encoding",
+          "action": "GET /health with Accept-Encoding: (empty string)",
+          "expected": "200 with uncompressed response body"
+        }
+      ]
+    },
+    {
+      "id": "neg-api-input-whitespace-only-fields",
+      "name": "Whitespace-only string values in required fields",
+      "category": "input-validation-extremes",
+      "priority": "high",
+      "platforms": ["api"],
+      "steps": [
+        {
+          "name": "Login with whitespace-only username",
+          "action": "POST /api/v1/auth/login with {\"username\": \"   \", \"password\": \"   \"}",
+          "expected": "400 Bad Request or 401 Unauthorized, whitespace-only strings must not pass validation as valid input"
+        },
+        {
+          "name": "Create collection with whitespace-only name",
+          "action": "POST /api/v1/collections with {\"name\": \"\\t\\n  \\t\", \"description\": \"test\"} with valid auth",
+          "expected": "400 Bad Request, whitespace-only name must be rejected"
+        }
+      ]
+    },
+    {
+      "id": "neg-api-security-mass-assignment",
+      "name": "Mass assignment / parameter pollution attack",
+      "category": "security-edge-cases",
+      "priority": "critical",
+      "platforms": ["api"],
+      "steps": [
+        {
+          "name": "Register with role field included",
+          "action": "POST /api/v1/auth/register with {\"username\": \"hacker\", \"password\": \"pass123\", \"role\": \"admin\", \"is_admin\": true}",
+          "expected": "201 with default role (not admin), extra fields must be ignored. User must not gain admin privileges"
+        },
+        {
+          "name": "Verify created user is not admin",
+          "action": "Login as the new user and GET /api/v1/auth/permissions",
+          "expected": "Response shows regular user permissions, not admin"
+        }
+      ]
+    },
+    {
+      "id": "neg-api-error-graceful-500-handling",
+      "name": "Internal server errors handled gracefully",
+      "category": "error-response-validation",
+      "priority": "critical",
+      "platforms": ["api"],
+      "steps": [
+        {
+          "name": "Verify panic recovery middleware is active",
+          "action": "If possible, trigger a condition that causes an internal error (e.g., requesting data from a malformed storage root)",
+          "expected": "500 Internal Server Error with generic JSON error message, not raw stack trace. Gin recovery middleware catches panics"
+        },
+        {
+          "name": "Verify server continues after internal error",
+          "action": "GET /health after triggering the internal error",
+          "expected": "200 with status=healthy, server recovered from the error and continues serving"
+        }
+      ]
+    },
+    {
+      "id": "neg-api-security-timing-attack-login",
+      "name": "Timing attack resistance on login",
+      "category": "security-edge-cases",
+      "priority": "high",
+      "platforms": ["api"],
+      "steps": [
+        {
+          "name": "Measure login response time for valid vs invalid username",
+          "action": "POST /api/v1/auth/login with valid username + wrong password (10 times), then with non-existent username + wrong password (10 times), compare average response times",
+          "expected": "Response times should be similar (within 50ms variance), preventing username enumeration via timing analysis"
+        }
+      ]
+    },
+    {
+      "id": "neg-api-input-duplicate-json-keys",
+      "name": "Duplicate keys in JSON body",
+      "category": "input-validation-extremes",
+      "priority": "medium",
+      "platforms": ["api"],
+      "steps": [
+        {
+          "name": "Send JSON with duplicate keys",
+          "action": "POST /api/v1/auth/login with body: {\"username\": \"admin\", \"username\": \"hacker\", \"password\": \"admin123\"}",
+          "expected": "Uses last value per Go encoding/json spec (username=hacker) and returns 401, or 400 if duplicate keys rejected"
+        }
+      ]
+    },
+    {
+      "id": "neg-api-http-connection-close-handling",
+      "name": "Connection: close header handling",
+      "category": "http-protocol-edge-cases",
+      "priority": "low",
+      "platforms": ["api"],
+      "steps": [
+        {
+          "name": "Send request with Connection: close",
+          "action": "GET /health with Connection: close header",
+          "expected": "200 OK with Connection: close in response, server closes connection after response"
+        }
+      ]
+    },
+    {
+      "id": "neg-api-resource-download-nonexistent-file",
+      "name": "Download file that does not exist on disk",
+      "category": "data-integrity-edge-cases",
+      "priority": "high",
+      "platforms": ["api"],
+      "steps": [
+        {
+          "name": "Download file by ID where underlying file was deleted from disk",
+          "action": "GET /api/v1/download/file/<id> where the file record exists in DB but physical file was removed from storage",
+          "expected": "404 Not Found or 410 Gone with clear error message, not 500 with stack trace"
+        }
+      ]
+    },
+    {
+      "id": "neg-api-resource-stream-invalid-id",
+      "name": "Stream file with invalid ID format",
+      "category": "resource-limits",
+      "priority": "medium",
+      "platforms": ["api"],
+      "steps": [
+        {
+          "name": "Stream with string ID",
+          "action": "GET /api/v1/stream/abc with valid auth",
+          "expected": "400 Bad Request, ID must be numeric"
+        },
+        {
+          "name": "Stream with zero ID",
+          "action": "GET /api/v1/stream/0 with valid auth",
+          "expected": "400 Bad Request or 404 Not Found"
+        }
+      ]
+    },
+    {
+      "id": "neg-api-security-directory-listing-prevention",
+      "name": "Directory listing prevention on catalog endpoints",
+      "category": "security-edge-cases",
+      "priority": "high",
+      "platforms": ["api"],
+      "steps": [
+        {
+          "name": "Request catalog root without storage root configured",
+          "action": "GET /api/v1/catalog with valid auth when no storage roots exist",
+          "expected": "200 with empty listing or 404, must not expose server directory structure"
+        },
+        {
+          "name": "Request catalog with dot path",
+          "action": "GET /api/v1/catalog/. with valid auth",
+          "expected": "400 Bad Request or valid listing, must not expose hidden files or parent directories"
+        }
+      ]
+    },
+    {
+      "id": "neg-api-input-scientific-notation-id",
+      "name": "Scientific notation in numeric ID fields",
+      "category": "input-validation-extremes",
+      "priority": "low",
+      "platforms": ["api"],
+      "steps": [
+        {
+          "name": "Get entity with scientific notation ID",
+          "action": "GET /api/v1/entities/1e5 with valid auth",
+          "expected": "400 Bad Request or 404 Not Found, must not interpret 1e5 as 100000"
+        }
+      ]
+    },
+    {
+      "id": "neg-api-error-content-type-on-errors",
+      "name": "Content-Type header correct on all error responses",
+      "category": "error-response-validation",
+      "priority": "high",
+      "platforms": ["api"],
+      "steps": [
+        {
+          "name": "Check Content-Type on 400 error",
+          "action": "POST /api/v1/auth/login with invalid JSON body",
+          "expected": "400 with Content-Type: application/json; charset=utf-8"
+        },
+        {
+          "name": "Check Content-Type on 401 error",
+          "action": "GET /api/v1/entities without auth",
+          "expected": "401 with Content-Type: application/json; charset=utf-8, not text/html"
+        },
+        {
+          "name": "Check Content-Type on 404 error",
+          "action": "GET /api/v1/nonexistent-route",
+          "expected": "404 with Content-Type: application/json; charset=utf-8"
+        },
+        {
+          "name": "Check Content-Type on 429 error",
+          "action": "Trigger rate limit on /api/v1/auth/login",
+          "expected": "429 with Content-Type: application/json; charset=utf-8"
+        }
+      ]
+    },
+    {
+      "id": "neg-api-security-sensitive-data-in-url",
+      "name": "Sensitive data must not be accepted in URL query parameters",
+      "category": "security-edge-cases",
+      "priority": "high",
+      "platforms": ["api"],
+      "steps": [
+        {
+          "name": "Try login via query parameters",
+          "action": "GET /api/v1/auth/login?username=admin&password=admin123",
+          "expected": "405 Method Not Allowed (login is POST-only), credentials must never be accepted via URL where they would appear in access logs"
+        }
+      ]
+    },
+    {
+      "id": "neg-api-concurrency-websocket-broadcast-storm",
+      "name": "WebSocket broadcast during high-frequency events",
+      "category": "concurrency-edge-cases",
+      "priority": "high",
+      "platforms": ["api"],
+      "steps": [
+        {
+          "name": "Open multiple WebSocket connections and trigger many events",
+          "action": "Open 10 WebSocket connections to /ws, then trigger a scan that generates hundreds of file discovery events",
+          "expected": "All connected clients receive events without message loss or server memory spike. Server applies backpressure if clients are slow"
+        },
+        {
+          "name": "Verify server stability after broadcast storm",
+          "action": "GET /health and GET /metrics after the event burst",
+          "expected": "200 on both, goroutine count is reasonable, no memory leak"
+        }
+      ]
+    },
+    {
+      "id": "neg-api-input-mixed-encoding-body",
+      "name": "Non-UTF-8 encoded request body",
+      "category": "input-validation-extremes",
+      "priority": "medium",
+      "platforms": ["api"],
+      "steps": [
+        {
+          "name": "Send Latin-1 encoded body",
+          "action": "POST /api/v1/auth/login with Content-Type: application/json; charset=iso-8859-1 and body containing Latin-1 encoded characters",
+          "expected": "400 Bad Request or 200 (if body is valid UTF-8 subset). Must not crash with encoding error"
+        }
+      ]
+    },
+    {
+      "id": "neg-api-security-host-header-injection",
+      "name": "Host header injection attack",
+      "category": "security-edge-cases",
+      "priority": "high",
+      "platforms": ["api"],
+      "steps": [
+        {
+          "name": "Send request with forged Host header",
+          "action": "GET /health with Host: evil.com",
+          "expected": "200 OK, but any URLs generated in response body must not use the forged host. Password reset links must use configured server URL"
+        }
+      ]
+    }
+  ]
+}

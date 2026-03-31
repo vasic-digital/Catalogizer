@@ -219,7 +219,16 @@ func (h *ReportingHandler) GetUsageReport(c *gin.Context) {
 }
 
 func (h *ReportingHandler) GetPerformanceReport(c *gin.Context) {
-	params := map[string]interface{}{}
+	startDateStr := c.DefaultQuery("start_date", time.Now().AddDate(0, -1, 0).Format("2006-01-02"))
+	endDateStr := c.DefaultQuery("end_date", time.Now().Format("2006-01-02"))
+
+	startDate, _ := time.Parse("2006-01-02", startDateStr)
+	endDate, _ := time.Parse("2006-01-02", endDateStr)
+
+	params := map[string]interface{}{
+		"start_date": startDate,
+		"end_date":   endDate,
+	}
 
 	report, err := h.service.GenerateReport("system_overview", "json", params)
 	if err != nil {

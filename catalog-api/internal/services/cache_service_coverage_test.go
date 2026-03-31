@@ -19,6 +19,7 @@ func newCacheTestDB(t *testing.T) (*database.DB, func()) {
 	t.Helper()
 	rawDB, err := sql.Open("sqlite3", ":memory:")
 	require.NoError(t, err)
+	rawDB.SetMaxOpenConns(1)
 
 	db := database.WrapDB(rawDB, database.DialectSQLite)
 	require.NotNil(t, db)

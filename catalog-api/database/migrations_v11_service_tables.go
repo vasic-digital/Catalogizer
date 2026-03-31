@@ -59,10 +59,23 @@ func (db *DB) createServiceTablesSQLite(ctx context.Context) error {
 		event_data TEXT DEFAULT '{}',
 		media_id INTEGER,
 		session_id TEXT,
+		device_info TEXT DEFAULT '{}',
 		ip_address TEXT,
 		user_agent TEXT,
 		device_type TEXT,
 		location TEXT,
+		event_category TEXT DEFAULT '',
+		access_count INTEGER DEFAULT 0,
+		file_type TEXT DEFAULT '',
+		data TEXT DEFAULT '{}',
+		duration_seconds INTEGER DEFAULT 0,
+		country TEXT DEFAULT '',
+		city TEXT DEFAULT '',
+		latitude REAL DEFAULT 0,
+		longitude REAL DEFAULT 0,
+		session_start DATETIME,
+		session_end DATETIME,
+		timestamp DATETIME DEFAULT CURRENT_TIMESTAMP,
 		created_at DATETIME DEFAULT CURRENT_TIMESTAMP
 	);
 
@@ -75,12 +88,16 @@ func (db *DB) createServiceTablesSQLite(ctx context.Context) error {
 		id INTEGER PRIMARY KEY AUTOINCREMENT,
 		user_id INTEGER,
 		media_id INTEGER NOT NULL,
+		action TEXT NOT NULL DEFAULT 'view',
 		access_type TEXT NOT NULL DEFAULT 'view',
 		duration INTEGER DEFAULT 0,
+		playback_duration INTEGER DEFAULT 0,
 		ip_address TEXT,
 		user_agent TEXT,
 		device_type TEXT,
+		device_info TEXT DEFAULT '{}',
 		location TEXT,
+		access_time DATETIME DEFAULT CURRENT_TIMESTAMP,
 		created_at DATETIME DEFAULT CURRENT_TIMESTAMP
 	);
 
@@ -114,9 +131,11 @@ func (db *DB) createServiceTablesSQLite(ctx context.Context) error {
 	CREATE TABLE IF NOT EXISTS crash_reports (
 		id INTEGER PRIMARY KEY AUTOINCREMENT,
 		user_id INTEGER,
+		signal TEXT NOT NULL DEFAULT 'crash',
 		crash_type TEXT NOT NULL DEFAULT 'crash',
 		message TEXT,
 		stack_trace TEXT,
+		context TEXT DEFAULT '{}',
 		system_info TEXT DEFAULT '{}',
 		device_info TEXT DEFAULT '{}',
 		app_version TEXT DEFAULT '',
@@ -152,12 +171,18 @@ func (db *DB) createServiceTablesSQLite(ctx context.Context) error {
 	CREATE TABLE IF NOT EXISTS log_shares (
 		id INTEGER PRIMARY KEY AUTOINCREMENT,
 		collection_id INTEGER NOT NULL,
+		user_id INTEGER NOT NULL DEFAULT 0,
 		share_token TEXT NOT NULL UNIQUE,
-		created_by INTEGER NOT NULL,
+		share_type TEXT DEFAULT 'link',
+		created_by INTEGER NOT NULL DEFAULT 0,
 		can_read INTEGER DEFAULT 1,
 		can_write INTEGER DEFAULT 0,
 		expires_at DATETIME,
 		created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+		accessed_at DATETIME,
+		is_active INTEGER DEFAULT 1,
+		permissions TEXT DEFAULT '{}',
+		recipients TEXT DEFAULT '[]',
 		FOREIGN KEY (collection_id) REFERENCES log_collections(id) ON DELETE CASCADE
 	);
 
@@ -209,8 +234,10 @@ func (db *DB) createServiceTablesSQLite(ctx context.Context) error {
 	CREATE TABLE IF NOT EXISTS wizard_progress (
 		id INTEGER PRIMARY KEY AUTOINCREMENT,
 		user_id INTEGER,
-		step_id TEXT NOT NULL,
+		current_step TEXT NOT NULL DEFAULT '',
+		step_id TEXT NOT NULL DEFAULT '',
 		step_data TEXT DEFAULT '{}',
+		all_data TEXT DEFAULT '{}',
 		completed INTEGER DEFAULT 0,
 		updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
 	);
@@ -235,12 +262,39 @@ func (db *DB) fixServiceTableColumns(ctx context.Context) error {
 		"ALTER TABLE error_reports ADD COLUMN url TEXT DEFAULT ''",
 		"ALTER TABLE error_reports ADD COLUMN reported_at DATETIME DEFAULT CURRENT_TIMESTAMP",
 		"ALTER TABLE error_reports ADD COLUMN resolved_at DATETIME",
+		"ALTER TABLE crash_reports ADD COLUMN signal TEXT DEFAULT 'crash'",
 		"ALTER TABLE crash_reports ADD COLUMN crash_type TEXT DEFAULT 'crash'",
+		"ALTER TABLE crash_reports ADD COLUMN context TEXT DEFAULT '{}'",
 		"ALTER TABLE crash_reports ADD COLUMN device_info TEXT DEFAULT '{}'",
 		"ALTER TABLE crash_reports ADD COLUMN app_version TEXT DEFAULT ''",
 		"ALTER TABLE crash_reports ADD COLUMN os_version TEXT DEFAULT ''",
 		"ALTER TABLE crash_reports ADD COLUMN reported_at DATETIME DEFAULT CURRENT_TIMESTAMP",
 		"ALTER TABLE crash_reports ADD COLUMN resolved_at DATETIME",
+		"ALTER TABLE log_shares ADD COLUMN user_id INTEGER DEFAULT 0",
+		"ALTER TABLE log_shares ADD COLUMN share_type TEXT DEFAULT 'link'",
+		"ALTER TABLE log_shares ADD COLUMN accessed_at DATETIME",
+		"ALTER TABLE log_shares ADD COLUMN is_active INTEGER DEFAULT 1",
+		"ALTER TABLE log_shares ADD COLUMN permissions TEXT DEFAULT '{}'",
+		"ALTER TABLE log_shares ADD COLUMN recipients TEXT DEFAULT '[]'",
+		"ALTER TABLE wizard_progress ADD COLUMN current_step TEXT DEFAULT ''",
+		"ALTER TABLE wizard_progress ADD COLUMN all_data TEXT DEFAULT '{}'",
+		"ALTER TABLE media_access_logs ADD COLUMN action TEXT DEFAULT 'view'",
+		"ALTER TABLE media_access_logs ADD COLUMN playback_duration INTEGER DEFAULT 0",
+		"ALTER TABLE media_access_logs ADD COLUMN access_time DATETIME DEFAULT CURRENT_TIMESTAMP",
+		"ALTER TABLE media_access_logs ADD COLUMN device_info TEXT DEFAULT '{}'",
+		"ALTER TABLE analytics_events ADD COLUMN timestamp DATETIME DEFAULT CURRENT_TIMESTAMP",
+		"ALTER TABLE analytics_events ADD COLUMN device_info TEXT DEFAULT '{}'",
+		"ALTER TABLE analytics_events ADD COLUMN event_category TEXT DEFAULT ''",
+		"ALTER TABLE analytics_events ADD COLUMN access_count INTEGER DEFAULT 0",
+		"ALTER TABLE analytics_events ADD COLUMN file_type TEXT DEFAULT ''",
+		"ALTER TABLE analytics_events ADD COLUMN session_start DATETIME",
+		"ALTER TABLE analytics_events ADD COLUMN session_end DATETIME",
+		"ALTER TABLE analytics_events ADD COLUMN data TEXT DEFAULT '{}'",
+		"ALTER TABLE analytics_events ADD COLUMN duration_seconds INTEGER DEFAULT 0",
+		"ALTER TABLE analytics_events ADD COLUMN country TEXT DEFAULT ''",
+		"ALTER TABLE analytics_events ADD COLUMN city TEXT DEFAULT ''",
+		"ALTER TABLE analytics_events ADD COLUMN latitude REAL DEFAULT 0",
+		"ALTER TABLE analytics_events ADD COLUMN longitude REAL DEFAULT 0",
 		"ALTER TABLE log_collections ADD COLUMN description TEXT DEFAULT ''",
 		"ALTER TABLE log_collections ADD COLUMN components TEXT DEFAULT '[]'",
 		"ALTER TABLE log_collections ADD COLUMN log_level TEXT DEFAULT 'info'",
@@ -303,10 +357,12 @@ func (db *DB) createServiceTablesPostgres(ctx context.Context) error {
 		event_data JSONB DEFAULT '{}',
 		media_id INTEGER,
 		session_id TEXT,
+		device_info JSONB DEFAULT '{}',
 		ip_address TEXT,
 		user_agent TEXT,
 		device_type TEXT,
 		location TEXT,
+		timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
 		created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 	);
 
@@ -314,12 +370,15 @@ func (db *DB) createServiceTablesPostgres(ctx context.Context) error {
 		id SERIAL PRIMARY KEY,
 		user_id INTEGER,
 		media_id INTEGER NOT NULL,
+		action TEXT NOT NULL DEFAULT 'view',
 		access_type TEXT NOT NULL DEFAULT 'view',
 		duration INTEGER DEFAULT 0,
+		playback_duration INTEGER DEFAULT 0,
 		ip_address TEXT,
 		user_agent TEXT,
 		device_type TEXT,
 		location TEXT,
+		access_time TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
 		created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 	);
 
@@ -344,9 +403,11 @@ func (db *DB) createServiceTablesPostgres(ctx context.Context) error {
 	CREATE TABLE IF NOT EXISTS crash_reports (
 		id SERIAL PRIMARY KEY,
 		user_id INTEGER,
+		signal TEXT NOT NULL DEFAULT 'crash',
 		crash_type TEXT NOT NULL DEFAULT 'crash',
 		message TEXT,
 		stack_trace TEXT,
+		context TEXT DEFAULT '{}',
 		system_info TEXT DEFAULT '{}',
 		device_info TEXT DEFAULT '{}',
 		app_version TEXT DEFAULT '',
@@ -376,12 +437,18 @@ func (db *DB) createServiceTablesPostgres(ctx context.Context) error {
 	CREATE TABLE IF NOT EXISTS log_shares (
 		id SERIAL PRIMARY KEY,
 		collection_id INTEGER NOT NULL,
+		user_id INTEGER NOT NULL DEFAULT 0,
 		share_token TEXT NOT NULL UNIQUE,
-		created_by INTEGER NOT NULL,
+		share_type TEXT DEFAULT 'link',
+		created_by INTEGER NOT NULL DEFAULT 0,
 		can_read BOOLEAN DEFAULT TRUE,
 		can_write BOOLEAN DEFAULT FALSE,
 		expires_at TIMESTAMP,
 		created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+		accessed_at TIMESTAMP,
+		is_active BOOLEAN DEFAULT TRUE,
+		permissions TEXT DEFAULT '{}',
+		recipients TEXT DEFAULT '[]',
 		FOREIGN KEY (collection_id) REFERENCES log_collections(id) ON DELETE CASCADE
 	);
 
@@ -425,8 +492,10 @@ func (db *DB) createServiceTablesPostgres(ctx context.Context) error {
 	CREATE TABLE IF NOT EXISTS wizard_progress (
 		id SERIAL PRIMARY KEY,
 		user_id INTEGER,
-		step_id TEXT NOT NULL,
+		current_step TEXT NOT NULL DEFAULT '',
+		step_id TEXT NOT NULL DEFAULT '',
 		step_data JSONB DEFAULT '{}',
+		all_data JSONB DEFAULT '{}',
 		completed BOOLEAN DEFAULT FALSE,
 		updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 	);

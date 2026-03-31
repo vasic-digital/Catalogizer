@@ -1,0 +1,404 @@
+{
+  "challenges": [
+    {
+      "id": "xplat-login-all-clients",
+      "name": "Login from All Client Platforms",
+      "category": "authentication",
+      "priority": "critical",
+      "platforms": ["api", "web", "desktop", "android", "androidtv"],
+      "steps": [
+        {
+          "name": "Login via API",
+          "action": "POST /api/v1/auth/login with admin/admin123",
+          "expected": "200 with JWT token"
+        },
+        {
+          "name": "Login via Web",
+          "action": "Navigate to /login, enter admin/admin123, submit",
+          "expected": "Redirect to /dashboard"
+        },
+        {
+          "name": "Login via Desktop",
+          "action": "Launch desktop app, enter credentials, login",
+          "expected": "Home screen loads"
+        },
+        {
+          "name": "Login via Android",
+          "action": "Launch Android app, enter server URL and credentials",
+          "expected": "Main screen loads"
+        },
+        {
+          "name": "Login via Android TV",
+          "action": "Launch TV app, enter server URL and credentials using D-pad",
+          "expected": "Home screen with media carousel loads"
+        }
+      ]
+    },
+    {
+      "id": "xplat-favorite-sync",
+      "name": "Favorites Sync Across Platforms",
+      "category": "data-sync",
+      "priority": "critical",
+      "platforms": ["api", "web", "androidtv"],
+      "steps": [
+        {
+          "name": "Add favorite via API",
+          "action": "POST /api/v1/favorites with a media entity ID",
+          "expected": "201 Created"
+        },
+        {
+          "name": "Verify on Web",
+          "action": "Navigate to /favorites on web",
+          "expected": "Favorited entity appears in the list"
+        },
+        {
+          "name": "Verify on Android TV",
+          "action": "Navigate to favorites section on TV app",
+          "expected": "Same favorited entity visible"
+        },
+        {
+          "name": "Remove favorite via Web",
+          "action": "Click unfavorite button on web",
+          "expected": "Entity removed from favorites"
+        },
+        {
+          "name": "Verify removal on API",
+          "action": "GET /api/v1/favorites",
+          "expected": "Entity no longer in favorites list"
+        }
+      ]
+    },
+    {
+      "id": "xplat-collection-crud",
+      "name": "Collection CRUD Across Platforms",
+      "category": "data-sync",
+      "priority": "high",
+      "platforms": ["api", "web"],
+      "steps": [
+        {
+          "name": "Create collection via Web",
+          "action": "Navigate to /collections, create 'Test Collection'",
+          "expected": "Collection created successfully"
+        },
+        {
+          "name": "Add items via API",
+          "action": "POST /api/v1/collections/{id}/items with entity IDs",
+          "expected": "Items added"
+        },
+        {
+          "name": "Verify on Web",
+          "action": "Open collection on web",
+          "expected": "All added items visible in collection"
+        },
+        {
+          "name": "Delete via API",
+          "action": "DELETE /api/v1/collections/{id}",
+          "expected": "204 No Content"
+        },
+        {
+          "name": "Verify deleted on Web",
+          "action": "Refresh /collections page",
+          "expected": "Collection no longer listed"
+        }
+      ]
+    },
+    {
+      "id": "xplat-scan-triggers-websocket",
+      "name": "Scan Event Propagates via WebSocket",
+      "category": "realtime",
+      "priority": "high",
+      "platforms": ["api", "web"],
+      "steps": [
+        {
+          "name": "Connect WebSocket on Web",
+          "action": "Open web app, verify WebSocket connected indicator",
+          "expected": "WebSocket connection established"
+        },
+        {
+          "name": "Trigger scan via API",
+          "action": "POST /api/v1/scans to start storage root scan",
+          "expected": "202 Accepted with scan job ID"
+        },
+        {
+          "name": "Verify WebSocket notification",
+          "action": "Check web app for real-time scan notification",
+          "expected": "Scan progress updates appear in real-time via WebSocket"
+        }
+      ]
+    },
+    {
+      "id": "xplat-media-playback-progress",
+      "name": "Playback Progress Syncs Across Platforms",
+      "category": "data-sync",
+      "priority": "high",
+      "platforms": ["api", "web", "androidtv"],
+      "steps": [
+        {
+          "name": "Start playback on Web",
+          "action": "Play a media item on web, pause at 50%",
+          "expected": "Progress saved (PUT /api/v1/media/{id}/progress)"
+        },
+        {
+          "name": "Check progress via API",
+          "action": "GET /api/v1/media/{id}",
+          "expected": "Progress field shows ~50%"
+        },
+        {
+          "name": "Resume on Android TV",
+          "action": "Open same media item on TV app",
+          "expected": "Offers to resume from saved position (~50%)"
+        }
+      ]
+    },
+    {
+      "id": "xplat-user-management-web-api",
+      "name": "Admin Creates User on Web, User Logs in on API",
+      "category": "authentication",
+      "priority": "high",
+      "platforms": ["api", "web"],
+      "steps": [
+        {
+          "name": "Create user on Web admin",
+          "action": "Go to /admin, create user 'testuser' with password 'Test1234!'",
+          "expected": "User created successfully"
+        },
+        {
+          "name": "Login with new user via API",
+          "action": "POST /api/v1/auth/login with testuser/Test1234!",
+          "expected": "200 with JWT token"
+        },
+        {
+          "name": "Verify permissions",
+          "action": "GET /api/v1/auth/permissions with new user token",
+          "expected": "Returns expected role permissions"
+        }
+      ]
+    },
+    {
+      "id": "xplat-entity-browse-all-clients",
+      "name": "Browse Same Entity on All Clients",
+      "category": "functional",
+      "priority": "critical",
+      "platforms": ["api", "web", "androidtv"],
+      "steps": [
+        {
+          "name": "Get entity via API",
+          "action": "GET /api/v1/entities?limit=1",
+          "expected": "Returns at least one entity with id, name, type"
+        },
+        {
+          "name": "View entity on Web",
+          "action": "Navigate to /entity/{id} on web",
+          "expected": "Entity detail page shows same name, type, metadata as API"
+        },
+        {
+          "name": "View entity on Android TV",
+          "action": "Navigate to entity detail on TV app",
+          "expected": "Same entity info displayed, poster image loaded"
+        }
+      ]
+    },
+    {
+      "id": "xplat-search-consistency",
+      "name": "Search Returns Same Results Everywhere",
+      "category": "data-consistency",
+      "priority": "high",
+      "platforms": ["api", "web"],
+      "steps": [
+        {
+          "name": "Search via API",
+          "action": "GET /api/v1/media/search?q=test",
+          "expected": "Returns result set with count"
+        },
+        {
+          "name": "Search same term on Web",
+          "action": "Enter 'test' in web search bar",
+          "expected": "Same number of results as API, same entity names"
+        }
+      ]
+    },
+    {
+      "id": "xplat-password-change-invalidates-sessions",
+      "name": "Password Change Invalidates Other Sessions",
+      "category": "security",
+      "priority": "critical",
+      "platforms": ["api", "web"],
+      "steps": [
+        {
+          "name": "Login on Web and API",
+          "action": "Login on both web browser and via API",
+          "expected": "Both sessions active"
+        },
+        {
+          "name": "Change password on Web",
+          "action": "Change password via web /settings page",
+          "expected": "Password changed, web session refreshed"
+        },
+        {
+          "name": "Verify API session invalidated",
+          "action": "Make authenticated request with old API token",
+          "expected": "401 Unauthorized - old token no longer valid"
+        }
+      ]
+    },
+    {
+      "id": "xplat-storage-root-add-scan-browse",
+      "name": "Full Storage Root Lifecycle Across Platforms",
+      "category": "workflow",
+      "priority": "critical",
+      "platforms": ["api", "web"],
+      "steps": [
+        {
+          "name": "Add storage root via API",
+          "action": "POST /api/v1/storage-roots with local path",
+          "expected": "201 Created with root ID"
+        },
+        {
+          "name": "Scan via API",
+          "action": "POST /api/v1/scans with the new root ID",
+          "expected": "202 Accepted, scan starts"
+        },
+        {
+          "name": "Wait for scan completion",
+          "action": "Poll GET /api/v1/scans/{id} until status=completed",
+          "expected": "Scan completes with files found"
+        },
+        {
+          "name": "Browse entities on Web",
+          "action": "Navigate to /browse on web",
+          "expected": "Newly scanned entities appear in browse view"
+        },
+        {
+          "name": "Verify entity details",
+          "action": "Click on a scanned entity",
+          "expected": "Entity detail page shows metadata, file associations"
+        }
+      ]
+    },
+    {
+      "id": "xplat-concurrent-sessions",
+      "name": "Multiple Concurrent Client Sessions",
+      "category": "concurrency",
+      "priority": "high",
+      "platforms": ["api", "web", "androidtv"],
+      "steps": [
+        {
+          "name": "Login from all platforms",
+          "action": "Login with same user on Web, API, and Android TV simultaneously",
+          "expected": "All three sessions active concurrently"
+        },
+        {
+          "name": "Perform operations",
+          "action": "Add favorite on Web, search on API, browse on TV",
+          "expected": "All operations succeed without conflicts"
+        },
+        {
+          "name": "Verify consistency",
+          "action": "Check favorites list on all three platforms",
+          "expected": "All platforms show the newly added favorite"
+        }
+      ]
+    },
+    {
+      "id": "xplat-admin-lock-user-everywhere",
+      "name": "Admin Locks User Across All Platforms",
+      "category": "security",
+      "priority": "critical",
+      "platforms": ["api", "web"],
+      "steps": [
+        {
+          "name": "Login as test user",
+          "action": "Login as testuser on both web and API",
+          "expected": "Both sessions active"
+        },
+        {
+          "name": "Admin locks user",
+          "action": "Admin locks testuser account via API",
+          "expected": "Lock succeeds"
+        },
+        {
+          "name": "Verify web session blocked",
+          "action": "Testuser tries to access a page on web",
+          "expected": "Redirected to login, session invalidated"
+        },
+        {
+          "name": "Verify API session blocked",
+          "action": "Testuser tries API request with existing token",
+          "expected": "401 or 403 - account locked"
+        }
+      ]
+    },
+    {
+      "id": "xplat-discovery-service",
+      "name": "Service Discovery Across Network",
+      "category": "discovery",
+      "priority": "high",
+      "platforms": ["api", "androidtv"],
+      "steps": [
+        {
+          "name": "Check discovery endpoint",
+          "action": "GET /api/v1/discovery/service-info",
+          "expected": "Returns service name, version, capabilities"
+        },
+        {
+          "name": "Verify TV discovers service",
+          "action": "Open TV app server discovery screen",
+          "expected": "API server appears in discovered services list"
+        }
+      ]
+    },
+    {
+      "id": "xplat-error-format-consistency",
+      "name": "Error Response Format Same on All Endpoints",
+      "category": "data-consistency",
+      "priority": "high",
+      "platforms": ["api"],
+      "steps": [
+        {
+          "name": "Trigger 401 error",
+          "action": "GET /api/v1/media without auth header",
+          "expected": "JSON error with 'error' field, consistent format"
+        },
+        {
+          "name": "Trigger 404 error",
+          "action": "GET /api/v1/entities/999999",
+          "expected": "JSON error with same format structure as 401"
+        },
+        {
+          "name": "Trigger 400 error",
+          "action": "POST /api/v1/auth/login with malformed JSON",
+          "expected": "JSON error with same format structure"
+        },
+        {
+          "name": "Verify no stack traces",
+          "action": "Check all error responses",
+          "expected": "No internal paths, stack traces, or debug info in any error response"
+        }
+      ]
+    },
+    {
+      "id": "xplat-health-check-all",
+      "name": "Health Check from All Angles",
+      "category": "monitoring",
+      "priority": "critical",
+      "platforms": ["api"],
+      "steps": [
+        {
+          "name": "API health",
+          "action": "GET /health",
+          "expected": "200 with status=healthy"
+        },
+        {
+          "name": "Metrics endpoint",
+          "action": "GET /metrics",
+          "expected": "Prometheus metrics including go_goroutines, http_requests_total"
+        },
+        {
+          "name": "Auth status",
+          "action": "GET /api/v1/auth/status",
+          "expected": "200 with auth system status"
+        }
+      ]
+    }
+  ]
+}

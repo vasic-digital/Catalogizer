@@ -538,7 +538,7 @@ func TestAllChallengeConstructors_IDAndMetadata(t *testing.T) {
 			expectedID:   "browsing-api-health",
 			expectedName: "API Health & Auth",
 			category:     "e2e",
-			depCount:     1,
+			depCount:     0,
 		},
 		{
 			name:         "CH-010 API Catalog",
@@ -846,7 +846,7 @@ func TestDependencyChain_BrowsingSequence(t *testing.T) {
 	catalog := NewBrowsingAPICatalogChallenge()
 	webapp := NewBrowsingWebAppChallenge()
 
-	assert.Contains(t, health.Dependencies(), challenge.ID("first-catalog-populate"))
+	assert.Empty(t, health.Dependencies())
 	assert.Contains(t, catalog.Dependencies(), challenge.ID("browsing-api-health"))
 	assert.Contains(t, webapp.Dependencies(), challenge.ID("browsing-api-catalog"))
 }

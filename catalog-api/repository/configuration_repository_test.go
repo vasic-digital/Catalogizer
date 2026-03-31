@@ -191,8 +191,10 @@ func TestConfigurationRepository_WizardProgress(t *testing.T) {
 			WithArgs(999).
 			WillReturnError(sql.ErrNoRows)
 
-		_, err := repo.GetWizardProgress(999)
-		assert.Error(t, err)
+		progress, err := repo.GetWizardProgress(999)
+		assert.NoError(t, err)
+		assert.NotNil(t, progress)
+		assert.Equal(t, 999, progress.UserID)
 		assert.NoError(t, mock.ExpectationsWereMet())
 	})
 }

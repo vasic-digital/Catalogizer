@@ -5,7 +5,7 @@
 #   podman build --network host -f catalog-api/Dockerfile -t catalogizer-api .
 
 # Stage 1: Build (Debian-based for glibc — required by go-fitz/MuPDF)
-FROM docker.io/library/golang:1.24 AS builder
+FROM docker.io/library/golang:1.25 AS builder
 
 # Install build dependencies
 RUN apt-get update && apt-get install -y --no-install-recommends \
@@ -18,16 +18,29 @@ ENV CGO_ENABLED=1
 WORKDIR /build
 
 # Copy submodules (required by go.mod replace directives)
-COPY Challenges/ /build/Challenges/
 COPY Assets/ /build/Assets/
-COPY Containers/ /build/Containers/
-COPY Concurrency/ /build/Concurrency/
-COPY Config/ /build/Config/
-COPY Filesystem/ /build/Filesystem/
 COPY Auth/ /build/Auth/
 COPY Cache/ /build/Cache/
+COPY Challenges/ /build/Challenges/
+COPY Concurrency/ /build/Concurrency/
+COPY Config/ /build/Config/
+COPY Containers/ /build/Containers/
+COPY Database/ /build/Database/
+COPY Discovery/ /build/Discovery/
 COPY Entities/ /build/Entities/
 COPY EventBus/ /build/EventBus/
+COPY Filesystem/ /build/Filesystem/
+COPY Lazy/ /build/Lazy/
+COPY Media/ /build/Media/
+COPY Memory/ /build/Memory/
+COPY Middleware/ /build/Middleware/
+COPY Observability/ /build/Observability/
+COPY RateLimiter/ /build/RateLimiter/
+COPY Recovery/ /build/Recovery/
+COPY Security/ /build/Security/
+COPY Storage/ /build/Storage/
+COPY Streaming/ /build/Streaming/
+COPY Watcher/ /build/Watcher/
 
 # Copy catalog-api source
 COPY catalog-api/go.mod catalog-api/go.sum /build/catalog-api/
@@ -58,8 +71,8 @@ COPY --from=builder /build/catalog-api/migrations /app/migrations
 COPY --from=builder /build/catalog-api/challenges/config /app/challenges/config
 
 # Create a dedicated non-root user
-RUN addgroup --system --gid 1001 appgroup && \
-    adduser --system --uid 1001 --ingroup appgroup --no-create-home appuser
+RUN groupadd --system --gid 1001 appgroup && \
+    useradd --system --uid 1001 --gid appgroup --no-create-home appuser
 
 # Create necessary directories with proper permissions
 RUN mkdir -p /app/data /app/logs /app/temp && \

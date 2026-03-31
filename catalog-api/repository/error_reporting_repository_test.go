@@ -529,9 +529,9 @@ func TestErrorReportingRepository_GetErrorStatistics(t *testing.T) {
 			WillReturnRows(sqlmock.NewRows([]string{"count"}).AddRow(6))
 
 		// Average resolution time
-		mock.ExpectQuery("SELECT AVG").
+		mock.ExpectQuery("SELECT COALESCE").
 			WithArgs(userID).
-			WillReturnRows(sqlmock.NewRows([]string{"avg"}).AddRow(2.5))
+			WillReturnRows(sqlmock.NewRows([]string{"coalesce"}).AddRow(2.5))
 
 		stats, err := repo.GetErrorStatistics(userID)
 		require.NoError(t, err)

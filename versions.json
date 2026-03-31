@@ -4,26 +4,26 @@
     "major": 2,
     "minor": 1,
     "patch": 0,
-    "build_number": 15
+    "build_number": 16
   },
   "components": {
     "catalog-api": {
-      "last_build_number": 13,
-      "last_build_date": "2026-03-30T12:00:00Z",
-      "last_source_hash": "b7337dcf3ab4ed9cf77011cc10b3647a55fd8cbaf985c2bd6aef8ed152d41528",
-      "last_git_commit": "c5a4a4b7"
+      "last_build_number": 16,
+      "last_build_date": "2026-03-31T13:18:13Z",
+      "last_source_hash": "8277d492f4b8527a53f53703114e8422a46d73faa142f43dd1ea565de5a5254d",
+      "last_git_commit": "7333d825"
     },
     "catalog-web": {
-      "last_build_number": 13,
-      "last_build_date": "2026-03-30T12:00:00Z",
-      "last_source_hash": "378e4a0ca1d9a1310d18e24791d11e6cfe6fa3bbf9142e574d5d44fbb09187ff",
-      "last_git_commit": "c5a4a4b7"
+      "last_build_number": 16,
+      "last_build_date": "2026-03-31T13:18:49Z",
+      "last_source_hash": "5d3e80c220ed4bde6c272773e09c2bac96bcd062aa505c7888cfb3019867fd0c",
+      "last_git_commit": "7333d825"
     },
     "catalogizer-api-client": {
-      "last_build_number": 14,
-      "last_build_date": "2026-03-30T10:37:01Z",
+      "last_build_number": 16,
+      "last_build_date": "2026-03-31T13:18:52Z",
       "last_source_hash": "3fdb883c5e93e6e0fd4bfd731657592578007c8fd4a97638c96e6b4714820ff4",
-      "last_git_commit": "f2bbe56a"
+      "last_git_commit": "7333d825"
     },
     "catalogizer-desktop": {
       "last_build_number": 13,
@@ -38,16 +38,16 @@
       "last_git_commit": "c5a4a4b7"
     },
     "catalogizer-android": {
-      "last_build_number": 13,
-      "last_build_date": "2026-03-30T12:00:00Z",
-      "last_source_hash": "9c4e4fedc9434fcc6ff28976b513d1f3e2212572efa37b522f3337d2c4ce5778",
-      "last_git_commit": "c5a4a4b7"
+      "last_build_number": 16,
+      "last_build_date": "2026-03-31T13:21:29Z",
+      "last_source_hash": "08c495a764650003d01c5a6de89be5d528045b4dbeba359879a9504ca09c3383",
+      "last_git_commit": "7333d825"
     },
     "catalogizer-androidtv": {
-      "last_build_number": 14,
-      "last_build_date": "2026-03-30T11:02:52Z",
-      "last_source_hash": "6eae6e41a92383730236edd3b6f1e14c64bf76e15fa6adae08a4ce5355b6579f",
-      "last_git_commit": "f2bbe56a"
+      "last_build_number": 16,
+      "last_build_date": "2026-03-31T13:24:11Z",
+      "last_source_hash": "09f994766ab91fac828af5e2d744fc82bb2f154eaa38af88c6fb091279368abc",
+      "last_git_commit": "7333d825"
     }
   }
 }

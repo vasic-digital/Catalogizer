@@ -336,7 +336,15 @@ func (r *StatsRepository) GetAccessPatterns(ctx context.Context, storageRootName
 			COUNT(CASE WHEN accessed_at IS NULL THEN 1 END) as never_accessed
 		FROM files f`
 
-	args := []interface{}{time.Now().AddDate(0, 0, -days).Unix()}
+	// PostgreSQL TIMESTAMP columns require time.Time values, not Unix epoch integers.
+	// SQLite stores timestamps as integers and compares them numerically.
+	cutoff := time.Now().AddDate(0, 0, -days)
+	var args []interface{}
+	if r.db.Dialect().IsPostgres() {
+		args = []interface{}{cutoff}
+	} else {
+		args = []interface{}{cutoff.Unix()}
+	}
 	whereClause := " WHERE f.is_directory = 0 AND f.deleted = 0"
 
 	if storageRootName != "" {
@@ -370,7 +378,7 @@ func (r *StatsRepository) GetGrowthTrends(ctx context.Context, storageRootName s
 	// In a real scenario, you'd need historical data tracking
 	monthExpr := "COALESCE(strftime('%Y-%m', datetime(created_at, 'unixepoch')), 'unknown')"
 	if r.db.Dialect().IsPostgres() {
-		monthExpr = "COALESCE(to_char(to_timestamp(EXTRACT(EPOCH FROM created_at)::BIGINT), 'YYYY-MM'), 'unknown')"
+		monthExpr = "COALESCE(to_char(created_at, 'YYYY-MM'), 'unknown')"
 	}
 
 	baseQuery := fmt.Sprintf(`
@@ -380,11 +388,24 @@ func (r *StatsRepository) GetGrowthTrends(ctx context.Context, storageRootName s
 			COALESCE(SUM(size), 0) as size_added
 		FROM files f`, monthExpr)
 
-	args := []interface{}{}
-	whereClause := " WHERE f.is_directory = 0 AND f.deleted = 0 AND created_at IS NOT NULL AND created_at > 0 AND created_at > ?"
+	// PostgreSQL TIMESTAMP columns require time.Time values, not Unix epoch integers.
+	// SQLite stores timestamps as integers and compares them numerically.
+	cutoff := time.Now().AddDate(0, -months, 0)
+	var cutoffArg interface{}
+	if r.db.Dialect().IsPostgres() {
+		cutoffArg = cutoff
+	} else {
+		cutoffArg = cutoff.Unix()
+	}
 
-	monthsAgo := time.Now().AddDate(0, -months, 0).Unix()
-	args = append(args, monthsAgo)
+	args := []interface{}{}
+	createdAtPositive := "created_at > 0"
+	if r.db.Dialect().IsPostgres() {
+		createdAtPositive = "created_at > '1970-01-01'"
+	}
+	whereClause := fmt.Sprintf(" WHERE f.is_directory = 0 AND f.deleted = 0 AND created_at IS NOT NULL AND %s AND created_at > ?", createdAtPositive)
+
+	args = append(args, cutoffArg)
 
 	if storageRootName != "" {
 		whereClause += " AND f.storage_root_id = (SELECT id FROM storage_roots WHERE name = ?)"

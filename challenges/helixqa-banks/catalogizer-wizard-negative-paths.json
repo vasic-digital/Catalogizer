@@ -1,0 +1,289 @@
+{
+  "challenges": [
+    {
+      "id": "neg-wizard-back-data-loss",
+      "name": "Back Button Preserves Data",
+      "category": "validation",
+      "priority": "critical",
+      "platforms": ["desktop"],
+      "steps": [
+        {
+          "name": "Fill SMB config",
+          "action": "Enter host=192.168.0.100, share=media, user=admin in SMB config step",
+          "expected": "Fields populated"
+        },
+        {
+          "name": "Go back then forward",
+          "action": "Click Back, then click Next to return to SMB config",
+          "expected": "All previously entered values are preserved"
+        }
+      ]
+    },
+    {
+      "id": "neg-wizard-invalid-smb-host",
+      "name": "SMB Invalid Host Address",
+      "category": "validation",
+      "priority": "high",
+      "platforms": ["desktop"],
+      "steps": [
+        {
+          "name": "Enter invalid host",
+          "action": "Enter host='<script>alert(1)</script>' in SMB config",
+          "expected": "Validation error shown, input sanitized, no XSS"
+        }
+      ]
+    },
+    {
+      "id": "neg-wizard-smb-test-timeout",
+      "name": "SMB Connection Test Timeout",
+      "category": "resilience",
+      "priority": "high",
+      "platforms": ["desktop"],
+      "steps": [
+        {
+          "name": "Test unreachable host",
+          "action": "Enter host=192.168.99.99 and click Test Connection",
+          "expected": "Connection attempt times out within 10s, error message shown, not frozen"
+        }
+      ]
+    },
+    {
+      "id": "neg-wizard-ftp-wrong-port",
+      "name": "FTP Wrong Port Number",
+      "category": "validation",
+      "priority": "medium",
+      "platforms": ["desktop"],
+      "steps": [
+        {
+          "name": "Enter invalid port",
+          "action": "Set FTP port to 99999",
+          "expected": "Validation error: port must be 1-65535"
+        }
+      ]
+    },
+    {
+      "id": "neg-wizard-webdav-malformed-url",
+      "name": "WebDAV Malformed URL",
+      "category": "validation",
+      "priority": "high",
+      "platforms": ["desktop"],
+      "steps": [
+        {
+          "name": "Enter malformed URL",
+          "action": "Enter WebDAV URL as 'htp://not valid url'",
+          "expected": "Validation error about malformed URL format"
+        }
+      ]
+    },
+    {
+      "id": "neg-wizard-local-nonexistent-path",
+      "name": "Local Path Does Not Exist",
+      "category": "validation",
+      "priority": "high",
+      "platforms": ["desktop"],
+      "steps": [
+        {
+          "name": "Enter nonexistent path",
+          "action": "Enter /this/path/does/not/exist as local storage path",
+          "expected": "Validation error: path does not exist or is not accessible"
+        }
+      ]
+    },
+    {
+      "id": "neg-wizard-local-path-traversal",
+      "name": "Local Path Traversal Attack",
+      "category": "security",
+      "priority": "critical",
+      "platforms": ["desktop"],
+      "steps": [
+        {
+          "name": "Enter traversal path",
+          "action": "Enter '../../../etc/passwd' as local storage path",
+          "expected": "Path traversal detected and blocked, security error shown"
+        }
+      ]
+    },
+    {
+      "id": "neg-wizard-network-scan-no-devices",
+      "name": "Network Scan Finds No Devices",
+      "category": "functional",
+      "priority": "medium",
+      "platforms": ["desktop"],
+      "steps": [
+        {
+          "name": "Scan empty network",
+          "action": "Start network scan on isolated network with no SMB/NFS devices",
+          "expected": "Scan completes, shows 'No devices found' message, option to retry or enter manually"
+        }
+      ]
+    },
+    {
+      "id": "neg-wizard-config-save-permission-denied",
+      "name": "Config Save Permission Denied",
+      "category": "resilience",
+      "priority": "medium",
+      "platforms": ["desktop"],
+      "steps": [
+        {
+          "name": "Save to read-only location",
+          "action": "Attempt to save configuration to read-only directory",
+          "expected": "Error message about permissions, suggestion to choose different location"
+        }
+      ]
+    },
+    {
+      "id": "neg-wizard-config-load-corrupt",
+      "name": "Load Corrupted Config File",
+      "category": "resilience",
+      "priority": "high",
+      "platforms": ["desktop"],
+      "steps": [
+        {
+          "name": "Load corrupt config",
+          "action": "Load a config file containing invalid JSON",
+          "expected": "Error message about corrupted file, wizard remains functional, no crash"
+        }
+      ]
+    },
+    {
+      "id": "neg-wizard-rapid-step-navigation",
+      "name": "Rapid Step Navigation",
+      "category": "performance",
+      "priority": "medium",
+      "platforms": ["desktop"],
+      "steps": [
+        {
+          "name": "Click Next rapidly",
+          "action": "Click Next button 20 times in rapid succession",
+          "expected": "Steps advance correctly, no double-processing, final step reached cleanly"
+        }
+      ]
+    },
+    {
+      "id": "neg-wizard-cancel-during-scan",
+      "name": "Cancel During Network Scan",
+      "category": "lifecycle",
+      "priority": "high",
+      "platforms": ["desktop"],
+      "steps": [
+        {
+          "name": "Start and cancel scan",
+          "action": "Start network scan, then immediately click Cancel",
+          "expected": "Scan stops, resources released, wizard returns to previous state"
+        }
+      ]
+    },
+    {
+      "id": "neg-wizard-smb-special-chars-password",
+      "name": "SMB Password with Special Characters",
+      "category": "validation",
+      "priority": "high",
+      "platforms": ["desktop"],
+      "steps": [
+        {
+          "name": "Enter special password",
+          "action": "Enter password 'p@$$w0rd!#%&*()' in SMB config",
+          "expected": "Password accepted and used correctly in connection test"
+        }
+      ]
+    },
+    {
+      "id": "neg-wizard-nfs-root-export",
+      "name": "NFS Root Export Path",
+      "category": "security",
+      "priority": "critical",
+      "platforms": ["desktop"],
+      "steps": [
+        {
+          "name": "Enter root export",
+          "action": "Enter '/' as NFS export path",
+          "expected": "Warning about mounting root filesystem, requires explicit confirmation"
+        }
+      ]
+    },
+    {
+      "id": "neg-wizard-multi-protocol-conflict",
+      "name": "Multiple Protocols Same Share",
+      "category": "validation",
+      "priority": "medium",
+      "platforms": ["desktop"],
+      "steps": [
+        {
+          "name": "Configure duplicate storage",
+          "action": "Add SMB share pointing to same path already configured via NFS",
+          "expected": "Warning about duplicate storage path detected"
+        }
+      ]
+    },
+    {
+      "id": "neg-wizard-complete-without-test",
+      "name": "Complete Without Testing Connection",
+      "category": "validation",
+      "priority": "medium",
+      "platforms": ["desktop"],
+      "steps": [
+        {
+          "name": "Skip connection test",
+          "action": "Fill all fields but skip Test Connection step and click Complete",
+          "expected": "Warning that connection was not tested, option to proceed anyway or test first"
+        }
+      ]
+    },
+    {
+      "id": "neg-wizard-very-long-share-name",
+      "name": "Extremely Long Share Name",
+      "category": "validation",
+      "priority": "low",
+      "platforms": ["desktop"],
+      "steps": [
+        {
+          "name": "Enter very long share",
+          "action": "Enter 500-character string as SMB share name",
+          "expected": "Input truncated or validation error, no buffer overflow or crash"
+        }
+      ]
+    },
+    {
+      "id": "neg-wizard-unicode-hostname",
+      "name": "Unicode Characters in Hostname",
+      "category": "validation",
+      "priority": "medium",
+      "platforms": ["desktop"],
+      "steps": [
+        {
+          "name": "Enter unicode hostname",
+          "action": "Enter hostname with Chinese/Arabic characters",
+          "expected": "Validation error about invalid hostname characters, helpful message shown"
+        }
+      ]
+    },
+    {
+      "id": "neg-wizard-offline-during-test",
+      "name": "Network Drops During Connection Test",
+      "category": "resilience",
+      "priority": "high",
+      "platforms": ["desktop"],
+      "steps": [
+        {
+          "name": "Lose network during test",
+          "action": "Start connection test, then disconnect network mid-test",
+          "expected": "Test fails with timeout/network error, wizard remains usable, retry available"
+        }
+      ]
+    },
+    {
+      "id": "neg-wizard-progress-persist-crash",
+      "name": "Progress Survives App Crash",
+      "category": "resilience",
+      "priority": "medium",
+      "platforms": ["desktop"],
+      "steps": [
+        {
+          "name": "Crash mid-wizard",
+          "action": "Force kill app while on step 4 of wizard",
+          "expected": "On relaunch, wizard offers to resume from last saved step or start over"
+        }
+      ]
+    }
+  ]
+}
