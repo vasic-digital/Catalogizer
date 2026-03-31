@@ -123,6 +123,9 @@ func (h *MediaBrowseHandler) GetMediaStats(c *gin.Context) {
 				byType[ft] = cnt
 			}
 		}
+		if rowsErr := rows.Err(); rowsErr != nil {
+			c.Error(rowsErr)
+		}
 	}
 
 	// Count files added in the last 7 days as recent_additions.
@@ -133,10 +136,33 @@ func (h *MediaBrowseHandler) GetMediaStats(c *gin.Context) {
 		sevenDaysAgo,
 	).Scan(&recentAdditions)
 
+	// Build by_quality breakdown by file extension (proxy for quality/format).
+	byQuality := map[string]int{}
+	qualityRows, qualityErr := h.db.QueryContext(ctx,
+		`SELECT COALESCE(LOWER(extension), 'unknown') AS ext, COUNT(*) AS cnt
+		 FROM files
+		 WHERE is_directory = 0 AND deleted = 0 AND extension IS NOT NULL AND extension != ''
+		 GROUP BY ext
+		 ORDER BY cnt DESC
+		 LIMIT 20`)
+	if qualityErr == nil {
+		defer qualityRows.Close()
+		for qualityRows.Next() {
+			var ext string
+			var cnt int
+			if scanErr := qualityRows.Scan(&ext, &cnt); scanErr == nil {
+				byQuality[ext] = cnt
+			}
+		}
+		if rowsErr := qualityRows.Err(); rowsErr != nil {
+			c.Error(rowsErr)
+		}
+	}
+
 	c.JSON(http.StatusOK, gin.H{
 		"total_items":      overallStats.TotalFiles,
 		"by_type":          byType,
-		"by_quality":       map[string]int{},
+		"by_quality":       byQuality,
 		"total_size":       overallStats.TotalSize,
 		"recent_additions": recentAdditions,
 	})

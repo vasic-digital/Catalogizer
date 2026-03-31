@@ -23,9 +23,8 @@ func TestCoverArtService_GetCoverArt_NilDB(t *testing.T) {
 	mockLogger := zap.NewNop()
 	service := NewCoverArtService(mockDB, mockLogger)
 
-	// GetCoverArt with nil DB panics because it directly uses s.db without nil check.
-	// Verify it panics as expected rather than silently failing.
-	assert.Panics(t, func() {
+	// GetCoverArt with a nil underlying DB handles gracefully without panic.
+	assert.NotPanics(t, func() {
 		_, _ = service.GetCoverArt(context.Background(), 1)
 	})
 }

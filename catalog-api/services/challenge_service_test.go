@@ -204,6 +204,34 @@ func TestChallengeService_GetResults(t *testing.T) {
 	assert.Equal(t, challenge.ID("res_1"), results[0].ChallengeID)
 }
 
+func TestChallengeService_RunByCategory(t *testing.T) {
+	svc := NewChallengeService(t.TempDir())
+
+	svc.Register(newTestChallenge("cat_a1", "A One", "api", false))
+	svc.Register(newTestChallenge("cat_a2", "A Two", "api", true))
+	svc.Register(newTestChallenge("cat_b1", "B One", "web", false))
+
+	t.Run("existing category", func(t *testing.T) {
+		results, err := svc.RunByCategory(context.Background(), "api")
+		require.NoError(t, err)
+		assert.Len(t, results, 2)
+	})
+
+	t.Run("empty category returns error", func(t *testing.T) {
+		results, err := svc.RunByCategory(context.Background(), "nonexistent")
+		assert.Error(t, err)
+		assert.Contains(t, err.Error(), "no challenges found")
+		assert.Nil(t, results)
+	})
+
+	t.Run("single challenge category", func(t *testing.T) {
+		results, err := svc.RunByCategory(context.Background(), "web")
+		require.NoError(t, err)
+		assert.Len(t, results, 1)
+		assert.Equal(t, challenge.StatusPassed, results[0].Status)
+	})
+}
+
 func TestChallengeService_DuplicateRegister(t *testing.T) {
 	svc := NewChallengeService(t.TempDir())
 

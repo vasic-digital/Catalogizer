@@ -94,7 +94,6 @@ func (c *AuthTokenRefreshChallenge) Execute(
 			}
 			if t, ok := resp["refresh_token"].(string); ok {
 				refreshToken = t
-				fmt.Printf("DEBUG: refresh token length %d\n", len(refreshToken))
 			}
 		}
 	}
@@ -147,7 +146,6 @@ func (c *AuthTokenRefreshChallenge) Execute(
 
 	// 3. POST /auth/refresh — expect new session_token
 	refreshPayload := fmt.Sprintf(`{"refresh_token": "%s"}`, refreshToken)
-	fmt.Printf("DEBUG: refresh payload length %d\n", len(refreshPayload))
 	refreshCode, refreshBytes, refreshErr := client.PostJSON(
 		ctx, "/api/v1/auth/refresh", refreshPayload,
 	)

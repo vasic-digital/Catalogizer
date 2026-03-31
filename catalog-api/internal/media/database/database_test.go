@@ -698,6 +698,15 @@ func TestChangePassword_ExecFails(t *testing.T) {
 // Backup
 // ---------------------------------------------------------------------------
 
+func TestBackup_RejectsPathWithSingleQuote(t *testing.T) {
+	mdb, _ := newTestMediaDatabase(t)
+	defer mdb.db.Close()
+
+	err := mdb.Backup("/tmp/it's-a-trap.db")
+	assert.Error(t, err)
+	assert.Contains(t, err.Error(), "invalid character")
+}
+
 func TestBackup_AttachFails(t *testing.T) {
 	mdb, mock := newTestMediaDatabase(t)
 	defer mdb.db.Close()

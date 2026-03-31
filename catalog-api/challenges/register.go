@@ -229,6 +229,15 @@ func RegisterAll(svc *services.ChallengeService) error {
 	// Multiplatform challenges (CH-221 to CH-250)
 	RegisterMultiplatformChallenges(svc)
 
+	// v2.1.0 expansion challenges (CH-251 to CH-401)
+	RegisterConcurrencyHardeningChallenges(svc) // CH-251 to CH-255
+	RegisterSecurityScanChallenges(svc)         // CH-256 to CH-260
+	RegisterCoverageGateChallenges(svc)         // CH-261 to CH-270
+	RegisterSubmoduleCoverageChallenges(svc)    // CH-271 to CH-278
+	RegisterPlatformCoverageChallenges(svc)     // CH-279 to CH-283
+	RegisterStressPerformanceChallenges(svc)    // CH-284 to CH-291
+	RegisterDocumentationChallenges(svc)        // CH-352 to CH-364
+
 	return nil
 }
 

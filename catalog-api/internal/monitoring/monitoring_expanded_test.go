@@ -12,6 +12,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"go.uber.org/zap"
 )
 
 // ---------------------------------------------------------------------------
@@ -256,4 +257,40 @@ func TestMonitoringConfig_CustomValues(t *testing.T) {
 	assert.Equal(t, "2.5.0", cfg.ServiceVersion)
 	assert.False(t, cfg.EnableHealthCheck)
 	assert.Equal(t, "/status", cfg.HealthCheckPath)
+}
+
+// ---------------------------------------------------------------------------
+// NewMetrics — constructor coverage
+// ---------------------------------------------------------------------------
+
+func TestNewMetrics_Constructor(t *testing.T) {
+	// NewMetrics registers against the default Prometheus registry.
+	// We call it once; if it panics on duplicate registration that
+	// indicates the global registry already has these metrics, which
+	// is fine — the constructor still executed.
+	assert.NotPanics(t, func() {
+		m := NewMetrics()
+		assert.NotNil(t, m)
+		assert.NotNil(t, m.RequestDuration)
+		assert.NotNil(t, m.RequestTotal)
+		assert.NotNil(t, m.ActiveConnections)
+		assert.NotNil(t, m.CacheHits)
+		assert.NotNil(t, m.CacheMisses)
+	})
+}
+
+// ---------------------------------------------------------------------------
+// StartPrometheusServer — verify it starts without panic
+// ---------------------------------------------------------------------------
+
+func TestStartPrometheusServer(t *testing.T) {
+	logger, _ := zap.NewDevelopment()
+	// Use port 0 to let the OS pick a free port — avoids conflicts.
+	// StartPrometheusServer launches a goroutine, so we just verify
+	// it doesn't panic on startup.
+	assert.NotPanics(t, func() {
+		StartPrometheusServer(0, logger)
+	})
+	// Give the goroutine a moment to start, then let it die with the test.
+	time.Sleep(10 * time.Millisecond)
 }

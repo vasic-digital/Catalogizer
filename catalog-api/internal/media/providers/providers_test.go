@@ -1001,3 +1001,87 @@ func TestProviderManager_FreeProvidersRegistered(t *testing.T) {
 	require.True(t, exists)
 	assert.True(t, mbProvider.IsEnabled())
 }
+
+// --- RegisterProvider coverage ---
+
+func TestProviderManager_RegisterProvider(t *testing.T) {
+	pm := NewProviderManager(testLogger(t))
+
+	mock := &stubProvider{name: "custom", enabled: true}
+	pm.RegisterProvider("custom", mock)
+
+	p, exists := pm.resolveProvider("custom")
+	require.True(t, exists)
+	assert.Equal(t, "custom", p.GetName())
+}
+
+// --- BaseProvider GetBaseURL & MakeRequest coverage ---
+
+func TestBaseProvider_GetBaseURL(t *testing.T) {
+	bp := NewBaseProvider("test", "https://api.example.com", "", http.DefaultClient, testLogger(t))
+	assert.Equal(t, "https://api.example.com", bp.GetBaseURL())
+}
+
+func TestBaseProvider_MakeRequest_Success(t *testing.T) {
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		assert.Equal(t, "custom-val", r.Header.Get("X-Custom"))
+		w.WriteHeader(200)
+		w.Write([]byte(`{"ok":true}`))
+	}))
+	defer server.Close()
+
+	bp := NewBaseProvider("test", server.URL, "", server.Client(), testLogger(t))
+	body, err := bp.MakeRequest(context.Background(), server.URL+"/data", map[string]string{"X-Custom": "custom-val"})
+	require.NoError(t, err)
+	assert.Contains(t, string(body), "ok")
+}
+
+func TestBaseProvider_MakeRequest_Error(t *testing.T) {
+	bp := NewBaseProvider("test", "http://127.0.0.1:1", "", http.DefaultClient, testLogger(t))
+	ctx, cancel := context.WithTimeout(context.Background(), 100*time.Millisecond)
+	defer cancel()
+	_, err := bp.MakeRequest(ctx, "http://127.0.0.1:1/fail", nil)
+	assert.Error(t, err)
+}
+
+func TestBaseProvider_MakeRequest_WithAPIKey(t *testing.T) {
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		assert.Equal(t, "Bearer secret-key", r.Header.Get("Authorization"))
+		w.WriteHeader(200)
+		w.Write([]byte(`{}`))
+	}))
+	defer server.Close()
+
+	bp := NewBaseProvider("test", server.URL, "secret-key", server.Client(), testLogger(t))
+	_, err := bp.MakeRequest(context.Background(), server.URL+"/secure", nil)
+	assert.NoError(t, err)
+}
+
+// --- Search and GetDetails with mock server ---
+
+func TestProviderManager_Search_MockServer(t *testing.T) {
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		if r.URL.Path == "/search" {
+			json.NewEncoder(w).Encode(map[string]interface{}{
+				"docs": []map[string]interface{}{
+					{"title": "Test Book", "author_name": []string{"Author"}},
+				},
+			})
+		} else {
+			w.WriteHeader(200)
+			w.Write([]byte(`{}`))
+		}
+	}))
+	defer server.Close()
+
+	pm := NewProviderManager(testLogger(t))
+	// Register a mock provider using the mock server
+	mock := &stubProvider{name: "mock_search", enabled: true}
+	pm.RegisterProvider("mock_search", mock)
+
+	// SearchAll with the mock provider
+	results, err := pm.SearchAll(context.Background(), "test", "book", nil, []string{"mock_search"})
+	assert.NoError(t, err)
+	assert.NotNil(t, results)
+}

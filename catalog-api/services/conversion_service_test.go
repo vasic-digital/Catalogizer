@@ -1036,6 +1036,51 @@ func TestConversionService_NotifyUser(t *testing.T) {
 	})
 }
 
+func TestConversionService_ConvertPDFToImage_InvalidPath(t *testing.T) {
+	service := NewConversionService(nil, nil, nil)
+	job := &models.ConversionJob{
+		SourcePath: "/nonexistent/file.pdf",
+		TargetPath: "/tmp/output.png",
+	}
+	err := service.convertPDFToImage(job, "png")
+	assert.Error(t, err)
+	assert.Contains(t, err.Error(), "failed to open PDF")
+}
+
+func TestConversionService_ConvertPDFToText_InvalidPath(t *testing.T) {
+	service := NewConversionService(nil, nil, nil)
+	job := &models.ConversionJob{
+		SourcePath: "/nonexistent/file.pdf",
+		TargetPath: "/tmp/output.txt",
+	}
+	err := service.convertPDFToText(job)
+	assert.Error(t, err)
+	assert.Contains(t, err.Error(), "failed to open PDF")
+}
+
+func TestConversionService_ConvertPDFWithImageMagick_InvalidPath(t *testing.T) {
+	service := NewConversionService(nil, nil, nil)
+	job := &models.ConversionJob{
+		SourcePath: "/nonexistent/file.pdf",
+		TargetPath: "/tmp/output.bmp",
+	}
+	err := service.convertPDFWithImageMagick(job, "bmp")
+	// Either error (no ImageMagick) or exec error — both are non-nil
+	assert.Error(t, err)
+}
+
+func TestConversionService_ConvertPDFToImage_WithSettings(t *testing.T) {
+	service := NewConversionService(nil, nil, nil)
+	settings := `{"page": 0, "dpi": 300}`
+	job := &models.ConversionJob{
+		SourcePath: "/nonexistent/file.pdf",
+		TargetPath: "/tmp/output.png",
+		Settings:   &settings,
+	}
+	err := service.convertPDFToImage(job, "png")
+	assert.Error(t, err) // file doesn't exist, but settings parsing path is covered
+}
+
 func ptr(s string) *string {
 	return &s
 }
