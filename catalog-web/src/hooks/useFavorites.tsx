@@ -3,6 +3,13 @@ import { favoritesApi } from '@/lib/favoritesApi'
 import type { Favorite, FavoriteToggleRequest } from '@/types/favorites'
 import toast from 'react-hot-toast'
 
+/**
+ * useFavorites manages favorite media items with list fetching, stats,
+ * and an optimistic toggle mutation.
+ *
+ * @param params - Optional pagination, filtering, and sorting parameters
+ * @returns Favorites list, stats, toggle action, and loading/error states
+ */
 export const useFavorites = (params?: {
   limit?: number
   offset?: number
@@ -136,7 +143,12 @@ export const useFavorites = (params?: {
   }
 }
 
-// Hook for checking single item favorite status
+/**
+ * useFavoriteStatus checks whether a single media item is favorited.
+ *
+ * @param mediaId - The ID of the media item to check
+ * @returns React Query result with the favorite status
+ */
 export const useFavoriteStatus = (mediaId: number) => {
   return useQuery({
     queryKey: ['favorite-status', mediaId],

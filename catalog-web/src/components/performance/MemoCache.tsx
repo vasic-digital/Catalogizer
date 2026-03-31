@@ -208,14 +208,12 @@ export const usePagination = <T,>(
 export const useIntersectionObserver = (_options?: IntersectionObserverInit) => {
   const [entries] = useState<IntersectionObserverEntry[]>([]);
   
-  const observe = useCallback((element: Element) => {
-    // Mock implementation for tests
-    console.debug('Observing element:', element);
+  const observe = useCallback((_element: Element) => {
+    // Placeholder — real IntersectionObserver wired in PerformanceOptimizer
   }, []);
 
-  const unobserve = useCallback((element: Element) => {
-    // Mock implementation for tests
-    console.debug('Unobserving element:', element);
+  const unobserve = useCallback((_element: Element) => {
+    // Placeholder — real IntersectionObserver wired in PerformanceOptimizer
   }, []);
 
   return { entries, observe, unobserve };

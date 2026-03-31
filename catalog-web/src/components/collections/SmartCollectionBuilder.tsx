@@ -67,6 +67,10 @@ const TEMPLATE_ICONS = {
   Play: Play,
 };
 
+/**
+ * SmartCollectionBuilder provides a rule-based editor for creating smart
+ * collections with field/operator/value criteria and preset templates.
+ */
 export const SmartCollectionBuilder: React.FC<SmartCollectionBuilderProps> = ({
   initialName = '',
   initialDescription = '',
@@ -313,16 +317,16 @@ export const SmartCollectionBuilder: React.FC<SmartCollectionBuilderProps> = ({
                 />
               ) : fieldOptions.length > 0 ? (
                 <Select
-                  value={Array.isArray(rule.value) ? rule.value[0] : rule.value}
-                  onChange={(value) => updateRule(rule.id, { 
-                    value: rule.operator === 'is_any' || rule.operator === 'is_not_any' ? [value] : value 
+                  value={Array.isArray(rule.value) ? rule.value[0] : String(rule.value ?? '')}
+                  onChange={(value) => updateRule(rule.id, {
+                    value: rule.operator === 'is_any' || rule.operator === 'is_not_any' ? [value] : value
                   })}
                   options={fieldOptions}
                   className="w-full"
                 />
               ) : (
                 <Input
-                  value={rule.value || ''}
+                  value={String(rule.value ?? '')}
                   onChange={(e: React.ChangeEvent<HTMLInputElement>) => updateRule(rule.id, { value: e.target.value })}
                   placeholder="Enter value"
                   type={fieldType === 'number' ? 'number' : fieldType === 'date' ? 'date' : 'text'}

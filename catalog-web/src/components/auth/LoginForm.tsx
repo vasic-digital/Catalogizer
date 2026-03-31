@@ -7,6 +7,9 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { User, Lock, Eye, EyeOff } from 'lucide-react'
 import { motion } from 'framer-motion'
 
+/**
+ * LoginForm renders the user authentication form with username and password fields.
+ */
 export const LoginForm: React.FC = () => {
   const [username, setUsername] = useState('')
   const [password, setPassword] = useState('')

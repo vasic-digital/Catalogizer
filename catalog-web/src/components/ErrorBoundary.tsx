@@ -13,6 +13,10 @@ interface ErrorBoundaryState {
   error: Error | null
 }
 
+/**
+ * ErrorBoundary catches unhandled rendering errors in its child tree and
+ * displays a fallback UI instead of crashing the entire application.
+ */
 export class ErrorBoundary extends React.Component<ErrorBoundaryProps, ErrorBoundaryState> {
   constructor(props: ErrorBoundaryProps) {
     super(props)

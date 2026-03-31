@@ -27,6 +27,10 @@ interface MediaPlayerProps {
   onNavigate?: (entityId: number) => void
 }
 
+/**
+ * MediaPlayer renders an HTML5 video/audio player with transport controls,
+ * volume, subtitles, fullscreen, and sibling navigation support.
+ */
 export const MediaPlayer: React.FC<MediaPlayerProps> = ({
   media,
   entity,

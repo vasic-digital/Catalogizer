@@ -148,4 +148,97 @@ describe('AIDashboard Page', () => {
 
     expect(screen.getByText('AI-Powered Suggestions')).toBeInTheDocument()
   })
+
+  // --- Additional branch coverage tests ---
+
+  it('navigates to search from quick action button', async () => {
+    const user = userEvent.setup()
+    render(<AIDashboard />)
+
+    await user.click(screen.getByText('AI Search'))
+
+    expect(screen.getByText('Natural Language Search')).toBeInTheDocument()
+  })
+
+  it('navigates to analytics from quick action button', async () => {
+    const user = userEvent.setup()
+    render(<AIDashboard />)
+
+    await user.click(screen.getByText('View Analytics'))
+
+    expect(screen.getByText('AI Analytics')).toBeInTheDocument()
+  })
+
+  it('navigates to automation from quick action button', async () => {
+    const user = userEvent.setup()
+    render(<AIDashboard />)
+
+    await user.click(screen.getByText('Manage Rules'))
+
+    expect(screen.getByText('AI Automation')).toBeInTheDocument()
+  })
+
+  it('switches between all tabs without errors', async () => {
+    const user = userEvent.setup()
+    render(<AIDashboard />)
+
+    // Visit each tab
+    await user.click(screen.getByText('AI Suggestions'))
+    expect(screen.getByTestId('ai-suggestions')).toBeInTheDocument()
+
+    await user.click(screen.getByText('Natural Search'))
+    expect(screen.getByTestId('ai-search')).toBeInTheDocument()
+
+    await user.click(screen.getByText('Analytics'))
+    expect(screen.getByTestId('ai-behavior')).toBeInTheDocument()
+
+    await user.click(screen.getByText('Metadata'))
+    expect(screen.getByTestId('ai-metadata')).toBeInTheDocument()
+
+    await user.click(screen.getByText('Automation'))
+    expect(screen.getByTestId('ai-automation')).toBeInTheDocument()
+
+    // Return to Overview
+    await user.click(screen.getByText('Overview'))
+    expect(screen.getByText('Processed Items')).toBeInTheDocument()
+  })
+
+  it('displays all metric cards in overview', () => {
+    render(<AIDashboard />)
+    expect(screen.getByText('Processed Items')).toBeInTheDocument()
+    expect(screen.getByText('AI Accuracy')).toBeInTheDocument()
+    expect(screen.getByText('Time Saved')).toBeInTheDocument()
+  })
+
+  it('renders suggestions tab with suggestion component', async () => {
+    const user = userEvent.setup()
+    render(<AIDashboard />)
+
+    await user.click(screen.getByText('AI Suggestions'))
+    expect(screen.getByTestId('ai-suggestions')).toBeInTheDocument()
+  })
+
+  it('renders analytics tab with predictions', async () => {
+    const user = userEvent.setup()
+    render(<AIDashboard />)
+
+    await user.click(screen.getByText('Analytics'))
+    expect(screen.getByTestId('ai-predictions')).toBeInTheDocument()
+  })
+
+  it('renders analytics tab with organization component', async () => {
+    const user = userEvent.setup()
+    render(<AIDashboard />)
+
+    await user.click(screen.getByText('Analytics'))
+    expect(screen.getByTestId('ai-organization')).toBeInTheDocument()
+  })
+
+  it('renders metadata tab with quality analyzer', async () => {
+    const user = userEvent.setup()
+    render(<AIDashboard />)
+
+    await user.click(screen.getByText('Metadata'))
+    expect(screen.getByTestId('ai-quality')).toBeInTheDocument()
+  })
 })

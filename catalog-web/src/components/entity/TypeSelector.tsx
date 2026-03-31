@@ -31,6 +31,10 @@ export const TYPE_COLORS: Record<string, string> = {
   comic: 'from-pink-500 to-pink-700',
 }
 
+/**
+ * TypeSelectorGrid renders a grid of media type cards that the user can
+ * click to filter the entity browser by type.
+ */
 export function TypeSelectorGrid({
   types,
   onSelect,

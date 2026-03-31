@@ -34,8 +34,7 @@ export interface CollectionRule {
   id: string;
   field: string;
   operator: string;
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  value: any;
+  value: string | number | boolean | string[] | null;
   condition?: 'AND' | 'OR';
   nested_rules?: CollectionRule[];
   field_type: 'text' | 'number' | 'date' | 'boolean' | 'select' | 'multiselect';

@@ -76,6 +76,10 @@ const renderStars = (rating?: number) => {
   )
 }
 
+/**
+ * CollectionPreview displays a modal with the items inside a smart collection,
+ * including playback, preview, and file size details.
+ */
 export const CollectionPreview: React.FC<CollectionPreviewProps> = ({
   collection,
   isLoading = false,

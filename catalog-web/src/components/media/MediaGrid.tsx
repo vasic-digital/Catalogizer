@@ -27,6 +27,10 @@ const LoadingSkeleton: React.FC = () => (
   </div>
 )
 
+/**
+ * MediaGrid renders a responsive grid or list of MediaCard components
+ * with loading skeletons and empty-state handling.
+ */
 export const MediaGrid: React.FC<MediaGridProps> = ({
   media,
   loading = false,

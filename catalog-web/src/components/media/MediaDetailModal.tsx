@@ -13,6 +13,10 @@ interface MediaDetailModalProps {
   onPlay?: (media: MediaItem) => void
 }
 
+/**
+ * MediaDetailModal displays a full-screen dialog with detailed information
+ * about a media item including poster, metadata, and playback/download actions.
+ */
 export const MediaDetailModal: React.FC<MediaDetailModalProps> = ({
   media,
   isOpen,

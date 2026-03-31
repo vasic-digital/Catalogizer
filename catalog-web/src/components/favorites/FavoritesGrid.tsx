@@ -28,6 +28,10 @@ interface FavoritesGridProps {
   onSelectChange?: (selectedItems: MediaItem[]) => void
 }
 
+/**
+ * FavoritesGrid displays the user's favorited media items in a filterable,
+ * sortable grid with search and view mode toggling.
+ */
 export const FavoritesGrid: React.FC<FavoritesGridProps> = ({
   className,
   showFilters = true,

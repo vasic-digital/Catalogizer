@@ -9,6 +9,10 @@ import { cn } from '@/lib/utils'
 import { TYPE_ICONS } from './TypeSelector'
 import type { MediaEntityDetail, MediaEntity, EntityFile } from '@/types/media'
 
+/**
+ * EntityHero renders the hero section for an entity detail page with title,
+ * metadata badges, description, and favorite/refresh actions.
+ */
 export function EntityHero({
   entity,
   files,
@@ -141,6 +145,10 @@ export function EntityHero({
   )
 }
 
+/**
+ * ChildrenList displays child entities (seasons, episodes, albums, songs)
+ * in a navigable list within an entity hierarchy.
+ */
 export function ChildrenList({
   items,
   mediaType,
@@ -193,6 +201,10 @@ export function ChildrenList({
   )
 }
 
+/**
+ * FilesList renders a table of files associated with a media entity,
+ * showing path, size, and format details.
+ */
 export function FilesList({ files }: { files: EntityFile[] }) {
   if (files.length === 0) return null
 
@@ -228,6 +240,10 @@ export function FilesList({ files }: { files: EntityFile[] }) {
   )
 }
 
+/**
+ * DuplicatesList displays potential duplicate entities detected for the
+ * current media item, with navigation to each duplicate.
+ */
 export function DuplicatesList({
   duplicates,
   onDuplicateClick,

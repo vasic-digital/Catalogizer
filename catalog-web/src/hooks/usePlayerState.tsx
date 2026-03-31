@@ -43,6 +43,12 @@ interface UsePlayerStateReturn extends PlayerState {
   clearQueue: () => void;
 }
 
+/**
+ * usePlayerState manages media player state including playback, volume,
+ * queue, repeat/shuffle modes, and navigation between tracks.
+ *
+ * @returns Player state values and control actions
+ */
 export const usePlayerState = (): UsePlayerStateReturn => {
   const [currentItem, setCurrentItem] = useState<PlaylistItem | null>(null);
   const [isPlaying, setIsPlaying] = useState(false);

@@ -15,6 +15,10 @@ interface FavoriteToggleProps {
   disabled?: boolean
 }
 
+/**
+ * FavoriteToggle renders a star button that toggles the favorite status
+ * of a media item with optimistic UI updates.
+ */
 export const FavoriteToggle: React.FC<FavoriteToggleProps> = ({
   mediaId,
   mediaItem: _mediaItem,

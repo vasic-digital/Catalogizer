@@ -393,7 +393,7 @@ export const validateRule = (rule: CollectionRule): string[] => {
                rule.operator !== 'last_7_days' &&
                rule.operator !== 'last_30_days' &&
                rule.operator !== 'last_90_days') {
-      if (isNaN(Date.parse(rule.value))) {
+      if (typeof rule.value === 'string' && isNaN(Date.parse(rule.value))) {
         errors.push('Invalid date format');
       }
     }

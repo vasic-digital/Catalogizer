@@ -9,6 +9,10 @@ interface ProtectedRouteProps {
   requiredRole?: string
 }
 
+/**
+ * ProtectedRoute guards child routes behind authentication and optional
+ * role/permission checks, redirecting unauthenticated users to login.
+ */
 export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
   children,
   requireAdmin = false,

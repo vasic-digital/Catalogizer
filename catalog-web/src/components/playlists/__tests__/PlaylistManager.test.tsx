@@ -102,4 +102,33 @@ describe('PlaylistManager', () => {
     const selects = screen.getAllByRole('combobox')
     expect(selects.length).toBeGreaterThan(0)
   })
+
+  // --- Additional branch coverage tests ---
+
+  it('renders playlist description', () => {
+    render(<PlaylistManager {...defaultProps} />)
+    expect(screen.getByText('Test playlist')).toBeInTheDocument()
+  })
+
+  it('filters playlists by search query', async () => {
+    const userEvent = (await import('@testing-library/user-event')).default
+    const user = userEvent.setup()
+    render(<PlaylistManager {...defaultProps} />)
+
+    const searchInput = screen.getByPlaceholderText('Search playlists...')
+    await user.type(searchInput, 'nonexistent')
+
+    expect(screen.queryByText('My Playlist')).not.toBeInTheDocument()
+  })
+
+  it('shows matching playlists when search matches', async () => {
+    const userEvent = (await import('@testing-library/user-event')).default
+    const user = userEvent.setup()
+    render(<PlaylistManager {...defaultProps} />)
+
+    const searchInput = screen.getByPlaceholderText('Search playlists...')
+    await user.type(searchInput, 'My')
+
+    expect(screen.getByText('My Playlist')).toBeInTheDocument()
+  })
 })

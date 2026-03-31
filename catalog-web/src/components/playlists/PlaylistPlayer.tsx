@@ -39,6 +39,10 @@ interface PlaylistPlayerProps {
   className?: string;
 }
 
+/**
+ * PlaylistPlayer renders a media player with a track queue sidebar,
+ * supporting sequential playback, shuffle, repeat, and reordering.
+ */
 export const PlaylistPlayer: React.FC<PlaylistPlayerProps> = ({
   playlist,
   items,

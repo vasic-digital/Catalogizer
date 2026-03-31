@@ -3,6 +3,12 @@ import { collectionsApi } from '../lib/collectionsApi';
 import { CreateCollectionRequest, UpdateCollectionRequest, ShareCollectionRequest } from '../types/collections';
 import { toast } from 'react-hot-toast';
 
+/**
+ * useCollections manages media collections with CRUD, sharing, bulk
+ * operations, and cache invalidation via React Query.
+ *
+ * @returns Collections list, mutation actions, and loading/error states
+ */
 export const useCollections = () => {
   const queryClient = useQueryClient();
 
@@ -199,6 +205,12 @@ export const useCollections = () => {
   };
 };
 
+/**
+ * useCollection fetches a single collection and its items by ID.
+ *
+ * @param id - The collection ID to load
+ * @returns Collection data, items, and loading/error states
+ */
 export const useCollection = (id: string) => {
   const {
     data: collection,
@@ -234,6 +246,12 @@ export const useCollection = (id: string) => {
   };
 };
 
+/**
+ * useCollectionAnalytics fetches analytics data for a specific collection.
+ *
+ * @param id - The collection ID to load analytics for
+ * @returns Analytics data with loading/error states
+ */
 export const useCollectionAnalytics = (id: string) => {
   const {
     data: analytics,
@@ -255,6 +273,12 @@ export const useCollectionAnalytics = (id: string) => {
   };
 };
 
+/**
+ * useSharedCollection fetches a collection accessed via a public share link.
+ *
+ * @param shareId - The share token identifying the shared collection
+ * @returns Shared collection data with loading/error states
+ */
 export const useSharedCollection = (shareId: string) => {
   const {
     data: collection,

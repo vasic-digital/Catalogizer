@@ -58,6 +58,10 @@ interface AdminPanelProps {
   onUpdateUser?: (id: string, updates: Partial<User>) => void;
 }
 
+/**
+ * AdminPanel provides system administration controls including user management,
+ * storage monitoring, and backup operations.
+ */
 export const AdminPanel: React.FC<AdminPanelProps> = ({
   systemInfo,
   users,

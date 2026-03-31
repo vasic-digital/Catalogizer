@@ -4,6 +4,10 @@ import { ChevronLeft, ChevronRight } from 'lucide-react'
 import { EntityCard } from './EntityCard'
 import type { MediaEntity } from '@/types/media'
 
+/**
+ * EntityGrid renders a paginated grid of EntityCard components with
+ * page navigation and item count display.
+ */
 export function EntityGrid({
   entities,
   total,

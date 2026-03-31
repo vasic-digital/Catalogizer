@@ -19,6 +19,10 @@ const mobileNavLinkClass = (pathname: string, href: string) => {
     : 'block px-3 py-2 text-gray-700 hover:text-gray-900 hover:bg-gray-100 rounded-md dark:text-gray-300 dark:hover:text-white dark:hover:bg-gray-800 transition-colors'
 }
 
+/**
+ * Header renders the sticky top navigation bar with logo, navigation links,
+ * search, and user account controls.
+ */
 export const Header: React.FC = () => {
   const { user, isAuthenticated, logout } = useAuth()
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)

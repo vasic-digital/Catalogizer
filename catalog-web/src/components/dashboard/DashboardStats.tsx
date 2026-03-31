@@ -23,6 +23,9 @@ interface StatCardProps {
   loading?: boolean
 }
 
+/**
+ * StatCard renders a single dashboard statistic with an icon, value, optional trend indicator, and description.
+ */
 export const StatCard: React.FC<StatCardProps> = ({
   title,
   value,
@@ -91,6 +94,10 @@ interface DashboardStatsProps {
   loading?: boolean
 }
 
+/**
+ * DashboardStats displays an overview of media library and user statistics
+ * as a row of StatCard components.
+ */
 export const DashboardStats: React.FC<DashboardStatsProps> = ({
   mediaStats,
   userStats,

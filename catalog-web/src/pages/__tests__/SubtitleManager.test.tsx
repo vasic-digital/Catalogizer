@@ -131,4 +131,63 @@ describe('SubtitleManager Page', () => {
 
     expect(screen.getByText('Cancel')).toBeInTheDocument()
   })
+
+  // --- Additional branch coverage tests ---
+
+  it('closes media selector when Cancel is clicked', async () => {
+    const user = userEvent.setup()
+    render(<SubtitleManager />, { wrapper: createWrapper() })
+
+    await user.click(screen.getByText('Select Media'))
+    expect(screen.getByText('Search for Media')).toBeInTheDocument()
+
+    await user.click(screen.getByText('Cancel'))
+    expect(screen.queryByText('Search for Media')).not.toBeInTheDocument()
+  })
+
+  it('renders language filter area', () => {
+    render(<SubtitleManager />, { wrapper: createWrapper() })
+    // Language filter should be accessible via the Filters button area
+    expect(screen.getByText('Filters')).toBeInTheDocument()
+  })
+
+  it('toggles filter section when Filters button is clicked', async () => {
+    const user = userEvent.setup()
+    render(<SubtitleManager />, { wrapper: createWrapper() })
+
+    await user.click(screen.getByText('Filters'))
+    // After clicking Filters, additional filter options should appear or collapse
+  })
+
+  it('renders search button and can click it', async () => {
+    const user = userEvent.setup()
+    render(<SubtitleManager />, { wrapper: createWrapper() })
+
+    const searchBtn = screen.getByText('Search')
+    await user.click(searchBtn)
+    // Search should trigger (may show loading or results)
+  })
+
+  it('can type in subtitle search input', async () => {
+    const user = userEvent.setup()
+    render(<SubtitleManager />, { wrapper: createWrapper() })
+
+    const searchInput = screen.getByPlaceholderText(/Search subtitles by title/)
+    await user.type(searchInput, 'Matrix')
+    expect(searchInput).toHaveValue('Matrix')
+  })
+
+  it('renders max-width container', () => {
+    const { container } = render(<SubtitleManager />, { wrapper: createWrapper() })
+    const maxWidthEl = container.querySelector('.max-w-7xl')
+    expect(maxWidthEl).toBeInTheDocument()
+  })
+
+  it('renders the full page structure', () => {
+    render(<SubtitleManager />, { wrapper: createWrapper() })
+    // Check that all major sections are present
+    expect(screen.getByText('Subtitle Manager')).toBeInTheDocument()
+    expect(screen.getByText('Selected Media')).toBeInTheDocument()
+    expect(screen.getByText('Search Subtitles')).toBeInTheDocument()
+  })
 })

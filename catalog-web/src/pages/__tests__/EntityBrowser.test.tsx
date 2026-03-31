@@ -167,4 +167,60 @@ describe('EntityBrowser', () => {
       expect(screen.getByTestId('type-card-music_artist')).toBeInTheDocument()
     })
   })
+
+  // --- Additional branch coverage tests ---
+
+  it('shows entity grid when a type is selected', async () => {
+    const userEvent = (await import('@testing-library/user-event')).default
+    const user = userEvent.setup()
+    renderWithProviders(<EntityBrowser />)
+
+    await waitFor(() => {
+      expect(screen.getByTestId('type-card-movie')).toBeInTheDocument()
+    })
+
+    await user.click(screen.getByTestId('type-card-movie'))
+
+    await waitFor(() => {
+      expect(screen.getByTestId('entity-grid')).toBeInTheDocument()
+    })
+  })
+
+  it('shows entity items after selecting a type', async () => {
+    const userEvent = (await import('@testing-library/user-event')).default
+    const user = userEvent.setup()
+    renderWithProviders(<EntityBrowser />)
+
+    await waitFor(() => {
+      expect(screen.getByTestId('type-card-movie')).toBeInTheDocument()
+    })
+
+    await user.click(screen.getByTestId('type-card-movie'))
+
+    await waitFor(() => {
+      expect(screen.getByText('The Matrix')).toBeInTheDocument()
+    })
+  })
+
+  it('can type in search input', async () => {
+    const userEvent = (await import('@testing-library/user-event')).default
+    const user = userEvent.setup()
+    renderWithProviders(<EntityBrowser />)
+
+    const searchInput = screen.getByPlaceholderText('Search entities...')
+    await user.type(searchInput, 'Matrix')
+    expect(searchInput).toHaveValue('Matrix')
+  })
+
+  it('renders page heading regardless of route', () => {
+    renderWithProviders(<EntityBrowser />)
+    expect(screen.getByText('Browse Media')).toBeInTheDocument()
+  })
+
+  it('shows summary text with total entities', async () => {
+    renderWithProviders(<EntityBrowser />)
+    await waitFor(() => {
+      expect(screen.getByText('65 total entities across all types')).toBeInTheDocument()
+    })
+  })
 })

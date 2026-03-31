@@ -7,6 +7,9 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { User, Mail, Lock, Eye, EyeOff } from 'lucide-react'
 import { motion } from 'framer-motion'
 
+/**
+ * RegisterForm renders the new user registration form with validation.
+ */
 export const RegisterForm: React.FC = () => {
   const [formData, setFormData] = useState({
     username: '',

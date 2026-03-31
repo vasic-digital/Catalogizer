@@ -12,6 +12,10 @@ const FIRST_LAUNCH_KEY = 'catalogizer_launched'
 const FIRST_LAUNCH_DURATION = 5000
 const REGULAR_LAUNCH_DURATION = 2500
 
+/**
+ * SplashScreen displays a branded loading screen on application startup,
+ * with a longer duration on first launch.
+ */
 export function SplashScreen({
   onComplete,
   appTitle = 'Catalogizer',

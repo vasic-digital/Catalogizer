@@ -3,6 +3,12 @@ import { playlistApi } from '../lib/playlistsApi';
 import { toast } from 'react-hot-toast';
 import type { PlaylistItem } from '../types/playlists';
 
+/**
+ * usePlaylistReorder provides an optimistic drag-and-drop reorder mutation
+ * for playlist items with automatic rollback on failure.
+ *
+ * @returns Reorder mutation and its pending state
+ */
 export const usePlaylistReorder = () => {
   const queryClient = useQueryClient();
 

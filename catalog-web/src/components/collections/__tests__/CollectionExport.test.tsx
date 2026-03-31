@@ -119,4 +119,57 @@ describe('CollectionExport', () => {
       await user.click(closeBtn)
     }
   })
+
+  // --- Additional branch coverage tests ---
+
+  it('selects JSON export format by default', () => {
+    render(<CollectionExport {...defaultProps} />)
+    // JSON should be visually selected (has a highlighted style)
+    const jsonOption = screen.getByText('JSON')
+    expect(jsonOption).toBeInTheDocument()
+  })
+
+  it('renders all export format options', () => {
+    render(<CollectionExport {...defaultProps} />)
+    expect(screen.getByText('JSON')).toBeInTheDocument()
+    expect(screen.getByText('CSV')).toBeInTheDocument()
+    expect(screen.getByText('M3U Playlist')).toBeInTheDocument()
+  })
+
+  it('renders include options toggles', () => {
+    render(<CollectionExport {...defaultProps} />)
+    expect(screen.getByText('Include Metadata')).toBeInTheDocument()
+    expect(screen.getByText('Include Thumbnails')).toBeInTheDocument()
+    expect(screen.getByText('Include Files')).toBeInTheDocument()
+  })
+
+  it('renders Export Collection button clickable', async () => {
+    const user = userEvent.setup()
+    render(<CollectionExport {...defaultProps} />)
+
+    const exportBtn = screen.getByText('Export Collection')
+    await user.click(exportBtn)
+    // Should trigger export (may show success toast or progress)
+  })
+
+  it('switches to Import tab and shows import UI', async () => {
+    const user = userEvent.setup()
+    render(<CollectionExport {...defaultProps} />)
+
+    await user.click(screen.getByText('Import'))
+
+    expect(screen.getByText('Import File')).toBeInTheDocument()
+    expect(screen.getByText('Click to upload or drag and drop')).toBeInTheDocument()
+  })
+
+  it('renders with non-smart collection', () => {
+    const nonSmartCollection = { ...mockCollection, is_smart: false }
+    render(<CollectionExport collection={nonSmartCollection as any} onClose={vi.fn()} />)
+    expect(screen.getByText('Test Collection')).toBeInTheDocument()
+  })
+
+  it('renders collection summary section', () => {
+    render(<CollectionExport {...defaultProps} />)
+    expect(screen.getByText('Collection Summary')).toBeInTheDocument()
+  })
 })

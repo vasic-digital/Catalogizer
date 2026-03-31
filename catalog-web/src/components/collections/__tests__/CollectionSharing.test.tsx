@@ -103,4 +103,34 @@ describe('CollectionSharing', () => {
     render(<CollectionSharing collection={differentCollection as any} onClose={vi.fn()} />)
     expect(screen.getByText('Another Collection')).toBeInTheDocument()
   })
+
+  // --- Additional branch coverage tests ---
+
+  it('renders share heading and collection info', () => {
+    render(<CollectionSharing collection={mockCollection as any} onClose={vi.fn()} />)
+    expect(screen.getByText('Share Collection')).toBeInTheDocument()
+    expect(screen.getByText('Test Collection')).toBeInTheDocument()
+  })
+
+  it('renders Create Share Link section', () => {
+    render(<CollectionSharing collection={mockCollection as any} onClose={vi.fn()} />)
+    const shareLinkElements = screen.getAllByText(/Create Share Link/)
+    expect(shareLinkElements.length).toBeGreaterThanOrEqual(1)
+  })
+
+  it('renders permission level options', () => {
+    render(<CollectionSharing collection={mockCollection as any} onClose={vi.fn()} />)
+    expect(screen.getByText('Permission Level')).toBeInTheDocument()
+  })
+
+  it('renders with public collection', () => {
+    const publicCollection = { ...mockCollection, is_public: true }
+    render(<CollectionSharing collection={publicCollection as any} onClose={vi.fn()} />)
+    expect(screen.getByText('Share Collection')).toBeInTheDocument()
+  })
+
+  it('renders expiry duration options', () => {
+    render(<CollectionSharing collection={mockCollection as any} onClose={vi.fn()} />)
+    expect(screen.getByText('Expires In')).toBeInTheDocument()
+  })
 })

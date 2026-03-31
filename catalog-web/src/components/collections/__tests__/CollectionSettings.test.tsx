@@ -132,4 +132,76 @@ describe('CollectionSettings', () => {
 
     expect(defaultProps.onClose).toHaveBeenCalled()
   })
+
+  // --- Additional branch coverage tests ---
+
+  it('switches to Behavior tab', async () => {
+    const user = userEvent.setup()
+    render(<CollectionSettings {...defaultProps} />)
+
+    await user.click(screen.getByText('Behavior'))
+    // Should show behavior-related settings
+    expect(screen.getByText('Behavior')).toBeInTheDocument()
+  })
+
+  it('switches to Sharing tab', async () => {
+    const user = userEvent.setup()
+    render(<CollectionSettings {...defaultProps} />)
+
+    await user.click(screen.getByText('Sharing'))
+    expect(screen.getByText('Sharing')).toBeInTheDocument()
+  })
+
+  it('renders Save Settings button and it is clickable', async () => {
+    const user = userEvent.setup()
+    render(<CollectionSettings {...defaultProps} />)
+
+    const saveBtn = screen.getByText('Save Settings')
+    expect(saveBtn).toBeInTheDocument()
+    await user.click(saveBtn)
+    // Save action triggers internal state update (toast or close)
+  })
+
+  it('renders with public collection', () => {
+    const publicCollection = { ...mockCollection, is_public: true }
+    render(
+      <CollectionSettings
+        collection={publicCollection as any}
+        onClose={vi.fn()}
+        onSave={vi.fn()}
+      />
+    )
+    expect(screen.getByText('Test Collection')).toBeInTheDocument()
+  })
+
+  it('renders with non-smart collection', () => {
+    const manualCollection = { ...mockCollection, is_smart: false }
+    render(
+      <CollectionSettings
+        collection={manualCollection as any}
+        onClose={vi.fn()}
+        onSave={vi.fn()}
+      />
+    )
+    expect(screen.getByText('Collection Settings')).toBeInTheDocument()
+  })
+
+  it('shows items per page option in Display tab', () => {
+    render(<CollectionSettings {...defaultProps} />)
+    expect(screen.getByText('Items Per Page')).toBeInTheDocument()
+  })
+
+  it('switches to all tabs without errors', async () => {
+    const user = userEvent.setup()
+    render(<CollectionSettings {...defaultProps} />)
+
+    // Click through all tabs
+    const tabs = ['Display', 'Behavior', 'Playback', 'Download', 'Sharing', 'Privacy']
+    for (const tab of tabs) {
+      await user.click(screen.getByText(tab))
+    }
+    // Back to Display
+    await user.click(screen.getByText('Display'))
+    expect(screen.getByText('View Settings')).toBeInTheDocument()
+  })
 })

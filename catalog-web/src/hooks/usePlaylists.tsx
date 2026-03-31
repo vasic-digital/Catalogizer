@@ -6,6 +6,13 @@ import type {
 } from '@/types/playlists'
 import toast from 'react-hot-toast'
 
+/**
+ * usePlaylists manages playlist CRUD operations with React Query caching
+ * and toast notifications for success/error feedback.
+ *
+ * @param params - Optional pagination and filtering parameters
+ * @returns Playlists data, mutations for create/update/delete, and loading states
+ */
 export const usePlaylists = (params?: {
   limit?: number
   offset?: number
@@ -151,7 +158,14 @@ export const usePlaylists = (params?: {
   }
 }
 
-// Hook for playlist items
+/**
+ * usePlaylistItems fetches the items belonging to a specific playlist
+ * with optional sorting and pagination.
+ *
+ * @param playlistId - The playlist to load items for
+ * @param params - Optional sorting and pagination parameters
+ * @returns Playlist items, total count, and loading/error states
+ */
 export const usePlaylistItems = (playlistId: string, params?: {
   limit?: number
   offset?: number
@@ -181,7 +195,12 @@ export const usePlaylistItems = (playlistId: string, params?: {
   }
 }
 
-// Hook for playlist analytics
+/**
+ * usePlaylistAnalytics fetches analytics data for a specific playlist.
+ *
+ * @param playlistId - The playlist to load analytics for
+ * @returns React Query result with playlist analytics data
+ */
 export const usePlaylistAnalytics = (playlistId: string) => {
   return useQuery({
     queryKey: ['playlist-analytics', playlistId],

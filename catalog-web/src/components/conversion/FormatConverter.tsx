@@ -40,6 +40,10 @@ interface FormatConverterProps {
   onDownloadFile?: (path: string) => void;
 }
 
+/**
+ * FormatConverter manages media format conversion jobs with quality/codec
+ * settings, progress tracking, and download of completed outputs.
+ */
 export const FormatConverter: React.FC<FormatConverterProps> = ({
   jobs,
   supportedFormats,

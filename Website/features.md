@@ -9,6 +9,16 @@ Catalogizer is a multi-protocol media collection management system that detects,
 
 ---
 
+## What's New in v2.1
+
+- **400+ Challenges**: Comprehensive challenge bank covering concurrency hardening, coverage gates, stress validation, documentation completeness, accessibility, and API contract compliance
+- **30-Module Video Course**: 6 new modules covering concurrency hardening, security scanning, test coverage mastery, performance monitoring, module architecture, and cross-platform consistency
+- **Real Media Quality Breakdown**: `/api/v1/media/stats` now returns actual file extension distribution instead of placeholder data
+- **Full Security Scan Artifacts**: govulncheck, npm audit, Semgrep with 8 custom rules -- all verified clean with saved reports
+- **Comprehensive Test Coverage**: 82+ new frontend component tests, 30+ TypeScript submodule tests, doc.go for all Go packages
+- **ARCHITECTURE.md Everywhere**: Every submodule now has architecture documentation
+- **Type Safety Hardened**: Eliminated `any` types from production TypeScript code
+
 ## What's New in v2.0
 
 - **Backup Management**: Create, list, and restore database backups via the REST API with concurrent-operation protection

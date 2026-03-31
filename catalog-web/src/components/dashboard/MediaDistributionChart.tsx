@@ -28,6 +28,10 @@ const COLORS = {
   other: '#ef4444' // red
 }
 
+/**
+ * MediaDistributionChart renders a pie chart showing the breakdown of
+ * media files by type (video, audio, image, document).
+ */
 export const MediaDistributionChart: React.FC<MediaDistributionChartProps> = ({
   data,
   loading = false

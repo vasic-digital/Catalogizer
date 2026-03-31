@@ -35,6 +35,10 @@ interface PlaylistGridProps {
   className?: string;
 }
 
+/**
+ * PlaylistGrid renders all playlists in a filterable grid or list layout
+ * with inline player, batch selection, and sharing controls.
+ */
 export const PlaylistGrid: React.FC<PlaylistGridProps> = ({
   onCreatePlaylist,
   onEditPlaylist,

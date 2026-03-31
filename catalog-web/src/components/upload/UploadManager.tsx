@@ -21,6 +21,10 @@ interface UploadManagerProps {
   maxConcurrentUploads?: number;
 }
 
+/**
+ * UploadManager provides drag-and-drop and file-picker upload with per-file
+ * progress tracking, size validation, and retry/remove controls.
+ */
 export const UploadManager: React.FC<UploadManagerProps> = ({
   onUpload,
   onRemove,

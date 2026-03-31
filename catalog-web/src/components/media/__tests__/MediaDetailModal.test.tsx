@@ -487,4 +487,160 @@ describe('MediaDetailModal', () => {
       expect(screen.queryByText('Available Versions')).not.toBeInTheDocument()
     })
   })
+
+  // --- Additional branch coverage tests ---
+
+  describe('Edge Cases', () => {
+    it('renders nothing when isOpen is false', () => {
+      const { container } = render(
+        <MediaDetailModal media={mockMediaItem} isOpen={false} onClose={vi.fn()} />
+      )
+      expect(container.firstChild).toBeNull()
+    })
+
+    it('renders with no poster or backdrop images', () => {
+      const mediaNoImages = {
+        ...mockMediaItem,
+        cover_image: undefined,
+        external_metadata: [
+          {
+            ...mockMediaItem.external_metadata![0],
+            poster_url: '',
+            backdrop_url: '',
+          },
+        ],
+      }
+      render(
+        <MediaDetailModal media={mediaNoImages} isOpen={true} onClose={vi.fn()} />
+      )
+      expect(screen.getByText('Test Movie (External)')).toBeInTheDocument()
+    })
+
+    it('renders with no external metadata at all', () => {
+      const mediaNoExternal: MediaItem = {
+        ...mockMediaItem,
+        external_metadata: undefined,
+      }
+      render(
+        <MediaDetailModal media={mediaNoExternal} isOpen={true} onClose={vi.fn()} />
+      )
+      expect(screen.getByText('Test Movie')).toBeInTheDocument()
+    })
+
+    it('renders with null external metadata', () => {
+      const mediaWithNull = {
+        ...mockMediaItem,
+        external_metadata: null as any,
+      }
+      render(
+        <MediaDetailModal media={mediaWithNull} isOpen={true} onClose={vi.fn()} />
+      )
+      expect(screen.getByText('Test Movie')).toBeInTheDocument()
+    })
+
+    it('renders with versions undefined', () => {
+      const mediaNoVersions = { ...mockMediaItem, versions: undefined }
+      render(
+        <MediaDetailModal media={mediaNoVersions} isOpen={true} onClose={vi.fn()} />
+      )
+      expect(screen.queryByText('Available Versions')).not.toBeInTheDocument()
+    })
+
+    it('displays both Play and Download buttons when both callbacks provided', () => {
+      const onPlay = vi.fn()
+      const onDownload = vi.fn()
+      render(
+        <MediaDetailModal
+          media={mockMediaItem}
+          isOpen={true}
+          onClose={vi.fn()}
+          onPlay={onPlay}
+          onDownload={onDownload}
+        />
+      )
+      expect(screen.getByRole('button', { name: /play/i })).toBeInTheDocument()
+      expect(screen.getByRole('button', { name: /download/i })).toBeInTheDocument()
+    })
+
+    it('formats zero duration correctly', () => {
+      const mediaZeroDuration = { ...mockMediaItem, duration: 0 }
+      render(
+        <MediaDetailModal media={mediaZeroDuration} isOpen={true} onClose={vi.fn()} />
+      )
+      // Duration with 0 should not show duration section
+      expect(screen.queryByText('0h 0m')).not.toBeInTheDocument()
+    })
+
+    it('formats bytes file size correctly', () => {
+      const mediaTinyFile = { ...mockMediaItem, file_size: 500 }
+      render(
+        <MediaDetailModal media={mediaTinyFile} isOpen={true} onClose={vi.fn()} />
+      )
+      expect(screen.getByText('500.00 Bytes')).toBeInTheDocument()
+    })
+
+    it('renders with missing year', () => {
+      const mediaNoYear = { ...mockMediaItem, year: undefined }
+      render(
+        <MediaDetailModal media={mediaNoYear} isOpen={true} onClose={vi.fn()} />
+      )
+      expect(screen.queryByText('2023')).not.toBeInTheDocument()
+    })
+
+    it('renders with missing rating', () => {
+      const mediaNoRating = { ...mockMediaItem, rating: undefined }
+      render(
+        <MediaDetailModal media={mediaNoRating} isOpen={true} onClose={vi.fn()} />
+      )
+      expect(screen.queryByText('8.5')).not.toBeInTheDocument()
+    })
+
+    it('renders with missing quality', () => {
+      const mediaNoQuality = { ...mockMediaItem, quality: undefined }
+      render(
+        <MediaDetailModal media={mediaNoQuality} isOpen={true} onClose={vi.fn()} />
+      )
+      // Quality should not appear as a standalone badge
+      expect(screen.getByText('Test Movie (External)')).toBeInTheDocument()
+    })
+
+    it('renders with all metadata missing', () => {
+      const minimalMedia: MediaItem = {
+        id: 99,
+        title: 'Bare Minimum',
+        media_type: 'unknown',
+        directory_path: '/path/to/file',
+        created_at: '2024-01-01T00:00:00Z',
+        updated_at: '2024-01-01T00:00:00Z',
+      }
+      render(
+        <MediaDetailModal media={minimalMedia} isOpen={true} onClose={vi.fn()} />
+      )
+      expect(screen.getByText('Bare Minimum')).toBeInTheDocument()
+    })
+
+    it('handles version without language', () => {
+      const mediaVersionNoLang = {
+        ...mockMediaItem,
+        versions: [
+          {
+            id: 1,
+            media_id: 1,
+            version: 'v1',
+            quality: '4K',
+            file_path: '/movies/test-4k.mp4',
+            resolution: '3840x2160',
+            codec: 'H.265',
+            file_size: 4294967296,
+            language: undefined,
+          },
+        ],
+      }
+      render(
+        <MediaDetailModal media={mediaVersionNoLang} isOpen={true} onClose={vi.fn()} />
+      )
+      expect(screen.getByText('Available Versions')).toBeInTheDocument()
+      expect(screen.getByText('4K - 3840x2160')).toBeInTheDocument()
+    })
+  })
 })

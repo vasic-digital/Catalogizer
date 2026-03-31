@@ -30,6 +30,12 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined)
 
+/**
+ * useAuth returns the authentication context including user state, login/logout
+ * actions, and permission checks. Throws if used outside AuthProvider.
+ *
+ * @returns Auth state and actions
+ */
 export const useAuth = () => {
   const context = useContext(AuthContext)
   if (context === undefined) {
@@ -42,6 +48,10 @@ interface AuthProviderProps {
   children: ReactNode
 }
 
+/**
+ * AuthProvider manages authentication state, token refresh, and permission
+ * resolution, exposing login/register/logout actions to the component tree.
+ */
 export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null)
   const [permissions, setPermissions] = useState<string[]>([])

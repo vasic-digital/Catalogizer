@@ -119,4 +119,72 @@ describe('Admin Page', () => {
     const wrapper = container.firstChild as HTMLElement
     expect(wrapper).toHaveClass('max-w-7xl')
   })
+
+  // --- Additional branch coverage tests ---
+
+  it('shows system info once loaded', async () => {
+    render(<Admin />, { wrapper: createWrapper() })
+    await waitFor(() => {
+      expect(screen.getByText('1.0.0')).toBeInTheDocument()
+    })
+  })
+
+  it('displays active connections count', async () => {
+    render(<Admin />, { wrapper: createWrapper() })
+    await waitFor(() => {
+      expect(screen.getByText('12')).toBeInTheDocument()
+    })
+  })
+
+  it('displays total requests count', async () => {
+    render(<Admin />, { wrapper: createWrapper() })
+    await waitFor(() => {
+      expect(screen.getByText(/15,?420/)).toBeInTheDocument()
+    })
+  })
+
+  it('renders Users tab and can click it', async () => {
+    const { default: userEvent } = await import('@testing-library/user-event')
+    const user = userEvent.setup()
+    render(<Admin />, { wrapper: createWrapper() })
+    await waitFor(() => {
+      expect(screen.getByText('Users')).toBeInTheDocument()
+    })
+    await user.click(screen.getByText('Users'))
+  })
+
+  it('renders Storage tab and can click it', async () => {
+    const { default: userEvent } = await import('@testing-library/user-event')
+    const user = userEvent.setup()
+    render(<Admin />, { wrapper: createWrapper() })
+    await waitFor(() => {
+      expect(screen.getByText('Storage')).toBeInTheDocument()
+    })
+    await user.click(screen.getByText('Storage'))
+  })
+
+  it('renders Backups tab and can click it', async () => {
+    const { default: userEvent } = await import('@testing-library/user-event')
+    const user = userEvent.setup()
+    render(<Admin />, { wrapper: createWrapper() })
+    await waitFor(() => {
+      expect(screen.getByText('Backups')).toBeInTheDocument()
+    })
+    await user.click(screen.getByText('Backups'))
+  })
+
+  it('shows backup section heading', async () => {
+    render(<Admin />, { wrapper: createWrapper() })
+    await waitFor(() => {
+      expect(screen.getByText('Backups')).toBeInTheDocument()
+    })
+  })
+
+  it('renders CPU Usage and Memory Usage in resources section', async () => {
+    render(<Admin />, { wrapper: createWrapper() })
+    await waitFor(() => {
+      expect(screen.getByText('CPU Usage')).toBeInTheDocument()
+      expect(screen.getByText('Memory Usage')).toBeInTheDocument()
+    })
+  })
 })

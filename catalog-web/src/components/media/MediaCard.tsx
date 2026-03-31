@@ -96,6 +96,10 @@ const formatDuration = (minutes?: number) => {
   return `${mins}m`
 }
 
+/**
+ * MediaCard displays a single media item as a card with poster, metadata,
+ * quality badge, and action buttons for viewing, playing, and downloading.
+ */
 export const MediaCard: React.FC<MediaCardProps> = React.memo(({
   media,
   onView,

@@ -47,6 +47,21 @@ In-depth technical training for building and extending Catalogizer.
 
 **Total Duration**: ~10-12 hours
 
+## New in v2.1: Advanced Engineering Modules
+
+| Module | Title | Duration |
+|--------|-------|----------|
+| 25 | Concurrency Hardening | 25 min |
+| 26 | Security Scanning in Practice | 20 min |
+| 27 | Test Coverage Mastery | 25 min |
+| 28 | Performance Monitoring | 25 min |
+| 29 | Module Architecture Deep Dive | 25 min |
+| 30 | Cross-Platform Consistency | 25 min |
+
+**v2.1 Modules Total**: ~2.5 hours
+
+**Grand Total**: 30 modules, 16-18 hours
+
 ## Certification Levels
 
 - **Catalogizer User** - Complete Modules 1-4 with 80% assessment score

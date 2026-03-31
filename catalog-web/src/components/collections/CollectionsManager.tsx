@@ -31,6 +31,10 @@ interface CollectionsManagerProps {
   onPlayCollection?: (id: string) => void;
 }
 
+/**
+ * CollectionsManager provides CRUD controls for media collections with
+ * search, grid/list view switching, and smart collection support.
+ */
 export const CollectionsManager: React.FC<CollectionsManagerProps> = ({
   collections,
   onCreateCollection,

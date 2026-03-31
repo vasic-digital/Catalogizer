@@ -256,4 +256,186 @@ describe('AuthContext', () => {
 
     expect(screen.getByTestId('child')).toHaveTextContent('Child Content');
   });
+
+  // --- Additional branch coverage tests ---
+
+  it('hasPermission returns true for admin users regardless of permission', async () => {
+    mockAuthApi.getAuthStatus.mockResolvedValue({
+      authenticated: true,
+      user: { id: 1, username: 'admin', role: { name: 'Admin' }, role_id: 1 },
+      permissions: [],
+    });
+    mockAuthApi.getPermissions.mockResolvedValue({ permissions: [] });
+    const queryClient = createQueryClient();
+
+    render(
+      <QueryClientProvider client={queryClient}>
+        <AuthProvider>
+          <TestComponent />
+        </AuthProvider>
+      </QueryClientProvider>
+    );
+
+    await waitFor(() => {
+      expect(screen.getByTestId('has-read-media')).toHaveTextContent('yes');
+    });
+  });
+
+  it('hasPermission returns false for non-admin without the permission', async () => {
+    mockAuthApi.getAuthStatus.mockResolvedValue({
+      authenticated: true,
+      user: { id: 2, username: 'viewer', role: { name: 'Viewer' }, role_id: 3 },
+      permissions: ['write:media'],
+    });
+    mockAuthApi.getPermissions.mockResolvedValue({ permissions: ['write:media'] });
+    const queryClient = createQueryClient();
+
+    render(
+      <QueryClientProvider client={queryClient}>
+        <AuthProvider>
+          <TestComponent />
+        </AuthProvider>
+      </QueryClientProvider>
+    );
+
+    await waitFor(() => {
+      expect(screen.getByTestId('has-read-media')).toHaveTextContent('no');
+    });
+  });
+
+  it('canAccess returns true when user has matching resource:action permission', async () => {
+    mockAuthApi.getAuthStatus.mockResolvedValue({
+      authenticated: true,
+      user: { id: 2, username: 'user', role: { name: 'User' }, role_id: 2 },
+      permissions: ['read:media'],
+    });
+    mockAuthApi.getPermissions.mockResolvedValue({ permissions: ['read:media'] });
+    const queryClient = createQueryClient();
+
+    render(
+      <QueryClientProvider client={queryClient}>
+        <AuthProvider>
+          <TestComponent />
+        </AuthProvider>
+      </QueryClientProvider>
+    );
+
+    await waitFor(() => {
+      expect(screen.getByTestId('can-access-media-read')).toHaveTextContent('yes');
+    });
+  });
+
+  it('canAccess returns true when user has admin:system permission', async () => {
+    mockAuthApi.getAuthStatus.mockResolvedValue({
+      authenticated: true,
+      user: { id: 2, username: 'superuser', role: { name: 'SuperUser' }, role_id: 5 },
+      permissions: ['admin:system'],
+    });
+    mockAuthApi.getPermissions.mockResolvedValue({ permissions: ['admin:system'] });
+    const queryClient = createQueryClient();
+
+    render(
+      <QueryClientProvider client={queryClient}>
+        <AuthProvider>
+          <TestComponent />
+        </AuthProvider>
+      </QueryClientProvider>
+    );
+
+    await waitFor(() => {
+      expect(screen.getByTestId('can-access-media-read')).toHaveTextContent('yes');
+    });
+  });
+
+  it('canAccess returns false when user lacks permission', async () => {
+    mockAuthApi.getAuthStatus.mockResolvedValue({
+      authenticated: true,
+      user: { id: 2, username: 'limited', role: { name: 'Limited' }, role_id: 4 },
+      permissions: ['read:other'],
+    });
+    mockAuthApi.getPermissions.mockResolvedValue({ permissions: ['read:other'] });
+    const queryClient = createQueryClient();
+
+    render(
+      <QueryClientProvider client={queryClient}>
+        <AuthProvider>
+          <TestComponent />
+        </AuthProvider>
+      </QueryClientProvider>
+    );
+
+    await waitFor(() => {
+      expect(screen.getByTestId('can-access-media-read')).toHaveTextContent('no');
+    });
+  });
+
+  it('sets permissions from auth status when no separate permissions data', async () => {
+    mockAuthApi.getAuthStatus.mockResolvedValue({
+      authenticated: true,
+      user: { id: 1, username: 'user1', role: { name: 'User' }, role_id: 2 },
+      permissions: ['read:media', 'write:media'],
+    });
+    // permissionsData returns undefined (query not enabled or not resolved yet)
+    mockAuthApi.getPermissions.mockResolvedValue({ permissions: ['read:media', 'write:media'] });
+    const queryClient = createQueryClient();
+
+    render(
+      <QueryClientProvider client={queryClient}>
+        <AuthProvider>
+          <TestComponent />
+        </AuthProvider>
+      </QueryClientProvider>
+    );
+
+    await waitFor(() => {
+      expect(screen.getByTestId('permissions-count')).toHaveTextContent('2');
+    });
+  });
+
+  it('handles auth status with null permissions gracefully', async () => {
+    mockAuthApi.getAuthStatus.mockResolvedValue({
+      authenticated: true,
+      user: { id: 1, username: 'user', role: { name: 'User' }, role_id: 2 },
+      permissions: null,
+    });
+    mockAuthApi.getPermissions.mockResolvedValue({ permissions: [] });
+    const queryClient = createQueryClient();
+
+    render(
+      <QueryClientProvider client={queryClient}>
+        <AuthProvider>
+          <TestComponent />
+        </AuthProvider>
+      </QueryClientProvider>
+    );
+
+    await waitFor(() => {
+      expect(screen.getByTestId('auth-status')).toHaveTextContent('Authenticated');
+    });
+    expect(screen.getByTestId('permissions-count')).toHaveTextContent('0');
+  });
+
+  it('clears user state when auth status returns not authenticated', async () => {
+    // First, set up an authenticated state
+    mockAuthApi.getAuthStatus.mockResolvedValue({
+      authenticated: false,
+      user: null,
+      permissions: [],
+    });
+    const queryClient = createQueryClient();
+
+    render(
+      <QueryClientProvider client={queryClient}>
+        <AuthProvider>
+          <TestComponent />
+        </AuthProvider>
+      </QueryClientProvider>
+    );
+
+    await waitFor(() => {
+      expect(screen.getByTestId('auth-status')).toHaveTextContent('Not authenticated');
+      expect(screen.getByTestId('user-info')).toHaveTextContent('No user');
+      expect(screen.getByTestId('admin-status')).toHaveTextContent('Not Admin');
+    });
+  });
 });

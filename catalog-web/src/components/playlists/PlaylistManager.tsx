@@ -30,6 +30,10 @@ interface PlaylistManagerProps {
   className?: string;
 }
 
+/**
+ * PlaylistManager provides playlist browsing, searching, sorting, and
+ * CRUD operations including create, edit, delete, and shuffle.
+ */
 export const PlaylistManager: React.FC<PlaylistManagerProps> = ({
   onCreatePlaylist,
   onEditPlaylist,

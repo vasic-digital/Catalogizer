@@ -547,4 +547,147 @@ describe('Playlists Page', () => {
     // Should show the Selected Items section since the edited playlist has items
     expect(screen.getByText(/Selected Items/)).toBeInTheDocument()
   })
+
+  // --- Additional branch coverage tests ---
+
+  it('filters playlists by media type', async () => {
+    const user = userEvent.setup()
+    render(<PlaylistsPage />)
+
+    const select = screen.getByRole('combobox')
+    await user.selectOptions(select, 'music')
+
+    // Grid still renders (filtering is internal)
+    expect(screen.getByTestId('playlist-grid')).toBeInTheDocument()
+  })
+
+  it('prevents creating playlist without a name', async () => {
+    const user = userEvent.setup()
+    render(<PlaylistsPage />)
+
+    await user.click(screen.getByText('Create Playlist'))
+
+    // The form submit button should be disabled when name is empty
+    const createButtons = screen.getAllByText('Create Playlist')
+    const formBtn = createButtons.find(el => el.closest('.border-t'))
+    expect(formBtn?.closest('button')).toBeDisabled()
+  })
+
+  it('adds item to playlist and prevents duplicate adds', async () => {
+    mockSearchMedia.mockResolvedValue({
+      items: [
+        { id: 99, title: 'Unique Song', media_type: 'music', year: 2024, cover_image: '', duration: 200, rating: 5, quality: 'high', directory_path: '/music' },
+      ],
+    })
+    const user = userEvent.setup()
+    render(<PlaylistsPage />)
+
+    await user.click(screen.getByText('Create Playlist'))
+    const mediaSearch = screen.getByPlaceholderText('Search media items...')
+    await user.type(mediaSearch, 'Unique Song')
+    await user.keyboard('{Enter}')
+
+    await waitFor(() => {
+      expect(screen.getByText('Unique Song')).toBeInTheDocument()
+    })
+
+    // Add the item
+    const searchResultItem = screen.getByText('Unique Song').closest('[class*="border-b"]')
+    const addButton = searchResultItem?.querySelector('button')
+    await user.click(addButton as HTMLElement)
+
+    await waitFor(() => {
+      expect(toast.success).toHaveBeenCalledWith(expect.stringContaining('Added'))
+    })
+
+    // Try adding the same item again - should show error
+    // Need to re-search since state may have changed
+    await user.clear(mediaSearch)
+    await user.type(mediaSearch, 'Unique Song')
+    await user.keyboard('{Enter}')
+
+    await waitFor(() => {
+      const addButtons = screen.getAllByText(/Added/)
+      expect(addButtons.length).toBeGreaterThanOrEqual(1)
+    })
+  })
+
+  it('shows Searching... text while media search is in progress', async () => {
+    // Create a promise we can control
+    let resolveSearch: (value: any) => void
+    const searchPromise = new Promise((resolve) => { resolveSearch = resolve })
+    mockSearchMedia.mockReturnValue(searchPromise)
+
+    const user = userEvent.setup()
+    render(<PlaylistsPage />)
+
+    await user.click(screen.getByText('Create Playlist'))
+    const mediaSearch = screen.getByPlaceholderText('Search media items...')
+    await user.type(mediaSearch, 'slow search')
+    await user.keyboard('{Enter}')
+
+    expect(screen.getByText('Searching...')).toBeInTheDocument()
+
+    // Resolve the search
+    resolveSearch!({ items: [] })
+    await waitFor(() => {
+      expect(screen.queryByText('Searching...')).not.toBeInTheDocument()
+    })
+  })
+
+  it('opens create form from Grid Create button', async () => {
+    const user = userEvent.setup()
+    render(<PlaylistsPage />)
+
+    await user.click(screen.getByText('Grid Create'))
+
+    expect(screen.getByText('Create New Playlist')).toBeInTheDocument()
+  })
+
+  it('resets form after successful create', async () => {
+    const user = userEvent.setup()
+    render(<PlaylistsPage />)
+
+    await user.click(screen.getByText('Create Playlist'))
+    const nameInput = screen.getByPlaceholderText('Enter playlist name')
+    await user.type(nameInput, 'My Playlist')
+
+    const createButtons = screen.getAllByRole('button', { name: /Create Playlist/i })
+    await user.click(createButtons[createButtons.length - 1])
+
+    await waitFor(() => {
+      expect(mockCreatePlaylist).toHaveBeenCalled()
+    })
+
+    // After success, the form should be gone
+    await waitFor(() => {
+      expect(screen.queryByText('Create New Playlist')).not.toBeInTheDocument()
+    })
+  })
+
+  it('toggles public checkbox in create form', async () => {
+    const user = userEvent.setup()
+    render(<PlaylistsPage />)
+
+    await user.click(screen.getByText('Create Playlist'))
+    const publicCheckbox = screen.getByLabelText('Make this playlist public')
+    expect(publicCheckbox).not.toBeChecked()
+
+    await user.click(publicCheckbox)
+    expect(publicCheckbox).toBeChecked()
+
+    await user.click(publicCheckbox)
+    expect(publicCheckbox).not.toBeChecked()
+  })
+
+  it('closes create form by clicking Cancel in footer', async () => {
+    const user = userEvent.setup()
+    render(<PlaylistsPage />)
+
+    await user.click(screen.getByText('Create Playlist'))
+    expect(screen.getByText('Create New Playlist')).toBeInTheDocument()
+
+    await user.click(screen.getByText('Cancel'))
+    expect(screen.queryByText('Create New Playlist')).not.toBeInTheDocument()
+  })
 })

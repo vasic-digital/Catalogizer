@@ -13,6 +13,10 @@ interface MediaFiltersProps {
   className?: string
 }
 
+/**
+ * MediaFilters provides filter controls for media search including type, quality,
+ * and text search with active-filter indicators and a reset option.
+ */
 export const MediaFilters: React.FC<MediaFiltersProps> = ({
   filters,
   onFiltersChange,

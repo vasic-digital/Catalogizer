@@ -322,4 +322,65 @@ describe('Dashboard', () => {
       expect(headingTexts.some(text => text?.includes('System Status'))).toBe(true)
     })
   })
+
+  describe('Quick Action Interactions', () => {
+    beforeEach(() => {
+      mockUseAuth.mockReturnValue({
+        user: { username: 'testuser' },
+      })
+    })
+
+    it('clicking Scan Library triggers toast', async () => {
+      const user = userEvent.setup()
+      const toast = (await import('react-hot-toast')).default
+
+      render(<Dashboard />, { wrapper: createWrapper() })
+
+      await user.click(screen.getByText('Scan Library'))
+      expect(toast.promise).toHaveBeenCalled()
+    })
+
+    it('clicking Search triggers toast', async () => {
+      const user = userEvent.setup()
+      const toast = (await import('react-hot-toast')).default
+
+      render(<Dashboard />, { wrapper: createWrapper() })
+
+      await user.click(screen.getByText('Search'))
+      expect(toast.success).toHaveBeenCalledWith('Opening search interface...')
+    })
+
+    it('clicking Settings triggers toast', async () => {
+      const user = userEvent.setup()
+      const toast = (await import('react-hot-toast')).default
+
+      render(<Dashboard />, { wrapper: createWrapper() })
+
+      await user.click(screen.getByText('Settings'))
+      expect(toast.success).toHaveBeenCalledWith('Opening settings...')
+    })
+  })
+
+  describe('System Status Values', () => {
+    beforeEach(() => {
+      mockUseAuth.mockReturnValue({
+        user: { username: 'testuser' },
+      })
+    })
+
+    it('shows CPU percentage', () => {
+      render(<Dashboard />, { wrapper: createWrapper() })
+      expect(screen.getByText('45%')).toBeInTheDocument()
+    })
+
+    it('shows Memory percentage', () => {
+      render(<Dashboard />, { wrapper: createWrapper() })
+      expect(screen.getByText('62%')).toBeInTheDocument()
+    })
+
+    it('shows Disk percentage', () => {
+      render(<Dashboard />, { wrapper: createWrapper() })
+      expect(screen.getByText('78%')).toBeInTheDocument()
+    })
+  })
 })

@@ -9,6 +9,43 @@ All notable changes to the Catalogizer project are documented here. This page pr
 
 ---
 
+## v2.1.0 (2026-03-31)
+
+### New Features
+- 152 new challenges (CH-251 to CH-401): concurrency hardening, coverage gates, stress validation, documentation completeness, accessibility, API contract compliance
+- Total challenge bank: 400+ (from 249)
+- 6 new video course modules (25-30): Concurrency Hardening, Security Scanning in Practice, Test Coverage Mastery, Performance Monitoring, Module Architecture Deep Dive, Cross-Platform Consistency
+- Real media quality breakdown by file extension (`/api/v1/media/stats` `by_quality` field)
+
+### Test Coverage Expansion
+- 82+ new frontend component tests (auth, layout, UI base, media, entity, dashboard, playlists, collections, pages, hooks)
+- 30+ new TypeScript submodule tests across all 9 modules
+- Go doc.go files for all 41 packages
+- ARCHITECTURE.md for all submodules
+- `.env` protection in `.gitignore` for all submodules
+
+### Improvements
+- `rows.Err()` check after database row iteration in media stats handler
+- Removed `console.debug()` from production code (MemoCache.tsx)
+- Replaced `value: any` with proper union type in CollectionRule
+- Type-safe Select/Input value narrowing in SmartCollectionBuilder
+- typeof guard for Date.parse in collection rule validation
+
+### Security
+- govulncheck: 0 vulnerabilities (verified with scan artifacts)
+- npm audit: 0 vulnerabilities across all components
+- Semgrep custom rules (8 rules): 0 real security findings
+- Removed 2 `fmt.Printf("DEBUG: ...")` statements from challenge code
+- Fixed stale test expecting panic on graceful nil-DB handling
+
+### Documentation
+- Video course expanded to 30 modules (was 24)
+- Course outline updated to 16-18 hours
+- Master Completion Plan v3: 13-phase hardening roadmap
+- Session report with full verification results
+
+---
+
 ## v2.0.0 (2026-03-30)
 
 ### New Features

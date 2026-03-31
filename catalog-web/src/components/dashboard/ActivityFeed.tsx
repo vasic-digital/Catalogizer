@@ -45,6 +45,10 @@ const ACTIVITY_MESSAGES = {
   media_viewed: (data: Record<string, unknown>) => `Viewed "${data.title as string}"`
 }
 
+/**
+ * ActivityFeed displays a chronological list of recent user and system
+ * activities such as media plays, uploads, and logins.
+ */
 export const ActivityFeed: React.FC<ActivityFeedProps> = ({
   limit = 10,
   showFilters = true

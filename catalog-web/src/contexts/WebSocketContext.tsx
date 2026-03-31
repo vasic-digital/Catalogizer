@@ -13,6 +13,12 @@ interface WebSocketContextType {
 
 const WebSocketContext = createContext<WebSocketContextType | undefined>(undefined)
 
+/**
+ * useWebSocketContext returns the WebSocket connection controls from the
+ * nearest WebSocketProvider. Throws if used outside the provider.
+ *
+ * @returns WebSocket connect, disconnect, send, subscribe, and unsubscribe actions
+ */
 export const useWebSocketContext = () => {
   const context = useContext(WebSocketContext)
   if (context === undefined) {
@@ -25,6 +31,10 @@ interface WebSocketProviderProps {
   children: ReactNode
 }
 
+/**
+ * WebSocketProvider automatically connects the WebSocket when the user is
+ * authenticated and disconnects on logout or unmount.
+ */
 export const WebSocketProvider: React.FC<WebSocketProviderProps> = ({ children }) => {
   const { isAuthenticated, user } = useAuth()
   const webSocket = useWebSocket()

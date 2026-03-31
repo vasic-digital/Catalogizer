@@ -16,6 +16,9 @@ interface PageHeaderProps {
   className?: string
 }
 
+/**
+ * PageHeader renders a page title with optional subtitle, icon, breadcrumbs, and action buttons.
+ */
 export const PageHeader: React.FC<PageHeaderProps> = ({
   title,
   subtitle,

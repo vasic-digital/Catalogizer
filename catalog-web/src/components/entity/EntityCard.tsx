@@ -4,6 +4,10 @@ import { motion } from 'framer-motion'
 import { TYPE_ICONS } from './TypeSelector'
 import type { MediaEntity } from '@/types/media'
 
+/**
+ * EntityCard displays a single media entity as a compact card with type icon,
+ * title, year, rating, and genre tags.
+ */
 export function EntityCard({
   entity,
   onClick,

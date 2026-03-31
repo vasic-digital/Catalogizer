@@ -4,7 +4,7 @@
 
 **Title**: Mastering Catalogizer - Building a Multi-Platform Media Collection Manager
 
-**Duration**: 12-14 hours (across 18 modules)
+**Duration**: 16-18 hours (across 30 modules)
 
 **Audience**: Intermediate to advanced Go and TypeScript developers
 
@@ -465,6 +465,60 @@
 - Authentication flows
 - Rate limiting
 - Versioning strategy
+
+---
+
+## Module 25: Concurrency Hardening (25 min)
+
+- Debounce map bounding with TTL and max-size eviction
+- Active scan session cleanup (deferred goroutine + timer)
+- IP rate limiter bucket bounding with LRU eviction
+- Lock ordering documentation for multi-mutex structs
+- WaitGroup + context cancellation patterns
+
+## Module 26: Security Scanning in Practice (20 min)
+
+- Running govulncheck, npm audit, Semgrep, SonarQube, Snyk
+- Interpreting scan results and severity levels
+- Custom Semgrep rules (8 project-specific rules)
+- Handling false positives
+- Security gates for release workflow
+
+## Module 27: Test Coverage Mastery (25 min)
+
+- Table-driven tests achieving 95%+ Go coverage
+- In-memory SQLite test isolation
+- Fuzz testing for input parsing (20+ targets)
+- Benchmark tests for performance regression (50+ benchmarks)
+- Frontend testing with Vitest + React Testing Library
+- Hook testing with renderHook
+
+## Module 28: Performance Monitoring (25 min)
+
+- Prometheus custom metrics collection
+- Grafana dashboard visualization
+- k6 load testing (load, stress, soak, spike)
+- Alertmanager configuration and routing
+- Monitoring-driven optimization workflow
+
+## Module 29: Module Architecture Deep Dive (25 min)
+
+- 43 submodules: Go (24), TypeScript (9), Specialized (10)
+- Go wiring via replace directives + module registry
+- TypeScript wiring via file:// + module registry
+- Lazy initialization patterns
+- Semaphore-based concurrency control
+- Circuit breaker pattern
+
+## Module 30: Cross-Platform Consistency (25 min)
+
+- 6 platforms sharing 1 API contract (OpenAPI spec)
+- Android MVVM + Compose architecture
+- Android TV D-pad navigation + focus management
+- Tauri React + Rust IPC for desktop
+- 9 shared TypeScript libraries
+- HelixQA autonomous cross-platform testing
+- 174 user flow challenges for platform consistency
 
 ---
 
