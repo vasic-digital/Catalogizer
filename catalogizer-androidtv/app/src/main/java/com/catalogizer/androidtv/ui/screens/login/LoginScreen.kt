@@ -50,6 +50,11 @@ import com.catalogizer.androidtv.data.models.ServerEntry
 import com.catalogizer.androidtv.ui.viewmodel.AuthViewModel
 import kotlinx.coroutines.launch
 
+/**
+ * TV-optimized login screen with D-pad-navigable credential fields, server URL
+ * configuration, auto-discovery of Catalogizer API instances on the local network,
+ * and support for ADB-driven auto-login via intent extras.
+ */
 @Composable
 fun LoginScreen(
     authViewModel: AuthViewModel,

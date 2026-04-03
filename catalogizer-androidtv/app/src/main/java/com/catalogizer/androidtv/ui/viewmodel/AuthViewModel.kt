@@ -8,6 +8,10 @@ import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 
+/**
+ * Manages authentication state for the TV app including login, logout, token refresh,
+ * and error clearing. Exposes [authState] as a [StateFlow] derived from [AuthRepository].
+ */
 class AuthViewModel(
     private val authRepository: AuthRepository
 ) : ViewModel() {

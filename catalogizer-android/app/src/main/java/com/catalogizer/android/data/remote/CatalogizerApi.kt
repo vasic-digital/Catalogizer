@@ -4,6 +4,10 @@ import com.catalogizer.android.data.models.*
 import retrofit2.Response
 import retrofit2.http.*
 
+/**
+ * Retrofit interface defining all Catalogizer REST API endpoints including
+ * authentication, media CRUD, user preferences, favorites, streaming, and system health.
+ */
 interface CatalogizerApi {
 
     // Authentication endpoints
@@ -155,7 +159,10 @@ interface CatalogizerApi {
     suspend fun getContinueWatching(): Response<List<MediaItem>>
 }
 
-// API Response wrapper for consistent error handling
+/**
+ * Generic API response wrapper providing consistent error handling.
+ * Encapsulates either a successful [data] payload or an [error] message.
+ */
 data class ApiResult<T>(
     val data: T? = null,
     val error: String? = null,
@@ -181,7 +188,10 @@ suspend fun <T> Response<T>.toApiResult(): ApiResult<T> {
     }
 }
 
-// WebSocket events for real-time updates
+/**
+ * Sealed class hierarchy representing WebSocket events for real-time updates
+ * including media changes, system status, analysis completion, and notifications.
+ */
 sealed class WebSocketEvent {
     data class MediaUpdate(
         val action: String,

@@ -7,6 +7,11 @@ import org.java_websocket.client.WebSocketClient
 import org.java_websocket.handshake.ServerHandshake
 import java.net.URI
 
+/**
+ * Manages a WebSocket connection to the Catalogizer API for real-time event streaming.
+ * Automatically subscribes to media and system update channels on connection and
+ * exposes events as a [StateFlow] of [WebSocketEvent].
+ */
 class WebSocketRepository(
     private val baseUrl: String,
     private val tokenProvider: () -> String?

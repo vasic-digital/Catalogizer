@@ -121,6 +121,10 @@ private val DarkColorScheme = darkColorScheme(
     outline = DarkOutline
 )
 
+/**
+ * Catalogizer Material 3 theme composable that applies light/dark color schemes,
+ * dynamic color on Android 12+, and configures the status bar appearance.
+ */
 @Composable
 fun CatalogizerTheme(
     darkTheme: Boolean = isSystemInDarkTheme(),

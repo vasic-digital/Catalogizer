@@ -64,6 +64,10 @@ private val TVLightColorScheme = lightColorScheme(
     onSurfaceVariant = Color(0xFF43474E)
 )
 
+/**
+ * Catalogizer TV Material 3 theme composable applying dark or light color schemes
+ * optimized for 10-foot TV viewing with the [TVTypography] scale.
+ */
 @OptIn(ExperimentalTvMaterial3Api::class)
 @Composable
 fun CatalogizerTVTheme(

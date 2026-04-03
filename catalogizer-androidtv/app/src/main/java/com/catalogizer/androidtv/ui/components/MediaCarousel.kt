@@ -22,6 +22,10 @@ import androidx.compose.ui.unit.sp
 import androidx.tv.material3.*
 import com.catalogizer.androidtv.data.models.MediaItem
 
+/**
+ * Horizontal scrolling carousel of [MediaCard] items with a section header and
+ * "See All" action. Designed for TV D-pad navigation with focus-aware cards.
+ */
 @Composable
 fun MediaCarousel(
     title: String,
@@ -88,6 +92,10 @@ fun MediaCarousel(
     }
 }
 
+/**
+ * Large featured media card with 16:9 aspect ratio, overlay metadata (title, description,
+ * year, rating, quality), and play/info action buttons for hero banner display.
+ */
 @Composable
 fun FeaturedMediaCard(
     mediaItem: MediaItem,

@@ -3,6 +3,9 @@ package com.catalogizer.android.data.models
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 
+/**
+ * Represents an authenticated user with profile data, role, and permissions.
+ */
 @Serializable
 data class User(
     val id: Long,
@@ -65,6 +68,9 @@ data class AuthStatus(
     val error: String? = null
 )
 
+/**
+ * UI state holder for authentication status, loading indicator, and error messages.
+ */
 data class AuthState(
     val isAuthenticated: Boolean = false,
     val isLoading: Boolean = false,
@@ -103,6 +109,9 @@ data class ErrorResponse(
     val details: Map<String, String>? = null
 )
 
+/**
+ * Enumeration of user roles with their API values and display names.
+ */
 enum class UserRole(val value: String, val displayName: String) {
     ADMIN("admin", "Administrator"),
     MODERATOR("moderator", "Moderator"),
@@ -116,6 +125,9 @@ enum class UserRole(val value: String, val displayName: String) {
     }
 }
 
+/**
+ * Constants for permission strings used in role-based access control.
+ */
 object Permissions {
     // Media permissions
     const val READ_MEDIA = "read:media"

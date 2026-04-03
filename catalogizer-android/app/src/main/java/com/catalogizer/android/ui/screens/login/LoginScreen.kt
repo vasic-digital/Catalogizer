@@ -33,6 +33,11 @@ import kotlinx.coroutines.withContext
 import java.net.HttpURLConnection
 import java.net.URL
 
+/**
+ * Login screen with username/password fields, server URL configuration, and
+ * local network discovery. Persists server URL via [DependencyContainer] and
+ * navigates to home on successful authentication.
+ */
 @Composable
 fun LoginScreen(
     authViewModel: AuthViewModel,

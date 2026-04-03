@@ -10,6 +10,10 @@ import kotlinx.parcelize.Parcelize
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 
+/**
+ * Core media entity stored both as a Room [Entity] and serialized from the API.
+ * Tracks metadata, watch progress, favorite status, and download state.
+ */
 @Parcelize
 @Serializable
 @Entity(tableName = "media_items")

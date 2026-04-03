@@ -11,6 +11,10 @@ import androidx.media3.session.MediaSessionService
 import com.google.common.util.concurrent.Futures
 import com.google.common.util.concurrent.ListenableFuture
 
+/**
+ * [MediaSessionService] providing ExoPlayer-backed media playback with TV media session
+ * integration. Enables remote control (play/pause) and background audio via [MediaSession].
+ */
 @UnstableApi
 class MediaPlaybackService : MediaSessionService() {
     private var mediaSession: MediaSession? = null

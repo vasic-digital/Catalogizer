@@ -9,6 +9,10 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 
+/**
+ * Manages authentication state including login, logout, and initial auth status check.
+ * Exposes [authState] as a [StateFlow] for reactive UI updates.
+ */
 class AuthViewModel(
     private val authRepository: AuthRepository
 ) : ViewModel() {

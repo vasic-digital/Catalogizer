@@ -53,6 +53,11 @@ private val OverlayGradientBottom = listOf(Color.Transparent, Color.Black.copy(a
 // Playback speed presets (VLC-style)
 private val speedOptions = listOf(0.25f, 0.5f, 0.75f, 1.0f, 1.25f, 1.5f, 2.0f, 3.0f)
 
+/**
+ * VLC-style media player screen with ExoPlayer integration, D-pad controls,
+ * seekbar, playback speed selection, audio/subtitle track switching, and
+ * auto-hiding overlay. Resolves stream URLs from the entity API with auth headers.
+ */
 @androidx.annotation.OptIn(UnstableApi::class)
 @Composable
 fun MediaPlayerScreen(

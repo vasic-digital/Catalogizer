@@ -25,6 +25,11 @@ import okhttp3.MediaType.Companion.toMediaType
 import retrofit2.Retrofit
 import java.util.concurrent.TimeUnit
 
+/**
+ * Manual dependency injection container for the Android TV app. Provides singleton
+ * access to repositories, API clients, network discovery, and ViewModel factories.
+ * Manages runtime server URL switching and async initialization from [DataStore].
+ */
 class DependencyContainer(private val context: Context) {
 
     private val dataStore: DataStore<Preferences> by lazy {

@@ -10,6 +10,11 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.first
 
+/**
+ * Handles media data operations for the Android TV app via the remote [CatalogizerApi].
+ * Supports entity browsing, search, favorites, collections, recommendations,
+ * playlists, and watch progress tracking.
+ */
 class MediaRepository(private val context: Context, private val api: CatalogizerApi) {
 
     /**

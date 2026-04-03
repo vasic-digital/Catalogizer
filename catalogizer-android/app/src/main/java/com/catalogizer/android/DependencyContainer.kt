@@ -34,6 +34,11 @@ import java.net.HttpURLConnection
 import java.net.URL
 import java.util.concurrent.TimeUnit
 
+/**
+ * Manual dependency injection container providing singleton access to repositories,
+ * API clients, and ViewModel factories. Manages server URL configuration, Retrofit
+ * client lifecycle, and async initialization from persisted [DataStore] settings.
+ */
 class DependencyContainer(private val context: Context) {
 
     private val json = Json {

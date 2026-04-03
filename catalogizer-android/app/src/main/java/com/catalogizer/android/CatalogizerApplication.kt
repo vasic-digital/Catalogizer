@@ -11,6 +11,12 @@ import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.launch
 
+/**
+ * Application-level class that initializes the [DependencyContainer] and manages
+ * the application lifecycle including coroutine scope and process lifecycle observer.
+ * Implements [Configuration.Provider] to supply a custom [WorkManager] configuration
+ * with [CatalogizerWorkerFactory].
+ */
 class CatalogizerApplication : Application(), Configuration.Provider {
 
     val dependencyContainer by lazy { DependencyContainer.getInstance(this) }

@@ -15,6 +15,9 @@ import com.catalogizer.androidtv.ui.screens.search.SearchViewModel
 import com.catalogizer.androidtv.ui.viewmodel.AuthViewModel
 import com.catalogizer.androidtv.ui.viewmodel.HomeViewModel
 
+/**
+ * Sealed class defining the navigation route constants for all TV app screens.
+ */
 sealed class TVScreen(val route: String) {
     object Login : TVScreen("login")
     object Home : TVScreen("home")
@@ -28,6 +31,11 @@ sealed class TVScreen(val route: String) {
     object Settings : TVScreen("settings")
 }
 
+/**
+ * Top-level navigation host for the TV app wiring screen routes to their composables.
+ * Selects the start destination based on [isAuthenticated] state and provides
+ * navigation to login, home, search, media detail, player, and settings screens.
+ */
 @Composable
 fun TVNavigation(
     isAuthenticated: Boolean,

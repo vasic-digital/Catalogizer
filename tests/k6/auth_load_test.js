@@ -43,7 +43,7 @@ export function setup() {
   }
 
   const body = JSON.parse(loginRes.body);
-  return { setupToken: body.token || body.access_token || '' };
+  return { setupToken: body.session_token || body.token || body.access_token || '' };
 }
 
 export default function (data) {
@@ -127,7 +127,7 @@ function testTokenRefresh() {
   }
 
   const body = JSON.parse(loginRes.body);
-  const token = body.token || body.access_token || '';
+  const token = body.session_token || body.token || body.access_token || '';
 
   // Use the token to access a protected endpoint (simulates token refresh pattern)
   const start = new Date();
@@ -166,7 +166,7 @@ function testAuthenticatedAccess(token) {
 
     if (loginRes.status === 200) {
       const body = JSON.parse(loginRes.body);
-      token = body.token || body.access_token || '';
+      token = body.session_token || body.token || body.access_token || '';
     }
   }
 

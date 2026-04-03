@@ -52,7 +52,7 @@ function authenticate() {
 
   if (loginRes.status === 200) {
     const body = JSON.parse(loginRes.body);
-    return body.token || body.access_token || '';
+    return body.session_token || body.token || body.access_token || '';
   }
   return '';
 }

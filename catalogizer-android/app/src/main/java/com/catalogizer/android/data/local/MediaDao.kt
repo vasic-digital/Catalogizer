@@ -5,6 +5,10 @@ import androidx.room.*
 import com.catalogizer.android.data.models.MediaItem
 import kotlinx.coroutines.flow.Flow
 
+/**
+ * Data access object for [MediaItem] entities providing paginated queries,
+ * CRUD operations, favorite/progress updates, and offline cache management.
+ */
 @Dao
 interface MediaDao {
 

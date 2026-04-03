@@ -6,6 +6,11 @@ import com.catalogizer.androidtv.data.models.MediaSearchResponse
 import retrofit2.Response
 import retrofit2.http.*
 
+/**
+ * Retrofit interface defining all Catalogizer REST API endpoints for the Android TV client
+ * including authentication, entity browsing, media search, favorites, collections,
+ * recommendations, playlists, and streaming.
+ */
 interface CatalogizerApi {
 
     // Authentication endpoints
@@ -107,6 +112,9 @@ interface CatalogizerApi {
     suspend fun getSubtitleLanguages(): Response<Map<String, Any>>
 }
 
+/**
+ * API response model for entity statistics containing total count and per-type breakdown.
+ */
 @kotlinx.serialization.Serializable
 data class EntityStatsResponse(
     @kotlinx.serialization.SerialName("total_entities")
@@ -115,7 +123,9 @@ data class EntityStatsResponse(
     val byType: Map<String, Int> = emptyMap()
 )
 
-// Auth response models
+/**
+ * Authenticated user profile returned in the login response.
+ */
 @kotlinx.serialization.Serializable
 data class LoginUser(
     val id: Long,
@@ -124,6 +134,10 @@ data class LoginUser(
     val display_name: String? = null
 )
 
+/**
+ * API response model for successful authentication containing user profile,
+ * session token, optional refresh token, and expiration timestamp.
+ */
 @kotlinx.serialization.Serializable
 data class LoginResponse(
     val user: LoginUser,

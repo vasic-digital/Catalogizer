@@ -1,5 +1,9 @@
 package com.catalogizer.androidtv.data.models
 
+/**
+ * Immutable state holder for authentication status, credentials, and error information.
+ * [Unauthenticated] provides a default unauthenticated instance.
+ */
 data class AuthState(
     val isAuthenticated: Boolean = false,
     val username: String? = null,

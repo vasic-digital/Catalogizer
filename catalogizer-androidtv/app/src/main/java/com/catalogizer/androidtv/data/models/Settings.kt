@@ -13,6 +13,10 @@ data class ServerEntry(
     val lastConnected: Long = 0L
 )
 
+/**
+ * Immutable data class holding all user-configurable settings including playback,
+ * subtitle preferences, server URL, discovered servers, and auto-discovery toggle.
+ */
 data class Settings(
     val enableNotifications: Boolean,
     val enableAutoPlay: Boolean,

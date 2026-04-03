@@ -12,6 +12,11 @@ import java.text.SimpleDateFormat
 import java.util.Locale
 import java.util.TimeZone
 
+/**
+ * Manages authentication state for the Android TV app including login, logout,
+ * token refresh with mutex-based concurrency, and token expiration checks.
+ * Exposes [authState] as a [StateFlow] for reactive UI binding.
+ */
 class AuthRepository(private val context: Context, private var api: CatalogizerApi?) {
 
     fun setApi(api: CatalogizerApi) {

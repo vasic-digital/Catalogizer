@@ -130,6 +130,11 @@ private fun SettingsSection(
     }
 }
 
+/**
+ * TV settings screen with D-pad-accessible toggle rows, streaming quality selector,
+ * subtitle language picker, notification settings, and account logout.
+ * All controls feature WCAG AA-compliant contrast and visible focus indicators.
+ */
 @OptIn(ExperimentalTvMaterial3Api::class)
 @Composable
 fun SettingsScreen(

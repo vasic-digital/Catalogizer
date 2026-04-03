@@ -38,6 +38,11 @@ private data class ContentRailData(
     val navigateToPlayer: Boolean = false
 )
 
+/**
+ * TV home screen displaying dynamic content rails (recent, top-rated, trending, recommended)
+ * with catalog statistics header. Uses [HomeViewModel] for parallel data loading and
+ * handles navigation to search, settings, media detail, and player screens.
+ */
 @OptIn(ExperimentalTvMaterial3Api::class)
 @Composable
 fun HomeScreen(

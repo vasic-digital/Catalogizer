@@ -11,6 +11,10 @@ import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 
+/**
+ * UI state holder for the TV home screen containing all media rails,
+ * recommendations, trending items, catalog statistics, and loading/error state.
+ */
 data class HomeUiState(
     val isLoading: Boolean = false,
     val error: String? = null,
@@ -34,6 +38,11 @@ data class HomeUiState(
     val statsByType: Map<String, Int> = emptyMap()
 )
 
+/**
+ * Provides home screen data for the TV app with parallel API calls for all content rails.
+ * Loads recent items by type, top-rated lists, recommendations, trending items, and
+ * catalog statistics. Exposes [uiState] as a [StateFlow] of [HomeUiState].
+ */
 class HomeViewModel(
     private val mediaRepository: MediaRepository
 ) : ViewModel() {

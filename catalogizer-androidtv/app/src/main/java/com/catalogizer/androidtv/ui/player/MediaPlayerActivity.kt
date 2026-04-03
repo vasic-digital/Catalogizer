@@ -8,6 +8,10 @@ import androidx.tv.material3.MaterialTheme
 import com.catalogizer.androidtv.ui.screens.player.MediaPlayerScreen
 import com.catalogizer.androidtv.ui.theme.CatalogizerTVTheme
 
+/**
+ * Standalone activity for media playback launched via intent with MEDIA_ID, MEDIA_URL,
+ * and MEDIA_TITLE extras. Hosts [MediaPlayerScreen] within the TV theme.
+ */
 class MediaPlayerActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)

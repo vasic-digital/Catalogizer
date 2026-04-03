@@ -6,6 +6,11 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.launch
 
+/**
+ * Application-level class for the Android TV variant. Initializes the
+ * [DependencyContainer] and loads persisted server settings asynchronously
+ * during application startup.
+ */
 class CatalogizerTVApplication : Application() {
 
     val dependencyContainer by lazy { DependencyContainer.getInstance(this) }

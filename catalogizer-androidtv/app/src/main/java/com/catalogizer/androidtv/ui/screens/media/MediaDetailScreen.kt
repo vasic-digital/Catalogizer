@@ -34,6 +34,11 @@ import com.catalogizer.androidtv.data.models.MediaItem
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 
+/**
+ * Media detail screen displaying a hero poster, metadata badges (year, rating, type, quality),
+ * play/back/favorite action buttons, synopsis, and file info. Fetches entity data
+ * from [MediaRepository] and checks favorite status via the API.
+ */
 @Composable
 fun MediaDetailScreen(
     mediaId: Long,

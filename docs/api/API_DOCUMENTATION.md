@@ -2,130 +2,51 @@
 
 Complete REST API documentation for the Catalogizer backend (`catalog-api`). All endpoints are served under the base URL `http://localhost:8080`.
 
+**Total registered endpoints: 208**
+
 ## Table of Contents
 
 1. [Overview](#overview)
-2. [Authentication](#authentication)
-   - [POST /api/v1/auth/login](#post-apiv1authlogin)
-   - [POST /api/v1/auth/register](#post-apiv1authregister)
-   - [POST /api/v1/auth/refresh](#post-apiv1authrefresh)
-   - [POST /api/v1/auth/logout](#post-apiv1authlogout)
-   - [GET /api/v1/auth/me](#get-apiv1authme)
-3. [Catalog Browsing](#catalog-browsing)
-   - [GET /api/v1/catalog](#get-apiv1catalog)
-   - [GET /api/v1/catalog/{path}](#get-apiv1catalogpath)
-   - [GET /api/v1/catalog-info/{path}](#get-apiv1catalog-infopath)
-4. [Search](#search)
-   - [GET /api/v1/search](#get-apiv1search)
-   - [GET /api/v1/search/duplicates](#get-apiv1searchduplicates)
-5. [Download](#download)
-   - [GET /api/v1/download/file/{id}](#get-apiv1downloadfileid)
-   - [GET /api/v1/download/directory/{path}](#get-apiv1downloaddirectorypath)
-   - [POST /api/v1/download/archive](#post-apiv1downloadarchive)
-6. [File Copy Operations](#file-copy-operations)
-   - [POST /api/v1/copy/storage](#post-apiv1copystorage)
-   - [POST /api/v1/copy/local](#post-apiv1copylocal)
-   - [POST /api/v1/copy/upload](#post-apiv1copyupload)
-7. [Media Operations](#media-operations)
-   - [GET /api/v1/media/{id}](#get-apiv1mediaid)
-   - [PUT /api/v1/media/{id}/progress](#put-apiv1mediaidprogress)
-   - [PUT /api/v1/media/{id}/favorite](#put-apiv1mediaidfavorite)
-8. [Recommendations](#recommendations)
-   - [GET /api/v1/recommendations/similar/{media_id}](#get-apiv1recommendationssimilarmedia_id)
-   - [GET /api/v1/recommendations/trending](#get-apiv1recommendationstrending)
-   - [GET /api/v1/recommendations/personalized/{user_id}](#get-apiv1recommendationspersonalizeduser_id)
-   - [GET /api/v1/recommendations/test](#get-apiv1recommendationstest)
-9. [Subtitles](#subtitles)
-   - [GET /api/v1/subtitles/search](#get-apiv1subtitlessearch)
-   - [POST /api/v1/subtitles/download](#post-apiv1subtitlesdownload)
-   - [GET /api/v1/subtitles/media/{media_id}](#get-apiv1subtitlesmediamedia_id)
-   - [GET /api/v1/subtitles/{subtitle_id}/verify-sync/{media_id}](#get-apiv1subtitlessubtitle_idverify-syncmedia_id)
-   - [POST /api/v1/subtitles/translate](#post-apiv1subtitlestranslate)
-   - [POST /api/v1/subtitles/upload](#post-apiv1subtitlesupload)
-   - [GET /api/v1/subtitles/languages](#get-apiv1subtitleslanguages)
-   - [GET /api/v1/subtitles/providers](#get-apiv1subtitlesproviders)
-10. [Storage](#storage)
-    - [GET /api/v1/storage/roots](#get-apiv1storageroots)
-    - [GET /api/v1/storage/list/{path}](#get-apiv1storagelistpath)
-11. [Statistics](#statistics)
-    - [GET /api/v1/stats/directories/by-size](#get-apiv1statsdirectoriesby-size)
-    - [GET /api/v1/stats/duplicates/count](#get-apiv1statsduplicatescount)
-    - [GET /api/v1/stats/overall](#get-apiv1statsoverall)
-    - [GET /api/v1/stats/smb/{smb_root}](#get-apiv1statssmb_root)
-    - [GET /api/v1/stats/filetypes](#get-apiv1statsfiletypes)
-    - [GET /api/v1/stats/sizes](#get-apiv1statssizes)
-    - [GET /api/v1/stats/duplicates](#get-apiv1statsduplicates)
-    - [GET /api/v1/stats/duplicates/groups](#get-apiv1statsduplicatesgroups)
-    - [GET /api/v1/stats/access](#get-apiv1statsaccess)
-    - [GET /api/v1/stats/growth](#get-apiv1statsgrowth)
-    - [GET /api/v1/stats/scans](#get-apiv1statsscans)
-12. [SMB Discovery](#smb-discovery)
-    - [POST /api/v1/smb/discover](#post-apiv1smbdiscover)
-    - [GET /api/v1/smb/discover](#get-apiv1smbdiscover)
-    - [POST /api/v1/smb/test](#post-apiv1smbtest)
-    - [GET /api/v1/smb/test](#get-apiv1smbtest)
-    - [POST /api/v1/smb/browse](#post-apiv1smbbrowse)
-13. [Conversion](#conversion)
-    - [POST /api/v1/conversion/jobs](#post-apiv1conversionjobs)
-    - [GET /api/v1/conversion/jobs](#get-apiv1conversionjobs)
-    - [GET /api/v1/conversion/jobs/{id}](#get-apiv1conversionjobsid)
-    - [POST /api/v1/conversion/jobs/{id}/cancel](#post-apiv1conversionjobsidcancel)
-    - [GET /api/v1/conversion/formats](#get-apiv1conversionformats)
-14. [User Management](#user-management)
-    - [POST /api/v1/users](#post-apiv1users)
-    - [GET /api/v1/users](#get-apiv1users)
-    - [GET /api/v1/users/{id}](#get-apiv1usersid)
-    - [PUT /api/v1/users/{id}](#put-apiv1usersid)
-    - [DELETE /api/v1/users/{id}](#delete-apiv1usersid)
-    - [POST /api/v1/users/{id}/reset-password](#post-apiv1usersidreset-password)
-    - [POST /api/v1/users/{id}/lock](#post-apiv1usersidlock)
-    - [POST /api/v1/users/{id}/unlock](#post-apiv1usersidunlock)
-15. [Role Management](#role-management)
-    - [POST /api/v1/roles](#post-apiv1roles)
-    - [GET /api/v1/roles](#get-apiv1roles)
-    - [GET /api/v1/roles/{id}](#get-apiv1rolesid)
-    - [PUT /api/v1/roles/{id}](#put-apiv1rolesid)
-    - [DELETE /api/v1/roles/{id}](#delete-apiv1rolesid)
-    - [GET /api/v1/roles/permissions](#get-apiv1rolespermissions)
-16. [Configuration](#configuration)
-    - [GET /api/v1/configuration](#get-apiv1configuration)
-    - [POST /api/v1/configuration/test](#post-apiv1configurationtest)
-    - [GET /api/v1/configuration/status](#get-apiv1configurationstatus)
-    - [GET /api/v1/configuration/wizard/step/{step_id}](#get-apiv1configurationwizardstepstep_id)
-    - [POST /api/v1/configuration/wizard/step/{step_id}/validate](#post-apiv1configurationwizardstepstep_idvalidate)
-    - [POST /api/v1/configuration/wizard/step/{step_id}/save](#post-apiv1configurationwizardstepstep_idsave)
-    - [GET /api/v1/configuration/wizard/progress](#get-apiv1configurationwizardprogress)
-    - [POST /api/v1/configuration/wizard/complete](#post-apiv1configurationwizardcomplete)
-17. [Error Reporting](#error-reporting)
-    - [POST /api/v1/errors/report](#post-apiv1errorsreport)
-    - [POST /api/v1/errors/crash](#post-apiv1errorscrash)
-    - [GET /api/v1/errors/reports](#get-apiv1errorsreports)
-    - [GET /api/v1/errors/reports/{id}](#get-apiv1errorsreportsid)
-    - [PUT /api/v1/errors/reports/{id}/status](#put-apiv1errorsreportsidstatus)
-    - [GET /api/v1/errors/crashes](#get-apiv1errorscrashes)
-    - [GET /api/v1/errors/crashes/{id}](#get-apiv1errorscrashesid)
-    - [PUT /api/v1/errors/crashes/{id}/status](#put-apiv1errorscrashesidstatus)
-    - [GET /api/v1/errors/statistics](#get-apiv1errorsstatistics)
-    - [GET /api/v1/errors/crash-statistics](#get-apiv1errorscrash-statistics)
-    - [GET /api/v1/errors/health](#get-apiv1errorshealth)
-18. [Log Management](#log-management)
-    - [POST /api/v1/logs/collect](#post-apiv1logscollect)
-    - [GET /api/v1/logs/collections](#get-apiv1logscollections)
-    - [GET /api/v1/logs/collections/{id}](#get-apiv1logscollectionsid)
-    - [GET /api/v1/logs/collections/{id}/entries](#get-apiv1logscollectionsidentries)
-    - [POST /api/v1/logs/collections/{id}/export](#post-apiv1logscollectionsidexport)
-    - [GET /api/v1/logs/collections/{id}/analyze](#get-apiv1logscollectionsidanalyze)
-    - [POST /api/v1/logs/share](#post-apiv1logsshare)
-    - [GET /api/v1/logs/share/{token}](#get-apiv1logssharetoken)
-    - [DELETE /api/v1/logs/share/{id}](#delete-apiv1logsshareid)
-    - [GET /api/v1/logs/stream](#get-apiv1logsstream)
-    - [GET /api/v1/logs/statistics](#get-apiv1logsstatistics)
-19. [Health and Metrics](#health-and-metrics)
-    - [GET /health](#get-health)
-    - [GET /metrics](#get-metrics)
-20. [Global Middleware](#global-middleware)
-21. [Error Handling](#error-handling)
-22. [Rate Limiting](#rate-limiting)
+2. [Health and Infrastructure](#health-and-infrastructure)
+3. [Service Discovery](#service-discovery)
+4. [WebSocket](#websocket)
+5. [Image Proxy](#image-proxy)
+6. [Cover Art (Public)](#cover-art-public)
+7. [Assets (Public)](#assets-public)
+8. [Authentication](#authentication)
+9. [Catalog Browsing](#catalog-browsing)
+10. [Search](#search)
+11. [Download](#download)
+12. [Streaming](#streaming)
+13. [File Copy Operations](#file-copy-operations)
+14. [Media Browsing](#media-browsing)
+15. [Media Operations](#media-operations)
+16. [Recommendations](#recommendations)
+17. [Subtitles](#subtitles)
+18. [Storage and Storage Roots](#storage-and-storage-roots)
+19. [Statistics](#statistics)
+20. [SMB Discovery](#smb-discovery)
+21. [Scanning](#scanning)
+22. [Conversion](#conversion)
+23. [Admin](#admin)
+24. [User Management](#user-management)
+25. [Role Management](#role-management)
+26. [Configuration](#configuration)
+27. [Error Reporting](#error-reporting)
+28. [Log Management](#log-management)
+29. [Collections](#collections)
+30. [Assets (Authenticated)](#assets-authenticated)
+31. [Media Entities](#media-entities)
+32. [Analytics](#analytics)
+33. [Reports](#reports)
+34. [Favorites](#favorites)
+35. [Playlists](#playlists)
+36. [Browse](#browse)
+37. [Sync](#sync)
+38. [Challenges](#challenges)
+39. [Global Middleware](#global-middleware)
+40. [Error Handling](#error-handling)
+41. [Rate Limiting](#rate-limiting)
 
 ---
 
@@ -134,12 +55,14 @@ Complete REST API documentation for the Catalogizer backend (`catalog-api`). All
 | Property | Value |
 |---|---|
 | Base URL | `http://localhost:8080` |
+| HTTPS URL | `https://localhost:8443` (HTTP/2 + HTTP/3 QUIC) |
 | API Version | `v1` |
 | Auth Method | JWT Bearer Token |
 | Content Type | `application/json` |
+| Compression | Brotli (primary), gzip (fallback) |
 | Database | SQLite (dev) / PostgreSQL (prod) |
 
-All API routes (except `/health`, `/metrics`, and `/api/v1/auth/*`) require a valid JWT token in the `Authorization` header:
+All API routes under `/api/v1/*` (except auth endpoints, public assets, covers, and discovery) require a valid JWT token in the `Authorization` header:
 
 ```
 Authorization: Bearer <jwt_token>
@@ -147,19 +70,297 @@ Authorization: Bearer <jwt_token>
 
 ---
 
+## Health and Infrastructure
+
+### GET /health
+
+Simple health check endpoint. No authentication required. Cached for 5 seconds.
+
+**Description:** Returns basic service health status with version info.
+**Auth:** None
+**Rate Limit:** None
+
+**Response:** 200 OK
+
+```json
+{
+  "status": "healthy",
+  "time": "2024-01-20T12:00:00Z",
+  "version": "2.1.0",
+  "build_number": "16",
+  "build_date": "2026-03-31"
+}
+```
+
+---
+
+### GET /health/deep
+
+Deep health check that pings the database. Times out after 100ms to avoid blocking. Cached for 5 seconds.
+
+**Description:** Returns component-level health including database connectivity.
+**Auth:** None
+**Rate Limit:** None
+
+**Response:** 200 OK
+
+```json
+{
+  "status": "healthy",
+  "time": "2024-01-20T12:00:00Z",
+  "version": "2.1.0",
+  "components": {
+    "database": {
+      "status": "healthy",
+      "latency_ms": 2
+    }
+  }
+}
+```
+
+**Response:** 200 OK (degraded, timeout exceeded)
+
+```json
+{
+  "status": "degraded",
+  "time": "2024-01-20T12:00:00Z",
+  "version": "2.1.0",
+  "message": "health check exceeded 100ms timeout",
+  "components": {
+    "timeout": {
+      "status": "degraded",
+      "message": "deep health check took too long"
+    }
+  }
+}
+```
+
+**Response:** 503 Service Unavailable (unhealthy)
+
+---
+
+### GET /metrics
+
+Prometheus metrics endpoint. Returns metrics in Prometheus exposition format. No authentication required.
+
+**Description:** Exposes Prometheus metrics (HTTP request durations, counts, response sizes, goroutines, memory).
+**Auth:** None
+**Rate Limit:** None
+
+**Response:** 200 OK (text/plain; Prometheus exposition format)
+
+---
+
+## Service Discovery
+
+### GET /discovery
+
+Service discovery endpoint for LAN clients to find the API. Cached for 60 seconds.
+
+**Description:** Returns service connection info including WebSocket URL and API base URL.
+**Auth:** None
+**Rate Limit:** None
+
+**Response:** 200 OK
+
+```json
+{
+  "service": "catalogizer-api",
+  "name": "Catalogizer API",
+  "version": "2.1.0",
+  "build": "16",
+  "build_date": "2026-03-31",
+  "host": "192.168.0.100",
+  "port": 8080,
+  "protocol": "http",
+  "websocket_url": "ws://192.168.0.100:8080/ws",
+  "api_base_url": "http://192.168.0.100:8080/api/v1",
+  "capabilities": ["catalog", "media", "streaming", "sync", "websocket", "entities"],
+  "database": "sqlite",
+  "instance_id": "catalogizer-1234567890",
+  "uptime_seconds": 3600
+}
+```
+
+---
+
+### GET /api/v1/discovery
+
+Alias for `/discovery` under the API path. Same response. Cached for 60 seconds.
+
+**Description:** Service discovery under the API prefix.
+**Auth:** None
+**Rate Limit:** None
+
+---
+
+### GET /api/v1/discovery/announce
+
+Alias for `/discovery` under the announce path. Same response. Cached for 60 seconds.
+
+**Description:** Service announcement endpoint.
+**Auth:** None
+**Rate Limit:** None
+
+---
+
+## WebSocket
+
+### GET /ws
+
+WebSocket connection endpoint for real-time updates (scan progress, asset updates, live events).
+
+**Description:** Upgrades to WebSocket. Auth is via query parameter, not header.
+**Auth:** Query parameter token
+**Rate Limit:** None
+
+**Connection:**
+
+```
+ws://localhost:8080/ws?token=<jwt_token>
+```
+
+**Message Types (server-to-client):**
+
+```json
+{
+  "type": "asset_update",
+  "action": "asset_ready",
+  "asset_id": "abc123",
+  "asset_type": "cover",
+  "entity_type": "movie",
+  "entity_id": "42"
+}
+```
+
+---
+
+## Image Proxy
+
+### GET /api/v1/image-proxy
+
+Proxy external images (TMDB, OMDB, IGDB CDNs) through the API for devices that cannot reach external CDNs directly.
+
+**Description:** Fetches and proxies images from allowed CDN domains.
+**Auth:** None
+**Rate Limit:** None
+
+**Query Parameters:**
+
+| Parameter | Type | Required | Description |
+|---|---|---|---|
+| `url` | string | Yes | Full URL of the image to proxy |
+
+**Allowed Domains:** `image.tmdb.org`, `img.omdbapi.com`, `images.igdb.com`
+
+**Response:** Image binary with original Content-Type. Cached for 24 hours via `Cache-Control: public, max-age=86400`.
+
+**Errors:**
+
+| Status | Condition |
+|---|---|
+| 400 | Missing `url` parameter |
+| 403 | Domain not in allowlist |
+| 502 | Failed to fetch image from origin |
+
+---
+
+## Cover Art (Public)
+
+Cover image endpoints are public (no auth required).
+
+### GET /api/v1/cover/placeholder/:type
+
+Serve a placeholder SVG image for a media type. Cached for 24 hours.
+
+**Description:** Returns an SVG placeholder for the given media type.
+**Auth:** None
+**Rate Limit:** None
+
+**Path Parameters:**
+
+| Parameter | Type | Description |
+|---|---|---|
+| `type` | string | Media type: `movie`, `tv_show`, `music_album`, `game`, `software`, `book`, `comic`, etc. |
+
+**Response:** 200 OK (image/svg+xml)
+
+---
+
+### GET /api/v1/cover/url/:id
+
+Get the cover image URL for a media entity. Cached for 5 minutes.
+
+**Description:** Returns the URL where the cover image can be fetched.
+**Auth:** None
+**Rate Limit:** None
+
+**Path Parameters:**
+
+| Parameter | Type | Description |
+|---|---|---|
+| `id` | int | Media entity ID |
+
+**Response:** 200 OK
+
+```json
+{
+  "url": "/api/v1/cover/42",
+  "source": "tmdb"
+}
+```
+
+---
+
+### GET /api/v1/cover/:id
+
+Serve the actual cover image for a media entity. Cached for 24 hours.
+
+**Description:** Returns the cover image binary data.
+**Auth:** None
+**Rate Limit:** None
+
+**Path Parameters:**
+
+| Parameter | Type | Description |
+|---|---|---|
+| `id` | int | Media entity ID |
+
+**Response:** 200 OK (image/jpeg, image/png, or image/svg+xml)
+
+---
+
+## Assets (Public)
+
+### GET /api/v1/assets/:id
+
+Serve an asset by ID. Static cache headers (immutable, 1 year).
+
+**Description:** Serves fingerprinted/content-hashed asset files.
+**Auth:** None
+**Rate Limit:** None
+
+**Path Parameters:**
+
+| Parameter | Type | Description |
+|---|---|---|
+| `id` | string | Asset ID |
+
+**Response:** 200 OK with `Cache-Control: public, max-age=31536000, immutable`
+
+---
+
 ## Authentication
 
-Authentication endpoints are under `/api/v1/auth`. These endpoints have stricter rate limiting (5 requests/minute) and do not require a JWT token (except `/me`).
+Authentication endpoints are under `/api/v1/auth`. Write operations (login, register) have strict rate limiting (5/min). Read operations use standard rate limiting (100/min).
 
 ### POST /api/v1/auth/login
 
 Authenticate a user and receive JWT tokens.
 
-| Property | Value |
-|---|---|
-| Auth Required | No |
-| Rate Limit | 5/min |
-| Permission | None |
+**Description:** Validates credentials and returns session + refresh tokens.
+**Auth:** None
+**Rate Limit:** Strict (5/min)
 
 **Request Body:**
 
@@ -176,7 +377,7 @@ Authenticate a user and receive JWT tokens.
 }
 ```
 
-**Success Response (200):**
+**Response:** 200 OK
 
 ```json
 {
@@ -200,12 +401,7 @@ Authenticate a user and receive JWT tokens.
 }
 ```
 
-**Error Responses:**
-
-| Status | Body | Condition |
-|---|---|---|
-| 400 | `{"error": "Invalid request format"}` | Malformed JSON |
-| 401 | `{"error": "invalid credentials"}` | Wrong username/password |
+**Errors:** 400 (malformed JSON), 401 (invalid credentials)
 
 ---
 
@@ -213,11 +409,9 @@ Authenticate a user and receive JWT tokens.
 
 Register a new user account.
 
-| Property | Value |
-|---|---|
-| Auth Required | No |
-| Rate Limit | 5/min |
-| Permission | None |
+**Description:** Creates a new user and returns the user object.
+**Auth:** None
+**Rate Limit:** Strict (5/min)
 
 **Request Body:**
 
@@ -233,23 +427,15 @@ Register a new user account.
 
 | Field | Type | Required | Validation |
 |---|---|---|---|
-| `username` | string | Yes | - |
-| `email` | string | Yes | Valid email |
+| `username` | string | Yes | Unique |
+| `email` | string | Yes | Valid email, unique |
 | `password` | string | Yes | Min 8 characters |
 | `first_name` | string | Yes | - |
 | `last_name` | string | Yes | - |
 
-**Success Response (201):**
+**Response:** 201 Created (User object)
 
-Returns the created `User` object (see [API_SCHEMAS.md](./API_SCHEMAS.md#user)).
-
-**Error Responses:**
-
-| Status | Body | Condition |
-|---|---|---|
-| 400 | `{"error": "<validation details>"}` | Validation failure |
-| 409 | `{"error": "Username already exists"}` | Duplicate username |
-| 409 | `{"error": "Email already exists"}` | Duplicate email |
+**Errors:** 400 (validation failure), 409 (duplicate username or email)
 
 ---
 
@@ -257,10 +443,9 @@ Returns the created `User` object (see [API_SCHEMAS.md](./API_SCHEMAS.md#user)).
 
 Refresh an expired access token using a refresh token.
 
-| Property | Value |
-|---|---|
-| Auth Required | No |
-| Rate Limit | 5/min |
+**Description:** Issues new session and refresh tokens.
+**Auth:** None
+**Rate Limit:** Standard (100/min)
 
 **Request Body:**
 
@@ -270,7 +455,7 @@ Refresh an expired access token using a refresh token.
 }
 ```
 
-**Success Response (200):**
+**Response:** 200 OK
 
 ```json
 {
@@ -280,12 +465,7 @@ Refresh an expired access token using a refresh token.
 }
 ```
 
-**Error Responses:**
-
-| Status | Body | Condition |
-|---|---|---|
-| 400 | `{"error": "Invalid request format"}` | Malformed JSON |
-| 401 | `{"error": "invalid refresh token"}` | Expired or invalid token |
+**Errors:** 400 (malformed JSON), 401 (invalid or expired refresh token)
 
 ---
 
@@ -293,12 +473,11 @@ Refresh an expired access token using a refresh token.
 
 Invalidate the current session token.
 
-| Property | Value |
-|---|---|
-| Auth Required | Bearer Token |
-| Rate Limit | 5/min |
+**Description:** Logs out the current session.
+**Auth:** None (token optional)
+**Rate Limit:** Standard (100/min)
 
-**Success Response (200):**
+**Response:** 200 OK
 
 ```json
 {
@@ -312,31 +491,125 @@ Invalidate the current session token.
 
 Get the currently authenticated user's profile.
 
-| Property | Value |
-|---|---|
-| Auth Required | Bearer Token |
-| Rate Limit | 5/min |
+**Description:** Returns the user object for the JWT bearer.
+**Auth:** Required
+**Rate Limit:** Standard (100/min)
 
-**Success Response (200):**
+**Response:** 200 OK (User object)
 
-Returns the current `User` object (see [API_SCHEMAS.md](./API_SCHEMAS.md#user)).
+---
+
+### GET /api/v1/auth/status
+
+Get authentication system status (whether auth is configured, if initial setup is needed).
+
+**Description:** Returns auth system status without requiring authentication.
+**Auth:** None
+**Rate Limit:** Standard (100/min)
+
+**Response:** 200 OK
+
+```json
+{
+  "auth_configured": true,
+  "users_exist": true,
+  "registration_enabled": true
+}
+```
+
+---
+
+### GET /api/v1/auth/permissions
+
+Get the permissions for the current user.
+
+**Description:** Returns the permission set granted to the authenticated user's role.
+**Auth:** Required
+**Rate Limit:** Standard (100/min)
+
+**Response:** 200 OK
+
+```json
+{
+  "permissions": ["media.view", "media.edit", "media.upload"]
+}
+```
+
+---
+
+### GET /api/v1/auth/profile
+
+Alias for `/api/v1/auth/me`. Returns the current user profile.
+
+**Description:** Same as GET /api/v1/auth/me.
+**Auth:** Required
+**Rate Limit:** Standard (100/min)
+
+---
+
+### GET /api/v1/auth/init-status
+
+Get initialization status (whether the system has been set up).
+
+**Description:** Returns whether the system needs initial configuration.
+**Auth:** None
+**Rate Limit:** Standard (100/min)
+
+**Response:** 200 OK
+
+```json
+{
+  "initialized": true,
+  "has_admin": true,
+  "has_storage_roots": true,
+  "has_scanned_files": true
+}
+```
+
+---
+
+### POST /api/v1/auth/change-password
+
+Change the password for the currently authenticated user.
+
+**Description:** Updates the user's password after verifying the current password.
+**Auth:** Required
+**Rate Limit:** Standard (100/min)
+
+**Request Body:**
+
+```json
+{
+  "current_password": "oldpassword",
+  "new_password": "newsecurepassword"
+}
+```
+
+**Response:** 200 OK
+
+```json
+{
+  "message": "Password changed successfully"
+}
+```
+
+**Errors:** 400 (validation failure), 401 (current password incorrect)
 
 ---
 
 ## Catalog Browsing
 
-Browse the file catalog across all configured storage roots (SMB, FTP, NFS, WebDAV, local).
+Browse the file catalog across all configured storage roots (SMB, FTP, NFS, WebDAV, local). All endpoints require authentication.
 
 ### GET /api/v1/catalog
 
 List all available storage root directories.
 
-| Property | Value |
-|---|---|
-| Auth Required | Bearer Token |
-| Rate Limit | 100/min |
+**Description:** Returns the list of configured storage root names.
+**Auth:** Required
+**Rate Limit:** Standard (100/min)
 
-**Success Response (200):**
+**Response:** 200 OK
 
 ```json
 {
@@ -354,10 +627,9 @@ List all available storage root directories.
 
 List files and directories at the specified path.
 
-| Property | Value |
-|---|---|
-| Auth Required | Bearer Token |
-| Rate Limit | 100/min |
+**Description:** Browse files and subdirectories within a storage root.
+**Auth:** Required
+**Rate Limit:** Standard (100/min)
 
 **Query Parameters:**
 
@@ -368,14 +640,7 @@ List files and directories at the specified path.
 | `limit` | int | `100` | Max results to return |
 | `offset` | int | `0` | Pagination offset |
 
-**Example Request:**
-
-```bash
-curl -H "Authorization: Bearer $TOKEN" \
-  "http://localhost:8080/api/v1/catalog/nas-media/movies?sort_by=size&sort_order=desc&limit=50"
-```
-
-**Success Response (200):**
+**Response:** 200 OK
 
 ```json
 {
@@ -405,21 +670,13 @@ curl -H "Authorization: Bearer $TOKEN" \
 
 Get detailed information about a specific file or directory.
 
-| Property | Value |
-|---|---|
-| Auth Required | Bearer Token |
-| Rate Limit | 100/min |
+**Description:** Returns file metadata including size, type, timestamps.
+**Auth:** Required
+**Rate Limit:** Standard (100/min)
 
-**Success Response (200):**
+**Response:** 200 OK (FileInfo object)
 
-Returns a `FileInfo` object (see [API_SCHEMAS.md](./API_SCHEMAS.md#fileinfo)).
-
-**Error Responses:**
-
-| Status | Body | Condition |
-|---|---|---|
-| 400 | `{"error": "Path is required"}` | Empty path |
-| 404 | `{"error": "File not found"}` | Path does not exist |
+**Errors:** 400 (empty path), 404 (path not found)
 
 ---
 
@@ -427,12 +684,11 @@ Returns a `FileInfo` object (see [API_SCHEMAS.md](./API_SCHEMAS.md#fileinfo)).
 
 ### GET /api/v1/search
 
-Search for files and directories using various criteria.
+Search for files and directories using various criteria (catalog-level search).
 
-| Property | Value |
-|---|---|
-| Auth Required | Bearer Token |
-| Rate Limit | 100/min |
+**Description:** Full-text search across the file catalog with filtering.
+**Auth:** Required
+**Rate Limit:** Standard (100/min)
 
 **Query Parameters:**
 
@@ -451,14 +707,7 @@ Search for files and directories using various criteria.
 | `limit` | int | No | `100` | Max results |
 | `offset` | int | No | `0` | Pagination offset |
 
-**Example Request:**
-
-```bash
-curl -H "Authorization: Bearer $TOKEN" \
-  "http://localhost:8080/api/v1/search?query=matrix&extension=mkv&smb_roots=nas-media"
-```
-
-**Success Response (200):**
+**Response:** 200 OK
 
 ```json
 {
@@ -470,22 +719,17 @@ curl -H "Authorization: Bearer $TOKEN" \
 }
 ```
 
-**Error Responses:**
-
-| Status | Body | Condition |
-|---|---|---|
-| 400 | `{"error": "Search query is required"}` | Missing query parameter |
+**Errors:** 400 (missing query parameter)
 
 ---
 
 ### GET /api/v1/search/duplicates
 
-Find groups of duplicate files within a storage root.
+Find groups of duplicate files within a storage root (catalog-level).
 
-| Property | Value |
-|---|---|
-| Auth Required | Bearer Token |
-| Rate Limit | 100/min |
+**Description:** Detects duplicate files based on content hashing.
+**Auth:** Required
+**Rate Limit:** Standard (100/min)
 
 **Query Parameters:**
 
@@ -495,7 +739,7 @@ Find groups of duplicate files within a storage root.
 | `min_count` | int | No | `2` | Minimum duplicates per group |
 | `limit` | int | No | `50` | Max groups to return |
 
-**Success Response (200):**
+**Response:** 200 OK
 
 ```json
 {
@@ -514,17 +758,103 @@ Find groups of duplicate files within a storage root.
 
 ---
 
+### GET /api/v1/search/files
+
+Search files in the database (file-level search handler).
+
+**Description:** Database-level file search with advanced filtering.
+**Auth:** Required
+**Rate Limit:** Standard (100/min)
+
+**Query Parameters:**
+
+| Parameter | Type | Required | Description |
+|---|---|---|---|
+| `query` | string | Yes | Search term |
+| `storage_root_id` | int | No | Filter by storage root |
+| `extension` | string | No | File extension filter |
+| `min_size` | int | No | Minimum size in bytes |
+| `max_size` | int | No | Maximum size in bytes |
+| `limit` | int | No | Max results |
+| `offset` | int | No | Pagination offset |
+
+**Response:** 200 OK
+
+```json
+{
+  "files": [...],
+  "total": 42,
+  "limit": 100,
+  "offset": 0
+}
+```
+
+---
+
+### GET /api/v1/search/files/duplicates
+
+Find duplicate files via the file-level search handler.
+
+**Description:** Detects duplicate files using the database search handler.
+**Auth:** Required
+**Rate Limit:** Standard (100/min)
+
+**Query Parameters:**
+
+| Parameter | Type | Required | Description |
+|---|---|---|---|
+| `storage_root_id` | int | No | Filter by storage root |
+| `min_count` | int | No | Minimum duplicates per group |
+| `limit` | int | No | Max groups |
+
+**Response:** 200 OK
+
+---
+
+### POST /api/v1/search/advanced
+
+Advanced multi-criteria search with structured query body.
+
+**Description:** Accepts a JSON body with complex search criteria.
+**Auth:** Required
+**Rate Limit:** Standard (100/min)
+
+**Request Body:**
+
+```json
+{
+  "query": "matrix",
+  "filters": {
+    "extensions": [".mkv", ".mp4"],
+    "min_size": 1073741824,
+    "max_size": 10737418240,
+    "storage_root_ids": [1, 2],
+    "is_directory": false,
+    "date_from": "2024-01-01",
+    "date_to": "2024-12-31"
+  },
+  "sort": {
+    "field": "size",
+    "order": "desc"
+  },
+  "limit": 50,
+  "offset": 0
+}
+```
+
+**Response:** 200 OK
+
+---
+
 ## Download
 
-### GET /api/v1/download/file/{id}
+### GET /api/v1/download/file/:id
 
 Download a single file by its database ID.
 
-| Property | Value |
-|---|---|
-| Auth Required | Bearer Token |
-| Rate Limit | 100/min |
-| Response Type | `application/octet-stream` |
+**Description:** Streams the file binary data for download.
+**Auth:** Required
+**Rate Limit:** Standard (100/min)
 
 **Path Parameters:**
 
@@ -540,13 +870,7 @@ Content-Type: application/octet-stream
 Content-Length: 4294967296
 ```
 
-**Error Responses:**
-
-| Status | Body | Condition |
-|---|---|---|
-| 400 | `{"error": "Invalid file ID"}` | Non-numeric ID |
-| 400 | `{"error": "Cannot download directory as single file"}` | Path is a directory |
-| 404 | `{"error": "File not found"}` | File does not exist |
+**Errors:** 400 (invalid ID, cannot download directory), 404 (file not found)
 
 ---
 
@@ -554,11 +878,9 @@ Content-Length: 4294967296
 
 Download a directory as a compressed archive.
 
-| Property | Value |
-|---|---|
-| Auth Required | Bearer Token |
-| Rate Limit | 100/min |
-| Response Type | `application/zip` or `application/gzip` |
+**Description:** Compresses and streams a directory for download.
+**Auth:** Required
+**Rate Limit:** Standard (100/min)
 
 **Query Parameters:**
 
@@ -566,13 +888,7 @@ Download a directory as a compressed archive.
 |---|---|---|---|
 | `format` | string | `zip` | Archive format: `zip`, `tar`, `tar.gz` |
 
-**Error Responses:**
-
-| Status | Body | Condition |
-|---|---|---|
-| 400 | `{"error": "Invalid format. Supported: zip, tar, tar.gz"}` | Unsupported format |
-| 400 | `{"error": "Directory too large for download", "total_size": ..., "max_size": ...}` | Exceeds max size |
-| 404 | `{"error": "Directory not found or empty"}` | Path does not exist |
+**Errors:** 400 (unsupported format, directory too large), 404 (not found or empty)
 
 ---
 
@@ -580,10 +896,9 @@ Download a directory as a compressed archive.
 
 Create and download an archive from multiple specified file paths.
 
-| Property | Value |
-|---|---|
-| Auth Required | Bearer Token |
-| Rate Limit | 100/min |
+**Description:** Bundles selected files into an archive for download.
+**Auth:** Required
+**Rate Limit:** Standard (100/min)
 
 **Request Body:**
 
@@ -606,16 +921,43 @@ Create and download an archive from multiple specified file paths.
 
 ---
 
+## Streaming
+
+### GET /api/v1/stream/:id
+
+Stream a file from any storage backend (SMB, FTP, NFS, WebDAV, local).
+
+**Description:** Proxies file data for real-time streaming/playback. Supports range requests.
+**Auth:** Required
+**Rate Limit:** Standard (100/min)
+
+**Path Parameters:**
+
+| Parameter | Type | Description |
+|---|---|---|
+| `id` | int | File ID in the database |
+
+**Response Headers:**
+
+```
+Content-Type: video/x-matroska
+Accept-Ranges: bytes
+Content-Length: 4294967296
+```
+
+**Errors:** 400 (invalid ID), 404 (file not found), 500 (storage backend error)
+
+---
+
 ## File Copy Operations
 
 ### POST /api/v1/copy/storage
 
 Copy a file to a storage location.
 
-| Property | Value |
-|---|---|
-| Auth Required | Bearer Token |
-| Rate Limit | 100/min |
+**Description:** Copies a file between storage locations.
+**Auth:** Required
+**Rate Limit:** Standard (100/min)
 
 **Request Body:**
 
@@ -633,7 +975,7 @@ Copy a file to a storage location.
 | `dest_path` | string | Yes | Destination file path |
 | `storage_id` | string | Yes | Target storage root ID |
 
-**Success Response (200):**
+**Response:** 200 OK
 
 ```json
 {
@@ -650,10 +992,9 @@ Copy a file to a storage location.
 
 Copy a file from a remote storage (SMB) to local filesystem.
 
-| Property | Value |
-|---|---|
-| Auth Required | Bearer Token |
-| Rate Limit | 100/min |
+**Description:** Downloads a file from remote storage to a local path.
+**Auth:** Required
+**Rate Limit:** Standard (100/min)
 
 **Request Body:**
 
@@ -671,12 +1012,7 @@ Copy a file from a remote storage (SMB) to local filesystem.
 | `destination_path` | string | Yes | Local destination path |
 | `overwrite` | bool | No | Overwrite existing files (default: false) |
 
-**Error Responses:**
-
-| Status | Body | Condition |
-|---|---|---|
-| 400 | `{"error": "Invalid source format. Use 'host:path'"}` | Bad source format |
-| 409 | `{"error": "Destination file already exists"}` | File exists and overwrite=false |
+**Errors:** 400 (invalid source format), 409 (file exists and overwrite=false)
 
 ---
 
@@ -684,11 +1020,11 @@ Copy a file from a remote storage (SMB) to local filesystem.
 
 Upload a file from local filesystem to SMB storage.
 
-| Property | Value |
-|---|---|
-| Auth Required | Bearer Token |
-| Rate Limit | 100/min |
-| Content-Type | `multipart/form-data` |
+**Description:** Uploads a file to remote storage via multipart form data.
+**Auth:** Required
+**Rate Limit:** Standard (100/min)
+
+**Content-Type:** `multipart/form-data`
 
 **Form Fields:**
 
@@ -698,7 +1034,7 @@ Upload a file from local filesystem to SMB storage.
 | `destination` | string | Yes | Destination in `host:path` format |
 | `overwrite` | string | No | `"true"` to overwrite existing files |
 
-**Success Response (200):**
+**Response:** 200 OK
 
 ```json
 {
@@ -711,18 +1047,157 @@ Upload a file from local filesystem to SMB storage.
 
 ---
 
+## Media Browsing
+
+Endpoints for searching and querying media at the database level.
+
+### GET /api/v1/media/search
+
+Search media items in the database.
+
+**Description:** Full-text search across scanned media items.
+**Auth:** Required
+**Rate Limit:** Standard (100/min)
+
+**Query Parameters:**
+
+| Parameter | Type | Required | Description |
+|---|---|---|---|
+| `query` | string | Yes | Search term |
+| `type` | string | No | Media type filter |
+| `limit` | int | No | Max results |
+| `offset` | int | No | Pagination offset |
+
+**Response:** 200 OK
+
+```json
+{
+  "results": [...],
+  "total": 42,
+  "limit": 100,
+  "offset": 0
+}
+```
+
+---
+
+### GET /api/v1/media/stats
+
+Get aggregate media statistics.
+
+**Description:** Returns counts and size totals grouped by media type.
+**Auth:** Required
+**Rate Limit:** Standard (100/min)
+
+**Response:** 200 OK
+
+```json
+{
+  "total_files": 25000,
+  "total_size": 5497558138880,
+  "by_type": {
+    "video": {"count": 5000, "size": 2748779069440},
+    "audio": {"count": 12000, "size": 549755813888}
+  }
+}
+```
+
+---
+
+### GET /api/v1/media/recent
+
+Get recently added or accessed media items.
+
+**Description:** Returns media items sorted by recency.
+**Auth:** Required
+**Rate Limit:** Standard (100/min)
+
+**Query Parameters:**
+
+| Parameter | Type | Default | Description |
+|---|---|---|---|
+| `limit` | int | `20` | Max results |
+| `type` | string | - | Media type filter |
+
+**Response:** 200 OK
+
+---
+
+### GET /api/v1/media/popular
+
+Get most popular/frequently accessed media items.
+
+**Description:** Returns media items sorted by popularity/access count.
+**Auth:** Required
+**Rate Limit:** Standard (100/min)
+
+**Query Parameters:**
+
+| Parameter | Type | Default | Description |
+|---|---|---|---|
+| `limit` | int | `20` | Max results |
+| `type` | string | - | Media type filter |
+
+**Response:** 200 OK
+
+---
+
+### GET /api/v1/media/by-path
+
+Look up a media item by its file path.
+
+**Description:** Resolves a file path to a media entity.
+**Auth:** Required
+**Rate Limit:** Standard (100/min)
+
+**Query Parameters:**
+
+| Parameter | Type | Required | Description |
+|---|---|---|---|
+| `path` | string | Yes | File or directory path |
+
+**Response:** 200 OK
+
+---
+
+### POST /api/v1/media/analyze
+
+Analyze a media file for metadata extraction.
+
+**Description:** Triggers media analysis pipeline for a specific file.
+**Auth:** Required
+**Rate Limit:** Standard (100/min)
+
+**Request Body:**
+
+```json
+{
+  "path": "/movies/The Matrix (1999)/The.Matrix.mkv",
+  "storage_root_id": 1
+}
+```
+
+**Response:** 200 OK
+
+---
+
 ## Media Operations
 
-### GET /api/v1/media/{id}
+### GET /api/v1/media/:id
 
 Get detailed media item information by ID.
 
-| Property | Value |
-|---|---|
-| Auth Required | Bearer Token |
-| Rate Limit | 100/min |
+**Description:** Returns full media metadata including external metadata, versions, and user-specific data.
+**Auth:** Required
+**Rate Limit:** Standard (100/min)
 
-**Success Response (200):**
+**Path Parameters:**
+
+| Parameter | Type | Description |
+|---|---|---|
+| `id` | int | Media item ID |
+
+**Response:** 200 OK
 
 ```json
 {
@@ -749,23 +1224,17 @@ Get detailed media item information by ID.
 }
 ```
 
-**Error Responses:**
-
-| Status | Body | Condition |
-|---|---|---|
-| 400 | `{"error": "Invalid media ID"}` | Non-numeric ID |
-| 404 | `{"error": "Media not found"}` | Media does not exist |
+**Errors:** 400 (invalid ID), 404 (not found)
 
 ---
 
-### PUT /api/v1/media/{id}/progress
+### PUT /api/v1/media/:id/progress
 
 Update watch progress for a media item.
 
-| Property | Value |
-|---|---|
-| Auth Required | Bearer Token |
-| Rate Limit | 100/min |
+**Description:** Saves the playback position for continue-watching functionality.
+**Auth:** Required
+**Rate Limit:** Standard (100/min)
 
 **Request Body:**
 
@@ -779,7 +1248,7 @@ Update watch progress for a media item.
 |---|---|---|---|
 | `progress` | float | Yes | 0.0 to 1.0 |
 
-**Success Response (200):**
+**Response:** 200 OK
 
 ```json
 {
@@ -790,14 +1259,13 @@ Update watch progress for a media item.
 
 ---
 
-### PUT /api/v1/media/{id}/favorite
+### PUT /api/v1/media/:id/favorite
 
 Update the favorite status for a media item.
 
-| Property | Value |
-|---|---|
-| Auth Required | Bearer Token |
-| Rate Limit | 100/min |
+**Description:** Toggles the favorite flag on a media item.
+**Auth:** Required
+**Rate Limit:** Standard (100/min)
 
 **Request Body:**
 
@@ -807,7 +1275,7 @@ Update the favorite status for a media item.
 }
 ```
 
-**Success Response (200):**
+**Response:** 200 OK
 
 ```json
 {
@@ -818,16 +1286,55 @@ Update the favorite status for a media item.
 
 ---
 
+### POST /api/v1/media/:id/refresh
+
+Refresh metadata for a specific media item from external providers.
+
+**Description:** Re-fetches metadata from TMDB, OMDB, MusicBrainz, etc.
+**Auth:** Required
+**Rate Limit:** Standard (100/min)
+
+**Response:** 200 OK
+
+```json
+{
+  "message": "Metadata refresh initiated"
+}
+```
+
+---
+
+### GET /api/v1/media/:id/quality
+
+Get quality information for a media item (resolution, codec, bitrate).
+
+**Description:** Returns technical quality details for the media file.
+**Auth:** Required
+**Rate Limit:** Standard (100/min)
+
+**Response:** 200 OK
+
+```json
+{
+  "id": 42,
+  "resolution": "1920x1080",
+  "codec": "h264",
+  "bitrate": 8000000,
+  "quality_label": "1080p"
+}
+```
+
+---
+
 ## Recommendations
 
-### GET /api/v1/recommendations/similar/{media_id}
+### GET /api/v1/recommendations/similar/:media_id
 
 Get media items similar to a given media item.
 
-| Property | Value |
-|---|---|
-| Auth Required | Bearer Token |
-| Rate Limit | 100/min |
+**Description:** Uses content-based and collaborative filtering to find similar items.
+**Auth:** Required
+**Rate Limit:** Standard (100/min)
 
 **Path Parameters:**
 
@@ -844,7 +1351,7 @@ Get media items similar to a given media item.
 | `include_external` | bool | `false` | Include external API results |
 | `similarity_threshold` | float | `0.3` | Minimum similarity score |
 
-**Success Response (200):**
+**Response:** 200 OK
 
 ```json
 {
@@ -862,10 +1369,9 @@ Get media items similar to a given media item.
 
 Get trending media items based on recent activity.
 
-| Property | Value |
-|---|---|
-| Auth Required | Bearer Token |
-| Rate Limit | 100/min |
+**Description:** Returns media items trending in a given time window.
+**Auth:** Required
+**Rate Limit:** Standard (100/min)
 
 **Query Parameters:**
 
@@ -875,7 +1381,7 @@ Get trending media items based on recent activity.
 | `limit` | int | `20` | Max results |
 | `time_range` | string | `week` | Time range: `day`, `week`, `month`, `year` |
 
-**Success Response (200):**
+**Response:** 200 OK
 
 ```json
 {
@@ -898,14 +1404,19 @@ Get trending media items based on recent activity.
 
 ---
 
-### GET /api/v1/recommendations/personalized/{user_id}
+### GET /api/v1/recommendations/personalized/:user_id
 
 Get personalized recommendations based on viewing history.
 
-| Property | Value |
-|---|---|
-| Auth Required | Bearer Token |
-| Rate Limit | 100/min |
+**Description:** ML-based recommendations tailored to user preferences.
+**Auth:** Required
+**Rate Limit:** Standard (100/min)
+
+**Path Parameters:**
+
+| Parameter | Type | Description |
+|---|---|---|
+| `user_id` | int | User ID |
 
 **Query Parameters:**
 
@@ -913,7 +1424,7 @@ Get personalized recommendations based on viewing history.
 |---|---|---|---|
 | `limit` | int | `20` | Max results |
 
-**Success Response (200):**
+**Response:** 200 OK
 
 ```json
 {
@@ -925,30 +1436,15 @@ Get personalized recommendations based on viewing history.
 
 ---
 
-### GET /api/v1/recommendations/test
-
-Simple test endpoint for the recommendation system.
-
-**Success Response (200):**
-
-```json
-{
-  "message": "Simple recommendation works!"
-}
-```
-
----
-
 ## Subtitles
 
 ### GET /api/v1/subtitles/search
 
 Search for subtitles across multiple providers.
 
-| Property | Value |
-|---|---|
-| Auth Required | Bearer Token |
-| Rate Limit | 100/min |
+**Description:** Queries subtitle databases for matching subtitles.
+**Auth:** Required
+**Rate Limit:** Standard (100/min)
 
 **Query Parameters:**
 
@@ -964,7 +1460,7 @@ Search for subtitles across multiple providers.
 
 **Available Providers:** `opensubtitles`, `subdb`, `yifysubtitles`, `subscene`, `addic7ed`
 
-**Success Response (200):**
+**Response:** 200 OK
 
 ```json
 {
@@ -991,10 +1487,9 @@ Search for subtitles across multiple providers.
 
 Download a specific subtitle by result ID.
 
-| Property | Value |
-|---|---|
-| Auth Required | Bearer Token |
-| Rate Limit | 100/min |
+**Description:** Downloads and saves a subtitle file for a media item.
+**Auth:** Required
+**Rate Limit:** Standard (100/min)
 
 **Request Body:**
 
@@ -1006,7 +1501,7 @@ Download a specific subtitle by result ID.
 }
 ```
 
-**Success Response (200):**
+**Response:** 200 OK
 
 ```json
 {
@@ -1024,11 +1519,15 @@ Download a specific subtitle by result ID.
 
 ---
 
-### GET /api/v1/subtitles/media/{media_id}
+### GET /api/v1/subtitles/media/:media_id
 
 Get all subtitle tracks for a media item.
 
-**Success Response (200):**
+**Description:** Lists available subtitles associated with a media file.
+**Auth:** Required
+**Rate Limit:** Standard (100/min)
+
+**Response:** 200 OK
 
 ```json
 {
@@ -1047,11 +1546,15 @@ Get all subtitle tracks for a media item.
 
 ---
 
-### GET /api/v1/subtitles/{subtitle_id}/verify-sync/{media_id}
+### GET /api/v1/subtitles/:subtitle_id/verify-sync/:media_id
 
 Verify if a subtitle is properly synchronized with its media.
 
-**Success Response (200):**
+**Description:** Checks subtitle timing alignment against the media file.
+**Auth:** Required
+**Rate Limit:** Standard (100/min)
+
+**Response:** 200 OK
 
 ```json
 {
@@ -1070,6 +1573,10 @@ Verify if a subtitle is properly synchronized with its media.
 
 Translate a subtitle to another language.
 
+**Description:** Machine-translates subtitle content between languages.
+**Auth:** Required
+**Rate Limit:** Standard (100/min)
+
 **Request Body:**
 
 ```json
@@ -1080,7 +1587,7 @@ Translate a subtitle to another language.
 }
 ```
 
-**Success Response (200):**
+**Response:** 200 OK
 
 ```json
 {
@@ -1100,9 +1607,11 @@ Translate a subtitle to another language.
 
 Upload a subtitle file for a media item.
 
-| Property | Value |
-|---|---|
-| Content-Type | `multipart/form-data` |
+**Description:** Uploads a custom subtitle file.
+**Auth:** Required
+**Rate Limit:** Standard (100/min)
+
+**Content-Type:** `multipart/form-data`
 
 **Form Fields:**
 
@@ -1119,7 +1628,11 @@ Upload a subtitle file for a media item.
 
 Get the list of supported subtitle languages.
 
-**Success Response (200):**
+**Description:** Returns all languages available for subtitle operations.
+**Auth:** Required
+**Rate Limit:** Standard (100/min)
+
+**Response:** 200 OK
 
 ```json
 {
@@ -1141,7 +1654,11 @@ Get the list of supported subtitle languages.
 
 Get the list of supported subtitle providers.
 
-**Success Response (200):**
+**Description:** Returns available subtitle provider configurations.
+**Auth:** Required
+**Rate Limit:** Standard (100/min)
+
+**Response:** 200 OK
 
 ```json
 {
@@ -1159,28 +1676,15 @@ Get the list of supported subtitle providers.
 
 ---
 
-## Storage
-
-### GET /api/v1/storage/roots
-
-Get all available storage root configurations.
-
-**Success Response (200):**
-
-```json
-{
-  "roots": [
-    {"id": "local", "name": "Local Storage", "path": "/data/storage"},
-    {"id": "smb", "name": "SMB Storage", "path": "smb://server/share"}
-  ]
-}
-```
-
----
+## Storage and Storage Roots
 
 ### GET /api/v1/storage/list/{path}
 
 List files in a storage path.
+
+**Description:** Browse files within a specific storage backend.
+**Auth:** Required
+**Rate Limit:** Standard (100/min)
 
 **Query Parameters:**
 
@@ -1188,7 +1692,7 @@ List files in a storage path.
 |---|---|---|---|
 | `storage_id` | string | Yes | Storage root ID |
 
-**Success Response (200):**
+**Response:** 200 OK
 
 ```json
 {
@@ -1200,11 +1704,110 @@ List files in a storage path.
 
 ---
 
+### GET /api/v1/storage/roots
+
+Get all available storage root configurations.
+
+**Description:** Lists configured storage roots (SMB, FTP, NFS, WebDAV, local).
+**Auth:** Required
+**Rate Limit:** Standard (100/min)
+
+**Response:** 200 OK
+
+```json
+{
+  "roots": [
+    {
+      "id": 1,
+      "name": "Local Storage",
+      "protocol": "local",
+      "path": "/data/storage",
+      "enabled": true
+    }
+  ]
+}
+```
+
+---
+
+### POST /api/v1/storage/roots
+
+Create a new storage root configuration.
+
+**Description:** Registers a new storage location for scanning.
+**Auth:** Required
+**Rate Limit:** Standard (100/min)
+
+**Request Body:**
+
+```json
+{
+  "name": "NAS Media",
+  "protocol": "smb",
+  "host": "192.168.0.241",
+  "port": 445,
+  "path": "/media",
+  "username": "user",
+  "password": "password",
+  "domain": "WORKGROUP",
+  "enabled": true
+}
+```
+
+**Response:** 201 Created
+
+---
+
+### GET /api/v1/storage-roots
+
+Alias for GET /api/v1/storage/roots. Returns same response.
+
+**Description:** Alternative path for listing storage roots.
+**Auth:** Required
+**Rate Limit:** Standard (100/min)
+
+---
+
+### GET /api/v1/storage-roots/:id/status
+
+Get the current status of a specific storage root (online/offline, last scan time).
+
+**Description:** Checks connectivity and returns scan status for a storage root.
+**Auth:** Required
+**Rate Limit:** Standard (100/min)
+
+**Path Parameters:**
+
+| Parameter | Type | Description |
+|---|---|---|
+| `id` | int | Storage root ID |
+
+**Response:** 200 OK
+
+```json
+{
+  "id": 1,
+  "name": "NAS Media",
+  "status": "online",
+  "last_scan": "2024-01-15T10:00:00Z",
+  "file_count": 25000,
+  "total_size": 5497558138880
+}
+```
+
+---
+
 ## Statistics
+
+All statistics endpoints are cached for 60 seconds.
 
 ### GET /api/v1/stats/directories/by-size
 
 Get directories sorted by total size.
+
+**Description:** Returns the largest directories across storage roots.
+**Auth:** Required
+**Rate Limit:** Standard (100/min)
 
 **Query Parameters:**
 
@@ -1213,7 +1816,7 @@ Get directories sorted by total size.
 | `smb_root` | string | Yes | - | Storage root name |
 | `limit` | int | No | `50` | Max results |
 
-**Success Response (200):**
+**Response:** 200 OK
 
 ```json
 {
@@ -1236,13 +1839,17 @@ Get directories sorted by total size.
 
 Get statistics about duplicate files.
 
+**Description:** Returns aggregate duplicate file counts and wasted space.
+**Auth:** Required
+**Rate Limit:** Standard (100/min)
+
 **Query Parameters:**
 
 | Parameter | Type | Required | Description |
 |---|---|---|---|
 | `smb_root` | string | No | Storage root name |
 
-**Success Response (200):**
+**Response:** 200 OK
 
 ```json
 {
@@ -1259,7 +1866,11 @@ Get statistics about duplicate files.
 
 Get comprehensive catalog statistics.
 
-**Success Response (200):**
+**Description:** Returns total files, directories, sizes, duplicates, and storage root counts.
+**Auth:** Required
+**Rate Limit:** Standard (100/min)
+
+**Response:** 200 OK
 
 ```json
 {
@@ -1279,11 +1890,15 @@ Get comprehensive catalog statistics.
 
 ---
 
-### GET /api/v1/stats/smb/{smb_root}
+### GET /api/v1/stats/smb/:smb_root
 
 Get statistics for a specific storage root.
 
-**Success Response (200):**
+**Description:** Returns file counts, sizes, and scan info for one storage root.
+**Auth:** Required
+**Rate Limit:** Standard (100/min)
+
+**Response:** 200 OK
 
 ```json
 {
@@ -1307,6 +1922,10 @@ Get statistics for a specific storage root.
 
 Get file type distribution statistics.
 
+**Description:** Returns file counts and sizes grouped by extension/type.
+**Auth:** Required
+**Rate Limit:** Standard (100/min)
+
 **Query Parameters:**
 
 | Parameter | Type | Default | Description |
@@ -1314,7 +1933,7 @@ Get file type distribution statistics.
 | `smb_root` | string | - | Storage root filter |
 | `limit` | int | `50` | Max results (max 1000) |
 
-**Success Response (200):**
+**Response:** 200 OK
 
 ```json
 {
@@ -1332,13 +1951,17 @@ Get file type distribution statistics.
 
 Get file size distribution.
 
+**Description:** Returns file counts bucketed by size range.
+**Auth:** Required
+**Rate Limit:** Standard (100/min)
+
 **Query Parameters:**
 
 | Parameter | Type | Description |
 |---|---|---|
 | `smb_root` | string | Storage root filter |
 
-**Success Response (200):**
+**Response:** 200 OK
 
 ```json
 {
@@ -1362,7 +1985,11 @@ Size buckets: tiny (<1KB), small (1KB-1MB), medium (1MB-10MB), large (10MB-100MB
 
 Get duplicate file statistics.
 
-**Success Response (200):**
+**Description:** Returns aggregate duplicate stats across the catalog.
+**Auth:** Required
+**Rate Limit:** Standard (100/min)
+
+**Response:** 200 OK
 
 ```json
 {
@@ -1383,6 +2010,10 @@ Get duplicate file statistics.
 
 Get the largest duplicate groups.
 
+**Description:** Lists duplicate file groups sorted by count or size.
+**Auth:** Required
+**Rate Limit:** Standard (100/min)
+
 **Query Parameters:**
 
 | Parameter | Type | Default | Description |
@@ -1397,6 +2028,10 @@ Get the largest duplicate groups.
 
 Get file access pattern statistics.
 
+**Description:** Analyzes file access patterns over a time period.
+**Auth:** Required
+**Rate Limit:** Standard (100/min)
+
 **Query Parameters:**
 
 | Parameter | Type | Default | Description |
@@ -1410,6 +2045,10 @@ Get file access pattern statistics.
 
 Get storage growth trends over time.
 
+**Description:** Returns monthly file and size growth data.
+**Auth:** Required
+**Rate Limit:** Standard (100/min)
+
 **Query Parameters:**
 
 | Parameter | Type | Default | Description |
@@ -1417,7 +2056,7 @@ Get storage growth trends over time.
 | `smb_root` | string | - | Storage root filter |
 | `months` | int | `12` | Analysis period (max 60) |
 
-**Success Response (200):**
+**Response:** 200 OK
 
 ```json
 {
@@ -1439,6 +2078,10 @@ Get storage growth trends over time.
 
 Get scan operation history.
 
+**Description:** Returns historical scan results with pagination.
+**Auth:** Required
+**Rate Limit:** Standard (100/min)
+
 **Query Parameters:**
 
 | Parameter | Type | Default | Description |
@@ -1447,7 +2090,7 @@ Get scan operation history.
 | `limit` | int | `50` | Max results (max 1000) |
 | `offset` | int | `0` | Pagination offset |
 
-**Success Response (200):**
+**Response:** 200 OK
 
 ```json
 {
@@ -1483,6 +2126,10 @@ Get scan operation history.
 
 Discover available SMB shares on a host.
 
+**Description:** Scans an SMB host for available shares.
+**Auth:** Required
+**Rate Limit:** Standard (100/min)
+
 **Request Body:**
 
 ```json
@@ -1501,15 +2148,17 @@ Discover available SMB shares on a host.
 | `password` | string | Yes | Authentication password |
 | `domain` | string | No | Windows domain |
 
-**Success Response (200):**
-
-Returns an array of `SMBShareInfo` objects.
+**Response:** 200 OK (array of SMBShareInfo objects)
 
 ---
 
 ### GET /api/v1/smb/discover
 
-Discover SMB shares using query parameters (for testing).
+Discover SMB shares using query parameters (convenience endpoint for testing).
+
+**Description:** Same as POST but with query string parameters.
+**Auth:** Required
+**Rate Limit:** Standard (100/min)
 
 **Query Parameters:**
 
@@ -1526,6 +2175,10 @@ Discover SMB shares using query parameters (for testing).
 
 Test connectivity to an SMB share.
 
+**Description:** Verifies that the API server can reach and authenticate to an SMB share.
+**Auth:** Required
+**Rate Limit:** Standard (100/min)
+
 **Request Body:**
 
 ```json
@@ -1539,7 +2192,7 @@ Test connectivity to an SMB share.
 }
 ```
 
-**Success Response (200):**
+**Response:** 200 OK
 
 ```json
 {
@@ -1556,6 +2209,10 @@ Test connectivity to an SMB share.
 ### GET /api/v1/smb/test
 
 Test SMB connection using query parameters.
+
+**Description:** Same as POST but with query string parameters.
+**Auth:** Required
+**Rate Limit:** Standard (100/min)
 
 **Query Parameters:**
 
@@ -1574,6 +2231,10 @@ Test SMB connection using query parameters.
 
 Browse files and directories in an SMB share.
 
+**Description:** Lists contents of a remote SMB share directory.
+**Auth:** Required
+**Rate Limit:** Standard (100/min)
+
 **Request Body:**
 
 ```json
@@ -1588,9 +2249,104 @@ Browse files and directories in an SMB share.
 }
 ```
 
-**Success Response (200):**
+**Response:** 200 OK (array of SMBFileEntry objects)
 
-Returns an array of `SMBFileEntry` objects.
+---
+
+## Scanning
+
+### POST /api/v1/scans
+
+Queue a new scan job for a storage root.
+
+**Description:** Initiates a file system scan on a configured storage root.
+**Auth:** Required
+**Rate Limit:** Standard (100/min)
+
+**Request Body:**
+
+```json
+{
+  "storage_root_id": 1,
+  "scan_type": "full"
+}
+```
+
+| Field | Type | Required | Description |
+|---|---|---|---|
+| `storage_root_id` | int | Yes | Storage root to scan |
+| `scan_type` | string | No | `full` or `incremental` |
+
+**Response:** 202 Accepted
+
+```json
+{
+  "job_id": "scan-abc123",
+  "storage_root_id": 1,
+  "status": "queued"
+}
+```
+
+---
+
+### GET /api/v1/scans
+
+List all scan jobs with their status.
+
+**Description:** Returns recent and active scan operations.
+**Auth:** Required
+**Rate Limit:** Standard (100/min)
+
+**Response:** 200 OK
+
+```json
+{
+  "scans": [
+    {
+      "job_id": "scan-abc123",
+      "storage_root_id": 1,
+      "status": "running",
+      "progress": 0.45,
+      "files_processed": 11250,
+      "started_at": "2024-01-15T10:00:00Z"
+    }
+  ]
+}
+```
+
+---
+
+### GET /api/v1/scans/:job_id
+
+Get the status of a specific scan job.
+
+**Description:** Returns detailed progress for a scan operation.
+**Auth:** Required
+**Rate Limit:** Standard (100/min)
+
+**Path Parameters:**
+
+| Parameter | Type | Description |
+|---|---|---|
+| `job_id` | string | Scan job ID |
+
+**Response:** 200 OK
+
+```json
+{
+  "job_id": "scan-abc123",
+  "storage_root_id": 1,
+  "status": "completed",
+  "progress": 1.0,
+  "files_processed": 25000,
+  "files_added": 150,
+  "files_updated": 30,
+  "files_deleted": 5,
+  "errors": [],
+  "started_at": "2024-01-15T10:00:00Z",
+  "completed_at": "2024-01-15T10:45:00Z"
+}
+```
 
 ---
 
@@ -1600,10 +2356,9 @@ Returns an array of `SMBFileEntry` objects.
 
 Create a new media format conversion job.
 
-| Property | Value |
-|---|---|
-| Auth Required | Bearer Token |
-| Permission | `conversion.create` |
+**Description:** Queues a media file for format conversion.
+**Auth:** Required
+**Rate Limit:** Standard (100/min)
 
 **Request Body:**
 
@@ -1621,9 +2376,7 @@ Create a new media format conversion job.
 }
 ```
 
-**Success Response (200):**
-
-Returns a `ConversionJob` object (see [API_SCHEMAS.md](./API_SCHEMAS.md#conversionjob)).
+**Response:** 200 OK (ConversionJob object)
 
 ---
 
@@ -1631,46 +2384,43 @@ Returns a `ConversionJob` object (see [API_SCHEMAS.md](./API_SCHEMAS.md#conversi
 
 List conversion jobs for the current user.
 
-| Property | Value |
-|---|---|
-| Permission | `conversion.view` |
+**Description:** Returns conversion jobs with optional status filtering.
+**Auth:** Required
+**Rate Limit:** Standard (100/min)
 
 **Query Parameters:**
 
 | Parameter | Type | Default | Description |
 |---|---|---|---|
-| `status` | string | - | Filter by status: `pending`, `running`, `completed`, `failed`, `cancelled` |
+| `status` | string | - | Filter: `pending`, `running`, `completed`, `failed`, `cancelled` |
 | `limit` | int | `50` | Max results (max 100) |
 | `offset` | int | `0` | Pagination offset |
 
-**Success Response (200):**
-
-Returns an array of `ConversionJob` objects.
+**Response:** 200 OK (array of ConversionJob objects)
 
 ---
 
-### GET /api/v1/conversion/jobs/{id}
+### GET /api/v1/conversion/jobs/:id
 
 Get a specific conversion job by ID.
 
-**Error Responses:**
+**Description:** Returns full details for a conversion job.
+**Auth:** Required
+**Rate Limit:** Standard (100/min)
 
-| Status | Body | Condition |
-|---|---|---|
-| 400 | `{"error": "Invalid job ID"}` | Non-numeric ID |
-| 404 | `{"error": "Job not found"}` | Job does not exist |
+**Errors:** 400 (invalid ID), 404 (not found)
 
 ---
 
-### POST /api/v1/conversion/jobs/{id}/cancel
+### POST /api/v1/conversion/jobs/:id/cancel
 
 Cancel a running conversion job.
 
-| Property | Value |
-|---|---|
-| Permission | `conversion.manage` |
+**Description:** Cancels an in-progress or queued conversion.
+**Auth:** Required
+**Rate Limit:** Standard (100/min)
 
-**Success Response (200):**
+**Response:** 200 OK
 
 ```json
 {
@@ -1680,15 +2430,53 @@ Cancel a running conversion job.
 
 ---
 
+### DELETE /api/v1/conversion/jobs/:id
+
+Delete a conversion job record.
+
+**Description:** Removes a completed or cancelled conversion job from history.
+**Auth:** Required
+**Rate Limit:** Standard (100/min)
+
+**Response:** 204 No Content
+
+---
+
+### POST /api/v1/conversion/jobs/:id/retry
+
+Retry a failed conversion job.
+
+**Description:** Re-queues a previously failed conversion job.
+**Auth:** Required
+**Rate Limit:** Standard (100/min)
+
+**Response:** 200 OK (ConversionJob object with status reset)
+
+---
+
+### GET /api/v1/conversion/jobs/:id/download
+
+Download the output file of a completed conversion job.
+
+**Description:** Streams the converted file for download.
+**Auth:** Required
+**Rate Limit:** Standard (100/min)
+
+**Response:** Binary file download with appropriate Content-Type.
+
+**Errors:** 400 (job not completed), 404 (not found)
+
+---
+
 ### GET /api/v1/conversion/formats
 
 Get all supported conversion formats.
 
-| Property | Value |
-|---|---|
-| Permission | `conversion.view` |
+**Description:** Lists input and output formats by media type.
+**Auth:** Required
+**Rate Limit:** Standard (100/min)
 
-**Success Response (200):**
+**Response:** 200 OK
 
 ```json
 {
@@ -1713,6 +2501,122 @@ Get all supported conversion formats.
 
 ---
 
+## Admin
+
+Administration endpoints for system management. All require authentication and admin privileges.
+
+### GET /api/v1/admin/system-info
+
+Get system information (OS, CPU, memory, disk, Go runtime).
+
+**Description:** Returns detailed system metrics and runtime info.
+**Auth:** Required (admin)
+**Rate Limit:** Standard (100/min)
+
+**Response:** 200 OK
+
+```json
+{
+  "version": "2.1.0",
+  "build_number": "16",
+  "os": "linux",
+  "arch": "amd64",
+  "go_version": "go1.25",
+  "goroutines": 42,
+  "memory_alloc_mb": 128,
+  "cpu_count": 8,
+  "uptime_seconds": 86400
+}
+```
+
+---
+
+### GET /api/v1/admin/users
+
+List all users (admin view with additional fields).
+
+**Description:** Returns user list with admin-level detail.
+**Auth:** Required (admin)
+**Rate Limit:** Standard (100/min)
+
+---
+
+### PUT /api/v1/admin/users/:id
+
+Update a user via admin interface.
+
+**Description:** Admin-level user update (can change role, active status).
+**Auth:** Required (admin)
+**Rate Limit:** Standard (100/min)
+
+---
+
+### GET /api/v1/admin/storage
+
+Get storage utilization info across all backends.
+
+**Description:** Returns disk space usage for all configured storage roots.
+**Auth:** Required (admin)
+**Rate Limit:** Standard (100/min)
+
+---
+
+### GET /api/v1/admin/backups
+
+List available backups.
+
+**Description:** Returns database and configuration backup history.
+**Auth:** Required (admin)
+**Rate Limit:** Standard (100/min)
+
+---
+
+### POST /api/v1/admin/backups
+
+Create a new backup.
+
+**Description:** Triggers a database and/or configuration backup.
+**Auth:** Required (admin)
+**Rate Limit:** Standard (100/min)
+
+**Request Body:**
+
+```json
+{
+  "type": "full",
+  "include_database": true,
+  "include_config": true
+}
+```
+
+---
+
+### POST /api/v1/admin/backups/:id/restore
+
+Restore from a backup.
+
+**Description:** Restores the system from a specified backup.
+**Auth:** Required (admin)
+**Rate Limit:** Standard (100/min)
+
+**Path Parameters:**
+
+| Parameter | Type | Description |
+|---|---|---|
+| `id` | int | Backup ID |
+
+---
+
+### POST /api/v1/admin/storage/scan
+
+Trigger a storage scan via admin interface.
+
+**Description:** Admin-level scan trigger (can scan all roots).
+**Auth:** Required (admin)
+**Rate Limit:** Standard (100/min)
+
+---
+
 ## User Management
 
 All user management endpoints require a JWT token and appropriate permissions.
@@ -1721,9 +2625,9 @@ All user management endpoints require a JWT token and appropriate permissions.
 
 Create a new user.
 
-| Property | Value |
-|---|---|
-| Permission | `user.create` |
+**Description:** Creates a user account with role assignment.
+**Auth:** Required
+**Rate Limit:** Standard (100/min)
 
 **Request Body:**
 
@@ -1742,16 +2646,9 @@ Create a new user.
 }
 ```
 
-**Success Response (201):**
+**Response:** 201 Created (User object)
 
-Returns the created `User` object.
-
-**Error Responses:**
-
-| Status | Condition |
-|---|---|
-| 400 | Password validation failure |
-| 409 | Username or email already exists |
+**Errors:** 400 (password validation), 409 (duplicate username/email)
 
 ---
 
@@ -1759,9 +2656,9 @@ Returns the created `User` object.
 
 List all users with pagination.
 
-| Property | Value |
-|---|---|
-| Permission | `user.view` |
+**Description:** Returns paginated user list.
+**Auth:** Required
+**Rate Limit:** Standard (100/min)
 
 **Query Parameters:**
 
@@ -1770,7 +2667,7 @@ List all users with pagination.
 | `limit` | int | `50` | Max results (max 100) |
 | `offset` | int | `0` | Pagination offset |
 
-**Success Response (200):**
+**Response:** 200 OK
 
 ```json
 {
@@ -1783,15 +2680,23 @@ List all users with pagination.
 
 ---
 
-### GET /api/v1/users/{id}
+### GET /api/v1/users/:id
 
-Get a specific user by ID. Users can view their own profile; viewing other users requires `user.view` permission.
+Get a specific user by ID.
+
+**Description:** Returns user profile. Users can view their own profile; viewing others requires `user.view` permission.
+**Auth:** Required
+**Rate Limit:** Standard (100/min)
 
 ---
 
-### PUT /api/v1/users/{id}
+### PUT /api/v1/users/:id
 
-Update a user's information. Users can update their own profile; updating other users requires `user.update` permission. Changing `role_id` or `is_active` requires `user.manage` permission.
+Update a user's information.
+
+**Description:** Updates user fields. Users can update own profile; changing `role_id` or `is_active` requires `user.manage`.
+**Auth:** Required
+**Rate Limit:** Standard (100/min)
 
 **Request Body (all fields optional):**
 
@@ -1813,31 +2718,27 @@ Update a user's information. Users can update their own profile; updating other 
 
 ---
 
-### DELETE /api/v1/users/{id}
+### DELETE /api/v1/users/:id
 
 Delete a user account.
 
-| Property | Value |
-|---|---|
-| Permission | `user.delete` |
+**Description:** Permanently removes a user. Cannot delete own account.
+**Auth:** Required (`user.delete`)
+**Rate Limit:** Standard (100/min)
 
-**Success Response:** `204 No Content`
+**Response:** 204 No Content
 
-**Error Responses:**
-
-| Status | Condition |
-|---|---|
-| 400 | Attempting to delete own account |
+**Errors:** 400 (cannot delete own account)
 
 ---
 
-### POST /api/v1/users/{id}/reset-password
+### POST /api/v1/users/:id/reset-password
 
 Reset a user's password (admin operation).
 
-| Property | Value |
-|---|---|
-| Permission | `user.manage` |
+**Description:** Admin-level forced password reset.
+**Auth:** Required (`user.manage`)
+**Rate Limit:** Standard (100/min)
 
 **Request Body:**
 
@@ -1849,13 +2750,13 @@ Reset a user's password (admin operation).
 
 ---
 
-### POST /api/v1/users/{id}/lock
+### POST /api/v1/users/:id/lock
 
 Lock a user account until a specified time.
 
-| Property | Value |
-|---|---|
-| Permission | `user.manage` |
+**Description:** Temporarily disables a user account.
+**Auth:** Required (`user.manage`)
+**Rate Limit:** Standard (100/min)
 
 **Request Body:**
 
@@ -1867,15 +2768,15 @@ Lock a user account until a specified time.
 
 ---
 
-### POST /api/v1/users/{id}/unlock
+### POST /api/v1/users/:id/unlock
 
 Unlock a locked user account.
 
-| Property | Value |
-|---|---|
-| Permission | `user.manage` |
+**Description:** Re-enables a previously locked account.
+**Auth:** Required (`user.manage`)
+**Rate Limit:** Standard (100/min)
 
-**Success Response (200):**
+**Response:** 200 OK
 
 ```json
 {
@@ -1893,6 +2794,10 @@ All role management endpoints require `system.admin` permission.
 
 Create a new role.
 
+**Description:** Defines a new role with a set of permissions.
+**Auth:** Required (`system.admin`)
+**Rate Limit:** Standard (100/min)
+
 **Request Body:**
 
 ```json
@@ -1903,9 +2808,7 @@ Create a new role.
 }
 ```
 
-**Success Response (201):**
-
-Returns the created `Role` object.
+**Response:** 201 Created (Role object)
 
 ---
 
@@ -1913,21 +2816,31 @@ Returns the created `Role` object.
 
 List all roles.
 
-**Success Response (200):**
+**Description:** Returns all defined roles with their permissions.
+**Auth:** Required (`system.admin`)
+**Rate Limit:** Standard (100/min)
 
-Returns an array of `Role` objects.
+**Response:** 200 OK (array of Role objects)
 
 ---
 
-### GET /api/v1/roles/{id}
+### GET /api/v1/roles/:id
 
 Get a specific role by ID.
 
+**Description:** Returns role details including permissions.
+**Auth:** Required (`system.admin`)
+**Rate Limit:** Standard (100/min)
+
 ---
 
-### PUT /api/v1/roles/{id}
+### PUT /api/v1/roles/:id
 
 Update a role. System roles cannot be modified.
+
+**Description:** Modifies role name, description, or permissions.
+**Auth:** Required (`system.admin`)
+**Rate Limit:** Standard (100/min)
 
 **Request Body:**
 
@@ -1941,11 +2854,15 @@ Update a role. System roles cannot be modified.
 
 ---
 
-### DELETE /api/v1/roles/{id}
+### DELETE /api/v1/roles/:id
 
 Delete a role. System roles and roles assigned to users cannot be deleted.
 
-**Success Response:** `204 No Content`
+**Description:** Removes a custom role definition.
+**Auth:** Required (`system.admin`)
+**Rate Limit:** Standard (100/min)
+
+**Response:** 204 No Content
 
 ---
 
@@ -1953,7 +2870,11 @@ Delete a role. System roles and roles assigned to users cannot be deleted.
 
 Get the complete permission catalog organized by category.
 
-**Success Response (200):**
+**Description:** Lists all available permissions that can be assigned to roles.
+**Auth:** Required (`system.admin`)
+**Rate Limit:** Standard (100/min)
+
+**Response:** 200 OK
 
 ```json
 {
@@ -1993,9 +2914,9 @@ Get the complete permission catalog organized by category.
 
 Get the current system configuration schema.
 
-| Property | Value |
-|---|---|
-| Permission | `system.configure` |
+**Description:** Returns the configuration schema and current values.
+**Auth:** Required (`system.configure`)
+**Rate Limit:** Standard (100/min)
 
 ---
 
@@ -2003,13 +2924,13 @@ Get the current system configuration schema.
 
 Test a configuration without applying it.
 
-| Property | Value |
-|---|---|
-| Permission | `system.admin` |
+**Description:** Validates a configuration object and reports errors/warnings.
+**Auth:** Required (`system.admin`)
+**Rate Limit:** Standard (100/min)
 
-**Request Body:** A `Configuration` object.
+**Request Body:** A Configuration object.
 
-**Success Response (200):**
+**Response:** 200 OK
 
 ```json
 {
@@ -2025,11 +2946,11 @@ Test a configuration without applying it.
 
 Get system component health status.
 
-| Property | Value |
-|---|---|
-| Permission | `system.configure` |
+**Description:** Returns health status of all system components.
+**Auth:** Required (`system.configure`)
+**Rate Limit:** Standard (100/min)
 
-**Success Response (200):**
+**Response:** 200 OK
 
 ```json
 {
@@ -2048,25 +2969,53 @@ Get system component health status.
 
 ---
 
-### GET /api/v1/configuration/wizard/step/{step_id}
+### GET /api/v1/configuration/wizard/step/:step_id
 
 Get a specific setup wizard step definition.
 
-### POST /api/v1/configuration/wizard/step/{step_id}/validate
+**Description:** Returns the step configuration including fields, validation rules, and defaults.
+**Auth:** Required
+**Rate Limit:** Standard (100/min)
+
+---
+
+### POST /api/v1/configuration/wizard/step/:step_id/validate
 
 Validate data for a specific wizard step.
 
-### POST /api/v1/configuration/wizard/step/{step_id}/save
+**Description:** Validates user input for a wizard step without saving.
+**Auth:** Required
+**Rate Limit:** Standard (100/min)
+
+---
+
+### POST /api/v1/configuration/wizard/step/:step_id/save
 
 Save progress for a specific wizard step.
+
+**Description:** Persists the user's input for a wizard step.
+**Auth:** Required
+**Rate Limit:** Standard (100/min)
+
+---
 
 ### GET /api/v1/configuration/wizard/progress
 
 Get the current wizard progress for the authenticated user.
 
+**Description:** Returns which steps are completed and the current step.
+**Auth:** Required
+**Rate Limit:** Standard (100/min)
+
+---
+
 ### POST /api/v1/configuration/wizard/complete
 
 Complete the setup wizard and apply the configuration.
+
+**Description:** Finalizes wizard setup, applying all saved step data as the active configuration.
+**Auth:** Required
+**Rate Limit:** Standard (100/min)
 
 ---
 
@@ -2076,9 +3025,9 @@ Complete the setup wizard and apply the configuration.
 
 Submit an error report.
 
-| Property | Value |
-|---|---|
-| Permission | `report.create` |
+**Description:** Logs an application error with stack trace and context.
+**Auth:** Required
+**Rate Limit:** Standard (100/min)
 
 **Request Body:**
 
@@ -2095,9 +3044,7 @@ Submit an error report.
 }
 ```
 
-**Success Response (200):**
-
-Returns the created `ErrorReport` object.
+**Response:** 200 OK (ErrorReport object)
 
 ---
 
@@ -2105,9 +3052,9 @@ Returns the created `ErrorReport` object.
 
 Submit a crash report.
 
-| Property | Value |
-|---|---|
-| Permission | `report.create` |
+**Description:** Logs a crash event with signal and stack trace.
+**Auth:** Required
+**Rate Limit:** Standard (100/min)
 
 **Request Body:**
 
@@ -2126,17 +3073,17 @@ Submit a crash report.
 
 List error reports with filtering.
 
-| Property | Value |
-|---|---|
-| Permission | `report.view` |
+**Description:** Returns paginated error reports with optional filters.
+**Auth:** Required
+**Rate Limit:** Standard (100/min)
 
 **Query Parameters:**
 
 | Parameter | Type | Description |
 |---|---|---|
-| `level` | string | Filter by level: `debug`, `info`, `warning`, `error`, `fatal` |
+| `level` | string | Filter: `debug`, `info`, `warning`, `error`, `fatal` |
 | `component` | string | Filter by component |
-| `status` | string | Filter by status: `new`, `in_progress`, `resolved`, `ignored` |
+| `status` | string | Filter: `new`, `in_progress`, `resolved`, `ignored` |
 | `start_date` | string | Start date (YYYY-MM-DD) |
 | `end_date` | string | End date (YYYY-MM-DD) |
 | `limit` | int | Max results |
@@ -2144,13 +3091,23 @@ List error reports with filtering.
 
 ---
 
-### GET /api/v1/errors/reports/{id}
+### GET /api/v1/errors/reports/:id
 
 Get a specific error report.
 
-### PUT /api/v1/errors/reports/{id}/status
+**Description:** Returns full details of an error report.
+**Auth:** Required
+**Rate Limit:** Standard (100/min)
+
+---
+
+### PUT /api/v1/errors/reports/:id/status
 
 Update error report status.
+
+**Description:** Changes the triage status of an error report.
+**Auth:** Required
+**Rate Limit:** Standard (100/min)
 
 **Request Body:**
 
@@ -2160,23 +3117,55 @@ Update error report status.
 }
 ```
 
+---
+
 ### GET /api/v1/errors/crashes
 
-List crash reports with filtering (same parameters as error reports, with `signal` instead of `level`/`component`).
+List crash reports with filtering.
 
-### GET /api/v1/errors/crashes/{id}
+**Description:** Returns paginated crash reports (same parameters as error reports, with `signal` instead of `level`/`component`).
+**Auth:** Required
+**Rate Limit:** Standard (100/min)
+
+---
+
+### GET /api/v1/errors/crashes/:id
 
 Get a specific crash report.
 
-### PUT /api/v1/errors/crashes/{id}/status
+**Description:** Returns full details of a crash report.
+**Auth:** Required
+**Rate Limit:** Standard (100/min)
+
+---
+
+### PUT /api/v1/errors/crashes/:id/status
 
 Update crash report status.
+
+**Description:** Changes the triage status of a crash report.
+**Auth:** Required
+**Rate Limit:** Standard (100/min)
+
+**Request Body:**
+
+```json
+{
+  "status": "resolved"
+}
+```
+
+---
 
 ### GET /api/v1/errors/statistics
 
 Get error reporting statistics.
 
-**Success Response (200):**
+**Description:** Returns aggregate error counts by level, component, and resolution status.
+**Auth:** Required
+**Rate Limit:** Standard (100/min)
+
+**Response:** 200 OK
 
 ```json
 {
@@ -2189,17 +3178,25 @@ Get error reporting statistics.
 }
 ```
 
+---
+
 ### GET /api/v1/errors/crash-statistics
 
 Get crash reporting statistics.
+
+**Description:** Returns aggregate crash counts by signal and resolution status.
+**Auth:** Required
+**Rate Limit:** Standard (100/min)
+
+---
 
 ### GET /api/v1/errors/health
 
 Get system health based on error and crash data.
 
-| Property | Value |
-|---|---|
-| Permission | `system.admin` |
+**Description:** Evaluates system health by analyzing recent error and crash trends.
+**Auth:** Required (`system.admin`)
+**Rate Limit:** Standard (100/min)
 
 ---
 
@@ -2210,6 +3207,10 @@ All log management endpoints require `system.admin` permission.
 ### POST /api/v1/logs/collect
 
 Create a new log collection.
+
+**Description:** Initiates log collection from specified components and time range.
+**Auth:** Required (`system.admin`)
+**Rate Limit:** Standard (100/min)
 
 **Request Body:**
 
@@ -2231,6 +3232,10 @@ Create a new log collection.
 
 List log collections.
 
+**Description:** Returns paginated list of log collections.
+**Auth:** Required (`system.admin`)
+**Rate Limit:** Standard (100/min)
+
 **Query Parameters:**
 
 | Parameter | Type | Default |
@@ -2240,13 +3245,23 @@ List log collections.
 
 ---
 
-### GET /api/v1/logs/collections/{id}
+### GET /api/v1/logs/collections/:id
 
 Get a specific log collection.
 
-### GET /api/v1/logs/collections/{id}/entries
+**Description:** Returns metadata for a log collection.
+**Auth:** Required (`system.admin`)
+**Rate Limit:** Standard (100/min)
+
+---
+
+### GET /api/v1/logs/collections/:id/entries
 
 Get log entries for a collection.
+
+**Description:** Returns individual log entries with filtering.
+**Auth:** Required (`system.admin`)
+**Rate Limit:** Standard (100/min)
 
 **Query Parameters:**
 
@@ -2260,9 +3275,15 @@ Get log entries for a collection.
 | `limit` | int | Max results |
 | `offset` | int | Pagination offset |
 
-### POST /api/v1/logs/collections/{id}/export
+---
+
+### POST /api/v1/logs/collections/:id/export
 
 Export log collection data.
+
+**Description:** Exports a log collection in the specified format.
+**Auth:** Required (`system.admin`)
+**Rate Limit:** Standard (100/min)
 
 **Query Parameters:**
 
@@ -2270,11 +3291,17 @@ Export log collection data.
 |---|---|---|---|
 | `format` | string | `json` | `json`, `csv`, `txt`, `zip` |
 
-### GET /api/v1/logs/collections/{id}/analyze
+---
+
+### GET /api/v1/logs/collections/:id/analyze
 
 Analyze a log collection for patterns and insights.
 
-**Success Response (200):**
+**Description:** Runs pattern analysis on log entries and returns insights.
+**Auth:** Required (`system.admin`)
+**Rate Limit:** Standard (100/min)
+
+**Response:** 200 OK
 
 ```json
 {
@@ -2288,9 +3315,15 @@ Analyze a log collection for patterns and insights.
 }
 ```
 
+---
+
 ### POST /api/v1/logs/share
 
 Create a shareable link for a log collection.
+
+**Description:** Generates a time-limited sharing token for a log collection.
+**Auth:** Required (`system.admin`)
+**Rate Limit:** Standard (100/min)
 
 **Request Body:**
 
@@ -2304,21 +3337,37 @@ Create a shareable link for a log collection.
 }
 ```
 
-### GET /api/v1/logs/share/{token}
+---
+
+### GET /api/v1/logs/share/:token
 
 Access a shared log collection via share token.
 
-### DELETE /api/v1/logs/share/{id}
+**Description:** Retrieves log collection data using a share token.
+**Auth:** Required (`system.admin`)
+**Rate Limit:** Standard (100/min)
+
+---
+
+### DELETE /api/v1/logs/share/:id
 
 Revoke a log share.
+
+**Description:** Invalidates a sharing token.
+**Auth:** Required (`system.admin`)
+**Rate Limit:** Standard (100/min)
+
+---
 
 ### GET /api/v1/logs/stream
 
 Stream live logs via Server-Sent Events (SSE).
 
-| Property | Value |
-|---|---|
-| Content-Type | `text/event-stream` |
+**Description:** Opens a persistent SSE connection for real-time log streaming.
+**Auth:** Required (`system.admin`)
+**Rate Limit:** Standard (100/min)
+
+**Content-Type:** `text/event-stream`
 
 **Query Parameters:**
 
@@ -2336,11 +3385,17 @@ data: {"id":1,"timestamp":"2024-01-20T10:00:00Z","level":"error","component":"ap
 data: {"id":2,"timestamp":"2024-01-20T10:00:01Z","level":"info","component":"storage","message":"File scan completed","context":{"files":500}}
 ```
 
+---
+
 ### GET /api/v1/logs/statistics
 
 Get log management statistics.
 
-**Success Response (200):**
+**Description:** Returns aggregate log collection and entry statistics.
+**Auth:** Required (`system.admin`)
+**Rate Limit:** Standard (100/min)
+
+**Response:** 200 OK
 
 ```json
 {
@@ -2354,28 +3409,1034 @@ Get log management statistics.
 
 ---
 
-## Health and Metrics
+## Collections
 
-### GET /health
+Media collection endpoints for organizing media items into user-defined collections.
 
-Simple health check endpoint. No authentication required.
+### GET /api/v1/collections
 
-**Success Response (200):**
+List all media collections.
+
+**Description:** Returns user's media collections.
+**Auth:** Required
+**Rate Limit:** Standard (100/min)
+
+**Response:** 200 OK
 
 ```json
 {
-  "status": "healthy",
-  "time": "2024-01-20T12:00:00Z"
+  "collections": [
+    {
+      "id": 1,
+      "name": "Sci-Fi Favorites",
+      "description": "Best sci-fi movies",
+      "item_count": 25,
+      "created_at": "2024-01-01T00:00:00Z"
+    }
+  ]
 }
 ```
 
 ---
 
-### GET /metrics
+### POST /api/v1/collections
 
-Prometheus metrics endpoint. Returns metrics in Prometheus exposition format. No authentication required.
+Create a new media collection.
 
-Tracked metrics include HTTP request durations, request counts, response sizes, active goroutines, and memory usage.
+**Description:** Creates an empty collection for the user.
+**Auth:** Required
+**Rate Limit:** Standard (100/min)
+
+**Request Body:**
+
+```json
+{
+  "name": "Sci-Fi Favorites",
+  "description": "Best sci-fi movies",
+  "is_public": false
+}
+```
+
+---
+
+### GET /api/v1/collections/:id
+
+Get a specific collection with its items.
+
+**Description:** Returns collection details and contained media items.
+**Auth:** Required
+**Rate Limit:** Standard (100/min)
+
+---
+
+### PUT /api/v1/collections/:id
+
+Update a collection's name or description.
+
+**Description:** Modifies collection metadata.
+**Auth:** Required
+**Rate Limit:** Standard (100/min)
+
+---
+
+### DELETE /api/v1/collections/:id
+
+Delete a collection.
+
+**Description:** Removes the collection (does not delete the media items).
+**Auth:** Required
+**Rate Limit:** Standard (100/min)
+
+---
+
+## Assets (Authenticated)
+
+Authenticated asset management endpoints.
+
+### POST /api/v1/assets/request
+
+Request an asset to be resolved and cached.
+
+**Description:** Triggers async asset resolution (cover art, thumbnails) via the asset pipeline.
+**Auth:** Required
+**Rate Limit:** Standard (100/min)
+
+**Request Body:**
+
+```json
+{
+  "entity_type": "movie",
+  "entity_id": "42",
+  "asset_type": "cover"
+}
+```
+
+**Response:** 202 Accepted
+
+```json
+{
+  "asset_id": "abc123",
+  "status": "resolving"
+}
+```
+
+---
+
+### GET /api/v1/assets/by-entity/:type/:id
+
+Get the asset for a specific entity type and ID.
+
+**Description:** Returns the resolved asset URL/data for an entity.
+**Auth:** Required
+**Rate Limit:** Standard (100/min)
+
+**Path Parameters:**
+
+| Parameter | Type | Description |
+|---|---|---|
+| `type` | string | Entity type (e.g., `movie`, `tv_show`, `music_album`) |
+| `id` | int | Entity ID |
+
+**Response:** 200 OK (asset data or redirect to asset URL)
+
+---
+
+## Media Entities
+
+Structured media entity browsing. All endpoints are cached for 5 minutes.
+
+### GET /api/v1/entities
+
+List media entities with filtering and pagination.
+
+**Description:** Returns paginated media entities with optional type and search filters.
+**Auth:** Required
+**Rate Limit:** Standard (100/min)
+
+**Query Parameters:**
+
+| Parameter | Type | Default | Description |
+|---|---|---|---|
+| `type` | string | - | Media type filter |
+| `query` | string | - | Search term |
+| `parent_id` | int | - | Filter by parent entity |
+| `limit` | int | `50` | Max results |
+| `offset` | int | `0` | Pagination offset |
+
+**Response:** 200 OK
+
+```json
+{
+  "entities": [...],
+  "total": 150,
+  "limit": 50,
+  "offset": 0
+}
+```
+
+---
+
+### GET /api/v1/entities/types
+
+Get all media entity types.
+
+**Description:** Returns the list of media types with counts.
+**Auth:** Required
+**Rate Limit:** Standard (100/min)
+
+**Response:** 200 OK
+
+```json
+{
+  "types": [
+    {"name": "movie", "label": "Movie", "count": 500},
+    {"name": "tv_show", "label": "TV Show", "count": 150},
+    {"name": "tv_season", "label": "TV Season", "count": 800},
+    {"name": "tv_episode", "label": "TV Episode", "count": 5000},
+    {"name": "music_artist", "label": "Music Artist", "count": 200},
+    {"name": "music_album", "label": "Music Album", "count": 1200},
+    {"name": "song", "label": "Song", "count": 12000},
+    {"name": "game", "label": "Game", "count": 100},
+    {"name": "software", "label": "Software", "count": 50},
+    {"name": "book", "label": "Book", "count": 300},
+    {"name": "comic", "label": "Comic", "count": 75}
+  ]
+}
+```
+
+---
+
+### GET /api/v1/entities/stats
+
+Get aggregate entity statistics.
+
+**Description:** Returns counts and totals grouped by entity type.
+**Auth:** Required
+**Rate Limit:** Standard (100/min)
+
+---
+
+### GET /api/v1/entities/duplicates
+
+List groups of duplicate media entities.
+
+**Description:** Finds entities that may be duplicates based on title, type, and year.
+**Auth:** Required
+**Rate Limit:** Standard (100/min)
+
+---
+
+### GET /api/v1/entities/browse/:type
+
+Browse entities by media type.
+
+**Description:** Returns entities of a specific type with type-appropriate sorting and filtering.
+**Auth:** Required
+**Rate Limit:** Standard (100/min)
+
+**Path Parameters:**
+
+| Parameter | Type | Description |
+|---|---|---|
+| `type` | string | Media type: `movie`, `tv_show`, `music_artist`, `game`, `software`, `book`, `comic`, etc. |
+
+**Query Parameters:**
+
+| Parameter | Type | Default | Description |
+|---|---|---|---|
+| `sort_by` | string | `title` | Sort field |
+| `sort_order` | string | `asc` | Sort direction |
+| `limit` | int | `50` | Max results |
+| `offset` | int | `0` | Pagination offset |
+
+---
+
+### GET /api/v1/entities/:id
+
+Get a specific media entity by ID.
+
+**Description:** Returns full entity details including metadata and hierarchy info.
+**Auth:** Required
+**Rate Limit:** Standard (100/min)
+
+**Response:** 200 OK
+
+```json
+{
+  "id": 42,
+  "title": "The Matrix",
+  "media_type": "movie",
+  "year": 1999,
+  "description": "A computer hacker learns about the true nature of reality.",
+  "parent_id": null,
+  "cover_url": "/api/v1/cover/42",
+  "metadata": {},
+  "file_count": 3,
+  "total_size": 8589934592,
+  "created_at": "2024-01-15T10:30:00Z"
+}
+```
+
+---
+
+### GET /api/v1/entities/:id/children
+
+Get child entities of a parent entity (e.g., seasons of a TV show, albums of an artist).
+
+**Description:** Returns the entity hierarchy children.
+**Auth:** Required
+**Rate Limit:** Standard (100/min)
+
+**Response:** 200 OK
+
+```json
+{
+  "parent_id": 42,
+  "children": [
+    {"id": 43, "title": "Season 1", "media_type": "tv_season", "year": 1999},
+    {"id": 44, "title": "Season 2", "media_type": "tv_season", "year": 2000}
+  ]
+}
+```
+
+---
+
+### GET /api/v1/entities/:id/files
+
+Get files associated with a media entity.
+
+**Description:** Returns the file records linked to this entity via the media_files junction table.
+**Auth:** Required
+**Rate Limit:** Standard (100/min)
+
+---
+
+### GET /api/v1/entities/:id/metadata
+
+Get external metadata for a media entity.
+
+**Description:** Returns metadata from external providers (TMDB, OMDB, MusicBrainz, OpenLibrary).
+**Auth:** Required
+**Rate Limit:** Standard (100/min)
+
+---
+
+### GET /api/v1/entities/:id/duplicates
+
+Get potential duplicates of a specific entity.
+
+**Description:** Finds entities that may be duplicates of this one.
+**Auth:** Required
+**Rate Limit:** Standard (100/min)
+
+---
+
+### GET /api/v1/entities/:id/stream
+
+Stream the primary file of a media entity.
+
+**Description:** Proxies the main media file for playback. Supports range requests.
+**Auth:** Required
+**Rate Limit:** Standard (100/min)
+
+---
+
+### GET /api/v1/entities/:id/download
+
+Download the primary file of a media entity.
+
+**Description:** Downloads the main media file as an attachment.
+**Auth:** Required
+**Rate Limit:** Standard (100/min)
+
+---
+
+### GET /api/v1/entities/:id/install-info
+
+Get installation information for a software or game entity.
+
+**Description:** Returns install instructions, requirements, and file details for software/game entities.
+**Auth:** Required
+**Rate Limit:** Standard (100/min)
+
+---
+
+### POST /api/v1/entities/:id/metadata/refresh
+
+Refresh external metadata for a specific entity.
+
+**Description:** Re-fetches metadata from all configured providers.
+**Auth:** Required
+**Rate Limit:** Standard (100/min)
+
+---
+
+### PUT /api/v1/entities/:id/user-metadata
+
+Update user-specific metadata for an entity (e.g., personal rating, notes).
+
+**Description:** Saves user-provided metadata that augments the entity.
+**Auth:** Required
+**Rate Limit:** Standard (100/min)
+
+**Request Body:**
+
+```json
+{
+  "rating": 9,
+  "notes": "One of my all-time favorites",
+  "tags": ["sci-fi", "action", "classic"]
+}
+```
+
+---
+
+### POST /api/v1/entities/:id/user-metadata
+
+Alias for PUT /api/v1/entities/:id/user-metadata. Same behavior.
+
+**Description:** Alternative method for updating user metadata.
+**Auth:** Required
+**Rate Limit:** Standard (100/min)
+
+---
+
+### POST /api/v1/entities/enrich
+
+Trigger bulk metadata enrichment for all entities.
+
+**Description:** Starts background enrichment from external providers for entities missing metadata.
+**Auth:** Required
+**Rate Limit:** Standard (100/min)
+
+**Response:** 200 OK
+
+```json
+{
+  "message": "Enrichment started",
+  "entities_queued": 150
+}
+```
+
+---
+
+## Analytics
+
+### POST /api/v1/analytics/access
+
+Log a media access event.
+
+**Description:** Records that a user accessed/viewed a media item.
+**Auth:** Required
+**Rate Limit:** Standard (100/min)
+
+**Request Body:**
+
+```json
+{
+  "media_id": 42,
+  "action": "play",
+  "duration_seconds": 7200
+}
+```
+
+---
+
+### POST /api/v1/analytics/event
+
+Log a generic analytics event.
+
+**Description:** Records a custom analytics event with arbitrary context.
+**Auth:** Required
+**Rate Limit:** Standard (100/min)
+
+**Request Body:**
+
+```json
+{
+  "event_type": "search",
+  "context": {"query": "matrix", "results_count": 15}
+}
+```
+
+---
+
+### GET /api/v1/analytics/user/:user_id
+
+Get analytics data for a specific user.
+
+**Description:** Returns user engagement metrics and activity history.
+**Auth:** Required
+**Rate Limit:** Standard (100/min)
+
+**Path Parameters:**
+
+| Parameter | Type | Description |
+|---|---|---|
+| `user_id` | int | User ID |
+
+---
+
+### GET /api/v1/analytics/system
+
+Get system-wide analytics.
+
+**Description:** Returns aggregate system usage metrics.
+**Auth:** Required
+**Rate Limit:** Standard (100/min)
+
+---
+
+### GET /api/v1/analytics/media/:media_id
+
+Get analytics data for a specific media item.
+
+**Description:** Returns access counts, popularity metrics, and engagement data for a media item.
+**Auth:** Required
+**Rate Limit:** Standard (100/min)
+
+**Path Parameters:**
+
+| Parameter | Type | Description |
+|---|---|---|
+| `media_id` | int | Media item ID |
+
+---
+
+### POST /api/v1/analytics/reports
+
+Create an analytics report.
+
+**Description:** Generates a custom analytics report based on specified criteria.
+**Auth:** Required
+**Rate Limit:** Standard (100/min)
+
+---
+
+## Reports
+
+### GET /api/v1/reports/usage
+
+Get a usage report.
+
+**Description:** Returns system usage metrics over a time period.
+**Auth:** Required
+**Rate Limit:** Standard (100/min)
+
+**Query Parameters:**
+
+| Parameter | Type | Default | Description |
+|---|---|---|---|
+| `start_date` | string | - | Start date (YYYY-MM-DD) |
+| `end_date` | string | - | End date (YYYY-MM-DD) |
+| `granularity` | string | `daily` | `hourly`, `daily`, `weekly`, `monthly` |
+
+---
+
+### GET /api/v1/reports/performance
+
+Get a performance report.
+
+**Description:** Returns API performance metrics (response times, error rates, throughput).
+**Auth:** Required
+**Rate Limit:** Standard (100/min)
+
+---
+
+## Favorites
+
+### GET /api/v1/favorites
+
+List the current user's favorites.
+
+**Description:** Returns all entities the user has marked as favorite.
+**Auth:** Required
+**Rate Limit:** Standard (100/min)
+
+**Response:** 200 OK
+
+```json
+{
+  "favorites": [
+    {
+      "entity_type": "movie",
+      "entity_id": 42,
+      "title": "The Matrix",
+      "added_at": "2024-01-15T10:30:00Z"
+    }
+  ]
+}
+```
+
+---
+
+### POST /api/v1/favorites
+
+Add an entity to favorites.
+
+**Description:** Marks an entity as a favorite for the current user.
+**Auth:** Required
+**Rate Limit:** Standard (100/min)
+
+**Request Body:**
+
+```json
+{
+  "entity_type": "movie",
+  "entity_id": 42
+}
+```
+
+---
+
+### DELETE /api/v1/favorites/:entity_type/:entity_id
+
+Remove an entity from favorites.
+
+**Description:** Removes the favorite mark from an entity.
+**Auth:** Required
+**Rate Limit:** Standard (100/min)
+
+**Path Parameters:**
+
+| Parameter | Type | Description |
+|---|---|---|
+| `entity_type` | string | Entity type (e.g., `movie`, `tv_show`) |
+| `entity_id` | int | Entity ID |
+
+---
+
+### GET /api/v1/favorites/check/:entity_type/:entity_id
+
+Check if an entity is in the user's favorites.
+
+**Description:** Returns whether the entity is favorited by the current user.
+**Auth:** Required
+**Rate Limit:** Standard (100/min)
+
+**Path Parameters:**
+
+| Parameter | Type | Description |
+|---|---|---|
+| `entity_type` | string | Entity type |
+| `entity_id` | int | Entity ID |
+
+**Response:** 200 OK
+
+```json
+{
+  "is_favorite": true
+}
+```
+
+---
+
+## Playlists
+
+### GET /api/v1/playlists
+
+List the current user's playlists.
+
+**Description:** Returns all playlists owned by the user.
+**Auth:** Required
+**Rate Limit:** Standard (100/min)
+
+---
+
+### POST /api/v1/playlists
+
+Create a new playlist.
+
+**Description:** Creates an empty playlist.
+**Auth:** Required
+**Rate Limit:** Standard (100/min)
+
+**Request Body:**
+
+```json
+{
+  "name": "Road Trip Mix",
+  "description": "Music for long drives",
+  "is_public": false
+}
+```
+
+---
+
+### GET /api/v1/playlists/:id
+
+Get a specific playlist with its items.
+
+**Description:** Returns playlist details and ordered items.
+**Auth:** Required
+**Rate Limit:** Standard (100/min)
+
+---
+
+### PUT /api/v1/playlists/:id
+
+Update a playlist's metadata.
+
+**Description:** Modifies playlist name, description, or visibility.
+**Auth:** Required
+**Rate Limit:** Standard (100/min)
+
+---
+
+### DELETE /api/v1/playlists/:id
+
+Delete a playlist.
+
+**Description:** Removes the playlist (does not delete the media items).
+**Auth:** Required
+**Rate Limit:** Standard (100/min)
+
+---
+
+### POST /api/v1/playlists/:id/items
+
+Add an item to a playlist.
+
+**Description:** Appends a media entity to the playlist.
+**Auth:** Required
+**Rate Limit:** Standard (100/min)
+
+**Request Body:**
+
+```json
+{
+  "entity_type": "song",
+  "entity_id": 123,
+  "position": 5
+}
+```
+
+---
+
+### DELETE /api/v1/playlists/:id/items/:item_id
+
+Remove an item from a playlist.
+
+**Description:** Removes a specific item from the playlist.
+**Auth:** Required
+**Rate Limit:** Standard (100/min)
+
+---
+
+## Browse
+
+Directory browsing and file information endpoints using the database file repository.
+
+### GET /api/v1/browse/roots
+
+Get all storage roots available for browsing.
+
+**Description:** Lists storage roots with browse-relevant metadata.
+**Auth:** Required
+**Rate Limit:** Standard (100/min)
+
+---
+
+### GET /api/v1/browse/directory/{path}
+
+Browse a directory and list its contents from the database.
+
+**Description:** Returns files and subdirectories at the specified path.
+**Auth:** Required
+**Rate Limit:** Standard (100/min)
+
+---
+
+### GET /api/v1/browse/file-info/{path}
+
+Get detailed file information from the database.
+
+**Description:** Returns metadata for a specific file path.
+**Auth:** Required
+**Rate Limit:** Standard (100/min)
+
+---
+
+### GET /api/v1/browse/directory-sizes/{path}
+
+Get subdirectory sizes for a given path.
+
+**Description:** Returns the total size of each subdirectory.
+**Auth:** Required
+**Rate Limit:** Standard (100/min)
+
+---
+
+### GET /api/v1/browse/duplicates/{path}
+
+Get duplicate files within a directory.
+
+**Description:** Finds duplicates under the specified directory path.
+**Auth:** Required
+**Rate Limit:** Standard (100/min)
+
+---
+
+## Sync
+
+Remote synchronization endpoints (WebDAV, S3, GCS, local).
+
+### POST /api/v1/sync/endpoints
+
+Create a sync endpoint configuration.
+
+**Description:** Registers a remote sync destination.
+**Auth:** Required
+**Rate Limit:** Standard (100/min)
+
+**Request Body:**
+
+```json
+{
+  "name": "Cloud Backup",
+  "type": "s3",
+  "config": {
+    "bucket": "my-backup-bucket",
+    "region": "us-east-1",
+    "access_key": "...",
+    "secret_key": "..."
+  },
+  "sync_direction": "push",
+  "filters": {"extensions": [".mkv", ".mp4"]}
+}
+```
+
+---
+
+### GET /api/v1/sync/endpoints
+
+List the user's sync endpoints.
+
+**Description:** Returns all configured sync destinations for the user.
+**Auth:** Required
+**Rate Limit:** Standard (100/min)
+
+---
+
+### GET /api/v1/sync/endpoints/:id
+
+Get a specific sync endpoint.
+
+**Description:** Returns endpoint configuration details.
+**Auth:** Required
+**Rate Limit:** Standard (100/min)
+
+---
+
+### PUT /api/v1/sync/endpoints/:id
+
+Update a sync endpoint configuration.
+
+**Description:** Modifies sync endpoint settings.
+**Auth:** Required
+**Rate Limit:** Standard (100/min)
+
+---
+
+### DELETE /api/v1/sync/endpoints/:id
+
+Delete a sync endpoint.
+
+**Description:** Removes a sync destination configuration.
+**Auth:** Required
+**Rate Limit:** Standard (100/min)
+
+---
+
+### POST /api/v1/sync/endpoints/:id/sync
+
+Start a sync operation on an endpoint.
+
+**Description:** Triggers immediate synchronization.
+**Auth:** Required
+**Rate Limit:** Standard (100/min)
+
+**Response:** 202 Accepted
+
+```json
+{
+  "session_id": "sync-abc123",
+  "status": "started"
+}
+```
+
+---
+
+### GET /api/v1/sync/sessions
+
+List the user's sync sessions.
+
+**Description:** Returns sync operation history for the user.
+**Auth:** Required
+**Rate Limit:** Standard (100/min)
+
+---
+
+### GET /api/v1/sync/sessions/:id
+
+Get a specific sync session.
+
+**Description:** Returns detailed sync session status and progress.
+**Auth:** Required
+**Rate Limit:** Standard (100/min)
+
+---
+
+### POST /api/v1/sync/schedules
+
+Create a sync schedule.
+
+**Description:** Sets up automatic recurring synchronization.
+**Auth:** Required
+**Rate Limit:** Standard (100/min)
+
+**Request Body:**
+
+```json
+{
+  "endpoint_id": 1,
+  "cron": "0 2 * * *",
+  "enabled": true
+}
+```
+
+---
+
+### GET /api/v1/sync/statistics
+
+Get sync statistics.
+
+**Description:** Returns aggregate sync metrics (bytes transferred, sessions, errors).
+**Auth:** Required
+**Rate Limit:** Standard (100/min)
+
+---
+
+### POST /api/v1/sync/cleanup
+
+Clean up old sync sessions.
+
+**Description:** Removes completed sync session records older than a threshold.
+**Auth:** Required
+**Rate Limit:** Standard (100/min)
+
+---
+
+## Challenges
+
+Challenge system endpoints for running validation and testing challenges.
+
+### GET /api/v1/challenges
+
+List all registered challenges.
+
+**Description:** Returns the full challenge catalog with status.
+**Auth:** Required
+**Rate Limit:** Standard (100/min)
+
+**Response:** 200 OK
+
+```json
+{
+  "challenges": [
+    {
+      "id": "CH-001",
+      "name": "Health Check",
+      "category": "infrastructure",
+      "description": "Verify API health endpoint returns 200",
+      "status": "passed"
+    }
+  ],
+  "total": 492
+}
+```
+
+---
+
+### GET /api/v1/challenges/:id
+
+Get a specific challenge by ID.
+
+**Description:** Returns challenge details and last run result.
+**Auth:** Required
+**Rate Limit:** Standard (100/min)
+
+---
+
+### POST /api/v1/challenges/:id/run
+
+Run a specific challenge.
+
+**Description:** Executes a single challenge and returns the result.
+**Auth:** Required
+**Rate Limit:** Standard (100/min)
+
+**Response:** 200 OK
+
+```json
+{
+  "id": "CH-001",
+  "status": "passed",
+  "duration_ms": 150,
+  "assertions": [
+    {"name": "health_endpoint_returns_200", "passed": true}
+  ]
+}
+```
+
+---
+
+### POST /api/v1/challenges/run
+
+Run all challenges (synchronous, blocking).
+
+**Description:** Executes the entire challenge suite sequentially. WARNING: This is blocking -- no other challenge can run until it finishes. Can take 25+ minutes for NAS scans.
+**Auth:** Required
+**Rate Limit:** Standard (100/min)
+
+**Response:** 200 OK
+
+```json
+{
+  "total": 492,
+  "passed": 490,
+  "failed": 2,
+  "skipped": 0,
+  "duration_ms": 1500000,
+  "results": [...]
+}
+```
+
+---
+
+### POST /api/v1/challenges/run/category/:category
+
+Run all challenges in a specific category.
+
+**Description:** Executes challenges filtered by category.
+**Auth:** Required
+**Rate Limit:** Standard (100/min)
+
+**Path Parameters:**
+
+| Parameter | Type | Description |
+|---|---|---|
+| `category` | string | Challenge category (e.g., `infrastructure`, `browsing`, `media`, `security`) |
+
+---
+
+### GET /api/v1/challenges/results
+
+Get the results from the most recent challenge run.
+
+**Description:** Returns cached results from the last challenge execution.
+**Auth:** Required
+**Rate Limit:** Standard (100/min)
 
 ---
 
@@ -2385,14 +4446,19 @@ All requests pass through these middleware layers:
 
 | Middleware | Description |
 |---|---|
+| Security Headers | HSTS, X-Content-Type-Options, X-Frame-Options, etc. |
+| Concurrency Limiter | Max 100 concurrent requests |
+| Request Timeout | 60-second request timeout |
 | CORS | Cross-Origin Resource Sharing headers |
 | Prometheus Metrics | Request duration and count tracking |
 | Logger | Structured request logging (zap) |
 | Error Handler | Consistent error response formatting |
 | Request ID | Unique `X-Request-ID` header per request |
 | Input Validation | Request body sanitization and validation |
-| JWT Auth | Token validation on `/api/v1/*` routes (except auth) |
+| Compression | Brotli (primary) with gzip fallback |
+| JWT Auth | Token validation on `/api/v1/*` routes (except auth/public) |
 | Rate Limiting | Per-user request throttling |
+| Cache Headers | Cache-Control headers on static/discovery endpoints |
 
 ---
 
@@ -2422,23 +4488,30 @@ Or the structured format used by subtitle and recommendation handlers:
 |---|---|
 | 200 | Success |
 | 201 | Created (user registration, resource creation) |
+| 202 | Accepted (async operation queued) |
 | 204 | No Content (successful deletion) |
 | 400 | Bad Request (validation error, invalid parameters) |
 | 401 | Unauthorized (missing or invalid JWT) |
-| 403 | Forbidden (insufficient permissions) |
+| 403 | Forbidden (insufficient permissions or domain not allowed) |
 | 404 | Not Found (resource does not exist) |
 | 409 | Conflict (duplicate resource) |
+| 429 | Too Many Requests (rate limited) |
 | 500 | Internal Server Error |
+| 502 | Bad Gateway (upstream fetch failed, e.g., image proxy) |
+| 503 | Service Unavailable (unhealthy) |
 
 ---
 
 ## Rate Limiting
 
-Rate limiting is applied per-user based on the JWT token.
+Rate limiting is applied per-user based on the JWT token. Two tiers are used:
 
-| Endpoint Group | Limit |
-|---|---|
-| `/api/v1/auth/*` | 5 requests/minute |
-| All other `/api/v1/*` | 100 requests/minute |
+| Endpoint Group | Limit | Description |
+|---|---|---|
+| `POST /api/v1/auth/login` | 5 requests/minute | Brute-force protection |
+| `POST /api/v1/auth/register` | 5 requests/minute | Brute-force protection |
+| All other `/api/v1/*` | 100 requests/minute | Standard rate limit |
 
 When rate limited, the server returns `429 Too Many Requests`.
+
+Optional Redis-based distributed rate limiting is available when a Redis instance is configured. Supports both fixed-window and sliding-window algorithms.

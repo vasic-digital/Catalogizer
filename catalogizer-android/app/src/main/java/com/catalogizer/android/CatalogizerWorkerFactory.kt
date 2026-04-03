@@ -6,6 +6,10 @@ import androidx.work.WorkerFactory
 import androidx.work.WorkerParameters
 import com.catalogizer.android.data.sync.SyncWorker
 
+/**
+ * Custom [WorkerFactory] that injects [DependencyContainer]-managed dependencies
+ * into [WorkManager] workers, enabling constructor injection for [SyncWorker].
+ */
 class CatalogizerWorkerFactory(private val dependencyContainer: DependencyContainer) : WorkerFactory() {
 
     override fun createWorker(

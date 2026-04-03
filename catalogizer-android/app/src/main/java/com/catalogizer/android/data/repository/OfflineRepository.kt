@@ -13,6 +13,11 @@ import kotlinx.serialization.encodeToString
 import kotlinx.serialization.decodeFromString
 val Context.offlineDataStore: DataStore<Preferences> by preferencesDataStore(name = "offline_settings")
 
+/**
+ * Manages offline data operations including local media caching, search history,
+ * storage limits, and queuing user actions (favorites, ratings, progress) for
+ * deferred synchronization via [SyncManager].
+ */
 class OfflineRepository(
     private val database: CatalogizerDatabase,
     private val syncManager: SyncManager,
@@ -265,6 +270,10 @@ class OfflineRepository(
     }
 }
 
+/**
+ * Serializable container for exporting offline data (media items, sync operations,
+ * and search queries) for backup and restore purposes.
+ */
 @kotlinx.serialization.Serializable
 data class OfflineDataExport(
     val mediaItems: List<MediaItem>,
@@ -273,6 +282,10 @@ data class OfflineDataExport(
     val exportTimestamp: Long
 )
 
+/**
+ * Summary statistics for the offline cache including item counts,
+ * pending/failed sync operations, and storage usage.
+ */
 data class OfflineStats(
     val cachedItems: Int,
     val pendingSyncOperations: Int,

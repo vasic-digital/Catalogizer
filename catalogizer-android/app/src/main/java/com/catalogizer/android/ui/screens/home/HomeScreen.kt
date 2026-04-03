@@ -20,6 +20,10 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.catalogizer.android.data.models.MediaItem
 import com.catalogizer.android.ui.viewmodel.HomeViewModel
 
+/**
+ * Home screen displaying recently added and favorite media in horizontal carousels.
+ * Uses [HomeViewModel] for data loading and navigation callbacks for routing.
+ */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun HomeScreen(

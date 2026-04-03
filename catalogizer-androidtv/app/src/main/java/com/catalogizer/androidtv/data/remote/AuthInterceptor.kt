@@ -6,6 +6,10 @@ import kotlinx.coroutines.sync.Mutex
 import okhttp3.Interceptor
 import okhttp3.Response
 
+/**
+ * OkHttp [Interceptor] that attaches Bearer authentication tokens to outgoing requests
+ * and proactively refreshes tokens nearing expiration. Skips auth for login endpoints.
+ */
 class AuthInterceptor(private val authRepository: AuthRepository) : Interceptor {
     private val scope = CoroutineScope(Dispatchers.IO)
     private val refreshMutex = Mutex()

@@ -20,6 +20,11 @@ import com.catalogizer.androidtv.ui.viewmodel.HomeViewModel
 import com.catalogizer.androidtv.ui.viewmodel.MainViewModel
 import kotlinx.coroutines.launch
 
+/**
+ * Main entry point activity for the Catalogizer Android TV app.
+ * Initializes ViewModels from [DependencyContainer], handles server URL from
+ * intent extras (for ADB testing), and implements double-back-press to exit.
+ */
 class MainActivity : ComponentActivity() {
 
     private lateinit var authViewModel: AuthViewModel
@@ -79,6 +84,10 @@ class MainActivity : ComponentActivity() {
     }
 }
 
+/**
+ * Root composable for the TV app managing the splash-to-navigation transition
+ * based on authentication state and app initialization progress.
+ */
 @Composable
 fun CatalogizerTVApp(
     authViewModel: AuthViewModel,

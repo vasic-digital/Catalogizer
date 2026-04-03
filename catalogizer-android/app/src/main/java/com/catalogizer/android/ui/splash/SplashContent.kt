@@ -24,6 +24,11 @@ import com.catalogizer.android.BuildConfig
 import com.catalogizer.android.R
 import kotlinx.coroutines.delay
 
+/**
+ * Branded splash screen composable with Vasic Digital branding, version display,
+ * and a minimum display duration (longer on first launch). Transitions to the
+ * main content when both the timer completes and [isAppReady] is true.
+ */
 @Composable
 fun SplashContent(
     isAppReady: Boolean,

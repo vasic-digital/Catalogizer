@@ -14,6 +14,10 @@ import kotlinx.serialization.json.Json
 import kotlinx.serialization.encodeToString
 import java.util.concurrent.TimeUnit
 
+/**
+ * Current state of the synchronization process including running status,
+ * last sync timestamp, result, and pending operation count.
+ */
 @Serializable
 data class SyncStatus(
     val isRunning: Boolean = false,
@@ -22,6 +26,9 @@ data class SyncStatus(
     val pendingOperations: Int = 0
 )
 
+/**
+ * Result of a sync operation indicating success/failure, item counts, and any error message.
+ */
 @Serializable
 data class SyncResult(
     val success: Boolean,
@@ -31,6 +38,12 @@ data class SyncResult(
     val errorMessage: String? = null
 )
 
+/**
+ * Orchestrates bidirectional data synchronization between the local Room database
+ * and the remote Catalogizer API. Supports periodic background sync via [WorkManager],
+ * manual sync, and queuing of offline operations (favorites, progress, ratings)
+ * with exponential backoff retry.
+ */
 class SyncManager(
     private val database: CatalogizerDatabase,
     private val api: CatalogizerApi,

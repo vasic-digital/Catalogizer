@@ -23,6 +23,10 @@ import kotlinx.serialization.decodeFromString
     exportSchema = true
 )
 @TypeConverters(Converters::class)
+/**
+ * Room database providing access to all local DAOs for media items, search history,
+ * downloads, sync operations, watch progress, and favorites.
+ */
 abstract class CatalogizerDatabase : RoomDatabase() {
     abstract fun mediaDao(): MediaDao
     abstract fun searchHistoryDao(): SearchHistoryDao
@@ -64,6 +68,10 @@ abstract class CatalogizerDatabase : RoomDatabase() {
     }
 }
 
+/**
+ * Room [TypeConverter] collection for serializing complex types (lists, maps,
+ * enums) to and from JSON strings for SQLite storage.
+ */
 class Converters {
     private val json = Json { ignoreUnknownKeys = true }
 

@@ -18,6 +18,10 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.catalogizer.android.data.models.MediaItem
 import com.catalogizer.android.ui.viewmodel.SearchViewModel
 
+/**
+ * Search screen with a top-bar text field for query input and a scrollable list of results.
+ * Uses [SearchViewModel] for debounced search and displays loading, empty, and result states.
+ */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SearchScreen(

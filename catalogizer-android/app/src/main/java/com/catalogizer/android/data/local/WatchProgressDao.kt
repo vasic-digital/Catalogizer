@@ -15,6 +15,9 @@ data class WatchProgress(
     val updatedAt: Long = System.currentTimeMillis()
 )
 
+/**
+ * Data access object for [WatchProgress] entities tracking per-media playback position.
+ */
 @Dao
 interface WatchProgressDao {
     

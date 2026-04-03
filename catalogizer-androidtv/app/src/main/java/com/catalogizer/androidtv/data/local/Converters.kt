@@ -4,6 +4,10 @@ import androidx.room.TypeConverter
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 
+/**
+ * Room [TypeConverter] collection for serializing complex types (lists, maps)
+ * to and from JSON strings for SQLite storage in the Android TV app.
+ */
 object Converters {
     @TypeConverter
     @JvmStatic

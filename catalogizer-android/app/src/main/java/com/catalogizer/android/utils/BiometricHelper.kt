@@ -6,6 +6,11 @@ import androidx.biometric.BiometricPrompt
 import androidx.core.content.ContextCompat
 import androidx.fragment.app.FragmentActivity
 
+/**
+ * Utility object for biometric authentication using [BiometricPrompt].
+ * Provides availability checks and a callback-based authentication flow
+ * for fingerprint-based sign-in.
+ */
 object BiometricHelper {
 
     fun isAvailable(context: Context): Boolean {

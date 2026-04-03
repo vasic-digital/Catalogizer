@@ -18,6 +18,10 @@ import com.catalogizer.androidtv.data.models.AuthState
 // Focus ring color matches theme primary for WCAG-visible focus indicators (HELIX-005, 015)
 private val FocusBorderColor = Color(0xFF9ECAFF)
 
+/**
+ * TV top bar composable with app title, optional user info display, and
+ * search/settings action buttons with visible focus border indicators.
+ */
 @OptIn(ExperimentalTvMaterial3Api::class)
 @Composable
 fun TopBar(
@@ -109,6 +113,10 @@ fun TopBar(
     }
 }
 
+/**
+ * Network connection status indicator showing a Wi-Fi icon and label
+ * with color-coded connected/offline states.
+ */
 @OptIn(ExperimentalTvMaterial3Api::class)
 @Composable
 fun ConnectionStatus(

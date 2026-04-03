@@ -10,6 +10,11 @@ import kotlinx.coroutines.flow.*
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.decodeFromString
+/**
+ * Manages authentication state including login, logout, token refresh, and profile operations.
+ * Persists auth tokens and user data to [DataStore] and exposes reactive [Flow]-based
+ * state for [isAuthenticated], [currentUser], and [authToken].
+ */
 class AuthRepository(
     private val api: CatalogizerApi,
     private val dataStore: DataStore<Preferences>

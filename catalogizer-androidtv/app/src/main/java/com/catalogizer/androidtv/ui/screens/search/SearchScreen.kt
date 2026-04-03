@@ -46,6 +46,11 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 
+/**
+ * TV-optimized search screen with D-pad-navigable text field and search button.
+ * Displays results as [CompactMediaCard] items in a scrollable list with
+ * loading overlay and empty-state messaging.
+ */
 @Composable
 fun SearchScreen(
     viewModel: SearchViewModel,
@@ -309,7 +314,10 @@ fun SearchScreen(
     }
 }
 
-// ViewModel for search functionality with repository integration
+/**
+ * ViewModel for media search with [MediaRepository] integration.
+ * Manages query state, search execution, loading/error indicators, and result clearing.
+ */
 class SearchViewModel(
     private val mediaRepository: MediaRepository
 ) : androidx.lifecycle.ViewModel() {

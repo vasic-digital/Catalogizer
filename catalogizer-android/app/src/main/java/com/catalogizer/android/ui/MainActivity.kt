@@ -22,6 +22,11 @@ import com.catalogizer.android.ui.viewmodel.HomeViewModel
 import com.catalogizer.android.ui.viewmodel.MainViewModel
 import com.catalogizer.android.ui.viewmodel.SearchViewModel
 
+/**
+ * Main entry point activity for the Catalogizer Android app.
+ * Initializes ViewModels from [DependencyContainer], configures edge-to-edge display,
+ * installs the splash screen, and implements double-back-press to exit.
+ */
 class MainActivity : ComponentActivity() {
 
     private lateinit var authViewModel: AuthViewModel
@@ -87,6 +92,10 @@ class MainActivity : ComponentActivity() {
     }
 }
 
+/**
+ * Root composable that manages the splash-to-navigation transition based on
+ * authentication state from [AuthViewModel] and loading state from [MainViewModel].
+ */
 @Composable
 fun CatalogizerApp(
     authViewModel: AuthViewModel,

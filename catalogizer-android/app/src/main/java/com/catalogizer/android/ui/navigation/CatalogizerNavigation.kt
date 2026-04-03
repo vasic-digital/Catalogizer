@@ -13,6 +13,9 @@ import com.catalogizer.android.ui.viewmodel.AuthViewModel
 import com.catalogizer.android.ui.viewmodel.HomeViewModel
 import com.catalogizer.android.ui.viewmodel.SearchViewModel
 
+/**
+ * Sealed class defining the navigation route constants for all app screens.
+ */
 sealed class Screen(val route: String) {
     object Login : Screen("login")
     object Home : Screen("home")
@@ -20,6 +23,10 @@ sealed class Screen(val route: String) {
     object Settings : Screen("settings")
 }
 
+/**
+ * Top-level navigation host composable that wires screen routes to their composables.
+ * Selects the start destination based on [isAuthenticated] state.
+ */
 @Composable
 fun CatalogizerNavigation(
     isAuthenticated: Boolean,

@@ -13,6 +13,11 @@ import kotlinx.coroutines.flow.map
 import org.json.JSONArray
 import org.json.JSONObject
 
+/**
+ * Persists and retrieves user settings via [DataStore] including playback preferences,
+ * subtitle configuration, server URL management, and saved server entries.
+ * Maintains an in-memory [cachedSettings] for synchronous reads.
+ */
 class SettingsRepository(private val dataStore: DataStore<Preferences>) {
 
     companion object {

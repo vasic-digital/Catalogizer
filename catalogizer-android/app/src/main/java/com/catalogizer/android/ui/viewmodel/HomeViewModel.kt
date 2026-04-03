@@ -9,6 +9,11 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 
+/**
+ * Provides home screen data including recent and popular media lists.
+ * Fetches data from [MediaRepository] and exposes loading/error state
+ * as [StateFlow] for reactive UI composition.
+ */
 class HomeViewModel(
     private val mediaRepository: MediaRepository
 ) : ViewModel() {

@@ -8,6 +8,11 @@ import kotlinx.parcelize.Parcelize
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 
+/**
+ * Core media entity stored both as a Room [Entity] and serialized from the API.
+ * Provides computed properties for poster/backdrop URLs, genres, cast, and
+ * watch progress status derived from external metadata.
+ */
 @Parcelize
 @Serializable
 @Entity(tableName = "media_items")

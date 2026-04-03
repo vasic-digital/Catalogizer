@@ -10,6 +10,11 @@ import android.database.SQLException
 import android.net.Uri
 import android.provider.BaseColumns
 
+/**
+ * [ContentProvider] implementation for the Android TV home screen integration.
+ * Exposes media and category data via content URIs defined in [CatalogizerTvContract],
+ * backed by [TvDatabaseHelper] for local SQLite storage.
+ */
 class CatalogizerTvProviderImpl : ContentProvider() {
     
     companion object {

@@ -43,7 +43,7 @@ export function setup() {
 
   if (loginRes.status === 200) {
     const body = JSON.parse(loginRes.body);
-    return { token: body.token || body.access_token || '' };
+    return { token: body.session_token || body.token || body.access_token || '' };
   }
 
   console.warn('Setup login failed, proceeding without token');

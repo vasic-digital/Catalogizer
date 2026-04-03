@@ -8,6 +8,10 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 
+/**
+ * Controls application initialization state used by the TV splash screen.
+ * Exposes [isLoading] as a [StateFlow] to signal when the app is ready.
+ */
 class MainViewModel(
     private val authRepository: AuthRepository
 ) : ViewModel() {

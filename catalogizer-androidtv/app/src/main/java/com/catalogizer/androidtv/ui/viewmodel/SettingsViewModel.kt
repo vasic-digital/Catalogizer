@@ -9,6 +9,10 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.launch
 
+/**
+ * Manages TV settings state including playback, subtitle, notification, and auto-play
+ * preferences. Observes [SettingsRepository.settingsFlow] and persists changes on update.
+ */
 class SettingsViewModel(
     private val settingsRepository: SettingsRepository
 ) : ViewModel() {

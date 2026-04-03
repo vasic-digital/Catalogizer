@@ -5,6 +5,10 @@ import com.catalogizer.android.data.sync.SyncOperation
 import com.catalogizer.android.data.sync.SyncOperationType
 import kotlinx.coroutines.flow.Flow
 
+/**
+ * Data access object for [SyncOperation] entities managing the queue of
+ * pending offline operations awaiting server synchronization.
+ */
 @Dao
 interface SyncOperationDao {
 

@@ -7,6 +7,10 @@ import com.catalogizer.android.data.repository.MediaRepository
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 
+/**
+ * Manages media search with debounced query input and client-side filtering.
+ * Exposes [searchResults] and [isSearching] as [StateFlow] for reactive UI updates.
+ */
 class SearchViewModel(
     private val mediaRepository: MediaRepository
 ) : ViewModel() {

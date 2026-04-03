@@ -24,6 +24,11 @@ import com.catalogizer.androidtv.BuildConfig
 import com.catalogizer.androidtv.R
 import kotlinx.coroutines.delay
 
+/**
+ * Branded TV splash screen with Vasic Digital branding, version display, and
+ * a minimum display duration (longer on first launch). Transitions to the
+ * main content when both the timer completes and [isAppReady] is true.
+ */
 @Composable
 fun SplashContent(
     isAppReady: Boolean,

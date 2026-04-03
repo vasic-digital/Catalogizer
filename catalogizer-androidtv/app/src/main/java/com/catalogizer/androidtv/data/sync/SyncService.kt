@@ -8,6 +8,11 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
 
+/**
+ * Background [Service] for media library synchronization with the Catalogizer API.
+ * Supports immediate and scheduled sync modes via intent actions.
+ * Uses a [CoroutineScope] tied to the service lifecycle.
+ */
 class SyncService : Service() {
     private val serviceScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
     

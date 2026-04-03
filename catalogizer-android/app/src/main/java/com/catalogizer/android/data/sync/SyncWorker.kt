@@ -4,6 +4,10 @@ import android.content.Context
 import androidx.work.CoroutineWorker
 import androidx.work.WorkerParameters
 
+/**
+ * [CoroutineWorker] that delegates background data synchronization to [SyncManager].
+ * Scheduled periodically by [WorkManager] and retries on sync failure.
+ */
 class SyncWorker(
     context: Context,
     workerParams: WorkerParameters,

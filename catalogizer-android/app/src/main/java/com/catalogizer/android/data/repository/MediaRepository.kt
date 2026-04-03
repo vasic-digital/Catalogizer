@@ -7,6 +7,11 @@ import com.catalogizer.android.data.remote.CatalogizerApi
 import com.catalogizer.android.data.remote.ApiResult
 import com.catalogizer.android.data.remote.toApiResult
 import kotlinx.coroutines.flow.*
+/**
+ * Handles media data operations with both remote [CatalogizerApi] and local [MediaDao] database.
+ * Supports online-first with offline fallback, paginated browsing via [Pager], and
+ * optimistic local updates for favorites and watch progress.
+ */
 class MediaRepository(
     private val api: CatalogizerApi,
     private val mediaDao: MediaDao
@@ -250,7 +255,10 @@ class MediaRepository(
     }
 }
 
-// Paging source for remote media data
+/**
+ * [PagingSource] implementation that loads paginated media search results from
+ * the remote [CatalogizerApi], supporting offset-based pagination.
+ */
 class MediaPagingSource(
     private val api: CatalogizerApi,
     private val searchRequest: MediaSearchRequest

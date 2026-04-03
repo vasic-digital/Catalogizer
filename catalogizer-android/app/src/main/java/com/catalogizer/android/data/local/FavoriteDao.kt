@@ -14,6 +14,9 @@ data class Favorite(
     val updatedAt: Long = System.currentTimeMillis()
 )
 
+/**
+ * Data access object for [Favorite] entities tracking user-favorited media items.
+ */
 @Dao
 interface FavoriteDao {
     

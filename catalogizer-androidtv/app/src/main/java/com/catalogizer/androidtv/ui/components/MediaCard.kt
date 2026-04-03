@@ -29,6 +29,11 @@ import androidx.tv.material3.*
 import coil.compose.AsyncImage
 import com.catalogizer.androidtv.data.models.MediaItem
 
+/**
+ * TV-optimized media card with poster/placeholder image, media type badge,
+ * play overlay, metadata row (year, duration, rating, quality), and focus-scaled
+ * border animation for D-pad navigation.
+ */
 @Composable
 fun MediaCard(
     mediaItem: MediaItem,
@@ -274,6 +279,10 @@ fun MediaCard(
     }
 }
 
+/**
+ * Compact horizontal media card with thumbnail, title, year, quality, and rating
+ * for use in search result lists and dense content layouts.
+ */
 @OptIn(ExperimentalTvMaterial3Api::class)
 @Composable
 fun CompactMediaCard(
