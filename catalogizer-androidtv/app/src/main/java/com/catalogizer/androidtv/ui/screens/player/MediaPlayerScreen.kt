@@ -14,6 +14,7 @@ import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.Slider
 import androidx.compose.material3.SliderDefaults
 import androidx.compose.runtime.*
+import kotlinx.serialization.json.jsonPrimitive
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -110,7 +111,7 @@ fun MediaPlayerScreen(
                 val response = container.api.getEntityStream(mediaId)
                 if (response.isSuccessful) {
                     val body = response.body()
-                    val streamPath = body?.get("stream_url")?.asString
+                    val streamPath = body?.get("stream_url")?.jsonPrimitive?.content
                     if (streamPath != null) {
                         resolvedUrl = if (streamPath.startsWith("/")) "$baseUrl$streamPath" else streamPath
                     } else {
