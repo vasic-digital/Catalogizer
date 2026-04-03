@@ -2,7 +2,7 @@
 
 ## Overview
 
-Go 1.24 REST API built with Gin. Serves as the backend for all Catalogizer clients (web, desktop, Android, Android TV). Provides media browsing, search, recognition, recommendations, deep linking, and a reading experience across multi-protocol storage (SMB, FTP, NFS, WebDAV, local).
+Go 1.25 REST API built with Gin. Serves as the backend for all Catalogizer clients (web, desktop, Android, Android TV). Provides media browsing, search, recognition, recommendations, deep linking, and a reading experience across multi-protocol storage (SMB, FTP, NFS, WebDAV, local).
 
 ## Commands
 

@@ -4,13 +4,13 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Overview
 
-Multi-platform media collection manager. Detects, categorizes, and organizes media across SMB, FTP, NFS, WebDAV, and local filesystems. Components: **catalog-api** (Go 1.24/Gin backend), **catalog-web** (React 18/TS/Vite frontend), **catalogizer-desktop** & **installer-wizard** (Tauri/Rust+React), **catalogizer-android** & **catalogizer-androidtv** (Kotlin/Compose), **catalogizer-api-client** (TS library).
+Multi-platform media collection manager. Detects, categorizes, and organizes media across SMB, FTP, NFS, WebDAV, and local filesystems. Components: **catalog-api** (Go 1.25/Gin backend), **catalog-web** (React 18/TS/Vite frontend), **catalogizer-desktop** & **installer-wizard** (Tauri/Rust+React), **catalogizer-android** & **catalogizer-androidtv** (Kotlin/Compose), **catalogizer-api-client** (TS library).
 
 ## Submodule Architecture
 
-29 independent git submodules under the vasic-digital organization. Each has its own repo (GitHub + GitLab), tests, docs, and Upstreams for multi-remote push.
+41 independent git submodules under the vasic-digital organization. Each has its own repo (GitHub + GitLab), tests, docs, and Upstreams for multi-remote push.
 
-### Go Modules (used via `replace` directives in `catalog-api/go.mod`)
+### Go Modules (all wired via `replace` directives in `catalog-api/go.mod`)
 
 | Module | Path | Description |
 |--------|------|-------------|
@@ -24,8 +24,19 @@ Multi-platform media collection manager. Detects, categorizes, and organizes med
 | `digital.vasic.cache` | `Cache/` | Caching layer |
 | `digital.vasic.entities` | `Entities/` | Entity model definitions |
 | `digital.vasic.eventbus` | `EventBus/` | Event bus for pub/sub |
-
-Additional Go submodules (Database, Discovery, Media, Middleware, Observability, RateLimiter, Security, Storage, Streaming, Watcher) exist but are not currently wired via `replace` directives.
+| `digital.vasic.database` | `Database/` | Database connection, dialect abstraction, migrations |
+| `digital.vasic.discovery` | `Discovery/` | Service discovery |
+| `digital.vasic.lazy` | `Lazy/` | Generic lazy loading |
+| `digital.vasic.media` | `Media/` | Media detection and analysis pipeline |
+| `digital.vasic.memory` | `Memory/` | Memory leak detection |
+| `digital.vasic.middleware` | `Middleware/` | HTTP middleware components |
+| `digital.vasic.observability` | `Observability/` | Metrics, logging, tracing |
+| `digital.vasic.ratelimiter` | `RateLimiter/` | Rate limiting |
+| `digital.vasic.recovery` | `Recovery/` | Circuit breaker and recovery patterns |
+| `digital.vasic.security` | `Security/` | Security utilities |
+| `digital.vasic.storage` | `Storage/` | Storage abstraction layer |
+| `digital.vasic.streaming` | `Streaming/` | Media streaming |
+| `digital.vasic.watcher` | `Watcher/` | File system watcher |
 
 ### TypeScript/React Modules (linked via `file:../` in `catalog-web/package.json`)
 
@@ -40,6 +51,20 @@ Additional Go submodules (Database, Discovery, Media, Middleware, Observability,
 | `@vasic-digital/media-player` | `Media-Player-React/` | Media playback components |
 | `@vasic-digital/collection-manager` | `Collection-Manager-React/` | Collection management UI |
 | `@vasic-digital/dashboard-analytics` | `Dashboard-Analytics-React/` | Dashboard and analytics |
+
+### HelixQA / AI Submodules
+
+| Module | Path | Description |
+|--------|------|-------------|
+| HelixQA | `HelixQA/` | LLM-driven autonomous QA testing pipeline |
+| DocProcessor | `DocProcessor/` | Document processing |
+| LLMOrchestrator | `LLMOrchestrator/` | LLM orchestration layer |
+| LLMProvider | `LLMProvider/` | LLM provider abstraction |
+| VisionEngine | `VisionEngine/` | Vision model integration |
+| ReplayBuffer | `ReplayBuffer/` | Experience replay for QA sessions |
+| ScreenDiff | `ScreenDiff/` | Screenshot diff analysis |
+| TrainingCollector | `TrainingCollector/` | Training data collection |
+| VisualRegression | `VisualRegression/` | Visual regression testing |
 
 ### Submodule Commands
 
@@ -256,6 +281,8 @@ Docker Compose files reference `config/` for nginx and redis configs. Do NOT mov
 | `docker-compose.test.yml` | Test stack (API, web, Playwright; `network_mode: host`) |
 | `docker-compose.test-infra.yml` | Test infrastructure services |
 | `docker-compose.security.yml` | Security scanning tools |
+| `docker-compose.qa.yml` | QA environment |
+| `docker-compose.qa-robot.yml` | QA robot configuration |
 
 ## Container Runtime
 
@@ -286,31 +313,27 @@ Critical container notes:
 - All submodules MUST have `.env` in their `.gitignore`
 - Pre-commit hooks should scan for secrets when available
 
-**HelixQA Vision Architecture**: Phase-specific model selection — each pipeline phase uses a dedicated LLMsVerifier strategy: **NavigationStrategy** (Execute/Curiosity) selects JSON-action-producing vision models; **AnalysisStrategy** (Analyze) selects rich-description vision models; **PlanningStrategy** (Learn/Plan) selects strong-reasoning chat models. Bridged CLI models (Claude Code, Qwen Coder) are discovered via `pkg/bridge/` and scored alongside cloud and local providers. **MANDATORY: llama.cpp RPC distributed inference** is the primary local vision backend (superior to Ollama). It distributes model layers across ALL configured hosts. Cloud providers (Astica.AI for analysis, Gemini/OpenAI for navigation) complement the local model. Models scored dynamically by phase-appropriate strategies (no hardcoded preferences). See `HelixQA/.env.example` for configuration.
+**CRITICAL: HelixQA — FULLY LLM-DRIVEN Autonomous Testing.**
 
-**CRITICAL: HelixQA Screenshot/Video Validation — MANDATORY.** Every HelixQA QA session MUST validate captured evidence:
-- **Screenshots MUST be analyzed** — visually inspect every captured screenshot to verify expected screen state
-- **Login verification**: After login attempt, the UI dump MUST NOT contain "Sign In" text. If it does, login FAILED regardless of what the script reports
-- **Data validation**: Compare what the API returns (backend data) against what is displayed on screen. Empty screens when the API has data = BUG
-- **Video recordings MUST be reviewed** — check for visual glitches, frozen frames, unexpected screens, navigation to wrong apps
-- **False positives are UNACCEPTABLE** — a QA session that reports "success" while the app is stuck on the login screen is a critical test infrastructure failure
-- **Every phase transition MUST be verified** — before starting Phase 2, confirm Phase 1 actually achieved its goal (e.g., login succeeded, not just "app is in foreground")
-- **Business logic validation**: Cross-reference screen content against codebase logic, database state, and project documentation/specs
+HelixQA is a generic, universal QA tool driven entirely by LLM vision models. Pipeline: Learn → Plan → Execute → Curiosity → Analyze. Run via `helixqa autonomous --platforms androidtv`. See `HelixQA/.env.example` for configuration.
 
-**CRITICAL: HelixQA Autonomous Testing — FULLY LLM-DRIVEN, NO Hardcoded Flows.** This is a MANDATORY, NON-NEGOTIABLE rule:
-- **ALL navigation and interaction MUST be performed by real LLM vision models.** The LLM sees a screenshot, analyzes it, and decides the next action. Every single step.
-- **NEVER write hardcoded tap coordinates, sleep timers, keystroke sequences, or "fallback navigation" scripts.** These are brittle, break on different devices, and produce false positives. They were permanently removed from the codebase on 2026-03-29.
-- **NEVER implement "fallback actions" that bypass the LLM.** If vision providers are unavailable, the curiosity phase MUST skip — not fake results with scripted steps. A skipped QA session is honest; a scripted one is a lie.
-- **If the LLM returns malformed JSON, RETRY the vision call** — do not substitute a hardcoded action sequence.
-- **ALL QA testing MUST be driven by the HelixQA LLM autonomous pipeline** (`helixqa autonomous --platforms androidtv`). The LLM takes screenshots, analyzes them with vision, decides actions, and validates results.
-- If the LLM pipeline doesn't work, **fix the HelixQA Go code** (improve JSON parsing, retry logic, prompt engineering) — do NOT work around it with hardcoded scripts.
-- **Stay in the testing loop**: Run HelixQA → analyze results → fix discovered bugs → rebuild → redeploy → run again. Only stop when HelixQA completes a full session with verified screenshots showing the app navigated through ALL screens with real data.
-- **Every connected device MUST be tested** — HelixQA detects all ADB devices and runs tests on each one.
-- **ADB reverse proxy MUST be set up automatically** for every Android device before testing begins.
-- **QA Testing Priority Order (MANDATORY)**: (1) Happy paths first — login, browse, open details, play media. (2) Standard flows — search with context-appropriate terms, browse sections, test navigation. (3) Edge cases — empty states, error handling, back navigation. (4) Adversarial testing last.
-- **NEVER type credentials into non-login fields.** The LLM MUST understand which screen it is on and provide context-appropriate input.
-- **HelixQA is a GENERIC, UNIVERSAL tool** — it works with ANY app. No app-specific content is hardcoded in prompts or code. All context comes from screenshots, the knowledge base, and LLM vision analysis.
-- **Devices listed in `.devignore`** (project root) are excluded from testing.
+**Vision architecture**: Phase-specific model selection via LLMsVerifier strategies — **NavigationStrategy** (Execute/Curiosity) for JSON-action models, **AnalysisStrategy** (Analyze) for rich-description models, **PlanningStrategy** (Learn/Plan) for reasoning models. **llama.cpp RPC distributed inference** is the primary local backend; cloud providers (Astica.AI, Gemini, OpenAI) complement it. Models scored dynamically per-phase (no hardcoded preferences). Bridged CLI models discovered via `pkg/bridge/`.
+
+**Non-negotiable rules:**
+- ALL navigation MUST be performed by real LLM vision models — the LLM sees a screenshot, decides the next action. Every single step.
+- NEVER write hardcoded tap coordinates, sleep timers, keystroke sequences, or fallback scripts. If vision providers are unavailable, the phase MUST skip — not fake results. Malformed LLM JSON → retry the vision call, never substitute hardcoded actions.
+- Fix issues in HelixQA Go code (parsing, retry logic, prompts) — never work around with scripts.
+- Every connected ADB device MUST be tested (except `.devignore` entries). ADB reverse proxy set up automatically.
+- QA priority: (1) Happy paths (login, browse, play), (2) Standard flows, (3) Edge cases, (4) Adversarial.
+- Never type credentials into non-login fields — LLM must understand which screen it's on.
+
+**Evidence validation (mandatory):**
+- Visually inspect every screenshot to verify expected screen state.
+- Login verification: UI dump must NOT contain "Sign In" after login attempt — if it does, login FAILED.
+- Data validation: compare API responses against screen content. Empty screens with backend data = BUG.
+- Review all video recordings for visual glitches, frozen frames, wrong screens.
+- Verify every phase transition before proceeding to the next phase.
+- Cross-reference screen content against codebase logic and database state.
 
 **GitHub Actions are PERMANENTLY DISABLED.** Do NOT create any GitHub Actions workflow files in `.github/workflows/`. CI/CD must be run locally.
 
