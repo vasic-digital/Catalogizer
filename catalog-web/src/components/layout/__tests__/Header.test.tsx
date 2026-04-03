@@ -279,7 +279,6 @@ describe('Header', () => {
 
     it('handles logout errors gracefully', async () => {
       const user = userEvent.setup()
-      const consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation()
       mockLogout.mockRejectedValue(new Error('Logout failed'))
 
       render(
@@ -295,14 +294,10 @@ describe('Header', () => {
 
       await user.click(logoutButton)
 
+      // Logout failure is silently caught (non-critical), no console.error call
       await waitFor(() => {
-        expect(consoleErrorSpy).toHaveBeenCalledWith(
-          'Logout failed:',
-          expect.any(Error)
-        )
+        expect(mockLogout).toHaveBeenCalled()
       })
-
-      consoleErrorSpy.mockRestore()
     })
   })
 

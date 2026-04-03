@@ -1,7 +1,12 @@
 @file:OptIn(ExperimentalTvMaterial3Api::class, ExperimentalComposeUiApi::class)
 package com.catalogizer.androidtv.ui.screens.login
 
+import androidx.compose.animation.animateColorAsState
+import androidx.compose.animation.core.animateDpAsState
+import androidx.compose.animation.core.tween
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.focusable
 import androidx.compose.foundation.rememberScrollState
@@ -14,12 +19,10 @@ import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.Visibility
-import androidx.compose.material.icons.filled.VisibilityOff
 import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Divider
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.runtime.*
@@ -29,15 +32,19 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusProperties
 import androidx.compose.ui.focus.focusRequester
+import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.input.key.Key
+import androidx.compose.ui.input.key.KeyEventType
+import androidx.compose.ui.input.key.key
+import androidx.compose.ui.input.key.onKeyEvent
+import androidx.compose.ui.input.key.type
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.PasswordVisualTransformation
-import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.text.style.TextOverflow
-import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.min
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -69,7 +76,6 @@ fun LoginScreen(
     var password by remember { mutableStateOf("") }
     var isLoading by remember { mutableStateOf(false) }
     var errorMessage by remember { mutableStateOf<String?>(null) }
-    var passwordVisible by remember { mutableStateOf(false) }
     var serverConnected by remember { mutableStateOf<Boolean?>(null) } // null=unknown, true=ok, false=fail
     var usernameError by remember { mutableStateOf<String?>(null) }
     var passwordError by remember { mutableStateOf<String?>(null) }
@@ -105,7 +111,45 @@ fun LoginScreen(
     val usernameFocusRequester = remember { FocusRequester() }
     val passwordFocusRequester = remember { FocusRequester() }
     val signInFocusRequester = remember { FocusRequester() }
+    val serverUrlFocusRequester = remember { FocusRequester() }
     val keyboardController = LocalSoftwareKeyboardController.current
+
+    // Track focus state for each field to show visible highlight on D-pad navigation
+    var usernameFocused by remember { mutableStateOf(false) }
+    var passwordFocused by remember { mutableStateOf(false) }
+    var serverUrlFocused by remember { mutableStateOf(false) }
+
+    // Premium focus highlight — animated glow with smooth transitions
+    val accentColor = Color(0xFF90CAF9)       // soft ice-blue
+    val accentGlow  = Color(0x4090CAF9)       // translucent glow layer
+    val dormantBorder = Color.White.copy(alpha = 0.12f)
+
+    @Composable
+    fun focusBorder(focused: Boolean): BorderStroke {
+        val color by animateColorAsState(
+            targetValue = if (focused) accentColor else dormantBorder,
+            animationSpec = tween(durationMillis = 220), label = "border"
+        )
+        val width by animateDpAsState(
+            targetValue = if (focused) 1.5.dp else 0.5.dp,
+            animationSpec = tween(durationMillis = 220), label = "width"
+        )
+        return BorderStroke(width, color)
+    }
+
+    @Composable
+    fun focusGlowModifier(focused: Boolean): Modifier {
+        val elevation by animateDpAsState(
+            targetValue = if (focused) 8.dp else 0.dp,
+            animationSpec = tween(durationMillis = 250), label = "glow"
+        )
+        val bgAlpha by androidx.compose.animation.core.animateFloatAsState(
+            targetValue = if (focused) 0.14f else 0.08f,
+            animationSpec = tween(durationMillis = 250), label = "bg"
+        )
+        return Modifier
+            .background(Color.White.copy(alpha = bgAlpha), RoundedCornerShape(8.dp))
+    }
 
     // Auto-login from intent extras (for QA/testing via ADB)
     // Usage: adb shell am start -n com.catalogizer.androidtv/.ui.MainActivity \
@@ -126,17 +170,17 @@ fun LoginScreen(
     }
     val scrollState = rememberScrollState()
 
-    // Accessible text field colors for dark TV theme (WCAG AA)
+    // Premium text field colors for dark TV theme
     val textFieldColors = OutlinedTextFieldDefaults.colors(
         focusedTextColor = Color.White,
-        unfocusedTextColor = Color.White,
-        focusedContainerColor = Color.White.copy(alpha = 0.10f),
-        unfocusedContainerColor = Color.White.copy(alpha = 0.08f),
-        focusedBorderColor = MaterialTheme.colorScheme.primary,
-        unfocusedBorderColor = Color.White.copy(alpha = 0.5f),
-        focusedLabelColor = MaterialTheme.colorScheme.primary,
-        unfocusedLabelColor = Color.White.copy(alpha = 0.85f),
-        cursorColor = MaterialTheme.colorScheme.primary,
+        unfocusedTextColor = Color.White.copy(alpha = 0.9f),
+        focusedContainerColor = Color.Transparent,
+        unfocusedContainerColor = Color.Transparent,
+        focusedBorderColor = Color.Transparent,   // border handled by our custom focus system
+        unfocusedBorderColor = Color.Transparent,  // border handled by our custom focus system
+        focusedLabelColor = accentColor,
+        unfocusedLabelColor = Color.White.copy(alpha = 0.6f),
+        cursorColor = accentColor,
         errorBorderColor = Color(0xFFFF6B6B),
         errorLabelColor = Color(0xFFFF6B6B)
     )
@@ -151,23 +195,43 @@ fun LoginScreen(
         }
     }
 
+    // Discovery status message shown below the server URL field during auto-discovery
+    var discoveryStatus by remember { mutableStateOf<String?>(null) }
+
     LaunchedEffect(Unit) {
         val initialSettings = container.settingsRepository.getSettingsAsync()
-        if (initialSettings.autoDiscovery) {
+        // Only auto-discover if no server URL is already configured
+        if (initialSettings.autoDiscovery && initialSettings.serverUrl.isBlank()) {
             isDiscovering = true
+            discoveryStatus = "Searching for server..."
             try {
                 val results = container.discoveryService.discoverAll(8000L)
                 discoveredServers = results
-                if (results.size == 1) {
+                if (results.isNotEmpty()) {
+                    // Auto-select the first (or only) discovered server
                     val server = results.first()
                     serverUrl = server.url
                     container.switchServer(server.url)
                     container.settingsRepository.updateServerUrl(server.url)
                     container.settingsRepository.addServer(server)
                     serverConnected = true
+                    discoveryStatus = "Connected to ${server.name}"
+                } else {
+                    discoveryStatus = null
                 }
-            } catch (_: Exception) { }
+            } catch (_: Exception) {
+                discoveryStatus = null
+            }
             isDiscovering = false
+        } else if (initialSettings.serverUrl.isNotBlank()) {
+            // Server URL already configured -- verify connectivity in the background
+            serverUrl = initialSettings.serverUrl
+            try {
+                val probe = container.discoveryService.probeServer(serverUrl)
+                serverConnected = probe != null
+            } catch (_: Exception) {
+                serverConnected = false
+            }
         }
     }
 
@@ -226,10 +290,17 @@ fun LoginScreen(
                     usernameError = null
                 },
                 label = { Text("Username", color = Color.White.copy(alpha = 0.85f)) },
+                shape = RoundedCornerShape(8.dp),
                 modifier = Modifier
                     .width(formWidth)
+                    .then(focusGlowModifier(usernameFocused))
+                    .border(focusBorder(usernameFocused), RoundedCornerShape(8.dp))
                     .focusRequester(usernameFocusRequester)
-                    .focusProperties { next = passwordFocusRequester }
+                    .onFocusChanged { usernameFocused = it.isFocused }
+                    .focusProperties {
+                        next = passwordFocusRequester
+                        down = passwordFocusRequester
+                    }
                     .focusable(),
                 keyboardOptions = KeyboardOptions(imeAction = ImeAction.Next),
                 keyboardActions = KeyboardActions(onNext = { passwordFocusRequester.requestFocus() }),
@@ -250,10 +321,18 @@ fun LoginScreen(
                     passwordError = null
                 },
                 label = { Text("Password", color = Color.White.copy(alpha = 0.85f)) },
+                shape = RoundedCornerShape(8.dp),
                 modifier = Modifier
                     .width(formWidth)
+                    .then(focusGlowModifier(passwordFocused))
+                    .border(focusBorder(passwordFocused), RoundedCornerShape(8.dp))
                     .focusRequester(passwordFocusRequester)
-                    .focusProperties { next = signInFocusRequester }
+                    .onFocusChanged { passwordFocused = it.isFocused }
+                    .focusProperties {
+                        next = signInFocusRequester
+                        down = signInFocusRequester
+                        up = usernameFocusRequester
+                    }
                     .focusable(),
                 keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
                 keyboardActions = KeyboardActions(onDone = {
@@ -261,15 +340,15 @@ fun LoginScreen(
                     validateAndLogin(username, password, authViewModel, { isLoading = it }, { errorMessage = it },
                         { usernameError = it }, { passwordError = it })
                 }),
-                visualTransformation = if (passwordVisible) VisualTransformation.None else PasswordVisualTransformation(),
+                // Always mask the password -- no visibility toggle on TV (the IconButton
+                // was stealing D-pad focus and accidentally toggling visibility)
+                visualTransformation = PasswordVisualTransformation(),
                 trailingIcon = {
-                    IconButton(onClick = { passwordVisible = !passwordVisible }) {
-                        Icon(
-                            imageVector = if (passwordVisible) Icons.Default.VisibilityOff else Icons.Default.Visibility,
-                            contentDescription = if (passwordVisible) "Hide password" else "Show password",
-                            tint = Color.White.copy(alpha = 0.85f)
-                        )
-                    }
+                    Icon(
+                        imageVector = Icons.Default.Visibility,
+                        contentDescription = "Password field",
+                        tint = Color.White.copy(alpha = 0.5f)
+                    )
                 },
                 singleLine = true,
                 enabled = !isLoading,
@@ -297,7 +376,7 @@ fun LoginScreen(
                 Spacer(modifier = Modifier.height(12.dp))
             }
 
-            // Login button
+            // Login button — explicit DPAD_CENTER handling to ensure form submission
             Button(
                 onClick = {
                     keyboardController?.hide()
@@ -307,7 +386,26 @@ fun LoginScreen(
                 modifier = Modifier
                     .width(formWidth)
                     .height(if (isCompact) 48.dp else 52.dp)
-                    .focusRequester(signInFocusRequester),
+                    .focusRequester(signInFocusRequester)
+                    .focusProperties {
+                        up = passwordFocusRequester
+                        down = serverUrlFocusRequester
+                    }
+                    .onKeyEvent { keyEvent ->
+                        if (keyEvent.type == KeyEventType.KeyUp &&
+                            (keyEvent.key == Key.DirectionCenter || keyEvent.key == Key.Enter)
+                        ) {
+                            keyboardController?.hide()
+                            validateAndLogin(
+                                username, password, authViewModel,
+                                { isLoading = it }, { errorMessage = it },
+                                { usernameError = it }, { passwordError = it }
+                            )
+                            true
+                        } else {
+                            false
+                        }
+                    },
                 enabled = !isLoading
             ) {
                 if (isLoading) {
@@ -337,7 +435,17 @@ fun LoginScreen(
                 value = serverUrl,
                 onValueChange = { serverUrl = it; serverConnected = null },
                 label = { Text("Server URL", color = Color.White.copy(alpha = 0.85f)) },
-                modifier = Modifier.width(formWidth).focusable(),
+                shape = RoundedCornerShape(8.dp),
+                modifier = Modifier
+                    .width(formWidth)
+                    .then(focusGlowModifier(serverUrlFocused))
+                    .border(focusBorder(serverUrlFocused), RoundedCornerShape(8.dp))
+                    .focusRequester(serverUrlFocusRequester)
+                    .onFocusChanged { serverUrlFocused = it.isFocused }
+                    .focusProperties {
+                        up = signInFocusRequester
+                    }
+                    .focusable(),
                 singleLine = true,
                 enabled = !isLoading,
                 colors = textFieldColors,
@@ -359,11 +467,32 @@ fun LoginScreen(
                 }
             )
 
-            // Connection status text
-            if (serverConnected != null) {
+            // Connection status text or discovery status
+            if (isDiscovering && discoveryStatus != null) {
+                Spacer(modifier = Modifier.height(4.dp))
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    CircularProgressIndicator(
+                        modifier = Modifier.size(14.dp),
+                        strokeWidth = 1.5.dp,
+                        color = Color.White.copy(alpha = 0.7f)
+                    )
+                    Text(
+                        text = discoveryStatus ?: "",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = Color.White.copy(alpha = 0.7f)
+                    )
+                }
+            } else if (serverConnected != null) {
                 Spacer(modifier = Modifier.height(4.dp))
                 Text(
-                    text = if (serverConnected == true) "Connected to server" else "Unable to reach server",
+                    text = if (serverConnected == true) {
+                        discoveryStatus ?: "Connected to server"
+                    } else {
+                        "Unable to reach server"
+                    },
                     style = MaterialTheme.typography.bodySmall,
                     color = if (serverConnected == true) Color(0xFF4CAF50) else Color(0xFFFF6B6B)
                 )
@@ -381,12 +510,30 @@ fun LoginScreen(
                             isDiscovering = true
                             discoveredServers = emptyList()
                             serverConnected = null
+                            discoveryStatus = "Searching for server..."
+                            errorMessage = null
                             try {
                                 val results = container.discoveryService.discoverAll(10000L)
                                 discoveredServers = results
-                                if (results.isEmpty()) errorMessage = "No servers found on the network"
+                                if (results.isEmpty()) {
+                                    errorMessage = "No servers found on the network"
+                                    discoveryStatus = null
+                                } else if (results.size == 1) {
+                                    // Auto-select the single discovered server
+                                    val server = results.first()
+                                    serverUrl = server.url
+                                    container.switchServer(server.url)
+                                    container.settingsRepository.updateServerUrl(server.url)
+                                    container.settingsRepository.addServer(server)
+                                    serverConnected = true
+                                    discoveryStatus = "Connected to ${server.name}"
+                                    discoveredServers = emptyList()
+                                } else {
+                                    discoveryStatus = "Found ${results.size} servers"
+                                }
                             } catch (e: Exception) {
                                 errorMessage = "Discovery failed: ${e.message}"
+                                discoveryStatus = null
                             }
                             isDiscovering = false
                         }
@@ -394,12 +541,17 @@ fun LoginScreen(
                     modifier = Modifier.weight(1f).height(44.dp),
                     enabled = !isDiscovering && !isLoading
                 ) {
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    Box(
+                        modifier = Modifier.fillMaxSize(),
+                        contentAlignment = Alignment.Center
                     ) {
-                        Icon(Icons.Default.Search, contentDescription = "Discover servers", modifier = Modifier.size(18.dp))
-                        Text("Discover", style = MaterialTheme.typography.bodyMedium)
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
+                            Icon(Icons.Default.Search, contentDescription = "Discover servers", modifier = Modifier.size(18.dp))
+                            Text("Discover", style = MaterialTheme.typography.bodyMedium)
+                        }
                     }
                 }
 
@@ -424,12 +576,17 @@ fun LoginScreen(
                     modifier = Modifier.weight(1f).height(44.dp),
                     enabled = serverUrl.isNotBlank() && !isLoading
                 ) {
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    Box(
+                        modifier = Modifier.fillMaxSize(),
+                        contentAlignment = Alignment.Center
                     ) {
-                        Icon(Icons.Default.Settings, contentDescription = "Connect to server", modifier = Modifier.size(18.dp))
-                        Text("Connect", style = MaterialTheme.typography.bodyMedium)
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
+                            Icon(Icons.Default.Settings, contentDescription = "Connect to server", modifier = Modifier.size(18.dp))
+                            Text("Connect", style = MaterialTheme.typography.bodyMedium)
+                        }
                     }
                 }
             }

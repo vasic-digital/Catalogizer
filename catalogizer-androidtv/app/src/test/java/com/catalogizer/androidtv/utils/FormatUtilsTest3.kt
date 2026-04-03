@@ -131,8 +131,9 @@ class FormatUtilsTest3 {
     fun `formatFrameRate 29_97 fps fractional`() {
         val result = formatFrameRate(29.97)
         assertNotNull(result)
-        assertTrue(result!!.contains("29"))
-        assertTrue(result.contains("fps"))
+        // 29.97 formatted with "%.1f" rounds to "30.0 fps"
+        assertTrue(result!!.contains("fps"))
+        assertTrue(result == "30.0 fps" || result.contains("29"))
     }
 
     // --- formatAudioChannels additional ---

@@ -23,8 +23,8 @@ android {
         applicationId = "com.catalogizer.androidtv"
         minSdk = 26
         targetSdk = 34
-        versionCode = 5
-        versionName = "2.2.0"
+        versionCode = 6
+        versionName = "2.2.1"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         vectorDrawables {
@@ -124,17 +124,20 @@ dependencies {
     implementation("androidx.lifecycle:lifecycle-runtime-ktx:2.7.0")
     implementation("androidx.activity:activity-compose:1.8.2")
 
-    // Compose BOM
-    implementation(platform("androidx.compose:compose-bom:2024.01.00"))
+    // Compose BOM — pinned to 2024.06.00 (Compose 1.6.8) for binary compatibility
+    // with tv-foundation:1.0.0-alpha11 and tv-material:1.0.0 (both compiled against 1.6.8).
+    // BOM 2024.01.00 (Compose 1.6.0) caused NoSuchMethodError on KeyframesSpec.at() at runtime
+    // because tv-foundation alpha10 was compiled against Compose 1.4.x animation-core.
+    implementation(platform("androidx.compose:compose-bom:2024.06.00"))
     implementation("androidx.compose.ui:ui")
     implementation("androidx.compose.ui:ui-graphics")
     implementation("androidx.compose.ui:ui-tooling-preview")
     implementation("androidx.compose.material3:material3")
     implementation("androidx.compose.material:material-icons-extended")
 
-    // TV-specific Compose
-    implementation("androidx.tv:tv-foundation:1.0.0-alpha10")
-    implementation("androidx.tv:tv-material:1.0.0-alpha10")
+    // TV-specific Compose — aligned with Compose 1.6.8 (BOM 2024.06.00)
+    implementation("androidx.tv:tv-foundation:1.0.0-alpha11")
+    implementation("androidx.tv:tv-material:1.0.0")
 
     // Navigation
     implementation("androidx.navigation:navigation-compose:2.7.5")
@@ -202,7 +205,7 @@ dependencies {
     androidTestImplementation("androidx.test:runner:1.5.2")
     androidTestImplementation("androidx.test:rules:1.5.0")
     androidTestImplementation("org.mockito:mockito-android:5.8.0")
-    androidTestImplementation(platform("androidx.compose:compose-bom:2024.01.00"))
+    androidTestImplementation(platform("androidx.compose:compose-bom:2024.06.00"))
     androidTestImplementation("androidx.compose.ui:ui-test-junit4")
     debugImplementation("androidx.compose.ui:ui-tooling")
     debugImplementation("androidx.compose.ui:ui-test-manifest")

@@ -312,8 +312,8 @@ fun CompactMediaCard(
         @OptIn(ExperimentalTvMaterial3Api::class)
         Surface(
             modifier = Modifier,
-            shape = NonInteractiveSurfaceDefaults.shape,
-            colors = NonInteractiveSurfaceDefaults.colors(
+            shape = SurfaceDefaults.shape,
+            colors = SurfaceDefaults.colors(
                 containerColor = androidx.tv.material3.MaterialTheme.colorScheme.surfaceVariant
             ),
             border = androidx.tv.material3.Border(

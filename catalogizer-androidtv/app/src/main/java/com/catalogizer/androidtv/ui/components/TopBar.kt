@@ -125,13 +125,13 @@ fun ConnectionStatus(
 ) {
     Surface(
         modifier = modifier,
-        colors = NonInteractiveSurfaceDefaults.colors(
+        colors = SurfaceDefaults.colors(
             containerColor = if (isConnected)
                 MaterialTheme.colorScheme.primaryContainer
             else
                 MaterialTheme.colorScheme.errorContainer
         ),
-        shape = NonInteractiveSurfaceDefaults.shape
+        shape = SurfaceDefaults.shape
     ) {
         Row(
             modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp),

@@ -144,8 +144,10 @@ class DependencyContainer(private val context: Context) {
                 val localhostUrl = "http://localhost:8080"
                 val probe = discoveryService.probeServer(localhostUrl)
                 if (probe != null) {
-                    currentBaseUrl = localhostUrl
-                    settingsRepository.updateServerUrl(localhostUrl)
+                    // Use the resolved URL (real IP from /discovery), not localhost
+                    val resolvedUrl = probe.url
+                    currentBaseUrl = resolvedUrl
+                    settingsRepository.updateServerUrl(resolvedUrl)
                     settingsRepository.addServer(probe)
                 }
             }

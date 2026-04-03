@@ -1,6 +1,5 @@
 import { useEffect, useState } from 'react'
 import appIcon from '../assets/app-icon.jpeg'
-import vdLogo from '../assets/vasic-digital-logo.jpeg'
 
 interface SplashScreenProps {
   onComplete: () => void
@@ -55,16 +54,9 @@ export function SplashScreen({
       </div>
 
       <div className="absolute bottom-8 flex flex-col items-center gap-3">
-        <div className="flex items-center gap-2">
-          <img
-            src={vdLogo}
-            alt="Vasic Digital logo"
-            className="w-6 h-6 rounded-lg border border-red-600"
-          />
-          <span className="text-slate-500 text-xs">
-            Made with &#9829; by Vasic Digital
-          </span>
-        </div>
+        <span className="text-slate-500 text-xs">
+          Made with &#9829; by Vasic Digital
+        </span>
         <span className="text-slate-600 text-xs">v1.1.0</span>
       </div>
     </div>

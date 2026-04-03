@@ -144,7 +144,7 @@ class MediaRepositoryTest2 {
 
     @Test
     fun `favorites throws on API failure`() = runTest {
-        coEvery { mockApi.addFavorite(any()) } returns Response.error<Map<String, String>>(
+        coEvery { mockApi.removeFavorite(any(), any()) } returns Response.error<Map<String, String>>(
             500,
             "Server error".toResponseBody(null)
         )
@@ -153,7 +153,7 @@ class MediaRepositoryTest2 {
             repository.removeFavorite("movie", 1L)
             fail("Expected exception")
         } catch (e: Exception) {
-            assertTrue(e.message?.contains("Failed to update favorite status") == true)
+            assertTrue(e.message?.contains("Failed to remove favorite") == true)
         }
     }
 
@@ -174,7 +174,7 @@ class MediaRepositoryTest2 {
         coVerify {
             mockApi.searchMedia(match { params ->
                 params["query"] == "inception" &&
-                    params["media_type"] == "movie" &&
+                    params["media_types"] == "movie" &&
                     params["limit"] == "50" &&
                     params["offset"] == "10"
             })

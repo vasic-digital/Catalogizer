@@ -4,7 +4,6 @@ import { SplashScreen } from '../SplashScreen'
 
 // Mock image imports
 vi.mock('../../assets/app-icon.jpeg', () => ({ default: '/mock-app-icon.jpeg' }))
-vi.mock('../../assets/vasic-digital-logo.jpeg', () => ({ default: '/mock-vd-logo.jpeg' }))
 
 describe('SplashScreen', () => {
   let onComplete: ReturnType<typeof vi.fn>
@@ -55,13 +54,6 @@ describe('SplashScreen', () => {
     const icon = screen.getByAltText('Catalogizer icon')
     expect(icon).toBeInTheDocument()
     expect(icon).toHaveAttribute('src', '/mock-app-icon.jpeg')
-  })
-
-  it('renders the Vasic Digital logo', () => {
-    render(<SplashScreen onComplete={onComplete} />)
-    const logo = screen.getByAltText('Vasic Digital logo')
-    expect(logo).toBeInTheDocument()
-    expect(logo).toHaveAttribute('src', '/mock-vd-logo.jpeg')
   })
 
   it('renders the loading spinner', () => {

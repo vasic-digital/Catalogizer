@@ -12,6 +12,7 @@ import kotlinx.coroutines.withContext
 import kotlinx.coroutines.withTimeoutOrNull
 import org.json.JSONObject
 import java.net.DatagramPacket
+import java.net.DatagramSocket
 import java.net.HttpURLConnection
 import java.net.InetAddress
 import java.net.MulticastSocket
@@ -20,9 +21,10 @@ import java.net.URL
 /**
  * Discovers Catalogizer API instances on the local network.
  *
- * Strategy:
- * 1. HTTP probe on common ports across the LAN subnet (most reliable)
- * 2. UDP multicast listening with WiFi MulticastLock (may be blocked by router)
+ * Strategy (ordered by speed and reliability):
+ * 1. UDP broadcast to the responder port (fastest — direct request/reply)
+ * 2. UDP multicast listening with WiFi MulticastLock (passive, may be blocked)
+ * 3. HTTP probe on common ports across the LAN subnet (most reliable fallback)
  */
 class NetworkDiscoveryService(private val context: Context? = null) {
 
@@ -30,14 +32,72 @@ class NetworkDiscoveryService(private val context: Context? = null) {
         private const val TAG = "Discovery"
         private const val MULTICAST_GROUP = "239.42.42.42"
         private const val MULTICAST_PORT = 42069
+        private const val RESPONDER_PORT = 19820
+        private const val DISCOVERY_MESSAGE = "CATALOGIZER_DISCOVER"
         private const val HTTP_PROBE_TIMEOUT_MS = 2000
         private val COMMON_PORTS = listOf(8080, 8081, 8082, 80)
     }
 
     /**
-     * Primary discovery: HTTP probe on common ports across LAN subnet.
+     * Fastest discovery method: send a UDP broadcast with "CATALOGIZER_DISCOVER"
+     * to port 19820. The catalog-api Responder replies with JSON ServiceInfo
+     * directly to the sender. Works on any network that allows local broadcast.
+     */
+    suspend fun discoverViaBroadcast(timeoutMs: Long = 3000L): List<ServerEntry> =
+        withContext(Dispatchers.IO) {
+            val results = mutableMapOf<String, ServerEntry>()
+            try {
+                val socket = DatagramSocket()
+                socket.broadcast = true
+                socket.soTimeout = 500
+
+                // Send discovery request to the broadcast address on responder port
+                val message = DISCOVERY_MESSAGE.toByteArray()
+                val broadcastAddr = InetAddress.getByName("255.255.255.255")
+                val packet = DatagramPacket(message, message.size, broadcastAddr, RESPONDER_PORT)
+                socket.send(packet)
+                Log.d(TAG, "Sent UDP broadcast discovery to 255.255.255.255:$RESPONDER_PORT")
+
+                // Also try subnet-directed broadcast if we can detect the subnet
+                val prefix = detectSubnetPrefix()
+                if (prefix != null) {
+                    val subnetBroadcast = InetAddress.getByName("$prefix.255")
+                    val subnetPacket = DatagramPacket(message, message.size, subnetBroadcast, RESPONDER_PORT)
+                    socket.send(subnetPacket)
+                    Log.d(TAG, "Sent UDP broadcast discovery to $prefix.255:$RESPONDER_PORT")
+                }
+
+                val deadline = System.currentTimeMillis() + timeoutMs
+                val buf = ByteArray(4096)
+
+                while (System.currentTimeMillis() < deadline) {
+                    try {
+                        val response = DatagramPacket(buf, buf.size)
+                        val remaining = deadline - System.currentTimeMillis()
+                        if (remaining <= 0) break
+                        socket.soTimeout = remaining.coerceAtMost(500).toInt()
+                        socket.receive(response)
+                        val json = String(response.data, 0, response.length)
+                        val entry = parseServiceInfoJson(json)
+                        if (entry != null) {
+                            val key = entry.url
+                            results[key] = entry
+                            Log.d(TAG, "UDP broadcast discovered: ${entry.url} (${entry.name})")
+                        }
+                    } catch (_: java.net.SocketTimeoutException) { }
+                }
+
+                socket.close()
+            } catch (e: Exception) {
+                Log.w(TAG, "UDP broadcast discovery failed: ${e.message}")
+            }
+            results.values.toList()
+        }
+
+    /**
+     * HTTP probe on common ports across LAN subnet.
      * Tries /discovery endpoint on each IP in the subnet.
-     * This works reliably on all networks (no multicast needed).
+     * This works reliably on all networks (no multicast/broadcast needed).
      */
     suspend fun discoverViaHttpProbe(timeoutMs: Long = 10000L): List<ServerEntry> = coroutineScope {
         val prefix = detectSubnetPrefix()
@@ -87,9 +147,20 @@ class NetworkDiscoveryService(private val context: Context? = null) {
                 val obj = JSONObject(body)
                 if (obj.optString("service") == "catalogizer-api") {
                     val version = obj.optString("version", "?")
+                    val host = obj.optString("host", "")
+                    val port = obj.optInt("port", 8080)
+                    val protocol = obj.optString("protocol", "http")
+                    val name = obj.optString("name", "Catalogizer API")
+                    // Use the actual host IP from the discovery response
+                    // so the URL shows the real server address, not localhost
+                    val resolvedUrl = if (host.isNotBlank() && host != "0.0.0.0") {
+                        "$protocol://$host:$port"
+                    } else {
+                        baseUrl.trimEnd('/')
+                    }
                     return@withContext ServerEntry(
-                        url = baseUrl.trimEnd('/'),
-                        name = "Catalogizer v$version",
+                        url = resolvedUrl,
+                        name = "$name v$version",
                         isDiscovered = true,
                         lastConnected = System.currentTimeMillis()
                     )
@@ -102,6 +173,7 @@ class NetworkDiscoveryService(private val context: Context? = null) {
 
     /**
      * UDP multicast discovery with WiFi MulticastLock.
+     * Listens for periodic announcements from catalog-api on 239.42.42.42:42069.
      * Requires android.permission.CHANGE_WIFI_MULTICAST_STATE.
      */
     suspend fun discoverViaMulticast(timeoutMs: Long = 5000L): List<ServerEntry> =
@@ -130,19 +202,10 @@ class NetworkDiscoveryService(private val context: Context? = null) {
                         val packet = DatagramPacket(buf, buf.size)
                         socket.receive(packet)
                         val json = String(packet.data, 0, packet.length)
-                        val obj = JSONObject(json)
-
-                        if (obj.optString("type") == "catalogizer-announce") {
-                            val host = obj.getString("host")
-                            val port = obj.getInt("port")
-                            val key = "$host:$port"
-                            results[key] = ServerEntry(
-                                url = "http://$host:$port",
-                                name = obj.optString("name", "Catalogizer API"),
-                                isDiscovered = true,
-                                lastConnected = System.currentTimeMillis()
-                            )
-                            Log.d(TAG, "Multicast discovered: $key")
+                        val entry = parseServiceInfoJson(json)
+                        if (entry != null) {
+                            results[entry.url] = entry
+                            Log.d(TAG, "Multicast discovered: ${entry.url}")
                         }
                     } catch (_: java.net.SocketTimeoutException) { }
                 }
@@ -159,19 +222,68 @@ class NetworkDiscoveryService(private val context: Context? = null) {
         }
 
     /**
-     * Full discovery: try multicast first (fast if supported), then HTTP probe.
+     * Full discovery: tries all methods in order of speed, returning as soon as
+     * any method finds at least one server.
+     *
+     * Order:
+     * 1. Localhost probe (instant — works when ADB reverse proxy is active)
+     * 2. UDP broadcast (fast — direct request/reply, ~1-2s)
+     * 3. UDP multicast (passive listen for announcements, ~3s)
+     * 4. HTTP subnet probe (slow but reliable fallback, scans entire /24)
      */
     suspend fun discoverAll(timeoutMs: Long = 12000L): List<ServerEntry> {
-        // Try multicast first (3 seconds)
+        // 1. Try localhost first (ADB reverse proxy scenario)
+        val localhostResult = probeServer("http://localhost:8080")
+        if (localhostResult != null) {
+            Log.d(TAG, "Found server via localhost probe")
+            return listOf(localhostResult)
+        }
+
+        // 2. Try UDP broadcast (fastest network discovery — 2 seconds)
+        val broadcastResults = discoverViaBroadcast(2000L)
+        if (broadcastResults.isNotEmpty()) {
+            Log.d(TAG, "Found ${broadcastResults.size} via UDP broadcast")
+            return broadcastResults
+        }
+
+        // 3. Try multicast (3 seconds)
         val multicastResults = discoverViaMulticast(3000L)
         if (multicastResults.isNotEmpty()) {
             Log.d(TAG, "Found ${multicastResults.size} via multicast")
             return multicastResults
         }
 
-        // Fallback: HTTP probe (more reliable, scans subnet)
-        Log.d(TAG, "Multicast found nothing, trying HTTP probe...")
+        // 4. Fallback: HTTP probe (more reliable, scans subnet)
+        Log.d(TAG, "No servers found via broadcast/multicast, trying HTTP probe...")
         return discoverViaHttpProbe(timeoutMs)
+    }
+
+    /**
+     * Parse a JSON service info response (from either multicast announce or
+     * broadcast responder reply) into a [ServerEntry].
+     */
+    private fun parseServiceInfoJson(json: String): ServerEntry? {
+        return try {
+            val obj = JSONObject(json)
+            val type = obj.optString("type", "")
+            if (type != "catalogizer-announce") return null
+
+            val host = obj.getString("host")
+            val port = obj.getInt("port")
+            val protocol = obj.optString("protocol", "http")
+            val version = obj.optString("version", "?")
+            val name = obj.optString("name", "Catalogizer API")
+
+            ServerEntry(
+                url = "$protocol://$host:$port",
+                name = "$name v$version",
+                isDiscovered = true,
+                lastConnected = System.currentTimeMillis()
+            )
+        } catch (e: Exception) {
+            Log.w(TAG, "Failed to parse service info JSON: ${e.message}")
+            null
+        }
     }
 
     private fun detectSubnetPrefix(): String? {

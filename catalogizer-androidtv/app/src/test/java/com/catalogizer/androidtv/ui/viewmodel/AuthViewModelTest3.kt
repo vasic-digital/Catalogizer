@@ -6,6 +6,8 @@ import com.catalogizer.androidtv.data.repository.AuthRepository
 import io.mockk.*
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.test.*
 import org.junit.After
 import org.junit.Assert.*
@@ -76,6 +78,11 @@ class AuthViewModelTest3 {
 
     @Test
     fun `auth state reflects repository state changes`() = runTest {
+        // stateIn with WhileSubscribed needs an active collector to propagate upstream changes
+        val collectJob = launch(UnconfinedTestDispatcher(testScheduler)) {
+            viewModel.authState.collect {}
+        }
+
         advanceUntilIdle()
         assertFalse(viewModel.authState.value.isAuthenticated)
 
@@ -89,10 +96,16 @@ class AuthViewModelTest3 {
 
         assertTrue(viewModel.authState.value.isAuthenticated)
         assertEquals("admin", viewModel.authState.value.username)
+
+        collectJob.cancel()
     }
 
     @Test
     fun `auth state reflects logout`() = runTest {
+        val collectJob = launch(UnconfinedTestDispatcher(testScheduler)) {
+            viewModel.authState.collect {}
+        }
+
         // Start authenticated
         authStateFlow.value = AuthState(isAuthenticated = true, token = "token")
         advanceUntilIdle()
@@ -102,14 +115,22 @@ class AuthViewModelTest3 {
         authStateFlow.value = AuthState.Unauthenticated
         advanceUntilIdle()
         assertFalse(viewModel.authState.value.isAuthenticated)
+
+        collectJob.cancel()
     }
 
     @Test
     fun `auth state reflects error`() = runTest {
+        val collectJob = launch(UnconfinedTestDispatcher(testScheduler)) {
+            viewModel.authState.collect {}
+        }
+
         authStateFlow.value = AuthState(error = "Invalid credentials")
         advanceUntilIdle()
 
         assertEquals("Invalid credentials", viewModel.authState.value.error)
+
+        collectJob.cancel()
     }
 
     @Test

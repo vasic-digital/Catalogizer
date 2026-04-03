@@ -47,10 +47,10 @@ class MediaSearchModelsTest {
         val jsonStr = json.encodeToString(request)
 
         // kotlinx.serialization uses @SerialName for snake_case JSON field mapping.
-        // Retrofit uses the serialization converter; direct encoding uses Kotlin property names.
-        assertTrue(jsonStr.contains("\"mediaType\":\"movie\""))
-        assertTrue(jsonStr.contains("\"yearMin\":2010"))
-        assertTrue(jsonStr.contains("\"sortBy\":\"rating\""))
+        // Fields with @SerialName annotations serialize to their snake_case serial names.
+        assertTrue(jsonStr.contains("\"media_type\":\"movie\""))
+        assertTrue(jsonStr.contains("\"year_min\":2010"))
+        assertTrue(jsonStr.contains("\"sort_by\":\"rating\""))
     }
 
     @Test
@@ -72,13 +72,13 @@ class MediaSearchModelsTest {
     @Test
     fun `MediaStats deserializes correctly`() {
         // kotlinx.serialization uses @SerialName for snake_case JSON field mapping.
-        // Retrofit uses the serialization converter; direct encoding uses Kotlin property names.
+        // JSON keys must match the @SerialName annotations (snake_case).
         val jsonStr = """{
-            "totalItems": 500,
-            "byType": {"movie": 200, "music": 300},
-            "byQuality": {"1080p": 300, "720p": 200},
-            "totalSize": 5000000000000,
-            "recentAdditions": 25
+            "total_items": 500,
+            "by_type": {"movie": 200, "music": 300},
+            "by_quality": {"1080p": 300, "720p": 200},
+            "total_size": 5000000000000,
+            "recent_additions": 25
         }"""
 
         val stats = json.decodeFromString<MediaStats>(jsonStr)

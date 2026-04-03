@@ -241,7 +241,6 @@ class MediaRepositoryTest {
     @Test
     fun `addFavorite failure should throw exception`() = runTest {
         val mediaId = 123L
-        val isFavorite = false
 
         val errorResponse = Response.error<Map<String, String>>(
             500,
@@ -253,7 +252,7 @@ class MediaRepositoryTest {
             repository.addFavorite("movie", mediaId)
             fail("Expected exception to be thrown")
         } catch (e: Exception) {
-            assertTrue(e.message?.contains("Failed to update favorite status") == true)
+            assertTrue(e.message?.contains("Failed to add favorite") == true)
         }
     }
 

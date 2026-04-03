@@ -103,7 +103,11 @@ class AuthViewModelTest {
     
     @Test
     fun `login failure should handle error`() = runTest {
-        // Given
+        // Given - recreate ViewModel with unauthenticated initial state
+        coEvery { mockAuthRepository.isAuthenticated() } returns false
+        viewModel = AuthViewModel(mockAuthRepository)
+        advanceUntilIdle()
+
         coEvery { mockAuthRepository.login(any(), any()) } returns ApiResult.error("Invalid credentials")
 
         // When
@@ -122,7 +126,11 @@ class AuthViewModelTest {
 
     @Test
     fun `login exception sets error state`() = runTest {
-        // Given
+        // Given - recreate ViewModel with unauthenticated initial state
+        coEvery { mockAuthRepository.isAuthenticated() } returns false
+        viewModel = AuthViewModel(mockAuthRepository)
+        advanceUntilIdle()
+
         coEvery { mockAuthRepository.login(any(), any()) } throws RuntimeException("Network error")
 
         // When

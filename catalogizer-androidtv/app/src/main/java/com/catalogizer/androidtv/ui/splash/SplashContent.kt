@@ -3,9 +3,7 @@ package com.catalogizer.androidtv.ui.splash
 import android.content.Context
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Text
 import androidx.compose.runtime.*
@@ -25,9 +23,9 @@ import com.catalogizer.androidtv.R
 import kotlinx.coroutines.delay
 
 /**
- * Branded TV splash screen with Vasic Digital branding, version display, and
- * a minimum display duration (longer on first launch). Transitions to the
- * main content when both the timer completes and [isAppReady] is true.
+ * TV splash screen with version display and a minimum display duration
+ * (longer on first launch). Transitions to the main content when both the
+ * timer completes and [isAppReady] is true.
  */
 @Composable
 fun SplashContent(
@@ -104,23 +102,11 @@ fun SplashContent(
                 .padding(bottom = 32.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(8.dp)
-            ) {
-                Image(
-                    painter = painterResource(R.drawable.vasic_digital_logo),
-                    contentDescription = "Vasic Digital",
-                    modifier = Modifier
-                        .size(36.dp)
-                        .border(1.dp, Color(0xFFDC2626), RoundedCornerShape(8.dp))
-                )
-                Text(
-                    text = "Made with \u2764\uFE0F by Vasic Digital",
-                    fontSize = 12.sp,
-                    color = Color(0xFF64748B)
-                )
-            }
+            Text(
+                text = "Made with \u2764\uFE0F by Vasic Digital",
+                fontSize = 12.sp,
+                color = Color(0xFF64748B)
+            )
             Spacer(modifier = Modifier.height(4.dp))
             Text(
                 text = "v${BuildConfig.VERSION_NAME}",

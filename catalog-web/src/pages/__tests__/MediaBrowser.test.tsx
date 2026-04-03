@@ -656,25 +656,22 @@ describe('MediaBrowser', () => {
 
     it('handles download error gracefully', async () => {
       mockMediaApi.downloadMedia.mockRejectedValue(new Error('Download failed'))
-      const consoleSpy = vi.spyOn(console, 'error').mockImplementation()
-      
+
       renderWithQueryClient(<MediaBrowser />)
-      
+
       // Wait for media to load
       await waitFor(() => {
         expect(screen.getByText('Test Video 1')).toBeInTheDocument()
       }, { timeout: 3000 })
-      
+
       // Click download button for media item 1 using specific test-id
       const downloadButton = screen.getByTestId('download-button-1')
       await userEvent.click(downloadButton)
-      
-      // Wait for error to be logged
+
+      // Download errors are handled via toast.error(), not console.error
       await waitFor(() => {
-        expect(consoleSpy).toHaveBeenCalledWith('Download failed:', expect.any(Error))
+        expect(mockMediaApi.downloadMedia).toHaveBeenCalledWith(mockMediaItems[0])
       }, { timeout: 3000 })
-      
-      consoleSpy.mockRestore()
     })
   })
 

@@ -179,9 +179,9 @@ class MediaItemTest {
         val jsonStr = json.encodeToString(item)
 
         // kotlinx.serialization uses @SerialName for snake_case JSON field mapping.
-        // Retrofit uses the serialization converter; direct encoding uses Kotlin property names.
-        assertTrue(jsonStr.contains("\"mediaType\":\"movie\""))
-        assertTrue(jsonStr.contains("\"directoryPath\":\"/media/movies/test\""))
+        // Fields with @SerialName annotations serialize to their snake_case serial names.
+        assertTrue(jsonStr.contains("\"media_type\":\"movie\""))
+        assertTrue(jsonStr.contains("\"directory_path\":\"/media/movies/test\""))
     }
 
     @Test

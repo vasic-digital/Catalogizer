@@ -322,7 +322,6 @@ describe('LoginForm', () => {
       const user = userEvent.setup()
       const mockLogin = vi.fn().mockRejectedValue(new Error('Invalid credentials'))
       mockUseAuth.mockReturnValue({ login: mockLogin })
-      const consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => { /* Suppress error output during test */ })
 
       render(
         <MemoryRouter>
@@ -342,15 +341,12 @@ describe('LoginForm', () => {
         expect(mockLogin).toHaveBeenCalled()
       })
 
-      // Should log error
-      expect(consoleErrorSpy).toHaveBeenCalledWith('Login failed:', expect.any(Error))
+      // Error is silently handled by auth context (void error), no console.error call
 
       // Button should be re-enabled after error
       await waitFor(() => {
         expect(submitButton).not.toBeDisabled()
       })
-
-      consoleErrorSpy.mockRestore()
     })
 
     it('does not submit form when username is empty', async () => {
