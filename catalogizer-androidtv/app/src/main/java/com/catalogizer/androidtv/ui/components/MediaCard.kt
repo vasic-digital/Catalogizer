@@ -66,7 +66,7 @@ fun MediaCard(
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .aspectRatio(16f/9f)
+                    .aspectRatio(2f/3f)
                     .background(
                         brush = androidx.compose.ui.graphics.Brush.verticalGradient(
                             colors = mediaTypeGradient(mediaItem.mediaType)

@@ -119,13 +119,14 @@ fun HomeScreen(
                 }
             }
 
-            uiState.continueWatching.isEmpty() && uiState.recentlyAdded.isEmpty() &&
-                uiState.movies.isEmpty() && uiState.tvShows.isEmpty() &&
-                uiState.music.isEmpty() && uiState.documents.isEmpty() &&
-                uiState.recentMovies.isEmpty() && uiState.recentMusicAlbums.isEmpty() &&
-                uiState.recentTvShows.isEmpty() && uiState.recentGames.isEmpty() &&
-                uiState.recentConcerts.isEmpty() && uiState.recentBooks.isEmpty() &&
-                uiState.recentSoftware.isEmpty() -> {
+            uiState.continueWatching.isEmpty() &&
+                uiState.recentMovies.isEmpty() && uiState.recentTvShows.isEmpty() &&
+                uiState.recentMusicAlbums.isEmpty() && uiState.recentGames.isEmpty() &&
+                uiState.recentBooks.isEmpty() && uiState.recentComics.isEmpty() &&
+                uiState.recentSoftware.isEmpty() && uiState.recentConcerts.isEmpty() &&
+                uiState.recommended.isEmpty() && uiState.trending.isEmpty() &&
+                uiState.topRatedMovies.isEmpty() && uiState.topRatedTvShows.isEmpty() &&
+                uiState.topRatedMusic.isEmpty() && uiState.topRatedDocuments.isEmpty() -> {
                 Box(
                     modifier = Modifier.fillMaxSize(),
                     contentAlignment = Alignment.Center
@@ -164,46 +165,37 @@ fun HomeScreen(
                 val rails = buildList {
                     if (uiState.continueWatching.isNotEmpty())
                         add(ContentRailData("Continue Watching", uiState.continueWatching, navigateToPlayer = true))
-                    if (uiState.recentlyAdded.isNotEmpty())
-                        add(ContentRailData("Recently Added", uiState.recentlyAdded))
 
-                    // Recently Added by category
                     if (uiState.recentMovies.isNotEmpty())
                         add(ContentRailData("Recently Added Movies", uiState.recentMovies))
-                    if (uiState.recentMusicAlbums.isNotEmpty())
-                        add(ContentRailData("Recently Added Music Albums", uiState.recentMusicAlbums))
                     if (uiState.recentTvShows.isNotEmpty())
                         add(ContentRailData("Recently Added TV Shows", uiState.recentTvShows))
+                    if (uiState.recentMusicAlbums.isNotEmpty())
+                        add(ContentRailData("Recently Added Music Albums", uiState.recentMusicAlbums))
                     if (uiState.recentGames.isNotEmpty())
                         add(ContentRailData("Recently Added Games", uiState.recentGames))
-                    if (uiState.recentConcerts.isNotEmpty())
-                        add(ContentRailData("Recently Added Concerts", uiState.recentConcerts))
                     if (uiState.recentBooks.isNotEmpty())
                         add(ContentRailData("Recently Added Books", uiState.recentBooks))
+                    if (uiState.recentComics.isNotEmpty())
+                        add(ContentRailData("Recently Added Comics", uiState.recentComics))
                     if (uiState.recentSoftware.isNotEmpty())
                         add(ContentRailData("Recently Added Software", uiState.recentSoftware))
+                    if (uiState.recentConcerts.isNotEmpty())
+                        add(ContentRailData("Recently Added Concerts", uiState.recentConcerts))
 
-                    // Recently Played by category
-                    if (uiState.playedMovies.isNotEmpty())
-                        add(ContentRailData("Recently Played Movies", uiState.playedMovies, navigateToPlayer = true))
-                    if (uiState.playedMusicAlbums.isNotEmpty())
-                        add(ContentRailData("Recently Played Music Albums", uiState.playedMusicAlbums, navigateToPlayer = true))
-                    if (uiState.playedTvShows.isNotEmpty())
-                        add(ContentRailData("Recently Played TV Shows", uiState.playedTvShows, navigateToPlayer = true))
-                    if (uiState.playedGames.isNotEmpty())
-                        add(ContentRailData("Recently Played Games", uiState.playedGames, navigateToPlayer = true))
-                    if (uiState.playedConcerts.isNotEmpty())
-                        add(ContentRailData("Recently Played Concerts", uiState.playedConcerts, navigateToPlayer = true))
+                    if (uiState.recommended.isNotEmpty())
+                        add(ContentRailData("Recommended for You", uiState.recommended))
+                    if (uiState.trending.isNotEmpty())
+                        add(ContentRailData("Trending", uiState.trending))
 
-                    // Top-rated category rails (original rails)
-                    if (uiState.movies.isNotEmpty())
-                        add(ContentRailData("Top Rated Movies", uiState.movies))
-                    if (uiState.tvShows.isNotEmpty())
-                        add(ContentRailData("Top Rated TV Shows", uiState.tvShows))
-                    if (uiState.music.isNotEmpty())
-                        add(ContentRailData("Music", uiState.music))
-                    if (uiState.documents.isNotEmpty())
-                        add(ContentRailData("Documents", uiState.documents))
+                    if (uiState.topRatedMovies.isNotEmpty())
+                        add(ContentRailData("Top Rated Movies", uiState.topRatedMovies))
+                    if (uiState.topRatedTvShows.isNotEmpty())
+                        add(ContentRailData("Top Rated TV Shows", uiState.topRatedTvShows))
+                    if (uiState.topRatedMusic.isNotEmpty())
+                        add(ContentRailData("Top Rated Music", uiState.topRatedMusic))
+                    if (uiState.topRatedDocuments.isNotEmpty())
+                        add(ContentRailData("Top Rated Documents", uiState.topRatedDocuments))
                 }
 
                 TvLazyColumn(
@@ -260,7 +252,7 @@ private fun MediaSection(
                     mediaItem = item,
                     onClick = { onItemClick(item.id) },
                     onFocus = { onItemFocus(item) },
-                    modifier = Modifier.width(200.dp)
+                    modifier = Modifier.width(240.dp)
                 )
             }
         }

@@ -2,7 +2,6 @@ package com.catalogizer.androidtv.ui.screens.home
 
 import com.catalogizer.androidtv.MainDispatcherRule
 import com.catalogizer.androidtv.data.models.MediaItem
-import com.catalogizer.androidtv.data.models.MediaSearchRequest
 import com.catalogizer.androidtv.data.models.MediaType
 import com.catalogizer.androidtv.data.repository.MediaRepository
 import com.catalogizer.androidtv.ui.viewmodel.HomeUiState
@@ -34,7 +33,8 @@ class HomeScreenTest {
         id: Long = 1L,
         title: String = "Test Media",
         mediaType: String = "movie",
-        watchProgress: Double = 0.0
+        watchProgress: Double = 0.0,
+        isFavorite: Boolean = false
     ): MediaItem {
         return MediaItem(
             id = id,
@@ -43,7 +43,8 @@ class HomeScreenTest {
             directoryPath = "/media/test",
             createdAt = "2024-01-01T00:00:00Z",
             updatedAt = "2024-01-01T00:00:00Z",
-            watchProgress = watchProgress
+            watchProgress = watchProgress,
+            isFavorite = isFavorite
         )
     }
 
@@ -51,6 +52,10 @@ class HomeScreenTest {
     fun setup() {
         mockMediaRepository = mockk(relaxed = true)
         coEvery { mockMediaRepository.searchMedia(any()) } returns flowOf(emptyList())
+        coEvery { mockMediaRepository.browseEntities(any(), any(), any(), any()) } returns flowOf(emptyList())
+        coEvery { mockMediaRepository.getSimilarItems(any()) } returns emptyList()
+        coEvery { mockMediaRepository.getTrendingItems(any()) } returns emptyList()
+        coEvery { mockMediaRepository.getEntityStats() } returns Pair(0, emptyMap())
         homeViewModel = HomeViewModel(mockMediaRepository)
     }
 
@@ -75,11 +80,13 @@ class HomeScreenTest {
     fun `initial uiState should have empty content sections`() {
         val state = homeViewModel.uiState.value
         assertTrue(state.continueWatching.isEmpty())
-        assertTrue(state.recentlyAdded.isEmpty())
-        assertTrue(state.movies.isEmpty())
-        assertTrue(state.tvShows.isEmpty())
-        assertTrue(state.music.isEmpty())
-        assertTrue(state.documents.isEmpty())
+        assertTrue(state.recentMovies.isEmpty())
+        assertTrue(state.recommended.isEmpty())
+        assertTrue(state.trending.isEmpty())
+        assertTrue(state.topRatedMovies.isEmpty())
+        assertTrue(state.topRatedTvShows.isEmpty())
+        assertTrue(state.topRatedMusic.isEmpty())
+        assertTrue(state.topRatedDocuments.isEmpty())
     }
 
     @Test
@@ -97,88 +104,90 @@ class HomeScreenTest {
     }
 
     @Test
-    fun `loadHomeData should populate recentlyAdded section`() = runTest {
-        val recentItems = listOf(
-            createTestMediaItem(1L, "Recent Movie 1"),
-            createTestMediaItem(2L, "Recent Movie 2")
+    fun `loadHomeData should populate recent movies section`() = runTest {
+        val movies = listOf(
+            createTestMediaItem(1L, "Recent Movie 1", MediaType.MOVIE.value),
+            createTestMediaItem(2L, "Recent Movie 2", MediaType.MOVIE.value)
         )
         coEvery {
-            mockMediaRepository.searchMedia(match { it.sortBy == "created_at" && it.sortOrder == "desc" && it.mediaType == null })
-        } returns flowOf(recentItems)
+            mockMediaRepository.browseEntities(eq("movie"), eq(10), eq("created"), eq("desc"))
+        } returns flowOf(movies)
 
         homeViewModel.loadHomeData()
         advanceUntilIdle()
 
+        coVerify(atLeast = 1) { mockMediaRepository.browseEntities(eq("movie"), any(), any(), any()) }
         val state = homeViewModel.uiState.value
-        assertEquals(2, state.recentlyAdded.size)
-        assertEquals("Recent Movie 1", state.recentlyAdded[0].title)
+        assertNull("Error should be null: ${state.error}", state.error)
+        assertFalse("Loading should be false", state.isLoading)
+        assertEquals(2, state.recentMovies.size)
+        assertEquals("Recent Movie 1", state.recentMovies[0].title)
+        
+        coVerify { mockMediaRepository.browseEntities(eq("movie"), eq(10), eq("created"), eq("desc")) }
     }
 
     @Test
-    fun `loadHomeData should populate movies section`() = runTest {
+    fun `loadHomeData should populate top rated movies section`() = runTest {
         val movies = listOf(
             createTestMediaItem(1L, "Action Movie", MediaType.MOVIE.value)
         )
-        // loadMovies() now uses browseEntities instead of searchMedia
         coEvery {
-            mockMediaRepository.browseEntities("movie", any(), any(), any())
+            mockMediaRepository.browseEntities(eq("movie"), eq(10), eq("rating"), eq("desc"))
         } returns flowOf(movies)
 
         homeViewModel.loadHomeData()
         advanceUntilIdle()
 
         val state = homeViewModel.uiState.value
-        assertEquals(1, state.movies.size)
-        assertEquals("Action Movie", state.movies[0].title)
+        assertEquals(1, state.topRatedMovies.size)
+        assertEquals("Action Movie", state.topRatedMovies[0].title)
     }
 
     @Test
-    fun `loadHomeData should populate tvShows section`() = runTest {
+    fun `loadHomeData should populate top rated tv shows section`() = runTest {
         val tvShows = listOf(
             createTestMediaItem(1L, "TV Show 1", MediaType.TV_SHOW.value)
         )
-        // loadTVShows() now uses browseEntities instead of searchMedia
         coEvery {
-            mockMediaRepository.browseEntities("tv_show", any(), any(), any())
+            mockMediaRepository.browseEntities(eq("tv_show"), eq(10), eq("rating"), eq("desc"))
         } returns flowOf(tvShows)
 
         homeViewModel.loadHomeData()
         advanceUntilIdle()
 
         val state = homeViewModel.uiState.value
-        assertEquals(1, state.tvShows.size)
+        assertEquals(1, state.topRatedTvShows.size)
     }
 
     @Test
-    fun `loadHomeData should populate music section`() = runTest {
-        val music = listOf(
-            createTestMediaItem(1L, "Song 1", MediaType.MUSIC.value)
-        )
-        coEvery {
-            mockMediaRepository.searchMedia(match { it.mediaType == MediaType.MUSIC.value })
-        } returns flowOf(music)
+    fun `loadHomeData should populate trending section`() = runTest {
+        val trending = listOf(createTestMediaItem(1L, "Trending Movie"))
+        coEvery { mockMediaRepository.getTrendingItems(10) } returns trending
 
         homeViewModel.loadHomeData()
         advanceUntilIdle()
 
         val state = homeViewModel.uiState.value
-        assertEquals(1, state.music.size)
+        assertEquals(1, state.trending.size)
     }
 
     @Test
-    fun `loadHomeData should populate documents section`() = runTest {
-        val docs = listOf(
-            createTestMediaItem(1L, "Ebook 1", MediaType.EBOOK.value)
-        )
+    fun `loadHomeData should populate recommended section`() = runTest {
+        val playedItem = createTestMediaItem(1L, "Played", watchProgress = 0.5)
+        val similar = listOf(createTestMediaItem(2L, "Similar"))
+
         coEvery {
-            mockMediaRepository.searchMedia(match { it.mediaType == MediaType.EBOOK.value })
-        } returns flowOf(docs)
+            mockMediaRepository.searchMedia(match { it.sortBy == "updated_at" && it.sortOrder == "desc" && it.limit == 50 })
+        } returns flowOf(listOf(playedItem))
+
+        coEvery { mockMediaRepository.getSimilarItems(1L) } returns similar
 
         homeViewModel.loadHomeData()
         advanceUntilIdle()
 
         val state = homeViewModel.uiState.value
-        assertEquals(1, state.documents.size)
+        assertEquals(1, state.recommended.size)
+        assertEquals("Similar", state.recommended[0].title)
     }
 
     @Test
@@ -189,14 +198,13 @@ class HomeScreenTest {
             createTestMediaItem(3L, "Not Started", watchProgress = 0.0)
         )
         coEvery {
-            mockMediaRepository.searchMedia(match { it.sortBy == "last_watched" })
+            mockMediaRepository.searchMedia(any())
         } returns flowOf(watchingItems)
 
         homeViewModel.loadHomeData()
         advanceUntilIdle()
 
         val state = homeViewModel.uiState.value
-        // Only items with progress > 0 and not completed (< 0.9) should be in continue watching
         val continueWatching = state.continueWatching
         assertEquals(1, continueWatching.size)
         assertEquals("Watching", continueWatching[0].title)
@@ -208,7 +216,7 @@ class HomeScreenTest {
             createTestMediaItem(1L, "Currently Watching", watchProgress = 0.3)
         )
         coEvery {
-            mockMediaRepository.searchMedia(match { it.sortBy == "last_watched" })
+            mockMediaRepository.searchMedia(any())
         } returns flowOf(watchingItems)
 
         homeViewModel.loadHomeData()
@@ -220,22 +228,6 @@ class HomeScreenTest {
     }
 
     @Test
-    fun `loadHomeData should set featured item from recently added when no watching items`() = runTest {
-        val recentItems = listOf(createTestMediaItem(1L, "New Movie"))
-        coEvery {
-            mockMediaRepository.searchMedia(match { it.sortBy == "created_at" && it.mediaType == null })
-        } returns flowOf(recentItems)
-
-        homeViewModel.loadHomeData()
-        advanceUntilIdle()
-
-        val state = homeViewModel.uiState.value
-        // Featured item should be from recentlyAdded when no continue watching
-        assertNotNull(state.featuredItem)
-        assertEquals("New Movie", state.featuredItem?.title)
-    }
-
-    @Test
     fun `loadHomeData should set error on exception`() = runTest {
         coEvery { mockMediaRepository.searchMedia(any()) } throws RuntimeException("Network error")
 
@@ -244,40 +236,8 @@ class HomeScreenTest {
 
         val state = homeViewModel.uiState.value
         assertFalse(state.isLoading)
-        // Each individual load method catches exceptions and returns emptyList(),
-        // so no top-level error is set
-        assertNull(state.error)
-        assertTrue(state.movies.isEmpty())
-    }
-
-    @Test
-    fun `loadHomeData should clear error before reloading`() = runTest {
-        // Each individual load method catches exceptions internally,
-        // so no top-level error is ever set. Verify that after reloading,
-        // error remains null.
-        coEvery { mockMediaRepository.searchMedia(any()) } throws RuntimeException("Error")
-        homeViewModel.loadHomeData()
-        advanceUntilIdle()
-
-        // Second load succeeds
-        coEvery { mockMediaRepository.searchMedia(any()) } returns flowOf(emptyList())
-        homeViewModel.loadHomeData()
-        advanceUntilIdle()
-
-        assertNull(homeViewModel.uiState.value.error)
-    }
-
-    @Test
-    fun `loadHomeData with generic exception should show fallback message`() = runTest {
-        coEvery { mockMediaRepository.searchMedia(any()) } throws RuntimeException()
-
-        homeViewModel.loadHomeData()
-        advanceUntilIdle()
-
-        // Each individual load method catches exceptions internally and returns emptyList(),
-        // so no top-level error/fallback message is set
-        assertNull(homeViewModel.uiState.value.error)
-        assertTrue(homeViewModel.uiState.value.movies.isEmpty())
+        assertNull(state.error) // exceptions are caught per section, not propagated
+        assertTrue(state.topRatedMovies.isEmpty())
     }
 
     @Test
@@ -285,7 +245,6 @@ class HomeScreenTest {
         homeViewModel.refreshContent()
         advanceUntilIdle()
 
-        // Verify repository was called (indicating loadHomeData ran)
         coVerify(atLeast = 1) { mockMediaRepository.searchMedia(any()) }
     }
 
@@ -313,24 +272,12 @@ class HomeScreenTest {
     fun `toggleFavorite should call repository methods`() = runTest {
         val item = createTestMediaItem(1L, isFavorite = false)
         coEvery { mockMediaRepository.getMediaById(1L) } returns flowOf(item)
-        coEvery { mockMediaRepository.toggleFavorite(any(), any(), any()) } just Runs
+        coEvery { mockMediaRepository.toggleFavorite(any(), any(), any()) } returns true
 
         homeViewModel.toggleFavorite(1L)
         advanceUntilIdle()
 
         coVerify { mockMediaRepository.getMediaById(1L) }
-        coVerify { mockMediaRepository.toggleFavorite(any(), eq(1L), any()) }
-    }
-
-    @Test
-    fun `toggleFavorite should toggle from false to true`() = runTest {
-        val item = createTestMediaItem(1L, isFavorite = false)
-        coEvery { mockMediaRepository.getMediaById(1L) } returns flowOf(item)
-        coEvery { mockMediaRepository.toggleFavorite(any(), any(), any()) } just Runs
-
-        homeViewModel.toggleFavorite(1L)
-        advanceUntilIdle()
-
         coVerify { mockMediaRepository.toggleFavorite(any(), eq(1L), any()) }
     }
 
@@ -341,11 +288,13 @@ class HomeScreenTest {
         assertFalse(state.isLoading)
         assertNull(state.error)
         assertTrue(state.continueWatching.isEmpty())
-        assertTrue(state.recentlyAdded.isEmpty())
-        assertTrue(state.movies.isEmpty())
-        assertTrue(state.tvShows.isEmpty())
-        assertTrue(state.music.isEmpty())
-        assertTrue(state.documents.isEmpty())
+        assertTrue(state.recentMovies.isEmpty())
+        assertTrue(state.recommended.isEmpty())
+        assertTrue(state.trending.isEmpty())
+        assertTrue(state.topRatedMovies.isEmpty())
+        assertTrue(state.topRatedTvShows.isEmpty())
+        assertTrue(state.topRatedMusic.isEmpty())
+        assertTrue(state.topRatedDocuments.isEmpty())
         assertNull(state.featuredItem)
     }
 
@@ -356,24 +305,5 @@ class HomeScreenTest {
 
         assertFalse(copied.isLoading)
         assertEquals("err", copied.error)
-    }
-
-    private fun createTestMediaItem(
-        id: Long = 1L,
-        title: String = "Test",
-        mediaType: String = "movie",
-        watchProgress: Double = 0.0,
-        isFavorite: Boolean = false
-    ): MediaItem {
-        return MediaItem(
-            id = id,
-            title = title,
-            mediaType = mediaType,
-            directoryPath = "/media/test",
-            createdAt = "2024-01-01T00:00:00Z",
-            updatedAt = "2024-01-01T00:00:00Z",
-            watchProgress = watchProgress,
-            isFavorite = isFavorite
-        )
     }
 }

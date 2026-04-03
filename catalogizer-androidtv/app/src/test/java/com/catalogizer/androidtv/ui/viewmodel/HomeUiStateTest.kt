@@ -28,11 +28,14 @@ class HomeUiStateTest {
         assertFalse(state.isLoading)
         assertNull(state.error)
         assertTrue(state.continueWatching.isEmpty())
-        assertTrue(state.recentlyAdded.isEmpty())
-        assertTrue(state.movies.isEmpty())
-        assertTrue(state.tvShows.isEmpty())
-        assertTrue(state.music.isEmpty())
-        assertTrue(state.documents.isEmpty())
+        assertTrue(state.recentMovies.isEmpty())
+        assertTrue(state.recommended.isEmpty())
+        assertTrue(state.trending.isEmpty())
+        assertTrue(state.topRatedMovies.isEmpty())
+        assertTrue(state.topRatedTvShows.isEmpty())
+        assertTrue(state.topRatedMusic.isEmpty())
+        assertTrue(state.topRatedDocuments.isEmpty())
+        assertTrue(state.recentComics.isEmpty())
         assertNull(state.featuredItem)
     }
 
@@ -51,17 +54,14 @@ class HomeUiStateTest {
     @Test
     fun `HomeUiState with content`() {
         val movies = listOf(createTestMediaItem(1, "Movie 1"), createTestMediaItem(2, "Movie 2"))
-        val tvShows = listOf(createTestMediaItem(3, "Show 1", "tv_show"))
         val featured = createTestMediaItem(1, "Movie 1")
 
         val state = HomeUiState(
-            movies = movies,
-            tvShows = tvShows,
+            topRatedMovies = movies,
             featuredItem = featured
         )
 
-        assertEquals(2, state.movies.size)
-        assertEquals(1, state.tvShows.size)
+        assertEquals(2, state.topRatedMovies.size)
         assertEquals("Movie 1", state.featuredItem?.title)
     }
 
@@ -71,13 +71,13 @@ class HomeUiStateTest {
         val loading = initial.copy(isLoading = true)
         val loaded = loading.copy(
             isLoading = false,
-            movies = listOf(createTestMediaItem())
+            topRatedMovies = listOf(createTestMediaItem())
         )
 
         assertFalse(initial.isLoading)
         assertTrue(loading.isLoading)
         assertFalse(loaded.isLoading)
-        assertEquals(1, loaded.movies.size)
+        assertEquals(1, loaded.topRatedMovies.size)
     }
 
     @Test

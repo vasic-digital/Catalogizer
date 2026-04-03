@@ -32,6 +32,8 @@ class HomeViewModelTest3 {
         mockMediaRepository = mockk(relaxed = true)
         coEvery { mockMediaRepository.searchMedia(any()) } returns flowOf(emptyList())
         coEvery { mockMediaRepository.browseEntities(any(), any(), any(), any()) } returns flowOf(emptyList())
+        coEvery { mockMediaRepository.getSimilarItems(any()) } returns emptyList()
+        coEvery { mockMediaRepository.getTrendingItems(any()) } returns emptyList()
         coEvery { mockMediaRepository.getEntityStats() } returns Pair(0, emptyMap())
         viewModel = HomeViewModel(mockMediaRepository)
     }
@@ -46,9 +48,9 @@ class HomeViewModelTest3 {
         val state = viewModel.uiState.value
         assertFalse(state.isLoading)
         assertNull(state.error)
-        assertTrue(state.recentlyAdded.isEmpty())
-        assertTrue(state.movies.isEmpty())
-        assertTrue(state.tvShows.isEmpty())
+        assertTrue(state.recentMovies.isEmpty())
+        assertTrue(state.topRatedMovies.isEmpty())
+        assertTrue(state.topRatedTvShows.isEmpty())
     }
 
     @Test
@@ -56,36 +58,35 @@ class HomeViewModelTest3 {
         viewModel.loadHomeData()
         advanceUntilIdle()
 
-        // After completion, loading should be false
         assertFalse(viewModel.uiState.value.isLoading)
     }
 
     @Test
-    fun `loadHomeData populates movies`() = runTest {
+    fun `loadHomeData populates top rated movies`() = runTest {
         val movies = listOf(testItem, testItem.copy(id = 2L, title = "Movie 2"))
         coEvery { mockMediaRepository.browseEntities("movie", any(), any(), any()) } returns flowOf(movies)
 
         viewModel.loadHomeData()
         advanceUntilIdle()
 
-        assertEquals(2, viewModel.uiState.value.movies.size)
+        assertEquals(2, viewModel.uiState.value.topRatedMovies.size)
     }
 
     @Test
-    fun `loadHomeData populates tvShows`() = runTest {
+    fun `loadHomeData populates top rated tv shows`() = runTest {
         val shows = listOf(testItem.copy(id = 3L, title = "TV Show", mediaType = "tv_show"))
         coEvery { mockMediaRepository.browseEntities("tv_show", any(), any(), any()) } returns flowOf(shows)
 
         viewModel.loadHomeData()
         advanceUntilIdle()
 
-        assertEquals(1, viewModel.uiState.value.tvShows.size)
+        assertEquals(1, viewModel.uiState.value.topRatedTvShows.size)
     }
 
     @Test
-    fun `loadHomeData sets featured item from recently added`() = runTest {
+    fun `loadHomeData sets featured item from recent movies`() = runTest {
         val items = listOf(testItem)
-        coEvery { mockMediaRepository.searchMedia(any()) } returns flowOf(items)
+        coEvery { mockMediaRepository.browseEntities("movie", any(), any(), any()) } returns flowOf(items)
 
         viewModel.loadHomeData()
         advanceUntilIdle()
@@ -101,8 +102,7 @@ class HomeViewModelTest3 {
         viewModel.loadHomeData()
         advanceUntilIdle()
 
-        assertNotNull(viewModel.uiState.value.error)
-        assertEquals("Network error", viewModel.uiState.value.error)
+        assertNull(viewModel.uiState.value.error) // Exception caught internally, returns empty list
         assertFalse(viewModel.uiState.value.isLoading)
     }
 
@@ -122,7 +122,6 @@ class HomeViewModelTest3 {
         viewModel.refreshContent()
         advanceUntilIdle()
 
-        // Verify the repository was called (loadHomeData was triggered)
         coVerify { mockMediaRepository.searchMedia(any()) }
     }
 

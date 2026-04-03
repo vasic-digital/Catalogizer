@@ -64,7 +64,7 @@ class MediaSearchModelsTest {
 
         val response = json.decodeFromString<MediaSearchResponse>(jsonStr)
 
-        assertTrue(response.items.isEmpty())
+        assertTrue(response.items!!.isEmpty())
         assertEquals(0, response.total)
         assertEquals(20, response.limit)
     }

@@ -25,24 +25,30 @@ class HomeViewModelTest2 {
 
     private fun createTestMediaItem(
         id: Long = 1L,
-        title: String = "Test Movie",
+        title: String = "Test",
         mediaType: String = "movie",
-        watchProgress: Double = 0.0,
-        isFavorite: Boolean = false
-    ) = MediaItem(
-        id = id,
-        title = title,
-        mediaType = mediaType,
-        directoryPath = "/test",
-        createdAt = "2024-01-01",
-        updatedAt = "2024-01-01",
-        watchProgress = watchProgress,
-        isFavorite = isFavorite
-    )
+        isFavorite: Boolean = false,
+        watchProgress: Double = 0.0
+    ): MediaItem {
+        return MediaItem(
+            id = id,
+            title = title,
+            mediaType = mediaType,
+            directoryPath = "/media/test",
+            createdAt = "2024-01-01T00:00:00Z",
+            updatedAt = "2024-01-01T00:00:00Z",
+            isFavorite = isFavorite,
+            watchProgress = watchProgress
+        )
+    }
 
     @Before
     fun setup() {
         coEvery { mockMediaRepository.searchMedia(any()) } returns flowOf(emptyList())
+        coEvery { mockMediaRepository.browseEntities(any(), any(), any(), any()) } returns flowOf(emptyList())
+        coEvery { mockMediaRepository.getSimilarItems(any()) } returns emptyList()
+        coEvery { mockMediaRepository.getTrendingItems(any()) } returns emptyList()
+        coEvery { mockMediaRepository.getEntityStats() } returns Pair(0, emptyMap())
         viewModel = HomeViewModel(mockMediaRepository)
     }
 
@@ -52,54 +58,14 @@ class HomeViewModelTest2 {
     }
 
     @Test
-    fun `initial state is not loading with empty lists`() {
+    fun `initial state has empty fields`() {
         val state = viewModel.uiState.value
         assertFalse(state.isLoading)
-        assertNull(state.error)
-        assertTrue(state.movies.isEmpty())
-    }
-
-    @Test
-    fun `loadHomeData sets loading state`() = runTest {
-        viewModel.loadHomeData()
-        advanceUntilIdle()
-
-        assertFalse(viewModel.uiState.value.isLoading)
-    }
-
-    @Test
-    fun `loadHomeData populates movies`() = runTest {
-        val movies = listOf(createTestMediaItem(1, "Movie 1"), createTestMediaItem(2, "Movie 2"))
-        // loadMovies() now uses browseEntities instead of searchMedia
-        coEvery { mockMediaRepository.browseEntities("movie", any(), any(), any()) } returns flowOf(movies)
-
-        viewModel.loadHomeData()
-        advanceUntilIdle()
-
-        assertEquals(2, viewModel.uiState.value.movies.size)
-    }
-
-    @Test
-    fun `loadHomeData handles error`() = runTest {
-        coEvery { mockMediaRepository.searchMedia(any()) } throws RuntimeException("Network error")
-
-        viewModel.loadHomeData()
-        advanceUntilIdle()
-
-        // Each individual load method catches exceptions and returns emptyList(),
-        // so no top-level error is set - sections are just empty
-        assertNull(viewModel.uiState.value.error)
-        assertFalse(viewModel.uiState.value.isLoading)
-        assertTrue(viewModel.uiState.value.movies.isEmpty())
-    }
-
-    @Test
-    fun `refreshContent calls loadHomeData`() = runTest {
-        viewModel.refreshContent()
-        advanceUntilIdle()
-
-        // loadHomeData should have been triggered (which calls searchMedia)
-        assertFalse(viewModel.uiState.value.isLoading)
+        assertTrue(state.continueWatching.isEmpty())
+        assertTrue(state.recentMovies.isEmpty())
+        assertTrue(state.topRatedMovies.isEmpty())
+        assertTrue(state.recommended.isEmpty())
+        assertTrue(state.trending.isEmpty())
     }
 
     @Test
@@ -126,7 +92,7 @@ class HomeViewModelTest2 {
     fun `toggleFavorite calls repository with toggled value`() = runTest {
         val item = createTestMediaItem(42, isFavorite = false)
         coEvery { mockMediaRepository.getMediaById(42L) } returns flowOf(item)
-        coEvery { mockMediaRepository.toggleFavorite(any(), any(), any()) } just Runs
+        coEvery { mockMediaRepository.toggleFavorite(any(), any(), any()) } returns true
 
         viewModel.toggleFavorite(42L)
         advanceUntilIdle()

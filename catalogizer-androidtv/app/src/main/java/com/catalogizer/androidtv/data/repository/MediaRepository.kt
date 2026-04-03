@@ -229,6 +229,43 @@ class MediaRepository(private val context: Context, private val api: Catalogizer
         }
     }
 
+    suspend fun getSimilarItems(mediaId: Long): List<MediaItem> {
+        return try {
+            val body = api.getSimilarMedia(mediaId).takeIf { it.isSuccessful }?.body() ?: return emptyList()
+            val localItems = (body["local_items"] as? List<*>) ?: return emptyList()
+            localItems.mapNotNull { parseRecommendationItem(it) }
+        } catch (e: Exception) {
+            android.util.Log.w("MediaRepo", "getSimilarItems error: ${e.message}")
+            emptyList()
+        }
+    }
+
+    suspend fun getTrendingItems(limit: Int = 10): List<MediaItem> {
+        return try {
+            val body = api.getTrendingMedia().takeIf { it.isSuccessful }?.body() ?: return emptyList()
+            val items = (body["items"] as? List<*>) ?: return emptyList()
+            items.mapNotNull { parseRecommendationItem(it) }.take(limit)
+        } catch (e: Exception) {
+            android.util.Log.w("MediaRepo", "getTrendingItems error: ${e.message}")
+            emptyList()
+        }
+    }
+
+    private fun parseRecommendationItem(item: Any?): MediaItem? {
+        val map = item as? Map<*, *> ?: return null
+        val id = (map["id"] as? Number)?.toLong() ?: return null
+        val title = map["title"] as? String ?: return null
+        return MediaItem(
+            id = id,
+            title = title,
+            mediaType = map["media_type"] as? String,
+            year = (map["year"] as? Number)?.toInt(),
+            coverUrl = map["poster_url"] as? String,
+            rating = (map["rating"] as? Number)?.toDouble(),
+            genre = (map["genres"] as? List<*>)?.filterIsInstance<String>()
+        )
+    }
+
     // --- Playlists ---
 
     /**

@@ -12,9 +12,9 @@ class ConvertersTest {
         val list = listOf("action", "drama", "thriller")
         val result = Converters.fromStringList(list)
 
-        assertTrue(result.contains("action"))
-        assertTrue(result.contains("drama"))
-        assertTrue(result.contains("thriller"))
+        assertTrue(result!!.contains("action"))
+        assertTrue(result!!.contains("drama"))
+        assertTrue(result!!.contains("thriller"))
     }
 
     @Test
@@ -22,10 +22,10 @@ class ConvertersTest {
         val jsonStr = """["action","drama","thriller"]"""
         val result = Converters.toStringList(jsonStr)
 
-        assertEquals(3, result.size)
-        assertEquals("action", result[0])
-        assertEquals("drama", result[1])
-        assertEquals("thriller", result[2])
+        assertEquals(3, result!!.size)
+        assertEquals("action", result!![0])
+        assertEquals("drama", result!![1])
+        assertEquals("thriller", result!![2])
     }
 
     @Test
@@ -46,7 +46,7 @@ class ConvertersTest {
     @Test
     fun `toStringList handles empty array`() {
         val result = Converters.toStringList("[]")
-        assertTrue(result.isEmpty())
+        assertTrue(result!!.isEmpty())
     }
 
     @Test
@@ -67,10 +67,10 @@ class ConvertersTest {
         val json = Converters.fromExternalMetadataList(metadata)
         val restored = Converters.toExternalMetadataList(json)
 
-        assertEquals(1, restored.size)
-        assertEquals("Inception", restored[0].title)
-        assertEquals("tmdb", restored[0].provider)
-        assertEquals("tt1375666", restored[0].externalId)
+        assertEquals(1, restored!!.size)
+        assertEquals("Inception", restored!![0].title)
+        assertEquals("tmdb", restored!![0].provider)
+        assertEquals("tt1375666", restored!![0].externalId)
     }
 
     @Test
@@ -90,10 +90,10 @@ class ConvertersTest {
         val json = Converters.fromMediaVersionList(versions)
         val restored = Converters.toMediaVersionList(json)
 
-        assertEquals(1, restored.size)
-        assertEquals("1080p", restored[0].quality)
-        assertEquals("h265", restored[0].codec)
-        assertEquals(4_000_000_000L, restored[0].fileSize)
+        assertEquals(1, restored!!.size)
+        assertEquals("1080p", restored!![0].quality)
+        assertEquals("h265", restored!![0].codec)
+        assertEquals(4_000_000_000L, restored!![0].fileSize)
     }
 
     @Test
@@ -101,7 +101,7 @@ class ConvertersTest {
         val json = Converters.fromExternalMetadataList(emptyList())
         val restored = Converters.toExternalMetadataList(json)
 
-        assertTrue(restored.isEmpty())
+        assertTrue(restored!!.isEmpty())
     }
 
     @Test
@@ -109,6 +109,6 @@ class ConvertersTest {
         val json = Converters.fromMediaVersionList(emptyList())
         val restored = Converters.toMediaVersionList(json)
 
-        assertTrue(restored.isEmpty())
+        assertTrue(restored!!.isEmpty())
     }
 }

@@ -231,7 +231,7 @@ class MediaRepositoryTest {
         val mediaId = 123L
         val isFavorite = true
 
-        val successResponse = Response.success(Unit)
+        val successResponse = Response.success(mapOf("status" to "ok"))
         coEvery { api.addFavorite(any()) } returns successResponse
 
         // Should not throw exception
@@ -243,7 +243,7 @@ class MediaRepositoryTest {
         val mediaId = 123L
         val isFavorite = false
 
-        val errorResponse = Response.error<Unit>(
+        val errorResponse = Response.error<Map<String, String>>(
             500,
             "Server error".toResponseBody(null)
         )

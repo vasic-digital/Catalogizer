@@ -17,11 +17,20 @@ class HomeUiStateTest2 {
         assertFalse(state.isLoading)
         assertNull(state.error)
         assertTrue(state.continueWatching.isEmpty())
-        assertTrue(state.recentlyAdded.isEmpty())
-        assertTrue(state.movies.isEmpty())
-        assertTrue(state.tvShows.isEmpty())
-        assertTrue(state.music.isEmpty())
-        assertTrue(state.documents.isEmpty())
+        assertTrue(state.recentMovies.isEmpty())
+        assertTrue(state.recentTvShows.isEmpty())
+        assertTrue(state.recentMusicAlbums.isEmpty())
+        assertTrue(state.recentGames.isEmpty())
+        assertTrue(state.recentBooks.isEmpty())
+        assertTrue(state.recentComics.isEmpty())
+        assertTrue(state.recentSoftware.isEmpty())
+        assertTrue(state.recentConcerts.isEmpty())
+        assertTrue(state.recommended.isEmpty())
+        assertTrue(state.trending.isEmpty())
+        assertTrue(state.topRatedMovies.isEmpty())
+        assertTrue(state.topRatedTvShows.isEmpty())
+        assertTrue(state.topRatedMusic.isEmpty())
+        assertTrue(state.topRatedDocuments.isEmpty())
         assertNull(state.featuredItem)
         assertEquals(0, state.totalEntities)
         assertTrue(state.statsByType.isEmpty())
@@ -42,8 +51,8 @@ class HomeUiStateTest2 {
     @Test
     fun `HomeUiState with movies`() {
         val items = listOf(testItem, testItem.copy(id = 2L))
-        val state = HomeUiState(movies = items)
-        assertEquals(2, state.movies.size)
+        val state = HomeUiState(topRatedMovies = items)
+        assertEquals(2, state.topRatedMovies.size)
     }
 
     @Test
@@ -65,12 +74,12 @@ class HomeUiStateTest2 {
     fun `HomeUiState copy updates loading`() {
         val initial = HomeUiState()
         val loading = initial.copy(isLoading = true)
-        val done = loading.copy(isLoading = false, movies = listOf(testItem))
+        val done = loading.copy(isLoading = false, topRatedMovies = listOf(testItem))
 
         assertFalse(initial.isLoading)
         assertTrue(loading.isLoading)
         assertFalse(done.isLoading)
-        assertEquals(1, done.movies.size)
+        assertEquals(1, done.topRatedMovies.size)
     }
 
     @Test
@@ -82,35 +91,23 @@ class HomeUiStateTest2 {
         assertTrue(state.recentGames.isEmpty())
         assertTrue(state.recentConcerts.isEmpty())
         assertTrue(state.recentBooks.isEmpty())
+        assertTrue(state.recentComics.isEmpty())
         assertTrue(state.recentSoftware.isEmpty())
     }
 
     @Test
-    fun `HomeUiState recently played rails default to empty`() {
+    fun `HomeUiState recommendation rails default to empty`() {
         val state = HomeUiState()
-        assertTrue(state.playedMovies.isEmpty())
-        assertTrue(state.playedMusicAlbums.isEmpty())
-        assertTrue(state.playedTvShows.isEmpty())
-        assertTrue(state.playedGames.isEmpty())
-        assertTrue(state.playedConcerts.isEmpty())
-    }
-
-    // --- ContentRail ---
-
-    @Test
-    fun `ContentRail has correct defaults`() {
-        val rail = ContentRail(title = "Recently Added")
-        assertEquals("Recently Added", rail.title)
-        assertTrue(rail.items.isEmpty())
+        assertTrue(state.recommended.isEmpty())
+        assertTrue(state.trending.isEmpty())
     }
 
     @Test
-    fun `ContentRail with items`() {
-        val rail = ContentRail(
-            title = "Movies",
-            items = listOf(testItem, testItem.copy(id = 2L))
-        )
-        assertEquals("Movies", rail.title)
-        assertEquals(2, rail.items.size)
+    fun `HomeUiState top rated rails default to empty`() {
+        val state = HomeUiState()
+        assertTrue(state.topRatedMovies.isEmpty())
+        assertTrue(state.topRatedTvShows.isEmpty())
+        assertTrue(state.topRatedMusic.isEmpty())
+        assertTrue(state.topRatedDocuments.isEmpty())
     }
 }

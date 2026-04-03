@@ -6,43 +6,30 @@ import com.catalogizer.androidtv.data.models.MediaItem
 import com.catalogizer.androidtv.data.models.MediaSearchRequest
 import com.catalogizer.androidtv.data.models.MediaType
 import com.catalogizer.androidtv.data.repository.MediaRepository
+import kotlinx.coroutines.async
+import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
-
-/**
- * Represents a single content rail on the home screen.
- * Each rail has a title and a list of media items.
- */
-data class ContentRail(
-    val title: String,
-    val items: List<MediaItem> = emptyList()
-)
 
 data class HomeUiState(
     val isLoading: Boolean = false,
     val error: String? = null,
     val continueWatching: List<MediaItem> = emptyList(),
-    val recentlyAdded: List<MediaItem> = emptyList(),
-    val movies: List<MediaItem> = emptyList(),
-    val tvShows: List<MediaItem> = emptyList(),
-    val music: List<MediaItem> = emptyList(),
-    val documents: List<MediaItem> = emptyList(),
-    val featuredItem: MediaItem? = null,
-    // Category-specific rails: recently added
     val recentMovies: List<MediaItem> = emptyList(),
-    val recentMusicAlbums: List<MediaItem> = emptyList(),
     val recentTvShows: List<MediaItem> = emptyList(),
+    val recentMusicAlbums: List<MediaItem> = emptyList(),
     val recentGames: List<MediaItem> = emptyList(),
-    val recentConcerts: List<MediaItem> = emptyList(),
     val recentBooks: List<MediaItem> = emptyList(),
+    val recentComics: List<MediaItem> = emptyList(),
     val recentSoftware: List<MediaItem> = emptyList(),
-    // Recently played rails
-    val playedMovies: List<MediaItem> = emptyList(),
-    val playedMusicAlbums: List<MediaItem> = emptyList(),
-    val playedTvShows: List<MediaItem> = emptyList(),
-    val playedGames: List<MediaItem> = emptyList(),
-    val playedConcerts: List<MediaItem> = emptyList(),
-    // Catalog stats
+    val recentConcerts: List<MediaItem> = emptyList(),
+    val recommended: List<MediaItem> = emptyList(),
+    val trending: List<MediaItem> = emptyList(),
+    val topRatedMovies: List<MediaItem> = emptyList(),
+    val topRatedTvShows: List<MediaItem> = emptyList(),
+    val topRatedMusic: List<MediaItem> = emptyList(),
+    val topRatedDocuments: List<MediaItem> = emptyList(),
+    val featuredItem: MediaItem? = null,
     val totalEntities: Int = 0,
     val statsByType: Map<String, Int> = emptyMap()
 )
@@ -59,61 +46,68 @@ class HomeViewModel(
             _uiState.update { it.copy(isLoading = true, error = null) }
 
             try {
-                // Load different content sections in parallel
-                val continueWatching = loadContinueWatching()
-                val recentlyAdded = loadRecentlyAdded()
-                val movies = loadMovies()
-                val tvShows = loadTVShows()
-                val music = loadMusic()
-                val documents = loadDocuments()
+                coroutineScope {
+                    val continueWatchingDef = async { loadContinueWatching() }
+                    val recentMoviesDef = async { loadRecentByType("movie") }
+                    val recentTvShowsDef = async { loadRecentByType("tv_show") }
+                    val recentMusicAlbumsDef = async { loadRecentByType("music_album") }
+                    val recentGamesDef = async { loadRecentByType("game") }
+                    val recentBooksDef = async { loadRecentByType("book") }
+                    val recentComicsDef = async { loadRecentByType("comic") }
+                    val recentSoftwareDef = async { loadRecentByType("software") }
+                    val recentConcertsDef = async { loadRecentByType("concert") }
+                    val topRatedMoviesDef = async { loadTopRatedByType("movie") }
+                    val topRatedTvShowsDef = async { loadTopRatedByType("tv_show") }
+                    val topRatedMusicDef = async { loadTopRatedByType("music_album") }
+                    val topRatedDocumentsDef = async { loadDocuments() }
+                    val trendingDef = async { loadTrending() }
+                    val recommendedDef = async { loadRecommended() }
+                    val statsDef = async { loadStats() }
 
-                // Category-specific "Recently Added" rails
-                val recentMovies = loadRecentByType("movie")
-                val recentMusicAlbums = loadRecentByType("music_album")
-                val recentTvShows = loadRecentByType("tv_show")
-                val recentGames = loadRecentByType("game")
-                val recentConcerts = loadRecentByType("concert")
-                val recentBooks = loadRecentByType("book")
-                val recentSoftware = loadRecentByType("software")
+                    val continueWatching = continueWatchingDef.await()
+                    val recentMovies = recentMoviesDef.await()
+                    val recentTvShows = recentTvShowsDef.await()
+                    val recentMusicAlbums = recentMusicAlbumsDef.await()
+                    val recentGames = recentGamesDef.await()
+                    val recentBooks = recentBooksDef.await()
+                    val recentComics = recentComicsDef.await()
+                    val recentSoftware = recentSoftwareDef.await()
+                    val recentConcerts = recentConcertsDef.await()
+                    val topRatedMovies = topRatedMoviesDef.await()
+                    val topRatedTvShows = topRatedTvShowsDef.await()
+                    val topRatedMusic = topRatedMusicDef.await()
+                    val topRatedDocuments = topRatedDocumentsDef.await()
+                    val trending = trendingDef.await()
+                    val recommended = recommendedDef.await()
+                    val stats = statsDef.await()
 
-                // "Recently Played" rails
-                val playedMovies = loadRecentlyPlayedByType("movie")
-                val playedMusicAlbums = loadRecentlyPlayedByType("music_album")
-                val playedTvShows = loadRecentlyPlayedByType("tv_show")
-                val playedGames = loadRecentlyPlayedByType("game")
-                val playedConcerts = loadRecentlyPlayedByType("concert")
+                    val featuredItem = continueWatching.firstOrNull()
+                        ?: recentMovies.firstOrNull()
+                        ?: trending.firstOrNull()
 
-                // Set featured item from recently added or continue watching
-                val featuredItem = continueWatching.firstOrNull() ?: recentlyAdded.firstOrNull()
-
-                // Load catalog stats
-                val stats = loadStats()
-
-                _uiState.update {
-                    it.copy(
-                        isLoading = false,
-                        continueWatching = continueWatching,
-                        recentlyAdded = recentlyAdded,
-                        movies = movies,
-                        tvShows = tvShows,
-                        music = music,
-                        documents = documents,
-                        featuredItem = featuredItem,
-                        recentMovies = recentMovies,
-                        recentMusicAlbums = recentMusicAlbums,
-                        recentTvShows = recentTvShows,
-                        recentGames = recentGames,
-                        recentConcerts = recentConcerts,
-                        recentBooks = recentBooks,
-                        recentSoftware = recentSoftware,
-                        playedMovies = playedMovies,
-                        playedMusicAlbums = playedMusicAlbums,
-                        playedTvShows = playedTvShows,
-                        playedGames = playedGames,
-                        playedConcerts = playedConcerts,
-                        totalEntities = stats.first,
-                        statsByType = stats.second
-                    )
+                    _uiState.update {
+                        it.copy(
+                            isLoading = false,
+                            continueWatching = continueWatching,
+                            recentMovies = recentMovies,
+                            recentTvShows = recentTvShows,
+                            recentMusicAlbums = recentMusicAlbums,
+                            recentGames = recentGames,
+                            recentBooks = recentBooks,
+                            recentComics = recentComics,
+                            recentSoftware = recentSoftware,
+                            recentConcerts = recentConcerts,
+                            recommended = recommended,
+                            trending = trending,
+                            topRatedMovies = topRatedMovies,
+                            topRatedTvShows = topRatedTvShows,
+                            topRatedMusic = topRatedMusic,
+                            topRatedDocuments = topRatedDocuments,
+                            featuredItem = featuredItem,
+                            totalEntities = stats.first,
+                            statsByType = stats.second
+                        )
+                    }
                 }
             } catch (e: Exception) {
                 _uiState.update {
@@ -140,47 +134,17 @@ class HomeViewModel(
         }
     }
 
-    private suspend fun loadRecentlyAdded(): List<MediaItem> {
+    private suspend fun loadRecentByType(type: String): List<MediaItem> {
         return try {
-            mediaRepository.searchMedia(
-                MediaSearchRequest(
-                    sortBy = "created",
-                    sortOrder = "desc",
-                    limit = 50
-                )
-            ).first()
+            mediaRepository.browseEntities(type, limit = 10, sortBy = "created", sortOrder = "desc").first()
         } catch (e: Exception) {
             emptyList()
         }
     }
 
-    private suspend fun loadMovies(): List<MediaItem> {
+    private suspend fun loadTopRatedByType(type: String): List<MediaItem> {
         return try {
-            // Use entity browse to get TMDB poster URLs
-            mediaRepository.browseEntities("movie", limit = 50, sortBy = "rating", sortOrder = "desc").first()
-        } catch (e: Exception) {
-            emptyList()
-        }
-    }
-
-    private suspend fun loadTVShows(): List<MediaItem> {
-        return try {
-            mediaRepository.browseEntities("tv_show", limit = 50, sortBy = "rating", sortOrder = "desc").first()
-        } catch (e: Exception) {
-            emptyList()
-        }
-    }
-
-    private suspend fun loadMusic(): List<MediaItem> {
-        return try {
-            mediaRepository.searchMedia(
-                MediaSearchRequest(
-                    mediaType = MediaType.MUSIC.value,
-                    sortBy = "created",
-                    sortOrder = "desc",
-                    limit = 50
-                )
-            ).first()
+            mediaRepository.browseEntities(type, limit = 10, sortBy = "rating", sortOrder = "desc").first()
         } catch (e: Exception) {
             emptyList()
         }
@@ -191,9 +155,9 @@ class HomeViewModel(
             mediaRepository.searchMedia(
                 MediaSearchRequest(
                     mediaType = MediaType.EBOOK.value,
-                    sortBy = "created",
+                    sortBy = "rating",
                     sortOrder = "desc",
-                    limit = 50
+                    limit = 10
                 )
             ).first()
         } catch (e: Exception) {
@@ -201,31 +165,54 @@ class HomeViewModel(
         }
     }
 
-    /**
-     * Load recently added items for a specific entity type via the browse endpoint.
-     */
-    private suspend fun loadRecentByType(type: String): List<MediaItem> {
+    private suspend fun loadRecommended(): List<MediaItem> {
         return try {
-            mediaRepository.browseEntities(type, limit = 50, sortBy = "created", sortOrder = "desc").first()
-        } catch (e: Exception) {
-            emptyList()
-        }
-    }
-
-    /**
-     * Load recently played items for a specific entity type.
-     * Uses the search endpoint with last_played sort — items with watch progress.
-     */
-    private suspend fun loadRecentlyPlayedByType(type: String): List<MediaItem> {
-        return try {
-            mediaRepository.searchMedia(
+            val playedItems = mediaRepository.searchMedia(
                 MediaSearchRequest(
-                    mediaType = type,
                     sortBy = "updated_at",
                     sortOrder = "desc",
                     limit = 50
                 )
             ).first().filter { it.hasWatchProgress }
+
+            if (playedItems.isEmpty()) return emptyList()
+
+            val byType = playedItems.groupBy { it.mediaType }
+            val seenIds = mutableSetOf<Long>()
+            val result = mutableListOf<MediaItem>()
+
+            // Process each media type in parallel for better performance
+            val similarResults = coroutineScope {
+                byType.map { (_, items) ->
+                    async {
+                        try {
+                            val topItem = items.firstOrNull() ?: return@async emptyList<MediaItem>()
+                            mediaRepository.getSimilarItems(topItem.id)
+                        } catch (e: Exception) {
+                            // Individual failure shouldn't break the whole recommendation section
+                            emptyList<MediaItem>()
+                        }
+                    }
+                }
+            }.map { it.await() }.flatten()
+
+            // Deduplicate and limit to 10 items
+            for (item in similarResults) {
+                if (seenIds.add(item.id) && result.size < 10) {
+                    result.add(item)
+                }
+                if (result.size >= 10) break
+            }
+
+            result
+        } catch (e: Exception) {
+            emptyList()
+        }
+    }
+
+    private suspend fun loadTrending(): List<MediaItem> {
+        return try {
+            mediaRepository.getTrendingItems(10)
         } catch (e: Exception) {
             emptyList()
         }
@@ -239,7 +226,6 @@ class HomeViewModel(
         viewModelScope.launch {
             try {
                 mediaRepository.updateWatchProgress(mediaId, 1.0)
-                // Refresh continue watching section
                 loadHomeData()
             } catch (e: Exception) {
                 // Handle error

@@ -135,7 +135,7 @@ class MediaRepositoryTest2 {
 
     @Test
     fun `favorites calls API`() = runTest {
-        coEvery { mockApi.addFavorite(any()) } returns Response.success(Unit)
+        coEvery { mockApi.addFavorite(any()) } returns Response.success(mapOf("status" to "ok"))
 
         repository.addFavorite("movie", 1L)
 
@@ -144,7 +144,7 @@ class MediaRepositoryTest2 {
 
     @Test
     fun `favorites throws on API failure`() = runTest {
-        coEvery { mockApi.addFavorite(any()) } returns Response.error(
+        coEvery { mockApi.addFavorite(any()) } returns Response.error<Map<String, String>>(
             500,
             "Server error".toResponseBody(null)
         )
