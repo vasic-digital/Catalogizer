@@ -235,6 +235,198 @@
           "refId": "B"
         }
       ]
+    },
+    {
+      "title": "Channel Buffer Utilization",
+      "type": "timeseries",
+      "gridPos": { "h": 8, "w": 8, "x": 0, "y": 24 },
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "custom": {
+            "drawStyle": "line",
+            "lineInterpolation": "smooth",
+            "fillOpacity": 10
+          }
+        },
+        "overrides": []
+      },
+      "targets": [
+        {
+          "expr": "catalogizer_channel_buffer_depth",
+          "legendFormat": "{{channel_name}}",
+          "refId": "A"
+        }
+      ]
+    },
+    {
+      "title": "DB Connection Pool",
+      "type": "timeseries",
+      "gridPos": { "h": 8, "w": 8, "x": 8, "y": 24 },
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "custom": {
+            "drawStyle": "line",
+            "lineInterpolation": "smooth",
+            "fillOpacity": 10
+          }
+        },
+        "overrides": []
+      },
+      "targets": [
+        {
+          "expr": "go_sql_open_connections{job=\"catalog-api\"}",
+          "legendFormat": "Open",
+          "refId": "A"
+        },
+        {
+          "expr": "go_sql_idle_connections{job=\"catalog-api\"}",
+          "legendFormat": "Idle",
+          "refId": "B"
+        },
+        {
+          "expr": "go_sql_wait_count_total{job=\"catalog-api\"}",
+          "legendFormat": "Waiting",
+          "refId": "C"
+        }
+      ]
+    },
+    {
+      "title": "GC Pause Times",
+      "type": "timeseries",
+      "gridPos": { "h": 8, "w": 8, "x": 16, "y": 24 },
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "s",
+          "custom": {
+            "drawStyle": "line",
+            "lineInterpolation": "smooth",
+            "fillOpacity": 10
+          }
+        },
+        "overrides": []
+      },
+      "targets": [
+        {
+          "expr": "rate(go_gc_duration_seconds_sum{job=\"catalog-api\"}[5m])",
+          "legendFormat": "GC Duration Rate",
+          "refId": "A"
+        },
+        {
+          "expr": "go_gc_duration_seconds{quantile=\"0.5\",job=\"catalog-api\"}",
+          "legendFormat": "p50",
+          "refId": "B"
+        },
+        {
+          "expr": "go_gc_duration_seconds{quantile=\"1\",job=\"catalog-api\"}",
+          "legendFormat": "p100",
+          "refId": "C"
+        }
+      ]
+    },
+    {
+      "title": "Heap Allocation Rate",
+      "type": "timeseries",
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 32 },
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "Bps",
+          "custom": {
+            "drawStyle": "line",
+            "lineInterpolation": "smooth",
+            "fillOpacity": 10
+          }
+        },
+        "overrides": []
+      },
+      "targets": [
+        {
+          "expr": "rate(go_memstats_alloc_bytes_total{job=\"catalog-api\"}[5m])",
+          "legendFormat": "Allocation Rate",
+          "refId": "A"
+        }
+      ]
+    },
+    {
+      "title": "HTTP Latency Heatmap",
+      "type": "heatmap",
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 32 },
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "options": {
+        "calculate": false,
+        "yAxis": { "unit": "s" }
+      },
+      "targets": [
+        {
+          "expr": "sum(increase(http_request_duration_seconds_bucket[5m])) by (le)",
+          "legendFormat": "{{le}}",
+          "format": "heatmap",
+          "refId": "A"
+        }
+      ]
+    },
+    {
+      "title": "Scan Progress",
+      "type": "timeseries",
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 40 },
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "custom": {
+            "drawStyle": "line",
+            "lineInterpolation": "smooth",
+            "fillOpacity": 10
+          }
+        },
+        "overrides": []
+      },
+      "targets": [
+        {
+          "expr": "catalogizer_scan_files_total",
+          "legendFormat": "Total Files Scanned",
+          "refId": "A"
+        },
+        {
+          "expr": "rate(catalogizer_scan_files_total[1m])",
+          "legendFormat": "Files/sec",
+          "refId": "B"
+        }
+      ]
+    },
+    {
+      "title": "WebSocket Message Rate",
+      "type": "timeseries",
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 40 },
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "cps",
+          "custom": {
+            "drawStyle": "line",
+            "lineInterpolation": "smooth",
+            "fillOpacity": 10
+          }
+        },
+        "overrides": []
+      },
+      "targets": [
+        {
+          "expr": "rate(websocket_messages_sent_total[5m])",
+          "legendFormat": "Sent",
+          "refId": "A"
+        },
+        {
+          "expr": "rate(websocket_messages_received_total[5m])",
+          "legendFormat": "Received",
+          "refId": "B"
+        }
+      ]
     }
   ],
   "schemaVersion": 39,

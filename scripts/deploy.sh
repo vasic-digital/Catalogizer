@@ -12,6 +12,9 @@ BUILD_DIR="${PROJECT_ROOT}/build"
 DEPLOY_DIR="${PROJECT_ROOT}/deployment"
 VERSION=$(date +%Y%m%d-%H%M%S)
 
+# Source container runtime detection library
+source "${SCRIPT_DIR}/lib/container-runtime.sh"
+
 echo "=== Catalogizer Deployment Script ==="
 echo "Version: ${VERSION}"
 echo "Build Dir: ${BUILD_DIR}"
@@ -57,11 +60,11 @@ check_prerequisites() {
     NODE_VERSION=$(node --version)
     log_info "Node.js version: ${NODE_VERSION}"
     
-    # Check Docker
-    if ! command -v docker &> /dev/null; then
-        log_warn "Docker not found, skipping container builds"
+    # Check container runtime
+    if container_available; then
+        detect_container_runtime
     else
-        log_info "Docker available"
+        log_warn "No container runtime found, skipping container builds"
     fi
     
     log_info "Prerequisites check passed"
@@ -121,26 +124,26 @@ build_frontend() {
     log_info "Frontend built successfully"
 }
 
-# Build Docker images
-build_docker() {
-    if ! command -v docker &> /dev/null; then
-        log_warn "Docker not available, skipping container builds"
+# Build container images
+build_containers() {
+    if [[ -z "${CONTAINER_CMD:-}" ]]; then
+        log_warn "No container runtime available, skipping container builds"
         return
     fi
-    
-    log_info "Building Docker images..."
-    
+
+    log_info "Building container images (${CONTAINER_RUNTIME})..."
+
     cd "${PROJECT_ROOT}"
-    
+
     # Build API image
-    docker build -f Dockerfile.api -t catalogizer/api:${VERSION} .
-    docker tag catalogizer/api:${VERSION} catalogizer/api:latest
-    
+    container_build -f Dockerfile.api -t catalogizer/api:${VERSION} .
+    $CONTAINER_CMD tag catalogizer/api:${VERSION} catalogizer/api:latest
+
     # Build Web image
-    docker build -f Dockerfile.web -t catalogizer/web:${VERSION} .
-    docker tag catalogizer/web:${VERSION} catalogizer/web:latest
-    
-    log_info "Docker images built successfully"
+    container_build -f Dockerfile.web -t catalogizer/web:${VERSION} .
+    $CONTAINER_CMD tag catalogizer/web:${VERSION} catalogizer/web:latest
+
+    log_info "Container images built successfully"
 }
 
 # Package release
@@ -173,7 +176,7 @@ deploy() {
     log_info "To deploy:"
     log_info "  1. Copy ${BUILD_DIR}/releases/catalogizer-${VERSION}.tar.gz to server"
     log_info "  2. Extract and run ./install.sh"
-    log_info "  3. Or use Docker Compose: docker-compose up -d"
+    log_info "  3. Or use compose: ${COMPOSE_CMD:-podman-compose} up -d"
 }
 
 # Main execution
@@ -184,7 +187,7 @@ main() {
     run_tests
     build_backend
     build_frontend
-    build_docker
+    build_containers
     package_release
     deploy
     

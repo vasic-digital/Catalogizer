@@ -106,7 +106,6 @@ export const MediaBrowser: React.FC = () => {
       await mediaApi.downloadMedia(media)
       toast.success(`Successfully downloaded ${media.title}`)
     } catch (error) {
-      console.error('Download failed:', error)
       toast.error(`Failed to download ${media.title}: ${error instanceof Error ? error.message : 'Unknown error'}`)
     } finally {
       setIsDownloading(false)

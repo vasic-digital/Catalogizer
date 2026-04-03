@@ -1,0 +1,103 @@
+%% Authentication Flow
+%% Login, token validation, refresh, and logout sequences
+
+sequenceDiagram
+    autonumber
+    participant Client
+    participant AuthRL as Auth Rate Limiter<br/>(5 req/min)
+    participant AuthHandler as Auth Handler<br/>/api/v1/auth/*
+    participant AuthSvc as AuthService<br/>services/auth_service.go
+    participant InternalAuth as Internal AuthService<br/>internal/auth/service.go
+    participant UserRepo as UserRepository
+    participant DB as Database<br/>(SQLite / PostgreSQL)
+    participant JWT as JWT Generator<br/>(HS256)
+
+    rect rgb(232, 245, 233)
+        Note over Client,DB: LOGIN FLOW
+        Client->>AuthRL: POST /api/v1/auth/login<br/>{username, password, device_info, remember_me}
+        AuthRL->>AuthRL: Check rate limit (5/min per IP)
+
+        alt Rate Limit Exceeded
+            AuthRL-->>Client: 429 Too Many Requests<br/>{error, retry_after}
+        end
+
+        AuthRL->>AuthHandler: Forward request
+        AuthHandler->>AuthSvc: Login(req, ipAddress, userAgent)
+        AuthSvc->>UserRepo: GetByUsernameOrEmail(username)
+        UserRepo->>DB: SELECT FROM users WHERE username=? OR email=?
+        DB-->>UserRepo: User record (with role_id, salt)
+        UserRepo-->>AuthSvc: User object
+
+        AuthSvc->>AuthSvc: Check user.CanLogin()<br/>(is_active=1 AND is_locked=0)
+
+        alt Account Locked or Disabled
+            AuthSvc-->>Client: 401 Unauthorized
+        end
+
+        AuthSvc->>AuthSvc: bcrypt.Compare(password + salt, hash)
+
+        alt Invalid Password
+            AuthSvc->>UserRepo: IncrementFailedLoginAttempts(userID)
+            AuthSvc->>DB: INSERT INTO auth_audit_log<br/>(user_id, 'failed_login', ip)
+            AuthSvc-->>Client: 401 Invalid credentials
+        end
+
+        AuthSvc->>UserRepo: ResetFailedLoginAttempts(userID)
+        AuthSvc->>UserRepo: CreateSession(user, deviceInfo, ip, ua)
+        UserRepo->>DB: INSERT INTO user_sessions
+        DB-->>UserRepo: Session ID
+
+        AuthSvc->>JWT: GenerateJWT(user_id, username, role_id, session_id)
+        JWT-->>AuthSvc: Access token (24h expiry)
+        AuthSvc->>AuthSvc: GenerateRefreshToken()<br/>(32-byte crypto/rand hex)
+
+        AuthSvc->>UserRepo: UpdateSessionTokens(sessionID, jwt, refreshToken)
+        AuthSvc->>UserRepo: UpdateLastLogin(userID, ipAddress)
+        AuthSvc->>DB: INSERT INTO auth_audit_log<br/>(user_id, 'login_success', ip)
+
+        AuthSvc-->>Client: 200 OK<br/>{user, session_token, refresh_token, expires_at}
+    end
+
+    rect rgb(227, 242, 253)
+        Note over Client,DB: TOKEN VALIDATION (per request)
+        Client->>AuthHandler: GET /api/v1/catalog<br/>Authorization: Bearer JWT
+        AuthHandler->>JWT: Parse + validate signature (HS256)
+        JWT->>JWT: Check exp claim (not expired)
+        JWT->>JWT: Extract: user_id, username, role_id
+
+        alt Token Invalid or Expired
+            JWT-->>Client: 401 Invalid token
+        end
+
+        JWT-->>AuthHandler: Claims set in Gin context
+        Note over AuthHandler: user_id and username<br/>available via c.Get()
+    end
+
+    rect rgb(255, 243, 224)
+        Note over Client,DB: REFRESH TOKEN FLOW
+        Client->>AuthRL: POST /api/v1/auth/refresh<br/>{refresh_token}
+        AuthRL->>AuthSvc: RefreshToken(refreshToken)
+        AuthSvc->>UserRepo: GetSessionByRefreshToken(token)
+        UserRepo->>DB: SELECT FROM user_sessions<br/>WHERE refresh_token=? AND is_active=1
+        DB-->>UserRepo: Session record
+
+        alt Session Not Found or Expired
+            AuthSvc-->>Client: 401 Invalid refresh token
+        end
+
+        AuthSvc->>UserRepo: GetByID(session.user_id)
+        AuthSvc->>JWT: GenerateJWT (new access token)
+        AuthSvc->>AuthSvc: GenerateRefreshToken (token rotation)
+        AuthSvc->>UserRepo: UpdateSessionTokens(newJWT, newRefresh)
+
+        AuthSvc-->>Client: 200 OK<br/>{session_token, refresh_token, expires_at}
+    end
+
+    rect rgb(252, 228, 236)
+        Note over Client,DB: LOGOUT FLOW
+        Client->>AuthHandler: POST /api/v1/auth/logout<br/>Authorization: Bearer JWT
+        AuthHandler->>AuthSvc: Logout(token)
+        AuthSvc->>DB: DELETE FROM user_sessions WHERE token=?
+        AuthSvc->>DB: INSERT INTO auth_audit_log<br/>(user_id, 'logout', ip)
+        AuthSvc-->>Client: 200 OK
+    end

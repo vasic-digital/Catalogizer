@@ -21,19 +21,12 @@
 
 This guide provides comprehensive troubleshooting procedures and maintenance tasks for Catalogizer v3.0. It covers common issues, diagnostic procedures, and preventive maintenance to ensure optimal system operation.
 
-### Emergency Contacts
+### Support Channels
 
-- **System Administrator**: admin@yourcompany.com
-- **Database Administrator**: dba@yourcompany.com
-- **Network Operations**: noc@yourcompany.com
-- **Emergency Hotline**: +1-XXX-XXX-XXXX
-
-### Support Resources
-
-- **Documentation**: https://docs.catalogizer.com
-- **Issue Tracker**: https://github.com/your-org/catalogizer/issues
-- **Community Forum**: https://community.catalogizer.com
-- **Status Page**: https://status.catalogizer.com
+- **Bug Reports & Issues**: https://github.com/vasic-digital/Catalogizer/issues
+- **Documentation**: https://catalogizer.dev/documentation
+- **Community Discussions**: https://github.com/vasic-digital/Catalogizer/discussions
+- **Project Website**: https://catalogizer.dev
 
 ## Quick Diagnostics
 

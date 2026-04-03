@@ -29,6 +29,7 @@ class MainActivity : ComponentActivity() {
     private lateinit var homeViewModel: HomeViewModel
     private lateinit var searchViewModel: SearchViewModel
     private var backPressedOnce = false
+    private val resetBackPressRunnable = Runnable { backPressedOnce = false }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         // Install splash screen
@@ -45,7 +46,7 @@ class MainActivity : ComponentActivity() {
             }
             backPressedOnce = true
             Toast.makeText(this@MainActivity, "Press back again to exit", Toast.LENGTH_SHORT).show()
-            window.decorView.postDelayed({ backPressedOnce = false }, 2000)
+            window.decorView.postDelayed(resetBackPressRunnable, 2000)
         }
 
         // Initialize ViewModels
@@ -78,6 +79,11 @@ class MainActivity : ComponentActivity() {
                 }
             }
         }
+    }
+
+    override fun onDestroy() {
+        window.decorView.removeCallbacks(resetBackPressRunnable)
+        super.onDestroy()
     }
 }
 

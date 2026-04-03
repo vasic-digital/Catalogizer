@@ -166,6 +166,39 @@ Authorization: Bearer eyJhbGciOiJIUzI1NiIs...
 | DELETE | `/users/:id` | Delete a user |
 | GET | `/roles` | List available roles |
 
+### Search and Browse
+
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| GET | `/search` | Full-text search with advanced filters |
+| GET | `/browse/roots` | List storage roots with summary stats |
+| GET | `/browse/directory` | Browse directory tree with pagination |
+
+### Backup Management (Admin)
+
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| POST | `/admin/backup` | Create a database backup |
+| GET | `/admin/backups` | List available backups |
+| POST | `/admin/backup/restore` | Restore from a backup |
+
+### Password Management
+
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| POST | `/auth/change-password` | Change current user's password |
+
+### Media Quality and Analysis
+
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| GET | `/media/stats` | Media statistics with quality breakdown by file extension |
+| POST | `/media/:id/analyze` | Trigger quality analysis for a media item |
+| POST | `/media/:id/refresh-metadata` | Refresh external metadata |
+| GET | `/media/popular` | Popular media sorted by favorites count |
+| GET | `/media/recent` | Recently discovered media |
+| GET | `/media/search-by-path` | Search media by file path |
+
 ### Configuration (Admin)
 
 | Method | Endpoint | Description |

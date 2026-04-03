@@ -39,7 +39,7 @@ app/src/main/java/com/catalogizer/android/
 
 | Library | Purpose |
 |---|---|
-| Jetpack Compose (BOM 2023.10) | Declarative UI |
+| Jetpack Compose (BOM 2024.01) | Declarative UI |
 | Material 3 | Design system |
 | Navigation Compose | Screen navigation |
 | Room 2.6.1 | Local database (offline cache) |

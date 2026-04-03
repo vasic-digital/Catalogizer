@@ -213,7 +213,7 @@ Storage sources are configured through the web interface or API. Each protocol r
 
 ## Container Configuration
 
-When running in containers, pass environment variables through the Docker Compose file or `podman run` flags.
+When running in containers, pass environment variables through the Compose file or container run flags. Catalogizer automatically detects the available container runtime (Podman or Docker).
 
 ```yaml
 # docker-compose.yml excerpt

@@ -9,6 +9,20 @@ Catalogizer is a multi-protocol media collection management system that detects,
 
 ---
 
+## What's New in v2.2
+
+- **557+ Challenges**: Expanded challenge bank with stress tests, integration tests, security challenges, and documentation completeness checks
+- **Dynamic Container Runtime**: Automatic detection of Podman, Docker, or other container runtimes with graceful fallback
+- **Android Offline Mode Activation**: Full offline catalog browsing with Room database caching and automatic background sync
+- **Android Biometric Authentication**: Fingerprint and face unlock for secure app access on supported devices
+- **Android WebSocket Real-Time Updates**: Live scan progress, new media notifications, and source status changes pushed to the Android app
+- **Panoptic Cloud Analytics**: Cloud-based analytics dashboard with aggregated usage metrics and fleet-wide insights
+- **17-Module Video Course**: 7 user/admin modules plus 10 developer modules covering the full stack
+- **Comprehensive Security Scanning**: SonarQube static analysis, Snyk dependency scanning, Semgrep SAST, Trivy container scanning, and OWASP Dependency Check
+- **4 k6 Stress Test Scripts**: Load, stress, soak, and spike test scenarios for performance validation
+- **10 Architecture Diagrams**: Mermaid diagrams covering system topology, data flow, media pipeline, and protocol abstraction
+- **Test Coverage >85%**: All Go and TypeScript modules meet or exceed 85% code coverage
+
 ## What's New in v2.1
 
 - **400+ Challenges**: Comprehensive challenge bank covering concurrency hardening, coverage gates, stress validation, documentation completeness, accessibility, and API contract compliance
@@ -83,8 +97,9 @@ Enterprise-grade security for your media catalog.
 - **SQLCipher encrypted database**: Media metadata is stored in an encrypted SQLite database
 - **CORS configuration**: Configurable cross-origin resource sharing for web deployments
 - **Security testing**: Built-in security testing suite via Docker Compose security profile
-- **Enhanced security scanning**: SonarQube static analysis, Semgrep SAST, Snyk dependency scanning, Trivy container scanning, and OWASP Dependency Check for comprehensive vulnerability coverage
+- **Comprehensive security scanning**: SonarQube static analysis, Semgrep SAST with custom rules, Snyk dependency scanning, Trivy container scanning, OWASP Dependency Check, govulncheck, and npm audit for full-spectrum vulnerability coverage
 - **Accessibility compliance**: WCAG 2.0 AA testing with axe-core integration in Playwright end-to-end tests
+- **Biometric authentication**: Android app supports fingerprint and face unlock on supported devices
 
 ## Monitoring and Analytics
 
@@ -189,13 +204,12 @@ Generate professional reports and analytics exports.
 
 Built for extensibility with a submodule-based architecture.
 
-- **29 Go modules**: Auth, Cache, Database, Concurrency, Storage, EventBus, Streaming, Security, Observability, Formatters, Plugins, Challenges, Filesystem, RateLimiter, Config, Discovery, Media, Middleware, Watcher, Containers, Assets, Entities, Lazy, Memory, Recovery, and more
+- **22 Go modules**: Auth, Cache, Database, Concurrency, Storage, EventBus, Streaming, Security, Observability, Challenges, Filesystem, RateLimiter, Config, Discovery, Media, Middleware, Watcher, Containers, Assets, Entities, Lazy, Memory, Recovery -- all wired via `replace` directives in `go.mod`
 - **Lazy service initialization**: LazyServiceRegistry defers expensive service creation until first use, improving startup time and reducing resource consumption for unused features
 - **Semaphore-based concurrency control**: Bounded parallelism for scan operations prevents resource exhaustion on large libraries
-- **9 TypeScript modules**: WebSocket-Client, UI-Components-React, Media-Types, Catalogizer-API-Client, Auth-Context, Media-Browser, Media-Player, Collection-Manager, Dashboard-Analytics
+- **9 TypeScript modules**: WebSocket-Client, UI-Components-React, Media-Types, Catalogizer-API-Client, Auth-Context, Media-Browser, Media-Player, Collection-Manager, Dashboard-Analytics -- linked via `file:../` in `package.json`
 - **1 Kotlin module**: Android-Toolkit
-- **3 new modules** added in v1.1.0: Lazy (generic lazy loading), Memory (leak detection), Recovery (circuit breaker with automatic state restoration)
-- Each module is an independent git repository with its own tests, documentation, and ARCHITECTURE.md
+- **41 independent submodules**: Each is a separate git repository under the vasic-digital organization with its own tests, documentation, and ARCHITECTURE.md
 - Shared across projects for consistent behavior and reduced duplication
 
 ## Search and Browse API

@@ -209,4 +209,63 @@ class SearchViewModelTest {
         assertEquals(1, viewModel.searchResults.value.size)
         assertEquals("A Song", viewModel.searchResults.value[0].title)
     }
+
+    @Test
+    fun `search with blank query after spaces clears results`() = runTest {
+        viewModel.search("   ")
+        advanceUntilIdle()
+
+        assertTrue(viewModel.searchResults.value.isEmpty())
+        assertFalse(viewModel.isSearching.value)
+    }
+
+    @Test
+    fun `search updates query value`() = runTest {
+        viewModel.search("inception")
+
+        assertEquals("inception", viewModel.query.value)
+    }
+
+    @Test
+    fun `search is case insensitive`() = runTest {
+        // Given
+        val mediaItems = listOf(
+            createMediaItem(1, "Inception", "movie")
+        )
+        coEvery { mockMediaRepository.getRecentMedia(50) } returns ApiResult.success(mediaItems)
+
+        viewModel.search("inception")
+        advanceUntilIdle()
+
+        assertEquals(1, viewModel.searchResults.value.size)
+        assertEquals("Inception", viewModel.searchResults.value[0].title)
+    }
+
+    @Test
+    fun `search handles API failure gracefully`() = runTest {
+        // Given - ApiResult.error (not exception)
+        coEvery { mockMediaRepository.getRecentMedia(50) } returns ApiResult.error("Network error")
+
+        viewModel.search("test")
+        advanceUntilIdle()
+
+        // On failure, searchResults should be empty (the filter on null data returns empty)
+        assertTrue(viewModel.searchResults.value.isEmpty())
+        assertFalse(viewModel.isSearching.value)
+    }
+
+    @Test
+    fun `search with no matching results returns empty list`() = runTest {
+        // Given
+        val mediaItems = listOf(
+            createMediaItem(1, "The Matrix", "movie"),
+            createMediaItem(2, "Dark Side of the Moon", "music")
+        )
+        coEvery { mockMediaRepository.getRecentMedia(50) } returns ApiResult.success(mediaItems)
+
+        viewModel.search("nonexistent_xyz_123")
+        advanceUntilIdle()
+
+        assertTrue(viewModel.searchResults.value.isEmpty())
+    }
 }

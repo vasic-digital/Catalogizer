@@ -177,14 +177,15 @@ curl http://localhost:8080/api/v1/challenges/status \
 
 ### Challenge Categories
 
-| Range | Category | Count |
-|-------|----------|-------|
-| CH-001 to CH-035 | Core system challenges | 35 |
-| UF-API-* | API user flow challenges | 49 |
-| UF-WEB-* | Web user flow challenges | 59 |
-| UF-DESKTOP-* | Desktop user flow challenges | 28 |
-| UF-MOBILE-* | Mobile user flow challenges | 38 |
-| **Total** | | **209** |
+| Range | Category | Description |
+|-------|----------|-------------|
+| CH-001 to CH-050+ | Core system challenges | Connectivity, scanning, security, performance, resilience, stress, integration |
+| UF-API-* | API user flow challenges | HTTP endpoint validation across all API routes |
+| UF-WEB-* | Web user flow challenges | Browser-based flows via Playwright |
+| UF-DESKTOP-* | Desktop user flow challenges | Tauri desktop and installer wizard flows |
+| UF-MOBILE-* | Mobile user flow challenges | Android and Android TV flows via ADB |
+| MOD-* | Module verification challenges | Per-module functional validation |
+| **Total** | **557+ challenges** | Stress, integration, security, documentation completeness |
 
 ### Writing a Challenge
 
@@ -209,6 +210,27 @@ Register challenges in `challenges/register.go` via the `RegisterAll()` function
 - Progress-based liveness detection kills stuck challenges after 5 minutes of no progress
 - `challenge.NewConfig()` defaults to a 5-minute timeout -- set it to zero to use the runner's timeout
 - `config.json` `write_timeout` must be `900` for long-running challenge sets
+
+---
+
+## Stress Tests (k6)
+
+Catalogizer includes k6 load testing scripts in `tests/k6/` for performance validation.
+
+| Script | Scenario | Description |
+|--------|----------|-------------|
+| `load_test.js` | Load test | Ramp to 50 virtual users, verify p95 < 500ms |
+| `stress_test.js` | Stress test | Ramp to 300 virtual users, find the breaking point |
+| `soak_test.js` | Soak test | 20 users for 30 minutes, detect memory leaks |
+| `spike_test.js` | Spike test | Sudden traffic burst to test recovery |
+
+Run via containers:
+
+```bash
+podman run --rm --network host \
+  -v $(pwd)/tests/k6:/scripts \
+  docker.io/grafana/k6:latest run /scripts/load_test.js
+```
 
 ---
 

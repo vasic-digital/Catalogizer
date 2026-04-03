@@ -33,7 +33,6 @@ export const SubtitleSyncModal: React.FC<SubtitleSyncModalProps> = ({
       })
       setVerificationResult(result)
     } catch (error) {
-      console.error('Verification failed:', error)
       setVerificationResult({
         success: false,
         status: 'unusable',

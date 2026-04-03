@@ -1,0 +1,80 @@
+%% Deployment Topology
+%% Production container architecture with monitoring stack
+
+graph TB
+    subgraph Internet["External"]
+        USER["Users<br/>(Browser / Mobile / Desktop)"]
+    end
+
+    subgraph Host["Host Machine (Podman)"]
+        subgraph Proxy["Reverse Proxy"]
+            NGINX["nginx:alpine<br/>catalogizer-nginx<br/>Ports: 80 (HTTP) / 443 (HTTPS)<br/>config/nginx.conf<br/>SSL termination"]
+        end
+
+        subgraph AppLayer["Application Layer"]
+            API["catalog-api<br/>catalogizer-api<br/>Port: 8080<br/>Go 1.25 / Gin<br/>HTTP/3 (QUIC) + Brotli<br/>CPU: 2 / RAM: 2G"]
+            WEB["catalog-web<br/>(static files served by Nginx)<br/>React 18 / Vite build"]
+        end
+
+        subgraph DataLayer["Data Layer<br/>catalogizer-network"]
+            PG["PostgreSQL 15 Alpine<br/>catalogizer-postgres<br/>Port: 5432 (internal)<br/>Port: 5433 (host mapped)<br/>CPU: 2 / RAM: 2G<br/>Volume: postgres_data"]
+            REDIS["Redis 7 Alpine<br/>catalogizer-redis<br/>Port: 6379<br/>CPU: 1 / RAM: 512M<br/>Volume: redis_data<br/>config/redis.conf"]
+        end
+
+        subgraph MonitoringStack["Monitoring (optional profile)"]
+            PROM["Prometheus<br/>catalogizer-prometheus<br/>Port: 9090<br/>CPU: 1 / RAM: 1G<br/>Retention: 200h<br/>monitoring/prometheus.yml"]
+            GRAFANA["Grafana<br/>catalogizer-grafana<br/>Port: 3001<br/>CPU: 1 / RAM: 512M<br/>monitoring/grafana/dashboards/"]
+        end
+
+        subgraph Storage["Storage Access"]
+            NAS["Synology NAS<br/>synology.local:445<br/>SMB / NFS / WebDAV"]
+            LOCAL_FS["Local Filesystem<br/>/media mount"]
+        end
+
+        subgraph Volumes["Persistent Volumes"]
+            VOL_PG["postgres_data"]
+            VOL_REDIS["redis_data"]
+            VOL_PROM["prometheus_data"]
+            VOL_GRAFANA["grafana_data"]
+            VOL_LOGS["api_logs"]
+            VOL_NGINX["nginx_logs"]
+        end
+    end
+
+    USER -->|"HTTPS :443<br/>HTTP :80"| NGINX
+    NGINX -->|"Proxy /api/*<br/>to :8080"| API
+    NGINX -->|"Serve static<br/>dist/ files"| WEB
+
+    API -->|"DB_TYPE=postgres<br/>Port 5432"| PG
+    API -->|"REDIS_HOST=redis<br/>Port 6379"| REDIS
+    API -->|"GET /metrics"| PROM
+    API -->|"--add-host=synology.local<br/>SMB/NFS/WebDAV"| NAS
+    API -->|"/media:ro mount"| LOCAL_FS
+
+    PROM -->|"Scrape /metrics<br/>every 15s"| API
+    GRAFANA -->|"Query<br/>PromQL"| PROM
+
+    PG --- VOL_PG
+    REDIS --- VOL_REDIS
+    PROM --- VOL_PROM
+    GRAFANA --- VOL_GRAFANA
+    API --- VOL_LOGS
+    NGINX --- VOL_NGINX
+
+    subgraph HealthChecks["Health Checks"]
+        HC_PG["pg_isready<br/>interval: 10s"]
+        HC_REDIS["redis-cli ping<br/>interval: 10s"]
+        HC_API["curl /health<br/>interval: 30s"]
+    end
+
+    PG -.- HC_PG
+    REDIS -.- HC_REDIS
+    API -.- HC_API
+
+    style Proxy fill:#fff3e0,stroke:#e65100,stroke-width:2px
+    style AppLayer fill:#e3f2fd,stroke:#1565c0,stroke-width:2px
+    style DataLayer fill:#e8f5e9,stroke:#2e7d32,stroke-width:2px
+    style MonitoringStack fill:#fce4ec,stroke:#c62828,stroke-width:2px
+    style Storage fill:#f3e5f5,stroke:#6a1b9a,stroke-width:2px
+    style Volumes fill:#eceff1,stroke:#455a64,stroke-width:1px
+    style HealthChecks fill:#fffde7,stroke:#f9a825,stroke-width:1px

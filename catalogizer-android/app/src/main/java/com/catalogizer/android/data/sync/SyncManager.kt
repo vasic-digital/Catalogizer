@@ -79,6 +79,10 @@ class SyncManager(
         WorkManager.getInstance(context).cancelUniqueWork(SYNC_WORK_NAME)
     }
 
+    fun cancelSync() {
+        WorkManager.getInstance(context).cancelUniqueWork(SYNC_WORK_NAME)
+    }
+
     suspend fun performManualSync(): SyncResult {
         if (_syncStatus.value.isRunning) {
             return SyncResult(

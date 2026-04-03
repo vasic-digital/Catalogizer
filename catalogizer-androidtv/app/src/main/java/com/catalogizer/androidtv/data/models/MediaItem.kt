@@ -18,34 +18,34 @@ data class MediaItem(
     @PrimaryKey
     val id: Long = 0,
     val title: String = "",
-    @com.google.gson.annotations.SerializedName("media_type")
+    @SerialName("media_type")
     val mediaType: String? = null,
-    @com.google.gson.annotations.SerializedName("media_type_id")
+    @SerialName("media_type_id")
     val mediaTypeId: Int? = null,
     val year: Int? = null,
     val description: String? = null,
-    @com.google.gson.annotations.SerializedName("cover_image")
+    @SerialName("cover_image")
     val coverImage: String? = null,
-    @com.google.gson.annotations.SerializedName("cover_url")
+    @SerialName("cover_url")
     val coverUrl: String? = null,
     val rating: Double? = null,
     val quality: String? = null,
-    @com.google.gson.annotations.SerializedName("file_size")
+    @SerialName("file_size")
     val fileSize: Long? = null,
     val duration: Long? = null,
-    @com.google.gson.annotations.SerializedName("directory_path")
+    @SerialName("directory_path")
     val directoryPath: String = "",
-    @com.google.gson.annotations.SerializedName("smb_path")
+    @SerialName("smb_path")
     val smbPath: String? = null,
-    @com.google.gson.annotations.SerializedName("created_at")
+    @SerialName("created_at")
     val createdAt: String = "",
-    @com.google.gson.annotations.SerializedName("updated_at")
+    @SerialName("updated_at")
     val updatedAt: String = "",
-    @com.google.gson.annotations.SerializedName("first_detected")
+    @SerialName("first_detected")
     val firstDetected: String? = null,
-    @com.google.gson.annotations.SerializedName("last_updated")
+    @SerialName("last_updated")
     val lastUpdated: String? = null,
-    @com.google.gson.annotations.SerializedName("external_metadata")
+    @SerialName("external_metadata")
     val externalMetadata: List<ExternalMetadata>? = null,
     val versions: List<MediaVersion>? = null,
     val isFavorite: Boolean = false,
@@ -53,7 +53,7 @@ data class MediaItem(
     val lastWatched: String? = null,
     val isDownloaded: Boolean = false,
     val status: String? = null,
-    @com.google.gson.annotations.SerializedName("original_title")
+    @SerialName("original_title")
     val originalTitle: String? = null,
     val genre: List<String>? = null,
     val director: String? = null,
@@ -88,26 +88,26 @@ data class MediaItem(
 @Serializable
 data class ExternalMetadata(
     val id: Long = 0,
-    @com.google.gson.annotations.SerializedName("media_id")
+    @SerialName("media_id")
     val mediaId: Long = 0,
     val provider: String = "",
-    @com.google.gson.annotations.SerializedName("external_id")
+    @SerialName("external_id")
     val externalId: String = "",
     val title: String = "",
     val description: String? = null,
     val year: Int? = null,
     val rating: Double? = null,
-    @com.google.gson.annotations.SerializedName("poster_url")
+    @SerialName("poster_url")
     val posterUrl: String? = null,
-    @com.google.gson.annotations.SerializedName("cover_url")
+    @SerialName("cover_url")
     val coverUrl: String? = null,
-    @com.google.gson.annotations.SerializedName("backdrop_url")
+    @SerialName("backdrop_url")
     val backdropUrl: String? = null,
     val genres: List<String>? = null,
     val cast: List<String>? = null,
     val crew: List<String>? = null,
     val metadata: Map<String, String>? = null,
-    @com.google.gson.annotations.SerializedName("last_updated")
+    @SerialName("last_updated")
     val lastUpdated: String = ""
 ) : Parcelable
 
@@ -115,41 +115,41 @@ data class ExternalMetadata(
 @Serializable
 data class MediaVersion(
     val id: Long,
-    @com.google.gson.annotations.SerializedName("media_id")
+    @SerialName("media_id")
     val mediaId: Long,
     val version: String,
     val quality: String,
-    @com.google.gson.annotations.SerializedName("file_path")
+    @SerialName("file_path")
     val filePath: String,
-    @com.google.gson.annotations.SerializedName("file_size")
+    @SerialName("file_size")
     val fileSize: Long,
     val codec: String? = null,
     val resolution: String? = null,
     val bitrate: Long? = null,
     val language: String? = null,
-    @com.google.gson.annotations.SerializedName("frame_rate")
+    @SerialName("frame_rate")
     val frameRate: Double? = null,
-    @com.google.gson.annotations.SerializedName("audio_channels")
+    @SerialName("audio_channels")
     val audioChannels: Int? = null,
-    @com.google.gson.annotations.SerializedName("sample_rate")
+    @SerialName("sample_rate")
     val sampleRate: Int? = null
 ) : Parcelable
 
 @Serializable
 data class MediaSearchRequest(
     val query: String? = null,
-    @com.google.gson.annotations.SerializedName("media_type")
+    @SerialName("media_type")
     val mediaType: String? = null,
-    @com.google.gson.annotations.SerializedName("year_min")
+    @SerialName("year_min")
     val yearMin: Int? = null,
-    @com.google.gson.annotations.SerializedName("year_max")
+    @SerialName("year_max")
     val yearMax: Int? = null,
-    @com.google.gson.annotations.SerializedName("rating_min")
+    @SerialName("rating_min")
     val ratingMin: Double? = null,
     val quality: String? = null,
-    @com.google.gson.annotations.SerializedName("sort_by")
+    @SerialName("sort_by")
     val sortBy: String? = null,
-    @com.google.gson.annotations.SerializedName("sort_order")
+    @SerialName("sort_order")
     val sortOrder: String? = null,
     val limit: Int = 20,
     val offset: Int = 0
@@ -158,9 +158,9 @@ data class MediaSearchRequest(
 @Serializable
 data class MediaSearchResponse(
     // Entity browse endpoint uses "items"; media search endpoint uses "media_items"
-    @com.google.gson.annotations.SerializedName("items")
+    @SerialName("items")
     val items: List<MediaItem>? = null,
-    @com.google.gson.annotations.SerializedName("media_items")
+    @SerialName("media_items")
     val mediaItems: List<MediaItem>? = null,
     val total: Int = 0,
     val limit: Int = 20,
@@ -173,21 +173,21 @@ data class MediaSearchResponse(
 
 @Serializable
 data class MediaStats(
-    @com.google.gson.annotations.SerializedName("total_items")
+    @SerialName("total_items")
     val totalItems: Int,
-    @com.google.gson.annotations.SerializedName("by_type")
+    @SerialName("by_type")
     val byType: Map<String, Int>,
-    @com.google.gson.annotations.SerializedName("by_quality")
+    @SerialName("by_quality")
     val byQuality: Map<String, Int>,
-    @com.google.gson.annotations.SerializedName("total_size")
+    @SerialName("total_size")
     val totalSize: Long,
-    @com.google.gson.annotations.SerializedName("recent_additions")
+    @SerialName("recent_additions")
     val recentAdditions: Int
 )
 
 @Serializable
 data class PlaybackProgress(
-    @com.google.gson.annotations.SerializedName("media_id")
+    @SerialName("media_id")
     val mediaId: Long,
     val position: Long,
     val duration: Long,

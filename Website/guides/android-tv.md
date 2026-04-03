@@ -29,8 +29,11 @@ Alternatively, transfer the APK to your TV via USB drive or network share.
 
 1. Launch Catalogizer from the Apps row
 2. Enter your server URL using the on-screen keyboard
-3. Log in with your credentials
-4. The app loads your catalog and displays the home screen
+3. Navigate between input fields using the D-pad (press D-pad center/OK before typing, use Tab key or D-pad down to move between fields)
+4. Log in with your credentials
+5. The app loads your catalog and displays the home screen
+
+**Tip**: On the login screen, press D-pad center (OK) to focus an input field before typing with the on-screen keyboard. Use Tab (KEYCODE_TAB) to move between the username and password fields.
 
 ---
 
@@ -98,6 +101,16 @@ During playback, press Select/OK to show the transport overlay. Use the D-pad to
 ## Recommendations
 
 Catalogizer integrates with the Android TV recommendations system. Recently added and partially watched items appear in the Recommendations row on your TV home screen, allowing quick access without opening the app first.
+
+---
+
+## Performance
+
+The Android TV app is optimized for fast startup and smooth navigation:
+
+- **Parallel API calls**: The homescreen loads all content rails (Continue Watching, Recently Added, Movies, TV Shows, Music, Collections) in parallel for faster initial load
+- **Image caching**: Cover art and backdrops are cached locally for instant display on subsequent visits
+- **Focus management**: The Leanback framework handles focus transitions smoothly across rows and items
 
 ---
 

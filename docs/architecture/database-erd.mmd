@@ -1,0 +1,350 @@
+%% Database Entity-Relationship Diagram
+%% Complete schema: core catalog, auth, media entities, subtitles, conversions
+
+erDiagram
+    storage_roots {
+        INTEGER id PK
+        TEXT name UK
+        TEXT protocol
+        TEXT host
+        INTEGER port
+        TEXT path
+        TEXT username
+        TEXT password
+        TEXT domain
+        TEXT mount_point
+        TEXT options
+        TEXT url
+        BOOLEAN enabled
+        INTEGER max_depth
+        BOOLEAN enable_duplicate_detection
+        BOOLEAN enable_metadata_extraction
+        TEXT include_patterns
+        TEXT exclude_patterns
+        DATETIME created_at
+        DATETIME updated_at
+        DATETIME last_scan_at
+    }
+
+    files {
+        INTEGER id PK
+        INTEGER storage_root_id FK
+        TEXT path
+        TEXT name
+        TEXT extension
+        TEXT mime_type
+        TEXT file_type
+        INTEGER size
+        BOOLEAN is_directory
+        DATETIME created_at
+        DATETIME modified_at
+        DATETIME accessed_at
+        BOOLEAN deleted
+        DATETIME deleted_at
+        DATETIME last_scan_at
+        DATETIME last_verified_at
+        TEXT md5
+        TEXT sha256
+        TEXT sha1
+        TEXT blake3
+        TEXT quick_hash
+        BOOLEAN is_duplicate
+        INTEGER duplicate_group_id FK
+        INTEGER parent_id FK
+    }
+
+    file_metadata {
+        INTEGER id PK
+        INTEGER file_id FK
+        TEXT key
+        TEXT value
+        TEXT data_type
+    }
+
+    duplicate_groups {
+        INTEGER id PK
+        INTEGER file_count
+        INTEGER total_size
+        DATETIME created_at
+        DATETIME updated_at
+    }
+
+    virtual_paths {
+        INTEGER id PK
+        TEXT path UK
+        TEXT target_type
+        INTEGER target_id
+        DATETIME created_at
+    }
+
+    scan_history {
+        INTEGER id PK
+        INTEGER storage_root_id FK
+        TEXT scan_type
+        TEXT status
+        DATETIME start_time
+        DATETIME end_time
+        INTEGER files_processed
+        INTEGER files_added
+        INTEGER files_updated
+        INTEGER files_deleted
+        INTEGER error_count
+        TEXT error_message
+    }
+
+    users {
+        INTEGER id PK
+        TEXT username UK
+        TEXT email UK
+        TEXT password_hash
+        TEXT salt
+        INTEGER role_id FK
+        TEXT first_name
+        TEXT last_name
+        TEXT display_name
+        TEXT avatar_url
+        BOOLEAN is_active
+        BOOLEAN is_locked
+        DATETIME locked_until
+        INTEGER failed_login_attempts
+        DATETIME last_login_at
+        TEXT last_login_ip
+        DATETIME created_at
+        DATETIME updated_at
+    }
+
+    roles {
+        INTEGER id PK
+        TEXT name UK
+        TEXT description
+        TEXT permissions
+        BOOLEAN is_system
+        DATETIME created_at
+        DATETIME updated_at
+    }
+
+    user_sessions {
+        INTEGER id PK
+        INTEGER user_id FK
+        TEXT session_token UK
+        TEXT refresh_token
+        TEXT device_info
+        TEXT ip_address
+        TEXT user_agent
+        BOOLEAN is_active
+        DATETIME expires_at
+        DATETIME created_at
+        DATETIME last_activity_at
+    }
+
+    permissions {
+        INTEGER id PK
+        TEXT name UK
+        TEXT resource
+        TEXT action
+        TEXT description
+    }
+
+    user_permissions {
+        INTEGER user_id FK
+        INTEGER permission_id FK
+        DATETIME granted_at
+        INTEGER granted_by FK
+    }
+
+    auth_audit_log {
+        INTEGER id PK
+        INTEGER user_id FK
+        TEXT event_type
+        TEXT ip_address
+        TEXT user_agent
+        TEXT details
+        DATETIME created_at
+    }
+
+    media_types {
+        INTEGER id PK
+        TEXT name UK
+        TEXT description
+        TEXT detection_patterns
+        TEXT metadata_providers
+        DATETIME created_at
+        DATETIME updated_at
+    }
+
+    media_items {
+        INTEGER id PK
+        INTEGER media_type_id FK
+        TEXT title
+        TEXT original_title
+        INTEGER year
+        TEXT description
+        TEXT genre
+        TEXT director
+        TEXT cast_crew
+        REAL rating
+        INTEGER runtime
+        TEXT language
+        TEXT country
+        TEXT status
+        INTEGER parent_id FK
+        INTEGER season_number
+        INTEGER episode_number
+        INTEGER track_number
+        DATETIME first_detected
+        DATETIME last_updated
+    }
+
+    media_files {
+        INTEGER id PK
+        INTEGER media_item_id FK
+        INTEGER file_id FK
+        TEXT quality_info
+        TEXT language
+        INTEGER is_primary
+        DATETIME created_at
+    }
+
+    media_collections {
+        INTEGER id PK
+        TEXT name
+        TEXT collection_type
+        TEXT description
+        INTEGER total_items
+        TEXT external_ids
+        TEXT cover_url
+        DATETIME created_at
+        DATETIME updated_at
+    }
+
+    media_collection_items {
+        INTEGER id PK
+        INTEGER collection_id FK
+        INTEGER media_item_id FK
+        INTEGER sequence_number
+        INTEGER season_number
+        INTEGER release_order
+    }
+
+    external_metadata {
+        INTEGER id PK
+        INTEGER media_item_id FK
+        TEXT provider
+        TEXT external_id
+        TEXT data
+        REAL rating
+        TEXT review_url
+        TEXT cover_url
+        TEXT trailer_url
+        DATETIME last_fetched
+    }
+
+    user_metadata {
+        INTEGER id PK
+        INTEGER media_item_id FK
+        INTEGER user_id FK
+        REAL user_rating
+        TEXT watched_status
+        DATETIME watched_date
+        TEXT personal_notes
+        TEXT tags
+        BOOLEAN favorite
+        DATETIME created_at
+        DATETIME updated_at
+    }
+
+    directory_analyses {
+        INTEGER id PK
+        TEXT directory_path UK
+        TEXT smb_root
+        INTEGER media_item_id FK
+        REAL confidence_score
+        TEXT detection_method
+        TEXT analysis_data
+        DATETIME last_analyzed
+        INTEGER files_count
+        INTEGER total_size
+    }
+
+    detection_rules {
+        INTEGER id PK
+        INTEGER media_type_id FK
+        TEXT rule_name
+        TEXT rule_type
+        TEXT pattern
+        REAL confidence_weight
+        BOOLEAN enabled
+        INTEGER priority
+        DATETIME created_at
+    }
+
+    conversion_jobs {
+        INTEGER id PK
+        INTEGER user_id FK
+        TEXT source_path
+        TEXT target_path
+        TEXT source_format
+        TEXT target_format
+        TEXT conversion_type
+        TEXT quality
+        TEXT settings
+        INTEGER priority
+        TEXT status
+        DATETIME created_at
+        DATETIME started_at
+        DATETIME completed_at
+        DATETIME scheduled_for
+        INTEGER duration
+        TEXT error_message
+    }
+
+    subtitle_tracks {
+        INTEGER id PK
+        INTEGER media_item_id FK
+        TEXT language
+        TEXT language_code
+        TEXT source
+        TEXT format
+        TEXT path
+        TEXT content
+        BOOLEAN is_default
+        BOOLEAN is_forced
+        TEXT encoding
+        REAL sync_offset
+        BOOLEAN verified_sync
+        DATETIME created_at
+        DATETIME updated_at
+    }
+
+    %% Core catalog relationships
+    storage_roots ||--o{ files : "contains"
+    files ||--o{ file_metadata : "has metadata"
+    files }o--o| duplicate_groups : "belongs to group"
+    files }o--o| files : "parent_id (directory tree)"
+    storage_roots ||--o{ scan_history : "scan records"
+
+    %% Auth relationships
+    roles ||--o{ users : "assigned role"
+    users ||--o{ user_sessions : "has sessions"
+    users ||--o{ auth_audit_log : "audit trail"
+    users ||--o{ user_permissions : "granted"
+    permissions ||--o{ user_permissions : "assigned to"
+
+    %% Media entity relationships
+    media_types ||--o{ media_items : "categorizes"
+    media_items }o--o| media_items : "parent_id (hierarchy)"
+    media_items ||--o{ media_files : "linked files"
+    files ||--o{ media_files : "referenced by"
+    media_items ||--o{ external_metadata : "provider data"
+    media_items ||--o{ user_metadata : "user ratings"
+    users ||--o{ user_metadata : "rates/tracks"
+    media_items ||--o{ directory_analyses : "analysis results"
+    media_types ||--o{ detection_rules : "detection patterns"
+
+    %% Collection relationships
+    media_collections ||--o{ media_collection_items : "contains"
+    media_items ||--o{ media_collection_items : "member of"
+
+    %% Conversion and subtitle relationships
+    users ||--o{ conversion_jobs : "requests"
+    files ||--o{ subtitle_tracks : "has subtitles"

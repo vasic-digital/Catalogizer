@@ -3,6 +3,7 @@ package handlers
 import (
 	"catalogizer/models"
 	"catalogizer/services"
+	"sync"
 	"time"
 )
 
@@ -209,7 +210,8 @@ func (a *ErrorReportingServiceAdapter) ExportReports(userID int, filters *models
 
 // LogManagementServiceAdapter adapts *services.LogManagementService
 type LogManagementServiceAdapter struct {
-	Inner *services.LogManagementService
+	Inner    *services.LogManagementService
+	streamWg sync.WaitGroup // tracks background StreamLogs relay goroutines
 }
 
 func (a *LogManagementServiceAdapter) CollectLogs(userID int, request *models.LogCollectionRequest) (*models.LogCollection, error) {
@@ -266,7 +268,9 @@ func (a *LogManagementServiceAdapter) StreamLogs(userID int, filters *models.Log
 		return nil, nil, err
 	}
 	ch := make(chan models.LogEntry, 64)
+	a.streamWg.Add(1)
 	go func() {
+		defer a.streamWg.Done()
 		defer close(ch)
 		for p := range ptrCh {
 			if p != nil {
@@ -279,6 +283,12 @@ func (a *LogManagementServiceAdapter) StreamLogs(userID int, filters *models.Log
 		}
 	}()
 	return ch, done, nil
+}
+
+// Close waits for all background stream relay goroutines to finish.
+// Must be called during shutdown to avoid goroutine leaks.
+func (a *LogManagementServiceAdapter) Close() {
+	a.streamWg.Wait()
 }
 
 func (a *LogManagementServiceAdapter) AnalyzeLogs(collectionID int, userID int) (*models.LogAnalysis, error) {

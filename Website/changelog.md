@@ -9,6 +9,43 @@ All notable changes to the Catalogizer project are documented here. This page pr
 
 ---
 
+## v2.2.0 (2026-04-03)
+
+### New Features
+- Dynamic container runtime detection: automatically selects Podman, Docker, or other available runtimes with graceful fallback
+- Android offline mode activation with Room database caching and automatic background sync
+- Android biometric authentication (fingerprint and face unlock) on supported devices
+- Android WebSocket real-time updates: live scan progress, new media notifications, and source status changes
+- Panoptic cloud analytics implementation for aggregated usage metrics and fleet-wide insights
+- 4 new k6 stress test scripts: load, stress, soak, and spike scenarios
+- 10 Mermaid architecture diagrams covering system topology, data flow, media pipeline, and protocol abstraction
+
+### Challenge System
+- 557+ challenges registered (stress, integration, security, documentation)
+- Expanded coverage for all platform targets (API, web, desktop, mobile)
+
+### Video Course
+- 17 modules: 7 user/admin modules plus 10 developer modules
+- Complete restructuring with user course, advanced modules, and developer course tracks
+
+### Security
+- Comprehensive security scanning pipeline: SonarQube, Snyk, Semgrep SAST, Trivy, OWASP Dependency Check
+- govulncheck: 0 vulnerabilities
+- npm audit: 0 vulnerabilities across all components
+- Semgrep custom rules: 0 findings
+
+### Test Coverage
+- Test coverage maximization across all modules (>85% target)
+- Go 44/44 packages pass, Frontend 130/130 files pass
+- HelixQA: 1228+ total test cases including negative and cross-platform scenarios
+
+### Infrastructure
+- Dockerfile updated: Go 1.25, 13 submodule COPYs, proper user/group creation
+- PostgreSQL datetime handling fixes, migration column gap corrections
+- Build 16 verified across all 7 components
+
+---
+
 ## v2.1.0 (2026-03-31)
 
 ### New Features

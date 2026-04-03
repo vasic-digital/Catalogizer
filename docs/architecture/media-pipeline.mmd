@@ -1,0 +1,85 @@
+%% Media Detection and Entity Pipeline
+%% From storage root scan to entity hierarchy creation
+
+flowchart TD
+    START["Storage Root<br/>(SMB / FTP / NFS / WebDAV / Local)"]
+    SCAN["UniversalScanner<br/>filesystem/interface.go UnifiedClient"]
+    DETECT["File Detector<br/>internal/media/detector/file_detector.go"]
+    CLASSIFY["Type Classifier<br/>internal/media/detector/type_classifier.go"]
+    ANALYZE["Media Analyzer<br/>internal/media/analyzer/"]
+    PARSE["Filename Parser<br/>analyzer/filename_parser.go"]
+    TITLEPARSE["Title Parser<br/>internal/services/title_parser.go"]
+
+    subgraph Providers["External Metadata Providers"]
+        TMDB["TMDB Provider<br/>Movies / TV"]
+        OMDB["OMDB Provider<br/>Movies / TV"]
+        MUSICBRAINZ["MusicBrainz<br/>Music"]
+        OPENLIB["OpenLibrary<br/>Books"]
+        IMDB["IMDB Provider<br/>Movies / TV"]
+    end
+
+    CACHE["Redis Cache Layer"]
+    AGG["AggregationService<br/>internal/services/aggregation_service.go"]
+
+    subgraph EntityCreation["Entity Creation"]
+        MEDIAITEM["MediaItem<br/>media_items table"]
+        MEDIAFILE["MediaFile Linking<br/>media_files junction"]
+        DEDUP["Duplicate Detection<br/>(same title + type + year)"]
+    end
+
+    subgraph Hierarchy["Entity Hierarchy (parent_id self-ref)"]
+        direction TB
+        TVSHOW["TV Show<br/>media_type: tv_show"]
+        SEASON["TV Season<br/>media_type: tv_season<br/>parent_id -> show"]
+        EPISODE["TV Episode<br/>media_type: tv_episode<br/>parent_id -> season"]
+
+        ARTIST["Music Artist<br/>media_type: music_artist"]
+        ALBUM["Music Album<br/>media_type: music_album<br/>parent_id -> artist"]
+        SONG["Song<br/>media_type: song<br/>parent_id -> album"]
+    end
+
+    EVENTBUS["EventBus<br/>internal/media/realtime/event_bus.go"]
+    WS["WebSocket Handler<br/>Push to connected clients"]
+    ENTITYAPI["Entity API<br/>/api/v1/entities<br/>handlers/media_entity_handler.go"]
+
+    START -->|"ListDirectory()"| SCAN
+    SCAN -->|"Post-scan hook"| DETECT
+    DETECT -->|"Extension + size filter<br/>(.mp4, .mkv, .mp3, .flac...)"| CLASSIFY
+    CLASSIFY -->|"Pattern matching<br/>S01E01, year, album path"| ANALYZE
+    ANALYZE -->|"Extract metadata"| PARSE
+    PARSE -->|"MovieInfo / TVInfo / MusicInfo"| TITLEPARSE
+
+    TITLEPARSE -->|"Movie regex"| TMDB
+    TITLEPARSE -->|"Movie regex"| OMDB
+    TITLEPARSE -->|"TV regex"| IMDB
+    TITLEPARSE -->|"Music regex"| MUSICBRAINZ
+    TITLEPARSE -->|"Book regex"| OPENLIB
+
+    TMDB --> CACHE
+    OMDB --> CACHE
+    IMDB --> CACHE
+    MUSICBRAINZ --> CACHE
+    OPENLIB --> CACHE
+
+    CACHE -->|"AggregateAfterScan()"| AGG
+    AGG --> MEDIAITEM
+    AGG --> MEDIAFILE
+    AGG --> DEDUP
+
+    MEDIAITEM --> TVSHOW
+    TVSHOW --> SEASON
+    SEASON --> EPISODE
+
+    MEDIAITEM --> ARTIST
+    ARTIST --> ALBUM
+    ALBUM --> SONG
+
+    AGG -->|"Publish event"| EVENTBUS
+    EVENTBUS --> WS
+    AGG --> ENTITYAPI
+
+    style START fill:#fff3e0,stroke:#e65100,stroke-width:2px
+    style AGG fill:#e3f2fd,stroke:#1565c0,stroke-width:2px
+    style Hierarchy fill:#e8f5e9,stroke:#2e7d32,stroke-width:2px
+    style Providers fill:#f3e5f5,stroke:#6a1b9a,stroke-width:2px
+    style EntityCreation fill:#fce4ec,stroke:#c62828,stroke-width:2px

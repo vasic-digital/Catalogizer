@@ -127,8 +127,7 @@ export const PlaylistManager: React.FC<PlaylistManagerProps> = ({
           }
           break;
       }
-    } catch (error) {
-      console.error(`Failed to ${action} playlist:`, error);
+    } catch {
       toast.error(`Failed to ${action} playlist`);
     } finally {
       setShowDropdown(null);

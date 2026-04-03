@@ -3,7 +3,7 @@ package automation
 import (
 	"bytes"
 	"encoding/json"
-	"io/ioutil"
+	"io"
 	"net/http"
 	"os"
 	"path/filepath"
@@ -36,7 +36,7 @@ func TestStorageOperationsFullFlow(t *testing.T) {
 
 		assert.Equal(t, http.StatusOK, resp.StatusCode)
 
-		body, err := ioutil.ReadAll(resp.Body)
+		body, err := io.ReadAll(resp.Body)
 		require.NoError(t, err)
 
 		var result map[string]interface{}
@@ -57,7 +57,7 @@ func TestStorageOperationsFullFlow(t *testing.T) {
 
 		assert.Equal(t, http.StatusOK, resp.StatusCode)
 
-		body, err := ioutil.ReadAll(resp.Body)
+		body, err := io.ReadAll(resp.Body)
 		require.NoError(t, err)
 
 		var result map[string]interface{}
@@ -90,7 +90,7 @@ func TestStorageOperationsFullFlow(t *testing.T) {
 
 		assert.Equal(t, http.StatusOK, resp.StatusCode)
 
-		body, err := ioutil.ReadAll(resp.Body)
+		body, err := io.ReadAll(resp.Body)
 		require.NoError(t, err)
 
 		var result map[string]interface{}
@@ -130,13 +130,13 @@ func TestFileSystemServiceIntegration(t *testing.T) {
 	}
 
 	// Create a temporary directory for testing
-	tempDir, err := ioutil.TempDir("", "fs_service_test")
+	tempDir, err := os.MkdirTemp("", "fs_service_test")
 	require.NoError(t, err)
 	defer os.RemoveAll(tempDir)
 
 	// Create test file
 	testFile := filepath.Join(tempDir, "test.txt")
-	err = ioutil.WriteFile(testFile, []byte("test content"), 0644)
+	err = os.WriteFile(testFile, []byte("test content"), 0644)
 	require.NoError(t, err)
 
 	t.Run("Local Filesystem Operations", func(t *testing.T) {
@@ -145,7 +145,7 @@ func TestFileSystemServiceIntegration(t *testing.T) {
 		assert.NoError(t, err)
 
 		// Test reading directory
-		files, err := ioutil.ReadDir(tempDir)
+		files, err := os.ReadDir(tempDir)
 		require.NoError(t, err)
 		assert.Len(t, files, 1)
 		assert.Equal(t, "test.txt", files[0].Name())

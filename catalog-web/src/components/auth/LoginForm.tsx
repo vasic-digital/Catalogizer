@@ -40,7 +40,8 @@ export const LoginForm: React.FC = () => {
       })
       navigate('/dashboard')
     } catch (error) {
-      console.error('Login failed:', error)
+      // Error is handled by the auth context which sets error state for UI display
+      void error;
     } finally {
       setIsLoading(false)
     }

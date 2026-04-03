@@ -24,7 +24,7 @@ curl http://localhost:8080/health
 ```json
 {
   "status": "ok",
-  "version": "1.0.0",
+  "version": "2.2.0",
   "uptime": "48h32m15s"
 }
 ```

@@ -171,26 +171,36 @@ If you discover a security vulnerability, do not report it publicly. Instead:
 
 ## Video Course
 
-For structured learning, the Catalogizer video course covers fourteen modules:
+For structured learning, the Catalogizer video course covers 17 modules across two tracks:
+
+**User and Admin Track (7 Modules)**
 
 | Module | Topic | Duration |
 |--------|-------|----------|
-| Module 1 | Installation and Setup | ~45 minutes |
-| Module 2 | Getting Started | ~75 minutes |
-| Module 3 | Media Management | ~75 minutes |
-| Module 4 | Multi-Platform | ~55 minutes |
-| Module 5 | Administration | ~65 minutes |
-| Module 6 | Developer Guide | ~70 minutes |
-| Module 7 | Advanced Architecture | ~60 minutes |
-| Module 8 | Security Deep Dive | ~55 minutes |
-| Module 9 | Search and Sync | ~50 minutes |
-| Module 10 | Advanced Testing | ~60 minutes |
-| Module 11 | Module Development | ~65 minutes |
-| Module 12 | Deployment and Operations | ~60 minutes |
-| Module 13 | Search, Browse and Cloud Sync | ~55 minutes |
-| Module 14 | Challenge System Deep Dive | ~60 minutes |
+| 1 | Introduction & Installation | ~45 minutes |
+| 2 | Getting Started | ~75 minutes |
+| 3 | Advanced Media Features | ~75 minutes |
+| 4 | Multi-Platform Experience | ~55 minutes |
+| 5 | Administration | ~65 minutes |
+| 6 | Testing & Quality Assurance | ~60 minutes |
+| 7 | Deployment & Production | ~55 minutes |
 
-Course materials including scripts, slide outlines, and exercises are available in the `docs/courses/` directory.
+**Developer Track (10 Modules)**
+
+| Module | Topic | Duration |
+|--------|-------|----------|
+| 1 | Introduction and Architecture | ~45 minutes |
+| 2 | Backend Development | ~60 minutes |
+| 3 | Authentication and Authorization | ~45 minutes |
+| 4 | Media Detection and Processing | ~75 minutes |
+| 5 | Frontend Development | ~60 minutes |
+| 6 | Real-Time Features and Protocols | ~45 minutes |
+| 7 | HTTP/3, Performance, and Stress Testing | ~45 minutes |
+| 8 | Desktop and Mobile Apps | ~60 minutes |
+| 9 | Module Architecture and Decoupling | ~60 minutes |
+| 10 | Security Scanning and Monitoring | ~45 minutes |
+
+**Total**: ~16 hours. Course materials including scripts, slide outlines, and exercises are available in the `docs/courses/` directory.
 
 ---
 

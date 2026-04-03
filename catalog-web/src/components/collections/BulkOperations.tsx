@@ -133,7 +133,8 @@ export const BulkOperations: React.FC<BulkOperationsProps> = ({
       setShowConfirmation(false)
       onClose()
     } catch (error) {
-      console.error('Bulk action failed:', error)
+      // Bulk action failure — handled by caller via onOperation
+      void error;
     } finally {
       setIsActionInProgress(false)
     }

@@ -1,0 +1,93 @@
+%% Challenge System Architecture
+%% Registration, execution, progress tracking, and reporting
+
+flowchart TD
+    subgraph Registration["Challenge Registration<br/>challenges/register.go"]
+        REG_ALL["RegisterAll()"]
+        REG_API["RegisterUserFlowAPIChallenges()<br/>49 challenges"]
+        REG_WEB["RegisterUserFlowWebChallenges()<br/>59 challenges"]
+        REG_DESK["RegisterUserFlowDesktopChallenges()<br/>28 challenges"]
+        REG_MOBILE["RegisterUserFlowMobileChallenges()<br/>38 challenges"]
+        REG_MOD["Module Verification<br/>MOD-001 to MOD-015"]
+        REG_CORE["Core Challenges<br/>CH-001 to CH-050"]
+    end
+
+    subgraph ChallengeService["ChallengeService<br/>handlers/challenge.go"]
+        API_LIST["GET /api/v1/challenges<br/>List all challenges"]
+        API_RUN["POST /api/v1/challenges/:id/run<br/>Run single challenge"]
+        API_RUNALL["POST /api/v1/challenges/run-all<br/>Run all (blocking)"]
+        API_STATUS["GET /api/v1/challenges/:id/status<br/>Get status + progress"]
+        API_RESULTS["GET /api/v1/challenges/results<br/>Get all results"]
+    end
+
+    subgraph Runner["Challenge Runner<br/>Challenges/ submodule"]
+        direction TB
+        QUEUE["Sequential Queue<br/>(one at a time)"]
+        EXEC["Execute()<br/>BaseChallenge embedding"]
+        PROGRESS["ProgressReporter<br/>(5s poll intervals)"]
+        LIVENESS["Liveness Detection<br/>(5-min stale threshold)"]
+        TIMEOUT["Timeout Handler<br/>(default 5min per challenge)"]
+    end
+
+    subgraph Statuses["Challenge Status"]
+        PENDING["pending"]
+        RUNNING["running"]
+        PASSED["passed"]
+        FAILED["failed"]
+        STUCK["stuck<br/>(no progress for 5min)"]
+        TIMEDOUT["timed_out"]
+    end
+
+    subgraph Results["Result Collection"]
+        RESULT_OBJ["ChallengeResult<br/>{id, name, status, duration,<br/>assertions, errors}"]
+        ASSERTIONS["Assertions<br/>{passed, failed, total, details}"]
+        REPORT["Report Generation<br/>challenges/config/"]
+    end
+
+    subgraph Banks["Challenge Bank<br/>challenges/config/"]
+        CONFIG_JSON["config.json<br/>write_timeout: 900"]
+        BANK_DEFS["Challenge Definitions<br/>(JSON bank files)"]
+        BANK_LOADER["JSON Bank Loader"]
+    end
+
+    REG_ALL --> REG_API
+    REG_ALL --> REG_WEB
+    REG_ALL --> REG_DESK
+    REG_ALL --> REG_MOBILE
+    REG_ALL --> REG_MOD
+    REG_ALL --> REG_CORE
+
+    API_LIST --> REG_ALL
+    API_RUN --> QUEUE
+    API_RUNALL -->|"Synchronous / blocking<br/>No other challenge runs"| QUEUE
+
+    QUEUE -->|"One at a time"| EXEC
+    EXEC --> PROGRESS
+    PROGRESS -->|"Report every 5s"| API_STATUS
+    EXEC --> LIVENESS
+    LIVENESS -->|"No progress 5min"| STUCK
+    EXEC --> TIMEOUT
+    TIMEOUT -->|"Exceeded limit"| TIMEDOUT
+
+    EXEC -->|"Success"| PASSED
+    EXEC -->|"Assertion failure"| FAILED
+    EXEC -->|"Runtime error"| FAILED
+
+    PASSED --> RESULT_OBJ
+    FAILED --> RESULT_OBJ
+    STUCK --> RESULT_OBJ
+    TIMEDOUT --> RESULT_OBJ
+
+    RESULT_OBJ --> ASSERTIONS
+    ASSERTIONS --> REPORT
+    RESULT_OBJ --> API_RESULTS
+
+    BANK_DEFS --> BANK_LOADER
+    BANK_LOADER --> REG_ALL
+    CONFIG_JSON --> Runner
+
+    style Registration fill:#e3f2fd,stroke:#1565c0,stroke-width:2px
+    style Runner fill:#fff3e0,stroke:#e65100,stroke-width:2px
+    style Results fill:#e8f5e9,stroke:#2e7d32,stroke-width:2px
+    style Banks fill:#f3e5f5,stroke:#6a1b9a,stroke-width:1px
+    style Statuses fill:#fce4ec,stroke:#c62828,stroke-width:1px

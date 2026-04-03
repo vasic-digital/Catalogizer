@@ -28,12 +28,12 @@ The dashboard refreshes automatically via WebSocket when scans complete or new m
 
 The sidebar provides access to all major sections:
 
-- **Dashboard** -- Overview and analytics
-- **Browse** -- Media browser with filters
+- **Dashboard** -- Overview, analytics, and Panoptic cloud analytics
+- **Browse** -- Media browser with filters and entity hierarchy
 - **Search** -- Full-text search across all metadata
-- **Collections** -- Organized groups of media
+- **Collections** -- Organized groups of media (Manual, Smart, Dynamic)
 - **Playlists** -- Ordered sequences for playback
-- **Favorites** -- Bookmarked items
+- **Favorites** -- Bookmarked items with JSON/CSV export
 - **Settings** -- Storage sources, user preferences, and system configuration
 
 On mobile viewports, the sidebar collapses into a hamburger menu.

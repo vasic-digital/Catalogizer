@@ -188,4 +188,54 @@ class HomeViewModelTest {
         assertEquals(emptyList<MediaItem>(), viewModel.favoriteMedia.value)
         assertFalse(viewModel.isLoading.value)
     }
+
+    @Test
+    fun `loadHomeData populates favorite media on success`() = runTest {
+        // Given
+        val favorites = listOf(
+            createMediaItem(3, "Popular Movie 1"),
+            createMediaItem(4, "Popular Movie 2")
+        )
+        coEvery { mockMediaRepository.getRecentMedia(20) } returns ApiResult.success(emptyList())
+        coEvery { mockMediaRepository.getPopularMedia(20) } returns ApiResult.success(favorites)
+
+        // When
+        viewModel.loadHomeData()
+        advanceUntilIdle()
+
+        // Then
+        assertEquals(2, viewModel.favoriteMedia.value.size)
+        assertFalse(viewModel.isLoading.value)
+    }
+
+    @Test
+    fun `loadHomeData handles empty results`() = runTest {
+        // Given
+        coEvery { mockMediaRepository.getRecentMedia(20) } returns ApiResult.success(emptyList())
+        coEvery { mockMediaRepository.getPopularMedia(20) } returns ApiResult.success(emptyList())
+
+        // When
+        viewModel.loadHomeData()
+        advanceUntilIdle()
+
+        // Then
+        assertTrue(viewModel.recentMedia.value.isEmpty())
+        assertTrue(viewModel.favoriteMedia.value.isEmpty())
+        assertFalse(viewModel.isLoading.value)
+    }
+
+    @Test
+    fun `loadHomeData handles API error for recent media`() = runTest {
+        // Given - ApiResult.error (not exception)
+        coEvery { mockMediaRepository.getRecentMedia(20) } returns ApiResult.error("Network error")
+        coEvery { mockMediaRepository.getPopularMedia(20) } returns ApiResult.success(emptyList())
+
+        // When
+        viewModel.loadHomeData()
+        advanceUntilIdle()
+
+        // Then - recent media stays empty because API returned error
+        assertTrue(viewModel.recentMedia.value.isEmpty())
+        assertFalse(viewModel.isLoading.value)
+    }
 }

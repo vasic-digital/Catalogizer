@@ -79,16 +79,39 @@ Play video and audio directly from the app.
 
 ---
 
+## Biometric Authentication
+
+Starting with v2.2.0, the Android app supports biometric authentication for secure access.
+
+### Supported Methods
+
+- **Fingerprint**: On devices with a fingerprint sensor
+- **Face unlock**: On devices with compatible face recognition hardware
+
+### Setup
+
+1. Log in with your username and password
+2. Navigate to **Profile** > **Security**
+3. Enable **Biometric Login**
+4. Authenticate with your biometric to confirm setup
+
+Once enabled, subsequent app launches prompt for biometric verification instead of a password. Your credentials remain stored securely in the Android Keystore, protected by the device's biometric subsystem.
+
+If biometric verification fails three times, the app falls back to password authentication.
+
+---
+
 ## Offline Mode
 
-The app caches metadata locally using a Room database so you can browse your catalog without a network connection.
+The app caches metadata locally using a Room database so you can browse your catalog without a network connection. Offline mode was expanded in v2.2.0 for a full browsing experience without connectivity.
 
 ### What Works Offline
 
-- Browsing previously loaded catalog metadata
-- Viewing media details and cover art
-- Searching cached items
+- Browsing the complete catalog (metadata cached locally)
+- Viewing media details and cover art (images cached)
+- Searching cached items with full-text search
 - Viewing collections, playlists, and favorites
+- Navigating entity hierarchies (TV show seasons, music albums)
 
 ### What Requires a Connection
 
@@ -103,8 +126,21 @@ Configure caching behavior in Settings:
 
 - **Wi-Fi only sync**: Only download metadata updates on Wi-Fi
 - **Storage limit**: Set a maximum cache size (cover art and metadata)
-- **Auto-sync interval**: How often the app checks for updates
+- **Auto-sync interval**: How often the app checks for updates (background sync supported)
 - **Clear cache**: Remove all cached data and re-sync
+
+---
+
+## Real-Time Updates (WebSocket)
+
+Starting with v2.2.0, the Android app maintains a WebSocket connection to the server for live updates.
+
+- **Scan progress**: Real-time progress bar and file count during active scans
+- **New media notifications**: Instant notification when new items are detected
+- **Source status changes**: Immediate feedback when a storage source goes offline or recovers
+- **Multi-device sync**: Changes made on other devices (web, desktop) appear in the app in real time
+
+The WebSocket connection is established after login and reconnects automatically if the connection drops. A status indicator in the app shows connection health.
 
 ---
 

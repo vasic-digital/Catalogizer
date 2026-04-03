@@ -29,7 +29,7 @@ interface CatalogizerApi {
     suspend fun getEntityById(@Path("id") id: Long): Response<MediaItem>
 
     @GET("api/v1/entities/{id}/stream")
-    suspend fun getEntityStream(@Path("id") id: Long): Response<com.google.gson.JsonObject>
+    suspend fun getEntityStream(@Path("id") id: Long): Response<kotlinx.serialization.json.JsonObject>
 
     @GET("api/v1/media/{id}")
     suspend fun getMediaById(@Path("id") id: Long): Response<MediaItem>
@@ -107,10 +107,11 @@ interface CatalogizerApi {
     suspend fun getSubtitleLanguages(): Response<Map<String, Any>>
 }
 
+@kotlinx.serialization.Serializable
 data class EntityStatsResponse(
-    @com.google.gson.annotations.SerializedName("total_entities")
+    @kotlinx.serialization.SerialName("total_entities")
     val totalEntities: Int = 0,
-    @com.google.gson.annotations.SerializedName("by_type")
+    @kotlinx.serialization.SerialName("by_type")
     val byType: Map<String, Int> = emptyMap()
 )
 
@@ -123,6 +124,7 @@ data class LoginUser(
     val display_name: String? = null
 )
 
+@kotlinx.serialization.Serializable
 data class LoginResponse(
     val user: LoginUser,
     val session_token: String,

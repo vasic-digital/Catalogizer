@@ -1,0 +1,69 @@
+%% API Request Flow
+%% Sequence diagram: HTTP Request through the full middleware and service stack
+
+sequenceDiagram
+    autonumber
+    participant Client
+    participant Nginx as Nginx<br/>Reverse Proxy
+    participant Gin as Gin Router<br/>/api/v1/*
+    participant CORS as CORS<br/>Middleware
+    participant Metrics as Prometheus<br/>Metrics
+    participant Logger as Request Logger<br/>(Zap)
+    participant ErrH as Error Handler
+    participant ReqID as Request ID
+    participant Input as Input<br/>Validation
+    participant JWT as JWT<br/>RequireAuth
+    participant RL as Rate Limiter<br/>(100 req/min)
+    participant Handler as Route Handler
+    participant Service as Service Layer
+    participant Repo as Repository
+    participant DB as database.DB<br/>(Dialect Wrapper)
+    participant SQLite as SQLite
+    participant PG as PostgreSQL
+
+    Client->>Nginx: HTTPS Request (HTTP/3 QUIC)
+    Nginx->>Gin: Forward to backend
+    Gin->>CORS: Apply CORS headers
+    CORS->>Metrics: Record request start
+    Metrics->>Logger: Log request (method, path, IP)
+    Logger->>ErrH: Wrap with recovery
+    ErrH->>ReqID: Generate X-Request-ID
+    ReqID->>Input: Sanitize request body
+
+    Input->>JWT: Extract Bearer token
+    JWT->>JWT: Parse JWT (HS256)<br/>Validate signature + expiry
+    JWT->>JWT: Set context: user_id, username
+
+    alt Token Invalid or Expired
+        JWT-->>Client: 401 Unauthorized
+    end
+
+    JWT->>RL: Check per-user rate limit<br/>(sliding window)
+
+    alt Rate Limit Exceeded
+        RL-->>Client: 429 Too Many Requests
+    end
+
+    RL->>Handler: Dispatch to handler
+    Handler->>Service: Business logic call
+    Service->>Repo: Data access call
+
+    Repo->>DB: SQL query (dialect-agnostic)
+    DB->>DB: RewritePlaceholders()<br/>RewriteInsertOrIgnore()<br/>BooleanLiterals()
+
+    alt SQLite (Development)
+        DB->>SQLite: Execute native SQL
+        SQLite-->>DB: Result rows
+    end
+
+    alt PostgreSQL (Production)
+        DB->>PG: Execute rewritten SQL<br/>(? to $1,$2,...)
+        PG-->>DB: Result rows
+    end
+
+    DB-->>Repo: Rows / error
+    Repo-->>Service: Domain objects
+    Service-->>Handler: Response data
+    Handler-->>Client: JSON response<br/>(Brotli compressed)
+
+    Note over Metrics: Record response time,<br/>status code, path

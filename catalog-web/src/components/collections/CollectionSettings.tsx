@@ -155,7 +155,8 @@ export const CollectionSettings: React.FC<CollectionSettingsProps> = ({
         const parsed = JSON.parse(savedPrefs)
         setPreferences({ ...DEFAULT_PREFERENCES, ...parsed })
       } catch (error) {
-        console.error('Failed to load preferences:', error)
+        // JSON parse failure — use defaults (already set)
+        void error;
       }
     }
   }, [collection])
@@ -179,7 +180,8 @@ export const CollectionSettings: React.FC<CollectionSettingsProps> = ({
 
       setHasChanges(false)
     } catch (error) {
-      console.error('Failed to save preferences:', error)
+      // Save failure — UI remains in unsaved state via hasChanges flag
+      void error;
     } finally {
       setIsSaving(false)
     }

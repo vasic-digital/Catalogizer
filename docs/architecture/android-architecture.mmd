@@ -1,0 +1,172 @@
+%% Android Application Architecture (catalogizer-android)
+%% MVVM with manual DI, Room, Retrofit, Compose
+
+classDiagram
+    class CatalogizerApplication {
+        +dependencyContainer: DependencyContainer
+        +workManagerConfiguration: Configuration
+    }
+
+    class DependencyContainer {
+        -context: Context
+        -database: CatalogizerDatabase
+        -api: CatalogizerApi
+        -dataStore: DataStore
+        +authRepository: AuthRepository
+        +mediaRepository: MediaRepository
+        +offlineRepository: OfflineRepository
+        +createAuthViewModel() AuthViewModel
+        +createHomeViewModel() HomeViewModel
+        +createSearchViewModel() SearchViewModel
+        +getInstance(context) DependencyContainer
+    }
+
+    class CatalogizerApi {
+        +login(LoginRequest) Response~LoginResponse~
+        +searchMedia(query, type, limit, offset) Response~MediaSearchResponse~
+        +getMediaById(id) Response~MediaItem~
+        +getRecentMedia(limit) Response~List~MediaItem~~
+        +updateWatchProgress(id, data) Response~Unit~
+        +addToFavorites(mediaId) Response~Unit~
+        +removeFromFavorites(mediaId) Response~Unit~
+    }
+
+    class CatalogizerDatabase {
+        +mediaDao() MediaDao
+        +searchHistoryDao() SearchHistoryDao
+        +downloadDao() DownloadDao
+        +syncOperationDao() SyncOperationDao
+        +watchProgressDao() WatchProgressDao
+        +favoriteDao() FavoriteDao
+        +ALL_MIGRATIONS: Array~Migration~
+    }
+
+    class AuthRepository {
+        -api: CatalogizerApi
+        -dataStore: DataStore
+        +isAuthenticated: Flow~Boolean~
+        +login(username, password) ApiResult~LoginResponse~
+        +logout() ApiResult~Unit~
+        +refreshToken() ApiResult~TokenResponse~
+    }
+
+    class MediaRepository {
+        -api: CatalogizerApi
+        -mediaDao: MediaDao
+        +getRecentMedia(limit) ApiResult~List~MediaItem~~
+        +searchMedia(query) ApiResult~List~MediaItem~~
+        +toggleFavorite(mediaId) ApiResult~Unit~
+        +getMediaPaging(request) Flow~PagingData~
+    }
+
+    class OfflineRepository {
+        -syncOperationDao: SyncOperationDao
+        -mediaDao: MediaDao
+        +queueOperation(operation) Unit
+        +getPendingOperations() List~SyncOperation~
+        +getOfflineMedia(limit) List~MediaItem~
+    }
+
+    class AuthViewModel {
+        -authRepository: AuthRepository
+        +authState: StateFlow~AuthState~
+        +isLoading: StateFlow~Boolean~
+        +error: StateFlow~String?~
+        +login(username, password) Unit
+        +logout() Unit
+    }
+
+    class HomeViewModel {
+        -mediaRepository: MediaRepository
+        +recentMedia: StateFlow~List~MediaItem~~
+        +isLoading: StateFlow~Boolean~
+        +error: StateFlow~String?~
+        +loadHomeData() Unit
+    }
+
+    class SearchViewModel {
+        -mediaRepository: MediaRepository
+        +searchQuery: StateFlow~String~
+        +searchResults: StateFlow~List~MediaItem~~
+        +isLoading: StateFlow~Boolean~
+        +search(query) Unit
+    }
+
+    class MainActivity {
+        +onCreate() Unit
+    }
+
+    class CatalogizerNavigation {
+        +LoginScreen
+        +HomeScreen
+        +SearchScreen
+        +SettingsScreen
+    }
+
+    class SyncManager {
+        -syncOperationDao: SyncOperationDao
+        -api: CatalogizerApi
+        +schedulePeriodic() Unit
+        +syncNow() Unit
+    }
+
+    class SyncWorker {
+        +doWork() Result
+    }
+
+    class ApiResult~T~ {
+        +data: T?
+        +error: String?
+        +isSuccess: Boolean
+        +success(data) ApiResult
+        +error(msg) ApiResult
+    }
+
+    class WebSocketEvent {
+        <<sealed>>
+    }
+    class MediaUpdate {
+        +action: String
+        +mediaId: Long
+        +media: MediaItem?
+    }
+    class SystemUpdate {
+        +action: String
+        +component: String
+        +status: String
+    }
+    class AnalysisComplete {
+        +analysisId: String
+        +itemsProcessed: Int
+    }
+
+    CatalogizerApplication --> DependencyContainer : creates
+    DependencyContainer --> CatalogizerApi : lazy init
+    DependencyContainer --> CatalogizerDatabase : lazy init
+    DependencyContainer --> AuthRepository : lazy init
+    DependencyContainer --> MediaRepository : lazy init
+    DependencyContainer --> OfflineRepository : lazy init
+    DependencyContainer ..> AuthViewModel : factory
+    DependencyContainer ..> HomeViewModel : factory
+    DependencyContainer ..> SearchViewModel : factory
+
+    AuthRepository --> CatalogizerApi : remote calls
+    MediaRepository --> CatalogizerApi : remote calls
+    MediaRepository --> CatalogizerDatabase : local cache
+    OfflineRepository --> CatalogizerDatabase : offline data
+
+    AuthViewModel --> AuthRepository : suspend calls
+    HomeViewModel --> MediaRepository : suspend calls
+    SearchViewModel --> MediaRepository : suspend calls
+
+    MainActivity --> CatalogizerNavigation : hosts
+    CatalogizerNavigation --> AuthViewModel : observes StateFlow
+    CatalogizerNavigation --> HomeViewModel : observes StateFlow
+    CatalogizerNavigation --> SearchViewModel : observes StateFlow
+
+    SyncManager --> SyncWorker : schedules via WorkManager
+    SyncWorker --> OfflineRepository : processes queue
+
+    WebSocketEvent <|-- MediaUpdate
+    WebSocketEvent <|-- SystemUpdate
+    WebSocketEvent <|-- AnalysisComplete

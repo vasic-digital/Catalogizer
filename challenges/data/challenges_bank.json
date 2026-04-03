@@ -1,6 +1,3472 @@
 {
-  "version": "1.0.0",
+  "version": "2.2.0",
   "name": "Catalogizer Challenges",
   "description": "Challenge definitions for validating the Catalogizer media collection management system",
-  "challenges": []
+  "generated": "2026-04-03",
+  "categories": {
+    "infrastructure": "Database, configuration, and system connectivity",
+    "storage": "SMB, NFS, FTP, WebDAV, and local filesystem operations",
+    "scanning": "Media scanning and detection pipeline",
+    "entity": "Media entity CRUD, hierarchy, and metadata",
+    "api": "API endpoint validation and HTTP operations",
+    "security": "Authentication, authorization, and security hardening",
+    "performance": "Response time, throughput, and resource usage",
+    "module": "Go submodule verification",
+    "userflow-api": "User flow automation via HTTP API",
+    "userflow-web": "User flow automation via web browser",
+    "userflow-desktop": "User flow automation for desktop apps",
+    "userflow-mobile": "User flow automation for mobile apps",
+    "stress": "Stress and load testing validation",
+    "integration": "End-to-end integration validation",
+    "documentation": "Documentation completeness verification",
+    "coverage": "Test coverage gates and code quality",
+    "monitoring": "Observability, metrics, and dashboards",
+    "concurrency": "Concurrency safety and resource bounding"
+  },
+  "challenges": [
+    {
+      "id": "CH-001",
+      "name": "SMB Connectivity",
+      "category": "storage",
+      "severity": "critical",
+      "description": "Validates SMB protocol connectivity to configured storage endpoints"
+    },
+    {
+      "id": "CH-002",
+      "name": "Directory Discovery",
+      "category": "storage",
+      "severity": "critical",
+      "description": "Discovers and validates directories on configured storage endpoints"
+    },
+    {
+      "id": "CH-003",
+      "name": "Music Scan",
+      "category": "scanning",
+      "severity": "high",
+      "description": "Scans and validates music content detection on storage directories"
+    },
+    {
+      "id": "CH-004",
+      "name": "Series Scan",
+      "category": "scanning",
+      "severity": "high",
+      "description": "Scans and validates TV series content detection on storage directories"
+    },
+    {
+      "id": "CH-005",
+      "name": "Movies Scan",
+      "category": "scanning",
+      "severity": "high",
+      "description": "Scans and validates movie content detection on storage directories"
+    },
+    {
+      "id": "CH-006",
+      "name": "Software Scan",
+      "category": "scanning",
+      "severity": "medium",
+      "description": "Scans and validates software content detection on storage directories"
+    },
+    {
+      "id": "CH-007",
+      "name": "Comics Scan",
+      "category": "scanning",
+      "severity": "medium",
+      "description": "Scans and validates comic book content detection on storage directories"
+    },
+    {
+      "id": "CH-008",
+      "name": "First Catalog Populate",
+      "category": "scanning",
+      "severity": "critical",
+      "description": "Triggers full scan pipeline via API and validates catalog population"
+    },
+    {
+      "id": "CH-009",
+      "name": "Browsing API Health",
+      "category": "api",
+      "severity": "critical",
+      "description": "Validates the API health endpoint returns 200 with version information"
+    },
+    {
+      "id": "CH-010",
+      "name": "Browsing API Catalog",
+      "category": "api",
+      "severity": "critical",
+      "description": "Validates catalog browsing endpoints return data after population"
+    },
+    {
+      "id": "CH-011",
+      "name": "Browsing Web App",
+      "category": "api",
+      "severity": "high",
+      "description": "Validates the web application is accessible and serving content"
+    },
+    {
+      "id": "CH-012",
+      "name": "Asset Serving",
+      "category": "api",
+      "severity": "high",
+      "description": "Validates static asset serving and content delivery"
+    },
+    {
+      "id": "CH-013",
+      "name": "Asset Lazy Loading",
+      "category": "api",
+      "severity": "medium",
+      "description": "Validates the asset lazy loading pipeline for media thumbnails"
+    },
+    {
+      "id": "CH-014",
+      "name": "Database Connectivity",
+      "category": "infrastructure",
+      "severity": "critical",
+      "description": "Validates database connection, pool settings, and basic queries"
+    },
+    {
+      "id": "CH-015",
+      "name": "Database Schema Validation",
+      "category": "infrastructure",
+      "severity": "critical",
+      "description": "Validates database schema including all tables and migration state"
+    },
+    {
+      "id": "CH-016",
+      "name": "Entity Aggregation",
+      "category": "entity",
+      "severity": "high",
+      "description": "Validates post-scan entity aggregation creates media items from files"
+    },
+    {
+      "id": "CH-017",
+      "name": "Entity Browsing",
+      "category": "entity",
+      "severity": "high",
+      "description": "Validates entity browsing API returns structured media entities"
+    },
+    {
+      "id": "CH-018",
+      "name": "Entity Metadata",
+      "category": "entity",
+      "severity": "high",
+      "description": "Validates external metadata enrichment for media entities"
+    },
+    {
+      "id": "CH-019",
+      "name": "Entity Duplicates",
+      "category": "entity",
+      "severity": "medium",
+      "description": "Validates duplicate detection across media entities"
+    },
+    {
+      "id": "CH-020",
+      "name": "Entity Hierarchy",
+      "category": "entity",
+      "severity": "high",
+      "description": "Validates entity parent-child hierarchy (TV shows, music albums)"
+    },
+    {
+      "id": "CH-021",
+      "name": "Collections API",
+      "category": "api",
+      "severity": "high",
+      "description": "Validates collections CRUD endpoints for @vasic-digital/collection-manager"
+    },
+    {
+      "id": "CH-022",
+      "name": "Entity User Metadata",
+      "category": "entity",
+      "severity": "medium",
+      "description": "Validates user metadata endpoints for @vasic-digital/media-browser"
+    },
+    {
+      "id": "CH-023",
+      "name": "Entity Search",
+      "category": "entity",
+      "severity": "high",
+      "description": "Validates entity search API for @vasic-digital/media-browser"
+    },
+    {
+      "id": "CH-024",
+      "name": "Storage Roots API",
+      "category": "api",
+      "severity": "high",
+      "description": "Validates storage roots CRUD for @vasic-digital/catalogizer-api-client"
+    },
+    {
+      "id": "CH-025",
+      "name": "Auth Token Refresh",
+      "category": "security",
+      "severity": "high",
+      "description": "Validates JWT token refresh flow for @vasic-digital/catalogizer-api-client"
+    },
+    {
+      "id": "CH-026",
+      "name": "Stress Test",
+      "category": "stress",
+      "severity": "high",
+      "description": "Validates API stability under concurrent load"
+    },
+    {
+      "id": "CH-027",
+      "name": "Rate Limiting",
+      "category": "security",
+      "severity": "high",
+      "description": "Validates rate limiting middleware blocks excessive requests"
+    },
+    {
+      "id": "CH-028",
+      "name": "Favorites Workflow",
+      "category": "api",
+      "severity": "medium",
+      "description": "Validates end-to-end favorites add/list/remove workflow"
+    },
+    {
+      "id": "CH-029",
+      "name": "Collection Management",
+      "category": "api",
+      "severity": "medium",
+      "description": "Validates collection create/update/delete via PUT and DELETE methods"
+    },
+    {
+      "id": "CH-030",
+      "name": "Media Playback",
+      "category": "api",
+      "severity": "high",
+      "description": "Validates media streaming endpoint returns playable content"
+    },
+    {
+      "id": "CH-031",
+      "name": "Search & Filter",
+      "category": "api",
+      "severity": "high",
+      "description": "Validates media search with query parameters and filters"
+    },
+    {
+      "id": "CH-032",
+      "name": "Cover Art",
+      "category": "api",
+      "severity": "medium",
+      "description": "Validates cover art asset retrieval by entity type and ID"
+    },
+    {
+      "id": "CH-033",
+      "name": "WebSocket Events",
+      "category": "api",
+      "severity": "high",
+      "description": "Validates WebSocket event delivery for real-time updates"
+    },
+    {
+      "id": "CH-034",
+      "name": "Security",
+      "category": "security",
+      "severity": "critical",
+      "description": "Validates security headers, HTTPS enforcement, and auth requirements"
+    },
+    {
+      "id": "CH-035",
+      "name": "Configuration Wizard",
+      "category": "api",
+      "severity": "medium",
+      "description": "Validates configuration wizard progress and settings endpoints"
+    },
+    {
+      "id": "CH-036",
+      "name": "Auth Required",
+      "category": "security",
+      "severity": "critical",
+      "description": "Validates all protected endpoints require authentication"
+    },
+    {
+      "id": "CH-037",
+      "name": "JWT Expiration",
+      "category": "security",
+      "severity": "critical",
+      "description": "Validates JWT token expiration is enforced correctly"
+    },
+    {
+      "id": "CH-038",
+      "name": "Rate Limit Auth",
+      "category": "security",
+      "severity": "high",
+      "description": "Validates rate limiting is active on authentication endpoints"
+    },
+    {
+      "id": "CH-039",
+      "name": "CORS Headers",
+      "category": "security",
+      "severity": "high",
+      "description": "Validates CORS headers are properly configured on API responses"
+    },
+    {
+      "id": "CH-040",
+      "name": "No Sensitive Errors",
+      "category": "security",
+      "severity": "critical",
+      "description": "Validates error responses do not leak sensitive information"
+    },
+    {
+      "id": "CH-041",
+      "name": "Health Latency",
+      "category": "performance",
+      "severity": "high",
+      "description": "Validates health endpoint responds in under 10ms"
+    },
+    {
+      "id": "CH-042",
+      "name": "File Listing Latency",
+      "category": "performance",
+      "severity": "high",
+      "description": "Validates file listing endpoint responds in under 200ms"
+    },
+    {
+      "id": "CH-043",
+      "name": "Entity Search Latency",
+      "category": "performance",
+      "severity": "high",
+      "description": "Validates entity search endpoint responds in under 500ms"
+    },
+    {
+      "id": "CH-044",
+      "name": "WebSocket Latency",
+      "category": "performance",
+      "severity": "medium",
+      "description": "Validates WebSocket connection establishment in under 50ms"
+    },
+    {
+      "id": "CH-045",
+      "name": "API Documentation",
+      "category": "documentation",
+      "severity": "medium",
+      "description": "Validates API documentation is present and complete"
+    },
+    {
+      "id": "CH-046",
+      "name": "Database Documentation",
+      "category": "documentation",
+      "severity": "medium",
+      "description": "Validates database schema documentation is current"
+    },
+    {
+      "id": "CH-047",
+      "name": "Configuration Documentation",
+      "category": "documentation",
+      "severity": "low",
+      "description": "Validates configuration options are documented"
+    },
+    {
+      "id": "CH-048",
+      "name": "DB Error Recovery",
+      "category": "infrastructure",
+      "severity": "high",
+      "description": "Validates database error recovery and connection pool resilience"
+    },
+    {
+      "id": "CH-049",
+      "name": "Scanner Recovery",
+      "category": "infrastructure",
+      "severity": "high",
+      "description": "Validates scanner recovery from connection failures and timeouts"
+    },
+    {
+      "id": "CH-050",
+      "name": "Graceful Shutdown",
+      "category": "infrastructure",
+      "severity": "high",
+      "description": "Validates graceful shutdown closes connections and flushes state"
+    },
+    {
+      "id": "CH-051",
+      "name": "Input Validation",
+      "category": "security",
+      "severity": "high",
+      "description": "Validates input sanitization rejects malformed and dangerous payloads"
+    },
+    {
+      "id": "CH-052",
+      "name": "Pagination",
+      "category": "api",
+      "severity": "medium",
+      "description": "Validates pagination consistency across all list endpoints"
+    },
+    {
+      "id": "CH-053",
+      "name": "Content Types",
+      "category": "api",
+      "severity": "medium",
+      "description": "Validates Content-Type header validation on all endpoints"
+    },
+    {
+      "id": "CH-054",
+      "name": "User Management",
+      "category": "api",
+      "severity": "high",
+      "description": "Validates user management API for CRUD operations"
+    },
+    {
+      "id": "CH-055",
+      "name": "Analytics API",
+      "category": "api",
+      "severity": "medium",
+      "description": "Validates analytics and statistics API endpoints"
+    },
+    {
+      "id": "CH-056",
+      "name": "Entity CRUD",
+      "category": "entity",
+      "severity": "high",
+      "description": "Validates entity create, read, update, and delete operations"
+    },
+    {
+      "id": "CH-057",
+      "name": "Sync API",
+      "category": "api",
+      "severity": "medium",
+      "description": "Validates synchronization API endpoints"
+    },
+    {
+      "id": "CH-058",
+      "name": "Subtitle API",
+      "category": "api",
+      "severity": "medium",
+      "description": "Validates subtitle management API for search, upload, and sync"
+    },
+    {
+      "id": "CH-059",
+      "name": "Recommendation API",
+      "category": "api",
+      "severity": "low",
+      "description": "Validates recommendation engine API endpoints"
+    },
+    {
+      "id": "CH-060",
+      "name": "Localization API",
+      "category": "api",
+      "severity": "low",
+      "description": "Validates localization and i18n API endpoints"
+    },
+    {
+      "id": "CH-061",
+      "name": "Search API Basic Query",
+      "category": "api",
+      "severity": "high",
+      "description": "Validates basic search query returns matching results"
+    },
+    {
+      "id": "CH-062",
+      "name": "Search API Duplicate Detection",
+      "category": "api",
+      "severity": "medium",
+      "description": "Validates search API duplicate detection across entities"
+    },
+    {
+      "id": "CH-063",
+      "name": "Search API Advanced Filters",
+      "category": "api",
+      "severity": "medium",
+      "description": "Validates search API advanced filter parameters"
+    },
+    {
+      "id": "CH-064",
+      "name": "Browse API Storage Roots",
+      "category": "api",
+      "severity": "high",
+      "description": "Validates browse API lists storage roots correctly"
+    },
+    {
+      "id": "CH-065",
+      "name": "Browse API Directory Listing",
+      "category": "api",
+      "severity": "high",
+      "description": "Validates browse API returns directory listings for storage paths"
+    },
+    {
+      "id": "CH-066",
+      "name": "Sync API Endpoint Creation",
+      "category": "api",
+      "severity": "medium",
+      "description": "Validates sync endpoint creation for cloud storage"
+    },
+    {
+      "id": "CH-067",
+      "name": "Sync API Cloud Providers",
+      "category": "api",
+      "severity": "medium",
+      "description": "Validates sync API cloud provider configuration"
+    },
+    {
+      "id": "CH-068",
+      "name": "Sync API User Endpoints",
+      "category": "api",
+      "severity": "medium",
+      "description": "Validates sync API user-specific endpoint management"
+    },
+    {
+      "id": "CH-069",
+      "name": "Security Headers All",
+      "category": "security",
+      "severity": "high",
+      "description": "Validates all security headers are present on responses"
+    },
+    {
+      "id": "CH-070",
+      "name": "CORS Rejects Unauthorized",
+      "category": "security",
+      "severity": "high",
+      "description": "Validates CORS rejects requests from unauthorized origins"
+    },
+    {
+      "id": "CH-071",
+      "name": "Input Validation Rejects Injection",
+      "category": "security",
+      "severity": "critical",
+      "description": "Validates input validation rejects SQL injection and XSS payloads"
+    },
+    {
+      "id": "CH-072",
+      "name": "Rate Limit Auth Endpoints",
+      "category": "security",
+      "severity": "high",
+      "description": "Validates strict rate limiting on login and register endpoints"
+    },
+    {
+      "id": "CH-073",
+      "name": "JWT Token Lifecycle",
+      "category": "security",
+      "severity": "high",
+      "description": "Validates full JWT token lifecycle including refresh and revocation"
+    },
+    {
+      "id": "CH-074",
+      "name": "File Upload Magic Bytes",
+      "category": "security",
+      "severity": "high",
+      "description": "Validates file upload validates magic bytes, not just extensions"
+    },
+    {
+      "id": "CH-075",
+      "name": "Path Traversal Rejection",
+      "category": "security",
+      "severity": "critical",
+      "description": "Validates path traversal attempts are rejected"
+    },
+    {
+      "id": "CH-076",
+      "name": "API Response Latency",
+      "category": "performance",
+      "severity": "high",
+      "description": "Validates API response latency across key endpoints"
+    },
+    {
+      "id": "CH-077",
+      "name": "API Concurrent Requests",
+      "category": "performance",
+      "severity": "high",
+      "description": "Validates API handles concurrent requests without errors"
+    },
+    {
+      "id": "CH-078",
+      "name": "Graceful Degradation",
+      "category": "performance",
+      "severity": "medium",
+      "description": "Validates API degrades gracefully under resource constraints"
+    },
+    {
+      "id": "CH-079",
+      "name": "Memory Stable During Load",
+      "category": "performance",
+      "severity": "high",
+      "description": "Validates memory usage remains stable during sustained load"
+    },
+    {
+      "id": "CH-080",
+      "name": "DB Pool Recovery",
+      "category": "infrastructure",
+      "severity": "high",
+      "description": "Validates database connection pool recovers from exhaustion"
+    },
+    {
+      "id": "CH-081",
+      "name": "WebSocket Reconnection",
+      "category": "api",
+      "severity": "medium",
+      "description": "Validates WebSocket clients can reconnect after disconnection"
+    },
+    {
+      "id": "CH-082",
+      "name": "Lazy Init On First Request",
+      "category": "infrastructure",
+      "severity": "medium",
+      "description": "Validates lazy service initialization triggers on first request"
+    },
+    {
+      "id": "CH-083",
+      "name": "Semaphore Prevents Overload",
+      "category": "concurrency",
+      "severity": "high",
+      "description": "Validates semaphore-based concurrency control prevents resource overload"
+    },
+    {
+      "id": "CH-084",
+      "name": "Prometheus Metrics Endpoint",
+      "category": "monitoring",
+      "severity": "high",
+      "description": "Validates Prometheus metrics endpoint exposes custom metrics"
+    },
+    {
+      "id": "CH-085",
+      "name": "HTTP Request Metrics Increment",
+      "category": "monitoring",
+      "severity": "medium",
+      "description": "Validates HTTP request metrics increment on each request"
+    },
+    {
+      "id": "CH-086",
+      "name": "Runtime Metrics Current",
+      "category": "monitoring",
+      "severity": "medium",
+      "description": "Validates runtime metrics (goroutines, memory) are current"
+    },
+    {
+      "id": "CH-087",
+      "name": "DB Query Duration Tracked",
+      "category": "monitoring",
+      "severity": "medium",
+      "description": "Validates database query duration is tracked in metrics"
+    },
+    {
+      "id": "CH-088",
+      "name": "Grafana Dashboard Renders",
+      "category": "monitoring",
+      "severity": "low",
+      "description": "Validates Grafana dashboard configuration exists and is valid"
+    },
+    {
+      "id": "CH-089",
+      "name": "Scan Semaphore Limits",
+      "category": "performance",
+      "severity": "high",
+      "description": "Validates scan semaphore limits concurrent scan operations"
+    },
+    {
+      "id": "CH-090",
+      "name": "Redis Connection Pooling",
+      "category": "performance",
+      "severity": "medium",
+      "description": "Validates Redis connection pooling is properly configured"
+    },
+    {
+      "id": "CH-091",
+      "name": "HTTP Client Pooled Transport",
+      "category": "performance",
+      "severity": "medium",
+      "description": "Validates HTTP client uses pooled transport with connection reuse"
+    },
+    {
+      "id": "CH-092",
+      "name": "Goroutine Leak Detection",
+      "category": "performance",
+      "severity": "high",
+      "description": "Validates no goroutine leaks after request processing"
+    },
+    {
+      "id": "CH-093",
+      "name": "Health Endpoint Latency",
+      "category": "performance",
+      "severity": "high",
+      "description": "Validates health endpoint responds in under 100ms"
+    },
+    {
+      "id": "CH-094",
+      "name": "OpenLibrary Provider",
+      "category": "api",
+      "severity": "medium",
+      "description": "Validates OpenLibrary metadata provider search functionality"
+    },
+    {
+      "id": "CH-095",
+      "name": "MusicBrainz Provider",
+      "category": "api",
+      "severity": "medium",
+      "description": "Validates MusicBrainz metadata provider search functionality"
+    },
+    {
+      "id": "CH-096",
+      "name": "Provider Graceful Degradation",
+      "category": "api",
+      "severity": "high",
+      "description": "Validates metadata providers degrade gracefully when unavailable"
+    },
+    {
+      "id": "CH-097",
+      "name": "Provider Manager Routing",
+      "category": "api",
+      "severity": "medium",
+      "description": "Validates provider manager routes requests to correct providers"
+    },
+    {
+      "id": "CH-098",
+      "name": "Lazy Service Registry",
+      "category": "infrastructure",
+      "severity": "high",
+      "description": "Validates LazyServiceRegistry initializes services with dependency ordering"
+    },
+    {
+      "id": "CH-100",
+      "name": "Admin System Info",
+      "category": "api",
+      "severity": "high",
+      "description": "Validates admin system info endpoint returns server details"
+    },
+    {
+      "id": "CH-101",
+      "name": "Admin Users List",
+      "category": "api",
+      "severity": "high",
+      "description": "Validates admin user listing endpoint"
+    },
+    {
+      "id": "CH-102",
+      "name": "Admin User Update",
+      "category": "api",
+      "severity": "high",
+      "description": "Validates admin user update operations"
+    },
+    {
+      "id": "CH-103",
+      "name": "Admin Storage Info",
+      "category": "api",
+      "severity": "medium",
+      "description": "Validates admin storage overview endpoint"
+    },
+    {
+      "id": "CH-104",
+      "name": "Admin Backups List",
+      "category": "api",
+      "severity": "medium",
+      "description": "Validates admin backup listing endpoint"
+    },
+    {
+      "id": "CH-105",
+      "name": "Admin Backup Create",
+      "category": "api",
+      "severity": "high",
+      "description": "Validates admin backup creation"
+    },
+    {
+      "id": "CH-106",
+      "name": "Admin Backup Restore",
+      "category": "api",
+      "severity": "high",
+      "description": "Validates admin backup restore functionality"
+    },
+    {
+      "id": "CH-107",
+      "name": "Admin Storage Scan",
+      "category": "api",
+      "severity": "high",
+      "description": "Validates admin-triggered storage scan"
+    },
+    {
+      "id": "CH-108",
+      "name": "Admin Auth Required",
+      "category": "security",
+      "severity": "critical",
+      "description": "Validates admin endpoints require authentication"
+    },
+    {
+      "id": "CH-109",
+      "name": "Admin Non-Admin Rejected",
+      "category": "security",
+      "severity": "critical",
+      "description": "Validates non-admin users are rejected from admin endpoints"
+    },
+    {
+      "id": "CH-110",
+      "name": "Admin System Info Version",
+      "category": "api",
+      "severity": "medium",
+      "description": "Validates admin system info includes version and build metadata"
+    },
+    {
+      "id": "CH-111",
+      "name": "Conversion Jobs List",
+      "category": "api",
+      "severity": "medium",
+      "description": "Validates conversion job listing endpoint"
+    },
+    {
+      "id": "CH-112",
+      "name": "Conversion Job Create",
+      "category": "api",
+      "severity": "medium",
+      "description": "Validates conversion job creation"
+    },
+    {
+      "id": "CH-113",
+      "name": "Conversion Job Cancel",
+      "category": "api",
+      "severity": "medium",
+      "description": "Validates conversion job cancellation"
+    },
+    {
+      "id": "CH-114",
+      "name": "Conversion Job Retry",
+      "category": "api",
+      "severity": "medium",
+      "description": "Validates conversion job retry after failure"
+    },
+    {
+      "id": "CH-115",
+      "name": "Conversion Job Download",
+      "category": "api",
+      "severity": "medium",
+      "description": "Validates converted file download"
+    },
+    {
+      "id": "CH-116",
+      "name": "Conversion Auth Required",
+      "category": "security",
+      "severity": "high",
+      "description": "Validates conversion endpoints require authentication"
+    },
+    {
+      "id": "CH-117",
+      "name": "Conversion Job Status Transition",
+      "category": "api",
+      "severity": "medium",
+      "description": "Validates conversion job status transitions are valid"
+    },
+    {
+      "id": "CH-118",
+      "name": "Conversion Formats List",
+      "category": "api",
+      "severity": "low",
+      "description": "Validates supported conversion formats listing"
+    },
+    {
+      "id": "CH-119",
+      "name": "Conversion Invalid Job ID",
+      "category": "api",
+      "severity": "low",
+      "description": "Validates error handling for invalid conversion job IDs"
+    },
+    {
+      "id": "CH-120",
+      "name": "Conversion Rate Limit",
+      "category": "security",
+      "severity": "medium",
+      "description": "Validates rate limiting on conversion endpoints"
+    },
+    {
+      "id": "CH-121",
+      "name": "Entity List",
+      "category": "entity",
+      "severity": "high",
+      "description": "Validates entity listing endpoint returns paginated results"
+    },
+    {
+      "id": "CH-122",
+      "name": "Entity Detail",
+      "category": "entity",
+      "severity": "high",
+      "description": "Validates entity detail endpoint returns full entity data"
+    },
+    {
+      "id": "CH-123",
+      "name": "Entity Types",
+      "category": "entity",
+      "severity": "high",
+      "description": "Validates all 11 media types are available via entity types endpoint"
+    },
+    {
+      "id": "CH-124",
+      "name": "Entity Stats",
+      "category": "entity",
+      "severity": "medium",
+      "description": "Validates entity statistics endpoint returns counts by type"
+    },
+    {
+      "id": "CH-125",
+      "name": "Entity Search By Title",
+      "category": "entity",
+      "severity": "high",
+      "description": "Validates entity search by title returns matching results"
+    },
+    {
+      "id": "CH-126",
+      "name": "Entity Filter By Type",
+      "category": "entity",
+      "severity": "high",
+      "description": "Validates entity filtering by media type"
+    },
+    {
+      "id": "CH-127",
+      "name": "Entity Hierarchy Correct",
+      "category": "entity",
+      "severity": "high",
+      "description": "Validates entity hierarchy parent-child relationships are correct"
+    },
+    {
+      "id": "CH-128",
+      "name": "Entity Duplicate Detection",
+      "category": "entity",
+      "severity": "medium",
+      "description": "Validates entity duplicate detection by title, type, and year"
+    },
+    {
+      "id": "CH-129",
+      "name": "Entity Pagination",
+      "category": "entity",
+      "severity": "medium",
+      "description": "Validates entity listing pagination with offset and limit"
+    },
+    {
+      "id": "CH-130",
+      "name": "Entity Sorting",
+      "category": "entity",
+      "severity": "medium",
+      "description": "Validates entity listing sorting by various fields"
+    },
+    {
+      "id": "CH-131",
+      "name": "Middleware Security Headers",
+      "category": "security",
+      "severity": "high",
+      "description": "Validates security headers middleware adds required headers"
+    },
+    {
+      "id": "CH-132",
+      "name": "Middleware Request ID",
+      "category": "api",
+      "severity": "medium",
+      "description": "Validates request ID middleware generates unique IDs per request"
+    },
+    {
+      "id": "CH-133",
+      "name": "Middleware Cache Headers Health",
+      "category": "api",
+      "severity": "medium",
+      "description": "Validates cache headers on health endpoint (no-cache)"
+    },
+    {
+      "id": "CH-134",
+      "name": "Middleware Cache Headers Discovery",
+      "category": "api",
+      "severity": "medium",
+      "description": "Validates cache headers on discovery endpoint"
+    },
+    {
+      "id": "CH-135",
+      "name": "Middleware Rate Limiting",
+      "category": "security",
+      "severity": "high",
+      "description": "Validates rate limiting middleware enforces request limits"
+    },
+    {
+      "id": "CH-136",
+      "name": "Middleware Request Timeout",
+      "category": "api",
+      "severity": "medium",
+      "description": "Validates request timeout middleware kills long-running requests"
+    },
+    {
+      "id": "CH-137",
+      "name": "Middleware CORS Headers",
+      "category": "security",
+      "severity": "high",
+      "description": "Validates CORS middleware sets correct headers"
+    },
+    {
+      "id": "CH-138",
+      "name": "Middleware Compression",
+      "category": "performance",
+      "severity": "medium",
+      "description": "Validates Brotli/gzip compression middleware is active"
+    },
+    {
+      "id": "CH-139",
+      "name": "Middleware SQL Injection",
+      "category": "security",
+      "severity": "critical",
+      "description": "Validates SQL injection payloads are blocked by middleware"
+    },
+    {
+      "id": "CH-140",
+      "name": "Middleware XSS",
+      "category": "security",
+      "severity": "critical",
+      "description": "Validates XSS payloads are blocked by middleware"
+    },
+    {
+      "id": "CH-141",
+      "name": "Recent Media API",
+      "category": "api",
+      "severity": "medium",
+      "description": "Validates recently added media API endpoint"
+    },
+    {
+      "id": "CH-142",
+      "name": "Popular Media API",
+      "category": "api",
+      "severity": "medium",
+      "description": "Validates popular media API endpoint"
+    },
+    {
+      "id": "CH-143",
+      "name": "Media By Path API",
+      "category": "api",
+      "severity": "medium",
+      "description": "Validates media lookup by file path"
+    },
+    {
+      "id": "CH-144",
+      "name": "Media Analysis",
+      "category": "api",
+      "severity": "medium",
+      "description": "Validates media analysis pipeline endpoint"
+    },
+    {
+      "id": "CH-145",
+      "name": "Metadata Refresh",
+      "category": "api",
+      "severity": "medium",
+      "description": "Validates metadata refresh trigger for entities"
+    },
+    {
+      "id": "CH-146",
+      "name": "Media Quality",
+      "category": "api",
+      "severity": "medium",
+      "description": "Validates media quality breakdown endpoint"
+    },
+    {
+      "id": "CH-147",
+      "name": "Change Password",
+      "category": "security",
+      "severity": "high",
+      "description": "Validates password change endpoint"
+    },
+    {
+      "id": "CH-148",
+      "name": "Backup Create",
+      "category": "api",
+      "severity": "high",
+      "description": "Validates backup creation endpoint"
+    },
+    {
+      "id": "CH-149",
+      "name": "Backup List",
+      "category": "api",
+      "severity": "medium",
+      "description": "Validates backup listing endpoint"
+    },
+    {
+      "id": "CH-150",
+      "name": "Backup Restore",
+      "category": "api",
+      "severity": "high",
+      "description": "Validates backup restore endpoint"
+    },
+    {
+      "id": "CH-151",
+      "name": "Storage Scan Admin",
+      "category": "api",
+      "severity": "high",
+      "description": "Validates admin-only storage scan trigger"
+    },
+    {
+      "id": "CH-152",
+      "name": "Backup Semaphore",
+      "category": "concurrency",
+      "severity": "high",
+      "description": "Validates backup operations use semaphore for mutual exclusion"
+    },
+    {
+      "id": "CH-153",
+      "name": "Module Registry Init",
+      "category": "infrastructure",
+      "severity": "high",
+      "description": "Validates LazyServiceRegistry initializes all registered modules"
+    },
+    {
+      "id": "CH-154",
+      "name": "Memory Monitor Active",
+      "category": "monitoring",
+      "severity": "medium",
+      "description": "Validates memory monitor is active and reporting metrics"
+    },
+    {
+      "id": "CH-155",
+      "name": "Health Aggregator Active",
+      "category": "monitoring",
+      "severity": "high",
+      "description": "Validates health aggregator collects component health status"
+    },
+    {
+      "id": "CH-156",
+      "name": "Resilience Facade Active",
+      "category": "infrastructure",
+      "severity": "high",
+      "description": "Validates resilience facade (circuit breaker, retry) is active"
+    },
+    {
+      "id": "CH-157",
+      "name": "Guardrail Engine Active",
+      "category": "infrastructure",
+      "severity": "high",
+      "description": "Validates guardrail engine enforces resource limits"
+    },
+    {
+      "id": "CH-158",
+      "name": "Storage Resolver Active",
+      "category": "infrastructure",
+      "severity": "high",
+      "description": "Validates storage resolver maps protocols to filesystem clients"
+    },
+    {
+      "id": "CH-159",
+      "name": "Create Playlist",
+      "category": "api",
+      "severity": "medium",
+      "description": "Validates playlist creation via API"
+    },
+    {
+      "id": "CH-160",
+      "name": "List Playlists",
+      "category": "api",
+      "severity": "medium",
+      "description": "Validates playlist listing endpoint"
+    },
+    {
+      "id": "CH-161",
+      "name": "Get Playlist",
+      "category": "api",
+      "severity": "medium",
+      "description": "Validates playlist detail retrieval by ID"
+    },
+    {
+      "id": "CH-162",
+      "name": "Update Playlist",
+      "category": "api",
+      "severity": "medium",
+      "description": "Validates playlist update operations"
+    },
+    {
+      "id": "CH-163",
+      "name": "Delete Playlist",
+      "category": "api",
+      "severity": "medium",
+      "description": "Validates playlist deletion"
+    },
+    {
+      "id": "CH-164",
+      "name": "Add Playlist Item",
+      "category": "api",
+      "severity": "medium",
+      "description": "Validates adding items to a playlist"
+    },
+    {
+      "id": "CH-165",
+      "name": "Remove Playlist Item",
+      "category": "api",
+      "severity": "medium",
+      "description": "Validates removing items from a playlist"
+    },
+    {
+      "id": "CH-166",
+      "name": "Playlist Ordering",
+      "category": "api",
+      "severity": "medium",
+      "description": "Validates playlist item ordering and reordering"
+    },
+    {
+      "id": "CH-167",
+      "name": "Playlist Access Control",
+      "category": "security",
+      "severity": "high",
+      "description": "Validates playlist access control per user"
+    },
+    {
+      "id": "CH-168",
+      "name": "Public Playlist Access",
+      "category": "api",
+      "severity": "medium",
+      "description": "Validates public playlists are accessible without auth"
+    },
+    {
+      "id": "CH-169",
+      "name": "Playlist Pagination",
+      "category": "api",
+      "severity": "low",
+      "description": "Validates playlist listing pagination"
+    },
+    {
+      "id": "CH-170",
+      "name": "Playlist Search",
+      "category": "api",
+      "severity": "medium",
+      "description": "Validates playlist search functionality"
+    },
+    {
+      "id": "CH-171",
+      "name": "Media Type Detection",
+      "category": "scanning",
+      "severity": "high",
+      "description": "Validates media type detection across all 11 supported types"
+    },
+    {
+      "id": "CH-172",
+      "name": "TV Show Hierarchy",
+      "category": "entity",
+      "severity": "high",
+      "description": "Validates TV show hierarchy: show -> seasons -> episodes"
+    },
+    {
+      "id": "CH-173",
+      "name": "Music Hierarchy",
+      "category": "entity",
+      "severity": "high",
+      "description": "Validates music hierarchy: artist -> albums -> songs"
+    },
+    {
+      "id": "CH-174",
+      "name": "Duplicate Detection",
+      "category": "entity",
+      "severity": "medium",
+      "description": "Validates duplicate detection for entities with same title, type, year"
+    },
+    {
+      "id": "CH-175",
+      "name": "Entity Search API",
+      "category": "entity",
+      "severity": "high",
+      "description": "Validates entity search API with query and filter parameters"
+    },
+    {
+      "id": "CH-176",
+      "name": "Entity Pagination API",
+      "category": "entity",
+      "severity": "medium",
+      "description": "Validates entity pagination with page size and offset"
+    },
+    {
+      "id": "CH-177",
+      "name": "Media Item Create",
+      "category": "entity",
+      "severity": "high",
+      "description": "Validates manual media item creation via API"
+    },
+    {
+      "id": "CH-178",
+      "name": "Media Item Update",
+      "category": "entity",
+      "severity": "high",
+      "description": "Validates media item update operations"
+    },
+    {
+      "id": "CH-179",
+      "name": "Media File Link",
+      "category": "entity",
+      "severity": "high",
+      "description": "Validates linking files to media entities via junction table"
+    },
+    {
+      "id": "CH-180",
+      "name": "External Metadata",
+      "category": "entity",
+      "severity": "medium",
+      "description": "Validates external metadata retrieval and storage"
+    },
+    {
+      "id": "CH-181",
+      "name": "User Metadata API",
+      "category": "entity",
+      "severity": "medium",
+      "description": "Validates user-specific metadata (ratings, notes, tags)"
+    },
+    {
+      "id": "CH-182",
+      "name": "Collection Create API",
+      "category": "api",
+      "severity": "medium",
+      "description": "Validates collection creation via entity system"
+    },
+    {
+      "id": "CH-183",
+      "name": "Collection Items API",
+      "category": "api",
+      "severity": "medium",
+      "description": "Validates collection item management (add/remove)"
+    },
+    {
+      "id": "CH-184",
+      "name": "Collection Search API",
+      "category": "api",
+      "severity": "medium",
+      "description": "Validates collection search by name and description"
+    },
+    {
+      "id": "CH-185",
+      "name": "Directory Analysis",
+      "category": "scanning",
+      "severity": "medium",
+      "description": "Validates directory analysis for content type detection"
+    },
+    {
+      "id": "CH-186",
+      "name": "JWT Validation",
+      "category": "security",
+      "severity": "critical",
+      "description": "Validates JWT token signature verification and claims"
+    },
+    {
+      "id": "CH-187",
+      "name": "Token Refresh Security",
+      "category": "security",
+      "severity": "high",
+      "description": "Validates token refresh security constraints"
+    },
+    {
+      "id": "CH-188",
+      "name": "Role Based Access Security",
+      "category": "security",
+      "severity": "critical",
+      "description": "Validates role-based access control enforcement"
+    },
+    {
+      "id": "CH-189",
+      "name": "Input Validation Security",
+      "category": "security",
+      "severity": "high",
+      "description": "Validates comprehensive input validation and sanitization"
+    },
+    {
+      "id": "CH-190",
+      "name": "SQL Injection Security",
+      "category": "security",
+      "severity": "critical",
+      "description": "Validates SQL injection prevention across all endpoints"
+    },
+    {
+      "id": "CH-191",
+      "name": "Path Traversal Security",
+      "category": "security",
+      "severity": "critical",
+      "description": "Validates path traversal attack prevention"
+    },
+    {
+      "id": "CH-192",
+      "name": "Rate Limiting Security",
+      "category": "security",
+      "severity": "high",
+      "description": "Validates rate limiting across authentication and API endpoints"
+    },
+    {
+      "id": "CH-193",
+      "name": "CORS Headers Security",
+      "category": "security",
+      "severity": "high",
+      "description": "Validates CORS policy restricts cross-origin access"
+    },
+    {
+      "id": "CH-194",
+      "name": "Security Headers Present",
+      "category": "security",
+      "severity": "high",
+      "description": "Validates all security headers present (CSP, X-Frame-Options, etc.)"
+    },
+    {
+      "id": "CH-195",
+      "name": "Password Hashing",
+      "category": "security",
+      "severity": "critical",
+      "description": "Validates passwords are hashed with bcrypt, never stored in plaintext"
+    },
+    {
+      "id": "CH-196",
+      "name": "Session Timeout",
+      "category": "security",
+      "severity": "high",
+      "description": "Validates session timeout enforces re-authentication"
+    },
+    {
+      "id": "CH-197",
+      "name": "Brute Force Protection",
+      "category": "security",
+      "severity": "high",
+      "description": "Validates brute force protection on login endpoints"
+    },
+    {
+      "id": "CH-198",
+      "name": "Content Type Validation",
+      "category": "security",
+      "severity": "medium",
+      "description": "Validates Content-Type header enforcement on POST/PUT endpoints"
+    },
+    {
+      "id": "CH-199",
+      "name": "Max Body Size",
+      "category": "security",
+      "severity": "medium",
+      "description": "Validates maximum request body size is enforced"
+    },
+    {
+      "id": "CH-200",
+      "name": "Error Info Leak",
+      "category": "security",
+      "severity": "high",
+      "description": "Validates error responses do not leak stack traces or internal paths"
+    },
+    {
+      "id": "CH-201",
+      "name": "Health Endpoint Fast",
+      "category": "performance",
+      "severity": "high",
+      "description": "Validates health endpoint responds under latency threshold"
+    },
+    {
+      "id": "CH-202",
+      "name": "Search Latency",
+      "category": "performance",
+      "severity": "high",
+      "description": "Validates search endpoint responds under latency threshold"
+    },
+    {
+      "id": "CH-203",
+      "name": "Browse Latency",
+      "category": "performance",
+      "severity": "high",
+      "description": "Validates browse endpoint responds under latency threshold"
+    },
+    {
+      "id": "CH-204",
+      "name": "Entity Detail Latency",
+      "category": "performance",
+      "severity": "medium",
+      "description": "Validates entity detail endpoint responds under latency threshold"
+    },
+    {
+      "id": "CH-205",
+      "name": "Stats Latency",
+      "category": "performance",
+      "severity": "medium",
+      "description": "Validates stats endpoint responds under latency threshold"
+    },
+    {
+      "id": "CH-206",
+      "name": "Concurrent Reads",
+      "category": "performance",
+      "severity": "high",
+      "description": "Validates system handles concurrent read operations"
+    },
+    {
+      "id": "CH-207",
+      "name": "Concurrent Searches",
+      "category": "performance",
+      "severity": "high",
+      "description": "Validates system handles concurrent search operations"
+    },
+    {
+      "id": "CH-208",
+      "name": "Goroutine Stability",
+      "category": "performance",
+      "severity": "high",
+      "description": "Validates goroutine count remains stable under load"
+    },
+    {
+      "id": "CH-209",
+      "name": "Memory Stability",
+      "category": "performance",
+      "severity": "high",
+      "description": "Validates memory usage remains stable under sustained requests"
+    },
+    {
+      "id": "CH-210",
+      "name": "Connection Pool Health",
+      "category": "performance",
+      "severity": "high",
+      "description": "Validates database connection pool health and utilization"
+    },
+    {
+      "id": "CH-211",
+      "name": "Cache Effectiveness",
+      "category": "performance",
+      "severity": "medium",
+      "description": "Validates cache hit rates on frequently accessed endpoints"
+    },
+    {
+      "id": "CH-212",
+      "name": "Compression Active",
+      "category": "performance",
+      "severity": "medium",
+      "description": "Validates Brotli/gzip compression is active on responses"
+    },
+    {
+      "id": "CH-213",
+      "name": "Metrics Endpoint Performance",
+      "category": "performance",
+      "severity": "low",
+      "description": "Validates metrics endpoint itself responds quickly"
+    },
+    {
+      "id": "CH-214",
+      "name": "Deep Health Check",
+      "category": "performance",
+      "severity": "high",
+      "description": "Validates deep health check covers all subsystems"
+    },
+    {
+      "id": "CH-215",
+      "name": "WebSocket Connect Performance",
+      "category": "performance",
+      "severity": "medium",
+      "description": "Validates WebSocket connection establishment performance"
+    },
+    {
+      "id": "CH-216",
+      "name": "WebSocket Message",
+      "category": "performance",
+      "severity": "medium",
+      "description": "Validates WebSocket message delivery latency"
+    },
+    {
+      "id": "CH-217",
+      "name": "Scan Queueing",
+      "category": "performance",
+      "severity": "medium",
+      "description": "Validates scan job queueing and execution order"
+    },
+    {
+      "id": "CH-218",
+      "name": "Backup Performance",
+      "category": "performance",
+      "severity": "medium",
+      "description": "Validates backup operation performance"
+    },
+    {
+      "id": "CH-219",
+      "name": "Pagination Performance",
+      "category": "performance",
+      "severity": "medium",
+      "description": "Validates pagination does not degrade with large offsets"
+    },
+    {
+      "id": "CH-220",
+      "name": "Filter Performance",
+      "category": "performance",
+      "severity": "medium",
+      "description": "Validates filter operations use indexed queries"
+    },
+    {
+      "id": "CH-221",
+      "name": "Consistent JSON Structure",
+      "category": "integration",
+      "severity": "high",
+      "description": "Validates all API endpoints return consistent JSON structure"
+    },
+    {
+      "id": "CH-222",
+      "name": "Consistent Error Format",
+      "category": "integration",
+      "severity": "high",
+      "description": "Validates all error responses follow consistent format"
+    },
+    {
+      "id": "CH-223",
+      "name": "Consistent Pagination",
+      "category": "integration",
+      "severity": "medium",
+      "description": "Validates pagination format is consistent across endpoints"
+    },
+    {
+      "id": "CH-224",
+      "name": "Consistent Status Codes",
+      "category": "integration",
+      "severity": "high",
+      "description": "Validates HTTP status codes follow REST conventions"
+    },
+    {
+      "id": "CH-225",
+      "name": "Consistent Content Type",
+      "category": "integration",
+      "severity": "medium",
+      "description": "Validates Content-Type header is consistent across endpoints"
+    },
+    {
+      "id": "CH-226",
+      "name": "Consistent Auth Required",
+      "category": "integration",
+      "severity": "high",
+      "description": "Validates authentication requirement is consistent"
+    },
+    {
+      "id": "CH-227",
+      "name": "Consistent Timestamp Format",
+      "category": "integration",
+      "severity": "medium",
+      "description": "Validates timestamp format is consistent (ISO 8601)"
+    },
+    {
+      "id": "CH-228",
+      "name": "Consistent ID Format",
+      "category": "integration",
+      "severity": "medium",
+      "description": "Validates entity ID format is consistent across endpoints"
+    },
+    {
+      "id": "CH-229",
+      "name": "Consistent Method Support",
+      "category": "integration",
+      "severity": "medium",
+      "description": "Validates HTTP method support follows REST conventions"
+    },
+    {
+      "id": "CH-230",
+      "name": "Consistent Empty Response",
+      "category": "integration",
+      "severity": "medium",
+      "description": "Validates empty result sets return consistent format"
+    },
+    {
+      "id": "CH-231",
+      "name": "Entity Relationships Valid",
+      "category": "integration",
+      "severity": "high",
+      "description": "Validates entity foreign key relationships are valid"
+    },
+    {
+      "id": "CH-232",
+      "name": "No Orphan Media Files",
+      "category": "integration",
+      "severity": "high",
+      "description": "Validates no orphan media files exist without entity links"
+    },
+    {
+      "id": "CH-233",
+      "name": "Entity Type Consistency",
+      "category": "integration",
+      "severity": "high",
+      "description": "Validates entity types are consistent with media_types table"
+    },
+    {
+      "id": "CH-234",
+      "name": "Collection Integrity",
+      "category": "integration",
+      "severity": "medium",
+      "description": "Validates collection integrity (no dangling references)"
+    },
+    {
+      "id": "CH-235",
+      "name": "Storage Root Integrity",
+      "category": "integration",
+      "severity": "high",
+      "description": "Validates storage root configuration integrity"
+    },
+    {
+      "id": "CH-236",
+      "name": "Scan History Integrity",
+      "category": "integration",
+      "severity": "medium",
+      "description": "Validates scan history records are consistent"
+    },
+    {
+      "id": "CH-237",
+      "name": "User Data Integrity",
+      "category": "integration",
+      "severity": "high",
+      "description": "Validates user data integrity (no orphan records)"
+    },
+    {
+      "id": "CH-238",
+      "name": "Favorites Integrity",
+      "category": "integration",
+      "severity": "medium",
+      "description": "Validates favorites reference valid entities"
+    },
+    {
+      "id": "CH-239",
+      "name": "Media Stats Integrity",
+      "category": "integration",
+      "severity": "medium",
+      "description": "Validates media statistics match actual data counts"
+    },
+    {
+      "id": "CH-240",
+      "name": "Detection Rules Integrity",
+      "category": "integration",
+      "severity": "medium",
+      "description": "Validates detection rules are valid and non-conflicting"
+    },
+    {
+      "id": "CH-241",
+      "name": "Admin System Info Access",
+      "category": "api",
+      "severity": "high",
+      "description": "Validates admin system info is accessible to admin users"
+    },
+    {
+      "id": "CH-242",
+      "name": "Admin User List Access",
+      "category": "api",
+      "severity": "high",
+      "description": "Validates admin user list is accessible to admin users"
+    },
+    {
+      "id": "CH-243",
+      "name": "Admin Storage Overview",
+      "category": "api",
+      "severity": "medium",
+      "description": "Validates admin storage overview endpoint"
+    },
+    {
+      "id": "CH-244",
+      "name": "Admin Log Collection",
+      "category": "api",
+      "severity": "medium",
+      "description": "Validates admin log collection and retrieval"
+    },
+    {
+      "id": "CH-245",
+      "name": "Admin Error Reporting",
+      "category": "api",
+      "severity": "medium",
+      "description": "Validates admin error reporting endpoint"
+    },
+    {
+      "id": "CH-246",
+      "name": "Admin Backup List",
+      "category": "api",
+      "severity": "medium",
+      "description": "Validates admin backup listing access"
+    },
+    {
+      "id": "CH-247",
+      "name": "Admin User Update Ops",
+      "category": "api",
+      "severity": "high",
+      "description": "Validates admin user update operations"
+    },
+    {
+      "id": "CH-248",
+      "name": "Admin Challenges List",
+      "category": "api",
+      "severity": "low",
+      "description": "Validates admin challenges listing endpoint"
+    },
+    {
+      "id": "CH-249",
+      "name": "Admin Config Access",
+      "category": "api",
+      "severity": "medium",
+      "description": "Validates admin configuration access"
+    },
+    {
+      "id": "CH-250",
+      "name": "Admin Health Dashboard",
+      "category": "api",
+      "severity": "medium",
+      "description": "Validates admin health dashboard endpoint"
+    },
+    {
+      "id": "CH-251",
+      "name": "Debounce Map Bounded",
+      "category": "concurrency",
+      "severity": "high",
+      "description": "Verifies watcher debounce map stays bounded under load"
+    },
+    {
+      "id": "CH-252",
+      "name": "Scan Cleanup Active",
+      "category": "concurrency",
+      "severity": "high",
+      "description": "Verifies completed scan sessions are cleaned up after 60s"
+    },
+    {
+      "id": "CH-253",
+      "name": "IP Bucket Bounded",
+      "category": "concurrency",
+      "severity": "high",
+      "description": "Verifies rate limiter IP buckets stay bounded"
+    },
+    {
+      "id": "CH-254",
+      "name": "Event Bus Unsubscribe",
+      "category": "concurrency",
+      "severity": "medium",
+      "description": "Verifies event bus handlers can be removed"
+    },
+    {
+      "id": "CH-255",
+      "name": "Media Quality Real Data",
+      "category": "api",
+      "severity": "medium",
+      "description": "Verifies /api/v1/media/stats returns real quality breakdown by extension"
+    },
+    {
+      "id": "CH-256",
+      "name": "govulncheck Clean",
+      "category": "security",
+      "severity": "critical",
+      "description": "Validates govulncheck reports 0 vulnerabilities"
+    },
+    {
+      "id": "CH-257",
+      "name": "npm Audit Clean",
+      "category": "security",
+      "severity": "critical",
+      "description": "Validates npm audit reports 0 production vulnerabilities"
+    },
+    {
+      "id": "CH-258",
+      "name": "Semgrep Clean",
+      "category": "security",
+      "severity": "high",
+      "description": "Validates Semgrep returns 0 ERROR findings"
+    },
+    {
+      "id": "CH-259",
+      "name": "SonarQube Gate Pass",
+      "category": "security",
+      "severity": "high",
+      "description": "Validates SonarQube quality gate passes"
+    },
+    {
+      "id": "CH-260",
+      "name": "Custom Rules Pass",
+      "category": "security",
+      "severity": "medium",
+      "description": "Validates all 8 custom Semgrep rules pass"
+    },
+    {
+      "id": "CH-261",
+      "name": "Go Coverage 95%",
+      "category": "coverage",
+      "severity": "high",
+      "description": "Go test coverage >= 95%"
+    },
+    {
+      "id": "CH-262",
+      "name": "All Packages Documented",
+      "category": "coverage",
+      "severity": "medium",
+      "description": "Every Go package has doc.go"
+    },
+    {
+      "id": "CH-263",
+      "name": "Challenge Tests Pass",
+      "category": "coverage",
+      "severity": "high",
+      "description": "All challenge unit tests pass"
+    },
+    {
+      "id": "CH-264",
+      "name": "Fuzz Tests 20+",
+      "category": "coverage",
+      "severity": "medium",
+      "description": "At least 20 fuzz test targets"
+    },
+    {
+      "id": "CH-265",
+      "name": "Benchmarks 50+",
+      "category": "coverage",
+      "severity": "medium",
+      "description": "At least 50 benchmark functions"
+    },
+    {
+      "id": "CH-266",
+      "name": "Frontend Coverage 90%",
+      "category": "coverage",
+      "severity": "high",
+      "description": "Frontend test coverage >= 90%"
+    },
+    {
+      "id": "CH-267",
+      "name": "All Components Tested",
+      "category": "coverage",
+      "severity": "high",
+      "description": "Zero untested component files"
+    },
+    {
+      "id": "CH-268",
+      "name": "Accessibility Clean",
+      "category": "coverage",
+      "severity": "medium",
+      "description": "Zero missing alt/aria violations"
+    },
+    {
+      "id": "CH-269",
+      "name": "Zero Console Debug",
+      "category": "coverage",
+      "severity": "medium",
+      "description": "No console.debug in production"
+    },
+    {
+      "id": "CH-270",
+      "name": "Zero any in Production",
+      "category": "coverage",
+      "severity": "medium",
+      "description": "No bare any type in production TypeScript"
+    },
+    {
+      "id": "CH-271",
+      "name": "WebSocket Client 90%",
+      "category": "coverage",
+      "severity": "medium",
+      "description": "WebSocket client coverage >= 90%"
+    },
+    {
+      "id": "CH-272",
+      "name": "API Client 90%",
+      "category": "coverage",
+      "severity": "medium",
+      "description": "API client coverage >= 90%"
+    },
+    {
+      "id": "CH-273",
+      "name": "Auth Context 90%",
+      "category": "coverage",
+      "severity": "medium",
+      "description": "Auth context coverage >= 90%"
+    },
+    {
+      "id": "CH-274",
+      "name": "Media Browser 90%",
+      "category": "coverage",
+      "severity": "medium",
+      "description": "Media browser coverage >= 90%"
+    },
+    {
+      "id": "CH-275",
+      "name": "Media Player 90%",
+      "category": "coverage",
+      "severity": "medium",
+      "description": "Media player coverage >= 90%"
+    },
+    {
+      "id": "CH-276",
+      "name": "Collection Manager 90%",
+      "category": "coverage",
+      "severity": "medium",
+      "description": "Collection manager coverage >= 90%"
+    },
+    {
+      "id": "CH-277",
+      "name": "Dashboard Analytics 90%",
+      "category": "coverage",
+      "severity": "medium",
+      "description": "Dashboard analytics coverage >= 90%"
+    },
+    {
+      "id": "CH-278",
+      "name": "UI Components 90%",
+      "category": "coverage",
+      "severity": "medium",
+      "description": "UI components coverage >= 90%"
+    },
+    {
+      "id": "CH-279",
+      "name": "Desktop Coverage 80%",
+      "category": "coverage",
+      "severity": "medium",
+      "description": "Desktop app test coverage >= 80%"
+    },
+    {
+      "id": "CH-280",
+      "name": "Wizard Coverage 80%",
+      "category": "coverage",
+      "severity": "medium",
+      "description": "Installer wizard test coverage >= 80%"
+    },
+    {
+      "id": "CH-281",
+      "name": "Android Coverage 80%",
+      "category": "coverage",
+      "severity": "medium",
+      "description": "Android app test coverage >= 80%"
+    },
+    {
+      "id": "CH-282",
+      "name": "Android TV Coverage 80%",
+      "category": "coverage",
+      "severity": "medium",
+      "description": "Android TV test coverage >= 80%"
+    },
+    {
+      "id": "CH-283",
+      "name": "API Client Old Coverage 90%",
+      "category": "coverage",
+      "severity": "medium",
+      "description": "Old API client test coverage >= 90%"
+    },
+    {
+      "id": "CH-284",
+      "name": "All Stress Tests Pass",
+      "category": "stress",
+      "severity": "high",
+      "description": "All 54+ stress tests pass"
+    },
+    {
+      "id": "CH-285",
+      "name": "Filesystem Integration Pass",
+      "category": "integration",
+      "severity": "high",
+      "description": "FTP, SMB, NFS, WebDAV tests pass"
+    },
+    {
+      "id": "CH-286",
+      "name": "Full Lifecycle Integration",
+      "category": "integration",
+      "severity": "critical",
+      "description": "End-to-end flow: Register, Login, Root, Scan, Browse, Search, Collect, Play"
+    },
+    {
+      "id": "CH-287",
+      "name": "k6 Load p95 < 500ms",
+      "category": "performance",
+      "severity": "high",
+      "description": "Performance at 50 users: p95 < 500ms"
+    },
+    {
+      "id": "CH-288",
+      "name": "k6 Stress Stable",
+      "category": "performance",
+      "severity": "high",
+      "description": "System stable at 200 users"
+    },
+    {
+      "id": "CH-289",
+      "name": "k6 Soak No Leaks",
+      "category": "performance",
+      "severity": "high",
+      "description": "30min soak test with zero memory growth"
+    },
+    {
+      "id": "CH-290",
+      "name": "Prometheus Complete",
+      "category": "monitoring",
+      "severity": "medium",
+      "description": "All custom metrics verified on Prometheus endpoint"
+    },
+    {
+      "id": "CH-291",
+      "name": "Frontend Bundle < 500KB",
+      "category": "performance",
+      "severity": "medium",
+      "description": "Gzipped bundle size under 500KB"
+    },
+    {
+      "id": "CH-352",
+      "name": "All Submodules ARCHITECTURE.md",
+      "category": "documentation",
+      "severity": "medium",
+      "description": "43/43 submodules have ARCHITECTURE.md"
+    },
+    {
+      "id": "CH-353",
+      "name": "All Submodules .env Protected",
+      "category": "documentation",
+      "severity": "high",
+      "description": "43/43 submodules have .env in .gitignore"
+    },
+    {
+      "id": "CH-354",
+      "name": "All Submodules README",
+      "category": "documentation",
+      "severity": "medium",
+      "description": "43/43 submodules have README.md"
+    },
+    {
+      "id": "CH-355",
+      "name": "CLAUDE.md Current",
+      "category": "documentation",
+      "severity": "medium",
+      "description": "Main CLAUDE.md reflects current version"
+    },
+    {
+      "id": "CH-356",
+      "name": "Course 30 Modules",
+      "category": "documentation",
+      "severity": "low",
+      "description": "30 video course scripts present"
+    },
+    {
+      "id": "CH-357",
+      "name": "Website Current",
+      "category": "documentation",
+      "severity": "low",
+      "description": "All website pages reflect current version"
+    },
+    {
+      "id": "CH-358",
+      "name": "Diagrams Updated",
+      "category": "documentation",
+      "severity": "low",
+      "description": "SVG diagrams reflect current architecture"
+    },
+    {
+      "id": "MOD-001",
+      "name": "Database Module Verification",
+      "category": "module",
+      "severity": "high",
+      "description": "Verifies that the Database module has architecture docs, CLAUDE.md, and tests"
+    },
+    {
+      "id": "MOD-002",
+      "name": "Concurrency Module Verification",
+      "category": "module",
+      "severity": "high",
+      "description": "Verifies that the Concurrency module has architecture docs, CLAUDE.md, and tests"
+    },
+    {
+      "id": "MOD-003",
+      "name": "Observability Module Verification",
+      "category": "module",
+      "severity": "high",
+      "description": "Verifies that the Observability module has architecture docs, CLAUDE.md, and tests"
+    },
+    {
+      "id": "MOD-004",
+      "name": "Security Module Verification",
+      "category": "module",
+      "severity": "high",
+      "description": "Verifies that the Security module has architecture docs, CLAUDE.md, and tests"
+    },
+    {
+      "id": "MOD-005",
+      "name": "Middleware Module Verification",
+      "category": "module",
+      "severity": "high",
+      "description": "Verifies that the Middleware module has architecture docs, CLAUDE.md, and tests"
+    },
+    {
+      "id": "MOD-006",
+      "name": "Media Module Verification",
+      "category": "module",
+      "severity": "high",
+      "description": "Verifies that the Media module has architecture docs, CLAUDE.md, and tests"
+    },
+    {
+      "id": "MOD-007",
+      "name": "Discovery Module Verification",
+      "category": "module",
+      "severity": "high",
+      "description": "Verifies that the Discovery module has architecture docs, CLAUDE.md, and tests"
+    },
+    {
+      "id": "MOD-008",
+      "name": "Streaming Module Verification",
+      "category": "module",
+      "severity": "high",
+      "description": "Verifies that the Streaming module has architecture docs, CLAUDE.md, and tests"
+    },
+    {
+      "id": "MOD-009",
+      "name": "Lazy Module Verification",
+      "category": "module",
+      "severity": "high",
+      "description": "Verifies that the Lazy module has architecture docs, CLAUDE.md, and tests"
+    },
+    {
+      "id": "MOD-010",
+      "name": "Memory Module Verification",
+      "category": "module",
+      "severity": "high",
+      "description": "Verifies that the Memory module has architecture docs, CLAUDE.md, and tests"
+    },
+    {
+      "id": "MOD-011",
+      "name": "Recovery Module Verification",
+      "category": "module",
+      "severity": "high",
+      "description": "Verifies that the Recovery module has architecture docs, CLAUDE.md, and tests"
+    },
+    {
+      "id": "MOD-012",
+      "name": "Storage Module Verification",
+      "category": "module",
+      "severity": "high",
+      "description": "Verifies that the Storage module has architecture docs, CLAUDE.md, and tests"
+    },
+    {
+      "id": "MOD-013",
+      "name": "Cache Module Verification",
+      "category": "module",
+      "severity": "high",
+      "description": "Verifies that the Cache module has architecture docs, CLAUDE.md, and tests"
+    },
+    {
+      "id": "MOD-014",
+      "name": "Watcher Module Verification",
+      "category": "module",
+      "severity": "high",
+      "description": "Verifies that the Watcher module has architecture docs, CLAUDE.md, and tests"
+    },
+    {
+      "id": "MOD-015",
+      "name": "RateLimiter Module Verification",
+      "category": "module",
+      "severity": "high",
+      "description": "Verifies that the RateLimiter module has architecture docs, CLAUDE.md, and tests"
+    },
+    {
+      "id": "MOD-016",
+      "name": "Lazy Value[T] Concurrent Access",
+      "category": "module",
+      "severity": "high",
+      "description": "Verifies the Lazy module exposes Value[T] with Get, MustGet, Reset, and uses sync.Mutex for thread safety"
+    },
+    {
+      "id": "MOD-017",
+      "name": "Lazy Service[T] Singleton Guarantee",
+      "category": "module",
+      "severity": "high",
+      "description": "Verifies the Lazy module exposes Service[T] with Get, Initialized, and uses sync.Once for singleton guarantee"
+    },
+    {
+      "id": "MOD-018",
+      "name": "Recovery CircuitBreaker Transitions",
+      "category": "module",
+      "severity": "high",
+      "description": "Verifies the Recovery module has CircuitBreaker with state transitions (closed, open, half-open)"
+    },
+    {
+      "id": "MOD-019",
+      "name": "Recovery HealthChecker Verification",
+      "category": "module",
+      "severity": "medium",
+      "description": "Verifies the Recovery module has health checking capabilities"
+    },
+    {
+      "id": "MOD-020",
+      "name": "Memory LeakDetector Tracking",
+      "category": "module",
+      "severity": "high",
+      "description": "Verifies the Memory module has leak detection and memory monitoring capabilities"
+    },
+    {
+      "id": "MOD-021",
+      "name": "Memory Graph BFS",
+      "category": "module",
+      "severity": "medium",
+      "description": "Verifies the Memory module has graph with breadth-first search"
+    },
+    {
+      "id": "UF-ENV-SETUP",
+      "name": "Environment Setup",
+      "category": "userflow-api",
+      "severity": "critical",
+      "description": "Verifies API server availability before running user flow challenges"
+    },
+    {
+      "id": "UF-ENV-TEARDOWN",
+      "name": "Environment Teardown",
+      "category": "userflow-api",
+      "severity": "low",
+      "description": "Cleans up test environment after user flow challenges complete"
+    },
+    {
+      "id": "UF-API-HEALTH",
+      "name": "API Health Check",
+      "category": "userflow-api",
+      "severity": "critical",
+      "description": "Validates /health endpoint returns 200"
+    },
+    {
+      "id": "UF-API-HEALTH-VERSION",
+      "name": "API Version Info",
+      "category": "userflow-api",
+      "severity": "high",
+      "description": "Verify /health returns version information"
+    },
+    {
+      "id": "UF-API-HEALTH-METRICS",
+      "name": "API Metrics Health",
+      "category": "userflow-api",
+      "severity": "high",
+      "description": "Validates /metrics endpoint returns 200"
+    },
+    {
+      "id": "UF-API-AUTH-LOGIN",
+      "name": "API Auth Login",
+      "category": "userflow-api",
+      "severity": "critical",
+      "description": "Verify user login returns valid JWT token"
+    },
+    {
+      "id": "UF-API-AUTH-REGISTER",
+      "name": "API Auth Register",
+      "category": "userflow-api",
+      "severity": "high",
+      "description": "Register a new user and verify account creation"
+    },
+    {
+      "id": "UF-API-AUTH-INVALID",
+      "name": "API Auth Invalid Credentials",
+      "category": "userflow-api",
+      "severity": "high",
+      "description": "Verify login with bad credentials returns 401"
+    },
+    {
+      "id": "UF-API-AUTH-TOKEN-REFRESH",
+      "name": "API Auth Token Refresh",
+      "category": "userflow-api",
+      "severity": "high",
+      "description": "Login and verify token works for authenticated endpoint"
+    },
+    {
+      "id": "UF-API-AUTH-LOGOUT",
+      "name": "API Auth Logout",
+      "category": "userflow-api",
+      "severity": "high",
+      "description": "Login then logout and verify session ends"
+    },
+    {
+      "id": "UF-API-MEDIA-LIST",
+      "name": "API Media List",
+      "category": "userflow-api",
+      "severity": "high",
+      "description": "List all media items and verify array response"
+    },
+    {
+      "id": "UF-API-MEDIA-GET",
+      "name": "API Media Get By ID",
+      "category": "userflow-api",
+      "severity": "high",
+      "description": "Get a specific media entity by ID"
+    },
+    {
+      "id": "UF-API-MEDIA-SEARCH",
+      "name": "API Media Search",
+      "category": "userflow-api",
+      "severity": "high",
+      "description": "Search media by query string"
+    },
+    {
+      "id": "UF-API-MEDIA-TYPES",
+      "name": "API Media Types",
+      "category": "userflow-api",
+      "severity": "high",
+      "description": "List all media entity types"
+    },
+    {
+      "id": "UF-API-MEDIA-ENTITY",
+      "name": "API Media Entity Details",
+      "category": "userflow-api",
+      "severity": "high",
+      "description": "Get entity details including full metadata"
+    },
+    {
+      "id": "UF-API-MEDIA-HIERARCHY",
+      "name": "API Media Entity Hierarchy",
+      "category": "userflow-api",
+      "severity": "high",
+      "description": "Navigate entity hierarchy: parent and children"
+    },
+    {
+      "id": "UF-API-MEDIA-COVER",
+      "name": "API Media Cover Art",
+      "category": "userflow-api",
+      "severity": "medium",
+      "description": "Get cover art asset for an entity"
+    },
+    {
+      "id": "UF-API-MEDIA-METADATA",
+      "name": "API Media External Metadata",
+      "category": "userflow-api",
+      "severity": "medium",
+      "description": "Get external metadata for an entity"
+    },
+    {
+      "id": "UF-API-MEDIA-RECENT",
+      "name": "API Media Recently Added",
+      "category": "userflow-api",
+      "severity": "medium",
+      "description": "Get recently added media entities"
+    },
+    {
+      "id": "UF-API-MEDIA-STATS",
+      "name": "API Media Statistics",
+      "category": "userflow-api",
+      "severity": "medium",
+      "description": "Get media and entity statistics"
+    },
+    {
+      "id": "UF-API-COLL-LIST",
+      "name": "API Collections List",
+      "category": "userflow-api",
+      "severity": "high",
+      "description": "List all collections"
+    },
+    {
+      "id": "UF-API-COLL-CREATE",
+      "name": "API Collection Create",
+      "category": "userflow-api",
+      "severity": "high",
+      "description": "Create a new collection and verify it is returned"
+    },
+    {
+      "id": "UF-API-COLL-ADD",
+      "name": "API Collection Add Item",
+      "category": "userflow-api",
+      "severity": "medium",
+      "description": "Add an entity item to a collection"
+    },
+    {
+      "id": "UF-API-COLL-REMOVE",
+      "name": "API Collection Remove Item",
+      "category": "userflow-api",
+      "severity": "medium",
+      "description": "Remove an item from a collection"
+    },
+    {
+      "id": "UF-API-COLL-DELETE",
+      "name": "API Collection Delete",
+      "category": "userflow-api",
+      "severity": "medium",
+      "description": "Delete a collection and verify removal"
+    },
+    {
+      "id": "UF-API-STORAGE-LIST",
+      "name": "API Storage List Roots",
+      "category": "userflow-api",
+      "severity": "high",
+      "description": "List all storage roots"
+    },
+    {
+      "id": "UF-API-STORAGE-ADD",
+      "name": "API Storage Add Root",
+      "category": "userflow-api",
+      "severity": "high",
+      "description": "Add a new storage root via the API"
+    },
+    {
+      "id": "UF-API-STORAGE-SCAN",
+      "name": "API Storage Trigger Scan",
+      "category": "userflow-api",
+      "severity": "high",
+      "description": "Trigger a scan on a storage root"
+    },
+    {
+      "id": "UF-API-STORAGE-STATUS",
+      "name": "API Storage Scan Status",
+      "category": "userflow-api",
+      "severity": "medium",
+      "description": "Check scan status for a storage root"
+    },
+    {
+      "id": "UF-API-STORAGE-FILES",
+      "name": "API Storage List Files",
+      "category": "userflow-api",
+      "severity": "medium",
+      "description": "List files in a storage root path"
+    },
+    {
+      "id": "UF-API-ADMIN-USERS",
+      "name": "API Admin List Users",
+      "category": "userflow-api",
+      "severity": "high",
+      "description": "List all users via admin endpoint"
+    },
+    {
+      "id": "UF-API-ADMIN-CONFIG",
+      "name": "API Admin Configuration",
+      "category": "userflow-api",
+      "severity": "medium",
+      "description": "Get server configuration"
+    },
+    {
+      "id": "UF-API-ADMIN-LOGS",
+      "name": "API Admin Log Collections",
+      "category": "userflow-api",
+      "severity": "medium",
+      "description": "Get server log collections"
+    },
+    {
+      "id": "UF-API-ADMIN-STATS",
+      "name": "API Admin System Statistics",
+      "category": "userflow-api",
+      "severity": "medium",
+      "description": "Get system-wide statistics"
+    },
+    {
+      "id": "UF-API-ADMIN-SESSIONS",
+      "name": "API Admin Active Sessions",
+      "category": "userflow-api",
+      "severity": "medium",
+      "description": "List active sessions via auth status"
+    },
+    {
+      "id": "UF-API-DL-REQUEST",
+      "name": "API Download Request",
+      "category": "userflow-api",
+      "severity": "medium",
+      "description": "Request a file download by ID"
+    },
+    {
+      "id": "UF-API-DL-STATUS",
+      "name": "API Download Status",
+      "category": "userflow-api",
+      "severity": "medium",
+      "description": "Check scan list as proxy for download readiness"
+    },
+    {
+      "id": "UF-API-DL-STREAM",
+      "name": "API Media Stream",
+      "category": "userflow-api",
+      "severity": "high",
+      "description": "Stream a media entity"
+    },
+    {
+      "id": "UF-API-FAV-ADD",
+      "name": "API Favorites Add",
+      "category": "userflow-api",
+      "severity": "medium",
+      "description": "Mark a media item as favorite"
+    },
+    {
+      "id": "UF-API-FAV-LIST",
+      "name": "API Favorites List",
+      "category": "userflow-api",
+      "severity": "medium",
+      "description": "List media search results (favorites filter)"
+    },
+    {
+      "id": "UF-API-FAV-REMOVE",
+      "name": "API Favorites Remove",
+      "category": "userflow-api",
+      "severity": "medium",
+      "description": "Remove a media item from favorites"
+    },
+    {
+      "id": "UF-API-WS-CONNECT",
+      "name": "API WebSocket Connect",
+      "category": "userflow-api",
+      "severity": "high",
+      "description": "Verify WebSocket endpoint is reachable"
+    },
+    {
+      "id": "UF-API-WS-EVENTS",
+      "name": "API WebSocket Events",
+      "category": "userflow-api",
+      "severity": "medium",
+      "description": "Verify WebSocket event delivery via API health"
+    },
+    {
+      "id": "UF-API-ERR-404",
+      "name": "API Error 404 Not Found",
+      "category": "userflow-api",
+      "severity": "medium",
+      "description": "Request a non-existent endpoint and verify 404"
+    },
+    {
+      "id": "UF-API-ERR-401",
+      "name": "API Error 401 Unauthorized",
+      "category": "userflow-api",
+      "severity": "high",
+      "description": "Request protected endpoint without auth token"
+    },
+    {
+      "id": "UF-API-ERR-400",
+      "name": "API Error 400 Bad Request",
+      "category": "userflow-api",
+      "severity": "medium",
+      "description": "Send malformed JSON body and verify 400"
+    },
+    {
+      "id": "UF-API-SEC-CORS",
+      "name": "API Security CORS Headers",
+      "category": "userflow-api",
+      "severity": "high",
+      "description": "Verify CORS headers are present on responses"
+    },
+    {
+      "id": "UF-API-SEC-RATE",
+      "name": "API Security Rate Limiting",
+      "category": "userflow-api",
+      "severity": "high",
+      "description": "Verify rate limiting is active on auth endpoints"
+    },
+    {
+      "id": "UF-API-SEC-HEADERS",
+      "name": "API Security Headers",
+      "category": "userflow-api",
+      "severity": "high",
+      "description": "Verify security headers (X-Request-Id, etc.)"
+    },
+    {
+      "id": "UF-WEB-AUTH-LOGIN",
+      "name": "Web Auth Login",
+      "category": "userflow-web",
+      "severity": "critical",
+      "description": "Verify user can log in via the web interface"
+    },
+    {
+      "id": "UF-WEB-AUTH-REGISTER",
+      "name": "Web Auth Register",
+      "category": "userflow-web",
+      "severity": "high",
+      "description": "Verify user registration form works via the web interface"
+    },
+    {
+      "id": "UF-WEB-AUTH-INVALID",
+      "name": "Web Auth Invalid Credentials",
+      "category": "userflow-web",
+      "severity": "high",
+      "description": "Verify error message appears for invalid credentials"
+    },
+    {
+      "id": "UF-WEB-AUTH-LOGOUT",
+      "name": "Web Auth Logout",
+      "category": "userflow-web",
+      "severity": "high",
+      "description": "Verify user can log out and is redirected to login"
+    },
+    {
+      "id": "UF-WEB-AUTH-PERSIST",
+      "name": "Web Auth Session Persistence",
+      "category": "userflow-web",
+      "severity": "high",
+      "description": "Verify session persists across page navigations"
+    },
+    {
+      "id": "UF-WEB-DASH-LOAD",
+      "name": "Web Dashboard Load",
+      "category": "userflow-web",
+      "severity": "high",
+      "description": "Verify dashboard loads with stats and activity feed after login"
+    },
+    {
+      "id": "UF-WEB-DASH-STATS",
+      "name": "Web Dashboard Stats Component",
+      "category": "userflow-web",
+      "severity": "medium",
+      "description": "Verify DashboardStats component renders with data"
+    },
+    {
+      "id": "UF-WEB-DASH-CHARTS",
+      "name": "Web Dashboard Charts",
+      "category": "userflow-web",
+      "severity": "medium",
+      "description": "Verify MediaDistributionChart renders on dashboard"
+    },
+    {
+      "id": "UF-WEB-DASH-ACTIVITY",
+      "name": "Web Dashboard Activity Feed",
+      "category": "userflow-web",
+      "severity": "medium",
+      "description": "Verify ActivityFeed renders on dashboard"
+    },
+    {
+      "id": "UF-WEB-DASH-NAV",
+      "name": "Web Dashboard Navigation",
+      "category": "userflow-web",
+      "severity": "high",
+      "description": "Verify navigation links load correct pages from dashboard"
+    },
+    {
+      "id": "UF-WEB-BROWSE-LOAD",
+      "name": "Web Media Browser Load",
+      "category": "userflow-web",
+      "severity": "high",
+      "description": "Verify media browser page loads with grid of items"
+    },
+    {
+      "id": "UF-WEB-BROWSE-SEARCH",
+      "name": "Web Media Browser Search",
+      "category": "userflow-web",
+      "severity": "high",
+      "description": "Verify search query updates media browser results"
+    },
+    {
+      "id": "UF-WEB-BROWSE-FILTER",
+      "name": "Web Media Browser Filter",
+      "category": "userflow-web",
+      "severity": "medium",
+      "description": "Verify media type filter updates results"
+    },
+    {
+      "id": "UF-WEB-BROWSE-DETAIL",
+      "name": "Web Media Browser Detail Modal",
+      "category": "userflow-web",
+      "severity": "high",
+      "description": "Verify clicking media card opens detail modal"
+    },
+    {
+      "id": "UF-WEB-BROWSE-PAGINATION",
+      "name": "Web Media Browser Pagination",
+      "category": "userflow-web",
+      "severity": "medium",
+      "description": "Verify pagination through media browser results"
+    },
+    {
+      "id": "UF-WEB-BROWSE-SORT",
+      "name": "Web Media Browser Sort",
+      "category": "userflow-web",
+      "severity": "medium",
+      "description": "Verify changing sort order reorders results"
+    },
+    {
+      "id": "UF-WEB-BROWSE-GRID",
+      "name": "Web Media Browser Grid Layout",
+      "category": "userflow-web",
+      "severity": "medium",
+      "description": "Verify media grid layout renders correctly"
+    },
+    {
+      "id": "UF-WEB-BROWSE-EMPTY",
+      "name": "Web Media Browser Empty State",
+      "category": "userflow-web",
+      "severity": "medium",
+      "description": "Verify empty state appears for nonexistent search"
+    },
+    {
+      "id": "UF-WEB-COLL-LIST",
+      "name": "Web Collections List",
+      "category": "userflow-web",
+      "severity": "high",
+      "description": "Verify collections page loads with collection list"
+    },
+    {
+      "id": "UF-WEB-COLL-CREATE",
+      "name": "Web Collections Create",
+      "category": "userflow-web",
+      "severity": "high",
+      "description": "Verify creating a new collection via the web interface"
+    },
+    {
+      "id": "UF-WEB-COLL-ADD",
+      "name": "Web Collections Add Item",
+      "category": "userflow-web",
+      "severity": "medium",
+      "description": "Verify adding an item to a collection"
+    },
+    {
+      "id": "UF-WEB-COLL-REMOVE",
+      "name": "Web Collections Remove Item",
+      "category": "userflow-web",
+      "severity": "medium",
+      "description": "Verify removing an item from a collection"
+    },
+    {
+      "id": "UF-WEB-COLL-DELETE",
+      "name": "Web Collections Delete",
+      "category": "userflow-web",
+      "severity": "medium",
+      "description": "Verify deleting a collection removes it from the list"
+    },
+    {
+      "id": "UF-WEB-COLL-SEARCH",
+      "name": "Web Collections Search",
+      "category": "userflow-web",
+      "severity": "medium",
+      "description": "Verify searching within collections"
+    },
+    {
+      "id": "UF-WEB-PLAYER-LOAD",
+      "name": "Web Player Load",
+      "category": "userflow-web",
+      "severity": "high",
+      "description": "Verify media player loads when opening a media item"
+    },
+    {
+      "id": "UF-WEB-PLAYER-CONTROLS",
+      "name": "Web Player Controls",
+      "category": "userflow-web",
+      "severity": "high",
+      "description": "Verify play/pause/seek controls are visible"
+    },
+    {
+      "id": "UF-WEB-PLAYER-SUBTITLE",
+      "name": "Web Player Subtitle Toggle",
+      "category": "userflow-web",
+      "severity": "medium",
+      "description": "Verify subtitle panel can be toggled in the player"
+    },
+    {
+      "id": "UF-WEB-PLAYER-FULLSCREEN",
+      "name": "Web Player Fullscreen",
+      "category": "userflow-web",
+      "severity": "medium",
+      "description": "Verify fullscreen toggle works in the player"
+    },
+    {
+      "id": "UF-WEB-ADMIN-LOAD",
+      "name": "Web Admin Panel Load",
+      "category": "userflow-web",
+      "severity": "high",
+      "description": "Verify admin panel loads for authenticated admin user"
+    },
+    {
+      "id": "UF-WEB-ADMIN-USERS",
+      "name": "Web Admin Users List",
+      "category": "userflow-web",
+      "severity": "high",
+      "description": "Verify admin user list table renders"
+    },
+    {
+      "id": "UF-WEB-ADMIN-CONFIG",
+      "name": "Web Admin Configuration",
+      "category": "userflow-web",
+      "severity": "medium",
+      "description": "Verify admin configuration form renders"
+    },
+    {
+      "id": "UF-WEB-ADMIN-LOGS",
+      "name": "Web Admin Logs Viewer",
+      "category": "userflow-web",
+      "severity": "medium",
+      "description": "Verify admin log entries are visible"
+    },
+    {
+      "id": "UF-WEB-ADMIN-STATS",
+      "name": "Web Admin System Stats",
+      "category": "userflow-web",
+      "severity": "medium",
+      "description": "Verify admin system stats metrics are displayed"
+    },
+    {
+      "id": "UF-WEB-SUB-SEARCH",
+      "name": "Web Subtitle Search",
+      "category": "userflow-web",
+      "severity": "medium",
+      "description": "Verify subtitle manager search functionality"
+    },
+    {
+      "id": "UF-WEB-SUB-DOWNLOAD",
+      "name": "Web Subtitle Download",
+      "category": "userflow-web",
+      "severity": "medium",
+      "description": "Verify subtitle download action"
+    },
+    {
+      "id": "UF-WEB-SUB-UPLOAD",
+      "name": "Web Subtitle Upload Modal",
+      "category": "userflow-web",
+      "severity": "medium",
+      "description": "Verify subtitle upload modal form is visible"
+    },
+    {
+      "id": "UF-WEB-SUB-SYNC",
+      "name": "Web Subtitle Sync Modal",
+      "category": "userflow-web",
+      "severity": "medium",
+      "description": "Verify subtitle sync interface opens"
+    },
+    {
+      "id": "UF-WEB-CONV-LOAD",
+      "name": "Web Conversion Tools Load",
+      "category": "userflow-web",
+      "severity": "medium",
+      "description": "Verify conversion tools page loads"
+    },
+    {
+      "id": "UF-WEB-CONV-FORMATS",
+      "name": "Web Conversion Format List",
+      "category": "userflow-web",
+      "severity": "low",
+      "description": "Verify format list loads on conversion page"
+    },
+    {
+      "id": "UF-WEB-CONV-CREATE",
+      "name": "Web Conversion Create Job",
+      "category": "userflow-web",
+      "severity": "medium",
+      "description": "Verify creating a conversion job"
+    },
+    {
+      "id": "UF-WEB-ANALYTICS-LOAD",
+      "name": "Web Analytics Page Load",
+      "category": "userflow-web",
+      "severity": "medium",
+      "description": "Verify analytics page loads"
+    },
+    {
+      "id": "UF-WEB-ANALYTICS-CHARTS",
+      "name": "Web Analytics Charts Render",
+      "category": "userflow-web",
+      "severity": "medium",
+      "description": "Verify analytics charts render with data"
+    },
+    {
+      "id": "UF-WEB-ANALYTICS-FILTERS",
+      "name": "Web Analytics Date Filter",
+      "category": "userflow-web",
+      "severity": "medium",
+      "description": "Verify date filter updates analytics charts"
+    },
+    {
+      "id": "UF-WEB-FAV-ADD",
+      "name": "Web Favorites Add",
+      "category": "userflow-web",
+      "severity": "medium",
+      "description": "Verify clicking favorite on media item toggles it"
+    },
+    {
+      "id": "UF-WEB-FAV-LIST",
+      "name": "Web Favorites List",
+      "category": "userflow-web",
+      "severity": "medium",
+      "description": "Verify favorites list page loads with favorited items"
+    },
+    {
+      "id": "UF-WEB-FAV-REMOVE",
+      "name": "Web Favorites Remove",
+      "category": "userflow-web",
+      "severity": "medium",
+      "description": "Verify removing a favorite item"
+    },
+    {
+      "id": "UF-WEB-PLAYLIST-LIST",
+      "name": "Web Playlists List",
+      "category": "userflow-web",
+      "severity": "medium",
+      "description": "Verify playlists page loads"
+    },
+    {
+      "id": "UF-WEB-PLAYLIST-CREATE",
+      "name": "Web Playlists Create",
+      "category": "userflow-web",
+      "severity": "medium",
+      "description": "Verify creating a new playlist"
+    },
+    {
+      "id": "UF-WEB-PLAYLIST-ADD",
+      "name": "Web Playlists Add Item",
+      "category": "userflow-web",
+      "severity": "medium",
+      "description": "Verify adding an item to a playlist"
+    },
+    {
+      "id": "UF-WEB-PLAYLIST-PLAY",
+      "name": "Web Playlists Play",
+      "category": "userflow-web",
+      "severity": "medium",
+      "description": "Verify playing a playlist starts the player"
+    },
+    {
+      "id": "UF-WEB-RESP-MOBILE",
+      "name": "Web Responsive Mobile Layout",
+      "category": "userflow-web",
+      "severity": "medium",
+      "description": "Verify mobile viewport (375x667) renders mobile layout"
+    },
+    {
+      "id": "UF-WEB-RESP-TABLET",
+      "name": "Web Responsive Tablet Layout",
+      "category": "userflow-web",
+      "severity": "medium",
+      "description": "Verify tablet viewport (768x1024) renders tablet layout"
+    },
+    {
+      "id": "UF-WEB-RESP-DESKTOP",
+      "name": "Web Responsive Desktop Layout",
+      "category": "userflow-web",
+      "severity": "medium",
+      "description": "Verify desktop viewport (1920x1080) renders desktop layout"
+    },
+    {
+      "id": "UF-WEB-ERR-404",
+      "name": "Web Error 404 Page",
+      "category": "userflow-web",
+      "severity": "medium",
+      "description": "Verify 404 page renders for invalid URL"
+    },
+    {
+      "id": "UF-WEB-ERR-NETWORK",
+      "name": "Web Error Network Failure",
+      "category": "userflow-web",
+      "severity": "medium",
+      "description": "Verify error boundary handles network failures gracefully"
+    },
+    {
+      "id": "UF-WEB-ERR-BOUNDARY",
+      "name": "Web Error Boundary Component",
+      "category": "userflow-web",
+      "severity": "medium",
+      "description": "Verify ErrorBoundary component catches rendering errors"
+    },
+    {
+      "id": "UF-WEB-A11Y-KEYBOARD",
+      "name": "Web Accessibility Keyboard Navigation",
+      "category": "userflow-web",
+      "severity": "medium",
+      "description": "Verify tab navigation works across interactive elements"
+    },
+    {
+      "id": "UF-WEB-A11Y-ARIA",
+      "name": "Web Accessibility ARIA Labels",
+      "category": "userflow-web",
+      "severity": "medium",
+      "description": "Verify ARIA labels are present on interactive elements"
+    },
+    {
+      "id": "UF-WEB-A11Y-CONTRAST",
+      "name": "Web Accessibility Color Contrast",
+      "category": "userflow-web",
+      "severity": "medium",
+      "description": "Verify sufficient color contrast on text elements"
+    },
+    {
+      "id": "UF-DESKTOP-BUILD",
+      "name": "Desktop Build",
+      "category": "userflow-desktop",
+      "severity": "critical",
+      "description": "Build catalogizer-desktop with Cargo"
+    },
+    {
+      "id": "UF-DESKTOP-TEST",
+      "name": "Desktop Unit Tests",
+      "category": "userflow-desktop",
+      "severity": "high",
+      "description": "Run Rust unit tests for catalogizer-desktop"
+    },
+    {
+      "id": "UF-DESKTOP-LINT",
+      "name": "Desktop Lint",
+      "category": "userflow-desktop",
+      "severity": "medium",
+      "description": "Run cargo clippy on catalogizer-desktop"
+    },
+    {
+      "id": "UF-DESKTOP-LAUNCH",
+      "name": "Desktop Launch",
+      "category": "userflow-desktop",
+      "severity": "critical",
+      "description": "Launch catalogizer-desktop and verify window appears"
+    },
+    {
+      "id": "UF-DESKTOP-STABLE",
+      "name": "Desktop Stability",
+      "category": "userflow-desktop",
+      "severity": "high",
+      "description": "Launch catalogizer-desktop, wait 10s, verify still running"
+    },
+    {
+      "id": "UF-DESKTOP-SCREENSHOT",
+      "name": "Desktop Screenshot",
+      "category": "userflow-desktop",
+      "severity": "medium",
+      "description": "Launch desktop app, take screenshot, verify non-empty"
+    },
+    {
+      "id": "UF-DESKTOP-AUTH-LOGIN",
+      "name": "Desktop Auth Login",
+      "category": "userflow-desktop",
+      "severity": "critical",
+      "description": "Navigate to login, fill form, assert dashboard"
+    },
+    {
+      "id": "UF-DESKTOP-AUTH-PERSIST",
+      "name": "Desktop Auth Persist",
+      "category": "userflow-desktop",
+      "severity": "high",
+      "description": "Login, navigate away, assert still authenticated"
+    },
+    {
+      "id": "UF-DESKTOP-AUTH-LOGOUT",
+      "name": "Desktop Auth Logout",
+      "category": "userflow-desktop",
+      "severity": "high",
+      "description": "Login, logout, assert login screen visible"
+    },
+    {
+      "id": "UF-DESKTOP-BROWSE-LOAD",
+      "name": "Desktop Browse Load",
+      "category": "userflow-desktop",
+      "severity": "high",
+      "description": "Navigate to browse page, assert media grid loads"
+    },
+    {
+      "id": "UF-DESKTOP-BROWSE-SEARCH",
+      "name": "Desktop Browse Search",
+      "category": "userflow-desktop",
+      "severity": "medium",
+      "description": "Search for media items, assert results appear"
+    },
+    {
+      "id": "UF-DESKTOP-BROWSE-DETAIL",
+      "name": "Desktop Browse Detail",
+      "category": "userflow-desktop",
+      "severity": "medium",
+      "description": "Click a media item, assert detail view opens"
+    },
+    {
+      "id": "UF-DESKTOP-BROWSE-FILTER",
+      "name": "Desktop Browse Filter",
+      "category": "userflow-desktop",
+      "severity": "medium",
+      "description": "Apply a media type filter, assert filtered results"
+    },
+    {
+      "id": "UF-DESKTOP-IPC-VERSION",
+      "name": "Desktop IPC Version",
+      "category": "userflow-desktop",
+      "severity": "medium",
+      "description": "Invoke get_version IPC command, verify response"
+    },
+    {
+      "id": "UF-DESKTOP-IPC-CONFIG",
+      "name": "Desktop IPC Config",
+      "category": "userflow-desktop",
+      "severity": "medium",
+      "description": "Invoke get_config IPC command, verify config returned"
+    },
+    {
+      "id": "UF-DESKTOP-IPC-SETTINGS",
+      "name": "Desktop IPC Settings",
+      "category": "userflow-desktop",
+      "severity": "medium",
+      "description": "Invoke get_settings IPC command, verify settings"
+    },
+    {
+      "id": "UF-DESKTOP-SETTINGS-LOAD",
+      "name": "Desktop Settings Load",
+      "category": "userflow-desktop",
+      "severity": "medium",
+      "description": "Navigate to settings page and verify it loads"
+    },
+    {
+      "id": "UF-DESKTOP-SETTINGS-SAVE",
+      "name": "Desktop Settings Save",
+      "category": "userflow-desktop",
+      "severity": "medium",
+      "description": "Change a setting, save, verify persisted"
+    },
+    {
+      "id": "UF-WIZARD-BUILD",
+      "name": "Wizard Build",
+      "category": "userflow-desktop",
+      "severity": "critical",
+      "description": "Build installer-wizard with Cargo"
+    },
+    {
+      "id": "UF-WIZARD-TEST",
+      "name": "Wizard Unit Tests",
+      "category": "userflow-desktop",
+      "severity": "high",
+      "description": "Run Rust unit tests for installer-wizard"
+    },
+    {
+      "id": "UF-WIZARD-LAUNCH",
+      "name": "Wizard Launch",
+      "category": "userflow-desktop",
+      "severity": "critical",
+      "description": "Launch installer wizard and verify window appears"
+    },
+    {
+      "id": "UF-WIZARD-WELCOME",
+      "name": "Wizard Welcome Screen",
+      "category": "userflow-desktop",
+      "severity": "high",
+      "description": "Assert the welcome screen is visible after launch"
+    },
+    {
+      "id": "UF-WIZARD-PROTOCOL",
+      "name": "Wizard Protocol Selection",
+      "category": "userflow-desktop",
+      "severity": "high",
+      "description": "Select a storage protocol and assert next step"
+    },
+    {
+      "id": "UF-WIZARD-SERVER",
+      "name": "Wizard Server Details",
+      "category": "userflow-desktop",
+      "severity": "high",
+      "description": "Fill server details, validate, assert next step"
+    },
+    {
+      "id": "UF-WIZARD-COMPLETE",
+      "name": "Wizard Complete",
+      "category": "userflow-desktop",
+      "severity": "high",
+      "description": "Complete the wizard, assert success screen visible"
+    },
+    {
+      "id": "UF-WIZARD-VALIDATE-EMPTY",
+      "name": "Wizard Validate Empty Form",
+      "category": "userflow-desktop",
+      "severity": "medium",
+      "description": "Submit empty form, assert validation errors shown"
+    },
+    {
+      "id": "UF-WIZARD-VALIDATE-IP",
+      "name": "Wizard Validate Invalid IP",
+      "category": "userflow-desktop",
+      "severity": "medium",
+      "description": "Enter invalid IP address, assert validation error"
+    },
+    {
+      "id": "UF-WIZARD-VALIDATE-PATH",
+      "name": "Wizard Validate Invalid Path",
+      "category": "userflow-desktop",
+      "severity": "medium",
+      "description": "Enter invalid share path, assert validation error"
+    },
+    {
+      "id": "UF-ANDROID-BUILD",
+      "name": "Android Build",
+      "category": "userflow-mobile",
+      "severity": "critical",
+      "description": "Build catalogizer-android with Gradle assembleDebug"
+    },
+    {
+      "id": "UF-ANDROID-TEST",
+      "name": "Android Unit Tests",
+      "category": "userflow-mobile",
+      "severity": "high",
+      "description": "Run Android unit tests with Gradle"
+    },
+    {
+      "id": "UF-ANDROID-LINT",
+      "name": "Android Lint",
+      "category": "userflow-mobile",
+      "severity": "medium",
+      "description": "Run Android lint on catalogizer-android"
+    },
+    {
+      "id": "UF-ANDROID-LAUNCH",
+      "name": "Android Launch",
+      "category": "userflow-mobile",
+      "severity": "critical",
+      "description": "Install and launch catalogizer-android on emulator"
+    },
+    {
+      "id": "UF-ANDROID-STABLE",
+      "name": "Android Stability",
+      "category": "userflow-mobile",
+      "severity": "high",
+      "description": "Launch Android app, wait 10s, verify still running"
+    },
+    {
+      "id": "UF-ANDROID-SCREENSHOT",
+      "name": "Android Screenshot",
+      "category": "userflow-mobile",
+      "severity": "medium",
+      "description": "Launch app and capture a screenshot"
+    },
+    {
+      "id": "UF-ANDROID-AUTH-LOGIN",
+      "name": "Android Auth Login",
+      "category": "userflow-mobile",
+      "severity": "critical",
+      "description": "Tap login, enter credentials, verify main screen"
+    },
+    {
+      "id": "UF-ANDROID-AUTH-INVALID",
+      "name": "Android Auth Invalid",
+      "category": "userflow-mobile",
+      "severity": "high",
+      "description": "Enter wrong credentials, verify error message"
+    },
+    {
+      "id": "UF-ANDROID-AUTH-LOGOUT",
+      "name": "Android Auth Logout",
+      "category": "userflow-mobile",
+      "severity": "high",
+      "description": "Login, tap logout, verify login screen returns"
+    },
+    {
+      "id": "UF-ANDROID-BROWSE-LOAD",
+      "name": "Android Browse Load",
+      "category": "userflow-mobile",
+      "severity": "high",
+      "description": "Navigate to browse tab, assert items visible"
+    },
+    {
+      "id": "UF-ANDROID-BROWSE-SEARCH",
+      "name": "Android Browse Search",
+      "category": "userflow-mobile",
+      "severity": "medium",
+      "description": "Tap search, enter query, assert results appear"
+    },
+    {
+      "id": "UF-ANDROID-BROWSE-DETAIL",
+      "name": "Android Browse Detail",
+      "category": "userflow-mobile",
+      "severity": "medium",
+      "description": "Tap a media item, assert detail view opens"
+    },
+    {
+      "id": "UF-ANDROID-BROWSE-SCROLL",
+      "name": "Android Browse Scroll",
+      "category": "userflow-mobile",
+      "severity": "medium",
+      "description": "Scroll the list, assert more items load"
+    },
+    {
+      "id": "UF-ANDROID-PLAY-START",
+      "name": "Android Playback Start",
+      "category": "userflow-mobile",
+      "severity": "high",
+      "description": "Select media item, assert playback starts"
+    },
+    {
+      "id": "UF-ANDROID-PLAY-CONTROLS",
+      "name": "Android Playback Controls",
+      "category": "userflow-mobile",
+      "severity": "medium",
+      "description": "Assert play/pause controls are visible"
+    },
+    {
+      "id": "UF-ANDROID-PLAY-SEEK",
+      "name": "Android Playback Seek",
+      "category": "userflow-mobile",
+      "severity": "medium",
+      "description": "Seek forward during playback, assert position changes"
+    },
+    {
+      "id": "UF-ANDROID-SETTINGS-LOAD",
+      "name": "Android Settings Load",
+      "category": "userflow-mobile",
+      "severity": "medium",
+      "description": "Navigate to settings screen"
+    },
+    {
+      "id": "UF-ANDROID-SETTINGS-SERVER",
+      "name": "Android Settings Server URL",
+      "category": "userflow-mobile",
+      "severity": "medium",
+      "description": "Change server URL in settings, save"
+    },
+    {
+      "id": "UF-ANDROID-OFFLINE-BANNER",
+      "name": "Android Offline Banner",
+      "category": "userflow-mobile",
+      "severity": "medium",
+      "description": "Disable network, assert offline banner appears"
+    },
+    {
+      "id": "UF-ANDROID-OFFLINE-CACHE",
+      "name": "Android Offline Cache",
+      "category": "userflow-mobile",
+      "severity": "medium",
+      "description": "Assert cached content is accessible while offline"
+    },
+    {
+      "id": "UF-ANDROID-INSTR-UI",
+      "name": "Android Instrumented UI Tests",
+      "category": "userflow-mobile",
+      "severity": "high",
+      "description": "Run instrumented UI tests on Android device"
+    },
+    {
+      "id": "UF-ANDROID-INSTR-NAV",
+      "name": "Android Instrumented Navigation Tests",
+      "category": "userflow-mobile",
+      "severity": "high",
+      "description": "Run navigation instrumented tests on device"
+    },
+    {
+      "id": "UF-ANDROIDTV-BUILD",
+      "name": "Android TV Build",
+      "category": "userflow-mobile",
+      "severity": "critical",
+      "description": "Build catalogizer-androidtv with Gradle assembleDebug"
+    },
+    {
+      "id": "UF-ANDROIDTV-TEST",
+      "name": "Android TV Unit Tests",
+      "category": "userflow-mobile",
+      "severity": "high",
+      "description": "Run Android TV unit tests with Gradle"
+    },
+    {
+      "id": "UF-ANDROIDTV-LINT",
+      "name": "Android TV Lint",
+      "category": "userflow-mobile",
+      "severity": "medium",
+      "description": "Run Android lint on catalogizer-androidtv"
+    },
+    {
+      "id": "UF-ANDROIDTV-LAUNCH",
+      "name": "Android TV Launch",
+      "category": "userflow-mobile",
+      "severity": "critical",
+      "description": "Install and launch catalogizer-androidtv on TV emulator"
+    },
+    {
+      "id": "UF-ANDROIDTV-STABLE",
+      "name": "Android TV Stability",
+      "category": "userflow-mobile",
+      "severity": "high",
+      "description": "Verify Android TV app stability for 10s"
+    },
+    {
+      "id": "UF-ANDROIDTV-NAV-DPAD",
+      "name": "Android TV D-pad Navigation",
+      "category": "userflow-mobile",
+      "severity": "high",
+      "description": "Navigate with D-pad up/down/left/right"
+    },
+    {
+      "id": "UF-ANDROIDTV-NAV-SELECT",
+      "name": "Android TV D-pad Select",
+      "category": "userflow-mobile",
+      "severity": "high",
+      "description": "Navigate to item with D-pad, select with Enter"
+    },
+    {
+      "id": "UF-ANDROIDTV-NAV-BACK",
+      "name": "Android TV Back Navigation",
+      "category": "userflow-mobile",
+      "severity": "high",
+      "description": "Press Back, assert navigation back works"
+    },
+    {
+      "id": "UF-ANDROIDTV-BROWSE-LOAD",
+      "name": "Android TV Browse Load",
+      "category": "userflow-mobile",
+      "severity": "high",
+      "description": "Assert browse screen loads on TV"
+    },
+    {
+      "id": "UF-ANDROIDTV-BROWSE-ROW",
+      "name": "Android TV Browse Row Scroll",
+      "category": "userflow-mobile",
+      "severity": "medium",
+      "description": "Navigate row with D-pad, assert items scroll"
+    },
+    {
+      "id": "UF-ANDROIDTV-BROWSE-DETAIL",
+      "name": "Android TV Browse Detail",
+      "category": "userflow-mobile",
+      "severity": "medium",
+      "description": "Select item on TV, assert detail screen opens"
+    },
+    {
+      "id": "UF-ANDROIDTV-PLAY-START",
+      "name": "Android TV Playback Start",
+      "category": "userflow-mobile",
+      "severity": "high",
+      "description": "Select media item on TV, assert playback starts"
+    },
+    {
+      "id": "UF-ANDROIDTV-PLAY-CONTROLS",
+      "name": "Android TV Playback Controls",
+      "category": "userflow-mobile",
+      "severity": "medium",
+      "description": "Assert media controls overlay on TV"
+    },
+    {
+      "id": "UF-ANDROIDTV-PLAY-DPAD",
+      "name": "Android TV Playback D-pad",
+      "category": "userflow-mobile",
+      "severity": "medium",
+      "description": "Control TV playback via D-pad keys"
+    },
+    {
+      "id": "UF-ANDROIDTV-SETTINGS-LOAD",
+      "name": "Android TV Settings Load",
+      "category": "userflow-mobile",
+      "severity": "medium",
+      "description": "Navigate to TV settings screen"
+    },
+    {
+      "id": "UF-ANDROIDTV-SETTINGS-SERVER",
+      "name": "Android TV Settings Server URL",
+      "category": "userflow-mobile",
+      "severity": "medium",
+      "description": "Configure server URL on Android TV"
+    }
+  ]
 }

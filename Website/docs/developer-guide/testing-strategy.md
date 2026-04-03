@@ -61,7 +61,7 @@ Purpose: Identify vulnerabilities and ensure security best practices
 ### 6. Challenge-Based Testing
 Purpose: Validate the running system end-to-end with structured challenges
 
-Catalogizer uses a custom challenge framework with **285+ registered challenges** that execute against the running system and report structured results with assertions and metrics.
+Catalogizer uses a custom challenge framework with **557+ registered challenges** that execute against the running system and report structured results with assertions and metrics.
 
 **Challenge Categories:**
 - **Core challenges (CH-001 to CH-050)**: Connectivity, scanning, media detection, organization, and playback validation

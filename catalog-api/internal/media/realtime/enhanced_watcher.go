@@ -3,6 +3,7 @@ package realtime
 import (
 	"catalogizer/internal/media/analyzer"
 	"catalogizer/internal/media/database"
+	"catalogizer/internal/metrics"
 	"catalogizer/internal/models"
 	"catalogizer/internal/services"
 	"context"
@@ -421,6 +422,7 @@ func (w *EnhancedChangeWatcher) changeWorker(workerID int) {
 			return
 
 		case event := <-w.changeQueue:
+			metrics.UpdateChannelBufferDepth("enhanced_change_queue", float64(len(w.changeQueue)))
 			w.processChange(event, workerID)
 		}
 	}

@@ -13,7 +13,7 @@ This guide covers how to set up a development environment, follow the project's 
 
 ### Prerequisites
 
-- **Go 1.24+** for the backend
+- **Go 1.25+** for the backend
 - **Node.js 18+** and npm for the frontend
 - **Git** with submodule support
 - **Podman** (or Docker) for containers
@@ -215,12 +215,13 @@ Catalogizer enforces a zero warning, zero error policy across all components:
 
 ## Container Runtime
 
-Always use **Podman** for container operations. Key notes:
+Catalogizer supports dynamic container runtime detection, automatically selecting the available runtime (Podman preferred, Docker as fallback). Key notes:
 
-- Use `podman build --network host` (default networking has SSL issues)
-- Use fully qualified image names (`docker.io/library/...`)
+- Use `podman build --network host` or `docker build --network host` (default networking has SSL issues)
+- Use fully qualified image names (`docker.io/library/...`) -- required for Podman
 - Set `GOTOOLCHAIN=local` to prevent Go auto-downloading toolchains
 - Enforce resource limits on containers (max 4 CPUs, 8 GB RAM total)
+- Set `APPIMAGE_EXTRACT_AND_RUN=1` in containers for Tauri AppImage bundling (no FUSE)
 
 ---
 

@@ -191,8 +191,7 @@ export const PlaylistGrid: React.FC<PlaylistGridProps> = ({
           }
           break;
       }
-    } catch (error) {
-      console.error(`Failed to ${action} playlist:`, error);
+    } catch {
       toast.error(`Failed to ${action} playlist`);
     } finally {
       setShowDropdown(null);
@@ -253,8 +252,7 @@ export const PlaylistGrid: React.FC<PlaylistGridProps> = ({
           break;
         }
       }
-    } catch (error) {
-      console.error(`Failed to ${action} playlists:`, error);
+    } catch {
       toast.error(`Failed to ${action} playlists`);
     }
   };

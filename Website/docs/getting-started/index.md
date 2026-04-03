@@ -85,7 +85,7 @@ Docker provides an isolated environment that's easy to manage and deploy.
 ### Option 3: Manual Installation (For developers)
 
 #### Backend Installation
-1. **Install Go 1.24+**
+1. **Install Go 1.25+**
    ```bash
    # macOS
    brew install go

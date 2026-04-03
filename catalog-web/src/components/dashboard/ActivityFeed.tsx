@@ -113,7 +113,8 @@ export const ActivityFeed: React.FC<ActivityFeedProps> = ({
         
         setActivities(mockActivities)
       } catch (error) {
-        console.error('Failed to fetch activities:', error)
+        // Activity fetch failure — UI shows empty state
+        void error;
       } finally {
         setLoading(false)
       }

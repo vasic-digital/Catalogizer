@@ -304,7 +304,6 @@ export const CollectionExport: React.FC<CollectionExportProps> = ({
       toast.success('Collection exported successfully')
     } catch (error) {
       toast.error('Export failed')
-      console.error('Export error:', error)
     } finally {
       setIsExporting(false)
       setExportProgress(null)
@@ -378,7 +377,6 @@ export const CollectionExport: React.FC<CollectionExportProps> = ({
       }
     } catch (error) {
       toast.error('Import failed')
-      console.error('Import error:', error)
     } finally {
       setIsImporting(false)
     }

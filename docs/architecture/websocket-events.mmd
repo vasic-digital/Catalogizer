@@ -1,0 +1,76 @@
+%% WebSocket Event Flow
+%% Event sources through EventBus to connected clients
+
+flowchart TD
+    subgraph Sources["Event Sources"]
+        SCAN["UniversalScanner<br/>Scan started / progress / complete"]
+        AGG["AggregationService<br/>Entity created / updated"]
+        DETECT["Media Detector<br/>New media detected"]
+        SYSTEM["System Events<br/>Service health / config changes"]
+        CHALLENGE["Challenge Runner<br/>Progress / result"]
+    end
+
+    subgraph EventBus["Internal EventBus<br/>internal/media/realtime/event_bus.go"]
+        PUBLISH["Publish(event)"]
+        TOPICS["Topic Routing<br/>scan | media | system | challenge"]
+        SUBS["Subscriber Registry<br/>(map of topic to channels)"]
+    end
+
+    subgraph WSHandler["WebSocketHandler<br/>internal/handlers/"]
+        UPGRADE["HTTP Upgrade<br/>to WebSocket"]
+        CONNMGR["Connection Manager<br/>(mutex-protected connCount)"]
+        READPUMP["readPump()<br/>per-connection goroutine"]
+        WRITEPUMP["writePump()<br/>per-connection goroutine"]
+        BROADCAST["Broadcast to<br/>all connections"]
+        STOP["Stop()<br/>sync.Once safe shutdown"]
+    end
+
+    subgraph Clients["Connected Clients"]
+        WEB["catalog-web<br/>WebSocketProvider<br/>@vasic-digital/websocket-client"]
+        ANDROID["catalogizer-android<br/>OkHttp WebSocket<br/>WebSocketEvent sealed class"]
+        ANDROIDTV["catalogizer-androidtv<br/>OkHttp WebSocket"]
+        DESKTOP["catalogizer-desktop<br/>Tauri WebSocket"]
+    end
+
+    subgraph EventTypes["Event Message Types"]
+        MEDIA_UPDATE["MediaUpdate<br/>{action, mediaId, media}"]
+        SYSTEM_UPDATE["SystemUpdate<br/>{action, component, status}"]
+        ANALYSIS_COMPLETE["AnalysisComplete<br/>{analysisId, itemsProcessed}"]
+        NOTIFICATION["Notification<br/>{type, title, message}"]
+        SCAN_PROGRESS["ScanProgress<br/>{rootId, filesProcessed, total}"]
+    end
+
+    SCAN -->|"ScanStarted<br/>ScanProgress<br/>ScanComplete"| PUBLISH
+    AGG -->|"EntityCreated<br/>EntityUpdated"| PUBLISH
+    DETECT -->|"MediaDetected"| PUBLISH
+    SYSTEM -->|"HealthCheck<br/>ConfigChanged"| PUBLISH
+    CHALLENGE -->|"ChallengeProgress<br/>ChallengeResult"| PUBLISH
+
+    PUBLISH --> TOPICS
+    TOPICS --> SUBS
+    SUBS -->|"Fan-out to<br/>subscribers"| BROADCAST
+
+    BROADCAST --> WRITEPUMP
+    WRITEPUMP -->|"JSON message"| WEB
+    WRITEPUMP -->|"JSON message"| ANDROID
+    WRITEPUMP -->|"JSON message"| ANDROIDTV
+    WRITEPUMP -->|"JSON message"| DESKTOP
+
+    WEB -->|"Client messages"| READPUMP
+    ANDROID -->|"Client messages"| READPUMP
+    ANDROIDTV -->|"Client messages"| READPUMP
+    DESKTOP -->|"Client messages"| READPUMP
+
+    READPUMP -->|"Parse + route"| PUBLISH
+
+    UPGRADE --> CONNMGR
+    CONNMGR --> READPUMP
+    CONNMGR --> WRITEPUMP
+
+    BROADCAST -.->|"Message format"| EventTypes
+
+    style Sources fill:#fff3e0,stroke:#e65100,stroke-width:2px
+    style EventBus fill:#e3f2fd,stroke:#1565c0,stroke-width:2px
+    style WSHandler fill:#e8f5e9,stroke:#2e7d32,stroke-width:2px
+    style Clients fill:#f3e5f5,stroke:#6a1b9a,stroke-width:2px
+    style EventTypes fill:#fce4ec,stroke:#c62828,stroke-width:1px

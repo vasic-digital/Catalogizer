@@ -17,6 +17,9 @@ class AuthRepository(
 
     private val json = Json { ignoreUnknownKeys = true }
 
+    /** Called on logout to allow cancelling background sync without circular dependency. */
+    var onLogout: (() -> Unit)? = null
+
     companion object {
         private val AUTH_TOKEN_KEY = stringPreferencesKey("auth_token")
         private val REFRESH_TOKEN_KEY = stringPreferencesKey("refresh_token")
@@ -110,6 +113,9 @@ class AuthRepository(
                 // Continue with local logout even if API call fails
                 ApiResult.success(Unit)
             }
+
+            // Cancel background sync work
+            onLogout?.invoke()
 
             // Clear local auth data
             clearAuthData()

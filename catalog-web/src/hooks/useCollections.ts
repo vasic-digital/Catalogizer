@@ -79,9 +79,9 @@ export const useCollections = () => {
       try {
         await navigator.clipboard.writeText(shareInfo.share_url);
         toast.success('Share link copied to clipboard!');
-      } catch (error) {
+      } catch {
+        // Clipboard copy is non-critical — still show success for the share itself
         toast.success('Collection shared successfully!');
-        console.error('Failed to copy to clipboard:', error);
       }
     },
     onError: (error: Error) => {

@@ -19,8 +19,10 @@ import com.catalogizer.androidtv.ui.screens.search.SearchViewModel
 import com.catalogizer.androidtv.data.remote.AuthInterceptor
 import okhttp3.OkHttpClient
 import okhttp3.logging.HttpLoggingInterceptor
+import com.jakewharton.retrofit2.converter.kotlinx.serialization.asConverterFactory
+import kotlinx.serialization.json.Json
+import okhttp3.MediaType.Companion.toMediaType
 import retrofit2.Retrofit
-import retrofit2.converter.gson.GsonConverterFactory
 import java.util.concurrent.TimeUnit
 
 class DependencyContainer(private val context: Context) {
@@ -76,7 +78,7 @@ class DependencyContainer(private val context: Context) {
         return Retrofit.Builder()
             .baseUrl(effectiveUrl.trimEnd('/') + "/")
             .client(buildOkHttpClient())
-            .addConverterFactory(GsonConverterFactory.create())
+            .addConverterFactory(Json { ignoreUnknownKeys = true; coerceInputValues = true }.asConverterFactory("application/json".toMediaType()))
             .build()
             .create(CatalogizerApi::class.java)
     }

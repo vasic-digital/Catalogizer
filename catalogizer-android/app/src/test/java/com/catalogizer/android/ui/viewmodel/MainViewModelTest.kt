@@ -68,13 +68,30 @@ class MainViewModelTest {
     fun `initialize app should handle errors gracefully`() = runTest {
         // Given - initial state should be loading
         assertTrue(viewModel.isLoading.value)
-        
+
         // When
         viewModel.initializeApp()
         advanceUntilIdle()
-        
+
         // Then - should still set loading to false even if errors occur
         assertFalse(viewModel.isLoading.value)
         // Should not crash and should handle the error
+    }
+
+    @Test
+    fun `isLoading is StateFlow and emits initial value`() {
+        val flow = viewModel.isLoading
+        assertNotNull(flow)
+        assertTrue(flow.value) // default value
+    }
+
+    @Test
+    fun `multiple calls to initializeApp are safe`() = runTest {
+        viewModel.initializeApp()
+        viewModel.initializeApp()
+        viewModel.initializeApp()
+        advanceUntilIdle()
+
+        assertFalse(viewModel.isLoading.value)
     }
 }

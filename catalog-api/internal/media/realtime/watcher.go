@@ -3,6 +3,7 @@ package realtime
 import (
 	"catalogizer/internal/media/analyzer"
 	"catalogizer/internal/media/database"
+	"catalogizer/internal/metrics"
 	"context"
 	"encoding/json"
 	"path/filepath"
@@ -292,6 +293,7 @@ func (w *SMBChangeWatcher) changeWorker(workerID int) {
 			return
 
 		case event := <-w.changeQueue:
+			metrics.UpdateChannelBufferDepth("smb_change_queue", float64(len(w.changeQueue)))
 			w.processChange(event, workerID)
 		}
 	}

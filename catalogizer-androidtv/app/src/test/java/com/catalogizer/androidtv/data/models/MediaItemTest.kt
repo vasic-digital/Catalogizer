@@ -178,9 +178,8 @@ class MediaItemTest {
         val item = createTestMediaItem()
         val jsonStr = json.encodeToString(item)
 
-        // kotlinx.serialization uses Kotlin property names (camelCase) since
-        // the class uses Gson @SerializedName annotations (not kotlinx @SerialName).
-        // Gson handles snake_case for Retrofit; kotlinx uses camelCase field names.
+        // kotlinx.serialization uses @SerialName for snake_case JSON field mapping.
+        // Retrofit uses the serialization converter; direct encoding uses Kotlin property names.
         assertTrue(jsonStr.contains("\"mediaType\":\"movie\""))
         assertTrue(jsonStr.contains("\"directoryPath\":\"/media/movies/test\""))
     }

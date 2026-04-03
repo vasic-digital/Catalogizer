@@ -1267,6 +1267,12 @@ func main() {
 	// Stop cache service cleanup goroutine
 	cacheService.Close()
 
+	// Wait for background TMDB enrichment goroutines to finish
+	mediaEntityHandler.Close()
+
+	// Wait for background log stream relay goroutines to finish
+	logAdapter.Close()
+
 	// Shutdown HTTP server (stops accepting new connections, waits for in-flight requests)
 	if err := srv.Shutdown(shutdownCtx); err != nil {
 		logger.Error("HTTP server shutdown error", zap.Error(err))

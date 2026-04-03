@@ -182,6 +182,15 @@ var (
 		[]string{"component", "type"},
 	)
 
+	// Channel Buffer Metrics
+	ChannelBufferDepth = promauto.NewGaugeVec(
+		prometheus.GaugeOpts{
+			Name: "catalogizer_channel_buffer_depth",
+			Help: "Current number of items in buffered channels",
+		},
+		[]string{"channel_name"},
+	)
+
 	// System Metrics
 	UptimeSeconds = promauto.NewCounter(
 		prometheus.CounterOpts{
@@ -275,4 +284,9 @@ func IncrementUptime() {
 // RecordWebSocketMessage records a WebSocket message
 func RecordWebSocketMessage(direction string) {
 	WebSocketMessagesTotal.WithLabelValues(direction).Inc()
+}
+
+// UpdateChannelBufferDepth updates the current depth of a buffered channel.
+func UpdateChannelBufferDepth(channelName string, depth float64) {
+	ChannelBufferDepth.WithLabelValues(channelName).Set(depth)
 }

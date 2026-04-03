@@ -46,8 +46,8 @@ class MediaSearchModelsTest {
 
         val jsonStr = json.encodeToString(request)
 
-        // kotlinx.serialization uses Kotlin property names (camelCase) since
-        // the class uses Gson @SerializedName annotations (not kotlinx @SerialName).
+        // kotlinx.serialization uses @SerialName for snake_case JSON field mapping.
+        // Retrofit uses the serialization converter; direct encoding uses Kotlin property names.
         assertTrue(jsonStr.contains("\"mediaType\":\"movie\""))
         assertTrue(jsonStr.contains("\"yearMin\":2010"))
         assertTrue(jsonStr.contains("\"sortBy\":\"rating\""))
@@ -71,8 +71,8 @@ class MediaSearchModelsTest {
 
     @Test
     fun `MediaStats deserializes correctly`() {
-        // kotlinx.serialization uses Kotlin property names (camelCase) since
-        // the class uses Gson @SerializedName annotations (not kotlinx @SerialName).
+        // kotlinx.serialization uses @SerialName for snake_case JSON field mapping.
+        // Retrofit uses the serialization converter; direct encoding uses Kotlin property names.
         val jsonStr = """{
             "totalItems": 500,
             "byType": {"movie": 200, "music": 300},

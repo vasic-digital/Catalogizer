@@ -9,6 +9,7 @@ import (
 	"net/url"
 	"os"
 	"strconv"
+	"sync"
 	"time"
 
 	"catalogizer/database"
@@ -28,6 +29,7 @@ type MediaEntityHandler struct {
 	userMetaRepo    *repository.UserMetadataRepository
 	coverArtService *services.CoverArtService
 	db              *database.DB
+	enrichWg        sync.WaitGroup // tracks background TMDB enrichment goroutines
 }
 
 // NewMediaEntityHandler creates a new media entity handler.
@@ -1024,13 +1026,21 @@ func (h *MediaEntityHandler) getMediaTypeNames(ctx context.Context) map[int64]st
 	return result
 }
 
+// Close waits for all background enrichment goroutines to finish.
+// Must be called during shutdown to avoid goroutine leaks.
+func (h *MediaEntityHandler) Close() {
+	h.enrichWg.Wait()
+}
+
 // lazyEnrichEntities triggers background TMDB enrichment for entities without metadata.
 // Called from browse/detail handlers to populate data on first access.
 func (h *MediaEntityHandler) lazyEnrichEntities(entityIDs []int64) {
 	if h.db == nil || os.Getenv("TMDB_API_KEY") == "" {
 		return
 	}
+	h.enrichWg.Add(1)
 	go func() {
+		defer h.enrichWg.Done()
 		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Minute)
 		defer cancel()
 		for _, id := range entityIDs {

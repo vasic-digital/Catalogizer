@@ -40,13 +40,13 @@ app/src/main/java/com/catalogizer/androidtv/
 
 | Library | Purpose |
 |---|---|
-| Jetpack Compose (BOM 2023.10) | Declarative UI |
+| Jetpack Compose (BOM 2024.01) | Declarative UI |
 | Compose for TV (`tv-foundation`, `tv-material` 1.0.0-alpha10) | TV-specific composables |
 | Leanback 1.0.0 | TV navigation and UI patterns |
 | Material 3 | Design system |
 | Navigation Compose | Screen navigation |
 | Room 2.6.1 | Local database (offline cache) |
-| Retrofit 2.9.0 + Gson + OkHttp 4.12 | REST API client |
+| Retrofit 2.9.0 + Kotlinx Serialization Converter + OkHttp 4.12 | REST API client |
 | Kotlinx Serialization | JSON serialization |
 | Coil | Image loading |
 | ExoPlayer (Media3 + Session) | Media playback with TV session support |
@@ -107,7 +107,7 @@ Uses Media3 ExoPlayer with `media3-session` for TV media session integration (pl
 - **Kotlin**: Coroutines for async, StateFlow for reactive state, `freeCompilerArgs = ["-Xjvm-default=all"]`.
 - **Compose**: TV-optimized screens using `tv-foundation`/`tv-material` composables.
 - **Offline-first**: Room database provides local cache.
-- **Networking**: Uses Gson converter (unlike the phone app which uses Kotlinx Serialization converter).
+- **Networking**: Uses Kotlinx Serialization converter (aligned with the phone app).
 
 ## Constraints
 

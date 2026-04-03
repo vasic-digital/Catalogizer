@@ -77,7 +77,7 @@ When using Podman, keep these points in mind:
 Build and run each component individually.
 
 ### Requirements
-- Go 1.24+ (backend)
+- Go 1.25+ (backend)
 - Node.js 18+ (frontend and TypeScript projects)
 - SQLCipher (encrypted database)
 - Git

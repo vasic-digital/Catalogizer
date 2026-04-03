@@ -88,8 +88,7 @@ export const PlaylistsPage: React.FC = () => {
       setIsCreating(false);
       resetForm();
       refetchPlaylists();
-    } catch (error) {
-      console.error('Failed to create playlist:', error);
+    } catch {
       toast.error('Failed to create playlist');
     }
   };
@@ -110,8 +109,7 @@ export const PlaylistsPage: React.FC = () => {
       setEditingPlaylist(null);
       resetForm();
       refetchPlaylists();
-    } catch (error) {
-      console.error('Failed to update playlist:', error);
+    } catch {
       toast.error('Failed to update playlist');
     }
   };
@@ -142,8 +140,7 @@ export const PlaylistsPage: React.FC = () => {
         limit: 20
       });
       setMediaSearchResults(response.items || []);
-    } catch (error) {
-      console.error('Failed to search media:', error);
+    } catch {
       toast.error('Failed to search media items');
       setMediaSearchResults([]);
     } finally {
@@ -508,8 +505,7 @@ export const PlaylistsPage: React.FC = () => {
                     setActiveTab('my'); // Switch to My Playlists to see the result
                     refetchPlaylists();
                   })
-                  .catch((error) => {
-                    console.error('Failed to create smart playlist:', error);
+                  .catch(() => {
                     toast.error('Failed to create smart playlist');
                   });
               }}

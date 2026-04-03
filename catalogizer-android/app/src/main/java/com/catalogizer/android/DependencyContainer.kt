@@ -12,6 +12,8 @@ import com.catalogizer.android.data.local.CatalogizerDatabase
 import com.catalogizer.android.data.remote.CatalogizerApi
 import com.catalogizer.android.data.repository.AuthRepository
 import com.catalogizer.android.data.repository.MediaRepository
+import com.catalogizer.android.data.repository.OfflineRepository
+import com.catalogizer.android.data.repository.WebSocketRepository
 import com.catalogizer.android.data.sync.SyncManager
 import com.catalogizer.android.ui.viewmodel.AuthViewModel
 import com.catalogizer.android.ui.viewmodel.HomeViewModel
@@ -21,6 +23,7 @@ import com.jakewharton.retrofit2.converter.kotlinx.serialization.asConverterFact
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withContext
 import kotlinx.serialization.json.Json
 import okhttp3.MediaType.Companion.toMediaType
@@ -60,6 +63,8 @@ class DependencyContainer(private val context: Context) {
     // Current active base URL — read from settings or discovered at runtime
     private var currentBaseUrl: String = BuildConfig.API_BASE_URL.ifBlank { "" }
 
+    private var okHttpClient: OkHttpClient? = null
+
     private fun buildOkHttpClient(): OkHttpClient {
         val logging = HttpLoggingInterceptor().apply {
             level = if (BuildConfig.DEBUG) HttpLoggingInterceptor.Level.BODY
@@ -70,7 +75,7 @@ class DependencyContainer(private val context: Context) {
             .connectTimeout(30, TimeUnit.SECONDS)
             .readTimeout(30, TimeUnit.SECONDS)
             .writeTimeout(30, TimeUnit.SECONDS)
-            .build()
+            .build().also { okHttpClient = it }
     }
 
     private fun buildApi(baseUrl: String): CatalogizerApi {
@@ -99,7 +104,9 @@ class DependencyContainer(private val context: Context) {
 
     // Repositories
     val authRepository: AuthRepository by lazy {
-        AuthRepository(api, dataStore)
+        AuthRepository(api, dataStore).also { repo ->
+            repo.onLogout = { syncManager.cancelSync() }
+        }
     }
 
     val mediaRepository: MediaRepository by lazy {
@@ -109,6 +116,21 @@ class DependencyContainer(private val context: Context) {
     // Sync Manager
     val syncManager: SyncManager by lazy {
         SyncManager(database, api, authRepository, mediaRepository, context)
+    }
+
+    // Offline Repository
+    val offlineRepository: OfflineRepository by lazy {
+        OfflineRepository(database, syncManager, context)
+    }
+
+    // WebSocket Repository
+    val webSocketRepository: WebSocketRepository by lazy {
+        WebSocketRepository(
+            baseUrl = currentBaseUrl,
+            tokenProvider = {
+                runBlocking { authRepository.authToken.first() }
+            }
+        )
     }
 
     // ViewModels
@@ -175,6 +197,23 @@ class DependencyContainer(private val context: Context) {
         } catch (_: Exception) {
             false
         }
+    }
+
+    /**
+     * Shut down OkHttpClient resources (dispatcher, connection pool, cache).
+     * Called from Application.onTerminate() as a safety net.
+     */
+    fun shutdown() {
+        try {
+            webSocketRepository.disconnect()
+        } catch (_: Exception) { }
+        try {
+            okHttpClient?.let { client ->
+                client.dispatcher.executorService.shutdown()
+                client.connectionPool.evictAll()
+                client.cache?.close()
+            }
+        } catch (_: Exception) { }
     }
 
     /**

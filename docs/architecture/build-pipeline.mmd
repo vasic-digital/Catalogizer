@@ -1,0 +1,94 @@
+%% Build Pipeline Architecture
+%% release-build.sh orchestrating all 7 components via Build/ framework
+
+flowchart TD
+    TRIGGER["release-build.sh<br/>--container --force --skip-tests"]
+
+    subgraph BuildFramework["Build/ Framework (submodule)"]
+        COMMON["lib/common.sh<br/>Logging, container runtime<br/>detection, git helpers"]
+        VERSION["lib/version.sh<br/>Semantic versioning<br/>via versions.json"]
+        HASH["lib/hash.sh<br/>SHA256 change detection<br/>(skip unchanged components)"]
+        ORCH["lib/orchestrator.sh<br/>CLI parsing, build loop"]
+    end
+
+    subgraph VersionInfo["Version Injection"]
+        VERSIONS_JSON["versions.json<br/>{version, build, date}"]
+        LDFLAGS["-ldflags<br/>Version, BuildNumber, BuildDate"]
+    end
+
+    subgraph Components["7 Component Builders<br/>scripts/lib/"]
+        direction TB
+        BUILD_API["build-catalog-api.sh<br/>Go binary<br/>(go build -ldflags)"]
+        BUILD_WEB["build-catalog-web.sh<br/>Vite production build<br/>(npm run build)"]
+        BUILD_DESKTOP["build-desktop.sh<br/>Tauri AppImage/DMG<br/>(npm run tauri:build)"]
+        BUILD_WIZARD["build-installer.sh<br/>Tauri installer wizard<br/>(npm run tauri:build)"]
+        BUILD_ANDROID["build-android.sh<br/>APK / AAB<br/>(./gradlew assembleRelease)"]
+        BUILD_ANDROIDTV["build-androidtv.sh<br/>APK / AAB<br/>(./gradlew assembleRelease)"]
+        BUILD_CLIENT["build-api-client.sh<br/>TypeScript library<br/>(npm run build)"]
+    end
+
+    subgraph Container["Container Build Environment<br/>(Podman)"]
+        BUILDER["Dockerfile.builder<br/>Ubuntu 22.04<br/>Go 1.25 + Node 18 + Rust<br/>+ JDK 21 + Android SDK 34<br/>+ Playwright"]
+        PODMAN_BUILD["podman build --network host"]
+        PODMAN_RUN["podman run --network host<br/>GOTOOLCHAIN=local<br/>APPIMAGE_EXTRACT_AND_RUN=1"]
+    end
+
+    subgraph Artifacts["Build Artifacts<br/>(releases/ - gitignored)"]
+        BIN["catalog-api binary<br/>(linux/amd64)"]
+        WEBDIST["catalog-web dist/<br/>(static files)"]
+        APPIMAGE["Desktop AppImage<br/>+ DMG (macOS)"]
+        INSTALLER["Wizard AppImage<br/>+ DMG (macOS)"]
+        APK_ANDROID["Android APK/AAB"]
+        APK_TV["Android TV APK/AAB"]
+        NPM_PKG["API Client npm package"]
+    end
+
+    subgraph ChangeDetection["Change Detection"]
+        PREV_HASH["Previous SHA256<br/>(per component)"]
+        CURR_HASH["Current SHA256<br/>(source files)"]
+        SKIP{{"Hashes match?"}}
+    end
+
+    TRIGGER --> ORCH
+    ORCH --> COMMON
+    ORCH --> VERSION
+    ORCH --> HASH
+
+    VERSION --> VERSIONS_JSON
+    VERSIONS_JSON --> LDFLAGS
+
+    HASH --> PREV_HASH
+    HASH --> CURR_HASH
+    PREV_HASH --> SKIP
+    CURR_HASH --> SKIP
+    SKIP -->|"Yes: skip"| Artifacts
+    SKIP -->|"No: rebuild"| Components
+
+    ORCH -->|"build_single_component()"| Components
+
+    BUILD_API --> PODMAN_RUN
+    BUILD_WEB --> PODMAN_RUN
+    BUILD_DESKTOP --> PODMAN_RUN
+    BUILD_WIZARD --> PODMAN_RUN
+    BUILD_ANDROID --> PODMAN_RUN
+    BUILD_ANDROIDTV --> PODMAN_RUN
+    BUILD_CLIENT --> PODMAN_RUN
+
+    PODMAN_BUILD --> BUILDER
+    BUILDER --> PODMAN_RUN
+
+    BUILD_API -->|"Go binary"| BIN
+    BUILD_WEB -->|"Vite dist"| WEBDIST
+    BUILD_DESKTOP -->|"Tauri bundle"| APPIMAGE
+    BUILD_WIZARD -->|"Tauri bundle"| INSTALLER
+    BUILD_ANDROID -->|"Gradle output"| APK_ANDROID
+    BUILD_ANDROIDTV -->|"Gradle output"| APK_TV
+    BUILD_CLIENT -->|"npm pack"| NPM_PKG
+
+    LDFLAGS --> BUILD_API
+
+    style BuildFramework fill:#e3f2fd,stroke:#1565c0,stroke-width:2px
+    style Components fill:#fff3e0,stroke:#e65100,stroke-width:2px
+    style Container fill:#e8f5e9,stroke:#2e7d32,stroke-width:2px
+    style Artifacts fill:#f3e5f5,stroke:#6a1b9a,stroke-width:2px
+    style ChangeDetection fill:#fce4ec,stroke:#c62828,stroke-width:1px

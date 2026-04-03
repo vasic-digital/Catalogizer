@@ -89,7 +89,8 @@ export const RegisterForm: React.FC = () => {
       })
       navigate('/login')
     } catch (error) {
-      console.error('Registration failed:', error)
+      // Error is handled by the auth context which sets error state for UI display
+      void error;
     } finally {
       setIsLoading(false)
     }

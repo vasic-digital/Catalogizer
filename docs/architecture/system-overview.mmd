@@ -1,0 +1,75 @@
+%% Catalogizer System Overview
+%% All 7 components and their data flow through the API
+
+graph TB
+    subgraph Clients["Client Applications"]
+        WEB["catalog-web<br/>(React 18 / TypeScript / Vite)<br/>Port 3000"]
+        DESKTOP["catalogizer-desktop<br/>(Tauri / Rust + React)"]
+        WIZARD["installer-wizard<br/>(Tauri / Rust + React)"]
+        ANDROID["catalogizer-android<br/>(Kotlin / Jetpack Compose)"]
+        ANDROIDTV["catalogizer-androidtv<br/>(Kotlin / Compose for TV)"]
+        APICLIENT["catalogizer-api-client<br/>(TypeScript Library)"]
+    end
+
+    subgraph API["catalog-api (Go 1.25 / Gin)"]
+        direction TB
+        ROUTER["Gin Router<br/>/api/v1/*"]
+        MIDDLEWARE["Middleware Stack<br/>CORS | Auth | Rate Limit | Metrics"]
+        HANDLERS["Handlers<br/>Catalog | Media Entity | Auth | Search"]
+        SERVICES["Services<br/>Auth | Scan | Aggregation | Detection"]
+        REPOS["Repositories<br/>File | MediaItem | User | Collection"]
+    end
+
+    subgraph Storage["Data Layer"]
+        SQLITE["SQLite<br/>(Development)"]
+        POSTGRES["PostgreSQL 15<br/>(Production)"]
+        REDIS["Redis 7<br/>(Cache)"]
+    end
+
+    subgraph FileSystem["Storage Protocols"]
+        SMB["SMB / CIFS"]
+        FTP["FTP / SFTP"]
+        NFS["NFS"]
+        WEBDAV["WebDAV"]
+        LOCAL["Local FS"]
+    end
+
+    subgraph Monitoring["Observability"]
+        PROM["Prometheus"]
+        GRAFANA["Grafana"]
+    end
+
+    WEB -->|"HTTP/3 + WebSocket<br/>Vite Proxy /api"| ROUTER
+    DESKTOP -->|"HTTP/3<br/>IPC Commands"| ROUTER
+    WIZARD -->|"HTTP/3<br/>Setup Flow"| ROUTER
+    ANDROID -->|"HTTP/3 (Cronet)<br/>OkHttp + Retrofit"| ROUTER
+    ANDROIDTV -->|"HTTP/3 (Cronet)<br/>OkHttp + Retrofit"| ROUTER
+    APICLIENT -->|"HTTP/3<br/>Fetch API"| ROUTER
+
+    ROUTER --> MIDDLEWARE
+    MIDDLEWARE --> HANDLERS
+    HANDLERS --> SERVICES
+    SERVICES --> REPOS
+
+    REPOS --> SQLITE
+    REPOS --> POSTGRES
+    SERVICES -->|"Cache Layer"| REDIS
+
+    SERVICES -->|"UnifiedClient<br/>filesystem/factory.go"| SMB
+    SERVICES --> FTP
+    SERVICES --> NFS
+    SERVICES --> WEBDAV
+    SERVICES --> LOCAL
+
+    API -->|"/metrics"| PROM
+    PROM --> GRAFANA
+
+    SERVICES -->|"EventBus<br/>WebSocket"| WEB
+    SERVICES -->|"EventBus<br/>WebSocket"| ANDROID
+    SERVICES -->|"EventBus<br/>WebSocket"| ANDROIDTV
+
+    style API fill:#e3f2fd,stroke:#1565c0,stroke-width:2px
+    style Clients fill:#f3e5f5,stroke:#6a1b9a,stroke-width:2px
+    style Storage fill:#e8f5e9,stroke:#2e7d32,stroke-width:2px
+    style FileSystem fill:#fff3e0,stroke:#e65100,stroke-width:2px
+    style Monitoring fill:#fce4ec,stroke:#c62828,stroke-width:2px

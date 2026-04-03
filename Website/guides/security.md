@@ -130,26 +130,44 @@ All API inputs are validated by the input validation middleware before reaching 
 
 ## Security Testing
 
-Catalogizer includes tools for security auditing.
+Catalogizer includes a comprehensive security scanning pipeline covering static analysis, dependency scanning, and container scanning.
 
 ```bash
 # Go vulnerability check
-govulncheck ./...
+cd catalog-api && govulncheck ./...
 
 # Dependency vulnerability scanning
-npm audit --production
+cd catalog-web && npm audit --production
 
-# Security-focused test suite
-./scripts/security-test.sh
+# Consolidated security scan (runs all available scanners)
+./scripts/security-scan.sh
 
-# Snyk scanning
+# SonarQube static analysis
+./scripts/run-sonarqube-scan.sh
+
+# Semgrep SAST with custom rules
+podman-compose -f docker-compose.security.yml --profile semgrep-scan run --rm semgrep-scanner
+
+# Snyk dependency scanning
 ./scripts/snyk-scan.sh
 
-# SonarQube analysis
-./scripts/sonarqube-scan.sh
+# Trivy container scanning
+podman-compose -f docker-compose.security.yml --profile trivy-scan run --rm trivy-scanner
 ```
 
-The `docker-compose.security.yml` file provides a containerized security scanning environment with pre-configured tools.
+### Available Scanners
+
+| Scanner | Target | Description |
+|---------|--------|-------------|
+| **govulncheck** | Go dependencies | Scans for known vulnerabilities in Go stdlib and third-party packages |
+| **npm audit** | Node.js dependencies | Checks frontend and TypeScript submodule dependencies |
+| **SonarQube** | Source code | Static analysis for code quality, bugs, and security anti-patterns |
+| **Semgrep** | Source code | SAST scanning with 8 custom rules for project-specific patterns |
+| **Snyk** | Dependencies | Cross-ecosystem dependency vulnerability scanning |
+| **Trivy** | Container images | Scans container images for OS and library vulnerabilities |
+| **OWASP Dependency Check** | Dependencies | Identifies known vulnerable components |
+
+The `docker-compose.security.yml` file provides a containerized security scanning environment with pre-configured tools and profiles for each scanner.
 
 ---
 

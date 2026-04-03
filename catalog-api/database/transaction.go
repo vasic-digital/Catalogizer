@@ -196,35 +196,59 @@ func (tx *Transaction) QueryRow(query string, args ...interface{}) *sql.Row {
 	return tx.Tx.QueryRowContext(ctx, query, args...)
 }
 
-// Commit commits the transaction with cleanup
+// Commit commits the transaction with cleanup.
+// Note: RecordEnd is called outside tx.mu to avoid nested locking (tx.mu -> detector.mu).
+// RecordEnd acquires its own mutex internally, so calling it under tx.mu would
+// create a lock ordering dependency that risks deadlock under contention.
 func (tx *Transaction) Commit() error {
-	tx.mu.Lock()
-	defer tx.mu.Unlock()
+	var shouldRecord bool
+	var txID string
+	err := func() error {
+		tx.mu.Lock()
+		defer tx.mu.Unlock()
 
-	if tx.isRolledBack {
-		return fmt.Errorf("transaction already rolled back")
-	}
+		if tx.isRolledBack {
+			return fmt.Errorf("transaction already rolled back")
+		}
 
-	err := tx.Tx.Commit()
+		txID = tx.txID
+		shouldRecord = true
+		return tx.Tx.Commit()
+	}()
+
 	tx.cancel()
-	tx.detector.RecordEnd(tx.txID)
+	if shouldRecord {
+		tx.detector.RecordEnd(txID) // Called outside tx.mu lock
+	}
 
 	return err
 }
 
-// Rollback rolls back the transaction with cleanup
+// Rollback rolls back the transaction with cleanup.
+// Note: RecordEnd is called outside tx.mu to avoid nested locking (tx.mu -> detector.mu).
+// RecordEnd acquires its own mutex internally, so calling it under tx.mu would
+// create a lock ordering dependency that risks deadlock under contention.
 func (tx *Transaction) Rollback() error {
-	tx.mu.Lock()
-	defer tx.mu.Unlock()
+	var shouldRecord bool
+	var txID string
+	err := func() error {
+		tx.mu.Lock()
+		defer tx.mu.Unlock()
 
-	if tx.isRolledBack {
-		return nil
-	}
+		if tx.isRolledBack {
+			return nil
+		}
 
-	tx.isRolledBack = true
-	err := tx.Tx.Rollback()
+		tx.isRolledBack = true
+		txID = tx.txID
+		shouldRecord = true
+		return tx.Tx.Rollback()
+	}()
+
 	tx.cancel()
-	tx.detector.RecordEnd(tx.txID)
+	if shouldRecord {
+		tx.detector.RecordEnd(txID) // Called outside tx.mu lock
+	}
 
 	return err
 }

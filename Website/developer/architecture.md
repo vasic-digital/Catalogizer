@@ -23,7 +23,7 @@ Catalogizer is a multi-platform media collection manager composed of seven compo
                       |                         |
               +-------v-------------------------v-------+
               |            catalog-api                   |
-              |         (Go 1.24 / Gin)                  |
+              |         (Go 1.25 / Gin)                  |
               |           Port 8080                      |
               +----+--------+--------+---------+--------+
                    |        |        |         |
@@ -36,7 +36,7 @@ Catalogizer is a multi-platform media collection manager composed of seven compo
 
 | Component | Technology | Purpose |
 |-----------|-----------|---------|
-| **catalog-api** | Go 1.24, Gin | REST API, media detection, storage protocols |
+| **catalog-api** | Go 1.25, Gin | REST API, media detection, storage protocols |
 | **catalog-web** | React 18, TypeScript, Vite | Web frontend |
 | **catalogizer-desktop** | Tauri (Rust + React) | Desktop app for Windows, macOS, Linux |
 | **installer-wizard** | Tauri (Rust + React) | First-time setup wizard |
@@ -155,7 +155,7 @@ The React frontend communicates with the Rust backend through Tauri's IPC comman
 
 ## Submodule Architecture
 
-The project uses 29 independent git submodules for shared libraries. Go modules use `replace` directives in `go.mod` to reference local submodule paths. TypeScript modules use `file:../` references in `package.json`. Each submodule is an independent repository with its own tests and CI.
+The project uses 41 independent git submodules under the vasic-digital organization. Go modules (22 total) use `replace` directives in `go.mod` to reference local submodule paths. TypeScript modules (9 total) use `file:../` references in `package.json`. Each submodule is an independent repository with its own tests, documentation, ARCHITECTURE.md, and Upstreams for multi-remote push.
 
 ---
 

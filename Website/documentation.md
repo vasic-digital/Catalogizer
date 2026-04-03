@@ -98,9 +98,10 @@ Guides for contributing to Catalogizer and understanding its architecture.
 
 ### Testing
 - **Testing Guide** -- Running tests across all components
-- **Test Strategy** -- Testing approach and coverage goals
-- **QA Testing Guide** -- Quality assurance procedures
-- **Stress Test Results** -- 50k request load testing results and analysis
+- **Test Strategy** -- Testing approach and coverage goals (>85% target)
+- **Challenge System** -- 557+ challenges covering stress, integration, security, and documentation
+- **QA Testing Guide** -- Quality assurance procedures and HelixQA autonomous testing
+- **Stress Test Results** -- k6 load, stress, soak, and spike test scenarios and analysis
 
 ### Contributing
 - **Contributing Guide** -- How to contribute to the project

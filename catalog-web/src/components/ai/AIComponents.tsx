@@ -347,7 +347,8 @@ export const AINaturalSearch: React.FC<AINaturalSearchProps> = ({
         const result = await AIService.generateSmartSearchSuggestions(input);
         setSuggestions(result);
       } catch (err) {
-        console.error('Failed to get suggestions:', err);
+        // Suggestions are non-critical — silently degrade to no suggestions
+        void err;
       } finally {
         setLoading(false);
       }
@@ -369,7 +370,8 @@ export const AINaturalSearch: React.FC<AINaturalSearchProps> = ({
       onSearch(processedQuery);
       setShowSuggestions(false);
     } catch (err) {
-      console.error('Failed to process query:', err);
+      // Query processing failure — silently degrade
+      void err;
     } finally {
       setLoading(false);
     }
@@ -447,7 +449,8 @@ export const AIContentCategorizer: React.FC<AIContentCategorizerProps> = ({
       setCategorization(result);
       onCategorizationComplete(result);
     } catch (err) {
-      console.error('Failed to categorize content:', err);
+      // Categorization failure — silently degrade
+      void err;
     } finally {
       setCategorizing(false);
     }

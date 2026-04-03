@@ -438,7 +438,8 @@ export const AIPredictions: React.FC<AIPredictionsProps> = ({
       });
       setPredictions(result);
     } catch (err) {
-      console.error('Failed to load predictions:', err);
+      // Predictions are non-critical — silently degrade to empty list
+      void err;
     } finally {
       setLoading(false);
     }
@@ -611,7 +612,8 @@ export const AISmartOrganization: React.FC<AISmartOrganizationProps> = ({
       const result = await AIAnalyticsService.generateOrganizationSuggestions(collections);
       setSuggestions(result);
     } catch (err) {
-      console.error('Failed to load organization suggestions:', err);
+      // Organization suggestions are non-critical — silently degrade to empty list
+      void err;
     } finally {
       setLoading(false);
     }

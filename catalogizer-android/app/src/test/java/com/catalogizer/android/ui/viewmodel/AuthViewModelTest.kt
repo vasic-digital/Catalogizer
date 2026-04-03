@@ -6,6 +6,7 @@ import com.catalogizer.android.data.remote.CatalogizerApi
 import io.mockk.*
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.test.*
 import com.catalogizer.android.MainDispatcherRule
@@ -104,15 +105,53 @@ class AuthViewModelTest {
     fun `login failure should handle error`() = runTest {
         // Given
         coEvery { mockAuthRepository.login(any(), any()) } returns ApiResult.error("Invalid credentials")
-        
+
         // When
         viewModel.login("invaliduser", "wrongpassword")
         advanceUntilIdle()
-        
+
         // Then
         assertNotNull(viewModel.authState.value)
-        
+        assertFalse(viewModel.authState.value.isAuthenticated)
+        assertEquals("Invalid credentials", viewModel.authState.value.error)
+        assertFalse(viewModel.authState.value.isLoading)
+
         // Verify login attempt was made
         coVerify { mockAuthRepository.login("invaliduser", "wrongpassword") }
+    }
+
+    @Test
+    fun `login exception sets error state`() = runTest {
+        // Given
+        coEvery { mockAuthRepository.login(any(), any()) } throws RuntimeException("Network error")
+
+        // When
+        viewModel.login("user", "pass")
+        advanceUntilIdle()
+
+        // Then
+        assertFalse(viewModel.authState.value.isAuthenticated)
+        assertEquals("Network error", viewModel.authState.value.error)
+    }
+
+    @Test
+    fun `login sets loading state during request`() = runTest {
+        coEvery { mockAuthRepository.login(any(), any()) } coAnswers {
+            kotlinx.coroutines.delay(1000)
+            ApiResult.success(mockk<LoginResponse>(relaxed = true))
+        }
+
+        viewModel.login("user", "pass")
+        advanceUntilIdle()
+
+        // After completion, loading should be false
+        assertFalse(viewModel.authState.value.isLoading)
+    }
+
+    @Test
+    fun `authState is a StateFlow`() {
+        val state = viewModel.authState.value
+        assertNotNull(state)
+        assertFalse(state.isLoading)
     }
 }

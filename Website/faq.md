@@ -40,7 +40,11 @@ No. Catalogizer stores only metadata about your media files (titles, description
 
 ### Should I use Docker/Podman or manual installation?
 
-Container installation (Docker or Podman) is recommended for most users. It handles all dependencies automatically and provides consistent behavior. Manual installation is better for development or when you need fine-grained control over each component. If Docker is not available, Podman is fully supported as an alternative container runtime.
+Container installation is recommended for most users. It handles all dependencies automatically and provides consistent behavior. Manual installation is better for development or when you need fine-grained control over each component. Catalogizer automatically detects the available container runtime, preferring Podman over Docker. Both are fully supported.
+
+### How does the container runtime selection work?
+
+Starting with v2.2.0, Catalogizer includes dynamic container runtime detection. The build and deployment scripts automatically detect whether Podman, Docker, or another OCI-compatible runtime is installed on your system. Podman is preferred when available because it runs rootless by default. If neither is found, the scripts report a clear error with installation instructions. You do not need to configure which runtime to use -- it is detected automatically.
 
 ### Do I need PostgreSQL?
 
@@ -192,7 +196,15 @@ Catalogizer includes scripts for automated security testing:
 
 ### Do mobile apps work offline?
 
-Yes. The Android app uses Room database for local caching. Previously loaded metadata is available offline. When connectivity returns, the app syncs with the server automatically.
+Yes. The Android app uses Room database for local caching. Previously loaded metadata is available offline. When connectivity returns, the app syncs with the server automatically. In v2.2.0, offline mode activation was expanded so the full catalog browsing experience (metadata, cover art, collections, favorites) works without a connection. Background sync keeps the cache up to date when Wi-Fi is available.
+
+### Does the Android app support biometric authentication?
+
+Yes. Starting with v2.2.0, the Android app supports fingerprint and face unlock on devices with compatible hardware. Biometric auth is configured in the app's security settings after initial login. When enabled, subsequent app launches prompt for biometric verification instead of a password. Credentials are stored securely in the Android Keystore and protected by the device's biometric subsystem.
+
+### Does the Android app receive real-time updates?
+
+Yes. The Android app maintains a WebSocket connection to the server for live updates. Scan progress, new media notifications, and storage source status changes are pushed to the app in real time. This was added in v2.2.0 alongside the existing web and desktop real-time features.
 
 ### Can I build the desktop app for my platform?
 
@@ -230,7 +242,11 @@ Catalogizer exposes Prometheus-compatible metrics at `/metrics`. Tracked metrics
 
 ### What testing framework does Catalogizer use?
 
-Catalogizer uses a challenge-based testing framework with 285+ registered challenges covering connectivity, scanning, security, performance, resilience, and observability. Challenges are Go structs that execute against the running system and report structured results with assertions and metrics. Run challenges via the REST API at `/api/v1/challenges`.
+Catalogizer uses a challenge-based testing framework with 557+ registered challenges covering connectivity, scanning, security, performance, resilience, stress testing, integration, and documentation completeness. Challenges are Go structs that execute against the running system and report structured results with assertions and metrics. Run challenges via the REST API at `/api/v1/challenges`.
+
+### What is the challenge system?
+
+The challenge system is Catalogizer's end-to-end validation framework. Each challenge is a Go struct that tests a specific aspect of the running system -- from API endpoint correctness to storage protocol resilience to security header compliance. Challenges run through the API (never via external scripts) and produce structured results with pass/fail assertions and timing metrics. The system includes 557+ challenges across categories: core system (CH-*), API user flows (UF-API-*), web user flows (UF-WEB-*), desktop user flows (UF-DESKTOP-*), mobile user flows (UF-MOBILE-*), and module verification (MOD-*). Run all challenges with `POST /api/v1/challenges/run-all` or run individual challenges by ID.
 
 ### How do I troubleshoot connection issues?
 

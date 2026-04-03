@@ -822,7 +822,7 @@ describe('Collections Page', () => {
     const shareButtons = document.querySelectorAll('button[title="Share collection"]')
     await user.click(shareButtons[0] as HTMLElement)
 
-    // Share failure is caught silently (console.error), no toast — verify it didn't crash
+    // Share failure is caught silently, no toast — verify it didn't crash
     await waitFor(() => {
       expect(mockShareCollection).toHaveBeenCalled()
     })

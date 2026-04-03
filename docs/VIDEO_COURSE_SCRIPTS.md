@@ -1816,6 +1816,2580 @@ Happy autonomous testing!"
 
 ---
 
+## Module 6: Storage and Media Management (20 minutes)
+
+### Learning Objectives
+- Configure storage roots across all 5 protocols
+- Understand the media scanning and detection pipeline
+- Browse and search media entities
+- Manage media metadata and cover art
+
+### Prerequisites
+- Catalogizer backend running
+- At least one accessible media source (local directory, SMB share, etc.)
+
+### Script
+
+```
+[0:00-2:00] Introduction
+"In this module, we configure storage roots and scan media collections.
+Catalogizer supports 5 protocols: local filesystem, SMB/CIFS, FTP, NFS, and WebDAV."
+
+[2:00-5:00] Adding Storage Roots
+"Navigate to Admin > Storage Roots. Click Add Root.
+For a local path: enter the directory path, e.g., /media/movies.
+For an SMB share: enter the server address, share name, and credentials.
+
+# Via API:
+curl -X POST http://localhost:8080/api/v1/storage/roots \
+  -H 'Authorization: Bearer TOKEN' \
+  -d '{"path": "/media/movies", "name": "Movies", "protocol": "local"}'
+
+Test the connection before saving."
+
+[5:00-9:00] Scanning Media
+"Once a root is added, click Scan to start detection.
+The pipeline works in 3 stages:
+1. File Detection — identifies media files by extension and content
+2. Media Analysis — parses titles, extracts metadata (year, quality, codec)
+3. Aggregation — creates entities, builds hierarchy, detects duplicates
+
+Progress appears in the UI and via WebSocket events.
+Catalogizer recognizes 11 media types:
+movie, tv_show, tv_season, tv_episode, music_artist, music_album,
+song, game, software, book, comic."
+
+[9:00-14:00] Browsing and Searching
+"Open the Entity Browser to see all detected media.
+Use the search bar for text search.
+Filter by type, year, rating, or quality.
+Click any entity to see details: files, metadata, hierarchy.
+
+For TV shows, you'll see the hierarchy:
+Show > Seasons > Episodes
+For music: Artist > Albums > Songs"
+
+[14:00-18:00] Metadata and Cover Art
+"Catalogizer enriches entities with metadata from external providers:
+- TMDB and OMDB for movies and TV
+- MusicBrainz for music
+- OpenLibrary for books
+
+Cover art is automatically fetched and cached.
+You can also upload custom cover art via the entity detail page."
+
+[18:00-20:00] Summary
+"You've learned to add storage roots, scan media, browse entities,
+and understand the metadata enrichment pipeline.
+Next: Module 7 covers collections and playback."
+```
+
+---
+
+## Module 7: Collections and Playback (20 minutes)
+
+### Learning Objectives
+- Create and manage collections (manual and smart)
+- Use the playlist system
+- Play media with subtitle support
+- Import and export collections
+
+### Prerequisites
+- Scanned media library with entities
+- Web browser or desktop app
+
+### Script
+
+```
+[0:00-2:00] Introduction
+"This module covers organizing media into collections and playing content.
+Collections let you group media by any criteria — manually or with smart rules."
+
+[2:00-6:00] Creating Collections
+"Navigate to Collections > New Collection.
+Enter a name and optional description.
+For manual collections, add items by searching and clicking Add.
+
+For smart collections, enable 'Smart Collection' and define rules:
+- media_type equals 'movie'
+- year greater_than 2020
+- rating greater_than 7.0
+
+Smart collections automatically update when new matching media is scanned."
+
+[6:00-10:00] Import and Export
+"Collections can be exported as JSON or CSV:
+Click Export > Choose format > Download.
+
+Import works the same way:
+Collections > Import > Upload JSON/CSV file.
+M3U playlists are also supported for music collections."
+
+[10:00-14:00] Playlist Management
+"Playlists are ordered sequences for playback.
+Create a playlist: Playlists > New Playlist.
+Add items by drag-and-drop or search.
+Reorder by dragging items up and down.
+
+# Via API:
+curl -X POST http://localhost:8080/api/v1/playlists \
+  -H 'Authorization: Bearer TOKEN' \
+  -d '{"name": "Movie Night", "items": [1, 5, 12]}'
+"
+
+[14:00-18:00] Media Playback
+"Click any media item to open the player.
+The player supports:
+- Play/pause, seek, volume
+- Fullscreen mode
+- Subtitle selection and sync
+
+Upload subtitles via the Subtitle tab:
+Click Upload > Select .srt or .vtt file.
+Use the Sync tool to adjust timing if needed."
+
+[18:00-20:00] Summary
+"You can now organize media into collections, create playlists,
+play content with subtitles, and import/export your library.
+Next: Module 8 covers the Android mobile app."
+```
+
+---
+
+## Module 8: Android Mobile App (15 minutes)
+
+### Learning Objectives
+- Install and configure the Catalogizer Android app
+- Connect the app to a running catalog-api server
+- Browse, search, and play media from your phone
+- Configure offline mode and background sync
+- Customize app settings for your workflow
+
+### Prerequisites
+- Android device running Android 8.0 (API 26) or later
+- Running catalog-api server accessible on the local network
+- Admin or user account credentials
+- APK file downloaded or access to the release artifacts
+
+### Script
+
+**[00:00-02:00] - Introduction & APK Installation**
+```
+"Welcome to Module 8! In this video, we'll set up the
+Catalogizer Android app on your phone or tablet.
+
+First, let's install the APK. You have two options:
+
+Option 1: Direct APK install
+- Transfer the APK to your device via USB or file share
+- Open the APK file
+- Allow installation from unknown sources if prompted
+- Tap Install
+
+Option 2: ADB install from your computer
+```bash
+adb install catalogizer-android-v2.1.0.apk
+```
+
+If you see 'Success' in the terminal, you're good to go.
+
+Once installed, find the Catalogizer icon in your app drawer
+and tap to launch it."
+```
+
+**[02:00-04:00] - Server Discovery & Login**
+```
+"When you first launch the app, you'll see the server
+connection screen.
+
+The app uses mDNS to automatically discover catalog-api
+servers on your local network. If your server is running,
+it should appear in the list within a few seconds.
+
+If automatic discovery doesn't find your server:
+1. Tap 'Manual Configuration'
+2. Enter the server URL (e.g., http://192.168.0.100:8080)
+3. Tap 'Test Connection' to verify
+
+Once connected, you'll see the login screen.
+Enter your username and password, then tap 'Sign In'.
+
+The app stores your session token securely using
+Android Keystore, so you won't need to log in
+every time you open the app."
+```
+
+**[04:00-07:00] - Browsing Media**
+```
+"After login, you're on the home screen.
+
+The bottom navigation bar has five tabs:
+- Home: Dashboard with recent items and recommendations
+- Browse: Full media library organized by type
+- Search: Global search across all media
+- Downloads: Offline content
+- Profile: Settings and account
+
+Let's explore the Browse tab. You'll see categories:
+- Movies, TV Shows, Music, Games, Books, and more
+
+Tap any category to see items. Each item shows:
+- Cover art or poster
+- Title and year
+- Rating (if available)
+- Quality indicators (4K, HDR)
+
+Tap an item to see its detail page:
+- Full metadata (cast, crew, description)
+- Available files with quality info
+- Play button for immediate streaming
+- Download button for offline access
+- Add to collection or favorites
+
+[Show browsing through movie categories]
+
+Pull down to refresh any list.
+Long-press an item for quick actions."
+```
+
+**[07:00-09:00] - Search & Filtering**
+```
+"The Search tab is powerful. Tap the search bar and
+start typing.
+
+Search works across:
+- Titles (movies, shows, albums, etc.)
+- People (actors, directors, artists)
+- Descriptions and metadata
+
+Results update as you type with debounced requests.
+
+Advanced filtering:
+- Tap the filter icon next to the search bar
+- Filter by media type, year range, rating
+- Sort by name, date added, rating, or year
+- Combine multiple filters
+
+Recent searches are saved for quick access.
+You can also use voice search by tapping the
+microphone icon."
+```
+
+**[09:00-11:30] - Offline Mode & Background Sync**
+```
+"One of the best features of the Android app is
+offline support.
+
+To download content for offline use:
+1. Open any media item
+2. Tap the download icon
+3. Select quality (Original, High, Medium, Low)
+4. Download starts in the background
+
+Check download progress in the Downloads tab.
+A notification also shows progress.
+
+Background sync keeps your library up to date:
+- New items from scans appear automatically
+- Watch progress syncs across all devices
+- Metadata updates pull in the background
+
+Configure sync in Settings > Sync:
+- Sync frequency (15 min, 30 min, 1 hour, manual)
+- Wi-Fi only (recommended to save mobile data)
+- Auto-download favorites
+- Storage limit for offline content
+
+When you're offline:
+- Downloaded content plays normally
+- Browse history is cached
+- Changes queue and sync when back online
+
+[Show downloading a movie and playing it offline]"
+```
+
+**[11:30-13:30] - Playback**
+```
+"Tap Play on any media item to start streaming.
+
+The built-in player supports:
+- Video: Hardware-accelerated playback
+- Audio track selection
+- Subtitle support (SRT, ASS, VTT)
+- Playback speed control (0.5x to 2x)
+- Resume from last position
+- Picture-in-picture mode
+- Chromecast support
+
+For music, the player shows:
+- Album art
+- Track info
+- Mini player in bottom bar
+- Full-screen mode with visualizations
+- Queue management
+
+Casting to other devices:
+- Tap the cast icon in the player
+- Select your Chromecast or smart TV
+- Control playback from your phone"
+```
+
+**[13:30-15:00] - Settings & Summary**
+```
+"Let's review the key settings under Profile > Settings:
+
+Server: Change or add server connections
+Sync: Background sync preferences
+Downloads: Storage management, quality defaults
+Playback: Default quality, subtitle preferences
+Appearance: Theme (light/dark/system), language
+Notifications: Scan alerts, new content alerts
+Storage: Clear cache, manage downloads
+
+Tips for best experience:
+- Keep the app updated for latest features
+- Use Wi-Fi for initial library sync
+- Enable background sync for seamless updates
+- Set download quality based on your storage
+
+That's the Android app! In Module 9, we'll explore
+the Android TV experience with D-pad remote navigation."
+```
+
+---
+
+## Module 9: Android TV App (12 minutes)
+
+### Learning Objectives
+- Install Catalogizer on an Android TV device via ADB
+- Navigate the app using a D-pad remote control
+- Browse and play media on the big screen
+- Use voice search and home screen channels
+- Understand Android TV input handling quirks
+
+### Prerequisites
+- Android TV device (Xiaomi Mi Box, NVIDIA Shield, or similar)
+- ADB access enabled on the Android TV device
+- Running catalog-api server on the local network
+- Computer with ADB tools for initial installation
+
+### Script
+
+**[00:00-02:30] - Installation via ADB**
+```
+"Welcome to Module 9! Let's set up Catalogizer on
+your Android TV device.
+
+Android TV apps are installed via ADB since we're
+not distributing through the Play Store yet.
+
+Step 1: Enable Developer Options on your TV
+- Settings > About > Build Number (tap 7 times)
+- Settings > Developer Options > USB Debugging: ON
+- Note: Also enable 'Network Debugging' for wireless ADB
+
+Step 2: Connect via ADB
+```bash
+# Find your TV's IP address (Settings > Network)
+adb connect 192.168.0.214:5555
+
+# Verify connection
+adb devices
+# Should show: 192.168.0.214:5555  device
+```
+
+Step 3: Install the APK
+```bash
+adb install catalogizer-androidtv-v2.1.0.apk
+```
+
+Step 4: Set up ADB reverse proxy so the TV can
+reach your catalog-api server:
+```bash
+adb reverse tcp:8080 tcp:8080
+```
+
+This maps localhost:8080 on the TV to your server.
+
+Find Catalogizer in your TV's app drawer and launch it."
+```
+
+**[02:30-05:00] - D-pad Navigation & Login**
+```
+"Android TV is entirely D-pad driven. No touchscreen.
+Understanding D-pad navigation is critical.
+
+The remote has these key inputs:
+- D-pad: Up, Down, Left, Right
+- Center/Select: Confirm action (dpad_center)
+- Back: Go back one screen
+- Home: Return to Android TV home
+
+CRITICAL NOTE FOR DEVELOPERS:
+When entering text on Android TV, you must send
+dpad_center BEFORE type commands, and use
+KEYCODE_TAB to move between input fields.
+This is an Android TV platform requirement that
+differs from standard Android.
+
+Login flow on Android TV:
+1. The app opens to the server connection screen
+2. Use D-pad to navigate to the server URL field
+3. Press Center to activate the field
+4. Use the on-screen keyboard to enter the URL
+   (or it auto-discovers via mDNS)
+5. Press KEYCODE_TAB to move to username field
+6. Press Center, then type your username
+7. Tab to password, Center, type password
+8. Navigate to Sign In button and press Center
+
+[Show the complete login flow on Mi Box]
+
+Once logged in, you'll see the home screen with
+content rails - rows of media organized by category."
+```
+
+**[05:00-07:30] - Browsing Media on the Big Screen**
+```
+"The Android TV interface uses a 'lean-back' design
+optimized for 10-foot viewing.
+
+Home Screen Layout:
+- Top row: Search and settings
+- Featured rail: Highlighted content with large cards
+- Category rails: Movies, TV Shows, Music, etc.
+- Continue Watching rail: Resume where you left off
+- Recently Added rail: New content from latest scans
+
+Navigation:
+- Left/Right: Scroll within a rail
+- Up/Down: Move between rails
+- Center: Select an item
+- Long press: Quick actions menu
+
+Each media card shows:
+- Poster/cover art (landscape format for TV)
+- Title overlay
+- Quality badges (4K, HDR)
+
+Select an item to see its detail screen:
+- Large backdrop image
+- Full metadata display
+- Play, Add to List, More Info buttons
+- Related items rail at the bottom
+
+The interface responds to focus changes with
+smooth animations and scaling effects.
+
+[Show browsing through movie and TV show rails]"
+```
+
+**[07:30-09:30] - Playback on the Big Screen**
+```
+"Press Play on any item to start playback.
+
+The TV player is optimized for the big screen:
+- Full-screen playback with no UI chrome
+- Press Center to show/hide playback controls
+- Left/Right: Seek backward/forward (10s increments)
+- Up: Show chapter or episode selector
+- Down: Show audio and subtitle options
+
+Playback controls overlay:
+- Play/Pause
+- Progress bar with thumbnail preview
+- Time elapsed / total duration
+- Audio track selector
+- Subtitle selector
+- Quality selector (if transcoding available)
+
+For TV shows:
+- 'Next Episode' prompt at end of episode
+- Auto-play next episode after 10 seconds
+- Season selector accessible from Up button
+
+For music:
+- Album art displayed full screen
+- Track info and progress
+- Queue visible with Up button
+- Shuffle and repeat toggles
+
+[Show playing a movie with subtitle selection]"
+```
+
+**[09:30-11:00] - Voice Search & Home Screen Channels**
+```
+"If your remote has a microphone button, you can
+use voice search.
+
+Press the microphone button and say:
+- 'Play The Matrix'
+- 'Show action movies'
+- 'Search for Beatles'
+
+The app registers as a voice search provider,
+so results from your Catalogizer library appear
+alongside other Android TV results.
+
+Home Screen Channels:
+Catalogizer adds channels to your Android TV home:
+- Continue Watching: Resume your content
+- Recommended: Based on your viewing history
+- Recently Added: Latest items from scans
+
+These channels appear on your TV's main home screen
+even before you open the Catalogizer app.
+
+To manage channels:
+1. Long-press the channel row on home screen
+2. Select 'Customize channel'
+3. Choose which channels to show or hide"
+```
+
+**[11:00-12:00] - Tips & Summary**
+```
+"Tips for the best Android TV experience:
+
+1. Use Ethernet instead of Wi-Fi for streaming
+   - More stable for high-bitrate content
+   - Lower latency for remote navigation
+
+2. ADB reverse proxy must be re-established
+   after TV reboots:
+   adb connect 192.168.0.214:5555
+   adb reverse tcp:8080 tcp:8080
+
+3. For 4K content, ensure your TV supports
+   the codec (H.265/HEVC recommended)
+
+4. Clear app cache periodically:
+   Settings > Apps > Catalogizer > Clear Cache
+
+That wraps up the Android TV module!
+In Module 10, we'll look at the Tauri desktop
+application for Windows, macOS, and Linux."
+```
+
+---
+
+## Module 10: Desktop App (10 minutes)
+
+### Learning Objectives
+- Install the Catalogizer desktop application
+- Complete the installation wizard
+- Connect to a catalog-api server
+- Browse and play media from the desktop
+- Use system tray integration and local scanning
+
+### Prerequisites
+- Windows 10+, macOS 12+, or Linux with X11/Wayland
+- Downloaded desktop installer or AppImage
+- Running catalog-api server (local or remote)
+
+### Script
+
+**[00:00-02:00] - Installation**
+```
+"Welcome to Module 10! Let's install the Catalogizer
+desktop application built with Tauri.
+
+The desktop app is available for all major platforms:
+
+Windows:
+- Download Catalogizer-Setup.exe
+- Run the installer
+- Follow the wizard (next, next, finish)
+
+macOS:
+- Download Catalogizer.dmg
+- Drag to Applications folder
+- First launch: Right-click > Open (Gatekeeper)
+
+Linux:
+- AppImage: chmod +x Catalogizer.AppImage && ./Catalogizer.AppImage
+- Or use the .deb package: sudo dpkg -i catalogizer.deb
+
+The app is lightweight - the Tauri runtime is much
+smaller than Electron-based alternatives.
+
+Launch the application to start the setup wizard."
+```
+
+**[02:00-04:00] - Installation Wizard**
+```
+"The installation wizard walks you through initial
+configuration in four steps.
+
+Step 1: Server Connection
+- Enter your catalog-api server URL
+- Or select a discovered server from the list
+- Test connection to verify
+
+Step 2: Authentication
+- Enter your username and password
+- Option to 'Remember me' for auto-login
+- Server validates credentials immediately
+
+Step 3: Local Storage (Optional)
+- Point to local media folders
+- These can be scanned independently
+- Useful if you have media on your desktop machine
+
+Step 4: Preferences
+- Theme: Light, Dark, or System
+- Default media player: Built-in or external
+- Notification preferences
+- Startup behavior (launch at login, minimize to tray)
+
+Click 'Finish' and the main interface loads.
+
+[Show the complete wizard flow]"
+```
+
+**[04:00-06:30] - Main Interface & Browsing**
+```
+"The desktop interface mirrors the web UI but with
+native OS integration.
+
+Layout:
+- Title bar with native window controls
+- Left sidebar: Navigation (Browse, Search, Collections)
+- Main area: Content grid or list view
+- Bottom bar: Now playing / mini player
+
+Browsing works the same as the web interface:
+- Click media type in sidebar to filter
+- Grid view shows posters with hover details
+- List view shows more metadata per item
+- Sort and filter controls at top
+
+Desktop-specific features:
+- Drag and drop files to add to library
+- Right-click context menus on items
+- Keyboard shortcuts for power users:
+  - Ctrl+F: Search
+  - Ctrl+L: Library view
+  - Space: Play/Pause
+  - F11: Fullscreen
+
+Double-click any item to open its detail view.
+Click Play to start streaming through the built-in
+player or your configured external player.
+
+[Show browsing and opening a movie detail page]"
+```
+
+**[06:30-08:30] - System Tray & Local Scanning**
+```
+"The desktop app integrates with your system tray.
+
+System Tray Features:
+- Minimize to tray (keeps running in background)
+- Quick access menu:
+  - Open Catalogizer
+  - Recently Played
+  - Start Scan
+  - Settings
+  - Quit
+
+The tray icon shows notifications for:
+- Scan completion
+- New content added
+- Server connection changes
+
+Local Scanning:
+The desktop app can scan folders on your machine
+directly, without going through the server.
+
+To set up local scanning:
+1. Go to Settings > Local Storage
+2. Add folder paths to monitor
+3. Enable 'Watch for changes' for real-time detection
+4. Set scan schedule (or manual only)
+
+Scanned files are registered with the catalog-api
+server and become available on all your devices.
+
+This is especially useful if you download media
+to your desktop and want it cataloged automatically."
+```
+
+**[08:30-10:00] - Playback & Summary**
+```
+"The desktop player uses native rendering for
+optimal performance.
+
+Player features:
+- Hardware-accelerated video decode
+- Subtitle rendering (SRT, ASS, VTT)
+- Audio track selection
+- Keyboard controls:
+  - Space: Play/Pause
+  - Left/Right: Seek 10 seconds
+  - Up/Down: Volume
+  - F: Fullscreen
+  - M: Mute
+  - S: Cycle subtitles
+
+The player remembers your position across sessions
+and syncs with the server, so you can continue
+watching on any device.
+
+Summary:
+- Lightweight native app built with Tauri
+- Full browsing, search, and playback
+- System tray for background operation
+- Local folder scanning and monitoring
+- Cross-device sync via catalog-api
+
+In Module 11, we'll explore monitoring and
+observability for your Catalogizer deployment."
+```
+
+---
+
+## Module 11: Monitoring and Observability (15 minutes)
+
+### Learning Objectives
+- Set up Prometheus metrics collection for catalog-api
+- Build Grafana dashboards for key metrics
+- Configure alerting for critical conditions
+- Interpret metrics to diagnose performance issues
+- Use health checks and log analysis for troubleshooting
+
+### Prerequisites
+- Running catalog-api instance
+- Podman or Docker for running Prometheus and Grafana containers
+- Basic understanding of time-series metrics
+
+### Script
+
+**[00:00-03:00] - Observability Overview & Prometheus Setup**
+```
+"Welcome to Module 11! Monitoring is essential for
+any production deployment.
+
+Catalogizer exposes Prometheus metrics on the
+/metrics endpoint. Let's set up the monitoring stack.
+
+First, catalog-api must be running. Verify the
+metrics endpoint:
+```bash
+curl http://localhost:8080/metrics
+```
+
+You should see metrics in Prometheus exposition format.
+
+Now let's start Prometheus:
+```bash
+podman run -d --name prometheus \
+  --network host \
+  -v $(pwd)/monitoring/prometheus.yml:/etc/prometheus/prometheus.yml \
+  docker.io/prom/prometheus:latest
+```
+
+The prometheus.yml scrape config:
+```yaml
+scrape_configs:
+  - job_name: 'catalogizer-api'
+    scrape_interval: 15s
+    static_configs:
+      - targets: ['localhost:8080']
+```
+
+Open http://localhost:9090 to access Prometheus UI.
+
+Verify the target is up:
+Status > Targets > catalogizer-api should show 'UP'."
+```
+
+**[03:00-06:00] - Key Metrics & Grafana Dashboards**
+```
+"Let's explore the metrics Catalogizer exposes:
+
+HTTP Metrics:
+- http_requests_total: Request count by method, path, status
+- http_request_duration_seconds: Latency histogram
+- http_requests_in_flight: Active requests
+
+Business Metrics:
+- catalogizer_scans_total: Completed scans
+- catalogizer_files_detected: Files found per scan
+- catalogizer_media_items_total: Total media entities
+- catalogizer_websocket_connections: Active WS clients
+
+System Metrics:
+- go_goroutines: Active goroutines
+- go_memstats_alloc_bytes: Memory usage
+- process_cpu_seconds_total: CPU time
+
+Now let's visualize with Grafana:
+```bash
+podman run -d --name grafana \
+  --network host \
+  docker.io/grafana/grafana:latest
+```
+
+Open http://localhost:3001 (default: admin/admin).
+
+Add Prometheus as a data source:
+1. Configuration > Data Sources > Add
+2. Select Prometheus
+3. URL: http://localhost:9090
+4. Save & Test
+
+Import the Catalogizer dashboard:
+1. Dashboards > Import
+2. Upload monitoring/grafana-dashboard.json
+3. Select Prometheus data source
+
+[Show the dashboard with live metrics]
+
+Key panels to watch:
+- Request rate (requests/sec over time)
+- Latency percentiles (p50, p95, p99)
+- Error rate (4xx and 5xx responses)
+- Active connections (HTTP + WebSocket)
+- Memory and goroutine trends"
+```
+
+**[06:00-09:00] - Alert Configuration**
+```
+"Alerts notify you before problems become outages.
+
+In Grafana, set up alert rules:
+
+Alert 1: High Error Rate
+- Condition: rate(http_requests_total{status=~'5..'}[5m]) > 0.1
+- Threshold: More than 10% of requests are errors
+- Duration: For 5 minutes
+- Severity: Critical
+
+Alert 2: High Latency
+- Condition: histogram_quantile(0.95, http_request_duration_seconds) > 2
+- Threshold: p95 latency exceeds 2 seconds
+- Duration: For 10 minutes
+- Severity: Warning
+
+Alert 3: Memory Leak Detection
+- Condition: go_memstats_alloc_bytes > 2e9
+- Threshold: Memory exceeds 2 GB
+- Duration: For 15 minutes
+- Severity: Warning
+
+Alert 4: Goroutine Leak
+- Condition: go_goroutines > 1000
+- Threshold: More than 1000 goroutines
+- Duration: For 5 minutes
+- Severity: Critical
+
+Configure notification channels:
+1. Alerting > Contact Points
+2. Add email, Slack, or webhook
+3. Assign contact points to alert rules
+
+[Show creating an alert rule step by step]
+
+Prometheus alerting rules can also be defined in
+monitoring/alert-rules.yml for infrastructure-level
+alerts independent of Grafana."
+```
+
+**[09:00-12:00] - Health Checks & Log Analysis**
+```
+"Health checks provide quick status verification.
+
+The API exposes several health endpoints:
+
+```bash
+# Basic health check
+curl http://localhost:8080/api/v1/health
+# Returns: {'status': 'ok', 'uptime': '2h15m'}
+
+# Detailed health with dependency status
+curl http://localhost:8080/api/v1/health/detailed
+# Returns: database, cache, storage status
+```
+
+Use health checks for:
+- Load balancer probes (every 10 seconds)
+- Container orchestration liveness/readiness
+- Uptime monitoring services
+
+Log Analysis:
+
+catalog-api logs structured JSON to stdout:
+```json
+{
+  'level': 'info',
+  'time': '2026-04-03T10:15:00Z',
+  'method': 'GET',
+  'path': '/api/v1/media',
+  'status': 200,
+  'latency': '45ms'
+}
+```
+
+Useful log queries:
+
+# Find slow requests (>1 second)
+```bash
+podman logs catalog-api 2>&1 | \
+  jq 'select(.latency_ms > 1000)'
+```
+
+# Find errors
+```bash
+podman logs catalog-api 2>&1 | \
+  jq 'select(.level == \"error\")'
+```
+
+# Count requests per endpoint
+```bash
+podman logs catalog-api 2>&1 | \
+  jq -r '.path' | sort | uniq -c | sort -rn
+```
+
+For centralized logging, forward to a log
+aggregation service like Loki or Elasticsearch."
+```
+
+**[12:00-15:00] - Interpreting Metrics & Summary**
+```
+"Let's look at common patterns and what they mean:
+
+Pattern: Latency spikes during scans
+- Normal behavior: Scanning is I/O intensive
+- Action: Schedule scans during off-peak hours
+
+Pattern: Memory steadily increasing
+- Possible leak: Check goroutine count
+- Action: Monitor and restart if needed
+- Catalog-api uses Memory module for leak detection
+
+Pattern: WebSocket connections not dropping
+- Possible issue: Clients not disconnecting cleanly
+- Action: Check WebSocket handler cleanup
+
+Pattern: High 429 (rate limit) responses
+- Clients hitting rate limits
+- Action: Review rate limiter configuration
+- Check if legitimate or potential abuse
+
+Dashboard Best Practices:
+1. Keep dashboards focused (one per concern)
+2. Set appropriate time ranges (last 1h for ops, 7d for trends)
+3. Use template variables for filtering
+4. Document panel descriptions
+5. Review dashboards in team meetings
+
+Resource limits reminder:
+When running monitoring containers, respect the host
+resource limits (30-40% max):
+```bash
+podman run --cpus=0.5 --memory=512m prometheus
+podman run --cpus=0.5 --memory=512m grafana
+```
+
+That covers monitoring! In Module 12, we'll dive
+into security hardening for your deployment."
+```
+
+---
+
+## Module 12: Security and Hardening (12 minutes)
+
+### Learning Objectives
+- Configure HTTPS and HTTP/3 (QUIC) for secure transport
+- Set up JWT authentication with proper secret management
+- Implement role-based access control
+- Configure rate limiting and CORS
+- Run security scanning tools (SonarQube, Snyk, Semgrep)
+
+### Prerequisites
+- Running catalog-api instance
+- Basic understanding of TLS/SSL
+- Podman for running security scanning tools
+
+### Script
+
+**[00:00-02:30] - HTTPS & HTTP/3 Setup**
+```
+"Welcome to Module 12! Security is not optional.
+Let's harden your Catalogizer deployment.
+
+Catalogizer uses HTTP/3 (QUIC) by default, which
+provides encrypted transport with lower latency
+than traditional HTTPS.
+
+On startup, catalog-api generates self-signed TLS
+certificates automatically. For production, use
+proper certificates:
+
+1. Obtain certificates (Let's Encrypt recommended):
+```bash
+certbot certonly --standalone -d catalogizer.yourdomain.com
+```
+
+2. Configure in .env:
+```
+TLS_CERT_PATH=/etc/letsencrypt/live/catalogizer.yourdomain.com/fullchain.pem
+TLS_KEY_PATH=/etc/letsencrypt/live/catalogizer.yourdomain.com/privkey.pem
+```
+
+3. The server starts with HTTP/3 + Brotli compression.
+   Fallback chain: HTTP/3 (QUIC) > HTTP/2 + gzip > HTTP/1.1
+   Production deployments must never use plain HTTP/1.1.
+
+For the Nginx reverse proxy (production setup):
+```nginx
+server {
+    listen 443 ssl http2;
+    listen 443 quic reuseport;
+
+    ssl_certificate /path/to/fullchain.pem;
+    ssl_certificate_key /path/to/privkey.pem;
+
+    add_header Alt-Svc 'h3=\":443\"; ma=86400';
+
+    location /api/ {
+        proxy_pass http://localhost:8080;
+    }
+}
+```
+
+[Show verifying HTTP/3 with curl]
+```bash
+curl --http3 https://catalogizer.yourdomain.com/api/v1/health
+```"
+```
+
+**[02:30-05:00] - JWT Authentication & Roles**
+```
+"Catalogizer uses JWT tokens for authentication.
+
+Configure JWT in .env:
+```
+JWT_SECRET=your-very-long-random-secret-at-least-32-chars
+JWT_EXPIRY=24h
+JWT_REFRESH_EXPIRY=7d
+```
+
+CRITICAL: Never use default secrets in production.
+Generate a strong secret:
+```bash
+openssl rand -base64 64
+```
+
+Role-Based Access Control (RBAC):
+
+Catalogizer defines three roles:
+- admin: Full access (user management, settings, scanning)
+- user: Browse, play, create collections, download
+- guest: Browse and play only (read-only)
+
+Assign roles via the admin panel or API:
+```bash
+curl -X PUT http://localhost:8080/api/v1/users/5/role \
+  -H 'Authorization: Bearer <admin-token>' \
+  -H 'Content-Type: application/json' \
+  -d '{\"role\": \"user\"}'
+```
+
+Token refresh flow:
+1. Client sends request with expired access token
+2. Server returns 401
+3. Client uses refresh token to get new access token
+4. Original request retries automatically
+
+The API client library handles this transparently."
+```
+
+**[05:00-07:30] - Rate Limiting & CORS**
+```
+"Rate limiting protects against abuse and DoS attacks.
+
+Catalogizer has two rate limit tiers:
+
+Strict (login/register endpoints):
+- 5 requests per minute per IP
+- Prevents brute-force password attacks
+
+Default (all other endpoints):
+- 100 requests per minute per IP
+- Sufficient for normal usage
+
+Configure in .env:
+```
+RATE_LIMIT_DEFAULT=100
+RATE_LIMIT_STRICT=5
+RATE_LIMIT_WINDOW=60s
+```
+
+When rate limited, the API returns:
+- HTTP 429 Too Many Requests
+- Retry-After header with wait time
+- X-RateLimit-Remaining header
+
+CORS Configuration:
+
+Cross-Origin Resource Sharing must be configured
+for your frontend domain:
+
+```
+CORS_ALLOWED_ORIGINS=https://catalogizer.yourdomain.com
+CORS_ALLOWED_METHODS=GET,POST,PUT,DELETE,OPTIONS
+CORS_ALLOWED_HEADERS=Authorization,Content-Type
+CORS_MAX_AGE=3600
+```
+
+For development, you can allow all origins,
+but NEVER do this in production:
+```
+CORS_ALLOWED_ORIGINS=*  # Development only!
+```
+
+[Show testing rate limiting with rapid requests]"
+```
+
+**[07:30-10:00] - Security Scanning**
+```
+"Regular security scanning catches vulnerabilities
+before they become incidents.
+
+Catalogizer includes several scanning tools:
+
+1. Go Vulnerability Check:
+```bash
+cd catalog-api
+govulncheck ./...
+```
+Checks Go dependencies against the vulnerability database.
+
+2. npm Audit (frontend):
+```bash
+cd catalog-web
+npm audit
+```
+Reports known vulnerabilities in npm packages.
+
+3. Semgrep (static analysis):
+```bash
+podman-compose -f docker-compose.security.yml \
+  --profile semgrep-scan run --rm semgrep-scanner
+```
+Finds security anti-patterns in source code.
+
+4. SonarQube (code quality + security):
+```bash
+./scripts/run-sonarqube-scan.sh
+```
+Comprehensive analysis including:
+- Security hotspots
+- Code smells
+- Bug detection
+- Duplicate code
+
+5. Snyk and Trivy (container scanning):
+```bash
+podman-compose -f docker-compose.security.yml \
+  --profile snyk run --rm snyk-scanner
+```
+
+Run all scans together:
+```bash
+./scripts/security-scan.sh
+```
+
+[Show running govulncheck and reviewing results]
+
+Make scanning part of your regular workflow:
+- Before every release
+- Weekly automated scans
+- After dependency updates"
+```
+
+**[10:00-12:00] - Security Checklist & Summary**
+```
+"Production Security Checklist:
+
+Transport:
+[ ] HTTPS/HTTP3 with valid certificates
+[ ] Brotli compression enabled
+[ ] HSTS header configured
+[ ] No plain HTTP in production
+
+Authentication:
+[ ] Strong JWT secret (64+ characters)
+[ ] Token expiry configured (24h max)
+[ ] Refresh tokens enabled
+[ ] Admin password changed from default
+
+Authorization:
+[ ] RBAC roles assigned to all users
+[ ] Guest access restricted appropriately
+[ ] API endpoints require authentication
+[ ] Admin endpoints require admin role
+
+Rate Limiting:
+[ ] Strict rate limit on auth endpoints
+[ ] Default rate limit on API endpoints
+[ ] Rate limit headers in responses
+
+Network:
+[ ] CORS restricted to known domains
+[ ] Firewall rules for API port
+[ ] Database not exposed to public network
+[ ] Redis protected with password
+
+Scanning:
+[ ] govulncheck: 0 vulnerabilities
+[ ] npm audit: 0 critical/production vulnerabilities
+[ ] Semgrep: 0 high-severity findings
+[ ] Container images scanned
+
+Secrets:
+[ ] .env files not in git
+[ ] .gitignore covers all .env files
+[ ] API keys rotated regularly
+[ ] No secrets in source code
+
+That's security hardening! In Module 13, we'll
+explore the Challenge System for automated testing."
+```
+
+---
+
+## Module 13: Challenge System (10 minutes)
+
+### Learning Objectives
+- Understand what challenges are and how they verify system correctness
+- Run individual challenges and the full suite
+- Interpret challenge results and fix failures
+- Explore the challenge bank and custom challenge creation
+- Use challenge-based QA as part of your workflow
+
+### Prerequisites
+- Running catalog-api server with at least one storage root configured
+- Basic understanding of REST APIs
+- Access to the admin account
+
+### Script
+
+**[00:00-02:30] - What Are Challenges?**
+```
+"Welcome to Module 13! The Challenge System is
+Catalogizer's built-in verification framework.
+
+Think of challenges as structured, automated tests
+that verify your entire deployment works correctly -
+from API endpoints to data integrity.
+
+There are currently 492 registered challenges:
+- 50 original system challenges (CH-001 to CH-050)
+- 174 user flow challenges (UF-*)
+- 15 module verification challenges (MOD-*)
+- 253 HelixQA test bank challenges
+
+Challenges are Go structs that embed BaseChallenge
+and implement an Execute() method. They're registered
+in catalog-api/challenges/register.go.
+
+Categories include:
+- API health and endpoint verification
+- Data integrity (scanning, detection, entities)
+- Authentication and authorization
+- Performance (response times, throughput)
+- Cross-platform user flows
+- Module integration verification
+
+The challenge system is exposed via REST endpoints:
+- GET /api/v1/challenges - List all challenges
+- POST /api/v1/challenges/:id/run - Run one
+- POST /api/v1/challenges/run-all - Run all
+- GET /api/v1/challenges/:id/results - Get results"
+```
+
+**[02:30-05:00] - Running Challenges**
+```
+"Let's run some challenges. First, ensure catalog-api
+is running and you're authenticated.
+
+Run a single challenge:
+```bash
+curl -X POST http://localhost:8080/api/v1/challenges/CH-001/run \
+  -H 'Authorization: Bearer <your-token>'
+```
+
+Response:
+```json
+{
+  'id': 'CH-001',
+  'name': 'API Health Check',
+  'status': 'passed',
+  'duration': '45ms',
+  'assertions': 5,
+  'passed': 5,
+  'failed': 0
+}
+```
+
+Run all challenges (WARNING: this is synchronous
+and blocks until complete - can take 25+ minutes
+if NAS scanning is involved):
+```bash
+curl -X POST http://localhost:8080/api/v1/challenges/run-all \
+  -H 'Authorization: Bearer <your-token>'
+```
+
+IMPORTANT: RunAll is blocking. No other challenge
+can execute until it finishes. The runner has a
+5-minute stale threshold - if no progress is reported
+for 5 minutes, the stuck challenge is terminated.
+
+Monitor progress by polling:
+```bash
+curl http://localhost:8080/api/v1/challenges/status \
+  -H 'Authorization: Bearer <your-token>'
+```
+
+[Show running CH-001 through CH-005 individually]"
+```
+
+**[05:00-07:30] - Interpreting Results**
+```
+"Challenge results tell you exactly what passed
+and what needs attention.
+
+Result statuses:
+- passed: All assertions succeeded
+- failed: One or more assertions failed
+- stuck: No progress for 5 minutes (killed)
+- timed_out: Exceeded timeout limit
+- skipped: Prerequisites not met
+
+Example failure output:
+```json
+{
+  'id': 'CH-012',
+  'name': 'Media Entity Aggregation',
+  'status': 'failed',
+  'assertions': 8,
+  'passed': 6,
+  'failed': 2,
+  'failures': [
+    'Expected media_items count > 0, got 0',
+    'Expected parent_id set for TV episodes'
+  ]
+}
+```
+
+Common failure patterns and fixes:
+
+'count > 0, got 0':
+- Run a scan first to populate the database
+- Check storage root configuration
+
+'connection refused':
+- Verify catalog-api is running
+- Check the port configuration
+
+'unauthorized':
+- Token expired - re-authenticate
+- Check user role permissions
+
+'timeout':
+- Increase config.json write_timeout to 900
+- Check if NAS is accessible
+
+The challenge bank in challenges/config/ defines
+additional test parameters and expected values."
+```
+
+**[07:30-10:00] - Custom Challenges & Summary**
+```
+"Creating a custom challenge:
+
+1. Define the challenge struct:
+```go
+type MyCustomChallenge struct {
+    challenge.BaseChallenge
+}
+
+func (c *MyCustomChallenge) Execute(
+    ctx context.Context) *challenge.Result {
+    
+    result := challenge.NewResult(c.ID())
+    
+    // Your verification logic here
+    resp, err := http.Get('http://localhost:8080/api/v1/health')
+    result.Assert('health returns 200', resp.StatusCode == 200)
+    
+    return result
+}
+```
+
+2. Register it in register.go:
+```go
+registry.Register(&MyCustomChallenge{
+    BaseChallenge: challenge.NewBaseChallenge(
+        'CUSTOM-001', 'My Custom Check',
+    ),
+})
+```
+
+3. Run it:
+```bash
+curl -X POST http://localhost:8080/api/v1/challenges/CUSTOM-001/run
+```
+
+All challenge operations must go through the running
+catalog-api service. Never use custom scripts or curl
+directly against the database - always use the API
+as an end user would.
+
+Best Practices:
+- Run challenges after every deployment
+- Use individual challenges for quick verification
+- Reserve RunAll for comprehensive regression checks
+- Monitor challenge trends over time
+- Add custom challenges for your specific requirements
+
+That's the Challenge System! In Module 14, we'll
+set up a development environment from scratch."
+```
+
+---
+
+## Module 14: Development Setup (15 minutes)
+
+### Learning Objectives
+- Clone the repository and initialize all submodules
+- Set up the Go backend development environment
+- Set up the React frontend development environment
+- Run the full test suite across all components
+- Understand code style conventions and contribution guidelines
+
+### Prerequisites
+- Go 1.25 or later installed
+- Node.js 18+ and npm
+- Git with submodule support
+- Code editor (VS Code recommended)
+- Podman for container operations
+
+### Script
+
+**[00:00-03:00] - Cloning & Submodule Initialization**
+```
+"Welcome to Module 14! Let's set up a complete
+development environment for Catalogizer.
+
+Clone the repository:
+```bash
+git clone https://github.com/vasic-digital/Catalogizer.git
+cd Catalogizer
+```
+
+Initialize all 41 submodules:
+```bash
+git submodule init
+git submodule update --recursive
+```
+
+This downloads all Go modules, TypeScript libraries,
+and supporting tools. It may take a few minutes on
+the first run.
+
+Verify submodules:
+```bash
+git submodule status
+```
+
+You should see 41 entries, each with a commit hash
+and path. No entries should have a '-' prefix
+(which indicates uninitialized submodules).
+
+Project structure overview:
+- catalog-api/     : Go backend (Gin framework)
+- catalog-web/     : React frontend (Vite + TypeScript)
+- catalogizer-desktop/ : Tauri desktop app
+- catalogizer-android/ : Android mobile app
+- catalogizer-androidtv/ : Android TV app
+- installer-wizard/ : Tauri setup wizard
+- 22 Go submodules (Auth/, Cache/, Database/, etc.)
+- 9 TypeScript submodules (UI-Components-React/, etc.)
+- HelixQA and supporting AI submodules
+
+[Show the directory listing with submodule folders]"
+```
+
+**[03:00-06:00] - Backend Setup (Go)**
+```
+"Let's set up the Go backend.
+
+Prerequisites check:
+```bash
+go version    # Should be 1.25+
+```
+
+The Go modules use 'replace' directives in
+catalog-api/go.mod to point to local submodule paths.
+This means you don't need to publish modules to
+work on them locally.
+
+Build the backend:
+```bash
+cd catalog-api
+go build -o catalog-api main.go
+```
+
+Create your .env file:
+```bash
+cp .env.example .env
+```
+
+Edit .env with your settings:
+```
+PORT=8080
+GIN_MODE=debug
+DB_TYPE=sqlite
+JWT_SECRET=your-dev-secret-key-at-least-32-chars
+ADMIN_PASSWORD=admin123
+```
+
+Run the development server:
+```bash
+go run main.go
+```
+
+The server starts and writes its port to .service-port.
+This file is read by the frontend for API proxying.
+
+Verify it's running:
+```bash
+curl http://localhost:8080/api/v1/health
+```
+
+For database, SQLite is used by default in development.
+No setup needed - the database file is created
+automatically. For PostgreSQL (production), set
+DB_TYPE=postgres and provide connection details."
+```
+
+**[06:00-09:00] - Frontend Setup (React/TypeScript)**
+```
+"Now let's set up the React frontend.
+
+Prerequisites:
+```bash
+node --version  # Should be 18+
+npm --version
+```
+
+Install dependencies:
+```bash
+cd catalog-web
+npm install
+```
+
+This also installs linked submodule packages via
+file:../ references in package.json.
+
+Start the development server:
+```bash
+npm run dev
+```
+
+The frontend starts on port 3000 and automatically
+proxies /api requests to the catalog-api backend
+by reading ../catalog-api/.service-port.
+
+NOTE: Kill any process on port 3000 first:
+```bash
+ss -tlnp | grep :3000
+```
+
+Open http://localhost:3000 in your browser.
+
+Key development tools:
+- Hot Module Replacement (HMR) for instant updates
+- Path aliases (@/components, @/hooks, @/lib, etc.)
+- React Query DevTools for server state inspection
+- TypeScript strict mode for type safety
+
+Frontend structure:
+- src/pages/      : Route-level components
+- src/components/ : Reusable UI components
+- src/hooks/      : Custom React hooks
+- src/services/   : API service layer
+- src/store/      : Zustand client state
+- src/types/      : TypeScript type definitions
+
+[Show the running frontend with hot reload]"
+```
+
+**[09:00-12:00] - Running Tests**
+```
+"Testing is critical. Let's run the full test suite.
+
+Backend tests (with resource limits):
+```bash
+cd catalog-api
+GOMAXPROCS=3 go test ./... -p 2 -parallel 2
+```
+
+Resource limits are mandatory - the host machine
+runs other processes and we must stay under 30-40%
+CPU/memory usage.
+
+Run a single test:
+```bash
+go test -v -run TestMediaDetection ./internal/media/detector/
+```
+
+Frontend tests:
+```bash
+cd catalog-web
+npm run test           # Single run (Vitest)
+npm run test:watch     # Watch mode
+npm run test:coverage  # With coverage report
+```
+
+End-to-end tests:
+```bash
+npm run test:e2e       # Playwright E2E
+```
+
+Lint and type checking:
+```bash
+npm run lint
+npm run type-check
+```
+
+Full system test:
+```bash
+./scripts/run-all-tests.sh
+```
+
+Current test counts:
+- Go: 44 packages, all passing
+- Frontend: 130 test files, 2330+ tests
+- Installer: 19 test files, 178 tests
+- Security: govulncheck 0 vulnerabilities
+
+[Show running go test and npm test with output]"
+```
+
+**[12:00-15:00] - Code Style & Contributing**
+```
+"Catalogizer follows strict code conventions.
+
+Go conventions:
+- Constructor injection via NewService() functions
+- Error wrapping with context
+- Table-driven tests in *_test.go files beside source
+- Package names: lowercase, single word
+- Test helpers in internal/tests/test_helper.go
+
+TypeScript conventions:
+- PascalCase for components
+- camelCase for functions and variables
+- Zod for runtime validation
+- React Hook Form for forms
+- Strict TypeScript (no 'any')
+
+Kotlin conventions:
+- MVVM architecture
+- Result sealed classes for error handling
+- Room for offline data
+- Coroutines for async operations
+
+Configuration precedence:
+env vars > .env file > config.json > defaults
+
+PostCSS note:
+postcss.config.js MUST use module.exports (CommonJS)
+for Node 18 compatibility.
+
+Contributing workflow:
+1. Create a feature branch
+2. Write tests first (TDD encouraged)
+3. Implement the feature
+4. Run the full test suite
+5. Ensure zero warnings, zero errors
+6. Submit a pull request
+
+Container builds are mandatory for releases:
+```bash
+./scripts/release-build.sh --container --force --skip-tests
+```
+
+Never build directly on bare metal for production.
+
+That's development setup! In Module 15, we'll
+explore API integration with the TypeScript client."
+```
+
+---
+
+## Module 15: API Integration (12 minutes)
+
+### Learning Objectives
+- Install and configure the Catalogizer API client library
+- Authenticate and manage JWT tokens
+- Perform CRUD operations on media entities
+- Subscribe to real-time WebSocket events
+- Handle errors, rate limits, and pagination
+
+### Prerequisites
+- Node.js 18+ or TypeScript project
+- Running catalog-api server
+- Valid user credentials
+
+### Script
+
+**[00:00-02:30] - API Client Setup**
+```
+"Welcome to Module 15! The Catalogizer API client
+makes integration straightforward.
+
+Install the TypeScript client:
+```bash
+npm install @vasic-digital/catalogizer-api-client
+```
+
+Or if working within the monorepo, it's linked via
+file:../ in catalog-web/package.json.
+
+Basic setup:
+```typescript
+import { CatalogizerClient } from '@vasic-digital/catalogizer-api-client';
+
+const client = new CatalogizerClient({
+  baseUrl: 'http://localhost:8080',
+  // Optional: provide token if already authenticated
+  token: 'your-jwt-token',
+});
+```
+
+The client handles:
+- Automatic token refresh on 401 responses
+- Brotli/gzip content negotiation
+- HTTP/3 when available
+- Request retry with exponential backoff
+- Type-safe responses with TypeScript generics
+
+All API routes are under /api/v1/ prefix."
+```
+
+**[02:30-05:00] - Authentication & CRUD Operations**
+```
+"Authenticate to get a JWT token:
+
+```typescript
+// Login
+const auth = await client.auth.login({
+  username: 'admin',
+  password: 'your-password',
+});
+// auth.token and auth.refreshToken are stored internally
+
+// Check current user
+const me = await client.auth.me();
+console.log(me.username, me.role);
+```
+
+CRUD Operations on Media Items:
+
+```typescript
+// List all movies
+const movies = await client.media.list({
+  type: 'movie',
+  page: 1,
+  pageSize: 20,
+  sort: 'title',
+});
+
+// Get a specific item
+const movie = await client.media.get(42);
+
+// Search across all media types
+const results = await client.media.search({
+  query: 'Matrix',
+  types: ['movie', 'tv_show'],
+  minRating: 7.0,
+});
+
+// Collections
+const collections = await client.collections.list();
+const myList = await client.collections.create({
+  name: 'Watch Later',
+  description: 'Movies to watch this weekend',
+});
+await client.collections.addItem(myList.id, movie.id);
+
+// Storage roots
+const roots = await client.storage.listRoots();
+
+// Trigger a scan
+const scan = await client.storage.scan(roots[0].id);
+```
+
+All responses are fully typed. TypeScript catches
+errors at compile time if you use wrong field names
+or types.
+
+[Show IDE autocompletion with typed responses]"
+```
+
+**[05:00-07:30] - WebSocket Events**
+```
+"Real-time events let your application react to
+changes instantly.
+
+```typescript
+import { CatalogizerWebSocket } from '@vasic-digital/websocket-client';
+
+const ws = new CatalogizerWebSocket({
+  url: 'ws://localhost:8080/ws',
+  token: auth.token,
+  reconnect: true,
+  reconnectInterval: 3000,
+});
+
+// Subscribe to events
+ws.on('scan:progress', (data) => {
+  console.log('Scan progress:', data.percentage);
+});
+
+ws.on('scan:complete', (data) => {
+  console.log('Scan found', data.filesDetected, 'files');
+});
+
+ws.on('media:added', (data) => {
+  console.log('New media:', data.title);
+  // Update your UI
+});
+
+ws.on('media:updated', (data) => {
+  console.log('Updated:', data.title);
+});
+
+// React hook (for React applications)
+import { useWebSocket } from '@vasic-digital/websocket-client/react';
+
+function ScanProgress() {
+  const { lastMessage } = useWebSocket('scan:progress');
+  return <ProgressBar value={lastMessage?.percentage} />;
+}
+```
+
+The WebSocket client handles:
+- Automatic reconnection with exponential backoff
+- Token refresh on connection
+- Message queuing during disconnection
+- Heartbeat/ping-pong for connection health
+
+Available event channels:
+- scan:progress, scan:complete, scan:error
+- media:added, media:updated, media:deleted
+- collection:updated
+- system:health, system:alert"
+```
+
+**[07:30-10:00] - Error Handling & Rate Limits**
+```
+"Robust error handling is essential for integration.
+
+```typescript
+try {
+  const movie = await client.media.get(999);
+} catch (error) {
+  if (error.status === 404) {
+    console.log('Movie not found');
+  } else if (error.status === 401) {
+    console.log('Token expired, refreshing...');
+    // Client handles this automatically
+  } else if (error.status === 429) {
+    console.log('Rate limited, retry after:', 
+      error.retryAfter, 'seconds');
+  } else {
+    console.error('Unexpected error:', error.message);
+  }
+}
+```
+
+Rate limit headers in every response:
+- X-RateLimit-Limit: Maximum requests per window
+- X-RateLimit-Remaining: Requests left
+- X-RateLimit-Reset: Window reset timestamp
+
+The client respects these automatically and backs
+off when approaching limits.
+
+Pagination:
+
+```typescript
+// First page
+const page1 = await client.media.list({
+  page: 1,
+  pageSize: 50,
+});
+// page1.total, page1.page, page1.pageSize, page1.items
+
+// Iterate all pages
+async function* allMedia() {
+  let page = 1;
+  let hasMore = true;
+  while (hasMore) {
+    const result = await client.media.list({
+      page, pageSize: 100,
+    });
+    yield* result.items;
+    hasMore = page * 100 < result.total;
+    page++;
+  }
+}
+
+for await (const item of allMedia()) {
+  console.log(item.title);
+}
+```"
+```
+
+**[10:00-12:00] - Integration Examples & Summary**
+```
+"Common integration patterns:
+
+1. Dashboard Widget:
+```typescript
+const stats = await client.media.stats();
+// { totalMovies: 450, totalShows: 89, totalMusic: 2300 }
+```
+
+2. Webhook Integration:
+```typescript
+// Register webhook for new media events
+await client.webhooks.register({
+  url: 'https://yourapp.com/catalogizer-hook',
+  events: ['media:added', 'scan:complete'],
+});
+```
+
+3. Batch Operations:
+```typescript
+// Add multiple items to collection
+await client.collections.addItems(
+  collectionId,
+  [itemId1, itemId2, itemId3]
+);
+```
+
+4. Export Data:
+```typescript
+const allMedia = await client.media.list({
+  pageSize: 1000, sort: 'title',
+});
+// Transform and export to your format
+```
+
+API Documentation:
+- Full OpenAPI/Swagger spec at /api/v1/docs
+- TypeScript types exported from the client package
+- Examples in catalogizer-api-client/examples/
+
+Summary:
+- Type-safe client library with auto-completion
+- JWT auth with automatic token refresh
+- Real-time updates via WebSocket
+- Graceful error handling and rate limit respect
+- Pagination support for large collections
+
+In Module 16, we'll cover deploying Catalogizer
+to production with Docker Compose."
+```
+
+---
+
+## Module 16: Deployment and Operations (15 minutes)
+
+### Learning Objectives
+- Deploy Catalogizer using production Docker Compose
+- Configure PostgreSQL for production use
+- Set up Nginx as a reverse proxy with SSL
+- Implement backup and restore procedures
+- Scale the deployment for larger collections
+
+### Prerequisites
+- Linux server with Podman installed
+- Domain name with DNS configured (for SSL)
+- Basic understanding of container orchestration
+- SSH access to the target server
+
+### Script
+
+**[00:00-03:00] - Production Docker Compose**
+```
+"Welcome to Module 16! Let's deploy Catalogizer
+to production.
+
+Catalogizer uses Podman exclusively - no Docker.
+The production stack is defined in docker-compose.yml.
+
+Review the production compose file:
+```bash
+podman-compose -f docker-compose.yml config --quiet
+```
+
+The stack includes:
+- catalog-api: Go backend with HTTP/3
+- catalog-web: React frontend (served by Nginx)
+- PostgreSQL: Production database
+- Redis: Caching layer
+- Nginx: Reverse proxy with SSL
+
+Start with environment configuration:
+```bash
+cp .env.example .env
+nano .env
+```
+
+Critical production variables:
+```
+# Database
+DB_TYPE=postgres
+DB_HOST=localhost
+DB_PORT=5433
+DB_NAME=catalogizer
+DB_USER=catalogizer
+DB_PASSWORD=<strong-random-password>
+
+# Authentication
+JWT_SECRET=<64-char-random-string>
+ADMIN_PASSWORD=<strong-admin-password>
+
+# Server
+GIN_MODE=release
+PORT=8080
+
+# Optional metadata providers
+TMDB_API_KEY=your_key
+OMDB_API_KEY=your_key
+```
+
+Generate strong secrets:
+```bash
+openssl rand -base64 64  # JWT_SECRET
+openssl rand -base64 32  # DB_PASSWORD
+```
+
+[Show the .env file being configured]"
+```
+
+**[03:00-06:00] - PostgreSQL Setup**
+```
+"PostgreSQL is the production database.
+
+Start the database container:
+```bash
+podman run -d --name catalogizer-postgres \
+  --cpus=1 --memory=2g \
+  -e POSTGRES_DB=catalogizer \
+  -e POSTGRES_USER=catalogizer \
+  -e POSTGRES_PASSWORD=<your-db-password> \
+  -p 5433:5432 \
+  -v catalogizer-pgdata:/var/lib/postgresql/data \
+  docker.io/library/postgres:16-alpine
+```
+
+Note the resource limits (--cpus=1 --memory=2g).
+This is mandatory - total container budget is
+4 CPUs and 8 GB RAM across all containers.
+
+Verify the database:
+```bash
+podman exec catalogizer-postgres \
+  psql -U catalogizer -d catalogizer -c 'SELECT 1;'
+```
+
+The catalog-api automatically runs migrations on
+startup. It supports 9 migration versions covering:
+- Core tables (users, settings, storage roots)
+- File tracking and scan history
+- Media entity tables (media_items, media_files)
+- Performance indexes
+- Deduplication of media_files
+
+Dialect abstraction handles the differences:
+- SQLite: INSERT OR IGNORE, ?, boolean 0/1
+- PostgreSQL: ON CONFLICT DO NOTHING, $1/$2, TRUE/FALSE
+
+The database.DB wrapper auto-rewrites queries,
+so all code works with both dialects transparently."
+```
+
+**[06:00-09:00] - Nginx Reverse Proxy & SSL**
+```
+"Nginx serves the frontend and proxies API requests.
+
+The Nginx configuration is in config/nginx.conf.
+Do NOT move this file - Docker Compose volume
+mounts reference this path.
+
+SSL with Let's Encrypt:
+```bash
+# Install certbot
+sudo apt install certbot
+
+# Obtain certificate
+sudo certbot certonly --standalone \
+  -d catalogizer.yourdomain.com
+```
+
+Update config/nginx.conf:
+```nginx
+server {
+    listen 80;
+    server_name catalogizer.yourdomain.com;
+    return 301 https://$server_name$request_uri;
+}
+
+server {
+    listen 443 ssl http2;
+    listen 443 quic reuseport;
+    server_name catalogizer.yourdomain.com;
+
+    ssl_certificate /etc/letsencrypt/live/catalogizer.yourdomain.com/fullchain.pem;
+    ssl_certificate_key /etc/letsencrypt/live/catalogizer.yourdomain.com/privkey.pem;
+
+    # HTTP/3 advertisement
+    add_header Alt-Svc 'h3=\":443\"; ma=86400';
+
+    # Brotli compression
+    brotli on;
+    brotli_types text/html application/json application/javascript;
+
+    # Frontend
+    location / {
+        root /usr/share/nginx/html;
+        try_files $uri $uri/ /index.html;
+    }
+
+    # API proxy
+    location /api/ {
+        proxy_pass http://localhost:8080;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+    }
+
+    # WebSocket proxy
+    location /ws {
+        proxy_pass http://localhost:8080;
+        proxy_http_version 1.1;
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection 'upgrade';
+    }
+}
+```
+
+Start the full stack:
+```bash
+podman-compose -f docker-compose.yml up -d
+```
+
+Verify everything is running:
+```bash
+podman-compose -f docker-compose.yml ps
+```
+
+[Show the running containers and health checks]"
+```
+
+**[09:00-12:00] - Backup & Restore**
+```
+"Regular backups are essential. Here's how to
+protect your data.
+
+PostgreSQL Backup:
+```bash
+# Full database dump
+podman exec catalogizer-postgres \
+  pg_dump -U catalogizer catalogizer | \
+  gzip > backup-$(date +%Y%m%d).sql.gz
+
+# Schedule daily backups via cron
+0 3 * * * /path/to/backup-script.sh
+```
+
+Restore from backup:
+```bash
+# Stop the API first
+podman stop catalog-api
+
+# Restore
+gunzip -c backup-20260403.sql.gz | \
+  podman exec -i catalogizer-postgres \
+  psql -U catalogizer catalogizer
+
+# Restart the API
+podman start catalog-api
+```
+
+Media Files:
+Media files live on your storage roots (NAS, local
+disk, etc.). These are not in the database - only
+metadata and file paths are stored.
+
+Backup strategy:
+1. Database: Daily pg_dump (small, fast)
+2. Configuration: Version control .env.example,
+   config files, compose files
+3. Media: Use your NAS RAID or backup solution
+4. Certificates: Copy /etc/letsencrypt/
+
+Data volume protection:
+The PostgreSQL data lives in a named volume:
+```bash
+podman volume inspect catalogizer-pgdata
+```
+
+Never delete this volume without backing up first.
+
+[Show running a backup and verifying the dump file]"
+```
+
+**[12:00-15:00] - Scaling & Operations Summary**
+```
+"Scaling for larger collections:
+
+Database Tuning:
+```
+# PostgreSQL performance settings
+shared_buffers = 512MB
+effective_cache_size = 1.5GB
+work_mem = 16MB
+maintenance_work_mem = 128MB
+```
+
+Connection Pool Tuning:
+catalog-api defaults: MaxOpen=25, MaxIdle=10,
+MaxLifetime=5m, MaxIdleTime=3m.
+Adjust via config.json for higher concurrency.
+
+Caching with Redis:
+Redis dramatically reduces database load:
+```bash
+podman run -d --name catalogizer-redis \
+  --cpus=0.5 --memory=512m \
+  -v $(pwd)/config/redis.conf:/usr/local/etc/redis/redis.conf \
+  docker.io/library/redis:7-alpine
+```
+
+Monitoring (from Module 11):
+Always run Prometheus + Grafana alongside production.
+
+Operational Checklist:
+[ ] Daily database backups verified
+[ ] SSL certificate auto-renewal configured
+[ ] Monitoring dashboards reviewed weekly
+[ ] Security scans run before releases
+[ ] Container images updated monthly
+[ ] Log rotation configured
+[ ] Resource limits enforced on all containers
+
+Container resource budget (mandatory):
+- PostgreSQL: --cpus=1 --memory=2g
+- catalog-api: --cpus=2 --memory=4g
+- catalog-web (Nginx): --cpus=1 --memory=2g
+- Redis: --cpus=0.5 --memory=512m
+- Total: max 4 CPUs, 8 GB RAM
+
+That's production deployment! In Module 17, we'll
+cover troubleshooting common issues."
+```
+
+---
+
+## Module 17: Troubleshooting (10 minutes)
+
+### Learning Objectives
+- Diagnose the most common Catalogizer issues
+- Use diagnostic commands to identify root causes
+- Resolve database, network, and performance problems
+- Analyze logs effectively
+- Know where to get help when stuck
+
+### Prerequisites
+- Access to the running Catalogizer deployment
+- Terminal access to the host machine
+- Basic familiarity with Podman and system tools
+
+### Script
+
+**[00:00-02:30] - Common Issues & Quick Fixes**
+```
+"Welcome to Module 17! Let's tackle the most
+frequent issues you'll encounter.
+
+Issue 1: Frontend can't reach the API
+Symptoms: Network errors in browser console,
+'Connection refused' on /api calls.
+
+Diagnosis:
+```bash
+# Check if API is running
+curl http://localhost:8080/api/v1/health
+
+# Check .service-port file
+cat catalog-api/.service-port
+
+# Check if port is in use by another process
+ss -tlnp | grep :8080
+ss -tlnp | grep :3000
+```
+
+Fix: Ensure catalog-api is running and .service-port
+matches the actual port. Kill any process on port 3000
+(Bear Messenger commonly occupies this port).
+
+Issue 2: 'Database is locked' (SQLite)
+Symptoms: 500 errors during concurrent writes.
+
+Fix: SQLite WAL mode should be enabled automatically.
+Verify:
+```bash
+sqlite3 catalogizer.db 'PRAGMA journal_mode;'
+# Should return: wal
+```
+
+If not 'wal', the PRAGMA is not executing. Check
+database/connection.go for the explicit WAL pragma.
+
+Issue 3: Scan finds no files
+Symptoms: Scan completes but 0 files detected.
+
+Diagnosis:
+```bash
+# Verify storage root path exists and is accessible
+ls -la /path/to/your/media
+
+# For SMB/NFS mounts, check if mounted
+mount | grep /path/to/media
+```
+
+Fix: Ensure the storage root path is correct and
+the catalog-api process has read permissions."
+```
+
+**[02:30-05:00] - Diagnostic Commands**
+```
+"These commands help pinpoint problems quickly.
+
+System Health:
+```bash
+# Overall system load (stay under 30-40%)
+cat /proc/loadavg
+
+# Container resource usage
+podman stats --no-stream
+
+# Disk space
+df -h /path/to/media
+df -h /path/to/database
+```
+
+API Diagnostics:
+```bash
+# Health check with timing
+curl -w 'Total: %{time_total}s\n' \
+  http://localhost:8080/api/v1/health
+
+# Check all API endpoints respond
+curl -s http://localhost:8080/api/v1/health/detailed | jq .
+
+# Count active WebSocket connections
+curl -s http://localhost:8080/metrics | \
+  grep websocket_connections
+```
+
+Database Diagnostics:
+```bash
+# PostgreSQL: Check active connections
+podman exec catalogizer-postgres \
+  psql -U catalogizer -d catalogizer \
+  -c 'SELECT count(*) FROM pg_stat_activity;'
+
+# PostgreSQL: Check table sizes
+podman exec catalogizer-postgres \
+  psql -U catalogizer -d catalogizer \
+  -c 'SELECT relname, pg_size_pretty(pg_total_relation_size(relid))
+      FROM pg_catalog.pg_statio_user_tables
+      ORDER BY pg_total_relation_size(relid) DESC;'
+
+# SQLite: Check integrity
+sqlite3 catalogizer.db 'PRAGMA integrity_check;'
+```
+
+Container Diagnostics:
+```bash
+# View container logs
+podman logs --tail 100 catalog-api
+podman logs --tail 100 catalogizer-postgres
+
+# Check container health
+podman inspect --format='{{.State.Health.Status}}' catalog-api
+
+# Restart a misbehaving container
+podman restart catalog-api
+```"
+```
+
+**[05:00-07:30] - Database & Network Issues**
+```
+"Database Issues:
+
+Problem: Migration fails on startup
+```bash
+# Check migration status in logs
+podman logs catalog-api 2>&1 | grep -i migration
+```
+Migrations run automatically. If one fails, check:
+- PostgreSQL: Are all 9 migration versions applied?
+- Column mismatches between SQLite and PostgreSQL
+- The dialect abstraction rewrites queries automatically
+
+Problem: Slow queries
+```bash
+# PostgreSQL: Enable slow query logging
+# In postgresql.conf:
+log_min_duration_statement = 1000  # log queries > 1s
+
+# Check for missing indexes
+podman exec catalogizer-postgres \
+  psql -U catalogizer -d catalogizer \
+  -c 'SELECT * FROM pg_stat_user_indexes
+      WHERE idx_scan = 0;'
+```
+
+Network Issues:
+
+Problem: NAS (SMB/NFS) connection drops
+```bash
+# Test NAS connectivity
+ping synology.local
+smbclient //synology.local/media -U user -c 'ls'
+```
+The SMB client has built-in circuit breaker with
+exponential backoff retry. Check logs for retry
+patterns.
+
+Problem: WebSocket disconnections
+```bash
+# Monitor WebSocket connections
+podman logs catalog-api 2>&1 | grep -i websocket
+```
+The WebSocket handler uses sync.Once for safe
+shutdown. Clients should auto-reconnect."
+```
+
+**[07:30-09:00] - Performance Debugging**
+```
+"When things are slow, here's how to investigate.
+
+High CPU:
+```bash
+# Find what's consuming CPU
+podman stats --no-stream
+cat /proc/loadavg
+
+# If Go CPU is high, check goroutine count
+curl -s http://localhost:8080/metrics | grep goroutines
+```
+A goroutine count above 1000 suggests a leak.
+The Memory module provides leak detection.
+
+High Memory:
+```bash
+# Check memory usage
+podman stats --no-stream --format \
+  'table {{.Name}}\t{{.MemUsage}}'
+
+# Go memory details
+curl -s http://localhost:8080/metrics | grep memstats
+```
+
+Slow Scans:
+- Large NAS: 85K files takes ~25 minutes
+- Scan progress is reported every 5 seconds
+- Use incremental scans for daily updates
+- Schedule full scans during off-peak hours
+
+Slow API Responses:
+```bash
+# Test endpoint latency
+curl -w '\nTime: %{time_total}s\n' \
+  http://localhost:8080/api/v1/media?page=1&pageSize=20
+
+# Check if Redis caching is working
+curl -s http://localhost:8080/metrics | grep cache_hit
+```
+
+If responses are slow without caching enabled,
+consider enabling Redis (Module 16)."
+```
+
+**[09:00-10:00] - Getting Help & Summary**
+```
+"When you're stuck, here's where to go:
+
+Documentation:
+- CLAUDE.md: Comprehensive project reference
+- docs/ directory: Architecture, plans, guides
+- ARCHITECTURE.md in each submodule
+- API docs at /api/v1/docs (when running)
+
+Logs to collect for bug reports:
+1. catalog-api logs: podman logs catalog-api
+2. Database logs: podman logs catalogizer-postgres
+3. Browser console: F12 > Console tab
+4. System info: uname -a, go version, node --version
+5. Configuration: .env (redact secrets!)
+
+Diagnostic one-liner:
+```bash
+echo '=== Health ===' && \
+curl -s http://localhost:8080/api/v1/health | jq . && \
+echo '=== Containers ===' && \
+podman ps --format 'table {{.Names}}\t{{.Status}}' && \
+echo '=== Load ===' && \
+cat /proc/loadavg && \
+echo '=== Disk ===' && \
+df -h / | tail -1
+```
+
+Run the challenge system to verify everything:
+```bash
+curl -X POST http://localhost:8080/api/v1/challenges/CH-001/run \
+  -H 'Authorization: Bearer <token>'
+```
+
+Quick Troubleshooting Checklist:
+[ ] Is catalog-api running? (check health endpoint)
+[ ] Is the database accessible? (check connection)
+[ ] Are ports free? (check ss -tlnp)
+[ ] Are containers healthy? (podman ps)
+[ ] Are resource limits respected? (podman stats)
+[ ] Are logs showing errors? (podman logs)
+
+That concludes our troubleshooting module and the
+entire extended course series! You now have the
+knowledge to install, configure, operate, develop
+for, and troubleshoot Catalogizer across all
+platforms. Happy cataloging!"
+```
+
+---
+
 ## Production Notes
 
 ### Recording Setup

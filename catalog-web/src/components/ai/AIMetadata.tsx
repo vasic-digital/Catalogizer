@@ -439,7 +439,8 @@ export const AIMetadataExtractor: React.FC<AIMetadataExtractorProps> = ({
       setMetadata(result);
       onMetadataExtracted(result);
     } catch (err) {
-      console.error('Failed to extract metadata:', err);
+      // Metadata extraction failure — silently degrade
+      void err;
     } finally {
       setExtracting(false);
     }
@@ -565,7 +566,8 @@ export const AIAutomationRules: React.FC<AIAutomationRulesProps> = ({
       const result = await AIMetadataService.generateAutomationRules({});
       setRules(result);
     } catch (err) {
-      console.error('Failed to load automation rules:', err);
+      // Automation rules loading failure — silently degrade to empty list
+      void err;
     } finally {
       setLoading(false);
     }
@@ -731,7 +733,8 @@ export const AIContentQualityAnalyzer: React.FC<AIContentQualityAnalyzerProps> =
       const result = await AIMetadataService.analyzeContentQuality(content);
       setQuality(result);
     } catch (err) {
-      console.error('Failed to analyze content quality:', err);
+      // Quality analysis failure — silently degrade
+      void err;
     } finally {
       setAnalyzing(false);
     }

@@ -11,8 +11,8 @@ This guide walks you through installing Catalogizer and scanning your first medi
 
 Choose one of the following setups:
 
-- **Container setup** (recommended): Podman 5+ with podman-compose, or Docker 20.10+ with Docker Compose v2+
-- **Manual setup**: Go 1.24+, Node.js 18+, Git
+- **Container setup** (recommended): Podman 5+ with podman-compose, or Docker 20.10+ with Docker Compose v2+. Catalogizer automatically detects the available container runtime.
+- **Manual setup**: Go 1.25+, Node.js 18+, Git
 
 ## Step 1: Clone the Repository
 
