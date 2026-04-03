@@ -36,6 +36,7 @@ import (
 	"os/signal"
 	"path/filepath"
 	"strconv"
+	"sync"
 	"syscall"
 	"time"
 
@@ -400,29 +401,39 @@ func main() {
 	smbService := services.NewSMBService(internalCfg, logger)
 	smbDiscoveryService := services.NewSMBDiscoveryService(logger)
 
-	// Initialize services needed for recommendations
-	mediaRecognitionService := services.NewMediaRecognitionService(databaseDB, logger, nil, nil, "", "", "", "", "", "")
-	duplicateDetectionService := services.NewDuplicateDetectionService(databaseDB, logger, nil)
+	// fileRepository is shared by stats, browse, and recommendation handlers
 	fileRepository := root_repository.NewFileRepository(databaseDB)
-	recommendationService := services.NewRecommendationService(
-		mediaRecognitionService,
-		duplicateDetectionService,
-		fileRepository,
-		databaseDB,
-	)
 
-	// Initialize repositories
+	// Lazy initialization: RecommendationService and its unique dependencies
+	// (mediaRecognitionService, duplicateDetectionService) are only needed when
+	// recommendation endpoints are hit. Deferred via sync.Once to reduce startup cost.
+	var recommendationHandlerOnce sync.Once
+	var lazyRecommendationHandler *root_handlers.RecommendationHandler
+	getRecommendationHandler := func() *root_handlers.RecommendationHandler {
+		recommendationHandlerOnce.Do(func() {
+			mediaRecognitionService := services.NewMediaRecognitionService(databaseDB, logger, nil, nil, "", "", "", "", "", "")
+			duplicateDetectionService := services.NewDuplicateDetectionService(databaseDB, logger, nil)
+			recommendationService := services.NewRecommendationService(
+				mediaRecognitionService,
+				duplicateDetectionService,
+				fileRepository,
+				databaseDB,
+			)
+			lazyRecommendationHandler = root_handlers.NewRecommendationHandler(recommendationService)
+		})
+		return lazyRecommendationHandler
+	}
+
+	// Initialize repositories (eager — used by core services or multiple handlers)
 	userRepo := root_repository.NewUserRepository(databaseDB)
-	conversionRepo := root_repository.NewConversionRepository(databaseDB)
 	analyticsRepo := root_repository.NewAnalyticsRepository(databaseDB)
 	configurationRepo := root_repository.NewConfigurationRepository(databaseDB)
 	errorReportingRepo := root_repository.NewErrorReportingRepository(databaseDB)
 	crashReportingRepo := root_repository.NewCrashReportingRepository(databaseDB)
 	logManagementRepo := root_repository.NewLogManagementRepository(databaseDB)
 	favoritesRepo := root_repository.NewFavoritesRepository(databaseDB)
-	playlistRepo := root_repository.NewPlaylistRepository(databaseDB)
 
-	// Initialize authentication and conversion services
+	// Initialize authentication services (eager — core dependency for many handlers)
 	jwtSecret := cfg.Auth.JWTSecret
 	if jwtSecret == "" {
 		// Generate a cryptographically secure random secret at startup
@@ -434,14 +445,36 @@ func main() {
 		log.Println("WARNING: No JWT secret configured. Generated ephemeral secret. Set Auth.JWTSecret in config for persistent sessions across restarts.")
 	}
 	authService := root_services.NewAuthService(userRepo, jwtSecret)
-	conversionService := root_services.NewConversionService(conversionRepo, userRepo, authService)
 	analyticsService := root_services.NewAnalyticsService(analyticsRepo)
 	reportingService := root_services.NewReportingService(analyticsRepo, userRepo)
 	configurationService := root_services.NewConfigurationService(configurationRepo, "./config.json")
 	errorReportingService := root_services.NewErrorReportingService(errorReportingRepo, crashReportingRepo)
 	logManagementService := root_services.NewLogManagementService(logManagementRepo)
 	favoritesService := root_services.NewFavoritesService(favoritesRepo, authService)
-	playlistService := root_services.NewPlaylistService(playlistRepo)
+
+	// Lazy initialization: ConversionService — only needed when conversion endpoints are hit
+	var conversionHandlerOnce sync.Once
+	var lazyConversionHandler *root_handlers.ConversionHandler
+	getConversionHandler := func() *root_handlers.ConversionHandler {
+		conversionHandlerOnce.Do(func() {
+			conversionRepo := root_repository.NewConversionRepository(databaseDB)
+			conversionService := root_services.NewConversionService(conversionRepo, userRepo, authService)
+			lazyConversionHandler = root_handlers.NewConversionHandler(conversionService, authService)
+		})
+		return lazyConversionHandler
+	}
+
+	// Lazy initialization: PlaylistService — only needed when playlist endpoints are hit
+	var playlistHandlerOnce sync.Once
+	var lazyPlaylistHandler *root_handlers.PlaylistHandler
+	getPlaylistHandler := func() *root_handlers.PlaylistHandler {
+		playlistHandlerOnce.Do(func() {
+			playlistRepo := root_repository.NewPlaylistRepository(databaseDB)
+			playlistService := root_services.NewPlaylistService(playlistRepo)
+			lazyPlaylistHandler = root_handlers.NewPlaylistHandler(playlistService, logger)
+		})
+		return lazyPlaylistHandler
+	}
 
 	// Initialize internal auth service and middleware for rate limiting
 	internalAuthService := auth.NewAuthService(databaseDB, jwtSecret, logger)
@@ -499,26 +532,28 @@ func main() {
 	aggregationService := services.NewAggregationService(databaseDB, logger, mediaItemRepo, mediaFileRepo, dirAnalysisRepo, extMetaRepo)
 	universalScanner.SetAggregationService(aggregationService)
 
-	// Initialize subtitle service
-	// Use SQL-based cache service for now
+	// CacheService is eager — used during shutdown and potentially by other services
 	cacheService := services.NewCacheService(databaseDB, logger)
-	subtitleService := services.NewSubtitleService(databaseDB, logger, cacheService)
 
-	// Initialize handlers
+	// Lazy initialization: SubtitleService — only needed when subtitle endpoints are hit
+	var subtitleHandlerOnce sync.Once
+	var lazySubtitleHandler *root_handlers.SubtitleHandler
+	getSubtitleHandler := func() *root_handlers.SubtitleHandler {
+		subtitleHandlerOnce.Do(func() {
+			subtitleService := services.NewSubtitleService(databaseDB, logger, cacheService)
+			lazySubtitleHandler = root_handlers.NewSubtitleHandler(subtitleService, logger)
+		})
+		return lazySubtitleHandler
+	}
+
+	// Initialize handlers (eager — needed at startup or used by core routes)
 	catalogHandler := handlers.NewCatalogHandler(catalogService, smbService, logger)
 	downloadHandler := handlers.NewDownloadHandler(catalogService, smbService, cfg.Catalog.TempDir, cfg.Catalog.MaxArchiveSize, cfg.Catalog.DownloadChunkSize, logger)
 	streamHandler := handlers.NewStreamHandler(catalogService, databaseDB, clientFactory, logger)
 	copyHandler := handlers.NewCopyHandler(catalogService, smbService, cfg.Catalog.TempDir, logger)
 	smbDiscoveryHandler := handlers.NewSMBDiscoveryHandler(smbDiscoveryService, logger)
-	conversionHandler := root_handlers.NewConversionHandler(conversionService, authService)
 	authHandler := root_handlers.NewAuthHandler(authService)
 	androidTVMediaHandler := root_handlers.NewAndroidTVMediaHandler(databaseDB)
-
-	// Recommendation handler
-	recommendationHandler := root_handlers.NewRecommendationHandler(recommendationService)
-
-	// Subtitle handler
-	subtitleHandler := root_handlers.NewSubtitleHandler(subtitleService, logger)
 
 	// Collection handler
 	collectionHandler := root_handlers.NewCollectionHandler(mediaCollectionRepo)
@@ -659,16 +694,22 @@ func main() {
 	searchHandler := root_handlers.NewSearchHandler(fileRepository)
 	browseHandler := root_handlers.NewBrowseHandler(fileRepository)
 
-	// Sync handler (remote synchronization via WebDAV, S3, GCS, local)
-	syncRepo := root_repository.NewSyncRepository(databaseDB)
-	syncService := root_services.NewSyncService(syncRepo, userRepo, authService)
-	syncHandler := root_handlers.NewSyncHandler(syncService, authService)
+	// Lazy initialization: SyncService — only needed when sync endpoints are hit
+	var syncHandlerOnce sync.Once
+	var lazySyncHandler *root_handlers.SyncHandler
+	getSyncHandler := func() *root_handlers.SyncHandler {
+		syncHandlerOnce.Do(func() {
+			syncRepo := root_repository.NewSyncRepository(databaseDB)
+			syncService := root_services.NewSyncService(syncRepo, userRepo, authService)
+			lazySyncHandler = root_handlers.NewSyncHandler(syncService, authService)
+		})
+		return lazySyncHandler
+	}
 
-	// Analytics, reporting, and favorites handlers
+	// Analytics, reporting, and favorites handlers (eager — lightweight, commonly used)
 	analyticsHandler := root_handlers.NewAnalyticsHandler(analyticsService, logger)
 	reportingHandler := root_handlers.NewReportingHandler(reportingService, logger)
 	favoritesHandler := root_handlers.NewFavoritesHandler(favoritesService, logger)
-	playlistHandler := root_handlers.NewPlaylistHandler(playlistService, logger)
 
 	// Media query handler — replaces former stub endpoints with real DB implementations
 	mediaQueryHandler := root_handlers.NewMediaQueryHandler(databaseDB, mediaItemRepo, userRepo)
@@ -887,25 +928,25 @@ func main() {
 		api.POST("/media/:id/refresh", mediaQueryHandler.RefreshMediaMetadata)
 		api.GET("/media/:id/quality", mediaQueryHandler.GetMediaQuality)
 
-		// Recommendation endpoints
+		// Recommendation endpoints (lazy — handler initialized on first request)
 		recGroup := api.Group("/recommendations")
 		{
-			recGroup.GET("/similar/:media_id", recommendationHandler.GetSimilarItems)
-			recGroup.GET("/trending", recommendationHandler.GetTrendingItems)
-			recGroup.GET("/personalized/:user_id", recommendationHandler.GetPersonalizedRecommendations)
+			recGroup.GET("/similar/:media_id", func(c *gin.Context) { getRecommendationHandler().GetSimilarItems(c) })
+			recGroup.GET("/trending", func(c *gin.Context) { getRecommendationHandler().GetTrendingItems(c) })
+			recGroup.GET("/personalized/:user_id", func(c *gin.Context) { getRecommendationHandler().GetPersonalizedRecommendations(c) })
 		}
 
-		// Subtitle endpoints
+		// Subtitle endpoints (lazy — handler initialized on first request)
 		subGroup := api.Group("/subtitles")
 		{
-			subGroup.GET("/search", subtitleHandler.SearchSubtitles)
-			subGroup.POST("/download", subtitleHandler.DownloadSubtitle)
-			subGroup.GET("/media/:media_id", subtitleHandler.GetSubtitles)
-			subGroup.GET("/:subtitle_id/verify-sync/:media_id", subtitleHandler.VerifySubtitleSync)
-			subGroup.POST("/translate", subtitleHandler.TranslateSubtitle)
-			subGroup.POST("/upload", subtitleHandler.UploadSubtitle)
-			subGroup.GET("/languages", subtitleHandler.GetSupportedLanguages)
-			subGroup.GET("/providers", subtitleHandler.GetSupportedProviders)
+			subGroup.GET("/search", func(c *gin.Context) { getSubtitleHandler().SearchSubtitles(c) })
+			subGroup.POST("/download", func(c *gin.Context) { getSubtitleHandler().DownloadSubtitle(c) })
+			subGroup.GET("/media/:media_id", func(c *gin.Context) { getSubtitleHandler().GetSubtitles(c) })
+			subGroup.GET("/:subtitle_id/verify-sync/:media_id", func(c *gin.Context) { getSubtitleHandler().VerifySubtitleSync(c) })
+			subGroup.POST("/translate", func(c *gin.Context) { getSubtitleHandler().TranslateSubtitle(c) })
+			subGroup.POST("/upload", func(c *gin.Context) { getSubtitleHandler().UploadSubtitle(c) })
+			subGroup.GET("/languages", func(c *gin.Context) { getSubtitleHandler().GetSupportedLanguages(c) })
+			subGroup.GET("/providers", func(c *gin.Context) { getSubtitleHandler().GetSupportedProviders(c) })
 		}
 		api.GET("/storage/list/*path", copyHandler.ListStoragePath)
 		api.GET("/storage/roots", scanHandler.GetStorageRoots)
@@ -950,17 +991,17 @@ func main() {
 			scanGroup.GET("/:job_id", scanHandler.GetScanStatus)
 		}
 
-		// Conversion endpoints
+		// Conversion endpoints (lazy — handler initialized on first request)
 		conversionGroup := api.Group("/conversion")
 		{
-			conversionGroup.POST("/jobs", conversionHandler.CreateJob)
-			conversionGroup.GET("/jobs", conversionHandler.ListJobs)
-			conversionGroup.GET("/jobs/:id", conversionHandler.GetJob)
-			conversionGroup.POST("/jobs/:id/cancel", conversionHandler.CancelJob)
-			conversionGroup.DELETE("/jobs/:id", conversionHandler.DeleteJob)
-			conversionGroup.POST("/jobs/:id/retry", conversionHandler.RetryJob)
-			conversionGroup.GET("/jobs/:id/download", conversionHandler.DownloadJobFile)
-			conversionGroup.GET("/formats", conversionHandler.GetSupportedFormats)
+			conversionGroup.POST("/jobs", func(c *gin.Context) { getConversionHandler().CreateJob(c) })
+			conversionGroup.GET("/jobs", func(c *gin.Context) { getConversionHandler().ListJobs(c) })
+			conversionGroup.GET("/jobs/:id", func(c *gin.Context) { getConversionHandler().GetJob(c) })
+			conversionGroup.POST("/jobs/:id/cancel", func(c *gin.Context) { getConversionHandler().CancelJob(c) })
+			conversionGroup.DELETE("/jobs/:id", func(c *gin.Context) { getConversionHandler().DeleteJob(c) })
+			conversionGroup.POST("/jobs/:id/retry", func(c *gin.Context) { getConversionHandler().RetryJob(c) })
+			conversionGroup.GET("/jobs/:id/download", func(c *gin.Context) { getConversionHandler().DownloadJobFile(c) })
+			conversionGroup.GET("/formats", func(c *gin.Context) { getConversionHandler().GetSupportedFormats(c) })
 		}
 
 		// Admin endpoints (system info, user management, storage, backups)
@@ -1113,16 +1154,16 @@ func main() {
 			favoritesGroup.GET("/check/:entity_type/:entity_id", favoritesHandler.CheckFavorite)
 		}
 
-		// Playlist endpoints
+		// Playlist endpoints (lazy — handler initialized on first request)
 		playlistGroup := api.Group("/playlists")
 		{
-			playlistGroup.GET("", playlistHandler.ListPlaylists)
-			playlistGroup.POST("", playlistHandler.CreatePlaylist)
-			playlistGroup.GET("/:id", playlistHandler.GetPlaylist)
-			playlistGroup.PUT("/:id", playlistHandler.UpdatePlaylist)
-			playlistGroup.DELETE("/:id", playlistHandler.DeletePlaylist)
-			playlistGroup.POST("/:id/items", playlistHandler.AddItem)
-			playlistGroup.DELETE("/:id/items/:item_id", playlistHandler.RemoveItem)
+			playlistGroup.GET("", func(c *gin.Context) { getPlaylistHandler().ListPlaylists(c) })
+			playlistGroup.POST("", func(c *gin.Context) { getPlaylistHandler().CreatePlaylist(c) })
+			playlistGroup.GET("/:id", func(c *gin.Context) { getPlaylistHandler().GetPlaylist(c) })
+			playlistGroup.PUT("/:id", func(c *gin.Context) { getPlaylistHandler().UpdatePlaylist(c) })
+			playlistGroup.DELETE("/:id", func(c *gin.Context) { getPlaylistHandler().DeletePlaylist(c) })
+			playlistGroup.POST("/:id/items", func(c *gin.Context) { getPlaylistHandler().AddItem(c) })
+			playlistGroup.DELETE("/:id/items/:item_id", func(c *gin.Context) { getPlaylistHandler().RemoveItem(c) })
 		}
 
 		// Browse endpoints (directory browsing and file info)
@@ -1135,20 +1176,20 @@ func main() {
 			browseGroup.GET("/duplicates/*path", browseHandler.GetDirectoryDuplicates)
 		}
 
-		// Sync endpoints (remote synchronization)
+		// Sync endpoints (lazy — handler initialized on first request)
 		syncGroup := api.Group("/sync")
 		{
-			syncGroup.POST("/endpoints", syncHandler.CreateEndpoint)
-			syncGroup.GET("/endpoints", syncHandler.GetUserEndpoints)
-			syncGroup.GET("/endpoints/:id", syncHandler.GetEndpoint)
-			syncGroup.PUT("/endpoints/:id", syncHandler.UpdateEndpoint)
-			syncGroup.DELETE("/endpoints/:id", syncHandler.DeleteEndpoint)
-			syncGroup.POST("/endpoints/:id/sync", syncHandler.StartSync)
-			syncGroup.GET("/sessions", syncHandler.GetUserSessions)
-			syncGroup.GET("/sessions/:id", syncHandler.GetSession)
-			syncGroup.POST("/schedules", syncHandler.ScheduleSync)
-			syncGroup.GET("/statistics", syncHandler.GetSyncStatistics)
-			syncGroup.POST("/cleanup", syncHandler.CleanupOldSessions)
+			syncGroup.POST("/endpoints", func(c *gin.Context) { getSyncHandler().CreateEndpoint(c) })
+			syncGroup.GET("/endpoints", func(c *gin.Context) { getSyncHandler().GetUserEndpoints(c) })
+			syncGroup.GET("/endpoints/:id", func(c *gin.Context) { getSyncHandler().GetEndpoint(c) })
+			syncGroup.PUT("/endpoints/:id", func(c *gin.Context) { getSyncHandler().UpdateEndpoint(c) })
+			syncGroup.DELETE("/endpoints/:id", func(c *gin.Context) { getSyncHandler().DeleteEndpoint(c) })
+			syncGroup.POST("/endpoints/:id/sync", func(c *gin.Context) { getSyncHandler().StartSync(c) })
+			syncGroup.GET("/sessions", func(c *gin.Context) { getSyncHandler().GetUserSessions(c) })
+			syncGroup.GET("/sessions/:id", func(c *gin.Context) { getSyncHandler().GetSession(c) })
+			syncGroup.POST("/schedules", func(c *gin.Context) { getSyncHandler().ScheduleSync(c) })
+			syncGroup.GET("/statistics", func(c *gin.Context) { getSyncHandler().GetSyncStatistics(c) })
+			syncGroup.POST("/cleanup", func(c *gin.Context) { getSyncHandler().CleanupOldSessions(c) })
 		}
 
 		// Challenge endpoints
