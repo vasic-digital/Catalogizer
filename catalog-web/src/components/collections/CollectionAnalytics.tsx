@@ -174,7 +174,7 @@ export const CollectionAnalytics: React.FC<CollectionAnalyticsProps> = ({
       const data: Array<Record<string, string | number>> = []
       let periods = 30
       
-      if (timeRange === '7d') periods = period === 'daily' ? 7 : period === 'weekly' ? 1 : 1
+      if (timeRange === '7d') periods = period === 'daily' ? 7 : 1
       else if (timeRange === '30d') periods = period === 'daily' ? 30 : period === 'weekly' ? 4 : 1
       else if (timeRange === '90d') periods = period === 'daily' ? 90 : period === 'weekly' ? 12 : 3
       else if (timeRange === '1y') periods = period === 'daily' ? 365 : period === 'weekly' ? 52 : 12
