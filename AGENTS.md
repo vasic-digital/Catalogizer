@@ -6,36 +6,37 @@ Essential commands and style guidelines for AI agents working in the Catalogizer
 
 Multi-platform media collection manager: **catalog-api** (Go/Gin backend), **catalog-web** (React/TS/Vite), **catalogizer-desktop** & **installer-wizard** (Tauri), **catalogizer-android** & **catalogizer-androidtv** (Kotlin/Compose), **catalogizer-api-client** (TS library).
 
-## Essential Commands
+## Build / Lint / Test Commands
 
 ### Backend (catalog-api)
 ```bash
 cd catalog-api
-go run main.go                              # dev server (dynamic port, writes .service-port)
-go build -o catalog-api                     # build binary
-go test ./...                               # all tests
-go test -v -run TestFunctionName ./path/    # single test
-go test -cover ./...                        # coverage
-go fmt ./... && go vet ./...                # format + lint
+go run main.go                                          # dev server (writes .service-port)
+go build -o catalog-api                                 # build binary
+GOMAXPROCS=3 go test ./... -p 2 -parallel 2            # all tests (resource-limited)
+go test -v -run ^TestName$ ./path/to/pkg/               # single test (regex match)
+go test -v -run ^TestSuiteName/TestSubtest$ ./path/     # single subtest in suite
+go test -cover ./...                                    # coverage
+go fmt ./... && go vet ./...                            # format + lint
 ```
 
 ### Frontend (catalog-web)
 ```bash
 cd catalog-web
-npm run dev                                 # dev server (port 3000)
-npm run build                               # production build (tsc + vite)
-npm run lint                                # ESLint
-npm run lint:fix                            # auto-fix lint issues
-npm run type-check                          # TypeScript check
-npm run test                                # Vitest (single run)
-npm run test -- -t "test name"              # single test
-npm run test:watch                          # watch mode
-npm run test:coverage                       # coverage
-npm run test:e2e                            # Playwright E2E
-npm run test:e2e -- --grep "test title"     # single E2E test
+npm run dev                                             # dev server (port 3000, proxies /api)
+npm run build                                           # production build (tsc + vite)
+npm run lint                                            # ESLint (--max-warnings 0)
+npm run lint:fix                                        # auto-fix lint issues
+npm run type-check                                      # tsc --noEmit
+npm run test                                            # Vitest (single run)
+npm run test -- -t "test name pattern"                  # single test by name
+npm run test:watch                                      # watch mode
+npm run test:coverage                                   # coverage (v8)
+npm run test:e2e                                        # Playwright E2E
+npm run test:e2e -- --grep "test title"                 # single E2E test
 ```
 
-### Desktop Apps (Tauri)
+### Desktop (catalogizer-desktop / installer-wizard)
 ```bash
 cd catalogizer-desktop  # or installer-wizard
 npm run tauri:dev       # dev with hot reload
@@ -43,130 +44,87 @@ npm run tauri:build     # build for platform
 npm run test            # unit tests
 ```
 
-### Android
+### Android (catalogizer-android / catalogizer-androidtv)
 ```bash
 cd catalogizer-android  # or catalogizer-androidtv
-./gradlew test          # unit tests
-./gradlew test --tests "*TestClassName"   # single test
-./gradlew assembleDebug                    # debug APK
-./gradlew lintKotlin                      # lint
+./gradlew test                                          # all unit tests
+./gradlew test --tests "*TestClassName"                 # single test class
+./gradlew test --tests "*TestClassName.testMethod"      # single test method
+./gradlew assembleDebug                                 # debug APK
+./gradlew lintKotlin                                    # lint
 ```
 
 ### Container Operations
 ```bash
-podman-compose -f docker-compose.dev.yml up   # dev environment
-podman-compose down                           # stop services
-./scripts/services-up.sh                      # start all
-./scripts/services-down.sh                    # stop all
+podman-compose -f docker-compose.dev.yml up             # dev environment
+podman-compose down                                     # stop services
+./scripts/services-up.sh                                # start all
+./scripts/services-down.sh                              # stop all
 ```
 
-### Security & Quality Scanning
-```bash
-./scripts/run-sonarqube-scan.sh                                    # SonarQube code quality scan
-podman-compose -f docker-compose.security.yml --profile semgrep-scan run --rm semgrep-scanner  # Semgrep static analysis
-```
+## Code Style - Go Backend
 
-### Load Testing
-```bash
-podman run --rm --network host -v $(pwd)/tests/k6:/scripts docker.io/grafana/k6:latest run /scripts/spike_test.js  # k6 spike test
-```
-
-### HelixQA Testing
-```bash
-cd HelixQA
-go run ./cmd/helixqa list --banks ../challenges/helixqa-banks      # list all test cases
-go run ./cmd/helixqa run --banks ../challenges/helixqa-banks       # run tests
-go run ./cmd/helixqa run --banks ../challenges/helixqa-banks --filter platform=api  # filter by platform
-go run ./cmd/helixqa autonomous --banks ../challenges/helixqa-banks  # LLM-driven testing
-```
-
-## Code Style Guidelines
-
-### Go Backend
 - **Naming**: PascalCase exported, camelCase unexported. Interfaces: `Reader`, `Writer`, `Service` suffixes.
-- **Receivers**: Single-letter (e.g., `s *Service`).
-- **Imports**: Group stdlib, third-party, local with blank lines:
+- **Receivers**: Single-letter (`s *Service`, `h *Handler`, `r *Repository`).
+- **Imports**: Three groups separated by blank lines — stdlib, third-party, local:
   ```go
   import (
       "encoding/json"
       "net/http"
-      
+
       "github.com/gin-gonic/gin"
-      
+      "github.com/stretchr/testify/assert"
+
+      "catalogizer/database"
       "catalogizer/models"
   )
   ```
-- **Error handling**: Wrap with `fmt.Errorf("context: %w", err)`. Use `errors.New` for simple errors.
-- **Testing**: Table-driven tests with `t.Run`. Use `testify/suite` for test suites. Files: `*_test.go` beside source.
-- **Constructors**: `NewService(dep Dependency) *Service` pattern with dependency injection.
-- **Formatting**: `go fmt` (or `gofumpt`). All public functions need doc comments.
+- **Constructors**: `NewService(dep Dependency) *Service` with dependency injection.
+- **Error handling**: Wrap with `fmt.Errorf("context: %w", err)`. Use `errors.New` for static errors. Never expose internal details to clients.
+- **Formatting**: `go fmt` (or `gofumpt`). All exported functions/types need doc comments.
+- **Testing**: Table-driven tests with `t.Run`. Use `testify/suite` for complex suites, `testify/mock` for mocks. Files: `*_test.go` beside source. Use `database.WrapDB()` for in-memory SQLite test DB.
+- **Concurrency**: Services spawning goroutines (`CacheService`, `WebSocketHandler`) use `sync.Once` for cleanup. Tests MUST `defer service.Close()` / `handler.Stop()`.
+- **Database**: Use `?` placeholders (auto-converted to `$1, $2...` for Postgres). Use `InsertReturningID()` instead of `LastInsertId()`.
 
-### TypeScript/React Frontend
+## Code Style - TypeScript/React Frontend
+
 - **Naming**: PascalCase components/interfaces, camelCase functions/variables, SCREAMING_SNAKE_CASE constants.
-- **Components**: Functional components with TypeScript interfaces:
+- **Components**: Functional components with explicit TypeScript interfaces:
   ```tsx
   interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
     loading?: boolean
   }
   const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
-    ({ className, loading, children, ...props }, ref) => { ... }
+    ({ className, loading, children, ...props }, ref) => { /* ... */ }
   )
   ```
-- **Imports**: Group React, third-party, local. Use path aliases:
+- **Imports**: Three groups — React, third-party, local path aliases:
   ```tsx
   import React from 'react'
   import { cva, type VariantProps } from 'class-variance-authority'
   import { cn } from '@/lib/utils'
   ```
 - **Path aliases**: `@/components`, `@/hooks`, `@/lib`, `@/types`, `@/services`, `@/store`, `@/pages`, `@/assets`.
-- **Formatting**: Prettier. Tailwind classes via `cn()` utility from `@/lib/utils`.
-- **Linting**: ESLint with `@typescript-eslint`, `react`, `react-hooks`. Unused vars with `_` prefix allowed.
+- **Formatting**: Prettier. Tailwind classes composed via `cn()` from `@/lib/utils`.
+- **Linting**: ESLint with `@typescript-eslint`, `react`, `react-hooks`, `security`. Unused vars prefixed with `_`. `--max-warnings 0` enforced.
 - **State**: React Query for server state, Zustand for client state.
 - **Forms**: React Hook Form + Zod validation (`@hookform/resolvers`).
-- **Testing**: Vitest + React Testing Library. Test files: `__tests__/` or `.test.tsx` beside source.
+- **Testing**: Vitest + React Testing Library. Files: `__tests__/` or `.test.tsx` beside source. Playwright for E2E.
 
-### Kotlin/Android
+## Code Style - Kotlin/Android
+
 - **Naming**: PascalCase classes, camelCase functions/variables.
-- **Architecture**: MVVM with ViewModel, Repository pattern, Hilt DI.
-- **Async**: `suspend` functions, `Flow` for streams, Paging 3 for lists.
-- **Testing**: JUnit, Mockito.
+- **Architecture**: MVVM — Compose UI → ViewModel (StateFlow) → Repository → Room + Retrofit.
+- **DI**: Manual `DependencyContainer`. Async: `suspend` functions, `Flow`/`StateFlow`, Paging 3.
 - **Error handling**: Sealed `Result` classes for operation outcomes.
+- **Testing**: JUnit 4 + MockK/Mockito. Coroutines via `kotlinx-coroutines-test`.
+- **Build**: JDK 21 with `--add-opens` JVM args for kapt compatibility.
 
-## Constraints
+## Database (Dual Dialect)
 
-**CRITICAL: API Keys and Secrets — NEVER Commit to Git.** API keys, tokens, secrets, and credentials MUST NEVER be committed to git. Use `.env.example` with placeholders only. Verify `.gitignore` covers `.env` before every commit. If a key is accidentally committed, rotate it immediately.
-
-**CRITICAL: HelixQA Screenshot/Video Validation — MANDATORY.** Every QA session MUST analyze captured screenshots and videos. A "successful" session where the app is stuck on the login screen is a critical failure. Login MUST be verified via UI dump (no "Sign In" text after login). Screen content MUST be validated against API/database data. False positives are UNACCEPTABLE.
-
-**CRITICAL: HelixQA Autonomous Testing — NO Hardcoded Flows.** NEVER write hardcoded tap coordinates, sleep timers, or keystroke sequences for QA. ALL testing MUST be driven by the HelixQA LLM autonomous pipeline (`helixqa autonomous`). The LLM takes screenshots, analyzes with vision, decides actions, validates results. If the pipeline doesn't work, fix the HelixQA Go code — do NOT work around it with scripts. Stay in testing loop until HelixQA completes full sessions with verified evidence on ALL connected devices.
-
-**Container Runtime**: Use Podman exclusively (not Docker).
-
-**MANDATORY: All builds, services, and QA MUST use containers.**
-- **Builds**: `./scripts/release-build.sh --container` or `podman run --network host` with builder image.
-- **Services**: `podman-compose -f docker-compose.dev.yml up` or `podman-compose -f docker-compose.test.yml --profile web up`.
-- **QA Testing**: `./scripts/run-helixqa.sh` with containerized services. HelixQA sessions use Playwright in containers for video recording.
-- **Android Emulators**: `podman-compose -f docker-compose.test.yml --profile android up`.
-- **Never run production builds or QA on bare metal.** Local `go run` / `npm run dev` is only for rapid dev iteration.
-
-**GitHub Actions**: PERMANENTLY DISABLED. No CI/CD workflows.
-
-**Host Resource Limits (30-40% max)**:
-- Go tests: `GOMAXPROCS=3 go test ./... -p 2 -parallel 2`
-- Containers: PostgreSQL `--cpus=1 --memory=2g`, API `--cpus=2 --memory=4g`, Web `--cpus=1 --memory=2g`.
-- Total budget: max 4 CPUs, 8 GB RAM.
-
-**HTTP/3 (QUIC) with Brotli**: Mandatory for all network communication. Fallback: HTTP/2 + gzip.
-
-## Database Dialect
-
-SQLite (dev) and PostgreSQL (prod). Use the `database.DB` wrapper:
+SQLite (dev) and PostgreSQL (prod) via `database.DB` wrapper:
 ```go
-// Use ? placeholders - auto-converted to $1, $2... for Postgres
-cutoff := time.Now().Add(-24 * time.Hour)
 db.Query("SELECT * FROM table WHERE created_at > ?", cutoff)
-
-// Dialect-specific expressions
 if db.Dialect().IsPostgres() {
     expr = "EXTRACT(EPOCH FROM (MAX(t) - MIN(t)))"
 } else {
@@ -174,18 +132,20 @@ if db.Dialect().IsPostgres() {
 }
 ```
 
+## Constraints
+
+- **NEVER commit API keys/secrets** to git. Use `.env.example` with placeholders. Rotate immediately if leaked.
+- **Container runtime**: Podman exclusively (not Docker). Production builds and QA must run in containers.
+- **GitHub Actions**: PERMANENTLY DISABLED. No `.github/workflows/` files.
+- **Host resource limits (30-40% max)**: Go tests use `GOMAXPROCS=3 -p 2 -parallel 2`. Containers: PostgreSQL `--cpus=1 --memory=2g`, API `--cpus=2 --memory=4g`, Web `--cpus=1 --memory=2g`. Total: max 4 CPUs, 8 GB RAM.
+- **HTTP/3 (QUIC) with Brotli**: Mandatory. Fallback: HTTP/2 + gzip.
+- **Zero-warning policy**: No console errors/warnings, no failed network requests. Unimplemented features need stub endpoints returning valid empty responses.
+- **Config precedence**: env vars > `.env` > `config.json` > defaults.
+- **PostCSS**: Must use `module.exports` (CommonJS) for Node 18 compat.
+
 ## Challenge System
 
-All challenge operations executed by compiled binaries only (catalog-api service). Never use curl/scripts for API endpoints. Challenges registered in `catalog-api/challenges/register.go`.
-
-### HelixQA Integration
-
-HelixQA is a QA orchestration framework for structured test execution. Test banks located at `challenges/helixqa-banks/`:
-
-- `catalogizer-api-simple.yaml` - 5 API tests
-- `catalogizer-web-simple.yaml` - 3 Web UI tests
-- `catalogizer-desktop-simple.yaml` - 3 Desktop tests
-- `catalogizer-android-simple.yaml` - 3 Android tests
+All challenge operations executed by compiled binaries only (catalog-api service). Never use curl/scripts for API endpoints. Registered in `catalog-api/challenges/register.go`.
 
 ## Quick Setup
 
@@ -195,15 +155,16 @@ HelixQA is a QA orchestration framework for structured test execution. Test bank
 4. Access: http://localhost:3000 (web), http://localhost:8080 (API)
 
 ## Key Files
-- `catalog-api/main.go` - API entry point
-- `catalog-api/filesystem/interface.go` - Unified filesystem interface
-- `catalog-web/src/App.tsx` - React root
-- `catalog-web/vite.config.ts` - Path aliases, proxy config
-- `challenges/helixqa-banks/` - HelixQA test banks (14 tests across 4 platforms)
+
+- `catalog-api/main.go` — API entry point, route registration
+- `catalog-api/database/dialect.go` — dual-dialect SQL rewriting
+- `catalog-api/filesystem/interface.go` — `UnifiedClient` protocol abstraction
+- `catalog-web/src/App.tsx` — React root (AuthProvider → WebSocketProvider → Router)
+- `catalog-web/vite.config.ts` — path aliases, API proxy config
 
 ## Pre-Commit Checklist
 
-Run linting and type checking before committing:
-- Go: `go fmt ./... && go vet ./...`
-- TypeScript: `npm run lint && npm run type-check`
+- Go: `cd catalog-api && go fmt ./... && go vet ./...`
+- TypeScript: `cd catalog-web && npm run lint && npm run type-check`
 - Ensure zero console warnings/errors in browser
+- Verify `.gitignore` covers `.env` — never commit secrets
