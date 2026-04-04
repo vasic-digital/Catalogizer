@@ -20,6 +20,7 @@ import androidx.tv.material3.*
 import androidx.compose.foundation.background
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.text.font.FontWeight
 import com.catalogizer.androidtv.data.models.MediaItem
 import com.catalogizer.androidtv.ui.components.MediaCarousel
@@ -50,6 +51,7 @@ fun HomeScreen(
     onNavigateToSettings: () -> Unit,
     onNavigateToMediaDetail: (Long) -> Unit,
     onNavigateToPlayer: (Long) -> Unit,
+    onNavigateToCategory: (mediaType: String) -> Unit = {},
     viewModel: HomeViewModel
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
@@ -212,7 +214,8 @@ fun HomeScreen(
                         item {
                             CatalogStatsHeader(
                                 totalEntities = uiState.totalEntities,
-                                statsByType = uiState.statsByType
+                                statsByType = uiState.statsByType,
+                                onStatClick = { mediaType -> onNavigateToCategory(mediaType) }
                             )
                         }
                     }
@@ -257,7 +260,7 @@ private fun MediaSection(
                     mediaItem = item,
                     onClick = { onItemClick(item.id) },
                     onFocus = { onItemFocus(item) },
-                    modifier = Modifier.width(240.dp)
+                    modifier = Modifier.width(140.dp)
                 )
             }
         }
@@ -283,6 +286,7 @@ private val statsTypeLabels = mapOf(
 private fun CatalogStatsHeader(
     totalEntities: Int,
     statsByType: Map<String, Int>,
+    onStatClick: (mediaType: String) -> Unit = {},
     modifier: Modifier = Modifier
 ) {
     Column(modifier = modifier.fillMaxWidth()) {
@@ -311,17 +315,30 @@ private fun CatalogStatsHeader(
                 val label = statsTypeLabels[entry.key]
                     ?: entry.key.replace("_", " ")
                         .replaceFirstChar { it.uppercase() }
-                Box(
+                Card(
+                    onClick = { onStatClick(entry.key) },
                     modifier = Modifier
-                        .background(
-                            color = Color.White.copy(alpha = 0.1f),
+                        .onFocusChanged { },
+                    scale = CardDefaults.scale(focusedScale = 1.1f),
+                    border = CardDefaults.border(
+                        focusedBorder = Border(
+                            border = androidx.compose.foundation.BorderStroke(
+                                width = 2.dp,
+                                color = MaterialTheme.colorScheme.primary
+                            ),
                             shape = RoundedCornerShape(8.dp)
                         )
-                        .padding(horizontal = 16.dp, vertical = 8.dp)
+                    ),
+                    colors = CardDefaults.colors(
+                        containerColor = Color.White.copy(alpha = 0.1f),
+                        focusedContainerColor = Color.White.copy(alpha = 0.2f)
+                    ),
+                    shape = CardDefaults.shape(shape = RoundedCornerShape(8.dp))
                 ) {
                     Row(
                         verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                        modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)
                     ) {
                         Text(
                             text = "${entry.value}",

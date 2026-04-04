@@ -82,7 +82,7 @@ fun MediaCarousel(
                     onFocus = { isFocused = !isFocused },
                     isFocused = isFocused,
                     modifier = Modifier
-                        .width(200.dp)
+                        .width(120.dp)
                         .onFocusChanged { focusState ->
                             isFocused = focusState.isFocused
                         }
