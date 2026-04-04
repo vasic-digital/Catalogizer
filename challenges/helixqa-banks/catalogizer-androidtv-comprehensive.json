@@ -1363,6 +1363,328 @@
           "expected": "Login uses the new server URL"
         }
       ]
+    },
+    {
+      "id": "tv-channel-default-visible",
+      "name": "TV Default Channel on Home Screen",
+      "category": "channels",
+      "priority": "critical",
+      "platforms": [
+        "androidtv"
+      ],
+      "steps": [
+        {
+          "name": "Navigate to TV home",
+          "action": "Press HOME button on remote",
+          "expected": "Android TV home screen is displayed"
+        },
+        {
+          "name": "Scroll to find Catalogizer channel",
+          "action": "Scroll down through home screen channels",
+          "expected": "Catalogizer Picks channel row is visible on the home screen"
+        },
+        {
+          "name": "Verify channel has content",
+          "action": "Focus on Catalogizer Picks row",
+          "expected": "Channel shows media item cards with poster images and titles"
+        }
+      ]
+    },
+    {
+      "id": "tv-channel-category-movies",
+      "name": "TV Movies Category Channel",
+      "category": "channels",
+      "priority": "high",
+      "platforms": [
+        "androidtv"
+      ],
+      "steps": [
+        {
+          "name": "Open Customize Channels",
+          "action": "Navigate to Customize channels on TV home screen",
+          "expected": "Channel customization screen appears"
+        },
+        {
+          "name": "Find Movies channel",
+          "action": "Look for Catalogizer Movies channel in the list",
+          "expected": "Movies channel is available to add"
+        },
+        {
+          "name": "Enable Movies channel",
+          "action": "Toggle Movies channel on",
+          "expected": "Movies channel is enabled and will appear on home screen"
+        },
+        {
+          "name": "Verify on home screen",
+          "action": "Navigate back to home screen",
+          "expected": "Movies channel row appears with movie items"
+        }
+      ]
+    },
+    {
+      "id": "tv-channel-click-detail",
+      "name": "TV Channel Click Opens Detail",
+      "category": "channels",
+      "priority": "critical",
+      "platforms": [
+        "androidtv"
+      ],
+      "steps": [
+        {
+          "name": "Navigate to channel",
+          "action": "Focus on a Catalogizer channel on the home screen",
+          "expected": "Channel row is focused"
+        },
+        {
+          "name": "Select item",
+          "action": "Press DPAD_CENTER on a media item card",
+          "expected": "Catalogizer app launches"
+        },
+        {
+          "name": "Verify detail screen",
+          "action": "Check the displayed screen",
+          "expected": "Media detail screen is shown with title, description, poster, and Play button"
+        }
+      ]
+    },
+    {
+      "id": "tv-channel-click-play",
+      "name": "TV Channel Click Plays Immediately",
+      "category": "channels",
+      "priority": "high",
+      "platforms": [
+        "androidtv"
+      ],
+      "steps": [
+        {
+          "name": "Configure play immediately",
+          "action": "Open Catalogizer Settings > Channel Tap Behavior > Set Movies to Play Immediately",
+          "expected": "Movies launch action set to Play Immediately"
+        },
+        {
+          "name": "Go to home screen",
+          "action": "Press HOME",
+          "expected": "TV home screen displayed"
+        },
+        {
+          "name": "Select movie from channel",
+          "action": "Focus and press DPAD_CENTER on a movie in Catalogizer channel",
+          "expected": "Movie playback starts immediately without showing detail screen"
+        }
+      ]
+    },
+    {
+      "id": "tv-channel-watch-next",
+      "name": "TV Watch Next Row Populated",
+      "category": "channels",
+      "priority": "critical",
+      "platforms": [
+        "androidtv"
+      ],
+      "steps": [
+        {
+          "name": "Start watching content",
+          "action": "Open a movie in Catalogizer and play for 30+ seconds, then stop",
+          "expected": "Playback stops, progress is saved"
+        },
+        {
+          "name": "Go to home screen",
+          "action": "Press HOME",
+          "expected": "TV home screen displayed"
+        },
+        {
+          "name": "Check Watch Next row",
+          "action": "Scroll to the Watch Next row near the top of the home screen",
+          "expected": "The partially watched movie appears in Watch Next with resume progress indicator"
+        }
+      ]
+    },
+    {
+      "id": "tv-channel-watch-next-resume",
+      "name": "TV Watch Next Resume Playback",
+      "category": "channels",
+      "priority": "high",
+      "platforms": [
+        "androidtv"
+      ],
+      "steps": [
+        {
+          "name": "Find item in Watch Next",
+          "action": "Navigate to Watch Next row on home screen",
+          "expected": "Previously watched item is visible"
+        },
+        {
+          "name": "Select item",
+          "action": "Press DPAD_CENTER on the item",
+          "expected": "Catalogizer opens and shows the media detail screen"
+        },
+        {
+          "name": "Resume playback",
+          "action": "Press Play button",
+          "expected": "Playback resumes from the saved position, not from the beginning"
+        }
+      ]
+    },
+    {
+      "id": "tv-channel-next-episode",
+      "name": "TV Watch Next Auto Episode",
+      "category": "channels",
+      "priority": "high",
+      "platforms": [
+        "androidtv"
+      ],
+      "steps": [
+        {
+          "name": "Complete a TV episode",
+          "action": "Watch a TV show episode to completion (>90% progress)",
+          "expected": "Episode marked as completed"
+        },
+        {
+          "name": "Check Watch Next",
+          "action": "Navigate to home screen Watch Next row",
+          "expected": "The NEXT episode in the series appears in Watch Next (not the completed one)"
+        }
+      ]
+    },
+    {
+      "id": "tv-channel-logout-cleanup",
+      "name": "TV Channel Cleanup on Logout",
+      "category": "channels",
+      "priority": "critical",
+      "platforms": [
+        "androidtv"
+      ],
+      "steps": [
+        {
+          "name": "Verify channels exist",
+          "action": "Check TV home screen for Catalogizer channels",
+          "expected": "Catalogizer channels are visible"
+        },
+        {
+          "name": "Logout",
+          "action": "Open Catalogizer Settings and press Logout",
+          "expected": "User is logged out, login screen appears"
+        },
+        {
+          "name": "Check home screen",
+          "action": "Press HOME to go to home screen",
+          "expected": "All Catalogizer channels and Watch Next entries are removed from the home screen"
+        }
+      ]
+    },
+    {
+      "id": "tv-channel-settings-per-category",
+      "name": "TV Channel Tap Behavior Settings",
+      "category": "settings",
+      "priority": "high",
+      "platforms": [
+        "androidtv"
+      ],
+      "steps": [
+        {
+          "name": "Open settings",
+          "action": "Navigate to Catalogizer Settings screen",
+          "expected": "Settings screen is displayed"
+        },
+        {
+          "name": "Find Channel Tap Behavior",
+          "action": "Scroll down to Channel Tap Behavior section",
+          "expected": "Section shows list of media types with Detail Screen / Play Immediately options"
+        },
+        {
+          "name": "Change movie behavior",
+          "action": "Select Play Immediately for Movies",
+          "expected": "Radio button changes to Play Immediately for Movies"
+        },
+        {
+          "name": "Verify persistence",
+          "action": "Navigate away from settings and return",
+          "expected": "Movies still set to Play Immediately"
+        }
+      ]
+    },
+    {
+      "id": "tv-channel-unauthenticated-deeplink",
+      "name": "TV Channel Deep Link Without Auth",
+      "category": "channels",
+      "priority": "high",
+      "platforms": [
+        "androidtv"
+      ],
+      "steps": [
+        {
+          "name": "Logout from Catalogizer",
+          "action": "Logout from the app",
+          "expected": "User is logged out"
+        },
+        {
+          "name": "Click channel item from home",
+          "action": "Select a Catalogizer item from cached home screen channel (if still visible) or launch via ADB deep link",
+          "expected": "Catalogizer launches to the login screen"
+        },
+        {
+          "name": "Login",
+          "action": "Enter credentials and login",
+          "expected": "After login, the deep-linked media item detail screen is shown"
+        }
+      ]
+    },
+    {
+      "id": "tv-channel-dpad-browse",
+      "name": "TV Channel D-pad Navigation",
+      "category": "channels",
+      "priority": "medium",
+      "platforms": [
+        "androidtv"
+      ],
+      "steps": [
+        {
+          "name": "Focus channel row",
+          "action": "Navigate to a Catalogizer channel row on the home screen",
+          "expected": "Channel row is focused with visible highlight"
+        },
+        {
+          "name": "Browse items left",
+          "action": "Press DPAD_LEFT multiple times",
+          "expected": "Focus moves smoothly between program cards with poster images"
+        },
+        {
+          "name": "Browse items right",
+          "action": "Press DPAD_RIGHT to the end of the row",
+          "expected": "Focus reaches the last item, row scrolls smoothly to reveal more items"
+        }
+      ]
+    },
+    {
+      "id": "tv-channel-refresh-after-scan",
+      "name": "TV Channel Refresh After Content Change",
+      "category": "channels",
+      "priority": "medium",
+      "platforms": [
+        "androidtv"
+      ],
+      "steps": [
+        {
+          "name": "Note current channel content",
+          "action": "Check items in Catalogizer channels on home screen",
+          "expected": "Current items are noted"
+        },
+        {
+          "name": "Add new content via API",
+          "action": "Trigger a scan that adds new media items to the library",
+          "expected": "New content is detected and added"
+        },
+        {
+          "name": "Open Catalogizer app",
+          "action": "Launch Catalogizer app and wait for home screen to load",
+          "expected": "App loads home data and refreshes channels"
+        },
+        {
+          "name": "Check updated channels",
+          "action": "Press HOME and check Catalogizer channels",
+          "expected": "New content appears in the appropriate channel rows"
+        }
+      ]
     }
   ]
 }
