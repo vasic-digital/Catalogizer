@@ -81,7 +81,7 @@ func (h *ChallengeHandler) RunChallenge(c *gin.Context) {
 		return
 	}
 
-	result, err := h.service.RunChallenge(c.Request.Context(), id)
+	result, err := h.service.RunChallenge(context.Background(), id)
 	if err != nil {
 		utils.SendErrorResponse(
 			c, http.StatusInternalServerError,
@@ -97,8 +97,11 @@ func (h *ChallengeHandler) RunChallenge(c *gin.Context) {
 }
 
 // RunAll executes all registered challenges in dependency order.
+// Uses context.Background() because RunAll is long-running and
+// must not be cancelled by HTTP write timeouts or client
+// disconnection. The HTTP response is written after completion.
 func (h *ChallengeHandler) RunAll(c *gin.Context) {
-	results, err := h.service.RunAll(c.Request.Context())
+	results, err := h.service.RunAll(context.Background())
 	if err != nil {
 		utils.SendErrorResponse(
 			c, http.StatusInternalServerError,
@@ -140,7 +143,7 @@ func (h *ChallengeHandler) RunByCategory(c *gin.Context) {
 	}
 
 	results, err := h.service.RunByCategory(
-		c.Request.Context(), category,
+		context.Background(), category,
 	)
 	if err != nil {
 		utils.SendErrorResponse(

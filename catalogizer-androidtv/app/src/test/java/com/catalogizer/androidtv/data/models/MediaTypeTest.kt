@@ -26,8 +26,8 @@ class MediaTypeTest {
     }
 
     @Test
-    fun `getAllTypes returns all 16 types`() {
-        assertEquals(16, MediaType.getAllTypes().size)
+    fun `getAllTypes returns all 23 types`() {
+        assertEquals(23, MediaType.getAllTypes().size)
     }
 
     @Test

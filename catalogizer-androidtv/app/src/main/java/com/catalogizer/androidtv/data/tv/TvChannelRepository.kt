@@ -4,6 +4,7 @@ import android.content.ContentValues
 import android.content.Context
 import android.util.Log
 import androidx.tvprovider.media.tv.TvContractCompat
+import com.catalogizer.androidtv.DependencyContainer
 import com.catalogizer.androidtv.data.models.MediaItem
 import com.catalogizer.androidtv.data.models.MediaSearchRequest
 import com.catalogizer.androidtv.data.models.MediaType
@@ -157,9 +158,13 @@ class TvChannelRepository(
             Log.w(TAG, "Failed to delete old programs for channel $channelId: ${e.message}")
         }
 
+        val serverUrl = try {
+            DependencyContainer.getInstance(context).getServerUrl()
+        } catch (_: Exception) { null }
+
         for (item in items) {
             try {
-                val values = ChannelProgramMapper.toPreviewProgramValues(item, channelId)
+                val values = ChannelProgramMapper.toPreviewProgramValues(item, channelId, serverUrl)
                 context.contentResolver.insert(TvContractCompat.PreviewPrograms.CONTENT_URI, values)
             } catch (e: Exception) {
                 Log.w(TAG, "Failed to insert program ${item.id}: ${e.message}")

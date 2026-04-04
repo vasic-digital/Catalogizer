@@ -3,6 +3,7 @@ package com.catalogizer.androidtv.data.tv
 import android.content.Context
 import android.util.Log
 import androidx.tvprovider.media.tv.TvContractCompat
+import com.catalogizer.androidtv.DependencyContainer
 import com.catalogizer.androidtv.data.models.MediaItem
 import com.catalogizer.androidtv.data.models.MediaSearchRequest
 import com.catalogizer.androidtv.data.repository.MediaRepository
@@ -81,7 +82,10 @@ class WatchNextManager(
 
     private fun addWatchNextProgram(item: MediaItem, watchNextType: Int) {
         try {
-            val values = ChannelProgramMapper.toWatchNextValues(item, watchNextType)
+            val serverUrl = try {
+                DependencyContainer.getInstance(context).getServerUrl()
+            } catch (_: Exception) { null }
+            val values = ChannelProgramMapper.toWatchNextValues(item, watchNextType, serverUrl)
             context.contentResolver.insert(TvContractCompat.WatchNextPrograms.CONTENT_URI, values)
         } catch (e: Exception) {
             Log.w(TAG, "Failed to add Watch Next for ${item.id}: ${e.message}")
