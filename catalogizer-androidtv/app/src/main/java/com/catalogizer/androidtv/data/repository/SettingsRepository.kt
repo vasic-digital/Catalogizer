@@ -4,8 +4,10 @@ import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.booleanPreferencesKey
 import androidx.datastore.preferences.core.edit
+import androidx.datastore.preferences.core.longPreferencesKey
 import androidx.datastore.preferences.core.stringPreferencesKey
 import com.catalogizer.androidtv.data.models.ServerEntry
+import com.catalogizer.androidtv.data.tv.LaunchAction
 import com.catalogizer.androidtv.data.models.Settings
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.first
@@ -209,6 +211,73 @@ class SettingsRepository(private val dataStore: DataStore<Preferences>) {
             }
         } catch (e: Exception) {
             emptyList()
+        }
+    }
+
+    // ─── TV Channel ID Persistence ─────────────────────────────────────
+
+    private fun channelIdKey(channelKey: String) = longPreferencesKey("channel_id_$channelKey")
+    private fun launchActionKey(mediaType: String) = stringPreferencesKey("launch_action_$mediaType")
+
+    suspend fun saveChannelId(channelKey: String, channelId: Long) {
+        dataStore.edit { preferences ->
+            preferences[channelIdKey(channelKey)] = channelId
+        }
+    }
+
+    suspend fun getChannelId(channelKey: String): Long? {
+        val prefs = dataStore.data.first()
+        val value = prefs[channelIdKey(channelKey)]
+        return if (value != null && value != 0L) value else null
+    }
+
+    suspend fun removeChannelId(channelKey: String) {
+        dataStore.edit { preferences ->
+            preferences.remove(channelIdKey(channelKey))
+        }
+    }
+
+    suspend fun clearAllChannelIds() {
+        dataStore.edit { preferences ->
+            val channelKeys = preferences.asMap().keys.filter {
+                it.name.startsWith("channel_id_")
+            }
+            channelKeys.forEach { preferences.remove(it) }
+        }
+    }
+
+    // ─── Per-Category Launch Action ────────────────────────────────────
+
+    suspend fun saveLaunchAction(mediaType: String, action: LaunchAction) {
+        dataStore.edit { preferences ->
+            preferences[launchActionKey(mediaType)] = action.name
+        }
+    }
+
+    suspend fun getLaunchAction(mediaType: String): LaunchAction {
+        val prefs = dataStore.data.first()
+        val value = prefs[launchActionKey(mediaType)]
+        return if (value != null) LaunchAction.fromString(value) else LaunchAction.DETAIL
+    }
+
+    suspend fun getAllLaunchActions(): Map<String, LaunchAction> {
+        val prefs = dataStore.data.first()
+        val result = mutableMapOf<String, LaunchAction>()
+        prefs.asMap().forEach { (key, value) ->
+            if (key.name.startsWith("launch_action_") && value is String) {
+                val mediaType = key.name.removePrefix("launch_action_")
+                result[mediaType] = LaunchAction.fromString(value)
+            }
+        }
+        return result
+    }
+
+    suspend fun clearAllLaunchActions() {
+        dataStore.edit { preferences ->
+            val actionKeys = preferences.asMap().keys.filter {
+                it.name.startsWith("launch_action_")
+            }
+            actionKeys.forEach { preferences.remove(it) }
         }
     }
 }
