@@ -13,6 +13,10 @@ function getApiPort(): number {
   }
 }
 
+function getApiHost(): string {
+  return process.env.VITE_API_HOST || 'localhost';
+}
+
 export default defineConfig({
   plugins: [react()],
   test: {
@@ -52,12 +56,12 @@ export default defineConfig({
     host: true,
     proxy: {
       '/api': {
-        target: 'http://localhost:' + getApiPort(),
+        target: 'http://' + getApiHost() + ':' + getApiPort(),
         changeOrigin: true,
         secure: false,
       },
       '/ws': {
-        target: 'ws://localhost:' + getApiPort(),
+        target: 'ws://' + getApiHost() + ':' + getApiPort(),
         ws: true,
         changeOrigin: true,
       },
