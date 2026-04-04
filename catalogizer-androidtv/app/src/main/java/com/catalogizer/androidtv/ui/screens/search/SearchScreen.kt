@@ -353,7 +353,11 @@ class SearchViewModel(
                     query = searchQuery.value,
                     limit = 50
                 )
-                val results = mediaRepository.searchMedia(request).first()
+                // Search entities (titles) instead of raw files.
+                // The entity endpoint returns aggregated media items
+                // with titles, covers, and metadata — much more
+                // useful for user-facing search than file names.
+                val results = mediaRepository.searchEntities(request).first()
                 _searchResults.value = results
                 _hasSearched.value = true
             } catch (e: Exception) {

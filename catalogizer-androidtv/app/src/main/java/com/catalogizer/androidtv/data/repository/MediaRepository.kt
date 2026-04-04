@@ -57,7 +57,35 @@ class MediaRepository(private val context: Context, private val api: Catalogizer
                 return flowOf(emptyList())
             }
         } catch (e: Exception) {
-            // Handle error and return empty list
+            return flowOf(emptyList())
+        }
+    }
+
+    /**
+     * Search entities (aggregated media items with titles, covers, metadata).
+     * Uses GET /api/v1/entities?query=... which searches entity titles
+     * via LIKE matching. This is the user-facing search — returns movies,
+     * TV shows, music albums, etc. by title.
+     */
+    suspend fun searchEntities(request: MediaSearchRequest): Flow<List<MediaItem>> {
+        try {
+            val params = mutableMapOf<String, String>()
+            request.query?.let { params["query"] = it }
+            params["limit"] = request.limit.toString()
+            params["offset"] = request.offset.toString()
+            request.mediaType?.let { params["type"] = it }
+
+            val response = api.searchEntities(params)
+            if (response.isSuccessful) {
+                val searchResponse = response.body()
+                val mediaItems = searchResponse?.allItems ?: emptyList()
+                return flowOf(mediaItems)
+            } else {
+                android.util.Log.w("MediaRepo", "Entity search failed: ${response.code()}")
+                return flowOf(emptyList())
+            }
+        } catch (e: Exception) {
+            android.util.Log.w("MediaRepo", "Entity search error: ${e.message}")
             return flowOf(emptyList())
         }
     }
