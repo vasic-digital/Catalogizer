@@ -718,8 +718,8 @@ func main() {
 	jwtMiddleware := root_middleware.NewJWTMiddleware(jwtSecret)
 
 	// Initialize rate limiters using internal auth middleware
-	authRateLimiter := authMiddleware.RateLimitByUser(5, "1m")      // 5 requests per minute for auth
-	defaultRateLimiter := authMiddleware.RateLimitByUser(100, "1m") // 100 requests per minute default
+	authRateLimiter := authMiddleware.RateLimitByUser(30, "1m")     // 30 requests per minute for auth (supports challenge execution)
+	defaultRateLimiter := authMiddleware.RateLimitByUser(200, "1m") // 200 requests per minute default
 
 	// Optional: Redis-based rate limiting when Redis is available
 	if redisClient != nil {
