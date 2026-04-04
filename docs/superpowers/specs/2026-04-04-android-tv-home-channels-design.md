@@ -114,7 +114,7 @@ Converts `MediaItem` to `PreviewProgram` / `WatchNextProgram`.
 | documentary | TYPE_MOVIE |
 | concert | TYPE_EVENT |
 | game | TYPE_GAME |
-| software | TYPE_APP |
+| software | TYPE_CLIP (TYPE_APP does not exist in tvprovider:1.0.0) |
 | ebook | TYPE_CLIP |
 | audiobook | TYPE_ALBUM |
 | podcast | TYPE_CHANNEL |

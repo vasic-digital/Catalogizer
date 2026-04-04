@@ -5,11 +5,9 @@ import android.net.Uri
 import android.os.Bundle
 import android.util.Log
 import androidx.activity.ComponentActivity
+import androidx.lifecycle.lifecycleScope
 import com.catalogizer.androidtv.DependencyContainer
 import com.catalogizer.androidtv.data.tv.LaunchAction
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 
@@ -18,7 +16,8 @@ import kotlinx.coroutines.launch
  */
 data class DeepLinkResult(
     val mediaId: Long?,
-    val mediaType: String?
+    val mediaType: String?,
+    val action: String? = null
 )
 
 /**
@@ -31,7 +30,8 @@ object DeepLinkParser {
         if (uri == null) return DeepLinkResult(null, null)
         val mediaId = uri.pathSegments?.firstOrNull()?.toLongOrNull()
         val mediaType = uri.getQueryParameter("type")
-        return DeepLinkResult(mediaId, mediaType)
+        val action = uri.getQueryParameter("action")
+        return DeepLinkResult(mediaId, mediaType, action)
     }
 
     fun isAudioWithoutContext(mediaType: String?, hasExternalMetadata: Boolean): Boolean {
@@ -52,13 +52,11 @@ class ChannelDeepLinkActivity : ComponentActivity() {
         const val EXTRA_ACTION = "deep_link_action"
     }
 
-    private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Main)
-
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
         val deepLink = DeepLinkParser.parse(intent?.data)
-        Log.d(TAG, "Deep link received: mediaId=${deepLink.mediaId}, type=${deepLink.mediaType}")
+        Log.d(TAG, "Deep link received: mediaId=${deepLink.mediaId}, type=${deepLink.mediaType}, action=${deepLink.action}")
 
         if (deepLink.mediaId == null) {
             Log.w(TAG, "Invalid deep link — no media ID")
@@ -67,7 +65,7 @@ class ChannelDeepLinkActivity : ComponentActivity() {
             return
         }
 
-        scope.launch {
+        lifecycleScope.launch {
             resolveAndRoute(deepLink)
             finish()
         }
@@ -87,28 +85,36 @@ class ChannelDeepLinkActivity : ComponentActivity() {
             return
         }
 
-        val launchAction = if (deepLink.mediaType != null) {
-            container.settingsRepository.getLaunchAction(deepLink.mediaType)
-        } else {
-            LaunchAction.DETAIL
-        }
+        // URI action parameter takes precedence (e.g., Watch Next "play" for resume)
+        val uriAction = deepLink.action
 
-        // Check audio-without-context override
-        val shouldPlayImmediately = if (DeepLinkParser.isAudioWithoutContext(
-                deepLink.mediaType, hasExternalMetadata = false
-            )) {
-            try {
-                val item = container.mediaRepository.getMediaById(deepLink.mediaId!!).first()
-                val hasMetadata = item?.externalMetadata?.isNotEmpty() == true
-                if (!hasMetadata) true else launchAction == LaunchAction.IMMEDIATE_PLAY
-            } catch (e: Exception) {
+        val action: String = if (uriAction == "play" || uriAction == "detail") {
+            uriAction
+        } else {
+            // Fall back to per-category setting
+            val launchAction = if (deepLink.mediaType != null) {
+                container.settingsRepository.getLaunchAction(deepLink.mediaType)
+            } else {
+                LaunchAction.DETAIL
+            }
+
+            // Check audio-without-context override
+            val shouldPlayImmediately = if (DeepLinkParser.isAudioWithoutContext(
+                    deepLink.mediaType, hasExternalMetadata = false
+                )) {
+                try {
+                    val item = container.mediaRepository.getMediaById(deepLink.mediaId!!).first()
+                    val hasMetadata = item?.externalMetadata?.isNotEmpty() == true
+                    if (!hasMetadata) true else launchAction == LaunchAction.IMMEDIATE_PLAY
+                } catch (e: Exception) {
+                    launchAction == LaunchAction.IMMEDIATE_PLAY
+                }
+            } else {
                 launchAction == LaunchAction.IMMEDIATE_PLAY
             }
-        } else {
-            launchAction == LaunchAction.IMMEDIATE_PLAY
-        }
 
-        val action = if (shouldPlayImmediately) "play" else "detail"
+            if (shouldPlayImmediately) "play" else "detail"
+        }
 
         val mainIntent = Intent(this, MainActivity::class.java).apply {
             putExtra(EXTRA_MEDIA_ID, deepLink.mediaId)

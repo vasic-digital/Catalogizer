@@ -44,6 +44,8 @@ class SyncService : Service() {
     
     private fun performSync() {
         serviceScope.launch {
+            // TODO: Add media library sync logic here (e.g., fetch updated catalog from API)
+
             // Refresh TV home screen channels after sync
             try {
                 val container = DependencyContainer.getInstance(this@SyncService)
@@ -54,10 +56,10 @@ class SyncService : Service() {
             }
         }
     }
-    
+
     private fun performScheduledSync() {
-        // Implement scheduled sync logic here
-        // This might be less aggressive than immediate sync
+        // Scheduled sync: same as immediate but could be throttled in the future
+        performSync()
     }
     
     override fun onBind(intent: Intent?): IBinder? {

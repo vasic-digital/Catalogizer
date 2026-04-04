@@ -34,12 +34,13 @@ object ChannelProgramMapper {
         return TYPE_MAP[mediaType] ?: TvContractCompat.PreviewPrograms.TYPE_CLIP
     }
 
-    fun buildDeepLinkUri(mediaId: Long, mediaType: String?): Uri {
+    fun buildDeepLinkUri(mediaId: Long, mediaType: String?, action: String? = null): Uri {
         val builder = Uri.Builder()
             .scheme("catalogizer")
             .authority("media")
             .appendPath(mediaId.toString())
         mediaType?.let { builder.appendQueryParameter("type", it) }
+        action?.let { builder.appendQueryParameter("action", it) }
         return builder.build()
     }
 
@@ -71,7 +72,9 @@ object ChannelProgramMapper {
         values.put(TvContractCompat.WatchNextPrograms.COLUMN_TITLE, item.title)
         values.put(TvContractCompat.WatchNextPrograms.COLUMN_TYPE, mapToPreviewProgramType(item.mediaType))
         values.put(TvContractCompat.WatchNextPrograms.COLUMN_WATCH_NEXT_TYPE, watchNextType)
-        values.put(TvContractCompat.WatchNextPrograms.COLUMN_INTENT_URI, buildDeepLinkUri(item.id, item.mediaType).toString())
+        // CONTINUE items resume playback directly; NEXT items open detail for the new episode
+        val deepLinkAction = if (watchNextType == TvContractCompat.WatchNextPrograms.WATCH_NEXT_TYPE_CONTINUE) "play" else null
+        values.put(TvContractCompat.WatchNextPrograms.COLUMN_INTENT_URI, buildDeepLinkUri(item.id, item.mediaType, deepLinkAction).toString())
         values.put(TvContractCompat.WatchNextPrograms.COLUMN_LAST_ENGAGEMENT_TIME_UTC_MILLIS, System.currentTimeMillis())
 
         item.description?.let { values.put(TvContractCompat.WatchNextPrograms.COLUMN_SHORT_DESCRIPTION, it) }

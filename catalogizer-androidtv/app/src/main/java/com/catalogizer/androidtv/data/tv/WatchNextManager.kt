@@ -90,7 +90,12 @@ class WatchNextManager(
 
     fun removeAll() {
         try {
-            context.contentResolver.delete(TvContractCompat.WatchNextPrograms.CONTENT_URI, null, null)
+            // Only delete Catalogizer's Watch Next entries (identified by our URI scheme)
+            context.contentResolver.delete(
+                TvContractCompat.WatchNextPrograms.CONTENT_URI,
+                "${TvContractCompat.WatchNextPrograms.COLUMN_INTENT_URI} LIKE ?",
+                arrayOf("catalogizer://%")
+            )
         } catch (e: Exception) {
             Log.w(TAG, "Failed to clear Watch Next: ${e.message}")
         }

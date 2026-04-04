@@ -101,6 +101,8 @@ class DependencyContainer(private val context: Context) {
             return _api!!
         }
 
+    // These use get() instead of `by lazy` because `api` can change at runtime
+    // via switchServer(). Each access creates a fresh instance pointing to the current API.
     val mediaRepository: MediaRepository
         get() = MediaRepository(context, api)
 
