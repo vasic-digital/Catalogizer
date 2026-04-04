@@ -65,6 +65,22 @@
             android:theme="@style/Theme.CatalogizerTV.Player"
             android:screenOrientation="landscape" />
 
+        <!-- Channel Deep Link Activity -->
+        <activity
+            android:name=".ui.ChannelDeepLinkActivity"
+            android:exported="true"
+            android:theme="@android:style/Theme.Translucent.NoTitleBar"
+            android:screenOrientation="landscape">
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <data
+                    android:scheme="catalogizer"
+                    android:host="media" />
+            </intent-filter>
+        </activity>
+
         <!-- Media Session Service -->
         <service
             android:name=".data.media.MediaPlaybackService"
