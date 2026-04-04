@@ -489,3 +489,95 @@ Run `./scripts/security-scan.sh` for automated scanning. Run `./scripts/run-sona
 - **Kotlin**: MVVM, Result sealed classes, Room for offline
 - **Config precedence**: env vars > `.env` > `config.json` > defaults
 - **PostCSS**: `postcss.config.js` must use `module.exports` (CommonJS) for Node 18 compat
+
+## CRITICAL: Iterative Test-Fix-Rebuild QA Loop (Mandatory)
+
+**All QA campaigns MUST follow the iterative test-fix-rebuild loop.** This is a MANDATORY, NON-NEGOTIABLE process:
+
+### Loop Protocol
+1. **Rebuild** all affected binaries, containers, and deployments before each test iteration
+2. **Execute** all tests (unit, challenges, HelixQA bank, autonomous QA)
+3. **Analyze** all results, video recordings, screenshots, and logs
+4. **Create tickets** for every defect with severity, evidence, reproduction steps
+5. **Fix** root causes (never workarounds), create validation tests for each fix
+6. **Repeat** from step 1 until: all pass, fatal blocker, or nothing left to fix
+
+### Exit Conditions (only these stop the loop)
+- All tests pass across all platforms and all test types
+- FATAL BLOCKER encountered (system crash, hardware failure, unrecoverable state)
+- Nothing left to test, fix, or polish
+
+### Validation Tests (Fixes Validation Suite)
+- Every bug fix MUST include a corresponding test in the "Fixes Validation" bank
+- Tests must verify the specific fix prevents the issue from recurring
+- Tests are permanent — they persist in the bank system across all future QA campaigns
+
+## CRITICAL: Live Monitoring During All Test Execution (Mandatory)
+
+**All test execution MUST be actively monitored with real-time status reporting.** This is NON-NEGOTIABLE:
+
+- **Platform identification**: Which platform and app/service is being tested
+- **Test case tracking**: Current test case ID, short description, progress percentage
+- **Per-test results**: Running/pass/fail/skip status with duration
+- **Aggregate stats**: Total tests, passed, failed, skipped, warnings — updated in real-time
+- **Complete logging**: All output captured to `docs/reports/qa-sessions/qa-session-<date>/logs/`
+- **Session archival**: Every QA session produces a complete archive including:
+  - Test execution logs (stdout/stderr)
+  - Video recordings and screenshots
+  - Challenge results (JSON)
+  - HelixQA pipeline reports
+  - Ticket/issue files
+  - Deep analysis and conclusions
+
+### Reporting Directory Structure
+```
+docs/reports/qa-sessions/qa-session-YYYY-MM-DD/
+├── FINAL-REPORT.md              # Executive summary with all results
+├── logs/                        # Complete execution logs
+│   ├── unit-tests-go.log
+│   ├── unit-tests-frontend.log
+│   ├── challenges.log
+│   ├── helixqa-bank.log
+│   └── helixqa-autonomous-<platform>.log
+├── challenges/                  # Challenge results (JSON + summary)
+├── helixqa/                     # HelixQA reports and evidence
+│   ├── bank-results/
+│   └── autonomous/
+├── videos/                      # All video recordings
+├── screenshots/                 # All screenshots
+├── tickets/                     # Issue tickets with evidence
+└── analysis/                    # Deep analysis documents
+```
+
+## CRITICAL: Comprehensive HelixQA Test Coverage (Mandatory)
+
+**HelixQA test banks MUST cover ALL features, ALL screens, ALL use cases with varied data sets.** No feature or functionality may be left untested.
+
+### Required Coverage per Platform
+- **All happy paths** with known data from the system (real titles, music, books)
+- **All screens/pages/views** with full UI element validation
+- **All CRUD operations** for each entity type (media items, collections, playlists, users)
+- **All media types** (movie, tv_show, music, book, comic, game, software — all 11 types)
+- **Search** with real content terms, empty queries, long text, special characters, Cyrillic
+- **Authentication** flows (login, logout, session expiry, invalid credentials)
+- **Navigation** (forward, back, deep linking, TV channels, DPAD)
+- **Media interaction** (play video, listen to music, read books, view images, browse comics)
+- **Settings and configuration** (all toggleable options, theme, preferences)
+- **Edge cases** (boundary values, rapid actions, network interruption)
+- **Negative data** (SQL injection strings, XSS payloads, malformed input, wrong data types)
+
+### Data Set Requirements
+Test banks MUST include specific data sets drawn from:
+- Actual catalog content (titles scanned from NAS)
+- Known media metadata (TMDB, OpenLibrary, MusicBrainz entries)
+- Invalid/malformed data for negative testing
+- Boundary values (max-length strings, zero, negative, overflow)
+- Internationalized content (Cyrillic paths, Unicode characters)
+
+### Bank Organization
+- `banks/full-qa-api.yaml` — Comprehensive API endpoint testing
+- `banks/full-qa-web.yaml` — Comprehensive web UI testing
+- `banks/full-qa-androidtv.yaml` — Comprehensive Android TV testing
+- `banks/full-qa-android.yaml` — Comprehensive Android phone testing
+- `banks/full-qa-cross-platform.yaml` — Cross-platform consistency
+- `banks/fixes-validation.yaml` — Regression tests for all bug fixes

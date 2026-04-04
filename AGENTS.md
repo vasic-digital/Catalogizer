@@ -168,3 +168,23 @@ All challenge operations executed by compiled binaries only (catalog-api service
 - TypeScript: `cd catalog-web && npm run lint && npm run type-check`
 - Ensure zero console warnings/errors in browser
 - Verify `.gitignore` covers `.env` — never commit secrets
+
+## CRITICAL: QA Campaign Protocol (Mandatory)
+
+### Iterative Test-Fix-Rebuild Loop
+All QA campaigns MUST follow: Rebuild → Execute all tests → Analyze results → Create tickets → Fix root causes → Create validation tests → Repeat. Loop stops only on: all pass, fatal blocker, or nothing left.
+
+### Live Monitoring
+All test execution requires real-time status: platform, app/service, test case ID, description, progress, result. All output logged to `docs/reports/qa-sessions/qa-session-<date>/logs/`.
+
+### Video Recording & Analysis
+All device/emulator QA sessions MUST record video. All recordings MUST be analyzed for: visual glitches, UI/UX issues, content gaps, brand compliance, performance, crashes. Every defect gets a ticket with evidence.
+
+### Comprehensive Test Coverage
+HelixQA banks MUST cover ALL features, ALL screens, ALL use cases with varied data (positive, negative, boundary, Cyrillic). No feature left untested. Banks: `full-qa-api.yaml`, `full-qa-web.yaml`, `full-qa-androidtv.yaml`, `full-qa-android.yaml`, `full-qa-cross-platform.yaml`, `fixes-validation.yaml`.
+
+### Fixes Validation Suite
+Every bug fix MUST include a bank test entry in `fixes-validation.yaml` to prevent regression. Tests are permanent.
+
+### Session Archival
+Every QA session produces a complete archive in `docs/reports/qa-sessions/qa-session-YYYY-MM-DD/` with: logs, challenge results, HelixQA reports, videos, screenshots, tickets, analysis, and a FINAL-REPORT.md.

@@ -73,7 +73,7 @@ func VisionModelRegistry() []strategy.ModelInfo {
 			ID:                      "gemini-flash",
 			Name:                    "Gemini 2.0 Flash",
 			Provider:                "google",
-			Model:                   "gemini-2.0-flash",
+			Model:                   "gemini-2.5-flash",
 			SupportsVision:          true,
 			SupportsStreaming:       true,
 			SupportsFunctionCalling: true,

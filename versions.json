@@ -4,7 +4,7 @@
     "major": 2,
     "minor": 2,
     "patch": 0,
-    "build_number": 17
+    "build_number": 18
   },
   "components": {
     "catalog-api": {

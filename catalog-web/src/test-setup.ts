@@ -205,6 +205,20 @@ HTMLCanvasElement.prototype.getContext = vi.fn().mockReturnValue({
   strokeRect: vi.fn(),
 });
 
+// Suppress jsdom/undici unhandled rejections (Node 22 + jsdom 24 compatibility issue)
+// These are async cleanup errors from jsdom's HTTP dispatcher, not test failures.
+process.on('unhandledRejection', (reason: unknown) => {
+  if (
+    reason instanceof Error &&
+    (reason.message.includes('invalid onError method') ||
+     (reason as { code?: string }).code === 'UND_ERR_INVALID_ARG')
+  ) {
+    return; // Suppress known jsdom/undici incompatibility
+  }
+  // Re-throw other unhandled rejections so they still fail tests
+  throw reason;
+});
+
 // Suppress specific console warnings in tests
 const originalError = console.error;
 beforeAll(() => {

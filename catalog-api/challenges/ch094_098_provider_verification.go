@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"regexp"
 	"strings"
 	"time"
 
@@ -493,7 +494,9 @@ func (c *ProviderManagerRoutingChallenge) Execute(
 	outputs["routes_verified"] = fmt.Sprintf("%d/%d", passedRoutes, len(routingChecks))
 
 	// Verify ProviderManager struct has providers map
-	hasProviderMap := strings.Contains(src, "providers map[string]MetadataProvider")
+	// Use regex to tolerate Go struct field alignment whitespace
+	providerMapRe := regexp.MustCompile(`providers\s+map\[string\]MetadataProvider`)
+	hasProviderMap := providerMapRe.MatchString(src)
 	assertions = append(assertions, challenge.AssertionResult{
 		Type:     "contains",
 		Target:   "provider_map",
