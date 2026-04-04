@@ -44,7 +44,9 @@ data class HomeUiState(
  * catalog statistics. Exposes [uiState] as a [StateFlow] of [HomeUiState].
  */
 class HomeViewModel(
-    private val mediaRepository: MediaRepository
+    private val mediaRepository: MediaRepository,
+    private val tvChannelRepository: com.catalogizer.androidtv.data.tv.TvChannelRepository? = null,
+    private val watchNextManager: com.catalogizer.androidtv.data.tv.WatchNextManager? = null
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(HomeUiState())
@@ -116,6 +118,15 @@ class HomeViewModel(
                             totalEntities = stats.first,
                             statsByType = stats.second
                         )
+                    }
+                    // Refresh TV home screen channels (non-blocking)
+                    launch {
+                        try {
+                            tvChannelRepository?.refreshAllChannels()
+                            watchNextManager?.refreshWatchNext()
+                        } catch (e: Exception) {
+                            android.util.Log.w("HomeVM", "Channel refresh failed: ${e.message}")
+                        }
                     }
                 }
             } catch (e: Exception) {

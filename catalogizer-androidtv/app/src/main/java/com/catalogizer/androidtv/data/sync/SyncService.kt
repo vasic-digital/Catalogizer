@@ -3,10 +3,12 @@ package com.catalogizer.androidtv.data.sync
 import android.app.Service
 import android.content.Intent
 import android.os.IBinder
+import com.catalogizer.androidtv.DependencyContainer
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
+import kotlinx.coroutines.launch
 
 /**
  * Background [Service] for media library synchronization with the Catalogizer API.
@@ -41,8 +43,16 @@ class SyncService : Service() {
     }
     
     private fun performSync() {
-        // Implement your sync logic here
-        // For example, sync media library from server
+        serviceScope.launch {
+            // Refresh TV home screen channels after sync
+            try {
+                val container = DependencyContainer.getInstance(this@SyncService)
+                container.tvChannelRepository.refreshAllChannels()
+                container.watchNextManager.refreshWatchNext()
+            } catch (e: Exception) {
+                android.util.Log.w("SyncService", "Channel refresh failed: ${e.message}")
+            }
+        }
     }
     
     private fun performScheduledSync() {
