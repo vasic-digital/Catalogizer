@@ -67,6 +67,10 @@ class MainActivity : ComponentActivity() {
         homeViewModel = dependencyContainer.createHomeViewModel()
         searchViewModel = dependencyContainer.createSearchViewModel()
 
+        // Extract deep link from ChannelDeepLinkActivity
+        val deepLinkMediaId = intent?.getLongExtra("deep_link_media_id", -1L) ?: -1L
+        val deepLinkAction = intent?.getStringExtra("deep_link_action")
+
         setContent {
             CatalogizerTVTheme {
                 Surface(
@@ -76,7 +80,9 @@ class MainActivity : ComponentActivity() {
                         authViewModel = authViewModel,
                         mainViewModel = mainViewModel,
                         homeViewModel = homeViewModel,
-                        searchViewModel = searchViewModel
+                        searchViewModel = searchViewModel,
+                        deepLinkMediaId = deepLinkMediaId,
+                        deepLinkAction = deepLinkAction
                     )
                 }
             }
@@ -93,7 +99,9 @@ fun CatalogizerTVApp(
     authViewModel: AuthViewModel,
     mainViewModel: MainViewModel,
     homeViewModel: HomeViewModel,
-    searchViewModel: SearchViewModel
+    searchViewModel: SearchViewModel,
+    deepLinkMediaId: Long = -1L,
+    deepLinkAction: String? = null
 ) {
     val authState by authViewModel.authState.collectAsStateWithLifecycle()
     val isLoading by mainViewModel.isLoading.collectAsStateWithLifecycle()
@@ -114,7 +122,9 @@ fun CatalogizerTVApp(
             isAuthenticated = authState.isAuthenticated,
             authViewModel = authViewModel,
             homeViewModel = homeViewModel,
-            searchViewModel = searchViewModel
+            searchViewModel = searchViewModel,
+            deepLinkMediaId = deepLinkMediaId,
+            deepLinkAction = deepLinkAction
         )
     }
 }

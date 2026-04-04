@@ -1,6 +1,7 @@
 package com.catalogizer.androidtv.ui.navigation
 
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
@@ -42,6 +43,8 @@ fun TVNavigation(
     authViewModel: AuthViewModel,
     homeViewModel: HomeViewModel,
     searchViewModel: SearchViewModel,
+    deepLinkMediaId: Long = -1L,
+    deepLinkAction: String? = null,
     navController: NavHostController = rememberNavController()
 ) {
     val startDestination = if (isAuthenticated) TVScreen.Home.route else TVScreen.Login.route
@@ -129,6 +132,16 @@ fun TVNavigation(
                     }
                 }
             )
+        }
+    }
+
+    // Handle deep link navigation from home screen channels
+    LaunchedEffect(deepLinkMediaId) {
+        if (deepLinkMediaId > 0 && isAuthenticated) {
+            when (deepLinkAction) {
+                "play" -> navController.navigate(TVScreen.Player.createRoute(deepLinkMediaId))
+                else -> navController.navigate(TVScreen.MediaDetail.createRoute(deepLinkMediaId))
+            }
         }
     }
 }
