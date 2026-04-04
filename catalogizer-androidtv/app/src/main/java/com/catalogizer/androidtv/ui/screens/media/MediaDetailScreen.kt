@@ -136,18 +136,22 @@ fun MediaDetailScreen(
                         .fillMaxSize()
                         .verticalScroll(scrollState)
                 ) {
-                    // Hero poster section
+                    // Hero poster section — use FillWidth to prevent
+                    // deforming the image. The image fills width and
+                    // crops vertically to preserve aspect ratio.
                     Box(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .height(if (isCompact) 280.dp else 400.dp)
+                            .height(if (isCompact) 280.dp else 400.dp),
+                        contentAlignment = Alignment.TopCenter
                     ) {
                         if (coverUrl != null) {
                             AsyncImage(
                                 model = coverUrl,
                                 contentDescription = item.title,
-                                modifier = Modifier.fillMaxSize(),
-                                contentScale = ContentScale.Crop
+                                modifier = Modifier.fillMaxWidth(),
+                                contentScale = ContentScale.FillWidth,
+                                alignment = Alignment.TopCenter
                             )
                         } else {
                             Box(
@@ -233,21 +237,32 @@ fun MediaDetailScreen(
                         Spacer(Modifier.height(20.dp))
 
                         // Play + Back buttons (Play gets auto-focus for D-pad)
-                        Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                        Row(
+                            horizontalArrangement = Arrangement.spacedBy(12.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
                             Button(
                                 onClick = { onNavigateToPlayer(mediaId) },
-                                modifier = Modifier.height(48.dp).focusRequester(playButtonFocus).focusable()
+                                modifier = Modifier.height(48.dp).focusRequester(playButtonFocus).focusable(),
+                                contentPadding = PaddingValues(horizontal = 24.dp, vertical = 0.dp)
                             ) {
                                 Row(
                                     verticalAlignment = Alignment.CenterVertically,
-                                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                                    modifier = Modifier.fillMaxHeight()
                                 ) {
                                     M3Icon(Icons.Default.PlayArrow, "Play", Modifier.size(24.dp))
                                     Text("Play", style = MaterialTheme.typography.titleSmall)
                                 }
                             }
-                            Button(onClick = onNavigateBack, modifier = Modifier.height(48.dp)) {
-                                Text("Back to Library", style = MaterialTheme.typography.titleSmall)
+                            Button(
+                                onClick = onNavigateBack,
+                                modifier = Modifier.height(48.dp),
+                                contentPadding = PaddingValues(horizontal = 24.dp, vertical = 0.dp)
+                            ) {
+                                Box(Modifier.fillMaxHeight(), contentAlignment = Alignment.Center) {
+                                    Text("Back to Library", style = MaterialTheme.typography.titleSmall)
+                                }
                             }
                             Button(
                                 onClick = {
@@ -263,11 +278,13 @@ fun MediaDetailScreen(
                                         }
                                     }
                                 },
-                                modifier = Modifier.height(48.dp)
+                                modifier = Modifier.height(48.dp),
+                                contentPadding = PaddingValues(horizontal = 24.dp, vertical = 0.dp)
                             ) {
                                 Row(
                                     verticalAlignment = Alignment.CenterVertically,
-                                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                                    modifier = Modifier.fillMaxHeight()
                                 ) {
                                     M3Icon(
                                         if (isFavorite) Icons.Default.Favorite else Icons.Default.FavoriteBorder,
