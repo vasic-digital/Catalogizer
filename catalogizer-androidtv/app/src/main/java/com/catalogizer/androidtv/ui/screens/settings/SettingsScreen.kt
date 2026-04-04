@@ -22,6 +22,7 @@ import androidx.tv.foundation.lazy.list.TvLazyColumn
 import androidx.tv.material3.*
 import androidx.lifecycle.Lifecycle
 import com.catalogizer.androidtv.data.models.Settings
+import com.catalogizer.androidtv.data.tv.LaunchAction
 import com.catalogizer.androidtv.ui.viewmodel.SettingsViewModel
 
 // WCAG AA-compliant colors for TV (dark background)
@@ -151,8 +152,14 @@ fun SettingsScreen(
     var enableSubtitles by remember { mutableStateOf(true) }
     var subtitleLanguage by remember { mutableStateOf("English") }
 
+    val context = androidx.compose.ui.platform.LocalContext.current
+
     LaunchedEffect(Unit) {
         settingsViewModel.loadSettings()
+        try {
+            val container = com.catalogizer.androidtv.DependencyContainer.getInstance(context)
+            settingsViewModel.loadChannelSettings(container.mediaRepository)
+        } catch (_: Exception) {}
     }
 
     LaunchedEffect(settingsState) {
@@ -356,6 +363,28 @@ fun SettingsScreen(
                             onCheckedChange = {
                                 enableNotifications = it
                                 settingsViewModel.updateNotificationSettings(it)
+                            }
+                        )
+                    }
+                }
+
+                // ── Channel Tap Behavior ────────────────────────────────────────
+                item {
+                    val activeMediaTypes by settingsViewModel.activeMediaTypes.collectAsStateWithLifecycle()
+                    val launchActions by settingsViewModel.channelLaunchActions.collectAsStateWithLifecycle()
+
+                    SettingsSection(title = "Channel Tap Behavior") {
+                        Text(
+                            text = "Choose what happens when you select an item from a home screen channel.",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = TextSecondary,
+                            modifier = Modifier.padding(bottom = 8.dp)
+                        )
+                        ChannelSettingsSection(
+                            activeMediaTypes = activeMediaTypes,
+                            launchActions = launchActions,
+                            onUpdateAction = { type, action ->
+                                settingsViewModel.updateLaunchAction(type, action)
                             }
                         )
                     }

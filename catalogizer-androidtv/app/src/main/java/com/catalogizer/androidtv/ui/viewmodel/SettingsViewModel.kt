@@ -3,10 +3,14 @@ package com.catalogizer.androidtv.ui.viewmodel
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.catalogizer.androidtv.data.models.Settings
+import com.catalogizer.androidtv.data.repository.MediaRepository
 import com.catalogizer.androidtv.data.repository.SettingsRepository
+import com.catalogizer.androidtv.data.tv.LaunchAction
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.catch
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
 /**
@@ -25,6 +29,33 @@ class SettingsViewModel(
 
     private val _error = MutableStateFlow<String?>(null)
     val error: StateFlow<String?> = _error
+
+    private val _channelLaunchActions = MutableStateFlow<Map<String, LaunchAction>>(emptyMap())
+    val channelLaunchActions: StateFlow<Map<String, LaunchAction>> = _channelLaunchActions.asStateFlow()
+
+    private val _activeMediaTypes = MutableStateFlow<List<String>>(emptyList())
+    val activeMediaTypes: StateFlow<List<String>> = _activeMediaTypes.asStateFlow()
+
+    fun loadChannelSettings(mediaRepository: MediaRepository) {
+        viewModelScope.launch {
+            try {
+                val actions = settingsRepository.getAllLaunchActions()
+                _channelLaunchActions.value = actions
+
+                val (_, byType) = mediaRepository.getEntityStats()
+                _activeMediaTypes.value = byType.filter { it.value > 0 }.keys.toList()
+            } catch (e: Exception) {
+                // Defaults will be used
+            }
+        }
+    }
+
+    fun updateLaunchAction(mediaType: String, action: LaunchAction) {
+        viewModelScope.launch {
+            settingsRepository.saveLaunchAction(mediaType, action)
+            _channelLaunchActions.update { it + (mediaType to action) }
+        }
+    }
 
     init {
         // Observe settings changes from DataStore
