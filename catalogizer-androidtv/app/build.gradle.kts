@@ -187,6 +187,11 @@ dependencies {
     // TV Input Framework
     implementation("androidx.tvprovider:tvprovider:1.0.0")
 
+    // WorkManager for periodic channel sync
+    implementation("androidx.work:work-runtime-ktx:2.9.0")
+    // WorkManager testing
+    testImplementation("androidx.work:work-testing:2.9.0")
+
     // Testing
     testImplementation("junit:junit:4.13.2")
     testImplementation("org.mockito:mockito-core:5.8.0")
