@@ -6,7 +6,7 @@ Android TV application for Catalogizer, optimized for big-screen viewing and D-p
 
 - **Package**: `com.catalogizer.androidtv`
 - **SDK**: compileSdk 34, minSdk 26, targetSdk 34
-- **Version**: 1.1.0 (versionCode 3)
+- **Version**: 2.3.0 (versionCode 7)
 
 ## Commands
 
@@ -84,6 +84,25 @@ For physical TV devices on LAN, enter the server's IP (e.g., `http://192.168.0.1
 ### Media Playback
 
 Uses Media3 ExoPlayer with `media3-session` for TV media session integration (play/pause from remote, background audio control).
+
+### Home Screen Channels
+
+The app integrates with Android TV's home screen channels API (`androidx.tvprovider`):
+
+- **Default Channel ("Catalogizer Picks")**: Auto-added on first launch. Curated mix of continue watching + recently added + trending. Up to 30 items.
+- **Category Channels**: One per media type with content. Created dynamically based on entity stats. Users add via "Customize channels".
+- **Watch Next Row**: System-level row. Shows partially watched items (5%-90%) and auto-surfaces next TV episodes.
+- **Deep Linking**: `catalogizer://media/{id}?type={type}` — handled by `ChannelDeepLinkActivity`. Per-category launch behavior configurable in Settings ("Detail Screen" or "Play Immediately").
+- **Background Sync**: `TvChannelSyncWorker` runs every 6 hours via WorkManager. Also triggers on app launch and after SyncService runs.
+- **Logout**: Deletes all channels, clears Watch Next, cancels sync worker.
+
+Key files:
+- `data/tv/TvChannelRepository.kt` — Channel/program CRUD
+- `data/tv/ChannelProgramMapper.kt` — MediaItem to PreviewProgram conversion
+- `data/tv/WatchNextManager.kt` — Watch Next row logic
+- `data/tv/TvChannelSyncWorker.kt` — Periodic background sync
+- `ui/ChannelDeepLinkActivity.kt` — Deep link intent router
+- `ui/screens/settings/ChannelSettingsSection.kt` — Per-category tap behavior UI
 
 ## Testing
 
