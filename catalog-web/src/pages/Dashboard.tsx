@@ -375,14 +375,14 @@ export const Dashboard: React.FC = () => {
                     <div className="p-3 rounded-lg bg-gray-50 dark:bg-gray-800">
                       <FolderTree className="h-4 w-4 text-gray-500 mb-1" />
                       <div className="text-lg font-semibold text-gray-900 dark:text-white">
-                        {overallStats.total_directories.toLocaleString()}
+                        {(overallStats.total_directories ?? 0).toLocaleString()}
                       </div>
                       <div className="text-xs text-gray-500">Directories</div>
                     </div>
                     <div className="p-3 rounded-lg bg-gray-50 dark:bg-gray-800">
                       <FileType className="h-4 w-4 text-gray-500 mb-1" />
                       <div className="text-lg font-semibold text-gray-900 dark:text-white">
-                        {overallStats.total_files.toLocaleString()}
+                        {(overallStats.total_files ?? 0).toLocaleString()}
                       </div>
                       <div className="text-xs text-gray-500">Total Files</div>
                     </div>

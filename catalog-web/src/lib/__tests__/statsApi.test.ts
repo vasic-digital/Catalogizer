@@ -30,7 +30,27 @@ describe('statsApi', () => {
       const result = await statsApi.getOverallStats()
 
       expect(mockApi.get).toHaveBeenCalledWith('/stats/overall')
-      expect(result).toEqual(mockStats)
+      expect(result.total_files).toBe(5000)
+      expect(result.total_directories).toBe(200)
+      expect(result.total_storage_roots).toBe(3)
+    })
+
+    it('unwraps { data, success } wrapper from API', async () => {
+      // Real API response shape: { data: { total_files, ... , storage_roots_count }, success: true }
+      mockApi.get.mockResolvedValue({
+        data: {
+          data: { total_files: 119456, total_directories: 22606, total_size: 7442893787694, storage_roots_count: 5, last_scan_time: 1775303981 },
+          success: true,
+        },
+      })
+
+      const result = await statsApi.getOverallStats()
+
+      expect(result.total_files).toBe(119456)
+      expect(result.total_directories).toBe(22606)
+      expect(result.total_size).toBe(7442893787694)
+      expect(result.total_storage_roots).toBe(5)
+      expect(result.last_scan_at).toBeDefined()
     })
 
     it('propagates errors', async () => {
@@ -79,6 +99,22 @@ describe('statsApi', () => {
 
       expect(mockApi.get).toHaveBeenCalledWith('/stats/duplicates')
       expect(result).toEqual(mockStats)
+    })
+
+    it('unwraps { data, success } wrapper and maps field names', async () => {
+      // Real API returns duplicate_groups (not total_duplicate_groups) and total_duplicates (not total_duplicate_files)
+      mockApi.get.mockResolvedValue({
+        data: {
+          data: { total_duplicates: 0, duplicate_groups: 0, wasted_space: 0, largest_duplicate_group: 0, average_group_size: 0 },
+          success: true,
+        },
+      })
+
+      const result = await statsApi.getDuplicateStats()
+
+      expect(result.total_duplicate_groups).toBe(0)
+      expect(result.total_duplicate_files).toBe(0)
+      expect(result.wasted_space).toBe(0)
     })
   })
 
@@ -135,6 +171,21 @@ describe('statsApi', () => {
 
       expect(mockApi.get).toHaveBeenCalledWith('/stats/growth', { params: { days: 7 } })
     })
+
+    it('unwraps { data: { monthly_growth } } wrapper from API', async () => {
+      mockApi.get.mockResolvedValue({
+        data: {
+          data: { monthly_growth: [{ month: 'unknown', files_added: 119456, size_added: 7442893787694 }] },
+          success: true,
+        },
+      })
+
+      const result = await statsApi.getGrowthTrends(7)
+
+      expect(Array.isArray(result)).toBe(true)
+      expect(result).toHaveLength(1)
+      expect(result[0].files_added).toBe(119456)
+    })
   })
 
   describe('getScanHistory', () => {
@@ -154,6 +205,20 @@ describe('statsApi', () => {
       await statsApi.getScanHistory(5)
 
       expect(mockApi.get).toHaveBeenCalledWith('/stats/scans', { params: { limit: 5 } })
+    })
+
+    it('unwraps { data: { scans } } wrapper and handles null scans', async () => {
+      mockApi.get.mockResolvedValue({
+        data: {
+          data: { scans: null, total_count: 0, limit: 5, offset: 0 },
+          success: true,
+        },
+      })
+
+      const result = await statsApi.getScanHistory(5)
+
+      expect(Array.isArray(result)).toBe(true)
+      expect(result).toHaveLength(0)
     })
   })
 })
