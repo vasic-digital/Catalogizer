@@ -111,7 +111,9 @@ class DependencyContainer(private val context: Context) {
         get() = WatchNextManager(context, mediaRepository)
 
     // ViewModels
-    fun createAuthViewModel(): AuthViewModel = AuthViewModel(authRepository)
+    fun createAuthViewModel(): AuthViewModel = AuthViewModel(
+        authRepository, tvChannelRepository, watchNextManager, context, settingsRepository
+    )
     fun createMainViewModel(): MainViewModel = MainViewModel(authRepository)
     fun createHomeViewModel(): HomeViewModel = HomeViewModel(
         mediaRepository, tvChannelRepository, watchNextManager
