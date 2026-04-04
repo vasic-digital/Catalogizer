@@ -1,8 +1,8 @@
 {
-  "version": "2.2.0",
+  "version": "2.3.0",
   "name": "Catalogizer Challenges",
   "description": "Challenge definitions for validating the Catalogizer media collection management system",
-  "generated": "2026-04-03",
+  "generated": "2026-04-04",
   "categories": {
     "infrastructure": "Database, configuration, and system connectivity",
     "storage": "SMB, NFS, FTP, WebDAV, and local filesystem operations",
@@ -3467,6 +3467,111 @@
       "category": "userflow-mobile",
       "severity": "medium",
       "description": "Configure server URL on Android TV"
+    },
+    {
+      "id": "UF-ANDROIDTV-CHANNEL-DEFAULT",
+      "name": "Android TV Default Channel Creation",
+      "category": "userflow-mobile",
+      "severity": "critical",
+      "description": "Verify the default 'Catalogizer Picks' channel is created on first app launch and appears on the TV home screen"
+    },
+    {
+      "id": "UF-ANDROIDTV-CHANNEL-CATEGORY",
+      "name": "Android TV Category Channel Creation",
+      "category": "userflow-mobile",
+      "severity": "high",
+      "description": "Verify per-media-type channels are created dynamically for types with content in the library"
+    },
+    {
+      "id": "UF-ANDROIDTV-CHANNEL-PROGRAMS",
+      "name": "Android TV Channel Programs Population",
+      "category": "userflow-mobile",
+      "severity": "critical",
+      "description": "Verify channels are populated with media items (up to 30) with correct poster art, titles, and metadata"
+    },
+    {
+      "id": "UF-ANDROIDTV-CHANNEL-WATCHNEXT",
+      "name": "Android TV Watch Next Row",
+      "category": "userflow-mobile",
+      "severity": "critical",
+      "description": "Verify partially watched items (5-90% progress) appear in the system Watch Next row with correct resume position"
+    },
+    {
+      "id": "UF-ANDROIDTV-CHANNEL-WATCHNEXT-EPISODE",
+      "name": "Android TV Watch Next Episode",
+      "category": "userflow-mobile",
+      "severity": "high",
+      "description": "Verify next episode auto-surfaces in Watch Next when a TV episode is completed (>90%)"
+    },
+    {
+      "id": "UF-ANDROIDTV-CHANNEL-DEEPLINK-DETAIL",
+      "name": "Android TV Channel Deep Link to Detail",
+      "category": "userflow-mobile",
+      "severity": "critical",
+      "description": "Verify clicking a channel program card opens the Catalogizer detail screen for that media item"
+    },
+    {
+      "id": "UF-ANDROIDTV-CHANNEL-DEEPLINK-PLAY",
+      "name": "Android TV Channel Deep Link to Play",
+      "category": "userflow-mobile",
+      "severity": "high",
+      "description": "Verify clicking a channel program with 'Play Immediately' setting starts playback directly"
+    },
+    {
+      "id": "UF-ANDROIDTV-CHANNEL-DEEPLINK-AUTH",
+      "name": "Android TV Channel Deep Link Authentication",
+      "category": "userflow-mobile",
+      "severity": "high",
+      "description": "Verify unauthenticated deep link redirects to login screen, then resumes after login"
+    },
+    {
+      "id": "UF-ANDROIDTV-CHANNEL-SYNC",
+      "name": "Android TV Channel Background Sync",
+      "category": "userflow-mobile",
+      "severity": "medium",
+      "description": "Verify WorkManager periodic sync updates channel content every 6 hours"
+    },
+    {
+      "id": "UF-ANDROIDTV-CHANNEL-LOGOUT",
+      "name": "Android TV Channel Logout Cleanup",
+      "category": "userflow-mobile",
+      "severity": "critical",
+      "description": "Verify logout deletes all channels, Watch Next entries, cancels sync worker, and clears settings"
+    },
+    {
+      "id": "UF-ANDROIDTV-CHANNEL-SETTINGS",
+      "name": "Android TV Channel Tap Behavior Settings",
+      "category": "userflow-mobile",
+      "severity": "high",
+      "description": "Verify per-category launch action can be configured in Settings (Detail Screen vs Play Immediately)"
+    },
+    {
+      "id": "UF-ANDROIDTV-CHANNEL-STALE",
+      "name": "Android TV Stale Channel Removal",
+      "category": "userflow-mobile",
+      "severity": "medium",
+      "description": "Verify channels for media types with no content are removed automatically"
+    },
+    {
+      "id": "UF-ANDROIDTV-CHANNEL-AUDIO-NOCONTEXT",
+      "name": "Android TV Audio Without Context Play",
+      "category": "userflow-mobile",
+      "severity": "medium",
+      "description": "Verify audio items without album/artist metadata play immediately regardless of settings"
+    },
+    {
+      "id": "UF-ANDROIDTV-CHANNEL-REFRESH-LAUNCH",
+      "name": "Android TV Channel Refresh on Launch",
+      "category": "userflow-mobile",
+      "severity": "medium",
+      "description": "Verify channels are refreshed when the app launches and home data loads"
+    },
+    {
+      "id": "UF-ANDROIDTV-CHANNEL-DYNAMIC",
+      "name": "Android TV Dynamic Channel Discovery",
+      "category": "userflow-mobile",
+      "severity": "high",
+      "description": "Verify new media types added to the library automatically get channels created"
     }
   ]
 }
