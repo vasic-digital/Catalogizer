@@ -173,6 +173,8 @@ AuthProvider → WebSocketProvider → Router. Key tech: React Query (`@tanstack
 
 **Android**: MVVM — Compose UI → ViewModel (StateFlow) → Repository → Room + Retrofit. Hilt DI. Requires `jvmToolchain(17)` and `--add-opens` JVM args for kapt + JDK 21 compatibility.
 
+**Android TV Home Screen Channels** (catalogizer-androidtv v2.3.0): Full integration with Android TV's channel API (`androidx.tvprovider`). Default "Catalogizer Picks" channel auto-created on launch. Dynamic per-category channels (one per media type with content). System Watch Next row for partially-watched items + auto-next-episode. Deep linking via `catalogizer://media/{id}?type={type}` with per-category launch behavior (detail screen vs. immediate play, configurable in Settings). `WorkManager` periodic sync (6h) + app-launch + SyncService triggers. Full cleanup on logout. Key files: `data/tv/TvChannelRepository.kt`, `data/tv/ChannelProgramMapper.kt`, `data/tv/WatchNextManager.kt`, `data/tv/TvChannelSyncWorker.kt`, `ui/ChannelDeepLinkActivity.kt`.
+
 **Tauri apps**: React frontend ↔ Rust backend via IPC commands/events.
 
 ### Build Framework
