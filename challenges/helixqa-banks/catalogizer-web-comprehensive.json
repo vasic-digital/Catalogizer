@@ -3999,6 +3999,89 @@
           "expected": "Favorites reorder by selected criterion (date added, name, type)"
         }
       ]
+    },
+    {
+      "id": "web-media-player-video-playback",
+      "name": "Media Player Video Playback",
+      "category": "playback-verification",
+      "priority": "critical",
+      "platforms": [
+        "web"
+      ],
+      "steps": [
+        {
+          "name": "Navigate to a movie entity detail",
+          "action": "Click on any movie card from the browse screen",
+          "expected": "Entity detail page loads with movie information"
+        },
+        {
+          "name": "Click play button",
+          "action": "Click the play button on the entity detail page",
+          "expected": "MediaPlayer component appears with a video element"
+        },
+        {
+          "name": "Verify video source is set",
+          "action": "Inspect the video element's src attribute",
+          "expected": "src points to /api/v1/stream/:id"
+        },
+        {
+          "name": "Verify playback progress",
+          "action": "Wait 3 seconds and check the progress bar",
+          "expected": "currentTime > 0, indicating actual video playback"
+        }
+      ]
+    },
+    {
+      "id": "web-media-player-controls",
+      "name": "Media Player Controls Functional",
+      "category": "playback-verification",
+      "priority": "high",
+      "platforms": [
+        "web"
+      ],
+      "steps": [
+        {
+          "name": "Open media player",
+          "action": "Navigate to entity detail and click play",
+          "expected": "Media player visible with controls"
+        },
+        {
+          "name": "Test pause/resume",
+          "action": "Click pause button, verify paused, click play",
+          "expected": "Video pauses and resumes correctly"
+        },
+        {
+          "name": "Test seek",
+          "action": "Click on the progress bar at ~50% position",
+          "expected": "Playback position jumps to approximately 50%"
+        },
+        {
+          "name": "Test volume",
+          "action": "Adjust the volume slider",
+          "expected": "Volume changes, mute button works"
+        }
+      ]
+    },
+    {
+      "id": "web-media-player-audio-playback",
+      "name": "Media Player Audio Playback",
+      "category": "playback-verification",
+      "priority": "high",
+      "platforms": [
+        "web"
+      ],
+      "steps": [
+        {
+          "name": "Navigate to a music entity",
+          "action": "Browse to music category and click on a song",
+          "expected": "Entity detail page loads with song information"
+        },
+        {
+          "name": "Click play",
+          "action": "Click the play button",
+          "expected": "Audio player appears and starts playback (progress bar moves)"
+        }
+      ]
     }
   ]
 }

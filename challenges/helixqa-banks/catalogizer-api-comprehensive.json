@@ -4927,6 +4927,90 @@
           "expected": "Receive JSON announcement with type=catalogizer-announce"
         }
       ]
+    },
+    {
+      "id": "api-stream-range-request",
+      "name": "Stream Range Request (HTTP 206)",
+      "category": "playback-verification",
+      "priority": "critical",
+      "platforms": [
+        "api"
+      ],
+      "steps": [
+        {
+          "name": "Get a media file ID",
+          "action": "GET /api/v1/files?limit=1 with auth \u2014 extract first file ID",
+          "expected": "200 with at least one file entry"
+        },
+        {
+          "name": "Request stream with Range header",
+          "action": "GET /api/v1/stream/:id with Range: bytes=0-1023 and auth",
+          "expected": "206 Partial Content with Content-Range header and 1024 bytes of data"
+        },
+        {
+          "name": "Verify Accept-Ranges header",
+          "action": "HEAD /api/v1/stream/:id with auth",
+          "expected": "Response includes Accept-Ranges: bytes"
+        }
+      ]
+    },
+    {
+      "id": "api-stream-full-file",
+      "name": "Stream Full File Download",
+      "category": "playback-verification",
+      "priority": "high",
+      "platforms": [
+        "api"
+      ],
+      "steps": [
+        {
+          "name": "Stream without Range header",
+          "action": "GET /api/v1/stream/:id with auth (no Range header)",
+          "expected": "200 OK with Content-Type matching file type and Content-Length > 0"
+        }
+      ]
+    },
+    {
+      "id": "api-stream-content-type",
+      "name": "Stream Content-Type Detection",
+      "category": "playback-verification",
+      "priority": "high",
+      "platforms": [
+        "api"
+      ],
+      "steps": [
+        {
+          "name": "Stream video file",
+          "action": "GET /api/v1/stream/:id for a .mp4/.mkv file with auth",
+          "expected": "Content-Type is video/mp4 or video/x-matroska"
+        },
+        {
+          "name": "Stream audio file",
+          "action": "GET /api/v1/stream/:id for a .mp3/.flac file with auth",
+          "expected": "Content-Type is audio/mpeg or audio/flac"
+        }
+      ]
+    },
+    {
+      "id": "api-entity-stream-url",
+      "name": "Entity Stream URL Resolution",
+      "category": "playback-verification",
+      "priority": "critical",
+      "platforms": [
+        "api"
+      ],
+      "steps": [
+        {
+          "name": "Get entity stream URL",
+          "action": "GET /api/v1/entities/:id/stream with auth",
+          "expected": "200 with JSON containing stream_url field pointing to /api/v1/stream/:file_id"
+        },
+        {
+          "name": "Follow stream URL",
+          "action": "GET the stream_url from previous step with Range: bytes=0-0",
+          "expected": "206 Partial Content confirming the stream URL is valid and streamable"
+        }
+      ]
     }
   ]
 }

@@ -61,26 +61,32 @@ class MainActivity : ComponentActivity() {
             }
         }
 
+        // Initialize ViewModels
+        authViewModel = dependencyContainer.createAuthViewModel()
+        mainViewModel = dependencyContainer.createMainViewModel()
+        homeViewModel = dependencyContainer.createHomeViewModel()
+        searchViewModel = dependencyContainer.createSearchViewModel()
+
         // Auto-login via intent extras (for ADB testing / HelixQA).
         // Usage: adb shell am start -n ... --es qa_username admin --es qa_password admin123
+        // The login gate ensures the splash screen stays visible until login
+        // completes, preventing the empty library race condition.
         val qaUser = intent.getStringExtra("qa_username")
         val qaPass = intent.getStringExtra("qa_password")
         if (!qaUser.isNullOrBlank() && !qaPass.isNullOrBlank()) {
+            val loginGate = kotlinx.coroutines.CompletableDeferred<Unit>()
+            mainViewModel.setQaLoginGate(loginGate)
             kotlinx.coroutines.CoroutineScope(kotlinx.coroutines.Dispatchers.IO).launch {
                 try {
                     dependencyContainer.authRepository.login(qaUser, qaPass)
                     android.util.Log.i("MainActivity", "QA auto-login successful")
                 } catch (e: Exception) {
                     android.util.Log.w("MainActivity", "QA auto-login failed: ${e.message}")
+                } finally {
+                    mainViewModel.completeQaLogin()
                 }
             }
         }
-
-        // Initialize ViewModels
-        authViewModel = dependencyContainer.createAuthViewModel()
-        mainViewModel = dependencyContainer.createMainViewModel()
-        homeViewModel = dependencyContainer.createHomeViewModel()
-        searchViewModel = dependencyContainer.createSearchViewModel()
 
         // Extract deep link from ChannelDeepLinkActivity
         val deepLinkMediaId = intent?.getLongExtra("deep_link_media_id", -1L) ?: -1L

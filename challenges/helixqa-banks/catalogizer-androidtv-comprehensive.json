@@ -1685,6 +1685,131 @@
           "expected": "New content appears in the appropriate channel rows"
         }
       ]
+    },
+    {
+      "id": "tv-player-video-start",
+      "name": "TV Player Video Start Verification",
+      "category": "playback-verification",
+      "priority": "critical",
+      "platforms": [
+        "androidtv"
+      ],
+      "steps": [
+        {
+          "name": "Navigate to a movie",
+          "action": "From home screen, navigate to a movie card and press DPAD_CENTER",
+          "expected": "Entity detail screen shows movie information"
+        },
+        {
+          "name": "Press play",
+          "action": "Focus and press DPAD_CENTER on the Play button",
+          "expected": "MediaPlayerActivity launches with ExoPlayer"
+        },
+        {
+          "name": "Verify playback started",
+          "action": "Wait 3 seconds and take screenshot",
+          "expected": "Player screen visible, progress bar shows non-zero position, buffering indicator gone"
+        },
+        {
+          "name": "Press back to exit player",
+          "action": "Press BACK button",
+          "expected": "Returns to entity detail screen"
+        }
+      ]
+    },
+    {
+      "id": "tv-player-dpad-seek",
+      "name": "TV Player D-Pad Seek",
+      "category": "playback-verification",
+      "priority": "high",
+      "platforms": [
+        "androidtv"
+      ],
+      "steps": [
+        {
+          "name": "Start playback",
+          "action": "Navigate to media and press play",
+          "expected": "Player starts"
+        },
+        {
+          "name": "Seek forward with D-pad",
+          "action": "Press DPAD_RIGHT to seek forward",
+          "expected": "Progress bar jumps forward by 10 seconds"
+        },
+        {
+          "name": "Seek backward",
+          "action": "Press DPAD_LEFT to seek backward",
+          "expected": "Progress bar moves back"
+        }
+      ]
+    },
+    {
+      "id": "tv-player-play-pause",
+      "name": "TV Player Play/Pause Toggle",
+      "category": "playback-verification",
+      "priority": "critical",
+      "platforms": [
+        "androidtv"
+      ],
+      "steps": [
+        {
+          "name": "Start playback",
+          "action": "Navigate to media and press play",
+          "expected": "Video plays"
+        },
+        {
+          "name": "Pause with DPAD_CENTER",
+          "action": "Press DPAD_CENTER during playback",
+          "expected": "Playback pauses, controls overlay visible"
+        },
+        {
+          "name": "Resume with DPAD_CENTER",
+          "action": "Press DPAD_CENTER again",
+          "expected": "Playback resumes"
+        }
+      ]
+    },
+    {
+      "id": "tv-player-speed-change",
+      "name": "TV Player Speed Control",
+      "category": "playback-verification",
+      "priority": "medium",
+      "platforms": [
+        "androidtv"
+      ],
+      "steps": [
+        {
+          "name": "Start playback and open speed menu",
+          "action": "Start video playback, navigate to speed control button",
+          "expected": "Speed selection menu appears with presets (0.5x, 1x, 1.5x, 2x)"
+        },
+        {
+          "name": "Change speed to 2x",
+          "action": "Select 2x speed",
+          "expected": "Playback speed changes to 2x, speed indicator visible"
+        }
+      ]
+    },
+    {
+      "id": "tv-channel-play-immediately",
+      "name": "TV Channel Direct Playback",
+      "category": "playback-verification",
+      "priority": "high",
+      "platforms": [
+        "androidtv"
+      ],
+      "steps": [
+        {
+          "name": "Click a channel program",
+          "action": "From Android TV home, click a Catalogizer channel program",
+          "expected": "Deep link launches the app"
+        },
+        {
+          "name": "Verify immediate playback",
+          "action": "Check if player starts for categories with Play Immediately setting",
+          "expected": "Player activity visible or detail screen loads (per category setting)"
+        }
+      ]
     }
   ]
 }

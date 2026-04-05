@@ -3,6 +3,7 @@ package com.catalogizer.androidtv.ui.viewmodel
 import com.catalogizer.androidtv.MainDispatcherRule
 import com.catalogizer.androidtv.data.repository.AuthRepository
 import io.mockk.*
+import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.*
 import org.junit.After
@@ -59,5 +60,47 @@ class MainViewModelTest3 {
     fun `isLoading is a StateFlow`() {
         assertNotNull(viewModel.isLoading)
         assertTrue(viewModel.isLoading.value)
+    }
+
+    @Test
+    fun `qaLoginGate blocks initializeApp until completed`() = runTest {
+        val gate = CompletableDeferred<Unit>()
+        viewModel.setQaLoginGate(gate)
+
+        viewModel.initializeApp()
+        advanceUntilIdle()
+
+        // Gate not completed — still loading
+        assertTrue(viewModel.isLoading.value)
+
+        // Complete the gate (login finished)
+        gate.complete(Unit)
+        advanceUntilIdle()
+
+        assertFalse(viewModel.isLoading.value)
+    }
+
+    @Test
+    fun `completeQaLogin unblocks initializeApp`() = runTest {
+        val gate = CompletableDeferred<Unit>()
+        viewModel.setQaLoginGate(gate)
+
+        viewModel.initializeApp()
+        advanceUntilIdle()
+        assertTrue(viewModel.isLoading.value)
+
+        viewModel.completeQaLogin()
+        advanceUntilIdle()
+
+        assertFalse(viewModel.isLoading.value)
+    }
+
+    @Test
+    fun `no qaLoginGate allows immediate initialization`() = runTest {
+        // No gate set — normal startup
+        viewModel.initializeApp()
+        advanceUntilIdle()
+
+        assertFalse(viewModel.isLoading.value)
     }
 }
