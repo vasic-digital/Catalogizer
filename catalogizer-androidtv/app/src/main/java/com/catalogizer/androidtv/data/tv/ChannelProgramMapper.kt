@@ -57,16 +57,20 @@ object ChannelProgramMapper {
      */
     fun resolveImageUrl(url: String?, serverBaseUrl: String?): String? {
         if (url == null) return null
-        // Extract direct TMDB URL from image proxy (proxy may not reach CDN from all hosts)
-        if (url.contains("/image-proxy?url=")) {
-            return try {
-                java.net.URLDecoder.decode(url.substringAfter("url="), "UTF-8")
-            } catch (_: Exception) { url }
-        }
-        if (url.startsWith("http://") || url.startsWith("https://")) return url
+        // Relative URLs (including /api/v1/image-proxy) need the
+        // server base to become absolute for the TV channel system.
         if (url.startsWith("/") && serverBaseUrl != null) {
             return serverBaseUrl.trimEnd('/') + url
         }
+        // Direct TMDB URLs get routed through the API image proxy
+        // to bypass Mi Box DNS blocking of TMDB CDN.
+        if (url.contains("image.tmdb.org") && serverBaseUrl != null) {
+            return try {
+                val encoded = java.net.URLEncoder.encode(url, "UTF-8")
+                serverBaseUrl.trimEnd('/') + "/api/v1/image-proxy?url=$encoded"
+            } catch (_: Exception) { url }
+        }
+        if (url.startsWith("http://") || url.startsWith("https://")) return url
         return url
     }
 

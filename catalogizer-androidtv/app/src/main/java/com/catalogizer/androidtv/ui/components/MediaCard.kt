@@ -85,14 +85,18 @@ fun MediaCard(
                     androidx.compose.ui.platform.LocalContext.current
                 )
                 val coverUrl = when {
-                    rawUrl != null && rawUrl.contains("/image-proxy?url=") -> {
-                        // Route image-proxy through local proxy (port 8888
-                        // via ADB reverse) to bypass CDN geo-blocking
-                        val encoded = rawUrl.substringAfter("/image-proxy?")
-                        "http://localhost:8888/image-proxy?$encoded"
-                    }
                     rawUrl != null && rawUrl.startsWith("/") -> {
+                        // All relative URLs (including /api/v1/image-proxy)
+                        // route through the catalog-api server, which handles
+                        // TMDB CDN proxying — no separate Python proxy needed.
                         container.getServerUrl().trimEnd('/') + rawUrl
+                    }
+                    rawUrl != null && rawUrl.contains("image.tmdb.org") -> {
+                        // Direct TMDB URLs get routed through the API image
+                        // proxy to bypass Mi Box DNS blocking of TMDB CDN.
+                        val encoded = java.net.URLEncoder.encode(rawUrl, "UTF-8")
+                        container.getServerUrl().trimEnd('/') +
+                            "/api/v1/image-proxy?url=$encoded"
                     }
                     else -> rawUrl
                 }
@@ -339,14 +343,20 @@ fun CompactMediaCard(
                 contentAlignment = Alignment.Center
             ) {
                 val rawUrl = mediaItem.thumbnailUrl
-                val coverUrl = if (rawUrl != null && rawUrl.contains("/image-proxy?url=")) {
-                    java.net.URLDecoder.decode(rawUrl.substringAfter("url="), "UTF-8")
-                } else if (rawUrl != null && rawUrl.startsWith("/")) {
-                    val container = com.catalogizer.androidtv.DependencyContainer.getInstance(
-                        androidx.compose.ui.platform.LocalContext.current
-                    )
-                    container.getServerUrl().trimEnd('/') + rawUrl
-                } else rawUrl
+                val container2 = com.catalogizer.androidtv.DependencyContainer.getInstance(
+                    androidx.compose.ui.platform.LocalContext.current
+                )
+                val coverUrl = when {
+                    rawUrl != null && rawUrl.startsWith("/") -> {
+                        container2.getServerUrl().trimEnd('/') + rawUrl
+                    }
+                    rawUrl != null && rawUrl.contains("image.tmdb.org") -> {
+                        val encoded = java.net.URLEncoder.encode(rawUrl, "UTF-8")
+                        container2.getServerUrl().trimEnd('/') +
+                            "/api/v1/image-proxy?url=$encoded"
+                    }
+                    else -> rawUrl
+                }
                 if (coverUrl != null) {
                     AsyncImage(
                         model = coverUrl,
