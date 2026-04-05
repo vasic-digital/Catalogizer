@@ -60,6 +60,15 @@ fun HomeScreen(
         viewModel.loadHomeData()
     }
 
+    // Auto-retry if library loaded empty — server may still be
+    // aggregating entities or network was briefly unavailable.
+    LaunchedEffect(uiState.totalEntities, uiState.isLoading) {
+        if (!uiState.isLoading && uiState.totalEntities == 0 && uiState.error == null) {
+            kotlinx.coroutines.delay(5000) // Wait 5s before retry
+            viewModel.loadHomeData()
+        }
+    }
+
     Column(
         modifier = Modifier
             .fillMaxSize()
