@@ -304,3 +304,6 @@ catalog-api/config.json
 qa-results/latest
 .env.remote
 deployment/.env*
+
+# QA session logs may contain API keys in error messages
+docs/reports/qa-sessions/**/logs/*.log
