@@ -50,13 +50,28 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-        // Handle server URL from intent extra (for ADB testing)
+        // Handle server URL from intent extra (for ADB testing / HelixQA)
         val dependencyContainer = (application as CatalogizerTVApplication).dependencyContainer
         intent.getStringExtra("server_url")?.let { url ->
             if (url.isNotBlank()) {
                 dependencyContainer.switchServer(url)
                 kotlinx.coroutines.CoroutineScope(kotlinx.coroutines.Dispatchers.IO).launch {
                     dependencyContainer.settingsRepository.updateServerUrl(url)
+                }
+            }
+        }
+
+        // Auto-login via intent extras (for ADB testing / HelixQA).
+        // Usage: adb shell am start -n ... --es qa_username admin --es qa_password admin123
+        val qaUser = intent.getStringExtra("qa_username")
+        val qaPass = intent.getStringExtra("qa_password")
+        if (!qaUser.isNullOrBlank() && !qaPass.isNullOrBlank()) {
+            kotlinx.coroutines.CoroutineScope(kotlinx.coroutines.Dispatchers.IO).launch {
+                try {
+                    dependencyContainer.authRepository.login(qaUser, qaPass)
+                    android.util.Log.i("MainActivity", "QA auto-login successful")
+                } catch (e: Exception) {
+                    android.util.Log.w("MainActivity", "QA auto-login failed: ${e.message}")
                 }
             }
         }

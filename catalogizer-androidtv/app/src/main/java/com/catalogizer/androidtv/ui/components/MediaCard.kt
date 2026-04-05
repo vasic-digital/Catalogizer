@@ -81,13 +81,21 @@ fun MediaCard(
                 contentAlignment = Alignment.Center
             ) {
                 val rawUrl = mediaItem.thumbnailUrl
-                val coverUrl = if (rawUrl != null && rawUrl.startsWith("/")) {
-                    // Relative URL — prefix with server base URL
-                    val container = com.catalogizer.androidtv.DependencyContainer.getInstance(
-                        androidx.compose.ui.platform.LocalContext.current
-                    )
-                    container.getServerUrl().trimEnd('/') + rawUrl
-                } else rawUrl
+                val container = com.catalogizer.androidtv.DependencyContainer.getInstance(
+                    androidx.compose.ui.platform.LocalContext.current
+                )
+                val coverUrl = when {
+                    rawUrl != null && rawUrl.contains("/image-proxy?url=") -> {
+                        // Route image-proxy through local proxy (port 8888
+                        // via ADB reverse) to bypass CDN geo-blocking
+                        val encoded = rawUrl.substringAfter("/image-proxy?")
+                        "http://localhost:8888/image-proxy?$encoded"
+                    }
+                    rawUrl != null && rawUrl.startsWith("/") -> {
+                        container.getServerUrl().trimEnd('/') + rawUrl
+                    }
+                    else -> rawUrl
+                }
                 if (coverUrl != null) {
                     AsyncImage(
                         model = coverUrl,
@@ -331,7 +339,9 @@ fun CompactMediaCard(
                 contentAlignment = Alignment.Center
             ) {
                 val rawUrl = mediaItem.thumbnailUrl
-                val coverUrl = if (rawUrl != null && rawUrl.startsWith("/")) {
+                val coverUrl = if (rawUrl != null && rawUrl.contains("/image-proxy?url=")) {
+                    java.net.URLDecoder.decode(rawUrl.substringAfter("url="), "UTF-8")
+                } else if (rawUrl != null && rawUrl.startsWith("/")) {
                     val container = com.catalogizer.androidtv.DependencyContainer.getInstance(
                         androidx.compose.ui.platform.LocalContext.current
                     )

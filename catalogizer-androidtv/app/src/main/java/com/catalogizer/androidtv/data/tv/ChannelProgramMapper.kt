@@ -57,6 +57,12 @@ object ChannelProgramMapper {
      */
     fun resolveImageUrl(url: String?, serverBaseUrl: String?): String? {
         if (url == null) return null
+        // Extract direct TMDB URL from image proxy (proxy may not reach CDN from all hosts)
+        if (url.contains("/image-proxy?url=")) {
+            return try {
+                java.net.URLDecoder.decode(url.substringAfter("url="), "UTF-8")
+            } catch (_: Exception) { url }
+        }
         if (url.startsWith("http://") || url.startsWith("https://")) return url
         if (url.startsWith("/") && serverBaseUrl != null) {
             return serverBaseUrl.trimEnd('/') + url

@@ -128,7 +128,11 @@ fun MediaDetailScreen(
             mediaItem != null -> {
                 val item = mediaItem!!
                 val coverUrl = item.thumbnailUrl?.let { url ->
-                    if (url.startsWith("/")) container.getServerUrl().trimEnd('/') + url else url
+                    if (url.contains("/image-proxy?url=")) {
+                        java.net.URLDecoder.decode(url.substringAfter("url="), "UTF-8")
+                    } else if (url.startsWith("/")) {
+                        container.getServerUrl().trimEnd('/') + url
+                    } else url
                 }
 
                 Column(

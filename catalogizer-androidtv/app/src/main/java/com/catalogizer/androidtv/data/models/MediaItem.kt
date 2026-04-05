@@ -178,16 +178,17 @@ data class MediaSearchResponse(
 
 @Serializable
 data class MediaStats(
-    @SerialName("total_items")
-    val totalItems: Int,
+    // API returns "total_entities" — accept both field names
+    @SerialName("total_entities")
+    val totalItems: Int = 0,
     @SerialName("by_type")
-    val byType: Map<String, Int>,
+    val byType: Map<String, Int> = emptyMap(),
     @SerialName("by_quality")
-    val byQuality: Map<String, Int>,
+    val byQuality: Map<String, Int> = emptyMap(),
     @SerialName("total_size")
-    val totalSize: Long,
+    val totalSize: Long = 0,
     @SerialName("recent_additions")
-    val recentAdditions: Int
+    val recentAdditions: Int = 0
 )
 
 @Serializable
