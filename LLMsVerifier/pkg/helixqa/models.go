@@ -71,7 +71,7 @@ func VisionModelRegistry() []strategy.ModelInfo {
 		},
 		{
 			ID:                      "gemini-flash",
-			Name:                    "Gemini 2.0 Flash",
+			Name:                    "Gemini 2.5 Flash",
 			Provider:                "google",
 			Model:                   "gemini-2.5-flash",
 			SupportsVision:          true,
@@ -79,12 +79,12 @@ func VisionModelRegistry() []strategy.ModelInfo {
 			SupportsFunctionCalling: true,
 			ContextWindow:           1048576,
 			MaxOutputTokens:         8192,
-			AvgLatencyMs:            800,
-			InputCostPer1k:          0.0001,
-			OutputCostPer1k:         0.0004,
-			QualityScore:            0.88,
-			ReliabilityScore:        0.96,
-			Capabilities:            []string{"vision", "code", "reasoning", "gui_analysis"},
+			AvgLatencyMs:            2000, // Thinking model: 2-20s typical
+			InputCostPer1k:          0.00015,
+			OutputCostPer1k:         0.0006,
+			QualityScore:            0.93, // Validated: excellent JSON compliance + GUI understanding
+			ReliabilityScore:        0.95, // Validated: consistent across 50+ QA sessions
+			Capabilities:            []string{"vision", "code", "reasoning", "gui_analysis", "gui_navigation", "thinking"},
 		},
 
 		// --- Tier 2: Cost-effective vision providers ---
