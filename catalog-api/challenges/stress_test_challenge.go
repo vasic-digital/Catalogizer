@@ -70,7 +70,7 @@ func (c *StressTestChallenge) Execute(
 	var healthTotalMs int64
 
 	c.ReportProgress("stress-health", map[string]any{
-		"concurrency":  concurrency,
+		"concurrency":    concurrency,
 		"total_requests": requestsPerEndpoint,
 	})
 
@@ -125,7 +125,7 @@ func (c *StressTestChallenge) Execute(
 	var entityTotalMs int64
 
 	c.ReportProgress("stress-entities", map[string]any{
-		"concurrency":  concurrency,
+		"concurrency":    concurrency,
 		"total_requests": requestsPerEndpoint,
 	})
 

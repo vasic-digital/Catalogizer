@@ -170,11 +170,11 @@ func TestCalculateRelevanceScore(t *testing.T) {
 	rating8 := 8.0
 
 	tests := []struct {
-		name      string
-		result    SearchResult
-		query     string
-		year      *int
-		minScore  float64
+		name     string
+		result   SearchResult
+		query    string
+		year     *int
+		minScore float64
 	}{
 		{
 			name: "exact title match with year and rating",

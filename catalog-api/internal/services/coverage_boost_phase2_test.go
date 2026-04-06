@@ -465,9 +465,9 @@ func TestP2_TranslationService_HashText(t *testing.T) {
 	svc := NewTranslationService(zap.NewNop())
 
 	tests := []struct {
-		name     string
-		text     string
-		isShort  bool
+		name    string
+		text    string
+		isShort bool
 	}{
 		{"short_text", "Hello", true},
 		{"long_text", "This is a very long text that exceeds fifty characters in length for sure certainly yes", false},
@@ -2382,4 +2382,3 @@ func TestP2_LocalizationService_EditConfiguration(t *testing.T) {
 	require.NoError(t, err)
 	assert.NotEmpty(t, editedJSON)
 }
-

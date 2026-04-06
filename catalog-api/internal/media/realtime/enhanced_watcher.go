@@ -65,10 +65,11 @@ type EnhancedChangeEvent struct {
 // internal fsnotify wiring.
 //
 // Interface mapping:
-//   EnhancedChangeWatcher.WatchPath    -> watcher.Watch(ctx, paths...)
-//   EnhancedChangeWatcher.Stop         -> watcher.Close()
-//   EnhancedChangeWatcher.changeQueue  -> watcher.Events() channel
-//   EnhancedChangeWatcher.debounceMap  -> watcher's built-in debouncing
+//
+//	EnhancedChangeWatcher.WatchPath    -> watcher.Watch(ctx, paths...)
+//	EnhancedChangeWatcher.Stop         -> watcher.Close()
+//	EnhancedChangeWatcher.changeQueue  -> watcher.Events() channel
+//	EnhancedChangeWatcher.debounceMap  -> watcher's built-in debouncing
 func NewModuleWatcher() (watchermod.Watcher, error) {
 	return watchermod.New(&watchermod.Config{
 		Recursive:     true,

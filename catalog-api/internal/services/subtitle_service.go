@@ -127,18 +127,17 @@ type SubtitleLine struct {
 
 // SubtitleTrack represents a subtitle track in the database
 
-
 // SubtitleUploadRequest represents a subtitle upload request
 type SubtitleUploadRequest struct {
-	MediaID     int64   `json:"media_item_id" form:"media_item_id"`
-	Language    string  `json:"language" form:"language"`
-	LanguageCode string `json:"language_code" form:"language_code"`
-	Format      string  `json:"format" form:"format"`
-	Content     string  `json:"content"` // File content as string
-	IsDefault   bool    `json:"is_default" form:"is_default"`
-	IsForced    bool    `json:"is_forced" form:"is_forced"`
-	Encoding    string  `json:"encoding" form:"encoding"`
-	SyncOffset  float64 `json:"sync_offset" form:"sync_offset"`
+	MediaID      int64   `json:"media_item_id" form:"media_item_id"`
+	Language     string  `json:"language" form:"language"`
+	LanguageCode string  `json:"language_code" form:"language_code"`
+	Format       string  `json:"format" form:"format"`
+	Content      string  `json:"content"` // File content as string
+	IsDefault    bool    `json:"is_default" form:"is_default"`
+	IsForced     bool    `json:"is_forced" form:"is_forced"`
+	Encoding     string  `json:"encoding" form:"encoding"`
+	SyncOffset   float64 `json:"sync_offset" form:"sync_offset"`
 }
 
 // SubtitleUploadResponse represents the response for subtitle upload
@@ -993,7 +992,7 @@ func (s *SubtitleService) saveSubtitleTrack(ctx context.Context, mediaItemID int
 	if track.VerifiedSync {
 		verifiedSync = 1
 	}
-	
+
 	// Handle pointers for optional fields
 	var content interface{}
 	if track.Content != nil {
@@ -1001,7 +1000,7 @@ func (s *SubtitleService) saveSubtitleTrack(ctx context.Context, mediaItemID int
 	} else {
 		content = ""
 	}
-	
+
 	var path interface{}
 	if track.Path != nil {
 		path = *track.Path
@@ -1102,12 +1101,12 @@ func (s *SubtitleService) SaveUploadedSubtitle(ctx context.Context, req *Subtitl
 
 	// Return upload response
 	response := &SubtitleUploadResponse{
-		Success:     true,
-		SubtitleID:  track.ID,
-		Message:     "Subtitle uploaded successfully",
-		Language:    req.Language,
-		Format:      req.Format,
-		Size:        int64(len(req.Content)),
+		Success:    true,
+		SubtitleID: track.ID,
+		Message:    "Subtitle uploaded successfully",
+		Language:   req.Language,
+		Format:     req.Format,
+		Size:       int64(len(req.Content)),
 	}
 
 	s.logger.Info("Uploaded subtitle saved successfully",

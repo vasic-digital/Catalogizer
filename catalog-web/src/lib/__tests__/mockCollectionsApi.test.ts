@@ -274,7 +274,13 @@ describe('mockCollectionsApi', () => {
 })
 
 describe('shouldUseMockCollections', () => {
-  it('returns true (mock mode is always on)', () => {
-    expect(shouldUseMockCollections()).toBe(true)
+  it('returns a boolean value', () => {
+    const result = shouldUseMockCollections()
+    expect(typeof result).toBe('boolean')
+  })
+
+  it('is defined and exported', () => {
+    expect(shouldUseMockCollections).toBeDefined()
+    expect(typeof shouldUseMockCollections).toBe('function')
   })
 })

@@ -13,6 +13,7 @@ import (
 	"time"
 
 	"catalogizer/internal/auth"
+	"catalogizer/internal/logging"
 	"catalogizer/models"
 	"catalogizer/repository"
 
@@ -424,7 +425,9 @@ func (s *ConversionService) convertPDFToHTML(job *models.ConversionJob) error {
 		if _, err := os.Stat(libreOutput); err == nil {
 			if libreOutput != job.TargetPath {
 				if err := os.Rename(libreOutput, job.TargetPath); err != nil {
-					fmt.Printf("Warning: Failed to rename LibreOffice output: %v\n", err)
+					if logging.Logger != nil {
+						logging.With(logging.ErrorField(err)).Warn("Failed to rename LibreOffice output")
+					}
 				}
 			}
 		}
@@ -628,7 +631,9 @@ func (s *ConversionService) handleConversionSuccess(job *models.ConversionJob) {
 
 	err := s.conversionRepo.UpdateJob(job)
 	if err != nil {
-		fmt.Printf("Failed to update completed job %d: %v\n", job.ID, err)
+		if logging.Logger != nil {
+			logging.With(logging.Int("job_id", job.ID), logging.ErrorField(err)).Warn("Failed to update completed conversion job")
+		}
 	}
 
 	s.notifyUser(job, "Conversion completed successfully")
@@ -648,7 +653,9 @@ func (s *ConversionService) handleConversionError(job *models.ConversionJob, con
 
 	err := s.conversionRepo.UpdateJob(job)
 	if err != nil {
-		fmt.Printf("Failed to update failed job %d: %v\n", job.ID, err)
+		if logging.Logger != nil {
+			logging.With(logging.Int("job_id", job.ID), logging.ErrorField(err)).Warn("Failed to update failed conversion job")
+		}
 	}
 
 	s.notifyUser(job, fmt.Sprintf("Conversion failed: %s", conversionError.Error()))
@@ -656,7 +663,13 @@ func (s *ConversionService) handleConversionError(job *models.ConversionJob, con
 
 func (s *ConversionService) notifyUser(job *models.ConversionJob, message string) {
 	// In a full implementation, this would send notifications via email, push, etc.
-	fmt.Printf("Notification for user %d: %s (Job %d)\n", job.UserID, message, job.ID)
+	if logging.Logger != nil {
+		logging.With(
+			logging.Int("user_id", job.UserID),
+			logging.Int("job_id", job.ID),
+			logging.String("message", message),
+		).Debug("Conversion notification")
+	}
 }
 
 func (s *ConversionService) GetUserJobs(userID int, status *string, limit, offset int) ([]models.ConversionJob, error) {
@@ -868,7 +881,9 @@ func (s *ConversionService) ProcessJobQueue() error {
 
 		err := s.StartConversion(job.ID)
 		if err != nil {
-			fmt.Printf("Failed to start conversion job %d: %v\n", job.ID, err)
+			if logging.Logger != nil {
+				logging.With(logging.Int("job_id", job.ID), logging.ErrorField(err)).Error("Failed to start conversion job")
+			}
 		}
 	}
 

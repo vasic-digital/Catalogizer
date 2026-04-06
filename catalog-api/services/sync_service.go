@@ -13,6 +13,7 @@ import (
 	"sync"
 	"time"
 
+	"catalogizer/internal/logging"
 	"catalogizer/models"
 	"catalogizer/repository"
 
@@ -895,17 +896,27 @@ func (s *SyncService) handleSyncError(session *models.SyncSession, syncError err
 func (s *SyncService) updateSyncProgress(session *models.SyncSession, message string) {
 	// In a full implementation, this would update the session with current progress
 	// For now, we just log the progress update
-	fmt.Printf("Sync progress for session %d: %s\n", session.ID, message)
+	if logging.Logger != nil {
+		logging.With(logging.Int("session_id", session.ID), logging.String("message", message)).Debug("Sync progress")
+	}
 }
 
 func (s *SyncService) logSyncError(session *models.SyncSession, message string) {
 	// In a full implementation, this would log to a sync error log
-	fmt.Printf("Sync error for session %d: %s\n", session.ID, message)
+	if logging.Logger != nil {
+		logging.With(logging.Int("session_id", session.ID), logging.String("message", message)).Warn("Sync error")
+	}
 }
 
 func (s *SyncService) notifyUser(session *models.SyncSession, message string) {
 	// In a full implementation, this would send notifications
-	fmt.Printf("Notification for user %d: %s (Session %d)\n", session.UserID, message, session.ID)
+	if logging.Logger != nil {
+		logging.With(
+			logging.Int("user_id", session.UserID),
+			logging.Int("session_id", session.ID),
+			logging.String("message", message),
+		).Debug("Sync notification")
+	}
 }
 
 func (s *SyncService) GetUserSessions(userID int, limit, offset int) ([]models.SyncSession, error) {
@@ -969,7 +980,12 @@ func (s *SyncService) ProcessScheduledSyncs() error {
 		if s.shouldRunSchedule(&schedule) {
 			_, err := s.StartSync(schedule.EndpointID, schedule.UserID)
 			if err != nil {
-				fmt.Printf("Failed to start scheduled sync for endpoint %d: %v\n", schedule.EndpointID, err)
+				if logging.Logger != nil {
+					logging.With(
+						logging.Int("endpoint_id", schedule.EndpointID),
+						logging.ErrorField(err),
+					).Error("Failed to start scheduled sync")
+				}
 			}
 		}
 	}

@@ -1204,16 +1204,16 @@ func TestLocalization_UpdateUserLocalization_WithDB(t *testing.T) {
 	ctx := context.Background()
 
 	step := &WizardLocalizationStep{
-		UserID:          1,
-		PrimaryLanguage: "en",
+		UserID:            1,
+		PrimaryLanguage:   "en",
 		SubtitleLanguages: []string{"en"},
-		LyricsLanguages: []string{"en"},
+		LyricsLanguages:   []string{"en"},
 		MetadataLanguages: []string{"en"},
-		PreferredRegion: "US",
-		DateFormat:      "MM/DD/YYYY",
-		TimeFormat:      "12h",
-		NumberFormat:    "en-US",
-		CurrencyCode:    "USD",
+		PreferredRegion:   "US",
+		DateFormat:        "MM/DD/YYYY",
+		TimeFormat:        "12h",
+		NumberFormat:      "en-US",
+		CurrencyCode:      "USD",
 	}
 
 	_, err := svc.SetupUserLocalization(ctx, step)
@@ -1221,11 +1221,11 @@ func TestLocalization_UpdateUserLocalization_WithDB(t *testing.T) {
 
 	// Update multiple fields
 	err = svc.UpdateUserLocalization(ctx, 1, map[string]interface{}{
-		"primary_language": "de",
-		"preferred_region": "DE",
-		"currency_code":    "EUR",
+		"primary_language":    "de",
+		"preferred_region":    "DE",
+		"currency_code":       "EUR",
 		"secondary_languages": []string{"en", "fr"},
-		"auto_translate":   true,
+		"auto_translate":      true,
 	})
 	require.NoError(t, err)
 

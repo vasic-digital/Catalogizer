@@ -3,10 +3,11 @@ package middleware
 import (
 	"context"
 	"errors"
-	"fmt"
 	"net/http"
 	"strconv"
 	"time"
+
+	"catalogizer/internal/logging"
 
 	"github.com/gin-gonic/gin"
 	"github.com/redis/go-redis/v9"
@@ -116,7 +117,9 @@ func RedisRateLimit(config RedisRateLimiterConfig) gin.HandlerFunc {
 		// redis.Nil is expected when the key doesn't exist yet (first request)
 		if err != nil && !errors.Is(err, redis.Nil) {
 			// Log the Redis error
-			fmt.Printf("Redis rate limiter error: %v\n", err)
+			if logging.Logger != nil {
+				logging.With(logging.ErrorField(err)).Warn("Redis rate limiter error")
+			}
 
 			// When Redis is unavailable, we fail closed for security
 			// This prevents bypassing rate limiting when Redis is down
@@ -154,8 +157,13 @@ func RedisRateLimit(config RedisRateLimiterConfig) gin.HandlerFunc {
 			}
 
 			// Log rate limit attempt
-			fmt.Printf("Rate limit exceeded for key: %s, IP: %s, Path: %s\n",
-				key, c.ClientIP(), c.Request.URL.Path)
+			if logging.Logger != nil {
+				logging.With(
+					logging.String("key", key),
+					logging.String("ip", c.ClientIP()),
+					logging.String("path", c.Request.URL.Path),
+				).Warn("Rate limit exceeded")
+			}
 
 			c.JSON(http.StatusTooManyRequests, gin.H{
 				"error":       "rate_limit_exceeded",
@@ -209,7 +217,9 @@ func SlidingWindowRedisRateLimit(config RedisRateLimiterConfig) gin.HandlerFunc 
 
 		// Handle Redis errors gracefully
 		if err != nil {
-			fmt.Printf("Redis sliding window rate limiter error: %v\n", err)
+			if logging.Logger != nil {
+				logging.With(logging.ErrorField(err)).Warn("Redis sliding window rate limiter error")
+			}
 			c.Next()
 			return
 		}
@@ -229,8 +239,13 @@ func SlidingWindowRedisRateLimit(config RedisRateLimiterConfig) gin.HandlerFunc 
 			}
 
 			// Log rate limit attempt
-			fmt.Printf("Sliding window rate limit exceeded for key: %s, IP: %s, Path: %s\n",
-				key, c.ClientIP(), c.Request.URL.Path)
+			if logging.Logger != nil {
+				logging.With(
+					logging.String("key", key),
+					logging.String("ip", c.ClientIP()),
+					logging.String("path", c.Request.URL.Path),
+				).Warn("Sliding window rate limit exceeded")
+			}
 
 			c.JSON(http.StatusTooManyRequests, gin.H{
 				"error":       "rate_limit_exceeded",
@@ -305,7 +320,9 @@ func TokenBucketRedisRateLimit(
 			now, tokens, refillRate, refillInterval.Seconds(), 1).Result()
 
 		if err != nil {
-			fmt.Printf("Redis token bucket rate limiter error: %v\n", err)
+			if logging.Logger != nil {
+				logging.With(logging.ErrorField(err)).Warn("Redis token bucket rate limiter error")
+			}
 			c.Next()
 			return
 		}

@@ -4,11 +4,111 @@ Essential commands and style guidelines for AI agents working in the Catalogizer
 
 ## Project Overview
 
-Multi-platform media collection manager: **catalog-api** (Go/Gin backend), **catalog-web** (React/TS/Vite), **catalogizer-desktop** & **installer-wizard** (Tauri), **catalogizer-android** & **catalogizer-androidtv** (Kotlin/Compose), **catalogizer-api-client** (TS library).
+**Catalogizer** is a comprehensive multi-platform media collection management system that automatically detects, categorizes, and organizes media files across multiple storage protocols (SMB, FTP, NFS, WebDAV, local filesystem). It provides real-time monitoring, advanced analytics, and modern client applications.
+
+### System Components
+
+| Component | Technology | Purpose |
+|-----------|------------|---------|
+| **catalog-api** | Go 1.25 / Gin | REST API backend with HTTP/3 (QUIC) support |
+| **catalog-web** | React 18 / TypeScript / Vite | Modern responsive web application |
+| **catalogizer-desktop** | Tauri (Rust + React) | Cross-platform desktop application |
+| **installer-wizard** | Tauri (Rust + React) | SMB configuration and installation wizard |
+| **catalogizer-android** | Kotlin / Jetpack Compose / Hilt | Android mobile application |
+| **catalogizer-androidtv** | Kotlin / Jetpack Compose / Hilt | Android TV application with channel integration |
+| **catalogizer-api-client** | TypeScript | Reusable API client library |
+
+### Version Information
+- Current Version: 2.2.0 (build 18)
+- Go Version: 1.25.7
+- Node.js: 18+
+- Kotlin: 1.9.22
+- Android Gradle Plugin: 8.2.2
+
+## Submodule Architecture
+
+The project uses 41 independent git submodules under the `digital.vasic.*` and `@vasic-digital/*` namespace for generic, reusable functionality. Each submodule has its own repository, tests, and documentation.
+
+### Go Modules (23 modules)
+
+Wired via `replace` directives in `catalog-api/go.mod`:
+
+| Module | Path | Package | Purpose |
+|--------|------|---------|---------|
+| Assets | `Assets/` | `digital.vasic.assets` | Asset management (lazy loading, serving, defaults) |
+| Auth | `Auth/` | `digital.vasic.auth` | JWT authentication, bcrypt password helpers |
+| Cache | `Cache/` | `digital.vasic.cache` | Redis-backed caching with TTL management |
+| Challenges | `Challenges/` | `digital.vasic.challenges` | Structured test scenario framework |
+| Concurrency | `Concurrency/` | `digital.vasic.concurrency` | Retry with backoff, offline cache patterns |
+| Config | `Config/` | `digital.vasic.config` | Configuration management (env, file, validation) |
+| Containers | `Containers/` | `digital.vasic.containers` | Container discovery and service port detection |
+| Database | `Database/` | `digital.vasic.database` | Migration patterns, dual SQLite/PostgreSQL support |
+| Discovery | `Discovery/` | `digital.vasic.discovery` | Network/service discovery (SMB, mDNS) |
+| Entities | `Entities/` | `digital.vasic.entities` | Entity model definitions |
+| EventBus | `EventBus/` | `digital.vasic.eventbus` | Typed event channels and pub/sub |
+| Filesystem | `Filesystem/` | `digital.vasic.filesystem` | Unified multi-protocol client (SMB, FTP, NFS, WebDAV, local) |
+| Lazy | `Lazy/` | `digital.vasic.lazy` | Generic lazy loading utilities |
+| Media | `Media/` | `digital.vasic.media` | Media detection, analysis, and metadata extraction |
+| Memory | `Memory/` | `digital.vasic.memory` | Memory leak detection |
+| Middleware | `Middleware/` | `digital.vasic.middleware` | HTTP middleware (CORS, logging, recovery, request ID) |
+| Observability | `Observability/` | `digital.vasic.observability` | Prometheus metrics and OpenTelemetry integration |
+| RateLimiter | `RateLimiter/` | `digital.vasic.ratelimiter` | Pluggable rate limiting (memory, Redis, sliding window) |
+| Recovery | `Recovery/` | `digital.vasic.recovery` | Circuit breaker and recovery patterns |
+| Security | `Security/` | `digital.vasic.security` | CORS config, CSP headers, request sanitization |
+| Storage | `Storage/` | `digital.vasic.storage` | Object storage abstraction (MinIO/S3-compatible) |
+| Streaming | `Streaming/` | `digital.vasic.streaming` | WebSocket hub with room/topic support |
+| Watcher | `Watcher/` | `digital.vasic.watcher` | Filesystem watcher with debouncing and filtering |
+
+### TypeScript/React Modules (9 modules)
+
+Linked via `file:../` in `catalog-web/package.json`:
+
+| Module | Path | Package | Purpose |
+|--------|------|---------|---------|
+| Auth Context | `Auth-Context-React/` | `@vasic-digital/auth-context` | React authentication context provider |
+| API Client TS | `Catalogizer-API-Client-TS/` | `@vasic-digital/catalogizer-api-client` | TypeScript API client |
+| Collection Manager | `Collection-Manager-React/` | `@vasic-digital/collection-manager` | Collection management UI components |
+| Dashboard Analytics | `Dashboard-Analytics-React/` | `@vasic-digital/dashboard-analytics` | Dashboard and analytics components |
+| Media Browser | `Media-Browser-React/` | `@vasic-digital/media-browser` | Media browsing components |
+| Media Player | `Media-Player-React/` | `@vasic-digital/media-player` | Media playback components |
+| Media Types | `Media-Types-TS/` | `@vasic-digital/media-types` | Shared media type definitions |
+| UI Components | `UI-Components-React/` | `@vasic-digital/ui-components` | Reusable React UI component library |
+| WebSocket Client | `WebSocket-Client-TS/` | `@vasic-digital/websocket-client` | WebSocket client with React hooks |
+
+### HelixQA / AI Submodules (9 modules)
+
+| Module | Path | Purpose |
+|--------|------|---------|
+| HelixQA | `HelixQA/` | LLM-driven autonomous QA testing pipeline |
+| DocProcessor | `DocProcessor/` | Document processing |
+| LLMOrchestrator | `LLMOrchestrator/` | LLM orchestration layer |
+| LLMProvider | `LLMProvider/` | LLM provider abstraction |
+| VisionEngine | `VisionEngine/` | Vision model integration |
+| ReplayBuffer | `ReplayBuffer/` | Experience replay for QA sessions |
+| ScreenDiff | `ScreenDiff/` | Screenshot diff analysis |
+| TrainingCollector | `TrainingCollector/` | Training data collection |
+| VisualRegression | `VisualRegression/` | Visual regression testing |
+
+### Submodule Commands
+
+```bash
+# Initialize submodules after cloning
+git submodule init && git submodule update --recursive
+
+# Set up a new submodule with upstream remotes
+./scripts/setup-submodule.sh ModuleName [--create-repos] [--go|--ts|--kotlin]
+
+# Push to all upstreams (from within submodule)
+cd SubmoduleName && commit "message"
+
+# Install upstream remotes (from within submodule)
+cd SubmoduleName && install_upstreams
+```
 
 ## Build / Lint / Test Commands
 
 ### Backend (catalog-api)
+
 ```bash
 cd catalog-api
 go run main.go                                          # dev server (writes .service-port)
@@ -21,6 +121,7 @@ go fmt ./... && go vet ./...                            # format + lint
 ```
 
 ### Frontend (catalog-web)
+
 ```bash
 cd catalog-web
 npm run dev                                             # dev server (port 3000, proxies /api)
@@ -37,6 +138,7 @@ npm run test:e2e -- --grep "test title"                 # single E2E test
 ```
 
 ### Desktop (catalogizer-desktop / installer-wizard)
+
 ```bash
 cd catalogizer-desktop  # or installer-wizard
 npm run tauri:dev       # dev with hot reload
@@ -45,6 +147,7 @@ npm run test            # unit tests
 ```
 
 ### Android (catalogizer-android / catalogizer-androidtv)
+
 ```bash
 cd catalogizer-android  # or catalogizer-androidtv
 ./gradlew test                                          # all unit tests
@@ -54,12 +157,14 @@ cd catalogizer-android  # or catalogizer-androidtv
 ./gradlew lintKotlin                                    # lint
 ```
 
-### Container Operations
+### Full System
+
 ```bash
 podman-compose -f docker-compose.dev.yml up             # dev environment
-podman-compose down                                     # stop services
-./scripts/services-up.sh                                # start all
-./scripts/services-down.sh                              # stop all
+./scripts/services-up.sh                                # start all services
+./scripts/services-down.sh                              # stop all services
+./scripts/run-all-tests.sh                              # all tests + security scans
+./scripts/release-build.sh --container --force --skip-tests  # release build
 ```
 
 ## Code Style - Go Backend
@@ -115,7 +220,8 @@ podman-compose down                                     # stop services
 
 - **Naming**: PascalCase classes, camelCase functions/variables.
 - **Architecture**: MVVM — Compose UI → ViewModel (StateFlow) → Repository → Room + Retrofit.
-- **DI**: Manual `DependencyContainer`. Async: `suspend` functions, `Flow`/`StateFlow`, Paging 3.
+- **DI**: Hilt for dependency injection.
+- **Async**: `suspend` functions, `Flow`/`StateFlow`, Paging 3.
 - **Error handling**: Sealed `Result` classes for operation outcomes.
 - **Testing**: JUnit 4 + MockK/Mockito. Coroutines via `kotlinx-coroutines-test`.
 - **Build**: JDK 21 with `--add-opens` JVM args for kapt compatibility.
@@ -123,6 +229,7 @@ podman-compose down                                     # stop services
 ## Database (Dual Dialect)
 
 SQLite (dev) and PostgreSQL (prod) via `database.DB` wrapper:
+
 ```go
 db.Query("SELECT * FROM table WHERE created_at > ?", cutoff)
 if db.Dialect().IsPostgres() {
@@ -132,35 +239,331 @@ if db.Dialect().IsPostgres() {
 }
 ```
 
-## Constraints
+- `RewritePlaceholders()` — `?` → `$1, $2, ...` for PostgreSQL
+- `RewriteInsertOrIgnore()` — `INSERT OR IGNORE` → `ON CONFLICT DO NOTHING`
+- `BooleanLiterals()` — `= 0/1` → `= FALSE/TRUE` for known boolean columns
+- `InsertReturningID()` and `TxInsertReturningID()` replace `LastInsertId()` (PostgreSQL uses `RETURNING id`)
+- **SQLite WAL mode**: Explicit `PRAGMA journal_mode=WAL` after connection
+- Migrations in `database/migrations/` — separate SQLite and PostgreSQL variants
 
-- **NEVER commit API keys/secrets** to git. Use `.env.example` with placeholders. Rotate immediately if leaked.
-- **Container runtime**: Podman exclusively (not Docker). Production builds and QA must run in containers.
-- **GitHub Actions**: PERMANENTLY DISABLED. No `.github/workflows/` files.
-- **Host resource limits (30-40% max)**: Go tests use `GOMAXPROCS=3 -p 2 -parallel 2`. Containers: PostgreSQL `--cpus=1 --memory=2g`, API `--cpus=2 --memory=4g`, Web `--cpus=1 --memory=2g`. Total: max 4 CPUs, 8 GB RAM.
-- **HTTP/3 (QUIC) with Brotli**: Mandatory. Fallback: HTTP/2 + gzip.
-- **Zero-warning policy**: No console errors/warnings, no failed network requests. Unimplemented features need stub endpoints returning valid empty responses.
-- **Config precedence**: env vars > `.env` > `config.json` > defaults.
-- **PostCSS**: Must use `module.exports` (CommonJS) for Node 18 compat.
+## Architecture Overview
+
+### catalog-api (Go/Gin)
+
+Handler → Service → Repository → SQLite/PostgreSQL. Routes under `/api/v1` in `main.go`.
+
+- **Dual package layout**: top-level `handlers/`, `repository/`, `services/`, `middleware/` for domain logic; `internal/handlers/`, `internal/services/`, `internal/middleware/` for infrastructure concerns.
+- `filesystem/interface.go` defines `UnifiedClient`; `filesystem/factory.go` creates per-protocol clients. New protocols: implement the interface.
+- `internal/smb/`: circuit breaker + offline cache + exponential backoff retry.
+- `internal/media/detector/` → `analyzer/` → `providers/` (TMDB, IMDB, etc.): detection pipeline.
+- `internal/media/realtime/`: event bus → WebSocket → clients.
+- `internal/auth/` + `middleware/`: JWT auth with role-based access.
+- `internal/metrics/`: Prometheus metrics (exposed via `/metrics`).
+- **Dynamic port binding**: On startup, writes chosen port to `.service-port` file. Frontend reads this for API proxy target.
+- **HTTP/3 (QUIC)**: Uses `quic-go/http3` with self-signed TLS certs generated at startup.
+- **Redis**: Optional caching layer via `go-redis/v9`.
+- **Version injection**: `Version`, `BuildNumber`, `BuildDate` via `-ldflags` at build time.
+- `internal/lifecycle/`: `LazyServiceRegistry` for deferred service initialization with dependency ordering.
+- `internal/concurrency/`: Semaphore-based concurrency control for limiting parallel operations.
+- `internal/httpclient/`: Pooled HTTP client with connection reuse, timeouts, and retry logic.
+
+### Media Entity System
+
+Scanned files are transformed into structured media entities via a post-scan aggregation pipeline:
+
+```
+UniversalScanner (scan completes)
+       ↓ (post-scan hook)
+AggregationService.AggregateAfterScan()
+  ├── Title parser (regex: movie, TV, music, game, software)
+  ├── MediaItem creation/update (media_items table)
+  ├── MediaFile linking (media_files junction table)
+  ├── Hierarchy builder (TV: show→season→episode, Music: artist→album→song)
+  └── Duplicate detection (same title + type + year)
+       ↓
+Entity API (/api/v1/entities)
+       ↓
+Entity Browser UI (/browse, /entity/:id)
+```
+
+**11 media types** (seeded in `media_types` table): movie, tv_show, tv_season, tv_episode, music_artist, music_album, song, game, software, book, comic.
+
+### catalog-web (React/TypeScript/Vite)
+
+AuthProvider → WebSocketProvider → Router.
+
+Key tech: React Query (`@tanstack/react-query`) for server state, Zustand for client state, Tailwind CSS for styling, React Hook Form + Zod for forms, framer-motion for animations, Vitest for unit tests, Playwright for E2E tests.
+
+- Auth-gated routes via `ProtectedRoute`.
+- Path aliases configured in `vite.config.ts`.
+- API proxy: reads `../catalog-api/.service-port` at dev server startup to resolve backend port (falls back to 8080).
+- Build output split into vendor chunks: `vendor` (react), `router`, `ui`, `charts`, `utils`.
+
+### Android TV Home Screen Channels (v2.3.0)
+
+Full integration with Android TV's channel API (`androidx.tvprovider`):
+- Default "Catalogizer Picks" channel auto-created on launch
+- Dynamic per-category channels (one per media type with content)
+- System Watch Next row for partially-watched items + auto-next-episode
+- Deep linking via `catalogizer://media/{id}?type={type}`
+- `WorkManager` periodic sync (6h) + app-launch + SyncService triggers
+- Full cleanup on logout
+
+Key files: `data/tv/TvChannelRepository.kt`, `data/tv/ChannelProgramMapper.kt`, `data/tv/WatchNextManager.kt`, `data/tv/TvChannelSyncWorker.kt`, `ui/ChannelDeepLinkActivity.kt`.
 
 ## Challenge System
 
-All challenge operations executed by compiled binaries only (catalog-api service). Never use curl/scripts for API endpoints. Registered in `catalog-api/challenges/register.go`.
+`digital.vasic.challenges` framework integrated via `Challenges/` submodule. Challenges are Go structs embedding `challenge.BaseChallenge` with custom `Execute()`. Registered in `catalog-api/challenges/register.go` via `RegisterAll()`, exposed via `/api/v1/challenges` REST endpoints. Challenge bank definitions loaded from `challenges/config/`.
 
-## Quick Setup
+**All challenge operations MUST be executed exclusively by system deliverables (compiled binaries) — the catalog-api service and other Catalogizer applications. Never use custom scripts, curl commands, or third-party tools to trigger API endpoints within challenge execution.**
 
-1. `git submodule init && git submodule update --recursive`
-2. Backend: `cd catalog-api && go run main.go`
-3. Frontend: `cd catalog-web && npm run dev`
-4. Access: http://localhost:3000 (web), http://localhost:8080 (API)
+Key constraints:
+- `RunAll` is synchronous/blocking — no other challenge can run until it finishes.
+- Progress-based liveness detection: 5-minute stale threshold kills stuck challenges.
+- `challenge.NewConfig()` sets Timeout=5min by default — zero it to use runner's timeout.
+- `config.json` `write_timeout` must be 900 (not 30) for long-running challenge RunAll.
+
+### User Flow Automation
+
+Multi-platform user flow automation via `Challenges/pkg/userflow/`. 174 Catalogizer-specific challenges across 4 platform groups:
+
+| File | Platform | Challenges |
+|------|----------|-----------|
+| `userflow_api.go` | Go API (HTTP) | 49 |
+| `userflow_web.go` | React web (Playwright) | 59 |
+| `userflow_desktop.go` | Tauri desktop + wizard | 28 |
+| `userflow_mobile.go` | Android + Android TV | 38 |
+
+## Docker Compose Files
+
+| File | Purpose |
+|------|---------|
+| `docker-compose.yml` | Production stack |
+| `docker-compose.dev.yml` | Development environment |
+| `docker-compose.build.yml` | Containerized build pipeline |
+| `docker-compose.test.yml` | Test stack (API, web, Playwright; `network_mode: host`) |
+| `docker-compose.test-infra.yml` | Test infrastructure services |
+| `docker-compose.security.yml` | Security scanning tools |
+| `docker-compose.qa.yml` | QA environment |
+| `docker-compose.qa-robot.yml` | QA robot configuration |
+
+## Container Runtime
+
+**Always use Podman** — this project uses Podman exclusively (no Docker). All container commands use `podman`/`podman-compose`.
+
+```bash
+podman-compose -f docker-compose.dev.yml up       # dev env
+podman-compose -f docker-compose.yml config --quiet  # validate
+podman run / podman build / podman ps              # single container commands
+```
+
+Critical container notes:
+- Must use `podman build --network host` — default container networking has SSL issues.
+- Must use `podman run --network host` for builds.
+- Set `GOTOOLCHAIN=local` to prevent Go auto-downloading newer toolchain versions.
+- Use fully qualified image names (`docker.io/library/...`) — short names fail without TTY.
+- Set `APPIMAGE_EXTRACT_AND_RUN=1` in containers for Tauri AppImage bundling (no FUSE).
+- API container needs `--add-host=synology.local:192.168.0.241` for NAS access.
+
+## Constraints
+
+### CRITICAL: API Keys and Secrets — NEVER Commit to Git
+
+- **Never** commit `.env` files containing real API keys, tokens, or secrets
+- **Never** hardcode API keys in source code, CLAUDE.md, AGENTS.md, or any tracked file
+- Use `.env.example` with placeholder values only (e.g., `YOUR_API_KEY_HERE`)
+- Verify `.gitignore` covers all `.env` files before every commit
+- If an API key is accidentally committed, **rotate it immediately**
+- All submodules MUST have `.env` in their `.gitignore`
+- Pre-commit hooks scan for secrets via detect-secrets
+
+### CRITICAL: Git Access via SSH Only — NEVER Use HTTPS
+
+- **Always** use SSH (`git@github.com:user/repo.git`) for all Git operations
+- **Never** use HTTPS (`https://github.com/user/repo.git`) for Git access
+- Configure remotes to use SSH: `git remote set-url origin git@github.com:user/repo.git`
+- For new clones: `git clone git@github.com:user/repo.git` — NOT `git clone https://...`
+- For GitLab, GitFlic, GitVerse, and all other Git hosts: use SSH protocol exclusively
+- HTTPS bypasses SSH key-based authentication and is less secure
+- Submodules MUST be configured with SSH URLs in `.gitmodules`
+- CI/CD scripts and automation MUST use SSH with deploy keys, never HTTPS with passwords/tokens
+
+### CRITICAL: HelixQA — FULLY LLM-DRIVEN Autonomous Testing
+
+HelixQA is a generic, universal QA tool driven entirely by LLM vision models. Pipeline: Learn → Plan → Execute → Curiosity → Analyze.
+
+**Non-negotiable rules:**
+- ALL navigation MUST be performed by real LLM vision models — the LLM sees a screenshot, decides the next action. Every single step.
+- NEVER write hardcoded tap coordinates, sleep timers, keystroke sequences, or fallback scripts.
+- Fix issues in HelixQA Go code (parsing, retry logic, prompts) — never work around with scripts.
+- Every connected ADB device MUST be tested (except `.devignore` entries).
+- QA priority: (1) Happy paths, (2) Standard flows, (3) Edge cases, (4) Adversarial.
+
+### GitHub Actions are PERMANENTLY DISABLED
+
+Do NOT create any GitHub Actions workflow files in `.github/workflows/`. CI/CD must be run locally.
+
+### All Builds, Services, and QA Testing MUST Use Containers (Podman)
+
+- **Builds**: Use `./scripts/release-build.sh --container` or `podman-compose -f docker-compose.build.yml`
+- **Services**: Use `podman-compose` to run catalog-api, catalog-web, and all supporting services
+- **QA Testing**: Use `./scripts/run-helixqa.sh` with containerized services
+- **Android Emulators**: Run in containers via `docker-compose.test.yml --profile android`
+- **Never build or run apps/services directly on bare metal** in production or QA contexts
+
+### CRITICAL: Host Resource Limits (30-40% Maximum)
+
+The host machine runs other mission-critical processes. All workloads MUST be limited to 30-40% of total host resources.
+
+- **Go tests**: `GOMAXPROCS=3 go test ./... -p 2 -parallel 2`
+- **Container CPU/memory limits** (mandatory):
+  - PostgreSQL: `--cpus=1 --memory=2g`
+  - API: `--cpus=2 --memory=4g`
+  - Web: `--cpus=1 --memory=2g`
+  - Builder: `--cpus=3 --memory=8g`
+- **Total container budget**: max 4 CPUs, 8 GB RAM across all running containers
+- **Challenges**: Run sequentially via the API, never in parallel
+- **Monitor**: `podman stats --no-stream` and `cat /proc/loadavg`
+
+### CRITICAL: HTTP/3 (QUIC) with Brotli Compression (Mandatory)
+
+All network communication MUST use **HTTP/3 (QUIC)** with **Brotli compression**. Fallback: HTTP/2 + gzip. Never HTTP/1.1 in production.
+
+- **catalog-api**: `quic-go/http3` server + Brotli middleware (`andybalholm/brotli`)
+- **catalog-web**: Served via HTTP/3-capable reverse proxy, Brotli-compressed static assets
+- **Tauri apps**: HTTP/3 client for API communication
+- **Android apps**: OkHttp with HTTP/3 (Cronet) + Brotli
+- **API client**: HTTP/3-capable fetch with Brotli Accept-Encoding
+
+### Zero Warning / Zero Error Policy
+
+All components must run with zero console warnings, zero console errors, and zero failed network requests in every environment.
+
+- No browser console errors or warnings. Every failed network request is a defect.
+- Every API endpoint the frontend calls must exist, return valid 2xx responses, and match expected shape.
+- No framework deprecation warnings. No WebSocket connection failures.
+- If a feature is not yet implemented, provide a stub endpoint that returns a valid empty response.
+
+## Environment Configuration
+
+### Config Precedence
+
+`env vars > .env > config.json > defaults`
+
+### Backend Environment Variables (.env)
+
+```env
+# Application
+APP_ENV=development
+LOG_LEVEL=debug
+API_PORT=8080
+
+# Database
+DATABASE_TYPE=postgres  # or sqlite
+POSTGRES_USER=catalogizer
+POSTGRES_PASSWORD=change_me_in_production
+POSTGRES_DB=catalogizer_dev
+POSTGRES_PORT=5432
+
+# For SQLite (alternative)
+# SQLITE_PATH=./catalogizer.db
+
+# Redis
+REDIS_PORT=6379
+REDIS_PASSWORD=
+
+# Security
+JWT_SECRET=your-super-secret-jwt-key-change-me-in-production
+
+# CORS
+CORS_ENABLED=true
+CORS_ORIGINS=http://localhost:3000,http://localhost:19006
+
+# SMB/File System
+SMB_ENABLED=true
+MEDIA_ROOT_PATH=./media
+
+# Metadata Providers (optional)
+TMDB_API_KEY=YOUR_TMDB_KEY_HERE
+OMDB_API_KEY=YOUR_OMDB_KEY_HERE
+
+# HelixQA / Vision Configuration
+HELIX_VISION_HOSTS=thinker.local,amber.local
+HELIX_VISION_MULTI_USER=milosvasic
+ASTICA_API_KEY=YOUR_ASTICA_API_KEY_HERE
+OPENAI_API_KEY=YOUR_OPENAI_KEY_HERE
+ANTHROPIC_API_KEY=YOUR_ANTHROPIC_KEY_HERE
+GEMINI_API_KEY=YOUR_GEMINI_API_KEY_HERE
+```
+
+## Testing Strategy
+
+### Test Organization
+
+- **Unit tests**: `*_test.go` files beside source code
+- **Integration tests**: `catalog-api/internal/tests/`, `catalog-api/tests/integration/`
+- **E2E tests**: Playwright in `catalog-web/e2e/`
+- **Challenge tests**: `catalog-api/challenges/` — structured test scenarios
+- **Stress tests**: `catalog-api/tests/stress/`
+- **Security tests**: `catalog-api/tests/security/`
+
+### Security Scanning
+
+```bash
+./scripts/security-scan.sh              # automated scanning
+./scripts/run-sonarqube-scan.sh         # SonarQube code quality
+./scripts/snyk-scan.sh                  # Snyk dependency scanning
+```
+
+Available tools:
+- `govulncheck` — Go stdlib/dependency vulnerabilities
+- `npm audit` — Frontend dependency vulnerabilities
+- Semgrep — Static analysis for security anti-patterns
+- Snyk, Trivy, Gosec via `docker-compose.security.yml`
+
+### QA Campaign Protocol (Mandatory)
+
+All QA campaigns MUST follow: **Rebuild → Execute all tests → Analyze results → Create tickets → Fix root causes → Create validation tests → Repeat**.
+
+Loop stops only on: all pass, fatal blocker, or nothing left.
+
+### Live Monitoring (Mandatory)
+
+All test execution requires real-time status: platform, app/service, test case ID, description, progress, result. All output logged to `docs/reports/qa-sessions/qa-session-<date>/logs/`.
+
+### Video Recording & Analysis (Mandatory)
+
+All device/emulator QA sessions MUST record video. All recordings MUST be analyzed for: visual glitches, UI/UX issues, content gaps, brand compliance, performance, crashes.
+
+### Fixes Validation Suite
+
+Every bug fix MUST include a bank test entry in `fixes-validation.yaml` to prevent regression. Tests are permanent.
 
 ## Key Files
 
 - `catalog-api/main.go` — API entry point, route registration
 - `catalog-api/database/dialect.go` — dual-dialect SQL rewriting
 - `catalog-api/filesystem/interface.go` — `UnifiedClient` protocol abstraction
+- `catalog-api/challenges/register.go` — challenge registration
 - `catalog-web/src/App.tsx` — React root (AuthProvider → WebSocketProvider → Router)
 - `catalog-web/vite.config.ts` — path aliases, API proxy config
+- `versions.json` — version tracking for all components
+- `.env.example` — environment variable template
+
+## Git
+
+6 push targets configured on `origin` remote (2x GitHub, 2x GitLab, GitFlic, GitVerse). GitVerse uses port 2222.
+
+```bash
+# Push to all remotes
+GIT_SSH_COMMAND="ssh -o BatchMode=yes" git push origin main
+
+# Add hosts to known_hosts first
+ssh-keyscan github.com gitlab.com gitflic.ru >> ~/.ssh/known_hosts
+ssh-keyscan -p 2222 gitverse.ru >> ~/.ssh/known_hosts
+```
+
+`releases/` and `reports/` are gitignored — build artifacts are not version-controlled.
 
 ## Pre-Commit Checklist
 
@@ -168,23 +571,45 @@ All challenge operations executed by compiled binaries only (catalog-api service
 - TypeScript: `cd catalog-web && npm run lint && npm run type-check`
 - Ensure zero console warnings/errors in browser
 - Verify `.gitignore` covers `.env` — never commit secrets
+- Run pre-commit hooks: `pre-commit run --all-files`
 
-## CRITICAL: QA Campaign Protocol (Mandatory)
+## Root Directory Structure (Mandatory Locations)
 
-### Iterative Test-Fix-Rebuild Loop
-All QA campaigns MUST follow: Rebuild → Execute all tests → Analyze results → Create tickets → Fix root causes → Create validation tests → Repeat. Loop stops only on: all pass, fatal blocker, or nothing left.
+New files MUST be placed in the correct directory. Do NOT add files to the project root unless they are conventional root files (README, LICENSE, .gitignore, docker-compose, etc.).
 
-### Live Monitoring
-All test execution requires real-time status: platform, app/service, test case ID, description, progress, result. All output logged to `docs/reports/qa-sessions/qa-session-<date>/logs/`.
+| Directory | Purpose |
+|-----------|---------|
+| `catalog-api/` | Go backend API service |
+| `catalog-web/` | React TypeScript web frontend |
+| `catalogizer-android/` | Android mobile app (Kotlin) |
+| `catalogizer-androidtv/` | Android TV app (Kotlin) |
+| `catalogizer-desktop/` | Tauri desktop application |
+| `catalogizer-api-client/` | TypeScript API client library |
+| `installer-wizard/` | Tauri installation wizard |
+| `challenges/` | Challenge bank definitions and runtime results |
+| `config/` | Infrastructure config files (nginx.conf, redis.conf) |
+| `scripts/` | Shell scripts (install, setup, CI/CD, testing runners) |
+| `scripts/lib/` | Per-component build scripts (`build-*.sh`) |
+| `tests/` | Standalone/integration test files |
+| `docs/` | All documentation markdown files |
+| `Assets/` | Static assets (images, HTML tutorials) — also a Go submodule |
+| `Build/` | Generic build framework submodule |
+| `build/` | Build output and container build context |
+| `deployment/` | Deployment configurations |
+| `monitoring/` | Monitoring and observability configs |
+| `tools/` | Development tooling |
+| `Upstreams/` | Git upstream remote configurations for submodules |
+| `HelixQA/` | LLM-driven autonomous QA testing |
+| `qa-results/` | QA session outputs and reports |
 
-### Video Recording & Analysis
-All device/emulator QA sessions MUST record video. All recordings MUST be analyzed for: visual glitches, UI/UX issues, content gaps, brand compliance, performance, crashes. Every defect gets a ticket with evidence.
+## Documentation
 
-### Comprehensive Test Coverage
-HelixQA banks MUST cover ALL features, ALL screens, ALL use cases with varied data (positive, negative, boundary, Cyrillic). No feature left untested. Banks: `full-qa-api.yaml`, `full-qa-web.yaml`, `full-qa-androidtv.yaml`, `full-qa-android.yaml`, `full-qa-cross-platform.yaml`, `fixes-validation.yaml`.
+Comprehensive documentation is available in `docs/`:
 
-### Fixes Validation Suite
-Every bug fix MUST include a bank test entry in `fixes-validation.yaml` to prevent regression. Tests are permanent.
-
-### Session Archival
-Every QA session produces a complete archive in `docs/reports/qa-sessions/qa-session-YYYY-MM-DD/` with: logs, challenge results, HelixQA reports, videos, screenshots, tickets, analysis, and a FINAL-REPORT.md.
+- `docs/INSTALLATION_GUIDE.md` — Installation instructions
+- `docs/DEVELOPER_GUIDE.md` — Developer setup and workflows
+- `docs/DEPLOYMENT_GUIDE.md` — Production deployment
+- `docs/SECURITY_TESTING_GUIDE.md` — Security best practices
+- `docs/architecture/ARCHITECTURE.md` — System design
+- `docs/api/API_DOCUMENTATION.md` — REST API reference
+- `docs/guides/TROUBLESHOOTING.md` — Common issues and solutions

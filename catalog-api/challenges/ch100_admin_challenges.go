@@ -922,4 +922,3 @@ func (c *AdminSystemInfoVersionChallenge) Execute(
 		resultStatus, start, assertions, nil, outputs, "",
 	), nil
 }
-

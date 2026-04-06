@@ -1,6 +1,7 @@
 package com.catalogizer.androidtv
 
 import android.content.Context
+import android.util.Log
 import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.PreferenceDataStoreFactory
 import androidx.datastore.preferences.core.Preferences
@@ -26,6 +27,8 @@ import kotlinx.serialization.json.Json
 import okhttp3.MediaType.Companion.toMediaType
 import retrofit2.Retrofit
 import java.util.concurrent.TimeUnit
+
+private const val TAG = "DependencyContainer"
 
 /**
  * Manual dependency injection container for the Android TV app. Provides singleton
@@ -53,7 +56,7 @@ class DependencyContainer(private val context: Context) {
     }
 
     // Current active base URL — read from settings or discovered at runtime
-    private var currentBaseUrl: String = BuildConfig.API_BASE_URL.ifBlank { "" }
+    private var currentBaseUrl: String = BuildConfig.API_BASE_URL ?: ""
 
     /**
      * Build OkHttpClient with auth interceptor and logging.
@@ -81,13 +84,24 @@ class DependencyContainer(private val context: Context) {
         // Retrofit requires a non-empty base URL. Use a placeholder when unconfigured;
         // all calls will fail with a connection error, which is the expected behavior
         // until the user configures a real server URL.
-        val effectiveUrl = baseUrl.ifBlank { "http://localhost:8080" }
-        return Retrofit.Builder()
-            .baseUrl(effectiveUrl.trimEnd('/') + "/")
-            .client(buildOkHttpClient())
-            .addConverterFactory(Json { ignoreUnknownKeys = true; coerceInputValues = true }.asConverterFactory("application/json".toMediaType()))
-            .build()
-            .create(CatalogizerApi::class.java)
+        val effectiveUrl = if (baseUrl.isBlank()) "http://localhost:8080" else baseUrl
+        val sanitizedUrl = effectiveUrl.trimEnd('/')
+        
+        return try {
+            Retrofit.Builder()
+                .baseUrl("$sanitizedUrl/")
+                .client(buildOkHttpClient())
+                .addConverterFactory(Json { 
+                    ignoreUnknownKeys = true 
+                    coerceInputValues = true 
+                }.asConverterFactory("application/json".toMediaType()))
+                .build()
+                .create(CatalogizerApi::class.java)
+        } catch (e: Exception) {
+            Log.e(TAG, "Failed to build API client: ${e.message}")
+            // Return a minimal API that will fail gracefully
+            throw IllegalStateException("Failed to initialize API: ${e.message}")
+        }
     }
 
     private var _api: CatalogizerApi? = null
@@ -95,8 +109,13 @@ class DependencyContainer(private val context: Context) {
     val api: CatalogizerApi
         get() {
             if (_api == null) {
-                _api = buildApi(currentBaseUrl)
-                authRepository.setApi(_api!!)
+                try {
+                    _api = buildApi(currentBaseUrl)
+                    authRepository.setApi(_api!!)
+                } catch (e: Exception) {
+                    Log.e(TAG, "Failed to create API: ${e.message}")
+                    throw e
+                }
             }
             return _api!!
         }
@@ -104,13 +123,28 @@ class DependencyContainer(private val context: Context) {
     // These use get() instead of `by lazy` because `api` can change at runtime
     // via switchServer(). Each access creates a fresh instance pointing to the current API.
     val mediaRepository: MediaRepository
-        get() = MediaRepository(context, api)
+        get() = try {
+            MediaRepository(context, api)
+        } catch (e: Exception) {
+            Log.e(TAG, "Failed to create MediaRepository: ${e.message}")
+            throw e
+        }
 
     val tvChannelRepository: TvChannelRepository
-        get() = TvChannelRepository(context, mediaRepository, settingsRepository)
+        get() = try {
+            TvChannelRepository(context, mediaRepository, settingsRepository)
+        } catch (e: Exception) {
+            Log.e(TAG, "Failed to create TvChannelRepository: ${e.message}")
+            throw e
+        }
 
     val watchNextManager: WatchNextManager
-        get() = WatchNextManager(context, mediaRepository)
+        get() = try {
+            WatchNextManager(context, mediaRepository)
+        } catch (e: Exception) {
+            Log.e(TAG, "Failed to create WatchNextManager: ${e.message}")
+            throw e
+        }
 
     // ViewModels
     fun createAuthViewModel(): AuthViewModel = AuthViewModel(
@@ -128,9 +162,15 @@ class DependencyContainer(private val context: Context) {
      * Call this when the user selects a discovered or manually entered server.
      */
     fun switchServer(newBaseUrl: String) {
-        currentBaseUrl = newBaseUrl.trimEnd('/')
-        _api = buildApi(currentBaseUrl)
-        authRepository.setApi(_api!!)
+        try {
+            currentBaseUrl = newBaseUrl.trimEnd('/')
+            _api = buildApi(currentBaseUrl)
+            authRepository.setApi(_api!!)
+            Log.d(TAG, "Switched to server: $currentBaseUrl")
+        } catch (e: Exception) {
+            Log.e(TAG, "Failed to switch server: ${e.message}")
+            throw e
+        }
     }
 
     /**
@@ -153,6 +193,7 @@ class DependencyContainer(private val context: Context) {
             val settings = settingsRepository.getSettingsAsync()
             if (settings.serverUrl.isNotBlank()) {
                 currentBaseUrl = settings.serverUrl
+                Log.d(TAG, "Loaded saved server URL: $currentBaseUrl")
             } else {
                 // No saved URL — try localhost (ADB reverse proxy)
                 val localhostUrl = "http://localhost:8080"
@@ -163,15 +204,21 @@ class DependencyContainer(private val context: Context) {
                     currentBaseUrl = resolvedUrl
                     settingsRepository.updateServerUrl(resolvedUrl)
                     settingsRepository.addServer(probe)
+                    Log.d(TAG, "Auto-discovered server: $resolvedUrl")
                 }
             }
-        } catch (_: Exception) {
+        } catch (e: Exception) {
+            Log.w(TAG, "Initialization error: ${e.message}")
             // Leave empty — LoginScreen handles unconfigured state
         }
         // Trigger API creation with the loaded URL (if any)
         _api = null // Force recreation with correct URL
         if (currentBaseUrl.isNotBlank()) {
-            api // Only create API if we have a URL
+            try {
+                api // Only create API if we have a URL
+            } catch (e: Exception) {
+                Log.w(TAG, "Failed to create API during init: ${e.message}")
+            }
         }
     }
 
@@ -179,7 +226,11 @@ class DependencyContainer(private val context: Context) {
      * Synchronous initialize (uses BuildConfig URL, settings loaded later).
      */
     fun initialize() {
-        api
+        try {
+            api
+        } catch (e: Exception) {
+            Log.w(TAG, "Synchronous init failed: ${e.message}")
+        }
     }
 
     companion object {
@@ -190,6 +241,13 @@ class DependencyContainer(private val context: Context) {
             return instance ?: synchronized(this) {
                 instance ?: DependencyContainer(context.applicationContext).also { instance = it }
             }
+        }
+        
+        /**
+         * Clear the singleton instance. Useful for testing.
+         */
+        fun clearInstance() {
+            instance = null
         }
     }
 }

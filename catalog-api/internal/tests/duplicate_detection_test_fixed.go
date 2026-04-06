@@ -26,10 +26,10 @@ func TestDuplicateDetectionService_Basic(t *testing.T) {
 	// Test duplicate detection request with empty database
 	ctx := context.Background()
 	req := &services.DuplicateDetectionRequest{
-		UserID:        1,
-		MinSimilarity:  0.8,
+		UserID:           1,
+		MinSimilarity:    0.8,
 		DetectionMethods: []string{"title", "metadata"},
-		BatchSize:      100,
+		BatchSize:        100,
 	}
 
 	// This should not fail even with empty database

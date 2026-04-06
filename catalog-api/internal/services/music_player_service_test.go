@@ -23,9 +23,9 @@ func TestMusicPlayerService_GetNextTrackIndex(t *testing.T) {
 	service := NewMusicPlayerService(mockDB, mockLogger, nil, nil, nil, nil, nil, nil)
 
 	tests := []struct {
-		name       string
-		session    *MusicPlaybackSession
-		expected   int
+		name     string
+		session  *MusicPlaybackSession
+		expected int
 	}{
 		{
 			name: "next track in queue",
@@ -97,9 +97,9 @@ func TestMusicPlayerService_GetPreviousTrackIndex(t *testing.T) {
 	service := NewMusicPlayerService(mockDB, mockLogger, nil, nil, nil, nil, nil, nil)
 
 	tests := []struct {
-		name       string
-		session    *MusicPlaybackSession
-		expected   int
+		name     string
+		session  *MusicPlaybackSession
+		expected int
 	}{
 		{
 			name: "previous track in queue",

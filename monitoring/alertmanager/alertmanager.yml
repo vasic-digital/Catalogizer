@@ -1,43 +1,98 @@
+# AlertManager Configuration
+# Receivers: Slack, Email, PagerDuty (optional)
+
 global:
   smtp_smarthost: 'localhost:587'
-  smtp_from: 'alertmanager@catalogizer.local'
+  smtp_from: 'alerts@catalogizer.local'
+  smtp_auth_username: ''
+  smtp_auth_password: ''
+  slack_api_url: ''  # Set via environment variable: SLACK_API_URL
+
+templates:
+  - '/etc/alertmanager/templates/*.tmpl'
 
 route:
-  receiver: 'default'
+  receiver: 'default-receiver'
   group_by: ['alertname', 'severity']
   group_wait: 10s
-  group_interval: 5m
-  repeat_interval: 12h
+  group_interval: 10s
+  repeat_interval: 1h
   routes:
+    # Critical alerts - immediate notification
     - match:
-        severity: 'critical'
-      receiver: 'critical-alerts'
-      continue: true
-
-receivers:
-  - name: 'default'
-    email_configs:
-      - to: 'admin@catalogizer.local'
-        headers:
-          Subject: 'Catalogizer Alert: {{ .GroupLabels.alertname }}'
-
-  - name: 'webhook-notifications'
-    webhook_configs:
-      - url: 'http://localhost:8080/api/v1/admin/webhooks/alerts'
-        send_resolved: true
-
-  - name: 'critical-alerts'
-    email_configs:
-      - to: 'admin@catalogizer.local'
-        headers:
-          Subject: 'CRITICAL Catalogizer Alert: {{ .GroupLabels.alertname }}'
-    webhook_configs:
-      - url: 'http://localhost:8080/api/v1/admin/webhooks/alerts'
-        send_resolved: true
+        severity: critical
+      receiver: 'critical-receiver'
+      group_wait: 0s
+      repeat_interval: 5m
+    
+    # Warning alerts - batched
+    - match:
+        severity: warning
+      receiver: 'warning-receiver'
+      group_wait: 30s
+      repeat_interval: 2h
+    
+    # API-specific alerts
+    - match:
+        service: api
+      receiver: 'api-team-receiver'
+    
+    # Database alerts
+    - match:
+        service: database
+      receiver: 'dba-receiver'
 
 inhibit_rules:
+  # If a critical alert is firing, suppress warnings for the same alert
   - source_match:
       severity: 'critical'
     target_match:
       severity: 'warning'
-    equal: ['alertname']
+    equal: ['alertname', 'instance']
+
+receivers:
+  - name: 'default-receiver'
+    email_configs:
+      - to: 'admin@catalogizer.local'
+        subject: 'Catalogizer Alert: {{ .GroupLabels.alertname }}'
+        body: |
+          {{ range .Alerts }}
+          Alert: {{ .Annotations.summary }}
+          Description: {{ .Annotations.description }}
+          Severity: {{ .Labels.severity }}
+          Instance: {{ .Labels.instance }}
+          Time: {{ .StartsAt }}
+          {{ end }}
+
+  - name: 'critical-receiver'
+    email_configs:
+      - to: 'oncall@catalogizer.local'
+        subject: '[CRITICAL] Catalogizer: {{ .GroupLabels.alertname }}'
+        send_resolved: true
+    slack_configs:
+      - channel: '#catalogizer-alerts'
+        title: 'Critical Alert: {{ .GroupLabels.alertname }}'
+        text: |
+          {{ range .Alerts }}
+          *{{ .Annotations.summary }}*
+          {{ .Annotations.description }}
+          Instance: {{ .Labels.instance }}
+          {{ end }}
+        send_resolved: true
+
+  - name: 'warning-receiver'
+    email_configs:
+      - to: 'team@catalogizer.local'
+        subject: '[WARNING] Catalogizer: {{ .GroupLabels.alertname }}'
+
+  - name: 'api-team-receiver'
+    slack_configs:
+      - channel: '#api-alerts'
+        title: 'API Alert: {{ .GroupLabels.alertname }}'
+        text: '{{ .Annotations.description }}'
+
+  - name: 'dba-receiver'
+    slack_configs:
+      - channel: '#database-alerts'
+        title: 'Database Alert: {{ .GroupLabels.alertname }}'
+        text: '{{ .Annotations.description }}'

@@ -157,9 +157,9 @@ func TestPermissions_HasAnyPermission(t *testing.T) {
 	p := Permissions{"read:media", "write:media"}
 
 	tests := []struct {
-		name    string
-		check   []string
-		want    bool
+		name  string
+		check []string
+		want  bool
 	}{
 		{"has one of many", []string{"delete:media", "read:media"}, true},
 		{"has all", []string{"read:media", "write:media"}, true},
@@ -182,9 +182,9 @@ func TestUser_IsAccountLocked(t *testing.T) {
 	future := now.Add(1 * time.Hour)
 
 	tests := []struct {
-		name   string
-		user   User
-		want   bool
+		name string
+		user User
+		want bool
 	}{
 		{
 			name: "not locked",

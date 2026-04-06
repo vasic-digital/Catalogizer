@@ -185,7 +185,7 @@ func TestDefaultClientFactory_CreateClient_SettingsExtraction(t *testing.T) {
 		assert.Equal(t, "myshare", smbCfg.Share)
 		assert.Equal(t, "", smbCfg.Username)        // default
 		assert.Equal(t, "", smbCfg.Password)        // default
-		assert.Equal(t, "WORKGROUP", smbCfg.Domain)  // default
+		assert.Equal(t, "WORKGROUP", smbCfg.Domain) // default
 	})
 
 	t.Run("FTP settings extraction with defaults", func(t *testing.T) {

@@ -449,10 +449,10 @@ func TestReaderService_UpdateReadingStats_DailyProgress(t *testing.T) {
 	service := NewReaderService(nil, zap.NewNop(), nil, nil, nil)
 
 	tests := []struct {
-		name              string
-		initialProgress   int
-		readingTime       int64
-		expectedProgress  int
+		name             string
+		initialProgress  int
+		readingTime      int64
+		expectedProgress int
 	}{
 		{
 			name:             "two minutes adds to zero",

@@ -10,7 +10,7 @@ const isNetworkError = (err: unknown): boolean =>
 // The shared AuthContextType defines the canonical contract for auth contexts.
 // The internal interface below extends the same shape; once react-query versions
 // are aligned, AuthProvider can be replaced with the shared package's version.
-import type { AuthContextType as SharedAuthContextType } from '@vasic-digital/auth-context'
+import type { AuthContextType as _SharedAuthContextType } from '@vasic-digital/auth-context'
 import toast from 'react-hot-toast'
 
 interface AuthContextType {

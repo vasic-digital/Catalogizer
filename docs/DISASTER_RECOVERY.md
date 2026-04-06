@@ -1,485 +1,544 @@
-# Catalogizer Disaster Recovery Guide
+# Disaster Recovery Plan
 
-This document defines backup procedures, restore steps, data verification, and backup scheduling for Catalogizer deployments.
+**Document Version:** 1.0  
+**Last Updated:** April 6, 2026  
+**Owner:** DevOps Team  
+**Review Cycle:** Quarterly  
 
 ---
 
 ## Table of Contents
 
-1. [Backup Strategy Overview](#backup-strategy-overview)
-2. [SQLite Backup Procedures](#sqlite-backup-procedures)
-3. [PostgreSQL Backup Procedures](#postgresql-backup-procedures)
-4. [Configuration Backup](#configuration-backup)
-5. [Asset and Cache Backup](#asset-and-cache-backup)
-6. [Restore Procedures](#restore-procedures)
-7. [Data Verification](#data-verification)
-8. [Backup Scheduling](#backup-scheduling)
-9. [Disaster Recovery Scenarios](#disaster-recovery-scenarios)
+1. [Overview & Objectives](#1-overview--objectives)
+2. [Disaster Types & Scenarios](#2-disaster-types--scenarios)
+3. [Recovery Team & Responsibilities](#3-recovery-team--responsibilities)
+4. [Backup Procedures](#4-backup-procedures)
+5. [Recovery Procedures](#5-recovery-procedures)
+6. [Recovery Time Objectives (RTO)](#6-recovery-time-objectives-rto)
+7. [Recovery Point Objectives (RPO)](#7-recovery-point-objectives-rpo)
+8. [Testing & Validation](#8-testing--validation)
+9. [Communication Plan](#9-communication-plan)
 
 ---
 
-## Backup Strategy Overview
+## 1. Overview & Objectives
 
-Catalogizer stores data in three categories that must be backed up:
+### 1.1 Purpose
 
-| Category | Location | Priority | Description |
-|----------|----------|----------|-------------|
-| Database | `catalog-api/data/catalogizer.db` (SQLite) or PostgreSQL server | Critical | All metadata, user accounts, media entities, scan history |
-| Configuration | `catalog-api/.env`, `catalog-api/config.json`, `config/` | High | Server settings, API keys, nginx/redis configs |
-| Assets | `catalog-api/cache/assets/`, `catalog-api/cache/cover_art/` | Medium | Cover art, thumbnails, cached images (regenerable) |
+This Disaster Recovery Plan (DRP) provides a comprehensive framework for responding to and recovering from disruptive events that impact the Catalogizer media management system. The plan ensures business continuity and minimizes data loss.
 
-Media files themselves are stored on external storage roots (SMB, NFS, etc.) and are not managed by Catalogizer backups.
+### 1.2 Scope
 
-### Backup Frequency Recommendations
+This plan covers:
+- **catalog-api** (Go backend API)
+- **catalog-web** (React frontend)
+- **catalogizer-android** (Android mobile app)
+- **catalogizer-androidtv** (Android TV app)
+- **catalogizer-desktop** (Tauri desktop app)
+- **Database systems** (SQLite/PostgreSQL)
+- **Supporting infrastructure** (Redis, monitoring, etc.)
 
-| Component | Frequency | Retention |
-|-----------|-----------|-----------|
-| Database (full) | Daily | 30 days |
-| Database (incremental) | Hourly (PostgreSQL WAL) | 7 days |
-| Configuration | On change | 90 days |
-| Assets | Weekly | 14 days |
+### 1.3 Objectives
+
+| Objective | Target |
+|-----------|--------|
+| Maximum Acceptable Downtime | 4 hours (RTO) |
+| Maximum Data Loss | 15 minutes (RPO) |
+| Recovery Success Rate | 99.9% |
+| DR Testing Frequency | Quarterly |
 
 ---
 
-## SQLite Backup Procedures
+## 2. Disaster Types & Scenarios
 
-### Online Backup (Recommended)
+### 2.1 Disaster Classification
 
-SQLite with WAL mode supports online backups without stopping the service:
+| Level | Description | Examples |
+|-------|-------------|----------|
+| **Critical** | Complete system failure, data loss | Database corruption, total infrastructure failure |
+| **High** | Major component failure | API cluster down, storage failure |
+| **Medium** | Partial functionality loss | Single node failure, network partition |
+| **Low** | Minor impact | Performance degradation, non-critical service down |
+
+### 2.2 Specific Scenarios
+
+#### Scenario 1: Database Corruption
+**Impact:** High - All media metadata inaccessible  
+**Detection:** Database health checks, error logs  
+**Response Time:** Immediate
+
+#### Scenario 2: Complete Infrastructure Failure
+**Impact:** Critical - Entire system unavailable  
+**Detection:** Monitoring alerts, user reports  
+**Response Time:** Immediate
+
+#### Scenario 3: Data Center Outage
+**Impact:** Critical - Multi-region failure  
+**Detection:** Infrastructure monitoring  
+**Response Time:** 15 minutes
+
+#### Scenario 4: Ransomware/Malware Attack
+**Impact:** Critical - Data integrity compromised  
+**Detection:** Security monitoring, unusual file activity  
+**Response Time:** Immediate
+
+#### Scenario 5: Accidental Data Deletion
+**Impact:** High - User or system data lost  
+**Detection:** Audit logs, user reports  
+**Response Time:** 1 hour
+
+---
+
+## 3. Recovery Team & Responsibilities
+
+### 3.1 Team Structure
+
+| Role | Responsibility | Primary | Secondary |
+|------|---------------|---------|-----------|
+| **DR Coordinator** | Overall DR process management | DevOps Lead | Engineering Manager |
+| **Technical Lead** | Technical recovery decisions | Senior Backend Dev | Senior DevOps |
+| **Database Admin** | Database recovery | DBA | Senior Backend Dev |
+| **Infrastructure** | Infrastructure restoration | DevOps Engineer | SRE |
+| **Communications** | Stakeholder communication | Product Manager | Engineering Manager |
+| **QA Validation** | Post-recovery testing | QA Lead | Senior QA |
+
+### 3.2 Escalation Matrix
+
+| Time Elapsed | Action | Notify |
+|--------------|--------|--------|
+| 0-15 min | Initial assessment | DR Coordinator, Technical Lead |
+| 15-30 min | DR activation decision | Engineering Manager, CTO |
+| 30-60 min | External communication | Product Manager, Support Lead |
+| 1-4 hours | Hourly status updates | All stakeholders |
+| 4+ hours | Executive briefing | CEO, CTO, VP Engineering |
+
+---
+
+## 4. Backup Procedures
+
+### 4.1 Database Backups
+
+#### PostgreSQL (Production)
 
 ```bash
+# Automated backup script
 #!/bin/bash
-# backup-sqlite.sh -- Online SQLite backup
+# /opt/catalogizer/scripts/backup-database.sh
 
-BACKUP_DIR="/opt/catalogizer/backups"
-DB_PATH="/opt/catalogizer/catalog-api/data/catalogizer.db"
-TIMESTAMP=$(date +%Y%m%d_%H%M%S)
-BACKUP_FILE="${BACKUP_DIR}/catalogizer_${TIMESTAMP}.db"
+BACKUP_DIR="/backup/postgres/$(date +%Y%m%d)"
+RETENTION_DAYS=30
+DB_NAME="catalogizer"
+DB_USER="postgres"
 
+# Create backup directory
 mkdir -p "$BACKUP_DIR"
 
-# Use SQLite .backup command for a consistent snapshot
-sqlite3 "$DB_PATH" ".backup '${BACKUP_FILE}'"
+# Full database dump
+pg_dump -h localhost -U "$DB_USER" -Fc "$DB_NAME" > "$BACKUP_DIR/catalogizer_$(date +%H%M%S).dump"
 
-# Compress the backup
-gzip "$BACKUP_FILE"
+# Verify backup
+if pg_restore --list "$BACKUP_DIR"/catalogizer_*.dump > /dev/null 2>&1; then
+    echo "Backup verified: $(date)" >> /var/log/catalogizer/backup.log
+else
+    echo "BACKUP FAILED: $(date)" | mail -s "CRITICAL: Backup Failure" alerts@catalogizer.local
+fi
 
-echo "Backup created: ${BACKUP_FILE}.gz"
-echo "Size: $(du -h "${BACKUP_FILE}.gz" | cut -f1)"
+# Clean old backups
+find /backup/postgres -type d -mtime +$RETENTION_DAYS -exec rm -rf {} \;
 ```
 
-### Offline Backup
+**Schedule:**
+- Full backup: Daily at 02:00 UTC
+- Incremental backup: Every 4 hours
+- WAL archiving: Continuous
 
-If the service can be stopped:
+**Retention:**
+- Daily backups: 30 days
+- Weekly backups: 12 weeks
+- Monthly backups: 12 months
+
+#### SQLite (Development/Single-user)
 
 ```bash
-# Stop the service
-sudo systemctl stop catalogizer
-
-# Copy the database file and WAL/SHM files
-cp catalog-api/data/catalogizer.db /opt/catalogizer/backups/catalogizer_$(date +%Y%m%d).db
-cp catalog-api/data/catalogizer.db-wal /opt/catalogizer/backups/catalogizer_$(date +%Y%m%d).db-wal 2>/dev/null
-cp catalog-api/data/catalogizer.db-shm /opt/catalogizer/backups/catalogizer_$(date +%Y%m%d).db-shm 2>/dev/null
-
-# Restart the service
-sudo systemctl start catalogizer
+# SQLite backup
+sqlite3 catalogizer.db ".backup '/backup/sqlite/catalogizer_$(date +%Y%m%d_%H%M%S).db'"
 ```
 
-### Encrypted Database Backup
+### 4.2 File System Backups
 
-If SQLCipher encryption is enabled, the backup file is also encrypted. Store the `DB_ENCRYPTION_KEY` separately from the backup for security:
+#### Media Storage
 
 ```bash
-# The .backup command preserves encryption
-sqlite3 "$DB_PATH" ".backup '${BACKUP_FILE}'"
+# Rsync-based backup
+rsync -avz --delete \
+    /media/storage/ \
+    backup-server:/backup/media/storage/ \
+    --log-file=/var/log/catalogizer/media-backup.log
+```
 
-# Store the encryption key in a separate, secured location
-echo "$DB_ENCRYPTION_KEY" > /opt/catalogizer/keys/db_key_${TIMESTAMP}.txt
-chmod 600 /opt/catalogizer/keys/db_key_${TIMESTAMP}.txt
+**Schedule:**
+- Incremental: Every 6 hours
+- Full sync: Weekly
+
+### 4.3 Configuration Backups
+
+```bash
+# Configuration backup
+CONFIG_BACKUP="/backup/config/$(date +%Y%m%d)"
+mkdir -p "$CONFIG_BACKUP"
+
+cp -r /etc/catalogizer/* "$CONFIG_BACKUP/"
+cp /opt/catalogizer/.env "$CONFIG_BACKUP/"
+cp /opt/catalogizer/config.json "$CONFIG_BACKUP/"
+
+# Docker Compose files
+cp /opt/catalogizer/docker-compose*.yml "$CONFIG_BACKUP/"
+
+# Kubernetes manifests
+cp -r /opt/catalogizer/k8s/* "$CONFIG_BACKUP/"
+```
+
+### 4.4 Backup Verification
+
+```bash
+# Monthly backup verification script
+#!/bin/bash
+
+# Test database restore
+gpg --decrypt /backup/postgres/latest.dump.gpg | pg_restore --list > /dev/null
+
+# Test file restore
+rsync --dry-run backup-server:/backup/media/storage/ /tmp/restore-test/
+
+# Generate verification report
+echo "Backup verification completed: $(date)" >> /var/log/catalogizer/backup-verify.log
 ```
 
 ---
 
-## PostgreSQL Backup Procedures
+## 5. Recovery Procedures
 
-### Logical Backup (pg_dump)
+### 5.1 Database Recovery
+
+#### PostgreSQL Point-in-Time Recovery
+
+```bash
+# 1. Stop application
+podman-compose -f docker-compose.yml stop api
+
+# 2. Restore from backup
+pg_restore -h localhost -U postgres -d catalogizer --clean --create \
+    /backup/postgres/20250406/catalogizer_020000.dump
+
+# 3. Replay WAL logs (for PITR)
+pg_waldump /var/lib/postgresql/wal/ > /dev/null
+
+# 4. Verify database
+psql -h localhost -U postgres -d catalogizer -c "SELECT COUNT(*) FROM media_items;"
+
+# 5. Restart application
+podman-compose -f docker-compose.yml start api
+```
+
+#### SQLite Recovery
+
+```bash
+# Simple file restore
+cp /backup/sqlite/catalogizer_20250406_020000.db catalogizer.db
+
+# Verify
+sqlite3 catalogizer.db "PRAGMA integrity_check;"
+```
+
+### 5.2 Complete System Recovery
 
 ```bash
 #!/bin/bash
-# backup-postgres.sh -- PostgreSQL logical backup
+# Complete disaster recovery script
 
-BACKUP_DIR="/opt/catalogizer/backups"
-TIMESTAMP=$(date +%Y%m%d_%H%M%S)
-BACKUP_FILE="${BACKUP_DIR}/catalogizer_pg_${TIMESTAMP}.dump"
+set -e
 
-mkdir -p "$BACKUP_DIR"
+RECOVERY_LOG="/var/log/catalogizer/recovery-$(date +%Y%m%d-%H%M%S).log"
+exec > >(tee -a "$RECOVERY_LOG")
+exec 2>&1
 
-# Custom format backup (compressed, supports selective restore)
-PGPASSWORD="$DATABASE_PASSWORD" pg_dump \
-  -h "${DATABASE_HOST:-localhost}" \
-  -p "${DATABASE_PORT:-5432}" \
-  -U "${DATABASE_USER:-catalogizer_user}" \
-  -d "${DATABASE_NAME:-catalogizer}" \
-  -Fc \
-  -f "$BACKUP_FILE"
+echo "=== Catalogizer Disaster Recovery Started: $(date) ==="
 
-echo "Backup created: ${BACKUP_FILE}"
-echo "Size: $(du -h "${BACKUP_FILE}" | cut -f1)"
+# Step 1: Infrastructure setup
+echo "[1/7] Setting up infrastructure..."
+podman-compose -f docker-compose.yml pull
+
+# Step 2: Database recovery
+echo "[2/7] Restoring database..."
+./scripts/restore-database.sh
+
+# Step 3: Media storage mount
+echo "[3/7] Mounting media storage..."
+mount -t nfs nas.local:/volume1/media /media/storage
+
+# Step 4: Configuration restore
+echo "[4/7] Restoring configuration..."
+cp /backup/config/latest/.env /opt/catalogizer/
+cp /backup/config/latest/config.json /opt/catalogizer/
+
+# Step 5: Start services
+echo "[5/7] Starting services..."
+podman-compose -f docker-compose.yml up -d
+
+# Step 6: Health checks
+echo "[6/7] Running health checks..."
+sleep 30
+./scripts/health-check.sh
+
+# Step 7: Validation
+echo "[7/7] Validating recovery..."
+./scripts/validate-recovery.sh
+
+echo "=== Disaster Recovery Completed: $(date) ==="
 ```
 
-### SQL Text Backup
-
-For portability and readability:
+### 5.3 Kubernetes Recovery
 
 ```bash
-PGPASSWORD="$DATABASE_PASSWORD" pg_dump \
-  -h "$DATABASE_HOST" \
-  -U "$DATABASE_USER" \
-  -d "$DATABASE_NAME" \
-  --no-owner \
-  --no-privileges \
-  -f "${BACKUP_DIR}/catalogizer_pg_${TIMESTAMP}.sql"
+# Restore from manifests
+kubectl apply -f /backup/config/latest/k8s/
 
-gzip "${BACKUP_DIR}/catalogizer_pg_${TIMESTAMP}.sql"
+# Verify pods
+kubectl wait --for=condition=ready pod -l app=catalogizer-api --timeout=300s
+
+# Check services
+kubectl get svc
+
+# Verify ingress
+kubectl get ingress
 ```
 
-### Containerized PostgreSQL Backup
+### 5.4 Application-Specific Recovery
+
+#### Mobile Apps (Android/Android TV)
+
+- App binaries: Restore from CI/CD artifacts
+- Signing keys: Retrieve from secure vault
+- App Store: Resubmit if necessary
+
+#### Desktop App (Tauri)
 
 ```bash
-# Using podman exec
-podman exec catalogizer-db pg_dump \
-  -U catalogizer_user \
-  -d catalogizer \
-  -Fc > "/opt/catalogizer/backups/catalogizer_pg_$(date +%Y%m%d_%H%M%S).dump"
-```
-
-### Continuous Archiving (WAL)
-
-For point-in-time recovery, configure PostgreSQL WAL archiving:
-
-```ini
-# postgresql.conf
-wal_level = replica
-archive_mode = on
-archive_command = 'cp %p /opt/catalogizer/backups/wal/%f'
+# Rebuild from source
+git clone https://github.com/catalogizer/catalogizer.git
+cd catalogizer/catalogizer-desktop
+npm install
+npm run tauri:build
 ```
 
 ---
 
-## Configuration Backup
+## 6. Recovery Time Objectives (RTO)
+
+### 6.1 Component RTOs
+
+| Component | RTO | Recovery Method |
+|-----------|-----|-----------------|
+| API Service | 30 minutes | Container restart/redployment |
+| Web Frontend | 30 minutes | CDN/cache refresh |
+| Database | 2 hours | Point-in-time restore |
+| Media Storage | 4 hours | Failover to replica |
+| Monitoring | 1 hour | Container restart |
+| Mobile Apps | N/A | Client-side, no server impact |
+
+### 6.2 Service Level Tiers
+
+| Tier | Services | RTO |
+|------|----------|-----|
+| **Tier 1** | API, Database, Auth | 1 hour |
+| **Tier 2** | Web UI, Caching | 2 hours |
+| **Tier 3** | Analytics, Reporting | 4 hours |
+| **Tier 4** | Development, Testing | 24 hours |
+
+---
+
+## 7. Recovery Point Objectives (RPO)
+
+### 7.1 Data Loss Tolerance
+
+| Data Type | RPO | Backup Frequency |
+|-----------|-----|------------------|
+| User Data | 15 minutes | Continuous WAL + hourly backup |
+| Media Metadata | 15 minutes | Continuous WAL + hourly backup |
+| Configuration | 24 hours | Daily backup |
+| Media Files | 6 hours | Incremental backup |
+| Logs | 24 hours | Daily archive |
+
+### 7.2 Zero Data Loss Strategy
+
+For critical transactions:
+```sql
+-- Enable synchronous replication
+ALTER SYSTEM SET synchronous_commit = 'remote_apply';
+ALTER SYSTEM SET synchronous_standby_names = 'replica_1, replica_2';
+```
+
+---
+
+## 8. Testing & Validation
+
+### 8.1 DR Testing Schedule
+
+| Test Type | Frequency | Scope |
+|-----------|-----------|-------|
+| Tabletop Exercise | Monthly | Process review |
+| Backup Restoration | Weekly | Automated test |
+| Full DR Drill | Quarterly | Complete failover |
+| Chaos Engineering | Monthly | Random failures |
+
+### 8.2 Automated DR Tests
 
 ```bash
 #!/bin/bash
-# backup-config.sh -- Configuration backup
+# Weekly DR validation
 
-BACKUP_DIR="/opt/catalogizer/backups/config"
-TIMESTAMP=$(date +%Y%m%d_%H%M%S)
+# Test backup integrity
+pg_restore --list latest.dump > /dev/null || exit 1
 
-mkdir -p "${BACKUP_DIR}/${TIMESTAMP}"
+# Test service startup
+podman-compose up -d --scale api=0
+sleep 5
+podman-compose up -d --scale api=1
 
-# Back up configuration files
-cp catalog-api/.env "${BACKUP_DIR}/${TIMESTAMP}/.env" 2>/dev/null
-cp catalog-api/config.json "${BACKUP_DIR}/${TIMESTAMP}/config.json" 2>/dev/null
-cp -r config/ "${BACKUP_DIR}/${TIMESTAMP}/config/" 2>/dev/null
+# Run smoke tests
+curl -f http://localhost:8080/health || exit 1
 
-# Back up docker-compose files
-for f in docker-compose*.yml; do
-  cp "$f" "${BACKUP_DIR}/${TIMESTAMP}/" 2>/dev/null
-done
-
-# Create archive
-tar czf "${BACKUP_DIR}/config_${TIMESTAMP}.tar.gz" -C "${BACKUP_DIR}" "${TIMESTAMP}"
-rm -rf "${BACKUP_DIR}/${TIMESTAMP}"
-
-echo "Config backup: ${BACKUP_DIR}/config_${TIMESTAMP}.tar.gz"
+echo "DR test passed: $(date)"
 ```
 
----
-
-## Asset and Cache Backup
-
-Assets (cover art, thumbnails) are stored in the filesystem and can be regenerated from external providers. Back them up to avoid re-fetching:
+### 8.3 Post-Recovery Validation
 
 ```bash
 #!/bin/bash
-# backup-assets.sh -- Asset backup
+# Recovery validation checklist
 
-BACKUP_DIR="/opt/catalogizer/backups"
-TIMESTAMP=$(date +%Y%m%d_%H%M%S)
+echo "=== Post-Recovery Validation ==="
 
-tar czf "${BACKUP_DIR}/assets_${TIMESTAMP}.tar.gz" \
-  catalog-api/cache/assets/ \
-  catalog-api/cache/cover_art/ \
-  catalog-api/cache/tls/ \
-  2>/dev/null
+# 1. API health
+curl -s http://localhost:8080/health | grep -q "healthy" && echo "✓ API healthy" || echo "✗ API unhealthy"
 
-echo "Asset backup: ${BACKUP_DIR}/assets_${TIMESTAMP}.tar.gz"
+# 2. Database connectivity
+psql -h localhost -U postgres -c "SELECT 1" > /dev/null && echo "✓ Database accessible" || echo "✗ Database inaccessible"
+
+# 3. Media count verification
+ACTUAL=$(psql -h localhost -U postgres -t -c "SELECT COUNT(*) FROM media_items")
+EXPECTED=$(cat /backup/expected-counts.txt | grep media_items | cut -d: -f2)
+[ "$ACTUAL" -eq "$EXPECTED" ] && echo "✓ Media count matches" || echo "⚠ Media count differs"
+
+# 4. WebSocket functionality
+./scripts/test-websocket.sh && echo "✓ WebSocket working" || echo "✗ WebSocket failed"
+
+# 5. File access
+ls /media/storage > /dev/null && echo "✓ Storage accessible" || echo "✗ Storage inaccessible"
+
+echo "=== Validation Complete ==="
 ```
 
 ---
 
-## Restore Procedures
+## 9. Communication Plan
 
-### Restore SQLite Database
+### 9.1 Internal Communication
 
-```bash
-# Stop the service
-sudo systemctl stop catalogizer
+| Stakeholder | Notification Channel | Timing |
+|-------------|---------------------|--------|
+| Engineering Team | Slack #incidents | Immediate |
+| Management | Email + Phone | 15 minutes |
+| Executive Team | Phone bridge | 1 hour (if ongoing) |
+| All Staff | Company-wide Slack | 30 minutes |
 
-# Restore from backup
-gunzip -k /opt/catalogizer/backups/catalogizer_20260323_020000.db.gz
-cp /opt/catalogizer/backups/catalogizer_20260323_020000.db catalog-api/data/catalogizer.db
+### 9.2 External Communication
 
-# Remove WAL and SHM files (will be recreated)
-rm -f catalog-api/data/catalogizer.db-wal catalog-api/data/catalogizer.db-shm
+| Audience | Channel | Timing | Owner |
+|----------|---------|--------|-------|
+| Customers | Status page | 30 minutes | Support Lead |
+| Customers | Email | 1 hour (if >2hr outage) | Product Manager |
+| Partners | Direct contact | 1 hour | Business Dev |
+| Media | Press release | If newsworthy | Marketing |
 
-# Start the service
-sudo systemctl start catalogizer
-```
+### 9.3 Status Page Updates
 
-### Restore PostgreSQL Database
+```markdown
+**Template: Incident Update**
 
-```bash
-# Drop and recreate the database
-PGPASSWORD="$DATABASE_PASSWORD" dropdb -h "$DATABASE_HOST" -U "$DATABASE_USER" "$DATABASE_NAME"
-PGPASSWORD="$DATABASE_PASSWORD" createdb -h "$DATABASE_HOST" -U "$DATABASE_USER" -O "$DATABASE_USER" "$DATABASE_NAME"
+**[Investigating]** Service Disruption - Catalogizer API
 
-# Restore from custom format dump
-PGPASSWORD="$DATABASE_PASSWORD" pg_restore \
-  -h "$DATABASE_HOST" \
-  -U "$DATABASE_USER" \
-  -d "$DATABASE_NAME" \
-  --no-owner \
-  --no-privileges \
-  /opt/catalogizer/backups/catalogizer_pg_20260323_020000.dump
-```
+We are currently investigating reports of service disruption affecting the Catalogizer API. 
 
-### Restore from SQL Text Backup
+**Impact:** Media browsing and search are unavailable
+**Started:** 2026-04-06 14:30 UTC
+**Status:** Our engineering team is actively working on resolution
 
-```bash
-gunzip -k /opt/catalogizer/backups/catalogizer_pg_20260323_020000.sql.gz
-
-PGPASSWORD="$DATABASE_PASSWORD" psql \
-  -h "$DATABASE_HOST" \
-  -U "$DATABASE_USER" \
-  -d "$DATABASE_NAME" \
-  -f /opt/catalogizer/backups/catalogizer_pg_20260323_020000.sql
-```
-
-### Restore Configuration
-
-```bash
-tar xzf /opt/catalogizer/backups/config_20260323_020000.tar.gz -C /tmp/
-cp /tmp/20260323_020000/.env catalog-api/.env
-cp /tmp/20260323_020000/config.json catalog-api/config.json
-cp -r /tmp/20260323_020000/config/ config/
-```
-
-### Restore Assets
-
-```bash
-tar xzf /opt/catalogizer/backups/assets_20260323_020000.tar.gz -C /opt/catalogizer/
-```
+We will provide updates every 30 minutes until resolved.
 
 ---
 
-## Data Verification
+**[Resolved]** Service Restored - Catalogizer API
 
-After restoring, verify data integrity:
+All services have been restored and are operating normally.
 
-### SQLite Verification
+**Duration:** 45 minutes
+**Root Cause:** Database connection pool exhaustion
+**Resolution:** Restarted database connections, increased pool size
 
-```bash
-# Check database integrity
-sqlite3 catalog-api/data/catalogizer.db "PRAGMA integrity_check;"
-
-# Verify row counts
-sqlite3 catalog-api/data/catalogizer.db "
-SELECT 'storage_roots' as tbl, COUNT(*) FROM storage_roots
-UNION ALL SELECT 'files', COUNT(*) FROM files
-UNION ALL SELECT 'users', COUNT(*) FROM users
-UNION ALL SELECT 'media_items', COUNT(*) FROM media_items
-UNION ALL SELECT 'media_files', COUNT(*) FROM media_files
-UNION ALL SELECT 'scan_history', COUNT(*) FROM scan_history;"
-
-# Check foreign key integrity
-sqlite3 catalog-api/data/catalogizer.db "PRAGMA foreign_key_check;"
-
-# Verify migration state
-sqlite3 catalog-api/data/catalogizer.db "SELECT * FROM migrations ORDER BY version;"
+We apologize for any inconvenience caused.
 ```
 
-### PostgreSQL Verification
+### 9.4 Communication Templates
 
-```bash
-# Verify table access
-PGPASSWORD="$DATABASE_PASSWORD" psql -h "$DATABASE_HOST" -U "$DATABASE_USER" -d "$DATABASE_NAME" -c "
-SELECT 'storage_roots' as tbl, COUNT(*) FROM storage_roots
-UNION ALL SELECT 'files', COUNT(*) FROM files
-UNION ALL SELECT 'users', COUNT(*) FROM users
-UNION ALL SELECT 'media_items', COUNT(*) FROM media_items
-UNION ALL SELECT 'media_files', COUNT(*) FROM media_files
-UNION ALL SELECT 'scan_history', COUNT(*) FROM scan_history;"
-
-# Verify migration state
-PGPASSWORD="$DATABASE_PASSWORD" psql -h "$DATABASE_HOST" -U "$DATABASE_USER" -d "$DATABASE_NAME" -c \
-  "SELECT * FROM migrations ORDER BY version;"
-
-# Check for constraint violations
-PGPASSWORD="$DATABASE_PASSWORD" psql -h "$DATABASE_HOST" -U "$DATABASE_USER" -d "$DATABASE_NAME" -c "
-SELECT conname, conrelid::regclass
-FROM pg_constraint
-WHERE contype = 'f'
-  AND NOT convalidated;"
-```
-
-### Application-Level Verification
-
-```bash
-# Health check
-curl -s http://localhost:8080/health | jq
-
-# Login as admin
-TOKEN=$(curl -s -X POST http://localhost:8080/api/v1/auth/login \
-  -H "Content-Type: application/json" \
-  -d '{"username":"admin","password":"admin123"}' | jq -r '.token')
-
-# Verify storage roots exist
-curl -s -H "Authorization: Bearer $TOKEN" http://localhost:8080/api/v1/storage-roots | jq '.[] | .name'
-
-# Verify media entity counts
-curl -s -H "Authorization: Bearer $TOKEN" http://localhost:8080/api/v1/entities/stats | jq
-
-# Run the challenge suite
-curl -s -X POST -H "Authorization: Bearer $TOKEN" http://localhost:8080/api/v1/challenges/run
-```
+See `docs/communication/` for:
+- Initial incident notification
+- Status update templates
+- Resolution notification
+- Post-incident report
 
 ---
 
-## Backup Scheduling
+## Appendix A: Emergency Contacts
 
-### Cron-Based Scheduling
+| Role | Name | Phone | Email |
+|------|------|-------|-------|
+| DR Coordinator | [Name] | [Phone] | [Email] |
+| Technical Lead | [Name] | [Phone] | [Email] |
+| Infrastructure | [Name] | [Phone] | [Email] |
+| Database Admin | [Name] | [Phone] | [Email] |
+| Hosting Provider | [Provider] | [Support Line] | [Email] |
+| Domain Registrar | [Registrar] | [Support Line] | [Email] |
 
-```bash
-# /etc/cron.d/catalogizer-backup
+## Appendix B: Recovery Resources
 
-# Daily full database backup at 2:00 AM
-0 2 * * * root /opt/catalogizer/scripts/backup-postgres.sh >> /var/log/catalogizer-backup.log 2>&1
+### Backup Locations
 
-# Hourly configuration backup
-0 * * * * root /opt/catalogizer/scripts/backup-config.sh >> /var/log/catalogizer-backup.log 2>&1
+| Resource | Primary | Secondary | Tertiary |
+|----------|---------|-----------|----------|
+| Database | Local NAS | Cloud S3 | Off-site |
+| Config | GitHub | GitLab | Local |
+| Media | Local NAS | Cloud | Off-site |
 
-# Weekly asset backup on Sundays at 3:00 AM
-0 3 * * 0 root /opt/catalogizer/scripts/backup-assets.sh >> /var/log/catalogizer-backup.log 2>&1
+### Critical Credentials
 
-# Daily cleanup of backups older than 30 days
-0 4 * * * root find /opt/catalogizer/backups -name "*.dump" -mtime +30 -delete
-0 4 * * * root find /opt/catalogizer/backups -name "*.db.gz" -mtime +30 -delete
-```
+Stored in: `/secure/vault/credentials.yml` (encrypted)
 
-### Systemd Timer (Alternative)
+### Network Information
 
-```ini
-# /etc/systemd/system/catalogizer-backup.service
-[Unit]
-Description=Catalogizer Database Backup
-
-[Service]
-Type=oneshot
-ExecStart=/opt/catalogizer/scripts/backup-postgres.sh
-User=catalogizer
-
-# /etc/systemd/system/catalogizer-backup.timer
-[Unit]
-Description=Run Catalogizer backup daily
-
-[Timer]
-OnCalendar=*-*-* 02:00:00
-Persistent=true
-
-[Install]
-WantedBy=timers.target
-```
-
-```bash
-sudo systemctl enable catalogizer-backup.timer
-sudo systemctl start catalogizer-backup.timer
-```
-
-### Backup Rotation
-
-Implement a retention policy to manage disk space:
-
-```bash
-#!/bin/bash
-# rotate-backups.sh
-
-BACKUP_DIR="/opt/catalogizer/backups"
-
-# Keep daily backups for 30 days
-find "$BACKUP_DIR" -name "catalogizer_pg_*.dump" -mtime +30 -delete
-find "$BACKUP_DIR" -name "catalogizer_*.db.gz" -mtime +30 -delete
-
-# Keep config backups for 90 days
-find "$BACKUP_DIR" -name "config_*.tar.gz" -mtime +90 -delete
-
-# Keep asset backups for 14 days
-find "$BACKUP_DIR" -name "assets_*.tar.gz" -mtime +14 -delete
-
-# Report remaining backups
-echo "Remaining backups:"
-du -sh "$BACKUP_DIR"
-ls -lh "$BACKUP_DIR"
-```
+| Component | IP/URL | Notes |
+|-----------|--------|-------|
+| Primary API | api.catalogizer.local | Load balancer |
+| Database Master | db-master.local | PostgreSQL |
+| Database Replica | db-replica.local | Read replica |
+| Storage NAS | nas.local | NFS mount |
+| Backup Server | backup.local | Rsync target |
 
 ---
 
-## Disaster Recovery Scenarios
+**Document Control:**
+- Version: 1.0
+- Approved by: [Name]
+- Date approved: April 6, 2026
+- Next review: July 6, 2026
 
-### Scenario 1: Database Corruption
-
-1. Stop the service: `sudo systemctl stop catalogizer`
-2. Identify the most recent clean backup
-3. Restore from backup (see Restore Procedures above)
-4. Verify data integrity
-5. Restart: `sudo systemctl start catalogizer`
-6. Re-scan storage roots if the backup is stale: trigger scans via the API
-
-### Scenario 2: Complete Server Loss
-
-1. Provision a new server with the same OS
-2. Install prerequisites: Go 1.24+, PostgreSQL 15+, Podman
-3. Clone the repository: `git clone --recurse-submodules <repo-url>`
-4. Restore configuration from backup
-5. Restore database from backup
-6. Restore assets from backup (optional -- they regenerate)
-7. Build and start: `cd catalog-api && go build -o catalogizer && ./catalogizer`
-8. Verify all endpoints
-
-### Scenario 3: Storage Root Unavailable
-
-If a storage root goes offline, Catalogizer continues to serve cached metadata. When the root comes back online:
-
-1. Verify connectivity via `POST /api/v1/smb/test`
-2. Trigger a rescan: `POST /api/v1/scans` with the storage root ID
-3. The scanner detects added, modified, and deleted files
-
-### Scenario 4: Accidental Data Deletion
-
-If rows were accidentally deleted from the database:
-
-1. Stop the service
-2. Restore the database from the most recent backup
-3. If the backup is older than the deletion, you may need to rescan storage roots to re-detect files
-4. Media entities will be re-aggregated during the post-scan pipeline
-
-### Scenario 5: Encryption Key Loss
-
-If the SQLCipher `DB_ENCRYPTION_KEY` is lost:
-
-1. The encrypted database file is unrecoverable
-2. Restore from the most recent backup where the key is known
-3. If no keyed backup exists, rescan all storage roots from scratch
-4. User accounts and settings will need to be recreated
-
-Prevention: Store the encryption key in at least two separate secure locations (e.g., password manager and sealed envelope).

@@ -9,7 +9,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"go.uber.org/zap"
-	
+
 	"catalogizer/internal/services"
 )
 
@@ -29,45 +29,45 @@ func NewSubtitleHandler(subtitleService *services.SubtitleService, logger *zap.L
 
 // SubtitleSearchResponse represents the response for subtitle search
 type SubtitleSearchResponse struct {
-	Success bool                         `json:"success"`
-	Message string                       `json:"message,omitempty"`
+	Success bool                            `json:"success"`
+	Message string                          `json:"message,omitempty"`
 	Results []services.SubtitleSearchResult `json:"results,omitempty"`
-	Count   int                          `json:"count"`
+	Count   int                             `json:"count"`
 }
 
 // SubtitleDownloadResponse represents the response for subtitle download
 type SubtitleDownloadResponse struct {
-	Success bool                  `json:"success"`
-	Message string                `json:"message,omitempty"`
+	Success bool                    `json:"success"`
+	Message string                  `json:"message,omitempty"`
 	Track   *services.SubtitleTrack `json:"track,omitempty"`
 }
 
 // SubtitleUploadResponse represents the response for subtitle upload
 type SubtitleUploadResponse struct {
-	Success bool                  `json:"success"`
-	Message string                `json:"message,omitempty"`
+	Success bool                    `json:"success"`
+	Message string                  `json:"message,omitempty"`
 	Track   *services.SubtitleTrack `json:"track,omitempty"`
 }
 
 // SubtitleListResponse represents the response for subtitle list
 type SubtitleListResponse struct {
-	Success    bool                      `json:"success"`
-	Message    string                    `json:"message,omitempty"`
-	Subtitles  []services.SubtitleTrack  `json:"subtitles,omitempty"`
+	Success     bool                     `json:"success"`
+	Message     string                   `json:"message,omitempty"`
+	Subtitles   []services.SubtitleTrack `json:"subtitles,omitempty"`
 	MediaItemID int64                    `json:"media_item_id"`
 }
 
 // SubtitleSyncResponse represents the response for subtitle sync verification
 type SubtitleSyncResponse struct {
-	Success        bool                        `json:"success"`
-	Message        string                      `json:"message,omitempty"`
-	SyncResult     *services.SubtitleSyncResult `json:"sync_result,omitempty"`
+	Success    bool                         `json:"success"`
+	Message    string                       `json:"message,omitempty"`
+	SyncResult *services.SubtitleSyncResult `json:"sync_result,omitempty"`
 }
 
 // SubtitleTranslationResponse represents the response for subtitle translation
 type SubtitleTranslationResponse struct {
-	Success        bool                  `json:"success"`
-	Message        string                `json:"message,omitempty"`
+	Success         bool                    `json:"success"`
+	Message         string                  `json:"message,omitempty"`
 	TranslatedTrack *services.SubtitleTrack `json:"translated_track,omitempty"`
 }
 
@@ -131,8 +131,8 @@ func (h *SubtitleHandler) SearchSubtitles(c *gin.Context) {
 		for _, provStr := range providerStrings {
 			provStr = strings.TrimSpace(provStr)
 			switch services.SubtitleProvider(provStr) {
-			case services.ProviderOpenSubtitles, services.ProviderSubDB, services.ProviderYifySubtitles, 
-				 services.ProviderSubscene, services.ProviderAddic7ed:
+			case services.ProviderOpenSubtitles, services.ProviderSubDB, services.ProviderYifySubtitles,
+				services.ProviderSubscene, services.ProviderAddic7ed:
 				request.Providers = append(request.Providers, services.SubtitleProvider(provStr))
 			}
 		}
@@ -207,7 +207,7 @@ func (h *SubtitleHandler) DownloadSubtitle(c *gin.Context) {
 	ctx := c.Request.Context()
 	track, err := h.subtitleService.DownloadSubtitle(ctx, &request)
 	if err != nil {
-		h.logger.Error("Failed to download subtitle", 
+		h.logger.Error("Failed to download subtitle",
 			zap.Int64("media_item_id", request.MediaItemID),
 			zap.String("result_id", request.ResultID),
 			zap.Error(err))
@@ -268,7 +268,7 @@ func (h *SubtitleHandler) GetSubtitles(c *gin.Context) {
 	ctx := c.Request.Context()
 	subtitles, err := h.subtitleService.GetSubtitles(ctx, mediaID)
 	if err != nil {
-		h.logger.Error("Failed to get subtitles", 
+		h.logger.Error("Failed to get subtitles",
 			zap.Int64("media_id", mediaID),
 			zap.Error(err))
 		c.JSON(http.StatusInternalServerError, ErrorResponse{
@@ -280,8 +280,8 @@ func (h *SubtitleHandler) GetSubtitles(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, SubtitleListResponse{
-		Success:    true,
-		Subtitles:  subtitles,
+		Success:     true,
+		Subtitles:   subtitles,
 		MediaItemID: mediaID,
 	})
 }
@@ -322,7 +322,7 @@ func (h *SubtitleHandler) VerifySubtitleSync(c *gin.Context) {
 		return
 	}
 
-	h.logger.Info("Verify subtitle sync request", 
+	h.logger.Info("Verify subtitle sync request",
 		zap.String("subtitle_id", subtitleID),
 		zap.Int64("media_id", mediaID))
 
@@ -330,7 +330,7 @@ func (h *SubtitleHandler) VerifySubtitleSync(c *gin.Context) {
 	ctx := c.Request.Context()
 	track, err := h.subtitleService.GetSubtitleTrack(ctx, subtitleID)
 	if err != nil {
-		h.logger.Error("Failed to get subtitle track", 
+		h.logger.Error("Failed to get subtitle track",
 			zap.String("subtitle_id", subtitleID),
 			zap.Error(err))
 		c.JSON(http.StatusNotFound, ErrorResponse{
@@ -344,7 +344,7 @@ func (h *SubtitleHandler) VerifySubtitleSync(c *gin.Context) {
 	// Verify synchronization
 	syncResult, err := h.subtitleService.VerifySynchronization(ctx, mediaID, track)
 	if err != nil {
-		h.logger.Error("Failed to verify subtitle sync", 
+		h.logger.Error("Failed to verify subtitle sync",
 			zap.String("subtitle_id", subtitleID),
 			zap.Int64("media_id", mediaID),
 			zap.Error(err))
@@ -401,7 +401,7 @@ func (h *SubtitleHandler) TranslateSubtitle(c *gin.Context) {
 	ctx := c.Request.Context()
 	translatedTrack, err := h.subtitleService.TranslateSubtitle(ctx, &request)
 	if err != nil {
-		h.logger.Error("Failed to translate subtitle", 
+		h.logger.Error("Failed to translate subtitle",
 			zap.String("subtitle_id", request.SubtitleID),
 			zap.String("source_language", request.SourceLanguage),
 			zap.String("target_language", request.TargetLanguage),
@@ -503,9 +503,9 @@ func (h *SubtitleHandler) GetSupportedProviders(c *gin.Context) {
 
 // Helper types
 type LanguageListResponse struct {
-	Success   bool             `json:"success"`
+	Success   bool               `json:"success"`
 	Languages []SubtitleLanguage `json:"languages"`
-	Count     int              `json:"count"`
+	Count     int                `json:"count"`
 }
 
 type ProviderListResponse struct {
@@ -623,7 +623,7 @@ func (h *SubtitleHandler) UploadSubtitle(c *gin.Context) {
 		})
 		return
 	}
-	
+
 	// Open the uploaded file
 	fileContent, err := file.Open()
 	if err != nil {
@@ -668,22 +668,22 @@ func (h *SubtitleHandler) UploadSubtitle(c *gin.Context) {
 
 	// Create subtitle upload request
 	request := &services.SubtitleUploadRequest{
-		MediaID:     mediaID,
-		Language:    language,
+		MediaID:      mediaID,
+		Language:     language,
 		LanguageCode: languageCode,
-		Format:      format,
-		Content:     contentStr,
-		IsDefault:   false,
-		IsForced:    false,
-		Encoding:    "utf-8",
-		SyncOffset:  0.0,
+		Format:       format,
+		Content:      contentStr,
+		IsDefault:    false,
+		IsForced:     false,
+		Encoding:     "utf-8",
+		SyncOffset:   0.0,
 	}
 
 	// Save to database
 	ctx := c.Request.Context()
 	response, err := h.subtitleService.SaveUploadedSubtitle(ctx, request)
 	if err != nil {
-		h.logger.Error("Failed to save uploaded subtitle", 
+		h.logger.Error("Failed to save uploaded subtitle",
 			zap.Int64("media_item_id", mediaID),
 			zap.String("language", language),
 			zap.Error(err))

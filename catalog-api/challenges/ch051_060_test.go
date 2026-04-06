@@ -43,7 +43,7 @@ func TestInputValidationChallenge_Execute_MockServer(t *testing.T) {
 	ch := NewInputValidationChallenge()
 	ch.config = &BrowsingConfig{
 		BaseURL:  server.URL,
-		Username:     "admin",
+		Username: "admin",
 		Password: "admin123",
 	}
 
@@ -104,7 +104,7 @@ func TestPaginationChallenge_Execute_MockServer(t *testing.T) {
 	ch := NewPaginationChallenge()
 	ch.config = &BrowsingConfig{
 		BaseURL:  server.URL,
-		Username:     "admin",
+		Username: "admin",
 		Password: "admin123",
 	}
 
@@ -156,7 +156,7 @@ func TestContentTypesChallenge_Execute_MockServer(t *testing.T) {
 	ch := NewContentTypesChallenge()
 	ch.config = &BrowsingConfig{
 		BaseURL:  server.URL,
-		Username:     "admin",
+		Username: "admin",
 		Password: "admin123",
 	}
 
@@ -292,7 +292,7 @@ func TestAnalyticsAPIChallenge_Execute_MockServer(t *testing.T) {
 	ch := NewAnalyticsAPIChallenge()
 	ch.config = &BrowsingConfig{
 		BaseURL:  server.URL,
-		Username:     "admin",
+		Username: "admin",
 		Password: "admin123",
 	}
 
@@ -352,7 +352,7 @@ func TestEntityCRUDChallenge_Execute_MockServer(t *testing.T) {
 	ch := NewEntityCRUDChallenge()
 	ch.config = &BrowsingConfig{
 		BaseURL:  server.URL,
-		Username:     "admin",
+		Username: "admin",
 		Password: "admin123",
 	}
 
@@ -416,7 +416,7 @@ func TestSyncAPIChallenge_Execute_MockServer(t *testing.T) {
 	ch := NewSyncAPIChallenge()
 	ch.config = &BrowsingConfig{
 		BaseURL:  server.URL,
-		Username:     "admin",
+		Username: "admin",
 		Password: "admin123",
 	}
 
@@ -476,7 +476,7 @@ func TestSubtitleAPIChallenge_Execute_MockServer(t *testing.T) {
 	ch := NewSubtitleAPIChallenge()
 	ch.config = &BrowsingConfig{
 		BaseURL:  server.URL,
-		Username:     "admin",
+		Username: "admin",
 		Password: "admin123",
 	}
 
@@ -532,7 +532,7 @@ func TestRecommendationAPIChallenge_Execute_MockServer(t *testing.T) {
 	ch := NewRecommendationAPIChallenge()
 	ch.config = &BrowsingConfig{
 		BaseURL:  server.URL,
-		Username:     "admin",
+		Username: "admin",
 		Password: "admin123",
 	}
 
@@ -592,7 +592,7 @@ func TestLocalizationAPIChallenge_Execute_MockServer(t *testing.T) {
 	ch := NewLocalizationAPIChallenge()
 	ch.config = &BrowsingConfig{
 		BaseURL:  server.URL,
-		Username:     "admin",
+		Username: "admin",
 		Password: "admin123",
 	}
 

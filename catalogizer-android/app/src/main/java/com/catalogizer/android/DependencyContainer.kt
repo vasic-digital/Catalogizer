@@ -1,6 +1,7 @@
 package com.catalogizer.android
 
 import android.content.Context
+import android.util.Log
 import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.PreferenceDataStoreFactory
 import androidx.datastore.preferences.core.Preferences
@@ -211,14 +212,18 @@ class DependencyContainer(private val context: Context) {
     fun shutdown() {
         try {
             webSocketRepository.disconnect()
-        } catch (_: Exception) { }
+        } catch (e: Exception) { 
+            Log.w(TAG, "Error disconnecting WebSocket during shutdown", e)
+        }
         try {
             okHttpClient?.let { client ->
                 client.dispatcher.executorService.shutdown()
                 client.connectionPool.evictAll()
                 client.cache?.close()
             }
-        } catch (_: Exception) { }
+        } catch (e: Exception) { 
+            Log.w(TAG, "Error shutting down OkHttp client", e)
+        }
     }
 
     /**
@@ -254,6 +259,7 @@ class DependencyContainer(private val context: Context) {
     }
 
     companion object {
+        private const val TAG = "DependencyContainer"
         private val SERVER_URL_PREF_KEY = stringPreferencesKey("server_url")
 
         @Volatile

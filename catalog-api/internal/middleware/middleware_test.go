@@ -167,10 +167,10 @@ func TestCORS_PreflightDoesNotReachHandler(t *testing.T) {
 
 func TestRequestID(t *testing.T) {
 	tests := []struct {
-		name             string
-		incomingID       string
-		expectIncoming   bool
-		expectGenerated  bool
+		name            string
+		incomingID      string
+		expectIncoming  bool
+		expectGenerated bool
 	}{
 		{
 			name:            "generates new ID when none provided",

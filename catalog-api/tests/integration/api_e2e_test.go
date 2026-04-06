@@ -27,7 +27,7 @@ func setupE2EServer(t *testing.T) *httptest.Server {
 
 	// Shared state
 	var mu sync.Mutex
-	tokens := map[string]string{}       // token -> username
+	tokens := map[string]string{} // token -> username
 	users := map[string]map[string]interface{}{
 		"admin": {
 			"id":       1,
@@ -305,10 +305,10 @@ func setupE2EServer(t *testing.T) *httptest.Server {
 			c.JSON(http.StatusOK, gin.H{
 				"success": true,
 				"data": gin.H{
-					"total_media":    3,
-					"total_size_gb":  5.8,
-					"active_users":   2,
-					"recent_scans":   1,
+					"total_media":   3,
+					"total_size_gb": 5.8,
+					"active_users":  2,
+					"recent_scans":  1,
 				},
 			})
 		})

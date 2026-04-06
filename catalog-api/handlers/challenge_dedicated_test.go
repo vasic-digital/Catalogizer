@@ -713,7 +713,7 @@ func TestChallengeHandler_GetChallenge_FirstMatchWins(t *testing.T) {
 	assert.Equal(t, http.StatusOK, w.Code)
 
 	var response struct {
-		Success bool                     `json:"success"`
+		Success bool                      `json:"success"`
 		Data    services.ChallengeSummary `json:"data"`
 	}
 	err := json.Unmarshal(w.Body.Bytes(), &response)
@@ -742,9 +742,9 @@ func TestChallengeHandler_ListChallenges_DependencyChain(t *testing.T) {
 	assert.Equal(t, http.StatusOK, w.Code)
 
 	var response struct {
-		Success bool                       `json:"success"`
+		Success bool                        `json:"success"`
 		Data    []services.ChallengeSummary `json:"data"`
-		Count   int                        `json:"count"`
+		Count   int                         `json:"count"`
 	}
 	err := json.Unmarshal(w.Body.Bytes(), &response)
 	require.NoError(t, err)

@@ -1698,8 +1698,8 @@ func TestRunMigrations_WrapsRunMigrationError(t *testing.T) {
 	err := db.createMigrationsTable(ctx)
 	require.NoError(t, err)
 
-	// Mark all 10 migrations as done except one that we'll sabotage
-	for v := 1; v <= 10; v++ {
+	// Mark all 14 migrations as done
+	for v := 1; v <= 14; v++ {
 		_, err := db.ExecContext(ctx, "INSERT INTO migrations (version, name) VALUES (?, ?)", v, fmt.Sprintf("migration_%d", v))
 		require.NoError(t, err)
 	}

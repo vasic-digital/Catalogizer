@@ -1048,7 +1048,9 @@ npm run build && npm run test
 export GIN_MODE=debug
 ```
 
-The server uses `zap` structured logging. In debug mode, all requests and responses are logged with details.
+The server uses structured logging via the `internal/logging` package (built on Zap). In debug mode, all requests and responses are logged with details.
+
+See [Structured Logging Guide](guides/STRUCTURED_LOGGING.md) for complete documentation on logging best practices and API usage.
 
 **View server logs:**
 ```bash

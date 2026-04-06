@@ -19,7 +19,7 @@ type CacheService struct {
 	db        *database.DB
 	logger    *zap.Logger
 	wg        sync.WaitGroup // Tracks background goroutines for graceful shutdown
-	shutdown  chan struct{}   // Signals shutdown to prevent new goroutines
+	shutdown  chan struct{}  // Signals shutdown to prevent new goroutines
 	closeMu   sync.Mutex     // Guards shutdown-check + wg.Add atomicity
 	closeOnce sync.Once      // Ensures Close() is safe to call multiple times
 }

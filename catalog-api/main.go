@@ -9,6 +9,7 @@ import (
 	"catalogizer/internal/auth"
 	internal_config "catalogizer/internal/config"
 	"catalogizer/internal/handlers"
+	"catalogizer/internal/logging"
 	"catalogizer/internal/metrics"
 	"catalogizer/internal/middleware"
 	"catalogizer/internal/modules"
@@ -27,15 +28,14 @@ import (
 	"flag"
 	"fmt"
 	"io"
-	"log"
 	"math/big"
 	"net"
 	"net/http"
-	"strings"
 	"os"
 	"os/signal"
 	"path/filepath"
 	"strconv"
+	"strings"
 	"sync"
 	"syscall"
 	"time"
@@ -247,12 +247,27 @@ func main() {
 	testMode := flag.Bool("test-mode", false, "Run in test mode with additional logging")
 	flag.Parse()
 
-	// Initialize logger
-	logger, _ := zap.NewProduction()
-	defer logger.Sync()
+	// Initialize structured logger
+	env := os.Getenv("APP_ENV")
+	if env == "" {
+		env = "production"
+	}
+	if *testMode {
+		env = "development"
+	}
+	if err := logging.Init(env); err != nil {
+		fmt.Fprintf(os.Stderr, "Failed to initialize logger: %v\n", err)
+		os.Exit(1)
+	}
+	defer func() {
+		if err := logging.Sync(); err != nil {
+			fmt.Fprintf(os.Stderr, "Failed to sync logger: %v\n", err)
+		}
+	}()
+	logger := logging.Logger
 
 	if *testMode {
-		logger.Info("Running in test mode")
+		logging.Info("Running in test mode")
 	}
 
 	// Register all external Go modules (digital.vasic.* family)
@@ -262,7 +277,7 @@ func main() {
 	// Load configuration
 	cfg, err := root_config.LoadConfig("config.json")
 	if err != nil {
-		log.Fatal("Failed to load configuration:", err)
+		logging.Fatal("Failed to load configuration", logging.ErrorField(err))
 	}
 
 	// Override sensitive config with environment variables (security best practice)
@@ -320,24 +335,24 @@ func main() {
 	// Initialize single database connection
 	databaseDB, err := database.NewConnection(&cfg.Database)
 	if err != nil {
-		log.Fatal("Failed to initialize database:", err)
+		logging.Fatal("Failed to initialize database", logging.ErrorField(err))
 	}
-	log.Printf("Database connected: %s", databaseDB.DatabaseType())
+	logging.Infof("Database connected: %s", databaseDB.DatabaseType())
 
 	// Start module background services (memory monitor, health checks)
 	ctx := context.Background()
 	moduleRegistry.StartBackgroundServices(ctx)
 
 	// Run database migrations
-	log.Println("Running database migrations...")
+	logging.Info("Running database migrations...")
 	if err := databaseDB.RunMigrations(ctx); err != nil {
-		log.Fatal("Failed to run database migrations:", err)
+		logging.Fatal("Failed to run database migrations", logging.ErrorField(err))
 	}
-	log.Println("Database migrations completed successfully")
+	logging.Info("Database migrations completed successfully")
 
 	// Seed default admin user if none exists
 	if err := seedDefaultAdmin(databaseDB, cfg.Auth.AdminUsername, cfg.Auth.AdminPassword); err != nil {
-		log.Printf("Warning: failed to seed admin user: %v", err)
+		logging.Warnf("Failed to seed admin user: %v", err)
 	}
 
 	// Initialize services
@@ -353,22 +368,36 @@ func main() {
 			var host, share, username, password, domain *string
 			var port *int
 			if err := smbRows.Scan(&name, &host, &port, &share, &username, &password, &domain); err != nil {
-				log.Printf("Warning: failed to scan SMB storage root: %v", err)
+				logging.Warnf("Failed to scan SMB storage root: %v", err)
 				continue
 			}
 			h := internal_config.SMBHost{Name: name, Port: 445}
-			if host != nil { h.Host = *host }
-			if port != nil { h.Port = *port }
-			if share != nil { h.Share = *share }
-			if username != nil { h.Username = *username }
-			if password != nil { h.Password = *password }
-			if domain != nil { h.Domain = *domain }
+			if host != nil {
+				h.Host = *host
+			}
+			if port != nil {
+				h.Port = *port
+			}
+			if share != nil {
+				h.Share = *share
+			}
+			if username != nil {
+				h.Username = *username
+			}
+			if password != nil {
+				h.Password = *password
+			}
+			if domain != nil {
+				h.Domain = *domain
+			}
 			smbHosts = append(smbHosts, h)
-			log.Printf("Loaded SMB host from DB: %s (%s:%d/%s)", h.Name, h.Host, h.Port, h.Share)
+			logging.Infof("Loaded SMB host from DB: %s (%s:%d/%s)", h.Name, h.Host, h.Port, h.Share)
 		}
-		smbRows.Close()
+		if err := smbRows.Close(); err != nil {
+			logging.Warnf("Failed to close SMB rows: %v", err)
+		}
 	} else {
-		log.Printf("Warning: failed to query SMB storage roots: %v", smbErr)
+		logging.Warnf("Failed to query SMB storage roots: %v", smbErr)
 	}
 
 	internalCfg := &internal_config.Config{
@@ -439,10 +468,10 @@ func main() {
 		// Generate a cryptographically secure random secret at startup
 		secretBytes := make([]byte, 32)
 		if _, err := rand.Read(secretBytes); err != nil {
-			log.Fatal("FATAL: Failed to generate JWT secret: ", err)
+			logging.Fatal("Failed to generate JWT secret", logging.ErrorField(err))
 		}
 		jwtSecret = hex.EncodeToString(secretBytes)
-		log.Println("WARNING: No JWT secret configured. Generated ephemeral secret. Set Auth.JWTSecret in config for persistent sessions across restarts.")
+		logging.Warn("No JWT secret configured. Generated ephemeral secret. Set Auth.JWTSecret in config for persistent sessions across restarts.")
 	}
 	authService := root_services.NewAuthService(userRepo, jwtSecret)
 	analyticsService := root_services.NewAnalyticsService(analyticsRepo)
@@ -496,10 +525,10 @@ func main() {
 
 	// Test Redis connection
 	if _, err := redisClient.Ping(context.Background()).Result(); err != nil {
-		log.Printf("Warning: Redis connection failed (%v), falling back to in-memory rate limiting", err)
+		logging.Warnf("Redis connection failed (%v), falling back to in-memory rate limiting", err)
 		redisClient = nil
 	} else {
-		log.Println("Redis connected successfully for distributed rate limiting")
+		logging.Info("Redis connected successfully for distributed rate limiting")
 	}
 
 	// Initialize challenge service
@@ -524,7 +553,7 @@ func main() {
 	}
 	universalScanner := services.NewUniversalScanner(databaseDB, logger, nil, clientFactory, scannerConcurrency)
 	if err := universalScanner.Start(); err != nil {
-		log.Fatalf("Failed to start universal scanner: %v", err)
+		logging.Fatalf("Failed to start universal scanner: %v", err)
 	}
 	defer universalScanner.Stop()
 
@@ -575,7 +604,7 @@ func main() {
 	assetRepo := root_repository.NewAssetRepository(databaseDB)
 	assetStore, err := asset_store.NewFileStore(filepath.Join(".", "cache", "assets"))
 	if err != nil {
-		log.Printf("Warning: failed to create asset store: %v", err)
+		logging.Warnf("Failed to create asset store: %v", err)
 	}
 	assetEventBus := event.NewInMemoryBus()
 	assetResolver := resolver.NewChain(
@@ -797,10 +826,10 @@ func main() {
 
 		case <-time.After(deepTimeout):
 			c.JSON(http.StatusOK, gin.H{
-				"status":    "degraded",
-				"time":      time.Now().UTC(),
-				"version":   Version,
-				"message":   "health check exceeded 100ms timeout",
+				"status":  "degraded",
+				"time":    time.Now().UTC(),
+				"version": Version,
+				"message": "health check exceeded 100ms timeout",
 				"components": gin.H{
 					"timeout": gin.H{
 						"status":  "degraded",
@@ -1395,7 +1424,7 @@ func seedDefaultAdmin(db *database.DB, username, password string) error {
 		return fmt.Errorf("insert admin user: %w", err)
 	}
 
-	log.Printf("Default admin user '%s' created", username)
+	logging.Infof("Default admin user '%s' created", username)
 	return nil
 }
 

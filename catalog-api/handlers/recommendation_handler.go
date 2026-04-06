@@ -119,9 +119,9 @@ func (h *RecommendationHandler) GetTrendingItems(c *gin.Context) {
 	}
 
 	response := TrendingResponse{
-		Items:      trending,
-		MediaType:  mediaType,
-		TimeRange:  timeRange,
+		Items:       trending,
+		MediaType:   mediaType,
+		TimeRange:   timeRange,
 		GeneratedAt: time.Now(),
 	}
 
@@ -162,9 +162,9 @@ func (h *RecommendationHandler) GetPersonalizedRecommendations(c *gin.Context) {
 	}
 
 	response := PersonalizedResponse{
-		UserID:         userID,
-		Items:          recommendations,
-		GeneratedAt:    time.Now(),
+		UserID:      userID,
+		Items:       recommendations,
+		GeneratedAt: time.Now(),
 	}
 
 	c.JSON(http.StatusOK, response)
@@ -185,10 +185,10 @@ func (h *RecommendationHandler) getMediaMetadata(ctx context.Context, mediaID in
 	var metadata models.MediaMetadata
 	var castStr string
 	err := h.recommendationService.GetDB().QueryRowContext(ctx, query, mediaID).Scan(
-		&metadata.ID, &metadata.Title, &metadata.MediaType, &metadata.Year, 
-		&metadata.Description, &metadata.Rating, &metadata.Duration, 
-		&metadata.Language, &metadata.Country, &metadata.Director, 
-		&metadata.Producer, &castStr, &metadata.Resolution, 
+		&metadata.ID, &metadata.Title, &metadata.MediaType, &metadata.Year,
+		&metadata.Description, &metadata.Rating, &metadata.Duration,
+		&metadata.Language, &metadata.Country, &metadata.Director,
+		&metadata.Producer, &castStr, &metadata.Resolution,
 		&metadata.FileSize, &metadata.CreatedAt, &metadata.UpdatedAt,
 	)
 
@@ -234,7 +234,7 @@ func (h *RecommendationHandler) getPersonalizedRecommendations(ctx context.Conte
 	var items []*models.MediaCatalogItem
 	for i := int64(1); i <= int64(limit) && i <= 3; i++ {
 		item := &models.MediaCatalogItem{
-			ID:            userID * 10 + i,
+			ID:            userID*10 + i,
 			Title:         fmt.Sprintf("Personalized Media %d for User %d", i, userID),
 			MediaType:     "video",
 			Description:   &[]string{fmt.Sprintf("Personalized description %d", i)}[0],
@@ -253,15 +253,15 @@ func (h *RecommendationHandler) getPersonalizedRecommendations(ctx context.Conte
 
 // TrendingResponse represents the response for trending items
 type TrendingResponse struct {
-	Items      []*models.MediaCatalogItem `json:"items"`
-	MediaType  string                     `json:"media_type"`
-	TimeRange  string                     `json:"time_range"`
+	Items       []*models.MediaCatalogItem `json:"items"`
+	MediaType   string                     `json:"media_type"`
+	TimeRange   string                     `json:"time_range"`
 	GeneratedAt time.Time                  `json:"generated_at"`
 }
 
 // PersonalizedResponse represents the response for personalized recommendations
 type PersonalizedResponse struct {
 	UserID      int64                      `json:"user_id"`
-	Items       []*models.MediaCatalogItem  `json:"items"`
+	Items       []*models.MediaCatalogItem `json:"items"`
 	GeneratedAt time.Time                  `json:"generated_at"`
 }

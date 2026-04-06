@@ -4,7 +4,9 @@ severity: medium
 category: visual
 platform: 
 screen: androidtv-curiosity-011.png
-status: open
+status: resolved
+resolution: fixed
+fixed_date: 2026-04-06
 found_date: 2026-04-05
 ---
 

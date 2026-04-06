@@ -35,9 +35,9 @@ import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 
 /**
- * Media detail screen displaying a hero poster, metadata badges (year, rating, type, quality),
- * play/back/favorite action buttons, synopsis, and file info. Fetches entity data
- * from [MediaRepository] and checks favorite status via the API.
+ * Enhanced media detail screen with improved UI/UX.
+ * Features hero poster, metadata badges, action buttons with clear CTAs,
+ * synopsis, and file info with proper spacing and visual feedback.
  */
 @Composable
 fun MediaDetailScreen(
@@ -57,14 +57,13 @@ fun MediaDetailScreen(
     val config = LocalConfiguration.current
     val isCompact = config.screenWidthDp < 600
 
-    // Fetch entity details from API, then check favorite status
+    // Fetch entity details from API
     LaunchedEffect(mediaId, retryCount) {
         isLoading = true
         try {
             val result = container.mediaRepository.getMediaById(mediaId).first()
             mediaItem = result
             error = if (result == null) "Media not found" else null
-            // Check favorite status via dedicated endpoint
             if (result != null) {
                 val entityType = result.mediaType ?: "movie"
                 isFavorite = container.mediaRepository.checkFavorite(entityType, mediaId)
@@ -119,8 +118,9 @@ fun MediaDetailScreen(
                         }) {
                             Text("Retry")
                         }
+                        // Simplified back button with full text visibility
                         Button(onClick = onNavigateBack) {
-                            Text("Back to Library")
+                            Text("Back")
                         }
                     }
                 }
@@ -145,9 +145,7 @@ fun MediaDetailScreen(
                         .fillMaxSize()
                         .verticalScroll(scrollState)
                 ) {
-                    // Hero poster section — use FillWidth to prevent
-                    // deforming the image. The image fills width and
-                    // crops vertically to preserve aspect ratio.
+                    // Hero poster section
                     Box(
                         modifier = Modifier
                             .fillMaxWidth()
@@ -178,7 +176,7 @@ fun MediaDetailScreen(
                                 )
                             )
                         )
-                        // Back button
+                        // Back button with icon and label for clarity
                         Button(
                             onClick = onNavigateBack,
                             modifier = Modifier.padding(16.dp).align(Alignment.TopStart)
@@ -193,8 +191,13 @@ fun MediaDetailScreen(
                         }
                     }
 
-                    // Metadata content
-                    Column(modifier = Modifier.padding(horizontal = if (isCompact) 24.dp else 48.dp)) {
+                    // Metadata content with improved spacing
+                    Column(
+                        modifier = Modifier.padding(
+                            horizontal = if (isCompact) 24.dp else 48.dp,
+                            vertical = 24.dp
+                        )
+                    ) {
                         // Title
                         Text(
                             text = item.title,
@@ -206,120 +209,158 @@ fun MediaDetailScreen(
                             overflow = TextOverflow.Ellipsis
                         )
 
-                        Spacer(Modifier.height(8.dp))
+                        Spacer(Modifier.height(12.dp))
 
-                        // Year + Rating + Type badges
+                        // Year + Rating + Type badges with improved styling
                         Row(
                             verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(12.dp)
+                            horizontalArrangement = Arrangement.spacedBy(16.dp)
                         ) {
                             item.year?.let {
-                                Text(it.toString(), color = Color.White.copy(0.7f), style = MaterialTheme.typography.bodyMedium)
+                                Text(
+                                    it.toString(), 
+                                    color = Color.White.copy(0.8f), 
+                                    style = MaterialTheme.typography.bodyLarge
+                                )
                             }
                             item.rating?.let { r ->
                                 if (r > 0) {
                                     Row(verticalAlignment = Alignment.CenterVertically) {
-                                        M3Icon(Icons.Default.Star, "Rating", Modifier.size(16.dp), tint = Color(0xFFFFD700))
-                                        Spacer(Modifier.width(4.dp))
-                                        Text(String.format("%.1f", r), color = Color(0xFFFFD700),
-                                            style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.Bold)
+                                        M3Icon(
+                                            Icons.Default.Star, 
+                                            "Rating", 
+                                            Modifier.size(18.dp), 
+                                            tint = Color(0xFFFFD700)
+                                        )
+                                        Spacer(Modifier.width(6.dp))
+                                        Text(
+                                            String.format("%.1f", r), 
+                                            color = Color(0xFFFFD700),
+                                            style = MaterialTheme.typography.bodyLarge, 
+                                            fontWeight = FontWeight.Bold
+                                        )
                                     }
                                 }
                             }
                             Box(
-                                Modifier.background(Color.White.copy(0.15f), RoundedCornerShape(4.dp))
-                                    .padding(horizontal = 8.dp, vertical = 2.dp)
+                                Modifier.background(Color.White.copy(0.15f), RoundedCornerShape(6.dp))
+                                    .padding(horizontal = 12.dp, vertical = 4.dp)
                             ) {
-                                Text((item.mediaType ?: "unknown").replace("_", " ").uppercase(),
-                                    color = Color.White.copy(0.8f), style = MaterialTheme.typography.labelSmall)
+                                val typeLabel = when(item.mediaType) {
+                                    "movie" -> "Movie"
+                                    "tv_show" -> "TV Show"
+                                    "tv_episode" -> "Episode"
+                                    "music_album" -> "Album"
+                                    "song" -> "Song"
+                                    "game" -> "Game"
+                                    "book" -> "Book"
+                                    else -> (item.mediaType ?: "unknown").replace("_", " ")
+                                        .replaceFirstChar { it.uppercase() }
+                                }
+                                Text(
+                                    typeLabel,
+                                    color = Color.White.copy(0.9f), 
+                                    style = MaterialTheme.typography.labelMedium
+                                )
                             }
                             item.quality?.let { q ->
                                 Box(
-                                    Modifier.background(Color(0xFF1B5E20).copy(0.8f), RoundedCornerShape(4.dp))
-                                        .padding(horizontal = 8.dp, vertical = 2.dp)
+                                    Modifier.background(Color(0xFF1B5E20).copy(0.8f), RoundedCornerShape(6.dp))
+                                        .padding(horizontal = 12.dp, vertical = 4.dp)
                                 ) {
-                                    Text(q.uppercase(), color = Color.White, style = MaterialTheme.typography.labelSmall)
-                                }
-                            }
-                        }
-
-                        Spacer(Modifier.height(20.dp))
-
-                        // Play + Back buttons (Play gets auto-focus for D-pad)
-                        Row(
-                            horizontalArrangement = Arrangement.spacedBy(12.dp),
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Button(
-                                onClick = { onNavigateToPlayer(mediaId) },
-                                modifier = Modifier.height(48.dp).focusRequester(playButtonFocus).focusable(),
-                                contentPadding = PaddingValues(horizontal = 24.dp, vertical = 0.dp)
-                            ) {
-                                Row(
-                                    verticalAlignment = Alignment.CenterVertically,
-                                    horizontalArrangement = Arrangement.spacedBy(8.dp),
-                                    modifier = Modifier.fillMaxHeight()
-                                ) {
-                                    M3Icon(Icons.Default.PlayArrow, "Play", Modifier.size(24.dp))
-                                    Text("Play", style = MaterialTheme.typography.titleSmall)
-                                }
-                            }
-                            Button(
-                                onClick = onNavigateBack,
-                                modifier = Modifier.height(48.dp),
-                                contentPadding = PaddingValues(horizontal = 24.dp, vertical = 0.dp)
-                            ) {
-                                Box(Modifier.fillMaxHeight(), contentAlignment = Alignment.Center) {
-                                    Text("Back to Library", style = MaterialTheme.typography.titleSmall)
-                                }
-                            }
-                            Button(
-                                onClick = {
-                                    val oldState = isFavorite
-                                    isFavorite = !oldState // optimistic update
-                                    coroutineScope.launch {
-                                        try {
-                                            val entityType = item.mediaType ?: "movie"
-                                            container.mediaRepository.toggleFavorite(entityType, mediaId, oldState)
-                                        } catch (e: Exception) {
-                                            isFavorite = oldState // revert on failure
-                                            android.util.Log.e("MediaDetail", "Favorite toggle failed", e)
-                                        }
-                                    }
-                                },
-                                modifier = Modifier.height(48.dp),
-                                contentPadding = PaddingValues(horizontal = 24.dp, vertical = 0.dp)
-                            ) {
-                                Row(
-                                    verticalAlignment = Alignment.CenterVertically,
-                                    horizontalArrangement = Arrangement.spacedBy(8.dp),
-                                    modifier = Modifier.fillMaxHeight()
-                                ) {
-                                    M3Icon(
-                                        if (isFavorite) Icons.Default.Favorite else Icons.Default.FavoriteBorder,
-                                        contentDescription = if (isFavorite) "Remove from Favorites" else "Add to Favorites",
-                                        modifier = Modifier.size(24.dp)
-                                    )
-                                    Text("Favorite", style = MaterialTheme.typography.titleSmall)
+                                    Text(q.uppercase(), color = Color.White, style = MaterialTheme.typography.labelMedium)
                                 }
                             }
                         }
 
                         Spacer(Modifier.height(24.dp))
 
-                        // Synopsis
+                        // Action buttons with improved spacing and clear CTAs
+                        Row(
+                            horizontalArrangement = Arrangement.spacedBy(16.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            // Primary Play button with enhanced styling
+                            Button(
+                                onClick = { onNavigateToPlayer(mediaId) },
+                                modifier = Modifier
+                                    .height(52.dp)
+                                    .focusRequester(playButtonFocus)
+                                    .focusable(),
+                                scale = ButtonDefaults.scale(focusedScale = 1.05f)
+                            ) {
+                                Row(
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    horizontalArrangement = Arrangement.spacedBy(10.dp)
+                                ) {
+                                    M3Icon(Icons.Default.PlayArrow, "Play", Modifier.size(28.dp))
+                                    Text(
+                                        "Play Now", 
+                                        style = MaterialTheme.typography.titleMedium,
+                                        fontWeight = FontWeight.SemiBold
+                                    )
+                                }
+                            }
+                            
+                            // Favorite button with clear state indication
+                            Button(
+                                onClick = {
+                                    val oldState = isFavorite
+                                    isFavorite = !oldState
+                                    coroutineScope.launch {
+                                        try {
+                                            val entityType = item.mediaType ?: "movie"
+                                            container.mediaRepository.toggleFavorite(entityType, mediaId, oldState)
+                                        } catch (e: Exception) {
+                                            isFavorite = oldState
+                                            android.util.Log.e("MediaDetail", "Favorite toggle failed", e)
+                                        }
+                                    }
+                                },
+                                modifier = Modifier.height(52.dp),
+                                scale = ButtonDefaults.scale(focusedScale = 1.05f)
+                            ) {
+                                Row(
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    horizontalArrangement = Arrangement.spacedBy(10.dp)
+                                ) {
+                                    M3Icon(
+                                        if (isFavorite) Icons.Default.Favorite else Icons.Default.FavoriteBorder,
+                                        contentDescription = if (isFavorite) "Remove from Favorites" else "Add to Favorites",
+                                        modifier = Modifier.size(24.dp),
+                                        tint = if (isFavorite) Color(0xFFFF6B6B) else Color.White
+                                    )
+                                    Text(
+                                        if (isFavorite) "Favorited" else "Favorite",
+                                        style = MaterialTheme.typography.titleMedium
+                                    )
+                                }
+                            }
+                        }
+
+                        Spacer(Modifier.height(32.dp))
+
+                        // Synopsis section
                         item.description?.let { desc ->
                             if (desc.isNotBlank()) {
-                                Text("Synopsis", style = MaterialTheme.typography.titleMedium,
-                                    color = Color.White, fontWeight = FontWeight.Bold)
-                                Spacer(Modifier.height(8.dp))
-                                Text(desc, style = MaterialTheme.typography.bodyMedium,
-                                    color = Color.White.copy(0.8f))
+                                Text(
+                                    "Synopsis",
+                                    style = MaterialTheme.typography.titleLarge,
+                                    color = Color.White,
+                                    fontWeight = FontWeight.Bold
+                                )
+                                Spacer(Modifier.height(12.dp))
+                                Text(
+                                    desc,
+                                    style = MaterialTheme.typography.bodyLarge,
+                                    color = Color.White.copy(0.85f),
+                                    lineHeight = MaterialTheme.typography.bodyLarge.lineHeight * 1.2f
+                                )
                                 Spacer(Modifier.height(24.dp))
                             }
                         }
 
-                        // File info
+                        // File info section
                         item.fileSize?.let { size ->
                             if (size > 0) {
                                 val s = when {
@@ -327,7 +368,22 @@ fun MediaDetailScreen(
                                     size > 1048576 -> String.format("%.1f MB", size.toFloat() / 1048576)
                                     else -> String.format("%.1f KB", size.toFloat() / 1024)
                                 }
-                                Text("File Size: $s", color = Color.White.copy(0.7f), style = MaterialTheme.typography.bodySmall)
+                                Row(
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                                ) {
+                                    Text(
+                                        "File Size:",
+                                        color = Color.White.copy(0.6f),
+                                        style = MaterialTheme.typography.bodyMedium
+                                    )
+                                    Text(
+                                        s,
+                                        color = Color.White.copy(0.9f),
+                                        style = MaterialTheme.typography.bodyMedium,
+                                        fontWeight = FontWeight.Medium
+                                    )
+                                }
                             }
                         }
                         Spacer(Modifier.height(48.dp))

@@ -8,11 +8,11 @@ import (
 
 // ChallengeBank represents the JSON challenge bank structure.
 type ChallengeBank struct {
-	Version     string            `json:"version"`
-	Name        string            `json:"name"`
-	Description string            `json:"description"`
-	Generated   string            `json:"generated"`
-	Categories  map[string]string `json:"categories"`
+	Version     string               `json:"version"`
+	Name        string               `json:"name"`
+	Description string               `json:"description"`
+	Generated   string               `json:"generated"`
+	Categories  map[string]string    `json:"categories"`
 	Challenges  []ChallengeBankEntry `json:"challenges"`
 }
 

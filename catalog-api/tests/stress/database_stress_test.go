@@ -16,14 +16,14 @@ import (
 
 // DatabaseStressContext manages database stress test execution
 type DatabaseStressContext struct {
-	DB              *sql.DB
-	OperationCount  int64
-	SuccessCount    int64
-	ErrorCount      int64
-	TotalLatency    int64
-	StartTime       time.Time
-	Errors          []error
-	ErrorsMutex     sync.Mutex
+	DB             *sql.DB
+	OperationCount int64
+	SuccessCount   int64
+	ErrorCount     int64
+	TotalLatency   int64
+	StartTime      time.Time
+	Errors         []error
+	ErrorsMutex    sync.Mutex
 }
 
 func newDatabaseStressContext(t *testing.T) *DatabaseStressContext {

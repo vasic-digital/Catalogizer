@@ -15,8 +15,8 @@ import (
 
 	"catalogizer/config"
 	"catalogizer/database"
-	internalservices "catalogizer/internal/services"
 	mediamodels "catalogizer/internal/media/models"
+	internalservices "catalogizer/internal/services"
 	"catalogizer/models"
 	"catalogizer/repository"
 	"catalogizer/services"
@@ -1424,11 +1424,11 @@ func TestSearchHandler_AdvancedSearch_WithDB(t *testing.T) {
 		{"default pagination", SearchRequest{Filter: models.SearchFilter{Query: "test"}}},
 		{"invalid sort", SearchRequest{
 			Filter: models.SearchFilter{Query: "test"},
-			Page: 1, Limit: 50, SortBy: "invalid_field", SortOrder: "invalid_order",
+			Page:   1, Limit: 50, SortBy: "invalid_field", SortOrder: "invalid_order",
 		}},
 		{"valid request", SearchRequest{
 			Filter: models.SearchFilter{Query: "movie"},
-			Page: 1, Limit: 10, SortBy: "name", SortOrder: "asc",
+			Page:   1, Limit: 10, SortBy: "name", SortOrder: "asc",
 		}},
 	}
 
@@ -1548,9 +1548,9 @@ func TestFileToMediaItem_EmptyFields(t *testing.T) {
 // =============================================================================
 
 type mockScanner struct {
-	queueScanFunc           func(job internalservices.ScanJob) error
+	queueScanFunc            func(job internalservices.ScanJob) error
 	getAllActiveScanStatuses func() map[string]*internalservices.ScanStatus
-	getActiveScanStatus     func(jobID string) (*internalservices.ScanStatus, bool)
+	getActiveScanStatus      func(jobID string) (*internalservices.ScanStatus, bool)
 }
 
 func (m *mockScanner) QueueScan(job internalservices.ScanJob) error {

@@ -125,10 +125,10 @@ func TestMemoryPressure_GoroutineLimit(t *testing.T) {
 	}
 
 	tests := []struct {
-		name             string
-		spawnCount       int
-		maxGoroutines    int
-		workDuration     time.Duration
+		name          string
+		spawnCount    int
+		maxGoroutines int
+		workDuration  time.Duration
 	}{
 		{
 			name:          "100BoundedGoroutines",
@@ -237,11 +237,11 @@ func TestMemoryPressure_CacheEviction(t *testing.T) {
 	}
 
 	tests := []struct {
-		name           string
-		cacheEntries   int
-		entrySize      int
-		maxCacheLimit  int
-		maxMemoryMB    uint64
+		name          string
+		cacheEntries  int
+		entrySize     int
+		maxCacheLimit int
+		maxMemoryMB   uint64
 	}{
 		{
 			name:          "SmallCache_1000Entries",

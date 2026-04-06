@@ -345,13 +345,13 @@ func TestCollectionHandler_ListCollections_WithDB(t *testing.T) {
 
 // mockUserService implements UserServiceInterface for testing
 type mockUserService struct {
-	createFunc func(user *models.User) (int, error)
+	createFunc  func(user *models.User) (int, error)
 	getByIDFunc func(id int) (*models.User, error)
-	updateFunc func(user *models.User) error
-	deleteFunc func(id int) error
-	listFunc   func(limit, offset int) ([]models.User, error)
+	updateFunc  func(user *models.User) error
+	deleteFunc  func(id int) error
+	listFunc    func(limit, offset int) ([]models.User, error)
 	getRoleFunc func(roleID int) (*models.Role, error)
-	countFunc  func() (int, error)
+	countFunc   func() (int, error)
 }
 
 func (m *mockUserService) Create(user *models.User) (int, error) {
@@ -405,15 +405,15 @@ func (m *mockUserService) Count() (int, error) {
 
 // mockUserAuthService implements UserAuthServiceInterface for testing
 type mockUserAuthService struct {
-	checkPermissionFunc    func(userID int, permission string) (bool, error)
-	getCurrentUserFunc     func(token string) (*models.User, error)
-	hashPasswordFunc       func(password string) (string, error)
-	validatePasswordFunc   func(password string) error
+	checkPermissionFunc     func(userID int, permission string) (bool, error)
+	getCurrentUserFunc      func(token string) (*models.User, error)
+	hashPasswordFunc        func(password string) (string, error)
+	validatePasswordFunc    func(password string) error
 	generateSecureTokenFunc func(length int) (string, error)
-	resetPasswordFunc      func(userID int, newPassword string) error
-	lockAccountFunc        func(userID int, lockUntil time.Time) error
-	unlockAccountFunc      func(userID int) error
-	hashDataFunc           func(data string) string
+	resetPasswordFunc       func(userID int, newPassword string) error
+	lockAccountFunc         func(userID int, lockUntil time.Time) error
+	unlockAccountFunc       func(userID int) error
+	hashDataFunc            func(data string) string
 }
 
 func (m *mockUserAuthService) CheckPermission(userID int, permission string) (bool, error) {

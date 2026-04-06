@@ -162,12 +162,12 @@ func TestResponsiveness_HealthEndpoint(t *testing.T) {
 	}
 
 	tests := []struct {
-		name             string
-		concurrentUsers  int
-		requestsPerUser  int
-		maxP99Latency    time.Duration
-		maxAvgLatency    time.Duration
-		minSuccessRate   float64
+		name            string
+		concurrentUsers int
+		requestsPerUser int
+		maxP99Latency   time.Duration
+		maxAvgLatency   time.Duration
+		minSuccessRate  float64
 	}{
 		{
 			name:            "LowLoad_10Users",
@@ -269,12 +269,12 @@ func TestResponsiveness_AuthEndpoint(t *testing.T) {
 	}
 
 	tests := []struct {
-		name             string
-		concurrentUsers  int
-		requestsPerUser  int
-		maxP99Latency    time.Duration
-		maxAvgLatency    time.Duration
-		minSuccessRate   float64
+		name            string
+		concurrentUsers int
+		requestsPerUser int
+		maxP99Latency   time.Duration
+		maxAvgLatency   time.Duration
+		minSuccessRate  float64
 	}{
 		{
 			name:            "LowLoad_10Users",

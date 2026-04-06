@@ -627,12 +627,12 @@ func TestReportingService_CalculateSecurityMetrics_Boost(t *testing.T) {
 	svc := NewReportingService(nil, nil)
 
 	tests := []struct {
-		name            string
-		startDate       time.Time
-		endDate         time.Time
-		expectedThreat  string
-		minScore        float64
-		maxScore        float64
+		name           string
+		startDate      time.Time
+		endDate        time.Time
+		expectedThreat string
+		minScore       float64
+		maxScore       float64
 	}{
 		{
 			name:           "short period high score",

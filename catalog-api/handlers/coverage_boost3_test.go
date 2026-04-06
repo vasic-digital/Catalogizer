@@ -10,9 +10,9 @@ import (
 	"testing"
 	"time"
 
+	internalservices "catalogizer/internal/services"
 	"catalogizer/models"
 	"catalogizer/services"
-	internalservices "catalogizer/internal/services"
 
 	"github.com/gin-gonic/gin"
 	"github.com/gorilla/mux"

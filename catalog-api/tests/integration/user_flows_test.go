@@ -269,9 +269,9 @@ func setupUserFlowsServer(t *testing.T) *httptest.Server {
 			c.JSON(http.StatusOK, gin.H{
 				"success": true,
 				"data": gin.H{
-					"total_views":    100,
-					"active_users":   5,
-					"total_media":    50,
+					"total_views":     100,
+					"active_users":    5,
+					"total_media":     50,
 					"storage_used_gb": 10.5,
 				},
 			})

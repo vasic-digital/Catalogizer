@@ -124,9 +124,9 @@ func (c *MoviesScanChallenge) Execute(ctx context.Context) (*challenge.Result, e
 
 	metrics := map[string]challenge.MetricValue{
 		"video_file_count": {Name: "video_file_count", Value: float64(result.FileCount), Unit: "count"},
-		"movie_dir_count": {Name: "movie_dir_count", Value: float64(result.DirCount), Unit: "count"},
-		"total_size": {Name: "total_size", Value: float64(result.TotalSize), Unit: "bytes"},
-		"scan_time": {Name: "scan_time", Value: float64(time.Since(start).Milliseconds()), Unit: "ms"},
+		"movie_dir_count":  {Name: "movie_dir_count", Value: float64(result.DirCount), Unit: "count"},
+		"total_size":       {Name: "total_size", Value: float64(result.TotalSize), Unit: "bytes"},
+		"scan_time":        {Name: "scan_time", Value: float64(time.Since(start).Milliseconds()), Unit: "ms"},
 	}
 
 	status := challenge.StatusPassed

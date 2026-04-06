@@ -350,18 +350,18 @@ func TestMovieRecognitionProvider_GetTMDbMovieDetails_Success(t *testing.T) {
 	provider := NewMovieRecognitionProvider(logger)
 
 	movieDetails := TMDbMovieDetails{
-		ID:           550,
-		Title:        "Fight Club",
+		ID:            550,
+		Title:         "Fight Club",
 		OriginalTitle: "Fight Club",
-		Overview:     "An insomniac office worker...",
-		ReleaseDate:  "1999-10-15",
-		Runtime:      139,
-		VoteAverage:  8.4,
-		VoteCount:    20000,
-		PosterPath:   "/poster.jpg",
-		BackdropPath: "/backdrop.jpg",
-		IMDbID:       "tt0137523",
-		Genres:       []TMDbGenre{{Name: "Drama"}},
+		Overview:      "An insomniac office worker...",
+		ReleaseDate:   "1999-10-15",
+		Runtime:       139,
+		VoteAverage:   8.4,
+		VoteCount:     20000,
+		PosterPath:    "/poster.jpg",
+		BackdropPath:  "/backdrop.jpg",
+		IMDbID:        "tt0137523",
+		Genres:        []TMDbGenre{{Name: "Drama"}},
 	}
 
 	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {

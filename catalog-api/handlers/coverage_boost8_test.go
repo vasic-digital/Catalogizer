@@ -1412,7 +1412,7 @@ func TestMediaEntityHandler_BrowseByType_PaginationBounds(t *testing.T) {
 	err := json.Unmarshal(w.Body.Bytes(), &resp)
 	require.NoError(t, err)
 	assert.Equal(t, float64(24), resp["limit"]) // clamped to default
-	assert.Equal(t, float64(0), resp["offset"])  // clamped to 0
+	assert.Equal(t, float64(0), resp["offset"]) // clamped to 0
 }
 
 // =====================================================================
@@ -2411,7 +2411,7 @@ func TestLogManagementHandler_GetLogShare_SuccessPath(t *testing.T) {
 
 	share := &models.LogShare{
 		ID:           1,
-		ShareToken:        "abc123",
+		ShareToken:   "abc123",
 		CollectionID: 1,
 		UserID:       1,
 		Permissions:  []string{"read"},
@@ -2463,7 +2463,7 @@ func TestLogManagementHandler_GetLogShare_WriteOnlyPermission(t *testing.T) {
 
 	share := &models.LogShare{
 		ID:           1,
-		ShareToken:        "writeonly",
+		ShareToken:   "writeonly",
 		CollectionID: 1,
 		UserID:       1,
 		Permissions:  []string{"write"},

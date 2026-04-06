@@ -208,11 +208,11 @@ func TestGetProtocolCapabilities(t *testing.T) {
 	mockLogger := zap.NewNop()
 
 	tests := []struct {
-		name                         string
-		protocol                     string
-		wantErr                      bool
-		expectedRealTime             bool
-		expectedAtomicMove           bool
+		name               string
+		protocol           string
+		wantErr            bool
+		expectedRealTime   bool
+		expectedAtomicMove bool
 	}{
 		{
 			name:               "local capabilities",

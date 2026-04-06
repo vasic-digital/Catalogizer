@@ -152,10 +152,10 @@ func buildTestManager(t *testing.T) *MediaManager {
 
 // seedFiles inserts test file rows into the files table.
 func seedFiles(t *testing.T, mediaDB *database.MediaDatabase, rows []struct {
-	Path        string
-	Name        string
-	IsDir       int
-	SmbRoot     string
+	Path    string
+	Name    string
+	IsDir   int
+	SmbRoot string
 }) {
 	t.Helper()
 	for _, r := range rows {
@@ -1997,8 +1997,11 @@ func TestExportData_TableDriven(t *testing.T) {
 
 func TestAnalyzeAllDirectories_TableDriven(t *testing.T) {
 	tests := []struct {
-		name        string
-		files       []struct{ Path, Name, SmbRoot string; IsDir int }
+		name  string
+		files []struct {
+			Path, Name, SmbRoot string
+			IsDir               int
+		}
 		cancelCtx   bool
 		expectError bool
 	}{
@@ -2010,7 +2013,10 @@ func TestAnalyzeAllDirectories_TableDriven(t *testing.T) {
 		},
 		{
 			name: "single directory",
-			files: []struct{ Path, Name, SmbRoot string; IsDir int }{
+			files: []struct {
+				Path, Name, SmbRoot string
+				IsDir               int
+			}{
 				{"/movies/Inception", "Inception", "nas1", 1},
 			},
 			cancelCtx:   false,
@@ -2018,7 +2024,10 @@ func TestAnalyzeAllDirectories_TableDriven(t *testing.T) {
 		},
 		{
 			name: "mix of files and directories",
-			files: []struct{ Path, Name, SmbRoot string; IsDir int }{
+			files: []struct {
+				Path, Name, SmbRoot string
+				IsDir               int
+			}{
 				{"/movies/Film", "Film", "nas1", 1},
 				{"/movies/Film/movie.mkv", "movie.mkv", "nas1", 0},
 				{"/tv/Show", "Show", "nas2", 1},
@@ -2028,7 +2037,10 @@ func TestAnalyzeAllDirectories_TableDriven(t *testing.T) {
 		},
 		{
 			name: "multiple SMB roots",
-			files: []struct{ Path, Name, SmbRoot string; IsDir int }{
+			files: []struct {
+				Path, Name, SmbRoot string
+				IsDir               int
+			}{
 				{"/data/a", "a", "nas1", 1},
 				{"/data/b", "b", "nas2", 1},
 				{"/data/c", "c", "nas3", 1},

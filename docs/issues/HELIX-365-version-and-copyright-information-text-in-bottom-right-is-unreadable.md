@@ -4,7 +4,9 @@ severity: low
 category: accessibility
 platform: 
 screen: web-001-loginform.png
-status: open
+status: resolved
+resolution: fixed
+fixed_date: 2026-04-06
 found_date: 2026-04-05
 ---
 

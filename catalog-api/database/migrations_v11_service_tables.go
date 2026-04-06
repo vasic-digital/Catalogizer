@@ -3,8 +3,9 @@ package database
 import (
 	"context"
 	"fmt"
-	"log"
 	"strings"
+
+	"catalogizer/internal/logging"
 )
 
 // createServiceTables creates tables for analytics, favorites, error reporting,
@@ -314,7 +315,10 @@ func (db *DB) fixServiceTableColumns(ctx context.Context) error {
 			if strings.Contains(errMsg, "duplicate column") || strings.Contains(errMsg, "already exists") {
 				continue
 			}
-			log.Printf("Warning: migration v12 ALTER failed: %s: %v", stmt, err)
+			logging.With(
+				logging.String("statement", stmt),
+				logging.ErrorField(err),
+			).Warn("Migration v12 ALTER failed")
 		}
 	}
 

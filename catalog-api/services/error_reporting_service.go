@@ -5,7 +5,6 @@ import (
 	"encoding/csv"
 	"encoding/json"
 	"fmt"
-	"log"
 	"net/http"
 	"os"
 	"runtime"
@@ -14,6 +13,7 @@ import (
 	"sync"
 	"time"
 
+	"catalogizer/internal/logging"
 	"catalogizer/models"
 	"catalogizer/repository"
 )
@@ -519,8 +519,14 @@ func (s *ErrorReportingService) sendEmailNotification(report *models.ErrorReport
 	if len(bodySummary) > 200 {
 		bodySummary = bodySummary[:200] + "..."
 	}
-	log.Printf("[EMAIL NOTIFICATION] To: admin | Subject: %s | Body: %s | ReportedAt: %s | Fingerprint: %s",
-		subject, bodySummary, report.ReportedAt.Format(time.RFC3339), report.Fingerprint)
+	if logging.Logger != nil {
+		logging.With(
+			logging.String("subject", subject),
+			logging.String("body", bodySummary),
+			logging.String("reported_at", report.ReportedAt.Format(time.RFC3339)),
+			logging.String("fingerprint", report.Fingerprint),
+		).Info("Email notification sent for error report")
+	}
 	return nil
 }
 
@@ -531,8 +537,14 @@ func (s *ErrorReportingService) sendEmailCrashNotification(report *models.CrashR
 	if len(bodySummary) > 200 {
 		bodySummary = bodySummary[:200] + "..."
 	}
-	log.Printf("[EMAIL CRASH NOTIFICATION] To: admin | Subject: %s | Body: %s | ReportedAt: %s | Fingerprint: %s",
-		subject, bodySummary, report.ReportedAt.Format(time.RFC3339), report.Fingerprint)
+	if logging.Logger != nil {
+		logging.With(
+			logging.String("subject", subject),
+			logging.String("body", bodySummary),
+			logging.String("reported_at", report.ReportedAt.Format(time.RFC3339)),
+			logging.String("fingerprint", report.Fingerprint),
+		).Info("Email notification sent for crash report")
+	}
 	return nil
 }
 

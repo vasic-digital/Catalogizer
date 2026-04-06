@@ -86,13 +86,13 @@ func TestFile_DeletedFields(t *testing.T) {
 	now := time.Now().Truncate(time.Second)
 
 	file := File{
-		ID:          1,
-		Name:        "deleted.txt",
-		Deleted:     true,
-		DeletedAt:   &now,
-		CreatedAt:   now,
-		ModifiedAt:  now,
-		LastScanAt:  now,
+		ID:         1,
+		Name:       "deleted.txt",
+		Deleted:    true,
+		DeletedAt:  &now,
+		CreatedAt:  now,
+		ModifiedAt: now,
+		LastScanAt: now,
 	}
 
 	assert.True(t, file.Deleted)
@@ -695,11 +695,11 @@ func TestDirectoryInfo_JSONMarshaling(t *testing.T) {
 
 func TestSearchFilter_BasicFields(t *testing.T) {
 	filter := SearchFilter{
-		Query:         "movie",
-		Path:          "/movies",
-		Extension:     ".mp4",
-		FileType:      MediaTypeVideo,
-		StorageRoots:  []string{"root1", "root2"},
+		Query:          "movie",
+		Path:           "/movies",
+		Extension:      ".mp4",
+		FileType:       MediaTypeVideo,
+		StorageRoots:   []string{"root1", "root2"},
 		OnlyDuplicates: false,
 	}
 
@@ -726,7 +726,7 @@ func TestSearchFilter_SizeRange(t *testing.T) {
 }
 
 func TestSearchFilter_DateRange(t *testing.T) {
-	after := time.Now().AddDate(0, -1, 0)  // 1 month ago
+	after := time.Now().AddDate(0, -1, 0) // 1 month ago
 	before := time.Now()
 
 	filter := SearchFilter{

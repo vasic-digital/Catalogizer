@@ -1047,4 +1047,3 @@ func (c *BackupSemaphoreChallenge) Execute(
 		status, start, assertions, nil, outputs, "",
 	), nil
 }
-

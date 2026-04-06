@@ -672,12 +672,12 @@ func TestSimilarityAnalysis_StructFields(t *testing.T) {
 func TestTextSimilarityMetrics_StructFields(t *testing.T) {
 	metrics := TextSimilarityMetrics{
 		LevenshteinDistance: 3,
-		JaroWinklerScore:   0.85,
-		CosineSimilarity:   0.9,
-		JaccardIndex:       0.75,
-		LCSRatio:           0.8,
-		SoundexMatch:       true,
-		MetaphoneMatch:     false,
+		JaroWinklerScore:    0.85,
+		CosineSimilarity:    0.9,
+		JaccardIndex:        0.75,
+		LCSRatio:            0.8,
+		SoundexMatch:        true,
+		MetaphoneMatch:      false,
 	}
 
 	assert.Equal(t, 3, metrics.LevenshteinDistance)

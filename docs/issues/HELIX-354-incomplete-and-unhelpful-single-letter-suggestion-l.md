@@ -4,7 +4,9 @@ severity: low
 category: content
 platform: 
 screen: androidtv-curiosity-008-after.png
-status: open
+status: resolved
+resolution: fixed
+fixed_date: 2026-04-06
 found_date: 2026-04-05
 ---
 

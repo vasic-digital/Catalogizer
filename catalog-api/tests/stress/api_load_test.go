@@ -83,10 +83,10 @@ func setupStressTestServer(t *testing.T) *httptest.Server {
 		// Analytics endpoints
 		api.GET("/analytics/dashboard", func(c *gin.Context) {
 			c.JSON(http.StatusOK, gin.H{
-				"total_files":  1000,
-				"total_size":   5000000000,
-				"media_count":  500,
-				"scan_status":  "idle",
+				"total_files": 1000,
+				"total_size":  5000000000,
+				"media_count": 500,
+				"scan_status": "idle",
 			})
 		})
 

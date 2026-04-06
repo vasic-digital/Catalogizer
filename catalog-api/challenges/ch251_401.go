@@ -708,16 +708,20 @@ func (c *DiagramsUpdatedChallenge) Execute(ctx context.Context) (*challenge.Resu
 // --- Registration Functions ---
 
 // RegisterConcurrencyHardeningChallenges registers CH-251 to CH-255.
-func RegisterConcurrencyHardeningChallenges(svc interface{ Register(challenge.Challenge) error }) {
-	svc.Register(NewDebounceMapBoundedChallenge())    // CH-251
-	svc.Register(NewScanCleanupActiveChallenge())     // CH-252
-	svc.Register(NewIPBucketBoundedChallenge())       // CH-253
-	svc.Register(NewEventBusUnsubscribeChallenge())   // CH-254
-	svc.Register(NewMediaQualityRealDataChallenge())  // CH-255
+func RegisterConcurrencyHardeningChallenges(svc interface {
+	Register(challenge.Challenge) error
+}) {
+	svc.Register(NewDebounceMapBoundedChallenge())   // CH-251
+	svc.Register(NewScanCleanupActiveChallenge())    // CH-252
+	svc.Register(NewIPBucketBoundedChallenge())      // CH-253
+	svc.Register(NewEventBusUnsubscribeChallenge())  // CH-254
+	svc.Register(NewMediaQualityRealDataChallenge()) // CH-255
 }
 
 // RegisterSecurityScanChallenges registers CH-256 to CH-260.
-func RegisterSecurityScanChallenges(svc interface{ Register(challenge.Challenge) error }) {
+func RegisterSecurityScanChallenges(svc interface {
+	Register(challenge.Challenge) error
+}) {
 	svc.Register(NewGovulncheckCleanChallenge())  // CH-256
 	svc.Register(NewNpmAuditCleanChallenge())     // CH-257
 	svc.Register(NewSemgrepCleanChallenge())      // CH-258
@@ -726,59 +730,69 @@ func RegisterSecurityScanChallenges(svc interface{ Register(challenge.Challenge)
 }
 
 // RegisterCoverageGateChallenges registers CH-261 to CH-270.
-func RegisterCoverageGateChallenges(svc interface{ Register(challenge.Challenge) error }) {
-	svc.Register(NewGoCoverage95Challenge())            // CH-261
-	svc.Register(NewAllPackagesDocumentedChallenge())   // CH-262
-	svc.Register(NewChallengeTestsPassChallenge())      // CH-263
-	svc.Register(NewFuzzTests20Challenge())             // CH-264
-	svc.Register(NewBenchmarks50Challenge())            // CH-265
-	svc.Register(NewFrontendCoverage90Challenge())      // CH-266
-	svc.Register(NewAllComponentsTestedChallenge())     // CH-267
-	svc.Register(NewAccessibilityCleanChallenge())      // CH-268
-	svc.Register(NewZeroConsoleDebugChallenge())        // CH-269
-	svc.Register(NewZeroAnyProductionChallenge())       // CH-270
+func RegisterCoverageGateChallenges(svc interface {
+	Register(challenge.Challenge) error
+}) {
+	svc.Register(NewGoCoverage95Challenge())          // CH-261
+	svc.Register(NewAllPackagesDocumentedChallenge()) // CH-262
+	svc.Register(NewChallengeTestsPassChallenge())    // CH-263
+	svc.Register(NewFuzzTests20Challenge())           // CH-264
+	svc.Register(NewBenchmarks50Challenge())          // CH-265
+	svc.Register(NewFrontendCoverage90Challenge())    // CH-266
+	svc.Register(NewAllComponentsTestedChallenge())   // CH-267
+	svc.Register(NewAccessibilityCleanChallenge())    // CH-268
+	svc.Register(NewZeroConsoleDebugChallenge())      // CH-269
+	svc.Register(NewZeroAnyProductionChallenge())     // CH-270
 }
 
 // RegisterSubmoduleCoverageChallenges registers CH-271 to CH-278.
-func RegisterSubmoduleCoverageChallenges(svc interface{ Register(challenge.Challenge) error }) {
-	svc.Register(NewWSClientCoverage90Challenge())             // CH-271
-	svc.Register(NewAPIClientCoverage90Challenge())            // CH-272
-	svc.Register(NewAuthContextCoverage90Challenge())          // CH-273
-	svc.Register(NewMediaBrowserCoverage90Challenge())         // CH-274
-	svc.Register(NewMediaPlayerCoverage90Challenge())          // CH-275
-	svc.Register(NewCollectionManagerCoverage90Challenge())    // CH-276
-	svc.Register(NewDashboardAnalyticsCoverage90Challenge())  // CH-277
-	svc.Register(NewUIComponentsCoverage90Challenge())         // CH-278
+func RegisterSubmoduleCoverageChallenges(svc interface {
+	Register(challenge.Challenge) error
+}) {
+	svc.Register(NewWSClientCoverage90Challenge())           // CH-271
+	svc.Register(NewAPIClientCoverage90Challenge())          // CH-272
+	svc.Register(NewAuthContextCoverage90Challenge())        // CH-273
+	svc.Register(NewMediaBrowserCoverage90Challenge())       // CH-274
+	svc.Register(NewMediaPlayerCoverage90Challenge())        // CH-275
+	svc.Register(NewCollectionManagerCoverage90Challenge())  // CH-276
+	svc.Register(NewDashboardAnalyticsCoverage90Challenge()) // CH-277
+	svc.Register(NewUIComponentsCoverage90Challenge())       // CH-278
 }
 
 // RegisterPlatformCoverageChallenges registers CH-279 to CH-283.
-func RegisterPlatformCoverageChallenges(svc interface{ Register(challenge.Challenge) error }) {
-	svc.Register(NewDesktopCoverage80Challenge())        // CH-279
-	svc.Register(NewWizardCoverage80Challenge())         // CH-280
-	svc.Register(NewAndroidCoverage80Challenge())        // CH-281
-	svc.Register(NewAndroidTVCoverage80Challenge())      // CH-282
-	svc.Register(NewAPIClientOldCoverage90Challenge())   // CH-283
+func RegisterPlatformCoverageChallenges(svc interface {
+	Register(challenge.Challenge) error
+}) {
+	svc.Register(NewDesktopCoverage80Challenge())      // CH-279
+	svc.Register(NewWizardCoverage80Challenge())       // CH-280
+	svc.Register(NewAndroidCoverage80Challenge())      // CH-281
+	svc.Register(NewAndroidTVCoverage80Challenge())    // CH-282
+	svc.Register(NewAPIClientOldCoverage90Challenge()) // CH-283
 }
 
 // RegisterStressPerformanceChallenges registers CH-284 to CH-291.
-func RegisterStressPerformanceChallenges(svc interface{ Register(challenge.Challenge) error }) {
-	svc.Register(NewAllStressTestsPassChallenge())            // CH-284
-	svc.Register(NewFilesystemIntegrationPassChallenge())     // CH-285
-	svc.Register(NewFullLifecycleIntegrationChallenge())      // CH-286
-	svc.Register(NewK6LoadP95Challenge())                     // CH-287
-	svc.Register(NewK6StressStableChallenge())                // CH-288
-	svc.Register(NewK6SoakNoLeaksChallenge())                 // CH-289
-	svc.Register(NewPrometheusCompleteChallenge())            // CH-290
-	svc.Register(NewFrontendBundleSmallChallenge())           // CH-291
+func RegisterStressPerformanceChallenges(svc interface {
+	Register(challenge.Challenge) error
+}) {
+	svc.Register(NewAllStressTestsPassChallenge())        // CH-284
+	svc.Register(NewFilesystemIntegrationPassChallenge()) // CH-285
+	svc.Register(NewFullLifecycleIntegrationChallenge())  // CH-286
+	svc.Register(NewK6LoadP95Challenge())                 // CH-287
+	svc.Register(NewK6StressStableChallenge())            // CH-288
+	svc.Register(NewK6SoakNoLeaksChallenge())             // CH-289
+	svc.Register(NewPrometheusCompleteChallenge())        // CH-290
+	svc.Register(NewFrontendBundleSmallChallenge())       // CH-291
 }
 
 // RegisterDocumentationChallenges registers CH-352 to CH-364.
-func RegisterDocumentationChallenges(svc interface{ Register(challenge.Challenge) error }) {
-	svc.Register(NewAllSubmodulesArchMDChallenge())          // CH-352
-	svc.Register(NewAllSubmodulesEnvProtectedChallenge())    // CH-353
-	svc.Register(NewAllSubmodulesREADMEChallenge())          // CH-354
-	svc.Register(NewCLAUDEMDCurrentChallenge())              // CH-355
-	svc.Register(NewCourse30ModulesChallenge())              // CH-356
-	svc.Register(NewWebsiteCurrentChallenge())               // CH-357
-	svc.Register(NewDiagramsUpdatedChallenge())              // CH-358
+func RegisterDocumentationChallenges(svc interface {
+	Register(challenge.Challenge) error
+}) {
+	svc.Register(NewAllSubmodulesArchMDChallenge())       // CH-352
+	svc.Register(NewAllSubmodulesEnvProtectedChallenge()) // CH-353
+	svc.Register(NewAllSubmodulesREADMEChallenge())       // CH-354
+	svc.Register(NewCLAUDEMDCurrentChallenge())           // CH-355
+	svc.Register(NewCourse30ModulesChallenge())           // CH-356
+	svc.Register(NewWebsiteCurrentChallenge())            // CH-357
+	svc.Register(NewDiagramsUpdatedChallenge())           // CH-358
 }

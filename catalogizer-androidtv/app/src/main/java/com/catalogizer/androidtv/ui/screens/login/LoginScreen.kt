@@ -56,6 +56,9 @@ import com.catalogizer.androidtv.DependencyContainer
 import com.catalogizer.androidtv.data.models.ServerEntry
 import com.catalogizer.androidtv.ui.viewmodel.AuthViewModel
 import kotlinx.coroutines.launch
+import android.util.Log
+
+private const val TAG = "TVLoginScreen"
 
 /**
  * TV-optimized login screen with D-pad-navigable credential fields, server URL
@@ -69,7 +72,7 @@ fun LoginScreen(
 ) {
     val authState by authViewModel.authState.collectAsStateWithLifecycle()
     val context = LocalContext.current
-    val container = DependencyContainer.getInstance(context)
+    val container = remember { DependencyContainer.getInstance(context) }
 
     // Load saved username from DataStore (remember credentials)
     var username by remember { mutableStateOf("") }
@@ -86,17 +89,21 @@ fun LoginScreen(
             enableSubtitles = true, subtitleLanguage = "English"
         )
     )
-    var serverUrl by remember { mutableStateOf(container.getServerUrl()) }
+    var serverUrl by remember { mutableStateOf(container.getServerUrl() ?: "") }
     var isDiscovering by remember { mutableStateOf(false) }
     var discoveredServers by remember { mutableStateOf<List<ServerEntry>>(emptyList()) }
     val coroutineScope = rememberCoroutineScope()
 
     // Load saved username on first compose
     LaunchedEffect(Unit) {
-        val savedSettings = container.settingsRepository.getSettingsAsync()
-        val savedUser = savedSettings.lastUsername
-        if (!savedUser.isNullOrBlank()) {
-            username = savedUser
+        try {
+            val savedSettings = container.settingsRepository.getSettingsAsync()
+            val savedUser = savedSettings.lastUsername
+            if (!savedUser.isNullOrBlank()) {
+                username = savedUser
+            }
+        } catch (e: Exception) {
+            Log.w(TAG, "Failed to load saved username: ${e.message}")
         }
     }
 
@@ -104,7 +111,11 @@ fun LoginScreen(
     LaunchedEffect(settings.serverUrl) {
         if (settings.serverUrl.isNotBlank() && settings.serverUrl != serverUrl) {
             serverUrl = settings.serverUrl
-            container.switchServer(settings.serverUrl)
+            try {
+                container.switchServer(settings.serverUrl)
+            } catch (e: Exception) {
+                Log.w(TAG, "Failed to switch server: ${e.message}")
+            }
         }
     }
 
@@ -152,20 +163,22 @@ fun LoginScreen(
     }
 
     // Auto-login from intent extras (for QA/testing via ADB)
-    // Usage: adb shell am start -n com.catalogizer.androidtv/.ui.MainActivity \
-    //   --es qa_username admin --es qa_password admin123
     val activity = LocalContext.current as? android.app.Activity
     LaunchedEffect(Unit) {
-        val qaUser = activity?.intent?.getStringExtra("qa_username")
-        val qaPass = activity?.intent?.getStringExtra("qa_password")
-        if (!qaUser.isNullOrBlank() && !qaPass.isNullOrBlank()) {
-            username = qaUser
-            password = qaPass
-            // Auto-submit after a brief delay
-            kotlinx.coroutines.delay(500)
-            validateAndLogin(username, password, authViewModel,
-                { isLoading = it }, { errorMessage = it },
-                { usernameError = it }, { passwordError = it })
+        try {
+            val qaUser = activity?.intent?.getStringExtra("qa_username")
+            val qaPass = activity?.intent?.getStringExtra("qa_password")
+            if (!qaUser.isNullOrBlank() && !qaPass.isNullOrBlank()) {
+                username = qaUser
+                password = qaPass
+                // Auto-submit after a brief delay
+                kotlinx.coroutines.delay(500)
+                validateAndLogin(username, password, authViewModel,
+                    { isLoading = it }, { errorMessage = it },
+                    { usernameError = it }, { passwordError = it })
+            }
+        } catch (e: Exception) {
+            Log.w(TAG, "Auto-login failed: ${e.message}")
         }
     }
     val scrollState = rememberScrollState()
@@ -189,7 +202,11 @@ fun LoginScreen(
         if (authState.isAuthenticated) {
             // Save username for next launch
             coroutineScope.launch {
-                container.settingsRepository.updateLastUsername(username)
+                try {
+                    container.settingsRepository.updateLastUsername(username)
+                } catch (e: Exception) {
+                    Log.w(TAG, "Failed to save username: ${e.message}")
+                }
             }
             onLoginSuccess()
         }
@@ -199,39 +216,50 @@ fun LoginScreen(
     var discoveryStatus by remember { mutableStateOf<String?>(null) }
 
     LaunchedEffect(Unit) {
-        val initialSettings = container.settingsRepository.getSettingsAsync()
-        // Only auto-discover if no server URL is already configured
-        if (initialSettings.autoDiscovery && initialSettings.serverUrl.isBlank()) {
-            isDiscovering = true
-            discoveryStatus = "Searching for server..."
-            try {
-                val results = container.discoveryService.discoverAll(8000L)
-                discoveredServers = results
-                if (results.isNotEmpty()) {
-                    // Auto-select the first (or only) discovered server
-                    val server = results.first()
-                    serverUrl = server.url
-                    container.switchServer(server.url)
-                    container.settingsRepository.updateServerUrl(server.url)
-                    container.settingsRepository.addServer(server)
-                    serverConnected = true
-                    discoveryStatus = "Connected to ${server.name}"
-                } else {
+        try {
+            val initialSettings = container.settingsRepository.getSettingsAsync()
+            // Only auto-discover if no server URL is already configured
+            if (initialSettings.autoDiscovery && initialSettings.serverUrl.isBlank()) {
+                isDiscovering = true
+                discoveryStatus = "Searching for server..."
+                try {
+                    val results = container.discoveryService.discoverAll(8000L)
+                    discoveredServers = results
+                    if (results.isNotEmpty()) {
+                        // Auto-select the first (or only) discovered server
+                        val server = results.first()
+                        serverUrl = server.url
+                        try {
+                            container.switchServer(server.url)
+                            container.settingsRepository.updateServerUrl(server.url)
+                            container.settingsRepository.addServer(server)
+                            serverConnected = true
+                            discoveryStatus = "Connected to ${server.name}"
+                        } catch (e: Exception) {
+                            Log.w(TAG, "Failed to configure discovered server: ${e.message}")
+                            serverConnected = false
+                            discoveryStatus = null
+                        }
+                    } else {
+                        discoveryStatus = null
+                    }
+                } catch (e: Exception) {
+                    Log.w(TAG, "Auto-discovery failed: ${e.message}")
                     discoveryStatus = null
                 }
-            } catch (_: Exception) {
-                discoveryStatus = null
+                isDiscovering = false
+            } else if (initialSettings.serverUrl.isNotBlank()) {
+                // Server URL already configured -- verify connectivity in the background
+                serverUrl = initialSettings.serverUrl
+                try {
+                    val probe = container.discoveryService.probeServer(serverUrl)
+                    serverConnected = probe != null
+                } catch (_: Exception) {
+                    serverConnected = false
+                }
             }
-            isDiscovering = false
-        } else if (initialSettings.serverUrl.isNotBlank()) {
-            // Server URL already configured -- verify connectivity in the background
-            serverUrl = initialSettings.serverUrl
-            try {
-                val probe = container.discoveryService.probeServer(serverUrl)
-                serverConnected = probe != null
-            } catch (_: Exception) {
-                serverConnected = false
-            }
+        } catch (e: Exception) {
+            Log.w(TAG, "Initialization failed: ${e.message}")
         }
     }
 
@@ -303,7 +331,11 @@ fun LoginScreen(
                     }
                     .focusable(),
                 keyboardOptions = KeyboardOptions(imeAction = ImeAction.Next),
-                keyboardActions = KeyboardActions(onNext = { passwordFocusRequester.requestFocus() }),
+                keyboardActions = KeyboardActions(onNext = { 
+                    try {
+                        passwordFocusRequester.requestFocus() 
+                    } catch (_: Exception) { }
+                }),
                 singleLine = true,
                 enabled = !isLoading,
                 isError = usernameError != null,
@@ -522,12 +554,17 @@ fun LoginScreen(
                                     // Auto-select the single discovered server
                                     val server = results.first()
                                     serverUrl = server.url
-                                    container.switchServer(server.url)
-                                    container.settingsRepository.updateServerUrl(server.url)
-                                    container.settingsRepository.addServer(server)
-                                    serverConnected = true
-                                    discoveryStatus = "Connected to ${server.name}"
-                                    discoveredServers = emptyList()
+                                    try {
+                                        container.switchServer(server.url)
+                                        container.settingsRepository.updateServerUrl(server.url)
+                                        container.settingsRepository.addServer(server)
+                                        serverConnected = true
+                                        discoveryStatus = "Connected to ${server.name}"
+                                        discoveredServers = emptyList()
+                                    } catch (e: Exception) {
+                                        Log.w(TAG, "Failed to save server: ${e.message}")
+                                        errorMessage = "Failed to save server configuration"
+                                    }
                                 } else {
                                     discoveryStatus = "Found ${results.size} servers"
                                 }
@@ -558,16 +595,24 @@ fun LoginScreen(
                 Button(
                     onClick = {
                         if (serverUrl.isNotBlank()) {
-                            container.switchServer(serverUrl)
+                            try {
+                                container.switchServer(serverUrl)
+                            } catch (e: Exception) {
+                                Log.w(TAG, "Failed to switch server: ${e.message}")
+                            }
                             coroutineScope.launch {
-                                container.settingsRepository.updateServerUrl(serverUrl)
-                                container.settingsRepository.addServer(ServerEntry(url = serverUrl, name = "Manual"))
-                                // Test connection
                                 try {
-                                    val testResp = container.api.getCatalog()
-                                    serverConnected = testResp.isSuccessful
-                                } catch (_: Exception) {
-                                    serverConnected = false
+                                    container.settingsRepository.updateServerUrl(serverUrl)
+                                    container.settingsRepository.addServer(ServerEntry(url = serverUrl, name = "Manual"))
+                                    // Test connection
+                                    try {
+                                        val testResp = container.api.getCatalog()
+                                        serverConnected = testResp.isSuccessful
+                                    } catch (_: Exception) {
+                                        serverConnected = false
+                                    }
+                                } catch (e: Exception) {
+                                    Log.w(TAG, "Failed to save settings: ${e.message}")
                                 }
                             }
                             errorMessage = null
@@ -598,11 +643,19 @@ fun LoginScreen(
                     Button(
                         onClick = {
                             serverUrl = server.url
-                            container.switchServer(server.url)
+                            try {
+                                container.switchServer(server.url)
+                            } catch (e: Exception) {
+                                Log.w(TAG, "Failed to switch to discovered server: ${e.message}")
+                            }
                             serverConnected = true
                             coroutineScope.launch {
-                                container.settingsRepository.updateServerUrl(server.url)
-                                container.settingsRepository.addServer(server)
+                                try {
+                                    container.settingsRepository.updateServerUrl(server.url)
+                                    container.settingsRepository.addServer(server)
+                                } catch (e: Exception) {
+                                    Log.w(TAG, "Failed to save server: ${e.message}")
+                                }
                             }
                             discoveredServers = emptyList()
                         },
@@ -637,11 +690,19 @@ fun LoginScreen(
 
     LaunchedEffect(Unit) {
         kotlinx.coroutines.delay(200)
-        usernameFocusRequester.requestFocus()
+        try {
+            usernameFocusRequester.requestFocus()
+        } catch (_: Exception) {
+            Log.w(TAG, "Failed to request focus")
+        }
     }
 
     DisposableEffect(Unit) {
-        onDispose { authViewModel.clearError() }
+        onDispose { 
+            try {
+                authViewModel.clearError() 
+            } catch (_: Exception) { }
+        }
     }
 }
 
@@ -659,19 +720,22 @@ private fun validateAndLogin(
     setPasswordError(null)
     setErrorMessage(null)
 
-    // Validate inputs
+    // Validate inputs with null/blank safety
     var valid = true
-    if (username.isBlank()) {
+    val safeUsername = username.trim()
+    val safePassword = password
+    
+    if (safeUsername.isBlank()) {
         setUsernameError("Username is required")
         valid = false
-    } else if (username.length < 2) {
+    } else if (safeUsername.length < 2) {
         setUsernameError("Username must be at least 2 characters")
         valid = false
     }
-    if (password.isBlank()) {
+    if (safePassword.isBlank()) {
         setPasswordError("Password is required")
         valid = false
-    } else if (password.length < 4) {
+    } else if (safePassword.length < 4) {
         setPasswordError("Password must be at least 4 characters")
         valid = false
     }
@@ -679,5 +743,10 @@ private fun validateAndLogin(
     if (!valid) return
 
     setIsLoading(true)
-    authViewModel.login(username, password)
+    try {
+        authViewModel.login(safeUsername, safePassword)
+    } catch (e: Exception) {
+        setIsLoading(false)
+        setErrorMessage("Login failed: ${e.message}")
+    }
 }

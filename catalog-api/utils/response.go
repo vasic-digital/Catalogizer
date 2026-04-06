@@ -1,7 +1,7 @@
 package utils
 
 import (
-	"log"
+	"catalogizer/internal/logging"
 
 	"github.com/gin-gonic/gin"
 )
@@ -29,7 +29,13 @@ func SendErrorResponse(c *gin.Context, statusCode int, message string, err error
 
 	if err != nil {
 		response.Details = err.Error()
-		log.Printf("Error: %s - %v", message, err)
+		// Log error if logger is initialized
+		if logging.Logger != nil {
+			logging.With(
+				logging.String("message", message),
+				logging.ErrorField(err),
+			).Error("Error response sent")
+		}
 	}
 
 	c.JSON(statusCode, response)

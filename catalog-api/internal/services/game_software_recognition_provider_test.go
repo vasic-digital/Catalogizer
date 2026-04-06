@@ -115,10 +115,10 @@ func TestGameSoftwareRecognitionProvider_LooksLikeGame(t *testing.T) {
 	provider := NewGameSoftwareRecognitionProvider(mockLogger)
 
 	tests := []struct {
-		name        string
-		softName    string
-		filename    string
-		expected    bool
+		name     string
+		softName string
+		filename string
+		expected bool
 	}{
 		{
 			name:     "game with common keywords",

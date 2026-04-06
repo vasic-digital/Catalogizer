@@ -46,8 +46,9 @@ class NetworkDiscoveryService(private val context: Context? = null) {
     suspend fun discoverViaBroadcast(timeoutMs: Long = 3000L): List<ServerEntry> =
         withContext(Dispatchers.IO) {
             val results = mutableMapOf<String, ServerEntry>()
+            var socket: DatagramSocket? = null
             try {
-                val socket = DatagramSocket()
+                socket = DatagramSocket()
                 socket.broadcast = true
                 socket.soTimeout = 500
 
@@ -84,12 +85,16 @@ class NetworkDiscoveryService(private val context: Context? = null) {
                             results[key] = entry
                             Log.d(TAG, "UDP broadcast discovered: ${entry.url} (${entry.name})")
                         }
-                    } catch (_: java.net.SocketTimeoutException) { }
+                    } catch (_: java.net.SocketTimeoutException) {
+                        // Expected: socket timeout means no more broadcasts received
+                    }
                 }
-
-                socket.close()
             } catch (e: Exception) {
                 Log.w(TAG, "UDP broadcast discovery failed: ${e.message}")
+            } finally {
+                try {
+                    socket?.close()
+                } catch (_: Exception) { }
             }
             results.values.toList()
         }
@@ -123,8 +128,12 @@ class NetworkDiscoveryService(private val context: Context? = null) {
         }
 
         // Process results as they come in, with overall timeout
-        withTimeoutOrNull(timeoutMs) {
-            jobs.awaitAll().filterNotNull().forEach { results.add(it) }
+        try {
+            withTimeoutOrNull(timeoutMs) {
+                jobs.awaitAll().filterNotNull().forEach { results.add(it) }
+            }
+        } catch (e: Exception) {
+            Log.w(TAG, "HTTP probe discovery interrupted: ${e.message}")
         }
 
         Log.d(TAG, "HTTP probe found ${results.size} servers")
@@ -135,15 +144,17 @@ class NetworkDiscoveryService(private val context: Context? = null) {
      * Probe a single URL to check if it's a Catalogizer API.
      */
     suspend fun probeServer(baseUrl: String): ServerEntry? = withContext(Dispatchers.IO) {
+        var connection: HttpURLConnection? = null
+        val safeBaseUrl = baseUrl.trimEnd('/')
         try {
-            val url = URL("${baseUrl.trimEnd('/')}/discovery")
-            val conn = url.openConnection() as HttpURLConnection
-            conn.connectTimeout = HTTP_PROBE_TIMEOUT_MS
-            conn.readTimeout = HTTP_PROBE_TIMEOUT_MS
-            conn.requestMethod = "GET"
+            val url = URL("$safeBaseUrl/discovery")
+            connection = url.openConnection() as HttpURLConnection
+            connection.connectTimeout = HTTP_PROBE_TIMEOUT_MS
+            connection.readTimeout = HTTP_PROBE_TIMEOUT_MS
+            connection.requestMethod = "GET"
 
-            if (conn.responseCode == 200) {
-                val body = conn.inputStream.bufferedReader().readText()
+            if (connection.responseCode == 200) {
+                val body = connection.inputStream.bufferedReader().use { it.readText() }
                 val obj = JSONObject(body)
                 if (obj.optString("service") == "catalogizer-api") {
                     val version = obj.optString("version", "?")
@@ -156,7 +167,7 @@ class NetworkDiscoveryService(private val context: Context? = null) {
                     val resolvedUrl = if (host.isNotBlank() && host != "0.0.0.0") {
                         "$protocol://$host:$port"
                     } else {
-                        baseUrl.trimEnd('/')
+                        safeBaseUrl
                     }
                     return@withContext ServerEntry(
                         url = resolvedUrl,
@@ -166,8 +177,13 @@ class NetworkDiscoveryService(private val context: Context? = null) {
                     )
                 }
             }
-            conn.disconnect()
-        } catch (_: Exception) { }
+        } catch (e: Exception) {
+            Log.d(TAG, "HTTP probe failed for $safeBaseUrl: ${e.message}")
+        } finally {
+            try {
+                connection?.disconnect()
+            } catch (_: Exception) { }
+        }
         null
     }
 
@@ -180,6 +196,7 @@ class NetworkDiscoveryService(private val context: Context? = null) {
         withContext(Dispatchers.IO) {
             val results = mutableMapOf<String, ServerEntry>()
             var multicastLock: WifiManager.MulticastLock? = null
+            var socket: MulticastSocket? = null
 
             try {
                 // Acquire multicast lock (Android blocks multicast by default for power saving)
@@ -190,7 +207,7 @@ class NetworkDiscoveryService(private val context: Context? = null) {
                 Log.d(TAG, "MulticastLock acquired")
 
                 val group = InetAddress.getByName(MULTICAST_GROUP)
-                val socket = MulticastSocket(MULTICAST_PORT)
+                socket = MulticastSocket(MULTICAST_PORT)
                 socket.joinGroup(group)
                 socket.soTimeout = 500
 
@@ -207,15 +224,23 @@ class NetworkDiscoveryService(private val context: Context? = null) {
                             results[entry.url] = entry
                             Log.d(TAG, "Multicast discovered: ${entry.url}")
                         }
-                    } catch (_: java.net.SocketTimeoutException) { }
+                    } catch (_: java.net.SocketTimeoutException) {
+                        // Expected: socket timeout for multicast receive
+                    }
                 }
 
-                socket.leaveGroup(group)
-                socket.close()
+                try {
+                    socket.leaveGroup(group)
+                } catch (_: Exception) { }
             } catch (e: Exception) {
                 Log.w(TAG, "Multicast discovery failed: ${e.message}")
             } finally {
-                multicastLock?.release()
+                try {
+                    socket?.close()
+                } catch (_: Exception) { }
+                try {
+                    multicastLock?.release()
+                } catch (_: Exception) { }
                 Log.d(TAG, "MulticastLock released")
             }
             results.values.toList()
@@ -268,8 +293,10 @@ class NetworkDiscoveryService(private val context: Context? = null) {
             val type = obj.optString("type", "")
             if (type != "catalogizer-announce") return null
 
-            val host = obj.getString("host")
-            val port = obj.getInt("port")
+            val host = obj.optString("host", "")
+            val port = obj.optInt("port", 0)
+            if (host.isBlank() || port <= 0) return null
+
             val protocol = obj.optString("protocol", "http")
             val version = obj.optString("version", "?")
             val name = obj.optString("name", "Catalogizer API")

@@ -9,12 +9,13 @@ package modules
 
 import (
 	"context"
-	"log"
 	"time"
 
+	"catalogizer/internal/logging"
+
 	// Database module — generic connection pool, query builder, repository pattern
-	dbpool "digital.vasic.database/pkg/pool"
 	dbhelpers "digital.vasic.database/pkg/helpers"
+	dbpool "digital.vasic.database/pkg/pool"
 
 	// Lazy module — generic lazy-loading primitives (Value[T], Service[T])
 	"digital.vasic.lazy/pkg/lazy"
@@ -103,11 +104,15 @@ type Registry struct {
 type registryLogger struct{}
 
 func (l *registryLogger) Info(msg string, keysAndValues ...interface{}) {
-	log.Printf("[modules] INFO: %s %v", msg, keysAndValues)
+	if logging.SugaredLogger != nil {
+		logging.SugaredLogger.With(logging.String("component", "modules")).Infow(msg, keysAndValues...)
+	}
 }
 
 func (l *registryLogger) Warn(msg string, keysAndValues ...interface{}) {
-	log.Printf("[modules] WARN: %s %v", msg, keysAndValues)
+	if logging.SugaredLogger != nil {
+		logging.SugaredLogger.With(logging.String("component", "modules")).Warnw(msg, keysAndValues...)
+	}
 }
 
 func (l *registryLogger) Debug(msg string, keysAndValues ...interface{}) {
@@ -124,7 +129,9 @@ func RegisterModules() *Registry {
 	// Verify pool configuration defaults and transaction helper availability.
 	poolCfg := dbpool.DefaultPoolConfig()
 	if err := poolCfg.Validate(); err != nil {
-		log.Printf("[modules] Database pool config validation failed: %v", err)
+		if logging.Logger != nil {
+			logging.Warnf("Database pool config validation failed: %v", err)
+		}
 	}
 	// dbhelpers.WithTransaction is available for wrapping repository operations.
 	_ = dbhelpers.WithTransaction // compile-time verification
@@ -162,8 +169,12 @@ func RegisterModules() *Registry {
 	// Samples every 60 seconds, alerts if heap grows beyond 3x baseline.
 	reg.MemoryMonitor = memory.NewMemoryMonitor(60*time.Second, 3.0)
 	reg.MemoryMonitor.SetAlertCallback(func(report memory.LeakReport) {
-		log.Printf("[modules] MEMORY ALERT: potential leak detected — heap growth ratio %.2f, goroutines %d (initial %d)",
-			report.HeapGrowthRatio, report.GoroutineCount, report.InitialGoroutines)
+		logging.Warn("MEMORY ALERT: potential leak detected",
+			logging.String("component", "modules"),
+			logging.Float64("heap_growth_ratio", report.HeapGrowthRatio),
+			logging.Int("goroutine_count", report.GoroutineCount),
+			logging.Int("initial_goroutines", report.InitialGoroutines),
+		)
 	})
 	reg.Modules = append(reg.Modules, ModuleInfo{
 		Name:        "digital.vasic.memory",
@@ -175,7 +186,7 @@ func RegisterModules() *Registry {
 	// Verify middleware chain and request ID generator are available.
 	// These are net/http middleware; catalog-api uses Gin, but they can
 	// wrap the underlying net/http handler when needed.
-	_ = chain.Chain // middleware chaining utility
+	_ = chain.Chain   // middleware chaining utility
 	_ = mwheaders.New // request ID generator
 	reg.Modules = append(reg.Modules, ModuleInfo{
 		Name:        "digital.vasic.middleware",
@@ -270,7 +281,9 @@ func RegisterModules() *Registry {
 		Initialized: true,
 	})
 
-	log.Printf("[modules] All %d external modules registered successfully", len(reg.Modules))
+	if logging.Logger != nil {
+		logging.With(logging.String("component", "modules")).Info("All external modules registered successfully", logging.Int("count", len(reg.Modules)))
+	}
 
 	// Use digital.vasic.observability structured logger to record module registration.
 	// This provides JSON-formatted, correlation-ID-aware logging alongside the
@@ -292,9 +305,13 @@ func (r *Registry) StartBackgroundServices(ctx context.Context) {
 	// Start memory monitoring
 	if r.MemoryMonitor != nil {
 		if err := r.MemoryMonitor.Start(ctx); err != nil {
-			log.Printf("[modules] Failed to start memory monitor: %v", err)
+			if logging.Logger != nil {
+				logging.With(logging.String("component", "modules"), logging.ErrorField(err)).Warn("Failed to start memory monitor")
+			}
 		} else {
-			log.Println("[modules] Memory monitor started (60s interval, 3x threshold)")
+			if logging.Logger != nil {
+				logging.With(logging.String("component", "modules")).Info("Memory monitor started", logging.String("interval", "60s"), logging.String("threshold", "3x"))
+			}
 		}
 	}
 }
@@ -307,7 +324,9 @@ func (r *Registry) Stop() {
 	if r.ResilienceFacade != nil {
 		r.ResilienceFacade.Stop()
 	}
-	log.Println("[modules] All module services stopped")
+	if logging.Logger != nil {
+		logging.With(logging.String("component", "modules")).Info("All module services stopped")
+	}
 }
 
 // GetModuleInfo returns information about all registered modules.

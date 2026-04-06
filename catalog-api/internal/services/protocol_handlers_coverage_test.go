@@ -23,12 +23,12 @@ type mockFSClient struct {
 	deleteDirectoryFn func(ctx context.Context, path string) error
 }
 
-func (m *mockFSClient) Connect(ctx context.Context) error              { return nil }
-func (m *mockFSClient) Disconnect(ctx context.Context) error           { return nil }
-func (m *mockFSClient) IsConnected() bool                              { return true }
-func (m *mockFSClient) TestConnection(ctx context.Context) error       { return nil }
-func (m *mockFSClient) GetProtocol() string                            { return "mock" }
-func (m *mockFSClient) GetConfig() interface{}                         { return nil }
+func (m *mockFSClient) Connect(ctx context.Context) error        { return nil }
+func (m *mockFSClient) Disconnect(ctx context.Context) error     { return nil }
+func (m *mockFSClient) IsConnected() bool                        { return true }
+func (m *mockFSClient) TestConnection(ctx context.Context) error { return nil }
+func (m *mockFSClient) GetProtocol() string                      { return "mock" }
+func (m *mockFSClient) GetConfig() interface{}                   { return nil }
 func (m *mockFSClient) ReadFile(ctx context.Context, path string) (io.ReadCloser, error) {
 	return nil, errors.New("not implemented")
 }

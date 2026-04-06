@@ -9,8 +9,8 @@ import (
 	"strings"
 	"unicode/utf8"
 
-	"digital.vasic.security/pkg/guardrails"
 	obslogging "digital.vasic.observability/pkg/logging"
+	"digital.vasic.security/pkg/guardrails"
 	"github.com/gin-gonic/gin"
 	"github.com/go-playground/validator/v10"
 )
@@ -48,9 +48,9 @@ func DefaultInputValidationConfig() InputValidationConfig {
 
 // Pre-compiled injection detection patterns
 var (
-	sqlInjectionRegexes    []*regexp.Regexp
-	xssRegexes             []*regexp.Regexp
-	pathTraversalRegexes   []*regexp.Regexp
+	sqlInjectionRegexes  []*regexp.Regexp
+	xssRegexes           []*regexp.Regexp
+	pathTraversalRegexes []*regexp.Regexp
 )
 
 func init() {
@@ -162,14 +162,14 @@ func ValidateRequestBody(config InputValidationConfig, c *gin.Context) error {
 	// Only validate specific content types and methods that typically have bodies
 	contentType := c.GetHeader("Content-Type")
 	method := c.Request.Method
-	
+
 	// Skip validation for GET requests (they shouldn't have bodies)
 	if method == "GET" || method == "DELETE" || method == "HEAD" {
 		return nil
 	}
-	
+
 	// Skip validation for non-form/json content types
-	if contentType != "" && 
+	if contentType != "" &&
 		!strings.Contains(contentType, "application/json") &&
 		!strings.Contains(contentType, "application/x-www-form-urlencoded") &&
 		!strings.Contains(contentType, "multipart/form-data") {

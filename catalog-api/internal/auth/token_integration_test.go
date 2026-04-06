@@ -83,7 +83,7 @@ func TestTokenGeneration_AccessAndRefreshDifferentExpiry(t *testing.T) {
 	accessDuration := accessClaims.ExpiresAt - now
 	refreshDuration := refreshClaims.ExpiresAt - now
 
-	assert.InDelta(t, 24*3600, accessDuration, 5)   // 24h +/- 5s
+	assert.InDelta(t, 24*3600, accessDuration, 5)    // 24h +/- 5s
 	assert.InDelta(t, 7*24*3600, refreshDuration, 5) // 7d +/- 5s
 }
 

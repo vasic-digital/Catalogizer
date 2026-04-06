@@ -25,10 +25,10 @@ import (
 // FileExists always returns false (destination does not exist).
 type stubFSClient struct{}
 
-func (s *stubFSClient) Connect(ctx context.Context) error                              { return nil }
-func (s *stubFSClient) Disconnect(ctx context.Context) error                           { return nil }
-func (s *stubFSClient) IsConnected() bool                                              { return true }
-func (s *stubFSClient) TestConnection(ctx context.Context) error                       { return nil }
+func (s *stubFSClient) Connect(ctx context.Context) error        { return nil }
+func (s *stubFSClient) Disconnect(ctx context.Context) error     { return nil }
+func (s *stubFSClient) IsConnected() bool                        { return true }
+func (s *stubFSClient) TestConnection(ctx context.Context) error { return nil }
 func (s *stubFSClient) ReadFile(ctx context.Context, path string) (io.ReadCloser, error) {
 	return nil, fmt.Errorf("not implemented")
 }
@@ -1125,22 +1125,22 @@ func TestMusicPlayerService_PreviousTrack_RestartsIfPastThreshold(t *testing.T) 
 
 	// Create session at track index 1 with position > 3000
 	session := &MusicPlaybackSession{
-		ID:                "music-prev-restart",
-		UserID:            1,
-		CurrentTrack:      &tracks[1],
-		Queue:             tracks,
-		QueueIndex:        1,
-		PlayMode:          PlayModeQueue,
-		RepeatMode:        RepeatModeOff,
-		Volume:            1.0,
-		EqualizerPreset:   "flat",
-		EqualizerBands:    make(map[string]float64),
-		PlaybackState:     PlaybackStatePlaying,
-		Position:          5000, // > 3000ms
-		Duration:          tracks[1].Duration,
-		LastActivity:      time.Now(),
-		CreatedAt:         time.Now(),
-		UpdatedAt:         time.Now(),
+		ID:              "music-prev-restart",
+		UserID:          1,
+		CurrentTrack:    &tracks[1],
+		Queue:           tracks,
+		QueueIndex:      1,
+		PlayMode:        PlayModeQueue,
+		RepeatMode:      RepeatModeOff,
+		Volume:          1.0,
+		EqualizerPreset: "flat",
+		EqualizerBands:  make(map[string]float64),
+		PlaybackState:   PlaybackStatePlaying,
+		Position:        5000, // > 3000ms
+		Duration:        tracks[1].Duration,
+		LastActivity:    time.Now(),
+		CreatedAt:       time.Now(),
+		UpdatedAt:       time.Now(),
 	}
 	sessionData, err := json.Marshal(session)
 	require.NoError(t, err)
@@ -1289,7 +1289,7 @@ func TestMusicPlayerService_ShuffleQueue(t *testing.T) {
 			{ID: 4, Title: "D"},
 			{ID: 5, Title: "E"},
 		},
-		QueueIndex: 2, // Current track is C
+		QueueIndex:   2, // Current track is C
 		CurrentTrack: &MusicTrack{ID: 3, Title: "C"},
 	}
 
@@ -1305,8 +1305,8 @@ func TestMusicPlayerService_ShuffleQueue_SingleTrack(t *testing.T) {
 	svc := NewMusicPlayerService(nil, logger, nil, nil, nil, nil, nil, nil)
 
 	session := &MusicPlaybackSession{
-		Queue:      []MusicTrack{{ID: 1, Title: "Only"}},
-		QueueIndex: 0,
+		Queue:        []MusicTrack{{ID: 1, Title: "Only"}},
+		QueueIndex:   0,
 		CurrentTrack: &MusicTrack{ID: 1, Title: "Only"},
 	}
 

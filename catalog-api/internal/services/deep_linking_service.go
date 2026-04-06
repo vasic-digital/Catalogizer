@@ -7,6 +7,7 @@ import (
 	"strings"
 	"time"
 
+	"catalogizer/internal/logging"
 	"catalogizer/internal/models"
 )
 
@@ -492,7 +493,9 @@ func (dls *DeepLinkingService) getRequiredFeatures(req *DeepLinkRequest) []strin
 func (dls *DeepLinkingService) TrackLinkEvent(ctx context.Context, event *LinkTrackingEvent) error {
 	// This would normally store the event in a database or analytics service
 	// For now, we'll just log it
-	fmt.Printf("Link tracking event: %+v\n", event)
+	if logging.Logger != nil {
+		logging.With(logging.Any("event", event)).Debug("Link tracking event")
+	}
 	return nil
 }
 

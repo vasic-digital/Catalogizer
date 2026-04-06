@@ -126,7 +126,7 @@ func TestServiceCreation(t *testing.T) {
 	defer cacheService.Close()
 	translationService := services.NewTranslationService(logger)
 	localizationService := services.NewLocalizationService(db, logger, translationService, cacheService)
-	
+
 	// Test creating services with required parameters
 	recognitionService := services.NewMediaRecognitionService(
 		db,
@@ -140,9 +140,9 @@ func TestServiceCreation(t *testing.T) {
 		"ocr_key",
 		"fingerprint_key",
 	)
-	
+
 	duplicationService := services.NewDuplicateDetectionService(db, logger, cacheService)
-	
+
 	readerService := services.NewReaderService(
 		db,
 		logger,
@@ -150,7 +150,7 @@ func TestServiceCreation(t *testing.T) {
 		translationService,
 		localizationService,
 	)
-	
+
 	// Verify services are created
 	if recognitionService == nil {
 		t.Error("Recognition service should not be nil")
@@ -168,7 +168,7 @@ func TestMediaMetadataCreation(t *testing.T) {
 	year := 1999
 	duration := 136
 	fileSize := int64(2048000000)
-	
+
 	metadata := &models.MediaMetadata{
 		Title:      "The Matrix",
 		Year:       &year,
@@ -180,7 +180,7 @@ func TestMediaMetadataCreation(t *testing.T) {
 		Language:   "English",
 		MediaType:  models.MediaTypeVideo,
 	}
-	
+
 	// Verify struct was created correctly
 	if metadata.Title != "The Matrix" {
 		t.Errorf("Expected title 'The Matrix', got %s", metadata.Title)

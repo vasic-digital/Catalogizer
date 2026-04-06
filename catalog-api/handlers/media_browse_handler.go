@@ -31,15 +31,15 @@ func NewMediaBrowseHandler(fileRepo *repository.FileRepository, statsRepo *repos
 
 // mediaItemJSON is the JSON shape the web frontend expects for each media item.
 type mediaItemJSON struct {
-	ID                  int64   `json:"id"`
-	Title               string  `json:"title"`
-	MediaType           string  `json:"media_type"`
-	Quality             string  `json:"quality,omitempty"`
-	FileSize            int64   `json:"file_size,omitempty"`
-	DirectoryPath       string  `json:"directory_path"`
-	StorageRootName     string  `json:"storage_root_name,omitempty"`
-	CreatedAt           string  `json:"created_at"`
-	UpdatedAt           string  `json:"updated_at"`
+	ID              int64  `json:"id"`
+	Title           string `json:"title"`
+	MediaType       string `json:"media_type"`
+	Quality         string `json:"quality,omitempty"`
+	FileSize        int64  `json:"file_size,omitempty"`
+	DirectoryPath   string `json:"directory_path"`
+	StorageRootName string `json:"storage_root_name,omitempty"`
+	CreatedAt       string `json:"created_at"`
+	UpdatedAt       string `json:"updated_at"`
 }
 
 // SearchMedia handles GET /api/v1/media/search — replaces the hardcoded stub.

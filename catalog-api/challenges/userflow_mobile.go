@@ -48,7 +48,7 @@ func androidTVAPKPath() string {
 // catalogizer-android application.
 func androidMobileConfig() userflow.MobileConfig {
 	return userflow.MobileConfig{
-		PackageName: "com.vasic.catalogizer",
+		PackageName:  "com.vasic.catalogizer",
 		ActivityName: ".MainActivity",
 		DeviceSerial: env.GetOrDefault(
 			"ANDROID_DEVICE_SERIAL", "",
@@ -60,7 +60,7 @@ func androidMobileConfig() userflow.MobileConfig {
 // catalogizer-androidtv application.
 func androidTVMobileConfig() userflow.MobileConfig {
 	return userflow.MobileConfig{
-		PackageName: "com.vasic.catalogizer.tv",
+		PackageName:  "com.vasic.catalogizer.tv",
 		ActivityName: ".MainActivity",
 		DeviceSerial: env.GetOrDefault(
 			"ANDROIDTV_DEVICE_SERIAL", "",

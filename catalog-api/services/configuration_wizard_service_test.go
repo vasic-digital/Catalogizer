@@ -1326,7 +1326,7 @@ func TestConfigurationWizardService_FinalizeConfiguration(t *testing.T) {
 			UserID:     1,
 			ConfigType: "basic",
 			Configuration: map[string]interface{}{
-				"db_type":    "sqlite",
+				"db_type":     "sqlite",
 				"server_port": 8080,
 			},
 		}
@@ -1539,4 +1539,3 @@ func TestConfigurationWizardService_GetSession_CurrentSession(t *testing.T) {
 	assert.NoError(t, err)
 	assert.Equal(t, session, result)
 }
-

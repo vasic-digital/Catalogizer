@@ -1290,16 +1290,16 @@ func TestLocalizationService_GetPreferredLanguagesForContent(t *testing.T) {
 	ctx := context.Background()
 
 	_, err := svc.SetupUserLocalization(ctx, &WizardLocalizationStep{
-		UserID:            1,
-		PrimaryLanguage:   "ja",
+		UserID:             1,
+		PrimaryLanguage:    "ja",
 		SecondaryLanguages: []string{"en"},
-		SubtitleLanguages: []string{"ja", "en"},
-		LyricsLanguages:   []string{"ja"},
-		MetadataLanguages: []string{"ja", "en", "ko"},
-		DateFormat:        "YYYY/MM/DD",
-		TimeFormat:        "24h",
-		NumberFormat:      "#,###",
-		CurrencyCode:      "JPY",
+		SubtitleLanguages:  []string{"ja", "en"},
+		LyricsLanguages:    []string{"ja"},
+		MetadataLanguages:  []string{"ja", "en", "ko"},
+		DateFormat:         "YYYY/MM/DD",
+		TimeFormat:         "24h",
+		NumberFormat:       "#,###",
+		CurrencyCode:       "JPY",
 	})
 	require.NoError(t, err)
 

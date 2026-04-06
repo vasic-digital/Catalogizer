@@ -1723,7 +1723,6 @@ func TestSyncService_GetSyncStatistics_Integration(t *testing.T) {
 // AuthService - integration tests
 // ===========================================================================
 
-
 func TestAuthService_Login_WithDB_InvalidCredentials(t *testing.T) {
 	db := setupTestDB(t)
 	userRepo := repository.NewUserRepository(db)
@@ -3112,9 +3111,9 @@ func TestConversionService_CreateConversionJob_AllTypes(t *testing.T) {
 	service := NewConversionService(conversionRepo, userRepo, authService)
 
 	tests := []struct {
-		name     string
-		request  *models.ConversionRequest
-		wantErr  bool
+		name    string
+		request *models.ConversionRequest
+		wantErr bool
 	}{
 		{
 			name: "video conversion",
@@ -3344,7 +3343,6 @@ func TestReportingService_GenerateReport_SystemOverview_Integration(t *testing.T
 	assert.NotNil(t, report)
 	assert.Equal(t, "system_overview", report.Type)
 }
-
 
 func TestReportingService_GenerateReport_HTMLFormat_Integration(t *testing.T) {
 	db := setupTestDB(t)

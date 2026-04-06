@@ -146,14 +146,14 @@ func setupFullAPITestServer(t *testing.T) *httptest.Server {
 
 	router.GET("/api/v1/media/stats", func(c *gin.Context) {
 		c.JSON(http.StatusOK, gin.H{
-			"total_files":   1500,
-			"total_size":    75000000000,
-			"media_count":   800,
-			"movie_count":   350,
-			"series_count":  150,
-			"music_count":   300,
-			"scan_status":   "idle",
-			"last_scan_at":  time.Now().Add(-1 * time.Hour).UTC(),
+			"total_files":  1500,
+			"total_size":   75000000000,
+			"media_count":  800,
+			"movie_count":  350,
+			"series_count": 150,
+			"music_count":  300,
+			"scan_status":  "idle",
+			"last_scan_at": time.Now().Add(-1 * time.Hour).UTC(),
 		})
 	})
 
@@ -195,9 +195,9 @@ func setupFullAPITestServer(t *testing.T) *httptest.Server {
 			"version":  "test",
 			"database": "sqlite",
 			"features": gin.H{
-				"http3":       true,
-				"brotli":      true,
-				"websocket":   true,
+				"http3":     true,
+				"brotli":    true,
+				"websocket": true,
 			},
 		})
 	})

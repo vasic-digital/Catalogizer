@@ -35,24 +35,24 @@ type ServerConfig struct {
 // DatabaseConfig contains database connection configuration.
 // Type selects the backend: "postgres" (default) or "sqlite".
 type DatabaseConfig struct {
-	Type               string `json:"type"` // "postgres" or "sqlite"
+	Type string `json:"type"` // "postgres" or "sqlite"
 	// PostgreSQL fields
-	Host               string `json:"host"`
-	Port               int    `json:"port"`
-	Name               string `json:"name"`
-	User               string `json:"user"`
-	Password           string `json:"password"`
-	SSLMode            string `json:"ssl_mode"`
+	Host     string `json:"host"`
+	Port     int    `json:"port"`
+	Name     string `json:"name"`
+	User     string `json:"user"`
+	Password string `json:"password"`
+	SSLMode  string `json:"ssl_mode"`
 	// SQLite fields (used when Type="sqlite")
-	Path               string `json:"path"`
-	EnableWAL          bool   `json:"enable_wal"`
-	CacheSize          int    `json:"cache_size"`
-	BusyTimeout        int    `json:"busy_timeout"`
+	Path        string `json:"path"`
+	EnableWAL   bool   `json:"enable_wal"`
+	CacheSize   int    `json:"cache_size"`
+	BusyTimeout int    `json:"busy_timeout"`
 	// Common
-	MaxOpenConnections int    `json:"max_open_connections"`
-	MaxIdleConnections int    `json:"max_idle_connections"`
-	ConnMaxLifetime    int    `json:"conn_max_lifetime"`
-	ConnMaxIdleTime    int    `json:"conn_max_idle_time"`
+	MaxOpenConnections int `json:"max_open_connections"`
+	MaxIdleConnections int `json:"max_idle_connections"`
+	ConnMaxLifetime    int `json:"conn_max_lifetime"`
+	ConnMaxIdleTime    int `json:"conn_max_idle_time"`
 }
 
 // AuthConfig contains authentication configuration

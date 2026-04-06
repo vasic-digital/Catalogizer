@@ -30,8 +30,11 @@ import com.catalogizer.android.ui.viewmodel.AuthViewModel
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import android.util.Log
 import java.net.HttpURLConnection
 import java.net.URL
+
+private const val TAG = "LoginScreen"
 
 /**
  * Login screen with username/password fields, server URL configuration, and
@@ -341,16 +344,22 @@ private suspend fun discoverServers(): List<String> = withContext(Dispatchers.IO
     for (host in hosts) {
         for (port in ports) {
             val url = "http://$prefix.$host:$port"
+            var conn: HttpURLConnection? = null
             try {
-                val conn = URL("$url/health").openConnection() as HttpURLConnection
+                conn = URL("$url/health").openConnection() as HttpURLConnection
                 conn.connectTimeout = 1500
                 conn.readTimeout = 1500
                 conn.requestMethod = "GET"
                 if (conn.responseCode == 200) {
                     found.add(url)
                 }
-                conn.disconnect()
-            } catch (_: Exception) { }
+            } catch (e: Exception) { 
+                Log.d(TAG, "Server not found at $url: ${e.message}")
+            } finally {
+                try {
+                    conn?.disconnect()
+                } catch (_: Exception) { }
+            }
         }
         if (found.isNotEmpty()) break // Stop after first subnet with results
     }

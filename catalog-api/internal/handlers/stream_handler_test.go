@@ -49,7 +49,7 @@ func (m *streamMockCatalogService) GetDirectoriesBySize(smbRoot string, limit in
 func (m *streamMockCatalogService) GetDuplicateGroups(smbRoot string, minCount, limit int) ([]models.DuplicateGroup, error) {
 	return nil, nil
 }
-func (m *streamMockCatalogService) GetSMBRoots() ([]string, error)   { return nil, nil }
+func (m *streamMockCatalogService) GetSMBRoots() ([]string, error)     { return nil, nil }
 func (m *streamMockCatalogService) GetDuplicatesCount() (int64, error) { return 0, nil }
 func (m *streamMockCatalogService) GetDirectoriesBySizeLimited(limit int) ([]models.DirectoryStats, error) {
 	return nil, nil
@@ -120,8 +120,8 @@ func (m *mockFSClient) Disconnect(ctx context.Context) error {
 	m.connected = false
 	return nil
 }
-func (m *mockFSClient) IsConnected() bool                                          { return m.connected }
-func (m *mockFSClient) TestConnection(ctx context.Context) error                   { return nil }
+func (m *mockFSClient) IsConnected() bool                        { return m.connected }
+func (m *mockFSClient) TestConnection(ctx context.Context) error { return nil }
 func (m *mockFSClient) ReadFile(ctx context.Context, path string) (io.ReadCloser, error) {
 	if m.readFileErr != nil {
 		return nil, m.readFileErr
@@ -135,15 +135,15 @@ func (m *mockFSClient) GetFileInfo(ctx context.Context, path string) (*filesyste
 	return &filesystem.FileInfo{Size: m.fileSize}, nil
 }
 func (m *mockFSClient) FileExists(ctx context.Context, path string) (bool, error) { return true, nil }
-func (m *mockFSClient) DeleteFile(ctx context.Context, path string) error          { return nil }
-func (m *mockFSClient) CopyFile(ctx context.Context, src, dst string) error        { return nil }
+func (m *mockFSClient) DeleteFile(ctx context.Context, path string) error         { return nil }
+func (m *mockFSClient) CopyFile(ctx context.Context, src, dst string) error       { return nil }
 func (m *mockFSClient) ListDirectory(ctx context.Context, path string) ([]*filesystem.FileInfo, error) {
 	return nil, nil
 }
-func (m *mockFSClient) CreateDirectory(ctx context.Context, path string) error  { return nil }
-func (m *mockFSClient) DeleteDirectory(ctx context.Context, path string) error  { return nil }
-func (m *mockFSClient) GetProtocol() string                                     { return m.protocol }
-func (m *mockFSClient) GetConfig() interface{}                                  { return nil }
+func (m *mockFSClient) CreateDirectory(ctx context.Context, path string) error { return nil }
+func (m *mockFSClient) DeleteDirectory(ctx context.Context, path string) error { return nil }
+func (m *mockFSClient) GetProtocol() string                                    { return m.protocol }
+func (m *mockFSClient) GetConfig() interface{}                                 { return nil }
 
 // mockSeekableFSClient implements both filesystem.FileSystemClient and filesystem.SeekableClient.
 // This simulates protocols that support random access (SMB, local).

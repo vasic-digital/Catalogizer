@@ -845,4 +845,3 @@ func (c *EntitySortingChallenge) Execute(
 		resultStatus, start, assertions, nil, outputs, "",
 	), nil
 }
-

@@ -102,7 +102,9 @@ func (c *moduleDocChallenge) Execute(ctx context.Context) (*challenge.Result, er
 // RegisterModuleChallenges registers challenges that verify each decoupled
 // module has proper structure and documentation. These run without network
 // access and validate the local filesystem layout.
-func RegisterModuleChallenges(svc interface{ Register(challenge.Challenge) error }) {
+func RegisterModuleChallenges(svc interface {
+	Register(challenge.Challenge) error
+}) {
 	modules := []struct {
 		id   string
 		name string

@@ -1933,11 +1933,11 @@ func TestReportingService_FilterLogsByDateRange_BoundaryExact(t *testing.T) {
 	endDate := time.Date(2025, 1, 20, 0, 0, 0, 0, time.UTC)
 
 	logs := []models.MediaAccessLog{
-		{UserID: 1, MediaID: 1, AccessTime: startDate},                                          // exactly at start (not After)
-		{UserID: 2, MediaID: 2, AccessTime: endDate},                                            // exactly at end (not Before)
-		{UserID: 3, MediaID: 3, AccessTime: startDate.Add(1 * time.Second)},                     // just after start
-		{UserID: 4, MediaID: 4, AccessTime: endDate.Add(-1 * time.Second)},                      // just before end
-		{UserID: 5, MediaID: 5, AccessTime: time.Date(2025, 1, 15, 12, 0, 0, 0, time.UTC)},     // middle
+		{UserID: 1, MediaID: 1, AccessTime: startDate},                                     // exactly at start (not After)
+		{UserID: 2, MediaID: 2, AccessTime: endDate},                                       // exactly at end (not Before)
+		{UserID: 3, MediaID: 3, AccessTime: startDate.Add(1 * time.Second)},                // just after start
+		{UserID: 4, MediaID: 4, AccessTime: endDate.Add(-1 * time.Second)},                 // just before end
+		{UserID: 5, MediaID: 5, AccessTime: time.Date(2025, 1, 15, 12, 0, 0, 0, time.UTC)}, // middle
 	}
 
 	filtered := service.filterLogsByDateRange(logs, startDate, endDate)
@@ -2041,23 +2041,23 @@ func TestReportingService_AnalyzeTimeDistribution_BoundaryHours(t *testing.T) {
 	service := NewReportingService(nil, nil)
 
 	logs := []models.MediaAccessLog{
-		{AccessTime: time.Date(2025, 1, 1, 0, 0, 0, 0, time.UTC)},  // midnight = night
-		{AccessTime: time.Date(2025, 1, 1, 5, 59, 59, 0, time.UTC)}, // just before morning = night
-		{AccessTime: time.Date(2025, 1, 1, 6, 0, 0, 0, time.UTC)},   // morning boundary
+		{AccessTime: time.Date(2025, 1, 1, 0, 0, 0, 0, time.UTC)},    // midnight = night
+		{AccessTime: time.Date(2025, 1, 1, 5, 59, 59, 0, time.UTC)},  // just before morning = night
+		{AccessTime: time.Date(2025, 1, 1, 6, 0, 0, 0, time.UTC)},    // morning boundary
 		{AccessTime: time.Date(2025, 1, 1, 11, 59, 59, 0, time.UTC)}, // end of morning
-		{AccessTime: time.Date(2025, 1, 1, 12, 0, 0, 0, time.UTC)},  // afternoon boundary
+		{AccessTime: time.Date(2025, 1, 1, 12, 0, 0, 0, time.UTC)},   // afternoon boundary
 		{AccessTime: time.Date(2025, 1, 1, 17, 59, 59, 0, time.UTC)}, // end of afternoon
-		{AccessTime: time.Date(2025, 1, 1, 18, 0, 0, 0, time.UTC)},  // evening boundary
+		{AccessTime: time.Date(2025, 1, 1, 18, 0, 0, 0, time.UTC)},   // evening boundary
 		{AccessTime: time.Date(2025, 1, 1, 21, 59, 59, 0, time.UTC)}, // end of evening
-		{AccessTime: time.Date(2025, 1, 1, 22, 0, 0, 0, time.UTC)},  // night boundary
+		{AccessTime: time.Date(2025, 1, 1, 22, 0, 0, 0, time.UTC)},   // night boundary
 		{AccessTime: time.Date(2025, 1, 1, 23, 59, 59, 0, time.UTC)}, // end of night
 	}
 
 	dist := service.analyzeTimeDistribution(logs)
-	assert.Equal(t, 4, dist["night"])    // 0:00, 5:59, 22:00, 23:59
-	assert.Equal(t, 2, dist["morning"])  // 6:00, 11:59
+	assert.Equal(t, 4, dist["night"])     // 0:00, 5:59, 22:00, 23:59
+	assert.Equal(t, 2, dist["morning"])   // 6:00, 11:59
 	assert.Equal(t, 2, dist["afternoon"]) // 12:00, 17:59
-	assert.Equal(t, 2, dist["evening"])  // 18:00, 21:59
+	assert.Equal(t, 2, dist["evening"])   // 18:00, 21:59
 }
 
 // ===========================================================================

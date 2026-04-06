@@ -548,7 +548,12 @@ func TestGenerateDeepLinks_ResponseFieldsNotEmpty(t *testing.T) {
 	}
 
 	checks := map[string]string{
-		"Links":        func() string { if resp.Links == nil { return "" }; return "ok" }(),
+		"Links": func() string {
+			if resp.Links == nil {
+				return ""
+			}
+			return "ok"
+		}(),
 		"UniversalLink": resp.UniversalLink,
 		"ShareableLink": resp.ShareableLink,
 		"QRCode":        resp.QRCode,
@@ -1270,11 +1275,11 @@ func TestGetRequiredFeatures(t *testing.T) {
 	svc := NewDeepLinkingService("https://catalogizer.app", "v1")
 
 	tests := []struct {
-		name       string
-		action     string
-		mediaType  string
-		wantFeats  []string
-		noFeats    []string
+		name      string
+		action    string
+		mediaType string
+		wantFeats []string
+		noFeats   []string
 	}{
 		{"detail no media", "detail", "", nil, nil},
 		{"play no media", "play", "", []string{"media_playback"}, nil},

@@ -12,9 +12,9 @@ import (
 	"testing"
 	"time"
 
+	_ "github.com/mutecomm/go-sqlcipher"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	_ "github.com/mutecomm/go-sqlcipher"
 	"go.uber.org/zap"
 )
 
@@ -157,12 +157,12 @@ func setupTestDB(t *testing.T) *database.DB {
 
 // seedStorageRootAndFiles inserts a storage root and files for testing.
 func seedStorageRootAndFiles(t *testing.T, db *database.DB, rootName string, files []struct {
-	path      string
-	name      string
-	ext       *string
-	mime      *string
-	size      int64
-	isDir     bool
+	path  string
+	name  string
+	ext   *string
+	mime  *string
+	size  int64
+	isDir bool
 }) {
 	t.Helper()
 	_, err := db.Exec("INSERT OR IGNORE INTO storage_roots (name, protocol) VALUES (?, 'smb')", rootName)

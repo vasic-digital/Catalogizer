@@ -596,20 +596,20 @@ func TestMusicPlayerService_SaveAndGetSession(t *testing.T) {
 	ctx := context.Background()
 
 	session := &MusicPlaybackSession{
-		ID:                "music_session_1",
-		UserID:            1,
-		CurrentTrack:      &MusicTrack{ID: 1, Title: "Test Song", Artist: "Test Artist"},
-		Queue:             []MusicTrack{{ID: 1, Title: "Test Song", Artist: "Test Artist"}},
-		QueueIndex:        0,
-		PlayMode:          PlayModeTrack,
-		RepeatMode:        RepeatModeOff,
-		Volume:            0.9,
-		PlaybackState:     PlaybackStatePlaying,
-		EqualizerPreset:   "flat",
-		EqualizerBands:    map[string]float64{"bass": 0.5},
-		LastActivity:      time.Now(),
-		CreatedAt:         time.Now(),
-		UpdatedAt:         time.Now(),
+		ID:              "music_session_1",
+		UserID:          1,
+		CurrentTrack:    &MusicTrack{ID: 1, Title: "Test Song", Artist: "Test Artist"},
+		Queue:           []MusicTrack{{ID: 1, Title: "Test Song", Artist: "Test Artist"}},
+		QueueIndex:      0,
+		PlayMode:        PlayModeTrack,
+		RepeatMode:      RepeatModeOff,
+		Volume:          0.9,
+		PlaybackState:   PlaybackStatePlaying,
+		EqualizerPreset: "flat",
+		EqualizerBands:  map[string]float64{"bass": 0.5},
+		LastActivity:    time.Now(),
+		CreatedAt:       time.Now(),
+		UpdatedAt:       time.Now(),
 	}
 
 	// Save session
@@ -1399,13 +1399,13 @@ func TestGameSoftwareRecognitionProvider_BasicRecognition(t *testing.T) {
 	provider := NewGameSoftwareRecognitionProvider(logger)
 
 	tests := []struct {
-		name      string
-		reqType   MediaType
-		gameName  string
-		version   string
-		platform  string
-		isGame    bool
-		wantType  MediaType
+		name     string
+		reqType  MediaType
+		gameName string
+		version  string
+		platform string
+		isGame   bool
+		wantType MediaType
 	}{
 		{"game", MediaTypeGame, "Doom", "2016", "windows", true, MediaTypeGame},
 		{"software", MediaTypeSoftware, "VSCode", "1.80", "linux", false, MediaTypeSoftware},
@@ -1579,9 +1579,11 @@ func TestProtocolHandlers_GetFileIdentifier(t *testing.T) {
 	ctx := context.Background()
 
 	tests := []struct {
-		name     string
-		handler  interface{ GetFileIdentifier(context.Context, string, int64, bool) (string, error) }
-		prefix   string
+		name    string
+		handler interface {
+			GetFileIdentifier(context.Context, string, int64, bool) (string, error)
+		}
+		prefix string
 	}{
 		{"local", NewLocalProtocolHandler(logger), "local:"},
 		{"smb", NewSMBProtocolHandler(logger), "smb:"},
@@ -1613,7 +1615,11 @@ func TestProtocolHandlers_ValidateMove_SamePath(t *testing.T) {
 
 	handlers := []struct {
 		name    string
-		handler interface{ ValidateMove(context.Context, interface{ FileExists(context.Context, string) (bool, error) }, string, string) error }
+		handler interface {
+			ValidateMove(context.Context, interface {
+				FileExists(context.Context, string) (bool, error)
+			}, string, string) error
+		}
 	}{
 		// We test using the Local handler directly since ValidateMove signature
 		// depends on filesystem.FileSystemClient

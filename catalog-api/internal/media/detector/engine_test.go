@@ -46,14 +46,14 @@ func TestLoadRules(t *testing.T) {
 
 func TestAnalyzeDirectory_FilenamePattern(t *testing.T) {
 	tests := []struct {
-		name           string
-		dirPath        string
-		files          []FileInfo
-		rules          []models.DetectionRule
-		mediaTypes     []models.MediaType
-		expectNil      bool
-		expectType     string
-		minConfidence  float64
+		name          string
+		dirPath       string
+		files         []FileInfo
+		rules         []models.DetectionRule
+		mediaTypes    []models.MediaType
+		expectNil     bool
+		expectType    string
+		minConfidence float64
 	}{
 		{
 			name:    "detects movie by video file extensions",
@@ -350,27 +350,27 @@ func TestExtractQualityHints(t *testing.T) {
 		expected []string // hints that should be present
 	}{
 		{
-			name:    "detects 4K quality",
-			dirPath: "/media/movies/Movie.4K.UHD",
-			files:   nil,
+			name:     "detects 4K quality",
+			dirPath:  "/media/movies/Movie.4K.UHD",
+			files:    nil,
 			expected: []string{"4K"},
 		},
 		{
-			name:    "detects 1080p from filename",
-			dirPath: "/media/movies/Movie",
-			files:   []FileInfo{{Name: "movie.1080p.bluray.mkv"}},
+			name:     "detects 1080p from filename",
+			dirPath:  "/media/movies/Movie",
+			files:    []FileInfo{{Name: "movie.1080p.bluray.mkv"}},
 			expected: []string{"1080p", "BluRay"},
 		},
 		{
-			name:    "detects HDR",
-			dirPath: "/media/movies/Movie.HDR10",
-			files:   nil,
+			name:     "detects HDR",
+			dirPath:  "/media/movies/Movie.HDR10",
+			files:    nil,
 			expected: []string{"HDR"},
 		},
 		{
-			name:    "detects lossless audio",
-			dirPath: "/media/music/Album",
-			files:   []FileInfo{{Name: "track01.flac"}},
+			name:     "detects lossless audio",
+			dirPath:  "/media/music/Album",
+			files:    []FileInfo{{Name: "track01.flac"}},
 			expected: []string{"Lossless"},
 		},
 		{
@@ -398,9 +398,9 @@ func TestBuildAnalysisData(t *testing.T) {
 	engine := newTestEngine(t)
 
 	files := []FileInfo{
-		{Name: "movie.mkv", Size: 5 * 1024 * 1024 * 1024, Extension: ".mkv"},  // large
-		{Name: "subtitle.srt", Size: 50000, Extension: ".srt"},                  // tiny
-		{Name: "poster.jpg", Size: 500 * 1024, Extension: ".jpg"},               // tiny
+		{Name: "movie.mkv", Size: 5 * 1024 * 1024 * 1024, Extension: ".mkv"}, // large
+		{Name: "subtitle.srt", Size: 50000, Extension: ".srt"},               // tiny
+		{Name: "poster.jpg", Size: 500 * 1024, Extension: ".jpg"},            // tiny
 	}
 
 	data := engine.buildAnalysisData("/media/movies/Test", files, []string{"*.mkv"}, 0.8)

@@ -303,7 +303,33 @@ export const mockCollectionsApi = {
 };
 
 // Helper function to determine if we should use mock API
-export const shouldUseMockCollections = () => {
-  // Use mock API when backend doesn't have collections endpoints
+export const shouldUseMockCollections = (): boolean => {
+  // Check for explicit force mock flag (for testing)
+  const forceMock = import.meta.env.VITE_FORCE_MOCK_COLLECTIONS === 'true';
+  if (forceMock) {
+    return true;
+  }
+  
+  // Check for explicit disable mock flag
+  const disableMock = import.meta.env.VITE_DISABLE_MOCK_COLLECTIONS === 'true';
+  if (disableMock) {
+    return false;
+  }
+  
+  // In development, check if API URL is configured
+  const isDev = import.meta.env.DEV;
+  const apiUrl = import.meta.env.VITE_API_URL;
+  
+  // If API URL is explicitly set, try real API first
+  if (apiUrl && apiUrl.length > 0) {
+    return false;
+  }
+  
+  // In production, always try real API first
+  if (!isDev) {
+    return false;
+  }
+  
+  // In development without API URL, use mock as fallback
   return true;
 };

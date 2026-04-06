@@ -6,6 +6,8 @@ import (
 	"sync"
 	"time"
 
+	"catalogizer/internal/logging"
+
 	"github.com/gin-gonic/gin"
 	"golang.org/x/time/rate"
 )
@@ -136,8 +138,13 @@ func AdvancedRateLimit(config RateLimiterConfig) gin.HandlerFunc {
 
 		if !clientLimiter.Allow() {
 			// Log rate limit attempt
-			fmt.Printf("Rate limit exceeded for key: %s, IP: %s, Path: %s\n",
-				key, c.ClientIP(), c.Request.URL.Path)
+			if logging.Logger != nil {
+				logging.With(
+					logging.String("key", key),
+					logging.String("ip", c.ClientIP()),
+					logging.String("path", c.Request.URL.Path),
+				).Warn("Rate limit exceeded")
+			}
 
 			c.JSON(http.StatusTooManyRequests, gin.H{
 				"error":       "rate_limit_exceeded",

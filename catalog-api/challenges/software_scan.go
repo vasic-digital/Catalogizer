@@ -120,9 +120,9 @@ func (c *SoftwareScanChallenge) Execute(ctx context.Context) (*challenge.Result,
 
 	metrics := map[string]challenge.MetricValue{
 		"installer_file_count": {Name: "installer_file_count", Value: float64(result.FileCount), Unit: "count"},
-		"subdirectory_count": {Name: "subdirectory_count", Value: float64(result.DirCount), Unit: "count"},
-		"total_size": {Name: "total_size", Value: float64(result.TotalSize), Unit: "bytes"},
-		"scan_time": {Name: "scan_time", Value: float64(time.Since(start).Milliseconds()), Unit: "ms"},
+		"subdirectory_count":   {Name: "subdirectory_count", Value: float64(result.DirCount), Unit: "count"},
+		"total_size":           {Name: "total_size", Value: float64(result.TotalSize), Unit: "bytes"},
+		"scan_time":            {Name: "scan_time", Value: float64(time.Since(start).Milliseconds()), Unit: "ms"},
 	}
 
 	status := challenge.StatusPassed

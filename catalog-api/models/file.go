@@ -170,7 +170,6 @@ type SearchResult struct {
 	TotalPages int                `json:"total_pages"`
 }
 
-
 // MediaMetadata represents media metadata information
 type MediaMetadata struct {
 	ID          int64                  `json:"id" db:"id"`

@@ -875,14 +875,14 @@ func TestMediaCollectionRepo_MarshalJSONFieldString(t *testing.T) {
 			wantJSON: "null",
 		},
 		{
-			name:     "map with entries",
-			input:    map[string]string{"a": "1", "b": "2"},
-			wantErr:  false,
+			name:    "map with entries",
+			input:   map[string]string{"a": "1", "b": "2"},
+			wantErr: false,
 		},
 		{
-			name:     "empty map",
-			input:    map[string]string{},
-			wantErr:  false,
+			name:    "empty map",
+			input:   map[string]string{},
+			wantErr: false,
 		},
 	}
 

@@ -11,7 +11,6 @@ import (
 	"go.uber.org/zap"
 )
 
-
 func TestNewUniversalScanner(t *testing.T) {
 	var mockDB *database.DB
 	mockLogger := zap.NewNop()

@@ -1141,15 +1141,15 @@ func TestRecommendation_PassesExternalFilters(t *testing.T) {
 			expected: true,
 		},
 		{
-			name:    "genre filter matches",
-			item:    &ExternalSimilarItem{Genre: "Action, Thriller"},
-			filters: &RecommendationFilters{GenreFilter: []string{"action"}},
+			name:     "genre filter matches",
+			item:     &ExternalSimilarItem{Genre: "Action, Thriller"},
+			filters:  &RecommendationFilters{GenreFilter: []string{"action"}},
 			expected: true,
 		},
 		{
-			name:    "genre filter does not match",
-			item:    &ExternalSimilarItem{Genre: "Comedy"},
-			filters: &RecommendationFilters{GenreFilter: []string{"action"}},
+			name:     "genre filter does not match",
+			item:     &ExternalSimilarItem{Genre: "Comedy"},
+			filters:  &RecommendationFilters{GenreFilter: []string{"action"}},
 			expected: false,
 		},
 		{

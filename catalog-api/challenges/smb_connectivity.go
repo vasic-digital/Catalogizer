@@ -136,4 +136,3 @@ func (c *SMBConnectivityChallenge) Cleanup(ctx context.Context) error {
 	}
 	return c.BaseChallenge.Cleanup(ctx)
 }
-

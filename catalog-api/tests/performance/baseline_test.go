@@ -521,10 +521,10 @@ func statsOverallHandler(db *sql.DB) gin.HandlerFunc {
 		}
 
 		c.JSON(http.StatusOK, gin.H{
-			"total_files":    totalFiles,
-			"total_size":     totalSize,
+			"total_files":     totalFiles,
+			"total_size":      totalSize,
 			"duplicate_count": dupCount,
-			"file_types":     typeStats,
+			"file_types":      typeStats,
 		})
 	}
 }

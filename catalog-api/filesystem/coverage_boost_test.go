@@ -815,11 +815,11 @@ func TestDefaultClientFactory_SupportedProtocols_Boost(t *testing.T) {
 
 func TestGetStringSetting_Boost(t *testing.T) {
 	settings := map[string]interface{}{
-		"host":     "example.com",
-		"port":     float64(21),
-		"empty":    "",
-		"number":   42,
-		"nil_val":  nil,
+		"host":    "example.com",
+		"port":    float64(21),
+		"empty":   "",
+		"number":  42,
+		"nil_val": nil,
 	}
 
 	assert.Equal(t, "example.com", getStringSetting(settings, "host", "default"))

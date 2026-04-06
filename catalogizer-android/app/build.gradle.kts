@@ -1,11 +1,5 @@
 import java.util.Properties
 
-// Disable JDK image transform at project level to avoid jlink issues
-project.ext.set("android.useNewJdkImageTransform", false)
-project.ext.set("android.experimental.jdkImageTransform", false)
-project.ext.set("android.enableNewJdkImageTransform", false)
-project.ext.set("android.experimental.useNewJdkImageTransform", false)
-
 plugins {
     id("com.android.application")
     id("org.jetbrains.kotlin.android")
@@ -16,13 +10,6 @@ plugins {
 }
 
 android {
-    
-    // Disable JDK image transform - must be set before any android configuration
-    project.extensions.extraProperties["android.useNewJdkImageTransform"] = false
-    project.extensions.extraProperties["android.experimental.jdkImageTransform"] = false
-    project.extensions.extraProperties["android.enableNewJdkImageTransform"] = false
-    project.extensions.extraProperties["android.experimental.useNewJdkImageTransform"] = false
-    
     namespace = "com.catalogizer.android"
     compileSdk = 34
 
@@ -86,14 +73,6 @@ android {
         jvmTarget = "21"
     }
 
-    // Disable explicit toolchain to use system JVM
-    // kotlin {
-    //     jvmToolchain(21)
-    // }
-
-    // Disable JDK image transform to avoid jlink issues
-    // useNewJdkImageTransform.set(false)
-
     buildFeatures {
         compose = true
         buildConfig = true
@@ -103,12 +82,23 @@ android {
         kotlinCompilerExtensionVersion = "1.5.8"
     }
 
-
-
     packaging {
         resources {
             excludes += "/META-INF/{AL2.0,LGPL2.1}"
         }
+    }
+
+    // Disable problematic JDK image transform tasks
+    tasks.configureEach {
+        if (name.contains("JdkImage", ignoreCase = true) || 
+            name.contains("core-for-system-modules", ignoreCase = true)) {
+            enabled = false
+        }
+    }
+
+    // Workaround for JavaCompile tasks
+    tasks.withType<JavaCompile> {
+        options.isFork = false
     }
 }
 
@@ -142,8 +132,6 @@ dependencies {
 
     // WebSocket
     implementation("org.java-websocket:Java-WebSocket:1.5.4")
-
-
 
     // Image Loading
     implementation("io.coil-kt:coil-compose:2.5.0")
@@ -223,10 +211,4 @@ tasks.register<JacocoReport>("jacocoTestReport") {
     sourceDirectories.setFrom(files(mainSrc))
     classDirectories.setFrom(files(debugTree))
     executionData.setFrom(fileTree(layout.buildDirectory) { include("jacoco/testDebugUnitTest.exec") })
-}
-// Workaround for JDK image transform issue with Java 21
-// This is a known issue with AGP 8.1.0 and Java 21
-tasks.withType<JavaCompile> {
-    // Disable JDK image transform
-    options.isFork = false
 }

@@ -58,12 +58,12 @@ func TestRecommendationService_GetSimilarItems(t *testing.T) {
 		req := &services.SimilarItemsRequest{
 			MediaID: "matrix_1999",
 			MediaMetadata: &models.MediaMetadata{
-				Title:       "The Matrix",
-				Year:        &year1999,
-				Genre:       "Science Fiction", 
-				Director:    "The Wachowskis",
-				MediaType:   models.MediaTypeVideo,
-				Rating:      &rating87,
+				Title:     "The Matrix",
+				Year:      &year1999,
+				Genre:     "Science Fiction",
+				Director:  "The Wachowskis",
+				MediaType: models.MediaTypeVideo,
+				Rating:    &rating87,
 			},
 			MaxLocalItems:       10,
 			MaxExternalItems:    5,
@@ -118,12 +118,12 @@ func TestRecommendationService_GetSimilarItems(t *testing.T) {
 		req := &services.SimilarItemsRequest{
 			MediaID: "queen_bohemian_rhapsody",
 			MediaMetadata: &models.MediaMetadata{
-				Title:     "Bohemian Rhapsody",
+				Title:       "Bohemian Rhapsody",
 				Description: "Queen",
-				Genre:     "Rock",
-				Year:      &year1975,
-				MediaType: models.MediaTypeAudio,
-				Duration:  &duration,
+				Genre:       "Rock",
+				Year:        &year1975,
+				MediaType:   models.MediaTypeAudio,
+				Duration:    &duration,
 			},
 			MaxLocalItems:       8,
 			MaxExternalItems:    3,
@@ -159,13 +159,13 @@ func TestRecommendationService_GetSimilarItems(t *testing.T) {
 		req := &services.SimilarItemsRequest{
 			MediaID: "harry_potter_1",
 			MediaMetadata: &models.MediaMetadata{
-				Title:     "Harry Potter and the Philosopher's Stone",
+				Title:       "Harry Potter and the Philosopher's Stone",
 				Description: "J.K. Rowling",
-				Year:      &year1997,
-				Genre:     "Fantasy",
-				Country:   "Bloomsbury",
-				MediaType: models.MediaTypeBook,
-				Duration:  &pages,
+				Year:        &year1997,
+				Genre:       "Fantasy",
+				Country:     "Bloomsbury",
+				MediaType:   models.MediaTypeBook,
+				Duration:    &pages,
 			},
 			MaxLocalItems:       5,
 			MaxExternalItems:    5,
@@ -320,9 +320,9 @@ func TestRecommendationService_ExternalProviders(t *testing.T) {
 				Genre:     "Sci-Fi",
 				MediaType: models.MediaTypeVideo,
 			},
-			MaxLocalItems:   0, // Only external
+			MaxLocalItems:    0, // Only external
 			MaxExternalItems: 5,
-			IncludeExternal: true,
+			IncludeExternal:  true,
 		}
 
 		response, err := recommendationService.GetSimilarItems(ctx, req)
@@ -346,14 +346,14 @@ func TestRecommendationService_ExternalProviders(t *testing.T) {
 		req := &services.SimilarItemsRequest{
 			MediaID: "imagine",
 			MediaMetadata: &models.MediaMetadata{
-				Title:     "Imagine",
+				Title:       "Imagine",
 				Description: "John Lennon",
-				Genre:     "Rock",
-				MediaType: models.MediaTypeAudio,
+				Genre:       "Rock",
+				MediaType:   models.MediaTypeAudio,
 			},
-			MaxLocalItems:   0,
+			MaxLocalItems:    0,
 			MaxExternalItems: 5,
-			IncludeExternal: true,
+			IncludeExternal:  true,
 		}
 
 		response, err := recommendationService.GetSimilarItems(ctx, req)
@@ -377,14 +377,14 @@ func TestRecommendationService_ExternalProviders(t *testing.T) {
 		req := &services.SimilarItemsRequest{
 			MediaID: "1984",
 			MediaMetadata: &models.MediaMetadata{
-				Title:     "1984",
+				Title:       "1984",
 				Description: "George Orwell",
-				Genre:     "Dystopian Fiction",
-				MediaType: models.MediaTypeBook,
+				Genre:       "Dystopian Fiction",
+				MediaType:   models.MediaTypeBook,
 			},
-			MaxLocalItems:   0,
+			MaxLocalItems:    0,
 			MaxExternalItems: 5,
-			IncludeExternal: true,
+			IncludeExternal:  true,
 		}
 
 		response, err := recommendationService.GetSimilarItems(ctx, req)
@@ -407,14 +407,14 @@ func TestRecommendationService_ExternalProviders(t *testing.T) {
 		req := &services.SimilarItemsRequest{
 			MediaID: "witcher3",
 			MediaMetadata: &models.MediaMetadata{
-				Title:     "The Witcher 3",
+				Title:       "The Witcher 3",
 				Description: "CD Projekt RED",
-				Genre:     "RPG",
-				MediaType: models.MediaTypeGame,
+				Genre:       "RPG",
+				MediaType:   models.MediaTypeGame,
 			},
-			MaxLocalItems:   0,
+			MaxLocalItems:    0,
 			MaxExternalItems: 5,
-			IncludeExternal: true,
+			IncludeExternal:  true,
 		}
 
 		response, err := recommendationService.GetSimilarItems(ctx, req)
@@ -463,9 +463,9 @@ func TestRecommendationService_Performance(t *testing.T) {
 				Title:     "Performance Test",
 				MediaType: models.MediaTypeVideo,
 			},
-			MaxLocalItems:   10,
+			MaxLocalItems:    10,
 			MaxExternalItems: 5,
-			IncludeExternal: true,
+			IncludeExternal:  true,
 		}
 
 		start := time.Now()
@@ -836,7 +836,7 @@ func TestRecommendationService_SimilarityAlgorithms(t *testing.T) {
 
 func BenchmarkRecommendationService(b *testing.B) {
 	ctx := context.Background()
-	
+
 	// In-memory database for benchmarking
 	sqlDB, _ := sql.Open("sqlite3", ":memory:")
 	defer sqlDB.Close()

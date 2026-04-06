@@ -69,11 +69,11 @@ func TestDuplicateDetectionService_CalculateTextSimilarity(t *testing.T) {
 	service := NewDuplicateDetectionService(nil, mockLogger, nil)
 
 	tests := []struct {
-		name        string
-		text1       string
-		text2       string
-		minScore    float64
-		maxScore    float64
+		name     string
+		text1    string
+		text2    string
+		minScore float64
+		maxScore float64
 	}{
 		{
 			name:     "identical texts",

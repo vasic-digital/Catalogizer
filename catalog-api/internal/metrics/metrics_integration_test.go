@@ -19,7 +19,9 @@ func init() {
 
 // --- Helper to read a CounterVec label combination ---
 
-func getCounterVecValue(cv interface{ WithLabelValues(lvs ...string) interface{ Write(*dto.Metric) error } }, labels ...string) float64 {
+func getCounterVecValue(cv interface {
+	WithLabelValues(lvs ...string) interface{ Write(*dto.Metric) error }
+}, labels ...string) float64 {
 	m := &dto.Metric{}
 	cv.WithLabelValues(labels...).Write(m)
 	return m.GetCounter().GetValue()

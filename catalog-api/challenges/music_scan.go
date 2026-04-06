@@ -128,10 +128,10 @@ func (c *MusicScanChallenge) Execute(ctx context.Context) (*challenge.Result, er
 	outputs["total_size"] = fmt.Sprintf("%d", result.TotalSize)
 
 	metrics := map[string]challenge.MetricValue{
-		"audio_file_count": {Name: "audio_file_count", Value: float64(result.FileCount), Unit: "count"},
+		"audio_file_count":   {Name: "audio_file_count", Value: float64(result.FileCount), Unit: "count"},
 		"subdirectory_count": {Name: "subdirectory_count", Value: float64(result.DirCount), Unit: "count"},
-		"total_size": {Name: "total_size", Value: float64(result.TotalSize), Unit: "bytes"},
-		"scan_time": {Name: "scan_time", Value: float64(time.Since(start).Milliseconds()), Unit: "ms"},
+		"total_size":         {Name: "total_size", Value: float64(result.TotalSize), Unit: "bytes"},
+		"scan_time":          {Name: "scan_time", Value: float64(time.Since(start).Milliseconds()), Unit: "ms"},
 	}
 
 	status := challenge.StatusPassed

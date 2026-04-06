@@ -20,14 +20,14 @@ import (
 
 // mockProvider implements providers.MetadataProvider for testing.
 type mockProvider struct {
-	name       string
-	enabled    bool
-	searchFn   func(ctx context.Context, query string, mediaType string, year *int) ([]providers.SearchResult, error)
-	detailsFn  func(ctx context.Context, externalID string) (*models.ExternalMetadata, error)
+	name      string
+	enabled   bool
+	searchFn  func(ctx context.Context, query string, mediaType string, year *int) ([]providers.SearchResult, error)
+	detailsFn func(ctx context.Context, externalID string) (*models.ExternalMetadata, error)
 }
 
-func (m *mockProvider) GetName() string  { return m.name }
-func (m *mockProvider) IsEnabled() bool  { return m.enabled }
+func (m *mockProvider) GetName() string { return m.name }
+func (m *mockProvider) IsEnabled() bool { return m.enabled }
 
 func (m *mockProvider) Search(ctx context.Context, query string, mediaType string, year *int) ([]providers.SearchResult, error) {
 	if m.searchFn != nil {

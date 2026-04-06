@@ -4,7 +4,9 @@ severity: critical
 category: functional
 platform: androidtv
 screen: All screens with buttons
-status: open
+status: resolved
+resolution: fixed
+fixed_date: 2026-04-06
 found_date: 2026-04-04
 ---
 

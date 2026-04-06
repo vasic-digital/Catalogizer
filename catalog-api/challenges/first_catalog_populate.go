@@ -341,9 +341,9 @@ func (c *FirstCatalogPopulateChallenge) Execute(ctx context.Context) (*challenge
 
 	scanDuration := time.Since(start)
 	metrics := map[string]challenge.MetricValue{
-		"scan_time_ms":      {Name: "scan_time_ms", Value: float64(scanDuration.Milliseconds()), Unit: "ms"},
-		"total_files_found": {Name: "total_files_found", Value: totalFiles, Unit: "count"},
-		"total_size_bytes":  {Name: "total_size_bytes", Value: totalSize, Unit: "bytes"},
+		"scan_time_ms":        {Name: "scan_time_ms", Value: float64(scanDuration.Milliseconds()), Unit: "ms"},
+		"total_files_found":   {Name: "total_files_found", Value: totalFiles, Unit: "count"},
+		"total_size_bytes":    {Name: "total_size_bytes", Value: totalSize, Unit: "bytes"},
 		"directories_scanned": {Name: "directories_scanned", Value: float64(len(scans)), Unit: "count"},
 	}
 

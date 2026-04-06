@@ -8,11 +8,11 @@ import (
 
 // DuplicateEntityGroup represents a group of duplicate media items.
 type DuplicateEntityGroup struct {
-	Title       string  `json:"title"`
-	MediaType   string  `json:"media_type"`
-	Year        *int    `json:"year,omitempty"`
-	Count       int     `json:"count"`
-	EntityIDs   []int64 `json:"entity_ids"`
+	Title     string  `json:"title"`
+	MediaType string  `json:"media_type"`
+	Year      *int    `json:"year,omitempty"`
+	Count     int     `json:"count"`
+	EntityIDs []int64 `json:"entity_ids"`
 }
 
 // DuplicateEntityRepository handles duplicate entity detection.

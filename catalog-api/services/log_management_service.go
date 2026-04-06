@@ -14,6 +14,7 @@ import (
 	"sync"
 	"time"
 
+	"catalogizer/internal/logging"
 	"catalogizer/models"
 	"catalogizer/repository"
 )
@@ -700,7 +701,12 @@ func (s *LogManagementService) compressLogFile(path string) error {
 
 func (s *LogManagementService) logError(collectionID int, message string) {
 	// Log error to the system log (simplified implementation)
-	fmt.Printf("[ERROR] Collection %d: %s\n", collectionID, message)
+	if logging.Logger != nil {
+		logging.With(
+			logging.Int("collection_id", collectionID),
+			logging.String("message", message),
+		).Error("Log management error")
+	}
 }
 
 // LogCollector implementations

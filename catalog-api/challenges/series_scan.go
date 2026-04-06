@@ -128,9 +128,9 @@ func (c *SeriesScanChallenge) Execute(ctx context.Context) (*challenge.Result, e
 
 	metrics := map[string]challenge.MetricValue{
 		"video_file_count": {Name: "video_file_count", Value: float64(result.FileCount), Unit: "count"},
-		"show_count": {Name: "show_count", Value: float64(result.DirCount), Unit: "count"},
-		"total_size": {Name: "total_size", Value: float64(result.TotalSize), Unit: "bytes"},
-		"scan_time": {Name: "scan_time", Value: float64(time.Since(start).Milliseconds()), Unit: "ms"},
+		"show_count":       {Name: "show_count", Value: float64(result.DirCount), Unit: "count"},
+		"total_size":       {Name: "total_size", Value: float64(result.TotalSize), Unit: "bytes"},
+		"scan_time":        {Name: "scan_time", Value: float64(time.Since(start).Milliseconds()), Unit: "ms"},
 	}
 
 	status := challenge.StatusPassed

@@ -170,12 +170,12 @@ func (r *AssetRepository) FindPending(ctx context.Context, limit int) ([]*asset.
 
 func (r *AssetRepository) recordToAsset(rec *AssetRecord) *asset.Asset {
 	a := &asset.Asset{
-		ID:         asset.ID(rec.ID),
-		Type:       asset.Type(rec.Type),
-		Status:     asset.Status(rec.Status),
-		Size:       rec.Size,
-		CreatedAt:  rec.CreatedAt,
-		UpdatedAt:  rec.UpdatedAt,
+		ID:        asset.ID(rec.ID),
+		Type:      asset.Type(rec.Type),
+		Status:    asset.Status(rec.Status),
+		Size:      rec.Size,
+		CreatedAt: rec.CreatedAt,
+		UpdatedAt: rec.UpdatedAt,
 	}
 
 	if rec.ContentType.Valid {

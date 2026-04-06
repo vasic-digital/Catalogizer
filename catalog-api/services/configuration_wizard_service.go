@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"log"
 	"os"
 	"path/filepath"
 	"runtime"
@@ -12,6 +11,7 @@ import (
 	"strings"
 	"time"
 
+	"catalogizer/internal/logging"
 	"catalogizer/models"
 	"catalogizer/repository"
 )
@@ -909,7 +909,9 @@ func (s *ConfigurationWizardService) performSystemCheck(data map[string]interfac
 	if len(issues) > 0 {
 		autoFix, _ := data["auto_fix"].(bool)
 		if autoFix {
-			log.Printf("Auto-fixing system issues: %v", issues)
+			if logging.Logger != nil {
+				logging.Warnf("Auto-fixing system issues: %v", issues)
+			}
 			// Attempt to fix issues automatically
 		} else {
 			return fmt.Errorf("system check failed: %v", issues)
@@ -1056,7 +1058,9 @@ func (s *ConfigurationWizardService) testMediaStorage(config map[string]interfac
 
 	default:
 		if storageType != "" {
-			log.Printf("Storage type %s: no additional validation available", storageType)
+			if logging.Logger != nil {
+				logging.Debugf("Storage type %s: no additional validation available", storageType)
+			}
 		}
 	}
 
@@ -1098,7 +1102,9 @@ func (s *ConfigurationWizardService) finalizeConfiguration(session *models.Wizar
 			if action.Required {
 				return fmt.Errorf("failed to execute required post-install action: %w", err)
 			}
-			log.Printf("Optional post-install action failed: %v", err)
+			if logging.Logger != nil {
+				logging.Warnf("Optional post-install action failed: %v", err)
+			}
 		}
 	}
 
@@ -1160,7 +1166,9 @@ func (s *ConfigurationWizardService) restartService(params map[string]interface{
 	}
 
 	// This would contain actual service restart logic
-	log.Printf("Would restart service: %s", serviceName)
+	if logging.Logger != nil {
+		logging.Debugf("Would restart service: %s", serviceName)
+	}
 	return nil
 }
 
@@ -1171,7 +1179,9 @@ func (s *ConfigurationWizardService) runCommand(params map[string]interface{}) e
 	}
 
 	// This would contain actual command execution logic
-	log.Printf("Would run command: %s", command)
+	if logging.Logger != nil {
+		logging.Debugf("Would run command: %s", command)
+	}
 	return nil
 }
 

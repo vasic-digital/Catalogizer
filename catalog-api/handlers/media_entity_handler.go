@@ -13,6 +13,7 @@ import (
 	"time"
 
 	"catalogizer/database"
+	"catalogizer/internal/logging"
 	"catalogizer/internal/media/models"
 	"catalogizer/internal/services"
 	"catalogizer/repository"
@@ -48,9 +49,13 @@ func NewMediaEntityHandler(
 	}
 	if len(dbArgs) > 0 && dbArgs[0] != nil {
 		h.db = dbArgs[0]
-		fmt.Println("[MediaEntityHandler] Database connected for metadata enrichment")
+		if logging.Logger != nil {
+			logging.With(logging.String("handler", "MediaEntityHandler")).Info("Database connected for metadata enrichment")
+		}
 	} else {
-		fmt.Println("[MediaEntityHandler] WARNING: No database provided, enrichment disabled")
+		if logging.Logger != nil {
+			logging.With(logging.String("handler", "MediaEntityHandler")).Warn("No database provided, enrichment disabled")
+		}
 	}
 	return h
 }
@@ -502,14 +507,14 @@ func fetchTMDBMetadata(title string, year int, mediaTypeID int) *tmdbSearchResul
 
 	var searchResp struct {
 		Results []struct {
-			ID          int     `json:"id"`
-			Title       string  `json:"title"`
-			Name        string  `json:"name"`
-			Overview    string  `json:"overview"`
-			PosterPath  string  `json:"poster_path"`
-			VoteAverage float64 `json:"vote_average"`
-			ReleaseDate string  `json:"release_date"`
-			FirstAirDate string `json:"first_air_date"`
+			ID           int     `json:"id"`
+			Title        string  `json:"title"`
+			Name         string  `json:"name"`
+			Overview     string  `json:"overview"`
+			PosterPath   string  `json:"poster_path"`
+			VoteAverage  float64 `json:"vote_average"`
+			ReleaseDate  string  `json:"release_date"`
+			FirstAirDate string  `json:"first_air_date"`
 		} `json:"results"`
 	}
 	if err := json.Unmarshal(body, &searchResp); err != nil || len(searchResp.Results) == 0 {
@@ -648,11 +653,11 @@ func (h *MediaEntityHandler) EnrichAllEntities(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, gin.H{
-		"message":        "Batch enrichment complete",
-		"scanned":        len(entities),
-		"enriched":       enriched,
-		"local_covers":   localEnriched,
-		"tmdb_enriched":  tmdbEnriched,
+		"message":       "Batch enrichment complete",
+		"scanned":       len(entities),
+		"enriched":      enriched,
+		"local_covers":  localEnriched,
+		"tmdb_enriched": tmdbEnriched,
 	})
 }
 

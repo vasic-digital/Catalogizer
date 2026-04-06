@@ -55,18 +55,18 @@ func (h *AndroidTVMediaHandler) GetMediaByID(c *gin.Context) {
 		FROM media_items 
 		WHERE id = ?
 	`
-	
+
 	var mediaItem models.MediaCatalogItem
 	err = h.db.QueryRowContext(ctx, query, id).Scan(
-		&mediaItem.ID, &mediaItem.Title, &mediaItem.MediaType, &mediaItem.Year, 
-		&mediaItem.Description, &mediaItem.CoverImage, &mediaItem.Rating, 
-		&mediaItem.Quality, &mediaItem.FileSize, &mediaItem.Duration, 
-		&mediaItem.DirectoryPath, &mediaItem.SMBPath, &mediaItem.CreatedAt, 
+		&mediaItem.ID, &mediaItem.Title, &mediaItem.MediaType, &mediaItem.Year,
+		&mediaItem.Description, &mediaItem.CoverImage, &mediaItem.Rating,
+		&mediaItem.Quality, &mediaItem.FileSize, &mediaItem.Duration,
+		&mediaItem.DirectoryPath, &mediaItem.SMBPath, &mediaItem.CreatedAt,
 		&mediaItem.UpdatedAt, &mediaItem.ExternalMetadata, &mediaItem.Versions,
 		&mediaItem.IsFavorite, &mediaItem.WatchProgress, &mediaItem.LastWatched,
 		&mediaItem.IsDownloaded,
 	)
-	
+
 	if err != nil {
 		if err.Error() == "sql: no rows in result set" {
 			utils.SendErrorResponse(c, http.StatusNotFound, "Media not found", err)
@@ -128,7 +128,7 @@ func (h *AndroidTVMediaHandler) UpdateWatchProgress(c *gin.Context) {
 		SET watch_progress = ?, last_watched = CURRENT_TIMESTAMP, updated_at = CURRENT_TIMESTAMP
 		WHERE id = ?
 	`
-	
+
 	result, err := h.db.ExecContext(ctx, query, progress, id)
 	if err != nil {
 		utils.SendErrorResponse(c, http.StatusInternalServerError, "Failed to update watch progress", err)
@@ -196,7 +196,7 @@ func (h *AndroidTVMediaHandler) UpdateFavoriteStatus(c *gin.Context) {
 		SET is_favorite = ?, updated_at = CURRENT_TIMESTAMP
 		WHERE id = ?
 	`
-	
+
 	result, err := h.db.ExecContext(ctx, query, isFavorite, id)
 	if err != nil {
 		utils.SendErrorResponse(c, http.StatusInternalServerError, "Failed to update favorite status", err)

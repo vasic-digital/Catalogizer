@@ -479,7 +479,6 @@ func TestVideoPlayerService_PreviousVideo_NoSession(t *testing.T) {
 	assert.Error(t, err)
 }
 
-
 // =============================================================================
 // generateThumbnail — requires coverArtService, so test error path
 // =============================================================================

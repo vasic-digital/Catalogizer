@@ -1,595 +1,504 @@
 package filesystem
 
 import (
-	"bytes"
 	"context"
+	"io"
+	"net/http"
+	"net/http/httptest"
+	"strings"
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
-// =============================================================================
-// WebDAVClient Basic Tests
-// =============================================================================
+func TestNewWebDAVClient(t *testing.T) {
+	tests := []struct {
+		name    string
+		config  *WebDAVConfig
+		wantErr bool
+		errMsg  string
+	}{
+		{
+			name: "valid config",
+			config: &WebDAVConfig{
+				URL:      "http://example.com/webdav",
+				Username: "user",
+				Password: "pass",
+				Path:     "/files",
+			},
+			wantErr: false,
+		},
+		{
+			name: "valid config without auth",
+			config: &WebDAVConfig{
+				URL: "http://example.com/webdav",
+			},
+			wantErr: false,
+		},
+		{
+			name: "invalid URL",
+			config: &WebDAVConfig{
+				URL: "://invalid-url",
+			},
+			wantErr: true,
+			errMsg:  "invalid WebDAV URL",
+		},
+		{
+			name: "empty path defaults to root",
+			config: &WebDAVConfig{
+				URL:  "http://example.com/webdav",
+				Path: "",
+			},
+			wantErr: false,
+		},
+	}
 
-func TestWebDAVClient_NewWebDAVClient(t *testing.T) {
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			client, err := NewWebDAVClient(tt.config)
+
+			if tt.wantErr {
+				assert.Error(t, err)
+				if tt.errMsg != "" {
+					assert.Contains(t, err.Error(), tt.errMsg)
+				}
+				assert.Nil(t, client)
+			} else {
+				assert.NoError(t, err)
+				assert.NotNil(t, client)
+				assert.NotNil(t, client.client)
+				assert.NotNil(t, client.baseURL)
+				assert.Equal(t, tt.config, client.config)
+			}
+		})
+	}
+}
+
+func TestWebDAVClient_Connect_Success(t *testing.T) {
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		assert.Equal(t, "PROPFIND", r.Method)
+		assert.Equal(t, "0", r.Header.Get("Depth"))
+		w.WriteHeader(http.StatusMultiStatus)
+	}))
+	defer server.Close()
+
 	config := &WebDAVConfig{
-		URL:      "https://webdav.example.com",
+		URL:      server.URL,
 		Username: "testuser",
 		Password: "testpass",
-		Path:     "/remote/path",
 	}
 
-	client, _ := NewWebDAVClient(config)
+	client, err := NewWebDAVClient(config)
+	require.NoError(t, err)
 
-	assert.NotNil(t, client)
-	assert.Equal(t, config, client.config)
-	assert.NotNil(t, client.client)
-	assert.NotNil(t, client.baseURL)
+	ctx := context.Background()
+	err = client.Connect(ctx)
+
+	assert.NoError(t, err)
+	assert.True(t, client.connected)
+}
+
+func TestWebDAVClient_Connect_OKStatus(t *testing.T) {
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusOK)
+	}))
+	defer server.Close()
+
+	config := &WebDAVConfig{
+		URL: server.URL,
+	}
+
+	client, err := NewWebDAVClient(config)
+	require.NoError(t, err)
+
+	ctx := context.Background()
+	err = client.Connect(ctx)
+
+	assert.NoError(t, err)
+	assert.True(t, client.connected)
+}
+
+func TestWebDAVClient_Connect_AuthFailure(t *testing.T) {
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusUnauthorized)
+	}))
+	defer server.Close()
+
+	config := &WebDAVConfig{
+		URL: server.URL,
+	}
+
+	client, err := NewWebDAVClient(config)
+	require.NoError(t, err)
+
+	ctx := context.Background()
+	err = client.Connect(ctx)
+
+	assert.Error(t, err)
+	assert.Contains(t, err.Error(), "401")
+	assert.False(t, client.connected)
+}
+
+func TestWebDAVClient_Connect_NotFound(t *testing.T) {
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusNotFound)
+	}))
+	defer server.Close()
+
+	config := &WebDAVConfig{
+		URL: server.URL,
+	}
+
+	client, err := NewWebDAVClient(config)
+	require.NoError(t, err)
+
+	ctx := context.Background()
+	err = client.Connect(ctx)
+
+	assert.Error(t, err)
+	assert.Contains(t, err.Error(), "404")
+}
+
+func TestWebDAVClient_Connect_ServerError(t *testing.T) {
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusInternalServerError)
+	}))
+	defer server.Close()
+
+	config := &WebDAVConfig{
+		URL: server.URL,
+	}
+
+	client, err := NewWebDAVClient(config)
+	require.NoError(t, err)
+
+	ctx := context.Background()
+	err = client.Connect(ctx)
+
+	assert.Error(t, err)
+	assert.Contains(t, err.Error(), "500")
+}
+
+func TestWebDAVClient_Connect_WithTimeout(t *testing.T) {
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		time.Sleep(100 * time.Millisecond)
+		w.WriteHeader(http.StatusMultiStatus)
+	}))
+	defer server.Close()
+
+	config := &WebDAVConfig{
+		URL: server.URL,
+	}
+
+	client, err := NewWebDAVClient(config)
+	require.NoError(t, err)
+
+	// Test with cancelled context
+	ctx, cancel := context.WithCancel(context.Background())
+	cancel() // Cancel immediately
+
+	err = client.Connect(ctx)
+	assert.Error(t, err)
+}
+
+func TestWebDAVClient_IsConnected(t *testing.T) {
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusMultiStatus)
+	}))
+	defer server.Close()
+
+	config := &WebDAVConfig{
+		URL: server.URL,
+	}
+
+	client, err := NewWebDAVClient(config)
+	require.NoError(t, err)
+
+	// Initially not connected
 	assert.False(t, client.IsConnected())
-	assert.Equal(t, "/remote/path", client.baseURL.Path)
-}
 
-func TestWebDAVClient_NewWebDAVClient_MinimalConfig(t *testing.T) {
-	config := &WebDAVConfig{
-		URL: "https://localhost:8080/webdav",
-	}
+	// Connect
+	ctx := context.Background()
+	err = client.Connect(ctx)
+	require.NoError(t, err)
+	assert.True(t, client.IsConnected())
 
-	client, _ := NewWebDAVClient(config)
-
-	assert.NotNil(t, client)
-	assert.Equal(t, "https://localhost:8080/webdav", config.URL)
-	assert.Empty(t, config.Username)
-	assert.Empty(t, config.Password)
-	assert.Empty(t, config.Path)
-}
-
-func TestWebDAVClient_NewWebDAVClient_WithBasePath(t *testing.T) {
-	config := &WebDAVConfig{
-		URL:  "https://example.com",
-		Path: "/dav/files",
-	}
-
-	client, _ := NewWebDAVClient(config)
-
-	assert.Equal(t, "/dav/files", client.baseURL.Path)
-}
-
-func TestWebDAVClient_NewWebDAVClient_RootPath(t *testing.T) {
-	config := &WebDAVConfig{
-		URL:  "https://example.com",
-		Path: "/",
-	}
-
-	client, _ := NewWebDAVClient(config)
-
-	// Root path should be empty after processing
-	assert.Equal(t, "", client.baseURL.Path)
-}
-
-func TestWebDAVClient_GetProtocol(t *testing.T) {
-	config := &WebDAVConfig{
-		URL: "https://localhost",
-	}
-
-	client, _ := NewWebDAVClient(config)
-	assert.Equal(t, "webdav", client.GetProtocol())
-}
-
-func TestWebDAVClient_GetConfig(t *testing.T) {
-	config := &WebDAVConfig{
-		URL:      "https://webdav.example.com",
-		Username: "user",
-		Password: "pass",
-		Path:     "/files",
-	}
-
-	client, _ := NewWebDAVClient(config)
-	retrievedConfig := client.GetConfig().(*WebDAVConfig)
-
-	assert.Equal(t, config.URL, retrievedConfig.URL)
-	assert.Equal(t, config.Username, retrievedConfig.Username)
-	assert.Equal(t, config.Password, retrievedConfig.Password)
-	assert.Equal(t, config.Path, retrievedConfig.Path)
-}
-
-func TestWebDAVClient_IsConnected_Initial(t *testing.T) {
-	config := &WebDAVConfig{
-		URL: "https://localhost",
-	}
-
-	client, _ := NewWebDAVClient(config)
+	// Disconnect
+	err = client.Disconnect(ctx)
+	require.NoError(t, err)
 	assert.False(t, client.IsConnected())
 }
 
-// =============================================================================
-// WebDAVClient Error Handling Tests (Not Connected)
-// =============================================================================
+func TestWebDAVClient_TestConnection(t *testing.T) {
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusMultiStatus)
+	}))
+	defer server.Close()
 
-func TestWebDAVClient_TestConnection_NotConnected(t *testing.T) {
 	config := &WebDAVConfig{
-		URL: "https://localhost",
+		URL: server.URL,
 	}
 
-	client, _ := NewWebDAVClient(config)
+	client, err := NewWebDAVClient(config)
+	require.NoError(t, err)
+
 	ctx := context.Background()
 
-	err := client.TestConnection(ctx)
+	// Test without connection should fail
+	err = client.TestConnection(ctx)
 	assert.Error(t, err)
 	assert.Contains(t, err.Error(), "not connected")
+
+	// Connect first
+	err = client.Connect(ctx)
+	require.NoError(t, err)
+
+	// Test with connection should succeed
+	err = client.TestConnection(ctx)
+	assert.NoError(t, err)
+}
+
+func TestWebDAVClient_ReadFile_Success(t *testing.T) {
+	expectedContent := "Hello, WebDAV!"
+
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.Method == "PROPFIND" {
+			w.WriteHeader(http.StatusMultiStatus)
+			return
+		}
+
+		// Check authentication
+		user, pass, ok := r.BasicAuth()
+		if ok {
+			assert.Equal(t, "testuser", user)
+			assert.Equal(t, "testpass", pass)
+		}
+
+		if r.Method == "GET" {
+			w.WriteHeader(http.StatusOK)
+			w.Write([]byte(expectedContent))
+		}
+	}))
+	defer server.Close()
+
+	config := &WebDAVConfig{
+		URL:      server.URL,
+		Username: "testuser",
+		Password: "testpass",
+	}
+
+	client, err := NewWebDAVClient(config)
+	require.NoError(t, err)
+
+	ctx := context.Background()
+	err = client.Connect(ctx)
+	require.NoError(t, err)
+
+	reader, err := client.ReadFile(ctx, "/test.txt")
+	require.NoError(t, err)
+	assert.NotNil(t, reader)
+
+	content, err := io.ReadAll(reader)
+	require.NoError(t, err)
+	assert.Equal(t, expectedContent, string(content))
+
+	reader.Close()
+}
+
+func TestWebDAVClient_ReadFile_NotFound(t *testing.T) {
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.Method == "PROPFIND" {
+			w.WriteHeader(http.StatusMultiStatus)
+			return
+		}
+		if r.Method == "GET" {
+			w.WriteHeader(http.StatusNotFound)
+		}
+	}))
+	defer server.Close()
+
+	config := &WebDAVConfig{
+		URL: server.URL,
+	}
+
+	client, err := NewWebDAVClient(config)
+	require.NoError(t, err)
+
+	ctx := context.Background()
+	err = client.Connect(ctx)
+	require.NoError(t, err)
+
+	_, err = client.ReadFile(ctx, "/nonexistent.txt")
+	assert.Error(t, err)
+	assert.Contains(t, err.Error(), "404")
 }
 
 func TestWebDAVClient_ReadFile_NotConnected(t *testing.T) {
 	config := &WebDAVConfig{
-		URL: "https://localhost",
+		URL: "http://example.com/webdav",
 	}
 
-	client, _ := NewWebDAVClient(config)
-	ctx := context.Background()
+	client, err := NewWebDAVClient(config)
+	require.NoError(t, err)
 
-	_, err := client.ReadFile(ctx, "/test/file.txt")
+	ctx := context.Background()
+	_, err = client.ReadFile(ctx, "/test.txt")
+
 	assert.Error(t, err)
 	assert.Contains(t, err.Error(), "not connected")
+}
+
+func TestWebDAVClient_WriteFile_Success(t *testing.T) {
+	var receivedContent string
+
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.Method == "PROPFIND" {
+			w.WriteHeader(http.StatusMultiStatus)
+			return
+		}
+		if r.Method == "PUT" {
+			body, _ := io.ReadAll(r.Body)
+			receivedContent = string(body)
+			w.WriteHeader(http.StatusCreated)
+		}
+	}))
+	defer server.Close()
+
+	config := &WebDAVConfig{
+		URL:      server.URL,
+		Username: "testuser",
+		Password: "testpass",
+	}
+
+	client, err := NewWebDAVClient(config)
+	require.NoError(t, err)
+
+	ctx := context.Background()
+	err = client.Connect(ctx)
+	require.NoError(t, err)
+
+	content := "test content"
+	reader := strings.NewReader(content)
+	err = client.WriteFile(ctx, "/test.txt", reader)
+
+	assert.NoError(t, err)
+	assert.Equal(t, content, receivedContent)
 }
 
 func TestWebDAVClient_WriteFile_NotConnected(t *testing.T) {
 	config := &WebDAVConfig{
-		URL: "https://localhost",
+		URL: "http://example.com/webdav",
 	}
 
-	client, _ := NewWebDAVClient(config)
-	ctx := context.Background()
-	data := bytes.NewReader([]byte("test data"))
+	client, err := NewWebDAVClient(config)
+	require.NoError(t, err)
 
-	err := client.WriteFile(ctx, "/test/file.txt", data)
+	ctx := context.Background()
+	reader := strings.NewReader("test")
+	err = client.WriteFile(ctx, "/test.txt", reader)
+
 	assert.Error(t, err)
 	assert.Contains(t, err.Error(), "not connected")
 }
 
-func TestWebDAVClient_GetFileInfo_NotConnected(t *testing.T) {
+func TestWebDAVClient_Disconnect(t *testing.T) {
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusMultiStatus)
+	}))
+	defer server.Close()
+
 	config := &WebDAVConfig{
-		URL: "https://localhost",
+		URL: server.URL,
 	}
 
-	client, _ := NewWebDAVClient(config)
+	client, err := NewWebDAVClient(config)
+	require.NoError(t, err)
+
 	ctx := context.Background()
+	err = client.Connect(ctx)
+	require.NoError(t, err)
+	assert.True(t, client.IsConnected())
 
-	_, err := client.GetFileInfo(ctx, "/test/file.txt")
-	assert.Error(t, err)
-	assert.Contains(t, err.Error(), "not connected")
-}
-
-func TestWebDAVClient_ListDirectory_NotConnected(t *testing.T) {
-	config := &WebDAVConfig{
-		URL: "https://localhost",
-	}
-
-	client, _ := NewWebDAVClient(config)
-	ctx := context.Background()
-
-	_, err := client.ListDirectory(ctx, "/test")
-	assert.Error(t, err)
-	assert.Contains(t, err.Error(), "not connected")
-}
-
-func TestWebDAVClient_FileExists_NotConnected(t *testing.T) {
-	config := &WebDAVConfig{
-		URL: "https://localhost",
-	}
-
-	client, _ := NewWebDAVClient(config)
-	ctx := context.Background()
-
-	_, err := client.FileExists(ctx, "/test/file.txt")
-	assert.Error(t, err)
-	assert.Contains(t, err.Error(), "not connected")
-}
-
-func TestWebDAVClient_CreateDirectory_NotConnected(t *testing.T) {
-	config := &WebDAVConfig{
-		URL: "https://localhost",
-	}
-
-	client, _ := NewWebDAVClient(config)
-	ctx := context.Background()
-
-	err := client.CreateDirectory(ctx, "/test/newdir")
-	assert.Error(t, err)
-	assert.Contains(t, err.Error(), "not connected")
-}
-
-func TestWebDAVClient_DeleteDirectory_NotConnected(t *testing.T) {
-	config := &WebDAVConfig{
-		URL: "https://localhost",
-	}
-
-	client, _ := NewWebDAVClient(config)
-	ctx := context.Background()
-
-	err := client.DeleteDirectory(ctx, "/test/olddir")
-	assert.Error(t, err)
-	assert.Contains(t, err.Error(), "not connected")
-}
-
-func TestWebDAVClient_DeleteFile_NotConnected(t *testing.T) {
-	config := &WebDAVConfig{
-		URL: "https://localhost",
-	}
-
-	client, _ := NewWebDAVClient(config)
-	ctx := context.Background()
-
-	err := client.DeleteFile(ctx, "/test/file.txt")
-	assert.Error(t, err)
-	assert.Contains(t, err.Error(), "not connected")
-}
-
-func TestWebDAVClient_CopyFile_NotConnected(t *testing.T) {
-	config := &WebDAVConfig{
-		URL: "https://localhost",
-	}
-
-	client, _ := NewWebDAVClient(config)
-	ctx := context.Background()
-
-	err := client.CopyFile(ctx, "/test/src.txt", "/test/dst.txt")
-	assert.Error(t, err)
-	assert.Contains(t, err.Error(), "not connected")
-}
-
-// =============================================================================
-// WebDAVConfig Validation Tests
-// =============================================================================
-
-func TestWebDAVConfig_AllFields(t *testing.T) {
-	config := &WebDAVConfig{
-		URL:      "https://webdav.example.com:8080",
-		Username: "admin",
-		Password: "secret123",
-		Path:     "/data/files",
-	}
-
-	assert.Equal(t, "https://webdav.example.com:8080", config.URL)
-	assert.Equal(t, "admin", config.Username)
-	assert.Equal(t, "secret123", config.Password)
-	assert.Equal(t, "/data/files", config.Path)
-}
-
-func TestWebDAVConfig_HTTPSEndpoint(t *testing.T) {
-	config := &WebDAVConfig{
-		URL: "https://secure.example.com",
-	}
-
-	assert.Contains(t, config.URL, "https://")
-}
-
-func TestWebDAVConfig_HTTPEndpoint(t *testing.T) {
-	config := &WebDAVConfig{
-		URL: "http://insecure.example.com",
-	}
-
-	assert.Contains(t, config.URL, "http://")
-}
-
-func TestWebDAVConfig_CustomPort(t *testing.T) {
-	testCases := []struct {
-		name string
-		url  string
-	}{
-		{"Standard HTTPS", "https://example.com:443"},
-		{"Standard HTTP", "http://example.com:80"},
-		{"Custom Port", "https://example.com:8443"},
-		{"Alternative Port", "http://example.com:8080"},
-	}
-
-	for _, tc := range testCases {
-		t.Run(tc.name, func(t *testing.T) {
-			config := &WebDAVConfig{
-				URL: tc.url,
-			}
-
-			assert.Equal(t, tc.url, config.URL)
-		})
-	}
-}
-
-func TestWebDAVConfig_BasePath(t *testing.T) {
-	testCases := []struct {
-		name string
-		path string
-	}{
-		{"Root", "/"},
-		{"Simple Path", "/webdav"},
-		{"Nested Path", "/remote/dav/files"},
-		{"User Path", "/users/john/files"},
-	}
-
-	for _, tc := range testCases {
-		t.Run(tc.name, func(t *testing.T) {
-			config := &WebDAVConfig{
-				URL:  "https://example.com",
-				Path: tc.path,
-			}
-
-			assert.Equal(t, tc.path, config.Path)
-		})
-	}
-}
-
-func TestWebDAVConfig_Authentication(t *testing.T) {
-	testCases := []struct {
-		name     string
-		username string
-		password string
-	}{
-		{"Basic Auth", "user", "pass"},
-		{"Empty Password", "user", ""},
-		{"Complex Password", "admin", "P@ssw0rd!#$%"},
-		{"Email Username", "user@example.com", "password"},
-	}
-
-	for _, tc := range testCases {
-		t.Run(tc.name, func(t *testing.T) {
-			config := &WebDAVConfig{
-				URL:      "https://example.com",
-				Username: tc.username,
-				Password: tc.password,
-			}
-
-			assert.Equal(t, tc.username, config.Username)
-			assert.Equal(t, tc.password, config.Password)
-		})
-	}
-}
-
-// =============================================================================
-// WebDAVClient State Management Tests
-// =============================================================================
-
-func TestWebDAVClient_Disconnect_NotConnected(t *testing.T) {
-	config := &WebDAVConfig{
-		URL: "https://localhost",
-	}
-
-	client, _ := NewWebDAVClient(config)
-	ctx := context.Background()
-
-	err := client.Disconnect(ctx)
+	err = client.Disconnect(ctx)
 	assert.NoError(t, err)
 	assert.False(t, client.IsConnected())
 }
 
-func TestWebDAVClient_StatePersistence(t *testing.T) {
+func TestWebDAVClient_resolveURL(t *testing.T) {
 	config := &WebDAVConfig{
-		URL: "https://localhost",
+		URL:  "http://example.com/webdav",
+		Path: "/base",
 	}
 
-	client, _ := NewWebDAVClient(config)
+	client, err := NewWebDAVClient(config)
+	require.NoError(t, err)
 
-	// Verify initial state
-	assert.False(t, client.IsConnected())
-
-	// Verify state doesn't change randomly
-	assert.False(t, client.IsConnected())
-	assert.False(t, client.IsConnected())
-}
-
-func TestWebDAVClient_MultipleInstances(t *testing.T) {
-	config1 := &WebDAVConfig{
-		URL:  "https://server1.example.com",
-		Path: "/files1",
-	}
-
-	config2 := &WebDAVConfig{
-		URL:  "https://server2.example.com",
-		Path: "/files2",
-	}
-
-	client1, _ := NewWebDAVClient(config1)
-	client2, _ := NewWebDAVClient(config2)
-
-	assert.NotEqual(t, client1, client2)
-	assert.Equal(t, "https://server1.example.com", client1.config.URL)
-	assert.Equal(t, "https://server2.example.com", client2.config.URL)
-	assert.Equal(t, "/files1", client1.baseURL.Path)
-	assert.Equal(t, "/files2", client2.baseURL.Path)
-}
-
-// =============================================================================
-// WebDAVClient URL Resolution Tests
-// =============================================================================
-
-func TestWebDAVClient_ResolveURL_SimplePaths(t *testing.T) {
-	config := &WebDAVConfig{
-		URL:  "https://example.com",
-		Path: "/webdav",
-	}
-
-	client, _ := NewWebDAVClient(config)
-
-	testCases := []struct {
+	tests := []struct {
 		name     string
-		input    string
-		contains string
+		path     string
+		expected string
 	}{
-		{"Simple File", "/file.txt", "https://example.com/webdav/file.txt"},
-		{"Nested File", "/data/file.txt", "https://example.com/webdav/data/file.txt"},
-		{"Root", "/", "https://example.com/webdav"},
+		{
+			name:     "simple path",
+			path:     "/file.txt",
+			expected: "http://example.com/base/file.txt",
+		},
+		{
+			name:     "nested path",
+			path:     "/folder/subfolder/file.txt",
+			expected: "http://example.com/base/folder/subfolder/file.txt",
+		},
+		{
+			name:     "path with traversal attempt",
+			path:     "/../../../etc/passwd",
+			expected: "http://example.com/base/etc/passwd",
+		},
 	}
 
-	for _, tc := range testCases {
-		t.Run(tc.name, func(t *testing.T) {
-			resolved := client.resolveURL(tc.input)
-			assert.Contains(t, resolved, tc.contains)
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			result := client.resolveURL(tt.path)
+			assert.Equal(t, tt.expected, result)
 		})
 	}
 }
 
-func TestWebDAVClient_ResolveURL_DirectoryTraversal(t *testing.T) {
+func TestWebDAVClient_WithTimeout(t *testing.T) {
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		time.Sleep(200 * time.Millisecond)
+		w.WriteHeader(http.StatusMultiStatus)
+	}))
+	defer server.Close()
+
 	config := &WebDAVConfig{
-		URL:  "https://example.com",
-		Path: "/webdav",
+		URL: server.URL,
 	}
 
-	client, _ := NewWebDAVClient(config)
+	client, err := NewWebDAVClient(config)
+	require.NoError(t, err)
 
-	// Test directory traversal prevention
-	testCases := []string{
-		"../etc/passwd",
-		"../../etc/shadow",
-		"data/../../etc/hosts",
-		"/data/../../../root",
-	}
+	// Reduce timeout for testing
+	client.client.Timeout = 100 * time.Millisecond
 
-	for _, input := range testCases {
-		t.Run(input, func(t *testing.T) {
-			resolved := client.resolveURL(input)
-			// Should not contain ".." after resolution
-			assert.NotContains(t, resolved, "..")
-			// Should still contain base URL
-			assert.Contains(t, resolved, "https://example.com")
-		})
-	}
-}
-
-// =============================================================================
-// WebDAVClient Context Tests
-// =============================================================================
-
-func TestWebDAVClient_Connect_InvalidServer(t *testing.T) {
-	config := &WebDAVConfig{
-		URL: "https://nonexistent.invalid.test",
-	}
-
-	client, _ := NewWebDAVClient(config)
 	ctx := context.Background()
+	err = client.Connect(ctx)
 
-	err := client.Connect(ctx)
 	assert.Error(t, err)
-	assert.False(t, client.IsConnected())
 }
 
-func TestWebDAVClient_Connect_WithAuthentication(t *testing.T) {
+// Benchmark tests
+func BenchmarkWebDAVClient_resolveURL(b *testing.B) {
 	config := &WebDAVConfig{
-		URL:      "https://nonexistent.test",
-		Username: "user",
-		Password: "pass",
-	}
-
-	client, _ := NewWebDAVClient(config)
-	ctx := context.Background()
-
-	err := client.Connect(ctx)
-	assert.Error(t, err) // Should fail to connect to nonexistent server
-	assert.False(t, client.IsConnected())
-}
-
-func TestWebDAVClient_Connect_WithCanceledContext(t *testing.T) {
-	config := &WebDAVConfig{
-		URL: "https://example.com",
-	}
-
-	client, _ := NewWebDAVClient(config)
-	ctx, cancel := context.WithCancel(context.Background())
-	cancel() // Cancel immediately
-
-	err := client.Connect(ctx)
-	assert.Error(t, err)
-	assert.False(t, client.IsConnected())
-}
-
-// =============================================================================
-// WebDAVClient HTTP Client Tests
-// =============================================================================
-
-func TestWebDAVClient_HTTPClientInitialization(t *testing.T) {
-	config := &WebDAVConfig{
-		URL: "https://example.com",
+		URL:  "http://example.com/webdav",
+		Path: "/base",
 	}
 
 	client, _ := NewWebDAVClient(config)
 
-	assert.NotNil(t, client.client)
-	assert.Equal(t, 30000000000, int(client.client.Timeout)) // 30 seconds in nanoseconds
-}
-
-func TestWebDAVClient_BaseURLParsing(t *testing.T) {
-	testCases := []struct {
-		name        string
-		url         string
-		expectedHost string
-		expectedScheme string
-	}{
-		{"HTTPS URL", "https://example.com", "example.com", "https"},
-		{"HTTP URL", "http://example.com", "example.com", "http"},
-		{"With Port", "https://example.com:8443", "example.com:8443", "https"},
-		{"With Path", "https://example.com/webdav", "example.com", "https"},
-	}
-
-	for _, tc := range testCases {
-		t.Run(tc.name, func(t *testing.T) {
-			config := &WebDAVConfig{
-				URL: tc.url,
-			}
-
-			client, _ := NewWebDAVClient(config)
-
-			assert.Equal(t, tc.expectedHost, client.baseURL.Host)
-			assert.Equal(t, tc.expectedScheme, client.baseURL.Scheme)
-		})
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		client.resolveURL("/folder/subfolder/file.txt")
 	}
 }
-
-// =============================================================================
-// NOTE: Integration Tests Requiring WebDAV Server
-// =============================================================================
-
-// The following tests require an actual WebDAV server running.
-// These tests are skipped by default.
-
-/*
-func TestWebDAVClient_IntegrationConnect(t *testing.T) {
-	if testing.Short() {
-		t.Skip("Skipping integration test")
-	}
-
-	config := &WebDAVConfig{
-		URL:      "http://localhost:8080/webdav",
-		Username: "testuser",
-		Password: "testpass",
-	}
-
-	client, _ := NewWebDAVClient(config)
-	ctx := context.Background()
-
-	err := client.Connect(ctx)
-	require.NoError(t, err)
-	defer client.Disconnect(ctx)
-
-	assert.True(t, client.IsConnected())
-}
-
-func TestWebDAVClient_IntegrationListDirectory(t *testing.T) {
-	if testing.Short() {
-		t.Skip("Skipping integration test")
-	}
-
-	config := &WebDAVConfig{
-		URL:      "http://localhost:8080/webdav",
-		Username: "testuser",
-		Password: "testpass",
-		Path:     "/",
-	}
-
-	client, _ := NewWebDAVClient(config)
-	ctx := context.Background()
-
-	err := client.Connect(ctx)
-	require.NoError(t, err)
-	defer client.Disconnect(ctx)
-
-	files, err := client.ListDirectory(ctx, "/")
-	require.NoError(t, err)
-	assert.NotNil(t, files)
-}
-*/

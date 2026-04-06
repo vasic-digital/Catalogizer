@@ -44,11 +44,11 @@ func TestDuplicateDetectionService_TextSimilarity(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			// Use public method DetectDuplicates which includes text similarity logic
 			req := &services.DuplicateDetectionRequest{
-				UserID:       1,
-				MediaTypes:   []services.MediaType{"movie"},
+				UserID:        1,
+				MediaTypes:    []services.MediaType{"movie"},
 				MinSimilarity: 0.5,
 			}
-			
+
 			// This is a basic smoke test to ensure the service doesn't crash
 			// We can't directly test the internal text similarity without accessing unexported methods
 			duplicates, err := service.DetectDuplicates(context.Background(), req)
@@ -62,7 +62,7 @@ func TestDuplicateDetectionService_TextSimilarity(t *testing.T) {
 			}
 		})
 	}
-	
+
 	// Remove the unused service variable in the next test
 	_ = service
 }

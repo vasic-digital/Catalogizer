@@ -314,8 +314,8 @@ func registerAuthChallenges(
 						Value:    "admin123",
 					},
 					{
-						Name:   "click-login",
-						Action: "click",
+						Name:     "click-login",
+						Action:   "click",
 						Selector: "button[type='submit']",
 					},
 					{
@@ -325,8 +325,8 @@ func registerAuthChallenges(
 						Timeout:  waitTimeout,
 					},
 					{
-						Name:   "click-logout",
-						Action: "click",
+						Name:     "click-logout",
+						Action:   "click",
 						Selector: "[data-testid='logout-button'], button.logout, [aria-label='Logout']",
 					},
 					{

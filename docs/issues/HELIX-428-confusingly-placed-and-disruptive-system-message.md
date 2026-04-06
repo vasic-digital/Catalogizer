@@ -4,7 +4,9 @@ severity: high
 category: ux
 platform: 
 screen: web-curiosity-029.png
-status: open
+status: resolved
+resolution: fixed
+fixed_date: 2026-04-06
 found_date: 2026-04-05
 ---
 

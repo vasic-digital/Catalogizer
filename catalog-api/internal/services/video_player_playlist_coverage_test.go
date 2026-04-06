@@ -214,8 +214,8 @@ func TestVideoPlayerService_NextVideo_WithSession(t *testing.T) {
 	require.NoError(t, err)
 
 	session := &VideoPlaybackSession{
-		ID:     "test-next-session",
-		UserID: 1,
+		ID:           "test-next-session",
+		UserID:       1,
 		CurrentVideo: &VideoContent{ID: 60, Title: "Video 1"},
 		Playlist: []VideoContent{
 			{ID: 60, Title: "Video 1", Duration: 3600},
@@ -239,8 +239,8 @@ func TestVideoPlayerService_NextVideo_AtEnd(t *testing.T) {
 	db, svc := setupVideoPlaylistTestDB(t)
 
 	session := &VideoPlaybackSession{
-		ID:     "test-next-end",
-		UserID: 1,
+		ID:           "test-next-end",
+		UserID:       1,
 		CurrentVideo: &VideoContent{ID: 70, Title: "Last"},
 		Playlist: []VideoContent{
 			{ID: 70, Title: "Last", Duration: 3600},
@@ -268,8 +268,8 @@ func TestVideoPlayerService_PreviousVideo_WithSession(t *testing.T) {
 	require.NoError(t, err)
 
 	session := &VideoPlaybackSession{
-		ID:     "test-prev-session",
-		UserID: 1,
+		ID:           "test-prev-session",
+		UserID:       1,
 		CurrentVideo: &VideoContent{ID: 81, Title: "Video B"},
 		Playlist: []VideoContent{
 			{ID: 80, Title: "Video A", Duration: 3600},
@@ -293,8 +293,8 @@ func TestVideoPlayerService_PreviousVideo_AtStart(t *testing.T) {
 	db, svc := setupVideoPlaylistTestDB(t)
 
 	session := &VideoPlaybackSession{
-		ID:     "test-prev-start",
-		UserID: 1,
+		ID:           "test-prev-start",
+		UserID:       1,
 		CurrentVideo: &VideoContent{ID: 90, Title: "First"},
 		Playlist: []VideoContent{
 			{ID: 90, Title: "First", Duration: 3600},

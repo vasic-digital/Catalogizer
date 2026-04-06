@@ -12,6 +12,7 @@ import (
 	"time"
 
 	"catalogizer/database"
+	"catalogizer/internal/logging"
 	"catalogizer/models"
 )
 
@@ -24,7 +25,7 @@ type RecommendationService struct {
 	mediaRecognitionService   *MediaRecognitionService
 	duplicateDetectionService *DuplicateDetectionService
 	fileRepository            FileRepositoryInterface
-	db                       *database.DB
+	db                        *database.DB
 	tmdbBaseURL               string
 	omdbBaseURL               string
 	lastfmBaseURL             string
@@ -145,7 +146,7 @@ func NewRecommendationService(
 		mediaRecognitionService:   mediaRecognitionService,
 		duplicateDetectionService: duplicateDetectionService,
 		fileRepository:            fileRepository,
-		db:                       db,
+		db:                        db,
 		tmdbBaseURL:               "https://api.themoviedb.org/3",
 		omdbBaseURL:               "http://www.omdbapi.com",
 		lastfmBaseURL:             "http://ws.audioscrobbler.com/2.0",
@@ -202,7 +203,9 @@ func (rs *RecommendationService) GetSimilarItems(ctx context.Context, req *Simil
 		externalItems, err := rs.findExternalSimilarItems(ctx, req)
 		if err != nil {
 			// Log error but don't fail the entire request
-			fmt.Printf("Warning: failed to find external similar items: %v\n", err)
+			if logging.Logger != nil {
+				logging.With(logging.ErrorField(err)).Warn("Failed to find external similar items")
+			}
 		} else {
 			response.ExternalItems = externalItems
 			response.Performance.ExternalItemsFound = len(externalItems)
@@ -225,7 +228,9 @@ func (rs *RecommendationService) findLocalSimilarItems(ctx context.Context, req 
 	filesWithMetadata, err := rs.querySimilarMediaFromDatabase(ctx, req.MediaMetadata)
 	if err != nil {
 		// If database query fails, fall back to mock data for now
-		fmt.Printf("Warning: failed to query similar media from database: %v, falling back to mock data\n", err)
+		if logging.Logger != nil {
+			logging.With(logging.ErrorField(err)).Warn("Failed to query similar media from database, falling back to mock data")
+		}
 		allLocalMedia = rs.generateMockLocalMedia(req.MediaMetadata)
 	} else {
 		// Convert FileWithMetadata to MediaMetadata

@@ -25,6 +25,7 @@ func (db *DB) RunMigrations(ctx context.Context) error {
 		{Version: 11, Name: "create_service_tables", Up: db.createServiceTables},
 		{Version: 12, Name: "fix_service_table_columns", Up: db.fixServiceTableColumns},
 		{Version: 13, Name: "create_playlist_tables", Up: db.createPlaylistTables},
+		{Version: 14, Name: "create_additional_indexes", Up: db.createAdditionalIndexes},
 	}
 
 	for _, migration := range migrations {
@@ -127,4 +128,11 @@ func (db *DB) createMediaEntityTables(ctx context.Context) error {
 		return db.createMediaEntityTablesPostgres(ctx)
 	}
 	return db.createMediaEntityTablesSQLite(ctx)
+}
+
+func (db *DB) createAdditionalIndexes(ctx context.Context) error {
+	if db.dialect.IsPostgres() {
+		return db.createV14AdditionalIndexesPostgres(ctx)
+	}
+	return db.createV14AdditionalIndexesSQLite(ctx)
 }

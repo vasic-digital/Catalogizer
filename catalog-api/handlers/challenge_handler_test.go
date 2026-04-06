@@ -197,9 +197,9 @@ func TestChallengeHandler_ListChallenges_VerifiesFields(t *testing.T) {
 	assert.Equal(t, http.StatusOK, w.Code)
 
 	var response struct {
-		Success bool                       `json:"success"`
+		Success bool                        `json:"success"`
 		Data    []services.ChallengeSummary `json:"data"`
-		Count   int                        `json:"count"`
+		Count   int                         `json:"count"`
 	}
 	err := json.Unmarshal(w.Body.Bytes(), &response)
 	assert.NoError(t, err)
@@ -436,14 +436,14 @@ func TestChallengeHandler_RunChallenge_EmptyID(t *testing.T) {
 
 func TestChallengeHandler_RunAll(t *testing.T) {
 	tests := []struct {
-		name            string
-		results         []*challenge.Result
-		serviceErr      error
-		expectedStatus  int
-		expectSuccess   bool
-		expectedTotal   int
-		expectedPassed  int
-		expectedFailed  int
+		name           string
+		results        []*challenge.Result
+		serviceErr     error
+		expectedStatus int
+		expectSuccess  bool
+		expectedTotal  int
+		expectedPassed int
+		expectedFailed int
 	}{
 		{
 			name: "all passed",
@@ -488,14 +488,14 @@ func TestChallengeHandler_RunAll(t *testing.T) {
 			expectedFailed: 2, // failed + skipped both count as non-passed
 		},
 		{
-			name:            "empty results",
-			results:         []*challenge.Result{},
-			serviceErr:      nil,
-			expectedStatus:  http.StatusOK,
-			expectSuccess:   true,
-			expectedTotal:   0,
-			expectedPassed:  0,
-			expectedFailed:  0,
+			name:           "empty results",
+			results:        []*challenge.Result{},
+			serviceErr:     nil,
+			expectedStatus: http.StatusOK,
+			expectSuccess:  true,
+			expectedTotal:  0,
+			expectedPassed: 0,
+			expectedFailed: 0,
 		},
 		{
 			name:           "service error",
@@ -558,15 +558,15 @@ func TestChallengeHandler_RunAll(t *testing.T) {
 
 func TestChallengeHandler_RunByCategory(t *testing.T) {
 	tests := []struct {
-		name            string
-		category        string
-		results         []*challenge.Result
-		serviceErr      error
-		expectedStatus  int
-		expectSuccess   bool
-		expectedTotal   int
-		expectedPassed  int
-		expectedFailed  int
+		name           string
+		category       string
+		results        []*challenge.Result
+		serviceErr     error
+		expectedStatus int
+		expectSuccess  bool
+		expectedTotal  int
+		expectedPassed int
+		expectedFailed int
 	}{
 		{
 			name:     "all passed in category",
@@ -597,15 +597,15 @@ func TestChallengeHandler_RunByCategory(t *testing.T) {
 			expectedFailed: 1,
 		},
 		{
-			name:            "empty results for category",
-			category:        "nonexistent",
-			results:         []*challenge.Result{},
-			serviceErr:      nil,
-			expectedStatus:  http.StatusOK,
-			expectSuccess:   true,
-			expectedTotal:   0,
-			expectedPassed:  0,
-			expectedFailed:  0,
+			name:           "empty results for category",
+			category:       "nonexistent",
+			results:        []*challenge.Result{},
+			serviceErr:     nil,
+			expectedStatus: http.StatusOK,
+			expectSuccess:  true,
+			expectedTotal:  0,
+			expectedPassed: 0,
+			expectedFailed: 0,
 		},
 		{
 			name:           "service error for category",
@@ -971,7 +971,7 @@ func TestChallengeHandler_GetChallenge_ResponseShape(t *testing.T) {
 	assert.Equal(t, http.StatusOK, w.Code)
 
 	var response struct {
-		Success bool                     `json:"success"`
+		Success bool                      `json:"success"`
 		Data    services.ChallengeSummary `json:"data"`
 	}
 	err := json.Unmarshal(w.Body.Bytes(), &response)

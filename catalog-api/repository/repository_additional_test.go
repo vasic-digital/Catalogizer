@@ -8,8 +8,8 @@ import (
 	"time"
 
 	"catalogizer/database"
-	topmodels "catalogizer/models"
 	mediamodels "catalogizer/internal/media/models"
+	topmodels "catalogizer/models"
 
 	"github.com/DATA-DOG/go-sqlmock"
 	"github.com/stretchr/testify/assert"
@@ -1456,7 +1456,7 @@ func TestUnmarshalJSONFieldString(t *testing.T) {
 
 func TestMarshalJSONFieldString(t *testing.T) {
 	tests := []struct {
-		name string
+		name  string
 		input interface{}
 		want  string
 	}{

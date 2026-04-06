@@ -132,7 +132,9 @@ func sourceContains(root, needle string) bool {
 
 // RegisterModuleFuncChallenges registers functional verification challenges
 // for specific module capabilities (MOD-016 to MOD-021).
-func RegisterModuleFuncChallenges(svc interface{ Register(challenge.Challenge) error }) {
+func RegisterModuleFuncChallenges(svc interface {
+	Register(challenge.Challenge) error
+}) {
 	challenges := []struct {
 		id            string
 		name          string

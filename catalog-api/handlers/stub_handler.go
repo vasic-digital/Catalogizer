@@ -174,12 +174,12 @@ func (h *MediaQueryHandler) GetPopularMedia(c *gin.Context) {
 		}
 
 		item := gin.H{
-			"id":            id,
-			"media_type_id": mediaTypeID,
-			"type_name":     typeName,
-			"title":         title,
-			"status":        status,
-			"last_updated":  lastUpdated,
+			"id":             id,
+			"media_type_id":  mediaTypeID,
+			"type_name":      typeName,
+			"title":          title,
+			"status":         status,
+			"last_updated":   lastUpdated,
 			"favorite_count": favCount,
 		}
 		if originalTitle.Valid {
@@ -483,12 +483,12 @@ func (h *MediaQueryHandler) AnalyzeMedia(c *gin.Context) {
 				"type":  typeName,
 				"files": files,
 				"metadata": gin.H{
-					"id":            item.ID,
-					"title":         item.Title,
-					"media_type_id": item.MediaTypeID,
-					"status":        item.Status,
+					"id":             item.ID,
+					"title":          item.Title,
+					"media_type_id":  item.MediaTypeID,
+					"status":         item.Status,
 					"first_detected": item.FirstDetected,
-					"last_updated":  item.LastUpdated,
+					"last_updated":   item.LastUpdated,
 				},
 			},
 		})

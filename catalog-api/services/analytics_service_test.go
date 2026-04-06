@@ -2129,5 +2129,3 @@ func TestAnalyticsService_ExtractDateRange_NonStringTypes(t *testing.T) {
 		assert.Error(t, err)
 	})
 }
-
-

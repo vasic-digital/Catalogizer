@@ -35,10 +35,10 @@ func TestConfigurationService_CompleteWizard(t *testing.T) {
 	svc := NewConfigurationService(configRepo, t.TempDir()+"/config.json")
 
 	finalData := map[string]interface{}{
-		"db_type":  "sqlite",
-		"db_host":  "localhost",
-		"db_port":  5432,
-		"db_name":  "catalogizer",
+		"db_type":    "sqlite",
+		"db_host":    "localhost",
+		"db_port":    5432,
+		"db_name":    "catalogizer",
 		"jwt_secret": "test-secret-key",
 	}
 

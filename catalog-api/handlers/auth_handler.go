@@ -189,15 +189,15 @@ func (h *AuthHandler) RegisterGin(c *gin.Context, userRepo *repository.UserRepos
 
 	// Create user
 	user := &models.User{
-		Username:    req.Username,
-		Email:       req.Email,
+		Username:     req.Username,
+		Email:        req.Email,
 		PasswordHash: passwordHash,
-		Salt:        salt,
-		FirstName:   &req.FirstName,
-		LastName:    &req.LastName,
-		RoleID:      2,   // Default user role
-		Role:        nil, // Will be loaded after creation
-		IsActive:    true,
+		Salt:         salt,
+		FirstName:    &req.FirstName,
+		LastName:     &req.LastName,
+		RoleID:       2,   // Default user role
+		Role:         nil, // Will be loaded after creation
+		IsActive:     true,
 	}
 
 	userID, err := userRepo.Create(user)

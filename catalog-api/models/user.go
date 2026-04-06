@@ -1797,13 +1797,13 @@ const (
 
 // Playlist represents a user-created playlist of media entities.
 type Playlist struct {
-	ID          int        `json:"id" db:"id"`
-	UserID      int        `json:"user_id" db:"user_id"`
-	Name        string     `json:"name" db:"name"`
-	Description string     `json:"description" db:"description"`
-	IsPublic    bool       `json:"is_public" db:"is_public"`
-	CreatedAt   time.Time  `json:"created_at" db:"created_at"`
-	UpdatedAt   time.Time  `json:"updated_at" db:"updated_at"`
+	ID          int            `json:"id" db:"id"`
+	UserID      int            `json:"user_id" db:"user_id"`
+	Name        string         `json:"name" db:"name"`
+	Description string         `json:"description" db:"description"`
+	IsPublic    bool           `json:"is_public" db:"is_public"`
+	CreatedAt   time.Time      `json:"created_at" db:"created_at"`
+	UpdatedAt   time.Time      `json:"updated_at" db:"updated_at"`
 	Items       []PlaylistItem `json:"items,omitempty"`
 }
 

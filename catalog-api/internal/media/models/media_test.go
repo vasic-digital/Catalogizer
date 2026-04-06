@@ -249,13 +249,13 @@ func TestMediaItem_JSONRoundTrip(t *testing.T) {
 func TestMediaSearchRequest_JSONRoundTrip(t *testing.T) {
 	minRating := 7.5
 	req := MediaSearchRequest{
-		Query:     "inception",
+		Query:      "inception",
 		MediaTypes: []string{"video"},
-		MinRating: &minRating,
-		Limit:     20,
-		Offset:    0,
-		SortBy:    "rating",
-		SortOrder: "desc",
+		MinRating:  &minRating,
+		Limit:      20,
+		Offset:     0,
+		SortBy:     "rating",
+		SortOrder:  "desc",
 	}
 
 	data, err := json.Marshal(req)

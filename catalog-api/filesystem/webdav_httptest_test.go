@@ -38,7 +38,7 @@ func newTestWebDAVServer(t *testing.T, handler http.Handler) (*httptest.Server, 
 // WebDAV Connect Tests
 // =============================================================================
 
-func TestWebDAVClient_Connect_Success(t *testing.T) {
+func TestWebDAVClient_Connect_Success_HTTP(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if r.Method == "PROPFIND" {
 			w.WriteHeader(http.StatusMultiStatus)
@@ -61,7 +61,7 @@ func TestWebDAVClient_Connect_Success(t *testing.T) {
 	assert.True(t, client.IsConnected())
 }
 
-func TestWebDAVClient_Connect_OKStatus(t *testing.T) {
+func TestWebDAVClient_Connect_OKStatus_HTTP(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusOK)
 	}))
@@ -109,7 +109,7 @@ func TestWebDAVClient_Connect_NoAuth(t *testing.T) {
 // WebDAV ReadFile Tests
 // =============================================================================
 
-func TestWebDAVClient_ReadFile_Success(t *testing.T) {
+func TestWebDAVClient_ReadFile_Success_HTTP(t *testing.T) {
 	handler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		switch r.Method {
 		case "PROPFIND":
@@ -132,7 +132,7 @@ func TestWebDAVClient_ReadFile_Success(t *testing.T) {
 	assert.Equal(t, "file content here", string(data))
 }
 
-func TestWebDAVClient_ReadFile_NotFound(t *testing.T) {
+func TestWebDAVClient_ReadFile_NotFound_HTTP(t *testing.T) {
 	handler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		switch r.Method {
 		case "PROPFIND":
@@ -182,7 +182,7 @@ func TestWebDAVClient_ReadFile_WithAuth(t *testing.T) {
 // WebDAV WriteFile Tests
 // =============================================================================
 
-func TestWebDAVClient_WriteFile_Success(t *testing.T) {
+func TestWebDAVClient_WriteFile_Success_HTTP(t *testing.T) {
 	var receivedBody string
 	handler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		switch r.Method {

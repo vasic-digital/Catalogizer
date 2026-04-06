@@ -159,7 +159,9 @@ fun SettingsScreen(
         try {
             val container = com.catalogizer.androidtv.DependencyContainer.getInstance(context)
             settingsViewModel.loadChannelSettings(container.mediaRepository)
-        } catch (_: Exception) {}
+        } catch (e: Exception) {
+            android.util.Log.w("SettingsScreen", "Failed to load channel settings: ${e.message}")
+        }
     }
 
     LaunchedEffect(settingsState) {

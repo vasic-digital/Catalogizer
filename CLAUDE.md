@@ -315,6 +315,16 @@ Critical container notes:
 - All submodules MUST have `.env` in their `.gitignore`
 - Pre-commit hooks should scan for secrets when available
 
+**CRITICAL: Git Access via SSH Only — NEVER Use HTTPS.** This is a MANDATORY, NON-NEGOTIABLE security rule:
+- **Always** use SSH (`git@github.com:user/repo.git`) for all Git operations — cloning, fetching, pushing
+- **Never** use HTTPS (`https://github.com/user/repo.git`) for Git access
+- Configure remotes to use SSH: `git remote set-url origin git@github.com:user/repo.git`
+- For new clones: `git clone git@github.com:user/repo.git` — NOT `git clone https://...`
+- For GitLab, GitFlic, GitVerse, and all other Git hosts: use SSH protocol exclusively
+- HTTPS bypasses SSH key-based authentication and is less secure
+- Submodules MUST be configured with SSH URLs in `.gitmodules`
+- CI/CD scripts and automation MUST use SSH with deploy keys, never HTTPS with passwords/tokens
+
 **CRITICAL: HelixQA — FULLY LLM-DRIVEN Autonomous Testing.**
 
 HelixQA is a generic, universal QA tool driven entirely by LLM vision models. Pipeline: Learn → Plan → Execute → Curiosity → Analyze. Run via `helixqa autonomous --platforms androidtv`. See `HelixQA/.env.example` for configuration.

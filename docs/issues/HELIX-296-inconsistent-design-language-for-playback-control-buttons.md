@@ -4,7 +4,9 @@ severity: medium
 category: visual
 platform: 
 screen: android-curiosity-015.png
-status: open
+status: resolved
+resolution: fixed
+fixed_date: 2026-04-06
 found_date: 2026-04-04
 ---
 
