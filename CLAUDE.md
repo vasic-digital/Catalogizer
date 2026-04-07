@@ -678,3 +678,27 @@ If any script or command suggests using `sudo`:
 
 **VIOLATION OF THIS CONSTRAINT IS STRICTLY PROHIBITED.**
 
+
+### One-Command HelixQA Execution
+
+**Use the orchestrator script for full automation:**
+
+```bash
+# One command to rule them all - connects devices, installs APKs, runs HelixQA
+./scripts/helixqa-orchestrator.sh [platforms]
+
+# Examples:
+./scripts/helixqa-orchestrator.sh           # Test all platforms
+./scripts/helixqa-orchestrator.sh android   # Android TV only
+./scripts/helixqa-orchestrator.sh web       # Web only
+```
+
+**Orchestrator Phases:**
+1. ✅ Environment validation (API health check)
+2. ✅ Device connection (.devconnect auto-connect)
+3. ✅ APK installation (builds if needed)
+4. ✅ Monitoring (background health monitoring)
+5. ✅ HelixQA execution (autonomous testing)
+6. ✅ Report generation (consolidated results)
+
+**Output:** `qa-results/session-<timestamp>/`
