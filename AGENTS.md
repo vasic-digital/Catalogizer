@@ -46,6 +46,18 @@ if grep -qi "$DEVICE_MODEL" .devignore; then
 fi
 ```
 
+### MANDATORY: HelixQA ONLY for UI/UX Automated Testing
+
+**ALL automated UI/UX testing MUST be performed exclusively by HelixQA.**
+
+- **NEVER** write custom scripts for UI testing (no ADB tap sequences, no coordinate-based scripts)
+- **NEVER** use third-party UI testing tools outside of HelixQA
+- **HelixQA is the SOLE authorized tool** for all automated UI/UX testing across all platforms
+- **Every UI interaction** MUST be LLM vision-driven: screenshot → LLM analysis → action decision
+- **No workarounds**: If HelixQA finds an issue, fix it in the app code, not with testing scripts
+- **This applies to**: Android TV, Android mobile, Web, Desktop, and any future platforms
+- **Manual testing** is allowed for debugging, but **automated QA = HelixQA only**
+
 ## Submodule Architecture
 
 The project uses 41 independent git submodules under the `digital.vasic.*` and `@vasic-digital/*` namespace for generic, reusable functionality. Each submodule has its own repository, tests, and documentation.

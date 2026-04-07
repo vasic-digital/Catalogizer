@@ -18,6 +18,17 @@ Multi-platform media collection manager. Detects, categorizes, and organizes med
 - **If no valid devices are connected, abort testing** - do not proceed with excluded devices
 - **This constraint is NON-NEGOTIABLE and applies to all QA, HelixQA, and manual testing**
 
+### CRITICAL: HelixQA ONLY for UI/UX Automated Testing
+
+**ALL automated UI/UX testing MUST be performed exclusively by HelixQA.**
+
+- **NEVER** use custom scripts, manual ADB commands, or third-party tools for UI/UX testing
+- **HelixQA is the SOLE authorized tool** for automated Android TV, Web, and Desktop UI testing
+- **All UI interactions** (clicks, navigation, screenshots, validation) MUST be LLM-driven via HelixQA
+- **No hardcoded coordinates, sleep timers, or tap sequences** - HelixQA vision models decide every action
+- **If HelixQA reports an issue**, it must be fixed in the app code, not worked around with scripts
+- **This constraint applies to all platforms**: Android TV, Android mobile, Web, and Desktop
+
 Example check:
 ```bash
 # Get device model and check against .devignore
