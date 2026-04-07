@@ -248,8 +248,9 @@ run_helixqa() {
     
     local platform_arg="$PLATFORMS"
     if [[ "$PLATFORMS" == "all" ]]; then
-        # Test ALL platforms: Android TV, Web, Desktop (Tauri), Wizard, API
-        platform_arg="androidtv,web,desktop,wizard,api"
+        # Test ALL platforms: Android TV, Web, Desktop (Tauri + Wizard), API
+        # Note: wizard is tested as part of desktop (same Tauri app)
+        platform_arg="androidtv,web,desktop,api"
     fi
     
     log_info "Platforms: $platform_arg"
