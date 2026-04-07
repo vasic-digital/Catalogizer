@@ -25,6 +25,27 @@ Essential commands and style guidelines for AI agents working in the Catalogizer
 - Kotlin: 1.9.22
 - Android Gradle Plugin: 8.2.2
 
+## ⚠️ CRITICAL CONSTRAINTS
+
+### MANDATORY: .devignore Devices - NEVER USE FOR TESTING
+
+**Devices listed in `.devignore` MUST NEVER be used for any testing, QA, or app deployment.**
+
+- **ATMOSphere devices are explicitly excluded** - never install or test on them
+- **Always check `.devignore` before any ADB device operation**
+- **Only use devices NOT matching any pattern in `.devignore`**
+- **If no valid devices are connected, abort testing** - do not proceed with excluded devices
+- **This constraint applies to HelixQA, manual testing, and all QA workflows**
+
+Pre-flight check:
+```bash
+DEVICE_MODEL=$(adb -s $DEVICE shell getprop ro.product.model)
+if grep -qi "$DEVICE_MODEL" .devignore; then
+  echo "❌ Device $DEVICE_MODEL is in .devignore - CANNOT USE"
+  exit 1
+fi
+```
+
 ## Submodule Architecture
 
 The project uses 41 independent git submodules under the `digital.vasic.*` and `@vasic-digital/*` namespace for generic, reusable functionality. Each submodule has its own repository, tests, and documentation.

@@ -6,6 +6,28 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 Multi-platform media collection manager. Detects, categorizes, and organizes media across SMB, FTP, NFS, WebDAV, and local filesystems. Components: **catalog-api** (Go 1.25/Gin backend), **catalog-web** (React 18/TS/Vite frontend), **catalogizer-desktop** & **installer-wizard** (Tauri/Rust+React), **catalogizer-android** & **catalogizer-androidtv** (Kotlin/Compose), **catalogizer-api-client** (TS library).
 
+## ⚠️ MANDATORY CONSTRAINTS
+
+### CRITICAL: .devignore Devices - NEVER USE FOR TESTING
+
+**Devices listed in `.devignore` MUST NEVER be used for any testing, QA, or app deployment.**
+
+- **Before any ADB operation**, check `.devignore` for excluded device models
+- **ATMOSphere devices are explicitly excluded** - never install or test on them
+- **Only use devices NOT matching any pattern in `.devignore`**
+- **If no valid devices are connected, abort testing** - do not proceed with excluded devices
+- **This constraint is NON-NEGOTIABLE and applies to all QA, HelixQA, and manual testing**
+
+Example check:
+```bash
+# Get device model and check against .devignore
+DEVICE_MODEL=$(adb -s $DEVICE shell getprop ro.product.model)
+if grep -qi "$DEVICE_MODEL" .devignore; then
+  echo "❌ Device $DEVICE_MODEL is in .devignore - CANNOT USE"
+  exit 1
+fi
+```
+
 ## Submodule Architecture
 
 41 independent git submodules under the vasic-digital organization. Each has its own repo (GitHub + GitLab), tests, docs, and Upstreams for multi-remote push.
