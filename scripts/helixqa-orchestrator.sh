@@ -265,6 +265,14 @@ run_helixqa() {
         log_info "Android device: $ANDROID_DEVICE"
     fi
     
+    # Export Android package for HelixQA to launch
+    export HELIX_ANDROID_PACKAGE="com.catalogizer.androidtv"
+    log_info "Android package: $HELIX_ANDROID_PACKAGE"
+    
+    # HelixQA automatically reads .devignore from project root
+    # and respects HELIX_ADB_EXCLUDE env var if set.
+    # No need to manually filter - HelixQA handles device exclusion internally.
+    
     # Run HelixQA
     log_info "Starting HelixQA autonomous session..."
     
