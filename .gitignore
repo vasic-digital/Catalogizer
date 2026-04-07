@@ -307,3 +307,6 @@ deployment/.env*
 
 # QA session logs may contain API keys in error messages
 docs/reports/qa-sessions/**/logs/*.log
+
+# Device connect list (local IP addresses, should not be committed)
+.devconnect

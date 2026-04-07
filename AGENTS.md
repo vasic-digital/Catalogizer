@@ -58,6 +58,33 @@ fi
 - **This applies to**: Android TV, Android mobile, Web, Desktop, and any future platforms
 - **Manual testing** is allowed for debugging, but **automated QA = HelixQA only**
 
+### MANDATORY: Device Auto-Connect via .devconnect (Before HelixQA)
+
+**Ensure Android TV devices are connected BEFORE running HelixQA.**
+
+- **`.devconnect`** file: List of IP addresses to auto-connect via `adb connect`
+- **Opposite of `.devignore`**: Ensures devices ARE connected (not excluded)
+- **Git ignored**: Never commit `.devconnect` (contains local network IPs)
+- **Pre-flight requirement**: Run `./scripts/devconnect.sh` before every HelixQA session
+- **Validation**: Script pings devices first, only connects reachable devices
+- **Idempotent**: Safe to run multiple times
+
+**Pre-flight checklist:**
+```bash
+# 1. Check .devignore - ensure devices are NOT excluded
+# 2. Check .devconnect - ensure devices ARE listed
+grep -v "^#" .devconnect | grep -v "^$"
+
+# 3. Auto-connect devices
+./scripts/devconnect.sh
+
+# 4. Verify connection
+adb devices
+
+# 5. Run HelixQA
+./HelixQA/bin/helixqa autonomous -platforms android ...
+```
+
 ## Submodule Architecture
 
 The project uses 41 independent git submodules under the `digital.vasic.*` and `@vasic-digital/*` namespace for generic, reusable functionality. Each submodule has its own repository, tests, and documentation.

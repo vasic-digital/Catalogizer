@@ -29,6 +29,30 @@ Multi-platform media collection manager. Detects, categorizes, and organizes med
 - **If HelixQA reports an issue**, it must be fixed in the app code, not worked around with scripts
 - **This constraint applies to all platforms**: Android TV, Android mobile, Web, and Desktop
 
+### CRITICAL: Device Auto-Connect via .devconnect
+
+**Devices listed in `.devconnect` MUST be auto-connected before HelixQA executes.**
+
+- **`.devconnect`** file contains IP addresses of Android TV devices that must be connected
+- **Opposite of `.devignore`** - ensures devices ARE connected rather than excluded
+- **Format**: One IP per line (e.g., `192.168.0.214` or `192.168.0.214:5555`)
+- **Git ignored**: `.devconnect` is in `.gitignore` (local device IPs should not be committed)
+- **Pre-flight check**: Run `./scripts/devconnect.sh` before HelixQA to validate and connect devices
+- **Reachability validation**: Script pings devices before attempting ADB connect
+- **Idempotent**: Safe to run multiple times - skips already connected devices
+
+Usage:
+```bash
+# Create .devconnect with your Android TV devices
+echo "192.168.0.214" > .devconnect
+
+# Auto-connect all listed devices (validates reachability first)
+./scripts/devconnect.sh
+
+# Then run HelixQA
+./HelixQA/bin/helixqa autonomous -platforms android ...
+```
+
 Example check:
 ```bash
 # Get device model and check against .devignore
