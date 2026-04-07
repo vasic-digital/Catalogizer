@@ -613,3 +613,63 @@ Comprehensive documentation is available in `docs/`:
 - `docs/architecture/ARCHITECTURE.md` — System design
 - `docs/api/API_DOCUMENTATION.md` — REST API reference
 - `docs/guides/TROUBLESHOOTING.md` — Common issues and solutions
+
+## CRITICAL CONSTRAINTS FOR APK BUILDING
+
+### Android APK Build Requirements
+
+1. **MUST Use Containers Builder Environment via Containers Submodule**
+   - All Android APK builds MUST use the `catalogizer-builder` container
+   - Use the `Containers` submodule for container orchestration
+   - Builder defined in `docker-compose.build.yml`
+   - NEVER build APKs directly on host without container
+
+2. **Builder Container Definition (docker-compose.build.yml)**
+   - Service: `catalogizer-builder`
+   - Image: `localhost/catalogizer-builder:latest`
+   - Android SDK at `/opt/android-sdk`
+   - Java at `/usr/lib/jvm/java-21-openjdk-amd64`
+   - Depends on: PostgreSQL and Redis (for integration tests)
+   - Mounts project to `/project`
+
+3. **Build Using Containers Submodule Boot**
+   ```bash
+   # Start builder infrastructure (PostgreSQL, Redis, builder)
+   cd Containers && ./bin/boot --project /path/to/catalogizer
+   
+   # Or use docker-compose.build.yml directly:
+   podman-compose -f docker-compose.build.yml up --build --abort-on-container-exit
+   ```
+
+4. **Direct Builder Container Usage (if boot not available)**
+   ```bash
+   podman run --rm --entrypoint="" \
+     -v /path/to/project:/project \
+     -w /project/catalogizer-androidtv \
+     -e ANDROID_HOME=/opt/android-sdk \
+     -e JAVA_HOME=/usr/lib/jvm/java-21-openjdk-amd64 \
+     localhost/catalogizer-builder:latest \
+     ./gradlew assembleDebug --no-daemon
+   ```
+
+5. **Build Prerequisites**
+   - All git submodules must be initialized
+   - Builder container image must exist: `localhost/catalogizer-builder:latest`
+   - If missing, build it: `podman build -f docker/Dockerfile.builder -t catalogizer-builder:latest .`
+
+### QA Testing Requirements
+
+1. **Catalog Population**
+   - QA tests require populated catalog database
+   - Run populate challenge or configure SMB storage before QA
+   - Empty catalog shows "Your Library is Empty" (correct behavior)
+
+2. **Android TV QA**
+   - Requires ADB connected device
+   - App must be installed: `com.catalogizer.androidtv`
+   - API must be accessible from device network
+   - Video recording available via `adb shell screenrecord`
+
+3. **HelixQA Bank Format**
+   - HelixQA requires JSON format for test banks
+   - Convert YAML to JSON: `python3 -c "import yaml,json; json.dump(yaml.safe_load(open('bank.yaml')), open('bank.json','w'))"`

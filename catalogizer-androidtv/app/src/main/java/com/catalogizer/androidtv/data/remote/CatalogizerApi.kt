@@ -20,6 +20,11 @@ interface CatalogizerApi {
     @POST("api/v1/auth/refresh")
     suspend fun refreshToken(@Body token: Map<String, String>): Response<LoginResponse>
 
+    @POST("api/v1/auth/logout")
+    suspend fun logout(): Response<Unit>
+
+    // Catalog endpoints(@Body token: Map<String, String>): Response<LoginResponse>
+
     // Catalog endpoints
     @GET("api/v1/catalog")
     suspend fun getCatalog(): Response<List<String>>

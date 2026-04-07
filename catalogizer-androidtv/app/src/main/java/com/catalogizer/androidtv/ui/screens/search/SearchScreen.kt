@@ -8,6 +8,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.focusable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardActions
@@ -284,12 +285,21 @@ fun SearchScreen(
                             style = MaterialTheme.typography.labelLarge,
                             color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
                         )
-                        TextButton(
-                            onClick = { viewModel.clearSearchHistory() }
+                        // Clear All button using TV-optimized Surface
+                        Surface(
+                            onClick = { viewModel.clearSearchHistory() },
+                            modifier = Modifier.padding(start = 8.dp),
+                            colors = ClickableSurfaceDefaults.colors(
+                                containerColor = Color.Transparent,
+                                focusedContainerColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.2f)
+                            ),
+                            shape = ClickableSurfaceDefaults.shape()
                         ) {
                             Text(
                                 text = "Clear All",
-                                fontSize = 14.sp
+                                fontSize = 14.sp,
+                                color = MaterialTheme.colorScheme.primary,
+                                modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp)
                             )
                         }
                     }
@@ -358,8 +368,20 @@ fun SearchScreen(
                         style = MaterialTheme.typography.labelLarge,
                         color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.8f)
                     )
-                    TextButton(onClick = { viewModel.clearResults() }) {
-                        Text("Clear Results")
+                    // Clear Results button using TV-optimized Surface
+                    Surface(
+                        onClick = { viewModel.clearResults() },
+                        colors = ClickableSurfaceDefaults.colors(
+                            containerColor = Color.Transparent,
+                            focusedContainerColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.2f)
+                        ),
+                        shape = ClickableSurfaceDefaults.shape()
+                    ) {
+                        Text(
+                            text = "Clear Results",
+                            color = MaterialTheme.colorScheme.primary,
+                            modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp)
+                        )
                     }
                 }
 
@@ -404,10 +426,20 @@ fun SearchScreen(
                             color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
                         )
                         if (searchHistory.isNotEmpty()) {
-                            TextButton(
-                                onClick = { viewModel.clearResults() }
+                            // Try a recent search button using TV-optimized Surface
+                            Surface(
+                                onClick = { viewModel.clearResults() },
+                                colors = ClickableSurfaceDefaults.colors(
+                                    containerColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.1f),
+                                    focusedContainerColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.3f)
+                                ),
+                                shape = ClickableSurfaceDefaults.shape()
                             ) {
-                                Text("Try a recent search")
+                                Text(
+                                    text = "Try a recent search",
+                                    color = MaterialTheme.colorScheme.primary,
+                                    modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)
+                                )
                             }
                         }
                     }

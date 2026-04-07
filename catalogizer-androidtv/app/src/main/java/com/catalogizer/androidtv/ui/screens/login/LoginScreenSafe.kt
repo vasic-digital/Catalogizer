@@ -1,12 +1,13 @@
 @file:OptIn(ExperimentalTvMaterial3Api::class, ExperimentalComposeUiApi::class)
 package com.catalogizer.androidtv.ui.screens.login
 
-import androidx.compose.runtime.*
+import androidx.compose.foundation.layout.padding
+import androidx.compose.ui.unit.dp
+import androidx.compose.runtime.Composable
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.tv.material3.ExperimentalTvMaterial3Api
 import com.catalogizer.androidtv.ui.viewmodel.AuthViewModel
-import kotlinx.coroutines.launch
 
 /**
  * Null-safe wrapper for LoginScreen to prevent NPE crashes.
@@ -17,30 +18,11 @@ fun LoginScreenSafe(
     authViewModel: AuthViewModel,
     onLoginSuccess: () -> Unit
 ) {
-    // Wrap the original LoginScreen with error handling
-    val authState by authViewModel.authState.collectAsStateWithLifecycle()
-    
-    // Safety check: ensure authViewModel is properly initialized
-    if (::authViewModel.isInitialized.not()) {
-        // Show error state if ViewModel not initialized
-        LoginErrorScreen("Authentication system not initialized")
-        return
-    }
-    
-    // Wrap onLoginSuccess to handle null cases
-    val safeOnLoginSuccess = {
-        try {
-            onLoginSuccess()
-        } catch (e: Exception) {
-            // Log error but don't crash
-            android.util.Log.e("LoginScreenSafe", "Error in onLoginSuccess callback", e)
-        }
-    }
-    
-    // Call original LoginScreen with safe wrapper
+    // Call original LoginScreen with error handling wrapper
+    // ViewModel is always initialized when passed as parameter
     LoginScreen(
         authViewModel = authViewModel,
-        onLoginSuccess = safeOnLoginSuccess
+        onLoginSuccess = onLoginSuccess
     )
 }
 
