@@ -698,27 +698,6 @@ func main() {
 	}
 	defer responder.Stop()
 
-	discoveryHandler := func(c *gin.Context) {
-		host := serviceInfo.Host
-		port := cfg.Server.Port
-		c.JSON(200, gin.H{
-			"service":        serviceInfo.Service,
-			"name":           serviceInfo.Name,
-			"version":        Version,
-			"build":          BuildNumber,
-			"build_date":     BuildDate,
-			"host":           host,
-			"port":           port,
-			"protocol":       "http",
-			"websocket_url":  fmt.Sprintf("ws://%s:%d/ws", host, port),
-			"api_base_url":   fmt.Sprintf("http://%s:%d/api/v1", host, port),
-			"capabilities":   serviceInfo.Capabilities,
-			"database":       cfg.Database.Type,
-			"instance_id":    serviceInfo.InstanceID,
-			"uptime_seconds": int(time.Since(startTime).Seconds()),
-		})
-	}
-
 	// Search and browse handlers (file-level search and directory browsing)
 	searchHandler := root_handlers.NewSearchHandler(fileRepository)
 	browseHandler := root_handlers.NewBrowseHandler(fileRepository)
@@ -771,6 +750,30 @@ func main() {
 
 	// Setup Gin router
 	router := gin.Default()
+
+	// Service discovery (PUBLIC - must respond in < 2 seconds for Android TV)
+	// Register BEFORE middleware chain to avoid slow middleware (CORS, metrics, compression)
+	// This ensures the /discovery endpoint responds quickly for LAN discovery probes
+	router.GET("/discovery", func(c *gin.Context) {
+		host := serviceInfo.Host
+		port := cfg.Server.Port
+		c.JSON(200, gin.H{
+			"service":        serviceInfo.Service,
+			"name":           serviceInfo.Name,
+			"version":        Version,
+			"build":          BuildNumber,
+			"build_date":     BuildDate,
+			"host":           host,
+			"port":           port,
+			"protocol":       "http",
+			"websocket_url":  fmt.Sprintf("ws://%s:%d/ws", host, port),
+			"api_base_url":   fmt.Sprintf("http://%s:%d/api/v1", host, port),
+			"capabilities":   serviceInfo.Capabilities,
+			"database":       cfg.Database.Type,
+			"instance_id":    serviceInfo.InstanceID,
+			"uptime_seconds": int(time.Since(startTime).Seconds()),
+		})
+	})
 
 	// Middleware
 	router.Use(root_middleware.SecurityHeaders())
@@ -843,10 +846,6 @@ func main() {
 	// WebSocket endpoint (auth via query parameter, not header)
 	router.GET("/ws", wsHandler.HandleConnection)
 
-	// Service discovery (public — no auth needed for clients to find the API)
-	// Cache discovery info for 1 minute (rarely changes during runtime)
-	router.GET("/discovery", root_middleware.CacheHeaders(60), discoveryHandler)
-
 	// Image proxy — serves external images (TMDB, etc.) through the API
 	// Needed when devices can't reach external CDNs directly (DNS blocking, etc.)
 	router.GET("/api/v1/image-proxy", func(c *gin.Context) {
@@ -879,8 +878,6 @@ func main() {
 		c.Status(resp.StatusCode)
 		io.Copy(c.Writer, resp.Body)
 	})
-	router.GET("/api/v1/discovery", root_middleware.CacheHeaders(60), discoveryHandler)
-	router.GET("/api/v1/discovery/announce", root_middleware.CacheHeaders(60), discoveryHandler)
 
 	// Asset serving (public — no auth needed for serving images)
 	// StaticCacheHeaders() sets Cache-Control: public, max-age=31536000, immutable

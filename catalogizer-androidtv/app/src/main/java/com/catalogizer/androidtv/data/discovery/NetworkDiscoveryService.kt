@@ -34,7 +34,12 @@ class NetworkDiscoveryService(private val context: Context? = null) {
         private const val MULTICAST_PORT = 42069
         private const val RESPONDER_PORT = 19820
         private const val DISCOVERY_MESSAGE = "CATALOGIZER_DISCOVER"
-        private const val HTTP_PROBE_TIMEOUT_MS = 2000
+        // Default timeout for HTTP probes - increased from 2000ms to 5000ms
+        // to accommodate slower servers or networks with higher latency.
+        // Can be overridden via SettingsRepository for custom deployments.
+        private const val DEFAULT_HTTP_PROBE_TIMEOUT_MS = 5000
+        private const val MAX_RETRIES = 2
+        private const val RETRY_DELAY_MS = 500L
         private val COMMON_PORTS = listOf(8080, 8081, 8082, 80)
     }
 
@@ -120,7 +125,7 @@ class NetworkDiscoveryService(private val context: Context? = null) {
         val jobs = priorityHosts.flatMap { host ->
             COMMON_PORTS.map { port ->
                 async(Dispatchers.IO) {
-                    withTimeoutOrNull(HTTP_PROBE_TIMEOUT_MS.toLong()) {
+                    withTimeoutOrNull(DEFAULT_HTTP_PROBE_TIMEOUT_MS.toLong() * 2) {
                         probeServer("http://$prefix.$host:$port")
                     }
                 }
@@ -143,17 +148,35 @@ class NetworkDiscoveryService(private val context: Context? = null) {
     /**
      * Probe a single URL to check if it's a Catalogizer API.
      */
-    suspend fun probeServer(baseUrl: String): ServerEntry? = withContext(Dispatchers.IO) {
-        var connection: HttpURLConnection? = null
+    /**
+     * Probes a single URL to check if it's a Catalogizer API.
+     * 
+     * @param baseUrl The base URL to probe (e.g., "http://192.168.1.100:8080")
+     * @param timeoutMs Timeout in milliseconds (default: 5000ms)
+     * @param retryCount Number of retries on failure (default: 1)
+     * @return ServerEntry if successful, null otherwise
+     */
+    suspend fun probeServer(
+        baseUrl: String, 
+        timeoutMs: Int = DEFAULT_HTTP_PROBE_TIMEOUT_MS,
+        retryCount: Int = MAX_RETRIES
+    ): ServerEntry? = withContext(Dispatchers.IO) {
         val safeBaseUrl = baseUrl.trimEnd('/')
-        try {
-            val url = URL("$safeBaseUrl/discovery")
-            connection = url.openConnection() as HttpURLConnection
-            connection.connectTimeout = HTTP_PROBE_TIMEOUT_MS
-            connection.readTimeout = HTTP_PROBE_TIMEOUT_MS
-            connection.requestMethod = "GET"
+        
+        // Retry loop for reliability
+        repeat(retryCount + 1) { attempt ->
+            var connection: HttpURLConnection? = null
+            try {
+                val url = URL("$safeBaseUrl/discovery")
+                connection = url.openConnection() as HttpURLConnection
+                connection.connectTimeout = timeoutMs
+                connection.readTimeout = timeoutMs
+                connection.requestMethod = "GET"
+                // Disable following redirects for faster failure detection
+                connection.instanceFollowRedirects = false
 
-            if (connection.responseCode == 200) {
+            val responseCode = connection.responseCode
+            if (responseCode == 200) {
                 val body = connection.inputStream.bufferedReader().use { it.readText() }
                 val obj = JSONObject(body)
                 if (obj.optString("service") == "catalogizer-api") {
