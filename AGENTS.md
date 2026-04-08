@@ -371,6 +371,60 @@ Full integration with Android TV's channel API (`androidx.tvprovider`):
 
 Key files: `data/tv/TvChannelRepository.kt`, `data/tv/ChannelProgramMapper.kt`, `data/tv/WatchNextManager.kt`, `data/tv/TvChannelSyncWorker.kt`, `ui/ChannelDeepLinkActivity.kt`.
 
+#### Automated Channels Testing via HelixQA
+
+HelixQA includes a **generic, decoupled Android TV Channels testing framework** that automatically detects and tests all Channels functionality:
+
+**Detection:** HelixQA scans the Android TV codebase for `androidx.tvprovider` API usage and automatically identifies:
+- TvContractCompat integration patterns
+- WatchNextManager implementations
+- ChannelDeepLinkActivity handlers
+- URI scheme configurations
+
+**Generated Test Cases (30 comprehensive tests):**
+
+| Test ID | Category | Description |
+|---------|----------|-------------|
+| ATV-CH-001 | Default Channel | Auto-creation on first launch |
+| ATV-CH-002 | Default Channel | Content population (continue watching, recent, trending) |
+| ATV-CH-003 | Default Channel | Browsable state verification |
+| ATV-CH-004 | Default Channel | Duplicate prevention |
+| ATV-CH-005 | Category Channels | Dynamic creation based on content |
+| ATV-CH-006 | Category Channels | Display name localization |
+| ATV-CH-007 | Category Channels | Empty category suppression |
+| ATV-CH-008 | Category Channels | Stale channel removal |
+| ATV-CH-009 | Watch Next | Continue watching entries (5-90% progress) |
+| ATV-CH-010 | Watch Next | Completed item removal (>90%) |
+| ATV-CH-011 | Watch Next | Minimum threshold exclusion |
+| ATV-CH-012 | Watch Next | Auto next-episode surfacing |
+| ATV-CH-013 | Watch Next | Stale entry cleanup (30+ days) |
+| ATV-CH-014 | Sync | Content refresh on sync |
+| ATV-CH-015 | Sync | WorkManager periodic sync (6h) |
+| ATV-CH-016 | Sync | Launch-triggered sync |
+| ATV-CH-017 | Sync | Manual sync trigger |
+| ATV-CH-018 | Deep Links | Detail navigation from channels |
+| ATV-CH-019 | Deep Links | Resume playback from Watch Next |
+| ATV-CH-020 | Deep Links | URI format validation |
+| ATV-CH-021 | Deep Links | App link intent URIs |
+| ATV-CH-022 | Deep Links | Unauthenticated redirect handling |
+| ATV-CH-023 | Security | Channel cleanup on logout |
+| ATV-CH-024 | Security | Watch Next cleanup on logout |
+| ATV-CH-025 | Security | Re-authentication restoration |
+| ATV-CH-026 | Edge Cases | Invalid media ID handling |
+| ATV-CH-027 | Edge Cases | No server connection graceful handling |
+| ATV-CH-028 | Edge Cases | Program limit enforcement (max 30) |
+| ATV-CH-029 | Edge Cases | Internal provider ID validation |
+| ATV-CH-030 | Functional | Program metadata completeness |
+
+**Framework Location:** `HelixQA/pkg/planning/androidtv_channels_framework.go`
+
+**Usage:** Simply run HelixQA with androidtv platform - Channels tests are auto-generated:
+```bash
+./HelixQA/bin/helixqa autonomous -platforms androidtv
+```
+
+**Generic Framework:** The testing framework is app-agnostic. Any Android TV app using `androidx.tvprovider` will automatically receive comprehensive Channels testing by configuring a `ChannelFeatureSpec`.
+
 ## Challenge System
 
 `digital.vasic.challenges` framework integrated via `Challenges/` submodule. Challenges are Go structs embedding `challenge.BaseChallenge` with custom `Execute()`. Registered in `catalog-api/challenges/register.go` via `RegisterAll()`, exposed via `/api/v1/challenges` REST endpoints. Challenge bank definitions loaded from `challenges/config/`.
