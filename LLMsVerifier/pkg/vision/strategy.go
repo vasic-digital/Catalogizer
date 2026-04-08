@@ -7,6 +7,11 @@
 // This strategy is NOT the default -- it is used when vision model
 // selection is specifically needed (e.g., HelixQA Execute/Curiosity
 // phases, screenshot analysis, UI element detection).
+//
+// This strategy respects ProviderUsageConfig and will prefer providers
+// designated as UsageTypeVisionOnly (e.g., Gemini) or UsageTypeAny
+// with vision capabilities. Providers marked as UsageTypeLLMOnly are
+// excluded from vision selection.
 package vision
 
 import (
@@ -25,6 +30,10 @@ import (
 // (Ollama) get a cost=0 bonus but may score lower on quality.
 // Cloud models like Astica score highest due to specialised vision
 // capabilities.
+//
+// This strategy respects ProviderUsageConfig to ensure expensive
+// vision providers (like Gemini) are used appropriately while
+// excluding providers designated for LLM-only use.
 type VisionStrategy struct {
 	mu sync.RWMutex
 
@@ -45,6 +54,11 @@ type VisionStrategy struct {
 
 	// scoreCache caches computed scores.
 	scoreCache map[string]cachedVisionScore
+
+	// usageConfig defines how providers should be used.
+	// If nil, uses DefaultProviderUsageConfig() which marks
+	// Gemini as vision-only and others as appropriate.
+	usageConfig *strategy.ProviderUsageConfig
 }
 
 type cachedVisionScore struct {
@@ -68,17 +82,29 @@ type VisionStrategyConfig struct {
 
 	// CostWeight for cost efficiency (default: 0.10)
 	CostWeight float64
+
+	// UsageConfig defines provider categorization. If nil, uses
+	// DefaultProviderUsageConfig() which marks Gemini as vision-only.
+	UsageConfig *strategy.ProviderUsageConfig
+
+	// PreferVisionOnlyProviders when true (default), prioritizes
+	// providers marked as UsageTypeVisionOnly (e.g., Gemini) for
+	// vision tasks. These are typically expensive but excellent
+	// at vision tasks.
+	PreferVisionOnlyProviders bool
 }
 
 // DefaultVisionStrategyConfig returns the default Vision strategy
 // configuration.
 func DefaultVisionStrategyConfig() *VisionStrategyConfig {
 	return &VisionStrategyConfig{
-		ImageQualityWeight: 0.35,
-		GUIDetectionWeight: 0.25,
-		OCRAccuracyWeight:  0.15,
-		SpeedWeight:        0.15,
-		CostWeight:         0.10,
+		ImageQualityWeight:        0.35,
+		GUIDetectionWeight:        0.25,
+		OCRAccuracyWeight:         0.15,
+		SpeedWeight:               0.15,
+		CostWeight:                0.10,
+		UsageConfig:               strategy.DefaultProviderUsageConfig(),
+		PreferVisionOnlyProviders: true,
 	}
 }
 
@@ -98,6 +124,7 @@ func NewVisionStrategy(
 		speedWeight:        cfg.SpeedWeight,
 		costWeight:         cfg.CostWeight,
 		scoreCache:         make(map[string]cachedVisionScore),
+		usageConfig:        cfg.UsageConfig,
 	}
 }
 
@@ -168,10 +195,44 @@ func (s *VisionStrategy) SetFallbacks(_ []strategy.FallbackRule) {}
 //   - Cost: free models get 1.0; expensive models score lower.
 //
 // Models that do not support vision get an overall score of 0.
+//
+// Provider Usage Rules:
+// getUsageConfig returns the usage config or default.
+func (s *VisionStrategy) getUsageConfig() *strategy.ProviderUsageConfig {
+	if s.usageConfig != nil {
+		return s.usageConfig
+	}
+	return strategy.DefaultProviderUsageConfig()
+}
+
+// SetUsageConfig updates the provider usage configuration.
+func (s *VisionStrategy) SetUsageConfig(config *strategy.ProviderUsageConfig) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	s.usageConfig = config
+}
+
+//   - UsageTypeVisionOnly providers (e.g., Gemini) get a bonus for
+//     vision tasks as they are designated for this purpose.
+//   - UsageTypeLLMOnly providers are excluded (score = 0).
+//   - UsageTypeAny providers are scored normally.
 func (s *VisionStrategy) Score(
 	ctx context.Context,
 	model strategy.ModelInfo,
 ) (strategy.StrategyScore, error) {
+	// Check if provider can be used for vision
+	usage := s.getUsageConfig().GetUsage(model.Provider)
+	if usage == strategy.UsageTypeLLMOnly {
+		// LLM-only providers cannot do vision
+		return strategy.StrategyScore{
+			Overall:      0,
+			Confidence:   0.1,
+			Reasoning:    fmt.Sprintf("Provider %s is marked as LLM-only, cannot use for vision", model.Provider),
+			Timestamp:    time.Now(),
+			ModelID:      model.ID,
+			StrategyName: s.Name(),
+		}, nil
+	}
 	s.mu.RLock()
 	cacheKey := model.ID
 	if cached, ok := s.scoreCache[cacheKey]; ok {
@@ -188,6 +249,7 @@ func (s *VisionStrategy) Score(
 	imageQuality := 0.0
 	if model.SupportsVision {
 		imageQuality = model.QualityScore
+
 		// Bonus for specialised vision capabilities.
 		visionCaps := countCapabilities(model.Capabilities,
 			"vision", "ocr", "object_detection",
@@ -195,6 +257,11 @@ func (s *VisionStrategy) Score(
 		)
 		if visionCaps >= 3 {
 			imageQuality = math.Min(1.0, imageQuality+0.05)
+		}
+
+		// Bonus for vision-only providers (they're designated for this)
+		if usage == strategy.UsageTypeVisionOnly {
+			imageQuality = math.Min(1.0, imageQuality+0.10)
 		}
 	}
 	scores[strategy.DimensionQuality] = imageQuality * s.imageQualityWeight
@@ -269,6 +336,12 @@ func (s *VisionStrategy) Score(
 	// Non-vision models get zero.
 	if !model.SupportsVision {
 		overall = 0
+	}
+
+	// Apply usage-based adjustments
+	if usage == strategy.UsageTypeVisionOnly {
+		// Vision-only providers get a bonus as they're designated for this
+		overall = math.Min(1.0, overall*1.15)
 	}
 
 	// Confidence calculation.
@@ -486,8 +559,17 @@ func (s *VisionStrategy) filterByRequirements(
 ) []strategy.RankedModel {
 	result := make([]strategy.RankedModel, 0)
 
+	usageConfig := s.getUsageConfig()
+
 	for _, r := range ranked {
 		model := r.Model
+
+		// Check provider usage type
+		usage := usageConfig.GetUsage(model.Provider)
+		if usage == strategy.UsageTypeLLMOnly {
+			// LLM-only providers cannot be used for vision
+			continue
+		}
 
 		if req.NeedsVision && !model.SupportsVision {
 			continue

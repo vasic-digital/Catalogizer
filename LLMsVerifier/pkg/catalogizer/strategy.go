@@ -44,6 +44,11 @@ type CatalogizerStrategy struct {
 
 	// scoreCache for caching computed scores
 	scoreCache map[string]cachedCatalogizerScore
+
+	// usageConfig defines provider categorization for this strategy.
+	// If nil, uses DefaultProviderUsageConfig() which marks Gemini
+	// as vision-only to preserve it for vision tasks.
+	usageConfig *strategy.ProviderUsageConfig
 }
 
 type cachedCatalogizerScore struct {
@@ -70,6 +75,11 @@ type CatalogizerStrategyConfig struct {
 
 	// CacheTTL for score caching (default: 5 minutes)
 	CacheTTL time.Duration
+
+	// UsageConfig defines provider categorization. If nil, uses
+	// DefaultProviderUsageConfig() which marks Gemini as vision-only
+	// to preserve it for vision tasks.
+	UsageConfig *strategy.ProviderUsageConfig
 }
 
 // DefaultCatalogizerStrategyConfig returns the default Catalogizer strategy configuration
@@ -99,7 +109,23 @@ func NewCatalogizerStrategy(opts ...func(*CatalogizerStrategyConfig)) *Catalogiz
 		reliabilityWeight: cfg.ReliabilityWeight,
 		capabilityWeight:  cfg.CapabilityWeight,
 		scoreCache:        make(map[string]cachedCatalogizerScore),
+		usageConfig:       cfg.UsageConfig,
 	}
+}
+
+// getUsageConfig returns the usage config or default
+func (s *CatalogizerStrategy) getUsageConfig() *strategy.ProviderUsageConfig {
+	if s.usageConfig != nil {
+		return s.usageConfig
+	}
+	return strategy.DefaultProviderUsageConfig()
+}
+
+// SetUsageConfig updates the provider usage configuration
+func (s *CatalogizerStrategy) SetUsageConfig(config *strategy.ProviderUsageConfig) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	s.usageConfig = config
 }
 
 // Name returns the strategy name
@@ -415,9 +441,20 @@ func (s *CatalogizerStrategy) enhanceRequirements(req strategy.Requirements) str
 
 func (s *CatalogizerStrategy) filterByRequirements(ranked []strategy.RankedModel, req strategy.Requirements) []strategy.RankedModel {
 	result := make([]strategy.RankedModel, 0)
+	usageConfig := s.getUsageConfig()
 
 	for _, r := range ranked {
 		model := r.Model
+
+		// Check provider usage type
+		usage := usageConfig.GetUsage(model.Provider)
+
+		// For general LLM tasks, exclude vision-only providers
+		// to preserve them for vision-specific work
+		if usage == strategy.UsageTypeVisionOnly && !req.NeedsVision {
+			// Skip vision-only providers for general LLM tasks
+			continue
+		}
 
 		if req.NeedsVision && !model.SupportsVision {
 			continue
