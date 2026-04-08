@@ -1,6 +1,7 @@
 package com.catalogizer.androidtv.ui
 
 import android.os.Bundle
+import android.util.Log
 import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
@@ -54,14 +55,19 @@ class MainActivity : ComponentActivity() {
         val dependencyContainer = (application as CatalogizerTVApplication).dependencyContainer
         intent.getStringExtra("server_url")?.let { url ->
             if (url.isNotBlank()) {
-                dependencyContainer.switchServer(url)
+                // Switch server immediately but don't block
                 kotlinx.coroutines.CoroutineScope(kotlinx.coroutines.Dispatchers.IO).launch {
-                    dependencyContainer.settingsRepository.updateServerUrl(url)
+                    try {
+                        dependencyContainer.switchServer(url)
+                        dependencyContainer.settingsRepository.updateServerUrl(url)
+                    } catch (e: Exception) {
+                        Log.w("MainActivity", "Failed to switch server: ${e.message}")
+                    }
                 }
             }
         }
 
-        // Initialize ViewModels
+        // Initialize ViewModels - use lazy getters to avoid blocking on API creation
         authViewModel = dependencyContainer.createAuthViewModel()
         mainViewModel = dependencyContainer.createMainViewModel()
         homeViewModel = dependencyContainer.createHomeViewModel()

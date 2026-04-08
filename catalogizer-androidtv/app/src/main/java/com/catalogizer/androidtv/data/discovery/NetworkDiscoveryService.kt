@@ -175,37 +175,38 @@ class NetworkDiscoveryService(private val context: Context? = null) {
                 // Disable following redirects for faster failure detection
                 connection.instanceFollowRedirects = false
 
-            val responseCode = connection.responseCode
-            if (responseCode == 200) {
-                val body = connection.inputStream.bufferedReader().use { it.readText() }
-                val obj = JSONObject(body)
-                if (obj.optString("service") == "catalogizer-api") {
-                    val version = obj.optString("version", "?")
-                    val host = obj.optString("host", "")
-                    val port = obj.optInt("port", 8080)
-                    val protocol = obj.optString("protocol", "http")
-                    val name = obj.optString("name", "Catalogizer API")
-                    // Use the actual host IP from the discovery response
-                    // so the URL shows the real server address, not localhost
-                    val resolvedUrl = if (host.isNotBlank() && host != "0.0.0.0") {
-                        "$protocol://$host:$port"
-                    } else {
-                        safeBaseUrl
+                val responseCode = connection.responseCode
+                if (responseCode == 200) {
+                    val body = connection.inputStream.bufferedReader().use { it.readText() }
+                    val obj = JSONObject(body)
+                    if (obj.optString("service") == "catalogizer-api") {
+                        val version = obj.optString("version", "?")
+                        val host = obj.optString("host", "")
+                        val port = obj.optInt("port", 8080)
+                        val protocol = obj.optString("protocol", "http")
+                        val name = obj.optString("name", "Catalogizer API")
+                        // Use the actual host IP from the discovery response
+                        // so the URL shows the real server address, not localhost
+                        val resolvedUrl = if (host.isNotBlank() && host != "0.0.0.0") {
+                            "$protocol://$host:$port"
+                        } else {
+                            safeBaseUrl
+                        }
+                        return@withContext ServerEntry(
+                            url = resolvedUrl,
+                            name = "$name v$version",
+                            isDiscovered = true,
+                            lastConnected = System.currentTimeMillis()
+                        )
                     }
-                    return@withContext ServerEntry(
-                        url = resolvedUrl,
-                        name = "$name v$version",
-                        isDiscovered = true,
-                        lastConnected = System.currentTimeMillis()
-                    )
                 }
+            } catch (e: Exception) {
+                Log.d(TAG, "HTTP probe failed for $safeBaseUrl: ${e.message}")
+            } finally {
+                try {
+                    connection?.disconnect()
+                } catch (_: Exception) { }
             }
-        } catch (e: Exception) {
-            Log.d(TAG, "HTTP probe failed for $safeBaseUrl: ${e.message}")
-        } finally {
-            try {
-                connection?.disconnect()
-            } catch (_: Exception) { }
         }
         null
     }
@@ -372,3 +373,4 @@ class NetworkDiscoveryService(private val context: Context? = null) {
         } catch (_: Exception) { null }
     }
 }
+
