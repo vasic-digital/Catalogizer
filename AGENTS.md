@@ -58,6 +58,28 @@ fi
 - **This applies to**: Android TV, Android mobile, Web, Desktop, and any future platforms
 - **Manual testing** is allowed for debugging, but **automated QA = HelixQA only**
 
+### MANDATORY: Real-Time Log Monitoring During ALL QA Sessions
+
+**Real-time log monitoring is MANDATORY for ALL QA sessions across ALL platforms.**
+
+- **Android/Android TV**: Active `adb logcat` monitoring during HelixQA execution
+- **Web**: Browser console logs must be captured and streamed in real-time
+- **Desktop**: Application logs and system logs must be actively monitored
+- **Backend Services**: Service logs, error logs, and metrics must be watched
+- **ANR Detection**: Application Not Responding errors must be detected IMMEDIATELY
+- **Crash Detection**: Fatal exceptions and crashes must pause the QA session
+- **Log Analysis**: Must happen in real-time, not post-session analysis
+- **Session Validity**: NO QA session is considered valid without real-time log monitoring
+
+**Crash/ANR Protocol:**
+1. Real-time log monitor detects ANR/crash
+2. QA session is immediately paused
+3. Full logs and stack traces are captured
+4. Issue is analyzed and root cause identified
+5. Application code is fixed
+6. Regression test verifies the fix
+7. Full QA session resumes only after verification
+
 ### MANDATORY: Device Auto-Connect via .devconnect (Before HelixQA)
 
 **Ensure Android TV devices are connected BEFORE running HelixQA.**

@@ -29,6 +29,19 @@ Multi-platform media collection manager. Detects, categorizes, and organizes med
 - **If HelixQA reports an issue**, it must be fixed in the app code, not worked around with scripts
 - **This constraint applies to all platforms**: Android TV, Android mobile, Web, and Desktop
 
+### CRITICAL: Real-Time Log Monitoring (MANDATORY)
+
+**ALL QA sessions MUST monitor application and system logs in REAL-TIME.**
+
+- **Android/Android TV**: `adb logcat` must be actively monitored during testing
+- **Web**: Browser console logs must be captured and monitored
+- **Desktop**: Application and system logs must be monitored
+- **Backend Services**: Service logs must be actively watched
+- **Purpose**: Immediate detection of ANRs, crashes, fatal exceptions, memory issues
+- **HelixQA must implement real-time log streaming and analysis** - not post-session
+- **ANR/Crash detection must pause the session** and alert immediately
+- **NO QA session is valid without real-time log monitoring**
+
 ### CRITICAL: Device Auto-Connect via .devconnect
 
 **Devices listed in `.devconnect` MUST be auto-connected before HelixQA executes.**
