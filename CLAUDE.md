@@ -551,11 +551,72 @@ Run `./scripts/security-scan.sh` for automated scanning. Run `./scripts/run-sona
 
 ## Conventions
 
-- **Go**: `NewService` constructor injection, error wrapping, table-driven tests, `*_test.go` beside source
-- **TypeScript**: PascalCase components, camelCase functions, Zod validation, React Hook Form
-- **Kotlin**: MVVM, Result sealed classes, Room for offline
-- **Config precedence**: env vars > `.env` > `config.json` > defaults
-- **PostCSS**: `postcss.config.js` must use `module.exports` (CommonJS) for Node 18 compat
+**Config precedence**: env vars > `.env` > `config.json` > defaults
+
+**PostCSS**: `postcss.config.js` must use `module.exports` (CommonJS) for Node 18 compat
+
+### Go Backend Style
+
+- **Naming**: PascalCase exported, camelCase unexported. Interfaces: `Reader`, `Writer`, `Service` suffixes.
+- **Receivers**: Single-letter (`s *Service`, `h *Handler`, `r *Repository`).
+- **Imports**: Three groups separated by blank lines — stdlib, third-party, local:
+  ```go
+  import (
+      "encoding/json"
+      "net/http"
+
+      "github.com/gin-gonic/gin"
+      "github.com/stretchr/testify/assert"
+
+      "catalogizer/database"
+      "catalogizer/models"
+  )
+  ```
+- **Constructors**: `NewService(dep Dependency) *Service` with dependency injection.
+- **Error handling**: Wrap with `fmt.Errorf("context: %w", err)`. Use `errors.New` for static errors. Never expose internal details to clients.
+- **Testing**: Table-driven tests with `t.Run`. Use `testify/suite` for complex suites, `testify/mock` for mocks. Files: `*_test.go` beside source. Use `database.WrapDB()` for in-memory SQLite test DB.
+- **Concurrency**: Services spawning goroutines (`CacheService`, `WebSocketHandler`) use `sync.Once` for cleanup. Tests MUST `defer service.Close()` / `handler.Stop()`.
+- **Database**: Use `?` placeholders (auto-converted to `$1, $2...` for Postgres). Use `InsertReturningID()` instead of `LastInsertId()`.
+
+### TypeScript/React Frontend Style
+
+- **Naming**: PascalCase components/interfaces, camelCase functions/variables, SCREAMING_SNAKE_CASE constants.
+- **Imports**: Three groups — React, third-party, local path aliases (`@/components`, `@/hooks`, `@/lib`, etc.).
+- **Formatting**: Prettier. Tailwind classes composed via `cn()` from `@/lib/utils`.
+- **Linting**: ESLint with `@typescript-eslint`. `--max-warnings 0` enforced.
+- **State**: React Query for server state, Zustand for client state.
+- **Forms**: React Hook Form + Zod validation.
+- **Testing**: Vitest + React Testing Library. Playwright for E2E.
+
+### Kotlin/Android Style
+
+- **Architecture**: MVVM — Compose UI → ViewModel (StateFlow) → Repository → Room + Retrofit.
+- **DI**: Hilt for dependency injection.
+- **Async**: `suspend` functions, `Flow`/`StateFlow`, Paging 3.
+- **Error handling**: Sealed `Result` classes for operation outcomes.
+- **Testing**: JUnit 4 + MockK/Mockito. Coroutines via `kotlinx-coroutines-test`.
+- **Build**: JDK 21 with `--add-opens` JVM args for kapt compatibility.
+
+## Pre-Commit Checklist
+
+```bash
+cd catalog-api && go fmt ./... && go vet ./...           # Go format + lint
+cd catalog-web && npm run lint && npm run type-check     # TS lint + typecheck
+pre-commit run --all-files                               # run all hooks
+```
+
+Ensure zero console warnings/errors in browser. Verify `.gitignore` covers `.env`.
+
+## Key Files
+
+- `catalog-api/main.go` — API entry point, route registration
+- `catalog-api/database/dialect.go` — dual-dialect SQL rewriting
+- `catalog-api/filesystem/interface.go` — `UnifiedClient` protocol abstraction
+- `catalog-api/challenges/register.go` — challenge registration
+- `catalog-web/src/App.tsx` — React root (AuthProvider → WebSocketProvider → Router)
+- `catalog-web/vite.config.ts` — path aliases, API proxy config
+- `versions.json` — version tracking for all components
+- `.env.example` — environment variable template
 
 ## CRITICAL: Iterative Test-Fix-Rebuild QA Loop (Mandatory)
 
@@ -648,6 +709,31 @@ Test banks MUST include specific data sets drawn from:
 - `banks/full-qa-android.yaml` — Comprehensive Android phone testing
 - `banks/full-qa-cross-platform.yaml` — Cross-platform consistency
 - `banks/fixes-validation.yaml` — Regression tests for all bug fixes
+
+**HelixQA bank format**: JSON required. Convert YAML: `python3 -c "import yaml,json; json.dump(yaml.safe_load(open('bank.yaml')), open('bank.json','w'))"`
+
+## CRITICAL: Android APK Build Requirements
+
+All Android APK builds MUST use the `catalogizer-builder` container. Never build APKs directly on host without container.
+
+```bash
+# Start builder infrastructure (PostgreSQL, Redis, builder)
+cd Containers && ./bin/boot --project /path/to/catalogizer
+
+# Or use docker-compose.build.yml directly:
+podman-compose -f docker-compose.build.yml up --build --abort-on-container-exit
+
+# Direct builder container usage:
+podman run --rm --entrypoint="" \
+  -v /path/to/project:/project \
+  -w /project/catalogizer-androidtv \
+  -e ANDROID_HOME=/opt/android-sdk \
+  -e JAVA_HOME=/usr/lib/jvm/java-21-openjdk-amd64 \
+  localhost/catalogizer-builder:latest \
+  ./gradlew assembleDebug --no-daemon
+```
+
+Builder image must exist: `localhost/catalogizer-builder:latest`. If missing: `podman build -f docker/Dockerfile.builder -t catalogizer-builder:latest .`
 
 ## ⚠️ MANDATORY: NO SUDO OR ROOT EXECUTION
 
