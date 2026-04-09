@@ -41,6 +41,11 @@ import kotlinx.coroutines.flow.first
 import kotlinx.serialization.json.jsonPrimitive
 import org.videolan.libvlc.util.VLCVideoLayout
 
+// Progress tracking constants
+private const val PROGRESS_SAVE_INTERVAL_MS = 5000L // Save every 5 seconds
+private const val MIN_PROGRESS_TO_SAVE = 0.05 // Only save if > 5% watched
+private const val MAX_PROGRESS_TO_SAVE = 0.95 // Don't save if > 95% (completed)
+
 /**
  * VLC-based video player activity for Android TV.
  * Provides full-screen video playback with TV-optimized controls.
@@ -59,6 +64,9 @@ class VLCPlayerActivity : ComponentActivity() {
     private var mediaId: Long = -1
     private var streamUrl: String? = null
     private var mediaTitle: String = ""
+    private var lastSavedProgress: Double = 0.0
+    private var progressTrackingJob: kotlinx.coroutines.Job? = null
+    private var resumePositionMs: Long = 0
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -99,15 +107,23 @@ class VLCPlayerActivity : ComponentActivity() {
             val container = com.catalogizer.androidtv.DependencyContainer.getInstance(this)
             val baseUrl = container.getServerUrl().trimEnd('/')
             
-            // Fetch media title
+            // Fetch media details including watch progress
             try {
                 val mediaFlow = container.mediaRepository.getMediaById(mediaId)
                 val item = mediaFlow.first()
-                if (item != null && item.title.isNotBlank()) {
-                    mediaTitle = item.title
+                if (item != null) {
+                    if (item.title.isNotBlank()) {
+                        mediaTitle = item.title
+                    }
+                    // Get resume position from watch progress
+                    val durationMs = item.duration ?: 0
+                    if (item.watchProgress > 0 && item.watchProgress < 0.95 && durationMs > 0) {
+                        resumePositionMs = (item.watchProgress * durationMs).toLong()
+                        Log.d(TAG, "Will resume from ${resumePositionMs}ms (progress: ${item.watchProgress})")
+                    }
                 }
             } catch (e: Exception) {
-                Log.w(TAG, "Could not fetch media title: ${e.message}")
+                Log.w(TAG, "Could not fetch media details: ${e.message}")
             }
             
             // Fetch stream URL from API
@@ -118,8 +134,21 @@ class VLCPlayerActivity : ComponentActivity() {
                 if (streamPath != null) {
                     val resolvedUrl = if (streamPath.startsWith("/")) "$baseUrl$streamPath" else streamPath
                     streamUrl = resolvedUrl
+                    
+                    // Start playback
                     vlcPlayer.play(resolvedUrl)
+                    
+                    // Seek to resume position if available
+                    if (resumePositionMs > 0) {
+                        delay(1000) // Wait for player to be ready
+                        vlcPlayer.seek(resumePositionMs.toFloat() / 1000 / 60) // Approximate seek
+                        Log.d(TAG, "Resumed playback at ${resumePositionMs}ms")
+                    }
+                    
                     Log.d(TAG, "Starting playback for media $mediaId: $resolvedUrl")
+                    
+                    // Start progress tracking
+                    startProgressTracking()
                 } else {
                     showErrorAndFinish("No stream URL available")
                 }
@@ -132,6 +161,40 @@ class VLCPlayerActivity : ComponentActivity() {
         }
     }
     
+    private fun startProgressTracking() {
+        progressTrackingJob = lifecycleScope.launch {
+            while (true) {
+                delay(PROGRESS_SAVE_INTERVAL_MS)
+                saveWatchProgress()
+            }
+        }
+    }
+    
+    private suspend fun saveWatchProgress() {
+        if (mediaId <= 0) return
+        
+        val currentPosition = vlcPlayer.currentPosition.value
+        val duration = vlcPlayer.duration.value
+        
+        if (duration <= 0) return
+        
+        val progress = currentPosition.toDouble() / duration.toDouble()
+        
+        // Only save if progress changed significantly and is in valid range
+        if (progress in MIN_PROGRESS_TO_SAVE..MAX_PROGRESS_TO_SAVE && 
+            kotlin.math.abs(progress - lastSavedProgress) > 0.01) {
+            
+            try {
+                val container = com.catalogizer.androidtv.DependencyContainer.getInstance(this)
+                container.mediaRepository.updateWatchProgress(mediaId, progress)
+                lastSavedProgress = progress
+                Log.d(TAG, "Saved watch progress: ${"%.2f".format(progress * 100)}%")
+            } catch (e: Exception) {
+                Log.w(TAG, "Failed to save watch progress: ${e.message}")
+            }
+        }
+    }
+    
     private fun showErrorAndFinish(message: String) {
         Toast.makeText(this, message, Toast.LENGTH_LONG).show()
         finish()
@@ -140,6 +203,10 @@ class VLCPlayerActivity : ComponentActivity() {
     override fun onPause() {
         super.onPause()
         vlcPlayer.pause()
+        // Save progress when pausing
+        lifecycleScope.launch {
+            saveWatchProgress()
+        }
     }
 
     override fun onResume() {
@@ -149,7 +216,12 @@ class VLCPlayerActivity : ComponentActivity() {
 
     override fun onDestroy() {
         super.onDestroy()
-        vlcPlayer.release()
+        // Save final progress before destroying
+        progressTrackingJob?.cancel()
+        lifecycleScope.launch {
+            saveWatchProgress()
+            vlcPlayer.release()
+        }
     }
 
     override fun onKeyDown(keyCode: Int, event: KeyEvent?): Boolean {

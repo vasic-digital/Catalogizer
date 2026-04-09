@@ -15,6 +15,7 @@ import {
   X
 } from 'lucide-react';
 import { useVLCPlayer, TrackInfo } from '../hooks/useVLCPlayer';
+import { apiService } from '../services/apiService';
 
 interface VLCPlayerProps {
   mediaUrl: string;
@@ -48,6 +49,7 @@ export const VLCPlayer: React.FC<VLCPlayerProps> = ({
     setVolume,
     toggleMute,
     setRate,
+    saveProgress,
     setAudioTrack,
     setSubtitleTrack,
     setAspectRatio,
@@ -69,9 +71,26 @@ export const VLCPlayer: React.FC<VLCPlayerProps> = ({
   // Handle playback ended
   useEffect(() => {
     if (status?.state === 'Ended') {
+      // Mark as completed (100% progress)
+      if (mediaId) {
+        apiService.updateWatchProgress(mediaId, { 
+          progress: 1.0,
+          position: status?.duration || 0,
+          duration: status?.duration || 0 
+        }).catch(() => {});
+      }
       onEnded?.();
     }
-  }, [status?.state, onEnded]);
+  }, [status?.state, onEnded, mediaId, status?.duration]);
+
+  // Save progress when component unmounts
+  useEffect(() => {
+    return () => {
+      if (mediaId) {
+        saveProgress(mediaId);
+      }
+    };
+  }, [mediaId, saveProgress]);
 
   // Auto-hide controls
   const resetControlsTimeout = useCallback(() => {
