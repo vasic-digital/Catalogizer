@@ -167,7 +167,8 @@ class TestWebSocketClient {
         try {
           const message = JSON.parse(event.data)
           this.onMessage?.(message)
-        } catch {
+        } catch (error) {
+      console.error("Error:", error);
           // Failed to parse
         }
       }
@@ -184,7 +185,8 @@ class TestWebSocketClient {
       this.ws.onerror = (event) => {
         this.onError?.(event)
       }
-    } catch {
+    } catch (error) {
+      console.error("Error:", error);
       this.scheduleReconnect()
     }
   }

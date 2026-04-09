@@ -133,7 +133,8 @@ function LogoutTrigger() {
   const handleLogout = async () => {
     try {
       await logout()
-    } catch {
+    } catch (error) {
+      console.error("Error:", error);
       // handled by mutation
     }
   }
@@ -147,7 +148,8 @@ function ProfileUpdateTrigger() {
   const handleUpdate = async () => {
     try {
       await updateProfile({ first_name: 'Updated', last_name: 'Name' })
-    } catch {
+    } catch (error) {
+      console.error("Error:", error);
       // handled by mutation
     }
   }
@@ -161,7 +163,8 @@ function PasswordChangeTrigger() {
   const handleChange = async () => {
     try {
       await changePassword({ current_password: 'old', new_password: 'new123456' })
-    } catch {
+    } catch (error) {
+      console.error("Error:", error);
       // handled by mutation
     }
   }

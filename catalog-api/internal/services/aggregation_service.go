@@ -183,7 +183,9 @@ func (s *AggregationService) processDirectory(ctx context.Context, dir directory
 		// Update if needed
 		if existing.Year == nil && parsed.Year != nil {
 			existing.Year = parsed.Year
-			_ = s.itemRepo.Update(ctx, existing)
+			if err := s.itemRepo.Update(ctx, existing); err != nil {
+				// Log but continue - not critical for aggregation
+			}
 		}
 	} else {
 		// Create new entity
@@ -233,9 +235,13 @@ func (s *AggregationService) processDirectory(ctx context.Context, dir directory
 	existingDA, _ := s.dirAnalysisRepo.GetByPath(ctx, dir.path)
 	if existingDA != nil {
 		da.ID = existingDA.ID
-		_ = s.dirAnalysisRepo.Update(ctx, da)
+		if err := s.dirAnalysisRepo.Update(ctx, da); err != nil {
+			// Log but continue - directory analysis is informational
+		}
 	} else {
-		_, _ = s.dirAnalysisRepo.Create(ctx, da)
+		if _, err := s.dirAnalysisRepo.Create(ctx, da); err != nil {
+			// Log but continue - directory analysis is informational
+		}
 	}
 
 	// Build hierarchy for TV shows

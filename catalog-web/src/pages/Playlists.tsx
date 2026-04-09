@@ -153,7 +153,8 @@ export const PlaylistsPage: React.FC = () => {
         limit: 20
       });
       setMediaSearchResults(response.items || []);
-    } catch {
+    } catch (error) {
+      console.error("Error:", error);
       toast.error('Failed to search media items');
       setMediaSearchResults([]);
     } finally {

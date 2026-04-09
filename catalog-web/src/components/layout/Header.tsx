@@ -34,7 +34,8 @@ export const Header: React.FC = () => {
     try {
       await logout()
       navigate('/login')
-    } catch {
+    } catch (error) {
+      console.error("Error:", error);
       // Logout failure is non-critical — navigation already happened or will be retried
     }
   }

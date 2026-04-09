@@ -57,7 +57,8 @@ const FavoritesPage: React.FC = () => {
         bulkAddToFavorites(mediaIds)
         refetchFavorites()
         refetchStats()
-      } catch {
+      } catch (error) {
+      console.error("Error:", error);
         toast.error('Invalid JSON file')
       }
     }

@@ -200,7 +200,8 @@ describe('usePlaylists', () => {
       await act(async () => {
         try {
           await result.current.createPlaylist({ name: 'Duplicate' })
-        } catch {
+        } catch (error) {
+      console.error("Error:", error);
           // Expected to throw
         }
       })
@@ -221,7 +222,8 @@ describe('usePlaylists', () => {
       await act(async () => {
         try {
           await result.current.createPlaylist({ name: 'Test' })
-        } catch {
+        } catch (error) {
+      console.error("Error:", error);
           // Expected to throw
         }
       })

@@ -42,7 +42,8 @@ function LoginPage() {
     try {
       await authState.login({ username: 'testuser', password: 'password123' })
       navigate('/dashboard')
-    } catch {
+    } catch (error) {
+      console.error("Error:", error);
       // stay on login
     }
   }
@@ -64,7 +65,8 @@ function DashboardPage() {
     try {
       await authState.logout()
       navigate('/login')
-    } catch {
+    } catch (error) {
+      console.error("Error:", error);
       // handled
     }
   }

@@ -457,7 +457,8 @@ export const PlaylistPlayer: React.FC<PlaylistPlayerProps> = ({
       // Copy share link to clipboard
       await navigator.clipboard.writeText(shareInfo.share_url);
       toast.success('Share link copied to clipboard!');
-    } catch {
+    } catch (error) {
+      console.error("Error:", error);
       toast.error('Failed to create share link');
     }
   };
@@ -467,7 +468,8 @@ export const PlaylistPlayer: React.FC<PlaylistPlayerProps> = ({
       const analyticsData = await playlistsApi.getPlaylistAnalytics(playlist.id);
       setAnalytics(analyticsData);
       setShowAnalytics(true);
-    } catch {
+    } catch (error) {
+      console.error("Error:", error);
       toast.error('Failed to load playlist analytics');
     }
   };
