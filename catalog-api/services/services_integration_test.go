@@ -1235,7 +1235,7 @@ func TestReportingService_GenerateReport_UserActivity_Integration(t *testing.T) 
 	db := setupTestDB(t)
 	analyticsRepo := repository.NewAnalyticsRepository(db)
 	userRepo := repository.NewUserRepository(db)
-	service := NewReportingService(analyticsRepo, userRepo)
+	service := NewReportingService(analyticsRepo, userRepo, nil)
 
 	// Log some media access data
 	for i := 0; i < 5; i++ {
@@ -1263,7 +1263,7 @@ func TestReportingService_GenerateReport_SecurityAudit_Integration(t *testing.T)
 	db := setupTestDB(t)
 	analyticsRepo := repository.NewAnalyticsRepository(db)
 	userRepo := repository.NewUserRepository(db)
-	service := NewReportingService(analyticsRepo, userRepo)
+	service := NewReportingService(analyticsRepo, userRepo, nil)
 
 	params := map[string]interface{}{
 		"start_date": time.Now().Add(-24 * time.Hour).Format("2006-01-02"),
@@ -1280,7 +1280,7 @@ func TestReportingService_GenerateReport_MediaAnalytics_Integration(t *testing.T
 	db := setupTestDB(t)
 	analyticsRepo := repository.NewAnalyticsRepository(db)
 	userRepo := repository.NewUserRepository(db)
-	service := NewReportingService(analyticsRepo, userRepo)
+	service := NewReportingService(analyticsRepo, userRepo, nil)
 
 	params := map[string]interface{}{
 		"start_date": time.Now().Add(-24 * time.Hour).Format("2006-01-02"),
@@ -1299,7 +1299,7 @@ func TestReportingService_GenerateReport_PerformanceMetrics_Integration(t *testi
 	db := setupTestDB(t)
 	analyticsRepo := repository.NewAnalyticsRepository(db)
 	userRepo := repository.NewUserRepository(db)
-	service := NewReportingService(analyticsRepo, userRepo)
+	service := NewReportingService(analyticsRepo, userRepo, nil)
 
 	params := map[string]interface{}{
 		"start_date": time.Now().Add(-24 * time.Hour).Format("2006-01-02"),
@@ -1318,7 +1318,7 @@ func TestReportingService_GenerateReport_Markdown_Integration(t *testing.T) {
 	db := setupTestDB(t)
 	analyticsRepo := repository.NewAnalyticsRepository(db)
 	userRepo := repository.NewUserRepository(db)
-	service := NewReportingService(analyticsRepo, userRepo)
+	service := NewReportingService(analyticsRepo, userRepo, nil)
 
 	params := map[string]interface{}{
 		"start_date": time.Now().Add(-24 * time.Hour).Format("2006-01-02"),
@@ -1335,7 +1335,7 @@ func TestReportingService_GenerateReport_HTML_Integration(t *testing.T) {
 	db := setupTestDB(t)
 	analyticsRepo := repository.NewAnalyticsRepository(db)
 	userRepo := repository.NewUserRepository(db)
-	service := NewReportingService(analyticsRepo, userRepo)
+	service := NewReportingService(analyticsRepo, userRepo, nil)
 
 	params := map[string]interface{}{
 		"start_date": time.Now().Add(-24 * time.Hour).Format("2006-01-02"),
@@ -1352,7 +1352,7 @@ func TestReportingService_GenerateReport_CSV_Integration(t *testing.T) {
 	db := setupTestDB(t)
 	analyticsRepo := repository.NewAnalyticsRepository(db)
 	userRepo := repository.NewUserRepository(db)
-	service := NewReportingService(analyticsRepo, userRepo)
+	service := NewReportingService(analyticsRepo, userRepo, nil)
 
 	params := map[string]interface{}{
 		"start_date": time.Now().Add(-24 * time.Hour).Format("2006-01-02"),
@@ -3313,7 +3313,7 @@ func TestReportingService_GenerateReport_UserAnalytics_Integration(t *testing.T)
 	db := setupTestDB(t)
 	analyticsRepo := repository.NewAnalyticsRepository(db)
 	userRepo := repository.NewUserRepository(db)
-	service := NewReportingService(analyticsRepo, userRepo)
+	service := NewReportingService(analyticsRepo, userRepo, nil)
 
 	params := map[string]interface{}{
 		"user_id":    1,
@@ -3331,7 +3331,7 @@ func TestReportingService_GenerateReport_SystemOverview_Integration(t *testing.T
 	db := setupTestDB(t)
 	analyticsRepo := repository.NewAnalyticsRepository(db)
 	userRepo := repository.NewUserRepository(db)
-	service := NewReportingService(analyticsRepo, userRepo)
+	service := NewReportingService(analyticsRepo, userRepo, nil)
 
 	params := map[string]interface{}{
 		"start_date": time.Now().Add(-24 * time.Hour).Format("2006-01-02"),
@@ -3348,7 +3348,7 @@ func TestReportingService_GenerateReport_HTMLFormat_Integration(t *testing.T) {
 	db := setupTestDB(t)
 	analyticsRepo := repository.NewAnalyticsRepository(db)
 	userRepo := repository.NewUserRepository(db)
-	service := NewReportingService(analyticsRepo, userRepo)
+	service := NewReportingService(analyticsRepo, userRepo, nil)
 
 	params := map[string]interface{}{
 		"start_date": time.Now().Add(-24 * time.Hour).Format("2006-01-02"),
@@ -3365,7 +3365,7 @@ func TestReportingService_GenerateReport_PDFFormat_Integration(t *testing.T) {
 	db := setupTestDB(t)
 	analyticsRepo := repository.NewAnalyticsRepository(db)
 	userRepo := repository.NewUserRepository(db)
-	service := NewReportingService(analyticsRepo, userRepo)
+	service := NewReportingService(analyticsRepo, userRepo, nil)
 
 	params := map[string]interface{}{
 		"user_id":    1,

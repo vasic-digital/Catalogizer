@@ -73,6 +73,10 @@ func (s *ReportingService) GenerateReport(reportType string, format string, para
 }
 
 func (s *ReportingService) generateUserAnalyticsData(params map[string]interface{}) (interface{}, error) {
+	if s.userRepo == nil || s.analyticsRepo == nil {
+		return nil, fmt.Errorf("repository not initialized")
+	}
+	
 	userID, ok := params["user_id"].(int)
 	if !ok {
 		return nil, fmt.Errorf("user_id parameter required")
@@ -117,6 +121,10 @@ func (s *ReportingService) generateUserAnalyticsData(params map[string]interface
 }
 
 func (s *ReportingService) generateSystemOverviewData(params map[string]interface{}) (interface{}, error) {
+	if s.analyticsRepo == nil {
+		return nil, fmt.Errorf("analytics repository not initialized")
+	}
+	
 	startDate, endDate, err := s.extractDateRange(params)
 	if err != nil {
 		return nil, err
@@ -206,6 +214,10 @@ func (s *ReportingService) generateMediaAnalyticsData(params map[string]interfac
 }
 
 func (s *ReportingService) generateUserActivityData(params map[string]interface{}) (interface{}, error) {
+	if s.analyticsRepo == nil || s.userRepo == nil {
+		return nil, fmt.Errorf("repository not initialized")
+	}
+	
 	startDate, endDate, err := s.extractDateRange(params)
 	if err != nil {
 		return nil, err
@@ -273,6 +285,10 @@ func (s *ReportingService) generateSecurityAuditData(params map[string]interface
 }
 
 func (s *ReportingService) generatePerformanceMetricsData(params map[string]interface{}) (interface{}, error) {
+	if s.analyticsRepo == nil {
+		return nil, fmt.Errorf("analytics repository not initialized")
+	}
+	
 	startDate, endDate, err := s.extractDateRange(params)
 	if err != nil {
 		return nil, err
@@ -1060,6 +1076,10 @@ func (s *ReportingService) calculateSystemHealth(totalUsers, activeUsers, mediaA
 }
 
 func (s *ReportingService) calculateUsageStatistics(startDate, endDate time.Time) models.UsageStatistics {
+	if s.analyticsRepo == nil {
+		return models.UsageStatistics{}
+	}
+	
 	// Get actual access logs to calculate peak hours
 	logs, err := s.analyticsRepo.GetAllMediaAccessLogs(startDate, endDate)
 	if err != nil {

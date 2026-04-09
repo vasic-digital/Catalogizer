@@ -11,13 +11,13 @@ import (
 )
 
 func TestNewReportingService(t *testing.T) {
-	service := NewReportingService(nil, nil)
+	service := NewReportingService(nil, nil, nil)
 
 	assert.NotNil(t, service)
 }
 
 func TestReportingService_CalculateSystemHealth(t *testing.T) {
-	service := NewReportingService(nil, nil)
+	service := NewReportingService(nil, nil, nil)
 
 	tests := []struct {
 		name          string
@@ -54,7 +54,7 @@ func TestReportingService_CalculateSystemHealth(t *testing.T) {
 }
 
 func TestReportingService_ExtractDateRange(t *testing.T) {
-	service := NewReportingService(nil, nil)
+	service := NewReportingService(nil, nil, nil)
 
 	tests := []struct {
 		name    string
@@ -102,7 +102,7 @@ func TestReportingService_ExtractDateRange(t *testing.T) {
 }
 
 func TestReportingService_CountUniqueUsers(t *testing.T) {
-	service := NewReportingService(nil, nil)
+	service := NewReportingService(nil, nil, nil)
 
 	tests := []struct {
 		name     string
@@ -145,7 +145,7 @@ func TestReportingService_CountUniqueUsers(t *testing.T) {
 }
 
 func TestReportingService_AnalyzeTimeDistribution(t *testing.T) {
-	service := NewReportingService(nil, nil)
+	service := NewReportingService(nil, nil, nil)
 
 	tests := []struct {
 		name string
@@ -174,7 +174,7 @@ func TestReportingService_AnalyzeTimeDistribution(t *testing.T) {
 }
 
 func TestReportingService_GetMostActiveHour(t *testing.T) {
-	service := NewReportingService(nil, nil)
+	service := NewReportingService(nil, nil, nil)
 
 	tests := []struct {
 		name string
@@ -206,7 +206,7 @@ func TestReportingService_GetMostActiveHour(t *testing.T) {
 }
 
 func TestReportingService_FormatReport(t *testing.T) {
-	service := NewReportingService(nil, nil)
+	service := NewReportingService(nil, nil, nil)
 
 	tests := []struct {
 		name       string
@@ -252,7 +252,7 @@ func TestReportingService_FormatReport(t *testing.T) {
 }
 
 func TestReportingService_FilterLogsByDateRange(t *testing.T) {
-	service := NewReportingService(nil, nil)
+	service := NewReportingService(nil, nil, nil)
 
 	startDate := time.Date(2025, 1, 5, 0, 0, 0, 0, time.UTC)
 	endDate := time.Date(2025, 1, 15, 0, 0, 0, 0, time.UTC)
@@ -303,7 +303,7 @@ func TestReportingService_FilterLogsByDateRange(t *testing.T) {
 }
 
 func TestReportingService_AnalyzeUserAccessPatterns(t *testing.T) {
-	service := NewReportingService(nil, nil)
+	service := NewReportingService(nil, nil, nil)
 
 	tests := []struct {
 		name string
@@ -334,7 +334,7 @@ func TestReportingService_AnalyzeUserAccessPatterns(t *testing.T) {
 }
 
 func TestReportingService_AnalyzeUserDeviceUsage(t *testing.T) {
-	service := NewReportingService(nil, nil)
+	service := NewReportingService(nil, nil, nil)
 
 	platform := "iOS"
 	deviceModel := "iPhone 14"
@@ -378,7 +378,7 @@ func TestReportingService_AnalyzeUserDeviceUsage(t *testing.T) {
 }
 
 func TestReportingService_AnalyzeUserLocations(t *testing.T) {
-	service := NewReportingService(nil, nil)
+	service := NewReportingService(nil, nil, nil)
 
 	tests := []struct {
 		name     string
@@ -422,7 +422,7 @@ func TestReportingService_AnalyzeUserLocations(t *testing.T) {
 }
 
 func TestReportingService_AnalyzeUserPopularContent(t *testing.T) {
-	service := NewReportingService(nil, nil)
+	service := NewReportingService(nil, nil, nil)
 
 	tests := []struct {
 		name     string
@@ -454,7 +454,7 @@ func TestReportingService_AnalyzeUserPopularContent(t *testing.T) {
 }
 
 func TestReportingService_GetLastActivityTime(t *testing.T) {
-	service := NewReportingService(nil, nil)
+	service := NewReportingService(nil, nil, nil)
 
 	tests := []struct {
 		name     string
@@ -493,7 +493,7 @@ func TestReportingService_GetLastActivityTime(t *testing.T) {
 }
 
 func TestReportingService_GetPreferredDevices(t *testing.T) {
-	service := NewReportingService(nil, nil)
+	service := NewReportingService(nil, nil, nil)
 
 	tests := []struct {
 		name string
@@ -527,7 +527,7 @@ func TestReportingService_GetPreferredDevices(t *testing.T) {
 }
 
 func TestReportingService_GetAccessedLocations(t *testing.T) {
-	service := NewReportingService(nil, nil)
+	service := NewReportingService(nil, nil, nil)
 
 	logs := []models.MediaAccessLog{
 		{UserID: 1, MediaID: 1, AccessTime: time.Now(), Location: &models.Location{Latitude: 40.71, Longitude: -74.00}},
@@ -539,7 +539,7 @@ func TestReportingService_GetAccessedLocations(t *testing.T) {
 }
 
 func TestReportingService_GenerateActivitySummary(t *testing.T) {
-	service := NewReportingService(nil, nil)
+	service := NewReportingService(nil, nil, nil)
 
 	tests := []struct {
 		name       string
@@ -574,7 +574,7 @@ func TestReportingService_GenerateActivitySummary(t *testing.T) {
 }
 
 func TestReportingService_CalculateUsageStatistics(t *testing.T) {
-	service := NewReportingService(nil, nil)
+	service := NewReportingService(nil, nil, nil)
 
 	startDate := time.Date(2025, 1, 1, 0, 0, 0, 0, time.UTC)
 	endDate := time.Date(2025, 1, 31, 0, 0, 0, 0, time.UTC)
@@ -585,7 +585,7 @@ func TestReportingService_CalculateUsageStatistics(t *testing.T) {
 }
 
 func TestReportingService_CalculatePerformanceMetrics(t *testing.T) {
-	service := NewReportingService(nil, nil)
+	service := NewReportingService(nil, nil, nil)
 
 	startDate := time.Date(2025, 1, 1, 0, 0, 0, 0, time.UTC)
 	endDate := time.Date(2025, 1, 31, 0, 0, 0, 0, time.UTC)
@@ -596,7 +596,7 @@ func TestReportingService_CalculatePerformanceMetrics(t *testing.T) {
 }
 
 func TestReportingService_CalculateSecurityMetrics(t *testing.T) {
-	service := NewReportingService(nil, nil)
+	service := NewReportingService(nil, nil, nil)
 
 	startDate := time.Date(2025, 1, 1, 0, 0, 0, 0, time.UTC)
 	endDate := time.Date(2025, 1, 31, 0, 0, 0, 0, time.UTC)
@@ -607,7 +607,7 @@ func TestReportingService_CalculateSecurityMetrics(t *testing.T) {
 }
 
 func TestReportingService_CalculateAverageSessionDuration(t *testing.T) {
-	service := NewReportingService(nil, nil)
+	service := NewReportingService(nil, nil, nil)
 
 	tests := []struct {
 		name     string
@@ -646,7 +646,7 @@ func TestReportingService_CalculateAverageSessionDuration(t *testing.T) {
 }
 
 func TestReportingService_CalculateResponseTimes(t *testing.T) {
-	service := NewReportingService(nil, nil)
+	service := NewReportingService(nil, nil, nil)
 
 	startDate := time.Date(2025, 1, 1, 0, 0, 0, 0, time.UTC)
 	endDate := time.Date(2025, 1, 31, 0, 0, 0, 0, time.UTC)
@@ -658,7 +658,7 @@ func TestReportingService_CalculateResponseTimes(t *testing.T) {
 }
 
 func TestReportingService_CalculateSystemLoad(t *testing.T) {
-	service := NewReportingService(nil, nil)
+	service := NewReportingService(nil, nil, nil)
 
 	startDate := time.Date(2025, 1, 1, 0, 0, 0, 0, time.UTC)
 	endDate := time.Date(2025, 1, 31, 0, 0, 0, 0, time.UTC)
@@ -670,7 +670,7 @@ func TestReportingService_CalculateSystemLoad(t *testing.T) {
 }
 
 func TestReportingService_CalculateErrorRates(t *testing.T) {
-	service := NewReportingService(nil, nil)
+	service := NewReportingService(nil, nil, nil)
 
 	startDate := time.Date(2025, 1, 1, 0, 0, 0, 0, time.UTC)
 	endDate := time.Date(2025, 1, 31, 0, 0, 0, 0, time.UTC)
@@ -680,7 +680,7 @@ func TestReportingService_CalculateErrorRates(t *testing.T) {
 }
 
 func TestReportingService_AnalyzeUserEngagement(t *testing.T) {
-	service := NewReportingService(nil, nil)
+	service := NewReportingService(nil, nil, nil)
 
 	logs := []models.MediaAccessLog{
 		{UserID: 1, MediaID: 1, AccessTime: time.Now()},
@@ -692,7 +692,7 @@ func TestReportingService_AnalyzeUserEngagement(t *testing.T) {
 }
 
 func TestReportingService_ExtractDateRange_InvalidFormats(t *testing.T) {
-	service := NewReportingService(nil, nil)
+	service := NewReportingService(nil, nil, nil)
 
 	tests := []struct {
 		name   string
@@ -729,7 +729,7 @@ func TestReportingService_ExtractDateRange_InvalidFormats(t *testing.T) {
 // ---------------------------------------------------------------------------
 
 func TestReportingService_GenerateReport_UnsupportedType(t *testing.T) {
-	service := NewReportingService(nil, nil)
+	service := NewReportingService(nil, nil, nil)
 
 	report, err := service.GenerateReport("unsupported_type", "json", map[string]interface{}{})
 	assert.Error(t, err)
@@ -738,7 +738,7 @@ func TestReportingService_GenerateReport_UnsupportedType(t *testing.T) {
 }
 
 func TestReportingService_GenerateReport_UserAnalytics_MissingUserID(t *testing.T) {
-	service := NewReportingService(nil, nil)
+	service := NewReportingService(nil, nil, nil)
 
 	report, err := service.GenerateReport("user_analytics", "json", map[string]interface{}{
 		"start_date": "2025-01-01",
@@ -750,7 +750,7 @@ func TestReportingService_GenerateReport_UserAnalytics_MissingUserID(t *testing.
 }
 
 func TestReportingService_GenerateReport_UserAnalytics_MissingDateRange(t *testing.T) {
-	service := NewReportingService(nil, nil)
+	service := NewReportingService(nil, nil, nil)
 
 	report, err := service.GenerateReport("user_analytics", "json", map[string]interface{}{
 		"user_id": 1,
@@ -760,7 +760,7 @@ func TestReportingService_GenerateReport_UserAnalytics_MissingDateRange(t *testi
 }
 
 func TestReportingService_GenerateReport_SystemOverview_MissingDateRange(t *testing.T) {
-	service := NewReportingService(nil, nil)
+	service := NewReportingService(nil, nil, nil)
 
 	report, err := service.GenerateReport("system_overview", "json", map[string]interface{}{})
 	assert.Error(t, err)
@@ -768,7 +768,7 @@ func TestReportingService_GenerateReport_SystemOverview_MissingDateRange(t *test
 }
 
 func TestReportingService_GenerateReport_MediaAnalytics_MissingDateRange(t *testing.T) {
-	service := NewReportingService(nil, nil)
+	service := NewReportingService(nil, nil, nil)
 
 	report, err := service.GenerateReport("media_analytics", "json", map[string]interface{}{})
 	assert.Error(t, err)
@@ -776,7 +776,7 @@ func TestReportingService_GenerateReport_MediaAnalytics_MissingDateRange(t *test
 }
 
 func TestReportingService_GenerateReport_SecurityAudit_MissingDateRange(t *testing.T) {
-	service := NewReportingService(nil, nil)
+	service := NewReportingService(nil, nil, nil)
 
 	report, err := service.GenerateReport("security_audit", "json", map[string]interface{}{})
 	assert.Error(t, err)
@@ -784,7 +784,7 @@ func TestReportingService_GenerateReport_SecurityAudit_MissingDateRange(t *testi
 }
 
 func TestReportingService_GenerateReport_PerformanceMetrics_MissingDateRange(t *testing.T) {
-	service := NewReportingService(nil, nil)
+	service := NewReportingService(nil, nil, nil)
 
 	report, err := service.GenerateReport("performance_metrics", "json", map[string]interface{}{})
 	assert.Error(t, err)
@@ -796,7 +796,7 @@ func TestReportingService_GenerateReport_PerformanceMetrics_MissingDateRange(t *
 // ---------------------------------------------------------------------------
 
 func TestReportingService_FormatReport_UnsupportedFormat(t *testing.T) {
-	service := NewReportingService(nil, nil)
+	service := NewReportingService(nil, nil, nil)
 
 	content, err := service.formatReport(map[string]string{"test": "data"}, "invalid_format", "test_report")
 	assert.Error(t, err)
@@ -809,7 +809,7 @@ func TestReportingService_FormatReport_UnsupportedFormat(t *testing.T) {
 // ---------------------------------------------------------------------------
 
 func TestReportingService_CalculateSystemHealth_AllScenarios(t *testing.T) {
-	service := NewReportingService(nil, nil)
+	service := NewReportingService(nil, nil, nil)
 
 	tests := []struct {
 		name          string
@@ -862,7 +862,7 @@ func TestReportingService_CalculateSystemHealth_AllScenarios(t *testing.T) {
 // ---------------------------------------------------------------------------
 
 func TestReportingService_ExtractDateRange_ValidRange(t *testing.T) {
-	service := NewReportingService(nil, nil)
+	service := NewReportingService(nil, nil, nil)
 
 	start, end, err := service.extractDateRange(map[string]interface{}{
 		"start_date": "2025-01-01",
@@ -879,7 +879,7 @@ func TestReportingService_ExtractDateRange_ValidRange(t *testing.T) {
 // ---------------------------------------------------------------------------
 
 func TestReportingService_AnalyzeUserTimePatterns(t *testing.T) {
-	service := NewReportingService(nil, nil)
+	service := NewReportingService(nil, nil, nil)
 
 	logs := []models.MediaAccessLog{
 		{AccessTime: time.Date(2025, 1, 1, 9, 0, 0, 0, time.UTC)},
@@ -896,7 +896,7 @@ func TestReportingService_AnalyzeUserTimePatterns(t *testing.T) {
 }
 
 func TestReportingService_AnalyzeAccessPatterns(t *testing.T) {
-	service := NewReportingService(nil, nil)
+	service := NewReportingService(nil, nil, nil)
 
 	logs := []models.MediaAccessLog{
 		{AccessTime: time.Date(2025, 1, 6, 9, 0, 0, 0, time.UTC)}, // Monday
@@ -911,7 +911,7 @@ func TestReportingService_AnalyzeAccessPatterns(t *testing.T) {
 }
 
 func TestReportingService_AnalyzeGeographicDistribution(t *testing.T) {
-	service := NewReportingService(nil, nil)
+	service := NewReportingService(nil, nil, nil)
 
 	logs := []models.MediaAccessLog{
 		{Location: &models.Location{Latitude: 40.71, Longitude: -74.01}},
@@ -925,7 +925,7 @@ func TestReportingService_AnalyzeGeographicDistribution(t *testing.T) {
 }
 
 func TestReportingService_AnalyzeGeographicDistribution_Empty(t *testing.T) {
-	service := NewReportingService(nil, nil)
+	service := NewReportingService(nil, nil, nil)
 
 	result := service.analyzeGeographicDistribution([]models.MediaAccessLog{})
 	assert.NotNil(t, result)
@@ -933,7 +933,7 @@ func TestReportingService_AnalyzeGeographicDistribution_Empty(t *testing.T) {
 }
 
 func TestReportingService_AnalyzeDeviceDistribution(t *testing.T) {
-	service := NewReportingService(nil, nil)
+	service := NewReportingService(nil, nil, nil)
 
 	android := "Android"
 	pixel := "Pixel 7"
@@ -952,7 +952,7 @@ func TestReportingService_AnalyzeDeviceDistribution(t *testing.T) {
 }
 
 func TestReportingService_AnalyzeDeviceDistribution_Empty(t *testing.T) {
-	service := NewReportingService(nil, nil)
+	service := NewReportingService(nil, nil, nil)
 
 	result := service.analyzeDeviceDistribution([]models.MediaAccessLog{})
 	assert.NotNil(t, result)
@@ -964,7 +964,7 @@ func TestReportingService_AnalyzeDeviceDistribution_Empty(t *testing.T) {
 // ---------------------------------------------------------------------------
 
 func TestReportingService_FormatAsMarkdown_UserAnalytics(t *testing.T) {
-	service := NewReportingService(nil, nil)
+	service := NewReportingService(nil, nil, nil)
 
 	displayName := "Test User"
 	report := &models.UserAnalyticsReport{
@@ -995,7 +995,7 @@ func TestReportingService_FormatAsMarkdown_UserAnalytics(t *testing.T) {
 }
 
 func TestReportingService_FormatAsMarkdown_UserAnalytics_NilDisplayName(t *testing.T) {
-	service := NewReportingService(nil, nil)
+	service := NewReportingService(nil, nil, nil)
 
 	report := &models.UserAnalyticsReport{
 		User: &models.User{
@@ -1018,7 +1018,7 @@ func TestReportingService_FormatAsMarkdown_UserAnalytics_NilDisplayName(t *testi
 }
 
 func TestReportingService_FormatAsMarkdown_SystemOverview(t *testing.T) {
-	service := NewReportingService(nil, nil)
+	service := NewReportingService(nil, nil, nil)
 
 	report := &models.SystemOverviewReport{
 		StartDate:          time.Date(2025, 1, 1, 0, 0, 0, 0, time.UTC),
@@ -1042,7 +1042,7 @@ func TestReportingService_FormatAsMarkdown_SystemOverview(t *testing.T) {
 }
 
 func TestReportingService_FormatAsMarkdown_DefaultType(t *testing.T) {
-	service := NewReportingService(nil, nil)
+	service := NewReportingService(nil, nil, nil)
 
 	data := map[string]string{"key": "value"}
 
@@ -1060,7 +1060,7 @@ func TestReportingService_FormatAsMarkdown_DefaultType(t *testing.T) {
 // ---------------------------------------------------------------------------
 
 func TestReportingService_FormatAsHTML_UserAnalytics(t *testing.T) {
-	service := NewReportingService(nil, nil)
+	service := NewReportingService(nil, nil, nil)
 
 	displayName := "Test User"
 	report := &models.UserAnalyticsReport{
@@ -1091,7 +1091,7 @@ func TestReportingService_FormatAsHTML_UserAnalytics(t *testing.T) {
 }
 
 func TestReportingService_FormatAsHTML_UserAnalytics_NilDisplayName(t *testing.T) {
-	service := NewReportingService(nil, nil)
+	service := NewReportingService(nil, nil, nil)
 
 	report := &models.UserAnalyticsReport{
 		User: &models.User{
@@ -1114,7 +1114,7 @@ func TestReportingService_FormatAsHTML_UserAnalytics_NilDisplayName(t *testing.T
 }
 
 func TestReportingService_FormatAsHTML_SystemOverview(t *testing.T) {
-	service := NewReportingService(nil, nil)
+	service := NewReportingService(nil, nil, nil)
 
 	report := &models.SystemOverviewReport{
 		StartDate:          time.Date(2025, 1, 1, 0, 0, 0, 0, time.UTC),
@@ -1138,7 +1138,7 @@ func TestReportingService_FormatAsHTML_SystemOverview(t *testing.T) {
 }
 
 func TestReportingService_FormatAsHTML_DefaultType(t *testing.T) {
-	service := NewReportingService(nil, nil)
+	service := NewReportingService(nil, nil, nil)
 
 	data := map[string]string{"key": "value"}
 
@@ -1156,7 +1156,7 @@ func TestReportingService_FormatAsHTML_DefaultType(t *testing.T) {
 // ---------------------------------------------------------------------------
 
 func TestReportingService_FormatReport_Markdown(t *testing.T) {
-	service := NewReportingService(nil, nil)
+	service := NewReportingService(nil, nil, nil)
 
 	data := map[string]string{"test": "data"}
 	content, err := service.formatReport(data, "markdown", "generic_report")
@@ -1166,7 +1166,7 @@ func TestReportingService_FormatReport_Markdown(t *testing.T) {
 }
 
 func TestReportingService_FormatReport_HTML(t *testing.T) {
-	service := NewReportingService(nil, nil)
+	service := NewReportingService(nil, nil, nil)
 
 	data := map[string]string{"test": "data"}
 	content, err := service.formatReport(data, "html", "generic_report")
@@ -1180,7 +1180,7 @@ func TestReportingService_FormatReport_HTML(t *testing.T) {
 // ---------------------------------------------------------------------------
 
 func TestReportingService_GenerateActivitySummary_SingleActivity(t *testing.T) {
-	service := NewReportingService(nil, nil)
+	service := NewReportingService(nil, nil, nil)
 
 	activities := []models.UserActivitySummary{
 		{TotalAccesses: 50},
@@ -1193,7 +1193,7 @@ func TestReportingService_GenerateActivitySummary_SingleActivity(t *testing.T) {
 }
 
 func TestReportingService_GetMostActiveHour_SingleAccess(t *testing.T) {
-	service := NewReportingService(nil, nil)
+	service := NewReportingService(nil, nil, nil)
 
 	logs := []models.MediaAccessLog{
 		{AccessTime: time.Date(2025, 1, 1, 15, 0, 0, 0, time.UTC)},
@@ -1204,7 +1204,7 @@ func TestReportingService_GetMostActiveHour_SingleAccess(t *testing.T) {
 }
 
 func TestReportingService_AnalyzeTimeDistribution_AllSlots(t *testing.T) {
-	service := NewReportingService(nil, nil)
+	service := NewReportingService(nil, nil, nil)
 
 	logs := []models.MediaAccessLog{
 		{AccessTime: time.Date(2025, 1, 1, 8, 0, 0, 0, time.UTC)},  // morning
@@ -1225,7 +1225,7 @@ func TestReportingService_AnalyzeTimeDistribution_AllSlots(t *testing.T) {
 // ===========================================================================
 
 func TestReportingService_FormatReport_JSON_Complex(t *testing.T) {
-	service := NewReportingService(nil, nil)
+	service := NewReportingService(nil, nil, nil)
 
 	data := map[string]interface{}{
 		"nested": map[string]interface{}{
@@ -1242,7 +1242,7 @@ func TestReportingService_FormatReport_JSON_Complex(t *testing.T) {
 }
 
 func TestReportingService_FormatReport_PDF_ReturnsError(t *testing.T) {
-	service := NewReportingService(nil, nil)
+	service := NewReportingService(nil, nil, nil)
 
 	data := map[string]interface{}{"test": "data"}
 
@@ -1256,7 +1256,7 @@ func TestReportingService_FormatReport_PDF_ReturnsError(t *testing.T) {
 // ===========================================================================
 
 func TestReportingService_FormatAsMarkdown_SpecialCharacters(t *testing.T) {
-	service := NewReportingService(nil, nil)
+	service := NewReportingService(nil, nil, nil)
 
 	displayName := "Test <User> & \"Special\" 'Chars'"
 	report := &models.UserAnalyticsReport{
@@ -1284,7 +1284,7 @@ func TestReportingService_FormatAsMarkdown_SpecialCharacters(t *testing.T) {
 }
 
 func TestReportingService_FormatAsMarkdown_UnicodeCharacters(t *testing.T) {
-	service := NewReportingService(nil, nil)
+	service := NewReportingService(nil, nil, nil)
 
 	displayName := "\u041c\u0438\u043b\u043e\u0448 \u0412\u0430\u0441\u0438\u0107"
 	report := &models.UserAnalyticsReport{
@@ -1311,7 +1311,7 @@ func TestReportingService_FormatAsMarkdown_UnicodeCharacters(t *testing.T) {
 }
 
 func TestReportingService_FormatAsHTML_SpecialCharacters(t *testing.T) {
-	service := NewReportingService(nil, nil)
+	service := NewReportingService(nil, nil, nil)
 
 	displayName := "User <b>Bold</b> & \"Quoted\""
 	report := &models.UserAnalyticsReport{
@@ -1340,7 +1340,7 @@ func TestReportingService_FormatAsHTML_SpecialCharacters(t *testing.T) {
 }
 
 func TestReportingService_FormatAsHTML_UnicodeCharacters(t *testing.T) {
-	service := NewReportingService(nil, nil)
+	service := NewReportingService(nil, nil, nil)
 
 	displayName := "\u65e5\u672c\u8a9e\u30e6\u30fc\u30b6\u30fc"
 	report := &models.UserAnalyticsReport{
@@ -1364,7 +1364,7 @@ func TestReportingService_FormatAsHTML_UnicodeCharacters(t *testing.T) {
 }
 
 func TestReportingService_FormatAsMarkdown_EmptyUserAnalytics(t *testing.T) {
-	service := NewReportingService(nil, nil)
+	service := NewReportingService(nil, nil, nil)
 
 	report := &models.UserAnalyticsReport{
 		User: &models.User{
@@ -1391,7 +1391,7 @@ func TestReportingService_FormatAsMarkdown_EmptyUserAnalytics(t *testing.T) {
 }
 
 func TestReportingService_FormatAsHTML_EmptySystemOverview(t *testing.T) {
-	service := NewReportingService(nil, nil)
+	service := NewReportingService(nil, nil, nil)
 
 	report := &models.SystemOverviewReport{
 		StartDate:          time.Time{},
@@ -1415,7 +1415,7 @@ func TestReportingService_FormatAsHTML_EmptySystemOverview(t *testing.T) {
 }
 
 func TestReportingService_FormatAsMarkdown_EmptySystemOverview(t *testing.T) {
-	service := NewReportingService(nil, nil)
+	service := NewReportingService(nil, nil, nil)
 
 	report := &models.SystemOverviewReport{
 		StartDate:          time.Time{},
@@ -1437,7 +1437,7 @@ func TestReportingService_FormatAsMarkdown_EmptySystemOverview(t *testing.T) {
 }
 
 func TestReportingService_FormatAsMarkdown_SecurityAuditFallback(t *testing.T) {
-	service := NewReportingService(nil, nil)
+	service := NewReportingService(nil, nil, nil)
 
 	report := &models.SecurityAuditReport{
 		StartDate:           time.Date(2025, 1, 1, 0, 0, 0, 0, time.UTC),
@@ -1457,7 +1457,7 @@ func TestReportingService_FormatAsMarkdown_SecurityAuditFallback(t *testing.T) {
 }
 
 func TestReportingService_FormatAsMarkdown_PerformanceMetricsFallback(t *testing.T) {
-	service := NewReportingService(nil, nil)
+	service := NewReportingService(nil, nil, nil)
 
 	report := &models.PerformanceMetricsReport{
 		StartDate:              time.Date(2025, 1, 1, 0, 0, 0, 0, time.UTC),
@@ -1476,7 +1476,7 @@ func TestReportingService_FormatAsMarkdown_PerformanceMetricsFallback(t *testing
 }
 
 func TestReportingService_FormatAsMarkdown_MediaAnalyticsFallback(t *testing.T) {
-	service := NewReportingService(nil, nil)
+	service := NewReportingService(nil, nil, nil)
 
 	report := &models.MediaAnalyticsReport{
 		MediaID:       42,
@@ -1497,7 +1497,7 @@ func TestReportingService_FormatAsMarkdown_MediaAnalyticsFallback(t *testing.T) 
 }
 
 func TestReportingService_FormatAsMarkdown_UserActivityFallback(t *testing.T) {
-	service := NewReportingService(nil, nil)
+	service := NewReportingService(nil, nil, nil)
 
 	report := &models.UserActivityReport{
 		StartDate:     time.Date(2025, 1, 1, 0, 0, 0, 0, time.UTC),
@@ -1516,7 +1516,7 @@ func TestReportingService_FormatAsMarkdown_UserActivityFallback(t *testing.T) {
 }
 
 func TestReportingService_FormatAsHTML_SecurityAuditFallback(t *testing.T) {
-	service := NewReportingService(nil, nil)
+	service := NewReportingService(nil, nil, nil)
 
 	report := &models.SecurityAuditReport{
 		StartDate:           time.Date(2025, 1, 1, 0, 0, 0, 0, time.UTC),
@@ -1536,7 +1536,7 @@ func TestReportingService_FormatAsHTML_SecurityAuditFallback(t *testing.T) {
 }
 
 func TestReportingService_FormatAsHTML_MediaAnalyticsFallback(t *testing.T) {
-	service := NewReportingService(nil, nil)
+	service := NewReportingService(nil, nil, nil)
 
 	report := &models.MediaAnalyticsReport{
 		MediaID:       7,
@@ -1556,7 +1556,7 @@ func TestReportingService_FormatAsHTML_MediaAnalyticsFallback(t *testing.T) {
 }
 
 func TestReportingService_FormatAsHTML_PerformanceMetricsFallback(t *testing.T) {
-	service := NewReportingService(nil, nil)
+	service := NewReportingService(nil, nil, nil)
 
 	report := &models.PerformanceMetricsReport{
 		StartDate:              time.Date(2025, 1, 1, 0, 0, 0, 0, time.UTC),
@@ -1575,7 +1575,7 @@ func TestReportingService_FormatAsHTML_PerformanceMetricsFallback(t *testing.T) 
 }
 
 func TestReportingService_FormatAsHTML_UserActivityFallback(t *testing.T) {
-	service := NewReportingService(nil, nil)
+	service := NewReportingService(nil, nil, nil)
 
 	report := &models.UserActivityReport{
 		StartDate:     time.Date(2025, 1, 1, 0, 0, 0, 0, time.UTC),
@@ -1598,7 +1598,7 @@ func TestReportingService_FormatAsHTML_UserActivityFallback(t *testing.T) {
 // ===========================================================================
 
 func TestReportingService_FormatReport_Markdown_UserAnalytics(t *testing.T) {
-	service := NewReportingService(nil, nil)
+	service := NewReportingService(nil, nil, nil)
 
 	displayName := "Report User"
 	report := &models.UserAnalyticsReport{
@@ -1626,7 +1626,7 @@ func TestReportingService_FormatReport_Markdown_UserAnalytics(t *testing.T) {
 }
 
 func TestReportingService_FormatReport_HTML_UserAnalytics(t *testing.T) {
-	service := NewReportingService(nil, nil)
+	service := NewReportingService(nil, nil, nil)
 
 	displayName := "HTML User"
 	report := &models.UserAnalyticsReport{
@@ -1654,7 +1654,7 @@ func TestReportingService_FormatReport_HTML_UserAnalytics(t *testing.T) {
 }
 
 func TestReportingService_FormatReport_Markdown_SystemOverview(t *testing.T) {
-	service := NewReportingService(nil, nil)
+	service := NewReportingService(nil, nil, nil)
 
 	report := &models.SystemOverviewReport{
 		StartDate:          time.Date(2025, 1, 1, 0, 0, 0, 0, time.UTC),
@@ -1676,7 +1676,7 @@ func TestReportingService_FormatReport_Markdown_SystemOverview(t *testing.T) {
 }
 
 func TestReportingService_FormatReport_HTML_SystemOverview(t *testing.T) {
-	service := NewReportingService(nil, nil)
+	service := NewReportingService(nil, nil, nil)
 
 	report := &models.SystemOverviewReport{
 		StartDate:          time.Date(2025, 1, 1, 0, 0, 0, 0, time.UTC),
@@ -1698,7 +1698,7 @@ func TestReportingService_FormatReport_HTML_SystemOverview(t *testing.T) {
 }
 
 func TestReportingService_FormatReport_JSON_UserAnalytics(t *testing.T) {
-	service := NewReportingService(nil, nil)
+	service := NewReportingService(nil, nil, nil)
 
 	displayName := "JSON User"
 	report := &models.UserAnalyticsReport{
@@ -1725,7 +1725,7 @@ func TestReportingService_FormatReport_JSON_UserAnalytics(t *testing.T) {
 }
 
 func TestReportingService_FormatReport_JSON_SystemOverview(t *testing.T) {
-	service := NewReportingService(nil, nil)
+	service := NewReportingService(nil, nil, nil)
 
 	report := &models.SystemOverviewReport{
 		StartDate:          time.Date(2025, 1, 1, 0, 0, 0, 0, time.UTC),
@@ -1750,7 +1750,7 @@ func TestReportingService_FormatReport_JSON_SystemOverview(t *testing.T) {
 // ===========================================================================
 
 func TestReportingService_GenerateReport_UnsupportedFormat(t *testing.T) {
-	service := NewReportingService(nil, nil)
+	service := NewReportingService(nil, nil, nil)
 
 	report, err := service.GenerateReport("security_audit", "xml", map[string]interface{}{
 		"start_date": "2025-01-01",
@@ -1762,7 +1762,7 @@ func TestReportingService_GenerateReport_UnsupportedFormat(t *testing.T) {
 }
 
 func TestReportingService_GenerateReport_MediaAnalytics_MissingMediaID(t *testing.T) {
-	service := NewReportingService(nil, nil)
+	service := NewReportingService(nil, nil, nil)
 
 	report, err := service.GenerateReport("media_analytics", "json", map[string]interface{}{
 		"start_date": "2025-01-01",
@@ -1774,7 +1774,7 @@ func TestReportingService_GenerateReport_MediaAnalytics_MissingMediaID(t *testin
 }
 
 func TestReportingService_GenerateReport_UserActivity_MissingDates(t *testing.T) {
-	service := NewReportingService(nil, nil)
+	service := NewReportingService(nil, nil, nil)
 
 	report, err := service.GenerateReport("user_activity", "json", map[string]interface{}{})
 	assert.Error(t, err)
@@ -1786,7 +1786,7 @@ func TestReportingService_GenerateReport_UserActivity_MissingDates(t *testing.T)
 // ===========================================================================
 
 func TestReportingService_CalculateSystemHealth_ExcellentThreshold(t *testing.T) {
-	service := NewReportingService(nil, nil)
+	service := NewReportingService(nil, nil, nil)
 
 	// 100 total, 80 active => activeRatio=0.8 => 0.8*50=40, mediaAccesses>0 => +30, activeUsers>10 => +20 => 90 => excellent
 	health := service.calculateSystemHealth(100, 80, 5000)
@@ -1795,7 +1795,7 @@ func TestReportingService_CalculateSystemHealth_ExcellentThreshold(t *testing.T)
 }
 
 func TestReportingService_CalculateSystemHealth_GoodThreshold(t *testing.T) {
-	service := NewReportingService(nil, nil)
+	service := NewReportingService(nil, nil, nil)
 
 	// 100 total, 20 active => activeRatio=0.2 => 0.2*50=10, mediaAccesses>0 => +30, activeUsers>10 => +20 => 60 => good
 	health := service.calculateSystemHealth(100, 20, 100)
@@ -1805,7 +1805,7 @@ func TestReportingService_CalculateSystemHealth_GoodThreshold(t *testing.T) {
 }
 
 func TestReportingService_CalculateSystemHealth_FairThreshold(t *testing.T) {
-	service := NewReportingService(nil, nil)
+	service := NewReportingService(nil, nil, nil)
 
 	// 100 total, 5 active => activeRatio=0.05 => 0.05*50=2.5, mediaAccesses>0 => +30, activeUsers<=10 => +0 => 32.5
 	// Wait: 5 is not > 10, so no +20. Score = 2.5 + 30 = 32.5 => poor (< 40)
@@ -1819,7 +1819,7 @@ func TestReportingService_CalculateSystemHealth_FairThreshold(t *testing.T) {
 }
 
 func TestReportingService_CalculateSystemHealth_PoorThreshold(t *testing.T) {
-	service := NewReportingService(nil, nil)
+	service := NewReportingService(nil, nil, nil)
 
 	// 0 total => no active ratio bonus, 0 accesses => no +30, 0 active => no +20 => 0 => poor
 	health := service.calculateSystemHealth(0, 0, 0)
@@ -1828,7 +1828,7 @@ func TestReportingService_CalculateSystemHealth_PoorThreshold(t *testing.T) {
 }
 
 func TestReportingService_CalculateSystemHealth_ZeroTotalUsersNonZeroActive(t *testing.T) {
-	service := NewReportingService(nil, nil)
+	service := NewReportingService(nil, nil, nil)
 
 	// Edge: totalUsers=0 but activeUsers=5 (inconsistent data)
 	health := service.calculateSystemHealth(0, 5, 100)
@@ -1840,7 +1840,7 @@ func TestReportingService_CalculateSystemHealth_ZeroTotalUsersNonZeroActive(t *t
 // ===========================================================================
 
 func TestReportingService_FormatReport_JSON_LargeData(t *testing.T) {
-	service := NewReportingService(nil, nil)
+	service := NewReportingService(nil, nil, nil)
 
 	largeData := make(map[string]interface{})
 	for i := 0; i < 1000; i++ {
@@ -1854,7 +1854,7 @@ func TestReportingService_FormatReport_JSON_LargeData(t *testing.T) {
 }
 
 func TestReportingService_FormatAsMarkdown_LargeData(t *testing.T) {
-	service := NewReportingService(nil, nil)
+	service := NewReportingService(nil, nil, nil)
 
 	largeData := make(map[string]interface{})
 	for i := 0; i < 500; i++ {
@@ -1869,7 +1869,7 @@ func TestReportingService_FormatAsMarkdown_LargeData(t *testing.T) {
 }
 
 func TestReportingService_FormatAsHTML_LargeData(t *testing.T) {
-	service := NewReportingService(nil, nil)
+	service := NewReportingService(nil, nil, nil)
 
 	largeData := make(map[string]interface{})
 	for i := 0; i < 500; i++ {
@@ -1884,7 +1884,7 @@ func TestReportingService_FormatAsHTML_LargeData(t *testing.T) {
 }
 
 func TestReportingService_CountUniqueUsers_LargeDataSet(t *testing.T) {
-	service := NewReportingService(nil, nil)
+	service := NewReportingService(nil, nil, nil)
 
 	var logs []models.MediaAccessLog
 	for i := 0; i < 10000; i++ {
@@ -1900,7 +1900,7 @@ func TestReportingService_CountUniqueUsers_LargeDataSet(t *testing.T) {
 }
 
 func TestReportingService_FilterLogsByDateRange_LargeDataSet(t *testing.T) {
-	service := NewReportingService(nil, nil)
+	service := NewReportingService(nil, nil, nil)
 
 	startDate := time.Date(2025, 1, 10, 0, 0, 0, 0, time.UTC)
 	endDate := time.Date(2025, 1, 20, 0, 0, 0, 0, time.UTC)
@@ -1927,7 +1927,7 @@ func TestReportingService_FilterLogsByDateRange_LargeDataSet(t *testing.T) {
 // ===========================================================================
 
 func TestReportingService_FilterLogsByDateRange_BoundaryExact(t *testing.T) {
-	service := NewReportingService(nil, nil)
+	service := NewReportingService(nil, nil, nil)
 
 	startDate := time.Date(2025, 1, 10, 0, 0, 0, 0, time.UTC)
 	endDate := time.Date(2025, 1, 20, 0, 0, 0, 0, time.UTC)
@@ -1947,7 +1947,7 @@ func TestReportingService_FilterLogsByDateRange_BoundaryExact(t *testing.T) {
 }
 
 func TestReportingService_FilterLogsByDateRange_SameStartEnd(t *testing.T) {
-	service := NewReportingService(nil, nil)
+	service := NewReportingService(nil, nil, nil)
 
 	sameDate := time.Date(2025, 1, 15, 0, 0, 0, 0, time.UTC)
 
@@ -1965,7 +1965,7 @@ func TestReportingService_FilterLogsByDateRange_SameStartEnd(t *testing.T) {
 // ===========================================================================
 
 func TestReportingService_CalculateUsageStatistics_SameDay(t *testing.T) {
-	service := NewReportingService(nil, nil)
+	service := NewReportingService(nil, nil, nil)
 
 	sameDate := time.Date(2025, 6, 15, 0, 0, 0, 0, time.UTC)
 	stats := service.calculateUsageStatistics(sameDate, sameDate)
@@ -1974,7 +1974,7 @@ func TestReportingService_CalculateUsageStatistics_SameDay(t *testing.T) {
 }
 
 func TestReportingService_CalculateUsageStatistics_InvertedRange(t *testing.T) {
-	service := NewReportingService(nil, nil)
+	service := NewReportingService(nil, nil, nil)
 
 	// End before start -- days will be < 1, should use fallback of 1
 	start := time.Date(2025, 6, 15, 0, 0, 0, 0, time.UTC)
@@ -1989,7 +1989,7 @@ func TestReportingService_CalculateUsageStatistics_InvertedRange(t *testing.T) {
 // ===========================================================================
 
 func TestReportingService_CalculateErrorRates_SameDay(t *testing.T) {
-	service := NewReportingService(nil, nil)
+	service := NewReportingService(nil, nil, nil)
 
 	sameDate := time.Date(2025, 1, 15, 0, 0, 0, 0, time.UTC)
 	result := service.calculateErrorRates(sameDate, sameDate)
@@ -2000,7 +2000,7 @@ func TestReportingService_CalculateErrorRates_SameDay(t *testing.T) {
 }
 
 func TestReportingService_CalculateErrorRates_LongPeriod(t *testing.T) {
-	service := NewReportingService(nil, nil)
+	service := NewReportingService(nil, nil, nil)
 
 	start := time.Date(2025, 1, 1, 0, 0, 0, 0, time.UTC)
 	end := time.Date(2025, 12, 31, 0, 0, 0, 0, time.UTC)
@@ -2015,7 +2015,7 @@ func TestReportingService_CalculateErrorRates_LongPeriod(t *testing.T) {
 // ===========================================================================
 
 func TestReportingService_CalculateSecurityMetrics_LongPeriod(t *testing.T) {
-	service := NewReportingService(nil, nil)
+	service := NewReportingService(nil, nil, nil)
 
 	start := time.Date(2024, 1, 1, 0, 0, 0, 0, time.UTC)
 	end := time.Date(2025, 12, 31, 0, 0, 0, 0, time.UTC)
@@ -2025,7 +2025,7 @@ func TestReportingService_CalculateSecurityMetrics_LongPeriod(t *testing.T) {
 }
 
 func TestReportingService_CalculateSecurityMetrics_SameDay(t *testing.T) {
-	service := NewReportingService(nil, nil)
+	service := NewReportingService(nil, nil, nil)
 
 	sameDate := time.Date(2025, 1, 15, 0, 0, 0, 0, time.UTC)
 	metrics := service.calculateSecurityMetrics(sameDate, sameDate)
@@ -2038,7 +2038,7 @@ func TestReportingService_CalculateSecurityMetrics_SameDay(t *testing.T) {
 // ===========================================================================
 
 func TestReportingService_AnalyzeTimeDistribution_BoundaryHours(t *testing.T) {
-	service := NewReportingService(nil, nil)
+	service := NewReportingService(nil, nil, nil)
 
 	logs := []models.MediaAccessLog{
 		{AccessTime: time.Date(2025, 1, 1, 0, 0, 0, 0, time.UTC)},    // midnight = night
@@ -2065,7 +2065,7 @@ func TestReportingService_AnalyzeTimeDistribution_BoundaryHours(t *testing.T) {
 // ===========================================================================
 
 func TestReportingService_GetMostActiveHour_TiedHours(t *testing.T) {
-	service := NewReportingService(nil, nil)
+	service := NewReportingService(nil, nil, nil)
 
 	logs := []models.MediaAccessLog{
 		{AccessTime: time.Date(2025, 1, 1, 10, 0, 0, 0, time.UTC)},
@@ -2082,7 +2082,7 @@ func TestReportingService_GetMostActiveHour_TiedHours(t *testing.T) {
 // ===========================================================================
 
 func TestReportingService_AnalyzeUserPopularContent_SingleMedia(t *testing.T) {
-	service := NewReportingService(nil, nil)
+	service := NewReportingService(nil, nil, nil)
 
 	logs := []models.MediaAccessLog{
 		{UserID: 1, MediaID: 42, AccessTime: time.Now()},
@@ -2101,7 +2101,7 @@ func TestReportingService_AnalyzeUserPopularContent_SingleMedia(t *testing.T) {
 // ===========================================================================
 
 func TestReportingService_GenerateActivitySummary_LargeDataSet(t *testing.T) {
-	service := NewReportingService(nil, nil)
+	service := NewReportingService(nil, nil, nil)
 
 	var activities []models.UserActivitySummary
 	for i := 0; i < 1000; i++ {
@@ -2117,7 +2117,7 @@ func TestReportingService_GenerateActivitySummary_LargeDataSet(t *testing.T) {
 }
 
 func TestReportingService_GenerateActivitySummary_UnevenDistribution(t *testing.T) {
-	service := NewReportingService(nil, nil)
+	service := NewReportingService(nil, nil, nil)
 
 	activities := []models.UserActivitySummary{
 		{TotalAccesses: 0},
@@ -2137,7 +2137,7 @@ func TestReportingService_GenerateActivitySummary_UnevenDistribution(t *testing.
 // ===========================================================================
 
 func TestReportingService_CalculateAverageSessionDuration_VeryLongSessions(t *testing.T) {
-	service := NewReportingService(nil, nil)
+	service := NewReportingService(nil, nil, nil)
 
 	sessions := []models.SessionData{
 		{Duration: 24 * time.Hour},
@@ -2149,7 +2149,7 @@ func TestReportingService_CalculateAverageSessionDuration_VeryLongSessions(t *te
 }
 
 func TestReportingService_CalculateAverageSessionDuration_ZeroDuration(t *testing.T) {
-	service := NewReportingService(nil, nil)
+	service := NewReportingService(nil, nil, nil)
 
 	sessions := []models.SessionData{
 		{Duration: 0},
@@ -2165,7 +2165,7 @@ func TestReportingService_CalculateAverageSessionDuration_ZeroDuration(t *testin
 // ===========================================================================
 
 func TestReportingService_FormatReport_JSON_NilData(t *testing.T) {
-	service := NewReportingService(nil, nil)
+	service := NewReportingService(nil, nil, nil)
 
 	content, err := service.formatReport(nil, "json", "generic")
 	assert.NoError(t, err)
@@ -2173,7 +2173,7 @@ func TestReportingService_FormatReport_JSON_NilData(t *testing.T) {
 }
 
 func TestReportingService_FormatAsMarkdown_NilData(t *testing.T) {
-	service := NewReportingService(nil, nil)
+	service := NewReportingService(nil, nil, nil)
 
 	content, err := service.formatAsMarkdown(nil, "unknown_type")
 	assert.NoError(t, err)
@@ -2182,7 +2182,7 @@ func TestReportingService_FormatAsMarkdown_NilData(t *testing.T) {
 }
 
 func TestReportingService_FormatAsHTML_NilData(t *testing.T) {
-	service := NewReportingService(nil, nil)
+	service := NewReportingService(nil, nil, nil)
 
 	content, err := service.formatAsHTML(nil, "unknown_type")
 	assert.NoError(t, err)
@@ -2195,7 +2195,7 @@ func TestReportingService_FormatAsHTML_NilData(t *testing.T) {
 // ===========================================================================
 
 func TestReportingService_GetLastActivityTime_UnorderedLogs(t *testing.T) {
-	service := NewReportingService(nil, nil)
+	service := NewReportingService(nil, nil, nil)
 
 	logs := []models.MediaAccessLog{
 		{UserID: 1, MediaID: 1, AccessTime: time.Date(2025, 6, 15, 12, 0, 0, 0, time.UTC)},
@@ -2213,7 +2213,7 @@ func TestReportingService_GetLastActivityTime_UnorderedLogs(t *testing.T) {
 // ===========================================================================
 
 func TestReportingService_AnalyzeUserDeviceUsage_NilFields(t *testing.T) {
-	service := NewReportingService(nil, nil)
+	service := NewReportingService(nil, nil, nil)
 
 	logs := []models.MediaAccessLog{
 		{UserID: 1, MediaID: 1, AccessTime: time.Now(), DeviceInfo: &models.DeviceInfo{Platform: nil, DeviceModel: nil}},
@@ -2226,7 +2226,7 @@ func TestReportingService_AnalyzeUserDeviceUsage_NilFields(t *testing.T) {
 }
 
 func TestReportingService_AnalyzeUserDeviceUsage_MixedNilAndValid(t *testing.T) {
-	service := NewReportingService(nil, nil)
+	service := NewReportingService(nil, nil, nil)
 
 	platform := "Web"
 	model := "Chrome"
@@ -2247,7 +2247,7 @@ func TestReportingService_AnalyzeUserDeviceUsage_MixedNilAndValid(t *testing.T) 
 // ===========================================================================
 
 func TestReportingService_AnalyzeUserLocations_DuplicateLocations(t *testing.T) {
-	service := NewReportingService(nil, nil)
+	service := NewReportingService(nil, nil, nil)
 
 	logs := []models.MediaAccessLog{
 		{UserID: 1, MediaID: 1, AccessTime: time.Now(), Location: &models.Location{Latitude: 40.71, Longitude: -74.00}},
@@ -2266,7 +2266,7 @@ func TestReportingService_AnalyzeUserLocations_DuplicateLocations(t *testing.T) 
 // ===========================================================================
 
 func TestReportingService_ExtractDateRange_BothNonString(t *testing.T) {
-	service := NewReportingService(nil, nil)
+	service := NewReportingService(nil, nil, nil)
 
 	_, _, err := service.extractDateRange(map[string]interface{}{
 		"start_date": 20250101,
@@ -2277,7 +2277,7 @@ func TestReportingService_ExtractDateRange_BothNonString(t *testing.T) {
 }
 
 func TestReportingService_ExtractDateRange_NilParams(t *testing.T) {
-	service := NewReportingService(nil, nil)
+	service := NewReportingService(nil, nil, nil)
 
 	_, _, err := service.extractDateRange(nil)
 	assert.Error(t, err)
