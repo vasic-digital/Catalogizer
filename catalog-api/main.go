@@ -911,6 +911,9 @@ func main() {
 
 	// API routes
 	api := router.Group("/api/v1")
+	// NOTE: image-proxy is registered ABOVE (outside this group) to be publicly accessible
+	// without authentication - needed for Android TV and other clients that need to
+	// fetch cover images from TMDB through the API proxy.
 	api.Use(jwtMiddleware.RequireAuth()) // Apply auth middleware to all API routes
 	api.Use(defaultRateLimiter)          // Apply general rate limiting to API
 	{
