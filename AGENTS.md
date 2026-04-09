@@ -120,6 +120,52 @@ adb devices
 ./HelixQA/bin/helixqa autonomous -platforms android ...
 ```
 
+### ⚠️⚠️⚠️ ABSOLUTELY MANDATORY: ZERO UNFINISHED WORK POLICY
+
+**NO unfinished work, TODOs, or known issues may remain in the codebase. EVER.**
+
+This is a **ZERO TOLERANCE** policy for all code, tests, scripts, and documentation.
+
+**PROHIBITED:**
+- ❌ **TODO/FIXME comments** in committed code
+- ❌ **Empty implementations** with "// Implement later"
+- ❌ **Silent error ignoring** (`_ = err` patterns in production code)
+- ❌ **Hardcoded fake data** or fabricated metrics
+- ❌ **Coverage fraud** - tests that inflate coverage without testing logic
+- ❌ **unwrap() calls** in Rust that can panic (use proper error handling)
+- ❌ **Empty catch blocks** in TypeScript/JavaScript
+- ❌ **Partial implementations** left for "future completion"
+- ❌ **Known bugs** documented but not fixed
+- ❌ **"Temporary" workarounds** that become permanent
+
+**REQUIRED:**
+- ✅ **Fix ALL discovered issues immediately** - no deferrals
+- ✅ **When fixing, fix ALL instances** - not just the reported one
+- ✅ **Complete implementations** before committing
+- ✅ **Proper error handling** in ALL code paths
+- ✅ **Real test assertions** - no fake coverage
+- ✅ **Code compiles without warnings**
+- ✅ **Zero outstanding issues** at commit time
+
+**Definition of "Done":**
+1. Feature/bug fix is fully implemented
+2. All TODOs are resolved (implemented or removed)
+3. All error cases handled properly
+4. All tests pass with real assertions
+5. No fake/hardcoded data remains
+6. Code review passes with ZERO outstanding issues
+7. Documentation is updated
+8. No compiler warnings or linter errors
+
+**Enforcement:**
+- Pre-commit hooks block commits with TODO/FIXME patterns
+- CI/CD fails builds with unresolved issues
+- Code reviews reject PRs with known unfinished work
+- **This policy applies to ALL repositories, submodules, and branches**
+
+**Quality Principle:**
+> "If it's not finished, it doesn't ship. If it ships, it's finished."
+
 ## Submodule Architecture
 
 The project uses 41 independent git submodules under the `digital.vasic.*` and `@vasic-digital/*` namespace for generic, reusable functionality. Each submodule has its own repository, tests, and documentation.

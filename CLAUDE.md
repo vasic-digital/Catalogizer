@@ -89,6 +89,38 @@ if grep -qi "$DEVICE_MODEL" .devignore; then
 fi
 ```
 
+### ⚠️⚠️⚠️ CRITICAL: ZERO UNFINISHED WORK POLICY (ABSOLUTELY MANDATORY)
+
+**NO unfinished work, TODOs, or known issues may be left in the codebase. EVER.**
+
+- **ALL discovered issues MUST be fixed immediately** - no exceptions, no deferrals
+- **NO "TODO" or "FIXME" comments** may be committed to production code
+- **NO empty implementations** with "// Implement later" comments
+- **NO silent error ignoring** using `_ = err` patterns
+- **NO hardcoded fake data** or fabricated metrics
+- **NO test files** that artificially inflate coverage without testing real logic
+- **NO unwrap() calls** in Rust that can panic (use proper error handling)
+- **NO empty catch blocks** in TypeScript/JavaScript
+- **When an issue is found, ALL instances must be fixed** - not just the reported one
+- **This constraint applies to ALL code**: production, tests, scripts, and documentation
+- **Any commit that leaves known issues is INVALID and must be reverted**
+
+**Definition of "Done":**
+- Code compiles without warnings
+- All known bugs are fixed
+- All TODOs are implemented or removed
+- All error cases are handled
+- All tests pass with real assertions
+- No fake/hardcoded data remains
+- Code review passes with zero outstanding issues
+
+**Enforcement:**
+- Pre-commit hooks will block commits with TODO/FIXME patterns
+- CI/CD will fail builds with unresolved issues
+- Code reviews will reject any PR with known unfinished work
+
+This policy ensures maximum product quality and reliability.
+
 ## Submodule Architecture
 
 41 independent git submodules under the vasic-digital organization. Each has its own repo (GitHub + GitLab), tests, docs, and Upstreams for multi-remote push.
