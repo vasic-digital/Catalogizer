@@ -281,19 +281,19 @@ generate_final_report() {
         <div class="grid">
             <div class="metric">
                 <h3>🔍 SonarQube</h3>
-                <p class="status-ok">Scanned</p>
+                <p class="status-ok">$(if [ -f "$REPORTS_DIR/sonarqube-report.json" ]; then echo "Scanned"; else echo "Not Run"; fi)</p>
             </div>
             <div class="metric">
                 <h3>🔒 Snyk</h3>
-                <p class="status-ok">Scanned</p>
+                <p class="status-ok">$(if [ -f "$REPORTS_DIR/snyk-security-report.html" ]; then echo "Scanned"; else echo "Not Run"; fi)</p>
             </div>
             <div class="metric">
                 <h3>🐳 Trivy</h3>
-                <p class="status-ok">Scanned</p>
+                <p class="status-ok">$(if command -v trivy &>/dev/null; then echo "Available"; else echo "Not Installed"; fi)</p>
             </div>
             <div class="metric">
                 <h3>🛡️ OWASP</h3>
-                <p class="status-ok">Scanned</p>
+                <p class="status-ok">$(if [ -f "$REPORTS_DIR/dependency-check-report.html" ]; then echo "Scanned"; else echo "Not Run"; fi)</p>
             </div>
         </div>
     </div>
@@ -309,27 +309,27 @@ generate_final_report() {
             </tr>
             <tr>
                 <td>🐹 Go API</td>
-                <td class="status-ok">✅ Passed</td>
-                <td>85%+</td>
-                <td>0 Critical</td>
+                <td class="status-ok">$(if [ -f "$REPORTS_DIR/go-test-results.json" ]; then echo "Tested"; else echo "Unknown"; fi)</td>
+                <td>$(if [ -f "$REPORTS_DIR/go-coverage.out" ]; then grep -oP 'coverage: \K[0-9.]+' "$REPORTS_DIR/go-coverage.out" 2>/dev/null || echo "N/A"; else echo "N/A"; fi)%</td>
+                <td>$(if [ -f "$REPORTS_DIR/snyk-security-report.html" ]; then grep -c "critical" "$REPORTS_DIR/snyk-security-report.html" 2>/dev/null || echo "0"; else echo "N/A"; fi) Critical</td>
             </tr>
             <tr>
                 <td>🟢 Web Applications</td>
-                <td class="status-ok">✅ Passed</td>
-                <td>80%+</td>
-                <td>0 Critical</td>
+                <td class="status-ok">$(if [ -d "$REPORTS_DIR/coverage-catalog-web" ]; then echo "Tested"; else echo "Unknown"; fi)</td>
+                <td>$(if [ -f "$REPORTS_DIR/coverage-catalog-web/lcov.info" ]; then echo "See Report"; else echo "N/A"; fi)</td>
+                <td>Check Snyk Report</td>
             </tr>
             <tr>
                 <td>📱 Android Apps</td>
-                <td class="status-ok">✅ Passed</td>
-                <td>75%+</td>
-                <td>0 Critical</td>
+                <td class="status-ok">$(if [ -d "$REPORTS_DIR/android-catalogizer-android" ]; then echo "Tested"; else echo "Unknown"; fi)</td>
+                <td>See Test Report</td>
+                <td>Check Snyk Report</td>
             </tr>
             <tr>
                 <td>🖥️ Desktop App</td>
-                <td class="status-ok">✅ Passed</td>
-                <td>80%+</td>
-                <td>0 Critical</td>
+                <td class="status-ok">$(if [ -d "$REPORTS_DIR/coverage-catalogizer-desktop" ]; then echo "Tested"; else echo "Unknown"; fi)</td>
+                <td>$(if [ -f "$REPORTS_DIR/coverage-catalogizer-desktop/lcov.info" ]; then echo "See Report"; else echo "N/A"; fi)</td>
+                <td>Check Snyk Report</td>
             </tr>
         </table>
     </div>

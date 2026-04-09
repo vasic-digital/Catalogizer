@@ -25,6 +25,15 @@ TOTAL_TESTS=0
 PASSED_TESTS=0
 FAILED_TESTS=0
 
+# Individual test category results (for accurate HTML reporting)
+GO_TESTS_STATUS="PENDING"
+JS_TESTS_STATUS="PENDING"
+ANDROID_TESTS_STATUS="PENDING"
+SONARQUBE_STATUS="PENDING"
+SNYK_STATUS="PENDING"
+TRIVY_STATUS="PENDING"
+OWASP_STATUS="PENDING"
+
 # Container runtime detection - prefer podman over docker
 if command -v podman &>/dev/null; then
     CONTAINER_CMD="podman"
@@ -169,8 +178,9 @@ run_go_tests() {
             
             # Run tests with coverage (excluding integration tests that require server)
             log "🧪 Running Go tests with coverage..."
-            if go test -v -race -coverprofile=coverage.out -covermode=atomic ./... 2>&1 | grep -v "integration\|FAIL" | tee -a "$LOG_FILE" || true; then
+            if go test -v -race -coverprofile=coverage.out -covermode=atomic ./... 2>&1 | tee -a "$LOG_FILE"; then
                 print_status "PASS" "Go API tests passed"
+                GO_TESTS_STATUS="PASS"
                 
                 # Generate coverage report
                 go tool cover -html=coverage.out -o coverage.html 2>/dev/null || true
@@ -182,6 +192,7 @@ run_go_tests() {
                 
             else
                 print_status "FAIL" "Go API tests failed"
+                GO_TESTS_STATUS="FAIL"
                 return 1
             fi
         else
@@ -201,6 +212,7 @@ run_js_tests() {
     log "🟢 Running JavaScript/TypeScript tests..."
     
     local js_projects=("catalog-web" "catalogizer-desktop" "catalogizer-api-client" "installer-wizard")
+    local js_failed=0
     
     for project in "${js_projects[@]}"; do
         if [ -d "$PROJECT_ROOT/$project" ] && [ -f "$PROJECT_ROOT/$project/package.json" ]; then
@@ -226,8 +238,7 @@ run_js_tests() {
                     fi
                 else
                     print_status "FAIL" "$project tests failed"
-                    cd "$PROJECT_ROOT"
-                    return 1
+                    js_failed=1
                 fi
             else
                 print_status "WARN" "No test script found for $project"
@@ -239,6 +250,14 @@ run_js_tests() {
         fi
     done
     
+    # Set overall JS tests status
+    if [ $js_failed -eq 0 ]; then
+        JS_TESTS_STATUS="PASS"
+    else
+        JS_TESTS_STATUS="FAIL"
+        return 1
+    fi
+    
     return 0
 }
 
@@ -247,6 +266,7 @@ run_android_tests() {
     log "📱 Running Android tests..."
     
     local android_projects=("catalogizer-android" "catalogizer-androidtv")
+    local android_failed=0
     
     for project in "${android_projects[@]}"; do
         if [ -d "$PROJECT_ROOT/$project" ] && [ -f "$PROJECT_ROOT/$project/build.gradle.kts" ]; then
@@ -269,8 +289,7 @@ run_android_tests() {
                     fi
                 else
                     print_status "FAIL" "$project unit tests failed"
-                    cd "$PROJECT_ROOT"
-                    return 1
+                    android_failed=1
                 fi
             else
                 print_status "WARN" "gradlew not found in $project"
@@ -281,6 +300,14 @@ run_android_tests() {
             print_status "WARN" "$project directory or build.gradle.kts not found"
         fi
     done
+    
+    # Set overall Android tests status
+    if [ $android_failed -eq 0 ]; then
+        ANDROID_TESTS_STATUS="PASS"
+    else
+        ANDROID_TESTS_STATUS="FAIL"
+        return 1
+    fi
     
     return 0
 }
@@ -293,8 +320,10 @@ run_security_tests() {
     log "🔍 Running SonarQube analysis..."
     if "$SCRIPT_DIR/sonarqube-scan.sh" 2>&1 | tee -a "$LOG_FILE"; then
         print_status "PASS" "SonarQube analysis passed"
+        SONARQUBE_STATUS="PASS"
     else
         print_status "FAIL" "SonarQube analysis failed"
+        SONARQUBE_STATUS="FAIL"
         return 1
     fi
     
@@ -302,8 +331,10 @@ run_security_tests() {
     log "🔒 Running Snyk analysis..."
     if "$SCRIPT_DIR/snyk-scan.sh" 2>&1 | tee -a "$LOG_FILE"; then
         print_status "PASS" "Snyk analysis passed"
+        SNYK_STATUS="PASS"
     else
         print_status "FAIL" "Snyk analysis failed"
+        SNYK_STATUS="FAIL"
         return 1
     fi
     
@@ -314,15 +345,19 @@ run_security_tests() {
     # Run Trivy scan
     if $COMPOSE_CMD -f docker-compose.security.yml --profile trivy-scan run --rm trivy-scanner 2>&1 | tee -a "$LOG_FILE"; then
         print_status "PASS" "Trivy scan completed"
+        TRIVY_STATUS="PASS"
     else
         print_status "WARN" "Trivy scan failed"
+        TRIVY_STATUS="WARN"
     fi
     
     # Run OWASP Dependency Check
     if $COMPOSE_CMD -f docker-compose.security.yml --profile dependency-check run --rm dependency-check 2>&1 | tee -a "$LOG_FILE"; then
         print_status "PASS" "OWASP Dependency Check completed"
+        OWASP_STATUS="PASS"
     else
         print_status "WARN" "OWASP Dependency Check failed"
+        OWASP_STATUS="WARN"
     fi
     
     return 0
@@ -402,31 +437,31 @@ generate_final_report() {
         <h2>🧪 Test Results Summary</h2>
         <div class="test-item">
             <span>🐹 Go API Tests</span>
-            <span class="status-pass">✅ Passed</span>
+            $(if [ "$GO_TESTS_STATUS" = "PASS" ]; then echo '<span class="status-pass">✅ Passed</span>'; elif [ "$GO_TESTS_STATUS" = "FAIL" ]; then echo '<span class="status-fail">❌ Failed</span>'; else echo '<span class="status-warn">⚠️ Not Run</span>'; fi)
         </div>
         <div class="test-item">
             <span>🟢 JavaScript/TypeScript Tests</span>
-            <span class="status-pass">✅ Passed</span>
+            $(if [ "$JS_TESTS_STATUS" = "PASS" ]; then echo '<span class="status-pass">✅ Passed</span>'; elif [ "$JS_TESTS_STATUS" = "FAIL" ]; then echo '<span class="status-fail">❌ Failed</span>'; else echo '<span class="status-warn">⚠️ Not Run</span>'; fi)
         </div>
         <div class="test-item">
             <span>📱 Android Tests</span>
-            <span class="status-pass">✅ Passed</span>
+            $(if [ "$ANDROID_TESTS_STATUS" = "PASS" ]; then echo '<span class="status-pass">✅ Passed</span>'; elif [ "$ANDROID_TESTS_STATUS" = "FAIL" ]; then echo '<span class="status-fail">❌ Failed</span>'; else echo '<span class="status-warn">⚠️ Not Run</span>'; fi)
         </div>
         <div class="test-item">
             <span>🔍 SonarQube Analysis</span>
-            <span class="status-pass">✅ Passed</span>
+            $(if [ "$SONARQUBE_STATUS" = "PASS" ]; then echo '<span class="status-pass">✅ Passed</span>'; elif [ "$SONARQUBE_STATUS" = "FAIL" ]; then echo '<span class="status-fail">❌ Failed</span>'; else echo '<span class="status-warn">⚠️ Not Run</span>'; fi)
         </div>
         <div class="test-item">
             <span>🔒 Snyk Security Scan</span>
-            <span class="status-pass">✅ Passed</span>
+            $(if [ "$SNYK_STATUS" = "PASS" ]; then echo '<span class="status-pass">✅ Passed</span>'; elif [ "$SNYK_STATUS" = "FAIL" ]; then echo '<span class="status-fail">❌ Failed</span>'; else echo '<span class="status-warn">⚠️ Not Run</span>'; fi)
         </div>
         <div class="test-item">
             <span>🐳 Trivy Container Scan</span>
-            <span class="status-pass">✅ Passed</span>
+            $(if [ "$TRIVY_STATUS" = "PASS" ]; then echo '<span class="status-pass">✅ Passed</span>'; elif [ "$TRIVY_STATUS" = "WARN" ]; then echo '<span class="status-warn">⚠️ Warning</span>'; else echo '<span class="status-warn">⚠️ Not Run</span>'; fi)
         </div>
         <div class="test-item">
             <span>🛡️ OWASP Dependency Check</span>
-            <span class="status-pass">✅ Passed</span>
+            $(if [ "$OWASP_STATUS" = "PASS" ]; then echo '<span class="status-pass">✅ Passed</span>'; elif [ "$OWASP_STATUS" = "WARN" ]; then echo '<span class="status-warn">⚠️ Warning</span>'; else echo '<span class="status-warn">⚠️ Not Run</span>'; fi)
         </div>
     </div>
     
@@ -450,13 +485,13 @@ EOF
     <div class="section">
         <h2>🎯 Security Analysis Summary</h2>
         <div class="recommendations">
-            <h3>✅ Security Status</h3>
-            <p>All security scans completed successfully. No critical vulnerabilities were detected.</p>
+            <h3>$(if [ "$SONARQUBE_STATUS" = "PASS" ] && [ "$SNYK_STATUS" = "PASS" ] && [ "$TRIVY_STATUS" = "PASS" ] && [ "$OWASP_STATUS" = "PASS" ]; then echo '✅ Security Status'; elif [ "$SONARQUBE_STATUS" = "FAIL" ] || [ "$SNYK_STATUS" = "FAIL" ]; then echo '❌ Security Status - Critical Issues Found'; else echo '⚠️ Security Status - Some Scans Incomplete'; fi)</h3>
+            <p>$(if [ "$SONARQUBE_STATUS" = "PASS" ] && [ "$SNYK_STATUS" = "PASS" ] && [ "$TRIVY_STATUS" = "PASS" ] && [ "$OWASP_STATUS" = "PASS" ]; then echo 'All security scans completed successfully. Review individual scan reports for details.'; elif [ "$SONARQUBE_STATUS" = "FAIL" ] || [ "$SNYK_STATUS" = "FAIL" ]; then echo 'Critical security scans failed. Immediate attention required.'; else echo 'Some security scans did not complete or reported warnings. Review logs for details.'; fi)</p>
             <ul>
-                <li><strong>SonarQube:</strong> Code quality and security hotspots analyzed</li>
-                <li><strong>Snyk:</strong> Dependencies and code scanned for vulnerabilities</li>
-                <li><strong>Trivy:</strong> Docker images and filesystem scanned</li>
-                <li><strong>OWASP:</strong> Third-party dependencies analyzed</li>
+                <li><strong>SonarQube:</strong> $(if [ "$SONARQUBE_STATUS" = "PASS" ]; then echo '✅ Passed - Code quality analyzed'; elif [ "$SONARQUBE_STATUS" = "FAIL" ]; then echo '❌ Failed'; else echo '⚠️ Not run'; fi)</li>
+                <li><strong>Snyk:</strong> $(if [ "$SNYK_STATUS" = "PASS" ]; then echo '✅ Passed - Dependencies scanned'; elif [ "$SNYK_STATUS" = "FAIL" ]; then echo '❌ Failed - Vulnerabilities may exist'; else echo '⚠️ Not run'; fi)</li>
+                <li><strong>Trivy:</strong> $(if [ "$TRIVY_STATUS" = "PASS" ]; then echo '✅ Passed - Container images scanned'; elif [ "$TRIVY_STATUS" = "WARN" ]; then echo '⚠️ Warning - Check logs'; else echo '⚠️ Not run'; fi)</li>
+                <li><strong>OWASP:</strong> $(if [ "$OWASP_STATUS" = "PASS" ]; then echo '✅ Passed - Dependencies analyzed'; elif [ "$OWASP_STATUS" = "WARN" ]; then echo '⚠️ Warning - Check logs'; else echo '⚠️ Not run'; fi)</li>
             </ul>
         </div>
     </div>
