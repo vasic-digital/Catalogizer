@@ -253,11 +253,17 @@ class VLCPlayerActivity : ComponentActivity() {
                 true
             }
             KeyEvent.KEYCODE_MEDIA_NEXT -> {
-                // TODO: Play next episode
+                // Play next episode in series if available
+                lifecycleScope.launch {
+                    playNextEpisode()
+                }
                 true
             }
             KeyEvent.KEYCODE_MEDIA_PREVIOUS -> {
-                // TODO: Play previous episode
+                // Play previous episode in series if available
+                lifecycleScope.launch {
+                    playPreviousEpisode()
+                }
                 true
             }
             KeyEvent.KEYCODE_DPAD_CENTER -> {
@@ -269,6 +275,142 @@ class VLCPlayerActivity : ComponentActivity() {
                 true
             }
             else -> super.onKeyDown(keyCode, event)
+        }
+    }
+
+    /**
+     * Play the next episode in the series if available.
+     * Queries the API for episodes with the next episode number.
+     */
+    private suspend fun playNextEpisode() {
+        if (mediaId <= 0) {
+            Toast.makeText(this, "Cannot determine next episode", Toast.LENGTH_SHORT).show()
+            return
+        }
+        
+        try {
+            val container = com.catalogizer.androidtv.DependencyContainer.getInstance(this)
+            val response = container.apiService.getEntityDetails(mediaId)
+            
+            if (response.isSuccessful) {
+                val currentEntity = response.body()
+                val seriesId = currentEntity?.series_id
+                val currentEpisodeNum = currentEntity?.episode_number ?: 0
+                
+                if (seriesId != null && seriesId > 0) {
+                    // Query for next episode
+                    val nextEpisodeResponse = container.apiService.getEpisodesBySeries(
+                        seriesId = seriesId,
+                        seasonNumber = currentEntity?.season_number ?: 1
+                    )
+                    
+                    if (nextEpisodeResponse.isSuccessful) {
+                        val episodes = nextEpisodeResponse.body() ?: emptyList()
+                        val nextEpisode = episodes.find { it.episode_number == currentEpisodeNum + 1 }
+                        
+                        if (nextEpisode != null) {
+                            // Save progress for current episode before switching
+                            saveWatchProgress()
+                            
+                            // Play next episode
+                            mediaId = nextEpisode.id
+                            mediaTitle = nextEpisode.title ?: ""
+                            resolveAndPlay(mediaId)
+                            Toast.makeText(this, "Playing next episode", Toast.LENGTH_SHORT).show()
+                        } else {
+                            Toast.makeText(this, "No next episode available", Toast.LENGTH_SHORT).show()
+                        }
+                    } else {
+                        Toast.makeText(this, "Failed to fetch episodes", Toast.LENGTH_SHORT).show()
+                    }
+                } else {
+                    Toast.makeText(this, "No series information available", Toast.LENGTH_SHORT).show()
+                }
+            } else {
+                Toast.makeText(this, "Failed to get current media details", Toast.LENGTH_SHORT).show()
+            }
+        } catch (e: Exception) {
+            Log.e(TAG, "Error playing next episode", e)
+            Toast.makeText(this, "Error: ${e.message}", Toast.LENGTH_SHORT).show()
+        }
+    }
+    
+    /**
+     * Play the previous episode in the series if available.
+     * Queries the API for episodes with the previous episode number.
+     */
+    private suspend fun playPreviousEpisode() {
+        if (mediaId <= 0) {
+            Toast.makeText(this, "Cannot determine previous episode", Toast.LENGTH_SHORT).show()
+            return
+        }
+        
+        try {
+            val container = com.catalogizer.androidtv.DependencyContainer.getInstance(this)
+            val response = container.apiService.getEntityDetails(mediaId)
+            
+            if (response.isSuccessful) {
+                val currentEntity = response.body()
+                val seriesId = currentEntity?.series_id
+                val currentEpisodeNum = currentEntity?.episode_number ?: 0
+                
+                if (seriesId != null && seriesId > 0 && currentEpisodeNum > 1) {
+                    // Query for previous episode
+                    val prevEpisodeResponse = container.apiService.getEpisodesBySeries(
+                        seriesId = seriesId,
+                        seasonNumber = currentEntity?.season_number ?: 1
+                    )
+                    
+                    if (prevEpisodeResponse.isSuccessful) {
+                        val episodes = prevEpisodeResponse.body() ?: emptyList()
+                        val prevEpisode = episodes.find { it.episode_number == currentEpisodeNum - 1 }
+                        
+                        if (prevEpisode != null) {
+                            // Save progress for current episode before switching
+                            saveWatchProgress()
+                            
+                            // Play previous episode
+                            mediaId = prevEpisode.id
+                            mediaTitle = prevEpisode.title ?: ""
+                            resolveAndPlay(mediaId)
+                            Toast.makeText(this, "Playing previous episode", Toast.LENGTH_SHORT).show()
+                        } else {
+                            Toast.makeText(this, "No previous episode available", Toast.LENGTH_SHORT).show()
+                        }
+                    } else {
+                        Toast.makeText(this, "Failed to fetch episodes", Toast.LENGTH_SHORT).show()
+                    }
+                } else {
+                    Toast.makeText(this, "No previous episode available", Toast.LENGTH_SHORT).show()
+                }
+            } else {
+                Toast.makeText(this, "Failed to get current media details", Toast.LENGTH_SHORT).show()
+            }
+        } catch (e: Exception) {
+            Log.e(TAG, "Error playing previous episode", e)
+            Toast.makeText(this, "Error: ${e.message}", Toast.LENGTH_SHORT).show()
+        }
+    }
+    
+    /**
+     * Save current watch progress to the API.
+     */
+    private suspend fun saveWatchProgress() {
+        if (mediaId <= 0) return
+        
+        try {
+            val container = com.catalogizer.androidtv.DependencyContainer.getInstance(this)
+            val currentTime = vlcPlayer.getCurrentTime()
+            val duration = vlcPlayer.getDuration()
+            
+            if (duration > 0) {
+                val progress = currentTime.toFloat() / duration.toFloat()
+                if (progress in MIN_PROGRESS_TO_SAVE..MAX_PROGRESS_TO_SAVE) {
+                    container.mediaRepository.updateWatchProgress(mediaId, progress.toDouble())
+                }
+            }
+        } catch (e: Exception) {
+            Log.e(TAG, "Error saving watch progress", e)
         }
     }
 

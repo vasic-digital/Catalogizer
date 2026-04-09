@@ -44,16 +44,95 @@ class SyncService : Service() {
     
     private fun performSync() {
         serviceScope.launch {
-            // TODO: Add media library sync logic here (e.g., fetch updated catalog from API)
-
-            // Refresh TV home screen channels after sync
             try {
+                android.util.Log.d("SyncService", "Starting media library sync...")
                 val container = DependencyContainer.getInstance(this@SyncService)
+                
+                // 1. Sync recent media items
+                syncRecentMedia(container)
+                
+                // 2. Sync watch progress from server
+                syncWatchProgress(container)
+                
+                // 3. Sync watch next recommendations
+                syncWatchNext(container)
+                
+                // 4. Refresh TV home screen channels after sync
                 container.tvChannelRepository.refreshAllChannels()
                 container.watchNextManager.refreshWatchNext()
+                
+                android.util.Log.d("SyncService", "Media library sync completed successfully")
             } catch (e: Exception) {
-                android.util.Log.w("SyncService", "Channel refresh failed: ${e.message}")
+                android.util.Log.e("SyncService", "Sync failed: ${e.message}", e)
             }
+        }
+    }
+    
+    /**
+     * Sync recent media items from the API.
+     */
+    private suspend fun syncRecentMedia(container: DependencyContainer) {
+        try {
+            val response = container.apiService.getRecentMedia(limit = 50)
+            if (response.isSuccessful) {
+                val mediaItems = response.body() ?: emptyList()
+                android.util.Log.d("SyncService", "Synced ${mediaItems.size} recent media items")
+                
+                // Cache the media items locally
+                for (item in mediaItems) {
+                    container.mediaRepository.cacheMediaItem(item)
+                }
+            } else {
+                android.util.Log.w("SyncService", "Failed to fetch recent media: ${response.code()}")
+            }
+        } catch (e: Exception) {
+            android.util.Log.e("SyncService", "Error syncing recent media", e)
+        }
+    }
+    
+    /**
+     * Sync watch progress from the server.
+     */
+    private suspend fun syncWatchProgress(container: DependencyContainer) {
+        try {
+            val response = container.apiService.getUserWatchProgress()
+            if (response.isSuccessful) {
+                val progressList = response.body() ?: emptyList()
+                android.util.Log.d("SyncService", "Synced ${progressList.size} watch progress entries")
+                
+                // Update local watch progress cache
+                for (progress in progressList) {
+                    container.mediaRepository.updateLocalWatchProgress(
+                        mediaId = progress.mediaId,
+                        progress = progress.progress,
+                        position = progress.positionMs
+                    )
+                }
+            } else {
+                android.util.Log.w("SyncService", "Failed to fetch watch progress: ${response.code()}")
+            }
+        } catch (e: Exception) {
+            android.util.Log.e("SyncService", "Error syncing watch progress", e)
+        }
+    }
+    
+    /**
+     * Sync watch next recommendations.
+     */
+    private suspend fun syncWatchNext(container: DependencyContainer) {
+        try {
+            val response = container.apiService.getWatchNextRecommendations()
+            if (response.isSuccessful) {
+                val recommendations = response.body() ?: emptyList()
+                android.util.Log.d("SyncService", "Synced ${recommendations.size} watch next recommendations")
+                
+                // Update watch next channel
+                container.watchNextManager.updateRecommendations(recommendations)
+            } else {
+                android.util.Log.w("SyncService", "Failed to fetch watch next: ${response.code()}")
+            }
+        } catch (e: Exception) {
+            android.util.Log.e("SyncService", "Error syncing watch next", e)
         }
     }
 
