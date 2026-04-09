@@ -1,0 +1,923 @@
+version: '2.0'
+name: Test Suite - EXECUTABLE
+description: Executable test suite - converted from /run/media/milosvasic/DATA4TB/Projects/Catalogizer/challenges/helixqa-banks/catalogizer-desktop-comprehensive.json
+test_cases:
+- id: desktop-cold-start
+  name: Desktop Cold Start Launch
+  category: launch
+  priority: critical
+  platforms:
+  - desktop
+  steps:
+  - name: Launch application
+    action: '# TODO: Convert to executable - execute catalogizer-desktop binary from
+      command line or launcher'
+    expected: Application window appears within 3 seconds
+    timeout: 10
+  - name: Verify window state
+    action: '# TODO: Convert to executable - check window properties'
+    expected: Main window is visible, correctly sized, and centered on screen
+    timeout: 10
+- id: desktop-window-size
+  name: Desktop Window Default Size
+  category: launch
+  priority: high
+  platforms:
+  - desktop
+  steps:
+  - name: Launch fresh
+    action: '# TODO: Convert to executable - launch app with no saved window state'
+    expected: Window opens with default dimensions (minimum 1024x768)
+    timeout: 10
+  - name: Verify content fits
+    action: '# TODO: Convert to executable - check for scrollbars or clipping'
+    expected: All UI content fits within window without horizontal scrollbar
+    timeout: 10
+- id: desktop-tray
+  name: Desktop System Tray Icon
+  category: launch
+  priority: medium
+  platforms:
+  - desktop
+  steps:
+  - name: Launch app
+    action: '# TODO: Convert to executable - start catalogizer-desktop'
+    expected: System tray icon appears in taskbar notification area
+    timeout: 10
+  - name: Right-click tray
+    action: 'tap: 960,540'
+    expected: 'Context menu shows: Open, Settings, Quit'
+    timeout: 10
+  - name: Minimize to tray
+    action: 'tap: 960,540'
+    expected: Window hides, app remains running in tray
+    timeout: 10
+- id: desktop-login-page
+  name: Desktop Login Page Display
+  category: authentication
+  priority: critical
+  platforms:
+  - desktop
+  steps:
+  - name: Open app without session
+    action: '# TODO: Convert to executable - clear stored credentials and launch app'
+    expected: Login screen renders with server URL, username, password fields and
+      login button
+    timeout: 10
+  - name: Verify tab order
+    action: '# TODO: Convert to executable - press tab through fields'
+    expected: 'Tab order is: server URL -> username -> password -> login button'
+    timeout: 10
+- id: desktop-login-success
+  name: Desktop Login Success
+  category: authentication
+  priority: critical
+  platforms:
+  - desktop
+  steps:
+  - name: Enter credentials
+    action: '# TODO: Convert to executable - type server url, admin/admin123'
+    expected: Fields accept keyboard input
+    timeout: 10
+  - name: Click login
+    action: 'keypress: KEYCODE_ENTER'
+    expected: Loading spinner shows, then navigates to home/library screen
+    timeout: 10
+  - name: Verify session stored
+    action: '# TODO: Convert to executable - check that session token is persisted'
+    expected: Token stored in secure storage via Tauri IPC
+    timeout: 10
+- id: desktop-login-invalid
+  name: Desktop Login Invalid Credentials
+  category: authentication
+  priority: high
+  platforms:
+  - desktop
+  steps:
+  - name: Enter wrong password
+    action: 'tap: 960,540'
+    expected: 'Error message displayed: ''Invalid credentials'''
+    timeout: 10
+  - name: Fields preserved
+    action: '# TODO: Convert to executable - check form state'
+    expected: Username field retains value, password field cleared, focus returns
+      to password
+    timeout: 10
+- id: desktop-login-persist
+  name: Desktop Login Session Persistence
+  category: authentication
+  priority: high
+  platforms:
+  - desktop
+  steps:
+  - name: Login successfully
+    action: '# TODO: Convert to executable - login with valid credentials'
+    expected: Navigated to home screen
+    timeout: 10
+  - name: Close and reopen
+    action: '# TODO: Convert to executable - close app completely and relaunch'
+    expected: App opens directly to home/library screen without login prompt
+    timeout: 10
+- id: desktop-home-loads
+  name: Desktop Home Screen Loads
+  category: library
+  priority: critical
+  platforms:
+  - desktop
+  steps:
+  - name: Login and view home
+    action: 'sleep: 3000'
+    expected: Home screen displays with featured content, recent media, and categories
+    timeout: 10
+  - name: Verify no errors
+    action: '# TODO: Convert to executable - check for error banners or empty states'
+    expected: No error messages, content loaded or appropriate empty state shown
+    timeout: 10
+- id: desktop-library-grid
+  name: Desktop Library Grid View
+  category: library
+  priority: high
+  platforms:
+  - desktop
+  steps:
+  - name: Navigate to library
+    action: 'tap: 960,540'
+    expected: Library screen loads with media items in grid layout
+    timeout: 10
+  - name: Verify grid layout
+    action: '# TODO: Convert to executable - check media item cards in grid'
+    expected: Items display as cards with thumbnails, titles, and type badges in a
+      responsive grid
+    timeout: 10
+- id: desktop-library-list
+  name: Desktop Library List View
+  category: library
+  priority: high
+  platforms:
+  - desktop
+  steps:
+  - name: Switch to list view
+    action: 'tap: 960,540'
+    expected: Library switches to table/list layout with columns for title, type,
+      size, date
+    timeout: 10
+  - name: Verify list content
+    action: '# TODO: Convert to executable - check list rows'
+    expected: Each row shows media metadata in sortable columns
+    timeout: 10
+- id: desktop-library-search
+  name: Desktop Library Search
+  category: library
+  priority: high
+  platforms:
+  - desktop
+  steps:
+  - name: Click search field
+    action: 'tap: 960,540'
+    expected: Search field is focused, cursor visible
+    timeout: 10
+  - name: Type query
+    action: 'text: batman'
+    expected: Library filters in real-time as user types (debounced)
+    timeout: 10
+  - name: Clear search
+    action: 'tap: 960,540'
+    expected: Search cleared, full library displayed again
+    timeout: 10
+- id: desktop-library-filter
+  name: Desktop Library Filter
+  category: library
+  priority: high
+  platforms:
+  - desktop
+  steps:
+  - name: Open filter panel
+    action: 'tap: 960,540'
+    expected: 'Filter options appear: media type, file type, date range'
+    timeout: 10
+  - name: Apply filter
+    action: 'text: movies'
+    expected: Library updates to show only movie items
+    timeout: 10
+  - name: Clear filters
+    action: 'tap: 960,540'
+    expected: All filters removed, full library displayed
+    timeout: 10
+- id: desktop-detail-loads
+  name: Desktop Media Detail Loads
+  category: detail
+  priority: critical
+  platforms:
+  - desktop
+  steps:
+  - name: Click media item
+    action: 'tap: 960,540'
+    expected: Detail panel or page opens with full media information
+    timeout: 10
+  - name: Verify content
+    action: '# TODO: Convert to executable - check detail view contents'
+    expected: Title, metadata, poster/thumbnail, file info all displayed
+    timeout: 10
+- id: desktop-detail-metadata
+  name: Desktop Media Detail Metadata
+  category: detail
+  priority: high
+  platforms:
+  - desktop
+  steps:
+  - name: Open detail view
+    action: '# TODO: Convert to executable - navigate to a media item''s detail view'
+    expected: Detail view fully loaded
+    timeout: 10
+  - name: Check all metadata fields
+    action: '# TODO: Convert to executable - inspect displayed metadata'
+    expected: Title, year, type, file size, path, duration (if applicable), format
+      all shown
+    timeout: 10
+  - name: Check external metadata
+    action: '# TODO: Convert to executable - look for tmdb/imdb data if available'
+    expected: External metadata (rating, description, genres) displayed if fetched
+    timeout: 10
+- id: desktop-detail-play
+  name: Desktop Media Detail Play
+  category: detail
+  priority: critical
+  platforms:
+  - desktop
+  steps:
+  - name: Click play button
+    action: 'tap: 960,540'
+    expected: Media player opens in app or launches system default player via Tauri
+      IPC
+    timeout: 10
+  - name: Verify playback
+    action: '# TODO: Convert to executable - check that media is playing'
+    expected: Audio/video content is streaming or file is opened in appropriate player
+    timeout: 10
+- id: desktop-detail-actions
+  name: Desktop Media Detail Actions
+  category: detail
+  priority: high
+  platforms:
+  - desktop
+  steps:
+  - name: Check action buttons
+    action: '# TODO: Convert to executable - look for action buttons on detail view'
+    expected: Play, Favorite, Add to Collection, Download buttons visible
+    timeout: 10
+  - name: Toggle favorite
+    action: 'tap: 960,540'
+    expected: Item added to favorites, button state toggles
+    timeout: 10
+  - name: Add to collection
+    action: 'tap: 960,540'
+    expected: Collection picker dialog appears
+    timeout: 10
+- id: desktop-search-opens
+  name: Desktop Search Opens
+  category: search
+  priority: critical
+  platforms:
+  - desktop
+  steps:
+  - name: Open search
+    action: 'tap: 960,540'
+    expected: Search dialog or search panel opens with focused input field
+    timeout: 10
+- id: desktop-search-query
+  name: Desktop Search Query Execution
+  category: search
+  priority: critical
+  platforms:
+  - desktop
+  steps:
+  - name: Type search query
+    action: 'text: batman'
+    expected: Search executes (instant or on Enter) with loading indicator
+    timeout: 10
+  - name: Verify API call
+    action: '# TODO: Convert to executable - check that search api request was made'
+    expected: Request to /api/v1/search or /api/v1/media/search sent via Tauri HTTP
+      IPC
+    timeout: 10
+- id: desktop-search-results
+  name: Desktop Search Results Display
+  category: search
+  priority: high
+  platforms:
+  - desktop
+  steps:
+  - name: Execute search
+    action: '# TODO: Convert to executable - search for a known media title'
+    expected: Results displayed in grid or list format
+    timeout: 10
+  - name: Click result
+    action: 'tap: 960,540'
+    expected: Navigates to media detail view for that item
+    timeout: 10
+- id: desktop-search-empty
+  name: Desktop Search No Results
+  category: search
+  priority: high
+  platforms:
+  - desktop
+  steps:
+  - name: Search nonexistent
+    action: 'text: zzzznonexistent99999'
+    expected: 'Empty state message: ''No results found'' with suggestion to refine
+      query'
+    timeout: 10
+- id: desktop-settings-opens
+  name: Desktop Settings Opens
+  category: settings
+  priority: critical
+  platforms:
+  - desktop
+  steps:
+  - name: Open settings
+    action: 'tap: 960,540'
+    expected: Settings panel/page opens with configuration sections
+    timeout: 10
+- id: desktop-settings-server-url
+  name: Desktop Settings Server URL
+  category: settings
+  priority: critical
+  platforms:
+  - desktop
+  steps:
+  - name: Find server URL field
+    action: '# TODO: Convert to executable - navigate to server/connection settings
+      section'
+    expected: Server URL input field visible with current value
+    timeout: 10
+  - name: Edit URL
+    action: '# TODO: Convert to executable - clear and type new server url'
+    expected: Field accepts new URL
+    timeout: 10
+  - name: Save settings
+    action: 'tap: 960,540'
+    expected: Settings saved, connection re-established to new server
+    timeout: 10
+- id: desktop-settings-theme
+  name: Desktop Settings Theme
+  category: settings
+  priority: medium
+  platforms:
+  - desktop
+  steps:
+  - name: Find theme option
+    action: '# TODO: Convert to executable - navigate to appearance/theme section'
+    expected: 'Theme selector visible: Light, Dark, System'
+    timeout: 10
+  - name: Switch theme
+    action: '# TODO: Convert to executable - select dark theme'
+    expected: App UI immediately switches to dark theme
+    timeout: 10
+  - name: Persist theme
+    action: '# TODO: Convert to executable - close and reopen settings'
+    expected: Dark theme remains selected
+    timeout: 10
+- id: desktop-settings-auto-start
+  name: Desktop Settings Auto Start
+  category: settings
+  priority: low
+  platforms:
+  - desktop
+  steps:
+  - name: Find auto-start option
+    action: '# TODO: Convert to executable - navigate to general settings section'
+    expected: Auto-start / launch at login toggle visible
+    timeout: 10
+  - name: Toggle auto-start
+    action: 'tap: 960,540'
+    expected: Setting saved, Tauri registers app for OS startup
+    timeout: 10
+- id: desktop-settings-save
+  name: Desktop Settings Save and Load
+  category: settings
+  priority: high
+  platforms:
+  - desktop
+  steps:
+  - name: Modify multiple settings
+    action: '# TODO: Convert to executable - change theme, server url, and other settings'
+    expected: All fields show new values
+    timeout: 10
+  - name: Save all
+    action: 'tap: 960,540'
+    expected: All settings persisted via Tauri IPC to local storage
+    timeout: 10
+  - name: Reload settings
+    action: '# TODO: Convert to executable - close and reopen settings panel'
+    expected: All modified values are preserved
+    timeout: 10
+- id: desktop-ipc-get-config
+  name: Desktop IPC Get Config Command
+  category: ipc
+  priority: critical
+  platforms:
+  - desktop
+  steps:
+  - name: Invoke get_config
+    action: '# TODO: Convert to executable - frontend invokes tauri command: invoke(''get_config'')'
+    expected: Returns current configuration object with server_url, theme, preferences
+    timeout: 10
+  - name: Verify response shape
+    action: '# TODO: Convert to executable - check returned object structure'
+    expected: 'Object has expected keys: server_url, theme, auto_start, cache_size'
+    timeout: 10
+- id: desktop-ipc-update-config
+  name: Desktop IPC Update Config Command
+  category: ipc
+  priority: critical
+  platforms:
+  - desktop
+  steps:
+  - name: Invoke update_config
+    action: '# TODO: Convert to executable - frontend invokes tauri command: invoke(''update_config'',
+      {config: {...}})'
+    expected: Returns success, config is written to disk
+    timeout: 10
+  - name: Verify persistence
+    action: '# TODO: Convert to executable - invoke get_config again'
+    expected: Updated values are returned
+    timeout: 10
+- id: desktop-ipc-http-request
+  name: Desktop IPC HTTP Request Command
+  category: ipc
+  priority: critical
+  platforms:
+  - desktop
+  steps:
+  - name: Invoke http_request
+    action: '# TODO: Convert to executable - frontend invokes tauri command: invoke(''http_request'',
+      {url: ''/health'', method: ''get''})'
+    expected: Returns HTTP response with status 200 and body
+    timeout: 10
+  - name: Verify CORS bypass
+    action: '# TODO: Convert to executable - check that request bypasses browser cors
+      restrictions'
+    expected: Request succeeds even for cross-origin URLs (Tauri native HTTP)
+    timeout: 10
+- id: desktop-ipc-platform
+  name: Desktop IPC Platform Info
+  category: ipc
+  priority: high
+  platforms:
+  - desktop
+  steps:
+  - name: Invoke get_platform
+    action: '# TODO: Convert to executable - frontend invokes tauri command: invoke(''get_platform'')'
+    expected: 'Returns platform string: ''linux'', ''windows'', or ''macos'''
+    timeout: 10
+  - name: Verify accuracy
+    action: '# TODO: Convert to executable - compare with actual os'
+    expected: Returned platform matches the running operating system
+    timeout: 10
+- id: desktop-ipc-version
+  name: Desktop IPC Version Info
+  category: ipc
+  priority: high
+  platforms:
+  - desktop
+  steps:
+  - name: Invoke get_version
+    action: '# TODO: Convert to executable - frontend invokes tauri command: invoke(''get_version'')'
+    expected: Returns version string matching package.json/Cargo.toml version
+    timeout: 10
+  - name: Verify format
+    action: '# TODO: Convert to executable - check version format'
+    expected: 'Version follows semver format: X.Y.Z'
+    timeout: 10
+- id: desktop-file-picker
+  name: Desktop File Picker Dialog
+  category: file-ops
+  priority: high
+  platforms:
+  - desktop
+  steps:
+  - name: Trigger file picker
+    action: 'tap: 960,540'
+    expected: Native OS file picker dialog opens
+    timeout: 10
+  - name: Select file
+    action: '# TODO: Convert to executable - select a media file and confirm'
+    expected: File path returned to app, file info displayed
+    timeout: 10
+- id: desktop-directory-browse
+  name: Desktop Directory Browse
+  category: file-ops
+  priority: high
+  platforms:
+  - desktop
+  steps:
+  - name: Trigger directory picker
+    action: 'tap: 960,540'
+    expected: Native OS directory picker dialog opens
+    timeout: 10
+  - name: Select directory
+    action: '# TODO: Convert to executable - select a directory and confirm'
+    expected: Directory path returned to app, path displayed in field
+    timeout: 10
+- id: desktop-file-open
+  name: Desktop Open File in System App
+  category: file-ops
+  priority: high
+  platforms:
+  - desktop
+  steps:
+  - name: Click open externally
+    action: 'tap: 960,540'
+    expected: Tauri shell.open() invoked
+    timeout: 10
+  - name: Verify system app
+    action: '# TODO: Convert to executable - check that file opens in system default
+      application'
+    expected: OS default media player or file manager opens with the selected file
+    timeout: 10
+- id: desktop-offline
+  name: Desktop Offline Handling
+  category: edge-case
+  priority: high
+  platforms:
+  - desktop
+  steps:
+  - name: Disconnect network
+    action: '# TODO: Convert to executable - disable network connection on host machine'
+    expected: App detects connection loss
+    timeout: 10
+  - name: Verify error handling
+    action: '# TODO: Convert to executable - attempt to browse or search'
+    expected: Friendly offline banner/message displayed, cached content still accessible
+    timeout: 10
+  - name: Reconnect
+    action: '# TODO: Convert to executable - re-enable network'
+    expected: App automatically reconnects to server and refreshes data
+    timeout: 10
+- id: desktop-resize
+  name: Desktop Window Resize
+  category: edge-case
+  priority: high
+  platforms:
+  - desktop
+  steps:
+  - name: Resize to small
+    action: '# TODO: Convert to executable - drag window to minimum size'
+    expected: Minimum size enforced, UI adapts (responsive layout)
+    timeout: 10
+  - name: Resize to large
+    action: '# TODO: Convert to executable - maximize window'
+    expected: UI scales to fill window, grid columns increase
+    timeout: 10
+  - name: Restore size
+    action: '# TODO: Convert to executable - restore to default size'
+    expected: UI returns to normal layout, no rendering artifacts
+    timeout: 10
+- id: desktop-close-reopen
+  name: Desktop Close and Reopen State
+  category: edge-case
+  priority: medium
+  platforms:
+  - desktop
+  steps:
+  - name: Set app state
+    action: '# TODO: Convert to executable - navigate to a specific page, apply filters,
+      set view mode'
+    expected: App in customized state
+    timeout: 10
+  - name: Close app
+    action: '# TODO: Convert to executable - close application completely'
+    expected: App exits cleanly
+    timeout: 10
+  - name: Reopen app
+    action: '# TODO: Convert to executable - launch app again'
+    expected: Window position/size restored, user session active, last viewed state
+      restored where applicable
+    timeout: 10
+- id: desktop-flow-launch
+  name: 'User Flow: Launch Desktop App'
+  category: user-flow
+  priority: critical
+  platforms:
+  - desktop
+  steps:
+  - name: Launch application
+    action: '# TODO: Convert to executable - execute catalogizer-desktop binary'
+    expected: Application window appears within 3 seconds, centered on screen
+    timeout: 10
+- id: desktop-flow-login
+  name: 'User Flow: Login to Desktop App'
+  category: user-flow
+  priority: critical
+  platforms:
+  - desktop
+  steps:
+  - name: Login with credentials
+    action: 'tap: 960,540'
+    expected: Login succeeds, navigates to home/library screen with content loaded
+    timeout: 10
+- id: desktop-flow-browse-library
+  name: 'User Flow: Browse Library'
+  category: user-flow
+  priority: critical
+  platforms:
+  - desktop
+  steps:
+  - name: Browse library content
+    action: 'tap: 960,540'
+    expected: Library grid displays media items with thumbnails, titles, and type
+      badges
+    timeout: 10
+- id: desktop-flow-search
+  name: 'User Flow: Search Media'
+  category: user-flow
+  priority: critical
+  platforms:
+  - desktop
+  steps:
+  - name: Search for content
+    action: 'tap: 960,540'
+    expected: Search results appear matching query, items clickable
+    timeout: 10
+- id: desktop-flow-detail
+  name: 'User Flow: View Media Detail'
+  category: user-flow
+  priority: critical
+  platforms:
+  - desktop
+  steps:
+  - name: Open media detail
+    action: 'tap: 960,540'
+    expected: Detail panel opens with full metadata, play button, favorite toggle,
+      and collection actions
+    timeout: 10
+- id: desktop-flow-settings-logout
+  name: 'User Flow: Settings and Logout'
+  category: user-flow
+  priority: critical
+  platforms:
+  - desktop
+  steps:
+  - name: Open settings then logout
+    action: 'tap: 960,540'
+    expected: Settings panel displays, logout clears session, returns to login screen
+    timeout: 10
+- id: desktop-window-minimize
+  name: 'Window Management: Minimize'
+  category: window-management
+  priority: high
+  platforms:
+  - desktop
+  steps:
+  - name: Minimize window
+    action: 'tap: 960,540'
+    expected: Window minimizes to taskbar, app continues running in background
+    timeout: 10
+- id: desktop-window-maximize
+  name: 'Window Management: Maximize'
+  category: window-management
+  priority: high
+  platforms:
+  - desktop
+  steps:
+  - name: Maximize window
+    action: 'tap: 960,540'
+    expected: Window expands to fill entire screen, UI layout adapts to larger size
+    timeout: 10
+- id: desktop-window-restore
+  name: 'Window Management: Restore from Maximized'
+  category: window-management
+  priority: high
+  platforms:
+  - desktop
+  steps:
+  - name: Restore window
+    action: 'tap: 960,540'
+    expected: Window returns to previous size and position
+    timeout: 10
+- id: desktop-window-resize-drag
+  name: 'Window Management: Resize by Dragging'
+  category: window-management
+  priority: high
+  platforms:
+  - desktop
+  steps:
+  - name: Drag resize
+    action: '# TODO: Convert to executable - drag window edge to resize smaller and
+      larger'
+    expected: Window resizes smoothly, UI responds to new dimensions, minimum size
+      enforced
+    timeout: 10
+- id: desktop-tray-minimize-to-tray
+  name: 'System Tray: Minimize to Tray'
+  category: system-tray
+  priority: medium
+  platforms:
+  - desktop
+  steps:
+  - name: Minimize to tray
+    action: 'tap: 960,540'
+    expected: Window hides, system tray icon remains, app still running
+    timeout: 10
+- id: desktop-tray-restore-from-tray
+  name: 'System Tray: Restore from Tray'
+  category: system-tray
+  priority: medium
+  platforms:
+  - desktop
+  steps:
+  - name: Restore from tray
+    action: 'tap: 960,540'
+    expected: Window reappears in previous position and size with state preserved
+    timeout: 10
+- id: desktop-tray-context-menu
+  name: 'System Tray: Context Menu'
+  category: system-tray
+  priority: medium
+  platforms:
+  - desktop
+  steps:
+  - name: Open tray context menu
+    action: 'tap: 960,540'
+    expected: Context menu shows Open, Settings, Quit options
+    timeout: 10
+- id: desktop-file-association
+  name: 'File Association: Open .catalogizer File'
+  category: file-association
+  priority: low
+  platforms:
+  - desktop
+  steps:
+  - name: Open associated file
+    action: 'tap: 960,540'
+    expected: Catalogizer desktop app launches (or comes to front) and loads the configuration
+      file
+    timeout: 10
+- id: desktop-shortcut-search
+  name: 'Keyboard Shortcut: Ctrl+F Search'
+  category: keyboard-shortcut
+  priority: high
+  platforms:
+  - desktop
+  steps:
+  - name: Press Ctrl+F
+    action: '# TODO: Convert to executable - press ctrl+f from any screen'
+    expected: Search input field receives focus or search panel opens
+    timeout: 10
+- id: desktop-shortcut-settings
+  name: 'Keyboard Shortcut: Ctrl+, Settings'
+  category: keyboard-shortcut
+  priority: medium
+  platforms:
+  - desktop
+  steps:
+  - name: Press Ctrl+,
+    action: '# TODO: Convert to executable - press ctrl+comma from any screen'
+    expected: Settings panel opens
+    timeout: 10
+- id: desktop-shortcut-quit
+  name: 'Keyboard Shortcut: Ctrl+Q Quit'
+  category: keyboard-shortcut
+  priority: medium
+  platforms:
+  - desktop
+  steps:
+  - name: Press Ctrl+Q
+    action: '# TODO: Convert to executable - press ctrl+q from any screen'
+    expected: Quit confirmation dialog appears, or app exits gracefully if no unsaved
+      state
+    timeout: 10
+- id: desktop-copy-media-url
+  name: 'Copy/Paste: Copy Media URL'
+  category: copy-paste
+  priority: medium
+  platforms:
+  - desktop
+  steps:
+  - name: Copy media URL
+    action: 'tap: 960,540'
+    expected: Valid media URL is copied to clipboard and can be pasted
+    timeout: 10
+- id: desktop-paste-in-search
+  name: 'Copy/Paste: Paste in Search'
+  category: copy-paste
+  priority: medium
+  platforms:
+  - desktop
+  steps:
+  - name: Paste in search
+    action: 'tap: 960,540'
+    expected: Pasted text appears in search field, search executes with pasted content
+    timeout: 10
+- id: desktop-multi-monitor
+  name: 'Multi-Monitor: Move Window Between Monitors'
+  category: multi-monitor
+  priority: low
+  platforms:
+  - desktop
+  steps:
+  - name: Move to secondary monitor
+    action: '# TODO: Convert to executable - drag window from primary to secondary
+      monitor'
+    expected: Window moves smoothly, UI renders correctly on secondary monitor, DPI
+      scaling respected
+    timeout: 10
+- id: desktop-config-save-on-exit
+  name: 'Config Persistence: Settings Saved on Exit'
+  category: config-persistence
+  priority: high
+  platforms:
+  - desktop
+  steps:
+  - name: Change settings and exit
+    action: '# TODO: Convert to executable - change theme and server url in settings,
+      close app completely'
+    expected: Settings written to disk via Tauri IPC before app exits
+    timeout: 10
+- id: desktop-config-restore-on-launch
+  name: 'Config Persistence: Settings Restored on Launch'
+  category: config-persistence
+  priority: high
+  platforms:
+  - desktop
+  steps:
+  - name: Relaunch and verify
+    action: '# TODO: Convert to executable - launch app after previous settings change'
+    expected: Theme and server URL reflect previously saved values
+    timeout: 10
+- id: desktop-update-check
+  name: 'Update Check: App Checks for Updates on Launch'
+  category: update
+  priority: low
+  platforms:
+  - desktop
+  steps:
+  - name: Check for update on launch
+    action: '# TODO: Convert to executable - launch app and observe network requests'
+    expected: App checks update endpoint on startup, shows notification if update
+      available, does not block UI
+    timeout: 10
+- id: desktop-crash-recovery
+  name: 'Crash Recovery: App Restores State'
+  category: crash-recovery
+  priority: medium
+  platforms:
+  - desktop
+  steps:
+  - name: Simulate crash and recover
+    action: '# TODO: Convert to executable - force-kill app process, relaunch'
+    expected: App launches to login or home screen (based on saved session), no corrupt
+      state, window position restored
+    timeout: 10
+- id: desktop-ipc-rapid-config-updates
+  name: 'IPC Stress: Rapid Config Updates'
+  category: ipc-stress
+  priority: medium
+  platforms:
+  - desktop
+  steps:
+  - name: Rapid config changes
+    action: '# TODO: Convert to executable - trigger 20 config update ipc calls in
+      quick succession'
+    expected: All updates processed correctly, final state reflects last update, no
+      data corruption
+    timeout: 10
+- id: desktop-ipc-concurrent-calls
+  name: 'IPC Stress: Concurrent IPC Calls'
+  category: ipc-stress
+  priority: medium
+  platforms:
+  - desktop
+  steps:
+  - name: Concurrent IPC
+    action: '# TODO: Convert to executable - simultaneously invoke get_config, http_request,
+      and get_platform ipc commands'
+    expected: All commands return correct results, no race conditions or deadlocks
+      in Rust backend
+    timeout: 10
+- id: desktop-ssrf-block-internal-ip
+  name: 'HTTP Proxy SSRF: Block Internal IP Requests'
+  category: security
+  priority: critical
+  platforms:
+  - desktop
+  steps:
+  - name: Request internal IP
+    action: '# TODO: Convert to executable - invoke http_request ipc with url=''http://127.0.0.1:22''
+      or ''http://169.254.169.254/metadata'''
+    expected: Request blocked or rejected, error returned, no data from internal services
+      leaked
+    timeout: 10
+- id: desktop-ssrf-block-private-ranges
+  name: 'HTTP Proxy SSRF: Block Private IP Range Requests'
+  category: security
+  priority: critical
+  platforms:
+  - desktop
+  steps:
+  - name: Request private range
+    action: '# TODO: Convert to executable - invoke http_request ipc with url=''http://10.0.0.1/''
+      or ''http://192.168.1.1/'''
+    expected: Request blocked unless it matches the configured server URL, prevents
+      SSRF attacks
+    timeout: 10

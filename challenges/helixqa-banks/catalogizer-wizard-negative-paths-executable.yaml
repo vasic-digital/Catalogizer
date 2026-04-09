@@ -1,0 +1,244 @@
+version: '2.0'
+name: Test Suite - EXECUTABLE
+description: Executable test suite - converted from /run/media/milosvasic/DATA4TB/Projects/Catalogizer/challenges/helixqa-banks/catalogizer-wizard-negative-paths.json
+test_cases:
+- id: neg-wizard-back-data-loss
+  name: Back Button Preserves Data
+  category: validation
+  priority: critical
+  platforms:
+  - desktop
+  steps:
+  - name: Fill SMB config
+    action: '# TODO: Convert to executable - enter host=192.168.0.100, share=media,
+      user=admin in smb config step'
+    expected: Fields populated
+    timeout: 10
+  - name: Go back then forward
+    action: 'tap: 960,540'
+    expected: All previously entered values are preserved
+    timeout: 10
+- id: neg-wizard-invalid-smb-host
+  name: SMB Invalid Host Address
+  category: validation
+  priority: high
+  platforms:
+  - desktop
+  steps:
+  - name: Enter invalid host
+    action: '# TODO: Convert to executable - enter host=''<script>alert(1)</script>''
+      in smb config'
+    expected: Validation error shown, input sanitized, no XSS
+    timeout: 10
+- id: neg-wizard-smb-test-timeout
+  name: SMB Connection Test Timeout
+  category: resilience
+  priority: high
+  platforms:
+  - desktop
+  steps:
+  - name: Test unreachable host
+    action: 'tap: 960,540'
+    expected: Connection attempt times out within 10s, error message shown, not frozen
+    timeout: 10
+- id: neg-wizard-ftp-wrong-port
+  name: FTP Wrong Port Number
+  category: validation
+  priority: medium
+  platforms:
+  - desktop
+  steps:
+  - name: Enter invalid port
+    action: '# TODO: Convert to executable - set ftp port to 99999'
+    expected: 'Validation error: port must be 1-65535'
+    timeout: 10
+- id: neg-wizard-webdav-malformed-url
+  name: WebDAV Malformed URL
+  category: validation
+  priority: high
+  platforms:
+  - desktop
+  steps:
+  - name: Enter malformed URL
+    action: '# TODO: Convert to executable - enter webdav url as ''htp://not valid
+      url'''
+    expected: Validation error about malformed URL format
+    timeout: 10
+- id: neg-wizard-local-nonexistent-path
+  name: Local Path Does Not Exist
+  category: validation
+  priority: high
+  platforms:
+  - desktop
+  steps:
+  - name: Enter nonexistent path
+    action: '# TODO: Convert to executable - enter /this/path/does/not/exist as local
+      storage path'
+    expected: 'Validation error: path does not exist or is not accessible'
+    timeout: 10
+- id: neg-wizard-local-path-traversal
+  name: Local Path Traversal Attack
+  category: security
+  priority: critical
+  platforms:
+  - desktop
+  steps:
+  - name: Enter traversal path
+    action: '# TODO: Convert to executable - enter ''../../../etc/passwd'' as local
+      storage path'
+    expected: Path traversal detected and blocked, security error shown
+    timeout: 10
+- id: neg-wizard-network-scan-no-devices
+  name: Network Scan Finds No Devices
+  category: functional
+  priority: medium
+  platforms:
+  - desktop
+  steps:
+  - name: Scan empty network
+    action: '# TODO: Convert to executable - start network scan on isolated network
+      with no smb/nfs devices'
+    expected: Scan completes, shows 'No devices found' message, option to retry or
+      enter manually
+    timeout: 10
+- id: neg-wizard-config-save-permission-denied
+  name: Config Save Permission Denied
+  category: resilience
+  priority: medium
+  platforms:
+  - desktop
+  steps:
+  - name: Save to read-only location
+    action: '# TODO: Convert to executable - attempt to save configuration to read-only
+      directory'
+    expected: Error message about permissions, suggestion to choose different location
+    timeout: 10
+- id: neg-wizard-config-load-corrupt
+  name: Load Corrupted Config File
+  category: resilience
+  priority: high
+  platforms:
+  - desktop
+  steps:
+  - name: Load corrupt config
+    action: '# TODO: Convert to executable - load a config file containing invalid
+      json'
+    expected: Error message about corrupted file, wizard remains functional, no crash
+    timeout: 10
+- id: neg-wizard-rapid-step-navigation
+  name: Rapid Step Navigation
+  category: performance
+  priority: medium
+  platforms:
+  - desktop
+  steps:
+  - name: Click Next rapidly
+    action: 'tap: 960,540'
+    expected: Steps advance correctly, no double-processing, final step reached cleanly
+    timeout: 10
+- id: neg-wizard-cancel-during-scan
+  name: Cancel During Network Scan
+  category: lifecycle
+  priority: high
+  platforms:
+  - desktop
+  steps:
+  - name: Start and cancel scan
+    action: 'tap: 960,540'
+    expected: Scan stops, resources released, wizard returns to previous state
+    timeout: 10
+- id: neg-wizard-smb-special-chars-password
+  name: SMB Password with Special Characters
+  category: validation
+  priority: high
+  platforms:
+  - desktop
+  steps:
+  - name: Enter special password
+    action: '# TODO: Convert to executable - enter password ''p@$$w0rd!#%&*()'' in
+      smb config'
+    expected: Password accepted and used correctly in connection test
+    timeout: 10
+- id: neg-wizard-nfs-root-export
+  name: NFS Root Export Path
+  category: security
+  priority: critical
+  platforms:
+  - desktop
+  steps:
+  - name: Enter root export
+    action: '# TODO: Convert to executable - enter ''/'' as nfs export path'
+    expected: Warning about mounting root filesystem, requires explicit confirmation
+    timeout: 10
+- id: neg-wizard-multi-protocol-conflict
+  name: Multiple Protocols Same Share
+  category: validation
+  priority: medium
+  platforms:
+  - desktop
+  steps:
+  - name: Configure duplicate storage
+    action: '# TODO: Convert to executable - add smb share pointing to same path already
+      configured via nfs'
+    expected: Warning about duplicate storage path detected
+    timeout: 10
+- id: neg-wizard-complete-without-test
+  name: Complete Without Testing Connection
+  category: validation
+  priority: medium
+  platforms:
+  - desktop
+  steps:
+  - name: Skip connection test
+    action: 'tap: 960,540'
+    expected: Warning that connection was not tested, option to proceed anyway or
+      test first
+    timeout: 10
+- id: neg-wizard-very-long-share-name
+  name: Extremely Long Share Name
+  category: validation
+  priority: low
+  platforms:
+  - desktop
+  steps:
+  - name: Enter very long share
+    action: '# TODO: Convert to executable - enter 500-character string as smb share
+      name'
+    expected: Input truncated or validation error, no buffer overflow or crash
+    timeout: 10
+- id: neg-wizard-unicode-hostname
+  name: Unicode Characters in Hostname
+  category: validation
+  priority: medium
+  platforms:
+  - desktop
+  steps:
+  - name: Enter unicode hostname
+    action: '# TODO: Convert to executable - enter hostname with chinese/arabic characters'
+    expected: Validation error about invalid hostname characters, helpful message
+      shown
+    timeout: 10
+- id: neg-wizard-offline-during-test
+  name: Network Drops During Connection Test
+  category: resilience
+  priority: high
+  platforms:
+  - desktop
+  steps:
+  - name: Lose network during test
+    action: '# TODO: Convert to executable - start connection test, then disconnect
+      network mid-test'
+    expected: Test fails with timeout/network error, wizard remains usable, retry
+      available
+    timeout: 10
+- id: neg-wizard-progress-persist-crash
+  name: Progress Survives App Crash
+  category: resilience
+  priority: medium
+  platforms:
+  - desktop
+  steps:
+  - name: Crash mid-wizard
+    action: '# TODO: Convert to executable - force kill app while on step 4 of wizard'
+    expected: On relaunch, wizard offers to resume from last saved step or start over
+    timeout: 10

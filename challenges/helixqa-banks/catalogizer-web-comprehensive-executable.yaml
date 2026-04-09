@@ -1,0 +1,3015 @@
+version: '2.0'
+name: Test Suite - EXECUTABLE
+description: Executable test suite - converted from /run/media/milosvasic/DATA4TB/Projects/Catalogizer/challenges/helixqa-banks/catalogizer-web-comprehensive.json
+test_cases:
+- id: web-login-page
+  name: Login Page Loads
+  category: authentication
+  priority: critical
+  platforms:
+  - web
+  steps:
+  - name: Navigate to /login
+    action: '# TODO: Convert to executable - get http://localhost:3000/login'
+    expected: Page renders with login form, Catalogizer logo, username and password
+      fields visible
+    timeout: 10
+- id: web-login-form-elements
+  name: Login Form Elements Present
+  category: authentication
+  priority: critical
+  platforms:
+  - web
+  steps:
+  - name: Check form fields
+    action: '# TODO: Convert to executable - inspect login page dom'
+    expected: Username input, password input, submit button, password toggle (eye
+      icon), link to register page all present
+    timeout: 10
+- id: web-login-success
+  name: Successful Login
+  category: authentication
+  priority: critical
+  platforms:
+  - web
+  steps:
+  - name: Enter valid credentials
+    action: '# TODO: Convert to executable - fill username=admin, password=admin123
+      and submit'
+    expected: Login succeeds, redirect to /dashboard, JWT stored in localStorage
+    timeout: 10
+- id: web-login-invalid-password
+  name: Invalid Password Shows Error
+  category: authentication
+  priority: high
+  platforms:
+  - web
+  steps:
+  - name: Login with wrong password
+    action: '# TODO: Convert to executable - fill username=admin, password=wrongpass
+      and submit'
+    expected: Error message displayed, no redirect, form remains on /login
+    timeout: 10
+- id: web-login-empty-fields
+  name: Empty Fields Validation
+  category: authentication
+  priority: high
+  platforms:
+  - web
+  steps:
+  - name: Submit empty form
+    action: 'tap: 960,540'
+    expected: Form does not submit, fields remain empty, no network request sent
+    timeout: 10
+- id: web-login-remember-me
+  name: Remember Me Option
+  category: authentication
+  priority: medium
+  platforms:
+  - web
+  steps:
+  - name: Check remember me in login payload
+    action: '# TODO: Convert to executable - login with device_info including remember_me
+      field'
+    expected: Login request includes remember_me field, session persists appropriately
+    timeout: 10
+- id: web-login-password-toggle
+  name: Password Visibility Toggle
+  category: authentication
+  priority: medium
+  platforms:
+  - web
+  steps:
+  - name: Toggle password visibility
+    action: 'tap: 960,540'
+    expected: Password field toggles between type=password and type=text, icon changes
+      from Eye to EyeOff
+    timeout: 10
+- id: web-login-loading-state
+  name: Login Button Loading State
+  category: authentication
+  priority: medium
+  platforms:
+  - web
+  steps:
+  - name: Submit login form
+    action: '# TODO: Convert to executable - fill credentials and submit'
+    expected: Submit button shows loading state while request is in progress, prevents
+      double submission
+    timeout: 10
+- id: web-login-link-to-register
+  name: Login Page Register Link
+  category: authentication
+  priority: medium
+  platforms:
+  - web
+  steps:
+  - name: Check register link
+    action: 'tap: 960,540'
+    expected: Link navigates to /register page
+    timeout: 10
+- id: web-login-animation
+  name: Login Page Entry Animation
+  category: ui
+  priority: low
+  platforms:
+  - web
+  steps:
+  - name: Observe page load animation
+    action: '# TODO: Convert to executable - navigate to /login and observe motion
+      effects'
+    expected: Card fades in with y-axis translate animation via framer-motion
+    timeout: 10
+- id: web-register-page
+  name: Registration Page Loads
+  category: authentication
+  priority: high
+  platforms:
+  - web
+  steps:
+  - name: Navigate to /register
+    action: '# TODO: Convert to executable - get http://localhost:3000/register'
+    expected: Registration form renders with username, email, password, confirm password,
+      first name, last name fields
+    timeout: 10
+- id: web-register-form-elements
+  name: Registration Form Fields
+  category: authentication
+  priority: high
+  platforms:
+  - web
+  steps:
+  - name: Inspect register form
+    action: '# TODO: Convert to executable - check form dom elements'
+    expected: Username, email, first name, last name, password, confirm password inputs
+      and submit button present
+    timeout: 10
+- id: web-register-success
+  name: Successful Registration
+  category: authentication
+  priority: high
+  platforms:
+  - web
+  steps:
+  - name: Register new user
+    action: '# TODO: Convert to executable - fill all fields with valid data and submit'
+    expected: Registration succeeds, redirect to dashboard or login page
+    timeout: 10
+- id: web-register-duplicate
+  name: Duplicate Username Rejected
+  category: authentication
+  priority: high
+  platforms:
+  - web
+  steps:
+  - name: Register existing username
+    action: '# TODO: Convert to executable - submit form with username=admin (already
+      exists)'
+    expected: Error message displayed indicating username already taken
+    timeout: 10
+- id: web-register-validation
+  name: Registration Form Validation
+  category: authentication
+  priority: high
+  platforms:
+  - web
+  steps:
+  - name: Submit invalid data
+    action: '# TODO: Convert to executable - submit with short username (<3 chars),
+      invalid email, password <8 chars, mismatched confirm'
+    expected: 'Validation errors shown for each invalid field: username too short,
+      invalid email, password too short, passwords don''t match'
+    timeout: 10
+- id: web-register-password-mismatch
+  name: Password Mismatch Error
+  category: authentication
+  priority: medium
+  platforms:
+  - web
+  steps:
+  - name: Enter mismatched passwords
+    action: '# TODO: Convert to executable - fill password=test1234 and confirmpassword=test5678'
+    expected: Error message 'Passwords do not match' displayed
+    timeout: 10
+- id: web-logout-clears-session
+  name: Logout Clears Session
+  category: authentication
+  priority: critical
+  platforms:
+  - web
+  steps:
+  - name: Click logout button
+    action: 'tap: 960,540'
+    expected: Redirect to /login, JWT removed from localStorage, protected routes
+      no longer accessible
+    timeout: 10
+- id: web-token-refresh-auto
+  name: Automatic Token Refresh
+  category: authentication
+  priority: high
+  platforms:
+  - web
+  steps:
+  - name: Wait for token expiry
+    action: '# TODO: Convert to executable - observe auth context behavior near token
+      expiration'
+    expected: Token is automatically refreshed before expiry, no forced logout
+    timeout: 10
+- id: web-dashboard-loads
+  name: Dashboard Page Loads
+  category: dashboard
+  priority: critical
+  platforms:
+  - web
+  steps:
+  - name: Navigate to /dashboard
+    action: '# TODO: Convert to executable - get /dashboard after authentication'
+    expected: Dashboard renders with stats cards, charts, quick actions, system status,
+      activity feed
+    timeout: 10
+- id: web-dashboard-stats-cards
+  name: Dashboard Statistics Cards
+  category: dashboard
+  priority: high
+  platforms:
+  - web
+  steps:
+  - name: Check stats cards
+    action: '# TODO: Convert to executable - inspect dashboard stats section'
+    expected: DashboardStats component renders with Total Files, Storage Roots, Media
+      Types statistics from API
+    timeout: 10
+- id: web-dashboard-charts
+  name: Dashboard Media Distribution Chart
+  category: dashboard
+  priority: high
+  platforms:
+  - web
+  steps:
+  - name: Check charts render
+    action: '# TODO: Convert to executable - inspect mediadistributionchart component'
+    expected: Chart renders showing media type distribution with correct data from
+      API
+    timeout: 10
+- id: web-dashboard-recent-activity
+  name: Dashboard Activity Feed
+  category: dashboard
+  priority: high
+  platforms:
+  - web
+  steps:
+  - name: Check activity feed
+    action: '# TODO: Convert to executable - inspect activityfeed component'
+    expected: Recent activity items listed with timestamps and descriptions
+    timeout: 10
+- id: web-dashboard-quick-actions
+  name: Dashboard Quick Actions
+  category: dashboard
+  priority: high
+  platforms:
+  - web
+  steps:
+  - name: Check quick actions
+    action: '# TODO: Convert to executable - inspect quickactions section'
+    expected: 'Four action buttons visible: Upload Media, Scan Library, Search, Settings'
+    timeout: 10
+- id: web-dashboard-storage-usage
+  name: Dashboard Storage Usage Display
+  category: dashboard
+  priority: medium
+  platforms:
+  - web
+  steps:
+  - name: Check storage display
+    action: '# TODO: Convert to executable - look for disk usage progress bar in system
+      status'
+    expected: Disk usage shown as percentage with progress bar
+    timeout: 10
+- id: web-dashboard-scan-status
+  name: Dashboard Scan Library Action
+  category: dashboard
+  priority: medium
+  platforms:
+  - web
+  steps:
+  - name: Click Scan Library button
+    action: 'tap: 960,540'
+    expected: Toast notification 'Scanning library...' appears, API call to analyzeDirectory
+      made
+    timeout: 10
+- id: web-dashboard-system-status
+  name: Dashboard System Status Panel
+  category: dashboard
+  priority: medium
+  platforms:
+  - web
+  steps:
+  - name: Check system status
+    action: '# TODO: Convert to executable - inspect systemstatus component'
+    expected: CPU usage, memory usage, disk usage progress bars and network status
+      displayed with uptime
+    timeout: 10
+- id: web-dashboard-responsive
+  name: Dashboard Responsive Layout
+  category: dashboard
+  priority: medium
+  platforms:
+  - web
+  steps:
+  - name: Resize viewport
+    action: '# TODO: Convert to executable - set viewport to 375px width'
+    expected: Stats cards stack vertically, charts resize, quick actions grid collapses
+      to 2 columns
+    timeout: 10
+- id: web-dashboard-entity-types
+  name: Dashboard Entity Type Icons
+  category: dashboard
+  priority: medium
+  platforms:
+  - web
+  steps:
+  - name: Check entity type display
+    action: '# TODO: Convert to executable - inspect entity type breakdown in dashboard'
+    expected: 11 media type icons shown (Film, Tv, Music, Gamepad2, Monitor, BookOpen,
+      Book) with counts
+    timeout: 10
+- id: web-dashboard-redirect-root
+  name: Root URL Redirects to Dashboard
+  category: dashboard
+  priority: critical
+  platforms:
+  - web
+  steps:
+  - name: Navigate to /
+    action: '# TODO: Convert to executable - get http://localhost:3000/ after auth'
+    expected: Automatically redirected to /dashboard via Navigate component
+    timeout: 10
+- id: web-media-page-loads
+  name: Media Browser Page Loads
+  category: media
+  priority: critical
+  platforms:
+  - web
+  steps:
+  - name: Navigate to /media
+    action: '# TODO: Convert to executable - get /media after auth'
+    expected: Media browser renders with search bar, view toggle, filter button, and
+      media grid
+    timeout: 10
+- id: web-media-search
+  name: Media Search Functionality
+  category: media
+  priority: critical
+  platforms:
+  - web
+  steps:
+  - name: Type search query
+    action: '# TODO: Convert to executable - enter text in search input'
+    expected: Debounced search (300ms) triggers API call with query parameter, results
+      update in grid
+    timeout: 10
+- id: web-media-filter-by-type
+  name: Media Filter by Type
+  category: media
+  priority: high
+  platforms:
+  - web
+  steps:
+  - name: Open filters and select type
+    action: 'tap: 960,540'
+    expected: MediaFilters panel opens, selecting type updates search results to show
+      only that type
+    timeout: 10
+- id: web-media-sort-options
+  name: Media Sort Options
+  category: media
+  priority: high
+  platforms:
+  - web
+  steps:
+  - name: Change sort order
+    action: '# TODO: Convert to executable - change sort_by and sort_order in filters'
+    expected: Results re-ordered by selected field (updated_at, name, size) in selected
+      direction
+    timeout: 10
+- id: web-media-grid-view
+  name: Media Grid View Mode
+  category: media
+  priority: high
+  platforms:
+  - web
+  steps:
+  - name: Select grid view
+    action: 'tap: 960,540'
+    expected: Media items displayed in responsive grid layout via MediaGrid component
+    timeout: 10
+- id: web-media-list-view
+  name: Media List View Mode
+  category: media
+  priority: high
+  platforms:
+  - web
+  steps:
+  - name: Select list view
+    action: 'tap: 960,540'
+    expected: Media items displayed in list/table layout, viewMode state set to 'list'
+    timeout: 10
+- id: web-media-pagination
+  name: Media Pagination Controls
+  category: media
+  priority: high
+  platforms:
+  - web
+  steps:
+  - name: Navigate pages
+    action: 'tap: 960,540'
+    expected: Pagination updates offset, new page of results loaded, page indicator
+      updates
+    timeout: 10
+- id: web-media-detail-click
+  name: Media Item Detail Modal
+  category: media
+  priority: high
+  platforms:
+  - web
+  steps:
+  - name: Click media item
+    action: 'tap: 960,540'
+    expected: MediaDetailModal opens with full item details, play and download options
+    timeout: 10
+- id: web-media-empty-state
+  name: Media Empty State
+  category: media
+  priority: medium
+  platforms:
+  - web
+  steps:
+  - name: Search with no results
+    action: '# TODO: Convert to executable - enter search query that returns 0 results'
+    expected: Empty state message displayed instead of grid
+    timeout: 10
+- id: web-media-loading-state
+  name: Media Loading Skeleton
+  category: media
+  priority: medium
+  platforms:
+  - web
+  steps:
+  - name: Observe loading state
+    action: '# TODO: Convert to executable - navigate to /media and observe initial
+      load'
+    expected: Loading skeleton or spinner shown while data is fetching
+    timeout: 10
+- id: web-media-stats-display
+  name: Media Stats Summary
+  category: media
+  priority: medium
+  platforms:
+  - web
+  steps:
+  - name: Check media stats
+    action: '# TODO: Convert to executable - inspect stats query results on media
+      page'
+    expected: Media statistics (counts by type) fetched and available via getMediaStats
+    timeout: 10
+- id: web-media-player-open
+  name: Media Player Opens
+  category: media
+  priority: high
+  platforms:
+  - web
+  steps:
+  - name: Play media item
+    action: 'tap: 960,540'
+    expected: MediaPlayer component opens with playback controls for the selected
+      item
+    timeout: 10
+- id: web-media-upload-button
+  name: Media Upload Manager
+  category: media
+  priority: medium
+  platforms:
+  - web
+  steps:
+  - name: Click upload button
+    action: 'tap: 960,540'
+    expected: UploadManager component toggles visible, file upload interface shown
+    timeout: 10
+- id: web-media-refresh
+  name: Media Refresh Button
+  category: media
+  priority: medium
+  platforms:
+  - web
+  steps:
+  - name: Click refresh
+    action: 'tap: 960,540'
+    expected: Media search results refetched from API
+    timeout: 10
+- id: web-browse-page
+  name: Entity Browse Page Loads
+  category: entity
+  priority: critical
+  platforms:
+  - web
+  steps:
+  - name: Navigate to /browse
+    action: '# TODO: Convert to executable - get /browse after auth'
+    expected: Entity browser renders with type selector grid showing all 11 media
+      types with counts
+    timeout: 10
+- id: web-browse-type-selector
+  name: Entity Type Selector Grid
+  category: entity
+  priority: high
+  platforms:
+  - web
+  steps:
+  - name: Check type selector
+    action: '# TODO: Convert to executable - inspect typeselectorgrid component'
+    expected: Grid shows all entity types (movie, tv_show, music_artist, etc.) with
+      stats counts from entityStats API
+    timeout: 10
+- id: web-browse-entity-list
+  name: Entity List by Type
+  category: entity
+  priority: high
+  platforms:
+  - web
+  steps:
+  - name: Select entity type
+    action: 'tap: 960,540'
+    expected: URL updates to /browse?type=selected_type, EntityGrid renders with paginated
+      entities of that type
+    timeout: 10
+- id: web-browse-entity-detail
+  name: Entity Detail Navigation
+  category: entity
+  priority: high
+  platforms:
+  - web
+  steps:
+  - name: Click entity
+    action: 'tap: 960,540'
+    expected: Navigation to /entity/:id with full entity detail page
+    timeout: 10
+- id: web-browse-entity-search
+  name: Entity Search
+  category: entity
+  priority: high
+  platforms:
+  - web
+  steps:
+  - name: Search entities
+    action: '# TODO: Convert to executable - enter query in search input on browse
+      page'
+    expected: URL updates to /browse?q=query, results filtered by search query across
+      all types
+    timeout: 10
+- id: web-browse-back-button
+  name: Entity Browse Back Navigation
+  category: entity
+  priority: medium
+  platforms:
+  - web
+  steps:
+  - name: Click back arrow
+    action: 'tap: 960,540'
+    expected: Returns to type selector view, search params cleared
+    timeout: 10
+- id: web-browse-pagination
+  name: Entity Browse Pagination
+  category: entity
+  priority: medium
+  platforms:
+  - web
+  steps:
+  - name: Navigate entity pages
+    action: 'tap: 960,540'
+    expected: URL updates with page param, next 24 entities loaded
+    timeout: 10
+- id: web-browse-breadcrumbs
+  name: Entity Browse State in URL
+  category: entity
+  priority: medium
+  platforms:
+  - web
+  steps:
+  - name: Check URL state
+    action: '# TODO: Convert to executable - select type then navigate back via browser
+      back'
+    expected: URL search params reflect current state (type, q, page), browser back/forward
+      works
+    timeout: 10
+- id: web-entity-detail-page
+  name: Entity Detail Page Loads
+  category: entity
+  priority: critical
+  platforms:
+  - web
+  steps:
+  - name: Navigate to /entity/:id
+    action: '# TODO: Convert to executable - get /entity/1 after auth'
+    expected: Entity detail renders with EntityHero, children list, files list, duplicates
+      list
+    timeout: 10
+- id: web-entity-detail-hero
+  name: Entity Hero Section
+  category: entity
+  priority: high
+  platforms:
+  - web
+  steps:
+  - name: Check hero component
+    action: '# TODO: Convert to executable - inspect entityhero component on detail
+      page'
+    expected: Entity title, type, year, description, cover art displayed in hero section
+    timeout: 10
+- id: web-entity-detail-children
+  name: Entity Children List
+  category: entity
+  priority: high
+  platforms:
+  - web
+  steps:
+  - name: Check children list
+    action: '# TODO: Convert to executable - inspect childrenlist for a tv show entity'
+    expected: Child entities (seasons, episodes) listed with navigation links
+    timeout: 10
+- id: web-entity-detail-files
+  name: Entity Files List
+  category: entity
+  priority: high
+  platforms:
+  - web
+  steps:
+  - name: Check files list
+    action: '# TODO: Convert to executable - inspect fileslist component'
+    expected: Associated media files listed with file paths and details
+    timeout: 10
+- id: web-entity-detail-duplicates
+  name: Entity Duplicates Detection
+  category: entity
+  priority: medium
+  platforms:
+  - web
+  steps:
+  - name: Check duplicates list
+    action: '# TODO: Convert to executable - inspect duplicateslist component'
+    expected: Duplicate entities (same title+type+year) listed if any exist
+    timeout: 10
+- id: web-entity-detail-metadata-refresh
+  name: Entity Metadata Refresh
+  category: entity
+  priority: medium
+  platforms:
+  - web
+  steps:
+  - name: Click refresh metadata
+    action: 'tap: 960,540'
+    expected: Toast 'Metadata refresh queued' shown, entity data invalidated and refetched
+    timeout: 10
+- id: web-entity-detail-favorite
+  name: Entity Favorite Toggle
+  category: entity
+  priority: medium
+  platforms:
+  - web
+  steps:
+  - name: Toggle favorite on entity
+    action: 'tap: 960,540'
+    expected: Favorite mutation called, toast 'Updated' shown, entity refreshed
+    timeout: 10
+- id: web-entity-detail-not-found
+  name: Entity Not Found State
+  category: entity
+  priority: medium
+  platforms:
+  - web
+  steps:
+  - name: Navigate to invalid entity
+    action: '# TODO: Convert to executable - get /entity/999999'
+    expected: Shows 'Entity not found' message with 'Back to Browse' button
+    timeout: 10
+- id: web-entity-detail-loading
+  name: Entity Detail Loading State
+  category: entity
+  priority: medium
+  platforms:
+  - web
+  steps:
+  - name: Observe loading
+    action: '# TODO: Convert to executable - navigate to entity detail and observe'
+    expected: Spinning loader shown while entity data is being fetched
+    timeout: 10
+- id: web-collections-page
+  name: Collections Page Loads
+  category: collections
+  priority: critical
+  platforms:
+  - web
+  steps:
+  - name: Navigate to /collections
+    action: '# TODO: Convert to executable - get /collections after auth'
+    expected: 'Collections page renders with tabs: All, Smart, Manual, Favorites,
+      Templates, Automation, Integrations, AI Features'
+    timeout: 10
+- id: web-collections-list
+  name: Collections List Display
+  category: collections
+  priority: high
+  platforms:
+  - web
+  steps:
+  - name: Check collections list
+    action: '# TODO: Convert to executable - inspect collection items in all tab'
+    expected: Collections displayed with names, item counts, and action buttons
+    timeout: 10
+- id: web-collections-create
+  name: Create New Collection
+  category: collections
+  priority: high
+  platforms:
+  - web
+  steps:
+  - name: Click create button
+    action: 'tap: 960,540'
+    expected: Collection creation form/modal appears with name, description, type
+      fields
+    timeout: 10
+- id: web-collections-edit
+  name: Edit Collection
+  category: collections
+  priority: high
+  platforms:
+  - web
+  steps:
+  - name: Edit existing collection
+    action: 'tap: 960,540'
+    expected: Collection edit interface opens with pre-filled data
+    timeout: 10
+- id: web-collections-delete
+  name: Delete Collection
+  category: collections
+  priority: high
+  platforms:
+  - web
+  steps:
+  - name: Delete collection
+    action: 'tap: 960,540'
+    expected: Confirmation prompt shown, collection removed on confirm, toast notification
+    timeout: 10
+- id: web-collections-add-item
+  name: Add Item to Collection
+  category: collections
+  priority: high
+  platforms:
+  - web
+  steps:
+  - name: Add media to collection
+    action: '# TODO: Convert to executable - use add item interface on a collection'
+    expected: Media item added to collection, item count increments
+    timeout: 10
+- id: web-collections-remove-item
+  name: Remove Item from Collection
+  category: collections
+  priority: high
+  platforms:
+  - web
+  steps:
+  - name: Remove media from collection
+    action: 'tap: 960,540'
+    expected: Item removed from collection, item count decrements
+    timeout: 10
+- id: web-collections-empty-state
+  name: Collections Empty State
+  category: collections
+  priority: medium
+  platforms:
+  - web
+  steps:
+  - name: Check empty state
+    action: '# TODO: Convert to executable - view collections when none exist'
+    expected: Empty state message shown with prompt to create first collection
+    timeout: 10
+- id: web-collections-smart-builder
+  name: Smart Collection Builder
+  category: collections
+  priority: medium
+  platforms:
+  - web
+  steps:
+  - name: Open smart collection builder
+    action: '# TODO: Convert to executable - navigate to smart tab, create new smart
+      collection'
+    expected: SmartCollectionBuilder component renders with rule builder UI for automatic
+      collection criteria
+    timeout: 10
+- id: web-collections-search
+  name: Collections Search Filter
+  category: collections
+  priority: medium
+  platforms:
+  - web
+  steps:
+  - name: Search collections
+    action: '# TODO: Convert to executable - type in collections search input'
+    expected: Collection list filtered by search query
+    timeout: 10
+- id: web-collections-tabs
+  name: Collections Tab Navigation
+  category: collections
+  priority: medium
+  platforms:
+  - web
+  steps:
+  - name: Switch between tabs
+    action: 'tap: 960,540'
+    expected: Tab content changes, correct collections shown per tab filter
+    timeout: 10
+- id: web-collections-view-modes
+  name: Collections View Toggle
+  category: collections
+  priority: low
+  platforms:
+  - web
+  steps:
+  - name: Toggle grid/list view
+    action: 'tap: 960,540'
+    expected: Collections display switches between grid and list layouts
+    timeout: 10
+- id: web-collections-preview
+  name: Collection Preview Panel
+  category: collections
+  priority: medium
+  platforms:
+  - web
+  steps:
+  - name: Open collection preview
+    action: 'tap: 960,540'
+    expected: CollectionPreview component renders showing collection contents
+    timeout: 10
+- id: web-collections-sharing
+  name: Collection Sharing
+  category: collections
+  priority: medium
+  platforms:
+  - web
+  steps:
+  - name: Share collection
+    action: 'tap: 960,540'
+    expected: CollectionSharing interface opens with sharing options
+    timeout: 10
+- id: web-collections-export
+  name: Collection Export
+  category: collections
+  priority: low
+  platforms:
+  - web
+  steps:
+  - name: Export collection
+    action: 'tap: 960,540'
+    expected: CollectionExport component handles export to file
+    timeout: 10
+- id: web-collections-ai-features
+  name: Collections AI Features Tab
+  category: collections
+  priority: low
+  platforms:
+  - web
+  steps:
+  - name: Navigate to AI tab
+    action: 'tap: 960,540'
+    expected: 'AI components render: AICollectionSuggestions, AINaturalSearch, AIContentCategorizer'
+    timeout: 10
+- id: web-favorites-page
+  name: Favorites Page Loads
+  category: favorites
+  priority: critical
+  platforms:
+  - web
+  steps:
+  - name: Navigate to /favorites
+    action: '# TODO: Convert to executable - get /favorites after auth'
+    expected: Favorites page renders with PageHeader, FavoritesGrid, stats, and action
+      buttons
+    timeout: 10
+- id: web-favorites-list
+  name: Favorites Grid Display
+  category: favorites
+  priority: high
+  platforms:
+  - web
+  steps:
+  - name: Check favorites grid
+    action: '# TODO: Convert to executable - inspect favoritesgrid component'
+    expected: Favorited media items displayed in grid with media details and remove
+      option
+    timeout: 10
+- id: web-favorites-add
+  name: Add to Favorites
+  category: favorites
+  priority: high
+  platforms:
+  - web
+  steps:
+  - name: Favorite a media item
+    action: 'tap: 960,540'
+    expected: Item added to favorites, appears in /favorites page
+    timeout: 10
+- id: web-favorites-remove
+  name: Remove from Favorites
+  category: favorites
+  priority: high
+  platforms:
+  - web
+  steps:
+  - name: Unfavorite an item
+    action: 'tap: 960,540'
+    expected: Item removed from favorites, grid updates
+    timeout: 10
+- id: web-favorites-empty-state
+  name: Favorites Empty State
+  category: favorites
+  priority: medium
+  platforms:
+  - web
+  steps:
+  - name: View empty favorites
+    action: '# TODO: Convert to executable - check favorites page with no favorited
+      items'
+    expected: Empty state message displayed encouraging user to add favorites
+    timeout: 10
+- id: web-favorites-export
+  name: Favorites Export to JSON
+  category: favorites
+  priority: medium
+  platforms:
+  - web
+  steps:
+  - name: Click export button
+    action: 'tap: 960,540'
+    expected: JSON file downloaded with media_id, title, media_type, year, added_at
+      for each favorite
+    timeout: 10
+- id: web-favorites-import
+  name: Favorites Import from JSON
+  category: favorites
+  priority: medium
+  platforms:
+  - web
+  steps:
+  - name: Click import button
+    action: 'tap: 960,540'
+    expected: File parsed, valid media_ids extracted and bulk-added to favorites
+    timeout: 10
+- id: web-favorites-stats
+  name: Favorites Stats Display
+  category: favorites
+  priority: low
+  platforms:
+  - web
+  steps:
+  - name: Check favorites stats
+    action: '# TODO: Convert to executable - inspect stats section on favorites page'
+    expected: Favorite count and related statistics visible
+    timeout: 10
+- id: web-playlists-page
+  name: Playlists Page Loads
+  category: playlists
+  priority: critical
+  platforms:
+  - web
+  steps:
+  - name: Navigate to /playlists
+    action: '# TODO: Convert to executable - get /playlists after auth'
+    expected: Playlists page renders with tabs (All, My, Public, Favorites, Smart),
+      search, and filter controls
+    timeout: 10
+- id: web-playlists-create
+  name: Create New Playlist
+  category: playlists
+  priority: high
+  platforms:
+  - web
+  steps:
+  - name: Click create playlist
+    action: 'tap: 960,540'
+    expected: Creation form opens with name, description, is_public fields and media
+      item selector
+    timeout: 10
+- id: web-playlists-edit
+  name: Edit Playlist
+  category: playlists
+  priority: high
+  platforms:
+  - web
+  steps:
+  - name: Edit existing playlist
+    action: 'tap: 960,540'
+    expected: Edit form opens with pre-filled name, description, items list
+    timeout: 10
+- id: web-playlists-delete
+  name: Delete Playlist
+  category: playlists
+  priority: high
+  platforms:
+  - web
+  steps:
+  - name: Delete playlist
+    action: 'tap: 960,540'
+    expected: Playlist removed, toast confirmation, list refreshed
+    timeout: 10
+- id: web-playlists-search-media
+  name: Playlist Media Item Search
+  category: playlists
+  priority: medium
+  platforms:
+  - web
+  steps:
+  - name: Search media to add
+    action: '# TODO: Convert to executable - type in media search input when creating/editing
+      playlist'
+    expected: Media items matching query shown in results via mediaApi.searchMedia
+    timeout: 10
+- id: web-playlists-player
+  name: Playlist Player Component
+  category: playlists
+  priority: high
+  platforms:
+  - web
+  steps:
+  - name: Open playlist player
+    action: 'tap: 960,540'
+    expected: PlaylistPlayer component renders with playback controls and track list
+    timeout: 10
+- id: web-playlists-smart-builder
+  name: Smart Playlist Builder
+  category: playlists
+  priority: medium
+  platforms:
+  - web
+  steps:
+  - name: Create smart playlist
+    action: '# TODO: Convert to executable - navigate to smart tab, create smart playlist'
+    expected: SmartPlaylistBuilder renders with rule-based criteria for automatic
+      playlist generation
+    timeout: 10
+- id: web-playlists-empty-state
+  name: Playlists Empty State
+  category: playlists
+  priority: medium
+  platforms:
+  - web
+  steps:
+  - name: View empty playlists
+    action: '# TODO: Convert to executable - check playlists page with no playlists'
+    expected: Empty state message with option to create first playlist
+    timeout: 10
+- id: web-playlists-filter-type
+  name: Playlists Filter by Media Type
+  category: playlists
+  priority: medium
+  platforms:
+  - web
+  steps:
+  - name: Filter by media type
+    action: '# TODO: Convert to executable - select media type from filter dropdown
+      (all media, music, video, images, documents)'
+    expected: Playlist list filtered to show only playlists of selected media type
+    timeout: 10
+- id: web-playlists-tabs
+  name: Playlists Tab Navigation
+  category: playlists
+  priority: medium
+  platforms:
+  - web
+  steps:
+  - name: Switch tabs
+    action: 'tap: 960,540'
+    expected: Displayed playlists filtered by selected tab category
+    timeout: 10
+- id: web-subtitles-page
+  name: Subtitles Page Loads
+  category: subtitles
+  priority: critical
+  platforms:
+  - web
+  steps:
+  - name: Navigate to /subtitles
+    action: '# TODO: Convert to executable - get /subtitles after auth'
+    expected: Subtitle manager renders with search input, language selector, media
+      selector, and filter controls
+    timeout: 10
+- id: web-subtitles-search
+  name: Subtitle Search
+  category: subtitles
+  priority: high
+  platforms:
+  - web
+  steps:
+  - name: Search subtitles
+    action: 'tap: 960,540'
+    expected: SubtitleSearchRequest sent to API, search results displayed with language,
+      provider, format info
+    timeout: 10
+- id: web-subtitles-download
+  name: Subtitle Download
+  category: subtitles
+  priority: high
+  platforms:
+  - web
+  steps:
+  - name: Download subtitle
+    action: 'tap: 960,540'
+    expected: downloadSubtitle mutation called, success toast shown, media subtitles
+      refetched
+    timeout: 10
+- id: web-subtitles-upload
+  name: Subtitle Upload Modal
+  category: subtitles
+  priority: high
+  platforms:
+  - web
+  steps:
+  - name: Upload subtitle
+    action: 'tap: 960,540'
+    expected: Upload modal opens for attaching subtitle file to media item
+    timeout: 10
+- id: web-subtitles-languages
+  name: Subtitle Language Selector
+  category: subtitles
+  priority: high
+  platforms:
+  - web
+  steps:
+  - name: Select language
+    action: '# TODO: Convert to executable - choose language from common_languages
+      dropdown'
+    expected: Language filter applied, search scoped to selected language
+    timeout: 10
+- id: web-subtitles-sync-verify
+  name: Subtitle Sync Modal
+  category: subtitles
+  priority: medium
+  platforms:
+  - web
+  steps:
+  - name: Open sync modal
+    action: 'tap: 960,540'
+    expected: SubtitleSyncModal opens with timing adjustment controls
+    timeout: 10
+- id: web-subtitles-media-selector
+  name: Subtitle Media Selector
+  category: subtitles
+  priority: medium
+  platforms:
+  - web
+  steps:
+  - name: Select media for subtitles
+    action: 'tap: 960,540'
+    expected: Media selector shows searchable list, selected media highlighted, existing
+      subtitles loaded
+    timeout: 10
+- id: web-subtitles-providers
+  name: Subtitle Provider Filter
+  category: subtitles
+  priority: medium
+  platforms:
+  - web
+  steps:
+  - name: Filter by provider
+    action: '# TODO: Convert to executable - toggle subtitle provider filters'
+    expected: Search results filtered to selected providers only
+    timeout: 10
+- id: web-subtitles-existing-list
+  name: Subtitle Existing Subtitles List
+  category: subtitles
+  priority: medium
+  platforms:
+  - web
+  steps:
+  - name: View media subtitles
+    action: '# TODO: Convert to executable - select media item and check existing
+      subtitles'
+    expected: List of already-downloaded subtitles for the media item with delete
+      option
+    timeout: 10
+- id: web-conversion-page
+  name: Conversion Tools Page Loads
+  category: conversion
+  priority: critical
+  platforms:
+  - web
+  steps:
+  - name: Navigate to /conversion
+    action: '# TODO: Convert to executable - get /conversion after auth'
+    expected: Format Converter page renders with FormatConverter component, job list,
+      supported formats
+    timeout: 10
+- id: web-conversion-create-job
+  name: Create Conversion Job
+  category: conversion
+  priority: high
+  platforms:
+  - web
+  steps:
+  - name: Start conversion
+    action: 'tap: 960,540'
+    expected: conversionApi.startConversion called, new job appears in list, toast
+      'Conversion started successfully'
+    timeout: 10
+- id: web-conversion-job-list
+  name: Conversion Job List
+  category: conversion
+  priority: high
+  platforms:
+  - web
+  steps:
+  - name: View conversion jobs
+    action: '# TODO: Convert to executable - check job list on conversion page'
+    expected: Jobs listed with status (pending, in-progress, completed, cancelled,
+      failed), progress, and actions
+    timeout: 10
+- id: web-conversion-supported-formats
+  name: Conversion Supported Formats
+  category: conversion
+  priority: medium
+  platforms:
+  - web
+  steps:
+  - name: Check format options
+    action: '# TODO: Convert to executable - inspect format dropdown in converter'
+    expected: 'Supported formats listed: mp4, mkv, avi, mov, webm, mp3, wav, flac'
+    timeout: 10
+- id: web-conversion-cancel-job
+  name: Cancel Conversion Job
+  category: conversion
+  priority: high
+  platforms:
+  - web
+  steps:
+  - name: Cancel active job
+    action: 'tap: 960,540'
+    expected: conversionApi.cancelConversion called, job status changes to cancelled,
+      toast shown
+    timeout: 10
+- id: web-conversion-retry-job
+  name: Retry Failed Conversion
+  category: conversion
+  priority: medium
+  platforms:
+  - web
+  steps:
+  - name: Retry failed job
+    action: 'tap: 960,540'
+    expected: conversionApi.retryConversion called, job status reset to pending with
+      progress 0
+    timeout: 10
+- id: web-conversion-download-result
+  name: Download Converted File
+  category: conversion
+  priority: medium
+  platforms:
+  - web
+  steps:
+  - name: Download completed file
+    action: 'tap: 960,540'
+    expected: conversionApi.downloadFile called, file download initiated
+    timeout: 10
+- id: web-conversion-auto-refresh
+  name: Conversion Jobs Auto-Refresh
+  category: conversion
+  priority: low
+  platforms:
+  - web
+  steps:
+  - name: Check auto-refresh
+    action: 'sleep: 30000'
+    expected: Job list auto-refreshes every 30 seconds via refetchInterval
+    timeout: 10
+- id: web-admin-page
+  name: Admin Page Loads
+  category: admin
+  priority: critical
+  platforms:
+  - web
+  steps:
+  - name: Navigate to /admin
+    action: '# TODO: Convert to executable - get /admin after auth as admin user'
+    expected: 'AdminPanel renders with tabs: Overview, Users, Storage, Backups'
+    timeout: 10
+- id: web-admin-requires-admin
+  name: Admin Requires Admin Role
+  category: admin
+  priority: critical
+  platforms:
+  - web
+  steps:
+  - name: Access as non-admin
+    action: '# TODO: Convert to executable - navigate to /admin as regular user'
+    expected: ProtectedRoute with requireAdmin blocks access, redirected to dashboard
+    timeout: 10
+- id: web-admin-users-list
+  name: Admin Users List
+  category: admin
+  priority: high
+  platforms:
+  - web
+  steps:
+  - name: View users tab
+    action: 'tap: 960,540'
+    expected: User list displayed with username, email, role (admin/user/viewer),
+      status (active/inactive/suspended), last login
+    timeout: 10
+- id: web-admin-user-create
+  name: Admin Create User
+  category: admin
+  priority: high
+  platforms:
+  - web
+  steps:
+  - name: Create new user
+    action: '# TODO: Convert to executable - use user creation interface in admin
+      panel'
+    expected: New user created with specified username, email, role, and password
+    timeout: 10
+- id: web-admin-user-edit
+  name: Admin Edit User
+  category: admin
+  priority: high
+  platforms:
+  - web
+  steps:
+  - name: Update user
+    action: 'tap: 960,540'
+    expected: adminApi.updateUser called, toast 'User updated successfully'
+    timeout: 10
+- id: web-admin-roles
+  name: Admin Role Management
+  category: admin
+  priority: high
+  platforms:
+  - web
+  steps:
+  - name: Change user role
+    action: '# TODO: Convert to executable - change role dropdown for a user (admin,
+      user, viewer)'
+    expected: Role updated, permissions change for target user
+    timeout: 10
+- id: web-admin-system-info
+  name: Admin System Information
+  category: admin
+  priority: high
+  platforms:
+  - web
+  steps:
+  - name: Check system info
+    action: '# TODO: Convert to executable - view overview tab in admin panel'
+    expected: 'System info displayed: version, uptime, CPU usage, memory usage, disk
+      usage, active connections, total requests'
+    timeout: 10
+- id: web-admin-storage-info
+  name: Admin Storage Management
+  category: admin
+  priority: high
+  platforms:
+  - web
+  steps:
+  - name: View storage tab
+    action: 'tap: 960,540'
+    expected: Storage paths listed with total/used/available space, media count, last
+      scan date
+    timeout: 10
+- id: web-admin-scan-storage
+  name: Admin Trigger Storage Scan
+  category: admin
+  priority: medium
+  platforms:
+  - web
+  steps:
+  - name: Scan storage path
+    action: 'tap: 960,540'
+    expected: adminApi.scanStorage called, toast 'Storage scan initiated for [path]'
+    timeout: 10
+- id: web-admin-backups
+  name: Admin Backup Management
+  category: admin
+  priority: medium
+  platforms:
+  - web
+  steps:
+  - name: View backups tab
+    action: 'tap: 960,540'
+    expected: Backup list with id, filename, size, created date, type (full/incremental),
+      status
+    timeout: 10
+- id: web-admin-create-backup
+  name: Admin Create Backup
+  category: admin
+  priority: medium
+  platforms:
+  - web
+  steps:
+  - name: Create new backup
+    action: 'tap: 960,540'
+    expected: adminApi.createBackup called, toast confirmation, backup appears in
+      list
+    timeout: 10
+- id: web-admin-restore-backup
+  name: Admin Restore Backup
+  category: admin
+  priority: medium
+  platforms:
+  - web
+  steps:
+  - name: Restore from backup
+    action: 'tap: 960,540'
+    expected: adminApi.restoreBackup called, toast 'Backup restore initiated successfully'
+    timeout: 10
+- id: web-admin-auto-refresh
+  name: Admin System Info Auto-Refresh
+  category: admin
+  priority: low
+  platforms:
+  - web
+  steps:
+  - name: Check auto-refresh
+    action: 'sleep: 3000'
+    expected: System info refreshes every 30 seconds via refetchInterval
+    timeout: 10
+- id: web-analytics-page
+  name: Analytics Page Loads
+  category: analytics
+  priority: critical
+  platforms:
+  - web
+  steps:
+  - name: Navigate to /analytics
+    action: '# TODO: Convert to executable - get /analytics after auth'
+    expected: Analytics dashboard renders with stat cards, bar chart, pie chart, area
+      chart, line charts
+    timeout: 10
+- id: web-analytics-stat-cards
+  name: Analytics Key Metric Cards
+  category: analytics
+  priority: high
+  platforms:
+  - web
+  steps:
+  - name: Check stat cards
+    action: '# TODO: Convert to executable - inspect key metrics section'
+    expected: StatCard components show Total Media Items, Total Storage, media quality
+      breakdown with trend sparklines
+    timeout: 10
+- id: web-analytics-charts
+  name: Analytics Charts Render
+  category: analytics
+  priority: high
+  platforms:
+  - web
+  steps:
+  - name: Check Recharts components
+    action: '# TODO: Convert to executable - inspect chart containers'
+    expected: BarChart (weekly additions), PieChart (media type distribution), AreaChart
+      (growth trend), LineChart (sparklines) all render via Recharts
+    timeout: 10
+- id: web-analytics-media-type-distribution
+  name: Analytics Media Type Distribution
+  category: analytics
+  priority: high
+  platforms:
+  - web
+  steps:
+  - name: Check pie chart
+    action: '# TODO: Convert to executable - inspect piechart data'
+    expected: Pie chart shows breakdown by media type from stats.by_type with color-coded
+      segments
+    timeout: 10
+- id: web-analytics-quality-breakdown
+  name: Analytics Quality Distribution
+  category: analytics
+  priority: medium
+  platforms:
+  - web
+  steps:
+  - name: Check quality chart
+    action: '# TODO: Convert to executable - inspect quality distribution data'
+    expected: Quality breakdown from stats.by_quality shown (SD, HD, 4K, etc.)
+    timeout: 10
+- id: web-analytics-loading-state
+  name: Analytics Loading Skeleton
+  category: analytics
+  priority: medium
+  platforms:
+  - web
+  steps:
+  - name: Observe loading
+    action: '# TODO: Convert to executable - navigate to analytics and observe initial
+      state'
+    expected: Animated pulse skeleton with card placeholders shown while data loads
+    timeout: 10
+- id: web-ai-page
+  name: AI Dashboard Page Loads
+  category: ai
+  priority: high
+  platforms:
+  - web
+  steps:
+  - name: Navigate to /ai
+    action: '# TODO: Convert to executable - get /ai after auth'
+    expected: 'AI Dashboard renders with sections: overview, suggestions, search,
+      analytics, metadata, automation'
+    timeout: 10
+- id: web-ai-overview-metrics
+  name: AI Overview Metrics
+  category: ai
+  priority: high
+  platforms:
+  - web
+  steps:
+  - name: Check AI metrics
+    action: '# TODO: Convert to executable - inspect overview section'
+    expected: 'Metrics displayed: processed items, accuracy score, time saved, automation
+      rules, predictions active'
+    timeout: 10
+- id: web-ai-suggestions
+  name: AI Collection Suggestions
+  category: ai
+  priority: medium
+  platforms:
+  - web
+  steps:
+  - name: View AI suggestions
+    action: '# TODO: Convert to executable - expand suggestions section'
+    expected: AICollectionSuggestions component renders with AI-generated collection
+      recommendations
+    timeout: 10
+- id: web-ai-natural-search
+  name: AI Natural Language Search
+  category: ai
+  priority: medium
+  platforms:
+  - web
+  steps:
+  - name: Use AI search
+    action: '# TODO: Convert to executable - expand search section and enter natural
+      language query'
+    expected: AINaturalSearch component processes query and returns relevant results
+    timeout: 10
+- id: web-ai-metadata-extractor
+  name: AI Metadata Extraction
+  category: ai
+  priority: medium
+  platforms:
+  - web
+  steps:
+  - name: View metadata section
+    action: '# TODO: Convert to executable - expand metadata section'
+    expected: AIMetadataExtractor component renders for extracting metadata from media
+      items
+    timeout: 10
+- id: web-ai-automation-rules
+  name: AI Automation Rules
+  category: ai
+  priority: medium
+  platforms:
+  - web
+  steps:
+  - name: View automation rules
+    action: '# TODO: Convert to executable - expand automation section'
+    expected: AIAutomationRules component renders for managing AI-driven automation
+      rules
+    timeout: 10
+- id: web-ai-section-expand
+  name: AI Dashboard Section Toggle
+  category: ai
+  priority: low
+  platforms:
+  - web
+  steps:
+  - name: Toggle sections
+    action: 'tap: 960,540'
+    expected: Sections expand and collapse with expandedSections state tracking
+    timeout: 10
+- id: web-ai-auto-update
+  name: AI Metrics Auto Update
+  category: ai
+  priority: low
+  platforms:
+  - web
+  steps:
+  - name: Check auto update
+    action: 'sleep: 30000'
+    expected: processedItems metric increments periodically via 30-second interval
+    timeout: 10
+- id: web-responsive-mobile
+  name: Mobile Responsive Layout (375px)
+  category: cross-cutting
+  priority: high
+  platforms:
+  - web
+  steps:
+  - name: Set mobile viewport
+    action: '# TODO: Convert to executable - resize viewport to 375x667 (iphone se)'
+    expected: Hamburger menu appears, sidebar collapses, grids stack to single column,
+      content fits without horizontal scroll
+    timeout: 10
+- id: web-responsive-tablet
+  name: Tablet Responsive Layout (768px)
+  category: cross-cutting
+  priority: high
+  platforms:
+  - web
+  steps:
+  - name: Set tablet viewport
+    action: '# TODO: Convert to executable - resize viewport to 768x1024 (ipad)'
+    expected: 2-column grid layouts, sidebar may collapse, navigation adapts
+    timeout: 10
+- id: web-responsive-desktop
+  name: Desktop Full Layout (1920px)
+  category: cross-cutting
+  priority: medium
+  platforms:
+  - web
+  steps:
+  - name: Set desktop viewport
+    action: '# TODO: Convert to executable - resize viewport to 1920x1080'
+    expected: Full navigation visible, 3-4 column grids, max-w-7xl container centered
+      with side margins
+    timeout: 10
+- id: web-dark-mode-toggle
+  name: Dark Mode Toggle
+  category: cross-cutting
+  priority: medium
+  platforms:
+  - web
+  steps:
+  - name: Toggle dark mode
+    action: 'tap: 960,540'
+    expected: Body class toggles dark mode, backgrounds change from light gray to
+      dark gray, text inverts
+    timeout: 10
+- id: web-dark-mode-persistent
+  name: Dark Mode Persists Across Reload
+  category: cross-cutting
+  priority: medium
+  platforms:
+  - web
+  steps:
+  - name: Reload with dark mode
+    action: '# TODO: Convert to executable - enable dark mode, refresh page'
+    expected: Dark mode persists after page reload via localStorage preference
+    timeout: 10
+- id: web-no-console-errors
+  name: No Console Errors on Any Page
+  category: quality
+  priority: critical
+  platforms:
+  - web
+  steps:
+  - name: Monitor console
+    action: '# TODO: Convert to executable - navigate through all 13 routes, monitor
+      browser console'
+    expected: Zero console.error calls across all pages per zero-warning policy
+    timeout: 10
+- id: web-no-network-errors
+  name: No Failed Network Requests
+  category: quality
+  priority: critical
+  platforms:
+  - web
+  steps:
+  - name: Monitor network
+    action: '# TODO: Convert to executable - navigate through all pages, monitor xhr/fetch
+      requests'
+    expected: No 4xx/5xx responses, no failed fetch calls, all API endpoints return
+      valid responses
+    timeout: 10
+- id: web-no-404-requests
+  name: No 404 Resource Requests
+  category: quality
+  priority: critical
+  platforms:
+  - web
+  steps:
+  - name: Check resource loading
+    action: '# TODO: Convert to executable - monitor network for 404s on assets, scripts,
+      api calls'
+    expected: Zero 404 responses for any resource (JS chunks, CSS, images, API endpoints)
+    timeout: 10
+- id: web-loading-states
+  name: Loading States on All Pages
+  category: cross-cutting
+  priority: high
+  platforms:
+  - web
+  steps:
+  - name: Check loading indicators
+    action: '# TODO: Convert to executable - navigate to each page with throttled
+      network'
+    expected: Each page shows PageLoader skeleton (pulse animation) via Suspense fallback
+      during lazy load
+    timeout: 10
+- id: web-error-boundary
+  name: Error Boundary Wraps App
+  category: cross-cutting
+  priority: high
+  platforms:
+  - web
+  steps:
+  - name: Verify ErrorBoundary
+    action: '# TODO: Convert to executable - inspect component tree root'
+    expected: ErrorBoundary component wraps entire app in App.tsx, catches and displays
+      render errors gracefully
+    timeout: 10
+- id: web-empty-states
+  name: Empty States on Data Pages
+  category: cross-cutting
+  priority: medium
+  platforms:
+  - web
+  steps:
+  - name: Check all empty states
+    action: '# TODO: Convert to executable - visit media, collections, favorites,
+      playlists with no data'
+    expected: Each page shows meaningful empty state message instead of blank content
+    timeout: 10
+- id: web-keyboard-navigation
+  name: Keyboard Navigation
+  category: accessibility
+  priority: medium
+  platforms:
+  - web
+  steps:
+  - name: Tab through page
+    action: '# TODO: Convert to executable - press tab key repeatedly on login and
+      dashboard pages'
+    expected: Focus moves logically through interactive elements (inputs, buttons,
+      links) with visible focus ring
+    timeout: 10
+- id: web-tab-order
+  name: Logical Tab Order
+  category: accessibility
+  priority: medium
+  platforms:
+  - web
+  steps:
+  - name: Check tab order on forms
+    action: '# TODO: Convert to executable - tab through login form: username -> password
+      -> toggle -> submit -> register link'
+    expected: Focus order matches visual layout, no skipped or out-of-order elements
+    timeout: 10
+- id: web-aria-labels
+  name: ARIA Labels on Interactive Elements
+  category: accessibility
+  priority: medium
+  platforms:
+  - web
+  steps:
+  - name: Check ARIA attributes
+    action: '# TODO: Convert to executable - inspect buttons, inputs, and icons for
+      aria-label'
+    expected: Interactive elements have aria-label or accessible text for screen readers
+    timeout: 10
+- id: web-page-title-updates
+  name: Document Title Updates Per Route
+  category: cross-cutting
+  priority: low
+  platforms:
+  - web
+  steps:
+  - name: Check document.title
+    action: '# TODO: Convert to executable - navigate to each route and check document.title'
+    expected: Page title updates to reflect current page context
+    timeout: 10
+- id: web-protected-route-redirect
+  name: Protected Route Redirect to Login
+  category: security
+  priority: critical
+  platforms:
+  - web
+  steps:
+  - name: Access protected route
+    action: '# TODO: Convert to executable - get /dashboard, /media, /admin without
+      authentication'
+    expected: ProtectedRoute redirects to /login for all protected routes
+    timeout: 10
+- id: web-permission-based-routes
+  name: Permission-Based Route Protection
+  category: security
+  priority: high
+  platforms:
+  - web
+  steps:
+  - name: Access permission-gated route
+    action: '# TODO: Convert to executable - access /media (requires read:media),
+      /analytics (requires view:analysis) without permission'
+    expected: ProtectedRoute with requiredPermission blocks access for users without
+      the specific permission
+    timeout: 10
+- id: web-catch-all-route
+  name: Catch-All Route Redirect
+  category: cross-cutting
+  priority: medium
+  platforms:
+  - web
+  steps:
+  - name: Navigate to invalid URL
+    action: '# TODO: Convert to executable - get /nonexistent-page'
+    expected: Catch-all route redirects to /dashboard
+    timeout: 10
+- id: web-lazy-loading
+  name: Lazy-Loaded Page Components
+  category: performance
+  priority: high
+  platforms:
+  - web
+  steps:
+  - name: Check code splitting
+    action: '# TODO: Convert to executable - monitor network for js chunk loading
+      on navigation'
+    expected: Each page component (Dashboard, MediaBrowser, Analytics, etc.) loads
+      as separate JS chunk via React.lazy
+    timeout: 10
+- id: web-suspense-fallback
+  name: Suspense Fallback During Lazy Load
+  category: performance
+  priority: medium
+  platforms:
+  - web
+  steps:
+  - name: Observe fallback
+    action: '# TODO: Convert to executable - navigate with slow network to trigger
+      suspense boundary'
+    expected: PageLoader skeleton with animated pulse placeholders shown during chunk
+      loading
+    timeout: 10
+- id: web-websocket-connection
+  name: WebSocket Connection Status
+  category: cross-cutting
+  priority: high
+  platforms:
+  - web
+  steps:
+  - name: Check WebSocket connection
+    action: '# TODO: Convert to executable - inspect connectionstatus component after
+      login'
+    expected: WebSocketProvider establishes connection, ConnectionStatus indicator
+      shows connected state
+    timeout: 10
+- id: web-header-navigation
+  name: Header Navigation Links
+  category: cross-cutting
+  priority: critical
+  platforms:
+  - web
+  steps:
+  - name: Check header nav
+    action: '# TODO: Convert to executable - inspect header component when authenticated'
+    expected: 'Desktop navigation shows links: Dashboard, Media, Browse, Collections,
+      Favorites, Playlists with correct routes'
+    timeout: 10
+- id: web-header-logo-home
+  name: Header Logo Navigates Home
+  category: cross-cutting
+  priority: medium
+  platforms:
+  - web
+  steps:
+  - name: Click logo
+    action: 'tap: 960,540'
+    expected: Navigation to / which redirects to /dashboard
+    timeout: 10
+- id: web-header-mobile-menu
+  name: Header Mobile Menu Toggle
+  category: cross-cutting
+  priority: medium
+  platforms:
+  - web
+  steps:
+  - name: Toggle mobile menu
+    action: 'tap: 960,540'
+    expected: Mobile menu slides open/closed with AnimatePresence animation, shows
+      all navigation links
+    timeout: 10
+- id: web-header-user-menu
+  name: Header User Menu
+  category: cross-cutting
+  priority: medium
+  platforms:
+  - web
+  steps:
+  - name: Check user menu
+    action: '# TODO: Convert to executable - inspect user menu in header (user icon
+      area)'
+    expected: User icon shown with logout (LogOut) and settings (Settings) options
+    timeout: 10
+- id: web-toast-notifications
+  name: Toast Notifications Display
+  category: cross-cutting
+  priority: high
+  platforms:
+  - web
+  steps:
+  - name: Trigger toast
+    action: '# TODO: Convert to executable - perform action that triggers toast (e.g.,
+      scan library)'
+    expected: react-hot-toast notification appears with success/error/loading states,
+      auto-dismisses
+    timeout: 10
+- id: web-framer-motion-animations
+  name: Page Transition Animations
+  category: ui
+  priority: low
+  platforms:
+  - web
+  steps:
+  - name: Observe animations
+    action: '# TODO: Convert to executable - navigate between pages'
+    expected: 'framer-motion animations play: fade-in, slide-up on page components,
+      AnimatePresence on modals'
+    timeout: 10
+- id: web-react-query-caching
+  name: React Query Data Caching
+  category: performance
+  priority: medium
+  platforms:
+  - web
+  steps:
+  - name: Test cache behavior
+    action: '# TODO: Convert to executable - navigate to page, leave, return within
+      staletime'
+    expected: Data served from React Query cache without new API call within staleTime
+      window (5-15 minutes)
+    timeout: 10
+- id: web-device-info-login
+  name: Login Sends Device Info
+  category: security
+  priority: medium
+  platforms:
+  - web
+  steps:
+  - name: Check login payload
+    action: '# TODO: Convert to executable - inspect network request on login submit'
+    expected: Login request includes device_info object with device_type, platform,
+      platform_version, app_version, device_name
+    timeout: 10
+- id: web-flow-login-to-dashboard
+  name: 'User Flow: Login to Dashboard'
+  category: user-flow
+  priority: critical
+  platforms:
+  - web
+  steps:
+  - name: Login and reach dashboard
+    action: '# TODO: Convert to executable - navigate to /login, enter admin/admin123,
+      submit'
+    expected: Login succeeds, redirected to /dashboard with stats cards and charts
+      loaded
+    timeout: 10
+- id: web-flow-dashboard-to-browse
+  name: 'User Flow: Dashboard to Browse Media'
+  category: user-flow
+  priority: critical
+  platforms:
+  - web
+  steps:
+  - name: Navigate to media browser
+    action: 'tap: 960,540'
+    expected: Media browser page loads with search bar, view toggle, and media grid
+    timeout: 10
+- id: web-flow-browse-click-entity
+  name: 'User Flow: Click Entity from Media Browser'
+  category: user-flow
+  priority: critical
+  platforms:
+  - web
+  steps:
+  - name: Click media entity
+    action: 'tap: 960,540'
+    expected: MediaDetailModal opens or navigates to entity detail with full information
+    timeout: 10
+- id: web-flow-view-entity-details
+  name: 'User Flow: View Entity Details'
+  category: user-flow
+  priority: critical
+  platforms:
+  - web
+  steps:
+  - name: Inspect entity detail
+    action: '# TODO: Convert to executable - on entity detail page, check hero section,
+      files, children, metadata'
+    expected: 'All entity sections rendered: title, type, year, description, associated
+      files, child entities'
+    timeout: 10
+- id: web-flow-back-to-browse
+  name: 'User Flow: Back to Browse from Detail'
+  category: user-flow
+  priority: high
+  platforms:
+  - web
+  steps:
+  - name: Navigate back
+    action: 'tap: 960,540'
+    expected: Returns to media browser or browse page with previous scroll position
+      and filters preserved
+    timeout: 10
+- id: web-flow-login-to-collections
+  name: 'User Flow: Login to Collections'
+  category: user-flow
+  priority: critical
+  platforms:
+  - web
+  steps:
+  - name: Navigate to collections
+    action: 'tap: 960,540'
+    expected: Collections page loads with tabs and collection list or empty state
+    timeout: 10
+- id: web-flow-create-collection
+  name: 'User Flow: Create New Collection'
+  category: user-flow
+  priority: high
+  platforms:
+  - web
+  steps:
+  - name: Create collection
+    action: 'tap: 960,540'
+    expected: Collection created, appears in collection list with correct name and
+      0 items
+    timeout: 10
+- id: web-flow-add-item-to-collection
+  name: 'User Flow: Add Item to Created Collection'
+  category: user-flow
+  priority: high
+  platforms:
+  - web
+  steps:
+  - name: Add media item
+    action: '# TODO: Convert to executable - open collection, use add item interface,
+      select a media entity'
+    expected: Item added to collection, item count increments to 1
+    timeout: 10
+- id: web-flow-view-collection
+  name: 'User Flow: View Collection Contents'
+  category: user-flow
+  priority: high
+  platforms:
+  - web
+  steps:
+  - name: View collection
+    action: 'tap: 960,540'
+    expected: Collection detail shows the added media item with correct metadata
+    timeout: 10
+- id: web-flow-delete-collection
+  name: 'User Flow: Delete Collection'
+  category: user-flow
+  priority: high
+  platforms:
+  - web
+  steps:
+  - name: Delete collection
+    action: 'tap: 960,540'
+    expected: Collection removed from list, toast confirmation shown, list refreshed
+    timeout: 10
+- id: web-flow-add-to-favorites
+  name: 'User Flow: Add Media to Favorites'
+  category: user-flow
+  priority: high
+  platforms:
+  - web
+  steps:
+  - name: Favorite from browse
+    action: 'tap: 960,540'
+    expected: Star icon fills, toast 'Updated' shown, item marked as favorite
+    timeout: 10
+- id: web-flow-check-favorites-badge
+  name: 'User Flow: Check Favorites Badge'
+  category: user-flow
+  priority: high
+  platforms:
+  - web
+  steps:
+  - name: Navigate to favorites
+    action: 'tap: 960,540'
+    expected: Favorites page shows the newly favorited item in the grid
+    timeout: 10
+- id: web-flow-remove-favorite
+  name: 'User Flow: Remove from Favorites'
+  category: user-flow
+  priority: high
+  platforms:
+  - web
+  steps:
+  - name: Remove favorite
+    action: 'tap: 960,540'
+    expected: Item removed from favorites grid, count decrements
+    timeout: 10
+- id: web-flow-verify-favorite-removed
+  name: 'User Flow: Verify Favorite Removed'
+  category: user-flow
+  priority: high
+  platforms:
+  - web
+  steps:
+  - name: Refresh and verify
+    action: '# TODO: Convert to executable - refresh favorites page or navigate away
+      and back'
+    expected: Removed item no longer appears in favorites list
+    timeout: 10
+- id: web-flow-admin-create-user
+  name: 'User Flow Admin: Create New User'
+  category: user-flow
+  priority: high
+  platforms:
+  - web
+  steps:
+  - name: Create user in admin
+    action: '# TODO: Convert to executable - login as admin, go to /admin, users tab,
+      create user with username ''testuser'''
+    expected: User created, appears in user list with active status
+    timeout: 10
+- id: web-flow-admin-set-role
+  name: 'User Flow Admin: Set User Role'
+  category: user-flow
+  priority: high
+  platforms:
+  - web
+  steps:
+  - name: Change role
+    action: 'tap: 960,540'
+    expected: Role updated, user list shows testuser with viewer role
+    timeout: 10
+- id: web-flow-admin-lock-user
+  name: 'User Flow Admin: Lock User Account'
+  category: user-flow
+  priority: high
+  platforms:
+  - web
+  steps:
+  - name: Lock user
+    action: 'tap: 960,540'
+    expected: User status changes to locked/suspended, locked user cannot login
+    timeout: 10
+- id: web-flow-admin-unlock-user
+  name: 'User Flow Admin: Unlock User Account'
+  category: user-flow
+  priority: high
+  platforms:
+  - web
+  steps:
+  - name: Unlock user
+    action: 'tap: 960,540'
+    expected: User status returns to active, user can login again
+    timeout: 10
+- id: web-flow-admin-delete-user
+  name: 'User Flow Admin: Delete User'
+  category: user-flow
+  priority: high
+  platforms:
+  - web
+  steps:
+  - name: Delete user
+    action: 'tap: 960,540'
+    expected: User removed from list, toast confirmation shown
+    timeout: 10
+- id: web-form-validation-login-empty
+  name: 'Form Validation: Empty Login Submit'
+  category: form-validation
+  priority: high
+  platforms:
+  - web
+  steps:
+  - name: Submit empty login
+    action: 'tap: 960,540'
+    expected: Form does not submit, validation errors shown on both fields
+    timeout: 10
+- id: web-form-validation-register-empty
+  name: 'Form Validation: Empty Register Submit'
+  category: form-validation
+  priority: high
+  platforms:
+  - web
+  steps:
+  - name: Submit empty register
+    action: 'tap: 960,540'
+    expected: 'Zod validation errors shown for all required fields: username, email,
+      password, confirm password'
+    timeout: 10
+- id: web-form-validation-collection-empty
+  name: 'Form Validation: Empty Collection Create'
+  category: form-validation
+  priority: high
+  platforms:
+  - web
+  steps:
+  - name: Create empty collection
+    action: 'tap: 960,540'
+    expected: Validation error on name field, form does not submit
+    timeout: 10
+- id: web-form-validation-search-empty
+  name: 'Form Validation: Empty Search Submit'
+  category: form-validation
+  priority: medium
+  platforms:
+  - web
+  steps:
+  - name: Submit empty search
+    action: 'keypress: KEYCODE_ENTER'
+    expected: Search clears filters and shows all results, or shows all items unfiltered
+    timeout: 10
+- id: web-nav-browser-back-forward
+  name: 'Navigation: Browser Back/Forward'
+  category: navigation
+  priority: high
+  platforms:
+  - web
+  steps:
+  - name: Navigate and use back/forward
+    action: 'tap: 960,540'
+    expected: Back navigates to /media then /dashboard, forward returns to /media,
+      state preserved at each step
+    timeout: 10
+- id: web-nav-deep-link-entity
+  name: 'Navigation: Deep Link to Entity'
+  category: navigation
+  priority: high
+  platforms:
+  - web
+  steps:
+  - name: Direct navigate to entity
+    action: '# TODO: Convert to executable - type http://localhost:3000/entity/1 directly
+      in browser address bar while authenticated'
+    expected: Entity detail page loads directly for entity ID 1 without going through
+      browse page
+    timeout: 10
+- id: web-nav-bookmark-revisit
+  name: 'Navigation: Bookmark and Revisit'
+  category: navigation
+  priority: medium
+  platforms:
+  - web
+  steps:
+  - name: Bookmark and revisit
+    action: '# TODO: Convert to executable - navigate to /browse?type=movie, bookmark
+      url, close tab, open bookmark'
+    expected: Page loads with movie type pre-selected from URL search params
+    timeout: 10
+- id: web-session-refresh-stays-logged-in
+  name: 'Session: Refresh Page Stays Logged In'
+  category: session
+  priority: critical
+  platforms:
+  - web
+  steps:
+  - name: Refresh page
+    action: '# TODO: Convert to executable - login, navigate to /media, press f5 to
+      refresh'
+    expected: Page reloads, user remains authenticated, media page renders without
+      redirect to login
+    timeout: 10
+- id: web-session-token-refresh-on-expire
+  name: 'Session: Token Refresh on Expiry'
+  category: session
+  priority: high
+  platforms:
+  - web
+  steps:
+  - name: Wait for token near expiry
+    action: 'sleep: 3000'
+    expected: AuthContext automatically refreshes token before expiry, no forced logout,
+      seamless continuation
+    timeout: 10
+- id: web-concurrent-tabs-same-page
+  name: 'Concurrent Tabs: Same Page in Two Tabs'
+  category: concurrent-tabs
+  priority: medium
+  platforms:
+  - web
+  steps:
+  - name: Open two tabs
+    action: '# TODO: Convert to executable - open /favorites in two browser tabs,
+      add favorite in tab 1, refresh tab 2'
+    expected: After refresh, tab 2 shows the newly added favorite
+    timeout: 10
+- id: web-concurrent-tabs-logout-sync
+  name: 'Concurrent Tabs: Logout Propagation'
+  category: concurrent-tabs
+  priority: medium
+  platforms:
+  - web
+  steps:
+  - name: Logout in one tab
+    action: '# TODO: Convert to executable - open /dashboard in two tabs, logout in
+      tab 1, try to navigate in tab 2'
+    expected: Tab 2 detects expired/removed token and redirects to login on next API
+      call
+    timeout: 10
+- id: web-slow-network-loading-spinners
+  name: 'Slow Network: Loading Spinners Appear'
+  category: slow-network
+  priority: high
+  platforms:
+  - web
+  steps:
+  - name: Throttle network
+    action: '# TODO: Convert to executable - enable network throttling (slow 3g) in
+      devtools, navigate to /media'
+    expected: Loading skeletons/spinners appear while data is being fetched, page
+      remains responsive
+    timeout: 10
+- id: web-slow-network-error-on-timeout
+  name: 'Slow Network: Error States on Timeout'
+  category: slow-network
+  priority: high
+  platforms:
+  - web
+  steps:
+  - name: Simulate timeout
+    action: '# TODO: Convert to executable - block api responses entirely, navigate
+      to /dashboard'
+    expected: Error state displayed after timeout, retry button available, no infinite
+      loading spinner
+    timeout: 10
+- id: web-large-dataset-pagination
+  name: 'Large Dataset: 1000+ Items Pagination'
+  category: large-dataset
+  priority: high
+  platforms:
+  - web
+  steps:
+  - name: Test large result set
+    action: '# TODO: Convert to executable - navigate to /browse with a type that
+      has 1000+ entities, paginate through'
+    expected: Pagination controls work correctly, each page loads within 2 seconds,
+      total count displayed
+    timeout: 10
+- id: web-large-dataset-scroll-performance
+  name: 'Large Dataset: Scroll Performance'
+  category: large-dataset
+  priority: high
+  platforms:
+  - web
+  steps:
+  - name: Scroll large list
+    action: '# TODO: Convert to executable - load a page with maximum items per page,
+      scroll rapidly through grid'
+    expected: Smooth scrolling, no layout thrashing, images lazy-load as they enter
+      viewport
+    timeout: 10
+- id: web-search-empty-query
+  name: 'Search Edge Case: Empty Search'
+  category: search-edge
+  priority: high
+  platforms:
+  - web
+  steps:
+  - name: Submit empty search
+    action: '# TODO: Convert to executable - clear search input and submit on media
+      browser'
+    expected: All results shown (unfiltered), no error, search input remains focused
+    timeout: 10
+- id: web-search-single-char
+  name: 'Search Edge Case: Single Character'
+  category: search-edge
+  priority: medium
+  platforms:
+  - web
+  steps:
+  - name: Search single char
+    action: 'text: a'
+    expected: Search executes with 'a' query, results shown, no error
+    timeout: 10
+- id: web-search-special-chars
+  name: 'Search Edge Case: Special Characters'
+  category: search-edge
+  priority: high
+  platforms:
+  - web
+  steps:
+  - name: Search with special chars
+    action: 'text: <script>alert(1)</script>'
+    expected: Input sanitized, search executes safely, no XSS, results shown or empty
+      state
+    timeout: 10
+- id: web-search-unicode
+  name: 'Search Edge Case: Unicode Characters'
+  category: search-edge
+  priority: medium
+  platforms:
+  - web
+  steps:
+  - name: Search with unicode
+    action: '# TODO: Convert to executable - type unicode characters in search'
+    expected: Search handles unicode correctly, no encoding errors, results or empty
+      state shown
+    timeout: 10
+- id: web-search-very-long-query
+  name: 'Search Edge Case: Very Long Query'
+  category: search-edge
+  priority: medium
+  platforms:
+  - web
+  steps:
+  - name: Search with 500+ chars
+    action: '# TODO: Convert to executable - paste a 500+ character string into search
+      input'
+    expected: Input accepted or truncated gracefully, search executes without crash,
+      API handles long query
+    timeout: 10
+- id: web-responsive-320px
+  name: 'Responsive: 320px Small Phone'
+  category: responsive
+  priority: high
+  platforms:
+  - web
+  steps:
+  - name: Set 320px viewport
+    action: '# TODO: Convert to executable - resize viewport to 320px width'
+    expected: All content fits, no horizontal scroll, navigation collapses to hamburger
+      menu, text readable
+    timeout: 10
+- id: web-responsive-375px
+  name: 'Responsive: 375px Phone'
+  category: responsive
+  priority: high
+  platforms:
+  - web
+  steps:
+  - name: Set 375px viewport
+    action: '# TODO: Convert to executable - resize viewport to 375px width (iphone
+      se/mini)'
+    expected: Single column layout, hamburger menu, cards stack vertically, all content
+      accessible
+    timeout: 10
+- id: web-responsive-414px
+  name: 'Responsive: 414px Large Phone'
+  category: responsive
+  priority: medium
+  platforms:
+  - web
+  steps:
+  - name: Set 414px viewport
+    action: '# TODO: Convert to executable - resize viewport to 414px width (iphone
+      plus/max)'
+    expected: Single column layout with slightly more spacing, all features accessible
+    timeout: 10
+- id: web-responsive-768px
+  name: 'Responsive: 768px Tablet'
+  category: responsive
+  priority: high
+  platforms:
+  - web
+  steps:
+  - name: Set 768px viewport
+    action: '# TODO: Convert to executable - resize viewport to 768px width (ipad)'
+    expected: 2-column grid layouts, navigation may show partial items, sidebar toggleable
+    timeout: 10
+- id: web-responsive-1024px
+  name: 'Responsive: 1024px Small Desktop'
+  category: responsive
+  priority: medium
+  platforms:
+  - web
+  steps:
+  - name: Set 1024px viewport
+    action: '# TODO: Convert to executable - resize viewport to 1024px width'
+    expected: Full navigation visible, 2-3 column grids, comfortable spacing
+    timeout: 10
+- id: web-responsive-1440px
+  name: 'Responsive: 1440px Desktop'
+  category: responsive
+  priority: medium
+  platforms:
+  - web
+  steps:
+  - name: Set 1440px viewport
+    action: '# TODO: Convert to executable - resize viewport to 1440px width'
+    expected: 3-4 column grids, full sidebar, charts at full width, max-width container
+      centered
+    timeout: 10
+- id: web-responsive-1920px
+  name: 'Responsive: 1920px Full HD'
+  category: responsive
+  priority: medium
+  platforms:
+  - web
+  steps:
+  - name: Set 1920px viewport
+    action: '# TODO: Convert to executable - resize viewport to 1920px width'
+    expected: Content centered with max-w-7xl, side margins visible, 4+ column grids,
+      no stretched elements
+    timeout: 10
+- id: web-a11y-landmarks
+  name: 'Accessibility: Screen Reader Landmarks'
+  category: accessibility
+  priority: high
+  platforms:
+  - web
+  steps:
+  - name: Check landmarks
+    action: '# TODO: Convert to executable - inspect html for landmark roles: main,
+      navigation, banner, contentinfo'
+    expected: 'All pages have proper landmark structure: <header> for banner, <nav>
+      for navigation, <main> for content'
+    timeout: 10
+- id: web-a11y-heading-hierarchy
+  name: 'Accessibility: Heading Hierarchy'
+  category: accessibility
+  priority: high
+  platforms:
+  - web
+  steps:
+  - name: Check heading levels
+    action: '# TODO: Convert to executable - inspect all pages for h1-h6 heading hierarchy'
+    expected: Each page has exactly one h1, headings follow sequential order (no skipping
+      from h1 to h3)
+    timeout: 10
+- id: web-a11y-focus-trap-modals
+  name: 'Accessibility: Focus Trap in Modals'
+  category: accessibility
+  priority: high
+  platforms:
+  - web
+  steps:
+  - name: Check modal focus trap
+    action: '# TODO: Convert to executable - open mediadetailmodal, tab through all
+      elements'
+    expected: Focus is trapped within modal, Tab cycles through modal elements only,
+      Escape closes modal
+    timeout: 10
+- id: web-a11y-color-contrast
+  name: 'Accessibility: Color Contrast'
+  category: accessibility
+  priority: high
+  platforms:
+  - web
+  steps:
+  - name: Check contrast ratios
+    action: '# TODO: Convert to executable - run contrast analysis on text elements
+      in both light and dark themes'
+    expected: 'All text meets WCAG AA contrast ratio: 4.5:1 for normal text, 3:1 for
+      large text'
+    timeout: 10
+- id: web-pwa-manifest
+  name: 'PWA: Manifest Loads'
+  category: pwa
+  priority: medium
+  platforms:
+  - web
+  steps:
+  - name: Check manifest
+    action: '# TODO: Convert to executable - inspect <link rel=manifest> and fetch
+      manifest.json'
+    expected: Manifest file loads with correct name, icons, theme_color, display mode
+    timeout: 10
+- id: web-pwa-service-worker
+  name: 'PWA: Service Worker Registered'
+  category: pwa
+  priority: medium
+  platforms:
+  - web
+  steps:
+  - name: Check service worker
+    action: '# TODO: Convert to executable - inspect navigator.serviceworker.getregistrations()
+      in devtools console'
+    expected: Service worker registered (if applicable), or graceful absence without
+      errors
+    timeout: 10
+- id: web-ws-connected-indicator
+  name: 'WebSocket: Connected Status Indicator'
+  category: websocket
+  priority: high
+  platforms:
+  - web
+  steps:
+  - name: Check connected state
+    action: '# TODO: Convert to executable - login and inspect connectionstatus component'
+    expected: Green indicator or connected text showing WebSocket connection is active
+    timeout: 10
+- id: web-ws-disconnected-indicator
+  name: 'WebSocket: Disconnected Status Indicator'
+  category: websocket
+  priority: high
+  platforms:
+  - web
+  steps:
+  - name: Simulate disconnect
+    action: '# TODO: Convert to executable - block websocket connection via devtools
+      or stop backend'
+    expected: Indicator changes to red/disconnected, reconnection attempts visible,
+      user informed of offline state
+    timeout: 10
+- id: web-darkmode-all-pages
+  name: 'Dark Mode: All Pages Render Correctly'
+  category: dark-mode
+  priority: high
+  platforms:
+  - web
+  steps:
+  - name: Navigate all pages in dark mode
+    action: '# TODO: Convert to executable - enable dark mode, navigate through all
+      13 routes'
+    expected: All pages render with dark backgrounds, light text, no elements with
+      white backgrounds or invisible text
+    timeout: 10
+- id: web-darkmode-no-white-flash
+  name: 'Dark Mode: No White Flash on Load'
+  category: dark-mode
+  priority: high
+  platforms:
+  - web
+  steps:
+  - name: Reload in dark mode
+    action: '# TODO: Convert to executable - with dark mode enabled, hard refresh
+      the page (ctrl+shift+r)'
+    expected: No white flash during page load, dark theme applied from first paint
+      via localStorage check
+    timeout: 10
+- id: web-darkmode-modals-and-dropdowns
+  name: 'Dark Mode: Modals and Dropdowns Styled'
+  category: dark-mode
+  priority: medium
+  platforms:
+  - web
+  steps:
+  - name: Check overlays in dark mode
+    action: '# TODO: Convert to executable - open modals, dropdowns, and tooltips
+      in dark mode'
+    expected: All overlay components use dark backgrounds and light text, consistent
+      with page theme
+    timeout: 10
+- id: web-error-404-page
+  name: 'Error Page: 404 Not Found'
+  category: error-pages
+  priority: high
+  platforms:
+  - web
+  steps:
+  - name: Navigate to invalid route
+    action: '# TODO: Convert to executable - navigate to /nonexistent-route-12345'
+    expected: 404 page or redirect to dashboard shown, no blank page or crash
+    timeout: 10
+- id: web-error-500-handling
+  name: 'Error Page: 500 Error Handling'
+  category: error-pages
+  priority: high
+  platforms:
+  - web
+  steps:
+  - name: Trigger server error
+    action: '# TODO: Convert to executable - simulate 500 response from api endpoint'
+    expected: Error boundary catches error, user-friendly error message displayed
+      with retry option
+    timeout: 10
+- id: web-error-network-offline
+  name: 'Error Page: Network Offline State'
+  category: error-pages
+  priority: high
+  platforms:
+  - web
+  steps:
+  - name: Go offline
+    action: '# TODO: Convert to executable - disable network in devtools, attempt
+      to navigate'
+    expected: Offline state detected, friendly message shown, cached content available
+      if any
+    timeout: 10
+- id: web-dnd-playlist-reorder
+  name: 'Drag and Drop: Playlist Reorder'
+  category: drag-and-drop
+  priority: medium
+  platforms:
+  - web
+  steps:
+  - name: Reorder playlist items
+    action: '# TODO: Convert to executable - drag a playlist item from position 3
+      to position 1'
+    expected: Item moves to new position, order persisted, visual feedback during
+      drag
+    timeout: 10
+- id: web-dnd-collection-reorder
+  name: 'Drag and Drop: Collection Item Reorder'
+  category: drag-and-drop
+  priority: medium
+  platforms:
+  - web
+  steps:
+  - name: Reorder collection items
+    action: '# TODO: Convert to executable - drag a collection item to reorder within
+      the collection'
+    expected: Item moves to new position, order saved, smooth animation during drag
+    timeout: 10
+- id: web-keyboard-escape-closes-modals
+  name: 'Keyboard: Escape Closes Modals'
+  category: keyboard
+  priority: high
+  platforms:
+  - web
+  steps:
+  - name: Press Escape
+    action: 'keypress: KEYCODE_DPAD_UP'
+    expected: Modal closes, focus returns to the element that opened it
+    timeout: 10
+- id: web-keyboard-enter-submits-forms
+  name: 'Keyboard: Enter Submits Forms'
+  category: keyboard
+  priority: high
+  platforms:
+  - web
+  steps:
+  - name: Press Enter on forms
+    action: 'keypress: KEYCODE_ENTER'
+    expected: Form submits via Enter keypress, login proceeds normally
+    timeout: 10
+- id: web-toast-success-auto-dismiss
+  name: 'Toast: Success Notification Auto-Dismiss'
+  category: toast
+  priority: medium
+  platforms:
+  - web
+  steps:
+  - name: Trigger success toast
+    action: '# TODO: Convert to executable - perform successful action (add favorite,
+      create collection)'
+    expected: Green success toast appears, auto-dismisses after 3-5 seconds
+    timeout: 10
+- id: web-toast-error-notification
+  name: 'Toast: Error Notification Display'
+  category: toast
+  priority: medium
+  platforms:
+  - web
+  steps:
+  - name: Trigger error toast
+    action: '# TODO: Convert to executable - trigger an api error (invalid operation)'
+    expected: Red error toast appears with meaningful error message, stays longer
+      or requires manual dismiss
+    timeout: 10
+- id: web-filters-survive-navigation
+  name: 'Filters: Persist Through Navigation'
+  category: filter-persistence
+  priority: medium
+  platforms:
+  - web
+  steps:
+  - name: Apply and navigate
+    action: 'tap: 960,540'
+    expected: Filter still applied on return to /browse, URL search params preserved
+    timeout: 10
+- id: web-filters-survive-back-button
+  name: 'Filters: Survive Browser Back Button'
+  category: filter-persistence
+  priority: medium
+  platforms:
+  - web
+  steps:
+  - name: Filter and back
+    action: 'keypress: KEYCODE_BACK'
+    expected: Media page loads with filters still applied, results match filtered
+      view
+    timeout: 10
+- id: web-print-stylesheet
+  name: 'Print: Print Stylesheet Hides Navigation'
+  category: cross-cutting
+  priority: low
+  platforms:
+  - web
+  steps:
+  - name: Print preview
+    action: '# TODO: Convert to executable - open print preview (ctrl+p) on any page'
+    expected: Navigation, sidebar, and interactive controls hidden in print view,
+      content readable
+    timeout: 10
+- id: web-scroll-to-top
+  name: 'Navigation: Scroll to Top on Route Change'
+  category: navigation
+  priority: medium
+  platforms:
+  - web
+  steps:
+  - name: Navigate after scrolling
+    action: '# TODO: Convert to executable - scroll down on /media, then navigate
+      to /dashboard'
+    expected: Dashboard page loads scrolled to top, not maintaining scroll position
+      from previous page
+    timeout: 10
+- id: web-image-lazy-loading
+  name: 'Performance: Image Lazy Loading'
+  category: performance
+  priority: medium
+  platforms:
+  - web
+  steps:
+  - name: Check image loading
+    action: '# TODO: Convert to executable - open /browse with many entities, monitor
+      network for image requests'
+    expected: Images load lazily as they enter viewport, not all at once on page load
+    timeout: 10
+- id: web-no-memory-leaks-navigation
+  name: 'Performance: No Memory Leaks on Navigation'
+  category: performance
+  priority: high
+  platforms:
+  - web
+  steps:
+  - name: Navigate repeatedly
+    action: '# TODO: Convert to executable - navigate between /dashboard, /media,
+      /browse 20 times, monitor memory in devtools'
+    expected: Memory usage stays stable, no unbounded growth indicating leak
+    timeout: 10
+- id: web-form-autofill-compat
+  name: 'Form: Browser Autofill Compatible'
+  category: form-validation
+  priority: medium
+  platforms:
+  - web
+  steps:
+  - name: Check autofill
+    action: '# TODO: Convert to executable - inspect login form for autocomplete attributes
+      on username and password'
+    expected: autocomplete='username' and autocomplete='current-password' attributes
+      present for browser autofill
+    timeout: 10
+- id: web-modal-overlay-scroll-lock
+  name: 'Modal: Body Scroll Lock When Open'
+  category: ui
+  priority: medium
+  platforms:
+  - web
+  steps:
+  - name: Check scroll lock
+    action: '# TODO: Convert to executable - open mediadetailmodal, try scrolling
+      the page behind it'
+    expected: Background page does not scroll while modal is open, scroll lock applied
+      to body
+    timeout: 10
+- id: web-entity-hierarchy-navigation
+  name: 'Entity: Hierarchy Navigation (Show->Season->Episode)'
+  category: entity
+  priority: high
+  platforms:
+  - web
+  steps:
+  - name: Navigate TV hierarchy
+    action: 'tap: 960,540'
+    expected: Each level navigates to correct entity, breadcrumb/back navigation works
+      through hierarchy
+    timeout: 10
+- id: web-collection-item-count-badge
+  name: 'Collections: Item Count Badge Updates'
+  category: collections
+  priority: medium
+  platforms:
+  - web
+  steps:
+  - name: Add item and check badge
+    action: '# TODO: Convert to executable - add item to collection, check collection
+      card in list'
+    expected: Item count badge on collection card increments immediately after adding
+      item
+    timeout: 10
+- id: web-analytics-date-range-filter
+  name: 'Analytics: Date Range Filter'
+  category: analytics
+  priority: medium
+  platforms:
+  - web
+  steps:
+  - name: Change date range
+    action: '# TODO: Convert to executable - change date range filter on analytics
+      dashboard (7d, 30d, 90d)'
+    expected: Charts and metrics update to reflect selected time period
+    timeout: 10
+- id: web-media-type-icon-mapping
+  name: 'Media: Type Icon Mapping Complete'
+  category: media
+  priority: medium
+  platforms:
+  - web
+  steps:
+  - name: Check all type icons
+    action: '# TODO: Convert to executable - browse all 11 media types and verify
+      icon display'
+    expected: 'Each media type has a unique, correct icon: Film, Tv, Music, Gamepad2,
+      Monitor, BookOpen, Book etc.'
+    timeout: 10
+- id: web-admin-user-search
+  name: 'Admin: User Search in User List'
+  category: admin
+  priority: medium
+  platforms:
+  - web
+  steps:
+  - name: Search users
+    action: '# TODO: Convert to executable - type username in user search input on
+      admin users tab'
+    expected: User list filtered to match search query
+    timeout: 10
+- id: web-subtitles-format-filter
+  name: 'Subtitles: Format Filter (SRT, VTT, ASS)'
+  category: subtitles
+  priority: medium
+  platforms:
+  - web
+  steps:
+  - name: Filter by format
+    action: '# TODO: Convert to executable - select subtitle format filter (srt, webvtt,
+      ass)'
+    expected: Search results filtered to selected format only
+    timeout: 10
+- id: web-playlists-duration-display
+  name: 'Playlists: Total Duration Display'
+  category: playlists
+  priority: medium
+  platforms:
+  - web
+  steps:
+  - name: Check playlist duration
+    action: '# TODO: Convert to executable - view a playlist with multiple items'
+    expected: Total playlist duration calculated and displayed from individual item
+      durations
+    timeout: 10
+- id: web-media-detail-breadcrumb
+  name: 'Media: Detail Modal Breadcrumb'
+  category: media
+  priority: medium
+  platforms:
+  - web
+  steps:
+  - name: Check breadcrumb in detail
+    action: '# TODO: Convert to executable - open media detail from browse page'
+    expected: 'Breadcrumb or back link shows path: Browse > Type > Entity name'
+    timeout: 10
+- id: web-favorites-sort-options
+  name: 'Favorites: Sort by Date Added/Name'
+  category: favorites
+  priority: medium
+  platforms:
+  - web
+  steps:
+  - name: Sort favorites
+    action: '# TODO: Convert to executable - change sort option on favorites page'
+    expected: Favorites reorder by selected criterion (date added, name, type)
+    timeout: 10
+- id: web-media-player-video-playback
+  name: Media Player Video Playback
+  category: playback-verification
+  priority: critical
+  platforms:
+  - web
+  steps:
+  - name: Navigate to a movie entity detail
+    action: 'tap: 960,540'
+    expected: Entity detail page loads with movie information
+    timeout: 10
+  - name: Click play button
+    action: 'tap: 960,540'
+    expected: MediaPlayer component appears with a video element
+    timeout: 10
+  - name: Verify video source is set
+    action: '# TODO: Convert to executable - inspect the video element''s src attribute'
+    expected: src points to /api/v1/stream/:id
+    timeout: 10
+  - name: Verify playback progress
+    action: 'sleep: 3000'
+    expected: currentTime > 0, indicating actual video playback
+    timeout: 10
+- id: web-media-player-controls
+  name: Media Player Controls Functional
+  category: playback-verification
+  priority: high
+  platforms:
+  - web
+  steps:
+  - name: Open media player
+    action: 'tap: 960,540'
+    expected: Media player visible with controls
+    timeout: 10
+  - name: Test pause/resume
+    action: 'tap: 960,540'
+    expected: Video pauses and resumes correctly
+    timeout: 10
+  - name: Test seek
+    action: 'tap: 960,540'
+    expected: Playback position jumps to approximately 50%
+    timeout: 10
+  - name: Test volume
+    action: '# TODO: Convert to executable - adjust the volume slider'
+    expected: Volume changes, mute button works
+    timeout: 10
+- id: web-media-player-audio-playback
+  name: Media Player Audio Playback
+  category: playback-verification
+  priority: high
+  platforms:
+  - web
+  steps:
+  - name: Navigate to a music entity
+    action: 'tap: 960,540'
+    expected: Entity detail page loads with song information
+    timeout: 10
+  - name: Click play
+    action: 'tap: 960,540'
+    expected: Audio player appears and starts playback (progress bar moves)
+    timeout: 10

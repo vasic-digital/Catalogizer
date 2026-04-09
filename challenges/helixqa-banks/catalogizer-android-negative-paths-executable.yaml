@@ -1,0 +1,1276 @@
+version: '2.0'
+name: Test Suite - EXECUTABLE
+description: Executable test suite - converted from /run/media/milosvasic/DATA4TB/Projects/Catalogizer/challenges/helixqa-banks/catalogizer-android-negative-paths.json
+test_cases:
+- id: neg-android-crash-recovery-anr
+  name: Crash Recovery After ANR Dialog
+  category: launch-lifecycle
+  priority: critical
+  platforms:
+  - android
+  steps:
+  - name: Trigger ANR condition
+    action: adb_shell:am start -n com.vasic.catalogizer/.mainactivity &&  input keyevent
+      keycode_wakeup && sleep 1 &&  kill -stop $( pidof com.vasic.catalogizer)
+    expected: System ANR dialog appears after ~5 seconds indicating app is not responding
+    timeout: 10
+  - name: Dismiss ANR and wait
+    action: adb_shell:tap 'wait' on anr dialog, then resume process with  kill -cont
+    expected: App resumes to its previous state without data loss or blank screen
+    timeout: 10
+  - name: Verify app functional after ANR
+    action: '# TODO: Convert to executable - navigate to any media list screen and
+      scroll'
+    expected: App responds normally, no frozen UI, no repeated ANR dialogs
+    timeout: 10
+- id: neg-android-launch-low-storage
+  name: Launch With Low Storage Below 50MB Free
+  category: launch-lifecycle
+  priority: high
+  platforms:
+  - android
+  steps:
+  - name: Reduce available storage
+    action: '# TODO: Convert to executable - fill device storage until less than 50mb
+      remains free, then launch catalogizer'
+    expected: App launches successfully despite low storage
+    timeout: 10
+  - name: Verify graceful warning
+    action: '# TODO: Convert to executable - check for any low storage notification
+      or in-app warning'
+    expected: App displays a non-blocking warning about low storage rather than crashing.
+      Core browse and search features remain functional
+    timeout: 10
+  - name: Attempt cache write operation
+    action: '# TODO: Convert to executable - browse media items to trigger image caching'
+    expected: App handles cache write failures gracefully, shows placeholder images
+      instead of crashing with IOException
+    timeout: 10
+- id: neg-android-launch-no-network
+  name: Launch With No Network Connectivity
+  category: launch-lifecycle
+  priority: critical
+  platforms:
+  - android
+  steps:
+  - name: Disable all network
+    action: adb_shell:svc wifi disable &&  svc data disable
+    expected: Device has no network connectivity
+    timeout: 10
+  - name: Launch app
+    action: adb_shell:am start -n com.vasic.catalogizer/.mainactivity
+    expected: App launches and displays a clear offline state message instead of crash
+      or infinite loading spinner
+    timeout: 10
+  - name: Verify offline UI
+    action: '# TODO: Convert to executable - check screen content for error handling
+      ui'
+    expected: App shows 'No connection' or 'Server unreachable' message with a retry
+      button. No unhandled exception dialog
+    timeout: 10
+  - name: Restore network and retry
+    action: adb_shell:svc wifi enable && tap retry button
+    expected: App reconnects and loads content normally within 10 seconds
+    timeout: 10
+- id: neg-android-launch-during-system-update
+  name: Launch During Active System Update
+  category: launch-lifecycle
+  priority: medium
+  platforms:
+  - android
+  steps:
+  - name: Simulate system update pressure
+    action: '# TODO: Convert to executable - launch app while system update service
+      is running and system resources are constrained'
+    expected: App launches albeit potentially slower, does not crash due to resource
+      contention
+    timeout: 10
+  - name: Verify UI responsiveness
+    action: '# TODO: Convert to executable - navigate through app screens during high
+      system load'
+    expected: App may be slower but remains responsive, no ANR triggered within 10
+      seconds
+    timeout: 10
+- id: neg-android-force-stop-pending-ops
+  name: Force Stop With Pending Operations
+  category: launch-lifecycle
+  priority: critical
+  platforms:
+  - android
+  steps:
+  - name: Start a long operation
+    action: '# TODO: Convert to executable - begin browsing a large media library
+      or trigger a search with many results'
+    expected: Operation starts and data begins loading
+    timeout: 10
+  - name: Force stop mid-operation
+    action: adb_shell:am force-stop com.vasic.catalogizer
+    expected: App process terminates immediately
+    timeout: 10
+  - name: Relaunch app
+    action: adb_shell:am start -n com.vasic.catalogizer/.mainactivity
+    expected: App launches cleanly to home or login screen with no partial/corrupted
+      state. No crash on startup from interrupted operation
+    timeout: 10
+- id: neg-android-oom-kill-restore
+  name: OOM Kill and State Restoration
+  category: launch-lifecycle
+  priority: critical
+  platforms:
+  - android
+  steps:
+  - name: Navigate to deep screen
+    action: '# TODO: Convert to executable - login, browse media, open a specific
+      media detail page'
+    expected: User is on media detail screen with specific content
+    timeout: 10
+  - name: Background and simulate OOM kill
+    action: adb_shell:input keyevent keycode_home &&  am kill com.vasic.catalogizer
+    expected: App process is killed by system
+    timeout: 10
+  - name: Restore from recents
+    action: 'tap: 960,540'
+    expected: App restores to the media detail screen via onSaveInstanceState/ViewModel
+      restoration. If restoration is not possible, app gracefully returns to home
+      screen rather than crashing
+    timeout: 10
+- id: neg-android-launch-old-api
+  name: Launch on Minimum Supported API Level
+  category: launch-lifecycle
+  priority: medium
+  platforms:
+  - android
+  steps:
+  - name: Launch on oldest supported API
+    action: '# TODO: Convert to executable - run app on device/emulator at minsdkversion
+      api level'
+    expected: App launches without ClassNotFoundException or MethodNotFoundException
+      for newer APIs
+    timeout: 10
+  - name: Verify core features
+    action: '# TODO: Convert to executable - login, browse media, play media'
+    expected: All core features work. Features requiring higher APIs degrade gracefully
+      with appropriate messaging
+    timeout: 10
+- id: neg-android-app-update-preserve-data
+  name: App Update Preserves Existing Data
+  category: launch-lifecycle
+  priority: critical
+  platforms:
+  - android
+  steps:
+  - name: Install and configure app
+    action: '# TODO: Convert to executable - install current version, login, configure
+      server url, browse some media to populate cache'
+    expected: App is configured with user data, login session, and cached content
+    timeout: 10
+  - name: Install updated version over existing
+    action: '# TODO: Convert to executable - adb install -r catalogizer-v2.apk (install
+      updated apk without uninstall)'
+    expected: Installation succeeds without errors
+    timeout: 10
+  - name: Launch updated app
+    action: '# TODO: Convert to executable - launch app after update'
+    expected: User session is preserved (still logged in), server URL retained, cached
+      data intact. No database migration crash
+    timeout: 10
+- id: neg-android-clear-cache-behavior
+  name: Clear Cache Does Not Lose User Data
+  category: launch-lifecycle
+  priority: high
+  platforms:
+  - android
+  steps:
+  - name: Login and use app
+    action: '# TODO: Convert to executable - login, browse media, build up image cache'
+    expected: App has cached data and active session
+    timeout: 10
+  - name: Clear cache from system settings
+    action: '# TODO: Convert to executable - settings > apps > catalogizer > storage
+      > clear cache'
+    expected: Cache is cleared, SharedPreferences and database remain intact
+    timeout: 10
+  - name: Relaunch after cache clear
+    action: '# TODO: Convert to executable - launch catalogizer'
+    expected: User is still logged in, server URL preserved. Images reload from network.
+      No crash from missing cache files
+    timeout: 10
+- id: neg-android-clear-data-behavior
+  name: Clear Data Resets to Clean State
+  category: launch-lifecycle
+  priority: high
+  platforms:
+  - android
+  steps:
+  - name: Use app with full data
+    action: '# TODO: Convert to executable - login, configure server, browse media'
+    expected: App has user data, session, preferences
+    timeout: 10
+  - name: Clear all data from system settings
+    action: '# TODO: Convert to executable - settings > apps > catalogizer > storage
+      > clear data'
+    expected: All app data wiped
+    timeout: 10
+  - name: Relaunch after data clear
+    action: '# TODO: Convert to executable - launch catalogizer'
+    expected: App presents fresh login/setup screen as if first launch. No crash from
+      null references to missing data. No stale state leaks
+    timeout: 10
+- id: neg-android-launch-split-screen
+  name: Launch in Split Screen Mode
+  category: launch-lifecycle
+  priority: medium
+  platforms:
+  - android
+  steps:
+  - name: Enter split screen with another app
+    action: '# TODO: Convert to executable - open recents, drag catalogizer to split
+      screen'
+    expected: App resizes to half screen without crash
+    timeout: 10
+  - name: Verify layout adaptation
+    action: '# TODO: Convert to executable - check that ui elements are visible and
+      not overlapping'
+    expected: UI adapts to constrained size. No clipped buttons, no overlapping text.
+      Scrollable content remains scrollable
+    timeout: 10
+- id: neg-android-auth-server-unreachable
+  name: Login With Server Unreachable
+  category: authentication
+  priority: critical
+  platforms:
+  - android
+  steps:
+  - name: Enter unreachable server URL
+    action: '# TODO: Convert to executable - type server url pointing to non-existent
+      host (e.g., http://192.168.99.99:8080)'
+    expected: Server URL field accepts the input
+    timeout: 10
+  - name: Attempt login
+    action: 'tap: 960,540'
+    expected: Loading indicator appears briefly, then a clear error message like 'Cannot
+      reach server' or 'Connection refused' is shown. No infinite spinner. No unhandled
+      exception
+    timeout: 10
+  - name: Verify retry possible
+    action: '# TODO: Convert to executable - correct the server url and attempt login
+      again'
+    expected: Login succeeds with correct URL. Previous error state does not block
+      subsequent attempts
+    timeout: 10
+- id: neg-android-auth-login-timeout
+  name: Login Request Timeout
+  category: authentication
+  priority: high
+  platforms:
+  - android
+  steps:
+  - name: Simulate slow server response
+    action: '# TODO: Convert to executable - configure network to add 30-second delay,
+      then attempt login'
+    expected: Login request is initiated
+    timeout: 10
+  - name: Wait for timeout
+    action: 'sleep: 3000'
+    expected: After reasonable timeout (15-30 seconds), app shows 'Request timed out'
+      error. Login button becomes re-enabled. No ANR dialog
+    timeout: 10
+- id: neg-android-auth-special-chars-password
+  name: Login With Special Characters in Password
+  category: authentication
+  priority: high
+  platforms:
+  - android
+  steps:
+  - name: Enter credentials with special chars
+    action: '# TODO: Convert to executable - enter username ''admin'' and password
+      containing special characters: p@$$w0rd!#%&*<>"'''
+    expected: Password field accepts all special characters without escaping or truncation
+    timeout: 10
+  - name: Submit login
+    action: 'tap: 960,540'
+    expected: Credentials are sent correctly to server. If password is wrong, error
+      message shown. If correct, login succeeds. No JSON encoding errors or crashes
+      from special characters
+    timeout: 10
+- id: neg-android-auth-biometric-fallback
+  name: Biometric Authentication Fallback
+  category: authentication
+  priority: medium
+  platforms:
+  - android
+  steps:
+  - name: Enable biometric login if available
+    action: '# TODO: Convert to executable - configure biometric authentication in
+      app settings'
+    expected: Biometric option is saved
+    timeout: 10
+  - name: Fail biometric attempt
+    action: '# TODO: Convert to executable - present wrong fingerprint or cancel biometric
+      prompt 3 times'
+    expected: After max biometric failures, app falls back to password-based login
+      without crashing. Biometric lockout does not permanently lock the app
+    timeout: 10
+  - name: Login with password after biometric failure
+    action: '# TODO: Convert to executable - enter username and password manually'
+    expected: Password login works normally as fallback. No stuck biometric state
+    timeout: 10
+- id: neg-android-auth-session-expired-background
+  name: Session Expires While App in Background
+  category: authentication
+  priority: critical
+  platforms:
+  - android
+  steps:
+  - name: Login and background app
+    action: 'keypress: KEYCODE_BACK'
+    expected: App is backgrounded with active session
+    timeout: 10
+  - name: Return to app after token expiry
+    action: '# TODO: Convert to executable - open app from recents after token has
+      expired'
+    expected: App detects expired session and redirects to login screen with message
+      'Session expired, please login again'. No 401 error toast spam. No infinite
+      redirect loop
+    timeout: 10
+- id: neg-android-auth-token-corruption
+  name: Corrupted Auth Token in SharedPreferences
+  category: authentication
+  priority: high
+  platforms:
+  - android
+  steps:
+  - name: Corrupt stored token
+    action: 'adb_shell:use adb to modify sharedpreferences xml, replacing the jwt
+      token with garbage data:  run-as com.vasic.catalogizer sed -i ''s/eyj.*/corrupted_token/''
+      shared_prefs/auth.xml'
+    expected: Token value is corrupted on disk
+    timeout: 10
+  - name: Launch app with corrupted token
+    action: adb_shell:am start -n com.vasic.catalogizer/.mainactivity
+    expected: App detects invalid token on API call, clears corrupt token, and redirects
+      to login screen. No crash from malformed JWT parsing
+    timeout: 10
+- id: neg-android-auth-rooted-device
+  name: Login on Rooted Device Detection
+  category: authentication
+  priority: medium
+  platforms:
+  - android
+  steps:
+  - name: Launch on rooted device or emulator
+    action: '# TODO: Convert to executable - install and launch catalogizer on a rooted
+      device or emulator with su binary present'
+    expected: App launches. If root detection is implemented, a warning is shown but
+      app still functions (no hard block for media browsing app)
+    timeout: 10
+  - name: Attempt login
+    action: '# TODO: Convert to executable - enter valid credentials and login'
+    expected: Login works normally. Root status may be logged but does not prevent
+      authentication
+    timeout: 10
+- id: neg-android-auth-multi-account-conflict
+  name: Multi-Account Login Conflict
+  category: authentication
+  priority: medium
+  platforms:
+  - android
+  steps:
+  - name: Login as first user
+    action: '# TODO: Convert to executable - login with user ''admin'' on server a'
+    expected: Login succeeds, media content loads
+    timeout: 10
+  - name: Switch to different server and login
+    action: '# TODO: Convert to executable - go to settings, change server url to
+      server b, login as different user'
+    expected: Previous session data is cleared. New server connection established.
+      No stale data from server A displayed with server B session
+    timeout: 10
+  - name: Verify data isolation
+    action: '# TODO: Convert to executable - browse media content'
+    expected: Only media from server B is displayed. No cached items from server A
+      leak into the view
+    timeout: 10
+- id: neg-android-media-no-audio-codec
+  name: Play Media With Unsupported Audio Codec
+  category: media
+  priority: high
+  platforms:
+  - android
+  steps:
+  - name: Attempt to play file with unsupported audio
+    action: '# TODO: Convert to executable - open a media file that has a video track
+      but uses an unsupported audio codec (e.g., dts on a device without dts support)'
+    expected: App either plays video without audio and shows a codec warning, or shows
+      a clear error message about unsupported audio format. No crash or silent failure
+    timeout: 10
+- id: neg-android-media-corrupted-file
+  name: Play Corrupted Media File
+  category: media
+  priority: high
+  platforms:
+  - android
+  steps:
+  - name: Open corrupted media
+    action: '# TODO: Convert to executable - attempt to play a media file whose container
+      is corrupted (truncated, invalid headers)'
+    expected: Player shows clear error message like 'Unable to play this file' or
+      'File may be corrupted'. No app crash, no stuck loading state
+    timeout: 10
+  - name: Navigate away from error
+    action: 'keypress: KEYCODE_BACK'
+    expected: App returns to media list normally. Player resources are released. No
+      lingering error state
+    timeout: 10
+- id: neg-android-media-network-switch
+  name: Network Switch During Media Playback
+  category: media
+  priority: critical
+  platforms:
+  - android
+  steps:
+  - name: Start streaming media on WiFi
+    action: '# TODO: Convert to executable - begin playing a streaming media file
+      over wifi'
+    expected: Media plays normally
+    timeout: 10
+  - name: Switch to mobile data
+    action: adb_shell:svc wifi disable (switch to mobile data mid-stream)
+    expected: Playback may briefly buffer but resumes on new connection. If mobile
+      data is unavailable, a clear buffering/offline message is shown. No crash from
+      socket disconnection
+    timeout: 10
+  - name: Restore WiFi
+    action: adb_shell:svc wifi enable
+    expected: Playback resumes smoothly. No duplicate streams started
+    timeout: 10
+- id: neg-android-media-buffer-exhaustion
+  name: Streaming Buffer Exhaustion on Slow Network
+  category: media
+  priority: high
+  platforms:
+  - android
+  steps:
+  - name: Play media on very slow connection
+    action: '# TODO: Convert to executable - throttle network to 50kbps and attempt
+      to stream a high-bitrate video'
+    expected: Player shows buffering indicator. Does not crash or consume excessive
+      memory trying to buffer
+    timeout: 10
+  - name: Wait for buffer underrun
+    action: '# TODO: Convert to executable - let playback continue until buffer is
+      fully exhausted'
+    expected: Player pauses and shows buffering spinner or 'Slow connection' warning.
+      Resumes automatically when enough data is buffered. No ANR
+    timeout: 10
+- id: neg-android-media-seek-invalid
+  name: Seek to Invalid Position in Media
+  category: media
+  priority: medium
+  platforms:
+  - android
+  steps:
+  - name: Play a media file
+    action: '# TODO: Convert to executable - start playing a 60-second video'
+    expected: Video plays normally
+    timeout: 10
+  - name: Seek past end of file
+    action: 'tap: 960,540'
+    expected: Player seeks to the end and either stops playback or loops, depending
+      on settings. No crash from out-of-bounds seek
+    timeout: 10
+  - name: Rapidly seek back and forth
+    action: '# TODO: Convert to executable - drag seek bar rapidly from start to end
+      and back multiple times in quick succession'
+    expected: Player handles rapid seek requests without crashing, leaking memory,
+      or becoming unresponsive
+    timeout: 10
+- id: neg-android-media-drm-no-license
+  name: Play DRM Content Without License
+  category: media
+  priority: medium
+  platforms:
+  - android
+  steps:
+  - name: Attempt to play DRM-protected content
+    action: '# TODO: Convert to executable - open a media file that requires drm license
+      that is not available'
+    expected: App shows clear error message about DRM/licensing requirement. No crash
+      from DRM exception. Player does not expose raw encrypted content
+    timeout: 10
+- id: neg-android-media-bluetooth-disconnect
+  name: Bluetooth Audio Disconnect During Playback
+  category: media
+  priority: high
+  platforms:
+  - android
+  steps:
+  - name: Start playback with Bluetooth audio
+    action: '# TODO: Convert to executable - connect bluetooth headphones, start playing
+      media with audio'
+    expected: Audio plays through Bluetooth device
+    timeout: 10
+  - name: Disconnect Bluetooth mid-playback
+    action: adb_shell:turn off bluetooth headphones or disable bluetooth via  settings
+      put global bluetooth_on 0
+    expected: Playback pauses automatically (Android AUDIO_BECOMING_NOISY behavior).
+      Audio does not suddenly blast through phone speaker at full volume
+    timeout: 10
+  - name: Resume after reconnect
+    action: 'tap: 960,540'
+    expected: Playback resumes through Bluetooth audio. No duplicate audio streams
+    timeout: 10
+- id: neg-android-media-cast-failure
+  name: Cast Media Failure Recovery
+  category: media
+  priority: medium
+  platforms:
+  - android
+  steps:
+  - name: Initiate cast to unavailable device
+    action: '# TODO: Convert to executable - attempt to cast media to a chromecast
+      device that goes offline during connection'
+    expected: Cast connection fails with clear error message. Playback reverts to
+      local device. No stuck cast UI state
+    timeout: 10
+  - name: Resume local playback
+    action: '# TODO: Convert to executable - dismiss error and play locally'
+    expected: Local playback resumes from where cast was attempted. Cast icon shows
+      disconnected state
+    timeout: 10
+- id: neg-android-nav-deeplink-deleted-entity
+  name: Deep Link to Deleted or Non-Existent Entity
+  category: navigation
+  priority: high
+  platforms:
+  - android
+  steps:
+  - name: Follow deep link to deleted entity
+    action: adb_shell:am start -a android.intent.action.view -d catalogizer://media/999999
+    expected: App launches and attempts to load entity 999999
+    timeout: 10
+  - name: Verify error handling
+    action: 'sleep: 3000'
+    expected: App shows 'Item not found' or 'This content is no longer available'
+      message. Does not crash. Provides navigation to home screen
+    timeout: 10
+- id: neg-android-nav-backstack-overflow
+  name: Deep Back Stack Navigation
+  category: navigation
+  priority: medium
+  platforms:
+  - android
+  steps:
+  - name: Navigate deeply through many screens
+    action: '# TODO: Convert to executable - from home, navigate: media list > item
+      1 > related > item 2 > related > item 3 ... repeat 20+ times'
+    expected: App handles deep navigation without StackOverflowError or excessive
+      memory consumption
+    timeout: 10
+  - name: Press back repeatedly
+    action: 'keypress: KEYCODE_BACK'
+    expected: Each back press returns to the previous screen in correct order. Eventually
+      reaches home screen. No crash from stack depth
+    timeout: 10
+- id: neg-android-nav-intent-filter-conflict
+  name: Intent Filter Conflict With Other Apps
+  category: navigation
+  priority: medium
+  platforms:
+  - android
+  steps:
+  - name: Open media URL that Catalogizer handles
+    action: '# TODO: Convert to executable - open a url matching catalogizer intent
+      filter when another app also handles same scheme'
+    expected: Android shows app chooser dialog. Selecting Catalogizer opens the content
+      correctly. No crash from ambiguous intent resolution
+    timeout: 10
+- id: neg-android-nav-multi-window
+  name: Multi-Window Split Screen Navigation
+  category: navigation
+  priority: medium
+  platforms:
+  - android
+  steps:
+  - name: Enter split screen mode
+    action: '# TODO: Convert to executable - put catalogizer in split screen with
+      another app'
+    expected: App resizes and redraws correctly
+    timeout: 10
+  - name: Navigate in split screen
+    action: '# TODO: Convert to executable - browse media, open details, go back while
+      in half-screen mode'
+    expected: Navigation works correctly. Touch targets are still reachable. Content
+      is readable
+    timeout: 10
+  - name: Exit split screen
+    action: '# TODO: Convert to executable - drag divider to make catalogizer full
+      screen'
+    expected: App smoothly resizes to full screen. No overlapping fragments or blank
+      areas
+    timeout: 10
+- id: neg-android-nav-pip-transitions
+  name: Picture-in-Picture Mode Transitions
+  category: navigation
+  priority: medium
+  platforms:
+  - android
+  steps:
+  - name: Enter PIP during playback
+    action: 'keypress: KEYCODE_HOME'
+    expected: If PIP is supported, video continues in small floating window. If not
+      supported, playback pauses and app backgrounds normally
+    timeout: 10
+  - name: Interact with PIP window
+    action: 'tap: 960,540'
+    expected: App returns to full screen with playback continuing from correct position.
+      No duplicate player instances
+    timeout: 10
+- id: neg-android-nav-gesture-conflicts
+  name: Gesture Navigation Conflicts
+  category: navigation
+  priority: high
+  platforms:
+  - android
+  steps:
+  - name: Use gesture navigation near screen edges
+    action: '# TODO: Convert to executable - with android gesture navigation enabled,
+      swipe from left edge (system back gesture) while app has a side drawer or swipeable
+      content'
+    expected: System back gesture takes priority. App handles the onBackPressed correctly.
+      No conflict between app swipe gestures and system gestures
+    timeout: 10
+  - name: Bottom gesture conflict
+    action: '# TODO: Convert to executable - swipe up from bottom of screen during
+      media playback (system home gesture area)'
+    expected: System gesture triggers home. Player properly pauses and saves position.
+      No stuck gesture state in the app
+    timeout: 10
+- id: neg-android-nav-notification-tap-onboarding
+  name: Notification Tap During Onboarding
+  category: navigation
+  priority: medium
+  platforms:
+  - android
+  steps:
+  - name: Trigger notification during first-run setup
+    action: 'tap: 960,540'
+    expected: App either defers the deep link until onboarding is complete, or safely
+      interrupts onboarding and navigates. No crash from navigating to authenticated
+      content before login is complete
+    timeout: 10
+- id: neg-android-nav-share-intent-huge
+  name: Share Intent With Very Large Payload
+  category: navigation
+  priority: low
+  platforms:
+  - android
+  steps:
+  - name: Send oversized share intent
+    action: '# TODO: Convert to executable - send a share intent to catalogizer with
+      an extremely large text payload (>1mb) or many uris'
+    expected: App handles the oversized intent gracefully. Either processes what it
+      can or shows 'Content too large' error. No TransactionTooLargeException crash
+    timeout: 10
+- id: neg-android-data-missing-fields
+  name: Display Entity With Missing or Null Fields
+  category: data
+  priority: high
+  platforms:
+  - android
+  steps:
+  - name: Load entity with incomplete data
+    action: '# TODO: Convert to executable - navigate to a media item that has null/empty
+      title, description, year, genres, or poster url'
+    expected: App renders the item with placeholder text ('Unknown Title', 'No description
+      available') and placeholder image. No NullPointerException or blank screen
+    timeout: 10
+  - name: Interact with incomplete entity
+    action: 'tap: 960,540'
+    expected: Detail screen renders with available fields populated and missing fields
+      showing appropriate placeholders. No crash
+    timeout: 10
+- id: neg-android-data-pagination-timeout
+  name: Pagination Request Timeout
+  category: data
+  priority: high
+  platforms:
+  - android
+  steps:
+  - name: Scroll to trigger pagination
+    action: '# TODO: Convert to executable - scroll down a media list until the app
+      needs to load the next page of results'
+    expected: Pagination request is initiated with loading indicator
+    timeout: 10
+  - name: Simulate pagination timeout
+    action: '# TODO: Convert to executable - disconnect network right as pagination
+      request fires'
+    expected: App shows error at bottom of list with retry option. Already loaded
+      items remain visible. No crash or list reset to top
+    timeout: 10
+- id: neg-android-data-scroll-large-list
+  name: Scroll to 10000th Item in Large List
+  category: data
+  priority: medium
+  platforms:
+  - android
+  steps:
+  - name: Load a very large media library
+    action: '# TODO: Convert to executable - connect to a server with 10000+ media
+      items and start scrolling through the list'
+    expected: App uses lazy loading / RecyclerView with proper view recycling
+    timeout: 10
+  - name: Scroll extensively
+    action: '# TODO: Convert to executable - fast-scroll through thousands of items
+      using scrollbar or fling gestures'
+    expected: Memory usage stays stable (no linear growth). Frame rate remains smooth
+      (no jank). Items at position 10000 render correctly with images
+    timeout: 10
+- id: neg-android-data-sort-identical-values
+  name: Sort With Many Identical Values
+  category: data
+  priority: low
+  platforms:
+  - android
+  steps:
+  - name: Sort by a field with identical values
+    action: '# TODO: Convert to executable - sort media list by year when many items
+      share the same year (e.g., 100 items from 2024)'
+    expected: Sort completes without infinite loop or comparison error. Items with
+      identical sort values maintain stable order. No crash from comparison contract
+      violation
+    timeout: 10
+- id: neg-android-data-filter-no-results
+  name: Filter Returns Zero Results on Every Criteria
+  category: data
+  priority: medium
+  platforms:
+  - android
+  steps:
+  - name: Apply impossible filter combination
+    action: '# TODO: Convert to executable - set multiple filters that together match
+      zero items (e.g., genre=''documentary'' and year=''1800'' and rating=''10'')'
+    expected: App displays empty state with message like 'No items match your filters'
+      and option to clear filters. No crash from empty adapter
+    timeout: 10
+  - name: Clear filters
+    action: 'tap: 960,540'
+    expected: Full unfiltered list returns immediately. No stale filter state
+    timeout: 10
+- id: neg-android-data-rapid-search
+  name: Rapid Sequential Searches With Zero Results
+  category: data
+  priority: medium
+  platforms:
+  - android
+  steps:
+  - name: Search with no results
+    action: 'text: xyznonexistent'
+    expected: Empty results shown with appropriate message
+    timeout: 10
+  - name: Immediately search again
+    action: 'text: abcnonexistent'
+    expected: Previous search request is cancelled. New search executes. No race condition
+      between responses. No results from first query appearing briefly for second
+      query
+    timeout: 10
+- id: neg-android-data-pull-refresh-error
+  name: Pull to Refresh During Error State
+  category: data
+  priority: medium
+  platforms:
+  - android
+  steps:
+  - name: Trigger error state
+    action: '# TODO: Convert to executable - load media list, then disconnect network
+      to cause error state'
+    expected: Error state is displayed on the list
+    timeout: 10
+  - name: Pull to refresh while in error state
+    action: '# TODO: Convert to executable - pull down to trigger refresh with network
+      still disconnected'
+    expected: Refresh attempt is made and fails gracefully. Error message updates
+      or remains. Pull-to-refresh animation completes and is not stuck. No duplicate
+      error messages stacked
+    timeout: 10
+  - name: Restore network and pull to refresh
+    action: '# TODO: Convert to executable - re-enable network and pull to refresh'
+    expected: Data loads successfully. Error state clears. List populates with fresh
+      data
+    timeout: 10
+- id: neg-android-data-very-long-text
+  name: Display Very Long Text Without Truncation Bug
+  category: data
+  priority: medium
+  platforms:
+  - android
+  steps:
+  - name: Load entity with very long text
+    action: '# TODO: Convert to executable - open a media item with a 5000+ character
+      description and a 200+ character title'
+    expected: Title is appropriately truncated with ellipsis in list view. Description
+      in detail view is fully scrollable. No layout overflow, no text overlapping
+      other elements, no performance degradation from measuring huge text
+    timeout: 10
+- id: neg-android-net-wifi-to-mobile
+  name: WiFi to Mobile Data Mid-Request
+  category: network
+  priority: critical
+  platforms:
+  - android
+  steps:
+  - name: Start loading on WiFi
+    action: '# TODO: Convert to executable - begin loading a media list over wifi'
+    expected: Request is in progress
+    timeout: 10
+  - name: Switch to mobile data
+    action: adb_shell:svc wifi disable (mobile data takes over)
+    expected: In-flight request may fail but app retries on new connection. No crash
+      from SocketException. Data eventually loads or clear error is shown
+    timeout: 10
+- id: neg-android-net-airplane-toggle
+  name: Airplane Mode Toggle
+  category: network
+  priority: high
+  platforms:
+  - android
+  steps:
+  - name: Enable airplane mode while using app
+    action: adb_shell:settings put global airplane_mode_on 1 &&  am broadcast -a android.intent.action.airplane_mode
+    expected: App detects connectivity loss. Shows offline indicator. Pending requests
+      fail gracefully
+    timeout: 10
+  - name: Disable airplane mode
+    action: adb_shell:settings put global airplane_mode_on 0 &&  am broadcast -a android.intent.action.airplane_mode
+    expected: App detects connectivity restoration and either auto-reconnects or shows
+      a retry option. No stale offline state
+    timeout: 10
+- id: neg-android-net-captive-portal
+  name: Captive Portal Detection
+  category: network
+  priority: medium
+  platforms:
+  - android
+  steps:
+  - name: Connect to captive portal WiFi
+    action: '# TODO: Convert to executable - connect device to a wifi network with
+      captive portal (hotel/airport wifi) that intercepts http requests'
+    expected: App detects that API calls are being redirected (non-JSON responses).
+      Shows meaningful error like 'Network login required' rather than JSON parse
+      error crash
+    timeout: 10
+- id: neg-android-net-dns-failure
+  name: DNS Resolution Failure
+  category: network
+  priority: high
+  platforms:
+  - android
+  steps:
+  - name: Configure server with unresolvable hostname
+    action: '# TODO: Convert to executable - set server url to http://nonexistent.invalid.domain:8080'
+    expected: DNS resolution fails
+    timeout: 10
+  - name: Attempt to load data
+    action: '# TODO: Convert to executable - try to browse media or login'
+    expected: App shows clear error message about being unable to reach server. No
+      UnknownHostException crash. Error message distinguishes DNS failure from connection
+      refused
+    timeout: 10
+- id: neg-android-net-cert-pinning
+  name: Certificate Pinning Violation
+  category: network
+  priority: high
+  platforms:
+  - android
+  steps:
+  - name: Intercept HTTPS with proxy
+    action: '# TODO: Convert to executable - route app traffic through a mitm proxy
+      (charles/mitmproxy) with its own certificate'
+    expected: If certificate pinning is implemented, connection is rejected with security
+      error. If not pinned, connection works (development mode). No silent acceptance
+      of invalid certificates in production builds
+    timeout: 10
+- id: neg-android-net-proxy-detection
+  name: HTTP Proxy Detection and Handling
+  category: network
+  priority: low
+  platforms:
+  - android
+  steps:
+  - name: Configure system proxy
+    action: '# TODO: Convert to executable - set http proxy in device wifi settings
+      pointing to a proxy server'
+    expected: App either works through proxy or detects proxy and warns user. API
+      calls route through proxy if configured. No connection failure with unhelpful
+      error
+    timeout: 10
+- id: neg-android-net-very-slow-2g
+  name: Very Slow Connection Simulation (2G)
+  category: network
+  priority: high
+  platforms:
+  - android
+  steps:
+  - name: Throttle to 2G speeds
+    action: '# TODO: Convert to executable - use network emulation to limit bandwidth
+      to 50kbps with 500ms latency'
+    expected: App starts and login screen eventually loads
+    timeout: 10
+  - name: Attempt to browse
+    action: '# TODO: Convert to executable - login and browse media list on 2g'
+    expected: Content loads very slowly but progressively. Images load as available.
+      App remains responsive to touch (UI thread not blocked). Loading indicators
+      visible. No timeout before any content appears (at least text/metadata loads
+      first)
+    timeout: 10
+- id: neg-android-net-connection-drop-upload
+  name: Connection Drop During Upload
+  category: network
+  priority: high
+  platforms:
+  - android
+  steps:
+  - name: Start an upload or data modification
+    action: '# TODO: Convert to executable - begin an operation that sends data to
+      the server (e.g., updating collection, rating a media item)'
+    expected: Upload/modification request is in flight
+    timeout: 10
+  - name: Kill network mid-upload
+    action: adb_shell:svc wifi disable during the request
+    expected: Request fails. App shows error with option to retry. No partial data
+      corruption on server. Optimistic UI update is rolled back if server did not
+      confirm
+    timeout: 10
+- id: neg-android-device-rotation-dialog
+  name: Screen Rotation During Dialog
+  category: device
+  priority: high
+  platforms:
+  - android
+  steps:
+  - name: Open a dialog
+    action: '# TODO: Convert to executable - trigger any confirmation dialog (e.g.,
+      logout confirmation, delete confirmation)'
+    expected: Dialog is displayed
+    timeout: 10
+  - name: Rotate screen
+    action: adb_shell:settings put system accelerometer_rotation 1 && rotate device
+      90 degrees
+    expected: Dialog survives configuration change. It is still visible after rotation
+      with correct content. No WindowLeaked exception. No duplicate dialogs
+    timeout: 10
+- id: neg-android-device-font-size-200
+  name: System Font Size Over 200 Percent
+  category: device
+  priority: high
+  platforms:
+  - android
+  steps:
+  - name: Set maximum font scale
+    action: adb_shell:settings put system font_scale 2.0
+    expected: System font scale is set to 200%
+    timeout: 10
+  - name: Launch and browse app
+    action: '# TODO: Convert to executable - launch catalogizer and navigate through
+      screens'
+    expected: Text is enlarged but app remains usable. No text overlapping other elements.
+      Buttons remain tappable. Scrollable content accommodates larger text. No text
+      clipped by fixed-height containers
+    timeout: 10
+  - name: Reset font scale
+    action: adb_shell:settings put system font_scale 1.0
+    expected: App returns to normal text size
+    timeout: 10
+- id: neg-android-device-display-cutout
+  name: Display Cutout and Notch Handling
+  category: device
+  priority: high
+  platforms:
+  - android
+  steps:
+  - name: Enable display cutout simulation
+    action: adb_shell:settings put global display_cutout_emulation corner_cutout (or
+      use device with physical notch)
+    expected: Cutout simulation is active
+    timeout: 10
+  - name: Verify content not hidden behind cutout
+    action: '# TODO: Convert to executable - check all screens for content obscured
+      by the cutout area'
+    expected: App respects WindowInsets and display cutout. No content hidden behind
+      notch. Status bar content avoids cutout area. Full-screen mode (e.g., video
+      player) handles cutout correctly
+    timeout: 10
+- id: neg-android-device-rtl-layout
+  name: RTL Language Layout Rendering
+  category: device
+  priority: high
+  platforms:
+  - android
+  steps:
+  - name: Switch to RTL locale
+    action: adb_shell:settings put global development_settings_enabled 1 &&  setprop
+      debug.layout.rtl true
+    expected: Device is in RTL layout mode
+    timeout: 10
+  - name: Navigate app in RTL mode
+    action: '# TODO: Convert to executable - launch app and browse through screens'
+    expected: Layout mirrors correctly for RTL. Navigation drawer opens from right.
+      Lists scroll from right. Back arrows point right. No overlapping elements or
+      misaligned text. Media content (images, videos) renders correctly
+    timeout: 10
+- id: neg-android-device-accessibility-service
+  name: TalkBack Accessibility Service Enabled
+  category: device
+  priority: high
+  platforms:
+  - android
+  steps:
+  - name: Enable TalkBack
+    action: '# TODO: Convert to executable - enable talkback accessibility service
+      on the device'
+    expected: TalkBack is active and announcing screen content
+    timeout: 10
+  - name: Navigate with TalkBack
+    action: '# TODO: Convert to executable - use talkback gestures to navigate through
+      media list, open a detail, and interact with player controls'
+    expected: All interactive elements have content descriptions. Focus order is logical.
+      Custom views announce their role and state. No unlabeled buttons. Media player
+      controls are accessible
+    timeout: 10
+- id: neg-android-device-animations-off
+  name: Developer Options Animations Disabled
+  category: device
+  priority: medium
+  platforms:
+  - android
+  steps:
+  - name: Disable all animations
+    action: adb_shell:settings put global window_animation_scale 0 &&  settings put
+      global transition_animation_scale 0 &&  settings put global animator_duration_scale
+      0
+    expected: All system and app animations are disabled
+    timeout: 10
+  - name: Navigate through app
+    action: '# TODO: Convert to executable - browse media, open details, go back,
+      switch tabs'
+    expected: App works correctly without animations. No functionality depends on
+      animation completion callbacks. Transitions are instant but correct. No stuck
+      states from onAnimationEnd never firing
+    timeout: 10
+- id: neg-android-device-battery-saver
+  name: Battery Saver Mode Restrictions
+  category: device
+  priority: medium
+  platforms:
+  - android
+  steps:
+  - name: Enable battery saver
+    action: adb_shell:settings put global low_power 1
+    expected: Battery saver mode is active
+    timeout: 10
+  - name: Use app in battery saver
+    action: '# TODO: Convert to executable - browse media, play content, check for
+      background sync'
+    expected: App functions correctly with battery saver. Background network may be
+      restricted but foreground operations work. No crash from restricted background
+      execution. If background sync fails, app operates on cached data
+    timeout: 10
+  - name: Disable battery saver
+    action: adb_shell:settings put global low_power 0
+    expected: Full functionality resumes. Any queued background operations execute
+    timeout: 10
+- id: neg-android-device-thermal-throttle
+  name: Thermal Throttling During Heavy Use
+  category: device
+  priority: medium
+  platforms:
+  - android
+  steps:
+  - name: Trigger heavy workload
+    action: '# TODO: Convert to executable - play high-bitrate video while scrolling
+      through large media list (stress cpu/gpu)'
+    expected: Device may throttle CPU frequency
+    timeout: 10
+  - name: Verify graceful degradation
+    action: '# TODO: Convert to executable - continue using app during thermal throttling'
+    expected: App adapts to reduced performance. Video may drop frames but does not
+      crash. UI remains responsive even if slower. No watchdog kill
+    timeout: 10
+- id: neg-android-device-locale-change
+  name: Locale Change While App in Foreground
+  category: device
+  priority: medium
+  platforms:
+  - android
+  steps:
+  - name: Change system locale while app is open
+    action: adb_shell:settings put system system_locales ja-jp while catalogizer is
+      in foreground
+    expected: Activity is recreated due to configuration change
+    timeout: 10
+  - name: Verify app survives locale change
+    action: '# TODO: Convert to executable - check that app displays correctly after
+      locale change'
+    expected: App restarts/recreates cleanly. If localization is supported, strings
+      change to new locale. If not, English strings remain. No crash from missing
+      locale resources. User session is preserved
+    timeout: 10
+- id: neg-android-device-timezone-change
+  name: Time Zone Change During Operation
+  category: device
+  priority: low
+  platforms:
+  - android
+  steps:
+  - name: Change timezone mid-use
+    action: adb_shell:settings put global auto_time_zone 0 &&  setprop persist.sys.timezone
+      america/new_york while viewing media with timestamps
+    expected: App handles timezone change. Displayed timestamps update to new timezone
+      or remain in server timezone. No crash from date parsing. JWT token expiry calculations
+      remain correct
+    timeout: 10
+- id: neg-android-device-do-not-disturb
+  name: Do Not Disturb Mode and Notifications
+  category: device
+  priority: low
+  platforms:
+  - android
+  steps:
+  - name: Enable Do Not Disturb
+    action: '# TODO: Convert to executable - enable dnd mode on device'
+    expected: DND is active
+    timeout: 10
+  - name: Trigger in-app notifications
+    action: '# TODO: Convert to executable - perform actions that would trigger push
+      notifications or in-app alerts (scan complete, new media detected)'
+    expected: In-app UI notifications still display within the app. System notifications
+      are suppressed by DND as expected. App does not crash from notification delivery
+      failure. No notification queue overflow
+    timeout: 10
+- id: neg-android-device-storage-permission-revoked
+  name: Storage Permission Revoked at Runtime
+  category: device
+  priority: high
+  platforms:
+  - android
+  steps:
+  - name: Revoke storage permission while app is open
+    action: adb_shell:pm revoke com.vasic.catalogizer android.permission.read_external_storage
+      while app is browsing local media
+    expected: App may be killed and restarted by system
+    timeout: 10
+  - name: Relaunch and check behavior
+    action: '# TODO: Convert to executable - if app was killed, relaunch it. navigate
+      to feature requiring storage'
+    expected: App detects missing permission and prompts user to re-grant. No crash
+      from SecurityException. Features not requiring storage continue to work
+    timeout: 10
+- id: neg-android-data-concurrent-modifications
+  name: Concurrent Data Modifications From Multiple Sources
+  category: data
+  priority: medium
+  platforms:
+  - android
+  steps:
+  - name: View media item on phone
+    action: '# TODO: Convert to executable - open a media item detail screen on the
+      android app'
+    expected: Detail screen shows current data
+    timeout: 10
+  - name: Modify same item via web API
+    action: '# TODO: Convert to executable - using the web interface, update the same
+      media item metadata (title, description) simultaneously'
+    expected: No server-side conflict error
+    timeout: 10
+  - name: Refresh on phone
+    action: '# TODO: Convert to executable - pull to refresh or navigate away and
+      back'
+    expected: Phone shows updated data from the web modification. No stale cached
+      data displayed permanently. No merge conflict crash
+    timeout: 10
+- id: neg-android-media-multiple-player-instances
+  name: Prevent Multiple Simultaneous Player Instances
+  category: media
+  priority: high
+  platforms:
+  - android
+  steps:
+  - name: Start playing first media
+    action: '# TODO: Convert to executable - open and play a video file'
+    expected: Video plays normally
+    timeout: 10
+  - name: Quickly navigate back and play another
+    action: 'keypress: KEYCODE_BACK'
+    expected: First player is properly released before second starts. No overlapping
+      audio. No memory leak from abandoned player instances. Only one ExoPlayer/MediaPlayer
+      instance exists at a time
+    timeout: 10
+- id: neg-android-auth-concurrent-login-attempts
+  name: Multiple Rapid Login Button Taps
+  category: authentication
+  priority: high
+  platforms:
+  - android
+  steps:
+  - name: Enter valid credentials
+    action: '# TODO: Convert to executable - fill in server url, username, and password'
+    expected: Login form is filled
+    timeout: 10
+  - name: Tap login button rapidly 5 times
+    action: 'tap: 960,540'
+    expected: Only one login request is sent. Button is disabled after first tap or
+      duplicate requests are debounced. No multiple simultaneous API calls. No duplicate
+      home screen navigation
+    timeout: 10
+- id: neg-android-nav-process-death-webview
+  name: Process Death With WebView Content
+  category: navigation
+  priority: medium
+  platforms:
+  - android
+  steps:
+  - name: Open WebView-based content
+    action: '# TODO: Convert to executable - navigate to any screen that uses a webview
+      (help, about, embedded web content)'
+    expected: WebView content loads
+    timeout: 10
+  - name: Kill process and restore
+    action: adb_shell:background app, kill process via  am kill, restore from recents
+    expected: App recreates. WebView either reloads its URL or navigates to a safe
+      fallback screen. No crash from null WebView state
+    timeout: 10
+- id: neg-android-net-http3-fallback
+  name: HTTP/3 QUIC Fallback to HTTP/2
+  category: network
+  priority: high
+  platforms:
+  - android
+  steps:
+  - name: Block UDP traffic
+    action: '# TODO: Convert to executable - configure network to block udp port 443
+      (quic), forcing http/3 to fail'
+    expected: Initial QUIC connection attempt fails
+    timeout: 10
+  - name: Verify fallback
+    action: '# TODO: Convert to executable - app should fallback to http/2 over tcp
+      and continue operating'
+    expected: All API calls succeed over HTTP/2. No user-visible error. Fallback is
+      transparent. App does not continuously retry QUIC and waste battery
+    timeout: 10
+- id: neg-android-device-memory-pressure
+  name: Extreme Memory Pressure From Other Apps
+  category: device
+  priority: high
+  platforms:
+  - android
+  steps:
+  - name: Create memory pressure
+    action: 'keypress: KEYCODE_BACK'
+    expected: System may trim Catalogizer's memory or kill it
+    timeout: 10
+  - name: Return to Catalogizer
+    action: '# TODO: Convert to executable - switch back to catalogizer from recents'
+    expected: If process was killed, app restores cleanly via saved state. If trimmed,
+      app functions with reduced cache. No OutOfMemoryError on return. Image caches
+      are rebuilt lazily
+    timeout: 10

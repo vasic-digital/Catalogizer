@@ -1,0 +1,359 @@
+version: '2.0'
+name: Test Suite - EXECUTABLE
+description: Executable test suite - converted from /run/media/milosvasic/DATA4TB/Projects/Catalogizer/challenges/helixqa-banks/catalogizer-cross-platform-flows.json
+test_cases:
+- id: xplat-login-all-clients
+  name: Login from All Client Platforms
+  category: authentication
+  priority: critical
+  platforms:
+  - api
+  - web
+  - desktop
+  - android
+  - androidtv
+  steps:
+  - name: Login via API
+    action: '# TODO: Convert to executable - post /api/v1/auth/login with admin/admin123'
+    expected: 200 with JWT token
+    timeout: 10
+  - name: Login via Web
+    action: '# TODO: Convert to executable - navigate to /login, enter admin/admin123,
+      submit'
+    expected: Redirect to /dashboard
+    timeout: 10
+  - name: Login via Desktop
+    action: '# TODO: Convert to executable - launch desktop app, enter credentials,
+      login'
+    expected: Home screen loads
+    timeout: 10
+  - name: Login via Android
+    action: '# TODO: Convert to executable - launch android app, enter server url
+      and credentials'
+    expected: Main screen loads
+    timeout: 10
+  - name: Login via Android TV
+    action: '# TODO: Convert to executable - launch tv app, enter server url and credentials
+      using d-pad'
+    expected: Home screen with media carousel loads
+    timeout: 10
+- id: xplat-favorite-sync
+  name: Favorites Sync Across Platforms
+  category: data-sync
+  priority: critical
+  platforms:
+  - api
+  - web
+  - androidtv
+  steps:
+  - name: Add favorite via API
+    action: '# TODO: Convert to executable - post /api/v1/favorites with a media entity
+      id'
+    expected: 201 Created
+    timeout: 10
+  - name: Verify on Web
+    action: '# TODO: Convert to executable - navigate to /favorites on web'
+    expected: Favorited entity appears in the list
+    timeout: 10
+  - name: Verify on Android TV
+    action: '# TODO: Convert to executable - navigate to favorites section on tv app'
+    expected: Same favorited entity visible
+    timeout: 10
+  - name: Remove favorite via Web
+    action: 'tap: 960,540'
+    expected: Entity removed from favorites
+    timeout: 10
+  - name: Verify removal on API
+    action: '# TODO: Convert to executable - get /api/v1/favorites'
+    expected: Entity no longer in favorites list
+    timeout: 10
+- id: xplat-collection-crud
+  name: Collection CRUD Across Platforms
+  category: data-sync
+  priority: high
+  platforms:
+  - api
+  - web
+  steps:
+  - name: Create collection via Web
+    action: '# TODO: Convert to executable - navigate to /collections, create ''test
+      collection'''
+    expected: Collection created successfully
+    timeout: 10
+  - name: Add items via API
+    action: '# TODO: Convert to executable - post /api/v1/collections/{id}/items with
+      entity ids'
+    expected: Items added
+    timeout: 10
+  - name: Verify on Web
+    action: '# TODO: Convert to executable - open collection on web'
+    expected: All added items visible in collection
+    timeout: 10
+  - name: Delete via API
+    action: '# TODO: Convert to executable - delete /api/v1/collections/{id}'
+    expected: 204 No Content
+    timeout: 10
+  - name: Verify deleted on Web
+    action: '# TODO: Convert to executable - refresh /collections page'
+    expected: Collection no longer listed
+    timeout: 10
+- id: xplat-scan-triggers-websocket
+  name: Scan Event Propagates via WebSocket
+  category: realtime
+  priority: high
+  platforms:
+  - api
+  - web
+  steps:
+  - name: Connect WebSocket on Web
+    action: '# TODO: Convert to executable - open web app, verify websocket connected
+      indicator'
+    expected: WebSocket connection established
+    timeout: 10
+  - name: Trigger scan via API
+    action: '# TODO: Convert to executable - post /api/v1/scans to start storage root
+      scan'
+    expected: 202 Accepted with scan job ID
+    timeout: 10
+  - name: Verify WebSocket notification
+    action: '# TODO: Convert to executable - check web app for real-time scan notification'
+    expected: Scan progress updates appear in real-time via WebSocket
+    timeout: 10
+- id: xplat-media-playback-progress
+  name: Playback Progress Syncs Across Platforms
+  category: data-sync
+  priority: high
+  platforms:
+  - api
+  - web
+  - androidtv
+  steps:
+  - name: Start playback on Web
+    action: '# TODO: Convert to executable - play a media item on web, pause at 50%'
+    expected: Progress saved (PUT /api/v1/media/{id}/progress)
+    timeout: 10
+  - name: Check progress via API
+    action: '# TODO: Convert to executable - get /api/v1/media/{id}'
+    expected: Progress field shows ~50%
+    timeout: 10
+  - name: Resume on Android TV
+    action: '# TODO: Convert to executable - open same media item on tv app'
+    expected: Offers to resume from saved position (~50%)
+    timeout: 10
+- id: xplat-user-management-web-api
+  name: Admin Creates User on Web, User Logs in on API
+  category: authentication
+  priority: high
+  platforms:
+  - api
+  - web
+  steps:
+  - name: Create user on Web admin
+    action: '# TODO: Convert to executable - go to /admin, create user ''testuser''
+      with password ''test1234!'''
+    expected: User created successfully
+    timeout: 10
+  - name: Login with new user via API
+    action: '# TODO: Convert to executable - post /api/v1/auth/login with testuser/test1234!'
+    expected: 200 with JWT token
+    timeout: 10
+  - name: Verify permissions
+    action: '# TODO: Convert to executable - get /api/v1/auth/permissions with new
+      user token'
+    expected: Returns expected role permissions
+    timeout: 10
+- id: xplat-entity-browse-all-clients
+  name: Browse Same Entity on All Clients
+  category: functional
+  priority: critical
+  platforms:
+  - api
+  - web
+  - androidtv
+  steps:
+  - name: Get entity via API
+    action: '# TODO: Convert to executable - get /api/v1/entities?limit=1'
+    expected: Returns at least one entity with id, name, type
+    timeout: 10
+  - name: View entity on Web
+    action: '# TODO: Convert to executable - navigate to /entity/{id} on web'
+    expected: Entity detail page shows same name, type, metadata as API
+    timeout: 10
+  - name: View entity on Android TV
+    action: '# TODO: Convert to executable - navigate to entity detail on tv app'
+    expected: Same entity info displayed, poster image loaded
+    timeout: 10
+- id: xplat-search-consistency
+  name: Search Returns Same Results Everywhere
+  category: data-consistency
+  priority: high
+  platforms:
+  - api
+  - web
+  steps:
+  - name: Search via API
+    action: '# TODO: Convert to executable - get /api/v1/media/search?q=test'
+    expected: Returns result set with count
+    timeout: 10
+  - name: Search same term on Web
+    action: '# TODO: Convert to executable - enter ''test'' in web search bar'
+    expected: Same number of results as API, same entity names
+    timeout: 10
+- id: xplat-password-change-invalidates-sessions
+  name: Password Change Invalidates Other Sessions
+  category: security
+  priority: critical
+  platforms:
+  - api
+  - web
+  steps:
+  - name: Login on Web and API
+    action: '# TODO: Convert to executable - login on both web browser and via api'
+    expected: Both sessions active
+    timeout: 10
+  - name: Change password on Web
+    action: '# TODO: Convert to executable - change password via web /settings page'
+    expected: Password changed, web session refreshed
+    timeout: 10
+  - name: Verify API session invalidated
+    action: '# TODO: Convert to executable - make authenticated request with old api
+      token'
+    expected: 401 Unauthorized - old token no longer valid
+    timeout: 10
+- id: xplat-storage-root-add-scan-browse
+  name: Full Storage Root Lifecycle Across Platforms
+  category: workflow
+  priority: critical
+  platforms:
+  - api
+  - web
+  steps:
+  - name: Add storage root via API
+    action: '# TODO: Convert to executable - post /api/v1/storage-roots with local
+      path'
+    expected: 201 Created with root ID
+    timeout: 10
+  - name: Scan via API
+    action: '# TODO: Convert to executable - post /api/v1/scans with the new root
+      id'
+    expected: 202 Accepted, scan starts
+    timeout: 10
+  - name: Wait for scan completion
+    action: '# TODO: Convert to executable - poll get /api/v1/scans/{id} until status=completed'
+    expected: Scan completes with files found
+    timeout: 10
+  - name: Browse entities on Web
+    action: '# TODO: Convert to executable - navigate to /browse on web'
+    expected: Newly scanned entities appear in browse view
+    timeout: 10
+  - name: Verify entity details
+    action: 'tap: 960,540'
+    expected: Entity detail page shows metadata, file associations
+    timeout: 10
+- id: xplat-concurrent-sessions
+  name: Multiple Concurrent Client Sessions
+  category: concurrency
+  priority: high
+  platforms:
+  - api
+  - web
+  - androidtv
+  steps:
+  - name: Login from all platforms
+    action: '# TODO: Convert to executable - login with same user on web, api, and
+      android tv simultaneously'
+    expected: All three sessions active concurrently
+    timeout: 10
+  - name: Perform operations
+    action: '# TODO: Convert to executable - add favorite on web, search on api, browse
+      on tv'
+    expected: All operations succeed without conflicts
+    timeout: 10
+  - name: Verify consistency
+    action: '# TODO: Convert to executable - check favorites list on all three platforms'
+    expected: All platforms show the newly added favorite
+    timeout: 10
+- id: xplat-admin-lock-user-everywhere
+  name: Admin Locks User Across All Platforms
+  category: security
+  priority: critical
+  platforms:
+  - api
+  - web
+  steps:
+  - name: Login as test user
+    action: '# TODO: Convert to executable - login as testuser on both web and api'
+    expected: Both sessions active
+    timeout: 10
+  - name: Admin locks user
+    action: '# TODO: Convert to executable - admin locks testuser account via api'
+    expected: Lock succeeds
+    timeout: 10
+  - name: Verify web session blocked
+    action: '# TODO: Convert to executable - testuser tries to access a page on web'
+    expected: Redirected to login, session invalidated
+    timeout: 10
+  - name: Verify API session blocked
+    action: '# TODO: Convert to executable - testuser tries api request with existing
+      token'
+    expected: 401 or 403 - account locked
+    timeout: 10
+- id: xplat-discovery-service
+  name: Service Discovery Across Network
+  category: discovery
+  priority: high
+  platforms:
+  - api
+  - androidtv
+  steps:
+  - name: Check discovery endpoint
+    action: '# TODO: Convert to executable - get /api/v1/discovery/service-info'
+    expected: Returns service name, version, capabilities
+    timeout: 10
+  - name: Verify TV discovers service
+    action: '# TODO: Convert to executable - open tv app server discovery screen'
+    expected: API server appears in discovered services list
+    timeout: 10
+- id: xplat-error-format-consistency
+  name: Error Response Format Same on All Endpoints
+  category: data-consistency
+  priority: high
+  platforms:
+  - api
+  steps:
+  - name: Trigger 401 error
+    action: '# TODO: Convert to executable - get /api/v1/media without auth header'
+    expected: JSON error with 'error' field, consistent format
+    timeout: 10
+  - name: Trigger 404 error
+    action: '# TODO: Convert to executable - get /api/v1/entities/999999'
+    expected: JSON error with same format structure as 401
+    timeout: 10
+  - name: Trigger 400 error
+    action: '# TODO: Convert to executable - post /api/v1/auth/login with malformed
+      json'
+    expected: JSON error with same format structure
+    timeout: 10
+  - name: Verify no stack traces
+    action: '# TODO: Convert to executable - check all error responses'
+    expected: No internal paths, stack traces, or debug info in any error response
+    timeout: 10
+- id: xplat-health-check-all
+  name: Health Check from All Angles
+  category: monitoring
+  priority: critical
+  platforms:
+  - api
+  steps:
+  - name: API health
+    action: '# TODO: Convert to executable - get /health'
+    expected: 200 with status=healthy
+    timeout: 10
+  - name: Metrics endpoint
+    action: '# TODO: Convert to executable - get /metrics'
+    expected: Prometheus metrics including go_goroutines, http_requests_total
+    timeout: 10
+  - name: Auth status
+    action: '# TODO: Convert to executable - get /api/v1/auth/status'
+    expected: 200 with auth system status
+    timeout: 10

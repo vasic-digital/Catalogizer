@@ -1,0 +1,3699 @@
+version: '2.0'
+name: Test Suite - EXECUTABLE
+description: Executable test suite - converted from /run/media/milosvasic/DATA4TB/Projects/Catalogizer/challenges/helixqa-banks/catalogizer-api-comprehensive.json
+test_cases:
+- id: api-health
+  name: Health Endpoint
+  category: functional
+  priority: critical
+  platforms:
+  - api
+  steps:
+  - name: GET /health
+    action: '# TODO: Convert to executable - get /health'
+    expected: 200 with status=healthy
+    timeout: 10
+- id: api-metrics
+  name: Prometheus Metrics
+  category: observability
+  priority: high
+  platforms:
+  - api
+  steps:
+  - name: GET /metrics
+    action: '# TODO: Convert to executable - get /metrics'
+    expected: 200 with prometheus text format containing go_goroutines, http_requests_total
+    timeout: 10
+- id: api-websocket
+  name: WebSocket Connection
+  category: functional
+  priority: high
+  platforms:
+  - api
+  steps:
+  - name: WS /ws
+    action: '# TODO: Convert to executable - websocket upgrade to /ws'
+    expected: 101 Switching Protocols, connection stays open, receives heartbeat
+    timeout: 10
+- id: api-auth-login
+  name: Login Success
+  category: authentication
+  priority: critical
+  platforms:
+  - api
+  steps:
+  - name: POST /api/v1/auth/login
+    action: '# TODO: Convert to executable - post /api/v1/auth/login with valid admin/admin123
+      credentials'
+    expected: 200 with session_token and refresh_token in response body
+    timeout: 10
+- id: api-auth-login-invalid
+  name: Login Invalid Credentials
+  category: authentication
+  priority: critical
+  platforms:
+  - api
+  steps:
+  - name: POST /api/v1/auth/login with wrong password
+    action: '# TODO: Convert to executable - post /api/v1/auth/login with admin/wrongpassword'
+    expected: 401 with authentication failed error, no stack traces leaked
+    timeout: 10
+- id: api-auth-register
+  name: User Registration
+  category: authentication
+  priority: high
+  platforms:
+  - api
+  steps:
+  - name: POST /api/v1/auth/register
+    action: '# TODO: Convert to executable - post /api/v1/auth/register with username,
+      email, password'
+    expected: 201 with new user object, or 409 if duplicate username/email
+    timeout: 10
+- id: api-auth-refresh
+  name: Token Refresh
+  category: authentication
+  priority: high
+  platforms:
+  - api
+  steps:
+  - name: POST /api/v1/auth/refresh
+    action: '# TODO: Convert to executable - post /api/v1/auth/refresh with valid
+      refresh_token'
+    expected: 200 with new session_token and refresh_token
+    timeout: 10
+- id: api-auth-logout
+  name: Logout
+  category: authentication
+  priority: high
+  platforms:
+  - api
+  steps:
+  - name: POST /api/v1/auth/logout
+    action: '# TODO: Convert to executable - post /api/v1/auth/logout with valid session
+      token'
+    expected: 200 success, token invalidated, subsequent requests with same token
+      return 401
+    timeout: 10
+- id: api-auth-me
+  name: Current User Profile
+  category: authentication
+  priority: high
+  platforms:
+  - api
+  steps:
+  - name: GET /api/v1/auth/me
+    action: '# TODO: Convert to executable - get /api/v1/auth/me with valid auth token'
+    expected: 200 with user id, username, email, role; 401 without token
+    timeout: 10
+- id: api-auth-status
+  name: Auth Status
+  category: authentication
+  priority: high
+  platforms:
+  - api
+  steps:
+  - name: GET /api/v1/auth/status
+    action: '# TODO: Convert to executable - get /api/v1/auth/status with valid token'
+    expected: 200 with authenticated=true, user info, token expiry
+    timeout: 10
+- id: api-auth-permissions
+  name: User Permissions
+  category: authentication
+  priority: high
+  platforms:
+  - api
+  steps:
+  - name: GET /api/v1/auth/permissions
+    action: '# TODO: Convert to executable - get /api/v1/auth/permissions with valid
+      token'
+    expected: 200 with permissions array listing allowed actions
+    timeout: 10
+- id: api-auth-profile
+  name: User Profile Details
+  category: authentication
+  priority: medium
+  platforms:
+  - api
+  steps:
+  - name: GET /api/v1/auth/profile
+    action: '# TODO: Convert to executable - get /api/v1/auth/profile with valid token'
+    expected: 200 with full user profile including preferences and settings
+    timeout: 10
+- id: api-catalog-root
+  name: Catalog Root Listing
+  category: functional
+  priority: high
+  platforms:
+  - api
+  steps:
+  - name: GET /api/v1/catalog
+    action: '# TODO: Convert to executable - get /api/v1/catalog with auth'
+    expected: 200 with array of catalog entries at root level
+    timeout: 10
+- id: api-catalog-path
+  name: Catalog Path Browse
+  category: functional
+  priority: high
+  platforms:
+  - api
+  steps:
+  - name: GET /api/v1/catalog/*path
+    action: '# TODO: Convert to executable - get /api/v1/catalog/some/nested/path
+      with auth'
+    expected: 200 with entries at path, or 404 if path does not exist
+    timeout: 10
+- id: api-catalog-info
+  name: Catalog Info by Path
+  category: functional
+  priority: high
+  platforms:
+  - api
+  steps:
+  - name: GET /api/v1/catalog-info/*path
+    action: '# TODO: Convert to executable - get /api/v1/catalog-info/some/file/path
+      with auth'
+    expected: 200 with file metadata (size, type, modified date, permissions)
+    timeout: 10
+- id: api-search-query
+  name: Search Query
+  category: functional
+  priority: high
+  platforms:
+  - api
+  steps:
+  - name: GET /api/v1/search
+    action: '# TODO: Convert to executable - get /api/v1/search?q=test with auth'
+    expected: 200 with results array containing matched files and directories
+    timeout: 10
+- id: api-search-duplicates
+  name: Search Duplicates
+  category: functional
+  priority: medium
+  platforms:
+  - api
+  steps:
+  - name: GET /api/v1/search/duplicates
+    action: '# TODO: Convert to executable - get /api/v1/search/duplicates with auth'
+    expected: 200 with duplicate groups based on hash matching
+    timeout: 10
+- id: api-search-files
+  name: Search Files
+  category: functional
+  priority: high
+  platforms:
+  - api
+  steps:
+  - name: GET /api/v1/search/files
+    action: '# TODO: Convert to executable - get /api/v1/search/files?q=movie&type=video
+      with auth'
+    expected: 200 with filtered file results
+    timeout: 10
+- id: api-search-files-duplicates
+  name: Search Files Duplicates
+  category: functional
+  priority: medium
+  platforms:
+  - api
+  steps:
+  - name: GET /api/v1/search/files/duplicates
+    action: '# TODO: Convert to executable - get /api/v1/search/files/duplicates with
+      auth'
+    expected: 200 with duplicate file groups with hash and size info
+    timeout: 10
+- id: api-search-advanced
+  name: Advanced Search
+  category: functional
+  priority: high
+  platforms:
+  - api
+  steps:
+  - name: POST /api/v1/search/advanced
+    action: '# TODO: Convert to executable - post /api/v1/search/advanced with filters
+      (type, size range, date range, extensions)'
+    expected: 200 with filtered results matching all criteria
+    timeout: 10
+- id: api-download-file
+  name: Download File by ID
+  category: functional
+  priority: high
+  platforms:
+  - api
+  steps:
+  - name: GET /api/v1/download/file/:id
+    action: '# TODO: Convert to executable - get /api/v1/download/file/1 with auth'
+    expected: 200 with file content and Content-Disposition header, or 404 if not
+      found
+    timeout: 10
+- id: api-download-directory
+  name: Download Directory
+  category: functional
+  priority: medium
+  platforms:
+  - api
+  steps:
+  - name: GET /api/v1/download/directory/*path
+    action: '# TODO: Convert to executable - get /api/v1/download/directory/some/path
+      with auth'
+    expected: 200 with zip archive of directory contents
+    timeout: 10
+- id: api-download-archive
+  name: Download Archive
+  category: functional
+  priority: medium
+  platforms:
+  - api
+  steps:
+  - name: POST /api/v1/download/archive
+    action: '# TODO: Convert to executable - post /api/v1/download/archive with array
+      of file ids/paths'
+    expected: 200 with zip archive containing selected files
+    timeout: 10
+- id: api-copy-storage
+  name: Copy to Storage
+  category: functional
+  priority: medium
+  platforms:
+  - api
+  steps:
+  - name: POST /api/v1/copy/storage
+    action: '# TODO: Convert to executable - post /api/v1/copy/storage with source
+      and destination storage paths'
+    expected: 200 or 202 with copy job status
+    timeout: 10
+- id: api-copy-local
+  name: Copy to Local
+  category: functional
+  priority: medium
+  platforms:
+  - api
+  steps:
+  - name: POST /api/v1/copy/local
+    action: '# TODO: Convert to executable - post /api/v1/copy/local with source path
+      and local destination'
+    expected: 200 or 202 with copy job status
+    timeout: 10
+- id: api-copy-upload
+  name: Upload Copy
+  category: functional
+  priority: medium
+  platforms:
+  - api
+  steps:
+  - name: POST /api/v1/copy/upload
+    action: '# TODO: Convert to executable - post /api/v1/copy/upload with multipart
+      file upload and destination'
+    expected: 200 or 201 with uploaded file metadata
+    timeout: 10
+- id: api-media-search
+  name: Media Search
+  category: functional
+  priority: high
+  platforms:
+  - api
+  steps:
+  - name: GET /api/v1/media/search
+    action: '# TODO: Convert to executable - get /api/v1/media/search?q=movie with
+      auth'
+    expected: 200 with media search results array
+    timeout: 10
+- id: api-media-stats
+  name: Media Statistics
+  category: functional
+  priority: high
+  platforms:
+  - api
+  steps:
+  - name: GET /api/v1/media/stats
+    action: '# TODO: Convert to executable - get /api/v1/media/stats with auth'
+    expected: '200 with statistics: total count, by type, by size'
+    timeout: 10
+- id: api-media-get
+  name: Get Media by ID
+  category: functional
+  priority: high
+  platforms:
+  - api
+  steps:
+  - name: GET /api/v1/media/:id
+    action: '# TODO: Convert to executable - get /api/v1/media/1 with auth'
+    expected: 200 with media details (title, type, metadata), or 404
+    timeout: 10
+- id: api-media-progress
+  name: Update Media Progress
+  category: functional
+  priority: medium
+  platforms:
+  - api
+  steps:
+  - name: PUT /api/v1/media/:id/progress
+    action: '# TODO: Convert to executable - put /api/v1/media/1/progress with position
+      and duration'
+    expected: 200 with updated progress record
+    timeout: 10
+- id: api-media-favorite
+  name: Toggle Media Favorite
+  category: functional
+  priority: medium
+  platforms:
+  - api
+  steps:
+  - name: PUT /api/v1/media/:id/favorite
+    action: '# TODO: Convert to executable - put /api/v1/media/1/favorite with favorite=true'
+    expected: 200 with updated favorite status
+    timeout: 10
+- id: api-recommendations-similar
+  name: Similar Recommendations
+  category: functional
+  priority: medium
+  platforms:
+  - api
+  steps:
+  - name: GET /api/v1/recommendations/similar/:media_id
+    action: '# TODO: Convert to executable - get /api/v1/recommendations/similar/1
+      with auth'
+    expected: 200 with array of similar media items based on type, genre, metadata
+    timeout: 10
+- id: api-recommendations-trending
+  name: Trending Recommendations
+  category: functional
+  priority: medium
+  platforms:
+  - api
+  steps:
+  - name: GET /api/v1/recommendations/trending
+    action: '# TODO: Convert to executable - get /api/v1/recommendations/trending
+      with auth'
+    expected: 200 with array of trending media items
+    timeout: 10
+- id: api-recommendations-personalized
+  name: Personalized Recommendations
+  category: functional
+  priority: medium
+  platforms:
+  - api
+  steps:
+  - name: GET /api/v1/recommendations/personalized/:user_id
+    action: '# TODO: Convert to executable - get /api/v1/recommendations/personalized/1
+      with auth'
+    expected: 200 with personalized media recommendations for user
+    timeout: 10
+- id: api-subtitles-search
+  name: Subtitle Search
+  category: functional
+  priority: medium
+  platforms:
+  - api
+  steps:
+  - name: GET /api/v1/subtitles/search
+    action: '# TODO: Convert to executable - get /api/v1/subtitles/search?query=movie_name&language=en
+      with auth'
+    expected: 200 with array of available subtitle results
+    timeout: 10
+- id: api-subtitles-download
+  name: Subtitle Download
+  category: functional
+  priority: medium
+  platforms:
+  - api
+  steps:
+  - name: POST /api/v1/subtitles/download
+    action: '# TODO: Convert to executable - post /api/v1/subtitles/download with
+      subtitle_id and target media_id'
+    expected: 200 with downloaded subtitle file info
+    timeout: 10
+- id: api-subtitles-media
+  name: Subtitles for Media
+  category: functional
+  priority: medium
+  platforms:
+  - api
+  steps:
+  - name: GET /api/v1/subtitles/media/:media_id
+    action: '# TODO: Convert to executable - get /api/v1/subtitles/media/1 with auth'
+    expected: 200 with array of subtitle tracks associated with media
+    timeout: 10
+- id: api-subtitles-verify-sync
+  name: Subtitle Sync Verification
+  category: functional
+  priority: low
+  platforms:
+  - api
+  steps:
+  - name: GET /api/v1/subtitles/verify-sync
+    action: '# TODO: Convert to executable - get /api/v1/subtitles/verify-sync?media_id=1&subtitle_id=1
+      with auth'
+    expected: 200 with sync status and offset information
+    timeout: 10
+- id: api-subtitles-translate
+  name: Subtitle Translation
+  category: functional
+  priority: low
+  platforms:
+  - api
+  steps:
+  - name: POST /api/v1/subtitles/translate
+    action: '# TODO: Convert to executable - post /api/v1/subtitles/translate with
+      subtitle_id, source_lang, target_lang'
+    expected: 200 or 202 with translation job status
+    timeout: 10
+- id: api-subtitles-upload
+  name: Subtitle Upload
+  category: functional
+  priority: medium
+  platforms:
+  - api
+  steps:
+  - name: POST /api/v1/subtitles/upload
+    action: '# TODO: Convert to executable - post /api/v1/subtitles/upload with subtitle
+      file, media_id, language'
+    expected: 201 with uploaded subtitle metadata
+    timeout: 10
+- id: api-subtitles-languages
+  name: Subtitle Languages
+  category: functional
+  priority: low
+  platforms:
+  - api
+  steps:
+  - name: GET /api/v1/subtitles/languages
+    action: '# TODO: Convert to executable - get /api/v1/subtitles/languages with
+      auth'
+    expected: 200 with array of supported language codes and names
+    timeout: 10
+- id: api-subtitles-providers
+  name: Subtitle Providers
+  category: functional
+  priority: low
+  platforms:
+  - api
+  steps:
+  - name: GET /api/v1/subtitles/providers
+    action: '# TODO: Convert to executable - get /api/v1/subtitles/providers with
+      auth'
+    expected: 200 with array of subtitle provider names and status
+    timeout: 10
+- id: api-storage-list
+  name: Storage List by Path
+  category: functional
+  priority: high
+  platforms:
+  - api
+  steps:
+  - name: GET /api/v1/storage/list/*path
+    action: '# TODO: Convert to executable - get /api/v1/storage/list/ with auth'
+    expected: 200 with file/directory listing for the storage path
+    timeout: 10
+- id: api-storage-roots-list
+  name: Storage Roots List (storage)
+  category: functional
+  priority: high
+  platforms:
+  - api
+  steps:
+  - name: GET /api/v1/storage/roots
+    action: '# TODO: Convert to executable - get /api/v1/storage/roots with auth'
+    expected: 200 with array of configured storage roots
+    timeout: 10
+- id: api-storage-roots-create
+  name: Create Storage Root
+  category: functional
+  priority: high
+  platforms:
+  - api
+  steps:
+  - name: POST /api/v1/storage/roots
+    action: '# TODO: Convert to executable - post /api/v1/storage/roots with name,
+      path, protocol type'
+    expected: 201 with created storage root object
+    timeout: 10
+- id: api-storage-roots-top
+  name: Storage Roots Top-Level
+  category: functional
+  priority: high
+  platforms:
+  - api
+  steps:
+  - name: GET /api/v1/storage-roots
+    action: '# TODO: Convert to executable - get /api/v1/storage-roots with auth'
+    expected: 200 with array of all storage roots and their status
+    timeout: 10
+- id: api-storage-root-status
+  name: Storage Root Status
+  category: functional
+  priority: high
+  platforms:
+  - api
+  steps:
+  - name: GET /api/v1/storage-roots/:id/status
+    action: '# TODO: Convert to executable - get /api/v1/storage-roots/1/status with
+      auth'
+    expected: 200 with storage root connectivity status, space used/free
+    timeout: 10
+- id: api-stats-directories-by-size
+  name: Stats Directories by Size
+  category: functional
+  priority: medium
+  platforms:
+  - api
+  steps:
+  - name: GET /api/v1/stats/directories/by-size
+    action: '# TODO: Convert to executable - get /api/v1/stats/directories/by-size
+      with auth'
+    expected: 200 with directories sorted by total size descending
+    timeout: 10
+- id: api-stats-duplicates-count
+  name: Stats Duplicates Count
+  category: functional
+  priority: medium
+  platforms:
+  - api
+  steps:
+  - name: GET /api/v1/stats/duplicates/count
+    action: '# TODO: Convert to executable - get /api/v1/stats/duplicates/count with
+      auth'
+    expected: 200 with total duplicate count and wasted space
+    timeout: 10
+- id: api-stats-overall
+  name: Stats Overall
+  category: functional
+  priority: high
+  platforms:
+  - api
+  steps:
+  - name: GET /api/v1/stats/overall
+    action: '# TODO: Convert to executable - get /api/v1/stats/overall with auth'
+    expected: 200 with total files, directories, size, last scan time
+    timeout: 10
+- id: api-stats-smb
+  name: Stats SMB Root
+  category: functional
+  priority: medium
+  platforms:
+  - api
+  steps:
+  - name: GET /api/v1/stats/smb/:smb_root
+    action: '# TODO: Convert to executable - get /api/v1/stats/smb/share1 with auth'
+    expected: 200 with SMB-specific statistics for the given root
+    timeout: 10
+- id: api-stats-filetypes
+  name: Stats File Types
+  category: functional
+  priority: medium
+  platforms:
+  - api
+  steps:
+  - name: GET /api/v1/stats/filetypes
+    action: '# TODO: Convert to executable - get /api/v1/stats/filetypes with auth'
+    expected: 200 with file type distribution (extension, count, total size)
+    timeout: 10
+- id: api-stats-sizes
+  name: Stats Sizes
+  category: functional
+  priority: medium
+  platforms:
+  - api
+  steps:
+  - name: GET /api/v1/stats/sizes
+    action: '# TODO: Convert to executable - get /api/v1/stats/sizes with auth'
+    expected: 200 with size distribution buckets
+    timeout: 10
+- id: api-stats-duplicates
+  name: Stats Duplicates
+  category: functional
+  priority: medium
+  platforms:
+  - api
+  steps:
+  - name: GET /api/v1/stats/duplicates
+    action: '# TODO: Convert to executable - get /api/v1/stats/duplicates with auth'
+    expected: 200 with duplicate file statistics
+    timeout: 10
+- id: api-stats-duplicates-groups
+  name: Stats Duplicate Groups
+  category: functional
+  priority: medium
+  platforms:
+  - api
+  steps:
+  - name: GET /api/v1/stats/duplicates/groups
+    action: '# TODO: Convert to executable - get /api/v1/stats/duplicates/groups with
+      auth'
+    expected: 200 with grouped duplicate files by hash
+    timeout: 10
+- id: api-stats-access
+  name: Stats Access Patterns
+  category: functional
+  priority: low
+  platforms:
+  - api
+  steps:
+  - name: GET /api/v1/stats/access
+    action: '# TODO: Convert to executable - get /api/v1/stats/access with auth'
+    expected: 200 with access pattern statistics (most accessed, recent)
+    timeout: 10
+- id: api-stats-growth
+  name: Stats Growth
+  category: functional
+  priority: medium
+  platforms:
+  - api
+  steps:
+  - name: GET /api/v1/stats/growth
+    action: '# TODO: Convert to executable - get /api/v1/stats/growth with auth'
+    expected: 200 with storage growth over time (daily, weekly, monthly)
+    timeout: 10
+- id: api-stats-scans
+  name: Stats Scans
+  category: functional
+  priority: medium
+  platforms:
+  - api
+  steps:
+  - name: GET /api/v1/stats/scans
+    action: '# TODO: Convert to executable - get /api/v1/stats/scans with auth'
+    expected: 200 with scan history statistics (count, duration, files scanned)
+    timeout: 10
+- id: api-smb-discover-post
+  name: SMB Discover Trigger
+  category: functional
+  priority: medium
+  platforms:
+  - api
+  steps:
+  - name: POST /api/v1/smb/discover
+    action: '# TODO: Convert to executable - post /api/v1/smb/discover with network
+      range or host'
+    expected: 200 or 202 with discovery job initiated
+    timeout: 10
+- id: api-smb-discover-get
+  name: SMB Discover Results
+  category: functional
+  priority: medium
+  platforms:
+  - api
+  steps:
+  - name: GET /api/v1/smb/discover
+    action: '# TODO: Convert to executable - get /api/v1/smb/discover with auth'
+    expected: 200 with discovered SMB shares
+    timeout: 10
+- id: api-smb-test-post
+  name: SMB Connection Test
+  category: functional
+  priority: medium
+  platforms:
+  - api
+  steps:
+  - name: POST /api/v1/smb/test
+    action: '# TODO: Convert to executable - post /api/v1/smb/test with host, share,
+      username, password'
+    expected: 200 with connection test result (success/failure, latency)
+    timeout: 10
+- id: api-smb-test-get
+  name: SMB Test Results
+  category: functional
+  priority: low
+  platforms:
+  - api
+  steps:
+  - name: GET /api/v1/smb/test
+    action: '# TODO: Convert to executable - get /api/v1/smb/test with auth'
+    expected: 200 with previous SMB test results
+    timeout: 10
+- id: api-smb-browse
+  name: SMB Browse Share
+  category: functional
+  priority: medium
+  platforms:
+  - api
+  steps:
+  - name: POST /api/v1/smb/browse
+    action: '# TODO: Convert to executable - post /api/v1/smb/browse with host, share,
+      path, credentials'
+    expected: 200 with directory listing of SMB share
+    timeout: 10
+- id: api-scans-create
+  name: Create Scan Job
+  category: functional
+  priority: critical
+  platforms:
+  - api
+  steps:
+  - name: POST /api/v1/scans
+    action: '# TODO: Convert to executable - post /api/v1/scans with storage_root_id
+      and scan options'
+    expected: 201 or 202 with scan job ID and initial status
+    timeout: 10
+- id: api-scans-list
+  name: List Scan Jobs
+  category: functional
+  priority: high
+  platforms:
+  - api
+  steps:
+  - name: GET /api/v1/scans
+    action: '# TODO: Convert to executable - get /api/v1/scans with auth'
+    expected: 200 with array of scan jobs (id, status, progress, timestamps)
+    timeout: 10
+- id: api-scans-get
+  name: Get Scan Job Status
+  category: functional
+  priority: high
+  platforms:
+  - api
+  steps:
+  - name: GET /api/v1/scans/:job_id
+    action: '# TODO: Convert to executable - get /api/v1/scans/1 with auth'
+    expected: 200 with scan job details (status, progress, files found, errors)
+    timeout: 10
+- id: api-conversion-create
+  name: Create Conversion Job
+  category: functional
+  priority: medium
+  platforms:
+  - api
+  steps:
+  - name: POST /api/v1/conversion/jobs
+    action: '# TODO: Convert to executable - post /api/v1/conversion/jobs with source_file,
+      target_format, options'
+    expected: 201 with conversion job ID and status
+    timeout: 10
+- id: api-conversion-list
+  name: List Conversion Jobs
+  category: functional
+  priority: medium
+  platforms:
+  - api
+  steps:
+  - name: GET /api/v1/conversion/jobs
+    action: '# TODO: Convert to executable - get /api/v1/conversion/jobs with auth'
+    expected: 200 with array of conversion jobs and statuses
+    timeout: 10
+- id: api-conversion-get
+  name: Get Conversion Job
+  category: functional
+  priority: medium
+  platforms:
+  - api
+  steps:
+  - name: GET /api/v1/conversion/jobs/:id
+    action: '# TODO: Convert to executable - get /api/v1/conversion/jobs/1 with auth'
+    expected: 200 with conversion job details (progress, output path)
+    timeout: 10
+- id: api-conversion-cancel
+  name: Cancel Conversion Job
+  category: functional
+  priority: medium
+  platforms:
+  - api
+  steps:
+  - name: POST /api/v1/conversion/jobs/:id/cancel
+    action: '# TODO: Convert to executable - post /api/v1/conversion/jobs/1/cancel
+      with auth'
+    expected: 200 with cancellation confirmation
+    timeout: 10
+- id: api-conversion-formats
+  name: Supported Conversion Formats
+  category: functional
+  priority: low
+  platforms:
+  - api
+  steps:
+  - name: GET /api/v1/conversion/formats
+    action: '# TODO: Convert to executable - get /api/v1/conversion/formats with auth'
+    expected: 200 with supported input/output format pairs
+    timeout: 10
+- id: api-users-create
+  name: Create User
+  category: functional
+  priority: high
+  platforms:
+  - api
+  steps:
+  - name: POST /api/v1/users/create
+    action: '# TODO: Convert to executable - post /api/v1/users/create with username,
+      email, password, role (admin auth required)'
+    expected: 201 with created user object
+    timeout: 10
+- id: api-users-list
+  name: List Users
+  category: functional
+  priority: high
+  platforms:
+  - api
+  steps:
+  - name: GET /api/v1/users/list
+    action: '# TODO: Convert to executable - get /api/v1/users/list with admin auth'
+    expected: 200 with array of users (id, username, email, role, status)
+    timeout: 10
+- id: api-users-get
+  name: Get User
+  category: functional
+  priority: high
+  platforms:
+  - api
+  steps:
+  - name: GET /api/v1/users/get
+    action: '# TODO: Convert to executable - get /api/v1/users/get?id=1 with admin
+      auth'
+    expected: 200 with user details
+    timeout: 10
+- id: api-users-update
+  name: Update User
+  category: functional
+  priority: high
+  platforms:
+  - api
+  steps:
+  - name: PUT /api/v1/users/update
+    action: '# TODO: Convert to executable - put /api/v1/users/update with user id
+      and fields to update'
+    expected: 200 with updated user object
+    timeout: 10
+- id: api-users-delete
+  name: Delete User
+  category: functional
+  priority: high
+  platforms:
+  - api
+  steps:
+  - name: DELETE /api/v1/users/delete
+    action: '# TODO: Convert to executable - delete /api/v1/users/delete?id=2 with
+      admin auth'
+    expected: 200 success, user no longer returned by list
+    timeout: 10
+- id: api-users-reset-password
+  name: Reset User Password
+  category: functional
+  priority: high
+  platforms:
+  - api
+  steps:
+  - name: POST /api/v1/users/reset-password
+    action: '# TODO: Convert to executable - post /api/v1/users/reset-password with
+      user_id and new_password'
+    expected: 200 success, user can login with new password
+    timeout: 10
+- id: api-users-lock
+  name: Lock User Account
+  category: functional
+  priority: medium
+  platforms:
+  - api
+  steps:
+  - name: POST /api/v1/users/lock
+    action: '# TODO: Convert to executable - post /api/v1/users/lock with user_id'
+    expected: 200 success, locked user cannot login
+    timeout: 10
+- id: api-users-unlock
+  name: Unlock User Account
+  category: functional
+  priority: medium
+  platforms:
+  - api
+  steps:
+  - name: POST /api/v1/users/unlock
+    action: '# TODO: Convert to executable - post /api/v1/users/unlock with user_id'
+    expected: 200 success, user can login again
+    timeout: 10
+- id: api-roles-create
+  name: Create Role
+  category: functional
+  priority: medium
+  platforms:
+  - api
+  steps:
+  - name: POST /api/v1/roles/create
+    action: '# TODO: Convert to executable - post /api/v1/roles/create with role name
+      and permissions array'
+    expected: 201 with created role object
+    timeout: 10
+- id: api-roles-list
+  name: List Roles
+  category: functional
+  priority: medium
+  platforms:
+  - api
+  steps:
+  - name: GET /api/v1/roles/list
+    action: '# TODO: Convert to executable - get /api/v1/roles/list with admin auth'
+    expected: 200 with array of roles and their permission sets
+    timeout: 10
+- id: api-roles-get
+  name: Get Role
+  category: functional
+  priority: medium
+  platforms:
+  - api
+  steps:
+  - name: GET /api/v1/roles/get
+    action: '# TODO: Convert to executable - get /api/v1/roles/get?id=1 with admin
+      auth'
+    expected: 200 with role details and associated permissions
+    timeout: 10
+- id: api-roles-update
+  name: Update Role
+  category: functional
+  priority: medium
+  platforms:
+  - api
+  steps:
+  - name: PUT /api/v1/roles/update
+    action: '# TODO: Convert to executable - put /api/v1/roles/update with role id
+      and updated permissions'
+    expected: 200 with updated role object
+    timeout: 10
+- id: api-roles-delete
+  name: Delete Role
+  category: functional
+  priority: medium
+  platforms:
+  - api
+  steps:
+  - name: DELETE /api/v1/roles/delete
+    action: '# TODO: Convert to executable - delete /api/v1/roles/delete?id=2 with
+      admin auth'
+    expected: 200 success, role no longer in list, users with role reassigned
+    timeout: 10
+- id: api-roles-permissions
+  name: Role Permissions
+  category: functional
+  priority: medium
+  platforms:
+  - api
+  steps:
+  - name: GET /api/v1/roles/permissions
+    action: '# TODO: Convert to executable - get /api/v1/roles/permissions with admin
+      auth'
+    expected: 200 with complete list of available permissions
+    timeout: 10
+- id: api-config-get
+  name: Get Configuration
+  category: functional
+  priority: high
+  platforms:
+  - api
+  steps:
+  - name: GET /api/v1/configuration
+    action: '# TODO: Convert to executable - get /api/v1/configuration with auth'
+    expected: 200 with current configuration object (no secrets exposed)
+    timeout: 10
+- id: api-config-test
+  name: Test Configuration
+  category: functional
+  priority: medium
+  platforms:
+  - api
+  steps:
+  - name: POST /api/v1/configuration/test
+    action: '# TODO: Convert to executable - post /api/v1/configuration/test with
+      config changes to validate'
+    expected: 200 with validation results (valid/invalid, error messages)
+    timeout: 10
+- id: api-config-status
+  name: Configuration Status
+  category: functional
+  priority: medium
+  platforms:
+  - api
+  steps:
+  - name: GET /api/v1/configuration/status
+    action: '# TODO: Convert to executable - get /api/v1/configuration/status with
+      auth'
+    expected: 200 with configuration health status (db connected, services ok)
+    timeout: 10
+- id: api-config-wizard-step
+  name: Wizard Step
+  category: functional
+  priority: medium
+  platforms:
+  - api
+  steps:
+  - name: GET /api/v1/configuration/wizard/step/:id
+    action: '# TODO: Convert to executable - get /api/v1/configuration/wizard/step/1
+      with auth'
+    expected: 200 with wizard step definition (fields, validation rules)
+    timeout: 10
+- id: api-config-wizard-validate
+  name: Wizard Validate Step
+  category: functional
+  priority: medium
+  platforms:
+  - api
+  steps:
+  - name: POST /api/v1/configuration/wizard/validate
+    action: '# TODO: Convert to executable - post /api/v1/configuration/wizard/validate
+      with step_id and field values'
+    expected: 200 with validation result per field
+    timeout: 10
+- id: api-config-wizard-save
+  name: Wizard Save Step
+  category: functional
+  priority: medium
+  platforms:
+  - api
+  steps:
+  - name: POST /api/v1/configuration/wizard/save
+    action: '# TODO: Convert to executable - post /api/v1/configuration/wizard/save
+      with step_id and validated values'
+    expected: 200 with saved configuration confirmation
+    timeout: 10
+- id: api-config-wizard-progress
+  name: Wizard Progress
+  category: functional
+  priority: medium
+  platforms:
+  - api
+  steps:
+  - name: GET /api/v1/configuration/wizard/progress
+    action: '# TODO: Convert to executable - get /api/v1/configuration/wizard/progress
+      with auth'
+    expected: 200 with wizard completion progress (completed steps, current step)
+    timeout: 10
+- id: api-config-wizard-complete
+  name: Wizard Complete
+  category: functional
+  priority: medium
+  platforms:
+  - api
+  steps:
+  - name: POST /api/v1/configuration/wizard/complete
+    action: '# TODO: Convert to executable - post /api/v1/configuration/wizard/complete
+      with auth'
+    expected: 200 with wizard finalization, configuration applied
+    timeout: 10
+- id: api-errors-report
+  name: Report Error
+  category: functional
+  priority: high
+  platforms:
+  - api
+  steps:
+  - name: POST /api/v1/errors/report
+    action: '# TODO: Convert to executable - post /api/v1/errors/report with error
+      message, stack, context'
+    expected: 201 with error report ID
+    timeout: 10
+- id: api-errors-crash
+  name: Report Crash
+  category: functional
+  priority: high
+  platforms:
+  - api
+  steps:
+  - name: POST /api/v1/errors/crash
+    action: '# TODO: Convert to executable - post /api/v1/errors/crash with crash
+      data (signal, stack trace, device info)'
+    expected: 201 with crash report ID
+    timeout: 10
+- id: api-errors-reports-list
+  name: List Error Reports
+  category: functional
+  priority: medium
+  platforms:
+  - api
+  steps:
+  - name: GET /api/v1/errors/reports
+    action: '# TODO: Convert to executable - get /api/v1/errors/reports with admin
+      auth'
+    expected: 200 with paginated error reports
+    timeout: 10
+- id: api-errors-reports-get
+  name: Get Error Report
+  category: functional
+  priority: medium
+  platforms:
+  - api
+  steps:
+  - name: GET /api/v1/errors/reports/:id
+    action: '# TODO: Convert to executable - get /api/v1/errors/reports/1 with admin
+      auth'
+    expected: 200 with full error report details
+    timeout: 10
+- id: api-errors-reports-status
+  name: Update Error Report Status
+  category: functional
+  priority: medium
+  platforms:
+  - api
+  steps:
+  - name: PUT /api/v1/errors/reports/:id/status
+    action: '# TODO: Convert to executable - put /api/v1/errors/reports/1/status with
+      new status (open, investigating, resolved)'
+    expected: 200 with updated error report
+    timeout: 10
+- id: api-errors-crashes-list
+  name: List Crash Reports
+  category: functional
+  priority: medium
+  platforms:
+  - api
+  steps:
+  - name: GET /api/v1/errors/crashes
+    action: '# TODO: Convert to executable - get /api/v1/errors/crashes with admin
+      auth'
+    expected: 200 with paginated crash reports
+    timeout: 10
+- id: api-errors-crashes-get
+  name: Get Crash Report
+  category: functional
+  priority: medium
+  platforms:
+  - api
+  steps:
+  - name: GET /api/v1/errors/crashes/:id
+    action: '# TODO: Convert to executable - get /api/v1/errors/crashes/1 with admin
+      auth'
+    expected: 200 with full crash report details
+    timeout: 10
+- id: api-errors-crashes-status
+  name: Update Crash Report Status
+  category: functional
+  priority: medium
+  platforms:
+  - api
+  steps:
+  - name: PUT /api/v1/errors/crashes/:id/status
+    action: '# TODO: Convert to executable - put /api/v1/errors/crashes/1/status with
+      new status'
+    expected: 200 with updated crash report
+    timeout: 10
+- id: api-errors-statistics
+  name: Error Statistics
+  category: observability
+  priority: medium
+  platforms:
+  - api
+  steps:
+  - name: GET /api/v1/errors/statistics
+    action: '# TODO: Convert to executable - get /api/v1/errors/statistics with admin
+      auth'
+    expected: 200 with error counts by type, severity, time period
+    timeout: 10
+- id: api-errors-crash-statistics
+  name: Crash Statistics
+  category: observability
+  priority: medium
+  platforms:
+  - api
+  steps:
+  - name: GET /api/v1/errors/crash-statistics
+    action: '# TODO: Convert to executable - get /api/v1/errors/crash-statistics with
+      admin auth'
+    expected: 200 with crash frequency, affected versions, top crash signatures
+    timeout: 10
+- id: api-errors-health
+  name: Error Subsystem Health
+  category: observability
+  priority: medium
+  platforms:
+  - api
+  steps:
+  - name: GET /api/v1/errors/health
+    action: '# TODO: Convert to executable - get /api/v1/errors/health with admin
+      auth'
+    expected: 200 with error subsystem health (queue depth, processing rate)
+    timeout: 10
+- id: api-logs-collect
+  name: Collect Logs
+  category: functional
+  priority: medium
+  platforms:
+  - api
+  steps:
+  - name: POST /api/v1/logs/collect
+    action: '# TODO: Convert to executable - post /api/v1/logs/collect with collection
+      parameters (time range, sources)'
+    expected: 200 or 202 with log collection job ID
+    timeout: 10
+- id: api-logs-collections
+  name: List Log Collections
+  category: functional
+  priority: medium
+  platforms:
+  - api
+  steps:
+  - name: GET /api/v1/logs/collections
+    action: '# TODO: Convert to executable - get /api/v1/logs/collections with admin
+      auth'
+    expected: 200 with array of log collection jobs and statuses
+    timeout: 10
+- id: api-logs-collections-get
+  name: Get Log Collection
+  category: functional
+  priority: medium
+  platforms:
+  - api
+  steps:
+  - name: GET /api/v1/logs/collections/:id
+    action: '# TODO: Convert to executable - get /api/v1/logs/collections/1 with admin
+      auth'
+    expected: 200 with collection details (size, line count, sources)
+    timeout: 10
+- id: api-logs-entries
+  name: List Log Entries
+  category: functional
+  priority: medium
+  platforms:
+  - api
+  steps:
+  - name: GET /api/v1/logs/entries
+    action: '# TODO: Convert to executable - get /api/v1/logs/entries?level=error&limit=50
+      with admin auth'
+    expected: 200 with paginated log entries filtered by level
+    timeout: 10
+- id: api-logs-export
+  name: Export Logs
+  category: functional
+  priority: low
+  platforms:
+  - api
+  steps:
+  - name: POST /api/v1/logs/export
+    action: '# TODO: Convert to executable - post /api/v1/logs/export with format
+      (json, csv) and filters'
+    expected: 200 with downloadable log export file
+    timeout: 10
+- id: api-logs-analyze
+  name: Analyze Logs
+  category: functional
+  priority: low
+  platforms:
+  - api
+  steps:
+  - name: GET /api/v1/logs/analyze
+    action: '# TODO: Convert to executable - get /api/v1/logs/analyze?timerange=24h
+      with admin auth'
+    expected: 200 with log analysis (error rate, patterns, anomalies)
+    timeout: 10
+- id: api-logs-share-create
+  name: Create Log Share
+  category: functional
+  priority: low
+  platforms:
+  - api
+  steps:
+  - name: POST /api/v1/logs/share
+    action: '# TODO: Convert to executable - post /api/v1/logs/share with collection_id
+      and expiry'
+    expected: 201 with share token and expiry date
+    timeout: 10
+- id: api-logs-share-get
+  name: Get Shared Log
+  category: functional
+  priority: low
+  platforms:
+  - api
+  steps:
+  - name: GET /api/v1/logs/share/:token
+    action: '# TODO: Convert to executable - get /api/v1/logs/share/abc123token'
+    expected: 200 with shared log entries, or 404/410 if expired
+    timeout: 10
+- id: api-logs-share-delete
+  name: Delete Log Share
+  category: functional
+  priority: low
+  platforms:
+  - api
+  steps:
+  - name: DELETE /api/v1/logs/share/:id
+    action: '# TODO: Convert to executable - delete /api/v1/logs/share/1 with admin
+      auth'
+    expected: 200 success, share token invalidated
+    timeout: 10
+- id: api-logs-stream
+  name: Stream Logs
+  category: functional
+  priority: medium
+  platforms:
+  - api
+  steps:
+  - name: GET /api/v1/logs/stream
+    action: '# TODO: Convert to executable - get /api/v1/logs/stream with admin auth
+      (sse or websocket)'
+    expected: 200 with streaming log entries in real-time
+    timeout: 10
+- id: api-logs-statistics
+  name: Log Statistics
+  category: observability
+  priority: medium
+  platforms:
+  - api
+  steps:
+  - name: GET /api/v1/logs/statistics
+    action: '# TODO: Convert to executable - get /api/v1/logs/statistics with admin
+      auth'
+    expected: 200 with log volume, error rate, storage used
+    timeout: 10
+- id: api-collections-list
+  name: List Collections
+  category: functional
+  priority: high
+  platforms:
+  - api
+  steps:
+  - name: GET /api/v1/collections
+    action: '# TODO: Convert to executable - get /api/v1/collections with auth'
+    expected: 200 with array of user collections
+    timeout: 10
+- id: api-collections-create
+  name: Create Collection
+  category: functional
+  priority: high
+  platforms:
+  - api
+  steps:
+  - name: POST /api/v1/collections
+    action: '# TODO: Convert to executable - post /api/v1/collections with name and
+      description'
+    expected: 201 with created collection object
+    timeout: 10
+- id: api-collections-get
+  name: Get Collection
+  category: functional
+  priority: high
+  platforms:
+  - api
+  steps:
+  - name: GET /api/v1/collections/:id
+    action: '# TODO: Convert to executable - get /api/v1/collections/1 with auth'
+    expected: 200 with collection details and item list
+    timeout: 10
+- id: api-collections-update
+  name: Update Collection
+  category: functional
+  priority: medium
+  platforms:
+  - api
+  steps:
+  - name: PUT /api/v1/collections/:id
+    action: '# TODO: Convert to executable - put /api/v1/collections/1 with updated
+      name or description'
+    expected: 200 with updated collection object
+    timeout: 10
+- id: api-collections-delete
+  name: Delete Collection
+  category: functional
+  priority: medium
+  platforms:
+  - api
+  steps:
+  - name: DELETE /api/v1/collections/:id
+    action: '# TODO: Convert to executable - delete /api/v1/collections/1 with auth'
+    expected: 200 success, collection and items removed
+    timeout: 10
+- id: api-assets-get
+  name: Get Asset (Public)
+  category: functional
+  priority: high
+  platforms:
+  - api
+  steps:
+  - name: GET /api/v1/assets/:id
+    action: '# TODO: Convert to executable - get /api/v1/assets/1 (no auth required)'
+    expected: 200 with asset binary content and proper Content-Type header
+    timeout: 10
+- id: api-assets-request
+  name: Request Asset
+  category: functional
+  priority: medium
+  platforms:
+  - api
+  steps:
+  - name: POST /api/v1/assets/request
+    action: '# TODO: Convert to executable - post /api/v1/assets/request with entity_type,
+      entity_id, asset_type'
+    expected: 200 or 202 with asset fetch job or existing asset URL
+    timeout: 10
+- id: api-assets-by-entity
+  name: Get Asset by Entity
+  category: functional
+  priority: high
+  platforms:
+  - api
+  steps:
+  - name: GET /api/v1/assets/by-entity/:type/:id
+    action: '# TODO: Convert to executable - get /api/v1/assets/by-entity/movie/1
+      with auth'
+    expected: 200 with asset for entity (cover art, poster), or 404
+    timeout: 10
+- id: api-entities-list
+  name: List Entities
+  category: functional
+  priority: high
+  platforms:
+  - api
+  steps:
+  - name: GET /api/v1/entities
+    action: '# TODO: Convert to executable - get /api/v1/entities?page=1&limit=20
+      with auth'
+    expected: 200 with paginated entity list
+    timeout: 10
+- id: api-entities-types
+  name: Entity Types
+  category: functional
+  priority: high
+  platforms:
+  - api
+  steps:
+  - name: GET /api/v1/entities/types
+    action: '# TODO: Convert to executable - get /api/v1/entities/types with auth'
+    expected: 200 with 11 media types (movie, tv_show, tv_season, etc.)
+    timeout: 10
+- id: api-entities-stats
+  name: Entity Statistics
+  category: functional
+  priority: high
+  platforms:
+  - api
+  steps:
+  - name: GET /api/v1/entities/stats
+    action: '# TODO: Convert to executable - get /api/v1/entities/stats with auth'
+    expected: 200 with entity counts by type, total, recently added
+    timeout: 10
+- id: api-entities-duplicates
+  name: Entity Duplicates
+  category: functional
+  priority: medium
+  platforms:
+  - api
+  steps:
+  - name: GET /api/v1/entities/duplicates
+    action: '# TODO: Convert to executable - get /api/v1/entities/duplicates with
+      auth'
+    expected: 200 with duplicate entity groups (same title+type+year)
+    timeout: 10
+- id: api-entities-browse
+  name: Browse Entities by Type
+  category: functional
+  priority: high
+  platforms:
+  - api
+  steps:
+  - name: GET /api/v1/entities/browse/:type
+    action: '# TODO: Convert to executable - get /api/v1/entities/browse/movie with
+      auth'
+    expected: 200 with paginated entities of specified type
+    timeout: 10
+- id: api-entities-get
+  name: Get Entity by ID
+  category: functional
+  priority: high
+  platforms:
+  - api
+  steps:
+  - name: GET /api/v1/entities/:id
+    action: '# TODO: Convert to executable - get /api/v1/entities/1 with auth'
+    expected: 200 with full entity details (title, type, metadata, parent)
+    timeout: 10
+- id: api-entities-children
+  name: Entity Children
+  category: functional
+  priority: high
+  platforms:
+  - api
+  steps:
+  - name: GET /api/v1/entities/:id/children
+    action: '# TODO: Convert to executable - get /api/v1/entities/1/children with
+      auth'
+    expected: 200 with child entities (e.g., seasons of a show)
+    timeout: 10
+- id: api-entities-files
+  name: Entity Files
+  category: functional
+  priority: high
+  platforms:
+  - api
+  steps:
+  - name: GET /api/v1/entities/:id/files
+    action: '# TODO: Convert to executable - get /api/v1/entities/1/files with auth'
+    expected: 200 with files associated with entity via media_files junction
+    timeout: 10
+- id: api-entities-metadata
+  name: Entity Metadata
+  category: functional
+  priority: medium
+  platforms:
+  - api
+  steps:
+  - name: GET /api/v1/entities/:id/metadata
+    action: '# TODO: Convert to executable - get /api/v1/entities/1/metadata with
+      auth'
+    expected: 200 with external metadata (TMDB, IMDB, etc.)
+    timeout: 10
+- id: api-entities-entity-duplicates
+  name: Entity-Level Duplicates
+  category: functional
+  priority: medium
+  platforms:
+  - api
+  steps:
+  - name: GET /api/v1/entities/:id/entity-duplicates
+    action: '# TODO: Convert to executable - get /api/v1/entities/1/entity-duplicates
+      with auth'
+    expected: 200 with entities considered duplicates of this one
+    timeout: 10
+- id: api-entities-stream
+  name: Entity Stream
+  category: functional
+  priority: high
+  platforms:
+  - api
+  steps:
+  - name: GET /api/v1/entities/:id/stream
+    action: '# TODO: Convert to executable - get /api/v1/entities/1/stream with auth'
+    expected: 200 with streamable media content or redirect to stream URL
+    timeout: 10
+- id: api-entities-download
+  name: Entity Download
+  category: functional
+  priority: medium
+  platforms:
+  - api
+  steps:
+  - name: GET /api/v1/entities/:id/download
+    action: '# TODO: Convert to executable - get /api/v1/entities/1/download with
+      auth'
+    expected: 200 with file download and Content-Disposition header
+    timeout: 10
+- id: api-entities-install-info
+  name: Entity Install Info
+  category: functional
+  priority: low
+  platforms:
+  - api
+  steps:
+  - name: GET /api/v1/entities/:id/install-info
+    action: '# TODO: Convert to executable - get /api/v1/entities/1/install-info with
+      auth (for game/software type)'
+    expected: 200 with installation instructions, requirements, paths
+    timeout: 10
+- id: api-entities-refresh-metadata
+  name: Refresh Entity Metadata
+  category: functional
+  priority: medium
+  platforms:
+  - api
+  steps:
+  - name: POST /api/v1/entities/:id/refresh-metadata
+    action: '# TODO: Convert to executable - post /api/v1/entities/1/refresh-metadata
+      with auth'
+    expected: 200 or 202 with metadata refresh job started
+    timeout: 10
+- id: api-entities-user-metadata-put
+  name: Update User Metadata
+  category: functional
+  priority: medium
+  platforms:
+  - api
+  steps:
+  - name: PUT /api/v1/entities/:id/user-metadata
+    action: '# TODO: Convert to executable - put /api/v1/entities/1/user-metadata
+      with custom tags, rating, notes'
+    expected: 200 with updated user metadata for entity
+    timeout: 10
+- id: api-entities-user-metadata-post
+  name: Create User Metadata
+  category: functional
+  priority: medium
+  platforms:
+  - api
+  steps:
+  - name: POST /api/v1/entities/:id/user-metadata
+    action: '# TODO: Convert to executable - post /api/v1/entities/1/user-metadata
+      with initial custom metadata'
+    expected: 201 with created user metadata record
+    timeout: 10
+- id: api-analytics-access
+  name: Record Access Analytics
+  category: functional
+  priority: medium
+  platforms:
+  - api
+  steps:
+  - name: POST /api/v1/analytics/access
+    action: '# TODO: Convert to executable - post /api/v1/analytics/access with entity_id,
+      action_type, timestamp'
+    expected: 201 with recorded access event
+    timeout: 10
+- id: api-analytics-event
+  name: Record Analytics Event
+  category: functional
+  priority: medium
+  platforms:
+  - api
+  steps:
+  - name: POST /api/v1/analytics/event
+    action: '# TODO: Convert to executable - post /api/v1/analytics/event with event_type,
+      payload, context'
+    expected: 201 with recorded event
+    timeout: 10
+- id: api-analytics-user
+  name: User Analytics
+  category: functional
+  priority: medium
+  platforms:
+  - api
+  steps:
+  - name: GET /api/v1/analytics/user/:user_id
+    action: '# TODO: Convert to executable - get /api/v1/analytics/user/1 with auth'
+    expected: 200 with user activity summary (views, plays, searches, time spent)
+    timeout: 10
+- id: api-analytics-system
+  name: System Analytics
+  category: functional
+  priority: medium
+  platforms:
+  - api
+  steps:
+  - name: GET /api/v1/analytics/system
+    action: '# TODO: Convert to executable - get /api/v1/analytics/system with admin
+      auth'
+    expected: 200 with system-wide analytics (active users, request volume, popular
+      content)
+    timeout: 10
+- id: api-analytics-media
+  name: Media Analytics
+  category: functional
+  priority: medium
+  platforms:
+  - api
+  steps:
+  - name: GET /api/v1/analytics/media/:media_id
+    action: '# TODO: Convert to executable - get /api/v1/analytics/media/1 with auth'
+    expected: 200 with media-specific analytics (view count, play count, avg duration)
+    timeout: 10
+- id: api-analytics-reports
+  name: Generate Analytics Report
+  category: functional
+  priority: low
+  platforms:
+  - api
+  steps:
+  - name: POST /api/v1/analytics/reports
+    action: '# TODO: Convert to executable - post /api/v1/analytics/reports with report_type,
+      date_range, filters'
+    expected: 200 or 202 with generated report or job ID
+    timeout: 10
+- id: api-reports-usage
+  name: Usage Report
+  category: functional
+  priority: medium
+  platforms:
+  - api
+  steps:
+  - name: GET /api/v1/reports/usage
+    action: '# TODO: Convert to executable - get /api/v1/reports/usage with admin
+      auth'
+    expected: 200 with usage report (active users, storage consumed, API calls)
+    timeout: 10
+- id: api-reports-performance
+  name: Performance Report
+  category: functional
+  priority: medium
+  platforms:
+  - api
+  steps:
+  - name: GET /api/v1/reports/performance
+    action: '# TODO: Convert to executable - get /api/v1/reports/performance with
+      admin auth'
+    expected: 200 with performance report (response times, throughput, error rates)
+    timeout: 10
+- id: api-favorites-list
+  name: List Favorites
+  category: functional
+  priority: high
+  platforms:
+  - api
+  steps:
+  - name: GET /api/v1/favorites
+    action: '# TODO: Convert to executable - get /api/v1/favorites with auth'
+    expected: 200 with array of user favorite entities
+    timeout: 10
+- id: api-favorites-add
+  name: Add Favorite
+  category: functional
+  priority: high
+  platforms:
+  - api
+  steps:
+  - name: POST /api/v1/favorites
+    action: '# TODO: Convert to executable - post /api/v1/favorites with entity_id'
+    expected: 201 with favorite entry, or 409 if already favorited
+    timeout: 10
+- id: api-favorites-remove
+  name: Remove Favorite
+  category: functional
+  priority: high
+  platforms:
+  - api
+  steps:
+  - name: DELETE /api/v1/favorites/:id
+    action: '# TODO: Convert to executable - delete /api/v1/favorites/1 with auth'
+    expected: 200 success, entity no longer in favorites list
+    timeout: 10
+- id: api-favorites-check
+  name: Check Favorite
+  category: functional
+  priority: medium
+  platforms:
+  - api
+  steps:
+  - name: GET /api/v1/favorites/check
+    action: '# TODO: Convert to executable - get /api/v1/favorites/check?entity_id=1
+      with auth'
+    expected: 200 with is_favorite boolean
+    timeout: 10
+- id: api-browse-roots
+  name: Browse Roots
+  category: functional
+  priority: high
+  platforms:
+  - api
+  steps:
+  - name: GET /api/v1/browse/roots
+    action: '# TODO: Convert to executable - get /api/v1/browse/roots with auth'
+    expected: 200 with browsable root directories
+    timeout: 10
+- id: api-browse-directory
+  name: Browse Directory
+  category: functional
+  priority: high
+  platforms:
+  - api
+  steps:
+  - name: GET /api/v1/browse/directory/*path
+    action: '# TODO: Convert to executable - get /api/v1/browse/directory/movies with
+      auth'
+    expected: 200 with directory contents (files, subdirectories, sizes)
+    timeout: 10
+- id: api-browse-file-info
+  name: Browse File Info
+  category: functional
+  priority: high
+  platforms:
+  - api
+  steps:
+  - name: GET /api/v1/browse/file-info/*path
+    action: '# TODO: Convert to executable - get /api/v1/browse/file-info/movies/file.mkv
+      with auth'
+    expected: 200 with file details (size, type, modified, entity link)
+    timeout: 10
+- id: api-browse-directory-sizes
+  name: Browse Directory Sizes
+  category: functional
+  priority: medium
+  platforms:
+  - api
+  steps:
+  - name: GET /api/v1/browse/directory-sizes
+    action: '# TODO: Convert to executable - get /api/v1/browse/directory-sizes with
+      auth'
+    expected: 200 with directory size summary
+    timeout: 10
+- id: api-browse-duplicates
+  name: Browse Duplicates by Path
+  category: functional
+  priority: medium
+  platforms:
+  - api
+  steps:
+  - name: GET /api/v1/browse/duplicates/*path
+    action: '# TODO: Convert to executable - get /api/v1/browse/duplicates/movies
+      with auth'
+    expected: 200 with duplicate files within the specified path
+    timeout: 10
+- id: api-sync-endpoints-create
+  name: Create Sync Endpoint
+  category: functional
+  priority: medium
+  platforms:
+  - api
+  steps:
+  - name: POST /api/v1/sync/endpoints
+    action: '# TODO: Convert to executable - post /api/v1/sync/endpoints with name,
+      type, connection details'
+    expected: 201 with created sync endpoint object
+    timeout: 10
+- id: api-sync-endpoints-list
+  name: List Sync Endpoints
+  category: functional
+  priority: medium
+  platforms:
+  - api
+  steps:
+  - name: GET /api/v1/sync/endpoints
+    action: '# TODO: Convert to executable - get /api/v1/sync/endpoints with auth'
+    expected: 200 with array of configured sync endpoints
+    timeout: 10
+- id: api-sync-endpoints-get
+  name: Get Sync Endpoint
+  category: functional
+  priority: medium
+  platforms:
+  - api
+  steps:
+  - name: GET /api/v1/sync/endpoints/:id
+    action: '# TODO: Convert to executable - get /api/v1/sync/endpoints/1 with auth'
+    expected: 200 with sync endpoint details and last sync status
+    timeout: 10
+- id: api-sync-endpoints-update
+  name: Update Sync Endpoint
+  category: functional
+  priority: medium
+  platforms:
+  - api
+  steps:
+  - name: PUT /api/v1/sync/endpoints/:id
+    action: '# TODO: Convert to executable - put /api/v1/sync/endpoints/1 with updated
+      connection details'
+    expected: 200 with updated sync endpoint
+    timeout: 10
+- id: api-sync-endpoints-delete
+  name: Delete Sync Endpoint
+  category: functional
+  priority: medium
+  platforms:
+  - api
+  steps:
+  - name: DELETE /api/v1/sync/endpoints/:id
+    action: '# TODO: Convert to executable - delete /api/v1/sync/endpoints/1 with
+      auth'
+    expected: 200 success, endpoint removed
+    timeout: 10
+- id: api-sync-trigger
+  name: Trigger Sync
+  category: functional
+  priority: medium
+  platforms:
+  - api
+  steps:
+  - name: POST /api/v1/sync/sync
+    action: '# TODO: Convert to executable - post /api/v1/sync/sync with endpoint_id
+      and sync options'
+    expected: 200 or 202 with sync session ID and status
+    timeout: 10
+- id: api-sync-sessions-list
+  name: List Sync Sessions
+  category: functional
+  priority: medium
+  platforms:
+  - api
+  steps:
+  - name: GET /api/v1/sync/sessions
+    action: '# TODO: Convert to executable - get /api/v1/sync/sessions with auth'
+    expected: 200 with array of sync sessions (id, status, progress, timestamps)
+    timeout: 10
+- id: api-sync-sessions-get
+  name: Get Sync Session
+  category: functional
+  priority: medium
+  platforms:
+  - api
+  steps:
+  - name: GET /api/v1/sync/sessions/:id
+    action: '# TODO: Convert to executable - get /api/v1/sync/sessions/1 with auth'
+    expected: 200 with sync session details (files synced, errors, duration)
+    timeout: 10
+- id: api-sync-schedules
+  name: Create Sync Schedule
+  category: functional
+  priority: low
+  platforms:
+  - api
+  steps:
+  - name: POST /api/v1/sync/schedules
+    action: '# TODO: Convert to executable - post /api/v1/sync/schedules with endpoint_id,
+      cron expression, enabled flag'
+    expected: 201 with created sync schedule
+    timeout: 10
+- id: api-sync-statistics
+  name: Sync Statistics
+  category: functional
+  priority: low
+  platforms:
+  - api
+  steps:
+  - name: GET /api/v1/sync/statistics
+    action: '# TODO: Convert to executable - get /api/v1/sync/statistics with auth'
+    expected: 200 with sync stats (total sessions, files synced, bandwidth used)
+    timeout: 10
+- id: api-sync-cleanup
+  name: Sync Cleanup
+  category: functional
+  priority: low
+  platforms:
+  - api
+  steps:
+  - name: POST /api/v1/sync/cleanup
+    action: '# TODO: Convert to executable - post /api/v1/sync/cleanup with auth'
+    expected: 200 with cleanup results (orphaned records removed, space freed)
+    timeout: 10
+- id: api-challenges-list
+  name: List Challenges
+  category: functional
+  priority: high
+  platforms:
+  - api
+  steps:
+  - name: GET /api/v1/challenges
+    action: '# TODO: Convert to executable - get /api/v1/challenges with auth'
+    expected: 200 with challenges array, count >= 200
+    timeout: 10
+- id: api-challenges-get
+  name: Get Challenge
+  category: functional
+  priority: high
+  platforms:
+  - api
+  steps:
+  - name: GET /api/v1/challenges/:id
+    action: '# TODO: Convert to executable - get /api/v1/challenges/ch-001 with auth'
+    expected: 200 with challenge details (id, name, category, status, steps)
+    timeout: 10
+- id: api-challenges-run
+  name: Run Single Challenge
+  category: functional
+  priority: high
+  platforms:
+  - api
+  steps:
+  - name: POST /api/v1/challenges/run
+    action: '# TODO: Convert to executable - post /api/v1/challenges/run with challenge_id=ch-001'
+    expected: 200 with challenge execution result (pass/fail, duration, assertions)
+    timeout: 10
+- id: api-challenges-run-all
+  name: Run All Challenges
+  category: functional
+  priority: medium
+  platforms:
+  - api
+  steps:
+  - name: POST /api/v1/challenges/run-all
+    action: '# TODO: Convert to executable - post /api/v1/challenges/run-all with
+      auth (warning: synchronous/blocking)'
+    expected: 200 with all challenge results, may take minutes to complete
+    timeout: 10
+- id: api-challenges-run-category
+  name: Run Challenges by Category
+  category: functional
+  priority: medium
+  platforms:
+  - api
+  steps:
+  - name: POST /api/v1/challenges/run/category
+    action: '# TODO: Convert to executable - post /api/v1/challenges/run/category
+      with category=functional'
+    expected: 200 with results for all challenges in specified category
+    timeout: 10
+- id: api-challenges-results
+  name: Get Challenge Results
+  category: functional
+  priority: high
+  platforms:
+  - api
+  steps:
+  - name: GET /api/v1/challenges/results
+    action: '# TODO: Convert to executable - get /api/v1/challenges/results with auth'
+    expected: 200 with latest challenge execution results and pass/fail summary
+    timeout: 10
+- id: api-protected-no-auth
+  name: Protected Endpoint Without Auth
+  category: security
+  priority: critical
+  platforms:
+  - api
+  steps:
+  - name: GET /api/v1/catalog without auth
+    action: '# TODO: Convert to executable - get /api/v1/catalog with no authorization
+      header'
+    expected: 401 unauthorized response, no data leaked
+    timeout: 10
+- id: api-cors-headers
+  name: CORS Headers Present
+  category: security
+  priority: high
+  platforms:
+  - api
+  steps:
+  - name: OPTIONS preflight request
+    action: '# TODO: Convert to executable - options /api/v1/health with origin header'
+    expected: Access-Control-Allow-Origin and Access-Control-Allow-Methods headers
+      present
+    timeout: 10
+- id: api-rate-limit
+  name: Rate Limiting Active
+  category: security
+  priority: high
+  platforms:
+  - api
+  steps:
+  - name: Rapid login attempts
+    action: '# TODO: Convert to executable - 10 rapid post /api/v1/auth/login with
+      wrong credentials'
+    expected: 429 Too Many Requests after rate limit exceeded
+    timeout: 10
+- id: api-security-headers
+  name: Security Response Headers
+  category: security
+  priority: high
+  platforms:
+  - api
+  steps:
+  - name: Check security headers
+    action: '# TODO: Convert to executable - get /health and inspect response headers'
+    expected: 'X-Content-Type-Options: nosniff, X-Frame-Options: DENY present'
+    timeout: 10
+- id: api-json-content-type
+  name: JSON Content Type
+  category: security
+  priority: high
+  platforms:
+  - api
+  steps:
+  - name: Verify Content-Type header
+    action: '# TODO: Convert to executable - get /health and check content-type'
+    expected: application/json content type in response
+    timeout: 10
+- id: api-no-sensitive-data
+  name: No Sensitive Data in Errors
+  category: security
+  priority: critical
+  platforms:
+  - api
+  steps:
+  - name: POST invalid login
+    action: '# TODO: Convert to executable - post /api/v1/auth/login with wrong credentials'
+    expected: Error message does not leak stack traces, internal paths, or SQL queries
+    timeout: 10
+- id: api-response-time
+  name: Response Time Under 200ms
+  category: performance
+  priority: high
+  platforms:
+  - api
+  steps:
+  - name: GET /health response time
+    action: '# TODO: Convert to executable - get /health and measure latency'
+    expected: Response in < 200ms
+    timeout: 10
+- id: api-concurrent-requests
+  name: Concurrent Request Handling
+  category: performance
+  priority: high
+  platforms:
+  - api
+  steps:
+  - name: 10 concurrent GET /health
+    action: '# TODO: Convert to executable - 10 parallel get /health requests'
+    expected: All return 200 within 1 second, no dropped connections
+    timeout: 10
+- id: api-large-result-set
+  name: Large Result Set Performance
+  category: performance
+  priority: medium
+  platforms:
+  - api
+  steps:
+  - name: GET entities with large limit
+    action: '# TODO: Convert to executable - get /api/v1/entities?limit=1000 with
+      auth'
+    expected: 200 within 2 seconds, proper pagination metadata
+    timeout: 10
+- id: api-large-query
+  name: Large Query Parameter Handling
+  category: resilience
+  priority: medium
+  platforms:
+  - api
+  steps:
+  - name: GET with 10KB query
+    action: '# TODO: Convert to executable - get /api/v1/search?q=<10kb string> with
+      auth'
+    expected: 400 or 200 with truncated results, no crash or 500
+    timeout: 10
+- id: api-graceful-shutdown
+  name: Graceful Shutdown
+  category: resilience
+  priority: high
+  platforms:
+  - api
+  steps:
+  - name: SIGTERM during request
+    action: '# TODO: Convert to executable - send sigterm to catalog-api while request
+      in flight'
+    expected: In-flight request completes, new requests rejected, clean shutdown
+    timeout: 10
+- id: api-malformed-json
+  name: Malformed JSON Body
+  category: edge-case
+  priority: high
+  platforms:
+  - api
+  steps:
+  - name: POST with invalid JSON
+    action: '# TODO: Convert to executable - post /api/v1/auth/login with body ''{invalid
+      json'''
+    expected: 400 Bad Request with clear error message, not 500 Internal Server Error
+    timeout: 10
+- id: api-empty-body
+  name: Empty POST Body
+  category: edge-case
+  priority: high
+  platforms:
+  - api
+  steps:
+  - name: POST with empty body
+    action: '# TODO: Convert to executable - post /api/v1/auth/login with empty body
+      and content-type: application/json'
+    expected: 400 Bad Request indicating missing required fields
+    timeout: 10
+- id: api-oversized-body
+  name: Oversized Request Body
+  category: edge-case
+  priority: medium
+  platforms:
+  - api
+  steps:
+  - name: POST with >10MB body
+    action: '# TODO: Convert to executable - post /api/v1/errors/report with 10mb+
+      json payload'
+    expected: 413 Payload Too Large or 400, not server crash or OOM
+    timeout: 10
+- id: api-sql-injection
+  name: SQL Injection Resistance
+  category: edge-case
+  priority: critical
+  platforms:
+  - api
+  steps:
+  - name: SQL injection in search
+    action: '# TODO: Convert to executable - get /api/v1/search?q=''; drop table files;
+      -- with auth'
+    expected: 200 with empty results or 400, database integrity preserved
+    timeout: 10
+- id: api-xss-injection
+  name: XSS Injection Resistance
+  category: edge-case
+  priority: critical
+  platforms:
+  - api
+  steps:
+  - name: XSS in input fields
+    action: '# TODO: Convert to executable - post /api/v1/collections with name=''<script>alert(1)</script>'''
+    expected: Input sanitized or escaped in response, no raw script tags returned
+    timeout: 10
+- id: api-path-traversal
+  name: Path Traversal Resistance
+  category: edge-case
+  priority: critical
+  platforms:
+  - api
+  steps:
+  - name: Path traversal in catalog
+    action: '# TODO: Convert to executable - get /api/v1/catalog/../../etc/passwd
+      with auth'
+    expected: 400 or 403, no file system access outside allowed roots
+    timeout: 10
+- id: api-concurrent-auth
+  name: Concurrent Authentication
+  category: edge-case
+  priority: high
+  platforms:
+  - api
+  steps:
+  - name: 50 concurrent logins
+    action: '# TODO: Convert to executable - 50 parallel post /api/v1/auth/login with
+      valid credentials'
+    expected: All return 200 with valid tokens, no race conditions or deadlocks
+    timeout: 10
+- id: api-token-expiry
+  name: Expired Token Handling
+  category: edge-case
+  priority: high
+  platforms:
+  - api
+  steps:
+  - name: Use expired JWT
+    action: '# TODO: Convert to executable - get /api/v1/catalog with expired jwt
+      token in authorization header'
+    expected: 401 with token expired error, not 500 or data leak
+    timeout: 10
+- id: api-invalid-content-type
+  name: Invalid Content Type
+  category: edge-case
+  priority: medium
+  platforms:
+  - api
+  steps:
+  - name: Send XML to JSON endpoint
+    action: '# TODO: Convert to executable - post /api/v1/auth/login with content-type:
+      application/xml and xml body'
+    expected: 400 or 415 Unsupported Media Type, not 500
+    timeout: 10
+- id: api-unicode-input
+  name: Unicode Input Handling
+  category: edge-case
+  priority: medium
+  platforms:
+  - api
+  steps:
+  - name: Unicode in search and names
+    action: '# TODO: Convert to executable - get /api/v1/search?q=日本語テスト and post
+      /api/v1/collections with name=''коллекция 日本語'''
+    expected: 200 with correct Unicode handling, no mojibake or encoding errors
+    timeout: 10
+- id: api-pagination-bounds
+  name: Pagination Boundary Values
+  category: edge-case
+  priority: medium
+  platforms:
+  - api
+  steps:
+  - name: Test offset/limit boundaries
+    action: '# TODO: Convert to executable - get /api/v1/entities?offset=-1&limit=0,
+      offset=999999&limit=999999, offset=0&limit=1'
+    expected: Invalid values return 400 or are clamped to valid range, no crash
+    timeout: 10
+- id: api-nonexistent-id
+  name: Nonexistent Resource ID
+  category: edge-case
+  priority: medium
+  platforms:
+  - api
+  steps:
+  - name: GET entity with id=999999
+    action: '# TODO: Convert to executable - get /api/v1/entities/999999 with auth'
+    expected: 404 Not Found with clear error message, not 500
+    timeout: 10
+- id: api-flow-register-user
+  name: 'User Flow: Register New User'
+  category: user-flow
+  priority: critical
+  platforms:
+  - api
+  steps:
+  - name: Register user
+    action: '# TODO: Convert to executable - post /api/v1/auth/register with username=flowuser,
+      email=flow@test.com, password=flowpass123'
+    expected: 201 with new user object containing id, username, email
+    timeout: 10
+- id: api-flow-login-registered-user
+  name: 'User Flow: Login Registered User'
+  category: user-flow
+  priority: critical
+  platforms:
+  - api
+  steps:
+  - name: Login as new user
+    action: '# TODO: Convert to executable - post /api/v1/auth/login with flowuser/flowpass123'
+    expected: 200 with session_token and refresh_token
+    timeout: 10
+- id: api-flow-browse-entities
+  name: 'User Flow: Browse Entities'
+  category: user-flow
+  priority: critical
+  platforms:
+  - api
+  steps:
+  - name: Browse entities
+    action: '# TODO: Convert to executable - get /api/v1/entities?page=1&limit=20
+      with flowuser token'
+    expected: 200 with entity list, user has read access to browse
+    timeout: 10
+- id: api-flow-add-favorite
+  name: 'User Flow: Add Favorite'
+  category: user-flow
+  priority: high
+  platforms:
+  - api
+  steps:
+  - name: Favorite an entity
+    action: '# TODO: Convert to executable - post /api/v1/favorites with entity_id
+      from browse results, using flowuser token'
+    expected: 201 with favorite entry
+    timeout: 10
+- id: api-flow-logout
+  name: 'User Flow: Logout'
+  category: user-flow
+  priority: high
+  platforms:
+  - api
+  steps:
+  - name: Logout
+    action: '# TODO: Convert to executable - post /api/v1/auth/logout with flowuser
+      token'
+    expected: 200 success, subsequent requests with same token return 401
+    timeout: 10
+- id: api-flow-admin-creates-user
+  name: 'User Flow: Admin Creates User'
+  category: user-flow
+  priority: high
+  platforms:
+  - api
+  steps:
+  - name: Admin creates user
+    action: '# TODO: Convert to executable - post /api/v1/users/create with admin
+      token, username=tempuser, password=temp1234, role=user'
+    expected: 201 with created user object
+    timeout: 10
+- id: api-flow-temp-user-login
+  name: 'User Flow: New User Logs In'
+  category: user-flow
+  priority: high
+  platforms:
+  - api
+  steps:
+  - name: Login as temp user
+    action: '# TODO: Convert to executable - post /api/v1/auth/login with tempuser/temp1234'
+    expected: 200 with valid session_token
+    timeout: 10
+- id: api-flow-temp-user-browses
+  name: 'User Flow: New User Browses Content'
+  category: user-flow
+  priority: high
+  platforms:
+  - api
+  steps:
+  - name: Browse as temp user
+    action: '# TODO: Convert to executable - get /api/v1/entities?limit=10 with tempuser
+      token'
+    expected: 200 with entities accessible to user role
+    timeout: 10
+- id: api-flow-admin-deletes-user
+  name: 'User Flow: Admin Deletes User'
+  category: user-flow
+  priority: high
+  platforms:
+  - api
+  steps:
+  - name: Delete temp user
+    action: '# TODO: Convert to executable - delete /api/v1/users/delete?id=<tempuser_id>
+      with admin token'
+    expected: 200 success, tempuser no longer in user list, tempuser token invalidated
+    timeout: 10
+- id: api-flow-create-storage-root
+  name: 'User Flow: Create Storage Root'
+  category: user-flow
+  priority: critical
+  platforms:
+  - api
+  steps:
+  - name: Create root
+    action: '# TODO: Convert to executable - post /api/v1/storage/roots with name=''test-root'',
+      path=''/tmp/test-media'', protocol=''local'''
+    expected: 201 with created storage root object containing id and status
+    timeout: 10
+- id: api-flow-scan-storage
+  name: 'User Flow: Scan Storage Root'
+  category: user-flow
+  priority: critical
+  platforms:
+  - api
+  steps:
+  - name: Trigger scan
+    action: '# TODO: Convert to executable - post /api/v1/scans with storage_root_id
+      from previous step'
+    expected: 201 or 202 with scan job ID, status=running or queued
+    timeout: 10
+- id: api-flow-browse-scanned-entities
+  name: 'User Flow: Browse Scanned Entities'
+  category: user-flow
+  priority: high
+  platforms:
+  - api
+  steps:
+  - name: Browse entities after scan
+    action: '# TODO: Convert to executable - get /api/v1/entities with auth after
+      scan completes'
+    expected: 200 with entities created from scanned files
+    timeout: 10
+- id: api-flow-download-entity
+  name: 'User Flow: Download Entity'
+  category: user-flow
+  priority: high
+  platforms:
+  - api
+  steps:
+  - name: Download entity file
+    action: '# TODO: Convert to executable - get /api/v1/entities/:id/download with
+      auth'
+    expected: 200 with file content and Content-Disposition header, or 404 if file
+      not on disk
+    timeout: 10
+- id: api-flow-create-collection
+  name: 'User Flow: Create Collection'
+  category: user-flow
+  priority: high
+  platforms:
+  - api
+  steps:
+  - name: Create collection
+    action: '# TODO: Convert to executable - post /api/v1/collections with name=''flow
+      test collection'', description=''test'''
+    expected: 201 with collection object containing id, name, 0 items
+    timeout: 10
+- id: api-flow-add-to-collection
+  name: 'User Flow: Add Items to Collection'
+  category: user-flow
+  priority: high
+  platforms:
+  - api
+  steps:
+  - name: Add items
+    action: '# TODO: Convert to executable - post add items to collection using collection
+      id from previous step'
+    expected: 200 with updated collection, item count > 0
+    timeout: 10
+- id: api-flow-reorder-collection
+  name: 'User Flow: Reorder Collection Items'
+  category: user-flow
+  priority: medium
+  platforms:
+  - api
+  steps:
+  - name: Reorder items
+    action: '# TODO: Convert to executable - put /api/v1/collections/:id with reordered
+      item list'
+    expected: 200 with updated collection reflecting new item order
+    timeout: 10
+- id: api-flow-share-collection
+  name: 'User Flow: Share Collection'
+  category: user-flow
+  priority: medium
+  platforms:
+  - api
+  steps:
+  - name: Share collection
+    action: '# TODO: Convert to executable - post share endpoint for the collection'
+    expected: 200 with share link or sharing status
+    timeout: 10
+- id: api-flow-delete-collection
+  name: 'User Flow: Delete Collection'
+  category: user-flow
+  priority: high
+  platforms:
+  - api
+  steps:
+  - name: Delete collection
+    action: '# TODO: Convert to executable - delete /api/v1/collections/:id with auth'
+    expected: 200 success, collection no longer returned by GET /api/v1/collections
+    timeout: 10
+- id: api-integrity-collections
+  name: 'Data Integrity: POST/GET Collections'
+  category: data-integrity
+  priority: high
+  platforms:
+  - api
+  steps:
+  - name: Create and verify
+    action: '# TODO: Convert to executable - post /api/v1/collections with name=''integritytest'',
+      then get /api/v1/collections/:id'
+    expected: GET returns exactly the same name, description, and metadata as POST
+      created
+    timeout: 10
+- id: api-integrity-favorites
+  name: 'Data Integrity: POST/GET Favorites'
+  category: data-integrity
+  priority: high
+  platforms:
+  - api
+  steps:
+  - name: Add and verify favorite
+    action: '# TODO: Convert to executable - post /api/v1/favorites with entity_id,
+      then get /api/v1/favorites and check list'
+    expected: Favorite entity_id appears in GET favorites list with correct metadata
+    timeout: 10
+- id: api-integrity-users
+  name: 'Data Integrity: POST/GET Users'
+  category: data-integrity
+  priority: high
+  platforms:
+  - api
+  steps:
+  - name: Create and verify user
+    action: '# TODO: Convert to executable - post /api/v1/users/create, then get /api/v1/users/get?id=<new_id>'
+    expected: GET returns user with same username, email, and role as POST created
+    timeout: 10
+- id: api-integrity-roles
+  name: 'Data Integrity: POST/GET Roles'
+  category: data-integrity
+  priority: medium
+  platforms:
+  - api
+  steps:
+  - name: Create and verify role
+    action: '# TODO: Convert to executable - post /api/v1/roles/create with name and
+      permissions, then get /api/v1/roles/get?id=<new_id>'
+    expected: GET returns role with identical name and permissions array
+    timeout: 10
+- id: api-integrity-sync-endpoints
+  name: 'Data Integrity: POST/GET Sync Endpoints'
+  category: data-integrity
+  priority: medium
+  platforms:
+  - api
+  steps:
+  - name: Create and verify sync endpoint
+    action: '# TODO: Convert to executable - post /api/v1/sync/endpoints, then get
+      /api/v1/sync/endpoints/:id'
+    expected: GET returns endpoint with same name, type, and connection details
+    timeout: 10
+- id: api-integrity-error-reports
+  name: 'Data Integrity: POST/GET Error Reports'
+  category: data-integrity
+  priority: medium
+  platforms:
+  - api
+  steps:
+  - name: Create and verify error report
+    action: '# TODO: Convert to executable - post /api/v1/errors/report with message
+      and context, then get /api/v1/errors/reports/:id'
+    expected: GET returns report with same message and context data
+    timeout: 10
+- id: api-integrity-storage-roots
+  name: 'Data Integrity: POST/GET Storage Roots'
+  category: data-integrity
+  priority: high
+  platforms:
+  - api
+  steps:
+  - name: Create and verify storage root
+    action: '# TODO: Convert to executable - post /api/v1/storage/roots, then get
+      /api/v1/storage-roots and find by name'
+    expected: Created storage root appears in list with correct name, path, and protocol
+    timeout: 10
+- id: api-integrity-user-metadata
+  name: 'Data Integrity: PUT/GET User Metadata'
+  category: data-integrity
+  priority: medium
+  platforms:
+  - api
+  steps:
+  - name: Set and verify metadata
+    action: '# TODO: Convert to executable - put /api/v1/entities/:id/user-metadata
+      with rating=5, then get entity and check'
+    expected: User metadata reflects the rating=5 that was PUT
+    timeout: 10
+- id: api-pagination-limit-zero
+  name: 'Pagination: limit=0'
+  category: pagination
+  priority: high
+  platforms:
+  - api
+  steps:
+  - name: Request with limit=0
+    action: '# TODO: Convert to executable - get /api/v1/entities?limit=0 with auth'
+    expected: Returns empty array or default limit applied, no error, no full table
+      dump
+    timeout: 10
+- id: api-pagination-limit-one
+  name: 'Pagination: limit=1'
+  category: pagination
+  priority: high
+  platforms:
+  - api
+  steps:
+  - name: Request with limit=1
+    action: '# TODO: Convert to executable - get /api/v1/entities?limit=1 with auth'
+    expected: Returns exactly 1 entity with valid pagination metadata (total count,
+      has_more=true if more exist)
+    timeout: 10
+- id: api-pagination-limit-large
+  name: 'Pagination: limit=1000'
+  category: pagination
+  priority: high
+  platforms:
+  - api
+  steps:
+  - name: Request with limit=1000
+    action: '# TODO: Convert to executable - get /api/v1/entities?limit=1000 with
+      auth'
+    expected: Returns up to 1000 entities or capped at server max, response within
+      3 seconds
+    timeout: 10
+- id: api-pagination-offset-beyond-total
+  name: 'Pagination: Offset Beyond Total'
+  category: pagination
+  priority: high
+  platforms:
+  - api
+  steps:
+  - name: Request offset past end
+    action: '# TODO: Convert to executable - get /api/v1/entities?offset=999999&limit=20
+      with auth'
+    expected: Returns empty array with total count reflecting actual total, not 500
+      error
+    timeout: 10
+- id: api-pagination-negative-offset
+  name: 'Pagination: Negative Offset'
+  category: pagination
+  priority: medium
+  platforms:
+  - api
+  steps:
+  - name: Request negative offset
+    action: '# TODO: Convert to executable - get /api/v1/entities?offset=-1 with auth'
+    expected: Returns 400 Bad Request or treats as offset=0, no crash or negative
+      index error
+    timeout: 10
+- id: api-concurrent-write-collections
+  name: 'Concurrent Writes: Collections'
+  category: concurrent-writes
+  priority: high
+  platforms:
+  - api
+  steps:
+  - name: Simultaneous collection creates
+    action: '# TODO: Convert to executable - 10 parallel post /api/v1/collections
+      with different names'
+    expected: All 10 collections created with unique IDs, no duplicates, no DB deadlock
+    timeout: 10
+- id: api-concurrent-write-favorites
+  name: 'Concurrent Writes: Favorites'
+  category: concurrent-writes
+  priority: high
+  platforms:
+  - api
+  steps:
+  - name: Simultaneous favorite adds
+    action: '# TODO: Convert to executable - 10 parallel post /api/v1/favorites with
+      different entity_ids'
+    expected: All 10 favorites created, no duplicates, no race condition on user's
+      favorites list
+    timeout: 10
+- id: api-concurrent-write-errors
+  name: 'Concurrent Writes: Error Reports'
+  category: concurrent-writes
+  priority: medium
+  platforms:
+  - api
+  steps:
+  - name: Simultaneous error reports
+    action: '# TODO: Convert to executable - 20 parallel post /api/v1/errors/report
+      with different error messages'
+    expected: All 20 error reports created with unique IDs, no data loss
+    timeout: 10
+- id: api-auth-expired-token
+  name: 'Auth Edge Case: Expired Token'
+  category: auth-edge
+  priority: critical
+  platforms:
+  - api
+  steps:
+  - name: Use expired JWT
+    action: '# TODO: Convert to executable - craft a jwt with exp set to past time,
+      use in authorization header'
+    expected: 401 with clear 'token expired' message, not 500
+    timeout: 10
+- id: api-auth-malformed-jwt
+  name: 'Auth Edge Case: Malformed JWT'
+  category: auth-edge
+  priority: critical
+  platforms:
+  - api
+  steps:
+  - name: Send malformed JWT
+    action: '# TODO: Convert to executable - get /api/v1/entities with authorization:
+      bearer not.a.valid.jwt.token'
+    expected: 401 with 'invalid token' message, no panic or stack trace
+    timeout: 10
+- id: api-auth-empty-bearer
+  name: 'Auth Edge Case: Empty Bearer'
+  category: auth-edge
+  priority: high
+  platforms:
+  - api
+  steps:
+  - name: Send empty bearer
+    action: '# TODO: Convert to executable - get /api/v1/entities with authorization:
+      bearer (empty value)'
+    expected: 401 unauthorized, no crash on empty string parsing
+    timeout: 10
+- id: api-auth-wrong-user-token
+  name: 'Auth Edge Case: Token From Different User'
+  category: auth-edge
+  priority: high
+  platforms:
+  - api
+  steps:
+  - name: Use other user's token
+    action: '# TODO: Convert to executable - login as user a, use token to access
+      user b''s private resources'
+    expected: 403 or data scoped to user A only, no cross-user data leakage
+    timeout: 10
+- id: api-auth-double-login
+  name: 'Auth Edge Case: Double Login'
+  category: auth-edge
+  priority: medium
+  platforms:
+  - api
+  steps:
+  - name: Login twice
+    action: '# TODO: Convert to executable - post /api/v1/auth/login twice with same
+      credentials in quick succession'
+    expected: Both return 200 with different tokens, both tokens valid, no conflict
+    timeout: 10
+- id: api-error-500-no-crash
+  name: 'Error Recovery: 500 Does Not Crash Server'
+  category: error-recovery
+  priority: critical
+  platforms:
+  - api
+  steps:
+  - name: Trigger 500 and verify recovery
+    action: '# TODO: Convert to executable - trigger an internal error, then immediately
+      send get /health'
+    expected: GET /health returns 200, server is still running and accepting requests
+    timeout: 10
+- id: api-error-invalid-id-type
+  name: 'Error Recovery: Invalid ID Type'
+  category: error-recovery
+  priority: high
+  platforms:
+  - api
+  steps:
+  - name: Send string as numeric ID
+    action: '# TODO: Convert to executable - get /api/v1/entities/not-a-number with
+      auth'
+    expected: 400 Bad Request with clear message, not 500 or panic
+    timeout: 10
+- id: api-error-float-where-int
+  name: 'Error Recovery: Float Where Int Expected'
+  category: error-recovery
+  priority: high
+  platforms:
+  - api
+  steps:
+  - name: Send float as int
+    action: '# TODO: Convert to executable - post /api/v1/favorites with entity_id=1.5'
+    expected: 400 Bad Request or truncated to int, not crash or data corruption
+    timeout: 10
+- id: api-error-missing-required-fields
+  name: 'Error Recovery: Missing Required Fields'
+  category: error-recovery
+  priority: high
+  platforms:
+  - api
+  steps:
+  - name: Omit required fields
+    action: '# TODO: Convert to executable - post /api/v1/users/create with empty
+      json body {}'
+    expected: 400 with specific field validation errors (username required, password
+      required)
+    timeout: 10
+- id: api-error-extra-unknown-fields
+  name: 'Error Recovery: Extra Unknown Fields'
+  category: error-recovery
+  priority: medium
+  platforms:
+  - api
+  steps:
+  - name: Send extra fields
+    action: '# TODO: Convert to executable - post /api/v1/auth/login with {username,
+      password, evil_field: ''hack''}'
+    expected: Extra fields ignored, login proceeds normally, evil_field not stored
+    timeout: 10
+- id: api-ws-connect
+  name: 'WebSocket: Connect Successfully'
+  category: websocket
+  priority: high
+  platforms:
+  - api
+  steps:
+  - name: WebSocket connect
+    action: '# TODO: Convert to executable - websocket upgrade to /ws with valid auth'
+    expected: 101 Switching Protocols, connection established
+    timeout: 10
+- id: api-ws-receive-message
+  name: 'WebSocket: Receive Message'
+  category: websocket
+  priority: high
+  platforms:
+  - api
+  steps:
+  - name: Wait for message
+    action: 'sleep: 3000'
+    expected: Receive JSON message with type field within 30 seconds
+    timeout: 10
+- id: api-ws-reconnect-after-disconnect
+  name: 'WebSocket: Reconnect After Disconnect'
+  category: websocket
+  priority: high
+  platforms:
+  - api
+  steps:
+  - name: Disconnect and reconnect
+    action: '# TODO: Convert to executable - close websocket connection, immediately
+      open new connection to /ws'
+    expected: New connection established successfully, receives messages
+    timeout: 10
+- id: api-ws-multiple-clients
+  name: 'WebSocket: Multiple Clients'
+  category: websocket
+  priority: high
+  platforms:
+  - api
+  steps:
+  - name: Connect 5 clients
+    action: '# TODO: Convert to executable - open 5 simultaneous websocket connections
+      to /ws'
+    expected: All 5 connections established, all receive messages, server handles
+      concurrent connections
+    timeout: 10
+- id: api-cors-auth-endpoints
+  name: 'CORS: Auth Endpoint Preflight'
+  category: cors
+  priority: high
+  platforms:
+  - api
+  steps:
+  - name: OPTIONS /api/v1/auth/login
+    action: '# TODO: Convert to executable - options /api/v1/auth/login with origin:
+      http://localhost:3000'
+    expected: 200 with Access-Control-Allow-Origin, Access-Control-Allow-Methods including
+      POST, Access-Control-Allow-Headers including Content-Type
+    timeout: 10
+- id: api-cors-entity-endpoints
+  name: 'CORS: Entity Endpoint Preflight'
+  category: cors
+  priority: high
+  platforms:
+  - api
+  steps:
+  - name: OPTIONS /api/v1/entities
+    action: '# TODO: Convert to executable - options /api/v1/entities with origin:
+      http://localhost:3000'
+    expected: 200 with correct CORS headers allowing GET, POST methods
+    timeout: 10
+- id: api-cors-media-endpoints
+  name: 'CORS: Media Endpoint Preflight'
+  category: cors
+  priority: high
+  platforms:
+  - api
+  steps:
+  - name: OPTIONS /api/v1/media/search
+    action: '# TODO: Convert to executable - options /api/v1/media/search with origin
+      header'
+    expected: 200 with CORS headers present and correct
+    timeout: 10
+- id: api-content-neg-html-accept
+  name: 'Content Negotiation: Accept text/html'
+  category: content-negotiation
+  priority: medium
+  platforms:
+  - api
+  steps:
+  - name: Request with text/html
+    action: '# TODO: Convert to executable - get /api/v1/entities with accept: text/html
+      header and auth'
+    expected: Still returns application/json response, API does not serve HTML
+    timeout: 10
+- id: api-content-neg-wildcard-accept
+  name: 'Content Negotiation: Accept */*'
+  category: content-negotiation
+  priority: medium
+  platforms:
+  - api
+  steps:
+  - name: Request with wildcard
+    action: '# TODO: Convert to executable - get /api/v1/entities with accept: */*
+      header and auth'
+    expected: Returns application/json response with correct data
+    timeout: 10
+- id: api-ratelimit-auth-stricter
+  name: 'Rate Limit: Auth Endpoints Stricter'
+  category: rate-limit
+  priority: high
+  platforms:
+  - api
+  steps:
+  - name: Rapid auth requests
+    action: '# TODO: Convert to executable - send 20 rapid post /api/v1/auth/login
+      with wrong credentials'
+    expected: 429 Too Many Requests after auth rate limit exceeded (lower threshold
+      than regular endpoints)
+    timeout: 10
+- id: api-ratelimit-regular-higher
+  name: 'Rate Limit: Regular Endpoints Higher Limit'
+  category: rate-limit
+  priority: high
+  platforms:
+  - api
+  steps:
+  - name: Rapid entity requests
+    action: '# TODO: Convert to executable - send 50 rapid get /api/v1/entities with
+      valid auth'
+    expected: All succeed or 429 at a much higher threshold than auth endpoints
+    timeout: 10
+- id: api-ratelimit-reset-after-window
+  name: 'Rate Limit: Resets After Window'
+  category: rate-limit
+  priority: medium
+  platforms:
+  - api
+  steps:
+  - name: Wait for rate limit reset
+    action: 'sleep: 60000'
+    expected: After reset window, requests succeed again with 200 status
+    timeout: 10
+- id: api-idempotent-favorite-double
+  name: 'Idempotency: Double Favorite Add'
+  category: idempotency
+  priority: high
+  platforms:
+  - api
+  steps:
+  - name: Add favorite twice
+    action: '# TODO: Convert to executable - post /api/v1/favorites with same entity_id
+      twice'
+    expected: Second request returns 409 or is idempotent (no duplicate in list),
+      favorites count unchanged
+    timeout: 10
+- id: api-idempotent-user-create-double
+  name: 'Idempotency: Double User Create'
+  category: idempotency
+  priority: high
+  platforms:
+  - api
+  steps:
+  - name: Create user twice
+    action: '# TODO: Convert to executable - post /api/v1/users/create with same username
+      twice'
+    expected: Second request returns 409 Conflict, no duplicate user created
+    timeout: 10
+- id: api-idempotent-collection-create-double
+  name: 'Idempotency: Double Collection Create'
+  category: idempotency
+  priority: medium
+  platforms:
+  - api
+  steps:
+  - name: Create collection twice
+    action: '# TODO: Convert to executable - post /api/v1/collections with identical
+      name and description twice'
+    expected: Two collections created with different IDs (collections allow duplicates
+      by name), or second rejected
+    timeout: 10
+- id: api-consistency-stats-match-entities
+  name: 'Consistency: Stats Match Entity Counts'
+  category: consistency
+  priority: high
+  platforms:
+  - api
+  steps:
+  - name: Compare stats and entities
+    action: '# TODO: Convert to executable - get /api/v1/entities/stats total count,
+      get /api/v1/entities?limit=1 total from pagination'
+    expected: Total count from stats endpoint matches total from entities pagination
+      metadata
+    timeout: 10
+- id: api-consistency-favorites-count-list
+  name: 'Consistency: Favorites Count Matches List'
+  category: consistency
+  priority: high
+  platforms:
+  - api
+  steps:
+  - name: Compare favorites count
+    action: '# TODO: Convert to executable - count items from get /api/v1/favorites,
+      compare with any favorites count endpoint'
+    expected: Number of items in favorites list matches the reported favorites count
+    timeout: 10
+- id: api-consistency-media-stats-types
+  name: 'Consistency: Media Stats by Type Sum to Total'
+  category: consistency
+  priority: high
+  platforms:
+  - api
+  steps:
+  - name: Verify stats sum
+    action: '# TODO: Convert to executable - get /api/v1/media/stats, sum all by_type
+      counts'
+    expected: Sum of individual type counts equals the total count reported in stats
+    timeout: 10
+- id: api-timeout-slow-query-no-block
+  name: 'Timeout: Slow Query Does Not Block Others'
+  category: timeout
+  priority: high
+  platforms:
+  - api
+  steps:
+  - name: Concurrent slow and fast
+    action: '# TODO: Convert to executable - send slow query (large result set) and
+      fast query (get /health) simultaneously'
+    expected: GET /health returns immediately while slow query is still processing
+    timeout: 10
+- id: api-timeout-request-timeout
+  name: 'Timeout: Request Times Out Gracefully'
+  category: timeout
+  priority: high
+  platforms:
+  - api
+  steps:
+  - name: Long-running request
+    action: '# TODO: Convert to executable - trigger an operation that exceeds configured
+      request timeout'
+    expected: 504 or 408 timeout response, server continues operating, no goroutine
+      leak
+    timeout: 10
+- id: api-empty-db-entities
+  name: 'Empty DB: Entities Returns Empty Array'
+  category: empty-database
+  priority: high
+  platforms:
+  - api
+  steps:
+  - name: List entities on fresh DB
+    action: '# TODO: Convert to executable - get /api/v1/entities on fresh database
+      with no data'
+    expected: 200 with empty array [], not null, not error
+    timeout: 10
+- id: api-empty-db-collections
+  name: 'Empty DB: Collections Returns Empty Array'
+  category: empty-database
+  priority: high
+  platforms:
+  - api
+  steps:
+  - name: List collections on fresh DB
+    action: '# TODO: Convert to executable - get /api/v1/collections on fresh database'
+    expected: 200 with empty array [], not null or 500
+    timeout: 10
+- id: api-empty-db-favorites
+  name: 'Empty DB: Favorites Returns Empty Array'
+  category: empty-database
+  priority: high
+  platforms:
+  - api
+  steps:
+  - name: List favorites on fresh DB
+    action: '# TODO: Convert to executable - get /api/v1/favorites on fresh database'
+    expected: 200 with empty array []
+    timeout: 10
+- id: api-empty-db-scans
+  name: 'Empty DB: Scans Returns Empty Array'
+  category: empty-database
+  priority: high
+  platforms:
+  - api
+  steps:
+  - name: List scans on fresh DB
+    action: '# TODO: Convert to executable - get /api/v1/scans on fresh database'
+    expected: 200 with empty array [], not 500 or null
+    timeout: 10
+- id: api-empty-db-stats
+  name: 'Empty DB: Stats Returns Zeros'
+  category: empty-database
+  priority: high
+  platforms:
+  - api
+  steps:
+  - name: Get stats on fresh DB
+    action: '# TODO: Convert to executable - get /api/v1/stats/overall on fresh database'
+    expected: 200 with stats object showing total_files=0, total_size=0, not error
+    timeout: 10
+- id: api-wizard-full-flow-steps
+  name: 'Wizard Flow: Step 1 to Step 3'
+  category: wizard-flow
+  priority: high
+  platforms:
+  - api
+  steps:
+  - name: Navigate wizard steps
+    action: '# TODO: Convert to executable - get /api/v1/configuration/wizard/step/1,
+      then step/2, then step/3'
+    expected: Each step returns 200 with field definitions and validation rules
+    timeout: 10
+- id: api-wizard-full-flow-validate-save
+  name: 'Wizard Flow: Validate and Save'
+  category: wizard-flow
+  priority: high
+  platforms:
+  - api
+  steps:
+  - name: Validate then save
+    action: '# TODO: Convert to executable - post /api/v1/configuration/wizard/validate
+      with step values, then post /api/v1/configuration/wizard/save'
+    expected: Validate returns success, save persists configuration
+    timeout: 10
+- id: api-wizard-full-flow-complete
+  name: 'Wizard Flow: Complete Setup'
+  category: wizard-flow
+  priority: high
+  platforms:
+  - api
+  steps:
+  - name: Complete wizard
+    action: '# TODO: Convert to executable - post /api/v1/configuration/wizard/complete
+      after all steps saved'
+    expected: 200 with configuration applied, wizard progress shows completed
+    timeout: 10
+- id: api-subtitle-workflow-search-download
+  name: 'Subtitle Workflow: Search and Download'
+  category: subtitle-workflow
+  priority: medium
+  platforms:
+  - api
+  steps:
+  - name: Search then download
+    action: '# TODO: Convert to executable - get /api/v1/subtitles/search?query=test&language=en,
+      then post /api/v1/subtitles/download with result id'
+    expected: Search returns results, download attaches subtitle to media item
+    timeout: 10
+- id: api-subtitle-workflow-verify-sync
+  name: 'Subtitle Workflow: Verify Sync'
+  category: subtitle-workflow
+  priority: medium
+  platforms:
+  - api
+  steps:
+  - name: Verify subtitle sync
+    action: '# TODO: Convert to executable - get /api/v1/subtitles/verify-sync?media_id=1&subtitle_id=1
+      after download'
+    expected: 200 with sync status (in_sync or offset info)
+    timeout: 10
+- id: api-subtitle-workflow-get-languages
+  name: 'Subtitle Workflow: Get Available Languages'
+  category: subtitle-workflow
+  priority: low
+  platforms:
+  - api
+  steps:
+  - name: Get languages
+    action: '# TODO: Convert to executable - get /api/v1/subtitles/languages'
+    expected: 200 with array of language objects (code, name), includes at least 'en'
+      and 'es'
+    timeout: 10
+- id: api-conversion-workflow-formats-create
+  name: 'Conversion Workflow: Get Formats and Create Job'
+  category: conversion-workflow
+  priority: medium
+  platforms:
+  - api
+  steps:
+  - name: Get formats then create
+    action: '# TODO: Convert to executable - get /api/v1/conversion/formats, then
+      post /api/v1/conversion/jobs with valid format'
+    expected: Formats list returned, job created with status pending or in_progress
+    timeout: 10
+- id: api-conversion-workflow-check-status
+  name: 'Conversion Workflow: Check Job Status'
+  category: conversion-workflow
+  priority: medium
+  platforms:
+  - api
+  steps:
+  - name: Check status
+    action: '# TODO: Convert to executable - get /api/v1/conversion/jobs/:id for a
+      created job'
+    expected: 200 with job status (pending, in_progress, completed, or failed) and
+      progress percentage
+    timeout: 10
+- id: api-conversion-workflow-cancel
+  name: 'Conversion Workflow: Cancel Job'
+  category: conversion-workflow
+  priority: medium
+  platforms:
+  - api
+  steps:
+  - name: Cancel job
+    action: '# TODO: Convert to executable - post /api/v1/conversion/jobs/:id/cancel
+      for an active job'
+    expected: 200 with cancellation confirmed, job status changes to cancelled
+    timeout: 10
+- id: api-sync-workflow-create-endpoint
+  name: 'Sync Workflow: Create Endpoint'
+  category: sync-workflow
+  priority: medium
+  platforms:
+  - api
+  steps:
+  - name: Create sync endpoint
+    action: 'text: test-sync'
+    expected: 201 with created endpoint object
+    timeout: 10
+- id: api-sync-workflow-start-sync
+  name: 'Sync Workflow: Start Sync Session'
+  category: sync-workflow
+  priority: medium
+  platforms:
+  - api
+  steps:
+  - name: Trigger sync
+    action: '# TODO: Convert to executable - post /api/v1/sync/sync with endpoint_id
+      from previous step'
+    expected: 200 or 202 with sync session ID
+    timeout: 10
+- id: api-sync-workflow-check-session
+  name: 'Sync Workflow: Check Session Progress'
+  category: sync-workflow
+  priority: medium
+  platforms:
+  - api
+  steps:
+  - name: Check session
+    action: '# TODO: Convert to executable - get /api/v1/sync/sessions/:id for created
+      session'
+    expected: 200 with session status, progress, files synced count
+    timeout: 10
+- id: api-sync-workflow-stats-cleanup
+  name: 'Sync Workflow: Stats and Cleanup'
+  category: sync-workflow
+  priority: low
+  platforms:
+  - api
+  steps:
+  - name: Stats then cleanup
+    action: '# TODO: Convert to executable - get /api/v1/sync/statistics, then post
+      /api/v1/sync/cleanup'
+    expected: Statistics returned with session count, cleanup removes orphaned records
+    timeout: 10
+- id: api-log-workflow-collect
+  name: 'Log Workflow: Create Collection'
+  category: log-workflow
+  priority: medium
+  platforms:
+  - api
+  steps:
+  - name: Collect logs
+    action: '# TODO: Convert to executable - post /api/v1/logs/collect with time range
+      parameters'
+    expected: 200 or 202 with log collection job ID
+    timeout: 10
+- id: api-log-workflow-entries
+  name: 'Log Workflow: Get Entries'
+  category: log-workflow
+  priority: medium
+  platforms:
+  - api
+  steps:
+  - name: List log entries
+    action: '# TODO: Convert to executable - get /api/v1/logs/entries?level=error&limit=50
+      with admin auth'
+    expected: 200 with paginated log entries filtered by error level
+    timeout: 10
+- id: api-log-workflow-export
+  name: 'Log Workflow: Export Logs'
+  category: log-workflow
+  priority: low
+  platforms:
+  - api
+  steps:
+  - name: Export logs
+    action: '# TODO: Convert to executable - post /api/v1/logs/export with format=json
+      and time filters'
+    expected: 200 with downloadable JSON export of log entries
+    timeout: 10
+- id: api-log-workflow-share-revoke
+  name: 'Log Workflow: Share and Revoke'
+  category: log-workflow
+  priority: low
+  platforms:
+  - api
+  steps:
+  - name: Share then revoke
+    action: '# TODO: Convert to executable - post /api/v1/logs/share with collection_id,
+      then delete /api/v1/logs/share/:id'
+    expected: Share created with token, delete invalidates token, GET with token returns
+      404/410
+    timeout: 10
+- id: api-flow-register-login-update-profile
+  name: 'User Flow: Register, Login, Update Profile'
+  category: user-flow
+  priority: high
+  platforms:
+  - api
+  steps:
+  - name: Full profile flow
+    action: '# TODO: Convert to executable - register user, login, get /api/v1/auth/profile,
+      update preferences'
+    expected: Profile returned with user data, preferences updated successfully
+    timeout: 10
+- id: api-flow-search-favorite-collect
+  name: 'User Flow: Search, Favorite, Collect'
+  category: user-flow
+  priority: high
+  platforms:
+  - api
+  steps:
+  - name: Search to collection
+    action: '# TODO: Convert to executable - get /api/v1/media/search?q=test, favorite
+      result, add to collection'
+    expected: Search returns results, favorite created, item added to collection
+    timeout: 10
+- id: api-integrity-analytics-events
+  name: 'Data Integrity: POST/GET Analytics Events'
+  category: data-integrity
+  priority: medium
+  platforms:
+  - api
+  steps:
+  - name: Record and verify analytics
+    action: '# TODO: Convert to executable - post /api/v1/analytics/event, then get
+      /api/v1/analytics/system'
+    expected: Event recorded, appears in system analytics aggregation
+    timeout: 10
+- id: api-empty-db-storage-roots
+  name: 'Empty DB: Storage Roots Returns Empty Array'
+  category: empty-database
+  priority: high
+  platforms:
+  - api
+  steps:
+  - name: List storage roots on fresh DB
+    action: '# TODO: Convert to executable - get /api/v1/storage-roots on fresh database'
+    expected: 200 with empty array [], not 500 or null
+    timeout: 10
+- id: api-empty-db-media-search
+  name: 'Empty DB: Media Search Returns Empty'
+  category: empty-database
+  priority: medium
+  platforms:
+  - api
+  steps:
+  - name: Search media on fresh DB
+    action: '# TODO: Convert to executable - get /api/v1/media/search?q=anything on
+      fresh database'
+    expected: 200 with empty results array, not 500 error
+    timeout: 10
+- id: api-auth-token-after-password-change
+  name: 'Auth Edge Case: Token After Password Change'
+  category: auth-edge
+  priority: high
+  platforms:
+  - api
+  steps:
+  - name: Change password
+    action: '# TODO: Convert to executable - login, get token, change password via
+      /api/v1/users/reset-password, use old token'
+    expected: Old token may still work until expiry or is invalidated, depending on
+      implementation
+    timeout: 10
+- id: api-auth-concurrent-refresh
+  name: 'Auth Edge Case: Concurrent Token Refresh'
+  category: auth-edge
+  priority: medium
+  platforms:
+  - api
+  steps:
+  - name: Refresh simultaneously
+    action: '# TODO: Convert to executable - post /api/v1/auth/refresh 5 times simultaneously
+      with same refresh_token'
+    expected: At least one succeeds, others may fail gracefully, no duplicate tokens
+      or DB deadlock
+    timeout: 10
+- id: api-error-null-json-values
+  name: 'Error Recovery: Null JSON Values'
+  category: error-recovery
+  priority: medium
+  platforms:
+  - api
+  steps:
+  - name: Send null fields
+    action: '# TODO: Convert to executable - post /api/v1/collections with {name:
+      null, description: null}'
+    expected: 400 with validation error for null required field, not 500 nil pointer
+      panic
+    timeout: 10
+- id: api-error-deeply-nested-json
+  name: 'Error Recovery: Deeply Nested JSON'
+  category: error-recovery
+  priority: low
+  platforms:
+  - api
+  steps:
+  - name: Send 100-level nested JSON
+    action: '# TODO: Convert to executable - post /api/v1/errors/report with 100-level
+      deep nested json body'
+    expected: 400 or parsed without crash, no stack overflow
+    timeout: 10
+- id: api-ws-invalid-auth
+  name: 'WebSocket: Connection Without Auth'
+  category: websocket
+  priority: high
+  platforms:
+  - api
+  steps:
+  - name: WS connect no auth
+    action: '# TODO: Convert to executable - websocket upgrade to /ws without authentication
+      token'
+    expected: Connection rejected with 401 or connection closes immediately with auth
+      error frame
+    timeout: 10
+- id: api-ws-broadcast-on-scan
+  name: 'WebSocket: Broadcast on Scan Event'
+  category: websocket
+  priority: medium
+  platforms:
+  - api
+  steps:
+  - name: Monitor WS during scan
+    action: '# TODO: Convert to executable - connect to /ws, trigger a scan, listen
+      for messages'
+    expected: Receive scan progress or completion event via WebSocket broadcast
+    timeout: 10
+- id: api-method-not-allowed
+  name: 'HTTP Method: Method Not Allowed'
+  category: http-methods
+  priority: high
+  platforms:
+  - api
+  steps:
+  - name: Wrong HTTP method
+    action: '# TODO: Convert to executable - put /api/v1/auth/login (should be post)'
+    expected: 405 Method Not Allowed, not 404 or 500
+    timeout: 10
+- id: api-method-head-request
+  name: 'HTTP Method: HEAD Request'
+  category: http-methods
+  priority: medium
+  platforms:
+  - api
+  steps:
+  - name: HEAD /health
+    action: '# TODO: Convert to executable - head /health'
+    expected: 200 with headers but no body, Content-Length header present
+    timeout: 10
+- id: api-response-consistent-error-format
+  name: 'Response: Consistent Error Format'
+  category: response-format
+  priority: high
+  platforms:
+  - api
+  steps:
+  - name: Check error format
+    action: '# TODO: Convert to executable - trigger 400, 401, 403, 404, 500 errors
+      and compare response shapes'
+    expected: All errors return consistent JSON format with 'error' or 'message' field
+    timeout: 10
+- id: api-response-no-null-arrays
+  name: 'Response: No null Arrays'
+  category: response-format
+  priority: high
+  platforms:
+  - api
+  steps:
+  - name: Check list responses
+    action: '# TODO: Convert to executable - get /api/v1/entities, /api/v1/collections,
+      /api/v1/favorites with valid auth'
+    expected: All list endpoints return [] (empty array), never null, for empty results
+    timeout: 10
+- id: api-query-duplicate-params
+  name: 'Query String: Duplicate Parameters'
+  category: query-edge
+  priority: medium
+  platforms:
+  - api
+  steps:
+  - name: Send duplicate params
+    action: '# TODO: Convert to executable - get /api/v1/entities?limit=10&limit=20
+      with auth'
+    expected: One value used (first or last), no crash, valid response
+    timeout: 10
+- id: api-query-encoded-special-chars
+  name: 'Query String: Encoded Special Characters'
+  category: query-edge
+  priority: medium
+  platforms:
+  - api
+  steps:
+  - name: Send encoded chars
+    action: '# TODO: Convert to executable - get /api/v1/search?q=%3cscript%3ealert%281%29%3c%2fscript%3e
+      with auth'
+    expected: Decoded safely, search executes, no XSS reflection, empty or matching
+      results
+    timeout: 10
+- id: api-bulk-favorite-add
+  name: 'Bulk Operation: Add Multiple Favorites'
+  category: bulk
+  priority: medium
+  platforms:
+  - api
+  steps:
+  - name: Add 10 favorites
+    action: '# TODO: Convert to executable - post /api/v1/favorites 10 times with
+      different entity_ids sequentially'
+    expected: All 10 favorites created, GET /api/v1/favorites returns all 10
+    timeout: 10
+- id: api-bulk-collection-items
+  name: 'Bulk Operation: Add Multiple Items to Collection'
+  category: bulk
+  priority: medium
+  platforms:
+  - api
+  steps:
+  - name: Add 20 items
+    action: '# TODO: Convert to executable - add 20 different entities to a single
+      collection'
+    expected: Collection contains all 20 items, item count matches, no duplicates
+    timeout: 10
+- id: api-discovery-public
+  name: Discovery Endpoint Public Access
+  category: functional
+  priority: critical
+  platforms:
+  - api
+  steps:
+  - name: GET /discovery without auth
+    action: '# TODO: Convert to executable - get /discovery without authorization
+      header'
+    expected: 200 with service info JSON
+    timeout: 10
+- id: api-discovery-service-info
+  name: Discovery Returns Service Info
+  category: functional
+  priority: critical
+  platforms:
+  - api
+  steps:
+  - name: Verify discovery fields
+    action: '# TODO: Convert to executable - get /discovery and check response'
+    expected: Contains service, version, host, port, protocol, capabilities
+    timeout: 10
+- id: api-discovery-announce
+  name: Discovery Announce Alias
+  category: functional
+  priority: high
+  platforms:
+  - api
+  steps:
+  - name: GET /api/v1/discovery/announce
+    action: '# TODO: Convert to executable - get /api/v1/discovery/announce'
+    expected: 200 with same service info as /discovery
+    timeout: 10
+- id: api-discovery-capabilities
+  name: Discovery Lists Capabilities
+  category: functional
+  priority: high
+  platforms:
+  - api
+  steps:
+  - name: Check capabilities array
+    action: '# TODO: Convert to executable - get /discovery'
+    expected: capabilities array includes catalog, media, streaming, sync, websocket,
+      entities
+    timeout: 10
+- id: api-discovery-host-ip
+  name: Discovery Returns Valid Host IP
+  category: functional
+  priority: high
+  platforms:
+  - api
+  steps:
+  - name: Verify host is valid IP
+    action: '# TODO: Convert to executable - get /discovery and check host field'
+    expected: host is a valid IPv4 address, not 0.0.0.0 or empty
+    timeout: 10
+- id: api-discovery-no-auth-required
+  name: Discovery Does Not Require Auth
+  category: security
+  priority: critical
+  platforms:
+  - api
+  steps:
+  - name: Access without token
+    action: '# TODO: Convert to executable - get /discovery with no authorization
+      header'
+    expected: 200 OK, not 401
+    timeout: 10
+- id: api-discovery-udp-broadcast
+  name: UDP Multicast Announcement
+  category: functional
+  priority: high
+  platforms:
+  - api
+  steps:
+  - name: Listen on 239.42.42.42:42069
+    action: '# TODO: Convert to executable - listen for udp multicast on discovery
+      group'
+    expected: Receive JSON announcement with type=catalogizer-announce
+    timeout: 10
+- id: api-stream-range-request
+  name: Stream Range Request (HTTP 206)
+  category: playback-verification
+  priority: critical
+  platforms:
+  - api
+  steps:
+  - name: Get a media file ID
+    action: '# TODO: Convert to executable - get /api/v1/files?limit=1 with auth —
+      extract first file id'
+    expected: 200 with at least one file entry
+    timeout: 10
+  - name: Request stream with Range header
+    action: '# TODO: Convert to executable - get /api/v1/stream/:id with range: bytes=0-1023
+      and auth'
+    expected: 206 Partial Content with Content-Range header and 1024 bytes of data
+    timeout: 10
+  - name: Verify Accept-Ranges header
+    action: '# TODO: Convert to executable - head /api/v1/stream/:id with auth'
+    expected: 'Response includes Accept-Ranges: bytes'
+    timeout: 10
+- id: api-stream-full-file
+  name: Stream Full File Download
+  category: playback-verification
+  priority: high
+  platforms:
+  - api
+  steps:
+  - name: Stream without Range header
+    action: '# TODO: Convert to executable - get /api/v1/stream/:id with auth (no
+      range header)'
+    expected: 200 OK with Content-Type matching file type and Content-Length > 0
+    timeout: 10
+- id: api-stream-content-type
+  name: Stream Content-Type Detection
+  category: playback-verification
+  priority: high
+  platforms:
+  - api
+  steps:
+  - name: Stream video file
+    action: '# TODO: Convert to executable - get /api/v1/stream/:id for a .mp4/.mkv
+      file with auth'
+    expected: Content-Type is video/mp4 or video/x-matroska
+    timeout: 10
+  - name: Stream audio file
+    action: '# TODO: Convert to executable - get /api/v1/stream/:id for a .mp3/.flac
+      file with auth'
+    expected: Content-Type is audio/mpeg or audio/flac
+    timeout: 10
+- id: api-entity-stream-url
+  name: Entity Stream URL Resolution
+  category: playback-verification
+  priority: critical
+  platforms:
+  - api
+  steps:
+  - name: Get entity stream URL
+    action: '# TODO: Convert to executable - get /api/v1/entities/:id/stream with
+      auth'
+    expected: 200 with JSON containing stream_url field pointing to /api/v1/stream/:file_id
+    timeout: 10
+  - name: Follow stream URL
+    action: '# TODO: Convert to executable - get the stream_url from previous step
+      with range: bytes=0-0'
+    expected: 206 Partial Content confirming the stream URL is valid and streamable
+    timeout: 10

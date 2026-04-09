@@ -1,0 +1,1182 @@
+version: '2.0'
+name: Test Suite - EXECUTABLE
+description: Executable test suite - converted from /run/media/milosvasic/DATA4TB/Projects/Catalogizer/challenges/helixqa-banks/catalogizer-android-comprehensive.json
+test_cases:
+- id: android-cold-start
+  name: Cold Start Launch
+  category: launch
+  priority: critical
+  platforms:
+  - android
+  steps:
+  - name: Force stop app
+    action: adb_shell:am force-stop com.vasic.catalogizer
+    expected: App process terminated
+    timeout: 10
+  - name: Launch from launcher
+    action: adb_shell:am start -n com.vasic.catalogizer/.mainactivity
+    expected: App launches and displays splash screen within 3 seconds
+    timeout: 10
+  - name: Verify home screen
+    action: 'sleep: 3000'
+    expected: Home screen is displayed within 5 seconds total
+    timeout: 10
+- id: android-warm-start
+  name: Warm Start Launch
+  category: launch
+  priority: high
+  platforms:
+  - android
+  steps:
+  - name: Press home
+    action: adb_shell:input keyevent keycode_home
+    expected: App goes to background
+    timeout: 10
+  - name: Re-launch app
+    action: 'tap: 960,540'
+    expected: App resumes to previous screen within 1 second
+    timeout: 10
+- id: android-deep-link
+  name: Deep Link Navigation
+  category: launch
+  priority: high
+  platforms:
+  - android
+  steps:
+  - name: Send deep link intent
+    action: adb_shell:am start -a android.intent.action.view -d catalogizer://media/123
+    expected: App launches and navigates directly to media detail screen for item
+      123
+    timeout: 10
+- id: android-login-page-loads
+  name: Login Page Loads
+  category: authentication
+  priority: critical
+  platforms:
+  - android
+  steps:
+  - name: Open app without session
+    action: '# TODO: Convert to executable - clear app data and launch'
+    expected: Login screen renders with server URL field, username field, password
+      field, and login button
+    timeout: 10
+  - name: Verify UI elements
+    action: '# TODO: Convert to executable - inspect login screen layout'
+    expected: All fields are visible and keyboard-accessible
+    timeout: 10
+- id: android-login-success
+  name: Login Success
+  category: authentication
+  priority: critical
+  platforms:
+  - android
+  steps:
+  - name: Enter credentials
+    action: '# TODO: Convert to executable - type admin/admin123 in username and password
+      fields'
+    expected: Fields accept input and show entered text (password masked)
+    timeout: 10
+  - name: Tap login
+    action: 'tap: 960,540'
+    expected: Loading indicator shows, then navigates to home screen
+    timeout: 10
+  - name: Verify session
+    action: '# TODO: Convert to executable - check authentication state'
+    expected: User is authenticated and session token is stored
+    timeout: 10
+- id: android-login-invalid
+  name: Login Invalid Credentials
+  category: authentication
+  priority: critical
+  platforms:
+  - android
+  steps:
+  - name: Enter wrong password
+    action: 'tap: 960,540'
+    expected: Error snackbar or dialog shows 'Invalid credentials'
+    timeout: 10
+  - name: Verify stays on login
+    action: '# TODO: Convert to executable - check current screen'
+    expected: Login screen remains visible, fields are not cleared
+    timeout: 10
+- id: android-login-empty-fields
+  name: Login Empty Fields Validation
+  category: authentication
+  priority: high
+  platforms:
+  - android
+  steps:
+  - name: Tap login with empty fields
+    action: 'tap: 960,540'
+    expected: Validation error messages appear on both fields
+    timeout: 10
+  - name: Enter only username
+    action: 'tap: 960,540'
+    expected: Validation error appears on password field only
+    timeout: 10
+- id: android-login-remember
+  name: Login Remember Session
+  category: authentication
+  priority: high
+  platforms:
+  - android
+  steps:
+  - name: Login successfully
+    action: '# TODO: Convert to executable - login with valid credentials'
+    expected: Navigate to home screen
+    timeout: 10
+  - name: Kill and restart app
+    action: '# TODO: Convert to executable - force stop app and cold start'
+    expected: App resumes to home screen without requiring login again
+    timeout: 10
+- id: android-home-loads
+  name: Home Screen Loads
+  category: home
+  priority: critical
+  platforms:
+  - android
+  steps:
+  - name: Navigate to home
+    action: 'sleep: 3000'
+    expected: Home screen renders with all sections visible
+    timeout: 10
+  - name: Verify no errors
+    action: '# TODO: Convert to executable - check for error states or empty crash
+      screens'
+    expected: No error messages, all sections populated or show empty state gracefully
+    timeout: 10
+- id: android-home-recent-media
+  name: Home Recent Media Section
+  category: home
+  priority: high
+  platforms:
+  - android
+  steps:
+  - name: Check recent media section
+    action: '# TODO: Convert to executable - scroll to recent media section on home
+      screen'
+    expected: Recent media section visible with horizontal scrollable list of media
+      items
+    timeout: 10
+  - name: Tap a media item
+    action: 'tap: 960,540'
+    expected: Navigates to media detail screen for that item
+    timeout: 10
+- id: android-home-continue-watching
+  name: Home Continue Watching
+  category: home
+  priority: high
+  platforms:
+  - android
+  steps:
+  - name: Check continue watching section
+    action: '# TODO: Convert to executable - scroll to continue watching section'
+    expected: Section shows previously partially-watched media with progress indicators
+    timeout: 10
+  - name: Tap continue item
+    action: 'tap: 960,540'
+    expected: Media player opens and resumes from saved position
+    timeout: 10
+- id: android-home-trending
+  name: Home Trending Section
+  category: home
+  priority: medium
+  platforms:
+  - android
+  steps:
+  - name: Check trending section
+    action: '# TODO: Convert to executable - scroll to trending section on home screen'
+    expected: Trending media section visible with popular items
+    timeout: 10
+  - name: Verify content
+    action: '# TODO: Convert to executable - inspect trending items'
+    expected: Each item shows title, thumbnail, and media type indicator
+    timeout: 10
+- id: android-home-categories
+  name: Home Categories Section
+  category: home
+  priority: high
+  platforms:
+  - android
+  steps:
+  - name: Check categories section
+    action: '# TODO: Convert to executable - scroll to categories section on home
+      screen'
+    expected: Category chips or cards visible (Movies, TV Shows, Music, etc.)
+    timeout: 10
+  - name: Tap a category
+    action: 'tap: 960,540'
+    expected: Navigates to filtered media list showing only movies
+    timeout: 10
+- id: android-home-pull-refresh
+  name: Home Pull to Refresh
+  category: home
+  priority: high
+  platforms:
+  - android
+  steps:
+  - name: Pull down to refresh
+    action: '# TODO: Convert to executable - swipe down from top of home screen'
+    expected: Refresh indicator appears and data reloads
+    timeout: 10
+  - name: Verify refresh completes
+    action: 'sleep: 3000'
+    expected: Refresh indicator disappears, content is updated
+    timeout: 10
+- id: android-search-opens
+  name: Search Screen Opens
+  category: search
+  priority: critical
+  platforms:
+  - android
+  steps:
+  - name: Tap search icon
+    action: 'tap: 960,540'
+    expected: Search screen opens with text input field focused and keyboard visible
+    timeout: 10
+- id: android-search-query
+  name: Search Query Execution
+  category: search
+  priority: critical
+  platforms:
+  - android
+  steps:
+  - name: Enter search query
+    action: 'text: batman'
+    expected: Search field shows typed text
+    timeout: 10
+  - name: Submit search
+    action: 'keypress: KEYCODE_ENTER'
+    expected: Loading indicator appears, then search results are displayed
+    timeout: 10
+- id: android-search-results
+  name: Search Results Display
+  category: search
+  priority: high
+  platforms:
+  - android
+  steps:
+  - name: Execute search with results
+    action: '# TODO: Convert to executable - search for a known media title'
+    expected: Results list shows matching items with title, type, and thumbnail
+    timeout: 10
+  - name: Tap a result
+    action: 'tap: 960,540'
+    expected: Navigates to media detail screen for that item
+    timeout: 10
+- id: android-search-no-results
+  name: Search No Results
+  category: search
+  priority: high
+  platforms:
+  - android
+  steps:
+  - name: Search for nonexistent item
+    action: 'text: zzzznonexistent99999'
+    expected: 'Empty state message displayed: ''No results found'''
+    timeout: 10
+  - name: Verify UI state
+    action: '# TODO: Convert to executable - check screen layout'
+    expected: Search field remains active, user can modify query
+    timeout: 10
+- id: android-search-filter
+  name: Search Filter by Type
+  category: search
+  priority: medium
+  platforms:
+  - android
+  steps:
+  - name: Open search filters
+    action: 'tap: 960,540'
+    expected: Filter options appear (Movies, TV Shows, Music, etc.)
+    timeout: 10
+  - name: Select filter
+    action: '# TODO: Convert to executable - select ''movies'' filter'
+    expected: Results update to show only movie-type media
+    timeout: 10
+  - name: Clear filter
+    action: '# TODO: Convert to executable - deselect the filter'
+    expected: Results return to unfiltered state
+    timeout: 10
+- id: android-detail-loads
+  name: Media Detail Screen Loads
+  category: detail
+  priority: critical
+  platforms:
+  - android
+  steps:
+  - name: Navigate to detail
+    action: 'tap: 960,540'
+    expected: Media detail screen loads with content visible
+    timeout: 10
+  - name: Verify no loading errors
+    action: '# TODO: Convert to executable - check for error states'
+    expected: No error messages, screen fully rendered
+    timeout: 10
+- id: android-detail-metadata
+  name: Media Detail Metadata Display
+  category: detail
+  priority: high
+  platforms:
+  - android
+  steps:
+  - name: Open media detail
+    action: '# TODO: Convert to executable - navigate to a media item detail screen'
+    expected: Title, year, type, file size, and path are displayed
+    timeout: 10
+  - name: Verify metadata completeness
+    action: '# TODO: Convert to executable - check all metadata fields'
+    expected: All available metadata fields are populated and formatted correctly
+    timeout: 10
+- id: android-detail-play-button
+  name: Media Detail Play Button
+  category: detail
+  priority: critical
+  platforms:
+  - android
+  steps:
+  - name: Check play button
+    action: '# TODO: Convert to executable - look for play button on media detail
+      screen'
+    expected: Play button is visible and prominently displayed
+    timeout: 10
+  - name: Tap play
+    action: 'tap: 960,540'
+    expected: Media player opens and begins streaming/playing the media
+    timeout: 10
+- id: android-detail-download
+  name: Media Detail Download
+  category: detail
+  priority: high
+  platforms:
+  - android
+  steps:
+  - name: Tap download button
+    action: 'tap: 960,540'
+    expected: Download starts with progress notification
+    timeout: 10
+  - name: Verify download progress
+    action: '# TODO: Convert to executable - check notification bar'
+    expected: Download progress notification shows percentage
+    timeout: 10
+- id: android-detail-favorite-toggle
+  name: Media Detail Favorite Toggle
+  category: detail
+  priority: high
+  platforms:
+  - android
+  steps:
+  - name: Tap favorite icon
+    action: 'tap: 960,540'
+    expected: Icon changes to filled state, item added to favorites
+    timeout: 10
+  - name: Tap again to unfavorite
+    action: 'tap: 960,540'
+    expected: Icon changes to unfilled state, item removed from favorites
+    timeout: 10
+- id: android-detail-similar
+  name: Media Detail Similar Items
+  category: detail
+  priority: medium
+  platforms:
+  - android
+  steps:
+  - name: Scroll to similar section
+    action: '# TODO: Convert to executable - scroll down on media detail screen'
+    expected: Similar/related media section visible with recommendation items
+    timeout: 10
+  - name: Tap similar item
+    action: 'tap: 960,540'
+    expected: Navigates to that item's detail screen
+    timeout: 10
+- id: android-settings-opens
+  name: Settings Screen Opens
+  category: settings
+  priority: critical
+  platforms:
+  - android
+  steps:
+  - name: Open settings
+    action: 'tap: 960,540'
+    expected: Settings screen loads with all configuration options visible
+    timeout: 10
+- id: android-settings-server-url
+  name: Settings Server URL Configuration
+  category: settings
+  priority: critical
+  platforms:
+  - android
+  steps:
+  - name: Find server URL field
+    action: '# TODO: Convert to executable - look for server url/address setting'
+    expected: Server URL field visible with current value
+    timeout: 10
+  - name: Edit server URL
+    action: 'tap: 960,540'
+    expected: Field accepts new URL input
+    timeout: 10
+  - name: Save and verify
+    action: '# TODO: Convert to executable - save settings and reopen settings'
+    expected: New server URL is persisted
+    timeout: 10
+- id: android-settings-theme
+  name: Settings Theme Toggle
+  category: settings
+  priority: medium
+  platforms:
+  - android
+  steps:
+  - name: Find theme setting
+    action: '# TODO: Convert to executable - look for theme/appearance setting'
+    expected: Theme option visible (Light/Dark/System)
+    timeout: 10
+  - name: Switch theme
+    action: '# TODO: Convert to executable - toggle from current theme to opposite'
+    expected: App theme changes immediately to reflect selection
+    timeout: 10
+- id: android-settings-cache-clear
+  name: Settings Cache Clear
+  category: settings
+  priority: high
+  platforms:
+  - android
+  steps:
+  - name: Find cache option
+    action: '# TODO: Convert to executable - look for clear cache setting'
+    expected: Clear cache option visible with current cache size
+    timeout: 10
+  - name: Clear cache
+    action: 'tap: 960,540'
+    expected: Cache cleared, size shows 0 or reduced value
+    timeout: 10
+- id: android-settings-logout
+  name: Settings Logout
+  category: settings
+  priority: critical
+  platforms:
+  - android
+  steps:
+  - name: Find logout option
+    action: '# TODO: Convert to executable - scroll to logout button in settings'
+    expected: Logout button visible
+    timeout: 10
+  - name: Tap logout
+    action: 'tap: 960,540'
+    expected: Session cleared, app navigates to login screen
+    timeout: 10
+- id: android-player-starts
+  name: Media Player Starts Playback
+  category: player
+  priority: critical
+  platforms:
+  - android
+  steps:
+  - name: Open media item
+    action: 'tap: 960,540'
+    expected: Media player activity/screen opens
+    timeout: 10
+  - name: Verify playback
+    action: 'sleep: 3000'
+    expected: Media plays with video/audio output, progress bar advances
+    timeout: 10
+- id: android-player-controls
+  name: Media Player Controls
+  category: player
+  priority: critical
+  platforms:
+  - android
+  steps:
+  - name: Show controls
+    action: 'tap: 960,540'
+    expected: Play/pause, seek bar, volume, and fullscreen controls visible
+    timeout: 10
+  - name: Pause playback
+    action: 'tap: 960,540'
+    expected: Playback pauses, button changes to play icon
+    timeout: 10
+  - name: Resume playback
+    action: 'tap: 960,540'
+    expected: Playback resumes from paused position
+    timeout: 10
+  - name: Seek forward
+    action: '# TODO: Convert to executable - drag seek bar forward'
+    expected: Playback position jumps to new location
+    timeout: 10
+- id: android-player-progress-save
+  name: Media Player Progress Save
+  category: player
+  priority: high
+  platforms:
+  - android
+  steps:
+  - name: Play media to midpoint
+    action: '# TODO: Convert to executable - play media and seek to approximately
+      50% position'
+    expected: Playback at midpoint
+    timeout: 10
+  - name: Exit player
+    action: 'keypress: KEYCODE_BACK'
+    expected: Player closes, returns to previous screen
+    timeout: 10
+  - name: Verify progress saved
+    action: '# TODO: Convert to executable - check media item for progress indicator'
+    expected: Media item shows saved progress position on detail screen or home
+    timeout: 10
+- id: android-player-resume
+  name: Media Player Resume from Saved Position
+  category: player
+  priority: high
+  platforms:
+  - android
+  steps:
+  - name: Open previously watched media
+    action: 'tap: 960,540'
+    expected: Resume dialog appears or playback auto-resumes from saved position
+    timeout: 10
+  - name: Verify position
+    action: '# TODO: Convert to executable - check current playback position'
+    expected: Playback starts at or near the previously saved position
+    timeout: 10
+- id: android-offline-cached-data
+  name: Offline Mode Cached Data
+  category: offline
+  priority: high
+  platforms:
+  - android
+  steps:
+  - name: Load data while online
+    action: '# TODO: Convert to executable - browse home screen and media items while
+      connected'
+    expected: Data loads and is cached locally
+    timeout: 10
+  - name: Enable airplane mode
+    action: adb_shell:settings put global airplane_mode_on 1
+    expected: Device goes offline
+    timeout: 10
+  - name: Check cached content
+    action: '# TODO: Convert to executable - navigate to home screen'
+    expected: Previously loaded content visible from cache
+    timeout: 10
+  - name: Disable airplane mode
+    action: adb_shell:settings put global airplane_mode_on 0
+    expected: Device goes back online
+    timeout: 10
+- id: android-offline-error-message
+  name: Offline Mode Error Message
+  category: offline
+  priority: high
+  platforms:
+  - android
+  steps:
+  - name: Go offline
+    action: '# TODO: Convert to executable - enable airplane mode'
+    expected: Device is offline
+    timeout: 10
+  - name: Try network operation
+    action: '# TODO: Convert to executable - pull to refresh or search for new content'
+    expected: 'Friendly error message: ''No network connection'' or similar, not a
+      crash'
+    timeout: 10
+  - name: Restore connection
+    action: '# TODO: Convert to executable - disable airplane mode'
+    expected: Device is back online
+    timeout: 10
+- id: android-offline-reconnect
+  name: Offline Mode Reconnection
+  category: offline
+  priority: high
+  platforms:
+  - android
+  steps:
+  - name: Go offline then online
+    action: '# TODO: Convert to executable - toggle airplane mode on then off'
+    expected: Network restored
+    timeout: 10
+  - name: Verify auto-reconnect
+    action: '# TODO: Convert to executable - check if app reconnects to server automatically'
+    expected: App detects network restoration, refreshes data, and WebSocket reconnects
+    timeout: 10
+- id: android-bottom-nav
+  name: Bottom Navigation
+  category: navigation
+  priority: critical
+  platforms:
+  - android
+  steps:
+  - name: Check bottom nav bar
+    action: '# TODO: Convert to executable - look at bottom of screen'
+    expected: Bottom navigation bar with Home, Search, Library, Settings icons
+    timeout: 10
+  - name: Tap each tab
+    action: 'tap: 960,540'
+    expected: Each tap navigates to the corresponding screen with correct content
+    timeout: 10
+  - name: Verify selection state
+    action: '# TODO: Convert to executable - check active tab indicator'
+    expected: Currently selected tab is visually highlighted
+    timeout: 10
+- id: android-back-button
+  name: Back Button Navigation
+  category: navigation
+  priority: critical
+  platforms:
+  - android
+  steps:
+  - name: Navigate deep
+    action: '# TODO: Convert to executable - home -> media detail -> play'
+    expected: Navigate through multiple screens
+    timeout: 10
+  - name: Press back repeatedly
+    action: 'keypress: KEYCODE_BACK'
+    expected: 'Navigates back through each screen in reverse order: Player -> Detail
+      -> Home'
+    timeout: 10
+  - name: Back from home
+    action: 'keypress: KEYCODE_BACK'
+    expected: App exits or shows exit confirmation
+    timeout: 10
+- id: android-screen-rotation
+  name: Screen Rotation Handling
+  category: navigation
+  priority: high
+  platforms:
+  - android
+  steps:
+  - name: Open media detail
+    action: '# TODO: Convert to executable - navigate to a media detail screen'
+    expected: Screen in portrait mode
+    timeout: 10
+  - name: Rotate to landscape
+    action: '# TODO: Convert to executable - rotate device to landscape orientation'
+    expected: Screen adjusts layout, no data loss, no crash
+    timeout: 10
+  - name: Rotate back
+    action: '# TODO: Convert to executable - rotate device back to portrait'
+    expected: Screen returns to portrait layout with state preserved
+    timeout: 10
+- id: android-large-list-scroll
+  name: Large List Scrolling Performance
+  category: edge-case
+  priority: high
+  platforms:
+  - android
+  steps:
+  - name: Navigate to large list
+    action: '# TODO: Convert to executable - open a category or search with many results
+      (100+)'
+    expected: List renders initial items
+    timeout: 10
+  - name: Scroll rapidly
+    action: '# TODO: Convert to executable - fling scroll through the list quickly'
+    expected: Scrolling is smooth (60fps), no jank, no OOM crash
+    timeout: 10
+  - name: Scroll to bottom
+    action: '# TODO: Convert to executable - continue scrolling to end of list'
+    expected: Pagination/lazy loading works, all items eventually load
+    timeout: 10
+- id: android-slow-network
+  name: Slow Network Handling
+  category: edge-case
+  priority: high
+  platforms:
+  - android
+  steps:
+  - name: Throttle network
+    action: '# TODO: Convert to executable - enable network throttling to simulate
+      2g speeds'
+    expected: Network is slow
+    timeout: 10
+  - name: Navigate app
+    action: '# TODO: Convert to executable - try loading home screen and media detail'
+    expected: Loading indicators show, content eventually loads, no timeout crash
+    timeout: 10
+  - name: Verify timeout handling
+    action: '# TODO: Convert to executable - check for timeout errors on very slow
+      requests'
+    expected: Graceful timeout message, not ANR or crash
+    timeout: 10
+- id: android-no-media
+  name: No Media Available State
+  category: edge-case
+  priority: medium
+  platforms:
+  - android
+  steps:
+  - name: Login to empty catalog
+    action: '# TODO: Convert to executable - connect to server with no scanned media'
+    expected: Home screen loads
+    timeout: 10
+  - name: Verify empty state
+    action: '# TODO: Convert to executable - check each section on home screen'
+    expected: 'Friendly empty state messages: ''No media found. Add a storage root
+      to get started.'''
+    timeout: 10
+  - name: Verify no crashes
+    action: '# TODO: Convert to executable - navigate to search, library, etc.'
+    expected: All screens handle empty data gracefully with appropriate empty state
+      UI
+    timeout: 10
+- id: android-memory-pressure
+  name: Memory Pressure Handling
+  category: edge-case
+  priority: high
+  platforms:
+  - android
+  steps:
+  - name: Simulate low memory
+    action: adb_shell:am send-trim-memory com.vasic.catalogizer running_critical
+    expected: App receives memory trim callback
+    timeout: 10
+  - name: Continue using app
+    action: '# TODO: Convert to executable - navigate through screens'
+    expected: App remains functional, non-critical caches cleared
+    timeout: 10
+  - name: Process death recovery
+    action: '# TODO: Convert to executable - kill and restore app process'
+    expected: App recovers state from savedInstanceState, no crash
+    timeout: 10
+- id: android-network-switch
+  name: Network Switch WiFi to Cellular
+  category: edge-case
+  priority: medium
+  platforms:
+  - android
+  steps:
+  - name: Start on WiFi
+    action: '# TODO: Convert to executable - ensure device is on wifi and using the
+      app'
+    expected: App connected and functional
+    timeout: 10
+  - name: Switch to cellular
+    action: '# TODO: Convert to executable - disable wifi, enable mobile data'
+    expected: Brief connectivity gap
+    timeout: 10
+  - name: Verify reconnection
+    action: '# TODO: Convert to executable - check app connectivity after switch'
+    expected: App reconnects to server on cellular network without manual intervention
+    timeout: 10
+- id: android-flow-launch-to-home
+  name: 'User Flow: Launch App'
+  category: user-flow
+  priority: critical
+  platforms:
+  - android
+  steps:
+  - name: Cold launch app
+    action: '# TODO: Convert to executable - force stop and launch catalogizer from
+      launcher'
+    expected: App launches and displays splash screen, then transitions to login or
+      home screen
+    timeout: 10
+- id: android-flow-login
+  name: 'User Flow: Login After Launch'
+  category: user-flow
+  priority: critical
+  platforms:
+  - android
+  steps:
+  - name: Login with credentials
+    action: 'tap: 960,540'
+    expected: Login succeeds, navigates to home screen with content loaded
+    timeout: 10
+- id: android-flow-home-browse
+  name: 'User Flow: Browse Home Screen'
+  category: user-flow
+  priority: critical
+  platforms:
+  - android
+  steps:
+  - name: Scroll through home
+    action: '# TODO: Convert to executable - scroll through all sections on home screen'
+    expected: 'All sections render: recent media, continue watching, trending, categories'
+    timeout: 10
+- id: android-flow-search-media
+  name: 'User Flow: Search for Media'
+  category: user-flow
+  priority: critical
+  platforms:
+  - android
+  steps:
+  - name: Search for content
+    action: 'tap: 960,540'
+    expected: Search results displayed with matching items
+    timeout: 10
+- id: android-flow-view-detail
+  name: 'User Flow: View Media Detail'
+  category: user-flow
+  priority: critical
+  platforms:
+  - android
+  steps:
+  - name: Open detail from search
+    action: 'tap: 960,540'
+    expected: Media detail screen loads with title, metadata, play button, and favorite
+      toggle
+    timeout: 10
+- id: android-flow-play-media
+  name: 'User Flow: Play Media'
+  category: user-flow
+  priority: critical
+  platforms:
+  - android
+  steps:
+  - name: Start playback
+    action: 'tap: 960,540'
+    expected: Media player opens and begins playback with controls available
+    timeout: 10
+- id: android-flow-back-and-logout
+  name: 'User Flow: Back to Home and Logout'
+  category: user-flow
+  priority: critical
+  platforms:
+  - android
+  steps:
+  - name: Exit player and logout
+    action: 'keypress: KEYCODE_BACK'
+    expected: Player closes, navigates back to home, logout clears session and shows
+      login screen
+    timeout: 10
+- id: android-flow-browse-for-favorite
+  name: 'User Flow: Browse to Find Favorite'
+  category: user-flow
+  priority: high
+  platforms:
+  - android
+  steps:
+  - name: Browse media list
+    action: '# TODO: Convert to executable - login and navigate to a media category'
+    expected: Media items displayed in list or grid with favorite toggle icons
+    timeout: 10
+- id: android-flow-add-favorite
+  name: 'User Flow: Add Item to Favorites'
+  category: user-flow
+  priority: high
+  platforms:
+  - android
+  steps:
+  - name: Favorite an item
+    action: 'tap: 960,540'
+    expected: Icon changes to filled state, item marked as favorite
+    timeout: 10
+- id: android-flow-check-favorites-list
+  name: 'User Flow: Check Favorites List'
+  category: user-flow
+  priority: high
+  platforms:
+  - android
+  steps:
+  - name: Navigate to favorites
+    action: '# TODO: Convert to executable - open favorites section from navigation'
+    expected: Previously favorited item appears in favorites list
+    timeout: 10
+- id: android-flow-remove-favorite
+  name: 'User Flow: Remove from Favorites'
+  category: user-flow
+  priority: high
+  platforms:
+  - android
+  steps:
+  - name: Unfavorite the item
+    action: 'tap: 960,540'
+    expected: Item removed from favorites list, icon returns to unfilled state
+    timeout: 10
+- id: android-flow-verify-removed
+  name: 'User Flow: Verify Favorite Removed'
+  category: user-flow
+  priority: high
+  platforms:
+  - android
+  steps:
+  - name: Refresh favorites list
+    action: '# TODO: Convert to executable - pull to refresh or re-navigate to favorites'
+    expected: Removed item no longer appears in favorites list
+    timeout: 10
+- id: android-gesture-swipe-refresh
+  name: 'Gesture: Swipe to Refresh'
+  category: gesture
+  priority: high
+  platforms:
+  - android
+  steps:
+  - name: Swipe down on list
+    action: '# TODO: Convert to executable - perform pull-down gesture on any scrollable
+      content list'
+    expected: Refresh indicator appears, data reloads from server, indicator disappears
+      on completion
+    timeout: 10
+- id: android-gesture-swipe-back
+  name: 'Gesture: Swipe Back Navigation'
+  category: gesture
+  priority: high
+  platforms:
+  - android
+  steps:
+  - name: Swipe from edge
+    action: '# TODO: Convert to executable - perform edge swipe gesture (left edge
+      to right) on detail screen'
+    expected: Navigates back to previous screen with predictive back animation
+    timeout: 10
+- id: android-gesture-pinch-zoom
+  name: 'Gesture: Pinch Zoom on Images'
+  category: gesture
+  priority: medium
+  platforms:
+  - android
+  steps:
+  - name: Pinch zoom on poster
+    action: '# TODO: Convert to executable - perform pinch-to-zoom gesture on media
+      poster or cover art'
+    expected: Image zooms in smoothly, pinch out returns to original size
+    timeout: 10
+- id: android-notification-receive
+  name: Push Notification Received
+  category: notification
+  priority: medium
+  platforms:
+  - android
+  steps:
+  - name: Trigger notification
+    action: '# TODO: Convert to executable - trigger a server event that sends push
+      notification (scan complete, new media)'
+    expected: Notification appears in system notification shade with appropriate title
+      and body
+    timeout: 10
+- id: android-notification-tap-opens
+  name: Notification Tap Opens Correct Screen
+  category: notification
+  priority: medium
+  platforms:
+  - android
+  steps:
+  - name: Tap notification
+    action: 'tap: 960,540'
+    expected: App opens and navigates directly to the relevant screen (scan results,
+      new media detail)
+    timeout: 10
+- id: android-background-survive
+  name: App Survives Backgrounding
+  category: lifecycle
+  priority: high
+  platforms:
+  - android
+  steps:
+  - name: Background and wait
+    action: 'keypress: KEYCODE_BACK'
+    expected: App process remains alive, no crash in background
+    timeout: 10
+  - name: Resume app
+    action: 'tap: 960,540'
+    expected: App resumes on same screen with state preserved
+    timeout: 10
+- id: android-background-resume-correct
+  name: App Resumes Correctly After Background
+  category: lifecycle
+  priority: high
+  platforms:
+  - android
+  steps:
+  - name: Navigate deep then background
+    action: '# TODO: Convert to executable - go to media detail, background app for
+      60 seconds, resume'
+    expected: App resumes to media detail screen with all data intact, no re-login
+      required
+    timeout: 10
+- id: android-deeplink-detail
+  name: 'Deep Link: Media Detail'
+  category: deep-link
+  priority: high
+  platforms:
+  - android
+  steps:
+  - name: Open detail deep link
+    action: adb_shell:am start -a android.intent.action.view -d 'media://detail/123'
+    expected: App launches and navigates directly to media detail screen for item
+      123
+    timeout: 10
+- id: android-deeplink-search
+  name: 'Deep Link: Search Query'
+  category: deep-link
+  priority: high
+  platforms:
+  - android
+  steps:
+  - name: Open search deep link
+    action: adb_shell:am start -a android.intent.action.view -d 'media://search?q=test'
+    expected: App launches and navigates to search screen with query 'test' pre-filled
+      and results shown
+    timeout: 10
+- id: android-permission-storage-request
+  name: Storage Permission Request
+  category: permission
+  priority: high
+  platforms:
+  - android
+  steps:
+  - name: Trigger permission request
+    action: '# TODO: Convert to executable - attempt to download a media file without
+      storage permission'
+    expected: System permission dialog appears requesting storage/media access
+    timeout: 10
+- id: android-permission-denied-graceful
+  name: Permission Denied Handled Gracefully
+  category: permission
+  priority: high
+  platforms:
+  - android
+  steps:
+  - name: Deny permission
+    action: '# TODO: Convert to executable - deny storage permission when requested'
+    expected: Friendly error message explaining why permission is needed, option to
+      open settings, no crash
+    timeout: 10
+- id: android-network-wifi-to-mobile
+  name: 'Network Transition: WiFi to Mobile Data'
+  category: network
+  priority: medium
+  platforms:
+  - android
+  steps:
+  - name: Switch networks
+    action: '# TODO: Convert to executable - disable wifi while app is active, mobile
+      data takes over'
+    expected: Brief interruption, app reconnects automatically on mobile data within
+      5 seconds
+    timeout: 10
+- id: android-network-lost-recovered
+  name: 'Network: Connection Lost and Recovered'
+  category: network
+  priority: high
+  platforms:
+  - android
+  steps:
+  - name: Lose connection
+    action: 'sleep: 10000'
+    expected: App shows offline indicator when disconnected, automatically reconnects
+      and refreshes when network restored
+    timeout: 10
+- id: android-orientation-portrait
+  name: 'Orientation: Portrait Mode'
+  category: orientation
+  priority: high
+  platforms:
+  - android
+  steps:
+  - name: Verify portrait layout
+    action: '# TODO: Convert to executable - hold device in portrait orientation on
+      home screen'
+    expected: UI renders in portrait layout with proper spacing and no clipping
+    timeout: 10
+- id: android-orientation-landscape
+  name: 'Orientation: Landscape Mode'
+  category: orientation
+  priority: high
+  platforms:
+  - android
+  steps:
+  - name: Rotate to landscape
+    action: '# TODO: Convert to executable - rotate device to landscape orientation
+      on home screen'
+    expected: UI adapts to landscape layout, grid shows more columns, no data loss
+    timeout: 10
+- id: android-orientation-rotate-during-playback
+  name: 'Orientation: Rotate During Playback'
+  category: orientation
+  priority: high
+  platforms:
+  - android
+  steps:
+  - name: Rotate while playing
+    action: '# TODO: Convert to executable - start media playback in portrait, rotate
+      to landscape'
+    expected: Player transitions to fullscreen landscape mode, playback continues
+      without interruption or buffering restart
+    timeout: 10
+- id: android-large-content-long-title
+  name: 'Large Content: Long Title Display'
+  category: large-content
+  priority: medium
+  platforms:
+  - android
+  steps:
+  - name: View item with long title
+    action: '# TODO: Convert to executable - navigate to a media item with a very
+      long title (100+ characters)'
+    expected: Title is truncated with ellipsis or wraps properly, no layout overflow
+      or crash
+    timeout: 10
+- id: android-large-content-many-genres
+  name: 'Large Content: Many Genres and Large Description'
+  category: large-content
+  priority: medium
+  platforms:
+  - android
+  steps:
+  - name: View item with extensive metadata
+    action: '# TODO: Convert to executable - navigate to media item with many genres
+      and a large description'
+    expected: Genres wrap or scroll horizontally, description is truncated with 'Read
+      more' option, layout remains stable
+    timeout: 10
+- id: android-accessibility-talkback
+  name: 'Accessibility: TalkBack Navigation'
+  category: accessibility
+  priority: high
+  platforms:
+  - android
+  steps:
+  - name: Navigate with TalkBack
+    action: '# TODO: Convert to executable - enable talkback and navigate home screen
+      using swipe gestures'
+    expected: All interactive elements are announced with meaningful labels, navigation
+      is logical and complete
+    timeout: 10
+- id: android-accessibility-content-descriptions
+  name: 'Accessibility: Content Descriptions Present'
+  category: accessibility
+  priority: high
+  platforms:
+  - android
+  steps:
+  - name: Check content descriptions
+    action: '# TODO: Convert to executable - inspect all images, icons, and buttons
+      for contentdescription'
+    expected: All non-decorative images have contentDescription set, all buttons have
+      accessible labels
+    timeout: 10
+- id: android-performance-app-start
+  name: 'Performance: App Start Under 3 Seconds'
+  category: performance
+  priority: critical
+  platforms:
+  - android
+  steps:
+  - name: Measure cold start
+    action: '# TODO: Convert to executable - force stop app and measure time from
+      launch to home screen interactive'
+    expected: App is fully interactive (home screen loaded) within 3 seconds
+    timeout: 10
+- id: android-performance-scroll-60fps
+  name: 'Performance: List Scroll at 60fps'
+  category: performance
+  priority: high
+  platforms:
+  - android
+  steps:
+  - name: Profile scroll performance
+    action: '# TODO: Convert to executable - open a list with 50+ items and scroll
+      rapidly while monitoring frame rate'
+    expected: Scroll maintains 60fps with no dropped frames or jank visible to user
+    timeout: 10
+- id: android-performance-search-response
+  name: 'Performance: Search Response Under 2 Seconds'
+  category: performance
+  priority: high
+  platforms:
+  - android
+  steps:
+  - name: Measure search latency
+    action: '# TODO: Convert to executable - type a search query and measure time
+      until results are displayed'
+    expected: Search results appear within 2 seconds of query submission including
+      network roundtrip
+    timeout: 10

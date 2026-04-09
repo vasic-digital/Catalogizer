@@ -1,0 +1,1373 @@
+version: '2.0'
+name: Test Suite - EXECUTABLE
+description: Executable test suite - converted from /run/media/milosvasic/DATA4TB/Projects/Catalogizer/challenges/helixqa-banks/catalogizer-web-negative-paths.json
+test_cases:
+- id: neg-web-login-xss-username
+  name: XSS Injection in Username Field
+  category: login-auth-negative
+  priority: critical
+  platforms:
+  - web
+  steps:
+  - name: Enter XSS payload in username
+    action: 'text: xss'
+    expected: Input is sanitized or escaped, no script execution occurs, error message
+      shows sanitized text without rendering HTML, no alert dialog appears
+    timeout: 10
+  - name: Verify DOM integrity
+    action: '# TODO: Convert to executable - inspect the dom around the username field
+      and any error message elements'
+    expected: No injected script tags in the DOM, error message uses textContent not
+      innerHTML, React JSX escaping prevents XSS
+    timeout: 10
+- id: neg-web-login-xss-password
+  name: XSS Injection in Password Field
+  category: login-auth-negative
+  priority: critical
+  platforms:
+  - web
+  steps:
+  - name: Enter XSS payload in password
+    action: '# TODO: Convert to executable - type "><img src=x onerror=alert(1)> into
+      the password field and submit'
+    expected: Input is treated as plain text, no image element created, no onerror
+      fires, form shows invalid credentials error safely
+    timeout: 10
+- id: neg-web-login-extremely-long-password
+  name: Extremely Long Password (10000+ chars)
+  category: login-auth-negative
+  priority: high
+  platforms:
+  - web
+  steps:
+  - name: Paste extremely long password
+    action: '# TODO: Convert to executable - paste a 10000-character string into the
+      password field and submit the form'
+    expected: Form either truncates input to a reasonable limit or submits and receives
+      a 400/413 error from the API, UI does not freeze or crash, no browser tab hang
+    timeout: 10
+  - name: Verify UI responsiveness
+    action: '# TODO: Convert to executable - attempt to interact with other page elements
+      during and after paste'
+    expected: Page remains responsive, no excessive memory consumption, no visible
+      layout shift from the password field
+    timeout: 10
+- id: neg-web-login-network-offline
+  name: Login Attempt While Network Offline
+  category: login-auth-negative
+  priority: critical
+  platforms:
+  - web
+  steps:
+  - name: Disconnect network and attempt login
+    action: 'tap: 960,540'
+    expected: Login request fails, user sees a clear network error message such as
+      'Network error' or 'Unable to connect to server', submit button re-enables,
+      no infinite spinner
+    timeout: 10
+  - name: Reconnect and retry
+    action: 'tap: 960,540'
+    expected: Login succeeds on retry, redirect to /dashboard, credentials were preserved
+      in form fields
+    timeout: 10
+- id: neg-web-login-expired-saved-token
+  name: Login with Expired Token in localStorage
+  category: login-auth-negative
+  priority: critical
+  platforms:
+  - web
+  steps:
+  - name: Set expired token in localStorage
+    action: '# TODO: Convert to executable - manually set localstorage token to an
+      expired jwt (exp claim in the past), then navigate to /dashboard'
+    expected: AuthProvider detects expired token, user is redirected to /login page,
+      expired token is cleared from localStorage
+    timeout: 10
+  - name: Verify no flash of authenticated content
+    action: '# TODO: Convert to executable - observe the transition from load to redirect'
+    expected: No dashboard content flashes before redirect, loading state or blank
+      screen shown during auth check, then clean redirect to /login
+    timeout: 10
+- id: neg-web-login-redirect-loop
+  name: Redirect Loop After Login Prevention
+  category: login-auth-negative
+  priority: critical
+  platforms:
+  - web
+  steps:
+  - name: Navigate to /login with returnUrl pointing to /login
+    action: '# TODO: Convert to executable - navigate to /login?returnurl=%2flogin'
+    expected: After successful login, user is redirected to /dashboard (default) instead
+      of /login, no infinite redirect loop occurs
+    timeout: 10
+  - name: Test deeply nested redirect
+    action: '# TODO: Convert to executable - navigate to /login?returnurl=%2flogin%3freturnurl%3d%252flogin'
+    expected: Redirect loop is detected and broken, user lands on /dashboard
+    timeout: 10
+- id: neg-web-login-csrf-protection
+  name: CSRF Protection on Login Form
+  category: login-auth-negative
+  priority: high
+  platforms:
+  - web
+  steps:
+  - name: Submit login from external origin
+    action: '# TODO: Convert to executable - create an html page on a different origin
+      that auto-submits a form post to http://localhost:3000/api/v1/auth/login'
+    expected: Request is blocked by CORS policy or SameSite cookie restrictions, login
+      does not succeed from cross-origin form submission
+    timeout: 10
+- id: neg-web-login-session-hijack-token-edit
+  name: Session Hijacking via Manual Token Edit
+  category: login-auth-negative
+  priority: critical
+  platforms:
+  - web
+  steps:
+  - name: Modify JWT token in localStorage
+    action: '# TODO: Convert to executable - login as admin, then manually edit the
+      jwt token payload in localstorage (change username to ''superadmin'' or modify
+      role claims), then refresh the page'
+    expected: Modified token fails JWT signature verification on next API call, user
+      is logged out and redirected to /login, tampered token is cleared
+    timeout: 10
+  - name: Replace with fabricated token
+    action: '# TODO: Convert to executable - set localstorage token to a completely
+      fabricated jwt string signed with a wrong secret'
+    expected: All API calls return 401 Unauthorized, AuthProvider detects invalid
+      token and redirects to /login
+    timeout: 10
+- id: neg-web-login-disabled-account
+  name: Login with Disabled Account
+  category: login-auth-negative
+  priority: high
+  platforms:
+  - web
+  steps:
+  - name: Attempt login with disabled account
+    action: '# TODO: Convert to executable - submit login form with credentials for
+      a disabled/deactivated user account'
+    expected: Login is rejected with a specific error message like 'Account is disabled'
+      or generic 'Invalid credentials', no JWT is issued, user remains on /login page
+    timeout: 10
+- id: neg-web-login-concurrent-sessions
+  name: Concurrent Login Sessions Limit
+  category: login-auth-negative
+  priority: medium
+  platforms:
+  - web
+  steps:
+  - name: Login from multiple tabs simultaneously
+    action: '# TODO: Convert to executable - open 5 browser tabs, login as admin in
+      each tab in rapid succession'
+    expected: All tabs successfully authenticate, localStorage token is consistent
+      across tabs (last login wins), no race condition causes token corruption
+    timeout: 10
+  - name: Verify cross-tab state sync
+    action: '# TODO: Convert to executable - logout from one tab'
+    expected: Other tabs detect the logout (via storage event listener or next API
+      call) and redirect to /login, no stale authenticated state persists
+    timeout: 10
+- id: neg-web-login-auto-logout-token-corruption
+  name: Auto-Logout on Token Corruption
+  category: login-auth-negative
+  priority: high
+  platforms:
+  - web
+  steps:
+  - name: Corrupt token while on dashboard
+    action: '# TODO: Convert to executable - while on /dashboard, use devtools to
+      set localstorage token to ''corrupted-not-a-jwt'''
+    expected: On next API call or periodic token check, AuthProvider detects invalid
+      token format, triggers logout, redirects to /login
+    timeout: 10
+  - name: Set token to empty string
+    action: '# TODO: Convert to executable - set localstorage token to '''''
+    expected: Application treats empty string as no token, redirects to /login, no
+      error thrown in console
+    timeout: 10
+- id: neg-web-login-sql-injection-username
+  name: SQL Injection in Username Field
+  category: login-auth-negative
+  priority: critical
+  platforms:
+  - web
+  steps:
+  - name: Enter SQL injection payload
+    action: 'text:  or '
+    expected: Login fails with invalid credentials error, no SQL injection occurs,
+      API uses parameterized queries, no database error exposed to client
+    timeout: 10
+- id: neg-web-nav-rapid-route-switching
+  name: Rapid Route Switching (50 changes/sec)
+  category: navigation-negative
+  priority: high
+  platforms:
+  - web
+  steps:
+  - name: Programmatically switch routes rapidly
+    action: '# TODO: Convert to executable - use browser console to rapidly call history.pushstate
+      for 50 different routes within 1 second: /dashboard, /media, /browse, /collections,
+      /analytics, etc.'
+    expected: React Router handles rapid changes gracefully, no memory leak, no white
+      screen, final route renders correctly, no pending state from intermediate routes
+    timeout: 10
+  - name: Verify component cleanup
+    action: '# TODO: Convert to executable - check browser memory usage and dom node
+      count after rapid switching'
+    expected: Memory usage is stable (no unbounded growth), no orphaned DOM nodes,
+      no dangling event listeners, React Query cancels in-flight requests from abandoned
+      routes
+    timeout: 10
+- id: neg-web-nav-history-manipulation
+  name: Browser History Manipulation
+  category: navigation-negative
+  priority: high
+  platforms:
+  - web
+  steps:
+  - name: Manipulate history stack
+    action: 'tap: 960,540'
+    expected: React Router's internal state remains consistent, navigation works correctly
+      regardless of history manipulation, route guards still enforce auth
+    timeout: 10
+  - name: Push external URL to history
+    action: 'keypress: KEYCODE_BACK'
+    expected: Browser does not navigate to external URL from pushState (same-origin
+      policy), SPA routing handles the back action gracefully
+    timeout: 10
+- id: neg-web-nav-url-injection-params
+  name: URL Injection in Route Parameters
+  category: navigation-negative
+  priority: critical
+  platforms:
+  - web
+  steps:
+  - name: Inject script in entity ID param
+    action: '# TODO: Convert to executable - navigate to /entity/<script>alert(1)</script>'
+    expected: Route parameter is URL-encoded, no script execution, 404 or entity-not-found
+      page shown, entity ID is treated as literal string
+    timeout: 10
+  - name: Inject path traversal in param
+    action: '# TODO: Convert to executable - navigate to /entity/../../admin'
+    expected: No path traversal occurs, React Router treats it as a literal entity
+      ID, shows entity not found or 404 page
+    timeout: 10
+- id: neg-web-nav-hash-fragment-xss
+  name: Hash Fragment XSS Attempt
+  category: navigation-negative
+  priority: critical
+  platforms:
+  - web
+  steps:
+  - name: Navigate with XSS in hash
+    action: '# TODO: Convert to executable - navigate to /dashboard#<img src=x onerror=alert(''xss'')>'
+    expected: Hash fragment is not rendered as HTML, no script execution, dashboard
+      loads normally, hash is ignored or URL-encoded in display
+    timeout: 10
+- id: neg-web-nav-deep-link-nonexistent-entity
+  name: Deep Link to Non-Existent Entity ID
+  category: navigation-negative
+  priority: high
+  platforms:
+  - web
+  steps:
+  - name: Navigate to entity with invalid ID
+    action: '# TODO: Convert to executable - navigate to /entity/999999999 (non-existent
+      entity id)'
+    expected: API returns 404, entity page shows a clear 'Entity not found' message
+      with option to go back or browse, no white screen or unhandled error
+    timeout: 10
+  - name: Navigate to entity with non-numeric ID
+    action: '# TODO: Convert to executable - navigate to /entity/not-a-number'
+    expected: Page handles non-numeric ID gracefully, shows error or not-found page,
+      no crash, no console errors
+    timeout: 10
+- id: neg-web-nav-during-pending-save
+  name: Navigation During Pending Save
+  category: navigation-negative
+  priority: high
+  platforms:
+  - web
+  steps:
+  - name: Start save then navigate away
+    action: 'tap: 960,540'
+    expected: 'Either: (a) browser shows ''unsaved changes'' confirmation dialog,
+      or (b) save completes in background and navigation proceeds, or (c) save is
+      cancelled. No silent data loss occurs.'
+    timeout: 10
+- id: neg-web-nav-back-after-delete
+  name: Back Button After Delete Operation
+  category: navigation-negative
+  priority: high
+  platforms:
+  - web
+  steps:
+  - name: Delete entity then press back
+    action: 'keypress: KEYCODE_BACK'
+    expected: Back button goes to the previous list page (not the deleted entity),
+      if the deleted entity URL is reached it shows 'not found' rather than crashing
+    timeout: 10
+- id: neg-web-nav-refresh-during-upload
+  name: Page Refresh During File Upload
+  category: navigation-negative
+  priority: high
+  platforms:
+  - web
+  steps:
+  - name: Start upload and refresh page
+    action: 'keypress: KEYCODE_DPAD_UP'
+    expected: 'Browser shows ''leave page'' confirmation dialog (beforeunload event),
+      if confirmed: upload is cancelled, page reloads cleanly with no partial upload
+      state'
+    timeout: 10
+- id: neg-web-nav-bookmark-stale-url
+  name: Bookmark Stale URL After Data Change
+  category: navigation-negative
+  priority: medium
+  platforms:
+  - web
+  steps:
+  - name: Access bookmarked URL for deleted item
+    action: '# TODO: Convert to executable - bookmark /entity/42, delete entity 42,
+      close browser, reopen and navigate to bookmark'
+    expected: Page shows entity not found message with navigation options, not a blank
+      screen or unhandled error
+    timeout: 10
+- id: neg-web-nav-popstate-handling
+  name: Popstate Event Handling Edge Cases
+  category: navigation-negative
+  priority: medium
+  platforms:
+  - web
+  steps:
+  - name: Trigger popstate rapidly
+    action: 'tap: 960,540'
+    expected: Each back navigation renders the correct page content, no race conditions
+      between route renders, final page matches expected history position
+    timeout: 10
+  - name: Forward after multiple backs
+    action: 'tap: 960,540'
+    expected: Forward navigation works correctly, correct pages render, no stale data
+      from React Query cache
+    timeout: 10
+- id: neg-web-nav-direct-url-protected-route
+  name: Direct URL Access to Protected Route While Logged Out
+  category: navigation-negative
+  priority: critical
+  platforms:
+  - web
+  steps:
+  - name: Access admin page directly
+    action: '# TODO: Convert to executable - clear all auth tokens, type http://localhost:3000/admin
+      directly in address bar'
+    expected: Redirect to /login with returnUrl=/admin preserved, no admin content
+      visible even briefly, after login redirects back to /admin
+    timeout: 10
+- id: neg-web-form-paste-binary-data
+  name: Paste Binary Data in Text Fields
+  category: form-negative
+  priority: medium
+  platforms:
+  - web
+  steps:
+  - name: Paste binary data into search field
+    action: '# TODO: Convert to executable - copy binary content (e.g., from an image
+      file opened in hex editor) and paste into the media search input'
+    expected: Binary data is either rejected or displayed as garbled text, no crash,
+      no unhandled exception, search executes safely with no results
+    timeout: 10
+- id: neg-web-form-submit-network-outage
+  name: Form Submission During Network Outage
+  category: form-negative
+  priority: critical
+  platforms:
+  - web
+  steps:
+  - name: Submit collection creation while offline
+    action: 'tap: 960,540'
+    expected: Form shows a network error message, form data is preserved (not cleared),
+      submit button re-enables, user can retry after reconnecting
+    timeout: 10
+  - name: Reconnect and retry
+    action: 'tap: 960,540'
+    expected: Form submits successfully with original data intact, collection is created,
+      success toast appears
+    timeout: 10
+- id: neg-web-form-autofill-validation-bypass
+  name: Autofill Causing Validation Bypass
+  category: form-negative
+  priority: high
+  platforms:
+  - web
+  steps:
+  - name: Trigger browser autofill on login
+    action: 'tap: 960,540'
+    expected: React Hook Form detects autofilled values, validation runs correctly
+      on submit, form does not submit with stale empty-string state
+    timeout: 10
+- id: neg-web-form-maxlength-exceeded
+  name: Form Field with maxLength Exceeded via Paste
+  category: form-negative
+  priority: medium
+  platforms:
+  - web
+  steps:
+  - name: Paste text exceeding maxLength
+    action: '# TODO: Convert to executable - if a collection name field has maxlength=100,
+      paste a 500-character string'
+    expected: Input is truncated to maxLength on paste, or Zod validation catches
+      the overflow on submit with a clear error message like 'Name must be 100 characters
+      or less'
+    timeout: 10
+- id: neg-web-form-invisible-characters
+  name: Form Input with Invisible Characters
+  category: form-negative
+  priority: medium
+  platforms:
+  - web
+  steps:
+  - name: Enter zero-width characters in fields
+    action: '# TODO: Convert to executable - paste a string containing zero-width
+      spaces (u+200b), zero-width joiners (u+200d), and right-to-left marks (u+200f)
+      into a search or name field'
+    expected: Application either strips invisible characters or handles them gracefully,
+      search works correctly, no visual glitches in display, field appears empty if
+      only invisible chars
+    timeout: 10
+- id: neg-web-form-double-click-submit
+  name: Double-Click Submit Creates Duplicate
+  category: form-negative
+  priority: critical
+  platforms:
+  - web
+  steps:
+  - name: Double-click submit button rapidly
+    action: 'tap: 960,540'
+    expected: Only one collection is created (not two duplicates), submit button is
+      disabled after first click or second submission is debounced/deduplicated
+    timeout: 10
+- id: neg-web-form-data-loss-accidental-nav
+  name: Form Data Loss on Accidental Navigation
+  category: form-negative
+  priority: high
+  platforms:
+  - web
+  steps:
+  - name: Fill form then navigate away
+    action: 'tap: 960,540'
+    expected: Browser shows a confirmation dialog warning about unsaved changes (via
+      beforeunload or React Router prompt), user can cancel navigation and keep form
+      data
+    timeout: 10
+- id: neg-web-form-xss-error-messages
+  name: XSS in Form Error Messages
+  category: form-negative
+  priority: critical
+  platforms:
+  - web
+  steps:
+  - name: Trigger error with XSS in input
+    action: '# TODO: Convert to executable - submit a form field with value <img/src=x
+      onerror=alert(1)> that triggers a validation error which echoes the input'
+    expected: Error message displays the input as escaped text, no HTML rendering
+      in error messages, React JSX escaping prevents injection
+    timeout: 10
+- id: neg-web-form-memory-leak-rapid-open-close
+  name: Form Memory Leak on Rapid Open/Close
+  category: form-negative
+  priority: high
+  platforms:
+  - web
+  steps:
+  - name: Rapidly open and close modal forms
+    action: '# TODO: Convert to executable - open and close a create/edit modal dialog
+      50 times rapidly'
+    expected: Memory usage returns to baseline after modals are closed, no leaked
+      DOM nodes, React Hook Form instances are properly cleaned up, no growing event
+      listener count
+    timeout: 10
+- id: neg-web-form-browser-extension-interference
+  name: Browser Extension Interfering with Forms
+  category: form-negative
+  priority: low
+  platforms:
+  - web
+  steps:
+  - name: Password manager modifies DOM
+    action: '# TODO: Convert to executable - with a password manager extension active,
+      observe login form behavior when extension injects its own ui elements'
+    expected: Form layout remains usable, extension icons do not break input styling,
+      form submission still works correctly even with injected DOM elements
+    timeout: 10
+- id: neg-web-form-concurrent-edits
+  name: Concurrent Edits to Same Entity
+  category: form-negative
+  priority: high
+  platforms:
+  - web
+  steps:
+  - name: Edit same entity in two tabs
+    action: '# TODO: Convert to executable - open /entity/1 in two tabs, edit the
+      name in tab 1 and save, then edit the name in tab 2 (which has stale data) and
+      save'
+    expected: 'Either: (a) tab 2 gets a conflict error and is prompted to reload,
+      or (b) last write wins but user is informed, no silent data corruption'
+    timeout: 10
+- id: neg-web-form-special-chars-in-search
+  name: Special Characters in Search Query
+  category: form-negative
+  priority: medium
+  platforms:
+  - web
+  steps:
+  - name: Search with regex special chars
+    action: '# TODO: Convert to executable - type .*+?^${}()|[]\/ into the media search
+      field and submit'
+    expected: Search treats input as literal text not regex, returns results matching
+      the literal string or no results, no backend error, no 500 response
+    timeout: 10
+- id: neg-web-data-extremely-long-title
+  name: Entity with Extremely Long Title (1000+ chars)
+  category: data-display-negative
+  priority: high
+  platforms:
+  - web
+  steps:
+  - name: Display entity with 1000+ char title
+    action: '# TODO: Convert to executable - navigate to an entity whose title is
+      1000+ characters long'
+    expected: Title is truncated with ellipsis or wrapped within its container, no
+      horizontal overflow causing horizontal scrollbar, layout of other page elements
+      is preserved
+    timeout: 10
+  - name: Check tooltip or expand option
+    action: 'tap: 960,540'
+    expected: Full title is accessible via tooltip, expand button, or detail view,
+      truncation does not lose information permanently
+    timeout: 10
+- id: neg-web-data-entity-no-metadata
+  name: Entity with No Metadata
+  category: data-display-negative
+  priority: high
+  platforms:
+  - web
+  steps:
+  - name: View entity with empty metadata
+    action: '# TODO: Convert to executable - navigate to /entity/:id where the entity
+      has no description, no year, no genre, no poster, no external metadata'
+    expected: Page renders with placeholder content or 'No information available'
+      messages, no undefined/null text shown, layout is intact with empty state design
+    timeout: 10
+- id: neg-web-data-grid-10000-items
+  name: Grid with 10000+ Items
+  category: data-display-negative
+  priority: high
+  platforms:
+  - web
+  steps:
+  - name: Load browse page with 10000+ entities
+    action: '# TODO: Convert to executable - navigate to /browse when the database
+      contains 10000+ media items'
+    expected: Page uses pagination or virtual scrolling, initial load shows first
+      page quickly (<2s), does not attempt to render all 10000 items at once
+    timeout: 10
+  - name: Scroll through all items
+    action: '# TODO: Convert to executable - rapidly scroll through the list continuously'
+    expected: Scroll performance remains smooth (no visible jank), virtual scroll
+      recycles DOM nodes, memory usage stays bounded, no blank gaps during fast scroll
+    timeout: 10
+- id: neg-web-data-image-load-failure
+  name: Image Load Failure for Entity Poster
+  category: data-display-negative
+  priority: high
+  platforms:
+  - web
+  steps:
+  - name: Entity with broken poster URL
+    action: '# TODO: Convert to executable - navigate to an entity whose poster_url
+      returns 404 or is an invalid url'
+    expected: Fallback placeholder image or media-type icon is displayed, no broken
+      image icon, no layout shift when fallback loads, alt text is descriptive
+    timeout: 10
+- id: neg-web-data-missing-media-type-icon
+  name: Missing Media Type Icon
+  category: data-display-negative
+  priority: medium
+  platforms:
+  - web
+  steps:
+  - name: Display entity with unknown media type
+    action: '# TODO: Convert to executable - view an entity whose media_type field
+      is an unrecognized value not in the 11 known types'
+    expected: A generic fallback icon is shown instead of undefined or broken icon,
+      no console error about missing icon component
+    timeout: 10
+- id: neg-web-data-corrupted-utf8
+  name: Corrupted UTF-8 in Entity Name
+  category: data-display-negative
+  priority: medium
+  platforms:
+  - web
+  steps:
+  - name: Display entity with corrupted UTF-8 bytes
+    action: '# TODO: Convert to executable - navigate to an entity whose title contains
+      invalid utf-8 sequences (e.g., truncated multi-byte characters)'
+    expected: Browser renders replacement characters (U+FFFD) for invalid bytes, page
+      does not crash, no JavaScript error thrown, layout remains stable
+    timeout: 10
+- id: neg-web-data-html-in-description-xss
+  name: HTML/XSS in Entity Description
+  category: data-display-negative
+  priority: critical
+  platforms:
+  - web
+  steps:
+  - name: View entity with HTML in description
+    action: 'tap: 960,540'
+    expected: 'HTML tags are escaped and displayed as literal text, or sanitized (bold
+      may render but scripts and javascript: links are stripped), no script execution'
+    timeout: 10
+- id: neg-web-data-zero-byte-file
+  name: Zero-Byte File in Media List
+  category: data-display-negative
+  priority: medium
+  platforms:
+  - web
+  steps:
+  - name: View file with zero bytes
+    action: '# TODO: Convert to executable - browse media list containing a file with
+      size=0 bytes'
+    expected: File size displays as '0 B' or '0 bytes' (not NaN, undefined, or empty),
+      file is listed normally with appropriate icon, no division-by-zero in any size
+      calculations
+    timeout: 10
+- id: neg-web-data-negative-duration
+  name: Negative Duration Value in Media
+  category: data-display-negative
+  priority: medium
+  platforms:
+  - web
+  steps:
+  - name: Display media with negative duration
+    action: '# TODO: Convert to executable - view a media item whose duration field
+      is -120 (negative value from corrupted metadata)'
+    expected: Duration displays as 'Unknown' or '0:00' rather than '-2:00' or negative
+      value, no NaN in duration calculations, progress bars handle it gracefully
+    timeout: 10
+- id: neg-web-data-future-created-date
+  name: Future Date in created_at Field
+  category: data-display-negative
+  priority: low
+  platforms:
+  - web
+  steps:
+  - name: Display entity with future created_at
+    action: '# TODO: Convert to executable - view an entity whose created_at timestamp
+      is in the year 2099'
+    expected: Date is displayed as-is or flagged as unusual, relative time display
+      shows 'in X years' if using relative dates, no crash from future date arithmetic
+    timeout: 10
+- id: neg-web-data-emoji-in-title
+  name: Emoji and Special Unicode in Entity Title
+  category: data-display-negative
+  priority: medium
+  platforms:
+  - web
+  steps:
+  - name: Display entity with complex Unicode
+    action: '# TODO: Convert to executable - view an entity with title containing
+      emoji sequences, combining characters, and cjk characters'
+    expected: All characters render correctly, text measurement and truncation work
+      properly with multi-byte characters, no garbled display or incorrect string
+      length calculations
+    timeout: 10
+- id: neg-web-ws-disconnect-during-operation
+  name: WebSocket Disconnect During Operation
+  category: websocket-negative
+  priority: critical
+  platforms:
+  - web
+  steps:
+  - name: Disconnect WebSocket during scan
+    action: '# TODO: Convert to executable - start a media scan, then kill the websocket
+      connection (e.g., via devtools or network disruption) while scan progress events
+      are streaming'
+    expected: UI shows a 'connection lost' indicator, scan continues on server side,
+      WebSocket auto-reconnects and resumes receiving events, progress bar updates
+      resume after reconnect
+    timeout: 10
+- id: neg-web-ws-rapid-connect-disconnect
+  name: Rapid WebSocket Connect/Disconnect Cycle
+  category: websocket-negative
+  priority: high
+  platforms:
+  - web
+  steps:
+  - name: Rapidly toggle WebSocket connection
+    action: '# TODO: Convert to executable - programmatically open and close the websocket
+      connection 20 times within 5 seconds'
+    expected: No connection leak (old connections are properly closed), exponential
+      backoff prevents connection storm, server-side connection count does not grow
+      unbounded
+    timeout: 10
+- id: neg-web-ws-message-overflow
+  name: WebSocket Message Overflow
+  category: websocket-negative
+  priority: high
+  platforms:
+  - web
+  steps:
+  - name: Receive burst of WebSocket messages
+    action: '# TODO: Convert to executable - trigger a scenario where the server sends
+      1000+ websocket messages in rapid succession (e.g., bulk scan events)'
+    expected: Client processes messages without UI freeze, messages are batched or
+      throttled for rendering, no memory spike from queued unprocessed messages, React
+      state updates are batched
+    timeout: 10
+- id: neg-web-ws-invalid-json
+  name: Invalid JSON Over WebSocket
+  category: websocket-negative
+  priority: high
+  platforms:
+  - web
+  steps:
+  - name: Receive malformed JSON via WebSocket
+    action: '# TODO: Convert to executable - server sends a websocket message that
+      is not valid json (e.g., truncated or binary data)'
+    expected: Client catches JSON parse error, logs warning, discards the malformed
+      message, continues processing subsequent valid messages, no crash
+    timeout: 10
+- id: neg-web-ws-connection-while-offline
+  name: WebSocket Connection While Offline
+  category: websocket-negative
+  priority: high
+  platforms:
+  - web
+  steps:
+  - name: Load app while offline
+    action: '# TODO: Convert to executable - set browser to offline mode, navigate
+      to /dashboard which attempts websocket connection'
+    expected: WebSocket connection fails gracefully, UI shows offline indicator, app
+      remains functional for cached data, connection retries with exponential backoff
+      when online
+    timeout: 10
+- id: neg-web-ws-server-side-close
+  name: Server-Side WebSocket Close
+  category: websocket-negative
+  priority: high
+  platforms:
+  - web
+  steps:
+  - name: Server closes WebSocket
+    action: '# TODO: Convert to executable - server sends a close frame with code
+      1001 (going away) due to server restart'
+    expected: Client handles close event, shows reconnecting indicator, automatically
+      attempts reconnection with backoff, restores full functionality after server
+      is back
+    timeout: 10
+- id: neg-web-ws-reconnect-backoff
+  name: WebSocket Reconnect Backoff
+  category: websocket-negative
+  priority: medium
+  platforms:
+  - web
+  steps:
+  - name: Verify exponential backoff
+    action: '# TODO: Convert to executable - kill the server, observe websocket reconnection
+      attempts in the network tab over 2 minutes'
+    expected: Reconnection intervals increase exponentially (e.g., 1s, 2s, 4s, 8s,
+      16s, max 30s), not constant rapid polling, CPU/network usage stays low during
+      reconnection
+    timeout: 10
+- id: neg-web-ws-stale-state-long-idle
+  name: Stale WebSocket State After Long Idle
+  category: websocket-negative
+  priority: medium
+  platforms:
+  - web
+  steps:
+  - name: Leave tab idle for 30 minutes
+    action: '# TODO: Convert to executable - open /dashboard, leave the browser tab
+      idle for 30+ minutes (potentially causing websocket timeout), then return to
+      the tab'
+    expected: WebSocket reconnects on tab focus if connection was dropped, stale data
+      is refreshed via React Query refetch on window focus, dashboard shows current
+      state
+    timeout: 10
+- id: neg-web-ws-auth-token-expiry-mid-session
+  name: WebSocket Auth Token Expiry Mid-Session
+  category: websocket-negative
+  priority: critical
+  platforms:
+  - web
+  steps:
+  - name: Token expires while WebSocket is active
+    action: 'sleep: 3000'
+    expected: Server closes WebSocket with auth error code, client detects auth failure,
+      prompts re-login or attempts token refresh, does not continue with expired auth
+    timeout: 10
+- id: neg-web-ws-multiple-connections
+  name: Multiple WebSocket Connections Prevention
+  category: websocket-negative
+  priority: high
+  platforms:
+  - web
+  steps:
+  - name: Open app in multiple tabs
+    action: '# TODO: Convert to executable - open /dashboard in 5 different browser
+      tabs, each establishing its own websocket connection'
+    expected: Each tab maintains its own WebSocket connection, server handles multiple
+      connections per user, total connection count on server matches tab count, no
+      duplicate event processing causing UI glitches
+    timeout: 10
+- id: neg-web-ws-large-payload
+  name: WebSocket Large Payload Message
+  category: websocket-negative
+  priority: medium
+  platforms:
+  - web
+  steps:
+  - name: Receive very large WebSocket message
+    action: '# TODO: Convert to executable - server sends a websocket message with
+      a 5mb json payload (e.g., scan results with thousands of files)'
+    expected: Client either processes the large message with acceptable delay (<2s)
+      or the server chunks the response, no browser tab crash, no out-of-memory
+    timeout: 10
+- id: neg-web-perf-memory-leak-spa-nav
+  name: Memory Leak on SPA Navigation (100+ Page Changes)
+  category: performance-negative
+  priority: critical
+  platforms:
+  - web
+  steps:
+  - name: Navigate 100+ times and measure memory
+    action: '# TODO: Convert to executable - take a heap snapshot, then programmatically
+      navigate between /dashboard, /media, /browse, /collections, /analytics, /settings
+      100 times, take another heap snapshot'
+    expected: Memory usage increase is less than 20% above baseline after GC, no detached
+      DOM trees, no growing arrays of event listeners, React component unmount cleanup
+      is complete
+    timeout: 10
+- id: neg-web-perf-dom-node-leak
+  name: DOM Node Leak Detection
+  category: performance-negative
+  priority: high
+  platforms:
+  - web
+  steps:
+  - name: Count DOM nodes during navigation
+    action: '# TODO: Convert to executable - record document.queryselectorall(''*'').length
+      on /dashboard, navigate to /media, navigate back to /dashboard, repeat 20 times'
+    expected: DOM node count returns to approximately the same value on each /dashboard
+      visit (within 10% variance), no monotonic increase indicating leaked nodes
+    timeout: 10
+- id: neg-web-perf-react-state-accumulation
+  name: React State Accumulation Over Time
+  category: performance-negative
+  priority: high
+  platforms:
+  - web
+  steps:
+  - name: Monitor Zustand store growth
+    action: '# TODO: Convert to executable - open react devtools, monitor zustand
+      store size as user navigates through 50 different entity pages and performs
+      20 searches'
+    expected: Zustand store size stays bounded, old search results are evicted, entity
+      detail cache has a maximum size, store does not grow linearly with interactions
+    timeout: 10
+- id: neg-web-perf-lazy-load-failure
+  name: Large Bundle Lazy-Load Failure
+  category: performance-negative
+  priority: high
+  platforms:
+  - web
+  steps:
+  - name: Block lazy chunk loading
+    action: 'tap: 960,540'
+    expected: React Suspense fallback UI is shown, error boundary catches the chunk
+      load failure, user sees a 'Failed to load page' message with a retry button,
+      not a white screen
+    timeout: 10
+  - name: Retry after unblocking
+    action: 'tap: 960,540'
+    expected: Lazy chunk loads successfully, /analytics page renders correctly
+    timeout: 10
+- id: neg-web-perf-css-animation-jank
+  name: CSS Animation Jank Detection
+  category: performance-negative
+  priority: medium
+  platforms:
+  - web
+  steps:
+  - name: Profile framer-motion animations
+    action: '# TODO: Convert to executable - open performance tab in devtools, record
+      while navigating between pages (framer-motion page transitions) and opening
+      modal dialogs'
+    expected: Frame rate stays above 30fps during animations, no layout thrashing
+      (forced reflows), animations use transform/opacity (GPU-composited), no animation
+      on layout-triggering properties (width, height, top, left)
+    timeout: 10
+- id: neg-web-perf-scroll-1000-dom-nodes
+  name: Scroll Performance with 1000 DOM Nodes
+  category: performance-negative
+  priority: high
+  platforms:
+  - web
+  steps:
+  - name: Scroll through large media grid
+    action: '# TODO: Convert to executable - load /browse with 1000+ media items visible
+      (if virtualization is off or broken), scroll rapidly up and down'
+    expected: Scroll is smooth at 60fps if virtualized, or gracefully degrades with
+      slight jank if not virtualized, no complete UI freeze, no dropped frames lasting
+      more than 100ms
+    timeout: 10
+- id: neg-web-perf-react-query-cache-explosion
+  name: React Query Cache Size Explosion
+  category: performance-negative
+  priority: high
+  platforms:
+  - web
+  steps:
+  - name: Visit many unique entity pages
+    action: '# TODO: Convert to executable - navigate to 200 different /entity/:id
+      pages, each triggering unique react query cache entries'
+    expected: React Query gcTime/staleTime settings cause old entries to be garbage
+      collected, cache size plateaus rather than growing linearly, memory usage stays
+      bounded
+    timeout: 10
+- id: neg-web-perf-zustand-memory-growth
+  name: Zustand Store Memory Growth
+  category: performance-negative
+  priority: medium
+  platforms:
+  - web
+  steps:
+  - name: Perform many state-changing operations
+    action: '# TODO: Convert to executable - add 50 items to favorites, create 20
+      playlists, perform 100 searches, toggle 30 filter combinations'
+    expected: Zustand store does not retain all historical state, completed operations
+      are cleaned up, memory for store remains under 5MB total
+    timeout: 10
+- id: neg-web-perf-tab-open-1-hour
+  name: Tab with 100+ Media Items Open for 1 Hour
+  category: performance-negative
+  priority: medium
+  platforms:
+  - web
+  steps:
+  - name: Leave media-heavy page open
+    action: '# TODO: Convert to executable - navigate to /browse showing 100+ media
+      items with thumbnails, leave tab open for 1 hour'
+    expected: Memory usage stays stable over time, no growth from setInterval/setTimeout
+      leaks, no accumulating WebSocket messages, React Query refetch intervals do
+      not cause memory buildup
+    timeout: 10
+- id: neg-web-perf-image-gallery-memory
+  name: Image Gallery Memory Consumption
+  category: performance-negative
+  priority: high
+  platforms:
+  - web
+  steps:
+  - name: Browse through many entity posters
+    action: '# TODO: Convert to executable - scroll through /browse loading 500+ entity
+      poster images'
+    expected: Images outside the viewport are unloaded or use low-res thumbnails,
+      visible image count stays bounded via lazy loading (loading='lazy' or IntersectionObserver),
+      total image memory stays under 200MB
+    timeout: 10
+- id: neg-web-perf-bundle-size-regression
+  name: Bundle Size Regression Detection
+  category: performance-negative
+  priority: medium
+  platforms:
+  - web
+  steps:
+  - name: Measure initial page load weight
+    action: '# TODO: Convert to executable - open /login with cache disabled, measure
+      total transferred bytes in network tab'
+    expected: Initial page load is under 500KB (gzipped/brotli), vendor chunks are
+      cached separately, no single chunk exceeds 250KB compressed
+    timeout: 10
+- id: neg-web-browser-disabled-localstorage
+  name: Disabled JavaScript localStorage
+  category: browser-compatibility
+  priority: critical
+  platforms:
+  - web
+  steps:
+  - name: Disable localStorage and load app
+    action: '# TODO: Convert to executable - block localstorage access (private browsing
+      in some browsers or manual override), navigate to /login'
+    expected: App detects localStorage unavailability, shows a clear error message
+      like 'This application requires localStorage to function', does not crash with
+      SecurityError
+    timeout: 10
+- id: neg-web-browser-blocked-cookies
+  name: Blocked Cookies
+  category: browser-compatibility
+  priority: high
+  platforms:
+  - web
+  steps:
+  - name: Block all cookies and load app
+    action: '# TODO: Convert to executable - disable cookies in browser settings,
+      navigate to http://localhost:3000'
+    expected: Application functions with localStorage-based auth (JWT), cookie blocking
+      does not prevent login, if cookies are required show clear error message
+    timeout: 10
+- id: neg-web-browser-private-browsing
+  name: Private Browsing Mode
+  category: browser-compatibility
+  priority: high
+  platforms:
+  - web
+  steps:
+  - name: Use app in incognito/private mode
+    action: '# TODO: Convert to executable - open browser in private/incognito mode,
+      navigate to /login, login, browse media'
+    expected: Full app functionality works in private mode, localStorage is available
+      (in private mode in modern browsers), no quota exceeded errors, session works
+      until window is closed
+    timeout: 10
+- id: neg-web-browser-disabled-css
+  name: App with Disabled CSS
+  category: browser-compatibility
+  priority: low
+  platforms:
+  - web
+  steps:
+  - name: Disable CSS and view app
+    action: '# TODO: Convert to executable - disable all stylesheets in devtools,
+      navigate through the app'
+    expected: HTML structure is semantic and readable without CSS, form elements are
+      still functional, content hierarchy is understandable, no content hidden solely
+      via CSS that should be accessible
+    timeout: 10
+- id: neg-web-browser-zoom-400
+  name: Browser Zoom at 400%
+  category: browser-compatibility
+  priority: high
+  platforms:
+  - web
+  steps:
+  - name: Zoom to 400% and navigate
+    action: '# TODO: Convert to executable - set browser zoom to 400%, navigate through
+      /login, /dashboard, /browse, /settings'
+    expected: All content remains accessible (no hidden overflow), text is readable,
+      buttons are clickable, no overlapping elements, scroll works to reach all content,
+      meets WCAG 1.4.10 Reflow
+    timeout: 10
+- id: neg-web-browser-text-only-mode
+  name: Text-Only Rendering Mode
+  category: browser-compatibility
+  priority: low
+  platforms:
+  - web
+  steps:
+  - name: Disable images and view app
+    action: '# TODO: Convert to executable - block all image loading in browser settings,
+      navigate through the app'
+    expected: All images have meaningful alt text, media type icons have aria-labels,
+      layout does not break without images, placeholder sizing prevents layout shift
+    timeout: 10
+- id: neg-web-browser-screen-reader
+  name: Screen Reader Compatibility
+  category: browser-compatibility
+  priority: high
+  platforms:
+  - web
+  steps:
+  - name: Navigate with screen reader
+    action: '# TODO: Convert to executable - enable a screen reader (nvda/voiceover),
+      navigate through /login, /dashboard, /browse'
+    expected: All interactive elements are announced with roles and labels, page regions
+      have landmarks, heading hierarchy is logical (h1>h2>h3), focus order matches
+      visual order, dynamic content changes are announced via aria-live regions
+    timeout: 10
+- id: neg-web-browser-forced-colors
+  name: Forced Colors Mode (High Contrast)
+  category: browser-compatibility
+  priority: medium
+  platforms:
+  - web
+  steps:
+  - name: Enable forced colors / high contrast
+    action: '# TODO: Convert to executable - enable windows high contrast mode or
+      use forced-colors css media query emulation in devtools, navigate through the
+      app'
+    expected: All text meets contrast requirements, interactive elements are distinguishable,
+      focus indicators are visible, custom colors gracefully degrade to system colors,
+      no information conveyed by color alone
+    timeout: 10
+- id: neg-web-browser-print-preview
+  name: Print Preview Rendering
+  category: browser-compatibility
+  priority: low
+  platforms:
+  - web
+  steps:
+  - name: Print preview on various pages
+    action: '# TODO: Convert to executable - open print preview (ctrl+p) on /dashboard,
+      /browse, /entity/:id'
+    expected: Print output is readable and meaningful, navigation sidebar and non-essential
+      UI are hidden via @media print, data tables and entity details are formatted
+      for print, no blank pages
+    timeout: 10
+- id: neg-web-browser-battery-saver
+  name: Battery Saver Mode Throttling
+  category: browser-compatibility
+  priority: low
+  platforms:
+  - web
+  steps:
+  - name: Use app with battery saver enabled
+    action: '# TODO: Convert to executable - enable battery saver mode in os (which
+      throttles background tabs and timers), use the app actively'
+    expected: WebSocket reconnection still works (may be delayed), animations degrade
+      gracefully (requestAnimationFrame throttled), no critical functionality broken
+      by timer throttling
+    timeout: 10
+- id: neg-web-browser-slow-network
+  name: Slow 3G Network Simulation
+  category: browser-compatibility
+  priority: high
+  platforms:
+  - web
+  steps:
+  - name: Simulate slow 3G connection
+    action: '# TODO: Convert to executable - in devtools, set network throttling to
+      slow 3g (400kbps), navigate to /login and login'
+    expected: Loading indicators are visible during slow requests, UI does not appear
+      broken during loading, timeout errors show clear messages, form submission shows
+      pending state
+    timeout: 10
+- id: neg-web-browser-back-forward-cache
+  name: Back/Forward Cache (bfcache) Behavior
+  category: browser-compatibility
+  priority: medium
+  platforms:
+  - web
+  steps:
+  - name: Navigate away and back via bfcache
+    action: 'keypress: KEYCODE_BACK'
+    expected: Page restores from bfcache with correct state, WebSocket reconnects
+      if needed, data is refetched if stale, no frozen/broken UI from cached page
+      state
+    timeout: 10
+- id: neg-web-cross-api-500-every-request
+  name: API Returns 500 on Every Request
+  category: cross-cutting-negative
+  priority: critical
+  platforms:
+  - web
+  steps:
+  - name: Simulate all API endpoints returning 500
+    action: '# TODO: Convert to executable - configure api to return 500 internal
+      server error for all requests, login as admin (cached token), navigate to /dashboard'
+    expected: Dashboard shows error states for all widgets ('Failed to load data'
+      or similar), no white screen, error boundary catches component-level failures,
+      user can still navigate to other pages
+    timeout: 10
+  - name: Verify retry behavior
+    action: '# TODO: Convert to executable - observe react query retry behavior in
+      network tab'
+    expected: React Query retries failed requests (default 3 times with backoff),
+      after all retries fail shows persistent error state with manual retry button
+    timeout: 10
+- id: neg-web-cross-api-malformed-json
+  name: API Returns Malformed JSON
+  category: cross-cutting-negative
+  priority: critical
+  platforms:
+  - web
+  steps:
+  - name: API returns invalid JSON response
+    action: '# TODO: Convert to executable - configure api to return truncated/malformed
+      json (e.g., {"data": [{ instead of valid json), navigate to /media'
+    expected: JSON parse error is caught by API client layer, error state is shown
+      in the UI, no unhandled promise rejection, error message is user-friendly (not
+      raw SyntaxError)
+    timeout: 10
+- id: neg-web-cross-network-latency-10s
+  name: Network Latency >10 Seconds
+  category: cross-cutting-negative
+  priority: high
+  platforms:
+  - web
+  steps:
+  - name: Add 10-second latency to all requests
+    action: '# TODO: Convert to executable - use devtools to add 10000ms latency to
+      all network requests, navigate through the app'
+    expected: Loading spinners/skeletons are shown immediately, requests are not duplicated
+      by impatient clicks, timeout handling kicks in at reasonable threshold (e.g.,
+      30s), timeout message is clear
+    timeout: 10
+- id: neg-web-cross-cors-violation
+  name: CORS Violation Handling
+  category: cross-cutting-negative
+  priority: high
+  platforms:
+  - web
+  steps:
+  - name: Trigger CORS error
+    action: '# TODO: Convert to executable - configure api to not include access-control-allow-origin
+      header, make a request from the frontend'
+    expected: CORS error is caught and displayed as a connection error (not exposed
+      as a CORS error to the user), error message suggests checking server connectivity
+    timeout: 10
+- id: neg-web-cross-csp-violation
+  name: Content-Security-Policy Violation
+  category: cross-cutting-negative
+  priority: high
+  platforms:
+  - web
+  steps:
+  - name: Enforce strict CSP and verify compliance
+    action: '# TODO: Convert to executable - add strict content-security-policy header
+      (script-src ''self''; style-src ''self''; img-src ''self'' data:), load the
+      app'
+    expected: No CSP violations in console, all scripts loaded from same origin, no
+      inline scripts (except nonce-based), Tailwind CSS styles work (no inline style
+      violations), images use allowed sources
+    timeout: 10
+- id: neg-web-cross-mixed-content
+  name: Mixed Content Warning Prevention
+  category: cross-cutting-negative
+  priority: high
+  platforms:
+  - web
+  steps:
+  - name: Check for mixed content
+    action: '# TODO: Convert to executable - if the app is served over https, verify
+      no http resources are loaded (images, scripts, api calls, websocket)'
+    expected: No mixed content warnings in console, all resource URLs use protocol-relative
+      or HTTPS, WebSocket uses wss:// not ws:// when on HTTPS
+    timeout: 10
+- id: neg-web-cross-iframe-embedding
+  name: Iframe Embedding Attempt (Clickjacking)
+  category: cross-cutting-negative
+  priority: critical
+  platforms:
+  - web
+  steps:
+  - name: Attempt to embed app in iframe
+    action: '# TODO: Convert to executable - create an html page that embeds http://localhost:3000
+      in an iframe, open the outer page'
+    expected: 'App refuses to render in iframe due to X-Frame-Options: DENY or Content-Security-Policy:
+      frame-ancestors ''none'' header, iframe shows blank or error'
+    timeout: 10
+- id: neg-web-cross-clickjacking-protection
+  name: Clickjacking Protection Verification
+  category: cross-cutting-negative
+  priority: critical
+  platforms:
+  - web
+  steps:
+  - name: Verify security headers
+    action: '# TODO: Convert to executable - inspect http response headers for the
+      main page load'
+    expected: 'X-Frame-Options header is present (DENY or SAMEORIGIN), X-Content-Type-Options:
+      nosniff is present, Referrer-Policy is set, Strict-Transport-Security if HTTPS'
+    timeout: 10
+- id: neg-web-cross-rate-limit-feedback
+  name: Rate Limit UI Feedback
+  category: cross-cutting-negative
+  priority: high
+  platforms:
+  - web
+  steps:
+  - name: Trigger rate limiting
+    action: '# TODO: Convert to executable - rapidly submit login form 20 times within
+      10 seconds to trigger the rate limiter (5 requests/min on login)'
+    expected: After rate limit is hit, API returns 429 Too Many Requests, UI shows
+      clear message like 'Too many attempts, please try again in X seconds', subsequent
+      attempts show countdown timer
+    timeout: 10
+- id: neg-web-cross-cdn-cache-mismatch
+  name: CDN/Cache Mismatch Handling
+  category: cross-cutting-negative
+  priority: medium
+  platforms:
+  - web
+  steps:
+  - name: Simulate stale cache serving old assets
+    action: '# TODO: Convert to executable - after a deployment, simulate a scenario
+      where the html file references new chunk hashes but the cdn still serves old
+      chunk files (cache mismatch)'
+    expected: Chunk loading failure is caught by error boundary, user sees 'New version
+      available, please refresh' message, or the app auto-reloads to get fresh assets
+    timeout: 10
+- id: neg-web-cross-api-timeout
+  name: API Request Timeout Handling
+  category: cross-cutting-negative
+  priority: high
+  platforms:
+  - web
+  steps:
+  - name: API request exceeds timeout
+    action: '# TODO: Convert to executable - trigger an api call that takes longer
+      than the client-side timeout (e.g., a complex search that hangs for 60s when
+      timeout is 30s)'
+    expected: Client aborts the request after timeout, shows 'Request timed out' error,
+      offers retry option, AbortController properly cancels the fetch
+    timeout: 10
+- id: neg-web-cross-api-empty-response
+  name: API Returns Empty Response Body
+  category: cross-cutting-negative
+  priority: high
+  platforms:
+  - web
+  steps:
+  - name: API returns 200 with empty body
+    action: '# TODO: Convert to executable - configure an api endpoint to return 200
+      ok with an empty response body (no json)'
+    expected: Frontend handles empty body gracefully, shows empty state or appropriate
+      message, no crash from trying to parse empty string as JSON
+    timeout: 10
+- id: neg-web-cross-unexpected-api-shape
+  name: API Returns Unexpected Response Shape
+  category: cross-cutting-negative
+  priority: high
+  platforms:
+  - web
+  steps:
+  - name: API returns wrong data structure
+    action: '# TODO: Convert to executable - configure api to return {"result": "ok"}
+      instead of the expected {"data": [...], "total": 100} shape for the media list
+      endpoint'
+    expected: Zod validation or manual type checking catches the shape mismatch, error
+      boundary shows user-friendly error, no crash from accessing undefined properties
+      (cannot read property 'map' of undefined)
+    timeout: 10
+- id: neg-web-cross-service-worker-conflict
+  name: Stale Service Worker Conflict
+  category: cross-cutting-negative
+  priority: medium
+  platforms:
+  - web
+  steps:
+  - name: Old service worker serves stale content
+    action: '# TODO: Convert to executable - if a service worker is registered, deploy
+      a new version of the app and verify service worker update behavior'
+    expected: New service worker installs and activates, user is prompted to reload
+      for new version, stale cached content is not served indefinitely, skipWaiting
+      is handled properly
+    timeout: 10
+- id: neg-web-cross-open-redirect
+  name: Open Redirect Prevention
+  category: cross-cutting-negative
+  priority: critical
+  platforms:
+  - web
+  steps:
+  - name: Test open redirect via returnUrl
+    action: '# TODO: Convert to executable - navigate to /login?returnurl=https://evil.com/steal-token'
+    expected: After login, redirect goes to /dashboard (default) not to evil.com,
+      returnUrl is validated to only allow same-origin paths, external URLs are rejected
+    timeout: 10
+  - name: Test protocol-relative redirect
+    action: '# TODO: Convert to executable - navigate to /login?returnurl=//evil.com'
+    expected: Protocol-relative URL is rejected as external, user redirects to /dashboard
+    timeout: 10
