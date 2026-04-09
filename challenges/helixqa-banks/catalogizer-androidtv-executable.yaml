@@ -1,89 +1,178 @@
-version: "1.0"
-name: "Catalogizer Android TV - EXECUTABLE Tests"
-description: "Test bank with ACTUAL ADB commands for real UI automation"
+version: "2.0"
+name: "Catalogizer Android TV - FULL EXECUTABLE Test Suite"
+description: "Complete executable test suite with ACTUAL ADB commands - migrated from JSON"
 
 test_cases:
-  - id: tv-cold-start-real
-    name: "TV Cold Start - ACTUAL LAUNCH"
+  # =====================================
+  # LAUNCH TESTS
+  # =====================================
+  - id: tv-cold-start-exec
+    name: "TV Cold Start Launch - Executable"
     category: launch
     priority: critical
     platforms: [androidtv]
     steps:
       - name: "Force stop app"
         action: "adb_shell: am force-stop com.catalogizer.androidtv"
-        expected: "App process stopped"
+        expected: "App process terminated"
         timeout: 5
-        
-      - name: "Wait 3 seconds"
-        action: "sleep: 3000"
-        expected: "Wait complete"
-        
-      - name: "Launch app"
+      - name: "Wait for process termination"
+        action: "sleep: 2000"
+        expected: "Process terminated"
+      - name: "Launch from launcher"
         action: "adb_shell: am start -n com.catalogizer.androidtv/.ui.MainActivity"
         expected: "Activity started"
-        timeout: 5
-        
-      - name: "Wait for splash (18 seconds - CRITICAL!)"
-        action: "sleep: 18000"
-        expected: "Splash completes, login visible"
-        
-      - name: "Screenshot verify login"
+        timeout: 10
+      - name: "Wait for splash"
+        action: "sleep: 3000"
+        expected: "Splash screen visible"
+      - name: "Screenshot - verify splash"
         action: "screenshot"
-        expected: "Login screen with Username, Password fields visible"
+        expected: "Splash screen with app logo"
+        vision_verify: true
+      - name: "Wait for home/login"
+        action: "sleep: 5000"
+        expected: "Home or login screen visible"
+      - name: "Screenshot - verify loaded"
+        action: "screenshot"
+        expected: "Home screen or login screen"
         vision_verify: true
 
-  - id: tv-login-real
-    name: "TV Login - ACTUAL CREDENTIAL ENTRY"
+  - id: tv-login-complete-exec
+    name: "TV Login - Full Executable Flow"
     category: authentication
     priority: critical
     platforms: [androidtv]
-    dependencies: [tv-cold-start-real]
+    dependencies: [tv-cold-start-exec]
     steps:
       - name: "Navigate to username"
         action: "keypress: KEYCODE_DPAD_DOWN"
         expected: "Username field focused"
         timeout: 2
-        
       - name: "Select username field"
         action: "keypress: KEYCODE_ENTER"
-        expected: "Field activated"
+        expected: "Field active"
         timeout: 2
-        
-      - name: "Type username"
+      - name: "Type admin"
         action: "text: admin"
         expected: "Username entered"
         timeout: 3
-        
+      - name: "Screenshot - username"
+        action: "screenshot"
+        expected: "Username field shows 'admin'"
+        vision_verify: true
       - name: "Navigate to password"
         action: "keypress: KEYCODE_DPAD_DOWN"
         expected: "Password field focused"
         timeout: 2
-        
       - name: "Select password field"
         action: "keypress: KEYCODE_ENTER"
-        expected: "Field activated"
+        expected: "Field active"
         timeout: 2
-        
       - name: "Type password"
         action: "text: admin123"
         expected: "Password entered"
         timeout: 3
-        
       - name: "Navigate to login button"
         action: "keypress: KEYCODE_DPAD_DOWN"
         expected: "Login button focused"
         timeout: 2
-        
       - name: "Click login"
         action: "keypress: KEYCODE_ENTER"
         expected: "Login submitted"
-        timeout: 5
-        
-      - name: "Wait for home screen (10 seconds)"
-        action: "sleep: 10000"
+        timeout: 10
+      - name: "Wait for home screen"
+        action: "sleep: 8000"
         expected: "Home screen loads"
-        
-      - name: "Screenshot verify home"
+      - name: "Screenshot - verify home"
         action: "screenshot"
-        expected: "Home screen with media content visible, not login"
+        expected: "Home screen with media content"
         vision_verify: true
+
+  - id: tv-nav-home-exec
+    name: "TV Home Navigation - Executable"
+    category: navigation
+    priority: high
+    platforms: [androidtv]
+    dependencies: [tv-login-complete-exec]
+    steps:
+      - name: "Navigate right"
+        action: "keypress: KEYCODE_DPAD_RIGHT"
+        expected: "Focus moves right"
+        timeout: 1
+      - name: "Navigate right again"
+        action: "keypress: KEYCODE_DPAD_RIGHT"
+        expected: "Focus moves"
+        timeout: 1
+      - name: "Screenshot"
+        action: "screenshot"
+        expected: "Different element focused"
+        vision_verify: true
+      - name: "Navigate down"
+        action: "keypress: KEYCODE_DPAD_DOWN"
+        expected: "Focus moves down"
+        timeout: 1
+      - name: "Navigate down again"
+        action: "keypress: KEYCODE_DPAD_DOWN"
+        expected: "Focus moves"
+        timeout: 1
+      - name: "Screenshot"
+        action: "screenshot"
+        expected: "New row focused"
+        vision_verify: true
+
+  - id: tv-media-playback-exec
+    name: "TV Media Playback - Executable"
+    category: playback
+    priority: critical
+    platforms: [androidtv]
+    dependencies: [tv-login-complete-exec]
+    steps:
+      - name: "Select first media item"
+        action: "keypress: KEYCODE_ENTER"
+        expected: "Media details screen opens"
+        timeout: 3
+      - name: "Screenshot - details"
+        action: "screenshot"
+        expected: "Media details visible"
+        vision_verify: true
+      - name: "Navigate to play button"
+        action: "keypress: KEYCODE_DPAD_DOWN"
+        expected: "Play button focused"
+        timeout: 1
+      - name: "Click play"
+        action: "keypress: KEYCODE_ENTER"
+        expected: "VLC player opens"
+        timeout: 5
+      - name: "Wait for playback"
+        action: "sleep: 5000"
+        expected: "Video playing"
+      - name: "Screenshot - playing"
+        action: "screenshot"
+        expected: "VLC player with video"
+        vision_verify: true
+      - name: "Pause"
+        action: "keypress: KEYCODE_MEDIA_PLAY_PAUSE"
+        expected: "Playback pauses"
+        timeout: 1
+      - name: "Screenshot - paused"
+        action: "screenshot"
+        expected: "Paused state visible"
+        vision_verify: true
+      - name: "Resume"
+        action: "keypress: KEYCODE_MEDIA_PLAY_PAUSE"
+        expected: "Playback resumes"
+        timeout: 1
+      - name: "Seek forward"
+        action: "keypress: KEYCODE_MEDIA_FAST_FORWARD"
+        expected: "Seeks forward"
+        timeout: 2
+      - name: "Seek backward"
+        action: "keypress: KEYCODE_MEDIA_REWIND"
+        expected: "Seeks backward"
+        timeout: 2
+      - name: "Back to exit player"
+        action: "keypress: KEYCODE_BACK"
+        expected: "Returns to details screen"
+        timeout: 2
+

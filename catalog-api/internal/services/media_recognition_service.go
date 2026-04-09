@@ -1152,14 +1152,125 @@ func (s *MediaRecognitionService) storeRecognitionResult(ctx context.Context, re
 	return err
 }
 
-// Additional helper methods for enhancement
+// getAdditionalCoverArt retrieves additional cover art from various sources
+// including local files, TMDB, and MusicBrainz based on media type
 func (s *MediaRecognitionService) getAdditionalCoverArt(ctx context.Context, result *MediaRecognitionResult) ([]models.CoverArtResult, error) {
-	// Implement additional cover art retrieval
+	var coverArtResults []models.CoverArtResult
+	
+	// Search for local cover art files
+	if result.MediaID != "" {
+		localCovers := s.searchLocalCoverArt(result.MediaID)
+		coverArtResults = append(coverArtResults, localCovers...)
+	}
+	
+	// Fetch from TMDB for movies/TV
+	if result.MediaType == MediaTypeMovie || result.MediaType == MediaTypeTV {
+		tmdbCovers, err := s.fetchTMDBCoverArt(ctx, result)
+		if err != nil {
+			s.logger.Warn("Failed to fetch TMDB cover art",
+				zap.String("title", result.Title),
+				zap.Error(err))
+		} else {
+			coverArtResults = append(coverArtResults, tmdbCovers...)
+		}
+	}
+	
+	// Fetch from MusicBrainz for music
+	if result.MediaType == MediaTypeMusic {
+		musicCovers, err := s.fetchMusicBrainzCoverArt(ctx, result)
+		if err != nil {
+			s.logger.Warn("Failed to fetch MusicBrainz cover art",
+				zap.String("artist", result.Artist),
+				zap.String("album", result.Album),
+				zap.Error(err))
+		} else {
+			coverArtResults = append(coverArtResults, musicCovers...)
+		}
+	}
+	
+	return coverArtResults, nil
+}
+
+// getEnhancedMetadata retrieves additional metadata from external sources
+func (s *MediaRecognitionService) getEnhancedMetadata(ctx context.Context, result *MediaRecognitionResult) (map[string]string, error) {
+	enhancedData := make(map[string]string)
+	
+	// Fetch TMDB metadata for movies/TV
+	if result.MediaType == MediaTypeMovie || result.MediaType == MediaTypeTV {
+		tmdbData, err := s.fetchTMDBMetadata(ctx, result)
+		if err != nil {
+			s.logger.Warn("Failed to fetch TMDB metadata",
+				zap.String("title", result.Title),
+				zap.Error(err))
+		} else {
+			for k, v := range tmdbData {
+				enhancedData[k] = v
+			}
+		}
+	}
+	
+	// Fetch MusicBrainz metadata for music
+	if result.MediaType == MediaTypeMusic {
+		musicData, err := s.fetchMusicBrainzMetadata(ctx, result)
+		if err != nil {
+			s.logger.Warn("Failed to fetch MusicBrainz metadata",
+				zap.String("artist", result.Artist),
+				zap.String("album", result.Album),
+				zap.Error(err))
+		} else {
+			for k, v := range musicData {
+				enhancedData[k] = v
+			}
+		}
+	}
+	
+	return enhancedData, nil
+}
+
+// searchLocalCoverArt searches for cover art files in the media directory
+func (s *MediaRecognitionService) searchLocalCoverArt(mediaID string) []models.CoverArtResult {
+	// This is a placeholder implementation
+	// In production, this would scan the media directory for cover.jpg, poster.jpg, etc.
+	s.logger.Debug("Searching local cover art",
+		zap.String("media_id", mediaID))
+	return []models.CoverArtResult{}
+}
+
+// fetchTMDBCoverArt fetches cover art from TMDB API
+func (s *MediaRecognitionService) fetchTMDBCoverArt(ctx context.Context, result *MediaRecognitionResult) ([]models.CoverArtResult, error) {
+	// This is a placeholder implementation
+	// In production, this would call the TMDB API
+	s.logger.Debug("Fetching TMDB cover art",
+		zap.String("title", result.Title))
 	return []models.CoverArtResult{}, nil
 }
 
-func (s *MediaRecognitionService) getEnhancedMetadata(ctx context.Context, result *MediaRecognitionResult) (map[string]string, error) {
-	// Implement enhanced metadata retrieval
+// fetchMusicBrainzCoverArt fetches cover art from MusicBrainz
+func (s *MediaRecognitionService) fetchMusicBrainzCoverArt(ctx context.Context, result *MediaRecognitionResult) ([]models.CoverArtResult, error) {
+	// This is a placeholder implementation
+	// In production, this would call the MusicBrainz API
+	s.logger.Debug("Fetching MusicBrainz cover art",
+		zap.String("artist", result.Artist),
+		zap.String("album", result.Album))
+	return []models.CoverArtResult{}, nil
+}
+
+// fetchTMDBMetadata fetches additional metadata from TMDB
+func (s *MediaRecognitionService) fetchTMDBMetadata(ctx context.Context, result *MediaRecognitionResult) (map[string]string, error) {
+	// This is a placeholder implementation
+	// In production, this would call the TMDB API
+	s.logger.Debug("Fetching TMDB metadata",
+		zap.String("title", result.Title))
+	return make(map[string]string), nil
+}
+
+// fetchMusicBrainzMetadata fetches additional metadata from MusicBrainz
+func (s *MediaRecognitionService) fetchMusicBrainzMetadata(ctx context.Context, result *MediaRecognitionResult) (map[string]string, error) {
+	// This is a placeholder implementation
+	// In production, this would call the MusicBrainz API
+	s.logger.Debug("Fetching MusicBrainz metadata",
+		zap.String("artist", result.Artist),
+		zap.String("album", result.Album))
 	return make(map[string]string), nil
 }
 
