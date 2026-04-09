@@ -88,7 +88,8 @@ export const PlaylistsPage: React.FC = () => {
       setIsCreating(false);
       resetForm();
       refetchPlaylists();
-    } catch {
+    } catch (error) {
+      console.error('Failed to create playlist:', error);
       toast.error('Failed to create playlist');
     }
   };
@@ -109,8 +110,20 @@ export const PlaylistsPage: React.FC = () => {
       setEditingPlaylist(null);
       resetForm();
       refetchPlaylists();
-    } catch {
+    } catch (error) {
+      console.error('Failed to update playlist:', error);
       toast.error('Failed to update playlist');
+    }
+  };
+
+  const handleDeletePlaylist = async (id: number) => {
+    try {
+      await playlistsApi.deletePlaylist(id);
+      toast.success('Playlist deleted');
+      refetchPlaylists();
+    } catch (error) {
+      console.error('Failed to delete playlist:', error);
+      toast.error('Failed to delete playlist');
     }
   };
 

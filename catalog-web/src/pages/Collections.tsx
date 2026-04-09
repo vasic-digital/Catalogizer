@@ -290,8 +290,9 @@ export const Collections: React.FC = () => {
         }
       });
       setShowSmartBuilder(false);
-    } catch {
-      // Creation failure handled by mutation's onError callback
+    } catch (error) {
+      console.error('Failed to create smart collection:', error);
+      // Error already handled by mutation's onError callback
     }
   };
 
@@ -305,8 +306,9 @@ export const Collections: React.FC = () => {
           can_download: false,
         }
       });
-    } catch {
-      // Share failure handled by mutation's onError callback
+    } catch (error) {
+      console.error('Failed to share collection:', error);
+      // Error already handled by mutation's onError callback
     }
   };
 
@@ -316,8 +318,9 @@ export const Collections: React.FC = () => {
         id: collection.id,
         newName: `${collection.name} (Copy)`
       });
-    } catch {
-      // Duplicate failure handled by mutation's onError callback
+    } catch (error) {
+      console.error('Failed to duplicate collection:', error);
+      // Error already handled by mutation's onError callback
     }
   };
 
@@ -328,7 +331,8 @@ export const Collections: React.FC = () => {
           id: collection.id
         });
         toast.success('Collection deleted successfully');
-      } catch {
+      } catch (error) {
+        console.error('Failed to delete collection:', error);
         toast.error('Failed to delete collection');
       }
     }
@@ -366,7 +370,8 @@ export const Collections: React.FC = () => {
           toast.error('Unknown operation');
       }
       handleClearSelection();
-    } catch {
+    } catch (error) {
+      console.error('Bulk operation failed:', error);
       toast.error('Bulk operation failed');
     }
   };
