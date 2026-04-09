@@ -408,7 +408,10 @@ func (h *MediaEntityHandler) RefreshEntityMetadata(c *gin.Context) {
 			ExternalID:  fmt.Sprintf("local:%d", id),
 			CoverURL:    &coverURL,
 		}
-		_ = h.extMetaRepo.Upsert(ctx, meta)
+		if err := h.extMetaRepo.Upsert(ctx, meta); err != nil {
+			// Log but don't fail - the cover was still found
+			logging.Warnf("Failed to upsert external metadata: %v", err)
+		}
 		c.JSON(http.StatusOK, gin.H{
 			"message": "Cover art found (local)", "entity_id": id, "cover_url": coverURL,
 		})
@@ -432,18 +435,27 @@ func (h *MediaEntityHandler) RefreshEntityMetadata(c *gin.Context) {
 				Data:        tmdbResult.overview,
 				Rating:      tmdbResult.rating,
 			}
-			_ = h.extMetaRepo.Upsert(ctx, meta)
+			if err := h.extMetaRepo.Upsert(ctx, meta); err != nil {
+				// Log but don't fail - the metadata was still fetched
+				logging.Warnf("Failed to upsert TMDB metadata: %v", err)
+			}
 
 			// Also update the entity description/rating if empty
 			if (entity.Description == nil || *entity.Description == "") && tmdbResult.overview != "" {
-				_, _ = h.db.ExecContext(ctx,
+				_, err := h.db.ExecContext(ctx,
 					`UPDATE media_items SET description = ? WHERE id = ? AND (description IS NULL OR description = '')`,
 					tmdbResult.overview, id)
+				if err != nil {
+					logging.Warnf("Failed to update entity description: %v", err)
+				}
 			}
 			if (entity.Rating == nil || *entity.Rating == 0) && tmdbResult.rating != nil {
-				_, _ = h.db.ExecContext(ctx,
+				_, err := h.db.ExecContext(ctx,
 					`UPDATE media_items SET rating = ? WHERE id = ? AND (rating IS NULL OR rating = 0)`,
 					*tmdbResult.rating, id)
+				if err != nil {
+					logging.Warnf("Failed to update entity rating: %v", err)
+				}
 			}
 
 			c.JSON(http.StatusOK, gin.H{
@@ -603,7 +615,9 @@ func (h *MediaEntityHandler) EnrichAllEntities(c *gin.Context) {
 					ExternalID:  fmt.Sprintf("local:%d", ent.ID),
 					CoverURL:    &coverURL,
 				}
-				_ = h.extMetaRepo.Upsert(ctx, meta)
+				if err := h.extMetaRepo.Upsert(ctx, meta); err != nil {
+					// Log but continue - cover was still found
+				}
 				localEnriched++
 				enriched++
 				found = true
@@ -631,7 +645,9 @@ func (h *MediaEntityHandler) EnrichAllEntities(c *gin.Context) {
 						Data:        result.overview,
 						Rating:      result.rating,
 					}
-					_ = h.extMetaRepo.Upsert(ctx, meta)
+					if err := h.extMetaRepo.Upsert(ctx, meta); err != nil {
+						// Log but continue - metadata was still fetched
+					}
 					// Update entity description
 					if result.overview != "" {
 						_, _ = h.db.ExecContext(ctx,
@@ -1076,7 +1092,9 @@ func (h *MediaEntityHandler) lazyEnrichEntities(entityIDs []int64) {
 					Data:        result.overview,
 					Rating:      result.rating,
 				}
-				_ = h.extMetaRepo.Upsert(ctx, meta)
+				if err := h.extMetaRepo.Upsert(ctx, meta); err != nil {
+				// Log but continue
+			}
 				if result.overview != "" {
 					_, _ = h.db.ExecContext(ctx,
 						`UPDATE media_items SET description = ? WHERE id = ? AND (description IS NULL OR description = '')`,

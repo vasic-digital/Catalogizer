@@ -95,11 +95,17 @@ func (r *PlaylistRepository) UpdatePlaylist(playlist *models.Playlist) error {
 // DeletePlaylist removes a playlist and its items (cascade).
 func (r *PlaylistRepository) DeletePlaylist(playlistID int) error {
 	// Delete items first (in case foreign key cascades are not enforced)
-	_, _ = r.db.Exec("DELETE FROM playlist_items WHERE playlist_id = ?", playlistID)
+	_, err := r.db.Exec("DELETE FROM playlist_items WHERE playlist_id = ?", playlistID)
+	if err != nil {
+		return fmt.Errorf("failed to delete playlist items: %w", err)
+	}
 
 	query := `DELETE FROM playlists WHERE id = ?`
-	_, err := r.db.Exec(query, playlistID)
-	return err
+	_, err = r.db.Exec(query, playlistID)
+	if err != nil {
+		return fmt.Errorf("failed to delete playlist: %w", err)
+	}
+	return nil
 }
 
 // AddPlaylistItem inserts a new item into a playlist.
