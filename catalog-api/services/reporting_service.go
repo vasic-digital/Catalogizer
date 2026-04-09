@@ -2,13 +2,14 @@ package services
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"fmt"
 	"html/template"
-	"runtime"
 	"strings"
 	"time"
 
+	"catalogizer/database"
 	"catalogizer/models"
 	"catalogizer/repository"
 
@@ -19,12 +20,14 @@ import (
 type ReportingService struct {
 	analyticsRepo *repository.AnalyticsRepository
 	userRepo      *repository.UserRepository
+	db            *database.DB
 }
 
-func NewReportingService(analyticsRepo *repository.AnalyticsRepository, userRepo *repository.UserRepository) *ReportingService {
+func NewReportingService(analyticsRepo *repository.AnalyticsRepository, userRepo *repository.UserRepository, db *database.DB) *ReportingService {
 	return &ReportingService{
 		analyticsRepo: analyticsRepo,
 		userRepo:      userRepo,
+		db:            db,
 	}
 }
 
@@ -1057,65 +1060,124 @@ func (s *ReportingService) calculateSystemHealth(totalUsers, activeUsers, mediaA
 }
 
 func (s *ReportingService) calculateUsageStatistics(startDate, endDate time.Time) models.UsageStatistics {
+	// Get actual access logs to calculate peak hours
+	logs, err := s.analyticsRepo.GetAllMediaAccessLogs(startDate, endDate)
+	if err != nil {
+		return models.UsageStatistics{}
+	}
+
+	// Calculate peak hours from actual data
+	hourCounts := make(map[int]int)
+	for _, log := range logs {
+		hour := log.AccessTime.Hour()
+		hourCounts[hour]++
+	}
+
+	// Find top 5 peak hours
+	type hourCount struct {
+		hour  int
+		count int
+	}
+	var hours []hourCount
+	for h, c := range hourCounts {
+		hours = append(hours, hourCount{h, c})
+	}
+	// Sort by count descending
+	for i := 0; i < len(hours); i++ {
+		for j := i + 1; j < len(hours); j++ {
+			if hours[j].count > hours[i].count {
+				hours[i], hours[j] = hours[j], hours[i]
+			}
+		}
+	}
+	
+	peakHours := []int{}
+	for i := 0; i < 5 && i < len(hours); i++ {
+		peakHours = append(peakHours, hours[i].hour)
+	}
+
+	// Calculate average daily accesses
 	days := int(endDate.Sub(startDate).Hours()/24) + 1
 	if days < 1 {
 		days = 1
 	}
+	avgDaily := int(float64(len(logs)) / float64(days))
 
-	// Derive peak hours from the period midpoint
-	midHour := startDate.Add(endDate.Sub(startDate) / 2).Hour()
-	peakHours := []int{midHour, (midHour + 1) % 24, (midHour + 6) % 24, (midHour + 7) % 24, (midHour + 12) % 24}
+	// TODO: Calculate actual growth rate by comparing periods
+	growthRate := 0.0
 
 	return models.UsageStatistics{
 		PeakHours:    peakHours,
-		AverageDaily: days * 5,
-		GrowthRate:   float64(days) * 0.17,
+		AverageDaily: avgDaily,
+		GrowthRate:   growthRate,
 	}
 }
 
 func (s *ReportingService) calculatePerformanceMetrics(startDate, endDate time.Time) models.PerformanceMetrics {
-	var memStats runtime.MemStats
-	runtime.ReadMemStats(&memStats)
-
-	// Derive response time from GC pause latency as a process health indicator
-	avgPauseMs := 1.0
-	if memStats.NumGC > 0 {
-		avgPauseMs = float64(memStats.PauseTotalNs) / float64(memStats.NumGC) / 1e6
-		if avgPauseMs < 1.0 {
-			avgPauseMs = 1.0
-		}
-	}
-
-	hours := endDate.Sub(startDate).Hours()
-	if hours < 1 {
-		hours = 1
-	}
-	throughput := int(hours * 50)
-	if throughput < 1 {
-		throughput = 1
-	}
-
-	errorRate := memStats.GCCPUFraction
-	if errorRate < 0.001 {
-		errorRate = 0.001
-	}
-
-	return models.PerformanceMetrics{
-		ResponseTime: avgPauseMs,
-		Throughput:   throughput,
-		ErrorRate:    errorRate,
-	}
+	// TODO: Implement performance metrics tracking middleware
+	// For now, return empty metrics rather than fabricated data
+	return models.PerformanceMetrics{}
 }
+
 
 func (s *ReportingService) analyzeAccessPatterns(logs []models.MediaAccessLog) map[string]interface{} {
 	return s.analyzeUserAccessPatterns(logs)
 }
 
 func (s *ReportingService) analyzeUserEngagement(logs []models.MediaAccessLog) models.UserEngagement {
+	if len(logs) == 0 {
+		return models.UserEngagement{}
+	}
+
+	// Calculate actual session times from logs
+	var totalSessionTime float64
+	userSessions := make(map[int64][]time.Duration) // userID -> session durations
+	var lastLogTime time.Time
+	var currentUserID int64
+
+	for i, log := range logs {
+		userID := int64(log.UserID)
+		if i == 0 || userID != currentUserID {
+			currentUserID = userID
+		}
+		// Estimate session time from consecutive logs (within 30 min = same session)
+		if i > 0 && userID == currentUserID && log.AccessTime.Sub(lastLogTime) < 30*time.Minute {
+			sessionDuration := log.AccessTime.Sub(lastLogTime).Minutes()
+			userSessions[userID] = append(userSessions[userID], time.Duration(sessionDuration)*time.Minute)
+			totalSessionTime += sessionDuration
+		}
+		lastLogTime = log.AccessTime
+	}
+
+	// Calculate average session time
+	avgSessionTime := totalSessionTime / float64(len(logs))
+
+	// Calculate return rate (% of users with multiple sessions)
+	usersWithMultipleSessions := 0
+	for _, sessions := range userSessions {
+		if len(sessions) > 1 {
+			usersWithMultipleSessions++
+		}
+	}
+	returnRate := 0.0
+	if len(userSessions) > 0 {
+		returnRate = float64(usersWithMultipleSessions) / float64(len(userSessions)) * 100
+	}
+
+	// Calculate interaction depth (avg actions per session)
+	var totalInteractions int
+	for _, sessions := range userSessions {
+		totalInteractions += len(sessions)
+	}
+	interactionDepth := 0.0
+	if len(userSessions) > 0 {
+		interactionDepth = float64(totalInteractions) / float64(len(userSessions))
+	}
+
 	return models.UserEngagement{
-		AverageSessionTime: 15.5,
-		ReturnRate:         85.2,
-		InteractionDepth:   3.4,
+		AverageSessionTime: avgSessionTime,
+		ReturnRate:         returnRate,
+		InteractionDepth:   interactionDepth,
 	}
 }
 
@@ -1231,25 +1293,44 @@ func (s *ReportingService) generateActivitySummary(activities []models.UserActiv
 }
 
 func (s *ReportingService) calculateSecurityMetrics(startDate, endDate time.Time) models.SecurityMetrics {
-	days := int(endDate.Sub(startDate).Hours()/24) + 1
-	if days < 1 {
-		days = 1
+	ctx := context.Background()
+
+	// Query actual failed login attempts from database
+	failedLogins := 0
+	if s.db != nil {
+		row := s.db.QueryRowContext(ctx, 
+			"SELECT COUNT(*) FROM login_attempts WHERE success = false AND created_at BETWEEN ? AND ?",
+			startDate, endDate)
+		_ = row.Scan(&failedLogins)
 	}
 
-	// Score decreases slightly with longer observation periods (more exposure)
-	score := 100.0 - float64(days)*0.1
-	if score < 50.0 {
-		score = 50.0
+	// TODO: Implement security events table and query
+	vulnerabilityCount := 0
+
+	// Calculate security score based on actual metrics
+	score := 100.0
+	if failedLogins > 0 {
+		score -= float64(failedLogins) * 0.5
+	}
+	if vulnerabilityCount > 0 {
+		score -= float64(vulnerabilityCount) * 5.0
+	}
+	if score < 0 {
+		score = 0
 	}
 
 	threatLevel := "low"
-	if score < 70 {
+	if score < 50 {
+		threatLevel = "critical"
+	} else if score < 70 {
+		threatLevel = "high"
+	} else if score < 85 {
 		threatLevel = "medium"
 	}
 
 	return models.SecurityMetrics{
 		ThreatLevel:        threatLevel,
-		VulnerabilityCount: 0,
+		VulnerabilityCount: vulnerabilityCount,
 		SecurityScore:      score,
 	}
 }
@@ -1268,74 +1349,20 @@ func (s *ReportingService) calculateAverageSessionDuration(sessions []models.Ses
 }
 
 func (s *ReportingService) calculateResponseTimes(startDate, endDate time.Time) models.ResponseTimes {
-	var memStats runtime.MemStats
-	runtime.ReadMemStats(&memStats)
-
-	// Use GC pause statistics as a proxy for system latency characteristics
-	avgMs := 1.0
-	if memStats.NumGC > 0 {
-		avgMs = float64(memStats.PauseTotalNs) / float64(memStats.NumGC) / 1e6
-		if avgMs < 1.0 {
-			avgMs = 1.0
-		}
-	}
-
-	return models.ResponseTimes{
-		Average: avgMs,
-		Min:     avgMs * 0.2,
-		Max:     avgMs * 5.0,
-		P95:     avgMs * 2.0,
-		P99:     avgMs * 3.5,
-	}
+	// TODO: Implement response time tracking middleware to store actual metrics
+	// For now, return empty metrics rather than fabricated data
+	return models.ResponseTimes{}
 }
 
 func (s *ReportingService) calculateSystemLoad(startDate, endDate time.Time) models.SystemLoad {
-	var memStats runtime.MemStats
-	runtime.ReadMemStats(&memStats)
-
-	memPercent := float64(memStats.HeapInuse) / float64(memStats.Sys) * 100
-	if memPercent < 0.1 {
-		memPercent = 0.1
-	}
-
-	cpuEstimate := float64(runtime.NumGoroutine()) / float64(runtime.NumCPU()) * 10
-	if cpuEstimate < 0.1 {
-		cpuEstimate = 0.1
-	}
-
-	diskEstimate := float64(memStats.HeapAlloc+memStats.StackInuse) / float64(memStats.Sys) * 100
-	if diskEstimate < 0.1 {
-		diskEstimate = 0.1
-	}
-
-	networkEstimate := float64(runtime.NumGoroutine()) * 0.1
-	if networkEstimate < 0.1 {
-		networkEstimate = 0.1
-	}
-
-	return models.SystemLoad{
-		CPU:     cpuEstimate,
-		Memory:  memPercent,
-		Disk:    diskEstimate,
-		Network: networkEstimate,
-	}
+	// TODO: Implement system metrics collection daemon
+	// For now, return empty metrics rather than fabricated data
+	return models.SystemLoad{}
 }
 
 func (s *ReportingService) calculateErrorRates(startDate, endDate time.Time) models.ErrorRates {
-	days := endDate.Sub(startDate).Hours() / 24
-	if days < 1 {
-		days = 1
-	}
-
-	// Base rates scaled by observation period
-	http4xx := days * 0.07
-	http5xx := days * 0.01
-	timeouts := days * 0.003
-
-	return models.ErrorRates{
-		HTTP4xx:  http4xx,
-		HTTP5xx:  http5xx,
-		Timeouts: timeouts,
-		Total:    http4xx + http5xx + timeouts,
-	}
+	// TODO: Implement error logging middleware to store actual error counts
+	// For now, return empty metrics rather than fabricated data
+	return models.ErrorRates{}
 }
+

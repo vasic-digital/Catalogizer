@@ -54,11 +54,11 @@ func (c *MusicScanChallenge) Execute(ctx context.Context) (*challenge.Result, er
 
 	// Pre-check: verify NAS endpoint is reachable.
 	if !isEndpointReachable(c.endpoint.Host, c.endpoint.Port) {
-		return c.CreateResult(challenge.StatusPassed, start,
+		return c.CreateResult(challenge.StatusSkipped, start,
 			[]challenge.AssertionResult{{
 				Type:    "infrastructure",
 				Target:  "nas_reachable",
-				Passed:  true,
+				Passed:  false,
 				Message: fmt.Sprintf("NAS at %s:%d not reachable - skipped (requires NAS infrastructure)", c.endpoint.Host, c.endpoint.Port),
 			}}, nil, outputs, ""), nil
 	}

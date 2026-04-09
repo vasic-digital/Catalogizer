@@ -72,11 +72,11 @@ func (c *BrowsingWebAppChallenge) Execute(ctx context.Context) (*challenge.Resul
 
 	// Pre-check: verify web app is reachable.
 	if !isWebAppReachable(c.config.WebAppURL) {
-		return c.CreateResult(challenge.StatusPassed, start,
+		return c.CreateResult(challenge.StatusSkipped, start,
 			[]challenge.AssertionResult{{
 				Type:    "infrastructure",
 				Target:  "web_app_reachable",
-				Passed:  true,
+				Passed:  false,
 				Message: fmt.Sprintf("Web app at %s not reachable - skipped (requires catalog-web running)", c.config.WebAppURL),
 			}}, nil, outputs, ""), nil
 	}

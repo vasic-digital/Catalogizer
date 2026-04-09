@@ -1636,9 +1636,9 @@ func TestExecute_SMBChallenges_UnreachableEndpoint(t *testing.T) {
 			require.NoError(t, err, "Execute should not return error")
 			require.NotNil(t, result, "result should not be nil")
 
-			// When NAS is unreachable, challenges return StatusPassed (skipped)
-			assert.Equal(t, challenge.StatusPassed, result.Status,
-				"unreachable NAS should result in passed/skipped status")
+			// When NAS is unreachable, challenges return StatusSkipped
+			assert.Equal(t, challenge.StatusSkipped, result.Status,
+				"unreachable NAS should result in skipped status")
 			assert.True(t, len(result.Assertions) > 0,
 				"should have at least one assertion")
 		})
@@ -1722,9 +1722,9 @@ func TestExecute_WebAppChallenge_NoServer(t *testing.T) {
 	require.NoError(t, err)
 	require.NotNil(t, result)
 
-	// Web app unreachable -> StatusPassed (skipped)
-	assert.Equal(t, challenge.StatusPassed, result.Status,
-		"unreachable web app should result in passed/skipped")
+	// Web app unreachable -> StatusSkipped
+	assert.Equal(t, challenge.StatusSkipped, result.Status,
+		"unreachable web app should result in skipped")
 }
 
 func TestExecute_WebSocketEvents_NoServer(t *testing.T) {

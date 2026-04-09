@@ -102,10 +102,10 @@ func (c *FirstCatalogPopulateChallenge) Execute(ctx context.Context) (*challenge
 		assertions = append(assertions, challenge.AssertionResult{
 			Type:    "infrastructure",
 			Target:  "nas_reachable",
-			Passed:  true,
+			Passed:  false,
 			Message: fmt.Sprintf("NAS at %s:%d not reachable - skipped (requires NAS infrastructure)", ep.Host, ep.Port),
 		})
-		return c.CreateResult(challenge.StatusPassed, start, assertions, nil, outputs, ""), nil
+		return c.CreateResult(challenge.StatusSkipped, start, assertions, nil, outputs, ""), nil
 	}
 
 	// Step 3: POST /api/v1/storage/roots — create SMB storage root
