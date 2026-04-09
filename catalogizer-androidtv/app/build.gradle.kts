@@ -177,7 +177,11 @@ dependencies {
     implementation("androidx.leanback:leanback:1.0.0")
     implementation("androidx.leanback:leanback-preference:1.0.0")
 
-    // Media Player
+    // Media Player - VLC Integration
+    // Note: Using VLC instead of ExoPlayer for broader codec support
+    implementation("org.videolan.android:libvlc-all:3.6.0")
+    
+    // Keep ExoPlayer as fallback for specific use cases
     implementation("androidx.media3:media3-exoplayer:1.2.0")
     implementation("androidx.media3:media3-datasource:1.2.0")
     implementation("androidx.media3:media3-ui:1.2.0")
