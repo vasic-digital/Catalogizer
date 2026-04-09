@@ -1,10 +1,15 @@
 // Prevents additional console window on Windows in release, DO NOT REMOVE!!
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
+mod vlc;
+
 use std::collections::HashMap;
 use serde::{Deserialize, Serialize};
 use tauri::State;
 use tokio::sync::Mutex;
+
+use vlc::commands::{VLCPlayerState, PlayRequest, PlaybackStatus, TrackListResponse};
+use vlc::VLCPlayer;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 struct AppConfig {
@@ -136,8 +141,15 @@ fn main() {
     env_logger::init();
 
     let config = ConfigState::default();
+    
+    // Initialize VLC player (only if vlc-player feature is enabled)
+    #[cfg(feature = "vlc-player")]
+    let vlc_state = {
+        let player = VLCPlayer::new().expect("Failed to initialize VLC player");
+        VLCPlayerState(std::sync::Mutex::new(player))
+    };
 
-    let app = tauri::Builder::default()
+    let mut builder = tauri::Builder::default()
         .plugin(tauri_plugin_shell::init())
         .manage(config)
         .invoke_handler(tauri::generate_handler![
@@ -150,8 +162,48 @@ fn main() {
             get_app_version,
             get_platform,
             get_arch
-        ])
-        .run(tauri::generate_context!());
+        ]);
+    
+    // Register VLC commands if feature is enabled
+    #[cfg(feature = "vlc-player")]
+    {
+        use vlc::commands::*;
+        builder = builder
+            .manage(vlc_state)
+            .invoke_handler(tauri::generate_handler![
+                get_config,
+                update_config,
+                set_server_url,
+                set_auth_token,
+                clear_auth_token,
+                make_http_request,
+                get_app_version,
+                get_platform,
+                get_arch,
+                vlc_initialize,
+                vlc_play,
+                vlc_pause,
+                vlc_resume,
+                vlc_stop,
+                vlc_toggle_playback,
+                vlc_seek,
+                vlc_seek_forward,
+                vlc_seek_backward,
+                vlc_get_status,
+                vlc_set_volume,
+                vlc_toggle_mute,
+                vlc_set_rate,
+                vlc_get_tracks,
+                vlc_set_audio_track,
+                vlc_set_subtitle_track,
+                vlc_set_subtitle_delay,
+                vlc_set_audio_delay,
+                vlc_set_aspect_ratio,
+                vlc_take_snapshot
+            ]);
+    }
+    
+    let app = builder.run(tauri::generate_context!());
     
     match app {
         Ok(_) => (),

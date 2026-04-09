@@ -39,6 +39,15 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     && rm -rf /var/lib/apt/lists/*
 
 # ============================================================
+# Layer 1b: VLC Media Player dependencies (for Desktop app)
+# ============================================================
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    libvlc-dev \
+    libvlccore-dev \
+    vlc \
+    && rm -rf /var/lib/apt/lists/*
+
+# ============================================================
 # Layer 2: Go 1.26
 # ============================================================
 ENV GO_VERSION=1.26.1
