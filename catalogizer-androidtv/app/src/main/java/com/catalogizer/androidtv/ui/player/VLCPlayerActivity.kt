@@ -8,11 +8,16 @@ import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.focusable
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Pause
 import androidx.compose.material.icons.filled.PlayArrow
+import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.Slider
+import androidx.compose.material3.SliderDefaults
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -22,6 +27,7 @@ import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.lifecycle.Lifecycle
@@ -31,6 +37,8 @@ import androidx.tv.material3.*
 import com.catalogizer.androidtv.player.VLCPlayer
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.flow.first
+import kotlinx.serialization.json.jsonPrimitive
 import org.videolan.libvlc.util.VLCVideoLayout
 
 /**
@@ -60,12 +68,6 @@ class VLCPlayerActivity : ComponentActivity() {
         streamUrl = intent.getStringExtra(EXTRA_STREAM_URL)
         mediaTitle = intent.getStringExtra(EXTRA_MEDIA_TITLE) ?: ""
 
-        if (streamUrl.isNullOrBlank()) {
-            Toast.makeText(this, "No stream URL provided", Toast.LENGTH_SHORT).show()
-            finish()
-            return
-        }
-
         // Initialize VLC
         vlcPlayer = VLCPlayer(this)
 
@@ -77,11 +79,62 @@ class VLCPlayerActivity : ComponentActivity() {
             )
         }
 
-        // Start playback
-        streamUrl?.let { url ->
-            vlcPlayer.play(url)
-            Log.d(TAG, "Starting playback: $url")
+        // Resolve stream URL if media_id provided
+        if (streamUrl.isNullOrBlank() && mediaId > 0) {
+            lifecycleScope.launch {
+                resolveAndPlay(mediaId)
+            }
+        } else if (!streamUrl.isNullOrBlank()) {
+            // Start playback with provided URL
+            vlcPlayer.play(streamUrl!!)
+            Log.d(TAG, "Starting playback: $streamUrl")
+        } else {
+            Toast.makeText(this, "No media to play", Toast.LENGTH_SHORT).show()
+            finish()
         }
+    }
+    
+    private suspend fun resolveAndPlay(mediaId: Long) {
+        try {
+            val container = com.catalogizer.androidtv.DependencyContainer.getInstance(this)
+            val baseUrl = container.getServerUrl().trimEnd('/')
+            
+            // Fetch media title
+            try {
+                val mediaFlow = container.mediaRepository.getMediaById(mediaId)
+                val item = mediaFlow.first()
+                if (item != null && item.title.isNotBlank()) {
+                    mediaTitle = item.title
+                }
+            } catch (e: Exception) {
+                Log.w(TAG, "Could not fetch media title: ${e.message}")
+            }
+            
+            // Fetch stream URL from API
+            val response = container.api.getEntityStream(mediaId)
+            if (response.isSuccessful) {
+                val body = response.body()
+                val streamPath = body?.get("stream_url")?.jsonPrimitive?.content
+                if (streamPath != null) {
+                    val resolvedUrl = if (streamPath.startsWith("/")) "$baseUrl$streamPath" else streamPath
+                    streamUrl = resolvedUrl
+                    vlcPlayer.play(resolvedUrl)
+                    Log.d(TAG, "Starting playback for media $mediaId: $resolvedUrl")
+                } else {
+                    showErrorAndFinish("No stream URL available")
+                }
+            } else {
+                showErrorAndFinish("Stream unavailable (${response.code()})")
+            }
+        } catch (e: Exception) {
+            Log.e(TAG, "Failed to resolve stream: ${e.message}", e)
+            showErrorAndFinish("Failed to load stream: ${e.message}")
+        }
+    }
+    
+    private fun showErrorAndFinish(message: String) {
+        Toast.makeText(this, message, Toast.LENGTH_LONG).show()
+        finish()
     }
 
     override fun onPause() {
@@ -412,31 +465,78 @@ fun TrackSelectionMenu(
     onTrackSelected: (VLCPlayer.Track) -> Unit,
     onDismiss: () -> Unit
 ) {
-    AlertDialog(
-        onDismissRequest = onDismiss,
-        title = { Text(title) },
-        text = {
-            Column {
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(Color.Black.copy(alpha = 0.7f))
+            .clickable(onClick = onDismiss),
+        contentAlignment = Alignment.Center
+    ) {
+        Surface(
+            modifier = Modifier
+                .widthIn(max = 400.dp)
+                .padding(16.dp),
+            shape = SurfaceDefaults.shape,
+            colors = SurfaceDefaults.colors(
+                containerColor = Color(0xFF1E1E1E)
+            )
+        ) {
+            Column(modifier = Modifier.padding(16.dp)) {
+                Text(
+                    text = title,
+                    style = MaterialTheme.typography.titleLarge,
+                    color = Color(0xFFFF6600),
+                    fontWeight = FontWeight.Bold,
+                    modifier = Modifier.padding(bottom = 16.dp)
+                )
+                
                 tracks.forEach { track ->
                     val isSelected = track.id == currentTrack?.id
                     
-                    ListItem(
-                        selected = isSelected,
+                    Surface(
                         onClick = {
                             onTrackSelected(track)
                             onDismiss()
                         },
-                        headlineContent = { Text(track.name) }
-                    )
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(vertical = 4.dp),
+                        colors = ClickableSurfaceDefaults.colors(
+                            containerColor = if (isSelected) Color(0xFFFF6600).copy(alpha = 0.2f) else Color.Transparent
+                        )
+                    ) {
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(12.dp),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Text(
+                                text = track.name,
+                                color = if (isSelected) Color(0xFFFF6600) else Color.White
+                            )
+                            if (isSelected) {
+                                Text(
+                                    text = "✓",
+                                    color = Color(0xFFFF6600)
+                                )
+                            }
+                        }
+                    }
+                }
+                
+                Spacer(modifier = Modifier.height(16.dp))
+                
+                Button(
+                    onClick = onDismiss,
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Text("Close")
                 }
             }
-        },
-        confirmButton = {
-            TextButton(onClick = onDismiss) {
-                Text("Close")
-            }
         }
-    )
+    }
 }
 
 @OptIn(ExperimentalTvMaterial3Api::class)
@@ -445,52 +545,84 @@ fun PlayerSettingsMenu(
     vlcPlayer: VLCPlayer,
     onDismiss: () -> Unit
 ) {
-    AlertDialog(
-        onDismissRequest = onDismiss,
-        title = { Text("Player Settings") },
-        text = {
-            Column {
-                // Playback Speed
-                ListItem(
-                    headlineContent = { Text("Playback Speed") },
-                    supportingContent = {
-                        Row {
-                            listOf(0.5f, 0.75f, 1.0f, 1.25f, 1.5f, 2.0f).forEach { speed ->
-                                FilterChip(
-                                    selected = false,
-                                    onClick = { vlcPlayer.setSpeed(speed) }
-                                ) {
-                                    Text("${speed}x")
-                                }
-                            }
-                        }
-                    }
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(Color.Black.copy(alpha = 0.7f))
+            .clickable(onClick = onDismiss),
+        contentAlignment = Alignment.Center
+    ) {
+        Surface(
+            modifier = Modifier
+                .widthIn(max = 400.dp)
+                .padding(16.dp),
+            shape = SurfaceDefaults.shape,
+            colors = SurfaceDefaults.colors(
+                containerColor = Color(0xFF1E1E1E)
+            )
+        ) {
+            Column(modifier = Modifier.padding(16.dp)) {
+                Text(
+                    text = "Player Settings",
+                    style = MaterialTheme.typography.titleLarge,
+                    color = Color(0xFFFF6600),
+                    fontWeight = FontWeight.Bold,
+                    modifier = Modifier.padding(bottom = 16.dp)
                 )
                 
-                // Aspect Ratio
-                ListItem(
-                    headlineContent = { Text("Aspect Ratio") },
-                    supportingContent = {
-                        Row {
-                            listOf("16:9", "4:3", "1:1", "2.21:1").forEach { ratio ->
-                                FilterChip(
-                                    selected = false,
-                                    onClick = { vlcPlayer.setAspectRatio(ratio) }
-                                ) {
-                                    Text(ratio)
-                                }
-                            }
+                // Playback Speed
+                Text(
+                    text = "Playback Speed",
+                    style = MaterialTheme.typography.titleMedium,
+                    color = Color.White,
+                    modifier = Modifier.padding(bottom = 8.dp)
+                )
+                Row(
+                    modifier = Modifier.padding(bottom = 16.dp),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    listOf(0.5f, 0.75f, 1.0f, 1.25f, 1.5f, 2.0f).forEach { speed ->
+                        FilterChip(
+                            selected = false,
+                            onClick = { vlcPlayer.setSpeed(speed) }
+                        ) {
+                            Text("${speed}x")
                         }
                     }
+                }
+                
+                // Aspect Ratio
+                Text(
+                    text = "Aspect Ratio",
+                    style = MaterialTheme.typography.titleMedium,
+                    color = Color.White,
+                    modifier = Modifier.padding(bottom = 8.dp)
                 )
-            }
-        },
-        confirmButton = {
-            TextButton(onClick = onDismiss) {
-                Text("Close")
+                Row(
+                    modifier = Modifier.padding(bottom = 16.dp),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    listOf("16:9", "4:3", "1:1", "2.21:1").forEach { ratio ->
+                        FilterChip(
+                            selected = false,
+                            onClick = { vlcPlayer.setAspectRatio(ratio) }
+                        ) {
+                            Text(ratio)
+                        }
+                    }
+                }
+                
+                Spacer(modifier = Modifier.height(16.dp))
+                
+                Button(
+                    onClick = onDismiss,
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Text("Close")
+                }
             }
         }
-    )
+    }
 }
 
 private fun formatTime(milliseconds: Long): String {

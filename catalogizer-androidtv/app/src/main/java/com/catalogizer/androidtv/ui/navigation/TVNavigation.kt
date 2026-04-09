@@ -1,7 +1,9 @@
 package com.catalogizer.androidtv.ui.navigation
 
+import android.content.Intent
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.ui.platform.LocalContext
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
@@ -9,10 +11,10 @@ import androidx.navigation.compose.rememberNavController
 import com.catalogizer.androidtv.ui.screens.home.HomeScreen
 import com.catalogizer.androidtv.ui.screens.login.LoginScreen
 import com.catalogizer.androidtv.ui.screens.media.MediaDetailScreen
-import com.catalogizer.androidtv.ui.screens.player.MediaPlayerScreen
 import com.catalogizer.androidtv.ui.screens.search.SearchScreen
 import com.catalogizer.androidtv.ui.screens.settings.SettingsScreen
 import com.catalogizer.androidtv.ui.screens.search.SearchViewModel
+import com.catalogizer.androidtv.ui.player.VLCPlayerActivity
 import com.catalogizer.androidtv.ui.viewmodel.AuthViewModel
 import com.catalogizer.androidtv.ui.viewmodel.HomeViewModel
 
@@ -108,13 +110,20 @@ fun TVNavigation(
         }
 
         composable(TVScreen.Player.route) { backStackEntry ->
+            val context = LocalContext.current
             val mediaId = backStackEntry.arguments?.getString("mediaId")?.toLongOrNull() ?: 0L
-            MediaPlayerScreen(
-                mediaId = mediaId,
-                onNavigateBack = {
-                    navController.popBackStack()
+            
+            // Launch VLC Player Activity
+            LaunchedEffect(mediaId) {
+                val intent = Intent(context, VLCPlayerActivity::class.java).apply {
+                    putExtra("media_id", mediaId)
+                    flags = Intent.FLAG_ACTIVITY_NEW_TASK
                 }
-            )
+                context.startActivity(intent)
+                
+                // Pop back to previous screen since VLC opens in separate activity
+                navController.popBackStack()
+            }
         }
 
         composable(TVScreen.Settings.route) {

@@ -1,17 +1,34 @@
 import { useParams, useNavigate } from "react-router-dom";
 import { ArrowLeft, Play, Download, Heart, Star, Calendar, HardDrive } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
+import { useState } from "react";
 import { apiService } from "../services/apiService";
+import { VLCPlayer } from "../components/VLCPlayer";
 
 export default function MediaDetailPage() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
+  const [showPlayer, setShowPlayer] = useState(false);
+  const [streamUrl, setStreamUrl] = useState<string>("");
 
   const { data: media, isLoading } = useQuery({
     queryKey: ["media", id],
     queryFn: () => apiService.getMediaById(Number(id)),
     enabled: !!id,
   });
+
+  const handlePlay = async () => {
+    if (!id) return;
+    try {
+      const response = await apiService.getMediaUrl(Number(id));
+      if (response.url) {
+        setStreamUrl(response.url);
+        setShowPlayer(true);
+      }
+    } catch (error) {
+      console.error("Failed to get stream URL:", error);
+    }
+  };
 
   if (isLoading) {
     return (
@@ -123,7 +140,10 @@ export default function MediaDetailPage() {
 
             {/* Actions */}
             <div className="flex items-center gap-4">
-              <button className="flex items-center gap-2 bg-primary text-primary-foreground px-6 py-3 rounded-lg hover:bg-primary/90 transition-colors">
+              <button 
+                onClick={handlePlay}
+                className="flex items-center gap-2 bg-primary text-primary-foreground px-6 py-3 rounded-lg hover:bg-primary/90 transition-colors"
+              >
                 <Play className="h-5 w-5" />
                 Play
               </button>
@@ -138,6 +158,17 @@ export default function MediaDetailPage() {
           </div>
         </div>
       </div>
+
+      {/* VLC Player */}
+      {showPlayer && media && (
+        <VLCPlayer
+          mediaUrl={streamUrl}
+          mediaTitle={media.title}
+          mediaId={Number(id)}
+          onClose={() => setShowPlayer(false)}
+          onEnded={() => setShowPlayer(false)}
+        />
+      )}
     </div>
   );
 }

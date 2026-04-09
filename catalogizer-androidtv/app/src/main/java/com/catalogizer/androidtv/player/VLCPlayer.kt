@@ -160,10 +160,6 @@ class VLCPlayer(private val context: Context) {
         try {
             val media = Media(libVLC, Uri.parse(uri))
             
-            // Enable all tracks
-            media.setBooleanOption(Media.Option.Trusted, true)
-            media.setBooleanOption(Media.Option.TextRenderer, true)
-            
             // Hardware acceleration
             media.setHWDecoderEnabled(true, false)
             
@@ -310,14 +306,11 @@ class VLCPlayer(private val context: Context) {
         
         // Audio tracks
         val audioTracksList = mutableListOf<Track>()
-        val audioTrackIds = player.audioTracks
-        val audioTrackNames = player.audioTrackNames
-        
-        audioTrackIds?.forEachIndexed { index, id ->
+        player.audioTracks?.forEach { trackDesc ->
             audioTracksList.add(
                 Track(
-                    id = id,
-                    name = audioTrackNames?.getOrNull(index) ?: "Audio Track ${index + 1}",
+                    id = trackDesc.id,
+                    name = trackDesc.name ?: "Audio Track ${trackDesc.id}",
                     type = TrackType.AUDIO
                 )
             )
@@ -326,14 +319,11 @@ class VLCPlayer(private val context: Context) {
         
         // Subtitle tracks
         val subtitleTracksList = mutableListOf<Track>()
-        val spuTrackIds = player.spuTracks
-        val spuTrackNames = player.spuTrackNames
-        
-        spuTrackIds?.forEachIndexed { index, id ->
+        player.spuTracks?.forEach { trackDesc ->
             subtitleTracksList.add(
                 Track(
-                    id = id,
-                    name = spuTrackNames?.getOrNull(index) ?: "Subtitle ${index + 1}",
+                    id = trackDesc.id,
+                    name = trackDesc.name ?: "Subtitle ${trackDesc.id}",
                     type = TrackType.SUBTITLE
                 )
             )
