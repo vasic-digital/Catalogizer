@@ -169,9 +169,14 @@ func getOrCreateSelfSignedCert() (tls.Certificate, error) {
 	}
 
 	// Cache to disk
-	if err := os.MkdirAll(cacheDir, 0700); err == nil {
-		_ = os.WriteFile(certPath, certPEM, 0600)
-		_ = os.WriteFile(keyPath, keyPEM, 0600)
+	if err := os.MkdirAll(cacheDir, 0700); err != nil {
+		return cert, fmt.Errorf("failed to create cert cache directory: %w", err)
+	}
+	if err := os.WriteFile(certPath, certPEM, 0600); err != nil {
+		return cert, fmt.Errorf("failed to write certificate file: %w", err)
+	}
+	if err := os.WriteFile(keyPath, keyPEM, 0600); err != nil {
+		return cert, fmt.Errorf("failed to write key file: %w", err)
 	}
 
 	return cert, nil
@@ -475,7 +480,7 @@ func main() {
 	}
 	authService := root_services.NewAuthService(userRepo, jwtSecret)
 	analyticsService := root_services.NewAnalyticsService(analyticsRepo)
-	reportingService := root_services.NewReportingService(analyticsRepo, userRepo)
+	reportingService := root_services.NewReportingService(analyticsRepo, userRepo, databaseDB)
 	configurationService := root_services.NewConfigurationService(configurationRepo, "./config.json")
 	errorReportingService := root_services.NewErrorReportingService(errorReportingRepo, crashReportingRepo)
 	logManagementService := root_services.NewLogManagementService(logManagementRepo)

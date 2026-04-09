@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
+	"os"
 	"strings"
 	"sync"
 	"time"
@@ -352,9 +353,14 @@ func isDeadlockError(err error) bool {
 }
 
 // SafeRollback performs a safe rollback that won't panic
+// Logs rollback errors for debugging but doesn't return them since rollback is typically a cleanup operation
 func SafeRollback(tx *sql.Tx) {
 	if tx != nil {
-		_ = tx.Rollback()
+		if err := tx.Rollback(); err != nil {
+			// Log rollback error but don't fail - transaction may already be rolled back or committed
+			// This is acceptable behavior for cleanup operations
+			fmt.Fprintf(os.Stderr, "Warning: transaction rollback failed (may be already completed): %v\n", err)
+		}
 	}
 }
 
@@ -417,8 +423,11 @@ func SafeCommit(tx *sql.Tx) error {
 		return fmt.Errorf("cannot commit nil transaction")
 	}
 	if err := tx.Commit(); err != nil {
-		_ = tx.Rollback()
-		return err
+		// Rollback on commit failure - if rollback also fails, wrap both errors
+		if rbErr := tx.Rollback(); rbErr != nil {
+			return fmt.Errorf("commit failed: %v (rollback also failed: %v)", err, rbErr)
+		}
+		return fmt.Errorf("commit failed: %w", err)
 	}
 	return nil
 }
