@@ -51,30 +51,33 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-        // CRITICAL: Initialize ViewModels FIRST before any server operations
-        // to ensure the UI can render and prevent ANR
+        // CRITICAL: Get dependencyContainer first
         val dependencyContainer = (application as CatalogizerTVApplication).dependencyContainer
         
-        // Initialize ViewModels immediately without blocking
+        // Handle server URL from intent extra (for ADB testing / HelixQA)
+        // MUST be done BEFORE creating ViewModels to ensure correct API base URL!
+        intent.getStringExtra("server_url")?.let { url ->
+            if (url.isNotBlank()) {
+                // Switch server synchronously on main thread - this just updates the URL string
+                // The actual API client will be created lazily when first accessed
+                try {
+                    dependencyContainer.switchServer(url)
+                    // Save to settings in background
+                    kotlinx.coroutines.CoroutineScope(kotlinx.coroutines.Dispatchers.IO).launch {
+                        dependencyContainer.settingsRepository.updateServerUrl(url)
+                    }
+                    Log.i("MainActivity", "Server URL set from intent: $url")
+                } catch (e: Exception) {
+                    Log.w("MainActivity", "Failed to set server URL: ${e.message}")
+                }
+            }
+        }
+        
+        // NOW initialize ViewModels - they will use the correct server URL
         authViewModel = dependencyContainer.createAuthViewModel()
         mainViewModel = dependencyContainer.createMainViewModel()
         homeViewModel = dependencyContainer.createHomeViewModel()
         searchViewModel = dependencyContainer.createSearchViewModel()
-
-        // Handle server URL from intent extra (for ADB testing / HelixQA)
-        // Run in background - never block UI thread
-        intent.getStringExtra("server_url")?.let { url ->
-            if (url.isNotBlank()) {
-                kotlinx.coroutines.CoroutineScope(kotlinx.coroutines.Dispatchers.IO).launch {
-                    try {
-                        dependencyContainer.switchServer(url)
-                        dependencyContainer.settingsRepository.updateServerUrl(url)
-                    } catch (e: Exception) {
-                        Log.w("MainActivity", "Failed to switch server: ${e.message}")
-                    }
-                }
-            }
-        }
 
         // Auto-login via intent extras (for ADB testing / HelixQA).
         // Usage: adb shell am start -n ... --es qa_username admin --es qa_password admin123
