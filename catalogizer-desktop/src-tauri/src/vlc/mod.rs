@@ -92,14 +92,22 @@ impl VLCPlayer {
     /// Create a new VLC player instance
     pub fn new() -> Result<Self, VLCError> {
         // VLC command line arguments
+        // Using map_err to convert NulError to VLCError instead of unwrap
         let args = vec![
-            CString::new("--no-video-title-show").unwrap(),
-            CString::new("--no-snapshot-preview").unwrap(),
-            CString::new("--network-caching=3000").unwrap(),
-            CString::new("--file-caching=1000").unwrap(),
-            CString::new("--live-caching=3000").unwrap(),
-            CString::new("--audio-time-stretch").unwrap(),
-            CString::new("--avcodec-hw").unwrap(),
+            CString::new("--no-video-title-show")
+                .map_err(|e| VLCError::InitializationError(format!("Invalid argument: {}", e)))?,
+            CString::new("--no-snapshot-preview")
+                .map_err(|e| VLCError::InitializationError(format!("Invalid argument: {}", e)))?,
+            CString::new("--network-caching=3000")
+                .map_err(|e| VLCError::InitializationError(format!("Invalid argument: {}", e)))?,
+            CString::new("--file-caching=1000")
+                .map_err(|e| VLCError::InitializationError(format!("Invalid argument: {}", e)))?,
+            CString::new("--live-caching=3000")
+                .map_err(|e| VLCError::InitializationError(format!("Invalid argument: {}", e)))?,
+            CString::new("--audio-time-stretch")
+                .map_err(|e| VLCError::InitializationError(format!("Invalid argument: {}", e)))?,
+            CString::new("--avcodec-hw")
+                .map_err(|e| VLCError::InitializationError(format!("Invalid argument: {}", e)))?,
         ];
         
         let argc = args.len() as c_int;
@@ -207,12 +215,14 @@ impl VLCPlayer {
     }
     
     /// Set event callback
-    pub fn set_event_callback<F>(&self, callback: F)
+    pub fn set_event_callback<F>(&self, callback: F) -> Result<(), VLCError>
     where
         F: Fn(PlayerEvent) + Send + Sync + 'static
     {
-        let mut cb = self.event_callback.lock().unwrap();
+        let mut cb = self.event_callback.lock()
+            .map_err(|_| VLCError::InvalidState("Event callback mutex poisoned".to_string()))?;
         *cb = Some(Box::new(callback));
+        Ok(())
     }
     
     /// Play media from URL
