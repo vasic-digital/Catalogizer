@@ -539,13 +539,13 @@ mod tests {
         let player = VLCPlayer::new();
         assert!(player.is_ok());
         
-        let player = player.unwrap();
+        let player = player.expect("VLC player should initialize");
         assert_eq!(player.get_state(), PlaybackState::Idle);
     }
     
     #[test]
     fn test_playback_state_transitions() {
-        let mut player = VLCPlayer::new().unwrap();
+        let mut player = VLCPlayer::new().expect("VLC player should initialize");
         
         // Initially idle
         assert_eq!(player.get_state(), PlaybackState::Idle);
@@ -560,7 +560,7 @@ mod tests {
     
     #[test]
     fn test_rate_control() {
-        let player = VLCPlayer::new().unwrap();
+        let player = VLCPlayer::new().expect("VLC player should initialize");
         
         player.set_rate(1.5);
         // Rate should be set (can't verify without playing)

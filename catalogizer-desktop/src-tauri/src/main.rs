@@ -256,8 +256,8 @@ mod tests {
                 auto_start: false,
             };
 
-            let json = serde_json::to_string(&config).unwrap();
-            let deserialized: AppConfig = serde_json::from_str(&json).unwrap();
+            let json = serde_json::to_string(&config).expect("Serialization should succeed");
+            let deserialized: AppConfig = serde_json::from_str(&json).expect("Serialization should succeed");
 
             assert_eq!(config.server_url, deserialized.server_url);
             assert_eq!(config.auth_token, deserialized.auth_token);
@@ -274,7 +274,7 @@ mod tests {
                 "auto_start": true
             }"#;
 
-            let config: AppConfig = serde_json::from_str(json).unwrap();
+            let config: AppConfig = serde_json::from_str(json).expect("Serialization should succeed");
 
             assert_eq!(config.server_url, Some("https://api.example.com".to_string()));
             assert_eq!(config.auth_token, Some("jwt-token-123".to_string()));
@@ -291,7 +291,7 @@ mod tests {
                 "auto_start": false
             }"#;
 
-            let config: AppConfig = serde_json::from_str(json).unwrap();
+            let config: AppConfig = serde_json::from_str(json).expect("Serialization should succeed");
 
             assert!(config.server_url.is_none());
             assert!(config.auth_token.is_none());
@@ -406,7 +406,7 @@ mod tests {
             });
 
             // Wait for write to complete
-            write_task.await.unwrap();
+            write_task.await.expect("Serialization should succeed");
 
             // Verify the write was successful
             let config = state.lock().await;
@@ -539,7 +539,7 @@ mod tests {
             };
 
             // Serialize to JSON
-            let json = serde_json::to_string_pretty(&original).unwrap();
+            let json = serde_json::to_string_pretty(&original).expect("Serialization should succeed");
 
             // Verify JSON contains expected fields
             assert!(json.contains("server_url"));
@@ -548,7 +548,7 @@ mod tests {
             assert!(json.contains("auto_start"));
 
             // Deserialize back
-            let restored: AppConfig = serde_json::from_str(&json).unwrap();
+            let restored: AppConfig = serde_json::from_str(&json).expect("Serialization should succeed");
 
             // Verify values match
             assert_eq!(original.server_url, restored.server_url);
@@ -664,7 +664,7 @@ mod tests {
                 server_url: Some("http://192.168.1.100:8080/api?key=value&foo=bar".to_string()),
                 ..AppConfig::default()
             };
-            assert!(config.server_url.unwrap().contains("?key=value"));
+            assert!(config.server_url.expect("Serialization should succeed").contains("?key=value"));
         }
 
         #[test]
@@ -674,7 +674,7 @@ mod tests {
                 "auto_start": false
             }"#;
 
-            let config: AppConfig = serde_json::from_str(json).unwrap();
+            let config: AppConfig = serde_json::from_str(json).expect("Serialization should succeed");
             assert!(config.server_url.is_none());
             assert!(config.auth_token.is_none());
             assert_eq!(config.theme, "dark");
@@ -683,7 +683,7 @@ mod tests {
         #[test]
         fn test_config_serialization_preserves_none() {
             let config = AppConfig::default();
-            let json = serde_json::to_string(&config).unwrap();
+            let json = serde_json::to_string(&config).expect("Serialization should succeed");
             assert!(json.contains("null"));
         }
     }
