@@ -132,6 +132,24 @@ fun MediaCard(
                         )
                 )
 
+                // Watch progress bar (bottom) - Netflix style
+                if (mediaItem.hasWatchProgress && mediaItem.watchProgress > 0 && mediaItem.watchProgress < 0.95) {
+                    Box(
+                        modifier = Modifier
+                            .align(Alignment.BottomCenter)
+                            .fillMaxWidth()
+                            .height(4.dp)
+                            .background(Color.Black.copy(alpha = 0.5f))
+                    ) {
+                        Box(
+                            modifier = Modifier
+                                .fillMaxHeight()
+                                .fillMaxWidth(mediaItem.watchProgress.toFloat())
+                                .background(MaterialTheme.colorScheme.primary)
+                        )
+                    }
+                }
+
                 // Play button overlay (bottom-right)
                 Box(
                     modifier = Modifier
@@ -385,6 +403,24 @@ fun CompactMediaCard(
                         modifier = Modifier.size(24.dp),
                         tint = Color.White
                     )
+                }
+                
+                // Watch progress bar (bottom) - Netflix style
+                if (mediaItem.hasWatchProgress && mediaItem.watchProgress > 0 && mediaItem.watchProgress < 0.95) {
+                    Box(
+                        modifier = Modifier
+                            .align(Alignment.BottomCenter)
+                            .fillMaxWidth()
+                            .height(3.dp)
+                            .background(Color.Black.copy(alpha = 0.5f))
+                    ) {
+                        Box(
+                            modifier = Modifier
+                                .fillMaxHeight()
+                                .fillMaxWidth(mediaItem.watchProgress.toFloat())
+                                .background(androidx.tv.material3.MaterialTheme.colorScheme.primary)
+                        )
+                    }
                 }
             }
         }
