@@ -80,6 +80,19 @@ fi
 6. Regression test verifies the fix
 7. Full QA session resumes only after verification
 
+### MANDATORY: Universal Solution Principle - Works With ANY Application
+
+**ALL fixes, workarounds, and testing infrastructure MUST be UNIVERSAL and work with ANY application.**
+
+- **NEVER add test-only code to the application under test** (no `QAInputReceiver`, no test endpoints, no bypasses)
+- **NEVER modify the target application** to make it "testable" or facilitate testing
+- **ALWAYS implement fixes in the testing tool/infrastructure** (HelixQA, test frameworks, automation tools)
+- **HelixQA must handle text input** via on-screen keyboard navigation, not app modifications
+- **If detection/monitoring fails** → Improve the testing framework, not the app
+- **Target applications require ZERO modifications** for testing
+- **Universal solutions ensure**: portability, maintainability, valid test results, reusability
+- **App-specific testing code is PROHIBITED** and must be removed/reimplemented universally
+
 ### MANDATORY: Device Auto-Connect via .devconnect (Before HelixQA)
 
 **Ensure Android TV devices are connected BEFORE running HelixQA.**
@@ -838,4 +851,57 @@ If any script or command suggests using `sudo`:
 4. Modify commands to work within user permissions
 
 **VIOLATION OF THIS CONSTRAINT IS STRICTLY PROHIBITED.**
+
+
+---
+
+### 🔴 CRITICAL: HelixQA UI Testing Exclusivity
+
+**ALL automated UI/UX testing MUST be performed exclusively by HelixQA.**
+
+#### What is FORBIDDEN
+
+- Writing custom ADB tap/click scripts
+- Using coordinate-based automation
+- Creating manual testing workflows
+- Using third-party UI testing tools outside HelixQA
+- Any form of non-LLM-driven UI automation
+
+#### What is MANDATORY
+
+- HelixQA for ALL automated UI/UX testing
+- LLM vision-driven navigation (screenshot → analysis → action)
+- Video recording with frame extraction for analysis
+- High-quality video (16Mbps, 1920x1080 minimum)
+- Frame-by-frame analysis of recorded video material
+
+#### Rationale
+
+Video-based analysis with frame extraction:
+1. Captures ALL UI states including transitions
+2. No timing issues - continuous recording
+3. Frame-accurate analysis capability
+4. Better debugging with video evidence
+5. Standardized across all platforms
+
+#### Compliance
+
+Any agent not following this mandate will have their changes REJECTED.
+This is enforced at the project level and is non-negotiable.
+
+
+---
+
+### 🔴 CRITICAL: QA Must Detect Screen Stagnation
+
+**NEVER accept "tests passing" when app is stuck on one screen.**
+
+Requirements:
+1. Track actual screen state changes
+2. Use EXECUTABLE actions (ADB commands), not text descriptions
+3. Verify each action produces a visible change
+4. Report stagnation immediately
+5. Require frame-by-frame video analysis
+
+**A QA system that doesn't recognize stuck screens is WORTHLESS.**
 

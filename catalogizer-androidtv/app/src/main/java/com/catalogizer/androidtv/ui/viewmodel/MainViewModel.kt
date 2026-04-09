@@ -1,9 +1,11 @@
 package com.catalogizer.androidtv.ui.viewmodel
 
+import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.catalogizer.androidtv.data.repository.AuthRepository
 import kotlinx.coroutines.CompletableDeferred
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -49,13 +51,20 @@ class MainViewModel(
 
     fun initializeApp() {
         viewModelScope.launch {
-            // If QA auto-login is pending, wait for it (max 10s) before
-            // showing the app. This prevents HomeScreen from loading with
-            // no auth token and displaying an empty library.
-            qaLoginGate?.let { gate ->
-                withTimeoutOrNull(10_000L) { gate.await() }
+            try {
+                // If QA auto-login is pending, wait for it (max 10s) before
+                // showing the app. This prevents HomeScreen from loading with
+                // no auth token and displaying an empty library.
+                qaLoginGate?.let { gate ->
+                    withTimeoutOrNull(10_000L) { gate.await() }
+                }
+            } catch (e: Exception) {
+                Log.w("MainViewModel", "Error during QA login wait: ${e.message}")
             }
+            // ALWAYS set loading to false to prevent ANR
+            // Splash screen has its own minimum duration timer
             _isLoading.value = false
+            Log.d("MainViewModel", "App initialization complete, isLoading=false")
         }
     }
 }

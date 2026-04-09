@@ -1,0 +1,89 @@
+version: "1.0"
+name: "Catalogizer Android TV - EXECUTABLE Tests"
+description: "Test bank with ACTUAL ADB commands for real UI automation"
+
+test_cases:
+  - id: tv-cold-start-real
+    name: "TV Cold Start - ACTUAL LAUNCH"
+    category: launch
+    priority: critical
+    platforms: [androidtv]
+    steps:
+      - name: "Force stop app"
+        action: "adb_shell: am force-stop com.catalogizer.androidtv"
+        expected: "App process stopped"
+        timeout: 5
+        
+      - name: "Wait 3 seconds"
+        action: "sleep: 3000"
+        expected: "Wait complete"
+        
+      - name: "Launch app"
+        action: "adb_shell: am start -n com.catalogizer.androidtv/.ui.MainActivity"
+        expected: "Activity started"
+        timeout: 5
+        
+      - name: "Wait for splash (18 seconds - CRITICAL!)"
+        action: "sleep: 18000"
+        expected: "Splash completes, login visible"
+        
+      - name: "Screenshot verify login"
+        action: "screenshot"
+        expected: "Login screen with Username, Password fields visible"
+        vision_verify: true
+
+  - id: tv-login-real
+    name: "TV Login - ACTUAL CREDENTIAL ENTRY"
+    category: authentication
+    priority: critical
+    platforms: [androidtv]
+    dependencies: [tv-cold-start-real]
+    steps:
+      - name: "Navigate to username"
+        action: "keypress: KEYCODE_DPAD_DOWN"
+        expected: "Username field focused"
+        timeout: 2
+        
+      - name: "Select username field"
+        action: "keypress: KEYCODE_ENTER"
+        expected: "Field activated"
+        timeout: 2
+        
+      - name: "Type username"
+        action: "text: admin"
+        expected: "Username entered"
+        timeout: 3
+        
+      - name: "Navigate to password"
+        action: "keypress: KEYCODE_DPAD_DOWN"
+        expected: "Password field focused"
+        timeout: 2
+        
+      - name: "Select password field"
+        action: "keypress: KEYCODE_ENTER"
+        expected: "Field activated"
+        timeout: 2
+        
+      - name: "Type password"
+        action: "text: admin123"
+        expected: "Password entered"
+        timeout: 3
+        
+      - name: "Navigate to login button"
+        action: "keypress: KEYCODE_DPAD_DOWN"
+        expected: "Login button focused"
+        timeout: 2
+        
+      - name: "Click login"
+        action: "keypress: KEYCODE_ENTER"
+        expected: "Login submitted"
+        timeout: 5
+        
+      - name: "Wait for home screen (10 seconds)"
+        action: "sleep: 10000"
+        expected: "Home screen loads"
+        
+      - name: "Screenshot verify home"
+        action: "screenshot"
+        expected: "Home screen with media content visible, not login"
+        vision_verify: true

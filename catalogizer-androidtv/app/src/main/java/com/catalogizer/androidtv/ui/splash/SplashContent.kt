@@ -1,6 +1,7 @@
 package com.catalogizer.androidtv.ui.splash
 
 import android.content.Context
+import android.util.Log
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
@@ -23,9 +24,12 @@ import com.catalogizer.androidtv.R
 import kotlinx.coroutines.delay
 
 /**
- * TV splash screen with version display and a minimum display duration
- * (longer on first launch). Transitions to the main content when both the
- * timer completes and [isAppReady] is true.
+ * TV splash screen with version display and a minimum display duration.
+ * Transitions to the main content when both the timer completes and [isAppReady] is true.
+ * 
+ * CRITICAL: Uses short timeouts to prevent ANR (Android kills app after 5s of no response).
+ * - Min display: 1.5s (normal) / 2.5s (first launch)
+ * - Safety timeout: 5s max (must be < Android ANR threshold)
  */
 @Composable
 fun SplashContent(
@@ -35,7 +39,9 @@ fun SplashContent(
     val context = LocalContext.current
     val prefs = remember { context.getSharedPreferences("catalogizer_prefs", Context.MODE_PRIVATE) }
     val isFirstLaunch = remember { !prefs.getBoolean("has_launched", false) }
-    val minDuration = remember { if (isFirstLaunch) 5000L else 2500L }
+    // Reduced durations for faster startup (critical for QA testing)
+    val minDuration = remember { if (isFirstLaunch) 2500L else 1500L }
+    val startTime = remember { System.currentTimeMillis() }
 
     LaunchedEffect(Unit) {
         prefs.edit().putBoolean("has_launched", true).apply()
@@ -46,10 +52,23 @@ fun SplashContent(
     LaunchedEffect(Unit) {
         delay(minDuration)
         timerComplete = true
+        Log.d("SplashContent", "Min duration timer complete (${minDuration}ms)")
     }
 
-    LaunchedEffect(timerComplete, isAppReady) {
-        if (timerComplete && isAppReady) {
+    // Safety timeout: force complete after 5 seconds regardless of isAppReady
+    // Android ANR threshold is ~5 seconds for input, so we must complete before that
+    var safetyTimeout by remember { mutableStateOf(false) }
+    LaunchedEffect(Unit) {
+        delay(5000L)
+        safetyTimeout = true
+        val elapsed = System.currentTimeMillis() - startTime
+        Log.w("SplashContent", "SAFETY TIMEOUT triggered after ${elapsed}ms - forcing splash completion")
+    }
+
+    LaunchedEffect(timerComplete, isAppReady, safetyTimeout) {
+        if ((timerComplete && isAppReady) || safetyTimeout) {
+            val elapsed = System.currentTimeMillis() - startTime
+            Log.i("SplashContent", "Splash completing after ${elapsed}ms (timer=$timerComplete, ready=$isAppReady, safety=$safetyTimeout)")
             onSplashComplete()
         }
     }

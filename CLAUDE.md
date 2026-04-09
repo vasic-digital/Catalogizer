@@ -42,6 +42,19 @@ Multi-platform media collection manager. Detects, categorizes, and organizes med
 - **ANR/Crash detection must pause the session** and alert immediately
 - **NO QA session is valid without real-time log monitoring**
 
+### CRITICAL: Universal Solution Principle (MANDATORY)
+
+**ALL fixes, workarounds, and testing infrastructure MUST be UNIVERSAL - working with ANY application, not just Catalogizer.**
+
+- **NEVER add test-only code to the application under test** (no `QAInputReceiver`, no test endpoints, no bypasses in app code)
+- **NEVER modify the target application to make it "testable"**
+- **ALWAYS implement fixes in the testing tool/infrastructure** itself
+- **HelixQA must handle text input via on-screen keyboard navigation** - not by modifying the app
+- **If detection fails** → Improve detection algorithms in HelixQA, not in the app
+- **The target application should require ZERO modifications for testing**
+- **Universal solutions ensure portability, maintainability, and valid test results**
+- **ANY solution that modifies the app under test is INVALID and must be reimplemented**
+
 ### CRITICAL: Device Auto-Connect via .devconnect
 
 **Devices listed in `.devconnect` MUST be auto-connected before HelixQA executes.**
@@ -801,3 +814,144 @@ If any script or command suggests using `sudo`:
 6. ✅ Report generation (consolidated results)
 
 **Output:** `qa-results/session-<timestamp>/`
+
+---
+
+## 🔴 CRITICAL: HelixQA EXCLUSIVITY MANDATE
+
+### UI/UX Testing - HelixQA ONLY
+
+**Effective Immediately - ALL automated UI/UX testing MUST be performed exclusively by HelixQA.**
+
+#### Absolute Rules
+
+1. **NO MANUAL UI TESTING SCRIPTS**
+   - ❌ Never write custom ADB tap sequences
+   - ❌ Never use coordinate-based automation
+   - ❌ Never create shell scripts for UI interactions
+   - ✅ ALWAYS use HelixQA for automated UI testing
+
+2. **NO THIRD-PARTY UI TESTING TOOLS**
+   - ❌ No Appium scripts outside HelixQA
+   - ❌ No Playwright scripts outside HelixQA
+   - ❌ No custom UI automation frameworks
+   - ✅ HelixQA is the SOLE authorized UI testing tool
+
+3. **VISION-DRIVEN TESTING MANDATORY**
+   - ALL navigation MUST be LLM vision-driven
+   - Screenshot → LLM analysis → Action decision
+   - Every single step must use vision models
+   - NO hardcoded coordinates or sleep timers
+
+#### Implementation Requirements
+
+1. **Video-Based Analysis**
+   - All testing MUST record high-quality video
+   - Frames extracted from video for analysis
+   - 16Mbps bitrate minimum for Android recording
+   - 1920x1080 resolution for frame extraction
+
+2. **Screenshot Replacement Protocol**
+   - Screenshots replaced with video frame extraction
+   - Use `ExtractFrameAt()` for specific timestamps
+   - Use `ExtractLatestFrame()` for current state
+   - Higher quality and reliability than direct screenshots
+
+3. **Timing Issue Resolution**
+   - Video captures ALL frames continuously
+   - No missed frames due to timing issues
+   - Extract frames after UI has rendered
+   - Frame-by-frame analysis capability
+
+#### Consequences of Non-Compliance
+
+- Code violating this mandate will be REJECTED
+- Manual testing scripts will be DELETED
+- Only HelixQA-based solutions are acceptable
+- This is a ZERO TOLERANCE policy
+
+#### Verification Checklist
+
+Before submitting any UI testing solution:
+- [ ] Is HelixQA the ONLY testing tool used?
+- [ ] Are video recordings used for analysis?
+- [ ] Is every action LLM vision-driven?
+- [ ] Are there NO hardcoded coordinates?
+- [ ] Are there NO manual adb tap sequences?
+
+**This mandate is ABSOLUTE and NON-NEGOTIABLE.**
+
+
+---
+
+## 🔴 CRITICAL: QA System Requirements - SCREEN RECOGNITION & ACTION
+
+### The Problem
+A QA system that cannot recognize when the app is stuck on the same screen is **USELESS**.
+
+Example of FAILURE:
+- Tests "pass" because they check "does login screen exist?" 
+- App is stuck on login for ALL tests
+- Never actually logs in
+- Never tests home screen, media browsing, playback
+- QA reports "12/12 tests PASSED" but 0 actual functionality tested
+
+### Mandate: QA Must Recognize and Report Screen Stagnation
+
+#### 1. Screen State Tracking
+HelixQA MUST:
+- Track which screen is currently displayed
+- Compare current screen to previous screen
+- Detect if screen hasn't changed after an action
+- Report STAGNATION as a critical issue
+
+#### 2. Action Verification
+HelixQA MUST:
+- Actually EXECUTE actions (ADB commands, not just descriptions)
+- Verify the action had an effect
+- Confirm screen state changed as expected
+- FAIL the test if no change occurred
+
+#### 3. Test Bank Requirements
+ALL test banks MUST use EXECUTABLE actions:
+
+❌ WRONG (text description):
+```json
+{
+  "action": "Enter admin/admin123 credentials",
+  "expected": "Home screen loads"
+}
+```
+
+✅ CORRECT (executable command):
+```yaml
+- name: Type username
+  action: "adb_shell: input text admin"
+  expected: "Username field populated"
+  
+- name: Click login
+  action: "adb_shell: input keyevent KEYCODE_ENTER"
+  expected: "Screen changes from login to home"
+```
+
+#### 4. Frame-by-Frame Video Analysis
+For EVERY test:
+1. Record video at 16Mbps, 1920x1080
+2. Extract frames at 1-second intervals
+3. Compare frame N to frame N+1
+4. If frames are identical for >5 seconds after an action → REPORT STAGNATION
+5. If app stays on login screen for entire test → REPORT BLOCKER ISSUE
+
+#### 5. Critical Issues to Auto-Report
+- App stuck on same screen for >10 seconds
+- Login screen visible but login never attempted
+- Home screen never reached after login action
+- Blank/black screens
+- ANR/Crash detection
+
+### Consequence of Non-Compliance
+QA results showing "100% pass" when app never progressed past login screen are **FRAUDULENT** and **UNACCEPTABLE**.
+
+**All test banks must be re-written with EXECUTABLE actions.**
+**All QA results must show ACTUAL screen progression, not just screen existence.**
+

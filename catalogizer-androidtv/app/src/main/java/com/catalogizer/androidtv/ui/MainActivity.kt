@@ -51,11 +51,20 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-        // Handle server URL from intent extra (for ADB testing / HelixQA)
+        // CRITICAL: Initialize ViewModels FIRST before any server operations
+        // to ensure the UI can render and prevent ANR
         val dependencyContainer = (application as CatalogizerTVApplication).dependencyContainer
+        
+        // Initialize ViewModels immediately without blocking
+        authViewModel = dependencyContainer.createAuthViewModel()
+        mainViewModel = dependencyContainer.createMainViewModel()
+        homeViewModel = dependencyContainer.createHomeViewModel()
+        searchViewModel = dependencyContainer.createSearchViewModel()
+
+        // Handle server URL from intent extra (for ADB testing / HelixQA)
+        // Run in background - never block UI thread
         intent.getStringExtra("server_url")?.let { url ->
             if (url.isNotBlank()) {
-                // Switch server immediately but don't block
                 kotlinx.coroutines.CoroutineScope(kotlinx.coroutines.Dispatchers.IO).launch {
                     try {
                         dependencyContainer.switchServer(url)
@@ -66,12 +75,6 @@ class MainActivity : ComponentActivity() {
                 }
             }
         }
-
-        // Initialize ViewModels - use lazy getters to avoid blocking on API creation
-        authViewModel = dependencyContainer.createAuthViewModel()
-        mainViewModel = dependencyContainer.createMainViewModel()
-        homeViewModel = dependencyContainer.createHomeViewModel()
-        searchViewModel = dependencyContainer.createSearchViewModel()
 
         // Auto-login via intent extras (for ADB testing / HelixQA).
         // Usage: adb shell am start -n ... --es qa_username admin --es qa_password admin123

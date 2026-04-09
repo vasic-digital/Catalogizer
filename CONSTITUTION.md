@@ -59,5 +59,50 @@ When ANRs or crashes are detected:
 
 ---
 
+### Article IV: Universal Solution Principle (MANDATORY)
+
+**§4.1 All Solutions Must Be Universal**
+
+When implementing fixes, workarounds, or testing infrastructure, **ALL solutions MUST be UNIVERSAL** and work with **ANY application**, not just Catalogizer.
+
+**§4.2 Scope**
+
+This applies to:
+- **QA Tools** (HelixQA, test frameworks, automation scripts)
+- **Input Methods** (text input, navigation, gestures)
+- **Detection Systems** (ANR detection, crash monitoring, performance metrics)
+- **Workarounds** (temporary fixes, bypasses, fallbacks)
+- **Testing Infrastructure** (video recording, screenshot capture, log monitoring)
+
+**§4.3 Prohibited Practices**
+
+The following are **STRICTLY PROHIBITED**:
+1. Adding test-only code to the application under test (e.g., `QAInputReceiver` in app code)
+2. Modifying the target application to make it "testable"
+3. Creating app-specific testing hooks, endpoints, or bypasses
+4. Hardcoding app-specific coordinates, IDs, or behaviors in testing tools
+
+**§4.4 Correct Approach**
+
+The fix MUST be implemented in the **testing tool/infrastructure** itself:
+- If text input doesn't work → Fix the input method in HelixQA (e.g., on-screen keyboard navigation)
+- If detection fails → Improve detection algorithms in the testing framework
+- If navigation breaks → Enhance the navigation engine
+- The target application should require **ZERO modifications** for testing
+
+**§4.5 Rationale**
+
+Universal solutions ensure:
+- **Portability**: Testing tools work with any Android TV app without modification
+- **Maintainability**: No app-specific test code to maintain
+- **Validity**: Tests reflect real user interactions
+- **Reusability**: Solutions benefit future projects and the broader community
+
+**§4.6 Violation Consequences**
+
+Any solution that modifies the application under test to facilitate testing is **INVALID** and must be reimplemented as a universal solution in the testing infrastructure.
+
+---
+
 *Last Updated: 2026-04-08*
 *Enforced by: Project Lead*

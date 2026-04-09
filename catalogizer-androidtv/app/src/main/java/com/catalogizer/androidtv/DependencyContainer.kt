@@ -84,7 +84,7 @@ class DependencyContainer(private val context: Context) {
         // Retrofit requires a non-empty base URL. Use a placeholder when unconfigured;
         // all calls will fail with a connection error, which is the expected behavior
         // until the user configures a real server URL.
-        val effectiveUrl = if (baseUrl.isBlank()) "http://localhost:8080" else baseUrl
+        val effectiveUrl = baseUrl.ifBlank { "http://localhost:8080" }
         val sanitizedUrl = effectiveUrl.trimEnd('/')
         
         return try {
@@ -197,8 +197,11 @@ class DependencyContainer(private val context: Context) {
      *
      * Priority:
      * 1. Persisted server URL from DataStore (previous user selection)
-     * 2. Probe localhost:8080 (works when ADB reverse is active)
+     * 2. Probe localhost:8080 (works when ADB reverse is active) - FAST timeout
      * 3. Leave empty — LoginScreen will prompt for manual entry or discovery
+     * 
+     * CRITICAL: This method must complete quickly (<2s) to prevent ANR.
+     * All network operations use short timeouts during startup.
      */
     suspend fun initializeAsync() {
         // Load server URL from persisted settings
@@ -209,8 +212,21 @@ class DependencyContainer(private val context: Context) {
                 Log.d(TAG, "Loaded saved server URL: $currentBaseUrl")
             } else {
                 // No saved URL — try localhost (ADB reverse proxy)
+                // Use FAST probe (500ms timeout, 0 retries) to avoid blocking startup
                 val localhostUrl = "http://localhost:8080"
-                val probe = discoveryService.probeServer(localhostUrl)
+                val probe = try {
+                    kotlinx.coroutines.withTimeoutOrNull(2000L) {
+                        discoveryService.probeServer(
+                            baseUrl = localhostUrl,
+                            timeoutMs = 500,  // Fast timeout for startup
+                            retryCount = 0    // No retries during startup
+                        )
+                    }
+                } catch (e: Exception) {
+                    Log.d(TAG, "Fast localhost probe failed: ${e.message}")
+                    null
+                }
+                
                 if (probe != null) {
                     // Use the resolved URL (real IP from /discovery), not localhost
                     val resolvedUrl = probe.url
@@ -218,19 +234,25 @@ class DependencyContainer(private val context: Context) {
                     settingsRepository.updateServerUrl(resolvedUrl)
                     settingsRepository.addServer(probe)
                     Log.d(TAG, "Auto-discovered server: $resolvedUrl")
+                } else {
+                    Log.d(TAG, "No localhost server found - will use login screen")
                 }
             }
         } catch (e: Exception) {
             Log.w(TAG, "Initialization error: ${e.message}")
             // Leave empty — LoginScreen handles unconfigured state
         }
+        
         // Trigger API creation with the loaded URL (if any)
-        _api = null // Force recreation with correct URL
+        // Do this in background to not block startup
         if (currentBaseUrl.isNotBlank()) {
-            try {
-                api // Only create API if we have a URL
-            } catch (e: Exception) {
-                Log.w(TAG, "Failed to create API during init: ${e.message}")
+            kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) {
+                try {
+                    _api = null // Force recreation with correct URL
+                    api // Create API client
+                } catch (e: Exception) {
+                    Log.w(TAG, "Failed to create API during init: ${e.message}")
+                }
             }
         }
     }
