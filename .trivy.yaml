@@ -1,0 +1,67 @@
+# Trivy Configuration for Catalogizer
+# https://aquasecurity.github.io/trivy/latest/docs/configuration/
+
+# Global options
+debug: false
+insecure: false
+
+# Cache options
+cache:
+  backend: fs
+  dir: $HOME/.cache/trivy
+
+# Report options
+format: json
+output: reports/trivy-results.json
+severity:
+  - HIGH
+  - CRITICAL
+
+# Scan options
+scan:
+  scanners:
+    - vuln
+    - secret
+    - config
+  skip-dirs:
+    - node_modules
+    - vendor
+    - dist
+    - build
+    - target
+    - releases
+    - .git
+    - sonarqube
+    - .cache
+    - temp
+  skip-files:
+    - "*.test.js"
+    - "*.test.ts"
+    - "*.test.tsx"
+    - "*_test.go"
+    - "*.min.js"
+    - "*.bundle.js"
+
+# Vulnerability options
+vulnerability:
+  type:
+    - os
+    - library
+  ignore-unfixed: false
+
+# Secret options
+secret:
+  config: .trivy-secrets.yaml
+
+# Database options
+db:
+  repository: ghcr.io/aquasecurity/trivy-db
+  java-repository: ghcr.io/aquasecurity/trivy-java-db
+
+# Misconfiguration options
+misconfiguration:
+  include-non-failures: false
+
+# Kubernetes options (if applicable)
+kubernetes:
+  all-namespaces: false

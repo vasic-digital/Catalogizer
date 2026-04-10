@@ -1,0 +1,217 @@
+# Application Alerts for Catalogizer
+# These alerts monitor application-specific metrics
+
+groups:
+  - name: catalogizer-api
+    interval: 30s
+    rules:
+      # API Down
+      - alert: APIDown
+        expr: up{job="catalogizer-api"} == 0
+        for: 1m
+        labels:
+          severity: critical
+          service: api
+        annotations:
+          summary: "Catalogizer API is down"
+          description: "The Catalogizer API at {{ $labels.instance }} has been down for more than 1 minute"
+          runbook_url: "https://docs.catalogizer.io/runbooks/API_UNRESPONSIVE"
+
+      # High Error Rate
+      - alert: HighErrorRate
+        expr: |
+          (
+            sum(rate(http_requests_total{job="catalogizer-api",status=~"5.."}[5m]))
+            /
+            sum(rate(http_requests_total{job="catalogizer-api"}[5m]))
+          ) * 100 > 5
+        for: 5m
+        labels:
+          severity: high
+          service: api
+        annotations:
+          summary: "High error rate detected"
+          description: "Error rate is above 5% for more than 5 minutes"
+          runbook_url: "https://docs.catalogizer.io/runbooks/API_UNRESPONSIVE"
+
+      # Critical Error Rate
+      - alert: CriticalErrorRate
+        expr: |
+          (
+            sum(rate(http_requests_total{job="catalogizer-api",status=~"5.."}[5m]))
+            /
+            sum(rate(http_requests_total{job="catalogizer-api"}[5m]))
+          ) * 100 > 10
+        for: 2m
+        labels:
+          severity: critical
+          service: api
+        annotations:
+          summary: "Critical error rate detected"
+          description: "Error rate is above 10% for more than 2 minutes"
+          runbook_url: "https://docs.catalogizer.io/runbooks/API_UNRESPONSIVE"
+
+      # High Latency
+      - alert: HighLatency
+        expr: histogram_quantile(0.95, sum(rate(http_request_duration_seconds_bucket{job="catalogizer-api"}[5m])) by (le)) > 0.5
+        for: 5m
+        labels:
+          severity: warning
+          service: api
+        annotations:
+          summary: "High API latency detected"
+          description: "95th percentile latency is above 500ms for more than 5 minutes"
+
+      # Critical Latency
+      - alert: CriticalLatency
+        expr: histogram_quantile(0.95, sum(rate(http_request_duration_seconds_bucket{job="catalogizer-api"}[5m])) by (le)) > 1
+        for: 2m
+        labels:
+          severity: critical
+          service: api
+        annotations:
+          summary: "Critical API latency detected"
+          description: "95th percentile latency is above 1 second for more than 2 minutes"
+
+      # Rate Limiting Triggered
+      - alert: RateLimitingTriggered
+        expr: rate(http_requests_total{job="catalogizer-api",status="429"}[5m]) > 0
+        for: 1m
+        labels:
+          severity: warning
+          service: api
+        annotations:
+          summary: "Rate limiting is being triggered"
+          description: "API rate limiting is being triggered frequently"
+
+      # JWT Authentication Failures
+      - alert: JWTAuthFailures
+        expr: rate(http_requests_total{job="catalogizer-api",status="401"}[5m]) > 10
+        for: 5m
+        labels:
+          severity: warning
+          service: api
+          category: security
+        annotations:
+          summary: "High rate of authentication failures"
+          description: "Authentication failure rate is unusually high"
+
+  - name: catalogizer-database
+    interval: 30s
+    rules:
+      # Database Connection Failures
+      - alert: DatabaseConnectionFailure
+        expr: catalogizer_db_connection_errors_total > 0
+        for: 1m
+        labels:
+          severity: critical
+          service: database
+        annotations:
+          summary: "Database connection failures detected"
+          description: "Unable to connect to database"
+          runbook_url: "https://docs.catalogizer.io/runbooks/DATABASE_CONNECTION"
+
+      # Slow Queries
+      - alert: SlowDatabaseQueries
+        expr: |
+          (
+            sum(rate(catalogizer_db_query_duration_seconds_bucket{le="0.1"}[5m]))
+            /
+            sum(rate(catalogizer_db_query_duration_seconds_count[5m]))
+          ) < 0.95
+        for: 5m
+        labels:
+          severity: warning
+          service: database
+        annotations:
+          summary: "Slow database queries detected"
+          description: "More than 5% of queries are taking longer than 100ms"
+          runbook_url: "https://docs.catalogizer.io/runbooks/DATABASE_CONNECTION"
+
+      # Database Connections Exhausted
+      - alert: DatabaseConnectionsExhausted
+        expr: catalogizer_db_open_connections / catalogizer_db_max_open_connections > 0.9
+        for: 2m
+        labels:
+          severity: critical
+          service: database
+        annotations:
+          summary: "Database connections nearly exhausted"
+          description: "More than 90% of database connections are in use"
+
+  - name: catalogizer-web
+    interval: 30s
+    rules:
+      # Web Frontend Down
+      - alert: WebFrontendDown
+        expr: up{job="catalogizer-web"} == 0
+        for: 1m
+        labels:
+          severity: high
+          service: web
+        annotations:
+          summary: "Web frontend is down"
+          description: "The web frontend at {{ $labels.instance }} has been down for more than 1 minute"
+
+      # Build Failures
+      - alert: BuildFailure
+        expr: increase(catalogizer_build_failures_total[1h]) > 0
+        for: 0m
+        labels:
+          severity: warning
+          service: web
+        annotations:
+          summary: "Build failure detected"
+          description: "A build failure has occurred in the last hour"
+
+  - name: business-metrics
+    interval: 60s
+    rules:
+      # Media Scan Failures
+      - alert: MediaScanFailures
+        expr: increase(catalogizer_media_scan_failures_total[1h]) > 5
+        for: 5m
+        labels:
+          severity: warning
+          service: api
+        annotations:
+          summary: "Media scan failures detected"
+          description: "More than 5 media scan failures in the last hour"
+
+      # User Registration Spike
+      - alert: UserRegistrationSpike
+        expr: |
+          (
+            sum(rate(catalogizer_user_registrations_total[5m]))
+            /
+            sum(rate(catalogizer_user_registrations_total[1h] offset 1d))
+          ) > 5
+        for: 10m
+        labels:
+          severity: warning
+          service: api
+        annotations:
+          summary: "Unusual user registration spike"
+          description: "User registration rate is 5x higher than normal"
+
+      # Storage Quota Warnings
+      - alert: StorageQuotaWarning
+        expr: catalogizer_storage_usage_bytes / catalogizer_storage_quota_bytes > 0.8
+        for: 5m
+        labels:
+          severity: warning
+          service: api
+        annotations:
+          summary: "Storage quota warning"
+          description: "Storage usage is above 80% of quota"
+
+      # Storage Quota Critical
+      - alert: StorageQuotaCritical
+        expr: catalogizer_storage_usage_bytes / catalogizer_storage_quota_bytes > 0.95
+        for: 2m
+        labels:
+          severity: critical
+          service: api
+        annotations:
+          summary: "Storage quota critical"
+          description: "Storage usage is above 95% of quota"

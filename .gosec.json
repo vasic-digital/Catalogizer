@@ -1,0 +1,15 @@
+{
+  "severity": "medium",
+  "confidence": "medium",
+  "exclude": [
+    "G104",
+    "G307"
+  ],
+  "tests": false,
+  "nosec": true,
+  "sort": true,
+  "fmt": "json",
+  "out": "reports/gosec-results.json",
+  "track-suppressions": true,
+  "concurrency": 4
+}

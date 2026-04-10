@@ -191,8 +191,7 @@ class SettingsRepository(private val dataStore: DataStore<Preferences>) {
             obj.put("lastConnected", s.lastConnected)
             arr.put(obj)
         }
-        @Suppress("USELESS_ELVIS")
-        return arr.toString() ?: "[]"
+        return arr.toString()
     }
 
     private fun deserializeServers(json: String?): List<ServerEntry> {

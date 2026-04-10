@@ -1,0 +1,209 @@
+# Security Alerts for Catalogizer
+# These alerts monitor security-related events
+
+groups:
+  - name: security
+    interval: 30s
+    rules:
+      # Potential Brute Force Attack
+      - alert: PotentialBruteForce
+        expr: |
+          sum(rate(catalogizer_auth_failures_total[5m])) by (source_ip) > 10
+        for: 5m
+        labels:
+          severity: high
+          service: api
+          category: security
+        annotations:
+          summary: "Potential brute force attack detected"
+          description: "Multiple authentication failures from IP {{ $labels.source_ip }}"
+          runbook_url: "https://docs.catalogizer.io/runbooks/SECURITY_BREACH"
+
+      # Suspicious Login Pattern
+      - alert: SuspiciousLoginPattern
+        expr: |
+          sum(rate(catalogizer_auth_success_total[5m])) by (user_id) > 10
+        for: 5m
+        labels:
+          severity: warning
+          service: api
+          category: security
+        annotations:
+          summary: "Suspicious login pattern detected"
+          description: "User {{ $labels.user_id }} has unusually high login frequency"
+
+      # SQL Injection Attempt
+      - alert: SQLInjectionAttempt
+        expr: |
+          sum(rate(catalogizer_security_events_total{event_type="sql_injection_attempt"}[5m])) > 0
+        for: 0m
+        labels:
+          severity: critical
+          service: api
+          category: security
+        annotations:
+          summary: "SQL injection attempt detected"
+          description: "A potential SQL injection attempt has been blocked"
+          runbook_url: "https://docs.catalogizer.io/runbooks/SECURITY_BREACH"
+
+      # XSS Attempt
+      - alert: XSSAttempt
+        expr: |
+          sum(rate(catalogizer_security_events_total{event_type="xss_attempt"}[5m])) > 0
+        for: 0m
+        labels:
+          severity: high
+          service: api
+          category: security
+        annotations:
+          summary: "Cross-site scripting attempt detected"
+          description: "A potential XSS attempt has been blocked"
+          runbook_url: "https://docs.catalogizer.io/runbooks/SECURITY_BREACH"
+
+      # Path Traversal Attempt
+      - alert: PathTraversalAttempt
+        expr: |
+          sum(rate(catalogizer_security_events_total{event_type="path_traversal_attempt"}[5m])) > 0
+        for: 0m
+        labels:
+          severity: high
+          service: api
+          category: security
+        annotations:
+          summary: "Path traversal attempt detected"
+          description: "A potential path traversal attempt has been blocked"
+          runbook_url: "https://docs.catalogizer.io/runbooks/SECURITY_BREACH"
+
+      # Privilege Escalation Attempt
+      - alert: PrivilegeEscalationAttempt
+        expr: |
+          sum(rate(catalogizer_security_events_total{event_type="privilege_escalation_attempt"}[5m])) > 0
+        for: 0m
+        labels:
+          severity: critical
+          service: api
+          category: security
+        annotations:
+          summary: "Privilege escalation attempt detected"
+          description: "A user attempted to escalate privileges without authorization"
+          runbook_url: "https://docs.catalogizer.io/runbooks/SECURITY_BREACH"
+
+      # Token Anomaly
+      - alert: TokenAnomaly
+        expr: |
+          sum(rate(catalogizer_security_events_total{event_type="invalid_token"}[5m])) by (user_id) > 5
+        for: 5m
+        labels:
+          severity: warning
+          service: api
+          category: security
+        annotations:
+          summary: "Token anomaly detected"
+          description: "Multiple invalid token attempts for user {{ $labels.user_id }}"
+
+      # Data Exfiltration Warning
+      - alert: DataExfiltrationWarning
+        expr: |
+          sum(rate(catalogizer_api_response_bytes_total[5m])) by (user_id) > 104857600
+        for: 5m
+        labels:
+          severity: warning
+          service: api
+          category: security
+        annotations:
+          summary: "Potential data exfiltration"
+          description: "User {{ $labels.user_id }} is downloading unusually large amounts of data"
+
+      # New Admin Account Created
+      - alert: NewAdminAccount
+        expr: |
+          sum(increase(catalogizer_admin_created_total[5m])) > 0
+        for: 0m
+        labels:
+          severity: warning
+          service: api
+          category: security
+        annotations:
+          summary: "New admin account created"
+          description: "A new admin account has been created - verify this was authorized"
+
+      # Configuration Change
+      - alert: SecurityConfigurationChange
+        expr: |
+          sum(increase(catalogizer_config_changes_total{config_type="security"}[5m])) > 0
+        for: 0m
+        labels:
+          severity: warning
+          service: api
+          category: security
+        annotations:
+          summary: "Security configuration changed"
+          description: "Security-related configuration has been modified"
+
+      # Certificate Expiry Warning
+      - alert: CertificateExpiringSoon
+        expr: |
+          (certmanager_certificate_expiration_timestamp_seconds - time()) / 86400 < 30
+        for: 1h
+        labels:
+          severity: warning
+          service: api
+          category: security
+        annotations:
+          summary: "SSL certificate expiring soon"
+          description: "SSL certificate for {{ $labels.name }} expires in less than 30 days"
+
+      # Certificate Expiry Critical
+      - alert: CertificateExpiringCritical
+        expr: |
+          (certmanager_certificate_expiration_timestamp_seconds - time()) / 86400 < 7
+        for: 1h
+        labels:
+          severity: critical
+          service: api
+          category: security
+        annotations:
+          summary: "SSL certificate expiring very soon"
+          description: "SSL certificate for {{ $labels.name }} expires in less than 7 days"
+
+      # Failed Security Scan
+      - alert: FailedSecurityScan
+        expr: |
+          catalogizer_security_scan_failures > 0
+        for: 0m
+        labels:
+          severity: high
+          service: api
+          category: security
+        annotations:
+          summary: "Security scan failed"
+          description: "Automated security scan has detected vulnerabilities"
+
+  - name: compliance
+    interval: 300s
+    rules:
+      # Audit Log Gap
+      - alert: AuditLogGap
+        expr: |
+          time() - catalogizer_last_audit_log_timestamp > 300
+        for: 5m
+        labels:
+          severity: high
+          service: api
+          category: security
+        annotations:
+          summary: "Audit log gap detected"
+          description: "No audit logs have been written in the last 5 minutes"
+
+      # Backup Verification Failed
+      - alert: BackupVerificationFailed
+        expr: |
+          catalogizer_backup_verification_status != 1
+        for: 1h
+        labels:
+          severity: high
+          service: api
+          category: security
+        annotations:
+          summary: "Backup verification failed"
+          description: "Latest backup verification has failed - data may be at risk"

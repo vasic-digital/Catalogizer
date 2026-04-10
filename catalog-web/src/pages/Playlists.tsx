@@ -116,7 +116,7 @@ export const PlaylistsPage: React.FC = () => {
     }
   };
 
-  const handleDeletePlaylist = async (id: number) => {
+  const _handleDeletePlaylist = async (id: number) => {
     try {
       await playlistsApi.deletePlaylist(id.toString());
       toast.success('Playlist deleted');

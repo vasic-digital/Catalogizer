@@ -1,0 +1,15 @@
+# Nancy Ignore File for Catalogizer
+# Format: <vulnerability ID> # <justification>
+# Lines starting with # are comments
+
+# Example entries (uncomment and modify as needed):
+# CVE-2023-1234 # False positive - vulnerable code path not used
+# CVE-2022-5678 # Accepted risk - mitigated by network isolation
+# sonatype-2023-1234 # Test dependency only
+
+# Development dependencies
+# The following are development-only dependencies:
+
+# NOTE: Add specific CVEs here with justifications as they are identified
+# during Nancy scans. Each entry MUST include a justification comment.
+# Use 'nancy sleuth' output to find vulnerability IDs.

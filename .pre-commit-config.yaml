@@ -26,6 +26,20 @@ repos:
       - id: go-fmt
       - id: go-vet
       - id: go-imports
+      - id: go-unit-tests
+        args: ['-v', '-race', './...']
+
+  # Security scanning (local hooks)
+  - repo: local
+    hooks:
+      - id: gosec
+        name: Gosec Security Check
+        entry: gosec
+        args: ['-severity', 'medium', '-confidence', 'medium', '-quiet', './...']
+        language: system
+        files: '\.go$'
+        pass_filenames: false
+        types: [file]
 
   # TypeScript/Node hooks
   - repo: https://github.com/pre-commit/mirrors-eslint

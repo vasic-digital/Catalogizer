@@ -1,0 +1,27 @@
+# Trivy Ignore File for Catalogizer
+# Format: CVE-ID # Justification
+# Lines starting with # are comments
+
+# Development/Testing files - not production code
+# CVE-2023-1234 # Test dependency, not used in production
+
+# False positives - vulnerabilities in code we don't use
+# CVE-2022-5678 # Feature not enabled in our configuration
+
+# Accepted risks - mitigated through other means
+# CVE-2021-9999 # Mitigated by network isolation
+
+# Development environment only
+# The following only apply to development dependencies:
+
+# Go module test dependencies
+# These are only used in testing, not production builds
+
+# Node.js devDependencies
+# These are build tools, not runtime dependencies
+
+# Documentation / Examples
+# Vulnerabilities in example code that's not deployed
+
+# NOTE: Add specific CVEs here with justifications as they are identified
+# during security scans. Each entry MUST include a justification comment.

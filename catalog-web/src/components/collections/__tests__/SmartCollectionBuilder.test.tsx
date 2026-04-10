@@ -5,8 +5,8 @@ import { SmartCollectionBuilder } from '../SmartCollectionBuilder'
 // Mock framer-motion
 vi.mock('framer-motion', () => ({
   motion: {
-    div: ({ children, className, onClick, ..._props }: any) => <div className={className} onClick={onClick}>{children}</div>,
-    button: ({ children, className, onClick, ..._props }: any) => (
+    div: ({ children, className, onClick }: any) => <div className={className} onClick={onClick}>{children}</div>,
+    button: ({ children, className, onClick }: any) => (
       <button className={className} onClick={onClick}>{children}</button>
     ),
   },

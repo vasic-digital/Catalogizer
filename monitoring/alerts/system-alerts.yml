@@ -1,0 +1,120 @@
+# System Alerts for Catalogizer
+# These alerts monitor system-level metrics
+
+groups:
+  - name: system
+    interval: 30s
+    rules:
+      # High CPU Usage
+      - alert: HighCPUUsage
+        expr: 100 - (avg by(instance) (irate(node_cpu_seconds_total{mode="idle"}[5m])) * 100) > 80
+        for: 5m
+        labels:
+          severity: warning
+          service: system
+        annotations:
+          summary: "High CPU usage detected"
+          description: "CPU usage is above 80% for more than 5 minutes on {{ $labels.instance }}"
+          runbook_url: "https://docs.catalogizer.io/runbooks/HIGH_CPU"
+
+      # Critical CPU Usage
+      - alert: CriticalCPUUsage
+        expr: 100 - (avg by(instance) (irate(node_cpu_seconds_total{mode="idle"}[5m])) * 100) > 95
+        for: 2m
+        labels:
+          severity: critical
+          service: system
+        annotations:
+          summary: "Critical CPU usage detected"
+          description: "CPU usage is above 95% for more than 2 minutes on {{ $labels.instance }}"
+          runbook_url: "https://docs.catalogizer.io/runbooks/HIGH_CPU"
+
+      # High Memory Usage
+      - alert: HighMemoryUsage
+        expr: (node_memory_MemTotal_bytes - node_memory_MemAvailable_bytes) / node_memory_MemTotal_bytes * 100 > 80
+        for: 5m
+        labels:
+          severity: warning
+          service: system
+        annotations:
+          summary: "High memory usage detected"
+          description: "Memory usage is above 80% for more than 5 minutes on {{ $labels.instance }}"
+          runbook_url: "https://docs.catalogizer.io/runbooks/MEMORY_LEAK"
+
+      # Critical Memory Usage
+      - alert: CriticalMemoryUsage
+        expr: (node_memory_MemTotal_bytes - node_memory_MemAvailable_bytes) / node_memory_MemTotal_bytes * 100 > 95
+        for: 2m
+        labels:
+          severity: critical
+          service: system
+        annotations:
+          summary: "Critical memory usage detected"
+          description: "Memory usage is above 95% for more than 2 minutes on {{ $labels.instance }}"
+          runbook_url: "https://docs.catalogizer.io/runbooks/MEMORY_LEAK"
+
+      # Disk Space Low
+      - alert: DiskSpaceLow
+        expr: (node_filesystem_avail_bytes{mountpoint!="/boot"} / node_filesystem_size_bytes{mountpoint!="/boot"}) * 100 < 20
+        for: 5m
+        labels:
+          severity: warning
+          service: system
+        annotations:
+          summary: "Disk space is running low"
+          description: "Disk usage is above 80% on {{ $labels.instance }} (mountpoint: {{ $labels.mountpoint }})"
+
+      # Disk Space Critical
+      - alert: DiskSpaceCritical
+        expr: (node_filesystem_avail_bytes{mountpoint!="/boot"} / node_filesystem_size_bytes{mountpoint!="/boot"}) * 100 < 10
+        for: 2m
+        labels:
+          severity: critical
+          service: system
+        annotations:
+          summary: "Disk space is critically low"
+          description: "Disk usage is above 90% on {{ $labels.instance }} (mountpoint: {{ $labels.mountpoint }})"
+
+      # Node Down
+      - alert: NodeDown
+        expr: up{job="node-exporter"} == 0
+        for: 1m
+        labels:
+          severity: critical
+          service: system
+        annotations:
+          summary: "Node is down"
+          description: "Node {{ $labels.instance }} has been down for more than 1 minute"
+
+      # Network Receive Errors
+      - alert: NetworkReceiveErrors
+        expr: rate(node_network_receive_errs_total[5m]) > 0
+        for: 5m
+        labels:
+          severity: warning
+          service: system
+        annotations:
+          summary: "Network receive errors detected"
+          description: "Network interface {{ $labels.device }} on {{ $labels.instance }} has receive errors"
+
+      # Load Average High
+      - alert: HighLoadAverage
+        expr: node_load1 > 10
+        for: 5m
+        labels:
+          severity: warning
+          service: system
+        annotations:
+          summary: "Load average is high"
+          description: "Load average is above 10 on {{ $labels.instance }}"
+
+      # Too Many Open Files
+      - alert: TooManyOpenFiles
+        expr: node_filefd_allocated / node_filefd_maximum > 0.8
+        for: 5m
+        labels:
+          severity: warning
+          service: system
+        annotations:
+          summary: "Too many open file descriptors"
+          description: "More than 80% of file descriptors are in use on {{ $labels.instance }}"

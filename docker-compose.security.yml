@@ -158,23 +158,64 @@ services:
           cpus: '1'
           memory: 2G
 
-  # Trivy Vulnerability Scanner
+  # Trivy Vulnerability Scanner (Enhanced)
   trivy-scanner:
     image: docker.io/aquasec/trivy:latest
     container_name: catalogizer-trivy-scanner
+    environment:
+      TRIVY_CACHE_DIR: /root/.cache/trivy
+      TRIVY_QUIET: "false"
+      TRIVY_DEBUG: "false"
+      TRIVY_SEVERITY: HIGH,CRITICAL
+      TRIVY_FORMAT: json
+      TRIVY_OUTPUT: /reports/trivy-results.json
+      TRIVY_EXIT_CODE: "0"
     volumes:
       - .:/project:ro
       - trivy_cache:/root/.cache/trivy
       - ./reports:/reports
-    command: [
-      "fs",
-      "--scanners", "vuln,secret,config",
-      "--format", "json",
-      "--output", "/reports/trivy-results.json",
-      "/project"
-    ]
+      - ./.trivy.yaml:/root/.trivy.yaml:ro
+      - ./.trivyignore:/project/.trivyignore:ro
+      - ./.trivy-secrets.yaml:/project/.trivy-secrets.yaml:ro
+    working_dir: /project
+    command: >
+      sh -c "
+        echo '🔍 Running Trivy filesystem scan...' &&
+        trivy fs 
+        --scanners vuln,secret,config
+        --severity HIGH,CRITICAL
+        --format json
+        --output /reports/trivy-results.json
+        --skip-dirs 'node_modules,vendor,dist,build,target,releases,.git,sonarqube'
+        --skip-files '*.test.js,*.test.ts,*_test.go'
+        /project &&
+        echo '✅ Trivy scan completed'
+      "
     profiles:
       - trivy-scan
+      - security-full
+    networks:
+      - security-testing-network
+    deploy:
+      resources:
+        limits:
+          cpus: '2'
+          memory: 2G
+        reservations:
+          cpus: '1'
+          memory: 1G
+
+  # Trivy Server (for CI integration)
+  trivy-server:
+    image: docker.io/aquasec/trivy:latest
+    container_name: catalogizer-trivy-server
+    ports:
+      - "8080:8080"
+    volumes:
+      - trivy_cache:/root/.cache/trivy
+    command: server --listen 0.0.0.0:8080
+    profiles:
+      - trivy-server
     networks:
       - security-testing-network
     deploy:
