@@ -52,6 +52,15 @@ class MainViewModel(
     fun initializeApp() {
         viewModelScope.launch {
             try {
+                // Hydrate the persisted JWT from EncryptedSharedPreferences
+                // BEFORE the splash screen fades out, so the TVNavigation
+                // startDestination is computed from the restored auth
+                // state instead of the default Unauthenticated. Without
+                // this the app always flashes the login screen even when
+                // a valid token is on disk.
+                authRepository.hydrateFromDisk()
+                Log.d("MainViewModel", "Auth hydrated from disk")
+
                 // If QA auto-login is pending, wait for it (max 10s) before
                 // showing the app. This prevents HomeScreen from loading with
                 // no auth token and displaying an empty library.
@@ -59,7 +68,7 @@ class MainViewModel(
                     withTimeoutOrNull(10_000L) { gate.await() }
                 }
             } catch (e: Exception) {
-                Log.w("MainViewModel", "Error during QA login wait: ${e.message}")
+                Log.w("MainViewModel", "Error during app init: ${e.message}")
             }
             // ALWAYS set loading to false to prevent ANR
             // Splash screen has its own minimum duration timer

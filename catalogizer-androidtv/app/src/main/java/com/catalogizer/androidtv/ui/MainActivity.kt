@@ -79,6 +79,21 @@ class MainActivity : ComponentActivity() {
         homeViewModel = dependencyContainer.createHomeViewModel()
         searchViewModel = dependencyContainer.createSearchViewModel()
 
+        // On cold start, hydrate the auth state from disk BEFORE
+        // deciding whether to show Login or Home. Without this the
+        // user sees a flash of the login screen on every launch
+        // even though their token is valid. hydrateFromDisk is
+        // fast (<50ms) because TokenStore dispatches the
+        // SharedPreferences read to Dispatchers.IO.
+        kotlinx.coroutines.CoroutineScope(kotlinx.coroutines.Dispatchers.IO).launch {
+            try {
+                dependencyContainer.authRepository.hydrateFromDisk()
+                android.util.Log.i("MainActivity", "Auth hydrated from disk")
+            } catch (e: Exception) {
+                android.util.Log.w("MainActivity", "Auth hydrate failed: ${e.message}")
+            }
+        }
+
         // Auto-login via intent extras (for ADB testing / HelixQA).
         // Usage: adb shell am start -n ... --es qa_username admin --es qa_password admin123
         // The login gate ensures the splash screen stays visible until login

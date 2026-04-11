@@ -189,13 +189,26 @@ class AuthRepository(
     }
 
     private fun parseExpiresAt(expiresAt: String): Long? {
+        // The server emits RFC 3339 / ISO 8601 with either a
+        // 'Z' suffix (UTC) or a numeric offset ("+03:00"), and
+        // sub-second precision ranges from none to nanoseconds.
+        // Use java.time.OffsetDateTime which accepts all of
+        // these shapes; fall back to the legacy SimpleDateFormat
+        // for the strictly-'Z' case as a belt-and-braces safety
+        // net on very old devices.
         return try {
-            val format = SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'", Locale.getDefault())
-            format.timeZone = TimeZone.getTimeZone("UTC")
-            format.parse(expiresAt)?.time
-        } catch (e: Exception) {
-            Log.w(TAG, "Failed to parse expiresAt: $expiresAt")
-            null
+            java.time.OffsetDateTime.parse(expiresAt)
+                .toInstant()
+                .toEpochMilli()
+        } catch (primary: Throwable) {
+            try {
+                val legacy = SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'", Locale.getDefault())
+                legacy.timeZone = TimeZone.getTimeZone("UTC")
+                legacy.parse(expiresAt)?.time
+            } catch (fallback: Throwable) {
+                Log.w(TAG, "Failed to parse expiresAt ($primary -> $fallback): $expiresAt")
+                null
+            }
         }
     }
 

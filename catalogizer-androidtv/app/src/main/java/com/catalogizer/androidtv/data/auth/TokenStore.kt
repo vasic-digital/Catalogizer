@@ -2,6 +2,7 @@ package com.catalogizer.androidtv.data.auth
 
 import android.content.Context
 import android.content.SharedPreferences
+import android.util.Log
 import androidx.security.crypto.EncryptedSharedPreferences
 import androidx.security.crypto.MasterKey
 import kotlinx.coroutines.Dispatchers
@@ -33,16 +34,26 @@ class TokenStore internal constructor(
     )
 
     suspend fun save(record: Record) = withContext(Dispatchers.IO) {
-        prefs.edit()
-            .putString(KEY_TOKEN, record.token)
-            .putString(KEY_USERNAME, record.username)
-            .putLong(KEY_USER_ID, record.userId)
-            .putLong(KEY_EXPIRES_AT, record.expiresAtMs)
-            .commit()
+        try {
+            prefs.edit()
+                .putString(KEY_TOKEN, record.token)
+                .putString(KEY_USERNAME, record.username)
+                .putLong(KEY_USER_ID, record.userId)
+                .putLong(KEY_EXPIRES_AT, record.expiresAtMs)
+                .commit()
+        } catch (e: Throwable) {
+            Log.e("TokenStore", "save failed: ${e.message}", e)
+        }
+        Unit
     }
 
     suspend fun load(): Record? = withContext(Dispatchers.IO) {
-        val token = prefs.getString(KEY_TOKEN, null) ?: return@withContext null
+        val token = try {
+            prefs.getString(KEY_TOKEN, null)
+        } catch (e: Throwable) {
+            Log.e("TokenStore", "load failed: ${e.message}", e)
+            null
+        } ?: return@withContext null
         val username = prefs.getString(KEY_USERNAME, "") ?: ""
         val userId = prefs.getLong(KEY_USER_ID, 0)
         val expiresAt = prefs.getLong(KEY_EXPIRES_AT, 0)
