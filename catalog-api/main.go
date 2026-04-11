@@ -651,6 +651,14 @@ func main() {
 	mediaEntityHandler := root_handlers.NewMediaEntityHandler(mediaItemRepo, mediaFileRepo, extMetaRepo, userMetaRepo, databaseDB)
 	mediaEntityHandler.SetCoverArtService(coverArtService)
 
+	// Playback session tracking handler — records every
+	// reproduction session (video, audio, book, comic, game)
+	// and surfaces the rolled-up per-user progress + full
+	// history via /api/v1/playback/sessions/*, /entities/:id/
+	// progress, and /entities/:id/history.
+	playbackSessionRepo := root_repository.NewPlaybackSessionRepository(databaseDB)
+	playbackHandler := root_handlers.NewPlaybackHandler(playbackSessionRepo)
+
 	// Scan handler for storage roots and scan operations
 	scanHandler := root_handlers.NewScanHandler(universalScanner, databaseDB)
 
@@ -1164,6 +1172,20 @@ func main() {
 			entityGroup.PUT("/:id/user-metadata", mediaEntityHandler.UpdateUserMetadata)
 			entityGroup.POST("/:id/user-metadata", mediaEntityHandler.UpdateUserMetadata)
 			entityGroup.POST("/enrich", mediaEntityHandler.EnrichAllEntities)
+
+			// Playback session tracking: per-entity progress
+			// summary (used by the card badge) and full history
+			// drawer (clicking the badge).
+			entityGroup.GET("/:id/progress", playbackHandler.GetProgressForEntity)
+			entityGroup.GET("/:id/history", playbackHandler.ListHistoryForEntity)
+		}
+
+		// /api/v1/playback/sessions — start/progress/end lifecycle.
+		playbackGroup := api.Group("/playback")
+		{
+			playbackGroup.POST("/sessions/start", playbackHandler.StartSession)
+			playbackGroup.POST("/sessions/progress", playbackHandler.ProgressSession)
+			playbackGroup.POST("/sessions/end", playbackHandler.EndSession)
 		}
 
 		// Analytics endpoints
