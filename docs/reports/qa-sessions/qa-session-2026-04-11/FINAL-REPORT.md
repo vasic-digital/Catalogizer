@@ -117,9 +117,55 @@ HelixQA was re-run end-to-end against the same Mi Box 4:
   `VLCVideoLayout` needs an explicit `attachView` call inside
   the first composition — otherwise no HTTP GET for the
   stream is issued. Owned by the TV team.
-- Playback session tracking + per-card progress/history UI:
-  full implementation plan lives at
-  `docs/superpowers/plans/2026-04-11-playback-history-tracking.md`
-  (10 tasks covering backend schema, Go repo + handler, TS
-  client, React component, Android TV + phone, Tauri desktop,
-  HelixQA bank, challenges, and a re-run).
+- React / Tauri UI for playback history: TS client is in
+  place but the `ProgressBadge` + `HistoryDrawer` React
+  components (plan tasks T5, T7) haven't been built yet. TV
+  app already records sessions via `PlaybackTracker`, so
+  everything is in place for the UI tasks to land next.
+
+## Playback history feature — initial verification (late evening)
+
+Executed tasks T1, T2, T3, T4, T6, T8, T9, T10 from
+`docs/superpowers/plans/2026-04-11-playback-history-tracking.md`:
+
+- **Migration v15** (`playback_sessions` + `media_progress`) in
+  place and running cleanly on the live SQLite DB.
+- **PlaybackSessionRepository** + 3 Go unit tests passing
+  (video/seconds lifecycle with two back-to-back sessions,
+  book/pages session, empty-history edge case).
+- **PlaybackHandler** exposes five routes:
+  `/api/v1/playback/sessions/{start,progress,end}` +
+  `/api/v1/entities/:id/{progress,history}`. All five verified
+  end-to-end against the live Mi Box 4 backend:
+  - `POST /sessions/start` → `{"session_id":1}`
+  - `POST /sessions/progress` → `{"ok":true}`
+  - `POST /sessions/end` → `{"ok":true}`
+  - `GET /entities/1/progress` → snake-cased `MediaProgress`
+    with `last_position=120`, `total_reproductions=3` after
+    three sessions
+  - `GET /entities/1/history?limit=5` → `count=3` with full
+    session rows
+- **TypeScript PlaybackService** added to
+  `@vasic-digital/catalogizer-api-client` (submodule commit
+  `6fdbfe19`, superproject pointer bumped at `c0aae2de`).
+  Seven Vitest unit tests passing.
+- **Android TV PlaybackTracker** wired into
+  `VLCPlayerActivity` (commit `f1a57c0b`): opens a session
+  in `onCreate` after `vlcPlayer.play()`, runs a 15 s
+  progress ticker, finalises in `onDestroy` with
+  `completed = withinFiveSecondsOfEnd`. Five new Retrofit
+  methods on `CatalogizerApi`. APK rebuilt with libvlc 3.6.2
+  + the tracker and installed successfully on Mi Box 4.
+- **CH-200 Playback Sessions API** registered and
+  **passing 7/7 assertions** against the live backend after
+  the `json:` tag fix (commit `1eb15d98`): start, progress,
+  end, progress read, `last_position == 120`,
+  `total_reproductions >= 1`, `history_count >= 1`.
+- **HelixQA bank** gains three new playback test cases:
+  `tv-playback-session-lifecycle`, `tv-playback-dumpsys-
+  media-session` (androidtv-full-executable), and
+  `api-playback-session-lifecycle` (api-comprehensive-
+  executable). All use real executable actions (adb_shell /
+  keypress / sleep), no TODO placeholders. Structured phase
+  did not reach them within the time-boxed run — they'll be
+  exercised by the next full HelixQA pass.
