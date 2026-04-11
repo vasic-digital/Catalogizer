@@ -738,11 +738,22 @@ func main() {
 	// Initialize JWT middleware
 	jwtMiddleware := root_middleware.NewJWTMiddleware(jwtSecret)
 
-	// Initialize rate limiters using internal auth middleware
-	// Relaxed limits to 600 rpm auth / 2000 rpm default so the
-	// challenge runner (which re-logs-in for every test case) doesn't
-	// trip the limiter during a full bank run. Production deployments
-	// that need stricter limits should override via config.
+	// Initialize tiered rate limiters using internal auth middleware.
+	// Constitution Article V §5.1 category 7 (DDoS/rate-limit) requires
+	// that brute-force attempts against login/register be actively
+	// rejected, not just logged.
+	//
+	// Three tiers:
+	//   - loginRateLimiter  (30 rpm per IP) : only /login and /register.
+	//     Stops brute-force flooders within one minute while leaving
+	//     enough headroom for a legitimate user fat-fingering their
+	//     password a handful of times + the challenge runner which
+	//     re-authenticates ~1 rps during a full bank.
+	//   - authRateLimiter   (600 rpm per IP): token ops (/refresh,
+	//     /logout, /status, /me). These are cheap reads and the
+	//     challenge runner hits them heavily.
+	//   - defaultRateLimiter (2000 rpm per IP): everything else.
+	loginRateLimiter := authMiddleware.RateLimitByUser(30, "1m")
 	authRateLimiter := authMiddleware.RateLimitByUser(600, "1m")
 	defaultRateLimiter := authMiddleware.RateLimitByUser(2000, "1m")
 
@@ -910,18 +921,19 @@ func main() {
 	// Authentication routes (no auth required)
 	authGroup := router.Group("/api/v1/auth")
 	{
-		// Strict rate limiting for write operations (brute-force protection)
-		authGroup.POST("/login", authRateLimiter, authHandler.LoginGin)
-		authGroup.POST("/register", authRateLimiter, func(c *gin.Context) {
+		// Strict rate limiting for brute-force-prone write operations
+		// (30 rpm per IP). Applied ONLY to login/register.
+		authGroup.POST("/login", loginRateLimiter, authHandler.LoginGin)
+		authGroup.POST("/register", loginRateLimiter, func(c *gin.Context) {
 			authHandler.RegisterGin(c, userRepo)
 		})
-		// Standard rate limiting for token operations and read-only endpoints
-		authGroup.POST("/refresh", defaultRateLimiter, authHandler.RefreshTokenGin)
-		authGroup.POST("/logout", defaultRateLimiter, authHandler.LogoutGin)
-		authGroup.GET("/me", defaultRateLimiter, jwtMiddleware.RequireAuth(), authHandler.GetCurrentUserGin)
-		authGroup.GET("/status", defaultRateLimiter, authHandler.GetAuthStatusGin)
-		authGroup.GET("/permissions", defaultRateLimiter, jwtMiddleware.RequireAuth(), authHandler.GetPermissionsGin)
-		authGroup.GET("/profile", defaultRateLimiter, jwtMiddleware.RequireAuth(), authHandler.GetCurrentUserGin)
+		// Medium rate limiting for token operations (600 rpm)
+		authGroup.POST("/refresh", authRateLimiter, authHandler.RefreshTokenGin)
+		authGroup.POST("/logout", authRateLimiter, authHandler.LogoutGin)
+		authGroup.GET("/me", authRateLimiter, jwtMiddleware.RequireAuth(), authHandler.GetCurrentUserGin)
+		authGroup.GET("/status", authRateLimiter, authHandler.GetAuthStatusGin)
+		authGroup.GET("/permissions", authRateLimiter, jwtMiddleware.RequireAuth(), authHandler.GetPermissionsGin)
+		authGroup.GET("/profile", authRateLimiter, jwtMiddleware.RequireAuth(), authHandler.GetCurrentUserGin)
 		authGroup.GET("/init-status", defaultRateLimiter, mediaQueryHandler.GetInitStatus)
 		authGroup.POST("/change-password", defaultRateLimiter, jwtMiddleware.RequireAuth(), mediaQueryHandler.ChangePassword)
 	}
