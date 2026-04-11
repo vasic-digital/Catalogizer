@@ -1,6 +1,9 @@
-import React, { useMemo } from 'react'
+import React, { useEffect, useMemo, useState } from 'react'
 import { MediaCard } from './MediaCard'
+import { HistoryDrawer } from './HistoryDrawer'
+import { getEntityProgress } from '@/lib/playbackApi'
 import type { MediaItem } from '@/types/media'
+import type { UiPlaybackProgress } from '@/types/playback'
 import { motion } from 'framer-motion'
 
 interface MediaGridProps {
@@ -48,6 +51,31 @@ export const MediaGrid: React.FC<MediaGridProps> = ({
     ? 'grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6'
     : 'grid-cols-1', [viewMode])
 
+  // Per-card reproduction progress + HistoryDrawer wiring. Loads
+  // progress in parallel once the media list is known so badges
+  // populate without blocking initial render.
+  const [progressById, setProgressById] = useState<Record<number, UiPlaybackProgress>>({})
+  const [historyTarget, setHistoryTarget] = useState<MediaItem | null>(null)
+  const mediaIdsKey = media.map((m) => m.id).join(',')
+
+  useEffect(() => {
+    if (media.length === 0) return
+    let cancelled = false
+    const ids = media.map((m) => m.id)
+    Promise.all(ids.map((id) => getEntityProgress(id))).then((results) => {
+      if (cancelled) return
+      const next: Record<number, UiPlaybackProgress> = {}
+      results.forEach((prog, idx) => {
+        if (prog) next[ids[idx]] = prog
+      })
+      setProgressById(next)
+    })
+    return () => {
+      cancelled = true
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [mediaIdsKey])
+
   if (loading) {
     return (
       <div className={`grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-6 ${className}`}>
@@ -85,22 +113,32 @@ export const MediaGrid: React.FC<MediaGridProps> = ({
   }
 
   return (
-    <div className={`grid ${gridCols} gap-6 ${className}`}>
-      {media.map((item, index) => (
-        <motion.div
-          key={item.id}
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.3, delay: index * 0.05 }}
-        >
-          <MediaCard
-            media={item}
-            onView={onMediaView}
-            onPlay={onMediaPlay}
-            onDownload={onMediaDownload}
-          />
-        </motion.div>
-      ))}
-    </div>
+    <>
+      <div className={`grid ${gridCols} gap-6 ${className}`}>
+        {media.map((item, index) => (
+          <motion.div
+            key={item.id}
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.3, delay: index * 0.05 }}
+          >
+            <MediaCard
+              media={item}
+              onView={onMediaView}
+              onPlay={onMediaPlay}
+              onDownload={onMediaDownload}
+              progress={progressById[item.id] ?? null}
+              onOpenHistory={(m) => setHistoryTarget(m)}
+            />
+          </motion.div>
+        ))}
+      </div>
+      <HistoryDrawer
+        mediaItemId={historyTarget?.id ?? null}
+        mediaTitle={historyTarget?.title ?? ''}
+        open={historyTarget !== null}
+        onClose={() => setHistoryTarget(null)}
+      />
+    </>
   )
 }

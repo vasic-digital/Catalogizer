@@ -2,7 +2,9 @@ import React from 'react'
 import { Card, CardContent } from '@/components/ui/Card'
 import { Button } from '@/components/ui/Button'
 import { FavoriteToggle } from '@/components/favorites/FavoriteToggle'
+import { ProgressBadge } from '@/components/media/ProgressBadge'
 import type { MediaItem } from '@/types/media'
+import type { UiPlaybackProgress } from '@/types/playback'
 import {
   Film,
   Music,
@@ -26,6 +28,8 @@ interface MediaCardProps {
   onView?: (media: MediaItem) => void
   onPlay?: (media: MediaItem) => void
   onDownload?: (media: MediaItem) => void
+  progress?: UiPlaybackProgress | null
+  onOpenHistory?: (media: MediaItem) => void
   className?: string
 }
 
@@ -105,6 +109,8 @@ export const MediaCard: React.FC<MediaCardProps> = React.memo(({
   onView,
   onPlay,
   onDownload,
+  progress,
+  onOpenHistory,
   className = ''
 }) => {
   return (
@@ -198,6 +204,14 @@ export const MediaCard: React.FC<MediaCardProps> = React.memo(({
               {media.media_type.replace('_', ' ').toUpperCase()}
             </span>
           </div>
+
+          {/* Reproduction progress overlay (opens HistoryDrawer on click) */}
+          {progress && (
+            <ProgressBadge
+              progress={progress}
+              onOpenHistory={() => onOpenHistory?.(media)}
+            />
+          )}
         </div>
 
         <CardContent className="p-4">
