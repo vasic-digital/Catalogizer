@@ -56,6 +56,7 @@ fun MediaCard(
     onHistoryClick: (() -> Unit)? = null
 ) {
     var isCardFocused by remember { mutableStateOf(isFocused) }
+    var centerDownMs by remember { mutableStateOf(0L) }
 
     Card(
         onClick = onClick,
@@ -66,17 +67,36 @@ fun MediaCard(
                 if (focusState.isFocused) onFocus()
             }
             .onPreviewKeyEvent { event ->
-                // Menu / Info button on the remote opens the reproduction
-                // history dialog for the focused card. We only intercept on
-                // KeyUp so we never swallow the press before the system
-                // context menu fires for other UI elements.
-                if (event.type == KeyEventType.KeyUp && progress != null &&
-                    (event.key == Key.Menu || event.key == Key.Info)
-                ) {
-                    onHistoryClick?.invoke()
-                    onHistoryClick != null
-                } else {
+                // Long-press DPAD center on a focused card opens the
+                // reproduction history dialog. KEYCODE_MENU is unreliable
+                // because WindowManager.interceptKeyTq consumes it on
+                // Android TV shells before it reaches the app.
+                //
+                // We detect long-press manually: record the timestamp on
+                // KeyDown, compare on KeyUp. A press ≥ 500ms fires the
+                // history callback AND is consumed (returning true from
+                // onPreviewKeyEvent) so Card's own onClick never sees it.
+                val isCenter = event.key == Key.DirectionCenter || event.key == Key.Enter
+                if (!isCenter || progress == null || onHistoryClick == null) {
                     false
+                } else when (event.type) {
+                    KeyEventType.KeyDown -> {
+                        if (centerDownMs == 0L) {
+                            centerDownMs = System.currentTimeMillis()
+                        }
+                        false
+                    }
+                    KeyEventType.KeyUp -> {
+                        val heldMs = System.currentTimeMillis() - centerDownMs
+                        centerDownMs = 0L
+                        if (heldMs >= 500L) {
+                            onHistoryClick.invoke()
+                            true
+                        } else {
+                            false
+                        }
+                    }
+                    else -> false
                 }
             },
         scale = CardDefaults.scale(

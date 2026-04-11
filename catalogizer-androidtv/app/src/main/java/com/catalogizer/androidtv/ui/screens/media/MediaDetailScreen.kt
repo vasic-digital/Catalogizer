@@ -11,6 +11,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.FavoriteBorder
+import androidx.compose.material.icons.filled.History
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.Star
 import androidx.compose.material3.CircularProgressIndicator
@@ -31,6 +32,7 @@ import androidx.tv.material3.*
 import coil.compose.AsyncImage
 import com.catalogizer.androidtv.DependencyContainer
 import com.catalogizer.androidtv.data.models.MediaItem
+import com.catalogizer.androidtv.ui.components.HistoryDialog
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 
@@ -51,6 +53,7 @@ fun MediaDetailScreen(
     var error by remember { mutableStateOf<String?>(null) }
     var retryCount by remember { mutableStateOf(0) }
     var isFavorite by remember { mutableStateOf(false) }
+    var showHistory by remember { mutableStateOf(false) }
     val coroutineScope = rememberCoroutineScope()
     val scrollState = rememberScrollState()
     val playButtonFocus = remember { FocusRequester() }
@@ -336,6 +339,30 @@ fun MediaDetailScreen(
                                     )
                                 }
                             }
+
+                            // History button — opens full reproduction
+                            // history dialog showing aggregate totals + all
+                            // session rows.
+                            Button(
+                                onClick = { showHistory = true },
+                                modifier = Modifier.height(52.dp),
+                                scale = ButtonDefaults.scale(focusedScale = 1.05f)
+                            ) {
+                                Row(
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    horizontalArrangement = Arrangement.spacedBy(10.dp)
+                                ) {
+                                    M3Icon(
+                                        Icons.Default.History,
+                                        contentDescription = "View reproduction history",
+                                        modifier = Modifier.size(24.dp)
+                                    )
+                                    Text(
+                                        "History",
+                                        style = MaterialTheme.typography.titleMedium
+                                    )
+                                }
+                            }
                         }
 
                         Spacer(Modifier.height(32.dp))
@@ -398,6 +425,17 @@ fun MediaDetailScreen(
         if (mediaItem != null) {
             kotlinx.coroutines.delay(300)
             try { playButtonFocus.requestFocus() } catch (_: Exception) {}
+        }
+    }
+
+    if (showHistory) {
+        mediaItem?.let { item ->
+            HistoryDialog(
+                mediaItemId = mediaId,
+                mediaTitle = item.title,
+                repository = container.playbackRepository,
+                onDismiss = { showHistory = false }
+            )
         }
     }
 }
