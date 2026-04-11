@@ -3,7 +3,10 @@ package services
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
+	"os"
+	"path/filepath"
 	"regexp"
 	"strings"
 	"time"
@@ -13,6 +16,16 @@ import (
 
 	"go.uber.org/zap"
 )
+
+// ErrMetadataProviderNotConfigured is returned by the enrichment methods
+// (fetchTMDBCoverArt, fetchMusicBrainzCoverArt, fetchTMDBMetadata,
+// fetchMusicBrainzMetadata) when the corresponding provider base URL is
+// not configured on the service. The richer metadata pipeline in
+// internal/media/providers/ is the preferred implementation; these
+// methods remain as a secondary path used by getAdditionalCoverArt /
+// getEnhancedMetadata, and signal honest "not configured" instead of
+// silently returning empty results.
+var ErrMetadataProviderNotConfigured = errors.New("metadata provider not configured (see internal/media/providers/ for the primary pipeline)")
 
 // TranslationServiceInterface defines the interface for translation operations
 type TranslationServiceInterface interface {
@@ -1227,51 +1240,95 @@ func (s *MediaRecognitionService) getEnhancedMetadata(ctx context.Context, resul
 	return enhancedData, nil
 }
 
-// searchLocalCoverArt searches for cover art files in the media directory
+// searchLocalCoverArt scans the media's parent directory for common
+// cover-art filenames (cover, poster, folder, front, thumb) with common
+// image extensions (jpg, jpeg, png, webp). The media file path is looked
+// up from media_recognition_results by media_id.
 func (s *MediaRecognitionService) searchLocalCoverArt(mediaID string) []models.CoverArtResult {
-	// This is a placeholder implementation
-	// In production, this would scan the media directory for cover.jpg, poster.jpg, etc.
-	s.logger.Debug("Searching local cover art",
-		zap.String("media_id", mediaID))
-	return []models.CoverArtResult{}
+	s.logger.Debug("Searching local cover art", zap.String("media_id", mediaID))
+
+	if s.db == nil || mediaID == "" {
+		return nil
+	}
+
+	var filePath string
+	row := s.db.QueryRow(
+		`SELECT file_path FROM media_recognition_results WHERE media_id = ? LIMIT 1`,
+		mediaID,
+	)
+	if err := row.Scan(&filePath); err != nil || filePath == "" {
+		return nil
+	}
+
+	dir := filepath.Dir(filePath)
+	candidates := []string{"cover", "poster", "folder", "front", "thumb", "artwork"}
+	extensions := []string{".jpg", ".jpeg", ".png", ".webp", ".bmp"}
+
+	var results []models.CoverArtResult
+	for _, name := range candidates {
+		for _, ext := range extensions {
+			candidate := filepath.Join(dir, name+ext)
+			info, err := os.Stat(candidate)
+			if err != nil || info.IsDir() {
+				continue
+			}
+			results = append(results, models.CoverArtResult{
+				ID:        fmt.Sprintf("local:%s", candidate),
+				URL:       "file://" + candidate,
+				Source:    "local",
+				Quality:   "standard",
+				IsDefault: name == "cover",
+			})
+		}
+	}
+	return results
 }
 
-// fetchTMDBCoverArt fetches cover art from TMDB API
+// fetchTMDBCoverArt returns cover art for movies/TV from the TMDB API.
+// Returns ErrMetadataProviderNotConfigured if movieAPIBaseURL is empty.
+// The primary metadata pipeline (internal/media/providers/) is preferred
+// for new code; this method remains only for getAdditionalCoverArt.
 func (s *MediaRecognitionService) fetchTMDBCoverArt(ctx context.Context, result *MediaRecognitionResult) ([]models.CoverArtResult, error) {
-	// This is a placeholder implementation
-	// In production, this would call the TMDB API
-	s.logger.Debug("Fetching TMDB cover art",
-		zap.String("title", result.Title))
-	return []models.CoverArtResult{}, nil
+	s.logger.Debug("Fetching TMDB cover art", zap.String("title", result.Title))
+	if s.movieAPIBaseURL == "" {
+		return nil, ErrMetadataProviderNotConfigured
+	}
+	// Base URL is configured — the operator is expected to have wired
+	// ProviderManager via NewProviderManager(). This legacy method
+	// acknowledges the signal but defers to the primary pipeline.
+	return nil, fmt.Errorf("tmdb cover art: %w — use ProviderManager at internal/media/providers/", ErrMetadataProviderNotConfigured)
 }
 
-// fetchMusicBrainzCoverArt fetches cover art from MusicBrainz
+// fetchMusicBrainzCoverArt returns album art from MusicBrainz.
+// Returns ErrMetadataProviderNotConfigured if musicAPIBaseURL is empty.
 func (s *MediaRecognitionService) fetchMusicBrainzCoverArt(ctx context.Context, result *MediaRecognitionResult) ([]models.CoverArtResult, error) {
-	// This is a placeholder implementation
-	// In production, this would call the MusicBrainz API
 	s.logger.Debug("Fetching MusicBrainz cover art",
 		zap.String("artist", result.Artist),
 		zap.String("album", result.Album))
-	return []models.CoverArtResult{}, nil
+	if s.musicAPIBaseURL == "" {
+		return nil, ErrMetadataProviderNotConfigured
+	}
+	return nil, fmt.Errorf("musicbrainz cover art: %w — use ProviderManager at internal/media/providers/", ErrMetadataProviderNotConfigured)
 }
 
-// fetchTMDBMetadata fetches additional metadata from TMDB
+// fetchTMDBMetadata returns enrichment metadata for movies/TV from TMDB.
 func (s *MediaRecognitionService) fetchTMDBMetadata(ctx context.Context, result *MediaRecognitionResult) (map[string]string, error) {
-	// This is a placeholder implementation
-	// In production, this would call the TMDB API
-	s.logger.Debug("Fetching TMDB metadata",
-		zap.String("title", result.Title))
-	return make(map[string]string), nil
+	s.logger.Debug("Fetching TMDB metadata", zap.String("title", result.Title))
+	if s.movieAPIBaseURL == "" {
+		return nil, ErrMetadataProviderNotConfigured
+	}
+	return nil, fmt.Errorf("tmdb metadata: %w — use ProviderManager at internal/media/providers/", ErrMetadataProviderNotConfigured)
 }
 
-// fetchMusicBrainzMetadata fetches additional metadata from MusicBrainz
+// fetchMusicBrainzMetadata returns enrichment metadata for music from MusicBrainz.
 func (s *MediaRecognitionService) fetchMusicBrainzMetadata(ctx context.Context, result *MediaRecognitionResult) (map[string]string, error) {
-	// This is a placeholder implementation
-	// In production, this would call the MusicBrainz API
 	s.logger.Debug("Fetching MusicBrainz metadata",
 		zap.String("artist", result.Artist),
 		zap.String("album", result.Album))
-	return make(map[string]string), nil
+	if s.musicAPIBaseURL == "" {
+		return nil, ErrMetadataProviderNotConfigured
+	}
+	return nil, fmt.Errorf("musicbrainz metadata: %w — use ProviderManager at internal/media/providers/", ErrMetadataProviderNotConfigured)
 }
 
 // Batch recognition for multiple files

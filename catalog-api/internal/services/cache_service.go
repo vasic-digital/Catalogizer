@@ -939,9 +939,65 @@ func (s *CacheService) calculateHitRate(ctx context.Context, stats *CacheStats) 
 	return nil
 }
 
+// Warmup pre-populates hot entries into the cache. It runs the top-N most
+// recent cache_activity entries with hit=true through the existing Get()
+// path, which re-reads their underlying cache_entries rows and records a
+// cache-activity event — effectively paging cold cache rows into the DB
+// buffer pool after a restart.
+//
+// Safe to call with a nil db (no-op, returns nil). Safe to call
+// concurrently — each warmup runs in its own transaction via Get().
 func (s *CacheService) Warmup(ctx context.Context) error {
-	s.logger.Info("Starting cache warmup")
+	if s.db == nil {
+		s.logger.Info("Cache warmup skipped: no database configured")
+		return nil
+	}
 
+	s.logger.Info("Starting cache warmup")
+	start := time.Now()
+
+	// Pull up to 500 distinct keys from the recent hit history. Keys that
+	// appear multiple times are collapsed via SELECT DISTINCT so we don't
+	// warm the same entry twice.
+	const warmupLimit = 500
+	rows, err := s.db.QueryContext(ctx,
+		`SELECT DISTINCT key FROM cache_activity WHERE hit = true ORDER BY timestamp DESC LIMIT ?`,
+		warmupLimit,
+	)
+	if err != nil {
+		s.logger.Warn("Cache warmup query failed", zap.Error(err))
+		return nil // degrade gracefully
+	}
+	defer rows.Close()
+
+	var keys []string
+	for rows.Next() {
+		var k string
+		if err := rows.Scan(&k); err != nil {
+			continue
+		}
+		if k != "" {
+			keys = append(keys, k)
+		}
+	}
+	if err := rows.Err(); err != nil {
+		s.logger.Warn("Cache warmup row scan error", zap.Error(err))
+	}
+
+	warmed := 0
+	for _, k := range keys {
+		// Discard the unmarshaled value — we only care that the row is
+		// pulled into the DB buffer pool.
+		var dest json.RawMessage
+		if found, err := s.Get(ctx, k, &dest); err == nil && found {
+			warmed++
+		}
+	}
+
+	s.logger.Info("Cache warmup complete",
+		zap.Int("candidates", len(keys)),
+		zap.Int("warmed", warmed),
+		zap.Duration("elapsed", time.Since(start)))
 	return nil
 }
 

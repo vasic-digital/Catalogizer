@@ -92,20 +92,23 @@ func (c *WebSocketLatencyChallenge) Execute(
 	}
 
 	if wsConn == nil {
-		// WebSocket not available — pass with a note
+		// WebSocket endpoint not reachable: emit a real Skipped result
+		// with a structured reason. Pretending "passed" would give false
+		// confidence; a genuine skip surfaces the missing infrastructure.
 		assertions = append(assertions, challenge.AssertionResult{
 			Type:     "not_empty",
 			Target:   "websocket_available",
-			Expected: "WebSocket connection or graceful skip",
-			Actual:   "WebSocket not available",
-			Passed:   true,
-			Message:  "WebSocket not available; challenge passes as stub",
+			Expected: "reachable WebSocket endpoint",
+			Actual:   fmt.Sprintf("no endpoint reachable at any of %v (last error: %v)", wsPaths, connectErr),
+			Passed:   false,
+			Message:  "WebSocket endpoint not reachable; skipping latency probe",
 		})
 
 		outputs["websocket_available"] = "false"
 
 		return c.CreateResult(
-			challenge.StatusPassed, start, assertions, nil, outputs, "",
+			challenge.StatusSkipped, start, assertions, nil, outputs,
+			"websocket endpoint not reachable",
 		), nil
 	}
 	defer wsConn.Close()

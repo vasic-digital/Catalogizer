@@ -122,17 +122,32 @@ func (suite *SMBServiceTestSuite) TestSMBPathValidation() {
 }
 
 func (suite *SMBServiceTestSuite) TestSMBConnectionPooling() {
-	// Test that service maintains connection state
+	// IsConnected only checks the config, so it returns true for any
+	// host in the config regardless of reachability.
 	initialState := suite.service.IsConnected("test-server")
 	assert.True(suite.T(), initialState)
 
-	// Attempt connection (will succeed as host is in config)
+	// Connect() now does a real TCP probe with a bounded 5s timeout.
+	// The test config points "test-server" at an unreachable RFC1918
+	// address, so Connect must fail with a wrapped network error.
 	err := suite.service.Connect("test-server")
-	assert.NoError(suite.T(), err)
+	assert.Error(suite.T(), err, "Connect to unreachable host must fail")
+	assert.Contains(suite.T(), err.Error(), "failed to connect to SMB host",
+		"error should come from the network probe, not a config lookup")
 
-	// State should still be true (host is in config)
+	// IsConnected continues to return true because it's a config-level
+	// check, not a live probe.
 	currentState := suite.service.IsConnected("test-server")
 	assert.True(suite.T(), currentState)
+}
+
+// TestSMBConnectUnknownHost verifies Connect fails fast for a host not in
+// the config (distinct error class from a network failure).
+func (suite *SMBServiceTestSuite) TestSMBConnectUnknownHost() {
+	err := suite.service.Connect("nonexistent-host")
+	assert.Error(suite.T(), err)
+	assert.Contains(suite.T(), err.Error(), "SMB host not found",
+		"unknown host must surface a config-lookup error")
 }
 
 func (suite *SMBServiceTestSuite) TestSMBErrorHandling() {

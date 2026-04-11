@@ -519,9 +519,88 @@ func (s *PlaybackPositionService) CleanupOldPositions(ctx context.Context, older
 	return nil
 }
 
+// SyncAcrossDevices collapses duplicate playback-position rows for the
+// given user so every device sees the same authoritative state.
+//
+// For each media item the user has played on multiple devices, it keeps
+// the row with the most recent last_played timestamp and promotes that
+// row's position / percent_complete / is_completed values to a single
+// authoritative record. Older device-specific rows are deleted.
+//
+// This intentionally collapses device_info diversity — the canonical row
+// wins, and stale client polls will re-observe the authoritative value
+// next time they read. Clients that want per-device history can read
+// the playback_history table (not touched here).
 func (s *PlaybackPositionService) SyncAcrossDevices(ctx context.Context, userID int64) error {
+	if s.db == nil {
+		return fmt.Errorf("sync requires a database connection")
+	}
+
 	s.logger.Debug("Syncing playback positions across devices",
 		zap.Int64("user_id", userID))
 
+	tx, err := s.db.BeginTx(ctx, nil)
+	if err != nil {
+		return fmt.Errorf("failed to start sync transaction: %w", err)
+	}
+	defer func() {
+		// Rollback is a no-op after Commit per database/sql semantics.
+		_ = tx.Rollback()
+	}()
+
+	// For each media_item_id, pick the id of the row with the latest
+	// last_played for this user. Keep only those rows.
+	const pickWinners = `
+		SELECT media_item_id, MAX(last_played) AS latest
+		FROM playback_positions
+		WHERE user_id = ?
+		GROUP BY media_item_id
+		HAVING COUNT(*) > 1
+	`
+	rows, err := tx.QueryContext(ctx, pickWinners, userID)
+	if err != nil {
+		return fmt.Errorf("failed to pick winners: %w", err)
+	}
+
+	type winner struct {
+		mediaItemID int64
+		latest      time.Time
+	}
+	var winners []winner
+	for rows.Next() {
+		var w winner
+		if err := rows.Scan(&w.mediaItemID, &w.latest); err != nil {
+			rows.Close()
+			return fmt.Errorf("failed to scan winner: %w", err)
+		}
+		winners = append(winners, w)
+	}
+	rows.Close()
+	if err := rows.Err(); err != nil {
+		return fmt.Errorf("winner iteration error: %w", err)
+	}
+
+	const deleteLosers = `
+		DELETE FROM playback_positions
+		WHERE user_id = ? AND media_item_id = ? AND last_played < ?
+	`
+	var collapsed int64
+	for _, w := range winners {
+		res, err := tx.ExecContext(ctx, deleteLosers, userID, w.mediaItemID, w.latest)
+		if err != nil {
+			return fmt.Errorf("failed to delete loser rows for media %d: %w", w.mediaItemID, err)
+		}
+		n, _ := res.RowsAffected()
+		collapsed += n
+	}
+
+	if err := tx.Commit(); err != nil {
+		return fmt.Errorf("failed to commit sync transaction: %w", err)
+	}
+
+	s.logger.Info("Playback positions synced across devices",
+		zap.Int64("user_id", userID),
+		zap.Int("items_collapsed", len(winners)),
+		zap.Int64("rows_deleted", collapsed))
 	return nil
 }

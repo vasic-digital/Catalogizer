@@ -87,17 +87,20 @@ func (c *WebSocketReconnectionChallenge) Execute(
 	c.ReportProgress("first-connect", nil)
 	conn1, err1 := connectWS()
 	if err1 != nil {
+		// Real Skipped result — surfacing missing infrastructure honestly
+		// rather than claiming a passed state.
 		assertions = append(assertions, challenge.AssertionResult{
 			Type:     "not_empty",
 			Target:   "websocket_available",
-			Expected: "WebSocket connection or graceful skip",
-			Actual:   "WebSocket not available",
-			Passed:   true,
-			Message:  "WebSocket not available; challenge passes as stub",
+			Expected: "reachable WebSocket endpoint",
+			Actual:   fmt.Sprintf("no endpoint reachable: %v", err1),
+			Passed:   false,
+			Message:  "WebSocket endpoint not reachable; skipping reconnection probe",
 		})
 		outputs["websocket_available"] = "false"
 		return c.CreateResult(
-			challenge.StatusPassed, start, assertions, nil, outputs, "",
+			challenge.StatusSkipped, start, assertions, nil, outputs,
+			"websocket endpoint not reachable",
 		), nil
 	}
 

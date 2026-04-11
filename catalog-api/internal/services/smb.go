@@ -47,6 +47,12 @@ func NewSMBService(cfg *config.Config, logger *zap.Logger) *SMBService {
 	}
 }
 
+// smbDialTimeout bounds the TCP connect phase so SMB operations cannot
+// block indefinitely on unreachable hosts. The previous code used a raw
+// net.Dial which inherited the OS default (≈2 minutes on Linux) and
+// could freeze the shutdown path plus stall unit tests.
+const smbDialTimeout = 5 * time.Second
+
 func (s *SMBService) getConnection(hostName string) (*smb2.Session, error) {
 	var smbHost *config.SMBHost
 	for _, host := range s.config.SMB.Hosts {
@@ -60,7 +66,7 @@ func (s *SMBService) getConnection(hostName string) (*smb2.Session, error) {
 		return nil, fmt.Errorf("SMB host not found: %s", hostName)
 	}
 
-	conn, err := net.Dial("tcp", net.JoinHostPort(smbHost.Host, fmt.Sprintf("%d", smbHost.Port)))
+	conn, err := net.DialTimeout("tcp", net.JoinHostPort(smbHost.Host, fmt.Sprintf("%d", smbHost.Port)), smbDialTimeout)
 	if err != nil {
 		return nil, fmt.Errorf("failed to connect to SMB host: %w", err)
 	}
@@ -420,15 +426,23 @@ func (s *SMBService) ParseSMBPath(path string) models.SMBPath {
 	return smbPath
 }
 
-// Connect establishes a connection to an SMB host (stub implementation)
+// Connect opens a real SMB session to the named host and closes it
+// immediately — the session is ephemeral; callers that need a long-lived
+// connection use getConnection() via ListFiles / ListDirectory / etc.
+// The purpose of Connect() is to validate that the host is reachable
+// and authenticates successfully.
 func (s *SMBService) Connect(hostName string) error {
-	// Check if host exists in config
-	for _, host := range s.config.SMB.Hosts {
-		if host.Name == hostName {
-			return nil // Connection successful
-		}
+	session, err := s.getConnection(hostName)
+	if err != nil {
+		return fmt.Errorf("failed to connect to SMB host %q: %w", hostName, err)
 	}
-	return fmt.Errorf("SMB host not found: %s", hostName)
+	// Best-effort logoff — if it fails the connection will time out.
+	if logoffErr := session.Logoff(); logoffErr != nil && s.logger != nil {
+		s.logger.Debug("SMB logoff after connect probe failed",
+			zap.String("host", hostName),
+			zap.Error(logoffErr))
+	}
+	return nil
 }
 
 // ListDirectory lists files in a directory on an SMB host

@@ -667,10 +667,17 @@ func TestReportingService_CalculateSystemLoad(t *testing.T) {
 	endDate := time.Date(2025, 1, 31, 0, 0, 0, 0, time.UTC)
 
 	result := service.calculateSystemLoad(startDate, endDate)
-	// With nil repository, returns zero values
+	// CPU / Disk / Network aren't instrumented yet (Phase 6 of the
+	// completion roadmap wires a full system metrics collector that
+	// populates these); they must remain 0 until that lands.
 	assert.Equal(t, 0.0, result.CPU)
-	assert.Equal(t, 0.0, result.Memory)
 	assert.Equal(t, 0.0, result.Disk)
+	assert.Equal(t, 0.0, result.Network)
+	// Memory is read from the Go runtime's live MemStats, so it reflects
+	// actual heap usage of the test process — always non-zero, always
+	// less than 100% (Memory is reported as HeapInuse / SysBytes).
+	assert.Greater(t, result.Memory, 0.0, "Memory should reflect real runtime heap usage")
+	assert.Less(t, result.Memory, 100.0, "Memory is a percentage (HeapInuse/SysBytes)")
 }
 
 func TestReportingService_CalculateErrorRates(t *testing.T) {
