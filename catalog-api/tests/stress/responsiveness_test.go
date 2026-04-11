@@ -8,6 +8,7 @@ import (
 	"net/http/httptest"
 	"sort"
 	"sync"
+	"sync/atomic"
 	"testing"
 	"time"
 
@@ -201,7 +202,7 @@ func TestResponsiveness_HealthEndpoint(t *testing.T) {
 
 			ts := setupResponsivenessServer(t)
 			lr := newLatencyResult(tt.concurrentUsers * tt.requestsPerUser)
-			var successCount, errorCount int64
+			var successCount, errorCount atomic.Int64
 
 			var wg sync.WaitGroup
 			for i := 0; i < tt.concurrentUsers; i++ {
@@ -216,15 +217,15 @@ func TestResponsiveness_HealthEndpoint(t *testing.T) {
 						elapsed := time.Since(start)
 
 						if err != nil {
-							errorCount++
+							errorCount.Add(1)
 							continue
 						}
 						resp.Body.Close()
 
 						if resp.StatusCode == http.StatusOK {
-							successCount++
+							successCount.Add(1)
 						} else {
-							errorCount++
+							errorCount.Add(1)
 						}
 						lr.record(elapsed)
 					}
@@ -234,7 +235,7 @@ func TestResponsiveness_HealthEndpoint(t *testing.T) {
 			wg.Wait()
 
 			totalRequests := int64(tt.concurrentUsers * tt.requestsPerUser)
-			successRate := float64(successCount) / float64(totalRequests) * 100
+			successRate := float64(successCount.Load()) / float64(totalRequests) * 100
 			p50 := lr.percentile(50)
 			p95 := lr.percentile(95)
 			p99 := lr.percentile(99)
@@ -242,8 +243,8 @@ func TestResponsiveness_HealthEndpoint(t *testing.T) {
 
 			t.Logf("=== /health Responsiveness ===")
 			t.Logf("Requests:    %d", totalRequests)
-			t.Logf("Success:     %d (%.2f%%)", successCount, successRate)
-			t.Logf("Errors:      %d", errorCount)
+			t.Logf("Success:     %d (%.2f%%)", successCount.Load(), successRate)
+			t.Logf("Errors:      %d", errorCount.Load())
 			t.Logf("Avg latency: %v", avg)
 			t.Logf("P50 latency: %v", p50)
 			t.Logf("P95 latency: %v", p95)
@@ -308,7 +309,7 @@ func TestResponsiveness_AuthEndpoint(t *testing.T) {
 
 			ts := setupResponsivenessServer(t)
 			lr := newLatencyResult(tt.concurrentUsers * tt.requestsPerUser)
-			var successCount, errorCount int64
+			var successCount, errorCount atomic.Int64
 
 			loginPayload, err := json.Marshal(map[string]string{
 				"username": "admin",
@@ -333,15 +334,15 @@ func TestResponsiveness_AuthEndpoint(t *testing.T) {
 						elapsed := time.Since(start)
 
 						if err != nil {
-							errorCount++
+							errorCount.Add(1)
 							continue
 						}
 						resp.Body.Close()
 
 						if resp.StatusCode == http.StatusOK {
-							successCount++
+							successCount.Add(1)
 						} else {
-							errorCount++
+							errorCount.Add(1)
 						}
 						lr.record(elapsed)
 					}
@@ -351,7 +352,7 @@ func TestResponsiveness_AuthEndpoint(t *testing.T) {
 			wg.Wait()
 
 			totalRequests := int64(tt.concurrentUsers * tt.requestsPerUser)
-			successRate := float64(successCount) / float64(totalRequests) * 100
+			successRate := float64(successCount.Load()) / float64(totalRequests) * 100
 			p50 := lr.percentile(50)
 			p95 := lr.percentile(95)
 			p99 := lr.percentile(99)
@@ -359,8 +360,8 @@ func TestResponsiveness_AuthEndpoint(t *testing.T) {
 
 			t.Logf("=== /api/v1/auth/login Responsiveness ===")
 			t.Logf("Requests:    %d", totalRequests)
-			t.Logf("Success:     %d (%.2f%%)", successCount, successRate)
-			t.Logf("Errors:      %d", errorCount)
+			t.Logf("Success:     %d (%.2f%%)", successCount.Load(), successRate)
+			t.Logf("Errors:      %d", errorCount.Load())
 			t.Logf("Avg latency: %v", avg)
 			t.Logf("P50 latency: %v", p50)
 			t.Logf("P95 latency: %v", p95)
@@ -457,7 +458,7 @@ func TestResponsiveness_ListEndpoints(t *testing.T) {
 			t.Helper()
 
 			lr := newLatencyResult(tt.concurrentUsers * tt.requestsPerUser)
-			var successCount, errorCount int64
+			var successCount, errorCount atomic.Int64
 
 			var wg sync.WaitGroup
 			for i := 0; i < tt.concurrentUsers; i++ {
@@ -472,15 +473,15 @@ func TestResponsiveness_ListEndpoints(t *testing.T) {
 						elapsed := time.Since(start)
 
 						if err != nil {
-							errorCount++
+							errorCount.Add(1)
 							continue
 						}
 						resp.Body.Close()
 
 						if resp.StatusCode == http.StatusOK {
-							successCount++
+							successCount.Add(1)
 						} else {
-							errorCount++
+							errorCount.Add(1)
 						}
 						lr.record(elapsed)
 					}
@@ -490,7 +491,7 @@ func TestResponsiveness_ListEndpoints(t *testing.T) {
 			wg.Wait()
 
 			totalRequests := int64(tt.concurrentUsers * tt.requestsPerUser)
-			successRate := float64(successCount) / float64(totalRequests) * 100
+			successRate := float64(successCount.Load()) / float64(totalRequests) * 100
 			p50 := lr.percentile(50)
 			p95 := lr.percentile(95)
 			p99 := lr.percentile(99)
@@ -498,8 +499,8 @@ func TestResponsiveness_ListEndpoints(t *testing.T) {
 
 			t.Logf("=== %s Responsiveness ===", tt.endpoint)
 			t.Logf("Requests:    %d", totalRequests)
-			t.Logf("Success:     %d (%.2f%%)", successCount, successRate)
-			t.Logf("Errors:      %d", errorCount)
+			t.Logf("Success:     %d (%.2f%%)", successCount.Load(), successRate)
+			t.Logf("Errors:      %d", errorCount.Load())
 			t.Logf("Avg latency: %v", avg)
 			t.Logf("P50 latency: %v", p50)
 			t.Logf("P95 latency: %v", p95)
