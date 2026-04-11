@@ -10,6 +10,7 @@ import (
 	"net/http/httptest"
 	"strings"
 	"sync"
+	"sync/atomic"
 	"testing"
 	"time"
 
@@ -273,7 +274,7 @@ func TestAuthIntegration_ConcurrentLogins(t *testing.T) {
 
 	concurrentLogins := 20
 	var wg sync.WaitGroup
-	var successCount int64
+	var successCount atomic.Int64
 	var mu sync.Mutex
 	tokens := make([]string, 0, concurrentLogins)
 
@@ -292,7 +293,7 @@ func TestAuthIntegration_ConcurrentLogins(t *testing.T) {
 			}
 
 			if resp.StatusCode == http.StatusOK {
-				successCount++
+				successCount.Add(1)
 				var result map[string]interface{}
 				if decodeJSONSafe(resp, &result) == nil {
 					if token, ok := result["token"].(string); ok {
@@ -308,7 +309,7 @@ func TestAuthIntegration_ConcurrentLogins(t *testing.T) {
 	}
 
 	wg.Wait()
-	assert.Equal(t, int64(concurrentLogins), successCount,
+	assert.Equal(t, int64(concurrentLogins), successCount.Load(),
 		"All concurrent logins should succeed")
 	assert.Equal(t, concurrentLogins, len(tokens),
 		"Each login should produce a token")
