@@ -1,6 +1,6 @@
 # Video Course
 
-Catalogizer offers comprehensive video training courses for users, administrators, and developers. The v2.2.0 curriculum contains 17 modules organized into three tracks.
+Catalogizer offers comprehensive video training courses for users, administrators, and developers. The v2.3.0 curriculum contains 36 modules organized into three tracks. Modules 31-36 cover the v2.3.0 comprehensive completion work: database dialect rewriting, concurrency hardening, k6 stress testing, SonarQube/Snyk wiring, lazy/semaphore patterns, and universal test infrastructure with HelixQA.
 
 ---
 

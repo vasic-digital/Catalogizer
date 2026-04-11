@@ -9,6 +9,21 @@ Catalogizer is a multi-protocol media collection management system that detects,
 
 ---
 
+## What's New in v2.3
+
+- **Concurrency Hardening**: `SmbConnectionPool.StopCleanup()` now actually waits for the cleanup goroutine to exit; middleware rate-limiter cleanup goroutines register with a package-level shutdown drain; 6 stress-test data races migrated to `atomic.Int64`; log stream sends are non-blocking via `select` + timeout
+- **Stub Completion**: `ReportingService` performance/latency/error-rate/system-load metrics now read real data from the Prometheus registry via a new `internal/metrics/snapshot.go` helper; `CacheService.Warmup()` pages hot keys through `Get()` on restart; `SMBService.Connect()` performs a real handshake with bounded dial timeout; media cover-art scanning reads real filesystem artifacts
+- **Migration Dialect Parity**: Every migration now has both PostgreSQL and SQLite implementations, enforced by a boot-time `TestRunMigrationsSQLite` parity test
+- **Test Coverage**: `internal/metrics` jumped from 47% to 91%; new `smb` validation tests; new `SyncAcrossDevices` integration tests; `LoginWithRetry` short-circuits on 4xx (runtime dropped from 155 s to instant)
+- **Stress Suite Expansion**: New k6 scripts — `breakpoint_test.js` (constant-arrival ramp to find RPS ceiling), `endurance_test.js` (4-hour run), `concurrent_writers_test.js` (reader/writer contention)
+- **Race Detector Runner**: `scripts/run-race-detector.sh` walks catalog-api + every Go submodule, `GOMAXPROCS=3 go test -race`, summary + non-zero exit on any race
+- **Prometheus/Grafana Enabled by Default**: No longer behind a profile. New "Catalogizer Runtime & Latency" provisioned dashboard covering HTTP p50/p95/p99, error rate, goroutines, memory, DB query latency, SMB health
+- **Security Scan Orchestrator**: `scripts/security-scan-all.sh` runs govulncheck, npm audit, Semgrep, Trivy, SonarQube, Snyk in sequence with consolidated reporting
+- **Graphical Diagram Sources**: 6 new Mermaid sources under `docs/diagrams/sources/` — C4 architecture, media aggregation, auth flow, HelixQA pipeline, dialect rewriting, TV channels flow
+- **36-Module Video Course**: 6 new modules (31-36) for dialect rewriting, concurrency hardening, k6 stress testing, SonarQube/Snyk wiring, lazy/semaphore patterns, universal test infra with HelixQA
+- **Submodule Sync**: Auth absorbs gitlab security patch (`golang-jwt/jwt/v5` v5.2.1 → v5.2.2); Database absorbs missing ARCHITECTURE.md + edge tests; HelixQA absorbs ATMOSphere test bank; Lazy absorbs reconciled duplicate-content merge
+- **Documentation Completeness**: New `catalog-api/AGENTS.md` multi-agent coordination guide; v2.3.0 version bumps across USER_MANUAL.md, PERFORMANCE_TUNING.md, KUBERNETES_DEPLOYMENT.md
+
 ## What's New in v2.2
 
 - **557+ Challenges**: Expanded challenge bank with stress tests, integration tests, security challenges, and documentation completeness checks
