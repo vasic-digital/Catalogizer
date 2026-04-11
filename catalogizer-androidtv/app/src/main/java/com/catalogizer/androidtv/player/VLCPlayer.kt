@@ -99,11 +99,40 @@ class VLCPlayer(private val context: Context) {
      */
     private fun initialize() {
         try {
-            libVLC = LibVLC(context, VLC_OPTIONS)
-            mediaPlayer = MediaPlayer(libVLC)
+            // LibVLC construction touches the Android keystore
+            // and loads several native .so files; on older
+            // devices (Mi Box 4 / armeabi-v7a) it occasionally
+            // fails silently and returns a Java object whose
+            // internal native pointer is null. We fall through
+            // to play() which then SIGSEGVs inside
+            // Media.nativeNewFromLocation. Detect that failure
+            // mode explicitly by testing the libVLC instance
+            // with a cheap method that exercises the native
+            // handle — if it throws or is otherwise unusable,
+            // mark the player as ERROR and let the UI fall back
+            // to the system player / show a friendly message
+            // instead of crashing the whole app.
+            val vlc = LibVLC(context, ArrayList(VLC_OPTIONS))
+            // Touching libVLCVersion dereferences the native
+            // pointer; if construction silently failed this
+            // throws IllegalStateException or returns null.
+            val version = try {
+                LibVLC.version() ?: "unknown"
+            } catch (t: Throwable) {
+                Log.e(TAG, "LibVLC.version() threw — native init broken", t)
+                null
+            }
+            if (version == null) {
+                Log.e(TAG, "LibVLC native init failed — playback disabled")
+                vlc.release()
+                _playbackState.value = PlaybackState.ERROR
+                return
+            }
+            libVLC = vlc
+            mediaPlayer = MediaPlayer(vlc)
             setupEventListener()
-            Log.d(TAG, "VLC initialized successfully")
-        } catch (e: Exception) {
+            Log.d(TAG, "VLC initialized successfully (version $version)")
+        } catch (e: Throwable) {
             Log.e(TAG, "Failed to initialize VLC: ${e.message}", e)
             _playbackState.value = PlaybackState.ERROR
         }
@@ -171,20 +200,31 @@ class VLCPlayer(private val context: Context) {
      * Load and play media from URI
      */
     fun play(uri: String) {
+        val vlc = libVLC
+        val mp = mediaPlayer
+        if (vlc == null || mp == null) {
+            // LibVLC construction failed earlier — do NOT call
+            // Media(libVLC, ...) with a null handle. The native
+            // code dereferences the handle and SIGSEGVs on
+            // armeabi-v7a. Surface the error instead.
+            Log.e(TAG, "play() called but libVLC is null; playback disabled")
+            _playbackState.value = PlaybackState.ERROR
+            return
+        }
         try {
-            val media = Media(libVLC, Uri.parse(uri))
-            
+            val media = Media(vlc, Uri.parse(uri))
+
             // Hardware acceleration
             media.setHWDecoderEnabled(true, false)
-            
-            mediaPlayer?.media = media
-            mediaPlayer?.play()
-            
+
+            mp.media = media
+            mp.play()
+
             media.release()
-            
+
             _playbackState.value = PlaybackState.BUFFERING
             Log.d(TAG, "Playing: $uri")
-        } catch (e: Exception) {
+        } catch (e: Throwable) {
             Log.e(TAG, "Failed to play media: ${e.message}", e)
             _playbackState.value = PlaybackState.ERROR
         }

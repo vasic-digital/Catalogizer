@@ -184,7 +184,11 @@ dependencies {
 
     // Media Player - VLC Integration
     // Note: Using VLC instead of ExoPlayer for broader codec support
-    implementation("org.videolan.android:libvlc-all:3.6.0")
+    // libVLC: upgraded from 3.6.0 to 3.6.2 (latest stable on
+    // Maven Central, April 2025) to pick up stability fixes for
+    // native Media.nativeNewFromLocation on armeabi-v7a that
+    // surfaced as a SIGSEGV on Mi Box 4 Android 9.
+    implementation("org.videolan.android:libvlc-all:3.6.2")
     
     // Keep ExoPlayer as fallback for specific use cases
     implementation("androidx.media3:media3-exoplayer:1.2.0")

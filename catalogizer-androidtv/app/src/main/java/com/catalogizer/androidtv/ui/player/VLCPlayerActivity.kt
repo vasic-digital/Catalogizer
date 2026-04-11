@@ -132,9 +132,23 @@ class VLCPlayerActivity : ComponentActivity() {
                 val body = response.body()
                 val streamPath = body?.get("stream_url")?.jsonPrimitive?.content
                 if (streamPath != null) {
-                    val resolvedUrl = if (streamPath.startsWith("/")) "$baseUrl$streamPath" else streamPath
+                    val rawUrl = if (streamPath.startsWith("/")) "$baseUrl$streamPath" else streamPath
+                    // libVLC's HTTP data source cannot inject
+                    // custom headers (no Authorization: Bearer
+                    // support in the 3.x line), so we append the
+                    // JWT as ?access_token=... instead. The
+                    // backend's JWTMiddleware.RequireAuth accepts
+                    // the same token from either source — see
+                    // catalog-api/middleware/auth.go.
+                    val token = container.authRepository.authState.value.token.orEmpty()
+                    val resolvedUrl = if (token.isBlank()) {
+                        rawUrl
+                    } else {
+                        val sep = if (rawUrl.contains('?')) '&' else '?'
+                        "$rawUrl${sep}access_token=$token"
+                    }
                     streamUrl = resolvedUrl
-                    
+
                     // Start playback
                     vlcPlayer.play(resolvedUrl)
                     

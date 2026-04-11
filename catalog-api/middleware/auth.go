@@ -30,25 +30,38 @@ func NewJWTMiddleware(secretKey string) *JWTMiddleware {
 	}
 }
 
-// RequireAuth returns a middleware that requires valid JWT authentication
+// RequireAuth returns a middleware that requires valid JWT authentication.
+// Accepts the token either as a standard "Authorization: Bearer <token>"
+// header OR as an "access_token" / "token" query parameter. The query
+// parameter path exists so native media players (libVLC, ffmpeg, VLC
+// iOS, etc.) that cannot easily inject custom headers into their HTTP
+// data source can still reach the authenticated /api/v1/stream/:id
+// endpoint by appending "?access_token=<jwt>" to the URL.
 func (m *JWTMiddleware) RequireAuth() gin.HandlerFunc {
 	return func(c *gin.Context) {
+		var tokenString string
+
 		authHeader := c.GetHeader("Authorization")
-		if authHeader == "" {
-			utils.SendErrorResponse(c, http.StatusUnauthorized, "Authorization header required", nil)
-			c.Abort()
-			return
+		if authHeader != "" {
+			parts := strings.Split(authHeader, " ")
+			if len(parts) != 2 || parts[0] != "Bearer" {
+				utils.SendErrorResponse(c, http.StatusUnauthorized, "Invalid authorization header format", nil)
+				c.Abort()
+				return
+			}
+			tokenString = parts[1]
+		} else {
+			// Fallback to query parameter for native clients.
+			tokenString = c.Query("access_token")
+			if tokenString == "" {
+				tokenString = c.Query("token")
+			}
+			if tokenString == "" {
+				utils.SendErrorResponse(c, http.StatusUnauthorized, "Authorization header required", nil)
+				c.Abort()
+				return
+			}
 		}
-
-		// Extract token from "Bearer <token>"
-		parts := strings.Split(authHeader, " ")
-		if len(parts) != 2 || parts[0] != "Bearer" {
-			utils.SendErrorResponse(c, http.StatusUnauthorized, "Invalid authorization header format", nil)
-			c.Abort()
-			return
-		}
-
-		tokenString := parts[1]
 
 		// Parse and validate token
 		claims := &Claims{}
