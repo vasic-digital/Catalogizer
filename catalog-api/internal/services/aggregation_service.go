@@ -244,12 +244,87 @@ func (s *AggregationService) processDirectory(ctx context.Context, dir directory
 		}
 	}
 
-	// Build hierarchy for TV shows
-	if mediaTypeName == "tv_show" && parsed.Season != nil {
-		s.buildTVHierarchy(ctx, itemID, typeID, parsed)
+	// Build hierarchy for TV shows. Two paths:
+	//
+	//  (a) The top-level directory name already has season/
+	//      episode info (e.g. "Asterix Season 1 S01E01"). Use
+	//      the parser output from detectMediaType.
+	//
+	//  (b) More common: the dir name is just the show title
+	//      (e.g. "Asterix") and the season/episode data lives
+	//      in the file names underneath. Walk every
+	//      descendant file once and call buildTVHierarchy for
+	//      each (show, season, episode) triple the parser can
+	//      extract. Without this path the entity system ends
+	//      up with tv_show rows but zero tv_season / tv_episode
+	//      rows — exactly what the 2026-04-11 audit surfaced.
+	if mediaTypeName == "tv_show" {
+		if parsed.Season != nil {
+			s.buildTVHierarchy(ctx, itemID, typeID, parsed)
+		}
+		if err := s.buildTVHierarchyFromFiles(ctx, itemID, typeID, storageRootID, dir.path); err != nil {
+			s.logger.Warn("Failed to build tv hierarchy from files",
+				zap.Int64("show_id", itemID),
+				zap.String("dir", dir.path),
+				zap.Error(err))
+		}
 	}
 
 	return isNew, nil
+}
+
+// buildTVHierarchyFromFiles walks every descendant file of a
+// tv_show directory, parses each filename with ParseTVShow, and
+// upserts a season + episode row for every distinct (season,
+// episode) pair. Uses ParseTVShow's existing SxxEyy / NxNN /
+// "Season N / Episode M" regexes so all three scan patterns we
+// see on our Synology NAS are handled.
+func (s *AggregationService) buildTVHierarchyFromFiles(
+	ctx context.Context,
+	showID, showTypeID, storageRootID int64,
+	showDirPath string,
+) error {
+	query := `SELECT id, name FROM files
+		WHERE storage_root_id = ?
+		  AND is_directory = 0
+		  AND deleted = 0
+		  AND path LIKE ?`
+	rows, err := s.db.QueryContext(ctx, query, storageRootID, showDirPath+"/%")
+	if err != nil {
+		return fmt.Errorf("list descendant files: %w", err)
+	}
+	defer rows.Close()
+
+	type fileRow struct {
+		id   int64
+		name string
+	}
+	var files []fileRow
+	for rows.Next() {
+		var f fileRow
+		if err := rows.Scan(&f.id, &f.name); err != nil {
+			continue
+		}
+		files = append(files, f)
+	}
+	if err := rows.Err(); err != nil {
+		return fmt.Errorf("iterate descendant files: %w", err)
+	}
+
+	seenEpisode := make(map[[2]int]int64)
+	for _, f := range files {
+		p := ParseTVShow(f.name)
+		if p.Season == nil || p.Episode == nil {
+			continue
+		}
+		key := [2]int{*p.Season, *p.Episode}
+		if _, already := seenEpisode[key]; already {
+			continue
+		}
+		s.buildTVHierarchy(ctx, showID, showTypeID, p)
+		seenEpisode[key] = f.id
+	}
+	return nil
 }
 
 // detectMediaType determines the media type from directory info and filename.
