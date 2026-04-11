@@ -274,3 +274,80 @@ test_cases:
         action: "screenshot"
         expected: "Error message visible, still on login"
         vision_verify: true
+
+  # =====================================
+  # PLAYBACK SESSION TRACKING TESTS
+  # Backend endpoints: /api/v1/playback/sessions/{start,progress,end}
+  # Client: data/playback/PlaybackTracker in VLCPlayerActivity
+  # =====================================
+  - id: tv-playback-session-lifecycle
+    name: "Playback session lifecycle - start -> progress -> end"
+    category: playback-verification
+    priority: critical
+    platforms: [androidtv]
+    steps:
+      - name: "Force-stop app"
+        action: "adb_shell: am force-stop com.catalogizer.androidtv"
+        expected: "App process terminated"
+        timeout: 5
+
+      - name: "Relaunch with auto-login extras"
+        action: "adb_shell: am start -n com.catalogizer.androidtv/.ui.MainActivity --es qa_username admin --es qa_password admin123"
+        expected: "Home screen visible within 12 s"
+        timeout: 15
+
+      - name: "Wait for home render"
+        action: "sleep: 6000"
+        expected: "Home screen rendered"
+        timeout: 8
+
+      - name: "Focus category chips row"
+        action: "keypress: KEYCODE_DPAD_DOWN"
+        expected: "Category chip highlighted"
+        timeout: 3
+
+      - name: "Enter movies row"
+        action: "keypress: KEYCODE_DPAD_DOWN"
+        expected: "First movie card has focus"
+        timeout: 3
+
+      - name: "Open detail screen"
+        action: "keypress: KEYCODE_DPAD_CENTER"
+        expected: "MediaDetail screen with Play Now button visible"
+        timeout: 5
+
+      - name: "Focus Play Now"
+        action: "keypress: KEYCODE_DPAD_DOWN"
+        expected: "Play Now button focused"
+        timeout: 3
+
+      - name: "Press Play Now"
+        action: "keypress: KEYCODE_DPAD_CENTER"
+        expected: "VLCPlayerActivity launches and libVLC begins buffering"
+        timeout: 6
+
+      - name: "Wait for session write"
+        action: "sleep: 4000"
+        expected: "PlaybackTracker.start has posted the session"
+        timeout: 5
+
+      - name: "Return to home (triggers end)"
+        action: "keypress: KEYCODE_BACK"
+        expected: "VLCPlayerActivity finishes and PlaybackTracker.end fires"
+        timeout: 5
+
+  - id: tv-playback-dumpsys-media-session
+    name: "Playback dumpsys media session visible"
+    category: playback-verification
+    priority: medium
+    platforms: [androidtv]
+    steps:
+      - name: "Dumpsys media session"
+        action: "adb_shell: dumpsys media_session 2>/dev/null | grep -c 'com.catalogizer.androidtv' || true"
+        expected: "At least one line mentioning catalogizer media session"
+        timeout: 5
+
+      - name: "Dumpsys audio focus"
+        action: "adb_shell: dumpsys audio 2>/dev/null | grep -A1 'focus_stack' | head -10 || true"
+        expected: "Audio focus stack dumped"
+        timeout: 5

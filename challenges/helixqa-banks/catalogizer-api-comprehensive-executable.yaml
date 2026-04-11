@@ -3697,3 +3697,61 @@ test_cases:
       with range: bytes=0-0'
     expected: 206 Partial Content confirming the stream URL is valid and streamable
     timeout: 10
+
+- id: api-playback-session-lifecycle
+  name: Playback session lifecycle (start, progress, end, progress read)
+  category: playback-verification
+  priority: critical
+  platforms:
+  - api
+  description: >
+    Exercises the /api/v1/playback/sessions/{start,progress,end}
+    endpoints and /api/v1/entities/:id/{progress,history} added
+    for the playback history tracking feature. Equivalent to the
+    Catalogizer challenge CH-200 but runnable inside the HelixQA
+    structured test runner.
+  steps:
+  - name: Login
+    action: 'adb_shell: curl -sf -X POST http://localhost:8080/api/v1/auth/login
+      -H "Content-Type: application/json"
+      -d "{\"username\":\"admin\",\"password\":\"admin123\"}"
+      | python3 -c "import sys,json; print(json.load(sys.stdin)[''session_token''])"
+      > /data/local/tmp/cz_token.txt'
+    expected: JWT token captured to /data/local/tmp/cz_token.txt
+    timeout: 10
+  - name: Start playback session
+    action: 'adb_shell: T=$(cat /data/local/tmp/cz_token.txt); curl -sf -X POST
+      http://localhost:8080/api/v1/playback/sessions/start
+      -H "Authorization: Bearer $T" -H "Content-Type: application/json"
+      -d "{\"media_item_id\":1,\"position_unit\":\"seconds\",\"start_position\":0}"
+      | tee /data/local/tmp/cz_sess.json'
+    expected: Response contains session_id
+    timeout: 10
+  - name: Progress playback to 30s
+    action: 'adb_shell: T=$(cat /data/local/tmp/cz_token.txt); S=$(python3 -c
+      "import json; print(json.load(open(''/data/local/tmp/cz_sess.json''))[''session_id''])");
+      curl -sf -X POST http://localhost:8080/api/v1/playback/sessions/progress
+      -H "Authorization: Bearer $T" -H "Content-Type: application/json"
+      -d "{\"session_id\":$S,\"end_position\":30,\"total_amount\":30}"'
+    expected: 200 OK
+    timeout: 10
+  - name: End playback at 120s
+    action: 'adb_shell: T=$(cat /data/local/tmp/cz_token.txt); S=$(python3 -c
+      "import json; print(json.load(open(''/data/local/tmp/cz_sess.json''))[''session_id''])");
+      curl -sf -X POST http://localhost:8080/api/v1/playback/sessions/end
+      -H "Authorization: Bearer $T" -H "Content-Type: application/json"
+      -d "{\"session_id\":$S,\"end_position\":120,\"total_amount\":120,\"completed\":false}"'
+    expected: 200 OK
+    timeout: 10
+  - name: GET entity progress
+    action: 'adb_shell: T=$(cat /data/local/tmp/cz_token.txt); curl -sf
+      -H "Authorization: Bearer $T"
+      "http://localhost:8080/api/v1/entities/1/progress"'
+    expected: progress object with last_position=120 and total_reproductions>=1
+    timeout: 10
+  - name: GET entity history
+    action: 'adb_shell: T=$(cat /data/local/tmp/cz_token.txt); curl -sf
+      -H "Authorization: Bearer $T"
+      "http://localhost:8080/api/v1/entities/1/history?limit=10"'
+    expected: sessions array with count>=1
+    timeout: 10
