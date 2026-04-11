@@ -148,23 +148,37 @@ fun SearchScreen(
                         .focusRequester(focusRequester)
                         .focusable()
                         .onKeyEvent { keyEvent ->
-                            when {
-                                keyEvent.type == KeyEventType.KeyDown && keyEvent.key == Key.DirectionRight -> {
+                            if (keyEvent.type != KeyEventType.KeyDown) {
+                                return@onKeyEvent false
+                            }
+                            when (keyEvent.key) {
+                                // Android TV DPAD_CENTER arrives as
+                                // Key.DirectionCenter. Compose for TV
+                                // does NOT auto-show the IME when a
+                                // text field is "clicked" via d-pad,
+                                // so we open it ourselves. On the
+                                // second center press (when the query
+                                // has content) we submit instead.
+                                Key.DirectionCenter, Key.Enter, Key.NumPadEnter -> {
+                                    if (searchQuery.isBlank()) {
+                                        keyboardController?.show()
+                                    } else {
+                                        keyboardController?.hide()
+                                        viewModel.search()
+                                    }
+                                    true
+                                }
+                                Key.DirectionRight -> {
                                     if (searchQuery.isNotBlank()) {
                                         searchButtonFocusRequester.requestFocus()
                                     }
                                     true
                                 }
-                                keyEvent.type == KeyEventType.KeyDown && keyEvent.key == Key.DirectionDown -> {
+                                Key.DirectionDown -> {
                                     if (searchHistory.isNotEmpty() && !hasSearched) {
                                         historyFocusRequester.requestFocus()
                                         true
                                     } else false
-                                }
-                                keyEvent.type == KeyEventType.KeyDown && keyEvent.key == Key.Enter -> {
-                                    keyboardController?.hide()
-                                    viewModel.search()
-                                    true
                                 }
                                 else -> false
                             }
