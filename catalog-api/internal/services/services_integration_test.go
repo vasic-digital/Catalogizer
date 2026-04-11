@@ -538,9 +538,58 @@ func TestPlaybackPositionService_SyncAcrossDevices(t *testing.T) {
 	svc, _ := setupPlaybackPositionService(t)
 	ctx := context.Background()
 
-	// SyncAcrossDevices is a no-op stub, should return nil
+	// Empty state: no duplicate rows to collapse, must return nil.
 	err := svc.SyncAcrossDevices(ctx, 1)
 	require.NoError(t, err)
+}
+
+// TestPlaybackPositionService_SyncAcrossDevices_WithPositions verifies
+// SyncAcrossDevices returns nil and logs the count when the user has
+// existing position rows. Because the schema enforces UNIQUE(user_id,
+// media_item_id), cross-device merging is implicit at UPSERT time; this
+// method only validates the state is reachable.
+func TestPlaybackPositionService_SyncAcrossDevices_WithPositions(t *testing.T) {
+	svc, db := setupPlaybackPositionService(t)
+	ctx := context.Background()
+
+	insertTestMediaItem(t, db, 700, "synced.mp4", "video")
+	require.NoError(t, svc.UpdatePosition(ctx, &UpdatePositionRequest{
+		UserID: 1, MediaItemID: 700, Position: 30000, Duration: 120000,
+	}))
+
+	require.NoError(t, svc.SyncAcrossDevices(ctx, 1))
+
+	// Row should still be there.
+	var count int
+	err := db.QueryRow(
+		`SELECT COUNT(*) FROM playback_positions WHERE user_id = ? AND media_item_id = ?`,
+		1, 700,
+	).Scan(&count)
+	require.NoError(t, err)
+	require.Equal(t, 1, count)
+}
+
+// TestPlaybackPositionService_SyncAcrossDevices_NilDB verifies the sync
+// errors cleanly when the service has no database.
+func TestPlaybackPositionService_SyncAcrossDevices_NilDB(t *testing.T) {
+	svc := NewPlaybackPositionService(nil, zap.NewNop())
+	err := svc.SyncAcrossDevices(context.Background(), 1)
+	require.Error(t, err)
+	require.Contains(t, err.Error(), "database")
+}
+
+// TestPlaybackPositionService_SyncAcrossDevices_InvalidUserID verifies
+// the input validation path rejects non-positive user IDs.
+func TestPlaybackPositionService_SyncAcrossDevices_InvalidUserID(t *testing.T) {
+	svc, _ := setupPlaybackPositionService(t)
+
+	err := svc.SyncAcrossDevices(context.Background(), 0)
+	require.Error(t, err)
+	require.Contains(t, err.Error(), "positive userID")
+
+	err = svc.SyncAcrossDevices(context.Background(), -5)
+	require.Error(t, err)
+	require.Contains(t, err.Error(), "positive userID")
 }
 
 // ============================================================================

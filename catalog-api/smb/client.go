@@ -4,9 +4,14 @@ import (
 	"fmt"
 	"io"
 	"net"
+	"time"
 
 	"github.com/hirochachacha/go-smb2"
 )
+
+// defaultDialTimeout bounds the TCP connect phase of NewSmbClient so
+// unreachable SMB servers cannot block tests or shutdown for minutes.
+const defaultDialTimeout = 5 * time.Second
 
 // SmbClient represents an SMB client connection
 type SmbClient struct {
@@ -26,11 +31,26 @@ type SmbConfig struct {
 	Domain   string
 }
 
-// NewSmbClient creates a new SMB client
+// NewSmbClient creates a new SMB client.
+// Validates input and uses a bounded dial timeout so unreachable hosts
+// fail fast instead of hanging on the OS default TCP timeout.
 func NewSmbClient(config *SmbConfig) (*SmbClient, error) {
-	// Establish TCP connection
+	if config == nil {
+		return nil, fmt.Errorf("SMB config cannot be nil")
+	}
+	if config.Host == "" {
+		return nil, fmt.Errorf("SMB config: Host is required")
+	}
+	if config.Port <= 0 || config.Port > 65535 {
+		return nil, fmt.Errorf("SMB config: Port %d is out of range", config.Port)
+	}
+	if config.Share == "" {
+		return nil, fmt.Errorf("SMB config: Share is required")
+	}
+
+	// Establish TCP connection with a bounded timeout.
 	addr := net.JoinHostPort(config.Host, fmt.Sprintf("%d", config.Port))
-	conn, err := net.Dial("tcp", addr)
+	conn, err := net.DialTimeout("tcp", addr, defaultDialTimeout)
 	if err != nil {
 		return nil, fmt.Errorf("failed to connect to SMB server: %w", err)
 	}
