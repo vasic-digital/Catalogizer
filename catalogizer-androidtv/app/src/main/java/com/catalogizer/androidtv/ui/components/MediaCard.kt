@@ -20,6 +20,11 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.input.key.Key
+import androidx.compose.ui.input.key.KeyEventType
+import androidx.compose.ui.input.key.key
+import androidx.compose.ui.input.key.onPreviewKeyEvent
+import androidx.compose.ui.input.key.type
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
@@ -28,11 +33,17 @@ import androidx.compose.ui.unit.sp
 import androidx.tv.material3.*
 import coil.compose.AsyncImage
 import com.catalogizer.androidtv.data.models.MediaItem
+import com.catalogizer.androidtv.data.playback.UiPlaybackProgress
 
 /**
  * TV-optimized media card with poster/placeholder image, media type badge,
  * play overlay, metadata row (year, duration, rating, quality), and focus-scaled
  * border animation for D-pad navigation.
+ *
+ * When [progress] is non-null, a [ProgressBadge] overlay is rendered over the
+ * bottom of the cover art showing duration, current position, last session
+ * amount, and reproduction count. The badge intercepts D-pad long-press (or
+ * any LongClickable invocation) via [onHistoryClick] to open [HistoryDialog].
  */
 @Composable
 fun MediaCard(
@@ -40,7 +51,9 @@ fun MediaCard(
     onClick: () -> Unit,
     onFocus: () -> Unit,
     modifier: Modifier = Modifier,
-    isFocused: Boolean = false
+    isFocused: Boolean = false,
+    progress: UiPlaybackProgress? = null,
+    onHistoryClick: (() -> Unit)? = null
 ) {
     var isCardFocused by remember { mutableStateOf(isFocused) }
 
@@ -51,6 +64,20 @@ fun MediaCard(
             .onFocusChanged { focusState ->
                 isCardFocused = focusState.isFocused || focusState.hasFocus
                 if (focusState.isFocused) onFocus()
+            }
+            .onPreviewKeyEvent { event ->
+                // Menu / Info button on the remote opens the reproduction
+                // history dialog for the focused card. We only intercept on
+                // KeyUp so we never swallow the press before the system
+                // context menu fires for other UI elements.
+                if (event.type == KeyEventType.KeyUp && progress != null &&
+                    (event.key == Key.Menu || event.key == Key.Info)
+                ) {
+                    onHistoryClick?.invoke()
+                    onHistoryClick != null
+                } else {
+                    false
+                }
             },
         scale = CardDefaults.scale(
             scale = if (isCardFocused) 1.05f else 1.0f,
@@ -184,6 +211,16 @@ fun MediaCard(
                         text = (mediaItem.mediaType ?: "").replace("_", " ").lowercase(),
                         style = MaterialTheme.typography.labelSmall,
                         color = Color.White.copy(alpha = 0.9f)
+                    )
+                }
+
+                // Reproduction progress overlay (bottom) — shows duration,
+                // current position, last session amount, and play count.
+                // Only rendered when /api/v1/entities/:id/progress returned data.
+                if (progress != null) {
+                    ProgressBadge(
+                        progress = progress,
+                        modifier = Modifier.align(Alignment.BottomStart)
                     )
                 }
             }

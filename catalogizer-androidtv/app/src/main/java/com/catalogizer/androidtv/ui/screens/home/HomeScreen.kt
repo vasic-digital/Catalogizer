@@ -23,6 +23,8 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.text.font.FontWeight
 import com.catalogizer.androidtv.data.models.MediaItem
+import com.catalogizer.androidtv.data.playback.UiPlaybackProgress
+import com.catalogizer.androidtv.ui.components.HistoryDialog
 import com.catalogizer.androidtv.ui.components.MediaCarousel
 import com.catalogizer.androidtv.ui.components.MediaCard
 import com.catalogizer.androidtv.ui.components.TopBar
@@ -55,6 +57,10 @@ fun HomeScreen(
     viewModel: HomeViewModel
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+    var historyTarget by remember { mutableStateOf<MediaItem?>(null) }
+    val container = com.catalogizer.androidtv.DependencyContainer.getInstance(
+        androidx.compose.ui.platform.LocalContext.current
+    )
 
     LaunchedEffect(Unit) {
         viewModel.loadHomeData()
@@ -234,13 +240,24 @@ fun HomeScreen(
                         MediaSection(
                             title = rail.title,
                             items = rail.items,
+                            progressById = uiState.progressById,
                             onItemClick = if (rail.navigateToPlayer) onNavigateToPlayer else onNavigateToMediaDetail,
-                            onItemFocus = { /* Handle focus */ }
+                            onItemFocus = { /* Handle focus */ },
+                            onHistoryClick = { item -> historyTarget = item }
                         )
                     }
                 }
             }
         }
+    }
+
+    historyTarget?.let { target ->
+        HistoryDialog(
+            mediaItemId = target.id,
+            mediaTitle = target.title,
+            repository = container.playbackRepository,
+            onDismiss = { historyTarget = null }
+        )
     }
 }
 
@@ -249,8 +266,10 @@ fun HomeScreen(
 private fun MediaSection(
     title: String,
     items: List<MediaItem>,
+    progressById: Map<Long, UiPlaybackProgress>,
     onItemClick: (Long) -> Unit,
     onItemFocus: (MediaItem) -> Unit,
+    onHistoryClick: (MediaItem) -> Unit,
     modifier: Modifier = Modifier
 ) {
     Column(modifier = modifier) {
@@ -269,7 +288,9 @@ private fun MediaSection(
                     mediaItem = item,
                     onClick = { onItemClick(item.id) },
                     onFocus = { onItemFocus(item) },
-                    modifier = Modifier.width(140.dp)
+                    modifier = Modifier.width(140.dp),
+                    progress = progressById[item.id],
+                    onHistoryClick = { onHistoryClick(item) }
                 )
             }
         }

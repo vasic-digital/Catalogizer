@@ -7,6 +7,7 @@ import androidx.datastore.preferences.core.PreferenceDataStoreFactory
 import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.preferencesDataStoreFile
 import com.catalogizer.androidtv.data.discovery.NetworkDiscoveryService
+import com.catalogizer.androidtv.data.playback.PlaybackRepository
 import com.catalogizer.androidtv.data.tv.TvChannelRepository
 import com.catalogizer.androidtv.data.tv.WatchNextManager
 import com.catalogizer.androidtv.data.models.Settings
@@ -155,9 +156,12 @@ class DependencyContainer(private val context: Context) {
             throw e
         }
     }
-    
+
     val watchNextManager: WatchNextManager
         get() = watchNextManagerLazy
+
+    val playbackRepository: PlaybackRepository
+        get() = PlaybackRepository(api)
 
     // ViewModels
     fun createAuthViewModel(): AuthViewModel = AuthViewModel(
@@ -165,7 +169,7 @@ class DependencyContainer(private val context: Context) {
     )
     fun createMainViewModel(): MainViewModel = MainViewModel(authRepository)
     fun createHomeViewModel(): HomeViewModel = HomeViewModel(
-        mediaRepository, tvChannelRepository, watchNextManager
+        mediaRepository, playbackRepository, tvChannelRepository, watchNextManager
     )
     fun createSettingsViewModel(): SettingsViewModel = SettingsViewModel(settingsRepository)
     fun createSearchViewModel(): SearchViewModel = SearchViewModel(mediaRepository)

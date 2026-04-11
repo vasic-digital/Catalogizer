@@ -5,6 +5,8 @@ import androidx.lifecycle.viewModelScope
 import com.catalogizer.androidtv.data.models.MediaItem
 import com.catalogizer.androidtv.data.models.MediaSearchRequest
 import com.catalogizer.androidtv.data.models.MediaType
+import com.catalogizer.androidtv.data.playback.PlaybackRepository
+import com.catalogizer.androidtv.data.playback.UiPlaybackProgress
 import com.catalogizer.androidtv.data.repository.MediaRepository
 import kotlinx.coroutines.async
 import kotlinx.coroutines.coroutineScope
@@ -35,7 +37,8 @@ data class HomeUiState(
     val topRatedDocuments: List<MediaItem> = emptyList(),
     val featuredItem: MediaItem? = null,
     val totalEntities: Int = 0,
-    val statsByType: Map<String, Int> = emptyMap()
+    val statsByType: Map<String, Int> = emptyMap(),
+    val progressById: Map<Long, UiPlaybackProgress> = emptyMap()
 )
 
 /**
@@ -45,6 +48,7 @@ data class HomeUiState(
  */
 class HomeViewModel(
     private val mediaRepository: MediaRepository,
+    private val playbackRepository: PlaybackRepository? = null,
     private val tvChannelRepository: com.catalogizer.androidtv.data.tv.TvChannelRepository? = null,
     private val watchNextManager: com.catalogizer.androidtv.data.tv.WatchNextManager? = null
 ) : ViewModel() {
@@ -128,6 +132,8 @@ class HomeViewModel(
                             android.util.Log.w("HomeVM", "Channel refresh failed: ${e.message}")
                         }
                     }
+                    // Load playback progress for every visible card (non-blocking)
+                    launch { loadProgressForVisibleItems() }
                 }
             } catch (e: Exception) {
                 _uiState.update {
@@ -260,6 +266,54 @@ class HomeViewModel(
             } catch (e: Exception) {
                 // Handle error
             }
+        }
+    }
+
+    private suspend fun loadProgressForVisibleItems() {
+        val repo = playbackRepository ?: return
+        val state = _uiState.value
+        val allItems = buildList {
+            addAll(state.continueWatching)
+            addAll(state.recentMovies)
+            addAll(state.recentTvShows)
+            addAll(state.recentMusicAlbums)
+            addAll(state.recentGames)
+            addAll(state.recentBooks)
+            addAll(state.recentComics)
+            addAll(state.recentSoftware)
+            addAll(state.recentConcerts)
+            addAll(state.recommended)
+            addAll(state.trending)
+            addAll(state.topRatedMovies)
+            addAll(state.topRatedTvShows)
+            addAll(state.topRatedMusic)
+            addAll(state.topRatedDocuments)
+        }.distinctBy { it.id }
+
+        if (allItems.isEmpty()) return
+
+        try {
+            coroutineScope {
+                val results = allItems.map { item ->
+                    async {
+                        try {
+                            item.id to repo.getProgress(item.id)
+                        } catch (_: Throwable) {
+                            item.id to null
+                        }
+                    }
+                }.map { it.await() }
+
+                val progressMap = results
+                    .mapNotNull { (id, prog) -> prog?.let { id to it } }
+                    .toMap()
+
+                if (progressMap.isNotEmpty()) {
+                    _uiState.update { it.copy(progressById = progressMap) }
+                }
+            }
+        } catch (e: Exception) {
+            android.util.Log.w("HomeVM", "Progress fetch failed: ${e.message}")
         }
     }
 
