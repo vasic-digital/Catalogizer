@@ -111,4 +111,45 @@ describe('DashboardStats', () => {
     expect(screen.getByText('Total Media')).toBeInTheDocument()
     // In loading state, values should not be shown
   })
+
+  // Regression for TICKET-008-web-dashboard-error-after-login:
+  // Dashboard threw "Something went wrong" when the backend returned a
+  // partial MediaStats payload missing total_items / total_size / etc.
+  // The bug was unsafe `.toLocaleString()` calls on possibly-undefined
+  // numeric fields. This test feeds partial payloads and asserts the
+  // component renders without throwing.
+  it('renders cleanly with partial mediaStats missing total_items', () => {
+    const partial = {
+      by_type: { movie: 5 },
+      by_quality: { '1080p': 5 },
+    } as Parameters<typeof DashboardStats>[0]['mediaStats']
+    expect(() =>
+      render(<DashboardStats mediaStats={partial} userStats={userStats} />),
+    ).not.toThrow()
+    // And it shows the 0 fallback instead of crashing
+    expect(screen.getByText('Total Media')).toBeInTheDocument()
+  })
+
+  it('renders cleanly with partial userStats missing active_users', () => {
+    const partial = {
+      total_users: 10,
+    } as Parameters<typeof DashboardStats>[0]['userStats']
+    expect(() =>
+      render(<DashboardStats mediaStats={mediaStats} userStats={partial} />),
+    ).not.toThrow()
+    expect(screen.getByText('Active Users')).toBeInTheDocument()
+  })
+
+  it('renders cleanly with fully empty mediaStats + userStats objects', () => {
+    expect(() =>
+      render(
+        <DashboardStats
+          mediaStats={{} as NonNullable<Parameters<typeof DashboardStats>[0]['mediaStats']>}
+          userStats={{} as NonNullable<Parameters<typeof DashboardStats>[0]['userStats']>}
+        />,
+      ),
+    ).not.toThrow()
+    // Multiple "0" fallbacks are expected
+    expect(screen.getAllByText('0').length).toBeGreaterThan(0)
+  })
 })

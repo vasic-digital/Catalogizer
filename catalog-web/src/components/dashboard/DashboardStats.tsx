@@ -122,7 +122,7 @@ export const DashboardStats: React.FC<DashboardStatsProps> = ({
       {/* Total Media Items */}
       <StatCard
         title="Total Media"
-        value={mediaStats?.total_items.toLocaleString() || '0'}
+        value={mediaStats?.total_items?.toLocaleString() ?? '0'}
         icon={Database}
         trend={{
           value: 12.5,
@@ -174,7 +174,7 @@ export const DashboardStats: React.FC<DashboardStatsProps> = ({
       {/* Active Users */}
       <StatCard
         title="Active Users"
-        value={userStats?.active_users.toLocaleString() || '0'}
+        value={userStats?.active_users?.toLocaleString() ?? '0'}
         icon={Users}
         trend={{
           value: 3.2,
@@ -187,7 +187,7 @@ export const DashboardStats: React.FC<DashboardStatsProps> = ({
       {/* Total Users */}
       <StatCard
         title="Total Users"
-        value={userStats?.total_users.toLocaleString() || '0'}
+        value={userStats?.total_users?.toLocaleString() ?? '0'}
         icon={Users}
         trend={{
           value: 18.7,
@@ -200,7 +200,7 @@ export const DashboardStats: React.FC<DashboardStatsProps> = ({
       {/* Sessions Today */}
       <StatCard
         title="Sessions Today"
-        value={userStats?.sessions_today.toLocaleString() || '0'}
+        value={userStats?.sessions_today?.toLocaleString() ?? '0'}
         icon={PlayCircle}
         trend={{
           value: 22.1,
