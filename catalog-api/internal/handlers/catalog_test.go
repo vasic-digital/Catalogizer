@@ -264,7 +264,9 @@ func (suite *CatalogHandlerTestSuite) TestSearchEmptyQuery() {
 	w := httptest.NewRecorder()
 	suite.router.ServeHTTP(w, req)
 
-	assert.Equal(suite.T(), http.StatusBadRequest, w.Code)
+	// Empty-query search returns 200 with empty envelope, not 400.
+	// Matches the updated contract used by HelixQA / userflow suites.
+	assert.Equal(suite.T(), http.StatusOK, w.Code)
 }
 
 func (suite *CatalogHandlerTestSuite) TestSearchDuplicates() {

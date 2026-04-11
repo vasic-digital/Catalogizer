@@ -271,14 +271,16 @@ func TestMigrationSequence_AllVersionsApplied(t *testing.T) {
 	err := db.RunMigrations(ctx)
 	require.NoError(t, err)
 
-	// Verify all 14 migrations were recorded
+	// Verify all 15 migrations were recorded (v15 adds playback_sessions
+	// + media_progress tables for the reproduction history feature).
+	const latestVersion = 15
 	var count int
 	err = db.QueryRowContext(ctx, "SELECT COUNT(*) FROM migrations").Scan(&count)
 	assert.NoError(t, err)
-	assert.Equal(t, 14, count)
+	assert.Equal(t, latestVersion, count)
 
 	// Verify each version exists
-	for v := 1; v <= 14; v++ {
+	for v := 1; v <= latestVersion; v++ {
 		var exists int
 		err := db.QueryRowContext(ctx, "SELECT COUNT(*) FROM migrations WHERE version = ?", v).Scan(&exists)
 		assert.NoError(t, err)

@@ -1920,11 +1920,24 @@ func TestCatalogHandler_Search_EmptyQuery(t *testing.T) {
 
 	handler.Search(c)
 
-	assert.Equal(t, http.StatusBadRequest, w.Code)
+	// Contract change (post-2026-03): empty-query search returns 200
+	// with an empty result envelope instead of 400. This matches the
+	// challenge bank + userflow suite expectation that a blank search
+	// box does not error, and is friendlier to UI autocomplete that
+	// fires before the user types.
+	assert.Equal(t, http.StatusOK, w.Code)
 	var resp map[string]interface{}
 	err := json.Unmarshal(w.Body.Bytes(), &resp)
 	assert.NoError(t, err)
-	assert.Equal(t, "Search query is required", resp["error"])
+	assert.Equal(t, float64(0), resp["total"])
+	assert.Equal(t, float64(0), resp["count"])
+	// results + files arrays should exist and be empty
+	results, ok := resp["results"].([]interface{})
+	assert.True(t, ok, "results should be an array")
+	assert.Empty(t, results)
+	files, ok := resp["files"].([]interface{})
+	assert.True(t, ok, "files should be an array")
+	assert.Empty(t, files)
 }
 
 func TestCatalogHandler_SearchDuplicates_MissingSmbRoot(t *testing.T) {
