@@ -65,6 +65,14 @@
             android:theme="@style/Theme.CatalogizerTV.Player"
             android:screenOrientation="landscape" />
 
+        <!-- VLC Player Activity (used by TVNavigation.kt for Play Now) -->
+        <activity
+            android:name=".ui.player.VLCPlayerActivity"
+            android:exported="false"
+            android:configChanges="orientation|screenSize|keyboardHidden|screenLayout|smallestScreenSize"
+            android:theme="@style/Theme.CatalogizerTV.Player"
+            android:screenOrientation="landscape" />
+
         <!-- Channel Deep Link Activity -->
         <activity
             android:name=".ui.ChannelDeepLinkActivity"

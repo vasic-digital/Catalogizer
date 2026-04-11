@@ -22,6 +22,14 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
+// Note: primary-file selection logic moved to
+// repository.MediaFileRepository.GetPrimaryStreamableFile so it
+// can JOIN media_files against the files table in a single query
+// and score candidates by real name / extension / size. The
+// StreamEntity and DownloadEntity handlers call that method
+// directly instead of filtering an in-memory MediaFileRecord
+// slice that only carries file_id + is_primary.
+
 // MediaEntityHandler handles entity-level media browsing endpoints.
 type MediaEntityHandler struct {
 	itemRepo        *repository.MediaItemRepository
@@ -757,25 +765,30 @@ func (h *MediaEntityHandler) StreamEntity(c *gin.Context) {
 		return
 	}
 
-	files, err := h.fileRepo.GetFilesByItem(ctx, id)
-	if err != nil || len(files) == 0 {
-		utils.SendErrorResponse(c, http.StatusNotFound, "No files available for streaming", err)
-		return
-	}
-
-	// Find primary file or use first one
-	primary := files[0]
-	for _, f := range files {
-		if f.IsPrimary {
-			primary = f
-			break
+	// GetPrimaryStreamableFile JOINs media_files against files,
+	// filters out metadata scratch files (.DS_Store, Thumbs.db,
+	// ._*, desktop.ini, .nfo, .srt, ...) and returns the largest
+	// file with a known playable extension. Without this, the
+	// earlier implementation handed libVLC a 6 KB .DS_Store and
+	// crashed the Android TV client inside
+	// Media.nativeNewFromLocation.
+	primary, err := h.fileRepo.GetPrimaryStreamableFile(ctx, id)
+	if err != nil {
+		if err == repository.ErrNoStreamableFile {
+			utils.SendErrorResponse(c, http.StatusNotFound, "No streamable file available", err)
+			return
 		}
+		utils.SendErrorResponse(c, http.StatusInternalServerError, "Failed to resolve streamable file", err)
+		return
 	}
 
 	c.JSON(http.StatusOK, gin.H{
 		"entity_id":  id,
 		"file_id":    primary.FileID,
 		"stream_url": fmt.Sprintf("/api/v1/stream/%d", primary.FileID),
+		"filename":   primary.Filename,
+		"size":       primary.Size,
+		"mime_type":  primary.MimeType,
 	})
 }
 
@@ -797,28 +810,44 @@ func (h *MediaEntityHandler) DownloadEntity(c *gin.Context) {
 		return
 	}
 
-	target := files[0]
+	// Explicit file_id always wins — the client has asked for a
+	// specific file (subtitle, trailer, alternate cut).
+	var targetFileID int64 = -1
 	if fileIDStr != "" {
-		fileID, _ := strconv.ParseInt(fileIDStr, 10, 64)
-		for _, f := range files {
-			if f.FileID == fileID {
-				target = f
-				break
+		if parsed, err := strconv.ParseInt(fileIDStr, 10, 64); err == nil {
+			for _, f := range files {
+				if f.FileID == parsed {
+					targetFileID = f.FileID
+					break
+				}
 			}
-		}
-	} else {
-		for _, f := range files {
-			if f.IsPrimary {
-				target = f
-				break
+			if targetFileID < 0 {
+				utils.SendErrorResponse(c, http.StatusNotFound, "Requested file_id not linked to this entity", nil)
+				return
 			}
 		}
 	}
 
+	// No explicit file_id: use the same smart primary-picker as
+	// StreamEntity so `Download` and `Play Now` both hand back
+	// the real movie instead of a 6 KB .DS_Store.
+	if targetFileID < 0 {
+		primary, err := h.fileRepo.GetPrimaryStreamableFile(ctx, id)
+		if err != nil {
+			if err == repository.ErrNoStreamableFile {
+				utils.SendErrorResponse(c, http.StatusNotFound, "No downloadable file available", err)
+				return
+			}
+			utils.SendErrorResponse(c, http.StatusInternalServerError, "Failed to resolve downloadable file", err)
+			return
+		}
+		targetFileID = primary.FileID
+	}
+
 	c.JSON(http.StatusOK, gin.H{
 		"entity_id":    id,
-		"file_id":      target.FileID,
-		"download_url": fmt.Sprintf("/api/v1/download/file/%d", target.FileID),
+		"file_id":      targetFileID,
+		"download_url": fmt.Sprintf("/api/v1/download/file/%d", targetFileID),
 		"total_files":  len(files),
 	})
 }

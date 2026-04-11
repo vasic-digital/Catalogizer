@@ -23,18 +23,32 @@ class VLCPlayer(private val context: Context) {
     companion object {
         private const val TAG = "VLCPlayer"
         
-        // VLC options for optimized TV playback
+        // VLC options for optimized TV playback.
+        //
+        // NOTE: libvlc-android accepts *single-dash* long options (e.g.
+        // "-vvv") AND it is very strict about the format — any option
+        // that doesn't match a known libVLC flag causes the native
+        // LibVLC constructor to either swallow the error silently
+        // (leaving libVLC in an uninitialised state) or SIGSEGV when
+        // the first Media is created. The earlier list included
+        // several options that libvlc-android rejects on Android:
+        //   * --rtsp-tcp             -> not a valid option on Android
+        //   * --no-drop-late-frames  -> rejected
+        //   * --no-skip-frames       -> rejected
+        //   * --audio-time-stretch   -> rejected
+        //   * --avcodec-hw           -> requires a value (enum), crash
+        //   * -- subsdec-encoding=…  -> typo: end-of-options marker
+        // With any of these present, Media(libVLC, uri) crashed in
+        // VLCJniObject_newFromJavaLibVlc on Mi Box 4 / armeabi-v7a.
+        //
+        // The minimal set below works on all tested TV devices; add
+        // options back one at a time and verify via `dumpsys
+        // media_session | grep PlaybackState` that playback still
+        // reaches state=3 before committing.
         private val VLC_OPTIONS = listOf(
-            "--rtsp-tcp",           // Use TCP for RTSP (more reliable)
-            "--network-caching=1500", // Network buffer (ms)
-            "--file-caching=300",     // File buffer (ms)
-            "--live-caching=1500",    // Live stream buffer (ms)
-            "--sout-mux-caching=1500", // Stream output buffer (ms)
-            "--no-drop-late-frames",  // Don't drop late frames
-            "--no-skip-frames",       // Don't skip frames
-            "--audio-time-stretch",   // Enable audio time stretching
-            "--avcodec-hw",           // Enable hardware decoding
-            "-- subsdec-encoding=UTF-8" // Subtitle encoding
+            "--network-caching=1500",
+            "--file-caching=300",
+            "--live-caching=1500"
         )
     }
 

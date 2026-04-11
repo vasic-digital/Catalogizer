@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
+	"strings"
 	"time"
 
 	"catalogizer/database"
@@ -63,6 +64,200 @@ func (r *MediaFileRepository) UnlinkFile(ctx context.Context, mediaItemID, fileI
 	}
 
 	return nil
+}
+
+// StreamableFile is a media_file joined with its concrete file
+// metadata (name/extension/size). Used by the stream and download
+// entity endpoints to pick the best playable file for an entity
+// without pulling every row through a second round-trip.
+type StreamableFile struct {
+	MediaFileID int64
+	MediaItemID int64
+	FileID      int64
+	IsPrimary   bool
+	Filename    string
+	Extension   string
+	Size        int64
+	MimeType    string
+	Path        string
+}
+
+// ErrNoStreamableFile is returned by GetPrimaryStreamableFile
+// when the entity has at least one linked file but none of the
+// linked files are playable (everything is .DS_Store / Thumbs.db
+// / empty). Callers should translate to HTTP 404.
+var ErrNoStreamableFile = fmt.Errorf("no streamable file for media item")
+
+// GetPrimaryStreamableFile picks the best file to stream for a
+// given media item. It joins media_files to files so the ranking
+// can use real filename/extension/size metadata, filters out
+// metadata scratch files, and prefers the largest file with a
+// known media extension. Selection order:
+//
+//  1. A file flagged is_primary=true whose name is not a metadata
+//     file — trust the scanner's choice when it's sane.
+//  2. The largest file with a recognised media extension.
+//  3. The largest non-metadata file regardless of extension (for
+//     entity types like games/software where we don't know every
+//     extension).
+//
+// Returns ErrNoStreamableFile only when the entity has no linked
+// files at all or every linked file is on the metadata blacklist.
+func (r *MediaFileRepository) GetPrimaryStreamableFile(ctx context.Context, mediaItemID int64) (*StreamableFile, error) {
+	query := `
+		SELECT mf.id, mf.media_item_id, mf.file_id, mf.is_primary,
+		       f.name, f.extension, f.size, f.mime_type, f.path
+		FROM media_files mf
+		JOIN files f ON f.id = mf.file_id
+		WHERE mf.media_item_id = ?
+		ORDER BY mf.is_primary DESC, f.size DESC`
+
+	rows, err := r.db.QueryContext(ctx, query, mediaItemID)
+	if err != nil {
+		return nil, fmt.Errorf("query streamable files: %w", err)
+	}
+	defer rows.Close()
+
+	var files []StreamableFile
+	for rows.Next() {
+		var f StreamableFile
+		var name, ext, mime, path sql.NullString
+		var size sql.NullInt64
+		if err := rows.Scan(
+			&f.MediaFileID, &f.MediaItemID, &f.FileID, &f.IsPrimary,
+			&name, &ext, &size, &mime, &path,
+		); err != nil {
+			return nil, fmt.Errorf("scan streamable file: %w", err)
+		}
+		f.Filename = name.String
+		f.Extension = ext.String
+		f.Size = size.Int64
+		f.MimeType = mime.String
+		f.Path = path.String
+		files = append(files, f)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, fmt.Errorf("iterate streamable files: %w", err)
+	}
+	if len(files) == 0 {
+		return nil, ErrNoStreamableFile
+	}
+
+	pick := pickBestStreamableFile(files)
+	if pick == nil {
+		return nil, ErrNoStreamableFile
+	}
+	return pick, nil
+}
+
+// mediaExts is the extension whitelist used by
+// pickBestStreamableFile to decide whether a file "looks" like
+// something worth streaming.
+var mediaExts = map[string]struct{}{
+	// Video
+	"mp4": {}, "mkv": {}, "avi": {}, "mov": {}, "wmv": {},
+	"flv": {}, "webm": {}, "m4v": {}, "mpg": {}, "mpeg": {},
+	"ts": {}, "m2ts": {}, "vob": {}, "3gp": {}, "ogv": {},
+	// Audio
+	"mp3": {}, "flac": {}, "wav": {}, "m4a": {}, "aac": {},
+	"ogg": {}, "opus": {}, "wma": {}, "alac": {}, "ape": {},
+	// E-books / comics — full-file download + client-side reader.
+	"pdf": {}, "epub": {}, "mobi": {}, "azw3": {}, "djvu": {},
+	"cbr": {}, "cbz": {}, "cb7": {}, "cbt": {},
+}
+
+// nonMediaNames lists filenames we never consider streamable —
+// macOS, Windows and common scanner scratch files.
+var nonMediaNames = map[string]struct{}{
+	".ds_store":    {},
+	"thumbs.db":    {},
+	".thumbs.db":   {},
+	"desktop.ini":  {},
+	".nomedia":     {},
+	".localized":   {},
+	".appledouble": {},
+}
+
+// pickBestStreamableFile applies the selection rules described
+// on GetPrimaryStreamableFile. Exported unit tests in
+// media_file_repository_test.go exercise each branch.
+func pickBestStreamableFile(files []StreamableFile) *StreamableFile {
+	if len(files) == 0 {
+		return nil
+	}
+
+	isNonMedia := func(f *StreamableFile) bool {
+		name := strings.ToLower(strings.TrimSpace(f.Filename))
+		if _, ok := nonMediaNames[name]; ok {
+			return true
+		}
+		if strings.HasPrefix(name, "._") {
+			return true
+		}
+		ext := strings.ToLower(strings.TrimPrefix(f.Extension, "."))
+		// .nfo and subtitle-only extensions never play as the
+		// primary stream for a movie/episode. We still keep them
+		// in the files array for UI listing, just not as primary.
+		switch ext {
+		case "nfo", "srt", "sub", "idx", "vtt", "ass", "ssa":
+			return true
+		}
+		// Zero-byte files are always wrong choices.
+		if f.Size == 0 {
+			return true
+		}
+		return false
+	}
+
+	isMedia := func(f *StreamableFile) bool {
+		ext := strings.ToLower(strings.TrimPrefix(f.Extension, "."))
+		if _, ok := mediaExts[ext]; ok {
+			return true
+		}
+		// Fallback on MIME type when extension is missing but the
+		// scanner still tagged the file.
+		mime := strings.ToLower(f.MimeType)
+		return strings.HasPrefix(mime, "video/") ||
+			strings.HasPrefix(mime, "audio/") ||
+			mime == "application/pdf" ||
+			mime == "application/epub+zip"
+	}
+
+	// Pass 1: honour is_primary if the flagged file is sane.
+	for i := range files {
+		if files[i].IsPrimary && !isNonMedia(&files[i]) {
+			return &files[i]
+		}
+	}
+
+	// Pass 2: largest media-extension file that survives the
+	// blacklist.
+	var best *StreamableFile
+	for i := range files {
+		f := &files[i]
+		if isNonMedia(f) || !isMedia(f) {
+			continue
+		}
+		if best == nil || f.Size > best.Size {
+			best = f
+		}
+	}
+	if best != nil {
+		return best
+	}
+
+	// Pass 3: largest non-blacklisted file regardless of
+	// extension.
+	for i := range files {
+		f := &files[i]
+		if isNonMedia(f) {
+			continue
+		}
+		if best == nil || f.Size > best.Size {
+			best = f
+		}
+	}
+	return best
 }
 
 // GetFilesByItem retrieves all media_file records for a given media item
