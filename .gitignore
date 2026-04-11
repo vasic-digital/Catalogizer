@@ -237,6 +237,17 @@ reports/
 !docs/reports/
 !docs/reports/qa-sessions/
 !docs/reports/qa-sessions/**
+# Never commit recorded screenshots or videos — they bloat the repo.
+# Link to them from reports in qa-results/ (which is gitignored) instead.
+docs/reports/qa-sessions/**/*.png
+docs/reports/qa-sessions/**/*.jpg
+docs/reports/qa-sessions/**/*.jpeg
+docs/reports/qa-sessions/**/*.gif
+docs/reports/qa-sessions/**/*.webp
+docs/reports/qa-sessions/**/*.mp4
+docs/reports/qa-sessions/**/*.webm
+docs/reports/qa-sessions/**/*.mkv
+docs/reports/qa-sessions/**/*.mov
 
 # Challenge results (generated at runtime)
 challenges/results/

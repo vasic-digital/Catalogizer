@@ -50,14 +50,19 @@ cold-start.
 
 ## Evidence
 
-- `screenshots/` — 50 × 1083 KB home-screen PNGs, indexed 001..050
-- `evidence/androidtv-logcat.txt` — logcat from the 50-test Execute run
-- `replay.db` — HelixQA replay buffer (for re-running the exact same
-  navigation sequence against a future build)
+- `qa-results/session-1775930814/screenshots/` — 50 × 1083 KB home-screen
+  PNGs, indexed 001..050 (**not committed** — lives under `qa-results/`
+  which is gitignored; screenshots and videos are kept out of git to
+  avoid bloat)
+- `qa-results/session-1775930814/evidence/androidtv-logcat.txt` — logcat
+  from the 50-test Execute run
+- `qa-results/session-1775930814/replay.db` — HelixQA replay buffer (for
+  re-running the exact same navigation sequence against a future build)
 
-## Sanity-check screenshot
+## Sanity-check screenshot (local-only)
 
-The first capture of the session (`screenshots/androidtv-001-android-tv-home-screen.png`)
+The first capture of the session
+(`qa-results/session-1775930814/screenshots/androidtv-001-android-tv-home-screen.png`)
 contains:
 
 - Header: "Catalogizer" + search icon + settings gear
