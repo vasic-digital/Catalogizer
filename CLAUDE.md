@@ -79,6 +79,27 @@ All network communication uses HTTP/3 with Brotli compression. Fallback: HTTP/2 
 
 All components run with zero console warnings, zero console errors, and zero failed network requests in every environment. Every failed network request is a defect. If a feature is not yet implemented, provide a stub endpoint that returns a valid empty response. The challenge suite enforces this end-to-end.
 
+### 100% Test Coverage Across All Categories (Constitution Article V)
+
+**Every component must maintain no-less-than 100% coverage in every one of these ten categories** — none may be skipped, deferred, or partially covered:
+
+1. Unit — pure logic, individual functions / classes
+2. Integration — cross-module, DB, cache, queues, filesystems
+3. E2E — full user journeys through the live system
+4. Full automation — unattended, reproducible, CI-runnable E2E
+5. Stress — saturation, concurrency, large payloads, long sessions
+6. Security — authn/z, injection, SSRF, secrets, CVE scans (`govulncheck`, `npm audit`, Semgrep, Gosec, Trivy)
+7. DDoS / rate-limit — floods, bursts, slowloris, connection exhaustion, rejection + recovery verification
+8. Benchmarking — latency / throughput / memory baselines with regression detection
+9. Challenges — registered `digital.vasic.challenges` entry per feature
+10. HelixQA — autonomous bank + session entry per screen, flow, and adversarial case
+
+"100%" means every branch (happy, error, edge, adversarial) of every public function / endpoint / UI component is exercised, every feature has an E2E flow + challenge + HelixQA bank entry, and every fix has a regression test in the `fixes-validation` bank **before** the ticket is closed.
+
+**Mandatory retesting loop** (rebuild → execute all categories → analyze → ticket → fix + regression → repeat) runs until a full pass is clean. **Shipping is prohibited** while any category is incomplete or any ticket is open.
+
+Coverage is achieved **sequentially, one platform at a time**, across all services and applications. See `CONSTITUTION.md` Article V for the full text.
+
 ## HelixQA: Autonomous LLM-Driven Testing
 
 HelixQA is the **sole authorized tool** for all automated UI/UX testing across Android TV, Android phone, web, and desktop. Pipeline: **Learn → Plan → Execute → Curiosity → Analyze**. Run via `helixqa autonomous --platforms androidtv` or use the orchestrator script (below). Configuration in `HelixQA/.env.example`.

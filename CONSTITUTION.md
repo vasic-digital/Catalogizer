@@ -104,5 +104,66 @@ Any solution that modifies the application under test to facilitate testing is *
 
 ---
 
-*Last Updated: 2026-04-08*
+### Article V: 100% Test Coverage Across All Categories (MANDATORY)
+
+**§5.1 Required Test Categories**
+
+Every component, service, and application MUST maintain **no less than 100% coverage** across **every** one of the following test categories. None of these categories may be skipped, deferred, or partially covered:
+
+1. **Unit tests** — individual function / class behavior, pure logic
+2. **Integration tests** — cross-module interactions, DB, cache, queues, filesystems
+3. **End-to-end (E2E) tests** — full user journeys through the live system
+4. **Full automation tests** — unattended, reproducible, CI-runnable versions of the E2E suite
+5. **Stress tests** — resource saturation, high concurrency, large payloads, long-running sessions
+6. **Security tests** — authn/z, input validation, injection (SQL/command/XSS), SSRF, secrets handling, CVE scans (`govulncheck`, `npm audit`, Semgrep, Gosec, Trivy)
+7. **DDoS / rate-limit tests** — sustained floods, burst attacks, slowloris, amplification, connection exhaustion, verification that limiters and circuit breakers actually reject and recover
+8. **Benchmarking** — latency / throughput / memory baselines with regression detection
+9. **Challenges** — the `digital.vasic.challenges` framework must have a green registered challenge for every feature
+10. **HelixQA QA testing** — autonomous LLM-driven sessions (Learn → Plan → Execute → Curiosity → Analyze) covering every screen, every flow, every edge case
+
+**§5.2 "100%" Definition**
+
+"100%" in this constitution means **every one** of:
+- every public function / API endpoint / UI component has at least one test in each applicable category
+- every branch (happy path, each error path, edge cases, adversarial input) is exercised
+- every feature has an end-to-end flow test and a registered challenge and a HelixQA bank entry
+- every fix has a regression test added to the **fixes-validation** bank before the ticket is closed
+
+**§5.3 Mandatory Retesting Loop**
+
+After any change — feature, fix, refactor, dependency bump — the full loop below MUST run until it reaches a clean state with **zero** failing tests, **zero** open tickets, and **zero** new issues surfaced by any category:
+
+1. Rebuild affected binaries, containers, and deployments
+2. Execute every category of tests from §5.1
+3. Analyze results, videos, screenshots, and logs
+4. Open a ticket for every defect with severity, evidence, and repro steps
+5. Fix the root cause (never a workaround) and add a regression test to the fixes-validation bank
+6. Return to step 1
+
+The loop terminates only when every category passes and no new tickets are generated in a full pass.
+
+**§5.4 Sequential Platform Coverage**
+
+Coverage must be achieved **one platform at a time, sequentially**, across all platforms, services, and applications, with no platform left behind:
+
+- catalog-api (Go backend)
+- catalog-web (React frontend)
+- catalogizer-desktop (Tauri)
+- installer-wizard (Tauri)
+- catalogizer-android (Android phone)
+- catalogizer-androidtv (Android TV)
+- catalogizer-api-client (TypeScript library)
+- every Go submodule
+- every TypeScript submodule
+- HelixQA itself and every AI submodule
+
+A platform is "complete" only when every category in §5.1 is green for it.
+
+**§5.5 Violation Consequences**
+
+Shipping code (merging, releasing, tagging, deploying) is **prohibited** while any category is incomplete or any ticket is open. No partial "we'll get to it later" releases are permitted.
+
+---
+
+*Last Updated: 2026-04-12*
 *Enforced by: Project Lead*

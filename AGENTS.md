@@ -166,6 +166,45 @@ This is a **ZERO TOLERANCE** policy for all code, tests, scripts, and documentat
 **Quality Principle:**
 > "If it's not finished, it doesn't ship. If it ships, it's finished."
 
+### ⚠️⚠️⚠️ ABSOLUTELY MANDATORY: 100% TEST COVERAGE IN EVERY CATEGORY
+
+**Every component, service, and application must maintain NO LESS THAN 100% coverage in EACH AND EVERY one of the following test categories.** None of these may be skipped, deferred, or partially covered. This is Constitution Article V and is non-negotiable.
+
+**Required categories (all mandatory):**
+
+1. **Unit tests** — pure logic, individual functions and classes
+2. **Integration tests** — cross-module, database, cache, queues, filesystems
+3. **End-to-end (E2E) tests** — full user journeys through the live system
+4. **Full automation tests** — unattended, reproducible, CI-runnable E2E
+5. **Stress tests** — resource saturation, concurrency, large payloads, long sessions
+6. **Security tests** — authn/z, input validation, injection (SQL/command/XSS), SSRF, secrets, CVE scans (`govulncheck`, `npm audit`, Semgrep, Gosec, Trivy)
+7. **DDoS / rate-limit tests** — floods, bursts, slowloris, amplification, connection exhaustion, verification that limiters and circuit breakers actually reject and recover
+8. **Benchmarking** — latency, throughput, memory baselines with regression detection
+9. **Challenges** — `digital.vasic.challenges` registered entry per feature
+10. **HelixQA QA testing** — autonomous LLM-driven bank entry + session per screen, flow, edge case, and adversarial case
+
+**"100%" definition:**
+- every public function / API endpoint / UI component has at least one test in each applicable category
+- every branch (happy, error, edge, adversarial) is exercised
+- every feature has an E2E flow test, a registered challenge, and a HelixQA bank entry
+- every fix has a regression test added to the `fixes-validation` bank **before** the ticket is closed
+
+**Mandatory retesting loop:**
+1. Rebuild affected binaries, containers, deployments
+2. Execute every category from the list above
+3. Analyze results, videos, screenshots, logs
+4. Open a ticket for every defect (severity, evidence, repro steps)
+5. Fix the root cause (never a workaround), add regression test to `fixes-validation`
+6. Return to step 1
+
+The loop terminates only when every category passes and no new tickets are generated in a full pass.
+
+**Sequential platform coverage:** cover all platforms **one at a time, sequentially** — catalog-api, catalog-web, catalogizer-desktop, installer-wizard, catalogizer-android, catalogizer-androidtv, catalogizer-api-client, every Go/TS submodule, HelixQA + every AI submodule. A platform is "complete" only when every category is green for it.
+
+**Shipping is prohibited** (merging, releasing, tagging, deploying) while any category is incomplete or any ticket is open.
+
+See `CONSTITUTION.md` Article V for the full text.
+
 ## Submodule Architecture
 
 The project uses 41 independent git submodules under the `digital.vasic.*` and `@vasic-digital/*` namespace for generic, reusable functionality. Each submodule has its own repository, tests, and documentation.
