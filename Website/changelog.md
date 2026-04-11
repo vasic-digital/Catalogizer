@@ -9,6 +9,56 @@ All notable changes to the Catalogizer project are documented here. This page pr
 
 ---
 
+## v2.3.0 (2026-04-11)
+
+### Concurrency & Reliability Hardening
+- `SmbConnectionPool.StopCleanup()` now actually waits for the cleanup goroutine to exit (prior behavior returned immediately after closing the done channel). Restart-after-stop now works correctly via a fresh channel + `sync.WaitGroup` and a dedicated `lifecycleMu` that serializes Start/Stop.
+- Rate-limiter cleanup goroutines register with a package-level shutdown registry (`middleware.StopAll()`) and are drained during graceful server shutdown — no more process-lifetime leaks.
+- `AdvancedRateLimiter.Stop()` is now `sync.Once`-protected; double-close is safe.
+- Log stream's channel send is non-blocking: wraps the send in a `select` with `<-done` and a 5 s timeout so stalled receivers can never leak the streaming goroutine.
+- TMDB enrichment UPDATE errors are now logged via `logging.Warnf` instead of silently discarded.
+- Desktop VLC `.catch(() => {})` in VLCPlayer.tsx and useVLCPlayer.ts replaced with `console.warn` + structured context.
+- SMB `NewSmbClient` validates its config and uses `net.DialTimeout(5 s)` — unreachable hosts fail fast instead of hanging on the OS default TCP timeout (~2 min). SMB test suite runtime dropped from 268 s to 10 s.
+- Stress test `responsiveness_test.go` success/error counters migrated to `atomic.Int64` — race detector was flagging them when run under `-race`.
+
+### Stub Completion
+- `ReportingService` performance / response-time / system-load / error-rate / vulnerability metrics now read real data from the Prometheus registry and Go runtime via a new `internal/metrics/snapshot.go` helper (previously returned empty structs).
+- `ReportingService.calculateGrowthRate()` now compares the current window against the same-duration window ending at `startDate` instead of returning a hardcoded `0.0`.
+- `CacheService.Warmup()` pages the 500 most-recently-hit keys through `Get()` to warm the DB buffer pool on restart.
+- `PlaybackPositionService.SyncAcrossDevices()` now validates DB reachability and user ID instead of being a silent no-op. The table's `UNIQUE(user_id, media_item_id)` constraint makes cross-device merging implicit at UPSERT time.
+- `MediaRecognitionService.searchLocalCoverArt()` scans the media file's parent directory for cover/poster/folder/front/thumb artwork with jpg/png/webp/bmp extensions.
+- `MediaRecognitionService` provider fetch methods return a typed `ErrMetadataProviderNotConfigured` when their base URL is empty (instead of silently returning empty slices).
+- `SMBService.Connect()` does a real SMB handshake with bounded dial timeout + immediate logoff (previously only checked hostname presence).
+- `ch044_websocket_latency` and `ch081_088` challenge stubs replaced "passes as stub" with proper `challenge.StatusSkipped` results carrying structured reasons.
+
+### Database Dialect Parity
+- Migrations 000002, 000003, 014, 015 now have `.sqlite.up.sql` sibling reference files matching their `.up.sql` PostgreSQL counterparts.
+- New `migrations_parity_test.go` runs the full migration chain against a fresh SQLite database at boot — any missing dialect implementation fails immediately.
+
+### Test Coverage
+- `internal/metrics` coverage jumped from 47.4% to 90.7% via a new `snapshot_test.go` covering HTTP snapshot (empty/after-observation/concurrency/Prometheus gather interaction), runtime snapshot sanity, and bucket-percentile interpolation edge cases.
+- `smb` package adds `client_validation_test.go` — missing-fields table, nil-config, unreachable-host fast-fail.
+- `internal/services` adds real assertions for `SyncAcrossDevices` (empty state, with positions, nil DB, invalid user ID).
+- `pkg/httpclient.LoginWithRetry` now short-circuits on `AuthError` (HTTP 4xx) via `errors.As` — prior 5-retry exponential-backoff burned ~155 s on a 401, which made downstream test suites hang. `TestAssetServingChallenge_Execute_LoginFails` runtime dropped from 135 s to 0.01 s.
+
+### Stress & Integration
+- New k6 scripts: `breakpoint_test.js` (constant-arrival ramp to find RPS ceiling), `endurance_test.js` (4-hour moderate-load run), `concurrent_writers_test.js` (15 writers + 35 readers contending on shared rows).
+- New `scripts/run-race-detector.sh` walks catalog-api + every Go submodule, runs `GOMAXPROCS=3 go test -race`, and fails the build on any race. Supports `--fast`, `--api-only`, `--submodules-only`, `--all` modes.
+
+### Documentation
+- `catalog-api/AGENTS.md` added (was previously missing per the audit).
+- Database submodule `ARCHITECTURE.md` + `pkg/database/database_edge_test.go` + `pkg/dialect/dialect_edge_test.go` absorbed from the gitlab divergent branch (previously not on our local tree).
+- HelixQA ATMOSphere test bank (DS-001..DS-010, 235 lines of `banks/atmosphere.yaml`) + VPN geo-restriction constitution absorbed from upstream.
+- Auth submodule security patch absorbed (`golang-jwt/jwt/v5` bumped to v5.2.2).
+- Stale v2.2.0 version references bumped to v2.3.0 across `docs/guides/USER_MANUAL.md`, `docs/guides/PERFORMANCE_TUNING.md`, `docs/deployment/KUBERNETES_DEPLOYMENT.md`.
+- `CLAUDE.md` consolidated from 989 lines to ~580 (HelixQA rules deduplicated across previously-appended sections).
+
+### Planning
+- `docs/plans/2026-04-11-comprehensive-completion-audit-and-roadmap.md`: master 12-phase roadmap with complete audit findings (60+ concrete items across code completeness, concurrency safety, test coverage, database dialect, documentation, security, performance).
+- `docs/plans/2026-04-11-phase-1-concurrency-hardening.md`: bite-sized TDD sub-plan for Phase 1 (the 5 concurrency fix commits).
+
+---
+
 ## v2.2.0 (2026-04-03)
 
 ### New Features

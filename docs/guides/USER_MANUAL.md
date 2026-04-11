@@ -1,4 +1,4 @@
-# Catalogizer User Manual v2.2.0
+# Catalogizer User Manual v2.3.0
 
 A comprehensive guide to installing, configuring, and using Catalogizer -- the multi-platform media collection manager. Catalogizer detects, categorizes, and organizes media files across SMB, FTP, NFS, WebDAV, and local filesystems, serving them through a web interface, desktop applications, and mobile apps.
 
@@ -1462,4 +1462,4 @@ podman stats --no-stream
 
 ---
 
-*Catalogizer v2.2.0 -- Vasic Digital*
+*Catalogizer v2.3.0 -- Vasic Digital*

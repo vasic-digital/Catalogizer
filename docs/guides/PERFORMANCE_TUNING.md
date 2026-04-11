@@ -2,7 +2,7 @@
 
 **Document Version:** 1.0  
 **Last Updated:** April 6, 2026  
-**Applies to:** Catalogizer v2.2.0+  
+**Applies to:** Catalogizer v2.3.0+  
 
 ---
 
