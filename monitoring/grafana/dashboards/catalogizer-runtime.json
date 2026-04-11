@@ -1,0 +1,159 @@
+{
+  "annotations": {
+    "list": []
+  },
+  "description": "Go runtime + HTTP latency percentiles from internal/metrics (populated by GinMiddleware and StartRuntimeCollector).",
+  "editable": true,
+  "fiscalYearStartMonth": 0,
+  "graphTooltip": 1,
+  "id": null,
+  "links": [],
+  "panels": [
+    {
+      "title": "HTTP Latency p50 / p95 / p99",
+      "type": "timeseries",
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 0 },
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "s",
+          "custom": { "drawStyle": "line", "lineInterpolation": "smooth", "fillOpacity": 5 }
+        },
+        "overrides": []
+      },
+      "targets": [
+        { "expr": "histogram_quantile(0.50, sum(rate(catalogizer_http_request_duration_seconds_bucket[5m])) by (le))", "legendFormat": "p50", "refId": "A" },
+        { "expr": "histogram_quantile(0.95, sum(rate(catalogizer_http_request_duration_seconds_bucket[5m])) by (le))", "legendFormat": "p95", "refId": "B" },
+        { "expr": "histogram_quantile(0.99, sum(rate(catalogizer_http_request_duration_seconds_bucket[5m])) by (le))", "legendFormat": "p99", "refId": "C" }
+      ]
+    },
+    {
+      "title": "HTTP Error Rate by Status Class",
+      "type": "timeseries",
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 0 },
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percentunit",
+          "custom": { "drawStyle": "line", "lineInterpolation": "smooth", "fillOpacity": 10, "stacking": { "mode": "normal" } }
+        },
+        "overrides": []
+      },
+      "targets": [
+        { "expr": "sum(rate(catalogizer_http_requests_total{status=~\"4..\"}[5m])) / clamp_min(sum(rate(catalogizer_http_requests_total[5m])), 1)", "legendFormat": "4xx", "refId": "A" },
+        { "expr": "sum(rate(catalogizer_http_requests_total{status=~\"5..\"}[5m])) / clamp_min(sum(rate(catalogizer_http_requests_total[5m])), 1)", "legendFormat": "5xx", "refId": "B" }
+      ]
+    },
+    {
+      "title": "HTTP In-Flight Connections",
+      "type": "timeseries",
+      "gridPos": { "h": 6, "w": 6, "x": 0, "y": 8 },
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "none",
+          "custom": { "drawStyle": "line", "lineInterpolation": "linear", "fillOpacity": 20 }
+        },
+        "overrides": []
+      },
+      "targets": [
+        { "expr": "catalogizer_http_active_connections", "legendFormat": "active", "refId": "A" }
+      ]
+    },
+    {
+      "title": "WebSocket Connections",
+      "type": "timeseries",
+      "gridPos": { "h": 6, "w": 6, "x": 6, "y": 8 },
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "none",
+          "custom": { "drawStyle": "line", "lineInterpolation": "linear", "fillOpacity": 20 }
+        },
+        "overrides": []
+      },
+      "targets": [
+        { "expr": "catalogizer_websocket_connections", "legendFormat": "active", "refId": "A" }
+      ]
+    },
+    {
+      "title": "Go Goroutines",
+      "type": "timeseries",
+      "gridPos": { "h": 6, "w": 6, "x": 12, "y": 8 },
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "none",
+          "custom": { "drawStyle": "line", "lineInterpolation": "linear", "fillOpacity": 15 }
+        },
+        "overrides": []
+      },
+      "targets": [
+        { "expr": "catalogizer_runtime_goroutines", "legendFormat": "goroutines", "refId": "A" }
+      ]
+    },
+    {
+      "title": "Memory — Alloc / Heap In-Use / Sys",
+      "type": "timeseries",
+      "gridPos": { "h": 6, "w": 6, "x": 18, "y": 8 },
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "bytes",
+          "custom": { "drawStyle": "line", "lineInterpolation": "linear", "fillOpacity": 10 }
+        },
+        "overrides": []
+      },
+      "targets": [
+        { "expr": "catalogizer_runtime_memory_alloc_bytes", "legendFormat": "alloc", "refId": "A" },
+        { "expr": "catalogizer_runtime_memory_heap_inuse_bytes", "legendFormat": "heap_inuse", "refId": "B" },
+        { "expr": "catalogizer_runtime_memory_sys_bytes", "legendFormat": "sys", "refId": "C" }
+      ]
+    },
+    {
+      "title": "DB Query Duration p95 by operation/table",
+      "type": "timeseries",
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 14 },
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "s",
+          "custom": { "drawStyle": "line", "lineInterpolation": "smooth", "fillOpacity": 5 }
+        },
+        "overrides": []
+      },
+      "targets": [
+        { "expr": "histogram_quantile(0.95, sum(rate(catalogizer_db_query_duration_seconds_bucket[5m])) by (le, operation, table))", "legendFormat": "{{operation}} {{table}}", "refId": "A" }
+      ]
+    },
+    {
+      "title": "SMB Source Health",
+      "type": "timeseries",
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 14 },
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "none",
+          "min": 0,
+          "max": 1,
+          "custom": { "drawStyle": "line", "lineInterpolation": "stepAfter", "fillOpacity": 20 }
+        },
+        "overrides": []
+      },
+      "targets": [
+        { "expr": "catalogizer_smb_health_status", "legendFormat": "{{source}}", "refId": "A" }
+      ]
+    }
+  ],
+  "refresh": "30s",
+  "schemaVersion": 39,
+  "tags": ["catalogizer", "runtime", "latency"],
+  "templating": { "list": [] },
+  "time": { "from": "now-1h", "to": "now" },
+  "timepicker": {},
+  "timezone": "",
+  "title": "Catalogizer Runtime & Latency",
+  "uid": "catalogizer-runtime",
+  "version": 1,
+  "weekStart": ""
+}

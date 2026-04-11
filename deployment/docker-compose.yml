@@ -158,13 +158,19 @@ services:
     networks:
       - catalogizer-network
 
-  # Monitoring (Optional)
+  # Monitoring — Prometheus is now enabled by default (previously gated
+  # behind the `monitoring` profile). ReportingService reads its metrics
+  # via internal/metrics/snapshot.go so ReportingService reports are
+  # useless without a running Prometheus.
   prometheus:
     image: prom/prometheus:latest
     container_name: catalogizer-prometheus
     restart: ${RESTART_POLICY:-unless-stopped}
-    profiles:
-      - monitoring
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 512M
     command:
       - '--config.file=/etc/prometheus/prometheus.yml'
       - '--storage.tsdb.path=/prometheus'
@@ -180,24 +186,32 @@ services:
     networks:
       - catalogizer-network
 
-  # Grafana (Optional)
+  # Grafana — enabled by default so the operator gets dashboards without
+  # opting in. Dashboards are provisioned from ./monitoring/grafana/dashboards.
   grafana:
     image: grafana/grafana:latest
     container_name: catalogizer-grafana
     restart: ${RESTART_POLICY:-unless-stopped}
-    profiles:
-      - monitoring
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 512M
     environment:
       GF_SECURITY_ADMIN_PASSWORD: ${GRAFANA_PASSWORD:-admin}
       GF_SECURITY_ADMIN_USER: ${GRAFANA_USER:-admin}
+      GF_USERS_ALLOW_SIGN_UP: "false"
+      GF_INSTALL_PLUGINS: ""
     ports:
-      - "${GRAFANA_PORT:-3000}:3000"
+      - "${GRAFANA_PORT:-3001}:3000"
     volumes:
       - grafana_data:/var/lib/grafana
       - ./monitoring/grafana/dashboards:/etc/grafana/provisioning/dashboards:ro
       - ./monitoring/grafana/datasources:/etc/grafana/provisioning/datasources:ro
     networks:
       - catalogizer-network
+    depends_on:
+      - prometheus
 
   # Backup Service (Optional)
   backup:
