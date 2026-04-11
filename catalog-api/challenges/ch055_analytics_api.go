@@ -55,7 +55,7 @@ func (c *AnalyticsAPIChallenge) Execute(
 
 	// Test 1: Overall statistics
 	c.ReportProgress("testing-overall-stats", nil)
-	status, body, _ := client.Get(ctx, "/stats/overall")
+	status, body, _ := client.Get(ctx, "/api/v1/stats/overall")
 
 	statsOK := status == 200 && body != nil
 	assertions = append(assertions, challenge.AssertionResult{
@@ -69,7 +69,7 @@ func (c *AnalyticsAPIChallenge) Execute(
 
 	// Test 2: Duplicate counts
 	c.ReportProgress("testing-duplicate-stats", nil)
-	statusDup, _, _ := client.Get(ctx, "/stats/duplicates")
+	statusDup, _, _ := client.Get(ctx, "/api/v1/stats/duplicates")
 
 	dupOK := statusDup == 200
 	assertions = append(assertions, challenge.AssertionResult{
@@ -83,7 +83,7 @@ func (c *AnalyticsAPIChallenge) Execute(
 
 	// Test 3: Media type distribution
 	c.ReportProgress("testing-media-distribution", nil)
-	statusDist, bodyDist, _ := client.Get(ctx, "/stats/media-types")
+	statusDist, bodyDist, _ := client.Get(ctx, "/api/v1/stats/media-types")
 
 	distOK := statusDist == 200
 	assertions = append(assertions, challenge.AssertionResult{
@@ -101,7 +101,7 @@ func (c *AnalyticsAPIChallenge) Execute(
 
 	// Test 4: Scan history
 	c.ReportProgress("testing-scan-history", nil)
-	statusScan, _, _ := client.Get(ctx, "/stats/scan-history")
+	statusScan, _, _ := client.Get(ctx, "/api/v1/stats/scan-history")
 
 	scanOK := statusScan == 200
 	assertions = append(assertions, challenge.AssertionResult{

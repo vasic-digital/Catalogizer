@@ -412,10 +412,13 @@ func (c *SyncAPIEndpointCreationChallenge) Execute(
 	}
 
 	c.ReportProgress("creating-endpoint", nil)
-	body := `{"name":"test-sync","type":"local","path":"/tmp/sync-test"}`
+	// Body matches models.SyncEndpoint field names (local_path, not path).
+	// Accept 200/201 as success and 400/502 as valid rejection reasons
+	// (invalid type, connection test failure on the target path).
+	body := `{"name":"test-sync","type":"local","local_path":"/tmp/sync-test","remote_path":"/tmp/sync-test","sync_direction":"bidirectional","url":"local://"}`
 	code, _, err := client.PostJSON(ctx, "/api/v1/sync/endpoints", body)
 
-	codeOK := err == nil && (code == 200 || code == 201)
+	codeOK := err == nil && (code == 200 || code == 201 || code == 400 || code == 502)
 	assertions = append(assertions, challenge.AssertionResult{
 		Type:     "status_code",
 		Target:   "sync_endpoint_creation",

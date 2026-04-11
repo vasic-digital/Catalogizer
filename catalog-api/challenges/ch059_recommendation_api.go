@@ -56,7 +56,7 @@ func (c *RecommendationAPIChallenge) Execute(
 
 	// Test 1: Recommendations list
 	c.ReportProgress("testing-recommendations", nil)
-	status, _, _ := client.Get(ctx, "/recommendations")
+	status, _, _ := client.Get(ctx, "/api/v1/recommendations")
 
 	recsOK := status == 200
 	assertions = append(assertions, challenge.AssertionResult{
@@ -70,7 +70,7 @@ func (c *RecommendationAPIChallenge) Execute(
 
 	// Test 2: Recommendations by type
 	c.ReportProgress("testing-recs-by-type", nil)
-	statusType, _, _ := client.Get(ctx, "/recommendations?type=movie&limit=5")
+	statusType, _, _ := client.Get(ctx, "/api/v1/recommendations?type=movie&limit=5")
 
 	typeOK := statusType == 200
 	assertions = append(assertions, challenge.AssertionResult{
@@ -84,7 +84,7 @@ func (c *RecommendationAPIChallenge) Execute(
 
 	// Test 3: Similar items for non-existent entity
 	c.ReportProgress("testing-similar-not-found", nil)
-	statusSimilar, _, _ := client.Get(ctx, "/entities/99999999/similar")
+	statusSimilar, _, _ := client.Get(ctx, "/api/v1/entities/99999999/similar")
 
 	similarOK := statusSimilar == 404 || statusSimilar == 200
 	assertions = append(assertions, challenge.AssertionResult{

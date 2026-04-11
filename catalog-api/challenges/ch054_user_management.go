@@ -56,7 +56,7 @@ func (c *UserManagementChallenge) Execute(
 
 	// Test 1: Get current user profile
 	c.ReportProgress("testing-user-profile", nil)
-	status, body, _ := client.Get(ctx, "/users/me")
+	status, body, _ := client.Get(ctx, "/api/v1/users/me")
 
 	profileOK := status == 200 && body != nil
 	assertions = append(assertions, challenge.AssertionResult{
@@ -76,7 +76,7 @@ func (c *UserManagementChallenge) Execute(
 
 	// Test 2: List users (admin-only)
 	c.ReportProgress("testing-list-users", nil)
-	statusList, bodyList, _ := client.Get(ctx, "/users")
+	statusList, bodyList, _ := client.Get(ctx, "/api/v1/users")
 
 	listOK := statusList == 200 && bodyList != nil
 	assertions = append(assertions, challenge.AssertionResult{
@@ -90,7 +90,7 @@ func (c *UserManagementChallenge) Execute(
 
 	// Test 3: Get init status
 	c.ReportProgress("testing-init-status", nil)
-	statusInit, bodyInit, _ := client.Get(ctx, "/auth/init-status")
+	statusInit, bodyInit, _ := client.Get(ctx, "/api/v1/auth/init-status")
 
 	initOK := statusInit == 200 && bodyInit != nil
 	assertions = append(assertions, challenge.AssertionResult{
@@ -108,10 +108,12 @@ func (c *UserManagementChallenge) Execute(
 		}
 	}
 
-	// Test 4: Verify unauthorized access is blocked
+	// Test 4: Verify unauthorized access is blocked. Uses the /api/v1
+	// prefix to hit a real registered route; without the prefix the
+	// router returns 404 (path unknown) rather than 401 (auth required).
 	c.ReportProgress("testing-unauthorized", nil)
 	unauthClient := httpclient.NewAPIClient(c.config.BaseURL)
-	statusUnauth, _, _ := unauthClient.Get(ctx, "/users")
+	statusUnauth, _, _ := unauthClient.Get(ctx, "/api/v1/users")
 
 	unauthBlocked := statusUnauth == 401
 	assertions = append(assertions, challenge.AssertionResult{

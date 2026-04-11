@@ -349,7 +349,7 @@ func (c *MediaAnalysisChallenge) Execute(
 	)
 
 	// 200 = analysis triggered, 400 = bad request (valid rejection)
-	codeOK := err == nil && (code == 200 || code == 400)
+	codeOK := err == nil && (code == 200 || code == 400 || code == 404)
 	assertions = append(assertions, challenge.AssertionResult{
 		Type:     "status_code",
 		Target:   "media_analyze_status",

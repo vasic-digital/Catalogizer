@@ -154,8 +154,25 @@ func (h *CatalogHandler) Search(c *gin.Context) {
 		return
 	}
 
+	// Accept both ?query=... (primary) and ?q=... (short form used by
+	// the HelixQA bank + userflow suites) as the search term.
 	if req.Query == "" {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Search query is required"})
+		req.Query = c.Query("q")
+	}
+
+	if req.Query == "" {
+		// Empty-query search returns an empty result set instead of 400.
+		// This matches the challenge bank contract ("200 with results
+		// array, possibly empty") and is friendlier to UI autocomplete
+		// that may fire before the user types anything.
+		c.JSON(http.StatusOK, gin.H{
+			"results": []interface{}{},
+			"files":   []interface{}{},
+			"total":   0,
+			"count":   0,
+			"page":    0,
+			"limit":   0,
+		})
 		return
 	}
 
@@ -184,11 +201,12 @@ func (h *CatalogHandler) Search(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, gin.H{
-		"files":  files,
-		"total":  total,
-		"count":  len(files),
-		"limit":  req.Limit,
-		"offset": req.Offset,
+		"files":   files,
+		"results": files, // alias for bank/userflow compatibility
+		"total":   total,
+		"count":   len(files),
+		"limit":   req.Limit,
+		"offset":  req.Offset,
 	})
 }
 

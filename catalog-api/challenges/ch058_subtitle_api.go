@@ -56,7 +56,7 @@ func (c *SubtitleAPIChallenge) Execute(
 
 	// Test 1: Subtitles list endpoint
 	c.ReportProgress("testing-subtitles-list", nil)
-	status, _, _ := client.Get(ctx, "/subtitles")
+	status, _, _ := client.Get(ctx, "/api/v1/subtitles")
 
 	listOK := status == 200
 	assertions = append(assertions, challenge.AssertionResult{
@@ -70,7 +70,7 @@ func (c *SubtitleAPIChallenge) Execute(
 
 	// Test 2: Subtitle languages endpoint
 	c.ReportProgress("testing-subtitle-languages", nil)
-	statusLang, _, _ := client.Get(ctx, "/subtitles/languages")
+	statusLang, _, _ := client.Get(ctx, "/api/v1/subtitles/languages")
 
 	langOK := statusLang == 200
 	assertions = append(assertions, challenge.AssertionResult{
@@ -84,7 +84,7 @@ func (c *SubtitleAPIChallenge) Execute(
 
 	// Test 3: Non-existent subtitle returns 404
 	c.ReportProgress("testing-subtitle-not-found", nil)
-	statusNotFound, _, _ := client.Get(ctx, "/subtitles/99999999")
+	statusNotFound, _, _ := client.Get(ctx, "/api/v1/subtitles/99999999")
 
 	notFoundOK := statusNotFound == 404
 	assertions = append(assertions, challenge.AssertionResult{

@@ -87,7 +87,7 @@ func (c *ContentTypesChallenge) Execute(
 
 	// Test 3: API endpoints with auth return JSON errors for unauthorized
 	c.ReportProgress("testing-auth-error-json", nil)
-	status401, body401, _ := client.Get(ctx, "/users/me")
+	status401, body401, _ := client.Get(ctx, "/api/v1/users/me")
 
 	authErrorJSON := false
 	if status401 == 401 {

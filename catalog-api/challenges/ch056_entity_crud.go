@@ -55,7 +55,7 @@ func (c *EntityCRUDChallenge) Execute(
 
 	// Test 1: List entities
 	c.ReportProgress("listing-entities", nil)
-	status, body, _ := client.Get(ctx, "/entities?limit=5")
+	status, body, _ := client.Get(ctx, "/api/v1/entities?limit=5")
 
 	listOK := status == 200 && body != nil
 	assertions = append(assertions, challenge.AssertionResult{
@@ -69,7 +69,7 @@ func (c *EntityCRUDChallenge) Execute(
 
 	// Test 2: Get media types
 	c.ReportProgress("getting-media-types", nil)
-	statusTypes, bodyTypes, _ := client.Get(ctx, "/media-types")
+	statusTypes, bodyTypes, _ := client.Get(ctx, "/api/v1/media-types")
 
 	typesOK := statusTypes == 200 && bodyTypes != nil
 	assertions = append(assertions, challenge.AssertionResult{
@@ -83,7 +83,7 @@ func (c *EntityCRUDChallenge) Execute(
 
 	// Test 3: Search entities
 	c.ReportProgress("searching-entities", nil)
-	statusSearch, _, _ := client.Get(ctx, "/entities?search=test&limit=3")
+	statusSearch, _, _ := client.Get(ctx, "/api/v1/entities?search=test&limit=3")
 
 	searchOK := statusSearch == 200
 	assertions = append(assertions, challenge.AssertionResult{
@@ -97,7 +97,7 @@ func (c *EntityCRUDChallenge) Execute(
 
 	// Test 4: Filter by media type
 	c.ReportProgress("filtering-entities", nil)
-	statusFilter, _, _ := client.Get(ctx, "/entities?type=movie&limit=3")
+	statusFilter, _, _ := client.Get(ctx, "/api/v1/entities?type=movie&limit=3")
 
 	filterOK := statusFilter == 200
 	assertions = append(assertions, challenge.AssertionResult{
@@ -111,7 +111,7 @@ func (c *EntityCRUDChallenge) Execute(
 
 	// Test 5: Get non-existent entity returns 404
 	c.ReportProgress("testing-not-found", nil)
-	statusNotFound, _, _ := client.Get(ctx, "/entities/99999999")
+	statusNotFound, _, _ := client.Get(ctx, "/api/v1/entities/99999999")
 
 	notFoundOK := statusNotFound == 404
 	assertions = append(assertions, challenge.AssertionResult{

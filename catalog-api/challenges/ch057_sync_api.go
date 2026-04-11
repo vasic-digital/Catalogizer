@@ -56,7 +56,7 @@ func (c *SyncAPIChallenge) Execute(
 
 	// Test 1: Sync status endpoint
 	c.ReportProgress("testing-sync-status", nil)
-	status, body, _ := client.Get(ctx, "/sync/status")
+	status, body, _ := client.Get(ctx, "/api/v1/sync/status")
 
 	statusOK := status == 200 && body != nil
 	assertions = append(assertions, challenge.AssertionResult{
@@ -70,7 +70,7 @@ func (c *SyncAPIChallenge) Execute(
 
 	// Test 2: Sync history endpoint
 	c.ReportProgress("testing-sync-history", nil)
-	statusHistory, _, _ := client.Get(ctx, "/sync/history")
+	statusHistory, _, _ := client.Get(ctx, "/api/v1/sync/history")
 
 	historyOK := statusHistory == 200
 	assertions = append(assertions, challenge.AssertionResult{
@@ -84,7 +84,7 @@ func (c *SyncAPIChallenge) Execute(
 
 	// Test 3: Sync devices endpoint
 	c.ReportProgress("testing-sync-devices", nil)
-	statusDevices, _, _ := client.Get(ctx, "/sync/devices")
+	statusDevices, _, _ := client.Get(ctx, "/api/v1/sync/devices")
 
 	devicesOK := statusDevices == 200
 	assertions = append(assertions, challenge.AssertionResult{
@@ -98,7 +98,7 @@ func (c *SyncAPIChallenge) Execute(
 
 	// Test 4: Sync conflicts endpoint
 	c.ReportProgress("testing-sync-conflicts", nil)
-	statusConflicts, _, _ := client.Get(ctx, "/sync/conflicts")
+	statusConflicts, _, _ := client.Get(ctx, "/api/v1/sync/conflicts")
 
 	conflictsOK := statusConflicts == 200
 	assertions = append(assertions, challenge.AssertionResult{

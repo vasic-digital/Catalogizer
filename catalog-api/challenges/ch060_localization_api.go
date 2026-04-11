@@ -56,7 +56,7 @@ func (c *LocalizationAPIChallenge) Execute(
 
 	// Test 1: Supported languages
 	c.ReportProgress("testing-languages", nil)
-	status, body, _ := client.Get(ctx, "/localization/languages")
+	status, body, _ := client.Get(ctx, "/api/v1/localization/languages")
 
 	langOK := status == 200 && body != nil
 	assertions = append(assertions, challenge.AssertionResult{
@@ -70,7 +70,7 @@ func (c *LocalizationAPIChallenge) Execute(
 
 	// Test 2: Translations for a locale
 	c.ReportProgress("testing-translations", nil)
-	statusTrans, _, _ := client.Get(ctx, "/localization/translations?locale=en")
+	statusTrans, _, _ := client.Get(ctx, "/api/v1/localization/translations?locale=en")
 
 	transOK := statusTrans == 200
 	assertions = append(assertions, challenge.AssertionResult{
@@ -84,7 +84,7 @@ func (c *LocalizationAPIChallenge) Execute(
 
 	// Test 3: Localization stats
 	c.ReportProgress("testing-localization-stats", nil)
-	statusStats, _, _ := client.Get(ctx, "/localization/stats")
+	statusStats, _, _ := client.Get(ctx, "/api/v1/localization/stats")
 
 	statsOK := statusStats == 200
 	assertions = append(assertions, challenge.AssertionResult{

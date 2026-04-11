@@ -1,0 +1,21 @@
+# Local port overrides for environments where the standard ports are
+# already bound (host postgres, qbittorrent on 8080, Bear Messenger on 3000).
+# Used during the "bring everything up" operational run on 2026-04-11.
+version: '3.8'
+
+services:
+  postgres:
+    ports:
+      - "5435:5432"
+
+  redis:
+    ports:
+      - "6381:6379"
+
+  api:
+    ports:
+      - "8090:8080"
+    environment:
+      POSTGRES_PORT: 5432  # internal port, not the host map
+      REDIS_PORT: 6379
+      API_PORT: 8080
