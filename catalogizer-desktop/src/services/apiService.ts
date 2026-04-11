@@ -11,6 +11,8 @@ import {
   SMBConfig,
   SMBStatus,
   PlaybackProgress,
+  UiPlaybackProgress,
+  UiPlaybackSession,
 } from '../types';
 
 class ApiService {
@@ -104,6 +106,58 @@ class ApiService {
       method: 'PUT',
       body: progress,
     });
+  }
+
+  /**
+   * GET /api/v1/entities/:id/progress — returns rolled-up reproduction
+   * summary for a single entity. Returns null when the entity has never
+   * been played or the backend responds with `{ progress: null }`.
+   */
+  async getEntityProgress(mediaItemId: number): Promise<UiPlaybackProgress | null> {
+    try {
+      const resp = await this.makeRequest<{ progress: Record<string, unknown> | null }>(
+        `/v1/entities/${mediaItemId}/progress`,
+      );
+      const raw = resp?.progress;
+      if (!raw) return null;
+      return {
+        mediaItemId,
+        positionUnit: (raw.position_unit as string) ?? 'seconds',
+        durationTotal: (raw.duration_total as number | null) ?? null,
+        lastPosition: (raw.last_position as number) ?? 0,
+        lastSessionAmount: (raw.last_session_amount as number) ?? 0,
+        totalReproductions: (raw.total_reproductions as number) ?? 0,
+        aggregateAmount: (raw.aggregate_amount as number) ?? 0,
+        lastSessionEndedAt: (raw.last_session_ended_at as string | null) ?? null,
+      };
+    } catch {
+      return null;
+    }
+  }
+
+  /**
+   * GET /api/v1/entities/:id/history — returns up to `limit` session rows.
+   * Returns an empty array on failure or when no sessions exist.
+   */
+  async listEntityHistory(mediaItemId: number, limit = 50): Promise<UiPlaybackSession[]> {
+    try {
+      const resp = await this.makeRequest<{ sessions: Array<Record<string, unknown>> }>(
+        `/v1/entities/${mediaItemId}/history?limit=${limit}`,
+      );
+      const raw = resp?.sessions ?? [];
+      return raw.map((r) => ({
+        id: (r.id as number) ?? 0,
+        positionUnit: (r.position_unit as string) ?? 'seconds',
+        startPosition: (r.start_position as number) ?? 0,
+        endPosition: (r.end_position as number) ?? 0,
+        totalAmount: (r.total_amount as number) ?? 0,
+        startedAt: (r.started_at as string) ?? '',
+        endedAt: (r.ended_at as string | null) ?? null,
+        completed: (r.completed as boolean) ?? false,
+      }));
+    } catch {
+      return [];
+    }
   }
 
   async toggleFavorite(mediaId: number): Promise<void> {

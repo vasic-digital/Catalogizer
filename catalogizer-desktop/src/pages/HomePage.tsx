@@ -1,9 +1,11 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { Play, Clock, Star, TrendingUp, Calendar } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
-import { MediaItem } from "../types";
+import { MediaItem, UiPlaybackProgress } from "../types";
 import { apiService } from "../services/apiService";
+import { ProgressBadge } from "../components/ProgressBadge";
+import { HistoryDrawer } from "../components/HistoryDrawer";
 
 export default function HomePage() {
   const [greeting, setGreeting] = useState("");
@@ -46,6 +48,43 @@ export default function HomePage() {
         limit: 8,
       }),
   });
+
+  // Collect all media items displayed on this page into one flat list
+  // so we can fetch their progress in a single batch.
+  const allVisibleItems = useMemo(() => {
+    const list: MediaItem[] = [];
+    if (continueWatching?.items) list.push(...continueWatching.items);
+    if (recentItems?.items) list.push(...recentItems.items);
+    if (trending?.items) list.push(...trending.items);
+    const seen = new Set<number>();
+    return list.filter((m) => {
+      if (seen.has(m.id)) return false;
+      seen.add(m.id);
+      return true;
+    });
+  }, [continueWatching?.items, recentItems?.items, trending?.items]);
+
+  const visibleIdsKey = allVisibleItems.map((m) => m.id).join(",");
+
+  const { data: progressMap = {} } = useQuery<Record<number, UiPlaybackProgress>>({
+    queryKey: ["home-progress", visibleIdsKey],
+    enabled: allVisibleItems.length > 0,
+    queryFn: async () => {
+      const results = await Promise.all(
+        allVisibleItems.map(async (m) => {
+          const p = await apiService.getEntityProgress(m.id);
+          return [m.id, p] as const;
+        }),
+      );
+      const out: Record<number, UiPlaybackProgress> = {};
+      results.forEach(([id, p]) => {
+        if (p) out[id] = p;
+      });
+      return out;
+    },
+  });
+
+  const [historyTarget, setHistoryTarget] = useState<MediaItem | null>(null);
 
   useEffect(() => {
     const hour = new Date().getHours();
@@ -103,6 +142,8 @@ export default function HomePage() {
           items={continueWatching.items.filter(item =>
             item.watch_progress && item.watch_progress > 0 && item.watch_progress < 0.9
           )}
+          progressMap={progressMap}
+          onOpenHistory={setHistoryTarget}
           showProgress
         />
       )}
@@ -112,6 +153,8 @@ export default function HomePage() {
         <MediaSection
           title="Recently Added"
           items={recentItems.items}
+          progressMap={progressMap}
+          onOpenHistory={setHistoryTarget}
         />
       )}
 
@@ -120,8 +163,17 @@ export default function HomePage() {
         <MediaSection
           title="Highly Rated"
           items={trending.items}
+          progressMap={progressMap}
+          onOpenHistory={setHistoryTarget}
         />
       )}
+
+      <HistoryDrawer
+        mediaItemId={historyTarget?.id ?? null}
+        mediaTitle={historyTarget?.title ?? ""}
+        open={historyTarget !== null}
+        onClose={() => setHistoryTarget(null)}
+      />
     </div>
   );
 }
@@ -149,10 +201,12 @@ function StatCard({ icon, title, value, description }: StatCardProps) {
 interface MediaSectionProps {
   title: string;
   items: MediaItem[];
+  progressMap: Record<number, UiPlaybackProgress>;
+  onOpenHistory: (m: MediaItem) => void;
   showProgress?: boolean;
 }
 
-function MediaSection({ title, items, showProgress }: MediaSectionProps) {
+function MediaSection({ title, items, progressMap, onOpenHistory, showProgress }: MediaSectionProps) {
   if (items.length === 0) return null;
 
   return (
@@ -160,7 +214,13 @@ function MediaSection({ title, items, showProgress }: MediaSectionProps) {
       <h2 className="text-xl font-semibold text-foreground mb-4">{title}</h2>
       <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4">
         {items.map((item) => (
-          <MediaCard key={item.id} item={item} showProgress={showProgress} />
+          <MediaCard
+            key={item.id}
+            item={item}
+            showProgress={showProgress}
+            playbackProgress={progressMap[item.id] ?? null}
+            onOpenHistory={onOpenHistory}
+          />
         ))}
       </div>
     </div>
@@ -170,9 +230,11 @@ function MediaSection({ title, items, showProgress }: MediaSectionProps) {
 interface MediaCardProps {
   item: MediaItem;
   showProgress?: boolean;
+  playbackProgress: UiPlaybackProgress | null;
+  onOpenHistory: (m: MediaItem) => void;
 }
 
-function MediaCard({ item, showProgress }: MediaCardProps) {
+function MediaCard({ item, showProgress, playbackProgress, onOpenHistory }: MediaCardProps) {
   const posterUrl = item.external_metadata?.[0]?.poster_url || item.cover_image;
   const progress = item.watch_progress || 0;
 
@@ -194,7 +256,7 @@ function MediaCard({ item, showProgress }: MediaCardProps) {
           </div>
         )}
 
-        {showProgress && progress > 0 && (
+        {showProgress && progress > 0 && !playbackProgress && (
           <div className="absolute bottom-0 left-0 right-0 bg-black/60 p-2">
             <div className="w-full bg-muted h-1 rounded-full overflow-hidden">
               <div
@@ -203,6 +265,13 @@ function MediaCard({ item, showProgress }: MediaCardProps) {
               />
             </div>
           </div>
+        )}
+
+        {playbackProgress && (
+          <ProgressBadge
+            progress={playbackProgress}
+            onOpenHistory={() => onOpenHistory(item)}
+          />
         )}
       </div>
 
