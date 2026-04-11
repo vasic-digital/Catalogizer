@@ -451,4 +451,8 @@ func RegisterMultiplatformChallenges(svc *services.ChallengeService) {
 	svc.Register(NewAdminChallengesListChallenge())   // CH-248
 	svc.Register(NewAdminConfigAccessChallenge())     // CH-249
 	svc.Register(NewAdminHealthDashboardChallenge())  // CH-250
+
+	// Playback session tracking (CH-200 reserved in the plan,
+	// registered here alongside the admin API suites).
+	svc.Register(NewPlaybackSessionsAPIChallenge()) // CH-200: Playback sessions lifecycle
 }
