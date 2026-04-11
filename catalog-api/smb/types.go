@@ -94,9 +94,15 @@ type SmbConnectionPool struct {
 	logger         *zap.Logger
 
 	// Cleanup goroutine management
+	// lifecycleMu serializes Start/StopCleanup so concurrent callers cannot
+	// reuse wg before a prior Wait has returned. It is DISTINCT from mu (the
+	// data mutex) — holding mu during wg.Wait would deadlock the cleanup loop,
+	// which acquires mu on every tick.
+	lifecycleMu   sync.Mutex
 	cleanupTicker *time.Ticker
 	cleanupDone   chan struct{}
 	isRunning     bool
+	wg            sync.WaitGroup
 
 	// Metrics
 	totalConnections   int64
@@ -136,47 +142,71 @@ func NewSmbConnectionPoolWithConfig(maxConnections int, config ConnectionPoolCon
 	return pool
 }
 
-// StartCleanup starts the background cleanup goroutine
+// StartCleanup starts the background cleanup goroutine. Safe to call after StopCleanup.
 func (p *SmbConnectionPool) StartCleanup() {
-	p.mu.Lock()
-	defer p.mu.Unlock()
+	// lifecycleMu serializes Start/Stop so wg.Add here can never race with
+	// wg.Wait inside a concurrent StopCleanup.
+	p.lifecycleMu.Lock()
+	defer p.lifecycleMu.Unlock()
 
+	p.mu.Lock()
 	if p.isRunning {
+		p.mu.Unlock()
 		return
 	}
 
+	// Fresh channel + ticker on every start so restart after stop works.
+	p.cleanupDone = make(chan struct{})
 	p.cleanupTicker = time.NewTicker(p.config.HealthCheckInterval)
 	p.isRunning = true
 
-	go p.cleanupLoop()
+	// Snapshot locals so a subsequent StartCleanup cannot race with the loop
+	// reading p.cleanupTicker / p.cleanupDone.
+	ticker := p.cleanupTicker
+	stopCh := p.cleanupDone
+	p.mu.Unlock()
+
+	p.wg.Add(1)
+	go p.cleanupLoop(ticker, stopCh)
 }
 
-// StopCleanup stops the background cleanup goroutine
+// StopCleanup stops the background cleanup goroutine and waits for it to exit.
 func (p *SmbConnectionPool) StopCleanup() {
+	// lifecycleMu serializes Start/Stop so wg.Wait here can never race with
+	// wg.Add inside a concurrent StartCleanup.
+	p.lifecycleMu.Lock()
+	defer p.lifecycleMu.Unlock()
+
 	p.mu.Lock()
 	if !p.isRunning {
 		p.mu.Unlock()
 		return
 	}
-
 	p.isRunning = false
 	if p.cleanupTicker != nil {
 		p.cleanupTicker.Stop()
 	}
-	close(p.cleanupDone)
+	stopCh := p.cleanupDone
 	p.mu.Unlock()
 
-	// Wait for cleanup loop to finish
-	<-p.cleanupDone
+	// Close outside p.mu so the loop can acquire p.mu if it's still inside
+	// cleanupIdleConnections during its final iteration.
+	close(stopCh)
+
+	// Actually wait for the goroutine to exit. Reading from a closed channel
+	// returns instantly, so the pre-fix <-p.cleanupDone did not wait.
+	p.wg.Wait()
 }
 
-// cleanupLoop runs the periodic cleanup
-func (p *SmbConnectionPool) cleanupLoop() {
+// cleanupLoop runs the periodic cleanup. Ticker and stopCh are passed in so
+// a concurrent StartCleanup cannot swap them mid-loop.
+func (p *SmbConnectionPool) cleanupLoop(ticker *time.Ticker, stopCh <-chan struct{}) {
+	defer p.wg.Done()
 	for {
 		select {
-		case <-p.cleanupTicker.C:
+		case <-ticker.C:
 			p.cleanupIdleConnections()
-		case <-p.cleanupDone:
+		case <-stopCh:
 			return
 		}
 	}
