@@ -1147,6 +1147,7 @@ func main() {
 		entityGroup.Use(root_middleware.CacheHeaders(300)) // 5-minute cache for entity browsing
 		{
 			entityGroup.GET("", mediaEntityHandler.ListEntities)
+			entityGroup.GET("/search", mediaEntityHandler.SearchEntities)
 			entityGroup.GET("/types", mediaEntityHandler.GetEntityTypes)
 			entityGroup.GET("/stats", mediaEntityHandler.GetEntityStats)
 			entityGroup.GET("/duplicates", mediaEntityHandler.ListDuplicateGroups)

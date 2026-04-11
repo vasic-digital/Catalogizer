@@ -22,6 +22,77 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
+// SearchEntities handles GET /api/v1/entities/search — entity-
+// level full-text search that returns structured media items
+// (movies, tv shows, albums, books, ...) instead of raw files.
+// The TV and mobile clients previously hit this path and got a
+// "Invalid entity ID" error because the router matched
+// /entities/:id with id="search". Registering a dedicated route
+// before /:id (see main.go) fixes it, and this handler wraps the
+// existing repository Search with the same q/query/search param
+// aliases that ListEntities accepts.
+func (h *MediaEntityHandler) SearchEntities(c *gin.Context) {
+	ctx := c.Request.Context()
+
+	query := c.Query("q")
+	if query == "" {
+		query = c.Query("query")
+	}
+	if query == "" {
+		query = c.Query("search")
+	}
+	mediaType := c.Query("type")
+	limit, _ := strconv.Atoi(c.DefaultQuery("limit", "24"))
+	offset, _ := strconv.Atoi(c.DefaultQuery("offset", "0"))
+	if limit <= 0 || limit > 200 {
+		limit = 24
+	}
+	if offset < 0 {
+		offset = 0
+	}
+
+	// Empty query: return empty result set with 200 so autocomplete
+	// UIs can fire the request as the user types without getting a
+	// 400.
+	if query == "" {
+		c.JSON(http.StatusOK, gin.H{
+			"items":  []interface{}{},
+			"total":  0,
+			"limit":  limit,
+			"offset": offset,
+			"query":  "",
+		})
+		return
+	}
+
+	var mediaTypeIDs []int64
+	if mediaType != "" {
+		_, typeID, err := h.itemRepo.GetMediaTypeByName(ctx, mediaType)
+		if err != nil {
+			utils.SendErrorResponse(c, http.StatusBadRequest, "Invalid media type", err)
+			return
+		}
+		mediaTypeIDs = append(mediaTypeIDs, typeID)
+	}
+
+	items, total, err := h.itemRepo.Search(ctx, query, mediaTypeIDs, limit, offset)
+	if err != nil {
+		utils.SendErrorResponse(c, http.StatusInternalServerError, "Entity search failed", err)
+		return
+	}
+
+	jsonItems := itemsToJSON(items)
+	h.enrichItemsWithCoverURLs(ctx, items, jsonItems)
+
+	c.JSON(http.StatusOK, gin.H{
+		"items":  jsonItems,
+		"total":  total,
+		"limit":  limit,
+		"offset": offset,
+		"query":  query,
+	})
+}
+
 // Note: primary-file selection logic moved to
 // repository.MediaFileRepository.GetPrimaryStreamableFile so it
 // can JOIN media_files against the files table in a single query
@@ -77,7 +148,17 @@ func (h *MediaEntityHandler) SetCoverArtService(cas *services.CoverArtService) {
 func (h *MediaEntityHandler) ListEntities(c *gin.Context) {
 	ctx := c.Request.Context()
 
+	// Accept both ?query= (original) and ?q= (short form used by
+	// the TV/mobile clients and by HelixQA banks) as the search
+	// term. Without this alias the TV search box silently
+	// returned every entity because the server ignored ?q=.
 	query := c.Query("query")
+	if query == "" {
+		query = c.Query("q")
+	}
+	if query == "" {
+		query = c.Query("search")
+	}
 	mediaType := c.Query("type")
 	limitStr := c.DefaultQuery("limit", "24")
 	offsetStr := c.DefaultQuery("offset", "0")
