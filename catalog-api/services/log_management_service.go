@@ -612,7 +612,18 @@ func (s *LogManagementService) streamLogEntries(channel chan<- *models.LogEntry,
 				continue
 			}
 			lastID = entry.ID
-			channel <- entry
+
+			// Non-blocking send: if the receiver has gone away via done or
+			// is too slow (timeout), drop the entry and exit. The pre-fix
+			// unconditional `channel <- entry` could block forever, leaking
+			// the goroutine when the receiver stopped reading.
+			select {
+			case <-done:
+				return
+			case channel <- entry:
+			case <-time.After(5 * time.Second):
+				return
+			}
 		}
 	}
 }
