@@ -20,16 +20,43 @@ private const val TAG = "AuthRepository"
  * token refresh with mutex-based concurrency, and token expiration checks.
  * Exposes [authState] as a [StateFlow] for reactive UI binding.
  */
-class AuthRepository(private val context: Context, private var api: CatalogizerApi?) {
+class AuthRepository(
+    private val context: Context,
+    private var api: CatalogizerApi?,
+    private val tokenStore: com.catalogizer.androidtv.data.auth.TokenStore =
+        com.catalogizer.androidtv.data.auth.TokenStore.encrypted(context),
+) {
 
     fun setApi(api: CatalogizerApi) {
         this.api = api
     }
-    
+
     private val refreshMutex = Mutex()
-    
+
     private val _authState = MutableStateFlow<AuthState>(AuthState.Unauthenticated)
     val authState: StateFlow<AuthState> = _authState.asStateFlow()
+
+    /**
+     * Hydrates [_authState] from disk once at application start.
+     * Called by MainViewModel before the Login vs Home decision
+     * in MainActivity. Safe to call repeatedly — after the first
+     * invocation subsequent calls are cheap no-ops because the
+     * authState flow already carries the restored value.
+     */
+    suspend fun hydrateFromDisk() {
+        val rec = tokenStore.load() ?: return
+        if (rec.expiresAtMs != 0L && rec.expiresAtMs <= System.currentTimeMillis()) {
+            tokenStore.clear()
+            return
+        }
+        _authState.value = AuthState(
+            isAuthenticated = true,
+            token = rec.token,
+            username = rec.username,
+            userId = rec.userId,
+            expiresAt = rec.expiresAtMs.takeIf { it > 0 },
+        )
+    }
 
     suspend fun login(username: String, password: String) {
         try {
@@ -48,12 +75,21 @@ class AuthRepository(private val context: Context, private var api: CatalogizerA
             if (response.isSuccessful) {
                 val body = response.body()
                 if (body != null) {
+                    val expiresAtMs = body.expiresAt?.let { parseExpiresAt(it) }
                     _authState.value = AuthState(
                         isAuthenticated = true,
                         token = body.token,
                         username = body.username,
                         userId = body.userId,
-                        expiresAt = body.expiresAt?.let { parseExpiresAt(it) }
+                        expiresAt = expiresAtMs
+                    )
+                    tokenStore.save(
+                        com.catalogizer.androidtv.data.auth.TokenStore.Record(
+                            token = body.token,
+                            username = body.username,
+                            userId = body.userId,
+                            expiresAtMs = expiresAtMs ?: 0L,
+                        )
                     )
                 } else {
                     _authState.value = AuthState(
@@ -94,6 +130,7 @@ class AuthRepository(private val context: Context, private var api: CatalogizerA
         } catch (e: Exception) {
             Log.w(TAG, "Logout error: ${e.message}")
         } finally {
+            tokenStore.clear()
             _authState.value = AuthState.Unauthenticated
         }
     }
@@ -103,10 +140,11 @@ class AuthRepository(private val context: Context, private var api: CatalogizerA
             try {
                 val currentApi = api
                 if (currentApi == null) {
+                    tokenStore.clear()
                     _authState.value = AuthState.Unauthenticated
                     return
                 }
-                
+
                 val current = _authState.value
                 if (current.isAuthenticated && current.token != null) {
                     val tokenBody = mapOf("token" to current.token)
@@ -114,18 +152,29 @@ class AuthRepository(private val context: Context, private var api: CatalogizerA
 
                     if (response.isSuccessful) {
                         response.body()?.let { loginResponse ->
+                            val newExpiresMs = loginResponse.expiresAt?.let { parseExpiresAt(it) }
                             _authState.value = current.copy(
                                 token = loginResponse.token,
-                                expiresAt = loginResponse.expiresAt?.let { parseExpiresAt(it) }
+                                expiresAt = newExpiresMs
+                            )
+                            tokenStore.save(
+                                com.catalogizer.androidtv.data.auth.TokenStore.Record(
+                                    token = loginResponse.token,
+                                    username = loginResponse.username,
+                                    userId = loginResponse.userId,
+                                    expiresAtMs = newExpiresMs ?: 0L,
+                                )
                             )
                         }
                     } else {
-                        // If refresh fails, logout user
+                        // Refresh rejected: wipe on-disk token and sign out.
+                        tokenStore.clear()
                         _authState.value = AuthState.Unauthenticated
                     }
                 }
             } catch (e: Exception) {
                 Log.e(TAG, "Token refresh error: ${e.message}")
+                tokenStore.clear()
                 // If refresh fails, logout user
                 _authState.value = AuthState.Unauthenticated
             }
