@@ -391,3 +391,83 @@ func TestMediaFileRepository_SetPrimary(t *testing.T) {
 		})
 	}
 }
+
+func TestPickBestStreamableFile(t *testing.T) {
+	t.Parallel()
+	cases := []struct {
+		name    string
+		input   []StreamableFile
+		wantID  int64
+		wantNil bool
+	}{
+		{
+			name: "honours is_primary when sane",
+			input: []StreamableFile{
+				{FileID: 10, IsPrimary: true, Filename: "movie.mp4", Extension: "mp4", Size: 1_000_000_000},
+				{FileID: 11, IsPrimary: false, Filename: "trailer.mp4", Extension: "mp4", Size: 50_000_000},
+			},
+			wantID: 10,
+		},
+		{
+			name: "rejects is_primary when metadata file",
+			input: []StreamableFile{
+				{FileID: 1, IsPrimary: true, Filename: ".DS_Store", Extension: "", Size: 6148},
+				{FileID: 2, IsPrimary: false, Filename: "movie.mkv", Extension: "mkv", Size: 2_500_000_000},
+				{FileID: 3, IsPrimary: false, Filename: "subs.srt", Extension: "srt", Size: 52000},
+			},
+			wantID: 2,
+		},
+		{
+			name: "picks largest media when no is_primary",
+			input: []StreamableFile{
+				{FileID: 100, Filename: "cd1.avi", Extension: "avi", Size: 700_000_000},
+				{FileID: 101, Filename: "cd2.avi", Extension: "avi", Size: 800_000_000},
+				{FileID: 102, Filename: "movie.nfo", Extension: "nfo", Size: 1024},
+			},
+			wantID: 101,
+		},
+		{
+			name: "falls back to largest non-blacklisted when no media ext",
+			input: []StreamableFile{
+				{FileID: 200, Filename: "setup.iso", Extension: "iso", Size: 4_000_000_000},
+				{FileID: 201, Filename: "readme.txt", Extension: "txt", Size: 2048},
+				{FileID: 202, Filename: ".DS_Store", Extension: "", Size: 6148},
+			},
+			wantID: 200,
+		},
+		{
+			name: "rejects zero-byte files",
+			input: []StreamableFile{
+				{FileID: 300, Filename: "placeholder.mp4", Extension: "mp4", Size: 0},
+				{FileID: 301, Filename: "real.mp4", Extension: "mp4", Size: 1_500_000_000},
+			},
+			wantID: 301,
+		},
+		{
+			name: "uses mime type when extension missing",
+			input: []StreamableFile{
+				{FileID: 400, Filename: "MOVIE", Extension: "", MimeType: "video/x-matroska", Size: 3_000_000_000},
+				{FileID: 401, Filename: "poster", Extension: "", MimeType: "image/jpeg", Size: 500_000},
+			},
+			wantID: 400,
+		},
+		{
+			name:    "nil on empty slice",
+			input:   nil,
+			wantNil: true,
+		},
+	}
+	for _, tc := range cases {
+		tc := tc
+		t.Run(tc.name, func(t *testing.T) {
+			t.Parallel()
+			got := pickBestStreamableFile(tc.input)
+			if tc.wantNil {
+				require.Nil(t, got)
+				return
+			}
+			require.NotNil(t, got, "expected a match, got nil")
+			require.Equal(t, tc.wantID, got.FileID)
+		})
+	}
+}
