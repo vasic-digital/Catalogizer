@@ -73,3 +73,53 @@ contains:
 - Six movie posters visible with real cover art
 
 No blank backgrounds, no login forms, no "required" error messages.
+
+## Post-fix verification — 2026-04-11 (late evening)
+
+After executing the plan at
+`docs/superpowers/plans/2026-04-11-playback-auth-search-aggregation.md`,
+HelixQA was re-run end-to-end against the same Mi Box 4:
+
+- **Execute phase:** 57/57 tests, 0 blank-skipped, 2m33s
+- **Structured phase (partial):** 3 PASSED, 0 SKIPPED, 0 FAILED
+  before the session was time-boxed so the operator could
+  write the follow-up playback history plan.
+- **libVLC on Android TV:** bumped to 3.6.2, initialises cleanly
+  ("VLC initialized successfully (version 3.0.21 Vetinari)"),
+  VLCPlayerActivity launches without SIGSEGV on Play Now. The
+  player reaches the "Media opening..." state; the remaining
+  surface attachment for Compose-hosted `VLCVideoLayout` is
+  tracked as a follow-up commit.
+- **Query-param auth:** `GET /api/v1/stream/:id?access_token=…`
+  returns HTTP 206 with `video/mp4`. The Authorization header
+  path still works. libVLC now reaches the stream endpoint
+  without a middleware error.
+- **Token persistence:** force-stop + relaunch without
+  intent extras lands on the 1.1 MB home screen directly —
+  verified with `/tmp/t4-verify.png`.
+- **Backend primary-file picker:** unit-tested via
+  `TestPickBestStreamableFile` — 7/7 subtests passing.
+  `/api/v1/entities/1/stream` now returns the real 2.76 GB
+  `2001.A.Space.Odyssey.*.mp4`, not `.DS_Store`.
+- **Entity search:** `/api/v1/entities/search?q=die` returns
+  "A Good Day to Die Hard" and "Tinker Tailor Soldier Spy".
+- **TV show aggregation:** AggregationService now walks every
+  file under a tv_show directory, parses SxxEyy / NxNN /
+  "Season N / Episode M" from filenames, and upserts
+  `tv_season` / `tv_episode` rows via the existing
+  `buildTVHierarchy`. Rescans of the Synology NAS will
+  populate these counts on the next aggregation pass.
+
+## Known follow-up (not committed yet)
+
+- libVLC surface attachment: player activity launches and
+  libVLC enters "Media opening", but the Compose-hosted
+  `VLCVideoLayout` needs an explicit `attachView` call inside
+  the first composition — otherwise no HTTP GET for the
+  stream is issued. Owned by the TV team.
+- Playback session tracking + per-card progress/history UI:
+  full implementation plan lives at
+  `docs/superpowers/plans/2026-04-11-playback-history-tracking.md`
+  (10 tasks covering backend schema, Go repo + handler, TS
+  client, React component, Android TV + phone, Tauri desktop,
+  HelixQA bank, challenges, and a re-run).
