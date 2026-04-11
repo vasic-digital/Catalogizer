@@ -1,7 +1,6 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { invoke } from '@tauri-apps/api/core';
 import { apiService } from '../services/apiService';
-import type { PlaybackProgress } from '../types';
 
 export type PlaybackState = 
   | 'Idle' 
@@ -54,7 +53,7 @@ interface UseVLCPlayerReturn {
   pause: () => Promise<void>;
   resume: () => Promise<void>;
   stop: () => Promise<void>;
-  togglePlayPause: () => Promise<void>;
+  togglePlayPause: () => Promise<boolean>;
   seek: (position: number) => Promise<void>;
   seekForward: (milliseconds: number) => Promise<number>;
   seekBackward: (milliseconds: number) => Promise<number>;

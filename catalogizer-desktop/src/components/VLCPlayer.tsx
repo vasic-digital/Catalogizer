@@ -14,7 +14,7 @@ import {
   Languages,
   X
 } from 'lucide-react';
-import { useVLCPlayer, TrackInfo } from '../hooks/useVLCPlayer';
+import { useVLCPlayer } from '../hooks/useVLCPlayer';
 import { apiService } from '../services/apiService';
 
 interface VLCPlayerProps {
