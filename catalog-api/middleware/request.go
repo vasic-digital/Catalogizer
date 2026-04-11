@@ -32,9 +32,7 @@ func RequestID() gin.HandlerFunc {
 }
 
 // RateLimiter implements token-bucket rate limiting per client IP.
-// The cleanup goroutine is intentional: it is created once at server startup
-// and lives for the entire server lifetime. It is not tracked by a WaitGroup
-// because it terminates naturally when the process exits.
+// The cleanup goroutine is stopped on server shutdown via middleware.StopAll().
 func RateLimiter(requestsPerMinute int) gin.HandlerFunc {
 	const maxBuckets = 10000
 
@@ -42,10 +40,22 @@ func RateLimiter(requestsPerMinute int) gin.HandlerFunc {
 	buckets := make(map[string]*ipBucket)
 	rate := float64(requestsPerMinute) / 60.0
 
+	stopCh := make(chan struct{})
+	var stopOnce sync.Once
+	registerStop(func() {
+		stopOnce.Do(func() { close(stopCh) })
+	})
+
 	go func() {
 		ticker := time.NewTicker(5 * time.Minute)
 		defer ticker.Stop()
-		for range ticker.C {
+		for {
+			select {
+			case <-stopCh:
+				return
+			case <-ticker.C:
+			}
+
 			mu.Lock()
 			now := time.Now()
 			for ip, b := range buckets {

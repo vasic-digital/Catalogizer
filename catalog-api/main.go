@@ -1348,6 +1348,10 @@ func main() {
 	// Wait for background log stream relay goroutines to finish
 	logAdapter.Close()
 
+	// Stop all middleware cleanup goroutines (rate limiters, etc.) so they
+	// don't outlive the server and leak until process exit.
+	root_middleware.StopAll()
+
 	// Shutdown HTTP server (stops accepting new connections, waits for in-flight requests)
 	if err := srv.Shutdown(shutdownCtx); err != nil {
 		logger.Error("HTTP server shutdown error", zap.Error(err))

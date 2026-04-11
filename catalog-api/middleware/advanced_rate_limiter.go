@@ -73,20 +73,27 @@ type AdvancedRateLimiter struct {
 	mu       sync.RWMutex
 	config   RateLimiterConfig
 	stopCh   chan struct{} // Signals shutdown for cleanup goroutine
+	stopOnce sync.Once     // Ensures Stop is safe to call multiple times
 }
 
-// NewAdvancedRateLimiter creates a new rate limiter
+// NewAdvancedRateLimiter creates a new rate limiter and registers its Stop
+// function with the package shutdown registry so its cleanup goroutine is
+// stopped automatically via middleware.StopAll().
 func NewAdvancedRateLimiter(config RateLimiterConfig) *AdvancedRateLimiter {
-	return &AdvancedRateLimiter{
+	r := &AdvancedRateLimiter{
 		limiters: make(map[string]*rate.Limiter),
 		config:   config,
 		stopCh:   make(chan struct{}),
 	}
+	registerStop(r.Stop)
+	return r
 }
 
-// Stop gracefully stops the cleanup goroutine
+// Stop gracefully stops the cleanup goroutine. Safe to call multiple times.
 func (r *AdvancedRateLimiter) Stop() {
-	close(r.stopCh)
+	r.stopOnce.Do(func() {
+		close(r.stopCh)
+	})
 }
 
 // getLimiter returns a rate limiter for the given key
