@@ -41,32 +41,32 @@ type PlaybackEnd struct {
 // and ended_at are nullable while the session is still active;
 // ListHistory / Get treat zero as "unset" for in-flight rows.
 type PlaybackSession struct {
-	ID            int64
-	UserID        int64
-	MediaItemID   int64
-	FileID        *int64
-	StartedAt     time.Time
-	EndedAt       *time.Time
-	PositionUnit  string
-	StartPosition int64
-	EndPosition   int64
-	TotalAmount   int64
-	Completed     bool
+	ID            int64      `json:"id"`
+	UserID        int64      `json:"user_id"`
+	MediaItemID   int64      `json:"media_item_id"`
+	FileID        *int64     `json:"file_id"`
+	StartedAt     time.Time  `json:"started_at"`
+	EndedAt       *time.Time `json:"ended_at"`
+	PositionUnit  string     `json:"position_unit"`
+	StartPosition int64      `json:"start_position"`
+	EndPosition   int64      `json:"end_position"`
+	TotalAmount   int64      `json:"total_amount"`
+	Completed     bool       `json:"completed"`
 }
 
 // MediaProgress is the denormalised per-user, per-item summary
 // used by the cards UI.
 type MediaProgress struct {
-	UserID             int64
-	MediaItemID        int64
-	PositionUnit       string
-	DurationTotal      *int64
-	LastPosition       int64
-	LastSessionAmount  int64
-	TotalReproductions int64
-	AggregateAmount    int64
-	LastSessionEndedAt *time.Time
-	UpdatedAt          time.Time
+	UserID             int64      `json:"user_id"`
+	MediaItemID        int64      `json:"media_item_id"`
+	PositionUnit       string     `json:"position_unit"`
+	DurationTotal      *int64     `json:"duration_total"`
+	LastPosition       int64      `json:"last_position"`
+	LastSessionAmount  int64      `json:"last_session_amount"`
+	TotalReproductions int64      `json:"total_reproductions"`
+	AggregateAmount    int64      `json:"aggregate_amount"`
+	LastSessionEndedAt *time.Time `json:"last_session_ended_at"`
+	UpdatedAt          time.Time  `json:"updated_at"`
 }
 
 // PlaybackSessionRepository persists reproduction sessions and
