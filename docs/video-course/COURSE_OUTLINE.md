@@ -4,7 +4,7 @@
 
 **Title**: Mastering Catalogizer - Building a Multi-Platform Media Collection Manager
 
-**Duration**: 16-18 hours (across 30 modules)
+**Duration**: 18-20 hours (across 36 modules)
 
 **Audience**: Intermediate to advanced Go and TypeScript developers
 
@@ -519,6 +519,55 @@
 - 9 shared TypeScript libraries
 - HelixQA autonomous cross-platform testing
 - 174 user flow challenges for platform consistency
+
+## Module 31: Database Dialect Rewriting & Migration Parity (18 min) [v2.3.0]
+
+- Why dual dialect: SQLite for dev, PostgreSQL for production
+- The `database.DB` wrapper and its three rewrite rules
+- `?` → `$1, $2, …`, `INSERT OR IGNORE` → `ON CONFLICT DO NOTHING`, boolean literals
+- `InsertReturningID` and `TxInsertReturningID` replacing `LastInsertId`
+- Go-function-based migrations dispatched per dialect
+- The `TestRunMigrationsSQLite` boot test enforces parity
+
+## Module 32: Concurrency Hardening — From Race to Atomic (22 min) [v2.3.0]
+
+- Reading `go test -race` reports
+- Fixing plain-int counters with `atomic.Int64`
+- The `sync.Once` + `sync.WaitGroup` + `lifecycleMu` pattern
+- Real case study: SmbConnectionPool StopCleanup wait semantics
+- `wg.Add` placement, non-blocking channel sends, closed-channel gotchas
+
+## Module 33: Stress, Soak & Spike Testing with k6 (20 min) [v2.3.0]
+
+- Taxonomy: load, stress, soak, spike, breakpoint, endurance
+- k6 executors: constant-vus, ramping-vus, ramping-arrival-rate
+- Hard thresholds with `abortOnFail` vs soft thresholds
+- Running k6 in rootless Podman
+- Cross-checking k6 output against Grafana histograms
+
+## Module 34: Wiring SonarQube + Snyk via Compose (16 min) [v2.3.0]
+
+- Why no single tool covers everything
+- SonarQube server + Postgres in rootless compose
+- Snyk with token injection via `.env`
+- The `security-scan-all.sh` orchestrator
+- Consolidated reporting to `docs/reports/security/<date>/`
+
+## Module 35: Lazy Loading & Semaphore Patterns (18 min) [v2.3.0]
+
+- Lazy vs eager: when each makes sense
+- `digital.vasic.lazy.Value[T]` and `LazyServiceRegistry`
+- Semaphore-bounded parallelism via `internal/concurrency/semaphore.go`
+- Avoiding the "eager at boot, fail at boot" pitfall
+- Applying lazy to the 14-provider `MetadataProvider` registry
+
+## Module 36: Universal Test Infrastructure with HelixQA (22 min) [v2.3.0]
+
+- The Universal Solution Principle: fix test infra, never the app
+- Adapter-per-platform pattern (8 interfaces, 21 implementations)
+- LLM-vision-driven navigation: screenshot → analysis → action
+- Executable test banks (YAML/JSON) vs prose descriptions
+- Honest `StatusSkipped` vs false-positive "passes as stub"
 
 ---
 
