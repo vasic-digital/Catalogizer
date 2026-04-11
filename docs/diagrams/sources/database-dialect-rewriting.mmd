@@ -1,0 +1,33 @@
+%% database.DB wrapper — automatic SQL dialect rewriting
+%% Callers write portable SQL; the wrapper rewrites at Exec/Query time.
+
+flowchart TD
+    caller[handlers / services / repository] -->|db.Exec| wrapper[database.DB wrapper]
+
+    wrapper --> detect{dialect.IsPostgres?}
+
+    detect -->|No — SQLite| passthru[pass-through]
+    detect -->|Yes — PostgreSQL| rewrite[Rewrite pipeline]
+
+    rewrite --> placeholders[RewritePlaceholders<br/>? → $1 $2 $3 …]
+    placeholders --> insert[RewriteInsertOrIgnore<br/>INSERT OR IGNORE → ON CONFLICT DO NOTHING]
+    insert --> bool[RewriteBooleanLiterals<br/>= 0/1 → = FALSE/TRUE]
+    bool --> final[final SQL]
+
+    passthru --> sqlite[(SQLite engine)]
+    final --> postgres[(PostgreSQL engine)]
+
+    sqlite -.-> result
+    postgres -.-> result([result rows / Exec count])
+
+    returning{{InsertReturningID<br/>/TxInsertReturningID}}
+    caller -.->|instead of LastInsertId| returning
+    returning -->|SQLite| lastid[LastInsertId]
+    returning -->|PostgreSQL| returning_id[RETURNING id clause]
+
+    classDef primary fill:#fff3cd,stroke:#ffc107,color:#000
+    classDef dialect fill:#d1ecf1,stroke:#0c5460,color:#000
+    classDef engine fill:#d4edda,stroke:#155724,color:#000
+    class wrapper,rewrite,placeholders,insert,bool,returning primary
+    class detect,passthru,final dialect
+    class sqlite,postgres,result,lastid,returning_id engine

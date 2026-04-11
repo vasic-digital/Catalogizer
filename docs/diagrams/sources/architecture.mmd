@@ -1,0 +1,55 @@
+%% Catalogizer — System Architecture (C4 Container view)
+%% Rendered to SVG via mermaid-cli. Source of truth for docs/website.
+
+C4Context
+    title Catalogizer System Architecture
+
+    Person(user, "End User", "Browses media via web/desktop/mobile")
+    Person(admin, "Administrator", "Manages storage roots, users, QA")
+
+    System_Boundary(catalogizer, "Catalogizer") {
+        Container(web, "catalog-web", "React 18 + Vite", "Browsing, search, entity browser")
+        Container(desktop, "catalogizer-desktop", "Tauri 2 + React", "Native desktop client")
+        Container(wizard, "installer-wizard", "Tauri 2 + React", "First-run setup")
+        Container(android, "catalogizer-android", "Kotlin + Compose", "Phone client")
+        Container(androidtv, "catalogizer-androidtv", "Kotlin + Compose", "Android TV client with home-screen channels")
+
+        Container(api, "catalog-api", "Go 1.25 + Gin", "REST API, WebSocket, HTTP/3")
+        Container(db, "Database", "PostgreSQL / SQLite", "Dual-dialect via database.DB wrapper")
+        Container(redis, "Redis", "Optional cache", "go-redis/v9")
+        Container(prom, "Prometheus", "Metrics scrape", "Reads /metrics from catalog-api")
+        Container(grafana, "Grafana", "Dashboards", "Provisioned from monitoring/grafana/dashboards")
+    }
+
+    System_Ext(smb, "SMB/CIFS", "Network storage")
+    System_Ext(ftp, "FTP", "Network storage")
+    System_Ext(nfs, "NFS", "Network storage")
+    System_Ext(webdav, "WebDAV", "Network storage")
+    System_Ext(tmdb, "TMDB", "Movie metadata")
+    System_Ext(ol, "OpenLibrary", "Book metadata")
+    System_Ext(mb, "MusicBrainz", "Music metadata")
+
+    Rel(user, web, "browses")
+    Rel(user, desktop, "uses")
+    Rel(user, android, "uses")
+    Rel(user, androidtv, "uses")
+    Rel(admin, wizard, "runs once")
+    Rel(admin, grafana, "views dashboards")
+
+    Rel(web, api, "HTTP/3 + Brotli")
+    Rel(desktop, api, "HTTP/3 via Tauri IPC proxy")
+    Rel(android, api, "OkHttp + Cronet + Brotli")
+    Rel(androidtv, api, "OkHttp + Cronet + Brotli")
+    Rel(wizard, api, "HTTP/3")
+
+    Rel(api, db, "database.DB wrapper")
+    Rel(api, redis, "optional")
+    Rel(api, smb, "filesystem.UnifiedClient")
+    Rel(api, ftp, "filesystem.UnifiedClient")
+    Rel(api, nfs, "filesystem.UnifiedClient")
+    Rel(api, webdav, "filesystem.UnifiedClient")
+    Rel(api, tmdb, "ProviderManager")
+    Rel(api, ol, "ProviderManager")
+    Rel(api, mb, "ProviderManager")
+    Rel(prom, api, "scrapes /metrics")
+    Rel(grafana, prom, "queries")

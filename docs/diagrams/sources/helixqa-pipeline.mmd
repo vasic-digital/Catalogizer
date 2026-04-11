@@ -1,0 +1,39 @@
+%% HelixQA — Autonomous QA Pipeline (Learn → Plan → Execute → Curiosity → Analyze)
+%% All navigation is LLM-vision-driven; every phase has a dedicated strategy.
+
+flowchart LR
+    start([helixqa autonomous]) --> deploy[Phase 0: Deploy]
+    deploy -->|SSH| remote[Ollama + llama.cpp RPC workers]
+
+    deploy --> learn[Phase 1: Learn]
+    learn -->|PlanningStrategy| kb[(Knowledge base)]
+
+    learn --> plan[Phase 2: Plan]
+    plan -->|PlanningStrategy| tests[(Test cases)]
+
+    plan --> execute[Phase 3: Execute]
+    execute -->|NavigationStrategy| screenshots[Screenshots]
+    execute --> videos[Video recordings]
+
+    execute --> curiosity[Phase 3.5: Curiosity]
+    curiosity -->|NavigationStrategy| explored[(Explored screens)]
+    curiosity -->|LLM sees screenshot| action{Next action?}
+    action -->|tap/type/DPAD| device[ADB / Playwright / Tauri]
+    device -->|UI dump| validate{UI state changed?}
+    validate -->|yes| curiosity
+    validate -->|no, stuck| stagnation[Report STAGNATION]
+
+    curiosity --> analyze[Phase 4: Analyze]
+    analyze -->|AnalysisStrategy| findings[(Findings)]
+    analyze --> dedup[FindingsBridge dedup]
+    dedup --> tickets[(Issue tickets with evidence)]
+
+    analyze --> report[(pipeline-report.json + cost summary)]
+
+    classDef phase fill:#fff3cd,stroke:#ffc107,color:#000,font-weight:bold
+    classDef strat fill:#d1ecf1,stroke:#0c5460,color:#000
+    classDef out fill:#d4edda,stroke:#155724,color:#000
+    classDef warn fill:#f8d7da,stroke:#721c24,color:#000
+    class learn,plan,execute,curiosity,analyze,deploy phase
+    class kb,tests,screenshots,videos,explored,findings,tickets,report out
+    class stagnation warn

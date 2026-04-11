@@ -1,0 +1,45 @@
+%% Android TV Home Screen Channels — v2.3.0 data flow
+%% Uses androidx.tvprovider to publish channels and Watch Next rows.
+
+flowchart TD
+    launch([App launch]) --> worker[TvChannelSyncWorker<br/>WorkManager periodic 6h]
+    service([SyncService broadcast]) --> worker
+
+    worker --> repo[TvChannelRepository]
+    repo --> api{{catalog-api<br/>/api/v1/entities}}
+    api --> media[(media_items)]
+
+    repo --> mapper[ChannelProgramMapper]
+    mapper -->|per media type| channel_picks[Catalogizer Picks channel]
+    mapper -->|movie| channel_movies[Movies channel]
+    mapper -->|tv_show| channel_tv[TV Shows channel]
+    mapper -->|song| channel_music[Music channel]
+    mapper -->|book| channel_books[Books channel]
+    mapper -->|game| channel_games[Games channel]
+
+    repo --> watchnext[WatchNextManager]
+    watchnext -->|partially watched| wn_row[System Watch Next row]
+    watchnext -->|auto next episode| wn_row
+
+    channel_picks --> tvprovider[(androidx.tvprovider ContentProvider)]
+    channel_movies --> tvprovider
+    channel_tv --> tvprovider
+    channel_music --> tvprovider
+    channel_books --> tvprovider
+    channel_games --> tvprovider
+    wn_row --> tvprovider
+
+    tvprovider --> home[Android TV Home Screen]
+
+    home -->|user clicks program| deeplink[catalogizer://media/ID?type=X]
+    deeplink --> activity[ChannelDeepLinkActivity]
+    activity -->|per-category behavior| behavior{Launch behavior?}
+    behavior -->|detail screen| detail[MediaDetailActivity]
+    behavior -->|immediate play| player[Playback]
+
+    logout([User logout]) -.->|full cleanup| cleanup[Delete channels +<br/>Watch Next rows + WorkManager]
+
+    classDef primary fill:#fff3cd,stroke:#ffc107,color:#000
+    classDef out fill:#d4edda,stroke:#155724,color:#000
+    class repo,mapper,watchnext primary
+    class channel_picks,channel_movies,channel_tv,channel_music,channel_books,channel_games,wn_row,home out

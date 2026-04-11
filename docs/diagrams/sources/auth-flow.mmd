@@ -1,0 +1,58 @@
+%% Catalogizer — Authentication Flow (JWT + Refresh)
+%% Sequence diagram covering login, refresh, protected requests, logout.
+
+sequenceDiagram
+    autonumber
+    participant C as Client
+    participant M as middleware.RateLimiter
+    participant H as handlers.AuthHandler
+    participant S as internal/auth.Service
+    participant DB as database.DB
+    participant J as JWT Manager
+
+    rect rgb(240, 248, 255)
+    note over C,J: Login
+    C->>+M: POST /api/v1/auth/login (user, pass)
+    M->>M: IP-rate-limit check
+    M->>+H: pass
+    H->>+S: Authenticate(user, pass)
+    S->>+DB: SELECT user WHERE username = ?
+    DB-->>-S: user row
+    S->>S: bcrypt.CompareHashAndPassword
+    S->>+J: Create(claims)
+    J-->>-S: accessToken
+    S->>+J: CreateRefresh(claims)
+    J-->>-S: refreshToken
+    S-->>-H: tokens
+    H-->>-M: 200 { access, refresh }
+    M-->>-C: 200
+    end
+
+    rect rgb(245, 255, 240)
+    note over C,J: Protected request
+    C->>+M: GET /api/v1/entities (Bearer access)
+    M->>M: JWT validation
+    M->>+H: authorized
+    H-->>-M: 200 response
+    M-->>-C: 200
+    end
+
+    rect rgb(255, 250, 240)
+    note over C,J: Refresh
+    C->>+H: POST /api/v1/auth/refresh (refresh)
+    H->>+J: Validate(refresh)
+    J-->>-H: claims
+    H->>+J: Create(new access)
+    J-->>-H: new accessToken
+    H-->>-C: 200 { access }
+    end
+
+    rect rgb(255, 240, 245)
+    note over C,J: Logout
+    C->>+H: POST /api/v1/auth/logout
+    H->>+S: Revoke(refresh)
+    S->>+DB: DELETE FROM user_sessions WHERE refresh_token = ?
+    DB-->>-S: ok
+    S-->>-H: ok
+    H-->>-C: 204
+    end

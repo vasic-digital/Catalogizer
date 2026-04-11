@@ -1,0 +1,45 @@
+%% Catalogizer — Media Entity Aggregation Pipeline
+%% Post-scan hook runs AggregationService which builds structured entities
+%% from raw scanned files via title parsing, metadata providers, and
+%% hierarchy construction.
+
+flowchart TD
+    scan([UniversalScanner]) -->|scan completes| hook[post-scan hook]
+    hook --> agg[AggregationService.AggregateAfterScan]
+
+    agg --> parser[Title Parser]
+    parser -->|movie regex| movie[(media_items: movie)]
+    parser -->|TV regex| tvep[(media_items: tv_episode)]
+    parser -->|music regex| song[(media_items: song)]
+    parser -->|game regex| game[(media_items: game)]
+
+    agg --> link[MediaFile linking]
+    link --> mfiles[(media_files junction)]
+
+    agg --> hier[Hierarchy builder]
+    hier -->|TV show parent| tvshow[(media_items: tv_show)]
+    hier -->|season parent| season[(media_items: tv_season)]
+    hier -->|music artist parent| artist[(media_items: music_artist)]
+    hier -->|album parent| album[(media_items: music_album)]
+
+    tvep --> season --> tvshow
+    song --> album --> artist
+
+    agg --> dedup[Duplicate detection]
+    dedup --> report[(Aggregation report)]
+
+    movie --> entityapi{{/api/v1/entities}}
+    tvshow --> entityapi
+    artist --> entityapi
+    game --> entityapi
+
+    entityapi --> browser[Entity Browser UI]
+    entityapi --> mobile[Android/AndroidTV clients]
+    entityapi --> tv_channels[TV Home Screen Channels]
+
+    classDef primary fill:#ffd7b5,stroke:#ff6b35,color:#000
+    classDef db fill:#d7e3fc,stroke:#3a86ff,color:#000
+    classDef ui fill:#d3f8e2,stroke:#2a9d8f,color:#000
+    class agg,parser,link,hier,dedup primary
+    class movie,tvshow,tvep,season,artist,album,song,game,mfiles,report db
+    class browser,mobile,tv_channels,entityapi ui
