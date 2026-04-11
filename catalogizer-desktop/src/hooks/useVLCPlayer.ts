@@ -93,7 +93,9 @@ export function useVLCPlayer(): UseVLCPlayerReturn {
 
     return () => {
       // Stop playback on unmount
-      invoke('vlc_stop').catch(() => {});
+      invoke('vlc_stop').catch((err) => {
+        console.warn('[useVLCPlayer] vlc_stop on unmount failed', err);
+      });
       if (statusIntervalRef.current) {
         clearInterval(statusIntervalRef.current);
       }

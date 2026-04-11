@@ -73,12 +73,14 @@ export const VLCPlayer: React.FC<VLCPlayerProps> = ({
     if (status?.state === 'Ended') {
       // Mark as completed (100% progress)
       if (mediaId) {
-        apiService.updateWatchProgress(mediaId, { 
+        apiService.updateWatchProgress(mediaId, {
           media_id: mediaId,
           position: status?.duration || 0,
           duration: status?.duration || 0,
           timestamp: Date.now()
-        }).catch(() => {});
+        }).catch((err) => {
+          console.warn('[VLCPlayer] updateWatchProgress failed', { mediaId, err });
+        });
       }
       onEnded?.();
     }
