@@ -989,8 +989,10 @@ func TestWebSocketReconnectionChallenge_Execute(t *testing.T) {
 	result, err := ch.Execute(context.Background())
 	require.NoError(t, err)
 	require.NotNil(t, result)
-	// WebSocket won't connect to httptest server, so it passes as stub
-	assert.Equal(t, challenge.StatusPassed, result.Status)
+	// Mock httptest server doesn't expose a WebSocket endpoint, so the
+	// challenge now honestly returns Skipped with a structured reason
+	// instead of a false-positive "passed as stub".
+	assert.Equal(t, challenge.StatusSkipped, result.Status)
 }
 
 func TestLazyInitOnFirstRequestChallenge_Execute(t *testing.T) {
