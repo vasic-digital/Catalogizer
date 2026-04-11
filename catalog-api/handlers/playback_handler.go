@@ -41,11 +41,15 @@ type progressPlaybackRequest struct {
 }
 
 // endPlaybackRequest is the JSON body of POST /sessions/end.
+// DurationTotal is optional — players only know the total
+// media duration once they've parsed it from the stream, so
+// clients MAY pass it on end() even if they couldn't on start().
 type endPlaybackRequest struct {
-	SessionID   int64 `json:"session_id" binding:"required"`
-	EndPosition int64 `json:"end_position"`
-	TotalAmount int64 `json:"total_amount"`
-	Completed   bool  `json:"completed"`
+	SessionID     int64  `json:"session_id" binding:"required"`
+	EndPosition   int64  `json:"end_position"`
+	TotalAmount   int64  `json:"total_amount"`
+	DurationTotal *int64 `json:"duration_total,omitempty"`
+	Completed     bool   `json:"completed"`
 }
 
 // userIDFromContext extracts the authenticated user id set by
@@ -121,11 +125,12 @@ func (h *PlaybackHandler) EndSession(c *gin.Context) {
 		return
 	}
 	if err := h.repo.End(c.Request.Context(), repository.PlaybackEnd{
-		SessionID:   req.SessionID,
-		EndPosition: req.EndPosition,
-		TotalAmount: req.TotalAmount,
-		EndedAt:     time.Now().UTC(),
-		Completed:   req.Completed,
+		SessionID:     req.SessionID,
+		EndPosition:   req.EndPosition,
+		TotalAmount:   req.TotalAmount,
+		DurationTotal: req.DurationTotal,
+		EndedAt:       time.Now().UTC(),
+		Completed:     req.Completed,
 	}); err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return

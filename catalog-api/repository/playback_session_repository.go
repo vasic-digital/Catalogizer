@@ -28,13 +28,18 @@ type PlaybackProgress struct {
 }
 
 // PlaybackEnd finalises a session and triggers the
-// media_progress upsert in the same transaction.
+// media_progress upsert in the same transaction. DurationTotal
+// is optional — players report it once they've parsed the
+// underlying media (duration is not always known at start(),
+// e.g. HLS streams deliver it via the manifest). Passing nil
+// leaves the column unchanged.
 type PlaybackEnd struct {
-	SessionID   int64
-	EndPosition int64
-	TotalAmount int64
-	EndedAt     time.Time
-	Completed   bool
+	SessionID     int64
+	EndPosition   int64
+	TotalAmount   int64
+	DurationTotal *int64
+	EndedAt       time.Time
+	Completed     bool
 }
 
 // PlaybackSession is one reproduction session row. end_position
@@ -160,26 +165,41 @@ func (r *PlaybackSessionRepository) End(ctx context.Context, e PlaybackEnd) erro
 	// portable pattern also works unchanged on PostgreSQL, which
 	// is the other dialect we ship.
 	var existingReps, existingAgg int64
+	var existingDuration sql.NullInt64
 	selErr := tx.QueryRowContext(ctx,
-		`SELECT total_reproductions, aggregate_amount
+		`SELECT total_reproductions, aggregate_amount, duration_total
 		 FROM media_progress WHERE user_id = ? AND media_item_id = ?`,
-		userID, mediaItemID).Scan(&existingReps, &existingAgg)
+		userID, mediaItemID).Scan(&existingReps, &existingAgg, &existingDuration)
+
+	// Pick the duration to persist: use the caller-provided value
+	// when present, otherwise keep the existing one so a later
+	// session without duration info doesn't wipe a previously-
+	// learned value.
+	var durToStore sql.NullInt64
+	if e.DurationTotal != nil {
+		durToStore = sql.NullInt64{Int64: *e.DurationTotal, Valid: true}
+	} else {
+		durToStore = existingDuration
+	}
+
 	switch {
 	case selErr == sql.ErrNoRows:
 		if _, err := tx.ExecContext(ctx,
 			`INSERT INTO media_progress
-			    (user_id, media_item_id, position_unit, last_position,
-			     last_session_amount, total_reproductions, aggregate_amount,
-			     last_session_ended_at, updated_at)
-			 VALUES (?, ?, ?, ?, ?, 1, ?, ?, ?)`,
-			userID, mediaItemID, posUnit, endPos, totalAmount,
-			totalAmount, e.EndedAt, e.EndedAt); err != nil {
+			    (user_id, media_item_id, position_unit, duration_total,
+			     last_position, last_session_amount, total_reproductions,
+			     aggregate_amount, last_session_ended_at, updated_at)
+			 VALUES (?, ?, ?, ?, ?, ?, 1, ?, ?, ?)`,
+			userID, mediaItemID, posUnit, durToStore,
+			endPos, totalAmount, totalAmount,
+			e.EndedAt, e.EndedAt); err != nil {
 			return fmt.Errorf("insert media_progress: %w", err)
 		}
 	case selErr == nil:
 		if _, err := tx.ExecContext(ctx,
 			`UPDATE media_progress
 			 SET position_unit         = ?,
+			     duration_total        = ?,
 			     last_position         = ?,
 			     last_session_amount   = ?,
 			     total_reproductions   = ?,
@@ -187,7 +207,7 @@ func (r *PlaybackSessionRepository) End(ctx context.Context, e PlaybackEnd) erro
 			     last_session_ended_at = ?,
 			     updated_at            = ?
 			 WHERE user_id = ? AND media_item_id = ?`,
-			posUnit, endPos, totalAmount,
+			posUnit, durToStore, endPos, totalAmount,
 			existingReps+1, existingAgg+totalAmount,
 			e.EndedAt, e.EndedAt,
 			userID, mediaItemID); err != nil {

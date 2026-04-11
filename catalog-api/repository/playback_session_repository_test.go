@@ -142,6 +142,60 @@ func TestPlaybackSessionRepository_HandlesBookPages(t *testing.T) {
 	require.Equal(t, int64(20), prog.LastSessionAmount)
 }
 
+func TestPlaybackSessionRepository_PersistsDurationTotal(t *testing.T) {
+	db := newPlaybackTestDB(t)
+	repo := NewPlaybackSessionRepository(db)
+	ctx := context.Background()
+
+	// First session ends without duration_total — field stays
+	// null even though we accumulated position.
+	sess1, err := repo.Start(ctx, PlaybackStart{
+		UserID: 1, MediaItemID: 11, PositionUnit: "seconds",
+	})
+	require.NoError(t, err)
+	require.NoError(t, repo.End(ctx, PlaybackEnd{
+		SessionID: sess1, EndPosition: 600, TotalAmount: 600,
+	}))
+	p, err := repo.GetProgress(ctx, 1, 11)
+	require.NoError(t, err)
+	require.Nil(t, p.DurationTotal)
+
+	// Second session passes the parsed total — the upsert
+	// populates duration_total and keeps it on later writes.
+	dur := int64(7200)
+	sess2, err := repo.Start(ctx, PlaybackStart{
+		UserID: 1, MediaItemID: 11, PositionUnit: "seconds",
+	})
+	require.NoError(t, err)
+	require.NoError(t, repo.End(ctx, PlaybackEnd{
+		SessionID:     sess2,
+		EndPosition:   1200,
+		TotalAmount:   600,
+		DurationTotal: &dur,
+	}))
+	p, err = repo.GetProgress(ctx, 1, 11)
+	require.NoError(t, err)
+	require.NotNil(t, p.DurationTotal)
+	require.Equal(t, int64(7200), *p.DurationTotal)
+
+	// Third session without duration_total — previously learned
+	// value is preserved so the card badge never flickers to
+	// "unknown total" after one bad caller.
+	sess3, err := repo.Start(ctx, PlaybackStart{
+		UserID: 1, MediaItemID: 11, PositionUnit: "seconds",
+	})
+	require.NoError(t, err)
+	require.NoError(t, repo.End(ctx, PlaybackEnd{
+		SessionID: sess3, EndPosition: 1800, TotalAmount: 600,
+	}))
+	p, err = repo.GetProgress(ctx, 1, 11)
+	require.NoError(t, err)
+	require.NotNil(t, p.DurationTotal)
+	require.Equal(t, int64(7200), *p.DurationTotal)
+	require.Equal(t, int64(3), p.TotalReproductions)
+	require.Equal(t, int64(1800), p.AggregateAmount)
+}
+
 func TestPlaybackSessionRepository_ListHistoryEmpty(t *testing.T) {
 	db := newPlaybackTestDB(t)
 	repo := NewPlaybackSessionRepository(db)
