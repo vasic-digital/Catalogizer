@@ -157,6 +157,20 @@ interface CatalogizerApi {
 
     @GET("user/continue-watching")
     suspend fun getContinueWatching(): Response<List<MediaItem>>
+
+    // Playback history / progress endpoints (mirrored from catalog-api's
+    // /api/v1/entities/:id/{progress,history}). Returns raw JsonObject so
+    // callers can tolerate schema drift without recompiling DTOs.
+    @GET("api/v1/entities/{id}/progress")
+    suspend fun getEntityProgress(
+        @Path("id") id: Long
+    ): Response<kotlinx.serialization.json.JsonObject>
+
+    @GET("api/v1/entities/{id}/history")
+    suspend fun getEntityHistory(
+        @Path("id") id: Long,
+        @Query("limit") limit: Int = 50
+    ): Response<kotlinx.serialization.json.JsonObject>
 }
 
 /**

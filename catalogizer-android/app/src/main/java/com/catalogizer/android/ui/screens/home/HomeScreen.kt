@@ -1,6 +1,7 @@
 package com.catalogizer.android.ui.screens.home
 
-import androidx.compose.foundation.clickable
+import androidx.compose.foundation.ExperimentalFoundationApi
+import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
@@ -18,6 +19,10 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.catalogizer.android.data.models.MediaItem
+import com.catalogizer.android.data.playback.PlaybackRepository
+import com.catalogizer.android.data.playback.UiPlaybackProgress
+import com.catalogizer.android.ui.components.HistoryDialog
+import com.catalogizer.android.ui.components.ProgressBadge
 import com.catalogizer.android.ui.viewmodel.HomeViewModel
 
 /**
@@ -34,8 +39,13 @@ fun HomeScreen(
 ) {
     val recentMedia by viewModel.recentMedia.collectAsStateWithLifecycle()
     val favoriteMedia by viewModel.favoriteMedia.collectAsStateWithLifecycle()
+    val progressById by viewModel.progressById.collectAsStateWithLifecycle()
     val isLoading by viewModel.isLoading.collectAsStateWithLifecycle()
     val error by viewModel.error.collectAsStateWithLifecycle()
+    var historyTarget by remember { mutableStateOf<MediaItem?>(null) }
+    val container = com.catalogizer.android.DependencyContainer.getInstance(
+        androidx.compose.ui.platform.LocalContext.current
+    )
 
     LaunchedEffect(Unit) {
         viewModel.loadHomeData()
@@ -97,7 +107,9 @@ fun HomeScreen(
                         MediaSection(
                             title = "Recently Added",
                             items = recentMedia,
-                            onItemClick = onNavigateToMediaDetail
+                            progressById = progressById,
+                            onItemClick = onNavigateToMediaDetail,
+                            onItemLongPress = { item -> historyTarget = item },
                         )
                     }
                 }
@@ -107,7 +119,9 @@ fun HomeScreen(
                         MediaSection(
                             title = "Favorites",
                             items = favoriteMedia,
-                            onItemClick = onNavigateToMediaDetail
+                            progressById = progressById,
+                            onItemClick = onNavigateToMediaDetail,
+                            onItemLongPress = { item -> historyTarget = item },
                         )
                     }
                 }
@@ -138,13 +152,24 @@ fun HomeScreen(
             }
         }
     }
+
+    historyTarget?.let { target ->
+        HistoryDialog(
+            mediaItemId = target.id,
+            mediaTitle = target.title,
+            repository = container.playbackRepository,
+            onDismiss = { historyTarget = null },
+        )
+    }
 }
 
 @Composable
 private fun MediaSection(
     title: String,
     items: List<MediaItem>,
-    onItemClick: (Long) -> Unit
+    progressById: Map<Long, UiPlaybackProgress>,
+    onItemClick: (Long) -> Unit,
+    onItemLongPress: (MediaItem) -> Unit,
 ) {
     Column {
         Text(
@@ -160,22 +185,27 @@ private fun MediaSection(
             items(items, key = { it.id }) { mediaItem ->
                 MediaCard(
                     item = mediaItem,
-                    onClick = { onItemClick(mediaItem.id) }
+                    progress = progressById[mediaItem.id],
+                    onClick = { onItemClick(mediaItem.id) },
+                    onLongClick = { onItemLongPress(mediaItem) },
                 )
             }
         }
     }
 }
 
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
 private fun MediaCard(
     item: MediaItem,
-    onClick: () -> Unit
+    progress: UiPlaybackProgress?,
+    onClick: () -> Unit,
+    onLongClick: () -> Unit,
 ) {
     Card(
         modifier = Modifier
             .width(140.dp)
-            .clickable(onClick = onClick),
+            .combinedClickable(onClick = onClick, onLongClick = onLongClick),
         shape = MaterialTheme.shapes.medium
     ) {
         Column {
@@ -197,6 +227,12 @@ private fun MediaCard(
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
                     }
+                }
+                if (progress != null) {
+                    ProgressBadge(
+                        progress = progress,
+                        modifier = Modifier.align(Alignment.BottomStart),
+                    )
                 }
             }
 

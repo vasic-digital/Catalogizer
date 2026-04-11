@@ -119,6 +119,9 @@ class DependencyContainer(private val context: Context) {
         MediaRepository(api, database.mediaDao())
     }
 
+    val playbackRepository: com.catalogizer.android.data.playback.PlaybackRepository
+        get() = com.catalogizer.android.data.playback.PlaybackRepository(api)
+
     // Sync Manager
     val syncManager: SyncManager by lazy {
         SyncManager(database, api, authRepository, mediaRepository, context)
@@ -149,7 +152,7 @@ class DependencyContainer(private val context: Context) {
     }
 
     fun createHomeViewModel(): HomeViewModel {
-        return HomeViewModel(mediaRepository)
+        return HomeViewModel(mediaRepository, playbackRepository)
     }
 
     fun createSearchViewModel(): SearchViewModel {
