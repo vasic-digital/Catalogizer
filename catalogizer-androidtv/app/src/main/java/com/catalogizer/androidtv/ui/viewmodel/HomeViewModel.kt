@@ -18,7 +18,13 @@ import kotlinx.coroutines.launch
  * recommendations, trending items, catalog statistics, and loading/error state.
  */
 data class HomeUiState(
-    val isLoading: Boolean = false,
+    // Default to loading=true so the first compose frame renders the
+    // loading indicator instead of the "empty library" branch. Without
+    // this, there's a one-frame window between initial composition and
+    // LaunchedEffect(loadHomeData) where the screen shows nothing —
+    // which HelixQA captured as the "black screen after login"
+    // (TICKET-002-androidtv-black-screen-transition).
+    val isLoading: Boolean = true,
     val error: String? = null,
     val continueWatching: List<MediaItem> = emptyList(),
     val recentMovies: List<MediaItem> = emptyList(),

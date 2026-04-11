@@ -174,7 +174,16 @@ fun SettingsScreen(
         }
     }
 
-    Box(modifier = Modifier.fillMaxSize()) {
+    // TICKET-003-androidtv-settings-loading-overlay: explicit opaque
+    // background so nothing bleeds through from a sibling route during
+    // navigation transitions. Previously the Box had no background and
+    // the home screen's "Loading your media collection…" overlay could
+    // be captured behind the settings controls mid-transition.
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(Color.Black)
+    ) {
         Column(
             modifier = Modifier
                 .fillMaxSize()
