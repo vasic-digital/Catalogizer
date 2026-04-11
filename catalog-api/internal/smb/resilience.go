@@ -150,7 +150,9 @@ type CacheEntry struct {
 	SourceID    string                 `json:"source_id"`
 }
 
-// HealthChecker periodically checks SMB source health
+// HealthChecker periodically checks SMB source health.
+// inFlight tracks checks currently running to prevent goroutine stacking
+// when a check takes longer than the tick interval.
 type HealthChecker struct {
 	manager  *ResilientSMBManager
 	interval time.Duration
@@ -159,6 +161,9 @@ type HealthChecker struct {
 	ticker   *time.Ticker
 	ctx      context.Context
 	cancel   context.CancelFunc
+
+	inFlightMu sync.Mutex
+	inFlight   map[string]bool
 }
 
 // NewResilientSMBManager creates a new resilient SMB manager
@@ -195,6 +200,7 @@ func NewHealthChecker(manager *ResilientSMBManager, interval, timeout time.Durat
 		logger:   logger,
 		ctx:      ctx,
 		cancel:   cancel,
+		inFlight: make(map[string]bool),
 	}
 }
 
@@ -880,7 +886,32 @@ func (h *HealthChecker) performHealthChecks() {
 	}
 	h.manager.mutex.RUnlock()
 
+	// Skip any source whose previous health check is still running. This
+	// prevents goroutine stacking when a check takes longer than the tick
+	// interval (which would otherwise spawn unbounded fan-out over time).
+	// Health-check goroutines are tracked on the manager's WaitGroup so
+	// graceful shutdown can wait for them.
 	for _, source := range sources {
-		go h.manager.checkSourceHealth(source)
+		srcID := source.ID
+		h.inFlightMu.Lock()
+		if h.inFlight[srcID] {
+			h.inFlightMu.Unlock()
+			h.logger.Debug("Skipping health check: previous check still running",
+				zap.String("source_id", srcID))
+			continue
+		}
+		h.inFlight[srcID] = true
+		h.inFlightMu.Unlock()
+
+		h.manager.wg.Add(1)
+		go func(s *SMBSource) {
+			defer h.manager.wg.Done()
+			defer func() {
+				h.inFlightMu.Lock()
+				delete(h.inFlight, s.ID)
+				h.inFlightMu.Unlock()
+			}()
+			h.manager.checkSourceHealth(s)
+		}(source)
 	}
 }
