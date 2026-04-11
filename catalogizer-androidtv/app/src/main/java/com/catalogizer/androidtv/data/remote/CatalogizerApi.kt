@@ -44,6 +44,36 @@ interface CatalogizerApi {
     @GET("api/v1/entities/{id}/stream")
     suspend fun getEntityStream(@Path("id") id: Long): Response<kotlinx.serialization.json.JsonObject>
 
+    // Playback session tracking — records one row in the
+    // backend playback_sessions table for every reproduction
+    // session and surfaces the rolled-up per-user progress
+    // summary the card ProgressBadge consumes.
+    @POST("api/v1/playback/sessions/start")
+    suspend fun startPlaybackSession(
+        @Body body: Map<String, @JvmSuppressWildcards Any>
+    ): Response<kotlinx.serialization.json.JsonObject>
+
+    @POST("api/v1/playback/sessions/progress")
+    suspend fun progressPlaybackSession(
+        @Body body: Map<String, @JvmSuppressWildcards Any>
+    ): Response<Unit>
+
+    @POST("api/v1/playback/sessions/end")
+    suspend fun endPlaybackSession(
+        @Body body: Map<String, @JvmSuppressWildcards Any>
+    ): Response<Unit>
+
+    @GET("api/v1/entities/{id}/progress")
+    suspend fun getEntityProgress(
+        @Path("id") id: Long
+    ): Response<kotlinx.serialization.json.JsonObject>
+
+    @GET("api/v1/entities/{id}/history")
+    suspend fun getEntityHistory(
+        @Path("id") id: Long,
+        @Query("limit") limit: Int = 50
+    ): Response<kotlinx.serialization.json.JsonObject>
+
     @GET("api/v1/media/{id}")
     suspend fun getMediaById(@Path("id") id: Long): Response<MediaItem>
 

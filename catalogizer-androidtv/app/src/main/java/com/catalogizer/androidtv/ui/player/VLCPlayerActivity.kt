@@ -68,6 +68,17 @@ class VLCPlayerActivity : ComponentActivity() {
     private var progressTrackingJob: kotlinx.coroutines.Job? = null
     private var resumePositionMs: Long = 0
 
+    /**
+     * Records a single reproduction session against the backend
+     * /api/v1/playback/sessions endpoints so the ProgressBadge
+     * on every media card can show duration, current position,
+     * last session amount and total reproductions.
+     *
+     * Lazily constructed in onCreate after the DependencyContainer
+     * has a ready API client.
+     */
+    private lateinit var playbackTracker: com.catalogizer.androidtv.data.playback.PlaybackTracker
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
@@ -78,6 +89,12 @@ class VLCPlayerActivity : ComponentActivity() {
 
         // Initialize VLC
         vlcPlayer = VLCPlayer(this)
+
+        // Initialise the backend playback tracker so the card
+        // ProgressBadge and HistoryDrawer reflect this session.
+        playbackTracker = com.catalogizer.androidtv.data.playback.PlaybackTracker(
+            com.catalogizer.androidtv.DependencyContainer.getInstance(this).api
+        )
 
         setContent {
             VLCPlayerScreen(
@@ -151,7 +168,23 @@ class VLCPlayerActivity : ComponentActivity() {
 
                     // Start playback
                     vlcPlayer.play(resolvedUrl)
-                    
+
+                    // Open a backend playback session so the
+                    // ProgressBadge and HistoryDrawer reflect
+                    // this reproduction. Session id is cached
+                    // inside the tracker; onDestroy issues end().
+                    playbackTracker.start(
+                        mediaItemId = mediaId,
+                        fileId = null,
+                        positionUnit = "seconds",
+                        startPosition = resumePositionMs / 1000L,
+                    )
+                    playbackTracker.startProgressTicker(
+                        intervalMs = 15_000L,
+                        getCurrentPosition = { vlcPlayer.currentPosition.value / 1000L },
+                        getTotalAmount = { vlcPlayer.currentPosition.value / 1000L },
+                    )
+
                     // Seek to resume position if available
                     if (resumePositionMs > 0) {
                         delay(1000) // Wait for player to be ready
@@ -232,7 +265,23 @@ class VLCPlayerActivity : ComponentActivity() {
         super.onDestroy()
         // Save final progress before destroying
         progressTrackingJob?.cancel()
+
+        // Finalise the backend playback session so the rolled
+        // up media_progress row reflects the last-known
+        // position and increments total_reproductions.
+        val finalPositionSec = vlcPlayer.currentPosition.value / 1000L
+        val durationSec = vlcPlayer.duration.value / 1000L
+        val completed = durationSec > 0 &&
+            finalPositionSec >= (durationSec - 5L) // within 5s of end
+
         lifecycleScope.launch {
+            if (::playbackTracker.isInitialized && playbackTracker.isActive()) {
+                playbackTracker.end(
+                    endPosition = finalPositionSec,
+                    totalAmount = finalPositionSec,
+                    completed = completed,
+                )
+            }
             saveWatchProgress()
             vlcPlayer.release()
         }
