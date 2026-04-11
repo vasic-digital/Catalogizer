@@ -164,6 +164,11 @@ dependencies {
     // Datastore
     implementation("androidx.datastore:datastore-preferences:1.0.0")
 
+    // Security: EncryptedSharedPreferences for persisting the JWT
+    // session across cold start / force-stop. Uses Android keystore-
+    // backed AES-256-GCM; no plaintext token ever touches disk.
+    implementation("androidx.security:security-crypto:1.1.0-alpha06")
+
     // Room Database
     implementation("androidx.room:room-runtime:2.6.1")
     implementation("androidx.room:room-ktx:2.6.1")
