@@ -1096,14 +1096,18 @@ func (h *MediaEntityHandler) lazyEnrichEntities(entityIDs []int64) {
 				// Log but continue
 			}
 				if result.overview != "" {
-					_, _ = h.db.ExecContext(ctx,
+					if _, execErr := h.db.ExecContext(ctx,
 						`UPDATE media_items SET description = ? WHERE id = ? AND (description IS NULL OR description = '')`,
-						result.overview, id)
+						result.overview, id); execErr != nil {
+						logging.Warnf("Failed to update media description from TMDB (id=%d): %v", id, execErr)
+					}
 				}
 				if result.rating != nil && *result.rating > 0 {
-					_, _ = h.db.ExecContext(ctx,
+					if _, execErr := h.db.ExecContext(ctx,
 						`UPDATE media_items SET rating = ? WHERE id = ? AND (rating IS NULL OR rating = 0)`,
-						*result.rating, id)
+						*result.rating, id); execErr != nil {
+						logging.Warnf("Failed to update media rating from TMDB (id=%d): %v", id, execErr)
+					}
 				}
 				time.Sleep(250 * time.Millisecond) // TMDB rate limit
 			}
