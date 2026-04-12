@@ -188,18 +188,37 @@ class VLCPlayer(private val context: Context) {
         mediaPlayer?.setEventListener(eventListener)
     }
 
+    private var pendingUri: String? = null
+
     /**
-     * Attach video layout for display
+     * Attach video layout for display. If [play] was called before the
+     * surface was ready (common in Compose where `AndroidView.factory`
+     * runs on the next frame after `setContent`), the pending URI is
+     * played immediately after the views are attached — this is the fix
+     * for the "Media opening but no HTTP GET" issue on Mi Box 4
+     * (FINAL-REPORT N2).
      */
     fun attachView(videoLayout: VLCVideoLayout) {
         this.videoLayout = videoLayout
         mediaPlayer?.attachViews(videoLayout, null, false, false)
+        pendingUri?.let { uri ->
+            pendingUri = null
+            play(uri)
+        }
     }
 
     /**
-     * Load and play media from URI
+     * Load and play media from URI. If the video surface has not been
+     * attached yet (no prior [attachView] call), the URI is stored and
+     * playback defers to [attachView] so the surface receives the
+     * first frame.
      */
     fun play(uri: String) {
+        if (videoLayout == null) {
+            Log.d(TAG, "play() deferred — surface not attached yet")
+            pendingUri = uri
+            return
+        }
         val vlc = libVLC
         val mp = mediaPlayer
         if (vlc == null || mp == null) {
