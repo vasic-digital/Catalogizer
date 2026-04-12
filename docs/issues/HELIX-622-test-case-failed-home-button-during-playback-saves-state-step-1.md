@@ -1,0 +1,248 @@
+---
+id: HELIX-622
+severity: critical
+category: functional
+platform: androidtv
+screen: 
+status: open
+found_date: 2026-04-12
+---
+
+# Test Case Failed: Home Button During Playback Saves State - Step 1
+
+Step: Play media and press Home
+Action: keypress: KEYCODE_HOME
+Expected: Playback pauses. Player position (15 min) is saved. App goes to background cleanly
+Actual: Keypress failed: context deadline exceeded
+
+## Related Issues
+
+- HELIX-155: App crash detected during test: Login Form Test
+- HELIX-156: App crash detected during test: Register Form Test
+- HELIX-157: App crash detected during test: Layout Test
+- HELIX-158: App crash detected during test: Navigation Test
+- HELIX-159: App crash detected during test: Entity Detail Test
+- HELIX-160: App crash detected during test: Security Test
+- HELIX-161: App crash detected during test: Known Issue Test - Insecure Password Input
+- HELIX-162: App crash detected during test: Assets API Test
+- HELIX-163: App crash detected during test: Browse API Test
+- HELIX-164: App crash detected during test: Collections API Test
+- HELIX-165: App crash detected during test: Challenges API Test
+- HELIX-166: App crash detected during test: Known Issue Test - Lack of Feedback on Form Submission
+- HELIX-167: App crash detected during test: Error Handling Test
+- HELIX-168: App crash detected during test: Performance Test
+- HELIX-169: App crash detected during test: Known Issue Test - Inconsistent Label Alignment
+- HELIX-179: App crash detected during test: Insecure Password Input Test
+- HELIX-180: App crash detected during test: Memory Leak Test
+- HELIX-181: App crash detected during test: Lack of Feedback on Form Submission Test
+- HELIX-182: App crash detected during test: Inconsistent Label Alignment Test
+- HELIX-184: App crash detected during test: Successful User Login (LoginForm)
+- HELIX-185: App crash detected during test: User Registration with Valid Data (RegisterForm)
+- HELIX-186: App crash detected during test: Navigation Menu Accessibility (HELIX-055, HELIX-113, HELIX-125)
+- HELIX-187: App crash detected during test: Search Functionality with Valid Query (HELIX-035, HELIX-041, HELIX-062, HELIX-114, HELIX-122, HELIX-153)
+- HELIX-188: App crash detected during test: Entity Detail Page Load and Display
+- HELIX-189: App crash detected during test: Memory Leak Test (HELIX-178, HELIX-180)
+- HELIX-190: App crash detected during test: Unreachable API Handling (HELIX-037, HELIX-038, HELIX-167)
+- HELIX-191: App crash detected during test: Accessibility of Keyboard for Users with Disabilities (HELIX-177)
+- HELIX-192: App crash detected during test: App Crash During Navigation (HELIX-158)
+- HELIX-193: App crash detected during test: Incorrect Password Login Attempt
+- HELIX-194: App crash detected during test: Password Field Display (HELIX-093)
+- HELIX-195: App crash detected during test: Password Field 'Show/Hide' Option (HELIX-006)
+- HELIX-196: App crash detected during test: Search Functionality with No Results (HELIX-031, HELIX-138, HELIX-153)
+- HELIX-197: App crash detected during test: API Endpoint: GET /api/v1/media/:id - Valid Request
+- HELIX-198: App crash detected during test: API Endpoint: GET /api/v1/media/:id - Invalid ID
+- HELIX-199: App crash detected during test: API Endpoint: POST /api/v1/auth/login - Invalid Credentials
+- HELIX-200: App crash detected during test: Keyboard Layout Optimization for Search (HELIX-059, HELIX-140, HELIX-176)
+- HELIX-201: App crash detected during test: D-pad Navigation Consistency (HELIX-174)
+- HELIX-202: App crash detected during test: API Endpoint: GET /api/v1/scans - Retrieve Scan Jobs
+- HELIX-203: App crash detected during test: Search Placeholder Text (HELIX-004, HELIX-139)
+- HELIX-204: App crash detected during test: Color Contrast and Readability
+- HELIX-205: App crash detected during test: Keyboard Accessibility for Users with Disabilities
+- HELIX-206: App crash detected during test: GET /api/v1/media/:id - Valid Request
+- HELIX-207: App crash detected during test: Handling Unreachable APIs
+- HELIX-208: App crash detected during test: Successful User Login via D-pad
+- HELIX-209: App crash detected during test: D-pad Navigation on LoginForm
+- HELIX-210: App crash detected during test: LoginForm UI Consistency & Contrast
+- HELIX-211: App crash detected during test: Main Navigation Menu Accessibility
+- HELIX-212: App crash detected during test: Memory Leak Detection on androidtv
+- HELIX-213: App crash detected during test: User Registration with Valid Data
+- HELIX-214: App crash detected during test: Search Functionality with Valid Query
+- HELIX-215: App crash detected during test: Search Functionality with No Results
+- HELIX-216: App crash detected during test: Keyboard Layout and Overlap in Search
+- HELIX-217: App crash detected during test: GET /api/v1/media/:id - Invalid ID
+- HELIX-218: App crash detected during test: Entity Actions and Related Content
+- HELIX-219: App crash detected during test: Login with Invalid Credentials
+- HELIX-220: App crash detected during test: Password Field Display and 'Show Password' Option
+- HELIX-221: App crash detected during test: Deep Linking and Route Navigation
+- HELIX-222: App crash detected during test: Search Feedback and Placeholder Text
+- HELIX-223: App crash detected during test: Successful User Login with D-pad Navigation
+- HELIX-224: App crash detected during test: Insecure Password Input & Show/Hide Option
+- HELIX-225: App crash detected during test: Backward Navigation Functionality
+- HELIX-226: App crash detected during test: Initial Application Loading Time
+- HELIX-227: App crash detected during test: Registration with Existing Username
+- HELIX-228: App crash detected during test: Registration with Mismatched Passwords
+- HELIX-229: App crash detected during test: Button Responsiveness and Visual Feedback
+- HELIX-230: App crash detected during test: Consistent Button Styling and Spacing
+- HELIX-231: App crash detected during test: Error Message Display and Recovery Options
+- HELIX-232: App crash detected during test: Handling Unreachable APIs (e.g. /entities/stats)
+- HELIX-233: App crash detected during test: Successful User Login with D-pad
+- HELIX-234: App crash detected during test: Password Field Display and Show/Hide Option
+- HELIX-235: App crash detected during test: User Registration with Valid Data via D-pad
+- HELIX-236: App crash detected during test: Color Contrast and Readability Across Screens
+- HELIX-237: App crash detected during test: Search Functionality with Valid Query via D-pad
+- HELIX-238: App crash detected during test: Login with Invalid Credentials via D-pad
+- HELIX-239: App crash detected during test: Entity Actions and Related Content Navigation
+- HELIX-240: App crash detected during test: Search Functionality with No Results Found
+- HELIX-241: App crash detected during test: Handling Unreachable APIs (e.g., /entities/stats)
+- HELIX-242: App crash detected during test: Main Navigation Menu Accessibility via D-pad
+- HELIX-243: App crash detected during test: GET /api/v1/scans - Retrieve Scan Jobs
+- HELIX-244: App crash detected during test: Search Placeholder Text and Feedback
+- HELIX-245: App ANR detected during test: Color Contrast and Readability Across Screens
+- HELIX-246: App ANR detected during test: Keyboard Accessibility for Users with Disabilities
+- HELIX-247: App ANR detected during test: Handling Unreachable APIs (e.g., /entities/stats)
+- HELIX-248: App ANR detected during test: GET /api/v1/media/:id - Valid Request
+- HELIX-249: App ANR detected during test: Entity Detail Page Load and Display
+- HELIX-250: App ANR detected during test: Successful User Login via D-pad
+- HELIX-251: App ANR detected during test: Password Field Display and 'Show Password' Option
+- HELIX-252: App ANR detected during test: Main Navigation Menu Accessibility via D-pad
+- HELIX-253: App ANR detected during test: Memory Leak Detection during Extended Use
+- HELIX-254: App ANR detected during test: User Registration with Valid Data via D-pad
+- HELIX-255: App ANR detected during test: Search Functionality with Valid Query via D-pad
+- HELIX-256: App ANR detected during test: Keyboard Layout and Overlap in Search
+- HELIX-257: App ANR detected during test: GET /api/v1/media/:id - Invalid ID
+- HELIX-258: App ANR detected during test: Browse User Collections
+- HELIX-259: App ANR detected during test: Entity Actions and Related Content Navigation
+- HELIX-260: App ANR detected during test: Download File from Entity Detail
+- HELIX-261: App ANR detected during test: General Error Message Display and Recovery Options
+- HELIX-262: App ANR detected during test: Login with Invalid Credentials via D-pad
+- HELIX-263: App ANR detected during test: Backward Navigation Functionality
+- HELIX-264: App ANR detected during test: Initial Application Loading Time
+- HELIX-265: App ANR detected during test: User Registration with Existing Username
+- HELIX-266: App ANR detected during test: User Registration with Mismatched Passwords
+- HELIX-267: App ANR detected during test: Search Functionality with No Results Found
+- HELIX-268: App ANR detected during test: Search Placeholder Text and Feedback
+- HELIX-269: App ANR detected during test: SMB Browse Functionality with D-pad
+- HELIX-270: App ANR detected during test: Subtitle Search and Selection for Media
+- HELIX-271: App ANR detected during test: Consistent Button Styling and Spacing
+- HELIX-272: App ANR detected during test: Analytics Event Tracking
+- HELIX-273: App ANR detected during test: GET /api/v1/scans - Retrieve Scan Jobs
+- HELIX-274: App ANR detected during test: Retrieve Application Configuration
+- HELIX-275: App ANR detected during test: Trending Recommendations Display
+- HELIX-276: App ANR detected during test: Logo and Text Alignment
+- HELIX-277: App ANR detected during test: Font Sizes Consistency
+- HELIX-508: Test Case Failed: TV Cold Start Launch - Step 1
+- HELIX-509: Test Case Failed: TV Splash Screen Display - Step 1
+- HELIX-510: Test Case Failed: TV Home Initial Focus - Step 1
+- HELIX-511: Test Case Failed: TV Login Page Display - Step 1
+- HELIX-512: Test Case Failed: TV Login D-Pad Navigation - Step 1
+- HELIX-513: Test Case Failed: TV Login Success - Step 1
+- HELIX-514: Test Case Failed: TV Login Error Display - Step 1
+- HELIX-515: Test Case Failed: TV Home Screen Loads - Step 1
+- HELIX-516: Test Case Failed: TV Media Carousel - Step 1
+- HELIX-517: Test Case Failed: TV Category Rows - Step 1
+- HELIX-518: Test Case Failed: TV Focus Management - Step 1
+- HELIX-519: Test Case Failed: TV Top Bar Navigation - Step 1
+- HELIX-520: Test Case Failed: TV Continue Watching Row - Step 1
+- HELIX-521: Test Case Failed: TV Search Screen Opens - Step 1
+- HELIX-522: Test Case Failed: TV Voice Search - Step 1
+- HELIX-523: Test Case Failed: TV Search Results Display - Step 1
+- HELIX-524: Test Case Failed: TV Search No Results - Step 1
+- HELIX-525: Test Case Failed: TV Detail Screen Opens - Step 1
+- HELIX-526: Test Case Failed: TV Detail Poster and Backdrop - Step 1
+- HELIX-527: Test Case Failed: TV Detail Play Action - Step 1
+- HELIX-528: Test Case Failed: TV Detail Metadata - Step 1
+- HELIX-529: Test Case Failed: TV Detail Related Items - Step 1
+- HELIX-530: Test Case Failed: TV Player Starts Playback - Step 1
+- HELIX-531: Test Case Failed: TV Player D-Pad Controls - Step 1
+- HELIX-532: Test Case Failed: TV Player Progress Tracking - Step 1
+- HELIX-533: Test Case Failed: TV Player Resume Playback - Step 1
+- HELIX-534: Test Case Failed: TV Player Back Button Exit - Step 1
+- HELIX-535: Test Case Failed: TV Settings Screen Opens - Step 1
+- HELIX-536: Test Case Failed: TV Settings D-Pad Navigation - Step 1
+- HELIX-537: Test Case Failed: TV Settings Server Configuration - Step 1
+- HELIX-538: Test Case Failed: TV Settings Theme - Step 1
+- HELIX-539: Test Case Failed: TV D-Pad Full Navigation - Step 1
+- HELIX-540: Test Case Failed: TV Focus Always Visible - Step 1
+- HELIX-541: Test Case Failed: TV Back Key Behavior - Step 1
+- HELIX-542: Test Case Failed: TV Home Key Returns to Launcher - Step 1
+- HELIX-543: Test Case Failed: TV Focus Restore After Navigation - Step 1
+- HELIX-544: Test Case Failed: User Flow: Launch TV App - Step 1
+- HELIX-545: Test Case Failed: User Flow: Login on TV - Step 1
+- HELIX-546: Test Case Failed: User Flow: Navigate Home Rows - Step 1
+- HELIX-547: Test Case Failed: User Flow: Browse Hero Carousel - Step 1
+- HELIX-548: Test Case Failed: User Flow: Select Item and View Detail - Step 1
+- HELIX-549: Test Case Failed: User Flow: Play Media and Return - Step 1
+- HELIX-550: Test Case Failed: D-pad Stress: Rapid Direction Changes - Step 1
+- HELIX-551: Test Case Failed: D-pad Stress: Hold Direction Key - Step 1
+- HELIX-552: Test Case Failed: D-pad Stress: Diagonal Presses - Step 1
+- HELIX-553: Test Case Failed: Focus Chain: Home Screen Elements - Step 1
+- HELIX-554: Test Case Failed: Focus Chain: Detail Screen Elements - Step 1
+- HELIX-555: Test Case Failed: Focus Chain: Search Screen Elements - Step 1
+- HELIX-556: Test Case Failed: Focus Chain: Settings Screen Elements - Step 1
+- HELIX-557: Test Case Failed: Remote: Play/Pause Button - Step 1
+- HELIX-558: Test Case Failed: Remote: Stop Button - Step 1
+- HELIX-559: Test Case Failed: Remote: Back Button - Step 1
+- HELIX-560: Test Case Failed: Remote: Home Button - Step 1
+- HELIX-561: Test Case Failed: Remote: Menu Button - Step 1
+- HELIX-562: Test Case Failed: Voice Search: Speak Query - Step 1
+- HELIX-563: Test Case Failed: Voice Search: Results Display Correctly - Step 1
+- HELIX-564: Test Case Failed: 10-Foot UI: Text Readable at Distance - Step 1
+- HELIX-565: Test Case Failed: 10-Foot UI: Buttons Large Enough - Step 1
+- HELIX-566: Test Case Failed: 10-Foot UI: Contrast Sufficient - Step 1
+- HELIX-567: Test Case Failed: Idle: App Handles Screensaver Activation - Step 1
+- HELIX-568: Test Case Failed: Idle: Resume After Screensaver - Step 1
+- HELIX-569: Test Case Failed: Server URL Field on Login - Step 1
+- HELIX-570: Test Case Failed: Discover Button Present - Step 1
+- HELIX-571: Test Case Failed: Auto-Discovery on Launch - Step 1
+- HELIX-572: Test Case Failed: Manual Server URL Entry - Step 1
+- HELIX-573: Test Case Failed: Server URL Persists Across Restarts - Step 1
+- HELIX-574: Test Case Failed: Discovered Server Picker - Step 1
+- HELIX-575: Test Case Failed: Default URL is catalogizer.dev - Step 1
+- HELIX-576: Test Case Failed: Switch Server at Runtime - Step 1
+- HELIX-577: Test Case Failed: TV Default Channel on Home Screen - Step 1
+- HELIX-578: Test Case Failed: TV Movies Category Channel - Step 1
+- HELIX-579: Test Case Failed: TV Channel Click Opens Detail - Step 1
+- HELIX-580: Test Case Failed: TV Channel Click Plays Immediately - Step 1
+- HELIX-581: Test Case Failed: TV Watch Next Row Populated - Step 1
+- HELIX-582: Test Case Failed: TV Watch Next Resume Playback - Step 1
+- HELIX-583: Test Case Failed: TV Watch Next Auto Episode - Step 1
+- HELIX-584: Test Case Failed: TV Channel Cleanup on Logout - Step 1
+- HELIX-585: Test Case Failed: TV Channel Tap Behavior Settings - Step 1
+- HELIX-586: Test Case Failed: TV Channel Deep Link Without Auth - Step 1
+- HELIX-587: Test Case Failed: TV Channel D-pad Navigation - Step 1
+- HELIX-588: Test Case Failed: TV Channel Refresh After Content Change - Step 1
+- HELIX-589: Test Case Failed: TV Player Video Start Verification - Step 1
+- HELIX-590: Test Case Failed: TV Player D-Pad Seek - Step 1
+- HELIX-591: Test Case Failed: TV Player Play/Pause Toggle - Step 1
+- HELIX-592: Test Case Failed: TV Player Speed Control - Step 1
+- HELIX-593: Test Case Failed: TV Channel Direct Playback - Step 1
+- HELIX-594: Test Case Failed: TV Cold Start Launch - Executable - Step 1
+- HELIX-595: Test Case Failed: TV Login - Full Executable Flow - Step 1
+- HELIX-596: Test Case Failed: TV Home Navigation - Executable - Step 1
+- HELIX-597: Test Case Failed: TV Media Playback - Executable - Step 1
+- HELIX-598: Test Case Failed: Force Stop App - Step 1
+- HELIX-599: Test Case Failed: Cold Start - Full Launch Sequence - Step 2
+- HELIX-600: Test Case Failed: Login - Full Credential Entry - Step 1
+- HELIX-601: Test Case Failed: Navigate Home Screen - Step 1
+- HELIX-602: Test Case Failed: Background and Resume - Step 1
+- HELIX-603: Test Case Failed: Login - Invalid Credentials - Step 1
+- HELIX-604: Test Case Failed: Playback session lifecycle - start -> progress -> end - Step 1
+- HELIX-605: Test Case Failed: Playback dumpsys media session visible - Step 1
+- HELIX-606: Test Case Failed: Launch With Ethernet Disconnected - Step 1
+- HELIX-607: Test Case Failed: Memory Pressure Kill and Restore - Step 2
+- HELIX-608: Test Case Failed: Very Rapid D-Pad Input (20+ Per Second) - Step 1
+- HELIX-609: Test Case Failed: D-Pad Navigation During Loading Transition - Step 1
+- HELIX-610: Test Case Failed: Focus Lost After Dialog Dismissal - Step 2
+- HELIX-611: Test Case Failed: Focus Wrap-Around at List Boundaries - Step 2
+- HELIX-612: Test Case Failed: D-Pad Input During Row Scroll Animation - Step 1
+- HELIX-613: Test Case Failed: Long Press D-Pad Center Button - Step 1
+- HELIX-614: Test Case Failed: Simultaneous Multiple Button Press - Step 1
+- HELIX-615: Test Case Failed: Login With On-Screen Keyboard Lag - Step 2
+- HELIX-616: Test Case Failed: Login With External USB/Bluetooth Keyboard - Step 2
+- HELIX-617: Test Case Failed: Server URL With Trailing Spaces - Step 1
+- HELIX-618: Test Case Failed: Media Info for Corrupted or Incomplete File - Step 2
+- HELIX-619: Test Case Failed: Pause Playback for Over 30 Minutes Then Resume - Step 1
+- HELIX-620: Test Case Failed: Media Remote Keys on Non-Media Screen - Step 1
+- HELIX-621: Test Case Failed: Channel Up/Down on Non-Live Content - Step 1
+
+
