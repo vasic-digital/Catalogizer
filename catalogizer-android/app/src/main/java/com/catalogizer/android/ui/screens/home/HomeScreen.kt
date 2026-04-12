@@ -1,23 +1,32 @@
 package com.catalogizer.android.ui.screens.home
 
 import androidx.compose.foundation.ExperimentalFoundationApi
+import androidx.compose.foundation.background
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Settings
+import androidx.compose.material.icons.filled.Star
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalConfiguration
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import coil.compose.AsyncImage
 import com.catalogizer.android.data.models.MediaItem
 import com.catalogizer.android.data.playback.PlaybackRepository
 import com.catalogizer.android.data.playback.UiPlaybackProgress
@@ -26,8 +35,8 @@ import com.catalogizer.android.ui.components.ProgressBadge
 import com.catalogizer.android.ui.viewmodel.HomeViewModel
 
 /**
- * Home screen displaying recently added and favorite media in horizontal carousels.
- * Uses [HomeViewModel] for data loading and navigation callbacks for routing.
+ * Enterprise-grade home screen with adaptive layout for phone and tablet.
+ * Uses WindowSizeClass via screen width to adjust card sizes and grid columns.
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -46,6 +55,8 @@ fun HomeScreen(
     val container = com.catalogizer.android.DependencyContainer.getInstance(
         androidx.compose.ui.platform.LocalContext.current
     )
+    val config = LocalConfiguration.current
+    val isTablet = config.screenWidthDp >= 600
 
     LaunchedEffect(Unit) {
         viewModel.loadHomeData()
@@ -53,8 +64,20 @@ fun HomeScreen(
 
     Scaffold(
         topBar = {
-            TopAppBar(
-                title = { Text("Catalogizer") },
+            LargeTopAppBar(
+                title = {
+                    Column {
+                        Text(
+                            "Catalogizer",
+                            fontWeight = FontWeight.Bold,
+                        )
+                        Text(
+                            "Your media collection",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                    }
+                },
                 actions = {
                     IconButton(onClick = onNavigateToSearch) {
                         Icon(Icons.Default.Search, contentDescription = "Search")
@@ -62,7 +85,10 @@ fun HomeScreen(
                     IconButton(onClick = onNavigateToSettings) {
                         Icon(Icons.Default.Settings, contentDescription = "Settings")
                     }
-                }
+                },
+                colors = TopAppBarDefaults.largeTopAppBarColors(
+                    containerColor = MaterialTheme.colorScheme.surface,
+                ),
             )
         }
     ) { paddingValues ->
@@ -73,7 +99,15 @@ fun HomeScreen(
                     .padding(paddingValues),
                 contentAlignment = Alignment.Center
             ) {
-                CircularProgressIndicator()
+                Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                    CircularProgressIndicator()
+                    Spacer(modifier = Modifier.height(16.dp))
+                    Text(
+                        "Loading your media collection…",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                }
             }
         } else {
             LazyColumn(
@@ -91,13 +125,22 @@ fun HomeScreen(
                                 .padding(horizontal = 16.dp),
                             colors = CardDefaults.cardColors(
                                 containerColor = MaterialTheme.colorScheme.errorContainer
-                            )
+                            ),
+                            shape = RoundedCornerShape(16.dp),
                         ) {
-                            Text(
-                                text = errorMessage,
+                            Row(
                                 modifier = Modifier.padding(16.dp),
-                                color = MaterialTheme.colorScheme.onErrorContainer
-                            )
+                                verticalAlignment = Alignment.CenterVertically,
+                            ) {
+                                Text(
+                                    text = errorMessage,
+                                    modifier = Modifier.weight(1f),
+                                    color = MaterialTheme.colorScheme.onErrorContainer,
+                                )
+                                TextButton(onClick = { viewModel.loadHomeData() }) {
+                                    Text("Retry")
+                                }
+                            }
                         }
                     }
                 }
@@ -110,6 +153,7 @@ fun HomeScreen(
                             progressById = progressById,
                             onItemClick = onNavigateToMediaDetail,
                             onItemLongPress = { item -> historyTarget = item },
+                            isTablet = isTablet,
                         )
                     }
                 }
@@ -117,11 +161,12 @@ fun HomeScreen(
                 if (favoriteMedia.isNotEmpty()) {
                     item {
                         MediaSection(
-                            title = "Favorites",
+                            title = "Popular",
                             items = favoriteMedia,
                             progressById = progressById,
                             onItemClick = onNavigateToMediaDetail,
                             onItemLongPress = { item -> historyTarget = item },
+                            isTablet = isTablet,
                         )
                     }
                 }
@@ -137,7 +182,8 @@ fun HomeScreen(
                             Column(horizontalAlignment = Alignment.CenterHorizontally) {
                                 Text(
                                     text = "No media found",
-                                    style = MaterialTheme.typography.titleMedium
+                                    style = MaterialTheme.typography.titleMedium,
+                                    fontWeight = FontWeight.SemiBold,
                                 )
                                 Spacer(modifier = Modifier.height(8.dp))
                                 Text(
@@ -145,6 +191,10 @@ fun HomeScreen(
                                     style = MaterialTheme.typography.bodyMedium,
                                     color = MaterialTheme.colorScheme.onSurfaceVariant
                                 )
+                                Spacer(modifier = Modifier.height(24.dp))
+                                FilledTonalButton(onClick = { viewModel.loadHomeData() }) {
+                                    Text("Refresh")
+                                }
                             }
                         }
                     }
@@ -170,12 +220,17 @@ private fun MediaSection(
     progressById: Map<Long, UiPlaybackProgress>,
     onItemClick: (Long) -> Unit,
     onItemLongPress: (MediaItem) -> Unit,
+    isTablet: Boolean,
 ) {
+    val cardWidth = if (isTablet) 180.dp else 140.dp
+    val imageHeight = if (isTablet) 240.dp else 190.dp
+
     Column {
         Text(
             text = title,
             style = MaterialTheme.typography.titleLarge,
-            modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)
+            fontWeight = FontWeight.Bold,
+            modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp)
         )
 
         LazyRow(
@@ -188,6 +243,8 @@ private fun MediaSection(
                     progress = progressById[mediaItem.id],
                     onClick = { onItemClick(mediaItem.id) },
                     onLongClick = { onItemLongPress(mediaItem) },
+                    cardWidth = cardWidth,
+                    imageHeight = imageHeight,
                 )
             }
         }
@@ -201,33 +258,126 @@ private fun MediaCard(
     progress: UiPlaybackProgress?,
     onClick: () -> Unit,
     onLongClick: () -> Unit,
+    cardWidth: androidx.compose.ui.unit.Dp,
+    imageHeight: androidx.compose.ui.unit.Dp,
 ) {
     Card(
         modifier = Modifier
-            .width(140.dp)
+            .width(cardWidth)
             .combinedClickable(onClick = onClick, onLongClick = onLongClick),
-        shape = MaterialTheme.shapes.medium
+        shape = RoundedCornerShape(12.dp),
+        elevation = CardDefaults.cardElevation(defaultElevation = 4.dp),
     ) {
         Column {
+            // Cover art with gradient overlay
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(180.dp)
-                    .clip(MaterialTheme.shapes.medium),
+                    .height(imageHeight)
+                    .clip(RoundedCornerShape(topStart = 12.dp, topEnd = 12.dp)),
                 contentAlignment = Alignment.Center
             ) {
-                Surface(
-                    modifier = Modifier.fillMaxSize(),
-                    color = MaterialTheme.colorScheme.surfaceVariant
-                ) {
-                    Box(contentAlignment = Alignment.Center) {
+                val coverUrl = item.coverImage
+                    ?: item.externalMetadata?.firstOrNull()?.posterUrl
+                if (coverUrl != null) {
+                    val container = com.catalogizer.android.DependencyContainer.getInstance(
+                        androidx.compose.ui.platform.LocalContext.current
+                    )
+                    val resolvedUrl = when {
+                        coverUrl.startsWith("/") ->
+                            container.getServerUrl().trimEnd('/') + coverUrl
+                        coverUrl.contains("image.tmdb.org") -> {
+                            val encoded = java.net.URLEncoder.encode(coverUrl, "UTF-8")
+                            container.getServerUrl().trimEnd('/') +
+                                "/api/v1/image-proxy?url=$encoded"
+                        }
+                        else -> coverUrl
+                    }
+                    AsyncImage(
+                        model = resolvedUrl,
+                        contentDescription = item.title,
+                        modifier = Modifier.fillMaxSize(),
+                        contentScale = ContentScale.Crop,
+                    )
+                } else {
+                    // Gradient placeholder with type initial
+                    val gradient = mediaTypeGradient(item.mediaType)
+                    Box(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .background(Brush.verticalGradient(gradient)),
+                        contentAlignment = Alignment.Center,
+                    ) {
                         Text(
                             text = item.mediaType.take(1).uppercase(),
-                            style = MaterialTheme.typography.headlineMedium,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                            style = MaterialTheme.typography.headlineLarge,
+                            color = Color.White.copy(alpha = 0.7f),
+                            fontWeight = FontWeight.Bold,
                         )
                     }
                 }
+
+                // Bottom gradient for text readability
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(60.dp)
+                        .align(Alignment.BottomCenter)
+                        .background(
+                            Brush.verticalGradient(
+                                colors = listOf(Color.Transparent, Color.Black.copy(alpha = 0.6f))
+                            )
+                        )
+                )
+
+                // Media type badge
+                Surface(
+                    modifier = Modifier
+                        .align(Alignment.TopStart)
+                        .padding(8.dp),
+                    shape = RoundedCornerShape(6.dp),
+                    color = Color.Black.copy(alpha = 0.6f),
+                ) {
+                    Text(
+                        text = item.mediaType.replace("_", " "),
+                        modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp),
+                        style = MaterialTheme.typography.labelSmall,
+                        color = Color.White,
+                        fontSize = 9.sp,
+                    )
+                }
+
+                // Rating badge
+                item.rating?.let { rating ->
+                    Surface(
+                        modifier = Modifier
+                            .align(Alignment.TopEnd)
+                            .padding(8.dp),
+                        shape = RoundedCornerShape(6.dp),
+                        color = Color.Black.copy(alpha = 0.6f),
+                    ) {
+                        Row(
+                            modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(2.dp),
+                        ) {
+                            Icon(
+                                Icons.Default.Star,
+                                contentDescription = null,
+                                modifier = Modifier.size(10.dp),
+                                tint = Color(0xFFFFC107),
+                            )
+                            Text(
+                                text = "%.1f".format(rating),
+                                style = MaterialTheme.typography.labelSmall,
+                                color = Color.White,
+                                fontSize = 10.sp,
+                            )
+                        }
+                    }
+                }
+
+                // Progress badge
                 if (progress != null) {
                     ProgressBadge(
                         progress = progress,
@@ -236,28 +386,41 @@ private fun MediaCard(
                 }
             }
 
-            Column(modifier = Modifier.padding(8.dp)) {
+            // Card content
+            Column(
+                modifier = Modifier.padding(horizontal = 10.dp, vertical = 8.dp)
+            ) {
                 Text(
                     text = item.title,
                     style = MaterialTheme.typography.bodyMedium,
+                    fontWeight = FontWeight.SemiBold,
                     maxLines = 2,
-                    overflow = TextOverflow.Ellipsis
+                    overflow = TextOverflow.Ellipsis,
+                    lineHeight = 18.sp,
                 )
-                item.year?.let { year ->
-                    Text(
-                        text = year.toString(),
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                }
-                item.rating?.let { rating ->
-                    Text(
-                        text = "%.1f".format(rating),
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.primary
-                    )
+                Spacer(modifier = Modifier.height(2.dp))
+                Row(
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    item.year?.let { year ->
+                        Text(
+                            text = year.toString(),
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                    }
                 }
             }
         }
     }
+}
+
+private fun mediaTypeGradient(type: String): List<Color> = when (type.lowercase()) {
+    "movie" -> listOf(Color(0xFF1A237E), Color(0xFF283593))
+    "tv_show", "tv_season", "tv_episode" -> listOf(Color(0xFF4A148C), Color(0xFF6A1B9A))
+    "music_album", "song", "music" -> listOf(Color(0xFF1B5E20), Color(0xFF2E7D32))
+    "game", "software" -> listOf(Color(0xFFE65100), Color(0xFFF57C00))
+    "book", "comic", "ebook" -> listOf(Color(0xFF4E342E), Color(0xFF6D4C41))
+    else -> listOf(Color(0xFF37474F), Color(0xFF455A64))
 }
