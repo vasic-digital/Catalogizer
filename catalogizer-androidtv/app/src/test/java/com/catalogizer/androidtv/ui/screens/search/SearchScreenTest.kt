@@ -96,7 +96,7 @@ class SearchScreenTest {
         searchViewModel.search()
         advanceUntilIdle()
 
-        coVerify(exactly = 0) { mockMediaRepository.searchMedia(any()) }
+        coVerify(exactly = 0) { mockMediaRepository.searchEntities(any()) }
     }
 
     @Test
@@ -105,20 +105,20 @@ class SearchScreenTest {
         searchViewModel.search()
         advanceUntilIdle()
 
-        coVerify(exactly = 0) { mockMediaRepository.searchMedia(any()) }
+        coVerify(exactly = 0) { mockMediaRepository.searchEntities(any()) }
     }
 
     @Test
     fun `search should call repository with correct query`() = runTest {
         val results = listOf(createTestMediaItem(1L, "Result"))
-        coEvery { mockMediaRepository.searchMedia(any()) } returns flowOf(results)
+        coEvery { mockMediaRepository.searchEntities(any()) } returns flowOf(results)
 
         searchViewModel.updateSearchQuery("test")
         searchViewModel.search()
         advanceUntilIdle()
 
         coVerify {
-            mockMediaRepository.searchMedia(match { it.query == "test" })
+            mockMediaRepository.searchEntities(match { it.query == "test" })
         }
     }
 
@@ -128,7 +128,7 @@ class SearchScreenTest {
             createTestMediaItem(1L, "Movie 1"),
             createTestMediaItem(2L, "Movie 2")
         )
-        coEvery { mockMediaRepository.searchMedia(any()) } returns flowOf(results)
+        coEvery { mockMediaRepository.searchEntities(any()) } returns flowOf(results)
 
         searchViewModel.updateSearchQuery("movie")
         searchViewModel.search()
@@ -141,7 +141,7 @@ class SearchScreenTest {
 
     @Test
     fun `search should set isLoading to false after completion`() = runTest {
-        coEvery { mockMediaRepository.searchMedia(any()) } returns flowOf(emptyList())
+        coEvery { mockMediaRepository.searchEntities(any()) } returns flowOf(emptyList())
 
         searchViewModel.updateSearchQuery("test")
         searchViewModel.search()
@@ -152,7 +152,7 @@ class SearchScreenTest {
 
     @Test
     fun `search should set error on exception`() = runTest {
-        coEvery { mockMediaRepository.searchMedia(any()) } throws RuntimeException("Network error")
+        coEvery { mockMediaRepository.searchEntities(any()) } throws RuntimeException("Network error")
 
         searchViewModel.updateSearchQuery("test")
         searchViewModel.search()
@@ -165,14 +165,14 @@ class SearchScreenTest {
     @Test
     fun `search should clear error before searching`() = runTest {
         // First search fails
-        coEvery { mockMediaRepository.searchMedia(any()) } throws RuntimeException("Error")
+        coEvery { mockMediaRepository.searchEntities(any()) } throws RuntimeException("Error")
         searchViewModel.updateSearchQuery("fail")
         searchViewModel.search()
         advanceUntilIdle()
         assertNotNull(searchViewModel.error.value)
 
         // Second search succeeds - error should be cleared
-        coEvery { mockMediaRepository.searchMedia(any()) } returns flowOf(emptyList())
+        coEvery { mockMediaRepository.searchEntities(any()) } returns flowOf(emptyList())
         searchViewModel.updateSearchQuery("success")
         searchViewModel.search()
 
@@ -183,20 +183,20 @@ class SearchScreenTest {
 
     @Test
     fun `search should request 50 items as limit`() = runTest {
-        coEvery { mockMediaRepository.searchMedia(any()) } returns flowOf(emptyList())
+        coEvery { mockMediaRepository.searchEntities(any()) } returns flowOf(emptyList())
 
         searchViewModel.updateSearchQuery("test")
         searchViewModel.search()
         advanceUntilIdle()
 
         coVerify {
-            mockMediaRepository.searchMedia(match { it.limit == 50 })
+            mockMediaRepository.searchEntities(match { it.limit == 50 })
         }
     }
 
     @Test
     fun `search with empty results should set empty results list`() = runTest {
-        coEvery { mockMediaRepository.searchMedia(any()) } returns flowOf(emptyList())
+        coEvery { mockMediaRepository.searchEntities(any()) } returns flowOf(emptyList())
 
         searchViewModel.updateSearchQuery("nonexistent")
         searchViewModel.search()
@@ -230,7 +230,7 @@ class SearchScreenTest {
     @Test
     fun `clearResults should clear results list`() = runTest {
         val results = listOf(createTestMediaItem(1L))
-        coEvery { mockMediaRepository.searchMedia(any()) } returns flowOf(results)
+        coEvery { mockMediaRepository.searchEntities(any()) } returns flowOf(results)
         searchViewModel.updateSearchQuery("test")
         searchViewModel.search()
         advanceUntilIdle()
@@ -249,7 +249,7 @@ class SearchScreenTest {
 
     @Test
     fun `search error message should include original error details`() = runTest {
-        coEvery { mockMediaRepository.searchMedia(any()) } throws RuntimeException("Connection timeout")
+        coEvery { mockMediaRepository.searchEntities(any()) } throws RuntimeException("Connection timeout")
 
         searchViewModel.updateSearchQuery("test")
         searchViewModel.search()
@@ -266,8 +266,8 @@ class SearchScreenTest {
         val results1 = listOf(createTestMediaItem(1L, "First"))
         val results2 = listOf(createTestMediaItem(2L, "Second"))
 
-        coEvery { mockMediaRepository.searchMedia(match { it.query == "first" }) } returns flowOf(results1)
-        coEvery { mockMediaRepository.searchMedia(match { it.query == "second" }) } returns flowOf(results2)
+        coEvery { mockMediaRepository.searchEntities(match { it.query == "first" }) } returns flowOf(results1)
+        coEvery { mockMediaRepository.searchEntities(match { it.query == "second" }) } returns flowOf(results2)
 
         // First search
         searchViewModel.updateSearchQuery("first")

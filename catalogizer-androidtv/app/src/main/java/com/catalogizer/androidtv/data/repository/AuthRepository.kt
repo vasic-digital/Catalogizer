@@ -24,7 +24,7 @@ class AuthRepository(
     private val context: Context,
     private var api: CatalogizerApi?,
     private val tokenStore: com.catalogizer.androidtv.data.auth.TokenStore =
-        com.catalogizer.androidtv.data.auth.TokenStore.encrypted(context),
+        com.catalogizer.androidtv.data.auth.TokenStore.safe(context),
 ) {
 
     fun setApi(api: CatalogizerApi) {

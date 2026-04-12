@@ -74,7 +74,7 @@ class MediaSearchModelsTest {
         // kotlinx.serialization uses @SerialName for snake_case JSON field mapping.
         // JSON keys must match the @SerialName annotations (snake_case).
         val jsonStr = """{
-            "total_items": 500,
+            "total_entities": 500,
             "by_type": {"movie": 200, "music": 300},
             "by_quality": {"1080p": 300, "720p": 200},
             "total_size": 5000000000000,

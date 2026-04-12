@@ -63,7 +63,7 @@ class SearchViewModelTest {
     @Before
     fun setup() {
         mediaRepository = mockk()
-        coEvery { mediaRepository.searchMedia(any()) } returns flowOf(sampleMediaItems)
+        coEvery { mediaRepository.searchEntities(any()) } returns flowOf(sampleMediaItems)
         viewModel = SearchViewModel(mediaRepository)
     }
 
@@ -90,7 +90,7 @@ class SearchViewModelTest {
         viewModel.search()
         advanceUntilIdle()
 
-        coVerify(exactly = 0) { mediaRepository.searchMedia(any()) }
+        coVerify(exactly = 0) { mediaRepository.searchEntities(any()) }
         assertTrue(viewModel.searchResults.value.isEmpty())
         assertFalse(viewModel.isLoading.value)
     }
@@ -102,7 +102,7 @@ class SearchViewModelTest {
         viewModel.search()
         advanceUntilIdle()
 
-        coVerify(exactly = 0) { mediaRepository.searchMedia(any()) }
+        coVerify(exactly = 0) { mediaRepository.searchEntities(any()) }
     }
 
     @Test
@@ -113,7 +113,7 @@ class SearchViewModelTest {
         advanceUntilIdle()
 
         coVerify {
-            mediaRepository.searchMedia(match {
+            mediaRepository.searchEntities(match {
                 it.query == "test" && it.limit == 50
             })
         }
@@ -124,7 +124,7 @@ class SearchViewModelTest {
 
     @Test
     fun `search should handle repository errors`() = runTest {
-        coEvery { mediaRepository.searchMedia(any()) } throws Exception("Network error")
+        coEvery { mediaRepository.searchEntities(any()) } throws Exception("Network error")
 
         viewModel.updateSearchQuery("test")
         viewModel.search()
@@ -151,8 +151,8 @@ class SearchViewModelTest {
         val firstResults = listOf(sampleMediaItems[0])
         val secondResults = listOf(sampleMediaItems[1])
 
-        coEvery { mediaRepository.searchMedia(match { it.query == "first" }) } returns flowOf(firstResults)
-        coEvery { mediaRepository.searchMedia(match { it.query == "second" }) } returns flowOf(secondResults)
+        coEvery { mediaRepository.searchEntities(match { it.query == "first" }) } returns flowOf(firstResults)
+        coEvery { mediaRepository.searchEntities(match { it.query == "second" }) } returns flowOf(secondResults)
 
         // First search
         viewModel.updateSearchQuery("first")
@@ -177,7 +177,7 @@ class SearchViewModelTest {
         advanceUntilIdle()
 
         coVerify {
-            mediaRepository.searchMedia(
+            mediaRepository.searchEntities(
                 MediaSearchRequest(
                     query = "movie title",
                     limit = 50

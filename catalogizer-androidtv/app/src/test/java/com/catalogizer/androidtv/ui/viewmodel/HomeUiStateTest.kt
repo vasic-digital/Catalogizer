@@ -25,7 +25,7 @@ class HomeUiStateTest {
     fun `HomeUiState has correct defaults`() {
         val state = HomeUiState()
 
-        assertFalse(state.isLoading)
+        assertTrue(state.isLoading)
         assertNull(state.error)
         assertTrue(state.continueWatching.isEmpty())
         assertTrue(state.recentMovies.isEmpty())
@@ -67,15 +67,14 @@ class HomeUiStateTest {
 
     @Test
     fun `HomeUiState copy updates correctly`() {
+        // Default is isLoading=true (TICKET-002 fix — spinner from first frame)
         val initial = HomeUiState()
-        val loading = initial.copy(isLoading = true)
-        val loaded = loading.copy(
+        val loaded = initial.copy(
             isLoading = false,
             topRatedMovies = listOf(createTestMediaItem())
         )
 
-        assertFalse(initial.isLoading)
-        assertTrue(loading.isLoading)
+        assertTrue(initial.isLoading)
         assertFalse(loaded.isLoading)
         assertEquals(1, loaded.topRatedMovies.size)
     }

@@ -65,9 +65,12 @@ class HomeScreenTest {
     }
 
     @Test
-    fun `initial uiState should have loading set to false`() {
+    fun `initial uiState should have loading set to true`() {
+        // Default changed to isLoading=true so the first compose frame
+        // renders the spinner instead of the empty-library branch
+        // (TICKET-002-androidtv-black-screen-transition fix).
         val state = homeViewModel.uiState.value
-        assertFalse(state.isLoading)
+        assertTrue(state.isLoading)
     }
 
     @Test
@@ -285,7 +288,7 @@ class HomeScreenTest {
     fun `HomeUiState default values should be correct`() {
         val state = HomeUiState()
 
-        assertFalse(state.isLoading)
+        assertTrue(state.isLoading)
         assertNull(state.error)
         assertTrue(state.continueWatching.isEmpty())
         assertTrue(state.recentMovies.isEmpty())

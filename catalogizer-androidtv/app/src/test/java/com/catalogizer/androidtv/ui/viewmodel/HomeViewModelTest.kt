@@ -81,7 +81,7 @@ class HomeViewModelTest {
     fun `initial ui state should be default state`() = runTest {
         val initialState = viewModel.uiState.value
 
-        assertFalse(initialState.isLoading)
+        assertTrue(initialState.isLoading)
         assertNull(initialState.error)
         assertTrue(initialState.continueWatching.isEmpty())
         assertTrue(initialState.recentMovies.isEmpty())

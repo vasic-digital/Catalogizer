@@ -1,12 +1,15 @@
 package com.catalogizer.androidtv.data.repository
 
 import android.content.Context
+import android.content.SharedPreferences
 import com.catalogizer.androidtv.MainDispatcherRule
+import com.catalogizer.androidtv.data.auth.TokenStore
 import com.catalogizer.androidtv.data.models.AuthState
 import com.catalogizer.androidtv.data.remote.CatalogizerApi
 import com.catalogizer.androidtv.data.remote.LoginResponse
 import com.catalogizer.androidtv.data.remote.LoginUser
 import io.mockk.coEvery
+import io.mockk.every
 import io.mockk.mockk
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.first
@@ -34,11 +37,17 @@ class AuthRepositoryTest {
     private lateinit var api: CatalogizerApi
     private lateinit var repository: AuthRepository
 
+    private lateinit var tokenStore: TokenStore
+
     @Before
     fun setup() {
         context = mockk()
+        every { context.applicationContext } returns context
         api = mockk()
-        repository = AuthRepository(context, api)
+        val prefs = mockk<SharedPreferences>(relaxed = true)
+        every { prefs.edit() } returns mockk(relaxed = true)
+        tokenStore = TokenStore.inMemory(prefs)
+        repository = AuthRepository(context, api, tokenStore)
     }
 
     @Test
@@ -81,8 +90,8 @@ class AuthRepositoryTest {
 
         val authState = repository.authState.first()
         assertFalse(authState.isAuthenticated)
-        // Response.error() returns "Response.error()" as the message
-        assertEquals("Login failed: Response.error()", authState.error)
+        // errorBody().string() returns raw body text
+        assertEquals("Unauthorized", authState.error)
         assertNull(authState.token)
     }
 
@@ -96,7 +105,7 @@ class AuthRepositoryTest {
 
         val authState = repository.authState.first()
         assertFalse(authState.isAuthenticated)
-        assertEquals("Login failed: Invalid response", authState.error)
+        assertEquals("Login failed: Invalid response from server", authState.error)
     }
 
     @Test
@@ -113,7 +122,7 @@ class AuthRepositoryTest {
 
     @Test
     fun `login with null api should throw exception`() = runTest {
-        repository = AuthRepository(context, null)
+        repository = AuthRepository(context, null, tokenStore)
 
         // The login method catches IllegalStateException internally
         // and sets an error state instead of propagating it
@@ -121,7 +130,7 @@ class AuthRepositoryTest {
 
         val authState = repository.authState.first()
         assertFalse(authState.isAuthenticated)
-        assertEquals("Login failed: API not initialized", authState.error)
+        assertEquals("API not initialized. Please configure server URL.", authState.error)
     }
 
     @Test
@@ -213,7 +222,7 @@ class AuthRepositoryTest {
         // Create a new repository with null api
         // The refreshToken method catches exceptions internally
         // and resets to Unauthenticated when refresh fails
-        val nullApiRepository = AuthRepository(context, null)
+        val nullApiRepository = AuthRepository(context, null, tokenStore)
 
         // Since this is a new repository, it starts unauthenticated
         // and refreshToken does nothing for unauthenticated state
@@ -235,8 +244,7 @@ class AuthRepositoryTest {
         repository.login("testuser", "password")
 
         var authState = repository.authState.first()
-        // Response.error() returns "Response.error()" as the message
-        assertEquals("Login failed: Response.error()", authState.error)
+        assertEquals("Unauthorized", authState.error)
 
         // Clear error
         repository.clearError()

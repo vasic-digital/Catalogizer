@@ -109,6 +109,20 @@ class TokenStore internal constructor(
         }
 
         /**
+         * Safe factory: tries [encrypted] first, falls back to plain
+         * [SharedPreferences] when the Android keystore is unavailable
+         * (Robolectric, very old devices, restricted profiles).
+         */
+        fun safe(context: Context, fileName: String = DEFAULT_FILE): TokenStore {
+            return try {
+                encrypted(context, fileName)
+            } catch (_: Exception) {
+                val prefs = context.getSharedPreferences(fileName, Context.MODE_PRIVATE)
+                TokenStore(prefs)
+            }
+        }
+
+        /**
          * Factory for tests: uses a plain [SharedPreferences] so
          * unit tests can exercise the persistence logic without
          * needing the Android keystore.
