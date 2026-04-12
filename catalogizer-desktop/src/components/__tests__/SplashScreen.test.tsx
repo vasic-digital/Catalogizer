@@ -49,11 +49,11 @@ describe('SplashScreen', () => {
     expect(screen.getByText('v1.1.0')).toBeInTheDocument()
   })
 
-  it('renders the app icon image', () => {
+  it('renders the brand mark', () => {
     render(<SplashScreen onComplete={onComplete} />)
-    const icon = screen.getByAltText('Catalogizer icon')
-    expect(icon).toBeInTheDocument()
-    expect(icon).toHaveAttribute('src', '/mock-app-icon.jpeg')
+    const mark = screen.getByLabelText('Catalogizer icon')
+    expect(mark).toBeInTheDocument()
+    expect(mark).toHaveTextContent('C')
   })
 
   it('renders the loading spinner', () => {
