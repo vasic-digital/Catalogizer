@@ -2,8 +2,7 @@ import { render, screen, act } from '@testing-library/react'
 import { vi, describe, it, expect, beforeEach, afterEach } from 'vitest'
 import { SplashScreen } from '../SplashScreen'
 
-// Mock image imports
-vi.mock('../../assets/app-icon.jpeg', () => ({ default: '/mock-app-icon.jpeg' }))
+// Image import removed — SplashScreen now uses a text-based brand mark
 
 describe('SplashScreen', () => {
   let onComplete: ReturnType<typeof vi.fn>
@@ -51,9 +50,9 @@ describe('SplashScreen', () => {
 
   it('renders the app icon image', () => {
     render(<SplashScreen onComplete={onComplete} />)
-    const icon = screen.getByAltText('Catalogizer icon')
-    expect(icon).toBeInTheDocument()
-    expect(icon).toHaveAttribute('src', '/mock-app-icon.jpeg')
+    const mark = screen.getByLabelText('Catalogizer icon')
+    expect(mark).toBeInTheDocument()
+    expect(mark).toHaveTextContent('C')
   })
 
   it('renders the loading spinner', () => {

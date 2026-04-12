@@ -1,5 +1,4 @@
 import { useEffect, useState } from 'react'
-import appIcon from '../assets/app-icon.jpeg'
 
 interface SplashScreenProps {
   onComplete: () => void
@@ -40,11 +39,16 @@ export function SplashScreen({
       }}
     >
       <div className="flex flex-col items-center">
-        <img
-          src={appIcon}
-          alt={`${appTitle} icon`}
-          className="w-28 h-28 rounded-2xl shadow-2xl border-[3px] border-white/10 mb-6"
-        />
+        <div
+          className="w-28 h-28 rounded-2xl shadow-2xl border-[3px] mb-6 flex items-center justify-center"
+          style={{
+            background: 'linear-gradient(135deg, #1E293B 0%, #0F172A 100%)',
+            borderColor: '#DC2626',
+          }}
+          aria-label={`${appTitle} icon`}
+        >
+          <span className="text-6xl font-extrabold text-white select-none">C</span>
+        </div>
 
         <h1 className="text-3xl font-bold text-white mb-2">{appTitle}</h1>
 
