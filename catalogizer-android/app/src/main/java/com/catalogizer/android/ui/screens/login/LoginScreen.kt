@@ -1,5 +1,9 @@
 package com.catalogizer.android.ui.screens.login
 
+import android.Manifest
+import android.os.Build
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.KeyboardActions
@@ -58,7 +62,37 @@ fun LoginScreen(
     var isDiscovering by remember { mutableStateOf(false) }
     var discoveredServers by remember { mutableStateOf<List<String>>(emptyList()) }
     var serverError by remember { mutableStateOf<String?>(null) }
+    var pendingDiscovery by remember { mutableStateOf(false) }
     val coroutineScope = rememberCoroutineScope()
+
+    // Runtime permission launcher for network discovery.
+    // On Android 13+ NEARBY_WIFI_DEVICES is needed; on 10-12
+    // ACCESS_FINE_LOCATION is needed to read the WiFi subnet.
+    val permissionLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.RequestMultiplePermissions()
+    ) { grants ->
+        // Proceed with discovery regardless — the scan uses
+        // NetworkInterface which may work even without location
+        // if the device allows it. Worst case: returns empty.
+        if (pendingDiscovery) {
+            pendingDiscovery = false
+            coroutineScope.launch {
+                isDiscovering = true
+                discoveredServers = emptyList()
+                serverError = null
+                try {
+                    val results = discoverServers()
+                    discoveredServers = results
+                    if (results.isEmpty()) {
+                        serverError = "No servers found on the network"
+                    }
+                } catch (e: Exception) {
+                    serverError = "Discovery failed: ${e.message}"
+                }
+                isDiscovering = false
+            }
+        }
+    }
     val scrollState = rememberScrollState()
 
     LaunchedEffect(authState.isAuthenticated) {
@@ -216,24 +250,16 @@ fun LoginScreen(
                     horizontalArrangement = Arrangement.spacedBy(12.dp),
                     modifier = Modifier.fillMaxWidth()
                 ) {
-                    // Discover button — scans local network
+                    // Discover button — requests permissions then scans local network
                     OutlinedButton(
                         onClick = {
-                            coroutineScope.launch {
-                                isDiscovering = true
-                                discoveredServers = emptyList()
-                                serverError = null
-                                try {
-                                    val results = discoverServers()
-                                    discoveredServers = results
-                                    if (results.isEmpty()) {
-                                        serverError = "No servers found on the network"
-                                    }
-                                } catch (e: Exception) {
-                                    serverError = "Discovery failed: ${e.message}"
-                                }
-                                isDiscovering = false
+                            pendingDiscovery = true
+                            val perms = mutableListOf<String>()
+                            if (Build.VERSION.SDK_INT >= 33) {
+                                perms.add(Manifest.permission.NEARBY_WIFI_DEVICES)
                             }
+                            perms.add(Manifest.permission.ACCESS_FINE_LOCATION)
+                            permissionLauncher.launch(perms.toTypedArray())
                         },
                         modifier = Modifier.weight(1f),
                         enabled = !isDiscovering && !authState.isLoading
