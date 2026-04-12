@@ -177,7 +177,7 @@ function testAuthenticatedAccess(token) {
 
   // Access multiple authenticated endpoints in sequence
   const endpoints = [
-    '/api/v1/health',
+    '/health',
     '/api/v1/storage-roots',
     '/api/v1/auth/me',
   ];

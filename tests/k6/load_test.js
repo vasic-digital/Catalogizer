@@ -50,7 +50,7 @@ export default function (data) {
   };
 
   // Test 1: Health check
-  const healthRes = http.get(`${BASE_URL}/api/v1/health`, { headers });
+  const healthRes = http.get(`${BASE_URL}/health`, { headers });
   check(healthRes, { 'health status 200': (r) => r.status === 200 });
   errorRate.add(healthRes.status !== 200);
   apiLatency.add(healthRes.timings.duration);

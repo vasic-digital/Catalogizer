@@ -48,7 +48,7 @@ export default function (data) {
 
   // Realistic browsing mix — what a user does over a long session.
   const endpoints = [
-    '/api/v1/health',
+    '/health',
     '/api/v1/storage-roots',
     '/api/v1/media/stats',
     '/api/v1/media/search?q=a&limit=20',

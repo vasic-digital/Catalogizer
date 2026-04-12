@@ -62,7 +62,7 @@ export default function (data) {
 
   // Lightweight read-path mix to maximize observable throughput.
   const endpoints = [
-    '/api/v1/health',
+    '/health',
     '/api/v1/media/stats',
     '/api/v1/storage-roots',
   ];

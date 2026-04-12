@@ -148,7 +148,7 @@ function doMediaDetailOperation(headers) {
 
   const detailEndpoints = [
     '/api/v1/media/stats',
-    '/api/v1/health',
+    '/health',
     '/api/v1/entities?page=1&limit=5',
   ];
 
@@ -181,7 +181,7 @@ function doAdminOperation(headers) {
   adminOps.add(1);
 
   const adminEndpoints = [
-    '/api/v1/health',
+    '/health',
     '/api/v1/configuration',
     '/api/v1/challenges',
   ];

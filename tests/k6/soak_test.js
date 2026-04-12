@@ -39,7 +39,7 @@ export default function (data) {
   // Cycle through all major API endpoints
   const iteration = __ITER;
   const endpoints = [
-    '/api/v1/health',
+    '/health',
     '/api/v1/storage-roots',
     '/api/v1/media/stats',
     '/api/v1/browse',
