@@ -61,7 +61,7 @@ export const options = {
   },
   thresholds: {
     // At least 90% of burst-flood requests must be rejected with 429
-    rate_limit_rejections: ['rate>0.90'],
+    rate_limit_rejections: ['rate>=0.90'],
     // Recovery health check must always be 200 (after the flood stops)
     'http_req_failed{scenario:recovery_check}': ['rate<0.01'],
     // Recovery health check latency must return to normal (<500ms p95)
