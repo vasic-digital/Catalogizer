@@ -1,16 +1,19 @@
 <?xml version="1.0" encoding="utf-8"?>
 <network-security-config>
-    <!-- Disallow cleartext traffic by default -->
-    <base-config cleartextTrafficPermitted="false">
+    <!--
+      Allow cleartext HTTP for local/private network IPs so the app can
+      reach catalog-api on the LAN without TLS. Android's domain-config
+      matches HOSTNAMES not IP addresses — the old "192.168.0.0" entries
+      never matched real IPs like 192.168.0.213. The only reliable way
+      to permit cleartext to arbitrary LAN IPs is base-config level.
+
+      Production deployments MUST use HTTPS; this config is for the dev
+      and home-server use case where self-signed certs or plain HTTP are
+      standard.
+    -->
+    <base-config cleartextTrafficPermitted="true">
         <trust-anchors>
             <certificates src="system" />
         </trust-anchors>
     </base-config>
-    <!-- Allow cleartext only for local network ranges (SMB/FTP/NFS devices) -->
-    <domain-config cleartextTrafficPermitted="true">
-        <domain includeSubdomains="true">10.0.0.0</domain>
-        <domain includeSubdomains="true">172.16.0.0</domain>
-        <domain includeSubdomains="true">192.168.0.0</domain>
-        <domain includeSubdomains="true">localhost</domain>
-    </domain-config>
 </network-security-config>
