@@ -89,9 +89,14 @@ class DependencyContainer(private val context: Context) {
         // all calls will fail with a connection error, which is the expected behavior
         // until the user configures a real server URL.
         val effectiveUrl = baseUrl.ifBlank { "http://localhost:8080" }
+        val sanitized = effectiveUrl.trimEnd('/')
+        // Append /api/v1 so Retrofit paths like "auth/login" resolve
+        // to /api/v1/auth/login on the backend.
+        val apiBase = if (sanitized.endsWith("/api/v1")) "$sanitized/"
+                      else "$sanitized/api/v1/"
         val contentType = "application/json".toMediaType()
         return Retrofit.Builder()
-            .baseUrl(effectiveUrl.trimEnd('/') + "/")
+            .baseUrl(apiBase)
             .client(buildOkHttpClient())
             .addConverterFactory(json.asConverterFactory(contentType))
             .build()

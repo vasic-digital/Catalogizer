@@ -53,6 +53,16 @@ class AuthViewModel(
         }
     }
 
+    /** Re-check auth status from the repository. Called by MainActivity
+     *  after the QA auto-login completes on the IO dispatcher so the
+     *  Compose-observed [authState] reflects the new token. */
+    fun checkAuthState() {
+        viewModelScope.launch {
+            val isAuthenticated = authRepository.isAuthenticated()
+            _authState.value = AuthState(isAuthenticated = isAuthenticated)
+        }
+    }
+
     fun logout() {
         viewModelScope.launch {
             authRepository.logout()

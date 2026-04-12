@@ -12,6 +12,10 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import androidx.core.view.WindowCompat
+import androidx.lifecycle.lifecycleScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.catalogizer.android.CatalogizerApplication
 import com.catalogizer.android.ui.navigation.CatalogizerNavigation
@@ -61,12 +65,38 @@ class MainActivity : ComponentActivity() {
         homeViewModel = dependencyContainer.createHomeViewModel()
         searchViewModel = dependencyContainer.createSearchViewModel()
 
+        // Auto-login via intent extras (for ADB testing / HelixQA).
+        // Usage: adb shell am start -n com.catalogizer.android/.ui.MainActivity \
+        //          --es qa_username admin --es qa_password admin123
+        // Runs the login on IO, blocks the splash until done so the
+        // Compose auth check sees isAuthenticated=true on first render.
+        val qaUser = intent.getStringExtra("qa_username")
+        val qaPass = intent.getStringExtra("qa_password")
+        val qaLoginPending = !qaUser.isNullOrBlank() && !qaPass.isNullOrBlank()
+        var qaLoginDone = java.util.concurrent.atomic.AtomicBoolean(!qaLoginPending)
+
+        if (qaLoginPending) {
+            lifecycleScope.launch {
+                try {
+                    withContext(Dispatchers.IO) {
+                        dependencyContainer.authRepository.login(qaUser!!, qaPass!!)
+                    }
+                    authViewModel.checkAuthState()
+                    android.util.Log.i("MainActivity", "QA auto-login successful")
+                } catch (e: Exception) {
+                    android.util.Log.w("MainActivity", "QA auto-login failed: ${e.message}")
+                } finally {
+                    qaLoginDone.set(true)
+                }
+            }
+        }
+
         // Configure edge-to-edge display
         WindowCompat.setDecorFitsSystemWindows(window, false)
 
-        // Keep splash screen until app is ready
+        // Keep splash screen until app init AND auto-login (if any) are done
         splashScreen.setKeepOnScreenCondition {
-            mainViewModel.isLoading.value
+            mainViewModel.isLoading.value || !qaLoginDone.get()
         }
 
         setContent {
