@@ -11,7 +11,7 @@ plugins {
 
 android {
     namespace = "com.catalogizer.android"
-    compileSdk = 34
+    compileSdk = 35
 
     defaultConfig {
         applicationId = "com.catalogizer.android"
