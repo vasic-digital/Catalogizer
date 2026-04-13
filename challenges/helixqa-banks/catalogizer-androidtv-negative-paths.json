@@ -1,5 +1,8 @@
 {
-  "challenges": [
+  "version": "2.0",
+  "name": "Test Suite - EXECUTABLE",
+  "description": "Executable test suite - converted from /run/media/milosvasic/DATA4TB/Projects/Catalogizer/challenges/helixqa-banks/catalogizer-androidtv-negative-paths.json",
+  "test_cases": [
     {
       "id": "neg-tv-cold-start-low-ram",
       "name": "Cold Start on Low-RAM Device (2GB)",
@@ -11,13 +14,15 @@
       "steps": [
         {
           "name": "Simulate low RAM conditions",
-          "action": "Launch Catalogizer on a 2GB RAM Android TV device (e.g., Mi Box) with several other apps in recent tasks consuming memory",
-          "expected": "App launches within 5 seconds despite memory constraints. Splash screen appears without black screen gap"
+          "action": "adb_shell: am start -n com.catalogizer.androidtv/.MainActivity",
+          "expected": "App launches within 5 seconds despite memory constraints. Splash screen appears without black screen gap",
+          "timeout": 10
         },
         {
           "name": "Verify home screen renders",
-          "action": "Wait for home screen to fully load with media rows",
-          "expected": "Home screen renders with focus on first item. Image loading may be slower but layout is correct. No OutOfMemoryError crash"
+          "action": "sleep: 3000",
+          "expected": "Home screen renders with focus on first item. Image loading may be slower but layout is correct. No OutOfMemoryError crash",
+          "timeout": 10
         }
       ]
     },
@@ -32,18 +37,21 @@
       "steps": [
         {
           "name": "Disconnect ethernet",
-          "action": "Unplug ethernet cable from TV device or adb shell svc ethernet disable",
-          "expected": "Device has no network connectivity"
+          "action": "adb_shell:unplug ethernet cable from tv device or  svc ethernet disable",
+          "expected": "Device has no network connectivity",
+          "timeout": 10
         },
         {
           "name": "Launch app",
-          "action": "Select Catalogizer from Android TV launcher",
-          "expected": "App launches and shows clear offline state message centered on screen. Message is readable from 10-foot viewing distance. No crash, no infinite loading spinner"
+          "action": "adb_shell: am start -n com.catalogizer.androidtv/.MainActivity",
+          "expected": "App launches and shows clear offline state message centered on screen. Message is readable from 10-foot viewing distance. No crash, no infinite loading spinner",
+          "timeout": 10
         },
         {
           "name": "Reconnect and retry",
-          "action": "Plug ethernet back in and use D-pad to select retry button",
-          "expected": "App detects connectivity restoration and loads content. Retry button is focusable and activatable with D-pad center"
+          "action": "keypress: KEYCODE_DPAD_CENTER",
+          "expected": "App detects connectivity restoration and loads content. Retry button is focusable and activatable with D-pad center",
+          "timeout": 10
         }
       ]
     },
@@ -58,13 +66,15 @@
       "steps": [
         {
           "name": "Launch after system update reboot",
-          "action": "After Android TV system update completes and device reboots, launch Catalogizer",
-          "expected": "App launches normally. Database and SharedPreferences survive system update. No crash from changed system APIs or missing runtime permissions after update"
+          "action": "adb_shell: am start -n com.catalogizer.androidtv/.MainActivity",
+          "expected": "App launches normally. Database and SharedPreferences survive system update. No crash from changed system APIs or missing runtime permissions after update",
+          "timeout": 10
         },
         {
           "name": "Verify session and data",
-          "action": "Check if user is still logged in and cached data is available",
-          "expected": "Login session is preserved if tokens have not expired. Server URL and preferences intact. Cached images may need reload but no data corruption"
+          "action": "screenshot",
+          "expected": "Login session is preserved if tokens have not expired. Server URL and preferences intact. Cached images may need reload but no data corruption",
+          "timeout": 10
         }
       ]
     },
@@ -79,13 +89,15 @@
       "steps": [
         {
           "name": "Trigger CEC power-on during app launch",
-          "action": "Turn on TV via CEC (e.g., power on soundbar which triggers TV power-on) while Catalogizer is set as last-used app and auto-starts",
-          "expected": "App handles the HDMI input switching and CEC power-on events without crashing. Display may briefly show black during input switch"
+          "action": "adb_shell: am start -n com.catalogizer.androidtv/.MainActivity",
+          "expected": "App handles the HDMI input switching and CEC power-on events without crashing. Display may briefly show black during input switch",
+          "timeout": 10
         },
         {
           "name": "Verify app is functional after CEC",
-          "action": "Use remote to navigate after TV finishes input switching",
-          "expected": "App responds to D-pad input. UI is fully rendered. No stuck black screen from HDMI handshake timing"
+          "action": "keypress: KEYCODE_DPAD_DOWN",
+          "expected": "App responds to D-pad input. UI is fully rendered. No stuck black screen from HDMI handshake timing",
+          "timeout": 10
         }
       ]
     },
@@ -100,8 +112,9 @@
       "steps": [
         {
           "name": "Switch HDMI inputs while app is running",
-          "action": "While Catalogizer is running, switch TV input to HDMI 2 (cable box), wait 10 seconds, then switch back to Android TV input",
-          "expected": "App resumes correctly when input switches back. No blank screen. Media playback that was active is paused and can be resumed"
+          "action": "sleep: 10000",
+          "expected": "App resumes correctly when input switches back. No blank screen. Media playback that was active is paused and can be resumed",
+          "timeout": 10
         }
       ]
     },
@@ -116,13 +129,15 @@
       "steps": [
         {
           "name": "Let screensaver activate",
-          "action": "Leave Catalogizer idle on the home screen until the Android TV screensaver (Daydream) activates",
-          "expected": "Screensaver takes over display"
+          "action": "sleep: 30000",
+          "expected": "Screensaver takes over display",
+          "timeout": 10
         },
         {
           "name": "Dismiss screensaver",
-          "action": "Press any button on the remote to dismiss screensaver",
-          "expected": "App returns to the exact screen it was on before screensaver. Focus is restored to the last focused element. No activity recreation errors. No stale WebSocket connections"
+          "action": "keypress: KEYCODE_DPAD_CENTER",
+          "expected": "App returns to the exact screen it was on before screensaver. Focus is restored to the last focused element. No activity recreation errors. No stale WebSocket connections",
+          "timeout": 10
         }
       ]
     },
@@ -137,18 +152,21 @@
       "steps": [
         {
           "name": "Navigate to detail screen",
-          "action": "Login, browse to a media item, open its detail screen",
-          "expected": "User is on detail screen"
+          "action": "adb_shell: am start -n com.catalogizer.androidtv/.MainActivity",
+          "expected": "User is on detail screen",
+          "timeout": 10
         },
         {
           "name": "Simulate low memory kill",
-          "action": "adb shell am kill com.catalogizer.androidtv",
-          "expected": "Process is killed"
+          "action": "adb_shell:am kill com.catalogizer.androidtv",
+          "expected": "Process is killed",
+          "timeout": 10
         },
         {
           "name": "Restore from recents",
-          "action": "Press Home, navigate to Catalogizer in recents, select it",
-          "expected": "App restores gracefully. Either returns to the detail screen via saved state or navigates to home screen. No crash from null ViewModel state. Focus is on a valid UI element"
+          "action": "keypress: KEYCODE_ENTER",
+          "expected": "App restores gracefully. Either returns to the detail screen via saved state or navigates to home screen. No crash from null ViewModel state. Focus is on a valid UI element",
+          "timeout": 10
         }
       ]
     },
@@ -163,13 +181,15 @@
       "steps": [
         {
           "name": "Set overscan on display",
-          "action": "Configure TV display with significant overscan (old CRT mode or misconfigured HDMI) that cuts 5-10% of edges",
-          "expected": "App renders with content within the overscan-safe area (inner 90% of screen)"
+          "action": "sleep: 2000",
+          "expected": "App renders with content within the overscan-safe area (inner 90% of screen)",
+          "timeout": 10
         },
         {
           "name": "Verify critical UI visible",
-          "action": "Check that navigation elements, titles, and action buttons are not cut off by overscan",
-          "expected": "All interactive elements and text are within the title-safe area. No buttons or menu items hidden behind screen edges. Focus indicators are fully visible"
+          "action": "screenshot",
+          "expected": "All interactive elements and text are within the title-safe area. No buttons or menu items hidden behind screen edges. Focus indicators are fully visible",
+          "timeout": 10
         }
       ]
     },
@@ -184,13 +204,15 @@
       "steps": [
         {
           "name": "Send rapid D-pad events",
-          "action": "Hold D-pad right on the remote continuously on the media row, generating 20+ key events per second",
-          "expected": "Focus moves through items smoothly. App does not freeze, crash, or drop frames excessively. Key repeat rate is handled by throttling or debouncing"
+          "action": "keypress: KEYCODE_DPAD_RIGHT",
+          "expected": "Focus moves through items smoothly. App does not freeze, crash, or drop frames excessively. Key repeat rate is handled by throttling or debouncing",
+          "timeout": 10
         },
         {
           "name": "Stop rapid input",
-          "action": "Release D-pad button",
-          "expected": "Focus settles on a valid item. No overscroll past the last item. UI is responsive immediately after stopping"
+          "action": "sleep: 1000",
+          "expected": "Focus settles on a valid item. No overscroll past the last item. UI is responsive immediately after stopping",
+          "timeout": 10
         }
       ]
     },
@@ -205,13 +227,15 @@
       "steps": [
         {
           "name": "Press select on item",
-          "action": "Press D-pad center on a media item to open its detail page",
-          "expected": "Loading transition begins"
+          "action": "keypress: KEYCODE_ENTER",
+          "expected": "Loading transition begins",
+          "timeout": 10
         },
         {
           "name": "Press D-pad during transition",
-          "action": "Immediately press D-pad left/right/up/down while the detail page is loading",
-          "expected": "Input is either queued and applied after load, or ignored during transition. No crash from focus moving to elements that do not exist yet. No navigation to wrong screen"
+          "action": "keypress: KEYCODE_DPAD_DOWN",
+          "expected": "Input is either queued and applied after load, or ignored during transition. No crash from focus moving to elements that do not exist yet. No navigation to wrong screen",
+          "timeout": 10
         }
       ]
     },
@@ -226,13 +250,15 @@
       "steps": [
         {
           "name": "Open a dialog",
-          "action": "Trigger a confirmation dialog (e.g., logout, error alert, settings confirmation)",
-          "expected": "Dialog appears with focus on a dialog button"
+          "action": "keypress: KEYCODE_MENU",
+          "expected": "Dialog appears with focus on a dialog button",
+          "timeout": 10
         },
         {
           "name": "Dismiss dialog",
-          "action": "Press Back or select a dialog button to dismiss",
-          "expected": "Focus returns to the element that triggered the dialog, or to the nearest logical focusable element. Focus is NEVER lost entirely (no invisible focus state). D-pad input works immediately after dismissal"
+          "action": "keypress: KEYCODE_ENTER",
+          "expected": "Focus returns to the element that triggered the dialog, or to the nearest logical focusable element. Focus is NEVER lost entirely (no invisible focus state). D-pad input works immediately after dismissal",
+          "timeout": 10
         }
       ]
     },
@@ -247,13 +273,15 @@
       "steps": [
         {
           "name": "Navigate to screen with conditional visibility",
-          "action": "Navigate to a screen where some elements may be hidden (e.g., empty search results hiding the results container)",
-          "expected": "Screen loads with some elements gone/invisible"
+          "action": "keypress: KEYCODE_DPAD_UP",
+          "expected": "Screen loads with some elements gone/invisible",
+          "timeout": 10
         },
         {
           "name": "Attempt to focus hidden area",
-          "action": "Press D-pad in direction of hidden/gone elements",
-          "expected": "Focus skips invisible elements and lands on the next visible focusable element. No focus trap where D-pad input has no visible effect. No crash from focusing a GONE view"
+          "action": "keypress: KEYCODE_DPAD_DOWN",
+          "expected": "Focus skips invisible elements and lands on the next visible focusable element. No focus trap where D-pad input has no visible effect. No crash from focusing a GONE view",
+          "timeout": 10
         }
       ]
     },
@@ -268,18 +296,21 @@
       "steps": [
         {
           "name": "Navigate to first item in row",
-          "action": "Focus the first item in a horizontal media row",
-          "expected": "First item has visible focus"
+          "action": "keypress: KEYCODE_DPAD_RIGHT",
+          "expected": "First item has visible focus",
+          "timeout": 10
         },
         {
           "name": "Press D-pad left at boundary",
-          "action": "Press D-pad left when already on the first item",
-          "expected": "Focus either stays on the first item (no wrap) or wraps to the navigation sidebar. It does NOT wrap to the last item in the row. Behavior is consistent and predictable"
+          "action": "keypress: KEYCODE_DPAD_LEFT",
+          "expected": "Focus either stays on the first item (no wrap) or wraps to the navigation sidebar. It does NOT wrap to the last item in the row. Behavior is consistent and predictable",
+          "timeout": 10
         },
         {
           "name": "Navigate to last item and press right",
-          "action": "Navigate to last item in the row, then press D-pad right",
-          "expected": "Focus stays on last item or moves to next logical target. No crash from index out of bounds. No wrap to first item (unless explicitly designed)"
+          "action": "keypress: KEYCODE_DPAD_RIGHT",
+          "expected": "Focus stays on last item or moves to next logical target. No crash from index out of bounds. No wrap to first item (unless explicitly designed)",
+          "timeout": 10
         }
       ]
     },
@@ -294,13 +325,15 @@
       "steps": [
         {
           "name": "Start scrolling animation",
-          "action": "Press D-pad right to scroll a media row, triggering a smooth scroll animation",
-          "expected": "Scroll animation begins"
+          "action": "keypress: KEYCODE_DPAD_RIGHT",
+          "expected": "Scroll animation begins",
+          "timeout": 10
         },
         {
           "name": "Press D-pad during animation",
-          "action": "Press D-pad right again before animation completes",
-          "expected": "Second input is queued or the animation accelerates to the next item. Focus lands on the correct item. No visual glitch from interrupted animation. No item skipping"
+          "action": "keypress: KEYCODE_DPAD_RIGHT",
+          "expected": "Second input is queued or the animation accelerates to the next item. Focus lands on the correct item. No visual glitch from interrupted animation. No item skipping",
+          "timeout": 10
         }
       ]
     },
@@ -315,8 +348,9 @@
       "steps": [
         {
           "name": "Long press on media item",
-          "action": "Focus a media item and long-press D-pad center for 3+ seconds",
-          "expected": "If long-press menu is implemented, context menu appears. If not implemented, single press action fires once (not repeatedly). No crash from unhandled long press event"
+          "action": "keypress: KEYCODE_ENTER",
+          "expected": "If long-press menu is implemented, context menu appears. If not implemented, single press action fires once (not repeatedly). No crash from unhandled long press event",
+          "timeout": 10
         }
       ]
     },
@@ -331,8 +365,9 @@
       "steps": [
         {
           "name": "Press multiple remote buttons simultaneously",
-          "action": "Press D-pad center and Back simultaneously (possible with some remotes or via adb shell input keyevent --longpress KEYCODE_DPAD_CENTER KEYCODE_BACK)",
-          "expected": "App handles conflicting simultaneous key events gracefully. Either one takes priority or both are processed in order. No crash from concurrent event handling"
+          "action": "adb_shell:press d-pad center and back simultaneously (possible with some remotes or via  input keyevent --longpress keycode_dpad_center keycode_back)",
+          "expected": "App handles conflicting simultaneous key events gracefully. Either one takes priority or both are processed in order. No crash from concurrent event handling",
+          "timeout": 10
         }
       ]
     },
@@ -347,18 +382,21 @@
       "steps": [
         {
           "name": "Open login screen",
-          "action": "Launch app to login screen, focus username field",
-          "expected": "Login screen with on-screen keyboard visible"
+          "action": "adb_shell: am start -n com.catalogizer.androidtv/.MainActivity",
+          "expected": "Login screen with on-screen keyboard visible",
+          "timeout": 10
         },
         {
           "name": "Type slowly with D-pad",
-          "action": "Navigate on-screen keyboard with D-pad, selecting each character with 2-3 second pauses between characters",
-          "expected": "Each character appears in the field as selected. No characters dropped. No cursor position jump. D-pad focus on keyboard is clearly visible at 10-foot distance"
+          "action": "keypress: KEYCODE_ENTER",
+          "expected": "Each character appears in the field as selected. No characters dropped. No cursor position jump. D-pad focus on keyboard is clearly visible at 10-foot distance",
+          "timeout": 10
         },
         {
           "name": "Navigate to password field",
-          "action": "Press D-pad down or Tab to move to password field",
-          "expected": "Focus moves to password field. On-screen keyboard reappears for password. Username value is preserved"
+          "action": "keypress: KEYCODE_DPAD_DOWN",
+          "expected": "Focus moves to password field. On-screen keyboard reappears for password. Username value is preserved",
+          "timeout": 10
         }
       ]
     },
@@ -373,13 +411,15 @@
       "steps": [
         {
           "name": "Connect external keyboard",
-          "action": "Connect USB or Bluetooth keyboard to Android TV device",
-          "expected": "Keyboard is recognized by system"
+          "action": "sleep: 1000",
+          "expected": "Keyboard is recognized by system",
+          "timeout": 10
         },
         {
           "name": "Type credentials with physical keyboard",
-          "action": "Type username and password using external keyboard, press Tab to switch fields, press Enter to submit",
-          "expected": "Text input works correctly. Tab moves between fields in logical order (server URL > username > password > login button). Enter on login button submits the form. No focus conflict between keyboard and on-screen keyboard"
+          "action": "keypress: KEYCODE_ENTER",
+          "expected": "Text input works correctly. Tab moves between fields in logical order (server URL > username > password > login button). Enter on login button submits the form. No focus conflict between keyboard and on-screen keyboard",
+          "timeout": 10
         }
       ]
     },
@@ -394,13 +434,15 @@
       "steps": [
         {
           "name": "Simulate slow network",
-          "action": "Throttle network connection to 100kbps with 2-second latency, then attempt login",
-          "expected": "Login request is sent, loading indicator visible"
+          "action": "sleep: 5000",
+          "expected": "Login request is sent, loading indicator visible",
+          "timeout": 10
         },
         {
           "name": "Wait for timeout",
-          "action": "Wait for client-side timeout (15-30 seconds)",
-          "expected": "Timeout error message displayed in large, TV-readable text. Login button is re-enabled. No ANR from blocking main thread. User can retry immediately"
+          "action": "sleep: 30000",
+          "expected": "Timeout error message displayed in large, TV-readable text. Login button is re-enabled. No ANR from blocking main thread. User can retry immediately",
+          "timeout": 10
         }
       ]
     },
@@ -415,8 +457,9 @@
       "steps": [
         {
           "name": "Enter server URL with trailing spaces",
-          "action": "Type server URL as 'http://192.168.0.100:8080   ' (with trailing spaces from accidental D-pad navigation on keyboard)",
-          "expected": "App trims whitespace before making connection. Login succeeds if server is reachable at the trimmed URL. No connection error from malformed URL with spaces"
+          "action": "text: http://192.168.0.100:8080   ",
+          "expected": "App trims whitespace before making connection. Login succeeds if server is reachable at the trimmed URL. No connection error from malformed URL with spaces",
+          "timeout": 10
         }
       ]
     },
@@ -431,13 +474,15 @@
       "steps": [
         {
           "name": "Enter HTTPS URL for HTTP server",
-          "action": "Enter https://192.168.0.100:8080 when the server only supports HTTP",
-          "expected": "Connection fails with clear error message about protocol mismatch or SSL handshake failure. Suggests trying HTTP. No crash from SSLException"
+          "action": "text: https://192.168.0.100:8080",
+          "expected": "Connection fails with clear error message about protocol mismatch or SSL handshake failure. Suggests trying HTTP. No crash from SSLException",
+          "timeout": 10
         },
         {
           "name": "Enter HTTP URL for HTTPS server",
-          "action": "Enter http://192.168.0.100:8080 when the server requires HTTPS",
-          "expected": "Connection either auto-upgrades to HTTPS or shows clear error with suggestion. No silent downgrade that leaks credentials"
+          "action": "text: http://192.168.0.100:8080",
+          "expected": "Connection either auto-upgrades to HTTPS or shows clear error with suggestion. No silent downgrade that leaks credentials",
+          "timeout": 10
         }
       ]
     },
@@ -452,13 +497,15 @@
       "steps": [
         {
           "name": "Start media playback",
-          "action": "Login and start playing a movie or episode",
-          "expected": "Media is playing"
+          "action": "adb_shell: am start -n com.catalogizer.androidtv/.MainActivity",
+          "expected": "Media is playing",
+          "timeout": 10
         },
         {
           "name": "Wait for token expiry during playback",
-          "action": "Wait until JWT token expires while media continues to play",
-          "expected": "Currently buffered content continues to play. When next API call fails with 401, playback pauses and a non-intrusive re-login prompt appears. Does not abruptly cut to login screen mid-scene. Allows user to re-authenticate and resume"
+          "action": "sleep: 3000",
+          "expected": "Currently buffered content continues to play. When next API call fails with 401, playback pauses and a non-intrusive re-login prompt appears. Does not abruptly cut to login screen mid-scene. Allows user to re-authenticate and resume",
+          "timeout": 10
         }
       ]
     },
@@ -473,13 +520,15 @@
       "steps": [
         {
           "name": "Change password on server",
-          "action": "While TV app is logged in, change the user's password via the web interface",
-          "expected": "TV app continues with existing token until it expires"
+          "action": "adb_shell: curl -s -X PUT http://localhost:8080/api/v1/auth/password -H \"Content-Type: application/json\" -d \"{\\\"password\\\":\\\"newpass123\\\"}\"",
+          "expected": "TV app continues with existing token until it expires",
+          "timeout": 10
         },
         {
           "name": "Token expires and re-login needed",
-          "action": "After token expires, TV app attempts API call",
-          "expected": "App redirects to login screen. User enters new password. Login succeeds with new password. Old password no longer works. Clear error if old password is used"
+          "action": "sleep: 5000",
+          "expected": "App redirects to login screen. User enters new password. Login succeeds with new password. Old password no longer works. Clear error if old password is used",
+          "timeout": 10
         }
       ]
     },
@@ -494,8 +543,9 @@
       "steps": [
         {
           "name": "Connect to server with self-signed cert",
-          "action": "Enter server URL using HTTPS with a self-signed certificate (e.g., catalog-api HTTP/3 development cert)",
-          "expected": "App shows certificate warning that is readable on TV screen. Provides option to accept/trust the certificate for development. Does not silently accept untrusted certificates. Does not crash from CertPathValidatorException"
+          "action": "text: https://192.168.0.100:8443",
+          "expected": "App shows certificate warning that is readable on TV screen. Provides option to accept/trust the certificate for development. Does not silently accept untrusted certificates. Does not crash from CertPathValidatorException",
+          "timeout": 10
         }
       ]
     },
@@ -510,13 +560,15 @@
       "steps": [
         {
           "name": "Open 4K media file",
-          "action": "Select a 4K (3840x2160) video file on a device with max 1080p output",
-          "expected": "Player downscales 4K content to device resolution. Playback starts without decoder error. Quality is acceptable at lower resolution"
+          "action": "keypress: KEYCODE_DPAD_CENTER",
+          "expected": "Player downscales 4K content to device resolution. Playback starts without decoder error. Quality is acceptable at lower resolution",
+          "timeout": 10
         },
         {
           "name": "Verify no performance issues",
-          "action": "Watch for 30 seconds, checking for frame drops or stuttering",
-          "expected": "If device hardware can handle 4K decode with downscale, playback is smooth. If hardware cannot cope, app gracefully shows message suggesting a lower quality version rather than showing slideshow-like playback"
+          "action": "frame_diff: 2000",
+          "expected": "If device hardware can handle 4K decode with downscale, playback is smooth. If hardware cannot cope, app gracefully shows message suggesting a lower quality version rather than showing slideshow-like playback",
+          "timeout": 10
         }
       ]
     },
@@ -531,8 +583,9 @@
       "steps": [
         {
           "name": "Attempt to play HEVC/H.265 on non-HEVC device",
-          "action": "Open a media file encoded in HEVC on a TV device that lacks hardware HEVC decoder",
-          "expected": "App detects unsupported codec and shows clear error: 'This video format (HEVC) is not supported by your device'. No crash from MediaCodec initialization failure. Suggests alternative if available"
+          "action": "keypress: KEYCODE_DPAD_CENTER",
+          "expected": "App detects unsupported codec and shows clear error: 'This video format (HEVC) is not supported by your device'. No crash from MediaCodec initialization failure. Suggests alternative if available",
+          "timeout": 10
         }
       ]
     },
@@ -547,13 +600,15 @@
       "steps": [
         {
           "name": "Start high quality stream",
-          "action": "Begin streaming a video at full quality on fast network",
-          "expected": "Video plays at high quality"
+          "action": "keypress: KEYCODE_DPAD_CENTER",
+          "expected": "Video plays at high quality",
+          "timeout": 10
         },
         {
           "name": "Reduce bandwidth mid-stream",
-          "action": "Throttle network to 500kbps while video is playing",
-          "expected": "Player detects reduced bandwidth and buffers. If adaptive streaming is supported, quality reduces gracefully. Playback continues rather than failing. Buffer indicator visible to user"
+          "action": "sleep: 5000",
+          "expected": "Player detects reduced bandwidth and buffers. If adaptive streaming is supported, quality reduces gracefully. Playback continues rather than failing. Buffer indicator visible to user",
+          "timeout": 10
         }
       ]
     },
@@ -568,13 +623,15 @@
       "steps": [
         {
           "name": "Play media with HDMI ARC soundbar",
-          "action": "Play a video with audio routed through HDMI ARC to an external soundbar",
-          "expected": "Video and audio play"
+          "action": "keypress: KEYCODE_DPAD_CENTER",
+          "expected": "Video and audio play",
+          "timeout": 10
         },
         {
           "name": "Check audio sync",
-          "action": "Observe lip sync between video and audio (soundbar may introduce 50-200ms delay)",
-          "expected": "If audio delay adjustment is available in settings, user can compensate. Player does not add its own additional delay. Audio passthrough mode (if supported) minimizes latency"
+          "action": "frame_diff: 2000",
+          "expected": "If audio delay adjustment is available in settings, user can compensate. Player does not add its own additional delay. Audio passthrough mode (if supported) minimizes latency",
+          "timeout": 10
         }
       ]
     },
@@ -589,13 +646,15 @@
       "steps": [
         {
           "name": "Set large accessibility font",
-          "action": "Set system font scale to maximum in Android TV accessibility settings",
-          "expected": "Font scale is increased system-wide"
+          "action": "adb_shell: settings put system font_scale 2.0",
+          "expected": "Font scale is increased system-wide",
+          "timeout": 10
         },
         {
           "name": "Play video with subtitles",
-          "action": "Play a media file with subtitles enabled",
-          "expected": "Subtitles are rendered at increased size per system setting. Subtitles remain within the video bounds and do not overflow off screen. Long subtitle lines wrap correctly. No overlap with player controls"
+          "action": "keypress: KEYCODE_DPAD_CENTER",
+          "expected": "Subtitles are rendered at increased size per system setting. Subtitles remain within the video bounds and do not overflow off screen. Long subtitle lines wrap correctly. No overlap with player controls",
+          "timeout": 10
         }
       ]
     },
@@ -610,13 +669,15 @@
       "steps": [
         {
           "name": "Open info for corrupted file",
-          "action": "Navigate to a media item backed by a corrupted or truncated file and view its details",
-          "expected": "Detail screen shows whatever metadata is available (title from filename, file size). Fields that cannot be read show 'Unknown' or 'N/A'. No crash from FFprobe/MediaExtractor failure"
+          "action": "keypress: KEYCODE_DPAD_CENTER",
+          "expected": "Detail screen shows whatever metadata is available (title from filename, file size). Fields that cannot be read show 'Unknown' or 'N/A'. No crash from FFprobe/MediaExtractor failure",
+          "timeout": 10
         },
         {
           "name": "Attempt to play corrupted file",
-          "action": "Press Play on the corrupted media item",
-          "expected": "Player shows error message: 'Unable to play this file'. Returns to detail screen on Back press. No stuck loading state"
+          "action": "keypress: KEYCODE_DPAD_UP",
+          "expected": "Player shows error message: 'Unable to play this file'. Returns to detail screen on Back press. No stuck loading state",
+          "timeout": 10
         }
       ]
     },
@@ -631,13 +692,15 @@
       "steps": [
         {
           "name": "Save invalid resume position",
-          "action": "Start playing a 90-minute movie, navigate to 60 minutes. Kill the app process. Then replace the media file with a shorter version (30 minutes)",
-          "expected": "Resume position (60 min) is saved from previous session"
+          "action": "adb_shell: am force-stop com.catalogizer.androidtv",
+          "expected": "Resume position (60 min) is saved from previous session",
+          "timeout": 10
         },
         {
           "name": "Relaunch and resume",
-          "action": "Open the same media item and select 'Resume'",
-          "expected": "Player detects that saved position (60 min) exceeds file duration (30 min). Falls back to playing from beginning rather than seeking to invalid position. No crash from seek beyond EOF"
+          "action": "adb_shell: am start -n com.catalogizer.androidtv/.MainActivity",
+          "expected": "Player detects that saved position (60 min) exceeds file duration (30 min). Falls back to playing from beginning rather than seeking to invalid position. No crash from seek beyond EOF",
+          "timeout": 10
         }
       ]
     },
@@ -652,13 +715,15 @@
       "steps": [
         {
           "name": "Pause playback",
-          "action": "Start playing a video and press Pause. Leave app idle for 30+ minutes",
-          "expected": "Video is paused. Screensaver may activate"
+          "action": "keypress: KEYCODE_MEDIA_PLAY_PAUSE",
+          "expected": "Video is paused. Screensaver may activate",
+          "timeout": 10
         },
         {
           "name": "Resume after long pause",
-          "action": "Dismiss screensaver and press Play to resume",
-          "expected": "Playback resumes from paused position. Network connection to server is re-established if it was dropped. Buffer refills. No crash from stale connection or expired session. If session expired, re-auth prompt appears"
+          "action": "keypress: KEYCODE_MEDIA_PLAY_PAUSE",
+          "expected": "Playback resumes from paused position. Network connection to server is re-established if it was dropped. Buffer refills. No crash from stale connection or expired session. If session expired, re-auth prompt appears",
+          "timeout": 10
         }
       ]
     },
@@ -673,13 +738,15 @@
       "steps": [
         {
           "name": "Use Bluetooth remote normally",
-          "action": "Navigate through app using Bluetooth remote",
-          "expected": "App responds to remote input"
+          "action": "keypress: KEYCODE_DPAD_DOWN",
+          "expected": "App responds to remote input",
+          "timeout": 10
         },
         {
           "name": "Remote disconnects",
-          "action": "Remove remote batteries or move out of Bluetooth range mid-navigation",
-          "expected": "App continues running. No crash from missing input device. When remote reconnects, app responds immediately. No queued input events from disconnect/reconnect causing unexpected navigation"
+          "action": "sleep: 5000",
+          "expected": "App continues running. No crash from missing input device. When remote reconnects, app responds immediately. No queued input events from disconnect/reconnect causing unexpected navigation",
+          "timeout": 10
         }
       ]
     },
@@ -694,8 +761,9 @@
       "steps": [
         {
           "name": "Use app with IR remote active",
-          "action": "Navigate app while another IR remote in the room sends signals (e.g., AC remote, other TV remote)",
-          "expected": "App only responds to valid key events from its paired remote. Stray IR signals do not cause unintended navigation. No crash from unexpected key codes"
+          "action": "keypress: KEYCODE_DPAD_DOWN",
+          "expected": "App only responds to valid key events from its paired remote. Stray IR signals do not cause unintended navigation. No crash from unexpected key codes",
+          "timeout": 10
         }
       ]
     },
@@ -710,13 +778,15 @@
       "steps": [
         {
           "name": "Use remote with low battery",
-          "action": "Navigate app with remote that has very low battery (signal may be intermittent)",
-          "expected": "App handles intermittent key events gracefully. Missed key presses do not leave app in inconsistent state. No half-processed navigation actions"
+          "action": "keypress: KEYCODE_DPAD_DOWN",
+          "expected": "App handles intermittent key events gracefully. Missed key presses do not leave app in inconsistent state. No half-processed navigation actions",
+          "timeout": 10
         },
         {
           "name": "Remote drops and reconnects",
-          "action": "Remote temporarily disconnects due to low battery then reconnects",
-          "expected": "Focus state is preserved. App continues from where it was. No focus lost to invisible element"
+          "action": "sleep: 3000",
+          "expected": "Focus state is preserved. App continues from where it was. No focus lost to invisible element",
+          "timeout": 10
         }
       ]
     },
@@ -731,13 +801,15 @@
       "steps": [
         {
           "name": "Press play/pause on home screen",
-          "action": "On the media browse home screen (not player), press the Play/Pause media key on the remote",
-          "expected": "App either starts playing the focused item or ignores the key gracefully. No crash from unhandled media key event. No KeyEvent dispatching error"
+          "action": "keypress: KEYCODE_HOME",
+          "expected": "App either starts playing the focused item or ignores the key gracefully. No crash from unhandled media key event. No KeyEvent dispatching error",
+          "timeout": 10
         },
         {
           "name": "Press rewind/fast-forward on settings",
-          "action": "On settings or login screen, press rewind or fast-forward media keys",
-          "expected": "Keys are ignored on non-media screens. No crash. No unexpected navigation"
+          "action": "keypress: KEYCODE_MEDIA_FAST_FORWARD",
+          "expected": "Keys are ignored on non-media screens. No crash. No unexpected navigation",
+          "timeout": 10
         }
       ]
     },
@@ -752,8 +824,9 @@
       "steps": [
         {
           "name": "Press channel up/down during VOD browsing",
-          "action": "While browsing the media library, press Channel Up and Channel Down buttons on the remote",
-          "expected": "Buttons are either ignored or mapped to page up/down scrolling. No crash from unhandled KEYCODE_CHANNEL_UP/DOWN. No attempt to tune to a TV channel"
+          "action": "keypress: KEYCODE_DPAD_DOWN",
+          "expected": "Buttons are either ignored or mapped to page up/down scrolling. No crash from unhandled KEYCODE_CHANNEL_UP/DOWN. No attempt to tune to a TV channel",
+          "timeout": 10
         }
       ]
     },
@@ -768,13 +841,15 @@
       "steps": [
         {
           "name": "Trigger voice search",
-          "action": "Press microphone button on remote and speak a search query",
-          "expected": "Voice search intent is sent to Catalogizer if it handles voice search"
+          "action": "keypress: KEYCODE_SEARCH",
+          "expected": "Voice search intent is sent to Catalogizer if it handles voice search",
+          "timeout": 10
         },
         {
           "name": "Voice recognition fails",
-          "action": "Speak unintelligibly or press mic button with no speech",
-          "expected": "If app handles voice search, it shows 'Could not understand' message. If app does not handle voice search intent, system handles the failure. No crash from empty or malformed voice search result"
+          "action": "keypress: KEYCODE_SEARCH",
+          "expected": "If app handles voice search, it shows 'Could not understand' message. If app does not handle voice search intent, system handles the failure. No crash from empty or malformed voice search result",
+          "timeout": 10
         }
       ]
     },
@@ -789,13 +864,15 @@
       "steps": [
         {
           "name": "Play media and press Home",
-          "action": "Start playing a video at the 15-minute mark, then press Home button on remote",
-          "expected": "Playback pauses. Player position (15 min) is saved. App goes to background cleanly"
+          "action": "keypress: KEYCODE_HOME",
+          "expected": "Playback pauses. Player position (15 min) is saved. App goes to background cleanly",
+          "timeout": 10
         },
         {
           "name": "Return to app",
-          "action": "Navigate back to Catalogizer from Android TV home",
-          "expected": "App resumes to player screen with video paused at the 15-minute mark. Resume prompt shows if applicable. Player resources are properly re-initialized"
+          "action": "adb_shell: am start -n com.catalogizer.androidtv/.MainActivity",
+          "expected": "App resumes to player screen with video paused at the 15-minute mark. Resume prompt shows if applicable. Player resources are properly re-initialized",
+          "timeout": 10
         }
       ]
     },
@@ -810,13 +887,15 @@
       "steps": [
         {
           "name": "Open recent apps during use",
-          "action": "While using Catalogizer, long-press Home or press the Recent Apps button",
-          "expected": "Android TV recent apps overlay appears. Catalogizer shows correct preview thumbnail (not black screen). App state is preserved"
+          "action": "keypress: KEYCODE_HOME",
+          "expected": "Android TV recent apps overlay appears. Catalogizer shows correct preview thumbnail (not black screen). App state is preserved",
+          "timeout": 10
         },
         {
           "name": "Return from recents",
-          "action": "Select Catalogizer from recent apps",
-          "expected": "App resumes to exact previous state. No activity recreation from thumbnail. Focus is on the last focused element"
+          "action": "adb_shell: am start -n com.catalogizer.androidtv/.MainActivity",
+          "expected": "App resumes to exact previous state. No activity recreation from thumbnail. Focus is on the last focused element",
+          "timeout": 10
         }
       ]
     },
@@ -831,13 +910,15 @@
       "steps": [
         {
           "name": "Audit all text sizes",
-          "action": "Navigate through every screen (login, home, browse, detail, settings, player controls) and verify text readability from 10 feet",
-          "expected": "All body text is at least 14sp. Titles are at least 18sp. No text smaller than 12sp anywhere. All text is readable from 10-foot viewing distance on a 40-inch display"
+          "action": "screenshot",
+          "expected": "All body text is at least 14sp. Titles are at least 18sp. No text smaller than 12sp anywhere. All text is readable from 10-foot viewing distance on a 40-inch display",
+          "timeout": 10
         },
         {
           "name": "Check error messages",
-          "action": "Trigger various error states and check message readability",
-          "expected": "Error messages use same minimum font sizes. Error text is not in low-contrast colors. Readable from couch distance"
+          "action": "screenshot",
+          "expected": "Error messages use same minimum font sizes. Error text is not in low-contrast colors. Readable from couch distance",
+          "timeout": 10
         }
       ]
     },
@@ -852,13 +933,15 @@
       "steps": [
         {
           "name": "Play HDR content on SDR display",
-          "action": "Play a media file with HDR10/Dolby Vision metadata on a non-HDR TV",
-          "expected": "Player tone-maps HDR to SDR range. Colors appear reasonable (not washed out or oversaturated). No crash from unsupported HDR metadata"
+          "action": "keypress: KEYCODE_DPAD_CENTER",
+          "expected": "Player tone-maps HDR to SDR range. Colors appear reasonable (not washed out or oversaturated). No crash from unsupported HDR metadata",
+          "timeout": 10
         },
         {
           "name": "Play HDR content on HDR display",
-          "action": "Play HDR content on an HDR-capable TV",
-          "expected": "HDR mode is activated if supported. Display switches to HDR processing. UI overlay elements remain visible (not blown out by HDR brightness)"
+          "action": "keypress: KEYCODE_DPAD_CENTER",
+          "expected": "HDR mode is activated if supported. Display switches to HDR processing. UI overlay elements remain visible (not blown out by HDR brightness)",
+          "timeout": 10
         }
       ]
     },
@@ -873,13 +956,15 @@
       "steps": [
         {
           "name": "Play 24fps content on 60Hz display",
-          "action": "Play a movie encoded at 23.976fps on a TV set to 60Hz refresh",
-          "expected": "Player either uses frame rate matching to switch display to 24Hz (if supported and enabled) or applies 3:2 pulldown. No visible stuttering from frame rate mismatch"
+          "action": "keypress: KEYCODE_DPAD_CENTER",
+          "expected": "Player either uses frame rate matching to switch display to 24Hz (if supported and enabled) or applies 3:2 pulldown. No visible stuttering from frame rate mismatch",
+          "timeout": 10
         },
         {
           "name": "Exit player after refresh rate switch",
-          "action": "Stop playback and return to home screen",
-          "expected": "Display refresh rate returns to default (60Hz). UI animations are smooth. No stuck refresh rate from player not cleaning up"
+          "action": "keypress: KEYCODE_BACK",
+          "expected": "Display refresh rate returns to default (60Hz). UI animations are smooth. No stuck refresh rate from player not cleaning up",
+          "timeout": 10
         }
       ]
     },
@@ -894,8 +979,9 @@
       "steps": [
         {
           "name": "Navigate rows with many items",
-          "action": "On home screen with 10+ rows of 50+ items each, rapidly scroll vertically between rows and horizontally within rows",
-          "expected": "Frame rate stays above 30fps during navigation. Image loading happens asynchronously and does not block UI thread. Placeholder images shown while loading. No visible jank or hitching during row transitions"
+          "action": "keypress: KEYCODE_DPAD_DOWN",
+          "expected": "Frame rate stays above 30fps during navigation. Image loading happens asynchronously and does not block UI thread. Placeholder images shown while loading. No visible jank or hitching during row transitions",
+          "timeout": 10
         }
       ]
     },
@@ -910,8 +996,9 @@
       "steps": [
         {
           "name": "Play 4:3 aspect ratio content",
-          "action": "Play a classic TV show or movie in 4:3 aspect ratio on a 16:9 TV",
-          "expected": "Video displays with pillarbox (black bars on left and right). Content is not stretched to fill 16:9. Aspect ratio is preserved. Pillarbox bars are clean black, not gray or noisy"
+          "action": "keypress: KEYCODE_DPAD_CENTER",
+          "expected": "Video displays with pillarbox (black bars on left and right). Content is not stretched to fill 16:9. Aspect ratio is preserved. Pillarbox bars are clean black, not gray or noisy",
+          "timeout": 10
         }
       ]
     },
@@ -926,13 +1013,15 @@
       "steps": [
         {
           "name": "Play ultra-wide content",
-          "action": "Play a movie with 2.39:1 aspect ratio (ultra-widescreen cinema) on 16:9 TV",
-          "expected": "Video displays with letterbox bars (black bars top and bottom). Video is centered vertically. Player controls overlay the letterbox area, not the video content"
+          "action": "keypress: KEYCODE_DPAD_CENTER",
+          "expected": "Video displays with letterbox bars (black bars top and bottom). Video is centered vertically. Player controls overlay the letterbox area, not the video content",
+          "timeout": 10
         },
         {
           "name": "Play tall content",
-          "action": "Play vertical video (9:16 phone video) on the TV",
-          "expected": "Video displays with large pillarbox bars. Content is centered and not distorted. No crash from unusual aspect ratios"
+          "action": "keypress: KEYCODE_DPAD_CENTER",
+          "expected": "Video displays with large pillarbox bars. Content is centered and not distorted. No crash from unusual aspect ratios",
+          "timeout": 10
         }
       ]
     },
@@ -947,13 +1036,15 @@
       "steps": [
         {
           "name": "Check all screen edges",
-          "action": "Navigate through all screens and verify that no interactive content is within the outer 5% of the screen",
-          "expected": "All text, buttons, focus indicators, and interactive elements are within the title-safe area (inner 90% of screen). Background images may extend to edges. Media rows have horizontal padding from screen edges"
+          "action": "screenshot",
+          "expected": "All text, buttons, focus indicators, and interactive elements are within the title-safe area (inner 90% of screen). Background images may extend to edges. Media rows have horizontal padding from screen edges",
+          "timeout": 10
         },
         {
           "name": "Check focused item at edges",
-          "action": "Focus items at the far left and far right of media rows",
-          "expected": "Focus indicator and item content are fully visible even on TVs with overscan. No focus ring clipped by screen edge"
+          "action": "keypress: KEYCODE_DPAD_RIGHT",
+          "expected": "Focus indicator and item content are fully visible even on TVs with overscan. No focus ring clipped by screen edge",
+          "timeout": 10
         }
       ]
     },
@@ -968,13 +1059,15 @@
       "steps": [
         {
           "name": "Play video with subtitles and show controls",
-          "action": "Play a video with subtitles enabled, then press any button to show player transport controls",
-          "expected": "When player controls are visible, subtitles shift upward to avoid being hidden behind the seek bar and control buttons. Subtitles are readable at all times"
+          "action": "keypress: KEYCODE_MEDIA_PLAY_PAUSE",
+          "expected": "When player controls are visible, subtitles shift upward to avoid being hidden behind the seek bar and control buttons. Subtitles are readable at all times",
+          "timeout": 10
         },
         {
           "name": "Hide controls",
-          "action": "Let player controls auto-hide after timeout",
-          "expected": "Subtitles return to their default position at the bottom of the video. No rendering glitch during transition"
+          "action": "sleep: 5000",
+          "expected": "Subtitles return to their default position at the bottom of the video. No rendering glitch during transition",
+          "timeout": 10
         }
       ]
     },
@@ -989,13 +1082,15 @@
       "steps": [
         {
           "name": "Show UI over bright content",
-          "action": "During playback of a very bright scene (snow, white background), bring up player controls overlay",
-          "expected": "Player controls have sufficient contrast against bright video (semi-transparent dark background behind controls). Play/pause, seek bar, and time text are clearly visible. Focus indicator is visible against any video content"
+          "action": "keypress: KEYCODE_DPAD_CENTER",
+          "expected": "Player controls have sufficient contrast against bright video (semi-transparent dark background behind controls). Play/pause, seek bar, and time text are clearly visible. Focus indicator is visible against any video content",
+          "timeout": 10
         },
         {
           "name": "Check info overlay on bright poster",
-          "action": "Navigate to a media item with a very bright or white poster/thumbnail on the browse screen",
-          "expected": "Title text over or near bright thumbnails remains readable. Text has shadow, outline, or background scrim for contrast"
+          "action": "screenshot",
+          "expected": "Title text over or near bright thumbnails remains readable. Text has shadow, outline, or background scrim for contrast",
+          "timeout": 10
         }
       ]
     },
@@ -1010,13 +1105,15 @@
       "steps": [
         {
           "name": "Trigger loading state on low-end device",
-          "action": "On a low-end Android TV device (2GB RAM, weak GPU), navigate to a screen that triggers data loading",
-          "expected": "Loading spinner animates smoothly (not jerky). Spinner does not consume excessive GPU resources. Animation uses hardware layer or simple rotation rather than complex shader effects"
+          "action": "adb_shell: am start -n com.catalogizer.androidtv/.MainActivity",
+          "expected": "Loading spinner animates smoothly (not jerky). Spinner does not consume excessive GPU resources. Animation uses hardware layer or simple rotation rather than complex shader effects",
+          "timeout": 10
         },
         {
           "name": "Multiple loading states simultaneously",
-          "action": "Navigate quickly through screens to trigger multiple concurrent loading operations",
-          "expected": "Loading indicators do not stack up and consume all GPU resources. Previous loading states are properly cancelled. No visual artifacts from overlapping spinners"
+          "action": "keypress: KEYCODE_DPAD_DOWN",
+          "expected": "Loading indicators do not stack up and consume all GPU resources. Previous loading states are properly cancelled. No visual artifacts from overlapping spinners",
+          "timeout": 10
         }
       ]
     },
@@ -1031,18 +1128,21 @@
       "steps": [
         {
           "name": "Check focus on dark backgrounds",
-          "action": "Navigate to items with dark poster art and verify focus indicator is visible",
-          "expected": "Focus indicator (highlight border, scale effect, or glow) is visible against dark content. Contrast ratio meets WCAG AA minimum"
+          "action": "screenshot",
+          "expected": "Focus indicator (highlight border, scale effect, or glow) is visible against dark content. Contrast ratio meets WCAG AA minimum",
+          "timeout": 10
         },
         {
           "name": "Check focus on light backgrounds",
-          "action": "Navigate to items with light/white poster art and verify focus indicator",
-          "expected": "Focus indicator is equally visible against light content. Uses a technique (shadow, contrasting border, background tint) that works universally regardless of thumbnail colors"
+          "action": "screenshot",
+          "expected": "Focus indicator is equally visible against light content. Uses a technique (shadow, contrasting border, background tint) that works universally regardless of thumbnail colors",
+          "timeout": 10
         },
         {
           "name": "Check focus on empty/placeholder items",
-          "action": "Navigate to items that have placeholder images while real images load",
-          "expected": "Focus indicator is visible on placeholder items. User can always tell which item has focus, even before images load"
+          "action": "screenshot",
+          "expected": "Focus indicator is visible on placeholder items. User can always tell which item has focus, even before images load",
+          "timeout": 10
         }
       ]
     }

@@ -10,8 +10,7 @@ test_cases:
   - androidtv
   steps:
   - name: Simulate low RAM conditions
-    action: '# TODO: Convert to executable - launch catalogizer on a 2gb ram android
-      tv device (e.g., mi box) with several other apps in recent tasks consuming memory'
+    action: 'adb_shell: am start -n com.catalogizer.androidtv/.MainActivity'
     expected: App launches within 5 seconds despite memory constraints. Splash screen
       appears without black screen gap
     timeout: 10
@@ -32,14 +31,13 @@ test_cases:
     expected: Device has no network connectivity
     timeout: 10
   - name: Launch app
-    action: '# TODO: Convert to executable - select catalogizer from android tv launcher'
+    action: 'adb_shell: am start -n com.catalogizer.androidtv/.MainActivity'
     expected: App launches and shows clear offline state message centered on screen.
       Message is readable from 10-foot viewing distance. No crash, no infinite loading
       spinner
     timeout: 10
   - name: Reconnect and retry
-    action: '# TODO: Convert to executable - plug ethernet back in and use d-pad to
-      select retry button'
+    action: 'keypress: KEYCODE_DPAD_CENTER'
     expected: App detects connectivity restoration and loads content. Retry button
       is focusable and activatable with D-pad center
     timeout: 10
@@ -51,15 +49,13 @@ test_cases:
   - androidtv
   steps:
   - name: Launch after system update reboot
-    action: '# TODO: Convert to executable - after android tv system update completes
-      and device reboots, launch catalogizer'
+    action: 'adb_shell: am start -n com.catalogizer.androidtv/.MainActivity'
     expected: App launches normally. Database and SharedPreferences survive system
       update. No crash from changed system APIs or missing runtime permissions after
       update
     timeout: 10
   - name: Verify session and data
-    action: '# TODO: Convert to executable - check if user is still logged in and
-      cached data is available'
+    action: 'screenshot'
     expected: Login session is preserved if tokens have not expired. Server URL and
       preferences intact. Cached images may need reload but no data corruption
     timeout: 10
@@ -71,14 +67,12 @@ test_cases:
   - androidtv
   steps:
   - name: Trigger CEC power-on during app launch
-    action: '# TODO: Convert to executable - turn on tv via cec (e.g., power on soundbar
-      which triggers tv power-on) while catalogizer is set as last-used app and auto-starts'
+    action: 'adb_shell: am start -n com.catalogizer.androidtv/.MainActivity'
     expected: App handles the HDMI input switching and CEC power-on events without
       crashing. Display may briefly show black during input switch
     timeout: 10
   - name: Verify app is functional after CEC
-    action: '# TODO: Convert to executable - use remote to navigate after tv finishes
-      input switching'
+    action: 'keypress: KEYCODE_DPAD_DOWN'
     expected: App responds to D-pad input. UI is fully rendered. No stuck black screen
       from HDMI handshake timing
     timeout: 10
@@ -102,13 +96,11 @@ test_cases:
   - androidtv
   steps:
   - name: Let screensaver activate
-    action: '# TODO: Convert to executable - leave catalogizer idle on the home screen
-      until the android tv screensaver (daydream) activates'
+    action: 'sleep: 30000'
     expected: Screensaver takes over display
     timeout: 10
   - name: Dismiss screensaver
-    action: '# TODO: Convert to executable - press any button on the remote to dismiss
-      screensaver'
+    action: 'keypress: KEYCODE_DPAD_CENTER'
     expected: App returns to the exact screen it was on before screensaver. Focus
       is restored to the last focused element. No activity recreation errors. No stale
       WebSocket connections
@@ -121,8 +113,7 @@ test_cases:
   - androidtv
   steps:
   - name: Navigate to detail screen
-    action: '# TODO: Convert to executable - login, browse to a media item, open its
-      detail screen'
+    action: 'adb_shell: am start -n com.catalogizer.androidtv/.MainActivity'
     expected: User is on detail screen
     timeout: 10
   - name: Simulate low memory kill
@@ -143,14 +134,12 @@ test_cases:
   - androidtv
   steps:
   - name: Set overscan on display
-    action: '# TODO: Convert to executable - configure tv display with significant
-      overscan (old crt mode or misconfigured hdmi) that cuts 5-10% of edges'
+    action: 'sleep: 2000'
     expected: App renders with content within the overscan-safe area (inner 90% of
       screen)
     timeout: 10
   - name: Verify critical UI visible
-    action: '# TODO: Convert to executable - check that navigation elements, titles,
-      and action buttons are not cut off by overscan'
+    action: 'screenshot'
     expected: All interactive elements and text are within the title-safe area. No
       buttons or menu items hidden behind screen edges. Focus indicators are fully
       visible
@@ -168,7 +157,7 @@ test_cases:
       frames excessively. Key repeat rate is handled by throttling or debouncing
     timeout: 10
   - name: Stop rapid input
-    action: '# TODO: Convert to executable - release d-pad button'
+    action: 'sleep: 1000'
     expected: Focus settles on a valid item. No overscroll past the last item. UI
       is responsive immediately after stopping
     timeout: 10
@@ -197,8 +186,7 @@ test_cases:
   - androidtv
   steps:
   - name: Open a dialog
-    action: '# TODO: Convert to executable - trigger a confirmation dialog (e.g.,
-      logout, error alert, settings confirmation)'
+    action: 'keypress: KEYCODE_MENU'
     expected: Dialog appears with focus on a dialog button
     timeout: 10
   - name: Dismiss dialog
@@ -215,13 +203,11 @@ test_cases:
   - androidtv
   steps:
   - name: Navigate to screen with conditional visibility
-    action: '# TODO: Convert to executable - navigate to a screen where some elements
-      may be hidden (e.g., empty search results hiding the results container)'
+    action: 'keypress: KEYCODE_DPAD_UP'
     expected: Screen loads with some elements gone/invisible
     timeout: 10
   - name: Attempt to focus hidden area
-    action: '# TODO: Convert to executable - press d-pad in direction of hidden/gone
-      elements'
+    action: 'keypress: KEYCODE_DPAD_DOWN'
     expected: Focus skips invisible elements and lands on the next visible focusable
       element. No focus trap where D-pad input has no visible effect. No crash from
       focusing a GONE view
@@ -234,8 +220,7 @@ test_cases:
   - androidtv
   steps:
   - name: Navigate to first item in row
-    action: '# TODO: Convert to executable - focus the first item in a horizontal
-      media row'
+    action: 'keypress: KEYCODE_DPAD_RIGHT'
     expected: First item has visible focus
     timeout: 10
   - name: Press D-pad left at boundary
@@ -301,8 +286,7 @@ test_cases:
   - androidtv
   steps:
   - name: Open login screen
-    action: '# TODO: Convert to executable - launch app to login screen, focus username
-      field'
+    action: 'adb_shell: am start -n com.catalogizer.androidtv/.MainActivity'
     expected: Login screen with on-screen keyboard visible
     timeout: 10
   - name: Type slowly with D-pad
@@ -324,8 +308,7 @@ test_cases:
   - androidtv
   steps:
   - name: Connect external keyboard
-    action: '# TODO: Convert to executable - connect usb or bluetooth keyboard to
-      android tv device'
+    action: 'sleep: 1000'
     expected: Keyboard is recognized by system
     timeout: 10
   - name: Type credentials with physical keyboard
@@ -342,8 +325,7 @@ test_cases:
   - androidtv
   steps:
   - name: Simulate slow network
-    action: '# TODO: Convert to executable - throttle network connection to 100kbps
-      with 2-second latency, then attempt login'
+    action: 'sleep: 5000'
     expected: Login request is sent, loading indicator visible
     timeout: 10
   - name: Wait for timeout
@@ -372,14 +354,12 @@ test_cases:
   - androidtv
   steps:
   - name: Enter HTTPS URL for HTTP server
-    action: '# TODO: Convert to executable - enter https://192.168.0.100:8080 when
-      the server only supports http'
+    action: 'text: https://192.168.0.100:8080'
     expected: Connection fails with clear error message about protocol mismatch or
       SSL handshake failure. Suggests trying HTTP. No crash from SSLException
     timeout: 10
   - name: Enter HTTP URL for HTTPS server
-    action: '# TODO: Convert to executable - enter http://192.168.0.100:8080 when
-      the server requires https'
+    action: 'text: http://192.168.0.100:8080'
     expected: Connection either auto-upgrades to HTTPS or shows clear error with suggestion.
       No silent downgrade that leaks credentials
     timeout: 10
@@ -391,7 +371,7 @@ test_cases:
   - androidtv
   steps:
   - name: Start media playback
-    action: '# TODO: Convert to executable - login and start playing a movie or episode'
+    action: 'adb_shell: am start -n com.catalogizer.androidtv/.MainActivity'
     expected: Media is playing
     timeout: 10
   - name: Wait for token expiry during playback
@@ -409,13 +389,11 @@ test_cases:
   - androidtv
   steps:
   - name: Change password on server
-    action: '# TODO: Convert to executable - while tv app is logged in, change the
-      user''s password via the web interface'
+    action: 'adb_shell: curl -s -X PUT http://localhost:8080/api/v1/auth/password -H "Content-Type: application/json" -d "{\"password\":\"newpass123\"}"'
     expected: TV app continues with existing token until it expires
     timeout: 10
   - name: Token expires and re-login needed
-    action: '# TODO: Convert to executable - after token expires, tv app attempts
-      api call'
+    action: 'sleep: 5000'
     expected: App redirects to login screen. User enters new password. Login succeeds
       with new password. Old password no longer works. Clear error if old password
       is used
@@ -428,8 +406,7 @@ test_cases:
   - androidtv
   steps:
   - name: Connect to server with self-signed cert
-    action: '# TODO: Convert to executable - enter server url using https with a self-signed
-      certificate (e.g., catalog-api http/3 development cert)'
+    action: 'text: https://192.168.0.100:8443'
     expected: App shows certificate warning that is readable on TV screen. Provides
       option to accept/trust the certificate for development. Does not silently accept
       untrusted certificates. Does not crash from CertPathValidatorException
@@ -442,14 +419,12 @@ test_cases:
   - androidtv
   steps:
   - name: Open 4K media file
-    action: '# TODO: Convert to executable - select a 4k (3840x2160) video file on
-      a device with max 1080p output'
+    action: 'keypress: KEYCODE_DPAD_CENTER'
     expected: Player downscales 4K content to device resolution. Playback starts without
       decoder error. Quality is acceptable at lower resolution
     timeout: 10
   - name: Verify no performance issues
-    action: '# TODO: Convert to executable - watch for 30 seconds, checking for frame
-      drops or stuttering'
+    action: 'frame_diff: 2000'
     expected: If device hardware can handle 4K decode with downscale, playback is
       smooth. If hardware cannot cope, app gracefully shows message suggesting a lower
       quality version rather than showing slideshow-like playback
@@ -462,8 +437,7 @@ test_cases:
   - androidtv
   steps:
   - name: Attempt to play HEVC/H.265 on non-HEVC device
-    action: '# TODO: Convert to executable - open a media file encoded in hevc on
-      a tv device that lacks hardware hevc decoder'
+    action: 'keypress: KEYCODE_DPAD_CENTER'
     expected: 'App detects unsupported codec and shows clear error: ''This video format
       (HEVC) is not supported by your device''. No crash from MediaCodec initialization
       failure. Suggests alternative if available'
@@ -476,13 +450,11 @@ test_cases:
   - androidtv
   steps:
   - name: Start high quality stream
-    action: '# TODO: Convert to executable - begin streaming a video at full quality
-      on fast network'
+    action: 'keypress: KEYCODE_DPAD_CENTER'
     expected: Video plays at high quality
     timeout: 10
   - name: Reduce bandwidth mid-stream
-    action: '# TODO: Convert to executable - throttle network to 500kbps while video
-      is playing'
+    action: 'sleep: 5000'
     expected: Player detects reduced bandwidth and buffers. If adaptive streaming
       is supported, quality reduces gracefully. Playback continues rather than failing.
       Buffer indicator visible to user
@@ -495,13 +467,11 @@ test_cases:
   - androidtv
   steps:
   - name: Play media with HDMI ARC soundbar
-    action: '# TODO: Convert to executable - play a video with audio routed through
-      hdmi arc to an external soundbar'
+    action: 'keypress: KEYCODE_DPAD_CENTER'
     expected: Video and audio play
     timeout: 10
   - name: Check audio sync
-    action: '# TODO: Convert to executable - observe lip sync between video and audio
-      (soundbar may introduce 50-200ms delay)'
+    action: 'frame_diff: 2000'
     expected: If audio delay adjustment is available in settings, user can compensate.
       Player does not add its own additional delay. Audio passthrough mode (if supported)
       minimizes latency
@@ -514,12 +484,11 @@ test_cases:
   - androidtv
   steps:
   - name: Set large accessibility font
-    action: '# TODO: Convert to executable - set system font scale to maximum in android
-      tv accessibility settings'
+    action: 'adb_shell: settings put system font_scale 2.0'
     expected: Font scale is increased system-wide
     timeout: 10
   - name: Play video with subtitles
-    action: '# TODO: Convert to executable - play a media file with subtitles enabled'
+    action: 'keypress: KEYCODE_DPAD_CENTER'
     expected: Subtitles are rendered at increased size per system setting. Subtitles
       remain within the video bounds and do not overflow off screen. Long subtitle
       lines wrap correctly. No overlap with player controls
@@ -532,8 +501,7 @@ test_cases:
   - androidtv
   steps:
   - name: Open info for corrupted file
-    action: '# TODO: Convert to executable - navigate to a media item backed by a
-      corrupted or truncated file and view its details'
+    action: 'keypress: KEYCODE_DPAD_CENTER'
     expected: Detail screen shows whatever metadata is available (title from filename,
       file size). Fields that cannot be read show 'Unknown' or 'N/A'. No crash from
       FFprobe/MediaExtractor failure
@@ -551,13 +519,11 @@ test_cases:
   - androidtv
   steps:
   - name: Save invalid resume position
-    action: '# TODO: Convert to executable - start playing a 90-minute movie, navigate
-      to 60 minutes. kill the app process. then replace the media file with a shorter
-      version (30 minutes)'
+    action: 'adb_shell: am force-stop com.catalogizer.androidtv'
     expected: Resume position (60 min) is saved from previous session
     timeout: 10
   - name: Relaunch and resume
-    action: '# TODO: Convert to executable - open the same media item and select ''resume'''
+    action: 'adb_shell: am start -n com.catalogizer.androidtv/.MainActivity'
     expected: Player detects that saved position (60 min) exceeds file duration (30
       min). Falls back to playing from beginning rather than seeking to invalid position.
       No crash from seek beyond EOF
@@ -587,13 +553,11 @@ test_cases:
   - androidtv
   steps:
   - name: Use Bluetooth remote normally
-    action: '# TODO: Convert to executable - navigate through app using bluetooth
-      remote'
+    action: 'keypress: KEYCODE_DPAD_DOWN'
     expected: App responds to remote input
     timeout: 10
   - name: Remote disconnects
-    action: '# TODO: Convert to executable - remove remote batteries or move out of
-      bluetooth range mid-navigation'
+    action: 'sleep: 5000'
     expected: App continues running. No crash from missing input device. When remote
       reconnects, app responds immediately. No queued input events from disconnect/reconnect
       causing unexpected navigation
@@ -606,8 +570,7 @@ test_cases:
   - androidtv
   steps:
   - name: Use app with IR remote active
-    action: '# TODO: Convert to executable - navigate app while another ir remote
-      in the room sends signals (e.g., ac remote, other tv remote)'
+    action: 'keypress: KEYCODE_DPAD_DOWN'
     expected: App only responds to valid key events from its paired remote. Stray
       IR signals do not cause unintended navigation. No crash from unexpected key
       codes
@@ -620,14 +583,12 @@ test_cases:
   - androidtv
   steps:
   - name: Use remote with low battery
-    action: '# TODO: Convert to executable - navigate app with remote that has very
-      low battery (signal may be intermittent)'
+    action: 'keypress: KEYCODE_DPAD_DOWN'
     expected: App handles intermittent key events gracefully. Missed key presses do
       not leave app in inconsistent state. No half-processed navigation actions
     timeout: 10
   - name: Remote drops and reconnects
-    action: '# TODO: Convert to executable - remote temporarily disconnects due to
-      low battery then reconnects'
+    action: 'sleep: 3000'
     expected: Focus state is preserved. App continues from where it was. No focus
       lost to invisible element
     timeout: 10
@@ -644,8 +605,7 @@ test_cases:
       No crash from unhandled media key event. No KeyEvent dispatching error
     timeout: 10
   - name: Press rewind/fast-forward on settings
-    action: '# TODO: Convert to executable - on settings or login screen, press rewind
-      or fast-forward media keys'
+    action: 'keypress: KEYCODE_MEDIA_FAST_FORWARD'
     expected: Keys are ignored on non-media screens. No crash. No unexpected navigation
     timeout: 10
 - id: neg-tv-remote-channel-buttons
@@ -668,13 +628,11 @@ test_cases:
   - androidtv
   steps:
   - name: Trigger voice search
-    action: '# TODO: Convert to executable - press microphone button on remote and
-      speak a search query'
+    action: 'keypress: KEYCODE_SEARCH'
     expected: Voice search intent is sent to Catalogizer if it handles voice search
     timeout: 10
   - name: Voice recognition fails
-    action: '# TODO: Convert to executable - speak unintelligibly or press mic button
-      with no speech'
+    action: 'keypress: KEYCODE_SEARCH'
     expected: If app handles voice search, it shows 'Could not understand' message.
       If app does not handle voice search intent, system handles the failure. No crash
       from empty or malformed voice search result
@@ -692,8 +650,7 @@ test_cases:
       cleanly
     timeout: 10
   - name: Return to app
-    action: '# TODO: Convert to executable - navigate back to catalogizer from android
-      tv home'
+    action: 'adb_shell: am start -n com.catalogizer.androidtv/.MainActivity'
     expected: App resumes to player screen with video paused at the 15-minute mark.
       Resume prompt shows if applicable. Player resources are properly re-initialized
     timeout: 10
@@ -710,7 +667,7 @@ test_cases:
       thumbnail (not black screen). App state is preserved
     timeout: 10
   - name: Return from recents
-    action: '# TODO: Convert to executable - select catalogizer from recent apps'
+    action: 'adb_shell: am start -n com.catalogizer.androidtv/.MainActivity'
     expected: App resumes to exact previous state. No activity recreation from thumbnail.
       Focus is on the last focused element
     timeout: 10
@@ -722,16 +679,13 @@ test_cases:
   - androidtv
   steps:
   - name: Audit all text sizes
-    action: '# TODO: Convert to executable - navigate through every screen (login,
-      home, browse, detail, settings, player controls) and verify text readability
-      from 10 feet'
+    action: 'screenshot'
     expected: All body text is at least 14sp. Titles are at least 18sp. No text smaller
       than 12sp anywhere. All text is readable from 10-foot viewing distance on a
       40-inch display
     timeout: 10
   - name: Check error messages
-    action: '# TODO: Convert to executable - trigger various error states and check
-      message readability'
+    action: 'screenshot'
     expected: Error messages use same minimum font sizes. Error text is not in low-contrast
       colors. Readable from couch distance
     timeout: 10
@@ -743,13 +697,12 @@ test_cases:
   - androidtv
   steps:
   - name: Play HDR content on SDR display
-    action: '# TODO: Convert to executable - play a media file with hdr10/dolby vision
-      metadata on a non-hdr tv'
+    action: 'keypress: KEYCODE_DPAD_CENTER'
     expected: Player tone-maps HDR to SDR range. Colors appear reasonable (not washed
       out or oversaturated). No crash from unsupported HDR metadata
     timeout: 10
   - name: Play HDR content on HDR display
-    action: '# TODO: Convert to executable - play hdr content on an hdr-capable tv'
+    action: 'keypress: KEYCODE_DPAD_CENTER'
     expected: HDR mode is activated if supported. Display switches to HDR processing.
       UI overlay elements remain visible (not blown out by HDR brightness)
     timeout: 10
@@ -761,14 +714,13 @@ test_cases:
   - androidtv
   steps:
   - name: Play 24fps content on 60Hz display
-    action: '# TODO: Convert to executable - play a movie encoded at 23.976fps on
-      a tv set to 60hz refresh'
+    action: 'keypress: KEYCODE_DPAD_CENTER'
     expected: Player either uses frame rate matching to switch display to 24Hz (if
       supported and enabled) or applies 3:2 pulldown. No visible stuttering from frame
       rate mismatch
     timeout: 10
   - name: Exit player after refresh rate switch
-    action: '# TODO: Convert to executable - stop playback and return to home screen'
+    action: 'keypress: KEYCODE_BACK'
     expected: Display refresh rate returns to default (60Hz). UI animations are smooth.
       No stuck refresh rate from player not cleaning up
     timeout: 10
@@ -780,8 +732,7 @@ test_cases:
   - androidtv
   steps:
   - name: Navigate rows with many items
-    action: '# TODO: Convert to executable - on home screen with 10+ rows of 50+ items
-      each, rapidly scroll vertically between rows and horizontally within rows'
+    action: 'keypress: KEYCODE_DPAD_DOWN'
     expected: Frame rate stays above 30fps during navigation. Image loading happens
       asynchronously and does not block UI thread. Placeholder images shown while
       loading. No visible jank or hitching during row transitions
@@ -794,8 +745,7 @@ test_cases:
   - androidtv
   steps:
   - name: Play 4:3 aspect ratio content
-    action: '# TODO: Convert to executable - play a classic tv show or movie in 4:3
-      aspect ratio on a 16:9 tv'
+    action: 'keypress: KEYCODE_DPAD_CENTER'
     expected: Video displays with pillarbox (black bars on left and right). Content
       is not stretched to fill 16:9. Aspect ratio is preserved. Pillarbox bars are
       clean black, not gray or noisy
@@ -808,15 +758,13 @@ test_cases:
   - androidtv
   steps:
   - name: Play ultra-wide content
-    action: '# TODO: Convert to executable - play a movie with 2.39:1 aspect ratio
-      (ultra-widescreen cinema) on 16:9 tv'
+    action: 'keypress: KEYCODE_DPAD_CENTER'
     expected: Video displays with letterbox bars (black bars top and bottom). Video
       is centered vertically. Player controls overlay the letterbox area, not the
       video content
     timeout: 10
   - name: Play tall content
-    action: '# TODO: Convert to executable - play vertical video (9:16 phone video)
-      on the tv'
+    action: 'keypress: KEYCODE_DPAD_CENTER'
     expected: Video displays with large pillarbox bars. Content is centered and not
       distorted. No crash from unusual aspect ratios
     timeout: 10
@@ -828,15 +776,13 @@ test_cases:
   - androidtv
   steps:
   - name: Check all screen edges
-    action: '# TODO: Convert to executable - navigate through all screens and verify
-      that no interactive content is within the outer 5% of the screen'
+    action: 'screenshot'
     expected: All text, buttons, focus indicators, and interactive elements are within
       the title-safe area (inner 90% of screen). Background images may extend to edges.
       Media rows have horizontal padding from screen edges
     timeout: 10
   - name: Check focused item at edges
-    action: '# TODO: Convert to executable - focus items at the far left and far right
-      of media rows'
+    action: 'keypress: KEYCODE_DPAD_RIGHT'
     expected: Focus indicator and item content are fully visible even on TVs with
       overscan. No focus ring clipped by screen edge
     timeout: 10
@@ -854,7 +800,7 @@ test_cases:
       times
     timeout: 10
   - name: Hide controls
-    action: '# TODO: Convert to executable - let player controls auto-hide after timeout'
+    action: 'sleep: 5000'
     expected: Subtitles return to their default position at the bottom of the video.
       No rendering glitch during transition
     timeout: 10
@@ -866,15 +812,13 @@ test_cases:
   - androidtv
   steps:
   - name: Show UI over bright content
-    action: '# TODO: Convert to executable - during playback of a very bright scene
-      (snow, white background), bring up player controls overlay'
+    action: 'keypress: KEYCODE_DPAD_CENTER'
     expected: Player controls have sufficient contrast against bright video (semi-transparent
       dark background behind controls). Play/pause, seek bar, and time text are clearly
       visible. Focus indicator is visible against any video content
     timeout: 10
   - name: Check info overlay on bright poster
-    action: '# TODO: Convert to executable - navigate to a media item with a very
-      bright or white poster/thumbnail on the browse screen'
+    action: 'screenshot'
     expected: Title text over or near bright thumbnails remains readable. Text has
       shadow, outline, or background scrim for contrast
     timeout: 10
@@ -886,15 +830,13 @@ test_cases:
   - androidtv
   steps:
   - name: Trigger loading state on low-end device
-    action: '# TODO: Convert to executable - on a low-end android tv device (2gb ram,
-      weak gpu), navigate to a screen that triggers data loading'
+    action: 'adb_shell: am start -n com.catalogizer.androidtv/.MainActivity'
     expected: Loading spinner animates smoothly (not jerky). Spinner does not consume
       excessive GPU resources. Animation uses hardware layer or simple rotation rather
       than complex shader effects
     timeout: 10
   - name: Multiple loading states simultaneously
-    action: '# TODO: Convert to executable - navigate quickly through screens to trigger
-      multiple concurrent loading operations'
+    action: 'keypress: KEYCODE_DPAD_DOWN'
     expected: Loading indicators do not stack up and consume all GPU resources. Previous
       loading states are properly cancelled. No visual artifacts from overlapping
       spinners
@@ -907,21 +849,18 @@ test_cases:
   - androidtv
   steps:
   - name: Check focus on dark backgrounds
-    action: '# TODO: Convert to executable - navigate to items with dark poster art
-      and verify focus indicator is visible'
+    action: 'screenshot'
     expected: Focus indicator (highlight border, scale effect, or glow) is visible
       against dark content. Contrast ratio meets WCAG AA minimum
     timeout: 10
   - name: Check focus on light backgrounds
-    action: '# TODO: Convert to executable - navigate to items with light/white poster
-      art and verify focus indicator'
+    action: 'screenshot'
     expected: Focus indicator is equally visible against light content. Uses a technique
       (shadow, contrasting border, background tint) that works universally regardless
       of thumbnail colors
     timeout: 10
   - name: Check focus on empty/placeholder items
-    action: '# TODO: Convert to executable - navigate to items that have placeholder
-      images while real images load'
+    action: 'screenshot'
     expected: Focus indicator is visible on placeholder items. User can always tell
       which item has focus, even before images load
     timeout: 10

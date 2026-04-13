@@ -14,7 +14,7 @@ test_cases:
     expected: App process terminated
     timeout: 10
   - name: Launch from launcher
-    action: '# TODO: Convert to executable - select catalogizer from android tv launcher'
+    action: 'adb_shell: am start -n com.catalogizer.androidtv/.MainActivity'
     expected: App launches and displays splash screen within 3 seconds
     timeout: 10
 - id: tv-splash-screen
@@ -25,7 +25,7 @@ test_cases:
   - androidtv
   steps:
   - name: Launch app
-    action: '# TODO: Convert to executable - start catalogizer from launcher'
+    action: 'adb_shell: am start -n com.catalogizer.androidtv/.MainActivity'
     expected: Splash screen appears with app logo and loading indicator
     timeout: 10
   - name: Splash completes
@@ -44,7 +44,7 @@ test_cases:
     expected: Home screen loads
     timeout: 10
   - name: Verify initial focus
-    action: '# TODO: Convert to executable - check which ui element has focus'
+    action: 'screenshot'
     expected: First focusable media item in top row has visible focus indicator
     timeout: 10
 - id: tv-login-page
@@ -55,13 +55,12 @@ test_cases:
   - androidtv
   steps:
   - name: Open app without session
-    action: '# TODO: Convert to executable - clear app data and launch on tv'
+    action: 'adb_shell: pm clear com.catalogizer.androidtv && am start -n com.catalogizer.androidtv/.MainActivity'
     expected: Login screen renders with server URL, username, password fields and
       login button
     timeout: 10
   - name: Verify TV layout
-    action: '# TODO: Convert to executable - check layout is optimized for tv (large
-      text, readable from distance)'
+    action: 'screenshot'
     expected: Fields and labels are large enough for 10-foot viewing experience
     timeout: 10
 - id: tv-login-dpad-nav
@@ -72,7 +71,7 @@ test_cases:
   - androidtv
   steps:
   - name: Focus on username
-    action: '# TODO: Convert to executable - navigate to username field with d-pad'
+    action: 'keypress: KEYCODE_DPAD_DOWN'
     expected: Username field is focused with visible highlight
     timeout: 10
   - name: Navigate to password
@@ -110,11 +109,11 @@ test_cases:
   - androidtv
   steps:
   - name: Enter wrong credentials
-    action: '# TODO: Convert to executable - type admin/wrongpassword and press login'
+    action: 'text: wrongpassword'
     expected: Error message displayed prominently on screen, readable from 10 feet
     timeout: 10
   - name: Verify error dismissal
-    action: '# TODO: Convert to executable - press any d-pad direction'
+    action: 'keypress: KEYCODE_DPAD_DOWN'
     expected: Error message dismisses, focus returns to input fields
     timeout: 10
 - id: tv-home-loads
@@ -129,7 +128,7 @@ test_cases:
     expected: Leanback-style home screen renders with horizontal rows of media content
     timeout: 10
   - name: Check all rows visible
-    action: '# TODO: Convert to executable - inspect home screen layout'
+    action: 'screenshot'
     expected: Multiple category rows visible with media cards
     timeout: 10
 - id: tv-media-carousel
@@ -140,8 +139,7 @@ test_cases:
   - androidtv
   steps:
   - name: Check hero carousel
-    action: '# TODO: Convert to executable - look for featured/hero carousel at top
-      of home'
+    action: 'screenshot'
     expected: Hero carousel shows featured media with large backdrop images
     timeout: 10
   - name: Navigate carousel
@@ -160,7 +158,7 @@ test_cases:
   - androidtv
   steps:
   - name: Verify category rows
-    action: '# TODO: Convert to executable - scroll down on home screen'
+    action: 'keypress: KEYCODE_DPAD_DOWN'
     expected: 'Multiple rows visible: Recent, Movies, TV Shows, Music, etc.'
     timeout: 10
   - name: Scroll within row
@@ -183,7 +181,7 @@ test_cases:
     expected: Focus moves to nearest item in next row
     timeout: 10
   - name: Focus ring visible
-    action: '# TODO: Convert to executable - check focus indicator on each item'
+    action: 'screenshot'
     expected: Currently focused item has clearly visible border/highlight/scale effect
     timeout: 10
   - name: Return to previous row
@@ -217,13 +215,11 @@ test_cases:
   - androidtv
   steps:
   - name: Find continue watching
-    action: '# TODO: Convert to executable - look for continue watching row on home
-      screen'
+    action: 'keypress: KEYCODE_DPAD_DOWN'
     expected: Row shows previously started media with progress bars on cards
     timeout: 10
   - name: Select item
-    action: '# TODO: Convert to executable - focus and select a continue watching
-      item'
+    action: 'keypress: KEYCODE_DPAD_CENTER'
     expected: Media player opens and resumes from saved position
     timeout: 10
 - id: tv-search-opens
@@ -245,12 +241,11 @@ test_cases:
   - androidtv
   steps:
   - name: Activate voice search
-    action: '# TODO: Convert to executable - press microphone button on remote or
-      focus voice search icon'
+    action: 'keypress: KEYCODE_SEARCH'
     expected: Voice search overlay or system voice input activates
     timeout: 10
   - name: Speak query
-    action: '# TODO: Convert to executable - say ''batman'' into remote microphone'
+    action: 'text: batman'
     expected: Voice input is transcribed and search executes
     timeout: 10
 - id: tv-search-results
@@ -261,11 +256,11 @@ test_cases:
   - androidtv
   steps:
   - name: Execute search
-    action: '# TODO: Convert to executable - search for a known media title'
+    action: 'text: Matrix'
     expected: Results grid/row appears with matching media items
     timeout: 10
   - name: Navigate results
-    action: '# TODO: Convert to executable - use d-pad to browse through results'
+    action: 'keypress: KEYCODE_DPAD_RIGHT'
     expected: Focus moves between result cards with visible focus indicator
     timeout: 10
   - name: Select result
@@ -280,7 +275,7 @@ test_cases:
   - androidtv
   steps:
   - name: Search nonexistent
-    action: '# TODO: Convert to executable - search for ''zzzznonexistent99999'''
+    action: 'text: zzzznonexistent99999'
     expected: 'Empty state message: ''No results found'' displayed in large TV-friendly
       text'
     timeout: 10
@@ -296,7 +291,7 @@ test_cases:
     expected: Detail screen opens with Leanback detail layout (backdrop, poster, info)
     timeout: 10
   - name: Verify loading
-    action: '# TODO: Convert to executable - check for loading state'
+    action: 'screenshot'
     expected: Content loads without error, all sections rendered
     timeout: 10
 - id: tv-detail-poster
@@ -307,11 +302,11 @@ test_cases:
   - androidtv
   steps:
   - name: Check poster
-    action: '# TODO: Convert to executable - inspect media detail screen imagery'
+    action: 'screenshot'
     expected: Poster image displayed on left side
     timeout: 10
   - name: Check backdrop
-    action: '# TODO: Convert to executable - inspect background'
+    action: 'screenshot'
     expected: Full-width backdrop image behind detail content
     timeout: 10
 - id: tv-detail-play
@@ -322,7 +317,7 @@ test_cases:
   - androidtv
   steps:
   - name: Find play action
-    action: '# TODO: Convert to executable - check action buttons on detail screen'
+    action: 'screenshot'
     expected: Play button is the first/primary action, focused by default
     timeout: 10
   - name: Press play
@@ -337,11 +332,11 @@ test_cases:
   - androidtv
   steps:
   - name: Check metadata
-    action: '# TODO: Convert to executable - read metadata on detail screen'
+    action: 'screenshot'
     expected: Title, year, duration, type, file size displayed in large readable text
     timeout: 10
   - name: Check description
-    action: '# TODO: Convert to executable - look for description or synopsis'
+    action: 'screenshot'
     expected: Description text visible if available, truncated with 'more' option
       for long text
     timeout: 10
@@ -353,11 +348,11 @@ test_cases:
   - androidtv
   steps:
   - name: Scroll to related
-    action: '# TODO: Convert to executable - d-pad down past action buttons'
+    action: 'keypress: KEYCODE_DPAD_DOWN'
     expected: Related/similar media row appears below detail info
     timeout: 10
   - name: Navigate related
-    action: '# TODO: Convert to executable - d-pad right through related items'
+    action: 'keypress: KEYCODE_DPAD_RIGHT'
     expected: Can browse related media cards
     timeout: 10
   - name: Select related item
@@ -372,7 +367,7 @@ test_cases:
   - androidtv
   steps:
   - name: Start playback
-    action: '# TODO: Convert to executable - select play from media detail'
+    action: 'keypress: KEYCODE_DPAD_CENTER'
     expected: Player activity opens, buffering indicator shown
     timeout: 10
   - name: Verify playback
@@ -410,7 +405,7 @@ test_cases:
   - androidtv
   steps:
   - name: Play to midpoint
-    action: '# TODO: Convert to executable - seek to approximately 50% of media duration'
+    action: 'keypress: KEYCODE_DPAD_RIGHT'
     expected: Player shows correct time position
     timeout: 10
   - name: Exit player
@@ -418,7 +413,7 @@ test_cases:
     expected: Player closes, returns to detail screen
     timeout: 10
   - name: Check progress saved
-    action: '# TODO: Convert to executable - look at media card on home screen'
+    action: 'screenshot'
     expected: Progress bar visible on the media card showing ~50%
     timeout: 10
 - id: tv-player-resume
@@ -433,7 +428,7 @@ test_cases:
     expected: Resume prompt appears or playback starts from saved position
     timeout: 10
   - name: Verify position
-    action: '# TODO: Convert to executable - check current playback time'
+    action: 'screenshot'
     expected: Playback is at or near the previously saved position
     timeout: 10
 - id: tv-player-back-exit
@@ -444,7 +439,7 @@ test_cases:
   - androidtv
   steps:
   - name: Play media
-    action: '# TODO: Convert to executable - start playback of any media item'
+    action: 'keypress: KEYCODE_DPAD_CENTER'
     expected: Media is playing
     timeout: 10
   - name: Press Back
@@ -453,7 +448,7 @@ test_cases:
       player exits to detail screen'
     timeout: 10
   - name: Verify return
-    action: '# TODO: Convert to executable - check current screen'
+    action: 'screenshot'
     expected: User is back on media detail screen, progress was saved
     timeout: 10
 - id: tv-settings-opens
@@ -464,8 +459,7 @@ test_cases:
   - androidtv
   steps:
   - name: Navigate to settings
-    action: '# TODO: Convert to executable - select settings from top bar or side
-      menu'
+    action: 'keypress: KEYCODE_DPAD_UP'
     expected: Settings screen opens with Leanback-style preference layout
     timeout: 10
 - id: tv-settings-dpad-nav
@@ -495,7 +489,7 @@ test_cases:
   - androidtv
   steps:
   - name: Find server setting
-    action: '# TODO: Convert to executable - navigate to server url/address setting'
+    action: 'keypress: KEYCODE_DPAD_DOWN'
     expected: Server address setting visible with current value
     timeout: 10
   - name: Edit server
@@ -503,7 +497,7 @@ test_cases:
     expected: On-screen keyboard appears, accepts input
     timeout: 10
   - name: Save
-    action: '# TODO: Convert to executable - confirm input'
+    action: 'keypress: KEYCODE_ENTER'
     expected: New server URL is saved and persisted
     timeout: 10
 - id: tv-settings-theme
@@ -514,11 +508,11 @@ test_cases:
   - androidtv
   steps:
   - name: Find theme setting
-    action: '# TODO: Convert to executable - navigate to theme/appearance setting'
+    action: 'keypress: KEYCODE_DPAD_DOWN'
     expected: Theme option visible
     timeout: 10
   - name: Change theme
-    action: '# TODO: Convert to executable - select alternate theme (light/dark)'
+    action: 'keypress: KEYCODE_DPAD_CENTER'
     expected: App theme changes to reflect new selection
     timeout: 10
 - id: tv-dpad-navigation
@@ -529,12 +523,11 @@ test_cases:
   - androidtv
   steps:
   - name: Navigate entire app
-    action: '# TODO: Convert to executable - use only d-pad (up/down/left/right/select/back)
-      to navigate from home to search to detail to settings'
+    action: 'keypress: KEYCODE_DPAD_DOWN'
     expected: Every screen and interactive element is reachable via D-pad alone
     timeout: 10
   - name: No focus traps
-    action: '# TODO: Convert to executable - attempt to navigate out of each section'
+    action: 'keypress: KEYCODE_BACK'
     expected: No focus traps where D-pad cannot leave a section
     timeout: 10
 - id: tv-focus-visible
@@ -545,20 +538,19 @@ test_cases:
   - androidtv
   steps:
   - name: Check home screen focus
-    action: '# TODO: Convert to executable - navigate home screen with d-pad'
+    action: 'keypress: KEYCODE_DPAD_DOWN'
     expected: Focused item always has clearly visible highlight (border, scale, glow)
     timeout: 10
   - name: Check detail screen focus
-    action: '# TODO: Convert to executable - navigate detail screen action buttons'
+    action: 'keypress: KEYCODE_DPAD_RIGHT'
     expected: Focused button has visible focus state
     timeout: 10
   - name: Check settings focus
-    action: '# TODO: Convert to executable - navigate settings list'
+    action: 'keypress: KEYCODE_DPAD_DOWN'
     expected: Focused setting has visible highlight
     timeout: 10
   - name: Verify contrast
-    action: '# TODO: Convert to executable - check focus indicator in both light and
-      dark themes'
+    action: 'screenshot'
     expected: Focus indicator meets accessibility contrast requirements
     timeout: 10
 - id: tv-back-key
@@ -569,7 +561,7 @@ test_cases:
   - androidtv
   steps:
   - name: Navigate deep
-    action: '# TODO: Convert to executable - home -> category -> detail -> player'
+    action: 'adb_shell: am start -n com.catalogizer.androidtv/.MainActivity'
     expected: User navigated 4 levels deep
     timeout: 10
   - name: Press Back repeatedly
@@ -588,7 +580,7 @@ test_cases:
   - androidtv
   steps:
   - name: Navigate into app
-    action: '# TODO: Convert to executable - go to media detail screen within app'
+    action: 'keypress: KEYCODE_DPAD_CENTER'
     expected: User is deep in app
     timeout: 10
   - name: Press Home key
@@ -596,7 +588,7 @@ test_cases:
     expected: Returns to Android TV launcher, app goes to background
     timeout: 10
   - name: Return to app
-    action: '# TODO: Convert to executable - select catalogizer from recents or launcher'
+    action: 'adb_shell: am start -n com.catalogizer.androidtv/.MainActivity'
     expected: App resumes on the same screen (media detail) where user left off
     timeout: 10
 - id: tv-focus-restore
@@ -607,7 +599,7 @@ test_cases:
   - androidtv
   steps:
   - name: Focus item in row
-    action: '# TODO: Convert to executable - navigate to 3rd item in a category row'
+    action: 'keypress: KEYCODE_DPAD_RIGHT'
     expected: 3rd item is focused
     timeout: 10
   - name: Enter and return
@@ -615,7 +607,7 @@ test_cases:
     expected: Returns to home screen
     timeout: 10
   - name: Verify focus restored
-    action: '# TODO: Convert to executable - check which item has focus'
+    action: 'screenshot'
     expected: Focus is restored to the 3rd item in the same row where user left
     timeout: 10
 - id: tv-flow-launch
@@ -626,7 +618,7 @@ test_cases:
   - androidtv
   steps:
   - name: Launch from launcher
-    action: '# TODO: Convert to executable - select catalogizer from android tv launcher'
+    action: 'adb_shell: am start -n com.catalogizer.androidtv/.MainActivity'
     expected: App launches, splash screen shows, transitions to login or home within
       5 seconds
     timeout: 10
@@ -649,8 +641,7 @@ test_cases:
   - androidtv
   steps:
   - name: Browse home content
-    action: '# TODO: Convert to executable - use d-pad to navigate between category
-      rows and items'
+    action: 'keypress: KEYCODE_DPAD_DOWN'
     expected: Focus moves smoothly between rows and items, all content cards visible
       with focus indicators
     timeout: 10
@@ -733,8 +724,7 @@ test_cases:
   - androidtv
   steps:
   - name: Tab through home
-    action: '# TODO: Convert to executable - navigate through all interactive elements
-      on home screen using d-pad'
+    action: 'keypress: KEYCODE_DPAD_DOWN'
     expected: All media cards, navigation items, and action buttons are reachable
       in logical order
     timeout: 10
@@ -746,8 +736,7 @@ test_cases:
   - androidtv
   steps:
   - name: Tab through detail
-    action: '# TODO: Convert to executable - navigate through all interactive elements
-      on detail screen using d-pad'
+    action: 'keypress: KEYCODE_DPAD_DOWN'
     expected: 'Play, Favorite, Related items all reachable; focus order: actions row
       then related content row'
     timeout: 10
@@ -759,8 +748,7 @@ test_cases:
   - androidtv
   steps:
   - name: Tab through search
-    action: '# TODO: Convert to executable - navigate through search input, keyboard,
-      and results using d-pad'
+    action: 'keypress: KEYCODE_DPAD_DOWN'
     expected: Keyboard, search results, and navigation are all reachable without focus
       traps
     timeout: 10
@@ -772,8 +760,7 @@ test_cases:
   - androidtv
   steps:
   - name: Tab through settings
-    action: '# TODO: Convert to executable - navigate through all settings options
-      using d-pad'
+    action: 'keypress: KEYCODE_DPAD_DOWN'
     expected: All setting items reachable, expandable settings work, focus returns
       correctly after editing
     timeout: 10
@@ -842,8 +829,7 @@ test_cases:
   - androidtv
   steps:
   - name: Speak search query
-    action: '# TODO: Convert to executable - press microphone button on remote, say
-      ''batman movies'''
+    action: 'keypress: KEYCODE_SEARCH'
     expected: Voice input transcribed to text, search executes, results for batman
       movies displayed
     timeout: 10
@@ -855,7 +841,7 @@ test_cases:
   - androidtv
   steps:
   - name: Verify voice results
-    action: '# TODO: Convert to executable - complete voice search and inspect results'
+    action: 'screenshot'
     expected: Results displayed in TV-optimized grid, each card focusable, matching
       voice query content
     timeout: 10
@@ -867,8 +853,7 @@ test_cases:
   - androidtv
   steps:
   - name: Check text sizes
-    action: '# TODO: Convert to executable - view all screens from 10 feet distance
-      on a standard tv'
+    action: 'screenshot'
     expected: 'All text is readable: titles >= 24sp, body >= 18sp, labels >= 16sp,
       no tiny text anywhere'
     timeout: 10
@@ -880,8 +865,7 @@ test_cases:
   - androidtv
   steps:
   - name: Check button sizes
-    action: '# TODO: Convert to executable - inspect all interactive elements for
-      minimum touch/focus target size'
+    action: 'screenshot'
     expected: All buttons and focusable elements are at least 48dp in both dimensions,
       clear focus highlight
     timeout: 10
@@ -893,8 +877,7 @@ test_cases:
   - androidtv
   steps:
   - name: Check contrast ratios
-    action: '# TODO: Convert to executable - inspect text and background colors on
-      all screens'
+    action: 'screenshot'
     expected: Text meets WCAG AA contrast ratio (4.5:1 for body, 3:1 for large text)
       in both light and dark themes
     timeout: 10
@@ -906,8 +889,7 @@ test_cases:
   - androidtv
   steps:
   - name: Let device idle
-    action: '# TODO: Convert to executable - leave app idle until android tv screensaver
-      activates'
+    action: 'sleep: 30000'
     expected: Screensaver activates normally, app state preserved in background
     timeout: 10
 - id: tv-idle-resume-from-screensaver
@@ -918,8 +900,7 @@ test_cases:
   - androidtv
   steps:
   - name: Dismiss screensaver
-    action: '# TODO: Convert to executable - press any button on remote to dismiss
-      screensaver'
+    action: 'keypress: KEYCODE_DPAD_CENTER'
     expected: App resumes on the exact screen where user left off, no re-login, data
       intact, WebSocket reconnects if needed
     timeout: 10
@@ -931,7 +912,7 @@ test_cases:
   - androidtv
   steps:
   - name: Check login screen
-    action: '# TODO: Convert to executable - launch app and check login screen'
+    action: 'adb_shell: am start -n com.catalogizer.androidtv/.MainActivity'
     expected: Server URL text field is visible
     timeout: 10
 - id: tv-discovery-button
@@ -942,8 +923,7 @@ test_cases:
   - androidtv
   steps:
   - name: Check discover button
-    action: '# TODO: Convert to executable - look for search icon button next to server
-      url'
+    action: 'screenshot'
     expected: Discover button is visible and focusable
     timeout: 10
 - id: tv-discovery-auto-scan
@@ -954,7 +934,7 @@ test_cases:
   - androidtv
   steps:
   - name: Launch app fresh
-    action: '# TODO: Convert to executable - clear app data and launch'
+    action: 'adb_shell: pm clear com.catalogizer.androidtv && am start -n com.catalogizer.androidtv/.MainActivity'
     expected: Progress indicator shows while scanning, discovered server auto-populates
     timeout: 10
 - id: tv-discovery-manual-entry
@@ -965,8 +945,7 @@ test_cases:
   - androidtv
   steps:
   - name: Enter custom URL
-    action: '# TODO: Convert to executable - type http://192.168.0.1:8080 in server
-      url field'
+    action: 'text: http://192.168.0.1:8080'
     expected: URL is accepted and saved
     timeout: 10
 - id: tv-discovery-persist-url
@@ -977,7 +956,7 @@ test_cases:
   - androidtv
   steps:
   - name: Set URL, restart, check
-    action: '# TODO: Convert to executable - set server url, force-stop app, relaunch'
+    action: 'adb_shell: am force-stop com.catalogizer.androidtv && am start -n com.catalogizer.androidtv/.MainActivity'
     expected: Previously set URL is still shown
     timeout: 10
 - id: tv-discovery-server-picker
@@ -988,8 +967,7 @@ test_cases:
   - androidtv
   steps:
   - name: Discover multiple servers
-    action: '# TODO: Convert to executable - run discovery when multiple apis are
-      on network'
+    action: 'screenshot'
     expected: List of discovered servers shown as buttons
     timeout: 10
 - id: tv-discovery-default-url
@@ -1000,7 +978,7 @@ test_cases:
   - androidtv
   steps:
   - name: Check default URL
-    action: '# TODO: Convert to executable - fresh install, check server url field'
+    action: 'adb_shell: pm clear com.catalogizer.androidtv && am start -n com.catalogizer.androidtv/.MainActivity'
     expected: Default value is https://catalogizer.dev
     timeout: 10
 - id: tv-discovery-switch-server
@@ -1026,11 +1004,11 @@ test_cases:
     expected: Android TV home screen is displayed
     timeout: 10
   - name: Scroll to find Catalogizer channel
-    action: '# TODO: Convert to executable - scroll down through home screen channels'
+    action: 'keypress: KEYCODE_DPAD_DOWN'
     expected: Catalogizer Picks channel row is visible on the home screen
     timeout: 10
   - name: Verify channel has content
-    action: '# TODO: Convert to executable - focus on catalogizer picks row'
+    action: 'keypress: KEYCODE_DPAD_DOWN'
     expected: Channel shows media item cards with poster images and titles
     timeout: 10
 - id: tv-channel-category-movies
@@ -1041,21 +1019,19 @@ test_cases:
   - androidtv
   steps:
   - name: Open Customize Channels
-    action: '# TODO: Convert to executable - navigate to customize channels on tv
-      home screen'
+    action: 'keypress: KEYCODE_DPAD_DOWN'
     expected: Channel customization screen appears
     timeout: 10
   - name: Find Movies channel
-    action: '# TODO: Convert to executable - look for catalogizer movies channel in
-      the list'
+    action: 'screenshot'
     expected: Movies channel is available to add
     timeout: 10
   - name: Enable Movies channel
-    action: '# TODO: Convert to executable - toggle movies channel on'
+    action: 'keypress: KEYCODE_DPAD_CENTER'
     expected: Movies channel is enabled and will appear on home screen
     timeout: 10
   - name: Verify on home screen
-    action: '# TODO: Convert to executable - navigate back to home screen'
+    action: 'keypress: KEYCODE_BACK'
     expected: Movies channel row appears with movie items
     timeout: 10
 - id: tv-channel-click-detail
@@ -1066,8 +1042,7 @@ test_cases:
   - androidtv
   steps:
   - name: Navigate to channel
-    action: '# TODO: Convert to executable - focus on a catalogizer channel on the
-      home screen'
+    action: 'keypress: KEYCODE_DPAD_DOWN'
     expected: Channel row is focused
     timeout: 10
   - name: Select item
@@ -1075,7 +1050,7 @@ test_cases:
     expected: Catalogizer app launches
     timeout: 10
   - name: Verify detail screen
-    action: '# TODO: Convert to executable - check the displayed screen'
+    action: 'screenshot'
     expected: Media detail screen is shown with title, description, poster, and Play
       button
     timeout: 10
@@ -1106,8 +1081,7 @@ test_cases:
   - androidtv
   steps:
   - name: Start watching content
-    action: '# TODO: Convert to executable - open a movie in catalogizer and play
-      for 30+ seconds, then stop'
+    action: 'adb_shell: am start -n com.catalogizer.androidtv/.MainActivity'
     expected: Playback stops, progress is saved
     timeout: 10
   - name: Go to home screen
@@ -1115,8 +1089,7 @@ test_cases:
     expected: TV home screen displayed
     timeout: 10
   - name: Check Watch Next row
-    action: '# TODO: Convert to executable - scroll to the watch next row near the
-      top of the home screen'
+    action: 'keypress: KEYCODE_DPAD_UP'
     expected: The partially watched movie appears in Watch Next with resume progress
       indicator
     timeout: 10
@@ -1128,7 +1101,7 @@ test_cases:
   - androidtv
   steps:
   - name: Find item in Watch Next
-    action: '# TODO: Convert to executable - navigate to watch next row on home screen'
+    action: 'keypress: KEYCODE_DPAD_UP'
     expected: Previously watched item is visible
     timeout: 10
   - name: Select item
@@ -1147,12 +1120,11 @@ test_cases:
   - androidtv
   steps:
   - name: Complete a TV episode
-    action: '# TODO: Convert to executable - watch a tv show episode to completion
-      (>90% progress)'
+    action: 'sleep: 10000'
     expected: Episode marked as completed
     timeout: 10
   - name: Check Watch Next
-    action: '# TODO: Convert to executable - navigate to home screen watch next row'
+    action: 'keypress: KEYCODE_HOME'
     expected: The NEXT episode in the series appears in Watch Next (not the completed
       one)
     timeout: 10
@@ -1164,12 +1136,11 @@ test_cases:
   - androidtv
   steps:
   - name: Verify channels exist
-    action: '# TODO: Convert to executable - check tv home screen for catalogizer
-      channels'
+    action: 'screenshot'
     expected: Catalogizer channels are visible
     timeout: 10
   - name: Logout
-    action: '# TODO: Convert to executable - open catalogizer settings and press logout'
+    action: 'keypress: KEYCODE_DPAD_UP'
     expected: User is logged out, login screen appears
     timeout: 10
   - name: Check home screen
@@ -1185,7 +1156,7 @@ test_cases:
   - androidtv
   steps:
   - name: Open settings
-    action: '# TODO: Convert to executable - navigate to catalogizer settings screen'
+    action: 'keypress: KEYCODE_DPAD_UP'
     expected: Settings screen is displayed
     timeout: 10
   - name: Find Channel Tap Behavior
@@ -1194,11 +1165,11 @@ test_cases:
       options
     timeout: 10
   - name: Change movie behavior
-    action: '# TODO: Convert to executable - select play immediately for movies'
+    action: 'keypress: KEYCODE_DPAD_CENTER'
     expected: Radio button changes to Play Immediately for Movies
     timeout: 10
   - name: Verify persistence
-    action: '# TODO: Convert to executable - navigate away from settings and return'
+    action: 'keypress: KEYCODE_BACK'
     expected: Movies still set to Play Immediately
     timeout: 10
 - id: tv-channel-unauthenticated-deeplink
@@ -1209,16 +1180,15 @@ test_cases:
   - androidtv
   steps:
   - name: Logout from Catalogizer
-    action: '# TODO: Convert to executable - logout from the app'
+    action: 'keypress: KEYCODE_DPAD_CENTER'
     expected: User is logged out
     timeout: 10
   - name: Click channel item from home
-    action: '# TODO: Convert to executable - select a catalogizer item from cached
-      home screen channel (if still visible) or launch via adb deep link'
+    action: 'keypress: KEYCODE_DPAD_CENTER'
     expected: Catalogizer launches to the login screen
     timeout: 10
   - name: Login
-    action: '# TODO: Convert to executable - enter credentials and login'
+    action: 'text: admin'
     expected: After login, the deep-linked media item detail screen is shown
     timeout: 10
 - id: tv-channel-dpad-browse
@@ -1229,8 +1199,7 @@ test_cases:
   - androidtv
   steps:
   - name: Focus channel row
-    action: '# TODO: Convert to executable - navigate to a catalogizer channel row
-      on the home screen'
+    action: 'keypress: KEYCODE_DPAD_DOWN'
     expected: Channel row is focused with visible highlight
     timeout: 10
   - name: Browse items left
@@ -1249,13 +1218,11 @@ test_cases:
   - androidtv
   steps:
   - name: Note current channel content
-    action: '# TODO: Convert to executable - check items in catalogizer channels on
-      home screen'
+    action: 'screenshot'
     expected: Current items are noted
     timeout: 10
   - name: Add new content via API
-    action: '# TODO: Convert to executable - trigger a scan that adds new media items
-      to the library'
+    action: 'adb_shell: curl -s -X POST http://localhost:8080/api/v1/scan'
     expected: New content is detected and added
     timeout: 10
   - name: Open Catalogizer app
@@ -1337,12 +1304,11 @@ test_cases:
   - androidtv
   steps:
   - name: Start playback and open speed menu
-    action: '# TODO: Convert to executable - start video playback, navigate to speed
-      control button'
+    action: 'keypress: KEYCODE_DPAD_CENTER'
     expected: Speed selection menu appears with presets (0.5x, 1x, 1.5x, 2x)
     timeout: 10
   - name: Change speed to 2x
-    action: '# TODO: Convert to executable - select 2x speed'
+    action: 'keypress: KEYCODE_DPAD_CENTER'
     expected: Playback speed changes to 2x, speed indicator visible
     timeout: 10
 - id: tv-channel-play-immediately
@@ -1357,7 +1323,6 @@ test_cases:
     expected: Deep link launches the app
     timeout: 10
   - name: Verify immediate playback
-    action: '# TODO: Convert to executable - check if player starts for categories
-      with play immediately setting'
+    action: 'screenshot'
     expected: Player activity visible or detail screen loads (per category setting)
     timeout: 10

@@ -1,5 +1,8 @@
 {
-  "challenges": [
+  "version": "2.0",
+  "name": "Test Suite - EXECUTABLE",
+  "description": "Executable test suite - converted from /run/media/milosvasic/DATA4TB/Projects/Catalogizer/challenges/helixqa-banks/catalogizer-androidtv-comprehensive.json",
+  "test_cases": [
     {
       "id": "tv-cold-start",
       "name": "TV Cold Start Launch",
@@ -11,13 +14,15 @@
       "steps": [
         {
           "name": "Force stop app",
-          "action": "adb shell am force-stop com.vasic.catalogizer.tv",
-          "expected": "App process terminated"
+          "action": "adb_shell:am force-stop com.vasic.catalogizer.tv",
+          "expected": "App process terminated",
+          "timeout": 10
         },
         {
           "name": "Launch from launcher",
-          "action": "Select Catalogizer from Android TV launcher",
-          "expected": "App launches and displays splash screen within 3 seconds"
+          "action": "adb_shell: am start -n com.catalogizer.androidtv/.MainActivity",
+          "expected": "App launches and displays splash screen within 3 seconds",
+          "timeout": 10
         }
       ]
     },
@@ -32,13 +37,15 @@
       "steps": [
         {
           "name": "Launch app",
-          "action": "Start Catalogizer from launcher",
-          "expected": "Splash screen appears with app logo and loading indicator"
+          "action": "adb_shell: am start -n com.catalogizer.androidtv/.MainActivity",
+          "expected": "Splash screen appears with app logo and loading indicator",
+          "timeout": 10
         },
         {
           "name": "Splash completes",
-          "action": "Wait for splash screen to dismiss",
-          "expected": "Splash transitions to home screen or login within 5 seconds"
+          "action": "sleep: 3000",
+          "expected": "Splash transitions to home screen or login within 5 seconds",
+          "timeout": 10
         }
       ]
     },
@@ -53,13 +60,15 @@
       "steps": [
         {
           "name": "Launch to home",
-          "action": "Start app and wait for home screen",
-          "expected": "Home screen loads"
+          "action": "sleep: 3000",
+          "expected": "Home screen loads",
+          "timeout": 10
         },
         {
           "name": "Verify initial focus",
-          "action": "Check which UI element has focus",
-          "expected": "First focusable media item in top row has visible focus indicator"
+          "action": "screenshot",
+          "expected": "First focusable media item in top row has visible focus indicator",
+          "timeout": 10
         }
       ]
     },
@@ -74,13 +83,15 @@
       "steps": [
         {
           "name": "Open app without session",
-          "action": "Clear app data and launch on TV",
-          "expected": "Login screen renders with server URL, username, password fields and login button"
+          "action": "adb_shell: pm clear com.catalogizer.androidtv && am start -n com.catalogizer.androidtv/.MainActivity",
+          "expected": "Login screen renders with server URL, username, password fields and login button",
+          "timeout": 10
         },
         {
           "name": "Verify TV layout",
-          "action": "Check layout is optimized for TV (large text, readable from distance)",
-          "expected": "Fields and labels are large enough for 10-foot viewing experience"
+          "action": "screenshot",
+          "expected": "Fields and labels are large enough for 10-foot viewing experience",
+          "timeout": 10
         }
       ]
     },
@@ -95,23 +106,27 @@
       "steps": [
         {
           "name": "Focus on username",
-          "action": "Navigate to username field with D-pad",
-          "expected": "Username field is focused with visible highlight"
+          "action": "keypress: KEYCODE_DPAD_DOWN",
+          "expected": "Username field is focused with visible highlight",
+          "timeout": 10
         },
         {
           "name": "Navigate to password",
-          "action": "Press D-pad down",
-          "expected": "Focus moves to password field"
+          "action": "keypress: KEYCODE_DPAD_DOWN",
+          "expected": "Focus moves to password field",
+          "timeout": 10
         },
         {
           "name": "Navigate to login button",
-          "action": "Press D-pad down",
-          "expected": "Focus moves to login button"
+          "action": "keypress: KEYCODE_DPAD_DOWN",
+          "expected": "Focus moves to login button",
+          "timeout": 10
         },
         {
           "name": "Navigate back up",
-          "action": "Press D-pad up twice",
-          "expected": "Focus returns to username field"
+          "action": "keypress: KEYCODE_DPAD_UP",
+          "expected": "Focus returns to username field",
+          "timeout": 10
         }
       ]
     },
@@ -126,13 +141,15 @@
       "steps": [
         {
           "name": "Enter credentials via remote",
-          "action": "Use D-pad and on-screen keyboard to enter admin/admin123",
-          "expected": "Credentials entered in fields"
+          "action": "keypress: KEYCODE_ENTER",
+          "expected": "Credentials entered in fields",
+          "timeout": 10
         },
         {
           "name": "Submit login",
-          "action": "Focus Login button and press Select/Enter",
-          "expected": "Loading indicator shows, then navigates to TV home screen"
+          "action": "keypress: KEYCODE_ENTER",
+          "expected": "Loading indicator shows, then navigates to TV home screen",
+          "timeout": 10
         }
       ]
     },
@@ -147,13 +164,15 @@
       "steps": [
         {
           "name": "Enter wrong credentials",
-          "action": "Type admin/wrongpassword and press Login",
-          "expected": "Error message displayed prominently on screen, readable from 10 feet"
+          "action": "text: wrongpassword",
+          "expected": "Error message displayed prominently on screen, readable from 10 feet",
+          "timeout": 10
         },
         {
           "name": "Verify error dismissal",
-          "action": "Press any D-pad direction",
-          "expected": "Error message dismisses, focus returns to input fields"
+          "action": "keypress: KEYCODE_DPAD_DOWN",
+          "expected": "Error message dismisses, focus returns to input fields",
+          "timeout": 10
         }
       ]
     },
@@ -168,13 +187,15 @@
       "steps": [
         {
           "name": "Verify home screen",
-          "action": "Login and wait for home screen",
-          "expected": "Leanback-style home screen renders with horizontal rows of media content"
+          "action": "sleep: 3000",
+          "expected": "Leanback-style home screen renders with horizontal rows of media content",
+          "timeout": 10
         },
         {
           "name": "Check all rows visible",
-          "action": "Inspect home screen layout",
-          "expected": "Multiple category rows visible with media cards"
+          "action": "screenshot",
+          "expected": "Multiple category rows visible with media cards",
+          "timeout": 10
         }
       ]
     },
@@ -189,18 +210,21 @@
       "steps": [
         {
           "name": "Check hero carousel",
-          "action": "Look for featured/hero carousel at top of home",
-          "expected": "Hero carousel shows featured media with large backdrop images"
+          "action": "screenshot",
+          "expected": "Hero carousel shows featured media with large backdrop images",
+          "timeout": 10
         },
         {
           "name": "Navigate carousel",
-          "action": "Press D-pad left and right on carousel",
-          "expected": "Carousel scrolls between featured items smoothly"
+          "action": "keypress: KEYCODE_DPAD_LEFT",
+          "expected": "Carousel scrolls between featured items smoothly",
+          "timeout": 10
         },
         {
           "name": "Select carousel item",
-          "action": "Press Select/Enter on focused carousel item",
-          "expected": "Navigates to media detail for that item"
+          "action": "keypress: KEYCODE_ENTER",
+          "expected": "Navigates to media detail for that item",
+          "timeout": 10
         }
       ]
     },
@@ -215,18 +239,21 @@
       "steps": [
         {
           "name": "Verify category rows",
-          "action": "Scroll down on home screen",
-          "expected": "Multiple rows visible: Recent, Movies, TV Shows, Music, etc."
+          "action": "keypress: KEYCODE_DPAD_DOWN",
+          "expected": "Multiple rows visible: Recent, Movies, TV Shows, Music, etc.",
+          "timeout": 10
         },
         {
           "name": "Scroll within row",
-          "action": "Press D-pad right to scroll through a row",
-          "expected": "Row scrolls horizontally to reveal more items"
+          "action": "keypress: KEYCODE_DPAD_RIGHT",
+          "expected": "Row scrolls horizontally to reveal more items",
+          "timeout": 10
         },
         {
           "name": "Select item from row",
-          "action": "Press Select/Enter on focused item",
-          "expected": "Navigates to media detail screen"
+          "action": "keypress: KEYCODE_ENTER",
+          "expected": "Navigates to media detail screen",
+          "timeout": 10
         }
       ]
     },
@@ -241,18 +268,21 @@
       "steps": [
         {
           "name": "Navigate between rows",
-          "action": "Press D-pad down to move between category rows",
-          "expected": "Focus moves to nearest item in next row"
+          "action": "keypress: KEYCODE_DPAD_DOWN",
+          "expected": "Focus moves to nearest item in next row",
+          "timeout": 10
         },
         {
           "name": "Focus ring visible",
-          "action": "Check focus indicator on each item",
-          "expected": "Currently focused item has clearly visible border/highlight/scale effect"
+          "action": "screenshot",
+          "expected": "Currently focused item has clearly visible border/highlight/scale effect",
+          "timeout": 10
         },
         {
           "name": "Return to previous row",
-          "action": "Press D-pad up",
-          "expected": "Focus returns to previously focused item in upper row (focus memory)"
+          "action": "keypress: KEYCODE_DPAD_UP",
+          "expected": "Focus returns to previously focused item in upper row (focus memory)",
+          "timeout": 10
         }
       ]
     },
@@ -267,18 +297,21 @@
       "steps": [
         {
           "name": "Navigate to top bar",
-          "action": "Press D-pad up from first row until top bar is focused",
-          "expected": "Top navigation bar receives focus"
+          "action": "keypress: KEYCODE_DPAD_UP",
+          "expected": "Top navigation bar receives focus",
+          "timeout": 10
         },
         {
           "name": "Browse top bar items",
-          "action": "Press D-pad left/right through top bar",
-          "expected": "Focus moves between Home, Search, Settings icons"
+          "action": "keypress: KEYCODE_DPAD_LEFT",
+          "expected": "Focus moves between Home, Search, Settings icons",
+          "timeout": 10
         },
         {
           "name": "Select item",
-          "action": "Press Select on Search",
-          "expected": "Navigates to search screen"
+          "action": "keypress: KEYCODE_ENTER",
+          "expected": "Navigates to search screen",
+          "timeout": 10
         }
       ]
     },
@@ -293,13 +326,15 @@
       "steps": [
         {
           "name": "Find continue watching",
-          "action": "Look for continue watching row on home screen",
-          "expected": "Row shows previously started media with progress bars on cards"
+          "action": "keypress: KEYCODE_DPAD_DOWN",
+          "expected": "Row shows previously started media with progress bars on cards",
+          "timeout": 10
         },
         {
           "name": "Select item",
-          "action": "Focus and select a continue watching item",
-          "expected": "Media player opens and resumes from saved position"
+          "action": "keypress: KEYCODE_DPAD_CENTER",
+          "expected": "Media player opens and resumes from saved position",
+          "timeout": 10
         }
       ]
     },
@@ -314,8 +349,9 @@
       "steps": [
         {
           "name": "Navigate to search",
-          "action": "Select search from top bar or press search button on remote",
-          "expected": "Search screen opens with on-screen keyboard or search input"
+          "action": "keypress: KEYCODE_ENTER",
+          "expected": "Search screen opens with on-screen keyboard or search input",
+          "timeout": 10
         }
       ]
     },
@@ -330,13 +366,15 @@
       "steps": [
         {
           "name": "Activate voice search",
-          "action": "Press microphone button on remote or focus voice search icon",
-          "expected": "Voice search overlay or system voice input activates"
+          "action": "keypress: KEYCODE_SEARCH",
+          "expected": "Voice search overlay or system voice input activates",
+          "timeout": 10
         },
         {
           "name": "Speak query",
-          "action": "Say 'batman' into remote microphone",
-          "expected": "Voice input is transcribed and search executes"
+          "action": "text: batman",
+          "expected": "Voice input is transcribed and search executes",
+          "timeout": 10
         }
       ]
     },
@@ -351,18 +389,21 @@
       "steps": [
         {
           "name": "Execute search",
-          "action": "Search for a known media title",
-          "expected": "Results grid/row appears with matching media items"
+          "action": "text: Matrix",
+          "expected": "Results grid/row appears with matching media items",
+          "timeout": 10
         },
         {
           "name": "Navigate results",
-          "action": "Use D-pad to browse through results",
-          "expected": "Focus moves between result cards with visible focus indicator"
+          "action": "keypress: KEYCODE_DPAD_RIGHT",
+          "expected": "Focus moves between result cards with visible focus indicator",
+          "timeout": 10
         },
         {
           "name": "Select result",
-          "action": "Press Select on a result",
-          "expected": "Navigates to media detail"
+          "action": "keypress: KEYCODE_ENTER",
+          "expected": "Navigates to media detail",
+          "timeout": 10
         }
       ]
     },
@@ -377,8 +418,9 @@
       "steps": [
         {
           "name": "Search nonexistent",
-          "action": "Search for 'zzzznonexistent99999'",
-          "expected": "Empty state message: 'No results found' displayed in large TV-friendly text"
+          "action": "text: zzzznonexistent99999",
+          "expected": "Empty state message: 'No results found' displayed in large TV-friendly text",
+          "timeout": 10
         }
       ]
     },
@@ -393,13 +435,15 @@
       "steps": [
         {
           "name": "Select media item",
-          "action": "Press Select on any media card from home screen",
-          "expected": "Detail screen opens with Leanback detail layout (backdrop, poster, info)"
+          "action": "keypress: KEYCODE_ENTER",
+          "expected": "Detail screen opens with Leanback detail layout (backdrop, poster, info)",
+          "timeout": 10
         },
         {
           "name": "Verify loading",
-          "action": "Check for loading state",
-          "expected": "Content loads without error, all sections rendered"
+          "action": "screenshot",
+          "expected": "Content loads without error, all sections rendered",
+          "timeout": 10
         }
       ]
     },
@@ -414,13 +458,15 @@
       "steps": [
         {
           "name": "Check poster",
-          "action": "Inspect media detail screen imagery",
-          "expected": "Poster image displayed on left side"
+          "action": "screenshot",
+          "expected": "Poster image displayed on left side",
+          "timeout": 10
         },
         {
           "name": "Check backdrop",
-          "action": "Inspect background",
-          "expected": "Full-width backdrop image behind detail content"
+          "action": "screenshot",
+          "expected": "Full-width backdrop image behind detail content",
+          "timeout": 10
         }
       ]
     },
@@ -435,13 +481,15 @@
       "steps": [
         {
           "name": "Find play action",
-          "action": "Check action buttons on detail screen",
-          "expected": "Play button is the first/primary action, focused by default"
+          "action": "screenshot",
+          "expected": "Play button is the first/primary action, focused by default",
+          "timeout": 10
         },
         {
           "name": "Press play",
-          "action": "Press Select/Enter on Play button",
-          "expected": "Media player launches and begins playback"
+          "action": "keypress: KEYCODE_ENTER",
+          "expected": "Media player launches and begins playback",
+          "timeout": 10
         }
       ]
     },
@@ -456,13 +504,15 @@
       "steps": [
         {
           "name": "Check metadata",
-          "action": "Read metadata on detail screen",
-          "expected": "Title, year, duration, type, file size displayed in large readable text"
+          "action": "screenshot",
+          "expected": "Title, year, duration, type, file size displayed in large readable text",
+          "timeout": 10
         },
         {
           "name": "Check description",
-          "action": "Look for description or synopsis",
-          "expected": "Description text visible if available, truncated with 'more' option for long text"
+          "action": "screenshot",
+          "expected": "Description text visible if available, truncated with 'more' option for long text",
+          "timeout": 10
         }
       ]
     },
@@ -477,18 +527,21 @@
       "steps": [
         {
           "name": "Scroll to related",
-          "action": "D-pad down past action buttons",
-          "expected": "Related/similar media row appears below detail info"
+          "action": "keypress: KEYCODE_DPAD_DOWN",
+          "expected": "Related/similar media row appears below detail info",
+          "timeout": 10
         },
         {
           "name": "Navigate related",
-          "action": "D-pad right through related items",
-          "expected": "Can browse related media cards"
+          "action": "keypress: KEYCODE_DPAD_RIGHT",
+          "expected": "Can browse related media cards",
+          "timeout": 10
         },
         {
           "name": "Select related item",
-          "action": "Press Select on a related item",
-          "expected": "Navigates to that item's detail screen"
+          "action": "keypress: KEYCODE_ENTER",
+          "expected": "Navigates to that item's detail screen",
+          "timeout": 10
         }
       ]
     },
@@ -503,13 +556,15 @@
       "steps": [
         {
           "name": "Start playback",
-          "action": "Select Play from media detail",
-          "expected": "Player activity opens, buffering indicator shown"
+          "action": "keypress: KEYCODE_DPAD_CENTER",
+          "expected": "Player activity opens, buffering indicator shown",
+          "timeout": 10
         },
         {
           "name": "Verify playback",
-          "action": "Wait for buffering to complete",
-          "expected": "Video plays fullscreen with audio, no black screen"
+          "action": "sleep: 3000",
+          "expected": "Video plays fullscreen with audio, no black screen",
+          "timeout": 10
         }
       ]
     },
@@ -524,23 +579,27 @@
       "steps": [
         {
           "name": "Show transport controls",
-          "action": "Press Select/Enter during playback",
-          "expected": "Transport bar overlay appears with play/pause, seek bar, time"
+          "action": "keypress: KEYCODE_ENTER",
+          "expected": "Transport bar overlay appears with play/pause, seek bar, time",
+          "timeout": 10
         },
         {
           "name": "Pause with D-pad",
-          "action": "Press Select/Enter on pause button or press Play/Pause key",
-          "expected": "Playback pauses"
+          "action": "keypress: KEYCODE_ENTER",
+          "expected": "Playback pauses",
+          "timeout": 10
         },
         {
           "name": "Seek with D-pad",
-          "action": "Press D-pad left/right",
-          "expected": "Seek position moves backward/forward in increments"
+          "action": "keypress: KEYCODE_DPAD_LEFT",
+          "expected": "Seek position moves backward/forward in increments",
+          "timeout": 10
         },
         {
           "name": "Resume",
-          "action": "Press Select/Enter or Play key",
-          "expected": "Playback resumes from new position"
+          "action": "keypress: KEYCODE_ENTER",
+          "expected": "Playback resumes from new position",
+          "timeout": 10
         }
       ]
     },
@@ -555,18 +614,21 @@
       "steps": [
         {
           "name": "Play to midpoint",
-          "action": "Seek to approximately 50% of media duration",
-          "expected": "Player shows correct time position"
+          "action": "keypress: KEYCODE_DPAD_RIGHT",
+          "expected": "Player shows correct time position",
+          "timeout": 10
         },
         {
           "name": "Exit player",
-          "action": "Press Back button",
-          "expected": "Player closes, returns to detail screen"
+          "action": "keypress: KEYCODE_BACK",
+          "expected": "Player closes, returns to detail screen",
+          "timeout": 10
         },
         {
           "name": "Check progress saved",
-          "action": "Look at media card on home screen",
-          "expected": "Progress bar visible on the media card showing ~50%"
+          "action": "screenshot",
+          "expected": "Progress bar visible on the media card showing ~50%",
+          "timeout": 10
         }
       ]
     },
@@ -581,13 +643,15 @@
       "steps": [
         {
           "name": "Reopen partially watched",
-          "action": "Navigate to previously watched media and press Play",
-          "expected": "Resume prompt appears or playback starts from saved position"
+          "action": "keypress: KEYCODE_MEDIA_PLAY_PAUSE",
+          "expected": "Resume prompt appears or playback starts from saved position",
+          "timeout": 10
         },
         {
           "name": "Verify position",
-          "action": "Check current playback time",
-          "expected": "Playback is at or near the previously saved position"
+          "action": "screenshot",
+          "expected": "Playback is at or near the previously saved position",
+          "timeout": 10
         }
       ]
     },
@@ -602,18 +666,21 @@
       "steps": [
         {
           "name": "Play media",
-          "action": "Start playback of any media item",
-          "expected": "Media is playing"
+          "action": "keypress: KEYCODE_DPAD_CENTER",
+          "expected": "Media is playing",
+          "timeout": 10
         },
         {
           "name": "Press Back",
-          "action": "Press Back button on remote during playback",
-          "expected": "If controls are showing: controls dismiss. If controls are hidden: player exits to detail screen"
+          "action": "keypress: KEYCODE_BACK",
+          "expected": "If controls are showing: controls dismiss. If controls are hidden: player exits to detail screen",
+          "timeout": 10
         },
         {
           "name": "Verify return",
-          "action": "Check current screen",
-          "expected": "User is back on media detail screen, progress was saved"
+          "action": "screenshot",
+          "expected": "User is back on media detail screen, progress was saved",
+          "timeout": 10
         }
       ]
     },
@@ -628,8 +695,9 @@
       "steps": [
         {
           "name": "Navigate to settings",
-          "action": "Select Settings from top bar or side menu",
-          "expected": "Settings screen opens with Leanback-style preference layout"
+          "action": "keypress: KEYCODE_DPAD_UP",
+          "expected": "Settings screen opens with Leanback-style preference layout",
+          "timeout": 10
         }
       ]
     },
@@ -644,18 +712,21 @@
       "steps": [
         {
           "name": "Navigate settings list",
-          "action": "Press D-pad up/down through settings options",
-          "expected": "Focus moves between setting items with visible indicator"
+          "action": "keypress: KEYCODE_DPAD_DOWN",
+          "expected": "Focus moves between setting items with visible indicator",
+          "timeout": 10
         },
         {
           "name": "Select a setting",
-          "action": "Press Select/Enter on a setting",
-          "expected": "Setting expands or opens sub-screen for editing"
+          "action": "keypress: KEYCODE_ENTER",
+          "expected": "Setting expands or opens sub-screen for editing",
+          "timeout": 10
         },
         {
           "name": "Go back",
-          "action": "Press Back",
-          "expected": "Returns to settings list with focus preserved"
+          "action": "keypress: KEYCODE_BACK",
+          "expected": "Returns to settings list with focus preserved",
+          "timeout": 10
         }
       ]
     },
@@ -670,18 +741,21 @@
       "steps": [
         {
           "name": "Find server setting",
-          "action": "Navigate to server URL/address setting",
-          "expected": "Server address setting visible with current value"
+          "action": "keypress: KEYCODE_DPAD_DOWN",
+          "expected": "Server address setting visible with current value",
+          "timeout": 10
         },
         {
           "name": "Edit server",
-          "action": "Press Select to edit, type new URL via on-screen keyboard",
-          "expected": "On-screen keyboard appears, accepts input"
+          "action": "keypress: KEYCODE_ENTER",
+          "expected": "On-screen keyboard appears, accepts input",
+          "timeout": 10
         },
         {
           "name": "Save",
-          "action": "Confirm input",
-          "expected": "New server URL is saved and persisted"
+          "action": "keypress: KEYCODE_ENTER",
+          "expected": "New server URL is saved and persisted",
+          "timeout": 10
         }
       ]
     },
@@ -696,13 +770,15 @@
       "steps": [
         {
           "name": "Find theme setting",
-          "action": "Navigate to theme/appearance setting",
-          "expected": "Theme option visible"
+          "action": "keypress: KEYCODE_DPAD_DOWN",
+          "expected": "Theme option visible",
+          "timeout": 10
         },
         {
           "name": "Change theme",
-          "action": "Select alternate theme (Light/Dark)",
-          "expected": "App theme changes to reflect new selection"
+          "action": "keypress: KEYCODE_DPAD_CENTER",
+          "expected": "App theme changes to reflect new selection",
+          "timeout": 10
         }
       ]
     },
@@ -717,13 +793,15 @@
       "steps": [
         {
           "name": "Navigate entire app",
-          "action": "Use only D-pad (up/down/left/right/select/back) to navigate from home to search to detail to settings",
-          "expected": "Every screen and interactive element is reachable via D-pad alone"
+          "action": "keypress: KEYCODE_DPAD_DOWN",
+          "expected": "Every screen and interactive element is reachable via D-pad alone",
+          "timeout": 10
         },
         {
           "name": "No focus traps",
-          "action": "Attempt to navigate out of each section",
-          "expected": "No focus traps where D-pad cannot leave a section"
+          "action": "keypress: KEYCODE_BACK",
+          "expected": "No focus traps where D-pad cannot leave a section",
+          "timeout": 10
         }
       ]
     },
@@ -738,23 +816,27 @@
       "steps": [
         {
           "name": "Check home screen focus",
-          "action": "Navigate home screen with D-pad",
-          "expected": "Focused item always has clearly visible highlight (border, scale, glow)"
+          "action": "keypress: KEYCODE_DPAD_DOWN",
+          "expected": "Focused item always has clearly visible highlight (border, scale, glow)",
+          "timeout": 10
         },
         {
           "name": "Check detail screen focus",
-          "action": "Navigate detail screen action buttons",
-          "expected": "Focused button has visible focus state"
+          "action": "keypress: KEYCODE_DPAD_RIGHT",
+          "expected": "Focused button has visible focus state",
+          "timeout": 10
         },
         {
           "name": "Check settings focus",
-          "action": "Navigate settings list",
-          "expected": "Focused setting has visible highlight"
+          "action": "keypress: KEYCODE_DPAD_DOWN",
+          "expected": "Focused setting has visible highlight",
+          "timeout": 10
         },
         {
           "name": "Verify contrast",
-          "action": "Check focus indicator in both light and dark themes",
-          "expected": "Focus indicator meets accessibility contrast requirements"
+          "action": "screenshot",
+          "expected": "Focus indicator meets accessibility contrast requirements",
+          "timeout": 10
         }
       ]
     },
@@ -769,18 +851,21 @@
       "steps": [
         {
           "name": "Navigate deep",
-          "action": "Home -> Category -> Detail -> Player",
-          "expected": "User navigated 4 levels deep"
+          "action": "adb_shell: am start -n com.catalogizer.androidtv/.MainActivity",
+          "expected": "User navigated 4 levels deep",
+          "timeout": 10
         },
         {
           "name": "Press Back repeatedly",
-          "action": "Press Back button 4 times",
-          "expected": "Navigates back through: Player -> Detail -> Category -> Home"
+          "action": "keypress: KEYCODE_BACK",
+          "expected": "Navigates back through: Player -> Detail -> Category -> Home",
+          "timeout": 10
         },
         {
           "name": "Back from home",
-          "action": "Press Back on home screen",
-          "expected": "Exit confirmation dialog or app exits to TV launcher"
+          "action": "keypress: KEYCODE_BACK",
+          "expected": "Exit confirmation dialog or app exits to TV launcher",
+          "timeout": 10
         }
       ]
     },
@@ -795,18 +880,21 @@
       "steps": [
         {
           "name": "Navigate into app",
-          "action": "Go to media detail screen within app",
-          "expected": "User is deep in app"
+          "action": "keypress: KEYCODE_DPAD_CENTER",
+          "expected": "User is deep in app",
+          "timeout": 10
         },
         {
           "name": "Press Home key",
-          "action": "Press Home button on remote",
-          "expected": "Returns to Android TV launcher, app goes to background"
+          "action": "keypress: KEYCODE_HOME",
+          "expected": "Returns to Android TV launcher, app goes to background",
+          "timeout": 10
         },
         {
           "name": "Return to app",
-          "action": "Select Catalogizer from recents or launcher",
-          "expected": "App resumes on the same screen (media detail) where user left off"
+          "action": "adb_shell: am start -n com.catalogizer.androidtv/.MainActivity",
+          "expected": "App resumes on the same screen (media detail) where user left off",
+          "timeout": 10
         }
       ]
     },
@@ -821,18 +909,21 @@
       "steps": [
         {
           "name": "Focus item in row",
-          "action": "Navigate to 3rd item in a category row",
-          "expected": "3rd item is focused"
+          "action": "keypress: KEYCODE_DPAD_RIGHT",
+          "expected": "3rd item is focused",
+          "timeout": 10
         },
         {
           "name": "Enter and return",
-          "action": "Press Select to enter detail, then press Back",
-          "expected": "Returns to home screen"
+          "action": "keypress: KEYCODE_ENTER",
+          "expected": "Returns to home screen",
+          "timeout": 10
         },
         {
           "name": "Verify focus restored",
-          "action": "Check which item has focus",
-          "expected": "Focus is restored to the 3rd item in the same row where user left"
+          "action": "screenshot",
+          "expected": "Focus is restored to the 3rd item in the same row where user left",
+          "timeout": 10
         }
       ]
     },
@@ -847,8 +938,9 @@
       "steps": [
         {
           "name": "Launch from launcher",
-          "action": "Select Catalogizer from Android TV launcher",
-          "expected": "App launches, splash screen shows, transitions to login or home within 5 seconds"
+          "action": "adb_shell: am start -n com.catalogizer.androidtv/.MainActivity",
+          "expected": "App launches, splash screen shows, transitions to login or home within 5 seconds",
+          "timeout": 10
         }
       ]
     },
@@ -863,8 +955,9 @@
       "steps": [
         {
           "name": "Login via D-pad",
-          "action": "Navigate fields with D-pad, enter admin/admin123 using on-screen keyboard",
-          "expected": "Login succeeds, navigates to TV home screen with content rows"
+          "action": "keypress: KEYCODE_ENTER",
+          "expected": "Login succeeds, navigates to TV home screen with content rows",
+          "timeout": 10
         }
       ]
     },
@@ -879,8 +972,9 @@
       "steps": [
         {
           "name": "Browse home content",
-          "action": "Use D-pad to navigate between category rows and items",
-          "expected": "Focus moves smoothly between rows and items, all content cards visible with focus indicators"
+          "action": "keypress: KEYCODE_DPAD_DOWN",
+          "expected": "Focus moves smoothly between rows and items, all content cards visible with focus indicators",
+          "timeout": 10
         }
       ]
     },
@@ -895,8 +989,9 @@
       "steps": [
         {
           "name": "Navigate carousel",
-          "action": "Press D-pad left/right on hero carousel at top of home",
-          "expected": "Carousel scrolls between featured items with backdrop image transitions"
+          "action": "keypress: KEYCODE_DPAD_LEFT",
+          "expected": "Carousel scrolls between featured items with backdrop image transitions",
+          "timeout": 10
         }
       ]
     },
@@ -911,8 +1006,9 @@
       "steps": [
         {
           "name": "Select item",
-          "action": "Focus a media card and press Select/Enter",
-          "expected": "Detail screen opens with Leanback layout showing poster, metadata, and action buttons"
+          "action": "keypress: KEYCODE_ENTER",
+          "expected": "Detail screen opens with Leanback layout showing poster, metadata, and action buttons",
+          "timeout": 10
         }
       ]
     },
@@ -927,8 +1023,9 @@
       "steps": [
         {
           "name": "Play and exit",
-          "action": "Press Play on detail, watch for 5 seconds, press Back twice",
-          "expected": "Player starts, Back first shows/hides controls, second Back exits to detail, then Back to home"
+          "action": "keypress: KEYCODE_BACK",
+          "expected": "Player starts, Back first shows/hides controls, second Back exits to detail, then Back to home",
+          "timeout": 10
         }
       ]
     },
@@ -943,8 +1040,9 @@
       "steps": [
         {
           "name": "Rapid D-pad presses",
-          "action": "Press D-pad up/down/left/right rapidly (10 presses per second) on home screen",
-          "expected": "Focus moves correctly without getting stuck, no ANR, no crash, UI remains responsive"
+          "action": "keypress: KEYCODE_DPAD_DOWN",
+          "expected": "Focus moves correctly without getting stuck, no ANR, no crash, UI remains responsive",
+          "timeout": 10
         }
       ]
     },
@@ -959,8 +1057,9 @@
       "steps": [
         {
           "name": "Hold D-pad right",
-          "action": "Press and hold D-pad right for 5 seconds on a long category row",
-          "expected": "Focus scrolls continuously through items, stops at end of row, no jank or missed frames"
+          "action": "keypress: KEYCODE_DPAD_RIGHT",
+          "expected": "Focus scrolls continuously through items, stops at end of row, no jank or missed frames",
+          "timeout": 10
         }
       ]
     },
@@ -975,8 +1074,9 @@
       "steps": [
         {
           "name": "Press diagonal",
-          "action": "Press D-pad up+right simultaneously on home screen grid",
-          "expected": "Focus moves in one direction (up or right, not diagonal), no crash or undefined behavior"
+          "action": "keypress: KEYCODE_DPAD_UP",
+          "expected": "Focus moves in one direction (up or right, not diagonal), no crash or undefined behavior",
+          "timeout": 10
         }
       ]
     },
@@ -991,8 +1091,9 @@
       "steps": [
         {
           "name": "Tab through home",
-          "action": "Navigate through all interactive elements on home screen using D-pad",
-          "expected": "All media cards, navigation items, and action buttons are reachable in logical order"
+          "action": "keypress: KEYCODE_DPAD_DOWN",
+          "expected": "All media cards, navigation items, and action buttons are reachable in logical order",
+          "timeout": 10
         }
       ]
     },
@@ -1007,8 +1108,9 @@
       "steps": [
         {
           "name": "Tab through detail",
-          "action": "Navigate through all interactive elements on detail screen using D-pad",
-          "expected": "Play, Favorite, Related items all reachable; focus order: actions row then related content row"
+          "action": "keypress: KEYCODE_DPAD_DOWN",
+          "expected": "Play, Favorite, Related items all reachable; focus order: actions row then related content row",
+          "timeout": 10
         }
       ]
     },
@@ -1023,8 +1125,9 @@
       "steps": [
         {
           "name": "Tab through search",
-          "action": "Navigate through search input, keyboard, and results using D-pad",
-          "expected": "Keyboard, search results, and navigation are all reachable without focus traps"
+          "action": "keypress: KEYCODE_DPAD_DOWN",
+          "expected": "Keyboard, search results, and navigation are all reachable without focus traps",
+          "timeout": 10
         }
       ]
     },
@@ -1039,8 +1142,9 @@
       "steps": [
         {
           "name": "Tab through settings",
-          "action": "Navigate through all settings options using D-pad",
-          "expected": "All setting items reachable, expandable settings work, focus returns correctly after editing"
+          "action": "keypress: KEYCODE_DPAD_DOWN",
+          "expected": "All setting items reachable, expandable settings work, focus returns correctly after editing",
+          "timeout": 10
         }
       ]
     },
@@ -1055,8 +1159,9 @@
       "steps": [
         {
           "name": "Press Play/Pause",
-          "action": "Press Play/Pause button on remote during playback",
-          "expected": "Playback toggles between play and pause states"
+          "action": "keypress: KEYCODE_BACK",
+          "expected": "Playback toggles between play and pause states",
+          "timeout": 10
         }
       ]
     },
@@ -1071,8 +1176,9 @@
       "steps": [
         {
           "name": "Press Stop",
-          "action": "Press Stop button on remote during playback",
-          "expected": "Playback stops completely, returns to detail screen, progress saved"
+          "action": "keypress: KEYCODE_BACK",
+          "expected": "Playback stops completely, returns to detail screen, progress saved",
+          "timeout": 10
         }
       ]
     },
@@ -1087,8 +1193,9 @@
       "steps": [
         {
           "name": "Press Back",
-          "action": "Press Back button from various screens",
-          "expected": "Navigates to previous screen in back stack, from home shows exit dialog"
+          "action": "keypress: KEYCODE_BACK",
+          "expected": "Navigates to previous screen in back stack, from home shows exit dialog",
+          "timeout": 10
         }
       ]
     },
@@ -1103,8 +1210,9 @@
       "steps": [
         {
           "name": "Press Home",
-          "action": "Press Home button from any screen in the app",
-          "expected": "Returns to Android TV launcher, app goes to background, resumes correctly when re-selected"
+          "action": "keypress: KEYCODE_HOME",
+          "expected": "Returns to Android TV launcher, app goes to background, resumes correctly when re-selected",
+          "timeout": 10
         }
       ]
     },
@@ -1119,8 +1227,9 @@
       "steps": [
         {
           "name": "Press Menu",
-          "action": "Press Menu button on remote from home and detail screens",
-          "expected": "Context menu or options overlay appears with relevant actions for current screen"
+          "action": "keypress: KEYCODE_HOME",
+          "expected": "Context menu or options overlay appears with relevant actions for current screen",
+          "timeout": 10
         }
       ]
     },
@@ -1135,8 +1244,9 @@
       "steps": [
         {
           "name": "Speak search query",
-          "action": "Press microphone button on remote, say 'batman movies'",
-          "expected": "Voice input transcribed to text, search executes, results for batman movies displayed"
+          "action": "keypress: KEYCODE_SEARCH",
+          "expected": "Voice input transcribed to text, search executes, results for batman movies displayed",
+          "timeout": 10
         }
       ]
     },
@@ -1151,8 +1261,9 @@
       "steps": [
         {
           "name": "Verify voice results",
-          "action": "Complete voice search and inspect results",
-          "expected": "Results displayed in TV-optimized grid, each card focusable, matching voice query content"
+          "action": "screenshot",
+          "expected": "Results displayed in TV-optimized grid, each card focusable, matching voice query content",
+          "timeout": 10
         }
       ]
     },
@@ -1167,8 +1278,9 @@
       "steps": [
         {
           "name": "Check text sizes",
-          "action": "View all screens from 10 feet distance on a standard TV",
-          "expected": "All text is readable: titles >= 24sp, body >= 18sp, labels >= 16sp, no tiny text anywhere"
+          "action": "screenshot",
+          "expected": "All text is readable: titles >= 24sp, body >= 18sp, labels >= 16sp, no tiny text anywhere",
+          "timeout": 10
         }
       ]
     },
@@ -1183,8 +1295,9 @@
       "steps": [
         {
           "name": "Check button sizes",
-          "action": "Inspect all interactive elements for minimum touch/focus target size",
-          "expected": "All buttons and focusable elements are at least 48dp in both dimensions, clear focus highlight"
+          "action": "screenshot",
+          "expected": "All buttons and focusable elements are at least 48dp in both dimensions, clear focus highlight",
+          "timeout": 10
         }
       ]
     },
@@ -1199,8 +1312,9 @@
       "steps": [
         {
           "name": "Check contrast ratios",
-          "action": "Inspect text and background colors on all screens",
-          "expected": "Text meets WCAG AA contrast ratio (4.5:1 for body, 3:1 for large text) in both light and dark themes"
+          "action": "screenshot",
+          "expected": "Text meets WCAG AA contrast ratio (4.5:1 for body, 3:1 for large text) in both light and dark themes",
+          "timeout": 10
         }
       ]
     },
@@ -1215,8 +1329,9 @@
       "steps": [
         {
           "name": "Let device idle",
-          "action": "Leave app idle until Android TV screensaver activates",
-          "expected": "Screensaver activates normally, app state preserved in background"
+          "action": "sleep: 30000",
+          "expected": "Screensaver activates normally, app state preserved in background",
+          "timeout": 10
         }
       ]
     },
@@ -1231,8 +1346,9 @@
       "steps": [
         {
           "name": "Dismiss screensaver",
-          "action": "Press any button on remote to dismiss screensaver",
-          "expected": "App resumes on the exact screen where user left off, no re-login, data intact, WebSocket reconnects if needed"
+          "action": "keypress: KEYCODE_DPAD_CENTER",
+          "expected": "App resumes on the exact screen where user left off, no re-login, data intact, WebSocket reconnects if needed",
+          "timeout": 10
         }
       ]
     },
@@ -1247,8 +1363,9 @@
       "steps": [
         {
           "name": "Check login screen",
-          "action": "Launch app and check login screen",
-          "expected": "Server URL text field is visible"
+          "action": "adb_shell: am start -n com.catalogizer.androidtv/.MainActivity",
+          "expected": "Server URL text field is visible",
+          "timeout": 10
         }
       ]
     },
@@ -1263,8 +1380,9 @@
       "steps": [
         {
           "name": "Check discover button",
-          "action": "Look for search icon button next to server URL",
-          "expected": "Discover button is visible and focusable"
+          "action": "screenshot",
+          "expected": "Discover button is visible and focusable",
+          "timeout": 10
         }
       ]
     },
@@ -1279,8 +1397,9 @@
       "steps": [
         {
           "name": "Launch app fresh",
-          "action": "Clear app data and launch",
-          "expected": "Progress indicator shows while scanning, discovered server auto-populates"
+          "action": "adb_shell: pm clear com.catalogizer.androidtv && am start -n com.catalogizer.androidtv/.MainActivity",
+          "expected": "Progress indicator shows while scanning, discovered server auto-populates",
+          "timeout": 10
         }
       ]
     },
@@ -1295,8 +1414,9 @@
       "steps": [
         {
           "name": "Enter custom URL",
-          "action": "Type http://192.168.0.1:8080 in server URL field",
-          "expected": "URL is accepted and saved"
+          "action": "text: http://192.168.0.1:8080",
+          "expected": "URL is accepted and saved",
+          "timeout": 10
         }
       ]
     },
@@ -1311,8 +1431,9 @@
       "steps": [
         {
           "name": "Set URL, restart, check",
-          "action": "Set server URL, force-stop app, relaunch",
-          "expected": "Previously set URL is still shown"
+          "action": "adb_shell: am force-stop com.catalogizer.androidtv && am start -n com.catalogizer.androidtv/.MainActivity",
+          "expected": "Previously set URL is still shown",
+          "timeout": 10
         }
       ]
     },
@@ -1327,8 +1448,9 @@
       "steps": [
         {
           "name": "Discover multiple servers",
-          "action": "Run discovery when multiple APIs are on network",
-          "expected": "List of discovered servers shown as buttons"
+          "action": "screenshot",
+          "expected": "List of discovered servers shown as buttons",
+          "timeout": 10
         }
       ]
     },
@@ -1343,8 +1465,9 @@
       "steps": [
         {
           "name": "Check default URL",
-          "action": "Fresh install, check server URL field",
-          "expected": "Default value is https://catalogizer.dev"
+          "action": "adb_shell: pm clear com.catalogizer.androidtv && am start -n com.catalogizer.androidtv/.MainActivity",
+          "expected": "Default value is https://catalogizer.dev",
+          "timeout": 10
         }
       ]
     },
@@ -1359,8 +1482,9 @@
       "steps": [
         {
           "name": "Change server URL and login",
-          "action": "Enter different server URL, tap apply, then login",
-          "expected": "Login uses the new server URL"
+          "action": "tap: 960,540",
+          "expected": "Login uses the new server URL",
+          "timeout": 10
         }
       ]
     },
@@ -1375,18 +1499,21 @@
       "steps": [
         {
           "name": "Navigate to TV home",
-          "action": "Press HOME button on remote",
-          "expected": "Android TV home screen is displayed"
+          "action": "keypress: KEYCODE_HOME",
+          "expected": "Android TV home screen is displayed",
+          "timeout": 10
         },
         {
           "name": "Scroll to find Catalogizer channel",
-          "action": "Scroll down through home screen channels",
-          "expected": "Catalogizer Picks channel row is visible on the home screen"
+          "action": "keypress: KEYCODE_DPAD_DOWN",
+          "expected": "Catalogizer Picks channel row is visible on the home screen",
+          "timeout": 10
         },
         {
           "name": "Verify channel has content",
-          "action": "Focus on Catalogizer Picks row",
-          "expected": "Channel shows media item cards with poster images and titles"
+          "action": "keypress: KEYCODE_DPAD_DOWN",
+          "expected": "Channel shows media item cards with poster images and titles",
+          "timeout": 10
         }
       ]
     },
@@ -1401,23 +1528,27 @@
       "steps": [
         {
           "name": "Open Customize Channels",
-          "action": "Navigate to Customize channels on TV home screen",
-          "expected": "Channel customization screen appears"
+          "action": "keypress: KEYCODE_DPAD_DOWN",
+          "expected": "Channel customization screen appears",
+          "timeout": 10
         },
         {
           "name": "Find Movies channel",
-          "action": "Look for Catalogizer Movies channel in the list",
-          "expected": "Movies channel is available to add"
+          "action": "screenshot",
+          "expected": "Movies channel is available to add",
+          "timeout": 10
         },
         {
           "name": "Enable Movies channel",
-          "action": "Toggle Movies channel on",
-          "expected": "Movies channel is enabled and will appear on home screen"
+          "action": "keypress: KEYCODE_DPAD_CENTER",
+          "expected": "Movies channel is enabled and will appear on home screen",
+          "timeout": 10
         },
         {
           "name": "Verify on home screen",
-          "action": "Navigate back to home screen",
-          "expected": "Movies channel row appears with movie items"
+          "action": "keypress: KEYCODE_BACK",
+          "expected": "Movies channel row appears with movie items",
+          "timeout": 10
         }
       ]
     },
@@ -1432,18 +1563,21 @@
       "steps": [
         {
           "name": "Navigate to channel",
-          "action": "Focus on a Catalogizer channel on the home screen",
-          "expected": "Channel row is focused"
+          "action": "keypress: KEYCODE_DPAD_DOWN",
+          "expected": "Channel row is focused",
+          "timeout": 10
         },
         {
           "name": "Select item",
-          "action": "Press DPAD_CENTER on a media item card",
-          "expected": "Catalogizer app launches"
+          "action": "keypress: KEYCODE_ENTER",
+          "expected": "Catalogizer app launches",
+          "timeout": 10
         },
         {
           "name": "Verify detail screen",
-          "action": "Check the displayed screen",
-          "expected": "Media detail screen is shown with title, description, poster, and Play button"
+          "action": "screenshot",
+          "expected": "Media detail screen is shown with title, description, poster, and Play button",
+          "timeout": 10
         }
       ]
     },
@@ -1458,18 +1592,21 @@
       "steps": [
         {
           "name": "Configure play immediately",
-          "action": "Open Catalogizer Settings > Channel Tap Behavior > Set Movies to Play Immediately",
-          "expected": "Movies launch action set to Play Immediately"
+          "action": "tap: 960,540",
+          "expected": "Movies launch action set to Play Immediately",
+          "timeout": 10
         },
         {
           "name": "Go to home screen",
-          "action": "Press HOME",
-          "expected": "TV home screen displayed"
+          "action": "keypress: KEYCODE_HOME",
+          "expected": "TV home screen displayed",
+          "timeout": 10
         },
         {
           "name": "Select movie from channel",
-          "action": "Focus and press DPAD_CENTER on a movie in Catalogizer channel",
-          "expected": "Movie playback starts immediately without showing detail screen"
+          "action": "keypress: KEYCODE_ENTER",
+          "expected": "Movie playback starts immediately without showing detail screen",
+          "timeout": 10
         }
       ]
     },
@@ -1484,18 +1621,21 @@
       "steps": [
         {
           "name": "Start watching content",
-          "action": "Open a movie in Catalogizer and play for 30+ seconds, then stop",
-          "expected": "Playback stops, progress is saved"
+          "action": "adb_shell: am start -n com.catalogizer.androidtv/.MainActivity",
+          "expected": "Playback stops, progress is saved",
+          "timeout": 10
         },
         {
           "name": "Go to home screen",
-          "action": "Press HOME",
-          "expected": "TV home screen displayed"
+          "action": "keypress: KEYCODE_HOME",
+          "expected": "TV home screen displayed",
+          "timeout": 10
         },
         {
           "name": "Check Watch Next row",
-          "action": "Scroll to the Watch Next row near the top of the home screen",
-          "expected": "The partially watched movie appears in Watch Next with resume progress indicator"
+          "action": "keypress: KEYCODE_DPAD_UP",
+          "expected": "The partially watched movie appears in Watch Next with resume progress indicator",
+          "timeout": 10
         }
       ]
     },
@@ -1510,18 +1650,21 @@
       "steps": [
         {
           "name": "Find item in Watch Next",
-          "action": "Navigate to Watch Next row on home screen",
-          "expected": "Previously watched item is visible"
+          "action": "keypress: KEYCODE_DPAD_UP",
+          "expected": "Previously watched item is visible",
+          "timeout": 10
         },
         {
           "name": "Select item",
-          "action": "Press DPAD_CENTER on the item",
-          "expected": "Catalogizer opens and shows the media detail screen"
+          "action": "keypress: KEYCODE_ENTER",
+          "expected": "Catalogizer opens and shows the media detail screen",
+          "timeout": 10
         },
         {
           "name": "Resume playback",
-          "action": "Press Play button",
-          "expected": "Playback resumes from the saved position, not from the beginning"
+          "action": "keypress: KEYCODE_MEDIA_PLAY_PAUSE",
+          "expected": "Playback resumes from the saved position, not from the beginning",
+          "timeout": 10
         }
       ]
     },
@@ -1536,13 +1679,15 @@
       "steps": [
         {
           "name": "Complete a TV episode",
-          "action": "Watch a TV show episode to completion (>90% progress)",
-          "expected": "Episode marked as completed"
+          "action": "sleep: 10000",
+          "expected": "Episode marked as completed",
+          "timeout": 10
         },
         {
           "name": "Check Watch Next",
-          "action": "Navigate to home screen Watch Next row",
-          "expected": "The NEXT episode in the series appears in Watch Next (not the completed one)"
+          "action": "keypress: KEYCODE_HOME",
+          "expected": "The NEXT episode in the series appears in Watch Next (not the completed one)",
+          "timeout": 10
         }
       ]
     },
@@ -1557,18 +1702,21 @@
       "steps": [
         {
           "name": "Verify channels exist",
-          "action": "Check TV home screen for Catalogizer channels",
-          "expected": "Catalogizer channels are visible"
+          "action": "screenshot",
+          "expected": "Catalogizer channels are visible",
+          "timeout": 10
         },
         {
           "name": "Logout",
-          "action": "Open Catalogizer Settings and press Logout",
-          "expected": "User is logged out, login screen appears"
+          "action": "keypress: KEYCODE_DPAD_UP",
+          "expected": "User is logged out, login screen appears",
+          "timeout": 10
         },
         {
           "name": "Check home screen",
-          "action": "Press HOME to go to home screen",
-          "expected": "All Catalogizer channels and Watch Next entries are removed from the home screen"
+          "action": "keypress: KEYCODE_HOME",
+          "expected": "All Catalogizer channels and Watch Next entries are removed from the home screen",
+          "timeout": 10
         }
       ]
     },
@@ -1583,23 +1731,27 @@
       "steps": [
         {
           "name": "Open settings",
-          "action": "Navigate to Catalogizer Settings screen",
-          "expected": "Settings screen is displayed"
+          "action": "keypress: KEYCODE_DPAD_UP",
+          "expected": "Settings screen is displayed",
+          "timeout": 10
         },
         {
           "name": "Find Channel Tap Behavior",
-          "action": "Scroll down to Channel Tap Behavior section",
-          "expected": "Section shows list of media types with Detail Screen / Play Immediately options"
+          "action": "tap: 960,540",
+          "expected": "Section shows list of media types with Detail Screen / Play Immediately options",
+          "timeout": 10
         },
         {
           "name": "Change movie behavior",
-          "action": "Select Play Immediately for Movies",
-          "expected": "Radio button changes to Play Immediately for Movies"
+          "action": "keypress: KEYCODE_DPAD_CENTER",
+          "expected": "Radio button changes to Play Immediately for Movies",
+          "timeout": 10
         },
         {
           "name": "Verify persistence",
-          "action": "Navigate away from settings and return",
-          "expected": "Movies still set to Play Immediately"
+          "action": "keypress: KEYCODE_BACK",
+          "expected": "Movies still set to Play Immediately",
+          "timeout": 10
         }
       ]
     },
@@ -1614,18 +1766,21 @@
       "steps": [
         {
           "name": "Logout from Catalogizer",
-          "action": "Logout from the app",
-          "expected": "User is logged out"
+          "action": "keypress: KEYCODE_DPAD_CENTER",
+          "expected": "User is logged out",
+          "timeout": 10
         },
         {
           "name": "Click channel item from home",
-          "action": "Select a Catalogizer item from cached home screen channel (if still visible) or launch via ADB deep link",
-          "expected": "Catalogizer launches to the login screen"
+          "action": "keypress: KEYCODE_DPAD_CENTER",
+          "expected": "Catalogizer launches to the login screen",
+          "timeout": 10
         },
         {
           "name": "Login",
-          "action": "Enter credentials and login",
-          "expected": "After login, the deep-linked media item detail screen is shown"
+          "action": "text: admin",
+          "expected": "After login, the deep-linked media item detail screen is shown",
+          "timeout": 10
         }
       ]
     },
@@ -1640,18 +1795,21 @@
       "steps": [
         {
           "name": "Focus channel row",
-          "action": "Navigate to a Catalogizer channel row on the home screen",
-          "expected": "Channel row is focused with visible highlight"
+          "action": "keypress: KEYCODE_DPAD_DOWN",
+          "expected": "Channel row is focused with visible highlight",
+          "timeout": 10
         },
         {
           "name": "Browse items left",
-          "action": "Press DPAD_LEFT multiple times",
-          "expected": "Focus moves smoothly between program cards with poster images"
+          "action": "keypress: KEYCODE_DPAD_LEFT",
+          "expected": "Focus moves smoothly between program cards with poster images",
+          "timeout": 10
         },
         {
           "name": "Browse items right",
-          "action": "Press DPAD_RIGHT to the end of the row",
-          "expected": "Focus reaches the last item, row scrolls smoothly to reveal more items"
+          "action": "keypress: KEYCODE_DPAD_RIGHT",
+          "expected": "Focus reaches the last item, row scrolls smoothly to reveal more items",
+          "timeout": 10
         }
       ]
     },
@@ -1666,23 +1824,27 @@
       "steps": [
         {
           "name": "Note current channel content",
-          "action": "Check items in Catalogizer channels on home screen",
-          "expected": "Current items are noted"
+          "action": "screenshot",
+          "expected": "Current items are noted",
+          "timeout": 10
         },
         {
           "name": "Add new content via API",
-          "action": "Trigger a scan that adds new media items to the library",
-          "expected": "New content is detected and added"
+          "action": "adb_shell: curl -s -X POST http://localhost:8080/api/v1/scan",
+          "expected": "New content is detected and added",
+          "timeout": 10
         },
         {
           "name": "Open Catalogizer app",
-          "action": "Launch Catalogizer app and wait for home screen to load",
-          "expected": "App loads home data and refreshes channels"
+          "action": "sleep: 3000",
+          "expected": "App loads home data and refreshes channels",
+          "timeout": 10
         },
         {
           "name": "Check updated channels",
-          "action": "Press HOME and check Catalogizer channels",
-          "expected": "New content appears in the appropriate channel rows"
+          "action": "keypress: KEYCODE_HOME",
+          "expected": "New content appears in the appropriate channel rows",
+          "timeout": 10
         }
       ]
     },
@@ -1697,23 +1859,28 @@
       "steps": [
         {
           "name": "Navigate to a movie",
-          "action": "From home screen, navigate to a movie card and press DPAD_CENTER",
-          "expected": "Entity detail screen shows movie information"
+          "action": "keypress: KEYCODE_ENTER",
+          "expected": "Entity detail screen shows movie information",
+          "timeout": 10
         },
         {
           "name": "Press play",
-          "action": "Focus and press DPAD_CENTER on the Play button",
-          "expected": "MediaPlayerActivity launches with ExoPlayer"
+          "action": "keypress: KEYCODE_ENTER",
+          "expected": "MediaPlayerActivity launches with ExoPlayer",
+          "timeout": 10
         },
         {
           "name": "Verify playback started",
-          "action": "Wait 3 seconds and take screenshot",
-          "expected": "Player screen visible, progress bar shows non-zero position, buffering indicator gone"
+          "action": "sleep: 3000",
+          "expected": "Player screen visible, progress bar shows non-zero position, buffering indicator gone",
+          "timeout": 10,
+          "vision_verify": true
         },
         {
           "name": "Press back to exit player",
-          "action": "Press BACK button",
-          "expected": "Returns to entity detail screen"
+          "action": "keypress: KEYCODE_BACK",
+          "expected": "Returns to entity detail screen",
+          "timeout": 10
         }
       ]
     },
@@ -1728,18 +1895,21 @@
       "steps": [
         {
           "name": "Start playback",
-          "action": "Navigate to media and press play",
-          "expected": "Player starts"
+          "action": "keypress: KEYCODE_MEDIA_PLAY_PAUSE",
+          "expected": "Player starts",
+          "timeout": 10
         },
         {
           "name": "Seek forward with D-pad",
-          "action": "Press DPAD_RIGHT to seek forward",
-          "expected": "Progress bar jumps forward by 10 seconds"
+          "action": "keypress: KEYCODE_DPAD_RIGHT",
+          "expected": "Progress bar jumps forward by 10 seconds",
+          "timeout": 10
         },
         {
           "name": "Seek backward",
-          "action": "Press DPAD_LEFT to seek backward",
-          "expected": "Progress bar moves back"
+          "action": "keypress: KEYCODE_DPAD_LEFT",
+          "expected": "Progress bar moves back",
+          "timeout": 10
         }
       ]
     },
@@ -1754,18 +1924,21 @@
       "steps": [
         {
           "name": "Start playback",
-          "action": "Navigate to media and press play",
-          "expected": "Video plays"
+          "action": "keypress: KEYCODE_MEDIA_PLAY_PAUSE",
+          "expected": "Video plays",
+          "timeout": 10
         },
         {
           "name": "Pause with DPAD_CENTER",
-          "action": "Press DPAD_CENTER during playback",
-          "expected": "Playback pauses, controls overlay visible"
+          "action": "keypress: KEYCODE_ENTER",
+          "expected": "Playback pauses, controls overlay visible",
+          "timeout": 10
         },
         {
           "name": "Resume with DPAD_CENTER",
-          "action": "Press DPAD_CENTER again",
-          "expected": "Playback resumes"
+          "action": "keypress: KEYCODE_ENTER",
+          "expected": "Playback resumes",
+          "timeout": 10
         }
       ]
     },
@@ -1780,13 +1953,15 @@
       "steps": [
         {
           "name": "Start playback and open speed menu",
-          "action": "Start video playback, navigate to speed control button",
-          "expected": "Speed selection menu appears with presets (0.5x, 1x, 1.5x, 2x)"
+          "action": "keypress: KEYCODE_DPAD_CENTER",
+          "expected": "Speed selection menu appears with presets (0.5x, 1x, 1.5x, 2x)",
+          "timeout": 10
         },
         {
           "name": "Change speed to 2x",
-          "action": "Select 2x speed",
-          "expected": "Playback speed changes to 2x, speed indicator visible"
+          "action": "keypress: KEYCODE_DPAD_CENTER",
+          "expected": "Playback speed changes to 2x, speed indicator visible",
+          "timeout": 10
         }
       ]
     },
@@ -1801,13 +1976,15 @@
       "steps": [
         {
           "name": "Click a channel program",
-          "action": "From Android TV home, click a Catalogizer channel program",
-          "expected": "Deep link launches the app"
+          "action": "tap: 960,540",
+          "expected": "Deep link launches the app",
+          "timeout": 10
         },
         {
           "name": "Verify immediate playback",
-          "action": "Check if player starts for categories with Play Immediately setting",
-          "expected": "Player activity visible or detail screen loads (per category setting)"
+          "action": "screenshot",
+          "expected": "Player activity visible or detail screen loads (per category setting)",
+          "timeout": 10
         }
       ]
     }
