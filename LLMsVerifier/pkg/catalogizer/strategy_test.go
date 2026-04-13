@@ -416,7 +416,7 @@ func TestCatalogizerStrategy_FilterByRequirements_ExcludedProvider(t *testing.T)
 	ranked := []strategy.RankedModel{
 		{Model: strategy.ModelInfo{ID: "1", Provider: "openai", QualityScore: 0.9, ReliabilityScore: 0.95, ContextWindow: 128000}},
 		{Model: strategy.ModelInfo{ID: "2", Provider: "anthropic", QualityScore: 0.9, ReliabilityScore: 0.95, ContextWindow: 128000}},
-		{Model: strategy.ModelInfo{ID: "3", Provider: "google", QualityScore: 0.9, ReliabilityScore: 0.95, ContextWindow: 128000}},
+		{Model: strategy.ModelInfo{ID: "3", Provider: "deepseek", QualityScore: 0.9, ReliabilityScore: 0.95, ContextWindow: 128000}},
 	}
 
 	req := strategy.Requirements{

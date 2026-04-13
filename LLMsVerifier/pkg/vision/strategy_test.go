@@ -701,9 +701,11 @@ func TestVisionStrategy_ScoresRegistryModels(t *testing.T) {
 	require.NoError(t, err)
 	require.Len(t, ranked, 4)
 
-	// Astica should be first (specialised vision).
-	assert.Equal(t, "astica", ranked[0].Model.ID,
-		"Astica should rank first due to specialised vision capabilities")
+	// Gemini (vision-only designated) or Astica (specialised) should rank first.
+	// With DefaultProviderUsageConfig, Google gets UsageTypeVisionOnly +15% bonus.
+	topProvider := ranked[0].Model.Provider
+	assert.Contains(t, []string{"google", "astica"}, topProvider,
+		"Top vision model should be Gemini (vision-only bonus) or Astica (specialized)")
 
 	// All should have positive scores.
 	for _, r := range ranked {

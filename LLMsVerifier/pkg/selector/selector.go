@@ -159,6 +159,12 @@ var providerEnvKeys = map[string]string{
 	"nvidia":       "NVIDIA_API_KEY",
 	"githubmodels": "GITHUB_MODELS_API_KEY",
 	"xai":          "XAI_API_KEY",
+	"openrouter":   "OPENROUTER_API_KEY",
+	"huggingface":  "HUGGINGFACE_API_KEY",
+	"chutes":       "CHUTES_API_KEY",
+	"siliconflow":  "SILICONFLOW_API_KEY",
+	"replicate":    "REPLICATE_API_KEY",
+	"zhipu":        "ZHIPU_API_KEY",
 	"ollama":       "", // local, always available
 }
 
