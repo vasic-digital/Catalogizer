@@ -118,8 +118,17 @@ fun MediaPlayerScreen(
                         streamError = "No stream URL in response"
                     }
                 } else {
-                    streamError = "Stream unavailable (${response.code()})"
+                    streamError = when (response.code()) {
+                        404 -> "No playable file linked to this media item. The file may not have been scanned yet."
+                        401, 403 -> "Authentication required. Please sign in again."
+                        500 -> "Server error resolving stream. The storage may be unreachable."
+                        else -> "Stream unavailable (HTTP ${response.code()})"
+                    }
                 }
+            } catch (e: java.net.ConnectException) {
+                streamError = "Cannot connect to server. Check that the server is running and reachable."
+            } catch (e: java.net.SocketTimeoutException) {
+                streamError = "Server request timed out. The server may be busy."
             } catch (e: Exception) {
                 streamError = "Failed to get stream: ${e.message}"
             }

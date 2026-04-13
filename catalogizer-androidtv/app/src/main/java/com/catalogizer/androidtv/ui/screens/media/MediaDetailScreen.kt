@@ -60,20 +60,35 @@ fun MediaDetailScreen(
     val config = LocalConfiguration.current
     val isCompact = config.screenWidthDp < 600
 
-    // Fetch entity details from API
+    // Fetch entity details from API with retry
     LaunchedEffect(mediaId, retryCount) {
         isLoading = true
-        try {
-            val result = container.mediaRepository.getMediaById(mediaId).first()
-            mediaItem = result
-            error = if (result == null) "Media not found" else null
-            if (result != null) {
-                val entityType = result.mediaType ?: "movie"
-                isFavorite = container.mediaRepository.checkFavorite(entityType, mediaId)
+        var lastError: String? = null
+        for (attempt in 0..2) {
+            try {
+                val result = container.mediaRepository.getMediaById(mediaId).first()
+                if (result != null) {
+                    mediaItem = result
+                    error = null
+                    val entityType = result.mediaType ?: "movie"
+                    isFavorite = container.mediaRepository.checkFavorite(entityType, mediaId)
+                    lastError = null
+                    break
+                } else {
+                    lastError = "Media item not found (id=$mediaId). The server may still be processing this entry."
+                }
+            } catch (e: java.net.ConnectException) {
+                lastError = "Cannot connect to server. Check that the server is running and reachable."
+            } catch (e: java.net.SocketTimeoutException) {
+                lastError = "Server request timed out. The server may be busy or unreachable."
+            } catch (e: Exception) {
+                lastError = "Failed to load media: ${e.message}"
             }
-        } catch (e: Exception) {
-            error = "Failed to load: ${e.message}"
+            if (attempt < 2 && lastError != null) {
+                kotlinx.coroutines.delay((attempt + 1) * 1000L)
+            }
         }
+        error = lastError
         isLoading = false
     }
 

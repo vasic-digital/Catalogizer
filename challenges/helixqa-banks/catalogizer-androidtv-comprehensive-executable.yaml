@@ -944,10 +944,30 @@ test_cases:
   platforms:
   - androidtv
   steps:
+  - name: Navigate to server URL field
+    action: 'keypress: KEYCODE_DPAD_DOWN'
+    expected: Focus moves to server URL input field
+    timeout: 5
+  - name: Focus server URL field for text input
+    action: 'keypress: KEYCODE_DPAD_CENTER'
+    expected: Server URL field is focused and editable
+    timeout: 5
+  - name: Clear existing text
+    action: 'adb_shell: cmd input keyevent KEYCODE_CTRL_LEFT KEYCODE_A && cmd input keyevent KEYCODE_DEL'
+    expected: Existing URL text is cleared
+    timeout: 5
   - name: Enter custom URL
     action: 'text: http://192.168.0.1:8080'
-    expected: URL is accepted and saved
+    expected: URL text appears in the input field
     timeout: 10
+  - name: Confirm URL entry
+    action: 'keypress: KEYCODE_ENTER'
+    expected: URL is accepted and saved
+    timeout: 5
+  - name: Verify URL was saved
+    action: 'screenshot'
+    expected: Server URL field shows http://192.168.0.1:8080
+    timeout: 5
 - id: tv-discovery-persist-url
   name: Server URL Persists Across Restarts
   category: functional
@@ -1221,17 +1241,25 @@ test_cases:
     action: 'screenshot'
     expected: Current items are noted
     timeout: 10
-  - name: Add new content via API
+  - name: Trigger content scan via API
     action: 'adb_shell: curl -s -X POST http://localhost:8080/api/v1/scan'
-    expected: New content is detected and added
+    expected: Scan request accepted by the API
     timeout: 10
-  - name: Open Catalogizer app
+  - name: Wait for scan to complete
+    action: 'sleep: 8000'
+    expected: Server finishes scanning and committing new content
+    timeout: 15
+  - name: Relaunch app to trigger channel refresh
+    action: 'adb_shell: am start -n com.catalogizer.androidtv/.ui.MainActivity --es qa_username admin --es qa_password admin123'
+    expected: App relaunches and HomeScreen triggers loadHomeData with channel refresh
+    timeout: 10
+  - name: Wait for channels to refresh
     action: 'sleep: 3000'
-    expected: App loads home data and refreshes channels
+    expected: TvChannelRepository.refreshAllChannels() completes in background
     timeout: 10
-  - name: Check updated channels
-    action: 'keypress: KEYCODE_HOME'
-    expected: New content appears in the appropriate channel rows
+  - name: Verify updated channels
+    action: 'screenshot'
+    expected: New content appears in the channel rows
     timeout: 10
 - id: tv-player-video-start
   name: TV Player Video Start Verification
@@ -1326,3 +1354,65 @@ test_cases:
     action: 'screenshot'
     expected: Player activity visible or detail screen loads (per category setting)
     timeout: 10
+- id: tv-detect-missing-cover-art
+  name: Detect Missing Cover Art on Browse Screen
+  category: visual-regression
+  priority: high
+  platforms:
+  - androidtv
+  steps:
+  - name: Launch app and navigate to home
+    action: 'adb_shell: am start -n com.catalogizer.androidtv/.ui.MainActivity --es qa_username admin --es qa_password admin123'
+    expected: Home screen loads with media rows
+    timeout: 10
+  - name: Wait for content to load
+    action: 'sleep: 3000'
+    expected: Media cards with cover art are visible
+    timeout: 10
+  - name: Screenshot home screen for cover audit
+    action: 'screenshot'
+    expected: All media cards display cover art images, no placeholder or broken image icons visible
+    timeout: 10
+    vision_verify: true
+  - name: Navigate to Movies category
+    action: 'keypress: KEYCODE_DPAD_DOWN'
+    expected: Focus moves to Movies row
+    timeout: 5
+  - name: Screenshot movies row
+    action: 'screenshot'
+    expected: Movie cards all have poster images loaded, no grey placeholders
+    timeout: 10
+    vision_verify: true
+- id: tv-detect-media-playback-error
+  name: Detect Unable to Load Media Error
+  category: error-detection
+  priority: critical
+  platforms:
+  - androidtv
+  steps:
+  - name: Navigate to entity detail
+    action: 'keypress: KEYCODE_DPAD_CENTER'
+    expected: Entity detail screen opens with media info
+    timeout: 10
+  - name: Screenshot detail screen
+    action: 'screenshot'
+    expected: Detail screen shows title, metadata, and Play button. Must NOT show Unable to Load Media error
+    timeout: 10
+    vision_verify: true
+  - name: Attempt playback
+    action: 'keypress: KEYCODE_DPAD_CENTER'
+    expected: Player screen opens or stream starts loading
+    timeout: 10
+  - name: Wait for stream resolution
+    action: 'sleep: 3000'
+    expected: Video begins playing or meaningful error is shown
+    timeout: 10
+  - name: Screenshot player state
+    action: 'screenshot'
+    expected: Video playback active with progress bar, or specific error message (not generic Unable to Load Media)
+    timeout: 10
+    vision_verify: true
+  - name: Return to browse
+    action: 'keypress: KEYCODE_BACK'
+    expected: Returns to previous screen
+    timeout: 5

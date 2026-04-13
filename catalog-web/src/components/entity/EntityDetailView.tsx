@@ -106,12 +106,25 @@ export function EntityHero({
               </Button>
               {files.length > 0 && (
                 <>
-                  <a
-                    href={`/api/v1/entities/${entity.id}/stream`}
-                    className={cn(buttonVariants({ variant: 'outline', size: 'sm' }))}
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={async () => {
+                      try {
+                        const res = await fetch(`/api/v1/entities/${entity.id}/stream`)
+                        if (!res.ok) throw new Error(`HTTP ${res.status}`)
+                        const data = await res.json()
+                        if (data.stream_url) {
+                          window.open(data.stream_url, '_blank')
+                        }
+                      } catch {
+                        // Fall back to download link
+                        window.open(`/api/v1/entities/${entity.id}/download`, '_blank')
+                      }
+                    }}
                   >
                     <Play className="h-4 w-4 mr-1" /> Play
-                  </a>
+                  </Button>
                   <a
                     href={`/api/v1/entities/${entity.id}/download`}
                     className={cn(buttonVariants({ variant: 'outline', size: 'sm' }))}

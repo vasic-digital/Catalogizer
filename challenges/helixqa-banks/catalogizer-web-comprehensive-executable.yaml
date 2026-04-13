@@ -3013,3 +3013,43 @@ test_cases:
     action: 'tap: 960,540'
     expected: Audio player appears and starts playback (progress bar moves)
     timeout: 10
+- id: web-detect-missing-cover-art
+  name: Detect Missing Cover Art on Browse Page
+  category: visual-regression
+  priority: high
+  platforms:
+  - web
+  steps:
+  - name: Navigate to browse page
+    action: 'navigate: /browse'
+    expected: Browse page loads with entity grid
+    timeout: 10
+  - name: Wait for images to load
+    action: 'sleep: 2000'
+    expected: All entity cards have loaded cover images
+    timeout: 10
+  - name: Screenshot browse grid
+    action: 'screenshot'
+    expected: All entity cards display cover art, no broken image icons or empty placeholders
+    timeout: 10
+    vision_verify: true
+- id: web-detect-stream-error
+  name: Detect Stream Unavailable Error on Play
+  category: error-detection
+  priority: critical
+  platforms:
+  - web
+  steps:
+  - name: Navigate to entity detail
+    action: 'navigate: /entity/1'
+    expected: Entity detail page loads with Play button visible
+    timeout: 10
+  - name: Click Play button
+    action: 'tap: 960,400'
+    expected: Stream resolves and player opens, or download fallback triggers
+    timeout: 10
+  - name: Screenshot result
+    action: 'screenshot'
+    expected: Video playing or download started, no unhandled error or blank page
+    timeout: 10
+    vision_verify: true

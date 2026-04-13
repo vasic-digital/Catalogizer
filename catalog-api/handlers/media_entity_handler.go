@@ -571,6 +571,8 @@ type tmdbSearchResult struct {
 }
 
 // fetchTMDBMetadata searches TMDB for a movie/TV show and returns poster + metadata.
+// Retries without year if the initial year-qualified search returns no results,
+// matching the aggregation_service.go enrichment path.
 func fetchTMDBMetadata(title string, year int, mediaTypeID int) *tmdbSearchResult {
 	apiKey := os.Getenv("TMDB_API_KEY")
 	if apiKey == "" {
@@ -583,28 +585,26 @@ func fetchTMDBMetadata(title string, year int, mediaTypeID int) *tmdbSearchResul
 		searchType = "tv"
 	}
 
-	// Build search URL
-	searchURL := fmt.Sprintf("https://api.themoviedb.org/3/search/%s?api_key=%s&query=%s",
+	// Validate year range — skip obviously wrong years (before first film or future)
+	yearParam := year
+	currentYear := time.Now().Year()
+	if yearParam > currentYear || yearParam < 1888 {
+		yearParam = 0
+	}
+
+	// Build base search URL with year
+	baseURL := fmt.Sprintf("https://api.themoviedb.org/3/search/%s?api_key=%s&query=%s",
 		searchType, apiKey, url.QueryEscape(title))
-	if year > 0 {
+	searchURL := baseURL
+	if yearParam > 0 {
 		if searchType == "movie" {
-			searchURL += fmt.Sprintf("&year=%d", year)
+			searchURL += fmt.Sprintf("&year=%d", yearParam)
 		} else {
-			searchURL += fmt.Sprintf("&first_air_date_year=%d", year)
+			searchURL += fmt.Sprintf("&first_air_date_year=%d", yearParam)
 		}
 	}
 
 	client := &http.Client{Timeout: 10 * time.Second}
-	resp, err := client.Get(searchURL)
-	if err != nil || resp.StatusCode != 200 {
-		return nil
-	}
-	defer resp.Body.Close()
-
-	body, err := io.ReadAll(resp.Body)
-	if err != nil {
-		return nil
-	}
 
 	var searchResp struct {
 		Results []struct {
@@ -618,7 +618,48 @@ func fetchTMDBMetadata(title string, year int, mediaTypeID int) *tmdbSearchResul
 			FirstAirDate string  `json:"first_air_date"`
 		} `json:"results"`
 	}
-	if err := json.Unmarshal(body, &searchResp); err != nil || len(searchResp.Results) == 0 {
+
+	// Try with year first, retry without year if no results
+	for attempt := 0; attempt < 2; attempt++ {
+		reqURL := searchURL
+		if attempt == 1 {
+			if yearParam == 0 {
+				break // No year was used in first attempt, retry won't help
+			}
+			reqURL = baseURL // Retry without year
+			logging.Warnf("TMDB: retrying '%s' without year (year=%d returned no results)", title, yearParam)
+		}
+
+		resp, err := client.Get(reqURL)
+		if err != nil {
+			logging.Warnf("TMDB: request failed for '%s': %v", title, err)
+			break
+		}
+		if resp.StatusCode != 200 {
+			resp.Body.Close()
+			logging.Warnf("TMDB: HTTP %d for '%s'", resp.StatusCode, title)
+			break
+		}
+
+		body, err := io.ReadAll(resp.Body)
+		resp.Body.Close()
+		if err != nil {
+			break
+		}
+
+		if err := json.Unmarshal(body, &searchResp); err != nil {
+			logging.Warnf("TMDB: JSON parse error for '%s': %v", title, err)
+			break
+		}
+		if len(searchResp.Results) > 0 {
+			break // Found results
+		}
+		// No results with year — retry without
+		time.Sleep(300 * time.Millisecond)
+	}
+
+	if len(searchResp.Results) == 0 {
+		logging.Warnf("TMDB: no results for '%s' (year=%d, type=%s)", title, year, searchType)
 		return nil
 	}
 
