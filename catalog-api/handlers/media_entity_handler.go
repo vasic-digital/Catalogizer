@@ -656,7 +656,7 @@ func (h *MediaEntityHandler) EnrichAllEntities(c *gin.Context) {
 
 	// Get all entities that don't have external metadata yet
 	rows, err := h.db.QueryContext(ctx,
-		`SELECT mi.id, da.directory_path
+		`SELECT mi.id, MIN(da.directory_path)
 		 FROM media_items mi
 		 JOIN directory_analyses da ON da.media_item_id = mi.id
 		 LEFT JOIN external_metadata em ON em.media_item_id = mi.id
