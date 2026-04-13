@@ -2,10 +2,16 @@ package services
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
+	"io"
+	"net/http"
+	"net/url"
+	"os"
 	"path/filepath"
 	"regexp"
 	"strings"
+	"time"
 
 	"catalogizer/database"
 	"catalogizer/internal/media/models"
@@ -84,7 +90,139 @@ func (s *AggregationService) AggregateAfterScan(ctx context.Context, storageRoot
 		zap.Int("entities_created", created),
 		zap.Int("entities_updated", updated))
 
+	// Auto-enrich new entities with TMDB metadata (cover art, descriptions)
+	if created > 0 {
+		go s.enrichNewEntities(ctx, storageRootID, created)
+	}
+
 	return nil
+}
+
+// enrichNewEntities fetches TMDB metadata for entities that lack external metadata.
+// Runs asynchronously after aggregation to avoid blocking the scan completion.
+func (s *AggregationService) enrichNewEntities(ctx context.Context, storageRootID int64, count int) {
+	s.logger.Info("Starting automatic metadata enrichment",
+		zap.Int64("storage_root_id", storageRootID),
+		zap.Int("new_entities", count))
+
+	apiKey := os.Getenv("TMDB_API_KEY")
+	if apiKey == "" {
+		s.logger.Warn("TMDB_API_KEY not set, skipping metadata enrichment")
+		return
+	}
+
+	// Find entities without external metadata
+	rows, err := s.db.QueryContext(ctx,
+		`SELECT mi.id, mi.title, COALESCE(mi.year, 0), mt.name
+		 FROM media_items mi
+		 JOIN media_types mt ON mt.id = mi.media_type_id
+		 LEFT JOIN external_metadata em ON em.media_item_id = mi.id
+		 WHERE em.id IS NULL
+		 LIMIT 200`)
+	if err != nil {
+		s.logger.Error("Failed to query unenriched entities", zap.Error(err))
+		return
+	}
+	defer rows.Close()
+
+	type entity struct {
+		id        int64
+		title     string
+		year      int
+		mediaType string
+	}
+	var entities []entity
+	for rows.Next() {
+		var e entity
+		if err := rows.Scan(&e.id, &e.title, &e.year, &e.mediaType); err != nil {
+			continue
+		}
+		entities = append(entities, e)
+	}
+
+	if len(entities) == 0 {
+		return
+	}
+
+	client := &http.Client{Timeout: 10 * time.Second}
+	enriched := 0
+
+	for _, e := range entities {
+		searchType := "movie"
+		if e.mediaType == "tv_show" || e.mediaType == "tv_season" || e.mediaType == "tv_episode" {
+			searchType = "tv"
+		}
+		if e.mediaType == "music_artist" || e.mediaType == "music_album" || e.mediaType == "song" {
+			continue // Skip music — MusicBrainz handles this
+		}
+
+		searchURL := fmt.Sprintf("https://api.themoviedb.org/3/search/%s?api_key=%s&query=%s",
+			searchType, apiKey, url.QueryEscape(e.title))
+		if e.year > 0 {
+			searchURL += fmt.Sprintf("&year=%d", e.year)
+		}
+
+		resp, err := client.Get(searchURL)
+		if err != nil || resp.StatusCode != 200 {
+			if resp != nil {
+				resp.Body.Close()
+			}
+			continue
+		}
+
+		body, err := io.ReadAll(resp.Body)
+		resp.Body.Close()
+		if err != nil {
+			continue
+		}
+
+		var searchResp struct {
+			Results []struct {
+				ID          int     `json:"id"`
+				PosterPath  string  `json:"poster_path"`
+				Overview    string  `json:"overview"`
+				VoteAverage float64 `json:"vote_average"`
+			} `json:"results"`
+		}
+		if err := json.Unmarshal(body, &searchResp); err != nil || len(searchResp.Results) == 0 {
+			continue
+		}
+
+		r := searchResp.Results[0]
+		if r.PosterPath == "" {
+			continue
+		}
+
+		coverURL := fmt.Sprintf("https://image.tmdb.org/t/p/w500%s", r.PosterPath)
+		_, err = s.db.ExecContext(ctx,
+			`INSERT INTO external_metadata (media_item_id, provider, external_id, data, rating, cover_url, last_fetched)
+			 VALUES (?, 'tmdb', ?, ?, ?, ?, CURRENT_TIMESTAMP)`,
+			e.id, fmt.Sprintf("tmdb:%d", r.ID), r.Overview, r.VoteAverage, coverURL)
+		if err != nil {
+			s.logger.Warn("Failed to insert TMDB metadata", zap.Int64("entity", e.id), zap.Error(err))
+			continue
+		}
+
+		// Update entity description and rating
+		if r.Overview != "" {
+			s.db.ExecContext(ctx,
+				`UPDATE media_items SET description = ? WHERE id = ? AND (description IS NULL OR description = '')`,
+				r.Overview, e.id)
+		}
+		if r.VoteAverage > 0 {
+			s.db.ExecContext(ctx,
+				`UPDATE media_items SET rating = ? WHERE id = ? AND (rating IS NULL OR rating = 0)`,
+				r.VoteAverage, e.id)
+		}
+
+		enriched++
+		// TMDB rate limit: 40 requests per 10 seconds
+		time.Sleep(300 * time.Millisecond)
+	}
+
+	s.logger.Info("Automatic metadata enrichment completed",
+		zap.Int("enriched", enriched),
+		zap.Int("total", len(entities)))
 }
 
 type directoryInfo struct {
