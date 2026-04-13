@@ -14,7 +14,7 @@ test_cases:
     expected: App process terminated
     timeout: 10
   - name: Launch from launcher
-    action: 'adb_shell: am start -n com.catalogizer.androidtv/.ui.MainActivity'
+    action: 'adb_shell: am start -n com.catalogizer.androidtv/.ui.MainActivity --es qa_username admin --es qa_password admin123'
     expected: App launches and displays splash screen within 3 seconds
     timeout: 10
 - id: tv-splash-screen
@@ -25,7 +25,7 @@ test_cases:
   - androidtv
   steps:
   - name: Launch app
-    action: 'adb_shell: am start -n com.catalogizer.androidtv/.ui.MainActivity'
+    action: 'adb_shell: am start -n com.catalogizer.androidtv/.ui.MainActivity --es qa_username admin --es qa_password admin123'
     expected: Splash screen appears with app logo and loading indicator
     timeout: 10
   - name: Splash completes
@@ -55,7 +55,7 @@ test_cases:
   - androidtv
   steps:
   - name: Open app without session
-    action: 'adb_shell: pm clear com.catalogizer.androidtv && am start -n com.catalogizer.androidtv/.ui.MainActivity'
+    action: 'adb_shell: pm clear com.catalogizer.androidtv && am start -n com.catalogizer.androidtv/.ui.MainActivity --es qa_username admin --es qa_password admin123'
     expected: Login screen renders with server URL, username, password fields and
       login button
     timeout: 10
@@ -561,7 +561,7 @@ test_cases:
   - androidtv
   steps:
   - name: Navigate deep
-    action: 'adb_shell: am start -n com.catalogizer.androidtv/.ui.MainActivity'
+    action: 'adb_shell: am start -n com.catalogizer.androidtv/.ui.MainActivity --es qa_username admin --es qa_password admin123'
     expected: User navigated 4 levels deep
     timeout: 10
   - name: Press Back repeatedly
@@ -588,7 +588,7 @@ test_cases:
     expected: Returns to Android TV launcher, app goes to background
     timeout: 10
   - name: Return to app
-    action: 'adb_shell: am start -n com.catalogizer.androidtv/.ui.MainActivity'
+    action: 'adb_shell: am start -n com.catalogizer.androidtv/.ui.MainActivity --es qa_username admin --es qa_password admin123'
     expected: App resumes on the same screen (media detail) where user left off
     timeout: 10
 - id: tv-focus-restore
@@ -618,7 +618,7 @@ test_cases:
   - androidtv
   steps:
   - name: Launch from launcher
-    action: 'adb_shell: am start -n com.catalogizer.androidtv/.ui.MainActivity'
+    action: 'adb_shell: am start -n com.catalogizer.androidtv/.ui.MainActivity --es qa_username admin --es qa_password admin123'
     expected: App launches, splash screen shows, transitions to login or home within
       5 seconds
     timeout: 10
@@ -912,7 +912,7 @@ test_cases:
   - androidtv
   steps:
   - name: Check login screen
-    action: 'adb_shell: am start -n com.catalogizer.androidtv/.ui.MainActivity'
+    action: 'adb_shell: am start -n com.catalogizer.androidtv/.ui.MainActivity --es qa_username admin --es qa_password admin123'
     expected: Server URL text field is visible
     timeout: 10
 - id: tv-discovery-button
@@ -934,7 +934,7 @@ test_cases:
   - androidtv
   steps:
   - name: Launch app fresh
-    action: 'adb_shell: pm clear com.catalogizer.androidtv && am start -n com.catalogizer.androidtv/.ui.MainActivity'
+    action: 'adb_shell: pm clear com.catalogizer.androidtv && am start -n com.catalogizer.androidtv/.ui.MainActivity --es qa_username admin --es qa_password admin123'
     expected: Progress indicator shows while scanning, discovered server auto-populates
     timeout: 10
 - id: tv-discovery-manual-entry
@@ -956,7 +956,7 @@ test_cases:
   - androidtv
   steps:
   - name: Set URL, restart, check
-    action: 'adb_shell: am force-stop com.catalogizer.androidtv && am start -n com.catalogizer.androidtv/.ui.MainActivity'
+    action: 'adb_shell: am force-stop com.catalogizer.androidtv && am start -n com.catalogizer.androidtv/.ui.MainActivity --es qa_username admin --es qa_password admin123'
     expected: Previously set URL is still shown
     timeout: 10
 - id: tv-discovery-server-picker
@@ -978,7 +978,7 @@ test_cases:
   - androidtv
   steps:
   - name: Check default URL
-    action: 'adb_shell: pm clear com.catalogizer.androidtv && am start -n com.catalogizer.androidtv/.ui.MainActivity'
+    action: 'adb_shell: pm clear com.catalogizer.androidtv && am start -n com.catalogizer.androidtv/.ui.MainActivity --es qa_username admin --es qa_password admin123'
     expected: Default value is https://catalogizer.dev
     timeout: 10
 - id: tv-discovery-switch-server
@@ -1081,7 +1081,7 @@ test_cases:
   - androidtv
   steps:
   - name: Start watching content
-    action: 'adb_shell: am start -n com.catalogizer.androidtv/.ui.MainActivity'
+    action: 'adb_shell: am start -n com.catalogizer.androidtv/.ui.MainActivity --es qa_username admin --es qa_password admin123'
     expected: Playback stops, progress is saved
     timeout: 10
   - name: Go to home screen

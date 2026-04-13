@@ -14,7 +14,7 @@
       "steps": [
         {
           "name": "Simulate low RAM conditions",
-          "action": "adb_shell: am start -n com.catalogizer.androidtv/.ui.MainActivity",
+          "action": "adb_shell: am start -n com.catalogizer.androidtv/.ui.MainActivity --es qa_username admin --es qa_password admin123",
           "expected": "App launches within 5 seconds despite memory constraints. Splash screen appears without black screen gap",
           "timeout": 10
         },
@@ -43,7 +43,7 @@
         },
         {
           "name": "Launch app",
-          "action": "adb_shell: am start -n com.catalogizer.androidtv/.ui.MainActivity",
+          "action": "adb_shell: am start -n com.catalogizer.androidtv/.ui.MainActivity --es qa_username admin --es qa_password admin123",
           "expected": "App launches and shows clear offline state message centered on screen. Message is readable from 10-foot viewing distance. No crash, no infinite loading spinner",
           "timeout": 10
         },
@@ -66,7 +66,7 @@
       "steps": [
         {
           "name": "Launch after system update reboot",
-          "action": "adb_shell: am start -n com.catalogizer.androidtv/.ui.MainActivity",
+          "action": "adb_shell: am start -n com.catalogizer.androidtv/.ui.MainActivity --es qa_username admin --es qa_password admin123",
           "expected": "App launches normally. Database and SharedPreferences survive system update. No crash from changed system APIs or missing runtime permissions after update",
           "timeout": 10
         },
@@ -89,7 +89,7 @@
       "steps": [
         {
           "name": "Trigger CEC power-on during app launch",
-          "action": "adb_shell: am start -n com.catalogizer.androidtv/.ui.MainActivity",
+          "action": "adb_shell: am start -n com.catalogizer.androidtv/.ui.MainActivity --es qa_username admin --es qa_password admin123",
           "expected": "App handles the HDMI input switching and CEC power-on events without crashing. Display may briefly show black during input switch",
           "timeout": 10
         },
@@ -152,7 +152,7 @@
       "steps": [
         {
           "name": "Navigate to detail screen",
-          "action": "adb_shell: am start -n com.catalogizer.androidtv/.ui.MainActivity",
+          "action": "adb_shell: am start -n com.catalogizer.androidtv/.ui.MainActivity --es qa_username admin --es qa_password admin123",
           "expected": "User is on detail screen",
           "timeout": 10
         },
@@ -382,7 +382,7 @@
       "steps": [
         {
           "name": "Open login screen",
-          "action": "adb_shell: am start -n com.catalogizer.androidtv/.ui.MainActivity",
+          "action": "adb_shell: am start -n com.catalogizer.androidtv/.ui.MainActivity --es qa_username admin --es qa_password admin123",
           "expected": "Login screen with on-screen keyboard visible",
           "timeout": 10
         },
@@ -497,7 +497,7 @@
       "steps": [
         {
           "name": "Start media playback",
-          "action": "adb_shell: am start -n com.catalogizer.androidtv/.ui.MainActivity",
+          "action": "adb_shell: am start -n com.catalogizer.androidtv/.ui.MainActivity --es qa_username admin --es qa_password admin123",
           "expected": "Media is playing",
           "timeout": 10
         },
@@ -698,7 +698,7 @@
         },
         {
           "name": "Relaunch and resume",
-          "action": "adb_shell: am start -n com.catalogizer.androidtv/.ui.MainActivity",
+          "action": "adb_shell: am start -n com.catalogizer.androidtv/.ui.MainActivity --es qa_username admin --es qa_password admin123",
           "expected": "Player detects that saved position (60 min) exceeds file duration (30 min). Falls back to playing from beginning rather than seeking to invalid position. No crash from seek beyond EOF",
           "timeout": 10
         }
@@ -870,7 +870,7 @@
         },
         {
           "name": "Return to app",
-          "action": "adb_shell: am start -n com.catalogizer.androidtv/.ui.MainActivity",
+          "action": "adb_shell: am start -n com.catalogizer.androidtv/.ui.MainActivity --es qa_username admin --es qa_password admin123",
           "expected": "App resumes to player screen with video paused at the 15-minute mark. Resume prompt shows if applicable. Player resources are properly re-initialized",
           "timeout": 10
         }
@@ -893,7 +893,7 @@
         },
         {
           "name": "Return from recents",
-          "action": "adb_shell: am start -n com.catalogizer.androidtv/.ui.MainActivity",
+          "action": "adb_shell: am start -n com.catalogizer.androidtv/.ui.MainActivity --es qa_username admin --es qa_password admin123",
           "expected": "App resumes to exact previous state. No activity recreation from thumbnail. Focus is on the last focused element",
           "timeout": 10
         }
@@ -1105,7 +1105,7 @@
       "steps": [
         {
           "name": "Trigger loading state on low-end device",
-          "action": "adb_shell: am start -n com.catalogizer.androidtv/.ui.MainActivity",
+          "action": "adb_shell: am start -n com.catalogizer.androidtv/.ui.MainActivity --es qa_username admin --es qa_password admin123",
           "expected": "Loading spinner animates smoothly (not jerky). Spinner does not consume excessive GPU resources. Animation uses hardware layer or simple rotation rather than complex shader effects",
           "timeout": 10
         },
