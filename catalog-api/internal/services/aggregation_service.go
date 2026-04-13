@@ -156,24 +156,18 @@ func (s *AggregationService) enrichNewEntities(ctx context.Context, storageRootI
 			continue // Skip music — MusicBrainz handles this
 		}
 
+		// Build TMDB search URL. Skip obviously wrong years (> current year
+		// or < 1888, the year of the first film) to avoid empty results.
+		yearParam := e.year
+		currentYear := time.Now().Year()
+		if yearParam > currentYear || yearParam < 1888 {
+			yearParam = 0
+		}
+
 		searchURL := fmt.Sprintf("https://api.themoviedb.org/3/search/%s?api_key=%s&query=%s",
 			searchType, apiKey, url.QueryEscape(e.title))
-		if e.year > 0 {
-			searchURL += fmt.Sprintf("&year=%d", e.year)
-		}
-
-		resp, err := client.Get(searchURL)
-		if err != nil || resp.StatusCode != 200 {
-			if resp != nil {
-				resp.Body.Close()
-			}
-			continue
-		}
-
-		body, err := io.ReadAll(resp.Body)
-		resp.Body.Close()
-		if err != nil {
-			continue
+		if yearParam > 0 {
+			searchURL += fmt.Sprintf("&year=%d", yearParam)
 		}
 
 		var searchResp struct {
@@ -184,7 +178,40 @@ func (s *AggregationService) enrichNewEntities(ctx context.Context, storageRootI
 				VoteAverage float64 `json:"vote_average"`
 			} `json:"results"`
 		}
-		if err := json.Unmarshal(body, &searchResp); err != nil || len(searchResp.Results) == 0 {
+
+		// Try search with year first, retry without year if no results
+		for attempt := 0; attempt < 2; attempt++ {
+			reqURL := searchURL
+			if attempt == 1 {
+				// Retry without year
+				reqURL = fmt.Sprintf("https://api.themoviedb.org/3/search/%s?api_key=%s&query=%s",
+					searchType, apiKey, url.QueryEscape(e.title))
+			}
+
+			resp, err := client.Get(reqURL)
+			if err != nil || resp.StatusCode != 200 {
+				if resp != nil {
+					resp.Body.Close()
+				}
+				break
+			}
+
+			body, err := io.ReadAll(resp.Body)
+			resp.Body.Close()
+			if err != nil {
+				break
+			}
+
+			if err := json.Unmarshal(body, &searchResp); err != nil {
+				break
+			}
+			if len(searchResp.Results) > 0 {
+				break // Found results
+			}
+			// No results with year — retry without
+			time.Sleep(300 * time.Millisecond)
+		}
+		if len(searchResp.Results) == 0 {
 			continue
 		}
 
