@@ -10,7 +10,7 @@ test_cases:
   - androidtv
   steps:
   - name: Simulate low RAM conditions
-    action: 'adb_shell: am start -n com.catalogizer.androidtv/.MainActivity'
+    action: 'adb_shell: am start -n com.catalogizer.androidtv/.ui.MainActivity'
     expected: App launches within 5 seconds despite memory constraints. Splash screen
       appears without black screen gap
     timeout: 10
@@ -31,7 +31,7 @@ test_cases:
     expected: Device has no network connectivity
     timeout: 10
   - name: Launch app
-    action: 'adb_shell: am start -n com.catalogizer.androidtv/.MainActivity'
+    action: 'adb_shell: am start -n com.catalogizer.androidtv/.ui.MainActivity'
     expected: App launches and shows clear offline state message centered on screen.
       Message is readable from 10-foot viewing distance. No crash, no infinite loading
       spinner
@@ -49,7 +49,7 @@ test_cases:
   - androidtv
   steps:
   - name: Launch after system update reboot
-    action: 'adb_shell: am start -n com.catalogizer.androidtv/.MainActivity'
+    action: 'adb_shell: am start -n com.catalogizer.androidtv/.ui.MainActivity'
     expected: App launches normally. Database and SharedPreferences survive system
       update. No crash from changed system APIs or missing runtime permissions after
       update
@@ -67,7 +67,7 @@ test_cases:
   - androidtv
   steps:
   - name: Trigger CEC power-on during app launch
-    action: 'adb_shell: am start -n com.catalogizer.androidtv/.MainActivity'
+    action: 'adb_shell: am start -n com.catalogizer.androidtv/.ui.MainActivity'
     expected: App handles the HDMI input switching and CEC power-on events without
       crashing. Display may briefly show black during input switch
     timeout: 10
@@ -113,7 +113,7 @@ test_cases:
   - androidtv
   steps:
   - name: Navigate to detail screen
-    action: 'adb_shell: am start -n com.catalogizer.androidtv/.MainActivity'
+    action: 'adb_shell: am start -n com.catalogizer.androidtv/.ui.MainActivity'
     expected: User is on detail screen
     timeout: 10
   - name: Simulate low memory kill
@@ -286,7 +286,7 @@ test_cases:
   - androidtv
   steps:
   - name: Open login screen
-    action: 'adb_shell: am start -n com.catalogizer.androidtv/.MainActivity'
+    action: 'adb_shell: am start -n com.catalogizer.androidtv/.ui.MainActivity'
     expected: Login screen with on-screen keyboard visible
     timeout: 10
   - name: Type slowly with D-pad
@@ -371,7 +371,7 @@ test_cases:
   - androidtv
   steps:
   - name: Start media playback
-    action: 'adb_shell: am start -n com.catalogizer.androidtv/.MainActivity'
+    action: 'adb_shell: am start -n com.catalogizer.androidtv/.ui.MainActivity'
     expected: Media is playing
     timeout: 10
   - name: Wait for token expiry during playback
@@ -523,7 +523,7 @@ test_cases:
     expected: Resume position (60 min) is saved from previous session
     timeout: 10
   - name: Relaunch and resume
-    action: 'adb_shell: am start -n com.catalogizer.androidtv/.MainActivity'
+    action: 'adb_shell: am start -n com.catalogizer.androidtv/.ui.MainActivity'
     expected: Player detects that saved position (60 min) exceeds file duration (30
       min). Falls back to playing from beginning rather than seeking to invalid position.
       No crash from seek beyond EOF
@@ -650,7 +650,7 @@ test_cases:
       cleanly
     timeout: 10
   - name: Return to app
-    action: 'adb_shell: am start -n com.catalogizer.androidtv/.MainActivity'
+    action: 'adb_shell: am start -n com.catalogizer.androidtv/.ui.MainActivity'
     expected: App resumes to player screen with video paused at the 15-minute mark.
       Resume prompt shows if applicable. Player resources are properly re-initialized
     timeout: 10
@@ -667,7 +667,7 @@ test_cases:
       thumbnail (not black screen). App state is preserved
     timeout: 10
   - name: Return from recents
-    action: 'adb_shell: am start -n com.catalogizer.androidtv/.MainActivity'
+    action: 'adb_shell: am start -n com.catalogizer.androidtv/.ui.MainActivity'
     expected: App resumes to exact previous state. No activity recreation from thumbnail.
       Focus is on the last focused element
     timeout: 10
@@ -830,7 +830,7 @@ test_cases:
   - androidtv
   steps:
   - name: Trigger loading state on low-end device
-    action: 'adb_shell: am start -n com.catalogizer.androidtv/.MainActivity'
+    action: 'adb_shell: am start -n com.catalogizer.androidtv/.ui.MainActivity'
     expected: Loading spinner animates smoothly (not jerky). Spinner does not consume
       excessive GPU resources. Animation uses hardware layer or simple rotation rather
       than complex shader effects
