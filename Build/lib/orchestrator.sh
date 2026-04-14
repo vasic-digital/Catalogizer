@@ -317,6 +317,7 @@ Options:
   --skip-tests        Skip test phase during build
   --container         Force containerized build (requires builder image)
   --local             Force local build (no container)
+  --distributed       Distribute builds across remote hosts (requires Go)
   --status            Show component change detection status and exit
   --version           Show current version and exit
   --help              Show this help message
@@ -344,6 +345,7 @@ parse_build_args() {
     BUILD_USE_CONTAINER=""
     BUILD_SHOW_STATUS=false
     BUILD_SHOW_VERSION=false
+    BUILD_DISTRIBUTED=false
 
     while [[ $# -gt 0 ]]; do
         case "$1" in
@@ -373,6 +375,10 @@ parse_build_args() {
                 ;;
             --local)
                 BUILD_USE_CONTAINER=false
+                shift
+                ;;
+            --distributed)
+                BUILD_DISTRIBUTED=true
                 shift
                 ;;
             --status)
@@ -491,6 +497,22 @@ build_main() {
     # Handle container mode: re-launch inside container
     if [[ "$BUILD_USE_CONTAINER" == "true" ]] && ! is_container; then
         launch_container_build "${all_args[@]}"
+        return $?
+    fi
+
+    if [[ "$BUILD_DISTRIBUTED" == "true" ]]; then
+        log_info "Distributed build mode enabled"
+        local dist_bin="$BUILD_PROJECT_ROOT/Containers/cmd/distributed-build"
+        if ! command -v go &>/dev/null; then
+            log_error "Go is required for distributed builds"
+            return 1
+        fi
+        go run "$dist_bin" \
+            --project "$BUILD_PROJECT_ROOT" \
+            ${BUILD_SKIP_TESTS:+--skip-tests} \
+            ${BUILD_SINGLE_COMPONENT:+--component "$BUILD_SINGLE_COMPONENT"} \
+            ${BUILD_FORCE:+--force} \
+            ${BUILD_DRY_RUN:+--dry-run}
         return $?
     fi
 
