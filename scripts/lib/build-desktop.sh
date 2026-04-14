@@ -16,7 +16,13 @@ build_desktop() {
     # Container: install deps and enable AppImage extraction (no FUSE in containers)
     if is_container; then
         if command -v apt-get &>/dev/null; then
+            apt-get update -qq >/dev/null 2>&1 || true
             apt-get install -y --no-install-recommends xdg-utils >/dev/null 2>&1 || true
+        fi
+        # Provide xdg-open stub if still missing (some minimal images lack it)
+        if ! command -v xdg-open &>/dev/null; then
+            printf '#!/bin/sh\nexit 0\n' > /usr/local/bin/xdg-open
+            chmod +x /usr/local/bin/xdg-open
         fi
         export APPIMAGE_EXTRACT_AND_RUN=1
         # Ensure pkg-config can find VLC libs when vlc-player feature is enabled
