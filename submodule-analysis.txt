@@ -20,13 +20,13 @@ Last 5 commits:
   161a895 docs: add ARCHITECTURE.md, doc.go, tests, .env gitignore for v2.1.0
 
 === Challenges (Go) ===
-Current: 2db141b Merge remote-tracking branch 'gitlab/main'
+Current: 3dec360 chore: update Containers submodule to latest
 Last 5 commits:
+  3dec360 chore: update Containers submodule to latest
   2db141b Merge remote-tracking branch 'gitlab/main'
   cad3ab9 chore: update Containers and Panoptic submodules
   0670440 feat(bank): accept "test_cases" root key for HelixQA YAML banks
   a6185a5 feat(bank): load test banks from YAML in addition to JSON
-  95683ae fix(httpclient): LoginWithRetry short-circuits on AuthError (4xx)
 
 === Assets (Go) ===
 Current: 4b12577 MANDATORY: Add ZERO UNFINISHED WORK POLICY to AGENTS.md
@@ -290,13 +290,13 @@ Last 5 commits:
   334f2d7 feat: v2.2.0 comprehensive completion — edge tests, version alignment
 
 === HelixQA (AI/HelixQA) ===
-Current: 9d7d3ea test: add security, DDoS, benchmarking, and fixes-validation banks
+Current: b132b50 chore: update opensource tool submodules to latest
 Last 5 commits:
+  b132b50 chore: update opensource tool submodules to latest
   9d7d3ea test: add security, DDoS, benchmarking, and fixes-validation banks
   43d8ae3 Auto-commit
   d7c136d chore: update vector memory database after QA session
   040f611 perf(navigator): 18x faster ADB input via cmd input + reduced sleeps
-  c10162c fix(banks): add QA auto-login to all app launches + API 0.0.0.0 binding
 
 === DocProcessor (AI/HelixQA) ===
 Current: 6a52fb4 security: Add mandatory NO SUDO/ROOT execution constraint
