@@ -38,7 +38,7 @@ Perform a clean rebuild of the entire Catalogizer ecosystem with latest submodul
 - **Containers-based builder:** `docker-compose.build.yml` with `catalogizer-builder` container
 - **Build type:** Debug builds for all components (enables comprehensive logging)
 - **Runtime:** Podman exclusively (no Docker)
-- **Resource limits:** 30-40% host CPU/memory maximum
+- **Resource limits:** 50-60% host CPU/memory maximum
 
 ### QA Environment
 - **HelixQA iterations:** 5 complete rounds with self-learning capability
@@ -141,7 +141,7 @@ Test Failure → Root Cause Analysis → Fix → Regression Test → Re-run All 
 
 ## 6. Resource Management & Constraints
 
-### Host Resource Limits (30-40% maximum)
+### Host Resource Limits (50-60% maximum)
 - **Container CPU limits:**
   - PostgreSQL: `--cpus=1`
   - API: `--cpus=2`
