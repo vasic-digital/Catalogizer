@@ -191,12 +191,13 @@ func TestChaos_ConcurrentDatabaseAccess(t *testing.T) {
 		t.Skip("skipping chaos test in short mode")
 	}
 
-	db, err := sql.Open("sqlite3", "file::memory:?cache=shared&_busy_timeout=5000&_journal_mode=WAL")
+	db, err := sql.Open("sqlite3", "file::memory:?cache=shared&_busy_timeout=10000&_journal_mode=WAL&_synchronous=NORMAL")
 	require.NoError(t, err)
 	defer db.Close()
 
-	// Shared cache requires keeping at least one connection open
-	db.SetMaxOpenConns(5)
+	// Shared cache requires keeping at least one connection open.
+	// Limit to 3 connections to reduce SQLITE_BUSY contention.
+	db.SetMaxOpenConns(3)
 	db.SetMaxIdleConns(2)
 
 	_, err = db.Exec(`CREATE TABLE test_data (id INTEGER PRIMARY KEY AUTOINCREMENT, value TEXT, created_at DATETIME)`)

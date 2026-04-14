@@ -757,16 +757,14 @@ func main() {
 	authRateLimiter := authMiddleware.RateLimitByUser(600, "1m")
 	defaultRateLimiter := authMiddleware.RateLimitByUser(2000, "1m")
 
-	// Optional: Redis-based rate limiting when Redis is available
-	if redisClient != nil {
-		logger.Info("Redis available — Redis rate limiting can be enabled via config")
-		// To switch to Redis-based distributed rate limiting, replace the above limiters:
-		// authRateLimiter = root_middleware.RedisRateLimit(root_middleware.AuthRedisRateLimiterConfig(redisClient))
-		// defaultRateLimiter = root_middleware.RedisRateLimit(root_middleware.DefaultRedisRateLimiterConfig(redisClient))
-		//
-		// For sliding window algorithm (more accurate under burst traffic):
-		// authRateLimiter = root_middleware.SlidingWindowRedisRateLimit(root_middleware.AuthRedisRateLimiterConfig(redisClient))
-		// defaultRateLimiter = root_middleware.SlidingWindowRedisRateLimit(root_middleware.DefaultRedisRateLimiterConfig(redisClient))
+	// Redis-based distributed rate limiting: activates automatically when
+	// Redis is available AND REDIS_RATE_LIMIT=true is set.
+	if redisClient != nil && os.Getenv("REDIS_RATE_LIMIT") == "true" {
+		logger.Info("Activating Redis-based distributed rate limiting")
+		authRateLimiter = root_middleware.RedisRateLimit(root_middleware.AuthRedisRateLimiterConfig(redisClient))
+		defaultRateLimiter = root_middleware.RedisRateLimit(root_middleware.DefaultRedisRateLimiterConfig(redisClient))
+	} else if redisClient != nil {
+		logger.Info("Redis available but REDIS_RATE_LIMIT not set — using in-memory rate limiting")
 	}
 
 	// Setup Gin router

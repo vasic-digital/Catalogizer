@@ -358,3 +358,79 @@ export const useInfiniteScroll = (
 
   return loadMoreRef
 }
+
+// Dev-mode performance overlay — shows live FPS, memory, and DOM stats
+export const PerformanceOverlay: React.FC = () => {
+  const [visible, setVisible] = useState(true)
+  const [metrics, setMetrics] = useState({
+    fps: 0,
+    domNodes: 0,
+    heapUsedMB: 0,
+    heapTotalMB: 0,
+  })
+  const frameCountRef = useRef(0)
+  const lastTimeRef = useRef(performance.now())
+  const rafRef = useRef<number>(0)
+
+  useEffect(() => {
+    const measure = () => {
+      frameCountRef.current++
+      const now = performance.now()
+      const elapsed = now - lastTimeRef.current
+
+      if (elapsed >= 1000) {
+        const fps = Math.round((frameCountRef.current / elapsed) * 1000)
+        const domNodes = document.querySelectorAll('*').length
+
+        let heapUsedMB = 0
+        let heapTotalMB = 0
+        const perf = performance as Performance & { memory?: { usedJSHeapSize: number; totalJSHeapSize: number } }
+        if (perf.memory) {
+          heapUsedMB = Math.round(perf.memory.usedJSHeapSize / (1024 * 1024))
+          heapTotalMB = Math.round(perf.memory.totalJSHeapSize / (1024 * 1024))
+        }
+
+        setMetrics({ fps, domNodes, heapUsedMB, heapTotalMB })
+        frameCountRef.current = 0
+        lastTimeRef.current = now
+      }
+
+      rafRef.current = requestAnimationFrame(measure)
+    }
+
+    rafRef.current = requestAnimationFrame(measure)
+    return () => cancelAnimationFrame(rafRef.current)
+  }, [])
+
+  if (!visible) {
+    return (
+      <button
+        onClick={() => setVisible(true)}
+        className="fixed bottom-2 right-2 z-[9999] bg-gray-900 text-green-400 text-xs px-2 py-1 rounded opacity-60 hover:opacity-100 font-mono"
+      >
+        perf
+      </button>
+    )
+  }
+
+  return (
+    <div className="fixed bottom-2 right-2 z-[9999] bg-gray-900/90 text-green-400 text-xs p-3 rounded-lg shadow-lg font-mono min-w-[180px]">
+      <div className="flex items-center justify-between mb-1">
+        <span className="text-gray-400 font-bold">Performance</span>
+        <button
+          onClick={() => setVisible(false)}
+          className="text-gray-500 hover:text-gray-300 ml-2"
+        >
+          x
+        </button>
+      </div>
+      <div className={`${metrics.fps < 30 ? 'text-red-400' : metrics.fps < 50 ? 'text-yellow-400' : 'text-green-400'}`}>
+        FPS: {metrics.fps}
+      </div>
+      <div>DOM: {metrics.domNodes} nodes</div>
+      {metrics.heapTotalMB > 0 && (
+        <div>Heap: {metrics.heapUsedMB}/{metrics.heapTotalMB} MB</div>
+      )}
+    </div>
+  )
+}

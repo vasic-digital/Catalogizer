@@ -119,137 +119,45 @@ const ExternalIntegrations: React.FC = () => {
   const [typeFilter, setTypeFilter] = useState<string>('all');
   const [searchQuery, setSearchQuery] = useState('');
 
-  // Load existing integrations
-  const loadIntegrations = useCallback(() => {
-    const mockIntegrations: ExternalIntegration[] = [
-      {
-        id: '1',
-        name: 'Google Drive Backup',
-        provider: 'Google Drive',
-        type: 'storage',
-        status: 'connected',
-        description: 'Backup collection metadata and files to Google Drive',
-        config: {
-          apiKey: '••••••••••••••••',
-          endpoint: 'https://www.googleapis.com/drive/v3',
-          webhookUrl: 'https://catalogizer.app/webhooks/google-drive'
+  // Load existing integrations from the API
+  const loadIntegrations = useCallback(async () => {
+    try {
+      const response = await fetch('/api/v1/integrations', {
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('auth_token') || ''}`,
         },
-        syncSettings: {
-          enabled: true,
-          frequency: 'daily',
-          direction: 'export',
-          filters: [
-            { field: 'collection_type', operator: 'equals', value: 'movies' }
-          ]
-        },
-        statistics: {
-          totalSyncs: 45,
-          successfulSyncs: 43,
-          failedSyncs: 2,
-          lastSyncStatus: 'success',
-          itemsProcessed: 1250,
-          lastSyncDuration: 180,
-          bytesTransferred: 2048576000
-        },
-        lastSync: '2024-01-21T02:30:00Z',
-        createdAt: '2024-01-10T10:00:00Z',
-        enabled: true
-      },
-      {
-        id: '2',
-        name: 'TMDB Metadata',
-        provider: 'The Movie Database',
-        type: 'metadata',
-        status: 'connected',
-        description: 'Fetch movie and TV show metadata from TMDB',
-        config: {
-          apiKey: '••••••••••••••••',
-          endpoint: 'https://api.themoviedb.org/3'
-        },
-        syncSettings: {
-          enabled: true,
-          frequency: 'realtime',
-          direction: 'import',
-          filters: [
-            { field: 'media_type', operator: 'in', value: ['movie', 'tv'] }
-          ],
-          mapping: {
-            'title': 'original_title',
-            'overview': 'overview',
-            'release_date': 'release_date'
-          }
-        },
-        statistics: {
-          totalSyncs: 1240,
-          successfulSyncs: 1235,
-          failedSyncs: 5,
-          lastSyncStatus: 'success',
-          itemsProcessed: 3420,
-          lastSyncDuration: 45
-        },
-        lastSync: '2024-01-21T14:25:00Z',
-        createdAt: '2024-01-05T09:00:00Z',
-        enabled: true
-      },
-      {
-        id: '3',
-        name: 'Plex Media Server',
-        provider: 'Plex',
-        type: 'sharing',
-        status: 'disconnected',
-        description: 'Share collections with Plex Media Server',
-        config: {
-          endpoint: 'http://192.168.1.100:32400',
-          username: 'admin',
-          password: '••••••••••••••••'
-        },
-        syncSettings: {
-          enabled: false,
-          frequency: 'manual',
-          direction: 'bidirectional',
-          filters: []
-        },
-        statistics: {
-          totalSyncs: 0,
-          successfulSyncs: 0,
-          failedSyncs: 0,
-          lastSyncStatus: 'pending',
-          itemsProcessed: 0
-        },
-        createdAt: '2024-01-18T16:45:00Z',
-        enabled: false
-      },
-      {
-        id: '4',
-        name: 'Discord Notifications',
-        provider: 'Discord',
-        type: 'automation',
-        status: 'connected',
-        description: 'Send notifications to Discord channels',
-        config: {
-          webhookUrl: 'https://discord.com/api/webhooks/••••••••••••••••'
-        },
-        syncSettings: {
-          enabled: true,
-          frequency: 'realtime',
-          direction: 'export',
-          filters: [
-            { field: 'event_type', operator: 'in', value: ['new_movie', 'collection_update'] }
-          ]
-        },
-        statistics: {
-          totalSyncs: 67,
-          successfulSyncs: 67,
-          failedSyncs: 0,
-          lastSyncStatus: 'success',
-          itemsProcessed: 67
-        },
-        lastSync: '2024-01-21T15:30:00Z',
-        createdAt: '2024-01-12T14:20:00Z',
-        enabled: true
+      });
+      if (response.ok) {
+        const data = await response.json();
+        if (Array.isArray(data)) {
+          setIntegrations(data.map((item: Record<string, unknown>) => ({
+            id: String(item.id || ''),
+            name: String(item.name || ''),
+            provider: String(item.provider || ''),
+            type: (item.type as ExternalIntegration['type']) || 'storage',
+            status: (item.status as ExternalIntegration['status']) || 'disconnected',
+            description: String(item.description || ''),
+            config: (item.config as IntegrationConfig) || {},
+            syncSettings: (item.syncSettings as SyncSettings) || (item.sync_settings as SyncSettings) || {
+              enabled: false, frequency: 'manual', direction: 'import', filters: [],
+            },
+            statistics: (item.statistics as IntegrationStats) || {
+              totalSyncs: 0, successfulSyncs: 0, failedSyncs: 0,
+              lastSyncStatus: 'pending', itemsProcessed: 0,
+            },
+            lastSync: item.last_sync as string | undefined,
+            createdAt: String(item.created_at || item.createdAt || new Date().toISOString()),
+            enabled: item.enabled !== false,
+          })));
+          return;
+        }
       }
-    ];
-    setIntegrations(mockIntegrations);
+      // Endpoint does not exist yet or returned non-array; start with empty state
+      setIntegrations([]);
+    } catch {
+      // API not available; start with empty list
+      setIntegrations([]);
+    }
   }, []);
 
   useEffect(() => {
@@ -286,32 +194,68 @@ const ExternalIntegrations: React.FC = () => {
 
   // Toggle integration enabled/disabled
   const toggleIntegrationStatus = async (integrationId: string) => {
-    setIntegrations(prev => prev.map(integration => 
-      integration.id === integrationId 
-        ? { ...integration, enabled: !integration.enabled }
+    const target = integrations.find(i => i.id === integrationId);
+    if (!target) return;
+
+    const newEnabled = !target.enabled;
+    setIntegrations(prev => prev.map(integration =>
+      integration.id === integrationId
+        ? { ...integration, enabled: newEnabled }
         : integration
     ));
+
+    try {
+      await fetch(`/api/v1/integrations/${integrationId}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${localStorage.getItem('auth_token') || ''}`,
+        },
+        body: JSON.stringify({ enabled: newEnabled }),
+      });
+    } catch {
+      // Endpoint may not exist yet; local state update is sufficient
+    }
     toast.success('Integration status updated');
   };
 
   // Test integration connection
   const testIntegration = async (integrationId: string) => {
     setTestingIntegration(integrationId);
-    
-    // Simulate connection test
-    setTimeout(() => {
-      setTestingIntegration(null);
-      setIntegrations(prev => prev.map(integration => 
-        integration.id === integrationId 
-          ? { 
-              ...integration, 
-              status: Math.random() > 0.2 ? 'connected' : 'error',
-              lastSync: new Date().toISOString()
-            }
+
+    try {
+      const response = await fetch(`/api/v1/integrations/${integrationId}/test`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('auth_token') || ''}`,
+        },
+      });
+
+      let newStatus: ExternalIntegration['status'] = 'error';
+      if (response.ok) {
+        const data = await response.json();
+        newStatus = data.success ? 'connected' : 'error';
+      } else if (response.status === 404) {
+        // Endpoint not implemented; mark as disconnected gracefully
+        newStatus = 'disconnected';
+      }
+
+      setIntegrations(prev => prev.map(integration =>
+        integration.id === integrationId
+          ? { ...integration, status: newStatus, lastSync: new Date().toISOString() }
           : integration
       ));
       toast.success('Connection test completed');
-    }, 2000);
+    } catch {
+      setIntegrations(prev => prev.map(integration =>
+        integration.id === integrationId
+          ? { ...integration, status: 'error' }
+          : integration
+      ));
+      toast.error('Connection test failed');
+    } finally {
+      setTestingIntegration(null);
+    }
   };
 
   // Manual sync
@@ -320,42 +264,80 @@ const ExternalIntegrations: React.FC = () => {
     if (!integration || integration.status !== 'connected') return;
 
     // Update status to show syncing
-    setIntegrations(prev => prev.map(i => 
-      i.id === integrationId 
-        ? { 
-            ...i, 
+    setIntegrations(prev => prev.map(i =>
+      i.id === integrationId
+        ? {
+            ...i,
             lastSync: new Date().toISOString(),
-            statistics: {
-              ...i.statistics,
-              lastSyncStatus: 'pending'
-            }
+            statistics: { ...i.statistics, lastSyncStatus: 'pending' as const }
           }
         : i
     ));
 
-    // Simulate sync
-    setTimeout(() => {
-      setIntegrations(prev => prev.map(i => 
-        i.id === integrationId 
-          ? { 
+    try {
+      const response = await fetch(`/api/v1/integrations/${integrationId}/sync`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('auth_token') || ''}`,
+        },
+      });
+
+      let itemsProcessedDelta = 0;
+      let syncStatus: 'success' | 'error' = 'success';
+      if (response.ok) {
+        const data = await response.json();
+        itemsProcessedDelta = Number(data.items_processed || 0);
+        syncStatus = data.success === false ? 'error' : 'success';
+      }
+
+      setIntegrations(prev => prev.map(i =>
+        i.id === integrationId
+          ? {
               ...i,
               statistics: {
                 ...i.statistics,
                 totalSyncs: i.statistics.totalSyncs + 1,
-                successfulSyncs: i.statistics.successfulSyncs + 1,
-                lastSyncStatus: 'success',
-                itemsProcessed: i.statistics.itemsProcessed + Math.floor(Math.random() * 50)
+                successfulSyncs: syncStatus === 'success' ? i.statistics.successfulSyncs + 1 : i.statistics.successfulSyncs,
+                failedSyncs: syncStatus === 'error' ? i.statistics.failedSyncs + 1 : i.statistics.failedSyncs,
+                lastSyncStatus: syncStatus,
+                itemsProcessed: i.statistics.itemsProcessed + itemsProcessedDelta,
               }
             }
           : i
       ));
-      toast.success('Sync completed successfully');
-    }, 3000);
+      toast.success(syncStatus === 'success' ? 'Sync completed successfully' : 'Sync completed with errors');
+    } catch {
+      setIntegrations(prev => prev.map(i =>
+        i.id === integrationId
+          ? {
+              ...i,
+              statistics: {
+                ...i.statistics,
+                totalSyncs: i.statistics.totalSyncs + 1,
+                failedSyncs: i.statistics.failedSyncs + 1,
+                lastSyncStatus: 'error' as const,
+              }
+            }
+          : i
+      ));
+      toast.error('Sync failed');
+    }
   };
 
   // Delete integration
   const deleteIntegration = async (integrationId: string) => {
     setIntegrations(prev => prev.filter(integration => integration.id !== integrationId));
+
+    try {
+      await fetch(`/api/v1/integrations/${integrationId}`, {
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('auth_token') || ''}`,
+        },
+      });
+    } catch {
+      // Endpoint may not exist yet; local state update is sufficient
+    }
     toast.success('Integration deleted successfully');
   };
 

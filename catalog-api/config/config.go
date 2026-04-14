@@ -71,9 +71,8 @@ type CatalogConfig struct {
 	MaxConcurrentScans   int      `json:"max_concurrent_scans"`
 	ScannerConcurrency   int      `json:"scanner_concurrency"`
 	DownloadChunkSize    int      `json:"download_chunk_size"`
-	MaxArchiveSize       int64    `json:"max_archive_size"`
-	AllowedDownloadTypes []string `json:"allowed_download_types"`
-	TempDir              string   `json:"temp_dir"`
+	MaxArchiveSize int64  `json:"max_archive_size"`
+	TempDir        string `json:"temp_dir"`
 }
 
 // LoggingConfig contains logging configuration
@@ -87,24 +86,9 @@ type LoggingConfig struct {
 	Compress   bool   `json:"compress"`
 }
 
-// StorageConfig contains storage configuration for multiple protocols
-type StorageConfig struct {
-	Roots []StorageRootConfig `json:"roots"`
-}
-
-// StorageRootConfig represents configuration for a single storage root
-type StorageRootConfig struct {
-	ID                       string                 `json:"id"`
-	Name                     string                 `json:"name"`
-	Protocol                 string                 `json:"protocol"` // smb, ftp, nfs, webdav, local
-	Enabled                  bool                   `json:"enabled"`
-	MaxDepth                 int                    `json:"max_depth"`
-	EnableDuplicateDetection bool                   `json:"enable_duplicate_detection"`
-	EnableMetadataExtraction bool                   `json:"enable_metadata_extraction"`
-	IncludePatterns          []string               `json:"include_patterns,omitempty"`
-	ExcludePatterns          []string               `json:"exclude_patterns,omitempty"`
-	Settings                 map[string]interface{} `json:"settings"` // Protocol-specific settings
-}
+// StorageConfig contains storage configuration.
+// Storage roots are managed in the database, not in config files.
+type StorageConfig struct{}
 
 // LoadConfig loads configuration from file or creates default
 func LoadConfig(configPath string) (*Config, error) {
@@ -182,25 +166,9 @@ func getDefaultConfig() *Config {
 			ScannerConcurrency:   4,
 			DownloadChunkSize:    1024 * 1024,            // 1MB
 			MaxArchiveSize:       1024 * 1024 * 1024 * 5, // 5GB
-			AllowedDownloadTypes: []string{"*"},
-			TempDir:              os.TempDir() + "/catalog-api", // Use system temp directory
+			TempDir: os.TempDir() + "/catalog-api", // Use system temp directory
 		},
-		Storage: StorageConfig{
-			Roots: []StorageRootConfig{
-				{
-					ID:                       "local-example",
-					Name:                     "Local Files",
-					Protocol:                 "local",
-					Enabled:                  true,
-					MaxDepth:                 10,
-					EnableDuplicateDetection: true,
-					EnableMetadataExtraction: true,
-					Settings: map[string]interface{}{
-						"base_path": "/tmp/catalog-data",
-					},
-				},
-			},
-		},
+		Storage: StorageConfig{},
 		Logging: LoggingConfig{
 			Level:      "info",
 			Format:     "json",

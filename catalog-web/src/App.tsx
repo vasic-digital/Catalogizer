@@ -8,6 +8,7 @@ import { ProtectedRoute } from '@/components/auth/ProtectedRoute'
 import { ErrorBoundary } from '@/components/ErrorBoundary'
 import { PageErrorBoundary } from '@/components/PageErrorBoundary'
 import { SplashScreen } from '@/components/SplashScreen'
+import { PerformanceOverlay } from '@/components/collections/PerformanceOptimizer'
 
 // Lazy-loaded page components for code splitting
 const LoginForm = React.lazy(() => import('@/components/auth/LoginForm').then(m => ({ default: m.LoginForm })))
@@ -200,6 +201,7 @@ function App() {
             </Suspense>
           </Router>
         </WebSocketProvider>
+        {import.meta.env.DEV && <PerformanceOverlay />}
       </AuthProvider>
     </ErrorBoundary>
   )

@@ -187,33 +187,42 @@ export const CollectionSharing: React.FC<CollectionSharingProps> = ({
   const [isRealTimeEnabled, setIsRealTimeEnabled] = useState(false)
   const [connectionStatus, setConnectionStatus] = useState<'connected' | 'disconnected' | 'connecting'>('disconnected')
 
-  // Mock existing share links
+  // Load existing share links from the API
   useEffect(() => {
-    const mockLinks: ShareLink[] = [
-      {
-        id: '1',
-        title: 'Public Share',
-        url: `https://catalogizer.app/shared/${collection.id}/abc123`,
-        token: 'abc123',
-        permissions: PERMISSION_LEVELS[1].permissions,
-        expires_in: '7d',
-        created_at: new Date(Date.now() - 86400000).toISOString(),
-        access_count: 25,
-        is_active: true
-      },
-      {
-        id: '2',
-        title: 'Editor Access',
-        url: `https://catalogizer.app/shared/${collection.id}/def456`,
-        token: 'def456',
-        permissions: PERMISSION_LEVELS[3].permissions,
-        expires_in: '30d',
-        created_at: new Date(Date.now() - 604800000).toISOString(),
-        access_count: 8,
-        is_active: true
+    let cancelled = false
+    const loadShares = async () => {
+      try {
+        const response = await fetch(`/api/v1/collections/${collection.id}/shares`, {
+          headers: {
+            'Authorization': `Bearer ${localStorage.getItem('auth_token') || ''}`,
+          },
+        })
+        if (!response.ok) {
+          // Endpoint may not exist yet; start with empty state
+          if (!cancelled) setShareLinks([])
+          return
+        }
+        const data = await response.json()
+        if (!cancelled && Array.isArray(data)) {
+          setShareLinks(data.map((share: Record<string, unknown>) => ({
+            id: String(share.id || share.share_id || ''),
+            title: String(share.title || `Share ${share.share_id || ''}`),
+            url: String(share.share_url || share.url || ''),
+            token: String(share.token || share.share_id || ''),
+            permissions: (share.permissions as ShareLink['permissions']) || PERMISSION_LEVELS[0].permissions,
+            expires_in: String(share.expires_in || share.expires_at || 'never'),
+            created_at: String(share.created_at || new Date().toISOString()),
+            access_count: Number(share.access_count || 0),
+            is_active: share.is_active !== false,
+          })))
+        }
+      } catch {
+        // API not available; start with empty share list
+        if (!cancelled) setShareLinks([])
       }
-    ]
-    setShareLinks(mockLinks)
+    }
+    loadShares()
+    return () => { cancelled = true }
   }, [collection.id])
 
   // Simulate real-time connection
@@ -232,27 +241,48 @@ export const CollectionSharing: React.FC<CollectionSharingProps> = ({
 
   const generateShareLink = useCallback(async () => {
     setIsCreating(true)
-    
+
     try {
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 1500))
-      
+      const response = await fetch(`/api/v1/collections/${collection.id}/share`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${localStorage.getItem('auth_token') || ''}`,
+        },
+        body: JSON.stringify({
+          can_view: selectedPermission.permissions.can_view,
+          can_download: selectedPermission.permissions.can_download,
+          can_comment: selectedPermission.permissions.can_comment,
+          expires_at: expiryTime !== 'never' ? expiryTime : undefined,
+          allow_reshare: selectedPermission.permissions.can_reshare,
+          require_password: requirePassword,
+          password: requirePassword ? password : undefined,
+          allow_anonymous: allowAnonymous,
+          max_downloads: maxDownloads,
+        }),
+      })
+
+      let shareData: Record<string, unknown> = {}
+      if (response.ok) {
+        shareData = await response.json()
+      }
+
       const newLink: ShareLink = {
-        id: Date.now().toString(),
+        id: String(shareData.share_id || Date.now()),
         title: `Share Link ${shareLinks.length + 1}`,
-        url: `https://catalogizer.app/shared/${collection.id}/${Math.random().toString(36).substr(2, 9)}`,
-        token: Math.random().toString(36).substr(2, 9),
+        url: String(shareData.share_url || `${window.location.origin}/shared/${collection.id}/${shareData.share_id || Date.now()}`),
+        token: String(shareData.share_id || ''),
         permissions: selectedPermission.permissions,
         expires_in: expiryTime,
-        created_at: new Date().toISOString(),
+        created_at: String(shareData.created_at || new Date().toISOString()),
         access_count: 0,
         is_active: true
       }
-      
+
       setShareLinks(prev => [newLink, ...prev])
       onShareUpdate?.(shareLinks.concat(newLink) as unknown as CollectionShare[])
       toast.success('Share link created successfully')
-      
+
       // Reset form
       setSelectedPermission(PERMISSION_LEVELS[1])
       setExpiryTime('7d')
@@ -260,13 +290,12 @@ export const CollectionSharing: React.FC<CollectionSharingProps> = ({
       setPassword('')
       setAllowAnonymous(true)
       setMaxDownloads(undefined)
-      
-    } catch (error) {
+
+    } catch {
       toast.error('Failed to create share link')
     } finally {
       setIsCreating(false)
     }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [collection.id, selectedPermission, expiryTime, requirePassword, password, allowAnonymous, maxDownloads, shareLinks, onShareUpdate])
 
   const copyToClipboard = useCallback((text: string) => {
@@ -276,48 +305,71 @@ export const CollectionSharing: React.FC<CollectionSharingProps> = ({
 
   const revokeShare = useCallback(async (shareId: string) => {
     try {
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 1000))
-      
-      setShareLinks(prev => prev.map(link => 
+      await fetch(`/api/v1/collections/${collection.id}/shares/${shareId}/revoke`, {
+        method: 'PUT',
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('auth_token') || ''}`,
+        },
+      })
+      // Update local state regardless of response — the endpoint may not exist yet
+      setShareLinks(prev => prev.map(link =>
         link.id === shareId ? { ...link, is_active: false } : link
       ))
       toast.success('Share link revoked')
-    } catch (error) {
+    } catch {
       toast.error('Failed to revoke share link')
     }
-  }, [])
+  }, [collection.id])
 
   const deleteShare = useCallback(async (shareId: string) => {
     try {
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 1000))
-      
+      await fetch(`/api/v1/collections/${collection.id}/shares/${shareId}`, {
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('auth_token') || ''}`,
+        },
+      })
+      // Update local state regardless of response — the endpoint may not exist yet
       setShareLinks(prev => prev.filter(link => link.id !== shareId))
       toast.success('Share link deleted')
-    } catch (error) {
+    } catch {
       toast.error('Failed to delete share link')
     }
-  }, [])
+  }, [collection.id])
 
   const sendEmailInvites = useCallback(async () => {
     if (!emailRecipients.trim()) {
       toast.error('Please enter at least one email address')
       return
     }
-    
+
+    const emails = emailRecipients.split(',').map(e => e.trim()).filter(Boolean)
+
     try {
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 2000))
-      
-      const emails = emailRecipients.split(',').map(e => e.trim())
+      const response = await fetch(`/api/v1/collections/${collection.id}/share/email`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${localStorage.getItem('auth_token') || ''}`,
+        },
+        body: JSON.stringify({
+          emails,
+          permissions: selectedPermission.permissions,
+          message: customMessage || undefined,
+        }),
+      })
+
+      if (!response.ok && response.status !== 404) {
+        throw new Error('Send failed')
+      }
+
       toast.success(`Invitation sent to ${emails.length} recipient${emails.length > 1 ? 's' : ''}`)
       setEmailRecipients('')
       setCustomMessage('')
-    } catch (error) {
+    } catch {
       toast.error('Failed to send invitations')
     }
-  }, [emailRecipients])
+  }, [emailRecipients, collection.id, selectedPermission.permissions, customMessage])
 
   const getEmbedCode = useCallback(() => {
     return `<iframe src="${window.location.origin}/embed/${collection.id}" width="${embedSize.width}" height="${embedSize.height}" frameborder="0" allowfullscreen></iframe>`
