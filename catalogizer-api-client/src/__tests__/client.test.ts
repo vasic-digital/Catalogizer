@@ -1,20 +1,56 @@
 import { describe, it, expect, vi, beforeEach, type Mock } from 'vitest';
 import { CatalogizerClient } from '../index';
 import axios from 'axios';
-import WebSocket from 'ws';
 
 vi.mock('axios');
-vi.mock('ws');
 
-const mockAxios = axios as unknown as { create: Mock };
+// Track all WS instances created during tests
+let wsInstances: any[] = [];
+
+vi.mock('ws', () => {
+  const MockWS = vi.fn(function (this: any) {
+    Object.defineProperty(this, 'readyState', {
+      value: 1, // OPEN
+      writable: true,
+      configurable: true,
+    });
+    this.onopen = null;
+    this.onmessage = null;
+    this.onclose = null;
+    this.onerror = null;
+    this.send = vi.fn();
+    this.close = vi.fn();
+    this.addEventListener = vi.fn();
+    this.removeEventListener = vi.fn();
+    wsInstances.push(this);
+    return this;
+  }) as any;
+
+  MockWS.CONNECTING = 0;
+  MockWS.OPEN = 1;
+  MockWS.CLOSING = 2;
+  MockWS.CLOSED = 3;
+
+  return {
+    default: MockWS,
+    WebSocket: MockWS,
+    CONNECTING: 0,
+    OPEN: 1,
+    CLOSING: 2,
+    CLOSED: 3,
+  };
+});
+
+import WebSocket from 'ws';
 const MockWebSocket = WebSocket as unknown as Mock;
+const mockAxios = axios as unknown as { create: Mock };
 
 describe('CatalogizerClient Integration', () => {
   let mockAxiosInstance: any;
-  let mockWs: any;
 
   beforeEach(() => {
     vi.clearAllMocks();
+    wsInstances = [];
 
     mockAxiosInstance = {
       interceptors: {
@@ -34,21 +70,15 @@ describe('CatalogizerClient Integration', () => {
     };
 
     mockAxios.create.mockReturnValue(mockAxiosInstance);
-
-    mockWs = {
-      readyState: WebSocket.OPEN,
-      onopen: null,
-      onmessage: null,
-      onclose: null,
-      onerror: null,
-      send: vi.fn(),
-      close: vi.fn(),
-      addEventListener: vi.fn(),
-      removeEventListener: vi.fn(),
-    };
-
-    MockWebSocket.mockImplementation(() => mockWs);
   });
+
+  /** Helper: trigger onopen on the last created WS mock instance */
+  function triggerWsOpen(): void {
+    const inst = wsInstances[wsInstances.length - 1];
+    if (inst && inst.onopen) {
+      inst.onopen({});
+    }
+  }
 
   describe('client initialization', () => {
     it('creates client with all services', () => {
@@ -432,6 +462,270 @@ describe('CatalogizerClient Integration', () => {
       // The token refresh event should be emitted
       // Note: This is tested indirectly through the auth service
       expect(mockAxiosInstance.post).toHaveBeenCalledWith('/auth/refresh', undefined, undefined);
+    });
+  });
+
+  describe('WebSocket initialization', () => {
+    it('warns when WebSocket enabled without URL', () => {
+      const consoleSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
+
+      const client = new CatalogizerClient({
+        baseURL: 'http://localhost:8080',
+        enableWebSocket: true,
+      });
+
+      expect(consoleSpy).toHaveBeenCalledWith('WebSocket enabled but no WebSocket URL provided');
+      expect(client).toBeDefined();
+      consoleSpy.mockRestore();
+    });
+
+    it('initializes WebSocket when enabled with URL', () => {
+      const client = new CatalogizerClient({
+        baseURL: 'http://localhost:8080',
+        enableWebSocket: true,
+        webSocketURL: 'ws://localhost:8080/ws',
+      });
+
+      expect(client).toBeDefined();
+      expect(MockWebSocket).toHaveBeenCalledTimes(0); // WS not constructed until connect()
+    });
+
+    it('proxies WebSocket connection:open event', () => {
+      const client = new CatalogizerClient({
+        baseURL: 'http://localhost:8080',
+        enableWebSocket: true,
+        webSocketURL: 'ws://localhost:8080/ws',
+      });
+
+      const openListener = vi.fn();
+      client.on('connection:open', openListener);
+
+      // Internally the CatalogizerClient listens on ws events,
+      // so the ws instance must exist
+      expect(client).toBeDefined();
+    });
+  });
+
+  describe('connect with WebSocket', () => {
+    it('connects WebSocket after login when enabled', async () => {
+      const client = new CatalogizerClient({
+        baseURL: 'http://localhost:8080',
+        enableWebSocket: true,
+        webSocketURL: 'ws://localhost:8080/ws',
+      });
+
+      const loginResponse = {
+        user: { id: 1, username: 'testuser' },
+        token: 'jwt-token',
+        refresh_token: 'refresh-token',
+        expires_in: 3600,
+      };
+
+      mockAxiosInstance.get.mockResolvedValueOnce({ data: { status: 'healthy' } });
+      mockAxiosInstance.post.mockResolvedValueOnce({ data: loginResponse });
+
+      // Start connect (will block on WS connect waiting for onopen)
+      const connectPromise = client.connect({
+        username: 'testuser',
+        password: 'password',
+      });
+
+      // Let HTTP mocks resolve (microtasks), then trigger WS onopen
+      await vi.waitFor(() => {
+        expect(wsInstances.length).toBeGreaterThan(0);
+      }, { timeout: 1000 });
+      triggerWsOpen();
+
+      const result = await connectPromise;
+
+      expect(result).toEqual(loginResponse);
+      expect(MockWebSocket).toHaveBeenCalled();
+      expect(MockWebSocket.mock.calls[0][0]).toContain('token=jwt-token');
+    });
+
+    it('connects WebSocket with existing token when already authenticated', async () => {
+      const client = new CatalogizerClient({
+        baseURL: 'http://localhost:8080',
+        enableWebSocket: true,
+        webSocketURL: 'ws://localhost:8080/ws',
+      });
+
+      client.setAuthToken('existing-token');
+
+      mockAxiosInstance.get
+        .mockResolvedValueOnce({ data: { status: 'healthy' } })
+        .mockResolvedValueOnce({
+          data: {
+            authenticated: true,
+            user: { id: 1, username: 'testuser' },
+          },
+        });
+
+      const connectPromise = client.connect();
+
+      await vi.waitFor(() => {
+        expect(wsInstances.length).toBeGreaterThan(0);
+      }, { timeout: 1000 });
+      triggerWsOpen();
+
+      await connectPromise;
+
+      expect(MockWebSocket).toHaveBeenCalled();
+      expect(MockWebSocket.mock.calls[0][0]).toContain('token=existing-token');
+    });
+  });
+
+  describe('connect without credentials - not authenticated', () => {
+    it('handles unauthenticated status gracefully', async () => {
+      const client = new CatalogizerClient({
+        baseURL: 'http://localhost:8080',
+      });
+
+      mockAxiosInstance.get
+        .mockResolvedValueOnce({ data: { status: 'healthy' } })
+        .mockResolvedValueOnce({
+          data: {
+            authenticated: false,
+          },
+        });
+
+      const loginListener = vi.fn();
+      client.on('auth:login', loginListener);
+
+      const result = await client.connect();
+
+      expect(result).toBeNull();
+      expect(loginListener).not.toHaveBeenCalled();
+    });
+
+    it('handles auth status error gracefully', async () => {
+      const client = new CatalogizerClient({
+        baseURL: 'http://localhost:8080',
+      });
+
+      mockAxiosInstance.get
+        .mockResolvedValueOnce({ data: { status: 'healthy' } })
+        .mockRejectedValueOnce(new Error('Auth check failed'));
+
+      const loginListener = vi.fn();
+      client.on('auth:login', loginListener);
+
+      const result = await client.connect();
+
+      expect(result).toBeNull();
+      expect(loginListener).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('disconnect with WebSocket', () => {
+    it('disconnects WebSocket when active', async () => {
+      const client = new CatalogizerClient({
+        baseURL: 'http://localhost:8080',
+        enableWebSocket: true,
+        webSocketURL: 'ws://localhost:8080/ws',
+      });
+
+      mockAxiosInstance.post.mockResolvedValueOnce({ data: {} });
+
+      const logoutListener = vi.fn();
+      client.on('auth:logout', logoutListener);
+
+      await client.disconnect();
+
+      expect(logoutListener).toHaveBeenCalled();
+    });
+  });
+
+  describe('updateConfig with WebSocket changes', () => {
+    it('reinitializes WebSocket when enableWebSocket changes', () => {
+      const client = new CatalogizerClient({
+        baseURL: 'http://localhost:8080',
+        enableWebSocket: true,
+        webSocketURL: 'ws://localhost:8080/ws',
+      });
+
+      // Disable WebSocket
+      client.updateConfig({ enableWebSocket: false });
+
+      const config = client.getConfig();
+      expect(config.enableWebSocket).toBe(false);
+    });
+
+    it('reinitializes WebSocket when webSocketURL changes', () => {
+      const client = new CatalogizerClient({
+        baseURL: 'http://localhost:8080',
+        enableWebSocket: true,
+        webSocketURL: 'ws://localhost:8080/ws',
+      });
+
+      client.updateConfig({ webSocketURL: 'ws://newhost:9090/ws' });
+
+      const config = client.getConfig();
+      expect(config.webSocketURL).toBe('ws://newhost:9090/ws');
+    });
+
+    it('creates new WebSocket when re-enabling', () => {
+      const client = new CatalogizerClient({
+        baseURL: 'http://localhost:8080',
+      });
+
+      client.updateConfig({
+        enableWebSocket: true,
+        webSocketURL: 'ws://localhost:8080/ws',
+      });
+
+      const config = client.getConfig();
+      expect(config.enableWebSocket).toBe(true);
+      expect(config.webSocketURL).toBe('ws://localhost:8080/ws');
+    });
+  });
+
+  describe('typed event methods', () => {
+    it('supports on/off/emit with typed events', () => {
+      const client = new CatalogizerClient({
+        baseURL: 'http://localhost:8080',
+      });
+
+      const listener = vi.fn();
+      client.on('auth:logout', listener);
+
+      client.emit('auth:logout');
+      expect(listener).toHaveBeenCalledTimes(1);
+
+      client.off('auth:logout', listener);
+      client.emit('auth:logout');
+      expect(listener).toHaveBeenCalledTimes(1);
+    });
+
+    it('supports on/off/emit with arbitrary string events', () => {
+      const client = new CatalogizerClient({
+        baseURL: 'http://localhost:8080',
+      });
+
+      const listener = vi.fn();
+      client.on('custom:event', listener);
+
+      client.emit('custom:event', 'data');
+      expect(listener).toHaveBeenCalledWith('data');
+
+      client.off('custom:event', listener);
+      client.emit('custom:event', 'data2');
+      expect(listener).toHaveBeenCalledTimes(1);
+    });
+  });
+
+  describe('getConfig returns a copy', () => {
+    it('does not expose internal config reference', () => {
+      const client = new CatalogizerClient({
+        baseURL: 'http://localhost:8080',
+        timeout: 5000,
+      });
+
+      const config1 = client.getConfig();
+      config1.timeout = 99999;
+
+      const config2 = client.getConfig();
+      expect(config2.timeout).toBe(5000);
     });
   });
 });

@@ -8,11 +8,14 @@ import com.catalogizer.android.data.remote.CatalogizerApi
 import com.catalogizer.android.data.remote.toApiResult
 import com.catalogizer.android.data.repository.AuthRepository
 import com.catalogizer.android.data.repository.MediaRepository
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.flow.*
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.encodeToString
 import java.util.concurrent.TimeUnit
+import kotlin.coroutines.coroutineContext
 
 /**
  * Current state of the synchronization process including running status,
@@ -55,6 +58,7 @@ class SyncManager(
     private val _syncStatus = MutableStateFlow(SyncStatus())
     val syncStatus: StateFlow<SyncStatus> = _syncStatus.asStateFlow()
     private val syncOperationDao = database.syncOperationDao()
+    private var manualSyncJob: Job? = null
 
     companion object {
         private const val SYNC_WORK_NAME = "catalogizer_sync"
@@ -93,10 +97,15 @@ class SyncManager(
     }
 
     fun cancelSync() {
+        manualSyncJob?.cancel()
+        manualSyncJob = null
         WorkManager.getInstance(context).cancelUniqueWork(SYNC_WORK_NAME)
+        _syncStatus.update { it.copy(isRunning = false) }
     }
 
     suspend fun performManualSync(): SyncResult {
+        coroutineContext.ensureActive()
+
         if (_syncStatus.value.isRunning) {
             return SyncResult(
                 success = false,
@@ -108,6 +117,7 @@ class SyncManager(
         _syncStatus.update { it.copy(isRunning = true) }
 
         return try {
+            coroutineContext.ensureActive()
             val result = performSyncInternal()
 
             _syncStatus.update {

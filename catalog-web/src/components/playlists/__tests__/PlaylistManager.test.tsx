@@ -45,13 +45,6 @@ vi.mock('../../../hooks/usePlaylists', () => ({
   })),
 }))
 
-vi.mock('../../../hooks/usePlaylistReorder', () => ({
-  usePlaylistReorder: vi.fn(() => ({
-    reorderItems: vi.fn(),
-    isReordering: false,
-  })),
-}))
-
 vi.mock('../SortablePlaylistItem', () => ({
   SortablePlaylistItem: ({ item }: any) => <div>{item?.title || 'Item'}</div>,
 }))

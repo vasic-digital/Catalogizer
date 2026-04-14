@@ -55,7 +55,9 @@ export const UploadManager: React.FC<UploadManagerProps> = ({
 
     setUploadQueue(prev => [...prev, ...newItems]);
 
-    // Auto-start uploads
+    if (pendingTimerRef.current) {
+      clearTimeout(pendingTimerRef.current);
+    }
     pendingTimerRef.current = setTimeout(() => startUploads(newItems), 100);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);

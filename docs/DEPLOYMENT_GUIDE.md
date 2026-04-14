@@ -1,4 +1,4 @@
-# Catalogizer v3.0 - Deployment and Operations Guide
+# Catalogizer v2.4.0 - Deployment and Operations Guide
 
 ## Table of Contents
 1. [Overview](#overview)
@@ -21,7 +21,7 @@
 
 ## Overview
 
-This guide provides comprehensive instructions for deploying and operating Catalogizer v3.0 in various environments, from local development to large-scale production deployments.
+This guide provides comprehensive instructions for deploying and operating Catalogizer v2.4.0 in various environments, from local development to large-scale production deployments.
 
 ### Deployment Options
 
@@ -132,7 +132,7 @@ mkdir -p ./logs ./media ./config
 # Generate development configuration
 cat > config/config.json << EOF
 {
-  "version": "3.0.0",
+  "version": "2.4.0",
   "configuration": {
     "server": {
       "port": 8080,
@@ -230,7 +230,7 @@ sudo chown -R catalogizer:catalogizer /opt/catalogizer
 sudo su - catalogizer
 
 # Download latest release
-curl -L https://github.com/your-org/catalogizer/releases/download/v3.0.0/catalogizer-linux-amd64.tar.gz | tar xz -C /opt/catalogizer/bin
+curl -L https://github.com/your-org/catalogizer/releases/download/v2.4.0/catalogizer-linux-amd64.tar.gz | tar xz -C /opt/catalogizer/bin
 
 # Make binary executable
 chmod +x /opt/catalogizer/bin/catalogizer
@@ -238,7 +238,7 @@ chmod +x /opt/catalogizer/bin/catalogizer
 # Create production configuration
 cat > /opt/catalogizer/config/config.json << EOF
 {
-  "version": "3.0.0",
+  "version": "2.4.0",
   "configuration": {
     "server": {
       "port": 8080,
@@ -479,7 +479,7 @@ version: '3.8'
 
 services:
   catalogizer:
-    image: catalogizer:3.0.0
+    image: catalogizer:2.4.0
     container_name: catalogizer_app
     restart: unless-stopped
     ports:
@@ -574,7 +574,7 @@ set -e
 # Configuration
 COMPOSE_FILE="docker-compose.prod.yml"
 ENV_FILE=".env.prod"
-IMAGE_TAG="catalogizer:3.0.0"
+IMAGE_TAG="catalogizer:2.4.0"
 
 # Functions
 log() {
@@ -660,7 +660,7 @@ metadata:
 data:
   config.json: |
     {
-      "version": "3.0.0",
+      "version": "2.4.0",
       "configuration": {
         "server": {
           "port": 8080,
@@ -720,7 +720,7 @@ spec:
     spec:
       containers:
       - name: catalogizer
-        image: catalogizer:3.0.0
+        image: catalogizer:2.4.0
         ports:
         - containerPort: 8080
         env:
@@ -959,7 +959,7 @@ echo "Deployment completed successfully!"
   "containerDefinitions": [
     {
       "name": "catalogizer",
-      "image": "your-account.dkr.ecr.region.amazonaws.com/catalogizer:3.0.0",
+      "image": "your-account.dkr.ecr.region.amazonaws.com/catalogizer:2.4.0",
       "portMappings": [
         {
           "containerPort": 8080,
@@ -1001,7 +1001,7 @@ echo "Deployment completed successfully!"
 
 ```yaml
 AWSTemplateFormatVersion: '2010-09-09'
-Description: 'Catalogizer v3.0 Infrastructure'
+Description: 'Catalogizer v2.4.0 Infrastructure'
 
 Parameters:
   VpcId:
@@ -1097,7 +1097,7 @@ spec:
       containerConcurrency: 80
       timeoutSeconds: 300
       containers:
-      - image: gcr.io/your-project/catalogizer:3.0.0
+      - image: gcr.io/your-project/catalogizer:2.4.0
         ports:
         - containerPort: 8080
         env:
@@ -1129,7 +1129,7 @@ spec:
       {
         "name": "catalogizer",
         "properties": {
-          "image": "catalogizer:3.0.0",
+          "image": "catalogizer:2.4.0",
           "ports": [
             {
               "port": 8080,
@@ -1418,7 +1418,7 @@ alerting:
 ```json
 {
   "dashboard": {
-    "title": "Catalogizer v3.0 Dashboard",
+    "title": "Catalogizer v2.4.0 Dashboard",
     "panels": [
       {
         "title": "Request Rate",

@@ -516,4 +516,286 @@ mod tests {
             assert!(result.ends_with("config.json"));
         }
     }
+
+    /// Tests for load_configuration and save_configuration
+    mod configuration_io_tests {
+        use super::*;
+
+        #[tokio::test]
+        async fn test_load_configuration_nonexistent_file() {
+            let result =
+                super::load_configuration("/tmp/nonexistent_catalogizer_test_12345.json".to_string())
+                    .await;
+            assert!(result.is_err());
+            let err_msg = result.unwrap_err();
+            assert!(
+                err_msg.contains("Failed to read file"),
+                "Expected read error, got: {}",
+                err_msg
+            );
+        }
+
+        #[tokio::test]
+        async fn test_load_configuration_invalid_json() {
+            let test_path = "/tmp/catalogizer_test_invalid_json.json";
+            std::fs::write(test_path, "not valid json {{{").expect("Should write test file");
+
+            let result = super::load_configuration(test_path.to_string()).await;
+            assert!(result.is_err());
+            let err_msg = result.unwrap_err();
+            assert!(
+                err_msg.contains("Failed to parse JSON"),
+                "Expected parse error, got: {}",
+                err_msg
+            );
+
+            let _ = std::fs::remove_file(test_path);
+        }
+
+        #[tokio::test]
+        async fn test_save_and_load_configuration_roundtrip() {
+            let test_path = "/tmp/catalogizer_test_save_load.json";
+
+            let config = Configuration {
+                accesses: vec![ConfigurationAccess {
+                    name: "Test NAS".to_string(),
+                    r#type: "smb".to_string(),
+                    account: "admin".to_string(),
+                    secret: "password".to_string(),
+                }],
+                sources: vec![ConfigurationSource {
+                    r#type: "smb".to_string(),
+                    url: "smb://nas/media".to_string(),
+                    access: "Test NAS".to_string(),
+                }],
+            };
+
+            // Save
+            let save_result =
+                super::save_configuration(test_path.to_string(), config).await;
+            assert!(save_result.is_ok());
+
+            // Load
+            let load_result = super::load_configuration(test_path.to_string()).await;
+            assert!(load_result.is_ok());
+            let loaded = load_result.unwrap();
+            assert_eq!(loaded.accesses.len(), 1);
+            assert_eq!(loaded.sources.len(), 1);
+            assert_eq!(loaded.accesses[0].name, "Test NAS");
+            assert_eq!(loaded.sources[0].url, "smb://nas/media");
+
+            let _ = std::fs::remove_file(test_path);
+        }
+
+        #[tokio::test]
+        async fn test_save_configuration_empty() {
+            let test_path = "/tmp/catalogizer_test_save_empty.json";
+
+            let config = Configuration {
+                accesses: vec![],
+                sources: vec![],
+            };
+
+            let save_result =
+                super::save_configuration(test_path.to_string(), config).await;
+            assert!(save_result.is_ok());
+
+            // Verify the file content
+            let content = std::fs::read_to_string(test_path).expect("Should read file");
+            assert!(content.contains("\"accesses\""));
+            assert!(content.contains("\"sources\""));
+
+            let _ = std::fs::remove_file(test_path);
+        }
+
+        #[tokio::test]
+        async fn test_save_configuration_invalid_path() {
+            let config = Configuration {
+                accesses: vec![],
+                sources: vec![],
+            };
+
+            let result = super::save_configuration(
+                "/nonexistent_dir_12345/config.json".to_string(),
+                config,
+            )
+            .await;
+            assert!(result.is_err());
+            let err_msg = result.unwrap_err();
+            assert!(
+                err_msg.contains("Failed to write file"),
+                "Expected write error, got: {}",
+                err_msg
+            );
+        }
+    }
+
+    /// Tests for configuration with multiple protocols
+    mod multi_protocol_tests {
+        use super::*;
+
+        #[test]
+        fn test_configuration_all_protocol_types() {
+            let config = Configuration {
+                accesses: vec![
+                    ConfigurationAccess {
+                        name: "SMB Access".to_string(),
+                        r#type: "smb".to_string(),
+                        account: "admin".to_string(),
+                        secret: "pass".to_string(),
+                    },
+                    ConfigurationAccess {
+                        name: "FTP Access".to_string(),
+                        r#type: "ftp".to_string(),
+                        account: "ftpuser".to_string(),
+                        secret: "ftppass".to_string(),
+                    },
+                    ConfigurationAccess {
+                        name: "WebDAV Access".to_string(),
+                        r#type: "webdav".to_string(),
+                        account: "davuser".to_string(),
+                        secret: "davpass".to_string(),
+                    },
+                    ConfigurationAccess {
+                        name: "NFS Access".to_string(),
+                        r#type: "nfs".to_string(),
+                        account: "".to_string(),
+                        secret: "".to_string(),
+                    },
+                ],
+                sources: vec![
+                    ConfigurationSource {
+                        r#type: "smb".to_string(),
+                        url: "smb://nas/media".to_string(),
+                        access: "SMB Access".to_string(),
+                    },
+                    ConfigurationSource {
+                        r#type: "ftp".to_string(),
+                        url: "ftp://ftp.example.com/files".to_string(),
+                        access: "FTP Access".to_string(),
+                    },
+                    ConfigurationSource {
+                        r#type: "webdav".to_string(),
+                        url: "https://dav.example.com/media".to_string(),
+                        access: "WebDAV Access".to_string(),
+                    },
+                    ConfigurationSource {
+                        r#type: "local".to_string(),
+                        url: "/mnt/media".to_string(),
+                        access: "".to_string(),
+                    },
+                ],
+            };
+
+            assert_eq!(config.accesses.len(), 4);
+            assert_eq!(config.sources.len(), 4);
+
+            let json = serde_json::to_string_pretty(&config).expect("Should serialize");
+            let deserialized: Configuration =
+                serde_json::from_str(&json).expect("Should deserialize");
+            assert_eq!(deserialized.accesses.len(), 4);
+            assert_eq!(deserialized.sources.len(), 4);
+        }
+
+        #[test]
+        fn test_configuration_source_access_linkage() {
+            let config = Configuration {
+                accesses: vec![ConfigurationAccess {
+                    name: "MyNAS".to_string(),
+                    r#type: "smb".to_string(),
+                    account: "admin".to_string(),
+                    secret: "pass".to_string(),
+                }],
+                sources: vec![ConfigurationSource {
+                    r#type: "smb".to_string(),
+                    url: "smb://nas/videos".to_string(),
+                    access: "MyNAS".to_string(),
+                }],
+            };
+
+            // Verify the source references the access by name
+            let source = &config.sources[0];
+            let matching_access = config
+                .accesses
+                .iter()
+                .find(|a| a.name == source.access);
+            assert!(matching_access.is_some());
+            assert_eq!(matching_access.expect("Should find access").r#type, "smb");
+        }
+    }
+
+    /// Tests for NetworkHost edge cases
+    mod network_host_edge_case_tests {
+        use super::*;
+
+        #[test]
+        fn test_network_host_ipv6_address() {
+            let host = NetworkHost {
+                ip: "::1".to_string(),
+                hostname: Some("localhost".to_string()),
+                mac_address: None,
+                vendor: None,
+                open_ports: vec![],
+                smb_shares: vec![],
+            };
+
+            let json = serde_json::to_string(&host).expect("Should serialize");
+            let deserialized: NetworkHost =
+                serde_json::from_str(&json).expect("Should deserialize");
+            assert_eq!(deserialized.ip, "::1");
+        }
+
+        #[test]
+        fn test_network_host_many_ports() {
+            let host = NetworkHost {
+                ip: "10.0.0.1".to_string(),
+                hostname: None,
+                mac_address: None,
+                vendor: None,
+                open_ports: (1..=100).collect(),
+                smb_shares: vec![],
+            };
+
+            assert_eq!(host.open_ports.len(), 100);
+            assert_eq!(host.open_ports[0], 1);
+            assert_eq!(host.open_ports[99], 100);
+        }
+
+        #[test]
+        fn test_network_host_many_shares() {
+            let shares: Vec<String> = (0..20).map(|i| format!("share_{}", i)).collect();
+            let host = NetworkHost {
+                ip: "10.0.0.1".to_string(),
+                hostname: None,
+                mac_address: None,
+                vendor: None,
+                open_ports: vec![445],
+                smb_shares: shares,
+            };
+
+            assert_eq!(host.smb_shares.len(), 20);
+            assert_eq!(host.smb_shares[0], "share_0");
+            assert_eq!(host.smb_shares[19], "share_19");
+        }
+
+        #[test]
+        fn test_network_host_special_chars_in_hostname() {
+            let host = NetworkHost {
+                ip: "192.168.1.1".to_string(),
+                hostname: Some("my-nas.local".to_string()),
+                mac_address: None,
+                vendor: None,
+                open_ports: vec![],
+                smb_shares: vec![],
+            };
+
+            let json = serde_json::to_string(&host).expect("Should serialize");
+            let deserialized: NetworkHost =
+                serde_json::from_str(&json).expect("Should deserialize");
+            assert_eq!(
+                deserialized.hostname,
+                Some("my-nas.local".to_string())
+            );
+        }
+    }
 }

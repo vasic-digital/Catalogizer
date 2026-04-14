@@ -573,8 +573,12 @@ cd catalog-web && npm install && npm run dev     # Terminal 2 — frontend reads
 
 ## Concurrency & Lifecycle Patterns
 
-- **CacheService**: spawns cleanup goroutine in `NewCacheService()`. Tests must `defer service.Close()`. Uses `sync.Once` for safe double-close.
-- **WebSocketHandler**: spawns cleanup goroutine in constructor. Uses `sync.Once` for safe `Stop()`. Tests must call `handler.Stop()` before `server.Close()` to unblock `readPump`.
+- **CacheService**: spawns cleanup goroutine in `NewCacheService()`. Cleanup context respects shutdown signal (cancels in-flight cleanup on `Close()`). Tests must `defer service.Close()`. Uses `sync.Once` for safe double-close.
+- **WebSocketHandler**: spawns cleanup goroutine in constructor. Uses `sync.Once` for safe `Stop()`. Connection admission uses reservation pattern (pre-increment connCount, decrement on upgrade failure) to prevent race between capacity check and registration. Tests must call `handler.Stop()` before `server.Close()` to unblock `readPump`.
+- **WorkerPool**: `SubmitAsync()` goroutines are tracked via WaitGroup -- `Stop()` waits for all in-flight submissions.
+- **Throttler**: run goroutine is tracked via WaitGroup. `Stop()` uses `CompareAndSwap` for safe double-close and waits for goroutine exit.
+- **Debouncer**: `Flush()` copies the pending function and clears it under the lock, then executes outside the lock to prevent deadlock if the function calls `Debounce()` recursively.
+- **SMBChangeWatcher**: `Stop()` drains all pending debounce timers before closing stop channel to prevent `wg.Add(1)` after `wg.Wait()` has started.
 - **Production shutdown**: `main.go` calls `wsHandler.Stop()` and `cacheService.Close()` before HTTP server shutdown.
 - **Database pool defaults**: MaxOpen=25, MaxIdle=10, MaxLifetime=5m, MaxIdleTime=3m. Overridable via config.
 - **Race safety**: `connCount` reads in WebSocketHandler protected by mutex. `SyncService.StartSync()` and `LogManagementService.CollectLogs()` return copies to prevent shared-pointer races.
@@ -593,7 +597,14 @@ podman run --rm --network host -v $(pwd)/tests/k6:/scripts \
 
 ## Security Scanning
 
-`./scripts/security-scan.sh` runs all of: `govulncheck`, `npm audit`, Semgrep (`podman-compose -f docker-compose.security.yml --profile semgrep-scan run --rm semgrep-scanner`), Snyk, Trivy, Gosec.
+`./scripts/security-scan.sh` runs all of: `govulncheck`, `npm audit`, Semgrep (custom rules in `.semgrep.yml` + auto), Snyk, Trivy, Gosec, Hadolint.
+
+```bash
+./scripts/security-scan.sh                                     # all tools
+podman-compose -f docker-compose.security.yml --profile semgrep-scan run --rm semgrep-scanner  # Semgrep only
+podman-compose -f docker-compose.security.yml --profile hadolint run --rm hadolint             # Dockerfile lint
+podman-compose -f docker-compose.security.yml --profile sonarqube up                           # SonarQube (profile-gated)
+```
 
 ## Git
 

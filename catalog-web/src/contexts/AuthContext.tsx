@@ -78,18 +78,12 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   useEffect(() => {
     if (authStatus?.authenticated && authStatus.user) {
       setUser(authStatus.user)
-      setPermissions(authStatus.permissions || [])
+      setPermissions(permissionsData?.permissions || authStatus.permissions || [])
     } else {
       setUser(null)
       setPermissions([])
     }
-  }, [authStatus])
-
-  useEffect(() => {
-    if (permissionsData) {
-      setPermissions(permissionsData.permissions || [])
-    }
-  }, [permissionsData])
+  }, [authStatus, permissionsData])
 
   const loginMutation = useMutation({
     mutationFn: authApi.login,

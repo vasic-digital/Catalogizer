@@ -304,4 +304,270 @@ mod tests {
             std::env::remove_var("CATALOG_API_URL");
         }
     }
+
+    /// Tests for SMBShareApiResponse struct
+    mod smb_share_api_response_tests {
+        use super::*;
+
+        #[test]
+        fn test_smb_share_api_response_serialization() {
+            let response = SMBShareApiResponse {
+                host: "192.168.1.50".to_string(),
+                share_name: "media".to_string(),
+                path: "\\\\192.168.1.50\\media".to_string(),
+                writable: true,
+                description: Some("Media share".to_string()),
+            };
+
+            let json = serde_json::to_string(&response).unwrap();
+            let deserialized: SMBShareApiResponse = serde_json::from_str(&json).unwrap();
+
+            assert_eq!(deserialized.host, "192.168.1.50");
+            assert_eq!(deserialized.share_name, "media");
+            assert!(deserialized.writable);
+            assert_eq!(deserialized.description, Some("Media share".to_string()));
+        }
+
+        #[test]
+        fn test_smb_share_api_response_without_description() {
+            let response = SMBShareApiResponse {
+                host: "nas.local".to_string(),
+                share_name: "public".to_string(),
+                path: "/public".to_string(),
+                writable: false,
+                description: None,
+            };
+
+            let json = serde_json::to_string(&response).unwrap();
+            assert!(json.contains("\"description\":null"));
+        }
+
+        #[test]
+        fn test_smb_share_api_response_debug_trait() {
+            let response = SMBShareApiResponse {
+                host: "host".to_string(),
+                share_name: "share".to_string(),
+                path: "/share".to_string(),
+                writable: false,
+                description: None,
+            };
+            let debug = format!("{:?}", response);
+            assert!(debug.contains("SMBShareApiResponse"));
+        }
+    }
+
+    /// Tests for FileEntryApiResponse struct
+    mod file_entry_api_response_tests {
+        use super::*;
+
+        #[test]
+        fn test_file_entry_api_response_serialization() {
+            let entry = FileEntryApiResponse {
+                name: "video.mp4".to_string(),
+                path: "/media/video.mp4".to_string(),
+                is_directory: false,
+                size: Some(1073741824),
+                modified: Some("2024-01-15 12:00:00".to_string()),
+            };
+
+            let json = serde_json::to_string(&entry).unwrap();
+            let deserialized: FileEntryApiResponse = serde_json::from_str(&json).unwrap();
+
+            assert_eq!(deserialized.name, "video.mp4");
+            assert!(!deserialized.is_directory);
+            assert_eq!(deserialized.size, Some(1073741824));
+        }
+
+        #[test]
+        fn test_file_entry_api_response_directory() {
+            let entry = FileEntryApiResponse {
+                name: "Movies".to_string(),
+                path: "/media/Movies".to_string(),
+                is_directory: true,
+                size: None,
+                modified: None,
+            };
+
+            assert!(entry.is_directory);
+            assert!(entry.size.is_none());
+            assert!(entry.modified.is_none());
+        }
+
+        #[test]
+        fn test_file_entry_api_response_negative_size() {
+            // API may return negative size (i64), conversion to u64 handles it
+            let entry = FileEntryApiResponse {
+                name: "file.dat".to_string(),
+                path: "file.dat".to_string(),
+                is_directory: false,
+                size: Some(-1),
+                modified: None,
+            };
+
+            let file_entry = FileEntry {
+                name: entry.name.clone(),
+                path: entry.path.clone(),
+                is_directory: entry.is_directory,
+                size: entry.size.map(|s| s as u64),
+                modified: entry.modified.clone(),
+            };
+
+            // Negative i64 wraps around when cast to u64
+            assert!(file_entry.size.is_some());
+        }
+
+        #[test]
+        fn test_file_entry_api_response_zero_size() {
+            let entry = FileEntryApiResponse {
+                name: "empty.txt".to_string(),
+                path: "empty.txt".to_string(),
+                is_directory: false,
+                size: Some(0),
+                modified: None,
+            };
+
+            let file_entry = FileEntry {
+                name: entry.name,
+                path: entry.path,
+                is_directory: entry.is_directory,
+                size: entry.size.map(|s| s as u64),
+                modified: entry.modified,
+            };
+
+            assert_eq!(file_entry.size, Some(0));
+        }
+    }
+
+    /// Tests for API endpoint URL construction
+    mod api_endpoint_tests {
+        use super::*;
+
+        #[test]
+        fn test_discover_endpoint_url() {
+            std::env::remove_var("CATALOG_API_URL");
+            let api_url = get_api_base_url();
+            let endpoint = format!("{}/api/v1/smb/discover", api_url);
+            assert_eq!(endpoint, "http://localhost:8080/api/v1/smb/discover");
+        }
+
+        #[test]
+        fn test_browse_endpoint_url() {
+            std::env::remove_var("CATALOG_API_URL");
+            let api_url = get_api_base_url();
+            let endpoint = format!("{}/api/v1/smb/browse", api_url);
+            assert_eq!(endpoint, "http://localhost:8080/api/v1/smb/browse");
+        }
+
+        #[test]
+        fn test_test_endpoint_url() {
+            std::env::remove_var("CATALOG_API_URL");
+            let api_url = get_api_base_url();
+            let endpoint = format!("{}/api/v1/smb/test", api_url);
+            assert_eq!(endpoint, "http://localhost:8080/api/v1/smb/test");
+        }
+    }
+
+    /// Tests for request body construction
+    mod request_body_tests {
+        use super::*;
+
+        #[test]
+        fn test_scan_request_body_without_domain() {
+            let mut body = HashMap::new();
+            body.insert("host", "192.168.1.100");
+            body.insert("username", "guest");
+            body.insert("password", "");
+
+            assert_eq!(body.len(), 3);
+            assert_eq!(body.get("host"), Some(&"192.168.1.100"));
+            assert!(!body.contains_key("domain"));
+        }
+
+        #[test]
+        fn test_scan_request_body_with_domain() {
+            let mut body = HashMap::new();
+            body.insert("host", "192.168.1.100");
+            body.insert("username", "admin");
+            body.insert("password", "pass");
+            body.insert("domain", "WORKGROUP");
+
+            assert_eq!(body.len(), 4);
+            assert_eq!(body.get("domain"), Some(&"WORKGROUP"));
+        }
+
+        #[test]
+        fn test_browse_request_body_with_path() {
+            let mut body = HashMap::new();
+            body.insert("host", "192.168.1.100");
+            body.insert("share", "media");
+            body.insert("username", "guest");
+            body.insert("password", "");
+            body.insert("port", "445");
+            body.insert("path", "/movies");
+
+            assert_eq!(body.len(), 6);
+            assert_eq!(body.get("path"), Some(&"/movies"));
+            assert_eq!(body.get("port"), Some(&"445"));
+        }
+
+        #[test]
+        fn test_browse_request_body_default_path() {
+            let mut body = HashMap::new();
+            body.insert("host", "192.168.1.100");
+            body.insert("share", "media");
+            body.insert("path", ".");
+
+            assert_eq!(body.get("path"), Some(&"."));
+        }
+    }
+
+    /// Tests for SMBShare conversion from API response
+    mod conversion_tests {
+        use super::*;
+
+        #[test]
+        fn test_api_response_to_smb_share_conversion() {
+            let api_response = SMBShareApiResponse {
+                host: "nas.local".to_string(),
+                share_name: "videos".to_string(),
+                path: "\\\\nas.local\\videos".to_string(),
+                writable: true,
+                description: Some("Video library".to_string()),
+            };
+
+            let share = SMBShare {
+                host: api_response.host,
+                share_name: api_response.share_name,
+                path: api_response.path,
+                writable: api_response.writable,
+                description: api_response.description,
+            };
+
+            assert_eq!(share.host, "nas.local");
+            assert_eq!(share.share_name, "videos");
+            assert!(share.writable);
+        }
+
+        #[test]
+        fn test_file_entry_api_to_file_entry_conversion() {
+            let api_entry = FileEntryApiResponse {
+                name: "photo.jpg".to_string(),
+                path: "/photos/photo.jpg".to_string(),
+                is_directory: false,
+                size: Some(2048000),
+                modified: Some("2024-06-01 09:00:00".to_string()),
+            };
+
+            let entry = FileEntry {
+                name: api_entry.name,
+                path: api_entry.path,
+                is_directory: api_entry.is_directory,
+                size: api_entry.size.map(|s| s as u64),
+                modified: api_entry.modified,
+            };
+
+            assert_eq!(entry.name, "photo.jpg");
+            assert_eq!(entry.size, Some(2048000u64));
+        }
+    }
 }

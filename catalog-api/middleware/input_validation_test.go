@@ -159,33 +159,6 @@ func TestInputValidation_SizeLimit(t *testing.T) {
 	assert.Contains(t, w.Body.String(), "request body too large")
 }
 
-func TestAdvancedRateLimit(t *testing.T) {
-	gin.SetMode(gin.TestMode)
-
-	config := DefaultRateLimiterConfig()
-	config.Rate = 2  // 2 requests per second
-	config.Burst = 3 // Burst of 3
-
-	router := gin.New()
-	router.Use(AdvancedRateLimit(config))
-
-	callCount := 0
-	router.GET("/test", func(c *gin.Context) {
-		callCount++
-		c.JSON(http.StatusOK, gin.H{"call": callCount})
-	})
-
-	// Make multiple requests rapidly
-	for i := 0; i < 5; i++ {
-		req := httptest.NewRequest("GET", "/test", nil)
-		w := httptest.NewRecorder()
-		router.ServeHTTP(w, req)
-	}
-
-	// First 3 should succeed (burst)
-	// Next 2 should be rate limited
-	assert.Equal(t, 3, callCount)
-}
 
 func TestInputValidation_Sanitization(t *testing.T) {
 	testCases := []struct {

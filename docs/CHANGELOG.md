@@ -7,6 +7,56 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2.4.0] - 2026-04-14
+
+### Fixed
+- **Goroutine leak**: `WorkerPool.SubmitAsync()` now tracks spawned goroutines via WaitGroup (catalog-api)
+- **Goroutine leak**: `Throttler` run goroutine now tracked and awaited on Stop() (catalog-api)
+- **Deadlock risk**: `Debouncer.Flush()` executes pending function outside the lock to prevent reentrant deadlock (catalog-api)
+- **Race condition**: WebSocket handler uses reservation pattern to prevent over-admission under concurrent connections (catalog-api)
+- **Resource leak**: SMBChangeWatcher.Stop() drains all debounce timers before closing stop channel (catalog-api)
+- **Context propagation**: CacheService cleanup now cancels on service shutdown instead of using detached Background context (catalog-api)
+- **Memory leak**: WebSocketContext no longer causes reconnection storms from stale dependency array (catalog-web)
+- **Duplicate state update**: AuthContext consolidated from two permission effects into one (catalog-web)
+- **Timer leak**: UploadManager clears pending timer before scheduling new one (catalog-web)
+- **Sync on logout**: SyncManager.cancelSync() now cancels in-flight manual sync via Job tracking and ensureActive() (catalogizer-android)
+- **Indefinite suspension**: MediaRepository.getRecentMedia/getPopularMedia use withTimeoutOrNull(5s) on Flow.first() (catalogizer-android)
+- **DataStore contention**: AuthRepository shares a single DataStore flow via shareIn() instead of 7 independent collectors (catalogizer-android)
+- **Room DB lifecycle**: CatalogizerDatabase.closeDatabase() companion method for proper cleanup (catalogizer-android)
+- **Version alignment**: All component package.json/build.gradle versions aligned to 2.3.0 (all components)
+
+### Added
+- **Episode navigation**: Android TV VLCPlayerActivity.playNextEpisode/playPreviousEpisode now fetch real episodes via /api/v1/entities/:id/children API (catalogizer-androidtv)
+- **React lazy loading**: Sub-component lazy imports for MediaPlayer, MediaDetailModal, UploadManager, Dashboard charts, 9 AI components (catalog-web)
+- **Custom Semgrep rules**: `.semgrep.yml` with 17 security rules for Go SQL injection, XSS, command injection, secrets detection
+- **Hadolint**: Dockerfile linting service added to docker-compose.security.yml
+- **govulncheck integration**: Added to scripts/security-scan.sh for Go vulnerability scanning
+- **Android SDK 35**: Dockerfile.builder now installs both SDK 34 and 35 platforms
+- **AGENTS.md**: Created for 6 components (catalog-web, android, androidtv, desktop, api-client, wizard)
+- **SQL Migration Reference**: Complete 1323-line docs/database/SQL_MIGRATION_REFERENCE.md covering all 15 migrations
+- **Performance Tuning Guide**: 905-line docs/guides/PERFORMANCE_TUNING.md with concrete values from source code
+- **Video courses**: 6 new course scripts (35 modules, ~24 hours content) for all core components
+- **Architecture diagrams**: 4 new Mermaid diagrams (security-scanning-pipeline, lazy-init-flow, semaphore-control, test-coverage-matrix)
+- **HelixQA banks**: Security-comprehensive (30 entries), DDoS-ratelimit-comprehensive (20 entries), benchmarking-baselines (15 entries), fixes-validation (29 entries)
+- **Go benchmarks**: Benchmark tests for WorkerPool, Throttler, JWT, TitleParser, RateLimiter
+- **Rust tests**: Tests for all installer-wizard and catalogizer-desktop Tauri backend modules
+- **Test coverage**: Fixed 6 skipped catalog-web tests, completed API client tests, expanded TS submodule coverage
+
+### Removed
+- **Dead middleware**: Deleted advanced_rate_limiter.go, enhanced_rate_limiter.go (never used)
+- **Deprecated stub**: Removed NewStubHandler() function
+- **Dead hooks**: Deleted usePlayerState, useLazyImage, usePlaylistReorder, useVirtualScroll (unused)
+- **Mock APIs**: Deleted mockCollectionsApi.ts, removed conversionApi.ts mock fallbacks
+- **Unused config**: Removed CertFile/KeyFile from ServerConfig (self-signed certs generated at runtime)
+
+### Changed
+- **SonarQube**: Moved to profile-based activation (no longer auto-starts consuming resources)
+- **.env.example**: AI/Vision env vars clearly labeled as HelixQA-only, SNYK_TOKEN added
+- **Go submodules**: LLM modules bumped from Go 1.24.x to 1.25
+- **useDebounce**: Wired into MediaBrowser search replacing inline debounce utility
+
+## [2.3.0] - 2026-04-04
+
 ### Added
 
 #### Media Entity System (Phases 1-10)

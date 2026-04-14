@@ -40,6 +40,9 @@ services:
     restart: unless-stopped
     networks:
       - security-testing-network
+    profiles:
+      - sonarqube
+      - security-full
     deploy:
       resources:
         limits:
@@ -67,6 +70,9 @@ services:
     restart: unless-stopped
     networks:
       - security-testing-network
+    profiles:
+      - sonarqube
+      - security-full
     deploy:
       resources:
         limits:
@@ -238,6 +244,7 @@ services:
     command: [
       "semgrep", "scan",
       "--config", "auto",
+      "--config", "/project/.semgrep.yml",
       "--json",
       "--output", "/reports/semgrep-results.json",
       "--exclude", "node_modules",
@@ -252,6 +259,7 @@ services:
     ]
     profiles:
       - semgrep-scan
+      - security-full
     networks:
       - security-testing-network
     deploy:
@@ -262,6 +270,23 @@ services:
         reservations:
           cpus: '1'
           memory: 1G
+
+  # Hadolint Dockerfile Linter
+  hadolint:
+    image: docker.io/hadolint/hadolint:latest
+    volumes:
+      - .:/src:ro
+    working_dir: /src
+    entrypoint: ["hadolint"]
+    command: ["docker/Dockerfile.builder"]
+    profiles:
+      - hadolint
+      - security-full
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 256M
 
 volumes:
   sonarqube_data:

@@ -1,5 +1,6 @@
 package com.catalogizer.androidtv.ui.player
 
+import android.content.Intent
 import android.os.Bundle
 import android.util.Log
 import android.view.KeyEvent
@@ -342,25 +343,109 @@ class VLCPlayerActivity : ComponentActivity() {
     }
 
     /**
+     * Resolve sibling episodes for the current media item by fetching the parent's
+     * children from the API. Returns the sorted list of siblings and the index of
+     * the current episode, or null if the current item has no parent or the request fails.
+     */
+    private suspend fun resolveSiblingEpisodes(): Pair<List<com.catalogizer.androidtv.data.models.MediaItem>, Int>? {
+        try {
+            val container = com.catalogizer.androidtv.DependencyContainer.getInstance(this)
+
+            // Fetch the current entity to get its parentId
+            val response = container.api.getEntityById(mediaId)
+            if (!response.isSuccessful) {
+                Log.w(TAG, "Failed to fetch current entity: ${response.code()}")
+                return null
+            }
+            val currentItem = response.body() ?: return null
+            val parentId = currentItem.parentId
+            if (parentId == null) {
+                Log.d(TAG, "Current media item has no parent — episode navigation unavailable")
+                return null
+            }
+
+            // Fetch all siblings (episodes in the same season)
+            val siblings = container.mediaRepository.getEntityChildren(parentId)
+            if (siblings.isEmpty()) {
+                Log.w(TAG, "No sibling episodes found for parent $parentId")
+                return null
+            }
+
+            // Sort by episode number (fall back to ID for stable ordering)
+            val sorted = siblings.sortedWith(compareBy({ it.episodeNumber ?: Int.MAX_VALUE }, { it.id }))
+
+            // Find the current episode's position
+            val currentIndex = sorted.indexOfFirst { it.id == mediaId }
+            if (currentIndex == -1) {
+                Log.w(TAG, "Current media $mediaId not found among siblings of parent $parentId")
+                return null
+            }
+
+            return Pair(sorted, currentIndex)
+        } catch (e: Exception) {
+            Log.e(TAG, "Failed to resolve sibling episodes: ${e.message}", e)
+            return null
+        }
+    }
+
+    /**
+     * Launch playback of a different episode by starting a new VLCPlayerActivity
+     * with the target episode's ID. Finishes the current activity so the back
+     * stack does not accumulate player instances.
+     */
+    private fun launchEpisode(episode: com.catalogizer.androidtv.data.models.MediaItem) {
+        val intent = Intent(this, VLCPlayerActivity::class.java).apply {
+            putExtra(EXTRA_MEDIA_ID, episode.id)
+            putExtra(EXTRA_MEDIA_TITLE, episode.title)
+        }
+        startActivity(intent)
+        finish()
+    }
+
+    /**
      * Play the next episode in the series if available.
-     * Currently shows a message as episode navigation requires series metadata support.
+     * Fetches the parent entity's children, finds the current position,
+     * and launches the next sibling episode.
      */
     private suspend fun playNextEpisode() {
-        // Episode navigation requires API support for series/episode relationships
-        // This is a placeholder for future implementation
-        Toast.makeText(this, "Next episode feature not yet available", Toast.LENGTH_SHORT).show()
-        Log.d(TAG, "playNextEpisode called but not implemented - requires series metadata API")
+        val result = resolveSiblingEpisodes()
+        if (result == null) {
+            Toast.makeText(this, "Episode navigation unavailable", Toast.LENGTH_SHORT).show()
+            return
+        }
+        val (siblings, currentIndex) = result
+        val nextIndex = currentIndex + 1
+        if (nextIndex >= siblings.size) {
+            Toast.makeText(this, "No more episodes", Toast.LENGTH_SHORT).show()
+            Log.d(TAG, "Already at the last episode")
+            return
+        }
+        val nextEpisode = siblings[nextIndex]
+        Log.d(TAG, "Playing next episode: ${nextEpisode.title} (id=${nextEpisode.id})")
+        launchEpisode(nextEpisode)
     }
-    
+
     /**
      * Play the previous episode in the series if available.
-     * Currently shows a message as episode navigation requires series metadata support.
+     * Fetches the parent entity's children, finds the current position,
+     * and launches the previous sibling episode.
      */
     private suspend fun playPreviousEpisode() {
-        // Episode navigation requires API support for series/episode relationships  
-        // This is a placeholder for future implementation
-        Toast.makeText(this, "Previous episode feature not yet available", Toast.LENGTH_SHORT).show()
-        Log.d(TAG, "playPreviousEpisode called but not implemented - requires series metadata API")
+        val result = resolveSiblingEpisodes()
+        if (result == null) {
+            Toast.makeText(this, "Episode navigation unavailable", Toast.LENGTH_SHORT).show()
+            return
+        }
+        val (siblings, currentIndex) = result
+        val prevIndex = currentIndex - 1
+        if (prevIndex < 0) {
+            Toast.makeText(this, "No more episodes", Toast.LENGTH_SHORT).show()
+            Log.d(TAG, "Already at the first episode")
+            return
+        }
+        val prevEpisode = siblings[prevIndex]
+        Log.d(TAG, "Playing previous episode: ${prevEpisode.title} (id=${prevEpisode.id})")
+        launchEpisode(prevEpisode)
     }
 
     private fun togglePlayPause() {

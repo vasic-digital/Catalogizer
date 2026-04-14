@@ -1,28 +1,20 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { lazy, Suspense, useState, useEffect, useCallback } from 'react';
 import { Brain, Search, TrendingUp, Settings, FileText, Zap, Sparkles, Activity, RefreshCw, Info, ChevronDown, ChevronRight } from 'lucide-react';
 
-// Import all AI components
-import {
-  AICollectionSuggestions,
-  AINaturalSearch,
-  AIContentCategorizer,
-  type AISuggestion,
-  type AICategorizationResult,
-  type AISearchQuery
-} from '../components/ai/AIComponents';
+// Type-only imports (no runtime cost)
+import type { AISuggestion, AICategorizationResult, AISearchQuery } from '../components/ai/AIComponents';
+import type { ExtractedMetadata } from '../components/ai/AIMetadata';
 
-import {
-  AIUserBehaviorAnalytics,
-  AIPredictions,
-  AISmartOrganization
-} from '../components/ai/AIAnalytics';
-
-import {
-  AIMetadataExtractor,
-  AIAutomationRules,
-  AIContentQualityAnalyzer,
-  type ExtractedMetadata
-} from '../components/ai/AIMetadata';
+// Lazy-loaded AI components (heavy sub-components, loaded per-tab)
+const AICollectionSuggestions = lazy(() => import('../components/ai/AIComponents').then(m => ({ default: m.AICollectionSuggestions })));
+const AINaturalSearch = lazy(() => import('../components/ai/AIComponents').then(m => ({ default: m.AINaturalSearch })));
+const AIContentCategorizer = lazy(() => import('../components/ai/AIComponents').then(m => ({ default: m.AIContentCategorizer })));
+const AIUserBehaviorAnalytics = lazy(() => import('../components/ai/AIAnalytics').then(m => ({ default: m.AIUserBehaviorAnalytics })));
+const AIPredictions = lazy(() => import('../components/ai/AIAnalytics').then(m => ({ default: m.AIPredictions })));
+const AISmartOrganization = lazy(() => import('../components/ai/AIAnalytics').then(m => ({ default: m.AISmartOrganization })));
+const AIMetadataExtractor = lazy(() => import('../components/ai/AIMetadata').then(m => ({ default: m.AIMetadataExtractor })));
+const AIAutomationRules = lazy(() => import('../components/ai/AIMetadata').then(m => ({ default: m.AIAutomationRules })));
+const AIContentQualityAnalyzer = lazy(() => import('../components/ai/AIMetadata').then(m => ({ default: m.AIContentQualityAnalyzer })));
 
 // Types for AI Dashboard state
 interface AIDashboardState {
@@ -576,7 +568,9 @@ const AIDashboard: React.FC = () => {
         {renderNavigationTabs()}
 
         {/* Content */}
-        {renderContent()}
+        <Suspense fallback={<div className="flex items-center justify-center min-h-[300px]"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-600" /></div>}>
+          {renderContent()}
+        </Suspense>
       </div>
     </div>
   );

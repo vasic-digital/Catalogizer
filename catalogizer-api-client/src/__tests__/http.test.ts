@@ -239,6 +239,31 @@ describe('HttpClient', () => {
 
       await expect(client.get('/test')).rejects.toThrow('Something went wrong');
     });
+
+    it('throws error using message field when error field is absent', async () => {
+      const mockResponse = {
+        data: {
+          success: false,
+          message: 'Fallback message',
+          status: 422,
+        },
+      };
+      mockAxiosInstance.get.mockResolvedValueOnce(mockResponse);
+
+      await expect(client.get('/test')).rejects.toThrow('Fallback message');
+    });
+
+    it('throws generic error when success is false with no error or message', async () => {
+      const mockResponse = {
+        data: {
+          success: false,
+          status: 500,
+        },
+      };
+      mockAxiosInstance.get.mockResolvedValueOnce(mockResponse);
+
+      await expect(client.get('/test')).rejects.toThrow('Request failed');
+    });
   });
 
   describe('error handling', () => {
@@ -402,6 +427,37 @@ describe('HttpClient', () => {
         expect((err as CatalogizerError).message).toBe('Request failed');
       }
     });
+
+    it('handles unknown status codes with generic CatalogizerError', async () => {
+      const error = {
+        response: {
+          status: 418,
+          data: { message: "I'm a teapot" },
+        },
+      };
+
+      const responseUseMock = mockAxiosInstance.interceptors.response.use;
+      const responseInterceptor = responseUseMock.mock.calls[0][1];
+
+      try {
+        await responseInterceptor(error);
+      } catch (err) {
+        expect(err).toBeInstanceOf(CatalogizerError);
+        expect((err as CatalogizerError).message).toBe("I'm a teapot");
+        expect((err as CatalogizerError).status).toBe(418);
+        expect((err as CatalogizerError).code).toBeUndefined();
+      }
+    });
+
+    it('handles request interceptor error rejection', async () => {
+      const requestUseMock = mockAxiosInstance.interceptors.request.use;
+      const errorHandler = requestUseMock.mock.calls[0][1];
+
+      const error = new Error('Request setup failed');
+      const result = errorHandler(error);
+
+      await expect(result).rejects.toThrow('Request setup failed');
+    });
   });
 
   describe('token refresh on 401', () => {
@@ -427,6 +483,131 @@ describe('HttpClient', () => {
       client.onAuthenticationError = callback;
 
       expect(client.onAuthenticationError).toBe(callback);
+    });
+
+    it('retries request with new token when token refresh succeeds on 401', async () => {
+      // Create an axios instance that is also callable (axios instances are callable)
+      const callableInstance = Object.assign(
+        vi.fn().mockResolvedValue({ data: { retried: true } }),
+        {
+          interceptors: {
+            request: { use: vi.fn(), eject: vi.fn() },
+            response: { use: vi.fn(), eject: vi.fn() },
+          },
+          get: vi.fn(),
+          post: vi.fn(),
+          put: vi.fn(),
+          patch: vi.fn(),
+          delete: vi.fn(),
+          defaults: { headers: {}, baseURL: '', timeout: 30000 },
+        }
+      );
+      mockAxios.create.mockReturnValue(callableInstance as any);
+
+      const httpClient = new HttpClient({ baseURL: 'http://localhost:8080' });
+      httpClient.onTokenRefresh = vi.fn().mockResolvedValue('refreshed-token');
+
+      const responseUseMock = callableInstance.interceptors.response.use;
+      const responseInterceptor = responseUseMock.mock.calls[0][1];
+
+      const originalRequest = { headers: {} as any, _retry: false };
+      const error = {
+        response: { status: 401, data: { message: 'Unauthorized' } },
+        config: originalRequest,
+      };
+
+      const result = await responseInterceptor(error);
+
+      expect(httpClient.onTokenRefresh).toHaveBeenCalled();
+      expect(originalRequest._retry).toBe(true);
+      expect(originalRequest.headers.Authorization).toBe('Bearer refreshed-token');
+      expect(callableInstance).toHaveBeenCalledWith(originalRequest);
+      expect(result).toEqual({ data: { retried: true } });
+    });
+
+    it('calls onAuthenticationError when token refresh fails', async () => {
+      const callableInstance = Object.assign(
+        vi.fn(),
+        {
+          ...mockAxiosInstance,
+          interceptors: {
+            request: { use: vi.fn(), eject: vi.fn() },
+            response: { use: vi.fn(), eject: vi.fn() },
+          },
+        }
+      );
+      mockAxios.create.mockReturnValue(callableInstance as any);
+
+      const authErrorCallback = vi.fn();
+      const client4 = new HttpClient({ baseURL: 'http://localhost:8080' });
+      client4.onTokenRefresh = vi.fn().mockRejectedValue(new Error('Refresh failed'));
+      client4.onAuthenticationError = authErrorCallback;
+
+      const responseUseMock = callableInstance.interceptors.response.use;
+      const responseInterceptor = responseUseMock.mock.calls[0][1];
+
+      const originalRequest = { headers: {}, _retry: false };
+      const error = {
+        response: { status: 401, data: { message: 'Unauthorized' } },
+        config: originalRequest,
+      };
+
+      try {
+        await responseInterceptor(error);
+      } catch (err) {
+        // Expected to throw
+      }
+
+      expect(authErrorCallback).toHaveBeenCalled();
+    });
+
+    it('calls onAuthenticationError when token refresh returns null', async () => {
+      const callableInstance = Object.assign(
+        vi.fn(),
+        {
+          ...mockAxiosInstance,
+          interceptors: {
+            request: { use: vi.fn(), eject: vi.fn() },
+            response: { use: vi.fn(), eject: vi.fn() },
+          },
+        }
+      );
+      mockAxios.create.mockReturnValue(callableInstance as any);
+
+      const client5 = new HttpClient({ baseURL: 'http://localhost:8080' });
+      client5.onTokenRefresh = vi.fn().mockResolvedValue(null);
+
+      const responseUseMock = callableInstance.interceptors.response.use;
+      const responseInterceptor = responseUseMock.mock.calls[0][1];
+
+      const originalRequest = { headers: {}, _retry: false };
+      const error = {
+        response: { status: 401, data: { message: 'Unauthorized' } },
+        config: originalRequest,
+      };
+
+      try {
+        await responseInterceptor(error);
+      } catch (err) {
+        expect(err).toBeInstanceOf(AuthenticationError);
+      }
+    });
+
+    it('does not retry 401 when request was already retried', async () => {
+      const responseUseMock = mockAxiosInstance.interceptors.response.use;
+      const responseInterceptor = responseUseMock.mock.calls[0][1];
+
+      const originalRequest = { headers: {}, _retry: true };
+      const error = {
+        response: { status: 401, data: { message: 'Unauthorized' } },
+        config: originalRequest,
+      };
+
+      try {
+        await responseInterceptor(error);
+      } catch (err) {
+        expect(err).toBeInstanceOf(AuthenticationError);
+      }
     });
   });
 
@@ -465,6 +646,39 @@ describe('HttpClient', () => {
       expect(operation).toHaveBeenCalledTimes(1);
       expect(result).toBe('Success');
     });
+
+    it('retries and succeeds after transient failures', async () => {
+      const operation = vi.fn()
+        .mockRejectedValueOnce(new NetworkError('Connection reset'))
+        .mockRejectedValueOnce(new NetworkError('Connection reset'))
+        .mockResolvedValueOnce('Eventually succeeded');
+
+      const result = await client.withRetry(operation, 3, 10);
+
+      expect(operation).toHaveBeenCalledTimes(3);
+      expect(result).toBe('Eventually succeeded');
+    });
+
+    it('throws last error after exhausting all retry attempts', async () => {
+      const operation = vi.fn()
+        .mockRejectedValueOnce(new NetworkError('Fail 1'))
+        .mockRejectedValueOnce(new NetworkError('Fail 2'))
+        .mockRejectedValueOnce(new NetworkError('Fail 3'));
+
+      await expect(client.withRetry(operation, 3, 10)).rejects.toThrow('Fail 3');
+      expect(operation).toHaveBeenCalledTimes(3);
+    });
+
+    it('uses config defaults when maxAttempts and delay are not provided', async () => {
+      const operation = vi.fn()
+        .mockRejectedValueOnce(new NetworkError('fail'))
+        .mockResolvedValueOnce('ok');
+
+      const result = await client.withRetry(operation);
+
+      expect(operation).toHaveBeenCalledTimes(2);
+      expect(result).toBe('ok');
+    });
   });
 
   describe('stream operations', () => {
@@ -497,6 +711,45 @@ describe('HttpClient', () => {
         responseType: 'arraybuffer',
         headers: { 'X-Custom': 'value' },
       }));
+    });
+
+    it('uploads a file with multipart/form-data', async () => {
+      const mockResponse = { data: { id: 1, filename: 'test.jpg' } };
+      mockAxiosInstance.post.mockResolvedValueOnce(mockResponse);
+
+      const file = Buffer.from('fake-file-content');
+      await client.uploadFile('/upload', file);
+
+      expect(mockAxiosInstance.post).toHaveBeenCalledWith(
+        '/upload',
+        expect.any(FormData),
+        expect.objectContaining({
+          headers: expect.objectContaining({
+            'Content-Type': 'multipart/form-data',
+          }),
+        })
+      );
+    });
+
+    it('uploads a file with custom config headers', async () => {
+      const mockResponse = { data: { id: 2, filename: 'doc.pdf' } };
+      mockAxiosInstance.post.mockResolvedValueOnce(mockResponse);
+
+      const file = Buffer.from('pdf-content');
+      await client.uploadFile('/upload', file, {
+        headers: { 'X-Upload-Token': 'abc123' },
+      });
+
+      expect(mockAxiosInstance.post).toHaveBeenCalledWith(
+        '/upload',
+        expect.any(FormData),
+        expect.objectContaining({
+          headers: expect.objectContaining({
+            'Content-Type': 'multipart/form-data',
+            'X-Upload-Token': 'abc123',
+          }),
+        })
+      );
     });
   });
 

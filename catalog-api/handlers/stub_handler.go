@@ -633,8 +633,3 @@ func (h *MediaQueryHandler) GetInitStatus(c *gin.Context) {
 	})
 }
 
-// NewStubHandler creates a MediaQueryHandler without database dependencies.
-// Deprecated: Use NewMediaQueryHandler with proper dependencies instead.
-func NewStubHandler() *MediaQueryHandler {
-	return &MediaQueryHandler{}
-}

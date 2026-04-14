@@ -65,6 +65,17 @@ abstract class CatalogizerDatabase : RoomDatabase() {
                 instance
             }
         }
+
+        fun closeDatabase() {
+            synchronized(this) {
+                INSTANCE?.run {
+                    if (isOpen) {
+                        close()
+                    }
+                }
+                INSTANCE = null
+            }
+        }
     }
 }
 

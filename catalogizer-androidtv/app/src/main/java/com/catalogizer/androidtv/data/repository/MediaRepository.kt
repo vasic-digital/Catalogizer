@@ -90,6 +90,25 @@ class MediaRepository(private val context: Context, private val api: Catalogizer
         }
     }
 
+    /**
+     * Fetch child entities of a parent (e.g. episodes of a season).
+     * Returns an empty list on any error so callers degrade gracefully.
+     */
+    suspend fun getEntityChildren(parentId: Long): List<MediaItem> {
+        return try {
+            val response = api.getEntityChildren(parentId)
+            if (response.isSuccessful) {
+                response.body()?.allItems ?: emptyList()
+            } else {
+                android.util.Log.w("MediaRepo", "getEntityChildren failed: ${response.code()}")
+                emptyList()
+            }
+        } catch (e: Exception) {
+            android.util.Log.w("MediaRepo", "getEntityChildren error: ${e.message}")
+            emptyList()
+        }
+    }
+
     suspend fun getMediaById(mediaId: Long): Flow<MediaItem?> {
         try {
             // Try entity endpoint first (for entities from browse)

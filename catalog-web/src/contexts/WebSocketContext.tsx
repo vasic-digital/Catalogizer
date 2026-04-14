@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useEffect, ReactNode } from 'react'
+import React, { createContext, useContext, useEffect, useRef, ReactNode } from 'react'
 import { useAuth } from './AuthContext'
 import { useWebSocket } from '@/lib/websocket'
 
@@ -38,21 +38,20 @@ interface WebSocketProviderProps {
 export const WebSocketProvider: React.FC<WebSocketProviderProps> = ({ children }) => {
   const { isAuthenticated, user } = useAuth()
   const webSocket = useWebSocket()
+  const webSocketRef = useRef(webSocket)
+  webSocketRef.current = webSocket
 
   useEffect(() => {
     if (isAuthenticated && user) {
-      // Connect to WebSocket when user is authenticated
-      webSocket.connect()
+      webSocketRef.current.connect()
 
       return () => {
-        // Disconnect when component unmounts or user logs out
-        webSocket.disconnect()
+        webSocketRef.current.disconnect()
       }
     } else {
-      // Disconnect if user is not authenticated
-      webSocket.disconnect()
+      webSocketRef.current.disconnect()
     }
-  }, [isAuthenticated, user, webSocket])
+  }, [isAuthenticated, user])
 
   return (
     <WebSocketContext.Provider value={webSocket}>

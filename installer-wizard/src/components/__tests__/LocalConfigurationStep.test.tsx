@@ -39,8 +39,7 @@ describe('LocalConfigurationStep', () => {
       </TestWrapper>
     )
 
-    // First, click "Add New" to get a clean form (since component starts in edit mode with pre-populated data)
-    // Cancel editing to get to "Add Configuration" state
+    // First, click "Cancel" to get out of edit mode with pre-populated data
     const cancelButton = screen.getByText('Cancel')
     fireEvent.click(cancelButton)
 
@@ -108,5 +107,148 @@ describe('LocalConfigurationStep', () => {
 
     // Component auto-creates one default config
     expect(screen.getByText(/1 local source\(s\) configured/)).toBeInTheDocument()
+  })
+
+  it('handles local path test failure', async () => {
+    vi.spyOn(TauriService, 'testLocalConnection')
+      .mockRejectedValue(new Error('Permission denied'))
+
+    render(
+      <TestWrapper>
+        <LocalConfigurationStep />
+      </TestWrapper>
+    )
+
+    fireEvent.change(getInputByLabel('Base Path'), { target: { value: '/root/protected' } })
+
+    const testButton = screen.getByText('Test Path')
+    fireEvent.click(testButton)
+
+    await waitFor(() => {
+      expect(screen.getByText(/Path test failed/)).toBeInTheDocument()
+    }, { timeout: 3000 })
+  })
+
+  it('requires base path before testing', async () => {
+    render(
+      <TestWrapper>
+        <LocalConfigurationStep />
+      </TestWrapper>
+    )
+
+    // Clear the base path
+    fireEvent.change(getInputByLabel('Base Path'), { target: { value: '' } })
+
+    const testButton = screen.getByText('Test Path')
+    fireEvent.click(testButton)
+
+    await waitFor(() => {
+      expect(screen.getByText('Please fill in the base path before testing')).toBeInTheDocument()
+    }, { timeout: 3000 })
+  })
+
+  it('shows subtitle text', () => {
+    render(
+      <TestWrapper>
+        <LocalConfigurationStep />
+      </TestWrapper>
+    )
+
+    expect(screen.getByText('Configure local filesystem paths for your media')).toBeInTheDocument()
+  })
+
+  it('shows form description text', () => {
+    render(
+      <TestWrapper>
+        <LocalConfigurationStep />
+      </TestWrapper>
+    )
+
+    expect(screen.getByText('Enter the local filesystem path details')).toBeInTheDocument()
+  })
+
+  it('shows Add New button', () => {
+    render(
+      <TestWrapper>
+        <LocalConfigurationStep />
+      </TestWrapper>
+    )
+
+    expect(screen.getByText('Add New')).toBeInTheDocument()
+  })
+
+  it('shows next step instruction when configs exist', () => {
+    render(
+      <TestWrapper>
+        <LocalConfigurationStep />
+      </TestWrapper>
+    )
+
+    // Auto-created default config exists
+    expect(screen.getByText(/Click "Next" to manage your configuration file/)).toBeInTheDocument()
+  })
+
+  it('shows edit button for existing configuration', () => {
+    render(
+      <TestWrapper>
+        <LocalConfigurationStep />
+      </TestWrapper>
+    )
+
+    // The auto-created default config should have an Edit button
+    expect(screen.getByText('Edit')).toBeInTheDocument()
+  })
+
+  it('shows default config name and path', () => {
+    render(
+      <TestWrapper>
+        <LocalConfigurationStep />
+      </TestWrapper>
+    )
+
+    expect(screen.getByText('Local Media')).toBeInTheDocument()
+    expect(screen.getByText('/home/user/media')).toBeInTheDocument()
+  })
+
+  it('re-creates default config after removing last entry', async () => {
+    render(
+      <TestWrapper>
+        <LocalConfigurationStep />
+      </TestWrapper>
+    )
+
+    // Component auto-creates one config; remove it
+    const deleteButtons = screen.getAllByRole('button').filter(btn =>
+      btn.classList.contains('text-red-600') || btn.className.includes('text-red')
+    )
+    expect(deleteButtons.length).toBeGreaterThan(0)
+    fireEvent.click(deleteButtons[0])
+
+    // The useEffect re-populates when localConfigs becomes empty,
+    // so a new default config is created automatically
+    await waitFor(() => {
+      expect(screen.getByText('Local Media')).toBeInTheDocument()
+      expect(screen.getByText('/home/user/media')).toBeInTheDocument()
+    }, { timeout: 3000 })
+  })
+
+  it('shows manage local filesystem text in list description', () => {
+    render(
+      <TestWrapper>
+        <LocalConfigurationStep />
+      </TestWrapper>
+    )
+
+    expect(screen.getByText('Manage your local filesystem source configurations')).toBeInTheDocument()
+  })
+
+  it('shows configured sources count in list header', () => {
+    render(
+      <TestWrapper>
+        <LocalConfigurationStep />
+      </TestWrapper>
+    )
+
+    expect(screen.getByText(/Configured Sources \(1\)/)).toBeInTheDocument()
   })
 })

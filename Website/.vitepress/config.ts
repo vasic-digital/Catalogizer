@@ -21,6 +21,9 @@ export default defineConfig({
           { text: 'Introduction', link: '/' },
           { text: 'Download', link: '/download' },
           { text: 'Quick Start', link: '/getting-started' },
+          { text: 'Quick Start (5-min)', link: '/docs/getting-started/quick-start' },
+          { text: 'Configuration', link: '/docs/getting-started/configuration' },
+          { text: 'First Scan', link: '/docs/getting-started/first-scan' },
         ]
       },
       {
@@ -31,6 +34,7 @@ export default defineConfig({
           { text: 'Desktop Guide', link: '/guides/desktop' },
           { text: 'Android Guide', link: '/guides/android' },
           { text: 'Android TV Guide', link: '/guides/android-tv' },
+          { text: 'Platforms Overview', link: '/platforms' },
         ]
       },
       {
@@ -40,15 +44,22 @@ export default defineConfig({
           { text: 'Configuration', link: '/guides/configuration' },
           { text: 'Security', link: '/guides/security' },
           { text: 'Monitoring', link: '/guides/monitoring' },
+          { text: 'Security Overview', link: '/security' },
         ]
       },
       {
         text: 'Developer',
         items: [
           { text: 'Architecture', link: '/developer/architecture' },
+          { text: 'System Architecture', link: '/architecture' },
           { text: 'API Reference', link: '/developer/api' },
+          { text: 'Database', link: '/docs/developer-guide/database' },
+          { text: 'Filesystem Protocols', link: '/docs/developer-guide/protocols' },
+          { text: 'Media Pipeline', link: '/docs/developer-guide/media-pipeline' },
+          { text: 'WebSocket Events', link: '/docs/developer-guide/websockets' },
           { text: 'Testing', link: '/developer/testing' },
           { text: 'Contributing', link: '/developer/contributing' },
+          { text: 'Contributing Guide', link: '/contributing' },
         ]
       },
       {

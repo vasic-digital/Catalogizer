@@ -1,4 +1,4 @@
-# Contributing to Catalogizer v3.0
+# Contributing to Catalogizer
 
 ## Table of Contents
 1. [Welcome Contributors](#welcome-contributors)
@@ -17,7 +17,7 @@
 
 ## Welcome Contributors
 
-Thank you for your interest in contributing to Catalogizer v3.0! This document provides guidelines and instructions for contributing to the project. Whether you're fixing bugs, adding features, improving documentation, or helping with testing, your contributions are welcome and appreciated.
+Thank you for your interest in contributing to Catalogizer v2.4.0! This document provides guidelines and instructions for contributing to the project. Whether you're fixing bugs, adding features, improving documentation, or helping with testing, your contributions are welcome and appreciated.
 
 ### Ways to Contribute
 
@@ -114,7 +114,7 @@ export CATALOGIZER_DB_CONNECTION="host=localhost port=5432 user=dev_user passwor
 mkdir -p config
 cat > config/dev.json << EOF
 {
-  "version": "3.0.0",
+  "version": "2.4.0",
   "configuration": {
     "server": {
       "port": 8080,
@@ -831,7 +831,7 @@ Use Swagger/OpenAPI 3.0 annotations:
 
 ```go
 // @title Catalogizer API
-// @version 3.0.0
+// @version 2.4.0
 // @description Comprehensive media management and cataloging system
 // @contact.name API Support
 // @contact.email api-support@catalogizer.com
@@ -1082,7 +1082,7 @@ A clear and concise description of what actually happened.
 ## Environment
 - OS: [e.g. Ubuntu 20.04]
 - Go Version: [e.g. 1.21.5]
-- Catalogizer Version: [e.g. 3.0.0]
+- Catalogizer Version: [e.g. 2.4.0]
 - Database: [e.g. PostgreSQL 14]
 
 ## Logs
@@ -1374,7 +1374,7 @@ We follow [Semantic Versioning](https://semver.org/) (SemVer):
 - **PATCH**: Backward-compatible bug fixes
 
 Examples:
-- `3.0.0` - Major release with breaking changes
+- `2.4.0` - Major release with breaking changes
 - `3.1.0` - Minor release with new features
 - `3.1.1` - Patch release with bug fixes
 
@@ -1415,7 +1415,7 @@ Examples:
 
 ---
 
-Thank you for contributing to Catalogizer v3.0! Your contributions help make this project better for everyone. If you have questions about contributing, please don't hesitate to ask in our GitHub Discussions or reach out to the maintainers.
+Thank you for contributing to Catalogizer v2.4.0! Your contributions help make this project better for everyone. If you have questions about contributing, please don't hesitate to ask in our GitHub Discussions or reach out to the maintainers.
 
 For more information, see:
 - [Architecture Overview](architecture/ARCHITECTURE.md)

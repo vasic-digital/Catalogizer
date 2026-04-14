@@ -4,7 +4,7 @@ import "sync"
 
 // Package-level shutdown registry.
 //
-// Several middleware factories (RateLimiter, AdvancedRateLimit) spawn
+// Several middleware factories (e.g. RateLimiter) spawn
 // background cleanup goroutines but return only a gin.HandlerFunc, so the
 // caller has no handle to stop them. The registry gives main.go a single
 // entry point to stop all of them at once during graceful shutdown.

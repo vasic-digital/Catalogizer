@@ -123,6 +123,20 @@ func NewCacheService(db *database.DB, logger *zap.Logger) *CacheService {
 	return s
 }
 
+// cleanupContext returns a context that is cancelled when the cleanup
+// timeout expires OR the service is shutting down, whichever comes first.
+func (s *CacheService) cleanupContext(timeout time.Duration) (context.Context, context.CancelFunc) {
+	ctx, cancel := context.WithTimeout(context.Background(), timeout)
+	go func() {
+		select {
+		case <-s.shutdown:
+			cancel()
+		case <-ctx.Done():
+		}
+	}()
+	return ctx, cancel
+}
+
 // cleanupLoop runs periodic cache cleanup
 func (s *CacheService) cleanupLoop() {
 	defer s.wg.Done()
@@ -131,7 +145,7 @@ func (s *CacheService) cleanupLoop() {
 	defer ticker.Stop()
 
 	// Run initial cleanup
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Minute)
+	ctx, cancel := s.cleanupContext(5 * time.Minute)
 	if err := s.CleanupExpired(ctx); err != nil {
 		s.logger.Error("Initial cache cleanup failed", zap.Error(err))
 	}
@@ -140,7 +154,7 @@ func (s *CacheService) cleanupLoop() {
 	for {
 		select {
 		case <-ticker.C:
-			ctx, cancel := context.WithTimeout(context.Background(), 5*time.Minute)
+			ctx, cancel := s.cleanupContext(5 * time.Minute)
 			if err := s.CleanupExpired(ctx); err != nil {
 				s.logger.Error("Cache cleanup failed", zap.Error(err))
 			}

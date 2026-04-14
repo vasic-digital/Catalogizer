@@ -48,7 +48,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     && rm -rf /var/lib/apt/lists/*
 
 # ============================================================
-# Layer 2: Go 1.26
+# Layer 2: Go 1.26 (satisfies go.mod minimum of 1.25.7)
 # ============================================================
 ENV GO_VERSION=1.26.1
 COPY docker/go${GO_VERSION}.linux-amd64.tar.gz /tmp/go.tar.gz
@@ -107,7 +107,9 @@ RUN yes | sdkmanager --licenses >/dev/null 2>&1 || true
 RUN sdkmanager \
     "platform-tools" \
     "build-tools;34.0.0" \
-    "platforms;android-34"
+    "build-tools;35.0.0" \
+    "platforms;android-34" \
+    "platforms;android-35"
 
 # ============================================================
 # Layer 6: Playwright browsers

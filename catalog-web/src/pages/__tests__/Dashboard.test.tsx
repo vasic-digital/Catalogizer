@@ -174,9 +174,9 @@ describe('Dashboard', () => {
       expect(screen.getByTestId('dashboard-stats')).toBeInTheDocument()
     })
 
-    it('renders MediaDistributionChart component', () => {
+    it('renders MediaDistributionChart component', async () => {
       render(<Dashboard />, { wrapper: createWrapper() })
-      expect(screen.getByTestId('media-distribution-chart')).toBeInTheDocument()
+      expect(await screen.findByTestId('media-distribution-chart')).toBeInTheDocument()
     })
 
     it('renders ActivityFeed component', () => {

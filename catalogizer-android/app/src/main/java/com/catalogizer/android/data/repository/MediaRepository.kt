@@ -7,6 +7,7 @@ import com.catalogizer.android.data.remote.CatalogizerApi
 import com.catalogizer.android.data.remote.ApiResult
 import com.catalogizer.android.data.remote.toApiResult
 import kotlinx.coroutines.flow.*
+import kotlinx.coroutines.withTimeoutOrNull
 /**
  * Handles media data operations with both remote [CatalogizerApi] and local [MediaDao] database.
  * Supports online-first with offline fallback, paginated browsing via [Pager], and
@@ -107,7 +108,7 @@ class MediaRepository(
             result
         } catch (e: Exception) {
             // Fallback to local data
-            val localData = mediaDao.getRecentlyAdded(limit).first()
+            val localData = withTimeoutOrNull(5000L) { mediaDao.getRecentlyAdded(limit).first() } ?: emptyList()
             ApiResult.success(localData)
         }
     }
@@ -121,7 +122,7 @@ class MediaRepository(
             result
         } catch (e: Exception) {
             // Fallback to local data
-            val localData = mediaDao.getTopRated(limit).first()
+            val localData = withTimeoutOrNull(5000L) { mediaDao.getTopRated(limit).first() } ?: emptyList()
             ApiResult.success(localData)
         }
     }

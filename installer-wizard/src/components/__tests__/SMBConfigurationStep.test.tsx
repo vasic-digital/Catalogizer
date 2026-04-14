@@ -192,4 +192,182 @@ describe('SMBConfigurationStep', () => {
 
     expect(screen.getByText('Path (optional)', { selector: 'label' })).toBeInTheDocument()
   })
+
+  it('removes a configuration entry', async () => {
+    render(
+      <TestWrapper>
+        <SMBConfigurationStep />
+      </TestWrapper>
+    )
+
+    fireEvent.change(getInputByLabel('Configuration Name'), { target: { value: 'To Remove' } })
+    fireEvent.change(getInputByLabel('Host/IP Address'), { target: { value: '192.168.1.100' } })
+    fireEvent.change(getInputByLabel('Share Name'), { target: { value: 'shared' } })
+    fireEvent.change(getInputByLabel('Username'), { target: { value: 'testuser' } })
+    fireEvent.change(getInputByLabel('Password'), { target: { value: 'testpass' } })
+
+    const submitButton = screen.getByRole('button', { name: 'Add Configuration' })
+    fireEvent.click(submitButton)
+
+    await waitFor(() => {
+      expect(screen.getByText('To Remove')).toBeInTheDocument()
+    })
+
+    // Find and click the delete button (Trash2 icon button)
+    const deleteButtons = screen.getAllByRole('button').filter(btn =>
+      btn.classList.contains('text-red-600') || btn.className.includes('text-red')
+    )
+    expect(deleteButtons.length).toBeGreaterThan(0)
+    fireEvent.click(deleteButtons[0])
+
+    await waitFor(() => {
+      expect(screen.getByText('No configurations yet')).toBeInTheDocument()
+    })
+  })
+
+  it('shows edit button for existing configurations', async () => {
+    render(
+      <TestWrapper>
+        <SMBConfigurationStep />
+      </TestWrapper>
+    )
+
+    fireEvent.change(getInputByLabel('Configuration Name'), { target: { value: 'Editable' } })
+    fireEvent.change(getInputByLabel('Host/IP Address'), { target: { value: '192.168.1.100' } })
+    fireEvent.change(getInputByLabel('Share Name'), { target: { value: 'shared' } })
+    fireEvent.change(getInputByLabel('Username'), { target: { value: 'testuser' } })
+    fireEvent.change(getInputByLabel('Password'), { target: { value: 'testpass' } })
+
+    const submitButton = screen.getByRole('button', { name: 'Add Configuration' })
+    fireEvent.click(submitButton)
+
+    await waitFor(() => {
+      expect(screen.getByText('Edit')).toBeInTheDocument()
+    })
+  })
+
+  it('switches to edit mode when Edit is clicked', async () => {
+    render(
+      <TestWrapper>
+        <SMBConfigurationStep />
+      </TestWrapper>
+    )
+
+    fireEvent.change(getInputByLabel('Configuration Name'), { target: { value: 'Test Config' } })
+    fireEvent.change(getInputByLabel('Host/IP Address'), { target: { value: '10.0.0.1' } })
+    fireEvent.change(getInputByLabel('Share Name'), { target: { value: 'files' } })
+    fireEvent.change(getInputByLabel('Username'), { target: { value: 'admin' } })
+    fireEvent.change(getInputByLabel('Password'), { target: { value: 'secret' } })
+
+    const submitButton = screen.getByRole('button', { name: 'Add Configuration' })
+    fireEvent.click(submitButton)
+
+    await waitFor(() => {
+      expect(screen.getByText('Test Config')).toBeInTheDocument()
+    })
+
+    fireEvent.click(screen.getByText('Edit'))
+
+    await waitFor(() => {
+      expect(screen.getByText('Edit Configuration')).toBeInTheDocument()
+      expect(screen.getByRole('button', { name: 'Update Configuration' })).toBeInTheDocument()
+    })
+  })
+
+  it('shows cancel button during editing', async () => {
+    render(
+      <TestWrapper>
+        <SMBConfigurationStep />
+      </TestWrapper>
+    )
+
+    fireEvent.change(getInputByLabel('Configuration Name'), { target: { value: 'Test' } })
+    fireEvent.change(getInputByLabel('Host/IP Address'), { target: { value: '10.0.0.1' } })
+    fireEvent.change(getInputByLabel('Share Name'), { target: { value: 'share' } })
+    fireEvent.change(getInputByLabel('Username'), { target: { value: 'user' } })
+    fireEvent.change(getInputByLabel('Password'), { target: { value: 'pass' } })
+
+    fireEvent.click(screen.getByRole('button', { name: 'Add Configuration' }))
+
+    await waitFor(() => {
+      expect(screen.getByText('Edit')).toBeInTheDocument()
+    })
+
+    fireEvent.click(screen.getByText('Edit'))
+
+    await waitFor(() => {
+      expect(screen.getByText('Cancel')).toBeInTheDocument()
+    })
+  })
+
+  it('shows username in config entry details', async () => {
+    render(
+      <TestWrapper>
+        <SMBConfigurationStep />
+      </TestWrapper>
+    )
+
+    fireEvent.change(getInputByLabel('Configuration Name'), { target: { value: 'Server' } })
+    fireEvent.change(getInputByLabel('Host/IP Address'), { target: { value: '10.0.0.1' } })
+    fireEvent.change(getInputByLabel('Share Name'), { target: { value: 'files' } })
+    fireEvent.change(getInputByLabel('Username'), { target: { value: 'admin' } })
+    fireEvent.change(getInputByLabel('Password'), { target: { value: 'pass' } })
+
+    fireEvent.click(screen.getByRole('button', { name: 'Add Configuration' }))
+
+    await waitFor(() => {
+      expect(screen.getByText(/User: admin/)).toBeInTheDocument()
+    })
+  })
+
+  it('shows next step instruction when configs exist', async () => {
+    render(
+      <TestWrapper>
+        <SMBConfigurationStep />
+      </TestWrapper>
+    )
+
+    fireEvent.change(getInputByLabel('Configuration Name'), { target: { value: 'Server' } })
+    fireEvent.change(getInputByLabel('Host/IP Address'), { target: { value: '10.0.0.1' } })
+    fireEvent.change(getInputByLabel('Share Name'), { target: { value: 'files' } })
+    fireEvent.change(getInputByLabel('Username'), { target: { value: 'admin' } })
+    fireEvent.change(getInputByLabel('Password'), { target: { value: 'pass' } })
+
+    fireEvent.click(screen.getByRole('button', { name: 'Add Configuration' }))
+
+    await waitFor(() => {
+      expect(screen.getByText(/Click "Next" to manage your configuration file/)).toBeInTheDocument()
+    })
+  })
+
+  it('shows form description text', () => {
+    render(
+      <TestWrapper>
+        <SMBConfigurationStep />
+      </TestWrapper>
+    )
+
+    expect(screen.getByText('Enter the SMB connection details')).toBeInTheDocument()
+  })
+
+  it('shows empty state description in config list', () => {
+    render(
+      <TestWrapper>
+        <SMBConfigurationStep />
+      </TestWrapper>
+    )
+
+    expect(screen.getByText('Add your first SMB configuration to get started')).toBeInTheDocument()
+  })
+
+  it('defaults port to 445', () => {
+    render(
+      <TestWrapper>
+        <SMBConfigurationStep />
+      </TestWrapper>
+    )
+
+    const portInput = getInputByLabel('Port')
+    expect(portInput.value).toBe('445')
+  })
 })

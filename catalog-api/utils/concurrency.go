@@ -81,13 +81,17 @@ func (p *WorkerPool) Submit(job func()) bool {
 
 }
 
-// SubmitAsync adds a job without blocking
+// SubmitAsync adds a job without blocking.
+// The spawned goroutine is tracked by the pool's WaitGroup so that
+// Stop()/StopTimeout() will wait for it to finish.
 func (p *WorkerPool) SubmitAsync(job func()) {
 	if p.stopped.Load() {
 		return
 	}
 
+	p.wg.Add(1)
 	go func() {
+		defer p.wg.Done()
 		p.Submit(job)
 	}()
 }
@@ -147,6 +151,7 @@ type Throttler struct {
 	limitCh chan struct{}
 	stopCh  chan struct{}
 	stopped atomic.Bool
+	wg      sync.WaitGroup
 }
 
 // NewThrottler creates a new throttler with the specified rate
@@ -157,12 +162,14 @@ func NewThrottler(rate time.Duration) *Throttler {
 		stopCh:  make(chan struct{}),
 	}
 
+	t.wg.Add(1)
 	go t.run()
 	return t
 }
 
 // run manages the throttle
 func (t *Throttler) run() {
+	defer t.wg.Done()
 	for {
 		select {
 		case <-t.ticker.C:
@@ -207,10 +214,11 @@ func (t *Throttler) AllowTimeout(timeout time.Duration) bool {
 	}
 }
 
-// Stop stops the throttler
+// Stop stops the throttler and waits for the run goroutine to exit.
 func (t *Throttler) Stop() {
 	if t.stopped.CompareAndSwap(false, true) {
 		close(t.stopCh)
+		t.wg.Wait()
 	}
 }
 
@@ -252,18 +260,20 @@ func (d *Debouncer) Debounce(f func()) {
 	})
 }
 
-// Flush immediately executes the pending function
+// Flush immediately executes the pending function.
+// The function is copied and cleared under the lock, then executed
+// outside the lock to prevent deadlock if it calls Debounce().
 func (d *Debouncer) Flush() {
 	d.mu.Lock()
-	defer d.mu.Unlock()
-
 	if d.timer != nil {
 		d.timer.Stop()
 	}
+	fn := d.pending
+	d.pending = nil
+	d.mu.Unlock()
 
-	if d.pending != nil {
-		d.pending()
-		d.pending = nil
+	if fn != nil {
+		fn()
 	}
 }
 

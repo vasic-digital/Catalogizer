@@ -4,7 +4,6 @@ import userEvent from '@testing-library/user-event'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { MediaBrowser } from '../MediaBrowser'
 import { mediaApi } from '@/lib/mediaApi'
-import * as utils from '@/lib/utils'
 import type { MediaItem } from '@/types/media'
 
 // Mock dependencies
@@ -32,8 +31,8 @@ vi.mock('@/lib/mediaApi', async () => ({
   }
 }))
 
-vi.mock('@/lib/utils', async () => ({
-  debounce: vi.fn((fn) => fn), // Return the function directly for testing
+vi.mock('@/hooks/useDebounce', async () => ({
+  useDebounce: vi.fn((value: unknown) => value), // Return value immediately for testing
 }))
 
 // Mock child components
@@ -117,7 +116,6 @@ vi.mock('@/components/ui/Input', async () => ({
 }))
 
 const mockMediaApi = mediaApi as vi.Mocked<typeof mediaApi>
-const mockDebounce = utils.debounce as vi.MockedFunction<typeof utils.debounce>
 
 // Test data
 const mockMediaItems: MediaItem[] = [
@@ -176,7 +174,6 @@ describe('MediaBrowser', () => {
     })
     mockMediaApi.getMediaStats.mockResolvedValue(mockStats)
     mockMediaApi.downloadMedia.mockResolvedValue(undefined)
-    mockDebounce.mockImplementation((fn) => fn)
   })
 
   describe('Rendering', () => {
@@ -271,8 +268,7 @@ describe('MediaBrowser', () => {
       const searchInput = screen.getByPlaceholderText('Search your media collection...')
       await userEvent.type(searchInput, 'test query')
       
-      // Verify debounce was called
-      expect(mockDebounce).toHaveBeenCalled()
+      // Verify search was triggered with debounced value
       expect(mockMediaApi.searchMedia).toHaveBeenCalledWith(
         expect.objectContaining({
           query: 'test query',
@@ -704,9 +700,9 @@ describe('MediaBrowser', () => {
       
       // Type rapidly
       await userEvent.type(searchInput, 'rapid search')
-      
-      // Should debounce and only call once for final value
-      expect(mockDebounce).toHaveBeenCalled()
+
+      // With useDebounce mocked to return value immediately, search should be triggered
+      expect(mockMediaApi.searchMedia).toHaveBeenCalled()
     })
   })
 

@@ -336,11 +336,3 @@ func TestNewMediaQueryHandler(t *testing.T) {
 	assert.NotNil(t, handler.userRepo)
 }
 
-func TestNewStubHandler(t *testing.T) {
-	// Test the deprecated function still works
-	handler := NewStubHandler()
-
-	assert.NotNil(t, handler)
-	// The handler is created without dependencies
-	// Methods that require DB will fail appropriately
-}

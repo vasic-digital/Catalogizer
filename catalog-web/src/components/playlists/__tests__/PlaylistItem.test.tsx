@@ -22,13 +22,6 @@ vi.mock('../../favorites/FavoriteToggle', () => ({
   FavoriteToggle: () => <div data-testid="favorite-toggle">Favorite</div>,
 }))
 
-vi.mock('../../../hooks/usePlayerState', () => ({
-  usePlayerState: vi.fn(() => ({
-    currentTrack: null,
-    isPlaying: false,
-  })),
-}))
-
 vi.mock('../../../types/playlists', () => ({
   flattenPlaylistItem: vi.fn((item: any) => ({
     title: item.title || item.media?.title || 'Unknown',

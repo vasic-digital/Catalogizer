@@ -87,16 +87,24 @@ func (w *SMBChangeWatcher) Stop() {
 	// Cancel context for in-progress operations
 	w.cancel()
 
+	// Stop all pending debounce timers so their callbacks never fire
+	w.debounceMu.Lock()
+	for key, entry := range w.debounceMap {
+		entry.timer.Stop()
+		delete(w.debounceMap, key)
+	}
+	w.debounceMu.Unlock()
+
 	// Stop all file watchers
 	w.watcherMu.Lock()
-	defer w.watcherMu.Unlock()
 	for path, watcher := range w.watchers {
 		watcher.Close()
 		w.logger.Debug("Closed watcher", zap.String("path", path))
 	}
 	w.watchers = make(map[string]*fsnotify.Watcher)
+	w.watcherMu.Unlock()
 
-	// Stop workers
+	// Signal workers to stop and wait for all goroutines
 	close(w.stopCh)
 	w.wg.Wait()
 

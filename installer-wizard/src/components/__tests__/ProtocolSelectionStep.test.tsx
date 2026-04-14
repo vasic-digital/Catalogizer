@@ -153,4 +153,147 @@ describe('ProtocolSelectionStep', () => {
     fireEvent.click(screen.getByText('WebDAV'))
     expect(screen.getByText('WebDAV Selected')).toBeInTheDocument()
   })
+
+  it('navigates to SMB configuration on SMB selection', () => {
+    render(
+      <TestWrapper>
+        <ProtocolSelectionStep />
+      </TestWrapper>
+    )
+
+    fireEvent.click(screen.getByText('SMB/CIFS'))
+    fireEvent.click(screen.getByText('Next'))
+
+    expect(mockNavigate).toHaveBeenCalledWith('/configure-smb')
+  })
+
+  it('navigates to FTP configuration on FTP selection', () => {
+    render(
+      <TestWrapper>
+        <ProtocolSelectionStep />
+      </TestWrapper>
+    )
+
+    fireEvent.click(screen.getByText('FTP'))
+    fireEvent.click(screen.getByText('Next'))
+
+    expect(mockNavigate).toHaveBeenCalledWith('/configure-ftp')
+  })
+
+  it('navigates to WebDAV configuration on WebDAV selection', () => {
+    render(
+      <TestWrapper>
+        <ProtocolSelectionStep />
+      </TestWrapper>
+    )
+
+    fireEvent.click(screen.getByText('WebDAV'))
+    fireEvent.click(screen.getByText('Next'))
+
+    expect(mockNavigate).toHaveBeenCalledWith('/configure-webdav')
+  })
+
+  it('navigates to local configuration on Local Files selection', () => {
+    render(
+      <TestWrapper>
+        <ProtocolSelectionStep />
+      </TestWrapper>
+    )
+
+    fireEvent.click(screen.getByText('Local Files'))
+    fireEvent.click(screen.getByText('Next'))
+
+    expect(mockNavigate).toHaveBeenCalledWith('/configure-local')
+  })
+
+  it('shows NFS-specific features', () => {
+    render(
+      <TestWrapper>
+        <ProtocolSelectionStep />
+      </TestWrapper>
+    )
+
+    expect(screen.getByText('Mount point configuration')).toBeInTheDocument()
+    expect(screen.getByText('Version specification')).toBeInTheDocument()
+    expect(screen.getByText('Options support')).toBeInTheDocument()
+    expect(screen.getByText('Host-based access')).toBeInTheDocument()
+  })
+
+  it('shows WebDAV-specific features', () => {
+    render(
+      <TestWrapper>
+        <ProtocolSelectionStep />
+      </TestWrapper>
+    )
+
+    expect(screen.getByText('HTTP/HTTPS support')).toBeInTheDocument()
+    expect(screen.getByText('SSL/TLS encryption')).toBeInTheDocument()
+  })
+
+  it('shows Local Files specific features', () => {
+    render(
+      <TestWrapper>
+        <ProtocolSelectionStep />
+      </TestWrapper>
+    )
+
+    expect(screen.getByText('Fast access')).toBeInTheDocument()
+    expect(screen.getByText('Full permissions')).toBeInTheDocument()
+  })
+
+  it('shows confirmation text with lowercase protocol name', () => {
+    render(
+      <TestWrapper>
+        <ProtocolSelectionStep />
+      </TestWrapper>
+    )
+
+    fireEvent.click(screen.getByText('NFS'))
+    expect(screen.getByText(/Click "Next" to configure your nfs connection/)).toBeInTheDocument()
+  })
+
+  it('does not show confirmation text before selection', () => {
+    render(
+      <TestWrapper>
+        <ProtocolSelectionStep />
+      </TestWrapper>
+    )
+
+    expect(screen.queryByText(/Selected$/)).toBeNull()
+  })
+
+  it('does not navigate on Next click without protocol selected', () => {
+    render(
+      <TestWrapper>
+        <ProtocolSelectionStep />
+      </TestWrapper>
+    )
+
+    const nextButton = screen.getByText('Next')
+    fireEvent.click(nextButton)
+
+    expect(mockNavigate).not.toHaveBeenCalledWith(expect.stringContaining('/configure'))
+  })
+
+  it('renders Previous button', () => {
+    render(
+      <TestWrapper>
+        <ProtocolSelectionStep />
+      </TestWrapper>
+    )
+
+    expect(screen.getByText('Previous')).toBeInTheDocument()
+  })
+
+  it('renders five protocol cards', () => {
+    render(
+      <TestWrapper>
+        <ProtocolSelectionStep />
+      </TestWrapper>
+    )
+
+    const grid = screen.getByText('SMB/CIFS').closest('.grid')
+    expect(grid).toBeInTheDocument()
+    expect(grid!.children.length).toBe(5)
+  })
 })

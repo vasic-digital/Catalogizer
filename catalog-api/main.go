@@ -769,13 +769,6 @@ func main() {
 		// defaultRateLimiter = root_middleware.SlidingWindowRedisRateLimit(root_middleware.DefaultRedisRateLimiterConfig(redisClient))
 	}
 
-	// Alternative rate limiting strategies (documented for reference):
-	// These apply at the router level instead of per-route. Do not use
-	// simultaneously with the per-route limiters above.
-	// router.Use(root_middleware.AdvancedRateLimit(root_middleware.DefaultRateLimiterConfig()))
-	// router.Use(root_middleware.UserBasedRateLimit(root_middleware.AuthRateLimiterConfig()))
-	// router.Use(root_middleware.IPRateLimit(10, 20))
-
 	// Setup Gin router
 	router := gin.Default()
 

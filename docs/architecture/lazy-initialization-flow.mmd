@@ -1,0 +1,45 @@
+%% Lazy Initialization Flow - Catalogizer
+%% Shows how services are lazily initialized via LazyServiceRegistry
+
+sequenceDiagram
+    participant Main as main.go
+    participant LSR as LazyServiceRegistry
+    participant SVC as Service Instance
+    participant DEP as Dependencies
+
+    Main->>LSR: Register("metadata-providers", initFn, deps)
+    Note over LSR: Stores factory function<br/>without executing it
+
+    Main->>LSR: Register("redis-cache", initFn, deps)
+    Main->>LSR: Register("websocket-handler", initFn, deps)
+    Main->>LSR: Register("subtitle-service", initFn, deps)
+
+    Note over Main: Server starts accepting requests
+
+    rect rgb(240, 248, 255)
+        Note over Main,SVC: First API request needing metadata
+        Main->>LSR: Get("metadata-providers")
+        LSR->>LSR: Check: initialized?
+        Note over LSR: Not yet - invoke factory
+        LSR->>DEP: Resolve dependencies
+        DEP-->>LSR: Dependencies ready
+        LSR->>SVC: initFn(deps)
+        SVC-->>LSR: Service instance
+        LSR->>LSR: Cache instance
+        LSR-->>Main: Service instance
+    end
+
+    rect rgb(245, 255, 245)
+        Note over Main,SVC: Subsequent requests
+        Main->>LSR: Get("metadata-providers")
+        LSR->>LSR: Check: initialized?
+        Note over LSR: Already cached
+        LSR-->>Main: Cached instance
+    end
+
+    rect rgb(255, 245, 245)
+        Note over Main,SVC: Graceful shutdown
+        Main->>LSR: Shutdown()
+        LSR->>SVC: Close() for each initialized service
+        Note over LSR: Only closes services<br/>that were actually used
+    end

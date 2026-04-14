@@ -1,0 +1,75 @@
+%% Test Coverage Matrix - Constitution Article V
+%% 10 mandatory categories across all platforms
+
+graph LR
+    subgraph "Constitution Article V - 10 Categories"
+        C1[1. Unit Tests]
+        C2[2. Integration Tests]
+        C3[3. E2E Tests]
+        C4[4. Full Automation]
+        C5[5. Stress Tests]
+        C6[6. Security Tests]
+        C7[7. DDoS / Rate-Limit]
+        C8[8. Benchmarking]
+        C9[9. Challenges]
+        C10[10. HelixQA]
+    end
+
+    subgraph "Platforms"
+        API[catalog-api<br/>Go]
+        WEB[catalog-web<br/>React/TS]
+        DSK[Desktop<br/>Tauri/Rust]
+        WIZ[Wizard<br/>Tauri/Rust]
+        AND[Android<br/>Kotlin]
+        ATV[Android TV<br/>Kotlin]
+        CLI[API Client<br/>TypeScript]
+        GSM[Go Submodules<br/>22 modules]
+        TSM[TS Submodules<br/>9 modules]
+    end
+
+    C1 --- API
+    C1 --- WEB
+    C1 --- AND
+    C1 --- ATV
+    C1 --- GSM
+    C1 --- TSM
+    C1 --- CLI
+    C1 --- DSK
+    C1 --- WIZ
+
+    C2 --- API
+    C2 --- WEB
+
+    C3 --- WEB
+    C3 --- ATV
+
+    C4 --- API
+    C4 --- WEB
+    C4 --- ATV
+
+    C5 --- API
+
+    C6 --- API
+    C6 --- WEB
+
+    C7 --- API
+
+    C9 --- API
+    C9 --- WEB
+    C9 --- DSK
+    C9 --- WIZ
+    C9 --- AND
+    C9 --- ATV
+
+    C10 --- API
+    C10 --- WEB
+    C10 --- ATV
+    C10 --- AND
+
+    classDef complete fill:#6bcb77,stroke:#333,color:#fff
+    classDef partial fill:#ffd93d,stroke:#333,color:#333
+    classDef missing fill:#ff6b6b,stroke:#333,color:#fff
+
+    class API,WEB,GSM complete
+    class CLI,TSM partial
+    class DSK,WIZ,AND,ATV missing

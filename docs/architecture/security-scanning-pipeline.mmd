@@ -1,0 +1,57 @@
+%% Security Scanning Pipeline - Catalogizer
+%% Shows all security tools, their inputs, and reporting flow
+
+graph TD
+    subgraph "Source Code Analysis"
+        SRC[Source Code] --> GOVET[go vet]
+        SRC --> GOSEC[Gosec<br/>SAST for Go]
+        SRC --> SEMGREP[Semgrep<br/>Custom + Auto Rules]
+        SRC --> ESLINT[ESLint<br/>TS/JS Linting]
+    end
+
+    subgraph "Dependency Scanning"
+        GOMOD[go.mod] --> GOVULN[govulncheck<br/>Go Vulnerabilities]
+        GOMOD --> NANCY[Nancy<br/>Go Dep Scan]
+        PKG[package.json] --> NPMAUDIT[npm audit<br/>JS/TS Vulnerabilities]
+        GOMOD --> SNYK_GO[Snyk<br/>Go Dependencies]
+        PKG --> SNYK_JS[Snyk<br/>JS Dependencies]
+    end
+
+    subgraph "Container Scanning"
+        DOCKERFILE[Dockerfile.builder] --> HADOLINT[Hadolint<br/>Dockerfile Lint]
+        DOCKERFILE --> TRIVY_FS[Trivy<br/>Filesystem Scan]
+        IMG[Container Image] --> TRIVY_IMG[Trivy<br/>Image Scan]
+    end
+
+    subgraph "Secret Detection"
+        SRC --> TRIVYSEC[Trivy Secrets<br/>Custom Rules]
+        SRC --> PRECOMMIT[Pre-commit<br/>detect-secrets]
+    end
+
+    subgraph "Code Quality"
+        SRC --> SONARQUBE[SonarQube<br/>Quality Gate]
+        COV[Coverage Reports] --> SONARQUBE
+    end
+
+    subgraph "Reporting"
+        GOVET --> REPORT[Consolidated<br/>Security Report]
+        GOSEC --> REPORT
+        SEMGREP --> REPORT
+        GOVULN --> REPORT
+        NPMAUDIT --> REPORT
+        SNYK_GO --> REPORT
+        SNYK_JS --> REPORT
+        HADOLINT --> REPORT
+        TRIVY_FS --> REPORT
+        SONARQUBE --> DASH[SonarQube<br/>Dashboard]
+        REPORT --> MD[docs/security/<br/>scan-report.md]
+        REPORT --> JSON[reports/security/<br/>*.json]
+    end
+
+    classDef critical fill:#ff6b6b,stroke:#333,color:#fff
+    classDef warning fill:#ffd93d,stroke:#333,color:#333
+    classDef info fill:#6bcb77,stroke:#333,color:#fff
+
+    class GOVULN,GOSEC,TRIVY_FS critical
+    class SEMGREP,SNYK_GO,SNYK_JS warning
+    class HADOLINT,ESLINT,NANCY info

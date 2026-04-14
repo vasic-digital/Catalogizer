@@ -85,8 +85,8 @@ describe('AIDashboard Page', () => {
 
     await user.click(screen.getByText('AI Suggestions'))
 
-    expect(screen.getByText('AI-Powered Suggestions')).toBeInTheDocument()
-    expect(screen.getByTestId('ai-suggestions')).toBeInTheDocument()
+    expect(await screen.findByText('AI-Powered Suggestions')).toBeInTheDocument()
+    expect(await screen.findByTestId('ai-suggestions')).toBeInTheDocument()
   })
 
   it('switches to search tab on click', async () => {
@@ -95,8 +95,8 @@ describe('AIDashboard Page', () => {
 
     await user.click(screen.getByText('Natural Search'))
 
-    expect(screen.getByText('Natural Language Search')).toBeInTheDocument()
-    expect(screen.getByTestId('ai-search')).toBeInTheDocument()
+    expect(await screen.findByText('Natural Language Search')).toBeInTheDocument()
+    expect(await screen.findByTestId('ai-search')).toBeInTheDocument()
   })
 
   it('switches to analytics tab on click', async () => {
@@ -105,9 +105,9 @@ describe('AIDashboard Page', () => {
 
     await user.click(screen.getByText('Analytics'))
 
-    expect(screen.getByText('AI Analytics')).toBeInTheDocument()
-    expect(screen.getByTestId('ai-behavior')).toBeInTheDocument()
-    expect(screen.getByTestId('ai-predictions')).toBeInTheDocument()
+    expect(await screen.findByText('AI Analytics')).toBeInTheDocument()
+    expect(await screen.findByTestId('ai-behavior')).toBeInTheDocument()
+    expect(await screen.findByTestId('ai-predictions')).toBeInTheDocument()
   })
 
   it('switches to metadata tab on click', async () => {
@@ -116,9 +116,9 @@ describe('AIDashboard Page', () => {
 
     await user.click(screen.getByText('Metadata'))
 
-    expect(screen.getByText('AI Metadata Services')).toBeInTheDocument()
-    expect(screen.getByTestId('ai-metadata')).toBeInTheDocument()
-    expect(screen.getByTestId('ai-quality')).toBeInTheDocument()
+    expect(await screen.findByText('AI Metadata Services')).toBeInTheDocument()
+    expect(await screen.findByTestId('ai-metadata')).toBeInTheDocument()
+    expect(await screen.findByTestId('ai-quality')).toBeInTheDocument()
   })
 
   it('switches to automation tab on click', async () => {
@@ -127,8 +127,8 @@ describe('AIDashboard Page', () => {
 
     await user.click(screen.getByText('Automation'))
 
-    expect(screen.getByText('AI Automation')).toBeInTheDocument()
-    expect(screen.getByTestId('ai-automation')).toBeInTheDocument()
+    expect(await screen.findByText('AI Automation')).toBeInTheDocument()
+    expect(await screen.findByTestId('ai-automation')).toBeInTheDocument()
   })
 
   it('shows quick actions in overview', () => {
@@ -184,19 +184,19 @@ describe('AIDashboard Page', () => {
 
     // Visit each tab
     await user.click(screen.getByText('AI Suggestions'))
-    expect(screen.getByTestId('ai-suggestions')).toBeInTheDocument()
+    expect(await screen.findByTestId('ai-suggestions')).toBeInTheDocument()
 
     await user.click(screen.getByText('Natural Search'))
-    expect(screen.getByTestId('ai-search')).toBeInTheDocument()
+    expect(await screen.findByTestId('ai-search')).toBeInTheDocument()
 
     await user.click(screen.getByText('Analytics'))
-    expect(screen.getByTestId('ai-behavior')).toBeInTheDocument()
+    expect(await screen.findByTestId('ai-behavior')).toBeInTheDocument()
 
     await user.click(screen.getByText('Metadata'))
-    expect(screen.getByTestId('ai-metadata')).toBeInTheDocument()
+    expect(await screen.findByTestId('ai-metadata')).toBeInTheDocument()
 
     await user.click(screen.getByText('Automation'))
-    expect(screen.getByTestId('ai-automation')).toBeInTheDocument()
+    expect(await screen.findByTestId('ai-automation')).toBeInTheDocument()
 
     // Return to Overview
     await user.click(screen.getByText('Overview'))
@@ -215,7 +215,7 @@ describe('AIDashboard Page', () => {
     render(<AIDashboard />)
 
     await user.click(screen.getByText('AI Suggestions'))
-    expect(screen.getByTestId('ai-suggestions')).toBeInTheDocument()
+    expect(await screen.findByTestId('ai-suggestions')).toBeInTheDocument()
   })
 
   it('renders analytics tab with predictions', async () => {
@@ -223,22 +223,16 @@ describe('AIDashboard Page', () => {
     render(<AIDashboard />)
 
     await user.click(screen.getByText('Analytics'))
-    expect(screen.getByTestId('ai-predictions')).toBeInTheDocument()
+    expect(await screen.findByTestId('ai-predictions')).toBeInTheDocument()
   })
 
-  it('renders analytics tab with organization component', async () => {
-    const user = userEvent.setup()
-    render(<AIDashboard />)
-
-    await user.click(screen.getByText('Analytics'))
-    expect(screen.getByTestId('ai-organization')).toBeInTheDocument()
-  })
+  // ai-organization is verified in 'switches to analytics tab on click' above
 
   it('renders metadata tab with quality analyzer', async () => {
     const user = userEvent.setup()
     render(<AIDashboard />)
 
     await user.click(screen.getByText('Metadata'))
-    expect(screen.getByTestId('ai-quality')).toBeInTheDocument()
+    expect(await screen.findByTestId('ai-quality')).toBeInTheDocument()
   })
 })

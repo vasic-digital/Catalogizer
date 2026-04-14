@@ -35,16 +35,24 @@ class AuthRepository(
         private val BIOMETRIC_ENABLED_KEY = booleanPreferencesKey("biometric_enabled")
     }
 
-    // Authentication state flows
-    val authToken: Flow<String?> = dataStore.data.map { preferences ->
+    // Shared base flow to avoid redundant DataStore reads across multiple collectors
+    private val preferencesFlow: Flow<Preferences> = dataStore.data
+        .shareIn(
+            scope = kotlinx.coroutines.CoroutineScope(kotlinx.coroutines.Dispatchers.IO),
+            started = kotlinx.coroutines.flow.SharingStarted.WhileSubscribed(5000),
+            replay = 1
+        )
+
+    // Authentication state flows derived from the shared base
+    val authToken: Flow<String?> = preferencesFlow.map { preferences ->
         preferences[AUTH_TOKEN_KEY]
     }
 
-    val refreshToken: Flow<String?> = dataStore.data.map { preferences ->
+    val refreshToken: Flow<String?> = preferencesFlow.map { preferences ->
         preferences[REFRESH_TOKEN_KEY]
     }
 
-    val currentUser: Flow<User?> = dataStore.data.map { preferences ->
+    val currentUser: Flow<User?> = preferencesFlow.map { preferences ->
         preferences[USER_KEY]?.let { userJson ->
             try {
                 json.decodeFromString<User>(userJson)
@@ -54,22 +62,21 @@ class AuthRepository(
         }
     }
 
-    val isAuthenticated: Flow<Boolean> = combine(
-        authToken,
-        dataStore.data.map { it[TOKEN_EXPIRY_KEY] ?: 0L }
-    ) { token, expiry ->
+    val isAuthenticated: Flow<Boolean> = preferencesFlow.map { preferences ->
+        val token = preferences[AUTH_TOKEN_KEY]
+        val expiry = preferences[TOKEN_EXPIRY_KEY] ?: 0L
         !token.isNullOrBlank() && System.currentTimeMillis() < expiry
     }
 
-    val serverUrl: Flow<String?> = dataStore.data.map { preferences ->
+    val serverUrl: Flow<String?> = preferencesFlow.map { preferences ->
         preferences[SERVER_URL_KEY]
     }
 
-    val rememberMe: Flow<Boolean> = dataStore.data.map { preferences ->
+    val rememberMe: Flow<Boolean> = preferencesFlow.map { preferences ->
         preferences[REMEMBER_ME_KEY] ?: false
     }
 
-    val biometricEnabled: Flow<Boolean> = dataStore.data.map { preferences ->
+    val biometricEnabled: Flow<Boolean> = preferencesFlow.map { preferences ->
         preferences[BIOMETRIC_ENABLED_KEY] ?: false
     }
 

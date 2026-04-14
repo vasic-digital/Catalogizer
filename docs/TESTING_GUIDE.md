@@ -2,21 +2,140 @@
 
 ## Overview
 
-Catalogizer employs a comprehensive testing strategy that includes unit tests, integration tests, security testing, and quality assurance. This guide covers all testing aspects including the mandatory security scanning requirements.
+Catalogizer employs a comprehensive testing strategy mandated by **Constitution Article V**, which requires **100% coverage across all 10 test categories** for every component. No category may be skipped, deferred, or partially covered. Shipping is prohibited while any category is incomplete.
 
-## Test Categories
+## Constitution Article V -- 10 Mandatory Test Categories
 
 ### 1. Unit Tests
-- **Go Backend**: `go test ./...` - Tests individual functions and methods
-- **React Frontend**: `npm test` - Jest-based component and utility tests
-- **Android Apps**: `./gradlew test` - Unit tests for Kotlin code
-- **Coverage**: Minimum 80% coverage required for all modules
+
+Pure logic, individual functions, and classes. Every branch (happy, error, edge, adversarial) of every public function must be exercised.
+
+| Component | Framework | Command | Target |
+|-----------|-----------|---------|--------|
+| catalog-api | Go testing + testify | `GOMAXPROCS=3 go test ./... -p 2 -parallel 2` | 100% package coverage |
+| catalog-web | Vitest + RTL | `npm run test` | 100% component coverage |
+| catalogizer-desktop | Vitest (React) + Rust `#[test]` | `npm run test` / `cargo test` | 100% both layers |
+| installer-wizard | Vitest (React) + Rust `#[test]` | `npm run test` / `cargo test` | 100% both layers |
+| catalogizer-android | JUnit 4 + MockK | `./gradlew test` | 100% class coverage |
+| catalogizer-androidtv | JUnit 4 + MockK | `./gradlew test` | 100% class coverage |
+| catalogizer-api-client | Vitest | `npm run test` | 100% export coverage |
+| Go submodules (22) | Go testing | `go test ./...` per module | 100% exported functions |
+| TS submodules (9) | Vitest | `npm run test` per module | 100% component coverage |
 
 ### 2. Integration Tests
-- **API Integration**: End-to-end API testing with real database
-- **Cross-platform**: Tests between different client applications
-- **Database**: Tests data persistence and migration
-- **File System**: Tests multi-protocol file operations
+
+Cross-module interactions, database, cache, queues, filesystems.
+
+- **catalog-api**: `catalog-api/tests/integration/` -- user flows, API round-trips, database operations
+- **catalog-web**: `src/components/**/integration.test.tsx` -- auth flow, protected routes, context integration
+- **Protocol tests**: SMB, FTP, NFS, WebDAV integration with real or mocked servers
+
+### 3. End-to-End (E2E) Tests
+
+Full user journeys through the live system.
+
+- **catalog-web**: Playwright (`npm run test:e2e`) -- 5 spec files: auth, browse, collections, favorites, accessibility
+- **HelixQA**: Autonomous LLM-driven E2E across all platforms
+- **Challenges**: User flow challenges (174 registered) exercise full journeys
+
+### 4. Full Automation Tests
+
+Unattended, reproducible, CI-runnable E2E.
+
+- **Challenge runner**: `Challenges/cmd/userflow-runner/` with `--platform`, `--compose`, `--timeout` flags
+- **Container test stack**: `docker-compose.test.yml` with profiles per platform
+- **HelixQA orchestrator**: `./scripts/helixqa-orchestrator.sh [platforms]`
+
+### 5. Stress Tests
+
+Saturation, concurrency, large payloads, long sessions.
+
+- **k6 scripts** (`tests/k6/`): load_test.js, stress_test.js, soak_test.js, spike_test.js, endurance_test.js, breakpoint_test.js
+- **Go stress tests** (`catalog-api/tests/stress/`): concurrent handlers, API load, rate limiter stress, responsiveness
+- **Run**: `podman run --rm --network host -v $(pwd)/tests/k6:/scripts docker.io/grafana/k6:latest run /scripts/stress_test.js`
+
+### 6. Security Tests
+
+Authentication/authorization, injection, SSRF, secrets, CVE scans.
+
+- **govulncheck**: `cd catalog-api && govulncheck ./...`
+- **npm audit**: `cd catalog-web && npm audit --audit-level=high`
+- **Semgrep**: `podman-compose -f docker-compose.security.yml --profile semgrep-scan run --rm semgrep-scanner`
+- **Gosec**: `./scripts/gosec-scan.sh`
+- **Trivy**: `podman-compose -f docker-compose.security.yml --profile trivy-scan run --rm trivy-scanner`
+- **Snyk**: `podman-compose -f docker-compose.security.yml --profile snyk-scan run --rm snyk-cli`
+- **Consolidated**: `./scripts/security-scan.sh`
+- **HelixQA bank**: `HelixQA/banks/security-comprehensive.yaml` (30 entries)
+
+### 7. DDoS / Rate-Limit Tests
+
+Floods, bursts, slowloris, connection exhaustion, rejection + recovery verification.
+
+- **k6**: `tests/k6/ddos_ratelimit_test.js` -- rate limit verification, burst patterns, auth brute force
+- **Go tests**: `catalog-api/tests/stress/rate_limiter_stress_test.go` -- concurrent rate limiter validation
+- **HelixQA bank**: `HelixQA/banks/ddos-ratelimit-comprehensive.yaml` (20 entries)
+- **Recovery criterion**: System must recover within 30s after attack stops
+
+### 8. Benchmarking Tests
+
+Latency, throughput, memory baselines with regression detection.
+
+- **Go benchmarks**: `go test -bench=. -benchmem ./...` -- WorkerPool, JWT, TitleParser, RateLimiter
+- **k6 baselines**: `tests/k6/monitoring_test.js` -- response time SLAs per endpoint
+- **HelixQA bank**: `HelixQA/banks/benchmarking-baselines.yaml` (15 entries)
+- **Regression detection**: Compare against stored baselines; fail if p99 latency increases >10%
+
+### 9. Challenges
+
+Registered `digital.vasic.challenges` entry per feature.
+
+- **507+ challenges** registered in catalog-api
+- **Categories**: 50 original (CH-001..050) + 174 userflow (UF-*) + 15 module verification (MOD-*)
+- **Run single**: `curl -X POST http://localhost:8080/api/v1/challenges/<id>/run`
+- **Run all**: `curl -X POST http://localhost:8080/api/v1/challenges/run-all`
+- **CLI runner**: `cd Challenges/cmd/userflow-runner && go run . --platform api --timeout 30m`
+- **Bank files**: `challenges/config/`, `challenges/helixqa-banks/`
+
+### 10. HelixQA
+
+Autonomous bank + session entry per screen, flow, and adversarial case.
+
+- **Orchestrator**: `./scripts/helixqa-orchestrator.sh [platforms]`
+- **Banks**: 1,600+ test cases across 25 YAML files
+- **Pipeline**: Learn -> Plan -> Execute -> Curiosity -> Analyze
+- **Platforms**: androidtv, android, web, desktop
+- **Vision**: LLM-driven screenshot analysis for every action
+- **Output**: `qa-results/session-<timestamp>/`
+
+## Mandatory Retesting Loop
+
+After any change, the full loop must execute until clean:
+
+1. **Rebuild** affected binaries, containers, deployments
+2. **Execute** all tests (all 10 categories)
+3. **Analyze** results, videos, screenshots, logs
+4. **Create tickets** for every defect
+5. **Fix** root causes + add regression test to fixes-validation bank
+6. **Repeat** from step 1
+
+## Platform Coverage Order
+
+Per Constitution Article V, coverage is achieved sequentially:
+
+1. catalog-api
+2. catalog-web
+3. catalogizer-desktop
+4. installer-wizard
+5. catalogizer-android
+6. catalogizer-androidtv
+7. catalogizer-api-client
+8. Go submodules
+9. TS submodules
+10. HelixQA
+
+---
+
+## Security Testing Detail
 
 ### 3. Security Testing (Mandatory)
 

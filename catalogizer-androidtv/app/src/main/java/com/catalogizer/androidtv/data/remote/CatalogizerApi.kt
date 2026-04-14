@@ -41,6 +41,9 @@ interface CatalogizerApi {
     @GET("api/v1/entities/{id}")
     suspend fun getEntityById(@Path("id") id: Long): Response<MediaItem>
 
+    @GET("api/v1/entities/{id}/children")
+    suspend fun getEntityChildren(@Path("id") id: Long): Response<MediaSearchResponse>
+
     @GET("api/v1/entities/{id}/stream")
     suspend fun getEntityStream(@Path("id") id: Long): Response<kotlinx.serialization.json.JsonObject>
 

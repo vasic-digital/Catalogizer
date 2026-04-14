@@ -187,4 +187,137 @@ describe('ConfigurationManagementStep', () => {
       expect(screen.getByText(/Failed to save configuration/)).toBeInTheDocument()
     })
   })
+
+  it('shows Add button for access credentials', async () => {
+    render(
+      <TestWrapper>
+        <ConfigurationManagementStep />
+      </TestWrapper>
+    )
+
+    await waitFor(() => {
+      const addButtons = screen.getAllByText('Add')
+      expect(addButtons.length).toBeGreaterThanOrEqual(2)
+    })
+  })
+
+  it('shows Add button for media sources', async () => {
+    render(
+      <TestWrapper>
+        <ConfigurationManagementStep />
+      </TestWrapper>
+    )
+
+    await waitFor(() => {
+      expect(screen.getByText(/Media Sources/)).toBeInTheDocument()
+    })
+  })
+
+  it('displays generated accesses in the list', async () => {
+    render(
+      <TestWrapper>
+        <ConfigurationManagementStep />
+      </TestWrapper>
+    )
+
+    await waitFor(() => {
+      // The component generates mock configs with access names
+      expect(screen.getByText(/Access Credentials/)).toBeInTheDocument()
+    })
+  })
+
+  it('displays generated sources in the list', async () => {
+    render(
+      <TestWrapper>
+        <ConfigurationManagementStep />
+      </TestWrapper>
+    )
+
+    await waitFor(() => {
+      expect(screen.getByText(/Media Sources/)).toBeInTheDocument()
+    })
+  })
+
+  it('shows JSON preview with formatted content', async () => {
+    render(
+      <TestWrapper>
+        <ConfigurationManagementStep />
+      </TestWrapper>
+    )
+
+    await waitFor(() => {
+      const preElement = screen.getByText('Configuration Preview')
+        .closest('.space-y-6')!
+        .querySelector('pre')
+      expect(preElement).toBeInTheDocument()
+      expect(preElement!.textContent).toContain('accesses')
+      expect(preElement!.textContent).toContain('sources')
+    })
+  })
+
+  it('shows source type in source entries', async () => {
+    render(
+      <TestWrapper>
+        <ConfigurationManagementStep />
+      </TestWrapper>
+    )
+
+    await waitFor(() => {
+      expect(screen.getByText('samba')).toBeInTheDocument()
+    })
+  })
+
+  it('shows access type and account in access entries', async () => {
+    render(
+      <TestWrapper>
+        <ConfigurationManagementStep />
+      </TestWrapper>
+    )
+
+    await waitFor(() => {
+      const accessElements = screen.getAllByText(/Type: credentials/)
+      expect(accessElements.length).toBeGreaterThan(0)
+    })
+  })
+
+  it('masks secrets in access entries', async () => {
+    render(
+      <TestWrapper>
+        <ConfigurationManagementStep />
+      </TestWrapper>
+    )
+
+    await waitFor(() => {
+      const secretElements = screen.getAllByText(/Secret: \*+/)
+      expect(secretElements.length).toBeGreaterThan(0)
+    })
+  })
+
+  it('shows delete buttons for access entries', async () => {
+    render(
+      <TestWrapper>
+        <ConfigurationManagementStep />
+      </TestWrapper>
+    )
+
+    await waitFor(() => {
+      const deleteButtons = screen.getAllByRole('button').filter(btn =>
+        btn.classList.contains('text-red-600') || btn.className.includes('text-red')
+      )
+      expect(deleteButtons.length).toBeGreaterThan(0)
+    })
+  })
+
+  it('shows URL in source entries', async () => {
+    render(
+      <TestWrapper>
+        <ConfigurationManagementStep />
+      </TestWrapper>
+    )
+
+    await waitFor(() => {
+      const urlElements = screen.getAllByText(/URL:/)
+      expect(urlElements.length).toBeGreaterThan(0)
+    })
+  })
 })

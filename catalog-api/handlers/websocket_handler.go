@@ -233,7 +233,7 @@ type WebSocketStats struct {
 // HandleConnection upgrades an HTTP request to a WebSocket connection
 // and manages the connection lifecycle with proper cleanup.
 func (h *WebSocketHandler) HandleConnection(c *gin.Context) {
-	// Check connection limit
+	// Check connection limit atomically before upgrade
 	h.mu.Lock()
 	if len(h.clients) >= h.config.MaxConnections {
 		h.mu.Unlock()
@@ -245,11 +245,17 @@ func (h *WebSocketHandler) HandleConnection(c *gin.Context) {
 		})
 		return
 	}
+	// Hold a reservation by pre-incrementing connCount.
+	// If upgrade fails below, we decrement it back.
+	h.connCount++
 	h.mu.Unlock()
 
 	conn, err := h.upgrader.Upgrade(c.Writer, c.Request, nil)
 	if err != nil {
 		h.logger.Error("WebSocket upgrade failed", zap.Error(err))
+		h.mu.Lock()
+		h.connCount--
+		h.mu.Unlock()
 		return
 	}
 
@@ -273,7 +279,6 @@ func (h *WebSocketHandler) HandleConnection(c *gin.Context) {
 
 	h.mu.Lock()
 	h.clients[wc] = true
-	h.connCount++
 	if h.connCount > h.maxReached {
 		h.maxReached = h.connCount
 	}

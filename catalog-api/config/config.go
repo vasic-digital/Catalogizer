@@ -28,8 +28,6 @@ type ServerConfig struct {
 	IdleTimeout  int    `json:"idle_timeout"`
 	EnableCORS   bool   `json:"enable_cors"`
 	EnableHTTPS  bool   `json:"enable_https"`
-	CertFile     string `json:"cert_file,omitempty"`
-	KeyFile      string `json:"key_file,omitempty"`
 }
 
 // DatabaseConfig contains database connection configuration.

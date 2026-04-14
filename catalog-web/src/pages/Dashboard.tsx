@@ -1,9 +1,11 @@
-import { useState, useEffect } from 'react'
+import React, { lazy, Suspense, useState, useEffect } from 'react'
 import { useAuth } from '@/contexts/AuthContext'
 import { useQuery } from '@tanstack/react-query'
 import { DashboardStats } from '@/components/dashboard/DashboardStats'
-import { MediaDistributionChart } from '@/components/dashboard/MediaDistributionChart'
 import { ActivityFeed } from '@/components/dashboard/ActivityFeed'
+
+// Lazy-loaded chart component (pulls in heavy recharts library)
+const MediaDistributionChart = lazy(() => import('@/components/dashboard/MediaDistributionChart').then(m => ({ default: m.MediaDistributionChart })))
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card'
 import { Button } from '@/components/ui/Button'
 import { mediaApi, entityApi } from '@/lib/mediaApi'
@@ -445,10 +447,12 @@ export const Dashboard: React.FC = () => {
           animate={{ opacity: 1, x: 0 }}
           transition={{ delay: 0.2 }}
         >
-          <MediaDistributionChart
-            data={mediaStats?.by_type}
-            loading={mediaLoading}
-          />
+          <Suspense fallback={<div className="h-80 bg-gray-100 dark:bg-gray-800 rounded-lg animate-pulse" />}>
+            <MediaDistributionChart
+              data={mediaStats?.by_type}
+              loading={mediaLoading}
+            />
+          </Suspense>
         </motion.div>
 
         {/* System Status */}

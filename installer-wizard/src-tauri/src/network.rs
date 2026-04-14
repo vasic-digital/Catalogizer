@@ -322,4 +322,183 @@ mod tests {
         // /24 network has 256 addresses (0-255)
         assert_eq!(network.iter().count(), 256);
     }
+
+    #[test]
+    fn test_ipv4_network_smaller_subnet() {
+        let ip = Ipv4Addr::new(10, 0, 0, 0);
+        let network = ipnetwork::Ipv4Network::new(ip, 28).unwrap();
+        // /28 network has 16 addresses
+        assert_eq!(network.iter().count(), 16);
+    }
+
+    #[test]
+    fn test_ipv4_network_single_host() {
+        let ip = Ipv4Addr::new(10, 0, 0, 1);
+        let network = ipnetwork::Ipv4Network::new(ip, 32).unwrap();
+        assert_eq!(network.iter().count(), 1);
+    }
+
+    #[test]
+    fn test_network_host_struct_creation() {
+        let host = NetworkHost {
+            ip: "192.168.1.10".to_string(),
+            hostname: Some("server".to_string()),
+            mac_address: Some("AA:BB:CC:DD:EE:FF".to_string()),
+            vendor: Some("Test Vendor".to_string()),
+            open_ports: vec![22, 80, 445],
+            smb_shares: vec!["public".to_string()],
+        };
+
+        assert_eq!(host.ip, "192.168.1.10");
+        assert_eq!(host.hostname, Some("server".to_string()));
+        assert_eq!(host.open_ports.len(), 3);
+        assert_eq!(host.smb_shares.len(), 1);
+    }
+
+    #[test]
+    fn test_network_host_with_no_services() {
+        let host = NetworkHost {
+            ip: "10.0.0.50".to_string(),
+            hostname: None,
+            mac_address: None,
+            vendor: None,
+            open_ports: vec![],
+            smb_shares: vec![],
+        };
+
+        assert!(host.hostname.is_none());
+        assert!(host.mac_address.is_none());
+        assert!(host.vendor.is_none());
+        assert!(host.open_ports.is_empty());
+        assert!(host.smb_shares.is_empty());
+    }
+
+    #[test]
+    fn test_smb_port_detection_logic() {
+        let open_ports_with_smb = vec![22, 80, 139, 443, 445];
+        let has_smb = open_ports_with_smb.contains(&445) || open_ports_with_smb.contains(&139);
+        assert!(has_smb);
+
+        let open_ports_without_smb = vec![22, 80, 443];
+        let has_smb =
+            open_ports_without_smb.contains(&445) || open_ports_without_smb.contains(&139);
+        assert!(!has_smb);
+    }
+
+    #[test]
+    fn test_smb_port_139_only() {
+        let open_ports = vec![139];
+        let has_smb = open_ports.contains(&445) || open_ports.contains(&139);
+        assert!(has_smb);
+    }
+
+    #[test]
+    fn test_hosts_dedup_by_ip() {
+        let mut hosts = vec![
+            NetworkHost {
+                ip: "192.168.1.1".to_string(),
+                hostname: Some("first".to_string()),
+                mac_address: None,
+                vendor: None,
+                open_ports: vec![],
+                smb_shares: vec![],
+            },
+            NetworkHost {
+                ip: "192.168.1.1".to_string(),
+                hostname: Some("duplicate".to_string()),
+                mac_address: None,
+                vendor: None,
+                open_ports: vec![],
+                smb_shares: vec![],
+            },
+            NetworkHost {
+                ip: "192.168.1.2".to_string(),
+                hostname: None,
+                mac_address: None,
+                vendor: None,
+                open_ports: vec![],
+                smb_shares: vec![],
+            },
+        ];
+
+        hosts.sort_by(|a, b| a.ip.cmp(&b.ip));
+        hosts.dedup_by(|a, b| a.ip == b.ip);
+
+        assert_eq!(hosts.len(), 2);
+        assert_eq!(hosts[0].ip, "192.168.1.1");
+        assert_eq!(hosts[1].ip, "192.168.1.2");
+    }
+
+    #[test]
+    fn test_hosts_sort_by_ip() {
+        let mut hosts = vec![
+            NetworkHost {
+                ip: "192.168.1.100".to_string(),
+                hostname: None,
+                mac_address: None,
+                vendor: None,
+                open_ports: vec![],
+                smb_shares: vec![],
+            },
+            NetworkHost {
+                ip: "192.168.1.1".to_string(),
+                hostname: None,
+                mac_address: None,
+                vendor: None,
+                open_ports: vec![],
+                smb_shares: vec![],
+            },
+        ];
+
+        hosts.sort_by(|a, b| a.ip.cmp(&b.ip));
+        assert_eq!(hosts[0].ip, "192.168.1.1");
+        assert_eq!(hosts[1].ip, "192.168.1.100");
+    }
+
+    #[test]
+    fn test_mac_address_format_validation() {
+        let valid_mac = "AA:BB:CC:DD:EE:FF";
+        assert!(valid_mac.contains(':'));
+        assert_eq!(valid_mac.len(), 17);
+
+        let invalid_mac = "AABBCCDDEEFF";
+        assert!(!invalid_mac.contains(':') || invalid_mac.len() != 17);
+    }
+
+    #[test]
+    fn test_arp_output_parsing_logic() {
+        let arp_line = "192.168.1.1      ether   aa:bb:cc:dd:ee:ff   C                     eth0";
+        let ip_str = "192.168.1.1";
+
+        assert!(arp_line.contains(ip_str));
+
+        let parts: Vec<&str> = arp_line.split_whitespace().collect();
+        assert!(parts.len() >= 3);
+        let mac = parts[2];
+        assert!(mac.contains(':'));
+        assert_eq!(mac.len(), 17);
+    }
+
+    #[test]
+    fn test_ping_command_arguments() {
+        let ip = Ipv4Addr::new(127, 0, 0, 1);
+        let ip_string = ip.to_string();
+        assert_eq!(ip_string, "127.0.0.1");
+    }
+
+    #[tokio::test]
+    async fn test_scan_smb_shares_returns_seven_common() {
+        let ip = Ipv4Addr::new(10, 0, 0, 1);
+        let result = scan_smb_shares_for_host(ip).await;
+        assert!(result.is_ok());
+        let shares = result.unwrap();
+        assert_eq!(shares.len(), 7);
+    }
+
+    #[test]
+    fn test_semaphore_permit_count() {
+        assert_eq!(MAX_CONCURRENT_SCANS, 32);
+        let semaphore = Arc::new(Semaphore::new(MAX_CONCURRENT_SCANS));
+        assert_eq!(semaphore.available_permits(), 32);
+    }
 }

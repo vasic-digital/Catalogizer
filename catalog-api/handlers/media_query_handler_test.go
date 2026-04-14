@@ -650,7 +650,10 @@ func TestChangePassword(t *testing.T) {
 }
 
 func TestGetInitStatus(t *testing.T) {
-	handler := NewStubHandler()
+	db, cleanup := setupMediaQueryTestDB(t)
+	defer cleanup()
+
+	handler, _, _ := setupMediaQueryHandler(t, db)
 
 	gin.SetMode(gin.TestMode)
 	w := httptest.NewRecorder()

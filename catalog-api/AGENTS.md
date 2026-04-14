@@ -92,7 +92,7 @@ If you add a new route:
 - Register it in `main.go`'s `setupRouter()` (or the appropriate route group helper).
 - Add a unit test in `handlers/` or `internal/handlers/` that hits the route via `httptest.Server`.
 - If the route needs auth, wrap with the existing `authMiddleware` — do not hand-roll auth checks inside the handler.
-- If the route is rate-limited, use `middleware.AdvancedRateLimit(...)` — its cleanup goroutine auto-registers with `StopAll()`.
+- If the route is rate-limited, use per-route rate limiting configured in `main.go` or `middleware.RedisRateLimit(...)` for Redis-backed limiting.
 
 ### 3. Concurrency & goroutines
 

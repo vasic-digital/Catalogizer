@@ -75,6 +75,7 @@ log_section "Checking Security Tools"
 check_tool "snyk" || true
 check_tool "trivy" || true
 check_tool "gosec" || true
+check_tool "govulncheck" || true
 check_tool "nancy" || true
 check_tool "npm" || true
 check_tool "go" || true
@@ -257,6 +258,32 @@ EOF
     echo "" >> "$REPORT_FILE"
 }
 
+# Function to run govulncheck
+run_govulncheck() {
+    log_section "Running govulncheck"
+
+    cat >> "$REPORT_FILE" <<EOF
+## govulncheck Go Vulnerability Scan
+
+### Scanning catalog-api
+
+EOF
+
+    cd "$ROOT_DIR/catalog-api"
+
+    if govulncheck ./... 2>&1 | tee "$REPORT_DIR/govulncheck-$TIMESTAMP.txt"; then
+        log_info "govulncheck: No vulnerabilities found"
+        echo "✅ **No known Go vulnerabilities found**" >> "$REPORT_FILE"
+    else
+        log_warn "govulncheck: Vulnerabilities detected"
+        echo "⚠️ **Go vulnerabilities detected** (see detailed report)" >> "$REPORT_FILE"
+    fi
+
+    echo "" >> "$REPORT_FILE"
+    echo "---" >> "$REPORT_FILE"
+    echo "" >> "$REPORT_FILE"
+}
+
 # Function to run npm audit
 run_npm_audit() {
     log_section "Running npm audit"
@@ -317,6 +344,9 @@ for tool in "${AVAILABLE_TOOLS[@]}"; do
         gosec)
             run_gosec
             ;;
+        govulncheck)
+            run_govulncheck
+            ;;
         nancy)
             run_nancy
             ;;
@@ -359,6 +389,9 @@ if [ ${#MISSING_TOOLS[@]} -gt 0 ]; then
                 ;;
             gosec)
                 echo "- **Gosec**: \`go install github.com/securego/gosec/v2/cmd/gosec@latest\` - Go security checker" >> "$REPORT_FILE"
+                ;;
+            govulncheck)
+                echo "- **govulncheck**: \`go install golang.org/x/vuln/cmd/govulncheck@latest\` - Official Go vulnerability scanner" >> "$REPORT_FILE"
                 ;;
             nancy)
                 echo "- **Nancy**: \`go install github.com/sonatype-nexus-community/nancy@latest\` - Go dependency vulnerability scanner" >> "$REPORT_FILE"

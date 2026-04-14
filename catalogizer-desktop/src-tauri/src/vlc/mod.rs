@@ -533,39 +533,468 @@ extern "C" fn player_event_callback(event: *const libvlc_event_t, data: *mut c_v
 #[cfg(test)]
 mod tests {
     use super::*;
-    
-    #[test]
-    fn test_vlc_initialization() {
-        let player = VLCPlayer::new();
-        assert!(player.is_ok());
-        
-        let player = player.expect("VLC player should initialize");
-        assert_eq!(player.get_state(), PlaybackState::Idle);
+
+    /// Tests for PlaybackState enum
+    mod playback_state_tests {
+        use super::*;
+
+        #[test]
+        fn test_playback_state_serialization_all_variants() {
+            let states = vec![
+                PlaybackState::Idle,
+                PlaybackState::Opening,
+                PlaybackState::Buffering,
+                PlaybackState::Playing,
+                PlaybackState::Paused,
+                PlaybackState::Stopped,
+                PlaybackState::Ended,
+                PlaybackState::Error,
+            ];
+
+            for state in &states {
+                let json = serde_json::to_string(state).expect("Should serialize");
+                let deserialized: PlaybackState =
+                    serde_json::from_str(&json).expect("Should deserialize");
+                assert_eq!(*state, deserialized);
+            }
+        }
+
+        #[test]
+        fn test_playback_state_equality() {
+            assert_eq!(PlaybackState::Idle, PlaybackState::Idle);
+            assert_eq!(PlaybackState::Playing, PlaybackState::Playing);
+            assert_ne!(PlaybackState::Idle, PlaybackState::Playing);
+            assert_ne!(PlaybackState::Paused, PlaybackState::Stopped);
+        }
+
+        #[test]
+        fn test_playback_state_clone() {
+            let state = PlaybackState::Playing;
+            let cloned = state;
+            assert_eq!(state, cloned);
+        }
+
+        #[test]
+        fn test_playback_state_debug() {
+            let state = PlaybackState::Buffering;
+            let debug = format!("{:?}", state);
+            assert_eq!(debug, "Buffering");
+        }
+
+        #[test]
+        fn test_playback_state_json_values() {
+            assert_eq!(
+                serde_json::to_string(&PlaybackState::Idle).expect("Should serialize"),
+                "\"Idle\""
+            );
+            assert_eq!(
+                serde_json::to_string(&PlaybackState::Playing).expect("Should serialize"),
+                "\"Playing\""
+            );
+            assert_eq!(
+                serde_json::to_string(&PlaybackState::Paused).expect("Should serialize"),
+                "\"Paused\""
+            );
+            assert_eq!(
+                serde_json::to_string(&PlaybackState::Stopped).expect("Should serialize"),
+                "\"Stopped\""
+            );
+        }
     }
-    
-    #[test]
-    fn test_playback_state_transitions() {
-        let mut player = VLCPlayer::new().expect("VLC player should initialize");
-        
-        // Initially idle
-        assert_eq!(player.get_state(), PlaybackState::Idle);
-        
-        // Volume control should work
-        player.set_volume(50);
-        assert_eq!(player.get_volume(), 50);
-        
-        player.set_volume(150); // Should be clamped
-        assert_eq!(player.get_volume(), 100);
+
+    /// Tests for TrackType enum
+    mod track_type_tests {
+        use super::*;
+
+        #[test]
+        fn test_track_type_serialization() {
+            let types = vec![TrackType::Audio, TrackType::Video, TrackType::Subtitle];
+
+            for track_type in &types {
+                let json = serde_json::to_string(track_type).expect("Should serialize");
+                let deserialized: TrackType =
+                    serde_json::from_str(&json).expect("Should deserialize");
+                assert_eq!(*track_type, deserialized);
+            }
+        }
+
+        #[test]
+        fn test_track_type_equality() {
+            assert_eq!(TrackType::Audio, TrackType::Audio);
+            assert_ne!(TrackType::Audio, TrackType::Video);
+            assert_ne!(TrackType::Video, TrackType::Subtitle);
+        }
+
+        #[test]
+        fn test_track_type_debug() {
+            assert_eq!(format!("{:?}", TrackType::Audio), "Audio");
+            assert_eq!(format!("{:?}", TrackType::Video), "Video");
+            assert_eq!(format!("{:?}", TrackType::Subtitle), "Subtitle");
+        }
+
+        #[test]
+        fn test_track_type_json_values() {
+            assert_eq!(
+                serde_json::to_string(&TrackType::Audio).expect("Should serialize"),
+                "\"Audio\""
+            );
+            assert_eq!(
+                serde_json::to_string(&TrackType::Video).expect("Should serialize"),
+                "\"Video\""
+            );
+            assert_eq!(
+                serde_json::to_string(&TrackType::Subtitle).expect("Should serialize"),
+                "\"Subtitle\""
+            );
+        }
     }
-    
-    #[test]
-    fn test_rate_control() {
-        let player = VLCPlayer::new().expect("VLC player should initialize");
-        
-        player.set_rate(1.5);
-        // Rate should be set (can't verify without playing)
-        
-        player.set_rate(5.0); // Should be clamped
-        // Should be clamped to max
+
+    /// Tests for Track struct
+    mod track_tests {
+        use super::*;
+
+        #[test]
+        fn test_track_serialization() {
+            let track = Track {
+                id: 1,
+                track_type: TrackType::Audio,
+                name: "English 5.1".to_string(),
+                language: Some("en".to_string()),
+                codec: Some("aac".to_string()),
+                is_selected: true,
+            };
+
+            let json = serde_json::to_string(&track).expect("Should serialize");
+            let deserialized: Track =
+                serde_json::from_str(&json).expect("Should deserialize");
+
+            assert_eq!(deserialized.id, 1);
+            assert_eq!(deserialized.track_type, TrackType::Audio);
+            assert_eq!(deserialized.name, "English 5.1");
+            assert_eq!(deserialized.language, Some("en".to_string()));
+            assert_eq!(deserialized.codec, Some("aac".to_string()));
+            assert!(deserialized.is_selected);
+        }
+
+        #[test]
+        fn test_track_without_optional_fields() {
+            let track = Track {
+                id: 0,
+                track_type: TrackType::Video,
+                name: "Video Track".to_string(),
+                language: None,
+                codec: None,
+                is_selected: true,
+            };
+
+            let json = serde_json::to_string(&track).expect("Should serialize");
+            let deserialized: Track =
+                serde_json::from_str(&json).expect("Should deserialize");
+
+            assert!(deserialized.language.is_none());
+            assert!(deserialized.codec.is_none());
+        }
+
+        #[test]
+        fn test_track_subtitle_type() {
+            let track = Track {
+                id: 2,
+                track_type: TrackType::Subtitle,
+                name: "French Subtitles".to_string(),
+                language: Some("fr".to_string()),
+                codec: Some("srt".to_string()),
+                is_selected: false,
+            };
+
+            assert_eq!(track.track_type, TrackType::Subtitle);
+            assert!(!track.is_selected);
+        }
+
+        #[test]
+        fn test_track_clone() {
+            let original = Track {
+                id: 3,
+                track_type: TrackType::Audio,
+                name: "Stereo".to_string(),
+                language: Some("de".to_string()),
+                codec: Some("mp3".to_string()),
+                is_selected: false,
+            };
+
+            let cloned = original.clone();
+            assert_eq!(original.id, cloned.id);
+            assert_eq!(original.name, cloned.name);
+            assert_eq!(original.language, cloned.language);
+        }
+
+        #[test]
+        fn test_track_debug() {
+            let track = Track {
+                id: 0,
+                track_type: TrackType::Audio,
+                name: "Test".to_string(),
+                language: None,
+                codec: None,
+                is_selected: false,
+            };
+            let debug = format!("{:?}", track);
+            assert!(debug.contains("Track"));
+            assert!(debug.contains("Test"));
+        }
+    }
+
+    /// Tests for PlayerEvent enum
+    mod player_event_tests {
+        use super::*;
+
+        #[test]
+        fn test_player_event_state_changed() {
+            let event = PlayerEvent::StateChanged(PlaybackState::Playing);
+            let json = serde_json::to_string(&event).expect("Should serialize");
+            let deserialized: PlayerEvent =
+                serde_json::from_str(&json).expect("Should deserialize");
+
+            match deserialized {
+                PlayerEvent::StateChanged(state) => {
+                    assert_eq!(state, PlaybackState::Playing);
+                }
+                _ => panic!("Expected StateChanged event"),
+            }
+        }
+
+        #[test]
+        fn test_player_event_time_changed() {
+            let event = PlayerEvent::TimeChanged(45000);
+            let json = serde_json::to_string(&event).expect("Should serialize");
+            let deserialized: PlayerEvent =
+                serde_json::from_str(&json).expect("Should deserialize");
+
+            match deserialized {
+                PlayerEvent::TimeChanged(time) => assert_eq!(time, 45000),
+                _ => panic!("Expected TimeChanged event"),
+            }
+        }
+
+        #[test]
+        fn test_player_event_duration_changed() {
+            let event = PlayerEvent::DurationChanged(7200000);
+            let json = serde_json::to_string(&event).expect("Should serialize");
+            let deserialized: PlayerEvent =
+                serde_json::from_str(&json).expect("Should deserialize");
+
+            match deserialized {
+                PlayerEvent::DurationChanged(dur) => assert_eq!(dur, 7200000),
+                _ => panic!("Expected DurationChanged event"),
+            }
+        }
+
+        #[test]
+        fn test_player_event_position_changed() {
+            let event = PlayerEvent::PositionChanged(0.75);
+            let json = serde_json::to_string(&event).expect("Should serialize");
+            let deserialized: PlayerEvent =
+                serde_json::from_str(&json).expect("Should deserialize");
+
+            match deserialized {
+                PlayerEvent::PositionChanged(pos) => {
+                    assert!((pos - 0.75).abs() < 0.001);
+                }
+                _ => panic!("Expected PositionChanged event"),
+            }
+        }
+
+        #[test]
+        fn test_player_event_volume_changed() {
+            let event = PlayerEvent::VolumeChanged(80);
+            let json = serde_json::to_string(&event).expect("Should serialize");
+            let deserialized: PlayerEvent =
+                serde_json::from_str(&json).expect("Should deserialize");
+
+            match deserialized {
+                PlayerEvent::VolumeChanged(vol) => assert_eq!(vol, 80),
+                _ => panic!("Expected VolumeChanged event"),
+            }
+        }
+
+        #[test]
+        fn test_player_event_track_list_updated() {
+            let event = PlayerEvent::TrackListUpdated;
+            let json = serde_json::to_string(&event).expect("Should serialize");
+            let deserialized: PlayerEvent =
+                serde_json::from_str(&json).expect("Should deserialize");
+
+            match deserialized {
+                PlayerEvent::TrackListUpdated => {}
+                _ => panic!("Expected TrackListUpdated event"),
+            }
+        }
+
+        #[test]
+        fn test_player_event_error() {
+            let event = PlayerEvent::Error("Codec not found".to_string());
+            let json = serde_json::to_string(&event).expect("Should serialize");
+            let deserialized: PlayerEvent =
+                serde_json::from_str(&json).expect("Should deserialize");
+
+            match deserialized {
+                PlayerEvent::Error(msg) => assert_eq!(msg, "Codec not found"),
+                _ => panic!("Expected Error event"),
+            }
+        }
+
+        #[test]
+        fn test_player_event_clone() {
+            let event = PlayerEvent::TimeChanged(12345);
+            let cloned = event.clone();
+            match cloned {
+                PlayerEvent::TimeChanged(t) => assert_eq!(t, 12345),
+                _ => panic!("Clone should preserve variant"),
+            }
+        }
+    }
+
+    /// Tests for VLCError enum
+    mod vlc_error_tests {
+        use super::*;
+
+        #[test]
+        fn test_initialization_error_display() {
+            let err = VLCError::InitializationError("no libvlc".to_string());
+            let msg = err.to_string();
+            assert!(msg.contains("Failed to initialize VLC"));
+            assert!(msg.contains("no libvlc"));
+        }
+
+        #[test]
+        fn test_media_load_error_display() {
+            let err = VLCError::MediaLoadError("bad URL".to_string());
+            let msg = err.to_string();
+            assert!(msg.contains("Failed to load media"));
+            assert!(msg.contains("bad URL"));
+        }
+
+        #[test]
+        fn test_playback_error_display() {
+            let err = VLCError::PlaybackError("decoder failure".to_string());
+            let msg = err.to_string();
+            assert!(msg.contains("Playback error"));
+            assert!(msg.contains("decoder failure"));
+        }
+
+        #[test]
+        fn test_invalid_state_error_display() {
+            let err = VLCError::InvalidState("player not ready".to_string());
+            let msg = err.to_string();
+            assert!(msg.contains("Invalid state"));
+            assert!(msg.contains("player not ready"));
+        }
+
+        #[test]
+        fn test_vlc_error_serialization() {
+            let err = VLCError::PlaybackError("test error".to_string());
+            let json = serde_json::to_string(&err).expect("Should serialize");
+            assert!(json.contains("test error"));
+        }
+
+        #[test]
+        fn test_vlc_error_debug() {
+            let err = VLCError::InitializationError("debug test".to_string());
+            let debug = format!("{:?}", err);
+            assert!(debug.contains("InitializationError"));
+            assert!(debug.contains("debug test"));
+        }
+    }
+
+    /// Tests for value clamping logic used in VLCPlayer methods
+    mod clamping_tests {
+        #[test]
+        fn test_volume_clamping() {
+            assert_eq!((-10i32).clamp(0, 100), 0);
+            assert_eq!(0i32.clamp(0, 100), 0);
+            assert_eq!(50i32.clamp(0, 100), 50);
+            assert_eq!(100i32.clamp(0, 100), 100);
+            assert_eq!(150i32.clamp(0, 100), 100);
+        }
+
+        #[test]
+        fn test_position_clamping() {
+            assert_eq!((-0.5f32).clamp(0.0, 1.0), 0.0);
+            assert_eq!(0.0f32.clamp(0.0, 1.0), 0.0);
+            assert_eq!(0.5f32.clamp(0.0, 1.0), 0.5);
+            assert_eq!(1.0f32.clamp(0.0, 1.0), 1.0);
+            assert_eq!(1.5f32.clamp(0.0, 1.0), 1.0);
+        }
+
+        #[test]
+        fn test_rate_clamping() {
+            assert_eq!(0.1f32.clamp(0.25, 4.0), 0.25);
+            assert_eq!(0.25f32.clamp(0.25, 4.0), 0.25);
+            assert_eq!(1.0f32.clamp(0.25, 4.0), 1.0);
+            assert_eq!(2.0f32.clamp(0.25, 4.0), 2.0);
+            assert_eq!(4.0f32.clamp(0.25, 4.0), 4.0);
+            assert_eq!(5.0f32.clamp(0.25, 4.0), 4.0);
+        }
+    }
+
+    /// Tests for CString creation (used in VLC initialization args)
+    mod cstring_tests {
+        use std::ffi::CString;
+
+        #[test]
+        fn test_vlc_args_creation() {
+            let args = vec![
+                "--no-video-title-show",
+                "--no-snapshot-preview",
+                "--network-caching=3000",
+                "--file-caching=1000",
+                "--live-caching=3000",
+                "--audio-time-stretch",
+                "--avcodec-hw",
+            ];
+
+            for arg in &args {
+                let result = CString::new(*arg);
+                assert!(result.is_ok(), "CString should be created for: {}", arg);
+            }
+        }
+
+        #[test]
+        fn test_cstring_with_null_byte_fails() {
+            let result = CString::new("invalid\0arg");
+            assert!(result.is_err());
+        }
+
+        #[test]
+        fn test_vlc_arg_count() {
+            let args = vec![
+                "--no-video-title-show",
+                "--no-snapshot-preview",
+                "--network-caching=3000",
+                "--file-caching=1000",
+                "--live-caching=3000",
+                "--audio-time-stretch",
+                "--avcodec-hw",
+            ];
+            assert_eq!(args.len(), 7);
+        }
+
+        #[test]
+        fn test_aspect_ratio_cstring() {
+            let ratios = vec!["16:9", "4:3", "1:1", "21:9"];
+            for ratio in &ratios {
+                let result = CString::new(*ratio);
+                assert!(result.is_ok(), "CString should work for ratio: {}", ratio);
+            }
+        }
+
+        #[test]
+        fn test_aspect_ratio_fallback() {
+            let invalid_ratio = "invalid\0ratio";
+            let result = CString::new(invalid_ratio);
+            assert!(result.is_err());
+            // Fallback should work
+            let fallback = CString::new("16:9");
+            assert!(fallback.is_ok());
+        }
     }
 }

@@ -1,4 +1,4 @@
-# Catalogizer v3.0 - Installation & Setup Guide
+# Catalogizer - Installation & Setup Guide
 
 ![Installation Wizard](screenshots/wizard/welcome-step.png)
 *Welcome screen of the Catalogizer installation wizard*

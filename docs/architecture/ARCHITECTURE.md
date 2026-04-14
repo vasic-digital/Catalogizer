@@ -1083,3 +1083,22 @@ func main() {
 - [WebSocket Events](../api/WEBSOCKET_EVENTS.md) - Real-time event bus documentation
 - [Deployment Guide](../DEPLOYMENT_GUIDE.md) - Production deployment instructions
 - [Monitoring Guide](../deployment/MONITORING_GUIDE.md) - Metrics and observability
+- [SQL Migration Reference](../database/SQL_MIGRATION_REFERENCE.md) - All 15 migrations with complete schema
+- [Performance Tuning](../guides/PERFORMANCE_TUNING.md) - Database, cache, HTTP/3, rate limiting tuning
+
+### Mermaid Diagram Files
+
+- [system-overview.mmd](system-overview.mmd) - System architecture
+- [database-erd.mmd](database-erd.mmd) - Entity Relationship Diagram
+- [api-request-flow.mmd](api-request-flow.mmd) - API request lifecycle
+- [auth-flow.mmd](auth-flow.mmd) - Authentication flow
+- [media-pipeline.mmd](media-pipeline.mmd) - Media detection pipeline
+- [websocket-events.mmd](websocket-events.mmd) - WebSocket event flow
+- [build-pipeline.mmd](build-pipeline.mmd) - Build system pipeline
+- [challenge-system.mmd](challenge-system.mmd) - Challenge framework
+- [deployment-topology.mmd](deployment-topology.mmd) - Deployment layout
+- [android-architecture.mmd](android-architecture.mmd) - Android app architecture
+- [security-scanning-pipeline.mmd](security-scanning-pipeline.mmd) - Security tool pipeline
+- [lazy-initialization-flow.mmd](lazy-initialization-flow.mmd) - Lazy service initialization
+- [semaphore-control-flow.mmd](semaphore-control-flow.mmd) - Concurrency semaphore controls
+- [test-coverage-matrix.mmd](test-coverage-matrix.mmd) - Article V test coverage matrix

@@ -45,7 +45,9 @@ func (wf *wsFrame) sendText(msg string) error {
 }
 
 func (wf *wsFrame) readText(timeout time.Duration) (string, error) {
-	wf.conn.SetReadDeadline(time.Now().Add(timeout))
+	if err := wf.conn.SetReadDeadline(time.Now().Add(timeout)); err != nil {
+		return "", fmt.Errorf("set read deadline: %w", err)
+	}
 	header := make([]byte, 2)
 	if _, err := io.ReadFull(wf.conn, header); err != nil {
 		return "", err
@@ -68,11 +70,13 @@ func (wf *wsFrame) close() {
 	wf.conn.Close()
 }
 
-// setupWebSocketStressServer creates a minimal WebSocket echo server for stress testing
-func setupWebSocketStressServer(t *testing.T) *httptest.Server {
+// setupWebSocketStressServer creates a minimal WebSocket echo server for stress testing.
+// It tracks active connections and provides stats and broadcast endpoints.
+func setupWebSocketStressServer(t *testing.T) (*httptest.Server, *wsBroadcaster) {
 	t.Helper()
 
 	var activeConns int64
+	bc := newWSBroadcaster()
 
 	mux := http.NewServeMux()
 
@@ -97,7 +101,12 @@ func setupWebSocketStressServer(t *testing.T) *httptest.Server {
 			return
 		}
 		atomic.AddInt64(&activeConns, 1)
+
+		// Register with broadcaster
+		bc.register(conn)
+
 		defer func() {
+			bc.unregister(conn)
 			atomic.AddInt64(&activeConns, -1)
 			conn.Close()
 		}()
@@ -112,7 +121,9 @@ func setupWebSocketStressServer(t *testing.T) *httptest.Server {
 
 		// Echo loop
 		for {
-			conn.SetReadDeadline(time.Now().Add(30 * time.Second))
+			if err := conn.SetReadDeadline(time.Now().Add(30 * time.Second)); err != nil {
+				return
+			}
 			header := make([]byte, 2)
 			if _, err := io.ReadFull(conn, header); err != nil {
 				return
@@ -127,13 +138,17 @@ func setupWebSocketStressServer(t *testing.T) *httptest.Server {
 			length := int(header[1] & 0x7F)
 			if length == 126 {
 				ext := make([]byte, 2)
-				io.ReadFull(conn, ext)
+				if _, err := io.ReadFull(conn, ext); err != nil {
+					return
+				}
 				length = int(ext[0])<<8 | int(ext[1])
 			}
 
 			var maskKey [4]byte
 			if masked {
-				io.ReadFull(conn, maskKey[:])
+				if _, err := io.ReadFull(conn, maskKey[:]); err != nil {
+					return
+				}
 			}
 
 			payload := make([]byte, length)
@@ -172,8 +187,11 @@ func setupWebSocketStressServer(t *testing.T) *httptest.Server {
 	})
 
 	ts := httptest.NewServer(mux)
-	t.Cleanup(func() { ts.Close() })
-	return ts
+	t.Cleanup(func() {
+		bc.closeAll()
+		ts.Close()
+	})
+	return ts, bc
 }
 
 func computeAcceptKey(key string) string {
@@ -203,7 +221,9 @@ func dialWebSocket(t *testing.T, serverURL string) *wsFrame {
 	require.NoError(t, err, "Failed to send WebSocket upgrade request")
 
 	// Read upgrade response
-	conn.SetReadDeadline(time.Now().Add(5 * time.Second))
+	if err := conn.SetReadDeadline(time.Now().Add(5 * time.Second)); err != nil {
+		t.Fatalf("Failed to set read deadline: %v", err)
+	}
 	reader := bufio.NewReader(conn)
 	statusLine, err := reader.ReadString('\n')
 	require.NoError(t, err, "Failed to read upgrade response")
@@ -221,19 +241,81 @@ func dialWebSocket(t *testing.T, serverURL string) *wsFrame {
 	return &wsFrame{conn: conn}
 }
 
+// wsBroadcaster manages WebSocket connections for broadcast testing
+type wsBroadcaster struct {
+	mu    sync.Mutex
+	conns map[net.Conn]struct{}
+}
+
+func newWSBroadcaster() *wsBroadcaster {
+	return &wsBroadcaster{
+		conns: make(map[net.Conn]struct{}),
+	}
+}
+
+func (b *wsBroadcaster) register(conn net.Conn) {
+	b.mu.Lock()
+	defer b.mu.Unlock()
+	b.conns[conn] = struct{}{}
+}
+
+func (b *wsBroadcaster) unregister(conn net.Conn) {
+	b.mu.Lock()
+	defer b.mu.Unlock()
+	delete(b.conns, conn)
+}
+
+func (b *wsBroadcaster) broadcast(msg string) int {
+	b.mu.Lock()
+	targets := make([]net.Conn, 0, len(b.conns))
+	for c := range b.conns {
+		targets = append(targets, c)
+	}
+	b.mu.Unlock()
+
+	data := []byte(msg)
+	frame := make([]byte, 0, 2+len(data))
+	frame = append(frame, 0x81) // FIN + text
+	frame = append(frame, byte(len(data)))
+	frame = append(frame, data...)
+
+	var sent int
+	for _, c := range targets {
+		if _, err := c.Write(frame); err == nil {
+			sent++
+		}
+	}
+	return sent
+}
+
+func (b *wsBroadcaster) closeAll() {
+	b.mu.Lock()
+	defer b.mu.Unlock()
+	for c := range b.conns {
+		c.Close()
+	}
+	b.conns = make(map[net.Conn]struct{})
+}
+
+func (b *wsBroadcaster) count() int {
+	b.mu.Lock()
+	defer b.mu.Unlock()
+	return len(b.conns)
+}
+
 // =============================================================================
-// STRESS TEST: WebSocket Concurrent Connections
+// STRESS TEST: WebSocket Concurrent Connection Storm (100 simultaneous)
 // =============================================================================
 
-func TestWebSocketStress_ConcurrentConnections(t *testing.T) {
+func TestWebSocketStress_ConcurrentConnectionStorm(t *testing.T) {
 	if testing.Short() {
 		t.Skip("Skipping stress test in short mode")
 	}
 
-	ts := setupWebSocketStressServer(t)
+	ts, _ := setupWebSocketStressServer(t)
 
-	t.Run("50ConcurrentConnections", func(t *testing.T) {
-		connCount := 50
+	t.Run("100SimultaneousConnections", func(t *testing.T) {
+		connCount := 100
 		var connectedCount int64
 		var errorCount int64
 
@@ -252,7 +334,7 @@ func TestWebSocketStress_ConcurrentConnections(t *testing.T) {
 					return
 				}
 
-				key := base64.StdEncoding.EncodeToString([]byte(fmt.Sprintf("key-%d", idx)))
+				key := base64.StdEncoding.EncodeToString([]byte(fmt.Sprintf("storm-%d", idx)))
 				request := "GET /ws HTTP/1.1\r\n" +
 					"Host: " + addr + "\r\n" +
 					"Upgrade: websocket\r\n" +
@@ -266,7 +348,11 @@ func TestWebSocketStress_ConcurrentConnections(t *testing.T) {
 					return
 				}
 
-				conn.SetReadDeadline(time.Now().Add(5 * time.Second))
+				if setErr := conn.SetReadDeadline(time.Now().Add(5 * time.Second)); setErr != nil {
+					conn.Close()
+					atomic.AddInt64(&errorCount, 1)
+					return
+				}
 				reader := bufio.NewReader(conn)
 				statusLine, err := reader.ReadString('\n')
 				if err != nil || !strings.Contains(statusLine, "101") {
@@ -293,10 +379,11 @@ func TestWebSocketStress_ConcurrentConnections(t *testing.T) {
 
 		connected := atomic.LoadInt64(&connectedCount)
 		errors := atomic.LoadInt64(&errorCount)
-		t.Logf("Connected: %d/%d, Errors: %d", connected, connCount, errors)
-		assert.Greater(t, connected, int64(connCount*8/10), "At least 80% of connections should succeed")
+		t.Logf("Storm: connected %d/%d, errors %d", connected, connCount, errors)
+		assert.Greater(t, connected, int64(connCount*8/10),
+			"At least 80%% of connections should succeed in a storm")
 
-		// Send and receive on each connected client
+		// Verify each connected client can send and receive
 		var echoSuccess int64
 		for _, wf := range frames {
 			if wf == nil {
@@ -311,7 +398,8 @@ func TestWebSocketStress_ConcurrentConnections(t *testing.T) {
 				atomic.AddInt64(&echoSuccess, 1)
 			}
 		}
-		assert.Greater(t, echoSuccess, connected*8/10, "At least 80% of connected clients should echo")
+		assert.Greater(t, echoSuccess, connected*8/10,
+			"At least 80%% of connected clients should echo successfully")
 
 		// Cleanup
 		for _, wf := range frames {
@@ -323,36 +411,34 @@ func TestWebSocketStress_ConcurrentConnections(t *testing.T) {
 }
 
 // =============================================================================
-// STRESS TEST: WebSocket Message Throughput
+// STRESS TEST: WebSocket Rapid Message Sending (1000 messages/second target)
 // =============================================================================
 
-func TestWebSocketStress_MessageThroughput(t *testing.T) {
+func TestWebSocketStress_RapidMessageSending(t *testing.T) {
 	if testing.Short() {
 		t.Skip("Skipping stress test in short mode")
 	}
 
-	ts := setupWebSocketStressServer(t)
+	ts, _ := setupWebSocketStressServer(t)
 
-	t.Run("HighMessageRate", func(t *testing.T) {
+	t.Run("1000MessagesPerSecondTarget", func(t *testing.T) {
 		wf := dialWebSocket(t, ts.URL)
 		defer wf.close()
 
-		messageCount := 500
+		messageCount := 1000
 		var sentCount int64
 		var receivedCount int64
 
 		start := time.Now()
 
-		// Send all messages
 		for i := 0; i < messageCount; i++ {
-			msg := fmt.Sprintf("msg-%d", i)
+			msg := fmt.Sprintf("m%d", i)
 			err := wf.sendText(msg)
 			if err != nil {
 				break
 			}
 			atomic.AddInt64(&sentCount, 1)
 
-			// Read echo immediately after each send
 			response, err := wf.readText(3 * time.Second)
 			if err != nil {
 				break
@@ -365,110 +451,379 @@ func TestWebSocketStress_MessageThroughput(t *testing.T) {
 		elapsed := time.Since(start)
 		sent := atomic.LoadInt64(&sentCount)
 		received := atomic.LoadInt64(&receivedCount)
+		rate := float64(received) / elapsed.Seconds()
 
-		t.Logf("Sent: %d, Received: %d, Duration: %v, Rate: %.0f msg/s", sent, received, elapsed, float64(received)/elapsed.Seconds())
-		assert.Equal(t, sent, received, "All sent messages should be echoed back")
-		assert.Equal(t, int64(messageCount), sent, "All messages should be sent")
+		t.Logf("Rapid send: sent=%d, received=%d, duration=%v, rate=%.0f msg/s",
+			sent, received, elapsed, rate)
+		assert.Equal(t, sent, received,
+			"All sent messages should be echoed back")
+		assert.Equal(t, int64(messageCount), sent,
+			"All messages should be sent")
+		assert.Greater(t, rate, 100.0,
+			"Should sustain at least 100 msg/s echo throughput")
+	})
+
+	t.Run("BurstOf500ThenVerify", func(t *testing.T) {
+		wf := dialWebSocket(t, ts.URL)
+		defer wf.close()
+
+		// Send a burst of messages without reading immediately, then read all
+		burstSize := 50 // keep small enough for 125-byte frame limit
+		for i := 0; i < burstSize; i++ {
+			msg := fmt.Sprintf("b%d", i)
+			err := wf.sendText(msg)
+			require.NoError(t, err, "Burst send %d should succeed", i)
+		}
+
+		// Read all echoed responses
+		var received int
+		for i := 0; i < burstSize; i++ {
+			msg, err := wf.readText(5 * time.Second)
+			if err != nil {
+				break
+			}
+			expected := fmt.Sprintf("b%d", i)
+			if msg == expected {
+				received++
+			}
+		}
+
+		assert.Equal(t, burstSize, received,
+			"All burst messages should be echoed in order")
 	})
 }
 
 // =============================================================================
-// STRESS TEST: WebSocket Rapid Connect/Disconnect
+// STRESS TEST: WebSocket Connection Churn (rapid connect/disconnect cycles)
 // =============================================================================
 
-func TestWebSocketStress_RapidConnectDisconnect(t *testing.T) {
+func TestWebSocketStress_ConnectionChurn(t *testing.T) {
 	if testing.Short() {
 		t.Skip("Skipping stress test in short mode")
 	}
 
-	ts := setupWebSocketStressServer(t)
+	ts, _ := setupWebSocketStressServer(t)
 
-	t.Run("100RapidCycles", func(t *testing.T) {
-		cycles := 100
+	t.Run("200RapidCycles", func(t *testing.T) {
+		cycles := 200
 		var successCount int64
 		var errorCount int64
 
 		var wg sync.WaitGroup
-		for i := 0; i < cycles; i++ {
-			wg.Add(1)
-			go func(idx int) {
-				defer wg.Done()
+		// Run in batches of 50 to avoid fd exhaustion
+		batchSize := 50
+		for batchStart := 0; batchStart < cycles; batchStart += batchSize {
+			batchEnd := batchStart + batchSize
+			if batchEnd > cycles {
+				batchEnd = cycles
+			}
+			for i := batchStart; i < batchEnd; i++ {
+				wg.Add(1)
+				go func(idx int) {
+					defer wg.Done()
 
-				addr := strings.TrimPrefix(ts.URL, "http://")
-				conn, err := net.DialTimeout("tcp", addr, 5*time.Second)
-				if err != nil {
-					atomic.AddInt64(&errorCount, 1)
-					return
-				}
-
-				key := base64.StdEncoding.EncodeToString([]byte(fmt.Sprintf("rapid-%d", idx)))
-				request := "GET /ws HTTP/1.1\r\n" +
-					"Host: " + addr + "\r\n" +
-					"Upgrade: websocket\r\n" +
-					"Connection: Upgrade\r\n" +
-					"Sec-WebSocket-Key: " + key + "\r\n" +
-					"Sec-WebSocket-Version: 13\r\n\r\n"
-				conn.Write([]byte(request))
-
-				conn.SetReadDeadline(time.Now().Add(3 * time.Second))
-				reader := bufio.NewReader(conn)
-				statusLine, err := reader.ReadString('\n')
-				if err != nil || !strings.Contains(statusLine, "101") {
-					conn.Close()
-					atomic.AddInt64(&errorCount, 1)
-					return
-				}
-				// Drain headers
-				for {
-					line, _ := reader.ReadString('\n')
-					if strings.TrimSpace(line) == "" {
-						break
+					addr := strings.TrimPrefix(ts.URL, "http://")
+					conn, err := net.DialTimeout("tcp", addr, 5*time.Second)
+					if err != nil {
+						atomic.AddInt64(&errorCount, 1)
+						return
 					}
-				}
 
-				wf := &wsFrame{conn: conn}
-				err = wf.sendText("hello")
-				if err != nil {
-					conn.Close()
-					atomic.AddInt64(&errorCount, 1)
-					return
-				}
+					key := base64.StdEncoding.EncodeToString([]byte(fmt.Sprintf("churn-%d", idx)))
+					request := "GET /ws HTTP/1.1\r\n" +
+						"Host: " + addr + "\r\n" +
+						"Upgrade: websocket\r\n" +
+						"Connection: Upgrade\r\n" +
+						"Sec-WebSocket-Key: " + key + "\r\n" +
+						"Sec-WebSocket-Version: 13\r\n\r\n"
+					conn.Write([]byte(request))
 
-				msg, err := wf.readText(3 * time.Second)
-				if err != nil || msg != "hello" {
-					conn.Close()
-					atomic.AddInt64(&errorCount, 1)
-					return
-				}
+					if setErr := conn.SetReadDeadline(time.Now().Add(3 * time.Second)); setErr != nil {
+						conn.Close()
+						atomic.AddInt64(&errorCount, 1)
+						return
+					}
+					reader := bufio.NewReader(conn)
+					statusLine, err := reader.ReadString('\n')
+					if err != nil || !strings.Contains(statusLine, "101") {
+						conn.Close()
+						atomic.AddInt64(&errorCount, 1)
+						return
+					}
+					// Drain headers
+					for {
+						line, _ := reader.ReadString('\n')
+						if strings.TrimSpace(line) == "" {
+							break
+						}
+					}
 
-				wf.close()
-				atomic.AddInt64(&successCount, 1)
-			}(i)
+					wf := &wsFrame{conn: conn}
+					err = wf.sendText("churn")
+					if err != nil {
+						conn.Close()
+						atomic.AddInt64(&errorCount, 1)
+						return
+					}
+
+					msg, err := wf.readText(3 * time.Second)
+					if err != nil || msg != "churn" {
+						conn.Close()
+						atomic.AddInt64(&errorCount, 1)
+						return
+					}
+
+					wf.close()
+					atomic.AddInt64(&successCount, 1)
+				}(i)
+			}
+			wg.Wait()
 		}
-
-		wg.Wait()
 
 		success := atomic.LoadInt64(&successCount)
 		errors := atomic.LoadInt64(&errorCount)
-		t.Logf("Rapid connect/disconnect: %d success, %d errors", success, errors)
+		t.Logf("Connection churn: %d success, %d errors out of %d cycles",
+			success, errors, cycles)
 		successRate := float64(success) / float64(cycles) * 100
-		assert.Greater(t, successRate, 85.0, "Should complete >85% of rapid connect/disconnect cycles")
+		assert.Greater(t, successRate, 85.0,
+			"Should complete >85%% of rapid connect/disconnect cycles")
+	})
+
+	t.Run("SequentialChurnNoLeaks", func(t *testing.T) {
+		// Sequential connect-send-disconnect to verify no connection leaks
+		for i := 0; i < 50; i++ {
+			addr := strings.TrimPrefix(ts.URL, "http://")
+			conn, err := net.DialTimeout("tcp", addr, 5*time.Second)
+			require.NoError(t, err, "Cycle %d dial should succeed", i)
+
+			key := base64.StdEncoding.EncodeToString([]byte(fmt.Sprintf("seq-%d", i)))
+			request := "GET /ws HTTP/1.1\r\n" +
+				"Host: " + addr + "\r\n" +
+				"Upgrade: websocket\r\n" +
+				"Connection: Upgrade\r\n" +
+				"Sec-WebSocket-Key: " + key + "\r\n" +
+				"Sec-WebSocket-Version: 13\r\n\r\n"
+			conn.Write([]byte(request))
+
+			conn.SetReadDeadline(time.Now().Add(3 * time.Second))
+			reader := bufio.NewReader(conn)
+			statusLine, err := reader.ReadString('\n')
+			require.NoError(t, err)
+			require.Contains(t, statusLine, "101")
+
+			for {
+				line, _ := reader.ReadString('\n')
+				if strings.TrimSpace(line) == "" {
+					break
+				}
+			}
+
+			wf := &wsFrame{conn: conn}
+			require.NoError(t, wf.sendText("seq"))
+			msg, err := wf.readText(3 * time.Second)
+			require.NoError(t, err)
+			assert.Equal(t, "seq", msg)
+			wf.close()
+		}
+
+		// After all sequential cycles, check server health
+		resp, err := http.Get(ts.URL + "/health")
+		require.NoError(t, err)
+		defer resp.Body.Close()
+		assert.Equal(t, http.StatusOK, resp.StatusCode,
+			"Server should remain healthy after sequential churn")
 	})
 }
 
 // =============================================================================
-// STRESS TEST: WebSocket Concurrent Message Sending
+// STRESS TEST: WebSocket Message Broadcast Under Load
 // =============================================================================
 
-func TestWebSocketStress_ConcurrentSending(t *testing.T) {
+func TestWebSocketStress_BroadcastUnderLoad(t *testing.T) {
 	if testing.Short() {
 		t.Skip("Skipping stress test in short mode")
 	}
 
-	ts := setupWebSocketStressServer(t)
+	ts, bc := setupWebSocketStressServer(t)
 
-	t.Run("10ConnectionsSendingConcurrently", func(t *testing.T) {
-		connCount := 10
+	t.Run("BroadcastTo20Clients", func(t *testing.T) {
+		clientCount := 20
+
+		// Connect all clients
+		clients := make([]*wsFrame, clientCount)
+		for i := 0; i < clientCount; i++ {
+			clients[i] = dialWebSocket(t, ts.URL)
+		}
+
+		// Allow connections to register with broadcaster
+		time.Sleep(100 * time.Millisecond)
+
+		registeredCount := bc.count()
+		t.Logf("Registered %d clients with broadcaster", registeredCount)
+		assert.GreaterOrEqual(t, registeredCount, clientCount,
+			"All clients should be registered with broadcaster")
+
+		// Broadcast a message
+		broadcastMsg := "broadcast-test"
+		sent := bc.broadcast(broadcastMsg)
+		t.Logf("Broadcast sent to %d connections", sent)
+		assert.GreaterOrEqual(t, sent, clientCount,
+			"Broadcast should reach all registered clients")
+
+		// Read broadcast from each client
+		var receivedCount int64
+		var wg sync.WaitGroup
+		for i, client := range clients {
+			wg.Add(1)
+			go func(idx int, c *wsFrame) {
+				defer wg.Done()
+				msg, err := c.readText(3 * time.Second)
+				if err == nil && msg == broadcastMsg {
+					atomic.AddInt64(&receivedCount, 1)
+				}
+			}(i, client)
+		}
+		wg.Wait()
+
+		received := atomic.LoadInt64(&receivedCount)
+		t.Logf("Broadcast received by %d/%d clients", received, clientCount)
+		assert.GreaterOrEqual(t, received, int64(clientCount*8/10),
+			"At least 80%% of clients should receive the broadcast")
+
+		// Cleanup
+		for _, c := range clients {
+			c.close()
+		}
+	})
+
+	t.Run("RepeatedBroadcastsUnderLoad", func(t *testing.T) {
+		clientCount := 10
+		broadcastRounds := 5
+
+		clients := make([]*wsFrame, clientCount)
+		for i := 0; i < clientCount; i++ {
+			clients[i] = dialWebSocket(t, ts.URL)
+		}
+		defer func() {
+			for _, c := range clients {
+				c.close()
+			}
+		}()
+
+		time.Sleep(100 * time.Millisecond)
+
+		var totalReceived int64
+		expectedTotal := int64(clientCount * broadcastRounds)
+
+		for round := 0; round < broadcastRounds; round++ {
+			msg := fmt.Sprintf("round-%d", round)
+			bc.broadcast(msg)
+
+			var wg sync.WaitGroup
+			for _, client := range clients {
+				wg.Add(1)
+				go func(c *wsFrame) {
+					defer wg.Done()
+					received, err := c.readText(3 * time.Second)
+					if err == nil && received == msg {
+						atomic.AddInt64(&totalReceived, 1)
+					}
+				}(client)
+			}
+			wg.Wait()
+		}
+
+		received := atomic.LoadInt64(&totalReceived)
+		t.Logf("Repeated broadcast: received %d/%d total", received, expectedTotal)
+		assert.Greater(t, received, expectedTotal*7/10,
+			"At least 70%% of broadcast messages should be received across all rounds")
+	})
+}
+
+// =============================================================================
+// STRESS TEST: WebSocket Connection Cleanup Verification After Storm
+// =============================================================================
+
+func TestWebSocketStress_CleanupAfterStorm(t *testing.T) {
+	if testing.Short() {
+		t.Skip("Skipping stress test in short mode")
+	}
+
+	ts, bc := setupWebSocketStressServer(t)
+
+	t.Run("AllConnectionsReleasedAfterDisconnect", func(t *testing.T) {
+		stormSize := 50
+
+		// Connect a batch of clients
+		clients := make([]*wsFrame, stormSize)
+		for i := 0; i < stormSize; i++ {
+			clients[i] = dialWebSocket(t, ts.URL)
+		}
+
+		// Allow server to register all connections
+		time.Sleep(200 * time.Millisecond)
+
+		activeAfterConnect := bc.count()
+		t.Logf("Active connections after connect: %d", activeAfterConnect)
+		assert.GreaterOrEqual(t, activeAfterConnect, stormSize,
+			"All clients should be active after connecting")
+
+		// Verify server stats endpoint shows connections
+		resp, err := http.Get(ts.URL + "/ws/stats")
+		require.NoError(t, err)
+		body, err := io.ReadAll(resp.Body)
+		resp.Body.Close()
+		require.NoError(t, err)
+		t.Logf("Stats before cleanup: %s", string(body))
+
+		// Close all clients
+		for _, c := range clients {
+			c.close()
+		}
+
+		// Allow server cleanup goroutines to process disconnections
+		time.Sleep(500 * time.Millisecond)
+
+		activeAfterClose := bc.count()
+		t.Logf("Active connections after close: %d", activeAfterClose)
+		assert.LessOrEqual(t, activeAfterClose, 2,
+			"All connections should be cleaned up after close (allowing small margin for timing)")
+
+		// Verify server remains healthy
+		resp, err = http.Get(ts.URL + "/health")
+		require.NoError(t, err)
+		defer resp.Body.Close()
+		assert.Equal(t, http.StatusOK, resp.StatusCode,
+			"Server should be healthy after storm cleanup")
+	})
+
+	t.Run("NewConnectionsWorkAfterStormCleanup", func(t *testing.T) {
+		// After storm, verify new connections still work
+		wf := dialWebSocket(t, ts.URL)
+		defer wf.close()
+
+		err := wf.sendText("post-storm")
+		require.NoError(t, err)
+		msg, err := wf.readText(3 * time.Second)
+		require.NoError(t, err)
+		assert.Equal(t, "post-storm", msg,
+			"New connections should work after storm cleanup")
+	})
+}
+
+// =============================================================================
+// STRESS TEST: WebSocket Concurrent Message Sending (Multiple Connections)
+// =============================================================================
+
+func TestWebSocketStress_ConcurrentSendingMultipleConnections(t *testing.T) {
+	if testing.Short() {
+		t.Skip("Skipping stress test in short mode")
+	}
+
+	ts, _ := setupWebSocketStressServer(t)
+
+	t.Run("20ConnectionsSending50Each", func(t *testing.T) {
+		connCount := 20
 		messagesPerConn := 50
 		var totalSent int64
 		var totalReceived int64
@@ -537,8 +892,11 @@ func TestWebSocketStress_ConcurrentSending(t *testing.T) {
 		received := atomic.LoadInt64(&totalReceived)
 		expected := int64(connCount * messagesPerConn)
 
-		t.Logf("Concurrent sending: %d/%d sent, %d/%d received", sent, expected, received, expected)
-		assert.Greater(t, sent, expected*8/10, "At least 80% of messages should be sent")
-		assert.Equal(t, sent, received, "All sent messages should be echoed")
+		t.Logf("Concurrent sending: %d/%d sent, %d/%d received",
+			sent, expected, received, expected)
+		assert.Greater(t, sent, expected*8/10,
+			"At least 80%% of messages should be sent")
+		assert.Equal(t, sent, received,
+			"All sent messages should be echoed")
 	})
 }

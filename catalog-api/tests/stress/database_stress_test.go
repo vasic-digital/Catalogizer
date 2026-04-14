@@ -108,7 +108,7 @@ func (dsc *DatabaseStressContext) PrintStats(t *testing.T) {
 }
 
 // =============================================================================
-// STRESS TEST: Concurrent Database Reads
+// STRESS TEST: Concurrent Database Reads (50 goroutines)
 // =============================================================================
 
 func TestConcurrentDatabaseReads(t *testing.T) {
@@ -158,13 +158,13 @@ func TestConcurrentDatabaseReads(t *testing.T) {
 		dsc.PrintStats(t)
 
 		stats := dsc.GetStats()
-		assert.Greater(t, stats["success_rate"].(float64), 99.0, "Read operations should have >99% success")
+		assert.Greater(t, stats["success_rate"].(float64), 99.0, "Read operations should have >99%% success")
 		assert.Less(t, stats["avg_latency"].(time.Duration), 10*time.Millisecond, "Avg read latency should be <10ms")
 	})
 }
 
 // =============================================================================
-// STRESS TEST: Concurrent Database Writes
+// STRESS TEST: Concurrent Database Writes (50 goroutines)
 // =============================================================================
 
 func TestConcurrentDatabaseWrites(t *testing.T) {
@@ -214,7 +214,7 @@ func TestConcurrentDatabaseWrites(t *testing.T) {
 		dsc.PrintStats(t)
 
 		stats := dsc.GetStats()
-		assert.Greater(t, stats["success_rate"].(float64), 95.0, "Write operations should have >95% success")
+		assert.Greater(t, stats["success_rate"].(float64), 95.0, "Write operations should have >95%% success")
 		assert.Less(t, stats["avg_latency"].(time.Duration), 50*time.Millisecond, "Avg write latency should be <50ms")
 
 		// Verify all records were inserted
@@ -263,12 +263,12 @@ func TestConcurrentDatabaseWrites(t *testing.T) {
 		dsc.PrintStats(t)
 
 		stats := dsc.GetStats()
-		assert.Greater(t, stats["success_rate"].(float64), 95.0, "Update operations should have >95% success")
+		assert.Greater(t, stats["success_rate"].(float64), 95.0, "Update operations should have >95%% success")
 	})
 }
 
 // =============================================================================
-// STRESS TEST: Mixed Read/Write Workload
+// STRESS TEST: Mixed Read/Write Workload (70% reads, 30% writes)
 // =============================================================================
 
 func TestMixedReadWriteWorkload(t *testing.T) {
@@ -408,16 +408,16 @@ func TestMixedReadWriteWorkload(t *testing.T) {
 		dsc.PrintStats(t)
 
 		stats := dsc.GetStats()
-		assert.Greater(t, stats["success_rate"].(float64), 90.0, "Mixed workload should have >90% success")
+		assert.Greater(t, stats["success_rate"].(float64), 90.0, "Mixed workload should have >90%% success")
 		assert.Greater(t, stats["ops_per_sec"].(float64), 100.0, "Should handle >100 ops/sec")
 	})
 }
 
 // =============================================================================
-// STRESS TEST: Transaction Stress
+// STRESS TEST: Transaction Contention (multiple concurrent transactions)
 // =============================================================================
 
-func TestTransactionStress(t *testing.T) {
+func TestTransactionContention(t *testing.T) {
 	if testing.Short() {
 		t.Skip("Skipping stress test in short mode")
 	}
@@ -476,7 +476,7 @@ func TestTransactionStress(t *testing.T) {
 		dsc.PrintStats(t)
 
 		stats := dsc.GetStats()
-		assert.Greater(t, stats["success_rate"].(float64), 95.0, "Transactions should have >95% success")
+		assert.Greater(t, stats["success_rate"].(float64), 95.0, "Transactions should have >95%% success")
 
 		// Verify all transactions completed
 		var count int
@@ -485,20 +485,105 @@ func TestTransactionStress(t *testing.T) {
 		expectedCount := concurrentTxs * operationsPerTx
 		assert.Equal(t, expectedCount, count, "All transaction operations should complete")
 	})
+
+	t.Run("RollbackUnderContention", func(t *testing.T) {
+		// Test that rollback works correctly when transactions conflict
+		var rollbackCount int64
+		var commitCount int64
+
+		var wg sync.WaitGroup
+		for i := 0; i < 20; i++ {
+			wg.Add(1)
+			go func(txID int) {
+				defer wg.Done()
+
+				tx, err := dsc.DB.Begin()
+				if err != nil {
+					return
+				}
+
+				// Insert a record
+				_, err = tx.Exec(`
+					INSERT INTO files (storage_root_id, path, name, size, modified_at)
+					VALUES (1, ?, ?, ?, datetime('now'))
+				`, fmt.Sprintf("/rollback/tx%d.txt", txID), fmt.Sprintf("tx%d.txt", txID), 512)
+				if err != nil {
+					tx.Rollback()
+					atomic.AddInt64(&rollbackCount, 1)
+					return
+				}
+
+				// Even-numbered transactions commit, odd ones rollback
+				if txID%2 == 0 {
+					if err := tx.Commit(); err != nil {
+						atomic.AddInt64(&rollbackCount, 1)
+					} else {
+						atomic.AddInt64(&commitCount, 1)
+					}
+				} else {
+					tx.Rollback()
+					atomic.AddInt64(&rollbackCount, 1)
+				}
+			}(i)
+		}
+
+		wg.Wait()
+
+		commits := atomic.LoadInt64(&commitCount)
+		rollbacks := atomic.LoadInt64(&rollbackCount)
+		t.Logf("Rollback test: %d commits, %d rollbacks", commits, rollbacks)
+
+		// Verify only committed records exist
+		var fileCount int
+		err := dsc.DB.QueryRow("SELECT COUNT(*) FROM files WHERE path LIKE '/rollback/%'").Scan(&fileCount)
+		require.NoError(t, err)
+		assert.Equal(t, int(commits), fileCount,
+			"Only committed records should exist in the database")
+	})
+
+	t.Run("TransactionIsolation", func(t *testing.T) {
+		// Verify transaction isolation: uncommitted data should not be visible
+		// to other connections. With in-memory SQLite + MaxOpenConns(1), all
+		// operations serialize on the same connection, so we verify the semantics
+		// at the SQL level using savepoints.
+
+		tx, err := dsc.DB.Begin()
+		require.NoError(t, err)
+
+		// Insert inside transaction
+		_, err = tx.Exec(`
+			INSERT INTO files (storage_root_id, path, name, size, modified_at)
+			VALUES (1, '/isolation/pending.txt', 'pending.txt', 256, datetime('now'))
+		`)
+		require.NoError(t, err)
+
+		// The row should be visible inside the transaction
+		var txCount int
+		err = tx.QueryRow("SELECT COUNT(*) FROM files WHERE path = '/isolation/pending.txt'").Scan(&txCount)
+		require.NoError(t, err)
+		assert.Equal(t, 1, txCount, "Row should be visible inside the transaction")
+
+		// Rollback - row should disappear
+		tx.Rollback()
+
+		var afterCount int
+		err = dsc.DB.QueryRow("SELECT COUNT(*) FROM files WHERE path = '/isolation/pending.txt'").Scan(&afterCount)
+		require.NoError(t, err)
+		assert.Equal(t, 0, afterCount,
+			"Rolled-back row should not be visible after rollback")
+	})
 }
 
 // =============================================================================
-// STRESS TEST: Connection Pool Stress
+// STRESS TEST: Connection Pool Exhaustion and Recovery
 // =============================================================================
 
-func TestConnectionPoolStress(t *testing.T) {
+func TestConnectionPoolExhaustionAndRecovery(t *testing.T) {
 	if testing.Short() {
 		t.Skip("Skipping stress test in short mode")
 	}
 
 	// Use file-based SQLite with WAL mode to enable real connection pooling.
-	// In-memory SQLite creates separate databases per connection, but file-based
-	// SQLite with WAL mode supports concurrent reads from multiple connections.
 	tmpDir := t.TempDir()
 	dbPath := tmpDir + "/pool_stress_test.db"
 
@@ -539,28 +624,25 @@ func TestConnectionPoolStress(t *testing.T) {
 		VALUES (1, 'test-root', 'local', '/test', 1)`)
 	require.NoError(t, err)
 
-	// Build the stress context manually with our file-based DB
-	dsc := &DatabaseStressContext{
-		DB:        db,
-		StartTime: time.Now(),
-	}
+	// Configure a small pool to force exhaustion
+	db.SetMaxOpenConns(5)
+	db.SetMaxIdleConns(2)
+	db.SetConnMaxLifetime(5 * time.Minute)
+	db.SetConnMaxIdleTime(1 * time.Minute)
 
-	// Configure connection pool
-	dsc.DB.SetMaxOpenConns(25)
-	dsc.DB.SetMaxIdleConns(10)
-	dsc.DB.SetConnMaxLifetime(5 * time.Minute)
-
-	t.Run("ExceedConnectionPool", func(t *testing.T) {
-		// Try to create more concurrent operations than pool size
-		concurrentOps := 50 // More than max open connections
+	t.Run("ExceedPoolWithRecovery", func(t *testing.T) {
+		// Exceed the pool size with concurrent operations
+		concurrentOps := 50
 		duration := 3 * time.Second
+		var successOps int64
+		var failedOps int64
 
 		done := make(chan bool)
 		var wg sync.WaitGroup
 
 		for i := 0; i < concurrentOps; i++ {
 			wg.Add(1)
-			go func() {
+			go func(workerID int) {
 				defer wg.Done()
 
 				for {
@@ -568,29 +650,34 @@ func TestConnectionPoolStress(t *testing.T) {
 					case <-done:
 						return
 					default:
-						start := time.Now()
 						var count int
-						err := dsc.DB.QueryRow("SELECT COUNT(*) FROM files").Scan(&count)
-						latency := time.Since(start)
-						dsc.recordOperation(latency, err)
-
+						err := db.QueryRow("SELECT COUNT(*) FROM files").Scan(&count)
+						if err != nil {
+							atomic.AddInt64(&failedOps, 1)
+						} else {
+							atomic.AddInt64(&successOps, 1)
+						}
 						time.Sleep(20 * time.Millisecond)
 					}
 				}
-			}()
+			}(i)
 		}
 
 		time.Sleep(duration)
 		close(done)
 		wg.Wait()
 
-		dsc.PrintStats(t)
+		success := atomic.LoadInt64(&successOps)
+		failed := atomic.LoadInt64(&failedOps)
+		total := success + failed
+		successRate := float64(success) / float64(total) * 100
 
-		stats := dsc.GetStats()
-		assert.Greater(t, stats["success_rate"].(float64), 95.0, "Should handle connection pool saturation gracefully")
+		t.Logf("Pool exhaustion: %d success, %d failed, %.1f%% rate", success, failed, successRate)
+		assert.Greater(t, successRate, 95.0,
+			"Should handle connection pool saturation gracefully (>95%% success)")
 
 		// Check pool stats
-		dbStats := dsc.DB.Stats()
+		dbStats := db.Stats()
 		t.Logf("DB Pool Stats:")
 		t.Logf("  Max Open Connections: %d", dbStats.MaxOpenConnections)
 		t.Logf("  Open Connections: %d", dbStats.OpenConnections)
@@ -598,14 +685,50 @@ func TestConnectionPoolStress(t *testing.T) {
 		t.Logf("  Idle: %d", dbStats.Idle)
 		t.Logf("  Wait Count: %d", dbStats.WaitCount)
 		t.Logf("  Wait Duration: %v", dbStats.WaitDuration)
+
+		// After storm, pool should recover
+		var count int
+		err := db.QueryRow("SELECT COUNT(*) FROM files").Scan(&count)
+		assert.NoError(t, err, "Pool should recover after exhaustion")
+	})
+
+	t.Run("PoolRecoveryAfterConnectionDrain", func(t *testing.T) {
+		// Reconfigure pool to simulate connection drain
+		db.SetMaxOpenConns(3)
+		db.SetConnMaxLifetime(100 * time.Millisecond)
+
+		// Cause connections to expire and be recreated
+		for round := 0; round < 5; round++ {
+			var wg sync.WaitGroup
+			for w := 0; w < 10; w++ {
+				wg.Add(1)
+				go func() {
+					defer wg.Done()
+					var count int
+					db.QueryRow("SELECT COUNT(*) FROM storage_roots").Scan(&count)
+				}()
+			}
+			wg.Wait()
+			time.Sleep(150 * time.Millisecond) // Let connections expire
+		}
+
+		// Verify pool is still functional
+		var count int
+		err := db.QueryRow("SELECT COUNT(*) FROM storage_roots").Scan(&count)
+		require.NoError(t, err, "Pool should recover after connection drain")
+		assert.Equal(t, 1, count, "Data should be intact after pool drain")
+
+		// Restore normal pool settings
+		db.SetMaxOpenConns(25)
+		db.SetConnMaxLifetime(5 * time.Minute)
 	})
 }
 
 // =============================================================================
-// STRESS TEST: Large Query Results
+// STRESS TEST: Large Result Set Handling
 // =============================================================================
 
-func TestLargeQueryResults(t *testing.T) {
+func TestLargeResultSetHandling(t *testing.T) {
 	if testing.Short() {
 		t.Skip("Skipping stress test in short mode")
 	}
@@ -622,14 +745,16 @@ func TestLargeQueryResults(t *testing.T) {
 
 	// Insert large dataset
 	t.Log("Preparing large dataset...")
-	tx, _ := dsc.DB.Begin()
+	tx, err := dsc.DB.Begin()
+	require.NoError(t, err)
 	for i := 0; i < 2000; i++ {
-		tx.Exec(`
+		_, err := tx.Exec(`
 			INSERT INTO files (storage_root_id, path, name, size, modified_at)
 			VALUES (1, ?, ?, ?, datetime('now'))
 		`, fmt.Sprintf("/large/file%d.txt", i), fmt.Sprintf("file%d.txt", i), 1024*(i+1))
+		require.NoError(t, err)
 	}
-	tx.Commit()
+	require.NoError(t, tx.Commit())
 
 	t.Run("ConcurrentLargeQueries", func(t *testing.T) {
 		concurrentQueries := 10
@@ -654,7 +779,10 @@ func TestLargeQueryResults(t *testing.T) {
 					var path, name string
 					var size int64
 					var modTime string
-					rows.Scan(&id, &storageRootID, &path, &name, &size, &modTime)
+					if scanErr := rows.Scan(&id, &storageRootID, &path, &name, &size, &modTime); scanErr != nil {
+						dsc.recordOperation(time.Since(start), scanErr)
+						return
+					}
 					count++
 				}
 
@@ -670,5 +798,205 @@ func TestLargeQueryResults(t *testing.T) {
 
 		stats := dsc.GetStats()
 		assert.Greater(t, stats["success_rate"].(float64), 95.0, "Large queries should succeed")
+	})
+
+	t.Run("PaginatedLargeResultSet", func(t *testing.T) {
+		pageSize := 100
+		totalRows := 0
+		offset := 0
+
+		for {
+			rows, err := dsc.DB.Query(
+				"SELECT id, path, name FROM files WHERE path LIKE '/large/%' ORDER BY id LIMIT ? OFFSET ?",
+				pageSize, offset,
+			)
+			require.NoError(t, err)
+
+			pageCount := 0
+			for rows.Next() {
+				var id int
+				var path, name string
+				require.NoError(t, rows.Scan(&id, &path, &name))
+				pageCount++
+			}
+			rows.Close()
+			require.NoError(t, rows.Err())
+
+			totalRows += pageCount
+			if pageCount < pageSize {
+				break
+			}
+			offset += pageSize
+		}
+
+		assert.Equal(t, 2000, totalRows,
+			"Paginated query should retrieve all 2000 rows")
+	})
+
+	t.Run("AggregateOnLargeDataset", func(t *testing.T) {
+		var totalSize int64
+		var avgSize float64
+		var maxSize int64
+		var minSize int64
+		var fileCount int
+
+		err := dsc.DB.QueryRow(`
+			SELECT COUNT(*), SUM(size), AVG(size), MAX(size), MIN(size)
+			FROM files WHERE path LIKE '/large/%'
+		`).Scan(&fileCount, &totalSize, &avgSize, &maxSize, &minSize)
+		require.NoError(t, err)
+
+		assert.Equal(t, 2000, fileCount)
+		assert.Greater(t, totalSize, int64(0), "Total size should be positive")
+		assert.Greater(t, avgSize, 0.0, "Average size should be positive")
+		assert.Equal(t, int64(1024*2000), maxSize, "Max size should be 2000*1024")
+		assert.Equal(t, int64(1024), minSize, "Min size should be 1024")
+	})
+}
+
+// =============================================================================
+// STRESS TEST: WAL Mode Verification Under Concurrent Access
+// =============================================================================
+
+func TestWALModeUnderConcurrentAccess(t *testing.T) {
+	if testing.Short() {
+		t.Skip("Skipping stress test in short mode")
+	}
+
+	tmpDir := t.TempDir()
+	dbPath := tmpDir + "/wal_stress_test.db"
+
+	db, err := sql.Open("sqlite3", dbPath+"?cache=shared")
+	require.NoError(t, err)
+	t.Cleanup(func() { db.Close() })
+
+	// Explicitly enable WAL mode
+	var journalMode string
+	err = db.QueryRow("PRAGMA journal_mode=WAL").Scan(&journalMode)
+	require.NoError(t, err)
+	assert.Equal(t, "wal", journalMode,
+		"Journal mode should be WAL after explicit PRAGMA")
+
+	_, err = db.Exec("PRAGMA foreign_keys = ON")
+	require.NoError(t, err)
+
+	db.SetMaxOpenConns(10)
+	db.SetMaxIdleConns(5)
+
+	// Create tables
+	_, err = db.Exec(`CREATE TABLE IF NOT EXISTS storage_roots (
+		id INTEGER PRIMARY KEY AUTOINCREMENT,
+		name TEXT NOT NULL UNIQUE,
+		protocol TEXT NOT NULL,
+		path TEXT,
+		enabled BOOLEAN DEFAULT 1,
+		created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+	)`)
+	require.NoError(t, err)
+
+	_, err = db.Exec(`CREATE TABLE IF NOT EXISTS files (
+		id INTEGER PRIMARY KEY AUTOINCREMENT,
+		storage_root_id INTEGER NOT NULL,
+		path TEXT NOT NULL,
+		name TEXT NOT NULL,
+		size INTEGER NOT NULL,
+		modified_at DATETIME NOT NULL,
+		FOREIGN KEY (storage_root_id) REFERENCES storage_roots(id)
+	)`)
+	require.NoError(t, err)
+
+	_, err = db.Exec(`INSERT INTO storage_roots (id, name, protocol, path) VALUES (1, 'wal-test', 'local', '/wal')`)
+	require.NoError(t, err)
+
+	t.Run("ConcurrentReadsDuringWrites", func(t *testing.T) {
+		// WAL mode allows concurrent reads during writes (readers don't block writers)
+		var readSuccess int64
+		var writeSuccess int64
+		duration := 2 * time.Second
+		done := make(chan struct{})
+		var wg sync.WaitGroup
+
+		// Writers
+		for w := 0; w < 3; w++ {
+			wg.Add(1)
+			go func(writerID int) {
+				defer wg.Done()
+				counter := 0
+				for {
+					select {
+					case <-done:
+						return
+					default:
+						_, err := db.Exec(`
+							INSERT INTO files (storage_root_id, path, name, size, modified_at)
+							VALUES (1, ?, ?, ?, datetime('now'))
+						`, fmt.Sprintf("/wal/w%d_%d.txt", writerID, counter),
+							fmt.Sprintf("w%d_%d.txt", writerID, counter), 512)
+						if err == nil {
+							atomic.AddInt64(&writeSuccess, 1)
+						}
+						counter++
+						time.Sleep(5 * time.Millisecond)
+					}
+				}
+			}(w)
+		}
+
+		// Readers
+		for r := 0; r < 7; r++ {
+			wg.Add(1)
+			go func() {
+				defer wg.Done()
+				for {
+					select {
+					case <-done:
+						return
+					default:
+						var count int
+						err := db.QueryRow("SELECT COUNT(*) FROM files").Scan(&count)
+						if err == nil {
+							atomic.AddInt64(&readSuccess, 1)
+						}
+						time.Sleep(2 * time.Millisecond)
+					}
+				}
+			}()
+		}
+
+		time.Sleep(duration)
+		close(done)
+
+		wgDone := make(chan struct{})
+		go func() {
+			wg.Wait()
+			close(wgDone)
+		}()
+		select {
+		case <-wgDone:
+		case <-time.After(10 * time.Second):
+			t.Fatal("WAL concurrent access goroutines did not finish within deadline")
+		}
+
+		reads := atomic.LoadInt64(&readSuccess)
+		writes := atomic.LoadInt64(&writeSuccess)
+		t.Logf("WAL concurrent: %d reads, %d writes in %v", reads, writes, duration)
+
+		assert.Greater(t, reads, int64(100),
+			"WAL mode should allow many concurrent reads")
+		assert.Greater(t, writes, int64(10),
+			"WAL mode should allow concurrent writes alongside reads")
+	})
+
+	t.Run("WALModePreservedAfterReconnect", func(t *testing.T) {
+		// Verify WAL mode persists across connections
+		db2, err := sql.Open("sqlite3", dbPath)
+		require.NoError(t, err)
+		defer db2.Close()
+
+		var mode string
+		err = db2.QueryRow("PRAGMA journal_mode").Scan(&mode)
+		require.NoError(t, err)
+		assert.Equal(t, "wal", mode,
+			"WAL mode should persist across database connections")
 	})
 }

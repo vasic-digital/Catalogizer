@@ -64,7 +64,15 @@ data class MediaItem(
     val director: String? = null,
     val runtime: Int? = null,
     val language: String? = null,
-    val country: String? = null
+    val country: String? = null,
+    @SerialName("parent_id")
+    val parentId: Long? = null,
+    @SerialName("season_number")
+    val seasonNumber: Int? = null,
+    @SerialName("episode_number")
+    val episodeNumber: Int? = null,
+    @SerialName("track_number")
+    val trackNumber: Int? = null
 ) : Parcelable {
 
     val posterUrl: String?

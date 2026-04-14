@@ -1,0 +1,307 @@
+rules:
+  # ─── Go: SQL Injection Detection ─────────────────────────────
+  - id: go-sql-injection-string-concat
+    patterns:
+      - pattern: |
+          $DB.$METHOD(... + $VAR + ...)
+      - metavariable-regex:
+          metavariable: $METHOD
+          regex: ^(Exec|Query|QueryRow|Prepare)$
+    message: >
+      SQL query built with string concatenation. Use parameterized queries
+      with placeholder arguments to prevent SQL injection.
+    languages: [go]
+    severity: ERROR
+    metadata:
+      cwe: "CWE-89: SQL Injection"
+      owasp: "A03:2021 Injection"
+      category: security
+      confidence: HIGH
+
+  - id: go-sql-injection-fmt-sprintf
+    patterns:
+      - pattern: |
+          $DB.$METHOD(fmt.Sprintf(...), ...)
+      - metavariable-regex:
+          metavariable: $METHOD
+          regex: ^(Exec|Query|QueryRow|Prepare)$
+    message: >
+      SQL query built with fmt.Sprintf. Use parameterized queries with
+      placeholder arguments instead to prevent SQL injection.
+    languages: [go]
+    severity: ERROR
+    metadata:
+      cwe: "CWE-89: SQL Injection"
+      owasp: "A03:2021 Injection"
+      category: security
+      confidence: HIGH
+
+  # ─── Go: Missing resp.Body.Close() ──────────────────────────
+  - id: go-missing-resp-body-close
+    patterns:
+      - pattern: |
+          $RESP, $ERR := $CLIENT.Do(...)
+          ...
+      - pattern-not: |
+          $RESP, $ERR := $CLIENT.Do(...)
+          ...
+          $RESP.Body.Close()
+      - pattern-not: |
+          $RESP, $ERR := $CLIENT.Do(...)
+          ...
+          defer $RESP.Body.Close()
+    message: >
+      HTTP response body is not closed. Always defer resp.Body.Close()
+      after checking for errors to prevent resource leaks.
+    languages: [go]
+    severity: WARNING
+    metadata:
+      cwe: "CWE-404: Improper Resource Shutdown or Release"
+      category: correctness
+      confidence: MEDIUM
+
+  - id: go-missing-http-get-body-close
+    patterns:
+      - pattern: |
+          $RESP, $ERR := http.Get(...)
+          ...
+      - pattern-not: |
+          $RESP, $ERR := http.Get(...)
+          ...
+          $RESP.Body.Close()
+      - pattern-not: |
+          $RESP, $ERR := http.Get(...)
+          ...
+          defer $RESP.Body.Close()
+    message: >
+      HTTP response body from http.Get is not closed. Always defer
+      resp.Body.Close() after checking for errors to prevent resource leaks.
+    languages: [go]
+    severity: WARNING
+    metadata:
+      cwe: "CWE-404: Improper Resource Shutdown or Release"
+      category: correctness
+      confidence: MEDIUM
+
+  # ─── Go: Missing rows.Close() ───────────────────────────────
+  - id: go-missing-rows-close
+    patterns:
+      - pattern: |
+          $ROWS, $ERR := $DB.Query(...)
+          ...
+      - pattern-not: |
+          $ROWS, $ERR := $DB.Query(...)
+          ...
+          $ROWS.Close()
+      - pattern-not: |
+          $ROWS, $ERR := $DB.Query(...)
+          ...
+          defer $ROWS.Close()
+    message: >
+      Database rows are not closed. Always defer rows.Close() after
+      checking for errors to prevent connection leaks.
+    languages: [go]
+    severity: WARNING
+    metadata:
+      cwe: "CWE-404: Improper Resource Shutdown or Release"
+      category: correctness
+      confidence: MEDIUM
+
+  # ─── Go: Command Injection ──────────────────────────────────
+  - id: go-command-injection-exec
+    patterns:
+      - pattern: exec.Command($CMD, ...)
+      - metavariable-pattern:
+          metavariable: $CMD
+          patterns:
+            - pattern-not: "..."
+    message: >
+      os/exec.Command called with a variable command name. If this value
+      originates from user input, it enables command injection. Validate
+      and sanitize the command and its arguments, or use an allowlist.
+    languages: [go]
+    severity: WARNING
+    metadata:
+      cwe: "CWE-78: OS Command Injection"
+      owasp: "A03:2021 Injection"
+      category: security
+      confidence: MEDIUM
+
+  - id: go-command-injection-command-string
+    pattern: exec.CommandContext($CTX, $SHELL, "-c", $CMD)
+    message: >
+      Shell command executed via exec.CommandContext with -c flag. If the
+      command string contains user input, this enables command injection.
+      Prefer exec.Command with explicit argument lists instead.
+    languages: [go]
+    severity: ERROR
+    metadata:
+      cwe: "CWE-78: OS Command Injection"
+      owasp: "A03:2021 Injection"
+      category: security
+      confidence: HIGH
+
+  # ─── TypeScript: innerHTML XSS ──────────────────────────────
+  - id: ts-innerhtml-xss
+    pattern: $EL.innerHTML = $VAL
+    message: >
+      Direct innerHTML assignment can lead to XSS if the value contains
+      unsanitized user input. Use textContent for plain text, or sanitize
+      HTML with DOMPurify before assignment.
+    languages: [typescript, javascript]
+    severity: ERROR
+    metadata:
+      cwe: "CWE-79: Cross-site Scripting (XSS)"
+      owasp: "A03:2021 Injection"
+      category: security
+      confidence: HIGH
+
+  # ─── TypeScript: eval() Usage ───────────────────────────────
+  - id: ts-eval-usage
+    pattern: eval(...)
+    message: >
+      eval() executes arbitrary code and is a severe security risk.
+      Use safer alternatives such as JSON.parse for data, or structured
+      approaches for dynamic behavior.
+    languages: [typescript, javascript]
+    severity: ERROR
+    metadata:
+      cwe: "CWE-95: Eval Injection"
+      owasp: "A03:2021 Injection"
+      category: security
+      confidence: HIGH
+
+  - id: ts-function-constructor-injection
+    pattern: |
+      new $FUNC(...)
+    patterns:
+      - pattern: |
+          new Function(...)
+    message: >
+      The Function constructor executes arbitrary code strings, similar
+      to eval(). Use safer alternatives for dynamic behavior.
+    languages: [typescript, javascript]
+    severity: ERROR
+    metadata:
+      cwe: "CWE-95: Eval Injection"
+      owasp: "A03:2021 Injection"
+      category: security
+      confidence: HIGH
+
+  # ─── TypeScript: dangerouslySetInnerHTML ─────────────────────
+  - id: ts-react-dangerously-set-innerhtml
+    pattern: <$EL dangerouslySetInnerHTML={...} />
+    message: >
+      dangerouslySetInnerHTML renders raw HTML and can lead to XSS.
+      Ensure the HTML content is sanitized with DOMPurify or a similar
+      library before rendering.
+    languages: [typescript, javascript]
+    severity: WARNING
+    metadata:
+      cwe: "CWE-79: Cross-site Scripting (XSS)"
+      owasp: "A03:2021 Injection"
+      category: security
+      confidence: MEDIUM
+
+  - id: ts-react-dangerously-set-innerhtml-prop
+    pattern: dangerouslySetInnerHTML={{__html: $VAL}}
+    message: >
+      dangerouslySetInnerHTML renders raw HTML and can lead to XSS.
+      Ensure the value passed to __html is sanitized with DOMPurify
+      or a similar library before rendering.
+    languages: [typescript, javascript]
+    severity: WARNING
+    metadata:
+      cwe: "CWE-79: Cross-site Scripting (XSS)"
+      owasp: "A03:2021 Injection"
+      category: security
+      confidence: MEDIUM
+
+  # ─── General: Hardcoded Credentials / API Keys ──────────────
+  - id: hardcoded-api-key-assignment
+    pattern-either:
+      - pattern: $VAR = "sk-..."
+      - pattern: $VAR = "pk-..."
+      - pattern: $VAR = "api_..."
+      - pattern: $VAR = "key_..."
+      - pattern: $VAR = "ghp_..."
+      - pattern: $VAR = "gho_..."
+      - pattern: $VAR = "glpat-..."
+    message: >
+      Potential hardcoded API key or token detected. Store secrets in
+      environment variables or a secrets manager, never in source code.
+    languages: [go, typescript, javascript, python]
+    severity: ERROR
+    metadata:
+      cwe: "CWE-798: Use of Hard-coded Credentials"
+      owasp: "A07:2021 Identification and Authentication Failures"
+      category: security
+      confidence: HIGH
+
+  - id: hardcoded-password-variable
+    patterns:
+      - pattern-either:
+          - pattern: $PASSWORD = "..."
+          - pattern: $SECRET = "..."
+          - pattern: $TOKEN = "..."
+      - metavariable-regex:
+          metavariable: $PASSWORD
+          regex: ^(password|passwd|pwd|secret|token|apiKey|api_key|apikey)$
+      - pattern-not: $PASSWORD = ""
+      - pattern-not: $PASSWORD = "YOUR_..."
+      - pattern-not: $PASSWORD = "change_me..."
+      - pattern-not: $PASSWORD = "your-..."
+    message: >
+      Potential hardcoded credential in variable. Store secrets in
+      environment variables or a secrets manager, never in source code.
+    languages: [go, typescript, javascript, python]
+    severity: ERROR
+    metadata:
+      cwe: "CWE-798: Use of Hard-coded Credentials"
+      owasp: "A07:2021 Identification and Authentication Failures"
+      category: security
+      confidence: MEDIUM
+
+  # ─── General: Debug Logging in Production ───────────────────
+  - id: go-debug-fmt-println
+    pattern: fmt.Println(...)
+    message: >
+      fmt.Println used for output. In production code, use structured
+      logging (e.g., slog, zerolog, zap) with appropriate log levels
+      instead of fmt.Println.
+    languages: [go]
+    severity: INFO
+    metadata:
+      category: best-practice
+      confidence: LOW
+
+  - id: go-debug-fmt-printf
+    pattern: fmt.Printf(...)
+    message: >
+      fmt.Printf used for output. In production code, use structured
+      logging (e.g., slog, zerolog, zap) with appropriate log levels
+      instead of fmt.Printf.
+    languages: [go]
+    severity: INFO
+    metadata:
+      category: best-practice
+      confidence: LOW
+
+  - id: ts-console-log-in-source
+    pattern: console.log(...)
+    message: >
+      console.log found in source code. Remove debug logging before
+      production deployment, or use a proper logging library with
+      configurable log levels.
+    languages: [typescript, javascript]
+    severity: INFO
+    metadata:
+      category: best-practice
+      confidence: LOW
+    paths:
+      exclude:
+        - "*.test.*"
+        - "*.spec.*"
+        - "**/tests/**"
+        - "**/test/**"
+        - "**/__tests__/**"

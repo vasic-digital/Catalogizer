@@ -1,14 +1,12 @@
-import React, { useState, useEffect, useMemo } from 'react'
+import React, { lazy, Suspense, useState, useEffect } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { MediaGrid } from '@/components/media/MediaGrid'
 import { MediaFilters } from '@/components/media/MediaFilters'
-import { MediaDetailModal } from '@/components/media/MediaDetailModal'
-import { MediaPlayer } from '@/components/media/MediaPlayer'
 import { Button } from '@/components/ui/Button'
 import { Input } from '@/components/ui/Input'
 import { Card, CardContent } from '@/components/ui/Card'
 import { mediaApi } from '@/lib/mediaApi'
-import { debounce } from '@/lib/utils'
+import { useDebounce } from '@/hooks/useDebounce'
 import toast from 'react-hot-toast'
 import type { MediaSearchRequest, MediaItem } from '@/types/media'
 import {
@@ -22,7 +20,11 @@ import {
   Upload
 } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { UploadManager } from '@/components/upload/UploadManager'
+
+// Lazy-loaded heavy components (only rendered on user interaction)
+const MediaDetailModal = lazy(() => import('@/components/media/MediaDetailModal').then(m => ({ default: m.MediaDetailModal })))
+const MediaPlayer = lazy(() => import('@/components/media/MediaPlayer').then(m => ({ default: m.MediaPlayer })))
+const UploadManager = lazy(() => import('@/components/upload/UploadManager').then(m => ({ default: m.UploadManager })))
 
 export const MediaBrowser: React.FC = () => {
   const [filters, setFilters] = useState<MediaSearchRequest>({
@@ -41,20 +43,15 @@ export const MediaBrowser: React.FC = () => {
   const [_isDownloading, setIsDownloading] = useState(false)
   const [showUpload, setShowUpload] = useState(false)
 
-  const debouncedSearch = useMemo(
-    () => debounce((query: string) => {
-      setFilters(prev => ({
-        ...prev,
-        query: query || undefined,
-        offset: 0,
-      }))
-    }, 300),
-    []
-  )
+  const debouncedQuery = useDebounce(searchQuery, 300)
 
   useEffect(() => {
-    debouncedSearch(searchQuery)
-  }, [searchQuery, debouncedSearch])
+    setFilters(prev => ({
+      ...prev,
+      query: debouncedQuery || undefined,
+      offset: 0,
+    }))
+  }, [debouncedQuery])
 
   const {
     data: searchResults,
@@ -259,9 +256,11 @@ export const MediaBrowser: React.FC = () => {
             transition={{ duration: 0.3 }}
             className="overflow-hidden mb-8"
           >
-            <UploadManager
-              onUpload={async () => { refetch() }}
-            />
+            <Suspense fallback={<div className="flex items-center justify-center min-h-[200px]"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600" /></div>}>
+              <UploadManager
+                onUpload={async () => { refetch() }}
+              />
+            </Suspense>
           </motion.div>
         )}
       </AnimatePresence>
@@ -397,13 +396,15 @@ export const MediaBrowser: React.FC = () => {
       </div>
 
       {/* Media Detail Modal */}
-      <MediaDetailModal
-        media={selectedMedia}
-        isOpen={isModalOpen}
-        onClose={handleCloseModal}
-        onDownload={handleMediaDownload}
-        onPlay={handleMediaPlay}
-      />
+      <Suspense fallback={null}>
+        <MediaDetailModal
+          media={selectedMedia}
+          isOpen={isModalOpen}
+          onClose={handleCloseModal}
+          onDownload={handleMediaDownload}
+          onPlay={handleMediaPlay}
+        />
+      </Suspense>
 
       {/* Media Player Modal */}
       {selectedMedia && isPlayerOpen && (
@@ -417,10 +418,12 @@ export const MediaBrowser: React.FC = () => {
             >
               Close
             </Button>
-            <MediaPlayer 
-              media={selectedMedia}
-              onEnded={handleClosePlayer}
-            />
+            <Suspense fallback={<div className="flex items-center justify-center min-h-[300px]"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-white" /></div>}>
+              <MediaPlayer
+                media={selectedMedia}
+                onEnded={handleClosePlayer}
+              />
+            </Suspense>
           </div>
         </div>
       )}

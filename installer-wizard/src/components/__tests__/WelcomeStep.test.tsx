@@ -63,4 +63,61 @@ describe('WelcomeStep', () => {
 
     expect(screen.getByText(/Click "Next" to select your storage protocol/)).toBeInTheDocument()
   })
+
+  it('renders feature card descriptions', () => {
+    render(
+      <TestWrapper>
+        <WelcomeStep />
+      </TestWrapper>
+    )
+
+    expect(screen.getByText(/Choose the storage protocol that best fits your needs/)).toBeInTheDocument()
+    expect(screen.getByText(/Configure connection details, authentication, and paths/)).toBeInTheDocument()
+    expect(screen.getByText(/Generate and manage configuration files/)).toBeInTheDocument()
+  })
+
+  it('renders the main container with correct layout', () => {
+    const { container } = render(
+      <TestWrapper>
+        <WelcomeStep />
+      </TestWrapper>
+    )
+
+    expect(container.querySelector('.space-y-6')).toBeInTheDocument()
+  })
+
+  it('mentions supported protocols in description', () => {
+    render(
+      <TestWrapper>
+        <WelcomeStep />
+      </TestWrapper>
+    )
+
+    expect(screen.getByText(/SMB, FTP, NFS, WebDAV, and local files/)).toBeInTheDocument()
+  })
+
+  it('renders three requirement items', () => {
+    render(
+      <TestWrapper>
+        <WelcomeStep />
+      </TestWrapper>
+    )
+
+    const requirementList = screen.getByText("What you'll need:").closest('div')
+    expect(requirementList).toBeInTheDocument()
+    const items = requirementList!.querySelectorAll('li')
+    expect(items.length).toBe(3)
+  })
+
+  it('renders three feature cards in grid', () => {
+    render(
+      <TestWrapper>
+        <WelcomeStep />
+      </TestWrapper>
+    )
+
+    const grid = screen.getByText('Protocol Selection').closest('.grid')
+    expect(grid).toBeInTheDocument()
+    expect(grid!.children.length).toBe(3)
+  })
 })

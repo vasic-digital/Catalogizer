@@ -1,0 +1,48 @@
+%% Semaphore Control Flow - Catalogizer
+%% Shows how semaphores limit concurrent operations across the system
+
+graph TB
+    subgraph "Request Layer"
+        REQ[Incoming HTTP Requests]
+    end
+
+    subgraph "Rate Limiting"
+        REQ --> RL{Rate Limiter<br/>per-route config}
+        RL -->|allowed| HANDLER[Handler]
+        RL -->|rejected| R429[429 Too Many Requests]
+    end
+
+    subgraph "Concurrency Controls"
+        HANDLER --> SEM_SCAN[Scan Semaphore<br/>max: GOMAXPROCS<br/>concurrent file scans]
+        HANDLER --> SEM_META[Metadata Semaphore<br/>max: 5<br/>concurrent API fetches]
+        HANDLER --> SEM_WS[WebSocket Semaphore<br/>max: NumCPU<br/>concurrent broadcasts]
+        HANDLER --> SEM_DB[DB Write Semaphore<br/>max: MaxOpen/2<br/>concurrent writes]
+    end
+
+    subgraph "Worker Pools"
+        SEM_SCAN --> WP_SCAN[Scan WorkerPool<br/>bounded job queue]
+        SEM_META --> WP_META[Metadata WorkerPool<br/>bounded job queue]
+    end
+
+    subgraph "Resource Layer"
+        WP_SCAN --> FS[Filesystem<br/>SMB/FTP/NFS/WebDAV]
+        WP_META --> EXT[External APIs<br/>TMDB/OMDB/MusicBrainz]
+        SEM_DB --> DB[(Database<br/>MaxOpen=25<br/>MaxIdle=10)]
+        SEM_WS --> WS[WebSocket Clients<br/>MaxConnections config]
+    end
+
+    subgraph "Monitoring"
+        SEM_SCAN -.-> PROM[Prometheus Metrics<br/>semaphore_utilization<br/>semaphore_wait_duration]
+        SEM_META -.-> PROM
+        SEM_WS -.-> PROM
+        SEM_DB -.-> PROM
+        PROM -.-> GRAF[Grafana Dashboard]
+    end
+
+    classDef semaphore fill:#4ecdc4,stroke:#333,color:#fff
+    classDef resource fill:#ff6b6b,stroke:#333,color:#fff
+    classDef monitor fill:#45b7d1,stroke:#333,color:#fff
+
+    class SEM_SCAN,SEM_META,SEM_WS,SEM_DB semaphore
+    class FS,EXT,DB,WS resource
+    class PROM,GRAF monitor

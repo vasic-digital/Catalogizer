@@ -1,6 +1,6 @@
 import { collectionsApi } from '../collectionsApi'
 
-// Mock the api and mockCollectionsApi modules
+// Mock the api module
 vi.mock('../api', async () => {
   const mockApi = {
     get: vi.fn(),
@@ -15,30 +15,12 @@ vi.mock('../api', async () => {
   }
 })
 
-vi.mock('../mockCollectionsApi', () => ({
-  shouldUseMockCollections: vi.fn(() => false),
-  mockCollectionsApi: {
-    getSmartCollections: vi.fn(),
-    getSmartCollection: vi.fn(),
-    createSmartCollection: vi.fn(),
-    updateSmartCollection: vi.fn(),
-    deleteSmartCollection: vi.fn(),
-    getAnalytics: vi.fn(),
-    getTemplates: vi.fn(),
-    testRules: vi.fn(),
-  },
-}))
-
 import { api } from '../api'
-import { shouldUseMockCollections, mockCollectionsApi as mockCollections } from '../mockCollectionsApi'
 const mockApi = vi.mocked(api)
-const mockShouldUseMock = vi.mocked(shouldUseMockCollections)
-const mockedCollections = vi.mocked(mockCollections)
 
 describe('collectionsApi', () => {
   beforeEach(() => {
     vi.clearAllMocks()
-    mockShouldUseMock.mockReturnValue(false)
   })
 
   describe('getCollections', () => {
@@ -62,29 +44,6 @@ describe('collectionsApi', () => {
 
       await expect(collectionsApi.getCollections()).rejects.toThrow('Server error')
     })
-
-    it('falls back to mock on 404', async () => {
-      const error = new Error('Not found')
-      ;(error as any).response = { status: 404 }
-      mockApi.get.mockRejectedValue(error)
-      const mockResult = [{ id: '1', name: 'Mock Collection' }]
-      mockedCollections.getSmartCollections.mockResolvedValue(mockResult as any)
-
-      const result = await collectionsApi.getCollections()
-
-      expect(result).toEqual(mockResult)
-    })
-
-    it('uses mock API when shouldUseMockCollections returns true', async () => {
-      mockShouldUseMock.mockReturnValue(true)
-      const mockResult = [{ id: '1', name: 'Mock Collection' }]
-      mockedCollections.getSmartCollections.mockResolvedValue(mockResult as any)
-
-      const result = await collectionsApi.getCollections()
-
-      expect(mockApi.get).not.toHaveBeenCalled()
-      expect(result).toEqual(mockResult)
-    })
   })
 
   describe('getCollection', () => {
@@ -98,17 +57,12 @@ describe('collectionsApi', () => {
       expect(result).toEqual(mockCollection)
     })
 
-    it('falls back to mock on 404', async () => {
+    it('propagates 404 errors', async () => {
       const error = new Error('Not found')
       ;(error as any).response = { status: 404 }
       mockApi.get.mockRejectedValue(error)
-      const mockResult = { id: '1', name: 'Mock' }
-      mockedCollections.getSmartCollection.mockResolvedValue(mockResult as any)
 
-      const result = await collectionsApi.getCollection('1')
-
-      expect(mockedCollections.getSmartCollection).toHaveBeenCalledWith('1')
-      expect(result).toEqual(mockResult)
+      await expect(collectionsApi.getCollection('1')).rejects.toThrow('Not found')
     })
   })
 
@@ -235,17 +189,6 @@ describe('collectionsApi', () => {
 
       expect(mockApi.post).toHaveBeenCalledWith('/collections/1/share', shareRequest)
       expect(result).toEqual(shareInfo)
-    })
-
-    it('mock fallback generates share URL using window.location.origin, not hardcoded localhost', async () => {
-      mockShouldUseMock.mockReturnValue(true)
-      const shareRequest = { can_view: true, can_comment: false, can_download: true }
-
-      const result = await collectionsApi.shareCollection('42', shareRequest)
-
-      expect(result.share_url).toContain(window.location.origin)
-      expect(result.share_url).not.toContain('localhost:3006')
-      expect(result.share_url).toMatch(/\/shared\/share_42_\d+/)
     })
   })
 
@@ -570,21 +513,19 @@ describe('collectionsApi', () => {
     })
   })
 
-  describe('tryApiCall fallback behavior', () => {
-    it('does not fall back to mock on non-404 errors', async () => {
+  describe('error propagation', () => {
+    it('does not swallow non-404 errors', async () => {
       const error = new Error('Internal server error')
       ;(error as any).response = { status: 500 }
       mockApi.get.mockRejectedValue(error)
 
       await expect(collectionsApi.getCollection('1')).rejects.toThrow('Internal server error')
-      expect(mockedCollections.getSmartCollection).not.toHaveBeenCalled()
     })
 
-    it('falls back to mock when error has no response status', async () => {
+    it('propagates network errors without response', async () => {
       const error = new Error('Network error')
       mockApi.get.mockRejectedValue(error)
 
-      // Without response.status, it should not match 404, so it throws
       await expect(collectionsApi.getCollection('1')).rejects.toThrow('Network error')
     })
   })

@@ -15,7 +15,7 @@ import (
 )
 
 // testRateLimiter is a self-contained rate limiter for stress testing.
-// It mirrors the AdvancedRateLimiter in middleware/ but is defined here
+// It is a self-contained rate limiter defined here
 // so the stress package does not import internal middleware.
 type testRateLimiter struct {
 	limiters map[string]*rate.Limiter

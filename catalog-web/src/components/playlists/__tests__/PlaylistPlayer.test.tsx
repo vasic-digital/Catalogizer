@@ -21,15 +21,6 @@ vi.mock('../../favorites/FavoriteToggle', () => ({
   FavoriteToggle: () => <div data-testid="favorite-toggle">Favorite</div>,
 }))
 
-vi.mock('../../../hooks/usePlayerState', () => ({
-  usePlayerState: vi.fn(() => ({
-    currentTrack: null,
-    isPlaying: false,
-    play: vi.fn(),
-    pause: vi.fn(),
-  })),
-}))
-
 vi.mock('../../../lib/playlistsApi', () => ({
   playlistsApi: {
     updatePlayHistory: vi.fn(),

@@ -1,14 +1,13 @@
 import { conversionApi } from '../conversionApi'
 import { api } from '../api'
 
-// Mock the api module — all HTTP calls rejected with 404 to trigger fallback logic
+// Mock the api module
 vi.mock('../api', async () => {
-  const error404 = { response: { status: 404 } }
   const mockApi = {
-    get: vi.fn().mockRejectedValue(error404),
-    post: vi.fn().mockRejectedValue(error404),
-    put: vi.fn().mockRejectedValue(error404),
-    delete: vi.fn().mockRejectedValue(error404),
+    get: vi.fn(),
+    post: vi.fn(),
+    put: vi.fn(),
+    delete: vi.fn(),
   }
   return {
     __esModule: true,
@@ -22,23 +21,46 @@ const mockApi = vi.mocked(api)
 describe('conversionApi', () => {
   beforeEach(() => {
     vi.clearAllMocks()
-    // Re-apply 404 rejection after clearAllMocks resets implementations
-    const error404 = { response: { status: 404 } }
-    mockApi.get.mockRejectedValue(error404)
-    mockApi.post.mockRejectedValue(error404)
-    mockApi.put.mockRejectedValue(error404)
-    mockApi.delete.mockRejectedValue(error404)
   })
 
   describe('getConversionJobs', () => {
-    it('returns an array of conversion jobs', async () => {
-      const jobs = await conversionApi.getConversionJobs()
+    it('calls GET /conversion/jobs and returns jobs array', async () => {
+      const mockJobs = [
+        {
+          id: '1',
+          sourceFile: { path: '/media/test.mkv', name: 'test.mkv', format: 'mkv', size: 1000000 },
+          targetFormat: 'mp4',
+          quality: 'high',
+          status: 'completed',
+          progress: 100,
+          options: { resolution: '1080p', bitrate: 5000, framerate: 30, audioCodec: 'aac', videoCodec: 'h264' },
+        },
+      ]
+      mockApi.get.mockResolvedValue({ data: mockJobs })
 
-      expect(Array.isArray(jobs)).toBe(true)
-      expect(jobs.length).toBeGreaterThan(0)
+      const result = await conversionApi.getConversionJobs()
+
+      expect(mockApi.get).toHaveBeenCalledWith('/conversion/jobs')
+      expect(result).toEqual(mockJobs)
     })
 
     it('returns jobs with expected structure', async () => {
+      const mockJobs = [
+        {
+          id: '1',
+          sourceFile: { path: '/media/test.mkv', name: 'test.mkv', format: 'mkv', size: 1073741824 },
+          targetFormat: 'mp4',
+          quality: 'high',
+          status: 'completed',
+          progress: 100,
+          startTime: '2023-12-09T10:00:00Z',
+          endTime: '2023-12-09T10:15:00Z',
+          outputFile: '/media/converted/test.mp4',
+          options: { resolution: '1080p', bitrate: 5000, framerate: 30, audioCodec: 'aac', videoCodec: 'h264' },
+        },
+      ]
+      mockApi.get.mockResolvedValue({ data: mockJobs })
+
       const jobs = await conversionApi.getConversionJobs()
       const job = jobs[0]
 
@@ -51,89 +73,114 @@ describe('conversionApi', () => {
       expect(job).toHaveProperty('options')
     })
 
-    it('returns jobs with valid source file info', async () => {
-      const jobs = await conversionApi.getConversionJobs()
-      const sourceFile = jobs[0].sourceFile
+    it('propagates errors', async () => {
+      const error = new Error('Server error')
+      ;(error as any).response = { status: 500 }
+      mockApi.get.mockRejectedValue(error)
 
-      expect(sourceFile).toHaveProperty('path')
-      expect(sourceFile).toHaveProperty('name')
-      expect(sourceFile).toHaveProperty('format')
-      expect(sourceFile).toHaveProperty('size')
-      expect(typeof sourceFile.size).toBe('number')
-    })
-
-    it('returns jobs with valid options', async () => {
-      const jobs = await conversionApi.getConversionJobs()
-      const options = jobs[0].options
-
-      expect(options).toHaveProperty('resolution')
-      expect(options).toHaveProperty('bitrate')
-      expect(options).toHaveProperty('framerate')
-      expect(options).toHaveProperty('audioCodec')
-      expect(options).toHaveProperty('videoCodec')
+      await expect(conversionApi.getConversionJobs()).rejects.toThrow('Server error')
     })
   })
 
   describe('startConversion', () => {
-    it('returns a new job with pending status and zero progress', async () => {
+    it('calls POST /conversion/jobs with job data and returns new job', async () => {
       const jobData = {
-        sourceFile: {
-          path: '/media/test.mkv',
-          name: 'test.mkv',
-          format: 'mkv',
-          size: 1000000,
-        },
+        sourceFile: { path: '/media/test.mkv', name: 'test.mkv', format: 'mkv', size: 1000000 },
         targetFormat: 'mp4',
         quality: 'high' as const,
-        options: {
-          resolution: '1080p',
-          bitrate: 5000,
-          framerate: 30,
-          audioCodec: 'aac',
-          videoCodec: 'h264',
-        },
+        options: { resolution: '1080p', bitrate: 5000, framerate: 30, audioCodec: 'aac', videoCodec: 'h264' },
       }
+      const created = { ...jobData, id: '3', status: 'pending', progress: 0 }
+      mockApi.post.mockResolvedValue({ data: created })
 
       const result = await conversionApi.startConversion(jobData)
 
-      expect(result).toHaveProperty('id')
+      expect(mockApi.post).toHaveBeenCalledWith('/conversion/jobs', jobData)
+      expect(result).toEqual(created)
       expect(result.status).toBe('pending')
       expect(result.progress).toBe(0)
-      expect(result.sourceFile).toEqual(jobData.sourceFile)
-      expect(result.targetFormat).toBe('mp4')
-    })
-
-    it('generates a unique ID for each new job', async () => {
-      const jobData = {
-        sourceFile: { path: '/test.mkv', name: 'test.mkv', format: 'mkv', size: 100 },
-        targetFormat: 'mp4',
-        quality: 'medium' as const,
-        options: {},
-      }
-
-      const result1 = await conversionApi.startConversion(jobData)
-      const result2 = await conversionApi.startConversion(jobData)
-
-      expect(result1.id).toBeDefined()
-      expect(result2.id).toBeDefined()
     })
   })
 
   describe('cancelConversion', () => {
-    it('completes without throwing', async () => {
-      await expect(conversionApi.cancelConversion('1')).resolves.toBeUndefined()
+    it('calls DELETE /conversion/jobs/:id', async () => {
+      mockApi.delete.mockResolvedValue({})
+
+      await conversionApi.cancelConversion('1')
+
+      expect(mockApi.delete).toHaveBeenCalledWith('/conversion/jobs/1')
+    })
+
+    it('propagates errors', async () => {
+      const error = new Error('Not found')
+      ;(error as any).response = { status: 404 }
+      mockApi.delete.mockRejectedValue(error)
+
+      await expect(conversionApi.cancelConversion('999')).rejects.toThrow('Not found')
     })
   })
 
   describe('retryConversion', () => {
-    it('completes without throwing', async () => {
-      await expect(conversionApi.retryConversion('1')).resolves.toBeUndefined()
+    it('calls POST /conversion/jobs/:id/retry', async () => {
+      mockApi.post.mockResolvedValue({})
+
+      await conversionApi.retryConversion('1')
+
+      expect(mockApi.post).toHaveBeenCalledWith('/conversion/jobs/1/retry')
+    })
+
+    it('propagates errors', async () => {
+      const error = new Error('Cannot retry')
+      ;(error as any).response = { status: 400 }
+      mockApi.post.mockRejectedValue(error)
+
+      await expect(conversionApi.retryConversion('1')).rejects.toThrow('Cannot retry')
     })
   })
 
   describe('downloadFile', () => {
-    it('completes without throwing', async () => {
-      await expect(conversionApi.downloadFile('/media/converted/test.mp4')).resolves.toBeUndefined()
+    it('calls GET /conversion/jobs/:id/download with blob response type', async () => {
+      const blob = new Blob(['file content'], { type: 'video/mp4' })
+      mockApi.get.mockResolvedValue({ data: blob })
+
+      // Mock DOM APIs for download
+      const mockCreateObjectURL = vi.fn(() => 'blob:mock-url')
+      const mockRevokeObjectURL = vi.fn()
+      const mockClick = vi.fn()
+      const mockAppendChild = vi.fn()
+      const mockRemoveChild = vi.fn()
+      const mockCreateElement = vi.fn(() => ({
+        href: '',
+        download: '',
+        click: mockClick,
+      }))
+
+      Object.defineProperty(window, 'URL', {
+        value: { createObjectURL: mockCreateObjectURL, revokeObjectURL: mockRevokeObjectURL },
+        writable: true,
+      })
+      vi.spyOn(document, 'createElement').mockImplementation(mockCreateElement as any)
+      vi.spyOn(document.body, 'appendChild').mockImplementation(mockAppendChild)
+      vi.spyOn(document.body, 'removeChild').mockImplementation(mockRemoveChild)
+
+      await conversionApi.downloadFile('1')
+
+      expect(mockApi.get).toHaveBeenCalledWith('/conversion/jobs/1/download', {
+        responseType: 'blob',
+      })
+      expect(mockCreateObjectURL).toHaveBeenCalledWith(blob)
+      expect(mockClick).toHaveBeenCalled()
+      expect(mockRevokeObjectURL).toHaveBeenCalledWith('blob:mock-url')
+
+      vi.restoreAllMocks()
+    })
+
+    it('propagates errors', async () => {
+      const error = new Error('File not found')
+      ;(error as any).response = { status: 404 }
+      mockApi.get.mockRejectedValue(error)
+
+      await expect(conversionApi.downloadFile('999')).rejects.toThrow('File not found')
     })
   })
 })
