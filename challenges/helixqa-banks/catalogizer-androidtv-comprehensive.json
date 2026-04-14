@@ -1531,19 +1531,19 @@
           "name": "Navigate to TV home",
           "action": "keypress: KEYCODE_HOME",
           "expected": "Android TV home screen is displayed",
-          "timeout": 10
+          "timeout": 20
         },
         {
           "name": "Scroll to find Catalogizer channel",
           "action": "keypress: KEYCODE_DPAD_DOWN",
           "expected": "Catalogizer Picks channel row is visible on the home screen",
-          "timeout": 10
+          "timeout": 20
         },
         {
           "name": "Verify channel has content",
           "action": "keypress: KEYCODE_DPAD_DOWN",
           "expected": "Channel shows media item cards with poster images and titles",
-          "timeout": 10
+          "timeout": 20
         }
       ]
     },
@@ -1560,25 +1560,25 @@
           "name": "Open Customize Channels",
           "action": "keypress: KEYCODE_DPAD_DOWN",
           "expected": "Channel customization screen appears",
-          "timeout": 10
+          "timeout": 20
         },
         {
           "name": "Find Movies channel",
           "action": "screenshot",
           "expected": "Movies channel is available to add",
-          "timeout": 10
+          "timeout": 20
         },
         {
           "name": "Enable Movies channel",
           "action": "keypress: KEYCODE_DPAD_CENTER",
           "expected": "Movies channel is enabled and will appear on home screen",
-          "timeout": 10
+          "timeout": 20
         },
         {
           "name": "Verify on home screen",
           "action": "keypress: KEYCODE_BACK",
           "expected": "Movies channel row appears with movie items",
-          "timeout": 10
+          "timeout": 20
         }
       ]
     },
@@ -1595,19 +1595,19 @@
           "name": "Navigate to channel",
           "action": "keypress: KEYCODE_DPAD_DOWN",
           "expected": "Channel row is focused",
-          "timeout": 10
+          "timeout": 20
         },
         {
           "name": "Select item",
           "action": "keypress: KEYCODE_ENTER",
           "expected": "Catalogizer app launches",
-          "timeout": 10
+          "timeout": 20
         },
         {
           "name": "Verify detail screen",
           "action": "screenshot",
           "expected": "Media detail screen is shown with title, description, poster, and Play button",
-          "timeout": 10
+          "timeout": 20
         }
       ]
     },
@@ -1624,19 +1624,19 @@
           "name": "Configure play immediately",
           "action": "tap: 960,540",
           "expected": "Movies launch action set to Play Immediately",
-          "timeout": 10
+          "timeout": 20
         },
         {
           "name": "Go to home screen",
           "action": "keypress: KEYCODE_HOME",
           "expected": "TV home screen displayed",
-          "timeout": 10
+          "timeout": 20
         },
         {
           "name": "Select movie from channel",
           "action": "keypress: KEYCODE_ENTER",
           "expected": "Movie playback starts immediately without showing detail screen",
-          "timeout": 10
+          "timeout": 20
         }
       ]
     },
@@ -1653,19 +1653,19 @@
           "name": "Start watching content",
           "action": "adb_shell: am start -n com.catalogizer.androidtv/.ui.MainActivity --es qa_username admin --es qa_password admin123",
           "expected": "Playback stops, progress is saved",
-          "timeout": 10
+          "timeout": 20
         },
         {
           "name": "Go to home screen",
           "action": "keypress: KEYCODE_HOME",
           "expected": "TV home screen displayed",
-          "timeout": 10
+          "timeout": 20
         },
         {
           "name": "Check Watch Next row",
           "action": "keypress: KEYCODE_DPAD_UP",
           "expected": "The partially watched movie appears in Watch Next with resume progress indicator",
-          "timeout": 10
+          "timeout": 20
         }
       ]
     },
@@ -1682,19 +1682,19 @@
           "name": "Find item in Watch Next",
           "action": "keypress: KEYCODE_DPAD_UP",
           "expected": "Previously watched item is visible",
-          "timeout": 10
+          "timeout": 20
         },
         {
           "name": "Select item",
           "action": "keypress: KEYCODE_ENTER",
           "expected": "Catalogizer opens and shows the media detail screen",
-          "timeout": 10
+          "timeout": 20
         },
         {
           "name": "Resume playback",
           "action": "keypress: KEYCODE_MEDIA_PLAY_PAUSE",
           "expected": "Playback resumes from the saved position, not from the beginning",
-          "timeout": 10
+          "timeout": 20
         }
       ]
     },
@@ -1711,13 +1711,13 @@
           "name": "Complete a TV episode",
           "action": "sleep: 10000",
           "expected": "Episode marked as completed",
-          "timeout": 10
+          "timeout": 20
         },
         {
           "name": "Check Watch Next",
           "action": "keypress: KEYCODE_HOME",
           "expected": "The NEXT episode in the series appears in Watch Next (not the completed one)",
-          "timeout": 10
+          "timeout": 20
         }
       ]
     },
@@ -1734,19 +1734,19 @@
           "name": "Verify channels exist",
           "action": "screenshot",
           "expected": "Catalogizer channels are visible",
-          "timeout": 10
+          "timeout": 20
         },
         {
           "name": "Logout",
           "action": "keypress: KEYCODE_DPAD_UP",
           "expected": "User is logged out, login screen appears",
-          "timeout": 10
+          "timeout": 20
         },
         {
           "name": "Check home screen",
           "action": "keypress: KEYCODE_HOME",
           "expected": "All Catalogizer channels and Watch Next entries are removed from the home screen",
-          "timeout": 10
+          "timeout": 20
         }
       ]
     },
@@ -1763,25 +1763,25 @@
           "name": "Open settings",
           "action": "keypress: KEYCODE_DPAD_UP",
           "expected": "Settings screen is displayed",
-          "timeout": 10
+          "timeout": 20
         },
         {
           "name": "Find Channel Tap Behavior",
           "action": "tap: 960,540",
           "expected": "Section shows list of media types with Detail Screen / Play Immediately options",
-          "timeout": 10
+          "timeout": 20
         },
         {
           "name": "Change movie behavior",
           "action": "keypress: KEYCODE_DPAD_CENTER",
           "expected": "Radio button changes to Play Immediately for Movies",
-          "timeout": 10
+          "timeout": 20
         },
         {
           "name": "Verify persistence",
           "action": "keypress: KEYCODE_BACK",
           "expected": "Movies still set to Play Immediately",
-          "timeout": 10
+          "timeout": 20
         }
       ]
     },
@@ -1798,19 +1798,19 @@
           "name": "Logout from Catalogizer",
           "action": "keypress: KEYCODE_DPAD_CENTER",
           "expected": "User is logged out",
-          "timeout": 10
+          "timeout": 20
         },
         {
           "name": "Click channel item from home",
           "action": "keypress: KEYCODE_DPAD_CENTER",
           "expected": "Catalogizer launches to the login screen",
-          "timeout": 10
+          "timeout": 20
         },
         {
           "name": "Login",
           "action": "text: admin",
           "expected": "After login, the deep-linked media item detail screen is shown",
-          "timeout": 10
+          "timeout": 20
         }
       ]
     },
@@ -1827,19 +1827,19 @@
           "name": "Focus channel row",
           "action": "keypress: KEYCODE_DPAD_DOWN",
           "expected": "Channel row is focused with visible highlight",
-          "timeout": 10
+          "timeout": 20
         },
         {
           "name": "Browse items left",
           "action": "keypress: KEYCODE_DPAD_LEFT",
           "expected": "Focus moves smoothly between program cards with poster images",
-          "timeout": 10
+          "timeout": 20
         },
         {
           "name": "Browse items right",
           "action": "keypress: KEYCODE_DPAD_RIGHT",
           "expected": "Focus reaches the last item, row scrolls smoothly to reveal more items",
-          "timeout": 10
+          "timeout": 20
         }
       ]
     },
@@ -1856,13 +1856,13 @@
           "name": "Note current channel content",
           "action": "screenshot",
           "expected": "Current items are noted",
-          "timeout": 10
+          "timeout": 20
         },
         {
           "name": "Trigger content scan via API",
           "action": "adb_shell: curl -s -X POST http://localhost:8080/api/v1/scan",
           "expected": "Scan request accepted by the API",
-          "timeout": 10
+          "timeout": 20
         },
         {
           "name": "Wait for scan to complete",
@@ -1874,19 +1874,19 @@
           "name": "Relaunch app to trigger channel refresh",
           "action": "adb_shell: am start -n com.catalogizer.androidtv/.ui.MainActivity --es qa_username admin --es qa_password admin123",
           "expected": "App relaunches and HomeScreen triggers loadHomeData with channel refresh",
-          "timeout": 10
+          "timeout": 20
         },
         {
           "name": "Wait for channels to refresh",
           "action": "sleep: 3000",
           "expected": "TvChannelRepository.refreshAllChannels() completes in background",
-          "timeout": 10
+          "timeout": 20
         },
         {
           "name": "Verify updated channels",
           "action": "screenshot",
           "expected": "New content appears in the channel rows",
-          "timeout": 10
+          "timeout": 20
         }
       ]
     },
@@ -2020,13 +2020,13 @@
           "name": "Click a channel program",
           "action": "tap: 960,540",
           "expected": "Deep link launches the app",
-          "timeout": 10
+          "timeout": 20
         },
         {
           "name": "Verify immediate playback",
           "action": "screenshot",
           "expected": "Player activity visible or detail screen loads (per category setting)",
-          "timeout": 10
+          "timeout": 20
         }
       ]
     },

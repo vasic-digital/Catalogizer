@@ -1,6 +1,7 @@
 // Prevents additional console window on Windows in release, DO NOT REMOVE!!
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
+#[cfg(feature = "vlc-player")]
 mod vlc;
 
 use std::collections::HashMap;
@@ -8,7 +9,9 @@ use serde::{Deserialize, Serialize};
 use tauri::State;
 use tokio::sync::Mutex;
 
+#[cfg(feature = "vlc-player")]
 use vlc::commands::{VLCPlayerState, PlayRequest, PlaybackStatus, TrackListResponse};
+#[cfg(feature = "vlc-player")]
 use vlc::VLCPlayer;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]

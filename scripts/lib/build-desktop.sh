@@ -19,6 +19,8 @@ build_desktop() {
             apt-get install -y --no-install-recommends xdg-utils >/dev/null 2>&1 || true
         fi
         export APPIMAGE_EXTRACT_AND_RUN=1
+        # Ensure pkg-config can find VLC libs when vlc-player feature is enabled
+        export PKG_CONFIG_PATH="/usr/lib/x86_64-linux-gnu/pkgconfig:${PKG_CONFIG_PATH:-}"
     fi
 
     # Install frontend dependencies
