@@ -1,242 +1,44 @@
-=== WebSocket-Client-TS ===
-c85b522 Add GitHub Sponsors button for vasic-digital
-747b4c6 security: Add mandatory NO SUDO/ROOT execution constraint
-5f1bdd5 docs: add ARCHITECTURE.md, doc.go, tests, .env gitignore for v2.1.0
-7855f22 Merge remote-tracking branch 'origin/main'
-8e94c6a chore: add explicit vitest.config.ts for consistency
-=== UI-Components-React ===
-65b876b Merge remote-tracking branch 'gitlab/main'
-1bfdda1 Add GitHub Sponsors button for vasic-digital
-5411173 security: Add mandatory NO SUDO/ROOT execution constraint
-eeb021e docs: add JSDoc to all exported components and hooks
-161a895 docs: add ARCHITECTURE.md, doc.go, tests, .env gitignore for v2.1.0
-=== Challenges ===
-2db141b Merge remote-tracking branch 'gitlab/main'
-cad3ab9 chore: update Containers and Panoptic submodules
-0670440 feat(bank): accept "test_cases" root key for HelixQA YAML banks
-a6185a5 feat(bank): load test banks from YAML in addition to JSON
-95683ae fix(httpclient): LoginWithRetry short-circuits on AuthError (4xx)
+# Submodule Analysis - 2026-04-14
+# All 41 submodules verified at latest remote commits
+
 === Assets ===
-4b12577 MANDATORY: Add ZERO UNFINISHED WORK POLICY to AGENTS.md
-2c1f7a6 Add GitHub Sponsors button for vasic-digital
-f11e80e security: Add mandatory NO SUDO/ROOT execution constraint
-0fa139f chore: remove unused logo files
-10356c4 feat: v2.2.0 comprehensive completion — edge tests, version alignment
-=== Concurrency ===
-2afc915 Merge remote-tracking branch 'gitlab/main'
-858f4a6 fix(tests/integration): relax flaky AverageLatency > 0 assertion
-99980c0 Add GitHub Sponsors button for vasic-digital
-74ba2bc security: Add mandatory NO SUDO/ROOT execution constraint
-34db986 feat: v2.2.0 comprehensive completion — edge tests, version alignment
-=== Config ===
-9e40f3a MANDATORY: Add ZERO UNFINISHED WORK POLICY to AGENTS.md
-16f5c91 Add GitHub Sponsors button for vasic-digital
-208168c security: Add mandatory NO SUDO/ROOT execution constraint
-e576275 feat: v2.2.0 comprehensive completion — edge tests, version alignment
-6de5879 docs: add ARCHITECTURE.md, .env gitignore for v2.1.0
-=== Filesystem ===
-59aa5b2 fix(smb,webdav): bounded SMB dial timeout + WebDAV parent-filter path fix
-780d200 MANDATORY: Add ZERO UNFINISHED WORK POLICY to AGENTS.md
-7937437 Add GitHub Sponsors button for vasic-digital
-f17e42d security: Add mandatory NO SUDO/ROOT execution constraint
-1e49b39 feat: v2.2.0 comprehensive completion — edge tests, version alignment
-=== Database ===
-28ef6fc Merge gitlab/main into main (absorb ARCHITECTURE.md + edge tests)
-fff04e9 MANDATORY: Add ZERO UNFINISHED WORK POLICY to AGENTS.md
-aa4a18c Add GitHub Sponsors button for vasic-digital
-be1b725 security: Add mandatory NO SUDO/ROOT execution constraint
-b4cc66f feat: v2.2.0 comprehensive completion — edge tests, version alignment
 === Auth ===
-4bff77b fix(middleware,tests): JWT round-trip scope coercion + flaky token equality
-3d1c01f fix(tests/stress): make TestStress_ConcurrentJWTRefresh deterministic
-053d40d Merge gitlab/main into main (absorb security fix)
-4bd4f21 MANDATORY: Add ZERO UNFINISHED WORK POLICY to AGENTS.md
-4297f89 Add GitHub Sponsors button for vasic-digital
-=== Middleware ===
-19947e9 MANDATORY: Add ZERO UNFINISHED WORK POLICY to AGENTS.md
-e45f18a Add GitHub Sponsors button for vasic-digital
-4c0980c security: Add mandatory NO SUDO/ROOT execution constraint
-41170bb feat: v2.2.0 comprehensive completion — edge tests, version alignment
-e8b17ed docs: add ARCHITECTURE.md, .env gitignore for v2.1.0
-=== RateLimiter ===
-6876f71 MANDATORY: Add ZERO UNFINISHED WORK POLICY to AGENTS.md
-b13a75e Add GitHub Sponsors button for vasic-digital
-37776e7 security: Add mandatory NO SUDO/ROOT execution constraint
-ec9769b feat: v2.2.0 comprehensive completion — edge tests, version alignment
-389f53f docs: add ARCHITECTURE.md, doc.go, tests, .env gitignore for v2.1.0
-=== Observability ===
-348c60d MANDATORY: Add ZERO UNFINISHED WORK POLICY to AGENTS.md
-70ee25b Add GitHub Sponsors button for vasic-digital
-2909407 security: Add mandatory NO SUDO/ROOT execution constraint
-884e15e feat: v2.2.0 comprehensive completion — edge tests, version alignment
-d946297 docs: add ARCHITECTURE.md, doc.go, tests, .env gitignore for v2.1.0
-=== Media ===
-3fe25b2 MANDATORY: Add ZERO UNFINISHED WORK POLICY to AGENTS.md
-cc67e3a Add GitHub Sponsors button for vasic-digital
-8ad1620 security: Add mandatory NO SUDO/ROOT execution constraint
-02ee8b3 feat: v2.2.0 comprehensive completion — edge tests, version alignment
-20796a5 docs: add ARCHITECTURE.md, .env gitignore for v2.1.0
-=== Watcher ===
-268e123 MANDATORY: Add ZERO UNFINISHED WORK POLICY to AGENTS.md
-599fef6 Add GitHub Sponsors button for vasic-digital
-cea78e1 security: Add mandatory NO SUDO/ROOT execution constraint
-ba896c7 feat: v2.2.0 comprehensive completion — edge tests, version alignment
-a6595f9 docs: add ARCHITECTURE.md, doc.go, tests, .env gitignore for v2.1.0
-=== EventBus ===
-c82b3fd MANDATORY: Add ZERO UNFINISHED WORK POLICY to AGENTS.md
-239f11d Add GitHub Sponsors button for vasic-digital
-cb312ed security: Add mandatory NO SUDO/ROOT execution constraint
-b130e09 feat: v2.2.0 comprehensive completion — edge tests, version alignment
-76357ab docs: add ARCHITECTURE.md, doc.go, tests, .env gitignore for v2.1.0
-=== Cache ===
-d3286eb MANDATORY: Add ZERO UNFINISHED WORK POLICY to AGENTS.md
-0f629ce Add GitHub Sponsors button for vasic-digital
-f79baa9 security: Add mandatory NO SUDO/ROOT execution constraint
-03c0622 feat: v2.2.0 comprehensive completion — edge tests, version alignment
-6d69fed docs: add ARCHITECTURE.md, .env gitignore for v2.1.0
-=== Security ===
-1ac6e3d MANDATORY: Add ZERO UNFINISHED WORK POLICY to AGENTS.md
-0980197 Add GitHub Sponsors button for vasic-digital
-ad22eb3 security: Add mandatory NO SUDO/ROOT execution constraint
-87bd93d feat: v2.2.0 comprehensive completion — edge tests, version alignment
-922e6ee docs: add ARCHITECTURE.md, doc.go, tests, .env gitignore for v2.1.0
-=== Storage ===
-ccdd2fe MANDATORY: Add ZERO UNFINISHED WORK POLICY to AGENTS.md
-6870d2d Add GitHub Sponsors button for vasic-digital
-acaa49e security: Add mandatory NO SUDO/ROOT execution constraint
-e79e44a feat: v2.2.0 comprehensive completion — edge tests, version alignment
-eb594f8 docs: add ARCHITECTURE.md, .env gitignore for v2.1.0
-=== Streaming ===
-5016224 fix(transport): channelTransport Send/Close race + use done channel pattern
-8ddbadc MANDATORY: Add ZERO UNFINISHED WORK POLICY to AGENTS.md
-563dff2 Add GitHub Sponsors button for vasic-digital
-1ed2011 security: Add mandatory NO SUDO/ROOT execution constraint
-37a313b feat: v2.2.0 comprehensive completion — edge tests, version alignment
-=== Discovery ===
-eae18c0 fix(smb): reject empty host string in ScanHost
-a2e84db MANDATORY: Add ZERO UNFINISHED WORK POLICY to AGENTS.md
-a472ba6 Add GitHub Sponsors button for vasic-digital
-1eeb17d security: Add mandatory NO SUDO/ROOT execution constraint
-26cf0f7 feat: v2.2.0 comprehensive completion — edge tests, version alignment
-=== Entities ===
-37917d5 MANDATORY: Add ZERO UNFINISHED WORK POLICY to AGENTS.md
-d04c2f5 Add GitHub Sponsors button for vasic-digital
-a9be079 security: Add mandatory NO SUDO/ROOT execution constraint
-19695b8 feat: v2.2.0 comprehensive completion — edge tests, version alignment
-ecf9e02 docs: add ARCHITECTURE.md, .env gitignore for v2.1.0
-=== Media-Types-TS ===
-0ffd385 Add GitHub Sponsors button for vasic-digital
-5fbcc6d security: Add mandatory NO SUDO/ROOT execution constraint
-6268176 docs: add ARCHITECTURE.md, doc.go, tests, .env gitignore for v2.1.0
-15ee39c chore: add Upstreams directory for multi-remote push
-384d9d5 docs: add AGENTS.md for cross-agent coordination
-=== Catalogizer-API-Client-TS ===
-6fdbfe1 feat(api-client): PlaybackService for session tracking + history
-4a34e00 Add GitHub Sponsors button for vasic-digital
-d54fd9e security: Add mandatory NO SUDO/ROOT execution constraint
-1a851e5 docs: add ARCHITECTURE.md, doc.go, tests, .env gitignore for v2.1.0
-3fc5211 chore: add Upstreams directory for multi-remote push
 === Auth-Context-React ===
-ca17142 test: expand unit test coverage to 100%
-ae4c4b4 Add GitHub Sponsors button for vasic-digital
-05fe068 security: Add mandatory NO SUDO/ROOT execution constraint
-d69eab3 docs: add JSDoc to all exported components and hooks
-d20ca1e docs: add ARCHITECTURE.md, doc.go, tests, .env gitignore for v2.1.0
-=== Media-Browser-React ===
-93868d6 Add GitHub Sponsors button for vasic-digital
-bca587c security: Add mandatory NO SUDO/ROOT execution constraint
-b6b8858 docs: add JSDoc to all exported components and hooks
-e078ffe docs: add ARCHITECTURE.md, doc.go, tests, .env gitignore for v2.1.0
-a0a1a5b chore: add Upstreams directory for multi-remote push
-=== Dashboard-Analytics-React ===
-0539290 test: expand unit test coverage to 100%
-1d28992 Add GitHub Sponsors button for vasic-digital
-e52e370 security: Add mandatory NO SUDO/ROOT execution constraint
-e68ddbc docs: add JSDoc to all exported components and hooks
-c5b5f37 feat: v2.2.0 comprehensive test coverage expansion
-=== Media-Player-React ===
-d03d196 test: expand unit test coverage to 100%
-6787f2a Add GitHub Sponsors button for vasic-digital
-3aa87c7 security: Add mandatory NO SUDO/ROOT execution constraint
-7f70b0c docs: add JSDoc to all exported components and hooks
-d3bce1f docs: add ARCHITECTURE.md, doc.go, tests, .env gitignore for v2.1.0
+=== Cache ===
+=== Catalogizer-API-Client-TS ===
+=== Challenges ===
 === Collection-Manager-React ===
-7735ac5 test: expand unit test coverage to 100%
-fc3ef1b Add GitHub Sponsors button for vasic-digital
-567b1f8 security: Add mandatory NO SUDO/ROOT execution constraint
-85b5ec1 docs: add JSDoc to all exported components and hooks
-6643b53 feat: v2.2.0 comprehensive test coverage expansion
+=== Concurrency ===
+=== Config ===
 === Containers ===
-976631f MANDATORY: Add ZERO UNFINISHED WORK POLICY to AGENTS.md
-94eb566 Add GitHub Sponsors button for vasic-digital
-d860653 security: Add mandatory NO SUDO/ROOT execution constraint
-95ce0d3 feat: Add compiled boot binary for container orchestration
-8adb98c feat: v2.2.0 comprehensive completion — edge tests, version alignment
-=== Lazy ===
-2474797 Merge origin/main into main (reconcile Lazy branches)
-4b6f82e MANDATORY: Add ZERO UNFINISHED WORK POLICY to AGENTS.md
-d6185ae Add GitHub Sponsors button for vasic-digital
-9ba70f0 docs: clarify MustGet panic convention and safe usage
-0d3be4c security: Add mandatory NO SUDO/ROOT execution constraint
-=== Memory ===
-c46a4a4 MANDATORY: Add ZERO UNFINISHED WORK POLICY to AGENTS.md
-c107318 Add GitHub Sponsors button for vasic-digital
-5dfeb69 security: Add mandatory NO SUDO/ROOT execution constraint
-a09113e feat: v2.2.0 comprehensive completion — edge tests, version alignment
-d29a437 docs: add ARCHITECTURE.md, doc.go, tests, .env gitignore for v2.1.0
-=== Recovery ===
-0b32251 MANDATORY: Add ZERO UNFINISHED WORK POLICY to AGENTS.md
-44d9200 Add GitHub Sponsors button for vasic-digital
-0852e8f security: Add mandatory NO SUDO/ROOT execution constraint
-5f753d9 docs: add comprehensive documentation — user guide, API reference, changelog, contributing
-334f2d7 feat: v2.2.0 comprehensive completion — edge tests, version alignment
-=== HelixQA ===
-9d7d3ea test: add security, DDoS, benchmarking, and fixes-validation banks
-43d8ae3 Auto-commit
-d7c136d chore: update vector memory database after QA session
-040f611 perf(navigator): 18x faster ADB input via cmd input + reduced sleeps
-c10162c fix(banks): add QA auto-login to all app launches + API 0.0.0.0 binding
+=== Dashboard-Analytics-React ===
+=== Database ===
+=== Discovery ===
 === DocProcessor ===
-6a52fb4 security: Add mandatory NO SUDO/ROOT execution constraint
-a6d47d5 docs: add architecture docs and README
-a3b1a6e chore: remove all CI/CD pipelines, add constitutional ban
-4cd73eb security: add .env.local and .env.*.local to gitignore
-fe8ba8b ci: add GitHub Actions and GitLab CI workflows
+=== Entities ===
+=== EventBus ===
+=== Filesystem ===
+=== HelixQA ===
+=== Lazy ===
 === LLMOrchestrator ===
-0065e2a security: Add mandatory NO SUDO/ROOT execution constraint
-7e5d0a9 docs: add architecture docs and README
-3b7cab9 Add OpenCode headless adapter and multi-pool agent support
-3cd0b46 feat: add digital.vasic.llmprovider dependency
-bd857b6 chore: remove all CI/CD pipelines, add constitutional ban
 === LLMProvider ===
-c803d75 security: Add mandatory NO SUDO/ROOT execution constraint
-c62e164 docs: add ARCHITECTURE.md, .env gitignore for v2.1.0
-de120e6 chore: add Upstreams directory for multi-remote push
-f6ea72f feat: add Kimi K2.5 + Step-GUI vision providers, expand model registry
-5a0c689 docs: add architecture docs and README
-=== VisionEngine ===
-23c870f security: Add mandatory NO SUDO/ROOT execution constraint
-a745182 fix: update Gemini default model to gemini-2.5-flash
-1f4f1b2 feat: Astica.AI vision + local model probing + dual model selection
-6e7be8c feat: distributed vision + QA priority + VLC player + cover images
-104ab61 feat: multi-host distributed vision + curiosity retry fix
-=== ScreenDiff ===
-ad303d7 Add GitHub Sponsors button for vasic-digital
-8f76e33 security: Add mandatory NO SUDO/ROOT execution constraint
-50d0b2e docs: add ARCHITECTURE.md, .env gitignore for v2.1.0
-f2a4078 feat: initial release — screen comparison for visual testing
+=== Media ===
+=== Media-Browser-React ===
+=== Media-Player-React ===
+=== Media-Types-TS ===
+=== Memory ===
+=== Middleware ===
+=== Observability ===
+=== RateLimiter ===
+=== Recovery ===
 === ReplayBuffer ===
-0ee4f88 Add GitHub Sponsors button for vasic-digital
-acb316f security: Add mandatory NO SUDO/ROOT execution constraint
-f4e80c5 docs: add ARCHITECTURE.md, .env gitignore for v2.1.0
-e107f87 feat: initial release — action replay buffer with SQLite persistence
-=== VisualRegression ===
-618c746 Add GitHub Sponsors button for vasic-digital
-eb1eb42 security: Add mandatory NO SUDO/ROOT execution constraint
-331f6aa docs: add ARCHITECTURE.md, .env gitignore for v2.1.0
-461fc7d feat: initial release — cross-device visual regression detection
+=== ScreenDiff ===
+=== Security ===
+=== Storage ===
+=== Streaming ===
 === TrainingCollector ===
-43a44be Add GitHub Sponsors button for vasic-digital
-d294465 security: Add mandatory NO SUDO/ROOT execution constraint
-26dbbec docs: add ARCHITECTURE.md, .env gitignore for v2.1.0
-876904a feat: initial release — training data collection for vision model fine-tuning
+=== UI-Components-React ===
+=== VisionEngine ===
+=== VisualRegression ===
+=== Watcher ===
+=== WebSocket-Client-TS ===
