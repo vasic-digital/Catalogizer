@@ -1,6 +1,6 @@
 ---
-id: HELIX-623
-severity: medium
+id: HELIX-616
+severity: high
 category: functional
 platform: androidtv
 screen: 
@@ -8,11 +8,11 @@ status: open
 found_date: 2026-04-13
 ---
 
-# Test Case Failed: Recent Apps Button Handling - Step 1
+# Test Case Failed: Remote Control Disconnects During Operation - Step 1
 
-Step: Open recent apps during use
-Action: keypress: KEYCODE_HOME
-Expected: Android TV recent apps overlay appears. Catalogizer shows correct preview thumbnail (not black screen). App state is preserved
+Step: Use Bluetooth remote normally
+Action: keypress: KEYCODE_DPAD_DOWN
+Expected: App responds to remote input
 Actual: Keypress failed: context deadline exceeded
 
 ## Related Issues
@@ -238,12 +238,5 @@ Actual: Keypress failed: context deadline exceeded
 - HELIX-613: Test Case Failed: Media Info for Corrupted or Incomplete File - Step 1
 - HELIX-614: Test Case Failed: Resume Playback at Invalid Position After Crash - Step 1
 - HELIX-615: Test Case Failed: Pause Playback for Over 30 Minutes Then Resume - Step 1
-- HELIX-616: Test Case Failed: Remote Control Disconnects During Operation - Step 1
-- HELIX-617: Test Case Failed: IR Remote Interference From Other Devices - Step 1
-- HELIX-618: Test Case Failed: Bluetooth Remote Low Battery Behavior - Step 1
-- HELIX-619: Test Case Failed: Media Remote Keys on Non-Media Screen - Step 1
-- HELIX-620: Test Case Failed: Channel Up/Down on Non-Live Content - Step 1
-- HELIX-621: Test Case Failed: Voice Search Failure Graceful Handling - Step 1
-- HELIX-622: Test Case Failed: Home Button During Playback Saves State - Step 1
 
 

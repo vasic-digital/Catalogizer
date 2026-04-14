@@ -1,6 +1,6 @@
 ---
-id: HELIX-623
-severity: medium
+id: HELIX-636
+severity: high
 category: functional
 platform: androidtv
 screen: 
@@ -8,12 +8,12 @@ status: open
 found_date: 2026-04-13
 ---
 
-# Test Case Failed: Recent Apps Button Handling - Step 1
+# Test Case Failed: Playback Progress Syncs Across Platforms - Step 1
 
-Step: Open recent apps during use
-Action: keypress: KEYCODE_HOME
-Expected: Android TV recent apps overlay appears. Catalogizer shows correct preview thumbnail (not black screen). App state is preserved
-Actual: Keypress failed: context deadline exceeded
+Step: Start playback on Web
+Action: Play a media item on web, pause at 50%
+Expected: Progress saved (PUT /api/v1/media/{id}/progress)
+Actual: Text-only action - not executable! Use adb_shell:, sleep:, etc.
 
 ## Related Issues
 
@@ -245,5 +245,18 @@ Actual: Keypress failed: context deadline exceeded
 - HELIX-620: Test Case Failed: Channel Up/Down on Non-Live Content - Step 1
 - HELIX-621: Test Case Failed: Voice Search Failure Graceful Handling - Step 1
 - HELIX-622: Test Case Failed: Home Button During Playback Saves State - Step 1
+- HELIX-623: Test Case Failed: Recent Apps Button Handling - Step 1
+- HELIX-624: Test Case Failed: HDR Content Metadata Handling - Step 1
+- HELIX-625: Test Case Failed: Display Refresh Rate Switching - Step 1
+- HELIX-626: Test Case Failed: Frame Drops During Row Navigation - Step 1
+- HELIX-627: Test Case Failed: 4:3 Content on 16:9 Display - Step 1
+- HELIX-628: Test Case Failed: Letterbox and Pillarbox Rendering - Step 1
+- HELIX-629: Test Case Failed: Overscan Safe Area Compliance - Step 2
+- HELIX-630: Test Case Failed: Subtitle Overlap With Player UI Elements - Step 1
+- HELIX-631: Test Case Failed: UI Theme Contrast With Bright Video Content - Step 1
+- HELIX-632: Test Case Failed: Loading Spinner Performance on Slow GPU - Step 1
+- HELIX-633: Test Case Failed: Favorites Sync Across Platforms - Step 4
+- HELIX-634: Test Case Failed: Login from All Client Platforms - Step 1
+- HELIX-635: Test Case Failed: Favorites Sync Across Platforms - Step 1
 
 

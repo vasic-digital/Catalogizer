@@ -1,6 +1,6 @@
 ---
-id: HELIX-623
-severity: medium
+id: HELIX-630
+severity: high
 category: functional
 platform: androidtv
 screen: 
@@ -8,11 +8,11 @@ status: open
 found_date: 2026-04-13
 ---
 
-# Test Case Failed: Recent Apps Button Handling - Step 1
+# Test Case Failed: Subtitle Overlap With Player UI Elements - Step 1
 
-Step: Open recent apps during use
-Action: keypress: KEYCODE_HOME
-Expected: Android TV recent apps overlay appears. Catalogizer shows correct preview thumbnail (not black screen). App state is preserved
+Step: Play video with subtitles and show controls
+Action: keypress: KEYCODE_MEDIA_PLAY_PAUSE
+Expected: When player controls are visible, subtitles shift upward to avoid being hidden behind the seek bar and control buttons. Subtitles are readable at all times
 Actual: Keypress failed: context deadline exceeded
 
 ## Related Issues
@@ -245,5 +245,12 @@ Actual: Keypress failed: context deadline exceeded
 - HELIX-620: Test Case Failed: Channel Up/Down on Non-Live Content - Step 1
 - HELIX-621: Test Case Failed: Voice Search Failure Graceful Handling - Step 1
 - HELIX-622: Test Case Failed: Home Button During Playback Saves State - Step 1
+- HELIX-623: Test Case Failed: Recent Apps Button Handling - Step 1
+- HELIX-624: Test Case Failed: HDR Content Metadata Handling - Step 1
+- HELIX-625: Test Case Failed: Display Refresh Rate Switching - Step 1
+- HELIX-626: Test Case Failed: Frame Drops During Row Navigation - Step 1
+- HELIX-627: Test Case Failed: 4:3 Content on 16:9 Display - Step 1
+- HELIX-628: Test Case Failed: Letterbox and Pillarbox Rendering - Step 1
+- HELIX-629: Test Case Failed: Overscan Safe Area Compliance - Step 2
 
 

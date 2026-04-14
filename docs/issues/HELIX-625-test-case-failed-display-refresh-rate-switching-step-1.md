@@ -1,5 +1,5 @@
 ---
-id: HELIX-623
+id: HELIX-625
 severity: medium
 category: functional
 platform: androidtv
@@ -8,11 +8,11 @@ status: open
 found_date: 2026-04-13
 ---
 
-# Test Case Failed: Recent Apps Button Handling - Step 1
+# Test Case Failed: Display Refresh Rate Switching - Step 1
 
-Step: Open recent apps during use
-Action: keypress: KEYCODE_HOME
-Expected: Android TV recent apps overlay appears. Catalogizer shows correct preview thumbnail (not black screen). App state is preserved
+Step: Play 24fps content on 60Hz display
+Action: keypress: KEYCODE_DPAD_CENTER
+Expected: Player either uses frame rate matching to switch display to 24Hz (if supported and enabled) or applies 3:2 pulldown. No visible stuttering from frame rate mismatch
 Actual: Keypress failed: context deadline exceeded
 
 ## Related Issues
@@ -245,5 +245,7 @@ Actual: Keypress failed: context deadline exceeded
 - HELIX-620: Test Case Failed: Channel Up/Down on Non-Live Content - Step 1
 - HELIX-621: Test Case Failed: Voice Search Failure Graceful Handling - Step 1
 - HELIX-622: Test Case Failed: Home Button During Playback Saves State - Step 1
+- HELIX-623: Test Case Failed: Recent Apps Button Handling - Step 1
+- HELIX-624: Test Case Failed: HDR Content Metadata Handling - Step 1
 
 

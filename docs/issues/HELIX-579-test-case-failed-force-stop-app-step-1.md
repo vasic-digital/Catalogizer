@@ -1,6 +1,6 @@
 ---
-id: HELIX-623
-severity: medium
+id: HELIX-579
+severity: critical
 category: functional
 platform: androidtv
 screen: 
@@ -8,12 +8,12 @@ status: open
 found_date: 2026-04-13
 ---
 
-# Test Case Failed: Recent Apps Button Handling - Step 1
+# Test Case Failed: Force Stop App - Step 1
 
-Step: Open recent apps during use
-Action: keypress: KEYCODE_HOME
-Expected: Android TV recent apps overlay appears. Catalogizer shows correct preview thumbnail (not black screen). App state is preserved
-Actual: Keypress failed: context deadline exceeded
+Step: Kill app process
+Action: adb_shell: am force-stop com.catalogizer.androidtv
+Expected: App killed
+Actual: adb shell error: context deadline exceeded (out: )
 
 ## Related Issues
 
@@ -201,49 +201,5 @@ Actual: Keypress failed: context deadline exceeded
 - HELIX-576: Test Case Failed: TV Login - Full Executable Flow - Step 1
 - HELIX-577: Test Case Failed: TV Home Navigation - Executable - Step 1
 - HELIX-578: Test Case Failed: TV Media Playback - Executable - Step 1
-- HELIX-579: Test Case Failed: Force Stop App - Step 1
-- HELIX-580: Test Case Failed: Cold Start - Full Launch Sequence - Step 2
-- HELIX-581: Test Case Failed: Login - Full Credential Entry - Step 1
-- HELIX-582: Test Case Failed: Navigate Home Screen - Step 1
-- HELIX-583: Test Case Failed: Background and Resume - Step 1
-- HELIX-584: Test Case Failed: Login - Invalid Credentials - Step 1
-- HELIX-585: Test Case Failed: Playback session lifecycle - start -> progress -> end - Step 1
-- HELIX-586: Test Case Failed: Playback dumpsys media session visible - Step 1
-- HELIX-587: Test Case Failed: Cold Start on Low-RAM Device (2GB) - Step 1
-- HELIX-588: Test Case Failed: Launch With Ethernet Disconnected - Step 1
-- HELIX-589: Test Case Failed: Launch After System OTA Update - Step 1
-- HELIX-590: Test Case Failed: HDMI-CEC Power-On Launch Conflict - Step 1
-- HELIX-591: Test Case Failed: Screensaver Interruption During Idle - Step 2
-- HELIX-592: Test Case Failed: Memory Pressure Kill and Restore - Step 1
-- HELIX-593: Test Case Failed: Very Rapid D-Pad Input (20+ Per Second) - Step 1
-- HELIX-594: Test Case Failed: D-Pad Navigation During Loading Transition - Step 1
-- HELIX-595: Test Case Failed: Focus Lost After Dialog Dismissal - Step 1
-- HELIX-596: Test Case Failed: Focus Trapped on Invisible Element - Step 1
-- HELIX-597: Test Case Failed: Focus Wrap-Around at List Boundaries - Step 1
-- HELIX-598: Test Case Failed: D-Pad Input During Row Scroll Animation - Step 1
-- HELIX-599: Test Case Failed: Long Press D-Pad Center Button - Step 1
-- HELIX-600: Test Case Failed: Simultaneous Multiple Button Press - Step 1
-- HELIX-601: Test Case Failed: Login With On-Screen Keyboard Lag - Step 1
-- HELIX-602: Test Case Failed: Login With External USB/Bluetooth Keyboard - Step 2
-- HELIX-603: Test Case Failed: Server URL With Trailing Spaces - Step 1
-- HELIX-604: Test Case Failed: Server URL With Protocol Mismatch - Step 1
-- HELIX-605: Test Case Failed: Session Expires During Active Media Playback - Step 1
-- HELIX-606: Test Case Failed: Re-Login After Server-Side Password Change - Step 1
-- HELIX-607: Test Case Failed: Login With Self-Signed Server Certificate - Step 1
-- HELIX-608: Test Case Failed: Play 4K Content on 1080p Device - Step 1
-- HELIX-609: Test Case Failed: Play Unsupported Codec (HEVC on Old Device) - Step 1
-- HELIX-610: Test Case Failed: Streaming Quality Downgrade on Bandwidth Drop - Step 1
-- HELIX-611: Test Case Failed: Audio Delay With External Sound Bar - Step 1
-- HELIX-612: Test Case Failed: Subtitle Rendering With Large System Font - Step 1
-- HELIX-613: Test Case Failed: Media Info for Corrupted or Incomplete File - Step 1
-- HELIX-614: Test Case Failed: Resume Playback at Invalid Position After Crash - Step 1
-- HELIX-615: Test Case Failed: Pause Playback for Over 30 Minutes Then Resume - Step 1
-- HELIX-616: Test Case Failed: Remote Control Disconnects During Operation - Step 1
-- HELIX-617: Test Case Failed: IR Remote Interference From Other Devices - Step 1
-- HELIX-618: Test Case Failed: Bluetooth Remote Low Battery Behavior - Step 1
-- HELIX-619: Test Case Failed: Media Remote Keys on Non-Media Screen - Step 1
-- HELIX-620: Test Case Failed: Channel Up/Down on Non-Live Content - Step 1
-- HELIX-621: Test Case Failed: Voice Search Failure Graceful Handling - Step 1
-- HELIX-622: Test Case Failed: Home Button During Playback Saves State - Step 1
 
 

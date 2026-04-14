@@ -1,5 +1,5 @@
 ---
-id: HELIX-623
+id: HELIX-632
 severity: medium
 category: functional
 platform: androidtv
@@ -8,12 +8,12 @@ status: open
 found_date: 2026-04-13
 ---
 
-# Test Case Failed: Recent Apps Button Handling - Step 1
+# Test Case Failed: Loading Spinner Performance on Slow GPU - Step 1
 
-Step: Open recent apps during use
-Action: keypress: KEYCODE_HOME
-Expected: Android TV recent apps overlay appears. Catalogizer shows correct preview thumbnail (not black screen). App state is preserved
-Actual: Keypress failed: context deadline exceeded
+Step: Trigger loading state on low-end device
+Action: adb_shell: am start -n com.catalogizer.androidtv/.ui.MainActivity --es qa_username admin --es qa_password admin123
+Expected: Loading spinner animates smoothly (not jerky). Spinner does not consume excessive GPU resources. Animation uses hardware layer or simple rotation rather than complex shader effects
+Actual: adb shell error: context deadline exceeded (out: )
 
 ## Related Issues
 
@@ -245,5 +245,14 @@ Actual: Keypress failed: context deadline exceeded
 - HELIX-620: Test Case Failed: Channel Up/Down on Non-Live Content - Step 1
 - HELIX-621: Test Case Failed: Voice Search Failure Graceful Handling - Step 1
 - HELIX-622: Test Case Failed: Home Button During Playback Saves State - Step 1
+- HELIX-623: Test Case Failed: Recent Apps Button Handling - Step 1
+- HELIX-624: Test Case Failed: HDR Content Metadata Handling - Step 1
+- HELIX-625: Test Case Failed: Display Refresh Rate Switching - Step 1
+- HELIX-626: Test Case Failed: Frame Drops During Row Navigation - Step 1
+- HELIX-627: Test Case Failed: 4:3 Content on 16:9 Display - Step 1
+- HELIX-628: Test Case Failed: Letterbox and Pillarbox Rendering - Step 1
+- HELIX-629: Test Case Failed: Overscan Safe Area Compliance - Step 2
+- HELIX-630: Test Case Failed: Subtitle Overlap With Player UI Elements - Step 1
+- HELIX-631: Test Case Failed: UI Theme Contrast With Bright Video Content - Step 1
 
 

@@ -1,5 +1,5 @@
 ---
-id: HELIX-623
+id: HELIX-619
 severity: medium
 category: functional
 platform: androidtv
@@ -8,11 +8,11 @@ status: open
 found_date: 2026-04-13
 ---
 
-# Test Case Failed: Recent Apps Button Handling - Step 1
+# Test Case Failed: Media Remote Keys on Non-Media Screen - Step 1
 
-Step: Open recent apps during use
+Step: Press play/pause on home screen
 Action: keypress: KEYCODE_HOME
-Expected: Android TV recent apps overlay appears. Catalogizer shows correct preview thumbnail (not black screen). App state is preserved
+Expected: App either starts playing the focused item or ignores the key gracefully. No crash from unhandled media key event. No KeyEvent dispatching error
 Actual: Keypress failed: context deadline exceeded
 
 ## Related Issues
@@ -241,9 +241,5 @@ Actual: Keypress failed: context deadline exceeded
 - HELIX-616: Test Case Failed: Remote Control Disconnects During Operation - Step 1
 - HELIX-617: Test Case Failed: IR Remote Interference From Other Devices - Step 1
 - HELIX-618: Test Case Failed: Bluetooth Remote Low Battery Behavior - Step 1
-- HELIX-619: Test Case Failed: Media Remote Keys on Non-Media Screen - Step 1
-- HELIX-620: Test Case Failed: Channel Up/Down on Non-Live Content - Step 1
-- HELIX-621: Test Case Failed: Voice Search Failure Graceful Handling - Step 1
-- HELIX-622: Test Case Failed: Home Button During Playback Saves State - Step 1
 
 
