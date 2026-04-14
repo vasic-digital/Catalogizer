@@ -318,6 +318,7 @@ Options:
   --container         Force containerized build (requires builder image)
   --local             Force local build (no container)
   --distributed       Distribute builds across remote hosts (requires Go)
+  --env-file FILE     Environment file for distributed builds (default: .env.distributed)
   --status            Show component change detection status and exit
   --version           Show current version and exit
   --help              Show this help message
@@ -346,6 +347,7 @@ parse_build_args() {
     BUILD_SHOW_STATUS=false
     BUILD_SHOW_VERSION=false
     BUILD_DISTRIBUTED=false
+    BUILD_ENV_FILE=".env.distributed"
 
     while [[ $# -gt 0 ]]; do
         case "$1" in
@@ -380,6 +382,10 @@ parse_build_args() {
             --distributed)
                 BUILD_DISTRIBUTED=true
                 shift
+                ;;
+            --env-file)
+                BUILD_ENV_FILE="$2"
+                shift 2
                 ;;
             --status)
                 BUILD_SHOW_STATUS=true
@@ -502,17 +508,19 @@ build_main() {
 
     if [[ "$BUILD_DISTRIBUTED" == "true" ]]; then
         log_info "Distributed build mode enabled"
-        local dist_bin="$BUILD_PROJECT_ROOT/Containers/cmd/distributed-build"
+        local dist_dir="$BUILD_PROJECT_ROOT/Containers"
+        local dist_cmd="./cmd/distributed-build"
         if ! command -v go &>/dev/null; then
             log_error "Go is required for distributed builds"
             return 1
         fi
-        go run "$dist_bin" \
+        local env_path="$BUILD_PROJECT_ROOT/$BUILD_ENV_FILE"
+        (cd "$dist_dir" && go run "$dist_cmd" \
             --project "$BUILD_PROJECT_ROOT" \
+            --env "$env_path" \
             ${BUILD_SKIP_TESTS:+--skip-tests} \
             ${BUILD_SINGLE_COMPONENT:+--component "$BUILD_SINGLE_COMPONENT"} \
-            ${BUILD_FORCE:+--force} \
-            ${BUILD_DRY_RUN:+--dry-run}
+            ${BUILD_DRY_RUN:+--dry-run})
         return $?
     fi
 

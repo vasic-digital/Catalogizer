@@ -20,7 +20,22 @@ check_cmd() {
     fi
 }
 
-check_cmd podman
+check_runtime() {
+    if command -v podman &>/dev/null; then
+        echo "  [OK] podman found: $(command -v podman)"
+        RUNTIME="podman"
+    elif command -v docker &>/dev/null; then
+        echo "  [OK] docker found: $(command -v docker)"
+        echo "  [WARN] podman not found, using docker as container runtime"
+        RUNTIME="docker"
+        # Don't count as error since docker is acceptable
+    else
+        echo "  [MISSING] Neither podman nor docker found"
+        errors=$((errors + 1))
+    fi
+}
+
+check_runtime
 check_cmd go
 check_cmd node
 check_cmd npm

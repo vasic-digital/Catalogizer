@@ -4,14 +4,14 @@
     "major": 2,
     "minor": 3,
     "patch": 0,
-    "build_number": 22
+    "build_number": 23
   },
   "components": {
     "catalog-api": {
-      "last_build_number": 22,
-      "last_build_date": "2026-04-14T04:49:22Z",
-      "last_source_hash": "4c2b34319571e9bec43b1a8f43992521585203f59fd5538a50f3c84b0a466519",
-      "last_git_commit": "f3e79f3ea"
+      "last_build_number": 23,
+      "last_build_date": "2026-04-14T15:20:52Z",
+      "last_source_hash": "f27e41fdc3a03f4cee1d4858b87c2b765327c5e4e8d5fa3b483996fe28fdf464",
+      "last_git_commit": "660a82bef"
     },
     "catalog-web": {
       "last_build_number": 22,
