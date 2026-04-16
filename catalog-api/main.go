@@ -693,6 +693,7 @@ func main() {
 	if storageClient != nil {
 		coverArtService.SetObjectStore(storageClient, cfg.Storage.Bucket)
 	}
+	coverArtService.SetClientFactory(clientFactory)
 
 	// Cover handler for placeholder SVGs and cover image serving
 	coverHandler := root_handlers.NewCoverHandler(coverArtService)

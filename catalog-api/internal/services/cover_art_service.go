@@ -22,6 +22,7 @@ import (
 	"time"
 
 	"catalogizer/database"
+	"catalogizer/filesystem"
 
 	"digital.vasic.storage/pkg/object"
 
@@ -49,6 +50,7 @@ type CoverArtService struct {
 	cacheDir   string
 	store      object.ObjectStore
 	bucket     string
+	fsFactory  filesystem.ClientFactory
 }
 
 // CoverArtProvider represents different cover art providers
@@ -164,6 +166,11 @@ func (s *CoverArtService) SetProxyConfig(cfg ProxyConfiger) {
 func (s *CoverArtService) SetObjectStore(store object.ObjectStore, bucket string) {
 	s.store = store
 	s.bucket = bucket
+}
+
+// SetClientFactory configures the filesystem client factory for reading remote files.
+func (s *CoverArtService) SetClientFactory(factory filesystem.ClientFactory) {
+	s.fsFactory = factory
 }
 
 // HasObjectStore returns true when an object store is configured.
@@ -1204,11 +1211,14 @@ func (s *CoverArtService) GenerateMissingVideoThumbnails(ctx context.Context, li
 
 	// Find media items with no local cover art that have a primary video file
 	query := `
-		SELECT mi.id, f.path || '/' || f.name AS full_path
+		SELECT mi.id, f.path || '/' || f.name AS full_path,
+		       sr.protocol, sr.path AS root_path, sr.host, sr.port,
+		       sr.username, sr.password, sr.domain
 		FROM media_items mi
 		JOIN media_types mt ON mi.media_type_id = mt.id
 		JOIN media_files mf ON mi.id = mf.media_item_id
 		JOIN files f ON mf.file_id = f.id
+		JOIN storage_roots sr ON f.storage_root_id = sr.id
 		LEFT JOIN cover_art ca ON mi.id = ca.media_item_id AND ca.is_default = 1 AND ca.local_path IS NOT NULL
 		WHERE ca.id IS NULL
 		  AND mt.name IN ('movie', 'tv_show', 'tv_episode', 'video')
@@ -1228,21 +1238,39 @@ func (s *CoverArtService) GenerateMissingVideoThumbnails(ctx context.Context, li
 	}
 	defer rows.Close()
 
-	type task struct {
-		mediaItemID int64
-		videoPath   string
-	}
-	var tasks []task
+	var tasks []thumbnailTask
 	for rows.Next() {
-		var t task
-		if err := rows.Scan(&t.mediaItemID, &t.videoPath); err == nil {
+		var t thumbnailTask
+		if err := rows.Scan(&t.mediaItemID, &t.videoPath, &t.protocol, &t.rootPath, &t.host, &t.port, &t.username, &t.password, &t.domain); err == nil {
 			tasks = append(tasks, t)
 		}
 	}
 
 	generated := 0
 	for _, t := range tasks {
-		thumb, err := s.generateAndSaveVideoThumbnail(ctx, t.mediaItemID, t.videoPath)
+		resolvedPath := t.videoPath
+		isTemp := false
+
+		if t.protocol == "local" && t.rootPath.Valid && t.rootPath.String != "" {
+			resolvedPath = filepath.Join(t.rootPath.String, t.videoPath)
+		} else if t.protocol != "local" && s.fsFactory != nil {
+			// Copy remote file to temp location for ffmpeg
+			tempPath, err := s.copyRemoteFileToTemp(ctx, t)
+			if err != nil {
+				s.logger.Warn("Failed to copy remote file for thumbnail generation",
+					zap.Int64("media_item_id", t.mediaItemID),
+					zap.String("path", t.videoPath),
+					zap.Error(err))
+				continue
+			}
+			resolvedPath = tempPath
+			isTemp = true
+		}
+
+		thumb, err := s.generateAndSaveVideoThumbnail(ctx, t.mediaItemID, resolvedPath)
+		if isTemp {
+			_ = os.Remove(resolvedPath)
+		}
 		if err != nil {
 			s.logger.Warn("Failed to generate video thumbnail",
 				zap.Int64("media_item_id", t.mediaItemID),
@@ -1256,6 +1284,71 @@ func (s *CoverArtService) GenerateMissingVideoThumbnails(ctx context.Context, li
 	}
 
 	return generated, nil
+}
+
+// thumbnailTask holds the data needed to generate a video thumbnail.
+type thumbnailTask struct {
+	mediaItemID int64
+	videoPath   string
+	protocol    string
+	rootPath    sql.NullString
+	host        sql.NullString
+	port        sql.NullInt64
+	username    sql.NullString
+	password    sql.NullString
+	domain      sql.NullString
+}
+
+// copyRemoteFileToTemp copies a remote file (SMB, FTP, etc.) to a temporary
+// local path so ffmpeg can process it.
+func (s *CoverArtService) copyRemoteFileToTemp(ctx context.Context, t thumbnailTask) (string, error) {
+	settings := map[string]interface{}{
+		"host":     t.host.String,
+		"port":     445,
+		"share":    t.rootPath.String,
+		"username": t.username.String,
+		"password": t.password.String,
+		"domain":   "WORKGROUP",
+	}
+	if t.port.Valid {
+		settings["port"] = int(t.port.Int64)
+	}
+	if t.domain.Valid && t.domain.String != "" {
+		settings["domain"] = t.domain.String
+	}
+
+	config := &filesystem.StorageConfig{
+		Protocol: t.protocol,
+		Settings: settings,
+	}
+
+	client, err := s.fsFactory.CreateClient(config)
+	if err != nil {
+		return "", fmt.Errorf("failed to create filesystem client: %w", err)
+	}
+	if err := client.Connect(ctx); err != nil {
+		return "", fmt.Errorf("failed to connect filesystem client: %w", err)
+	}
+	defer client.Disconnect(ctx)
+
+	reader, err := client.ReadFile(ctx, t.videoPath)
+	if err != nil {
+		return "", fmt.Errorf("failed to read remote file: %w", err)
+	}
+	defer reader.Close()
+
+	tmpFile, err := os.CreateTemp(s.cacheDir, "video_thumb_*.tmp")
+	if err != nil {
+		return "", fmt.Errorf("failed to create temp file: %w", err)
+	}
+	defer tmpFile.Close()
+
+	if _, err := io.Copy(tmpFile, reader); err != nil {
+		_ = os.Remove(tmpFile.Name())
+		return "", fmt.Errorf("failed to copy remote file to temp: %w", err)
+	}
+
+	return tmpFile.Name(), nil
 }
 
 // generateAndSaveVideoThumbnail creates a single thumbnail for a video file
@@ -1272,8 +1365,8 @@ func (s *CoverArtService) generateAndSaveVideoThumbnail(ctx context.Context, med
 	}
 
 	coverID := fmt.Sprintf("video_thumb_%d", mediaItemID)
-	outputPath := filepath.Join(s.cacheDir, coverID+".jpg")
 	now := time.Now()
+	outputPath := filepath.Join(s.cacheDir, coverID+".jpg")
 
 	// Fast seek: place -ss before -i
 	cmd := exec.CommandContext(ctx, "ffmpeg",
@@ -1293,12 +1386,38 @@ func (s *CoverArtService) generateAndSaveVideoThumbnail(ctx context.Context, med
 		return nil, fmt.Errorf("thumbnail file not created: %w", err)
 	}
 
-	size := info.Size()
+	var storageKey string
+	var size int64
+
+	if s.HasObjectStore() {
+		storageKey = "covers/" + coverID + ".jpg"
+		file, err := os.Open(outputPath)
+		if err != nil {
+			_ = os.Remove(outputPath)
+			return nil, fmt.Errorf("failed to open thumbnail: %w", err)
+		}
+		size = info.Size()
+		putErr := s.store.PutObject(ctx, s.bucket, storageKey, file, size,
+			object.WithContentType("image/jpeg"),
+			object.WithMetadata(map[string]string{"media_item_id": strconv.FormatInt(mediaItemID, 10), "source": "video_thumbnail"}),
+		)
+		file.Close()
+		if putErr != nil {
+			s.logger.Warn("Failed to upload video thumbnail to object store, falling back to local cache",
+				zap.Error(putErr))
+			storageKey = outputPath
+		}
+		// Keep local copy as fallback; could be cleaned up later.
+	} else {
+		storageKey = outputPath
+		size = info.Size()
+	}
+
 	coverArt := &CoverArt{
 		ID:          coverID,
 		MediaItemID: mediaItemID,
 		Source:      "video_thumbnail",
-		LocalPath:   &outputPath,
+		LocalPath:   &storageKey,
 		Format:      "jpeg",
 		Size:        &size,
 		Quality:     "high",
