@@ -122,10 +122,10 @@ interface CatalogizerApi {
 
     // Recommendations endpoints
     @GET("api/v1/recommendations/similar/{mediaId}")
-    suspend fun getSimilarMedia(@Path("mediaId") mediaId: Long): Response<Map<String, Any>>
+    suspend fun getSimilarMedia(@Path("mediaId") mediaId: Long): Response<MediaSearchResponse>
 
     @GET("api/v1/recommendations/trending")
-    suspend fun getTrendingMedia(): Response<Map<String, Any>>
+    suspend fun getTrendingMedia(): Response<MediaSearchResponse>
 
     // Scan status endpoint
     @GET("api/v1/scans")

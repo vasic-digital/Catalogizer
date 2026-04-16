@@ -65,7 +65,15 @@
             android:theme="@style/Theme.CatalogizerTV.Player"
             android:screenOrientation="landscape" />
 
-        <!-- VLC Player Activity (used by TVNavigation.kt for Play Now) -->
+        <!-- ExoPlayer Activity (primary in-app player for TVNavigation.kt) -->
+        <activity
+            android:name=".ui.player.ExoTvPlayerActivity"
+            android:exported="false"
+            android:configChanges="orientation|screenSize|keyboardHidden|screenLayout|smallestScreenSize"
+            android:theme="@style/Theme.CatalogizerTV.Player"
+            android:screenOrientation="landscape" />
+
+        <!-- VLC Player Activity (fallback player) -->
         <activity
             android:name=".ui.player.VLCPlayerActivity"
             android:exported="false"

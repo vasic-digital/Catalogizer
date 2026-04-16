@@ -31,7 +31,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.tv.material3.*
-import coil.compose.AsyncImage
+
 import com.catalogizer.androidtv.data.models.MediaItem
 import com.catalogizer.androidtv.data.playback.UiPlaybackProgress
 
@@ -148,11 +148,12 @@ fun MediaCard(
                     else -> rawUrl
                 }
                 if (coverUrl != null) {
-                    AsyncImage(
-                        model = coverUrl,
+                    CoverImage(
+                        url = coverUrl,
                         contentDescription = mediaItem.title,
                         modifier = Modifier.fillMaxSize(),
-                        contentScale = ContentScale.Crop
+                        contentScale = ContentScale.Crop,
+                        mediaType = mediaItem.mediaType
                     )
                 } else {
                     // Type-specific placeholder icon
@@ -433,11 +434,12 @@ fun CompactMediaCard(
                     else -> rawUrl
                 }
                 if (coverUrl != null) {
-                    AsyncImage(
-                        model = coverUrl,
+                    CoverImage(
+                        url = coverUrl,
                         contentDescription = mediaItem.title,
                         modifier = Modifier.fillMaxSize(),
-                        contentScale = ContentScale.Crop
+                        contentScale = ContentScale.Crop,
+                        mediaType = mediaItem.mediaType
                     )
                 } else {
                     M3Icon(

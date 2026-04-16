@@ -123,42 +123,29 @@ class DependencyContainer(private val context: Context) {
 
     // These use get() instead of `by lazy` because `api` can change at runtime
     // via switchServer(). Each access creates a fresh instance pointing to the current API.
-    // Lazy initialization to avoid creating API client during ViewModel instantiation
-    private val mediaRepositoryLazy by lazy {
-        try {
+    val mediaRepository: MediaRepository
+        get() = try {
             MediaRepository(context, api)
         } catch (e: Exception) {
             Log.e(TAG, "Failed to create MediaRepository: ${e.message}")
             throw e
         }
-    }
-    
-    val mediaRepository: MediaRepository
-        get() = mediaRepositoryLazy
 
-    private val tvChannelRepositoryLazy by lazy {
-        try {
+    val tvChannelRepository: TvChannelRepository
+        get() = try {
             TvChannelRepository(context, mediaRepository, settingsRepository)
         } catch (e: Exception) {
             Log.e(TAG, "Failed to create TvChannelRepository: ${e.message}")
             throw e
         }
-    }
-    
-    val tvChannelRepository: TvChannelRepository
-        get() = tvChannelRepositoryLazy
 
-    private val watchNextManagerLazy by lazy {
-        try {
+    val watchNextManager: WatchNextManager
+        get() = try {
             WatchNextManager(context, mediaRepository)
         } catch (e: Exception) {
             Log.e(TAG, "Failed to create WatchNextManager: ${e.message}")
             throw e
         }
-    }
-
-    val watchNextManager: WatchNextManager
-        get() = watchNextManagerLazy
 
     val playbackRepository: PlaybackRepository
         get() = PlaybackRepository(api)

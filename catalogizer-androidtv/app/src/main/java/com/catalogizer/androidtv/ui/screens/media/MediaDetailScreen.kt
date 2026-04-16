@@ -29,9 +29,10 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.tv.material3.*
-import coil.compose.AsyncImage
+
 import com.catalogizer.androidtv.DependencyContainer
 import com.catalogizer.androidtv.data.models.MediaItem
+import com.catalogizer.androidtv.ui.components.CoverImage
 import com.catalogizer.androidtv.ui.components.HistoryDialog
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
@@ -171,12 +172,11 @@ fun MediaDetailScreen(
                         contentAlignment = Alignment.TopCenter
                     ) {
                         if (coverUrl != null) {
-                            AsyncImage(
-                                model = coverUrl,
+                            CoverImage(
+                                url = coverUrl,
                                 contentDescription = item.title,
                                 modifier = Modifier.fillMaxWidth(),
-                                contentScale = ContentScale.FillWidth,
-                                alignment = Alignment.TopCenter
+                                contentScale = ContentScale.FillWidth
                             )
                         } else {
                             Box(
@@ -197,14 +197,21 @@ fun MediaDetailScreen(
                         // Back button with icon and label for clarity
                         Button(
                             onClick = onNavigateBack,
-                            modifier = Modifier.padding(16.dp).align(Alignment.TopStart)
+                            modifier = Modifier.padding(16.dp).align(Alignment.TopStart),
+                            scale = ButtonDefaults.scale(focusedScale = 1.08f),
+                            glow = ButtonDefaults.glow(focusedGlow = Glow(elevation = 6.dp, elevationColor = MaterialTheme.colorScheme.primary))
                         ) {
-                            Row(
-                                verticalAlignment = Alignment.CenterVertically,
-                                horizontalArrangement = Arrangement.spacedBy(8.dp)
+                            Box(
+                                modifier = Modifier.fillMaxSize(),
+                                contentAlignment = Alignment.Center
                             ) {
-                                M3Icon(Icons.Default.ArrowBack, "Back", Modifier.size(20.dp))
-                                Text("Back")
+                                Row(
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                                ) {
+                                    M3Icon(Icons.Default.ArrowBack, "Back", Modifier.size(20.dp))
+                                    Text("Back")
+                                }
                             }
                         }
                     }
@@ -305,18 +312,30 @@ fun MediaDetailScreen(
                                     .height(52.dp)
                                     .focusRequester(playButtonFocus)
                                     .focusable(),
-                                scale = ButtonDefaults.scale(focusedScale = 1.05f)
-                            ) {
-                                Row(
-                                    verticalAlignment = Alignment.CenterVertically,
-                                    horizontalArrangement = Arrangement.spacedBy(10.dp)
-                                ) {
-                                    M3Icon(Icons.Default.PlayArrow, "Play", Modifier.size(28.dp))
-                                    Text(
-                                        "Play Now", 
-                                        style = MaterialTheme.typography.titleMedium,
-                                        fontWeight = FontWeight.SemiBold
+                                scale = ButtonDefaults.scale(focusedScale = 1.08f),
+                                glow = ButtonDefaults.glow(focusedGlow = Glow(elevation = 8.dp, elevationColor = MaterialTheme.colorScheme.primary)),
+                                border = ButtonDefaults.border(
+                                    focusedBorder = Border(
+                                        androidx.compose.foundation.BorderStroke(2.dp, MaterialTheme.colorScheme.primary),
+                                        shape = RoundedCornerShape(8.dp)
                                     )
+                                )
+                            ) {
+                                Box(
+                                    modifier = Modifier.fillMaxSize(),
+                                    contentAlignment = Alignment.Center
+                                ) {
+                                    Row(
+                                        verticalAlignment = Alignment.CenterVertically,
+                                        horizontalArrangement = Arrangement.spacedBy(10.dp)
+                                    ) {
+                                        M3Icon(Icons.Default.PlayArrow, "Play", Modifier.size(28.dp))
+                                        Text(
+                                            "Play Now",
+                                            style = MaterialTheme.typography.titleMedium,
+                                            fontWeight = FontWeight.SemiBold
+                                        )
+                                    }
                                 }
                             }
                             
@@ -336,22 +355,34 @@ fun MediaDetailScreen(
                                     }
                                 },
                                 modifier = Modifier.height(52.dp),
-                                scale = ButtonDefaults.scale(focusedScale = 1.05f)
+                                scale = ButtonDefaults.scale(focusedScale = 1.08f),
+                                glow = ButtonDefaults.glow(focusedGlow = Glow(elevation = 8.dp, elevationColor = MaterialTheme.colorScheme.primary)),
+                                border = ButtonDefaults.border(
+                                    focusedBorder = Border(
+                                        androidx.compose.foundation.BorderStroke(2.dp, MaterialTheme.colorScheme.primary),
+                                        shape = RoundedCornerShape(8.dp)
+                                    )
+                                )
                             ) {
-                                Row(
-                                    verticalAlignment = Alignment.CenterVertically,
-                                    horizontalArrangement = Arrangement.spacedBy(10.dp)
+                                Box(
+                                    modifier = Modifier.fillMaxSize(),
+                                    contentAlignment = Alignment.Center
                                 ) {
-                                    M3Icon(
-                                        if (isFavorite) Icons.Default.Favorite else Icons.Default.FavoriteBorder,
-                                        contentDescription = if (isFavorite) "Remove from Favorites" else "Add to Favorites",
-                                        modifier = Modifier.size(24.dp),
-                                        tint = if (isFavorite) Color(0xFFFF6B6B) else Color.White
-                                    )
-                                    Text(
-                                        if (isFavorite) "Favorited" else "Favorite",
-                                        style = MaterialTheme.typography.titleMedium
-                                    )
+                                    Row(
+                                        verticalAlignment = Alignment.CenterVertically,
+                                        horizontalArrangement = Arrangement.spacedBy(10.dp)
+                                    ) {
+                                        M3Icon(
+                                            if (isFavorite) Icons.Default.Favorite else Icons.Default.FavoriteBorder,
+                                            contentDescription = if (isFavorite) "Remove from Favorites" else "Add to Favorites",
+                                            modifier = Modifier.size(24.dp),
+                                            tint = if (isFavorite) Color(0xFFFF6B6B) else Color.White
+                                        )
+                                        Text(
+                                            if (isFavorite) "Favorited" else "Favorite",
+                                            style = MaterialTheme.typography.titleMedium
+                                        )
+                                    }
                                 }
                             }
 
@@ -361,21 +392,33 @@ fun MediaDetailScreen(
                             Button(
                                 onClick = { showHistory = true },
                                 modifier = Modifier.height(52.dp),
-                                scale = ButtonDefaults.scale(focusedScale = 1.05f)
+                                scale = ButtonDefaults.scale(focusedScale = 1.08f),
+                                glow = ButtonDefaults.glow(focusedGlow = Glow(elevation = 8.dp, elevationColor = MaterialTheme.colorScheme.primary)),
+                                border = ButtonDefaults.border(
+                                    focusedBorder = Border(
+                                        androidx.compose.foundation.BorderStroke(2.dp, MaterialTheme.colorScheme.primary),
+                                        shape = RoundedCornerShape(8.dp)
+                                    )
+                                )
                             ) {
-                                Row(
-                                    verticalAlignment = Alignment.CenterVertically,
-                                    horizontalArrangement = Arrangement.spacedBy(10.dp)
+                                Box(
+                                    modifier = Modifier.fillMaxSize(),
+                                    contentAlignment = Alignment.Center
                                 ) {
-                                    M3Icon(
-                                        Icons.Default.History,
-                                        contentDescription = "View reproduction history",
-                                        modifier = Modifier.size(24.dp)
-                                    )
-                                    Text(
-                                        "History",
-                                        style = MaterialTheme.typography.titleMedium
-                                    )
+                                    Row(
+                                        verticalAlignment = Alignment.CenterVertically,
+                                        horizontalArrangement = Arrangement.spacedBy(10.dp)
+                                    ) {
+                                        M3Icon(
+                                            Icons.Default.History,
+                                            contentDescription = "View reproduction history",
+                                            modifier = Modifier.size(24.dp)
+                                        )
+                                        Text(
+                                            "History",
+                                            style = MaterialTheme.typography.titleMedium
+                                        )
+                                    }
                                 }
                             }
                         }

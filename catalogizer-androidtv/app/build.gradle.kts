@@ -77,6 +77,7 @@ android {
         unitTests.isReturnDefaultValues = true
         unitTests.all {
             it.useJUnit()
+            it.jvmArgs("-Xmx2048m")
         }
     }
 
@@ -157,6 +158,7 @@ dependencies {
 
     // Image Loading
     implementation("io.coil-kt:coil-compose:2.5.0")
+    implementation("io.coil-kt:coil-svg:2.5.0")
 
     // JSON Serialization
     implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.6.2")

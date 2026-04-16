@@ -2,6 +2,9 @@ package com.catalogizer.androidtv
 
 import android.app.Application
 import android.util.Log
+import coil.ImageLoader
+import coil.ImageLoaderFactory
+import coil.decode.SvgDecoder
 import com.catalogizer.androidtv.data.tv.TvChannelSyncWorker
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -17,10 +20,18 @@ import kotlinx.coroutines.withTimeoutOrNull
  * CRITICAL: All initialization must complete in <2 seconds to prevent ANR.
  * Heavy operations are deferred or run on background threads.
  */
-class CatalogizerTVApplication : Application() {
+class CatalogizerTVApplication : Application(), ImageLoaderFactory {
 
     val dependencyContainer by lazy { DependencyContainer.getInstance(this) }
     private val appScope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
+
+    override fun newImageLoader(): ImageLoader {
+        return ImageLoader.Builder(this)
+            .components {
+                add(SvgDecoder.Factory())
+            }
+            .build()
+    }
 
     override fun onCreate() {
         super.onCreate()

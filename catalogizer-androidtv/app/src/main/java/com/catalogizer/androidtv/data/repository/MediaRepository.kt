@@ -248,7 +248,7 @@ class MediaRepository(private val context: Context, private val api: Catalogizer
     /**
      * Fetch media items similar to the given media ID.
      */
-    suspend fun getSimilarMedia(mediaId: Long): Map<String, Any>? {
+    suspend fun getSimilarMedia(mediaId: Long): MediaSearchResponse? {
         return try {
             val response = api.getSimilarMedia(mediaId)
             if (response.isSuccessful) {
@@ -266,7 +266,7 @@ class MediaRepository(private val context: Context, private val api: Catalogizer
     /**
      * Fetch currently trending media.
      */
-    suspend fun getTrendingMedia(): Map<String, Any>? {
+    suspend fun getTrendingMedia(): MediaSearchResponse? {
         return try {
             val response = api.getTrendingMedia()
             if (response.isSuccessful) {
@@ -284,8 +284,7 @@ class MediaRepository(private val context: Context, private val api: Catalogizer
     suspend fun getSimilarItems(mediaId: Long): List<MediaItem> {
         return try {
             val body = api.getSimilarMedia(mediaId).takeIf { it.isSuccessful }?.body() ?: return emptyList()
-            val localItems = (body["local_items"] as? List<*>) ?: return emptyList()
-            localItems.mapNotNull { parseRecommendationItem(it) }
+            body.allItems
         } catch (e: Exception) {
             android.util.Log.w("MediaRepo", "getSimilarItems error: ${e.message}")
             emptyList()
@@ -295,8 +294,7 @@ class MediaRepository(private val context: Context, private val api: Catalogizer
     suspend fun getTrendingItems(limit: Int = 10): List<MediaItem> {
         return try {
             val body = api.getTrendingMedia().takeIf { it.isSuccessful }?.body() ?: return emptyList()
-            val items = (body["items"] as? List<*>) ?: return emptyList()
-            items.mapNotNull { parseRecommendationItem(it) }.take(limit)
+            body.allItems.take(limit)
         } catch (e: Exception) {
             android.util.Log.w("MediaRepo", "getTrendingItems error: ${e.message}")
             emptyList()

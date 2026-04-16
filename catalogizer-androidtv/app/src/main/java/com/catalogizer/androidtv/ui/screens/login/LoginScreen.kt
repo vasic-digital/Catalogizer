@@ -48,10 +48,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.min
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import androidx.tv.material3.Button
-import androidx.tv.material3.ExperimentalTvMaterial3Api
-import androidx.tv.material3.MaterialTheme
-import androidx.tv.material3.Text
+import androidx.tv.material3.*
 import com.catalogizer.androidtv.DependencyContainer
 import com.catalogizer.androidtv.data.models.ServerEntry
 import com.catalogizer.androidtv.ui.viewmodel.AuthViewModel
@@ -438,12 +435,25 @@ fun LoginScreen(
                             false
                         }
                     },
-                enabled = !isLoading
+                enabled = !isLoading,
+                scale = ButtonDefaults.scale(focusedScale = 1.05f),
+                glow = ButtonDefaults.glow(focusedGlow = Glow(elevation = 6.dp, elevationColor = MaterialTheme.colorScheme.primary)),
+                border = ButtonDefaults.border(
+                    focusedBorder = Border(
+                        androidx.compose.foundation.BorderStroke(1.5.dp, MaterialTheme.colorScheme.primary),
+                        shape = RoundedCornerShape(8.dp)
+                    )
+                )
             ) {
-                if (isLoading) {
-                    CircularProgressIndicator(modifier = Modifier.size(24.dp), strokeWidth = 2.dp, color = Color.White)
-                } else {
-                    Text("Sign In", style = MaterialTheme.typography.titleMedium)
+                Box(
+                    modifier = Modifier.fillMaxSize(),
+                    contentAlignment = Alignment.Center
+                ) {
+                    if (isLoading) {
+                        CircularProgressIndicator(modifier = Modifier.size(24.dp), strokeWidth = 2.dp, color = Color.White)
+                    } else {
+                        Text("Sign In", style = MaterialTheme.typography.titleMedium)
+                    }
                 }
             }
 
@@ -576,7 +586,15 @@ fun LoginScreen(
                         }
                     },
                     modifier = Modifier.weight(1f).height(44.dp),
-                    enabled = !isDiscovering && !isLoading
+                    enabled = !isDiscovering && !isLoading,
+                    scale = ButtonDefaults.scale(focusedScale = 1.05f),
+                    glow = ButtonDefaults.glow(focusedGlow = Glow(elevation = 6.dp, elevationColor = MaterialTheme.colorScheme.primary)),
+                    border = ButtonDefaults.border(
+                        focusedBorder = Border(
+                            androidx.compose.foundation.BorderStroke(1.5.dp, MaterialTheme.colorScheme.primary),
+                            shape = RoundedCornerShape(8.dp)
+                        )
+                    )
                 ) {
                     Box(
                         modifier = Modifier.fillMaxSize(),
@@ -619,7 +637,15 @@ fun LoginScreen(
                         }
                     },
                     modifier = Modifier.weight(1f).height(44.dp),
-                    enabled = serverUrl.isNotBlank() && !isLoading
+                    enabled = serverUrl.isNotBlank() && !isLoading,
+                    scale = ButtonDefaults.scale(focusedScale = 1.05f),
+                    glow = ButtonDefaults.glow(focusedGlow = Glow(elevation = 6.dp, elevationColor = MaterialTheme.colorScheme.primary)),
+                    border = ButtonDefaults.border(
+                        focusedBorder = Border(
+                            androidx.compose.foundation.BorderStroke(1.5.dp, MaterialTheme.colorScheme.primary),
+                            shape = RoundedCornerShape(8.dp)
+                        )
+                    )
                 ) {
                     Box(
                         modifier = Modifier.fillMaxSize(),
@@ -659,13 +685,26 @@ fun LoginScreen(
                             }
                             discoveredServers = emptyList()
                         },
-                        modifier = Modifier.width(formWidth).height(44.dp)
-                    ) {
-                        Text(
-                            text = "${server.name.ifBlank { "API" }} — ${server.url}",
-                            maxLines = 1,
-                            overflow = TextOverflow.Ellipsis
+                        modifier = Modifier.width(formWidth).height(44.dp),
+                        scale = ButtonDefaults.scale(focusedScale = 1.05f),
+                        glow = ButtonDefaults.glow(focusedGlow = Glow(elevation = 6.dp, elevationColor = MaterialTheme.colorScheme.primary)),
+                        border = ButtonDefaults.border(
+                            focusedBorder = Border(
+                                androidx.compose.foundation.BorderStroke(1.5.dp, MaterialTheme.colorScheme.primary),
+                                shape = RoundedCornerShape(8.dp)
+                            )
                         )
+                    ) {
+                        Box(
+                            modifier = Modifier.fillMaxSize(),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Text(
+                                text = "${server.name.ifBlank { "API" }} — ${server.url}",
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis
+                            )
+                        }
                     }
                     Spacer(modifier = Modifier.height(8.dp))
                 }

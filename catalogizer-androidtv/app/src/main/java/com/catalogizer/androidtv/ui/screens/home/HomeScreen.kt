@@ -133,9 +133,18 @@ fun HomeScreen(
                         )
                         Spacer(modifier = Modifier.height(24.dp))
                         Button(
-                            onClick = { viewModel.loadHomeData() }
+                            onClick = { viewModel.loadHomeData() },
+                            modifier = Modifier.width(180.dp).height(52.dp),
+                            scale = ButtonDefaults.scale(focusedScale = 1.08f),
+                            glow = ButtonDefaults.glow(focusedGlow = Glow(elevation = 6.dp, elevationColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.5f)))
                         ) {
-                            Text("Retry")
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.Center,
+                                modifier = Modifier.fillMaxSize()
+                            ) {
+                                Text("Retry")
+                            }
                         }
                     }
                 }
@@ -174,9 +183,18 @@ fun HomeScreen(
                         )
                         Spacer(modifier = Modifier.height(24.dp))
                         Button(
-                            onClick = { viewModel.loadHomeData() }
+                            onClick = { viewModel.loadHomeData() },
+                            modifier = Modifier.width(180.dp).height(52.dp),
+                            scale = ButtonDefaults.scale(focusedScale = 1.08f),
+                            glow = ButtonDefaults.glow(focusedGlow = Glow(elevation = 6.dp, elevationColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.5f)))
                         ) {
-                            Text("Refresh")
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.Center,
+                                modifier = Modifier.fillMaxSize()
+                            ) {
+                                Text("Refresh")
+                            }
                         }
                     }
                 }
@@ -350,6 +368,7 @@ private fun CatalogStatsHeader(
                     modifier = Modifier
                         .onFocusChanged { },
                     scale = CardDefaults.scale(focusedScale = 1.1f),
+                    glow = CardDefaults.glow(focusedGlow = Glow(elevation = 8.dp, elevationColor = MaterialTheme.colorScheme.primary)),
                     border = CardDefaults.border(
                         focusedBorder = Border(
                             border = androidx.compose.foundation.BorderStroke(

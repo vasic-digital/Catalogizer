@@ -14,7 +14,8 @@ import com.catalogizer.androidtv.ui.screens.media.MediaDetailScreen
 import com.catalogizer.androidtv.ui.screens.search.SearchScreen
 import com.catalogizer.androidtv.ui.screens.settings.SettingsScreen
 import com.catalogizer.androidtv.ui.screens.search.SearchViewModel
-import com.catalogizer.androidtv.ui.player.VLCPlayerActivity
+import com.catalogizer.androidtv.ui.screens.category.CategoryBrowseScreen
+import com.catalogizer.androidtv.ui.player.ExoTvPlayerActivity
 import com.catalogizer.androidtv.ui.viewmodel.AuthViewModel
 import com.catalogizer.androidtv.ui.viewmodel.HomeViewModel
 
@@ -32,6 +33,9 @@ sealed class TVScreen(val route: String) {
         fun createRoute(mediaId: Long) = "player/$mediaId"
     }
     object Settings : TVScreen("settings")
+    object Category : TVScreen("category/{mediaType}") {
+        fun createRoute(mediaType: String) = "category/$mediaType"
+    }
 }
 
 /**
@@ -80,6 +84,9 @@ fun TVNavigation(
                 onNavigateToPlayer = { mediaId ->
                     navController.navigate(TVScreen.Player.createRoute(mediaId))
                 },
+                onNavigateToCategory = { mediaType ->
+                    navController.navigate(TVScreen.Category.createRoute(mediaType))
+                },
                 viewModel = homeViewModel
             )
         }
@@ -112,16 +119,16 @@ fun TVNavigation(
         composable(TVScreen.Player.route) { backStackEntry ->
             val context = LocalContext.current
             val mediaId = backStackEntry.arguments?.getString("mediaId")?.toLongOrNull() ?: 0L
-            
-            // Launch VLC Player Activity
+
+            // Launch internal ExoPlayer activity
             LaunchedEffect(mediaId) {
-                val intent = Intent(context, VLCPlayerActivity::class.java).apply {
-                    putExtra("media_id", mediaId)
+                val intent = Intent(context, ExoTvPlayerActivity::class.java).apply {
+                    putExtra(ExoTvPlayerActivity.EXTRA_MEDIA_ID, mediaId)
                     flags = Intent.FLAG_ACTIVITY_NEW_TASK
                 }
                 context.startActivity(intent)
-                
-                // Pop back to previous screen since VLC opens in separate activity
+
+                // Pop back to previous screen since player opens in separate activity
                 navController.popBackStack()
             }
         }
@@ -139,6 +146,22 @@ fun TVNavigation(
                     navController.navigate(TVScreen.Login.route) {
                         popUpTo(0) { inclusive = true }
                     }
+                }
+            )
+        }
+
+        composable(TVScreen.Category.route) { backStackEntry ->
+            val mediaType = backStackEntry.arguments?.getString("mediaType") ?: ""
+            CategoryBrowseScreen(
+                mediaType = mediaType,
+                onNavigateBack = {
+                    navController.popBackStack()
+                },
+                onNavigateToMediaDetail = { mediaId ->
+                    navController.navigate(TVScreen.MediaDetail.createRoute(mediaId))
+                },
+                onNavigateToPlayer = { mediaId ->
+                    navController.navigate(TVScreen.Player.createRoute(mediaId))
                 }
             )
         }

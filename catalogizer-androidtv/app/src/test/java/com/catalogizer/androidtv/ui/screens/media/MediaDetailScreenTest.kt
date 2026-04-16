@@ -148,7 +148,7 @@ class MediaDetailScreenTest {
         val url = "https://image.tmdb.org/t/p/w500/abc.jpg"
         val serverUrl = "http://192.168.0.100:8080"
         val result = resolveCoverUrl(url, serverUrl)
-        assertTrue(result.contains("/api/v1/image-proxy?url="))
+        assertTrue(result != null && result.contains("/api/v1/image-proxy?url="))
     }
 
     @Test

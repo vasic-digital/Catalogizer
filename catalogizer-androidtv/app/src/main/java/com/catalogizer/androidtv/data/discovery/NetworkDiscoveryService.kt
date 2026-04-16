@@ -115,6 +115,9 @@ class NetworkDiscoveryService(private val context: Context? = null) {
             Log.w(TAG, "Could not detect subnet prefix")
             return@coroutineScope emptyList()
         }
+        if (timeoutMs <= 0) {
+            return@coroutineScope emptyList()
+        }
         Log.d(TAG, "Scanning subnet $prefix.0/24 on ports $COMMON_PORTS")
 
         val results = mutableListOf<ServerEntry>()
@@ -122,23 +125,33 @@ class NetworkDiscoveryService(private val context: Context? = null) {
         // Scan common IPs first (.1, .100-120, .200-254) then the rest
         val priorityHosts = (listOf(1) + (100..120).toList() + (200..254).toList() + (2..99).toList() + (121..199).toList())
 
-        val jobs = priorityHosts.flatMap { host ->
-            COMMON_PORTS.map { port ->
+        val targets = priorityHosts.flatMap { host ->
+            COMMON_PORTS.map { port -> "http://$prefix.$host:$port" }
+        }
+
+        // Process in chunks to avoid spawning thousands of coroutines at once
+        val chunkSize = 32
+        val deadline = System.currentTimeMillis() + timeoutMs
+
+        for (chunk in targets.chunked(chunkSize)) {
+            if (System.currentTimeMillis() >= deadline) break
+            val remaining = deadline - System.currentTimeMillis()
+            val jobs = chunk.map { target ->
                 async(Dispatchers.IO) {
-                    withTimeoutOrNull(DEFAULT_HTTP_PROBE_TIMEOUT_MS.toLong() * 2) {
-                        probeServer("http://$prefix.$host:$port")
+                    withTimeoutOrNull(DEFAULT_HTTP_PROBE_TIMEOUT_MS.toLong()) {
+                        probeServer(target)
                     }
                 }
             }
-        }
-
-        // Process results as they come in, with overall timeout
-        try {
-            withTimeoutOrNull(timeoutMs) {
-                jobs.awaitAll().filterNotNull().forEach { results.add(it) }
+            try {
+                withTimeoutOrNull(remaining.coerceAtLeast(1L)) {
+                    jobs.awaitAll().filterNotNull().forEach { results.add(it) }
+                }
+            } catch (e: Exception) {
+                Log.w(TAG, "HTTP probe discovery interrupted: ${e.message}")
+            } finally {
+                jobs.forEach { it.cancel() }
             }
-        } catch (e: Exception) {
-            Log.w(TAG, "HTTP probe discovery interrupted: ${e.message}")
         }
 
         Log.d(TAG, "HTTP probe found ${results.size} servers")

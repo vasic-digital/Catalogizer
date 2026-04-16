@@ -5,6 +5,7 @@ import com.catalogizer.androidtv.data.models.ServerEntry
 import io.mockk.clearAllMocks
 import io.mockk.mockk
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.test.runTest
 import org.junit.After
 import org.junit.Assert.assertEquals
@@ -182,7 +183,7 @@ class NetworkDiscoveryServiceTest {
     // ------------------------------------------------------------------
 
     @Test
-    fun `discoverAll returns list and does not crash`() = runTest {
+    fun `discoverAll returns list and does not crash`() = runBlocking {
         // This will try localhost:8080 first, then broadcast, then
         // multicast, then HTTP probe. In CI none will respond, but
         // the method must return gracefully.
@@ -191,7 +192,7 @@ class NetworkDiscoveryServiceTest {
     }
 
     @Test
-    fun `discoverAll with short timeout returns empty or partial`() = runTest {
+    fun `discoverAll with short timeout returns empty or partial`() = runBlocking {
         val results = service.discoverAll(timeoutMs = 1L)
         assertNotNull(results)
     }
