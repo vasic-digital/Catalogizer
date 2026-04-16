@@ -37,8 +37,8 @@ func TestCoverHandler_ServePlaceholder_Movie(t *testing.T) {
 	assert.Equal(t, http.StatusOK, w.Code)
 	assert.Equal(t, "image/svg+xml", w.Header().Get("Content-Type"))
 	assert.Contains(t, w.Body.String(), "<svg")
-	assert.Contains(t, w.Body.String(), "#E53E3E") // movie color
-	assert.Contains(t, w.Body.String(), "Movie")
+	assert.Contains(t, w.Body.String(), "#e94560") // movie accent color
+	assert.Contains(t, w.Body.String(), "MOVIE")
 }
 
 func TestCoverHandler_ServePlaceholder_AllTypes(t *testing.T) {
@@ -82,7 +82,7 @@ func TestCoverHandler_ServePlaceholder_UnknownType(t *testing.T) {
 	assert.Equal(t, http.StatusOK, w.Code)
 	assert.Equal(t, "image/svg+xml", w.Header().Get("Content-Type"))
 	assert.Contains(t, w.Body.String(), "<svg")
-	assert.Contains(t, w.Body.String(), "#718096") // gray fallback
+	assert.Contains(t, w.Body.String(), "#e94560") // default accent fallback
 }
 
 func TestCoverHandler_ServePlaceholder_EmptyType(t *testing.T) {

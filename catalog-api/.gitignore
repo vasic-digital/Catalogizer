@@ -8,6 +8,8 @@
 # Test binary, built with `go test -c`
 *.test
 catalogizer
+catalog-api-new
+cmd/boot/boot
 
 # Output of the go coverage tool
 *.out

@@ -8,20 +8,19 @@ import (
 func TestGeneratePlaceholderSVG_KnownTypes(t *testing.T) {
 	knownTypes := []struct {
 		mediaType     string
-		expectedColor string
 		expectedLabel string
 	}{
-		{"movie", "#E53E3E", "Movie"},
-		{"tv_show", "#3182CE", "TV Show"},
-		{"tv_season", "#2B6CB0", "Season"},
-		{"tv_episode", "#4299E1", "Episode"},
-		{"music_artist", "#38A169", "Artist"},
-		{"music_album", "#2F855A", "Album"},
-		{"song", "#48BB78", "Song"},
-		{"game", "#805AD5", "Game"},
-		{"software", "#DD6B20", "Software"},
-		{"book", "#2B6CB0", "Book"},
-		{"comic", "#ED64A6", "Comic"},
+		{"movie", "MOVIE"},
+		{"tv_show", "TV SHOW"},
+		{"tv_season", "SEASON"},
+		{"tv_episode", "EPISODE"},
+		{"music_artist", "ARTIST"},
+		{"music_album", "ALBUM"},
+		{"song", "SONG"},
+		{"game", "GAME"},
+		{"software", "SOFTWARE"},
+		{"book", "BOOK"},
+		{"comic", "COMIC"},
 	}
 
 	for _, tc := range knownTypes {
@@ -37,10 +36,6 @@ func TestGeneratePlaceholderSVG_KnownTypes(t *testing.T) {
 				t.Errorf("expected SVG content, got: %s", svgStr[:100])
 			}
 
-			if !strings.Contains(svgStr, tc.expectedColor) {
-				t.Errorf("expected color %s for type %s, not found in SVG", tc.expectedColor, tc.mediaType)
-			}
-
 			if !strings.Contains(svgStr, tc.expectedLabel) {
 				t.Errorf("expected label %q for type %s, not found in SVG", tc.expectedLabel, tc.mediaType)
 			}
@@ -49,8 +44,8 @@ func TestGeneratePlaceholderSVG_KnownTypes(t *testing.T) {
 				t.Errorf("expected width 300 in SVG for type %s", tc.mediaType)
 			}
 
-			if !strings.Contains(svgStr, `height="300"`) {
-				t.Errorf("expected height 300 in SVG for type %s", tc.mediaType)
+			if !strings.Contains(svgStr, `height="450"`) {
+				t.Errorf("expected height 450 in SVG for type %s", tc.mediaType)
 			}
 		})
 	}
@@ -68,14 +63,14 @@ func TestGeneratePlaceholderSVG_UnknownType(t *testing.T) {
 		t.Error("expected valid SVG for unknown type")
 	}
 
-	// Should use gray fallback color
-	if !strings.Contains(svgStr, "#718096") {
-		t.Error("expected gray fallback color #718096 for unknown type")
+	// Should use default accent color
+	if !strings.Contains(svgStr, "#e94560") {
+		t.Error("expected default accent color #e94560 for unknown type")
 	}
 
-	// Should use the type name as label (with underscores replaced)
-	if !strings.Contains(svgStr, "unknown type") {
-		t.Error("expected label 'unknown type' for unknown_type media type")
+	// Should use the type name as label (uppercase, underscores replaced)
+	if !strings.Contains(svgStr, "UNKNOWN TYPE") {
+		t.Error("expected label 'UNKNOWN TYPE' for unknown_type media type")
 	}
 }
 
@@ -91,9 +86,9 @@ func TestGeneratePlaceholderSVG_EmptyType(t *testing.T) {
 		t.Error("expected valid SVG for empty type")
 	}
 
-	// Should use gray fallback
-	if !strings.Contains(svgStr, "#718096") {
-		t.Error("expected gray fallback color for empty type")
+	// Should use default accent color
+	if !strings.Contains(svgStr, "#e94560") {
+		t.Error("expected default accent color #e94560 for empty type")
 	}
 }
 
@@ -104,13 +99,13 @@ func TestGeneratePlaceholderSVG_ValidSVGStructure(t *testing.T) {
 	// Check required SVG elements
 	requiredElements := []string{
 		`xmlns="http://www.w3.org/2000/svg"`,
-		`viewBox="0 0 300 300"`,
+		`viewBox="0 0 300 450"`,
 		"<rect",
 		"<text",
 		"<defs>",
 		"<linearGradient",
 		`fill="url(#bg)"`,
-		`rx="12"`,
+		`rx="8"`,
 	}
 
 	for _, elem := range requiredElements {

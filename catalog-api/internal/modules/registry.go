@@ -302,17 +302,29 @@ func RegisterModules() *Registry {
 // health checks). Call this after RegisterModules during application startup.
 // The returned cancel function stops all background services.
 func (r *Registry) StartBackgroundServices(ctx context.Context) {
-	// Start memory monitoring
+	// Start memory monitoring after a short delay so the baseline is captured
+	// after the application has finished initializing its background goroutines
+	// (HTTP server, WebSocket handler, cache cleanup, etc.). This prevents
+	// false-positive leak alerts from normal startup goroutines.
 	if r.MemoryMonitor != nil {
-		if err := r.MemoryMonitor.Start(ctx); err != nil {
-			if logging.Logger != nil {
-				logging.With(logging.String("component", "modules"), logging.ErrorField(err)).Warn("Failed to start memory monitor")
+		go func() {
+			timer := time.NewTimer(30 * time.Second)
+			defer timer.Stop()
+			select {
+			case <-ctx.Done():
+				return
+			case <-timer.C:
 			}
-		} else {
-			if logging.Logger != nil {
-				logging.With(logging.String("component", "modules")).Info("Memory monitor started", logging.String("interval", "60s"), logging.String("threshold", "3x"))
+			if err := r.MemoryMonitor.Start(ctx); err != nil {
+				if logging.Logger != nil {
+					logging.With(logging.String("component", "modules"), logging.ErrorField(err)).Warn("Failed to start memory monitor")
+				}
+			} else {
+				if logging.Logger != nil {
+					logging.With(logging.String("component", "modules")).Info("Memory monitor started", logging.String("interval", "60s"), logging.String("threshold", "3x"), logging.String("delay", "30s"))
+				}
 			}
-		}
+		}()
 	}
 }
 

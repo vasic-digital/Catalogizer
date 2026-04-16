@@ -14,6 +14,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"net/url"
 	"strconv"
 	"strings"
 	"time"
@@ -719,6 +720,10 @@ func (s *CoverArtService) processAndSaveCoverArt(ctx context.Context, mediaItemI
 		CachedAt:    &now,
 	}
 
+	if err := s.saveCoverArtToDB(ctx, coverArt); err != nil {
+		s.logger.Warn("Failed to save cover art to database", zap.Error(err))
+	}
+
 	return coverArt, nil
 }
 
@@ -802,6 +807,77 @@ func (s *CoverArtService) setDefaultCoverArt(ctx context.Context, mediaItemID in
 	return err
 }
 
+// saveCoverArtToDB persists a CoverArt record to the database.
+func (s *CoverArtService) saveCoverArtToDB(ctx context.Context, coverArt *CoverArt) error {
+	if s.db == nil {
+		return nil
+	}
+
+	query := `
+		INSERT INTO cover_art (id, media_item_id, source, url, local_path, width, height, format, size, quality, is_default, created_at, cached_at)
+		VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+		ON CONFLICT(id) DO UPDATE SET
+			source = excluded.source,
+			url = excluded.url,
+			local_path = excluded.local_path,
+			width = excluded.width,
+			height = excluded.height,
+			format = excluded.format,
+			size = excluded.size,
+			quality = excluded.quality,
+			is_default = excluded.is_default,
+			cached_at = excluded.cached_at
+	`
+	if s.db.Dialect().IsPostgres() {
+		query = `
+			INSERT INTO cover_art (id, media_item_id, source, url, local_path, width, height, format, size, quality, is_default, created_at, cached_at)
+			VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)
+			ON CONFLICT(id) DO UPDATE SET
+				source = excluded.source,
+				url = excluded.url,
+				local_path = excluded.local_path,
+				width = excluded.width,
+				height = excluded.height,
+				format = excluded.format,
+				size = excluded.size,
+				quality = excluded.quality,
+				is_default = excluded.is_default,
+				cached_at = excluded.cached_at
+		`
+	}
+
+	var url, localPath sql.NullString
+	var width, height sql.NullInt64
+	var size sql.NullInt64
+	var cachedAt sql.NullTime
+
+	if coverArt.URL != nil {
+		url = sql.NullString{String: *coverArt.URL, Valid: true}
+	}
+	if coverArt.LocalPath != nil {
+		localPath = sql.NullString{String: *coverArt.LocalPath, Valid: true}
+	}
+	if coverArt.Width != nil {
+		width = sql.NullInt64{Int64: int64(*coverArt.Width), Valid: true}
+	}
+	if coverArt.Height != nil {
+		height = sql.NullInt64{Int64: int64(*coverArt.Height), Valid: true}
+	}
+	if coverArt.Size != nil {
+		size = sql.NullInt64{Int64: *coverArt.Size, Valid: true}
+	}
+	if coverArt.CachedAt != nil {
+		cachedAt = sql.NullTime{Time: *coverArt.CachedAt, Valid: true}
+	}
+
+	_, err := s.db.ExecContext(ctx, query,
+		coverArt.ID, coverArt.MediaItemID, coverArt.Source,
+		url, localPath, width, height, coverArt.Format, size,
+		coverArt.Quality, 0, coverArt.CreatedAt, cachedAt,
+	)
+	return err
+}
+
 // getVideoDuration gets the duration of a video file using ffprobe
 func (s *CoverArtService) getVideoDuration(videoPath string) (float64, error) {
 	output, err := exec.Command("ffprobe",
@@ -847,7 +923,7 @@ func (s *CoverArtService) generateVideoThumbnail(ctx context.Context, request *V
 	if err == nil {
 		if info, statErr := os.Stat(outputPath); statErr == nil {
 			size := info.Size()
-			return &CoverArt{
+			coverArt := &CoverArt{
 				ID:          coverID,
 				MediaItemID: request.MediaItemID,
 				Source:      "video_thumbnail",
@@ -857,18 +933,19 @@ func (s *CoverArtService) generateVideoThumbnail(ctx context.Context, request *V
 				Quality:     string(request.Quality),
 				CreatedAt:   now,
 				CachedAt:    &now,
-			}, nil
+			}
+			if s.db != nil {
+				if dbErr := s.saveCoverArtToDB(ctx, coverArt); dbErr != nil {
+					s.logger.Warn("Failed to save video thumbnail to database", zap.Error(dbErr))
+				} else {
+					_ = s.setDefaultCoverArt(ctx, request.MediaItemID, coverArt.ID)
+				}
+			}
+			return coverArt, nil
 		}
 	}
 
-	// Fallback: return metadata-only cover art record
-	return &CoverArt{
-		ID:          coverID,
-		MediaItemID: request.MediaItemID,
-		Source:      "video_thumbnail",
-		Quality:     string(request.Quality),
-		CreatedAt:   now,
-	}, nil
+	return nil, fmt.Errorf("failed to generate video thumbnail for %s", request.VideoPath)
 }
 
 // processLocalCoverArt processes local cover art file
@@ -914,34 +991,250 @@ func (s *CoverArtService) processLocalCoverArt(ctx context.Context, mediaItemID 
 		CreatedAt:   now,
 	}
 
+	if err := s.saveCoverArtToDB(ctx, coverArt); err != nil {
+		s.logger.Warn("Failed to save local cover art to database", zap.Error(err))
+	}
+
+	return coverArt, nil
+}
+
+// CacheExternalCoverArt downloads an external cover image, persists it locally,
+// and saves a record in the cover_art table so subsequent requests are served
+// directly from the backend without hitting external CDNs.
+func (s *CoverArtService) CacheExternalCoverArt(ctx context.Context, mediaItemID int64, imageURL string) (*CoverArt, error) {
+	if s.db == nil {
+		return nil, fmt.Errorf("no database connection")
+	}
+
+	// Check if we already have a local cover for this item
+	var existingID string
+	err := s.db.QueryRowContext(ctx,
+		`SELECT id FROM cover_art WHERE media_item_id = ? AND is_default = 1 AND local_path IS NOT NULL AND local_path != '' LIMIT 1`,
+		mediaItemID).Scan(&existingID)
+	if err == nil && existingID != "" {
+		return nil, fmt.Errorf("local cover art already exists")
+	}
+
+	s.logger.Info("Caching external cover art",
+		zap.Int64("media_item_id", mediaItemID),
+		zap.String("url", imageURL))
+
+	imageData, err := s.downloadImage(ctx, imageURL)
+	if err != nil {
+		return nil, fmt.Errorf("failed to download image: %w", err)
+	}
+
+	// Decode to validate and get dimensions
+	img, format, err := image.Decode(strings.NewReader(string(imageData)))
+	if err != nil {
+		return nil, fmt.Errorf("failed to decode image: %w", err)
+	}
+	bounds := img.Bounds()
+	width := bounds.Dx()
+	height := bounds.Dy()
+
+	coverID := s.generateCoverArtID()
+	filename := fmt.Sprintf("%s.%s", coverID, format)
+	localPath := filepath.Join(s.cacheDir, filename)
+
+	if err := os.MkdirAll(s.cacheDir, 0755); err != nil {
+		return nil, fmt.Errorf("failed to create cache directory: %w", err)
+	}
+
+	outFile, err := os.Create(localPath)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create file: %w", err)
+	}
+	defer outFile.Close()
+
+	switch format {
+	case "jpeg", "jpg":
+		err = jpeg.Encode(outFile, img, &jpeg.Options{Quality: 90})
+	case "png":
+		err = png.Encode(outFile, img)
+	default:
+		err = jpeg.Encode(outFile, img, &jpeg.Options{Quality: 90})
+	}
+	if err != nil {
+		return nil, fmt.Errorf("failed to encode image: %w", err)
+	}
+
+	fileInfo, err := os.Stat(localPath)
+	if err != nil {
+		return nil, fmt.Errorf("failed to stat file: %w", err)
+	}
+	size := fileInfo.Size()
+
+	now := time.Now()
+	coverArt := &CoverArt{
+		ID:          coverID,
+		MediaItemID: mediaItemID,
+		Source:      "cached_external",
+		LocalPath:   &localPath,
+		Width:       &width,
+		Height:      &height,
+		Format:      format,
+		Size:        &size,
+		Quality:     "high",
+		CreatedAt:   now,
+		CachedAt:    &now,
+	}
+
+	if err := s.saveCoverArtToDB(ctx, coverArt); err != nil {
+		return nil, fmt.Errorf("failed to save cover art: %w", err)
+	}
+	if err := s.setDefaultCoverArt(ctx, mediaItemID, coverArt.ID); err != nil {
+		s.logger.Warn("Failed to set default cover art", zap.Error(err))
+	}
+
+	return coverArt, nil
+}
+
+// GenerateMissingVideoThumbnails scans media items that have no local cover art,
+// finds their primary video file, and generates a thumbnail using ffmpeg.
+// Returns the number of thumbnails successfully generated.
+func (s *CoverArtService) GenerateMissingVideoThumbnails(ctx context.Context, limit int) (int, error) {
+	if s.db == nil {
+		return 0, fmt.Errorf("no database connection")
+	}
+	if limit <= 0 {
+		limit = 50
+	}
+
+	// Find media items with no local cover art that have a primary video file
+	query := `
+		SELECT mi.id, f.path || '/' || f.name AS full_path
+		FROM media_items mi
+		JOIN media_types mt ON mi.media_type_id = mt.id
+		JOIN media_files mf ON mi.id = mf.media_item_id
+		JOIN files f ON mf.file_id = f.id
+		LEFT JOIN cover_art ca ON mi.id = ca.media_item_id AND ca.is_default = 1 AND ca.local_path IS NOT NULL
+		WHERE ca.id IS NULL
+		  AND mt.name IN ('movie', 'tv_show', 'tv_episode', 'video')
+		  AND f.name NOT LIKE '%.srt'
+		  AND f.name NOT LIKE '%.sub'
+		  AND f.name NOT LIKE '%.nfo'
+		  AND f.name NOT LIKE '%.txt'
+		  AND f.name NOT LIKE '%.jpg'
+		  AND f.name NOT LIKE '%.png'
+		ORDER BY mi.id
+		LIMIT ?
+	`
+
+	rows, err := s.db.QueryContext(ctx, query, limit)
+	if err != nil {
+		return 0, fmt.Errorf("failed to query missing thumbnails: %w", err)
+	}
+	defer rows.Close()
+
+	type task struct {
+		mediaItemID int64
+		videoPath   string
+	}
+	var tasks []task
+	for rows.Next() {
+		var t task
+		if err := rows.Scan(&t.mediaItemID, &t.videoPath); err == nil {
+			tasks = append(tasks, t)
+		}
+	}
+
+	generated := 0
+	for _, t := range tasks {
+		thumb, err := s.generateAndSaveVideoThumbnail(ctx, t.mediaItemID, t.videoPath)
+		if err != nil {
+			s.logger.Warn("Failed to generate video thumbnail",
+				zap.Int64("media_item_id", t.mediaItemID),
+				zap.String("path", t.videoPath),
+				zap.Error(err))
+			continue
+		}
+		if thumb != nil {
+			generated++
+		}
+	}
+
+	return generated, nil
+}
+
+// generateAndSaveVideoThumbnail creates a single thumbnail for a video file
+// and persists it to the database.
+func (s *CoverArtService) generateAndSaveVideoThumbnail(ctx context.Context, mediaItemID int64, videoPath string) (*CoverArt, error) {
+	duration, err := s.getVideoDuration(videoPath)
+	if err != nil {
+		return nil, err
+	}
+
+	timestamp := duration * 0.25
+	if timestamp < 5 {
+		timestamp = 5
+	}
+
+	coverID := fmt.Sprintf("video_thumb_%d", mediaItemID)
+	outputPath := filepath.Join(s.cacheDir, coverID+".jpg")
+	now := time.Now()
+
+	// Fast seek: place -ss before -i
+	cmd := exec.CommandContext(ctx, "ffmpeg",
+		"-ss", fmt.Sprintf("%.2f", timestamp),
+		"-i", videoPath,
+		"-vframes", "1",
+		"-q:v", "2",
+		"-y",
+		outputPath,
+	)
+	if err := cmd.Run(); err != nil {
+		return nil, fmt.Errorf("ffmpeg failed: %w", err)
+	}
+
+	info, err := os.Stat(outputPath)
+	if err != nil {
+		return nil, fmt.Errorf("thumbnail file not created: %w", err)
+	}
+
+	size := info.Size()
+	coverArt := &CoverArt{
+		ID:          coverID,
+		MediaItemID: mediaItemID,
+		Source:      "video_thumbnail",
+		LocalPath:   &outputPath,
+		Format:      "jpeg",
+		Size:        &size,
+		Quality:     "high",
+		CreatedAt:   now,
+		CachedAt:    &now,
+	}
+
+	if err := s.saveCoverArtToDB(ctx, coverArt); err != nil {
+		return nil, fmt.Errorf("failed to save thumbnail to database: %w", err)
+	}
+	if err := s.setDefaultCoverArt(ctx, mediaItemID, coverArt.ID); err != nil {
+		s.logger.Warn("Failed to set default cover art", zap.Error(err))
+	}
+
 	return coverArt, nil
 }
 
 // GetCoverURL returns a cover image URL for any media item.
 // Tries in order:
-//  1. Cached cover art from cover_art table
-//  2. External metadata cover URL (TMDB, local_scan, etc.)
+//  1. Cached cover art from cover_art table (local file takes priority)
+//  2. External metadata cover URL routed through the backend image-proxy
 //  3. Type-specific placeholder SVG
 func (s *CoverArtService) GetCoverURL(ctx context.Context, mediaItemID int64, mediaTypeName string) string {
-	// 1. Check if we have cover art in the cover_art table
+	// 1. Check if we have locally cached cover art
 	if s.db != nil {
 		var localPath sql.NullString
-		var coverURL sql.NullString
 		err := s.db.QueryRowContext(ctx,
-			`SELECT local_path, url FROM cover_art
-			 WHERE media_item_id = ? AND is_default = 1
-			 ORDER BY created_at DESC LIMIT 1`, mediaItemID).Scan(&localPath, &coverURL)
-		if err == nil {
-			if coverURL.Valid && coverURL.String != "" {
-				return coverURL.String
-			}
-			if localPath.Valid && localPath.String != "" {
-				return fmt.Sprintf("/api/v1/cover/%d", mediaItemID)
-			}
+			`SELECT local_path FROM cover_art
+			 WHERE media_item_id = ? AND is_default = 1 AND local_path IS NOT NULL AND local_path != ''
+			 ORDER BY created_at DESC LIMIT 1`, mediaItemID).Scan(&localPath)
+		if err == nil && localPath.Valid && localPath.String != "" {
+			return fmt.Sprintf("/api/v1/cover/%d", mediaItemID)
 		}
 	}
 
-	// 2. Check external_metadata for a cover URL (TMDB, local scan, etc.)
+	// 2. Check external_metadata for a cover URL and route through our proxy
+	// so client apps never talk directly to external CDNs.
 	if s.db != nil {
 		var coverURL sql.NullString
 		err := s.db.QueryRowContext(ctx,
@@ -949,17 +1242,33 @@ func (s *CoverArtService) GetCoverURL(ctx context.Context, mediaItemID int64, me
 			 WHERE media_item_id = ? AND cover_url IS NOT NULL AND cover_url != ''
 			 ORDER BY last_fetched DESC LIMIT 1`, mediaItemID).Scan(&coverURL)
 		if err == nil && coverURL.Valid && coverURL.String != "" {
-			return coverURL.String
+			if strings.HasPrefix(coverURL.String, "/api/v1/image-proxy") {
+				return coverURL.String
+			}
+			encoded := url.QueryEscape(coverURL.String)
+			proxyURL := fmt.Sprintf("/api/v1/image-proxy?url=%s", encoded)
+			// Kick off background caching so future requests serve locally.
+			go func(itemID int64, extURL string) {
+				cacheCtx, cancel := context.WithTimeout(context.Background(), 2*time.Minute)
+				defer cancel()
+				if _, cacheErr := s.CacheExternalCoverArt(cacheCtx, itemID, extURL); cacheErr != nil {
+					s.logger.Debug("Background cover art caching failed",
+						zap.Int64("media_item_id", itemID),
+						zap.Error(cacheErr))
+				}
+			}(mediaItemID, coverURL.String)
+			return proxyURL
 		}
 	}
 
-	// 3. Fall back to type-specific placeholder
+	// 3. Fall back to type-specific placeholder SVG
 	return fmt.Sprintf("/api/v1/cover/placeholder/%s", mediaTypeName)
 }
 
 // GetCoverURLsBatch returns cover image URLs for multiple media items at once.
 // This is more efficient than calling GetCoverURL in a loop because it batches
-// the database queries.
+// the database queries. All returned URLs are backend-routed; no raw external
+// CDN URLs are ever sent to clients.
 func (s *CoverArtService) GetCoverURLsBatch(ctx context.Context, items []CoverURLRequest) map[int64]string {
 	result := make(map[int64]string, len(items))
 	if len(items) == 0 {
@@ -986,7 +1295,7 @@ func (s *CoverArtService) GetCoverURLsBatch(ctx context.Context, items []CoverUR
 	}
 	inClause := strings.Join(placeholders, ",")
 
-	// Batch query external_metadata cover URLs
+	// 1. Batch query external_metadata cover URLs and route through proxy
 	query := fmt.Sprintf(
 		`SELECT media_item_id, cover_url FROM external_metadata
 		 WHERE media_item_id IN (%s) AND cover_url IS NOT NULL AND cover_url != ''
@@ -1000,16 +1309,20 @@ func (s *CoverArtService) GetCoverURLsBatch(ctx context.Context, items []CoverUR
 			var itemID int64
 			var coverURL string
 			if err := rows.Scan(&itemID, &coverURL); err == nil && !seen[itemID] {
-				result[itemID] = coverURL
+				if strings.HasPrefix(coverURL, "/api/v1/image-proxy") {
+					result[itemID] = coverURL
+				} else {
+					result[itemID] = fmt.Sprintf("/api/v1/image-proxy?url=%s", url.QueryEscape(coverURL))
+				}
 				seen[itemID] = true
 			}
 		}
 	}
 
-	// Batch query cover_art table (overrides external_metadata if present)
+	// 2. Batch query locally cached cover_art (overrides external_metadata)
 	query = fmt.Sprintf(
-		`SELECT media_item_id, local_path, url FROM cover_art
-		 WHERE media_item_id IN (%s) AND is_default = 1
+		`SELECT media_item_id, local_path FROM cover_art
+		 WHERE media_item_id IN (%s) AND is_default = 1 AND local_path IS NOT NULL AND local_path != ''
 		 ORDER BY created_at DESC`, inClause)
 
 	rows2, err := s.db.QueryContext(ctx, query, ids...)
@@ -1018,12 +1331,9 @@ func (s *CoverArtService) GetCoverURLsBatch(ctx context.Context, items []CoverUR
 		seen := make(map[int64]bool)
 		for rows2.Next() {
 			var itemID int64
-			var localPath, urlVal sql.NullString
-			if err := rows2.Scan(&itemID, &localPath, &urlVal); err == nil && !seen[itemID] {
-				if urlVal.Valid && urlVal.String != "" {
-					result[itemID] = urlVal.String
-					seen[itemID] = true
-				} else if localPath.Valid && localPath.String != "" {
+			var localPath sql.NullString
+			if err := rows2.Scan(&itemID, &localPath); err == nil && !seen[itemID] {
+				if localPath.Valid && localPath.String != "" {
 					result[itemID] = fmt.Sprintf("/api/v1/cover/%d", itemID)
 					seen[itemID] = true
 				}
@@ -1040,75 +1350,105 @@ type CoverURLRequest struct {
 	MediaTypeName string
 }
 
-// GeneratePlaceholderSVG generates a placeholder SVG image for a given media type.
-// Returns SVG bytes with a colored background and an icon representing the type.
+// GeneratePlaceholderSVG generates a cinematic placeholder SVG image for a given media type.
+// The design mimics streaming-service placeholder cards with rich gradients,
+// subtle texture, and large type-friendly icons.
 func GeneratePlaceholderSVG(mediaType string) []byte {
-	colors := map[string]string{
-		"movie":        "#E53E3E",
-		"tv_show":      "#3182CE",
-		"tv_season":    "#2B6CB0",
-		"tv_episode":   "#4299E1",
-		"music_artist": "#38A169",
-		"music_album":  "#2F855A",
-		"song":         "#48BB78",
-		"game":         "#805AD5",
-		"software":     "#DD6B20",
-		"book":         "#2B6CB0",
-		"comic":        "#ED64A6",
-	}
+    gradients := map[string][2]string{
+        "movie":        {"#1a1a2e", "#16213e"},
+        "tv_show":      {"#2d132c", "#801336"},
+        "tv_season":    {"#1b1b2f", "#4a4e69"},
+        "tv_episode":   {"#1b1b2f", "#4a4e69"},
+        "music_artist": {"#0f3460", "#533483"},
+        "music_album":  {"#1a1a2e", "#16213e"},
+        "song":         {"#0f3460", "#e94560"},
+        "game":         {"#1a1a2e", "#0f3460"},
+        "software":     {"#2c3e50", "#3498db"},
+        "book":         {"#2d3436", "#636e72"},
+        "comic":        {"#2d132c", "#c0392b"},
+    }
 
-	icons := map[string]string{
-		"movie":        "&#127916;", // film clapper
-		"tv_show":      "&#128250;", // TV
-		"tv_season":    "&#128250;", // TV
-		"tv_episode":   "&#128250;", // TV
-		"music_artist": "&#127908;", // microphone
-		"music_album":  "&#128191;", // CD
-		"song":         "&#127925;", // music notes
-		"game":         "&#127918;", // game controller
-		"software":     "&#128187;", // computer
-		"book":         "&#128214;", // book
-		"comic":        "&#128214;", // book
-	}
+    accentColors := map[string]string{
+        "movie":        "#e94560",
+        "tv_show":      "#ff6b6b",
+        "tv_season":    "#74b9ff",
+        "tv_episode":   "#74b9ff",
+        "music_artist": "#a29bfe",
+        "music_album":  "#fd79a8",
+        "song":         "#00b894",
+        "game":         "#f39c12",
+        "software":     "#00cec9",
+        "book":         "#fab1a0",
+        "comic":        "#e17055",
+    }
 
-	labels := map[string]string{
-		"movie":        "Movie",
-		"tv_show":      "TV Show",
-		"tv_season":    "Season",
-		"tv_episode":   "Episode",
-		"music_artist": "Artist",
-		"music_album":  "Album",
-		"song":         "Song",
-		"game":         "Game",
-		"software":     "Software",
-		"book":         "Book",
-		"comic":        "Comic",
-	}
+    icons := map[string]string{
+        "movie":        "&#127916;",
+        "tv_show":      "&#128250;",
+        "tv_season":    "&#128250;",
+        "tv_episode":   "&#128250;",
+        "music_artist": "&#127908;",
+        "music_album":  "&#128191;",
+        "song":         "&#127925;",
+        "game":         "&#127918;",
+        "software":     "&#128187;",
+        "book":         "&#128214;",
+        "comic":        "&#128214;",
+    }
 
-	color, ok := colors[mediaType]
-	if !ok {
-		color = "#718096" // gray fallback
-	}
-	icon, ok := icons[mediaType]
-	if !ok {
-		icon = "&#128196;" // generic document
-	}
-	label, ok := labels[mediaType]
-	if !ok {
-		label = strings.ReplaceAll(mediaType, "_", " ")
-	}
+    labels := map[string]string{
+        "movie":        "MOVIE",
+        "tv_show":      "TV SHOW",
+        "tv_season":    "SEASON",
+        "tv_episode":   "EPISODE",
+        "music_artist": "ARTIST",
+        "music_album":  "ALBUM",
+        "song":         "SONG",
+        "game":         "GAME",
+        "software":     "SOFTWARE",
+        "book":         "BOOK",
+        "comic":        "COMIC",
+    }
 
-	svg := fmt.Sprintf(`<svg xmlns="http://www.w3.org/2000/svg" width="300" height="300" viewBox="0 0 300 300">
+    g, ok := gradients[mediaType]
+    if !ok {
+        g = [2]string{"#1a1a2e", "#16213e"}
+    }
+    accent, ok := accentColors[mediaType]
+    if !ok {
+        accent = "#e94560"
+    }
+    icon, ok := icons[mediaType]
+    if !ok {
+        icon = "&#128196;"
+    }
+    label, ok := labels[mediaType]
+    if !ok {
+        label = strings.ReplaceAll(strings.ToUpper(mediaType), "_", " ")
+    }
+
+    svg := fmt.Sprintf(`<svg xmlns="http://www.w3.org/2000/svg" width="300" height="450" viewBox="0 0 300 450">
   <defs>
-    <linearGradient id="bg" x1="0%%" y1="0%%" x2="100%%" y2="100%%">
-      <stop offset="0%%" style="stop-color:%s;stop-opacity:1"/>
-      <stop offset="100%%" style="stop-color:%s;stop-opacity:0.8"/>
+    <linearGradient id="bg" x1="0%%" y1="0%%" x2="0%%" y2="100%%">
+      <stop offset="0%%" stop-color="%s"/>
+      <stop offset="60%%" stop-color="%s"/>
+      <stop offset="100%%" stop-color="#0d0d0d"/>
     </linearGradient>
+    <linearGradient id="glow" x1="0%%" y1="0%%" x2="100%%" y2="100%%">
+      <stop offset="0%%" stop-color="%s" stop-opacity="0.35"/>
+      <stop offset="100%%" stop-color="%s" stop-opacity="0.05"/>
+    </linearGradient>
+    <filter id="shadow">
+      <feDropShadow dx="0" dy="4" stdDeviation="6" flood-color="black" flood-opacity="0.4"/>
+    </filter>
   </defs>
-  <rect width="300" height="300" rx="12" fill="url(#bg)"/>
-  <text x="150" y="130" font-size="72" text-anchor="middle" dominant-baseline="middle" fill="white" opacity="0.9">%s</text>
-  <text x="150" y="200" font-size="20" font-family="Arial, Helvetica, sans-serif" font-weight="bold" text-anchor="middle" dominant-baseline="middle" fill="white" opacity="0.85">%s</text>
-</svg>`, color, color, icon, label)
+  <rect width="300" height="450" rx="8" fill="url(#bg)"/>
+  <path d="M0 450 L300 0 L300 450 Z" fill="url(#glow)" opacity="0.6"/>
+  <rect x="0" y="0" width="300" height="4" rx="8" fill="%s"/>
+  <text x="150" y="200" font-size="96" text-anchor="middle" dominant-baseline="middle" fill="white" opacity="0.95" filter="url(#shadow)">%s</text>
+  <text x="150" y="300" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-size="16" font-weight="700" letter-spacing="3" text-anchor="middle" dominant-baseline="middle" fill="%s">%s</text>
+  <line x1="100" y1="330" x2="200" y2="330" stroke="white" stroke-width="1" stroke-opacity="0.2"/>
+</svg>`, g[0], g[1], accent, accent, accent, icon, accent, label)
 
-	return []byte(svg)
+    return []byte(svg)
 }

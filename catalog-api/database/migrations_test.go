@@ -271,9 +271,8 @@ func TestMigrationSequence_AllVersionsApplied(t *testing.T) {
 	err := db.RunMigrations(ctx)
 	require.NoError(t, err)
 
-	// Verify all 15 migrations were recorded (v15 adds playback_sessions
-	// + media_progress tables for the reproduction history feature).
-	const latestVersion = 15
+	// Verify all 16 migrations were recorded (v16 adds cover_art tables).
+	const latestVersion = 16
 	var count int
 	err = db.QueryRowContext(ctx, "SELECT COUNT(*) FROM migrations").Scan(&count)
 	assert.NoError(t, err)

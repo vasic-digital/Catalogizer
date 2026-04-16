@@ -311,15 +311,15 @@ func TestCoverArtService_GetCoverURL_FromCoverArtTable(t *testing.T) {
 
 	ctx := context.Background()
 
-	// Insert cover art with URL
+	// Insert cover art with local_path
 	_, err := db.ExecContext(ctx,
-		`INSERT INTO cover_art (id, media_item_id, source, url, width, height, format, quality, is_default, created_at)
-		 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-		"url_test_1", 100, "itunes", "https://example.com/cover.jpg", 500, 500, "jpeg", "high", 1, time.Now())
+		`INSERT INTO cover_art (id, media_item_id, source, url, local_path, width, height, format, quality, is_default, created_at)
+		 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+		"url_test_1", 100, "itunes", "https://example.com/cover.jpg", "/cache/100.jpg", 500, 500, "jpeg", "high", 1, time.Now())
 	require.NoError(t, err)
 
 	url := service.GetCoverURL(ctx, 100, "music_album")
-	assert.Equal(t, "https://example.com/cover.jpg", url)
+	assert.Equal(t, "/api/v1/cover/100", url)
 }
 
 func TestCoverArtService_GetCoverURL_FromLocalPath(t *testing.T) {
@@ -359,7 +359,7 @@ func TestCoverArtService_GetCoverURL_FromExternalMetadata(t *testing.T) {
 	require.NoError(t, err)
 
 	url := service.GetCoverURL(ctx, 102, "movie")
-	assert.Equal(t, "https://tmdb.org/poster.jpg", url)
+	assert.Equal(t, "/api/v1/image-proxy?url=https%3A%2F%2Ftmdb.org%2Fposter.jpg", url)
 }
 
 func TestCoverArtService_GetCoverURL_Placeholder(t *testing.T) {
@@ -420,11 +420,11 @@ func TestCoverArtService_GetCoverURLsBatch_WithData(t *testing.T) {
 
 	ctx := context.Background()
 
-	// Item 200: cover_art with URL (highest priority)
+	// Item 200: cover_art with local_path (highest priority)
 	_, err := db.ExecContext(ctx,
-		`INSERT INTO cover_art (id, media_item_id, source, url, width, height, format, quality, is_default, created_at)
-		 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-		"batch_1", 200, "itunes", "https://itunes.com/200.jpg", 500, 500, "jpeg", "high", 1, time.Now())
+		`INSERT INTO cover_art (id, media_item_id, source, url, local_path, width, height, format, quality, is_default, created_at)
+		 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+		"batch_1", 200, "itunes", "https://itunes.com/200.jpg", "/cache/200.jpg", 500, 500, "jpeg", "high", 1, time.Now())
 	require.NoError(t, err)
 
 	// Item 201: only external_metadata
@@ -444,8 +444,8 @@ func TestCoverArtService_GetCoverURLsBatch_WithData(t *testing.T) {
 
 	result := service.GetCoverURLsBatch(ctx, items)
 	assert.Len(t, result, 3)
-	assert.Equal(t, "https://itunes.com/200.jpg", result[200])
-	assert.Equal(t, "https://tmdb.org/201.jpg", result[201])
+	assert.Equal(t, "/api/v1/cover/200", result[200])
+	assert.Equal(t, "/api/v1/image-proxy?url=https%3A%2F%2Ftmdb.org%2F201.jpg", result[201])
 	assert.Equal(t, "/api/v1/cover/placeholder/game", result[202])
 }
 
@@ -466,9 +466,9 @@ func TestCoverArtService_GetCoverURLsBatch_CoverArtOverridesExternal(t *testing.
 	require.NoError(t, err)
 
 	_, err = db.ExecContext(ctx,
-		`INSERT INTO cover_art (id, media_item_id, source, url, width, height, format, quality, is_default, created_at)
-		 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-		"batch_300", 300, "local", "https://local/300.jpg", 600, 600, "jpeg", "high", 1, time.Now())
+		`INSERT INTO cover_art (id, media_item_id, source, url, local_path, width, height, format, quality, is_default, created_at)
+		 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+		"batch_300", 300, "local", "https://local/300.jpg", "/cache/300.jpg", 600, 600, "jpeg", "high", 1, time.Now())
 	require.NoError(t, err)
 
 	items := []CoverURLRequest{
@@ -476,8 +476,8 @@ func TestCoverArtService_GetCoverURLsBatch_CoverArtOverridesExternal(t *testing.
 	}
 
 	result := service.GetCoverURLsBatch(ctx, items)
-	// cover_art should override external_metadata
-	assert.Equal(t, "https://local/300.jpg", result[300])
+	// cover_art with local_path should override external_metadata
+	assert.Equal(t, "/api/v1/cover/300", result[300])
 }
 
 func TestCoverArtService_GetCoverURLsBatch_LocalPathFallback(t *testing.T) {

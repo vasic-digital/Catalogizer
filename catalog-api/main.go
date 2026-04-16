@@ -24,12 +24,14 @@ import (
 	"crypto/x509"
 	"crypto/x509/pkix"
 	"encoding/hex"
+	"encoding/json"
 	"encoding/pem"
 	"flag"
 	"fmt"
 	"io"
 	"math/big"
 	"net"
+	"net/url"
 	"net/http"
 	"os"
 	"os/signal"
@@ -865,8 +867,9 @@ func main() {
 	// WebSocket endpoint (auth via query parameter, not header)
 	router.GET("/ws", wsHandler.HandleConnection)
 
-	// Image proxy — serves external images (TMDB, etc.) through the API
-	// Needed when devices can't reach external CDNs directly (DNS blocking, etc.)
+	// Image proxy — serves external images (TMDB, etc.) through the API.
+	// When the upstream CDN is unreachable, falls back to a type-specific
+	// placeholder SVG so client apps still render something useful.
 	router.GET("/api/v1/image-proxy", func(c *gin.Context) {
 		imageURL := c.Query("url")
 		if imageURL == "" {
@@ -885,10 +888,19 @@ func main() {
 			c.JSON(http.StatusForbidden, gin.H{"error": "domain not allowed"})
 			return
 		}
-		proxyClient := &http.Client{Timeout: 15 * time.Second}
+
+		// Build a proxy client that can work around DNS hijacking.
+		proxyClient := buildImageProxyClient(imageURL)
 		resp, err := proxyClient.Get(imageURL)
-		if err != nil {
-			c.JSON(http.StatusBadGateway, gin.H{"error": "failed to fetch image"})
+		if err != nil || resp.StatusCode != http.StatusOK {
+			if resp != nil && resp.Body != nil {
+				resp.Body.Close()
+			}
+			mediaType := c.DefaultQuery("type", "movie")
+			svg := services.GeneratePlaceholderSVG(mediaType)
+			c.Header("Content-Type", "image/svg+xml")
+			c.Header("Cache-Control", "public, max-age=3600")
+			c.Data(http.StatusOK, "image/svg+xml", svg)
 			return
 		}
 		defer resp.Body.Close()
@@ -976,6 +988,28 @@ func main() {
 		api.PUT("/media/:id/favorite", androidTVMediaHandler.UpdateFavoriteStatus)
 		api.POST("/media/:id/refresh", mediaQueryHandler.RefreshMediaMetadata)
 		api.GET("/media/:id/quality", mediaQueryHandler.GetMediaQuality)
+
+		// Cover art batch generation — creates video-frame thumbnails for items
+		// that don't have cover art yet.  This is useful when external CDNs are
+		// unreachable and the backend must generate its own covers.
+		api.POST("/admin/covers/generate-thumbnails", func(c *gin.Context) {
+			var req struct {
+				Limit int `json:"limit" binding:"min=1,max=500"`
+			}
+			if err := c.ShouldBindJSON(&req); err != nil {
+				// default limit when body is empty
+				req.Limit = 50
+			}
+			generated, err := coverArtService.GenerateMissingVideoThumbnails(c.Request.Context(), req.Limit)
+			if err != nil {
+				c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+				return
+			}
+			c.JSON(http.StatusOK, gin.H{
+				"generated": generated,
+				"message":   "thumbnail generation completed",
+			})
+		})
 
 		// Recommendation endpoints (lazy — handler initialized on first request)
 		recGroup := api.Group("/recommendations")
@@ -1637,4 +1671,130 @@ func seedDefaultAdmin(db *database.DB, username, password string) error {
 // bcryptHash wraps bcrypt.GenerateFromPassword.
 func bcryptHash(data []byte) ([]byte, error) {
 	return bcrypt.GenerateFromPassword(data, bcrypt.DefaultCost)
+}
+
+// dnsCacheEntry holds resolved IPs with an expiration time.
+type dnsCacheEntry struct {
+	ips       []string
+	expiresAt time.Time
+}
+
+var (
+	dnsCache      = make(map[string]dnsCacheEntry)
+	dnsCacheMu    sync.RWMutex
+	dnsCacheTTL   = 5 * time.Minute
+	dnsDoHClient  = &http.Client{Timeout: 5 * time.Second}
+)
+
+// resolveViaDOH queries Cloudflare DNS-over-HTTPS for A records.
+func resolveViaDOH(hostname string) ([]string, error) {
+	reqURL := fmt.Sprintf("https://cloudflare-dns.com/dns-query?name=%s&type=A", url.QueryEscape(hostname))
+	req, err := http.NewRequest("GET", reqURL, nil)
+	if err != nil {
+		return nil, err
+	}
+	req.Header.Set("accept", "application/dns-json")
+	resp, err := dnsDoHClient.Do(req)
+	if err != nil {
+		return nil, err
+	}
+	defer resp.Body.Close()
+
+	var payload struct {
+		Status int `json:"Status"`
+		Answer []struct {
+			Type int    `json:"type"`
+			Data string `json:"data"`
+		} `json:"Answer"`
+	}
+	if err := json.NewDecoder(resp.Body).Decode(&payload); err != nil {
+		return nil, err
+	}
+	var ips []string
+	for _, ans := range payload.Answer {
+		if ans.Type == 1 {
+			ips = append(ips, ans.Data)
+		}
+	}
+	return ips, nil
+}
+
+// resolveHostDynamic returns non-loopback IPs for a hostname.
+// It prefers DNS-over-HTTPS (which gives real CDN edge IPs) and only falls
+// back to local DNS when DoH is unavailable. This avoids caching bad local
+// DNS results (e.g., CloudFront IPs that reject direct IP access).
+func resolveHostDynamic(host string) []string {
+	// Check cache first.
+	dnsCacheMu.RLock()
+	entry, ok := dnsCache[host]
+	dnsCacheMu.RUnlock()
+	if ok && time.Now().Before(entry.expiresAt) {
+		return entry.ips
+	}
+
+	// Prefer DNS-over-HTTPS for accurate CDN edge IPs.
+	valid, err := resolveViaDOH(host)
+	if err == nil && len(valid) > 0 {
+		dnsCacheMu.Lock()
+		dnsCache[host] = dnsCacheEntry{ips: valid, expiresAt: time.Now().Add(dnsCacheTTL)}
+		dnsCacheMu.Unlock()
+		return valid
+	}
+
+	// Fall back to local DNS only when DoH fails.
+	addrs, err := net.LookupHost(host)
+	if err == nil && len(addrs) > 0 {
+		var localValid []string
+		for _, a := range addrs {
+			if a != "127.0.0.1" && a != "::1" {
+				localValid = append(localValid, a)
+			}
+		}
+		if len(localValid) > 0 {
+			// Do not cache local DNS results so we can retry DoH later.
+			return localValid
+		}
+	}
+
+	return nil
+}
+
+// buildImageProxyClient returns an http.Client for fetching images from external CDNs.
+// When local DNS returns loopback addresses, it uses DNS-over-HTTPS to resolve real IPs
+// dynamically and dials those IPs while preserving TLS SNI.
+func buildImageProxyClient(imageURL string) *http.Client {
+	parsed, err := url.Parse(imageURL)
+	if err != nil {
+		return &http.Client{Timeout: 15 * time.Second}
+	}
+
+	host := parsed.Hostname()
+	ips := resolveHostDynamic(host)
+	if len(ips) == 0 {
+		return &http.Client{Timeout: 15 * time.Second}
+	}
+
+	dialer := &net.Dialer{Timeout: 10 * time.Second}
+	transport := &http.Transport{
+		DialContext: func(ctx context.Context, network, addr string) (net.Conn, error) {
+			_, port, err := net.SplitHostPort(addr)
+			if err != nil {
+				port = "443"
+			}
+			// Try each resolved IP until one connects.
+			var lastErr error
+			for _, ip := range ips {
+				conn, err := dialer.DialContext(ctx, network, net.JoinHostPort(ip, port))
+				if err == nil {
+					return conn, nil
+				}
+				lastErr = err
+			}
+			return nil, lastErr
+		},
+		TLSClientConfig: &tls.Config{
+			ServerName: host,
+		},
+	}
+	return &http.Client{Timeout: 15 * time.Second, Transport: transport}
 }
