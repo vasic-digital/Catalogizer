@@ -411,7 +411,7 @@ func TestNewMediaManager_MissingDBPassword(t *testing.T) {
 	logger := zap.NewNop()
 	cfg := &config.Config{}
 
-	mm, err := NewMediaManager(cfg, logger)
+	mm, err := NewMediaManager(cfg, logger, nil)
 	assert.Nil(t, mm)
 	assert.Error(t, err)
 	assert.Contains(t, err.Error(), "MEDIA_DB_PASSWORD environment variable is required")
@@ -431,7 +431,7 @@ func TestNewMediaManager_EmptyDBPassword(t *testing.T) {
 	logger := zap.NewNop()
 	cfg := &config.Config{}
 
-	mm, err := NewMediaManager(cfg, logger)
+	mm, err := NewMediaManager(cfg, logger, nil)
 	assert.Nil(t, mm)
 	assert.Error(t, err)
 	assert.Contains(t, err.Error(), "MEDIA_DB_PASSWORD environment variable is required")
@@ -448,7 +448,7 @@ func TestNewMediaManager_NilConfig(t *testing.T) {
 
 	logger := zap.NewNop()
 
-	mm, err := NewMediaManager(nil, logger)
+	mm, err := NewMediaManager(nil, logger, nil)
 	assert.Nil(t, mm)
 	assert.Error(t, err)
 	assert.Contains(t, err.Error(), "MEDIA_DB_PASSWORD")
@@ -468,7 +468,7 @@ func TestNewMediaManager_WithPasswordDBCreationSucceeds(t *testing.T) {
 	logger := zap.NewNop()
 	cfg := &config.Config{}
 
-	mm, err := NewMediaManager(cfg, logger)
+	mm, err := NewMediaManager(cfg, logger, nil)
 	if err != nil {
 		// In environments where SQLCipher can't create the DB
 		assert.NotContains(t, err.Error(), "MEDIA_DB_PASSWORD environment variable is required")
@@ -503,7 +503,7 @@ func TestNewMediaManager_DBInitFailure(t *testing.T) {
 	logger := zap.NewNop()
 	cfg := &config.Config{}
 
-	mm, err := NewMediaManager(cfg, logger)
+	mm, err := NewMediaManager(cfg, logger, nil)
 	assert.Nil(t, mm)
 	assert.Error(t, err)
 	assert.Contains(t, err.Error(), "failed to initialize media database")
@@ -1312,7 +1312,7 @@ func TestNewMediaManager_SuccessPath(t *testing.T) {
 	logger := zap.NewNop()
 	cfg := &config.Config{}
 
-	mm, err := NewMediaManager(cfg, logger)
+	mm, err := NewMediaManager(cfg, logger, nil)
 	if err != nil {
 		// Database initialization may fail in some test environments
 		// but the password check is passed

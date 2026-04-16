@@ -321,3 +321,9 @@ docs/reports/qa-sessions/**/logs/*.log
 
 # Device connect list (local IP addresses, should not be committed)
 .devconnect
+
+.env.resolved
+resolve_env.py
+full_helixqa_atv_session.sh
+master_qa_session.sh
+rerun_helixqa_atv.sh

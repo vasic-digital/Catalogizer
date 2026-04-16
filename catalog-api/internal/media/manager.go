@@ -50,7 +50,7 @@ type WatchPath struct {
 }
 
 // NewMediaManager creates a new media manager
-func NewMediaManager(cfg *config.Config, logger *zap.Logger) (*MediaManager, error) {
+func NewMediaManager(cfg *config.Config, logger *zap.Logger, proxyCfg providers.ProxyConfiger) (*MediaManager, error) {
 	// Initialize encrypted database
 	dbPassword := os.Getenv("MEDIA_DB_PASSWORD")
 	if dbPassword == "" {
@@ -75,7 +75,7 @@ func NewMediaManager(cfg *config.Config, logger *zap.Logger) (*MediaManager, err
 	}
 
 	// Initialize provider manager
-	providerManager := providers.NewProviderManager(logger)
+	providerManager := providers.NewProviderManagerWithProxy(logger, proxyCfg)
 
 	// Initialize analyzer
 	mediaAnalyzer := analyzer.NewMediaAnalyzer(catalogDB.WrapDB(mediaDB.GetDB(), catalogDB.DialectSQLite), detectionEngine, providerManager, logger)

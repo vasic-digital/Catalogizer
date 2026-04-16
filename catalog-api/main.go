@@ -10,6 +10,7 @@ import (
 	internal_config "catalogizer/internal/config"
 	"catalogizer/internal/handlers"
 	"catalogizer/internal/logging"
+	"catalogizer/internal/media/providers"
 	"catalogizer/internal/metrics"
 	"catalogizer/internal/middleware"
 	"catalogizer/internal/modules"
@@ -41,6 +42,8 @@ import (
 	"sync"
 	"syscall"
 	"time"
+
+	"golang.org/x/net/proxy"
 
 	"digital.vasic.assets/pkg/defaults"
 	"digital.vasic.assets/pkg/event"
@@ -645,6 +648,7 @@ func main() {
 
 	// Cover art service for universal cover images
 	coverArtService := services.NewCoverArtService(databaseDB, logger)
+	coverArtService.SetProxyConfig(cfg.Proxy)
 
 	// Cover handler for placeholder SVGs and cover image serving
 	coverHandler := root_handlers.NewCoverHandler(coverArtService)
@@ -652,6 +656,9 @@ func main() {
 	// Media entity handler for structured media browsing
 	mediaEntityHandler := root_handlers.NewMediaEntityHandler(mediaItemRepo, mediaFileRepo, extMetaRepo, userMetaRepo, databaseDB)
 	mediaEntityHandler.SetCoverArtService(coverArtService)
+	mediaEntityHandler.SetProxyConfig(cfg.Proxy)
+	llmProvider := providers.NewLLMProvider(buildProxyHTTPClient(cfg.Proxy), logger)
+	mediaEntityHandler.SetLLMProvider(llmProvider)
 
 	// Playback session tracking handler — records every
 	// reproduction session (video, audio, book, comic, game)
@@ -890,7 +897,7 @@ func main() {
 		}
 
 		// Build a proxy client that can work around DNS hijacking.
-		proxyClient := buildImageProxyClient(imageURL)
+		proxyClient := buildImageProxyClient(imageURL, cfg.Proxy)
 		resp, err := proxyClient.Get(imageURL)
 		if err != nil || resp.StatusCode != http.StatusOK {
 			if resp != nil && resp.Body != nil {
@@ -1759,42 +1766,100 @@ func resolveHostDynamic(host string) []string {
 	return nil
 }
 
+// buildProxyHTTPClient returns a basic http.Client that routes through the
+// configured proxy (SOCKS5 or HTTP) when enabled.
+func buildProxyHTTPClient(proxyCfg root_config.ProxyConfig) *http.Client {
+	transport := &http.Transport{}
+	if proxyCfg.Enabled {
+		if proxyCfg.URL != "" {
+			parsedProxy, err := url.Parse(proxyCfg.URL)
+			if err == nil && parsedProxy.Scheme == "socks5" {
+				var auth *proxy.Auth
+				if proxyCfg.Username != "" || proxyCfg.Password != "" {
+					auth = &proxy.Auth{User: proxyCfg.Username, Password: proxyCfg.Password}
+				}
+				SOCKS5Dialer, err := proxy.SOCKS5("tcp", parsedProxy.Host, auth, proxy.Direct)
+				if err == nil {
+					transport.DialContext = func(ctx context.Context, network, addr string) (net.Conn, error) {
+						return SOCKS5Dialer.Dial(network, addr)
+					}
+					return &http.Client{Timeout: 30 * time.Second, Transport: transport}
+				}
+			}
+		}
+		if proxyCfg.HTTPURL != "" {
+			parsedHTTPProxy, err := url.Parse(proxyCfg.HTTPURL)
+			if err == nil {
+				transport.Proxy = http.ProxyURL(parsedHTTPProxy)
+				return &http.Client{Timeout: 30 * time.Second, Transport: transport}
+			}
+		}
+	}
+	return &http.Client{Timeout: 30 * time.Second}
+}
+
 // buildImageProxyClient returns an http.Client for fetching images from external CDNs.
-// When local DNS returns loopback addresses, it uses DNS-over-HTTPS to resolve real IPs
-// dynamically and dials those IPs while preserving TLS SNI.
-func buildImageProxyClient(imageURL string) *http.Client {
+// When a proxy is configured it is used first. When local DNS returns loopback
+// addresses, it falls back to DNS-over-HTTPS to resolve real IPs dynamically
+// and dials those IPs while preserving TLS SNI.
+func buildImageProxyClient(imageURL string, proxyCfg root_config.ProxyConfig) *http.Client {
 	parsed, err := url.Parse(imageURL)
 	if err != nil {
 		return &http.Client{Timeout: 15 * time.Second}
 	}
-
 	host := parsed.Hostname()
+
+	transport := &http.Transport{
+		TLSClientConfig: &tls.Config{ServerName: host},
+	}
+
+	// Use configured proxy if enabled.
+	if proxyCfg.Enabled {
+		if proxyCfg.URL != "" {
+			parsedProxy, err := url.Parse(proxyCfg.URL)
+			if err == nil && parsedProxy.Scheme == "socks5" {
+				var auth *proxy.Auth
+				if proxyCfg.Username != "" || proxyCfg.Password != "" {
+					auth = &proxy.Auth{User: proxyCfg.Username, Password: proxyCfg.Password}
+				}
+				 SOCKS5Dialer, err := proxy.SOCKS5("tcp", parsedProxy.Host, auth, proxy.Direct)
+				if err == nil {
+					transport.DialContext = func(ctx context.Context, network, addr string) (net.Conn, error) {
+						return SOCKS5Dialer.Dial(network, addr)
+					}
+					return &http.Client{Timeout: 15 * time.Second, Transport: transport}
+				}
+			}
+		}
+		if proxyCfg.HTTPURL != "" {
+			parsedHTTPProxy, err := url.Parse(proxyCfg.HTTPURL)
+			if err == nil {
+				transport.Proxy = http.ProxyURL(parsedHTTPProxy)
+				return &http.Client{Timeout: 15 * time.Second, Transport: transport}
+			}
+		}
+	}
+
 	ips := resolveHostDynamic(host)
 	if len(ips) == 0 {
-		return &http.Client{Timeout: 15 * time.Second}
+		return &http.Client{Timeout: 15 * time.Second, Transport: transport}
 	}
 
 	dialer := &net.Dialer{Timeout: 10 * time.Second}
-	transport := &http.Transport{
-		DialContext: func(ctx context.Context, network, addr string) (net.Conn, error) {
-			_, port, err := net.SplitHostPort(addr)
-			if err != nil {
-				port = "443"
+	transport.DialContext = func(ctx context.Context, network, addr string) (net.Conn, error) {
+		_, port, err := net.SplitHostPort(addr)
+		if err != nil {
+			port = "443"
+		}
+		var lastErr error
+		for _, ip := range ips {
+			conn, err := dialer.DialContext(ctx, network, net.JoinHostPort(ip, port))
+			if err == nil {
+				return conn, nil
 			}
-			// Try each resolved IP until one connects.
-			var lastErr error
-			for _, ip := range ips {
-				conn, err := dialer.DialContext(ctx, network, net.JoinHostPort(ip, port))
-				if err == nil {
-					return conn, nil
-				}
-				lastErr = err
-			}
-			return nil, lastErr
-		},
-		TLSClientConfig: &tls.Config{
-			ServerName: host,
-		},
+			lastErr = err
+		}
+		return nil, lastErr
 	}
 	return &http.Client{Timeout: 15 * time.Second, Transport: transport}
 }

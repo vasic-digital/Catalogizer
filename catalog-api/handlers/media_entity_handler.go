@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"net"
 	"net/http"
 	"net/url"
 	"os"
@@ -15,11 +16,13 @@ import (
 	"catalogizer/database"
 	"catalogizer/internal/logging"
 	"catalogizer/internal/media/models"
+	"catalogizer/internal/media/providers"
 	"catalogizer/internal/services"
 	"catalogizer/repository"
 	"catalogizer/utils"
 
 	"github.com/gin-gonic/gin"
+	"golang.org/x/net/proxy"
 )
 
 // SearchEntities handles GET /api/v1/entities/search — entity-
@@ -93,6 +96,37 @@ func (h *MediaEntityHandler) SearchEntities(c *gin.Context) {
 	})
 }
 
+// tmdbCooldown tracks consecutive TMDB failures and backoffs.
+var tmdbCooldown struct {
+	mu       sync.RWMutex
+	failures int
+	until    time.Time
+}
+
+func isTMDBOnCooldown() bool {
+	tmdbCooldown.mu.RLock()
+	defer tmdbCooldown.mu.RUnlock()
+	return time.Now().Before(tmdbCooldown.until)
+}
+
+func recordTMDBFailure() {
+	tmdbCooldown.mu.Lock()
+	defer tmdbCooldown.mu.Unlock()
+	tmdbCooldown.failures++
+	backoff := time.Duration(1<<min(tmdbCooldown.failures-1, 5)) * time.Minute
+	if backoff > 30*time.Minute {
+		backoff = 30 * time.Minute
+	}
+	tmdbCooldown.until = time.Now().Add(backoff)
+}
+
+func recordTMDBSuccess() {
+	tmdbCooldown.mu.Lock()
+	defer tmdbCooldown.mu.Unlock()
+	tmdbCooldown.failures = 0
+	tmdbCooldown.until = time.Time{}
+}
+
 // Note: primary-file selection logic moved to
 // repository.MediaFileRepository.GetPrimaryStreamableFile so it
 // can JOIN media_files against the files table in a single query
@@ -110,6 +144,8 @@ type MediaEntityHandler struct {
 	coverArtService *services.CoverArtService
 	db              *database.DB
 	enrichWg        sync.WaitGroup // tracks background TMDB enrichment goroutines
+	proxyCfg        providers.ProxyConfiger
+	llmProvider     *providers.LLMProvider
 }
 
 // NewMediaEntityHandler creates a new media entity handler.
@@ -142,6 +178,16 @@ func NewMediaEntityHandler(
 // SetCoverArtService sets the cover art service for cover URL enrichment.
 func (h *MediaEntityHandler) SetCoverArtService(cas *services.CoverArtService) {
 	h.coverArtService = cas
+}
+
+// SetProxyConfig sets the proxy configuration for external API calls.
+func (h *MediaEntityHandler) SetProxyConfig(cfg providers.ProxyConfiger) {
+	h.proxyCfg = cfg
+}
+
+// SetLLMProvider sets the LLM provider for metadata fallback.
+func (h *MediaEntityHandler) SetLLMProvider(lp *providers.LLMProvider) {
+	h.llmProvider = lp
 }
 
 // ListEntities handles GET /api/v1/entities — list entities with filters and pagination.
@@ -514,7 +560,7 @@ func (h *MediaEntityHandler) RefreshEntityMetadata(c *gin.Context) {
 		if entity.Year != nil {
 			year = *entity.Year
 		}
-		tmdbResult := fetchTMDBMetadata(entity.Title, year, int(entity.MediaTypeID))
+		tmdbResult := h.fetchTMDBMetadata(ctx, entity.Title, year, int(entity.MediaTypeID))
 		if tmdbResult != nil {
 			meta := &models.ExternalMetadata{
 				MediaItemID: id,
@@ -570,13 +616,50 @@ type tmdbSearchResult struct {
 	year      string
 }
 
+// buildProxyHTTPClient returns an HTTP client that routes through the
+// configured proxy (SOCKS5 or HTTP) when enabled.
+func (h *MediaEntityHandler) buildProxyHTTPClient(timeout time.Duration) *http.Client {
+	transport := &http.Transport{}
+	if h.proxyCfg != nil && h.proxyCfg.IsEnabled() {
+		if h.proxyCfg.GetURL() != "" {
+			parsedProxy, err := url.Parse(h.proxyCfg.GetURL())
+			if err == nil && parsedProxy.Scheme == "socks5" {
+				var auth *proxy.Auth
+				if h.proxyCfg.GetUsername() != "" || h.proxyCfg.GetPassword() != "" {
+					auth = &proxy.Auth{User: h.proxyCfg.GetUsername(), Password: h.proxyCfg.GetPassword()}
+				}
+				SOCKS5Dialer, err := proxy.SOCKS5("tcp", parsedProxy.Host, auth, proxy.Direct)
+				if err == nil {
+					transport.DialContext = func(ctx context.Context, network, addr string) (net.Conn, error) {
+						return SOCKS5Dialer.Dial(network, addr)
+					}
+					return &http.Client{Timeout: timeout, Transport: transport}
+				}
+			}
+		}
+		if h.proxyCfg.GetHTTPURL() != "" {
+			parsedHTTPProxy, err := url.Parse(h.proxyCfg.GetHTTPURL())
+			if err == nil {
+				transport.Proxy = http.ProxyURL(parsedHTTPProxy)
+				return &http.Client{Timeout: timeout, Transport: transport}
+			}
+		}
+	}
+	return &http.Client{Timeout: timeout}
+}
+
 // fetchTMDBMetadata searches TMDB for a movie/TV show and returns poster + metadata.
 // Retries without year if the initial year-qualified search returns no results,
-// matching the aggregation_service.go enrichment path.
-func fetchTMDBMetadata(title string, year int, mediaTypeID int) *tmdbSearchResult {
+// matching the aggregation_service.go enrichment path. Falls back to LLM on failure.
+func (h *MediaEntityHandler) fetchTMDBMetadata(ctx context.Context, title string, year int, mediaTypeID int) *tmdbSearchResult {
 	apiKey := os.Getenv("TMDB_API_KEY")
 	if apiKey == "" {
-		return nil
+		return h.tryLLMFallback(ctx, title, year, mediaTypeID)
+	}
+
+	if isTMDBOnCooldown() {
+		logging.Warnf("TMDB: on cooldown due to previous failures; skipping '%s'", title)
+		return h.tryLLMFallback(ctx, title, year, mediaTypeID)
 	}
 
 	// Determine search type
@@ -604,7 +687,7 @@ func fetchTMDBMetadata(title string, year int, mediaTypeID int) *tmdbSearchResul
 		}
 	}
 
-	client := &http.Client{Timeout: 10 * time.Second}
+	client := h.buildProxyHTTPClient(10 * time.Second)
 
 	var searchResp struct {
 		Results []struct {
@@ -619,6 +702,8 @@ func fetchTMDBMetadata(title string, year int, mediaTypeID int) *tmdbSearchResul
 		} `json:"results"`
 	}
 
+	tmdbFailed := false
+
 	// Try with year first, retry without year if no results
 	for attempt := 0; attempt < 2; attempt++ {
 		reqURL := searchURL
@@ -630,37 +715,54 @@ func fetchTMDBMetadata(title string, year int, mediaTypeID int) *tmdbSearchResul
 			logging.Warnf("TMDB: retrying '%s' without year (year=%d returned no results)", title, yearParam)
 		}
 
-		resp, err := client.Get(reqURL)
+		req, err := http.NewRequestWithContext(ctx, http.MethodGet, reqURL, nil)
+		if err != nil {
+			logging.Warnf("TMDB: request build failed for '%s': %v", title, err)
+			tmdbFailed = true
+			break
+		}
+
+		resp, err := client.Do(req)
 		if err != nil {
 			logging.Warnf("TMDB: request failed for '%s': %v", title, err)
+			tmdbFailed = true
 			break
 		}
 		if resp.StatusCode != 200 {
 			resp.Body.Close()
 			logging.Warnf("TMDB: HTTP %d for '%s'", resp.StatusCode, title)
+			tmdbFailed = true
 			break
 		}
 
 		body, err := io.ReadAll(resp.Body)
 		resp.Body.Close()
 		if err != nil {
+			tmdbFailed = true
 			break
 		}
 
 		if err := json.Unmarshal(body, &searchResp); err != nil {
 			logging.Warnf("TMDB: JSON parse error for '%s': %v", title, err)
+			tmdbFailed = true
 			break
 		}
 		if len(searchResp.Results) > 0 {
+			recordTMDBSuccess()
 			break // Found results
 		}
 		// No results with year — retry without
 		time.Sleep(300 * time.Millisecond)
 	}
 
+	if tmdbFailed {
+		recordTMDBFailure()
+		return h.tryLLMFallback(ctx, title, year, mediaTypeID)
+	}
+
 	if len(searchResp.Results) == 0 {
 		logging.Warnf("TMDB: no results for '%s' (year=%d, type=%s)", title, year, searchType)
-		return nil
+		return h.tryLLMFallback(ctx, title, year, mediaTypeID)
 	}
 
 	best := searchResp.Results[0]
@@ -682,6 +784,39 @@ func fetchTMDBMetadata(title string, year int, mediaTypeID int) *tmdbSearchResul
 		posterURL: posterURL,
 		rating:    &rating,
 		year:      best.ReleaseDate,
+	}
+}
+
+// tryLLMFallback attempts to generate metadata via LLM when TMDB is unavailable.
+func (h *MediaEntityHandler) tryLLMFallback(ctx context.Context, title string, year int, mediaTypeID int) *tmdbSearchResult {
+	if h.llmProvider == nil || !h.llmProvider.IsEnabled() {
+		return nil
+	}
+	mediaType := "movie"
+	if mediaTypeID == 2 {
+		mediaType = "tv"
+	}
+	yearPtr := &year
+	if year == 0 {
+		yearPtr = nil
+	}
+	results, err := h.llmProvider.Search(ctx, title, mediaType, yearPtr)
+	if err != nil || len(results) == 0 {
+		logging.Warnf("LLM fallback failed for '%s': %v", title, err)
+		return nil
+	}
+	best := results[0]
+	var posterURL string
+	if best.CoverURL != nil && *best.CoverURL != "" {
+		posterURL = "/api/v1/image-proxy?url=" + url.QueryEscape(*best.CoverURL)
+	}
+	return &tmdbSearchResult{
+		tmdbID:    0,
+		title:     best.Title,
+		overview:  "",
+		posterURL: posterURL,
+		rating:    best.Rating,
+		year:      "",
 	}
 }
 
@@ -765,7 +900,7 @@ func (h *MediaEntityHandler) EnrichAllEntities(c *gin.Context) {
 				`SELECT title, COALESCE(year, 0), media_type_id FROM media_items WHERE id = ?`,
 				ent.ID).Scan(&title, &year, &mediaTypeID)
 			if err == nil && title != "" {
-				result := fetchTMDBMetadata(title, year, mediaTypeID)
+				result := h.fetchTMDBMetadata(ctx, title, year, mediaTypeID)
 				if result != nil && result.posterURL != "" {
 					meta := &models.ExternalMetadata{
 						MediaItemID: ent.ID,
@@ -1233,7 +1368,7 @@ func (h *MediaEntityHandler) lazyEnrichEntities(entityIDs []int64) {
 			if err != nil || title == "" {
 				continue
 			}
-			result := fetchTMDBMetadata(title, year, mediaTypeID)
+			result := h.fetchTMDBMetadata(ctx, title, year, mediaTypeID)
 			if result != nil && result.posterURL != "" {
 				meta := &models.ExternalMetadata{
 					MediaItemID: id,

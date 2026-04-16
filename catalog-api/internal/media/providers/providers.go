@@ -17,6 +17,15 @@ import (
 	"go.uber.org/zap"
 )
 
+// ProxyConfiger is the minimal interface required for proxy settings.
+type ProxyConfiger interface {
+	IsEnabled() bool
+	GetURL() string
+	GetHTTPURL() string
+	GetUsername() string
+	GetPassword() string
+}
+
 // MetadataProvider interface for external metadata sources
 type MetadataProvider interface {
 	GetName() string
@@ -46,6 +55,8 @@ type ProviderManager struct {
 	logger        *zap.Logger
 	client        *http.Client
 	searchSem     *concurrency.BoundedSemaphore
+	cooldown      *ProviderCooldown
+	llmProvider   MetadataProvider
 }
 
 // DefaultMaxConcurrentSearches is the default number of provider
@@ -56,8 +67,21 @@ const DefaultMaxConcurrentSearches int64 = 3
 // Providers are registered lazily — their constructors run on first
 // use rather than at startup.
 func NewProviderManager(logger *zap.Logger) *ProviderManager {
+	return NewProviderManagerWithProxy(logger, nil)
+}
+
+// NewProviderManagerWithProxy creates a provider manager with proxy support.
+func NewProviderManagerWithProxy(logger *zap.Logger, proxyCfg ProxyConfiger) *ProviderManager {
 	client := &http.Client{
 		Timeout: 30 * time.Second,
+	}
+	// Apply proxy to the shared client if configured.
+	if proxyCfg != nil && proxyCfg.IsEnabled() && proxyCfg.GetHTTPURL() != "" {
+		parsed, err := url.Parse(proxyCfg.GetHTTPURL())
+		if err == nil {
+			transport := &http.Transport{Proxy: http.ProxyURL(parsed)}
+			client = &http.Client{Timeout: 30 * time.Second, Transport: transport}
+		}
 	}
 
 	pm := &ProviderManager{
@@ -70,10 +94,12 @@ func NewProviderManager(logger *zap.Logger) *ProviderManager {
 			DefaultMaxConcurrentSearches,
 			30*time.Second,
 		),
+		cooldown:    NewProviderCooldown(5 * time.Minute),
+		llmProvider: NewLLMProvider(client, logger),
 	}
 
 	// Register all providers (lazy — no actual construction yet)
-	pm.registerProviders()
+	pm.registerProviders(proxyCfg)
 
 	return pm
 }
@@ -81,11 +107,15 @@ func NewProviderManager(logger *zap.Logger) *ProviderManager {
 // registerProviders registers all available providers using lazy
 // initialization.  The actual provider constructors only execute when
 // the provider is first looked up via resolveProvider().
-func (pm *ProviderManager) registerProviders() {
+func (pm *ProviderManager) registerProviders(proxyCfg ProxyConfiger) {
 	cl, lg := pm.client, pm.logger
 
 	// Movie/TV providers
-	pm.lazyProviders["tmdb"] = NewLazyProvider(func() MetadataProvider { return NewTMDBProvider(cl, lg) })
+	pm.lazyProviders["tmdb"] = NewLazyProvider(func() MetadataProvider {
+		p := NewTMDBProvider(cl, lg)
+		// TODO: proxy support for API providers could be added here
+		return p
+	})
 	pm.lazyProviders["imdb"] = NewLazyProvider(func() MetadataProvider { return NewIMDBProvider(cl, lg) })
 	pm.lazyProviders["tvdb"] = NewLazyProvider(func() MetadataProvider { return NewTVDBProvider(cl, lg) })
 
@@ -140,6 +170,8 @@ func (pm *ProviderManager) RegisterProvider(name string, provider MetadataProvid
 // SearchAll searches across all relevant providers concurrently,
 // bounded by the provider-search semaphore so that at most
 // DefaultMaxConcurrentSearches external calls run in parallel.
+// If all primary providers fail or are on cooldown, it falls back to
+// the LLM provider.
 func (pm *ProviderManager) SearchAll(ctx context.Context, query string, mediaType string, year *int, providers []string) (map[string][]SearchResult, error) {
 	// If no specific providers requested, use all relevant ones.
 	if len(providers) == 0 {
@@ -153,15 +185,16 @@ func (pm *ProviderManager) SearchAll(ctx context.Context, query string, mediaTyp
 	}
 	targets := make([]target, 0, len(providers))
 	for _, name := range providers {
+		if pm.cooldown.IsOnCooldown(name) {
+			pm.logger.Debug("Provider on cooldown, skipping",
+				zap.String("provider", name))
+			continue
+		}
 		p, exists := pm.resolveProvider(name)
 		if !exists || !p.IsEnabled() {
 			continue
 		}
 		targets = append(targets, target{name: name, provider: p})
-	}
-
-	if len(targets) == 0 {
-		return make(map[string][]SearchResult), nil
 	}
 
 	// Run searches concurrently with semaphore-bounded parallelism.
@@ -200,16 +233,34 @@ func (pm *ProviderManager) SearchAll(ctx context.Context, query string, mediaTyp
 	}()
 
 	results := make(map[string][]SearchResult)
+	anySuccess := false
 	for sr := range resultsCh {
 		if sr.err != nil {
 			pm.logger.Error("Provider search failed",
 				zap.String("provider", sr.name),
 				zap.String("query", query),
 				zap.Error(sr.err))
+			pm.cooldown.RecordFailure(sr.name)
 			continue
 		}
 		if len(sr.results) > 0 {
+			anySuccess = true
 			results[sr.name] = sr.results
+		}
+	}
+
+	// Fallback to LLM provider if no primary provider succeeded.
+	if !anySuccess && pm.llmProvider != nil && pm.llmProvider.IsEnabled() {
+		pm.logger.Info("All primary providers failed or returned empty; falling back to LLM",
+			zap.String("query", query),
+			zap.String("mediaType", mediaType))
+		llmResults, err := pm.llmProvider.Search(ctx, query, mediaType, year)
+		if err != nil {
+			pm.logger.Error("LLM fallback search failed",
+				zap.String("query", query),
+				zap.Error(err))
+		} else if len(llmResults) > 0 {
+			results[pm.llmProvider.GetName()] = llmResults
 		}
 	}
 

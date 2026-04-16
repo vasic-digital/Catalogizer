@@ -17,6 +17,7 @@ type Config struct {
 	Catalog  CatalogConfig  `json:"catalog"`
 	Storage  StorageConfig  `json:"storage"`
 	Logging  LoggingConfig  `json:"logging"`
+	Proxy    ProxyConfig    `json:"proxy"`
 }
 
 // ServerConfig contains server-related configuration
@@ -89,6 +90,21 @@ type LoggingConfig struct {
 // StorageConfig contains storage configuration.
 // Storage roots are managed in the database, not in config files.
 type StorageConfig struct{}
+
+// ProxyConfig contains HTTP/SOCKS proxy configuration for external API access.
+type ProxyConfig struct {
+	Enabled  bool   `json:"enabled"`
+	URL      string `json:"url"`      // e.g. "socks5://nezha.local:1080"
+	HTTPURL  string `json:"http_url"` // e.g. "http://nezha.local:3128"
+	Username string `json:"username"`
+	Password string `json:"password"`
+}
+
+func (p ProxyConfig) IsEnabled() bool   { return p.Enabled }
+func (p ProxyConfig) GetURL() string    { return p.URL }
+func (p ProxyConfig) GetHTTPURL() string { return p.HTTPURL }
+func (p ProxyConfig) GetUsername() string { return p.Username }
+func (p ProxyConfig) GetPassword() string { return p.Password }
 
 // LoadConfig loads configuration from file or creates default
 func LoadConfig(configPath string) (*Config, error) {
@@ -169,6 +185,9 @@ func getDefaultConfig() *Config {
 			TempDir: os.TempDir() + "/catalog-api", // Use system temp directory
 		},
 		Storage: StorageConfig{},
+		Proxy: ProxyConfig{
+			Enabled: false,
+		},
 		Logging: LoggingConfig{
 			Level:      "info",
 			Format:     "json",

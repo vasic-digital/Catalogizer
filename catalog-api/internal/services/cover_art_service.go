@@ -10,11 +10,12 @@ import (
 	"image/jpeg"
 	"image/png"
 	"io"
+	"net"
 	"net/http"
+	"net/url"
 	"os"
 	"os/exec"
 	"path/filepath"
-	"net/url"
 	"strconv"
 	"strings"
 	"time"
@@ -23,13 +24,24 @@ import (
 
 	"go.uber.org/zap"
 	"golang.org/x/image/draw"
+	"golang.org/x/net/proxy"
 )
+
+// ProxyConfiger is the minimal interface required by CoverArtService for proxy settings.
+type ProxyConfiger interface {
+	IsEnabled() bool
+	GetURL() string
+	GetHTTPURL() string
+	GetUsername() string
+	GetPassword() string
+}
 
 // CoverArtService handles cover art retrieval, processing, and caching
 type CoverArtService struct {
 	db         *database.DB
 	logger     *zap.Logger
 	httpClient *http.Client
+	proxyCfg   ProxyConfiger
 	apiKeys    map[string]string
 	cacheDir   string
 }
@@ -136,6 +148,11 @@ func NewCoverArtService(db *database.DB, logger *zap.Logger) *CoverArtService {
 		apiKeys:    make(map[string]string),
 		cacheDir:   "./cache/cover_art",
 	}
+}
+
+// SetProxyConfig configures the proxy used for external cover art downloads.
+func (s *CoverArtService) SetProxyConfig(cfg ProxyConfiger) {
+	s.proxyCfg = cfg
 }
 
 // SearchCoverArt searches for cover art across multiple providers
@@ -493,13 +510,41 @@ func (s *CoverArtService) searchITunes(ctx context.Context, request *CoverArtSea
 }
 
 // Helper functions
-func (s *CoverArtService) downloadImage(ctx context.Context, url string) ([]byte, error) {
-	req, err := http.NewRequestWithContext(ctx, "GET", url, nil)
+func (s *CoverArtService) downloadImage(ctx context.Context, imageURL string) ([]byte, error) {
+	client := s.httpClient
+	if s.proxyCfg != nil && s.proxyCfg.IsEnabled() {
+		transport := &http.Transport{}
+		if s.proxyCfg.GetURL() != "" {
+			parsedProxy, err := url.Parse(s.proxyCfg.GetURL())
+			if err == nil && parsedProxy.Scheme == "socks5" {
+				var auth *proxy.Auth
+				if s.proxyCfg.GetUsername() != "" || s.proxyCfg.GetPassword() != "" {
+					auth = &proxy.Auth{User: s.proxyCfg.GetUsername(), Password: s.proxyCfg.GetPassword()}
+				}
+				SOCKS5Dialer, err := proxy.SOCKS5("tcp", parsedProxy.Host, auth, proxy.Direct)
+				if err == nil {
+					transport.DialContext = func(ctx context.Context, network, addr string) (net.Conn, error) {
+						return SOCKS5Dialer.Dial(network, addr)
+					}
+					client = &http.Client{Timeout: 30 * time.Second, Transport: transport}
+				}
+			}
+		}
+		if client == s.httpClient && s.proxyCfg.GetHTTPURL() != "" {
+			parsedHTTPProxy, err := url.Parse(s.proxyCfg.GetHTTPURL())
+			if err == nil {
+				transport.Proxy = http.ProxyURL(parsedHTTPProxy)
+				client = &http.Client{Timeout: 30 * time.Second, Transport: transport}
+			}
+		}
+	}
+
+	req, err := http.NewRequestWithContext(ctx, "GET", imageURL, nil)
 	if err != nil {
 		return nil, err
 	}
 
-	resp, err := s.httpClient.Do(req)
+	resp, err := client.Do(req)
 	if err != nil {
 		return nil, err
 	}

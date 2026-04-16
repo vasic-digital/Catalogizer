@@ -69,36 +69,36 @@ fun CoverImage(
     }
 
     var currentUrl by remember(primaryUrl) { mutableStateOf(primaryUrl) }
-
-    val request = ImageRequest.Builder(context)
-        .data(currentUrl)
-        .crossfade(true)
-        .listener(
-            onError = { _, _ ->
-                if (fallbackUrl != null && currentUrl != fallbackUrl) {
-                    currentUrl = fallbackUrl
-                }
-            }
-        )
-        .build()
+    var triedFallback by remember(primaryUrl) { mutableStateOf(false) }
 
     val fallbackPlaceholderUrl = remember(context, mediaType) {
         val container = com.catalogizer.androidtv.DependencyContainer.getInstance(context)
         container.getServerUrl().trimEnd('/') + "/api/v1/cover/placeholder/${mediaType ?: "movie"}"
     }
 
-    var showFallback by remember { mutableStateOf(false) }
+    val request = ImageRequest.Builder(context)
+        .data(currentUrl)
+        .crossfade(true)
+        .listener(
+            onError = { _, _ ->
+                if (fallbackUrl != null && !triedFallback) {
+                    triedFallback = true
+                    currentUrl = fallbackUrl
+                }
+            }
+        )
+        .build()
 
-    if (showFallback) {
-        SubcomposeAsyncImage(
-            model = ImageRequest.Builder(context)
-                .data(fallbackPlaceholderUrl)
-                .crossfade(true)
-                .build(),
-            contentDescription = contentDescription,
-            modifier = modifier,
-            contentScale = ContentScale.Crop,
-            error = {
+    // Only show the generic icon if both the primary and fallback URLs failed.
+    val showGenericIcon = triedFallback && fallbackUrl != null && currentUrl == fallbackUrl
+
+    SubcomposeAsyncImage(
+        model = request,
+        contentDescription = contentDescription,
+        modifier = modifier,
+        contentScale = contentScale,
+        error = {
+            if (showGenericIcon) {
                 Box(
                     modifier = Modifier.fillMaxSize(),
                     contentAlignment = Alignment.Center
@@ -110,16 +110,6 @@ fun CoverImage(
                     )
                 }
             }
-        )
-    } else {
-        SubcomposeAsyncImage(
-            model = request,
-            contentDescription = contentDescription,
-            modifier = modifier,
-            contentScale = contentScale,
-            error = {
-                showFallback = true
-            }
-        )
-    }
+        }
+    )
 }
