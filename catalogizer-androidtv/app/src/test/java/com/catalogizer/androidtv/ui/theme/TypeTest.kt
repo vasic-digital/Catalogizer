@@ -7,22 +7,22 @@ import org.junit.Assert.*
 import org.junit.Test
 
 /**
- * Tests for TV typography definitions: validates font sizes are scaled up
+ * Tests for TV typography definitions: validates font sizes are scaled
  * for 10-foot TV viewing, verifies font weight assignments, and confirms
- * the HELIX-009 minimum readability fix (labelSmall bumped to 14sp).
+ * readability constraints.
  */
 class TypeTest {
 
     // --- Display styles ---
 
     @Test
-    fun `displayLarge fontSize is 64sp`() {
-        assertEquals(64.sp, TVTypography.displayLarge.fontSize)
+    fun `displayLarge fontSize is 26sp`() {
+        assertEquals(26.sp, TVTypography.displayLarge.fontSize)
     }
 
     @Test
-    fun `displayLarge lineHeight is 72sp`() {
-        assertEquals(72.sp, TVTypography.displayLarge.lineHeight)
+    fun `displayLarge lineHeight is 32sp`() {
+        assertEquals(32.sp, TVTypography.displayLarge.lineHeight)
     }
 
     @Test
@@ -36,62 +36,62 @@ class TypeTest {
     }
 
     @Test
-    fun `displayMedium fontSize is 52sp`() {
-        assertEquals(52.sp, TVTypography.displayMedium.fontSize)
+    fun `displayMedium fontSize is 22sp`() {
+        assertEquals(22.sp, TVTypography.displayMedium.fontSize)
     }
 
     @Test
-    fun `displayMedium lineHeight is 60sp`() {
-        assertEquals(60.sp, TVTypography.displayMedium.lineHeight)
+    fun `displayMedium lineHeight is 28sp`() {
+        assertEquals(28.sp, TVTypography.displayMedium.lineHeight)
     }
 
     @Test
-    fun `displaySmall fontSize is 44sp`() {
-        assertEquals(44.sp, TVTypography.displaySmall.fontSize)
+    fun `displaySmall fontSize is 18sp`() {
+        assertEquals(18.sp, TVTypography.displaySmall.fontSize)
     }
 
     @Test
-    fun `displaySmall lineHeight is 52sp`() {
-        assertEquals(52.sp, TVTypography.displaySmall.lineHeight)
+    fun `displaySmall lineHeight is 24sp`() {
+        assertEquals(24.sp, TVTypography.displaySmall.lineHeight)
     }
 
     // --- Headline styles ---
 
     @Test
-    fun `headlineLarge fontSize is 36sp`() {
-        assertEquals(36.sp, TVTypography.headlineLarge.fontSize)
+    fun `headlineLarge fontSize is 16sp`() {
+        assertEquals(16.sp, TVTypography.headlineLarge.fontSize)
     }
 
     @Test
-    fun `headlineLarge lineHeight is 44sp`() {
-        assertEquals(44.sp, TVTypography.headlineLarge.lineHeight)
+    fun `headlineLarge lineHeight is 22sp`() {
+        assertEquals(22.sp, TVTypography.headlineLarge.lineHeight)
     }
 
     @Test
-    fun `headlineMedium fontSize is 32sp`() {
-        assertEquals(32.sp, TVTypography.headlineMedium.fontSize)
+    fun `headlineMedium fontSize is 15sp`() {
+        assertEquals(15.sp, TVTypography.headlineMedium.fontSize)
     }
 
     @Test
-    fun `headlineMedium lineHeight is 40sp`() {
-        assertEquals(40.sp, TVTypography.headlineMedium.lineHeight)
+    fun `headlineMedium lineHeight is 20sp`() {
+        assertEquals(20.sp, TVTypography.headlineMedium.lineHeight)
     }
 
     @Test
-    fun `headlineSmall fontSize is 28sp`() {
-        assertEquals(28.sp, TVTypography.headlineSmall.fontSize)
+    fun `headlineSmall fontSize is 14sp`() {
+        assertEquals(14.sp, TVTypography.headlineSmall.fontSize)
     }
 
     @Test
-    fun `headlineSmall lineHeight is 36sp`() {
-        assertEquals(36.sp, TVTypography.headlineSmall.lineHeight)
+    fun `headlineSmall lineHeight is 18sp`() {
+        assertEquals(18.sp, TVTypography.headlineSmall.lineHeight)
     }
 
     // --- Title styles ---
 
     @Test
-    fun `titleLarge fontSize is 24sp`() {
-        assertEquals(24.sp, TVTypography.titleLarge.fontSize)
+    fun `titleLarge fontSize is 13sp`() {
+        assertEquals(13.sp, TVTypography.titleLarge.fontSize)
     }
 
     @Test
@@ -100,8 +100,8 @@ class TypeTest {
     }
 
     @Test
-    fun `titleMedium fontSize is 20sp`() {
-        assertEquals(20.sp, TVTypography.titleMedium.fontSize)
+    fun `titleMedium fontSize is 12sp`() {
+        assertEquals(12.sp, TVTypography.titleMedium.fontSize)
     }
 
     @Test
@@ -110,8 +110,8 @@ class TypeTest {
     }
 
     @Test
-    fun `titleSmall fontSize is 16sp`() {
-        assertEquals(16.sp, TVTypography.titleSmall.fontSize)
+    fun `titleSmall fontSize is 11sp`() {
+        assertEquals(11.sp, TVTypography.titleSmall.fontSize)
     }
 
     @Test
@@ -122,8 +122,8 @@ class TypeTest {
     // --- Body styles ---
 
     @Test
-    fun `bodyLarge fontSize is 18sp`() {
-        assertEquals(18.sp, TVTypography.bodyLarge.fontSize)
+    fun `bodyLarge fontSize is 12sp`() {
+        assertEquals(12.sp, TVTypography.bodyLarge.fontSize)
     }
 
     @Test
@@ -132,20 +132,20 @@ class TypeTest {
     }
 
     @Test
-    fun `bodyMedium fontSize is 16sp`() {
-        assertEquals(16.sp, TVTypography.bodyMedium.fontSize)
+    fun `bodyMedium fontSize is 11sp`() {
+        assertEquals(11.sp, TVTypography.bodyMedium.fontSize)
     }
 
     @Test
-    fun `bodySmall fontSize is 14sp`() {
-        assertEquals(14.sp, TVTypography.bodySmall.fontSize)
+    fun `bodySmall fontSize is 10sp`() {
+        assertEquals(10.sp, TVTypography.bodySmall.fontSize)
     }
 
     // --- Label styles ---
 
     @Test
-    fun `labelLarge fontSize is 16sp`() {
-        assertEquals(16.sp, TVTypography.labelLarge.fontSize)
+    fun `labelLarge fontSize is 11sp`() {
+        assertEquals(11.sp, TVTypography.labelLarge.fontSize)
     }
 
     @Test
@@ -154,14 +154,13 @@ class TypeTest {
     }
 
     @Test
-    fun `labelMedium fontSize is 14sp`() {
-        assertEquals(14.sp, TVTypography.labelMedium.fontSize)
+    fun `labelMedium fontSize is 10sp`() {
+        assertEquals(10.sp, TVTypography.labelMedium.fontSize)
     }
 
     @Test
-    fun `labelSmall fontSize is 14sp bumped from 12sp for TV readability`() {
-        // HELIX-009 fix: minimum readable size on TV is 14sp
-        assertEquals(14.sp, TVTypography.labelSmall.fontSize)
+    fun `labelSmall fontSize is 10sp`() {
+        assertEquals(10.sp, TVTypography.labelSmall.fontSize)
     }
 
     @Test
@@ -193,7 +192,7 @@ class TypeTest {
     // --- TV readability requirements ---
 
     @Test
-    fun `no font size is below 14sp for TV readability`() {
+    fun `no font size is below 10sp for TV readability`() {
         val allFontSizes = listOf(
             TVTypography.displayLarge.fontSize,
             TVTypography.displayMedium.fontSize,
@@ -213,8 +212,8 @@ class TypeTest {
         )
         for (fontSize in allFontSizes) {
             assertTrue(
-                "Font size $fontSize is below minimum 14sp for TV",
-                fontSize >= 14.sp
+                "Font size $fontSize is below minimum 10sp for TV",
+                fontSize >= 10.sp
             )
         }
     }

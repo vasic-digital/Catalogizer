@@ -90,28 +90,28 @@ fun SplashContent(
             Image(
                 painter = painterResource(R.drawable.app_icon),
                 contentDescription = "Catalogizer",
-                modifier = Modifier.size(120.dp),
+                modifier = Modifier.size(80.dp),
                 contentScale = ContentScale.Fit
             )
-            Spacer(modifier = Modifier.height(24.dp))
+            Spacer(modifier = Modifier.height(16.dp))
             Text(
                 text = "Catalogizer",
-                fontSize = 36.sp,
+                fontSize = 10.sp,
                 fontWeight = FontWeight.Bold,
                 color = Color.White
             )
-            Spacer(modifier = Modifier.height(8.dp))
+            Spacer(modifier = Modifier.height(2.dp))
             Text(
                 text = "Advanced Multi-Protocol Media\nCollection Management System",
-                fontSize = 16.sp,
+                fontSize = 7.sp,
                 color = Color(0xFF94A3B8),
                 textAlign = TextAlign.Center
             )
-            Spacer(modifier = Modifier.height(32.dp))
+            Spacer(modifier = Modifier.height(20.dp))
             CircularProgressIndicator(
-                modifier = Modifier.size(40.dp),
+                modifier = Modifier.size(28.dp),
                 color = Color(0xFF4A90E2),
-                strokeWidth = 3.dp
+                strokeWidth = 2.dp
             )
         }
 
@@ -123,13 +123,12 @@ fun SplashContent(
         ) {
             Text(
                 text = "Made with \u2764\uFE0F by Vasic Digital",
-                fontSize = 12.sp,
+                fontSize = 7.sp,
                 color = Color(0xFF64748B)
             )
-            Spacer(modifier = Modifier.height(4.dp))
             Text(
                 text = "v${BuildConfig.VERSION_NAME}",
-                fontSize = 11.sp,
+                fontSize = 7.sp,
                 color = Color(0xFF475569)
             )
         }

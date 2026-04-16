@@ -49,7 +49,7 @@ android {
     buildTypes {
         debug {
             isDebuggable = true
-            buildConfigField("String", "API_BASE_URL", "\"\"")
+            buildConfigField("String", "API_BASE_URL", "\"http://localhost:8080\"")
             buildConfigField("String", "WS_URL", "\"\"")
         }
         release {

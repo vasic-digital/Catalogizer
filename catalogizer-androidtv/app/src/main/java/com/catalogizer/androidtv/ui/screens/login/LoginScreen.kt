@@ -44,8 +44,11 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.PasswordVisualTransformation
+import androidx.compose.material3.ProvideTextStyle
+import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.compose.ui.unit.min
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.tv.material3.*
@@ -291,16 +294,17 @@ fun LoginScreen(
 
             Text(
                 text = "CATALOGIZER",
-                style = if (isCompact) MaterialTheme.typography.headlineMedium else MaterialTheme.typography.headlineLarge,
+                fontSize = 10.sp,
+                fontWeight = androidx.compose.ui.text.font.FontWeight.Medium,
                 color = Color.White,
-                letterSpacing = androidx.compose.ui.unit.TextUnit(if (isCompact) 2f else 4f, androidx.compose.ui.unit.TextUnitType.Sp)
+                letterSpacing = androidx.compose.ui.unit.TextUnit(0.5f, androidx.compose.ui.unit.TextUnitType.Sp)
             )
 
             Spacer(modifier = Modifier.height(8.dp))
 
             Text(
                 text = "Media Collection Manager",
-                style = MaterialTheme.typography.bodyLarge,
+                fontSize = 8.sp,
                 color = Color.White.copy(alpha = 0.85f)
             )
 
@@ -314,7 +318,8 @@ fun LoginScreen(
                     errorMessage = null
                     usernameError = null
                 },
-                label = { Text("Username", color = Color.White.copy(alpha = 0.85f)) },
+                label = { ProvideTextStyle(TextStyle(fontSize = 8.sp)) { Text("Username", color = Color.White.copy(alpha = 0.85f)) } },
+                textStyle = TextStyle(fontSize = 9.sp),
                 shape = RoundedCornerShape(8.dp),
                 modifier = Modifier
                     .width(formWidth)
@@ -349,7 +354,8 @@ fun LoginScreen(
                     errorMessage = null
                     passwordError = null
                 },
-                label = { Text("Password", color = Color.White.copy(alpha = 0.85f)) },
+                label = { ProvideTextStyle(TextStyle(fontSize = 8.sp)) { Text("Password", color = Color.White.copy(alpha = 0.85f)) } },
+                textStyle = TextStyle(fontSize = 9.sp),
                 shape = RoundedCornerShape(8.dp),
                 modifier = Modifier
                     .width(formWidth)
@@ -452,7 +458,7 @@ fun LoginScreen(
                     if (isLoading) {
                         CircularProgressIndicator(modifier = Modifier.size(24.dp), strokeWidth = 2.dp, color = Color.White)
                     } else {
-                        Text("Sign In", style = MaterialTheme.typography.titleMedium)
+                        Text("Sign In", fontSize = 9.sp)
                     }
                 }
             }
@@ -466,9 +472,9 @@ fun LoginScreen(
 
             Text(
                 text = "SERVER CONNECTION",
-                style = MaterialTheme.typography.labelLarge,
+                fontSize = 8.sp,
                 color = Color.White.copy(alpha = 0.6f),
-                letterSpacing = androidx.compose.ui.unit.TextUnit(2f, androidx.compose.ui.unit.TextUnitType.Sp)
+                letterSpacing = androidx.compose.ui.unit.TextUnit(0.5f, androidx.compose.ui.unit.TextUnitType.Sp)
             )
 
             Spacer(modifier = Modifier.height(12.dp))
@@ -476,7 +482,8 @@ fun LoginScreen(
             OutlinedTextField(
                 value = serverUrl,
                 onValueChange = { serverUrl = it; serverConnected = null },
-                label = { Text("Server URL", color = Color.White.copy(alpha = 0.85f)) },
+                label = { ProvideTextStyle(TextStyle(fontSize = 8.sp)) { Text("Server URL", color = Color.White.copy(alpha = 0.85f)) } },
+                textStyle = TextStyle(fontSize = 9.sp),
                 shape = RoundedCornerShape(8.dp),
                 modifier = Modifier
                     .width(formWidth)

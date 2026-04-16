@@ -7,7 +7,10 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Image
 import androidx.compose.material3.Icon
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -22,7 +25,7 @@ import coil.request.ImageRequest
  *
  * Per the image policy, all images MUST be served via the backend proxy;
  * client apps never communicate directly with external CDNs. If the backend
- * URL is missing, a backend placeholder SVG is requested instead.
+ * URL is missing or fails to load, a backend placeholder SVG is requested.
  */
 @Composable
 fun CoverImage(
@@ -34,12 +37,15 @@ fun CoverImage(
 ) {
     val context = LocalContext.current
 
-    val modelUrl = remember(url, context, mediaType) {
-        url ?: run {
-            val container = com.catalogizer.androidtv.DependencyContainer.getInstance(context)
-            container.getServerUrl().trimEnd('/') + "/api/v1/cover/placeholder/${mediaType ?: "movie"}"
-        }
+    val fallbackUrl = remember(context, mediaType) {
+        val container = com.catalogizer.androidtv.DependencyContainer.getInstance(context)
+        container.getServerUrl().trimEnd('/') + "/api/v1/cover/placeholder/${mediaType ?: "movie"}"
     }
+
+    var currentUrl by remember(url) { mutableStateOf(url ?: fallbackUrl) }
+    var useFallback by remember(url) { mutableStateOf(false) }
+
+    val modelUrl = if (useFallback) fallbackUrl else currentUrl
 
     SubcomposeAsyncImage(
         model = ImageRequest.Builder(context)
@@ -62,6 +68,10 @@ fun CoverImage(
             }
         },
         error = {
+            if (!useFallback && modelUrl != fallbackUrl) {
+                // Trigger recomposition with fallback URL on next frame
+                useFallback = true
+            }
             Box(
                 modifier = Modifier.fillMaxSize(),
                 contentAlignment = Alignment.Center

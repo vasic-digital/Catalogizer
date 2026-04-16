@@ -327,3 +327,8 @@ resolve_env.py
 full_helixqa_atv_session.sh
 master_qa_session.sh
 rerun_helixqa_atv.sh
+
+# HelixQA generated artifacts
+qa-results-*/
+docs/issues/
+
