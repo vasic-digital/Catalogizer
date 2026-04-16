@@ -1,7 +1,6 @@
 @file:OptIn(ExperimentalTvMaterial3Api::class)
 package com.catalogizer.androidtv.ui.components
 
-import android.net.Uri
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
@@ -24,14 +23,11 @@ import coil.compose.SubcomposeAsyncImage
 import coil.request.ImageRequest
 
 /**
- * Robust cover image composable with automatic fallback from proxy URLs
- * to direct CDN URLs. This fixes environments where the API host cannot
- * reach external CDNs (e.g. DNS override, firewall) while the Android TV
- * device can reach them directly.
+ * Cover image composable that always uses the backend-provided URL.
  *
- * If the supplied [url] is an `/api/v1/image-proxy?url=...` link, the
- * actual image URL is extracted and tried first. On failure it falls
- * back to the proxy URL so both paths are covered.
+ * Per the image policy, all images MUST be served via the backend proxy;
+ * client apps never communicate directly with external CDNs. If the backend
+ * URL fails, a local placeholder SVG is shown.
  */
 @Composable
 fun CoverImage(
@@ -43,54 +39,26 @@ fun CoverImage(
 ) {
     val context = LocalContext.current
 
-    val (primaryUrl, fallbackUrl) = remember(url) {
-        val proxyParam = url
-            ?.takeIf { it.contains("/api/v1/image-proxy") }
-            ?.let {
-                try {
-                    Uri.parse(it).getQueryParameter("url")
-                } catch (_: Exception) {
-                    null
-                }
-            }
-            ?.let {
-                try {
-                    java.net.URLDecoder.decode(it, "UTF-8")
-                } catch (_: Exception) {
-                    it
-                }
-            }
-
-        if (proxyParam != null && proxyParam.startsWith("http")) {
-            proxyParam to url
-        } else {
-            url to null
-        }
-    }
-
-    var currentUrl by remember(primaryUrl) { mutableStateOf(primaryUrl) }
-    var triedFallback by remember(primaryUrl) { mutableStateOf(false) }
-
     val fallbackPlaceholderUrl = remember(context, mediaType) {
         val container = com.catalogizer.androidtv.DependencyContainer.getInstance(context)
         container.getServerUrl().trimEnd('/') + "/api/v1/cover/placeholder/${mediaType ?: "movie"}"
     }
+
+    var currentUrl by remember(url) { mutableStateOf(url ?: fallbackPlaceholderUrl) }
+    var hasError by remember(url) { mutableStateOf(false) }
 
     val request = ImageRequest.Builder(context)
         .data(currentUrl)
         .crossfade(true)
         .listener(
             onError = { _, _ ->
-                if (fallbackUrl != null && !triedFallback) {
-                    triedFallback = true
-                    currentUrl = fallbackUrl
+                if (currentUrl != fallbackPlaceholderUrl) {
+                    currentUrl = fallbackPlaceholderUrl
+                    hasError = true
                 }
             }
         )
         .build()
-
-    // Only show the generic icon if both the primary and fallback URLs failed.
-    val showGenericIcon = triedFallback && fallbackUrl != null && currentUrl == fallbackUrl
 
     SubcomposeAsyncImage(
         model = request,
@@ -98,17 +66,15 @@ fun CoverImage(
         modifier = modifier,
         contentScale = contentScale,
         error = {
-            if (showGenericIcon) {
-                Box(
-                    modifier = Modifier.fillMaxSize(),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Icon(
-                        imageVector = Icons.Default.Image,
-                        contentDescription = "Image unavailable",
-                        tint = Color.White.copy(alpha = 0.5f)
-                    )
-                }
+            Box(
+                modifier = Modifier.fillMaxSize(),
+                contentAlignment = Alignment.Center
+            ) {
+                Icon(
+                    imageVector = Icons.Default.Image,
+                    contentDescription = "Image unavailable",
+                    tint = Color.White.copy(alpha = 0.5f)
+                )
             }
         }
     )
