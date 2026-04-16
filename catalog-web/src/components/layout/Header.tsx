@@ -118,6 +118,11 @@ export const Header: React.FC = () => {
                   type="text"
                   value={searchValue}
                   onChange={(e) => setSearchValue(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' && searchValue.trim()) {
+                      navigate(`/browse?search=${encodeURIComponent(searchValue.trim())}`)
+                    }
+                  }}
                   placeholder="Search movies, shows, music..."
                   className="w-full pl-10 pr-10 py-2 bg-gray-100 border border-gray-300 rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:border-transparent dark:bg-gray-800 dark:border-gray-600 dark:text-white dark:placeholder:text-gray-500"
                 />
@@ -213,6 +218,12 @@ export const Header: React.FC = () => {
                     type="text"
                     value={searchValue}
                     onChange={(e) => setSearchValue(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter' && searchValue.trim()) {
+                        navigate(`/browse?search=${encodeURIComponent(searchValue.trim())}`)
+                        setIsMobileMenuOpen(false)
+                      }
+                    }}
                     placeholder="Search movies, shows, music..."
                     className="w-full pl-10 pr-10 py-2 bg-gray-100 border border-gray-300 rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:border-transparent dark:bg-gray-800 dark:border-gray-600 dark:text-white dark:placeholder:text-gray-500"
                   />

@@ -1,8 +1,11 @@
 @file:OptIn(ExperimentalTvMaterial3Api::class)
 package com.catalogizer.androidtv.ui.components
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Image
 import androidx.compose.material3.Icon
@@ -16,6 +19,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.unit.dp
 import androidx.tv.material3.ExperimentalTvMaterial3Api
 import coil.compose.SubcomposeAsyncImage
 import coil.request.ImageRequest
@@ -42,7 +46,7 @@ fun CoverImage(
         container.getServerUrl().trimEnd('/') + "/api/v1/cover/placeholder/${mediaType ?: "movie"}"
     }
 
-    var currentUrl by remember(url) { mutableStateOf(url ?: fallbackUrl) }
+    var currentUrl by remember(url) { mutableStateOf(if (url.isNullOrBlank()) fallbackUrl else url) }
     var useFallback by remember(url) { mutableStateOf(false) }
 
     val modelUrl = if (useFallback) fallbackUrl else currentUrl
@@ -60,11 +64,17 @@ fun CoverImage(
                 modifier = Modifier.fillMaxSize(),
                 contentAlignment = Alignment.Center
             ) {
-                Icon(
-                    imageVector = Icons.Default.Image,
-                    contentDescription = "Loading",
-                    tint = Color.White.copy(alpha = 0.3f)
-                )
+                Box(
+                    modifier = Modifier.background(Color.Black.copy(alpha = 0.4f), RoundedCornerShape(50)),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.Image,
+                        contentDescription = "Loading cover image",
+                        tint = Color.White.copy(alpha = 0.8f),
+                        modifier = Modifier.padding(12.dp)
+                    )
+                }
             }
         },
         error = {
@@ -76,11 +86,17 @@ fun CoverImage(
                 modifier = Modifier.fillMaxSize(),
                 contentAlignment = Alignment.Center
             ) {
-                Icon(
-                    imageVector = Icons.Default.Image,
-                    contentDescription = "Image unavailable",
-                    tint = Color.White.copy(alpha = 0.5f)
-                )
+                Box(
+                    modifier = Modifier.background(Color.Black.copy(alpha = 0.5f), RoundedCornerShape(50)),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.Image,
+                        contentDescription = "Cover image unavailable",
+                        tint = Color.White.copy(alpha = 0.9f),
+                        modifier = Modifier.padding(12.dp)
+                    )
+                }
             }
         }
     )

@@ -13,6 +13,7 @@ import { PerformanceOverlay } from '@/components/collections/PerformanceOptimize
 // Lazy-loaded page components for code splitting
 const LoginForm = React.lazy(() => import('@/components/auth/LoginForm').then(m => ({ default: m.LoginForm })))
 const RegisterForm = React.lazy(() => import('@/components/auth/RegisterForm').then(m => ({ default: m.RegisterForm })))
+const ForgotPassword = React.lazy(() => import('@/components/auth/ForgotPassword').then(m => ({ default: m.ForgotPassword })))
 const Dashboard = React.lazy(() => import('@/pages/Dashboard').then(m => ({ default: m.Dashboard })))
 const MediaBrowser = React.lazy(() => import('@/pages/MediaBrowser').then(m => ({ default: m.MediaBrowser })))
 const Analytics = React.lazy(() => import('@/pages/Analytics').then(m => ({ default: m.Analytics })))
@@ -59,6 +60,7 @@ function App() {
               {/* Public routes */}
               <Route path="/login" element={<LoginForm />} />
               <Route path="/register" element={<RegisterForm />} />
+              <Route path="/forgot-password" element={<ForgotPassword />} />
 
               {/* Protected routes */}
               <Route path="/" element={<Layout />}>

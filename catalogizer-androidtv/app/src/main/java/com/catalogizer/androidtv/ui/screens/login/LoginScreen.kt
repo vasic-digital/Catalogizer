@@ -7,6 +7,7 @@ import androidx.compose.animation.core.tween
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.focusable
 import androidx.compose.foundation.rememberScrollState
@@ -19,6 +20,7 @@ import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.Visibility
+import androidx.compose.material.icons.filled.VisibilityOff
 import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Divider
@@ -82,6 +84,8 @@ fun LoginScreen(
     var serverConnected by remember { mutableStateOf<Boolean?>(null) } // null=unknown, true=ok, false=fail
     var usernameError by remember { mutableStateOf<String?>(null) }
     var passwordError by remember { mutableStateOf<String?>(null) }
+    var serverUrlError by remember { mutableStateOf<String?>(null) }
+    var passwordVisible by remember { mutableStateOf(false) }
 
     val settings by container.settingsRepository.settingsFlow.collectAsStateWithLifecycle(
         initialValue = com.catalogizer.androidtv.data.models.Settings(
@@ -183,19 +187,21 @@ fun LoginScreen(
     }
     val scrollState = rememberScrollState()
 
-    // Premium text field colors for dark TV theme
+    // Premium text field colors for dark TV theme — high contrast for accessibility
     val textFieldColors = OutlinedTextFieldDefaults.colors(
         focusedTextColor = Color.White,
-        unfocusedTextColor = Color.White.copy(alpha = 0.9f),
+        unfocusedTextColor = Color.White.copy(alpha = 0.95f),
         focusedContainerColor = Color.Transparent,
         unfocusedContainerColor = Color.Transparent,
         focusedBorderColor = Color.Transparent,   // border handled by our custom focus system
         unfocusedBorderColor = Color.Transparent,  // border handled by our custom focus system
         focusedLabelColor = accentColor,
-        unfocusedLabelColor = Color.White.copy(alpha = 0.6f),
+        unfocusedLabelColor = Color.White.copy(alpha = 0.85f),
         cursorColor = accentColor,
         errorBorderColor = Color(0xFFFF6B6B),
-        errorLabelColor = Color(0xFFFF6B6B)
+        errorLabelColor = Color(0xFFFF6B6B),
+        disabledTextColor = Color.White.copy(alpha = 0.6f),
+        disabledLabelColor = Color.White.copy(alpha = 0.5f)
     )
 
     LaunchedEffect(authState) {
@@ -318,8 +324,8 @@ fun LoginScreen(
                     errorMessage = null
                     usernameError = null
                 },
-                label = { ProvideTextStyle(TextStyle(fontSize = 8.sp)) { Text("Username", color = Color.White.copy(alpha = 0.85f)) } },
-                textStyle = TextStyle(fontSize = 9.sp),
+                label = { ProvideTextStyle(TextStyle(fontSize = 9.sp)) { Text("Username", color = Color.White.copy(alpha = 0.9f)) } },
+                textStyle = TextStyle(fontSize = 10.sp),
                 shape = RoundedCornerShape(8.dp),
                 modifier = Modifier
                     .width(formWidth)
@@ -341,7 +347,7 @@ fun LoginScreen(
                 singleLine = true,
                 enabled = !isLoading,
                 isError = usernameError != null,
-                supportingText = usernameError?.let { { Text(it, color = Color(0xFFFF6B6B)) } },
+                supportingText = usernameError?.let { { Text(it, color = Color(0xFFFF6B6B), fontSize = 9.sp) } },
                 colors = textFieldColors
             )
 
@@ -354,8 +360,8 @@ fun LoginScreen(
                     errorMessage = null
                     passwordError = null
                 },
-                label = { ProvideTextStyle(TextStyle(fontSize = 8.sp)) { Text("Password", color = Color.White.copy(alpha = 0.85f)) } },
-                textStyle = TextStyle(fontSize = 9.sp),
+                label = { ProvideTextStyle(TextStyle(fontSize = 9.sp)) { Text("Password", color = Color.White.copy(alpha = 0.9f)) } },
+                textStyle = TextStyle(fontSize = 10.sp),
                 shape = RoundedCornerShape(8.dp),
                 modifier = Modifier
                     .width(formWidth)
@@ -375,38 +381,85 @@ fun LoginScreen(
                     validateAndLogin(username, password, authViewModel, { isLoading = it }, { errorMessage = it },
                         { usernameError = it }, { passwordError = it })
                 }),
-                // Always mask the password -- no visibility toggle on TV (the IconButton
-                // was stealing D-pad focus and accidentally toggling visibility)
-                visualTransformation = PasswordVisualTransformation(),
+                visualTransformation = if (passwordVisible) androidx.compose.ui.text.input.VisualTransformation.None else PasswordVisualTransformation(),
                 trailingIcon = {
-                    Icon(
-                        imageVector = Icons.Default.Visibility,
-                        contentDescription = "Password field",
-                        tint = Color.White.copy(alpha = 0.5f)
-                    )
+                    Box(
+                        modifier = Modifier
+                            .size(40.dp)
+                            .clickable(
+                                onClick = { passwordVisible = !passwordVisible },
+                                role = androidx.compose.ui.semantics.Role.Button
+                            ),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Icon(
+                            imageVector = if (passwordVisible) Icons.Default.VisibilityOff else Icons.Default.Visibility,
+                            contentDescription = if (passwordVisible) "Hide password" else "Show password",
+                            tint = if (passwordFocused) accentColor else Color.White.copy(alpha = 0.7f)
+                        )
+                    }
                 },
                 singleLine = true,
                 enabled = !isLoading,
                 isError = passwordError != null,
-                supportingText = passwordError?.let { { Text(it, color = Color(0xFFFF6B6B)) } },
+                supportingText = passwordError?.let { { Text(it, color = Color(0xFFFF6B6B), fontSize = 9.sp) } },
                 colors = textFieldColors
             )
 
+            Spacer(modifier = Modifier.height(4.dp))
+
+            // Forgot password link
+            Row(
+                modifier = Modifier.width(formWidth),
+                horizontalArrangement = Arrangement.End
+            ) {
+                androidx.compose.material3.TextButton(
+                    onClick = {
+                        val baseUrl = serverUrl.trimEnd('/')
+                        val resetUrl = if (baseUrl.isNotBlank()) "$baseUrl/password-reset" else "https://catalogizer.app/password-reset"
+                        try {
+                            val intent = android.content.Intent(android.content.Intent.ACTION_VIEW, android.net.Uri.parse(resetUrl))
+                            context.startActivity(intent)
+                        } catch (_: Exception) {
+                            errorMessage = "Unable to open password reset page"
+                        }
+                    },
+                    modifier = Modifier.height(32.dp)
+                ) {
+                    Text(
+                        text = "Forgot Password?",
+                        fontSize = 9.sp,
+                        color = accentColor
+                    )
+                }
+            }
+
             Spacer(modifier = Modifier.height(16.dp))
 
-            // Error message
+            // Error message — distinctive, accessible, with icon
             errorMessage?.let { error ->
                 Box(
                     modifier = Modifier
                         .width(formWidth)
-                        .background(Color(0xFF442222), MaterialTheme.shapes.small)
+                        .background(Color(0xFF4A1515), RoundedCornerShape(8.dp))
+                        .border(BorderStroke(1.dp, Color(0xFFFF6B6B)), RoundedCornerShape(8.dp))
                         .padding(12.dp)
                 ) {
-                    Text(
-                        text = error,
-                        style = MaterialTheme.typography.bodySmall,
-                        color = Color(0xFFFF8888)
-                    )
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Icon(
+                            imageVector = Icons.Default.Warning,
+                            contentDescription = "Error",
+                            tint = Color(0xFFFF6B6B),
+                            modifier = Modifier.size(18.dp)
+                        )
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text(
+                            text = error,
+                            style = MaterialTheme.typography.bodySmall.copy(fontSize = 10.sp),
+                            color = Color(0xFFFFAAAA),
+                            modifier = Modifier.weight(1f)
+                        )
+                    }
                 }
                 Spacer(modifier = Modifier.height(12.dp))
             }
@@ -472,8 +525,8 @@ fun LoginScreen(
 
             Text(
                 text = "SERVER CONNECTION",
-                fontSize = 8.sp,
-                color = Color.White.copy(alpha = 0.6f),
+                fontSize = 9.sp,
+                color = Color.White.copy(alpha = 0.85f),
                 letterSpacing = androidx.compose.ui.unit.TextUnit(0.5f, androidx.compose.ui.unit.TextUnitType.Sp)
             )
 
@@ -481,9 +534,13 @@ fun LoginScreen(
 
             OutlinedTextField(
                 value = serverUrl,
-                onValueChange = { serverUrl = it; serverConnected = null },
-                label = { ProvideTextStyle(TextStyle(fontSize = 8.sp)) { Text("Server URL", color = Color.White.copy(alpha = 0.85f)) } },
-                textStyle = TextStyle(fontSize = 9.sp),
+                onValueChange = {
+                    serverUrl = it
+                    serverConnected = null
+                    serverUrlError = validateServerUrl(it)
+                },
+                label = { ProvideTextStyle(TextStyle(fontSize = 9.sp)) { Text("Server URL (e.g. http://192.168.1.10:8080)", color = Color.White.copy(alpha = 0.9f)) } },
+                textStyle = TextStyle(fontSize = 10.sp),
                 shape = RoundedCornerShape(8.dp),
                 modifier = Modifier
                     .width(formWidth)
@@ -497,6 +554,8 @@ fun LoginScreen(
                     .focusable(),
                 singleLine = true,
                 enabled = !isLoading,
+                isError = serverUrlError != null,
+                supportingText = serverUrlError?.let { { Text(it, color = Color(0xFFFF6B6B), fontSize = 9.sp) } },
                 colors = textFieldColors,
                 trailingIcon = {
                     when {
@@ -504,14 +563,18 @@ fun LoginScreen(
                             modifier = Modifier.size(20.dp), strokeWidth = 2.dp,
                             color = MaterialTheme.colorScheme.primary
                         )
-                        serverConnected == true -> Icon(
-                            Icons.Default.CheckCircle, "Connected",
-                            tint = Color(0xFF4CAF50), modifier = Modifier.size(20.dp)
-                        )
-                        serverConnected == false -> Icon(
-                            Icons.Default.Warning, "Connection failed",
-                            tint = Color(0xFFFF6B6B), modifier = Modifier.size(20.dp)
-                        )
+                        serverConnected == true -> Row(verticalAlignment = Alignment.CenterVertically) {
+                            Icon(
+                                Icons.Default.CheckCircle, "Connected",
+                                tint = Color(0xFF4CAF50), modifier = Modifier.size(20.dp)
+                            )
+                        }
+                        serverConnected == false -> Row(verticalAlignment = Alignment.CenterVertically) {
+                            Icon(
+                                Icons.Default.Warning, "Connection failed",
+                                tint = Color(0xFFFF6B6B), modifier = Modifier.size(20.dp)
+                            )
+                        }
                     }
                 }
             )
@@ -540,11 +603,30 @@ fun LoginScreen(
                     text = if (serverConnected == true) {
                         discoveryStatus ?: "Connected to server"
                     } else {
-                        "Unable to reach server"
+                        "Unable to reach server. Check the URL and ensure the server is running."
                     },
-                    style = MaterialTheme.typography.bodySmall,
+                    style = MaterialTheme.typography.bodySmall.copy(fontSize = 9.sp),
                     color = if (serverConnected == true) Color(0xFF4CAF50) else Color(0xFFFF6B6B)
                 )
+            }
+
+            // Insecure connection warning
+            if (serverUrl.isNotBlank() && serverUrl.startsWith("http://") && !serverUrl.startsWith("http://localhost") && !serverUrl.startsWith("http://127.")) {
+                Spacer(modifier = Modifier.height(4.dp))
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Icon(
+                        imageVector = Icons.Default.Warning,
+                        contentDescription = "Warning",
+                        tint = Color(0xFFFFA726),
+                        modifier = Modifier.size(14.dp)
+                    )
+                    Spacer(modifier = Modifier.width(6.dp))
+                    Text(
+                        text = "HTTP connections are not encrypted. Use HTTPS when possible.",
+                        style = MaterialTheme.typography.bodySmall.copy(fontSize = 8.sp),
+                        color = Color(0xFFFFA726)
+                    )
+                }
             }
 
             Spacer(modifier = Modifier.height(12.dp))
@@ -555,6 +637,9 @@ fun LoginScreen(
             ) {
                 Button(
                     onClick = {
+                        keyboardController?.hide()
+                        serverUrlError = validateServerUrl(serverUrl)
+                        if (serverUrlError != null) return@Button
                         coroutineScope.launch {
                             isDiscovering = true
                             discoveredServers = emptyList()
@@ -565,7 +650,7 @@ fun LoginScreen(
                                 val results = container.discoveryService.discoverAll(10000L)
                                 discoveredServers = results
                                 if (results.isEmpty()) {
-                                    errorMessage = "No servers found on the network"
+                                    errorMessage = "No servers found on the network. Make sure the server is on the same network."
                                     discoveryStatus = null
                                 } else if (results.size == 1) {
                                     // Auto-select the single discovered server
@@ -619,7 +704,10 @@ fun LoginScreen(
 
                 Button(
                     onClick = {
+                        keyboardController?.hide()
                         if (serverUrl.isNotBlank()) {
+                            serverUrlError = validateServerUrl(serverUrl)
+                            if (serverUrlError != null) return@Button
                             try {
                                 container.switchServer(serverUrl)
                             } catch (e: Exception) {
@@ -633,8 +721,12 @@ fun LoginScreen(
                                     try {
                                         val testResp = container.api.getCatalog()
                                         serverConnected = testResp.isSuccessful
+                                        if (!testResp.isSuccessful) {
+                                            errorMessage = "Server returned an error (${testResp.code()}). Check the URL and try again."
+                                        }
                                     } catch (_: Exception) {
                                         serverConnected = false
+                                        errorMessage = "Cannot connect to server. Check the URL and ensure the server is running."
                                     }
                                 } catch (e: Exception) {
                                     Log.w(TAG, "Failed to save settings: ${e.message}")
@@ -675,6 +767,7 @@ fun LoginScreen(
                 discoveredServers.forEach { server ->
                     Button(
                         onClick = {
+                            keyboardController?.hide()
                             serverUrl = server.url
                             try {
                                 container.switchServer(server.url)
@@ -772,17 +865,17 @@ private fun validateAndLogin(
     val safePassword = password
     
     if (safeUsername.isBlank()) {
-        setUsernameError("Username is required")
+        setUsernameError("Please enter your username")
         valid = false
     } else if (safeUsername.length < 2) {
-        setUsernameError("Username must be at least 2 characters")
+        setUsernameError("Username must be at least 2 characters long")
         valid = false
     }
     if (safePassword.isBlank()) {
-        setPasswordError("Password is required")
+        setPasswordError("Please enter your password")
         valid = false
     } else if (safePassword.length < 4) {
-        setPasswordError("Password must be at least 4 characters")
+        setPasswordError("Password must be at least 4 characters long")
         valid = false
     }
 
@@ -793,6 +886,18 @@ private fun validateAndLogin(
         authViewModel.login(safeUsername, safePassword)
     } catch (e: Exception) {
         setIsLoading(false)
-        setErrorMessage("Login failed: ${e.message}")
+        setErrorMessage("Unable to sign in: ${e.message}. Please check your credentials and try again.")
+    }
+}
+
+private fun validateServerUrl(url: String): String? {
+    val trimmed = url.trim()
+    if (trimmed.isBlank()) return null
+    return when {
+        !trimmed.startsWith("http://") && !trimmed.startsWith("https://") ->
+            "URL must start with http:// or https://"
+        trimmed.length < 10 ->
+            "URL is too short. Example: http://192.168.1.10:8080"
+        else -> null
     }
 }
