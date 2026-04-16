@@ -30,6 +30,7 @@ class CatalogizerTVApplication : Application(), ImageLoaderFactory {
             .components {
                 add(SvgDecoder.Factory())
             }
+            .allowHardware(false)
             .build()
     }
 
