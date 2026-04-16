@@ -202,6 +202,39 @@ services:
           memory: 128M
 
   # ---------------------------------------------------------------------------
+  # MinIO - S3-compatible object storage for cover art testing
+  # ---------------------------------------------------------------------------
+  minio:
+    image: quay.io/minio/minio:latest
+    container_name: catalogizer-test-minio
+    environment:
+      MINIO_ROOT_USER: minioadmin
+      MINIO_ROOT_PASSWORD: minioadmin123
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+    volumes:
+      - minio_data:/data
+    command: server /data --console-address ":9001"
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9000/minio/health/live"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+    restart: unless-stopped
+    networks:
+      - test-network
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 512M
+        reservations:
+          cpus: '0.1'
+          memory: 64M
+
+  # ---------------------------------------------------------------------------
   # Test Data Seeder (init container)
   # ---------------------------------------------------------------------------
   # One-shot container that populates the shared test-data volume with
@@ -253,6 +286,9 @@ volumes:
     driver: local
   # Pure-FTPd persistent configuration
   ftp_config:
+    driver: local
+  # MinIO persistent data
+  minio_data:
     driver: local
 
 networks:

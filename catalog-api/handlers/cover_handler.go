@@ -1,8 +1,10 @@
 package handlers
 
 import (
+	"io"
 	"net/http"
 	"strconv"
+	"strings"
 
 	"catalogizer/internal/services"
 
@@ -65,6 +67,20 @@ func (h *CoverHandler) ServeCover(c *gin.Context) {
 			contentType = "image/webp"
 		}
 		c.Header("Cache-Control", "public, max-age=86400")
+
+		// If object store is configured and the path looks like an object key,
+		// stream from S3/MinIO. Otherwise fall back to local filesystem.
+		if h.coverArtService.HasObjectStore() && !strings.HasPrefix(*coverArt.LocalPath, "/") && !strings.HasPrefix(*coverArt.LocalPath, ".") && !strings.HasPrefix(*coverArt.LocalPath, "\\") {
+			reader, err := h.coverArtService.GetObjectStore().GetObject(ctx, h.coverArtService.GetBucket(), *coverArt.LocalPath)
+			if err == nil {
+				defer reader.Close()
+				c.Header("Content-Type", contentType)
+				c.Status(http.StatusOK)
+				_, _ = io.Copy(c.Writer, reader)
+				return
+			}
+			// Fall through to local file on error
+		}
 		c.File(*coverArt.LocalPath)
 		_ = contentType // File() auto-detects content type
 		return

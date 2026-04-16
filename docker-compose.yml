@@ -99,6 +99,15 @@ services:
 
       # Media configuration
       MEDIA_ROOT_PATH: ${MEDIA_ROOT_PATH:-/media}
+
+      # S3/MinIO configuration
+      STORAGE_TYPE: ${STORAGE_TYPE:-s3}
+      STORAGE_ENDPOINT: minio:9000
+      STORAGE_ACCESS_KEY: ${MINIO_ROOT_USER:-minioadmin}
+      STORAGE_SECRET_KEY: ${MINIO_ROOT_PASSWORD:-minioadmin123}
+      STORAGE_BUCKET: ${STORAGE_BUCKET:-catalogizer-covers}
+      STORAGE_USE_SSL: "false"
+      STORAGE_REGION: ${STORAGE_REGION:-us-east-1}
     ports:
       - "${API_PORT:-8080}:8080"
     volumes:
@@ -108,6 +117,8 @@ services:
       postgres:
         condition: service_healthy
       redis:
+        condition: service_healthy
+      minio:
         condition: service_healthy
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8080/health"]
@@ -185,6 +196,36 @@ services:
           cpus: '0.5'
           memory: 256M
 
+  # MinIO - S3-compatible local object storage
+  minio:
+    image: quay.io/minio/minio:latest
+    container_name: catalogizer-minio
+    environment:
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER:-minioadmin}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD:-minioadmin123}
+    ports:
+      - "${MINIO_API_PORT:-9000}:9000"
+      - "${MINIO_CONSOLE_PORT:-9001}:9001"
+    volumes:
+      - minio_data:/data
+    command: server /data --console-address ":9001"
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9000/minio/health/live"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+    networks:
+      - catalogizer-network
+    deploy:
+      resources:
+        limits:
+          cpus: '1'
+          memory: 1G
+        reservations:
+          cpus: '0.5'
+          memory: 256M
+
   # Nginx Reverse Proxy (optional, for production)
   nginx:
     image: nginx:alpine
@@ -221,6 +262,8 @@ volumes:
   prometheus_data:
     driver: local
   grafana_data:
+    driver: local
+  minio_data:
     driver: local
 
 networks:

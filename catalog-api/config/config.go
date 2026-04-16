@@ -88,8 +88,15 @@ type LoggingConfig struct {
 }
 
 // StorageConfig contains storage configuration.
-// Storage roots are managed in the database, not in config files.
-type StorageConfig struct{}
+type StorageConfig struct {
+	Type      string `json:"type"`      // "local" or "s3"
+	Endpoint  string `json:"endpoint"`  // e.g. "minio:9000"
+	AccessKey string `json:"access_key"`
+	SecretKey string `json:"secret_key"`
+	Bucket    string `json:"bucket"`    // e.g. "catalogizer-covers"
+	UseSSL    bool   `json:"use_ssl"`
+	Region    string `json:"region"`
+}
 
 // ProxyConfig contains HTTP/SOCKS proxy configuration for external API access.
 type ProxyConfig struct {
@@ -184,7 +191,11 @@ func getDefaultConfig() *Config {
 			MaxArchiveSize:       1024 * 1024 * 1024 * 5, // 5GB
 			TempDir: os.TempDir() + "/catalog-api", // Use system temp directory
 		},
-		Storage: StorageConfig{},
+		Storage: StorageConfig{
+			Type:   "local",
+			Bucket: "catalogizer-covers",
+			Region: "us-east-1",
+		},
 		Proxy: ProxyConfig{
 			Enabled: false,
 		},
@@ -229,6 +240,29 @@ func validateConfig(config *Config) error {
 	}
 	if dbSSL := os.Getenv("DATABASE_SSL_MODE"); dbSSL != "" {
 		config.Database.SSLMode = dbSSL
+	}
+
+	// Apply STORAGE_* env overrides
+	if storageType := os.Getenv("STORAGE_TYPE"); storageType != "" {
+		config.Storage.Type = storageType
+	}
+	if storageEndpoint := os.Getenv("STORAGE_ENDPOINT"); storageEndpoint != "" {
+		config.Storage.Endpoint = storageEndpoint
+	}
+	if storageAccessKey := os.Getenv("STORAGE_ACCESS_KEY"); storageAccessKey != "" {
+		config.Storage.AccessKey = storageAccessKey
+	}
+	if storageSecretKey := os.Getenv("STORAGE_SECRET_KEY"); storageSecretKey != "" {
+		config.Storage.SecretKey = storageSecretKey
+	}
+	if storageBucket := os.Getenv("STORAGE_BUCKET"); storageBucket != "" {
+		config.Storage.Bucket = storageBucket
+	}
+	if storageUseSSL := os.Getenv("STORAGE_USE_SSL"); storageUseSSL != "" {
+		config.Storage.UseSSL = storageUseSSL == "true" || storageUseSSL == "1"
+	}
+	if storageRegion := os.Getenv("STORAGE_REGION"); storageRegion != "" {
+		config.Storage.Region = storageRegion
 	}
 
 	// Validate database config based on type

@@ -59,6 +59,15 @@ services:
       REDIS_HOST: redis
       REDIS_PORT: 6379
 
+      # S3/MinIO configuration
+      STORAGE_TYPE: s3
+      STORAGE_ENDPOINT: minio:9000
+      STORAGE_ACCESS_KEY: minioadmin
+      STORAGE_SECRET_KEY: minioadmin123
+      STORAGE_BUCKET: catalogizer-covers
+      STORAGE_USE_SSL: "false"
+      STORAGE_REGION: us-east-1
+
       # Application configuration
       APP_ENV: development
       API_PORT: 8080
@@ -76,6 +85,8 @@ services:
       postgres:
         condition: service_healthy
       redis:
+        condition: service_healthy
+      minio:
         condition: service_healthy
     networks:
       - catalogizer-network
@@ -115,6 +126,27 @@ services:
     profiles:
       - tools
 
+  # MinIO - S3-compatible local object storage for cover art and media content
+  minio:
+    image: quay.io/minio/minio:latest
+    container_name: catalogizer-minio-dev
+    environment:
+      MINIO_ROOT_USER: minioadmin
+      MINIO_ROOT_PASSWORD: minioadmin123
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+    volumes:
+      - minio_data:/data
+    command: server /data --console-address ":9001"
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9000/minio/health/live"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - catalogizer-network
+
 volumes:
   postgres_data:
     driver: local
@@ -123,6 +155,8 @@ volumes:
   api_cache:
     driver: local
   pgadmin_data:
+    driver: local
+  minio_data:
     driver: local
 
 networks:

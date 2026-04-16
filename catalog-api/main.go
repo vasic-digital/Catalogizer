@@ -45,6 +45,9 @@ import (
 
 	"golang.org/x/net/proxy"
 
+	"digital.vasic.storage/pkg/object"
+	"digital.vasic.storage/pkg/s3"
+
 	"digital.vasic.assets/pkg/defaults"
 	"digital.vasic.assets/pkg/event"
 	"digital.vasic.assets/pkg/manager"
@@ -646,9 +649,50 @@ func main() {
 		}
 	})
 
+	// Initialize S3-compatible object storage if configured
+	var storageClient object.ObjectStore
+	if cfg.Storage.Type == "s3" && cfg.Storage.Endpoint != "" {
+		s3Cfg := &s3.Config{
+			Endpoint:  cfg.Storage.Endpoint,
+			AccessKey: cfg.Storage.AccessKey,
+			SecretKey: cfg.Storage.SecretKey,
+			UseSSL:    cfg.Storage.UseSSL,
+			Region:    cfg.Storage.Region,
+		}
+		s3Client, err := s3.NewClient(s3Cfg, nil)
+		if err != nil {
+			logging.With(logging.ErrorField(err)).Warn("Failed to create S3 storage client, falling back to local filesystem")
+		} else {
+			ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+			defer cancel()
+			if err := s3Client.Connect(ctx); err != nil {
+				logging.With(logging.ErrorField(err)).Warn("Failed to connect to S3 storage, falling back to local filesystem")
+			} else {
+				// Ensure bucket exists
+				exists, err := s3Client.BucketExists(ctx, cfg.Storage.Bucket)
+				if err != nil {
+					logging.With(logging.ErrorField(err)).Warn("Failed to check S3 bucket, falling back to local filesystem")
+				} else if !exists {
+					if err := s3Client.CreateBucket(ctx, object.BucketConfig{Name: cfg.Storage.Bucket}); err != nil {
+						logging.With(logging.ErrorField(err)).Warn("Failed to create S3 bucket, falling back to local filesystem")
+					} else {
+						storageClient = s3Client
+						logging.With(logging.String("bucket", cfg.Storage.Bucket), logging.String("endpoint", cfg.Storage.Endpoint)).Info("S3 storage connected")
+					}
+				} else {
+					storageClient = s3Client
+					logging.With(logging.String("bucket", cfg.Storage.Bucket), logging.String("endpoint", cfg.Storage.Endpoint)).Info("S3 storage connected")
+				}
+			}
+		}
+	}
+
 	// Cover art service for universal cover images
 	coverArtService := services.NewCoverArtService(databaseDB, logger)
 	coverArtService.SetProxyConfig(cfg.Proxy)
+	if storageClient != nil {
+		coverArtService.SetObjectStore(storageClient, cfg.Storage.Bucket)
+	}
 
 	// Cover handler for placeholder SVGs and cover image serving
 	coverHandler := root_handlers.NewCoverHandler(coverArtService)

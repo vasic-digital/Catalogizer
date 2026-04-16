@@ -1,6 +1,7 @@
 package services
 
 import (
+	"bytes"
 	"context"
 	"crypto/sha256"
 	"database/sql"
@@ -21,6 +22,8 @@ import (
 	"time"
 
 	"catalogizer/database"
+
+	"digital.vasic.storage/pkg/object"
 
 	"go.uber.org/zap"
 	"golang.org/x/image/draw"
@@ -44,6 +47,8 @@ type CoverArtService struct {
 	proxyCfg   ProxyConfiger
 	apiKeys    map[string]string
 	cacheDir   string
+	store      object.ObjectStore
+	bucket     string
 }
 
 // CoverArtProvider represents different cover art providers
@@ -153,6 +158,27 @@ func NewCoverArtService(db *database.DB, logger *zap.Logger) *CoverArtService {
 // SetProxyConfig configures the proxy used for external cover art downloads.
 func (s *CoverArtService) SetProxyConfig(cfg ProxyConfiger) {
 	s.proxyCfg = cfg
+}
+
+// SetObjectStore configures the optional object store for cover art caching.
+func (s *CoverArtService) SetObjectStore(store object.ObjectStore, bucket string) {
+	s.store = store
+	s.bucket = bucket
+}
+
+// HasObjectStore returns true when an object store is configured.
+func (s *CoverArtService) HasObjectStore() bool {
+	return s.store != nil && s.bucket != ""
+}
+
+// GetObjectStore returns the configured object store.
+func (s *CoverArtService) GetObjectStore() object.ObjectStore {
+	return s.store
+}
+
+// GetBucket returns the configured object store bucket.
+func (s *CoverArtService) GetBucket() string {
+	return s.bucket
 }
 
 // SearchCoverArt searches for cover art across multiple providers
@@ -1079,46 +1105,76 @@ func (s *CoverArtService) CacheExternalCoverArt(ctx context.Context, mediaItemID
 	height := bounds.Dy()
 
 	coverID := s.generateCoverArtID()
-	filename := fmt.Sprintf("%s.%s", coverID, format)
-	localPath := filepath.Join(s.cacheDir, filename)
-
-	if err := os.MkdirAll(s.cacheDir, 0755); err != nil {
-		return nil, fmt.Errorf("failed to create cache directory: %w", err)
-	}
-
-	outFile, err := os.Create(localPath)
-	if err != nil {
-		return nil, fmt.Errorf("failed to create file: %w", err)
-	}
-	defer outFile.Close()
-
-	switch format {
-	case "jpeg", "jpg":
-		err = jpeg.Encode(outFile, img, &jpeg.Options{Quality: 90})
-	case "png":
-		err = png.Encode(outFile, img)
-	default:
-		err = jpeg.Encode(outFile, img, &jpeg.Options{Quality: 90})
-	}
-	if err != nil {
-		return nil, fmt.Errorf("failed to encode image: %w", err)
-	}
-
-	fileInfo, err := os.Stat(localPath)
-	if err != nil {
-		return nil, fmt.Errorf("failed to stat file: %w", err)
-	}
-	size := fileInfo.Size()
-
 	now := time.Now()
+	var storageKey string
+	var size int64
+
+	if s.HasObjectStore() {
+		// Upload to object store (S3/MinIO)
+		filename := fmt.Sprintf("%s.jpg", coverID)
+		storageKey = "covers/" + filename
+
+		var buf bytes.Buffer
+		err = jpeg.Encode(&buf, img, &jpeg.Options{Quality: 90})
+		if err != nil {
+			return nil, fmt.Errorf("failed to encode image: %w", err)
+		}
+		size = int64(buf.Len())
+
+		putErr := s.store.PutObject(ctx, s.bucket, storageKey, &buf, size,
+			object.WithContentType("image/jpeg"),
+			object.WithMetadata(map[string]string{"media_item_id": strconv.FormatInt(mediaItemID, 10)}),
+		)
+		if putErr != nil {
+			s.logger.Warn("Failed to upload cover art to object store, falling back to local cache",
+				zap.Error(putErr))
+			storageKey = ""
+		}
+	}
+
+	if storageKey == "" {
+		// Fallback to local filesystem
+		filename := fmt.Sprintf("%s.%s", coverID, format)
+		localPath := filepath.Join(s.cacheDir, filename)
+
+		if err := os.MkdirAll(s.cacheDir, 0755); err != nil {
+			return nil, fmt.Errorf("failed to create cache directory: %w", err)
+		}
+
+		outFile, err := os.Create(localPath)
+		if err != nil {
+			return nil, fmt.Errorf("failed to create file: %w", err)
+		}
+		defer outFile.Close()
+
+		switch format {
+		case "jpeg", "jpg":
+			err = jpeg.Encode(outFile, img, &jpeg.Options{Quality: 90})
+		case "png":
+			err = png.Encode(outFile, img)
+		default:
+			err = jpeg.Encode(outFile, img, &jpeg.Options{Quality: 90})
+		}
+		if err != nil {
+			return nil, fmt.Errorf("failed to encode image: %w", err)
+		}
+
+		fileInfo, err := os.Stat(localPath)
+		if err != nil {
+			return nil, fmt.Errorf("failed to stat file: %w", err)
+		}
+		size = fileInfo.Size()
+		storageKey = localPath
+	}
+
 	coverArt := &CoverArt{
 		ID:          coverID,
 		MediaItemID: mediaItemID,
 		Source:      "cached_external",
-		LocalPath:   &localPath,
+		LocalPath:   &storageKey,
 		Width:       &width,
 		Height:      &height,
-		Format:      format,
+		Format:      "jpeg",
 		Size:        &size,
 		Quality:     "high",
 		CreatedAt:   now,
