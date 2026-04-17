@@ -91,6 +91,7 @@ func RegisterAll(svc *services.ChallengeService) error {
 	// Image quality challenges (CH-IQ-*)
 	RegisterImageQualityChallenges(svc)
 	RegisterExtendedImageQualityChallenges(svc)
+	RegisterFinalImageQualityChallenges(svc)
 	svc.Register(NewSecurityChallenge())             // CH-034: Security
 	svc.Register(NewConfigWizardChallenge())         // CH-035: Configuration wizard
 
