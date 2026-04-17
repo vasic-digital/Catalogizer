@@ -1,12 +1,15 @@
 package handlers
 
 import (
+	"context"
+	"errors"
 	"io"
 	"net/http"
 	"strconv"
 	"strings"
 
 	"catalogizer/internal/services"
+	"catalogizer/repository"
 
 	"github.com/gin-gonic/gin"
 )
@@ -15,11 +18,42 @@ import (
 // type-specific placeholder SVGs for entities without cover art.
 type CoverHandler struct {
 	coverArtService *services.CoverArtService
+	qualityRepo     *repository.ImageQualityRepository
 }
 
 // NewCoverHandler creates a new cover handler.
 func NewCoverHandler(coverArtService *services.CoverArtService) *CoverHandler {
 	return &CoverHandler{coverArtService: coverArtService}
+}
+
+// WithQualityRepository attaches the image quality repository so response
+// headers can reflect the last assessed verdict for the served cover.
+func (h *CoverHandler) WithQualityRepository(repo *repository.ImageQualityRepository) *CoverHandler {
+	h.qualityRepo = repo
+	return h
+}
+
+// setQualityHeader writes X-Cover-Quality and X-Cover-Source based on the
+// most recent image_quality_assessments row for the given item. When no row
+// exists, the header is set to "unknown".
+func (h *CoverHandler) setQualityHeader(ctx context.Context, c *gin.Context, mediaItemID int64) {
+	if h.qualityRepo == nil {
+		c.Header("X-Cover-Quality", "unknown")
+		return
+	}
+	rec, err := h.qualityRepo.Find(ctx, "media_item", mediaItemID, "primary")
+	if errors.Is(err, repository.ErrNotFound) || rec == nil {
+		c.Header("X-Cover-Quality", "unknown")
+		return
+	}
+	if err != nil {
+		c.Header("X-Cover-Quality", "unknown")
+		return
+	}
+	c.Header("X-Cover-Quality", rec.Verdict)
+	if rec.Source != "" {
+		c.Header("X-Cover-Source", rec.Source)
+	}
 }
 
 // ServePlaceholder serves a type-specific placeholder SVG image.
@@ -49,9 +83,12 @@ func (h *CoverHandler) ServeCover(c *gin.Context) {
 		return
 	}
 
+	h.setQualityHeader(ctx, c, mediaItemID)
+
 	coverArt, err := h.coverArtService.GetCoverArt(ctx, mediaItemID)
 	if err != nil || coverArt == nil {
 		// Fall back to generic placeholder
+		c.Header("X-Cover-Quality", "placeholder_fallback")
 		svg := services.GeneratePlaceholderSVG("movie")
 		c.Header("Content-Type", "image/svg+xml")
 		c.Header("Cache-Control", "public, max-age=3600")
@@ -92,6 +129,7 @@ func (h *CoverHandler) ServeCover(c *gin.Context) {
 	}
 
 	// No cover art data available, serve placeholder
+	c.Header("X-Cover-Quality", "placeholder_fallback")
 	svg := services.GeneratePlaceholderSVG("movie")
 	c.Header("Content-Type", "image/svg+xml")
 	c.Header("Cache-Control", "public, max-age=3600")

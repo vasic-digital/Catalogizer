@@ -87,6 +87,9 @@ func RegisterAll(svc *services.ChallengeService) error {
 	svc.Register(NewSearchFilterChallenge())         // CH-031: Search & filter
 	svc.Register(NewCoverArtChallenge())             // CH-032: Cover art
 	svc.Register(NewWebSocketEventsChallenge())      // CH-033: WebSocket events
+
+	// Image quality challenges (CH-IQ-*)
+	RegisterImageQualityChallenges(svc)
 	svc.Register(NewSecurityChallenge())             // CH-034: Security
 	svc.Register(NewConfigWizardChallenge())         // CH-035: Configuration wizard
 

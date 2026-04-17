@@ -620,10 +620,20 @@ func main() {
 		logging.Warnf("Failed to create asset store: %v", err)
 	}
 	assetEventBus := event.NewInMemoryBus()
+
+	// Image quality gate + last-resort LLM fallback.
+	imageQualityRepo := root_repository.NewImageQualityRepository(databaseDB)
+	gate := func(inner resolver.Resolver, source string) resolver.Resolver {
+		return services.NewQualityGate(inner,
+			services.WithQualityRepository(imageQualityRepo),
+			services.WithSourceLabel(source),
+		)
+	}
 	assetResolver := resolver.NewChain(
-		services.NewCachedFileResolver(filepath.Join(".", "cache", "cover_art"), 1),
-		services.NewExternalMetadataResolver(databaseDB, 2),
-		services.NewLocalScanResolver(4),
+		gate(services.NewCachedFileResolver(filepath.Join(".", "cache", "cover_art"), 1), "cache"),
+		gate(services.NewExternalMetadataResolver(databaseDB, 2), "external_metadata"),
+		gate(services.NewLocalScanResolver(4), "local_scan"),
+		gate(services.NewLLMImageSearchResolver(90), "llm_image_search"),
 	)
 	assetManager := manager.New(
 		manager.WithStore(assetStore),
@@ -633,6 +643,12 @@ func main() {
 		manager.WithWorkers(4),
 	)
 	defer assetManager.Stop()
+
+	// Background image-quality revalidator: touches stale image_quality_assessments
+	// rows so the cover pipeline re-resolves them on next access.
+	qualityRevalidator := services.NewQualityRevalidator(imageQualityRepo, logger)
+	qualityRevalidator.Start(context.Background())
+	defer qualityRevalidator.Stop()
 	assetHandler := root_handlers.NewAssetHandler(assetManager, assetRepo)
 
 	// Bridge asset events to WebSocket clients
@@ -696,7 +712,7 @@ func main() {
 	coverArtService.SetClientFactory(clientFactory)
 
 	// Cover handler for placeholder SVGs and cover image serving
-	coverHandler := root_handlers.NewCoverHandler(coverArtService)
+	coverHandler := root_handlers.NewCoverHandler(coverArtService).WithQualityRepository(imageQualityRepo)
 
 	// Media entity handler for structured media browsing
 	mediaEntityHandler := root_handlers.NewMediaEntityHandler(mediaItemRepo, mediaFileRepo, extMetaRepo, userMetaRepo, databaseDB)
