@@ -76,3 +76,49 @@ func TestCSRF_W2_AdminGroupRejectsCrossOriginMutations(t *testing.T) {
 		t.Errorf("valid POST got %d, want 200", w4.Code)
 	}
 }
+
+// TestCSRF_B5_InsecureDevDropsHostPrefixAndSecureFlag locks in B5
+// from docs/nexus/remaining-work.md: plain-HTTP dev stacks must flip
+// the guard via WithCSRFInsecureDev so browsers actually accept the
+// cookie. The test asserts (a) the cookie name drops `__Host-` and
+// (b) the Secure flag is cleared in the Set-Cookie header.
+func TestCSRF_B5_InsecureDevDropsHostPrefixAndSecureFlag(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+	guard, err := NewCSRF(
+		[]byte("this-secret-is-at-least-16-bytes-long"),
+		WithCSRFInsecureDev(true),
+	)
+	if err != nil {
+		t.Fatal(err)
+	}
+	router := gin.New()
+	router.GET("/probe", guard.Handler(), func(c *gin.Context) { c.Status(http.StatusOK) })
+
+	w := httptest.NewRecorder()
+	r, _ := http.NewRequest(http.MethodGet, "/probe", nil)
+	router.ServeHTTP(w, r)
+
+	// Verify the response cookie name dropped __Host-.
+	var devCookie *http.Cookie
+	for _, c := range w.Result().Cookies() {
+		if c.Name == "csrf-dev" {
+			devCookie = c
+		}
+		if c.Name == "__Host-csrf" {
+			t.Fatalf("insecureDev mode must NOT emit __Host-csrf cookie, got one")
+		}
+	}
+	if devCookie == nil {
+		t.Fatal("insecureDev mode must emit csrf-dev cookie")
+	}
+
+	// Verify Secure flag is cleared so browsers accept over plain HTTP.
+	rawSetCookie := w.Header().Get("Set-Cookie")
+	if strings.Contains(strings.ToLower(rawSetCookie), "secure") {
+		t.Errorf("insecureDev mode must NOT set Secure flag: %q", rawSetCookie)
+	}
+	// Sanity: HttpOnly still on.
+	if !strings.Contains(strings.ToLower(rawSetCookie), "httponly") {
+		t.Errorf("insecureDev mode must keep HttpOnly: %q", rawSetCookie)
+	}
+}

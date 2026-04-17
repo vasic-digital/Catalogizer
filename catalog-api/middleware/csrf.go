@@ -24,17 +24,29 @@ import (
 // middleware ships as a lightweight default for deployments that
 // cannot adopt gorilla/csrf (Gin uses different idioms for the token
 // stream).
+//
+// Cookie prefix behaviour (B5 fix): the default cookie name carries
+// the `__Host-` prefix, which browsers only accept when the Secure
+// flag is set AND the request is over HTTPS. Plain-HTTP dev stacks
+// must flip the guard into `insecureDev` mode via WithCSRFInsecureDev
+// so the cookie drops the prefix and Secure=false — otherwise
+// browsers silently refuse the cookie and every mutating admin call
+// 403s.
 type CSRF struct {
-	secret []byte
-	cookie string
-	header string
-	maxAge time.Duration
+	secret      []byte
+	cookie      string
+	header      string
+	maxAge      time.Duration
+	insecureDev bool
 }
 
 // CSRFOption tunes the middleware at construction.
 type CSRFOption func(*CSRF)
 
 // WithCSRFCookieName overrides the cookie name (default "__Host-csrf").
+// Prefer WithCSRFInsecureDev(true) instead of a manual name override
+// for plain-HTTP dev — that path flips BOTH the cookie name and the
+// Secure flag so browsers accept the cookie end-to-end.
 func WithCSRFCookieName(name string) CSRFOption { return func(c *CSRF) { c.cookie = name } }
 
 // WithCSRFHeaderName overrides the header name (default "X-CSRF-Token").
@@ -43,6 +55,27 @@ func WithCSRFHeaderName(name string) CSRFOption { return func(c *CSRF) { c.heade
 // WithCSRFMaxAge sets the token validity window (default 24h).
 func WithCSRFMaxAge(d time.Duration) CSRFOption { return func(c *CSRF) { c.maxAge = d } }
 
+// WithCSRFInsecureDev enables plain-HTTP dev mode: the cookie drops
+// the `__Host-` prefix (incompatible with HTTP) and the Secure flag
+// is cleared so browsers still store it. Never enable in production.
+// Closes B5 from docs/nexus/remaining-work.md.
+func WithCSRFInsecureDev(enabled bool) CSRFOption {
+	return func(c *CSRF) {
+		c.insecureDev = enabled
+		if enabled && c.cookie == defaultCSRFCookieName {
+			c.cookie = devCSRFCookieName
+		}
+	}
+}
+
+// defaultCSRFCookieName and devCSRFCookieName are the two built-in
+// cookie names. Both are exported through constructor defaults +
+// WithCSRFInsecureDev so tests can pin either explicitly.
+const (
+	defaultCSRFCookieName = "__Host-csrf"
+	devCSRFCookieName     = "csrf-dev"
+)
+
 // NewCSRF returns a middleware bound to a HMAC secret.
 func NewCSRF(secret []byte, opts ...CSRFOption) (*CSRF, error) {
 	if len(secret) < 16 {
@@ -50,7 +83,7 @@ func NewCSRF(secret []byte, opts ...CSRFOption) (*CSRF, error) {
 	}
 	c := &CSRF{
 		secret: append([]byte(nil), secret...),
-		cookie: "__Host-csrf",
+		cookie: defaultCSRFCookieName,
 		header: "X-CSRF-Token",
 		maxAge: 24 * time.Hour,
 	}
@@ -95,13 +128,16 @@ func (c *CSRF) mintToken(ctx *gin.Context) {
 	_, _ = rand.Read(raw)
 	token := hex.EncodeToString(raw)
 	signed := c.sign(token)
+	// B5 fix: the Secure flag MUST be false in insecureDev mode so
+	// browsers still accept the cookie over plain HTTP. Production
+	// deployments stay on Secure=true with the __Host- prefix.
 	ctx.SetCookie(
 		c.cookie,
 		signed,
 		int(c.maxAge.Seconds()),
 		"/", "",
-		true, // secure — only over TLS
-		true, // httpOnly
+		!c.insecureDev, // secure — TLS-only unless explicitly dev-mode
+		true,           // httpOnly
 	)
 	ctx.Writer.Header().Set(c.header, token)
 }
