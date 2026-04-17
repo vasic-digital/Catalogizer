@@ -245,6 +245,13 @@ class SettingsRepository(private val dataStore: DataStore<Preferences>) {
         }
     }
 
+    suspend fun getAllChannelIds(): List<Long> {
+        val prefs = dataStore.data.first()
+        return prefs.asMap().keys
+            .filter { it.name.startsWith("channel_id_") }
+            .mapNotNull { prefs[it] as? Long }
+    }
+
     // ─── Per-Category Launch Action ────────────────────────────────────
 
     suspend fun saveLaunchAction(mediaType: String, action: LaunchAction) {

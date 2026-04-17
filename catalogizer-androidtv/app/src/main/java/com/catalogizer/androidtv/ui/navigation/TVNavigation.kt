@@ -18,6 +18,7 @@ import com.catalogizer.androidtv.ui.screens.category.CategoryBrowseScreen
 import com.catalogizer.androidtv.ui.player.ExoTvPlayerActivity
 import com.catalogizer.androidtv.ui.viewmodel.AuthViewModel
 import com.catalogizer.androidtv.ui.viewmodel.HomeViewModel
+import com.catalogizer.androidtv.ui.viewmodel.MainViewModel
 
 /**
  * Sealed class defining the navigation route constants for all TV app screens.
@@ -49,6 +50,7 @@ fun TVNavigation(
     authViewModel: AuthViewModel,
     homeViewModel: HomeViewModel,
     searchViewModel: SearchViewModel,
+    mainViewModel: MainViewModel? = null,
     deepLinkMediaId: Long = -1L,
     deepLinkAction: String? = null,
     navController: NavHostController = rememberNavController()
@@ -174,6 +176,7 @@ fun TVNavigation(
                 "play" -> navController.navigate(TVScreen.Player.createRoute(deepLinkMediaId))
                 else -> navController.navigate(TVScreen.MediaDetail.createRoute(deepLinkMediaId))
             }
+            mainViewModel?.consumeDeepLink()
         }
     }
 }

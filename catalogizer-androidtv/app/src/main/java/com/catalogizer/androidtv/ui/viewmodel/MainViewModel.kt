@@ -27,6 +27,12 @@ class MainViewModel(
     private val _isLoading = MutableStateFlow(true)
     val isLoading: StateFlow<Boolean> = _isLoading.asStateFlow()
 
+    private val _deepLinkMediaId = MutableStateFlow(-1L)
+    val deepLinkMediaId: StateFlow<Long> = _deepLinkMediaId.asStateFlow()
+
+    private val _deepLinkAction = MutableStateFlow<String?>(null)
+    val deepLinkAction: StateFlow<String?> = _deepLinkAction.asStateFlow()
+
     /**
      * Gate that blocks [initializeApp] until QA auto-login completes.
      * Set via [setQaLoginGate] before [initializeApp] is called.
@@ -47,6 +53,16 @@ class MainViewModel(
      */
     fun completeQaLogin() {
         qaLoginGate?.complete(Unit)
+    }
+
+    fun setDeepLink(mediaId: Long, action: String?) {
+        _deepLinkMediaId.value = mediaId
+        _deepLinkAction.value = action
+    }
+
+    fun consumeDeepLink() {
+        _deepLinkMediaId.value = -1L
+        _deepLinkAction.value = null
     }
 
     fun initializeApp() {

@@ -1,5 +1,6 @@
 package com.catalogizer.androidtv.ui
 
+import android.content.Intent
 import android.os.Bundle
 import android.util.Log
 import android.widget.Toast
@@ -116,8 +117,7 @@ class MainActivity : ComponentActivity() {
         }
 
         // Extract deep link from ChannelDeepLinkActivity
-        val deepLinkMediaId = intent?.getLongExtra("deep_link_media_id", -1L) ?: -1L
-        val deepLinkAction = intent?.getStringExtra("deep_link_action")
+        processDeepLinkIntent(intent)
 
         setContent {
             CatalogizerTVTheme {
@@ -128,12 +128,24 @@ class MainActivity : ComponentActivity() {
                         authViewModel = authViewModel,
                         mainViewModel = mainViewModel,
                         homeViewModel = homeViewModel,
-                        searchViewModel = searchViewModel,
-                        deepLinkMediaId = deepLinkMediaId,
-                        deepLinkAction = deepLinkAction
+                        searchViewModel = searchViewModel
                     )
                 }
             }
+        }
+    }
+
+    override fun onNewIntent(intent: Intent?) {
+        super.onNewIntent(intent)
+        processDeepLinkIntent(intent)
+    }
+
+    private fun processDeepLinkIntent(intent: Intent?) {
+        val deepLinkMediaId = intent?.getLongExtra("deep_link_media_id", -1L) ?: -1L
+        val deepLinkAction = intent?.getStringExtra("deep_link_action")
+        if (deepLinkMediaId > 0) {
+            mainViewModel.setDeepLink(deepLinkMediaId, deepLinkAction)
+            Log.d("MainActivity", "Deep link processed: mediaId=$deepLinkMediaId, action=$deepLinkAction")
         }
     }
 }
@@ -147,12 +159,12 @@ fun CatalogizerTVApp(
     authViewModel: AuthViewModel,
     mainViewModel: MainViewModel,
     homeViewModel: HomeViewModel,
-    searchViewModel: SearchViewModel,
-    deepLinkMediaId: Long = -1L,
-    deepLinkAction: String? = null
+    searchViewModel: SearchViewModel
 ) {
     val authState by authViewModel.authState.collectAsStateWithLifecycle()
     val isLoading by mainViewModel.isLoading.collectAsStateWithLifecycle()
+    val deepLinkMediaId by mainViewModel.deepLinkMediaId.collectAsStateWithLifecycle()
+    val deepLinkAction by mainViewModel.deepLinkAction.collectAsStateWithLifecycle()
 
     LaunchedEffect(Unit) {
         mainViewModel.initializeApp()
@@ -171,6 +183,7 @@ fun CatalogizerTVApp(
             authViewModel = authViewModel,
             homeViewModel = homeViewModel,
             searchViewModel = searchViewModel,
+            mainViewModel = mainViewModel,
             deepLinkMediaId = deepLinkMediaId,
             deepLinkAction = deepLinkAction
         )
