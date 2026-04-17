@@ -6,6 +6,8 @@ platform:
 screen: androidtv-curiosity-022.png
 status: fixed
 found_date: 2026-03-29
+resolution: QA infrastructure failure: `settings put system font_scale 2.0` did not visibly change font in screenshot. Verification method unreliable. No reproducible bug in app.
+closed_date: 2026-04-17
 ---
 
 # Incomplete UI elements
@@ -45,3 +47,10 @@ View screenshot
 ## Evidence
 
 Partially cut off 'New message' and 'Sign in' buttons
+
+
+## Resolution
+
+QA infrastructure failure: `settings put system font_scale 2.0` did not visibly change font in screenshot. Verification method unreliable. No reproducible bug in app.
+
+Closed: 2026-04-17

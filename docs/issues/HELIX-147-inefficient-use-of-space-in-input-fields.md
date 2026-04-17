@@ -6,6 +6,8 @@ platform:
 screen: androidtv-curiosity-034.png
 status: fixed
 found_date: 2026-03-29
+resolution: QA infrastructure failure: screenshot showed login screen instead of video playback. Wrong screen captured. No reproducible bug in app.
+closed_date: 2026-04-17
 ---
 
 # Inefficient use of space in input fields
@@ -75,3 +77,10 @@ The input field has a lot of unused space on the left side. This could be more o
 ## Evidence
 
 Screenshot shows an input field with a significant amount of unused space on its left.
+
+
+## Resolution
+
+QA infrastructure failure: screenshot showed login screen instead of video playback. Wrong screen captured. No reproducible bug in app.
+
+Closed: 2026-04-17

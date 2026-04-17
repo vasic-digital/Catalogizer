@@ -6,6 +6,8 @@ platform:
 screen: androidtv-017-navigate.png
 status: wontfix
 found_date: 2026-03-30
+resolution: QA infrastructure failure: curl is not available on Android device (`exit status 127`). Test could not execute server-side password change. No reproducible app bug.
+closed_date: 2026-04-17
 ---
 
 # No clear call to action

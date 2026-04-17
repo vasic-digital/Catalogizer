@@ -6,6 +6,8 @@ platform:
 screen: androidtv-017-navigate.png
 status: wontfix
 found_date: 2026-03-30
+resolution: QA infrastructure failure: screenshot showed on-screen keyboard instead of connection attempt to self-signed cert server. No reproducible bug in app.
+closed_date: 2026-04-17
 ---
 
 # No feedback on search results

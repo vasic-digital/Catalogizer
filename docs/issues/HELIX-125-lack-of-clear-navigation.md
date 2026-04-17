@@ -6,6 +6,8 @@ platform:
 screen: androidtv-curiosity-005.png
 status: wontfix
 found_date: 2026-03-30
+resolution: QA infrastructure failure: screenshot showed keyboard/URL bar instead of media playback. Test failed to reach playback step.
+closed_date: 2026-04-17
 ---
 
 # Lack of Clear Navigation

@@ -6,6 +6,8 @@ platform:
 screen: androidtv-curiosity-028.png
 status: wontfix
 found_date: 2026-03-30
+resolution: QA infrastructure failure: bandwidth drop was not actually simulated. Screenshot showed login screen. No reproducible bug in app.
+closed_date: 2026-04-17
 ---
 
 # Lack of Progress Indicator

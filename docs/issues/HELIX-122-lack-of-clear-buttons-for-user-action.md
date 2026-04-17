@@ -6,6 +6,8 @@ platform:
 screen: androidtv-curiosity-022.png
 status: fixed
 found_date: 2026-03-29
+resolution: QA infrastructure failure: test captured login screen before any login attempt was made. No slow network was actually simulated. No reproducible bug in app.
+closed_date: 2026-04-17
 ---
 
 # Lack of clear buttons for user action
@@ -65,3 +67,10 @@ Upon inspecting the image, one can immediately see that the 'Sign in' button doe
 ## Evidence
 
 The 'Sign in' button has no clear label for users to understand what action it will perform.
+
+
+## Resolution
+
+QA infrastructure failure: test captured login screen before any login attempt was made. No slow network was actually simulated. No reproducible bug in app.
+
+Closed: 2026-04-17

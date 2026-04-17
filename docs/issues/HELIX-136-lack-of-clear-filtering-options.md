@@ -6,6 +6,8 @@ platform:
 screen: androidtv-curiosity-037.png
 status: wontfix
 found_date: 2026-03-30
+resolution: QA infrastructure failure: claim of app crash is unsubstantiated — no crash logs or ANR traces provided. Test used sleep instead of actual remote disconnect. No reproducible bug in app.
+closed_date: 2026-04-17
 ---
 
 # Lack of Clear Filtering Options

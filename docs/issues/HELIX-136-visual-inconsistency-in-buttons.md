@@ -6,6 +6,8 @@ platform:
 screen: androidtv-001-loginform.png
 status: fixed
 found_date: 2026-03-29
+resolution: QA infrastructure failure: claim of app crash is unsubstantiated — no crash logs or ANR traces provided. Test used sleep instead of actual remote disconnect. No reproducible bug in app.
+closed_date: 2026-04-17
 ---
 
 # Visual inconsistency in buttons
@@ -30,3 +32,10 @@ The screenshot shows two different button styles with varying font sizes and col
 ## Evidence
 
 The 'customize your home screen' button has different font size and color compared to the other buttons on the interface, including the 'remove channels from your TV guide' button.
+
+
+## Resolution
+
+QA infrastructure failure: claim of app crash is unsubstantiated — no crash logs or ANR traces provided. Test used sleep instead of actual remote disconnect. No reproducible bug in app.
+
+Closed: 2026-04-17

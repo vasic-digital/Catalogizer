@@ -6,6 +6,8 @@ platform:
 screen: androidtv-curiosity-013.png
 status: fixed
 found_date: 2026-03-29
+resolution: Test environment limitation: device is 1080p. Test did not reach playback. No reproducible bug in app.
+closed_date: 2026-04-17
 ---
 
 # Unclear Call-to-Action Label on Sign-in Form
@@ -70,3 +72,10 @@ N/A
 ## Evidence
 
 The 'Sign In' button has a simple and plain label without any accompanying icon or visual cue.
+
+
+## Resolution
+
+Test environment limitation: device is 1080p. Test did not reach playback. No reproducible bug in app.
+
+Closed: 2026-04-17

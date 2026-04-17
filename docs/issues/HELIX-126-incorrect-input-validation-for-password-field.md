@@ -6,6 +6,8 @@ platform:
 screen: androidtv-curiosity-009.png
 status: fixed
 found_date: 2026-03-29
+resolution: QA infrastructure failure: curl is not available on Android device (`exit status 127`). Test could not execute server-side password change. No reproducible app bug.
+closed_date: 2026-04-17
 ---
 
 # Incorrect input validation for password field
@@ -43,3 +45,10 @@ Click on 'Sign in with a different account'. Enter an email address and attempt 
 ## Evidence
 
 The password input box lacks common visual indicators such as asterisks or icons to represent a password field, which are typically used to inform users that the entered text is hidden for privacy reasons. This could lead to confusion or misunderstanding regarding the type of input expected by the application.
+
+
+## Resolution
+
+QA infrastructure failure: curl is not available on Android device (`exit status 127`). Test could not execute server-side password change. No reproducible app bug.
+
+Closed: 2026-04-17

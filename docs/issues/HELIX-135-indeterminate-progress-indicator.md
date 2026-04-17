@@ -6,6 +6,8 @@ platform:
 screen: androidtv-curiosity-012.png
 status: wontfix
 found_date: 2026-03-30
+resolution: QA infrastructure failure: screenshot showed channel customization menu instead of video player. Wrong screen captured. No reproducible bug in app.
+closed_date: 2026-04-17
 ---
 
 # Indeterminate Progress Indicator

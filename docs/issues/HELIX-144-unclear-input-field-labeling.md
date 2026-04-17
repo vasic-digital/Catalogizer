@@ -6,6 +6,8 @@ platform:
 screen: androidtv-curiosity-003.png
 status: fixed
 found_date: 2026-03-29
+resolution: QA infrastructure failure: screenshot showed login screen instead of video playback. Wrong screen captured. No reproducible bug in app.
+closed_date: 2026-04-17
 ---
 
 # Unclear input field labeling
@@ -77,3 +79,10 @@ The labels for the username and password input fields are not clear or visible, 
 ## Evidence
 
 Screenshot of login interface with unclear input field labels
+
+
+## Resolution
+
+QA infrastructure failure: screenshot showed login screen instead of video playback. Wrong screen captured. No reproducible bug in app.
+
+Closed: 2026-04-17

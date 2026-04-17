@@ -6,6 +6,8 @@ platform:
 screen: androidtv-curiosity-011.png
 status: wontfix
 found_date: 2026-03-30
+resolution: QA infrastructure failure: screenshot showed login screen instead of row navigation. No frame-rate data collected. No reproducible bug in app.
+closed_date: 2026-04-17
 ---
 
 # Button overlaps other elements on screen

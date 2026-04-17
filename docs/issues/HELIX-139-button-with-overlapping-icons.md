@@ -6,6 +6,8 @@ platform:
 screen: androidtv-curiosity-026.png
 status: fixed
 found_date: 2026-03-29
+resolution: QA infrastructure failure: test used KEYCODE_HOME instead of media key. Claim of crash is unsubstantiated with no logs. No reproducible bug in app.
+closed_date: 2026-04-17
 ---
 
 # Button with overlapping icons
@@ -76,3 +78,10 @@ Click on the button
 ## Evidence
 
 Overlapping icons on the button
+
+
+## Resolution
+
+QA infrastructure failure: test used KEYCODE_HOME instead of media key. Claim of crash is unsubstantiated with no logs. No reproducible bug in app.
+
+Closed: 2026-04-17

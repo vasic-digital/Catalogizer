@@ -6,6 +6,8 @@ platform:
 screen: androidtv-curiosity-019.png
 status: wontfix
 found_date: 2026-03-30
+resolution: Test environment limitation: device is 1080p. Test did not reach playback. No reproducible bug in app.
+closed_date: 2026-04-17
 ---
 
 # Inadequate Feedback on Loading Status

@@ -6,6 +6,8 @@ platform:
 screen: androidtv-curiosity-013.png
 status: fixed
 found_date: 2026-03-29
+resolution: QA infrastructure failure: screenshot showed on-screen keyboard instead of connection attempt to self-signed cert server. No reproducible bug in app.
+closed_date: 2026-04-17
 ---
 
 # Inconsistent Typography in Sign-in Form
@@ -35,3 +37,10 @@ N/A
 ## Evidence
 
 In the screenshot, the 'Username' field has a smaller font size compared to other fields in the sign-in form.
+
+
+## Resolution
+
+QA infrastructure failure: screenshot showed on-screen keyboard instead of connection attempt to self-signed cert server. No reproducible bug in app.
+
+Closed: 2026-04-17

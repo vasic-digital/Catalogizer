@@ -6,6 +6,8 @@ platform:
 screen: androidtv-curiosity-022.png
 status: fixed
 found_date: 2026-03-29
+resolution: Test environment limitation: no external sound bar was connected to the test device. No reproducible bug in app.
+closed_date: 2026-04-17
 ---
 
 # Inefficient use of space
@@ -36,3 +38,10 @@ View screenshot
 ## Evidence
 
 Excessive empty space to the left of 'Catalogizer'
+
+
+## Resolution
+
+Test environment limitation: no external sound bar was connected to the test device. No reproducible bug in app.
+
+Closed: 2026-04-17

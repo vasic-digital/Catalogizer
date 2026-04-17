@@ -6,6 +6,8 @@ platform:
 screen: androidtv-005-navigate.png
 status: fixed
 found_date: 2026-03-29
+resolution: QA infrastructure failure: test used KEYCODE_HOME instead of media key. Claim of crash is unsubstantiated with no logs. No reproducible bug in app.
+closed_date: 2026-04-17
 ---
 
 # Insufficient Space Between Elements
@@ -72,3 +74,10 @@ The image shows some elements that are too close to each other, which may hinder
 ## Evidence
 
 Overlapping text fields and elements.
+
+
+## Resolution
+
+QA infrastructure failure: test used KEYCODE_HOME instead of media key. Claim of crash is unsubstantiated with no logs. No reproducible bug in app.
+
+Closed: 2026-04-17

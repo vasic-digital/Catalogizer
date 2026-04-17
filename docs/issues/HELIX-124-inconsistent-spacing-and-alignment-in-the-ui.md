@@ -6,6 +6,8 @@ platform:
 screen: androidtv-curiosity-022.png
 status: fixed
 found_date: 2026-03-29
+resolution: QA infrastructure failure: test showed HTTPS URL typed but never attempted connection. No reproducible bug in app.
+closed_date: 2026-04-17
 ---
 
 # Inconsistent spacing and alignment in the UI
@@ -67,3 +69,10 @@ Upon inspecting the image, one can immediately see that the text box is not well
 ## Evidence
 
 The input field has inconsistent spacing and alignment.
+
+
+## Resolution
+
+QA infrastructure failure: test showed HTTPS URL typed but never attempted connection. No reproducible bug in app.
+
+Closed: 2026-04-17

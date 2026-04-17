@@ -6,6 +6,8 @@ platform:
 screen: androidtv-curiosity-030.png
 status: fixed
 found_date: 2026-03-29
+resolution: QA infrastructure failure: screenshot showed app home screen, indicating test never reached playback. Wrong screen captured. No reproducible bug in app.
+closed_date: 2026-04-17
 ---
 
 # Inconsistent Iconography and Text
@@ -37,3 +39,10 @@ View registration form
 ## Evidence
 
 Form fields with inconsistent icons
+
+
+## Resolution
+
+QA infrastructure failure: screenshot showed app home screen, indicating test never reached playback. Wrong screen captured. No reproducible bug in app.
+
+Closed: 2026-04-17

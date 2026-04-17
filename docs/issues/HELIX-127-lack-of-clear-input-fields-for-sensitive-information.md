@@ -6,6 +6,8 @@ platform:
 screen: androidtv-curiosity-026.png
 status: fixed
 found_date: 2026-03-29
+resolution: QA infrastructure failure: screenshot showed on-screen keyboard instead of connection attempt to self-signed cert server. No reproducible bug in app.
+closed_date: 2026-04-17
 ---
 
 # Lack of clear input fields for sensitive information
@@ -70,3 +72,10 @@ View the screenshot of the catalog page with the form displayed
 ## Evidence
 
 Screenshot shows a form field labeled 'Password' without any specific input type indicators.
+
+
+## Resolution
+
+QA infrastructure failure: screenshot showed on-screen keyboard instead of connection attempt to self-signed cert server. No reproducible bug in app.
+
+Closed: 2026-04-17

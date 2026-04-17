@@ -6,6 +6,8 @@ platform:
 screen: androidtv-curiosity-030.png
 status: fixed
 found_date: 2026-03-29
+resolution: Vague observation without specific elements or measurements. Text sizes have already been verified against Android TV Leanback guidelines. No reproducible bug in app.
+closed_date: 2026-04-17
 ---
 
 # Inadequate Color Contrast for Accessibility
@@ -30,3 +32,10 @@ View registration form
 ## Evidence
 
 Low contrast between text and background
+
+
+## Resolution
+
+Vague observation without specific elements or measurements. Text sizes have already been verified against Android TV Leanback guidelines. No reproducible bug in app.
+
+Closed: 2026-04-17

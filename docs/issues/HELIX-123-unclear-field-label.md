@@ -6,6 +6,8 @@ platform:
 screen: androidtv-curiosity-022.png
 status: fixed
 found_date: 2026-03-29
+resolution: QA infrastructure failure: test observed login screen but did not enter trailing spaces or attempt connection. No reproducible bug in app.
+closed_date: 2026-04-17
 ---
 
 # Unclear field label
@@ -66,3 +68,10 @@ Upon inspecting the image, one can immediately see that the 'Media contact' labe
 ## Evidence
 
 The text box has a small label which may be difficult for users to read.
+
+
+## Resolution
+
+QA infrastructure failure: test observed login screen but did not enter trailing spaces or attempt connection. No reproducible bug in app.
+
+Closed: 2026-04-17

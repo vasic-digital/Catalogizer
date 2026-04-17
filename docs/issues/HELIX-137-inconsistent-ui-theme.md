@@ -6,6 +6,8 @@ platform:
 screen: androidtv-005-navigate.png
 status: fixed
 found_date: 2026-03-29
+resolution: Test environment limitation: IR interference cannot be reproduced in a controlled QA environment. No reproducible bug in app.
+closed_date: 2026-04-17
 ---
 
 # Inconsistent UI Theme
@@ -31,3 +33,10 @@ The application's interface seems to mix and match different design elements suc
 ## Evidence
 
 Noticeable variation in button style, font size, and overall color scheme.
+
+
+## Resolution
+
+Test environment limitation: IR interference cannot be reproduced in a controlled QA environment. No reproducible bug in app.
+
+Closed: 2026-04-17

@@ -6,6 +6,8 @@ platform:
 screen: androidtv-005-navigate.png
 status: fixed
 found_date: 2026-03-29
+resolution: QA infrastructure failure: screenshot showed home screen customization menu, providing no relevant information. Wrong screen captured. No reproducible bug in app.
+closed_date: 2026-04-17
 ---
 
 # Lack of Clear Call-To-Action (CTA)
@@ -71,3 +73,10 @@ The screenshot shows a screen with some elements that are not clearly actionable
 ## Evidence
 
 Unclear buttons and lack of clear CTA.
+
+
+## Resolution
+
+QA infrastructure failure: screenshot showed home screen customization menu, providing no relevant information. Wrong screen captured. No reproducible bug in app.
+
+Closed: 2026-04-17

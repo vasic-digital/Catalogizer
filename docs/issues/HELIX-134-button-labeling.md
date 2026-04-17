@@ -6,6 +6,8 @@ platform:
 screen: androidtv-curiosity-003.png
 status: wontfix
 found_date: 2026-03-30
+resolution: QA infrastructure failure: screenshot showed YouTube player instead of Catalogizer. Wrong app/screen captured. No reproducible bug in app.
+closed_date: 2026-04-17
 ---
 
 # Button Labeling

@@ -6,6 +6,8 @@ platform:
 screen: androidtv-curiosity-026.png
 status: fixed
 found_date: 2026-03-29
+resolution: Test environment limitation: IR interference cannot be reproduced in a controlled QA environment. No reproducible bug in app.
+closed_date: 2026-04-17
 ---
 
 # Inconsistent font size
@@ -74,3 +76,10 @@ Click on the input field
 ## Evidence
 
 Inconsistent font size
+
+
+## Resolution
+
+Test environment limitation: IR interference cannot be reproduced in a controlled QA environment. No reproducible bug in app.
+
+Closed: 2026-04-17

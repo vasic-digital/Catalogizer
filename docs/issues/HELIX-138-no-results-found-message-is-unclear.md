@@ -6,6 +6,8 @@ platform: video-frame
 screen: frame_0001.png
 status: wontfix
 found_date: 2026-03-30
+resolution: QA infrastructure failure: screenshot showed home screen customization menu, providing no relevant information. Wrong screen captured. No reproducible bug in app.
+closed_date: 2026-04-17
 ---
 
 # No results found message is unclear

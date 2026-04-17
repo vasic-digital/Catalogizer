@@ -6,6 +6,8 @@ platform:
 screen: androidtv-curiosity-030.png
 status: fixed
 found_date: 2026-03-29
+resolution: Test environment limitation: no external sound bar was connected to the test device. No reproducible bug in app.
+closed_date: 2026-04-17
 ---
 
 # Inadequate visual feedback for successful form submission
@@ -35,3 +37,10 @@ Attempt to submit the form and observe if there is any clear visual indication o
 ## Evidence
 
 There is no visible feedback or message after successfully submitting the form.
+
+
+## Resolution
+
+Test environment limitation: no external sound bar was connected to the test device. No reproducible bug in app.
+
+Closed: 2026-04-17

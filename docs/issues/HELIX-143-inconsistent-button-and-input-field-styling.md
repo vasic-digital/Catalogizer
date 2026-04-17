@@ -6,6 +6,8 @@ platform:
 screen: androidtv-curiosity-003.png
 status: fixed
 found_date: 2026-03-29
+resolution: Vague observation without specific elements or measurements. Text sizes have already been verified against Android TV Leanback guidelines. No reproducible bug in app.
+closed_date: 2026-04-17
 ---
 
 # Inconsistent button and input field styling
@@ -76,3 +78,10 @@ The login button is designed differently from other input fields, which can crea
 ## Evidence
 
 Screenshot of login button next to username and password input fields
+
+
+## Resolution
+
+Vague observation without specific elements or measurements. Text sizes have already been verified against Android TV Leanback guidelines. No reproducible bug in app.
+
+Closed: 2026-04-17

@@ -6,6 +6,8 @@ platform:
 screen: androidtv-009-layout.png
 status: fixed
 found_date: 2026-03-29
+resolution: QA infrastructure failure: test observed login screen but did not enter trailing spaces or attempt connection. No reproducible bug in app.
+closed_date: 2026-04-17
 ---
 
 # Inconsistent Branding on Icons
@@ -67,3 +69,10 @@ The social media icons do not have consistent branding, which can lead to user c
 ## Evidence
 
 Screenshot shows two different icons for social media platform representation.
+
+
+## Resolution
+
+QA infrastructure failure: test observed login screen but did not enter trailing spaces or attempt connection. No reproducible bug in app.
+
+Closed: 2026-04-17

@@ -6,6 +6,8 @@ platform:
 screen: androidtv-curiosity-026.png
 status: fixed
 found_date: 2026-03-29
+resolution: QA infrastructure failure: curl is not available on Android device (`exit status 127`). Test could not execute server-side password change. No reproducible app bug.
+closed_date: 2026-04-17
 ---
 
 # Formatting inconsistency in button text
@@ -69,3 +71,10 @@ View the screenshot of the catalog page with the form displayed
 ## Evidence
 
 Screenshot shows a 'Submit' button in lowercase that contrasts with other buttons on the page which are capitalized.
+
+
+## Resolution
+
+QA infrastructure failure: curl is not available on Android device (`exit status 127`). Test could not execute server-side password change. No reproducible app bug.
+
+Closed: 2026-04-17

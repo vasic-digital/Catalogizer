@@ -6,6 +6,8 @@ platform:
 screen: androidtv-curiosity-045.png
 status: wontfix
 found_date: 2026-03-30
+resolution: QA infrastructure failure: `settings put system font_scale 2.0` did not visibly change font in screenshot. Verification method unreliable. No reproducible bug in app.
+closed_date: 2026-04-17
 ---
 
 # No Option to Retry

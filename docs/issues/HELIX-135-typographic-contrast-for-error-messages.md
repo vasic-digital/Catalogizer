@@ -6,6 +6,8 @@ platform:
 screen: androidtv-curiosity-046.png
 status: fixed
 found_date: 2026-03-29
+resolution: QA infrastructure failure: screenshot showed channel customization menu instead of video player. Wrong screen captured. No reproducible bug in app.
+closed_date: 2026-04-17
 ---
 
 # Typographic contrast for error messages
@@ -74,3 +76,10 @@ The font color for error messages is not sufficient against the background, maki
 ## Evidence
 
 Screenshot of the application shows an error message with insufficient contrast.
+
+
+## Resolution
+
+QA infrastructure failure: screenshot showed channel customization menu instead of video player. Wrong screen captured. No reproducible bug in app.
+
+Closed: 2026-04-17

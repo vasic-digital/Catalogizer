@@ -6,6 +6,8 @@ platform:
 screen: androidtv-005-layout.png
 status: fixed
 found_date: 2026-03-29
+resolution: QA infrastructure failure: test captured login screen before any login attempt was made. No slow network was actually simulated. No reproducible bug in app.
+closed_date: 2026-04-17
 ---
 
 # Unclear label for icons
@@ -42,3 +44,10 @@ Observe the bottom of the screenshot
 ## Evidence
 
 Lack of clear text labeling icons
+
+
+## Resolution
+
+QA infrastructure failure: test captured login screen before any login attempt was made. No slow network was actually simulated. No reproducible bug in app.
+
+Closed: 2026-04-17

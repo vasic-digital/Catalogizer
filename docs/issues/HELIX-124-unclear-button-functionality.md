@@ -6,6 +6,8 @@ platform:
 screen: androidtv-curiosity-040.png
 status: wontfix
 found_date: 2026-03-30
+resolution: QA infrastructure failure: test showed HTTPS URL typed but never attempted connection. No reproducible bug in app.
+closed_date: 2026-04-17
 ---
 
 # Unclear Button Functionality

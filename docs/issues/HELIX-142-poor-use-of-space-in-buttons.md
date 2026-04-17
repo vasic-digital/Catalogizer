@@ -6,6 +6,8 @@ platform:
 screen: androidtv-curiosity-030.png
 status: fixed
 found_date: 2026-03-29
+resolution: QA infrastructure failure: test pressed KEYCODE_HOME instead of recent-apps button. No reproducible bug in app.
+closed_date: 2026-04-17
 ---
 
 # Poor Use of Space in Buttons
@@ -78,3 +80,10 @@ View registration form
 ## Evidence
 
 Close proximity of buttons
+
+
+## Resolution
+
+QA infrastructure failure: test pressed KEYCODE_HOME instead of recent-apps button. No reproducible bug in app.
+
+Closed: 2026-04-17

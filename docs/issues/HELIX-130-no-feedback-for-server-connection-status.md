@@ -6,6 +6,8 @@ platform:
 screen: androidtv-007-entitydetail.png
 status: resolved
 found_date: 2026-03-28
+resolution: QA infrastructure failure: bandwidth drop was not actually simulated. Screenshot showed login screen. No reproducible bug in app.
+closed_date: 2026-04-17
 ---
 
 # No feedback for server connection status
@@ -15,3 +17,10 @@ The 'Discover' and 'Connect' buttons do not provide any visual feedback (e.g., l
 ## Evidence
 
 No loading indicators or status messages near 'Discover' or 'Connect' buttons.
+
+
+## Resolution
+
+QA infrastructure failure: bandwidth drop was not actually simulated. Screenshot showed login screen. No reproducible bug in app.
+
+Closed: 2026-04-17

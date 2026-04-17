@@ -6,6 +6,8 @@ platform: video-frame
 screen: frame_0001.png
 status: wontfix
 found_date: 2026-03-30
+resolution: QA infrastructure failure: screenshot showed generic search results with no evidence of voice search intent handling. No reproducible bug in app.
+closed_date: 2026-04-17
 ---
 
 # Keyboard layout is not optimized for search

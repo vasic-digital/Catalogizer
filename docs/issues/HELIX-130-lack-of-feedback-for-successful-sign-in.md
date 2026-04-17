@@ -6,6 +6,8 @@ platform:
 screen: androidtv-curiosity-013.png
 status: fixed
 found_date: 2026-03-29
+resolution: QA infrastructure failure: bandwidth drop was not actually simulated. Screenshot showed login screen. No reproducible bug in app.
+closed_date: 2026-04-17
 ---
 
 # Lack of Feedback for Successful Sign-in
@@ -71,3 +73,10 @@ N/A
 ## Evidence
 
 No visual indicators are provided on the screenshot to confirm a successful sign-in.
+
+
+## Resolution
+
+QA infrastructure failure: bandwidth drop was not actually simulated. Screenshot showed login screen. No reproducible bug in app.
+
+Closed: 2026-04-17

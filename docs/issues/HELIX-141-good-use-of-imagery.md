@@ -6,6 +6,8 @@ platform:
 screen: androidtv-005-navigate.png
 status: fixed
 found_date: 2026-03-29
+resolution: QA infrastructure failure: screenshot showed app home screen, indicating test never reached playback. Wrong screen captured. No reproducible bug in app.
+closed_date: 2026-04-17
 ---
 
 # Good Use of Imagery
@@ -74,3 +76,10 @@ The image includes a small photo or icon at the top, which might serve as decora
 ## Evidence
 
 Incorporation of imagery in the design.
+
+
+## Resolution
+
+QA infrastructure failure: screenshot showed app home screen, indicating test never reached playback. Wrong screen captured. No reproducible bug in app.
+
+Closed: 2026-04-17

@@ -6,6 +6,8 @@ platform:
 screen: androidtv-curiosity-040.png
 status: wontfix
 found_date: 2026-03-30
+resolution: QA infrastructure failure: test observed login screen but did not enter trailing spaces or attempt connection. No reproducible bug in app.
+closed_date: 2026-04-17
 ---
 
 # Insufficient Error Recovery Options

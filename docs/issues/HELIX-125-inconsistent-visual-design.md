@@ -6,6 +6,8 @@ platform:
 screen: androidtv-curiosity-022.png
 status: fixed
 found_date: 2026-03-29
+resolution: QA infrastructure failure: screenshot showed keyboard/URL bar instead of media playback. Test failed to reach playback step.
+closed_date: 2026-04-17
 ---
 
 # Inconsistent visual design
@@ -68,3 +70,10 @@ Upon inspecting the image, one can immediately see that the text box has a diffe
 ## Evidence
 
 The input field has a different font size and style compared to other elements.
+
+
+## Resolution
+
+QA infrastructure failure: screenshot showed keyboard/URL bar instead of media playback. Test failed to reach playback step.
+
+Closed: 2026-04-17

@@ -6,6 +6,8 @@ platform:
 screen: androidtv-curiosity-030.png
 status: fixed
 found_date: 2026-03-29
+resolution: QA infrastructure failure: bandwidth drop was not actually simulated. Screenshot showed login screen. No reproducible bug in app.
+closed_date: 2026-04-17
 ---
 
 # Misaligned and inconsistent text alignment
@@ -71,3 +73,10 @@ Examine the form layout for inconsistent text alignment with input fields.
 ## Evidence
 
 The 'Sign in' label is not properly aligned to the left of its input field, and the 'Catalog number' label is misaligned to the right.
+
+
+## Resolution
+
+QA infrastructure failure: bandwidth drop was not actually simulated. Screenshot showed login screen. No reproducible bug in app.
+
+Closed: 2026-04-17

@@ -6,6 +6,8 @@ platform:
 screen: androidtv-curiosity-019.png
 status: wontfix
 found_date: 2026-03-30
+resolution: Test environment limitation: HEVC playback depends on device hardware decoder. Test did not reach playback. No reproducible bug in app.
+closed_date: 2026-04-17
 ---
 
 # Lack of Clear Instruction

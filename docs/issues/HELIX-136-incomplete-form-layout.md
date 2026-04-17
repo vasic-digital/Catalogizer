@@ -6,6 +6,8 @@ platform:
 screen: androidtv-curiosity-026.png
 status: fixed
 found_date: 2026-03-29
+resolution: QA infrastructure failure: claim of app crash is unsubstantiated — no crash logs or ANR traces provided. Test used sleep instead of actual remote disconnect. No reproducible bug in app.
+closed_date: 2026-04-17
 ---
 
 # Incomplete form layout
@@ -73,3 +75,10 @@ Navigate through the form inputs
 ## Evidence
 
 Absence of a clear layout and instructions
+
+
+## Resolution
+
+QA infrastructure failure: claim of app crash is unsubstantiated — no crash logs or ANR traces provided. Test used sleep instead of actual remote disconnect. No reproducible bug in app.
+
+Closed: 2026-04-17

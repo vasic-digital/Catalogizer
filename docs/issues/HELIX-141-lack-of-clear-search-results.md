@@ -6,6 +6,8 @@ platform: video-frame
 screen: frame_0002.png
 status: wontfix
 found_date: 2026-03-30
+resolution: QA infrastructure failure: screenshot showed app home screen, indicating test never reached playback. Wrong screen captured. No reproducible bug in app.
+closed_date: 2026-04-17
 ---
 
 # Lack of Clear Search Results

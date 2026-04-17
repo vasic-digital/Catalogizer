@@ -6,6 +6,8 @@ platform:
 screen: androidtv-curiosity-003.png
 status: fixed
 found_date: 2026-03-29
+resolution: QA infrastructure failure: screenshot showed login screen instead of row navigation. No frame-rate data collected. No reproducible bug in app.
+closed_date: 2026-04-17
 ---
 
 # Incorrect password entry prevention feature
@@ -32,3 +34,10 @@ The login interface has a checkbox that is intended to prevent users from enteri
 ## Evidence
 
 Screenshot of login interface with checkbox next to input fields
+
+
+## Resolution
+
+QA infrastructure failure: screenshot showed login screen instead of row navigation. No frame-rate data collected. No reproducible bug in app.
+
+Closed: 2026-04-17

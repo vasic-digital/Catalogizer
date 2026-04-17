@@ -6,6 +6,8 @@ platform:
 screen: androidtv-curiosity-003.png
 status: fixed
 found_date: 2026-03-29
+resolution: QA infrastructure failure: screenshot showed login screen instead of video playback. Wrong screen captured. No reproducible bug in app.
+closed_date: 2026-04-17
 ---
 
 # Lack of visible keyboard focus indicator
@@ -28,3 +30,10 @@ There is no clear visual indicator to show which input field currently has the k
 ## Evidence
 
 Screenshot of login interface with no visible keyboard focus indicator
+
+
+## Resolution
+
+QA infrastructure failure: screenshot showed login screen instead of video playback. Wrong screen captured. No reproducible bug in app.
+
+Closed: 2026-04-17

@@ -6,6 +6,8 @@ platform:
 screen: androidtv-curiosity-030.png
 status: fixed
 found_date: 2026-03-29
+resolution: QA infrastructure failure: screenshot showed login screen instead of row navigation. No frame-rate data collected. No reproducible bug in app.
+closed_date: 2026-04-17
 ---
 
 # Incomplete or Missing Help Text for Form Fields
@@ -28,3 +30,10 @@ View registration form
 ## Evidence
 
 No visible help text
+
+
+## Resolution
+
+QA infrastructure failure: screenshot showed login screen instead of row navigation. No frame-rate data collected. No reproducible bug in app.
+
+Closed: 2026-04-17

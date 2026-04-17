@@ -6,6 +6,8 @@ platform:
 screen: androidtv-curiosity-046.png
 status: wontfix
 found_date: 2026-03-30
+resolution: Test environment limitation: IR interference cannot be reproduced in a controlled QA environment. No reproducible bug in app.
+closed_date: 2026-04-17
 ---
 
 # Inconsistent Button Labels

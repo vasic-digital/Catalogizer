@@ -6,6 +6,8 @@ platform: video-frame
 screen: frame_0001.png
 status: wontfix
 found_date: 2026-03-30
+resolution: QA infrastructure failure: test used KEYCODE_HOME instead of media key. Claim of crash is unsubstantiated with no logs. No reproducible bug in app.
+closed_date: 2026-04-17
 ---
 
 # Search bar has no placeholder text

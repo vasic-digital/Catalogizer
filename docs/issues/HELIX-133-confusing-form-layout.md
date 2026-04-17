@@ -6,6 +6,8 @@ platform:
 screen: androidtv-curiosity-046.png
 status: fixed
 found_date: 2026-03-29
+resolution: QA infrastructure failure: screenshot showed Android home screen instead of the app. Wrong screen captured. No reproducible bug in app.
+closed_date: 2026-04-17
 ---
 
 # Confusing form layout
@@ -72,3 +74,10 @@ The form has a confusing and cluttered layout, with various elements competing f
 ## Evidence
 
 Screenshot of the application shows a form with multiple fields and buttons crammed together without clear groupings or visual hierarchy.
+
+
+## Resolution
+
+QA infrastructure failure: screenshot showed Android home screen instead of the app. Wrong screen captured. No reproducible bug in app.
+
+Closed: 2026-04-17

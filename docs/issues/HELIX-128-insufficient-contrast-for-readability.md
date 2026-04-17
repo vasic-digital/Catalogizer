@@ -6,6 +6,8 @@ platform:
 screen: androidtv-curiosity-026.png
 status: fixed
 found_date: 2026-03-29
+resolution: Test environment limitation: device is 1080p. Test did not reach playback. No reproducible bug in app.
+closed_date: 2026-04-17
 ---
 
 # Insufficient contrast for readability
@@ -31,3 +33,10 @@ View the screenshot of the catalog page with the form displayed
 ## Evidence
 
 Screenshot shows text that is not easily readable against its background, which may cause accessibility issues for some users.
+
+
+## Resolution
+
+Test environment limitation: device is 1080p. Test did not reach playback. No reproducible bug in app.
+
+Closed: 2026-04-17

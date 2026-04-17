@@ -6,6 +6,8 @@ platform:
 screen: androidtv-009-layout.png
 status: fixed
 found_date: 2026-03-29
+resolution: QA infrastructure failure: screenshot showed keyboard/URL bar instead of media playback. Test failed to reach playback step.
+closed_date: 2026-04-17
 ---
 
 # Poor Text Legibility
@@ -69,3 +71,10 @@ The text in the screenshot is not legible, making it difficult for users to unde
 ## Evidence
 
 Screenshot shows text that is too small or of a low resolution to read.
+
+
+## Resolution
+
+QA infrastructure failure: screenshot showed keyboard/URL bar instead of media playback. Test failed to reach playback step.
+
+Closed: 2026-04-17

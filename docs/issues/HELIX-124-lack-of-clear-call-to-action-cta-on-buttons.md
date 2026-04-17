@@ -6,6 +6,8 @@ platform:
 screen: androidtv-009-layout.png
 status: fixed
 found_date: 2026-03-29
+resolution: QA infrastructure failure: test showed HTTPS URL typed but never attempted connection. No reproducible bug in app.
+closed_date: 2026-04-17
 ---
 
 # Lack of Clear Call to Action (CTA) on Buttons
@@ -68,3 +70,10 @@ The buttons at the bottom of the screenshot do not have clear labels or icons, w
 ## Evidence
 
 Screenshot shows buttons without clear labels or icons.
+
+
+## Resolution
+
+QA infrastructure failure: test showed HTTPS URL typed but never attempted connection. No reproducible bug in app.
+
+Closed: 2026-04-17

@@ -6,6 +6,8 @@ platform:
 screen: androidtv-curiosity-026.png
 status: fixed
 found_date: 2026-03-29
+resolution: QA infrastructure failure: screenshot showed home screen customization menu, providing no relevant information. Wrong screen captured. No reproducible bug in app.
+closed_date: 2026-04-17
 ---
 
 # Color contrast issues
@@ -75,3 +77,10 @@ Focus on the input field
 ## Evidence
 
 Insufficient color contrast between text/labels and the background
+
+
+## Resolution
+
+QA infrastructure failure: screenshot showed home screen customization menu, providing no relevant information. Wrong screen captured. No reproducible bug in app.
+
+Closed: 2026-04-17

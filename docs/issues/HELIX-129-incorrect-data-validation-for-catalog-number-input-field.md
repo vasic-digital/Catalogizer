@@ -6,6 +6,8 @@ platform:
 screen: androidtv-curiosity-030.png
 status: fixed
 found_date: 2026-03-29
+resolution: Test environment limitation: HEVC playback depends on device hardware decoder. Test did not reach playback. No reproducible bug in app.
+closed_date: 2026-04-17
 ---
 
 # Incorrect data validation for Catalog number input field
@@ -34,3 +36,10 @@ Navigate to the 'Create new catalog' form and attempt to enter an invalid catalo
 ## Evidence
 
 The input field is allowing non-numeric characters or any other format, which suggests a lack of proper data validation.
+
+
+## Resolution
+
+Test environment limitation: HEVC playback depends on device hardware decoder. Test did not reach playback. No reproducible bug in app.
+
+Closed: 2026-04-17

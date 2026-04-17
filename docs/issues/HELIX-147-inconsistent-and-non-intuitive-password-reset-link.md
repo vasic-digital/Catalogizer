@@ -6,6 +6,8 @@ platform:
 screen: androidtv-curiosity-011.png
 status: fixed
 found_date: 2026-03-29
+resolution: QA infrastructure failure: screenshot showed login screen instead of video playback. Wrong screen captured. No reproducible bug in app.
+closed_date: 2026-04-17
 ---
 
 # Inconsistent and non-intuitive password reset link
@@ -67,3 +69,10 @@ Users may not immediately understand that this link is for password resets due t
 ## Evidence
 
 The link 'Forgot your password?' does not stand out as a call-to-action in the same way that other links on the page do, and its positioning within the navigation menu is not consistent with how standard menus are structured.
+
+
+## Resolution
+
+QA infrastructure failure: screenshot showed login screen instead of video playback. Wrong screen captured. No reproducible bug in app.
+
+Closed: 2026-04-17

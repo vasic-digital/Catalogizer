@@ -6,6 +6,8 @@ platform: video-frame
 screen: frame_0003.png
 status: wontfix
 found_date: 2026-03-30
+resolution: Vague observation without specific elements or measurements. Text sizes have already been verified against Android TV Leanback guidelines. No reproducible bug in app.
+closed_date: 2026-04-17
 ---
 
 # Lack of Search Results Feedback

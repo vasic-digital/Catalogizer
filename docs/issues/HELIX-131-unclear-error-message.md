@@ -6,6 +6,8 @@ platform:
 screen: androidtv-curiosity-045.png
 status: wontfix
 found_date: 2026-03-30
+resolution: Test environment limitation: no external sound bar was connected to the test device. No reproducible bug in app.
+closed_date: 2026-04-17
 ---
 
 # Unclear Error Message
