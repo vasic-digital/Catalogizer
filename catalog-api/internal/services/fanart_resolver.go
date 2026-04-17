@@ -53,7 +53,10 @@ func (r *FanartTVResolver) Name() string { return "fanarttv" }
 func (r *FanartTVResolver) Priority() int { return r.priority }
 
 // CanResolve reports whether the resolver is configured and the
-// request carries a TMDB id we can look up.
+// request carries the platform-appropriate id. The Fanart.tv v3 API
+// requires an IMDB id (tt-prefixed) for movies and a TheTVDB numeric
+// id for TV content — TMDB ids are not accepted by either endpoint.
+// Fixes B1 from docs/nexus/remaining-work.md.
 func (r *FanartTVResolver) CanResolve(_ context.Context, req *resolver.ResolveRequest) bool {
 	if r.apiKey == "" || r.fanart == nil {
 		return false
@@ -61,7 +64,13 @@ func (r *FanartTVResolver) CanResolve(_ context.Context, req *resolver.ResolveRe
 	if req == nil || req.Metadata == nil {
 		return false
 	}
-	return req.Metadata["tmdb_id"] != "" || req.Metadata["imdb_id"] != ""
+	switch strings.ToLower(req.EntityType) {
+	case "movie", "movies":
+		return req.Metadata["imdb_id"] != ""
+	case "tv_show", "tv_season", "tv_episode":
+		return req.Metadata["tvdb_id"] != ""
+	}
+	return false
 }
 
 // Resolve queries Fanart.tv and returns the first high-res poster.
@@ -69,9 +78,9 @@ func (r *FanartTVResolver) Resolve(ctx context.Context, req *resolver.ResolveReq
 	if r.apiKey == "" || r.fanart == nil {
 		return nil, errors.New("fanarttv: resolver not configured")
 	}
-	id := req.Metadata["tmdb_id"]
+	id := r.providerID(req)
 	if id == "" {
-		id = req.Metadata["imdb_id"]
+		return nil, fmt.Errorf("fanarttv: no platform-appropriate id in metadata for %s (movies need imdb_id, TV needs tvdb_id)", req.EntityType)
 	}
 	posters, err := r.lookupPosters(ctx, req.EntityType, id)
 	if err != nil {
@@ -81,6 +90,23 @@ func (r *FanartTVResolver) Resolve(ctx context.Context, req *resolver.ResolveReq
 		return nil, errors.New("fanarttv: no posters returned")
 	}
 	return r.download(ctx, posters[0])
+}
+
+// providerID picks the correct id for the entity type. Movies must
+// supply IMDB ids (imdb_id / "tt"-prefixed); TV content must supply
+// TheTVDB numeric ids (tvdb_id). TMDB ids cannot be used with the
+// Fanart.tv v3 API — see docs/nexus/remaining-work.md B1.
+func (r *FanartTVResolver) providerID(req *resolver.ResolveRequest) string {
+	if req == nil || req.Metadata == nil {
+		return ""
+	}
+	switch strings.ToLower(req.EntityType) {
+	case "movie", "movies":
+		return req.Metadata["imdb_id"]
+	case "tv_show", "tv_season", "tv_episode":
+		return req.Metadata["tvdb_id"]
+	}
+	return ""
 }
 
 // lookupPosters chooses the correct Fanart.tv endpoint based on entity

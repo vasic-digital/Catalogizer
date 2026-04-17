@@ -223,20 +223,25 @@ func (g *QualityGate) persist(ctx context.Context, req *resolver.ResolveRequest,
 	if failReason == "" && score.Verdict == quality.Pass {
 		failReason = ""
 	}
+	// Closes W3 from docs/nexus/remaining-work.md: every string that
+	// may carry provider-originated content is passed through the
+	// project's bluemonday.StrictPolicy before persistence so a
+	// compromised upstream cannot inject HTML/JS into the admin
+	// tables.
 	return g.repo.Upsert(ctx, &repository.ImageQualityAssessment{
-		EntityType:    req.EntityType,
+		EntityType:    SanitizeMetadataString(req.EntityType),
 		EntityID:      entityID,
-		Variant:       variant,
-		Source:        g.source,
-		ProviderRef:   req.SourceHint,
+		Variant:       SanitizeMetadataString(variant),
+		Source:        SanitizeMetadataString(g.source),
+		ProviderRef:   SanitizeMetadataString(req.SourceHint),
 		Width:         score.Width,
 		Height:        score.Height,
 		BlurVar:       score.BlurVariance,
 		BPP:           score.BytesPerPixel,
 		AspectRatio:   score.AspectRatio,
 		Verdict:       score.Verdict.String(),
-		FailReason:    failReason,
-		Format:        score.Format,
+		FailReason:    SanitizeMetadataString(failReason),
+		Format:        SanitizeMetadataString(score.Format),
 		AttemptCount:  1,
 		AssessedAt:    time.Now(),
 		LastCheckedAt: time.Now(),

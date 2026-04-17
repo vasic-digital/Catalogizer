@@ -25,16 +25,22 @@ func TestFanartTVResolver_InertWithoutKey(t *testing.T) {
 func TestFanartTVResolver_ActivatesWithKey(t *testing.T) {
 	t.Setenv("FANART_TV_API_KEY", "test-key")
 	r := NewFanartTVResolver(11)
-	req := &resolver.ResolveRequest{EntityType: "movie", Metadata: map[string]string{"tmdb_id": "603"}}
+	// Post-B1 fix: Fanart.tv movies require imdb_id (not tmdb_id).
+	// See docs/nexus/remaining-work.md and the B1 regression test in
+	// provider_bug_fixes_test.go for the underlying API constraint.
+	req := &resolver.ResolveRequest{EntityType: "movie", Metadata: map[string]string{"imdb_id": "tt0133093"}}
 	if !r.CanResolve(context.Background(), req) {
-		t.Error("resolver should activate with key + tmdb_id")
+		t.Error("resolver should activate with key + imdb_id for movies")
 	}
 	req2 := &resolver.ResolveRequest{EntityType: "movie", Metadata: map[string]string{}}
 	if r.CanResolve(context.Background(), req2) {
 		t.Error("resolver should not activate without an id")
 	}
-	req3 := &resolver.ResolveRequest{EntityType: "book", Metadata: map[string]string{"tmdb_id": "1"}}
-	_ = req3 // Fanart accepts any tmdb_id; actual dispatch falls through on unsupported entity types
+	// Unsupported entity types never activate even with an id.
+	req3 := &resolver.ResolveRequest{EntityType: "book", Metadata: map[string]string{"imdb_id": "tt1"}}
+	if r.CanResolve(context.Background(), req3) {
+		t.Error("Fanart.tv should not claim 'book' entities")
+	}
 }
 
 func TestIGDBResolver_InertWithoutCreds(t *testing.T) {
