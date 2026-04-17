@@ -92,6 +92,9 @@ func RegisterAll(svc *services.ChallengeService) error {
 	RegisterImageQualityChallenges(svc)
 	RegisterExtendedImageQualityChallenges(svc)
 	RegisterFinalImageQualityChallenges(svc)
+
+	// Nexus-authored Catalogizer challenges (CH-NX-WEBFLOW-*, ...)
+	RegisterNexusChallenges(svc)
 	svc.Register(NewSecurityChallenge())             // CH-034: Security
 	svc.Register(NewConfigWizardChallenge())         // CH-035: Configuration wizard
 
