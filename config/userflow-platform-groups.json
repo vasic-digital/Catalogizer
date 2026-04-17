@@ -1,0 +1,38 @@
+{
+  "api": {
+    "name": "api",
+    "services": ["catalog-api", "postgres", "redis"],
+    "cpuLimit": 2.0,
+    "memoryMB": 4096
+  },
+  "web": {
+    "name": "web",
+    "services": ["catalog-api", "catalog-web", "postgres", "redis"],
+    "cpuLimit": 3.0,
+    "memoryMB": 6144
+  },
+  "desktop": {
+    "name": "desktop",
+    "services": ["catalog-api", "postgres", "redis"],
+    "cpuLimit": 2.0,
+    "memoryMB": 4096
+  },
+  "wizard": {
+    "name": "wizard",
+    "services": ["catalog-api", "postgres", "redis"],
+    "cpuLimit": 2.0,
+    "memoryMB": 4096
+  },
+  "android": {
+    "name": "android",
+    "services": ["catalog-api", "postgres", "redis"],
+    "cpuLimit": 2.0,
+    "memoryMB": 4096
+  },
+  "tv": {
+    "name": "tv",
+    "services": ["catalog-api", "postgres", "redis"],
+    "cpuLimit": 2.0,
+    "memoryMB": 4096
+  }
+}

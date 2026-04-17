@@ -765,8 +765,14 @@ func main() {
 		Database:     cfg.Database.Type,
 	}
 
-	// Start UDP multicast announcer for LAN discovery
-	announcer := broadcast.NewAnnouncer(serviceInfo, broadcast.DefaultConfig())
+	// Start UDP multicast announcer for LAN discovery. The Discovery
+	// library is project-agnostic: catalog-api pins the legacy
+	// "catalogizer" wire namespace so existing mobile/web/desktop
+	// clients (which expect "catalogizer-announce" envelopes + the
+	// "CATALOGIZER_DISCOVER" probe body) keep working unchanged.
+	discoveryCfg := broadcast.DefaultConfig()
+	discoveryCfg.MessageNamespace = "catalogizer"
+	announcer := broadcast.NewAnnouncer(serviceInfo, discoveryCfg)
 	if err := announcer.Start(); err != nil {
 		logger.Warn("Failed to start discovery announcer", zap.Error(err))
 	} else {
@@ -774,9 +780,14 @@ func main() {
 	}
 	defer announcer.Stop()
 
-	// Start UDP broadcast responder for on-demand discovery
-	// Clients send "CATALOGIZER_DISCOVER" to UDP port 19820 and get service info back
-	responder := broadcast.NewResponder(serviceInfo, broadcast.DefaultResponderPort)
+	// Start UDP broadcast responder for on-demand discovery.
+	// Clients send "CATALOGIZER_DISCOVER" to UDP port 19820 and get
+	// service info back — the "catalogizer" namespace preserves the
+	// historical wire identity on this project.
+	responder := broadcast.NewResponderWithConfig(serviceInfo, broadcast.Config{
+		Port:             broadcast.DefaultResponderPort,
+		MessageNamespace: "catalogizer",
+	})
 	if err := responder.Start(); err != nil {
 		logger.Warn("Failed to start discovery responder", zap.Error(err))
 	} else {
