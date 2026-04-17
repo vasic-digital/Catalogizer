@@ -143,9 +143,23 @@ class MainActivity : ComponentActivity() {
     private fun processDeepLinkIntent(intent: Intent?) {
         val deepLinkMediaId = intent?.getLongExtra("deep_link_media_id", -1L) ?: -1L
         val deepLinkAction = intent?.getStringExtra("deep_link_action")
-        if (deepLinkMediaId > 0) {
-            mainViewModel.setDeepLink(deepLinkMediaId, deepLinkAction)
-            Log.d("MainActivity", "Deep link processed: mediaId=$deepLinkMediaId, action=$deepLinkAction")
+        val browseCategory = intent?.getStringExtra("deep_link_browse_category")
+        val isHome = intent?.getBooleanExtra("deep_link_is_home", false) == true
+
+        when {
+            browseCategory != null -> {
+                mainViewModel.setBrowseCategory(browseCategory)
+                Log.d("MainActivity", "Deep link processed: browseCategory=$browseCategory")
+            }
+            isHome -> {
+                mainViewModel.setBrowseCategory(null)
+                mainViewModel.consumeDeepLink()
+                Log.d("MainActivity", "Deep link processed: home")
+            }
+            deepLinkMediaId > 0 -> {
+                mainViewModel.setDeepLink(deepLinkMediaId, deepLinkAction)
+                Log.d("MainActivity", "Deep link processed: mediaId=$deepLinkMediaId, action=$deepLinkAction")
+            }
         }
     }
 }
@@ -165,6 +179,7 @@ fun CatalogizerTVApp(
     val isLoading by mainViewModel.isLoading.collectAsStateWithLifecycle()
     val deepLinkMediaId by mainViewModel.deepLinkMediaId.collectAsStateWithLifecycle()
     val deepLinkAction by mainViewModel.deepLinkAction.collectAsStateWithLifecycle()
+    val browseCategory by mainViewModel.browseCategory.collectAsStateWithLifecycle()
 
     LaunchedEffect(Unit) {
         mainViewModel.initializeApp()
@@ -185,7 +200,8 @@ fun CatalogizerTVApp(
             searchViewModel = searchViewModel,
             mainViewModel = mainViewModel,
             deepLinkMediaId = deepLinkMediaId,
-            deepLinkAction = deepLinkAction
+            deepLinkAction = deepLinkAction,
+            browseCategory = browseCategory
         )
     }
 }

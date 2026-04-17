@@ -53,6 +53,7 @@ fun TVNavigation(
     mainViewModel: MainViewModel? = null,
     deepLinkMediaId: Long = -1L,
     deepLinkAction: String? = null,
+    browseCategory: String? = null,
     navController: NavHostController = rememberNavController()
 ) {
     val startDestination = if (isAuthenticated) TVScreen.Home.route else TVScreen.Login.route
@@ -177,6 +178,14 @@ fun TVNavigation(
                 else -> navController.navigate(TVScreen.MediaDetail.createRoute(deepLinkMediaId))
             }
             mainViewModel?.consumeDeepLink()
+        }
+    }
+
+    // Handle channel header browse deep links (catalogizer://browse/{type})
+    LaunchedEffect(browseCategory) {
+        if (!browseCategory.isNullOrBlank() && isAuthenticated) {
+            navController.navigate(TVScreen.Category.createRoute(browseCategory))
+            mainViewModel?.consumeBrowseCategory()
         }
     }
 }

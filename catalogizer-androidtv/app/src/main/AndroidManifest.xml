@@ -87,6 +87,7 @@
             android:exported="true"
             android:theme="@android:style/Theme.Translucent.NoTitleBar"
             android:screenOrientation="landscape">
+            <!-- Media tile deep links: catalogizer://media/{id}?type={type} -->
             <intent-filter>
                 <action android:name="android.intent.action.VIEW" />
                 <category android:name="android.intent.category.DEFAULT" />
@@ -94,6 +95,24 @@
                 <data
                     android:scheme="catalogizer"
                     android:host="media" />
+            </intent-filter>
+            <!-- Channel header deep link: catalogizer://home -->
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <data
+                    android:scheme="catalogizer"
+                    android:host="home" />
+            </intent-filter>
+            <!-- Category channel header deep links: catalogizer://browse/{type} -->
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <data
+                    android:scheme="catalogizer"
+                    android:host="browse" />
             </intent-filter>
         </activity>
 

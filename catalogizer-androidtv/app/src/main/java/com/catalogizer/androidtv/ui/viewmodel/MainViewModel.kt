@@ -33,6 +33,9 @@ class MainViewModel(
     private val _deepLinkAction = MutableStateFlow<String?>(null)
     val deepLinkAction: StateFlow<String?> = _deepLinkAction.asStateFlow()
 
+    private val _browseCategory = MutableStateFlow<String?>(null)
+    val browseCategory: StateFlow<String?> = _browseCategory.asStateFlow()
+
     /**
      * Gate that blocks [initializeApp] until QA auto-login completes.
      * Set via [setQaLoginGate] before [initializeApp] is called.
@@ -63,6 +66,14 @@ class MainViewModel(
     fun consumeDeepLink() {
         _deepLinkMediaId.value = -1L
         _deepLinkAction.value = null
+    }
+
+    fun setBrowseCategory(category: String?) {
+        _browseCategory.value = category
+    }
+
+    fun consumeBrowseCategory() {
+        _browseCategory.value = null
     }
 
     fun initializeApp() {
