@@ -1060,6 +1060,47 @@ func main() {
 		api.POST("/media/:id/refresh", mediaQueryHandler.RefreshMediaMetadata)
 		api.GET("/media/:id/quality", mediaQueryHandler.GetMediaQuality)
 
+		// Image-quality manual revalidation endpoint: operators post an
+		// empty body to force the QualityRevalidator to sweep stale
+		// rows now, bypassing the 7-day natural tick. Accepts an
+		// optional { "stale_age_seconds": N } override to scope the
+		// sweep window for the single call.
+		api.POST("/admin/image-quality/revalidate", func(c *gin.Context) {
+			var req struct {
+				StaleAgeSeconds int `json:"stale_age_seconds"`
+				Limit           int `json:"limit"`
+			}
+			_ = c.ShouldBindJSON(&req)
+			staleAge := 7 * 24 * 3600
+			if req.StaleAgeSeconds > 0 {
+				staleAge = req.StaleAgeSeconds
+			}
+			limit := 256
+			if req.Limit > 0 && req.Limit <= 4096 {
+				limit = req.Limit
+			}
+			ctx := c.Request.Context()
+			cutoff := time.Now().Add(-time.Duration(staleAge) * time.Second)
+			rows, err := imageQualityRepo.SampleForRevalidation(ctx, cutoff, limit)
+			if err != nil {
+				c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+				return
+			}
+			touched := 0
+			for _, row := range rows {
+				if err := imageQualityRepo.TouchLastChecked(ctx, row.ID); err != nil {
+					continue
+				}
+				touched++
+			}
+			c.JSON(http.StatusOK, gin.H{
+				"sampled":          len(rows),
+				"touched":          touched,
+				"stale_age_seconds": staleAge,
+				"limit":            limit,
+			})
+		})
+
 		// Cover art batch generation — creates video-frame thumbnails for items
 		// that don't have cover art yet.  This is useful when external CDNs are
 		// unreachable and the backend must generate its own covers.
