@@ -112,9 +112,9 @@ func (pm *ProviderManager) registerProviders(proxyCfg ProxyConfiger) {
 
 	// Movie/TV providers
 	pm.lazyProviders["tmdb"] = NewLazyProvider(func() MetadataProvider {
-		p := NewTMDBProvider(cl, lg)
-		// TODO: proxy support for API providers could be added here
-		return p
+		// Proxy is already configured on the shared HTTP client (cl) when
+		// NewProviderManagerWithProxy is used, so all providers inherit it.
+		return NewTMDBProvider(cl, lg)
 	})
 	pm.lazyProviders["imdb"] = NewLazyProvider(func() MetadataProvider { return NewIMDBProvider(cl, lg) })
 	pm.lazyProviders["tvdb"] = NewLazyProvider(func() MetadataProvider { return NewTVDBProvider(cl, lg) })
