@@ -1199,8 +1199,17 @@ func main() {
 			conversionGroup.GET("/formats", func(c *gin.Context) { getConversionHandler().GetSupportedFormats(c) })
 		}
 
-		// Admin endpoints (system info, user management, storage, backups)
+		// Admin endpoints (system info, user management, storage, backups).
+		// Closes W2 from docs/nexus/remaining-work.md: double-submit-cookie
+		// CSRF guard derived from the JWT secret so mutating admin calls
+		// reject cross-origin POST/PUT/DELETE. GET/HEAD/OPTIONS mint a
+		// fresh token on the X-CSRF-Token response header + cookie.
 		adminGroup := api.Group("/admin")
+		if csrfGuard, csrfErr := root_middleware.NewCSRF([]byte(jwtSecret)); csrfErr != nil {
+			logging.Warnf("CSRF guard disabled on admin group: %v", csrfErr)
+		} else {
+			adminGroup.Use(csrfGuard.Handler())
+		}
 		{
 			adminGroup.GET("/system-info", adminHandler.GetSystemInfo)
 			adminGroup.GET("/users", adminHandler.GetUsers)
