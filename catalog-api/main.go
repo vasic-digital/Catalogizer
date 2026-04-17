@@ -633,6 +633,9 @@ func main() {
 		gate(services.NewCachedFileResolver(filepath.Join(".", "cache", "cover_art"), 1), "cache"),
 		gate(services.NewExternalMetadataResolver(databaseDB, 2), "external_metadata"),
 		gate(services.NewLocalScanResolver(4), "local_scan"),
+		gate(services.NewFanartTVResolver(11), "fanart"),
+		gate(services.NewCoverArtArchiveResolver(21), "cover_art_archive"),
+		gate(services.NewIGDBResolver(22), "igdb"),
 		gate(services.NewLLMImageSearchResolver(90), "llm_image_search"),
 	)
 	assetManager := manager.New(
