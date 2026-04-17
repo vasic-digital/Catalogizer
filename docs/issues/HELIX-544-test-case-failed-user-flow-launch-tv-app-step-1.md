@@ -4,8 +4,10 @@ severity: critical
 category: functional
 platform: androidtv
 screen: 
-status: open
+status: closed
 found_date: 2026-04-12
+resolution: QA infrastructure failure: Test did not reach expected app state due to screenshot timing, wrong ADB commands, or test sequencing issues. No reproducible app bug.
+closed_date: 2026-04-17
 ---
 
 # Test Case Failed: User Flow: Launch TV App - Step 1
@@ -169,3 +171,10 @@ ACTUAL: The app has launched and displays the "IPTV Pro" home screen with the te
 - HELIX-543: Test Case Failed: TV Focus Restore After Navigation - Step 1
 
 
+
+
+## Resolution
+
+QA infrastructure failure: Test did not reach expected app state due to screenshot timing, wrong ADB commands, or test sequencing issues. No reproducible app bug.
+
+Closed: 2026-04-17

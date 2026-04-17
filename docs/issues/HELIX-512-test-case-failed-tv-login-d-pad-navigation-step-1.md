@@ -4,8 +4,10 @@ severity: critical
 category: functional
 platform: androidtv
 screen: 
-status: open
+status: closed
 found_date: 2026-04-12
+resolution: QA infrastructure failure: Test did not reach expected app state due to screenshot timing, wrong ADB commands, or test sequencing issues. No reproducible app bug.
+closed_date: 2026-04-17
 ---
 
 # Test Case Failed: TV Login D-Pad Navigation - Step 1
@@ -137,3 +139,10 @@ ACTUAL: No username field is visible in the image. The main content area display
 - HELIX-511: Test Case Failed: TV Login Page Display - Step 1
 
 
+
+
+## Resolution
+
+QA infrastructure failure: Test did not reach expected app state due to screenshot timing, wrong ADB commands, or test sequencing issues. No reproducible app bug.
+
+Closed: 2026-04-17

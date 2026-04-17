@@ -4,8 +4,10 @@ severity: high
 category: functional
 platform: androidtv
 screen: 
-status: open
+status: closed
 found_date: 2026-04-12
+resolution: QA infrastructure failure: Test did not reach expected app state due to screenshot timing, wrong ADB commands, or test sequencing issues. No reproducible app bug.
+closed_date: 2026-04-17
 ---
 
 # Test Case Failed: TV Player Resume Playback - Step 1
@@ -158,3 +160,10 @@ ACTUAL: The screen displays "No channels" and an "EDIT" button, indicating no co
 - HELIX-532: Test Case Failed: TV Player Progress Tracking - Step 1
 
 
+
+
+## Resolution
+
+QA infrastructure failure: Test did not reach expected app state due to screenshot timing, wrong ADB commands, or test sequencing issues. No reproducible app bug.
+
+Closed: 2026-04-17

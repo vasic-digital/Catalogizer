@@ -4,8 +4,10 @@ severity: critical
 category: functional
 platform: androidtv
 screen: 
-status: open
+status: closed
 found_date: 2026-04-12
+resolution: QA infrastructure failure: ADB command used wrong package name 'com.vasic.catalogizer.tv' instead of actual package 'com.catalogizer.androidtv'. Force-stop had no effect. No app bug.
+closed_date: 2026-04-17
 ---
 
 # Test Case Failed: TV Cold Start Launch - Step 1
@@ -133,3 +135,10 @@ ACTUAL: The app "IPTV Pro" is running, displaying its main interface with a titl
 - HELIX-277: App ANR detected during test: Font Sizes Consistency
 
 
+
+
+## Resolution
+
+QA infrastructure failure: ADB command used wrong package name 'com.vasic.catalogizer.tv' instead of actual package 'com.catalogizer.androidtv'. Force-stop had no effect. No app bug.
+
+Closed: 2026-04-17

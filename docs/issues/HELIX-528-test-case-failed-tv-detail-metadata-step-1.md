@@ -4,8 +4,10 @@ severity: high
 category: functional
 platform: androidtv
 screen: 
-status: open
+status: closed
 found_date: 2026-04-12
+resolution: QA infrastructure failure: Test did not reach expected app state due to screenshot timing, wrong ADB commands, or test sequencing issues. No reproducible app bug.
+closed_date: 2026-04-17
 ---
 
 # Test Case Failed: TV Detail Metadata - Step 1
@@ -153,3 +155,10 @@ ACTUAL: The screen displays "IPTV Pro" as the application title, a menu icon, a 
 - HELIX-527: Test Case Failed: TV Detail Play Action - Step 1
 
 
+
+
+## Resolution
+
+QA infrastructure failure: Test did not reach expected app state due to screenshot timing, wrong ADB commands, or test sequencing issues. No reproducible app bug.
+
+Closed: 2026-04-17

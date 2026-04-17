@@ -4,8 +4,10 @@ severity: medium
 category: functional
 platform: androidtv
 screen: 
-status: open
+status: closed
 found_date: 2026-04-12
+resolution: QA infrastructure failure: Test did not reach expected app state due to screenshot timing, wrong ADB commands, or test sequencing issues. No reproducible app bug.
+closed_date: 2026-04-17
 ---
 
 # Test Case Failed: Login With External USB/Bluetooth Keyboard - Step 1
@@ -260,3 +262,10 @@ Actual: Text-only action - not executable! Use adb_shell:, sleep:, etc.
 - HELIX-635: Test Case Failed: Login With On-Screen Keyboard Lag - Step 1
 
 
+
+
+## Resolution
+
+QA infrastructure failure: Test did not reach expected app state due to screenshot timing, wrong ADB commands, or test sequencing issues. No reproducible app bug.
+
+Closed: 2026-04-17

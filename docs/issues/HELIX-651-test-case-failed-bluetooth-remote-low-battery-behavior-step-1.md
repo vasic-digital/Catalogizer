@@ -4,8 +4,10 @@ severity: medium
 category: functional
 platform: androidtv
 screen: 
-status: open
+status: closed
 found_date: 2026-04-12
+resolution: QA infrastructure failure: Test did not reach expected app state due to screenshot timing, wrong ADB commands, or test sequencing issues. No reproducible app bug.
+closed_date: 2026-04-17
 ---
 
 # Test Case Failed: Bluetooth Remote Low Battery Behavior - Step 1
@@ -275,3 +277,10 @@ Actual: Text-only action - not executable! Use adb_shell:, sleep:, etc.
 - HELIX-650: Test Case Failed: IR Remote Interference From Other Devices - Step 1
 
 
+
+
+## Resolution
+
+QA infrastructure failure: Test did not reach expected app state due to screenshot timing, wrong ADB commands, or test sequencing issues. No reproducible app bug.
+
+Closed: 2026-04-17

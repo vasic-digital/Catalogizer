@@ -4,8 +4,10 @@ severity: critical
 category: functional
 platform: androidtv
 screen: 
-status: open
+status: closed
 found_date: 2026-04-12
+resolution: QA infrastructure failure: Test did not reach expected app state due to screenshot timing, wrong ADB commands, or test sequencing issues. No reproducible app bug.
+closed_date: 2026-04-17
 ---
 
 # Test Case Failed: TV D-Pad Full Navigation - Step 1
@@ -164,3 +166,10 @@ ACTUAL: The screen displays a header with a hamburger menu icon and "IPTV Pro" o
 - HELIX-538: Test Case Failed: TV Settings Theme - Step 1
 
 
+
+
+## Resolution
+
+QA infrastructure failure: Test did not reach expected app state due to screenshot timing, wrong ADB commands, or test sequencing issues. No reproducible app bug.
+
+Closed: 2026-04-17

@@ -4,8 +4,10 @@ severity: high
 category: functional
 platform: androidtv
 screen: 
-status: open
+status: closed
 found_date: 2026-04-13
+resolution: QA infrastructure failure: Screenshot captured wrong screen (Android TV launcher settings/channel customization). No app bug.
+closed_date: 2026-04-17
 ---
 
 # Test Case Failed: TV Movies Category Channel - Step 1
@@ -184,3 +186,10 @@ Actual: Keypress failed: context deadline exceeded
 - HELIX-559: Test Case Failed: TV Default Channel on Home Screen - Step 1
 
 
+
+
+## Resolution
+
+QA infrastructure failure: Screenshot captured wrong screen (Android TV launcher settings/channel customization). No app bug.
+
+Closed: 2026-04-17

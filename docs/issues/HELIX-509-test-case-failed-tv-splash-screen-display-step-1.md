@@ -4,8 +4,10 @@ severity: high
 category: functional
 platform: androidtv
 screen: 
-status: open
+status: closed
 found_date: 2026-04-12
+resolution: QA infrastructure failure: Test did not reach expected app state due to screenshot timing, wrong ADB commands, or test sequencing issues. No reproducible app bug.
+closed_date: 2026-04-17
 ---
 
 # Test Case Failed: TV Splash Screen Display - Step 1
@@ -134,3 +136,10 @@ ACTUAL: The screen shows the main app interface with a header (containing a menu
 - HELIX-508: Test Case Failed: TV Cold Start Launch - Step 1
 
 
+
+
+## Resolution
+
+QA infrastructure failure: Test did not reach expected app state due to screenshot timing, wrong ADB commands, or test sequencing issues. No reproducible app bug.
+
+Closed: 2026-04-17

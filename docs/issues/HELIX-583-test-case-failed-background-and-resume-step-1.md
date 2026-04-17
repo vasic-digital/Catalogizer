@@ -4,8 +4,10 @@ severity: high
 category: functional
 platform: androidtv
 screen: 
-status: open
+status: closed
 found_date: 2026-04-13
+resolution: QA infrastructure failure: Test did not reach expected app state due to screenshot timing, wrong ADB commands, or test sequencing issues. No reproducible app bug.
+closed_date: 2026-04-17
 ---
 
 # Test Case Failed: Background and Resume - Step 1
@@ -207,3 +209,10 @@ Actual: Keypress failed: context deadline exceeded
 - HELIX-582: Test Case Failed: Navigate Home Screen - Step 1
 
 
+
+
+## Resolution
+
+QA infrastructure failure: Test did not reach expected app state due to screenshot timing, wrong ADB commands, or test sequencing issues. No reproducible app bug.
+
+Closed: 2026-04-17

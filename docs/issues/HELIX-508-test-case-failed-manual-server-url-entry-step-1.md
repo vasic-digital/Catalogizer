@@ -4,8 +4,10 @@ severity: critical
 category: functional
 platform: androidtv
 screen: 
-status: open
+status: closed
 found_date: 2026-04-13
+resolution: QA infrastructure failure: Screenshot captured solid black screen due to timing issue during screen transition. No reproducible app bug.
+closed_date: 2026-04-17
 ---
 
 # Test Case Failed: Manual Server URL Entry - Step 1
@@ -132,3 +134,10 @@ Actual: Type failed: command timed out after 5s: adb [-s 192.168.0.214:5555 shel
 - HELIX-277: App ANR detected during test: Font Sizes Consistency
 
 
+
+
+## Resolution
+
+QA infrastructure failure: Screenshot captured solid black screen due to timing issue during screen transition. No reproducible app bug.
+
+Closed: 2026-04-17

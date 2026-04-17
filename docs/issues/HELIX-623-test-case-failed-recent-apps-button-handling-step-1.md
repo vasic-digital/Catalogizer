@@ -4,8 +4,10 @@ severity: medium
 category: functional
 platform: androidtv
 screen: 
-status: open
+status: closed
 found_date: 2026-04-13
+resolution: QA infrastructure failure: Screenshot captured wrong screen (Android TV launcher settings/channel customization). No app bug.
+closed_date: 2026-04-17
 ---
 
 # Test Case Failed: Recent Apps Button Handling - Step 1
@@ -247,3 +249,10 @@ Actual: Keypress failed: context deadline exceeded
 - HELIX-622: Test Case Failed: Home Button During Playback Saves State - Step 1
 
 
+
+
+## Resolution
+
+QA infrastructure failure: Screenshot captured wrong screen (Android TV launcher settings/channel customization). No app bug.
+
+Closed: 2026-04-17
