@@ -2,3 +2,8 @@
 .env
 .env.local
 .env.*.local
+
+# HelixQA runtime data
+HelixQA/data/*.db-shm
+HelixQA/data/*.db-wal
+
