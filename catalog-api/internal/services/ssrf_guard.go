@@ -63,6 +63,16 @@ func AllowPrivateSSRFForTests(t interface{ Cleanup(func()) }) {
 	t.Cleanup(func() { testAllowPrivateNetworks = prev })
 }
 
+// SetTestAllowPrivateNetworks flips the package-wide test-only SSRF
+// relax and returns a restore func. Only for other packages' TestMain
+// helpers that need httptest loopback reachability. Production code
+// must never call this.
+func SetTestAllowPrivateNetworks(allow bool) func() {
+	prev := testAllowPrivateNetworks
+	testAllowPrivateNetworks = allow
+	return func() { testAllowPrivateNetworks = prev }
+}
+
 // GuardProviderURL parses target and runs every SSRF check. Returns
 // ErrSSRFBlocked (wrapped) on rejection, nil on pass.
 func GuardProviderURL(target string, cfg SSRFGuardConfig) error {

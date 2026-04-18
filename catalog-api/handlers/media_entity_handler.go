@@ -715,6 +715,11 @@ func (h *MediaEntityHandler) fetchTMDBMetadata(ctx context.Context, title string
 			logging.Warnf("TMDB: retrying '%s' without year (year=%d returned no results)", title, yearParam)
 		}
 
+		if err := services.GuardProviderURL(reqURL, services.SSRFGuardConfig{}); err != nil {
+			logging.Warnf("TMDB: unsafe URL for '%s': %v", title, err)
+			tmdbFailed = true
+			break
+		}
 		req, err := http.NewRequestWithContext(ctx, http.MethodGet, reqURL, nil)
 		if err != nil {
 			logging.Warnf("TMDB: request build failed for '%s': %v", title, err)

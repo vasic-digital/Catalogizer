@@ -2,6 +2,7 @@ package providers
 
 import (
 	"catalogizer/internal/media/models"
+	"catalogizer/internal/services"
 	"context"
 	"encoding/json"
 	"fmt"
@@ -157,7 +158,11 @@ Do not include markdown, explanations, or any text outside the JSON object.`
 		return nil, fmt.Errorf("failed to marshal LLM request: %w", err)
 	}
 
-	req, err := http.NewRequestWithContext(ctx, "POST", l.baseURL+"/chat/completions", strings.NewReader(string(body)))
+	target := l.baseURL + "/chat/completions"
+	if err := services.GuardProviderURL(target, services.SSRFGuardConfig{}); err != nil {
+		return nil, fmt.Errorf("unsafe LLM endpoint: %w", err)
+	}
+	req, err := http.NewRequestWithContext(ctx, "POST", target, strings.NewReader(string(body)))
 	if err != nil {
 		return nil, fmt.Errorf("failed to create LLM request: %w", err)
 	}

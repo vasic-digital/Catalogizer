@@ -3,6 +3,7 @@ package providers
 import (
 	"catalogizer/internal/concurrency"
 	"catalogizer/internal/media/models"
+	"catalogizer/internal/services"
 	"context"
 	"encoding/json"
 	"fmt"
@@ -398,6 +399,9 @@ func (bp *BaseProvider) MakeRequest(ctx context.Context, url string, headers map
 
 // makeRequest makes an HTTP request with error handling
 func (bp *BaseProvider) makeRequest(ctx context.Context, url string, headers map[string]string) ([]byte, error) {
+	if err := services.GuardProviderURL(url, services.SSRFGuardConfig{}); err != nil {
+		return nil, fmt.Errorf("unsafe provider URL: %w", err)
+	}
 	req, err := http.NewRequestWithContext(ctx, "GET", url, nil)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create request: %w", err)
