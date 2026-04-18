@@ -1,6 +1,6 @@
 # Open Points — Closure Brief
 
-**Last refresh:** 2026-04-18 (OCU P1.5/P3.5 closed — web + android production wiring live)
+**Last refresh:** 2026-04-18 (OCU P1.5/P3.5 Linux wiring closed — xwd/gnome/grim + xdotool/ydotool backends live)
 **Owner:** Operator (you). Every item below is work Claude cannot do
 autonomously — they need credentials, hardware, external accounts, or
 human judgment / filming / editing time.
@@ -251,6 +251,17 @@ later" items I'm listing so they aren't forgotten.
       map (10 keys). 40 nexus packages -race green, vet+gofmt+govulncheck
       clean. Linux uinput/xwd, FFmpeg NVENC/VAAPI, LD_PRELOAD/plthook/
       dbus/ax_tree still stubbed (P2.5/P3.5-linux/P4.5 scope).
+- [x] **OCU P1.5 + P3.5 Linux wiring** — **CLOSED 2026-04-18**:
+      Production xwd+convert pipeline for Linux capture
+      (xwd → gnome-screenshot → grim fallback chain, BMP→BGRA8
+      decoder, pngToBGRA8 helper). Production xdotool/ydotool backend
+      for Linux interact (xdotool X11 preferred, ydotool Wayland
+      fallback, KeyCode→X11-keysym map for 10 keys). Kill-switches:
+      HELIXQA_CAPTURE_LINUX_STUB=1 / HELIXQA_INTERACT_LINUX_STUB=1.
+      DISPLAY+WAYLAND_DISPLAY guard prevents capture without a display
+      server. Raw /dev/uinput path deferred; xdotool covers 95% of QA
+      interactions no-sudo. Operator setup: docs/ocu-udev-setup.md.
+      44 nexus packages -race green, vet+gofmt clean.
 
 ---
 
