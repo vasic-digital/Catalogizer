@@ -1076,7 +1076,11 @@ func main() {
 		// rows now, bypassing the 7-day natural tick. Accepts an
 		// optional { "stale_age_seconds": N } override to scope the
 		// sweep window for the single call.
-		api.POST("/admin/image-quality/revalidate", func(c *gin.Context) {
+		// P1 fix (docs/nexus/remaining-work.md): cap the admin
+		// revalidate route at 6 requests/minute per client IP so a
+		// runaway operator (or an attacker who bypassed auth) cannot
+		// stampede the provider chain.
+		api.POST("/admin/image-quality/revalidate", root_middleware.RateLimiter(6), func(c *gin.Context) {
 			var req struct {
 				StaleAgeSeconds int `json:"stale_age_seconds"`
 				Limit           int `json:"limit"`

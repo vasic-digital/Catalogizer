@@ -98,7 +98,12 @@ func TestCSRF_B5_InsecureDevDropsHostPrefixAndSecureFlag(t *testing.T) {
 	r, _ := http.NewRequest(http.MethodGet, "/probe", nil)
 	router.ServeHTTP(w, r)
 
-	// Verify the response cookie name dropped __Host-.
+	// Verify the response cookie name dropped __Host-. P6 fix
+	// (docs/nexus/remaining-work.md): use net/http's Cookies()
+	// parser + Secure/HttpOnly struct fields instead of a fragile
+	// manual substring scan of the Set-Cookie header — the stdlib
+	// parser tracks the canonical attribute names even if upstream
+	// formatting changes across Go versions.
 	var devCookie *http.Cookie
 	for _, c := range w.Result().Cookies() {
 		if c.Name == "csrf-dev" {
@@ -112,13 +117,11 @@ func TestCSRF_B5_InsecureDevDropsHostPrefixAndSecureFlag(t *testing.T) {
 		t.Fatal("insecureDev mode must emit csrf-dev cookie")
 	}
 
-	// Verify Secure flag is cleared so browsers accept over plain HTTP.
-	rawSetCookie := w.Header().Get("Set-Cookie")
-	if strings.Contains(strings.ToLower(rawSetCookie), "secure") {
-		t.Errorf("insecureDev mode must NOT set Secure flag: %q", rawSetCookie)
+	// Stdlib-parsed flag assertions — no substring guesswork.
+	if devCookie.Secure {
+		t.Errorf("insecureDev mode must NOT set Secure flag")
 	}
-	// Sanity: HttpOnly still on.
-	if !strings.Contains(strings.ToLower(rawSetCookie), "httponly") {
-		t.Errorf("insecureDev mode must keep HttpOnly: %q", rawSetCookie)
+	if !devCookie.HttpOnly {
+		t.Errorf("insecureDev mode must keep HttpOnly flag")
 	}
 }
