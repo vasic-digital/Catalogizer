@@ -8,6 +8,21 @@ Multi-platform media collection manager. Detects, categorizes, and organizes med
 
 ## ⚠️ Mandatory Constraints (Non-Negotiable)
 
+### Full-QA Master Cycle — Non-Negotiable
+
+**`CONSTITUTION.md` Article VII defines the rigid production QA loop.** Every release effort executes: clean rebuild → all tests → all Challenges → all HelixQA banks → full autonomous QA per app per platform → video+screenshot review → tickets → root-cause fixes with 4-artefact regression tail → rebuild → repeat until clean pass. Stop only on FATAL BLOCKER / SYSTEM BREAKS / NOTHING LEFT.
+
+- Clean slate: no cached artefacts. Rebuild every binary + container before the loop.
+- Coverage contract: every happy path + standard flow + screen + UI/UX component + use case + edge case + data-set combination + media type. Nothing skipped.
+- `.env` at project root supplies all LLM keys — HelixQA runs against real vision models, not stubs.
+- `.devignore` devices (ATMOSphere) never touched. `.devconnect` lists current valid devices.
+- Live monitoring mandatory: operator console shows platform + app + test ID + progress + result at every moment.
+- Every session archives to `docs/reports/qa-sessions/<YYYY-MM-DD-THH-MM>/` (not gitignored): FINAL-REPORT.md, logs/, challenges/, helixqa/, videos/, screenshots/, tickets/, analysis/.
+- Every fix = 4 artefacts in the same commit: unit/integration test + `fixes-validation` bank entry + HelixQA bank entry + challenge registration.
+- On clean pass: version-bump every app/service, archive debug+release builds to `releases/<platform>/<app>/<version>/`.
+
+See `CONSTITUTION.md` Article VII §7.1–§7.11 for full rules.
+
 ### Open-Points Closure Brief — Source of Truth
 
 **`docs/OPEN_POINTS_CLOSURE.md` is the single source of truth for every remaining operator-action item across the program.** Every session must consult it before starting work, and every session that changes the state of an item must update the brief in the **same commit** that changes the state.

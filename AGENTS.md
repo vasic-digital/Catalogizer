@@ -27,6 +27,31 @@ Essential commands and style guidelines for AI agents working in the Catalogizer
 
 ## ⚠️ CRITICAL CONSTRAINTS
 
+### MANDATORY: Full-QA Master Cycle (Constitution Article VII)
+
+**Every production QA effort executes the rigid loop in `CONSTITUTION.md` Article VII.**
+
+Order: clean rebuild → unit+integration tests → Challenges → HelixQA banks → autonomous QA per app per platform → video+screenshot post-session review → evidence-backed tickets → root-cause fixes with 4-artefact regression tail (unit test + fixes-validation bank + HelixQA bank + challenge) → full rebuild → re-run from top until clean pass.
+
+Stop conditions: FATAL BLOCKER / SYSTEM BREAKS / NOTHING LEFT. Any other termination is a violation.
+
+Coverage contract: every happy path + standard flow + screen + UI/UX component + use case + edge case + data-set combination (positive/faulty/wrong/boundary/internationalised/malicious) + media type. Real catalogue content (known titles) drives browse/play/search — scripted generic inputs are prohibited.
+
+Preconditions:
+- `.env` at project root — all LLM provider keys wired
+- `.devignore` devices (ATMOSphere) permanently excluded
+- `.devconnect` lists at least one valid device per mobile platform in scope
+
+Live monitoring: operator console always shows current platform + app + test case ID + short description + progress + running/final result.
+
+Archive: every session lands in `docs/reports/qa-sessions/<YYYY-MM-DD-THH-MM>/` with FINAL-REPORT.md + logs/ + challenges/ + helixqa/ + videos/ + screenshots/ + tickets/ + analysis/. This directory is **not** gitignored — the history is permanent.
+
+Release promotion on clean pass: version-code bump every app+service, debug+release builds to `releases/<platform>/<app>/<version>/`, release notes updated, submodule pointers bumped, all upstream remotes advanced.
+
+Extensibility mandate: Challenges + HelixQA + all their dependency submodules are extended continuously. OSS research encouraged — if a cutting-edge open-source framework raises the bar, vendor + integrate.
+
+See `CONSTITUTION.md` Article VII §7.1–§7.11 for the complete rule.
+
 ### MANDATORY: Open-Points Closure Brief — Source of Truth
 
 **`docs/OPEN_POINTS_CLOSURE.md` is the authoritative list of every operator-action item still outstanding across the program.** Every agent session MUST:

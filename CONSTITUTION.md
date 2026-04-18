@@ -199,5 +199,104 @@ The brief drives the "cleaning up the depth" workstream. Every regular maintenan
 
 ---
 
-*Last Updated: 2026-04-17*
+### Article VII: Full-QA Master Cycle (MANDATORY)
+
+**Every production QA effort must follow this rigid loop. Partial execution is prohibited.**
+
+**§7.1 Mandatory preconditions**
+- All binaries + all containers **must** be rebuilt from a clean slate before the loop begins. No cached artefacts permitted to avoid stale-code false-positives.
+- `.env` (at project root) **must** supply all LLMsVerifier-scored model keys so HelixQA runs with real vision models, not stubs. Missing keys = the loop cannot begin.
+- Devices listed in `.devignore` (ATMOSphere) are **permanently excluded** from Android + Android TV testing. No exception, no fallback.
+- `.devconnect` **must** list at least one non-ATMOSphere Android TV + one non-ATMOSphere Android phone when those platforms are in scope.
+
+**§7.2 Execution order (do not reorder)**
+1. Clean rebuild — all apps + services + containers
+2. Unit + integration tests, every submodule
+3. Challenges bank run, every registered challenge
+4. HelixQA bank tests, every bank
+5. Full autonomous QA per app per platform — `helixqa autonomous`
+6. Video + screenshot post-session review — every frame scrutinised for UI/UX imperfections
+7. Ticket creation for every defect with evidence attached
+8. Root-cause fixes + regression tests added to the **Fixes Validation Tests Suite**
+9. Full rebuild, re-run from step 1 until a clean pass
+10. Version-code bump for every app/service; release artefacts archived to `releases/<platform>/<app>/<version>/`
+
+**§7.3 Stop conditions (only these)**
+- **FATAL BLOCKER** — a defect the operator must resolve (missing hardware, credential, network route).
+- **SYSTEM BREAKS** — infrastructure collapse preventing further testing.
+- **NOTHING LEFT** — no defects, no warnings, no missing features, 100% pass.
+
+Any other termination is a Constitution violation.
+
+**§7.4 HelixQA coverage contract**
+Before every autonomous session, HelixQA **must** plan — in planning mode — every:
+- happy path (login, browse, open detail, play, favourite, search, settings)
+- standard flow variation
+- screen of every app (including Android TV channels, Tauri windows, web routes)
+- UI / UX component, widget, input, button, toggle, menu
+- use case, edge case
+- data-set combination (positive, faulty, wrong, boundary, internationalised, malicious)
+- media type in the library (movie / tv_show / tv_season / tv_episode / music_artist / music_album / song / game / software / book / comic)
+
+HelixQA **must** use the real catalogue content — titles it already knows about — when exercising browse/play/search. Scripted generic inputs are prohibited.
+
+No feature, flow, screen, component, or use case may be omitted. A session that skips anything is non-compliant and its results are void.
+
+**§7.5 Evidence and ticketing**
+Every defect surfaced by the post-session review **must** be ticketed with:
+- video reference (filename + MM:SS timestamp)
+- screenshot references (before + after state)
+- session ID and step number
+- reproduction path (actions taken)
+- suspected root cause (if identifiable)
+
+Tickets without complete evidence are rejected (§ existing HelixQA MANDATORY rules).
+
+**§7.6 Fixes Validation Tests Suite**
+Every fix **must** land with:
+- a unit or integration test asserting the fix
+- a regression entry in `banks/fixes-validation-*.json`
+- a HelixQA bank entry replaying the defect scenario
+- a challenge registration
+
+All four artefacts in the **same commit** that lands the fix. A fix without its four-artefact tail is a Constitution violation.
+
+**§7.7 Live monitoring**
+During the loop, the operator console **must** always show:
+- current platform under test
+- current app or service under test
+- current test case ID + short description
+- progress (e.g. step 12 / 34)
+- running + final result
+
+Comprehensive logs stream to `docs/reports/qa-sessions/<YYYY-MM-DD-THH-MM>/` with per-step timing, actions taken, LLM reasoning, evidence produced, and final verdicts.
+
+**§7.8 Archiving**
+Every session's artefacts are permanent. `docs/reports/qa-sessions/` is **not** gitignored. Each session directory contains:
+- `FINAL-REPORT.md` — aggregated results
+- `logs/` — per-run command logs
+- `challenges/` — JSON results + summary
+- `helixqa/` — bank + autonomous results
+- `videos/` — MP4 recordings
+- `screenshots/` — pre + post per action
+- `tickets/` — markdown tickets with evidence
+- `analysis/` — deep analysis, suggestions, conclusions for further improvements
+
+**§7.9 Release promotion**
+On a clean-pass exit (§7.3 "NOTHING LEFT"):
+- version codes increment for every app + service
+- debug + release builds land in `releases/<platform>/<app>/<version>/`
+- release notes update `docs/releases/v<version>.md`
+- submodule pointers bump in main repo
+- all upstream remotes advanced
+
+**§7.10 Extensibility mandate**
+The testing systems (Challenges, HelixQA, and all of their dependency submodules) **must** be extended continuously — every session adds coverage, every iteration adds regression defences. OSS research is encouraged: if a cutting-edge open-source framework raises the bar, it is vendored and integrated.
+
+**§7.11 Violation enforcement**
+Shipping (merging, releasing, tagging, deploying) is **prohibited** while the master cycle has not completed at least one clean pass under §7.3 "NOTHING LEFT". No partial "we'll re-run next sprint" releases are permitted.
+
+---
+
+*Last Updated: 2026-04-18*
 *Enforced by: Project Lead*
