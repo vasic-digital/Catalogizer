@@ -1,6 +1,6 @@
 # Open Points — Closure Brief
 
-**Last refresh:** 2026-04-18 (OCU P4.5 AT-SPI + P5.5 VAAPI wired — AT-SPI2 observer via godbus + ffmpeg h264_vaapi encoder)
+**Last refresh:** 2026-04-18 (OCU P5.5 NVENC client + P4.5 LD_PRELOAD loader — NVENC routes via Dispatcher to thinker.local Worker; LD_PRELOAD observer launches target with shim env + reads JSON Lines from FIFO)
 **Owner:** Operator (you). Every item below is work Claude cannot do
 autonomously — they need credentials, hardware, external accounts, or
 human judgment / filming / editing time.
@@ -285,10 +285,27 @@ later" items I'm listing so they aren't forgotten.
       hw_device + nv12 upload filter. Kill-switches
       HELIXQA_OBSERVE_AX_STUB / HELIXQA_RECORD_VAAPI_STUB.
 
-      Remaining stubs (operator-gated): NVENC (thinker.local GPU
-      container), real OpenCV CUDA sidecar (thinker.local), LD_PRELOAD
-      .so shim (requires per-target CGO-compiled shim), plthook
-      (requires /proc/self/maps inspection + unsafe).
+- [x] **OCU P5.5 NVENC client + P4.5 LD_PRELOAD loader** — **CLOSED
+      2026-04-18**: NVENC encoder now routes via ocuremote.Dispatcher
+      to a thinker.local Worker (real gRPC sidecar is P5.6
+      operator-setup). Per-frame call uses *structpb.Value placeholder;
+      P5.6 replaces with generated NVENCRequest/NVENCResponse from
+      proto/nvenc.proto. Close() releases the Worker. Kill-switch
+      HELIXQA_RECORD_NVENC_STUB=1; Dispatcher error (no GPU host) →
+      ErrNotWired. LD_PRELOAD observer launches target binary with
+      LD_PRELOAD=<shim.so> + HELIXQA_LD_SHIM_FIFO=<fifo>; reads
+      newline-delimited JSON from the FIFO and emits EventKindHook
+      Events (Payload["fn"], Payload["arg"], nanosecond Timestamp).
+      Shim path from target.Labels["shim_path"] or HELIXQA_LD_SHIM
+      env. FIFO created via syscall.Mkfifo (!windows build tag). C shim
+      template + operator README at docs/hooks/. Kill-switch
+      HELIXQA_OBSERVE_LDPRELOAD_STUB=1. All nexus packages -race green,
+      vet+gofmt+govulncheck clean. HelixQA commits cd923f7 + e07188e
+      pushed to all three remotes.
+
+      Remaining stubs: plthook (deep /proc/self/maps + unsafe work;
+      standalone session), real thinker.local CUDA sidecar gRPC server
+      (P5.6 operator infra), real OpenCV CUDA sidecar (P2.5).
 
 ---
 
