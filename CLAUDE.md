@@ -8,6 +8,18 @@ Multi-platform media collection manager. Detects, categorizes, and organizes med
 
 ## ⚠️ Mandatory Constraints (Non-Negotiable)
 
+### Open-Points Closure Brief — Source of Truth
+
+**`docs/OPEN_POINTS_CLOSURE.md` is the single source of truth for every remaining operator-action item across the program.** Every session must consult it before starting work, and every session that changes the state of an item must update the brief in the **same commit** that changes the state.
+
+- When you close an item: tick the checkbox, refresh the "Last refresh" date at the top of the brief.
+- When you discover a new operator-action item (credential, hardware, infra, human): append it to the appropriate section (1–5) in the same commit.
+- Never fork the list into tickets, chat, or other docs. Extend the brief.
+- The brief drives the "cleaning up the depth" work: each regular maintenance cycle picks the highest-impact unchecked item, closes it, commits the closure + brief update atomically, pushes everything to all upstream remotes.
+- Deleting an unclosed item without closing it is a **Constitution Article VI violation** on par with committing a TODO.
+
+See `CONSTITUTION.md` §6 for the full enforcement rule.
+
 ### Zero Unfinished Work Policy
 
 **No TODOs, FIXMEs, empty implementations, silent error swallows, fake data, panic-prone `unwrap()`, or empty catch blocks may be committed.** Pre-commit hooks block them; CI fails on them.

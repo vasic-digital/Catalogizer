@@ -27,6 +27,20 @@ Essential commands and style guidelines for AI agents working in the Catalogizer
 
 ## ⚠️ CRITICAL CONSTRAINTS
 
+### MANDATORY: Open-Points Closure Brief — Source of Truth
+
+**`docs/OPEN_POINTS_CLOSURE.md` is the authoritative list of every operator-action item still outstanding across the program.** Every agent session MUST:
+
+1. **Read it at start-up** — before picking any new work, open the brief and confirm whether the task being requested is already tracked there (and if so, whether it is blocked on an operator action that hasn't been supplied).
+2. **Update it atomically** — when you close an item, tick its checkbox and refresh the "Last refresh" date **in the same commit** that lands the code / infra change. Never in a follow-up commit.
+3. **Extend it, never fork it** — when you discover a new credential / hardware / infra / human / creative requirement, append it to the appropriate numbered section (1–5) in the brief, same commit as the discovery. Do not leave such items only in chat, tickets, or ad-hoc notes.
+4. **Drive the depth-cleanup cadence** — regular maintenance picks the highest-impact unchecked item, closes it, commits the closure + brief update atomically, pushes to all upstream remotes.
+5. **Verify state before release** — §7 of the brief lists the verification commands; run them and confirm green before any release tag.
+
+Deleting an unclosed item from the brief without actually closing it is a **Constitution Article VI violation** — treated with the same severity as committing a TODO.
+
+See `CONSTITUTION.md` §6 for the full enforcement rule.
+
 ### MANDATORY: .devignore Devices - NEVER USE FOR TESTING
 
 **Devices listed in `.devignore` MUST NEVER be used for any testing, QA, or app deployment.**

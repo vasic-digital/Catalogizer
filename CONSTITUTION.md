@@ -165,5 +165,39 @@ Shipping code (merging, releasing, tagging, deploying) is **prohibited** while a
 
 ---
 
-*Last Updated: 2026-04-12*
+### Article VI: Open-Points Closure Brief (MANDATORY)
+
+`docs/OPEN_POINTS_CLOSURE.md` is a **permanent source of truth** for every unfinished item across the program. It enumerates exactly what the operator (human, credentials, hardware, external accounts, filming time) must supply so that the program reaches **zero open points**.
+
+**§6.1 Scope**
+
+The brief is the authoritative list for work that cannot be completed autonomously by Claude or any automated pipeline. It covers:
+
+1. Credentials & secrets (API keys, vault entries, rotation schedule)
+2. Hardware / test harnesses (devices, runners, NAS corpus)
+3. Infra & deployments (DNS, live campaigns, training datasets, signing keys)
+4. Human / creative (video filming, brand review, legal review)
+5. Optional hardening (non-blocking improvements)
+6. Definition of done + verification commands
+
+**§6.2 Maintenance Duty**
+
+- Every time an open point closes, the corresponding checkbox in the brief **must** be ticked in the same commit that lands the closure.
+- Every time a new operator-action item is discovered, it **must** be appended to the brief in the same commit that discovers it. It is never acceptable to leave such an item only in chat, tickets, or ad-hoc notes.
+- Every session that touches production-affecting code **must** end by running the verification commands in §7 of the brief and updating the Last refresh date at the top.
+- The brief is reviewed by the Project Lead at every release gate. A release is **prohibited** if the brief is out of date relative to the working state.
+
+**§6.3 Cleanup Cadence**
+
+The brief drives the "cleaning up the depth" workstream. Every regular maintenance cycle picks the highest-impact unclosed checkbox, drives it to ticked, and commits the closure + brief update atomically.
+
+**§6.4 Non-negotiability**
+
+- The brief **must** be referenced from `CLAUDE.md` and `AGENTS.md` so every Claude session reads it at start-up.
+- No competing "open items" list may be created elsewhere. Add to the brief or extend it; never fork it.
+- Deleting an unclosed item from the brief without actually closing it is a Constitution violation on par with committing a TODO.
+
+---
+
+*Last Updated: 2026-04-17*
 *Enforced by: Project Lead*
