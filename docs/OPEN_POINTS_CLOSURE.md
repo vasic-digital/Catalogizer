@@ -1,6 +1,6 @@
 # Open Points — Closure Brief
 
-**Last refresh:** 2026-04-18 (OCU P7 closed — v4.0.0 released; OCU program fully closed)
+**Last refresh:** 2026-04-18 (OCU P1.5/P3.5 closed — web + android production wiring live)
 **Owner:** Operator (you). Every item below is work Claude cannot do
 autonomously — they need credentials, hardware, external accounts, or
 human judgment / filming / editing time.
@@ -240,6 +240,17 @@ later" items I'm listing so they aren't forgotten.
       notes `HelixQA/docs/releases/v4.0.0.md`. **OCU program fully
       closed — v4.0.0 tagged and pushed to all 4 HelixQA remotes.** Plan
       `HelixQA/docs/superpowers/plans/2026-04-17-ocu-p7-tickets-plan.md`.
+- [x] **OCU P1.5 + P3.5 web + android wiring** — **CLOSED 2026-04-18**:
+      Production chromedp backend for web capture + interact;
+      production adb backend for android capture + interact.
+      Graceful ErrNotWired fallback when browser/adb absent +
+      env kill-switches (HELIXQA_CAPTURE_WEB_STUB=1,
+      HELIXQA_INTERACT_WEB_STUB=1, HELIXQA_CAPTURE_ANDROID_STUB=1,
+      HELIXQA_INTERACT_ANDROID_STUB=1, HELIXQA_ADB_SERIAL for
+      multi-device). pngToBGRA8 helper, H.264 NAL splitter, ADB keycode
+      map (10 keys). 40 nexus packages -race green, vet+gofmt+govulncheck
+      clean. Linux uinput/xwd, FFmpeg NVENC/VAAPI, LD_PRELOAD/plthook/
+      dbus/ax_tree still stubbed (P2.5/P3.5-linux/P4.5 scope).
 
 ---
 
