@@ -1,6 +1,6 @@
 # Open Points — Closure Brief
 
-**Last refresh:** 2026-04-17
+**Last refresh:** 2026-04-18
 **Owner:** Operator (you). Every item below is work Claude cannot do
 autonomously — they need credentials, hardware, external accounts, or
 human judgment / filming / editing time.
@@ -155,6 +155,13 @@ later" items I'm listing so they aren't forgotten.
       `HelixQA/docs/superpowers/{specs,plans}/2026-04-17-*`. Next wave
       (P1 capture, P2 vision, P3 interact, P4 observe) can now proceed
       in parallel.
+- [x] **OCU P1 — GPU capture engine** — **CLOSED 2026-04-18**: factory +
+      web/CDP + linux/X11 + android/ADB (phone + TV) CaptureSource
+      plumbing; stress tested under -race; per-source bench + audit
+      filed; challenge bank `ocu-capture.json` shipped. Production
+      subprocess wiring (chromedp / xwd / adb screenrecord) remains
+      P1.5 scope via the injectable `newFrameProducer` pattern. Plan
+      `HelixQA/docs/superpowers/plans/2026-04-17-ocu-p1-capture-plan.md`.
 
 ---
 
