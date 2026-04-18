@@ -1,6 +1,6 @@
 # Open Points — Closure Brief
 
-**Last refresh:** 2026-04-18 (OCU P2.5/P4.5/P5.5 partial wiring closed — pure-Go CPU vision + D-Bus + CDP observers + x264 encoder via ffmpeg)
+**Last refresh:** 2026-04-18 (OCU P4.5 AT-SPI + P5.5 VAAPI wired — AT-SPI2 observer via godbus + ffmpeg h264_vaapi encoder)
 **Owner:** Operator (you). Every item below is work Claude cannot do
 autonomously — they need credentials, hardware, external accounts, or
 human judgment / filming / editing time.
@@ -278,6 +278,17 @@ later" items I'm listing so they aren't forgotten.
       absent or stub env set. All 30 nexus packages -race green,
       vet+gofmt clean. Remaining stubs: LD_PRELOAD hook, plthook,
       AT-SPI walker, NVENC, VAAPI, real OpenCV CUDA sidecar.
+
+- [x] **OCU P4.5 AT-SPI + P5.5 VAAPI wiring** — **CLOSED 2026-04-18**:
+      AT-SPI observer via godbus/dbus/v5 on the a11y bus (Object +
+      Window signals). VAAPI encoder via ffmpeg h264_vaapi with
+      hw_device + nv12 upload filter. Kill-switches
+      HELIXQA_OBSERVE_AX_STUB / HELIXQA_RECORD_VAAPI_STUB.
+
+      Remaining stubs (operator-gated): NVENC (thinker.local GPU
+      container), real OpenCV CUDA sidecar (thinker.local), LD_PRELOAD
+      .so shim (requires per-target CGO-compiled shim), plthook
+      (requires /proc/self/maps inspection + unsafe).
 
 ---
 
