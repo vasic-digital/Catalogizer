@@ -66,9 +66,12 @@ flagged so the quarterly refresh picks them up.
 - **E3** — Video course MP4s 01–08 (shot lists, VO scripts, exercises
   all shipped; filming + editing outstanding).
 - **E4** — Public `helixqa.vasic.digital/nexus` DNS + VitePress deploy.
-- **E5** — Android + Tauri desktop clients surfacing
-  `X-Cover-Quality` debug UX (catalog-web landed; per-client PRs
-  needed).
+- ~~**E5**~~ — **CLOSED 2026-04-17** — Android (`ui/debug/CoverQualityBadge.kt`),
+  Android TV (`ui/debug/CoverQualityBadge.kt` + MediaCard overlay),
+  and Tauri desktop (`hooks/useCoverQuality.ts` + `components/debug/
+  CoverQualityBadge.tsx`) all surface the X-Cover-Quality / X-Cover-
+  Source debug pill. Release builds pay zero network cost (gated on
+  BuildConfig.DEBUG / import.meta.env.DEV). 7 Vitest cases green.
 - **E6** — Predictor training against a real historical flake dataset
   (to verify the "AUC > 0.75" success criterion end-to-end).
 - **E7** — Fanart.tv / IGDB / Twitch credentials acquired + rotated
