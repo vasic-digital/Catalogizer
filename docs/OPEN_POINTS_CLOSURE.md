@@ -1,6 +1,6 @@
 # Open Points — Closure Brief
 
-**Last refresh:** 2026-04-18 (OCU P6 closed)
+**Last refresh:** 2026-04-18 (OCU P7 closed — v4.0.0 released; OCU program fully closed)
 **Owner:** Operator (you). Every item below is work Claude cannot do
 autonomously — they need credentials, hardware, external accounts, or
 human judgment / filming / editing time.
@@ -220,6 +220,26 @@ later" items I'm listing so they aren't forgotten.
       Bridge full sequence + all-Elapsed check) green. Security audit
       `HelixQA/docs/security/ocu-p6-audit.md`. Plan
       `HelixQA/docs/superpowers/plans/2026-04-17-ocu-p6-automation-plan.md`.
+- [x] **OCU P7 — Magical tickets + tests + challenges** — **CLOSED
+      2026-04-18**: `pkg/ticket` extended with 12 OCU evidence kind
+      constants (`EvidenceKindClip`, `EvidenceKindDiffOverlay`,
+      `EvidenceKindOCRDump`, `EvidenceKindElementTree`,
+      `EvidenceKindHookTrace`, `EvidenceKindReplayScript`,
+      `EvidenceKindLLMReasoning`, `EvidenceKindPerfMetrics`,
+      `EvidenceKindAXTreeDiff`, `EvidenceKindHAR`,
+      `EvidenceKindWebRTCStream`, `EvidenceKindRawDMA`) + `Evidence`
+      struct + `FromAutomationResult` helper + `BuildReplayScript`
+      generator + `.ocu-replay` DSL spec (`docs/ocu-replay-format.md`).
+      4 cross-cutting challenge banks: `ocu-tickets.json` (36 entries),
+      `ocu-adversarial.json` (20 entries), `ocu-cross-platform.json`
+      (15 entries), `ocu-fixes-validation.json` (10 entries) = 81 total.
+      10-category campaign script `scripts/ocu-full-campaign.sh` — all
+      8 active categories PASS. Pre-existing vet/fmt/integration bugs
+      fixed (Engine Elapsed named-return, pipeline stepCancel defer,
+      ExtractionStats/DetectorStats mutex-copy, 149-file gofmt). Release
+      notes `HelixQA/docs/releases/v4.0.0.md`. **OCU program fully
+      closed — v4.0.0 tagged and pushed to all 4 HelixQA remotes.** Plan
+      `HelixQA/docs/superpowers/plans/2026-04-17-ocu-p7-tickets-plan.md`.
 
 ---
 
