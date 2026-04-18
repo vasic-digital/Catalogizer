@@ -1,6 +1,6 @@
 # Open Points — Closure Brief
 
-**Last refresh:** 2026-04-18 (OCU P3 closed)
+**Last refresh:** 2026-04-18 (OCU P4 closed)
 **Owner:** Operator (you). Every item below is work Claude cannot do
 autonomously — they need credentials, hardware, external accounts, or
 human judgment / filming / editing time.
@@ -181,6 +181,15 @@ later" items I'm listing so they aren't forgotten.
       clean. go vet clean. gofmt clean. Integration smoke (all 4 kinds
       open + Wrap composes) green. Plan
       `HelixQA/docs/superpowers/plans/2026-04-17-ocu-p3-interact-plan.md`.
+- [x] **OCU P4 — Observation engine** — **CLOSED 2026-04-18**:
+      Factory + 5 Observer backends (ld_preload, plthook, dbus, cdp,
+      ax_tree) + shared BaseObserver + bounded RingBuffer. Injectable
+      producerFunc sentinel; production returns ErrNotWired. Real shim
+      install, PLT/GOT patching, D-Bus/CDP/AT-SPI2 subscription deferred
+      to P4.5. 21-entry bank `ocu-observe.json`. -race-clean 100-goroutine
+      stress (20 per kind × 5 kinds). govulncheck clean. go vet clean.
+      gofmt clean. Integration smoke (all 5 kinds open) green. Plan
+      `HelixQA/docs/superpowers/plans/2026-04-17-ocu-p4-observe-plan.md`.
 
 ---
 
