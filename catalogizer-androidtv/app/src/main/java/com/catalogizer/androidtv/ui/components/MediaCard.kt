@@ -244,6 +244,15 @@ fun MediaCard(
                         modifier = Modifier.align(Alignment.BottomStart)
                     )
                 }
+
+                // Nexus cover-quality debug badge (debug builds only).
+                com.catalogizer.androidtv.ui.debug.CoverQualityBadge(
+                    coverId = mediaItem.id,
+                    enabled = true,
+                    modifier = Modifier
+                        .align(Alignment.TopEnd)
+                        .padding(6.dp),
+                )
             }
 
             // Content info

@@ -182,6 +182,9 @@ class DependencyContainer(private val context: Context) {
      */
     fun getServerUrl(): String = currentBaseUrl
 
+    /** Shared OkHttpClient for the Nexus cover-quality debug probe. */
+    fun httpClient(): OkHttpClient = buildOkHttpClient()
+
     /**
      * Initialize the container: load saved server URL, create API client.
      * Call from Application.onCreate().

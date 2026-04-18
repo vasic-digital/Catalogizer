@@ -5,6 +5,7 @@ import { useQuery } from "@tanstack/react-query";
 import { MediaItem, MediaSearchRequest, MediaType, SortOption, SortOrder } from "../types";
 import { apiService } from "../services/apiService";
 import { cn } from "../utils/cn";
+import { CoverQualityBadge } from "../components/debug/CoverQualityBadge";
 
 export default function LibraryPage() {
   const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
@@ -197,6 +198,11 @@ function MediaGridCard({ item }: { item: MediaItem }) {
             <Play className="h-8 w-8" />
           </div>
         )}
+        <CoverQualityBadge
+          coverId={item.id}
+          debug={import.meta.env.DEV}
+          className="absolute top-2 right-2"
+        />
       </div>
 
       <div className="p-3">

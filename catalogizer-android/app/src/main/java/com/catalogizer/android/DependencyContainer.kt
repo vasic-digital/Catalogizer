@@ -177,6 +177,9 @@ class DependencyContainer(private val context: Context) {
      */
     fun getServerUrl(): String = currentBaseUrl
 
+    /** Shared OkHttpClient used by the Nexus cover-quality debug probe. */
+    fun httpClient(): OkHttpClient = okHttpClient ?: buildOkHttpClient()
+
     /**
      * Persist the server URL to DataStore so it survives app restarts.
      */

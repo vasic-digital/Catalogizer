@@ -347,6 +347,16 @@ private fun MediaCard(
                     )
                 }
 
+                // Nexus cover-quality debug badge — only shown in debug
+                // builds. Enabled by default when BuildConfig.DEBUG.
+                com.catalogizer.android.ui.debug.CoverQualityBadge(
+                    coverId = item.id,
+                    enabled = true,
+                    modifier = Modifier
+                        .align(Alignment.TopEnd)
+                        .padding(8.dp),
+                )
+
                 // Rating badge
                 item.rating?.let { rating ->
                     Surface(
