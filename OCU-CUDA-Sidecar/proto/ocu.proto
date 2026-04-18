@@ -1,0 +1,166 @@
+// SPDX-FileCopyrightText: 2026 Milos Vasic
+// SPDX-License-Identifier: Apache-2.0
+//
+// OCU CUDA Sidecar — service definitions for GPU-bound workloads
+// running on thinker.local.
+//
+// Regenerate Go bindings (requires protoc + protoc-gen-go + protoc-gen-go-grpc):
+//   protoc --go_out=. --go_opt=paths=source_relative \
+//          --go-grpc_out=. --go-grpc_opt=paths=source_relative \
+//          proto/ocu.proto
+
+syntax = "proto3";
+
+package ocu.v1;
+
+option go_package = "digital.vasic.ocu-cuda-sidecar/proto";
+
+// ---------------------------------------------------------------------------
+// NVENC hardware encode service (P5.6 protocol)
+// ---------------------------------------------------------------------------
+
+// NVENCService streams BGRA frames from the client and returns H.264
+// NAL units encoded by NVENC on the GPU side.
+service NVENCService {
+  // Open allocates an NVENC session and returns a session_id token.
+  rpc Open(OpenRequest) returns (OpenResponse);
+
+  // Encode is a bidirectional stream: client sends raw BGRA frames,
+  // server returns encoded H.264 chunks as they are produced.
+  rpc Encode(stream EncodeChunk) returns (stream EncodedChunk);
+
+  // Close releases the NVENC session.
+  rpc Close(CloseRequest) returns (CloseResponse);
+}
+
+message OpenRequest {
+  int32 width        = 1;
+  int32 height       = 2;
+  int32 framerate    = 3;
+  int32 bitrate_kbps = 4;
+}
+
+message OpenResponse {
+  string session_id = 1;
+}
+
+message EncodeChunk {
+  string session_id = 1;
+  // Raw BGRA pixels, width * height * 4 bytes.
+  bytes  bgra       = 2;
+}
+
+message EncodedChunk {
+  // One or more complete H.264 NAL units.
+  bytes h264 = 1;
+}
+
+message CloseRequest {
+  string session_id = 1;
+}
+
+message CloseResponse {}
+
+// ---------------------------------------------------------------------------
+// OpenCV CUDA vision service (P2.5 endpoints)
+// ---------------------------------------------------------------------------
+
+// OpenCVService exposes GPU-accelerated computer-vision primitives used
+// by HelixQA's OCU vision pipeline.
+service OpenCVService {
+  // Analyze detects UI elements in a frame using CUDA-accelerated
+  // feature detection (Harris corners + contour analysis).
+  rpc Analyze(AnalyzeRequest) returns (AnalyzeResponse);
+
+  // Diff computes per-pixel absolute difference between two frames and
+  // returns bounding boxes of changed regions above a magnitude threshold.
+  rpc Diff(DiffRequest) returns (DiffResponse);
+
+  // Match locates a template image inside a larger frame (CUDA-accelerated
+  // matchTemplate, TM_CCOEFF_NORMED).
+  rpc Match(MatchRequest) returns (MatchResponse);
+
+  // OCR extracts text from a frame region using Tesseract on the GPU host.
+  rpc OCR(OCRRequest) returns (OCRResponse);
+}
+
+// Rect is an axis-aligned bounding box in pixel coordinates.
+message Rect {
+  int32 x = 1;
+  int32 y = 2;
+  int32 w = 3;
+  int32 h = 4;
+}
+
+message AnalyzeRequest {
+  // Raw BGRA pixels.
+  bytes bgra   = 1;
+  int32 width  = 2;
+  int32 height = 3;
+}
+
+message UIElement {
+  string kind       = 1;  // e.g. "button", "text", "icon", "container"
+  Rect   rect       = 2;
+  double confidence = 3;
+}
+
+message AnalyzeResponse {
+  repeated UIElement elements  = 1;
+  int32              latency_ms = 2;
+}
+
+message DiffRequest {
+  bytes before  = 1;
+  bytes after   = 2;
+  int32 width   = 3;
+  int32 height  = 4;
+}
+
+message ChangeRegion {
+  Rect   rect        = 1;
+  double magnitude   = 2;  // mean absolute difference in the region
+  int32  pixel_count = 3;
+}
+
+message DiffResponse {
+  repeated ChangeRegion regions     = 1;
+  double                total_delta = 2;  // scene-level mean diff
+}
+
+message MatchRequest {
+  bytes frame   = 1;
+  bytes template = 2;
+  int32 frame_w  = 3;
+  int32 frame_h  = 4;
+  int32 tmpl_w   = 5;
+  int32 tmpl_h   = 6;
+}
+
+message MatchHit {
+  Rect   rect       = 1;
+  double confidence = 2;
+}
+
+message MatchResponse {
+  repeated MatchHit hits = 1;
+}
+
+message OCRRequest {
+  bytes bgra   = 1;
+  int32 width  = 2;
+  int32 height = 3;
+  // region restricts OCR to a sub-rect; zero value = full frame.
+  Rect  region = 4;
+}
+
+message OCRBlock {
+  string text       = 1;
+  Rect   rect       = 2;
+  double confidence = 3;
+}
+
+message OCRResponse {
+  repeated OCRBlock blocks    = 1;
+  string            full_text = 2;
+}

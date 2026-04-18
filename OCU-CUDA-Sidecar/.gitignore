@@ -1,0 +1,13 @@
+# Build output
+/bin/
+ocu-cuda-sidecar
+
+# Go
+*.test
+*.out
+coverage.html
+
+# Env
+.env
+.env.local
+.env.*.local
