@@ -1,6 +1,6 @@
 # Open Points — Closure Brief
 
-**Last refresh:** 2026-04-18
+**Last refresh:** 2026-04-18 (OCU P3 closed)
 **Owner:** Operator (you). Every item below is work Claude cannot do
 autonomously — they need credentials, hardware, external accounts, or
 human judgment / filming / editing time.
@@ -171,6 +171,16 @@ later" items I'm listing so they aren't forgotten.
       Diff 48 ns/1 alloc). Integration smoke across all 4 methods
       green. Plan
       `HelixQA/docs/superpowers/plans/2026-04-17-ocu-p2-vision-plan.md`.
+- [x] **OCU P3 — Interaction engine** — **CLOSED 2026-04-18**:
+      Factory + 4 Interactor backends (linux/uinput-planned, web/CDP,
+      android, androidtv) + verifier Wrap hook. Real evdev/CDP/ADB
+      transport deferred to P3.5 via injectable newInjector pattern.
+      19-entry bank `ocu-interact.json`. -race-clean 100-goroutine stress
+      (per-goroutine private injectors). Bench: Wrap_Click ~86 ns/op
+      0 allocs; NoOp_After ~0.34 ns/op 0 allocs (i7-1165G7). govulncheck
+      clean. go vet clean. gofmt clean. Integration smoke (all 4 kinds
+      open + Wrap composes) green. Plan
+      `HelixQA/docs/superpowers/plans/2026-04-17-ocu-p3-interact-plan.md`.
 
 ---
 
