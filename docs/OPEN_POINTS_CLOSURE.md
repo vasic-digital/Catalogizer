@@ -162,6 +162,15 @@ later" items I'm listing so they aren't forgotten.
       subprocess wiring (chromedp / xwd / adb screenrecord) remains
       P1.5 scope via the injectable `newFrameProducer` pattern. Plan
       `HelixQA/docs/superpowers/plans/2026-04-17-ocu-p1-capture-plan.md`.
+- [x] **OCU P2 — GPU vision pipeline** — **CLOSED 2026-04-18**:
+      Pipeline + CPU backend + remote-dispatch plumbing via
+      ocuremote.Dispatcher. Real OpenCV CUDA + TensorRT OCR deferred
+      to P2.5 with the LocalBackend interface + stub remote path.
+      13-entry challenge bank `ocu-vision.json`, 100-goroutine -race
+      stress, bench baseline appended (Analyze 3.8 ns/0 allocs,
+      Diff 48 ns/1 alloc). Integration smoke across all 4 methods
+      green. Plan
+      `HelixQA/docs/superpowers/plans/2026-04-17-ocu-p2-vision-plan.md`.
 
 ---
 
