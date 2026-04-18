@@ -164,6 +164,44 @@ func TestGuardProviderURL_AllowPrivateOptIn(t *testing.T) {
 	}
 }
 
+func TestGuardProviderURL_RejectsIntegerEncodedLoopback(t *testing.T) {
+	withStrictSSRFGuard(t)
+	// 2130706433 = 0x7F000001 = 127.0.0.1
+	for _, target := range []string{
+		"http://2130706433/",
+		"http://3232235777/", // 192.168.1.1
+	} {
+		err := GuardProviderURL(target, SSRFGuardConfig{})
+		if err == nil || !errors.Is(err, ErrSSRFBlocked) {
+			t.Errorf("integer-encoded %q must block, got %v", target, err)
+		}
+	}
+}
+
+func TestGuardProviderURL_RejectsShortDottedLoopback(t *testing.T) {
+	withStrictSSRFGuard(t)
+	for _, target := range []string{
+		"http://127.1/",      // 127.0.0.1
+		"http://127.0.1/",    // 127.0.0.1
+		"http://10.1/",       // 10.0.0.1
+		"http://192.168.1/",  // 192.168.0.1
+	} {
+		err := GuardProviderURL(target, SSRFGuardConfig{})
+		if err == nil || !errors.Is(err, ErrSSRFBlocked) {
+			t.Errorf("short-dotted %q must block, got %v", target, err)
+		}
+	}
+}
+
+func TestGuardProviderURL_IntegerPublicPasses(t *testing.T) {
+	withStrictSSRFGuard(t)
+	// 16843009 = 1.1.1.1 (Cloudflare public DNS)
+	err := GuardProviderURL("http://16843009/", SSRFGuardConfig{})
+	if err != nil {
+		t.Errorf("integer-encoded public IP must pass, got %v", err)
+	}
+}
+
 func TestGuardProviderURL_LookupFailureBlocks(t *testing.T) {
 	withStrictSSRFGuard(t)
 	err := GuardProviderURL("https://missing.example/", SSRFGuardConfig{

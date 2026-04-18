@@ -102,6 +102,18 @@ func GuardProviderURL(target string, cfg SSRFGuardConfig) error {
 		return guardIP(ip, cfg)
 	}
 
+	// Canonicalise alternative IP encodings that libc can expand into
+	// loopback / private addresses (e.g. http://2130706433/ or
+	// http://127.1/). Go's net.ParseIP rejects these, but some
+	// resolvers (and http.Client under cgo) will still dial them.
+	// See tldrsec/awesome-secure-defaults — "SSRF Defense" row.
+	if ip := parseSSRFIntegerIP(host); ip != nil {
+		return guardIP(ip, cfg)
+	}
+	if ip := parseSSRFShortDottedIP(host); ip != nil {
+		return guardIP(ip, cfg)
+	}
+
 	// Hostname path: resolve + reject if any returned IP is private.
 	resolver := cfg.Resolver
 	if resolver == nil {
@@ -167,4 +179,75 @@ func isIPv6UniqueLocal(ip net.IP) bool {
 		return false
 	}
 	return v6[0]&0xfe == 0xfc
+}
+
+// parseSSRFIntegerIP treats an all-digit host as a 32-bit IPv4 value
+// (e.g. "2130706433" → 127.0.0.1). Returns nil if the host contains
+// any non-digit character or overflows uint32.
+func parseSSRFIntegerIP(host string) net.IP {
+	if host == "" || len(host) > 10 {
+		return nil
+	}
+	var v uint64
+	for _, r := range host {
+		if r < '0' || r > '9' {
+			return nil
+		}
+		v = v*10 + uint64(r-'0')
+		if v > 0xFFFFFFFF {
+			return nil
+		}
+	}
+	return net.IPv4(byte(v>>24), byte(v>>16), byte(v>>8), byte(v))
+}
+
+// parseSSRFShortDottedIP expands a two- or three-octet dotted form to
+// the canonical four-octet IPv4 address. "127.1" → "127.0.0.1",
+// "127.0.1" → "127.0.0.1". Returns nil if the form isn't a short
+// dotted IPv4 or any component is out of range.
+func parseSSRFShortDottedIP(host string) net.IP {
+	parts := strings.Split(host, ".")
+	if len(parts) != 2 && len(parts) != 3 {
+		return nil
+	}
+	nums := make([]uint64, len(parts))
+	for i, p := range parts {
+		if p == "" || len(p) > 10 {
+			return nil
+		}
+		var v uint64
+		for _, r := range p {
+			if r < '0' || r > '9' {
+				return nil
+			}
+			v = v*10 + uint64(r-'0')
+			if v > 0xFFFFFFFF {
+				return nil
+			}
+		}
+		nums[i] = v
+	}
+	// Per RFC: the final component absorbs the remaining bytes.
+	// Leading components (except the last) must fit in one byte.
+	for i := 0; i < len(nums)-1; i++ {
+		if nums[i] > 0xFF {
+			return nil
+		}
+	}
+	var full uint64
+	switch len(nums) {
+	case 2:
+		// a.b → a.0.0.b where b fills the low 24 bits
+		if nums[1] > 0xFFFFFF {
+			return nil
+		}
+		full = nums[0]<<24 | nums[1]
+	case 3:
+		// a.b.c → a.b.0.c where c fills the low 16 bits
+		if nums[2] > 0xFFFF {
+			return nil
+		}
+		full = nums[0]<<24 | nums[1]<<16 | nums[2]
+	}
+	return net.IPv4(byte(full>>24), byte(full>>16), byte(full>>8), byte(full))
 }
