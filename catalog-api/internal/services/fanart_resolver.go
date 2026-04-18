@@ -181,23 +181,51 @@ func envFirstNonEmpty(names ...string) string {
 
 var osGetenv = defaultOsGetenv
 
-// allowPublicURLLocal is a small SSRF guard local to the provider
-// resolvers. It mirrors the one in the LLM resolver so provider
-// URLs never reach a loopback / private range (a compromised upstream
-// should not be able to pivot through our fetch path).
+// allowPublicURLLocal is a string-level SSRF fast-path. It catches
+// literal IP / localhost references without paying for DNS; a
+// compromised upstream that points a *hostname* at a private IP
+// is caught additionally by GuardProviderURL (ssrf_guard.go).
+//
+// Coverage mirrors the full private-network matrix from the
+// "SSRF Defense" row of tldrsec/awesome-secure-defaults:
+//   - loopback (127.0.0.0/8, localhost, ::1)
+//   - RFC1918 (10/8, 172.16/12, 192.168/16)
+//   - link-local + cloud metadata (169.254/16, fe80::/10)
+//   - IPv6 unique-local (fc00::/7, fd00::/8)
+//   - unspecified (0.0.0.0, ::)
+//   - dangerous URI schemes (file, javascript, data, vbscript,
+//     gopher, ftp, jar, view-source).
 func allowPublicURLLocal(raw string) error {
 	lower := strings.ToLower(raw)
-	for _, bad := range []string{"file:", "javascript:", "data:", "vbscript:"} {
+	for _, bad := range []string{
+		"file:", "javascript:", "data:", "vbscript:",
+		"gopher:", "ftp:", "jar:", "view-source:",
+	} {
 		if strings.HasPrefix(lower, bad) {
 			return fmt.Errorf("unsupported scheme in %q", raw)
 		}
 	}
-	if strings.Contains(lower, "://127.0.0.1") ||
-		strings.Contains(lower, "://localhost") ||
-		strings.Contains(lower, "://10.") ||
-		strings.Contains(lower, "://192.168.") ||
-		strings.Contains(lower, "://169.254.") {
-		return fmt.Errorf("unsafe private host in %q", raw)
+	for _, prefix := range []string{
+		"://127.",
+		"://localhost",
+		"://0.0.0.0",
+		"://10.",
+		"://192.168.",
+		"://169.254.",
+		"://[::1]",
+		"://[::]",
+		"://[fe80:",
+		"://[fc",
+		"://[fd",
+	} {
+		if strings.Contains(lower, prefix) {
+			return fmt.Errorf("unsafe private host in %q", raw)
+		}
+	}
+	for i := 16; i <= 31; i++ {
+		if strings.Contains(lower, fmt.Sprintf("://172.%d.", i)) {
+			return fmt.Errorf("unsafe private host in %q", raw)
+		}
 	}
 	return nil
 }
