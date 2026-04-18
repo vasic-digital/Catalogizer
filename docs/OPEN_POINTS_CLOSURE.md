@@ -1,6 +1,6 @@
 # Open Points — Closure Brief
 
-**Last refresh:** 2026-04-18 (OCU P5.5 NVENC client + P4.5 LD_PRELOAD loader — NVENC routes via Dispatcher to thinker.local Worker; LD_PRELOAD observer launches target with shim env + reads JSON Lines from FIFO)
+**Last refresh:** 2026-04-18 (SSRF guard migration to canonical Security/pkg/ssrf — catalog-api + HelixQA adapters replacing hand-synced copies; OCU CUDA sidecar source + Dockerfile committed to OCU-CUDA-Sidecar/)
 **Owner:** Operator (you). Every item below is work Claude cannot do
 autonomously — they need credentials, hardware, external accounts, or
 human judgment / filming / editing time.
@@ -128,13 +128,16 @@ These require physical hardware Claude cannot acquire.
 These are *not* open points — they are "would be nice, can be scoped
 later" items I'm listing so they aren't forgotten.
 
-- [ ] Migrate catalog-api `internal/services/ssrf_guard.go` and
-      HelixQA `pkg/nexus/ai/ssrf_guard.go` to import the canonical
-      `Security/pkg/ssrf` package. Today both are hand-synced copies;
-      the canonical module exists (commit `6ab39c5` in Security).
-      Requires: add Security submodule to HelixQA's `go.mod` replace
-      graph, same for catalog-api; vendor refresh; rewrite both
-      local guards to `import "digital.vasic.security/pkg/ssrf"`.
+- [x] **SSRF guard migration to canonical Security/pkg/ssrf** — **CLOSED
+      2026-04-18**: catalog-api `internal/services/ssrf_guard.go` and
+      HelixQA `pkg/nexus/ai/ssrf_guard.go` rewritten as thin adapters
+      (type aliases + delegating wrappers). ~150 LOC removed from each.
+      Public API preserved (SSRFGuardConfig, Resolver, GuardProviderURL /
+      ValidateURL, ErrSSRFBlocked, AllowPrivateSSRFForTests). HelixQA
+      vendor/modules.txt + vendor/digital.vasic.security/ updated; go.mod
+      replace + require added to both consumers. All tests green (race-
+      clean). Commits: catalog-api `ce5c1be1`, HelixQA `c170ad2`,
+      submodule bump `e4abd73e`.
 - [ ] Wire `gorilla/csrf` on any future cookie-auth endpoints. JWT
       Bearer auth is CSRF-safe by default so this is latent until
       the auth model changes.
@@ -306,6 +309,25 @@ later" items I'm listing so they aren't forgotten.
       Remaining stubs: plthook (deep /proc/self/maps + unsafe work;
       standalone session), real thinker.local CUDA sidecar gRPC server
       (P5.6 operator infra), real OpenCV CUDA sidecar (P2.5).
+
+- [x] **OCU CUDA sidecar source + Dockerfile** — **SOURCE READY
+      2026-04-18**: `OCU-CUDA-Sidecar/` directory committed to main repo
+      (commit `f35f6f53`). Standalone Go module
+      `digital.vasic.ocu-cuda-sidecar` with:
+        - `proto/ocu.proto` — canonical NVENC + OpenCV service definitions
+        - `proto/ocu.go` — hand-authored Go types (no protoc required)
+        - `internal/server/backend_stub.go` (!cuda) — unit-testable stub,
+          no GPU deps; 20 tests green, race-clean
+        - `internal/server/backend_cuda.go` (cuda) — gocv CUDA backend
+          (Analyze/Diff/Match/OCR via OpenCV CUDA; NVENC via session registry)
+        - `internal/server/server.go` — shared HTTP/JSON shim + routes
+        - `cmd/ocu-cuda-sidecar/main.go` — entrypoint, --listen flag
+        - `Dockerfile` — nvidia/cuda:12.2.0-devel multi-stage build
+      Operator tasks remaining (still unchecked in §3):
+        1. `podman build --network host -t ocu-cuda-sidecar .` on a CUDA host
+        2. `podman save ocu-cuda-sidecar | ssh thinker.local "podman load"`
+        3. `podman run --device nvidia.com/gpu=all -p 50060:50060 ocu-cuda-sidecar`
+        4. Set `HELIX_OCU_CUDA_ADDR=thinker.local:50060` in HelixQA `.env`
 
 ---
 
