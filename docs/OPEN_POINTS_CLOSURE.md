@@ -1,6 +1,6 @@
 # Open Points — Closure Brief
 
-**Last refresh:** 2026-04-18 (OCU P1.5/P3.5 Linux wiring closed — xwd/gnome/grim + xdotool/ydotool backends live)
+**Last refresh:** 2026-04-18 (OCU P2.5/P4.5/P5.5 partial wiring closed — pure-Go CPU vision + D-Bus + CDP observers + x264 encoder via ffmpeg)
 **Owner:** Operator (you). Every item below is work Claude cannot do
 autonomously — they need credentials, hardware, external accounts, or
 human judgment / filming / editing time.
@@ -262,6 +262,22 @@ later" items I'm listing so they aren't forgotten.
       server. Raw /dev/uinput path deferred; xdotool covers 95% of QA
       interactions no-sudo. Operator setup: docs/ocu-udev-setup.md.
       44 nexus packages -race green, vet+gofmt clean.
+
+- [x] **OCU P2.5/P4.5/P5.5 partial wiring** — **CLOSED 2026-04-18**:
+      Pure-Go CPU vision (per-pixel |Δ| diff with contiguous
+      flood-fill into ChangeRegions + Sobel X+Y edge detection →
+      UIElements, Kind "contour", Source "cv"). D-Bus observer via
+      godbus/dbus/v5 (ConnectSessionBus + AddMatchSignal per
+      target.Labels["interface"], signalToEvent pure translation).
+      CDP observer via chromedp ListenTarget (Network.responseReceived
+      + Runtime.consoleAPICalled). x264 encoder via ffmpeg libx264
+      subprocess (rawvideo bgra stdin → MP4 stdout, frag_keyframe).
+      Kill-switches: HELIXQA_VISION_CPU_STUB=1 /
+      HELIXQA_OBSERVE_DBUS_STUB=1 / HELIXQA_OBSERVE_CDP_STUB=1 /
+      HELIXQA_RECORD_X264_STUB=1. Graceful ErrNotWired when binary
+      absent or stub env set. All 30 nexus packages -race green,
+      vet+gofmt clean. Remaining stubs: LD_PRELOAD hook, plthook,
+      AT-SPI walker, NVENC, VAAPI, real OpenCV CUDA sidecar.
 
 ---
 
