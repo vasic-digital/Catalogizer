@@ -1,6 +1,6 @@
 # Open Points — Closure Brief
 
-**Last refresh:** 2026-04-18 (OCU P5 closed)
+**Last refresh:** 2026-04-18 (OCU P6 closed)
 **Owner:** Operator (you). Every item below is work Claude cannot do
 autonomously — they need credentials, hardware, external accounts, or
 human judgment / filming / editing time.
@@ -204,6 +204,22 @@ later" items I'm listing so they aren't forgotten.
       in-memory source + all 3 encoder kinds registered) green. Security
       audit `HelixQA/docs/security/ocu-p5-audit.md`. Plan
       `HelixQA/docs/superpowers/plans/2026-04-17-ocu-p5-record-plan.md`.
+- [x] **OCU P6 — Unified automation surface** — **CLOSED 2026-04-18**:
+      Engine composes P1–P5 (CaptureSource / VisionPipeline / Interactor /
+      Observer / Recorder) behind single `Engine.Perform(ctx, Action)`.
+      Action is pure data (Kind + At/To/Text/Key/Button/DX/DY/ClipAround/
+      ClipWindow/Expected); Engine is a pure dispatcher — zero decision logic.
+      Result carries Success, VerificationPassed, Elapsed, Evidence[],
+      DispatchedTo. verifier/ sub-package: PixelVerifier (Vision.Diff
+      threshold, errors never swallowed) + MultiVerifier (AND-chain,
+      first-fail short-circuit). agent_bridge/ sub-package: Bridge.
+      ExecuteAction is a provable one-liner adapter — LLM remains sole
+      decider. 22-entry bank `ocu-automation.json`. -race-clean
+      100-goroutine stress. govulncheck clean. go vet clean. gofmt clean.
+      Integration smoke (Capture → Click → Analyze → RecordClip sequence +
+      Bridge full sequence + all-Elapsed check) green. Security audit
+      `HelixQA/docs/security/ocu-p6-audit.md`. Plan
+      `HelixQA/docs/superpowers/plans/2026-04-17-ocu-p6-automation-plan.md`.
 
 ---
 
