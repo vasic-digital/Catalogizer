@@ -142,6 +142,19 @@ later" items I'm listing so they aren't forgotten.
       `database/dialect.go`) with a library like `sqlc` or `ent`
       once the schema stabilises — removes a category of dialect
       rewriting bugs.
+- [x] **OCU P0 — Foundation + Go↔Native bridging** — **CLOSED
+      2026-04-17**: contracts (`pkg/nexus/native/contracts/`) + budget
+      (`pkg/nexus/native/budget/`) + probe (`pkg/nexus/native/probe/`) +
+      remote dispatcher (`pkg/nexus/native/remote/`) land in HelixQA;
+      Containers GPU extension (`HostResources.GPU`, `GPURequirement`,
+      `StrategyGPUAffinity`, `GPUHealthCheck`, `ProbeGPU`) land in
+      Containers. Vertical-slice CLIs `cmd/ocu-probe` and
+      `cmd/ocu-dispatch-test` prove thinker.local routing end-to-end.
+      10-category test coverage (unit/integration/stress/security/
+      benchmark/challenges) per Constitution §V. Spec + plan in
+      `HelixQA/docs/superpowers/{specs,plans}/2026-04-17-*`. Next wave
+      (P1 capture, P2 vision, P3 interact, P4 observe) can now proceed
+      in parallel.
 
 ---
 
