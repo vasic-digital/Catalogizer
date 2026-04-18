@@ -1,6 +1,6 @@
 # Open Points — Closure Brief
 
-**Last refresh:** 2026-04-18 (OCU P4 closed)
+**Last refresh:** 2026-04-18 (OCU P5 closed)
 **Owner:** Operator (you). Every item below is work Claude cannot do
 autonomously — they need credentials, hardware, external accounts, or
 human judgment / filming / editing time.
@@ -190,6 +190,20 @@ later" items I'm listing so they aren't forgotten.
       stress (20 per kind × 5 kinds). govulncheck clean. go vet clean.
       gofmt clean. Integration smoke (all 5 kinds open) green. Plan
       `HelixQA/docs/superpowers/plans/2026-04-17-ocu-p4-observe-plan.md`.
+- [x] **OCU P5 — Recording & streaming** — **CLOSED 2026-04-18**:
+      Recorder + 3 encoder stubs (x264/nvenc/vaapi) + bounded FrameRing +
+      clipper (newline-delimited JSON frame metadata; real MKV/MP4 muxing
+      deferred to P5.5) + WebRTC/WHIP publisher off by default (ErrNotWired;
+      real ICE/DTLS/RTP deferred to P5.5). Priority-drain goroutine prevents
+      frame loss when Stop() races a pre-closed source channel. NVENC stub
+      documents P5.5 remote-dispatch path via ocuremote.Dispatcher (reuses
+      P2 SSH trust, no new credential). WebRTC BindAddr defaults to
+      127.0.0.1 (never 0.0.0.0 without explicit operator flag). 21-entry
+      bank `ocu-record.json`. -race-clean 100-goroutine stress. govulncheck
+      clean. go vet clean. gofmt clean. Integration smoke (Recorder +
+      in-memory source + all 3 encoder kinds registered) green. Security
+      audit `HelixQA/docs/security/ocu-p5-audit.md`. Plan
+      `HelixQA/docs/superpowers/plans/2026-04-17-ocu-p5-record-plan.md`.
 
 ---
 
