@@ -135,6 +135,9 @@ func (r *FanartTVResolver) download(ctx context.Context, url string) (*resolver.
 	if err := allowPublicURLLocal(url); err != nil {
 		return nil, fmt.Errorf("fanarttv: unsafe URL: %w", err)
 	}
+	if err := GuardProviderURL(url, SSRFGuardConfig{}); err != nil {
+		return nil, fmt.Errorf("fanarttv: unsafe URL: %w", err)
+	}
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, url, nil)
 	if err != nil {
 		return nil, err

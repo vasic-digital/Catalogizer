@@ -6,9 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
-	"net"
 	"net/http"
-	"net/url"
 	"os"
 	"strings"
 	"sync"
@@ -182,37 +180,7 @@ func (r *LLMImageSearchResolver) askLLMForURL(ctx context.Context, req *resolver
 // delegate to the Security submodule, but for now we keep it self-contained
 // to avoid widening the import graph.
 func allowPublicURL(raw string) error {
-	u, err := url.Parse(raw)
-	if err != nil {
-		return fmt.Errorf("parse url: %w", err)
-	}
-	if u.Scheme != "https" && u.Scheme != "http" {
-		return fmt.Errorf("unsupported scheme %q", u.Scheme)
-	}
-	host := u.Hostname()
-	if host == "" {
-		return errors.New("url has no host")
-	}
-	ips, err := net.LookupIP(host)
-	if err != nil {
-		return fmt.Errorf("resolve host: %w", err)
-	}
-	for _, ip := range ips {
-		if isUnsafeIP(ip) {
-			return fmt.Errorf("host resolves to unsafe ip %s", ip)
-		}
-	}
-	return nil
-}
-
-func isUnsafeIP(ip net.IP) bool {
-	if ip == nil {
-		return true
-	}
-	if ip.IsLoopback() || ip.IsPrivate() || ip.IsLinkLocalUnicast() || ip.IsLinkLocalMulticast() || ip.IsUnspecified() {
-		return true
-	}
-	return false
+	return GuardProviderURL(raw, SSRFGuardConfig{})
 }
 
 // Verify interface compliance at compile time.

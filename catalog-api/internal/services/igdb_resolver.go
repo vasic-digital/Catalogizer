@@ -94,7 +94,11 @@ func (r *IGDBResolver) Resolve(ctx context.Context, req *resolver.ResolveRequest
 // and returns the raw JSON reply. IGDB v4 requires Client-ID +
 // Bearer auth headers on every call.
 func (r *IGDBResolver) post(ctx context.Context, endpoint, apicalypse string) ([]byte, error) {
-	req, err := http.NewRequestWithContext(ctx, http.MethodPost, r.baseURL+"/"+endpoint, strings.NewReader(apicalypse))
+	target := r.baseURL + "/" + endpoint
+	if err := GuardProviderURL(target, SSRFGuardConfig{}); err != nil {
+		return nil, fmt.Errorf("igdb: unsafe endpoint: %w", err)
+	}
+	req, err := http.NewRequestWithContext(ctx, http.MethodPost, target, strings.NewReader(apicalypse))
 	if err != nil {
 		return nil, err
 	}
@@ -180,6 +184,9 @@ func normalizeIGDBImageURL(raw string) string {
 }
 
 func (r *IGDBResolver) download(ctx context.Context, url string) (*resolver.ResolveResult, error) {
+	if err := GuardProviderURL(url, SSRFGuardConfig{}); err != nil {
+		return nil, fmt.Errorf("igdb: unsafe download URL: %w", err)
+	}
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, url, nil)
 	if err != nil {
 		return nil, err

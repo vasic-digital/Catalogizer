@@ -123,6 +123,9 @@ func (r *ExternalMetadataResolver) Resolve(ctx context.Context, req *resolver.Re
 	if url == "" {
 		return nil, fmt.Errorf("no cover URL found for %s/%s", req.EntityType, req.EntityID)
 	}
+	if err := GuardProviderURL(url, SSRFGuardConfig{}); err != nil {
+		return nil, fmt.Errorf("external_metadata: unsafe URL: %w", err)
+	}
 
 	httpReq, err := http.NewRequestWithContext(ctx, http.MethodGet, url, nil)
 	if err != nil {

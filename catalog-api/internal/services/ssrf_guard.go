@@ -48,9 +48,27 @@ func (stdlibSSRFResolver) LookupIP(network, host string) ([]net.IP, error) {
 // ErrSSRFBlocked is returned when the guard rejects an outbound URL.
 var ErrSSRFBlocked = errors.New("services: ssrf blocked")
 
+// testAllowPrivateNetworks, when set true, globally relaxes the
+// guard so in-process httptest servers (always 127.0.0.1) can be
+// reached. Tests flip this with AllowPrivateSSRFForTests(t). The
+// production binary never touches the var — it defaults to false.
+var testAllowPrivateNetworks bool
+
+// AllowPrivateSSRFForTests flips testAllowPrivateNetworks for the
+// duration of t. Only for use inside *_test.go files that stand up
+// httptest servers. Registers a t.Cleanup hook to always restore.
+func AllowPrivateSSRFForTests(t interface{ Cleanup(func()) }) {
+	prev := testAllowPrivateNetworks
+	testAllowPrivateNetworks = true
+	t.Cleanup(func() { testAllowPrivateNetworks = prev })
+}
+
 // GuardProviderURL parses target and runs every SSRF check. Returns
 // ErrSSRFBlocked (wrapped) on rejection, nil on pass.
 func GuardProviderURL(target string, cfg SSRFGuardConfig) error {
+	if testAllowPrivateNetworks {
+		cfg.AllowPrivateNetworks = true
+	}
 	if target == "" {
 		return fmt.Errorf("%w: empty url", ErrSSRFBlocked)
 	}

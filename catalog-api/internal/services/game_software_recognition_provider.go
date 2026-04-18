@@ -535,7 +535,11 @@ func (p *GameSoftwareRecognitionProvider) searchIGDB(ctx context.Context, name, 
 	// Build IGDB query
 	query := fmt.Sprintf(`search "%s"; fields *; limit 10;`, name)
 
-	req, err := http.NewRequestWithContext(ctx, "POST", p.baseURLs["igdb"]+"/games", strings.NewReader(query))
+	target := p.baseURLs["igdb"] + "/games"
+	if err := GuardProviderURL(target, SSRFGuardConfig{}); err != nil {
+		return nil, fmt.Errorf("igdb: unsafe endpoint: %w", err)
+	}
+	req, err := http.NewRequestWithContext(ctx, "POST", target, strings.NewReader(query))
 	if err != nil {
 		return nil, err
 	}
@@ -831,7 +835,11 @@ func (p *GameSoftwareRecognitionProvider) searchGitHub(ctx context.Context, name
 	params.Set("sort", "stars")
 	params.Set("order", "desc")
 
-	req, err := http.NewRequestWithContext(ctx, "GET", fmt.Sprintf("%s/search/repositories?%s", p.baseURLs["github"], params.Encode()), nil)
+	target := fmt.Sprintf("%s/search/repositories?%s", p.baseURLs["github"], params.Encode())
+	if err := GuardProviderURL(target, SSRFGuardConfig{}); err != nil {
+		return nil, fmt.Errorf("github: unsafe endpoint: %w", err)
+	}
+	req, err := http.NewRequestWithContext(ctx, "GET", target, nil)
 	if err != nil {
 		return nil, err
 	}

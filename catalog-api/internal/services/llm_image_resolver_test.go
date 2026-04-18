@@ -41,6 +41,7 @@ func TestLLMResolver_EnabledOnlyWhenBothFlagsSet(t *testing.T) {
 }
 
 func TestLLMResolver_HappyPath(t *testing.T) {
+	withStrictSSRFGuard(t)
 	imgSrv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "image/jpeg")
 		_, _ = w.Write([]byte("IMAGEBYTES"))
@@ -82,6 +83,7 @@ func TestLLMResolver_OnePerEntityBudget(t *testing.T) {
 }
 
 func TestAllowPublicURL(t *testing.T) {
+	withStrictSSRFGuard(t)
 	tests := []struct {
 		name string
 		url  string

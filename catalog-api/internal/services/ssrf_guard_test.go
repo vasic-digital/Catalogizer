@@ -23,13 +23,24 @@ func (s stubSSRFResolver) LookupIP(_, host string) ([]net.IP, error) {
 	return nil, errors.New("stub: no such host")
 }
 
+// withStrictSSRFGuard turns off the package-wide test-only relax so
+// the guard is evaluated in production mode for the duration of t.
+func withStrictSSRFGuard(t *testing.T) {
+	t.Helper()
+	prev := testAllowPrivateNetworks
+	testAllowPrivateNetworks = false
+	t.Cleanup(func() { testAllowPrivateNetworks = prev })
+}
+
 func TestGuardProviderURL_RejectsEmpty(t *testing.T) {
+	withStrictSSRFGuard(t)
 	if err := GuardProviderURL("", SSRFGuardConfig{}); err == nil {
 		t.Error("empty URL must be rejected")
 	}
 }
 
 func TestGuardProviderURL_RejectsUnknownScheme(t *testing.T) {
+	withStrictSSRFGuard(t)
 	err := GuardProviderURL("gopher://example.com/", SSRFGuardConfig{})
 	if err == nil || !strings.Contains(err.Error(), "scheme") {
 		t.Errorf("expected scheme rejection, got %v", err)
@@ -37,6 +48,7 @@ func TestGuardProviderURL_RejectsUnknownScheme(t *testing.T) {
 }
 
 func TestGuardProviderURL_RejectsLoopbackLiteral(t *testing.T) {
+	withStrictSSRFGuard(t)
 	for _, target := range []string{
 		"http://127.0.0.1/",
 		"http://127.0.0.5:8080/",
@@ -50,6 +62,7 @@ func TestGuardProviderURL_RejectsLoopbackLiteral(t *testing.T) {
 }
 
 func TestGuardProviderURL_RejectsRFC1918(t *testing.T) {
+	withStrictSSRFGuard(t)
 	for _, target := range []string{
 		"http://10.0.0.5/",
 		"http://172.16.0.1/",
@@ -64,6 +77,7 @@ func TestGuardProviderURL_RejectsRFC1918(t *testing.T) {
 }
 
 func TestGuardProviderURL_RejectsCloudMetadata(t *testing.T) {
+	withStrictSSRFGuard(t)
 	err := GuardProviderURL("http://169.254.169.254/latest/meta-data/", SSRFGuardConfig{})
 	if err == nil || !errors.Is(err, ErrSSRFBlocked) {
 		t.Errorf("cloud metadata must block, got %v", err)
@@ -71,6 +85,7 @@ func TestGuardProviderURL_RejectsCloudMetadata(t *testing.T) {
 }
 
 func TestGuardProviderURL_RejectsIPv6Private(t *testing.T) {
+	withStrictSSRFGuard(t)
 	for _, target := range []string{
 		"http://[fe80::1]/",
 		"http://[fc00::1]/",
@@ -83,6 +98,7 @@ func TestGuardProviderURL_RejectsIPv6Private(t *testing.T) {
 }
 
 func TestGuardProviderURL_RejectsUnspecified(t *testing.T) {
+	withStrictSSRFGuard(t)
 	for _, target := range []string{"http://0.0.0.0/", "http://[::]/"} {
 		err := GuardProviderURL(target, SSRFGuardConfig{})
 		if err == nil || !errors.Is(err, ErrSSRFBlocked) {
@@ -110,6 +126,7 @@ func TestGuardProviderURL_HostnameToPublicIPAllowed(t *testing.T) {
 }
 
 func TestGuardProviderURL_HostnameToPrivateIPBlocked(t *testing.T) {
+	withStrictSSRFGuard(t)
 	err := GuardProviderURL("https://evil.fanart.tv/", SSRFGuardConfig{
 		Resolver: stubSSRFResolver{ips: map[string][]net.IP{
 			"evil.fanart.tv": {net.ParseIP("10.0.0.5")},
@@ -121,6 +138,7 @@ func TestGuardProviderURL_HostnameToPrivateIPBlocked(t *testing.T) {
 }
 
 func TestGuardProviderURL_MixedResolutionBlocked(t *testing.T) {
+	withStrictSSRFGuard(t)
 	err := GuardProviderURL("https://dual.fanart.tv/", SSRFGuardConfig{
 		Resolver: stubSSRFResolver{ips: map[string][]net.IP{
 			"dual.fanart.tv": {
@@ -147,6 +165,7 @@ func TestGuardProviderURL_AllowPrivateOptIn(t *testing.T) {
 }
 
 func TestGuardProviderURL_LookupFailureBlocks(t *testing.T) {
+	withStrictSSRFGuard(t)
 	err := GuardProviderURL("https://missing.example/", SSRFGuardConfig{
 		Resolver: stubSSRFResolver{err: errors.New("nxdomain")},
 	})

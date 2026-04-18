@@ -544,6 +544,9 @@ func (s *CoverArtService) searchITunes(ctx context.Context, request *CoverArtSea
 
 // Helper functions
 func (s *CoverArtService) downloadImage(ctx context.Context, imageURL string) ([]byte, error) {
+	if err := GuardProviderURL(imageURL, SSRFGuardConfig{}); err != nil {
+		return nil, fmt.Errorf("cover_art: unsafe URL: %w", err)
+	}
 	client := s.httpClient
 	if s.proxyCfg != nil && s.proxyCfg.IsEnabled() {
 		transport := &http.Transport{}

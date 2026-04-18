@@ -530,6 +530,10 @@ Test subtitle line 2`
 		return content, "utf-8", nil
 	}
 
+	if err := GuardProviderURL(url, SSRFGuardConfig{}); err != nil {
+		return "", "", fmt.Errorf("subtitle: unsafe URL: %w", err)
+	}
+
 	req, err := http.NewRequestWithContext(ctx, "GET", url, nil)
 	if err != nil {
 		return "", "", err

@@ -7,6 +7,12 @@ import (
 )
 
 func TestMain(m *testing.M) {
+	// Relax SSRF guard for the duration of this test package so
+	// in-process httptest servers (always 127.0.0.1) stay reachable.
+	// Production binaries never set this flag. SSRF tests themselves
+	// revert the flag per-test via withStrictSSRFGuard.
+	testAllowPrivateNetworks = true
+
 	goleak.VerifyTestMain(m,
 		// Known goroutines from third-party libraries
 		goleak.IgnoreTopFunction("github.com/gin-gonic/gin.(*Engine).handleHTTPRequest"),
