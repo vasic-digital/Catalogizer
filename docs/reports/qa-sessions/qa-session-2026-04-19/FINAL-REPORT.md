@@ -76,10 +76,24 @@ Delivered in commit `35624a2f` + `a2922322`:
   `scripts/lib/project-config.sh`, `Build/lib/orchestrator.sh`,
   `docker-compose.build.yml`, `docs/build-system.md`.
 
-Builder image rebuild was kicked off at `T21:52` and took
-~17–20 min — captured in the event log. Once it completes, a
-subsequent `run_in_builder "cargo --version && …"` will confirm the
-full happy path.
+Builder image rebuild kicked off at `T21:52`, completed at `T22:22`
+(30 min 10 s — longer than the Dockerfile baseline because the
+`playwright install --with-deps chromium` layer re-downloaded the
+headless-shell and FFmpeg artefacts fresh). Image tag
+`localhost/catalogizer-builder:latest = 7d03a0fbdb90` (7.08 GB).
+
+**End-to-end dispatch VERIFIED** at `T22:23`:
+
+```
+cargo 1.95.0 (f2d3ce0bd 2026-03-21)
+rustc 1.95.0 (59807616e 2026-04-14)
+v18.20.8
+10.8.2
+```
+
+`/opt/cargo/bin/cargo` reachable under `--userns=keep-id` (UID 1000
+host → UID 1000 container, and `/opt/cargo` is world-readable). See
+`verify/auto-container-dispatch-e2e.log` for the full capture.
 
 ## Phase 4 — Challenge banks (partial — in progress)
 

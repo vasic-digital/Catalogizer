@@ -1,0 +1,10 @@
+[0;36m[STEP][0m Dispatching to localhost/catalogizer-builder:latest…
+cargo 1.95.0 (f2d3ce0bd 2026-03-21)
+rustc 1.95.0 (59807616e 2026-04-14)
+v18.20.8
+10.8.2
+total 57872
+drwxr-xr-x 1 root root      258 Apr 19 19:09 .
+drwxr-xr-x 1 root root      174 Apr 19 18:58 ..
+lrwxrwxrwx 1 root root        6 Apr 19 18:52 cargo -> rustup
+lrwxrwxrwx 1 root root        6 Apr 19 18:52 cargo-clippy -> rustup
