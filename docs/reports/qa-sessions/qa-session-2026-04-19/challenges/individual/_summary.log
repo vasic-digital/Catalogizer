@@ -1,0 +1,19 @@
+✓ api-docs                                           HTTP=200
+✓ browsing-api-health                                HTTP=200
+✓ config-docs                                        HTTP=200
+! database-connectivity                              HTTP=curl: (28) Operation timed out after 30001 milliseconds with 0 bytes received
+000
+! database-docs                                      HTTP=curl: (28) Operation timed out after 30002 milliseconds with 0 bytes received
+000
+! first-catalog-smb-connect                          HTTP=curl: (28) Operation timed out after 30002 milliseconds with 0 bytes received
+000
+! grafana-dashboard-renders                          HTTP=curl: (28) Operation timed out after 30021 milliseconds with 0 bytes received
+000
+! musicbrainz-provider-search                        HTTP=curl: (28) Operation timed out after 30002 milliseconds with 0 bytes received
+000
+! openlibrary-provider-search                        HTTP=curl: (28) Operation timed out after 30004 milliseconds with 0 bytes received
+000
+! provider-graceful-degradation                      HTTP=curl: (28) Operation timed out after 30001 milliseconds with 0 bytes received
+000
+! provider-manager-routing                           HTTP=curl: (28) Operation timed out after 30003 milliseconds with 0 bytes received
+000
