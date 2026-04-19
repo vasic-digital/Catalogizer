@@ -28,6 +28,27 @@ Catalogizer is a comprehensive media collection management system that automatic
 - **Resilient Architecture**: Handles temporary SMB disconnections gracefully
 - **Scalable Design**: Modular architecture supporting multiple media sources
 
+## 📚 Key Documentation (start here)
+
+| Document | Purpose |
+|---|---|
+| 📄 **[Environment Variables Reference](docs/ENV_VARIABLES.md)** | Complete `.env` guide — every API key, token, provider registration URL, and configuration flag with 🔴/🟠/🟡/🟢/⚫ tier markers. **Start here to set up credentials.** |
+| 📐 **[CONSTITUTION.md](CONSTITUTION.md)** | Non-negotiable rules — Article V (100% test coverage), Article VI (Open-Points Closure Brief), **Article VII (Full-QA Master Cycle)** |
+| 🎯 **[Open-Points Closure Brief](docs/OPEN_POINTS_CLOSURE.md)** | Canonical operator-action checklist — every credential, hardware item, and infra task still outstanding |
+| 🗺️ **[OCU Program Roadmap](HelixQA/docs/nexus/ocu-roadmap.md)** | OpenClaw Ultimate phases P0–P7 status, contract versions, latency budgets, risks |
+| 📆 **[Session Handoff 2026-04-18](docs/SESSION_HANDOFF_2026-04-18.md)** | Latest session's completed work + known issues + exact resume commands |
+| 📝 **[Full-QA Master Plan](docs/plans/2026-04-18-full-qa-cycle-master-plan.md)** | Plan for the rigid rebuild → test → Challenges → HelixQA → fix loop |
+| 🧾 **[v4.0.0 Release Notes (HelixQA)](HelixQA/docs/releases/v4.0.0.md)** | OpenClaw Ultimate v4.0.0 ship notes |
+| 🐞 **[QA Sessions Archive](docs/reports/qa-sessions/)** | Permanent per-session FINAL-REPORT.md + logs + videos + tickets |
+| 🔒 **[Security audits (OCU)](HelixQA/docs/security/)** | Per-phase P0–P7 security posture notes |
+| 🪝 **[LD_PRELOAD Hook Guide](HelixQA/docs/hooks/README.md)** | How to compile and wire a per-target shim for hook-based observation |
+| 📜 **[OCU Replay DSL](HelixQA/docs/ocu-replay-format.md)** | `helixqa replay <ticket>` DSL spec |
+| 📊 **[Challenges Dashboard](HelixQA/docs/website/challenges-dashboard/)** | Static HTML dashboard over qa-results/ pipeline reports |
+| 🎫 **[Ticket Viewer](HelixQA/docs/website/ticket-viewer/)** | Static HTML renderer for OCU tickets with inline evidence |
+| 🤖 **[CLAUDE.md](CLAUDE.md)** | Agent-ingestible project rules + architecture pointers |
+| 🤖 **[AGENTS.md](AGENTS.md)** | Autonomous-agent constraints + coding conventions |
+| 🧠 **[MEMORY.md](MEMORY.md)** | Auto-memory index (persistent Claude session state) |
+
 ## 📋 Table of Contents
 
 - [Architecture Overview](#architecture-overview)
