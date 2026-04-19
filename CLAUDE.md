@@ -6,291 +6,84 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 Multi-platform media collection manager. Detects, categorizes, and organizes media across SMB, FTP, NFS, WebDAV, and local filesystems. Components: **catalog-api** (Go 1.25/Gin backend), **catalog-web** (React 18/TS/Vite frontend), **catalogizer-desktop** & **installer-wizard** (Tauri/Rust+React), **catalogizer-android** & **catalogizer-androidtv** (Kotlin/Compose), **catalogizer-api-client** (TS library).
 
+## Companion Docs
+
+- **`AGENTS.md`** — autonomous-agent constraints and coding conventions (read alongside this file).
+- **`MEMORY.md`** — auto-memory index for persistent Claude session state.
+- **`CONSTITUTION.md`** — non-negotiable program rules. Article V (100% test coverage), Article VI (Open-Points brief), Article VII (Full-QA Master Cycle).
+- **`docs/OPEN_POINTS_CLOSURE.md`** — single source of truth for every operator-action item.
+- **`README.md`** — extensive architecture narrative, provider details, deployment guidance.
+- **`versions.json`** — authoritative version for every app/service.
+
 ## ⚠️ Mandatory Constraints (Non-Negotiable)
 
-### Full-QA Master Cycle — Non-Negotiable
+The full text of each constraint below lives in `CONSTITUTION.md`. These are invariants — do not paraphrase into code comments or other docs.
 
-**`CONSTITUTION.md` Article VII defines the rigid production QA loop.** Every release effort executes: clean rebuild → all tests → all Challenges → all HelixQA banks → full autonomous QA per app per platform → video+screenshot review → tickets → root-cause fixes with 4-artefact regression tail → rebuild → repeat until clean pass. Stop only on FATAL BLOCKER / SYSTEM BREAKS / NOTHING LEFT.
-
-- Clean slate: no cached artefacts. Rebuild every binary + container before the loop.
-- Coverage contract: every happy path + standard flow + screen + UI/UX component + use case + edge case + data-set combination + media type. Nothing skipped.
-- `.env` at project root supplies all LLM keys — HelixQA runs against real vision models, not stubs.
-- `.devignore` devices (ATMOSphere) never touched. `.devconnect` lists current valid devices.
-- Live monitoring mandatory: operator console shows platform + app + test ID + progress + result at every moment.
-- Every session archives to `docs/reports/qa-sessions/<YYYY-MM-DD-THH-MM>/` (not gitignored): FINAL-REPORT.md, logs/, challenges/, helixqa/, videos/, screenshots/, tickets/, analysis/.
-- Every fix = 4 artefacts in the same commit: unit/integration test + `fixes-validation` bank entry + HelixQA bank entry + challenge registration.
-- On clean pass: version-bump every app/service, archive debug+release builds to `releases/<platform>/<app>/<version>/`.
-
-See `CONSTITUTION.md` Article VII §7.1–§7.11 for full rules.
-
-### Open-Points Closure Brief — Source of Truth
-
-**`docs/OPEN_POINTS_CLOSURE.md` is the single source of truth for every remaining operator-action item across the program.** Every session must consult it before starting work, and every session that changes the state of an item must update the brief in the **same commit** that changes the state.
-
-- When you close an item: tick the checkbox, refresh the "Last refresh" date at the top of the brief.
-- When you discover a new operator-action item (credential, hardware, infra, human): append it to the appropriate section (1–5) in the same commit.
-- Never fork the list into tickets, chat, or other docs. Extend the brief.
-- The brief drives the "cleaning up the depth" work: each regular maintenance cycle picks the highest-impact unchecked item, closes it, commits the closure + brief update atomically, pushes everything to all upstream remotes.
-- Deleting an unclosed item without closing it is a **Constitution Article VI violation** on par with committing a TODO.
-
-See `CONSTITUTION.md` §6 for the full enforcement rule.
-
-### Zero Unfinished Work Policy
-
-**No TODOs, FIXMEs, empty implementations, silent error swallows, fake data, panic-prone `unwrap()`, or empty catch blocks may be committed.** Pre-commit hooks block them; CI fails on them.
-
-When an issue is found, fix **all** instances — not just the reported one. Definition of "done": compiles without warnings, all bugs fixed, all error cases handled, all tests pass with real assertions.
-
-### No Sudo / No Root
-
-All operations run at local-user level only. Never `sudo`, never `root`, never elevated privileges. Use rootless Podman, user systemd, user-writable directories. If a command requires elevation, find a user-level alternative.
-
-### API Keys & Secrets
-
-Never commit `.env` files with real keys, never hardcode secrets in source / CLAUDE.md / AGENTS.md. Use `.env.example` with `YOUR_API_KEY_HERE` placeholders. Verify `.gitignore` covers `.env` before every commit. Rotate any leaked key immediately. All submodules must have `.env` in their `.gitignore`.
-
-### Git Access via SSH Only
-
-Always SSH (`git@github.com:...`), never HTTPS. Submodules in `.gitmodules` must use SSH URLs. CI/CD uses SSH deploy keys. GitVerse uses port 2222.
-
-### GitHub Actions Permanently Disabled
-
-Do not create files in `.github/workflows/`. CI/CD runs locally only.
-
-### Containers Mandatory for Builds, Services, QA
-
-All builds (`./scripts/release-build.sh --container`), services (`podman-compose`), and QA testing run in containers. Bare-metal `go run` / `npm run dev` is acceptable only for rapid local iteration, never production or QA.
-
-### .devignore — Devices Forbidden for Testing
-
-Devices listed in `.devignore` (e.g. ATMOSphere) **must never** be used for any testing, QA, or app deployment. Before any ADB operation, check device model against `.devignore` and abort if matched. If no valid devices are connected, abort the session — never fall back to excluded devices.
-
-```bash
-DEVICE_MODEL=$(adb -s $DEVICE shell getprop ro.product.model)
-if grep -qi "$DEVICE_MODEL" .devignore; then
-  echo "❌ Device $DEVICE_MODEL is in .devignore - CANNOT USE"; exit 1
-fi
-```
-
-### .devconnect — Auto-Connect Devices
-
-`.devconnect` (gitignored) lists IPs of Android TV devices to auto-connect before HelixQA runs. Format: one IP per line (`192.168.0.214` or `192.168.0.214:5555`). Run `./scripts/devconnect.sh` to validate reachability and connect (idempotent).
-
-### Universal Solution Principle
-
-All fixes and testing infrastructure must be **universal** — working with any application, not just Catalogizer. Never add test-only code to the app under test (no `QAInputReceiver`, no test endpoints, no bypasses). Fix detection / input / parsing in HelixQA itself, not in the app. Any solution that modifies the app under test is invalid.
-
-### Real-Time Log Monitoring
-
-Every QA session must stream logs in real time: `adb logcat` (Android), browser console (web), application + system logs (desktop), service logs (backend). ANR/crash/fatal-exception detection must pause the session immediately. No QA session is valid without live log monitoring.
-
-### Host Resource Limits (30–40% Maximum)
-
-The host runs other mission-critical processes. Workloads must stay under 30–40% of total resources or the system can freeze.
-
-- **Go tests**: `GOMAXPROCS=3 go test ./... -p 2 -parallel 2`
-- **Container limits** (mandatory `podman run` flags):
-  - PostgreSQL: `--cpus=1 --memory=2g`
-  - catalog-api: `--cpus=2 --memory=4g`
-  - catalog-web: `--cpus=1 --memory=2g`
-  - Builder: `--cpus=3 --memory=8g`
-- **Total budget**: max 4 CPUs, 8 GB RAM across all running containers
-- **Challenges**: run sequentially via the API, never in parallel
-- **Monitor**: `podman stats --no-stream`, `cat /proc/loadavg`
-
-### HTTP/3 (QUIC) + Brotli Mandatory
-
-All network communication uses HTTP/3 with Brotli compression. Fallback: HTTP/2 + gzip. Never HTTP/1.1 in production. catalog-api uses `quic-go/http3` + `andybalholm/brotli`. Android uses OkHttp + Cronet + Brotli.
-
-### Zero Warning / Zero Error Policy
-
-All components run with zero console warnings, zero console errors, and zero failed network requests in every environment. Every failed network request is a defect. If a feature is not yet implemented, provide a stub endpoint that returns a valid empty response. The challenge suite enforces this end-to-end.
-
-### 100% Test Coverage Across All Categories (Constitution Article V)
-
-**Every component must maintain no-less-than 100% coverage in every one of these ten categories** — none may be skipped, deferred, or partially covered:
-
-1. Unit — pure logic, individual functions / classes
-2. Integration — cross-module, DB, cache, queues, filesystems
-3. E2E — full user journeys through the live system
-4. Full automation — unattended, reproducible, CI-runnable E2E
-5. Stress — saturation, concurrency, large payloads, long sessions
-6. Security — authn/z, injection, SSRF, secrets, CVE scans (`govulncheck`, `npm audit`, Semgrep, Gosec, Trivy)
-7. DDoS / rate-limit — floods, bursts, slowloris, connection exhaustion, rejection + recovery verification
-8. Benchmarking — latency / throughput / memory baselines with regression detection
-9. Challenges — registered `digital.vasic.challenges` entry per feature
-10. HelixQA — autonomous bank + session entry per screen, flow, and adversarial case
-
-"100%" means every branch (happy, error, edge, adversarial) of every public function / endpoint / UI component is exercised, every feature has an E2E flow + challenge + HelixQA bank entry, and every fix has a regression test in the `fixes-validation` bank **before** the ticket is closed.
-
-**Mandatory retesting loop** (rebuild → execute all categories → analyze → ticket → fix + regression → repeat) runs until a full pass is clean. **Shipping is prohibited** while any category is incomplete or any ticket is open.
-
-Coverage is achieved **sequentially, one platform at a time**, across all services and applications. See `CONSTITUTION.md` Article V for the full text.
+- **Full-QA Master Cycle** (Article VII). Clean rebuild → all tests → all Challenges → all HelixQA banks → autonomous QA per app/platform → video+screenshot review → tickets → root-cause fix with 4 artefacts (unit/integration test + `fixes-validation` entry + HelixQA bank entry + challenge) → rebuild → repeat until clean pass. Stop only on FATAL BLOCKER / SYSTEM BREAKS / NOTHING LEFT. Every session archives to `docs/reports/qa-sessions/<YYYY-MM-DD-THH-MM>/` (FINAL-REPORT.md, logs/, challenges/, helixqa/, videos/, screenshots/, tickets/, analysis/). On clean pass: version-bump + archive to `releases/<platform>/<app>/<version>/`.
+- **100% Test Coverage Across 10 Categories** (Article V). Unit, integration, E2E, full automation, stress, security, DDoS/rate-limit, benchmarking, challenges, HelixQA. Every branch (happy / error / edge / adversarial) of every public function, endpoint, UI component. Shipping is prohibited while any category is incomplete or any ticket is open. Achieved sequentially, one platform at a time.
+- **Open-Points Closure Brief** (Article VI). `docs/OPEN_POINTS_CLOSURE.md` is the single source of truth for operator-action items. Consult before any work; update in the **same commit** that changes an item's state (tick checkbox + refresh "Last refresh" date). Deleting an unclosed item is an Article VI violation.
+- **Zero Unfinished Work.** No TODOs, FIXMEs, empty implementations, silent error swallows, fake data, panic-prone `unwrap()`, or empty catch blocks. Pre-commit hooks + CI enforce this. When you find one instance, fix **all** instances.
+- **Zero Warning / Zero Error.** Every component runs with zero console warnings/errors and zero failed network requests in every environment. Missing features: return a valid empty stub response, not a 404/500.
+- **No Sudo / No Root.** All operations local-user only: rootless Podman, user systemd, user-writable dirs. If something seems to need elevation, find a user-level alternative.
+- **API Keys & Secrets.** Never commit real `.env` files or hardcode secrets anywhere (source, CLAUDE.md, AGENTS.md). Use `.env.example` with `YOUR_API_KEY_HERE`. Verify `.gitignore` covers `.env` in the project root **and every submodule** before committing. Rotate leaked keys immediately.
+- **Git via SSH Only.** `git@github.com:…`, never HTTPS. Submodules in `.gitmodules` use SSH URLs. GitVerse uses port 2222.
+- **GitHub Actions Disabled.** Do not create files in `.github/workflows/`. CI/CD runs locally.
+- **Containers Mandatory for Builds, Services, QA.** Bare-metal `go run` / `npm run dev` is acceptable for rapid local iteration only, never for production or QA. See [Container Runtime](#container-runtime-podman-only) for resource limits and flags.
+- **HTTP/3 (QUIC) + Brotli.** Fallback HTTP/2 + gzip. Never HTTP/1.1 in production. catalog-api uses `quic-go/http3` + `andybalholm/brotli`; Android uses OkHttp + Cronet + Brotli.
+- **`.devignore`** (e.g. ATMOSphere): never used for any testing/QA/deployment. Check device model before any ADB operation; abort if matched. Never fall back to an excluded device.
+  ```bash
+  DEVICE_MODEL=$(adb -s $DEVICE shell getprop ro.product.model)
+  grep -qi "$DEVICE_MODEL" .devignore && { echo "❌ in .devignore"; exit 1; }
+  ```
+- **`.devconnect`** (gitignored): one IP per line for Android TV auto-connect. Run `./scripts/devconnect.sh` (idempotent) before HelixQA.
 
 ## HelixQA: Autonomous LLM-Driven Testing
 
-HelixQA is the **sole authorized tool** for all automated UI/UX testing across Android TV, Android phone, web, and desktop. Pipeline: **Learn → Plan → Execute → Curiosity → Analyze**. Run via `helixqa autonomous --platforms androidtv` or use the orchestrator script (below). Configuration in `HelixQA/.env.example`.
+HelixQA is the **sole authorized tool** for all automated UI/UX testing across Android TV, Android phone, web, and desktop. Pipeline: **Learn → Plan → Execute → Curiosity → Analyze**. Configuration in `HelixQA/.env.example`. Full details in `HelixQA/README.md`.
 
-### Absolute Rules
+### Invariants (must never be violated)
 
-- **No manual UI scripts.** No custom ADB tap sequences, coordinate-based automation, shell scripts for UI interactions, Appium scripts outside HelixQA, or standalone Playwright scripts. HelixQA is it.
-- **Vision-driven only.** Every action is `screenshot → LLM analysis → action decision`. No hardcoded coordinates, no sleep timers, no keystroke sequences, no fallback hardcoded actions. If vision providers are unavailable, the phase **skips** — never fakes results.
-- **Fix in HelixQA, not the app.** Parsing bugs, retry logic, prompt issues — all fixed in HelixQA Go code. Never work around with shell scripts.
-- **All connected ADB devices tested** (except `.devignore` entries). ADB reverse proxy auto-configured.
-- **QA priority order**: (1) happy paths (login, browse, play), (2) standard flows, (3) edge cases, (4) adversarial.
-- **Never type credentials into non-login fields** — the LLM must understand which screen it's on.
+- **HelixQA-only for UI automation.** No custom ADB tap sequences, no coordinate-based shell scripts, no standalone Playwright/Appium outside HelixQA.
+- **Vision-driven only.** Every action is `screenshot → LLM analysis → action decision`. No hardcoded coordinates, no sleep timers, no keystroke sequences, no fallback hardcoded actions. If vision providers are unavailable the phase **skips** — never fakes results.
+- **Universal Solution Principle.** Fix detection / input / parsing bugs in **HelixQA itself**, never in the app under test. No `QAInputReceiver`, no test endpoints, no bypasses — solutions that modify the app are invalid.
+- **Live log monitoring.** Every QA session streams `adb logcat` (Android), browser console (web), app/system logs (desktop), service logs (backend). ANR/crash/fatal-exception pauses the session immediately.
+- **Screen-state tracking.** Compare frame N to N+1. Stagnation (identical >10s or no change after an action) is a critical failure — a "100% pass" report when the app never progressed past login is fraudulent.
+- **Executable actions in banks**, never prose. `action: "adb_shell: input text admin"`, not `"Enter credentials"`.
+- **Credential safety.** Never type credentials into non-login fields — the LLM must recognize the current screen.
+- **Video mandatory for every device/emulator session.** 16 Mbps min, 1920×1080, pulled after recording; frames extracted for post-analysis (misaligned UI, clipped text, wrong colors, missing assets, unresponsive buttons, jank, brand compliance).
+- **Evidence validation.** Post-login UI dump must not contain "Sign In". Empty screens when backend has data = bug. Compare API responses against on-screen content.
+- **Validation tests are permanent.** Every fix adds a regression entry to `banks/fixes-validation.yaml`; it persists across all future campaigns.
 
 ### Vision Architecture
 
-Phase-specific model selection via LLMsVerifier strategies:
-- **NavigationStrategy** (Execute / Curiosity): JSON-action models
-- **AnalysisStrategy** (Analyze): rich-description models
-- **PlanningStrategy** (Learn / Plan): reasoning models
+Phase-specific model selection via LLMsVerifier strategies — NavigationStrategy (Execute/Curiosity: JSON-action models), AnalysisStrategy (Analyze: rich-description models), PlanningStrategy (Learn/Plan: reasoning models). **llama.cpp RPC** is the primary local backend; Astica.AI / Gemini / OpenAI complement it. Models scored dynamically per phase; bridged CLI models discovered via `pkg/bridge/`.
 
-**llama.cpp RPC distributed inference** is the primary local backend. Cloud providers (Astica.AI, Gemini, OpenAI) complement it. Models are scored dynamically per phase — no hardcoded preferences. Bridged CLI models discovered via `pkg/bridge/`.
+### Bank Coverage & Execution
 
-### Screen Recognition & Action Verification
-
-A QA system that cannot detect "stuck on same screen" is useless. HelixQA must:
-
-1. **Track screen state** — compare current vs previous; report stagnation (>10s identical frames) as a critical issue.
-2. **Verify actions executed** — confirm screen state changed as expected after each action; fail the test if no change.
-3. **Use executable actions in test banks**, never prose descriptions:
-   ```yaml
-   - name: Type username
-     action: "adb_shell: input text admin"
-     expected: "Username field populated"
-   ```
-   not:
-   ```json
-   { "action": "Enter admin/admin123 credentials", "expected": "Home screen loads" }
-   ```
-4. **Frame-by-frame video analysis** — extract frames at 1s intervals, compare N to N+1, report stagnation if identical for >5s after an action.
-5. **Auto-report**: stuck screens, login never attempted, home never reached, blank/black screens, ANR/crash indicators.
-
-QA reports showing "100% pass" when the app never progressed past login are fraudulent and unacceptable.
-
-### Mandatory Video Recording (Device / Emulator)
-
-Every Android device or emulator session **must** record video.
-
-- **Android 9 and below** (Mi Box, emulators): `adb shell screenrecord --bit-rate 4000000 /sdcard/qa_session.mp4`
-- **Android 10+**: rapid `adb shell screencap` assembled into video via ffmpeg
-- **Android 15 (SDK 35)**: `screenrecord` fails with `Encoder failed (err=-38)` — use screenshot-to-video
-- **Web**: Playwright `--video on` or ffmpeg x11grab
-- **Desktop (Tauri)**: ffmpeg x11grab or Xvfb
-- **Recording quality**: 16 Mbps minimum, 1920×1080 for frame extraction
-- **Frame extraction**: `ExtractFrameAt(timestamp)` and `ExtractLatestFrame()` from video — higher quality and more reliable than direct screenshots
-- **Pull videos after recording**: `adb pull /sdcard/qa_session.mp4`
-- **Output**: `qa-results/video-sessions-<timestamp>/` with per-device frames and analysis markdown
-
-Every video must be analyzed for: misaligned UI, clipped text, wrong colors, missing assets, unresponsive buttons, broken animations, empty screens with backend data, brand compliance (Vasic Digital logo in rounded square with red border), jank, frozen frames, app restarts.
-
-### Evidence Validation
-
-- Visually inspect every screenshot to verify expected screen state.
-- Login verification: UI dump must **not** contain "Sign In" after login attempt — if it does, login failed.
-- Compare API responses against on-screen content. Empty screens with backend data = bug.
-- Verify every phase transition before proceeding to the next.
-- Cross-reference screen content against codebase logic and database state.
-
-### Iterative Test-Fix-Rebuild Loop
-
-QA campaigns must follow this loop until all pass / fatal blocker / nothing left:
-
-1. **Rebuild** affected binaries, containers, deployments
-2. **Execute** all tests (unit, challenges, HelixQA bank, autonomous)
-3. **Analyze** results, videos, screenshots, logs
-4. **Create tickets** for every defect (severity, evidence, repro steps)
-5. **Fix** root causes (never workarounds); add a regression test to the **Fixes Validation** bank
-6. **Repeat** from step 1
-
-Validation tests are permanent — they persist across all future QA campaigns.
-
-### Live Monitoring & Reporting Layout
-
-Every test run captures real-time platform / test-case-ID / pass-fail-skip / aggregate stats and archives everything to:
-
-```
-docs/reports/qa-sessions/qa-session-YYYY-MM-DD/
-├── FINAL-REPORT.md
-├── logs/                  # unit-tests-go.log, unit-tests-frontend.log, challenges.log,
-│                          # helixqa-bank.log, helixqa-autonomous-<platform>.log
-├── challenges/            # JSON results + summary
-├── helixqa/               # bank-results/, autonomous/
-├── videos/
-├── screenshots/
-├── tickets/
-└── analysis/
-```
-
-### Comprehensive Bank Coverage
-
-Test banks must cover all features, all screens, all use cases, all 11 media types, all CRUD operations, search (Cyrillic / special chars / SQL injection / XSS payloads), auth flows, navigation (incl. TV channels + DPAD), media interaction, settings, edge cases, negative data. Data sets include real catalog content from NAS, known TMDB / OpenLibrary / MusicBrainz entries, boundary values, and internationalized content.
-
-Bank files: `banks/full-qa-{api,web,androidtv,android,cross-platform}.yaml`, `banks/fixes-validation.yaml`. **Bank format is JSON** — convert YAML with `python3 -c "import yaml,json; json.dump(yaml.safe_load(open('bank.yaml')), open('bank.json','w'))"`.
-
-### One-Command Execution
+Banks live in `banks/full-qa-{api,web,androidtv,android,cross-platform}.yaml` + `banks/fixes-validation.yaml`. **Bank format is JSON at runtime** — convert with `python3 -c "import yaml,json; json.dump(yaml.safe_load(open('bank.yaml')), open('bank.json','w'))"`. Coverage spans all 11 media types, all CRUD, all screens, all auth/nav flows, adversarial search (Cyrillic, SQL injection, XSS), boundary values, and internationalized content.
 
 ```bash
 ./scripts/helixqa-orchestrator.sh [platforms]   # all platforms by default
-./scripts/helixqa-orchestrator.sh android       # Android TV only
-./scripts/helixqa-orchestrator.sh web           # web only
+./scripts/helixqa-orchestrator.sh androidtv     # one platform
 ```
 
-Phases: env validation → device connect (`.devconnect`) → APK install (builds if needed) → background health monitoring → autonomous testing → report generation. Output: `qa-results/session-<timestamp>/`.
+Phases: env validation → device connect (`.devconnect`) → APK install (builds if needed) → background health monitoring → autonomous testing → report generation. Output: `qa-results/session-<timestamp>/`. Session archive layout is mandated by Article VII — see Full-QA Master Cycle.
+
+### Platform-Specific Recording Notes
+
+- **Android 9 and below** (Mi Box, emulators): `adb shell screenrecord --bit-rate 4000000 /sdcard/qa_session.mp4`.
+- **Android 10+**: rapid `screencap` frames assembled into video via ffmpeg.
+- **Android 15 (SDK 35)**: `screenrecord` fails with `Encoder failed (err=-38)` → use screenshot-to-video.
+- **Web**: Playwright `--video on` or `ffmpeg x11grab`.
+- **Desktop (Tauri)**: `ffmpeg x11grab` or `Xvfb`.
 
 ## Submodule Architecture
 
-41 independent git submodules under the `vasic-digital` org. Each has its own GitHub + GitLab repo, tests, docs, and `Upstreams/` for multi-remote push.
+41 independent git submodules under the `vasic-digital` org. Each has its own GitHub + GitLab repos, tests, docs, and `Upstreams/` config for multi-remote push. Wiring:
 
-### Go Modules (wired via `replace` in `catalog-api/go.mod`)
-
-| Module | Path | Description |
-|--------|------|-------------|
-| `digital.vasic.challenges` | `Challenges/` | Challenge framework |
-| `digital.vasic.assets` | `Assets/` | Asset management |
-| `digital.vasic.containers` | `Containers/` | Container discovery + service ports |
-| `digital.vasic.concurrency` | `Concurrency/` | Concurrency utilities |
-| `digital.vasic.config` | `Config/` | Configuration management |
-| `digital.vasic.filesystem` | `Filesystem/` | Unified filesystem protocol abstraction |
-| `digital.vasic.auth` | `Auth/` | Authentication primitives |
-| `digital.vasic.cache` | `Cache/` | Caching layer |
-| `digital.vasic.entities` | `Entities/` | Entity model definitions |
-| `digital.vasic.eventbus` | `EventBus/` | Pub/sub event bus |
-| `digital.vasic.database` | `Database/` | Connection, dialect abstraction, migrations |
-| `digital.vasic.discovery` | `Discovery/` | Service discovery |
-| `digital.vasic.lazy` | `Lazy/` | Generic lazy loading |
-| `digital.vasic.media` | `Media/` | Media detection + analysis pipeline |
-| `digital.vasic.memory` | `Memory/` | Memory leak detection |
-| `digital.vasic.middleware` | `Middleware/` | HTTP middleware |
-| `digital.vasic.observability` | `Observability/` | Metrics, logging, tracing |
-| `digital.vasic.ratelimiter` | `RateLimiter/` | Rate limiting |
-| `digital.vasic.recovery` | `Recovery/` | Circuit breaker + recovery patterns |
-| `digital.vasic.security` | `Security/` | Security utilities |
-| `digital.vasic.storage` | `Storage/` | Storage abstraction |
-| `digital.vasic.streaming` | `Streaming/` | Media streaming |
-| `digital.vasic.watcher` | `Watcher/` | Filesystem watcher |
-
-### TypeScript / React Modules (linked via `file:../` in `catalog-web/package.json`)
-
-| Module | Path | Description |
-|--------|------|-------------|
-| `@vasic-digital/websocket-client` | `WebSocket-Client-TS/` | WebSocket client + React hooks |
-| `@vasic-digital/ui-components` | `UI-Components-React/` | React UI library |
-| `@vasic-digital/media-types` | `Media-Types-TS/` | Shared media type definitions |
-| `@vasic-digital/catalogizer-api-client` | `Catalogizer-API-Client-TS/` | TypeScript API client |
-| `@vasic-digital/auth-context` | `Auth-Context-React/` | Auth context provider |
-| `@vasic-digital/media-browser` | `Media-Browser-React/` | Media browsing components |
-| `@vasic-digital/media-player` | `Media-Player-React/` | Playback components |
-| `@vasic-digital/collection-manager` | `Collection-Manager-React/` | Collection management UI |
-| `@vasic-digital/dashboard-analytics` | `Dashboard-Analytics-React/` | Dashboard + analytics |
-
-### HelixQA / AI Submodules
-
-`HelixQA/`, `DocProcessor/`, `LLMOrchestrator/`, `LLMProvider/`, `VisionEngine/`, `ReplayBuffer/`, `ScreenDiff/`, `TrainingCollector/`, `VisualRegression/`.
-
-### Submodule Commands
+- **Go modules** (`digital.vasic.*`) are wired into `catalog-api/go.mod` via `replace` directives — inspect `go.mod` for the authoritative list.
+- **TypeScript/React packages** (`@vasic-digital/*`) are linked in `catalog-web/package.json` via `file:../` — inspect `package.json`.
+- **HelixQA / AI stack**: `HelixQA/`, `DocProcessor/`, `LLMOrchestrator/`, `LLMProvider/`, `VisionEngine/`, `ReplayBuffer/`, `ScreenDiff/`, `TrainingCollector/`, `VisualRegression/`.
 
 ```bash
 git submodule update --init --recursive               # after cloning
@@ -427,7 +220,7 @@ Dual-dialect abstraction supporting SQLite (dev) and PostgreSQL (production).
 
 **Android**: MVVM — Compose UI → ViewModel (StateFlow) → Repository → Room + Retrofit. Hilt DI. Requires `jvmToolchain(17)` and `--add-opens` JVM args for kapt + JDK 21 compat.
 
-**Android TV Home Screen Channels** (catalogizer-androidtv v2.3.0): full integration with `androidx.tvprovider`. Default "Catalogizer Picks" channel auto-created on launch. Per-category dynamic channels. System Watch Next row for partially-watched items + auto-next-episode. Deep linking via `catalogizer://media/{id}?type={type}` with per-category launch behavior in Settings. `WorkManager` periodic sync (6h) + app-launch + SyncService triggers. Full cleanup on logout. Files: `data/tv/TvChannelRepository.kt`, `data/tv/ChannelProgramMapper.kt`, `data/tv/WatchNextManager.kt`, `data/tv/TvChannelSyncWorker.kt`, `ui/ChannelDeepLinkActivity.kt`.
+**Android TV Home Screen Channels** (`catalogizer-androidtv`; current version in `versions.json`): `androidx.tvprovider` integration. Default "Catalogizer Picks" channel auto-created on launch; per-category dynamic channels; system Watch Next row for partially-watched items + auto-next-episode. Deep linking via `catalogizer://media/{id}?type={type}`. `WorkManager` periodic sync (6h) + app-launch + SyncService triggers. Full cleanup on logout. Files: `data/tv/TvChannelRepository.kt`, `data/tv/ChannelProgramMapper.kt`, `data/tv/WatchNextManager.kt`, `data/tv/TvChannelSyncWorker.kt`, `ui/ChannelDeepLinkActivity.kt`.
 
 **Tauri apps**: React frontend ↔ Rust backend via IPC commands/events.
 
@@ -498,33 +291,39 @@ All scanned files must be associated with a recognized entity after aggregation.
 
 ## Container Runtime (Podman Only)
 
-Project uses Podman exclusively (no Docker). All commands use `podman` / `podman-compose`.
+Project uses Podman exclusively (no Docker). All commands use `podman` / `podman-compose`. Compose files at the project root (`docker-compose*.yml`) are self-describing — `podman-compose -f <file> config --quiet` validates a file without running it.
 
-```bash
-podman-compose -f docker-compose.dev.yml up         # dev env
-podman-compose -f docker-compose.yml config --quiet # validate
-```
+**Host resource limits (30–40% max).** The host runs other mission-critical processes. Exceeding the budget can freeze the system.
 
-Critical notes:
-- `podman build --network host` and `podman run --network host` — default container networking has SSL issues with dl.google.com, crates.io, etc.
-- `GOTOOLCHAIN=local` to prevent Go auto-downloading newer toolchain versions.
-- Use fully qualified image names (`docker.io/library/...`) — short names fail without TTY.
-- `APPIMAGE_EXTRACT_AND_RUN=1` in containers for Tauri AppImage bundling (no FUSE).
+- **Go tests**: `GOMAXPROCS=3 go test ./... -p 2 -parallel 2`
+- **Container flags** (mandatory on `podman run`):
+  - PostgreSQL: `--cpus=1 --memory=2g`
+  - catalog-api: `--cpus=2 --memory=4g`
+  - catalog-web: `--cpus=1 --memory=2g`
+  - Builder: `--cpus=3 --memory=8g`
+- **Total budget**: 4 CPUs / 8 GB RAM across all running containers.
+- **Challenges run sequentially** via the API — never in parallel.
+- **Monitor**: `podman stats --no-stream`, `cat /proc/loadavg`.
+
+**Networking & image hygiene:**
+- `podman build --network host` / `podman run --network host` — default container networking has SSL issues with `dl.google.com`, `crates.io`, etc.
+- `GOTOOLCHAIN=local` prevents Go from auto-downloading newer toolchains.
+- Fully qualified image names (`docker.io/library/...`) — short names fail without TTY.
+- `APPIMAGE_EXTRACT_AND_RUN=1` for Tauri AppImage bundling in containers (no FUSE).
 - catalog-api container needs `--add-host=synology.local:192.168.0.241` for NAS access.
-- Builder image: `localhost/catalogizer-builder:latest`. Rebuild with `podman build -f docker/Dockerfile.builder -t catalogizer-builder:latest .`
 
-### Android APK Builds
+**Builder image**: `localhost/catalogizer-builder:latest`. Rebuild with `podman build -f docker/Dockerfile.builder -t catalogizer-builder:latest .`
 
-All APK builds must use the `catalogizer-builder` container.
+### Android APK Builds (container only)
 
 ```bash
-# Builder infrastructure (PostgreSQL, Redis, builder)
+# Full builder infrastructure (PostgreSQL, Redis, builder)
 cd Containers && ./bin/boot --project /path/to/catalogizer
 
-# Or directly via compose
+# Or build via compose
 podman-compose -f docker-compose.build.yml up --build --abort-on-container-exit
 
-# Direct one-off build
+# Direct one-off
 podman run --rm --entrypoint="" \
   -v /path/to/project:/project \
   -w /project/catalogizer-androidtv \
@@ -534,38 +333,9 @@ podman run --rm --entrypoint="" \
   ./gradlew assembleDebug --no-daemon
 ```
 
-### Docker Compose Files
+## Directory Conventions
 
-| File | Purpose |
-|---|---|
-| `docker-compose.yml` | Production stack |
-| `docker-compose.dev.yml` | Development environment |
-| `docker-compose.build.yml` | Containerized build pipeline |
-| `docker-compose.test.yml` | Test stack (`network_mode: host`) |
-| `docker-compose.test-infra.yml` | Test infra services |
-| `docker-compose.security.yml` | Security scanning tools |
-| `docker-compose.qa.yml` | QA environment |
-| `docker-compose.qa-robot.yml` | QA robot configuration |
-
-## Root Directory Structure
-
-New files **must** go in the correct directory. Do not add files to the project root unless they are conventional root files (README, LICENSE, .gitignore, docker-compose, …).
-
-| Directory | Purpose |
-|---|---|
-| `challenges/` | Challenge bank definitions and runtime results |
-| `config/` | Infrastructure config (nginx.conf, redis.conf) — Compose mounts these |
-| `scripts/` | Shell scripts (install, setup, CI/CD, test runners) |
-| `scripts/lib/` | Per-component build scripts (`build-*.sh`) |
-| `tests/` | Standalone / integration test files |
-| `docs/` | All markdown documentation, organized by subdirectory |
-| `Assets/` | Static assets (also a Go submodule) |
-| `Build/` | Generic build framework submodule |
-| `build/` | Build output and container build context |
-| `deployment/` | Deployment configurations |
-| `monitoring/` | Monitoring and observability configs |
-| `tools/` | Development tooling |
-| `Upstreams/` | Git upstream remote configurations for submodules |
+New files go in existing purpose-specific directories — do not add files to the project root unless they are conventional root files (README, LICENSE, `.gitignore`, compose files, etc.). Notable top-level dirs: `challenges/`, `config/`, `scripts/` (+ `scripts/lib/` for per-component build scripts), `tests/`, `docs/`, `Build/`, `build/`, `deployment/`, `monitoring/`, `tools/`, `Upstreams/`.
 
 ## Local Development Setup
 
