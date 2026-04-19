@@ -8,6 +8,8 @@
 # exit codes + captured output.
 
 # shellcheck shell=bash
+# shellcheck disable=SC2317  # detect_runtime / is_container overrides are invoked indirectly via the sourced lib
+# shellcheck disable=SC2016  # single-quoted strings here are scripts written into mock files — expansion happens at mock-run time, not now
 
 _SUITE_TMP="$(mktemp -d -t auto-container-test.XXXXXX)"
 trap 'rm -rf "$_SUITE_TMP"' EXIT

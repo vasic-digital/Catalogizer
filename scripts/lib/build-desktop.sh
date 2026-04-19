@@ -39,7 +39,7 @@ build_desktop() {
         export PKG_CONFIG_PATH="/usr/lib/x86_64-linux-gnu/pkgconfig:${PKG_CONFIG_PATH:-}"
         # AppImage bundling requires xdg-open + FUSE which are unreliable in containers.
         # Produce .deb and .rpm only — AppImage can be built on the host.
-        tauri_bundle_flags=(-- --bundles deb,rpm)
+        tauri_bundle_flags=("--" "--bundles" "deb,rpm")
     fi
 
     # Install frontend dependencies

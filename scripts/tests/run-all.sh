@@ -81,7 +81,7 @@ for suite in "${SUITES[@]}"; do
         FAILED_TESTS+=("suite-missing:$suite")
         continue
     fi
-    printf '\n\033[0;36m── %s\033[0m\n' "${suite#$SCRIPT_DIR/}"
+    printf '\n\033[0;36m── %s\033[0m\n' "${suite#"$SCRIPT_DIR"/}"
     # shellcheck disable=SC1090
     source "$suite" || {
         fail "${suite##*/}: source error"

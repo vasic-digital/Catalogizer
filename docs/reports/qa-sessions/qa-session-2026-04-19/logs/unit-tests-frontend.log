@@ -1,0 +1,40 @@
+ [32m✓[39m src/types/__tests__/media.test.ts [2m([22m[2m29 tests[22m[2m)[22m[32m 75[2mms[22m[39m
+ [32m✓[39m src/types/__tests__/auth.test.ts [2m([22m[2m2 tests[22m[2m)[22m[32m 83[2mms[22m[39m
+ [32m✓[39m src/types/__tests__/subtitles.test.ts [2m([22m[2m38 tests[22m[2m)[22m[32m 111[2mms[22m[39m
+ [32m✓[39m src/lib/__tests__/collectionRules.test.ts [2m([22m[2m33 tests[22m[2m)[22m[32m 43[2mms[22m[39m
+ [32m✓[39m src/lib/__tests__/conversionApi.test.ts [2m([22m[2m10 tests[22m[2m)[22m[32m 255[2mms[22m[39m
+[90mstdout[2m | src/lib/__tests__/webVitals.test.ts[2m > [22m[2mwebVitals[2m > [22m[2mlogWebVitals - console logging pattern[2m > [22m[2mshould format metric for console output
+[22m[39m[Web Vitals] CLS: {
+  value: [33m0.05[39m,
+  rating: [32m'good'[39m,
+  delta: [33m0.05[39m,
+  id: [32m'v1-CLS-123'[39m,
+  navigationType: [32m'navigate'[39m
+}
+
+ [32m✓[39m src/lib/__tests__/webVitals.test.ts [2m([22m[2m21 tests[22m[2m)[22m[32m 57[2mms[22m[39m
+ [32m✓[39m src/lib/__tests__/downloadApi.test.ts [2m([22m[2m11 tests[22m[2m)[22m[32m 60[2mms[22m[39m
+ [32m✓[39m src/lib/__tests__/syncApi.test.ts [2m([22m[2m14 tests[22m[2m)[22m[32m 44[2mms[22m[39m
+ [32m✓[39m src/types/__tests__/playlists.test.ts [2m([22m[2m35 tests[22m[2m)[22m[32m 180[2mms[22m[39m
+ [32m✓[39m src/lib/__tests__/api.test.ts [2m([22m[2m11 tests[22m[2m)[22m[32m 27[2mms[22m[39m
+ [32m✓[39m src/lib/__tests__/assetApi.test.ts [2m([22m[2m10 tests[22m[2m)[22m[32m 281[2mms[22m[39m
+ [32m✓[39m src/types/__tests__/playback.test.ts [2m([22m[2m7 tests[22m[2m)[22m[32m 29[2mms[22m[39m
+ [32m✓[39m src/lib/__tests__/favoritesApi.test.ts [2m([22m[2m10 tests[22m[2m)[22m[32m 138[2mms[22m[39m
+ [32m✓[39m src/lib/__tests__/config.test.ts [2m([22m[2m21 tests[22m[2m)[22m[33m 316[2mms[22m[39m
+ [32m✓[39m src/lib/__tests__/playbackApi.test.ts [2m([22m[2m13 tests[22m[2m)[22m[32m 174[2mms[22m[39m
+ [32m✓[39m src/lib/__tests__/recommendationsApi.test.ts [2m([22m[2m8 tests[22m[2m)[22m[32m 132[2mms[22m[39m
+ [32m✓[39m src/lib/__tests__/adminApi.test.ts [2m([22m[2m16 tests[22m[2m)[22m[32m 16[2mms[22m[39m
+ [32m✓[39m src/lib/__tests__/smbApi.test.ts [2m([22m[2m8 tests[22m[2m)[22m[32m 18[2mms[22m[39m
+ [32m✓[39m src/lib/__tests__/reportsApi.test.ts [2m([22m[2m6 tests[22m[2m)[22m[32m 79[2mms[22m[39m
+ [32m✓[39m src/types/__tests__/dashboard.test.ts [2m([22m[2m11 tests[22m[2m)[22m[32m 76[2mms[22m[39m
+ [32m✓[39m src/types/__tests__/favorites.test.ts [2m([22m[2m8 tests[22m[2m)[22m[32m 50[2mms[22m[39m
+ [32m✓[39m src/types/__tests__/conversion.test.ts [2m([22m[2m6 tests[22m[2m)[22m[32m 126[2mms[22m[39m
+ [32m✓[39m src/types/__tests__/collection.test.ts [2m([22m[2m4 tests[22m[2m)[22m[32m 145[2mms[22m[39m
+ [32m✓[39m src/types/__tests__/admin.test.ts [2m([22m[2m11 tests[22m[2m)[22m[32m 102[2mms[22m[39m
+ [32m✓[39m src/lib/__tests__/playbackFormatter.test.ts [2m([22m[2m8 tests[22m[2m)[22m[32m 19[2mms[22m[39m
+
+[2m Test Files [22m [1m[32m131 passed[39m[22m[90m (131)[39m
+[2m      Tests [22m [1m[32m2318 passed[39m[22m[90m (2318)[39m
+[2m   Start at [22m 21:57:58
+[2m   Duration [22m 277.28s[2m (transform 42.94s, setup 92.67s, import 356.36s, tests 555.67s, environment 745.01s)[22m
+
