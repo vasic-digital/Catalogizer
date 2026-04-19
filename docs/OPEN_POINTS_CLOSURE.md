@@ -1,6 +1,6 @@
 # Open Points — Closure Brief
 
-**Last refresh:** 2026-04-19 (Tauri auto-container dispatch: Rust toolchain relocated to /opt in `docker/Dockerfile.builder` so rootless `--userns=keep-id` dispatches work; pure-bash test suite under `scripts/tests/` wired into `scripts/run-all-tests.sh`; docs/BUILD_CONTAINER_AUTO_DISPATCH.md published. Device pool regression: ADT-3 at 192.168.0.193 unreachable — see §2.)
+**Last refresh:** 2026-04-19 (Tauri auto-container dispatch: Rust toolchain relocated to /opt in `docker/Dockerfile.builder`, builder image rebuilt + `cargo --version && rustc --version` verified inside `--userns=keep-id` container [commits 35624a2f + 4c8dcefc]; pure-bash test suite under `scripts/tests/` wired into `scripts/run-all-tests.sh`; `docs/BUILD_CONTAINER_AUTO_DISPATCH.md` published. Phase-3 baseline re-green on current tip: catalog-api 44/44 packages, catalog-web 2318/2318, api-client 283/283, shell-layer 9/9. Phase-4 partial: 27/27 dep-clean category runs ✅, 10/11 dep-free leaf challenges ✅. Device pool regression: ADT-3 at 192.168.0.193 unreachable — see §2. Three new challenge-framework defects surfaced — see §6.)
 **Owner:** Operator (you). Every item below is work Claude cannot do
 autonomously — they need credentials, hardware, external accounts, or
 human judgment / filming / editing time.
@@ -393,7 +393,46 @@ an error, the corresponding section-1–4 checkbox is not yet green.
 
 ---
 
-## 8. Contacts & handoff
+## 8. Framework defects surfaced 2026-04-19 (Phase-4 retest)
+
+These are **code defects** — not ops items — but they materially
+block the "100 % category coverage" contract so they live here
+until a fix ships. Evidence in
+`docs/reports/qa-sessions/qa-session-2026-04-19/challenges/SUMMARY.md`.
+
+- [ ] **`RunByCategory` orders challenges alphabetically, not
+      topologically.** `digital.vasic.challenges/pkg/runner` should
+      perform a Kahn sort on `dependencies` before executing. Today
+      `asset-lazy-loading` (category `e2e`, depends on
+      `browsing-api-health` in the same category) errors with
+      "unmet dependency" because `a` sorts before `b`. Affects 11
+      categories: `api`, `admin-ops`, `api-consistency`, `coverage`,
+      `e2e`, `lint`, `middleware`, `module-integration`,
+      `observability`, `security`, `test`.
+- [ ] **`RunAll` is not practical on the current bank.** A 30-min
+      partial run completed ~10 challenges. Needs:
+      - per-challenge hard timeout distinct from the 5-min
+        "stale-progress" detector,
+      - optional `--parallel N` across challenges whose dep-set is
+        satisfied,
+      - streaming response writer (flush per-challenge result) so
+        `RunAll` doesn't block read endpoints while it buffers the
+        entire JSON body.
+- [ ] **`database-connectivity` challenge hangs >5 min.** The
+      underlying endpoint `GET /api/v1/stats/overall` responds in
+      1.5 s against the 112 MB SQLite DB when called directly, but
+      the challenge (which uses
+      `digital.vasic.challenges/pkg/httpclient` with a 180 s
+      timeout) never returns. Default challenge timeout is 5 min;
+      the runner should kill at 5 min but the handler writes no
+      response body to the HTTP client. Points to a goroutine /
+      context-propagation bug between runner → challenge →
+      handler. Evidence:
+      `docs/reports/qa-sessions/qa-session-2026-04-19/logs/catalog-api-phase4.log`.
+
+---
+
+## 9. Contacts & handoff
 
 - **Upstream remotes:** six on the main repo (GitHub × 2, GitLab ×
   2, GitFlic, GitVerse port 2222); four on HelixQA (GitHub × 2,
