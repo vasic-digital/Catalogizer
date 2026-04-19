@@ -1,6 +1,6 @@
 # Open Points — Closure Brief
 
-**Last refresh:** 2026-04-19 (Tauri auto-container dispatch: Rust toolchain relocated to /opt in `docker/Dockerfile.builder`, builder image rebuilt + `cargo --version && rustc --version` verified inside `--userns=keep-id` container [commits 35624a2f + 4c8dcefc]; pure-bash test suite under `scripts/tests/` wired into `scripts/run-all-tests.sh`; `docs/BUILD_CONTAINER_AUTO_DISPATCH.md` published. Phase-3 baseline re-green on current tip: catalog-api 44/44 packages, catalog-web 2318/2318, api-client 283/283, shell-layer 9/9. Phase-4 partial: 27/27 dep-clean category runs ✅, 10/11 dep-free leaf challenges ✅. Device pool regression: ADT-3 at 192.168.0.193 unreachable — see §2. Three new challenge-framework defects surfaced — see §6.)
+**Last refresh:** 2026-04-19 (OpenClawing4 Phase 0 closed on HelixQA — retraction banners on OpenClawing2/3/Starting_Point, `scripts/hooks/no-sudo.sh` pre-commit hook + `.pre-commit-config.yaml`, new `banks/docs-audit.yaml` with 7 mechanical checks, 14 `fixes-validation.yaml` entries FIX-OC2-001..003 + FIX-OC3-001..011, HQA-DOCS-001 challenge — [HelixQA commit `a2f3764`] + [handover `b2445ec`]; Phase-0 acceptance evidence in §10 below; full phases 1–6 roadmap in `HelixQA/docs/openclawing/OpenClawing4-Handover.md` §3. Prior (2026-04-19): Tauri auto-container dispatch: Rust toolchain relocated to /opt in `docker/Dockerfile.builder`, builder image rebuilt + `cargo --version && rustc --version` verified inside `--userns=keep-id` container [commits 35624a2f + 4c8dcefc]; pure-bash test suite under `scripts/tests/` wired into `scripts/run-all-tests.sh`; `docs/BUILD_CONTAINER_AUTO_DISPATCH.md` published. Phase-3 baseline re-green on current tip: catalog-api 44/44 packages, catalog-web 2318/2318, api-client 283/283, shell-layer 9/9. Phase-4 partial: 27/27 dep-clean category runs ✅, 10/11 dep-free leaf challenges ✅. Device pool regression: ADT-3 at 192.168.0.193 unreachable — see §2. Three new challenge-framework defects surfaced — see §6.)
 **Owner:** Operator (you). Every item below is work Claude cannot do
 autonomously — they need credentials, hardware, external accounts, or
 human judgment / filming / editing time.
@@ -445,6 +445,89 @@ until a fix ships. Evidence in
   immediately. Act on every one within 72 hours. The most recent
   (GO-2026-4753 in goxmldsig) was closed by commit `78ec16b` on
   HelixQA.
+
+---
+
+## 10. OpenClawing4 — Phase 0 closed, Phases 1–6 remaining
+
+### 10.1 Phase 0 — DONE
+
+Closed by HelixQA commits `a2f3764` (artefacts) + `b2445ec` (handover),
+pushed to all 4 HelixQA upstreams (GitHub × 2, GitLab × 2). Main-repo
+pointer bumped by this closure commit.
+
+What shipped:
+
+- **Retraction banners** on `HelixQA/docs/openclawing/Starting_Point.md`,
+  `OpenClawing2.md`, `OpenClawing3.md` — audit in
+  `OpenClawing4-Audit.md` (850 lines) identified 9/24 dead URLs in
+  Starting_Point, 3 fabricated internal paths in OpenClawing2, and a
+  larger set of issues in OpenClawing3 (`src/...` fabricated tree,
+  `sudo` violations, compile-blockers, wrong DXGI zero-copy claim,
+  3–7× optimistic benchmarks, missing llama.cpp RPC primary, 16-week
+  / 47-tech plan replaced by 24-week / 7-phase).
+- **`HelixQA/scripts/hooks/no-sudo.sh`** (executable) — rejects bare
+  `sudo` in committed content, allow-lists retraction docs,
+  strike-through (`~~sudo~~`), and quoted (`"sudo"`) forms.
+- **`HelixQA/.pre-commit-config.yaml`** — wires the hook into
+  `pre-commit run --all-files` alongside standard pre-commit-hooks.
+- **`HelixQA/banks/docs-audit.yaml`** — 7 mechanical checks
+  (AUDIT-001..007) verifying banners, hook behaviour, real `pkg/...`
+  citation in OpenClawing4, llama.cpp RPC primary invariant.
+- **`HelixQA/banks/fixes-validation.yaml`** — 14 new regression
+  entries: FIX-OC2-001..003 + FIX-OC3-001..011 (total now 44).
+- **`HelixQA/challenges/config/helixqa-validation.yaml`** — HQA-DOCS-001
+  registered.
+- **`HelixQA/docs/openclawing/OpenClawing4-Handover.md`** — 478-line
+  resume playbook for phases 1–6 (file-by-file landing points,
+  acceptance per Article V category, blockers, fast-path resume).
+
+Acceptance (Article V cat 6 security): YAML lint clean across 4 files
+(44 + 7 + 30 test_cases); hook positively rejects bare-sudo fixture
+(exit 1) and accepts strike-through / quoted (exit 0); OpenClawing4.md
+1,347 lines with 42 `pkg/` landing rows and llama.cpp-RPC-primary
+declared on lines 65 + 250.
+
+### 10.2 Phases 1–6 — NOT started, fully specified
+
+Roadmap is in `HelixQA/docs/openclawing/OpenClawing4.md` §8 and
+`OpenClawing4-Handover.md` §3. Any session resuming from here should:
+
+1. `git pull` + recursive submodule update.
+2. Read `OpenClawing4-Handover.md` §3 for the phase they are tackling.
+3. Create a feature branch `feat/openclawing4-phase-N` in HelixQA.
+4. Implement per file list; commit per sub-phase; push.
+5. Bump main-repo submodule pointer on every HelixQA commit that is
+   ready for general consumption.
+
+Phase-at-a-glance (all weeks estimated, see handover §3 for details):
+
+| Phase | Scope | Weeks | Toolchain blockers |
+|---|---|---|---|
+| 1 | Linux Wayland capture (PipeWire portal + kmsgrab), scrcpy-server v3 direct protocol (pure Go), libei + uinput input | 3–4 | pipewire + gstreamer + scrcpy-server JAR v3 |
+| 2 | Unified AX tree, perception tiers (dHash → SSIM → DreamSim), BOCPD stagnation | 4 | OpenCV 4.x + gocv; Triton on GPU host for DreamSim |
+| 3 | UI-TARS-1.5-7B + OmniParser v2 + LangGraph + SGLang | 4–6 | llama.cpp with mmproj; Python VLM sidecars |
+| 4 | GPU compute sidecars: qa-vision-infer (TRT+NPP+OpenCV-CUDA), qa-video-decode (FFmpeg+NVDEC), qa-vulkan-compute PoC | 4 | CUDA 12.x + NVIDIA Container Toolkit |
+| 5 | Observability: Frida sidecar, cilium/ebpf uprobes, LD_PRELOAD catalogue, rapid fuzzing, VLM-guided DFS | 3 | Linux 5.x BTF |
+| 6 | macOS (SCKit) + Windows (WGC) + iOS (idb + WDA) + TUI (pty + ANSI grid) | 4–6 | macOS Xcode, Windows + WinRT SDK |
+
+### 10.3 Operator-actionable items from OpenClawing4
+
+These go in the sections above (§1 credentials, §2 hardware) when they
+require operator input:
+
+- [ ] UI-TARS-1.5-7B GGUF on `~/models/` + `llama-server` on port 18100
+  with `--mmproj` (operator action, Phase 3).
+- [ ] OmniParser v2 weights + Python 3.11 env in
+  `cmd/helixqa-omniparser/` sidecar container (operator action, Phase 3).
+- [ ] `pre-commit install` on every fresh HelixQA clone (one-time per
+  clone, operator action).
+- [ ] TensorRT engine rebuild on every NVIDIA driver major bump
+  (operator action, Phase 4).
+- [ ] ScreenCaptureKit entitlement on macOS host for unattended QA
+  (operator action, Phase 6).
+- [ ] Windows Graphics Capture entitlements on Windows host (operator
+  action, Phase 6).
 
 ---
 
