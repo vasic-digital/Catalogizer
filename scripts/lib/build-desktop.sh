@@ -1,8 +1,16 @@
 #!/usr/bin/env bash
 # build-desktop.sh - Builder for catalogizer-desktop (Tauri/Rust+React)
 # Produces Linux artifacts (AppImage, .deb)
+#
+# Auto-container dispatch: if cargo/rustc are absent on the host, the
+# build re-routes through the catalogizer-builder container per
+# Constitution Article VII §7.1 (no sudo/root). Operator never needs
+# to install Rust locally.
 
 set -euo pipefail
+
+# shellcheck source=/dev/null
+source "$BUILD_PROJECT_ROOT/scripts/lib/auto-container.sh"
 
 build_desktop() {
     local version="$1"
@@ -12,6 +20,16 @@ build_desktop() {
     local skip_tests="${BUILD_SKIP_TESTS:-false}"
 
     local comp_dir="$BUILD_PROJECT_ROOT/catalogizer-desktop"
+
+    # If we're NOT already inside the builder container AND cargo is
+    # missing locally, re-dispatch the entire desktop build into the
+    # catalogizer-builder image. The container has Rust + Node + VLC
+    # headers pre-installed per docker/Dockerfile.builder.
+    if ! is_container && ! need_toolchain cargo; then
+        log_info "catalogizer-desktop: cargo missing on host — auto-dispatching to builder container"
+        run_in_builder "source /workspace/scripts/lib/project-config.sh && source /workspace/Build/lib/common.sh && source /workspace/scripts/lib/build-desktop.sh && build_desktop '$version' '$build_number' '$version_string' '$source_hash'"
+        return $?
+    fi
 
     # Container: configure build environment
     local tauri_bundle_flags=""

@@ -1,8 +1,15 @@
 #!/usr/bin/env bash
 # build-installer.sh - Builder for installer-wizard (Tauri/Rust+React)
 # Produces Linux artifacts (AppImage, .deb)
+#
+# Auto-container dispatch: if cargo is absent on the host, the build
+# re-routes through the catalogizer-builder container (Constitution
+# Article VII §7.1 — no sudo/root).
 
 set -euo pipefail
+
+# shellcheck source=/dev/null
+source "$BUILD_PROJECT_ROOT/scripts/lib/auto-container.sh"
 
 build_installer() {
     local version="$1"
@@ -12,6 +19,13 @@ build_installer() {
     local skip_tests="${BUILD_SKIP_TESTS:-false}"
 
     local comp_dir="$BUILD_PROJECT_ROOT/installer-wizard"
+
+    # Auto-dispatch to builder container when host lacks Rust.
+    if ! is_container && ! need_toolchain cargo; then
+        log_info "installer-wizard: cargo missing on host — auto-dispatching to builder container"
+        run_in_builder "source /workspace/scripts/lib/project-config.sh && source /workspace/Build/lib/common.sh && source /workspace/scripts/lib/build-installer.sh && build_installer '$version' '$build_number' '$version_string' '$source_hash'"
+        return $?
+    fi
 
     # Container: install deps and enable AppImage extraction (no FUSE in containers)
     if is_container; then
