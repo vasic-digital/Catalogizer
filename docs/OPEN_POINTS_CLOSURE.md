@@ -1,6 +1,6 @@
 # Open Points — Closure Brief
 
-**Last refresh:** 2026-04-18 (SSRF guard migration to canonical Security/pkg/ssrf — catalog-api + HelixQA adapters replacing hand-synced copies; OCU CUDA sidecar source + Dockerfile committed to OCU-CUDA-Sidecar/)
+**Last refresh:** 2026-04-19 (Tauri auto-container dispatch: Rust toolchain relocated to /opt in `docker/Dockerfile.builder` so rootless `--userns=keep-id` dispatches work; pure-bash test suite under `scripts/tests/` wired into `scripts/run-all-tests.sh`; docs/BUILD_CONTAINER_AUTO_DISPATCH.md published. Device pool regression: ADT-3 at 192.168.0.193 unreachable — see §2.)
 **Owner:** Operator (you). Every item below is work Claude cannot do
 autonomously — they need credentials, hardware, external accounts, or
 human judgment / filming / editing time.
@@ -67,6 +67,15 @@ These require physical hardware Claude cannot acquire.
 - [ ] **Android TV device pool** — keep at least two working devices
       reachable for HelixQA (Mi Box 4 at 192.168.0.134:5555 is the
       current reference). `.devconnect` must list the IPs.
+      **STATUS 2026-04-19**: device pool **0 usable**:
+      - ADT-3 at `192.168.0.193` was added to `.devconnect` on
+        2026-04-18 but is **unreachable** today (100 % ping loss).
+        Needs operator to power it on / fix network.
+      - The two USB devices currently attached (transport_id 1+2,
+        model=`ATMOSphere`) are in `.devignore` and forbidden.
+      - Until at least one non-ATMOSphere device is online, Phase 6
+        Android / Android-TV HelixQA is blocked. The remaining
+        non-device lanes (API, web, desktop) still run.
 - [ ] **Physical Android phone** — running Android 13+ for
       `catalogizer-android` UI regression.
 - [ ] **Synology (or equivalent) NAS** populated with the canonical

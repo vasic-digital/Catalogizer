@@ -32,14 +32,14 @@ build_desktop() {
     fi
 
     # Container: configure build environment
-    local tauri_bundle_flags=""
+    local -a tauri_bundle_flags=()
     if is_container; then
         export APPIMAGE_EXTRACT_AND_RUN=1
         # Ensure pkg-config can find VLC libs when vlc-player feature is enabled
         export PKG_CONFIG_PATH="/usr/lib/x86_64-linux-gnu/pkgconfig:${PKG_CONFIG_PATH:-}"
         # AppImage bundling requires xdg-open + FUSE which are unreliable in containers.
         # Produce .deb and .rpm only — AppImage can be built on the host.
-        tauri_bundle_flags="-- --bundles deb,rpm"
+        tauri_bundle_flags=(-- --bundles deb,rpm)
     fi
 
     # Install frontend dependencies
@@ -59,7 +59,7 @@ build_desktop() {
 
     # Build Tauri application
     log_step "Building catalogizer-desktop Tauri app..."
-    if (cd "$comp_dir" && npm run tauri:build $tauri_bundle_flags 2>&1); then
+    if (cd "$comp_dir" && npm run tauri:build "${tauri_bundle_flags[@]}" 2>&1); then
         local release_dir
         release_dir="$(create_release_dir "catalogizer-desktop" "linux" "$version_string")"
 

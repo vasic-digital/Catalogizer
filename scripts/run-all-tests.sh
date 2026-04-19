@@ -26,6 +26,7 @@ PASSED_TESTS=0
 FAILED_TESTS=0
 
 # Individual test category results (for accurate HTML reporting)
+SHELL_TESTS_STATUS="PENDING"
 GO_TESTS_STATUS="PENDING"
 JS_TESTS_STATUS="PENDING"
 ANDROID_TESTS_STATUS="PENDING"
@@ -163,10 +164,29 @@ check_prerequisites() {
     return 0
 }
 
+# Function to run shell-layer tests (build helpers, auto-container dispatch)
+run_shell_tests() {
+    log "🐚 Running shell-layer tests (scripts/lib)..."
+    local suite="$PROJECT_ROOT/scripts/tests/run-all.sh"
+    if [[ ! -x "$suite" ]]; then
+        print_status "WARN" "scripts/tests/run-all.sh missing or not executable — skipping shell tests"
+        SHELL_TESTS_STATUS="SKIP"
+        return 0
+    fi
+    if "$suite" 2>&1 | tee -a "$LOG_FILE"; then
+        print_status "PASS" "Shell-layer tests passed"
+        SHELL_TESTS_STATUS="PASS"
+        return 0
+    fi
+    print_status "FAIL" "Shell-layer tests failed"
+    SHELL_TESTS_STATUS="FAIL"
+    return 1
+}
+
 # Function to run Go tests
 run_go_tests() {
     log "🐹 Running Go API tests..."
-    
+
     if [ -d "$PROJECT_ROOT/catalog-api" ]; then
         cd "$PROJECT_ROOT/catalog-api"
         
@@ -572,14 +592,18 @@ main() {
     local test_failed=false
     
     # Run functional tests first
+    if ! run_shell_tests; then
+        test_failed=true
+    fi
+
     if ! run_go_tests; then
         test_failed=true
     fi
-    
+
     if ! run_js_tests; then
         test_failed=true
     fi
-    
+
     if ! run_android_tests; then
         test_failed=true
     fi

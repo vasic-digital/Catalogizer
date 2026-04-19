@@ -142,7 +142,7 @@ Named volumes persist build caches between runs:
 | `go-cache` | Go module cache (`/root/go`) |
 | `gradle-cache` | Gradle dependencies (`/root/.gradle`) |
 | `npm-cache` | npm cache (`/root/.npm`) |
-| `cargo-cache` | Rust/Cargo registry (`/root/.cargo/registry`) |
+| `cargo-cache` | Rust/Cargo registry (`/opt/cargo/registry`) |
 
 To clear caches:
 ```bash

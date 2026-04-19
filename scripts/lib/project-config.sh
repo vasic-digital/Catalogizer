@@ -20,7 +20,7 @@ BUILD_BUILDER_IMAGE="localhost/catalogizer-builder:latest"
 BUILD_DOCKERFILE="docker/Dockerfile.builder"
 
 # Cache volumes for container builds (space-separated "name:path" pairs)
-BUILD_CONTAINER_VOLUMES="go-cache:/root/go npm-cache:/root/.npm gradle-cache:/root/.gradle cargo-cache:/root/.cargo/registry"
+BUILD_CONTAINER_VOLUMES="go-cache:/root/go npm-cache:/root/.npm gradle-cache:/root/.gradle cargo-cache:/opt/cargo/registry"
 
 # All 7 Catalogizer components
 BUILD_COMPONENTS=(

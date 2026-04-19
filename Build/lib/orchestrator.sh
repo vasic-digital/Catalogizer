@@ -272,7 +272,7 @@ launch_container_build() {
     )
 
     # Add cache volumes for faster rebuilds
-    local cache_volumes="${BUILD_CONTAINER_VOLUMES:-go-cache:/root/go npm-cache:/root/.npm gradle-cache:/root/.gradle cargo-cache:/root/.cargo/registry}"
+    local cache_volumes="${BUILD_CONTAINER_VOLUMES:-go-cache:/root/go npm-cache:/root/.npm gradle-cache:/root/.gradle cargo-cache:/opt/cargo/registry}"
     for vol in $cache_volumes; do
         vol_args+=(-v "$vol")
     done

@@ -70,14 +70,19 @@ RUN for i in $(seq 1 10); do \
 RUN node --version && npm --version
 
 # ============================================================
-# Layer 4: Rust (latest stable)
+# Layer 4: Rust (latest stable) — installed under /opt so the
+# toolchain is world-readable. Required when the image is run with
+# rootless podman's `--userns=keep-id` flag (the host user's UID is
+# mapped through unchanged, so /root/.cargo would be inaccessible).
 # ============================================================
-ENV RUSTUP_HOME="/root/.rustup"
-ENV CARGO_HOME="/root/.cargo"
+ENV RUSTUP_HOME="/opt/rustup"
+ENV CARGO_HOME="/opt/cargo"
 RUN curl --retry 5 --retry-delay 10 --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y --default-toolchain stable
-ENV PATH="/root/.cargo/bin:${PATH}"
+ENV PATH="/opt/cargo/bin:${PATH}"
 
 RUN cargo install tauri-cli
+
+RUN chmod -R a+rX /opt/rustup /opt/cargo
 
 RUN rustc --version && cargo --version
 

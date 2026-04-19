@@ -64,9 +64,14 @@ run_in_builder() {
     local runtime
     runtime="$(detect_runtime)"
     log_step "Dispatching to $CATALOGIZER_BUILDER_IMAGE…"
+    # --entrypoint="" overrides any ENTRYPOINT set in the builder
+    # image so we can pass an arbitrary bash -c command. Without this,
+    # images like catalogizer-builder (which pins ENTRYPOINT to a
+    # project-specific build script) will reject ad-hoc invocations.
     "$runtime" run --rm \
         --network host \
         --userns=keep-id \
+        --entrypoint="" \
         -v "$BUILD_PROJECT_ROOT:/workspace:z" \
         -w /workspace \
         -e APPIMAGE_EXTRACT_AND_RUN=1 \
