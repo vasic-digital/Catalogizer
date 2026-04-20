@@ -1227,6 +1227,10 @@ func main() {
 		// CSRF guard derived from the JWT secret so mutating admin calls
 		// reject cross-origin POST/PUT/DELETE. GET/HEAD/OPTIONS mint a
 		// fresh token on the X-CSRF-Token response header + cookie.
+		// `wrap` adapts net/http handlers (from vasic-digital/handlers)
+		// to gin handlers. Declared before any group that needs it.
+		wrap := root_handlers.WrapHTTPHandler
+
 		adminGroup := api.Group("/admin")
 		if csrfGuard, csrfErr := root_middleware.NewCSRF([]byte(jwtSecret)); csrfErr != nil {
 			logging.Warnf("CSRF guard disabled on admin group: %v", csrfErr)
@@ -1242,10 +1246,20 @@ func main() {
 			adminGroup.POST("/backups", adminHandler.CreateBackup)
 			adminGroup.POST("/backups/:id/restore", adminHandler.RestoreBackup)
 			adminGroup.POST("/storage/scan", adminHandler.ScanStorage)
+
+			// FIX-QA-2026-04-21-003: bank probes /api/v1/admin/{config,
+			// errors,health,logs}; each returned 404. The underlying
+			// data lives under /configuration, /errors, /logs already —
+			// these aliases delegate to the canonical handlers so the
+			// admin surface reads as a superset (what the bank expects)
+			// without duplicating handler logic.
+			adminGroup.GET("/config", wrap(configurationHandler.GetConfiguration))
+			adminGroup.GET("/errors", wrap(errorReportingHandler.ListErrorReports))
+			adminGroup.GET("/health", wrap(errorReportingHandler.GetSystemHealth))
+			adminGroup.GET("/logs", wrap(logManagementHandler.ListLogCollections))
 		}
 
 		// User management endpoints
-		wrap := root_handlers.WrapHTTPHandler
 		usersGroup := api.Group("/users")
 		{
 			usersGroup.POST("", wrap(userHandler.CreateUser))

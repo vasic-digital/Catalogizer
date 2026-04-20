@@ -5,8 +5,8 @@ import (
 	"fmt"
 )
 
-// addMediaItemsFavoriteColumn adds the is_favorite + updated_at columns
-// to media_items.
+// addMediaItemsFavoriteColumn adds the is_favorite + updated_at +
+// duration columns to media_items.
 //
 // FIX-QA-2026-04-21-001: the /api/v1/media/:id/favorite handler
 // (AndroidTVMediaHandler.UpdateFavoriteStatus) writes
@@ -15,14 +15,20 @@ import (
 // call returned 500 ("Failed to update favorite status"), observed 4×
 // in the 2026-04-20 Article VII RunAll log analysis.
 //
-// The test_helper schema (internal/tests/test_helper.go) does declare
-// both, which is why the handler's unit tests pass. This migration
-// brings production schema in line with the test-schema assumption the
-// handler was written against.
+// FIX-QA-2026-04-21-004: audit (Q-cycle 2026-04-21) surfaced a second
+// drift — internal/services/playlist_service.go line 695 uses
+// `SUM(mi.duration)` but media_items never declared `duration` in
+// production either. Every playlist-stats update would silently 500
+// once exercised. Added alongside the favorite columns in this same
+// migration to keep schema-catch-up atomic.
+//
+// The test_helper schema (internal/tests/test_helper.go) declares all
+// three columns, which is why the affected tests pass. This migration
+// brings production schema in line with the test-schema assumption
+// each handler was written against.
 //
 // The per-user favorite flag in user_metadata.favorite is preserved
-// (it serves a different use case); this is the global/Android-TV
-// style favorite flag the handler targets.
+// (different use case); this is the global/Android-TV favorite flag.
 func (db *DB) addMediaItemsFavoriteColumn(ctx context.Context) error {
 	if db.dialect.IsPostgres() {
 		return db.addMediaItemsFavoriteColumnPostgres(ctx)
@@ -57,6 +63,16 @@ func (db *DB) addMediaItemsFavoriteColumnSQLite(ctx context.Context) error {
 			return fmt.Errorf("sqlite: backfill media_items.updated_at: %w", err)
 		}
 	}
+
+	has, err = db.columnExistsSQLite(ctx, "media_items", "duration")
+	if err != nil {
+		return fmt.Errorf("sqlite: probe media_items.duration: %w", err)
+	}
+	if !has {
+		if _, err := db.ExecContext(ctx, `ALTER TABLE media_items ADD COLUMN duration INTEGER DEFAULT 0`); err != nil {
+			return fmt.Errorf("sqlite: add media_items.duration: %w", err)
+		}
+	}
 	return nil
 }
 
@@ -66,6 +82,9 @@ func (db *DB) addMediaItemsFavoriteColumnPostgres(ctx context.Context) error {
 	}
 	if _, err := db.ExecContext(ctx, `ALTER TABLE media_items ADD COLUMN IF NOT EXISTS updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP`); err != nil {
 		return fmt.Errorf("postgres: add media_items.updated_at: %w", err)
+	}
+	if _, err := db.ExecContext(ctx, `ALTER TABLE media_items ADD COLUMN IF NOT EXISTS duration INTEGER DEFAULT 0`); err != nil {
+		return fmt.Errorf("postgres: add media_items.duration: %w", err)
 	}
 	return nil
 }
