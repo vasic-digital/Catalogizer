@@ -1,6 +1,6 @@
 # Open Points — Closure Brief
 
-**Last refresh:** 2026-04-19 (OpenClawing4 Phase 1 Go-core + sidecar wave further extended — sixteen milestones shipped across eight packages: M1..M14 + M16 as before plus M17 `pkg/bridge/dbusportal/` (shared D-Bus portal plumbing extracted from capture/linux, ~280 LoC, 61.5% coverage) + `pkg/navigator/linux/libei/portal.go` (RemoteDesktop portal handshake — CreateSession/SelectDevices/Start/ConnectToEIS; 91.8% coverage, `fe82e95`); handover rollup [`85cac59`] with 25-case `banks/phase1-gocore.yaml`. Phase 1 Go refactor complete: both portal clients (ScreenCast + RemoteDesktop) share dbusportal.Caller; libei portal.ConnectToEIS returns a connected *os.File ready for an EI wire-protocol client. Remaining in Phase 1: `ei_client.go` EI wire-protocol client (flatbuffers-based), `xcbshm.go` optional X11 fallback, `linux_capture.go` legacy-file routing modification, `x11_executor.go` -tags migration (blocked on EI client landing first), native sidecar binaries in C/Rust/C+GStreamer (helixqa-capture-linux, helixqa-kmsgrab, helixqa-input), scrcpy-server JAR pin, feature-level banks — see `OpenClawing4-Handover.md` §3.1 🚧 rows. Prior (2026-04-19): OpenClawing4 Phase 0 closed — retraction banners on OpenClawing2/3/Starting_Point, `scripts/hooks/no-sudo.sh` pre-commit hook + `.pre-commit-config.yaml`, new `banks/docs-audit.yaml` with 7 mechanical checks, 14 `fixes-validation.yaml` entries FIX-OC2-001..003 + FIX-OC3-001..011, HQA-DOCS-001 challenge [HelixQA `a2f3764` + handover `b2445ec`]. Prior (2026-04-19): Tauri auto-container dispatch: Rust toolchain relocated to /opt in `docker/Dockerfile.builder`, builder image rebuilt + `cargo --version && rustc --version` verified inside `--userns=keep-id` container [commits 35624a2f + 4c8dcefc]; pure-bash test suite under `scripts/tests/` wired into `scripts/run-all-tests.sh`; `docs/BUILD_CONTAINER_AUTO_DISPATCH.md` published. Phase-3 baseline re-green on current tip: catalog-api 44/44 packages, catalog-web 2318/2318, api-client 283/283, shell-layer 9/9. Phase-4 partial: 27/27 dep-clean category runs ✅, 10/11 dep-free leaf challenges ✅. Device pool regression: ADT-3 at 192.168.0.193 unreachable — see §2. Three new challenge-framework defects surfaced — see §6.)
+**Last refresh:** 2026-04-20 (OpenClawing4 **Phase 1 CLOSED** — 27 milestones shipped across 11 Go packages + 3 cmd binaries; see `HelixQA/docs/openclawing/OpenClawing4-Phase1-Closure.md` for the final exit report. Phase 2 kickoff ready — see `HelixQA/docs/openclawing/OpenClawing4-Phase2-Kickoff.md`; next concrete task is `pkg/vision/hash/dhash.go`. Prior state: 2026-04-19 — OpenClawing4 Phase 1 Go-core + sidecar wave further extended — sixteen milestones shipped across eight packages: M1..M14 + M16 as before plus M17 `pkg/bridge/dbusportal/` (shared D-Bus portal plumbing extracted from capture/linux, ~280 LoC, 61.5% coverage) + `pkg/navigator/linux/libei/portal.go` (RemoteDesktop portal handshake — CreateSession/SelectDevices/Start/ConnectToEIS; 91.8% coverage, `fe82e95`); handover rollup [`85cac59`] with 25-case `banks/phase1-gocore.yaml`. Phase 1 Go refactor complete: both portal clients (ScreenCast + RemoteDesktop) share dbusportal.Caller; libei portal.ConnectToEIS returns a connected *os.File ready for an EI wire-protocol client. Remaining in Phase 1: `ei_client.go` EI wire-protocol client (flatbuffers-based), `xcbshm.go` optional X11 fallback, `linux_capture.go` legacy-file routing modification, `x11_executor.go` -tags migration (blocked on EI client landing first), native sidecar binaries in C/Rust/C+GStreamer (helixqa-capture-linux, helixqa-kmsgrab, helixqa-input), scrcpy-server JAR pin, feature-level banks — see `OpenClawing4-Handover.md` §3.1 🚧 rows. Prior (2026-04-19): OpenClawing4 Phase 0 closed — retraction banners on OpenClawing2/3/Starting_Point, `scripts/hooks/no-sudo.sh` pre-commit hook + `.pre-commit-config.yaml`, new `banks/docs-audit.yaml` with 7 mechanical checks, 14 `fixes-validation.yaml` entries FIX-OC2-001..003 + FIX-OC3-001..011, HQA-DOCS-001 challenge [HelixQA `a2f3764` + handover `b2445ec`]. Prior (2026-04-19): Tauri auto-container dispatch: Rust toolchain relocated to /opt in `docker/Dockerfile.builder`, builder image rebuilt + `cargo --version && rustc --version` verified inside `--userns=keep-id` container [commits 35624a2f + 4c8dcefc]; pure-bash test suite under `scripts/tests/` wired into `scripts/run-all-tests.sh`; `docs/BUILD_CONTAINER_AUTO_DISPATCH.md` published. Phase-3 baseline re-green on current tip: catalog-api 44/44 packages, catalog-web 2318/2318, api-client 283/283, shell-layer 9/9. Phase-4 partial: 27/27 dep-clean category runs ✅, 10/11 dep-free leaf challenges ✅. Device pool regression: ADT-3 at 192.168.0.193 unreachable — see §2. Three new challenge-framework defects surfaced — see §6.)
 **Owner:** Operator (you). Every item below is work Claude cannot do
 autonomously — they need credentials, hardware, external accounts, or
 human judgment / filming / editing time.
@@ -515,14 +515,14 @@ What shipped (nine milestones, pure-Go, no native sidecar binaries):
 - **`challenges/config/helixqa-validation.yaml`** — HQA-PHASE1-GOCORE-001 rollup challenge (spans all nine milestones).
 - **`scripts/hooks/no-sudo.sh`** — allow-list extended to `banks/phase[0-9]+-gocore\.(yaml|json)`.
 
-Phase-1 items remaining (🚧 in `OpenClawing4-Handover.md` §3.1):
-- `pkg/navigator/linux/libei/ei_client.go` — EI wire-protocol client consuming the ConnectToEIS FD. Flatbuffers-based binary protocol from the libei spec (https://gitlab.freedesktop.org/libinput/libei). Substantial — ~400-600 LoC + tests.
-- `pkg/capture/linux/xcbshm.go` — optional X11 fallback
-- `pkg/capture/linux_capture.go` — modify the legacy file to route by `XDG_SESSION_TYPE` (today the new subpackage is additive; the legacy path still runs)
-- `pkg/navigator/x11_executor.go` — move existing X11 path behind `-tags x11legacy` (blocked on libei EI client landing first, since `pkg/autonomous` imports `NewX11Executor` unconditionally today)
-- `cmd/helixqa-capture-linux/` (C+GStreamer) + `cmd/helixqa-kmsgrab/` (C+DRM+VAAPI) + `cmd/helixqa-input/` (Rust+enigo) native sidecars
-- scrcpy-server JAR pinned under `pkg/bridge/scrcpy/testdata/` (v3 release tag)
-- `banks/capture-linux.yaml`, `banks/capture-android.yaml`, `banks/input-linux.yaml` — feature-level banks that require native sidecars for end-to-end runs
+Phase-1 CLOSED — see `HelixQA/docs/openclawing/OpenClawing4-Phase1-Closure.md` for the final exit report. All Go-side work shipped (27 milestones, M1..M27); sidecar READMEs with build recipes are committed. The three toolchain-gated binaries and one Rust crate remain operator-action items:
+
+- [ ] Build `cmd/helixqa-capture-linux/` on the target host. Requires C + GStreamer + libpipewire dev headers; build recipe in `HelixQA/cmd/helixqa-capture-linux/README.md`.
+- [ ] Build `cmd/helixqa-kmsgrab/` on the target host. Requires C + libdrm + VA-API dev headers + `setcap cap_sys_admin+ep`; build recipe in `HelixQA/cmd/helixqa-kmsgrab/README.md`.
+- [ ] Build `cmd/helixqa-input/` on the target host. Requires Rust + `cargo install reis` EI wire client; build recipe in `HelixQA/cmd/helixqa-input/README.md`.
+- [ ] Run `HelixQA/scripts/fetch-scrcpy-server.sh` after setting the real SCRCPY_SHA256 value in the script (the placeholder sentinel prevents prod use).
+
+Feature-level banks (`banks/capture-linux.yaml`, `banks/capture-android.yaml`, `banks/input-linux.yaml`) are committed with cases that reference the sidecars — they exercise end-to-end flows only after the four operator-action items above are closed.
 
 ### 10.2 Phases 2–6 — NOT started, fully specified
 
@@ -541,8 +541,8 @@ Phase-at-a-glance (all weeks estimated, see handover §3 for details):
 
 | Phase | Scope | Weeks | Toolchain blockers | Status |
 |---|---|---|---|---|
-| 1 | Linux Wayland capture (PipeWire portal + kmsgrab), scrcpy-server v3 direct protocol (pure Go), libei + uinput input | 3–4 | pipewire + gstreamer + scrcpy-server JAR v3 | **Go-core DONE**; native sidecars + pkg/capture/linux + pkg/navigator/linux 🚧 |
-| 2 | Unified AX tree, perception tiers (dHash → SSIM → DreamSim), BOCPD stagnation | 4 | OpenCV 4.x + gocv; Triton on GPU host for DreamSim | Not started |
+| 1 | Linux Wayland capture (PipeWire portal + kmsgrab), scrcpy-server v3 direct protocol (pure Go), libei + uinput input | 3–4 | pipewire + gstreamer + scrcpy-server JAR v3 | **CLOSED** 2026-04-20 — Go-core + sidecar READMEs shipped (M1..M27); operator-action binaries remain, see §10.1 |
+| 2 | Unified AX tree, perception tiers (dHash → SSIM → DreamSim), BOCPD stagnation | 4 | OpenCV 4.x + gocv; Triton on GPU host for DreamSim | **READY** — scaffolds in place (`pkg/vision/hash`, `perceptual`, `flow`, `template`, `text`, `analysis/pelt`, `regression`, `nexus/observe/axtree`); first task is `pkg/vision/hash/dhash.go` per `OpenClawing4-Phase2-Kickoff.md` |
 | 3 | UI-TARS-1.5-7B + OmniParser v2 + LangGraph + SGLang | 4–6 | llama.cpp with mmproj; Python VLM sidecars | Not started |
 | 4 | GPU compute sidecars: qa-vision-infer (TRT+NPP+OpenCV-CUDA), qa-video-decode (FFmpeg+NVDEC), qa-vulkan-compute PoC | 4 | CUDA 12.x + NVIDIA Container Toolkit | Not started |
 | 5 | Observability: Frida sidecar, cilium/ebpf uprobes, LD_PRELOAD catalogue, rapid fuzzing, VLM-guided DFS | 3 | Linux 5.x BTF | Not started |
@@ -553,6 +553,12 @@ Phase-at-a-glance (all weeks estimated, see handover §3 for details):
 These go in the sections above (§1 credentials, §2 hardware) when they
 require operator input:
 
+- [ ] Deploy DreamSim ONNX to the Triton instance on thinker.local
+  (operator action, Phase 2).
+- [ ] Install `ruptures` Python package + expose via a small gRPC
+  sidecar (operator action, Phase 2).
+- [ ] Install OpenCV dev headers on the build host for `gocv` CGO path
+  (operator action, Phase 2).
 - [ ] UI-TARS-1.5-7B GGUF on `~/models/` + `llama-server` on port 18100
   with `--mmproj` (operator action, Phase 3).
 - [ ] OmniParser v2 weights + Python 3.11 env in
