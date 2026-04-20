@@ -1,6 +1,6 @@
 # Open Points — Closure Brief
 
-**Last refresh:** 2026-04-19 (OpenClawing4 Phase 0 closed on HelixQA — retraction banners on OpenClawing2/3/Starting_Point, `scripts/hooks/no-sudo.sh` pre-commit hook + `.pre-commit-config.yaml`, new `banks/docs-audit.yaml` with 7 mechanical checks, 14 `fixes-validation.yaml` entries FIX-OC2-001..003 + FIX-OC3-001..011, HQA-DOCS-001 challenge — [HelixQA commit `a2f3764`] + [handover `b2445ec`]; Phase-0 acceptance evidence in §10 below; full phases 1–6 roadmap in `HelixQA/docs/openclawing/OpenClawing4-Handover.md` §3. Prior (2026-04-19): Tauri auto-container dispatch: Rust toolchain relocated to /opt in `docker/Dockerfile.builder`, builder image rebuilt + `cargo --version && rustc --version` verified inside `--userns=keep-id` container [commits 35624a2f + 4c8dcefc]; pure-bash test suite under `scripts/tests/` wired into `scripts/run-all-tests.sh`; `docs/BUILD_CONTAINER_AUTO_DISPATCH.md` published. Phase-3 baseline re-green on current tip: catalog-api 44/44 packages, catalog-web 2318/2318, api-client 283/283, shell-layer 9/9. Phase-4 partial: 27/27 dep-clean category runs ✅, 10/11 dep-free leaf challenges ✅. Device pool regression: ADT-3 at 192.168.0.193 unreachable — see §2. Three new challenge-framework defects surfaced — see §6.)
+**Last refresh:** 2026-04-19 (OpenClawing4 Phase 1 Go-core closed on HelixQA — three pure-Go packages land compilable and tested: `pkg/capture/frames` normalised Frame type [97.1% coverage, commit `61d2696`], `pkg/bridge/sidecarutil` stdio framing + SCM_RIGHTS FD passing + --health probe [84.5% coverage, `bcdc740`], `pkg/bridge/scrcpy` v3 wire protocol + .devignore enforcement [91.4% coverage, `25599bb`], rollup handover + `banks/phase1-gocore.yaml` 9-case bank + HQA-PHASE1-GOCORE-001 challenge [`8535f12`]. Phase-1 native sidecars (`helixqa-capture-linux`, `helixqa-kmsgrab`) and linux portal/pipewire/libei/uinput + scrcpy server/session remain — see Handover §3.1 🚧 rows. Prior (2026-04-19): OpenClawing4 Phase 0 closed — retraction banners on OpenClawing2/3/Starting_Point, `scripts/hooks/no-sudo.sh` pre-commit hook + `.pre-commit-config.yaml`, new `banks/docs-audit.yaml` with 7 mechanical checks, 14 `fixes-validation.yaml` entries FIX-OC2-001..003 + FIX-OC3-001..011, HQA-DOCS-001 challenge [HelixQA `a2f3764` + handover `b2445ec`]. Prior (2026-04-19): Tauri auto-container dispatch: Rust toolchain relocated to /opt in `docker/Dockerfile.builder`, builder image rebuilt + `cargo --version && rustc --version` verified inside `--userns=keep-id` container [commits 35624a2f + 4c8dcefc]; pure-bash test suite under `scripts/tests/` wired into `scripts/run-all-tests.sh`; `docs/BUILD_CONTAINER_AUTO_DISPATCH.md` published. Phase-3 baseline re-green on current tip: catalog-api 44/44 packages, catalog-web 2318/2318, api-client 283/283, shell-layer 9/9. Phase-4 partial: 27/27 dep-clean category runs ✅, 10/11 dep-free leaf challenges ✅. Device pool regression: ADT-3 at 192.168.0.193 unreachable — see §2. Three new challenge-framework defects surfaced — see §6.)
 **Owner:** Operator (you). Every item below is work Claude cannot do
 autonomously — they need credentials, hardware, external accounts, or
 human judgment / filming / editing time.
@@ -488,13 +488,36 @@ Acceptance (Article V cat 6 security): YAML lint clean across 4 files
 1,347 lines with 42 `pkg/` landing rows and llama.cpp-RPC-primary
 declared on lines 65 + 250.
 
-### 10.2 Phases 1–6 — NOT started, fully specified
+### 10.1.1 Phase 1 Go-Core — DONE (added after Phase 0 in the same session)
+
+Closed by HelixQA commits `61d2696` (M1) + `bcdc740` (M2) + `25599bb` (M3) + `8535f12` (handover/bank/challenge rollup), all pushed to 4 HelixQA upstreams. Main-repo pointer bumped by this closure commit to `8535f12`.
+
+What shipped (pure-Go, no sidecar binaries):
+
+- **`pkg/capture/frames/`** — normalised `Frame{PTS, Width, Height, Format, Source, DataFD, DataLen, Data, AXTree}` with `Format` enum (NV12/RGBA/BGRA/H264AnnexB), `New` + `NewFromFD`, `Validate`, idempotent nil-safe `Close`. 97.1% statement coverage.
+- **`pkg/bridge/sidecarutil/`** — stdio framing (length-prefixed JSON, 16 MiB ceiling, heartbeat, `DrainReader`), SCM_RIGHTS FD passing over `*net.UnixConn` (stdlib-only, CGO-free), `HealthProbe`/`MultiHealth` enforcing `<bin> --health → ok\n + exit 0`. 84.5% coverage (remaining is syscall error branches).
+- **`pkg/bridge/scrcpy/`** — all 18 v3 client→server control messages with byte-exact marshalling including `InjectTouchEvent` 31-byte body with `action_button` + `buttons` uint32s (fixes FIX-OC3-011), server→client `DeviceMessage` (Clipboard/AckClipboard/UhidOutput), `ReadVideoPacket` + `ReadAudioPacket` with flag-bit decoding, all size ceilings + ErrProtocol guardrails. `.devignore` enforcement via `LoadDevIgnore` / `MatchModel` (case-insensitive) / `DeviceModel` (adb getprop) / `EnforceDevIgnore` (ErrDeviceBlocked). 91.4% coverage.
+- **Test coverage rollup**: 26 test functions across the three packages; all pass under `-race`.
+- **`banks/phase1-gocore.yaml`** — 9 test cases (P1G-FRAMES-001/002, P1G-SIDECARUTIL-001/002/003, P1G-SCRCPY-001/002/003, P1G-FULL-001) covering Article V categories 1 (unit), 2 (integration), 6 (security), 8 (benchmarking reference).
+- **`challenges/config/helixqa-validation.yaml`** — HQA-PHASE1-GOCORE-001 challenge appended (build + race-tests + bank-load + FIX-OC3-011 regression).
+- **`scripts/hooks/no-sudo.sh`** — allow-list regex extended to `banks/phase[0-9]+-gocore\.(yaml|json)` (consistent with existing allow-lists for docs-audit and fixes-validation).
+
+Phase-1 items remaining (🚧 in `OpenClawing4-Handover.md` §3.1):
+- `pkg/capture/linux/{portal,pipewire,kmsgrab,xcbshm}.go` — Wayland/X11 capture paths (godbus + sidecar FD pass)
+- `pkg/navigator/linux/{libei,uinput}.go` — Wayland input + uinput fallback
+- `pkg/bridge/scrcpy/{server,session}.go` — ADB forward + app_process launch + high-level Session API
+- `pkg/bridges/registry.go` — sidecar probes for `helixqa-capture-linux` + `helixqa-kmsgrab`
+- `cmd/helixqa-capture-linux/` (C+GStreamer) + `cmd/helixqa-kmsgrab/` (C + `setcap cap_sys_admin+ep`) native sidecars
+- `banks/capture-linux.yaml`, `banks/capture-android.yaml`, `banks/input-linux.yaml` — feature-level banks that require the native sidecars to run end-to-end
+
+### 10.2 Phases 2–6 — NOT started, fully specified
 
 Roadmap is in `HelixQA/docs/openclawing/OpenClawing4.md` §8 and
 `OpenClawing4-Handover.md` §3. Any session resuming from here should:
 
 1. `git pull` + recursive submodule update.
-2. Read `OpenClawing4-Handover.md` §3 for the phase they are tackling.
+2. Read `OpenClawing4-Handover.md` §3 for the phase they are tackling
+   (Phase 1 partial — Go-core done, 🚧 rows remain).
 3. Create a feature branch `feat/openclawing4-phase-N` in HelixQA.
 4. Implement per file list; commit per sub-phase; push.
 5. Bump main-repo submodule pointer on every HelixQA commit that is
@@ -502,14 +525,14 @@ Roadmap is in `HelixQA/docs/openclawing/OpenClawing4.md` §8 and
 
 Phase-at-a-glance (all weeks estimated, see handover §3 for details):
 
-| Phase | Scope | Weeks | Toolchain blockers |
-|---|---|---|---|
-| 1 | Linux Wayland capture (PipeWire portal + kmsgrab), scrcpy-server v3 direct protocol (pure Go), libei + uinput input | 3–4 | pipewire + gstreamer + scrcpy-server JAR v3 |
-| 2 | Unified AX tree, perception tiers (dHash → SSIM → DreamSim), BOCPD stagnation | 4 | OpenCV 4.x + gocv; Triton on GPU host for DreamSim |
-| 3 | UI-TARS-1.5-7B + OmniParser v2 + LangGraph + SGLang | 4–6 | llama.cpp with mmproj; Python VLM sidecars |
-| 4 | GPU compute sidecars: qa-vision-infer (TRT+NPP+OpenCV-CUDA), qa-video-decode (FFmpeg+NVDEC), qa-vulkan-compute PoC | 4 | CUDA 12.x + NVIDIA Container Toolkit |
-| 5 | Observability: Frida sidecar, cilium/ebpf uprobes, LD_PRELOAD catalogue, rapid fuzzing, VLM-guided DFS | 3 | Linux 5.x BTF |
-| 6 | macOS (SCKit) + Windows (WGC) + iOS (idb + WDA) + TUI (pty + ANSI grid) | 4–6 | macOS Xcode, Windows + WinRT SDK |
+| Phase | Scope | Weeks | Toolchain blockers | Status |
+|---|---|---|---|---|
+| 1 | Linux Wayland capture (PipeWire portal + kmsgrab), scrcpy-server v3 direct protocol (pure Go), libei + uinput input | 3–4 | pipewire + gstreamer + scrcpy-server JAR v3 | **Go-core DONE**; native sidecars + pkg/capture/linux + pkg/navigator/linux 🚧 |
+| 2 | Unified AX tree, perception tiers (dHash → SSIM → DreamSim), BOCPD stagnation | 4 | OpenCV 4.x + gocv; Triton on GPU host for DreamSim | Not started |
+| 3 | UI-TARS-1.5-7B + OmniParser v2 + LangGraph + SGLang | 4–6 | llama.cpp with mmproj; Python VLM sidecars | Not started |
+| 4 | GPU compute sidecars: qa-vision-infer (TRT+NPP+OpenCV-CUDA), qa-video-decode (FFmpeg+NVDEC), qa-vulkan-compute PoC | 4 | CUDA 12.x + NVIDIA Container Toolkit | Not started |
+| 5 | Observability: Frida sidecar, cilium/ebpf uprobes, LD_PRELOAD catalogue, rapid fuzzing, VLM-guided DFS | 3 | Linux 5.x BTF | Not started |
+| 6 | macOS (SCKit) + Windows (WGC) + iOS (idb + WDA) + TUI (pty + ANSI grid) | 4–6 | macOS Xcode, Windows + WinRT SDK | Not started |
 
 ### 10.3 Operator-actionable items from OpenClawing4
 
