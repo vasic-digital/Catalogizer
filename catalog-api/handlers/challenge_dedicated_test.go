@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"net/http"
 	"net/http/httptest"
+	"strconv"
 	"sync"
 	"testing"
 	"time"
@@ -828,7 +829,56 @@ func TestChallengeHandler_GetResults_ResponseHasAllKeys(t *testing.T) {
 	assert.Contains(t, response, "success")
 	assert.Contains(t, response, "data")
 	assert.Contains(t, response, "count")
-	assert.Len(t, response, 3)
+	// FIX-QA-2026-04-21-004: GetResults also reports total_count so
+	// clients can tell when the limit truncated the list.
+	assert.Contains(t, response, "total_count")
+	assert.Len(t, response, 4)
+}
+
+// TestChallengeHandler_GetResults_LimitTruncates is the regression test
+// for FIX-QA-2026-04-21-004. Without the limit, a 508-challenge RunAll
+// followed by GET /challenges/results serialised tens of MB of embedded
+// assertion output through gin's JSON encoder and appeared to "hang"
+// past the 60s RequestTimeout. GetResults now defaults to the last 100
+// entries and exposes total_count so callers can page.
+func TestChallengeHandler_GetResults_LimitTruncates(t *testing.T) {
+	_, mock, router := setupDedicatedChallengeTest()
+
+	// Fake 250 stored results; default limit is 100.
+	all := make([]*challenge.Result, 250)
+	for i := range all {
+		all[i] = &challenge.Result{ChallengeID: challenge.ID("ch-" + strconv.Itoa(i)), Status: challenge.StatusPassed}
+	}
+	mock.getResultsFunc = func() []*challenge.Result { return all }
+
+	// Default: returns the last 100, reports total_count=250.
+	req := httptest.NewRequest(http.MethodGet, "/api/v1/challenges/results", nil)
+	w := httptest.NewRecorder()
+	router.ServeHTTP(w, req)
+	require.Equal(t, http.StatusOK, w.Code)
+
+	var resp map[string]interface{}
+	require.NoError(t, json.Unmarshal(w.Body.Bytes(), &resp))
+	assert.Equal(t, float64(100), resp["count"], "default limit = 100")
+	assert.Equal(t, float64(250), resp["total_count"])
+
+	// Explicit limit=10: returns last 10.
+	req = httptest.NewRequest(http.MethodGet, "/api/v1/challenges/results?limit=10", nil)
+	w = httptest.NewRecorder()
+	router.ServeHTTP(w, req)
+	require.Equal(t, http.StatusOK, w.Code)
+	require.NoError(t, json.Unmarshal(w.Body.Bytes(), &resp))
+	assert.Equal(t, float64(10), resp["count"])
+	assert.Equal(t, float64(250), resp["total_count"])
+
+	// limit=0: unlimited, returns all.
+	req = httptest.NewRequest(http.MethodGet, "/api/v1/challenges/results?limit=0", nil)
+	w = httptest.NewRecorder()
+	router.ServeHTTP(w, req)
+	require.Equal(t, http.StatusOK, w.Code)
+	require.NoError(t, json.Unmarshal(w.Body.Bytes(), &resp))
+	assert.Equal(t, float64(250), resp["count"])
+	assert.Equal(t, float64(250), resp["total_count"])
 }
 
 func TestChallengeHandler_RunAll_ResponseHasAllKeys(t *testing.T) {

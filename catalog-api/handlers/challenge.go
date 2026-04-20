@@ -3,6 +3,7 @@ package handlers
 import (
 	"context"
 	"net/http"
+	"strconv"
 
 	"catalogizer/services"
 	"catalogizer/utils"
@@ -174,12 +175,35 @@ func (h *ChallengeHandler) RunByCategory(c *gin.Context) {
 	})
 }
 
-// GetResults returns all stored challenge execution results.
+// GetResults returns stored challenge execution results.
+//
+// FIX-QA-2026-04-21-004 (partial mitigation of DEFER-QA-2026-04-21-001):
+// after a 508-challenge RunAll the full result slice carries tens of MB
+// of embedded assertion + output data; serialising all of it through
+// gin's JSON encoder can sit well past the 60s RequestTimeout and
+// present as a "hung" endpoint. Accept an optional `limit` query param
+// (default: last 100 results; 0 = unlimited) so diagnostic callers get
+// a fast answer without starving the server on huge post-RunAll
+// payloads.
 func (h *ChallengeHandler) GetResults(c *gin.Context) {
-	results := h.service.GetResults()
+	all := h.service.GetResults()
+
+	limit := 100
+	if v := c.Query("limit"); v != "" {
+		if n, err := strconv.Atoi(v); err == nil && n >= 0 {
+			limit = n
+		}
+	}
+
+	results := all
+	if limit > 0 && len(all) > limit {
+		results = all[len(all)-limit:]
+	}
+
 	c.JSON(http.StatusOK, gin.H{
-		"success": true,
-		"data":    results,
-		"count":   len(results),
+		"success":     true,
+		"data":        results,
+		"count":       len(results),
+		"total_count": len(all),
 	})
 }
