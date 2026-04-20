@@ -29,6 +29,7 @@ func (db *DB) RunMigrations(ctx context.Context) error {
 		{Version: 15, Name: "create_playback_session_tables", Up: db.createPlaybackSessionTables},
 		{Version: 16, Name: "create_cover_art_tables", Up: db.createCoverArtTables},
 		{Version: 17, Name: "create_image_quality_assessments", Up: db.createImageQualityAssessmentsTable},
+		{Version: 18, Name: "add_media_items_favorite_column", Up: db.addMediaItemsFavoriteColumn},
 	}
 
 	for _, migration := range migrations {

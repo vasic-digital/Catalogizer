@@ -123,12 +123,36 @@ is 0.
 | HelixQA bank entry | same YAML | DONE |
 | Challenge | HelixQA-internal test fix | N/A |
 
-### Iteration 3 — clean pass
+### Iteration 3 — clean pass on the HelixQA side
 
 After committing FIX-QA-2026-04-20-002, iteration 3 ran both `HelixQA/tests/e2e/...
-+ pkg/vision/...` and `catalog-api -short ./...`. **All green, zero FAIL.** The
-Article VII stop condition "NOTHING LEFT" is reached — no further defects
-surfaced.
++ pkg/vision/...` and `catalog-api -short ./...`. **All green, zero FAIL.**
+
+### Iteration 4 — RunAll server-log reconstruction surfaces 3 more issues
+
+Wrote `analysis/parse-runall-log.py` to reconstruct the per-challenge matrix
+from the 2888-line server log that the lost RunAll response body couldn't
+provide. The parser surfaced:
+
+| Finding | Action |
+|---|---|
+| **4× HTTP 500 on `PUT /api/v1/media/1/favorite`** — real product defect. | **FIX-QA-2026-04-21-001** — migration v18 (`add_media_items_favorite_column`) adds `is_favorite` + `updated_at` columns (were only in the parallel test_helper schema → classic test/prod drift). Added `TestUpdateFavoriteStatus_HappyPath` + `TestUpdateFavoriteStatus_MediaNotFound` — before this, every favorite test was a 400-path branch, so the real UPDATE SQL was never exercised. |
+| **11× HTTP 404 on `GET /api/v1/health`** — bank probes the wrong path. | **FIX-QA-2026-04-21-002** — `/api/v1/health` now registered as an unauthenticated alias for `/health` with a shared handler closure. |
+| **GetResults endpoint hangs after RunAll** (handler doesn't check client-disconnect; concurrency-limiter saturation from leaked foreground-curl handlers still running). | **DEFER-QA-2026-04-21-001** — deferred to a dedicated cycle (requires threading `ctx` end-to-end through `Challenges/pkg/runner/` and every `Execute()`). |
+| **53× heap-growth alerts during RunAll** — alerts fire but no FATAL. | **DEFER-QA-2026-04-21-002** — deferred (needs pprof data + bounded-result-store decision). |
+| **Container stack boot-wire verified** — host port collision with pre-existing `helixagent-postgres` (5432) + `helixagent-redis` (6379); compose deploys correctly but can't coexist with the already-running agent stack. | Environmental only; recorded. |
+
+Smoke test against the rebuilt binary:
+
+- `GET /api/v1/health` → `200 {status: healthy, …}` (was 404).
+- `PUT /api/v1/media/9999999/favorite` → `404 "Media not found"` (was 500).
+
+### Iteration 4 — clean pass
+
+`go test ./database/ ./handlers/` green, including the two new
+`TestUpdateFavoriteStatus_*` regression tests. Article VII stop
+condition "NOTHING LEFT" reached for this cycle; two DEFER tickets
+carry-over to a focused follow-up session.
 
 Two bugs at one site:
 

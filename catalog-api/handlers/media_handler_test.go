@@ -2,12 +2,17 @@ package handlers
 
 import (
 	"bytes"
+	"context"
+	"database/sql"
 	"encoding/json"
 	"net/http"
 	"net/http/httptest"
 	"testing"
 
+	"catalogizer/database"
+
 	"github.com/gin-gonic/gin"
+	_ "github.com/mutecomm/go-sqlcipher"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
 )
@@ -213,6 +218,102 @@ func (suite *MediaHandlerTestSuite) TestUpdateFavoriteStatus_EmptyBody() {
 	suite.router.ServeHTTP(w, req)
 
 	assert.Equal(suite.T(), http.StatusBadRequest, w.Code)
+}
+
+// TestUpdateFavoriteStatus_HappyPath is the regression test for
+// FIX-QA-2026-04-21-001. Earlier tests only exercised 400-path
+// branches (invalid ID, invalid JSON, missing field), so the real
+// UPDATE never ran — which is how the missing-column 500 slipped
+// through into production unnoticed until the 2026-04-20 RunAll log
+// analysis surfaced it. This test runs the handler against an
+// in-memory SQLite schema with the migration-v18 columns and asserts
+// 200 + affected row.
+func TestUpdateFavoriteStatus_HappyPath(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+
+	sqlDB, err := sql.Open("sqlite3", ":memory:")
+	if err != nil {
+		t.Fatalf("open sqlite: %v", err)
+	}
+	defer sqlDB.Close()
+	sqlDB.SetMaxOpenConns(1)
+
+	ctx := context.Background()
+	db := database.WrapDB(sqlDB, database.DialectSQLite)
+	if err := db.RunMigrations(ctx); err != nil {
+		t.Fatalf("run migrations: %v", err)
+	}
+
+	// Seed one media_item via the migration-v8 entity schema.
+	if _, err := db.ExecContext(ctx, `
+		INSERT INTO media_items (media_type_id, title, status)
+		VALUES (1, 'Test Movie', 'detected')
+	`); err != nil {
+		t.Fatalf("seed media_items: %v", err)
+	}
+
+	handler := NewAndroidTVMediaHandler(db)
+	r := gin.New()
+	r.PUT("/api/v1/media/:id/favorite", handler.UpdateFavoriteStatus)
+
+	body := bytes.NewBufferString(`{"favorite": true}`)
+	req := httptest.NewRequest("PUT", "/api/v1/media/1/favorite", body)
+	req.Header.Set("Content-Type", "application/json")
+	w := httptest.NewRecorder()
+	r.ServeHTTP(w, req)
+
+	assert.Equal(t, http.StatusOK, w.Code,
+		"expected 200 after migration-v18 added is_favorite + updated_at; got body: %s", w.Body.String())
+
+	var got int
+	if err := db.QueryRowContext(ctx,
+		`SELECT is_favorite FROM media_items WHERE id = 1`,
+	).Scan(&got); err != nil {
+		t.Fatalf("read back is_favorite: %v", err)
+	}
+	assert.Equal(t, 1, got, "is_favorite must be 1 after UPDATE")
+
+	body = bytes.NewBufferString(`{"favorite": false}`)
+	req = httptest.NewRequest("PUT", "/api/v1/media/1/favorite", body)
+	req.Header.Set("Content-Type", "application/json")
+	w = httptest.NewRecorder()
+	r.ServeHTTP(w, req)
+	assert.Equal(t, http.StatusOK, w.Code)
+
+	if err := db.QueryRowContext(ctx,
+		`SELECT is_favorite FROM media_items WHERE id = 1`,
+	).Scan(&got); err != nil {
+		t.Fatalf("read back is_favorite: %v", err)
+	}
+	assert.Equal(t, 0, got, "is_favorite must be 0 after toggle-off")
+}
+
+func TestUpdateFavoriteStatus_MediaNotFound(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+
+	sqlDB, err := sql.Open("sqlite3", ":memory:")
+	if err != nil {
+		t.Fatalf("open sqlite: %v", err)
+	}
+	defer sqlDB.Close()
+	sqlDB.SetMaxOpenConns(1)
+
+	db := database.WrapDB(sqlDB, database.DialectSQLite)
+	if err := db.RunMigrations(context.Background()); err != nil {
+		t.Fatalf("run migrations: %v", err)
+	}
+
+	handler := NewAndroidTVMediaHandler(db)
+	r := gin.New()
+	r.PUT("/api/v1/media/:id/favorite", handler.UpdateFavoriteStatus)
+
+	body := bytes.NewBufferString(`{"favorite": true}`)
+	req := httptest.NewRequest("PUT", "/api/v1/media/9999999/favorite", body)
+	req.Header.Set("Content-Type", "application/json")
+	w := httptest.NewRecorder()
+	r.ServeHTTP(w, req)
+
+	assert.Equal(t, http.StatusNotFound, w.Code)
 }
 
 func TestMediaHandlerTestSuite(t *testing.T) {

@@ -896,8 +896,14 @@ func main() {
 	// Prometheus metrics endpoint
 	router.GET("/metrics", gin.WrapH(promhttp.Handler()))
 
-	// Health check (short-lived cache to reduce redundant health polling)
-	router.GET("/health", root_middleware.CacheHeaders(5), func(c *gin.Context) {
+	// Health check (short-lived cache to reduce redundant health polling).
+	//
+	// /api/v1/health is registered as an alias here — several HelixQA
+	// test banks + external monitors probe that path. Before the alias,
+	// the 2026-04-20 Article VII RunAll log showed 11× 404 on it
+	// (bank/monitor noise, not product failures). Keeping both paths
+	// unauthenticated matches the canonical /health contract.
+	healthHandler := func(c *gin.Context) {
 		c.JSON(http.StatusOK, gin.H{
 			"status":       "healthy",
 			"time":         time.Now().UTC(),
@@ -905,7 +911,9 @@ func main() {
 			"build_number": BuildNumber,
 			"build_date":   BuildDate,
 		})
-	})
+	}
+	router.GET("/health", root_middleware.CacheHeaders(5), healthHandler)
+	router.GET("/api/v1/health", root_middleware.CacheHeaders(5), healthHandler)
 
 	// Deep health check — pings the database with a 100ms timeout so
 	// a slow DB never blocks callers for an unreasonable duration.

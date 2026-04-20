@@ -190,9 +190,12 @@ func (h *AndroidTVMediaHandler) UpdateFavoriteStatus(c *gin.Context) {
 		return
 	}
 
-	// Update database
+	// FIX-QA-2026-04-21-001: production migrations never declared
+	// `is_favorite` or `updated_at` on media_items, so every call
+	// returned 500. Migration v18 adds both columns so this handler
+	// matches the test-schema expectations it was written against.
 	query := `
-		UPDATE media_items 
+		UPDATE media_items
 		SET is_favorite = ?, updated_at = CURRENT_TIMESTAMP
 		WHERE id = ?
 	`
