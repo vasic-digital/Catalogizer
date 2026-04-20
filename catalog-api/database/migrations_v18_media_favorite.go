@@ -101,12 +101,12 @@ func (db *DB) columnExistsSQLite(ctx context.Context, table, column string) (boo
 
 	for rows.Next() {
 		var (
-			cid      int
-			name     string
-			ctype    string
-			notnull  int
-			dfltVal  any
-			pk       int
+			cid     int
+			name    string
+			ctype   string
+			notnull int
+			dfltVal any
+			pk      int
 		)
 		if err := rows.Scan(&cid, &name, &ctype, &notnull, &dfltVal, &pk); err != nil {
 			return false, err
