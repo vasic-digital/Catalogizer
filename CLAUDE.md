@@ -35,7 +35,9 @@ The full text of each constraint below lives in `CONSTITUTION.md`. These are inv
   DEVICE_MODEL=$(adb -s $DEVICE shell getprop ro.product.model)
   grep -qi "$DEVICE_MODEL" .devignore && { echo "❌ in .devignore"; exit 1; }
   ```
-- **`.devconnect`** (gitignored): one IP per line for Android TV auto-connect. Run `./scripts/devconnect.sh` (idempotent) before HelixQA.
+- **`.devconnect`** (gitignored): one IP per line for Android TV auto-connect. Run `./scripts/devconnect.sh` (idempotent) before HelixQA. IP lines MUST NOT carry inline `# comments` — trailing-comment gets concatenated into the device ID by the orchestrator's `head -1 | grep -v ^#` parser.
+- **Device state preservation** (Constitution Article VIII). A QA session MUST NOT leave the device with changed `font_scale`, `wm density`, brightness, rotation, or any other `settings put …` value. HelixQA snapshots sensitive keys at session start and restores them via deferred cleanup — see `HelixQA/pkg/autonomous/device_preserve.go`. If a session leaves a device polluted, it's both a product bug (curiosity should not navigate into Settings → Accessibility) and a missing preservation entry to patch.
+- **HelixQA tool hygiene** (Constitution Article IX). No manual `adb shell screenrecord` workaround scripts; no `tee`-style exit-code laundering; no "✓ completed successfully" reports gated by anything other than real pass assertions. If the autonomous pipeline produces broken output, fix the Go code.
 
 ## HelixQA: Autonomous LLM-Driven Testing
 

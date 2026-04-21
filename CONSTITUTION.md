@@ -298,5 +298,50 @@ Shipping (merging, releasing, tagging, deploying) is **prohibited** while the ma
 
 ---
 
-*Last Updated: 2026-04-18*
+### Article VIII: Device State Preservation (MANDATORY)
+
+**A QA session MUST return every test device to the exact state it was in at session start. Modifying device-level settings as a side effect is forbidden.**
+
+**§8.1 What must never change as a side effect**
+- `system.font_scale` / accessibility text-scaling
+- Display density (`wm density`) / screen resolution (`wm size`)
+- Screen brightness and brightness mode
+- Screen-off timeout
+- Auto-rotation
+- Any other `settings put system|secure|global …` key that outlives the app under test
+
+**§8.2 Mechanism**
+HelixQA captures the sensitive keys on every connected device at Phase 0b (after ADB reverse proxy setup) and registers a restoration deferred to the end of the pipeline. On normal completion, crash, timeout, or operator interrupt, the settings are written back to their captured values. See `HelixQA/pkg/autonomous/device_preserve.go`.
+
+**§8.3 Root-cause over cosmetic**
+If the LLM-driven curiosity phase navigates into device settings and flips a switch, the immediate fix is **both**:
+1. Constrain curiosity navigation so it never targets device-settings areas that fall outside the app under test.
+2. The preservation hook in §8.2 is defence in depth, not a permission slip.
+
+**§8.4 Verification**
+Every session's FINAL-REPORT.md includes a "Device state diff" section confirming every preserved key matches its captured value. A non-empty diff is a Constitution violation.
+
+---
+
+### Article IX: HelixQA Test Tool Hygiene (MANDATORY)
+
+**HelixQA is testing infrastructure. It must never ask the operator to paper over its own limitations.**
+
+**§9.1 No manual workarounds**
+- No manual screenrecord loops. No scripts that substitute for HelixQA recording.
+- No "run this script after the session to fix …" instructions.
+- If the autonomous pipeline produces broken output, fix the Go code.
+
+**§9.2 Recording must span the whole session**
+Android's `screenrecord` caps at 180 s per invocation. HelixQA's recorder runs in a loop and concatenates segments via `ffmpeg -f concat -c copy`. A 2-hour session produces a 2-hour MP4. Partial recordings are a Constitution violation. See `HelixQA/pkg/video/scrcpy.go`.
+
+**§9.3 Vision verification must tolerate provider variety**
+Some vision providers (e.g., astica) return natural-language descriptions and don't emit the literal `VERIFIED: yes` marker. When the response is non-empty but doesn't parse, HelixQA falls back to action-success. See `HelixQA/pkg/autonomous/structured_executor.go` (`verifyOutcome`).
+
+**§9.4 False-positive reporting is prohibited**
+An orchestrator or pipeline that reports "✓ completed successfully" when the underlying command failed is a Constitution violation (see FIX-QA-2026-04-20-001/002). Every success log must be gated by a real passing assertion, never by `tee` exit codes or similar shell pipeline artefacts.
+
+---
+
+*Last Updated: 2026-04-21*
 *Enforced by: Project Lead*

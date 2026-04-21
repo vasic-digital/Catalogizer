@@ -40,7 +40,9 @@ Coverage contract: every happy path + standard flow + screen + UI/UX component +
 Preconditions:
 - `.env` at project root — all LLM provider keys wired
 - `.devignore` devices (ATMOSphere) permanently excluded
-- `.devconnect` lists at least one valid device per mobile platform in scope
+- `.devconnect` lists at least one valid device per mobile platform in scope. IP lines carry NO inline `# comments` (trailing-comment pollution breaks orchestrator parsing).
+- Device state preservation (Constitution Article VIII) — never mutate `font_scale`, `wm density`, brightness, rotation, or any `settings put …` value as a side effect of a QA session. HelixQA snapshots + restores these via `HelixQA/pkg/autonomous/device_preserve.go`.
+- HelixQA tool hygiene (Constitution Article IX) — no bash workarounds for HelixQA bugs; recordings cover the full session (loop + ffmpeg concat); false-positive success logs are prohibited (FIX-QA-2026-04-20-001/002).
 
 Live monitoring: operator console always shows current platform + app + test case ID + short description + progress + running/final result.
 
