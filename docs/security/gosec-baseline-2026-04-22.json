@@ -1,0 +1,396 @@
+{
+	"Golang errors": {},
+	"Issues": [
+		{
+			"severity": "HIGH",
+			"confidence": "MEDIUM",
+			"cwe": {
+				"id": "190",
+				"url": "https://cwe.mitre.org/data/definitions/190.html"
+			},
+			"rule_id": "G115",
+			"details": "integer overflow conversion uint64 -\u003e int64",
+			"file": "/run/media/milosvasic/DATA4TB/Projects/Catalogizer/catalog-api/challenges/ch201_220_performance_challenges.go",
+			"code": "766: \t// Allow up to 100 MB growth (generous)\n767: \tgrowthMB := int64(memAfter.Alloc-memBefore.Alloc) / 1024 / 1024\n768: \tstable := growthMB \u003c 100\n",
+			"line": "767",
+			"column": "19",
+			"nosec": false,
+			"suppressions": null
+		},
+		{
+			"severity": "HIGH",
+			"confidence": "MEDIUM",
+			"cwe": {
+				"id": "338",
+				"url": "https://cwe.mitre.org/data/definitions/338.html"
+			},
+			"rule_id": "G404",
+			"details": "Use of weak random number generator (math/rand or math/rand/v2 instead of crypto/rand)",
+			"file": "/run/media/milosvasic/DATA4TB/Projects/Catalogizer/catalog-api/internal/tests/testutils/testdata.go",
+			"code": "15: \treturn \u0026TestDataGenerator{\n16: \t\trng: rand.New(rand.NewSource(seed)),\n17: \t}\n",
+			"line": "16",
+			"column": "8",
+			"nosec": false,
+			"suppressions": null
+		},
+		{
+			"severity": "HIGH",
+			"confidence": "MEDIUM",
+			"cwe": {
+				"id": "338",
+				"url": "https://cwe.mitre.org/data/definitions/338.html"
+			},
+			"rule_id": "G404",
+			"details": "Use of weak random number generator (math/rand or math/rand/v2 instead of crypto/rand)",
+			"file": "/run/media/milosvasic/DATA4TB/Projects/Catalogizer/catalog-api/internal/recovery/retry.go",
+			"code": "159: \t\t// crypto/rand would be overkill for adding randomness to avoid thundering herd.\n160: \t\tjitter := rand.Float64() * 0.1 * delay // 10% jitter\n161: \t\tdelay += jitter\n",
+			"line": "160",
+			"column": "13",
+			"nosec": false,
+			"suppressions": null
+		},
+		{
+			"severity": "HIGH",
+			"confidence": "HIGH",
+			"cwe": {
+				"id": "918",
+				"url": "https://cwe.mitre.org/data/definitions/918.html"
+			},
+			"rule_id": "G704",
+			"details": "SSRF via taint analysis",
+			"file": "/run/media/milosvasic/DATA4TB/Projects/Catalogizer/catalog-api/internal/services/aggregation_service.go",
+			"code": "190: \n191: \t\t\tresp, err := client.Get(reqURL)\n192: \t\t\tif err != nil || resp.StatusCode != 200 {\n",
+			"line": "191",
+			"column": "27",
+			"nosec": false,
+			"suppressions": null
+		},
+		{
+			"severity": "HIGH",
+			"confidence": "HIGH",
+			"cwe": {
+				"id": "918",
+				"url": "https://cwe.mitre.org/data/definitions/918.html"
+			},
+			"rule_id": "G704",
+			"details": "SSRF via taint analysis",
+			"file": "/run/media/milosvasic/DATA4TB/Projects/Catalogizer/catalog-api/handlers/media_entity_handler.go",
+			"code": "729: \n730: \t\tresp, err := client.Do(req)\n731: \t\tif err != nil {\n",
+			"line": "730",
+			"column": "25",
+			"nosec": false,
+			"suppressions": null
+		},
+		{
+			"severity": "HIGH",
+			"confidence": "HIGH",
+			"cwe": {
+				"id": "918",
+				"url": "https://cwe.mitre.org/data/definitions/918.html"
+			},
+			"rule_id": "G704",
+			"details": "SSRF via taint analysis",
+			"file": "/run/media/milosvasic/DATA4TB/Projects/Catalogizer/catalog-api/handlers/media_entity_handler.go",
+			"code": "722: \t\t}\n723: \t\treq, err := http.NewRequestWithContext(ctx, http.MethodGet, reqURL, nil)\n724: \t\tif err != nil {\n",
+			"line": "723",
+			"column": "41",
+			"nosec": false,
+			"suppressions": null
+		},
+		{
+			"severity": "HIGH",
+			"confidence": "HIGH",
+			"cwe": {
+				"id": "918",
+				"url": "https://cwe.mitre.org/data/definitions/918.html"
+			},
+			"rule_id": "G704",
+			"details": "SSRF via taint analysis",
+			"file": "/run/media/milosvasic/DATA4TB/Projects/Catalogizer/catalog-api/challenges/image_quality.go",
+			"code": "408: \thttpClient := \u0026http.Client{Timeout: 30 * time.Second}\n409: \treturn httpClient.Do(req)\n410: }\n",
+			"line": "409",
+			"column": "22",
+			"nosec": false,
+			"suppressions": null
+		},
+		{
+			"severity": "HIGH",
+			"confidence": "LOW",
+			"cwe": {
+				"id": "798",
+				"url": "https://cwe.mitre.org/data/definitions/798.html"
+			},
+			"rule_id": "G101",
+			"details": "Potential hardcoded credentials",
+			"file": "/run/media/milosvasic/DATA4TB/Projects/Catalogizer/catalog-api/internal/tests/mock_servers.go",
+			"code": "645: \t\tStatusCode: 200,\n646: \t\tBody: map[string]interface{}{\n647: \t\t\t\"access_token\": \"mock_spotify_access_token_12345\",\n648: \t\t\t\"token_type\":   \"Bearer\",\n649: \t\t\t\"expires_in\":   3600,\n650: \t\t},\n651: \t}\n",
+			"line": "646-650",
+			"column": "9",
+			"nosec": false,
+			"suppressions": null
+		},
+		{
+			"severity": "HIGH",
+			"confidence": "LOW",
+			"cwe": {
+				"id": "798",
+				"url": "https://cwe.mitre.org/data/definitions/798.html"
+			},
+			"rule_id": "G101",
+			"details": "Potential hardcoded credentials",
+			"file": "/run/media/milosvasic/DATA4TB/Projects/Catalogizer/catalog-api/internal/tests/mock_servers.go",
+			"code": "165: \t\tStatusCode: 200,\n166: \t\tBody: map[string]interface{}{\n167: \t\t\t\"token\": \"mock_opensubtitles_token_12345\",\n168: \t\t\t\"user\": map[string]interface{}{\n169: \t\t\t\t\"allowed_downloads\": 200,\n170: \t\t\t\t\"level\":             \"VIP\",\n171: \t\t\t\t\"user_id\":           12345,\n172: \t\t\t},\n173: \t\t},\n174: \t}\n",
+			"line": "166-173",
+			"column": "9",
+			"nosec": false,
+			"suppressions": null
+		},
+		{
+			"severity": "HIGH",
+			"confidence": "LOW",
+			"cwe": {
+				"id": "798",
+				"url": "https://cwe.mitre.org/data/definitions/798.html"
+			},
+			"rule_id": "G101",
+			"details": "Potential hardcoded credentials",
+			"file": "/run/media/milosvasic/DATA4TB/Projects/Catalogizer/catalog-api/config/config.go",
+			"code": "158: \t\t},\n159: \t\tDatabase: DatabaseConfig{\n160: \t\t\tType:               \"postgres\",\n161: \t\t\tHost:               \"localhost\",\n162: \t\t\tPort:               5433,\n163: \t\t\tName:               \"catalogizer\",\n164: \t\t\tUser:               \"catalogizer\",\n165: \t\t\tPassword:           \"catalogizer_dev\",\n166: \t\t\tSSLMode:            \"disable\",\n167: \t\t\tPath:               \"./catalog.db\",\n168: \t\t\tMaxOpenConnections: 25,\n169: \t\t\tMaxIdleConnections: 5,\n170: \t\t\tConnMaxLifetime:    300,\n171: \t\t\tConnMaxIdleTime:    60,\n172: \t\t\tEnableWAL:          true,\n173: \t\t\tCacheSize:          -2000,\n174: \t\t\tBusyTimeout:        5000,\n175: \t\t},\n176: \t\tAuth: AuthConfig{\n",
+			"line": "159-175",
+			"column": "13",
+			"nosec": false,
+			"suppressions": null
+		},
+		{
+			"severity": "HIGH",
+			"confidence": "HIGH",
+			"cwe": {
+				"id": "22",
+				"url": "https://cwe.mitre.org/data/definitions/22.html"
+			},
+			"rule_id": "G703",
+			"details": "Path traversal via taint analysis",
+			"file": "/run/media/milosvasic/DATA4TB/Projects/Catalogizer/catalog-api/services/conversion_service.go",
+			"code": "474: \t// Write HTML file\n475: \treturn os.WriteFile(job.TargetPath, []byte(htmlContent), 0644)\n476: }\n",
+			"line": "475",
+			"column": "21",
+			"nosec": false,
+			"suppressions": null
+		},
+		{
+			"severity": "HIGH",
+			"confidence": "HIGH",
+			"cwe": {
+				"id": "22",
+				"url": "https://cwe.mitre.org/data/definitions/22.html"
+			},
+			"rule_id": "G703",
+			"details": "Path traversal via taint analysis",
+			"file": "/run/media/milosvasic/DATA4TB/Projects/Catalogizer/catalog-api/services/configuration_wizard_service.go",
+			"code": "155: \tos.MkdirAll(service.backupPath, 0755)\n156: \tos.MkdirAll(service.templatesPath, 0755)\n157: \n",
+			"line": "156",
+			"column": "13",
+			"nosec": false,
+			"suppressions": null
+		},
+		{
+			"severity": "HIGH",
+			"confidence": "HIGH",
+			"cwe": {
+				"id": "22",
+				"url": "https://cwe.mitre.org/data/definitions/22.html"
+			},
+			"rule_id": "G703",
+			"details": "Path traversal via taint analysis",
+			"file": "/run/media/milosvasic/DATA4TB/Projects/Catalogizer/catalog-api/services/configuration_wizard_service.go",
+			"code": "154: \tos.MkdirAll(service.configPath, 0755)\n155: \tos.MkdirAll(service.backupPath, 0755)\n156: \tos.MkdirAll(service.templatesPath, 0755)\n",
+			"line": "155",
+			"column": "13",
+			"nosec": false,
+			"suppressions": null
+		},
+		{
+			"severity": "HIGH",
+			"confidence": "HIGH",
+			"cwe": {
+				"id": "22",
+				"url": "https://cwe.mitre.org/data/definitions/22.html"
+			},
+			"rule_id": "G703",
+			"details": "Path traversal via taint analysis",
+			"file": "/run/media/milosvasic/DATA4TB/Projects/Catalogizer/catalog-api/services/configuration_wizard_service.go",
+			"code": "153: \t// Ensure directories exist\n154: \tos.MkdirAll(service.configPath, 0755)\n155: \tos.MkdirAll(service.backupPath, 0755)\n",
+			"line": "154",
+			"column": "13",
+			"nosec": false,
+			"suppressions": null
+		},
+		{
+			"severity": "HIGH",
+			"confidence": "MEDIUM",
+			"cwe": {
+				"id": "400",
+				"url": "https://cwe.mitre.org/data/definitions/400.html"
+			},
+			"rule_id": "G118",
+			"details": "Goroutine uses context.Background/TODO while request-scoped context is available",
+			"file": "/run/media/milosvasic/DATA4TB/Projects/Catalogizer/catalog-api/internal/services/media_player_service.go",
+			"code": "327: \t\tuserIDInt, _ := strconv.ParseInt(userID, 10, 64)\n328: \t\tgo func() {\n329: \t\t\tbgCtx, bgCancel := context.WithTimeout(context.Background(), 30*time.Second)\n",
+			"line": "328",
+			"column": "3",
+			"nosec": false,
+			"suppressions": null
+		},
+		{
+			"severity": "HIGH",
+			"confidence": "MEDIUM",
+			"cwe": {
+				"id": "400",
+				"url": "https://cwe.mitre.org/data/definitions/400.html"
+			},
+			"rule_id": "G118",
+			"details": "Goroutine uses context.Background/TODO while request-scoped context is available",
+			"file": "/run/media/milosvasic/DATA4TB/Projects/Catalogizer/catalog-api/internal/services/media_player_service.go",
+			"code": "300: \t// cancelled before the DB write completes.\n301: \tgo func() {\n302: \t\tbgCtx, bgCancel := context.WithTimeout(context.Background(), 30*time.Second)\n",
+			"line": "301",
+			"column": "2",
+			"nosec": false,
+			"suppressions": null
+		},
+		{
+			"severity": "HIGH",
+			"confidence": "MEDIUM",
+			"cwe": {
+				"id": "400",
+				"url": "https://cwe.mitre.org/data/definitions/400.html"
+			},
+			"rule_id": "G118",
+			"details": "Goroutine uses context.Background/TODO while request-scoped context is available",
+			"file": "/run/media/milosvasic/DATA4TB/Projects/Catalogizer/catalog-api/internal/services/cover_art_service.go",
+			"code": "1473: \t\t\t// Kick off background caching so future requests serve locally.\n1474: \t\t\tgo func(itemID int64, extURL string) {\n1475: \t\t\t\tcacheCtx, cancel := context.WithTimeout(context.Background(), 2*time.Minute)\n",
+			"line": "1474",
+			"column": "4",
+			"nosec": false,
+			"suppressions": null
+		},
+		{
+			"severity": "HIGH",
+			"confidence": "MEDIUM",
+			"cwe": {
+				"id": "367",
+				"url": "https://cwe.mitre.org/data/definitions/367.html"
+			},
+			"rule_id": "G122",
+			"details": "Filesystem operation in filepath.Walk/WalkDir callback uses race-prone path; consider root-scoped APIs (e.g. os.Root) to prevent symlink TOCTOU traversal",
+			"file": "/run/media/milosvasic/DATA4TB/Projects/Catalogizer/catalog-api/services/sync_service.go",
+			"code": "852: \t\t\t\t// Remove file\n853: \t\t\t\tif err := os.Remove(destPath); err != nil {\n854: \t\t\t\t\treturn fmt.Errorf(\"failed to remove %s: %w\", destPath, err)\n",
+			"line": "853",
+			"column": "24",
+			"nosec": false,
+			"suppressions": null
+		},
+		{
+			"severity": "HIGH",
+			"confidence": "MEDIUM",
+			"cwe": {
+				"id": "367",
+				"url": "https://cwe.mitre.org/data/definitions/367.html"
+			},
+			"rule_id": "G122",
+			"details": "Filesystem operation in filepath.Walk/WalkDir callback uses race-prone path; consider root-scoped APIs (e.g. os.Root) to prevent symlink TOCTOU traversal",
+			"file": "/run/media/milosvasic/DATA4TB/Projects/Catalogizer/catalog-api/services/sync_service.go",
+			"code": "846: \t\t\t\t// Remove directory if it's empty\n847: \t\t\t\tif err := os.Remove(destPath); err != nil {\n848: \t\t\t\t\t// Directory not empty, skip\n",
+			"line": "847",
+			"column": "24",
+			"nosec": false,
+			"suppressions": null
+		},
+		{
+			"severity": "HIGH",
+			"confidence": "MEDIUM",
+			"cwe": {
+				"id": "367",
+				"url": "https://cwe.mitre.org/data/definitions/367.html"
+			},
+			"rule_id": "G122",
+			"details": "Filesystem operation in filepath.Walk/WalkDir callback uses race-prone path; consider root-scoped APIs (e.g. os.Root) to prevent symlink TOCTOU traversal",
+			"file": "/run/media/milosvasic/DATA4TB/Projects/Catalogizer/catalog-api/services/sync_service.go",
+			"code": "571: \t\t// Open file\n572: \t\tfile, err := os.Open(path)\n573: \t\tif err != nil {\n",
+			"line": "572",
+			"column": "23",
+			"nosec": false,
+			"suppressions": null
+		},
+		{
+			"severity": "HIGH",
+			"confidence": "MEDIUM",
+			"cwe": {
+				"id": "367",
+				"url": "https://cwe.mitre.org/data/definitions/367.html"
+			},
+			"rule_id": "G122",
+			"details": "Filesystem operation in filepath.Walk/WalkDir callback uses race-prone path; consider root-scoped APIs (e.g. os.Root) to prevent symlink TOCTOU traversal",
+			"file": "/run/media/milosvasic/DATA4TB/Projects/Catalogizer/catalog-api/services/sync_service.go",
+			"code": "474: \t\t// Open file\n475: \t\tfile, err := os.Open(path)\n476: \t\tif err != nil {\n",
+			"line": "475",
+			"column": "23",
+			"nosec": false,
+			"suppressions": null
+		},
+		{
+			"severity": "HIGH",
+			"confidence": "MEDIUM",
+			"cwe": {
+				"id": "367",
+				"url": "https://cwe.mitre.org/data/definitions/367.html"
+			},
+			"rule_id": "G122",
+			"details": "Filesystem operation in filepath.Walk/WalkDir callback uses race-prone path; consider root-scoped APIs (e.g. os.Root) to prevent symlink TOCTOU traversal",
+			"file": "/run/media/milosvasic/DATA4TB/Projects/Catalogizer/catalog-api/challenges/module_functional_challenges.go",
+			"code": "120: \t\t}\n121: \t\tdata, readErr := os.ReadFile(path)\n122: \t\tif readErr != nil {\n",
+			"line": "121",
+			"column": "31",
+			"nosec": false,
+			"suppressions": null
+		},
+		{
+			"severity": "HIGH",
+			"confidence": "MEDIUM",
+			"cwe": {
+				"id": "367",
+				"url": "https://cwe.mitre.org/data/definitions/367.html"
+			},
+			"rule_id": "G122",
+			"details": "Filesystem operation in filepath.Walk/WalkDir callback uses race-prone path; consider root-scoped APIs (e.g. os.Root) to prevent symlink TOCTOU traversal",
+			"file": "/run/media/milosvasic/DATA4TB/Projects/Catalogizer/catalog-api/challenges/ch047_config_docs.go",
+			"code": "77: \t\t\tif ext == \".md\" || ext == \".txt\" || name == \".env.example\" || name == \"CLAUDE.md\" {\n78: \t\t\t\tcontent, readErr := os.ReadFile(path)\n79: \t\t\t\tif readErr == nil {\n",
+			"line": "78",
+			"column": "36",
+			"nosec": false,
+			"suppressions": null
+		},
+		{
+			"severity": "HIGH",
+			"confidence": "MEDIUM",
+			"cwe": {
+				"id": "367",
+				"url": "https://cwe.mitre.org/data/definitions/367.html"
+			},
+			"rule_id": "G122",
+			"details": "Filesystem operation in filepath.Walk/WalkDir callback uses race-prone path; consider root-scoped APIs (e.g. os.Root) to prevent symlink TOCTOU traversal",
+			"file": "/run/media/milosvasic/DATA4TB/Projects/Catalogizer/catalog-api/challenges/ch046_database_docs.go",
+			"code": "141: \t\t\t}\n142: \t\t\tcontent, readErr := os.ReadFile(path)\n143: \t\t\tif readErr != nil {\n",
+			"line": "142",
+			"column": "35",
+			"nosec": false,
+			"suppressions": null
+		}
+	],
+	"Stats": {
+		"files": 354,
+		"lines": 139893,
+		"nosec": 3,
+		"found": 24
+	},
+	"GosecVersion": "dev"
+}
