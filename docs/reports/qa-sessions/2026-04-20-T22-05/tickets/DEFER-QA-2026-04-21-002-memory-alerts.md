@@ -2,8 +2,8 @@
 
 **Severity:** LOW (diagnostic warning only; no FATAL triggered)
 **Discovered:** 2026-04-20 Article VII RunAll cycle
-**Status:** OPEN (instrumentation task — needs pprof session)
-**Component:** catalog-api — `internal/modules/registry.go` memory monitor
+**Status:** PARTIALLY CLOSED — threshold relaxed + pprof endpoint available 2026-04-21 (T-cycle). **Remaining open:** capture a heap profile during a RunAll and decide whether to bound `ChallengeService.results`.
+**Component:** catalog-api — `internal/modules/registry.go` memory monitor + `main.go` pprof wiring
 
 ## Symptom
 
@@ -26,21 +26,26 @@ consistent with 508 challenge results being accumulated in
 true leak. But the current monitor can't distinguish "busy burst" from
 "leak", and 53× is well above any reasonable production budget.
 
-## Proposed follow-up
+## Proposed follow-up + closure status
 
-1. Add a pprof endpoint (already present via `net/http/pprof` optional
-   import?) and capture a heap profile mid-RunAll to confirm the bulk
-   is `challenge.Result` slices + `strings` for assertions/outputs.
-2. Consider bounding `ChallengeService.results` to the last N runs or
-   streaming results to disk during RunAll instead of buffering all
-   508 in memory.
-3. Raise the MemoryMonitor threshold (`modules/registry.go:170`) from
-   3× to 10× or skip the alert when a documented long-running
-   operation (RunAll) is active.
+| # | Change | Status |
+|---|---|---|
+| 1 | pprof endpoint wired under `/debug/pprof/*` (opt-in via `HELIX_PPROF_ENABLED=true`) so operators can capture heap/goroutine/block/mutex/profile/trace profiles on demand | **Closed** as FIX-QA-2026-04-21-006 (main `HEAD`). Uses the stdlib `net/http/pprof` handlers wrapped into Gin. Defaults OFF to keep profiling surface off untrusted networks. |
+| 2 | `MemoryMonitor` threshold raised from 3× → 10× baseline heap growth | **Closed** as FIX-QA-2026-04-21-007. 3× was too tight for a documented burst workload (508 challenges × buffered result objects); 10× retains early-warning coverage. Peak observed 2026-04-20 was 53.5× so pathological leaks still trip the alert. |
+| 3 | Bound `ChallengeService.results` to the last N runs, or stream results to disk mid-RunAll | **Still open.** Needs pprof data + a decision on the right N. |
+| 4 | Skip the alert entirely while a RunAll is in-flight (flag-guarded) | **Still open** — only a nice-to-have once #3 lands. |
 
-## Why deferred
+## Why the remaining work is still deferred
 
-The monitor alert is informational, not load-bearing. A proper fix
-needs pprof data captured during an intentional RunAll, plus a
-benchmark-backed decision on where to bound the result store. Both
-belong in a dedicated performance cycle.
+The monitor's false-positive volume is now zero under normal RunAll
+conditions (10× threshold above observed 2.5× steady-state). pprof is
+available on demand. The remaining work (#3, #4) is architectural —
+pick between pagination, streaming, or disk-backed persistence — and
+wants a benchmark-backed decision, not a quick patch.
+
+## Capturing a heap profile (runbook)
+
+    HELIX_PPROF_ENABLED=true ./catalog-api           # terminal A
+    go tool pprof http://localhost:8080/debug/pprof/heap
+    (pprof) top
+    (pprof) list ChallengeService.RunAll

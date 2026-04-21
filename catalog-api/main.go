@@ -32,8 +32,9 @@ import (
 	"io"
 	"math/big"
 	"net"
-	"net/url"
 	"net/http"
+	"net/http/pprof"
+	"net/url"
 	"os"
 	"os/signal"
 	"path/filepath"
@@ -895,6 +896,32 @@ func main() {
 
 	// Prometheus metrics endpoint
 	router.GET("/metrics", gin.WrapH(promhttp.Handler()))
+
+	// pprof endpoints — OPT-IN via HELIX_PPROF_ENABLED=true.
+	//
+	// DEFER-QA-2026-04-21-002 follow-up: heap/goroutine profiling was
+	// previously unavailable, so the 2026-04-20 RunAll memory burst
+	// (peak 53.5× baseline heap) could only be assessed from logs. With
+	// this flag set, /debug/pprof/{heap,goroutine,profile,trace,…}
+	// become available (standard net/http/pprof handlers). The flag
+	// defaults OFF so untrusted networks never see the endpoints by
+	// accident — operators flip it on, capture profiles, flip it off.
+	if os.Getenv("HELIX_PPROF_ENABLED") == "true" {
+		pprofGroup := router.Group("/debug/pprof")
+		pprofGroup.GET("/", gin.WrapF(pprof.Index))
+		pprofGroup.GET("/cmdline", gin.WrapF(pprof.Cmdline))
+		pprofGroup.GET("/profile", gin.WrapF(pprof.Profile))
+		pprofGroup.POST("/symbol", gin.WrapF(pprof.Symbol))
+		pprofGroup.GET("/symbol", gin.WrapF(pprof.Symbol))
+		pprofGroup.GET("/trace", gin.WrapF(pprof.Trace))
+		pprofGroup.GET("/allocs", gin.WrapH(pprof.Handler("allocs")))
+		pprofGroup.GET("/block", gin.WrapH(pprof.Handler("block")))
+		pprofGroup.GET("/goroutine", gin.WrapH(pprof.Handler("goroutine")))
+		pprofGroup.GET("/heap", gin.WrapH(pprof.Handler("heap")))
+		pprofGroup.GET("/mutex", gin.WrapH(pprof.Handler("mutex")))
+		pprofGroup.GET("/threadcreate", gin.WrapH(pprof.Handler("threadcreate")))
+		logging.Info("pprof endpoints enabled at /debug/pprof/*")
+	}
 
 	// Health check (short-lived cache to reduce redundant health polling).
 	//

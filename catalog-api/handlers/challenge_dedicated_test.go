@@ -835,6 +835,46 @@ func TestChallengeHandler_GetResults_ResponseHasAllKeys(t *testing.T) {
 	assert.Len(t, response, 4)
 }
 
+// TestChallengeHandler_RunChallenge_PropagatesRequestContext is the
+// regression test for FIX-QA-2026-04-21-005. Before the handler was
+// updated to pass c.Request.Context() (it used to pass
+// context.Background()), a curl that disconnected mid-challenge left
+// the challenge running server-side — the concurrency limiter then
+// accumulated zombie handlers and the whole /challenges/* surface
+// appeared to hang (DEFER-QA-2026-04-21-001).
+//
+// The mock asserts that the ctx received by RunChallenge is the
+// request's ctx (not a background one) by checking its deadline and
+// Done channel behaviour.
+func TestChallengeHandler_RunChallenge_PropagatesRequestContext(t *testing.T) {
+	_, mock, router := setupDedicatedChallengeTest()
+
+	var gotCtx context.Context
+	mock.runChallengeFunc = func(ctx context.Context, id string) (*challenge.Result, error) {
+		gotCtx = ctx
+		return makeResult(id, "Ctx propagation test", challenge.StatusPassed), nil
+	}
+
+	// Build a request whose context carries a deadline — if the
+	// handler was using context.Background(), the mock would see a
+	// ctx without a deadline.
+	deadline := time.Now().Add(5 * time.Second)
+	reqCtx, cancel := context.WithDeadline(context.Background(), deadline)
+	defer cancel()
+
+	req := httptest.NewRequest(http.MethodPost, "/api/v1/challenges/ch-001/run", nil)
+	req = req.WithContext(reqCtx)
+	w := httptest.NewRecorder()
+	router.ServeHTTP(w, req)
+
+	require.Equal(t, http.StatusOK, w.Code)
+	require.NotNil(t, gotCtx, "RunChallenge must have been invoked with a ctx")
+
+	gotDeadline, hasDeadline := gotCtx.Deadline()
+	assert.True(t, hasDeadline, "handler must propagate request ctx (which has a deadline), not background")
+	assert.WithinDuration(t, deadline, gotDeadline, 50*time.Millisecond)
+}
+
 // TestChallengeHandler_GetResults_LimitTruncates is the regression test
 // for FIX-QA-2026-04-21-004. Without the limit, a 508-challenge RunAll
 // followed by GET /challenges/results serialised tens of MB of embedded

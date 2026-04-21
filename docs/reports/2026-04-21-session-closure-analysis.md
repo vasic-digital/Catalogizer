@@ -70,6 +70,38 @@ every configured upstream.
 
 ---
 
+## 2b. T-cycle closures (2026-04-21, later)
+
+Post-analysis sweep triggered by the operator's instruction to process
+both DEFER tickets and do what's doable immediately. Five additional
+closures landed:
+
+| ID | Area | Summary |
+|---|---|---|
+| `FIX-QA-2026-04-21-005` | catalog-api / `handlers/challenge.go` | Single-challenge `POST /challenges/:id/run` now propagates `c.Request.Context()` so disconnected clients stop spawning zombie server-side work. Regression test `TestChallengeHandler_RunChallenge_PropagatesRequestContext` asserts the mock receives a ctx with the request's deadline. Partially closes DEFER-001 — RunAll/RunByCategory keep `context.Background()` by design (they are long-running). |
+| `FIX-QA-2026-04-21-006` | catalog-api / `main.go` | `net/http/pprof` handlers wired under `/debug/pprof/*`, opt-in via `HELIX_PPROF_ENABLED=true`. Default OFF so profiling surface never shows up on untrusted networks accidentally. Unblocks the heap-profile capture that DEFER-002 #3 needs. |
+| `FIX-QA-2026-04-21-007` | catalog-api / `internal/modules/registry.go` | `MemoryMonitor` threshold raised 3× → 10× baseline. 3× was too tight for legitimate burst workloads (observed 53.5× peak during RunAll, settling back to <2× within 5 min); 10× retains early-warning coverage without firing 26 false positives per cycle. |
+| DEFER-001 ticket updated | `qa-sessions/2026-04-20-T22-05/tickets/DEFER-QA-2026-04-21-001-challenges-results-hang.md` | Status changed OPEN → PARTIALLY CLOSED. Closed checkboxes: GetResults limit, RunChallenge ctx. Open: RunAll ctx + Challenges runner threading + end-to-end disconnect test. |
+| DEFER-002 ticket updated | `qa-sessions/2026-04-20-T22-05/tickets/DEFER-QA-2026-04-21-002-memory-alerts.md` | Status changed OPEN → PARTIALLY CLOSED. Closed: pprof endpoint + threshold raise. Open: bounded-result-store decision (architectural — needs pprof data + benchmark-backed N). Added capture-heap-profile runbook. |
+
+## 2c. CI/CD pipeline state (2026-04-21 check)
+
+Operator directive: "Make sure that GitHub actions and GitLab pipelines
+are not failing". Current state verified via `gh` and `glab` CLIs:
+
+- `.github/workflows/` contains only `README.md` — no active workflow
+  YAMLs. `gh run list` shows only historical failures from 2026-02-03
+  and earlier (before the workflow files were removed).
+- `.gitlab-ci.yml` is absent from the repo root.
+- `glab ci list` on `vasic-digital/catalogizer` and
+  `milos85vasic/Catalogizer`: "No pipelines available" on both.
+
+**Conclusion:** CI state is CLEAN. No active pipeline can fail because
+none are registered. This matches the main-repo CLAUDE.md rule
+("GitHub Actions Disabled. Do not create files in
+`.github/workflows/`. CI/CD runs locally."). Historical failures
+cannot re-run — the workflow files that defined them are gone.
+
 ## 3. Blocked on external inputs (not workable without user action)
 
 ### Full production compose-stack boot

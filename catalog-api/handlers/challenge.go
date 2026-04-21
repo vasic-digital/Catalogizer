@@ -72,6 +72,17 @@ func (h *ChallengeHandler) GetChallenge(c *gin.Context) {
 }
 
 // RunChallenge executes a single challenge by ID.
+//
+// FIX-QA-2026-04-21-005 (partial closure of DEFER-QA-2026-04-21-001):
+// single-challenge runs now propagate c.Request.Context() instead of
+// context.Background() so the challenge terminates when the HTTP
+// client disconnects (curl timeout, closed TCP). This keeps the
+// concurrency limiter from accumulating zombie handlers — the exact
+// pathology observed in the 2026-04-20 RunAll session.
+//
+// RunAll/RunByCategory deliberately keep context.Background() because
+// they're long-running by design; their full ctx-threading still
+// requires the submodule refactor documented in DEFER-001.
 func (h *ChallengeHandler) RunChallenge(c *gin.Context) {
 	id := c.Param("id")
 	if id == "" {
@@ -82,7 +93,7 @@ func (h *ChallengeHandler) RunChallenge(c *gin.Context) {
 		return
 	}
 
-	result, err := h.service.RunChallenge(context.Background(), id)
+	result, err := h.service.RunChallenge(c.Request.Context(), id)
 	if err != nil {
 		utils.SendErrorResponse(
 			c, http.StatusInternalServerError,

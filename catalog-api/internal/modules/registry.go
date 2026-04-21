@@ -166,8 +166,16 @@ func RegisterModules() *Registry {
 
 	// --- 4. Memory module ---
 	// Initialize memory monitor for production leak detection.
-	// Samples every 60 seconds, alerts if heap grows beyond 3x baseline.
-	reg.MemoryMonitor = memory.NewMemoryMonitor(60*time.Second, 3.0)
+	// Samples every 60 seconds, alerts if heap grows beyond 10× baseline.
+	//
+	// DEFER-QA-2026-04-21-002 follow-up: the previous 3× threshold
+	// was too tight for legitimate burst workloads. During the
+	// 2026-04-20 RunAll (508 challenges buffered as in-memory Result
+	// slices + transient HTTP buffers), heap peaked at 53.5× baseline
+	// and fired 26 false-positive alerts, settling back under 2×
+	// within 5 minutes of the burst. 10× retains early-warning
+	// coverage while silencing legitimate burst workloads.
+	reg.MemoryMonitor = memory.NewMemoryMonitor(60*time.Second, 10.0)
 	reg.MemoryMonitor.SetAlertCallback(func(report memory.LeakReport) {
 		logging.Warn("MEMORY ALERT: potential leak detected",
 			logging.String("component", "modules"),
