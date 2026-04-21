@@ -95,17 +95,24 @@ func init() {
 	}
 }
 
-// SanitizeInput performs basic sanitization on input strings
+// SanitizeInput performs basic sanitisation on input strings.
+//
+// FIX-QA-2026-04-21-009: the idempotency fuzzer
+// (FuzzSanitizeInput_Idempotent) surfaced a case where
+// SanitizeInput("\xdd 0") → " 0" (a leading space appears once the
+// invalid UTF-8 byte is dropped), but a second pass produced "0"
+// (TrimSpace now sees the leading space). Non-idempotent sanitisers
+// are dangerous: any multi-hop pipeline that re-sanitises (e.g.,
+// server-side after a CSRF middleware already did so) mutates data
+// between hops. Fix: move TrimSpace to run LAST so the result is a
+// fixed point under repeated application.
 func SanitizeInput(input string) string {
-	// Trim whitespace
-	input = strings.TrimSpace(input)
-
-	// Remove null bytes
+	// Remove null bytes first — they're never meaningful payload.
 	input = strings.ReplaceAll(input, "\x00", "")
 
-	// Ensure valid UTF-8
+	// Ensure valid UTF-8. Drop invalid leading/continuation bytes,
+	// which can leave whitespace next to formerly-adjacent bytes.
 	if !utf8.ValidString(input) {
-		// Remove invalid UTF-8 sequences
 		valid := make([]rune, 0, len(input))
 		for i, r := range input {
 			if r == utf8.RuneError {
@@ -119,7 +126,10 @@ func SanitizeInput(input string) string {
 		input = string(valid)
 	}
 
-	return input
+	// TrimSpace LAST so stripping invalid bytes cannot leave
+	// surrounding whitespace that changes the value on a second
+	// pass.
+	return strings.TrimSpace(input)
 }
 
 // DetectSQLInjection checks for common SQL injection patterns

@@ -47,4 +47,4 @@ result_*.json
 
 # Stale test artifact directories
 old_results/
-test-results/
+test-results/catalog-api/catalog-api.e2e
