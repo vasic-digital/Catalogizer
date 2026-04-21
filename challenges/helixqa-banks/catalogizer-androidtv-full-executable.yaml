@@ -17,7 +17,7 @@ test_cases:
         expected: "App killed"
         timeout: 5
         
-  - id: tv-cold-start
+  - id: tv-cold-start-full
     name: "Cold Start - Full Launch Sequence"
     category: launch
     priority: critical
@@ -68,7 +68,7 @@ test_cases:
     category: authentication
     priority: critical
     platforms: [androidtv]
-    dependencies: [tv-cold-start]
+    dependencies: [tv-cold-start-full]
     steps:
       - name: "Navigate to username field"
         action: "keypress: KEYCODE_DPAD_DOWN"

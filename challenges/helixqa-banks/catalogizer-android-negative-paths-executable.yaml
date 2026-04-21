@@ -10,8 +10,8 @@ test_cases:
   - android
   steps:
   - name: Trigger ANR condition
-    action: adb_shell:am start -n com.vasic.catalogizer/.mainactivity &&  input keyevent
-      keycode_wakeup && sleep 1 &&  kill -stop $( pidof com.vasic.catalogizer)
+    action: adb_shell:am start -n com.catalogizer.android/.MainActivity &&  input keyevent
+      keycode_wakeup && sleep 1 &&  kill -stop $( pidof com.catalogizer.android)
     expected: System ANR dialog appears after ~5 seconds indicating app is not responding
     timeout: 10
   - name: Dismiss ANR and wait
@@ -58,7 +58,7 @@ test_cases:
     expected: Device has no network connectivity
     timeout: 10
   - name: Launch app
-    action: adb_shell:am start -n com.vasic.catalogizer/.mainactivity
+    action: adb_shell:am start -n com.catalogizer.android/.MainActivity
     expected: App launches and displays a clear offline state message instead of crash
       or infinite loading spinner
     timeout: 10
@@ -104,11 +104,11 @@ test_cases:
     expected: Operation starts and data begins loading
     timeout: 10
   - name: Force stop mid-operation
-    action: adb_shell:am force-stop com.vasic.catalogizer
+    action: adb_shell:am force-stop com.catalogizer.android
     expected: App process terminates immediately
     timeout: 10
   - name: Relaunch app
-    action: adb_shell:am start -n com.vasic.catalogizer/.mainactivity
+    action: adb_shell:am start -n com.catalogizer.android/.MainActivity
     expected: App launches cleanly to home or login screen with no partial/corrupted
       state. No crash on startup from interrupted operation
     timeout: 10
@@ -125,7 +125,7 @@ test_cases:
     expected: User is on media detail screen with specific content
     timeout: 10
   - name: Background and simulate OOM kill
-    action: adb_shell:input keyevent keycode_home &&  am kill com.vasic.catalogizer
+    action: adb_shell:input keyevent keycode_home &&  am kill com.catalogizer.android
     expected: App process is killed by system
     timeout: 10
   - name: Restore from recents
@@ -342,12 +342,12 @@ test_cases:
   steps:
   - name: Corrupt stored token
     action: 'adb_shell:use adb to modify sharedpreferences xml, replacing the jwt
-      token with garbage data:  run-as com.vasic.catalogizer sed -i ''s/eyj.*/corrupted_token/''
+      token with garbage data:  run-as com.catalogizer.android sed -i ''s/eyj.*/corrupted_token/''
       shared_prefs/auth.xml'
     expected: Token value is corrupted on disk
     timeout: 10
   - name: Launch app with corrupted token
-    action: adb_shell:am start -n com.vasic.catalogizer/.mainactivity
+    action: adb_shell:am start -n com.catalogizer.android/.MainActivity
     expected: App detects invalid token on API call, clears corrupt token, and redirects
       to login screen. No crash from malformed JWT parsing
     timeout: 10
@@ -1155,7 +1155,7 @@ test_cases:
   - android
   steps:
   - name: Revoke storage permission while app is open
-    action: adb_shell:pm revoke com.vasic.catalogizer android.permission.read_external_storage
+    action: adb_shell:pm revoke com.catalogizer.android android.permission.read_external_storage
       while app is browsing local media
     expected: App may be killed and restarted by system
     timeout: 10

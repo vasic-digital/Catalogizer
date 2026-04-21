@@ -10,7 +10,7 @@ test_cases:
   - androidtv
   steps:
   - name: Force stop app
-    action: adb_shell:am force-stop com.vasic.catalogizer.tv
+    action: adb_shell:am force-stop com.catalogizer.androidtv
     expected: App process terminated
     timeout: 10
   - name: Launch from launcher

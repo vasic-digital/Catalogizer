@@ -10,11 +10,11 @@ test_cases:
   - android
   steps:
   - name: Force stop app
-    action: adb_shell:am force-stop com.vasic.catalogizer
+    action: adb_shell:am force-stop com.catalogizer.android
     expected: App process terminated
     timeout: 10
   - name: Launch from launcher
-    action: adb_shell:am start -n com.vasic.catalogizer/.mainactivity
+    action: adb_shell:am start -n com.catalogizer.android/.MainActivity
     expected: App launches and displays splash screen within 3 seconds
     timeout: 10
   - name: Verify home screen
@@ -724,7 +724,7 @@ test_cases:
   - android
   steps:
   - name: Simulate low memory
-    action: adb_shell:am send-trim-memory com.vasic.catalogizer running_critical
+    action: adb_shell:am send-trim-memory com.catalogizer.android running_critical
     expected: App receives memory trim callback
     timeout: 10
   - name: Continue using app

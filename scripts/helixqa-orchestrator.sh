@@ -278,17 +278,41 @@ run_helixqa() {
     # Run HelixQA
     log_info "Starting HelixQA autonomous session..."
     
-    if "$HELIXQA_BIN" autonomous \
+    # FIX-QA-2026-04-21-011: same false-positive anti-pattern as
+    # TestFullPipeline (FIX-QA-2026-04-20-001). `if cmd | tee …` uses
+    # tee's exit code, not cmd's — so HelixQA failing (e.g., Phase 1
+    # DB corruption) still reports "✓ completed successfully".
+    # Observed live on 2026-04-21 X-cycle run: HelixQA died with
+    # "database disk image is malformed" after 1 of 4 phases and the
+    # orchestrator claimed success.
+    # Fix: capture HelixQA's exit code explicitly before tee's.
+    set -o pipefail
+    "$HELIXQA_BIN" autonomous \
         -platforms "$platform_arg" \
         -project "$PROJECT_ROOT" \
         -output "$SESSION_DIR/helixqa" \
         -timeout 2h \
-        -verbose 2>&1 | tee -a "$LOG_FILE"; then
-        log_info "✓ HelixQA completed successfully"
-    else
-        log_error "✗ HelixQA failed or timed out"
+        -verbose 2>&1 | tee -a "$LOG_FILE"
+    local helixqa_rc=${PIPESTATUS[0]}
+    set +o pipefail
+
+    if [[ $helixqa_rc -ne 0 ]]; then
+        log_error "✗ HelixQA failed (exit code $helixqa_rc)"
         return 1
     fi
+
+    # Additional guard: even a zero exit code is suspect if the
+    # session report never reached Analyze phase. Scan the
+    # pipeline-report.json and fail loudly if the session aborted
+    # before Execute.
+    local pipeline_report
+    pipeline_report=$(find "$SESSION_DIR/helixqa" -name pipeline-report.json 2>/dev/null | head -1)
+    if [[ -n "$pipeline_report" ]] && grep -q '"Session failed"' "$pipeline_report" 2>/dev/null; then
+        log_error "✗ HelixQA exited 0 but pipeline-report.json shows session failed"
+        return 1
+    fi
+
+    log_info "✓ HelixQA completed successfully"
 }
 
 # Generate consolidated report
