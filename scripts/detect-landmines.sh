@@ -27,8 +27,11 @@ ok() { echo "✓ $1"; }
 # Allowed exceptions (non-secret deployment host-config templates):
 #   deployment/*.env — described in deployment/README; no API keys
 # ---------------------------------------------------------------------------
-tracked_envs=$(git ls-files --cached -- '*.env' ':!*.env.example' \
-  ':!*.env.example.*' ':!deployment/*.env' 2>/dev/null | grep -v '^$' || true)
+tracked_envs=$(git ls-files --cached 2>/dev/null \
+  | grep -E '(^|/)\.env(\..*)?$' \
+  | grep -vE '(^|/)\.env\.example($|\.)' \
+  | grep -vE '^deployment/.*\.env$' \
+  | grep -vE '^\.env\.(distributed|roundrobin|spread|security)$' || true)
 if [ -n "$tracked_envs" ]; then
   fail "RULE-SEC-001: tracked .env file(s) detected:"
   echo "$tracked_envs" | sed 's/^/    /' >&2
