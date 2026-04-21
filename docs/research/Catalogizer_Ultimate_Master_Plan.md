@@ -160,10 +160,16 @@ The universal approach from `Fixing_big_projects.md` is adapted specifically for
 | `catalogizer-androidtv` | Kotlin / Leanback | "Complete" | Mi Box 4 tested, focus navigation working | #3, #8 |
 | `catalogizer-desktop` | Tauri / Rust + React | "Complete" | Auto-container dispatch landed | #8 |
 | `catalogizer-api-client` | TypeScript | "Complete" | Library published | #8 |
-| `HelixQA` | Go | "Complete" | Autonomous QA framework | #3 |
-| `LLMsVerifier` | Go | "Complete" | Strategy pattern + recipes | #2 |
-| `LLMOrchestrator` | Go | "Complete" | Multi-provider pool | #7 |
-| `DocProcessor` | Go | "Complete" | ADOC/RST support | #3 |
+| `HelixQA` | Go | "In Progress" | Autonomous QA engine (501 commits, 40+ pkg) | #3 |
+| `LLMsVerifier` | Go | "Core Done" | Strategy pattern + recipes (needs integration) | #2 |
+| `LLMOrchestrator` | Go | "Core Done" | Multi-provider pool (needs E2E) | #7 |
+| `DocProcessor` | Go | "Complete" | ADOC/RST/MD/YAML/HTML parsing | — |
+| `VisionEngine` | Go | "Complete" | CV + LLM vision (24 commits) | — |
+| `ScreenDiff` | Go | "Complete" | Screenshot comparison | — |
+| `VisualRegression` | Go | "Complete" | Visual regression testing | — |
+| `TrainingCollector` | Go | "Complete" | Training data collection | — |
+| `ReplayBuffer` | Go | "Complete" | Session replay | — |
+| `OCU-CUDA-Sidecar` | Docker | "Complete" | GPU inference sidecar | — |
 
 ### 3.2 Submodule Inventory (41 Submodules)
 
@@ -215,9 +221,9 @@ These features are explicitly disabled in the codebase and MUST be re-enabled an
 
 ---
 
-## 4. The 14-Phase Execution Engine
+## 4. The 15-Phase Execution Engine
 
-This plan divides the remaining work into **14 sequential phases**. Each phase has:
+This plan divides the remaining work into **15 sequential phases**. Each phase has:
 - **Entry Criteria**: What must be true before starting
 - ** granular Tasks**: Every file, function, and test to modify
 - **Verification Steps**: Exact commands that must exit 0
@@ -231,16 +237,17 @@ Phase  1: Institutional Knowledge Capture (LANDMINES + Contracts)
 Phase  2: Test Infrastructure Resurrection (Real Dependencies)
 Phase  3: Disabled Feature Archaeology (Re-enable + Fix)
 Phase  4: Critical Bug Extermination (Known Bugs)
-Phase  5: Backend Integration Hardening (catalog-api)
-Phase  6: Frontend Integration Hardening (catalog-web)
-Phase  7: Android Mobile Hardening (catalogizer-android)
-Phase  8: Android TV Hardening (catalogizer-androidtv)
-Phase  9: Desktop Hardening (catalogizer-desktop)
-Phase 10: Cross-Platform Contract Validation
-Phase 11: Security Hardening & Penetration Testing
-Phase 12: Performance Optimization & Stress Testing
-Phase 13: Documentation Completion & Video Course
-Phase 14: Final Integration, Deployment & Sign-Off
+Phase  5: HelixQA & AI Stack Completion (The Verification Engine)
+Phase  6: Backend Integration Hardening (catalog-api)
+Phase  7: Frontend Integration Hardening (catalog-web)
+Phase  8: Android Mobile Hardening (catalogizer-android)
+Phase  9: Android TV Hardening (catalogizer-androidtv)
+Phase 10: Desktop Hardening (catalogizer-desktop)
+Phase 11: Cross-Platform Contract Validation
+Phase 12: Security Hardening & Penetration Testing
+Phase 13: Performance Optimization & Stress Testing
+Phase 14: Documentation Completion & Video Course
+Phase 15: Final Integration, Deployment & Sign-Off
 ```
 
 ---
@@ -818,7 +825,535 @@ gosec ./...  # No critical or high findings
 
 ---
 
-### PHASE 5: Backend Integration Hardening (catalog-api)
+### PHASE 5: HelixQA & AI Stack Completion (The Verification Engine)
+**Duration: 14 days | Owner: AI/QA Lead + AI Agent**
+
+**Goal:** Complete the HelixQA autonomous QA system and all its AI stack dependencies to the point where it can reliably validate all other Catalogizer components. HelixQA is not a test tool — it is the **verification engine** that makes the Full-QA Master Cycle (CONSTITUTION.md Article VII) possible. Without it, no other component can be declared "done."
+
+**Entry Criteria:** Phase 4 complete (critical bugs fixed, disabled features re-enabled).
+
+**5.0 Understanding the HelixQA Architecture**
+
+HelixQA (at `HelixDevelopment/HelixQA`, 501 commits, 40+ packages) is a complete AI-driven QA orchestration system. It is the largest and most complex submodule in the entire project.
+
+**HelixQA Internal Package Map (40+ packages in `pkg/`):**
+
+| Package | Purpose | Status Risk |
+|---------|---------|-------------|
+| `pkg/agent` | LLM agent management, VLM-guided DFS explorer | Medium |
+| `pkg/analysis` | PELT change-point segmentation for performance analysis | Medium |
+| `pkg/autonomous` | Autonomous QA session core (mapper, coordinator) | **High** — Issue #3 |
+| `pkg/bridge` | scrcpy bridge for Android screen control | Medium |
+| `pkg/bridges` | Bridge registry with sidecar probes, ToolKind | Medium |
+| `pkg/capture` | Screen capture (xcbshm Linux capture) | Medium |
+| `pkg/config` | Configuration loader and validation | Low |
+| `pkg/controller` | Process controller, fallback models | Low |
+| `pkg/detector` | Issue detection engine | Medium |
+| `pkg/discovery` | Service discovery for test targets | Low |
+| `pkg/distributed` | Distributed test execution | **High** — Complex |
+| `pkg/evidence` | Evidence collection (screenshots, logs, video) | Medium |
+| `pkg/gpu/infer` | Triton KServe v2 GPU inference client | **High** — Requires GPU |
+| `pkg/gst` | GStreamer integration for video | Medium |
+| `pkg/infra` | Infrastructure decoupling from Catalogizer | Low |
+| `pkg/issuedetector` | Issue detection with acceptance criteria | Medium |
+| `pkg/learning` | ML learning from past sessions | Medium |
+| `pkg/llm` | LLM provider abstraction layer | Low |
+| `pkg/maestro` | Maestro FlowRunner for YAML mobile flows | Medium |
+| `pkg/memory` | Vector memory database for session state | Medium |
+| `pkg/navigator` | LLM-powered navigation (Android-9 KeyPress fallback) | **High** — Recent fixes |
+| `pkg/nexus` | ANSI-terminal accessibility backend (axtree/TUI) | Medium |
+| `pkg/observe/frida` | Frida dynamic instrumentation bridge | **High** — Complex |
+| `pkg/opensource` | OSS vendoring and license audit | Low |
+| `pkg/orchestrator` | QA orchestration engine | Low |
+| `pkg/performance` | Performance testing and benchmarking | Medium |
+| `pkg/planning` | Test planning and coverage optimization | Medium |
+| `pkg/regression` | Regression testing with HTML reporter | Low |
+| `pkg/replay` | Session replay functionality | Medium |
+| `pkg/reporter` | Executive summary, navigation map, LLM summary | Low |
+| `pkg/reproduce` | Bug reproduction from tickets | Medium |
+| `pkg/session` | Session management | Low |
+| `pkg/streaming` | Video streaming for remote devices | Medium |
+| `pkg/testbank` | Test bank management | Low |
+| `pkg/ticket` | Ticket generation with evidence | Low |
+| `pkg/training` | Training data collection | Medium |
+| `pkg/types` | Core type definitions | Low |
+| `pkg/validator` | Video routing and input validation | Low |
+| `pkg/validators` | Additional validators | Low |
+| `pkg/video` | Video recording, segmentation, safety fuses | Medium |
+| `pkg/vision` | Perceptual vision (DreamSim, LPIPS on GPU infer) | **High** — M60 refactor |
+| `pkg/visual` | Visual regression detection | Medium |
+
+**AI Stack Dependency Chain:**
+
+```
+HelixQA (the orchestrator)
+├── LLMsVerifier (strategy pattern + recipe builder) ← Issue #2
+│   ├── pkg/strategy (VerificationStrategy interface)
+│   ├── pkg/recipe (builder + validator)
+│   └── pkg/helixqa (QA-specific strategies + 7 recipes)
+├── LLMOrchestrator (multi-provider LLM pool) ← Issue #7
+│   ├── OpenCode adapter (headless CLI mode)
+│   ├── Claude Code adapter
+│   ├── Gemini adapter
+│   ├── Junie adapter
+│   ├── Qwen Code adapter
+│   └── pkg/pool/multi_pool.go (agent selection)
+├── LLMProvider (unified LLM interface)
+│   ├── OpenAI (GPT-4o)
+│   ├── Anthropic (Claude 3.5/4 Sonnet)
+│   ├── Google (Gemini 2.0/2.5 Flash)
+│   ├── Groq (Llama 3.3 70B)
+│   ├── DeepSeek (deepseek-chat)
+│   ├── xAI (Grok)
+│   ├── Qwen (qwen-max)
+│   └── Local (llama.cpp RPC via OCU-CUDA-Sidecar)
+├── DocProcessor (documentation parsing)
+│   ├── Markdown
+│   ├── YAML
+│   ├── HTML
+│   ├── AsciiDoc (ADOC)
+│   └── reStructuredText (RST)
+├── VisionEngine (computer vision + LLM vision)
+│   ├── Analyzer (screen analysis, element detection)
+│   ├── NavigationGraph (BFS pathfinding, DOT/JSON/Mermaid)
+│   ├── LLM Vision (GPT-4o, Claude, Gemini, Qwen-VL)
+│   └── OpenCV (GoCV with build-tag gating)
+├── ScreenDiff (screenshot comparison)
+├── TrainingCollector (training data aggregation)
+├── VisualRegression (visual regression testing)
+└── OCU-CUDA-Sidecar (GPU sidecar for local inference)
+    ├── Triton KServe v2 server
+    └── llama.cpp RPC backend
+```
+
+**5.1 Task: LLMsVerifier Completion (Issue #2)**
+
+The LLMsVerifier submodule implements the Strategy pattern for LLM selection. It must be fully functional before HelixQA can select the right model for each QA phase.
+
+**5.1.1 Verification Strategy Interface**
+
+Verify `pkg/strategy/interface.go` implements:
+
+```go
+// Must be complete and tested:
+type VerificationStrategy interface {
+    Name() string
+    Score(ctx context.Context, model LLMModel, phase QAPhase) (Score, error)
+    Select(ctx context.Context, candidates []LLMModel, phase QAPhase) (LLMModel, error)
+    Rank(ctx context.Context, candidates []LLMModel, phase QAPhase) ([]RankedLLM, error)
+}
+```
+
+**Verification steps:**
+```bash
+cd LLMsVerifier && go test ./pkg/strategy -run TestInterface -count=1
+cd LLMsVerifier && go test ./pkg/strategy -run TestDefaultStrategy -count=1
+```
+
+**5.1.2 Recipe Builder and Validator**
+
+Verify `pkg/recipe/builder.go` and `pkg/recipe/validator.go`:
+
+| Recipe | Purpose | Verification |
+|--------|---------|--------------|
+| `qa-comprehensive` | Full QA with all phases | Build → Validate |
+| `qa-speed` | Fast smoke test | Build → Validate |
+| `qa-quality` | Maximum coverage | Build → Validate |
+| `qa-cost-optimized` | Cheapest LLM per phase | Build → Validate |
+| `qa-vision-heavy` | Vision-focused testing | Build → Validate |
+| `qa-api-only` | API contract testing | Build → Validate |
+| `qa-mobile-first` | Mobile-focused testing | Build → Validate |
+
+```bash
+cd LLMsVerifier && go test ./pkg/recipe -run TestBuilder -count=1
+cd LLMsVerifier && go test ./pkg/recipe -run TestValidator -count=1
+cd LLMsVerifier && go test ./pkg/recipe -run TestAllRecipes -count=1
+```
+
+**5.1.3 HelixQA-Specific Strategy**
+
+Verify `pkg/helixqa/strategy.go` implements phase-aware model selection:
+
+| QA Phase | Preferred Model Type | Rationale |
+|----------|---------------------|-----------|
+| Navigation (Execute/Curiosity) | JSON-action models (fast) | Quick UI interactions |
+| Analysis (Analyze) | Rich-description models | Detailed issue descriptions |
+| Planning (Learn/Plan) | Reasoning models | Complex test planning |
+
+```bash
+cd LLMsVerifier && go test ./pkg/helixqa -run TestQAStrategy -count=1
+cd LLMsVerifier && go test ./pkg/helixqa -run TestPhaseSelection -count=1
+```
+
+**5.1.4 Wire LLMsVerifier into HelixQA**
+
+Verify the `replace` directive in `HelixQA/go.mod`:
+```bash
+cd HelixQA && grep "LLMsVerifier" go.mod
+cd HelixQA && go mod tidy && go build ./...
+cd HelixQA && go test ./pkg/llm -run TestVerifierIntegration -count=1
+```
+
+**5.2 Task: LLMOrchestrator Multi-Provider Pool (Issue #7)**
+
+The LLMOrchestrator manages multiple CLI agents in headless mode. It must handle agent lifecycle, output parsing, and intelligent routing.
+
+**5.2.1 OpenCode Headless Adapter**
+
+Verify `pkg/adapter/opencode_headless.go`:
+
+```bash
+cd LLMOrchestrator && go test ./pkg/adapter -run TestOpenCodeHeadless -count=1
+cd LLMOrchestrator && go test ./pkg/adapter -run TestOpenCodeParser -count=1
+```
+
+Tests must verify:
+- Headless mode starts without interactive prompts
+- stdin/stdout/stderr pipes work correctly
+- Output parser handles partial/chunked responses
+- Timeout handling works (120s default)
+- Process cleanup on context cancellation
+
+**5.2.2 Multi-Provider Pool**
+
+Verify `pkg/pool/multi_pool.go`:
+
+```bash
+cd LLMOrchestrator && go test ./pkg/pool -run TestMultiPool -count=1
+cd LLMOrchestrator && go test ./pkg/pool -run TestAgentSelection -count=1
+cd LLMOrchestrator && go test ./pkg/pool -run TestPoolRecovery -count=1
+```
+
+Tests must verify:
+- Pool initialization with N agents
+- Round-robin and priority-based selection
+- Agent failure detection and replacement
+- Graceful degradation when agents unavailable
+- Concurrent request handling without races
+
+**5.2.3 All Agent Adapters**
+
+| Agent | Binary | Headless Test | Status |
+|-------|--------|--------------|--------|
+| OpenCode | `opencode` | `TestOpenCode*` | Must pass |
+| Claude Code | `claude` | `TestClaudeCode*` | Must pass |
+| Gemini | `gemini` | `TestGemini*` | Must pass |
+| Junie | `junie` | `TestJunie*` | Must pass |
+| Qwen Code | `qwen-code` | `TestQwenCode*` | Must pass |
+
+```bash
+cd LLMOrchestrator && go test ./pkg/adapter -run 'TestOpenCode|TestClaude|TestGemini|TestJunie|TestQwen' -count=1
+```
+
+**5.2.4 Wire LLMOrchestrator into HelixQA**
+
+```bash
+cd HelixQA && grep "LLMOrchestrator" go.mod
+cd HelixQA && go test ./pkg/orchestrator -run TestLLMOrchestratorIntegration -count=1
+```
+
+**5.3 Task: Enhanced Autonomous Session (Issue #3)**
+
+This is the core of HelixQA — the autonomous testing engine. It has 16 sub-tasks across 6 functional areas.
+
+**5.3.1 Feature-to-Test Mapper (`pkg/autonomous/mapper.go`)**
+
+Verifications:
+```bash
+cd HelixQA && go test ./pkg/autonomous -run TestMapper -count=1
+cd HelixQA && go test ./pkg/autonomous -run TestFeatureCache -count=1
+cd HelixQA && go test ./pkg/autonomous -run TestDocProcessorIntegration -count=1
+```
+
+Must verify:
+- ADOC, RST, MD, YAML, HTML formats parse correctly
+- Feature extraction produces valid FeatureTestMapping
+- Cache hit/miss works correctly
+- LLM-generated test steps are valid JSON actions
+
+**5.3.2 LLM-Powered Navigator (`pkg/navigator/llm_navigator.go`)**
+
+Verifications:
+```bash
+cd HelixQA && go test ./pkg/navigator -run TestLLMNavigator -count=1
+cd HelixQA && go test ./pkg/navigator -run TestNavigationGraph -count=1
+cd HelixQA && go test ./pkg/navigator -run TestShortestPath -count=1
+cd HelixQA && go test ./pkg/navigator -run TestAndroid9KeyPressFallback -count=1
+```
+
+Must verify:
+- Navigation graph builds correctly from app screens
+- Shortest path calculation works (BFS)
+- LLM path inference works when graph is incomplete
+- Screen verification after each action
+- **Android 9 KeyPress fallback** (recent fix — must work on Mi Box 4)
+- Stagnation detection (identical screen >10s)
+
+**5.3.3 Issue Analyzer (`pkg/issuedetector` + LLM analyzer)**
+
+Verifications:
+```bash
+cd HelixQA && go test ./pkg/issuedetector -run TestIssueDetection -count=1
+cd HelixQA && go test ./pkg/issuedetector -run TestSeverityClassification -count=1
+cd HelixQA && go test ./pkg/issuedetector -run TestAcceptanceCriteria -count=1
+```
+
+Must verify:
+- All issue categories detected (crash, ANR, visual, functional, performance)
+- Severity classification (critical/high/medium/low/info) is accurate
+- LLM analysis provides actionable descriptions
+- Acceptance criteria enforced in ticket generation
+
+**5.3.4 Session Recorder (`pkg/evidence` + timeline)**
+
+Verifications:
+```bash
+cd HelixQA && go test ./pkg/evidence -run TestSessionRecorder -count=1
+cd HelixQA && go test ./pkg/evidence -run TestTimeline -count=1
+cd HelixQA && go test ./pkg/evidence -run TestAnnotatedScreenshot -count=1
+```
+
+Must verify:
+- Screenshots capture at correct resolution (1920x1080 min)
+- Video recording with timestamp alignment
+- Timeline events correlate screenshots + video + actions
+- Annotated screenshots highlight detected issues
+- Evidence saved to `qa-results/session-<timestamp>/`
+
+**5.3.5 Ticket Generator (`pkg/ticket/generator.go`)**
+
+Verifications:
+```bash
+cd HelixQA && go test ./pkg/ticket -run TestTicketGenerator -count=1
+cd HelixQA && go test ./pkg/ticket -run TestTicketTemplates -count=1
+```
+
+Must verify:
+- Markdown tickets include all evidence
+- Severity and category correctly assigned
+- Video timestamp references included
+- Acceptance criteria for reproduction
+
+**5.3.6 Session Coordinator Integration**
+
+The coordinator wires all Phase 3 components together:
+
+```bash
+cd HelixQA && go test ./pkg/session -run TestFullAutonomousSession -count=1
+cd HelixQA && go test ./pkg/session -run TestCoordinatorWiring -count=1
+```
+
+Must verify:
+- Session starts with correct configuration
+- All subsystems initialize without error
+- Graceful shutdown saves partial results
+- Timeout enforcement works
+
+**5.4 Task: VisionEngine Integration**
+
+VisionEngine (`HelixDevelopment/VisionEngine`, 24 commits) provides computer vision capabilities.
+
+**5.4.1 Verify VisionEngine Standalone**
+
+```bash
+cd VisionEngine && go build ./...
+cd VisionEngine && go test ./pkg/analyzer -run TestScreenAnalysis -count=1
+cd VisionEngine && go test ./pkg/analyzer -run TestNavigationGraph -count=1
+```
+
+**5.4.2 Verify HelixQA → VisionEngine Integration**
+
+```bash
+cd HelixQA && go test ./pkg/vision -run TestVisionEngineIntegration -count=1
+cd HelixQA && go test ./pkg/vision -run TestDreamSimLPIPS -count=1
+```
+
+**5.5 Task: DocProcessor Format Support**
+
+Verify all 5 documentation formats parse correctly:
+
+```bash
+cd DocProcessor && go test ./... -run TestMarkdown -count=1
+cd DocProcessor && go test ./... -run TestYAML -count=1
+cd DocProcessor && go test ./... -run TestHTML -count=1
+cd DocProcessor && go test ./... -run TestADOC -count=1
+cd DocProcessor && go test ./... -run TestRST -count=1
+cd HelixQA && go test ./pkg/autonomous -run TestDocProcessorFormats -count=1
+```
+
+**5.6 Task: GPU Inference Pipeline (OCU-CUDA-Sidecar)**
+
+The OCU-CUDA-Sidecar provides local GPU inference for vision tasks.
+
+**5.6.1 Verify Triton KServe v2 Client**
+
+```bash
+cd HelixQA && go test ./pkg/gpu/infer -run TestTritonClient -count=1
+```
+
+**5.6.2 Verify llama.cpp RPC Backend**
+
+```bash
+# If GPU available:
+cd OCU-CUDA-Sidecar && docker build -t ocu-cuda .
+cd OCU-CUDA-Sidecar && docker run --gpus all ocu-cuda ./healthcheck
+```
+
+**5.7 Task: ScreenDiff + VisualRegression**
+
+```bash
+cd ScreenDiff && go test ./... -run TestScreenshotComparison -count 1
+cd VisualRegression && go test ./... -run TestVisualRegression -count 1
+cd HelixQA && go test ./pkg/visual -run TestVisualDetection -count=1
+```
+
+**5.8 Task: TrainingCollector**
+
+```bash
+cd TrainingCollector && go test ./... -count 1
+cd HelixQA && go test ./pkg/learning -run TestTrainingData -count=1
+```
+
+**5.9 Task: Frida Dynamic Instrumentation (`pkg/observe/frida`)**
+
+The Frida bridge provides dynamic instrumentation for Android apps.
+
+```bash
+cd HelixQA && go test ./pkg/observe/frida -run TestFridaBridge -count=1
+cd HelixQA && go test ./pkg/observe/frida -run TestHTTPBridge -count=1
+```
+
+Must verify:
+- Frida server connection works
+- Method hooking captures calls
+- HTTP bridge relays data without loss
+- No performance degradation on target app
+
+**5.10 Task: HelixQA Configuration Loader**
+
+Verify all 40+ environment variables load correctly:
+
+```bash
+cd HelixQA && go test ./pkg/config -run TestLoadFromEnv -count=1
+cd HelixQA && go test ./pkg/config -run TestValidation -count=1
+```
+
+Critical env vars to verify:
+- All 8 LLM provider API keys (OpenAI, Anthropic, Google, Groq, DeepSeek, xAI, Qwen)
+- All 5 agent binary paths (OpenCode, Claude, Gemini, Junie, Qwen)
+- Verifier strategy selection
+- Autonomous session configuration
+- Platform-specific settings (Android device, Desktop process, Web URL, API URL)
+- Recording configuration (FFmpeg, quality, format)
+- Resource limits (memory, goroutines)
+
+**5.11 Task: Test Banks (`banks/`)**
+
+HelixQA uses YAML test banks that define comprehensive test scenarios.
+
+Verify all banks load and parse:
+
+```bash
+cd HelixQA && go test ./pkg/testbank -run TestBankLoad -count=1
+cd HelixQA && go test ./pkg/testbank -run TestFullQA -count=1
+```
+
+Bank files to verify:
+| Bank File | Coverage |
+|-----------|----------|
+| `banks/full-qa-api.yaml` | All API endpoints |
+| `banks/full-qa-web.yaml` | All web screens + flows |
+| `banks/full-qa-androidtv.yaml` | All TV screens + D-pad flows |
+| `banks/full-qa-android.yaml` | All mobile screens + flows |
+| `banks/full-qa-cross-platform.yaml` | Cross-platform sync |
+| `banks/fixes-validation.yaml` | Regression tests for all fixed bugs |
+
+**5.12 Task: Challenges (`challenges/`)**
+
+The Challenges submodule provides structured test scenarios.
+
+```bash
+cd Challenges && go test ./... -count 1
+cd HelixQA && go test ./challenges -run TestChallengeSuite -count=1
+```
+
+**5.13 Task: ReplayBuffer Integration**
+
+```bash
+cd ReplayBuffer && go test ./... -count 1
+cd HelixQA && go test ./pkg/replay -run TestReplayIntegration -count=1
+```
+
+**5.14 Task: End-to-End HelixQA Validation**
+
+The final test: Run HelixQA against Catalogizer itself.
+
+```bash
+# Full E2E: HelixQA validates catalog-web
+cd HelixQA && go test ./tests/e2e -run TestE2E_WebQuick -count=1 -v
+
+# Full E2E: HelixQA validates catalog-api
+cd HelixQA && go test ./tests/e2e -run TestE2E_APIQuick -count=1 -v
+
+# Full E2E: HelixQA validates Android TV (if device connected)
+cd HelixQA && go test ./tests/e2e -run TestE2E_AndroidTV -count=1 -v
+
+# Full campaign: All 10 test categories
+cd HelixQA && ./scripts/helixqa-orchestrator.sh all
+```
+
+**Verification for Phase 5:**
+
+```bash
+# All AI stack submodules build
+cd LLMsVerifier && go build ./...
+cd LLMOrchestrator && go build ./...
+cd LLMProvider && go build ./...
+cd VisionEngine && go build ./...
+cd DocProcessor && go build ./...
+cd ScreenDiff && go build ./...
+cd VisualRegression && go build ./...
+cd TrainingCollector && go build ./...
+cd ReplayBuffer && go build ./...
+
+# HelixQA builds with all dependencies
+cd HelixQA && go mod tidy && go build ./...
+
+# All HelixQA unit tests pass
+cd HelixQA && go test ./pkg/strategy ./pkg/recipe ./pkg/helixqa -count=1
+cd HelixQA && go test ./pkg/autonomous ./pkg/navigator ./pkg/issuedetector -count=1
+cd HelixQA && go test ./pkg/evidence ./pkg/ticket ./pkg/session -count=1
+cd HelixQA && go test ./pkg/config ./pkg/testbank ./pkg/llm -count=1
+cd HelixQA && go test ./pkg/vision ./pkg/visual ./pkg/replay -count=1
+cd HelixQA && go test ./pkg/detector ./pkg/analysis ./pkg/performance -count=1
+cd HelixQA && go test ./pkg/distributed ./pkg/learning ./pkg/planning -count=1
+cd HelixQA && go test ./pkg/observe/frida -count=1 || echo "Frida requires device"
+cd HelixQA && go test ./pkg/gpu/infer -count=1 || echo "GPU infer requires GPU"
+
+# E2E tests pass
+cd HelixQA && go test ./tests/e2e -count=1
+
+# No race conditions
+cd HelixQA && go test ./... -race -count=1 -short
+
+# Banks are valid YAML and loadable
+cd HelixQA && go test ./pkg/testbank -run TestAllBanks -count=1
+```
+
+**Exit Criteria:**
+- [ ] LLMsVerifier: All strategies + 7 recipes passing tests
+- [ ] LLMOrchestrator: All 5 agent adapters + pool working
+- [ ] HelixQA autonomous session: Mapper, Navigator, Analyzer, Recorder, Ticket Generator all tested
+- [ ] VisionEngine: Screen analysis + navigation graph working
+- [ ] DocProcessor: All 5 formats (MD, YAML, HTML, ADOC, RST) parse correctly
+- [ ] All 6 test banks load and are valid
+- [ ] E2E tests: HelixQA can validate catalog-web and catalog-api
+- [ ] Zero race conditions in HelixQA
+- [ ] HelixQA can run a complete autonomous session end-to-end
+
+---
+
+### PHASE 6: Backend Integration Hardening (catalog-api)
 **Duration: 10 days | Owner: Backend Lead + AI Agent**
 
 **Goal:** Every endpoint in `catalog-api` works correctly with real dependencies, handles all error cases, and performs within budget.
@@ -897,7 +1432,7 @@ cd catalog-api && go test ./... -race -count=1
 
 ---
 
-### PHASE 6: Frontend Integration Hardening (catalog-web)
+### PHASE 7: Frontend Integration Hardening (catalog-web)
 **Duration: 8 days | Owner: Frontend Lead + AI Agent**
 
 **Goal:** The web application works flawlessly with the real backend, handles all edge cases, and has zero console errors.
@@ -977,7 +1512,7 @@ npx lighthouse http://localhost:3000 --preset=desktop
 
 ---
 
-### PHASE 7: Android Mobile Hardening (catalogizer-android)
+### PHASE 8: Android Mobile Hardening (catalogizer-android)
 **Duration: 8 days | Owner: Mobile Lead + AI Agent**
 
 **7.1 Task: Device Testing Matrix**
@@ -1043,7 +1578,7 @@ adb logcat -d | grep -i "fatal\|crash\|ANR" | wc -l  # Must be 0
 
 ---
 
-### PHASE 8: Android TV Hardening (catalogizer-androidtv)
+### PHASE 9: Android TV Hardening (catalogizer-androidtv)
 **Duration: 7 days | Owner: TV Lead + AI Agent**
 
 **8.1 Task: TV-Specific Device Matrix**
@@ -1104,7 +1639,7 @@ adb logcat -d | grep -i "fatal\|crash\|ANR" | wc -l  # Must be 0
 
 ---
 
-### PHASE 9: Desktop Hardening (catalogizer-desktop)
+### PHASE 10: Desktop Hardening (catalogizer-desktop)
 **Duration: 5 days | Owner: Desktop Lead + AI Agent**
 
 **9.1 Task: Platform Matrix**
@@ -1151,7 +1686,7 @@ npm run test:e2e:desktop
 
 ---
 
-### PHASE 10: Cross-Platform Contract Validation
+### PHASE 11: Cross-Platform Contract Validation
 **Duration: 5 days | Owner: Integration Lead + AI Agent**
 
 **10.1 Task: API Contract Cross-Verification**
@@ -1198,7 +1733,7 @@ cd tests/cross-platform && go test ./... -count=1 -v
 
 ---
 
-### PHASE 11: Security Hardening & Penetration Testing
+### PHASE 12: Security Hardening & Penetration Testing
 **Duration: 5 days | Owner: Security Lead + AI Agent**
 
 **11.1 Task: Authentication Security**
@@ -1245,7 +1780,7 @@ semgrep --config=auto .
 
 ---
 
-### PHASE 12: Performance Optimization & Stress Testing
+### PHASE 13: Performance Optimization & Stress Testing
 **Duration: 5 days | Owner: Performance Lead + AI Agent**
 
 **12.1 Task: API Performance Benchmarks**
@@ -1294,7 +1829,7 @@ go tool pprof heap.prof
 
 ---
 
-### PHASE 13: Documentation Completion & Video Course
+### PHASE 14: Documentation Completion & Video Course
 **Duration: 10 days | Owner: Documentation Lead + AI Agent**
 
 **13.1 Task: Documentation Audit**
@@ -1348,7 +1883,7 @@ Create/update:
 
 ---
 
-### PHASE 14: Final Integration, Deployment & Sign-Off
+### PHASE 15: Final Integration, Deployment & Sign-Off
 **Duration: 5 days | Owner: Project Lead + Full Team**
 
 **14.1 Task: Full-QA Master Cycle (CONSTITUTION.md Article VII)**
@@ -1679,13 +2214,13 @@ When ANY bug is found in manual testing:
 
 | GitHub Issue | Phase(s) | Real Completion Criteria |
 |-------------|----------|------------------------|
-| #2: LLMsVerifier Strategy | 1, 3, 5 | Strategy working in production QA runs |
-| #7: OpenCode Headless | 1, 3, 5 | Multi-provider E2E with real LLMs |
-| #3: Enhanced Autonomous Session | 2, 3, 5 | HelixQA runs end-to-end without human intervention |
-| #5: Comprehensive Testing | 2, 4, 5, 10, 11, 12 | All 10 test categories passing |
-| #6: Configuration | 1, 13 | OPEN_POINTS_CLOSURE.md shows all items ticked |
-| #4: Documentation | 13 | 5 video modules published |
-| #8: Final Integration | 14 | Full-QA Master Cycle clean pass + production stable 24h |
+| #2: LLMsVerifier Strategy | 1, 5 | Strategy working in production QA runs |
+| #7: OpenCode Headless | 1, 5 | Multi-provider E2E with real LLMs |
+| #3: Enhanced Autonomous Session | 2, 5 | HelixQA runs end-to-end without human intervention |
+| #5: Comprehensive Testing | 2, 4, 5, 11, 12, 13 | All 10 test categories passing |
+| #6: Configuration | 1, 14 | OPEN_POINTS_CLOSURE.md shows all items ticked |
+| #4: Documentation | 14 | 5 video modules published |
+| #8: Final Integration | 15 | Full-QA Master Cycle clean pass + production stable 24h |
 
 ### Appendix B: Time Estimates
 
@@ -1695,16 +2230,17 @@ When ANY bug is found in manual testing:
 | Phase 2: Test Infrastructure | 5 days | 8 days |
 | Phase 3: Disabled Features | 10 days | 18 days |
 | Phase 4: Critical Bugs | 7 days | 25 days |
-| Phase 5: Backend Hardening | 10 days | 35 days |
-| Phase 6: Frontend Hardening | 8 days | 43 days |
-| Phase 7: Android Mobile | 8 days | 51 days |
-| Phase 8: Android TV | 7 days | 58 days |
-| Phase 9: Desktop | 5 days | 63 days |
-| Phase 10: Cross-Platform | 5 days | 68 days |
-| Phase 11: Security | 5 days | 73 days |
-| Phase 12: Performance | 5 days | 78 days |
-| Phase 13: Documentation | 10 days | 88 days |
-| Phase 14: Final Integration | 5 days | **93 days (~13 weeks)** |
+| Phase 5: HelixQA & AI Stack | 14 days | 39 days |
+| Phase 6: Backend Hardening | 10 days | 49 days |
+| Phase 7: Frontend Hardening | 8 days | 57 days |
+| Phase 8: Android Mobile | 8 days | 65 days |
+| Phase 9: Android TV | 7 days | 72 days |
+| Phase 10: Desktop | 5 days | 77 days |
+| Phase 11: Cross-Platform | 5 days | 82 days |
+| Phase 12: Security | 5 days | 87 days |
+| Phase 13: Performance | 5 days | 92 days |
+| Phase 14: Documentation | 10 days | 102 days |
+| Phase 15: Final Integration | 5 days | **107 days (~15 weeks)** |
 
 ### Appendix C: Key Files Reference
 
