@@ -41,6 +41,18 @@ repos:
         pass_filenames: false
         types: [file]
 
+      # Guard the exact false-positive anti-pattern behind
+      # FIX-QA-2026-04-20-001/002 from regressing — non-fatal
+      # assert.* (testify) followed within 5 lines by an unconditional
+      # `s.T().Log("✅ …completed")`. See
+      # docs/reports/2026-04-21-verification-plan.md §4a.
+      - id: no-false-positive-log
+        name: No assert.* paired with unconditional success log
+        entry: scripts/hooks/no-false-positive-log.sh
+        language: system
+        files: '_test\.go$'
+        pass_filenames: true
+
   # TypeScript/Node hooks
   - repo: https://github.com/pre-commit/mirrors-eslint
     rev: v8.55.0

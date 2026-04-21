@@ -144,20 +144,26 @@ func IsValidURL(input string) bool {
 	return URLPattern.MatchString(input)
 }
 
-// SanitizeString performs basic sanitization
+// SanitizeString performs basic sanitisation.
+//
+// FIX-QA-2026-04-21-010: same anti-pattern as middleware.SanitizeInput
+// (FIX-QA-2026-04-21-009) — `\xff\xfe invalid utf8` produced
+// " invalid utf8" on pass 1 (invalid bytes dropped, leading space
+// remains) and "invalid utf8" on pass 2 (TrimSpace catches it).
+// TrimSpace MUST run after the UTF-8 cleanup so the result is a
+// fixed point under repeated application.
 func SanitizeString(input string) string {
-	// Trim whitespace
-	input = strings.TrimSpace(input)
-
-	// Remove null bytes
+	// Remove null bytes first.
 	input = strings.ReplaceAll(input, "\x00", "")
 
-	// Normalize Unicode
+	// Normalise Unicode — drop invalid sequences.
 	if !utf8.ValidString(input) {
 		input = strings.ToValidUTF8(input, "")
 	}
 
-	return input
+	// TrimSpace LAST so stripping invalid bytes can't leave
+	// adjacent whitespace that mutates the result between passes.
+	return strings.TrimSpace(input)
 }
 
 // SanitizeHTML removes HTML tags

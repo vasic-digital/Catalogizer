@@ -273,3 +273,78 @@ func TestSessionFixes_E2E_PprofOn(t *testing.T) {
 		require.Equal(t, 200, status)
 	})
 }
+
+// TestSessionFixes_E2E_AuthAndNegative covers the auth surface + the
+// negative paths the bank probes — proving the real server returns
+// the expected 4xx codes, not 5xx, and that unauthenticated calls
+// are rejected with 401 (not 403 — those are distinct contracts).
+func TestSessionFixes_E2E_AuthAndNegative(t *testing.T) {
+	sb := spawnBinary(t)
+	defer sb.Close()
+
+	// Unauthenticated protected calls must return 401.
+	t.Run("protected_without_token_returns_401", func(t *testing.T) {
+		for _, p := range []string{
+			"/api/v1/catalog",
+			"/api/v1/entities",
+			"/api/v1/search",
+			"/api/v1/admin/users",
+			"/api/v1/storage-roots",
+			"/api/v1/users/me",
+		} {
+			status, _, _ := sb.do(http.MethodGet, p, nil, nil)
+			require.Equalf(t, 401, status, "%s must be 401 without auth (got %d)", p, status)
+		}
+	})
+
+	// Unknown endpoints must return 404, not 500.
+	t.Run("unknown_endpoint_404_not_500", func(t *testing.T) {
+		for _, p := range []string{
+			"/api/v1/this-endpoint-does-not-exist",
+			"/nonexistent-endpoint-test",
+			"/api/v1/admin/totally-made-up",
+		} {
+			status, _, _ := sb.do(http.MethodGet, p, nil, nil)
+			require.Equalf(t, 404, status, "%s must be 404, got %d", p, status)
+		}
+	})
+
+	// Malformed login body must return 4xx (400 or 401), not 5xx.
+	t.Run("login_malformed_bodies_never_500", func(t *testing.T) {
+		cases := []struct {
+			name string
+			body string
+		}{
+			{"empty", ""},
+			{"not_json", "not-json-at-all"},
+			{"missing_fields", "{}"},
+			{"wrong_types", `{"username":42,"password":true}`},
+			{"sql_injection", `{"username":"' OR '1'='1","password":"pw"}`},
+			{"xss_attempt", `{"username":"<script>alert(1)</script>","password":"pw"}`},
+		}
+		for _, c := range cases {
+			status, body, _ := sb.do(http.MethodPost, "/api/v1/auth/login", []byte(c.body), nil)
+			require.Lessf(t, status, 500, "%s: login produced 5xx (%d): %s", c.name, status, string(body))
+			require.GreaterOrEqualf(t, status, 400, "%s: expected 4xx, got %d", c.name, status)
+		}
+	})
+
+	// Bad JWT must 401 not 500.
+	t.Run("bad_jwt_401_not_500", func(t *testing.T) {
+		for _, bad := range []string{
+			"Bearer not-a-jwt",
+			"Bearer eyJbroken.jwt",
+			"Bearer " + strings.Repeat("a", 2048), // oversized
+			"Basic YWRtaW46YWRtaW4=",              // wrong scheme
+		} {
+			status, _, _ := sb.do(http.MethodGet, "/api/v1/catalog", nil, map[string]string{"Authorization": bad})
+			require.Equalf(t, 401, status, "bad JWT %q → %d (want 401)", bad, status)
+		}
+	})
+
+	// Happy-path login returns a 251-byte session_token (JWT).
+	t.Run("login_happy_path_returns_session_token", func(t *testing.T) {
+		token := sb.login()
+		require.GreaterOrEqual(t, len(token), 100, "session_token unexpectedly short: len=%d", len(token))
+	})
+}
