@@ -1,0 +1,9 @@
+# .gitleaksignore — path filters for secret-scan baseline
+#
+# All 777 findings in the 2026-04-22 baseline scan are vendored code:
+#   tools/android-sdk/sources/android-{33,34}/**  (Android platform constants)
+#   HelixQA/tools/opensource/**                   (checked-in OSS packages)
+# Zero findings in first-party Catalogizer code.
+#
+# This file is consumed by future gitleaks runs via
+#   gitleaks detect --source . --baseline-path .gitleaksignore
