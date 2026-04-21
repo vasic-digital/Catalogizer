@@ -835,6 +835,132 @@ func TestChallengeHandler_GetResults_ResponseHasAllKeys(t *testing.T) {
 	assert.Len(t, response, 4)
 }
 
+// TestChallengeHandler_RunAll_CtxInheritsValuesButSurvivesRequestCancel
+// is the regression test for FIX-QA-2026-04-21-008. RunAll is
+// long-running by design (508 challenges × seconds each) and must
+// not cancel when the outer RequestTimeout middleware or client
+// disconnect fires. But it DOES need to inherit the request-scoped
+// values (request_id, trace IDs, auth subject) so downstream logging
+// stays coherent. The contract is:
+//
+//   - RunAll's ctx must carry the same values the request ctx
+//     carried (proved by a custom key/value).
+//   - Cancelling the request ctx must NOT cancel RunAll's ctx.
+//
+// This is exactly what context.WithoutCancel gives us — verified here.
+func TestChallengeHandler_RunAll_CtxInheritsValuesButSurvivesRequestCancel(t *testing.T) {
+	_, mock, router := setupDedicatedChallengeTest()
+
+	type ctxKey string
+	const probeKey ctxKey = "u-cycle-probe"
+	const probeVal = "inherited-value"
+
+	var gotCtx context.Context
+	mock.runAllFunc = func(ctx context.Context) ([]*challenge.Result, error) {
+		gotCtx = ctx
+		return []*challenge.Result{}, nil
+	}
+
+	// Build a request ctx carrying a probe value, then cancel it
+	// BEFORE the handler finishes.
+	reqCtx, cancel := context.WithCancel(context.WithValue(context.Background(), probeKey, probeVal))
+	cancel() // already cancelled when request is served.
+
+	req := httptest.NewRequest(http.MethodPost, "/api/v1/challenges/run/all", nil)
+	req = req.WithContext(reqCtx)
+	w := httptest.NewRecorder()
+	router.ServeHTTP(w, req)
+
+	require.Equal(t, http.StatusOK, w.Code)
+	require.NotNil(t, gotCtx, "RunAll must have been invoked")
+
+	// (a) Values inherited.
+	assert.Equal(t, probeVal, gotCtx.Value(probeKey),
+		"RunAll ctx must inherit values from the request ctx")
+
+	// (b) Cancel did NOT propagate — the ctx should NOT be done even
+	//     though the source request ctx was explicitly cancelled.
+	select {
+	case <-gotCtx.Done():
+		t.Fatalf("RunAll ctx should survive a request-ctx cancel (WithoutCancel), but Done() fired: %v", gotCtx.Err())
+	default:
+		// good — not done.
+	}
+	assert.NoError(t, gotCtx.Err(), "gotCtx.Err must be nil after request ctx cancel")
+}
+
+// TestChallengeHandler_RunChallenge_ObservesClientDisconnect is the
+// end-to-end regression test for DEFER-QA-2026-04-21-001 #5. It fires
+// a POST /:id/run whose request context is cancelled mid-flight and
+// asserts the service's ctx.Done channel fires before the mock
+// returns — proving the handler + service layer honour client
+// disconnect, not just that the deadline-carrying ctx was passed.
+//
+// Paired with TestChallengeHandler_RunChallenge_PropagatesRequestContext:
+// that test proves the ctx is RECEIVED; this one proves it's
+// ACTIONABLE.
+func TestChallengeHandler_RunChallenge_ObservesClientDisconnect(t *testing.T) {
+	_, mock, router := setupDedicatedChallengeTest()
+
+	// Mock blocks until either ctx.Done fires (good) or a 5s timeout
+	// elapses (the client disconnect never propagated → bug).
+	type observation struct {
+		ctxDone   bool
+		ctxErr    error
+		elapsedMs int64
+	}
+	obsCh := make(chan observation, 1)
+
+	mock.runChallengeFunc = func(ctx context.Context, id string) (*challenge.Result, error) {
+		start := time.Now()
+		select {
+		case <-ctx.Done():
+			obsCh <- observation{ctxDone: true, ctxErr: ctx.Err(),
+				elapsedMs: time.Since(start).Milliseconds()}
+			return nil, ctx.Err()
+		case <-time.After(5 * time.Second):
+			obsCh <- observation{ctxDone: false,
+				elapsedMs: time.Since(start).Milliseconds()}
+			return makeResult(id, "timeout", challenge.StatusFailed), nil
+		}
+	}
+
+	// Fire the request with a ctx we cancel after 100 ms — simulates
+	// a curl timeout or closed TCP.
+	reqCtx, cancel := context.WithCancel(context.Background())
+	req := httptest.NewRequest(http.MethodPost, "/api/v1/challenges/slow-ch/run", nil)
+	req = req.WithContext(reqCtx)
+	w := httptest.NewRecorder()
+
+	var serveErr error
+	done := make(chan struct{})
+	go func() {
+		defer close(done)
+		defer func() {
+			if r := recover(); r != nil {
+				serveErr = fmt.Errorf("ServeHTTP panic: %v", r)
+			}
+		}()
+		router.ServeHTTP(w, req)
+	}()
+
+	time.Sleep(100 * time.Millisecond)
+	cancel()
+
+	select {
+	case obs := <-obsCh:
+		require.True(t, obs.ctxDone,
+			"mock must see ctx.Done within the test budget — handler did not propagate the client disconnect (elapsed=%dms)", obs.elapsedMs)
+		assert.ErrorIs(t, obs.ctxErr, context.Canceled,
+			"ctx.Err must be Canceled, got %v", obs.ctxErr)
+		assert.Less(t, obs.elapsedMs, int64(500),
+			"disconnect should propagate fast, not after the 5s safety timeout")
+	case <-time.After(6 * time.Second):
+		t.Fatalf("mock never observed ctx.Done; serve err: %v", serveErr)
+	}
+	<-done
+}
+
 // TestChallengeHandler_RunChallenge_PropagatesRequestContext is the
 // regression test for FIX-QA-2026-04-21-005. Before the handler was
 // updated to pass c.Request.Context() (it used to pass

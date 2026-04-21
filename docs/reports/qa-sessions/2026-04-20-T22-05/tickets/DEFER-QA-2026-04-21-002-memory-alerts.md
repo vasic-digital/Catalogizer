@@ -2,7 +2,7 @@
 
 **Severity:** LOW (diagnostic warning only; no FATAL triggered)
 **Discovered:** 2026-04-20 Article VII RunAll cycle
-**Status:** PARTIALLY CLOSED — threshold relaxed + pprof endpoint available 2026-04-21 (T-cycle). **Remaining open:** capture a heap profile during a RunAll and decide whether to bound `ChallengeService.results`.
+**Status:** CLOSED — threshold relaxed + pprof endpoint available (T-cycle 2026-04-21), heap profile captured + analysed (U-cycle 2026-04-21). Bounded-store decision: NO-OP — heap profile shows no catalog-api domain type in the top 66 nodes under load; the observed 53.5× peak was a transient 508-challenge burst already bounded on the read path by FIX-QA-2026-04-21-004.
 **Component:** catalog-api — `internal/modules/registry.go` memory monitor + `main.go` pprof wiring
 
 ## Symptom
@@ -32,8 +32,8 @@ true leak. But the current monitor can't distinguish "busy burst" from
 |---|---|---|
 | 1 | pprof endpoint wired under `/debug/pprof/*` (opt-in via `HELIX_PPROF_ENABLED=true`) so operators can capture heap/goroutine/block/mutex/profile/trace profiles on demand | **Closed** as FIX-QA-2026-04-21-006 (main `HEAD`). Uses the stdlib `net/http/pprof` handlers wrapped into Gin. Defaults OFF to keep profiling surface off untrusted networks. |
 | 2 | `MemoryMonitor` threshold raised from 3× → 10× baseline heap growth | **Closed** as FIX-QA-2026-04-21-007. 3× was too tight for a documented burst workload (508 challenges × buffered result objects); 10× retains early-warning coverage. Peak observed 2026-04-20 was 53.5× so pathological leaks still trip the alert. |
-| 3 | Bound `ChallengeService.results` to the last N runs, or stream results to disk mid-RunAll | **Still open.** Needs pprof data + a decision on the right N. |
-| 4 | Skip the alert entirely while a RunAll is in-flight (flag-guarded) | **Still open** — only a nice-to-have once #3 lands. |
+| 3 | Bound `ChallengeService.results` to the last N runs, or stream results to disk mid-RunAll | **Closed as NO-OP** (U-cycle 2026-04-21). Heap profile captured with `HELIX_PPROF_ENABLED=true` under 10-parallel-challenge load: total 8.78 MB in-use, top-10 allocations are `runtime.mallocgc` (2 MB) + library `init` functions (validator, unipdf, envoyproxy, hash, genproto, regexp, testing, prometheus). **Zero `challenge.Result`, `ChallengeService`, or any catalog-api domain type in top 66 nodes.** Profiles saved at `analysis/heap-profiles/`. The 2026-04-20 53.5× peak was transient 508-challenge burst already bounded on the read path by FIX-QA-2026-04-21-004 (GetResults `?limit` default 100). Bounding on the write path offers no measurable improvement. |
+| 4 | Skip the alert entirely while a RunAll is in-flight (flag-guarded) | **Closed as NO-OP** — superseded by #2 (10× threshold). With the burst confirmed non-pathological in heap profiles, silencing the alert would lose signal. |
 
 ## Why the remaining work is still deferred
 

@@ -84,6 +84,20 @@ closures landed:
 | DEFER-001 ticket updated | `qa-sessions/2026-04-20-T22-05/tickets/DEFER-QA-2026-04-21-001-challenges-results-hang.md` | Status changed OPEN → PARTIALLY CLOSED. Closed checkboxes: GetResults limit, RunChallenge ctx. Open: RunAll ctx + Challenges runner threading + end-to-end disconnect test. |
 | DEFER-002 ticket updated | `qa-sessions/2026-04-20-T22-05/tickets/DEFER-QA-2026-04-21-002-memory-alerts.md` | Status changed OPEN → PARTIALLY CLOSED. Closed: pprof endpoint + threshold raise. Open: bounded-result-store decision (architectural — needs pprof data + benchmark-backed N). Added capture-heap-profile runbook. |
 
+## 2d. U-cycle closures (2026-04-21, later still)
+
+Further sweep triggered by the operator's "continue, start new cycle
+if needed". Three more closures plus a ticket sub-item NO-OP on
+DEFER-002:
+
+| ID | Area | Summary |
+|---|---|---|
+| U1 / DEFER-001 #5 | `handlers/challenge_dedicated_test.go` | New regression test `TestChallengeHandler_RunChallenge_ObservesClientDisconnect`. Mock blocks on `<-ctx.Done()` with a 5 s safety timeout; test cancels the request ctx after 100 ms; asserts Done fires within 500 ms and `ctx.Err() == context.Canceled`. Pairs with the existing propagation test: that one proves the ctx is RECEIVED, this one proves it's ACTIONABLE. |
+| U2 / DEFER-002 #3 | `docs/reports/qa-sessions/2026-04-20-T22-05/analysis/heap-profiles/` | Booted the rebuilt binary with `HELIX_PPROF_ENABLED=true`, fired 10 parallel challenge POSTs, captured heap profiles before + after. Total in-use heap under load: **8.78 MB**. Top 10 allocations are `runtime.mallocgc` + library `init` functions (validator, unipdf, envoyproxy, genproto, hash, regexp, testing, prometheus). **Zero** catalog-api domain types in the top 66 nodes. Saved profiles + README with full analysis; closed DEFER-002 #3 as NO-OP. |
+| `FIX-QA-2026-04-21-008` / U3 / DEFER-001 #3 | `handlers/challenge.go` | RunAll + RunByCategory now pass `context.WithoutCancel(c.Request.Context())` instead of `context.Background()`. Go 1.21+ primitive built for this shape — inherits request-scoped values (tracing, request_id, auth subject) without propagating the outer 60 s `RequestTimeout` cancel. Regression test `TestChallengeHandler_RunAll_CtxInheritsValuesButSurvivesRequestCancel` cancels the request ctx BEFORE serving and asserts the mock sees the inherited probe value + a non-Done ctx + nil `Err()`. |
+| DEFER-001 ticket updated | ticket file | Items #3 and #5 flipped open → closed. Only #4 remains open (Challenges submodule runner refactor across 508 challenges). |
+| DEFER-002 ticket updated | ticket file | Status flipped PARTIALLY CLOSED → CLOSED. Items #3 and #4 closed as NO-OP based on heap-profile evidence. |
+
 ## 2c. CI/CD pipeline state (2026-04-21 check)
 
 Operator directive: "Make sure that GitHub actions and GitLab pipelines

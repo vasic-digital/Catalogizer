@@ -109,11 +109,23 @@ func (h *ChallengeHandler) RunChallenge(c *gin.Context) {
 }
 
 // RunAll executes all registered challenges in dependency order.
-// Uses context.Background() because RunAll is long-running and
-// must not be cancelled by HTTP write timeouts or client
-// disconnection. The HTTP response is written after completion.
+//
+// FIX-QA-2026-04-21-008 (partial closure of DEFER-QA-2026-04-21-001 #3):
+// uses `context.WithoutCancel(c.Request.Context())` instead of the
+// previous `context.Background()`. That gives the service a ctx that:
+//   - **inherits** the request's values (tracing, request_id, auth
+//     subject, etc.) so downstream logging stays threaded,
+//   - **does not cancel** when the outer `RequestTimeout(60*time.Second)`
+//     middleware or client disconnect fires, because RunAll routinely
+//     runs for 10+ minutes by design.
+//
+// This is the "long-running but still traceable" contract documented
+// in the DEFER-001 ticket. Full ctx-threading through the Challenges
+// submodule runner so individual challenge steps can co-operatively
+// observe progress is still pending (DEFER-001 #4).
 func (h *ChallengeHandler) RunAll(c *gin.Context) {
-	results, err := h.service.RunAll(context.Background())
+	ctx := context.WithoutCancel(c.Request.Context())
+	results, err := h.service.RunAll(ctx)
 	if err != nil {
 		utils.SendErrorResponse(
 			c, http.StatusInternalServerError,
@@ -154,9 +166,10 @@ func (h *ChallengeHandler) RunByCategory(c *gin.Context) {
 		return
 	}
 
-	results, err := h.service.RunByCategory(
-		context.Background(), category,
-	)
+	// FIX-QA-2026-04-21-008: see RunAll comment — detach from request
+	// lifetime without losing request-scoped values.
+	ctx := context.WithoutCancel(c.Request.Context())
+	results, err := h.service.RunByCategory(ctx, category)
 	if err != nil {
 		utils.SendErrorResponse(
 			c, http.StatusInternalServerError,

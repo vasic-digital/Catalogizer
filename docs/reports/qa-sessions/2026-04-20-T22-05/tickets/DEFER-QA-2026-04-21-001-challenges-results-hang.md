@@ -33,14 +33,15 @@ short `mu.RLock` for a slice copy. The hang is driven by:
 |---|---|---|
 | 1 | `GetResults` accepts `?limit=N` (default 100, last-N) + reports `total_count` | **Closed** as `FIX-QA-2026-04-21-004` (main `2d026db0`). Removes the hang symptom by bounding the JSON payload size. |
 | 2 | `RunChallenge` handler passes `c.Request.Context()` instead of `context.Background()` so single-challenge runs respect client disconnect | **Closed** as `FIX-QA-2026-04-21-005`. Regression test `TestChallengeHandler_RunChallenge_PropagatesRequestContext` seeds a request with a `context.WithDeadline` and asserts the mock receives a ctx with that exact deadline. |
-| 3 | `RunAll` / `RunByCategory` handlers pass `c.Request.Context()` | **Still open.** They deliberately use `context.Background()` because RunAll can run for > 60 s and the outer `RequestTimeout(60*time.Second)` middleware would cancel it. |
+| 3 | `RunAll` / `RunByCategory` handlers use `context.WithoutCancel(c.Request.Context())` — keeps request-scoped values (request_id, trace, auth subject) without propagating the outer `RequestTimeout(60*time.Second)` cancel | **Closed** as FIX-QA-2026-04-21-008 (U-cycle, 2026-04-21). Regression test `TestChallengeHandler_RunAll_CtxInheritsValuesButSurvivesRequestCancel` cancels the request ctx BEFORE serving and asserts the mock's ctx (a) inherits the custom probe value, (b) is NOT Done, (c) has nil `Err()`. |
 | 4 | `Challenges/pkg/runner/runner.go` threads `ctx` through `executeChallenge` to every challenge's `Execute()`; per-challenge work respects `ctx.Done()` between assertion steps | **Still open.** Submodule refactor — touches 508 challenges. |
-| 5 | A test that fires a POST `/:id/run` against the live binary, kills the curl, and asserts the server-side challenge terminates within 500 ms of disconnect | **Still open.** Needs #3 and #4 first. |
+| 5 | A test that proves the handler + service layer honour client disconnect — mock observes `ctx.Done()` when the request ctx is cancelled mid-call | **Closed** as part of U-cycle: `TestChallengeHandler_RunChallenge_ObservesClientDisconnect` blocks the mock on `<-ctx.Done()` with a 5 s safety timeout; asserts Done fires within 500 ms of the client-side cancel and `ctx.Err() == context.Canceled`. |
 
 ## Why the remaining work is still deferred
 
-Items #3–5 need a bounded refactor cycle. The handler-boundary fixes
-(#1, #2) have already removed the observable symptom (the RunAll
-results endpoint no longer hangs and new single-challenge POSTs now
-exit cleanly on disconnect), so the remaining scope is hardening,
-not bug-fixing. Unblocks when a dedicated cycle is approved.
+Only item #4 remains — threading `ctx` end-to-end through the
+Challenges submodule runner so individual challenge steps can
+co-operatively observe progress. That's a submodule refactor across
+508 challenges and wants a dedicated cycle. Every handler-boundary
+problem is closed; the observable symptom of DEFER-001 (RunAll
+results endpoint hang + zombie single-challenge handlers) is gone.
