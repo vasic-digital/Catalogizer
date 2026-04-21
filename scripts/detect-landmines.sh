@@ -24,13 +24,16 @@ ok() { echo "✓ $1"; }
 
 # ---------------------------------------------------------------------------
 # RULE-SEC-001 — no real .env committed anywhere
+# Allowed exceptions (non-secret deployment host-config templates):
+#   deployment/*.env — described in deployment/README; no API keys
 # ---------------------------------------------------------------------------
-if git ls-files --cached -- '*.env' ':!*.env.example' ':!*.env.example.*' 2>/dev/null \
-      | grep -q .; then
+tracked_envs=$(git ls-files --cached -- '*.env' ':!*.env.example' \
+  ':!*.env.example.*' ':!deployment/*.env' 2>/dev/null | grep -v '^$' || true)
+if [ -n "$tracked_envs" ]; then
   fail "RULE-SEC-001: tracked .env file(s) detected:"
-  git ls-files --cached -- '*.env' ':!*.env.example' ':!*.env.example.*' | sed 's/^/    /' >&2
+  echo "$tracked_envs" | sed 's/^/    /' >&2
 else
-  ok "RULE-SEC-001: no tracked .env files"
+  ok "RULE-SEC-001: no tracked .env files (deployment/*.env whitelisted)"
 fi
 
 # ---------------------------------------------------------------------------
@@ -71,15 +74,23 @@ else
 fi
 
 # ---------------------------------------------------------------------------
-# RULE-GO-004 — LastInsertId() forbidden
+# RULE-GO-004 — LastInsertId() forbidden in application code
+# Allowed exceptions:
+#   database/connection.go  — InsertReturningID SQLite fallback
+#   database/tx_helpers.go  — TxInsertReturningID SQLite fallback
+# These are the wrapper's internal implementations, not application misuse.
 # ---------------------------------------------------------------------------
-if [ -d catalog-api ] && grep -rn 'LastInsertId()' catalog-api/ --include='*.go' \
-      | grep -v '_test.go' | grep -q .; then
-  fail "RULE-GO-004: LastInsertId() present in catalog-api:"
-  grep -rn 'LastInsertId()' catalog-api/ --include='*.go' | grep -v '_test.go' \
-    | sed 's/^/    /' >&2
-else
-  ok "RULE-GO-004: no LastInsertId() in catalog-api"
+if [ -d catalog-api ]; then
+  hits=$(grep -rn 'LastInsertId()' catalog-api/ --include='*.go' 2>/dev/null \
+    | grep -v '_test.go' \
+    | grep -v 'database/connection\.go' \
+    | grep -v 'database/tx_helpers\.go' || true)
+  if [ -n "$hits" ]; then
+    fail "RULE-GO-004: LastInsertId() in application code:"
+    echo "$hits" | sed 's/^/    /' >&2
+  else
+    ok "RULE-GO-004: no LastInsertId() in catalog-api application code"
+  fi
 fi
 
 # ---------------------------------------------------------------------------
