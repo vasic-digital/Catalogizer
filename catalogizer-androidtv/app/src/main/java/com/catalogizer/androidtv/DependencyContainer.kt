@@ -22,6 +22,7 @@ import com.catalogizer.androidtv.ui.viewmodel.SettingsViewModel
 import com.catalogizer.androidtv.ui.screens.search.SearchViewModel
 import com.catalogizer.androidtv.data.remote.AuthInterceptor
 import okhttp3.OkHttpClient
+import okhttp3.Protocol
 import okhttp3.logging.HttpLoggingInterceptor
 import com.jakewharton.retrofit2.converter.kotlinx.serialization.asConverterFactory
 import kotlinx.serialization.json.Json
@@ -72,6 +73,11 @@ class DependencyContainer(private val context: Context) {
         return OkHttpClient.Builder()
             .addInterceptor(authInterceptor)
             .addInterceptor(logging)
+            // RULE-TV-001 (docs/LANDMINES.md) — force HTTP/1.1. Android TV
+            // chipsets including Mi Box 4 (Android 9 / SDK 28) intermittently
+            // fail the HTTP/2 handshake against QUIC-capable backends. Master
+            // Plan v2 Phase 4.3 — "Force HTTP/1.1 for TV endpoints".
+            .protocols(listOf(Protocol.HTTP_1_1))
             .connectTimeout(30, TimeUnit.SECONDS)
             .readTimeout(30, TimeUnit.SECONDS)
             .writeTimeout(30, TimeUnit.SECONDS)
