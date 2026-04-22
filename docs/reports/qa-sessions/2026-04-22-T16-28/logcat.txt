@@ -115827,3 +115827,1258 @@
 04-22 20:10:11.767  3196  3274 E WifiVendorHal: getWifiLinkLayerStats(l.937) failed {.code = ERROR_NOT_AVAILABLE, .description = }
 04-22 20:10:14.662 12842 12842 V BleRemoteService: requestScan,RC size:1,hasInit:true,mIsPair:false,Connecting:false,isScreenOn:true,allowMoreThanOneRC:false
 04-22 20:10:14.781  3196  3274 E WifiVendorHal: getWifiLinkLayerStats(l.937) failed {.code = ERROR_NOT_AVAILABLE, .description = }
+04-22 20:10:26.839  3196  3274 I chatty  : uid=1000(system) WifiStateMachin identical 4 lines
+04-22 20:10:29.853  3196  3274 E WifiVendorHal: getWifiLinkLayerStats(l.937) failed {.code = ERROR_NOT_AVAILABLE, .description = }
+04-22 20:10:30.678 12842 12842 V BleRemoteService: requestScan,RC size:1,hasInit:true,mIsPair:false,Connecting:false,isScreenOn:true,allowMoreThanOneRC:false
+04-22 20:10:32.867  3196  3274 E WifiVendorHal: getWifiLinkLayerStats(l.937) failed {.code = ERROR_NOT_AVAILABLE, .description = }
+04-22 20:10:40.073  3196  3262 D PowerManagerService: updateSuspendBlockerLocked mWakefulness=1,needWakeLockSuspendBlocker=true
+04-22 20:10:40.100  3196  3196 D PowerManagerService: updateSuspendBlockerLocked mWakefulness=1,needWakeLockSuspendBlocker=false
+04-22 20:10:35.881  3196  3274 I chatty  : uid=1000(system) WifiStateMachin identical 1 line
+04-22 20:10:38.893  3196  3274 E WifiVendorHal: getWifiLinkLayerStats(l.937) failed {.code = ERROR_NOT_AVAILABLE, .description = }
+04-22 20:10:40.107  8066 20094 D WakeupService: onStartCommand command: active
+04-22 20:10:40.107  8066 20094 D SystemUtil: isOverSeasProduct true
+04-22 20:10:40.116  3196  7238 D WificondControl: Scan result ready event
+04-22 20:10:40.122  3196  3216 I EthernetTracker: interfaceLinkStateChanged, iface: wlan0, up: true
+04-22 20:10:40.125  8066 20096 D TVAnalytics-Core-UA: getTodaySentCount date: 20260422, count: 28
+04-22 20:10:40.125  8066 20096 D TVAnalytics-Core-UA: getTodaySentCount return 28
+04-22 20:10:40.125  8066 20096 D TVAnalytics-Core-UA: sent_count reach max value, return directly
+04-22 20:10:40.815 11257 11257 I cast_shell: [0422/201040.815764:INFO:service_base.h(78)] Size of the map for type AuthTokenResponse is 0
+04-22 20:10:40.833 11257 11257 I cast_shell: [0422/201040.833184:INFO:service_base.h(246)] Container sizes for type CloudSetting are (session_info_map: 0), (topic_info_map: 21), (pending_events: 0).
+04-22 20:10:40.833 11257 11257 I cast_shell: [0422/201040.833711:INFO:metrics_stat_logger.cc(38)] Metrics stat for the past 60 secs : total=0
+04-22 20:10:41.109 11257 11312 I cast_shell: [0422/201041.108711:INFO:mdns_cast_service.cc(987)] Recent mDNS app subtypes: [supported:'ED01B6D7','CFE7FEDA','A1EB4E9D','EF6F58F4',] [unsupported:'CA5E8412',]
+04-22 20:10:41.905  3196  3274 E WifiVendorHal: getWifiLinkLayerStats(l.937) failed {.code = ERROR_NOT_AVAILABLE, .description = }
+04-22 20:10:43.025 11257 11312 I cast_shell: [0422/201043.024623:INFO:mdns_app_filter.cc(3358)] MdnsAppFilter: responses sent in 98 seconds: 52
+04-22 20:10:44.924  3196  3274 E WifiVendorHal: getWifiLinkLayerStats(l.937) failed {.code = ERROR_NOT_AVAILABLE, .description = }
+04-22 20:10:45.432  3139  3174 E storaged: getDiskStats failed with result NOT_SUPPORTED and size 0
+04-22 20:10:46.689 12842 12842 V BleRemoteService: requestScan,RC size:1,hasInit:true,mIsPair:false,Connecting:false,isScreenOn:true,allowMoreThanOneRC:false
+04-22 20:10:47.947  3196  3274 E WifiVendorHal: getWifiLinkLayerStats(l.937) failed {.code = ERROR_NOT_AVAILABLE, .description = }
+04-22 20:10:49.538  3196  3262 D PowerManagerService: updateSuspendBlockerLocked mWakefulness=1,needWakeLockSuspendBlocker=true
+04-22 20:10:49.549  3196  3196 D PowerManagerService: updateSuspendBlockerLocked mWakefulness=1,needWakeLockSuspendBlocker=false
+04-22 20:10:53.964  3196  3274 I chatty  : uid=1000(system) WifiStateMachin identical 2 lines
+04-22 20:10:56.977  3196  3274 E WifiVendorHal: getWifiLinkLayerStats(l.937) failed {.code = ERROR_NOT_AVAILABLE, .description = }
+04-22 20:10:57.490  5496 12841 D UDTJmDNSThread: Local address: /192.168.0.214
+04-22 20:10:57.493  5496 12841 D UDTJmDNSThread: JmDNS address:/192.168.0.214
+04-22 20:10:57.493  5496 12841 I UDTDiscoverManager: UDTJmDNSThread now available, no operation
+04-22 20:10:59.992  3196  3274 E WifiVendorHal: getWifiLinkLayerStats(l.937) failed {.code = ERROR_NOT_AVAILABLE, .description = }
+04-22 20:11:00.002  3196  3262 D PowerManagerService: updateSuspendBlockerLocked mWakefulness=1,needWakeLockSuspendBlocker=true
+04-22 20:11:00.017  3196  3196 D PowerManagerService: updateSuspendBlockerLocked mWakefulness=1,needWakeLockSuspendBlocker=false
+04-22 20:11:02.693 12842 12842 V BleRemoteService: requestScan,RC size:1,hasInit:true,mIsPair:false,Connecting:false,isScreenOn:true,allowMoreThanOneRC:false
+04-22 20:11:03.004  3196  3274 E WifiVendorHal: getWifiLinkLayerStats(l.937) failed {.code = ERROR_NOT_AVAILABLE, .description = }
+04-22 20:11:06.014  3196  3274 I chatty  : uid=1000(system) WifiStateMachin identical 1 line
+04-22 20:11:09.024  3196  3274 E WifiVendorHal: getWifiLinkLayerStats(l.937) failed {.code = ERROR_NOT_AVAILABLE, .description = }
+04-22 20:11:10.157  3196  3205 I system_server: Background concurrent copying GC freed 292165(8MB) AllocSpace objects, 0(0B) LOS objects, 42% free, 11MB/20MB, paused 611us total 205.875ms
+04-22 20:11:12.038  3196  3274 E WifiVendorHal: getWifiLinkLayerStats(l.937) failed {.code = ERROR_NOT_AVAILABLE, .description = }
+04-22 20:11:15.053  3196  3274 I chatty  : uid=1000(system) WifiStateMachin identical 1 line
+04-22 20:11:18.072  3196  3274 E WifiVendorHal: getWifiLinkLayerStats(l.937) failed {.code = ERROR_NOT_AVAILABLE, .description = }
+04-22 20:11:18.697 12842 12842 V BleRemoteService: requestScan,RC size:1,hasInit:true,mIsPair:false,Connecting:false,isScreenOn:true,allowMoreThanOneRC:false
+04-22 20:11:21.083  3196  3274 E WifiVendorHal: getWifiLinkLayerStats(l.937) failed {.code = ERROR_NOT_AVAILABLE, .description = }
+04-22 20:11:30.122  3196  3274 I chatty  : uid=1000(system) WifiStateMachin identical 3 lines
+04-22 20:11:33.137  3196  3274 E WifiVendorHal: getWifiLinkLayerStats(l.937) failed {.code = ERROR_NOT_AVAILABLE, .description = }
+04-22 20:11:34.706 12842 12842 V BleRemoteService: requestScan,RC size:1,hasInit:true,mIsPair:false,Connecting:false,isScreenOn:true,allowMoreThanOneRC:false
+04-22 20:11:36.149  3196  3274 E WifiVendorHal: getWifiLinkLayerStats(l.937) failed {.code = ERROR_NOT_AVAILABLE, .description = }
+04-22 20:11:39.164  3196  3274 E WifiVendorHal: getWifiLinkLayerStats(l.937) failed {.code = ERROR_NOT_AVAILABLE, .description = }
+04-22 20:11:40.348  6847  6919 W native  : W0000 00:00:1776881500.348486    6919 publisher.cc:36] [FTL] No subscribers for event "hvc.api.events.MetricEvent" from publisher "UmaMetricsForwarder"
+04-22 20:11:40.817 11257 11257 I cast_shell: [0422/201140.816775:INFO:service_base.h(78)] Size of the map for type AuthTokenResponse is 0
+04-22 20:11:40.835 11257 11257 I cast_shell: [0422/201140.834461:INFO:service_base.h(246)] Container sizes for type CloudSetting are (session_info_map: 0), (topic_info_map: 21), (pending_events: 0).
+04-22 20:11:40.836 11257 11257 I cast_shell: [0422/201140.835739:INFO:metrics_stat_logger.cc(38)] Metrics stat for the past 60 secs : total=7
+04-22 20:11:40.836 11257 11257 I cast_shell: [metrics_stat_logger] Cast.Discovery.Mdns.Request.AppId.In=42
+04-22 20:11:40.836 11257 11257 I cast_shell: [metrics_stat_logger] Cast.Discovery.Mdns.Request.In=14
+04-22 20:11:40.836 11257 11257 I cast_shell: [metrics_stat_logger] Cast.Discovery.Mdns.Request.Namespace.In=6
+04-22 20:11:40.836 11257 11257 I cast_shell: [metrics_stat_logger] Cast.Discovery.Mdns.Response.AppId.Out=36
+04-22 20:11:40.836 11257 11257 I cast_shell: [metrics_stat_logger] Cast.Discovery.Mdns.Response.Error.AppNotSupported=6
+04-22 20:11:40.836 11257 11257 I cast_shell: [metrics_stat_logger] Cast.Discovery.Mdns.Response.Error.NamespaceNotSupported=6
+04-22 20:11:40.836 11257 11257 I cast_shell: [metrics_stat_logger] Cast.Discovery.Mdns.Response.Out=14
+04-22 20:11:41.587 11257 11312 I cast_shell: [0422/201141.587463:INFO:mdns_app_filter.cc(3550)] Mdns cast queries recently sent: queries=1
+04-22 20:11:42.177  3196  3274 E WifiVendorHal: getWifiLinkLayerStats(l.937) failed {.code = ERROR_NOT_AVAILABLE, .description = }
+04-22 20:11:45.435  3139  3174 E storaged: getDiskStats failed with result NOT_SUPPORTED and size 0
+04-22 20:11:45.190  3196  3274 I chatty  : uid=1000(system) WifiStateMachin identical 1 line
+04-22 20:11:48.203  3196  3274 E WifiVendorHal: getWifiLinkLayerStats(l.937) failed {.code = ERROR_NOT_AVAILABLE, .description = }
+04-22 20:11:50.722 12842 12842 V BleRemoteService: requestScan,RC size:1,hasInit:true,mIsPair:false,Connecting:false,isScreenOn:true,allowMoreThanOneRC:false
+04-22 20:11:51.215  3196  3274 E WifiVendorHal: getWifiLinkLayerStats(l.937) failed {.code = ERROR_NOT_AVAILABLE, .description = }
+04-22 20:11:54.228  3196  3274 I chatty  : uid=1000(system) WifiStateMachin identical 1 line
+04-22 20:11:57.242  3196  3274 E WifiVendorHal: getWifiLinkLayerStats(l.937) failed {.code = ERROR_NOT_AVAILABLE, .description = }
+04-22 20:11:57.491  5496 12841 D UDTJmDNSThread: Local address: /192.168.0.214
+04-22 20:11:57.493  5496 12841 D UDTJmDNSThread: JmDNS address:/192.168.0.214
+04-22 20:11:57.493  5496 12841 I UDTDiscoverManager: UDTJmDNSThread now available, no operation
+04-22 20:12:00.001  3196  3262 D PowerManagerService: updateSuspendBlockerLocked mWakefulness=1,needWakeLockSuspendBlocker=true
+04-22 20:12:00.010  3196  3196 D PowerManagerService: updateSuspendBlockerLocked mWakefulness=1,needWakeLockSuspendBlocker=false
+04-22 20:12:00.255  3196  3274 E WifiVendorHal: getWifiLinkLayerStats(l.937) failed {.code = ERROR_NOT_AVAILABLE, .description = }
+04-22 20:12:03.269  3196  3274 I chatty  : uid=1000(system) WifiStateMachin identical 1 line
+04-22 20:12:06.283  3196  3274 E WifiVendorHal: getWifiLinkLayerStats(l.937) failed {.code = ERROR_NOT_AVAILABLE, .description = }
+04-22 20:12:06.730 12842 12842 V BleRemoteService: requestScan,RC size:1,hasInit:true,mIsPair:false,Connecting:false,isScreenOn:true,allowMoreThanOneRC:false
+04-22 20:12:09.293  3196  3274 E WifiVendorHal: getWifiLinkLayerStats(l.937) failed {.code = ERROR_NOT_AVAILABLE, .description = }
+04-22 20:12:18.344  3196  3274 I chatty  : uid=1000(system) WifiStateMachin identical 3 lines
+04-22 20:12:21.373  3196  3274 E WifiVendorHal: getWifiLinkLayerStats(l.937) failed {.code = ERROR_NOT_AVAILABLE, .description = }
+04-22 20:12:22.746 12842 12842 V BleRemoteService: requestScan,RC size:1,hasInit:true,mIsPair:false,Connecting:false,isScreenOn:true,allowMoreThanOneRC:false
+04-22 20:12:24.388  3196  3274 E WifiVendorHal: getWifiLinkLayerStats(l.937) failed {.code = ERROR_NOT_AVAILABLE, .description = }
+04-22 20:12:27.403  3196  3274 E WifiVendorHal: getWifiLinkLayerStats(l.937) failed {.code = ERROR_NOT_AVAILABLE, .description = }
+04-22 20:12:28.698 11257 11320 I cast_shell: [0422/201228.698655:INFO:ssdp_device.c(101)] SSDP packets sent for 137 seconds = 2
+04-22 20:12:28.799 11257 11312 I cast_shell: [0422/201228.799633:INFO:mdns_app_filter.cc(3358)] MdnsAppFilter: responses sent in 105 seconds: 55
+04-22 20:12:30.418  3196  3274 E WifiVendorHal: getWifiLinkLayerStats(l.937) failed {.code = ERROR_NOT_AVAILABLE, .description = }
+04-22 20:12:33.433  3196  3274 I chatty  : uid=1000(system) WifiStateMachin identical 1 line
+04-22 20:12:36.443  3196  3274 E WifiVendorHal: getWifiLinkLayerStats(l.937) failed {.code = ERROR_NOT_AVAILABLE, .description = }
+04-22 20:12:38.763 12842 12842 V BleRemoteService: requestScan,RC size:1,hasInit:true,mIsPair:false,Connecting:false,isScreenOn:true,allowMoreThanOneRC:false
+04-22 20:12:39.458  3196  3274 E WifiVendorHal: getWifiLinkLayerStats(l.937) failed {.code = ERROR_NOT_AVAILABLE, .description = }
+04-22 20:12:40.268 11257 11257 I cast_shell: [0422/201240.268327:INFO:grpc_manager_impl.cc(881)] GRPC[uri=localhost:10042]: num_pending_calls=0, num_active_handlers=1, num_free_handlers=0
+04-22 20:12:40.277 11257 11257 I cast_shell: [0422/201240.277383:INFO:grpc_manager_impl.cc(881)] GRPC[uri=localhost:10042]: num_pending_calls=0, num_active_handlers=1, num_free_handlers=0
+04-22 20:12:40.279 11257 11257 I cast_shell: [0422/201240.279442:INFO:grpc_manager_impl.cc(881)] GRPC[uri=]: num_pending_calls=0, num_active_handlers=0, num_free_handlers=0
+04-22 20:12:40.282 11257 11257 I cast_shell: [0422/201240.282202:INFO:grpc_manager_impl.cc(881)] GRPC[uri=]: num_pending_calls=0, num_active_handlers=0, num_free_handlers=0
+04-22 20:12:40.313 11257 11257 I cast_shell: [0422/201240.313651:INFO:grpc_manager_impl.cc(881)] GRPC[uri=[::]:0]: num_pending_calls=0, num_active_handlers=4, num_free_handlers=0
+04-22 20:12:40.819 11257 11257 I cast_shell: [0422/201240.818947:INFO:service_base.h(78)] Size of the map for type AuthTokenResponse is 0
+04-22 20:12:40.836 11257 11257 I cast_shell: [0422/201240.835725:INFO:service_base.h(246)] Container sizes for type CloudSetting are (session_info_map: 0), (topic_info_map: 21), (pending_events: 0).
+04-22 20:12:40.837 11257 11257 I cast_shell: [0422/201240.836701:INFO:metrics_stat_logger.cc(38)] Metrics stat for the past 60 secs : total=8
+04-22 20:12:40.837 11257 11257 I cast_shell: [metrics_stat_logger] Cast.Discovery.Mdns.Query.Cast.Count=1
+04-22 20:12:40.837 11257 11257 I cast_shell: [metrics_stat_logger] Cast.Discovery.Mdns.Request.AppId.In=42
+04-22 20:12:40.837 11257 11257 I cast_shell: [metrics_stat_logger] Cast.Discovery.Mdns.Request.In=12
+04-22 20:12:40.837 11257 11257 I cast_shell: [metrics_stat_logger] Cast.Discovery.Mdns.Request.Namespace.In=6
+04-22 20:12:40.837 11257 11257 I cast_shell: [metrics_stat_logger] Cast.Discovery.Mdns.Response.AppId.Out=36
+04-22 20:12:40.837 11257 11257 I cast_shell: [metrics_stat_logger] Cast.Discovery.Mdns.Response.Error.AppNotSupported=6
+04-22 20:12:40.837 11257 11257 I cast_shell: [metrics_stat_logger] Cast.Discovery.Mdns.Response.Error.NamespaceNotSupported=6
+04-22 20:12:40.837 11257 11257 I cast_shell: [metrics_stat_logger] Cast.Discovery.Mdns.Response.Out=12
+04-22 20:12:41.112 11257 11312 I cast_shell: [0422/201241.112461:INFO:mdns_cast_service.cc(987)] Recent mDNS app subtypes: [supported:'ED01B6D7','CFE7FEDA','A1EB4E9D','EF6F58F4',] [unsupported:'CA5E8412',]
+04-22 20:12:42.472  3196  3274 E WifiVendorHal: getWifiLinkLayerStats(l.937) failed {.code = ERROR_NOT_AVAILABLE, .description = }
+04-22 20:12:45.437  3139  3174 E storaged: getDiskStats failed with result NOT_SUPPORTED and size 0
+04-22 20:12:48.492  3196  3274 I chatty  : uid=1000(system) WifiStateMachin identical 2 lines
+04-22 20:12:51.504  3196  3274 E WifiVendorHal: getWifiLinkLayerStats(l.937) failed {.code = ERROR_NOT_AVAILABLE, .description = }
+04-22 20:12:54.334  3196  3205 I system_server: Background concurrent copying GC freed 289646(8MB) AllocSpace objects, 2(104KB) LOS objects, 42% free, 11MB/20MB, paused 882us total 209.499ms
+04-22 20:12:54.517  3196  3274 E WifiVendorHal: getWifiLinkLayerStats(l.937) failed {.code = ERROR_NOT_AVAILABLE, .description = }
+04-22 20:12:54.779 12842 12842 V BleRemoteService: requestScan,RC size:1,hasInit:true,mIsPair:false,Connecting:false,isScreenOn:true,allowMoreThanOneRC:false
+04-22 20:12:57.492  5496 12841 D UDTJmDNSThread: Local address: /192.168.0.214
+04-22 20:12:57.501  5496 12841 D UDTJmDNSThread: JmDNS address:/192.168.0.214
+04-22 20:12:57.501  5496 12841 I UDTDiscoverManager: UDTJmDNSThread now available, no operation
+04-22 20:12:57.526  3196  3274 E WifiVendorHal: getWifiLinkLayerStats(l.937) failed {.code = ERROR_NOT_AVAILABLE, .description = }
+04-22 20:13:00.001  3196  3262 D PowerManagerService: updateSuspendBlockerLocked mWakefulness=1,needWakeLockSuspendBlocker=true
+04-22 20:13:00.014  3196  3196 D PowerManagerService: updateSuspendBlockerLocked mWakefulness=1,needWakeLockSuspendBlocker=false
+04-22 20:13:06.557  3196  3274 I chatty  : uid=1000(system) WifiStateMachin identical 3 lines
+04-22 20:13:09.569  3196  3274 E WifiVendorHal: getWifiLinkLayerStats(l.937) failed {.code = ERROR_NOT_AVAILABLE, .description = }
+04-22 20:13:10.488 11257 11278 I cast_shell: [0422/201310.488496:INFO:wifi_frame_histogram_capturer.cc(406)] No histogram or IOCTL data
+04-22 20:13:10.499 11257 11257 I cast_shell: [0422/201310.498905:INFO:metrics_recorder.cc(193)] Record action: Cast.CecHdmiInputState.Active
+04-22 20:13:10.499 11257 11257 I cast_shell: [0422/201310.499277:INFO:metrics_recorder.cc(193)] Record action: Cast.CecStandby.On
+04-22 20:13:10.511 11257 11278 I cast_shell: [0422/201310.511705:INFO:wifi_util.cc(197)] Current wifi TDLS peers:
+04-22 20:13:10.511 11257 11278 I cast_shell: [0422/201310.511957:INFO:wifi_util.cc(199)] 	No peers:
+04-22 20:13:10.793 12842 12842 V BleRemoteService: requestScan,RC size:1,hasInit:true,mIsPair:false,Connecting:false,isScreenOn:true,allowMoreThanOneRC:false
+04-22 20:13:12.581  3196  3274 E WifiVendorHal: getWifiLinkLayerStats(l.937) failed {.code = ERROR_NOT_AVAILABLE, .description = }
+04-22 20:13:21.619  3196  3274 I chatty  : uid=1000(system) WifiStateMachin identical 3 lines
+04-22 20:13:24.631  3196  3274 E WifiVendorHal: getWifiLinkLayerStats(l.937) failed {.code = ERROR_NOT_AVAILABLE, .description = }
+04-22 20:13:26.806 12842 12842 V BleRemoteService: requestScan,RC size:1,hasInit:true,mIsPair:false,Connecting:false,isScreenOn:true,allowMoreThanOneRC:false
+04-22 20:13:27.644  3196  3274 E WifiVendorHal: getWifiLinkLayerStats(l.937) failed {.code = ERROR_NOT_AVAILABLE, .description = }
+04-22 20:13:36.685  3196  3274 I chatty  : uid=1000(system) WifiStateMachin identical 3 lines
+04-22 20:13:39.699  3196  3274 E WifiVendorHal: getWifiLinkLayerStats(l.937) failed {.code = ERROR_NOT_AVAILABLE, .description = }
+04-22 20:13:40.820 11257 11257 I cast_shell: [0422/201340.819915:INFO:service_base.h(78)] Size of the map for type AuthTokenResponse is 0
+04-22 20:13:40.836 11257 11257 I cast_shell: [0422/201340.836657:INFO:service_base.h(246)] Container sizes for type CloudSetting are (session_info_map: 0), (topic_info_map: 21), (pending_events: 0).
+04-22 20:13:40.838 11257 11257 I cast_shell: [0422/201340.837643:INFO:metrics_stat_logger.cc(38)] Metrics stat for the past 60 secs : total=5
+04-22 20:13:40.838 11257 11257 I cast_shell: [metrics_stat_logger] AppRunning=1
+04-22 20:13:40.838 11257 11257 I cast_shell: [metrics_stat_logger] Cast.CecHdmiInputState.Active=1
+04-22 20:13:40.838 11257 11257 I cast_shell: [metrics_stat_logger] Cast.CecStandby.On=1
+04-22 20:13:40.838 11257 11257 I cast_shell: [metrics_stat_logger] Cast.ConnectionType.Wifi=1
+04-22 20:13:40.838 11257 11257 I cast_shell: [metrics_stat_logger] Cast.Network.CheckIn=1
+04-22 20:13:42.714  3196  3274 E WifiVendorHal: getWifiLinkLayerStats(l.937) failed {.code = ERROR_NOT_AVAILABLE, .description = }
+04-22 20:13:42.809 12842 12842 V BleRemoteService: requestScan,RC size:1,hasInit:true,mIsPair:false,Connecting:false,isScreenOn:true,allowMoreThanOneRC:false
+04-22 20:13:45.439  3139  3174 E storaged: getDiskStats failed with result NOT_SUPPORTED and size 0
+04-22 20:13:45.725  3196  3274 E WifiVendorHal: getWifiLinkLayerStats(l.937) failed {.code = ERROR_NOT_AVAILABLE, .description = }
+04-22 20:13:45.912  8423  8667 I PhenotypeProcessReaper: Memory state is: 125
+04-22 20:13:48.737  3196  3274 E WifiVendorHal: getWifiLinkLayerStats(l.937) failed {.code = ERROR_NOT_AVAILABLE, .description = }
+04-22 20:13:51.762  3196  3274 E WifiVendorHal: getWifiLinkLayerStats(l.937) failed {.code = ERROR_NOT_AVAILABLE, .description = }
+04-22 20:13:52.633  7726  7893 I PhenotypeProcessReaper: Memory state is: 200
+04-22 20:13:54.774  3196  3274 E WifiVendorHal: getWifiLinkLayerStats(l.937) failed {.code = ERROR_NOT_AVAILABLE, .description = }
+04-22 20:13:57.493  5496 12841 D UDTJmDNSThread: Local address: /192.168.0.214
+04-22 20:13:57.493  5496 12841 D UDTJmDNSThread: JmDNS address:/192.168.0.214
+04-22 20:13:57.493  5496 12841 I UDTDiscoverManager: UDTJmDNSThread now available, no operation
+04-22 20:13:57.788  3196  3274 E WifiVendorHal: getWifiLinkLayerStats(l.937) failed {.code = ERROR_NOT_AVAILABLE, .description = }
+04-22 20:13:58.827 12842 12842 V BleRemoteService: requestScan,RC size:1,hasInit:true,mIsPair:false,Connecting:false,isScreenOn:true,allowMoreThanOneRC:false
+04-22 20:14:00.002  3196  3262 D PowerManagerService: updateSuspendBlockerLocked mWakefulness=1,needWakeLockSuspendBlocker=true
+04-22 20:14:00.022  3196  3196 D PowerManagerService: updateSuspendBlockerLocked mWakefulness=1,needWakeLockSuspendBlocker=false
+04-22 20:14:00.807  3196  3274 E WifiVendorHal: getWifiLinkLayerStats(l.937) failed {.code = ERROR_NOT_AVAILABLE, .description = }
+04-22 20:14:03.835  3196  3274 I chatty  : uid=1000(system) WifiStateMachin identical 1 line
+04-22 20:14:06.847  3196  3274 E WifiVendorHal: getWifiLinkLayerStats(l.937) failed {.code = ERROR_NOT_AVAILABLE, .description = }
+04-22 20:14:06.906 11257 11312 I cast_shell: [0422/201406.906574:INFO:mdns_app_filter.cc(3358)] MdnsAppFilter: responses sent in 98 seconds: 53
+04-22 20:14:09.859  3196  3274 E WifiVendorHal: getWifiLinkLayerStats(l.937) failed {.code = ERROR_NOT_AVAILABLE, .description = }
+04-22 20:14:12.874  3196  3274 E WifiVendorHal: getWifiLinkLayerStats(l.937) failed {.code = ERROR_NOT_AVAILABLE, .description = }
+04-22 20:14:14.836 12842 12842 V BleRemoteService: requestScan,RC size:1,hasInit:true,mIsPair:false,Connecting:false,isScreenOn:true,allowMoreThanOneRC:false
+04-22 20:14:15.886  3196  3274 E WifiVendorHal: getWifiLinkLayerStats(l.937) failed {.code = ERROR_NOT_AVAILABLE, .description = }
+04-22 20:14:21.097  3196  3262 D PowerManagerService: updateSuspendBlockerLocked mWakefulness=1,needWakeLockSuspendBlocker=true
+04-22 20:14:21.111  3196  3274 D PowerManagerService: updateSuspendBlockerLocked mWakefulness=1,needWakeLockSuspendBlocker=false
+04-22 20:14:21.132  3196  3196 D PowerManagerService: updateSuspendBlockerLocked mWakefulness=1,needWakeLockSuspendBlocker=true
+04-22 20:14:18.908  3196  3274 E WifiVendorHal: getWifiLinkLayerStats(l.937) failed {.code = ERROR_NOT_AVAILABLE, .description = }
+04-22 20:14:21.844  3196  3207 D WificondControl: Scan result ready event
+04-22 20:14:21.859  3196  3216 I EthernetTracker: interfaceLinkStateChanged, iface: wlan0, up: true
+04-22 20:14:21.917  3196  3274 E WifiVendorHal: getWifiLinkLayerStats(l.937) failed {.code = ERROR_NOT_AVAILABLE, .description = }
+04-22 20:14:24.923  3196  3274 I chatty  : uid=1000(system) WifiStateMachin identical 1 line
+04-22 20:14:27.935  3196  3274 E WifiVendorHal: getWifiLinkLayerStats(l.937) failed {.code = ERROR_NOT_AVAILABLE, .description = }
+04-22 20:14:30.839 12842 12842 V BleRemoteService: requestScan,RC size:1,hasInit:true,mIsPair:false,Connecting:false,isScreenOn:true,allowMoreThanOneRC:false
+04-22 20:14:30.946  3196  3274 E WifiVendorHal: getWifiLinkLayerStats(l.937) failed {.code = ERROR_NOT_AVAILABLE, .description = }
+04-22 20:14:36.968  3196  3274 I chatty  : uid=1000(system) WifiStateMachin identical 2 lines
+04-22 20:14:39.982  3196  3274 E WifiVendorHal: getWifiLinkLayerStats(l.937) failed {.code = ERROR_NOT_AVAILABLE, .description = }
+04-22 20:14:40.821 11257 11257 I cast_shell: [0422/201440.820858:INFO:service_base.h(78)] Size of the map for type AuthTokenResponse is 0
+04-22 20:14:40.837 11257 11257 I cast_shell: [0422/201440.837498:INFO:service_base.h(246)] Container sizes for type CloudSetting are (session_info_map: 0), (topic_info_map: 21), (pending_events: 0).
+04-22 20:14:40.838 11257 11257 I cast_shell: [0422/201440.838071:INFO:metrics_stat_logger.cc(38)] Metrics stat for the past 60 secs : total=7
+04-22 20:14:40.838 11257 11257 I cast_shell: [metrics_stat_logger] Cast.Discovery.Mdns.Request.AppId.In=42
+04-22 20:14:40.838 11257 11257 I cast_shell: [metrics_stat_logger] Cast.Discovery.Mdns.Request.In=12
+04-22 20:14:40.838 11257 11257 I cast_shell: [metrics_stat_logger] Cast.Discovery.Mdns.Request.Namespace.In=6
+04-22 20:14:40.838 11257 11257 I cast_shell: [metrics_stat_logger] Cast.Discovery.Mdns.Response.AppId.Out=36
+04-22 20:14:40.838 11257 11257 I cast_shell: [metrics_stat_logger] Cast.Discovery.Mdns.Response.Error.AppNotSupported=6
+04-22 20:14:40.838 11257 11257 I cast_shell: [metrics_stat_logger] Cast.Discovery.Mdns.Response.Error.NamespaceNotSupported=6
+04-22 20:14:40.838 11257 11257 I cast_shell: [metrics_stat_logger] Cast.Discovery.Mdns.Response.Out=12
+04-22 20:14:41.088  3196  3205 I system_server: Background concurrent copying GC freed 288602(8MB) AllocSpace objects, 0(0B) LOS objects, 42% free, 11MB/20MB, paused 246us total 190.407ms
+04-22 20:14:41.116 11257 11312 I cast_shell: [0422/201441.116131:INFO:mdns_cast_service.cc(987)] Recent mDNS app subtypes: [supported:'ED01B6D7','CFE7FEDA','A1EB4E9D','EF6F58F4',] [unsupported:'CA5E8412',]
+04-22 20:14:42.994  3196  3274 E WifiVendorHal: getWifiLinkLayerStats(l.937) failed {.code = ERROR_NOT_AVAILABLE, .description = }
+04-22 20:14:45.440  3139  3174 E storaged: getDiskStats failed with result NOT_SUPPORTED and size 0
+04-22 20:14:46.009  3196  3274 E WifiVendorHal: getWifiLinkLayerStats(l.937) failed {.code = ERROR_NOT_AVAILABLE, .description = }
+04-22 20:14:46.854 12842 12842 V BleRemoteService: requestScan,RC size:1,hasInit:true,mIsPair:false,Connecting:false,isScreenOn:true,allowMoreThanOneRC:false
+04-22 20:14:49.020  3196  3274 E WifiVendorHal: getWifiLinkLayerStats(l.937) failed {.code = ERROR_NOT_AVAILABLE, .description = }
+04-22 20:14:52.035  3196  3274 I chatty  : uid=1000(system) WifiStateMachin identical 1 line
+04-22 20:14:55.049  3196  3274 E WifiVendorHal: getWifiLinkLayerStats(l.937) failed {.code = ERROR_NOT_AVAILABLE, .description = }
+04-22 20:14:57.494  5496 12841 D UDTJmDNSThread: Local address: /192.168.0.214
+04-22 20:14:57.494  5496 12841 D UDTJmDNSThread: JmDNS address:/192.168.0.214
+04-22 20:14:57.494  5496 12841 I UDTDiscoverManager: UDTJmDNSThread now available, no operation
+04-22 20:14:58.062  3196  3274 E WifiVendorHal: getWifiLinkLayerStats(l.937) failed {.code = ERROR_NOT_AVAILABLE, .description = }
+04-22 20:15:00.002  3196  3262 D PowerManagerService: updateSuspendBlockerLocked mWakefulness=1,needWakeLockSuspendBlocker=true
+04-22 20:15:00.020  3196  3196 D PowerManagerService: updateSuspendBlockerLocked mWakefulness=1,needWakeLockSuspendBlocker=true
+04-22 20:15:01.074  3196  3274 E WifiVendorHal: getWifiLinkLayerStats(l.937) failed {.code = ERROR_NOT_AVAILABLE, .description = }
+04-22 20:15:02.865 12842 12842 V BleRemoteService: requestScan,RC size:1,hasInit:true,mIsPair:false,Connecting:false,isScreenOn:true,allowMoreThanOneRC:false
+04-22 20:15:04.089  3196  3274 E WifiVendorHal: getWifiLinkLayerStats(l.937) failed {.code = ERROR_NOT_AVAILABLE, .description = }
+04-22 20:15:13.126  3196  3274 I chatty  : uid=1000(system) WifiStateMachin identical 3 lines
+04-22 20:15:16.139  3196  3274 E WifiVendorHal: getWifiLinkLayerStats(l.937) failed {.code = ERROR_NOT_AVAILABLE, .description = }
+04-22 20:15:18.870 12842 12842 V BleRemoteService: requestScan,RC size:1,hasInit:true,mIsPair:false,Connecting:false,isScreenOn:true,allowMoreThanOneRC:false
+04-22 20:15:19.151  3196  3274 E WifiVendorHal: getWifiLinkLayerStats(l.937) failed {.code = ERROR_NOT_AVAILABLE, .description = }
+04-22 20:15:31.204  3196  3274 I chatty  : uid=1000(system) WifiStateMachin identical 4 lines
+04-22 20:15:34.220  3196  3274 E WifiVendorHal: getWifiLinkLayerStats(l.937) failed {.code = ERROR_NOT_AVAILABLE, .description = }
+04-22 20:15:34.882 12842 12842 V BleRemoteService: requestScan,RC size:1,hasInit:true,mIsPair:false,Connecting:false,isScreenOn:true,allowMoreThanOneRC:false
+04-22 20:15:37.231  3196  3274 E WifiVendorHal: getWifiLinkLayerStats(l.937) failed {.code = ERROR_NOT_AVAILABLE, .description = }
+04-22 20:15:40.242  3196  3274 E WifiVendorHal: getWifiLinkLayerStats(l.937) failed {.code = ERROR_NOT_AVAILABLE, .description = }
+04-22 20:15:40.821 11257 11257 I cast_shell: [0422/201540.821632:INFO:service_base.h(78)] Size of the map for type AuthTokenResponse is 0
+04-22 20:15:40.838 11257 11257 I cast_shell: [0422/201540.838011:INFO:service_base.h(246)] Container sizes for type CloudSetting are (session_info_map: 0), (topic_info_map: 21), (pending_events: 0).
+04-22 20:15:40.838 11257 11257 I cast_shell: [0422/201540.838624:INFO:metrics_stat_logger.cc(38)] Metrics stat for the past 60 secs : total=0
+04-22 20:15:43.250  3196  3274 E WifiVendorHal: getWifiLinkLayerStats(l.937) failed {.code = ERROR_NOT_AVAILABLE, .description = }
+04-22 20:15:45.001 11257 11312 I cast_shell: [0422/201545.001217:INFO:mdns_app_filter.cc(3358)] MdnsAppFilter: responses sent in 98 seconds: 53
+04-22 20:15:45.442  3139  3174 E storaged: getDiskStats failed with result NOT_SUPPORTED and size 0
+04-22 20:15:46.265  3196  3274 E WifiVendorHal: getWifiLinkLayerStats(l.937) failed {.code = ERROR_NOT_AVAILABLE, .description = }
+04-22 20:15:49.278  3196  3274 E WifiVendorHal: getWifiLinkLayerStats(l.937) failed {.code = ERROR_NOT_AVAILABLE, .description = }
+04-22 20:15:50.000 11257 11320 I cast_shell: [0422/201550.000619:INFO:ssdp_device.c(101)] SSDP packets sent for 201 seconds = 2
+04-22 20:15:50.885 12842 12842 V BleRemoteService: requestScan,RC size:1,hasInit:true,mIsPair:false,Connecting:false,isScreenOn:true,allowMoreThanOneRC:false
+04-22 20:15:52.290  3196  3274 E WifiVendorHal: getWifiLinkLayerStats(l.937) failed {.code = ERROR_NOT_AVAILABLE, .description = }
+04-22 20:15:55.303  3196  3274 E WifiVendorHal: getWifiLinkLayerStats(l.937) failed {.code = ERROR_NOT_AVAILABLE, .description = }
+04-22 20:15:57.493  5496 12841 D UDTJmDNSThread: Local address: /192.168.0.214
+04-22 20:15:57.493  5496 12841 D UDTJmDNSThread: JmDNS address:/192.168.0.214
+04-22 20:15:57.493  5496 12841 I UDTDiscoverManager: UDTJmDNSThread now available, no operation
+04-22 20:15:58.317  3196  3274 E WifiVendorHal: getWifiLinkLayerStats(l.937) failed {.code = ERROR_NOT_AVAILABLE, .description = }
+04-22 20:16:00.002  3196  3262 D PowerManagerService: updateSuspendBlockerLocked mWakefulness=1,needWakeLockSuspendBlocker=true
+04-22 20:16:00.024  3196  3196 D PowerManagerService: updateSuspendBlockerLocked mWakefulness=1,needWakeLockSuspendBlocker=true
+04-22 20:16:01.327  3196  3274 I chatty  : uid=1000(system) WifiStateMachin identical 1 line
+04-22 20:16:04.333  3196  3274 E WifiVendorHal: getWifiLinkLayerStats(l.937) failed {.code = ERROR_NOT_AVAILABLE, .description = }
+04-22 20:16:06.892 12842 12842 V BleRemoteService: requestScan,RC size:1,hasInit:true,mIsPair:false,Connecting:false,isScreenOn:true,allowMoreThanOneRC:false
+04-22 20:16:07.342  3196  3274 E WifiVendorHal: getWifiLinkLayerStats(l.937) failed {.code = ERROR_NOT_AVAILABLE, .description = }
+04-22 20:16:19.412  3196  3274 I chatty  : uid=1000(system) WifiStateMachin identical 4 lines
+04-22 20:16:22.425  3196  3274 E WifiVendorHal: getWifiLinkLayerStats(l.937) failed {.code = ERROR_NOT_AVAILABLE, .description = }
+04-22 20:16:22.900 12842 12842 V BleRemoteService: requestScan,RC size:1,hasInit:true,mIsPair:false,Connecting:false,isScreenOn:true,allowMoreThanOneRC:false
+04-22 20:16:25.439  3196  3274 E WifiVendorHal: getWifiLinkLayerStats(l.937) failed {.code = ERROR_NOT_AVAILABLE, .description = }
+04-22 20:16:28.452  3196  3274 E WifiVendorHal: getWifiLinkLayerStats(l.937) failed {.code = ERROR_NOT_AVAILABLE, .description = }
+04-22 20:16:28.659  3196  3205 I system_server: Background concurrent copying GC freed 288833(8MB) AllocSpace objects, 0(0B) LOS objects, 42% free, 11MB/20MB, paused 877us total 206.518ms
+04-22 20:16:31.468  3196  3274 E WifiVendorHal: getWifiLinkLayerStats(l.937) failed {.code = ERROR_NOT_AVAILABLE, .description = }
+04-22 20:16:34.482  3196  3274 I chatty  : uid=1000(system) WifiStateMachin identical 1 line
+04-22 20:16:37.497  3196  3274 E WifiVendorHal: getWifiLinkLayerStats(l.937) failed {.code = ERROR_NOT_AVAILABLE, .description = }
+04-22 20:16:38.915 12842 12842 V BleRemoteService: requestScan,RC size:1,hasInit:true,mIsPair:false,Connecting:false,isScreenOn:true,allowMoreThanOneRC:false
+04-22 20:16:40.349  6847  6919 W native  : W0000 00:00:1776881800.348715    6919 publisher.cc:36] [FTL] No subscribers for event "hvc.api.events.MetricEvent" from publisher "UmaMetricsForwarder"
+04-22 20:16:40.512  3196  3274 E WifiVendorHal: getWifiLinkLayerStats(l.937) failed {.code = ERROR_NOT_AVAILABLE, .description = }
+04-22 20:16:40.822 11257 11257 I cast_shell: [0422/201640.822312:INFO:service_base.h(78)] Size of the map for type AuthTokenResponse is 0
+04-22 20:16:40.839 11257 11257 I cast_shell: [0422/201640.838809:INFO:service_base.h(246)] Container sizes for type CloudSetting are (session_info_map: 0), (topic_info_map: 21), (pending_events: 0).
+04-22 20:16:40.840 11257 11257 I cast_shell: [0422/201640.839764:INFO:metrics_stat_logger.cc(38)] Metrics stat for the past 60 secs : total=7
+04-22 20:16:40.840 11257 11257 I cast_shell: [metrics_stat_logger] Cast.Discovery.Mdns.Request.AppId.In=42
+04-22 20:16:40.840 11257 11257 I cast_shell: [metrics_stat_logger] Cast.Discovery.Mdns.Request.In=12
+04-22 20:16:40.840 11257 11257 I cast_shell: [metrics_stat_logger] Cast.Discovery.Mdns.Request.Namespace.In=6
+04-22 20:16:40.840 11257 11257 I cast_shell: [metrics_stat_logger] Cast.Discovery.Mdns.Response.AppId.Out=36
+04-22 20:16:40.840 11257 11257 I cast_shell: [metrics_stat_logger] Cast.Discovery.Mdns.Response.Error.AppNotSupported=6
+04-22 20:16:40.840 11257 11257 I cast_shell: [metrics_stat_logger] Cast.Discovery.Mdns.Response.Error.NamespaceNotSupported=6
+04-22 20:16:40.840 11257 11257 I cast_shell: [metrics_stat_logger] Cast.Discovery.Mdns.Response.Out=12
+04-22 20:16:41.125 11257 11312 I cast_shell: [0422/201641.125298:INFO:mdns_cast_service.cc(987)] Recent mDNS app subtypes: [supported:'ED01B6D7','CFE7FEDA','A1EB4E9D','EF6F58F4',] [unsupported:'CA5E8412',]
+04-22 20:16:43.522  3196  3274 E WifiVendorHal: getWifiLinkLayerStats(l.937) failed {.code = ERROR_NOT_AVAILABLE, .description = }
+04-22 20:16:45.000 11257 11320 I cast_shell: [0422/201645.000301:INFO:ssdp_device.c(101)] SSDP packets sent for 55 seconds = 2
+04-22 20:16:45.444  3139  3174 E storaged: getDiskStats failed with result NOT_SUPPORTED and size 0
+04-22 20:16:46.530  3196  3274 E WifiVendorHal: getWifiLinkLayerStats(l.937) failed {.code = ERROR_NOT_AVAILABLE, .description = }
+04-22 20:16:49.545  3196  3274 I chatty  : uid=1000(system) WifiStateMachin identical 1 line
+04-22 20:16:52.557  3196  3274 E WifiVendorHal: getWifiLinkLayerStats(l.937) failed {.code = ERROR_NOT_AVAILABLE, .description = }
+04-22 20:16:54.269 19815 19831 I Finsky  : [3015] Stats for Executor: BlockingExecutor mkw@3d186cb[Running, pool size = 0, active threads = 0, queued tasks = 0, completed tasks = 28]
+04-22 20:16:54.270 19815 19831 I Finsky  : [3015] Stats for Executor: LightweightExecutor mkw@34a6ea8[Running, pool size = 3, active threads = 0, queued tasks = 0, completed tasks = 120]
+04-22 20:16:54.322 19815 19831 I Finsky  : [3015] Stats for Executor: bgExecutor mkw@2587dc1[Running, pool size = 4, active threads = 0, queued tasks = 0, completed tasks = 96]
+04-22 20:16:54.923 12842 12842 V BleRemoteService: requestScan,RC size:1,hasInit:true,mIsPair:false,Connecting:false,isScreenOn:true,allowMoreThanOneRC:false
+04-22 20:16:55.570  3196  3274 E WifiVendorHal: getWifiLinkLayerStats(l.937) failed {.code = ERROR_NOT_AVAILABLE, .description = }
+04-22 20:16:55.588 19919 19936 I Finsky:background: [3023] Stats for Executor: bgExecutor mkw@e5c2fcf[Running, pool size = 4, active threads = 0, queued tasks = 0, completed tasks = 35]
+04-22 20:16:55.769 19919 19936 I Finsky:background: [3023] Stats for Executor: LightweightExecutor mkw@ceb9d5c[Running, pool size = 3, active threads = 0, queued tasks = 0, completed tasks = 14]
+04-22 20:16:55.969 19919 19936 I Finsky:background: [3023] Stats for Executor: BlockingExecutor mkw@b6c3865[Running, pool size = 0, active threads = 0, queued tasks = 0, completed tasks = 1]
+04-22 20:16:57.494  5496 12841 D UDTJmDNSThread: Local address: /192.168.0.214
+04-22 20:16:57.494  5496 12841 D UDTJmDNSThread: JmDNS address:/192.168.0.214
+04-22 20:16:57.495  5496 12841 I UDTDiscoverManager: UDTJmDNSThread now available, no operation
+04-22 20:16:58.585  3196  3274 E WifiVendorHal: getWifiLinkLayerStats(l.937) failed {.code = ERROR_NOT_AVAILABLE, .description = }
+04-22 20:17:00.002  3196  3262 D PowerManagerService: updateSuspendBlockerLocked mWakefulness=1,needWakeLockSuspendBlocker=true
+04-22 20:17:00.032  3196  3196 D PowerManagerService: updateSuspendBlockerLocked mWakefulness=1,needWakeLockSuspendBlocker=true
+04-22 20:17:01.107  3196  3262 D PowerManagerService: updateSuspendBlockerLocked mWakefulness=1,needWakeLockSuspendBlocker=true
+04-22 20:17:01.118  3196  3274 D PowerManagerService: updateSuspendBlockerLocked mWakefulness=1,needWakeLockSuspendBlocker=true
+04-22 20:17:01.142  3196  3206 D WificondControl: Scan result ready event
+04-22 20:17:01.144  3196  3216 I EthernetTracker: interfaceLinkStateChanged, iface: wlan0, up: true
+04-22 20:17:01.598  3196  3274 E WifiVendorHal: getWifiLinkLayerStats(l.937) failed {.code = ERROR_NOT_AVAILABLE, .description = }
+04-22 20:17:07.628  3196  3274 I chatty  : uid=1000(system) WifiStateMachin identical 2 lines
+04-22 20:17:10.642  3196  3274 E WifiVendorHal: getWifiLinkLayerStats(l.937) failed {.code = ERROR_NOT_AVAILABLE, .description = }
+04-22 20:17:10.939 12842 12842 V BleRemoteService: requestScan,RC size:1,hasInit:true,mIsPair:false,Connecting:false,isScreenOn:true,allowMoreThanOneRC:false
+04-22 20:17:13.653  3196  3274 E WifiVendorHal: getWifiLinkLayerStats(l.937) failed {.code = ERROR_NOT_AVAILABLE, .description = }
+04-22 20:17:19.679  3196  3274 I chatty  : uid=1000(system) WifiStateMachin identical 2 lines
+04-22 20:17:22.694  3196  3274 E WifiVendorHal: getWifiLinkLayerStats(l.937) failed {.code = ERROR_NOT_AVAILABLE, .description = }
+04-22 20:17:23.101 11257 11312 I cast_shell: [0422/201723.101403:INFO:mdns_app_filter.cc(3358)] MdnsAppFilter: responses sent in 98 seconds: 53
+04-22 20:17:25.706  3196  3274 E WifiVendorHal: getWifiLinkLayerStats(l.937) failed {.code = ERROR_NOT_AVAILABLE, .description = }
+04-22 20:17:26.949 12842 12842 V BleRemoteService: requestScan,RC size:1,hasInit:true,mIsPair:false,Connecting:false,isScreenOn:true,allowMoreThanOneRC:false
+04-22 20:17:28.721  3196  3274 E WifiVendorHal: getWifiLinkLayerStats(l.937) failed {.code = ERROR_NOT_AVAILABLE, .description = }
+04-22 20:17:34.749  3196  3274 I chatty  : uid=1000(system) WifiStateMachin identical 2 lines
+04-22 20:17:37.760  3196  3274 E WifiVendorHal: getWifiLinkLayerStats(l.937) failed {.code = ERROR_NOT_AVAILABLE, .description = }
+04-22 20:17:40.269 11257 11257 I cast_shell: [0422/201740.269213:INFO:grpc_manager_impl.cc(881)] GRPC[uri=localhost:10042]: num_pending_calls=0, num_active_handlers=1, num_free_handlers=0
+04-22 20:17:40.278 11257 11257 I cast_shell: [0422/201740.278387:INFO:grpc_manager_impl.cc(881)] GRPC[uri=localhost:10042]: num_pending_calls=0, num_active_handlers=1, num_free_handlers=0
+04-22 20:17:40.280 11257 11257 I cast_shell: [0422/201740.280303:INFO:grpc_manager_impl.cc(881)] GRPC[uri=]: num_pending_calls=0, num_active_handlers=0, num_free_handlers=0
+04-22 20:17:40.283 11257 11257 I cast_shell: [0422/201740.283049:INFO:grpc_manager_impl.cc(881)] GRPC[uri=]: num_pending_calls=0, num_active_handlers=0, num_free_handlers=0
+04-22 20:17:40.314 11257 11257 I cast_shell: [0422/201740.314151:INFO:grpc_manager_impl.cc(881)] GRPC[uri=[::]:0]: num_pending_calls=0, num_active_handlers=4, num_free_handlers=0
+04-22 20:17:40.477 11257 11278 I cast_shell: [0422/201740.477391:INFO:wifi_frame_histogram_capturer.cc(406)] No histogram or IOCTL data
+04-22 20:17:40.481 11257 11278 I cast_shell: [0422/201740.481133:INFO:wifi_util.cc(197)] Current wifi TDLS peers:
+04-22 20:17:40.481 11257 11278 I cast_shell: [0422/201740.481287:INFO:wifi_util.cc(199)] 	No peers:
+04-22 20:17:40.499 11257 11257 I cast_shell: [0422/201740.498980:INFO:metrics_recorder.cc(193)] Record action: Cast.CecHdmiInputState.Active
+04-22 20:17:40.499 11257 11257 I cast_shell: [0422/201740.499187:INFO:metrics_recorder.cc(193)] Record action: Cast.CecStandby.On
+04-22 20:17:40.768  3196  3274 E WifiVendorHal: getWifiLinkLayerStats(l.937) failed {.code = ERROR_NOT_AVAILABLE, .description = }
+04-22 20:17:40.823 11257 11257 I cast_shell: [0422/201740.823029:INFO:service_base.h(78)] Size of the map for type AuthTokenResponse is 0
+04-22 20:17:40.839 11257 11257 I cast_shell: [0422/201740.839522:INFO:service_base.h(246)] Container sizes for type CloudSetting are (session_info_map: 0), (topic_info_map: 21), (pending_events: 0).
+04-22 20:17:40.839 11257 11257 I cast_shell: [0422/201740.839838:INFO:metrics_stat_logger.cc(38)] Metrics stat for the past 60 secs : total=12
+04-22 20:17:40.839 11257 11257 I cast_shell: [metrics_stat_logger] AppRunning=1
+04-22 20:17:40.839 11257 11257 I cast_shell: [metrics_stat_logger] Cast.CecHdmiInputState.Active=1
+04-22 20:17:40.839 11257 11257 I cast_shell: [metrics_stat_logger] Cast.CecStandby.On=1
+04-22 20:17:40.839 11257 11257 I cast_shell: [metrics_stat_logger] Cast.ConnectionType.Wifi=1
+04-22 20:17:40.839 11257 11257 I cast_shell: [metrics_stat_logger] Cast.Discovery.Mdns.Request.AppId.In=42
+04-22 20:17:40.839 11257 11257 I cast_shell: [metrics_stat_logger] Cast.Discovery.Mdns.Request.In=12
+04-22 20:17:40.839 11257 11257 I cast_shell: [metrics_stat_logger] Cast.Discovery.Mdns.Request.Namespace.In=6
+04-22 20:17:40.839 11257 11257 I cast_shell: [metrics_stat_logger] Cast.Discovery.Mdns.Response.AppId.Out=36
+04-22 20:17:40.839 11257 11257 I cast_shell: [metrics_stat_logger] Cast.Discovery.Mdns.Response.Error.AppNotSupported=6
+04-22 20:17:40.839 11257 11257 I cast_shell: [metrics_stat_logger] Cast.Discovery.Mdns.Response.Error.NamespaceNotSupported=6
+04-22 20:17:40.839 11257 11257 I cast_shell: [metrics_stat_logger] Cast.Discovery.Mdns.Response.Out=12
+04-22 20:17:40.839 11257 11257 I cast_shell: [metrics_stat_logger] Cast.Network.CheckIn=1
+04-22 20:17:42.966 12842 12842 V BleRemoteService: requestScan,RC size:1,hasInit:true,mIsPair:false,Connecting:false,isScreenOn:true,allowMoreThanOneRC:false
+04-22 20:17:43.784  3196  3274 E WifiVendorHal: getWifiLinkLayerStats(l.937) failed {.code = ERROR_NOT_AVAILABLE, .description = }
+04-22 20:17:45.446  3139  3174 E storaged: getDiskStats failed with result NOT_SUPPORTED and size 0
+04-22 20:17:52.823  3196  3274 I chatty  : uid=1000(system) WifiStateMachin identical 3 lines
+04-22 20:17:55.837  3196  3274 E WifiVendorHal: getWifiLinkLayerStats(l.937) failed {.code = ERROR_NOT_AVAILABLE, .description = }
+04-22 20:17:57.494  5496 12841 D UDTJmDNSThread: Local address: /192.168.0.214
+04-22 20:17:57.494  5496 12841 D UDTJmDNSThread: JmDNS address:/192.168.0.214
+04-22 20:17:57.495  5496 12841 I UDTDiscoverManager: UDTJmDNSThread now available, no operation
+04-22 20:17:58.852  3196  3274 E WifiVendorHal: getWifiLinkLayerStats(l.937) failed {.code = ERROR_NOT_AVAILABLE, .description = }
+04-22 20:17:58.976 12842 12842 V BleRemoteService: requestScan,RC size:1,hasInit:true,mIsPair:false,Connecting:false,isScreenOn:true,allowMoreThanOneRC:false
+04-22 20:18:00.005  3196  3262 D PowerManagerService: updateSuspendBlockerLocked mWakefulness=1,needWakeLockSuspendBlocker=true
+04-22 20:18:00.021  3196  3196 D PowerManagerService: updateSuspendBlockerLocked mWakefulness=1,needWakeLockSuspendBlocker=true
+04-22 20:18:01.866  3196  3274 E WifiVendorHal: getWifiLinkLayerStats(l.937) failed {.code = ERROR_NOT_AVAILABLE, .description = }
+04-22 20:18:10.906  3196  3274 I chatty  : uid=1000(system) WifiStateMachin identical 3 lines
+04-22 20:18:13.916  3196  3274 E WifiVendorHal: getWifiLinkLayerStats(l.937) failed {.code = ERROR_NOT_AVAILABLE, .description = }
+04-22 20:18:14.992 12842 12842 V BleRemoteService: requestScan,RC size:1,hasInit:true,mIsPair:false,Connecting:false,isScreenOn:true,allowMoreThanOneRC:false
+04-22 20:18:15.035  3196  3205 I system_server: Background concurrent copying GC freed 290227(8MB) AllocSpace objects, 0(0B) LOS objects, 42% free, 11MB/20MB, paused 746us total 216.908ms
+04-22 20:18:16.929  3196  3274 E WifiVendorHal: getWifiLinkLayerStats(l.937) failed {.code = ERROR_NOT_AVAILABLE, .description = }
+04-22 20:18:25.969  3196  3274 I chatty  : uid=1000(system) WifiStateMachin identical 3 lines
+04-22 20:18:28.987  3196  3274 E WifiVendorHal: getWifiLinkLayerStats(l.937) failed {.code = ERROR_NOT_AVAILABLE, .description = }
+04-22 20:18:31.012 12842 12842 V BleRemoteService: requestScan,RC size:1,hasInit:true,mIsPair:false,Connecting:false,isScreenOn:true,allowMoreThanOneRC:false
+04-22 20:18:32.002  3196  3274 E WifiVendorHal: getWifiLinkLayerStats(l.937) failed {.code = ERROR_NOT_AVAILABLE, .description = }
+04-22 20:18:35.016  3196  3274 I chatty  : uid=1000(system) WifiStateMachin identical 1 line
+04-22 20:18:38.029  3196  3274 E WifiVendorHal: getWifiLinkLayerStats(l.937) failed {.code = ERROR_NOT_AVAILABLE, .description = }
+04-22 20:18:40.823 11257 11257 I cast_shell: [0422/201840.823560:INFO:service_base.h(78)] Size of the map for type AuthTokenResponse is 0
+04-22 20:18:40.839 11257 11257 I cast_shell: [0422/201840.839893:INFO:service_base.h(246)] Container sizes for type CloudSetting are (session_info_map: 0), (topic_info_map: 21), (pending_events: 0).
+04-22 20:18:40.840 11257 11257 I cast_shell: [0422/201840.840222:INFO:metrics_stat_logger.cc(38)] Metrics stat for the past 60 secs : total=0
+04-22 20:18:41.043  3196  3274 E WifiVendorHal: getWifiLinkLayerStats(l.937) failed {.code = ERROR_NOT_AVAILABLE, .description = }
+04-22 20:18:41.127 11257 11312 I cast_shell: [0422/201841.127659:INFO:mdns_cast_service.cc(987)] Recent mDNS app subtypes: [supported:'ED01B6D7','CFE7FEDA','A1EB4E9D','EF6F58F4',] [unsupported:'CA5E8412',]
+04-22 20:18:44.056  3196  3274 E WifiVendorHal: getWifiLinkLayerStats(l.937) failed {.code = ERROR_NOT_AVAILABLE, .description = }
+04-22 20:18:45.448  3139  3174 E storaged: getDiskStats failed with result NOT_SUPPORTED and size 0
+04-22 20:18:47.029 12842 12842 V BleRemoteService: requestScan,RC size:1,hasInit:true,mIsPair:false,Connecting:false,isScreenOn:true,allowMoreThanOneRC:false
+04-22 20:18:47.069  3196  3274 E WifiVendorHal: getWifiLinkLayerStats(l.937) failed {.code = ERROR_NOT_AVAILABLE, .description = }
+04-22 20:18:53.092  3196  3274 I chatty  : uid=1000(system) WifiStateMachin identical 2 lines
+04-22 20:18:56.115  3196  3274 E WifiVendorHal: getWifiLinkLayerStats(l.937) failed {.code = ERROR_NOT_AVAILABLE, .description = }
+04-22 20:18:57.503  5496 12841 D UDTJmDNSThread: Local address: /192.168.0.214
+04-22 20:18:57.503  5496 12841 D UDTJmDNSThread: JmDNS address:/192.168.0.214
+04-22 20:18:57.503  5496 12841 I UDTDiscoverManager: UDTJmDNSThread now available, no operation
+04-22 20:18:59.139  3196  3274 E WifiVendorHal: getWifiLinkLayerStats(l.937) failed {.code = ERROR_NOT_AVAILABLE, .description = }
+04-22 20:19:00.001  3196  3262 D PowerManagerService: updateSuspendBlockerLocked mWakefulness=1,needWakeLockSuspendBlocker=true
+04-22 20:19:00.012  3196  3196 D PowerManagerService: updateSuspendBlockerLocked mWakefulness=1,needWakeLockSuspendBlocker=true
+04-22 20:19:01.199 11257 11312 I cast_shell: [0422/201901.199183:INFO:mdns_app_filter.cc(3358)] MdnsAppFilter: responses sent in 98 seconds: 53
+04-22 20:19:02.153  3196  3274 E WifiVendorHal: getWifiLinkLayerStats(l.937) failed {.code = ERROR_NOT_AVAILABLE, .description = }
+04-22 20:19:03.046 12842 12842 V BleRemoteService: requestScan,RC size:1,hasInit:true,mIsPair:false,Connecting:false,isScreenOn:true,allowMoreThanOneRC:false
+04-22 20:19:05.163  3196  3274 E WifiVendorHal: getWifiLinkLayerStats(l.937) failed {.code = ERROR_NOT_AVAILABLE, .description = }
+04-22 20:19:14.204  3196  3274 I chatty  : uid=1000(system) WifiStateMachin identical 3 lines
+04-22 20:19:17.218  3196  3274 E WifiVendorHal: getWifiLinkLayerStats(l.937) failed {.code = ERROR_NOT_AVAILABLE, .description = }
+04-22 20:19:19.062 12842 12842 V BleRemoteService: requestScan,RC size:1,hasInit:true,mIsPair:false,Connecting:false,isScreenOn:true,allowMoreThanOneRC:false
+04-22 20:19:20.233  3196  3274 E WifiVendorHal: getWifiLinkLayerStats(l.937) failed {.code = ERROR_NOT_AVAILABLE, .description = }
+04-22 20:19:29.271  3196  3274 I chatty  : uid=1000(system) WifiStateMachin identical 3 lines
+04-22 20:19:32.286  3196  3274 E WifiVendorHal: getWifiLinkLayerStats(l.937) failed {.code = ERROR_NOT_AVAILABLE, .description = }
+04-22 20:19:35.079 12842 12842 V BleRemoteService: requestScan,RC size:1,hasInit:true,mIsPair:false,Connecting:false,isScreenOn:true,allowMoreThanOneRC:false
+04-22 20:19:35.302  3196  3274 E WifiVendorHal: getWifiLinkLayerStats(l.937) failed {.code = ERROR_NOT_AVAILABLE, .description = }
+04-22 20:19:38.317  3196  3274 E WifiVendorHal: getWifiLinkLayerStats(l.937) failed {.code = ERROR_NOT_AVAILABLE, .description = }
+04-22 20:19:40.824 11257 11257 I cast_shell: [0422/201940.824429:INFO:service_base.h(78)] Size of the map for type AuthTokenResponse is 0
+04-22 20:19:40.840 11257 11257 I cast_shell: [0422/201940.840426:INFO:service_base.h(246)] Container sizes for type CloudSetting are (session_info_map: 0), (topic_info_map: 21), (pending_events: 0).
+04-22 20:19:40.841 11257 11257 I cast_shell: [0422/201940.841315:INFO:metrics_stat_logger.cc(38)] Metrics stat for the past 60 secs : total=7
+04-22 20:19:40.841 11257 11257 I cast_shell: [metrics_stat_logger] Cast.Discovery.Mdns.Request.AppId.In=42
+04-22 20:19:40.841 11257 11257 I cast_shell: [metrics_stat_logger] Cast.Discovery.Mdns.Request.In=12
+04-22 20:19:40.841 11257 11257 I cast_shell: [metrics_stat_logger] Cast.Discovery.Mdns.Request.Namespace.In=6
+04-22 20:19:40.841 11257 11257 I cast_shell: [metrics_stat_logger] Cast.Discovery.Mdns.Response.AppId.Out=36
+04-22 20:19:40.841 11257 11257 I cast_shell: [metrics_stat_logger] Cast.Discovery.Mdns.Response.Error.AppNotSupported=6
+04-22 20:19:40.841 11257 11257 I cast_shell: [metrics_stat_logger] Cast.Discovery.Mdns.Response.Error.NamespaceNotSupported=6
+04-22 20:19:40.841 11257 11257 I cast_shell: [metrics_stat_logger] Cast.Discovery.Mdns.Response.Out=12
+04-22 20:19:41.330  3196  3274 E WifiVendorHal: getWifiLinkLayerStats(l.937) failed {.code = ERROR_NOT_AVAILABLE, .description = }
+04-22 20:19:45.450  3139  3174 E storaged: getDiskStats failed with result NOT_SUPPORTED and size 0
+04-22 20:19:47.357  3196  3274 I chatty  : uid=1000(system) WifiStateMachin identical 2 lines
+04-22 20:19:50.372  3196  3274 E WifiVendorHal: getWifiLinkLayerStats(l.937) failed {.code = ERROR_NOT_AVAILABLE, .description = }
+04-22 20:19:51.086 12842 12842 V BleRemoteService: requestScan,RC size:1,hasInit:true,mIsPair:false,Connecting:false,isScreenOn:true,allowMoreThanOneRC:false
+04-22 20:19:53.387  3196  3274 E WifiVendorHal: getWifiLinkLayerStats(l.937) failed {.code = ERROR_NOT_AVAILABLE, .description = }
+04-22 20:19:56.402  3196  3274 E WifiVendorHal: getWifiLinkLayerStats(l.937) failed {.code = ERROR_NOT_AVAILABLE, .description = }
+04-22 20:19:57.493  5496 12841 D UDTJmDNSThread: Local address: /192.168.0.214
+04-22 20:19:57.508  5496 12841 D UDTJmDNSThread: JmDNS address:/192.168.0.214
+04-22 20:19:57.508  5496 12841 I UDTDiscoverManager: UDTJmDNSThread now available, no operation
+04-22 20:19:59.416  3196  3274 E WifiVendorHal: getWifiLinkLayerStats(l.937) failed {.code = ERROR_NOT_AVAILABLE, .description = }
+04-22 20:20:00.001  3196  3262 D PowerManagerService: updateSuspendBlockerLocked mWakefulness=1,needWakeLockSuspendBlocker=true
+04-22 20:20:00.020  3196  3196 D PowerManagerService: updateSuspendBlockerLocked mWakefulness=1,needWakeLockSuspendBlocker=true
+04-22 20:20:02.430  3196  3274 E WifiVendorHal: getWifiLinkLayerStats(l.937) failed {.code = ERROR_NOT_AVAILABLE, .description = }
+04-22 20:20:02.813  3196  3205 I system_server: Background concurrent copying GC freed 291666(8MB) AllocSpace objects, 0(0B) LOS objects, 42% free, 11MB/20MB, paused 340us total 207.965ms
+04-22 20:20:05.443  3196  3274 E WifiVendorHal: getWifiLinkLayerStats(l.937) failed {.code = ERROR_NOT_AVAILABLE, .description = }
+04-22 20:20:07.097 12842 12842 V BleRemoteService: requestScan,RC size:1,hasInit:true,mIsPair:false,Connecting:false,isScreenOn:true,allowMoreThanOneRC:false
+04-22 20:20:08.457  3196  3274 E WifiVendorHal: getWifiLinkLayerStats(l.937) failed {.code = ERROR_NOT_AVAILABLE, .description = }
+04-22 20:20:11.471  3196  3274 I chatty  : uid=1000(system) WifiStateMachin identical 1 line
+04-22 20:20:14.482  3196  3274 E WifiVendorHal: getWifiLinkLayerStats(l.937) failed {.code = ERROR_NOT_AVAILABLE, .description = }
+04-22 20:20:15.000 11257 11320 I cast_shell: [0422/202015.000675:INFO:ssdp_device.c(101)] SSDP packets sent for 210 seconds = 2
+04-22 20:20:17.492  3196  3274 E WifiVendorHal: getWifiLinkLayerStats(l.937) failed {.code = ERROR_NOT_AVAILABLE, .description = }
+04-22 20:20:20.505  3196  3274 E WifiVendorHal: getWifiLinkLayerStats(l.937) failed {.code = ERROR_NOT_AVAILABLE, .description = }
+04-22 20:20:23.114 12842 12842 V BleRemoteService: requestScan,RC size:1,hasInit:true,mIsPair:false,Connecting:false,isScreenOn:true,allowMoreThanOneRC:false
+04-22 20:20:23.516  3196  3274 E WifiVendorHal: getWifiLinkLayerStats(l.937) failed {.code = ERROR_NOT_AVAILABLE, .description = }
+04-22 20:20:35.563  3196  3274 I chatty  : uid=1000(system) WifiStateMachin identical 4 lines
+04-22 20:20:38.575  3196  3274 E WifiVendorHal: getWifiLinkLayerStats(l.937) failed {.code = ERROR_NOT_AVAILABLE, .description = }
+04-22 20:20:39.129 12842 12842 V BleRemoteService: requestScan,RC size:1,hasInit:true,mIsPair:false,Connecting:false,isScreenOn:true,allowMoreThanOneRC:false
+04-22 20:20:39.300 11257 11312 I cast_shell: [0422/202039.299893:INFO:mdns_app_filter.cc(3358)] MdnsAppFilter: responses sent in 98 seconds: 53
+04-22 20:20:40.825 11257 11257 I cast_shell: [0422/202040.825384:INFO:service_base.h(78)] Size of the map for type AuthTokenResponse is 0
+04-22 20:20:40.841 11257 11257 I cast_shell: [0422/202040.841600:INFO:service_base.h(246)] Container sizes for type CloudSetting are (session_info_map: 0), (topic_info_map: 21), (pending_events: 0).
+04-22 20:20:40.842 11257 11257 I cast_shell: [0422/202040.842244:INFO:metrics_stat_logger.cc(38)] Metrics stat for the past 60 secs : total=7
+04-22 20:20:40.842 11257 11257 I cast_shell: [metrics_stat_logger] Cast.Discovery.Mdns.Request.AppId.In=28
+04-22 20:20:40.842 11257 11257 I cast_shell: [metrics_stat_logger] Cast.Discovery.Mdns.Request.In=8
+04-22 20:20:40.842 11257 11257 I cast_shell: [metrics_stat_logger] Cast.Discovery.Mdns.Request.Namespace.In=4
+04-22 20:20:40.842 11257 11257 I cast_shell: [metrics_stat_logger] Cast.Discovery.Mdns.Response.AppId.Out=24
+04-22 20:20:40.842 11257 11257 I cast_shell: [metrics_stat_logger] Cast.Discovery.Mdns.Response.Error.AppNotSupported=4
+04-22 20:20:40.842 11257 11257 I cast_shell: [metrics_stat_logger] Cast.Discovery.Mdns.Response.Error.NamespaceNotSupported=4
+04-22 20:20:40.842 11257 11257 I cast_shell: [metrics_stat_logger] Cast.Discovery.Mdns.Response.Out=8
+04-22 20:20:41.129 11257 11312 I cast_shell: [0422/202041.128871:INFO:mdns_cast_service.cc(987)] Recent mDNS app subtypes: [supported:'ED01B6D7','CFE7FEDA','A1EB4E9D','EF6F58F4',] [unsupported:'CA5E8412',]
+04-22 20:20:41.174  3196  3262 D PowerManagerService: updateSuspendBlockerLocked mWakefulness=1,needWakeLockSuspendBlocker=true
+04-22 20:20:41.204  3196  3196 D PowerManagerService: updateSuspendBlockerLocked mWakefulness=1,needWakeLockSuspendBlocker=true
+04-22 20:20:41.209  3196  3206 D WificondControl: Scan result ready event
+04-22 20:20:41.212 21491 21491 D MessageJobService: {com.mitv.androidtv.notifications.MessageJobService(SourceFile:1)} - onStartJob= android.app.job.JobParameters@91620fc
+04-22 20:20:41.213 21491 21491 D PWBaseObserver: {com.mitv.tvhome.z.d(SourceFile:1)} - request start
+04-22 20:20:41.205  3196  3196 D PowerManagerService: updateSuspendBlockerLocked mWakefulness=1,needWakeLockSuspendBlocker=true
+04-22 20:20:41.215  3196  3206 D PowerManagerService: updateSuspendBlockerLocked mWakefulness=1,needWakeLockSuspendBlocker=true
+04-22 20:20:41.217  3196  3216 I EthernetTracker: interfaceLinkStateChanged, iface: wlan0, up: true
+04-22 20:20:41.218 21491 20107 D PWHttp  : {Thread:RxCachedThreadScheduler-214: b.d.e.n.d.a(SourceFile:4)} - cache mode: net only
+04-22 20:20:41.219 21491 20107 D PWHttp  : {Thread:RxCachedThreadScheduler-214: b.d.e.n.d.a(SourceFile:19)} - call timeout: 10000
+04-22 20:20:41.220 21491 20107 D PWHttp  : {Thread:RxCachedThreadScheduler-214: b.d.e.s.c.<init>(SourceFile:5)} - retry count: 0
+04-22 20:20:41.225 21491 20107 D PWAppInterceptor: {com.mitv.tvhome.z.c(SourceFile:3)} - PWAppInterceptor intercept begin
+04-22 20:20:41.225 21491 20107 D mitv.os.MitvSystem_v2: getDeviceMac return 00:00:00:00:00:00
+04-22 20:20:41.226 21491 20107 D mitv.os.MitvSystem_v2: getSHA1 anonymousId 5248947efa3ab37e85b2eac853285fd4b3a1f3f5
+04-22 20:20:41.226 21491 20107 D device  : get platform through Settings.Global # 906
+04-22 20:20:41.233 21491 20107 D InternalInterceptor: {Thread:RxCachedThreadScheduler-214: okhttp3.internal.http.RealInterceptorChain.proceed(SourceFile:10)} - InternalInterceptor intercept begin
+04-22 20:20:41.234 21491 20107 D PWHttp  : {Thread:RxCachedThreadScheduler-214: b.d.e.e.intercept(SourceFile:9)} - cache mode: net only
+04-22 20:20:41.234 21491 20107 D PWHttp  : {Thread:RxCachedThreadScheduler-214: okhttp3.internal.http.RealInterceptorChain.proceed(SourceFile:10)} - --> GET https://us.tv.global.mi.com/atv/pushmessage?app=0&watchmode=0&ptf=906&level=1&codever=81&today=1776882041&os_type=1&android=28&me=5248947efa3ab37e85b2eac853285fd4b3a1f3f5&dlg=en&group=GA%2Cdefault&clg=en&opaque=976eab14e0ab6f8c892fde4491cc46c71de25132
+04-22 20:20:41.235 21491 20107 D PWHttp  : {Thread:RxCachedThreadScheduler-214: okhttp3.internal.http.RealInterceptorChain.proceed(SourceFile:10)} - --> END GET
+04-22 20:20:41.583  3196  3274 E WifiVendorHal: getWifiLinkLayerStats(l.937) failed {.code = ERROR_NOT_AVAILABLE, .description = }
+04-22 20:20:41.743 21491 20107 D PWHttp  : {Thread:RxCachedThreadScheduler-214: okhttp3.internal.http.RealInterceptorChain.proceed(SourceFile:10)} - <-- 200 https://us.tv.global.mi.com/atv/pushmessage?app=0&watchmode=0&ptf=906&level=1&codever=81&today=1776882041&os_type=1&android=28&me=5248947efa3ab37e85b2eac853285fd4b3a1f3f5&dlg=en&group=GA%2Cdefault&clg=en&opaque=976eab14e0ab6f8c892fde4491cc46c71de25132 (507ms)
+04-22 20:20:41.745 21491 20107 D PWHttp  : {Thread:RxCachedThreadScheduler-214: okhttp3.internal.http.RealInterceptorChain.proceed(SourceFile:10)} - date: Wed, 22 Apr 2026 18:20:46 GMT
+04-22 20:20:41.747 21491 20107 D PWHttp  : {Thread:RxCachedThreadScheduler-214: okhttp3.internal.http.RealInterceptorChain.proceed(SourceFile:10)} - content-type: application/json; charset=utf-8
+04-22 20:20:41.748 21491 20107 D PWHttp  : {Thread:RxCachedThreadScheduler-214: okhttp3.internal.http.RealInterceptorChain.proceed(SourceFile:10)} - x-log-id: 785623589454872684
+04-22 20:20:41.754 21491 20107 D PWHttp  : {Thread:RxCachedThreadScheduler-214: okhttp3.internal.http.RealInterceptorChain.proceed(SourceFile:10)} - 
+04-22 20:20:41.756 21491 20107 D PWHttp  : {Thread:RxCachedThreadScheduler-214: okhttp3.internal.http.RealInterceptorChain.proceed(SourceFile:10)} - {"msg":"空数据","status":13}
+04-22 20:20:41.757 21491 20107 D PWHttp  : {Thread:RxCachedThreadScheduler-214: okhttp3.internal.http.RealInterceptorChain.proceed(SourceFile:10)} - <-- END HTTP (31-byte body)
+04-22 20:20:41.759 21491 20107 D InternalInterceptor: {Thread:RxCachedThreadScheduler-214: okhttp3.internal.http.RealInterceptorChain.proceed(SourceFile:10)} - InternalInterceptor intercept end
+04-22 20:20:41.763 21491 20107 D PWAppInterceptor: {com.mitv.tvhome.z.c(SourceFile:22)} - PWAppInterceptor intercept end: protocol: h2
+04-22 20:20:41.765 21491 20107 D PWHttp  : {Thread:RxCachedThreadScheduler-214: b.d.e.s.c.a(SourceFile:31)} - request success!!
+04-22 20:20:41.765 21491 20107 D PWHttp  : {Thread:RxCachedThreadScheduler-214: b.d.e.n.d.a(SourceFile:32)} - call: i.i@40c98a is canceled: false
+04-22 20:20:41.767 21491 20107 D PWHttp  : {Thread:RxCachedThreadScheduler-214: b.d.e.n.c.a(SourceFile:34)} - max_age: delete on no-space
+04-22 20:20:41.768 21491 20107 D PWHttp  : {Thread:RxCachedThreadScheduler-214: b.d.e.n.c.a(SourceFile:35)} - put response to cache !!
+04-22 20:20:41.768 21491 20107 D PWHttp  : {Thread:RxCachedThreadScheduler-214: b.d.e.o.e.b(SourceFile:6)} - response is valid
+04-22 20:20:41.769 21491 21491 D PWBaseObserver: {com.mitv.tvhome.z.d(SourceFile:2)} - request success
+04-22 20:20:41.770 21491 21491 D PWBaseObserver: {com.mitv.tvhome.z.d(SourceFile:9)} - status code is: 13
+04-22 20:20:41.770 21491 21491 D MessageJobService: {com.mitv.androidtv.notifications.MessageJobService$a(SourceFile:3)} - request push message fail: original cause: java.lang.Throwable: 空数据
+04-22 20:20:41.770 21491 21491 D MessageJobService: Message: 空数据
+04-22 20:20:41.771 21491 21491 D MessageJobService: {com.mitv.androidtv.notifications.MessageJobService(SourceFile:40)} - Scheduling job : delay= 600000
+04-22 20:20:41.774 21491 21491 D PWHttp  : {Thread:main: b.d.e.b.c(SourceFile:2)} - onComplete
+04-22 20:20:44.592  3196  3274 E WifiVendorHal: getWifiLinkLayerStats(l.937) failed {.code = ERROR_NOT_AVAILABLE, .description = }
+04-22 20:20:45.452  3139  3174 E storaged: getDiskStats failed with result NOT_SUPPORTED and size 0
+04-22 20:20:50.617  3196  3274 I chatty  : uid=1000(system) WifiStateMachin identical 2 lines
+04-22 20:20:53.629  3196  3274 E WifiVendorHal: getWifiLinkLayerStats(l.937) failed {.code = ERROR_NOT_AVAILABLE, .description = }
+04-22 20:20:55.147 12842 12842 V BleRemoteService: requestScan,RC size:1,hasInit:true,mIsPair:false,Connecting:false,isScreenOn:true,allowMoreThanOneRC:false
+04-22 20:20:56.639  3196  3274 E WifiVendorHal: getWifiLinkLayerStats(l.937) failed {.code = ERROR_NOT_AVAILABLE, .description = }
+04-22 20:20:57.501  5496 12841 D UDTJmDNSThread: Local address: /192.168.0.214
+04-22 20:20:57.501  5496 12841 D UDTJmDNSThread: JmDNS address:/192.168.0.214
+04-22 20:20:57.501  5496 12841 I UDTDiscoverManager: UDTJmDNSThread now available, no operation
+04-22 20:20:59.652  3196  3274 E WifiVendorHal: getWifiLinkLayerStats(l.937) failed {.code = ERROR_NOT_AVAILABLE, .description = }
+04-22 20:21:00.001  3196  3262 D PowerManagerService: updateSuspendBlockerLocked mWakefulness=1,needWakeLockSuspendBlocker=true
+04-22 20:21:00.016  3196  3196 D PowerManagerService: updateSuspendBlockerLocked mWakefulness=1,needWakeLockSuspendBlocker=true
+04-22 20:21:05.679  3196  3274 I chatty  : uid=1000(system) WifiStateMachin identical 2 lines
+04-22 20:21:08.697  3196  3274 E WifiVendorHal: getWifiLinkLayerStats(l.937) failed {.code = ERROR_NOT_AVAILABLE, .description = }
+04-22 20:21:11.157 12842 12842 V BleRemoteService: requestScan,RC size:1,hasInit:true,mIsPair:false,Connecting:false,isScreenOn:true,allowMoreThanOneRC:false
+04-22 20:21:11.709  3196  3274 E WifiVendorHal: getWifiLinkLayerStats(l.937) failed {.code = ERROR_NOT_AVAILABLE, .description = }
+04-22 20:21:23.786  3196  3274 I chatty  : uid=1000(system) WifiStateMachin identical 4 lines
+04-22 20:21:26.798  3196  3274 E WifiVendorHal: getWifiLinkLayerStats(l.937) failed {.code = ERROR_NOT_AVAILABLE, .description = }
+04-22 20:21:27.173 12842 12842 V BleRemoteService: requestScan,RC size:1,hasInit:true,mIsPair:false,Connecting:false,isScreenOn:true,allowMoreThanOneRC:false
+04-22 20:21:29.326  3131  3159 D DrmHal  : found drm@1.0 IDrmFactory clearkey
+04-22 20:21:29.347  3131  3159 D DrmHal  : found drm@1.0 IDrmFactory default
+04-22 20:21:29.354  3131  3159 D DrmHal  : found drm@1.0 IDrmFactory widevine
+04-22 20:21:29.359  3131  3159 D DrmHal  : found drm@1.1 IDrmFactory clearkey
+04-22 20:21:29.364  3131  3159 D DrmHal  : found drm@1.1 IDrmFactory widevine
+04-22 20:21:29.368  3017  5021 I WVCdm   : [cdm_engine.cpp(482):QueryStatus] CdmEngine::QueryStatus
+04-22 20:21:29.368  3017  5021 D WVCdm   : [crypto_session.cpp(646):Open] CryptoSession::Open: Lock: requested_security_level: Default
+04-22 20:21:29.371  3017  5021 I WVCdm   : [cdm_engine.cpp(112):OpenSession] CdmEngine::OpenSession
+04-22 20:21:29.371  3017  5021 D WVCdm   : [crypto_session.cpp(646):Open] CryptoSession::Open: Lock: requested_security_level: Default
+04-22 20:21:29.374  3017  5021 I WVCdm   : [device_files.cpp(166):ExtractDeviceInfo] ExtractDeviceInfo Entry
+04-22 20:21:29.374  3017  5021 I oemcrypto_tz: [OEMCrypto_TEEInvoke:415] cmd 1050 return 25
+04-22 20:21:29.374  3017  5021 E oemcrypto_tz: [_oecc50:1913] error return 25
+04-22 20:21:29.387  3017  5021 I WVCdm   : [cdm_engine.cpp(149):OpenSession] CdmEngine::OpenSession: sid342
+04-22 20:21:29.387  3017  5021 I WVCdm   : [cdm_engine.cpp(744):QueryOemCryptoSessionId] CdmEngine::QueryOemCryptoSessionId
+04-22 20:21:29.388 11257 11280 I cast_shell: [0422/202129.388008:INFO:jni_client_auth_creds_mediadrm.cc(301)] Cast: signing message with length 51
+04-22 20:21:29.456  3017  5021 I WVCdm   : [cdm_engine.cpp(192):CloseSession] CdmEngine::CloseSession: sid342
+04-22 20:21:29.462 11257 11257 I cast_shell: [0422/202129.462152:INFO:application_identification_settings.cc(1079)] CreateJwt completed; running all done signing callbacks.
+04-22 20:21:29.462 11257 11257 I cast_shell: [0422/202129.462297:INFO:robot_account_auth_manager.cc(475)] JWT expiry in 3600 seconds
+04-22 20:21:29.811  3196  3274 E WifiVendorHal: getWifiLinkLayerStats(l.937) failed {.code = ERROR_NOT_AVAILABLE, .description = }
+04-22 20:21:35.838  3196  3274 I chatty  : uid=1000(system) WifiStateMachin identical 2 lines
+04-22 20:21:38.851  3196  3274 E WifiVendorHal: getWifiLinkLayerStats(l.937) failed {.code = ERROR_NOT_AVAILABLE, .description = }
+04-22 20:21:40.349  6847  6919 W native  : W0000 00:00:1776882100.348952    6919 publisher.cc:36] [FTL] No subscribers for event "hvc.api.events.MetricEvent" from publisher "UmaMetricsForwarder"
+04-22 20:21:40.826 11257 11257 I cast_shell: [0422/202140.826132:INFO:service_base.h(78)] Size of the map for type AuthTokenResponse is 0
+04-22 20:21:40.842 11257 11257 I cast_shell: [0422/202140.842146:INFO:service_base.h(246)] Container sizes for type CloudSetting are (session_info_map: 0), (topic_info_map: 21), (pending_events: 0).
+04-22 20:21:40.842 11257 11257 I cast_shell: [0422/202140.842489:INFO:metrics_stat_logger.cc(38)] Metrics stat for the past 60 secs : total=7
+04-22 20:21:40.842 11257 11257 I cast_shell: [metrics_stat_logger] Cast.Discovery.Mdns.Request.AppId.In=14
+04-22 20:21:40.842 11257 11257 I cast_shell: [metrics_stat_logger] Cast.Discovery.Mdns.Request.In=4
+04-22 20:21:40.842 11257 11257 I cast_shell: [metrics_stat_logger] Cast.Discovery.Mdns.Request.Namespace.In=2
+04-22 20:21:40.842 11257 11257 I cast_shell: [metrics_stat_logger] Cast.Discovery.Mdns.Response.AppId.Out=12
+04-22 20:21:40.842 11257 11257 I cast_shell: [metrics_stat_logger] Cast.Discovery.Mdns.Response.Error.AppNotSupported=2
+04-22 20:21:40.842 11257 11257 I cast_shell: [metrics_stat_logger] Cast.Discovery.Mdns.Response.Error.NamespaceNotSupported=2
+04-22 20:21:40.842 11257 11257 I cast_shell: [metrics_stat_logger] Cast.Discovery.Mdns.Response.Out=4
+04-22 20:21:41.862  3196  3274 E WifiVendorHal: getWifiLinkLayerStats(l.937) failed {.code = ERROR_NOT_AVAILABLE, .description = }
+04-22 20:21:43.189 12842 12842 V BleRemoteService: requestScan,RC size:1,hasInit:true,mIsPair:false,Connecting:false,isScreenOn:true,allowMoreThanOneRC:false
+04-22 20:21:44.872  3196  3274 E WifiVendorHal: getWifiLinkLayerStats(l.937) failed {.code = ERROR_NOT_AVAILABLE, .description = }
+04-22 20:21:45.455  3139  3174 E storaged: getDiskStats failed with result NOT_SUPPORTED and size 0
+04-22 20:21:46.897  3196  3205 I system_server: Background concurrent copying GC freed 293698(8MB) AllocSpace objects, 0(0B) LOS objects, 42% free, 11MB/20MB, paused 878us total 213.748ms
+04-22 20:21:47.885  3196  3274 E WifiVendorHal: getWifiLinkLayerStats(l.937) failed {.code = ERROR_NOT_AVAILABLE, .description = }
+04-22 20:21:49.537  3196  3262 D PowerManagerService: updateSuspendBlockerLocked mWakefulness=1,needWakeLockSuspendBlocker=true
+04-22 20:21:49.542  3196  3196 D PowerManagerService: updateSuspendBlockerLocked mWakefulness=1,needWakeLockSuspendBlocker=true
+04-22 20:21:53.911  3196  3274 I chatty  : uid=1000(system) WifiStateMachin identical 2 lines
+04-22 20:21:56.921  3196  3274 E WifiVendorHal: getWifiLinkLayerStats(l.937) failed {.code = ERROR_NOT_AVAILABLE, .description = }
+04-22 20:21:57.493  5496 12841 D UDTJmDNSThread: Local address: /192.168.0.214
+04-22 20:21:57.494  5496 12841 D UDTJmDNSThread: JmDNS address:/192.168.0.214
+04-22 20:21:57.494  5496 12841 I UDTDiscoverManager: UDTJmDNSThread now available, no operation
+04-22 20:21:59.205 12842 12842 V BleRemoteService: requestScan,RC size:1,hasInit:true,mIsPair:false,Connecting:false,isScreenOn:true,allowMoreThanOneRC:false
+04-22 20:21:59.935  3196  3274 E WifiVendorHal: getWifiLinkLayerStats(l.937) failed {.code = ERROR_NOT_AVAILABLE, .description = }
+04-22 20:22:00.001  3196  3262 D PowerManagerService: updateSuspendBlockerLocked mWakefulness=1,needWakeLockSuspendBlocker=true
+04-22 20:22:00.007  3196  3196 D PowerManagerService: updateSuspendBlockerLocked mWakefulness=1,needWakeLockSuspendBlocker=true
+04-22 20:22:00.860  3196  3262 D PowerManagerService: updateSuspendBlockerLocked mWakefulness=1,needWakeLockSuspendBlocker=true
+04-22 20:22:00.897  3196  3196 D PowerManagerService: updateSuspendBlockerLocked mWakefulness=1,needWakeLockSuspendBlocker=true
+04-22 20:22:00.901 19991 19991 D JobSchedulerService: SystemPropertiesget(sys.cccdownload.running,false) result = false
+04-22 20:22:00.902 19991 19991 D JobSchedulerService: start redownload
+04-22 20:22:00.899  3196  3196 D PowerManagerService: updateSuspendBlockerLocked mWakefulness=1,needWakeLockSuspendBlocker=true
+04-22 20:22:00.904  3196  3206 D PowerManagerService: updateSuspendBlockerLocked mWakefulness=1,needWakeLockSuspendBlocker=true
+04-22 20:22:00.909 19991 20118 D DownloadThread: SystemProperties.set(sys.cccdownload.running,true)
+04-22 20:22:01.607 19991 20118 D DownloadThread: HostnameVerifier, hostname = animation.tv.global.mi.com
+04-22 20:22:02.255 19991 20118 D DownloadThread: responseCode 200
+04-22 20:22:02.271 19991 20118 D DownloadThread: downloadFile index = 0
+04-22 20:22:02.947  3196  3274 E WifiVendorHal: getWifiLinkLayerStats(l.937) failed {.code = ERROR_NOT_AVAILABLE, .description = }
+04-22 20:22:05.958  3196  3274 E WifiVendorHal: getWifiLinkLayerStats(l.937) failed {.code = ERROR_NOT_AVAILABLE, .description = }
+04-22 20:22:07.311 19991 20118 W System.err: org.json.JSONException: No value for mitv.config
+04-22 20:22:07.311 19991 20118 W System.err: 	at org.json.JSONObject.get(JSONObject.java:392)
+04-22 20:22:07.312 19991 20118 W System.err: 	at org.json.JSONObject.getString(JSONObject.java:553)
+04-22 20:22:07.312 19991 20118 W System.err: 	at com.mitv.download.service.DownloadThread.getDownloadInfo(DownloadThread.java:121)
+04-22 20:22:07.312 19991 20118 W System.err: 	at com.mitv.download.service.DownloadThread.downloadFile(DownloadThread.java:90)
+04-22 20:22:07.312 19991 20118 W System.err: 	at com.mitv.download.service.DownloadThread.run(DownloadThread.java:69)
+04-22 20:22:08.971  3196  3274 E WifiVendorHal: getWifiLinkLayerStats(l.937) failed {.code = ERROR_NOT_AVAILABLE, .description = }
+04-22 20:22:10.484 11257 11318 I cast_shell: [0422/202210.484431:INFO:wifi_frame_histogram_capturer.cc(406)] No histogram or IOCTL data
+04-22 20:22:10.500 11257 11257 I cast_shell: [0422/202210.499797:INFO:metrics_recorder.cc(193)] Record action: Cast.CecHdmiInputState.Active
+04-22 20:22:10.500 11257 11257 I cast_shell: [0422/202210.500381:INFO:metrics_recorder.cc(193)] Record action: Cast.CecStandby.On
+04-22 20:22:10.512 11257 11318 I cast_shell: [0422/202210.512906:INFO:wifi_util.cc(197)] Current wifi TDLS peers:
+04-22 20:22:10.513 11257 11318 I cast_shell: [0422/202210.513077:INFO:wifi_util.cc(199)] 	No peers:
+04-22 20:22:11.985  3196  3274 E WifiVendorHal: getWifiLinkLayerStats(l.937) failed {.code = ERROR_NOT_AVAILABLE, .description = }
+04-22 20:22:12.350 19991 20118 W System.err: org.json.JSONException: No value for mitv.config
+04-22 20:22:12.351 19991 20118 W System.err: 	at org.json.JSONObject.get(JSONObject.java:392)
+04-22 20:22:12.351 19991 20118 W System.err: 	at org.json.JSONObject.getString(JSONObject.java:553)
+04-22 20:22:12.351 19991 20118 W System.err: 	at com.mitv.download.service.DownloadThread.getDownloadInfo(DownloadThread.java:121)
+04-22 20:22:12.352 19991 20118 W System.err: 	at com.mitv.download.service.DownloadThread.downloadFile(DownloadThread.java:90)
+04-22 20:22:12.352 19991 20118 W System.err: 	at com.mitv.download.service.DownloadThread.run(DownloadThread.java:69)
+04-22 20:22:14.997  3196  3274 E WifiVendorHal: getWifiLinkLayerStats(l.937) failed {.code = ERROR_NOT_AVAILABLE, .description = }
+04-22 20:22:15.223 12842 12842 V BleRemoteService: requestScan,RC size:1,hasInit:true,mIsPair:false,Connecting:false,isScreenOn:true,allowMoreThanOneRC:false
+04-22 20:22:17.303 11257 11312 I cast_shell: [0422/202217.302922:INFO:mdns_app_filter.cc(3358)] MdnsAppFilter: responses sent in 98 seconds: 53
+04-22 20:22:17.390 19991 20118 W System.err: org.json.JSONException: No value for mitv.config
+04-22 20:22:17.390 19991 20118 W System.err: 	at org.json.JSONObject.get(JSONObject.java:392)
+04-22 20:22:17.390 19991 20118 W System.err: 	at org.json.JSONObject.getString(JSONObject.java:553)
+04-22 20:22:17.390 19991 20118 W System.err: 	at com.mitv.download.service.DownloadThread.getDownloadInfo(DownloadThread.java:121)
+04-22 20:22:17.390 19991 20118 W System.err: 	at com.mitv.download.service.DownloadThread.downloadFile(DownloadThread.java:90)
+04-22 20:22:17.390 19991 20118 W System.err: 	at com.mitv.download.service.DownloadThread.run(DownloadThread.java:69)
+04-22 20:22:17.390 19991 20118 D DownloadThread: SystemProperties.set(sys.cccdownload.running,false)
+04-22 20:22:17.391 19991 20118 D DownloadThread: downloadFile failed delay download in one hour
+04-22 20:22:18.011  3196  3274 E WifiVendorHal: getWifiLinkLayerStats(l.937) failed {.code = ERROR_NOT_AVAILABLE, .description = }
+04-22 20:22:24.039  3196  3274 I chatty  : uid=1000(system) WifiStateMachin identical 2 lines
+04-22 20:22:27.050  3196  3274 E WifiVendorHal: getWifiLinkLayerStats(l.937) failed {.code = ERROR_NOT_AVAILABLE, .description = }
+04-22 20:22:30.000 11257 11320 I cast_shell: [0422/202230.000608:INFO:ssdp_device.c(101)] SSDP packets sent for 135 seconds = 2
+04-22 20:22:30.059  3196  3274 E WifiVendorHal: getWifiLinkLayerStats(l.937) failed {.code = ERROR_NOT_AVAILABLE, .description = }
+04-22 20:22:31.229 12842 12842 V BleRemoteService: requestScan,RC size:1,hasInit:true,mIsPair:false,Connecting:false,isScreenOn:true,allowMoreThanOneRC:false
+04-22 20:22:33.067  3196  3274 E WifiVendorHal: getWifiLinkLayerStats(l.937) failed {.code = ERROR_NOT_AVAILABLE, .description = }
+04-22 20:22:36.078  3196  3274 I chatty  : uid=1000(system) WifiStateMachin identical 1 line
+04-22 20:22:39.092  3196  3274 E WifiVendorHal: getWifiLinkLayerStats(l.937) failed {.code = ERROR_NOT_AVAILABLE, .description = }
+04-22 20:22:40.253 11257 11318 I cast_CastCrashUploader: Remove crash dumps
+04-22 20:22:40.270 11257 11257 I cast_shell: [0422/202240.270128:INFO:grpc_manager_impl.cc(881)] GRPC[uri=localhost:10042]: num_pending_calls=0, num_active_handlers=1, num_free_handlers=0
+04-22 20:22:40.279 11257 11257 I cast_shell: [0422/202240.279177:INFO:grpc_manager_impl.cc(881)] GRPC[uri=localhost:10042]: num_pending_calls=0, num_active_handlers=1, num_free_handlers=0
+04-22 20:22:40.281 11257 11257 I cast_shell: [0422/202240.281020:INFO:grpc_manager_impl.cc(881)] GRPC[uri=]: num_pending_calls=0, num_active_handlers=0, num_free_handlers=0
+04-22 20:22:40.283 11257 11257 I cast_shell: [0422/202240.283727:INFO:grpc_manager_impl.cc(881)] GRPC[uri=]: num_pending_calls=0, num_active_handlers=0, num_free_handlers=0
+04-22 20:22:40.314 11257 11257 I cast_shell: [0422/202240.314504:INFO:grpc_manager_impl.cc(881)] GRPC[uri=[::]:0]: num_pending_calls=0, num_active_handlers=4, num_free_handlers=0
+04-22 20:22:40.827 11257 11257 I cast_shell: [0422/202240.826781:INFO:service_base.h(78)] Size of the map for type AuthTokenResponse is 0
+04-22 20:22:40.842 11257 11257 I cast_shell: [0422/202240.842686:INFO:service_base.h(246)] Container sizes for type CloudSetting are (session_info_map: 0), (topic_info_map: 21), (pending_events: 0).
+04-22 20:22:40.844 11257 11257 I cast_shell: [0422/202240.843613:INFO:metrics_stat_logger.cc(38)] Metrics stat for the past 60 secs : total=11
+04-22 20:22:40.844 11257 11257 I cast_shell: [metrics_stat_logger] AppRunning=1
+04-22 20:22:40.844 11257 11257 I cast_shell: [metrics_stat_logger] Cast.CecHdmiInputState.Active=1
+04-22 20:22:40.844 11257 11257 I cast_shell: [metrics_stat_logger] Cast.CecStandby.On=1
+04-22 20:22:40.844 11257 11257 I cast_shell: [metrics_stat_logger] Cast.ConnectionType.Wifi=1
+04-22 20:22:40.844 11257 11257 I cast_shell: [metrics_stat_logger] Cast.Discovery.Mdns.Request.AppId.In=24
+04-22 20:22:40.844 11257 11257 I cast_shell: [metrics_stat_logger] Cast.Discovery.Mdns.Request.In=6
+04-22 20:22:40.844 11257 11257 I cast_shell: [metrics_stat_logger] Cast.Discovery.Mdns.Request.Namespace.In=6
+04-22 20:22:40.844 11257 11257 I cast_shell: [metrics_stat_logger] Cast.Discovery.Mdns.Response.AppId.Out=24
+04-22 20:22:40.844 11257 11257 I cast_shell: [metrics_stat_logger] Cast.Discovery.Mdns.Response.Error.NamespaceNotSupported=6
+04-22 20:22:40.844 11257 11257 I cast_shell: [metrics_stat_logger] Cast.Discovery.Mdns.Response.Out=6
+04-22 20:22:40.844 11257 11257 I cast_shell: [metrics_stat_logger] Cast.Network.CheckIn=1
+04-22 20:22:41.131 11257 11312 I cast_shell: [0422/202241.131780:INFO:mdns_cast_service.cc(987)] Recent mDNS app subtypes: [supported:'ED01B6D7','CFE7FEDA','A1EB4E9D','EF6F58F4',] [unsupported:'CA5E8412',]
+04-22 20:22:42.106  3196  3274 E WifiVendorHal: getWifiLinkLayerStats(l.937) failed {.code = ERROR_NOT_AVAILABLE, .description = }
+04-22 20:22:45.456  3139  3174 E storaged: getDiskStats failed with result NOT_SUPPORTED and size 0
+04-22 20:22:45.118  3196  3274 E WifiVendorHal: getWifiLinkLayerStats(l.937) failed {.code = ERROR_NOT_AVAILABLE, .description = }
+04-22 20:22:47.243 12842 12842 V BleRemoteService: requestScan,RC size:1,hasInit:true,mIsPair:false,Connecting:false,isScreenOn:true,allowMoreThanOneRC:false
+04-22 20:22:48.130  3196  3274 E WifiVendorHal: getWifiLinkLayerStats(l.937) failed {.code = ERROR_NOT_AVAILABLE, .description = }
+04-22 20:22:54.155  3196  3274 I chatty  : uid=1000(system) WifiStateMachin identical 2 lines
+04-22 20:22:57.167  3196  3274 E WifiVendorHal: getWifiLinkLayerStats(l.937) failed {.code = ERROR_NOT_AVAILABLE, .description = }
+04-22 20:22:57.493  5496 12841 D UDTJmDNSThread: Local address: /192.168.0.214
+04-22 20:22:57.493  5496 12841 D UDTJmDNSThread: JmDNS address:/192.168.0.214
+04-22 20:22:57.493  5496 12841 I UDTDiscoverManager: UDTJmDNSThread now available, no operation
+04-22 20:23:00.001  3196  3262 D PowerManagerService: updateSuspendBlockerLocked mWakefulness=1,needWakeLockSuspendBlocker=true
+04-22 20:23:00.015  3196  3196 D PowerManagerService: updateSuspendBlockerLocked mWakefulness=1,needWakeLockSuspendBlocker=true
+04-22 20:23:00.176  3196  3274 E WifiVendorHal: getWifiLinkLayerStats(l.937) failed {.code = ERROR_NOT_AVAILABLE, .description = }
+04-22 20:23:03.183  3196  3274 E WifiVendorHal: getWifiLinkLayerStats(l.937) failed {.code = ERROR_NOT_AVAILABLE, .description = }
+04-22 20:23:03.246 12842 12842 V BleRemoteService: requestScan,RC size:1,hasInit:true,mIsPair:false,Connecting:false,isScreenOn:true,allowMoreThanOneRC:false
+04-22 20:23:06.195  3196  3274 E WifiVendorHal: getWifiLinkLayerStats(l.937) failed {.code = ERROR_NOT_AVAILABLE, .description = }
+04-22 20:23:15.234  3196  3274 I chatty  : uid=1000(system) WifiStateMachin identical 3 lines
+04-22 20:23:18.248  3196  3274 E WifiVendorHal: getWifiLinkLayerStats(l.937) failed {.code = ERROR_NOT_AVAILABLE, .description = }
+04-22 20:23:19.256 12842 12842 V BleRemoteService: requestScan,RC size:1,hasInit:true,mIsPair:false,Connecting:false,isScreenOn:true,allowMoreThanOneRC:false
+04-22 20:23:21.261  3196  3274 E WifiVendorHal: getWifiLinkLayerStats(l.937) failed {.code = ERROR_NOT_AVAILABLE, .description = }
+04-22 20:23:23.876  3196  3205 I system_server: Background concurrent copying GC freed 295417(8MB) AllocSpace objects, 0(0B) LOS objects, 42% free, 11MB/20MB, paused 744us total 217.546ms
+04-22 20:23:24.275  3196  3274 E WifiVendorHal: getWifiLinkLayerStats(l.937) failed {.code = ERROR_NOT_AVAILABLE, .description = }
+04-22 20:23:30.302  3196  3274 I chatty  : uid=1000(system) WifiStateMachin identical 2 lines
+04-22 20:23:33.315  3196  3274 E WifiVendorHal: getWifiLinkLayerStats(l.937) failed {.code = ERROR_NOT_AVAILABLE, .description = }
+04-22 20:23:35.263 12842 12842 V BleRemoteService: requestScan,RC size:1,hasInit:true,mIsPair:false,Connecting:false,isScreenOn:true,allowMoreThanOneRC:false
+04-22 20:23:36.328  3196  3274 E WifiVendorHal: getWifiLinkLayerStats(l.937) failed {.code = ERROR_NOT_AVAILABLE, .description = }
+04-22 20:23:38.209  3196  3262 D PowerManagerService: updateSuspendBlockerLocked mWakefulness=1,needWakeLockSuspendBlocker=true
+04-22 20:23:38.229 21491 21491 D ScheduleMgr: {com.mitv.tvhome.content.ScheduleMgr(SourceFile:7)} - set_request_alarm# setExact, interval: 2160 s
+04-22 20:23:38.232  3196  3196 D PowerManagerService: updateSuspendBlockerLocked mWakefulness=1,needWakeLockSuspendBlocker=true
+04-22 20:23:38.239 21491 20123 D ScheduleMgr: {com.mitv.tvhome.content.ScheduleMgr(SourceFile:2)} - === check user status ===
+04-22 20:23:38.240 21491 21491 D PWBaseObserver: {com.mitv.tvhome.z.d(SourceFile:1)} - request start
+04-22 20:23:38.241 21491 20123 D PWHttp  : {Thread:RxCachedThreadScheduler-215: b.d.e.n.d.a(SourceFile:4)} - cache mode: net only
+04-22 20:23:38.242 21491 20123 D PWHttp  : {Thread:RxCachedThreadScheduler-215: b.d.e.n.d.a(SourceFile:19)} - call timeout: 10000
+04-22 20:23:38.243 21491 20123 D PWHttp  : {Thread:RxCachedThreadScheduler-215: b.d.e.s.c.<init>(SourceFile:5)} - retry count: 0
+04-22 20:23:38.244 21491 20123 D PWAppInterceptor: {com.mitv.tvhome.z.c(SourceFile:3)} - PWAppInterceptor intercept begin
+04-22 20:23:38.244 21491 20123 D mitv.os.MitvSystem_v2: getDeviceMac return 00:00:00:00:00:00
+04-22 20:23:38.244 21491 20123 D mitv.os.MitvSystem_v2: getSHA1 anonymousId 5248947efa3ab37e85b2eac853285fd4b3a1f3f5
+04-22 20:23:38.244 21491 20123 D device  : get platform through Settings.Global # 906
+04-22 20:23:38.253 21491 20123 D InternalInterceptor: {Thread:RxCachedThreadScheduler-215: okhttp3.internal.http.RealInterceptorChain.proceed(SourceFile:10)} - InternalInterceptor intercept begin
+04-22 20:23:38.254 21491 20123 D PWHttp  : {Thread:RxCachedThreadScheduler-215: b.d.e.e.intercept(SourceFile:9)} - cache mode: net only
+04-22 20:23:38.255 21491 20123 D PWHttp  : {Thread:RxCachedThreadScheduler-215: okhttp3.internal.http.RealInterceptorChain.proceed(SourceFile:10)} - --> GET https://us.tv.global.mi.com/tvservice/getdevicestatus?you=528c8e6cd4a3c6598999a0e9df15ad32&app=0&watchmode=0&ptf=906&level=1&codever=81&today=1776882218&os_type=1&android=28&me=5248947efa3ab37e85b2eac853285fd4b3a1f3f5&dlg=en&group=GA%2Cdefault&clg=en&opaque=50b443a99cc6d46234c7da9669590704d4f11cfe
+04-22 20:23:38.255 21491 20123 D PWHttp  : {Thread:RxCachedThreadScheduler-215: okhttp3.internal.http.RealInterceptorChain.proceed(SourceFile:10)} - --> END GET
+04-22 20:23:38.351 21491 20123 D PWHttp  : {Thread:RxCachedThreadScheduler-215: okhttp3.internal.http.RealInterceptorChain.proceed(SourceFile:10)} - <-- 200 https://us.tv.global.mi.com/tvservice/getdevicestatus?you=528c8e6cd4a3c6598999a0e9df15ad32&app=0&watchmode=0&ptf=906&level=1&codever=81&today=1776882218&os_type=1&android=28&me=5248947efa3ab37e85b2eac853285fd4b3a1f3f5&dlg=en&group=GA%2Cdefault&clg=en&opaque=50b443a99cc6d46234c7da9669590704d4f11cfe (93ms)
+04-22 20:23:38.353 21491 20123 D PWHttp  : {Thread:RxCachedThreadScheduler-215: okhttp3.internal.http.RealInterceptorChain.proceed(SourceFile:10)} - date: Wed, 22 Apr 2026 18:23:42 GMT
+04-22 20:23:38.354 21491 20123 D PWHttp  : {Thread:RxCachedThreadScheduler-215: okhttp3.internal.http.RealInterceptorChain.proceed(SourceFile:10)} - content-type: application/json; charset=utf-8
+04-22 20:23:38.356 21491 20123 D PWHttp  : {Thread:RxCachedThreadScheduler-215: okhttp3.internal.http.RealInterceptorChain.proceed(SourceFile:10)} - x-log-id: 785624345369117870
+04-22 20:23:38.361 21491 20123 D PWHttp  : {Thread:RxCachedThreadScheduler-215: okhttp3.internal.http.RealInterceptorChain.proceed(SourceFile:10)} - 
+04-22 20:23:38.363 21491 20123 D PWHttp  : {Thread:RxCachedThreadScheduler-215: okhttp3.internal.http.RealInterceptorChain.proceed(SourceFile:10)} - {"data":{"account_open_flag":false,"ad_config":{"interval":-1,"max_counts":-1},"ad_interval":0,"ad_preload_resource_sync_cycle":5,"apk_level":1,"app_icon":"icon_e","banner_autoplay_interval":15,"banner_autoplay_start":1,"check_as_launcher":true,"extra_stat_switch":false,"feature_release_rules":{"percent":100,"whitelist_ids":["f528b0c9e77b699c68ff6698eb00a07e58afdec3"]},"group_server_ready":true,"home_apk_update_time":1800,"level":1,"location":{"city_en":"lukhovitsy","country_en":"ru","province_en":"Moskovskaya Oblast"},"non_tv_cms_download_flag":false,"patchwall_launcher_config":{"enter_freq":7,"enter_pop_up_banner":"https://cdn.awsde0-fusion.fds.api.mi-img.com/mitv/10007/0/55e9b2a4460de4288c60beacbd47d5a1.webp","exit_pop_up_banner":"https://cdn.awsde0-fusion.fds.api.mi-img.com/mitv/10007/0/4dc755bd1219b3fa9989dc106461bb1e.webp","status_bar_switch_open":true},"pw_first_upgrade_interval":1500,"region":"spain","search_open_flag":false,"third_apk_update_time":5400,"user_center_open_flag":false,"user_center_white_list":null,"user_feedback_open_flag":false,"user_feedback_url":"","watch_mode_dict":[{"mode_id":0,"title":"Family Mode","description":"This is Family Mode ","limitation":[],"poster":"","disable":false,"condition":{"exclude":{"$and":[]},"include":{"$and":[]}}}],"watch_mode_open_flag":false},"status":0,"ver":1776882222}
+04-22 20:23:38.365 21491 20123 D PWHttp  : {Thread:RxCachedThreadScheduler-215: okhttp3.internal.http.RealInterceptorChain.proceed(SourceFile:10)} - <-- END HTTP (1344-byte body)
+04-22 20:23:38.369 21491 20123 D InternalInterceptor: {Thread:RxCachedThreadScheduler-215: okhttp3.internal.http.RealInterceptorChain.proceed(SourceFile:10)} - InternalInterceptor intercept end
+04-22 20:23:38.370 21491 20123 D PWAppInterceptor: {com.mitv.tvhome.z.c(SourceFile:22)} - PWAppInterceptor intercept end: protocol: h2
+04-22 20:23:38.373 21491 20123 D PWHttp  : {Thread:RxCachedThreadScheduler-215: b.d.e.s.c.a(SourceFile:31)} - request success!!
+04-22 20:23:38.374 21491 20123 D PWHttp  : {Thread:RxCachedThreadScheduler-215: b.d.e.n.d.a(SourceFile:32)} - call: i.i@63909c4 is canceled: false
+04-22 20:23:38.377 21491 20123 D PWHttp  : {Thread:RxCachedThreadScheduler-215: b.d.e.n.c.a(SourceFile:34)} - max_age: delete on no-space
+04-22 20:23:38.377 21491 20123 D PWHttp  : {Thread:RxCachedThreadScheduler-215: b.d.e.n.c.a(SourceFile:35)} - put response to cache !!
+04-22 20:23:38.378 21491 20123 D PWHttp  : {Thread:RxCachedThreadScheduler-215: b.d.e.o.e.b(SourceFile:6)} - response is valid
+04-22 20:23:38.378 21491 20123 D PWBaseObserver: {com.mitv.tvhome.z.d(SourceFile:2)} - request success
+04-22 20:23:38.379 21491 20123 D PWBaseObserver: {com.mitv.tvhome.z.d(SourceFile:9)} - status code is: 0
+04-22 20:23:38.391 21491 20123 D PWHttp  : {Thread:RxCachedThreadScheduler-215: b.d.e.b.c(SourceFile:2)} - onComplete
+04-22 20:23:38.392 21491 20123 D ScheduleMgr: {com.mitv.tvhome.content.ScheduleMgr(SourceFile:2)} - === check group info ===
+04-22 20:23:38.392 21491 20123 D mitv.os.MitvSystem_v2: getDeviceMac return 00:00:00:00:00:00
+04-22 20:23:38.392 21491 20123 D mitv.os.MitvSystem_v2: getSHA1 anonymousId 5248947efa3ab37e85b2eac853285fd4b3a1f3f5
+04-22 20:23:38.392 21491 20123 D device  : get platform through Settings.Global # 906
+04-22 20:23:38.393 21491 20123 D PWHttp  : {Thread:RxCachedThreadScheduler-215: b.d.e.n.d.a(SourceFile:4)} - cache mode: net only
+04-22 20:23:38.395 21491 20123 D PWHttp  : {Thread:RxCachedThreadScheduler-215: b.d.e.n.d.a(SourceFile:19)} - call timeout: 10000
+04-22 20:23:38.395 21491 20123 D PWHttp  : {Thread:RxCachedThreadScheduler-215: b.d.e.s.c.<init>(SourceFile:5)} - retry count: 0
+04-22 20:23:38.397 21491 20123 D PWAppInterceptor: {com.mitv.tvhome.z.c(SourceFile:3)} - PWAppInterceptor intercept begin
+04-22 20:23:38.397 21491 20123 D mitv.os.MitvSystem_v2: getDeviceMac return 00:00:00:00:00:00
+04-22 20:23:38.397 21491 20123 D mitv.os.MitvSystem_v2: getSHA1 anonymousId 5248947efa3ab37e85b2eac853285fd4b3a1f3f5
+04-22 20:23:38.397 21491 20123 D device  : get platform through Settings.Global # 906
+04-22 20:23:38.400 21491 20123 D InternalInterceptor: {Thread:RxCachedThreadScheduler-215: okhttp3.internal.http.RealInterceptorChain.proceed(SourceFile:10)} - InternalInterceptor intercept begin
+04-22 20:23:38.401 21491 20123 D PWHttp  : {Thread:RxCachedThreadScheduler-215: b.d.e.e.intercept(SourceFile:9)} - cache mode: net only
+04-22 20:23:38.402 21491 20123 D PWHttp  : {Thread:RxCachedThreadScheduler-215: okhttp3.internal.http.RealInterceptorChain.proceed(SourceFile:10)} - --> GET https://us.tv.global.mi.com/usercenter/overseas/deviceInfo?anonymous_id=5248947efa3ab37e85b2eac853285fd4b3a1f3f5&ptf=906&service_id=0&app=0&watchmode=0&ptf=906&level=1&codever=81&today=1776882218&os_type=1&android=28&me=5248947efa3ab37e85b2eac853285fd4b3a1f3f5&dlg=en&group=GA%2Cdefault&clg=en&opaque=91d2728333a5ae03b1dd34edebcd64283c17253b
+04-22 20:23:38.403 21491 20123 D PWHttp  : {Thread:RxCachedThreadScheduler-215: okhttp3.internal.http.RealInterceptorChain.proceed(SourceFile:10)} - --> END GET
+04-22 20:23:38.527 21491 20123 D PWHttp  : {Thread:RxCachedThreadScheduler-215: okhttp3.internal.http.RealInterceptorChain.proceed(SourceFile:10)} - <-- 404 https://us.tv.global.mi.com/usercenter/overseas/deviceInfo?anonymous_id=5248947efa3ab37e85b2eac853285fd4b3a1f3f5&ptf=906&service_id=0&app=0&watchmode=0&ptf=906&level=1&codever=81&today=1776882218&os_type=1&android=28&me=5248947efa3ab37e85b2eac853285fd4b3a1f3f5&dlg=en&group=GA%2Cdefault&clg=en&opaque=91d2728333a5ae03b1dd34edebcd64283c17253b (121ms)
+04-22 20:23:38.530 21491 20123 D PWHttp  : {Thread:RxCachedThreadScheduler-215: okhttp3.internal.http.RealInterceptorChain.proceed(SourceFile:10)} - date: Wed, 22 Apr 2026 18:23:42 GMT
+04-22 20:23:38.532 21491 20123 D PWHttp  : {Thread:RxCachedThreadScheduler-215: okhttp3.internal.http.RealInterceptorChain.proceed(SourceFile:10)} - content-type: text/html
+04-22 20:23:38.533 21491 20123 D PWHttp  : {Thread:RxCachedThreadScheduler-215: okhttp3.internal.http.RealInterceptorChain.proceed(SourceFile:10)} - server: openresty
+04-22 20:23:38.538 21491 20123 D PWHttp  : {Thread:RxCachedThreadScheduler-215: okhttp3.internal.http.RealInterceptorChain.proceed(SourceFile:10)} - 
+04-22 20:23:38.540 21491 20123 D PWHttp  : {Thread:RxCachedThreadScheduler-215: okhttp3.internal.http.RealInterceptorChain.proceed(SourceFile:10)} - <html>
+04-22 20:23:38.540 21491 20123 D PWHttp  : <head><title>404 Not Found</title></head>
+04-22 20:23:38.540 21491 20123 D PWHttp  : <body>
+04-22 20:23:38.540 21491 20123 D PWHttp  : <center><h1>404 Not Found</h1></center>
+04-22 20:23:38.540 21491 20123 D PWHttp  : <hr><center>openresty</center>
+04-22 20:23:38.540 21491 20123 D PWHttp  : </body>
+04-22 20:23:38.540 21491 20123 D PWHttp  : </html>
+04-22 20:23:38.541 21491 20123 D PWHttp  : {Thread:RxCachedThreadScheduler-215: okhttp3.internal.http.RealInterceptorChain.proceed(SourceFile:10)} - <-- END HTTP (150-byte body)
+04-22 20:23:38.543 21491 20123 D InternalInterceptor: {Thread:RxCachedThreadScheduler-215: okhttp3.internal.http.RealInterceptorChain.proceed(SourceFile:10)} - InternalInterceptor intercept end
+04-22 20:23:38.544 21491 20123 D PWAppInterceptor: {com.mitv.tvhome.z.c(SourceFile:22)} - PWAppInterceptor intercept end: protocol: h2
+04-22 20:23:38.546 21491 20123 D PWHttp  : {Thread:RxCachedThreadScheduler-215: b.d.e.n.d.a(SourceFile:32)} - call: i.i@8db10ad is canceled: false
+04-22 20:23:38.550 21491 20123 D PWHttp  : {Thread:RxCachedThreadScheduler-215: b.d.e.n.c.a(SourceFile:34)} - max_age: delete on no-space
+04-22 20:23:38.551 21491 20123 D PWHttp  : {Thread:RxCachedThreadScheduler-215: b.d.e.n.c.a(SourceFile:35)} - put response to cache !!
+04-22 20:23:38.551 21491 20123 D PWHttp  : {Thread:RxCachedThreadScheduler-215: b.d.e.o.e.b(SourceFile:6)} - response is valid
+04-22 20:23:38.552 21491 20123 D PWHttp  : {Thread:RxCachedThreadScheduler-215: b.d.e.b.a(SourceFile:16)} - onError
+04-22 20:23:38.552 21491 20123 D ScheduleMgr: {com.mitv.tvhome.content.ScheduleMgr(SourceFile:27)} - checkGroupInfo exception: HTTP 404 
+04-22 20:23:39.342  3196  3274 E WifiVendorHal: getWifiLinkLayerStats(l.937) failed {.code = ERROR_NOT_AVAILABLE, .description = }
+04-22 20:23:40.827 11257 11257 I cast_shell: [0422/202340.827630:INFO:service_base.h(78)] Size of the map for type AuthTokenResponse is 0
+04-22 20:23:40.843 11257 11257 I cast_shell: [0422/202340.843609:INFO:service_base.h(246)] Container sizes for type CloudSetting are (session_info_map: 0), (topic_info_map: 21), (pending_events: 0).
+04-22 20:23:40.844 11257 11257 I cast_shell: [0422/202340.844607:INFO:metrics_stat_logger.cc(38)] Metrics stat for the past 60 secs : total=0
+04-22 20:23:42.365  3196  3274 E WifiVendorHal: getWifiLinkLayerStats(l.937) failed {.code = ERROR_NOT_AVAILABLE, .description = }
+04-22 20:23:45.458  3139  3174 E storaged: getDiskStats failed with result NOT_SUPPORTED and size 0
+04-22 20:23:45.378  3196  3274 E WifiVendorHal: getWifiLinkLayerStats(l.937) failed {.code = ERROR_NOT_AVAILABLE, .description = }
+04-22 20:23:45.917  8423  8667 I PhenotypeProcessReaper: Memory state is: 125
+04-22 20:23:48.391  3196  3274 E WifiVendorHal: getWifiLinkLayerStats(l.937) failed {.code = ERROR_NOT_AVAILABLE, .description = }
+04-22 20:23:51.278 12842 12842 V BleRemoteService: requestScan,RC size:1,hasInit:true,mIsPair:false,Connecting:false,isScreenOn:true,allowMoreThanOneRC:false
+04-22 20:23:51.405  3196  3274 E WifiVendorHal: getWifiLinkLayerStats(l.937) failed {.code = ERROR_NOT_AVAILABLE, .description = }
+04-22 20:23:52.672  7726  7893 I PhenotypeProcessReaper: Memory state is: 200
+04-22 20:23:54.422  3196  3274 E WifiVendorHal: getWifiLinkLayerStats(l.937) failed {.code = ERROR_NOT_AVAILABLE, .description = }
+04-22 20:23:55.398 11257 11312 I cast_shell: [0422/202355.398143:INFO:mdns_app_filter.cc(3358)] MdnsAppFilter: responses sent in 98 seconds: 32
+04-22 20:23:57.445  3196  3274 E WifiVendorHal: getWifiLinkLayerStats(l.937) failed {.code = ERROR_NOT_AVAILABLE, .description = }
+04-22 20:23:57.484  5496 12841 D UDTJmDNSThread: Local address: /192.168.0.214
+04-22 20:23:57.484  5496 12841 D UDTJmDNSThread: JmDNS address:/192.168.0.214
+04-22 20:23:57.484  5496 12841 I UDTDiscoverManager: UDTJmDNSThread now available, no operation
+04-22 20:24:00.001  3196  3262 D PowerManagerService: updateSuspendBlockerLocked mWakefulness=1,needWakeLockSuspendBlocker=true
+04-22 20:24:00.020  3196  3196 D PowerManagerService: updateSuspendBlockerLocked mWakefulness=1,needWakeLockSuspendBlocker=true
+04-22 20:24:00.465  3196  3274 E WifiVendorHal: getWifiLinkLayerStats(l.937) failed {.code = ERROR_NOT_AVAILABLE, .description = }
+04-22 20:24:03.483  3196  3274 I chatty  : uid=1000(system) WifiStateMachin identical 1 line
+04-22 20:24:06.495  3196  3274 E WifiVendorHal: getWifiLinkLayerStats(l.937) failed {.code = ERROR_NOT_AVAILABLE, .description = }
+04-22 20:24:07.292 12842 12842 V BleRemoteService: requestScan,RC size:1,hasInit:true,mIsPair:false,Connecting:false,isScreenOn:true,allowMoreThanOneRC:false
+04-22 20:24:09.508  3196  3274 E WifiVendorHal: getWifiLinkLayerStats(l.937) failed {.code = ERROR_NOT_AVAILABLE, .description = }
+04-22 20:24:21.097  3196  3262 D PowerManagerService: updateSuspendBlockerLocked mWakefulness=1,needWakeLockSuspendBlocker=true
+04-22 20:24:21.109  3196  3196 D PowerManagerService: updateSuspendBlockerLocked mWakefulness=1,needWakeLockSuspendBlocker=true
+04-22 20:24:21.134  3196  3196 I JobServiceContext: Client timed out while executing (no jobFinished received), sending onStop: 22f72d5 #u0a23/1000001 com.google.android.tv/com.android.tv.recommendation.ChannelPreviewUpdater$ChannelPreviewUpdateService
+04-22 20:24:21.136  3196  3207 D PowerManagerService: updateSuspendBlockerLocked mWakefulness=1,needWakeLockSuspendBlocker=false
+04-22 20:24:18.555  3196  3274 I chatty  : uid=1000(system) WifiStateMachin identical 3 lines
+04-22 20:24:21.566  3196  3274 E WifiVendorHal: getWifiLinkLayerStats(l.937) failed {.code = ERROR_NOT_AVAILABLE, .description = }
+04-22 20:24:23.306 12842 12842 V BleRemoteService: requestScan,RC size:1,hasInit:true,mIsPair:false,Connecting:false,isScreenOn:true,allowMoreThanOneRC:false
+04-22 20:24:24.576  3196  3274 E WifiVendorHal: getWifiLinkLayerStats(l.937) failed {.code = ERROR_NOT_AVAILABLE, .description = }
+04-22 20:24:25.551  3196  3207 D WificondControl: Scan result ready event
+04-22 20:24:25.569  3196  3216 I EthernetTracker: interfaceLinkStateChanged, iface: wlan0, up: true
+04-22 20:24:27.590  3196  3274 E WifiVendorHal: getWifiLinkLayerStats(l.937) failed {.code = ERROR_NOT_AVAILABLE, .description = }
+04-22 20:24:33.631  3196  3274 I chatty  : uid=1000(system) WifiStateMachin identical 2 lines
+04-22 20:24:36.643  3196  3274 E WifiVendorHal: getWifiLinkLayerStats(l.937) failed {.code = ERROR_NOT_AVAILABLE, .description = }
+04-22 20:24:39.322 12842 12842 V BleRemoteService: requestScan,RC size:1,hasInit:true,mIsPair:false,Connecting:false,isScreenOn:true,allowMoreThanOneRC:false
+04-22 20:24:39.659  3196  3274 E WifiVendorHal: getWifiLinkLayerStats(l.937) failed {.code = ERROR_NOT_AVAILABLE, .description = }
+04-22 20:24:40.828 11257 11257 I cast_shell: [0422/202440.828661:INFO:service_base.h(78)] Size of the map for type AuthTokenResponse is 0
+04-22 20:24:40.844 11257 11257 I cast_shell: [0422/202440.844553:INFO:service_base.h(246)] Container sizes for type CloudSetting are (session_info_map: 0), (topic_info_map: 21), (pending_events: 0).
+04-22 20:24:40.846 11257 11257 I cast_shell: [0422/202440.845692:INFO:metrics_stat_logger.cc(38)] Metrics stat for the past 60 secs : total=6
+04-22 20:24:40.846 11257 11257 I cast_shell: [metrics_stat_logger] Cast.Discovery.Mdns.Request.AppId.In=24
+04-22 20:24:40.846 11257 11257 I cast_shell: [metrics_stat_logger] Cast.Discovery.Mdns.Request.In=6
+04-22 20:24:40.846 11257 11257 I cast_shell: [metrics_stat_logger] Cast.Discovery.Mdns.Request.Namespace.In=6
+04-22 20:24:40.846 11257 11257 I cast_shell: [metrics_stat_logger] Cast.Discovery.Mdns.Response.AppId.Out=24
+04-22 20:24:40.846 11257 11257 I cast_shell: [metrics_stat_logger] Cast.Discovery.Mdns.Response.Error.NamespaceNotSupported=6
+04-22 20:24:40.846 11257 11257 I cast_shell: [metrics_stat_logger] Cast.Discovery.Mdns.Response.Out=6
+04-22 20:24:41.141 11257 11312 I cast_shell: [0422/202441.139857:INFO:mdns_cast_service.cc(987)] Recent mDNS app subtypes: [supported:'ED01B6D7','CFE7FEDA','A1EB4E9D','EF6F58F4',] [unsupported:]
+04-22 20:24:42.673  3196  3274 E WifiVendorHal: getWifiLinkLayerStats(l.937) failed {.code = ERROR_NOT_AVAILABLE, .description = }
+04-22 20:24:45.459  3139  3174 E storaged: getDiskStats failed with result NOT_SUPPORTED and size 0
+04-22 20:24:51.720  3196  3274 I chatty  : uid=1000(system) WifiStateMachin identical 3 lines
+04-22 20:24:54.728  3196  3274 E WifiVendorHal: getWifiLinkLayerStats(l.937) failed {.code = ERROR_NOT_AVAILABLE, .description = }
+04-22 20:24:55.338 12842 12842 V BleRemoteService: requestScan,RC size:1,hasInit:true,mIsPair:false,Connecting:false,isScreenOn:true,allowMoreThanOneRC:false
+04-22 20:24:57.506  5496 12841 D UDTJmDNSThread: Local address: /192.168.0.214
+04-22 20:24:57.507  5496 12841 D UDTJmDNSThread: JmDNS address:/192.168.0.214
+04-22 20:24:57.507  5496 12841 I UDTDiscoverManager: UDTJmDNSThread now available, no operation
+04-22 20:24:57.737  3196  3274 E WifiVendorHal: getWifiLinkLayerStats(l.937) failed {.code = ERROR_NOT_AVAILABLE, .description = }
+04-22 20:25:00.004  3196  3262 D PowerManagerService: updateSuspendBlockerLocked mWakefulness=1,needWakeLockSuspendBlocker=true
+04-22 20:25:00.025  3196  3196 D PowerManagerService: updateSuspendBlockerLocked mWakefulness=1,needWakeLockSuspendBlocker=false
+04-22 20:25:00.744  3196  3274 E WifiVendorHal: getWifiLinkLayerStats(l.937) failed {.code = ERROR_NOT_AVAILABLE, .description = }
+04-22 20:25:00.850  3196  3205 I system_server: Background concurrent copying GC freed 284934(8MB) AllocSpace objects, 2(104KB) LOS objects, 42% free, 11MB/20MB, paused 346us total 210.585ms
+04-22 20:25:03.750  3196  3274 E WifiVendorHal: getWifiLinkLayerStats(l.937) failed {.code = ERROR_NOT_AVAILABLE, .description = }
+04-22 20:25:06.773  3196  3274 I chatty  : uid=1000(system) WifiStateMachin identical 1 line
+04-22 20:25:09.790  3196  3274 E WifiVendorHal: getWifiLinkLayerStats(l.937) failed {.code = ERROR_NOT_AVAILABLE, .description = }
+04-22 20:25:11.354 12842 12842 V BleRemoteService: requestScan,RC size:1,hasInit:true,mIsPair:false,Connecting:false,isScreenOn:true,allowMoreThanOneRC:false
+04-22 20:25:12.801  3196  3274 E WifiVendorHal: getWifiLinkLayerStats(l.937) failed {.code = ERROR_NOT_AVAILABLE, .description = }
+04-22 20:25:21.845  3196  3274 I chatty  : uid=1000(system) WifiStateMachin identical 3 lines
+04-22 20:25:24.858  3196  3274 E WifiVendorHal: getWifiLinkLayerStats(l.937) failed {.code = ERROR_NOT_AVAILABLE, .description = }
+04-22 20:25:27.368 12842 12842 V BleRemoteService: requestScan,RC size:1,hasInit:true,mIsPair:false,Connecting:false,isScreenOn:true,allowMoreThanOneRC:false
+04-22 20:25:27.872  3196  3274 E WifiVendorHal: getWifiLinkLayerStats(l.937) failed {.code = ERROR_NOT_AVAILABLE, .description = }
+04-22 20:25:30.895  3196  3274 E WifiVendorHal: getWifiLinkLayerStats(l.937) failed {.code = ERROR_NOT_AVAILABLE, .description = }
+04-22 20:25:33.496 11257 11312 I cast_shell: [0422/202533.496518:INFO:mdns_app_filter.cc(3358)] MdnsAppFilter: responses sent in 98 seconds: 33
+04-22 20:25:33.908  3196  3274 E WifiVendorHal: getWifiLinkLayerStats(l.937) failed {.code = ERROR_NOT_AVAILABLE, .description = }
+04-22 20:25:36.933  3196  3274 I chatty  : uid=1000(system) WifiStateMachin identical 1 line
+04-22 20:25:39.946  3196  3274 E WifiVendorHal: getWifiLinkLayerStats(l.937) failed {.code = ERROR_NOT_AVAILABLE, .description = }
+04-22 20:25:40.829 11257 11257 I cast_shell: [0422/202540.829543:INFO:service_base.h(78)] Size of the map for type AuthTokenResponse is 0
+04-22 20:25:40.845 11257 11257 I cast_shell: [0422/202540.845627:INFO:service_base.h(246)] Container sizes for type CloudSetting are (session_info_map: 0), (topic_info_map: 21), (pending_events: 0).
+04-22 20:25:40.847 11257 11257 I cast_shell: [0422/202540.846630:INFO:metrics_stat_logger.cc(38)] Metrics stat for the past 60 secs : total=6
+04-22 20:25:40.847 11257 11257 I cast_shell: [metrics_stat_logger] Cast.Discovery.Mdns.Request.AppId.In=24
+04-22 20:25:40.847 11257 11257 I cast_shell: [metrics_stat_logger] Cast.Discovery.Mdns.Request.In=6
+04-22 20:25:40.847 11257 11257 I cast_shell: [metrics_stat_logger] Cast.Discovery.Mdns.Request.Namespace.In=6
+04-22 20:25:40.847 11257 11257 I cast_shell: [metrics_stat_logger] Cast.Discovery.Mdns.Response.AppId.Out=24
+04-22 20:25:40.847 11257 11257 I cast_shell: [metrics_stat_logger] Cast.Discovery.Mdns.Response.Error.NamespaceNotSupported=6
+04-22 20:25:40.847 11257 11257 I cast_shell: [metrics_stat_logger] Cast.Discovery.Mdns.Response.Out=6
+04-22 20:25:42.115  3196  3207 D PowerManagerService: updateSuspendBlockerLocked mWakefulness=1,needWakeLockSuspendBlocker=true
+04-22 20:25:42.137 21145 20074 I AlarmManager: setExactAndAllowWhileIdle [name: GCM_HB_ALARM type: 2 triggerAtMillis: 959032600]
+04-22 20:25:42.140 21145 20074 I AlarmManager: setExactAndAllowWhileIdle [name: GCM_HB_ALARM type: 2 triggerAtMillis: 959032604]
+04-22 20:25:42.122  3196  3207 I chatty  : uid=1000(system) Binder:3196_2 identical 1 line
+04-22 20:25:42.129  3196  3207 D PowerManagerService: updateSuspendBlockerLocked mWakefulness=1,needWakeLockSuspendBlocker=true
+04-22 20:25:42.143  3196  3206 D PowerManagerService: updateSuspendBlockerLocked mWakefulness=1,needWakeLockSuspendBlocker=false
+04-22 20:25:42.163  3196  3206 D PowerManagerService: updateSuspendBlockerLocked mWakefulness=1,needWakeLockSuspendBlocker=true
+04-22 20:25:42.220 21145 20126 I NetworkScheduler.Stats: (REDACTED) Task %s/%s started execution. cause:%s exec_start_elapsed_seconds: %s
+04-22 20:25:42.197  3196  3206 I chatty  : uid=1000(system) Binder:3196_1 identical 1 line
+04-22 20:25:42.217  3196  3206 D PowerManagerService: updateSuspendBlockerLocked mWakefulness=1,needWakeLockSuspendBlocker=true
+04-22 20:25:42.223  3196  3206 D PowerManagerService: updateSuspendBlockerLocked mWakefulness=1,needWakeLockSuspendBlocker=false
+04-22 20:25:42.225  3196  3207 D PowerManagerService: updateSuspendBlockerLocked mWakefulness=1,needWakeLockSuspendBlocker=true
+04-22 20:25:42.233 21145 20074 I NetworkScheduler.Stats: (REDACTED) Task %s/%s finished executing. cause:%s result: %s elapsed_millis: %s uptime_millis: %s exec_start_elapsed_seconds: %s
+04-22 20:25:42.247  3196  3206 D PowerManagerService: updateSuspendBlockerLocked mWakefulness=1,needWakeLockSuspendBlocker=false
+04-22 20:25:42.249  3196  3206 D PowerManagerService: updateSuspendBlockerLocked mWakefulness=1,needWakeLockSuspendBlocker=true
+04-22 20:25:42.253  3196  3206 D PowerManagerService: updateSuspendBlockerLocked mWakefulness=1,needWakeLockSuspendBlocker=false
+04-22 20:25:42.424  3196  3262 D PowerManagerService: updateSuspendBlockerLocked mWakefulness=1,needWakeLockSuspendBlocker=true
+04-22 20:25:42.428  3196  3206 D PowerManagerService: updateSuspendBlockerLocked mWakefulness=1,needWakeLockSuspendBlocker=true
+04-22 20:25:42.429  3196  3207 D PowerManagerService: updateSuspendBlockerLocked mWakefulness=1,needWakeLockSuspendBlocker=true
+04-22 20:25:42.431  3196  3196 D PowerManagerService: updateSuspendBlockerLocked mWakefulness=1,needWakeLockSuspendBlocker=true
+04-22 20:25:42.432 21145 21184 W Settings: Setting airplane_mode_on has moved from android.provider.Settings.System to android.provider.Settings.Global, returning read-only value.
+04-22 20:25:42.433  3196  3206 D PowerManagerService: updateSuspendBlockerLocked mWakefulness=1,needWakeLockSuspendBlocker=true
+04-22 20:25:42.449  3196  3206 D WificondControl: Scan result ready event
+04-22 20:25:42.456  3196  3216 I EthernetTracker: interfaceLinkStateChanged, iface: wlan0, up: true
+04-22 20:25:42.436  3196  3206 I chatty  : uid=1000(system) Binder:3196_1 identical 1 line
+04-22 20:25:42.438  3196  3206 D PowerManagerService: updateSuspendBlockerLocked mWakefulness=1,needWakeLockSuspendBlocker=true
+04-22 20:25:42.470  3196  3206 D PowerManagerService: updateSuspendBlockerLocked mWakefulness=1,needWakeLockSuspendBlocker=false
+04-22 20:25:42.475  3196  3206 D PowerManagerService: updateSuspendBlockerLocked mWakefulness=1,needWakeLockSuspendBlocker=true
+04-22 20:25:42.478 21145 21184 W TrustedTimeHelper: TrustedTime initialization task failed
+04-22 20:25:42.478 21145 21184 W TrustedTimeHelper: ahdj: 17: API: TrustedTime.API is not available on this device. Connection failed with: ConnectionResult{statusCode=API_UNAVAILABLE, resolution=null, message=null, clientMethodKey=null}
+04-22 20:25:42.478 21145 21184 W TrustedTimeHelper: 	at ahzv.a(:com.google.android.gms@261332115@26.13.32 (080306-895912391):15)
+04-22 20:25:42.478 21145 21184 W TrustedTimeHelper: 	at ahfe.a(:com.google.android.gms@261332115@26.13.32 (080306-895912391):1)
+04-22 20:25:42.478 21145 21184 W TrustedTimeHelper: 	at ahfb.c(:com.google.android.gms@261332115@26.13.32 (080306-895912391):5)
+04-22 20:25:42.478 21145 21184 W TrustedTimeHelper: 	at ahhq.t(:com.google.android.gms@261332115@26.13.32 (080306-895912391):48)
+04-22 20:25:42.478 21145 21184 W TrustedTimeHelper: 	at ahhq.f(:com.google.android.gms@261332115@26.13.32 (080306-895912391):10)
+04-22 20:25:42.478 21145 21184 W TrustedTimeHelper: 	at ahhq.i(:com.google.android.gms@261332115@26.13.32 (080306-895912391):191)
+04-22 20:25:42.478 21145 21184 W TrustedTimeHelper: 	at ahhq.m(:com.google.android.gms@261332115@26.13.32 (080306-895912391):2)
+04-22 20:25:42.478 21145 21184 W TrustedTimeHelper: 	at ahhs.run(:com.google.android.gms@261332115@26.13.32 (080306-895912391):80)
+04-22 20:25:42.478 21145 21184 W TrustedTimeHelper: 	at android.os.Handler.handleCallback(Handler.java:873)
+04-22 20:25:42.478 21145 21184 W TrustedTimeHelper: 	at android.os.Handler.dispatchMessage(Handler.java:99)
+04-22 20:25:42.478 21145 21184 W TrustedTimeHelper: 	at bcju.ij(:com.google.android.gms@261332115@26.13.32 (080306-895912391):1)
+04-22 20:25:42.478 21145 21184 W TrustedTimeHelper: 	at bcju.dispatchMessage(:com.google.android.gms@261332115@26.13.32 (080306-895912391):140)
+04-22 20:25:42.478 21145 21184 W TrustedTimeHelper: 	at android.os.Looper.loop(Looper.java:193)
+04-22 20:25:42.478 21145 21184 W TrustedTimeHelper: 	at android.os.HandlerThread.run(HandlerThread.java:65)
+04-22 20:25:42.480 21145 21184 I FrewleMiniCache: (REDACTED) lookupMacEntries: %s MACs queried, %s informative APs, %s in cache
+04-22 20:25:42.487 21145 21184 W TrustedTimeHelper: TrustedTime initialization task failed
+04-22 20:25:42.487 21145 21184 W TrustedTimeHelper: ahdj: 17: API: TrustedTime.API is not available on this device. Connection failed with: ConnectionResult{statusCode=API_UNAVAILABLE, resolution=null, message=null, clientMethodKey=null}
+04-22 20:25:42.487 21145 21184 W TrustedTimeHelper: 	at ahzv.a(:com.google.android.gms@261332115@26.13.32 (080306-895912391):15)
+04-22 20:25:42.487 21145 21184 W TrustedTimeHelper: 	at ahfe.a(:com.google.android.gms@261332115@26.13.32 (080306-895912391):1)
+04-22 20:25:42.487 21145 21184 W TrustedTimeHelper: 	at ahfb.c(:com.google.android.gms@261332115@26.13.32 (080306-895912391):5)
+04-22 20:25:42.487 21145 21184 W TrustedTimeHelper: 	at ahhq.t(:com.google.android.gms@261332115@26.13.32 (080306-895912391):48)
+04-22 20:25:42.487 21145 21184 W TrustedTimeHelper: 	at ahhq.f(:com.google.android.gms@261332115@26.13.32 (080306-895912391):10)
+04-22 20:25:42.487 21145 21184 W TrustedTimeHelper: 	at ahhq.i(:com.google.android.gms@261332115@26.13.32 (080306-895912391):191)
+04-22 20:25:42.487 21145 21184 W TrustedTimeHelper: 	at ahhq.m(:com.google.android.gms@261332115@26.13.32 (080306-895912391):2)
+04-22 20:25:42.487 21145 21184 W TrustedTimeHelper: 	at ahhs.run(:com.google.android.gms@261332115@26.13.32 (080306-895912391):80)
+04-22 20:25:42.487 21145 21184 W TrustedTimeHelper: 	at android.os.Handler.handleCallback(Handler.java:873)
+04-22 20:25:42.487 21145 21184 W TrustedTimeHelper: 	at android.os.Handler.dispatchMessage(Handler.java:99)
+04-22 20:25:42.487 21145 21184 W TrustedTimeHelper: 	at bcju.ij(:com.google.android.gms@261332115@26.13.32 (080306-895912391):1)
+04-22 20:25:42.487 21145 21184 W TrustedTimeHelper: 	at bcju.dispatchMessage(:com.google.android.gms@261332115@26.13.32 (080306-895912391):140)
+04-22 20:25:42.487 21145 21184 W TrustedTimeHelper: 	at android.os.Looper.loop(Looper.java:193)
+04-22 20:25:42.487 21145 21184 W TrustedTimeHelper: 	at android.os.HandlerThread.run(HandlerThread.java:65)
+04-22 20:25:42.499  3196  3206 D PowerManagerService: updateSuspendBlockerLocked mWakefulness=1,needWakeLockSuspendBlocker=true
+04-22 20:25:42.503  3196  3207 D PowerManagerService: updateSuspendBlockerLocked mWakefulness=1,needWakeLockSuspendBlocker=true
+04-22 20:25:42.504  3196  3990 D PowerManagerService: updateSuspendBlockerLocked mWakefulness=1,needWakeLockSuspendBlocker=true
+04-22 20:25:42.506  3196  3990 D PowerManagerService: updateSuspendBlockerLocked mWakefulness=1,needWakeLockSuspendBlocker=true
+04-22 20:25:42.513  3196  3206 D PowerManagerService: updateSuspendBlockerLocked mWakefulness=1,needWakeLockSuspendBlocker=true
+04-22 20:25:42.503 21145 21184 I chatty  : uid=10006(com.google.android.gms) GoogleLocationS identical 8 lines
+04-22 20:25:42.514 21145 21184 W TrustedTimeHelper: TrustedTime initialization task failed
+04-22 20:25:42.514 21145 21184 W TrustedTimeHelper: ahdj: 17: API: TrustedTime.API is not available on this device. Connection failed with: ConnectionResult{statusCode=API_UNAVAILABLE, resolution=null, message=null, clientMethodKey=null}
+04-22 20:25:42.514 21145 21184 W TrustedTimeHelper: 	at ahzv.a(:com.google.android.gms@261332115@26.13.32 (080306-895912391):15)
+04-22 20:25:42.514 21145 21184 W TrustedTimeHelper: 	at ahfe.a(:com.google.android.gms@261332115@26.13.32 (080306-895912391):1)
+04-22 20:25:42.514 21145 21184 W TrustedTimeHelper: 	at ahfb.c(:com.google.android.gms@261332115@26.13.32 (080306-895912391):5)
+04-22 20:25:42.514 21145 21184 W TrustedTimeHelper: 	at ahhq.t(:com.google.android.gms@261332115@26.13.32 (080306-895912391):48)
+04-22 20:25:42.514 21145 21184 W TrustedTimeHelper: 	at ahhq.f(:com.google.android.gms@261332115@26.13.32 (080306-895912391):10)
+04-22 20:25:42.514 21145 21184 W TrustedTimeHelper: 	at ahhq.i(:com.google.android.gms@261332115@26.13.32 (080306-895912391):191)
+04-22 20:25:42.514 21145 21184 W TrustedTimeHelper: 	at ahhq.m(:com.google.android.gms@261332115@26.13.32 (080306-895912391):2)
+04-22 20:25:42.514 21145 21184 W TrustedTimeHelper: 	at ahhs.run(:com.google.android.gms@261332115@26.13.32 (080306-895912391):80)
+04-22 20:25:42.514 21145 21184 W TrustedTimeHelper: 	at android.os.Handler.handleCallback(Handler.java:873)
+04-22 20:25:42.514 21145 21184 W TrustedTimeHelper: 	at android.os.Handler.dispatchMessage(Handler.java:99)
+04-22 20:25:42.514 21145 21184 W TrustedTimeHelper: 	at bcju.ij(:com.google.android.gms@261332115@26.13.32 (080306-895912391):1)
+04-22 20:25:42.514 21145 21184 W TrustedTimeHelper: 	at bcju.dispatchMessage(:com.google.android.gms@261332115@26.13.32 (080306-895912391):140)
+04-22 20:25:42.514 21145 21184 W TrustedTimeHelper: 	at android.os.Looper.loop(Looper.java:193)
+04-22 20:25:42.514 21145 21184 W TrustedTimeHelper: 	at android.os.HandlerThread.run(HandlerThread.java:65)
+04-22 20:25:42.517 21145 21191 I FusedLocation: (REDACTED) location delivery to %s blocked - too close
+04-22 20:25:42.517  3196  3206 D PowerManagerService: updateSuspendBlockerLocked mWakefulness=1,needWakeLockSuspendBlocker=true
+04-22 20:25:42.520  3196  3209 D PowerManagerService: updateSuspendBlockerLocked mWakefulness=1,needWakeLockSuspendBlocker=true
+04-22 20:25:42.522  3196  3206 D PowerManagerService: updateSuspendBlockerLocked mWakefulness=1,needWakeLockSuspendBlocker=true
+04-22 20:25:42.524  3196  7205 D PowerManagerService: updateSuspendBlockerLocked mWakefulness=1,needWakeLockSuspendBlocker=true
+04-22 20:25:42.525  3196  7205 D PowerManagerService: updateSuspendBlockerLocked mWakefulness=1,needWakeLockSuspendBlocker=true
+04-22 20:25:42.527  3196  7205 D PowerManagerService: updateSuspendBlockerLocked mWakefulness=1,needWakeLockSuspendBlocker=false
+04-22 20:25:42.531  3196  3209 D PowerManagerService: updateSuspendBlockerLocked mWakefulness=1,needWakeLockSuspendBlocker=true
+04-22 20:25:42.531  3196  7205 D PowerManagerService: updateSuspendBlockerLocked mWakefulness=1,needWakeLockSuspendBlocker=false
+04-22 20:25:42.956  3196  3274 E WifiVendorHal: getWifiLinkLayerStats(l.937) failed {.code = ERROR_NOT_AVAILABLE, .description = }
+04-22 20:25:43.386 12842 12842 V BleRemoteService: requestScan,RC size:1,hasInit:true,mIsPair:false,Connecting:false,isScreenOn:true,allowMoreThanOneRC:false
+04-22 20:25:45.460  3139  3174 E storaged: getDiskStats failed with result NOT_SUPPORTED and size 0
+04-22 20:25:45.971  3196  3274 E WifiVendorHal: getWifiLinkLayerStats(l.937) failed {.code = ERROR_NOT_AVAILABLE, .description = }
+04-22 20:25:47.151  6847  6872 I katniss_interactor_KatnissAccountManagerImpl: Retrieved 1 Google account from GMS.
+04-22 20:25:47.151  6847  6872 I katniss_interactor_GlobalAccountsAccessor: Writing 1 accounts
+04-22 20:25:47.157  6847  6872 I katniss_interactor_TokenFetcherImpl: #fetchToken
+04-22 20:25:47.161  6847 20130 I katniss_interactor_MigrationUtils: Using GoogleAuthUtil for getToken for 1p app: com.google.android.katniss [CONTEXT service_id=343 ]
+04-22 20:25:47.232  6847 20131 I katniss_interactor_MigrationUtils: Using GoogleAuthUtil for getToken for 1p app: com.google.android.katniss [CONTEXT service_id=343 ]
+04-22 20:25:47.553  6847  6872 I katniss_interactor_AssistantWrapperImpl: In state[RUNNING] received signal[TOKEN_REFRESHED].
+04-22 20:25:47.553  6847  6872 I assistant: [INFO:hvc_manager_native.cc(408)] Setting Assistant access tokens.
+04-22 20:25:47.555  6847  6892 I katniss_interactor_AssistantWrapperImpl: LibAssistant received Auth Token in sign-in mode.
+04-22 20:25:48.553 21145 21145 D BoundBrokerSvc: onRebind: Intent { act=com.google.android.gms.libs.gmscorelogger.service.START dat=chimera-action: cmp=com.google.android.gms/.chimera.PersistentDirectBootAwareApiService }
+04-22 20:25:48.983  3196  3274 E WifiVendorHal: getWifiLinkLayerStats(l.937) failed {.code = ERROR_NOT_AVAILABLE, .description = }
+04-22 20:25:51.000 11257 11320 I cast_shell: [0422/202551.000584:INFO:ssdp_device.c(101)] SSDP packets sent for 201 seconds = 2
+04-22 20:25:51.995  3196  3274 E WifiVendorHal: getWifiLinkLayerStats(l.937) failed {.code = ERROR_NOT_AVAILABLE, .description = }
+04-22 20:25:55.008  3196  3274 E WifiVendorHal: getWifiLinkLayerStats(l.937) failed {.code = ERROR_NOT_AVAILABLE, .description = }
+04-22 20:25:57.503  5496 12841 D UDTJmDNSThread: Local address: /192.168.0.214
+04-22 20:25:57.504  5496 12841 D UDTJmDNSThread: JmDNS address:/192.168.0.214
+04-22 20:25:57.504  5496 12841 I UDTDiscoverManager: UDTJmDNSThread now available, no operation
+04-22 20:25:58.022  3196  3274 E WifiVendorHal: getWifiLinkLayerStats(l.937) failed {.code = ERROR_NOT_AVAILABLE, .description = }
+04-22 20:25:59.405 12842 12842 V BleRemoteService: requestScan,RC size:1,hasInit:true,mIsPair:false,Connecting:false,isScreenOn:true,allowMoreThanOneRC:false
+04-22 20:26:00.001  3196  3262 D PowerManagerService: updateSuspendBlockerLocked mWakefulness=1,needWakeLockSuspendBlocker=true
+04-22 20:26:00.017  3196  3196 D PowerManagerService: updateSuspendBlockerLocked mWakefulness=1,needWakeLockSuspendBlocker=false
+04-22 20:26:01.035  3196  3274 E WifiVendorHal: getWifiLinkLayerStats(l.937) failed {.code = ERROR_NOT_AVAILABLE, .description = }
+04-22 20:26:03.597 21145 21145 D BoundBrokerSvc: onUnbind: Intent { act=com.google.android.gms.libs.gmscorelogger.service.START dat=chimera-action: cmp=com.google.android.gms/.chimera.PersistentDirectBootAwareApiService }
+04-22 20:26:04.049  3196  3274 E WifiVendorHal: getWifiLinkLayerStats(l.937) failed {.code = ERROR_NOT_AVAILABLE, .description = }
+04-22 20:26:10.075  3196  3274 I chatty  : uid=1000(system) WifiStateMachin identical 2 lines
+04-22 20:26:13.088  3196  3274 E WifiVendorHal: getWifiLinkLayerStats(l.937) failed {.code = ERROR_NOT_AVAILABLE, .description = }
+04-22 20:26:15.416 12842 12842 V BleRemoteService: requestScan,RC size:1,hasInit:true,mIsPair:false,Connecting:false,isScreenOn:true,allowMoreThanOneRC:false
+04-22 20:26:16.100  3196  3274 E WifiVendorHal: getWifiLinkLayerStats(l.937) failed {.code = ERROR_NOT_AVAILABLE, .description = }
+04-22 20:26:28.151  3196  3274 I chatty  : uid=1000(system) WifiStateMachin identical 4 lines
+04-22 20:26:31.165  3196  3274 E WifiVendorHal: getWifiLinkLayerStats(l.937) failed {.code = ERROR_NOT_AVAILABLE, .description = }
+04-22 20:26:31.432 12842 12842 V BleRemoteService: requestScan,RC size:1,hasInit:true,mIsPair:false,Connecting:false,isScreenOn:true,allowMoreThanOneRC:false
+04-22 20:26:34.179  3196  3274 E WifiVendorHal: getWifiLinkLayerStats(l.937) failed {.code = ERROR_NOT_AVAILABLE, .description = }
+04-22 20:26:34.944 11257 11312 I cast_shell: [0422/202634.943943:INFO:mdns_app_filter.cc(3358)] MdnsAppFilter: responses sent in 61 seconds: 33
+04-22 20:26:35.005 11257 11313 I cast_shell: [0422/202635.005867:INFO:metrics_recorder.cc(193)] Cast v2 action(socket_id=2c1d420a-191e-f6c6-0fe2-0b0542fbb1db.71): CastV2.Connection.Connect.In
+04-22 20:26:35.006 11257 11308 I cast_shell: [0422/202635.006172:INFO:setup_namespace_handler.cc(90)] Added a peer for setup namespace: 2c1d420a-191e-f6c6-0fe2-0b0542fbb1db.71:gms_cast_prober-2
+04-22 20:26:35.006 11257 11308 I cast_shell: [0422/202635.006439:INFO:setup_state.cc(541)] EurekaInfoCalled: wifi_state=0, is_usable_ip_address=1, connected=1, is_initial_setup=0
+04-22 20:26:35.032 11257 11308 I cast_shell: [0422/202635.032656:INFO:setup_namespace_handler.cc(100)] Removed a peer for setup namespace: 2c1d420a-191e-f6c6-0fe2-0b0542fbb1db.71:gms_cast_prober-2
+04-22 20:26:35.032 11257 11313 I cast_shell: [0422/202635.032684:INFO:v2_ssl_socket.cc(342)] Stop reading on pending closed socket
+04-22 20:26:37.191  3196  3274 E WifiVendorHal: getWifiLinkLayerStats(l.937) failed {.code = ERROR_NOT_AVAILABLE, .description = }
+04-22 20:26:39.763  3196  3205 I system_server: Background concurrent copying GC freed 285312(8MB) AllocSpace objects, 0(0B) LOS objects, 42% free, 11MB/20MB, paused 833us total 215.484ms
+04-22 20:26:40.197  3196  3274 E WifiVendorHal: getWifiLinkLayerStats(l.937) failed {.code = ERROR_NOT_AVAILABLE, .description = }
+04-22 20:26:40.349  6847  6919 W native  : W0000 00:00:1776882400.349183    6919 publisher.cc:36] [FTL] No subscribers for event "hvc.api.events.MetricEvent" from publisher "UmaMetricsForwarder"
+04-22 20:26:40.486 11257 11318 I cast_shell: [0422/202640.486805:INFO:wifi_frame_histogram_capturer.cc(406)] No histogram or IOCTL data
+04-22 20:26:40.499 11257 11257 I cast_shell: [0422/202640.499827:INFO:metrics_recorder.cc(193)] Record action: Cast.CecHdmiInputState.Active
+04-22 20:26:40.500 11257 11257 I cast_shell: [0422/202640.500182:INFO:metrics_recorder.cc(193)] Record action: Cast.CecStandby.On
+04-22 20:26:40.505 11257 11318 I cast_shell: [0422/202640.505739:INFO:wifi_util.cc(197)] Current wifi TDLS peers:
+04-22 20:26:40.505 11257 11318 I cast_shell: [0422/202640.505919:INFO:wifi_util.cc(199)] 	No peers:
+04-22 20:26:40.830 11257 11257 I cast_shell: [0422/202640.830479:INFO:service_base.h(78)] Size of the map for type AuthTokenResponse is 0
+04-22 20:26:40.846 11257 11257 I cast_shell: [0422/202640.846637:INFO:service_base.h(246)] Container sizes for type CloudSetting are (session_info_map: 0), (topic_info_map: 21), (pending_events: 0).
+04-22 20:26:40.848 11257 11257 I cast_shell: [0422/202640.847569:INFO:metrics_stat_logger.cc(38)] Metrics stat for the past 60 secs : total=19
+04-22 20:26:40.848 11257 11257 I cast_shell: [metrics_stat_logger] AppRunning=1
+04-22 20:26:40.848 11257 11257 I cast_shell: [metrics_stat_logger] Cast.CecHdmiInputState.Active=1
+04-22 20:26:40.848 11257 11257 I cast_shell: [metrics_stat_logger] Cast.CecStandby.On=1
+04-22 20:26:40.848 11257 11257 I cast_shell: [metrics_stat_logger] Cast.ConnectionType.Wifi=1
+04-22 20:26:40.848 11257 11257 I cast_shell: [metrics_stat_logger] Cast.Discovery.Mdns.Request.AppId.In=6
+04-22 20:26:40.848 11257 11257 I cast_shell: [metrics_stat_logger] Cast.Discovery.Mdns.Request.In=14
+04-22 20:26:40.848 11257 11257 I cast_shell: [metrics_stat_logger] Cast.Discovery.Mdns.Request.Namespace.In=8
+04-22 20:26:40.848 11257 11257 I cast_shell: [metrics_stat_logger] Cast.Discovery.Mdns.Response.AppId.Out=6
+04-22 20:26:40.848 11257 11257 I cast_shell: [metrics_stat_logger] Cast.Discovery.Mdns.Response.Error.NamespaceNotSupported=8
+04-22 20:26:40.848 11257 11257 I cast_shell: [metrics_stat_logger] Cast.Discovery.Mdns.Response.Out=14
+04-22 20:26:40.848 11257 11257 I cast_shell: [metrics_stat_logger] Cast.Network.CheckIn=1
+04-22 20:26:40.848 11257 11257 I cast_shell: [metrics_stat_logger] CastV2.Connection.Connect.In=1
+04-22 20:26:40.848 11257 11257 I cast_shell: [metrics_stat_logger] CastV2.Receiver.DeviceStatus.Out=1
+04-22 20:26:40.848 11257 11257 I cast_shell: [metrics_stat_logger] CastV2.Receiver.GetAppAvailability.In=1
+04-22 20:26:40.848 11257 11257 I cast_shell: [metrics_stat_logger] CastV2.Receiver.GetAppAvailability.Out=1
+04-22 20:26:40.848 11257 11257 I cast_shell: [metrics_stat_logger] CastV2.Receiver.GetStatus.In=1
+04-22 20:26:40.848 11257 11257 I cast_shell: [metrics_stat_logger] CastV2.Transport.Accept=1
+04-22 20:26:40.848 11257 11257 I cast_shell: [metrics_stat_logger] CastV2.Transport.Close=1
+04-22 20:26:40.848 11257 11257 I cast_shell: [metrics_stat_logger] CastV2.Transport.TcpAccept=1
+04-22 20:26:41.143 11257 11312 I cast_shell: [0422/202641.142732:INFO:mdns_cast_service.cc(987)] Recent mDNS app subtypes: [supported:'ED01B6D7','CFE7FEDA','A1EB4E9D','EF6F58F4',] [unsupported:]
+04-22 20:26:43.205  3196  3274 E WifiVendorHal: getWifiLinkLayerStats(l.937) failed {.code = ERROR_NOT_AVAILABLE, .description = }
+04-22 20:26:44.000 11257 11320 I cast_shell: [0422/202644.000680:INFO:ssdp_device.c(101)] SSDP packets sent for 53 seconds = 2
+04-22 20:26:44.728  3035  3035 E WifiHAL : Failed to register debug response; result = -95
+04-22 20:26:44.737  3196  3214 E BatteryExternalStatsWorker: no controller energy info supplied for wifi
+04-22 20:26:44.738  3196  3214 E BatteryExternalStatsWorker: no controller energy info supplied for bluetooth
+04-22 20:26:44.738  3196  3214 E BatteryExternalStatsWorker: no controller energy info supplied for telephony
+04-22 20:26:44.730  3035  3035 E WifiHAL : Failed to register debug response; result = -95
+04-22 20:26:44.745  3027  3027 I PowerHAL: geNumberOfPlatformModes
+04-22 20:26:45.467  3139  3174 E storaged: getDiskStats failed with result NOT_SUPPORTED and size 0
+04-22 20:26:46.217  3196  3274 E WifiVendorHal: getWifiLinkLayerStats(l.937) failed {.code = ERROR_NOT_AVAILABLE, .description = }
+04-22 20:26:47.453 12842 12842 V BleRemoteService: requestScan,RC size:1,hasInit:true,mIsPair:false,Connecting:false,isScreenOn:true,allowMoreThanOneRC:false
+04-22 20:26:49.230  3196  3274 E WifiVendorHal: getWifiLinkLayerStats(l.937) failed {.code = ERROR_NOT_AVAILABLE, .description = }
+04-22 20:26:52.202  3196  7205 D PowerManagerService: updateSuspendBlockerLocked mWakefulness=1,needWakeLockSuspendBlocker=true
+04-22 20:26:52.239  3196  3274 E WifiVendorHal: getWifiLinkLayerStats(l.937) failed {.code = ERROR_NOT_AVAILABLE, .description = }
+04-22 20:26:52.256 21145 20074 I AlarmManager: setExactAndAllowWhileIdle [name: GCM_HB_ALARM type: 2 triggerAtMillis: 959102720]
+04-22 20:26:52.234  3196  7205 I chatty  : uid=1000(system) Binder:3196_16 identical 2 lines
+04-22 20:26:52.260  3196  7205 D PowerManagerService: updateSuspendBlockerLocked mWakefulness=1,needWakeLockSuspendBlocker=true
+04-22 20:26:52.272  3196  3206 D PowerManagerService: updateSuspendBlockerLocked mWakefulness=1,needWakeLockSuspendBlocker=true
+04-22 20:26:52.275 21145 20127 W ChimeraUtils: Module com.google.android.gms.gcm missing resource null(0)
+04-22 20:26:52.278  3196  3206 D PowerManagerService: updateSuspendBlockerLocked mWakefulness=1,needWakeLockSuspendBlocker=true
+04-22 20:26:52.281  3196  7205 D PowerManagerService: updateSuspendBlockerLocked mWakefulness=1,needWakeLockSuspendBlocker=true
+04-22 20:26:52.290 21145 20134 I AlarmManager: setExactAndAllowWhileIdle [name: GCM_HB_ALARM type: 2 triggerAtMillis: 959102754]
+04-22 20:26:52.295  3196  3206 D PowerManagerService: updateSuspendBlockerLocked mWakefulness=1,needWakeLockSuspendBlocker=true
+04-22 20:26:52.312  3196  7205 D PowerManagerService: updateSuspendBlockerLocked mWakefulness=1,needWakeLockSuspendBlocker=true
+04-22 20:26:52.314 11257 11257 D cast_CastAppComponentFactoryInProc: [CastAppComponentFactoryInProc.java:160] Using base class loader for com.google.android.apps.mediashell.ChromecastGcmListenerService, cl=dalvik.system.PathClassLoader[DexPathList[[zip file "/data/app/com.google.android.apps.mediashell-ujveE7kcrhme6WlR-9gNww==/base.apk"],nativeLibraryDirectories=[/data/app/com.google.android.apps.mediashell-ujveE7kcrhme6WlR-9gNww==/lib/arm, /data/app/com.google.android.apps.mediashell-ujveE7kcrhme6WlR-9gNww==/base.apk!/lib/armeabi-v7a, /system/lib, /product/lib]]]
+04-22 20:26:52.317 11257 11257 D cast_CastAppComponentFactoryInProc: [CastAppComponentFactoryInProc.java:84] Instantiating service com.google.android.apps.mediashell.ChromecastGcmListenerService
+04-22 20:26:52.322 11257 11257 I cast_shell: [0422/202652.322056:INFO:ccs_transport_gcm.cc(47)] Record action: Cloud.Transport.Gcm.Message.Received
+04-22 20:26:52.322 11257 11257 I cast_shell: [0422/202652.322250:INFO:ccs_transport_gcm.cc(47)] Record action: Cloud.Transport.Gcm.GetStatus.Received
+04-22 20:26:52.322 11257 11257 I cast_shell: [0422/202652.322384:INFO:ccs_transport_gcm.cc(47)] Record action: Cloud.Transport.Gcm.GetStatus.In
+04-22 20:26:52.322 11257 11257 I cast_shell: [0422/202652.322482:INFO:ccs_manager_impl.cc(1163)] Handling GET_STATUS message from CCS.
+04-22 20:26:52.323 11257 11257 I cast_shell: [0422/202652.323075:INFO:metrics_recorder.cc(193)] cast event: Cloud.Transport.Https.Status.Out
+04-22 20:26:52.321  3196  7205 I chatty  : uid=1000(system) Binder:3196_16 identical 1 line
+04-22 20:26:52.324  3196  7205 D PowerManagerService: updateSuspendBlockerLocked mWakefulness=1,needWakeLockSuspendBlocker=true
+04-22 20:26:52.324  3196  3206 D PowerManagerService: updateSuspendBlockerLocked mWakefulness=1,needWakeLockSuspendBlocker=true
+04-22 20:26:52.351 21145 20135 I NetworkScheduler.Stats: (REDACTED) Task %s/%s started execution. cause:%s exec_start_elapsed_seconds: %s
+04-22 20:26:52.361  3196  3206 D PowerManagerService: updateSuspendBlockerLocked mWakefulness=1,needWakeLockSuspendBlocker=true
+04-22 20:26:52.378  3196  7205 D PowerManagerService: updateSuspendBlockerLocked mWakefulness=1,needWakeLockSuspendBlocker=true
+04-22 20:26:52.380  3196  3206 D PowerManagerService: updateSuspendBlockerLocked mWakefulness=1,needWakeLockSuspendBlocker=true
+04-22 20:26:52.383  3196  7205 D PowerManagerService: updateSuspendBlockerLocked mWakefulness=1,needWakeLockSuspendBlocker=true
+04-22 20:26:52.384 21145 20134 I NetworkScheduler.Stats: (REDACTED) Task %s/%s finished executing. cause:%s result: %s elapsed_millis: %s uptime_millis: %s exec_start_elapsed_seconds: %s
+04-22 20:26:52.403  3196  3206 D PowerManagerService: updateSuspendBlockerLocked mWakefulness=1,needWakeLockSuspendBlocker=true
+04-22 20:26:52.403 21145 20134 I NetworkScheduler.Stats: (REDACTED) Task %s/%s started execution. cause:%s exec_start_elapsed_seconds: %s
+04-22 20:26:52.445 21145 20136 I NetworkScheduler.Stats: (REDACTED) Task %s/%s started execution. cause:%s exec_start_elapsed_seconds: %s
+04-22 20:26:52.453 21145 20134 I NetworkScheduler.Stats: (REDACTED) Task %s/%s finished executing. cause:%s result: %s elapsed_millis: %s uptime_millis: %s exec_start_elapsed_seconds: %s
+04-22 20:26:52.452  3196  3206 I chatty  : uid=1000(system) Binder:3196_1 identical 5 lines
+04-22 20:26:52.457  3196  3206 D PowerManagerService: updateSuspendBlockerLocked mWakefulness=1,needWakeLockSuspendBlocker=true
+04-22 20:26:52.461  3196  7205 D PowerManagerService: updateSuspendBlockerLocked mWakefulness=1,needWakeLockSuspendBlocker=true
+04-22 20:26:52.495  3196  7205 D PowerManagerService: updateSuspendBlockerLocked mWakefulness=1,needWakeLockSuspendBlocker=true
+04-22 20:26:52.499  3196  3206 D PowerManagerService: updateSuspendBlockerLocked mWakefulness=1,needWakeLockSuspendBlocker=true
+04-22 20:26:52.503 21145 21145 D BoundBrokerSvc: onBind: Intent { act=com.google.android.contextmanager.service.ContextManagerLogsUploadBoundService.ACTION_TASK_READY dat=chimera-action: cmp=com.google.android.gms/.chimera.PersistentInternalBoundBrokerService }
+04-22 20:26:52.504 21145 21145 D BoundBrokerSvc: Loading bound service for intent: Intent { act=com.google.android.contextmanager.service.ContextManagerLogsUploadBoundService.ACTION_TASK_READY dat=chimera-action: cmp=com.google.android.gms/.chimera.PersistentInternalBoundBrokerService }
+04-22 20:26:52.514 21145 20136 I NetworkScheduler.Stats: (REDACTED) Task %s/%s started execution. cause:%s exec_start_elapsed_seconds: %s
+04-22 20:26:52.524 21145 21145 D BoundBrokerSvc: onUnbind: Intent { act=com.google.android.contextmanager.service.ContextManagerLogsUploadBoundService.ACTION_TASK_READY dat=chimera-action: cmp=com.google.android.gms/.chimera.PersistentInternalBoundBrokerService }
+04-22 20:26:52.516  3196  3206 I chatty  : uid=1000(system) Binder:3196_1 identical 1 line
+04-22 20:26:52.520  3196  3206 D PowerManagerService: updateSuspendBlockerLocked mWakefulness=1,needWakeLockSuspendBlocker=true
+04-22 20:26:52.525  3196  7205 D PowerManagerService: updateSuspendBlockerLocked mWakefulness=1,needWakeLockSuspendBlocker=true
+04-22 20:26:52.533 21145 20137 I NetworkScheduler.Stats: (REDACTED) Task %s/%s finished executing. cause:%s result: %s elapsed_millis: %s uptime_millis: %s exec_start_elapsed_seconds: %s
+04-22 20:26:52.539  3196  3206 D PowerManagerService: updateSuspendBlockerLocked mWakefulness=1,needWakeLockSuspendBlocker=true
+04-22 20:26:52.545  3196  3206 I chatty  : uid=1000(system) Binder:3196_1 identical 1 line
+04-22 20:26:52.553  3196  3206 D PowerManagerService: updateSuspendBlockerLocked mWakefulness=1,needWakeLockSuspendBlocker=true
+04-22 20:26:52.562  3196  7205 D PowerManagerService: updateSuspendBlockerLocked mWakefulness=1,needWakeLockSuspendBlocker=true
+04-22 20:26:52.576 21145 21145 D BoundBrokerSvc: onRebind: Intent { act=com.google.android.gms.auth.aang.events.services.START dat=chimera-action: cmp=com.google.android.gms/.chimera.PersistentApiService }
+04-22 20:26:52.654 11257 11257 I cast_shell: [0422/202652.654113:INFO:metrics_recorder.cc(193)] cast event: Cloud.Transport.Https.Status.Out.Success
+04-22 20:26:52.730 21145 21155 I .gms.persisten: Background concurrent copying GC freed 215820(10MB) AllocSpace objects, 29(936KB) LOS objects, 49% free, 9MB/18MB, paused 232us total 269.451ms
+04-22 20:26:53.083  3196  7205 D PowerManagerService: updateSuspendBlockerLocked mWakefulness=1,needWakeLockSuspendBlocker=false
+04-22 20:26:53.085  3196  3206 D PowerManagerService: updateSuspendBlockerLocked mWakefulness=1,needWakeLockSuspendBlocker=true
+04-22 20:26:53.088 21145 20134 I NetworkScheduler.Stats: (REDACTED) Task %s/%s finished executing. cause:%s result: %s elapsed_millis: %s uptime_millis: %s exec_start_elapsed_seconds: %s
+04-22 20:26:53.092  3196  3206 D PowerManagerService: updateSuspendBlockerLocked mWakefulness=1,needWakeLockSuspendBlocker=false
+04-22 20:26:53.094  3196  7205 D PowerManagerService: updateSuspendBlockerLocked mWakefulness=1,needWakeLockSuspendBlocker=true
+04-22 20:26:53.098  3196  7205 D PowerManagerService: updateSuspendBlockerLocked mWakefulness=1,needWakeLockSuspendBlocker=false
+04-22 20:26:54.310 19815 19831 I Finsky  : [3015] Stats for Executor: BlockingExecutor mkw@3d186cb[Running, pool size = 0, active threads = 0, queued tasks = 0, completed tasks = 28]
+04-22 20:26:54.311 19815 19831 I Finsky  : [3015] Stats for Executor: LightweightExecutor mkw@34a6ea8[Running, pool size = 3, active threads = 0, queued tasks = 0, completed tasks = 120]
+04-22 20:26:54.361 19815 19831 I Finsky  : [3015] Stats for Executor: bgExecutor mkw@2587dc1[Running, pool size = 4, active threads = 0, queued tasks = 0, completed tasks = 96]
+04-22 20:26:55.249  3196  3274 E WifiVendorHal: getWifiLinkLayerStats(l.937) failed {.code = ERROR_NOT_AVAILABLE, .description = }
+04-22 20:26:55.632 19919 19936 I Finsky:background: [3023] Stats for Executor: bgExecutor mkw@e5c2fcf[Running, pool size = 4, active threads = 0, queued tasks = 0, completed tasks = 35]
+04-22 20:26:55.809 19919 19936 I Finsky:background: [3023] Stats for Executor: LightweightExecutor mkw@ceb9d5c[Running, pool size = 3, active threads = 0, queued tasks = 0, completed tasks = 14]
+04-22 20:26:56.009 19919 19936 I Finsky:background: [3023] Stats for Executor: BlockingExecutor mkw@b6c3865[Running, pool size = 0, active threads = 0, queued tasks = 0, completed tasks = 1]
+04-22 20:26:57.494  5496 12841 D UDTJmDNSThread: Local address: /192.168.0.214
+04-22 20:26:57.495  5496 12841 D UDTJmDNSThread: JmDNS address:/192.168.0.214
+04-22 20:26:57.495  5496 12841 I UDTDiscoverManager: UDTJmDNSThread now available, no operation
+04-22 20:26:58.262  3196  3274 E WifiVendorHal: getWifiLinkLayerStats(l.937) failed {.code = ERROR_NOT_AVAILABLE, .description = }
+04-22 20:26:58.389  3196  5944 I PropertiesHelper: Read /data/misc/ethernet/dhcpconfig.txt >>>
+04-22 20:26:58.392  3196  5944 I PropertiesHelper: password:[12345678]
+04-22 20:26:58.392  3196  5944 I PropertiesHelper: fixed_random_ts:[no]
+04-22 20:26:58.393  3196  5944 I PropertiesHelper: authnet_state:[enable]
+04-22 20:26:58.393  3196  5944 I PropertiesHelper: random:[0102030405060708]
+04-22 20:26:58.393  3196  5944 I PropertiesHelper: timestamp:[1122334455667788]
+04-22 20:26:58.393  3196  5944 I PropertiesHelper: username:[GAOKEJUN]
+04-22 20:26:58.393  3196  5944 I PropertiesHelper: Read /data/misc/ethernet/dhcpconfig.txt <<<
+04-22 20:26:59.413  3196  5944 I PropertiesHelper: Read /data/misc/ethernet/dhcpconfig.txt >>>
+04-22 20:26:59.413  3196  5944 I PropertiesHelper: password:[12345678]
+04-22 20:26:59.415  3196  5944 I PropertiesHelper: fixed_random_ts:[no]
+04-22 20:26:59.415  3196  5944 I PropertiesHelper: authnet_state:[enable]
+04-22 20:26:59.415  3196  5944 I PropertiesHelper: random:[0102030405060708]
+04-22 20:26:59.419  3196  5944 I PropertiesHelper: timestamp:[1122334455667788]
+04-22 20:26:59.419  3196  5944 I PropertiesHelper: username:[GAOKEJUN]
+04-22 20:26:59.419  3196  5944 I PropertiesHelper: Read /data/misc/ethernet/dhcpconfig.txt <<<
+04-22 20:27:00.001  3196  3262 D PowerManagerService: updateSuspendBlockerLocked mWakefulness=1,needWakeLockSuspendBlocker=true
+04-22 20:27:00.010  3196  3196 D PowerManagerService: updateSuspendBlockerLocked mWakefulness=1,needWakeLockSuspendBlocker=false
+04-22 20:27:01.099  3196  3262 D PowerManagerService: updateSuspendBlockerLocked mWakefulness=1,needWakeLockSuspendBlocker=true
+04-22 20:27:01.115  3196  3274 D PowerManagerService: updateSuspendBlockerLocked mWakefulness=1,needWakeLockSuspendBlocker=false
+04-22 20:27:01.139  3196  3206 D WificondControl: Scan result ready event
+04-22 20:27:01.144  3196  3216 I EthernetTracker: interfaceLinkStateChanged, iface: wlan0, up: true
+04-22 20:27:01.269  3196  3274 E WifiVendorHal: getWifiLinkLayerStats(l.937) failed {.code = ERROR_NOT_AVAILABLE, .description = }
+04-22 20:27:02.304 21145 21145 D BoundBrokerSvc: onRebind: Intent { act=com.google.android.gms.libs.gmscorelogger.service.START dat=chimera-action: cmp=com.google.android.gms/.chimera.PersistentDirectBootAwareApiService }
+04-22 20:27:03.459 12842 12842 V BleRemoteService: requestScan,RC size:1,hasInit:true,mIsPair:false,Connecting:false,isScreenOn:true,allowMoreThanOneRC:false
+04-22 20:27:04.278  3196  3274 E WifiVendorHal: getWifiLinkLayerStats(l.937) failed {.code = ERROR_NOT_AVAILABLE, .description = }
+04-22 20:27:07.290  3196  3274 E WifiVendorHal: getWifiLinkLayerStats(l.937) failed {.code = ERROR_NOT_AVAILABLE, .description = }
+04-22 20:27:07.602 21145 21145 D BoundBrokerSvc: onUnbind: Intent { act=com.google.android.gms.auth.aang.events.services.START dat=chimera-action: cmp=com.google.android.gms/.chimera.PersistentApiService }
+04-22 20:27:07.807  3196  5944 I PropertiesHelper: Read /data/misc/ethernet/dhcpconfig.txt >>>
+04-22 20:27:07.808  3196  5944 I PropertiesHelper: password:[12345678]
+04-22 20:27:07.808  3196  5944 I PropertiesHelper: fixed_random_ts:[no]
+04-22 20:27:07.808  3196  5944 I PropertiesHelper: authnet_state:[enable]
+04-22 20:27:07.808  3196  5944 I PropertiesHelper: random:[0102030405060708]
+04-22 20:27:07.808  3196  5944 I PropertiesHelper: timestamp:[1122334455667788]
+04-22 20:27:07.808  3196  5944 I PropertiesHelper: username:[GAOKEJUN]
+04-22 20:27:07.808  3196  5944 I PropertiesHelper: Read /data/misc/ethernet/dhcpconfig.txt <<<
+04-22 20:27:08.830  3196  5944 I PropertiesHelper: Read /data/misc/ethernet/dhcpconfig.txt >>>
+04-22 20:27:08.831  3196  5944 I PropertiesHelper: password:[12345678]
+04-22 20:27:08.831  3196  5944 I PropertiesHelper: fixed_random_ts:[no]
+04-22 20:27:08.831  3196  5944 I PropertiesHelper: authnet_state:[enable]
+04-22 20:27:08.831  3196  5944 I PropertiesHelper: random:[0102030405060708]
+04-22 20:27:08.831  3196  5944 I PropertiesHelper: timestamp:[1122334455667788]
+04-22 20:27:08.831  3196  5944 I PropertiesHelper: username:[GAOKEJUN]
+04-22 20:27:08.831  3196  5944 I PropertiesHelper: Read /data/misc/ethernet/dhcpconfig.txt <<<
+04-22 20:27:10.305  3196  3274 E WifiVendorHal: getWifiLinkLayerStats(l.937) failed {.code = ERROR_NOT_AVAILABLE, .description = }
+04-22 20:27:11.904 11257 11312 I cast_shell: [0422/202711.903961:INFO:mdns_app_filter.cc(3358)] MdnsAppFilter: responses sent in 36 seconds: 20
+04-22 20:27:13.333  3196  3274 E WifiVendorHal: getWifiLinkLayerStats(l.937) failed {.code = ERROR_NOT_AVAILABLE, .description = }
+04-22 20:27:14.134 11257 11313 I cast_shell: [0422/202714.134269:INFO:v2_ssl_socket.cc(342)] Stop reading on pending closed socket
+04-22 20:27:14.194 11257 11313 I cast_shell: [0422/202714.194327:INFO:metrics_recorder.cc(193)] Cast v2 action(socket_id=2c1d420a-191e-f6c6-0fe2-0b0542fbb1db.72): CastV2.Connection.Connect.In
+04-22 20:27:14.194 11257 11308 I cast_shell: [0422/202714.194661:INFO:setup_namespace_handler.cc(90)] Added a peer for setup namespace: 2c1d420a-191e-f6c6-0fe2-0b0542fbb1db.72:gms_cast_prober-3
+04-22 20:27:14.195 11257 11308 I cast_shell: [0422/202714.195043:INFO:setup_state.cc(541)] EurekaInfoCalled: wifi_state=0, is_usable_ip_address=1, connected=1, is_initial_setup=0
+04-22 20:27:14.208 11257 11313 I cast_shell: [0422/202714.208925:INFO:v2_ssl_socket.cc(342)] Stop reading on pending closed socket
+04-22 20:27:14.209 11257 11308 I cast_shell: [0422/202714.209071:INFO:setup_namespace_handler.cc(100)] Removed a peer for setup namespace: 2c1d420a-191e-f6c6-0fe2-0b0542fbb1db.72:gms_cast_prober-3
+04-22 20:27:16.359  3196  3274 E WifiVendorHal: getWifiLinkLayerStats(l.937) failed {.code = ERROR_NOT_AVAILABLE, .description = }
+04-22 20:27:17.366 21145 21145 D BoundBrokerSvc: onUnbind: Intent { act=com.google.android.gms.libs.gmscorelogger.service.START dat=chimera-action: cmp=com.google.android.gms/.chimera.PersistentDirectBootAwareApiService }
+04-22 20:27:19.376  3196  3274 E WifiVendorHal: getWifiLinkLayerStats(l.937) failed {.code = ERROR_NOT_AVAILABLE, .description = }
+04-22 20:27:19.472 12842 12842 V BleRemoteService: requestScan,RC size:1,hasInit:true,mIsPair:false,Connecting:false,isScreenOn:true,allowMoreThanOneRC:false
+04-22 20:27:22.392  3196  3274 E WifiVendorHal: getWifiLinkLayerStats(l.937) failed {.code = ERROR_NOT_AVAILABLE, .description = }
+04-22 20:27:25.403  3196  3274 I chatty  : uid=1000(system) WifiStateMachin identical 1 line
+04-22 20:27:28.414  3196  3274 E WifiVendorHal: getWifiLinkLayerStats(l.937) failed {.code = ERROR_NOT_AVAILABLE, .description = }
+04-22 20:27:31.040 11257 11312 W cast_shell: [0422/202731.040448:WARNING:mdns_discovered_service.cc(77)] MdnsDiscveredService::Stop called before Start!
+04-22 20:27:31.425  3196  3274 E WifiVendorHal: getWifiLinkLayerStats(l.937) failed {.code = ERROR_NOT_AVAILABLE, .description = }
+04-22 20:27:34.449  3196  3274 E WifiVendorHal: getWifiLinkLayerStats(l.937) failed {.code = ERROR_NOT_AVAILABLE, .description = }
+04-22 20:27:35.490 12842 12842 V BleRemoteService: requestScan,RC size:1,hasInit:true,mIsPair:false,Connecting:false,isScreenOn:true,allowMoreThanOneRC:false
+04-22 20:27:37.460  3196  3274 E WifiVendorHal: getWifiLinkLayerStats(l.937) failed {.code = ERROR_NOT_AVAILABLE, .description = }
+04-22 20:27:38.132  3196  3262 D PowerManagerService: updateSuspendBlockerLocked mWakefulness=1,needWakeLockSuspendBlocker=true
+04-22 20:27:38.143 21491 21491 D ScheduleMgr: {com.mitv.tvhome.content.ScheduleMgr(SourceFile:7)} - register_task_alarm# setExact, interval: 1320 s
+04-22 20:27:38.149  3196  3196 D PowerManagerService: updateSuspendBlockerLocked mWakefulness=1,needWakeLockSuspendBlocker=false
+04-22 20:27:40.271 11257 11257 I cast_shell: [0422/202740.271099:INFO:grpc_manager_impl.cc(881)] GRPC[uri=localhost:10042]: num_pending_calls=0, num_active_handlers=1, num_free_handlers=0
+04-22 20:27:40.280 11257 11257 I cast_shell: [0422/202740.280120:INFO:grpc_manager_impl.cc(881)] GRPC[uri=localhost:10042]: num_pending_calls=0, num_active_handlers=1, num_free_handlers=0
+04-22 20:27:40.282 11257 11257 I cast_shell: [0422/202740.282608:INFO:grpc_manager_impl.cc(881)] GRPC[uri=]: num_pending_calls=0, num_active_handlers=0, num_free_handlers=0
+04-22 20:27:40.284 11257 11257 I cast_shell: [0422/202740.284207:INFO:grpc_manager_impl.cc(881)] GRPC[uri=]: num_pending_calls=0, num_active_handlers=0, num_free_handlers=0
+04-22 20:27:40.315 11257 11257 I cast_shell: [0422/202740.314963:INFO:grpc_manager_impl.cc(881)] GRPC[uri=[::]:0]: num_pending_calls=0, num_active_handlers=4, num_free_handlers=0
+04-22 20:27:40.477  3196  3274 E WifiVendorHal: getWifiLinkLayerStats(l.937) failed {.code = ERROR_NOT_AVAILABLE, .description = }
+04-22 20:27:40.691  3196  3205 I system_server: Background concurrent copying GC freed 262518(8MB) AllocSpace objects, 5(588KB) LOS objects, 42% free, 11MB/20MB, paused 593us total 210.608ms
+04-22 20:27:40.831 11257 11257 I cast_shell: [0422/202740.831343:INFO:service_base.h(78)] Size of the map for type AuthTokenResponse is 0
+04-22 20:27:40.847 11257 11257 I cast_shell: [0422/202740.847513:INFO:service_base.h(246)] Container sizes for type CloudSetting are (session_info_map: 0), (topic_info_map: 21), (pending_events: 0).
+04-22 20:27:40.849 11257 11257 I cast_shell: [0422/202740.848617:INFO:metrics_stat_logger.cc(38)] Metrics stat for the past 60 secs : total=19
+04-22 20:27:40.849 11257 11257 I cast_shell: [metrics_stat_logger] Cast.Discovery.Mdns.Request.AppId.In=8
+04-22 20:27:40.849 11257 11257 I cast_shell: [metrics_stat_logger] Cast.Discovery.Mdns.Request.In=18
+04-22 20:27:40.849 11257 11257 I cast_shell: [metrics_stat_logger] Cast.Discovery.Mdns.Request.Namespace.In=8
+04-22 20:27:40.849 11257 11257 I cast_shell: [metrics_stat_logger] Cast.Discovery.Mdns.Response.AppId.Out=8
+04-22 20:27:40.849 11257 11257 I cast_shell: [metrics_stat_logger] Cast.Discovery.Mdns.Response.Error.NamespaceNotSupported=8
+04-22 20:27:40.849 11257 11257 I cast_shell: [metrics_stat_logger] Cast.Discovery.Mdns.Response.Out=18
+04-22 20:27:40.849 11257 11257 I cast_shell: [metrics_stat_logger] CastV2.Connection.Connect.In=1
+04-22 20:27:40.849 11257 11257 I cast_shell: [metrics_stat_logger] CastV2.Receiver.DeviceStatus.Out=1
+04-22 20:27:40.849 11257 11257 I cast_shell: [metrics_stat_logger] CastV2.Receiver.GetAppAvailability.In=1
+04-22 20:27:40.849 11257 11257 I cast_shell: [metrics_stat_logger] CastV2.Receiver.GetAppAvailability.Out=1
+04-22 20:27:40.849 11257 11257 I cast_shell: [metrics_stat_logger] CastV2.Receiver.GetStatus.In=1
+04-22 20:27:40.849 11257 11257 I cast_shell: [metrics_stat_logger] CastV2.Transport.Accept=1
+04-22 20:27:40.849 11257 11257 I cast_shell: [metrics_stat_logger] CastV2.Transport.Close=2
+04-22 20:27:40.849 11257 11257 I cast_shell: [metrics_stat_logger] CastV2.Transport.TcpAccept=1
+04-22 20:27:40.849 11257 11257 I cast_shell: [metrics_stat_logger] Cloud.Transport.Gcm.GetStatus.In=1
+04-22 20:27:40.849 11257 11257 I cast_shell: [metrics_stat_logger] Cloud.Transport.Gcm.GetStatus.Received=1
+04-22 20:27:40.849 11257 11257 I cast_shell: [metrics_stat_logger] Cloud.Transport.Gcm.Message.Received=1
+04-22 20:27:40.849 11257 11257 I cast_shell: [metrics_stat_logger] Cloud.Transport.Https.Status.Out=1
+04-22 20:27:40.849 11257 11257 I cast_shell: [metrics_stat_logger] Cloud.Transport.Https.Status.Out.Success=1
+04-22 20:27:42.215 11257 11312 I cast_shell: [0422/202742.214968:INFO:mdns_app_filter.cc(3358)] MdnsAppFilter: responses sent in 30 seconds: 26
+04-22 20:27:43.492  3196  3274 E WifiVendorHal: getWifiLinkLayerStats(l.937) failed {.code = ERROR_NOT_AVAILABLE, .description = }
+04-22 20:27:45.470  3139  3174 E storaged: getDiskStats failed with result NOT_SUPPORTED and size 0
+04-22 20:27:46.523  3196  3274 E WifiVendorHal: getWifiLinkLayerStats(l.937) failed {.code = ERROR_NOT_AVAILABLE, .description = }
+04-22 20:27:48.195 21491 20144 D ScheduleMgr: {com.mitv.tvhome.content.ScheduleMgr(SourceFile:1)} - === check upgrade info ===
+04-22 20:27:48.207 21491 20144 D PWHttp  : {Thread:RxCachedThreadScheduler-216: b.d.e.n.d.a(SourceFile:4)} - cache mode: cache_none
+04-22 20:27:48.210 21491 20144 D PWHttp  : {Thread:RxCachedThreadScheduler-216: b.d.e.n.d.a(SourceFile:19)} - call timeout: 10000
+04-22 20:27:48.215 21491 20144 D PWHttp  : {Thread:RxCachedThreadScheduler-216: b.d.e.s.c.<init>(SourceFile:5)} - retry count: 0
+04-22 20:27:48.217 21491 20144 D PWAppInterceptor: {com.mitv.tvhome.z.c(SourceFile:3)} - PWAppInterceptor intercept begin
+04-22 20:27:48.218 21491 20144 D mitv.os.MitvSystem_v2: getDeviceMac return 00:00:00:00:00:00
+04-22 20:27:48.219 21491 20144 D mitv.os.MitvSystem_v2: getSHA1 anonymousId 5248947efa3ab37e85b2eac853285fd4b3a1f3f5
+04-22 20:27:48.219 21491 20144 D device  : get platform through Settings.Global # 906
+04-22 20:27:48.229 21491 20144 D InternalInterceptor: {Thread:RxCachedThreadScheduler-216: okhttp3.internal.http.RealInterceptorChain.proceed(SourceFile:10)} - InternalInterceptor intercept begin
+04-22 20:27:48.230 21491 20144 D PWHttp  : {Thread:RxCachedThreadScheduler-216: b.d.e.e.intercept(SourceFile:9)} - cache mode: cache_none
+04-22 20:27:48.232 21491 20144 D PWHttp  : {Thread:RxCachedThreadScheduler-216: okhttp3.internal.http.RealInterceptorChain.proceed(SourceFile:10)} - --> GET https://us.tv.global.mi.com/atv/gethomeupgradeinfo?you=528c8e6cd4a3c6598999a0e9df15ad32&app=0&watchmode=0&ptf=906&level=1&codever=81&today=1776882468&os_type=1&android=28&me=5248947efa3ab37e85b2eac853285fd4b3a1f3f5&dlg=en&group=GA%2Cdefault&clg=en&opaque=7c5991a931a8a07f85d024c08613151ecea2718a
+04-22 20:27:48.233 21491 20144 D PWHttp  : {Thread:RxCachedThreadScheduler-216: okhttp3.internal.http.RealInterceptorChain.proceed(SourceFile:10)} - Cache-Control: no-cache, no-store
+04-22 20:27:48.233 21491 20144 D PWHttp  : {Thread:RxCachedThreadScheduler-216: okhttp3.internal.http.RealInterceptorChain.proceed(SourceFile:10)} - --> END GET
+04-22 20:27:48.663 21491 20144 D PWHttp  : {Thread:RxCachedThreadScheduler-216: okhttp3.internal.http.RealInterceptorChain.proceed(SourceFile:10)} - <-- 200 https://us.tv.global.mi.com/atv/gethomeupgradeinfo?you=528c8e6cd4a3c6598999a0e9df15ad32&app=0&watchmode=0&ptf=906&level=1&codever=81&today=1776882468&os_type=1&android=28&me=5248947efa3ab37e85b2eac853285fd4b3a1f3f5&dlg=en&group=GA%2Cdefault&clg=en&opaque=7c5991a931a8a07f85d024c08613151ecea2718a (429ms)
+04-22 20:27:48.664 21491 20144 D PWHttp  : {Thread:RxCachedThreadScheduler-216: okhttp3.internal.http.RealInterceptorChain.proceed(SourceFile:10)} - date: Wed, 22 Apr 2026 18:27:52 GMT
+04-22 20:27:48.667 21491 20144 D PWHttp  : {Thread:RxCachedThreadScheduler-216: okhttp3.internal.http.RealInterceptorChain.proceed(SourceFile:10)} - content-type: application/json; charset=utf-8
+04-22 20:27:48.668 21491 20144 D PWHttp  : {Thread:RxCachedThreadScheduler-216: okhttp3.internal.http.RealInterceptorChain.proceed(SourceFile:10)} - x-log-id: 785625217247478471
+04-22 20:27:48.669 21491 20144 D PWHttp  : {Thread:RxCachedThreadScheduler-216: okhttp3.internal.http.RealInterceptorChain.proceed(SourceFile:10)} - 
+04-22 20:27:48.673 21491 20144 D PWHttp  : {Thread:RxCachedThreadScheduler-216: okhttp3.internal.http.RealInterceptorChain.proceed(SourceFile:10)} - {"msg":"空数据","status":13}
+04-22 20:27:48.674 21491 20144 D PWHttp  : {Thread:RxCachedThreadScheduler-216: okhttp3.internal.http.RealInterceptorChain.proceed(SourceFile:10)} - <-- END HTTP (31-byte body)
+04-22 20:27:48.675 21491 20144 D InternalInterceptor: {Thread:RxCachedThreadScheduler-216: okhttp3.internal.http.RealInterceptorChain.proceed(SourceFile:10)} - InternalInterceptor intercept end
+04-22 20:27:48.676 21491 20144 D PWAppInterceptor: {com.mitv.tvhome.z.c(SourceFile:22)} - PWAppInterceptor intercept end: protocol: h2
+04-22 20:27:48.677 21491 20144 D PWHttp  : {Thread:RxCachedThreadScheduler-216: b.d.e.s.c.a(SourceFile:31)} - request success!!
+04-22 20:27:48.679 21491 20144 D PWHttp  : {Thread:RxCachedThreadScheduler-216: b.d.e.n.d.a(SourceFile:32)} - call: i.i@8d52592 is canceled: false
+04-22 20:27:48.679 21491 20144 D PWHttp  : {Thread:RxCachedThreadScheduler-216: b.d.e.o.e.b(SourceFile:6)} - response is valid
+04-22 20:27:48.680 21491 20144 D PWHttp  : {Thread:RxCachedThreadScheduler-216: b.d.e.b.c(SourceFile:2)} - onComplete
+04-22 20:27:48.681 21491 20144 D ScheduleMgr: {com.mitv.tvhome.content.ScheduleMgr(SourceFile:33)} - invalid upgrade data
+04-22 20:27:49.543  3196  3274 E WifiVendorHal: getWifiLinkLayerStats(l.937) failed {.code = ERROR_NOT_AVAILABLE, .description = }
+04-22 20:27:51.496 12842 12842 V BleRemoteService: requestScan,RC size:1,hasInit:true,mIsPair:false,Connecting:false,isScreenOn:true,allowMoreThanOneRC:false
+04-22 20:27:51.722 21491 20144 D ScheduleMgr: {com.mitv.tvhome.content.ScheduleMgr(SourceFile:2)} - === installQuiteApps ===
+04-22 20:27:51.726 21491 20144 D PWHttp  : {Thread:RxCachedThreadScheduler-216: b.d.e.n.d.a(SourceFile:4)} - cache mode: net only
+04-22 20:27:51.729 21491 20144 D PWHttp  : {Thread:RxCachedThreadScheduler-216: b.d.e.n.d.a(SourceFile:19)} - call timeout: 10000
+04-22 20:27:51.734 21491 20144 D PWHttp  : {Thread:RxCachedThreadScheduler-216: b.d.e.s.c.<init>(SourceFile:5)} - retry count: 0
+04-22 20:27:51.737 21491 20144 D PWAppInterceptor: {com.mitv.tvhome.z.c(SourceFile:3)} - PWAppInterceptor intercept begin
+04-22 20:27:51.738 21491 20144 D mitv.os.MitvSystem_v2: getDeviceMac return 00:00:00:00:00:00
+04-22 20:27:51.739 21491 20144 D mitv.os.MitvSystem_v2: getSHA1 anonymousId 5248947efa3ab37e85b2eac853285fd4b3a1f3f5
+04-22 20:27:51.739 21491 20144 D device  : get platform through Settings.Global # 906
+04-22 20:27:51.746 21491 20144 D InternalInterceptor: {Thread:RxCachedThreadScheduler-216: okhttp3.internal.http.RealInterceptorChain.proceed(SourceFile:10)} - InternalInterceptor intercept begin
+04-22 20:27:51.748 21491 20144 D PWHttp  : {Thread:RxCachedThreadScheduler-216: b.d.e.e.intercept(SourceFile:9)} - cache mode: net only
+04-22 20:27:51.749 21491 20144 D PWHttp  : {Thread:RxCachedThreadScheduler-216: okhttp3.internal.http.RealInterceptorChain.proceed(SourceFile:10)} - --> GET https://us.tv.global.mi.com/atv/apk/upgrade?you=528c8e6cd4a3c6598999a0e9df15ad32&app=0&watchmode=0&ptf=906&level=1&codever=81&today=1776882471&os_type=1&android=28&me=5248947efa3ab37e85b2eac853285fd4b3a1f3f5&dlg=en&group=GA%2Cdefault&clg=en&opaque=49aa117a4a73ec0c2fd938c512552ec211a5e4c6
+04-22 20:27:51.750 21491 20144 D PWHttp  : {Thread:RxCachedThreadScheduler-216: okhttp3.internal.http.RealInterceptorChain.proceed(SourceFile:10)} - --> END GET
+04-22 20:27:51.835 21491 20144 D PWHttp  : {Thread:RxCachedThreadScheduler-216: okhttp3.internal.http.RealInterceptorChain.proceed(SourceFile:10)} - <-- 200 https://us.tv.global.mi.com/atv/apk/upgrade?you=528c8e6cd4a3c6598999a0e9df15ad32&app=0&watchmode=0&ptf=906&level=1&codever=81&today=1776882471&os_type=1&android=28&me=5248947efa3ab37e85b2eac853285fd4b3a1f3f5&dlg=en&group=GA%2Cdefault&clg=en&opaque=49aa117a4a73ec0c2fd938c512552ec211a5e4c6 (84ms)
+04-22 20:27:51.836 21491 20144 D PWHttp  : {Thread:RxCachedThreadScheduler-216: okhttp3.internal.http.RealInterceptorChain.proceed(SourceFile:10)} - date: Wed, 22 Apr 2026 18:27:56 GMT
+04-22 20:27:51.836 21491 20144 D PWHttp  : {Thread:RxCachedThreadScheduler-216: okhttp3.internal.http.RealInterceptorChain.proceed(SourceFile:10)} - content-type: application/json; charset=utf-8
+04-22 20:27:51.837 21491 20144 D PWHttp  : {Thread:RxCachedThreadScheduler-216: okhttp3.internal.http.RealInterceptorChain.proceed(SourceFile:10)} - x-log-id: 785625436284518711
+04-22 20:27:51.842 21491 20144 D PWHttp  : {Thread:RxCachedThreadScheduler-216: okhttp3.internal.http.RealInterceptorChain.proceed(SourceFile:10)} - 
+04-22 20:27:51.842 21491 20144 D PWHttp  : {Thread:RxCachedThreadScheduler-216: okhttp3.internal.http.RealInterceptorChain.proceed(SourceFile:10)} - {"data":[{"allow_downgrade":false,"extra_params":"","md5":"7e243dcd04d31a05cc29309bacb63d94","name":"updateservice_new_signature-2.2.5","package_name":"com.xiaomi.mitv.updateservice","skip_foreground":true,"time_range":-1,"type":2,"url":"https://cdn.awsde0-fusion.fds.api.mi-img.com/mitv/10009/3/7e243dcd04d31a05cc29309bacb63d94.apk","version":24},{"allow_downgrade":false,"extra_params":"","md5":"a5642cdfb600448625eb539bb02700ba","name":"michannel-2.7","package_name":"com.mitv.tvhome.michannel","skip_foreground":true,"time_range":-1,"type":2,"url":"https://cdn.awsde0-fusion.fds.api.mi-img.com/mitv/10009/3/a5642cdfb600448625eb539bb02700ba.apk","version":19},{"allow_downgrade":false,"extra_params":"","md5":"d6e09d26704ac2ae1fb208b1a2230f3e","name":"oemtab-5.1","package_name":"com.mitv.tvhome.oemtab","skip_foreground":true,"time_range":-1,"type":2,"url":"https://cdn.awsde0-fusion.fds.api.mi-img.com/mitv/10009/3/d6e09d26704ac2ae1fb208b1a2230f3e.apk","version":6}],"status":0}
+04-22 20:27:51.843 21491 20144 D PWHttp  : {Thread:RxCachedThreadScheduler-216: okhttp3.internal.http.RealInterceptorChain.proceed(SourceFile:10)} - <-- END HTTP (983-byte body)
+04-22 20:27:51.846 21491 20144 D InternalInterceptor: {Thread:RxCachedThreadScheduler-216: okhttp3.internal.http.RealInterceptorChain.proceed(SourceFile:10)} - InternalInterceptor intercept end
+04-22 20:27:51.848 21491 20144 D PWAppInterceptor: {com.mitv.tvhome.z.c(SourceFile:22)} - PWAppInterceptor intercept end: protocol: h2
+04-22 20:27:51.851 21491 20144 D PWHttp  : {Thread:RxCachedThreadScheduler-216: b.d.e.s.c.a(SourceFile:31)} - request success!!
+04-22 20:27:51.852 21491 20144 D PWHttp  : {Thread:RxCachedThreadScheduler-216: b.d.e.n.d.a(SourceFile:32)} - call: i.i@79c08de is canceled: false
+04-22 20:27:51.854 21491 20144 D PWHttp  : {Thread:RxCachedThreadScheduler-216: b.d.e.n.c.a(SourceFile:34)} - max_age: delete on no-space
+04-22 20:27:51.855 21491 20144 D PWHttp  : {Thread:RxCachedThreadScheduler-216: b.d.e.n.c.a(SourceFile:35)} - put response to cache !!
+04-22 20:27:51.855 21491 20144 D PWHttp  : {Thread:RxCachedThreadScheduler-216: b.d.e.o.e.b(SourceFile:6)} - response is valid
+04-22 20:27:51.856 21491 20144 D PWHttp  : {Thread:RxCachedThreadScheduler-216: b.d.e.b.c(SourceFile:2)} - onComplete
+04-22 20:27:51.858 21491 20144 D ScheduleMgr: {com.mitv.tvhome.content.ScheduleMgr(SourceFile:27)} - quite_install# current version: 17, com.xiaomi.mitv.updateservice ,target version: 24
+04-22 20:27:51.860 21491 20144 D install : fg running, com.google.android.tvlauncher
+04-22 20:27:51.860 21491 20144 D install : fg running, com.xiaomi.android.tvsetup.partnercustomizer
+04-22 20:27:51.860 21491 20144 D install : fg running, com.android.providers.settings
+04-22 20:27:51.860 21491 20144 D install : fg running, com.android.systemui
+04-22 20:27:51.860 21491 20144 D install : fg running, android
+04-22 20:27:51.860 21491 20144 D install : fg running, com.android.se
+04-22 20:27:51.860 21491 20144 D install : fg running, mitv.service
+04-22 20:27:51.861 21491 20144 D install : fg running, com.android.bluetooth
+04-22 20:27:51.861 21491 20144 D install : fg running, com.droidlogic
+04-22 20:27:51.861 21491 20144 D install : fg running, com.android.location.fused
+04-22 20:27:51.861 21491 20144 D a       : {com.mitv.tvhome.update.a(SourceFile:34)} - start download app >> name: com.xiaomi.mitv.updateservice,version name: ,version code: 24,md5: 7e243dcd04d31a05cc29309bacb63d94,url: https://cdn.awsde0-fusion.fds.api.mi-img.com/mitv/10009/3/7e243dcd04d31a05cc29309bacb63d94.apk
+04-22 20:27:51.868 21491 20144 D DownloadRequestQueue: DownloadRequestQueue add()
+04-22 20:27:51.868 21491 20144 D DownloadRequestQueue: mCurrentRequests = [b.d.d.e@1d79abf]
+04-22 20:27:51.869 21491 22065 D b       : Download initiated for 32
+04-22 20:27:51.869 21491 22065 D b       : Existing file mDownloadedCacheSize: 4614564
+04-22 20:27:51.870 21491 20144 D ScheduleMgr: {com.mitv.tvhome.content.ScheduleMgr(SourceFile:27)} - quite_install# current version: 19, com.mitv.tvhome.michannel ,target version: 19
+04-22 20:27:51.872 21491 20144 W ScheduleMgr: {com.mitv.tvhome.content.ScheduleMgr(SourceFile:43)} - quite_install# com.mitv.tvhome.oemtab
+04-22 20:27:52.197 21491 22065 D b       : Response code obtained for downloaded Id 32 : httpResponse Code 416
+04-22 20:27:52.198 21491 22065 D b       : cleanupDestination() deleting /storage/emulated/0/Android/data/com.mitv.tvhome.atv/cache/com.xiaomi.mitv.updateservice
+04-22 20:27:52.207 21491 22065 D b       : this = Thread[Thread-11,5,main], run() mQueue = []
+04-22 20:27:52.207 21491 21491 D a       : {com.mitv.tvhome.update.a$b(SourceFile:4)} - download failed >> name : com.xiaomi.mitv.updateservice, errorCode : 416, errorMessage : Requested Range Not Satisfiable
+04-22 20:27:52.560  3196  3274 E WifiVendorHal: getWifiLinkLayerStats(l.937) failed {.code = ERROR_NOT_AVAILABLE, .description = }
+04-22 20:27:55.571  3196  3274 E WifiVendorHal: getWifiLinkLayerStats(l.937) failed {.code = ERROR_NOT_AVAILABLE, .description = }
+04-22 20:27:57.492  5496 12841 D UDTJmDNSThread: Local address: /192.168.0.214
+04-22 20:27:57.492  5496 12841 D UDTJmDNSThread: JmDNS address:/192.168.0.214
+04-22 20:27:57.492  5496 12841 I UDTDiscoverManager: UDTJmDNSThread now available, no operation
+04-22 20:27:58.580  3196  3274 E WifiVendorHal: getWifiLinkLayerStats(l.937) failed {.code = ERROR_NOT_AVAILABLE, .description = }
+04-22 20:28:00.002  3196  3262 D PowerManagerService: updateSuspendBlockerLocked mWakefulness=1,needWakeLockSuspendBlocker=true
+04-22 20:28:00.014  3196  3196 D PowerManagerService: updateSuspendBlockerLocked mWakefulness=1,needWakeLockSuspendBlocker=false
+04-22 20:28:01.590  3196  3274 I chatty  : uid=1000(system) WifiStateMachin identical 1 line
+04-22 20:28:04.602  3196  3274 E WifiVendorHal: getWifiLinkLayerStats(l.937) failed {.code = ERROR_NOT_AVAILABLE, .description = }
+04-22 20:28:07.513 12842 12842 V BleRemoteService: requestScan,RC size:1,hasInit:true,mIsPair:false,Connecting:false,isScreenOn:true,allowMoreThanOneRC:false
+04-22 20:28:07.607  3196  3274 E WifiVendorHal: getWifiLinkLayerStats(l.937) failed {.code = ERROR_NOT_AVAILABLE, .description = }
+04-22 20:28:19.658  3196  3274 I chatty  : uid=1000(system) WifiStateMachin identical 4 lines
+04-22 20:28:22.671  3196  3274 E WifiVendorHal: getWifiLinkLayerStats(l.937) failed {.code = ERROR_NOT_AVAILABLE, .description = }
+04-22 20:28:23.523 12842 12842 V BleRemoteService: requestScan,RC size:1,hasInit:true,mIsPair:false,Connecting:false,isScreenOn:true,allowMoreThanOneRC:false
+04-22 20:28:25.684  3196  3274 E WifiVendorHal: getWifiLinkLayerStats(l.937) failed {.code = ERROR_NOT_AVAILABLE, .description = }
+04-22 20:28:28.709  3196  3274 E WifiVendorHal: getWifiLinkLayerStats(l.937) failed {.code = ERROR_NOT_AVAILABLE, .description = }
+04-22 20:28:30.146 11257 11312 I cast_shell: [0422/202830.146072:INFO:mdns_app_filter.cc(3358)] MdnsAppFilter: responses sent in 47 seconds: 4
+04-22 20:28:31.727  3196  3274 E WifiVendorHal: getWifiLinkLayerStats(l.937) failed {.code = ERROR_NOT_AVAILABLE, .description = }
+04-22 20:28:34.751  3196  3274 I chatty  : uid=1000(system) WifiStateMachin identical 1 line
+04-22 20:28:37.769  3196  3274 E WifiVendorHal: getWifiLinkLayerStats(l.937) failed {.code = ERROR_NOT_AVAILABLE, .description = }
+04-22 20:28:39.538 12842 12842 V BleRemoteService: requestScan,RC size:1,hasInit:true,mIsPair:false,Connecting:false,isScreenOn:true,allowMoreThanOneRC:false
+04-22 20:28:40.788  3196  3274 E WifiVendorHal: getWifiLinkLayerStats(l.937) failed {.code = ERROR_NOT_AVAILABLE, .description = }
+04-22 20:28:40.832 11257 11257 I cast_shell: [0422/202840.832120:INFO:service_base.h(78)] Size of the map for type AuthTokenResponse is 0
+04-22 20:28:40.848 11257 11257 I cast_shell: [0422/202840.848328:INFO:service_base.h(246)] Container sizes for type CloudSetting are (session_info_map: 0), (topic_info_map: 21), (pending_events: 0).
+04-22 20:28:40.848 11257 11257 I cast_shell: [0422/202840.848668:INFO:metrics_stat_logger.cc(38)] Metrics stat for the past 60 secs : total=2
+04-22 20:28:40.848 11257 11257 I cast_shell: [metrics_stat_logger] Cast.Discovery.Mdns.Request.In=6
+04-22 20:28:40.848 11257 11257 I cast_shell: [metrics_stat_logger] Cast.Discovery.Mdns.Response.Out=6
+04-22 20:28:41.148 11257 11312 I cast_shell: [0422/202841.147572:INFO:mdns_cast_service.cc(987)] Recent mDNS app subtypes: [supported:'CFE7FEDA',] [unsupported:]
+04-22 20:28:43.812  3196  3274 E WifiVendorHal: getWifiLinkLayerStats(l.937) failed {.code = ERROR_NOT_AVAILABLE, .description = }
+04-22 20:28:45.472  3139  3174 E storaged: getDiskStats failed with result NOT_SUPPORTED and size 0
+04-22 20:28:49.856  3196  3274 I chatty  : uid=1000(system) WifiStateMachin identical 2 lines
+04-22 20:28:52.874  3196  3274 E WifiVendorHal: getWifiLinkLayerStats(l.937) failed {.code = ERROR_NOT_AVAILABLE, .description = }
+04-22 20:28:55.556 12842 12842 V BleRemoteService: requestScan,RC size:1,hasInit:true,mIsPair:false,Connecting:false,isScreenOn:true,allowMoreThanOneRC:false
+04-22 20:28:55.890  3196  3274 E WifiVendorHal: getWifiLinkLayerStats(l.937) failed {.code = ERROR_NOT_AVAILABLE, .description = }
+04-22 20:28:57.497  5496 12841 D UDTJmDNSThread: Local address: /192.168.0.214
+04-22 20:28:57.497  5496 12841 D UDTJmDNSThread: JmDNS address:/192.168.0.214
+04-22 20:28:57.497  5496 12841 I UDTDiscoverManager: UDTJmDNSThread now available, no operation
