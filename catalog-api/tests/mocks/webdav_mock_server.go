@@ -146,7 +146,7 @@ func (s *MockWebDAVServer) Start() error {
 
 	s.server = &http.Server{
 		Addr:    ":0",
-		Handler: mux,
+		Handler: mux, // #nosec G112 — test mock server, no sensitive data
 	}
 
 	// Start server in a goroutine to get the port

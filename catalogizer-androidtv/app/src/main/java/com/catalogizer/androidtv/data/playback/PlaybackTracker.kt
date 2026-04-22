@@ -2,11 +2,13 @@ package com.catalogizer.androidtv.data.playback
 
 import android.util.Log
 import com.catalogizer.androidtv.data.remote.CatalogizerApi
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.launch
 import kotlinx.serialization.json.jsonPrimitive
 import kotlinx.serialization.json.longOrNull
@@ -92,6 +94,7 @@ class PlaybackTracker(
         stopProgressTicker()
         progressJob = scope.launch {
             while (true) {
+                ensureActive()
                 delay(intervalMs)
                 val id = sessionId
                 if (id == 0L) break
@@ -103,6 +106,8 @@ class PlaybackTracker(
                             "total_amount" to getTotalAmount(),
                         ),
                     )
+                } catch (t: CancellationException) {
+                    throw t
                 } catch (t: Throwable) {
                     // Next tick will retry; do not bubble the
                     // exception up through the coroutine scope.

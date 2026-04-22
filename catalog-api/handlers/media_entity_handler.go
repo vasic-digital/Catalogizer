@@ -720,14 +720,14 @@ func (h *MediaEntityHandler) fetchTMDBMetadata(ctx context.Context, title string
 			tmdbFailed = true
 			break
 		}
-		req, err := http.NewRequestWithContext(ctx, http.MethodGet, reqURL, nil)
+		req, err := http.NewRequestWithContext(ctx, http.MethodGet, reqURL, nil) // #nosec G704 — URL validated by GuardProviderURL above
 		if err != nil {
 			logging.Warnf("TMDB: request build failed for '%s': %v", title, err)
 			tmdbFailed = true
 			break
 		}
 
-		resp, err := client.Do(req)
+		resp, err := client.Do(req) // #nosec G704 — URL validated by GuardProviderURL above
 		if err != nil {
 			logging.Warnf("TMDB: request failed for '%s': %v", title, err)
 			tmdbFailed = true

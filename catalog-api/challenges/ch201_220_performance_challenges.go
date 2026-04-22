@@ -764,7 +764,8 @@ func (c *MemoryStabilityChallenge) Execute(
 		memAfter.Alloc/1024/1024)
 
 	// Allow up to 100 MB growth (generous)
-	growthMB := int64(memAfter.Alloc-memBefore.Alloc) / 1024 / 1024
+	// #nosec G115 — Alloc/1024/1024 is always small enough for int64 (memory in MB)
+	growthMB := int64(memAfter.Alloc/1024/1024) - int64(memBefore.Alloc/1024/1024)
 	stable := growthMB < 100
 	assertions = append(assertions, challenge.AssertionResult{
 		Type:     "not_empty",

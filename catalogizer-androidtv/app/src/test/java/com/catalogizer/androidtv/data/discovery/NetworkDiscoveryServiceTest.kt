@@ -165,7 +165,7 @@ class NetworkDiscoveryServiceTest {
     // ------------------------------------------------------------------
 
     @Test
-    fun `discoverViaHttpProbe returns list within timeout`() = runTest {
+    fun `discoverViaHttpProbe returns list within timeout`() = runBlocking {
         val results = service.discoverViaHttpProbe(timeoutMs = 500L)
         assertNotNull(results)
         // In a test environment we may or may not find servers,
@@ -173,7 +173,7 @@ class NetworkDiscoveryServiceTest {
     }
 
     @Test
-    fun `discoverViaHttpProbe with very short timeout returns empty or partial`() = runTest {
+    fun `discoverViaHttpProbe with very short timeout returns empty or partial`() = runBlocking {
         val results = service.discoverViaHttpProbe(timeoutMs = 1L)
         assertNotNull(results)
     }

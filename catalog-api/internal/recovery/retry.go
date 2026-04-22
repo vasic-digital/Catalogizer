@@ -157,6 +157,7 @@ func calculateDelay(config RetryConfig, attempt int) time.Duration {
 	if config.Jitter {
 		// math/rand/v2 is appropriate for retry jitter (non-cryptographic use).
 		// crypto/rand would be overkill for adding randomness to avoid thundering herd.
+		// #nosec G404 — intentional non-cryptographic jitter to avoid thundering herd
 		jitter := rand.Float64() * 0.1 * delay // 10% jitter
 		delay += jitter
 	}

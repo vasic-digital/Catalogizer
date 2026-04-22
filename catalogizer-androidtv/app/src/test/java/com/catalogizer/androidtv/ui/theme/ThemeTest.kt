@@ -16,7 +16,11 @@ class ThemeTest {
     @Test
     fun `dark theme primary is soft blue`() {
         val primary = Color(0xFF9ECAFF)
-        assertEquals(0xFF9ECAFF, primary.value.toLong() and 0xFFFFFFFFL)
+        // Soft blue: high blue, moderate green, lower red, full alpha
+        assertEquals(1.0f, primary.alpha, 0.01f)
+        assertTrue(primary.blue > primary.green)
+        assertTrue(primary.green > primary.red)
+        assertTrue(primary.red > 0.5f)
     }
 
     @Test

@@ -2,6 +2,7 @@ package com.catalogizer.android.data.playback
 
 import com.catalogizer.android.MainDispatcherRule
 import com.catalogizer.android.data.remote.CatalogizerApi
+import android.util.Log
 import io.mockk.*
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.runTest
@@ -24,12 +25,16 @@ class PlaybackRepositoryTest {
 
     @Before
     fun setup() {
+        mockkStatic(Log::class)
+        every { Log.w(any<String>(), any<String>()) } returns 0
+        every { Log.w(any<String>(), any<Throwable>()) } returns 0
         repository = PlaybackRepository(mockApi)
     }
 
     @After
     fun tearDown() {
         clearAllMocks()
+        unmockkStatic(Log::class)
     }
 
     // --- getProgress ---

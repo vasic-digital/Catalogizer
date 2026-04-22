@@ -307,8 +307,9 @@ func StartPrometheusServer(port int, logger *zap.Logger) {
 	mux.Handle("/metrics", promhttp.Handler())
 
 	server := &http.Server{
-		Addr:    fmt.Sprintf(":%d", port),
-		Handler: mux,
+		Addr:              fmt.Sprintf(":%d", port),
+		Handler:           mux,
+		ReadHeaderTimeout: 5 * time.Second,
 	}
 
 	logger.Info("Starting Prometheus server", zap.Int("port", port))

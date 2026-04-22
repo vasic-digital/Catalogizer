@@ -7,7 +7,6 @@ import io.mockk.coEvery
 import io.mockk.coVerify
 import io.mockk.mockk
 import kotlinx.coroutines.ExperimentalCoroutinesApi
-import kotlinx.coroutines.test.TestScope
 import kotlinx.coroutines.test.advanceTimeBy
 import kotlinx.coroutines.test.runTest
 import kotlinx.serialization.json.JsonPrimitive
@@ -29,19 +28,14 @@ class PlaybackTrackerTest {
     val mainDispatcherRule = MainDispatcherRule()
 
     private lateinit var api: CatalogizerApi
-    private lateinit var testScope: TestScope
-    private lateinit var tracker: PlaybackTracker
 
     @Before
     fun setup() {
         api = mockk(relaxed = true)
-        testScope = TestScope()
-        tracker = PlaybackTracker(api, testScope)
     }
 
     @After
     fun tearDown() {
-        tracker.stopProgressTicker()
         clearAllMocks()
     }
 
@@ -55,6 +49,7 @@ class PlaybackTrackerTest {
             put("session_id", JsonPrimitive(123L))
         }
         coEvery { api.startPlaybackSession(any()) } returns Response.success(responseBody)
+        val tracker = PlaybackTracker(api, this)
 
         val id = tracker.start(mediaItemId = 1L, fileId = 10L)
 
@@ -68,6 +63,7 @@ class PlaybackTrackerTest {
             put("session_id", JsonPrimitive(1L))
         }
         coEvery { api.startPlaybackSession(any()) } returns Response.success(responseBody)
+        val tracker = PlaybackTracker(api, this)
 
         tracker.start(
             mediaItemId = 42L,
@@ -92,6 +88,7 @@ class PlaybackTrackerTest {
             put("session_id", JsonPrimitive(1L))
         }
         coEvery { api.startPlaybackSession(any()) } returns Response.success(responseBody)
+        val tracker = PlaybackTracker(api, this)
 
         tracker.start(mediaItemId = 42L, fileId = null)
 
@@ -108,6 +105,7 @@ class PlaybackTrackerTest {
             put("session_id", JsonPrimitive(1L))
         }
         coEvery { api.startPlaybackSession(any()) } returns Response.success(responseBody)
+        val tracker = PlaybackTracker(api, this)
 
         tracker.start(mediaItemId = 1L, fileId = null)
 
@@ -128,6 +126,7 @@ class PlaybackTrackerTest {
         coEvery { api.startPlaybackSession(any()) } returns Response.error(
             500, "Server error".toResponseBody(null)
         )
+        val tracker = PlaybackTracker(api, this)
 
         val id = tracker.start(mediaItemId = 1L, fileId = null)
 
@@ -138,6 +137,7 @@ class PlaybackTrackerTest {
     @Test
     fun `start returns 0 on network exception`() = runTest {
         coEvery { api.startPlaybackSession(any()) } throws RuntimeException("No route to host")
+        val tracker = PlaybackTracker(api, this)
 
         val id = tracker.start(mediaItemId = 1L, fileId = null)
 
@@ -148,6 +148,7 @@ class PlaybackTrackerTest {
     @Test
     fun `start returns 0 when response body is null`() = runTest {
         coEvery { api.startPlaybackSession(any()) } returns Response.success(null)
+        val tracker = PlaybackTracker(api, this)
 
         val id = tracker.start(mediaItemId = 1L, fileId = null)
 
@@ -160,6 +161,7 @@ class PlaybackTrackerTest {
             put("other_key", JsonPrimitive("value"))
         }
         coEvery { api.startPlaybackSession(any()) } returns Response.success(responseBody)
+        val tracker = PlaybackTracker(api, this)
 
         val id = tracker.start(mediaItemId = 1L, fileId = null)
 
@@ -172,6 +174,7 @@ class PlaybackTrackerTest {
 
     @Test
     fun `isActive is false before start`() {
+        val tracker = PlaybackTracker(api)
         assertFalse(tracker.isActive())
     }
 
@@ -181,6 +184,7 @@ class PlaybackTrackerTest {
             put("session_id", JsonPrimitive(5L))
         }
         coEvery { api.startPlaybackSession(any()) } returns Response.success(responseBody)
+        val tracker = PlaybackTracker(api, this)
 
         tracker.start(mediaItemId = 1L, fileId = null)
 
@@ -190,6 +194,7 @@ class PlaybackTrackerTest {
     @Test
     fun `isActive is false after failed start`() = runTest {
         coEvery { api.startPlaybackSession(any()) } throws RuntimeException("fail")
+        val tracker = PlaybackTracker(api, this)
 
         tracker.start(mediaItemId = 1L, fileId = null)
 
@@ -202,12 +207,12 @@ class PlaybackTrackerTest {
 
     @Test
     fun `end sends correct body and clears session`() = runTest {
-        // Start a session first
         val responseBody = buildJsonObject {
             put("session_id", JsonPrimitive(10L))
         }
         coEvery { api.startPlaybackSession(any()) } returns Response.success(responseBody)
         coEvery { api.endPlaybackSession(any()) } returns Response.success(Unit)
+        val tracker = PlaybackTracker(api, this)
 
         tracker.start(mediaItemId = 1L, fileId = null)
         assertTrue(tracker.isActive())
@@ -227,6 +232,7 @@ class PlaybackTrackerTest {
 
     @Test
     fun `end is no-op when no session is active`() = runTest {
+        val tracker = PlaybackTracker(api, this)
         assertFalse(tracker.isActive())
 
         tracker.end(endPosition = 100L, totalAmount = 100L, completed = false)
@@ -241,12 +247,12 @@ class PlaybackTrackerTest {
         }
         coEvery { api.startPlaybackSession(any()) } returns Response.success(responseBody)
         coEvery { api.endPlaybackSession(any()) } returns Response.success(Unit)
+        val tracker = PlaybackTracker(api, this)
 
         tracker.start(mediaItemId = 1L, fileId = null)
         tracker.end(endPosition = 100L, totalAmount = 100L, completed = true)
         tracker.end(endPosition = 200L, totalAmount = 200L, completed = false)
 
-        // Second call is a no-op because sessionId was zeroed
         coVerify(exactly = 1) { api.endPlaybackSession(any()) }
     }
 
@@ -261,13 +267,13 @@ class PlaybackTrackerTest {
         }
         coEvery { api.startPlaybackSession(any()) } returns Response.success(responseBody)
         coEvery { api.endPlaybackSession(any()) } throws RuntimeException("Network error")
+        val tracker = PlaybackTracker(api, this)
 
         tracker.start(mediaItemId = 1L, fileId = null)
         assertTrue(tracker.isActive())
 
         tracker.end(endPosition = 100L, totalAmount = 100L, completed = false)
 
-        // Session is cleared even on exception (finally block)
         assertFalse(tracker.isActive())
     }
 
@@ -280,6 +286,7 @@ class PlaybackTrackerTest {
         coEvery { api.endPlaybackSession(any()) } returns Response.error(
             500, "error".toResponseBody(null)
         )
+        val tracker = PlaybackTracker(api, this)
 
         tracker.start(mediaItemId = 1L, fileId = null)
         tracker.end(endPosition = 100L, totalAmount = 100L, completed = false)
@@ -297,7 +304,8 @@ class PlaybackTrackerTest {
             put("session_id", JsonPrimitive(10L))
         }
         coEvery { api.startPlaybackSession(any()) } returns Response.success(responseBody)
-        coEvery { api.endPlaybackSession(any()) } returns Response.success(Unit)
+        coEvery { api.progressPlaybackSession(any()) } returns Response.success(Unit)
+        val tracker = PlaybackTracker(api, this)
 
         tracker.start(mediaItemId = 1L, fileId = null)
         tracker.startProgressTicker(
@@ -309,7 +317,7 @@ class PlaybackTrackerTest {
         tracker.end(endPosition = 500L, totalAmount = 500L, completed = true)
 
         // After end, advancing time should NOT produce progress calls
-        testScope.advanceTimeBy(5000L)
+        advanceTimeBy(5000L)
         coVerify(exactly = 0) { api.progressPlaybackSession(any()) }
     }
 
@@ -324,6 +332,7 @@ class PlaybackTrackerTest {
         }
         coEvery { api.startPlaybackSession(any()) } returns Response.success(responseBody)
         coEvery { api.progressPlaybackSession(any()) } returns Response.success(Unit)
+        val tracker = PlaybackTracker(api, this)
 
         tracker.start(mediaItemId = 1L, fileId = null)
         tracker.startProgressTicker(
@@ -332,7 +341,7 @@ class PlaybackTrackerTest {
             getTotalAmount = { 500L }
         )
 
-        testScope.advanceTimeBy(1100L)
+        advanceTimeBy(1100L)
 
         coVerify(atLeast = 1) {
             api.progressPlaybackSession(match { body ->
@@ -341,6 +350,7 @@ class PlaybackTrackerTest {
                 body["total_amount"] == 500L
             })
         }
+        tracker.stopProgressTicker()
     }
 
     @Test
@@ -350,6 +360,7 @@ class PlaybackTrackerTest {
         }
         coEvery { api.startPlaybackSession(any()) } returns Response.success(responseBody)
         coEvery { api.progressPlaybackSession(any()) } returns Response.success(Unit)
+        val tracker = PlaybackTracker(api, this)
 
         tracker.start(mediaItemId = 1L, fileId = null)
         tracker.startProgressTicker(
@@ -358,9 +369,10 @@ class PlaybackTrackerTest {
             getTotalAmount = { 500L }
         )
 
-        testScope.advanceTimeBy(3100L)
+        advanceTimeBy(3100L)
 
         coVerify(atLeast = 3) { api.progressPlaybackSession(any()) }
+        tracker.stopProgressTicker()
     }
 
     @Test
@@ -370,6 +382,7 @@ class PlaybackTrackerTest {
         }
         coEvery { api.startPlaybackSession(any()) } returns Response.success(responseBody)
         coEvery { api.progressPlaybackSession(any()) } returns Response.success(Unit)
+        val tracker = PlaybackTracker(api, this)
 
         var position = 100L
         tracker.start(mediaItemId = 1L, fileId = null)
@@ -379,9 +392,9 @@ class PlaybackTrackerTest {
             getTotalAmount = { position }
         )
 
-        testScope.advanceTimeBy(1100L)
+        advanceTimeBy(1100L)
         position = 200L
-        testScope.advanceTimeBy(1100L)
+        advanceTimeBy(1100L)
 
         coVerify {
             api.progressPlaybackSession(match { it["end_position"] == 100L })
@@ -389,6 +402,7 @@ class PlaybackTrackerTest {
         coVerify {
             api.progressPlaybackSession(match { it["end_position"] == 200L })
         }
+        tracker.stopProgressTicker()
     }
 
     @Test
@@ -400,6 +414,7 @@ class PlaybackTrackerTest {
         // First call throws, second succeeds
         coEvery { api.progressPlaybackSession(any()) } throws RuntimeException("Network")
         coEvery { api.progressPlaybackSession(any()) } returns Response.success(Unit)
+        val tracker = PlaybackTracker(api, this)
 
         tracker.start(mediaItemId = 1L, fileId = null)
         tracker.startProgressTicker(
@@ -408,10 +423,10 @@ class PlaybackTrackerTest {
             getTotalAmount = { 100L }
         )
 
-        testScope.advanceTimeBy(2100L)
+        advanceTimeBy(2100L)
 
-        // Should have attempted at least 2 ticks (first fails, second retries)
         coVerify(atLeast = 2) { api.progressPlaybackSession(any()) }
+        tracker.stopProgressTicker()
     }
 
     @Test
@@ -421,6 +436,7 @@ class PlaybackTrackerTest {
         }
         coEvery { api.startPlaybackSession(any()) } returns Response.success(responseBody)
         coEvery { api.progressPlaybackSession(any()) } returns Response.success(Unit)
+        val tracker = PlaybackTracker(api, this)
 
         tracker.start(mediaItemId = 1L, fileId = null)
 
@@ -438,12 +454,12 @@ class PlaybackTrackerTest {
             getTotalAmount = { 200L }
         )
 
-        testScope.advanceTimeBy(2100L)
+        advanceTimeBy(2100L)
 
-        // Should only see calls from the second ticker (position 200)
         coVerify {
             api.progressPlaybackSession(match { it["end_position"] == 200L })
         }
+        tracker.stopProgressTicker()
     }
 
     // ------------------------------------------------------------------
@@ -457,6 +473,7 @@ class PlaybackTrackerTest {
         }
         coEvery { api.startPlaybackSession(any()) } returns Response.success(responseBody)
         coEvery { api.progressPlaybackSession(any()) } returns Response.success(Unit)
+        val tracker = PlaybackTracker(api, this)
 
         tracker.start(mediaItemId = 1L, fileId = null)
         tracker.startProgressTicker(
@@ -465,22 +482,22 @@ class PlaybackTrackerTest {
             getTotalAmount = { 100L }
         )
 
-        testScope.advanceTimeBy(1100L)
+        advanceTimeBy(1100L)
         tracker.stopProgressTicker()
-        testScope.advanceTimeBy(5000L)
+        advanceTimeBy(5000L)
 
-        // Only the initial tick before stop should have been called
         coVerify(atMost = 1) { api.progressPlaybackSession(any()) }
     }
 
     @Test
     fun `stopProgressTicker is safe to call when no ticker is running`() {
+        val tracker = PlaybackTracker(api)
         tracker.stopProgressTicker()
-        // Should not throw
     }
 
     @Test
     fun `stopProgressTicker is safe to call multiple times`() {
+        val tracker = PlaybackTracker(api)
         tracker.stopProgressTicker()
         tracker.stopProgressTicker()
         tracker.stopProgressTicker()
@@ -498,6 +515,7 @@ class PlaybackTrackerTest {
         coEvery { api.startPlaybackSession(any()) } returns Response.success(responseBody)
         coEvery { api.progressPlaybackSession(any()) } returns Response.success(Unit)
         coEvery { api.endPlaybackSession(any()) } returns Response.success(Unit)
+        val tracker = PlaybackTracker(api, this)
 
         // Start
         val id = tracker.start(mediaItemId = 5L, fileId = 10L, positionUnit = "seconds", startPosition = 0L)
@@ -510,7 +528,7 @@ class PlaybackTrackerTest {
             getCurrentPosition = { 1500L },
             getTotalAmount = { 1500L }
         )
-        testScope.advanceTimeBy(1100L)
+        advanceTimeBy(1100L)
 
         // End
         tracker.end(endPosition = 3000L, totalAmount = 3000L, completed = true)

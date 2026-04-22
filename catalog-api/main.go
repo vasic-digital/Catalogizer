@@ -105,7 +105,7 @@ func findAvailablePort(host string, startPort, maxAttempts int) (int, error) {
 func writePortFile(port int) error {
 	portFile := ".service-port"
 	data := fmt.Sprintf("%d", port)
-	return os.WriteFile(portFile, []byte(data), 0644)
+	return os.WriteFile(portFile, []byte(data), 0600)
 }
 
 // getOutboundIP returns the preferred LAN IP of this machine.
@@ -155,8 +155,10 @@ func getOrCreateSelfSignedCert() (tls.Certificate, error) {
 	certPath := filepath.Join(cacheDir, "cert.pem")
 	keyPath := filepath.Join(cacheDir, "key.pem")
 
-	// Try loading cached cert
+	// Try loading cached cert. Paths are hardcoded under ./cache/tls — safe.
+	// #nosec G304 — controlled internal cache directory, not user input.
 	if certPEM, err := os.ReadFile(certPath); err == nil {
+		// #nosec G304 — controlled internal cache directory, not user input.
 		if keyPEM, err := os.ReadFile(keyPath); err == nil {
 			cert, err := tls.X509KeyPair(certPEM, keyPEM)
 			if err == nil {
@@ -1061,7 +1063,9 @@ func main() {
 		c.Header("Content-Type", resp.Header.Get("Content-Type"))
 		c.Header("Cache-Control", "public, max-age=86400") // Cache 24h
 		c.Status(resp.StatusCode)
-		io.Copy(c.Writer, resp.Body)
+		if _, copyErr := io.Copy(c.Writer, resp.Body); copyErr != nil {
+			logger.Warn("Image proxy stream copy failed", zap.Error(copyErr))
+		}
 	})
 
 	// Asset serving (public — no auth needed for serving images)
@@ -1157,7 +1161,9 @@ func main() {
 				StaleAgeSeconds int `json:"stale_age_seconds"`
 				Limit           int `json:"limit"`
 			}
-			_ = c.ShouldBindJSON(&req)
+			if bindErr := c.ShouldBindJSON(&req); bindErr != nil {
+				// Empty or malformed body → use defaults below
+			}
 			staleAge := 7 * 24 * 3600
 			if req.StaleAgeSeconds > 0 {
 				staleAge = req.StaleAgeSeconds
@@ -1712,11 +1718,12 @@ func main() {
 
 	// Create HTTP server
 	srv := &http.Server{
-		Addr:         addr,
-		Handler:      router,
-		ReadTimeout:  time.Duration(cfg.Server.ReadTimeout) * time.Second,
-		WriteTimeout: time.Duration(cfg.Server.WriteTimeout) * time.Second,
-		IdleTimeout:  time.Duration(cfg.Server.IdleTimeout) * time.Second,
+		Addr:              addr,
+		Handler:           router,
+		ReadTimeout:       time.Duration(cfg.Server.ReadTimeout) * time.Second,
+		ReadHeaderTimeout: 5 * time.Second,
+		WriteTimeout:      time.Duration(cfg.Server.WriteTimeout) * time.Second,
+		IdleTimeout:       time.Duration(cfg.Server.IdleTimeout) * time.Second,
 	}
 	// HTTPS server for TLS and HTTP/2 (future HTTP/3)
 	var httpsServer *http.Server
@@ -1736,9 +1743,10 @@ func main() {
 		// Start HTTPS server on port 8443 (HTTP/2 with TLS, fallback for HTTP/3)
 		httpsAddr := fmt.Sprintf("%s:%d", cfg.Server.Host, 8443)
 		httpsServer = &http.Server{
-			Addr:      httpsAddr,
-			Handler:   router,
-			TLSConfig: tlsConfig,
+			Addr:              httpsAddr,
+			Handler:           router,
+			TLSConfig:         tlsConfig,
+			ReadHeaderTimeout: 5 * time.Second,
 		}
 		go func() {
 			logger.Info("Starting HTTPS server (HTTP/2 with TLS)", zap.String("address", httpsAddr))

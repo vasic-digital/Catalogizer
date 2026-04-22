@@ -188,7 +188,7 @@ func (s *AggregationService) enrichNewEntities(ctx context.Context, storageRootI
 					searchType, apiKey, url.QueryEscape(e.title))
 			}
 
-			resp, err := client.Get(reqURL)
+			resp, err := client.Get(reqURL) // #nosec G704 — hardcoded TMDB API URL, not user-controlled
 			if err != nil || resp.StatusCode != 200 {
 				if resp != nil {
 					resp.Body.Close()

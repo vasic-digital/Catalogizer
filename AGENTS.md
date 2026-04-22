@@ -16,14 +16,16 @@ Essential commands and style guidelines for AI agents working in the Catalogizer
 | **installer-wizard** | Tauri (Rust + React) | SMB configuration and installation wizard |
 | **catalogizer-android** | Kotlin / Jetpack Compose / Hilt | Android mobile application |
 | **catalogizer-androidtv** | Kotlin / Jetpack Compose / Hilt | Android TV application with channel integration |
-| **catalogizer-api-client** | TypeScript | Reusable API client library |
+| **catalogizer-api-client** | TypeScript | Reusable API client library (axios + ws) |
+| **OCU-CUDA-Sidecar** | Go / gRPC | GPU-accelerated sidecar for vision/AI workloads |
 
 ### Version Information
-- Current Version: 2.2.0 (build 18)
+- Current Version: 2.3.0 (build 24)
 - Go Version: 1.25.7
 - Node.js: 18+
 - Kotlin: 1.9.22
 - Android Gradle Plugin: 8.2.2
+- Tauri CLI: >= 2.0.0
 
 ## ⚠️ CRITICAL CONSTRAINTS
 
@@ -378,6 +380,15 @@ cd catalogizer-android  # or catalogizer-androidtv
 ./gradlew lintKotlin                                    # lint
 ```
 
+### API Client (catalogizer-api-client)
+
+```bash
+cd catalogizer-api-client
+npm run build                                           # compile TypeScript
+npm run test                                            # Vitest run
+npm run lint                                            # ESLint
+```
+
 ### Full System
 
 ```bash
@@ -519,6 +530,22 @@ Key tech: React Query (`@tanstack/react-query`) for server state, Zustand for cl
 - Path aliases configured in `vite.config.ts`.
 - API proxy: reads `../catalog-api/.service-port` at dev server startup to resolve backend port (falls back to 8080).
 - Build output split into vendor chunks: `vendor` (react), `router`, `ui`, `charts`, `utils`.
+
+### catalogizer-api-client (TypeScript)
+
+Reusable cross-platform API client library consumed by web, desktop, and installer-wizard.
+
+- Uses `axios` for HTTP and `ws` for WebSocket.
+- Built to `dist/` via `tsc`.
+- Tests via Vitest.
+
+### OCU-CUDA-Sidecar (Go / gRPC)
+
+GPU-accelerated sidecar service for vision and AI workloads.
+
+- Communicates via gRPC (`proto/ocu.proto`).
+- Packaged as a container (`Dockerfile` present).
+- Consumed by HelixQA and vision pipeline components.
 
 ### Android TV Home Screen Channels (v2.3.0)
 
@@ -746,6 +773,7 @@ POSTGRES_PORT=5432
 # Redis
 REDIS_PORT=6379
 REDIS_PASSWORD=
+REDIS_RATE_LIMIT=false
 
 # Security
 JWT_SECRET=your-super-secret-jwt-key-change-me-in-production
@@ -758,6 +786,11 @@ CORS_ORIGINS=http://localhost:3000,http://localhost:19006
 SMB_ENABLED=true
 MEDIA_ROOT_PATH=./media
 
+# Container Configuration
+GO_VERSION=1.25
+HTTP_PORT=80
+HTTPS_PORT=443
+
 # Metadata Providers (optional)
 TMDB_API_KEY=YOUR_TMDB_KEY_HERE
 OMDB_API_KEY=YOUR_OMDB_KEY_HERE
@@ -765,22 +798,39 @@ OMDB_API_KEY=YOUR_OMDB_KEY_HERE
 # HelixQA / Vision Configuration
 HELIX_VISION_HOSTS=thinker.local,amber.local
 HELIX_VISION_MULTI_USER=milosvasic
+HELIX_OLLAMA_URL=http://thinker.local:11434
+HELIX_OLLAMA_MODEL=minicpm-v:8b
 ASTICA_API_KEY=YOUR_ASTICA_API_KEY_HERE
 OPENAI_API_KEY=YOUR_OPENAI_KEY_HERE
 ANTHROPIC_API_KEY=YOUR_ANTHROPIC_KEY_HERE
-GEMINI_API_KEY=YOUR_GEMINI_API_KEY_HERE
+GEMINI_API_KEY=YOUR_GEMINI_KEY_HERE
+NVIDIA_API_KEY=YOUR_NVIDIA_KEY_HERE
+
+# Distributed Build Configuration
+BUILD_DISTRIBUTED=false
+BUILD_HOST_1_NAME=thinker
+BUILD_HOST_1_ADDRESS=thinker.local
+BUILD_HOST_1_USER=milosvasic
+BUILD_HOST_1_KEY_PATH=~/.ssh/id_ed25519
+BUILD_HOST_1_RUNTIME=podman
+BUILD_HOST_1_LABELS=go=true,npm=true,jdk=true,rust=true
+BUILD_SCHEDULER_STRATEGY=resource_aware
+BUILD_REMOTE_DIR=/tmp/catalogizer-build
+BUILD_TIMEOUT_MINUTES=30
 ```
 
 ## Testing Strategy
 
 ### Test Organization
 
-- **Unit tests**: `*_test.go` files beside source code
+- **Unit tests**: `*_test.go` / `*.test.tsx` / `*.test.ts` files beside source code
 - **Integration tests**: `catalog-api/internal/tests/`, `catalog-api/tests/integration/`
 - **E2E tests**: Playwright in `catalog-web/e2e/`
 - **Challenge tests**: `catalog-api/challenges/` — structured test scenarios
 - **Stress tests**: `catalog-api/tests/stress/`
 - **Security tests**: `catalog-api/tests/security/`
+- **Benchmarks**: `catalog-api/tests/benchmarks/`
+- **Performance tests**: `catalog-api/tests/performance/`
 
 ### Security Scanning
 
@@ -824,6 +874,7 @@ Every bug fix MUST include a bank test entry in `fixes-validation.yaml` to preve
 - `catalog-web/vite.config.ts` — path aliases, API proxy config
 - `versions.json` — version tracking for all components
 - `.env.example` — environment variable template
+- `docs/OPEN_POINTS_CLOSURE.md` — canonical outstanding operator-action checklist
 
 ## Git
 
@@ -861,6 +912,7 @@ New files MUST be placed in the correct directory. Do NOT add files to the proje
 | `catalogizer-desktop/` | Tauri desktop application |
 | `catalogizer-api-client/` | TypeScript API client library |
 | `installer-wizard/` | Tauri installation wizard |
+| `OCU-CUDA-Sidecar/` | GPU-accelerated sidecar for vision/AI workloads |
 | `challenges/` | Challenge bank definitions and runtime results |
 | `config/` | Infrastructure config files (nginx.conf, redis.conf) |
 | `scripts/` | Shell scripts (install, setup, CI/CD, testing runners) |
@@ -888,6 +940,7 @@ Comprehensive documentation is available in `docs/`:
 - `docs/architecture/ARCHITECTURE.md` — System design
 - `docs/api/API_DOCUMENTATION.md` — REST API reference
 - `docs/guides/TROUBLESHOOTING.md` — Common issues and solutions
+- `docs/OPEN_POINTS_CLOSURE.md` — Canonical operator-action checklist
 
 ## CRITICAL CONSTRAINTS FOR APK BUILDING
 
@@ -1030,4 +1083,3 @@ Requirements:
 5. Require frame-by-frame video analysis
 
 **A QA system that doesn't recognize stuck screens is WORTHLESS.**
-

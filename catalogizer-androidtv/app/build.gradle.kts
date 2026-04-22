@@ -77,7 +77,9 @@ android {
         unitTests.isReturnDefaultValues = true
         unitTests.all {
             it.useJUnit()
-            it.jvmArgs("-Xmx2048m")
+            it.jvmArgs("-Xmx4096m", "-XX:MaxMetaspaceSize=1024m", "-Djava.security.manager=allow")
+            it.maxParallelForks = 1
+            it.forkEvery = 5
         }
     }
 

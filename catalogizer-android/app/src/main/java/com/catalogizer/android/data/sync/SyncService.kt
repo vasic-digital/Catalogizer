@@ -90,13 +90,23 @@ class SyncService : Service() {
                 _syncState.value = SyncState.Completed
                 
                 // Stop service after completion
-                stopForeground(STOP_FOREGROUND_REMOVE)
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
+                    stopForeground(STOP_FOREGROUND_REMOVE)
+                } else {
+                    @Suppress("DEPRECATION")
+                    stopForeground(true)
+                }
                 stopSelf()
                 
             } catch (e: Exception) {
                 _syncState.value = SyncState.Error(e.message ?: "Unknown error")
                 updateNotification("Sync failed: ${e.message}", 0)
-                stopForeground(STOP_FOREGROUND_REMOVE)
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
+                    stopForeground(STOP_FOREGROUND_REMOVE)
+                } else {
+                    @Suppress("DEPRECATION")
+                    stopForeground(true)
+                }
                 stopSelf()
             }
         }
@@ -105,7 +115,12 @@ class SyncService : Service() {
     private fun stopSync() {
         syncJob?.cancel()
         _syncState.value = SyncState.Idle
-        stopForeground(STOP_FOREGROUND_REMOVE)
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
+            stopForeground(STOP_FOREGROUND_REMOVE)
+        } else {
+            @Suppress("DEPRECATION")
+            stopForeground(true)
+        }
         stopSelf()
     }
     
@@ -175,7 +190,11 @@ class SyncService : Service() {
             val intent = Intent(context, SyncService::class.java).apply {
                 action = ACTION_START_SYNC
             }
-            context.startForegroundService(intent)
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                context.startForegroundService(intent)
+            } else {
+                context.startService(intent)
+            }
         }
         
         fun stop(context: Context) {

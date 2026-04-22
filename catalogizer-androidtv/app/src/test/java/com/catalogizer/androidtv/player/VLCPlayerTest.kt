@@ -4,19 +4,26 @@ import android.content.Context
 import io.mockk.clearAllMocks
 import io.mockk.every
 import io.mockk.mockk
+import io.mockk.mockkConstructor
 import io.mockk.mockkStatic
+import io.mockk.unmockkConstructor
 import io.mockk.unmockkStatic
 import io.mockk.verify
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.test.runTest
 import org.junit.After
+import org.junit.AfterClass
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Before
+import org.junit.BeforeClass
 import org.junit.Test
+import org.junit.runner.RunWith
+import org.robolectric.RobolectricTestRunner
+import org.robolectric.annotation.Config
 import org.videolan.libvlc.LibVLC
 import org.videolan.libvlc.MediaPlayer
 
@@ -30,16 +37,46 @@ import org.videolan.libvlc.MediaPlayer
  *
  * Integration tests with a real LibVLC run on-device via HelixQA.
  */
+@RunWith(RobolectricTestRunner::class)
+@Config(manifest = Config.NONE)
 class VLCPlayerTest {
 
     private lateinit var context: Context
     private lateinit var player: VLCPlayer
 
+    companion object {
+        private var originalSecurityManager: SecurityManager? = null
+
+        @JvmStatic
+        @BeforeClass
+        fun installSecurityManager() {
+            // LibVLC.loadLibraries() calls System.exit(1) when native
+            // library loading fails. Intercept System.exit so the
+            // SecurityException propagates to initialize()'s catch block.
+            originalSecurityManager = System.getSecurityManager()
+            System.setSecurityManager(object : SecurityManager() {
+                override fun checkExit(status: Int) {
+                    throw SecurityException("System.exit($status) blocked")
+                }
+                override fun checkPermission(perm: java.security.Permission?) {}
+            })
+        }
+
+        @JvmStatic
+        @AfterClass
+        fun restoreSecurityManager() {
+            System.setSecurityManager(originalSecurityManager)
+        }
+    }
+
     @Before
     fun setup() {
         context = mockk(relaxed = true)
-        // LibVLC native init will fail in JVM — VLCPlayer catches
-        // the exception and enters ERROR state. This is expected.
+        // In JVM tests, LibVLC's native libraries (built for Android)
+        // are incompatible with the Linux host. loadLibraries() will
+        // fail and call System.exit(1). The SecurityManager installed
+        // above converts that into a SecurityException which is caught
+        // by VLCPlayer.initialize(), leaving the player in ERROR state.
         player = VLCPlayer(context)
     }
 

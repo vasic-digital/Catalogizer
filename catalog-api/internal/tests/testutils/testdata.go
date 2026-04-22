@@ -13,6 +13,7 @@ type TestDataGenerator struct {
 // NewTestDataGenerator creates a new test data generator
 func NewTestDataGenerator(seed int64) *TestDataGenerator {
 	return &TestDataGenerator{
+		// #nosec G404 — math/rand is appropriate for deterministic test data generation
 		rng: rand.New(rand.NewSource(seed)),
 	}
 }

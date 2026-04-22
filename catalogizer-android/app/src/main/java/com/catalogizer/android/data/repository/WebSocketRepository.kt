@@ -30,36 +30,37 @@ class WebSocketRepository(
 
     fun connect() {
         val token = tokenProvider() ?: return
-        val wsUrl = baseUrl.replace("http://", "ws://").replace("https://", "wss://")
-        val uri = URI("$wsUrl/ws?token=$token")
 
-        client?.close()
-        client = object : WebSocketClient(uri) {
-            override fun onOpen(handshakedata: ServerHandshake?) {
-                _events.value = WebSocketEvent.Connected(handshakedata?.httpStatusMessage ?: "")
-                send("""{"type":"subscribe","channel":"media_updates"}""")
-                send("""{"type":"subscribe","channel":"system_updates"}""")
-            }
+        try {
+            val wsUrl = baseUrl.replace("http://", "ws://").replace("https://", "wss://")
+            val uri = URI("$wsUrl/ws?token=$token")
 
-            override fun onMessage(message: String?) {
-                message?.let {
-                    // Extract type from JSON simply
-                    val typeMatch = Regex(""""type"\s*:\s*"([^"]+)"""").find(it)
-                    val type = typeMatch?.groupValues?.getOrNull(1) ?: "unknown"
-                    _events.value = WebSocketEvent.MessageReceived(type, it)
+            client?.close()
+            client = object : WebSocketClient(uri) {
+                override fun onOpen(handshakedata: ServerHandshake?) {
+                    _events.value = WebSocketEvent.Connected(handshakedata?.httpStatusMessage ?: "")
+                    send("""{"type":"subscribe","channel":"media_updates"}""")
+                    send("""{"type":"subscribe","channel":"system_updates"}""")
+                }
+
+                override fun onMessage(message: String?) {
+                    message?.let {
+                        // Extract type from JSON simply
+                        val typeMatch = Regex(""""type"\s*:\s*"([^"]+)"""").find(it)
+                        val type = typeMatch?.groupValues?.getOrNull(1) ?: "unknown"
+                        _events.value = WebSocketEvent.MessageReceived(type, it)
+                    }
+                }
+
+                override fun onClose(code: Int, reason: String?, remote: Boolean) {
+                    _events.value = WebSocketEvent.Disconnected
+                }
+
+                override fun onError(ex: Exception?) {
+                    _events.value = WebSocketEvent.Error(ex?.message ?: "Unknown WebSocket error")
                 }
             }
 
-            override fun onClose(code: Int, reason: String?, remote: Boolean) {
-                _events.value = WebSocketEvent.Disconnected
-            }
-
-            override fun onError(ex: Exception?) {
-                _events.value = WebSocketEvent.Error(ex?.message ?: "Unknown WebSocket error")
-            }
-        }
-
-        try {
             client?.connect()
         } catch (e: Exception) {
             _events.value = WebSocketEvent.Error(e.message ?: "Connection failed")

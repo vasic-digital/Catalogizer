@@ -406,7 +406,7 @@ func authed(client *httpclient.APIClient, req *http.Request) (*http.Response, er
 		req.Header.Set("Authorization", "Bearer "+tok)
 	}
 	httpClient := &http.Client{Timeout: 30 * time.Second}
-	return httpClient.Do(req)
+	return httpClient.Do(req) // #nosec G704 — internal API calls to challenge target
 }
 
 // RegisterImageQualityChallenges registers all image-quality challenges with

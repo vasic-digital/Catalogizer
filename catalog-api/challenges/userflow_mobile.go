@@ -60,8 +60,8 @@ func androidMobileConfig() userflow.MobileConfig {
 // catalogizer-androidtv application.
 func androidTVMobileConfig() userflow.MobileConfig {
 	return userflow.MobileConfig{
-		PackageName:  "com.vasic.catalogizer.tv",
-		ActivityName: ".MainActivity",
+		PackageName:  "com.catalogizer.androidtv",
+		ActivityName: ".ui.MainActivity",
 		DeviceSerial: env.GetOrDefault(
 			"ANDROIDTV_DEVICE_SERIAL", "",
 		),
