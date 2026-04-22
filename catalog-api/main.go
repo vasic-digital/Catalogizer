@@ -855,6 +855,43 @@ func main() {
 	// Setup Gin router
 	router := gin.Default()
 
+	// RULE-GO-005 / Master Plan §4.2 — lock down X-Forwarded-For
+	// handling. Gin's default TrustedProxies is 0.0.0.0/0, which
+	// lets any peer spoof the client IP via X-Forwarded-For and
+	// bypass per-IP rate limits. Policy:
+	//   - TRUSTED_PROXIES unset:    refuse to trust any proxy
+	//     header; c.ClientIP() returns the actual peer IP.
+	//   - TRUSTED_PROXIES=auto:     trust loopback + RFC-1918
+	//     private ranges (typical dev behind a local reverse
+	//     proxy / docker gateway).
+	//   - TRUSTED_PROXIES=<cidr>,...: explicit allow-list.
+	if tp := os.Getenv("TRUSTED_PROXIES"); tp == "" {
+		if err := router.SetTrustedProxies(nil); err != nil {
+			logger.Warn("SetTrustedProxies(nil) failed", zap.Error(err))
+		}
+	} else if tp == "auto" {
+		privates := []string{
+			"127.0.0.0/8", "10.0.0.0/8",
+			"172.16.0.0/12", "192.168.0.0/16",
+			"::1/128", "fc00::/7",
+		}
+		if err := router.SetTrustedProxies(privates); err != nil {
+			logger.Warn("SetTrustedProxies auto-RFC1918 failed", zap.Error(err))
+		}
+	} else {
+		list := strings.Split(tp, ",")
+		trimmed := list[:0]
+		for _, s := range list {
+			s = strings.TrimSpace(s)
+			if s != "" {
+				trimmed = append(trimmed, s)
+			}
+		}
+		if err := router.SetTrustedProxies(trimmed); err != nil {
+			logger.Warn("SetTrustedProxies custom list failed", zap.Error(err))
+		}
+	}
+
 	// Service discovery (PUBLIC - must respond in < 2 seconds for Android TV)
 	// Register BEFORE middleware chain to avoid slow middleware (CORS, metrics, compression)
 	// This ensures the /discovery endpoint responds quickly for LAN discovery probes
