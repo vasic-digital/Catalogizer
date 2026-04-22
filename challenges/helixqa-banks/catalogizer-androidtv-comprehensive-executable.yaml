@@ -9,10 +9,22 @@ test_cases:
   platforms:
   - androidtv
   steps:
+  # HELIX-145 fix — `am force-stop` is silent and returns instantly
+  # while the system still holds the app's last frame on screen for
+  # a moment. The vision verifier would flag the step as failed
+  # because the screen still SHOWS Catalogizer. Corrections:
+  #   1. Relax expected to a condition the vision LLM can actually
+  #      verify: command-exec success (not screen state).
+  #   2. Add an explicit sleep step so the system repaints before
+  #      the next vision-checked step.
   - name: Force stop app
     action: adb_shell:am force-stop com.catalogizer.androidtv
-    expected: App process terminated
+    expected: Command executes without error
     timeout: 10
+  - name: Wait for system repaint
+    action: 'sleep: 1500'
+    expected: Catalogizer is no longer the foreground app (launcher or blank screen visible)
+    timeout: 5
   - name: Launch from launcher
     action: 'adb_shell: am start -n com.catalogizer.androidtv/.ui.MainActivity --es qa_username admin --es qa_password admin123'
     expected: App launches and displays splash screen within 3 seconds
