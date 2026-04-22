@@ -234,6 +234,7 @@ test_cases:
     expected: Search screen opens with on-screen keyboard or search input
     timeout: 10
 - id: tv-search-voice
+  allow_foreground_leave: true
   name: TV Voice Search
   category: search
   priority: medium
@@ -822,6 +823,7 @@ test_cases:
       screen
     timeout: 10
 - id: tv-voice-search-query
+  allow_foreground_leave: true
   name: 'Voice Search: Speak Query'
   category: voice-search
   priority: medium
@@ -834,6 +836,7 @@ test_cases:
       movies displayed
     timeout: 10
 - id: tv-voice-search-results-display
+  allow_foreground_leave: true
   name: 'Voice Search: Results Display Correctly'
   category: voice-search
   priority: medium
@@ -1055,6 +1058,7 @@ test_cases:
     expected: Movies channel row appears with movie items
     timeout: 20
 - id: tv-channel-click-detail
+  allow_foreground_leave: true
   name: TV Channel Click Opens Detail
   category: channels
   priority: critical
@@ -1075,6 +1079,7 @@ test_cases:
       button
     timeout: 20
 - id: tv-channel-click-play
+  allow_foreground_leave: true
   name: TV Channel Click Plays Immediately
   category: channels
   priority: high
@@ -1212,6 +1217,7 @@ test_cases:
     expected: After login, the deep-linked media item detail screen is shown
     timeout: 20
 - id: tv-channel-dpad-browse
+  allow_foreground_leave: true
   name: TV Channel D-pad Navigation
   category: channels
   priority: medium
@@ -1262,6 +1268,7 @@ test_cases:
     expected: New content appears in the channel rows
     timeout: 20
 - id: tv-player-video-start
+  allow_foreground_leave: true
   name: TV Player Video Start Verification
   category: playback-verification
   priority: critical

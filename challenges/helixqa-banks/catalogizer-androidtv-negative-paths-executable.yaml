@@ -609,6 +609,7 @@ test_cases:
     expected: Keys are ignored on non-media screens. No crash. No unexpected navigation
     timeout: 10
 - id: neg-tv-remote-channel-buttons
+  allow_foreground_leave: true
   name: Channel Up/Down on Non-Live Content
   category: remote-control
   priority: low
@@ -621,6 +622,7 @@ test_cases:
       from unhandled KEYCODE_CHANNEL_UP/DOWN. No attempt to tune to a TV channel
     timeout: 10
 - id: neg-tv-remote-voice-search-failure
+  allow_foreground_leave: true
   name: Voice Search Failure Graceful Handling
   category: remote-control
   priority: medium
@@ -638,6 +640,7 @@ test_cases:
       from empty or malformed voice search result
     timeout: 10
 - id: neg-tv-remote-home-during-playback
+  allow_foreground_leave: true
   name: Home Button During Playback Saves State
   category: remote-control
   priority: critical
