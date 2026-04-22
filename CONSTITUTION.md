@@ -341,6 +341,45 @@ Some vision providers (e.g., astica) return natural-language descriptions and do
 **§9.4 False-positive reporting is prohibited**
 An orchestrator or pipeline that reports "✓ completed successfully" when the underlying command failed is a Constitution violation (see FIX-QA-2026-04-20-001/002). Every success log must be gated by a real passing assertion, never by `tee` exit codes or similar shell pipeline artefacts.
 
+### Article X: No Sudo / No Root Execution (MANDATORY)
+
+**ALL operations MUST run at local user level ONLY.**
+
+**§X.1 Permanent Security Constraint**
+
+This is a PERMANENT and NON-NEGOTIABLE security constraint:
+
+- **NEVER** use `sudo` in ANY command
+- **NEVER** use `su` in ANY command
+- **NEVER** execute operations as `root` user
+- **NEVER** elevate privileges for file operations
+- **ALL** infrastructure commands MUST use user-level container runtimes (rootless podman/docker)
+- **ALL** file operations MUST be within user-accessible directories
+- **ALL** service management MUST be done via user systemd or local process management
+- **ALL** builds, tests, and deployments MUST run as the current user
+
+**§X.2 Container-Based Solutions**
+
+When a build or runtime environment requires system-level dependencies, use containers instead of elevation:
+
+- **Use the `Containers` submodule** (`https://github.com/vasic-digital/Containers`) for containerized build and runtime environments
+- **Add the `Containers` submodule as a Git dependency** and configure it for local use within the project
+- **Build and run inside containers** to avoid any need for privilege escalation
+- **Rootless Podman/Docker** is the preferred container runtime
+
+**§X.3 Rationale**
+
+- **Security**: Prevents accidental system-wide damage
+- **Reproducibility**: User-level operations are portable across systems
+- **Safety**: Limits blast radius of any issues
+- **Best Practice**: Modern container workflows are rootless by design
+
+**§X.4 Violation Consequences**
+
+Any use of `sudo`, `su`, or root-level execution in scripts, builds, or operations is a Constitution violation.
+
+---
+
 ---
 
 *Last Updated: 2026-04-21*
