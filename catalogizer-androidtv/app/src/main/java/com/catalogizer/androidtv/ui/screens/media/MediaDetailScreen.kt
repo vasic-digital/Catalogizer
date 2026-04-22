@@ -55,9 +55,18 @@ fun MediaDetailScreen(
     var retryCount by remember { mutableStateOf(0) }
     var isFavorite by remember { mutableStateOf(false) }
     var showHistory by remember { mutableStateOf(false) }
+    // Tracks previous showHistory value so we can detect the
+    // true→false transition (dialog dismissed) and restore focus.
+    // Without this, LaunchedEffect(showHistory) would fire on the
+    // initial composition and try to focus before the button exists.
+    var wasHistoryOpen by remember { mutableStateOf(false) }
     val coroutineScope = rememberCoroutineScope()
     val scrollState = rememberScrollState()
     val playButtonFocus = remember { FocusRequester() }
+    // FocusRequester for the History button — paired with the
+    // wasHistoryOpen flag to restore focus after HistoryDialog closes
+    // (HELIX-154 fix — RULE-TV-002 / master plan §4.4 focus hygiene).
+    val historyButtonFocus = remember { FocusRequester() }
     val config = LocalConfiguration.current
     val isCompact = config.screenWidthDp < 600
 
@@ -388,10 +397,17 @@ fun MediaDetailScreen(
 
                             // History button — opens full reproduction
                             // history dialog showing aggregate totals + all
-                            // session rows.
+                            // session rows. Owns its own FocusRequester so
+                            // that after HistoryDialog dismisses (via BACK
+                            // or KEYCODE_ENTER on a focusable dismiss area)
+                            // focus can be restored here rather than
+                            // evaporating into the void (HELIX-154 fix —
+                            // "Focus Lost After Dialog Dismissal").
                             Button(
                                 onClick = { showHistory = true },
-                                modifier = Modifier.height(52.dp),
+                                modifier = Modifier
+                                    .height(52.dp)
+                                    .focusRequester(historyButtonFocus),
                                 scale = ButtonDefaults.scale(focusedScale = 1.08f),
                                 glow = ButtonDefaults.glow(focusedGlow = Glow(elevation = 8.dp, elevationColor = MaterialTheme.colorScheme.primary)),
                                 border = ButtonDefaults.border(
@@ -483,6 +499,21 @@ fun MediaDetailScreen(
         if (mediaItem != null) {
             kotlinx.coroutines.delay(300)
             try { playButtonFocus.requestFocus() } catch (_: Exception) {}
+        }
+    }
+
+    // HELIX-154 fix — after HistoryDialog dismisses, restore focus to
+    // the trigger button (History). Detect the true→false transition
+    // via wasHistoryOpen so this LaunchedEffect doesn't fire during
+    // the initial composition. A small delay lets the dialog teardown
+    // settle before the focus request lands.
+    LaunchedEffect(showHistory) {
+        if (!showHistory && wasHistoryOpen) {
+            wasHistoryOpen = false
+            kotlinx.coroutines.delay(100)
+            try { historyButtonFocus.requestFocus() } catch (_: Exception) {}
+        } else if (showHistory) {
+            wasHistoryOpen = true
         }
     }
 
