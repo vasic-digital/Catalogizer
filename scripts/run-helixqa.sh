@@ -408,21 +408,21 @@ SESSION_START=$(date +%s)
 
 if [[ "$PLATFORM" == "api" || "$PLATFORM" == "all" ]]; then
     run_api_session
-    run_helixqa_native web "$BANKS_DIR/catalogizer-api-comprehensive.json" "helixqa-api"
+    run_helixqa_native web "$BANKS_DIR/catalogizer-api-comprehensive-executable.yaml" "helixqa-api"
     echo ""
 fi
 
 if [[ "$PLATFORM" == "web" || "$PLATFORM" == "all" ]]; then
     run_web_session
-    run_helixqa_native web "$BANKS_DIR/catalogizer-web-comprehensive.json" "helixqa-web"
+    run_helixqa_native web "$BANKS_DIR/catalogizer-web-comprehensive-executable.yaml" "helixqa-web"
     echo ""
 fi
 
 if [[ "$PLATFORM" == "all" ]]; then
-    run_helixqa_native android "$BANKS_DIR/catalogizer-android-comprehensive.json" "helixqa-android"
-    run_helixqa_native android "$BANKS_DIR/catalogizer-androidtv-comprehensive.json" "helixqa-androidtv"
-    run_helixqa_native desktop "$BANKS_DIR/catalogizer-desktop-comprehensive.json" "helixqa-desktop"
-    run_helixqa_native desktop "$BANKS_DIR/catalogizer-wizard-comprehensive.json" "helixqa-wizard"
+    run_helixqa_native android "$BANKS_DIR/catalogizer-android-comprehensive-executable.yaml" "helixqa-android"
+    run_helixqa_native android "$BANKS_DIR/catalogizer-androidtv-comprehensive-executable.yaml" "helixqa-androidtv"
+    run_helixqa_native desktop "$BANKS_DIR/catalogizer-desktop-comprehensive-executable.yaml" "helixqa-desktop"
+    run_helixqa_native desktop "$BANKS_DIR/catalogizer-wizard-comprehensive-executable.yaml" "helixqa-wizard"
     echo ""
 fi
 

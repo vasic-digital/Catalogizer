@@ -1,26 +1,22 @@
 ---
 id: HELIX-022
-severity: medium
+severity: low
 category: brand
 platform: 
-screen: androidtv-009-performance.png
-status: wontfix
-found_date: 2026-03-30
+screen: androidtv-015-watch-next-row.png
+status: open
+found_date: 2026-04-21
 ---
 
 # Inconsistent Branding
 
-The branding used in the interface is inconsistent, as it does not match the company's official branding guidelines.
+The application's branding is inconsistent across different elements, such as the logo and color scheme, which may negatively impact the user's perception of the brand.
 
-## Reproduction Steps
+## Related Issues
 
-Observe the branding used in the interface.
+- HELIX-006: Inconsistent branding
+
 
 ## Evidence
 
-The logo used in the interface is different from the official logo.
-
-## Resolution
-
-Enhancement suggestion from automated QA. App branding follows Vasic Digital brand guidelines (rounded square with red border). Icon styling matches Android TV launcher requirements.
-Closed: 2026-03-30
+The logo and color scheme are not consistent throughout the application.
