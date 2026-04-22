@@ -13,7 +13,8 @@ import (
 // and operational through the running API.
 type DatabaseConnectivityChallenge struct {
 	challenge.BaseChallenge
-	config *BrowsingConfig
+	config   *BrowsingConfig
+	progress *challenge.ProgressReporter
 }
 
 // NewDatabaseConnectivityChallenge creates CH-014.
@@ -31,6 +32,18 @@ func NewDatabaseConnectivityChallenge() *DatabaseConnectivityChallenge {
 	}
 }
 
+// SetProgressReporter injects the progress reporter for liveness
+// monitoring. Called by the runner before Execute.
+func (c *DatabaseConnectivityChallenge) SetProgressReporter(p *challenge.ProgressReporter) {
+	c.progress = p
+}
+
+func (c *DatabaseConnectivityChallenge) reportProgress(msg string) {
+	if c.progress != nil {
+		c.progress.ReportProgress(msg, nil)
+	}
+}
+
 // Execute runs the database connectivity challenge.
 func (c *DatabaseConnectivityChallenge) Execute(ctx context.Context) (*challenge.Result, error) {
 	start := time.Now()
@@ -41,6 +54,7 @@ func (c *DatabaseConnectivityChallenge) Execute(ctx context.Context) (*challenge
 
 	client := httpclient.NewAPIClient(c.config.BaseURL)
 
+	c.reportProgress("step 1/5: health check")
 	// Step 1: Health endpoint responds (proves database is connected)
 	healthCode, healthBody, healthErr := client.Get(ctx, "/health")
 	healthOK := healthErr == nil && healthCode == 200
@@ -64,6 +78,7 @@ func (c *DatabaseConnectivityChallenge) Execute(ctx context.Context) (*challenge
 		return c.CreateResult(challenge.StatusFailed, start, assertions, nil, outputs, ""), nil
 	}
 
+	c.reportProgress("step 2/5: admin login")
 	// Step 2: Login to get auth token
 	loginResp, loginErr := client.Login(ctx, c.config.Username, c.config.Password)
 	loginOK := loginErr == nil && loginResp != nil
@@ -79,6 +94,7 @@ func (c *DatabaseConnectivityChallenge) Execute(ctx context.Context) (*challenge
 		return c.CreateResult(challenge.StatusFailed, start, assertions, nil, outputs, ""), nil
 	}
 
+	c.reportProgress("step 3/5: stats query")
 	// Step 3: GET /stats/overall returns valid stats (database is queryable)
 	statsCode, statsBody, statsErr := client.Get(ctx, "/api/v1/stats/overall")
 	statsOK := statsErr == nil && statsCode == 200 && statsBody != nil
@@ -91,6 +107,7 @@ func (c *DatabaseConnectivityChallenge) Execute(ctx context.Context) (*challenge
 		Message:  challenge.Ternary(statsOK, "Stats endpoint returned data (database queryable)", fmt.Sprintf("Stats query failed: HTTP %d err=%v", statsCode, statsErr)),
 	})
 
+	c.reportProgress("step 4/5: create storage root")
 	// Step 4: Create a test storage root (database is writable)
 	testRootName := fmt.Sprintf("db-test-%d", time.Now().UnixMilli())
 	createBody := fmt.Sprintf(`{"name":%q,"protocol":"local","path":"/tmp/db-test","max_depth":1}`, testRootName)
@@ -105,6 +122,7 @@ func (c *DatabaseConnectivityChallenge) Execute(ctx context.Context) (*challenge
 		Message:  challenge.Ternary(createOK, "Storage root created (database writable)", fmt.Sprintf("Create failed: HTTP %d err=%v", createCode, createErr)),
 	})
 
+	c.reportProgress("step 5/5: read-after-write")
 	// Step 5: Read back the created storage root
 	rootsCode, rootsBody, rootsErr := client.Get(ctx, "/api/v1/storage/roots")
 	rootsOK := rootsErr == nil && rootsCode == 200

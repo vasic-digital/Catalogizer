@@ -1552,8 +1552,8 @@ func TestAndroidMobileConfig(t *testing.T) {
 func TestAndroidTVMobileConfig(t *testing.T) {
 	t.Setenv("ANDROIDTV_DEVICE_SERIAL", "")
 	cfg := androidTVMobileConfig()
-	assert.Equal(t, "com.vasic.catalogizer.tv", cfg.PackageName)
-	assert.Equal(t, ".MainActivity", cfg.ActivityName)
+	assert.Equal(t, "com.catalogizer.androidtv", cfg.PackageName)
+	assert.Equal(t, ".ui.MainActivity", cfg.ActivityName)
 }
 
 func TestDesktopCargoAdapter(t *testing.T) {

@@ -1,5 +1,6 @@
 package com.catalogizer.androidtv.ui.player
 
+import android.annotation.SuppressLint
 import android.os.Bundle
 import android.util.Log
 import android.view.KeyEvent
@@ -35,6 +36,7 @@ import kotlinx.serialization.json.jsonPrimitive
  * so HelixQA sees the app return to the previous screen instead
  * of a frozen black frame.
  */
+@SuppressLint("UnsafeOptInUsageError")
 class ExoTvPlayerActivity : AppCompatActivity() {
 
     private var player: ExoPlayer? = null

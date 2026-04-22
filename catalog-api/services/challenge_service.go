@@ -28,7 +28,7 @@ func NewChallengeService(resultsDir string) *ChallengeService {
 	reg := registry.NewRegistry()
 	r := runner.NewRunner(
 		runner.WithRegistry(reg),
-		runner.WithTimeout(72*time.Hour),
+		runner.WithTimeout(30*time.Minute),
 		runner.WithStaleThreshold(5*time.Minute),
 		runner.WithResultsDir(resultsDir),
 	)
@@ -81,7 +81,7 @@ func (s *ChallengeService) RunChallenge(
 			s.resultsDir, id,
 			time.Now().Format("20060102_150405"),
 		),
-		Timeout: 72 * time.Hour,
+		Timeout: 30 * time.Minute,
 		Verbose: true,
 	}
 	result, err := s.runner.Run(
@@ -107,7 +107,7 @@ func (s *ChallengeService) RunAll(
 			s.resultsDir, "all",
 			time.Now().Format("20060102_150405"),
 		),
-		Timeout: 72 * time.Hour,
+		Timeout: 30 * time.Minute,
 		Verbose: true,
 	}
 	results, err := s.runner.RunAll(ctx, cfg)
@@ -120,6 +120,56 @@ func (s *ChallengeService) RunAll(
 	s.mu.Unlock()
 
 	return results, nil
+}
+
+// RunAllStreaming executes all challenges in dependency order and yields
+// each result on the returned channel as it completes. The channel is
+// closed when all challenges have finished or the context is cancelled.
+func (s *ChallengeService) RunAllStreaming(
+	ctx context.Context,
+) <-chan *challenge.Result {
+	ch := make(chan *challenge.Result)
+
+	go func() {
+		defer close(ch)
+
+		ordered, err := s.registry.GetDependencyOrder()
+		if err != nil {
+			return
+		}
+
+		depResults := make(map[challenge.ID]string)
+
+		for _, c := range ordered {
+			cfg := &challenge.Config{
+				ResultsDir: filepath.Join(
+					s.resultsDir, "all",
+					time.Now().Format("20060102_150405"),
+				),
+				ChallengeID:  c.ID(),
+				Timeout:      30 * time.Minute,
+				Verbose:      true,
+				Dependencies: depResults,
+			}
+
+			result, _ := s.runner.Run(ctx, c.ID(), cfg)
+			if result == nil {
+				continue
+			}
+
+			select {
+			case ch <- result:
+			case <-ctx.Done():
+				return
+			}
+
+			if result.Status == challenge.StatusPassed {
+				depResults[c.ID()] = cfg.ResultsDir
+			}
+		}
+	}()
+
+	return ch
 }
 
 // RunByCategory executes all challenges in a category.
@@ -143,7 +193,7 @@ func (s *ChallengeService) RunByCategory(
 			s.resultsDir, "category", category,
 			time.Now().Format("20060102_150405"),
 		),
-		Timeout: 72 * time.Hour,
+		Timeout: 30 * time.Minute,
 		Verbose: true,
 	}
 	results, err := s.runner.RunSequence(ctx, ids, cfg)
@@ -158,6 +208,60 @@ func (s *ChallengeService) RunByCategory(
 	s.mu.Unlock()
 
 	return results, nil
+}
+
+// RunByCategoryStreaming executes all challenges in a category and yields
+// each result on the returned channel as it completes.
+func (s *ChallengeService) RunByCategoryStreaming(
+	ctx context.Context, category string,
+) <-chan *challenge.Result {
+	ch := make(chan *challenge.Result)
+
+	go func() {
+		defer close(ch)
+
+		challenges := s.registry.ListByCategory(category)
+		if len(challenges) == 0 {
+			return
+		}
+
+		ids := make([]challenge.ID, len(challenges))
+		for i, c := range challenges {
+			ids[i] = c.ID()
+		}
+
+		depResults := make(map[challenge.ID]string)
+
+		for _, id := range ids {
+			cfg := &challenge.Config{
+				ResultsDir: filepath.Join(
+					s.resultsDir, "category", category,
+					time.Now().Format("20060102_150405"),
+				),
+				ChallengeID:  id,
+				Timeout:      30 * time.Minute,
+				Verbose:      true,
+				Dependencies: depResults,
+			}
+
+			result, _ := s.runner.Run(ctx, id, cfg)
+			if result == nil {
+				continue
+			}
+
+			select {
+			case ch <- result:
+			case <-ctx.Done():
+				return
+			}
+
+			if result.Status == challenge.StatusPassed {
+				depResults[id] = cfg.ResultsDir
+			}
+		}
+	}()
+
+	return ch
 }
 
 // GetResults returns all stored challenge results.

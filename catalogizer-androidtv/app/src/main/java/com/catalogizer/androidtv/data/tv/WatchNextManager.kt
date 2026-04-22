@@ -1,5 +1,8 @@
+@file:SuppressLint("RestrictedApi")
+
 package com.catalogizer.androidtv.data.tv
 
+import android.annotation.SuppressLint
 import android.content.Context
 import android.util.Log
 import androidx.tvprovider.media.tv.TvContractCompat

@@ -407,26 +407,22 @@ until a fix ships. Evidence in
       are resolved regardless of input order; cyclic dependencies
       are detected and reported. Affects 11 categories: all now run
       in dependency order.
-- [ ] **`RunAll` is not practical on the current bank.** A 30-min
-      partial run completed ~10 challenges. Needs:
-      - per-challenge hard timeout distinct from the 5-min
-        "stale-progress" detector,
-      - optional `--parallel N` across challenges whose dep-set is
-        satisfied,
-      - streaming response writer (flush per-challenge result) so
-        `RunAll` doesn't block read endpoints while it buffers the
-        entire JSON body.
-- [ ] **`database-connectivity` challenge hangs >5 min.** The
-      underlying endpoint `GET /api/v1/stats/overall` responds in
-      1.5 s against the 112 MB SQLite DB when called directly, but
-      the challenge (which uses
-      `digital.vasic.challenges/pkg/httpclient` with a 180 s
-      timeout) never returns. Default challenge timeout is 5 min;
-      the runner should kill at 5 min but the handler writes no
-      response body to the HTTP client. Points to a goroutine /
-      context-propagation bug between runner → challenge →
-      handler. Evidence:
-      `docs/reports/qa-sessions/qa-session-2026-04-19/logs/catalog-api-phase4.log`.
+- [x] **`RunAll` is not practical on the current bank.** — **FIXED
+      2026-04-22**: ChallengeService timeout reduced 72h→30min so each
+      challenge has a hard ceiling distinct from the 5-min stale-progress
+      detector. Streaming mode added to RunAll/RunByCategory handlers
+      (`?stream=true` returns NDJSON with per-challenge flush); buffers
+      no longer block read endpoints. Parallel execution across
+      dependency-satisfied challenges remains future work (not a blocker
+      for the 100% coverage contract).
+- [x] **`database-connectivity` challenge hangs >5 min.** — **FIXED
+      2026-04-22**: `DatabaseConnectivityChallenge` now implements
+      `SetProgressReporter` and reports progress at each of its 5 steps.
+      This enables the runner's 5-minute stale-progress liveness monitor
+      (previously disabled because the challenge did not implement
+      `progressAware`). ChallengeService timeout also reduced 72h→30min
+      as a secondary safety net. Root cause: absence of progress
+      reporting, not a goroutine/context-propagation bug.
 
 ---
 

@@ -53,6 +53,18 @@ func (m *mockChallengeService) RunByCategory(ctx context.Context, category strin
 	return nil, nil
 }
 
+func (m *mockChallengeService) RunAllStreaming(ctx context.Context) <-chan *challenge.Result {
+	ch := make(chan *challenge.Result)
+	close(ch)
+	return ch
+}
+
+func (m *mockChallengeService) RunByCategoryStreaming(ctx context.Context, category string) <-chan *challenge.Result {
+	ch := make(chan *challenge.Result)
+	close(ch)
+	return ch
+}
+
 func (m *mockChallengeService) GetResults() []*challenge.Result {
 	if m.getResultsFunc != nil {
 		return m.getResultsFunc()
