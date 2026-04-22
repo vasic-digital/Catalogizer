@@ -1,111 +1,149 @@
-# Run5 Tickets Triage — 2026-04-22
+# Run5 Tickets Triage — 2026-04-22 (CORRECTED)
 
 > **Source session:** `qa-results/session-20260422_000101/helixqa/session-1776805261/`
 > **Pipeline report:** 70 raw findings → 36 unique tickets (dedup rate 48.6 %)
+> **Ticket files:** `docs/issues/HELIX-{145..180}-*.md` (36 files, all created between 01:00 and 01:30 on 2026-04-22)
 > **Orchestrator log:** `docs/reports/qa-sessions/2026-04-21-T-v2/logs/helixqa-orchestrator-run5.log`
 
-## 1. Executive Summary
+## 1. Correction to earlier draft
 
-Run5's Analyze → Reproduce pipeline produced 3 vision-analyzed screenshots
-yielding a total of 12 raw findings, which the ticket generator (together
-with per-test failure findings and foreground-drift findings from
-structured phase) consolidated to 36 unique tickets. The reproduce phase
-re-attempted the first 38 per-step findings; outcomes:
+An earlier revision of this document incorrectly claimed HelixQA
+does not persist ticket markdown files. **That was wrong.** The
+FindingsBridge (see `HelixQA/pkg/autonomous/findings_bridge.go`)
+writes a markdown file per finding to `$PROJECT/docs/issues/` — the
+canonical cross-session issues directory. Configured by
+`cmd/helixqa/main.go:603 IssuesDir: filepath.Join(*project, "docs",
+"issues")`. All 36 Run5 tickets are at
+`docs/issues/HELIX-{145..180}-*.md` and were written at their
+pipeline-emit timestamps.
 
-| Reproduce outcome | Count | Meaning |
-|---|---:|---|
-| **CONFIRMED** | **5** | Bug reproduced in ≤3 retries → **actionable, top priority** |
-| not reproduced | 7 | Retry couldn't trigger the failure — flaky, transient, or already-fixed; investigate if repeated |
-| context deadline exceeded | 27 | Reproduce attempt timed out (90s per-step budget exhausted) → inconclusive; will retry next cycle |
+Any follow-up concerns about ticket persistence are invalid; the
+filesystem has the full content.
 
-## 2. Top-Priority Actionable Tickets (5 CONFIRMED)
+## 2. Run5 Distribution
 
-| # | Finding ID | Platform | Context (from log) |
-|---|---|---|---|
-| 1 | `finding-1-androidtv` | androidtv | First reproduce, 1 attempt — highest-confidence real bug |
-| 2 | `finding-4-androidtv` | androidtv | 2 attempts to reproduce |
-| 3 | `finding-6-androidtv` | androidtv | 3 attempts — edge of the confirm threshold |
-| 4 | `finding-7-androidtv` | androidtv | 2 attempts |
-| 5 | `finding-8-androidtv` | androidtv | 1 attempt |
+### By severity
+| Severity | Count |
+|---|---:|
+| critical | 16 |
+| high | 10 |
+| medium | 6 |
+| low | 4 |
+| **Total** | **36** |
 
-### ⚠ HelixQA persistence gap
+### By category
+| Category | Count |
+|---|---:|
+| functional | 27 |
+| ux | 6 |
+| accessibility | 1 |
+| content | 1 |
+| performance | 1 |
 
-The orchestrator's ticket generator emits `tickets_created: 36` as a scalar
-in `pipeline-report.json`, but **does not write per-ticket markdown files to
-the session directory**. The vision-analyzed finding descriptions, screenshot
-references, and suggested remediations live only in transient in-memory
-state during the session and are not recoverable after the pipeline exits.
+## 3. Critical Findings — Already-Known / Our Own Fix Firing
 
-**Follow-up ticket for HelixQA:** `FIX-QA-2026-04-22-001 — Ticket
-generator must persist each issue to `session-<ts>/tickets/FIX-*.md`
-with Category / Severity / Title / Description / Screenshot /
-Reproduction / AcceptanceCriteria so downstream triage is not forced
-to reconstruct from the orchestrator log.
+7 of the 16 critical findings are **emitted by our own
+FIX-QA-2026-04-21-019 foreground-drift guard** (Constitution Article
+IX). They are not new product bugs — they are the guard correctly
+identifying cases where the `tv-voice-search-*`, `tv-channel-*`, or
+`tv-watch-next-*` structured bank tests navigated away from
+Catalogizer (voice overlay, IPTV Pro, RuTube, etc.) and the guard
+recovered by force-stopping the hijacker.
 
-## 3. Vision Analysis Screenshots
+| ID | Test | Drift target |
+|---|---|---|
+| HELIX-146 | voice-search / speak-query step 1 | `ihq` voice-input overlay |
+| HELIX-147 | voice-search-results display correctly step 1 | `ihq` |
+| HELIX-148 | manual server-url entry step 3 | IPTV Pro |
+| HELIX-149 | tv-watch-next resume-playback step 3 | IPTV Pro |
+| HELIX-150 | tv-player video-start verification step 2 | RuTube |
+| HELIX-163 | voice-search-failure graceful-handling step 1 | `ihq` |
+| HELIX-164 | voice-search-failure graceful-handling step 2 | Google Katniss |
+| HELIX-166 | home-button during playback saves-state step 1 | `ihq` |
 
-| Screenshot | Findings | Path |
-|---|---:|---|
-| `androidtv-001-android-tv-home-screen.png` | 7 | `qa-results/session-20260422_000101/helixqa/session-1776805261/screenshots/` |
-| `androidtv-033-android-tv-home-screen.png` | 0 | same |
-| `androidtv-curiosity-002-after.png` | 5 | same |
+**Triage action:** close these 8 as "not-a-product-bug, guard working
+as designed". Follow-up work is in the bank, not the app:
+- Add `allow_foreground_leave: true` to voice-search tests so the
+  guard silences drift findings when the test is knowingly
+  exercising a system overlay.
+- Similarly flag `tv-channel-*` and `tv-watch-next-*` tests that
+  legitimately visit the launcher.
 
-These are the ground-truth frames the LLM analyzed. Any real UI bugs
-are visible in the home-screen and post-curiosity captures. The
-curiosity-002-after finding is likely related to the cover-tile blank
-issue (FIX-QA-2026-04-21-COVERS, prior-cycle ticket): post-launch home
-screen with 189 items loaded but cover tiles rendering blank due to
-client-side Coil SVG decoder absence.
+## 4. Critical Findings — Actual Product Bugs (7)
 
-## 4. Triage Plan for Next Cycle
+These 7 are genuine product-side issues that need developer attention.
 
-### 4.1 First wave — confirmed findings
+| ID | Title | Notes |
+|---|---|---|
+| HELIX-145 | tv-cold-start launch step 1 failed | Cold-start flow regression — blocker if reproducible |
+| HELIX-152 | memory-pressure kill-and-restore step 3 failed | OS-level kill + restore doesn't restore full state |
+| HELIX-154 | focus-lost-after-dialog-dismissal step 2 failed | Compose focus-recovery after AlertDialog dismiss |
+| HELIX-157 | session-expires-during-active-media-playback step 2 failed | JWT expiry mid-stream; app should refresh token mid-playback |
+| HELIX-168 | focus-indicator-visibility on all backgrounds step 2 failed | Focus-ring contrast against certain backgrounds insufficient |
+| HELIX-169 | HelixQA stagnation: device did not react to 8 consecutive actions | Either product freeze OR HelixQA's stagnation detector firing legitimately |
+| HELIX-179 | missing search functionality | Likely vision misread on a loading state; investigate |
+| HELIX-175 | lack of color contrast | WCAG issue — matches Phase 7 a11y bucket |
 
-1. **Pull the actual screenshots** referenced by each
-   `finding-{1,4,6,7,8}-androidtv` from
-   `qa-results/session-20260422_000101/helixqa/session-1776805261/screenshots/`
-   and the paired `frames/androidtv-session/` extracts.
-2. **Review the 2.4 MB session video** at
-   `qa-results/session-20260422_000101/helixqa/session-1776805261/videos/`
-   — look for frozen frames, unresponsive DPAD, cover-load gaps.
-3. **File concrete FIX-QA tickets** under
-   `docs/reports/qa-sessions/2026-04-21-T-v2/tickets/` following the
-   `templates/BUG_RETROSPECTIVE.md` schema.
-4. **Land fixes** with the 4-artefact requirement (unit test +
-   integration test + `banks/fixes-validation.yaml` entry + new
-   challenge) per Article VII.
+**Triage action:** these become the working set for the next
+Article VII fix cycle. Each needs:
+1. Root-cause investigation (replay the screenshot + video frames)
+2. Unit + integration + E2E + HelixQA bank + challenge fixture
+3. fixes-validation entry
+4. Rebuild + re-run against fixed build
 
-### 4.2 Second wave — inconclusive findings
+## 5. High-Severity Findings (10)
 
-- The 27 context-deadline-exceeded findings will be retested in Run6
-  with a longer reproduce timeout (current budget 90s per-step is tight
-  for vision+action+verification chains). Propose 180s default.
-- Audit whether the 7 "not reproduced" findings indicate real flakes
-  (bad vision call, transient LLM provider) vs. already-fixed issues;
-  if flaky, add stagnation + drift counters to the ticket payload so
-  triage can distinguish.
+Not all individually inspected; bucketed from the MD file titles:
 
-### 4.3 HelixQA code fix priority
+| ID range | Theme |
+|---|---|
+| HELIX-151, 153, 156, 158, 159, 160, 162, 171, 172, 178 | Focus-chain traversal, D-pad edge cases, dialog handling, text-input boundary |
 
-`FIX-QA-2026-04-22-001` (ticket persistence) is the prerequisite for
-every future triage. Without it, each cycle loses the semantic content
-of its findings the moment the pipeline exits. Should land before the
-next HelixQA campaign.
+Triage action: review as a group; many may consolidate to a single
+focus-management refactor.
 
-## 5. Deferred / Watch List
+## 6. Medium + Low (10)
 
-Nothing from Run5 indicates an infrastructure bug in HelixQA itself:
-- Foreground-drift guard: 11 drifts, all recovered ✅
-- Device state preservation: `font_scale=1.0` restored ✅
-- Vision verification: tri-state (VERIFIED yes / ambiguous / error) working ✅
-- Segment-video recorder: clean 1h 25m MP4 ✅
-- Stagnation detector: no false stagnations reported ✅
+UX polish items:
+- HELIX-155, 161, 165, 167 (focus-trapped-on-invisible-element,
+  various invisible-focusable placements)
+- HELIX-170, 173, 174, 176, 177, 180 (unclear navigation, inconsistent
+  button styles, small font size, unclear error messages, lack of
+  call-to-action, missing content information)
 
-The remaining infrastructure gap is ticket persistence (§4.3).
+These fold naturally into Phase 7 frontend polish + Phase 9 TV UX
+pass.
 
-## 6. Links
+## 7. Reproduce-phase Outcomes (log-sourced)
 
-- Full session: `qa-results/session-20260422_000101/`
-- HelixQA artefacts: `qa-results/session-20260422_000101/helixqa/session-1776805261/`
-- Orchestrator log: `docs/reports/qa-sessions/2026-04-21-T-v2/logs/helixqa-orchestrator-run5.log`
-- Cycle final report: `docs/reports/qa-sessions/2026-04-21-T-v2/FINAL-REPORT.md`
+| Outcome | Count |
+|---|---:|
+| CONFIRMED (reproduced on retry) | 5 |
+| Not reproduced (retry ran cleanly) | 7 |
+| Context deadline exceeded | 27 |
+
+The 5 CONFIRMED findings from the reproduce phase are
+finding-{1,4,6,7,8}-androidtv in the orchestrator log — they may or
+may not map 1:1 to the HELIX-NNN ticket IDs (ticket IDs are
+allocated sequentially by the memory store's NextFindingID, not by
+reproduce order). A proper mapping would require HelixQA to include
+the HELIX-NNN IDs in reproduce-phase log lines; filed as
+**FIX-QA-2026-04-22-002** (non-blocking).
+
+## 8. Summary for the next cycle
+
+- 8 foreground-drift tickets: **close as not-a-bug + update banks
+  with `allow_foreground_leave: true`** on legitimate launcher-
+  visiting tests
+- 7 genuine critical bugs (HELIX-145/152/154/157/168/175/179 +
+  HELIX-169 stagnation): **primary fix queue** — these need Article
+  VII 4-artefact closure each
+- 10 high-severity focus/dialog findings: **consolidate into a
+  single focus-management refactor PR**
+- 10 medium/low UX findings: **batch into Phase 7 polish pass**
+
+Next HelixQA campaign (Run6) should:
+- Raise reproduce per-step timeout from 90 s → 180 s (catches the
+  27 deadline-exceeded)
+- Emit HELIX-NNN IDs in reproduce-phase lines
+- Mark voice-search + channel-* tests as `allow_foreground_leave`
