@@ -154,7 +154,14 @@ fun MediaDetailScreen(
                 }
             }
             mediaItem != null -> {
-                val item = mediaItem!!
+                // HELIX-152 fix — capture the checked value into a local
+                // so a concurrent recomposition that clears mediaItem
+                // (retry, process restore from Recents, navigation
+                // tear-down) can't NPE at the !! below. Previously this
+                // was `val item = mediaItem!!` which could throw if the
+                // branch body re-read mediaItem after the when-head
+                // already checked it.
+                val item = mediaItem ?: return@Box
                 val coverUrl = item.thumbnailUrl?.let { url ->
                     when {
                         url.startsWith("/") ->

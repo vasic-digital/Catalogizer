@@ -20,6 +20,8 @@ import androidx.tv.material3.*
 import androidx.compose.foundation.background
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.text.font.FontWeight
 import com.catalogizer.androidtv.data.models.MediaItem
@@ -58,9 +60,29 @@ fun HomeScreen(
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     var historyTarget by remember { mutableStateOf<MediaItem?>(null) }
+    // HELIX-154 follow-up — HomeScreen historyTarget dialog dismissed
+    // previously left the screen in invisible-focus state (same root
+    // cause as MediaDetailScreen). We can't attach a FocusRequester
+    // to a per-card Button inside a LazyRow without a full per-card
+    // FocusRequester map refactor, so the pragmatic fix is to focus
+    // the top bar's Settings icon (always on-screen, always
+    // focusable) when the dialog dismisses — the user can then
+    // D-pad back DOWN into the rails.
+    val topBarFallbackFocus = remember { FocusRequester() }
+    var wasHistoryOpen by remember { mutableStateOf(false) }
     val container = com.catalogizer.androidtv.DependencyContainer.getInstance(
         androidx.compose.ui.platform.LocalContext.current
     )
+
+    LaunchedEffect(historyTarget) {
+        if (historyTarget == null && wasHistoryOpen) {
+            wasHistoryOpen = false
+            kotlinx.coroutines.delay(100)
+            try { topBarFallbackFocus.requestFocus() } catch (_: Exception) {}
+        } else if (historyTarget != null) {
+            wasHistoryOpen = true
+        }
+    }
 
     LaunchedEffect(Unit) {
         viewModel.loadHomeData()
@@ -84,7 +106,13 @@ fun HomeScreen(
             title = "Catalogizer",
             onSearchClick = onNavigateToSearch,
             onSettingsClick = onNavigateToSettings,
-            modifier = Modifier.padding(vertical = 24.dp)
+            modifier = Modifier.padding(vertical = 24.dp),
+            // HELIX-154 follow-up — Settings is the fallback focus
+            // target when a HistoryDialog dismisses (trigger lives
+            // inside a scrolling LazyRow card without a stable
+            // FocusRequester; restoring to the top bar keeps the
+            // user on a visible, reachable element).
+            settingsFocusRequester = topBarFallbackFocus,
         )
 
         when {

@@ -57,6 +57,47 @@ class AuthInterceptor(private val authRepository: AuthRepository) : Interceptor 
             originalRequest
         }
 
-        return chain.proceed(newRequest)
+        val response = chain.proceed(newRequest)
+
+        // HELIX-157 fix — mid-playback session expiry handling. When
+        // the server returns 401 (access token expired after our
+        // proactive-refresh heuristic missed the window), block for
+        // up to 5 s waiting for a refresh, then retry the request
+        // ONCE with the new bearer. Prevents the "abruptly cut to
+        // login screen mid-scene" scenario the bank test flagged.
+        //
+        // Bounded: one retry max, 5 s total. Never recurses — if the
+        // refresh also fails or the retry also 401s, we return the
+        // 401 to the caller (which ExoPlayer surfaces as a playback
+        // error + the UI layer routes to login).
+        if (response.code == 401 && !originalRequest.url.encodedPath.contains("/auth/")) {
+            response.close()
+            val refreshed = runBlocking {
+                withTimeoutOrNull(5_000L) {
+                    try {
+                        authRepository.refreshToken()
+                        true
+                    } catch (_: Exception) {
+                        false
+                    }
+                } ?: false
+            }
+            if (refreshed) {
+                val retryState = authRepository.authState.value
+                if (retryState.isAuthenticated && retryState.token != null) {
+                    val retryRequest = originalRequest.newBuilder()
+                        .addHeader("Authorization", "Bearer ${retryState.token}")
+                        .build()
+                    return chain.proceed(retryRequest)
+                }
+            }
+            // Refresh failed or produced no token — let the 401 bubble
+            // up so the UI layer can route to the login screen.
+            // Re-execute the original request to re-create a Response
+            // object the caller can consume (the old one was closed).
+            return chain.proceed(newRequest)
+        }
+
+        return response
     }
 }

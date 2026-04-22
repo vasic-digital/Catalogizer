@@ -9,14 +9,23 @@ import androidx.compose.material.icons.filled.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import androidx.tv.material3.*
 import com.catalogizer.androidtv.data.models.AuthState
 
-// Focus ring color matches theme primary for WCAG-visible focus indicators (HELIX-005, 015)
-private val FocusBorderColor = Color(0xFF9ECAFF)
+// Focus indicator colors chosen for WCAG contrast on BOTH dark AND
+// light backgrounds (HELIX-168 fix — "Focus Indicator Visibility on
+// All Backgrounds"). Drawn as two concentric borders: an outer
+// near-black stroke that shows on light content + an inner
+// theme-primary stroke that shows on dark content. Together they
+// remain visible no matter what color lies behind the focused
+// element.
+private val FocusBorderColorInner = Color(0xFF9ECAFF) // theme primary-ish
+private val FocusBorderColorOuter = Color(0xE6000000) // near-black 90% alpha
 
 /**
  * TV top bar composable with app title, optional user info display, and
@@ -29,7 +38,13 @@ fun TopBar(
     onSearchClick: () -> Unit,
     onSettingsClick: () -> Unit,
     modifier: Modifier = Modifier,
-    authState: AuthState? = null
+    authState: AuthState? = null,
+    // HELIX-154 follow-up — callers can attach a FocusRequester to
+    // the Settings button so a dismissed dialog higher in the tree
+    // can reclaim focus here rather than leaving the screen in
+    // invisible-focus state.
+    settingsFocusRequester: FocusRequester? = null,
+    searchFocusRequester: FocusRequester? = null,
 ) {
     Row(
         modifier = modifier.fillMaxWidth(),
@@ -60,17 +75,29 @@ fun TopBar(
                 }
             }
 
-            // Search button — with visible focus indicator (HELIX-005, 015)
+            // Search button — with dual-border focus indicator for WCAG
+            // visibility on both dark and light backgrounds (HELIX-168).
             var searchFocused by remember { mutableStateOf(false) }
             Surface(
                 onClick = onSearchClick,
                 modifier = Modifier
                     .onFocusChanged { searchFocused = it.isFocused }
                     .then(
-                        if (searchFocused) Modifier.border(
-                            BorderStroke(2.dp, FocusBorderColor),
-                            shape = RoundedCornerShape(8.dp)
-                        ) else Modifier
+                        if (searchFocusRequester != null)
+                            Modifier.focusRequester(searchFocusRequester)
+                        else Modifier
+                    )
+                    .then(
+                        if (searchFocused) Modifier
+                            .border(
+                                BorderStroke(4.dp, FocusBorderColorOuter),
+                                shape = RoundedCornerShape(10.dp)
+                            )
+                            .border(
+                                BorderStroke(2.dp, FocusBorderColorInner),
+                                shape = RoundedCornerShape(8.dp)
+                            )
+                        else Modifier
                     ),
                 shape = ClickableSurfaceDefaults.shape(),
                 colors = ClickableSurfaceDefaults.colors(
@@ -85,17 +112,29 @@ fun TopBar(
                 )
             }
 
-            // Settings button — with visible focus indicator (HELIX-005, 015)
+            // Settings button — dual-border focus indicator + optional
+            // caller-supplied FocusRequester for cross-dialog restore.
             var settingsFocused by remember { mutableStateOf(false) }
             Surface(
                 onClick = onSettingsClick,
                 modifier = Modifier
                     .onFocusChanged { settingsFocused = it.isFocused }
                     .then(
-                        if (settingsFocused) Modifier.border(
-                            BorderStroke(2.dp, FocusBorderColor),
-                            shape = RoundedCornerShape(8.dp)
-                        ) else Modifier
+                        if (settingsFocusRequester != null)
+                            Modifier.focusRequester(settingsFocusRequester)
+                        else Modifier
+                    )
+                    .then(
+                        if (settingsFocused) Modifier
+                            .border(
+                                BorderStroke(4.dp, FocusBorderColorOuter),
+                                shape = RoundedCornerShape(10.dp)
+                            )
+                            .border(
+                                BorderStroke(2.dp, FocusBorderColorInner),
+                                shape = RoundedCornerShape(8.dp)
+                            )
+                        else Modifier
                     ),
                 shape = ClickableSurfaceDefaults.shape(),
                 colors = ClickableSurfaceDefaults.colors(
