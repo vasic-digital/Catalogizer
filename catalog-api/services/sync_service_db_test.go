@@ -2,8 +2,10 @@ package services
 
 import (
 	"database/sql"
+	"fmt"
 	"os"
 	"path/filepath"
+	"sync/atomic"
 	"testing"
 	"time"
 
@@ -16,11 +18,37 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-// newSyncTestDB creates an in-memory SQLite database with sync tables for testing.
+// syncTestDBCounter gives each newSyncTestDB invocation a unique
+// shared-cache identity so parallel tests don't collide on the
+// same in-memory DB name.
+var syncTestDBCounter uint64
+
+// newSyncTestDB creates an in-memory SQLite database with sync
+// tables for testing.
+//
+// DEFER-QA-2026-04-22-001 fix — the database uses SQLite's
+// shared-cache in-memory mode (`file:syncdb-<n>?mode=memory&cache=shared`)
+// rather than the plain `:memory:` DSN. Under `go test -race -p 2`
+// SyncService.StartSync spawns a goroutine that holds one connection
+// while the test's next StartSync call opens another; with `:memory:`
+// each connection gets its OWN private in-memory DB, and the second
+// call fails with "no such table: sync_sessions". The shared-cache
+// mode wires all connections that name the same file: URI to the
+// same schema + data.
+//
+// MaxOpenConns is clamped to 1 so SQLite's writer-lock semantics
+// don't surface spurious "database is locked" under concurrent writes
+// (all write paths serialize; reads are rare in these tests).
 func newSyncTestDB(t *testing.T) (*database.DB, func()) {
 	t.Helper()
-	rawDB, err := sql.Open("sqlite3", ":memory:")
+	id := atomic.AddUint64(&syncTestDBCounter, 1)
+	dsn := fmt.Sprintf(
+		"file:syncdb-%d-%d?mode=memory&cache=shared",
+		time.Now().UnixNano(), id,
+	)
+	rawDB, err := sql.Open("sqlite3", dsn)
 	require.NoError(t, err)
+	rawDB.SetMaxOpenConns(1)
 
 	db := database.WrapDB(rawDB, database.DialectSQLite)
 	require.NotNil(t, db)
