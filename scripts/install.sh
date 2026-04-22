@@ -429,45 +429,38 @@ check_build_dependencies() {
     fi
 }
 
-# Install Node.js
+# Install Node.js — RULE-CONST-001 refuses sudo apt-get.
+# Operator installs distro packages themselves; we support user-local
+# alternatives (nvm, mise, fnm) or Homebrew on macOS.
 install_nodejs() {
-    log_info "Installing Node.js..."
-
-    if [[ "$OS" == "linux" ]]; then
-        # Install Node.js via NodeSource repository
-        curl -fsSL https://deb.nodesource.com/setup_18.x | sudo -E bash -
-        sudo apt-get install -y nodejs
-    elif [[ "$OS" == "macos" ]]; then
-        if command -v brew &> /dev/null; then
-            brew install node
-        else
-            log_error "Homebrew not found. Please install Node.js manually"
-            exit 1
-        fi
-    else
-        log_error "Please install Node.js manually for Windows"
-        exit 1
+    log_info "Checking Node.js..."
+    if command -v node &> /dev/null; then
+        log_success "Node.js found: $(node --version)"
+        return
     fi
+
+    log_error "Node.js not found. Install via one of:"
+    log_error "  Linux user-local: curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.7/install.sh | bash && nvm install 18"
+    log_error "  Linux distro:     sudo apt-get install -y nodejs  (operator runs manually)"
+    log_error "  macOS:            brew install node"
+    log_error "  Windows:          download from https://nodejs.org"
+    exit 1
 }
 
-# Install Java
+# Install Java — same operator-level policy as Node.js.
 install_java() {
-    log_info "Installing Java..."
-
-    if [[ "$OS" == "linux" ]]; then
-        sudo apt-get update
-        sudo apt-get install -y openjdk-17-jdk
-    elif [[ "$OS" == "macos" ]]; then
-        if command -v brew &> /dev/null; then
-            brew install openjdk@17
-        else
-            log_error "Homebrew not found. Please install Java manually"
-            exit 1
-        fi
-    else
-        log_error "Please install Java manually for Windows"
-        exit 1
+    log_info "Checking Java..."
+    if command -v java &> /dev/null; then
+        log_success "Java found: $(java -version 2>&1 | head -n 1)"
+        return
     fi
+
+    log_error "Java not found. Install via one of:"
+    log_error "  SDKMAN user-local: curl -s https://get.sdkman.io | bash && sdk install java 17-open"
+    log_error "  Linux distro:      sudo apt-get install -y openjdk-17-jdk  (operator runs manually)"
+    log_error "  macOS:             brew install openjdk@17"
+    log_error "  Windows:           download from https://adoptium.net"
+    exit 1
 }
 
 # Install Rust
@@ -510,15 +503,20 @@ create_directories() {
         "$INSTALL_DIR/backups"
     )
 
+    # RULE-CONST-001 — all install targets must be user-writable.
+    # The caller (install.sh wrapper) is responsible for setting
+    # INSTALL_DIR/DATA_DIR/LOGS_DIR to paths under $HOME.
     for dir in "${dirs[@]}"; do
         if [[ ! -d "$dir" ]]; then
-            sudo mkdir -p "$dir"
+            if [[ "$dir" == /etc/* || "$dir" == /usr/* || "$dir" == /opt/* || "$dir" == /var/* ]]; then
+                log_error "Install directory '$dir' requires elevation — refusing (RULE-CONST-001)."
+                log_error "Set INSTALL_DIR/DATA_DIR/LOGS_DIR to paths under \$HOME (e.g. \$HOME/.catalogizer)."
+                exit 1
+            fi
+            mkdir -p "$dir"
             log_success "Created directory: $dir"
         fi
     done
-
-    # Set permissions
-    sudo chown -R $USER:$USER "$INSTALL_DIR" 2>/dev/null || true
 }
 
 # Generate Docker Compose configuration

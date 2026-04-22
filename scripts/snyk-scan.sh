@@ -65,10 +65,12 @@ install_snyk() {
             esac
 
             SNYK_URL="https://static.snyk.io/cli/latest/snyk-${OS}-${ARCH}"
-            curl -s "$SNYK_URL" -o snyk
-            chmod +x snyk
-            sudo mv snyk /usr/local/bin/ 2>/dev/null || mv snyk /usr/local/bin/
-            echo "✅ Snyk CLI installed via direct download"
+            # RULE-CONST-001 — user-local install
+            mkdir -p "$HOME/bin"
+            curl -s "$SNYK_URL" -o "$HOME/bin/snyk"
+            chmod +x "$HOME/bin/snyk"
+            case ":$PATH:" in *":$HOME/bin:"*) ;; *) export PATH="$HOME/bin:$PATH" ;; esac
+            echo "✅ Snyk CLI installed to \$HOME/bin"
         fi
     else
         echo "✅ Snyk CLI is already installed"

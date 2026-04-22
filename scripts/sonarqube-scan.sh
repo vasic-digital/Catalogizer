@@ -56,13 +56,16 @@ install_scanner() {
         cd /tmp
         wget -q "$SONAR_SCANNER_URL" -O sonar-scanner.zip || curl -s "$SONAR_SCANNER_URL" -o sonar-scanner.zip
         unzip -q sonar-scanner.zip
-        sudo mv sonar-scanner-${SONAR_SCANNER_VERSION}-${OS}-${ARCH} /opt/sonar-scanner 2>/dev/null || {
-            mkdir -p ~/sonar-scanner
-            mv sonar-scanner-${SONAR_SCANNER_VERSION}-${OS}-${ARCH} ~/sonar-scanner
-            export PATH="$HOME/sonar-scanner/bin:$PATH"
-            echo 'export PATH="$HOME/sonar-scanner/bin:$PATH"' >> ~/.bashrc
-        }
-        sudo ln -sf /opt/sonar-scanner/bin/sonar-scanner /usr/local/bin/sonar-scanner 2>/dev/null || true
+        # RULE-CONST-001 — user-local install. sonar-scanner root lives
+        # under $HOME/sonar-scanner; ensure $HOME/sonar-scanner/bin is
+        # on PATH and drop a PATH shim in $HOME/bin so other scripts
+        # can invoke `sonar-scanner` unconditionally.
+        rm -rf "$HOME/sonar-scanner"
+        mkdir -p "$HOME/sonar-scanner" "$HOME/bin"
+        mv sonar-scanner-${SONAR_SCANNER_VERSION}-${OS}-${ARCH}/* "$HOME/sonar-scanner/"
+        rmdir sonar-scanner-${SONAR_SCANNER_VERSION}-${OS}-${ARCH}
+        ln -sf "$HOME/sonar-scanner/bin/sonar-scanner" "$HOME/bin/sonar-scanner"
+        case ":$PATH:" in *":$HOME/bin:"*) ;; *) export PATH="$HOME/bin:$PATH" ;; esac
         rm sonar-scanner.zip
         
         echo "✅ SonarScanner installed successfully"

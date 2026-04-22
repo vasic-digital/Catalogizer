@@ -124,6 +124,18 @@ echo -e "${BLUE}STEP 2: INSTALLING SECURITY TOOLS${NC}"
 echo -e "${BLUE}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
 echo ""
 
+# RULE-CONST-001 — install into $HOME/bin (user-level), never
+# /usr/local/bin (requires sudo). Operator must ensure $HOME/bin
+# is on PATH; the script adds it to the *current* shell so
+# subsequent command_exists checks succeed, and prints the
+# profile-file hint at the end.
+USER_BIN="$HOME/bin"
+mkdir -p "$USER_BIN"
+case ":$PATH:" in
+    *":$USER_BIN:"*) ;;
+    *) export PATH="$USER_BIN:$PATH" ;;
+esac
+
 # Create temp directory
 TEMP_DIR=$(mktemp -d)
 cd "$TEMP_DIR"
@@ -133,8 +145,7 @@ if command_exists trivy; then
     print_success "Trivy already installed"
 else
     print_status "Installing Trivy..."
-    curl -sfL https://raw.githubusercontent.com/aquasecurity/trivy/main/contrib/install.sh | sh -s -- -b /tmp
-    sudo mv /tmp/trivy /usr/local/bin/
+    curl -sfL https://raw.githubusercontent.com/aquasecurity/trivy/main/contrib/install.sh | sh -s -- -b "$USER_BIN"
     if command_exists trivy; then
         print_success "Trivy installed successfully"
     else
@@ -147,8 +158,7 @@ if command_exists gosec; then
     print_success "Gosec already installed"
 else
     print_status "Installing Gosec..."
-    curl -sfL https://raw.githubusercontent.com/securego/gosec/master/install.sh | sh -s -- -b /tmp
-    sudo mv /tmp/gosec /usr/local/bin/
+    curl -sfL https://raw.githubusercontent.com/securego/gosec/master/install.sh | sh -s -- -b "$USER_BIN"
     if command_exists gosec; then
         print_success "Gosec installed successfully"
     else
@@ -161,9 +171,8 @@ if command_exists nancy; then
     print_success "Nancy already installed"
 else
     print_status "Installing Nancy..."
-    curl -sL -o /tmp/nancy https://github.com/sonatype-nexus-community/nancy/releases/latest/download/nancy-linux.amd64
-    chmod +x /tmp/nancy
-    sudo mv /tmp/nancy /usr/local/bin/
+    curl -sL -o "$USER_BIN/nancy" https://github.com/sonatype-nexus-community/nancy/releases/latest/download/nancy-linux.amd64
+    chmod +x "$USER_BIN/nancy"
     if command_exists nancy; then
         print_success "Nancy installed successfully"
     else
@@ -176,8 +185,7 @@ if command_exists syft; then
     print_success "Syft already installed"
 else
     print_status "Installing Syft..."
-    curl -sSfL https://raw.githubusercontent.com/anchore/syft/main/install.sh | sh -s -- -b /tmp
-    sudo mv /tmp/syft /usr/local/bin/
+    curl -sSfL https://raw.githubusercontent.com/anchore/syft/main/install.sh | sh -s -- -b "$USER_BIN"
     if command_exists syft; then
         print_success "Syft installed successfully"
     else

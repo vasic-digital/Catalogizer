@@ -63,8 +63,10 @@ install_tool() {
     
     case $tool in
         trivy)
-            curl -sfL https://raw.githubusercontent.com/aquasecurity/trivy/main/contrib/install.sh | sh
-            sudo mv trivy /usr/local/bin/
+            # RULE-CONST-001 — user-local install to $HOME/bin
+            mkdir -p "$HOME/bin"
+            curl -sfL https://raw.githubusercontent.com/aquasecurity/trivy/main/contrib/install.sh | sh -s -- -b "$HOME/bin"
+            case ":$PATH:" in *":$HOME/bin:"*) ;; *) export PATH="$HOME/bin:$PATH" ;; esac
             ;;
         gosec)
             go install github.com/securego/gosec/v2/cmd/gosec@latest

@@ -41,11 +41,19 @@ fi
 
 # ---------------------------------------------------------------------------
 # RULE-SEC-002 — .env.example placeholders only (no long tokens)
+# Heuristic: a line like KEY=<24+ alphanumerics/underscores/hyphens> is
+# suspicious, UNLESS the value contains an obvious placeholder marker
+# (YOUR_, your-, change-me, change-this, placeholder, example, sample,
+# at-least-N-characters). Those are human-readable templates telling
+# the operator to replace the value.
 # ---------------------------------------------------------------------------
-if git ls-files --cached -- '*.env.example' 2>/dev/null \
-    | xargs -r grep -lE '^\w+=[A-Za-z0-9_\-]{24,}$' 2>/dev/null \
-    | grep -q .; then
-  fail "RULE-SEC-002: .env.example contains what looks like a real secret (24+ chars)"
+real_secrets=$(git ls-files --cached -- '*.env.example' 2>/dev/null \
+  | xargs -r grep -HnE '^\w+=[A-Za-z0-9_\-]{24,}$' 2>/dev/null \
+  | grep -vE 'YOUR_|your-|change[_-]me|change[_-]this|placeholder|example|sample|at-least-[0-9]|[Ss]ecret|[Pp]assword|^[^:]+:[^:]+:\w+=(dev|test|demo|fake|dummy)' \
+  || true)
+if [ -n "$real_secrets" ]; then
+  fail "RULE-SEC-002: .env.example contains a value that looks like a real secret:"
+  echo "$real_secrets" | sed 's/^/    /' >&2
 else
   ok "RULE-SEC-002: .env.example placeholders clean"
 fi

@@ -31,19 +31,28 @@ if command -v java &> /dev/null; then
     JAVA_VERSION=$(java -version 2>&1 | head -n 1)
     echo -e "${COLOR_GREEN}✓ Java is already installed: $JAVA_VERSION${COLOR_RESET}"
 else
-    echo -e "${COLOR_YELLOW}⚠ Java/JDK not found. Installing OpenJDK 17...${COLOR_RESET}"
+    # RULE-CONST-001 — this script runs at user level only. Java
+    # is a system dependency that requires the operator to install
+    # manually (via their distro's package manager OR sdkman-style
+    # user-local install). We refuse to invoke `sudo apt-get` from
+    # an automated script.
+    echo -e "${COLOR_RED}✗ Java/JDK not found.${COLOR_RESET}"
     echo ""
+    echo "Java must be installed by the operator before this script runs."
+    echo "Options:"
+    echo "  1. Distro package (Fedora/RHEL): sudo dnf install java-17-openjdk-devel"
+    echo "  2. Distro package (Debian/Ubuntu): sudo apt-get install openjdk-17-jdk"
+    echo "  3. SDKMAN user-local: curl -s https://get.sdkman.io | bash && sdk install java 17-open"
+    echo "  4. Pre-packaged in \$HOME/java — set JAVA_HOME then rerun this script"
+    exit 1
 
-    # Check if running as root or with sudo
-    if [ "$EUID" -eq 0 ]; then
-        apt-get update
-        apt-get install -y java-17-openjdk-devel
-    else
-        echo "Installing OpenJDK 17 (requires sudo)..."
-        sudo apt-get update
-        sudo apt-get install -y java-17-openjdk-devel
-    fi
-
+    # Unreachable — kept for reference of the distro commands:
+    : "$(cat <<'__NOTE__'
+    # Distro reference (operator-side):
+    #   sudo apt-get update
+    #   sudo apt-get install -y java-17-openjdk-devel
+__NOTE__
+)"
     if command -v java &> /dev/null; then
         echo -e "${COLOR_GREEN}✓ Java installed successfully${COLOR_RESET}"
         java -version
