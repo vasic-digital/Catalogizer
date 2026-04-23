@@ -62,7 +62,7 @@ func (suite *ConfigTestSuite) TestLoadDefaultConfig() {
 
 	assert.NoError(suite.T(), err)
 	assert.NotNil(suite.T(), cfg)
-	assert.Equal(suite.T(), "8080", cfg.Server.Port)
+	assert.Equal(suite.T(), "28080", cfg.Server.Port)
 	assert.Equal(suite.T(), "localhost", cfg.Server.Host)
 	assert.Equal(suite.T(), 30, cfg.Server.ReadTimeout)
 	assert.Equal(suite.T(), 30, cfg.Server.WriteTimeout)
@@ -115,7 +115,7 @@ func (suite *ConfigTestSuite) TestConfigValidation() {
 	assert.NotNil(suite.T(), cfg)
 	// validate() should have set defaults
 	assert.Equal(suite.T(), "localhost", cfg.Server.Host)
-	assert.Equal(suite.T(), "8080", cfg.Server.Port)
+	assert.Equal(suite.T(), "28080", cfg.Server.Port)
 }
 
 func (suite *ConfigTestSuite) TestSMBSourceParsing() {
@@ -163,7 +163,7 @@ func (suite *ConfigTestSuite) TestGetServerAddress() {
 		port     string
 		expected string
 	}{
-		{"127.0.0.1", "8080", "127.0.0.1:8080"},
+		{"127.0.0.1", "28080", "127.0.0.1:28080"},
 		{"0.0.0.0", "9090", "0.0.0.0:9090"},
 		{"localhost", "3000", "localhost:3000"},
 	}
@@ -249,7 +249,7 @@ func (suite *ConfigTestSuite) TestExternalAPIConfig() {
 	configData := map[string]interface{}{
 		"server": map[string]interface{}{
 			"host": "0.0.0.0",
-			"port": "8080",
+			"port": "28080",
 		},
 		"database": map[string]interface{}{
 			"driver":   "sqlite3",

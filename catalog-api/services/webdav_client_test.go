@@ -31,7 +31,7 @@ func TestNewWebDAVClient(t *testing.T) {
 		},
 		{
 			name:     "http URL",
-			url:      "http://localhost:8080/dav",
+			url:      "http://localhost:28080/dav",
 			username: "user",
 			password: "pass",
 		},
@@ -441,7 +441,7 @@ func TestWebDAVClient_BaseURLPreserved(t *testing.T) {
 		},
 		{
 			name: "HTTP URL",
-			url:  "http://localhost:8080/webdav",
+			url:  "http://localhost:28080/webdav",
 		},
 		{
 			name: "URL with trailing slash",

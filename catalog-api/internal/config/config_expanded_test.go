@@ -88,7 +88,7 @@ func TestLoadFromFile_EmptyFile(t *testing.T) {
 
 	// Defaults should be populated by validate()
 	assert.Equal(t, "localhost", cfg.Server.Host)
-	assert.Equal(t, "8080", cfg.Server.Port)
+	assert.Equal(t, "28080", cfg.Server.Port)
 }
 
 // ---------------------------------------------------------------------------
@@ -102,7 +102,7 @@ func TestValidate_FillsAllDefaults(t *testing.T) {
 
 	// Server defaults
 	assert.Equal(t, "localhost", cfg.Server.Host)
-	assert.Equal(t, "8080", cfg.Server.Port)
+	assert.Equal(t, "28080", cfg.Server.Port)
 	assert.Equal(t, 30, cfg.Server.ReadTimeout)
 	assert.Equal(t, 30, cfg.Server.WriteTimeout)
 	assert.Equal(t, 60, cfg.Server.IdleTimeout)
@@ -160,16 +160,16 @@ func TestGetServerAddress_IPv6(t *testing.T) {
 	cfg := &Config{
 		Server: ServerConfig{
 			Host: "::1",
-			Port: "8080",
+			Port: "28080",
 		},
 	}
-	assert.Equal(t, "::1:8080", cfg.GetServerAddress())
+	assert.Equal(t, "::1:28080", cfg.GetServerAddress())
 }
 
 func TestGetServerAddress_EmptyHostPort(t *testing.T) {
 	cfg := &Config{}
 	_ = cfg.validate()
-	assert.Equal(t, "localhost:8080", cfg.GetServerAddress())
+	assert.Equal(t, "localhost:28080", cfg.GetServerAddress())
 }
 
 // ---------------------------------------------------------------------------
@@ -287,7 +287,7 @@ func TestConfig_JSONMarshalUnmarshal(t *testing.T) {
 	cfg := &Config{
 		Server: ServerConfig{
 			Host: "localhost",
-			Port: "8080",
+			Port: "28080",
 		},
 		Auth: AuthConfig{
 			EnableAuth: true,

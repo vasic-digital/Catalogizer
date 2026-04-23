@@ -24,7 +24,7 @@ type BrowsingConfig struct {
 // from environment variables, falling back to defaults.
 func LoadBrowsingConfig() *BrowsingConfig {
 	return &BrowsingConfig{
-		BaseURL:   env.GetOrDefault("BROWSING_API_URL", "http://localhost:8080"),
+		BaseURL:   env.GetOrDefault("BROWSING_API_URL", "http://localhost:28080"),
 		Username:  env.GetOrDefault("ADMIN_USERNAME", "admin"),
 		Password:  env.GetOrDefault("ADMIN_PASSWORD", "admin123"),
 		WebAppURL: env.GetOrDefault("BROWSING_WEB_URL", "http://localhost:3000"),

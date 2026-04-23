@@ -94,7 +94,7 @@ func LoadFromFile(path string) (*Config, error) {
 
 func (c *Config) validate() error {
 	if c.Server.Port == "" {
-		c.Server.Port = "8080"
+		c.Server.Port = "28080"
 	}
 	if c.Server.Host == "" {
 		c.Server.Host = "localhost"

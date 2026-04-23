@@ -22,7 +22,7 @@ func TestStorageOperationsFullFlow(t *testing.T) {
 
 	baseURL := os.Getenv("API_BASE_URL")
 	if baseURL == "" {
-		baseURL = "http://localhost:8080/api/v1"
+		baseURL = "http://localhost:28080/api/v1"
 	}
 
 	client := &http.Client{

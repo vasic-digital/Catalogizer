@@ -227,7 +227,7 @@ func TestLoadBrowsingConfig_Defaults(t *testing.T) {
 	}
 
 	cfg := LoadBrowsingConfig()
-	assert.Equal(t, "http://localhost:8080", cfg.BaseURL)
+	assert.Equal(t, "http://localhost:28080", cfg.BaseURL)
 	assert.Equal(t, "admin", cfg.Username)
 	assert.Equal(t, "admin123", cfg.Password)
 	assert.Equal(t, "http://localhost:3000", cfg.WebAppURL)
@@ -257,7 +257,7 @@ func TestLoadBrowsingConfig_PartialEnv(t *testing.T) {
 	t.Setenv("CATALOG_WEB_DIR", "")
 
 	cfg := LoadBrowsingConfig()
-	assert.Equal(t, "http://localhost:8080", cfg.BaseURL)
+	assert.Equal(t, "http://localhost:28080", cfg.BaseURL)
 	assert.Equal(t, "custom_user", cfg.Username)
 	assert.Equal(t, "admin123", cfg.Password)
 }
@@ -1359,14 +1359,14 @@ func TestDirectory_Fields(t *testing.T) {
 
 func TestBrowsingConfig_Fields(t *testing.T) {
 	cfg := &BrowsingConfig{
-		BaseURL:   "http://api:8080",
+		BaseURL:   "http://api:28080",
 		Username:  "admin",
 		Password:  "pass",
 		WebAppURL: "http://web:3000",
 		WebAppDir: "/app",
 	}
 
-	assert.Equal(t, "http://api:8080", cfg.BaseURL)
+	assert.Equal(t, "http://api:28080", cfg.BaseURL)
 	assert.Equal(t, "admin", cfg.Username)
 	assert.Equal(t, "pass", cfg.Password)
 	assert.Equal(t, "http://web:3000", cfg.WebAppURL)

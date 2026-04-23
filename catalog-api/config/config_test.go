@@ -16,7 +16,7 @@ func TestGetDefaultConfig(t *testing.T) {
 
 	// Server defaults
 	assert.Equal(t, "localhost", config.Server.Host)
-	assert.Equal(t, 8080, config.Server.Port)
+	assert.Equal(t, 28080, config.Server.Port)
 	assert.True(t, config.Server.EnableCORS)
 	assert.True(t, config.Server.EnableHTTPS)
 
@@ -190,7 +190,7 @@ func TestGetServerAddress(t *testing.T) {
 	config := getDefaultConfig()
 
 	addr := config.GetServerAddress()
-	assert.Equal(t, "localhost:8080", addr)
+	assert.Equal(t, "localhost:28080", addr)
 
 	config.Server.Host = "0.0.0.0"
 	config.Server.Port = 9000
@@ -260,7 +260,7 @@ func TestLoadConfig_CreatesDefaultFile(t *testing.T) {
 	config, err := LoadConfig(configPath)
 	require.NoError(t, err)
 	assert.NotNil(t, config)
-	assert.Equal(t, 8080, config.Server.Port)
+	assert.Equal(t, 28080, config.Server.Port)
 
 	// File should now exist
 	_, err = os.Stat(configPath)

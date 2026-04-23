@@ -192,8 +192,8 @@ func TestBrowsingConfigDefaults(t *testing.T) {
 
 	cfg := LoadBrowsingConfig()
 
-	if cfg.BaseURL != "http://localhost:8080" {
-		t.Errorf("expected default BaseURL 'http://localhost:8080', got '%s'", cfg.BaseURL)
+	if cfg.BaseURL != "http://localhost:28080" {
+		t.Errorf("expected default BaseURL 'http://localhost:28080', got '%s'", cfg.BaseURL)
 	}
 	if cfg.Username != "admin" {
 		t.Errorf("expected default Username 'admin', got '%s'", cfg.Username)
@@ -513,10 +513,10 @@ func TestMediaEndpointAssertions_CH011_ValidatesData(t *testing.T) {
 }
 
 func TestAPIClient_NewAPIClient(t *testing.T) {
-	client := httpclient.NewAPIClient("http://localhost:8080/")
+	client := httpclient.NewAPIClient("http://localhost:28080/")
 
 	// Should trim trailing slash
-	if client.BaseURL() != "http://localhost:8080" {
+	if client.BaseURL() != "http://localhost:28080" {
 		t.Errorf("expected baseURL without trailing slash, got '%s'", client.BaseURL())
 	}
 	if client.Token() != "" {
