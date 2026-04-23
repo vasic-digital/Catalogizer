@@ -306,7 +306,7 @@ func main() {
 	if adminPass := os.Getenv("ADMIN_PASSWORD"); adminPass != "" {
 		cfg.Auth.AdminPassword = adminPass
 	}
-	if port := os.Getenv("PORT"); port != "" {
+	if port := os.Getenv("SERVER_PORT"); port != "" {
 		cfg.Server.Port = atoi(port) // Use helper function
 	}
 	if host := os.Getenv("HOST"); host != "" {
@@ -1740,8 +1740,8 @@ func main() {
 			NextProtos:   []string{"h3", "h2", "http/1.1"},
 		}
 
-		// Start HTTPS server on port 8443 (HTTP/2 with TLS, fallback for HTTP/3)
-		httpsAddr := fmt.Sprintf("%s:%d", cfg.Server.Host, 8443)
+		// Start HTTPS server on port 28443 (HTTP/2 with TLS, fallback for HTTP/3)
+		httpsAddr := fmt.Sprintf("%s:%d", cfg.Server.Host, 28443)
 		httpsServer = &http.Server{
 			Addr:              httpsAddr,
 			Handler:           router,
@@ -1757,11 +1757,11 @@ func main() {
 
 		// Add Alt-Svc header to advertise HTTP/3 support
 		router.Use(func(c *gin.Context) {
-			c.Header("Alt-Svc", `h3=":8443"; ma=86400`)
+			c.Header("Alt-Svc", `h3=":28443"; ma=86400`)
 			c.Next()
 		})
 
-		// Start HTTP/3 server on UDP port 8443
+		// Start HTTP/3 server on UDP port 28443
 		http3Server = &http3.Server{
 			Addr:      httpsAddr,
 			Handler:   router,

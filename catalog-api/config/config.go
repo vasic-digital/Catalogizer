@@ -149,17 +149,17 @@ func getDefaultConfig() *Config {
 	return &Config{
 		Server: ServerConfig{
 			Host:         "localhost",
-			Port:         8080,
+			Port:         28080,
 			ReadTimeout:  900,
 			WriteTimeout: 900,
 			IdleTimeout:  120,
 			EnableCORS:   true,
-			EnableHTTPS:  true, // Enable HTTPS by default for security
+			EnableHTTPS: true, // Enable HTTPS by default for security
 		},
 		Database: DatabaseConfig{
 			Type:               "postgres",
 			Host:               "localhost",
-			Port:               5433,
+			Port:               25432,
 			Name:               "catalogizer",
 			User:               "catalogizer",
 			Password:           "catalogizer_dev",
