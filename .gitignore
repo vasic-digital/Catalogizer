@@ -335,3 +335,15 @@ rerun_helixqa_atv.sh
 qa-results-*/
 docs/issues/
 
+
+# Build artifacts — never commit binaries
+# (CONST: 117 MB api-server binary was purged from history on 2026-04-27;
+# this guard prevents it from being re-added.)
+catalog-api/api-server
+catalog-api/api-server.*
+catalog-api/dist/
+catalog-api/build/
+*.exe
+*.dll
+*.so
+*.dylib
