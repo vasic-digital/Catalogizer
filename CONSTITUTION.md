@@ -380,9 +380,151 @@ Any use of `sudo`, `su`, or root-level execution in scripts, builds, or operatio
 
 ---
 
+### Article XI: Anti-Bluff Testing (MANDATORY)
+
+**Every test and every Challenge must guarantee that the tested code actually
+delivers a working, end-user-visible feature. Tests that pass without
+exercising the real behaviour are forbidden. Their existence creates the
+illusion of quality while shipping broken software.**
+
+**§11.1 The bluff problem (history)**
+
+Prior development cycles produced suites where every test and every
+challenge reported `PASS`, yet the majority of features did not work for
+end users (broken navigation, empty data screens, mis-wired endpoints,
+unrendered components, dead deep-links). This was caused by:
+
+- Tests that asserted only that code compiles or that a function returns
+  without panic.
+- Challenges that hit `GET /healthz` (or similar) and treated `200 OK` as
+  proof of feature liveness.
+- Mocks bleeding past unit-test boundaries into integration / E2E /
+  challenge runs.
+- "Smoke" tests that never produced an artefact a real user could see.
+- HelixQA banks whose "actions" were prose (`"Verify the user is logged
+  in"`) instead of executable steps with evidence.
+
+This pattern is now permanently banned by this Article.
+
+**§11.2 The Anti-Bluff Contract**
+
+Every test and every Challenge **must** satisfy all of:
+
+1. **End-user observable outcome.** The test asserts on a concrete
+   artefact a user could perceive: rendered DOM text, a database row a
+   query would return, a file the user expects on disk, a notification
+   they'd actually see, a media file that actually plays, a search
+   result list that actually contains the expected items.
+2. **Real path, real data.** Beyond unit tests, every layer below the
+   assertion is the **production** layer — real database, real HTTP
+   handler, real renderer, real container. Mocks/stubs/fakes are
+   permitted **only** in `*_test.go` (or language equivalent) running
+   under `go test -short` (Article §Universal-11). Any non-unit test
+   that cannot reach the real system **must skip with `SKIP-OK: #<ticket>`,
+   never silently pass.
+3. **Negative test exists.** For every positive assertion there is a
+   matching negative assertion that fails when the feature is broken.
+   Tests that only ever pass (because the assertion is empty, lenient,
+   or tautological) are forbidden.
+4. **Evidence is copy-pasted.** The test/Challenge writes an artefact
+   the operator can read after the run: HTTP response body, screenshot,
+   video frame, DB row dump, log excerpt. Anonymous boolean `pass/fail`
+   is insufficient.
+5. **The test fails when the feature is removed.** Every author **must**
+   verify locally that deleting or disabling the feature implementation
+   makes the test fail. A test that still passes after the feature is
+   ripped out is a Constitution violation and must be deleted.
+6. **No end-to-end blind shells.** Forbidden patterns include
+   `&& echo PASS`, `|| true`, `tee` exit-code laundering, `set +e` over
+   long blocks, treating `curl -s` exit code as success while the body
+   contains an error JSON, and any `if [ -f file ]; then echo OK` test
+   that does not assert content.
+
+**§11.3 Challenge-specific clauses**
+
+- A Challenge **must** replay the user journey end-to-end in the system
+  exactly as it ships — through the binary, through the container,
+  through the same UI/API surface a real user would touch.
+- A Challenge that drives the API directly via `curl` or third-party
+  scripts is INVALID. Only the project's own deliverables (catalog-api,
+  catalog-web, the Tauri apps, the Android apps, the userflow-runner)
+  may execute Challenges. (See umbrella `CLAUDE.md` Challenge System
+  section.)
+- Every Challenge declares its **end-user assertion** in its
+  description (e.g. *"User searches 'Inception', sees the movie card,
+  taps it, sees the movie detail page with poster + cast"*) and the
+  Challenge body matches that contract step-by-step.
+- A Challenge that finishes in under one second on a real-data run is
+  almost always a bluff and must be reviewed.
+
+**§11.4 HelixQA-specific clauses**
+
+- Bank entries declare an **executable action** (`adb_shell: input text
+  admin`, `playwright: page.click('text=Sign In')`), never prose.
+- Each bank entry declares a **concrete success predicate** verified by
+  a vision model or DOM/UI dump check (`assertVisible: 'Movies'`,
+  `assertNotVisible: 'Sign In'`).
+- Stagnation guard from Article §1.3 is in effect: if frame N+1 is
+  identical to frame N for >10 s after an action that should advance
+  the screen, the bank entry FAILS — never silently passes.
+- Vision providers that return `verified` without actually examining
+  the screenshot must be trapped: every `verifyOutcome` log line
+  records the model's reasoning text alongside the verdict, and any
+  empty/tautological reasoning is treated as `INCONCLUSIVE`, not `PASS`
+  (see `HelixQA/pkg/autonomous/structured_executor.go`).
+
+**§11.5 Test-suite-specific clauses**
+
+- Unit tests assert on **return values, side effects, and panics** —
+  not on the absence of compile errors.
+- Integration tests run against a real database started by the test
+  harness (`database.WrapDB(...)` for unit, real container for
+  integration). Schema migrations must be applied — schemas inferred
+  from `CREATE TABLE IF NOT EXISTS` in the test itself are forbidden
+  because they hide migration-divergence bugs.
+- E2E tests start the real binary, hit the real bound port, and assert
+  on the real response. `httptest.NewServer` is **only** permitted for
+  unit-level handler tests — never as a substitute for the actual
+  `main.go` binary.
+- Frontend tests render the actual production component tree, not a
+  hand-rolled stripped-down `<App />`.
+
+**§11.6 Verification ritual (added to every PR)**
+
+Every PR that adds or modifies a test or Challenge **must** include a
+fenced `## Anti-Bluff Verification` block in its body containing:
+
+- The command run.
+- The pasted output (real, not invented).
+- Proof that the test fails when the feature is broken: a second run
+  with the feature commented out / mocked away that shows a `FAIL`.
+
+PRs without this block are returned to the author. CI will be wired to
+require the section's presence.
+
+**§11.7 Enforcement and audits**
+
+- Every Full-QA Master Cycle (Article VII) **must** include a random
+  audit: pick five tests and five Challenges at random, comment out
+  their target feature, re-run, confirm they fail. Any that still pass
+  are tagged with `BLUFF` and rewritten before the cycle terminates.
+- A new fixes-validation entry must be added every time a bluff is
+  caught — making sure the same blind spot is never re-introduced.
+- Adding new tests/Challenges without satisfying §11.2 is a
+  Constitution violation on par with shipping a TODO.
+
+**§11.8 Cascade requirement**
+
+This Article **must** appear in every submodule's `CONSTITUTION.md` /
+`CLAUDE.md` / `AGENTS.md` (or whichever governance files that submodule
+maintains). The umbrella project enforces presence at every release
+gate.
+
 ---
 
-*Last Updated: 2026-04-21*
+---
+
+*Last Updated: 2026-04-28*
 *Enforced by: Project Lead*
 
 

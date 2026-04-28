@@ -177,3 +177,73 @@ Both MUST be wired into the project's CI / `run_all_challenges.sh`.
 
 <!-- END host-power-management addendum (CONST-033) -->
 
+<!-- BEGIN anti-bluff-testing addendum (Article XI) -->
+
+## Anti-Bluff Testing — Mandatory (Article XI)
+
+**Tests and Challenges that pass without exercising real end-user
+behaviour are forbidden.** History on this project includes long
+periods where every test and Challenge reported `PASS` while the
+shipped product was largely unusable: empty screens after login,
+broken deep links, unrendered components, mis-wired endpoints. That
+class of failure is now a Constitution violation.
+
+When you write or modify a test, Challenge, or HelixQA bank entry,
+you MUST:
+
+1. **Assert on a concrete end-user-visible outcome.** A rendered DOM
+   string, a DB row a user query would return, a media file that
+   actually plays, a search result list with the expected items, a
+   notification a real user would see. NOT just "no error" or
+   "200 OK".
+2. **Run against the real system below the assertion.** Beyond
+   `*_test.go` (or language equivalent) under `go test -short`,
+   non-unit tests use real containers, real databases, real HTTP
+   handlers, real renderers. Mocks/stubs/fakes are forbidden in
+   integration / E2E / Challenge / HelixQA tests. If the real
+   system isn't reachable, **skip with `SKIP-OK: #<ticket>`**, never
+   silently pass.
+3. **Include a matching negative.** For every positive assertion,
+   add an assertion that fails when the feature is broken.
+4. **Emit copy-pasteable evidence.** Body, screenshot, video frame,
+   DB row dump, log excerpt. Boolean pass/fail alone is insufficient.
+5. **Verify "fails when feature is removed."** Locally comment out
+   or delete the feature implementation and re-run. The test MUST
+   FAIL. If it still passes, it's a bluff — delete it and write a
+   real one.
+6. **No blind shells.** No `&& echo PASS`, no `|| true`, no `tee`
+   exit-code laundering, no `if [ -f file ]; then echo OK` without
+   asserting content, no `curl -s` whose body contains an error JSON
+   that gets silently treated as success.
+
+**Challenges specifically:** every Challenge replays the user
+journey end-to-end through the project's actual deliverables (the
+binaries, the containers, the userflow-runner) — never via raw
+`curl` or third-party scripts. Sub-1-second Challenges are almost
+always a bluff and require review. See umbrella `CONSTITUTION.md`
+Article XI §11.3.
+
+**HelixQA specifically:** bank entries declare an executable action
+(`adb_shell: input text admin`, `playwright: page.click('text=Sign
+In')`), never prose. Each entry declares a concrete success
+predicate (`assertVisible: 'Movies'`,
+`assertNotVisible: 'Sign In'`). Stagnation guard is in effect — if
+frame N+1 is identical to frame N for >10 s after an action, the
+entry FAILS. Vision-model `verified=true` with empty/tautological
+reasoning is treated as `INCONCLUSIVE`, not `PASS`.
+
+**PR requirement:** every PR adding or modifying a test or
+Challenge MUST include a fenced `## Anti-Bluff Verification` block
+with: (a) the command run, (b) the pasted output, (c) proof that
+the test fails when the feature is broken (a second run with the
+feature commented out showing `FAIL`).
+
+**Cascade:** this rule applies to every submodule. If a submodule
+maintains its own `CONSTITUTION.md` / `CLAUDE.md` / `AGENTS.md`,
+this clause must appear there too. The umbrella project enforces
+presence at every release gate.
+
+**Full background:** `CONSTITUTION.md` Article XI.
+
+<!-- END anti-bluff-testing addendum (Article XI) -->
+
