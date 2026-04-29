@@ -15,7 +15,9 @@ describe('FTPConfigurationStep', () => {
         <FTPConfigurationStep />
       </TestWrapper>
     )
-    expect(true).toBe(true)
+    // Article XI: assert the component actually mounted with its identifying
+    // heading rendered (not just "no exception").
+    expect(screen.getByText('FTP Configuration')).toBeInTheDocument()
   })
 
   it('renders FTP configuration form', () => {

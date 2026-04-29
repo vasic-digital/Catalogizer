@@ -297,6 +297,8 @@ describe('WebSocketClient', () => {
 
     it('handles pong messages (heartbeat)', async () => {
       const client = new WebSocketClient('ws://localhost:8080');
+      const messageListener = vi.fn();
+      client.on('message', messageListener);
 
       const connectPromise = client.connect();
 
@@ -313,8 +315,10 @@ describe('WebSocketClient', () => {
         inst.onmessage({ data: JSON.stringify(message) } as any);
       }
 
-      // Should not throw, pong is handled silently
-      expect(true).toBe(true);
+      // Article XI: pong is handled silently — assert the message listener
+      // was NOT triggered (confirms the heartbeat was actually swallowed,
+      // not just that the call didn't throw).
+      expect(messageListener).not.toHaveBeenCalled();
     });
 
     it('emits generic message event for unknown types', async () => {
