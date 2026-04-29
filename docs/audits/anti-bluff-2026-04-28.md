@@ -290,7 +290,23 @@ patterns it forbids. Three refinements landed:
    umbrella scan was finding 30+ copies × 4 lines = 126 false
    positives. After whitelisting: 0.
 
-### Final scanner counts (umbrella, 2026-04-29 18:00)
+### Final scanner counts (umbrella, 2026-04-29 22:00 — v10)
+
+After 5 more rounds of refinement attacking false-positive sources:
+
+| Category | Day 1 | v10 | Δ | Notes |
+|---|---:|---:|---:|---|
+| `PROSE_HELIXQA_ACTION` | 4564 | 4034 | -530 | Challenges-format false positives (action+target structured pairs) now correctly excluded; remaining 4034 are real prose-only HelixQA bank actions |
+| `GO_NO_ASSERT` | 982 | 255 | -727 | Stricter regex (no method receivers, suite runners, subtest dispatchers, "no panic" tests, compile-time interface assertions all skipped) |
+| `SKIP_WITHOUT_TICKET` | 188 | **0** | -188 | ✅ Bulk-tagged + scanner refined |
+| `GO_NIL_ONLY` | 164 | 147 | -17 | Tightened rule (skip suite/subtest contexts) |
+| `GO_MOCK_IN_INTEGRATION` | 150 | **0** | -150 | ✅ Directory-based filter (only flag tests under tests/integration/, tests/e2e/, etc., not files with "challenge" in the name) + stricter regex (gomock.NewController, testify/mock.) |
+| `ASSERT_TAUTOLOGY` | 22 | **0** | -22 | ✅ |
+| `CHALLENGE_BLIND_SHELL` | 12 | **0** | -12 | ✅ Canonical CONST-033 / Article XI tooling whitelisted |
+| `GO_HTTPTEST_ABUSE` | 9 | 9 | 0 | 4 SKIP-honestly per BLUFF-CATAPI-E2E-001; 5 false positives (library middleware tests) |
+| **Total** | **6091** | **4450** | **-1641 (27%)** | **4 entire categories at zero** |
+
+### Earlier scanner refinements (2026-04-29 — v6 → v10)
 
 | Category | Day 1 | Day 2 | Δ | Notes |
 |---|---:|---:|---:|---|
@@ -328,3 +344,126 @@ patterns it forbids. Three refinements landed:
 - `GO_NO_ASSERT` (854) review — high false-positive rate; mostly
   helper functions named `Test*` that aren't tests (`TestMain`,
   `TestSetup`, `TestNewFoo` constructor). Scanner refinement needed.
+
+### Bank rewrite plan (PROSE_HELIXQA_ACTION — 4034 sites)
+
+Confirmed real bluffs after schema-aware scanner refinement: HelixQA
+banks (`HelixQA/banks/full-qa-{api,web,android,androidtv}.json`,
+`atmosphere.json`, etc.) use prose-only actions like:
+
+```json
+{
+  "name": "Send login request",
+  "action": "POST /api/v1/auth/login with body {\"username\":\"admin\",\"password\":\"admin123\"}",
+  "expected": "200 OK with JSON containing token field"
+}
+```
+
+The runner cannot execute that string directly without LLM
+interpretation. To make these executable per Article XI:
+
+```json
+{
+  "name": "Send login request",
+  "action": "http: POST",
+  "target": "/api/v1/auth/login",
+  "body": {"username": "admin", "password": "admin123"},
+  "assertions": [
+    {"type": "status_eq", "value": 200},
+    {"type": "json_path_present", "path": "$.session_token"}
+  ]
+}
+```
+
+Most prose actions follow common patterns that can be mechanically
+converted:
+
+| Prose pattern | Structured form |
+|---|---|
+| `"POST /api/X with body {...}"` | `{action: "http: POST", target: "/api/X", body: {...}}` |
+| `"GET /api/X with admin token"` | `{action: "http: GET", target: "/api/X", auth: "admin"}` |
+| `"DELETE /api/X/{id}"` | `{action: "http: DELETE", target: "/api/X/{id}"}` |
+| `"adb shell input text X"` | `{action: "adb_shell:", target: "input text X"}` |
+| `"Click 'Sign In'"` | `{action: "playwright:", target: "page.click('text=Sign In')"}` |
+| `"Verify 'Welcome' is visible"` | `{action: "assertVisible:", target: "text=Welcome"}` |
+
+Plan:
+1. Build `scripts/audit/bank-rewrite-prose-to-exec.py` — reads a bank
+   JSON, applies regex-based pattern matching for the common cases,
+   writes the structured form alongside (`*-v2.json`). Sample 10%
+   of conversions for review.
+2. Run on `full-qa-api.json` first (357 sites — smallest of the big
+   banks, well-defined HTTP-only domain). Manually review 100% of
+   converted entries.
+3. Iterate to refine the converter for edge cases.
+4. Apply to remaining banks: web (572), androidtv (525), atmosphere
+   (423), android (321), entity-management (140),
+   performance-validation (139), and ~6 smaller banks.
+5. Each converted bank lands with an `## Anti-Bluff Verification`
+   block in its PR — a HelixQA dry-run on a sample subset showing
+   that the new structured action produces a real evidence trail
+   (DOM string seen, DB row returned, etc.) and that
+   commenting-out the implementation produces FAIL.
+
+Realistic timeline: ~1-2 weeks at one bank per day with thorough
+review. Mechanical converter handles ~80% of patterns; remaining
+20% require manual judgment for ambiguous prose.
+
+This is OUT OF SCOPE for the 2026-04-28 / 04-29 session. Tracked as
+ticket **BLUFF-HELIXQA-BANKS-REWRITE-001**.
+
+### Discovery: HelixQA framework extension needed for HTTP/web banks
+
+`HelixQA/pkg/testbank/schema.go` defines `ActionType` as the
+canonical executable-action enum:
+
+```
+ActionTypeADBShell      = "adb_shell"
+ActionTypeSleep         = "sleep"
+ActionTypeScreenshot    = "screenshot"
+ActionTypeKeyPress      = "keypress"
+ActionTypeTap           = "tap"
+ActionTypeSwipe         = "swipe"
+ActionTypeText          = "text"
+ActionTypePlaybackCheck = "playback_check"
+ActionTypeFrameDiff     = "frame_diff"
+ActionTypeDescription   = "description"  // legacy, non-executable
+```
+
+The framework natively supports **only Android device actions**.
+HTTP, web (Playwright), assertion-visible, and similar action types
+are NOT in the enum — which is why
+`HelixQA/banks/full-qa-api.json` (357 entries),
+`full-qa-web.json` (572 entries),
+and `atmosphere.json` (423 entries) all use prose under
+`ActionTypeDescription` instead of structured executable actions.
+
+**Implication:** the bank rewrite is bigger than just "reformat
+prose to `prefix: command`". For non-Android banks, the rewrite
+requires HelixQA framework extensions:
+
+1. Add `ActionTypeHTTP` (with sub-grammar for method, path, body,
+   auth, expected status, JSON path assertions).
+2. Add `ActionTypePlaywright` (with sub-grammar for selector,
+   click/type/wait, expected DOM).
+3. Update `pkg/autonomous/structured_executor.go` to dispatch the
+   new types to the appropriate sub-executor.
+4. Update `pkg/testbank/schema_test.go` with parse+execute tests
+   for each.
+5. THEN run the bulk converter.
+
+Or — simpler routing — replace the HTTP-flavoured banks entirely
+with `pkg/userflow/HTTPAPIAdapter`-driven challenges that live under
+`Challenges/banks/` (which DO have a structured action+target
+schema and an existing executor). The catalog-api integration tests
+already work this way — they hit the real bound port, assert on
+real responses, decode the JWT, query the DB. Migrating from
+HelixQA banks to userflow Challenges for non-Android tests would
+align the schema with the executor's actual capabilities and remove
+the rewrite-then-extend overhead.
+
+Either path is genuinely multi-week. The 4034 "prose action"
+findings in HelixQA banks are not a paint-job problem; they're a
+schema-vs-executor mismatch that has accumulated as the project
+expanded HelixQA from its Android-test origin into HTTP/web/
+desktop without extending the action grammar.

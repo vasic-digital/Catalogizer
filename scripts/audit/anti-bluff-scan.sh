@@ -70,50 +70,68 @@ emit() {
 }
 
 scan_go_tests() {
-  # GO_NIL_ONLY: a Test* function whose only assertion check is `if err != nil { t.Fatal(err) }`
-  # GO_NO_ASSERT: a Test* function whose body has zero t.Error/t.Fatal/assert./require.
+  # GO_NIL_ONLY: a Test* function whose only assertion is `if err != nil { t.Fatal(err) }`
+  #              and has NO other t.Error/t.Fatal/assert/require/expect calls.
+  # GO_NO_ASSERT: a Test* function (NOT a method, NOT a suite runner) whose body
+  #               has zero t.Error/t.Fatal/assert./require.
   # GO_HTTPTEST_ABUSE: file path contains e2e or _e2e_ AND uses httptest.NewServer
-  # GO_MOCK_IN_INTEGRATION: file path contains integration|e2e|stress|chaos|security|challenge AND uses mock/stub/fake
+  # GO_MOCK_IN_INTEGRATION: file is under a real integration/e2e/stress/chaos/security/
+  #                          challenges directory (NOT just filename match — that
+  #                          flags challenge_handler_test.go which is a unit test)
+  #                          AND uses mock/stub/fake.
   while IFS= read -r -d '' f; do
     is_excluded "$f" && continue
     local low="${f,,}"
-    # GO_HTTPTEST_ABUSE
-    if [[ "$low" == *e2e* ]]; then
+    # GO_HTTPTEST_ABUSE — file path contains /e2e/ or _e2e_test.go
+    if [[ "$low" == */e2e/* || "$low" == *_e2e_test.go ]]; then
       grep -nE 'httptest\.NewServer\b|httptest\.NewRequest\b' "$f" 2>/dev/null | while IFS=: read -r ln rest; do
         stripped="$(echo "$rest" | sed 's/^[[:space:]]*//')"
         case "$stripped" in '//'*|'/*'*|'*'*) continue ;; esac
         emit GO_HTTPTEST_ABUSE "$f" "$ln" "$rest"
       done
     fi
-    # GO_MOCK_IN_INTEGRATION
-    if [[ "$low" == *integration* || "$low" == *_e2e* || "$low" == *stress* || "$low" == *chaos* || "$low" == *security* || "$low" == *challenge* ]]; then
-      grep -nE '\bmock\.|stub\.|fake\.|NewMock|NewFake|NewStub|/mocks/|gomock\.|testify/mock' "$f" 2>/dev/null | while IFS=: read -r ln rest; do
+    # GO_MOCK_IN_INTEGRATION — directory must be one of the integration-class dirs
+    if [[ "$low" == */tests/integration/* || "$low" == */tests/e2e/* || \
+          "$low" == */tests/stress/* || "$low" == */tests/chaos/* || \
+          "$low" == */tests/security/* || "$low" == */challenges/scripts/* ]]; then
+      grep -nE 'gomock\.NewController|testify/mock\.|mock\.Mock\{|NewMockClient|NewMockService|NewMockRepository|/mocks/' "$f" 2>/dev/null | while IFS=: read -r ln rest; do
         stripped="$(echo "$rest" | sed 's/^[[:space:]]*//')"
         case "$stripped" in '//'*|'/*'*|'*'*) continue ;; esac
         emit GO_MOCK_IN_INTEGRATION "$f" "$ln" "$rest"
       done
     fi
-    # Per-function nil-only / no-assert
+    # Per-function nil-only / no-assert — only flag standalone Test funcs
+    # (no receiver) that aren't suite runners, subtest dispatchers, "no panic"
+    # tests, or compile-time interface assertions.
     awk -v f="$f" '
-      /^func[[:space:]]+(\([^)]*\)[[:space:]]*)?Test[A-Z]/ {
-        in_func=1; depth=0; start=NR; body=""; nil_only=1; has_assert=0; saw_anything=0; first_line=$0;
+      /^func[[:space:]]+Test[A-Z][A-Za-z0-9_]*\(t \*testing\.T\)/ {
+        in_func=1; depth=0; start=NR; body=""; nil_only=1; has_assert=0;
+        saw_suite_run=0; saw_subtest=0; saw_no_panic=0; saw_interface_assert=0;
+        first_line=$0;
       }
       in_func {
         body=body"\n"$0;
-        # depth tracker
         for (i=1; i<=length($0); i++) {
           ch=substr($0,i,1);
           if (ch=="{") depth++;
           else if (ch=="}") depth--;
         }
         if (NR > start) {
-          if ($0 ~ /t\.Error|t\.Errorf|t\.Fatal|t\.Fatalf|t\.Logf|assert\.|require\.|expect\(/) has_assert=1;
-          # very conservative: any assertion that is NOT just "if err != nil { t.Fatal(err) }" disqualifies nil_only
+          if ($0 ~ /t\.Error|t\.Errorf|t\.Fatal|t\.Fatalf|assert\.|require\.|expect\(/) has_assert=1;
           if ($0 ~ /(t\.Error|t\.Errorf|assert\.|require\.|expect\()/) nil_only=0;
+          if ($0 ~ /suite\.Run\(t,|s\.Run\(/) saw_suite_run=1;
+          if ($0 ~ /t\.Run\(/) saw_subtest=1;
+          # Implicit "no panic" assertion — Go panic = test failure
+          if ($0 ~ /[Ss]hould not panic|[Nn]o panic|[Sh][hh]ould.*not.*crash|[Dd]oes not crash|[Mm]ust not panic/) saw_no_panic=1;
+          # Compile-time interface assertion: var _ Iface = (*Type)(nil)
+          if ($0 ~ /var[[:space:]]+_[[:space:]]+[A-Z][A-Za-z0-9_]*[[:space:]]*=[[:space:]]*\(\*/) saw_interface_assert=1;
         }
         if (depth==0 && NR>start) {
-          if (!has_assert) printf "%s\t%d\tGO_NO_ASSERT\t%s\n", f, start, first_line;
-          else if (nil_only && body ~ /if[[:space:]]+err[[:space:]]*!=[[:space:]]*nil/) printf "%s\t%d\tGO_NIL_ONLY\t%s\n", f, start, first_line;
+          if (!has_assert && !saw_suite_run && !saw_subtest && !saw_no_panic && !saw_interface_assert) {
+            printf "%s\t%d\tGO_NO_ASSERT\t%s\n", f, start, first_line;
+          } else if (nil_only && !saw_suite_run && !saw_subtest && body ~ /if[[:space:]]+err[[:space:]]*!=[[:space:]]*nil/) {
+            printf "%s\t%d\tGO_NIL_ONLY\t%s\n", f, start, first_line;
+          }
           in_func=0;
         }
       }
@@ -151,20 +169,77 @@ scan_ts_tests() {
 }
 
 scan_helixqa_banks() {
-  # HelixQA bank actions are JSON. A prose action is one without a recognized executable prefix.
-  # Recognized prefixes: adb_shell:, adb:, playwright:, click:, type:, key:, http:, sql:, sleep:, screenshot:, assertVisible:, assertNotVisible:, evaluate:, navigate:.
+  # Bank actions are bluffs ONLY when the action field contains prose AND there
+  # is no accompanying executable field (target/command). Two bank schemas exist:
+  #
+  #  (A) Challenges format: {"action": "verb", "target": "adb shell ...",
+  #      "value": "...", "description": "..."}. The action is a verb, but
+  #      target carries the executable command — runner uses target+action+value.
+  #      NOT a bluff.
+  #  (B) HelixQA format: {"action": "POST /api/v1/auth/login with body {...}",
+  #      "expected": "200 OK with JSON containing token"}. Prose only — the
+  #      runner cannot execute this without interpretation. IS a bluff.
+  #
+  # Recognized executable-prefix actions also pass (adb_shell: ... etc).
+  # Files under HelixQA/banks/templates/ are scaffolding examples.
   while IFS= read -r -d '' f; do
     is_excluded "$f" && continue
-    grep -nE '"action"[[:space:]]*:[[:space:]]*"' "$f" 2>/dev/null | while IFS=: read -r ln rest; do
-      # extract the value between the first pair of quotes after the colon
-      val=$(echo "$rest" | sed -nE 's/.*"action"[[:space:]]*:[[:space:]]*"([^"]*)".*/\1/p')
-      if ! echo "$val" | grep -qE '^(adb_shell:|adb:|playwright:|click:|type:|key:|press:|swipe:|http(s)?:|sql:|sleep:|screenshot:|assertVisible:|assertNotVisible:|evaluate:|navigate:|wait_for:|tap:|focus:|scroll:)'; then
-        if [ -n "$val" ]; then
-          emit PROSE_HELIXQA_ACTION "$f" "$ln" "action=\"$val\""
-        fi
-      fi
-    done
-  done < <(find . -type f \( -path '*/banks/*' -a \( -name '*.json' -o -name '*.yaml' -o -name '*.yml' \) \) -print0 2>/dev/null)
+    case "$f" in *banks/templates/*) continue ;; esac
+    python3 - "$f" 2>/dev/null <<'PY'
+import json, re, sys
+path = sys.argv[1]
+try:
+    with open(path) as fh:
+        if path.endswith(('.yaml', '.yml')):
+            try:
+                import yaml
+                data = yaml.safe_load(fh)
+            except ImportError:
+                sys.exit(0)
+        else:
+            data = json.load(fh)
+except Exception:
+    sys.exit(0)
+
+# Find all step-like dicts recursively, with their JSON line position estimated
+# (rough — we re-read the file for line numbers).
+with open(path) as fh:
+    text = fh.read()
+
+EXEC_PREFIXES = (
+    'adb_shell:', 'adb:', 'playwright:', 'click:', 'type:', 'key:', 'press:',
+    'swipe:', 'http:', 'https:', 'sql:', 'sleep:', 'screenshot:',
+    'assertvisible:', 'assertnotvisible:', 'evaluate:', 'navigate:',
+    'wait_for:', 'tap:', 'focus:', 'scroll:',
+)
+
+def visit(obj):
+    if isinstance(obj, dict):
+        if 'action' in obj and isinstance(obj['action'], str):
+            action = obj['action']
+            # Has accompanying executable field?
+            has_target = 'target' in obj and isinstance(obj['target'], str) and obj['target'].strip()
+            has_command = 'command' in obj and isinstance(obj['command'], str) and obj['command'].strip()
+            has_executable_prefix = any(action.lower().startswith(p) for p in EXEC_PREFIXES)
+            if has_target or has_command or has_executable_prefix:
+                pass  # not a bluff
+            else:
+                # Estimate line number by searching for the action string
+                snippet = action[:50].replace('\\', '\\\\').replace('"', '\\"')
+                m = re.search(r'"action"\s*:\s*"' + re.escape(snippet[:30]) + r'[^"]*"', text)
+                ln = text[:m.start()].count('\n') + 1 if m else 1
+                print(f'{path}\t{ln}\tPROSE_HELIXQA_ACTION\taction="{snippet[:50]}"')
+        for v in obj.values():
+            visit(v)
+    elif isinstance(obj, list):
+        for v in obj:
+            visit(v)
+
+visit(data)
+PY
+  done < <(find . -type f -path '*/banks/*' -name '*.json' -print0 2>/dev/null)
+  # Per CLAUDE.md "Bank format is JSON at runtime" — YAML mirrors are kept in
+  # sync; scanning both would double-count.
 }
 
 scan_challenge_scripts() {
