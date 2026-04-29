@@ -1302,6 +1302,12 @@ func main() {
 		wrap := root_handlers.WrapHTTPHandler
 
 		adminGroup := api.Group("/admin")
+		// Article XI §11.5: gate every /admin/* endpoint on the admin
+		// role. Prior to 2026-04-29 the admin group had only auth +
+		// CSRF — any authenticated user could call /admin/system-info,
+		// /admin/users, /admin/storage, /admin/backups. Caught by
+		// FQA-API-010 in the real-binary bank verification.
+		adminGroup.Use(jwtMiddleware.RequireAdmin())
 		if csrfGuard, csrfErr := root_middleware.NewCSRF([]byte(jwtSecret)); csrfErr != nil {
 			logging.Warnf("CSRF guard disabled on admin group: %v", csrfErr)
 		} else {

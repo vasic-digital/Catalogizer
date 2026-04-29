@@ -361,3 +361,116 @@ func TestTokenTampering(t *testing.T) {
 	assert.Error(t, err)
 	assert.Nil(t, claims)
 }
+
+// signTokenWithRole mints a JWT carrying the given role_id, signed
+// with testSecret. Used by RequireAdmin tests below to simulate
+// tokens minted by services/auth_service.go (which DOES carry
+// role_id, unlike middleware.JWTMiddleware.GenerateToken which does
+// not).
+func signTokenWithRole(t *testing.T, username string, roleID int) string {
+	t.Helper()
+	claims := &Claims{
+		Username: username,
+		RoleID:   roleID,
+		RegisteredClaims: jwt.RegisteredClaims{
+			Subject:   "1",
+			ExpiresAt: jwt.NewNumericDate(time.Now().Add(time.Hour)),
+			IssuedAt:  jwt.NewNumericDate(time.Now()),
+			Issuer:    "catalog-api",
+		},
+	}
+	tok := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
+	signed, err := tok.SignedString([]byte(testSecret))
+	require.NoError(t, err)
+	return signed
+}
+
+// TestRequireAdmin_AdminTokenAllowed asserts that a JWT carrying
+// role_id == RoleAdminID passes through RequireAdmin.
+//
+// Article XI §11.2.5 anti-bluff anchor: comment out the
+// RequireAdmin() line in main.go's adminGroup wiring and this test
+// (paired with TestRequireAdmin_NonAdminForbidden) will fail —
+// proving the gate is load-bearing.
+func TestRequireAdmin_AdminTokenAllowed(t *testing.T) {
+	mw := setupJWTMiddleware()
+	token := signTokenWithRole(t, "admin", RoleAdminID)
+
+	router := gin.New()
+	router.GET("/admin/x", mw.RequireAuth(), mw.RequireAdmin(), func(c *gin.Context) {
+		c.JSON(http.StatusOK, gin.H{"ok": true})
+	})
+
+	w := httptest.NewRecorder()
+	req := httptest.NewRequest(http.MethodGet, "/admin/x", nil)
+	req.Header.Set("Authorization", "Bearer "+token)
+	router.ServeHTTP(w, req)
+
+	assert.Equal(t, http.StatusOK, w.Code, "admin role must reach the handler")
+}
+
+// TestRequireAdmin_NonAdminForbidden asserts that a JWT carrying
+// any non-admin role (e.g. role_id == 2) is rejected with 403.
+// Caught by FQA-API-010 in the 2026-04-29 real-binary bank
+// verification.
+func TestRequireAdmin_NonAdminForbidden(t *testing.T) {
+	mw := setupJWTMiddleware()
+	token := signTokenWithRole(t, "regular", 2)
+
+	router := gin.New()
+	router.GET("/admin/x", mw.RequireAuth(), mw.RequireAdmin(), func(c *gin.Context) {
+		t.Fatal("handler must NOT execute for a non-admin caller")
+	})
+
+	w := httptest.NewRecorder()
+	req := httptest.NewRequest(http.MethodGet, "/admin/x", nil)
+	req.Header.Set("Authorization", "Bearer "+token)
+	router.ServeHTTP(w, req)
+
+	assert.Equal(t, http.StatusForbidden, w.Code, "non-admin must be rejected with 403")
+	assert.Contains(t, w.Body.String(), "Admin role required")
+}
+
+// TestRequireAdmin_NoTokenUnauthenticated asserts that the chain
+// (RequireAuth → RequireAdmin) returns 401 when no token is
+// present, NOT 403. The auth layer answers first.
+func TestRequireAdmin_NoTokenUnauthenticated(t *testing.T) {
+	mw := setupJWTMiddleware()
+
+	router := gin.New()
+	router.GET("/admin/x", mw.RequireAuth(), mw.RequireAdmin(), func(c *gin.Context) {
+		t.Fatal("handler must NOT execute without auth")
+	})
+
+	w := httptest.NewRecorder()
+	req := httptest.NewRequest(http.MethodGet, "/admin/x", nil)
+	router.ServeHTTP(w, req)
+
+	assert.Equal(t, http.StatusUnauthorized, w.Code,
+		"no token must be 401, not 403 — auth layer answers first")
+}
+
+// TestRequireAdmin_RoleZeroForbidden defends against the legacy
+// JWTMiddleware.GenerateToken path that emits no role_id field
+// (role_id defaults to 0). Tokens minted by GenerateToken MUST be
+// rejected from /admin/* — they're for service-to-service or
+// test-fixture use, not human admin sessions.
+func TestRequireAdmin_RoleZeroForbidden(t *testing.T) {
+	mw := setupJWTMiddleware()
+	// GenerateToken does not set RoleID — claims.RoleID == 0.
+	token, err := mw.GenerateToken("legacy-fixture", "42", 1)
+	require.NoError(t, err)
+
+	router := gin.New()
+	router.GET("/admin/x", mw.RequireAuth(), mw.RequireAdmin(), func(c *gin.Context) {
+		t.Fatal("handler must NOT execute for role_id == 0")
+	})
+
+	w := httptest.NewRecorder()
+	req := httptest.NewRequest(http.MethodGet, "/admin/x", nil)
+	req.Header.Set("Authorization", "Bearer "+token)
+	router.ServeHTTP(w, req)
+
+	assert.Equal(t, http.StatusForbidden, w.Code,
+		"role_id == 0 must be rejected — GenerateToken doesn't mint admin tokens")
+}

@@ -17,9 +17,15 @@ type JWTMiddleware struct {
 	secretKey []byte
 }
 
-// Claims represents JWT claims
+// Claims represents JWT claims.
+// RoleID is populated by the auth service (services/auth_service.go) at
+// login time. The convention seeded by main.go::seedDefaultAdmin is
+// role_id == 1 == admin, role_id == 2 == default user role. RoleID is
+// read here so RequireAdmin() can gate the /api/v1/admin/* group
+// without bouncing through the heavier internal/auth middleware.
 type Claims struct {
 	Username string `json:"username"`
+	RoleID   int    `json:"role_id"`
 	jwt.RegisteredClaims
 }
 
@@ -83,12 +89,44 @@ func (m *JWTMiddleware) RequireAuth() gin.HandlerFunc {
 
 		// Set user info in context — convert user_id to int for handler compatibility
 		c.Set("username", claims.Username)
+		c.Set("role_id", claims.RoleID)
 		if uid, err := strconv.Atoi(claims.Subject); err == nil {
 			c.Set("user_id", uid)
 		} else {
 			c.Set("user_id", claims.Subject)
 		}
 
+		c.Next()
+	}
+}
+
+// RoleAdminID is the seeded admin role ID. Mirrors
+// services/auth_service.go and main.go::seedDefaultAdmin.
+const RoleAdminID = 1
+
+// RequireAdmin returns a middleware that requires the authenticated
+// caller to carry role_id == RoleAdminID. Article XI §11.5: prior to
+// 2026-04-29 the /api/v1/admin/* group had no role gate at all — any
+// authenticated user could call /admin/system-info, /admin/users,
+// /admin/storage, /admin/backups, etc. Caught by FQA-API-010 in the
+// real-binary bank verification, which expected a 403 and got 200.
+//
+// MUST be installed AFTER RequireAuth — relies on the role_id context
+// key set by RequireAuth.
+func (m *JWTMiddleware) RequireAdmin() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		roleVal, exists := c.Get("role_id")
+		if !exists {
+			utils.SendErrorResponse(c, http.StatusUnauthorized, "Authentication required", nil)
+			c.Abort()
+			return
+		}
+		roleID, ok := roleVal.(int)
+		if !ok || roleID != RoleAdminID {
+			utils.SendErrorResponse(c, http.StatusForbidden, "Admin role required", nil)
+			c.Abort()
+			return
+		}
 		c.Next()
 	}
 }
