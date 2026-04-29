@@ -140,11 +140,27 @@ func (h *UserHandler) CreateUser(w http.ResponseWriter, r *http.Request) {
 
 	id, err := h.userRepo.Create(user)
 	if err != nil {
-		if strings.Contains(err.Error(), "UNIQUE constraint failed") {
-			http.Error(w, "Username or email already exists", http.StatusConflict)
+		// Article XI §11.5: detect uniqueness-constraint violation
+		// across both SQLite and PostgreSQL dialects. SQLite reports
+		// "UNIQUE constraint failed: ...", PostgreSQL reports
+		// "duplicate key value violates unique constraint ...". Before
+		// this fix, PG-backed deployments silently bucketed every
+		// duplicate-username/email retry as 500 "Failed to create user"
+		// — exactly the empty-diagnostic 500 §11.9 forbids. Caught by
+		// FQA-API-244 / FQA-API-248 in the 2026-04-29 real-binary bank
+		// verification.
+		msg := err.Error()
+		if strings.Contains(msg, "UNIQUE constraint failed") ||
+			strings.Contains(msg, "duplicate key value") ||
+			strings.Contains(msg, "violates unique constraint") {
+			http.Error(w,
+				`{"error":"Username or email already exists","details":"`+strings.ReplaceAll(msg, `"`, `'`)+`"}`,
+				http.StatusConflict)
 			return
 		}
-		http.Error(w, "Failed to create user", http.StatusInternalServerError)
+		http.Error(w,
+			`{"error":"Failed to create user","details":"`+strings.ReplaceAll(msg, `"`, `'`)+`"}`,
+			http.StatusInternalServerError)
 		return
 	}
 
