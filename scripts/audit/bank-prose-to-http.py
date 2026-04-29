@@ -208,6 +208,81 @@ def _convert_playwright(action: str) -> str | None:
     return None
 
 
+# --- Android (adb_shell) prose patterns ---
+
+ADB_PROSE_PATTERNS: list[tuple[re.Pattern[str], Any]] = []
+
+
+def _aregister(pattern: str, builder):
+    ADB_PROSE_PATTERNS.append((re.compile(pattern, re.IGNORECASE), builder))
+
+
+# "Reboot the device" / "Reboot device" → adb_shell: reboot
+_aregister(
+    r"^\s*reboot(?:\s+the)?\s+device",
+    lambda m: "adb_shell: reboot",
+)
+# "Force stop com.x.y" / "Force-stop com.x.y" → adb_shell: am force-stop ...
+_aregister(
+    r"^\s*force[\s-]?stop\s+(?P<pkg>[a-z][\w.]+)",
+    lambda m: f"adb_shell: am force-stop {m.group('pkg')}",
+)
+# "Start <pkg>/<.Activity>" → adb_shell: am start -n
+_aregister(
+    r"^\s*start\s+(?P<comp>[a-z][\w.]+/[\w.]+)",
+    lambda m: f"adb_shell: am start -n {m.group('comp')}",
+)
+# "Launch <package>" → adb_shell: monkey -p <pkg>
+_aregister(
+    r"^\s*launch\s+(?P<pkg>[a-z][\w.]+)\s*(?:app)?\s*$",
+    lambda m: f"adb_shell: monkey -p {m.group('pkg')} -c android.intent.category.LAUNCHER 1",
+)
+# "Press <KEY>" / "Press the <KEY> button"
+_aregister(
+    r"^\s*press(?:\s+the)?\s+(?P<key>[A-Z_]{2,})\s*(?:button|key)?\s*$",
+    lambda m: f"keypress: KEYCODE_{m.group('key').upper().replace('KEYCODE_', '')}",
+)
+# "Run command: <cmd>" / "Run `<cmd>`"
+_aregister(
+    r"^\s*run\s+(?:command:?\s*)?`(?P<cmd>[^`]+)`",
+    lambda m: f"adb_shell: {m.group('cmd').strip()}",
+)
+# "Check via dumpsys <X>" / "Check that X via dumpsys"
+_aregister(
+    r"(?:check|verify|inspect|query)\s+(?:that\s+)?[^.]*?\bvia\s+(?:dumpsys|adb)\s+(?P<service>\w+)",
+    lambda m: f"adb_shell: dumpsys {m.group('service')}",
+)
+# "dumpsys <service>"
+_aregister(
+    r"^\s*dumpsys\s+(?P<service>\w+)",
+    lambda m: f"adb_shell: dumpsys {m.group('service')}",
+)
+# "logcat for X" / "Tail logcat"
+_aregister(
+    r"^\s*(?:tail\s+)?logcat\s*(?:for\s+(?P<filter>[\w.]+))?",
+    lambda m: f"adb_shell: logcat -d {('| grep ' + m.group('filter')) if m.group('filter') else ''}".strip(),
+)
+# "Wake the device" / "Wake device"
+_aregister(
+    r"^\s*wake(?:\s+the)?\s+device",
+    lambda m: "adb_shell: input keyevent KEYCODE_WAKEUP",
+)
+# "Sleep <N>s" / "Wait <N> seconds"
+_aregister(
+    r"^\s*(?:sleep|wait)\s+(?P<n>\d+)\s*(?:seconds?|secs?|s)?\s*$",
+    lambda m: f"sleep: {int(m.group('n'))*1000}",
+)
+
+
+def _convert_adb(action: str) -> str | None:
+    """Try to convert Android prose into an adb_shell:/keypress:/sleep: action."""
+    for pattern, builder in ADB_PROSE_PATTERNS:
+        m = pattern.match(action)
+        if m:
+            return builder(m)
+    return None
+
+
 # --- Expected-text → assertion inference ---
 
 _STATUS_RE = re.compile(r"\b(\d{3})\b")
@@ -284,6 +359,16 @@ def convert_step(step: dict[str, Any], stats: ConversionStats) -> dict[str, Any]
             matched = True
             verb = playwright_action.split()[1] if len(playwright_action.split()) > 1 else "?"
             stats.by_method["pw:" + verb] = stats.by_method.get("pw:" + verb, 0) + 1
+
+    # Finally try Android (adb_shell) patterns
+    if not matched:
+        adb_action = _convert_adb(action)
+        if adb_action:
+            converted["action"] = adb_action
+            converted.setdefault("_original_action", action)
+            matched = True
+            verb = adb_action.split(":", 1)[0]
+            stats.by_method["adb:" + verb] = stats.by_method.get("adb:" + verb, 0) + 1
 
     # Apply expectation inference from the "expected" prose
     expected_text = step.get("expected", "")
