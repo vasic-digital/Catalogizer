@@ -1,0 +1,39 @@
+# Thin runtime container for catalog-api.
+# Uses the pre-built binary from releases/ instead of compiling inside the
+# container. Avoids the golang:1.25 base-image checksum issue we hit on
+# 2026-04-28 and avoids redundant Go compilation when release-build.sh has
+# already produced the binary.
+#
+# Build from repo root, with the binary version pinned via build-arg:
+#   podman build --network host -f catalog-api/Dockerfile.runtime \
+#     --build-arg BINARY_PATH=releases/catalog-api/linux-amd64/v2.3.0-build.25/catalog-api \
+#     -t localhost/catalogizer-api:latest .
+
+FROM docker.io/library/debian:trixie-slim
+
+ARG BINARY_PATH=releases/catalog-api/linux-amd64/latest/catalog-api
+
+# Runtime dependencies (ca-certs for outbound HTTPS, tzdata for time, wget for healthcheck)
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    ca-certificates tzdata wget && rm -rf /var/lib/apt/lists/*
+
+WORKDIR /app
+
+COPY ${BINARY_PATH} /app/catalogizer-api
+COPY catalog-api/migrations /app/migrations
+COPY catalog-api/challenges/config /app/challenges/config
+
+RUN groupadd --system --gid 1001 appgroup && \
+    useradd --system --uid 1001 --gid appgroup --no-create-home appuser && \
+    chmod +x /app/catalogizer-api && \
+    mkdir -p /app/data /app/logs /app/temp && \
+    chown -R appuser:appgroup /app
+
+EXPOSE 8080
+
+HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
+  CMD wget --no-verbose --tries=1 --spider http://localhost:8080/health || exit 1
+
+USER appuser
+
+ENTRYPOINT ["/app/catalogizer-api"]

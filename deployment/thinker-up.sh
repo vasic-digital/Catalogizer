@@ -53,12 +53,22 @@ echo "==> Network: ${CZ_THINKER_NETWORK}"
 podman network inspect "${CZ_THINKER_NETWORK}" >/dev/null 2>&1 \
     || podman network create "${CZ_THINKER_NETWORK}"
 
-for name in "${CZ_THINKER_API_NAME}" "${CZ_THINKER_REDIS_NAME}" "${CZ_THINKER_POSTGRES_NAME}"; do
+for name in "${CZ_THINKER_WEB_NAME:-cz-web-thinker}" "${CZ_THINKER_API_NAME}" "${CZ_THINKER_REDIS_NAME}" "${CZ_THINKER_POSTGRES_NAME}"; do
     if podman ps -a --format '{{.Names}}' | grep -qx "${name}"; then
         echo "==> removing stale ${name}"
         podman rm -f "${name}" >/dev/null
     fi
 done
+
+: "${CZ_THINKER_WEB_PORT:=3092}"
+: "${CZ_THINKER_WEB_NAME:=cz-web-thinker}"
+: "${CZ_THINKER_WEB_CPUS:=1}"
+: "${CZ_THINKER_WEB_MEMORY:=1g}"
+: "${ADMIN_USERNAME:=admin}"
+WEB_IMAGE="${WEB_IMAGE:-localhost/catalogizer-web:latest}"
+
+# Linger keeps rootless containers alive after SSH disconnects
+loginctl enable-linger 2>/dev/null || true
 
 echo "==> starting postgres"
 podman run -d \
@@ -71,6 +81,15 @@ podman run -d \
     --cpus="${CZ_THINKER_POSTGRES_CPUS}" \
     --memory="${CZ_THINKER_POSTGRES_MEMORY}" \
     docker.io/library/postgres:16-alpine >/dev/null
+
+echo "==> waiting for postgres to accept connections"
+for i in 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15; do
+    if podman exec "${CZ_THINKER_POSTGRES_NAME}" pg_isready -U "${POSTGRES_USER}" >/dev/null 2>&1; then
+        echo "==> postgres ready (after ${i}s)"
+        break
+    fi
+    sleep 1
+done
 
 echo "==> starting redis"
 podman run -d \
@@ -102,20 +121,49 @@ podman run -d \
     -e REDIS_HOST="${CZ_THINKER_REDIS_NAME}" \
     -e REDIS_PORT=6379 \
     -e JWT_SECRET="${JWT_SECRET}" \
+    -e ADMIN_USERNAME="${ADMIN_USERNAME}" \
     -e ADMIN_PASSWORD="${ADMIN_PASSWORD}" \
-    -e PORT=8080 \
+    -e SERVER_PORT=8080 \
+    -e HOST=0.0.0.0 \
     -e GIN_MODE="${GIN_MODE}" \
     -e DB_TYPE="${DB_TYPE}" \
     "${API_IMAGE}" >/dev/null
 
+echo "==> starting catalog-web"
+podman run -d \
+    --name "${CZ_THINKER_WEB_NAME}" \
+    --network "${CZ_THINKER_NETWORK}" \
+    -p "127.0.0.1:${CZ_THINKER_WEB_PORT}:3000" \
+    --cpus="${CZ_THINKER_WEB_CPUS}" \
+    --memory="${CZ_THINKER_WEB_MEMORY}" \
+    --add-host host.containers.internal:host-gateway \
+    "${WEB_IMAGE}" >/dev/null
+
 echo "==> waiting for /health"
-for _ in 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15; do
+api_ok=0
+for i in 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 21 22 23 24 25 26 27 28 29 30; do
     if curl -sf "http://127.0.0.1:${CZ_THINKER_API_PORT}/health" >/dev/null 2>&1; then
-        echo "==> catalog-api healthy on http://127.0.0.1:${CZ_THINKER_API_PORT}"
-        exit 0
+        echo "==> catalog-api healthy on http://127.0.0.1:${CZ_THINKER_API_PORT} (after ${i}s)"
+        api_ok=1
+        break
     fi
     sleep 1
 done
-echo "!! catalog-api did not become healthy within 15s"
-podman logs --tail 40 "${CZ_THINKER_API_NAME}" || true
+
+web_ok=0
+for i in 1 2 3 4 5 6 7 8 9 10; do
+    code=$(curl -s -o /dev/null -w '%{http_code}' "http://127.0.0.1:${CZ_THINKER_WEB_PORT}/" 2>/dev/null || true)
+    if [[ "$code" == "200" ]]; then
+        echo "==> catalog-web serving on http://127.0.0.1:${CZ_THINKER_WEB_PORT} (after ${i}s)"
+        web_ok=1
+        break
+    fi
+    sleep 1
+done
+
+if [[ "$api_ok" == "1" && "$web_ok" == "1" ]]; then
+    exit 0
+fi
+[[ "$api_ok" != "1" ]] && { echo "!! catalog-api unhealthy"; podman logs --tail 30 "${CZ_THINKER_API_NAME}" || true; }
+[[ "$web_ok" != "1" ]] && { echo "!! catalog-web not serving"; podman logs --tail 30 "${CZ_THINKER_WEB_NAME}" || true; }
 exit 1
