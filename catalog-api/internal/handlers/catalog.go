@@ -73,6 +73,16 @@ func (h *CatalogHandler) ListPath(c *gin.Context) {
 
 	files, err := h.catalogService.ListPath(path, sortBy, sortOrder, limit, offset)
 	if err != nil {
+		// Article XI §11.5: ListPath wraps `path not found: <path>` when the
+		// path is not present in the files table. Returning 500 hid the
+		// real cause from clients and made empty/unmounted SMB roots look
+		// like server failures. Caught by FQA-API-072 in the 2026-04-29
+		// real-binary bank verification.
+		msg := err.Error()
+		if strings.Contains(msg, "path not found") || strings.Contains(msg, "no rows in result set") {
+			c.JSON(http.StatusNotFound, gin.H{"error": "Path not found", "path": path})
+			return
+		}
 		h.logger.Error("Failed to list path", zap.String("path", path), zap.Error(err))
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to list directory"})
 		return
