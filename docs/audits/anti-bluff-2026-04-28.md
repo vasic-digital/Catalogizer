@@ -154,3 +154,80 @@ audit so trend is visible.
 *Generated: 2026-04-28*
 *Scanner: scripts/audit/anti-bluff-scan.sh*
 *Constitution authority: Article XI*
+
+---
+
+## Resolution log (2026-04-29)
+
+### ASSERT_TAUTOLOGY — 4 of 5 actionable sites resolved
+
+Each replacement asserts on a concrete observable outcome and verifies
+"fails when feature is removed" per Article XI §11.2.5.
+
+| Site | Replacement |
+|---|---|
+| `Concurrency/pkg/pool/pool_test.go:1464,1468` (worker-pool race) | Branch-specific assertions: error path checks message matches one of the documented Submit failure modes (queue is full / context cancelled / pool is closed); no-error path verifies QueuedTasks counter advanced. Submodule commit `9a70382`. |
+| `LLMProvider/pkg/providers/deepseek/deepseek_test.go:388` (HealthCheck w/ invalid key) | Removed the `if err != nil` guard around `assert.True(t, true)`; now `assert.Error` is unconditional — invalid API key MUST always surface an error. Submodule commit `e94f791`. |
+| `installer-wizard/.../FTPConfigurationStep.test.tsx:18` (renders without crashing) | Replaced with `expect(screen.getByText('FTP Configuration')).toBeInTheDocument()` — proves the component actually mounted with its identifying heading rendered. |
+| `catalogizer-api-client/.../websocket.test.ts:317` (pong heartbeat) | Now registers a message listener and asserts `not.toHaveBeenCalled()` after a pong frame is delivered — proves the heartbeat was actually swallowed silently, not just that the call didn't throw. |
+
+The 5th site (`tools/opensource/midscene` / `tools/opensource/chroma`)
+is in vendored upstream OSS — excluded from our audit scope (those
+projects' anti-bluff hygiene is upstream's concern).
+
+### GO_HTTPTEST_ABUSE — re-classification of all 9 findings
+
+After case-by-case review, the 9 findings split into two categories:
+
+**(A) Scanner false positives — library middleware E2E tests (5 sites)**
+
+`Auth/tests/e2e/auth_e2e_test.go:57,113` and
+`HelixQA/tests/e2e/agent_stack_test.go:54,82,196` are testing
+**library** code (Auth's middleware, HelixQA's agent stack interacting
+with mock external services). For libraries with no `main.go`,
+`httptest.NewServer` IS the appropriate harness — it provides a real
+loopback HTTP server that exercises the library's contract end-to-end.
+
+Action: leave as-is. The scanner's heuristic is too aggressive for
+library E2E. A future scanner refinement should distinguish "submodule
+has a `main.go`" (httptest = bluff) from "submodule is a library"
+(httptest = legitimate).
+
+**(B) Real bluffs — catalog-api pseudo-E2E (4 sites)**
+
+`catalog-api/tests/integration/api_e2e_test.go:317`,
+`conversion_e2e_test.go:348`, `subtitle_e2e_test.go:311`,
+`user_management_e2e_test.go:353` all use a `setupE2EServer(t)` that
+**builds a fake Gin router with hardcoded responses** ("simulates auth,
+browse, search, media, download, subtitles, and conversion endpoints"
+per the function's own docstring). The tests pass because the mock
+returns 200, not because the real catalog-api works. Textbook
+Article XI §11.5 violation.
+
+Action — tracked as new ticket **BLUFF-CATAPI-E2E-001**:
+Rewrite the four `_e2e_test.go` files to either
+(a) start the actual catalog-api binary in a subprocess + hit it on
+its real bound port, or
+(b) point them at the deployed thinker/amber stacks (env var
+`CATALOG_API_REAL_E2E_URL`); skip with `SKIP-OK: #BLUFF-CATAPI-E2E-001`
+when the env is not set.
+
+This is a multi-hour rewrite (~1000+ lines of fake handlers to delete
++ real-binary harness to wire up). Out of scope for the 2026-04-28 /
+04-29 session; queued behind the bigger PROSE_HELIXQA_ACTION rewrite.
+
+### Remaining tier 1 work (queued, multi-day)
+
+- PROSE_HELIXQA_ACTION (4564) — bank rewrites (structural).
+- GO_MOCK_IN_INTEGRATION (150) — case-by-case replacement with real
+  fixtures. Several may turn out to be scanner false positives along
+  the same library-vs-app axis as GO_HTTPTEST_ABUSE.
+- BLUFF-CATAPI-E2E-001 (above).
+
+### Cumulative tier 1 progress
+
+- Resolved: 4 ASSERT_TAUTOLOGY sites.
+- Re-classified (no fix needed): 5 of 9 GO_HTTPTEST_ABUSE.
+- Newly ticketed: 1 (BLUFF-CATAPI-E2E-001 = 4 sites).
+- Tier 1 outstanding count: 4 (catalog-api E2E rewrites) +
+  4564 (HelixQA banks) + 150 (mocks in integration).
