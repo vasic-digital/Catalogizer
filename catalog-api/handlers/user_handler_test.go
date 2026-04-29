@@ -186,9 +186,18 @@ func TestUserHandler_CreateUser(t *testing.T) {
 			expectedStatusCode: http.StatusUnauthorized, // Handler tries to extract token first
 		},
 		{
+			// Article XI §11.5: payload is now COMPLETE (username +
+			// email + role_id + password). The handler-level
+			// required-field validation (added 2026-04-29 alongside
+			// FQA-API-244 fix) rejects incomplete payloads with 400
+			// BEFORE reaching ValidatePassword, so we have to send a
+			// complete payload to actually exercise the
+			// password-validation code path.
 			name: "password validation error",
 			requestBody: `{
 				"username": "testuser",
+				"email": "testuser@example.com",
+				"role_id": 2,
 				"password": "123"
 			}`,
 			mockSetup: func(userRepo *MockUserService, authService *MockUserAuthService) {
@@ -200,9 +209,14 @@ func TestUserHandler_CreateUser(t *testing.T) {
 			expectedStatusCode: http.StatusBadRequest,
 		},
 		{
+			// Same Article XI §11.5 reasoning: send a complete
+			// payload so the handler reaches userRepo.Create where
+			// the duplicate-username conflict surfaces.
 			name: "username already exists",
 			requestBody: `{
 				"username": "existinguser",
+				"email": "existinguser@example.com",
+				"role_id": 2,
 				"password": "password123"
 			}`,
 			mockSetup: func(userRepo *MockUserService, authService *MockUserAuthService) {
@@ -216,6 +230,27 @@ func TestUserHandler_CreateUser(t *testing.T) {
 				userRepo.On("Create", mock.AnythingOfType("*models.User")).Return(0, assert.AnError)
 			},
 			expectedStatusCode: http.StatusInternalServerError,
+		},
+		{
+			// Article XI §11.5 regression guard for FQA-API-244 /
+			// FQA-API-248: incomplete payload (missing email,
+			// role_id) MUST be rejected with 400 + diagnostic body
+			// — NOT 500 "Failed to create user". Caught by the
+			// 2026-04-29 real-binary bank verification.
+			name: "incomplete payload returns 400 with diagnostic",
+			requestBody: `{
+				"username": "incomplete",
+				"password": "Password123!",
+				"role": "user"
+			}`,
+			mockSetup: func(userRepo *MockUserService, authService *MockUserAuthService) {
+				authUser := &models.User{ID: 1, Username: "admin"}
+				authService.On("GetCurrentUser", "valid-token").Return(authUser, nil)
+				authService.On("CheckPermission", 1, models.PermissionUserCreate).Return(true, nil)
+				// no ValidatePassword / Create expectations — handler
+				// must short-circuit on missing required fields.
+			},
+			expectedStatusCode: http.StatusBadRequest,
 		},
 	}
 
@@ -249,6 +284,22 @@ func TestUserHandler_CreateUser(t *testing.T) {
 
 			// Check status code
 			assert.Equal(t, tt.expectedStatusCode, rr.Code)
+
+			// Article XI §11.5: diagnostic-body assertion. The
+			// "incomplete payload" case ships back a JSON body with
+			// `error: missing required fields` and a `details` list
+			// of which fields are missing. That body must persist —
+			// regressing it (e.g. http.Error(w, "Failed to create
+			// user", 500)) is the exact bluff pattern we just fixed.
+			if tt.name == "incomplete payload returns 400 with diagnostic" {
+				body := rr.Body.String()
+				assert.Contains(t, body, "missing required fields",
+					"diagnostic body must say which class of error fired")
+				assert.Contains(t, body, "email",
+					"diagnostic body must enumerate the missing field 'email'")
+				assert.Contains(t, body, "role_id",
+					"diagnostic body must enumerate the missing field 'role_id'")
+			}
 
 			// Check expectations
 			mockUserService.AssertExpectations(t)

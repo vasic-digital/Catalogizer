@@ -53,7 +53,17 @@ func (s *FavoritesService) RemoveFavorite(userID int, entityType string, entityI
 	if err != nil {
 		return fmt.Errorf("favorite not found: %w", err)
 	}
-
+	// Article XI §11.5: GetFavorite returns (nil, nil) on sql.ErrNoRows
+	// (see repository/favorites_repository.go::GetFavorite). The previous
+	// nil-unsafe `favorite.UserID` deref panicked, the gin recovery
+	// middleware swallowed it as 500-with-empty-body. Caught by
+	// FQA-API-218 in the 2026-04-29 real-binary bank verification:
+	// `DELETE /favorites/movie/999999 -> HTTP 500 (body empty)` with
+	// `runtime error: invalid memory address or nil pointer
+	// dereference` at favorites_service.go:57.
+	if favorite == nil {
+		return fmt.Errorf("favorite not found")
+	}
 	if favorite.UserID != userID {
 		return fmt.Errorf("unauthorized to remove this favorite")
 	}

@@ -75,6 +75,33 @@ func (h *UserHandler) CreateUser(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// Article XI §11.5: validate required fields before bouncing the
+	// payload into userRepo.Create. The previous flow let an empty
+	// email / role_id / username through, the repository's Create
+	// method blew up against the NOT NULL constraint, and the handler
+	// returned a generic "Failed to create user" 500 with no
+	// diagnostic. Caught by FQA-API-244 and FQA-API-248 in the
+	// 2026-04-29 real-binary bank verification.
+	missing := []string{}
+	if req.Username == "" {
+		missing = append(missing, "username")
+	}
+	if req.Email == "" {
+		missing = append(missing, "email")
+	}
+	if req.Password == "" {
+		missing = append(missing, "password")
+	}
+	if req.RoleID == 0 {
+		missing = append(missing, "role_id")
+	}
+	if len(missing) > 0 {
+		http.Error(w,
+			`{"error":"missing required fields","details":"required: `+strings.Join(missing, ", ")+`"}`,
+			http.StatusBadRequest)
+		return
+	}
+
 	if err := h.authService.ValidatePassword(req.Password); err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return

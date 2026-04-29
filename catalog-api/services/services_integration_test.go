@@ -557,11 +557,22 @@ func TestFavoritesService_RemoveFavorite_NotFound(t *testing.T) {
 	favoritesRepo := repository.NewFavoritesRepository(db)
 	service := NewFavoritesService(favoritesRepo, nil)
 
-	// RemoveFavorite panics on nil favorite (known bug: no nil check before dereferencing)
-	// Test that it panics when favorite is not found
-	assert.Panics(t, func() {
-		_ = service.RemoveFavorite(1, "media", 999)
-	})
+	// Article XI §11.5 regression guard: prior to the 2026-04-29 fix
+	// RemoveFavorite panicked with `runtime error: invalid memory
+	// address or nil pointer dereference` because GetFavorite returns
+	// (nil, nil) for sql.ErrNoRows and the service dereferenced
+	// `favorite.UserID` without a nil check. Caught by FQA-API-218 in
+	// the real-binary bank verification: DELETE
+	// /favorites/movie/999999 returned HTTP 500 with empty body via
+	// the gin recovery middleware.
+	//
+	// MUST NOT panic — must return a `favorite not found` error
+	// that the handler maps to 404.
+	err := service.RemoveFavorite(1, "media", 999)
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), "favorite not found",
+		"error message must contain 'favorite not found' so the handler's "+
+			"isNotFoundError check maps it to HTTP 404")
 }
 
 func TestFavoritesService_GetUserFavorites_Integration(t *testing.T) {
