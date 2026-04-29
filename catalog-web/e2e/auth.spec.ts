@@ -71,6 +71,47 @@ test.describe('Authentication', () => {
   });
 
   test.describe('Login with Invalid Credentials', () => {
+    test('shows persistent inline error AND stays on /login', async ({ page }) => {
+      // Article XI §11.5 regression guard for the silent-wrong-password
+      // bug fixed in commit 059479d4 on 2026-04-29: previously the
+      // form silently stayed at /login with no diagnostic, and the
+      // existing "stays on login page" assertion below would have
+      // PASSED in that broken state. This test specifically asserts
+      // the inline error message is visible — without it, the bug
+      // could regress and tests would still pass.
+      await page.route('**/api/v1/auth/login', async (route) => {
+        await route.fulfill({
+          status: 401,
+          contentType: 'application/json',
+          body: JSON.stringify({ error: 'invalid credentials' }),
+        });
+      });
+      await page.route('**/api/v1/auth/init-status', async (route) => {
+        await route.fulfill({
+          status: 200,
+          contentType: 'application/json',
+          body: JSON.stringify({ initialized: true, admin_exists: true }),
+        });
+      });
+
+      await page.goto('/login');
+      await page.locator('input[placeholder*="username" i]').fill('admin');
+      await page.locator('input[placeholder*="password" i]').fill('WRONGPASSWORD-12345');
+      await page.click('button[type="submit"]');
+
+      // (a) URL must still be /login
+      await expect(page).toHaveURL(/.*login/);
+
+      // (b) the persistent inline error element must be visible
+      const errorBanner = page.locator('[data-testid="login-error"]');
+      await expect(errorBanner).toBeVisible();
+
+      // (c) the error text must be human-readable, not empty
+      const errorText = await errorBanner.innerText();
+      expect(errorText.length).toBeGreaterThan(0);
+      expect(errorText.toLowerCase()).toMatch(/invalid|incorrect|wrong|failed/);
+    });
+
     test('stays on login page when credentials are wrong', async ({ page }) => {
       // Mock auth to reject all logins
       await page.route('**/api/v1/auth/login', async (route) => {
