@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"net/http"
 	"net/http/httptest"
+	"os"
 	"sync"
 	"testing"
 	"time"
@@ -14,9 +15,15 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-// setupConversionServer creates a test server with media conversion endpoints
+// setupConversionServer creates a test server with media conversion endpoints.
+// BLUFF-CATAPI-E2E-001: this builds a fake Gin router with hardcoded
+// responses; tests passed because the mock returned 200, not because the
+// real catalog-api worked. Skipped unless CATALOG_API_REAL_E2E_URL is set.
 func setupConversionServer(t *testing.T) *httptest.Server {
 	t.Helper()
+	if os.Getenv("CATALOG_API_REAL_E2E_URL") == "" {
+		t.Skip("SKIP-OK: #BLUFF-CATAPI-E2E-001 — fake-server pseudo-E2E is anti-bluff banned (Article XI §11.5); set CATALOG_API_REAL_E2E_URL to opt-in once test bodies are rewritten against real data")
+	}
 	gin.SetMode(gin.TestMode)
 
 	router := gin.New()

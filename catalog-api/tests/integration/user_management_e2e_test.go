@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"net/http"
 	"net/http/httptest"
+	"os"
 	"sync"
 	"testing"
 	"time"
@@ -13,9 +14,14 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-// setupUserManagementServer creates a test server with comprehensive user management endpoints
+// setupUserManagementServer creates a test server with comprehensive user management endpoints.
+// BLUFF-CATAPI-E2E-001: fake-server pseudo-E2E. Skipped unless
+// CATALOG_API_REAL_E2E_URL is set (Article XI §11.5).
 func setupUserManagementServer(t *testing.T) *httptest.Server {
 	t.Helper()
+	if os.Getenv("CATALOG_API_REAL_E2E_URL") == "" {
+		t.Skip("SKIP-OK: #BLUFF-CATAPI-E2E-001 — fake-server pseudo-E2E is anti-bluff banned (Article XI §11.5); set CATALOG_API_REAL_E2E_URL to opt-in once test bodies are rewritten against real data")
+	}
 	gin.SetMode(gin.TestMode)
 
 	router := gin.New()

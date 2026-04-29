@@ -7,6 +7,7 @@ import (
 	"io"
 	"net/http"
 	"net/http/httptest"
+	"os"
 	"sync"
 	"testing"
 	"time"
@@ -17,9 +18,27 @@ import (
 )
 
 // setupE2EServer creates a comprehensive test server for full API workflow E2E testing.
-// It simulates auth, browse, search, media, download, subtitles, and conversion endpoints.
+//
+// HISTORICAL: this function builds a fake Gin router with hardcoded responses
+// (auth/browse/search/media/download/subtitles/conversion). Per Article XI §11.5
+// — "E2E tests start the real binary, hit the real bound port, and assert on
+// the real response. httptest.NewServer is only permitted for unit-level handler
+// tests" — using this fake server as a pseudo-E2E harness was an anti-bluff
+// violation: tests passed because the mock returned 200, not because the real
+// catalog-api worked.
+//
+// Resolution path (BLUFF-CATAPI-E2E-001): when CATALOG_API_REAL_E2E_URL is
+// not set, every test that calls setupE2EServer Skips with that ticket; the
+// fake-server code below is preserved for now but is unreachable in CI. The
+// proper rewrite (~hours of work) replaces it with a real-binary harness:
+// either start ./catalog-api in a subprocess and read .service-port, or point
+// at the deployed thinker/amber stack. Test bodies' assertions on hardcoded
+// fake data also need updating to match seeded real data.
 func setupE2EServer(t *testing.T) *httptest.Server {
 	t.Helper()
+	if os.Getenv("CATALOG_API_REAL_E2E_URL") == "" {
+		t.Skip("SKIP-OK: #BLUFF-CATAPI-E2E-001 — fake-server pseudo-E2E is anti-bluff banned (Article XI §11.5); set CATALOG_API_REAL_E2E_URL to opt-in once test bodies are rewritten against real data")
+	}
 	gin.SetMode(gin.TestMode)
 
 	router := gin.New()
