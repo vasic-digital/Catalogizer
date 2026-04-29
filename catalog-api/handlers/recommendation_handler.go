@@ -63,11 +63,16 @@ func (h *RecommendationHandler) GetSimilarItems(c *gin.Context) {
 	// Get media metadata from database
 	mediaMetadata, err := h.getMediaMetadata(ctx, mediaID)
 	if err != nil {
-		if err.Error() == "media not found" {
+		// Article XI §11.5: getMediaMetadata uses sql.QueryRow which
+		// returns sql.ErrNoRows on a missing media id. The previous
+		// equality check ("media not found") missed that case and
+		// the handler returned 500 instead of 404. Caught by
+		// FQA-API-099 in the 2026-04-29 real-binary bank verification.
+		if isNotFoundError(err) {
 			utils.SendErrorResponse(c, http.StatusNotFound, "Media not found", nil)
-		} else {
-			utils.SendErrorResponse(c, http.StatusInternalServerError, "Failed to get media metadata", err)
+			return
 		}
+		utils.SendErrorResponse(c, http.StatusInternalServerError, "Failed to get media metadata", err)
 		return
 	}
 

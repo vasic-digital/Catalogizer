@@ -323,8 +323,28 @@ func (h *FavoritesHandler) AddFavorite(c *gin.Context) {
 		EntityType: req.EntityType,
 	}
 
+	// Article XI §11.5: validate entity_type against the small set
+	// of types favorites supports BEFORE the service call so an
+	// invalid type returns 400 (not 500). Caught by FQA-API-219.
+	switch req.EntityType {
+	case "movie", "tv_show", "tv_season", "tv_episode",
+		"music_artist", "music_album", "song",
+		"game", "software", "book", "comic":
+		// ok
+	default:
+		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid entity_type"})
+		return
+	}
+
 	_, err := h.service.AddFavorite(uid, favorite)
 	if err != nil {
+		// Distinguish "not found" / FK-violation from real internal
+		// errors. FQA-API-211/217/218 caught this returning 500
+		// when a not-yet-existing entity was favorited.
+		if isNotFoundError(err) {
+			c.JSON(http.StatusNotFound, gin.H{"error": "entity not found"})
+			return
+		}
 		h.logger.Error("Failed to add favorite", zap.Error(err))
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to add favorite"})
 		return
@@ -358,6 +378,13 @@ func (h *FavoritesHandler) RemoveFavorite(c *gin.Context) {
 	}
 
 	if err := h.service.RemoveFavorite(uid, entityType, entityID); err != nil {
+		// Article XI §11.5: a remove of a non-favorited entity is
+		// NOT an internal error — it's a 404. Caught by
+		// FQA-API-218.
+		if isNotFoundError(err) {
+			c.JSON(http.StatusNotFound, gin.H{"error": "favorite not found"})
+			return
+		}
 		h.logger.Error("Failed to remove favorite", zap.Error(err))
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to remove favorite"})
 		return

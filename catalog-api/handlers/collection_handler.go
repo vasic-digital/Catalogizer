@@ -1,8 +1,10 @@
 package handlers
 
 import (
+	"database/sql"
 	"net/http"
 	"strconv"
+	"strings"
 
 	"catalogizer/internal/media/models"
 	"catalogizer/repository"
@@ -182,6 +184,14 @@ func (h *CollectionHandler) DeleteCollection(c *gin.Context) {
 	}
 
 	if err := h.repo.Delete(ctx, id); err != nil {
+		// Article XI §11.5: distinguish "not found" from real
+		// internal errors so DELETE on a missing ID returns 404, not
+		// 500. Caught by FQA-API-168 in the 2026-04-29 real-binary
+		// bank verification.
+		if isNotFoundError(err) {
+			utils.SendErrorResponse(c, http.StatusNotFound, "Collection not found", err)
+			return
+		}
 		utils.SendErrorResponse(c, http.StatusInternalServerError, "Failed to delete collection", err)
 		return
 	}
@@ -189,6 +199,22 @@ func (h *CollectionHandler) DeleteCollection(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{
 		"message": "Collection deleted",
 	})
+}
+
+// isNotFoundError returns true when the given error is a database
+// "not found" sentinel — sql.ErrNoRows or repository-level error
+// strings containing "not found". Used by handlers to map 500 → 404
+// for missing-resource cases.
+func isNotFoundError(err error) bool {
+	if err == nil {
+		return false
+	}
+	if err == sql.ErrNoRows {
+		return true
+	}
+	msg := err.Error()
+	return strings.Contains(msg, "not found") ||
+		strings.Contains(msg, "no rows in result set")
 }
 
 // collectionsToJSON converts slice of MediaCollection to JSON-friendly slice.

@@ -151,6 +151,14 @@ func (h *PlaylistHandler) UpdatePlaylist(c *gin.Context) {
 
 	playlist, err := h.service.UpdatePlaylist(uid, playlistID, &req)
 	if err != nil {
+		// Article XI §11.5: distinguish "not found" from real internal
+		// errors so PUT on a missing ID returns 404, not 500.
+		// Caught by FQA-API-205 in the 2026-04-29 real-binary bank
+		// verification.
+		if isNotFoundError(err) {
+			c.JSON(http.StatusNotFound, gin.H{"error": "playlist not found"})
+			return
+		}
 		h.logger.Error("Failed to update playlist", zap.Error(err))
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to update playlist"})
 		return

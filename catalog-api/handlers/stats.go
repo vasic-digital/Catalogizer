@@ -72,7 +72,13 @@ func (h *StatsHandler) GetSmbRootStats(c *gin.Context) {
 
 	stats, err := h.statsRepo.GetStorageRootStats(ctx, smbRootName)
 	if err != nil {
-		if err.Error() == "smb root not found" {
+		// Article XI §11.5: distinguish "not found" — repository
+		// surfaces both literal "smb root not found" and the
+		// generic "storage root not found" depending on its
+		// state. Either form is a 404, not 500. Caught by
+		// FQA-API-067 in the 2026-04-29 real-binary bank
+		// verification.
+		if isNotFoundError(err) {
 			utils.SendErrorResponse(c, http.StatusNotFound, "SMB root not found", err)
 			return
 		}
