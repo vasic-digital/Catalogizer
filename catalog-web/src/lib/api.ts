@@ -32,7 +32,19 @@ api.interceptors.request.use((config) => {
 api.interceptors.response.use(
   (response) => response,
   (error) => {
-    if (error.response?.status === 401) {
+    // Article XI §11.5: when a 401 comes back FROM the login or
+    // refresh endpoint itself, it means the credentials submitted
+    // were wrong — NOT that an existing session expired. We must
+    // let the caller handle that error inline (and surface it to
+    // the user); redirecting to /login here erased the diagnostic
+    // and made wrong-password indistinguishable from the initial
+    // login render. Caught by the 2026-04-29 anti-bluff sweep.
+    const reqUrl: string = error.config?.url || ''
+    const isAuthEndpoint =
+      reqUrl.includes('/auth/login') ||
+      reqUrl.includes('/auth/register') ||
+      reqUrl.includes('/auth/refresh')
+    if (error.response?.status === 401 && !isAuthEndpoint) {
       localStorage.removeItem('auth_token')
       localStorage.removeItem('user')
       window.location.href = '/login'

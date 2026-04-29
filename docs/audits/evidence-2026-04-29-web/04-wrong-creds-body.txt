@@ -4,6 +4,7 @@ Welcome back
 
 Enter your credentials to access Catalogizer
 
+invalid credentials
 Username
 Password
 Remember me
@@ -15,3 +16,5 @@ Create new account
 Made with ❤ by Vasic Digital
 
 © 2026 Vasic Digital. All rights reserved.
+
+invalid credentials

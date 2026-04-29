@@ -4,7 +4,7 @@ import { useAuth } from '@/contexts/AuthContext'
 import { Button } from '@/components/ui/Button'
 import { Input } from '@/components/ui/Input'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/Card'
-import { User, Lock, Eye, EyeOff } from 'lucide-react'
+import { User, Lock, Eye, EyeOff, AlertCircle } from 'lucide-react'
 import { motion } from 'framer-motion'
 
 /**
@@ -15,6 +15,15 @@ export const LoginForm: React.FC = () => {
   const [password, setPassword] = useState('')
   const [showPassword, setShowPassword] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
+  // Article XI §11.5: a persistent inline error message is shown
+  // alongside the toast so users have a discoverable, non-transient
+  // explanation when login fails. The toast alone disappears in ~4 s;
+  // a user who looks down at the keyboard while submitting (or a
+  // Playwright suite that captures a few seconds post-click) loses
+  // the diagnostic. Caught by the 2026-04-29 anti-bluff sweep —
+  // wrong-password previously left the form in a state visually
+  // indistinguishable from the initial render.
+  const [errorMessage, setErrorMessage] = useState<string | null>(null)
   const { login } = useAuth()
   const navigate = useNavigate()
 
@@ -22,6 +31,7 @@ export const LoginForm: React.FC = () => {
     e.preventDefault()
     if (!username.trim() || !password.trim()) return
 
+    setErrorMessage(null)
     setIsLoading(true)
     try {
       const deviceInfo = {
@@ -31,17 +41,25 @@ export const LoginForm: React.FC = () => {
         app_version: '1.0.0',
         device_name: 'Web Browser'
       }
-      
-      await login({ 
-        username: username.trim(), 
+
+      await login({
+        username: username.trim(),
         password,
         device_info: deviceInfo,
         remember_me: false
       })
       navigate('/dashboard')
     } catch (error) {
-      // Error is handled by the auth context which sets error state for UI display
-      void error;
+      // Capture a human-readable error for inline display in addition
+      // to the toast that AuthContext.loginMutation.onError fires.
+      const err = error as { response?: { data?: { error?: string } }; message?: string }
+      const apiMessage = err?.response?.data?.error
+      const fallbackMessage = err?.message
+      setErrorMessage(
+        apiMessage ||
+        fallbackMessage ||
+        'Login failed. Please check your username and password.'
+      )
     } finally {
       setIsLoading(false)
     }
@@ -68,7 +86,17 @@ export const LoginForm: React.FC = () => {
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <form onSubmit={handleSubmit} className="space-y-4">
+            <form onSubmit={handleSubmit} className="space-y-4" noValidate>
+              {errorMessage && (
+                <div
+                  role="alert"
+                  data-testid="login-error"
+                  className="flex items-start gap-2 rounded-md border border-red-300 bg-red-50 p-3 text-sm text-red-800 dark:border-red-700 dark:bg-red-950 dark:text-red-200"
+                >
+                  <AlertCircle className="mt-0.5 h-4 w-4 flex-shrink-0" aria-hidden />
+                  <span>{errorMessage}</span>
+                </div>
+              )}
               <Input
                 label="Username"
                 type="text"
