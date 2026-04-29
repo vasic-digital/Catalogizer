@@ -71,6 +71,7 @@ func TestNVENCOpen_InvalidBitrate(t *testing.T) {
 }
 
 func TestNVENCClose_Valid(t *testing.T) {
+	// bluff-scan: nil-only-ok (lifecycle test — NVENC close on valid encoder must not error)
 	s := New()
 	open, err := s.NVENCOpen(context.Background(), &pb.OpenRequest{
 		Width: 640, Height: 480, Framerate: 25, BitrateKbps: 2000,

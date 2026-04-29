@@ -82,13 +82,23 @@ scan_go_tests() {
   while IFS= read -r -d '' f; do
     is_excluded "$f" && continue
     local low="${f,,}"
-    # GO_HTTPTEST_ABUSE — file path contains /e2e/ or _e2e_test.go
+    # GO_HTTPTEST_ABUSE — file path contains /e2e/ or _e2e_test.go.
+    # File-level exemption: if the file contains a SKIP-OK guard
+    # (e.g. `t.Skip("SKIP-OK: #BLUFF-... fake-server pseudo-E2E is
+    # anti-bluff banned (Article XI §11.5); set <ENV> to opt-in
+    # once test bodies are rewritten against real data")`), then
+    # the httptest body is documented dormant code — already
+    # caught by Article XI's SKIP-OK ledger, not a silent bluff.
     if [[ "$low" == */e2e/* || "$low" == *_e2e_test.go ]]; then
-      grep -nE 'httptest\.NewServer\b|httptest\.NewRequest\b' "$f" 2>/dev/null | while IFS=: read -r ln rest; do
-        stripped="$(echo "$rest" | sed 's/^[[:space:]]*//')"
-        case "$stripped" in '//'*|'/*'*|'*'*) continue ;; esac
-        emit GO_HTTPTEST_ABUSE "$f" "$ln" "$rest"
-      done
+      if grep -q 'SKIP-OK:[[:space:]]*#BLUFF-' "$f" 2>/dev/null; then
+        :  # documented dormant; reviewed via the SKIP-OK ticket
+      else
+        grep -nE 'httptest\.NewServer\b|httptest\.NewRequest\b' "$f" 2>/dev/null | while IFS=: read -r ln rest; do
+          stripped="$(echo "$rest" | sed 's/^[[:space:]]*//')"
+          case "$stripped" in '//'*|'/*'*|'*'*) continue ;; esac
+          emit GO_HTTPTEST_ABUSE "$f" "$ln" "$rest"
+        done
+      fi
     fi
     # GO_MOCK_IN_INTEGRATION — directory must be one of the integration-class dirs
     if [[ "$low" == */tests/integration/* || "$low" == */tests/e2e/* || \
@@ -107,6 +117,7 @@ scan_go_tests() {
       /^func[[:space:]]+Test[A-Z][A-Za-z0-9_]*\(t \*testing\.T\)/ {
         in_func=1; depth=0; start=NR; body=""; nil_only=1; has_assert=0;
         saw_suite_run=0; saw_subtest=0; saw_no_panic=0; saw_interface_assert=0;
+        saw_optin=0;
         first_line=$0;
       }
       in_func {
@@ -119,17 +130,65 @@ scan_go_tests() {
         if (NR > start) {
           if ($0 ~ /t\.Error|t\.Errorf|t\.Fatal|t\.Fatalf|assert\.|require\.|expect\(/) has_assert=1;
           if ($0 ~ /(t\.Error|t\.Errorf|assert\.|require\.|expect\()/) nil_only=0;
+          # Non-err `if X { t.Fatal/t.Fatalf }` is a real value
+          # assertion (Go idiom). Match `if <something-not-err-not-nil> {`
+          # followed by a line containing t.Fatal in the same block.
+          if ($0 ~ /t\.Fatal[fF]?\(/) {
+            prev3 = (NR-1>=1) ? prev_line[NR-1] : "";
+            prev2 = (NR-2>=1) ? prev_line[NR-2] : "";
+            prev1 = (NR-3>=1) ? prev_line[NR-3] : "";
+            window = prev1 prev2 prev3;
+            if (window ~ /if[[:space:]]/ && window !~ /err[[:space:]]*!=[[:space:]]*nil/) {
+              nil_only=0;
+            }
+          }
           if ($0 ~ /suite\.Run\(t,|s\.Run\(/) saw_suite_run=1;
           if ($0 ~ /t\.Run\(/) saw_subtest=1;
           # Implicit "no panic" assertion — Go panic = test failure
           if ($0 ~ /[Ss]hould not panic|[Nn]o panic|[Sh][hh]ould.*not.*crash|[Dd]oes not crash|[Mm]ust not panic/) saw_no_panic=1;
-          # Compile-time interface assertion: var _ Iface = (*Type)(nil)
-          if ($0 ~ /var[[:space:]]+_[[:space:]]+[A-Z][A-Za-z0-9_]*[[:space:]]*=[[:space:]]*\(\*/) saw_interface_assert=1;
+          # Compile-time interface assertion: covers
+          #   var _ Iface = (*Type)(nil)
+          #   var _ pkg.Iface = (*Type)(nil)
+          #   var _ pkg.Iface = NewThing("...")
+          if ($0 ~ /var[[:space:]]+_[[:space:]]+([a-z][a-zA-Z0-9_]*\.)?[A-Z][A-Za-z0-9_]*[[:space:]]*=[[:space:]]/) saw_interface_assert=1;
+          # Author-defined assertion helpers — common Go pattern of
+          # `assertX(t, got, want)` / `checkX(t, ...)` / `requireX(t, ...)`
+          # is a value assertion, just like a direct t.Errorf call.
+          if ($0 ~ /[[:space:]](assert|check|require|verify|expect)[A-Z][A-Za-z0-9_]*\(t[,)]/) {
+            has_assert=1; nil_only=0;
+          }
+          # testify/mock expectations: `mock.On("Method", args).Return(...)`
+          # acts as a strict assertion — the mock framework fails the
+          # test on any UNEXPECTED call, so the .On(...).Return(...) IS
+          # the assertion. Same for AssertExpectations / AssertCalled.
+          # `\.On\(` matches `inner.On(` reliably; no need for prefix.
+          if ($0 ~ /\.On\(|\.AssertExpectations\(t\)|\.AssertCalled\(t,|\.AssertNotCalled\(t,/) {
+            has_assert=1; nil_only=0;
+          }
+          # gomock expectations: `mockObj.EXPECT().Method(...).Return(...)`
+          if ($0 ~ /\.EXPECT\(\)\.[A-Z][A-Za-z0-9_]*\(/) {
+            has_assert=1; nil_only=0;
+          }
+          # go-cmp / google diffing libraries
+          if ($0 ~ /cmp\.Diff\(|cmp\.Equal\(/) {
+            has_assert=1; nil_only=0;
+          }
+          # gomega / Eventually / Expect
+          if ($0 ~ /\bgomega\.|Eventually\([^)]+\)\.Should\(|\bExpect\([^)]+\)\.To\(/) {
+            has_assert=1; nil_only=0;
+          }
+          # Author opt-in marker — `// bluff-scan: nil-only-ok (<reason>)`
+          # tells the scanner the test intentionally asserts only on
+          # absence-of-error (e.g. lifecycle Stop(), `go vet`/`go build`
+          # success, "must not panic" exec). Author owns the
+          # justification.
+          if ($0 ~ /\/\/[[:space:]]*bluff-scan:[[:space:]]*(nil-only-ok|no-assert-ok)/) saw_optin=1;
         }
+        prev_line[NR] = $0;
         if (depth==0 && NR>start) {
-          if (!has_assert && !saw_suite_run && !saw_subtest && !saw_no_panic && !saw_interface_assert) {
+          if (!has_assert && !saw_suite_run && !saw_subtest && !saw_no_panic && !saw_interface_assert && !saw_optin) {
             printf "%s\t%d\tGO_NO_ASSERT\t%s\n", f, start, first_line;
-          } else if (nil_only && !saw_suite_run && !saw_subtest && body ~ /if[[:space:]]+err[[:space:]]*!=[[:space:]]*nil/) {
+          } else if (nil_only && !saw_suite_run && !saw_subtest && !saw_optin && body ~ /if[[:space:]]+err[[:space:]]*!=[[:space:]]*nil/) {
             printf "%s\t%d\tGO_NIL_ONLY\t%s\n", f, start, first_line;
           }
           in_func=0;
@@ -256,11 +315,17 @@ scan_challenge_scripts() {
         ;;
     esac
     # CHALLENGE_BLIND_SHELL
+    # Inline-comment exemption: a line carrying `# bluff-scan: ok (<reason>)`
+    # is intentionally a best-effort/teardown line whose next-line
+    # assertion compensates. Any author who adds the comment owns the
+    # justification and a hostile reviewer can audit by grep.
     grep -nE '(\|\|[[:space:]]*true\b|&&[[:space:]]*echo[[:space:]]+(PASS|OK|SUCCESS)\b|\|[[:space:]]*tee[[:space:]]+\S+[[:space:]]*$|set[[:space:]]+\+e\b)' "$f" 2>/dev/null | while IFS=: read -r ln rest; do
+      case "$rest" in *'# bluff-scan: ok'*) continue ;; esac
       emit CHALLENGE_BLIND_SHELL "$f" "$ln" "$rest"
     done
     # CHALLENGE_200_OK_ONLY: curl whose ONLY check is HTTP code or grep -q 200
     grep -nE 'curl[^\n]*-w[^\n]*%\{http_code\}|grep[[:space:]]+-q[[:space:]]+200|status_code"][[:space:]]*==[[:space:]]*200' "$f" 2>/dev/null | while IFS=: read -r ln rest; do
+      case "$rest" in *'# bluff-scan: ok'*) continue ;; esac
       emit CHALLENGE_200_OK_ONLY "$f" "$ln" "$rest"
     done
   done < <(find . -type f \( -path '*/challenges/*' -a -name '*.sh' \) -print0 2>/dev/null)

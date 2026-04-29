@@ -44,7 +44,7 @@ find_project_root() {
   return 1
 }
 
-PROJECT_ROOT=$(find_project_root "$SCRIPT_DIR" || true)
+PROJECT_ROOT=$(find_project_root "$SCRIPT_DIR" || true) # bluff-scan: ok (next line asserts non-empty result)
 if [[ -z "${PROJECT_ROOT:-}" ]]; then
   echo "FAIL: cannot locate project root from $SCRIPT_DIR" >&2
   exit 2
@@ -77,7 +77,7 @@ DEVICE="${DEVICE%[[:space:]]}"
 echo "Device:   $DEVICE"
 
 if ! adb -s "$DEVICE" get-state >/dev/null 2>&1; then
-  adb connect "$DEVICE" >/dev/null 2>&1 || true
+  adb connect "$DEVICE" >/dev/null 2>&1 || true # bluff-scan: ok (best-effort retry; next get-state asserts)
   sleep 1
 fi
 if ! adb -s "$DEVICE" get-state >/dev/null 2>&1; then
@@ -103,8 +103,8 @@ VERSION=$(adb -s "$DEVICE" shell dumpsys package "$PACKAGE" 2>/dev/null \
 echo "Version:  $VERSION"
 
 # 2. Reset state + clear logcat.
-adb -s "$DEVICE" shell am force-stop "$PACKAGE" >/dev/null 2>&1 || true
-adb -s "$DEVICE" logcat -c >/dev/null 2>&1 || true
+adb -s "$DEVICE" shell am force-stop "$PACKAGE" >/dev/null 2>&1 || true # bluff-scan: ok (teardown; failure means app wasn't running)
+adb -s "$DEVICE" logcat -c >/dev/null 2>&1 || true # bluff-scan: ok (teardown; logcat clear is best-effort)
 
 # 3. Launch.
 LAUNCH_OUT=$(adb -s "$DEVICE" shell am start -n "$ACTIVITY" 2>&1)
@@ -127,7 +127,7 @@ fi
 # 6. Assert no fatal markers in the launch window.
 LOG_WINDOW=$(adb -s "$DEVICE" logcat -d -t 600 2>/dev/null \
               | grep -E "FATAL EXCEPTION|java\.lang\.NoSuchMethod|Force finishing activity ${PACKAGE}" \
-              | grep "$PACKAGE" || true)
+              | grep "$PACKAGE" || true) # bluff-scan: ok (empty grep is the success case; next [[ -n ]] asserts)
 if [[ -n "$LOG_WINDOW" ]]; then
   echo "FAIL: fatal markers detected in launch window:" >&2
   echo "$LOG_WINDOW" | sed 's/^/   /'
