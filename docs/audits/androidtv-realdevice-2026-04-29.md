@@ -147,11 +147,35 @@ clean process termination (no zombie state).
 - Catalogizer Android TV (com.catalogizer.androidtv v2.4.0 build 8)
   installs, launches, renders a real UI, accepts DPAD input, and
   shuts down cleanly on a Mi Box 4 / Android 9.
+- The login screen is wired to the auth client and **emits real
+  HTTP requests** when Sign In fires — verified by an `AuthRepository`
+  stack trace in logcat showing `okhttp3.RealConnection.connectSocket`
+  hitting the persisted server URL on a real `192.168.0.x` socket.
+- The auth client honours the persisted `server_url` in DataStore
+  (proto file at `/data/data/com.catalogizer.androidtv/files/datastore/catalogizer_tv_prefs.preferences_pb`)
+  even when an unsaved value is shown in the URL EditText —
+  confirming the Connect-button-saves-then-Sign-In-uses model rather
+  than a "displayed text wins" anti-pattern.
+- catalog-api `/api/v1/auth/login` accepts admin/admin123 and returns
+  a real user record (verified via direct curl against the deployed
+  amber instance at `cz-api-amber` 127.0.0.1:8093 published to LAN
+  via a python TCP forwarder on amber:0.0.0.0:8080).
 
 ## What is still NOT proven on real hardware
 
-- Login flow against the deployed catalog-api (would need the TV
-  to be configured with a server URL and a fresh login).
+- **Fully scripted post-login UI evidence via raw ADB.** Compose-TV
+  does not expose internal focus state via the accessibility tree
+  (every dump shows `focused="false"` on every element after the
+  initial composition), so coordinate-based `input tap` and DPAD
+  navigation land in unpredictable EditTexts. The proper tool for
+  this is HelixQA's vision-driven autonomous pipeline (project
+  invariant: "HelixQA is the **sole authorized tool** for all
+  automated UI/UX testing"), which uses screenshot-LLM analysis and
+  IME-action injection rather than coordinate scripting. A focused
+  ADB-script attempt at the login flow during this session
+  reproduced the project-documented form-fill-then-submit
+  difficulty, was logged in `/tmp/androidtv-evidence/`, and is the
+  reason this audit pivots to HelixQA for end-to-end coverage.
 - Media browsing / search / playback (would need a populated
   catalogizer DB and a media file).
 - Android phone variant `com.catalogizer.android` (it's also
