@@ -735,6 +735,11 @@ func (db *DB) createMediaEntityTablesPostgres(ctx context.Context) error {
 		`ALTER TABLE media_items ADD COLUMN IF NOT EXISTS play_count INTEGER DEFAULT 0`,
 		`ALTER TABLE media_items ADD COLUMN IF NOT EXISTS last_played TIMESTAMP`,
 		`ALTER TABLE media_items ADD COLUMN IF NOT EXISTS created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP`,
+		// Recommendation handler queries — same handler-vs-schema
+		// drift, additional columns surfaced after the first
+		// migration round.
+		`ALTER TABLE media_items ADD COLUMN IF NOT EXISTS producer TEXT`,
+		`ALTER TABLE media_items ADD COLUMN IF NOT EXISTS "cast" TEXT`,
 	}
 
 	for _, stmt := range statements {
