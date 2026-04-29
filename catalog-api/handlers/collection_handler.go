@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"database/sql"
+	"fmt"
 	"net/http"
 	"strconv"
 	"strings"
@@ -87,6 +88,19 @@ func (h *CollectionHandler) CreateCollection(c *gin.Context) {
 	}
 	if err := c.ShouldBindJSON(&req); err != nil {
 		utils.SendErrorResponse(c, http.StatusBadRequest, "Invalid request body", err)
+		return
+	}
+
+	// Article XI §11.5: enforce a sane upper bound on the collection
+	// name. Without it, a 500-character or 5000-character name is
+	// accepted and stored — a UI rendering / database-index hazard.
+	// 200 chars is well above the longest legitimate movie/album/
+	// series name on TMDB, OMDB or MusicBrainz. Caught by FQA-API-171.
+	const maxCollectionNameLen = 200
+	if len(req.Name) > maxCollectionNameLen {
+		utils.SendErrorResponse(c, http.StatusBadRequest,
+			fmt.Sprintf("name too long (max %d characters)", maxCollectionNameLen),
+			nil)
 		return
 	}
 
