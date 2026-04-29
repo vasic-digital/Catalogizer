@@ -217,6 +217,36 @@ func isNotFoundError(err error) bool {
 		strings.Contains(msg, "no rows in result set")
 }
 
+// validEntityTypes is the closed set of media-entity types favorites
+// (and similar entity-keyed APIs) can attach to. Mirrors the seed in
+// `database/migrations/*` for the `media_types` table. Any caller
+// passing an out-of-set entity_type is sending invalid input and the
+// handler MUST reject it with 400 — silently returning is_favorite or
+// 200 lets stale / corrupt rows masquerade as legitimate state.
+// Caught by FQA-API-220 in the 2026-04-29 real-binary bank
+// verification: GET /favorites/check/invalid_type/1 returned
+// HTTP 200 {"is_favorite":true}.
+var validEntityTypes = map[string]struct{}{
+	"movie":         {},
+	"tv_show":       {},
+	"tv_season":     {},
+	"tv_episode":    {},
+	"music_artist":  {},
+	"music_album":   {},
+	"song":          {},
+	"game":          {},
+	"software":      {},
+	"book":          {},
+	"comic":         {},
+}
+
+// isValidEntityType returns true iff the entity_type is one of the
+// closed set defined above.
+func isValidEntityType(entityType string) bool {
+	_, ok := validEntityTypes[entityType]
+	return ok
+}
+
 // collectionsToJSON converts slice of MediaCollection to JSON-friendly slice.
 func collectionsToJSON(collections []*models.MediaCollection) []gin.H {
 	result := make([]gin.H, 0, len(collections))

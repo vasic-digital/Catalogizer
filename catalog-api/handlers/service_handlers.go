@@ -361,12 +361,7 @@ func (h *FavoritesHandler) AddFavorite(c *gin.Context) {
 	// Article XI §11.5: validate entity_type against the small set
 	// of types favorites supports BEFORE the service call so an
 	// invalid type returns 400 (not 500). Caught by FQA-API-219.
-	switch req.EntityType {
-	case "movie", "tv_show", "tv_season", "tv_episode",
-		"music_artist", "music_album", "song",
-		"game", "software", "book", "comic":
-		// ok
-	default:
+	if !isValidEntityType(req.EntityType) {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid entity_type"})
 		return
 	}
@@ -420,6 +415,13 @@ func (h *FavoritesHandler) RemoveFavorite(c *gin.Context) {
 	if entityType == "" {
 		entityType = c.Query("entity_type")
 	}
+	// Article XI §11.5: reject invalid entity_type before the
+	// service call so the caller gets a deterministic 400 instead
+	// of a 404 that hides the real problem.
+	if !isValidEntityType(entityType) {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid entity_type"})
+		return
+	}
 
 	if err := h.service.RemoveFavorite(uid, entityType, entityID); err != nil {
 		// Article XI §11.5: a remove of a non-favorited entity is
@@ -459,6 +461,15 @@ func (h *FavoritesHandler) CheckFavorite(c *gin.Context) {
 	entityType := c.Param("entity_type")
 	if entityType == "" {
 		entityType = c.Query("entity_type")
+	}
+	// Article XI §11.5: reject invalid entity_type. Otherwise stale
+	// rows from earlier broken inserts (when entity_type was not
+	// validated on AddFavorite) would surface as `is_favorite:true`
+	// for nonsense types — letting bad data corrupt client logic.
+	// Caught by FQA-API-220.
+	if !isValidEntityType(entityType) {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid entity_type"})
+		return
 	}
 
 	isFavorite, err := h.service.IsFavorite(uid, entityType, entityID)
