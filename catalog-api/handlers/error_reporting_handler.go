@@ -67,6 +67,19 @@ func (h *ErrorReportingHandler) ReportError(w http.ResponseWriter, r *http.Reque
 		return
 	}
 
+	// Article XI §11.5: enforce the `validate:"required"` tags from
+	// models.ErrorReportRequest manually here so missing required
+	// fields surface as 400 with a diagnostic body. The previous
+	// handler returned an empty 500 on missing fields — exactly the
+	// diagnostic-less error response Article XI bans. Caught by
+	// FQA-API-271 in the 2026-04-29 real-binary bank verification.
+	if request.Level == "" || request.Message == "" {
+		http.Error(w,
+			`{"error":"missing required fields","details":"both 'level' and 'message' are required"}`,
+			http.StatusBadRequest)
+		return
+	}
+
 	report, err := h.errorReportingService.ReportError(userID, &request)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
@@ -93,6 +106,15 @@ func (h *ErrorReportingHandler) ReportCrash(w http.ResponseWriter, r *http.Reque
 	var request models.CrashReportRequest
 	if err := json.NewDecoder(r.Body).Decode(&request); err != nil {
 		http.Error(w, "Invalid request body", http.StatusBadRequest)
+		return
+	}
+
+	// Same Article XI §11.5 validation as ReportError — caught by
+	// FQA-API-273.
+	if request.Signal == "" || request.Message == "" {
+		http.Error(w,
+			`{"error":"missing required fields","details":"both 'signal' and 'message' are required"}`,
+			http.StatusBadRequest)
 		return
 	}
 
