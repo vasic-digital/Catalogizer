@@ -87,8 +87,9 @@ def _register(pattern: str, builder):
 
 
 # Pattern 1: "<METHOD> <PATH> with body {<inline JSON>}" + optional auth/user phrase
+# OPTIONS is included for CORS preflight tests.
 _register(
-    r"^\s*(?P<method>GET|POST|PUT|PATCH|DELETE)\s+"
+    r"^\s*(?P<method>GET|POST|PUT|PATCH|DELETE|OPTIONS|HEAD)\s+"
     r"(?P<path>/[\w/_\-{}.:?=&]+)"
     r"(?:\s+with\s+body\s+(?P<body>\{.*?\}))?"
     r"(?P<authclause>\s+(?:as|with)\s+(?:admin|user)\s*[:\w]*)?",
@@ -121,6 +122,68 @@ def _infer_auth(clause: str) -> str:
     if "as user" in clause:
         return "as:viewer"  # placeholder; manual review may refine
     return ""
+
+
+# --- Playwright (web) prose patterns ---
+
+PLAYWRIGHT_PROSE_PATTERNS: list[tuple[re.Pattern[str], Any]] = []
+
+
+def _wregister(pattern: str, builder):
+    PLAYWRIGHT_PROSE_PATTERNS.append((re.compile(pattern, re.IGNORECASE), builder))
+
+
+# Open / Navigate to URL → playwright: navigate <url>
+_wregister(
+    r"^\s*(?:open|navigate(?:\s+to)?)\s+(?P<url>https?://\S+)",
+    lambda m: f"playwright: navigate {m.group('url')}",
+)
+# Open <path> in the browser → playwright: navigate <path>
+_wregister(
+    r"^\s*open\s+(?P<url>/[^\s]+)\s+in\s+the\s+browser",
+    lambda m: f"playwright: navigate {m.group('url')}",
+)
+# Click <button|element|"text"|'text'> → playwright: click text=<X>
+_wregister(
+    r"^\s*click\s+(?:on\s+)?(?:the\s+)?[\"']?(?P<target>[^\"']+?)[\"']?(?:\s+button|\s+link|\s+icon|\s+element|\s+tab)?\s*$",
+    lambda m: f"playwright: click text={m.group('target').strip()}",
+)
+# Type 'X' in/into Y field → playwright: fill <selector> <text>
+_wregister(
+    r"^\s*type\s+[\"'](?P<text>[^\"']+)[\"']\s+(?:in|into)\s+(?:the\s+)?(?P<field>\w+)\s+field",
+    lambda m: f"playwright: fill input[name={m.group('field').lower()}] {m.group('text')}",
+)
+# Type 'X' in Y, 'Z' in W → composite "fill" actions; convert first only
+_wregister(
+    r"^\s*type\s+[\"'](?P<text>[^\"']+)[\"']\s+(?:in|into)\s+(?P<field>\w+)",
+    lambda m: f"playwright: fill input[name={m.group('field').lower()}] {m.group('text')}",
+)
+# Press <key> → playwright: press <key>
+_wregister(
+    r"^\s*press\s+(?:the\s+)?(?P<key>\w+)\s+key",
+    lambda m: f"playwright: press {m.group('key').strip()}",
+)
+# Wait for X → playwright: waitFor text=X
+_wregister(
+    r"^\s*wait\s+for\s+(?:the\s+)?[\"']?(?P<target>[^\"']+?)[\"']?(?:\s+to\s+(?:appear|load|render))?\s*$",
+    lambda m: f"playwright: waitFor text={m.group('target').strip()}",
+)
+# Look for / Check / Find / Verify <X> is visible → playwright: assertVisible
+_wregister(
+    r"^\s*(?:look\s+for|check\s+(?:that\s+|for\s+)?|find|verify(?:\s+that)?|observe|see)\s+"
+    r"(?:the\s+)?[\"']?(?P<target>[^\"']+?)[\"']?(?:\s+is\s+visible|\s+visible)?\s*$",
+    lambda m: f"playwright: assertVisible text={m.group('target').strip()}",
+)
+
+
+def _convert_playwright(action: str) -> str | None:
+    """Try to convert web prose into a playwright: action.
+    Returns None if no pattern matches."""
+    for pattern, builder in PLAYWRIGHT_PROSE_PATTERNS:
+        m = pattern.match(action)
+        if m:
+            return builder(m)
+    return None
 
 
 # --- Expected-text → assertion inference ---
@@ -164,6 +227,7 @@ def convert_step(step: dict[str, Any], stats: ConversionStats) -> dict[str, Any]
 
     converted = dict(step)  # shallow copy
     matched = False
+    # First try HTTP patterns
     for pattern, builder in HTTP_PROSE_PATTERNS:
         m = pattern.match(action)
         if m:
@@ -173,12 +237,21 @@ def convert_step(step: dict[str, Any], stats: ConversionStats) -> dict[str, Any]
                 converted["body"] = body
             if auth:
                 converted["auth"] = auth
-            # Preserve original prose as a comment
             converted.setdefault("_original_action", action)
             matched = True
             method = m.group("method").upper() if "method" in m.groupdict() else "?"
             stats.by_method[method] = stats.by_method.get(method, 0) + 1
             break
+
+    # Then try Playwright patterns
+    if not matched:
+        playwright_action = _convert_playwright(action)
+        if playwright_action:
+            converted["action"] = playwright_action
+            converted.setdefault("_original_action", action)
+            matched = True
+            verb = playwright_action.split()[1] if len(playwright_action.split()) > 1 else "?"
+            stats.by_method["pw:" + verb] = stats.by_method.get("pw:" + verb, 0) + 1
 
     # Apply expectation inference from the "expected" prose
     expected_text = step.get("expected", "")
