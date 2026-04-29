@@ -57,6 +57,56 @@ describe('AuthService', () => {
       expect(mockHttp.setAuthToken).toHaveBeenCalledWith('new-jwt-token');
     });
 
+    // Article XI §11.5 regression guard for the contract bluff fixed
+    // in commit a82ace8a (2026-04-29). The catalog-api login endpoint
+    // returns the bearer token under `session_token` (canonical), but
+    // the previous LoginResponse type required `token` and the
+    // AuthService unconditionally read `response.token` — so the http
+    // client never stored the bearer token, and isAuthenticated()
+    // silently always returned false even after a successful login.
+    // These three tests pin the dual-read behaviour so it can't
+    // regress.
+    it('extracts token from session_token (canonical current API)', async () => {
+      const loginResponse: any = {
+        session_token: 'canonical-jwt-token',
+        refresh_token: 'r',
+        expires_at: '2026-04-30T17:41:24Z',
+        user: { id: 1, username: 'admin' },
+      };
+      mockHttp.post.mockResolvedValueOnce(loginResponse);
+
+      await authService.login({ username: 'admin', password: 'admin123' });
+
+      expect(mockHttp.setAuthToken).toHaveBeenCalledWith('canonical-jwt-token');
+    });
+
+    it('extracts token from legacy `token` field (back-compat)', async () => {
+      const loginResponse: any = {
+        token: 'legacy-jwt-token',
+        refresh_token: 'r',
+        expires_in: 3600,
+        user: { id: 1, username: 'admin' },
+      };
+      mockHttp.post.mockResolvedValueOnce(loginResponse);
+
+      await authService.login({ username: 'admin', password: 'admin123' });
+
+      expect(mockHttp.setAuthToken).toHaveBeenCalledWith('legacy-jwt-token');
+    });
+
+    it('throws when neither session_token nor token is present', async () => {
+      const loginResponse: any = {
+        refresh_token: 'r',
+        user: { id: 1 },
+      };
+      mockHttp.post.mockResolvedValueOnce(loginResponse);
+
+      await expect(
+        authService.login({ username: 'admin', password: 'admin123' }),
+      ).rejects.toThrow(/missing both session_token and token/i);
+      expect(mockHttp.setAuthToken).not.toHaveBeenCalled();
+    });
+
     it('propagates errors on login failure', async () => {
       mockHttp.post.mockRejectedValueOnce(new Error('Invalid credentials'));
 

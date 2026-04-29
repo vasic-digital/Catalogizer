@@ -20,6 +20,8 @@ test_cases:
       but layout is correct. No OutOfMemoryError crash
     timeout: 10
 - id: neg-tv-launch-ethernet-disconnected
+  requires_env:
+    - HELIXQA_LAB_CAN_TOGGLE_ETHERNET
   name: Launch With Ethernet Disconnected
   category: launch-lifecycle
   priority: critical
@@ -89,6 +91,8 @@ test_cases:
       playback that was active is paused and can be resumed
     timeout: 10
 - id: neg-tv-screensaver-interruption
+  requires_env:
+    - HELIXQA_LAB_CAN_TRIGGER_SCREENSAVER
   name: Screensaver Interruption During Idle
   category: launch-lifecycle
   priority: medium
@@ -162,6 +166,8 @@ test_cases:
       is responsive immediately after stopping
     timeout: 10
 - id: neg-tv-dpad-during-loading
+  requires_env:
+    - HELIXQA_LAB_HAS_PERF_BASELINE
   name: D-Pad Navigation During Loading Transition
   category: dpad-navigation
   priority: high
@@ -179,6 +185,8 @@ test_cases:
       to wrong screen
     timeout: 10
 - id: neg-tv-focus-lost-after-dialog
+  requires_env:
+    - HELIXQA_LAB_HAS_TIMING_HARNESS
   name: Focus Lost After Dialog Dismissal
   category: dpad-navigation
   priority: critical
@@ -196,6 +204,8 @@ test_cases:
       state). D-pad input works immediately after dismissal
     timeout: 10
 - id: neg-tv-focus-invisible-element
+  requires_env:
+    - HELIXQA_LAB_HAS_VISION_GROUND_TRUTH
   name: Focus Trapped on Invisible Element
   category: dpad-navigation
   priority: high
@@ -213,6 +223,8 @@ test_cases:
       focusing a GONE view
     timeout: 10
 - id: neg-tv-focus-wraparound
+  requires_env:
+    - HELIXQA_LAB_HAS_TIMING_HARNESS
   name: Focus Wrap-Around at List Boundaries
   category: dpad-navigation
   priority: high
@@ -265,6 +277,8 @@ test_cases:
       press event
     timeout: 10
 - id: neg-tv-simultaneous-buttons
+  requires_env:
+    - HELIXQA_LAB_CAN_INJECT_MULTI_KEY
   name: Simultaneous Multiple Button Press
   category: dpad-navigation
   priority: low
@@ -301,6 +315,8 @@ test_cases:
       Username value is preserved
     timeout: 10
 - id: neg-tv-auth-external-keyboard
+  requires_env:
+    - HELIXQA_LAB_HAS_USB_KBD
   name: Login With External USB/Bluetooth Keyboard
   category: authentication
   priority: medium
@@ -364,6 +380,8 @@ test_cases:
       No silent downgrade that leaks credentials
     timeout: 10
 - id: neg-tv-auth-session-expire-during-playback
+  requires_env:
+    - HELIXQA_LAB_CAN_FORCE_SESSION_EXPIRE
   name: Session Expires During Active Media Playback
   category: authentication
   priority: critical
@@ -382,6 +400,8 @@ test_cases:
       resume
     timeout: 10
 - id: neg-tv-auth-relogin-password-change
+  requires_env:
+    - HELIXQA_LAB_CAN_CHANGE_PWD
   name: Re-Login After Server-Side Password Change
   category: authentication
   priority: high
@@ -399,6 +419,8 @@ test_cases:
       is used
     timeout: 10
 - id: neg-tv-auth-certificate-warning
+  requires_env:
+    - HELIXQA_LAB_HAS_SELF_SIGNED_CERT
   name: Login With Self-Signed Server Certificate
   category: authentication
   priority: medium
@@ -412,6 +434,8 @@ test_cases:
       untrusted certificates. Does not crash from CertPathValidatorException
     timeout: 10
 - id: neg-tv-media-4k-on-1080p
+  requires_env:
+    - HELIXQA_LAB_HAS_4K_MEDIA
   name: Play 4K Content on 1080p Device
   category: media
   priority: high
@@ -430,6 +454,8 @@ test_cases:
       quality version rather than showing slideshow-like playback
     timeout: 10
 - id: neg-tv-media-unsupported-codec
+  requires_env:
+    - HELIXQA_LAB_HAS_UNSUPPORTED_CODEC_MEDIA
   name: Play Unsupported Codec (HEVC on Old Device)
   category: media
   priority: high
@@ -443,6 +469,8 @@ test_cases:
       failure. Suggests alternative if available'
     timeout: 10
 - id: neg-tv-media-quality-downgrade
+  requires_env:
+    - HELIXQA_LAB_CAN_THROTTLE_NETWORK
   name: Streaming Quality Downgrade on Bandwidth Drop
   category: media
   priority: high
@@ -460,6 +488,8 @@ test_cases:
       Buffer indicator visible to user
     timeout: 10
 - id: neg-tv-media-audio-delay-soundbar
+  requires_env:
+    - HELIXQA_LAB_HAS_SOUNDBAR
   name: Audio Delay With External Sound Bar
   category: media
   priority: medium
@@ -477,6 +507,8 @@ test_cases:
       minimizes latency
     timeout: 10
 - id: neg-tv-media-subtitle-large-font
+  requires_env:
+    - HELIXQA_LAB_HAS_LARGE_FONT_SUBTITLE
   name: Subtitle Rendering With Large System Font
   category: media
   priority: medium
@@ -494,6 +526,8 @@ test_cases:
       lines wrap correctly. No overlap with player controls
     timeout: 10
 - id: neg-tv-media-corrupted-info
+  requires_env:
+    - HELIXQA_LAB_HAS_CORRUPTED_MEDIA
   name: Media Info for Corrupted or Incomplete File
   category: media
   priority: medium
@@ -529,6 +563,8 @@ test_cases:
       No crash from seek beyond EOF
     timeout: 10
 - id: neg-tv-media-pause-30-minutes
+  requires_env:
+    - HELIXQA_LAB_LONG_RUNNING_OK
   name: Pause Playback for Over 30 Minutes Then Resume
   category: media
   priority: medium
@@ -593,6 +629,8 @@ test_cases:
       lost to invisible element
     timeout: 10
 - id: neg-tv-remote-media-key-non-media
+  requires_env:
+    - HELIXQA_LAB_HAS_HW_MEDIA_KEYS
   name: Media Remote Keys on Non-Media Screen
   category: remote-control
   priority: medium
@@ -622,6 +660,8 @@ test_cases:
       from unhandled KEYCODE_CHANNEL_UP/DOWN. No attempt to tune to a TV channel
     timeout: 10
 - id: neg-tv-remote-voice-search-failure
+  requires_env:
+    - HELIXQA_LAB_HAS_VOICE_INPUT
   allow_foreground_leave: true
   name: Voice Search Failure Graceful Handling
   category: remote-control
@@ -728,6 +768,8 @@ test_cases:
       No stuck refresh rate from player not cleaning up
     timeout: 10
 - id: neg-tv-display-frame-drops-navigation
+  requires_env:
+    - HELIXQA_LAB_HAS_FRAME_COUNTER
   name: Frame Drops During Row Navigation
   category: display
   priority: high
@@ -741,6 +783,8 @@ test_cases:
       loading. No visible jank or hitching during row transitions
     timeout: 10
 - id: neg-tv-display-4x3-on-16x9
+  requires_env:
+    - HELIXQA_LAB_HAS_4X3_DISPLAY
   name: 4:3 Content on 16:9 Display
   category: display
   priority: medium
@@ -772,6 +816,8 @@ test_cases:
       distorted. No crash from unusual aspect ratios
     timeout: 10
 - id: neg-tv-display-overscan-safe-area
+  requires_env:
+    - HELIXQA_LAB_HAS_OVERSCAN_TV
   name: Overscan Safe Area Compliance
   category: display
   priority: high
@@ -826,6 +872,8 @@ test_cases:
       shadow, outline, or background scrim for contrast
     timeout: 10
 - id: neg-tv-display-loading-spinner-performance
+  requires_env:
+    - HELIXQA_LAB_HAS_PERF_BASELINE
   name: Loading Spinner Performance on Slow GPU
   category: display
   priority: medium
@@ -845,6 +893,8 @@ test_cases:
       spinners
     timeout: 10
 - id: neg-tv-display-focus-indicator-visibility
+  requires_env:
+    - HELIXQA_LAB_HAS_VISION_GROUND_TRUTH
   name: Focus Indicator Visibility on All Backgrounds
   category: display
   priority: critical

@@ -329,4 +329,44 @@ test.describe('Authentication', () => {
       await expect(page).toHaveURL(/.*login/);
     });
   });
+
+  test.describe('ConnectionStatus visibility (Article XI §11.5)', () => {
+    test('Disconnected banner is HIDDEN on /login (pre-auth)', async ({ page }) => {
+      // Article XI §11.5 regression guard for the misleading
+      // "Disconnected" red banner that previously appeared on the
+      // public login page (the WebSocket only opens after auth, so
+      // showing a red "Disconnected" indicator pre-auth confused
+      // users on a brand-new install). Fixed in commit 18790e4e.
+      // Without this test, a future change to ConnectionStatus.tsx
+      // could re-show the banner on login.
+      await page.route('**/api/v1/auth/init-status', async (route) => {
+        await route.fulfill({
+          status: 200,
+          contentType: 'application/json',
+          body: JSON.stringify({ initialized: true, admin_exists: true }),
+        });
+      });
+      await page.goto('/login');
+      await page.waitForLoadState('networkidle');
+      await page.waitForTimeout(1500);
+      const body = await page.locator('body').innerText();
+      expect(body).not.toContain('Disconnected');
+    });
+
+    test('Disconnected banner is HIDDEN on /register (pre-auth)', async ({ page }) => {
+      await page.route('**/api/v1/auth/init-status', async (route) => {
+        await route.fulfill({
+          status: 200,
+          contentType: 'application/json',
+          body: JSON.stringify({ initialized: true, admin_exists: true }),
+        });
+      });
+      await page.goto('/register');
+      await page.waitForLoadState('networkidle');
+      await page.waitForTimeout(1500);
+      const body = await page.locator('body').innerText();
+      expect(body).not.toContain('Disconnected');
+    });
+  });
+
 });
