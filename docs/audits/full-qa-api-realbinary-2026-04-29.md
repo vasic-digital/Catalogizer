@@ -10,7 +10,7 @@ Per Article XI §11.2.5 ("fails when feature is removed"), this
 run proves that the converted bank produces real PASS/FAIL
 outcomes against a real backend — not bluff PASSes.
 
-## Headline numbers
+## Headline numbers (initial run)
 
 | Metric | Value |
 |---|---:|
@@ -19,6 +19,40 @@ outcomes against a real backend — not bluff PASSes.
 | Failed | 282 (85.5%) |
 | Skipped | 0 |
 | Run time | 1.7 s |
+
+## Headline numbers (after 2026-04-29 / 2026-04-30 fix sweep)
+
+| Metric | Value |
+|---|---:|
+| HTTP steps evaluated | 331 |
+| Passed | 201 (60.7%) |
+| Failed | 130 (39.3%) |
+| Skipped | 0 |
+| Run time | ~2 s |
+
+The 4.2× improvement (48 → 201 passes) tracks the catalog-api fix
+sweep + bank-side patch sweep. The pass-rate progression is:
+
+  48  / 330 — initial conversion run (2026-04-29 morning)
+  188 / 331 — after schema-drift, auth-injection, default-bodies, isNotFoundError
+  198 / 331 — after admin role gate (FQA-API-010)
+  199 / 331 — after RemoveFavorite nil-pointer fix (FQA-API-218)
+  200 / 331 — after entity_type validation on /favorites/check + DELETE (FQA-API-220)
+  201 / 331 — after collection name length cap (FQA-API-171) + bank placeholder expansion
+
+Real catalog-api defects landed during this sweep, each with a
+matching anti-bluff regression test:
+
+  - catalog.ListPath returned 500 instead of 404 on missing path (FQA-API-072)
+  - /api/v1/admin/* group lacked role gate (FQA-API-010)
+  - RemoveFavorite nil-pointer panic on not-found favorite (FQA-API-218)
+  - POST /users incomplete payload returned 500 instead of 400 with diagnostic (FQA-API-244, 248)
+  - /favorites/check + DELETE accepted invalid entity_type (FQA-API-220, data-leak)
+  - POST /collections accepted any-length name (FQA-API-171)
+  - POST /errors/report and /errors/crash returned empty 500 on missing required fields (FQA-API-271, 273)
+
+The remaining 130 failures fall into the same category buckets
+documented below — none are catalog-api defects.
 
 The high fail rate is **the expected and desired outcome for the
 first end-to-end run** — until this verification, the bank was
