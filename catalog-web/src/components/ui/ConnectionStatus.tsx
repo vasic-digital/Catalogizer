@@ -1,14 +1,25 @@
 import React, { useEffect, useState } from 'react'
 import { useWebSocket } from '@/lib/websocket'
+import { useAuth } from '@/contexts/AuthContext'
 import { Wifi, WifiOff, Loader2 } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
 
 export const ConnectionStatus: React.FC = () => {
   const { getConnectionState } = useWebSocket()
+  const { isAuthenticated } = useAuth()
   const [connectionState, setConnectionState] = useState<'connecting' | 'open' | 'closing' | 'closed'>('closed')
   const [showStatus, setShowStatus] = useState(false)
 
   useEffect(() => {
+    // The WebSocket only connects after authentication, so showing
+    // a red "Disconnected" banner on /login (or any pre-auth route)
+    // is misleading — users on the public login page have no idea
+    // why their connection is "broken". Surfaced by the 2026-04-29
+    // anti-bluff sweep against catalog-web.
+    if (!isAuthenticated) {
+      setShowStatus(false)
+      return
+    }
     const checkConnection = () => {
       const state = getConnectionState()
       setConnectionState(state)
@@ -21,7 +32,7 @@ export const ConnectionStatus: React.FC = () => {
     const interval = setInterval(checkConnection, 1000)
 
     return () => clearInterval(interval)
-  }, [getConnectionState])
+  }, [getConnectionState, isAuthenticated])
 
   const getStatusConfig = () => {
     switch (connectionState) {
