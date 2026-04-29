@@ -155,7 +155,7 @@ func setupPerfTestServer() *httptest.Server {
 
 func TestResponseTime_HealthEndpoint(t *testing.T) {
 	if testing.Short() {
-		t.Skip("Skipping performance test in short mode")
+		t.Skip("Skipping performance test in short mode")  // SKIP-OK: #legacy-skip-untriaged-2026-04-29
 	}
 
 	server := setupPerfTestServer()
@@ -189,7 +189,7 @@ func TestResponseTime_HealthEndpoint(t *testing.T) {
 
 func TestResponseTime_ListEndpoints(t *testing.T) {
 	if testing.Short() {
-		t.Skip("Skipping performance test in short mode")
+		t.Skip("Skipping performance test in short mode")  // SKIP-OK: #legacy-skip-untriaged-2026-04-29
 	}
 
 	server := setupPerfTestServer()
@@ -220,7 +220,7 @@ func TestResponseTime_ListEndpoints(t *testing.T) {
 
 func TestResponseTime_ConcurrentMixedLoad(t *testing.T) {
 	if testing.Short() {
-		t.Skip("Skipping performance test in short mode")
+		t.Skip("Skipping performance test in short mode")  // SKIP-OK: #legacy-skip-untriaged-2026-04-29
 	}
 
 	server := setupPerfTestServer()

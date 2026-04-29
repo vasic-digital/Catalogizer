@@ -88,7 +88,7 @@ func setupRateLimitedServer(t *testing.T, ratePerSec float64, burst int) (*httpt
 
 func TestRateLimiter_BurstProtection(t *testing.T) {
 	if testing.Short() {
-		t.Skip("Skipping stress test in short mode")
+		t.Skip("Skipping stress test in short mode")  // SKIP-OK: #legacy-skip-untriaged-2026-04-29
 	}
 
 	tests := []struct {
@@ -175,7 +175,7 @@ func TestRateLimiter_BurstProtection(t *testing.T) {
 
 func TestRateLimiter_ConcurrentAccess(t *testing.T) {
 	if testing.Short() {
-		t.Skip("Skipping stress test in short mode")
+		t.Skip("Skipping stress test in short mode")  // SKIP-OK: #legacy-skip-untriaged-2026-04-29
 	}
 
 	tests := []struct {
@@ -278,7 +278,7 @@ func TestRateLimiter_ConcurrentAccess(t *testing.T) {
 
 func TestRateLimiter_Recovery(t *testing.T) {
 	if testing.Short() {
-		t.Skip("Skipping stress test in short mode")
+		t.Skip("Skipping stress test in short mode")  // SKIP-OK: #legacy-skip-untriaged-2026-04-29
 	}
 
 	tests := []struct {

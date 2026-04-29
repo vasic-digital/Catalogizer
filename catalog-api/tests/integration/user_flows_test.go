@@ -435,7 +435,7 @@ func TestAuthenticationFlow(t *testing.T) {
 	// Subtest: Access Protected Endpoint with Token
 	t.Run("AccessProtectedEndpoint", func(t *testing.T) {
 		if tc.AuthToken == "" {
-			t.Skip("No auth token available")
+			t.Skip("No auth token available")  // SKIP-OK: #legacy-skip-untriaged-2026-04-29
 		}
 
 		resp, err := tc.makeRequest("GET", "/users/me", nil)
@@ -462,7 +462,7 @@ func TestAuthenticationFlow(t *testing.T) {
 	// Subtest: Logout
 	t.Run("UserLogout", func(t *testing.T) {
 		if tc.AuthToken == "" {
-			t.Skip("No auth token available")
+			t.Skip("No auth token available")  // SKIP-OK: #legacy-skip-untriaged-2026-04-29
 		}
 
 		resp, err := tc.makeRequest("POST", "/auth/logout", nil)
@@ -714,7 +714,7 @@ func TestCollectionsAndFavorites(t *testing.T) {
 
 	t.Run("GetCollectionDetails", func(t *testing.T) {
 		if collectionID == 0 {
-			t.Skip("No collection created")
+			t.Skip("No collection created")  // SKIP-OK: #legacy-skip-untriaged-2026-04-29
 		}
 
 		resp, err := tc.makeRequest("GET", fmt.Sprintf("/collections/%d", collectionID), nil)
@@ -732,7 +732,7 @@ func TestCollectionsAndFavorites(t *testing.T) {
 
 	t.Run("DeleteCollection", func(t *testing.T) {
 		if collectionID == 0 {
-			t.Skip("No collection to delete")
+			t.Skip("No collection to delete")  // SKIP-OK: #legacy-skip-untriaged-2026-04-29
 		}
 
 		resp, err := tc.makeRequest("DELETE", fmt.Sprintf("/collections/%d", collectionID), nil)

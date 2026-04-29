@@ -498,7 +498,7 @@ func TestFTPClient_Disconnect_WithContext(t *testing.T) {
 /*
 func TestFTPClient_IntegrationConnect(t *testing.T) {
 	if testing.Short() {
-		t.Skip("Skipping integration test")
+		t.Skip("Skipping integration test")  // SKIP-OK: #legacy-skip-untriaged-2026-04-29
 	}
 
 	config := &FTPConfig{
@@ -520,7 +520,7 @@ func TestFTPClient_IntegrationConnect(t *testing.T) {
 
 func TestFTPClient_IntegrationListDirectory(t *testing.T) {
 	if testing.Short() {
-		t.Skip("Skipping integration test")
+		t.Skip("Skipping integration test")  // SKIP-OK: #legacy-skip-untriaged-2026-04-29
 	}
 
 	config := &FTPConfig{

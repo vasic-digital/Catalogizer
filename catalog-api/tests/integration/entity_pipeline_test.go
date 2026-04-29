@@ -644,7 +644,7 @@ func TestEntityPipeline_PlaybackTracking(t *testing.T) {
 
 func TestEntityPipeline_BulkInsertPerformance(t *testing.T) {
 	if testing.Short() {
-		t.Skip("Skipping bulk insert performance test in short mode")
+		t.Skip("Skipping bulk insert performance test in short mode")  // SKIP-OK: #legacy-skip-untriaged-2026-04-29
 	}
 
 	db := tests.SetupTestDB(t)

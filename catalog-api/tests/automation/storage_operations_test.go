@@ -17,7 +17,7 @@ import (
 // TestStorageOperationsFullFlow tests the complete storage operations workflow
 func TestStorageOperationsFullFlow(t *testing.T) {
 	if testing.Short() {
-		t.Skip("Skipping automation test in short mode")
+		t.Skip("Skipping automation test in short mode")  // SKIP-OK: #legacy-skip-untriaged-2026-04-29
 	}
 
 	baseURL := os.Getenv("API_BASE_URL")
@@ -126,7 +126,7 @@ func TestStorageOperationsFullFlow(t *testing.T) {
 // TestFileSystemServiceIntegration tests filesystem service integration
 func TestFileSystemServiceIntegration(t *testing.T) {
 	if testing.Short() {
-		t.Skip("Skipping integration test in short mode")
+		t.Skip("Skipping integration test in short mode")  // SKIP-OK: #legacy-skip-untriaged-2026-04-29
 	}
 
 	// Create a temporary directory for testing

@@ -18,7 +18,7 @@ import (
 
 func TestConcurrentHandlers_50Goroutines(t *testing.T) {
 	if testing.Short() {
-		t.Skip("Skipping stress test in short mode")
+		t.Skip("Skipping stress test in short mode")  // SKIP-OK: #legacy-skip-untriaged-2026-04-29
 	}
 
 	ts := setupStressTestServer(t)
@@ -91,7 +91,7 @@ func TestConcurrentHandlers_50Goroutines(t *testing.T) {
 
 func TestConcurrentHandlers_MixedMethodsUnderLoad(t *testing.T) {
 	if testing.Short() {
-		t.Skip("Skipping stress test in short mode")
+		t.Skip("Skipping stress test in short mode")  // SKIP-OK: #legacy-skip-untriaged-2026-04-29
 	}
 
 	ts := setupStressTestServer(t)
@@ -153,7 +153,7 @@ func TestConcurrentHandlers_MixedMethodsUnderLoad(t *testing.T) {
 
 func TestConcurrentHandlers_HealthCheckUnderLoad(t *testing.T) {
 	if testing.Short() {
-		t.Skip("Skipping stress test in short mode")
+		t.Skip("Skipping stress test in short mode")  // SKIP-OK: #legacy-skip-untriaged-2026-04-29
 	}
 
 	ts := setupStressTestServer(t)
@@ -217,7 +217,7 @@ func TestConcurrentHandlers_HealthCheckUnderLoad(t *testing.T) {
 
 func TestConcurrentHandlers_ErrorResponseConsistency(t *testing.T) {
 	if testing.Short() {
-		t.Skip("Skipping stress test in short mode")
+		t.Skip("Skipping stress test in short mode")  // SKIP-OK: #legacy-skip-untriaged-2026-04-29
 	}
 
 	ts := setupStressTestServer(t)

@@ -16,7 +16,7 @@ import (
 
 func TestDatabaseResponseTime(t *testing.T) {
 	if testing.Short() {
-		t.Skip("skipping stress test in short mode")
+		t.Skip("skipping stress test in short mode")  // SKIP-OK: #legacy-skip-untriaged-2026-04-29
 	}
 
 	sqlDB, err := sql.Open("sqlite3", ":memory:")
@@ -55,7 +55,7 @@ func TestDatabaseResponseTime(t *testing.T) {
 
 func TestConcurrentQueryThroughput(t *testing.T) {
 	if testing.Short() {
-		t.Skip("skipping stress test in short mode")
+		t.Skip("skipping stress test in short mode")  // SKIP-OK: #legacy-skip-untriaged-2026-04-29
 	}
 
 	sqlDB, err := sql.Open("sqlite3", ":memory:")

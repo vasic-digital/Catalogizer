@@ -17,7 +17,7 @@ import (
 
 func TestMemoryPressure_AllocationStorm(t *testing.T) {
 	if testing.Short() {
-		t.Skip("Skipping stress test in short mode")
+		t.Skip("Skipping stress test in short mode")  // SKIP-OK: #legacy-skip-untriaged-2026-04-29
 	}
 
 	tests := []struct {
@@ -121,7 +121,7 @@ func TestMemoryPressure_AllocationStorm(t *testing.T) {
 
 func TestMemoryPressure_GoroutineLimit(t *testing.T) {
 	if testing.Short() {
-		t.Skip("Skipping stress test in short mode")
+		t.Skip("Skipping stress test in short mode")  // SKIP-OK: #legacy-skip-untriaged-2026-04-29
 	}
 
 	tests := []struct {
@@ -233,7 +233,7 @@ func TestMemoryPressure_GoroutineLimit(t *testing.T) {
 
 func TestMemoryPressure_CacheEviction(t *testing.T) {
 	if testing.Short() {
-		t.Skip("Skipping stress test in short mode")
+		t.Skip("Skipping stress test in short mode")  // SKIP-OK: #legacy-skip-untriaged-2026-04-29
 	}
 
 	tests := []struct {
@@ -388,7 +388,7 @@ func TestMemoryPressure_CacheEviction(t *testing.T) {
 
 func TestMemoryStability_UnderSustainedLoad(t *testing.T) {
 	if testing.Short() {
-		t.Skip("skipping memory stability test in short mode")
+		t.Skip("skipping memory stability test in short mode")  // SKIP-OK: #legacy-skip-untriaged-2026-04-29
 	}
 
 	var memBefore, memAfter runtime.MemStats

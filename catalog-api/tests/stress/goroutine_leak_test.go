@@ -14,7 +14,7 @@ import (
 
 func TestNoGoroutineLeaks_AfterOperationCycles(t *testing.T) {
 	if testing.Short() {
-		t.Skip("skipping goroutine leak test in short mode")
+		t.Skip("skipping goroutine leak test in short mode")  // SKIP-OK: #legacy-skip-untriaged-2026-04-29
 	}
 
 	// Force GC and let goroutines settle

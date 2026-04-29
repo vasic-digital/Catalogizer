@@ -350,7 +350,7 @@ func (ltc *LoadTestContext) PrintStats(t *testing.T) {
 
 func TestConcurrentAPIRequests(t *testing.T) {
 	if testing.Short() {
-		t.Skip("Skipping stress test in short mode")
+		t.Skip("Skipping stress test in short mode")  // SKIP-OK: #legacy-skip-untriaged-2026-04-29
 	}
 
 	ts := setupStressTestServer(t)
@@ -415,7 +415,7 @@ func TestConcurrentAPIRequests(t *testing.T) {
 
 func TestSustainedLoad(t *testing.T) {
 	if testing.Short() {
-		t.Skip("Skipping stress test in short mode")
+		t.Skip("Skipping stress test in short mode")  // SKIP-OK: #legacy-skip-untriaged-2026-04-29
 	}
 
 	ts := setupStressTestServer(t)
@@ -483,7 +483,7 @@ func TestSustainedLoad(t *testing.T) {
 
 func TestMixedOperations(t *testing.T) {
 	if testing.Short() {
-		t.Skip("Skipping stress test in short mode")
+		t.Skip("Skipping stress test in short mode")  // SKIP-OK: #legacy-skip-untriaged-2026-04-29
 	}
 
 	ts := setupStressTestServer(t)
@@ -549,7 +549,7 @@ func TestMixedOperations(t *testing.T) {
 
 func TestAuthenticationLoad(t *testing.T) {
 	if testing.Short() {
-		t.Skip("Skipping stress test in short mode")
+		t.Skip("Skipping stress test in short mode")  // SKIP-OK: #legacy-skip-untriaged-2026-04-29
 	}
 
 	ts := setupStressTestServer(t)
@@ -590,7 +590,7 @@ func TestAuthenticationLoad(t *testing.T) {
 
 func TestRampUpLoad(t *testing.T) {
 	if testing.Short() {
-		t.Skip("Skipping stress test in short mode")
+		t.Skip("Skipping stress test in short mode")  // SKIP-OK: #legacy-skip-untriaged-2026-04-29
 	}
 
 	ts := setupStressTestServer(t)
@@ -671,7 +671,7 @@ func TestRampUpLoad(t *testing.T) {
 
 func TestEndpointSpecificLoad(t *testing.T) {
 	if testing.Short() {
-		t.Skip("Skipping stress test in short mode")
+		t.Skip("Skipping stress test in short mode")  // SKIP-OK: #legacy-skip-untriaged-2026-04-29
 	}
 
 	ts := setupStressTestServer(t)

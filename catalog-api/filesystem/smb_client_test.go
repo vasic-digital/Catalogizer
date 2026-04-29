@@ -459,7 +459,7 @@ func TestSmbClient_MultipleInstances(t *testing.T) {
 /*
 func TestSmbClient_IntegrationConnect(t *testing.T) {
 	if testing.Short() {
-		t.Skip("Skipping integration test")
+		t.Skip("Skipping integration test")  // SKIP-OK: #legacy-skip-untriaged-2026-04-29
 	}
 
 	config := &SmbConfig{
@@ -483,7 +483,7 @@ func TestSmbClient_IntegrationConnect(t *testing.T) {
 
 func TestSmbClient_IntegrationListDirectory(t *testing.T) {
 	if testing.Short() {
-		t.Skip("Skipping integration test")
+		t.Skip("Skipping integration test")  // SKIP-OK: #legacy-skip-untriaged-2026-04-29
 	}
 
 	config := &SmbConfig{

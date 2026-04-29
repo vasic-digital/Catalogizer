@@ -230,7 +230,7 @@ func TestCORSHeadersChallenge_Execute_MockServer(t *testing.T) {
 
 func TestCORSHeadersChallenge_Execute_Unreachable(t *testing.T) {
 	if testing.Short() {
-		t.Skip("Skipping unreachable endpoint test in short mode")
+		t.Skip("Skipping unreachable endpoint test in short mode")  // SKIP-OK: #legacy-skip-untriaged-2026-04-29
 	}
 	ch := &CORSHeadersChallenge{
 		BaseChallenge: challenge.NewBaseChallenge(
@@ -354,7 +354,7 @@ func TestNoSensitiveErrorsChallenge_Execute_MockServer(t *testing.T) {
 
 func TestAuthRequiredChallenge_Execute_Unreachable(t *testing.T) {
 	if testing.Short() {
-		t.Skip("Skipping unreachable endpoint test in short mode")
+		t.Skip("Skipping unreachable endpoint test in short mode")  // SKIP-OK: #legacy-skip-untriaged-2026-04-29
 	}
 	ch := &AuthRequiredChallenge{
 		BaseChallenge: challenge.NewBaseChallenge(
@@ -377,7 +377,7 @@ func TestAuthRequiredChallenge_Execute_Unreachable(t *testing.T) {
 
 func TestHealthLatencyChallenge_Execute_Unreachable(t *testing.T) {
 	if testing.Short() {
-		t.Skip("Skipping unreachable endpoint test in short mode")
+		t.Skip("Skipping unreachable endpoint test in short mode")  // SKIP-OK: #legacy-skip-untriaged-2026-04-29
 	}
 	ch := &HealthLatencyChallenge{
 		BaseChallenge: challenge.NewBaseChallenge(
@@ -592,7 +592,7 @@ func TestJWTExpirationChallenge_Execute_MockServer(t *testing.T) {
 
 func TestJWTExpirationChallenge_Execute_Unreachable(t *testing.T) {
 	if testing.Short() {
-		t.Skip("Skipping unreachable endpoint test in short mode")
+		t.Skip("Skipping unreachable endpoint test in short mode")  // SKIP-OK: #legacy-skip-untriaged-2026-04-29
 	}
 	ch := NewJWTExpirationChallenge()
 	ch.config = &BrowsingConfig{
@@ -663,7 +663,7 @@ func TestRateLimitAuthChallenge_Execute_MockServer(t *testing.T) {
 
 func TestRateLimitAuthChallenge_Execute_Unreachable(t *testing.T) {
 	if testing.Short() {
-		t.Skip("Skipping unreachable endpoint test in short mode")
+		t.Skip("Skipping unreachable endpoint test in short mode")  // SKIP-OK: #legacy-skip-untriaged-2026-04-29
 	}
 	ch := NewRateLimitAuthChallenge()
 	ch.config = &BrowsingConfig{
@@ -704,7 +704,7 @@ func TestFileListingLatencyChallenge_Execute_MockServer(t *testing.T) {
 
 func TestFileListingLatencyChallenge_Execute_Unreachable(t *testing.T) {
 	if testing.Short() {
-		t.Skip("Skipping unreachable endpoint test in short mode")
+		t.Skip("Skipping unreachable endpoint test in short mode")  // SKIP-OK: #legacy-skip-untriaged-2026-04-29
 	}
 	ch := NewFileListingLatencyChallenge()
 	ch.config = &BrowsingConfig{
@@ -744,7 +744,7 @@ func TestEntitySearchLatencyChallenge_Execute_MockServer(t *testing.T) {
 
 func TestEntitySearchLatencyChallenge_Execute_Unreachable(t *testing.T) {
 	if testing.Short() {
-		t.Skip("Skipping unreachable endpoint test in short mode")
+		t.Skip("Skipping unreachable endpoint test in short mode")  // SKIP-OK: #legacy-skip-untriaged-2026-04-29
 	}
 	ch := NewEntitySearchLatencyChallenge()
 	ch.config = &BrowsingConfig{
@@ -764,7 +764,7 @@ func TestEntitySearchLatencyChallenge_Execute_Unreachable(t *testing.T) {
 
 func TestWebSocketLatencyChallenge_Execute_Unreachable(t *testing.T) {
 	if testing.Short() {
-		t.Skip("Skipping unreachable endpoint test in short mode")
+		t.Skip("Skipping unreachable endpoint test in short mode")  // SKIP-OK: #legacy-skip-untriaged-2026-04-29
 	}
 	ch := NewWebSocketLatencyChallenge()
 	ch.config = &BrowsingConfig{
@@ -807,7 +807,7 @@ func TestDBErrorRecoveryChallenge_Execute_MockServer(t *testing.T) {
 
 func TestDBErrorRecoveryChallenge_Execute_Unreachable(t *testing.T) {
 	if testing.Short() {
-		t.Skip("Skipping unreachable endpoint test in short mode")
+		t.Skip("Skipping unreachable endpoint test in short mode")  // SKIP-OK: #legacy-skip-untriaged-2026-04-29
 	}
 	ch := NewDBErrorRecoveryChallenge()
 	ch.config = &BrowsingConfig{
@@ -889,7 +889,7 @@ func TestScannerRecoveryChallenge_Execute_MockServer(t *testing.T) {
 
 func TestScannerRecoveryChallenge_Execute_Unreachable(t *testing.T) {
 	if testing.Short() {
-		t.Skip("Skipping unreachable endpoint test in short mode")
+		t.Skip("Skipping unreachable endpoint test in short mode")  // SKIP-OK: #legacy-skip-untriaged-2026-04-29
 	}
 	ch := NewScannerRecoveryChallenge()
 	ch.config = &BrowsingConfig{

@@ -540,7 +540,7 @@ func TestNFSClient_ResolvePath_DirectoryTraversal(t *testing.T) {
 /*
 func TestNFSClient_IntegrationConnect(t *testing.T) {
 	if testing.Short() {
-		t.Skip("Skipping integration test - requires NFS server and root privileges")
+		t.Skip("Skipping integration test - requires NFS server and root privileges")  // SKIP-OK: #legacy-skip-untriaged-2026-04-29
 	}
 
 	config := NFSConfig{
@@ -564,7 +564,7 @@ func TestNFSClient_IntegrationConnect(t *testing.T) {
 
 func TestNFSClient_IntegrationListDirectory(t *testing.T) {
 	if testing.Short() {
-		t.Skip("Skipping integration test - requires NFS server and root privileges")
+		t.Skip("Skipping integration test - requires NFS server and root privileges")  // SKIP-OK: #legacy-skip-untriaged-2026-04-29
 	}
 
 	config := NFSConfig{

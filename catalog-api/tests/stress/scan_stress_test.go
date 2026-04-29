@@ -151,7 +151,7 @@ func simulateScan(ctx context.Context, db *sql.DB, rootID int64, rootPath string
 
 func TestScanStress_MultipleConcurrentScans(t *testing.T) {
 	if testing.Short() {
-		t.Skip("Skipping stress test in short mode")
+		t.Skip("Skipping stress test in short mode")  // SKIP-OK: #legacy-skip-untriaged-2026-04-29
 	}
 
 	db := scanStressDB(t)
@@ -236,7 +236,7 @@ func TestScanStress_MultipleConcurrentScans(t *testing.T) {
 
 func TestScanStress_LargeDirectoryTree(t *testing.T) {
 	if testing.Short() {
-		t.Skip("Skipping stress test in short mode")
+		t.Skip("Skipping stress test in short mode")  // SKIP-OK: #legacy-skip-untriaged-2026-04-29
 	}
 
 	db := scanStressDB(t)
@@ -306,7 +306,7 @@ func TestScanStress_LargeDirectoryTree(t *testing.T) {
 
 func TestScanStress_CancellationMidOperation(t *testing.T) {
 	if testing.Short() {
-		t.Skip("Skipping stress test in short mode")
+		t.Skip("Skipping stress test in short mode")  // SKIP-OK: #legacy-skip-untriaged-2026-04-29
 	}
 
 	db := scanStressDB(t)
@@ -399,7 +399,7 @@ func TestScanStress_CancellationMidOperation(t *testing.T) {
 
 func TestScanStress_MemoryUsageDuringLargeScans(t *testing.T) {
 	if testing.Short() {
-		t.Skip("Skipping stress test in short mode")
+		t.Skip("Skipping stress test in short mode")  // SKIP-OK: #legacy-skip-untriaged-2026-04-29
 	}
 
 	db := scanStressDB(t)

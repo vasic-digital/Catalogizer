@@ -39,7 +39,7 @@ func TestResourceMonitor_CPUUsage(t *testing.T) {
 
 			data, err := os.ReadFile("/proc/loadavg")
 			if err != nil {
-				t.Skipf("Skipping CPU usage test: /proc/loadavg not available: %v", err)
+				t.Skipf("Skipping CPU usage test: /proc/loadavg not available: %v", err)  // SKIP-OK: #legacy-skip-untriaged-2026-04-29
 			}
 
 			fields := strings.Fields(string(data))
@@ -246,7 +246,7 @@ func TestResourceMonitor_OpenFileDescriptors(t *testing.T) {
 			fdDir := "/proc/self/fd"
 			entries, err := os.ReadDir(fdDir)
 			if err != nil {
-				t.Skipf("Skipping file descriptor test: %s not available: %v", fdDir, err)
+				t.Skipf("Skipping file descriptor test: %s not available: %v", fdDir, err)  // SKIP-OK: #legacy-skip-untriaged-2026-04-29
 			}
 
 			openFDs := len(entries)

@@ -159,7 +159,7 @@ func (lr *latencyResult) count() int {
 
 func TestResponsiveness_HealthEndpoint(t *testing.T) {
 	if testing.Short() {
-		t.Skip("Skipping responsiveness test in short mode")
+		t.Skip("Skipping responsiveness test in short mode")  // SKIP-OK: #legacy-skip-untriaged-2026-04-29
 	}
 
 	tests := []struct {
@@ -266,7 +266,7 @@ func TestResponsiveness_HealthEndpoint(t *testing.T) {
 
 func TestResponsiveness_AuthEndpoint(t *testing.T) {
 	if testing.Short() {
-		t.Skip("Skipping responsiveness test in short mode")
+		t.Skip("Skipping responsiveness test in short mode")  // SKIP-OK: #legacy-skip-untriaged-2026-04-29
 	}
 
 	tests := []struct {
@@ -388,7 +388,7 @@ func TestResponsiveness_AuthEndpoint(t *testing.T) {
 
 func TestResponsiveness_ListEndpoints(t *testing.T) {
 	if testing.Short() {
-		t.Skip("Skipping responsiveness test in short mode")
+		t.Skip("Skipping responsiveness test in short mode")  // SKIP-OK: #legacy-skip-untriaged-2026-04-29
 	}
 
 	ts := setupResponsivenessServer(t)

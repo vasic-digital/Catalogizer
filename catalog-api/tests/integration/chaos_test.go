@@ -18,7 +18,7 @@ import (
 // when the database connection is closed.
 func TestChaos_DatabaseUnavailable(t *testing.T) {
 	if testing.Short() {
-		t.Skip("skipping chaos test in short mode")
+		t.Skip("skipping chaos test in short mode")  // SKIP-OK: #legacy-skip-untriaged-2026-04-29
 	}
 
 	gin.SetMode(gin.TestMode)
@@ -73,7 +73,7 @@ func TestChaos_DatabaseUnavailable(t *testing.T) {
 // after a temporary database outage.
 func TestChaos_DatabaseReconnection(t *testing.T) {
 	if testing.Short() {
-		t.Skip("skipping chaos test in short mode")
+		t.Skip("skipping chaos test in short mode")  // SKIP-OK: #legacy-skip-untriaged-2026-04-29
 	}
 
 	gin.SetMode(gin.TestMode)
@@ -120,7 +120,7 @@ func TestChaos_DatabaseReconnection(t *testing.T) {
 // and don't leak goroutines.
 func TestChaos_ContextCancellation(t *testing.T) {
 	if testing.Short() {
-		t.Skip("skipping chaos test in short mode")
+		t.Skip("skipping chaos test in short mode")  // SKIP-OK: #legacy-skip-untriaged-2026-04-29
 	}
 
 	gin.SetMode(gin.TestMode)
@@ -155,7 +155,7 @@ func TestChaos_ContextCancellation(t *testing.T) {
 // and returns 500 without crashing the server.
 func TestChaos_PanicRecovery(t *testing.T) {
 	if testing.Short() {
-		t.Skip("skipping chaos test in short mode")
+		t.Skip("skipping chaos test in short mode")  // SKIP-OK: #legacy-skip-untriaged-2026-04-29
 	}
 
 	gin.SetMode(gin.TestMode)
@@ -188,7 +188,7 @@ func TestChaos_PanicRecovery(t *testing.T) {
 // reads and writes without corruption.
 func TestChaos_ConcurrentDatabaseAccess(t *testing.T) {
 	if testing.Short() {
-		t.Skip("skipping chaos test in short mode")
+		t.Skip("skipping chaos test in short mode")  // SKIP-OK: #legacy-skip-untriaged-2026-04-29
 	}
 
 	db, err := sql.Open("sqlite3", "file::memory:?cache=shared&_busy_timeout=10000&_journal_mode=WAL&_synchronous=NORMAL")
@@ -268,7 +268,7 @@ func TestChaos_ConcurrentDatabaseAccess(t *testing.T) {
 // database connection pool is exhausted.
 func TestChaos_ConnectionPoolExhaustion(t *testing.T) {
 	if testing.Short() {
-		t.Skip("skipping chaos test in short mode")
+		t.Skip("skipping chaos test in short mode")  // SKIP-OK: #legacy-skip-untriaged-2026-04-29
 	}
 
 	db, err := sql.Open("sqlite3", ":memory:?_busy_timeout=5000")

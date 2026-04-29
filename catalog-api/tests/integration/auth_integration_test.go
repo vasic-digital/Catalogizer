@@ -267,7 +267,7 @@ func TestAuthIntegration_PasswordHashNotExposed(t *testing.T) {
 
 func TestAuthIntegration_ConcurrentLogins(t *testing.T) {
 	if testing.Short() {
-		t.Skip("Skipping concurrent login integration test in short mode")
+		t.Skip("Skipping concurrent login integration test in short mode")  // SKIP-OK: #legacy-skip-untriaged-2026-04-29
 	}
 
 	ts := setupUserFlowsServer(t)

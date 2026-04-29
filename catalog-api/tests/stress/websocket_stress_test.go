@@ -309,7 +309,7 @@ func (b *wsBroadcaster) count() int {
 
 func TestWebSocketStress_ConcurrentConnectionStorm(t *testing.T) {
 	if testing.Short() {
-		t.Skip("Skipping stress test in short mode")
+		t.Skip("Skipping stress test in short mode")  // SKIP-OK: #legacy-skip-untriaged-2026-04-29
 	}
 
 	ts, _ := setupWebSocketStressServer(t)
@@ -416,7 +416,7 @@ func TestWebSocketStress_ConcurrentConnectionStorm(t *testing.T) {
 
 func TestWebSocketStress_RapidMessageSending(t *testing.T) {
 	if testing.Short() {
-		t.Skip("Skipping stress test in short mode")
+		t.Skip("Skipping stress test in short mode")  // SKIP-OK: #legacy-skip-untriaged-2026-04-29
 	}
 
 	ts, _ := setupWebSocketStressServer(t)
@@ -499,7 +499,7 @@ func TestWebSocketStress_RapidMessageSending(t *testing.T) {
 
 func TestWebSocketStress_ConnectionChurn(t *testing.T) {
 	if testing.Short() {
-		t.Skip("Skipping stress test in short mode")
+		t.Skip("Skipping stress test in short mode")  // SKIP-OK: #legacy-skip-untriaged-2026-04-29
 	}
 
 	ts, _ := setupWebSocketStressServer(t)
@@ -641,7 +641,7 @@ func TestWebSocketStress_ConnectionChurn(t *testing.T) {
 
 func TestWebSocketStress_BroadcastUnderLoad(t *testing.T) {
 	if testing.Short() {
-		t.Skip("Skipping stress test in short mode")
+		t.Skip("Skipping stress test in short mode")  // SKIP-OK: #legacy-skip-untriaged-2026-04-29
 	}
 
 	ts, bc := setupWebSocketStressServer(t)
@@ -746,7 +746,7 @@ func TestWebSocketStress_BroadcastUnderLoad(t *testing.T) {
 
 func TestWebSocketStress_CleanupAfterStorm(t *testing.T) {
 	if testing.Short() {
-		t.Skip("Skipping stress test in short mode")
+		t.Skip("Skipping stress test in short mode")  // SKIP-OK: #legacy-skip-untriaged-2026-04-29
 	}
 
 	ts, bc := setupWebSocketStressServer(t)
@@ -817,7 +817,7 @@ func TestWebSocketStress_CleanupAfterStorm(t *testing.T) {
 
 func TestWebSocketStress_ConcurrentSendingMultipleConnections(t *testing.T) {
 	if testing.Short() {
-		t.Skip("Skipping stress test in short mode")
+		t.Skip("Skipping stress test in short mode")  // SKIP-OK: #legacy-skip-untriaged-2026-04-29
 	}
 
 	ts, _ := setupWebSocketStressServer(t)

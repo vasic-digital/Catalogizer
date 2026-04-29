@@ -46,7 +46,7 @@ func setupMiddlewareStressServer() *gin.Engine {
 
 func TestMiddlewareChainStress_ConcurrentRequests(t *testing.T) {
 	if testing.Short() {
-		t.Skip("Skipping stress test in short mode")
+		t.Skip("Skipping stress test in short mode")  // SKIP-OK: #legacy-skip-untriaged-2026-04-29
 	}
 
 	router := setupMiddlewareStressServer()
@@ -113,7 +113,7 @@ func TestMiddlewareChainStress_ConcurrentRequests(t *testing.T) {
 
 func TestMiddlewareChainStress_SecurityHeadersConsistency(t *testing.T) {
 	if testing.Short() {
-		t.Skip("Skipping stress test in short mode")
+		t.Skip("Skipping stress test in short mode")  // SKIP-OK: #legacy-skip-untriaged-2026-04-29
 	}
 
 	router := setupMiddlewareStressServer()
@@ -155,7 +155,7 @@ func TestMiddlewareChainStress_SecurityHeadersConsistency(t *testing.T) {
 
 func TestMiddlewareChainStress_RequestIDUniqueness(t *testing.T) {
 	if testing.Short() {
-		t.Skip("Skipping stress test in short mode")
+		t.Skip("Skipping stress test in short mode")  // SKIP-OK: #legacy-skip-untriaged-2026-04-29
 	}
 
 	router := setupMiddlewareStressServer()
@@ -202,7 +202,7 @@ func TestMiddlewareChainStress_RequestIDUniqueness(t *testing.T) {
 
 func TestMiddlewareChainStress_ConcurrencyLimiterBackpressure(t *testing.T) {
 	if testing.Short() {
-		t.Skip("Skipping stress test in short mode")
+		t.Skip("Skipping stress test in short mode")  // SKIP-OK: #legacy-skip-untriaged-2026-04-29
 	}
 
 	gin.SetMode(gin.TestMode)
@@ -247,7 +247,7 @@ func TestMiddlewareChainStress_ConcurrencyLimiterBackpressure(t *testing.T) {
 
 func TestMiddlewareChainStress_TimeoutUnderLoad(t *testing.T) {
 	if testing.Short() {
-		t.Skip("Skipping stress test in short mode")
+		t.Skip("Skipping stress test in short mode")  // SKIP-OK: #legacy-skip-untriaged-2026-04-29
 	}
 
 	gin.SetMode(gin.TestMode)
