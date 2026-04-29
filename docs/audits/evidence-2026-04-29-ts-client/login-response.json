@@ -24,13 +24,13 @@
     "settings": "{}",
     "is_active": true,
     "is_locked": false,
-    "failed_login_attempts": 0,
-    "last_login_at": "2026-04-29T17:40:03.499259Z",
+    "failed_login_attempts": 1,
+    "last_login_at": "2026-04-29T18:30:13.864041Z",
     "last_login_ip": "172.22.0.1",
     "created_at": "2026-04-29T00:32:47.086365Z",
     "updated_at": "2026-04-29T00:32:47.086365Z"
   },
-  "session_token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyX2lkIjoxLCJ1c2VybmFtZSI6ImFkbWluIiwicm9sZV9pZCI6MSwic2Vzc2lvbl9pZCI6IjEyIiwiaXNzIjoiY2F0YWxvZ2l6ZXIiLCJzdWIiOiIxIiwiZXhwIjoxNzc3NTcwODg0LCJpYXQiOjE3Nzc0ODQ0ODR9.P-u3RwY_AVRBhF_iBIdyYeH63x7b0-RHOA9bOrDREZs",
-  "refresh_token": "05d72e33c6ac5f260d369a6b6217977c588eb06cb0517137de7e34e9f22a783d",
-  "expires_at": "2026-04-30T17:41:24.12191788Z"
+  "session_token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyX2lkIjoxLCJ1c2VybmFtZSI6ImFkbWluIiwicm9sZV9pZCI6MSwic2Vzc2lvbl9pZCI6IjE3IiwiaXNzIjoiY2F0YWxvZ2l6ZXIiLCJzdWIiOiIxIiwiZXhwIjoxNzc3NTczODIzLCJpYXQiOjE3Nzc0ODc0MjN9.6QEQtH26RBgc5LJL3pDLHdjTHw-0DTcLoszeJW2t2yg",
+  "refresh_token": "0290a93bac42419d3540ac0ee39ab02c13b4a7fcd4b37f83b6377258987b4964",
+  "expires_at": "2026-04-30T18:30:23.730472503Z"
 }
