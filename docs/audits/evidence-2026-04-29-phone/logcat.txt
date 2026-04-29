@@ -1,0 +1,80 @@
+04-29 15:41:36.749 23136 23136 I logizer.androi:   at void android.view.ViewGroup.dispatchAttachedToWindow(android.view.View$AttachInfo, int) (ViewGroup.java:3404)
+04-29 15:41:36.749 23136 23136 I chatty  : uid=10123(com.catalogizer.android) identical 1 line
+04-29 15:41:36.749 23136 23136 I logizer.androi:   at void android.view.ViewGroup.dispatchAttachedToWindow(android.view.View$AttachInfo, int) (ViewGroup.java:3404)
+04-29 15:41:36.749 23136 23136 I logizer.androi:   at void android.view.ViewRootImpl.performTraversals() (ViewRootImpl.java:1766)
+04-29 15:41:36.749 23136 23136 I logizer.androi:   at void android.view.ViewRootImpl.doTraversal() (ViewRootImpl.java:1461)
+--
+04-29 15:41:36.749 23136 23136 I logizer.androi:   at void com.android.internal.os.ZygoteInit.main(java.lang.String[]) (ZygoteInit.java:858)
+04-29 15:41:36.749 23136 23136 I logizer.androi: Caused by: java.lang.ClassNotFoundException: Didn't find class "android.view.translation.ViewTranslationCallback" on path: DexPathList[[zip file "/data/app/com.catalogizer.android-9t5ujzDjrlPH6AR8QbIzpw==/base.apk"],nativeLibraryDirectories=[/data/app/com.catalogizer.android-9t5ujzDjrlPH6AR8QbIzpw==/lib/arm, /system/lib, /product/lib]]
+04-29 15:41:36.749 23136 23136 I logizer.androi:   at java.lang.Class dalvik.system.BaseDexClassLoader.findClass(java.lang.String) (BaseDexClassLoader.java:134)
+04-29 15:41:36.749 23136 23136 I logizer.androi:   at java.lang.Class java.lang.ClassLoader.loadClass(java.lang.String, boolean) (ClassLoader.java:379)
+04-29 15:41:36.749 23136 23136 I logizer.androi:   at java.lang.Class java.lang.ClassLoader.loadClass(java.lang.String) (ClassLoader.java:312)
+--
+04-29 15:41:36.749 23136 23136 I logizer.androi:   at void android.view.ViewGroup.dispatchAttachedToWindow(android.view.View$AttachInfo, int) (ViewGroup.java:3404)
+04-29 15:41:36.749 23136 23136 I chatty  : uid=10123(com.catalogizer.android) identical 1 line
+04-29 15:41:36.749 23136 23136 I logizer.androi:   at void android.view.ViewGroup.dispatchAttachedToWindow(android.view.View$AttachInfo, int) (ViewGroup.java:3404)
+04-29 15:41:36.749 23136 23136 I logizer.androi:   at void android.view.ViewRootImpl.performTraversals() (ViewRootImpl.java:1766)
+04-29 15:41:36.749 23136 23136 I logizer.androi:   at void android.view.ViewRootImpl.doTraversal() (ViewRootImpl.java:1461)
+--
+04-29 15:41:36.750 23136 23136 I logizer.androi:   at void android.view.ViewGroup.dispatchAttachedToWindow(android.view.View$AttachInfo, int) (ViewGroup.java:3404)
+04-29 15:41:36.750 23136 23136 I chatty  : uid=10123(com.catalogizer.android) identical 1 line
+04-29 15:41:36.750 23136 23136 I logizer.androi:   at void android.view.ViewGroup.dispatchAttachedToWindow(android.view.View$AttachInfo, int) (ViewGroup.java:3404)
+04-29 15:41:36.750 23136 23136 I logizer.androi:   at void android.view.ViewRootImpl.performTraversals() (ViewRootImpl.java:1766)
+04-29 15:41:36.750 23136 23136 I logizer.androi:   at void android.view.ViewRootImpl.doTraversal() (ViewRootImpl.java:1461)
+--
+04-29 15:41:36.751 23136 23136 I logizer.androi:   at void com.android.internal.os.ZygoteInit.main(java.lang.String[]) (ZygoteInit.java:858)
+04-29 15:41:36.751 23136 23136 I logizer.androi: Caused by: java.lang.ClassNotFoundException: Didn't find class "android.view.translation.ViewTranslationCallback" on path: DexPathList[[zip file "/data/app/com.catalogizer.android-9t5ujzDjrlPH6AR8QbIzpw==/base.apk"],nativeLibraryDirectories=[/data/app/com.catalogizer.android-9t5ujzDjrlPH6AR8QbIzpw==/lib/arm, /system/lib, /product/lib]]
+04-29 15:41:36.751 23136 23136 I logizer.androi:   at java.lang.Class dalvik.system.BaseDexClassLoader.findClass(java.lang.String) (BaseDexClassLoader.java:134)
+04-29 15:41:36.751 23136 23136 I logizer.androi:   at java.lang.Class java.lang.ClassLoader.loadClass(java.lang.String, boolean) (ClassLoader.java:379)
+04-29 15:41:36.751 23136 23136 I logizer.androi:   at java.lang.Class java.lang.ClassLoader.loadClass(java.lang.String) (ClassLoader.java:312)
+--
+04-29 15:41:36.751 23136 23136 I logizer.androi:   at void android.view.ViewGroup.dispatchAttachedToWindow(android.view.View$AttachInfo, int) (ViewGroup.java:3404)
+04-29 15:41:36.751 23136 23136 I chatty  : uid=10123(com.catalogizer.android) identical 1 line
+04-29 15:41:36.751 23136 23136 I logizer.androi:   at void android.view.ViewGroup.dispatchAttachedToWindow(android.view.View$AttachInfo, int) (ViewGroup.java:3404)
+04-29 15:41:36.751 23136 23136 I logizer.androi:   at void android.view.ViewRootImpl.performTraversals() (ViewRootImpl.java:1766)
+04-29 15:41:36.751 23136 23136 I logizer.androi:   at void android.view.ViewRootImpl.doTraversal() (ViewRootImpl.java:1461)
+--
+04-29 15:41:36.751 23136 23136 I logizer.androi: 
+04-29 15:41:37.227 23136 23136 D AndroidRuntime: Shutting down VM
+--------- beginning of crash
+04-29 15:41:37.244 23136 23136 E AndroidRuntime: FATAL EXCEPTION: main
+04-29 15:41:37.244 23136 23136 E AndroidRuntime: Process: com.catalogizer.android, PID: 23136
+04-29 15:41:37.244 23136 23136 E AndroidRuntime: java.lang.NoSuchMethodError: No virtual method at(Ljava/lang/Object;I)Landroidx/compose/animation/core/KeyframesSpec$KeyframeEntity; in class Landroidx/compose/animation/core/KeyframesSpec$KeyframesSpecConfig; or its super classes (declaration of 'androidx.compose.animation.core.KeyframesSpec$KeyframesSpecConfig' appears in /data/app/com.catalogizer.android-9t5ujzDjrlPH6AR8QbIzpw==/base.apk)
+04-29 15:41:37.244 23136 23136 E AndroidRuntime: 	at androidx.compose.material3.ProgressIndicatorKt$CircularProgressIndicator$endAngle$1.invoke(ProgressIndicator.kt:371)
+04-29 15:41:37.244 23136 23136 E AndroidRuntime: 	at androidx.compose.material3.ProgressIndicatorKt$CircularProgressIndicator$endAngle$1.invoke(ProgressIndicator.kt:369)
+04-29 15:41:37.244 23136 23136 E AndroidRuntime: 	at androidx.compose.animation.core.AnimationSpecKt.keyframes(AnimationSpec.kt:649)
+04-29 15:41:37.244 23136 23136 E AndroidRuntime: 	at androidx.compose.material3.ProgressIndicatorKt.CircularProgressIndicator-LxG7B9w(ProgressIndicator.kt:369)
+04-29 15:41:37.244 23136 23136 E AndroidRuntime: 	at com.catalogizer.android.ui.splash.SplashContentKt.SplashContent(SplashContent.kt:92)
+04-29 15:41:37.244 23136 23136 E AndroidRuntime: 	at com.catalogizer.android.ui.MainActivityKt.CatalogizerApp(MainActivity.kt:116)
+04-29 15:41:37.244 23136 23136 E AndroidRuntime: 	at com.catalogizer.android.ui.MainActivity$onCreate$3$1$1.invoke(MainActivity.kt:78)
+04-29 15:41:37.244 23136 23136 E AndroidRuntime: 	at com.catalogizer.android.ui.MainActivity$onCreate$3$1$1.invoke(MainActivity.kt:77)
+04-29 15:41:37.244 23136 23136 E AndroidRuntime: 	at androidx.compose.runtime.internal.ComposableLambdaImpl.invoke(ComposableLambda.jvm.kt:109)
+04-29 15:41:37.244 23136 23136 E AndroidRuntime: 	at androidx.compose.runtime.internal.ComposableLambdaImpl.invoke(ComposableLambda.jvm.kt:35)
+04-29 15:41:37.244 23136 23136 E AndroidRuntime: 	at androidx.compose.material3.SurfaceKt$Surface$1.invoke(Surface.kt:132)
+04-29 15:41:37.244 23136 23136 E AndroidRuntime: 	at androidx.compose.material3.SurfaceKt$Surface$1.invoke(Surface.kt:114)
+04-29 15:41:37.244 23136 23136 E AndroidRuntime: 	at androidx.compose.runtime.internal.ComposableLambdaImpl.invoke(ComposableLambda.jvm.kt:109)
+04-29 15:41:37.244 23136 23136 E AndroidRuntime: 	at androidx.compose.runtime.internal.ComposableLambdaImpl.invoke(ComposableLambda.jvm.kt:35)
+04-29 15:41:37.244 23136 23136 E AndroidRuntime: 	at androidx.compose.runtime.CompositionLocalKt.CompositionLocalProvider(CompositionLocal.kt:228)
+04-29 15:41:37.244 23136 23136 E AndroidRuntime: 	at androidx.compose.material3.SurfaceKt.Surface-T9BRK9s(Surface.kt:111)
+04-29 15:41:37.244 23136 23136 E AndroidRuntime: 	at com.catalogizer.android.ui.MainActivity$onCreate$3$1.invoke(MainActivity.kt:74)
+04-29 15:41:37.244 23136 23136 E AndroidRuntime: 	at com.catalogizer.android.ui.MainActivity$onCreate$3$1.invoke(MainActivity.kt:73)
+04-29 15:41:37.244 23136 23136 E AndroidRuntime: 	at androidx.compose.runtime.internal.ComposableLambdaImpl.invoke(ComposableLambda.jvm.kt:109)
+04-29 15:41:37.244 23136 23136 E AndroidRuntime: 	at androidx.compose.runtime.internal.ComposableLambdaImpl.invoke(ComposableLambda.jvm.kt:35)
+04-29 15:41:37.244 23136 23136 E AndroidRuntime: 	at androidx.compose.runtime.CompositionLocalKt.CompositionLocalProvider(CompositionLocal.kt:228)
+04-29 15:41:37.244 23136 23136 E AndroidRuntime: 	at androidx.compose.material3.TextKt.ProvideTextStyle(Text.kt:360)
+04-29 15:41:37.244 23136 23136 E AndroidRuntime: 	at androidx.compose.material3.MaterialThemeKt$MaterialTheme$1.invoke(MaterialTheme.kt:81)
+04-29 15:41:37.244 23136 23136 E AndroidRuntime: 	at androidx.compose.material3.MaterialThemeKt$MaterialTheme$1.invoke(MaterialTheme.kt:80)
+04-29 15:41:37.244 23136 23136 E AndroidRuntime: 	at androidx.compose.runtime.internal.ComposableLambdaImpl.invoke(ComposableLambda.jvm.kt:109)
+04-29 15:41:37.244 23136 23136 E AndroidRuntime: 	at androidx.compose.runtime.internal.ComposableLambdaImpl.invoke(ComposableLambda.jvm.kt:35)
+04-29 15:41:37.244 23136 23136 E AndroidRuntime: 	at androidx.compose.runtime.CompositionLocalKt.CompositionLocalProvider(CompositionLocal.kt:228)
+04-29 15:41:37.244 23136 23136 E AndroidRuntime: 	at androidx.compose.material3.MaterialThemeKt.MaterialTheme(MaterialTheme.kt:73)
+04-29 15:41:37.244 23136 23136 E AndroidRuntime: 	at com.catalogizer.android.ui.theme.ThemeKt.CatalogizerTheme(Theme.kt:152)
+04-29 15:41:37.244 23136 23136 E AndroidRuntime: 	at com.catalogizer.android.ui.MainActivity$onCreate$3.invoke(MainActivity.kt:73)
+04-29 15:41:37.244 23136 23136 E AndroidRuntime: 	at com.catalogizer.android.ui.MainActivity$onCreate$3.invoke(MainActivity.kt:72)
+04-29 15:41:37.244 23136 23136 E AndroidRuntime: 	at androidx.compose.runtime.internal.ComposableLambdaImpl.invoke(ComposableLambda.jvm.kt:109)
+04-29 15:41:37.244 23136 23136 E AndroidRuntime: 	at androidx.compose.runtime.internal.ComposableLambdaImpl.invoke(ComposableLambda.jvm.kt:35)
+04-29 15:41:37.244 23136 23136 E AndroidRuntime: 	at androidx.compose.ui.platform.ComposeView.Content(ComposeView.android.kt:428)
+04-29 15:41:37.244 23136 23136 E AndroidRuntime: 	at androidx.compose.ui.platform.AbstractComposeView$ensureCompositionCreated$1.invoke(ComposeView.android.kt:252)
+04-29 15:41:37.244 23136 23136 E AndroidRuntime: 	at androidx.compose.ui.platform.AbstractComposeView$ensureCompositionCreated$1.invoke(ComposeView.android.kt:251)
+04-29 15:41:37.244 23136 23136 E AndroidRuntime: 	at androidx.compose.runtime.internal.ComposableLambdaImpl.invoke(ComposableLambda.jvm.kt:109)
+04-29 15:41:37.244 23136 23136 E AndroidRuntime: 	at androidx.compose.runtime.internal.ComposableLambdaImpl.invoke(ComposableLambda.jvm.kt:35)
