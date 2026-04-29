@@ -3,6 +3,7 @@ package handlers
 import (
 	"net/http"
 	"strconv"
+	"strings"
 	"time"
 
 	"catalogizer/models"
@@ -203,13 +204,29 @@ func (h *ReportingHandler) GetUsageReport(c *gin.Context) {
 		return
 	}
 
+	// Article XI §11.5: pass user_id from the authenticated context
+	// so the service has the param it requires. Caught by FQA-API-277:
+	// the report service threw "user_id parameter required" and the
+	// handler wrapped that as 500 (it's a 400 from the user's
+	// perspective, but it shouldn't happen at all when called via
+	// auth-required routes — the user IS authenticated).
 	params := map[string]interface{}{
 		"start_date": startDate,
 		"end_date":   endDate,
 	}
+	if uid, exists := c.Get("user_id"); exists {
+		params["user_id"] = uid
+	}
 
 	report, err := h.service.GenerateReport("user_analytics", "json", params)
 	if err != nil {
+		// Missing-required-param errors from the service layer are
+		// 400, not 500.
+		if strings.Contains(err.Error(), "parameter required") ||
+			strings.Contains(err.Error(), "required parameter") {
+			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+			return
+		}
 		h.logger.Error("Failed to generate usage report", zap.Error(err))
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to generate report"})
 		return
@@ -222,8 +239,16 @@ func (h *ReportingHandler) GetPerformanceReport(c *gin.Context) {
 	startDateStr := c.DefaultQuery("start_date", time.Now().AddDate(0, -1, 0).Format("2006-01-02"))
 	endDateStr := c.DefaultQuery("end_date", time.Now().Format("2006-01-02"))
 
-	startDate, _ := time.Parse("2006-01-02", startDateStr)
-	endDate, _ := time.Parse("2006-01-02", endDateStr)
+	startDate, err := time.Parse("2006-01-02", startDateStr)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid start_date format"})
+		return
+	}
+	endDate, err := time.Parse("2006-01-02", endDateStr)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid end_date format"})
+		return
+	}
 
 	params := map[string]interface{}{
 		"start_date": startDate,
@@ -232,6 +257,16 @@ func (h *ReportingHandler) GetPerformanceReport(c *gin.Context) {
 
 	report, err := h.service.GenerateReport("system_overview", "json", params)
 	if err != nil {
+		// Article XI §11.5: missing-required-param → 400, not 500.
+		// FQA-API-278: the service threw "start_date parameter
+		// required" and the handler returned 500. Now: validate the
+		// parse errors above (was previously silently ignored with
+		// `_`), and downgrade service-level missing-param errors.
+		if strings.Contains(err.Error(), "parameter required") ||
+			strings.Contains(err.Error(), "required parameter") {
+			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+			return
+		}
 		h.logger.Error("Failed to generate performance report", zap.Error(err))
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to generate report"})
 		return
@@ -343,6 +378,15 @@ func (h *FavoritesHandler) AddFavorite(c *gin.Context) {
 		// when a not-yet-existing entity was favorited.
 		if isNotFoundError(err) {
 			c.JSON(http.StatusNotFound, gin.H{"error": "entity not found"})
+			return
+		}
+		// "item already in favorites" → 409 Conflict, not 500.
+		// Caught by FQA-API-217 (Add second time) where the API
+		// previously returned 500 for the duplicate-add case.
+		if strings.Contains(err.Error(), "already in favorites") ||
+			strings.Contains(err.Error(), "already exists") ||
+			strings.Contains(err.Error(), "duplicate") {
+			c.JSON(http.StatusConflict, gin.H{"error": "already in favorites"})
 			return
 		}
 		h.logger.Error("Failed to add favorite", zap.Error(err))
