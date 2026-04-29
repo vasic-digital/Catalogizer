@@ -314,9 +314,17 @@ func (r *AnalyticsRepository) GetUserGrowthData(startDate, endDate time.Time) ([
 			return nil, fmt.Errorf("failed to scan user growth point: %w", err)
 		}
 
-		date, err := time.Parse("2006-01-02", dateStr)
+		// Article XI §11.5: PostgreSQL returns DATE() as a full
+		// RFC3339 timestamp ("2026-04-29T00:00:00Z") when scanned
+		// into a string column, while SQLite returns a bare
+		// "2026-04-29". Try the bare-date layout first (matches the
+		// SELECT clause), then fall back to RFC3339 / RFC3339Nano
+		// for PostgreSQL. Caught by FQA-API-278 in the 2026-04-29
+		// real-binary bank verification (PostgreSQL deployment on
+		// amber.local).
+		date, err := parseDateFlexible(dateStr)
 		if err != nil {
-			return nil, fmt.Errorf("failed to parse date: %w", err)
+			return nil, fmt.Errorf("failed to parse date %q: %w", dateStr, err)
 		}
 		result.Date = date
 
@@ -324,6 +332,19 @@ func (r *AnalyticsRepository) GetUserGrowthData(startDate, endDate time.Time) ([
 	}
 
 	return results, nil
+}
+
+// parseDateFlexible accepts a date string in any of the formats
+// SQLite or PostgreSQL might emit for a DATE() projection:
+// "2006-01-02" (SQLite), or RFC3339 with zero time component
+// (PostgreSQL). Returns a normalized time.Time at UTC midnight.
+func parseDateFlexible(s string) (time.Time, error) {
+	for _, layout := range []string{"2006-01-02", time.RFC3339, time.RFC3339Nano} {
+		if t, err := time.Parse(layout, s); err == nil {
+			return t, nil
+		}
+	}
+	return time.Time{}, fmt.Errorf("no recognized date layout matches %q (tried 2006-01-02, RFC3339)", s)
 }
 
 func (r *AnalyticsRepository) GetSessionData(startDate, endDate time.Time) ([]models.SessionData, error) {

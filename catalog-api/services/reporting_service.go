@@ -920,27 +920,54 @@ func (s *ReportingService) formatPerformanceMetricsPDF(c *creator.Creator, data 
 }
 
 func (s *ReportingService) extractDateRange(params map[string]interface{}) (time.Time, time.Time, error) {
-	startDateStr, ok := params["start_date"].(string)
-	if !ok {
-		return time.Time{}, time.Time{}, fmt.Errorf("start_date parameter required")
-	}
-
-	endDateStr, ok := params["end_date"].(string)
-	if !ok {
-		return time.Time{}, time.Time{}, fmt.Errorf("end_date parameter required")
-	}
-
-	startDate, err := time.Parse("2006-01-02", startDateStr)
+	// Article XI §11.5: handlers/service_handlers.go::GetUsage/Performance
+	// pre-parse query strings into time.Time and pass them in
+	// the params map. The previous string-only type assertion saw
+	// time.Time, missed the assertion, and reported
+	// "start_date parameter required" even though the handler had
+	// already validated the parameter. Caught by FQA-API-277/278 in
+	// the 2026-04-29 real-binary bank verification.
+	startDate, err := paramAsDate(params, "start_date")
 	if err != nil {
-		return time.Time{}, time.Time{}, fmt.Errorf("invalid start_date format")
+		return time.Time{}, time.Time{}, err
 	}
-
-	endDate, err := time.Parse("2006-01-02", endDateStr)
+	endDate, err := paramAsDate(params, "end_date")
 	if err != nil {
-		return time.Time{}, time.Time{}, fmt.Errorf("invalid end_date format")
+		return time.Time{}, time.Time{}, err
 	}
-
 	return startDate, endDate, nil
+}
+
+// paramAsDate accepts the value associated with `key` as either
+// a parsed time.Time, a *time.Time, or a YYYY-MM-DD string —
+// returns the time.Time. Missing keys produce
+// "<key> parameter required" so callers can distinguish missing
+// from malformed.
+func paramAsDate(params map[string]interface{}, key string) (time.Time, error) {
+	v, present := params[key]
+	if !present {
+		return time.Time{}, fmt.Errorf("%s parameter required", key)
+	}
+	switch t := v.(type) {
+	case time.Time:
+		return t, nil
+	case *time.Time:
+		if t == nil {
+			return time.Time{}, fmt.Errorf("%s parameter required", key)
+		}
+		return *t, nil
+	case string:
+		if t == "" {
+			return time.Time{}, fmt.Errorf("%s parameter required", key)
+		}
+		parsed, err := time.Parse("2006-01-02", t)
+		if err != nil {
+			return time.Time{}, fmt.Errorf("invalid %s format", key)
+		}
+		return parsed, nil
+	default:
+		return time.Time{}, fmt.Errorf("invalid %s type %T (expected string or time.Time)", key, v)
+	}
 }
 
 // Helper methods for analytics calculations

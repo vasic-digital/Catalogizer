@@ -430,15 +430,38 @@ func (s *ErrorReportingService) collectSystemInfo() map[string]interface{} {
 }
 
 func (s *ErrorReportingService) generateFingerprint(report *models.ErrorReport) string {
-	// Create a unique fingerprint based on error characteristics
+	// Article XI §11.5: a minimal payload (level only, no component
+	// or error_code) hex-encodes to fewer than 16 chars and the
+	// `[:16]` slice panicked with "slice bounds out of range
+	// [:16] with length 14". The gin recovery middleware swallowed
+	// the panic into HTTP 500 with empty body — exactly the empty-
+	// 500 §11.9 forbids. Caught by FQA-API-271 in the 2026-04-29
+	// real-binary bank verification.
 	data := fmt.Sprintf("%s:%s:%s", report.Level, report.Component, report.ErrorCode)
-	return fmt.Sprintf("%x", data)[:16]
+	return truncateOrPad(fmt.Sprintf("%x", data), 16)
 }
 
 func (s *ErrorReportingService) generateCrashFingerprint(report *models.CrashReport) string {
-	// Create a unique fingerprint based on crash characteristics
+	// Same panic class as generateFingerprint above — short signal
+	// + empty message hex-encodes to <16 chars.
 	data := fmt.Sprintf("%s:%s", report.Signal, report.Message)
-	return fmt.Sprintf("%x", data)[:16]
+	return truncateOrPad(fmt.Sprintf("%x", data), 16)
+}
+
+// truncateOrPad returns the first n bytes of s, padding with '0'
+// if s is shorter than n. Safe for arbitrarily short input — never
+// panics with slice-bounds-out-of-range. Used by fingerprint
+// generators that must produce a fixed-width identifier.
+func truncateOrPad(s string, n int) string {
+	if len(s) >= n {
+		return s[:n]
+	}
+	out := make([]byte, n)
+	copy(out, s)
+	for i := len(s); i < n; i++ {
+		out[i] = '0'
+	}
+	return string(out)
 }
 
 func (s *ErrorReportingService) sendNotifications(report *models.ErrorReport) {

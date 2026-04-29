@@ -2283,6 +2283,15 @@ func TestReportingService_AnalyzeUserLocations_DuplicateLocations(t *testing.T) 
 // ===========================================================================
 
 func TestReportingService_ExtractDateRange_BothNonString(t *testing.T) {
+	// Article XI §11.5: this test originally asserted that an int
+	// param produced "start_date parameter required" — that was a
+	// vague catch-all message from the prior implementation that
+	// didn't distinguish "missing" from "wrong type". The new
+	// paramAsDate (added 2026-04-29 alongside the fix for
+	// FQA-API-277/278 type mismatch) returns a precise
+	// "invalid start_date type <T>" message instead. Both are
+	// errors; the new message is strictly more useful for
+	// debugging.
 	service := NewReportingService(nil, nil, nil)
 
 	_, _, err := service.extractDateRange(map[string]interface{}{
@@ -2290,7 +2299,8 @@ func TestReportingService_ExtractDateRange_BothNonString(t *testing.T) {
 		"end_date":   20250131,
 	})
 	assert.Error(t, err)
-	assert.Contains(t, err.Error(), "start_date parameter required")
+	assert.Contains(t, err.Error(), "invalid start_date type int",
+		"non-string non-time.Time value must surface its actual type so the caller can fix the wrong-type plumbing, not assume missing")
 }
 
 func TestReportingService_ExtractDateRange_NilParams(t *testing.T) {
