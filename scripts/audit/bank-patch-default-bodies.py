@@ -74,7 +74,7 @@ def find_default_body(path: str):
     return None
 
 
-def patch_step(step: dict) -> bool:
+def patch_step(step: dict, case_id: str = "", step_idx: int = 0) -> bool:
     action = step.get("action", "")
     if not isinstance(action, str) or not action.startswith("http:"):
         return False
@@ -89,6 +89,12 @@ def patch_step(step: dict) -> bool:
     body = find_default_body(path)
     if body is None:
         return False
+    # Per-entry unique names so re-running the bank doesn't trip
+    # CATAPI-DEFECT-005 (duplicate-name 409). When the body has a
+    # "name" field that's the generic default, suffix it with the
+    # case_id + step_idx to make it unique.
+    if isinstance(body, dict) and "name" in body and case_id:
+        body["name"] = f"{body['name']}_{case_id}_{step_idx}"
     step["body"] = body
     step.setdefault("_patched_by", []).append("bank-patch-default-bodies")
     return True
@@ -103,11 +109,11 @@ def main() -> int:
         data = json.load(f)
     patched, candidates = 0, 0
     for tc in data.get("test_cases", []):
-        for step in tc.get("steps", []):
+        for idx, step in enumerate(tc.get("steps", [])):
             action = step.get("action", "")
             if isinstance(action, str) and action.startswith(("http: POST", "http: PUT", "http: PATCH")):
                 candidates += 1
-                if patch_step(step):
+                if patch_step(step, tc.get("id", ""), idx):
                     patched += 1
     if patched > 0:
         with open(path, "w") as f:
