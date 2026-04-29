@@ -89,9 +89,12 @@ export class CatalogizerClient extends EventEmitter {
         const loginResponse = await this.auth.login(credentials);
         this.emit('auth:login', loginResponse.user);
 
-        // Connect WebSocket with auth token
-        if (this.ws) {
-          await this.ws.connect(loginResponse.token);
+        // Connect WebSocket with auth token (session_token is the
+        // canonical name; `token` is a back-compat alias — see
+        // LoginResponse type for context).
+        const wsToken = loginResponse.session_token ?? loginResponse.token;
+        if (this.ws && wsToken) {
+          await this.ws.connect(wsToken);
         }
 
         return loginResponse;

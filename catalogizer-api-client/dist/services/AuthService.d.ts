@@ -4,7 +4,13 @@ export declare class AuthService {
     private http;
     constructor(http: HttpClient);
     /**
-     * Authenticate user with username and password
+     * Authenticate user with username and password.
+     *
+     * The catalog-api returns the bearer token under `session_token`
+     * (canonical) but the legacy field name `token` is also accepted
+     * for back-compat. Without this dual-read, the client previously
+     * silently failed to store the token — caught by Article XI
+     * §11.5 verification on 2026-04-29.
      */
     login(credentials: LoginRequest): Promise<LoginResponse>;
     /**

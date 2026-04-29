@@ -113,9 +113,25 @@ export interface LoginRequest {
 }
 
 export interface LoginResponse {
-  token: string;
+  // The catalog-api returns the bearer token under `session_token`
+  // and a long-lived refresh token under `refresh_token`. The
+  // legacy `token` alias was a contract bluff caught by Article XI
+  // §11.5 verification on 2026-04-29 (real-API smoke saw
+  // `session_token` while the type required `token` — the client
+  // never stored the token, so isAuthenticated() always returned
+  // false). Both names are now accepted; new code should use
+  // `session_token`.
+  session_token?: string;
+  /** @deprecated alias for session_token kept for back-compat */
+  token?: string;
   refresh_token: string;
-  expires_in: number;
+  /**
+   * Absolute expiry as ISO-8601. The legacy `expires_in` (seconds
+   * relative) is preserved for back-compat.
+   */
+  expires_at?: string;
+  /** @deprecated use expires_at (absolute ISO-8601) */
+  expires_in?: number;
   user: User;
 }
 

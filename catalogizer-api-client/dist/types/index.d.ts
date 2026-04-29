@@ -101,9 +101,17 @@ export interface LoginRequest {
     password: string;
 }
 export interface LoginResponse {
-    token: string;
+    session_token?: string;
+    /** @deprecated alias for session_token kept for back-compat */
+    token?: string;
     refresh_token: string;
-    expires_in: number;
+    /**
+     * Absolute expiry as ISO-8601. The legacy `expires_in` (seconds
+     * relative) is preserved for back-compat.
+     */
+    expires_at?: string;
+    /** @deprecated use expires_at (absolute ISO-8601) */
+    expires_in?: number;
     user: User;
 }
 export interface AuthStatus {

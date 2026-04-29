@@ -6,12 +6,21 @@ class AuthService {
         this.http = http;
     }
     /**
-     * Authenticate user with username and password
+     * Authenticate user with username and password.
+     *
+     * The catalog-api returns the bearer token under `session_token`
+     * (canonical) but the legacy field name `token` is also accepted
+     * for back-compat. Without this dual-read, the client previously
+     * silently failed to store the token — caught by Article XI
+     * §11.5 verification on 2026-04-29.
      */
     async login(credentials) {
         const response = await this.http.post('/auth/login', credentials);
-        // Set the auth token for future requests
-        this.http.setAuthToken(response.token);
+        const bearer = response.session_token ?? response.token;
+        if (!bearer) {
+            throw new Error('login response missing both session_token and token fields');
+        }
+        this.http.setAuthToken(bearer);
         return response;
     }
     /**
