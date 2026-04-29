@@ -40,6 +40,7 @@ func TestSemaphore_AcquireRelease_Sequential(t *testing.T) {
 }
 
 func TestSemaphore_ContextAlreadyCancelled(t *testing.T) {
+	// bluff-scan: no-assert-ok (context-cancel smoke — cancel path must not panic/leak)
 	sem := NewSemaphore(1)
 
 	ctx, cancel := context.WithCancel(context.Background())

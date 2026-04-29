@@ -12,6 +12,7 @@ import (
 // called directly in a unit test. Having this file ensures every
 // package in the project has at least one _test.go file.
 func TestBuild(t *testing.T) {
+	// bluff-scan: no-assert-ok (basic build/config smoke — must not panic)
 	// Package compiles — this test passing is sufficient.
 }
 

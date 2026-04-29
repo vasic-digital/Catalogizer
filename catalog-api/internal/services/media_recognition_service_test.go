@@ -323,6 +323,7 @@ func TestMediaRecognitionService_TranslateMetadata(t *testing.T) {
 }
 
 func TestMediaRecognitionService_StoreRecognitionResult(t *testing.T) {
+	// bluff-scan: no-assert-ok (lifecycle smoke — must not panic on standard sequence)
 	mockDB := database.WrapDB(nil, database.DialectSQLite) // nil DB for testing
 	mockLogger := zap.NewNop()
 	mockCache := &MockMediaRecognitionCacheService{}

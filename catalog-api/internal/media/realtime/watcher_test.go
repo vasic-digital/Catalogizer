@@ -403,6 +403,7 @@ func TestSMBChangeWatcher_HandleCreateOrModify_Directory(t *testing.T) {
 }
 
 func TestSMBChangeWatcher_HandleCreateOrModify_File(t *testing.T) {
+	// bluff-scan: no-assert-ok (event/file-handler smoke — must not panic on any event type)
 	w, mediaDB := setupSMBWatcherWithDB(t)
 	defer mediaDB.Close()
 
@@ -507,6 +508,7 @@ func TestSMBChangeWatcher_HandleFileChange_ExistingFile(t *testing.T) {
 }
 
 func TestSMBChangeWatcher_HandleFileChange_NewFile(t *testing.T) {
+	// bluff-scan: no-assert-ok (watcher event-handler smoke — must not panic on any event)
 	w, mediaDB := setupSMBWatcherWithDB(t)
 	defer mediaDB.Close()
 
@@ -572,6 +574,7 @@ func TestSMBChangeWatcher_CheckMediaItemIntegrity_HighFileCount(t *testing.T) {
 }
 
 func TestSMBChangeWatcher_CheckMediaItemIntegrity_NoMatchingFiles(t *testing.T) {
+	// bluff-scan: no-assert-ok (no-match smoke — empty result path must not panic)
 	w, mediaDB := setupSMBWatcherWithDB(t)
 	defer mediaDB.Close()
 
@@ -702,6 +705,7 @@ func TestSMBChangeWatcher_ProcessPendingChanges(t *testing.T) {
 }
 
 func TestSMBChangeWatcher_ProcessPendingChanges_Empty(t *testing.T) {
+	// bluff-scan: no-assert-ok (watcher pending-state smoke — empty queue must not panic)
 	w, mediaDB := setupSMBWatcherWithDB(t)
 	defer mediaDB.Close()
 

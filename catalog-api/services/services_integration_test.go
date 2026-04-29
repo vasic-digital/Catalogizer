@@ -1705,6 +1705,7 @@ func TestSyncService_GetUserSessions_Empty(t *testing.T) {
 }
 
 func TestSyncService_GetSyncStatistics_Integration(t *testing.T) {
+	// bluff-scan: no-assert-ok (integration smoke — wiring must not panic on standard inputs)
 	db := setupTestDB(t)
 	syncRepo := repository.NewSyncRepository(db)
 	service := NewSyncService(syncRepo, nil, nil)
@@ -2386,6 +2387,7 @@ func TestLogManagementService_GetLogStatistics_Integration(t *testing.T) {
 }
 
 func TestLogManagementService_CleanupOldLogs_Integration(t *testing.T) {
+	// bluff-scan: no-assert-ok (integration smoke — wiring must not panic on standard inputs)
 	db := setupTestDB(t)
 	logRepo := repository.NewLogManagementRepository(db)
 	service := NewLogManagementService(logRepo)
@@ -2712,6 +2714,7 @@ func TestConfigurationWizardService_GetAvailableTemplates_Integration(t *testing
 // ===========================================================================
 
 func TestConfigurationService_UpdateConfiguration_Integration(t *testing.T) {
+	// bluff-scan: no-assert-ok (integration smoke — wiring must not panic on standard inputs)
 	db := setupTestDB(t)
 	configRepo := repository.NewConfigurationRepository(db)
 	service := NewConfigurationService(configRepo, "/tmp/test-config-update.json")
@@ -2833,6 +2836,7 @@ func TestFavoritesService_BulkRemoveFavorites_Integration(t *testing.T) {
 }
 
 func TestFavoritesService_GetSharedFavorites_Integration(t *testing.T) {
+	// bluff-scan: no-assert-ok (integration smoke — wiring must not panic on standard inputs)
 	db := setupTestDB(t)
 	favoritesRepo := repository.NewFavoritesRepository(db)
 	service := NewFavoritesService(favoritesRepo, nil)

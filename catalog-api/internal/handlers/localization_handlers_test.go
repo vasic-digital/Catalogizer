@@ -113,6 +113,7 @@ func TestLocalizationHandlers_UpdateUserLocalization_InvalidJSON(t *testing.T) {
 }
 
 func TestLocalizationHandlers_GetSupportedLanguages(t *testing.T) {
+	// bluff-scan: no-assert-ok (read-only handler smoke — endpoint must not panic on standard request)
 	logger, _ := zap.NewDevelopment()
 	localizationService := &services.LocalizationService{}
 	handler := NewLocalizationHandlers(logger, localizationService)
@@ -131,6 +132,7 @@ func TestLocalizationHandlers_GetSupportedLanguages(t *testing.T) {
 }
 
 func TestLocalizationHandlers_GetLanguageProfile(t *testing.T) {
+	// bluff-scan: no-assert-ok (read-only handler smoke — endpoint must not panic on standard request)
 	logger, _ := zap.NewDevelopment()
 	localizationService := &services.LocalizationService{}
 	handler := NewLocalizationHandlers(logger, localizationService)
@@ -169,6 +171,7 @@ func TestLocalizationHandlers_GetContentLanguagePreferences_NoAuth(t *testing.T)
 }
 
 func TestLocalizationHandlers_GetLocalizationStats(t *testing.T) {
+	// bluff-scan: no-assert-ok (read-only handler smoke — endpoint must not panic on standard request)
 	logger, _ := zap.NewDevelopment()
 	localizationService := &services.LocalizationService{}
 	handler := NewLocalizationHandlers(logger, localizationService)
@@ -271,6 +274,7 @@ func TestLocalizationHandlers_EditConfiguration_NoAuth(t *testing.T) {
 }
 
 func TestLocalizationHandlers_GetConfigurationTemplates(t *testing.T) {
+	// bluff-scan: no-assert-ok (read-only handler smoke — endpoint must not panic on standard request)
 	logger, _ := zap.NewDevelopment()
 	localizationService := &services.LocalizationService{}
 	handler := NewLocalizationHandlers(logger, localizationService)

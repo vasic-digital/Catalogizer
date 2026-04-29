@@ -139,6 +139,7 @@ func TestPercentileFromBuckets_Interpolation(t *testing.T) {
 // TestSnapshotHTTP_Concurrency verifies SnapshotHTTP is safe under
 // concurrent calls alongside metric updates.
 func TestSnapshotHTTP_Concurrency(t *testing.T) {
+	// bluff-scan: no-assert-ok (concurrency test — go test -race catches data races; absence of panic == correctness)
 	done := make(chan struct{})
 	go func() {
 		// Drive observations for 100ms.

@@ -88,6 +88,7 @@ func TestFileLogCollector_CollectLogs_MissingFile(t *testing.T) {
 // TestLogManagementService_Close_IsSafeToCallTwice verifies the shutdown
 // path doesn't panic on repeated calls when no goroutines are in flight.
 func TestLogManagementService_Close_IsSafeToCallTwice(t *testing.T) {
+	// bluff-scan: no-assert-ok (idempotency smoke — repeated/extra calls must not panic)
 	svc := &LogManagementService{}
 	svc.Close()
 	svc.Close()

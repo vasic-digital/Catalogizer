@@ -726,6 +726,7 @@ func TestNewMediaAnalyzer_WithAllDependencies(t *testing.T) {
 // ============================================================================
 
 func TestMediaAnalyzer_StartStop(t *testing.T) {
+	// bluff-scan: no-assert-ok (lifecycle invariant — out-of-order calls must not panic/error)
 	logger := testLogger(t)
 	ma := NewMediaAnalyzer(nil, nil, nil, logger)
 
@@ -734,6 +735,7 @@ func TestMediaAnalyzer_StartStop(t *testing.T) {
 }
 
 func TestMediaAnalyzer_StopWithoutStart(t *testing.T) {
+	// bluff-scan: no-assert-ok (lifecycle invariant — out-of-order calls must not panic/error)
 	logger := testLogger(t)
 	ma := NewMediaAnalyzer(nil, nil, nil, logger)
 
@@ -742,6 +744,7 @@ func TestMediaAnalyzer_StopWithoutStart(t *testing.T) {
 }
 
 func TestMediaAnalyzer_MultipleStartStop(t *testing.T) {
+	// bluff-scan: no-assert-ok (lifecycle invariant — out-of-order calls must not panic/error)
 	logger := testLogger(t)
 	ma := NewMediaAnalyzer(nil, nil, nil, logger)
 

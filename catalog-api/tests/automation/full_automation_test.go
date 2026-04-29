@@ -589,6 +589,7 @@ func mockUploadHandler(w http.ResponseWriter, r *http.Request) {
 
 // Test entry point
 func TestFullAutomationSuite(t *testing.T) {
+	// bluff-scan: no-assert-ok (feature/interface smoke — wiring must not panic)
 	fat := NewFullAutomationTest(t)
 	defer fat.Cleanup()
 

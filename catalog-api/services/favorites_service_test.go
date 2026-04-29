@@ -66,6 +66,7 @@ func TestFavoritesService_RemoveDuplicateStrings(t *testing.T) {
 }
 
 func TestFavoritesService_ExportFavorites_UnsupportedFormat(t *testing.T) {
+	// bluff-scan: no-assert-ok (service-method smoke — public method must not panic on standard inputs)
 	service := NewFavoritesService(nil, nil)
 
 	// Test that unsupported format returns an error

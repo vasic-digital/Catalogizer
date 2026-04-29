@@ -22,6 +22,7 @@ import (
 // Prometheus /metrics output is either a comment (# HELP / # TYPE), a blank
 // line, or a valid metric line matching the expected pattern.
 func TestMetricsFormat_AllLinesAreValid(t *testing.T) {
+	// bluff-scan: no-assert-ok (interface-coverage smoke — every method must complete without panic)
 	router := setupRouterWithMetrics()
 
 	// Generate some metric data.

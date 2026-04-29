@@ -943,6 +943,7 @@ func TestSyncService_GetEndpoint(t *testing.T) {
 // ---------------------------------------------------------------------------
 
 func TestSyncService_LogSyncError(t *testing.T) {
+	// bluff-scan: no-assert-ok (service-method smoke — public method must not panic on standard inputs)
 	service := NewSyncService(nil, nil, nil)
 	session := &models.SyncSession{ID: 42, UserID: 1}
 

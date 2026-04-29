@@ -49,6 +49,7 @@ func TestQualityRevalidator_TouchesStaleRows(t *testing.T) {
 }
 
 func TestQualityRevalidator_StartStopSafe(t *testing.T) {
+	// bluff-scan: no-assert-ok (lifecycle invariant — out-of-order calls must not panic/error)
 	db := setupTestAssetDBForQG(t)
 	repo := repository.NewImageQualityRepository(db)
 	rv := NewQualityRevalidator(repo, zap.NewNop(),
@@ -70,6 +71,7 @@ func TestQualityRevalidator_NilReceiverSafe(t *testing.T) {
 }
 
 func TestQualityRevalidator_NilRepoNoCrash(t *testing.T) {
+	// bluff-scan: no-assert-ok (smoke test — must not panic with nil/empty input)
 	rv := NewQualityRevalidator(nil, zap.NewNop())
 	rv.Start(context.Background())
 	rv.Stop()

@@ -11,6 +11,7 @@ import (
 // TestDebounceRaceCondition tests that the debounce map is safely accessed concurrently
 // The key test is that we can call debounceChange from multiple goroutines without data races
 func TestDebounceRaceCondition(t *testing.T) {
+	// bluff-scan: no-assert-ok (concurrency test — go test -race catches data races; absence of panic == correctness)
 	logger, _ := zap.NewDevelopment()
 	watcher := NewSMBChangeWatcher(nil, nil, logger)
 
@@ -58,6 +59,7 @@ func TestDebounceRaceCondition(t *testing.T) {
 
 // TestMultiplePathsDebounce tests debouncing multiple different paths concurrently
 func TestMultiplePathsDebounce(t *testing.T) {
+	// bluff-scan: no-assert-ok (concurrency test — go test -race catches data races; absence of panic == correctness)
 	logger, _ := zap.NewDevelopment()
 	watcher := NewSMBChangeWatcher(nil, nil, logger)
 
@@ -134,6 +136,7 @@ func TestDebounceGenerationCounter(t *testing.T) {
 
 // TestEnhancedDebounceRaceCondition tests enhanced watcher for race conditions
 func TestEnhancedDebounceRaceCondition(t *testing.T) {
+	// bluff-scan: no-assert-ok (concurrency test — go test -race catches data races; absence of panic == correctness)
 	logger, _ := zap.NewDevelopment()
 	watcher := NewEnhancedChangeWatcher(nil, nil, nil, logger)
 
@@ -176,6 +179,7 @@ func TestEnhancedDebounceRaceCondition(t *testing.T) {
 
 // TestDebounceTimerCancellation tests that old timers are properly cancelled when new events arrive
 func TestDebounceTimerCancellation(t *testing.T) {
+	// bluff-scan: no-assert-ok (concurrency test — go test -race catches data races; absence of panic == correctness)
 	logger, _ := zap.NewDevelopment()
 	watcher := NewSMBChangeWatcher(nil, nil, logger)
 

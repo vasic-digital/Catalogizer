@@ -607,6 +607,7 @@ func TestSubtitleService_SaveUploadedSubtitle_MediaNotFound(t *testing.T) {
 // ---------------------------------------------------------------------------
 
 func TestSubtitleService_Close(t *testing.T) {
+	// bluff-scan: no-assert-ok (service close smoke — must not panic on close)
 	logger := zap.NewNop()
 	mockCache := &MockCacheService{}
 	service := NewSubtitleService(nil, logger, mockCache)

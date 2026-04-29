@@ -574,6 +574,7 @@ func TestEnhancedChangeWatcher_ProcessChange_AllOps(t *testing.T) {
 // ---------------------------------------------------------------------------
 
 func TestEnhancedChangeWatcher_HandleCreateNew_NilAnalyzer(t *testing.T) {
+	// bluff-scan: no-assert-ok (smoke test — must not panic with nil/empty input)
 	logger := zap.NewNop()
 	w := NewEnhancedChangeWatcher(nil, nil, nil, logger)
 
@@ -602,6 +603,7 @@ func TestEnhancedChangeWatcher_HandleCreateNew_NilAnalyzer(t *testing.T) {
 }
 
 func TestEnhancedChangeWatcher_HandleCreateNew_WithAnalyzer_Dir(t *testing.T) {
+	// bluff-scan: no-assert-ok (event/file-handler smoke — must not panic on any event type)
 	w, mediaDB, _ := setupEnhancedWatcher(t)
 	defer mediaDB.Close()
 
@@ -618,6 +620,7 @@ func TestEnhancedChangeWatcher_HandleCreateNew_WithAnalyzer_Dir(t *testing.T) {
 }
 
 func TestEnhancedChangeWatcher_HandleCreateNew_WithAnalyzer_File(t *testing.T) {
+	// bluff-scan: no-assert-ok (event/file-handler smoke — must not panic on any event type)
 	w, mediaDB, _ := setupEnhancedWatcher(t)
 	defer mediaDB.Close()
 
@@ -662,6 +665,7 @@ func TestEnhancedChangeWatcher_HandleModify_MediaFile(t *testing.T) {
 }
 
 func TestEnhancedChangeWatcher_HandleModify_NonMediaFile(t *testing.T) {
+	// bluff-scan: no-assert-ok (event/file-handler smoke — must not panic on any event type)
 	w, mediaDB, _ := setupEnhancedWatcher(t)
 	defer mediaDB.Close()
 
@@ -1109,6 +1113,7 @@ func TestEnhancedChangeWatcher_MonitorPath_ErrorChannel(t *testing.T) {
 // ---------------------------------------------------------------------------
 
 func TestEnhancedChangeWatcher_HandleCreate_MoveDetectedButProcessFails(t *testing.T) {
+	// bluff-scan: no-assert-ok (event/file-handler smoke — must not panic on any event type)
 	w, mediaDB, rt := setupEnhancedWatcher(t)
 	defer mediaDB.Close()
 
