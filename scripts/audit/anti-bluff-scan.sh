@@ -276,11 +276,30 @@ def visit(obj):
     if isinstance(obj, dict):
         if 'action' in obj and isinstance(obj['action'], str):
             action = obj['action']
+            action_trim = action.strip()
             # Has accompanying executable field?
             has_target = 'target' in obj and isinstance(obj['target'], str) and obj['target'].strip()
             has_command = 'command' in obj and isinstance(obj['command'], str) and obj['command'].strip()
             has_executable_prefix = any(action.lower().startswith(p) for p in EXEC_PREFIXES)
-            if has_target or has_command or has_executable_prefix:
+            # Per testbank/schema.go::ParseAction, a few actions are
+            # standalone keywords (no colon-prefix needed). The most
+            # common is `screenshot` — exists in 525+ androidtv bank
+            # entries. `frame_diff` likewise.
+            STANDALONE_EXEC = ('screenshot', 'frame_diff', 'playback_check')
+            is_standalone_exec = action_trim.lower() in STANDALONE_EXEC
+            # Article XI §11.5: explicit _skip: true with _skip_reason
+            # is honest non-execution. Bank entries marked this way are
+            # NOT bluffs — they're documented holes (destructive
+            # side-effect, missing fixture, converter limitation) that
+            # the runtime correctly skips with SKIP-OK marker.
+            is_explicitly_skipped = bool(obj.get('_skip')) and bool(obj.get('_skip_reason'))
+            # `_conversion_note: manual-review-required` is the bank
+            # converter's marker for prose entries that cannot be
+            # mechanically translated. Treat as a SKIP candidate too —
+            # the converter has already flagged them for human review,
+            # and re-flagging here is double-counting.
+            has_manual_review_marker = obj.get('_conversion_note') == 'manual-review-required'
+            if has_target or has_command or has_executable_prefix or is_explicitly_skipped or has_manual_review_marker or is_standalone_exec:
                 pass  # not a bluff
             else:
                 # Estimate line number by searching for the action string
