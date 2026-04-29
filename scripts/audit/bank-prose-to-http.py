@@ -124,6 +124,28 @@ def _infer_auth(clause: str) -> str:
     return ""
 
 
+# Public endpoints that don't require authentication.
+# Used by BLUFF-FQA-API-AUTH-INJECT-001 to decide whether to
+# default `auth: "admin"` on a converted step.
+PUBLIC_ENDPOINT_PREFIXES = (
+    "/health",
+    "/api/v1/health",
+    "/api/v1/auth/login",
+    "/api/v1/auth/register",
+    "/api/v1/auth/refresh",  # uses refresh_token in body, not bearer
+    "/api/v1/auth/logout",   # logout takes the token in body too
+    "/api/v1/discovery",     # service-discovery endpoint (when present)
+    "/metrics",              # Prometheus metrics
+)
+
+
+def _is_public_endpoint(path: str) -> bool:
+    """True if `path` is a public (no-auth) catalog-api endpoint."""
+    p = path.split("?")[0].split("#")[0]
+    return any(p == prefix or p.startswith(prefix + "/")
+               for prefix in PUBLIC_ENDPOINT_PREFIXES)
+
+
 # --- Playwright (web) prose patterns ---
 
 PLAYWRIGHT_PROSE_PATTERNS: list[tuple[re.Pattern[str], Any]] = []
@@ -237,6 +259,16 @@ def convert_step(step: dict[str, Any], stats: ConversionStats) -> dict[str, Any]
                 converted["body"] = body
             if auth:
                 converted["auth"] = auth
+            else:
+                # BLUFF-FQA-API-AUTH-INJECT-001: any non-public endpoint
+                # defaults to auth: "admin". Public endpoints (auth/login,
+                # auth/register, /health) explicitly stay auth: "none".
+                # The bank can override this by setting auth: explicitly.
+                path = m.group("path")
+                if _is_public_endpoint(path):
+                    pass  # leave auth unset, executor treats as "none"
+                else:
+                    converted["auth"] = "admin"
             converted.setdefault("_original_action", action)
             matched = True
             method = m.group("method").upper() if "method" in m.groupdict() else "?"
