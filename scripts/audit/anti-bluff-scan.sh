@@ -35,6 +35,33 @@ cd "$ROOT" || { echo "cannot cd to $ROOT" >&2; exit 2; }
 
 EXCLUDE_DIRS='\(\./\)\?\(\.git\|node_modules\|target\|vendor\|build\|releases\|qa-results\|docs/reports/qa-sessions\|docs/audits\|HelixQA/banks/templates\|tests/k6/node_modules\|tools/opensource\|tools/external\|HelixQA/tools/opensource\|releases\)'
 
+# Substring match — excludes paths at any depth (not just root prefix).
+# /tools/opensource/ catches HelixQA/tools/opensource and any nested vendor.
+# /node_modules/ catches catalog-web/node_modules, installer-wizard/node_modules, etc.
+EXCLUDE_SUBSTRINGS=(
+  '/node_modules/'
+  '/tools/opensource/'
+  '/tools/external/'
+  '/.git/'
+  '/target/'
+  '/vendor/'
+  '/build/'
+  '/releases/'
+  '/qa-results/'
+  '/docs/reports/qa-sessions/'
+  '/docs/audits/'
+)
+
+# is_excluded <path> — return 0 if path matches any EXCLUDE_SUBSTRINGS.
+is_excluded() {
+  local p="$1"
+  local sub
+  for sub in "${EXCLUDE_SUBSTRINGS[@]}"; do
+    case "$p" in *"$sub"*) return 0 ;; esac
+  done
+  return 1
+}
+
 emit() {
   # emit kind file line excerpt
   local kind="$1" file="$2" line="$3" excerpt="$4"
@@ -48,17 +75,21 @@ scan_go_tests() {
   # GO_HTTPTEST_ABUSE: file path contains e2e or _e2e_ AND uses httptest.NewServer
   # GO_MOCK_IN_INTEGRATION: file path contains integration|e2e|stress|chaos|security|challenge AND uses mock/stub/fake
   while IFS= read -r -d '' f; do
-    [[ "$f" =~ ^\.\/($EXCLUDE_DIRS) ]] && continue
+    is_excluded "$f" && continue
     local low="${f,,}"
     # GO_HTTPTEST_ABUSE
     if [[ "$low" == *e2e* ]]; then
       grep -nE 'httptest\.NewServer\b|httptest\.NewRequest\b' "$f" 2>/dev/null | while IFS=: read -r ln rest; do
+        stripped="$(echo "$rest" | sed 's/^[[:space:]]*//')"
+        case "$stripped" in '//'*|'/*'*|'*'*) continue ;; esac
         emit GO_HTTPTEST_ABUSE "$f" "$ln" "$rest"
       done
     fi
     # GO_MOCK_IN_INTEGRATION
     if [[ "$low" == *integration* || "$low" == *_e2e* || "$low" == *stress* || "$low" == *chaos* || "$low" == *security* || "$low" == *challenge* ]]; then
       grep -nE '\bmock\.|stub\.|fake\.|NewMock|NewFake|NewStub|/mocks/|gomock\.|testify/mock' "$f" 2>/dev/null | while IFS=: read -r ln rest; do
+        stripped="$(echo "$rest" | sed 's/^[[:space:]]*//')"
+        case "$stripped" in '//'*|'/*'*|'*'*) continue ;; esac
         emit GO_MOCK_IN_INTEGRATION "$f" "$ln" "$rest"
       done
     fi
@@ -94,7 +125,7 @@ scan_ts_tests() {
   # TS_NO_ASSERT: a test() / it() block with no expect( or assert( inside.
   # TS_TRUTHY_ONLY: only expect().toBeTruthy() or .toBeDefined() (no value comparison)
   while IFS= read -r -d '' f; do
-    [[ "$f" =~ ^\.\/($EXCLUDE_DIRS) ]] && continue
+    is_excluded "$f" && continue
     awk -v f="$f" '
       /\b(it|test)\s*\(/ {
         depth=0; start=NR; body=""; saw_expect=0; saw_strong=0;
@@ -123,7 +154,7 @@ scan_helixqa_banks() {
   # HelixQA bank actions are JSON. A prose action is one without a recognized executable prefix.
   # Recognized prefixes: adb_shell:, adb:, playwright:, click:, type:, key:, http:, sql:, sleep:, screenshot:, assertVisible:, assertNotVisible:, evaluate:, navigate:.
   while IFS= read -r -d '' f; do
-    [[ "$f" =~ ^\.\/($EXCLUDE_DIRS) ]] && continue
+    is_excluded "$f" && continue
     grep -nE '"action"[[:space:]]*:[[:space:]]*"' "$f" 2>/dev/null | while IFS=: read -r ln rest; do
       # extract the value between the first pair of quotes after the colon
       val=$(echo "$rest" | sed -nE 's/.*"action"[[:space:]]*:[[:space:]]*"([^"]*)".*/\1/p')
@@ -138,8 +169,17 @@ scan_helixqa_banks() {
 
 scan_challenge_scripts() {
   # Heuristic blunders in shell-style Challenge scripts.
+  # Excluded by basename: canonical CONST-033 / Article XI tooling that
+  # uses `|| true` legitimately for graceful absence-handling (not for
+  # exit-code laundering).
   while IFS= read -r -d '' f; do
-    [[ "$f" =~ ^\.\/($EXCLUDE_DIRS) ]] && continue
+    is_excluded "$f" && continue
+    case "$(basename "$f")" in
+      host_no_auto_suspend_challenge.sh|no_suspend_calls_challenge.sh| \
+      no_session_termination_calls_challenge.sh)
+        continue
+        ;;
+    esac
     # CHALLENGE_BLIND_SHELL
     grep -nE '(\|\|[[:space:]]*true\b|&&[[:space:]]*echo[[:space:]]+(PASS|OK|SUCCESS)\b|\|[[:space:]]*tee[[:space:]]+\S+[[:space:]]*$|set[[:space:]]+\+e\b)' "$f" 2>/dev/null | while IFS=: read -r ln rest; do
       emit CHALLENGE_BLIND_SHELL "$f" "$ln" "$rest"
@@ -153,9 +193,14 @@ scan_challenge_scripts() {
 
 scan_skip_no_ticket() {
   # Lines with t.Skip / @Ignore / it.skip / describe.skip / xit / xdescribe lacking a SKIP-OK: #
+  # Skips lines that are inside a // comment (the scanner's own first-pass
+  # would otherwise flag prose mentions of "t.Skip" in docstrings).
   while IFS= read -r -d '' f; do
-    [[ "$f" =~ ^\.\/($EXCLUDE_DIRS) ]] && continue
+    is_excluded "$f" && continue
     grep -nE '\bt\.Skip\b|\bt\.Skipf\b|@Ignore\b|\bit\.skip\b|\bdescribe\.skip\b|\bxit\b|\bxdescribe\b' "$f" 2>/dev/null | while IFS=: read -r ln rest; do
+      # Skip comment lines (//-prefixed in Go/TS/Kotlin)
+      stripped="$(echo "$rest" | sed 's/^[[:space:]]*//')"
+      case "$stripped" in '//'*|'#'*) continue ;; esac
       if ! echo "$rest" | grep -qE 'SKIP-OK:[[:space:]]*#[A-Za-z0-9_-]+'; then
         emit SKIP_WITHOUT_TICKET "$f" "$ln" "$rest"
       fi
@@ -165,7 +210,7 @@ scan_skip_no_ticket() {
 
 scan_assert_tautology() {
   while IFS= read -r -d '' f; do
-    [[ "$f" =~ ^\.\/($EXCLUDE_DIRS) ]] && continue
+    is_excluded "$f" && continue
     grep -nE 'assert\.True\([^,]*,[[:space:]]*true\)|assert\.Equal\([^,]*,[[:space:]]*1[[:space:]]*,[[:space:]]*1[[:space:]]*\)|expect\(true\)\.toBe\(true\)|expect\(1\)\.toBe\(1\)' "$f" 2>/dev/null | while IFS=: read -r ln rest; do
       emit ASSERT_TAUTOLOGY "$f" "$ln" "$rest"
     done
