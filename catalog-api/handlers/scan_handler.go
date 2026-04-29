@@ -46,8 +46,27 @@ type createStorageRootRequest struct {
 	MaxDepth int     `json:"max_depth"`
 }
 
+// supportedStorageProtocols enumerates the protocols a CreateStorageRoot
+// request may declare. Closes CATAPI-DEFECT-004 (the handler used to
+// accept arbitrary strings — gopher, foo, anything — and create
+// undriveable storage roots).
+var supportedStorageProtocols = map[string]struct{}{
+	"local":  {},
+	"smb":    {},
+	"ftp":    {},
+	"nfs":    {},
+	"webdav": {},
+}
+
 // CreateStorageRoot handles POST /api/v1/storage/roots.
-// Creates or upserts a storage root in the database.
+// Strictly creates a new storage root. If a row with the same name
+// already exists, returns 409 Conflict (CATAPI-DEFECT-005). For
+// idempotent upsert semantics the caller should use PUT
+// /api/v1/storage/roots/{id} instead.
+//
+// Validates Protocol against supportedStorageProtocols
+// (CATAPI-DEFECT-004). Unknown protocols return 400 with an
+// explanatory message and the list of accepted values.
 func (h *ScanHandler) CreateStorageRoot(c *gin.Context) {
 	var req createStorageRootRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -55,47 +74,50 @@ func (h *ScanHandler) CreateStorageRoot(c *gin.Context) {
 		return
 	}
 
+	// CATAPI-DEFECT-004: enforce protocol allowlist.
+	if _, ok := supportedStorageProtocols[req.Protocol]; !ok {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error":    "unsupported protocol",
+			"protocol": req.Protocol,
+			"accepted": []string{"local", "smb", "ftp", "nfs", "webdav"},
+		})
+		return
+	}
+
 	if req.MaxDepth <= 0 {
 		req.MaxDepth = 10
 	}
 
-	// Check if storage root already exists
+	// CATAPI-DEFECT-005: refuse duplicate names with 409. Previous
+	// behavior silently upserted and returned 201, hiding the
+	// conflict from clients that genuinely meant "create".
 	var existingID int64
 	err := h.db.QueryRowContext(c.Request.Context(),
 		"SELECT id FROM storage_roots WHERE name = ?", req.Name,
 	).Scan(&existingID)
-
-	var id int64
 	if err == nil {
-		// Update existing
-		_, updateErr := h.db.ExecContext(c.Request.Context(),
-			`UPDATE storage_roots SET protocol=?, host=?, port=?, path=?, username=?, password=?, domain=?, max_depth=?, updated_at=CURRENT_TIMESTAMP
-			 WHERE id=?`,
-			req.Protocol, req.Host, req.Port, req.Path,
-			req.Username, req.Password, req.Domain, req.MaxDepth, existingID,
-		)
-		if updateErr != nil {
-			c.JSON(http.StatusInternalServerError, gin.H{"error": fmt.Sprintf("failed to update storage root: %v", updateErr)})
-			return
-		}
-		id = existingID
-	} else {
-		// Insert new
-		newID, insertErr := h.db.InsertReturningID(c.Request.Context(),
-			`INSERT INTO storage_roots (name, protocol, host, port, path, username, password, domain, enabled, max_depth)
-			 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-			req.Name, req.Protocol, req.Host, req.Port, req.Path,
-			req.Username, req.Password, req.Domain, true, req.MaxDepth,
-		)
-		if insertErr != nil {
-			c.JSON(http.StatusInternalServerError, gin.H{"error": fmt.Sprintf("failed to create storage root: %v", insertErr)})
-			return
-		}
-		id = newID
+		c.JSON(http.StatusConflict, gin.H{
+			"error":       "storage root with this name already exists",
+			"name":        req.Name,
+			"existing_id": existingID,
+			"hint":        "use PUT /api/v1/storage/roots/{id} to update an existing root",
+		})
+		return
+	}
+
+	newID, insertErr := h.db.InsertReturningID(c.Request.Context(),
+		`INSERT INTO storage_roots (name, protocol, host, port, path, username, password, domain, enabled, max_depth)
+		 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+		req.Name, req.Protocol, req.Host, req.Port, req.Path,
+		req.Username, req.Password, req.Domain, true, req.MaxDepth,
+	)
+	if insertErr != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": fmt.Sprintf("failed to create storage root: %v", insertErr)})
+		return
 	}
 
 	c.JSON(http.StatusCreated, gin.H{
-		"id":       id,
+		"id":       newID,
 		"name":     req.Name,
 		"protocol": req.Protocol,
 		"message":  "storage root created",

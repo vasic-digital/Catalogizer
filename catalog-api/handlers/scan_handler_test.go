@@ -144,40 +144,96 @@ func (suite *ScanHandlerTestSuite) TestCreateStorageRoot_InvalidRequest() {
 	assert.Equal(suite.T(), http.StatusBadRequest, w.Code)
 }
 
-// TestCreateStorageRoot_UpdateExisting tests updating an existing storage root
-func (suite *ScanHandlerTestSuite) TestCreateStorageRoot_UpdateExisting() {
-	// First create a storage root
-	reqBody1 := map[string]interface{}{
+// TestCreateStorageRoot_DuplicateNameRejected verifies CATAPI-DEFECT-005
+// is fixed: a second POST with the same name returns 409 Conflict
+// instead of silently upserting and returning 201.
+//
+// Anti-bluff (Article XI §11.2.5): this test FAILS against the
+// pre-fix code (which returned 201 with upsert behavior) and PASSES
+// against the post-fix code (which returns 409). The previous
+// TestCreateStorageRoot_UpdateExisting test asserted the buggy
+// upsert; it has been replaced by this test plus the new
+// `TestCreateStorageRoot_AllSupportedProtocolsAccepted`.
+func (suite *ScanHandlerTestSuite) TestCreateStorageRoot_DuplicateNameRejected() {
+	// First create
+	body1, _ := json.Marshal(map[string]interface{}{
 		"name":      "Existing Share",
 		"protocol":  "smb",
 		"host":      "server.example.com",
 		"max_depth": 10,
-	}
-	body1, _ := json.Marshal(reqBody1)
+	})
 	req1 := httptest.NewRequest("POST", "/api/v1/storage/roots", bytes.NewReader(body1))
 	req1.Header.Set("Content-Type", "application/json")
 	w1 := httptest.NewRecorder()
 	suite.router.ServeHTTP(w1, req1)
-	assert.Equal(suite.T(), http.StatusCreated, w1.Code)
+	assert.Equal(suite.T(), http.StatusCreated, w1.Code, "first create must succeed")
 
-	// Update with same name but different protocol
-	reqBody2 := map[string]interface{}{
+	// Second POST with same name → 409 Conflict (was 201 before fix)
+	body2, _ := json.Marshal(map[string]interface{}{
 		"name":      "Existing Share",
 		"protocol":  "ftp",
 		"host":      "ftp.example.com",
 		"max_depth": 15,
-	}
-	body2, _ := json.Marshal(reqBody2)
+	})
 	req2 := httptest.NewRequest("POST", "/api/v1/storage/roots", bytes.NewReader(body2))
 	req2.Header.Set("Content-Type", "application/json")
 	w2 := httptest.NewRecorder()
 	suite.router.ServeHTTP(w2, req2)
 
-	assert.Equal(suite.T(), http.StatusCreated, w2.Code)
+	assert.Equal(suite.T(), http.StatusConflict, w2.Code, "duplicate name must return 409")
 	var response map[string]interface{}
-	err := json.Unmarshal(w2.Body.Bytes(), &response)
-	assert.NoError(suite.T(), err)
-	assert.Equal(suite.T(), "ftp", response["protocol"])
+	if assert.NoError(suite.T(), json.Unmarshal(w2.Body.Bytes(), &response)) {
+		assert.Contains(suite.T(), response["error"], "already exists")
+		assert.Equal(suite.T(), "Existing Share", response["name"])
+		assert.NotNil(suite.T(), response["existing_id"])
+	}
+}
+
+// TestCreateStorageRoot_UnsupportedProtocolRejected verifies
+// CATAPI-DEFECT-004 is fixed: protocols outside the allowlist
+// (local|smb|ftp|nfs|webdav) return 400 instead of being accepted.
+//
+// Anti-bluff: deliberately uses "gopher" — the same protocol the
+// real-binary verification surfaced as accepted under the buggy
+// code. Test FAILS pre-fix (gets 201), PASSES post-fix (gets 400).
+func (suite *ScanHandlerTestSuite) TestCreateStorageRoot_UnsupportedProtocolRejected() {
+	body, _ := json.Marshal(map[string]interface{}{
+		"name":     "Bad Protocol Root",
+		"protocol": "gopher",
+		"path":     "/x",
+	})
+	req := httptest.NewRequest("POST", "/api/v1/storage/roots", bytes.NewReader(body))
+	req.Header.Set("Content-Type", "application/json")
+	w := httptest.NewRecorder()
+	suite.router.ServeHTTP(w, req)
+
+	assert.Equal(suite.T(), http.StatusBadRequest, w.Code,
+		"unsupported protocol must return 400 (was 201 before fix)")
+	var response map[string]interface{}
+	if assert.NoError(suite.T(), json.Unmarshal(w.Body.Bytes(), &response)) {
+		assert.Equal(suite.T(), "unsupported protocol", response["error"])
+		assert.Equal(suite.T(), "gopher", response["protocol"])
+		assert.NotEmpty(suite.T(), response["accepted"], "must surface the accepted-protocols list")
+	}
+}
+
+// TestCreateStorageRoot_AllSupportedProtocolsAccepted verifies the
+// inverse of CATAPI-DEFECT-004: every allow-listed protocol still
+// works. Article XI §11.2.3 matching positive — proves the fix
+// didn't over-restrict.
+func (suite *ScanHandlerTestSuite) TestCreateStorageRoot_AllSupportedProtocolsAccepted() {
+	for _, proto := range []string{"local", "smb", "ftp", "nfs", "webdav"} {
+		body, _ := json.Marshal(map[string]interface{}{
+			"name":     "Root_" + proto,
+			"protocol": proto,
+		})
+		req := httptest.NewRequest("POST", "/api/v1/storage/roots", bytes.NewReader(body))
+		req.Header.Set("Content-Type", "application/json")
+		w := httptest.NewRecorder()
+		suite.router.ServeHTTP(w, req)
+		assert.Equal(suite.T(), http.StatusCreated, w.Code,
+			"protocol %q must be accepted (got %d, body=%s)", proto, w.Code, w.Body.String())
+	}
 }
 
 // TestGetStorageRoots tests retrieving all storage roots

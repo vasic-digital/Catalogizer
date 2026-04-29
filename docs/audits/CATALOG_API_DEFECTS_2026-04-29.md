@@ -17,9 +17,58 @@ authored; the catalog-api implementation needs the fix.
 
 ---
 
-## CATAPI-DEFECT-001: `/api/v1/entities` accepts requests without Authorization header
+## Re-verification log (later same day)
 
-**Severity:** HIGH — authentication bypass on a list endpoint that
+After triage with direct curl reproduction, the 6 candidate defects fall into:
+
+| ID | Verdict | Notes |
+|---|---|---|
+| CATAPI-DEFECT-001 | ❌ FALSE POSITIVE | `/api/v1/entities` correctly returns 401 to unauth requests. The bank's auth-injection patch had quietly authenticated the test as admin, so 200 was the correct result for that authenticated request. Bank entry semantics need refinement. |
+| CATAPI-DEFECT-002 | ❌ FALSE POSITIVE | Same root cause as -001. `/api/v1/admin/system-info` returns 401 to unauth, 200 to admin (correctly). |
+| CATAPI-DEFECT-003 | ❌ FALSE POSITIVE | `/api/v1/auth/login` HAS rate limiting (`loginRateLimiter`, 30 rpm per IP at `main.go:843`). The bank's "6 rapid attempts" was below the 30/min threshold. 401 per attempt is correct. |
+| **CATAPI-DEFECT-004** | ✅ **REAL — FIXED** | `handlers/scan_handler.go` `CreateStorageRoot` accepted any `protocol` string. Now rejects via `supportedStorageProtocols` allowlist (local/smb/ftp/nfs/webdav). |
+| **CATAPI-DEFECT-005** | ✅ **REAL — FIXED** | Same handler upserted on duplicate name and returned 201, hiding the conflict. Now returns 409 Conflict. |
+| CATAPI-DEFECT-006 | ❓ DEFERRED | "Malformed JSON login" — converter sent valid JSON so the test is wrong. The catalog-api is fine; the bank needs raw-bytes body support (separate ticket). |
+
+**Net: 2 of 6 candidates were real defects, both now fixed.** The
+4 false positives expose lessons for the audit framework
+(BLUFF-FQA-API-AUTH-INJECT-001 was too aggressive on negative-test
+prose patterns; BLUFF-FQA-API-LOOP-CONSTRUCT-005 falsely surfaced
+as a "no rate limit" finding because the bank's loop semantics
+weren't honored).
+
+End-to-end verification of the fixes against the deployed thinker
+stack (post-redeploy of `localhost/catalogizer-api:fixed-defects`):
+
+```
+$ curl -X POST -H "Authorization: Bearer $TOKEN" \
+    -d '{"name":"Bad Root v3","protocol":"gopher","path":"/x"}' \
+    http://127.0.0.1:18092/api/v1/storage/roots
+HTTP/1.1 400 Bad Request          # was 201 before fix
+
+$ # first create
+$ curl -X POST ... -d '{"name":"Dup Test V2","protocol":"local","path":"/tmp/a"}' ...
+status=201
+$ # duplicate
+$ curl -X POST ... -d '{"name":"Dup Test V2","protocol":"local","path":"/tmp/b"}' ...
+status=409                        # was 201 before fix
+```
+
+Unit-test coverage for both fixes:
+- `handlers/scan_handler_test.go::TestCreateStorageRoot_DuplicateNameRejected`
+- `handlers/scan_handler_test.go::TestCreateStorageRoot_UnsupportedProtocolRejected`
+- `handlers/scan_handler_test.go::TestCreateStorageRoot_AllSupportedProtocolsAccepted`
+  (matching positive — proves allowlist didn't over-restrict).
+
+Article XI §11.2.5 verified: each test was run against the pre-fix
+handler and confirmed to FAIL, then re-run after the fix and
+confirmed to PASS.
+
+---
+
+## CATAPI-DEFECT-001: `/api/v1/entities` accepts requests without Authorization header (FALSE POSITIVE — see re-verification above)
+
+**Severity (original report):** HIGH — authentication bypass on a list endpoint that
 is supposed to be admin-only.
 
 **Reproduction:**
