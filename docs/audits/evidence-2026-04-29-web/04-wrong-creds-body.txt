@@ -1,0 +1,17 @@
+Disconnected
+C
+Welcome back
+
+Enter your credentials to access Catalogizer
+
+Username
+Password
+Remember me
+Forgot password?
+Sign in
+Don't have an account?
+Create new account
+
+Made with ❤ by Vasic Digital
+
+© 2026 Vasic Digital. All rights reserved.

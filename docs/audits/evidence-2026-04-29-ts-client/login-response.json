@@ -1,0 +1,36 @@
+{
+  "user": {
+    "id": 1,
+    "username": "admin",
+    "email": "admin@catalogizer.local",
+    "role_id": 1,
+    "role": {
+      "id": 1,
+      "name": "Admin",
+      "description": "Administrator role with all permissions",
+      "permissions": [
+        "*"
+      ],
+      "is_system": true,
+      "created_at": "2026-04-29T00:32:45.733539Z",
+      "updated_at": "2026-04-29T00:32:45.733539Z"
+    },
+    "first_name": "System",
+    "last_name": "Administrator",
+    "display_name": "Admin",
+    "avatar_url": null,
+    "time_zone": null,
+    "language": null,
+    "settings": "{}",
+    "is_active": true,
+    "is_locked": false,
+    "failed_login_attempts": 0,
+    "last_login_at": "2026-04-29T17:40:03.499259Z",
+    "last_login_ip": "172.22.0.1",
+    "created_at": "2026-04-29T00:32:47.086365Z",
+    "updated_at": "2026-04-29T00:32:47.086365Z"
+  },
+  "session_token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyX2lkIjoxLCJ1c2VybmFtZSI6ImFkbWluIiwicm9sZV9pZCI6MSwic2Vzc2lvbl9pZCI6IjEyIiwiaXNzIjoiY2F0YWxvZ2l6ZXIiLCJzdWIiOiIxIiwiZXhwIjoxNzc3NTcwODg0LCJpYXQiOjE3Nzc0ODQ0ODR9.P-u3RwY_AVRBhF_iBIdyYeH63x7b0-RHOA9bOrDREZs",
+  "refresh_token": "05d72e33c6ac5f260d369a6b6217977c588eb06cb0517137de7e34e9f22a783d",
+  "expires_at": "2026-04-30T17:41:24.12191788Z"
+}
