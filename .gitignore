@@ -347,3 +347,7 @@ catalog-api/build/
 *.dll
 *.so
 *.dylib
+
+# Claude Code session state (machine-local, never commit)
+.claude/
+docs/security/trivy-fs-*.json

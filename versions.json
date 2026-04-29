@@ -4,50 +4,50 @@
     "major": 2,
     "minor": 3,
     "patch": 0,
-    "build_number": 24
+    "build_number": 25
   },
   "components": {
     "catalog-api": {
-      "last_build_number": 24,
-      "last_build_date": "2026-04-18T23:52:04Z",
-      "last_source_hash": "578968451f062686489f318a33037fe3b93403349ec7eb32ff743450ec6c056c",
-      "last_git_commit": 75034957
+      "last_build_number": 25,
+      "last_build_date": "2026-04-28T23:35:43Z",
+      "last_source_hash": "9323333e58d9de275023b9686c667af48d72048c76252d1ad0fa31831419395c",
+      "last_git_commit": "3935fbde"
     },
     "catalog-web": {
-      "last_build_number": 24,
-      "last_build_date": "2026-04-18T23:52:48Z",
-      "last_source_hash": "c3f3a4c23ac7f844fefdb61584f46f75072a7d874d1917abd14c10fc852f637f",
-      "last_git_commit": 75034957
+      "last_build_number": 25,
+      "last_build_date": "2026-04-28T23:36:38Z",
+      "last_source_hash": "3867dc2ed964f273db58eb7030e3cbae933d91dc123f3ca2a5df8be9ca06aa0f",
+      "last_git_commit": "3935fbde"
     },
     "catalogizer-api-client": {
-      "last_build_number": 24,
-      "last_build_date": "2026-04-18T23:52:53Z",
-      "last_source_hash": "d4632906e8c7779e4529828e6c388e26c9e24d597b994060de2e635d2ca6fdb5",
-      "last_git_commit": 75034957
+      "last_build_number": 25,
+      "last_build_date": "2026-04-28T23:36:53Z",
+      "last_source_hash": "957b285d421509d69162be4c499631bff0f9a689ad2aee02989e0164b0bcfaf7",
+      "last_git_commit": "3935fbde"
     },
     "catalogizer-desktop": {
-      "last_build_number": 17,
-      "last_build_date": "2026-03-30T12:00:00Z",
-      "last_source_hash": "694c829e86196637163b168a9785cab1fcebe05dfe2e4a7862bd03e9cf0be100",
-      "last_git_commit": "c5a4a4b7"
+      "last_build_number": 25,
+      "last_build_date": "2026-04-28T23:38:43Z",
+      "last_source_hash": "7a927decf744a1e694fa11a25aaa9db3973d4066c69015e65ae6b6fbf24e9afa",
+      "last_git_commit": "3935fbde"
     },
     "installer-wizard": {
-      "last_build_number": 22,
-      "last_build_date": "2026-04-14T04:52:32Z",
-      "last_source_hash": "b731b7c086083250a14959b513dd47f1d064ace225cdc9005ca2f9f3a6399fcb",
-      "last_git_commit": "f3e79f3ea"
+      "last_build_number": 25,
+      "last_build_date": "2026-04-28T23:42:27Z",
+      "last_source_hash": "e80cef51b058994369678e2d93a8fc040ab3736ee3c67704ac56954134273992",
+      "last_git_commit": "b15ddcff"
     },
     "catalogizer-android": {
-      "last_build_number": 24,
-      "last_build_date": "2026-04-18T23:53:44Z",
-      "last_source_hash": "af38004f688f9049986c938b25301b700691f04ad7a45d94d0fb0b65279d5e2c",
-      "last_git_commit": 75034957
+      "last_build_number": 25,
+      "last_build_date": "2026-04-28T23:52:47Z",
+      "last_source_hash": "0fb5758beff0baf2f10a3019db6dd8ec58c463c5747c7b2b06ce81b82e02aad3",
+      "last_git_commit": "b15ddcff"
     },
     "catalogizer-androidtv": {
-      "last_build_number": 24,
-      "last_build_date": "2026-04-18T23:54:03Z",
-      "last_source_hash": "b1a02919b2c042c7f8528d96a0328c1e8e0425ca8d465e036a464ed319432beb",
-      "last_git_commit": 75034957
+      "last_build_number": 25,
+      "last_build_date": "2026-04-28T23:56:10Z",
+      "last_source_hash": "70dddd72a89ca1ff6b176b63ab18800ed44bdb0553bad5b14229380f8b8d45f6",
+      "last_git_commit": "b15ddcff"
     }
   }
 }

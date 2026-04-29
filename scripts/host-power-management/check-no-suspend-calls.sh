@@ -50,6 +50,8 @@ EXCLUDE_PATHS=(
   "/CHANGELOG.md"
   "/docs/superpowers/plans/"
   "anthropic-quickstarts/"
+  "/docs/incidents/"
+  "/docs/audits/"
 )
 
 # Forbidden grep -E patterns. Real, tight regexes — not bare words.
