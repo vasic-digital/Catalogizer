@@ -20,7 +20,7 @@ test_cases:
         action: "sleep: 2000"
         expected: "Process terminated"
       - name: "Launch from launcher"
-        action: "adb_shell: am start -n com.catalogizer.androidtv/.ui.MainActivity --es qa_username admin --es qa_password admin123"
+        action: "adb_shell: am start -n com.catalogizer.androidtv/.ui.MainActivity"
         expected: "Activity started"
         timeout: 10
       - name: "Wait for splash"

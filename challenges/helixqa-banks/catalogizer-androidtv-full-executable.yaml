@@ -29,7 +29,7 @@ test_cases:
         expected: "Process terminated"
         
       - name: "Launch app"
-        action: "adb_shell: am start -n com.catalogizer.androidtv/.ui.MainActivity --es qa_username admin --es qa_password admin123"
+        action: "adb_shell: am start -n com.catalogizer.androidtv/.ui.MainActivity"
         expected: "Activity started"
         timeout: 5
         
@@ -194,7 +194,7 @@ test_cases:
         expected: "App in background"
         
       - name: "Resume app"
-        action: "adb_shell: am start -n com.catalogizer.androidtv/.ui.MainActivity --es qa_username admin --es qa_password admin123"
+        action: "adb_shell: am start -n com.catalogizer.androidtv/.ui.MainActivity"
         expected: "App resumes"
         timeout: 5
         
@@ -218,7 +218,7 @@ test_cases:
     dependencies: [tv-force-stop]
     steps:
       - name: "Launch fresh"
-        action: "adb_shell: am start -n com.catalogizer.androidtv/.ui.MainActivity --es qa_username admin --es qa_password admin123"
+        action: "adb_shell: am start -n com.catalogizer.androidtv/.ui.MainActivity"
         expected: "App launches"
         timeout: 5
         
@@ -292,7 +292,7 @@ test_cases:
         timeout: 5
 
       - name: "Relaunch with auto-login extras"
-        action: "adb_shell: am start -n com.catalogizer.androidtv/.ui.MainActivity --es qa_username admin --es qa_password admin123"
+        action: "adb_shell: am start -n com.catalogizer.androidtv/.ui.MainActivity"
         expected: "Home screen visible within 12 s"
         timeout: 15
 
