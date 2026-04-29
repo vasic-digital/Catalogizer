@@ -688,6 +688,53 @@ func (db *DB) createMediaEntityTablesPostgres(ctx context.Context) error {
 		`CREATE INDEX IF NOT EXISTS idx_detection_rules_type ON detection_rules(media_type_id)`,
 		`CREATE INDEX IF NOT EXISTS idx_media_collection_items_collection ON media_collection_items(collection_id)`,
 		`CREATE INDEX IF NOT EXISTS idx_media_collection_items_item ON media_collection_items(media_item_id)`,
+
+		// FIX-CATAPI-2026-04-29-MEDIA_ITEMS-COLUMNS:
+		// The legacy media_handler.go and media_player_service.go
+		// queries reference 11 columns that the normalized schema
+		// above doesn't have, causing HTTP 500 ("pq: column ... does
+		// not exist") on every GET /media/{id} and PUT /media/{id}/
+		// progress request. Caught by Article XI §11.5 real-binary
+		// bank verification on 2026-04-29 (FQA-API-093, 094, 099).
+		//
+		// Each column is ADDed IDEMPOTENTLY so existing dbs are
+		// patched in-place without losing data. The proper long-term
+		// fix is to rewrite the handler to JOIN through media_files /
+		// user_metadata / media_types, but until that lands these
+		// nullable columns let the existing handler stop returning
+		// 500.
+		`ALTER TABLE media_items ADD COLUMN IF NOT EXISTS media_type TEXT`,
+		`ALTER TABLE media_items ADD COLUMN IF NOT EXISTS path TEXT`,
+		`ALTER TABLE media_items ADD COLUMN IF NOT EXISTS filename TEXT`,
+		`ALTER TABLE media_items ADD COLUMN IF NOT EXISTS mime_type TEXT`,
+		`ALTER TABLE media_items ADD COLUMN IF NOT EXISTS size BIGINT`,
+		`ALTER TABLE media_items ADD COLUMN IF NOT EXISTS file_size BIGINT`,
+		`ALTER TABLE media_items ADD COLUMN IF NOT EXISTS cover_image TEXT`,
+		`ALTER TABLE media_items ADD COLUMN IF NOT EXISTS quality TEXT`,
+		`ALTER TABLE media_items ADD COLUMN IF NOT EXISTS directory_path TEXT`,
+		`ALTER TABLE media_items ADD COLUMN IF NOT EXISTS smb_path TEXT`,
+		`ALTER TABLE media_items ADD COLUMN IF NOT EXISTS external_metadata TEXT`,
+		`ALTER TABLE media_items ADD COLUMN IF NOT EXISTS versions TEXT`,
+		`ALTER TABLE media_items ADD COLUMN IF NOT EXISTS watch_progress REAL DEFAULT 0`,
+		`ALTER TABLE media_items ADD COLUMN IF NOT EXISTS last_watched TIMESTAMP`,
+		`ALTER TABLE media_items ADD COLUMN IF NOT EXISTS is_downloaded BOOLEAN DEFAULT FALSE`,
+		`ALTER TABLE media_items ADD COLUMN IF NOT EXISTS artist TEXT`,
+		`ALTER TABLE media_items ADD COLUMN IF NOT EXISTS album TEXT`,
+		`ALTER TABLE media_items ADD COLUMN IF NOT EXISTS album_artist TEXT`,
+		`ALTER TABLE media_items ADD COLUMN IF NOT EXISTS disc_number INTEGER`,
+		`ALTER TABLE media_items ADD COLUMN IF NOT EXISTS video_codec TEXT`,
+		`ALTER TABLE media_items ADD COLUMN IF NOT EXISTS audio_codec TEXT`,
+		`ALTER TABLE media_items ADD COLUMN IF NOT EXISTS resolution TEXT`,
+		`ALTER TABLE media_items ADD COLUMN IF NOT EXISTS framerate REAL`,
+		`ALTER TABLE media_items ADD COLUMN IF NOT EXISTS bitrate INTEGER`,
+		`ALTER TABLE media_items ADD COLUMN IF NOT EXISTS series_title TEXT`,
+		`ALTER TABLE media_items ADD COLUMN IF NOT EXISTS season INTEGER`,
+		`ALTER TABLE media_items ADD COLUMN IF NOT EXISTS episode INTEGER`,
+		`ALTER TABLE media_items ADD COLUMN IF NOT EXISTS episode_title TEXT`,
+		`ALTER TABLE media_items ADD COLUMN IF NOT EXISTS last_position REAL DEFAULT 0`,
+		`ALTER TABLE media_items ADD COLUMN IF NOT EXISTS play_count INTEGER DEFAULT 0`,
+		`ALTER TABLE media_items ADD COLUMN IF NOT EXISTS last_played TIMESTAMP`,
+		`ALTER TABLE media_items ADD COLUMN IF NOT EXISTS created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP`,
 	}
 
 	for _, stmt := range statements {
