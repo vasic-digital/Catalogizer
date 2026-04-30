@@ -1,10 +1,23 @@
 import { render, screen, waitFor } from '@testing-library/react'
 import { ConnectionStatus } from '../ConnectionStatus'
 import { useWebSocket } from '@/lib/websocket'
+import { useAuth } from '@/contexts/AuthContext'
 
 // Mock the websocket hook
 vi.mock('@/lib/websocket', async () => ({
   useWebSocket: vi.fn(),
+}))
+
+// Article XI §11.5: ConnectionStatus is hidden pre-auth (added
+// 2026-04-29 alongside the silent-rejection wrong-password fix
+// in catalog-api). All existing tests in this file were written
+// before that gate and expect the component to render based
+// purely on websocket state. Default the auth mock to
+// authenticated so the existing assertions hold; the gate itself
+// is verified by the e2e/auth.spec.ts permanent regression and
+// by an explicit "hidden when unauthenticated" subtest below.
+vi.mock('@/contexts/AuthContext', async () => ({
+  useAuth: vi.fn(),
 }))
 
 // Mock framer-motion to avoid animation issues in tests
@@ -16,11 +29,22 @@ vi.mock('framer-motion', async () => ({
 }))
 
 const mockUseWebSocket = vi.mocked(useWebSocket)
+const mockUseAuth = vi.mocked(useAuth)
 
 describe('ConnectionStatus', () => {
   beforeEach(() => {
     vi.clearAllMocks()
     vi.useFakeTimers()
+    // Default to authenticated for the bulk of legacy assertions;
+    // individual tests can override.
+    mockUseAuth.mockReturnValue({
+      isAuthenticated: true,
+      user: null,
+      login: vi.fn(),
+      logout: vi.fn(),
+      register: vi.fn(),
+      loading: false,
+    } as any)
   })
 
   afterEach(() => {
@@ -218,6 +242,51 @@ describe('ConnectionStatus', () => {
 
         unmount()
       })
+    })
+  })
+
+  describe('Auth Gate (Article XI §11.5)', () => {
+    // Article XI §11.2.5 anti-bluff anchor: removing the
+    // `if (!isAuthenticated) return null` early-return in
+    // ConnectionStatus.tsx makes both these tests fail. The
+    // regression here pairs with the e2e/auth.spec.ts permanent
+    // regression that exercises the same gate against a real
+    // browser at runtime.
+    it('renders nothing when user is not authenticated, even with a connecting websocket', () => {
+      mockUseAuth.mockReturnValue({
+        isAuthenticated: false,
+        user: null,
+        login: vi.fn(),
+        logout: vi.fn(),
+        register: vi.fn(),
+        loading: false,
+      } as any)
+      mockUseWebSocket.mockReturnValue({
+        getConnectionState: vi.fn().mockReturnValue('connecting'),
+      })
+
+      const { container } = render(<ConnectionStatus />)
+      expect(screen.queryByText('Connecting...')).not.toBeInTheDocument()
+      expect(screen.queryByText('Disconnected')).not.toBeInTheDocument()
+      expect(container.firstChild).toBeNull()
+    })
+
+    it('renders nothing when user is not authenticated, even with a closed websocket', () => {
+      mockUseAuth.mockReturnValue({
+        isAuthenticated: false,
+        user: null,
+        login: vi.fn(),
+        logout: vi.fn(),
+        register: vi.fn(),
+        loading: false,
+      } as any)
+      mockUseWebSocket.mockReturnValue({
+        getConnectionState: vi.fn().mockReturnValue('closed'),
+      })
+
+      const { container } = render(<ConnectionStatus />)
+      expect(screen.queryByText('Disconnected')).not.toBeInTheDocument()
+      expect(container.firstChild).toBeNull()
     })
   })
 })
