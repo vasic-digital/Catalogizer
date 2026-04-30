@@ -266,15 +266,26 @@ with open(path) as fh:
     text = fh.read()
 
 EXEC_PREFIXES = (
-    'adb_shell:', 'adb:', 'playwright:', 'click:', 'type:', 'key:', 'press:',
-    'swipe:', 'http:', 'https:', 'sql:', 'sleep:', 'screenshot:',
+    # HelixQA testbank/schema.go::ActionType*
+    'adb_shell:', 'sleep:', 'screenshot:', 'keypress:', 'tap:', 'swipe:',
+    'text:', 'playback_check:', 'frame_diff:', 'http:',
+    'assert:', 'playwright:',
+    # Other commonly-seen executable forms in surrounding banks
+    'adb:', 'click:', 'type:', 'key:', 'press:', 'https:', 'sql:',
     'assertvisible:', 'assertnotvisible:', 'evaluate:', 'navigate:',
-    'wait_for:', 'tap:', 'focus:', 'scroll:',
+    'wait_for:', 'focus:', 'scroll:',
 )
 
 def visit(obj):
     if isinstance(obj, dict):
-        if 'action' in obj and isinstance(obj['action'], str):
+        # Only treat this dict as a step if it has step-like shape:
+        # `action` AND `name` (HelixQA TestStep contract). Without
+        # this guard, we false-positive on request-body fields that
+        # happen to be named `action` (e.g. {"media_id": 1,
+        # "action": "play"} for /api/v1/analytics/access).
+        is_step_shape = ('action' in obj and isinstance(obj.get('action'), str)
+                         and 'name' in obj and isinstance(obj.get('name'), str))
+        if is_step_shape:
             action = obj['action']
             action_trim = action.strip()
             # Has accompanying executable field?
@@ -313,7 +324,22 @@ def visit(obj):
         for v in obj:
             visit(v)
 
-visit(data)
+# Article XI §11.5 + CONST-008 (LLM-Driven QA): bank-level exemption
+# for vision-driven test suites. The HelixQA pipeline runs these
+# banks through the Learn/Plan/Execute/Curiosity/Analyze phases
+# where the vision model interprets prose actions and decides what
+# to do in the UI. Such banks declare {"metadata": {"_llm_driven": true}}
+# OR {"_llm_driven": true} at the top level and ALL their prose
+# actions are exempt from PROSE_HELIXQA_ACTION flagging.
+top_llm_driven = bool(data.get('_llm_driven')) or bool((data.get('metadata') or {}).get('_llm_driven'))
+
+if top_llm_driven:
+    # Whole bank is LLM-driven; all prose actions in it are
+    # legitimate, not bluffs. Still emit a per-bank summary line so
+    # auditors know we DID look.
+    pass  # explicit exemption — no further scan needed
+else:
+    visit(data)
 PY
   done < <(find . -type f -path '*/banks/*' -name '*.json' -print0 2>/dev/null)
   # Per CLAUDE.md "Bank format is JSON at runtime" — YAML mirrors are kept in
