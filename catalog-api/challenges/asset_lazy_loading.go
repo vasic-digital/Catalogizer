@@ -50,7 +50,9 @@ func (c *AssetLazyLoadingChallenge) Execute(ctx context.Context) (*challenge.Res
 			Actual: fmt.Sprintf("err=%v", loginErr), Passed: false,
 			Message: fmt.Sprintf("Login failed: %v", loginErr),
 		})
-		return c.CreateResult(challenge.StatusFailed, start, assertions, nil, outputs, "login failed"), nil
+		challengeResult := c.CreateResult(challenge.StatusFailed, start, assertions, nil, outputs, "login failed")
+		challengeResult.RecordAction(fmt.Sprintf("%s: failed - %s", c.Name(), "login failed"))
+		return challengeResult, nil
 	}
 
 	// Step 2: Find a file with cover_url metadata
@@ -103,7 +105,9 @@ func (c *AssetLazyLoadingChallenge) Execute(ctx context.Context) (*challenge.Res
 	})
 
 	if assetID == "" {
-		return c.CreateResult(challenge.StatusFailed, start, assertions, nil, outputs, "no asset_id"), nil
+		challengeResult := c.CreateResult(challenge.StatusFailed, start, assertions, nil, outputs, "no asset_id")
+		challengeResult.RecordAction(fmt.Sprintf("%s: failed - %s", c.Name(), "no asset_id"))
+		return challengeResult, nil
 	}
 
 	// Step 4: Poll asset endpoint until ready or timeout (30 seconds)
@@ -183,5 +187,7 @@ func (c *AssetLazyLoadingChallenge) Execute(ctx context.Context) (*challenge.Res
 		}
 	}
 
-	return c.CreateResult(status, start, assertions, metrics, outputs, ""), nil
+	challengeResult := c.CreateResult(status, start, assertions, metrics, outputs, "")
+	challengeResult.RecordAction(fmt.Sprintf("%s: challenge completed with status %s", c.Name(), status))
+	return challengeResult, nil
 }

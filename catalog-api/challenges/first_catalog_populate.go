@@ -56,7 +56,9 @@ func (c *FirstCatalogPopulateChallenge) Execute(ctx context.Context) (*challenge
 		Message: challenge.Ternary(loginOK, "Admin login succeeded", fmt.Sprintf("Login failed: %v", loginErr)),
 	})
 	if !loginOK {
-		return c.CreateResult(challenge.StatusFailed, start, assertions, nil, outputs, fmt.Sprintf("login failed: %v", loginErr)), nil
+		challengeResult := c.CreateResult(challenge.StatusFailed, start, assertions, nil, outputs, fmt.Sprintf("login failed: %v", loginErr))
+		challengeResult.RecordAction(fmt.Sprintf("%s: failed - %s", c.Name(), fmt.Sprintf("login failed: %v", loginErr)))
+		return challengeResult, nil
 	}
 
 	// Step 2: Load endpoint config to get NAS details and content directories
@@ -68,7 +70,9 @@ func (c *FirstCatalogPopulateChallenge) Execute(ctx context.Context) (*challenge
 			Passed:  false,
 			Message: fmt.Sprintf("Failed to load endpoint config: %v", epErr),
 		})
-		return c.CreateResult(challenge.StatusFailed, start, assertions, nil, outputs, fmt.Sprintf("endpoint config: %v", epErr)), nil
+		challengeResult := c.CreateResult(challenge.StatusFailed, start, assertions, nil, outputs, fmt.Sprintf("endpoint config: %v", epErr))
+		challengeResult.RecordAction(fmt.Sprintf("%s: failed - %s", c.Name(), fmt.Sprintf("endpoint config: %v", epErr)))
+		return challengeResult, nil
 	}
 	if len(epCfg.Endpoints) == 0 {
 		assertions = append(assertions, challenge.AssertionResult{
@@ -77,7 +81,9 @@ func (c *FirstCatalogPopulateChallenge) Execute(ctx context.Context) (*challenge
 			Passed:  false,
 			Message: "No endpoints configured",
 		})
-		return c.CreateResult(challenge.StatusFailed, start, assertions, nil, outputs, "no endpoints configured"), nil
+		challengeResult := c.CreateResult(challenge.StatusFailed, start, assertions, nil, outputs, "no endpoints configured")
+		challengeResult.RecordAction(fmt.Sprintf("%s: failed - %s", c.Name(), "no endpoints configured"))
+		return challengeResult, nil
 	}
 
 	ep := epCfg.Endpoints[0]
@@ -94,7 +100,9 @@ func (c *FirstCatalogPopulateChallenge) Execute(ctx context.Context) (*challenge
 			Passed:  false,
 			Message: "No content directories configured in endpoint",
 		})
-		return c.CreateResult(challenge.StatusFailed, start, assertions, nil, outputs, "no content directories configured"), nil
+		challengeResult := c.CreateResult(challenge.StatusFailed, start, assertions, nil, outputs, "no content directories configured")
+		challengeResult.RecordAction(fmt.Sprintf("%s: failed - %s", c.Name(), "no content directories configured"))
+		return challengeResult, nil
 	}
 
 	// Pre-check: verify NAS endpoint is reachable.
@@ -105,7 +113,9 @@ func (c *FirstCatalogPopulateChallenge) Execute(ctx context.Context) (*challenge
 			Passed:  false,
 			Message: fmt.Sprintf("NAS at %s:%d not reachable - skipped (requires NAS infrastructure)", ep.Host, ep.Port),
 		})
-		return c.CreateResult(challenge.StatusSkipped, start, assertions, nil, outputs, ""), nil
+		challengeResult := c.CreateResult(challenge.StatusSkipped, start, assertions, nil, outputs, "")
+		challengeResult.RecordAction(fmt.Sprintf("%s: failed", c.Name()))
+		return challengeResult, nil
 	}
 
 	// Step 3: POST /api/v1/storage/roots — create SMB storage root
@@ -133,7 +143,9 @@ func (c *FirstCatalogPopulateChallenge) Execute(ctx context.Context) (*challenge
 		Message:  challenge.Ternary(createOK, fmt.Sprintf("Storage root created: id=%.0f name=%s", storageRootID, rootName), fmt.Sprintf("Create storage root failed: code=%d err=%v", createCode, createErr)),
 	})
 	if !createOK || storageRootID == 0 {
-		return c.CreateResult(challenge.StatusFailed, start, assertions, nil, outputs, "failed to create storage root"), nil
+		challengeResult := c.CreateResult(challenge.StatusFailed, start, assertions, nil, outputs, "failed to create storage root")
+		challengeResult.RecordAction(fmt.Sprintf("%s: failed - %s", c.Name(), "failed to create storage root"))
+		return challengeResult, nil
 	}
 	outputs["storage_root_id"] = fmt.Sprintf("%.0f", storageRootID)
 
@@ -170,7 +182,9 @@ func (c *FirstCatalogPopulateChallenge) Execute(ctx context.Context) (*challenge
 			Message:  challenge.Ternary(scanOK && jobID != "", fmt.Sprintf("Scan queued for %s: job_id=%s", dir.Path, jobID), fmt.Sprintf("Queue scan for %s failed: code=%d err=%v", dir.Path, scanCode, scanErr)),
 		})
 		if !scanOK || jobID == "" {
-			return c.CreateResult(challenge.StatusFailed, start, assertions, nil, outputs, fmt.Sprintf("failed to queue scan for %s", dir.Path)), nil
+			challengeResult := c.CreateResult(challenge.StatusFailed, start, assertions, nil, outputs, fmt.Sprintf("failed to queue scan for %s", dir.Path))
+			challengeResult.RecordAction(fmt.Sprintf("%s: failed - %s", c.Name(), fmt.Sprintf("failed to queue scan for %s", dir.Path)))
+			return challengeResult, nil
 		}
 		scans = append(scans, dirScan{dir: dir, jobID: jobID})
 		outputs[fmt.Sprintf("job_id_%s", dir.ContentType)] = jobID
@@ -275,7 +289,9 @@ func (c *FirstCatalogPopulateChallenge) Execute(ctx context.Context) (*challenge
 	}
 
 	if !allCompleted {
-		return c.CreateResult(challenge.StatusFailed, start, assertions, nil, outputs, fmt.Sprintf("scans incomplete: %d completed, %d failed, %d pending", len(completed), len(failed), len(scans)-len(completed)-len(failed))), nil
+		challengeResult := c.CreateResult(challenge.StatusFailed, start, assertions, nil, outputs, fmt.Sprintf("scans incomplete: %d completed, %d failed, %d pending", len(completed), len(failed), len(scans)-len(completed)-len(failed)))
+		challengeResult.RecordAction(fmt.Sprintf("%s: failed - %s", c.Name(), fmt.Sprintf("scans incomplete: %d completed, %d failed, %d pending", len(completed), len(failed), len(scans)-len(completed)-len(failed))))
+		return challengeResult, nil
 	}
 	outputs["scan_files_found"] = fmt.Sprintf("%.0f", totalFilesFound)
 
@@ -355,5 +371,7 @@ func (c *FirstCatalogPopulateChallenge) Execute(ctx context.Context) (*challenge
 		}
 	}
 
-	return c.CreateResult(status, start, assertions, metrics, outputs, ""), nil
+	challengeResult := c.CreateResult(status, start, assertions, metrics, outputs, "")
+	challengeResult.RecordAction(fmt.Sprintf("%s: challenge completed with status %s", c.Name(), status))
+	return challengeResult, nil
 }

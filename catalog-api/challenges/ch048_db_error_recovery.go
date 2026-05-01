@@ -70,9 +70,11 @@ func (c *DBErrorRecoveryChallenge) Execute(
 	})
 
 	if !healthOK {
-		return c.CreateResult(
+		challengeResult := c.CreateResult(
 			challenge.StatusFailed, start, assertions, nil, outputs, "API not healthy",
-		), nil
+		)
+		challengeResult.RecordAction(fmt.Sprintf("%s: failed - %s", c.Name(), "API not healthy"))
+		return challengeResult, nil
 	}
 
 	// Step 2: Login
@@ -84,9 +86,11 @@ func (c *DBErrorRecoveryChallenge) Execute(
 			Passed:  false,
 			Message: fmt.Sprintf("Login failed: %v", loginErr),
 		})
-		return c.CreateResult(
+		challengeResult := c.CreateResult(
 			challenge.StatusFailed, start, assertions, nil, outputs, loginErr.Error(),
-		), nil
+		)
+		challengeResult.RecordAction(fmt.Sprintf("%s: failed - %s", c.Name(), loginErr.Error()))
+		return challengeResult, nil
 	}
 
 	// Step 3: Trigger requests that stress the database
@@ -168,5 +172,7 @@ func (c *DBErrorRecoveryChallenge) Execute(
 		}
 	}
 
-	return c.CreateResult(status, start, assertions, metrics, outputs, ""), nil
+	challengeResult := c.CreateResult(status, start, assertions, metrics, outputs, "")
+	challengeResult.RecordAction(fmt.Sprintf("%s: challenge completed with status %s", c.Name(), status))
+	return challengeResult, nil
 }

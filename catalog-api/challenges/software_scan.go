@@ -56,13 +56,15 @@ func (c *SoftwareScanChallenge) Execute(ctx context.Context) (*challenge.Result,
 
 	// Pre-check: verify NAS endpoint is reachable.
 	if !isEndpointReachable(c.endpoint.Host, c.endpoint.Port) {
-		return c.CreateResult(challenge.StatusSkipped, start,
+		challengeResult := c.CreateResult(challenge.StatusSkipped, start,
 			[]challenge.AssertionResult{{
 				Type:    "infrastructure",
 				Target:  "nas_reachable",
 				Passed:  false,
 				Message: fmt.Sprintf("NAS at %s:%d not reachable - skipped (requires NAS infrastructure)", c.endpoint.Host, c.endpoint.Port),
-			}}, nil, outputs, ""), nil
+			}}, nil, outputs, "")
+		challengeResult.RecordAction(fmt.Sprintf("%s: failed", c.Name()))
+		return challengeResult, nil
 	}
 
 	client, err := newSMBClient(ctx, c.endpoint)
@@ -73,7 +75,9 @@ func (c *SoftwareScanChallenge) Execute(ctx context.Context) (*challenge.Result,
 			Passed:  false,
 			Message: fmt.Sprintf("SMB connection failed: %v", err),
 		})
-		return c.CreateResult(challenge.StatusFailed, start, assertions, nil, outputs, err.Error()), nil
+		challengeResult := c.CreateResult(challenge.StatusFailed, start, assertions, nil, outputs, err.Error())
+		challengeResult.RecordAction(fmt.Sprintf("%s: failed - %s", c.Name(), err.Error()))
+		return challengeResult, nil
 	}
 	c.client = client
 
@@ -85,7 +89,9 @@ func (c *SoftwareScanChallenge) Execute(ctx context.Context) (*challenge.Result,
 			Passed:  false,
 			Message: fmt.Sprintf("Failed to walk directory: %v", err),
 		})
-		return c.CreateResult(challenge.StatusFailed, start, assertions, nil, outputs, err.Error()), nil
+		challengeResult := c.CreateResult(challenge.StatusFailed, start, assertions, nil, outputs, err.Error())
+		challengeResult.RecordAction(fmt.Sprintf("%s: failed - %s", c.Name(), err.Error()))
+		return challengeResult, nil
 	}
 
 	// Assertion: installer/archive files found
@@ -133,7 +139,9 @@ func (c *SoftwareScanChallenge) Execute(ctx context.Context) (*challenge.Result,
 		}
 	}
 
-	return c.CreateResult(status, start, assertions, metrics, outputs, ""), nil
+	challengeResult := c.CreateResult(status, start, assertions, metrics, outputs, "")
+	challengeResult.RecordAction(fmt.Sprintf("%s: challenge completed with status %s", c.Name(), status))
+	return challengeResult, nil
 }
 
 // Cleanup disconnects the SMB client.

@@ -48,10 +48,12 @@ func (c *ConversionJobsListChallenge) Execute(
 		ctx, c.config.Username, c.config.Password, 3,
 	)
 	if loginErr != nil {
-		return c.CreateResult(
+		challengeResult := c.CreateResult(
 			challenge.StatusFailed, start, assertions, nil,
 			outputs, fmt.Sprintf("login failed: %v", loginErr),
-		), nil
+		)
+		challengeResult.RecordAction(fmt.Sprintf("%s: failed - %s", c.Name(), fmt.Sprintf("login failed: %v", loginErr)))
+		return challengeResult, nil
 	}
 
 	c.ReportProgress("fetching-jobs", nil)
@@ -80,9 +82,11 @@ func (c *ConversionJobsListChallenge) Execute(
 		}
 	}
 
-	return c.CreateResult(
+	challengeResult := c.CreateResult(
 		status, start, assertions, nil, outputs, "",
-	), nil
+	)
+	challengeResult.RecordAction(fmt.Sprintf("%s: challenge completed with status %s", c.Name(), status))
+	return challengeResult, nil
 }
 
 // ConversionJobCreateChallenge validates POST
@@ -122,10 +126,12 @@ func (c *ConversionJobCreateChallenge) Execute(
 		ctx, c.config.Username, c.config.Password, 3,
 	)
 	if loginErr != nil {
-		return c.CreateResult(
+		challengeResult := c.CreateResult(
 			challenge.StatusFailed, start, assertions, nil,
 			outputs, fmt.Sprintf("login failed: %v", loginErr),
-		), nil
+		)
+		challengeResult.RecordAction(fmt.Sprintf("%s: failed - %s", c.Name(), fmt.Sprintf("login failed: %v", loginErr)))
+		return challengeResult, nil
 	}
 
 	c.ReportProgress("creating-job", nil)
@@ -157,9 +163,11 @@ func (c *ConversionJobCreateChallenge) Execute(
 		}
 	}
 
-	return c.CreateResult(
+	challengeResult := c.CreateResult(
 		status, start, assertions, nil, outputs, "",
-	), nil
+	)
+	challengeResult.RecordAction(fmt.Sprintf("%s: challenge completed with status %s", c.Name(), status))
+	return challengeResult, nil
 }
 
 // ConversionJobCancelChallenge validates DELETE
@@ -199,10 +207,12 @@ func (c *ConversionJobCancelChallenge) Execute(
 		ctx, c.config.Username, c.config.Password, 3,
 	)
 	if loginErr != nil {
-		return c.CreateResult(
+		challengeResult := c.CreateResult(
 			challenge.StatusFailed, start, assertions, nil,
 			outputs, fmt.Sprintf("login failed: %v", loginErr),
-		), nil
+		)
+		challengeResult.RecordAction(fmt.Sprintf("%s: failed - %s", c.Name(), fmt.Sprintf("login failed: %v", loginErr)))
+		return challengeResult, nil
 	}
 
 	c.ReportProgress("cancelling-job", nil)
@@ -235,9 +245,11 @@ func (c *ConversionJobCancelChallenge) Execute(
 		}
 	}
 
-	return c.CreateResult(
+	challengeResult := c.CreateResult(
 		status, start, assertions, nil, outputs, "",
-	), nil
+	)
+	challengeResult.RecordAction(fmt.Sprintf("%s: challenge completed with status %s", c.Name(), status))
+	return challengeResult, nil
 }
 
 // ConversionJobRetryChallenge validates POST
@@ -277,10 +289,12 @@ func (c *ConversionJobRetryChallenge) Execute(
 		ctx, c.config.Username, c.config.Password, 3,
 	)
 	if loginErr != nil {
-		return c.CreateResult(
+		challengeResult := c.CreateResult(
 			challenge.StatusFailed, start, assertions, nil,
 			outputs, fmt.Sprintf("login failed: %v", loginErr),
-		), nil
+		)
+		challengeResult.RecordAction(fmt.Sprintf("%s: failed - %s", c.Name(), fmt.Sprintf("login failed: %v", loginErr)))
+		return challengeResult, nil
 	}
 
 	c.ReportProgress("retrying-job", nil)
@@ -313,9 +327,11 @@ func (c *ConversionJobRetryChallenge) Execute(
 		}
 	}
 
-	return c.CreateResult(
+	challengeResult := c.CreateResult(
 		status, start, assertions, nil, outputs, "",
-	), nil
+	)
+	challengeResult.RecordAction(fmt.Sprintf("%s: challenge completed with status %s", c.Name(), status))
+	return challengeResult, nil
 }
 
 // ConversionJobDownloadChallenge validates GET
@@ -355,10 +371,12 @@ func (c *ConversionJobDownloadChallenge) Execute(
 		ctx, c.config.Username, c.config.Password, 3,
 	)
 	if loginErr != nil {
-		return c.CreateResult(
+		challengeResult := c.CreateResult(
 			challenge.StatusFailed, start, assertions, nil,
 			outputs, fmt.Sprintf("login failed: %v", loginErr),
-		), nil
+		)
+		challengeResult.RecordAction(fmt.Sprintf("%s: failed - %s", c.Name(), fmt.Sprintf("login failed: %v", loginErr)))
+		return challengeResult, nil
 	}
 
 	c.ReportProgress("downloading-job", nil)
@@ -391,9 +409,11 @@ func (c *ConversionJobDownloadChallenge) Execute(
 		}
 	}
 
-	return c.CreateResult(
+	challengeResult := c.CreateResult(
 		status, start, assertions, nil, outputs, "",
-	), nil
+	)
+	challengeResult.RecordAction(fmt.Sprintf("%s: challenge completed with status %s", c.Name(), status))
+	return challengeResult, nil
 }
 
 // ConversionAuthRequiredChallenge validates that conversion
@@ -442,10 +462,12 @@ func (c *ConversionAuthRequiredChallenge) Execute(
 			Passed:  false,
 			Message: fmt.Sprintf("Endpoint unreachable: %v", err),
 		})
-		return c.CreateResult(
+		challengeResult := c.CreateResult(
 			challenge.StatusFailed, start, assertions, nil,
 			outputs, err.Error(),
-		), nil
+		)
+		challengeResult.RecordAction(fmt.Sprintf("%s: failed - %s", c.Name(), err.Error()))
+		return challengeResult, nil
 	}
 	resp.Body.Close()
 
@@ -472,9 +494,11 @@ func (c *ConversionAuthRequiredChallenge) Execute(
 		}
 	}
 
-	return c.CreateResult(
+	challengeResult := c.CreateResult(
 		status, start, assertions, nil, outputs, "",
-	), nil
+	)
+	challengeResult.RecordAction(fmt.Sprintf("%s: challenge completed with status %s", c.Name(), status))
+	return challengeResult, nil
 }
 
 // ConversionJobStatusTransitionChallenge validates that job
@@ -514,10 +538,12 @@ func (c *ConversionJobStatusTransitionChallenge) Execute(
 		ctx, c.config.Username, c.config.Password, 3,
 	)
 	if loginErr != nil {
-		return c.CreateResult(
+		challengeResult := c.CreateResult(
 			challenge.StatusFailed, start, assertions, nil,
 			outputs, fmt.Sprintf("login failed: %v", loginErr),
-		), nil
+		)
+		challengeResult.RecordAction(fmt.Sprintf("%s: failed - %s", c.Name(), fmt.Sprintf("login failed: %v", loginErr)))
+		return challengeResult, nil
 	}
 
 	// Create a job and check its initial status
@@ -567,9 +593,11 @@ func (c *ConversionJobStatusTransitionChallenge) Execute(
 		}
 	}
 
-	return c.CreateResult(
+	challengeResult := c.CreateResult(
 		resultStatus, start, assertions, nil, outputs, "",
-	), nil
+	)
+	challengeResult.RecordAction(fmt.Sprintf("%s: challenge completed with status %s", c.Name(), resultStatus))
+	return challengeResult, nil
 }
 
 // ConversionFormatsListChallenge validates GET
@@ -609,10 +637,12 @@ func (c *ConversionFormatsListChallenge) Execute(
 		ctx, c.config.Username, c.config.Password, 3,
 	)
 	if loginErr != nil {
-		return c.CreateResult(
+		challengeResult := c.CreateResult(
 			challenge.StatusFailed, start, assertions, nil,
 			outputs, fmt.Sprintf("login failed: %v", loginErr),
-		), nil
+		)
+		challengeResult.RecordAction(fmt.Sprintf("%s: failed - %s", c.Name(), fmt.Sprintf("login failed: %v", loginErr)))
+		return challengeResult, nil
 	}
 
 	c.ReportProgress("fetching-formats", nil)
@@ -641,9 +671,11 @@ func (c *ConversionFormatsListChallenge) Execute(
 		}
 	}
 
-	return c.CreateResult(
+	challengeResult := c.CreateResult(
 		status, start, assertions, nil, outputs, "",
-	), nil
+	)
+	challengeResult.RecordAction(fmt.Sprintf("%s: challenge completed with status %s", c.Name(), status))
+	return challengeResult, nil
 }
 
 // ConversionInvalidJobIDChallenge validates that an invalid
@@ -683,10 +715,12 @@ func (c *ConversionInvalidJobIDChallenge) Execute(
 		ctx, c.config.Username, c.config.Password, 3,
 	)
 	if loginErr != nil {
-		return c.CreateResult(
+		challengeResult := c.CreateResult(
 			challenge.StatusFailed, start, assertions, nil,
 			outputs, fmt.Sprintf("login failed: %v", loginErr),
-		), nil
+		)
+		challengeResult.RecordAction(fmt.Sprintf("%s: failed - %s", c.Name(), fmt.Sprintf("login failed: %v", loginErr)))
+		return challengeResult, nil
 	}
 
 	c.ReportProgress("testing-invalid-id", nil)
@@ -726,9 +760,11 @@ func (c *ConversionInvalidJobIDChallenge) Execute(
 		}
 	}
 
-	return c.CreateResult(
+	challengeResult := c.CreateResult(
 		status, start, assertions, nil, outputs, "",
-	), nil
+	)
+	challengeResult.RecordAction(fmt.Sprintf("%s: challenge completed with status %s", c.Name(), status))
+	return challengeResult, nil
 }
 
 // ConversionRateLimitChallenge validates that conversion
@@ -768,10 +804,12 @@ func (c *ConversionRateLimitChallenge) Execute(
 		ctx, c.config.Username, c.config.Password, 3,
 	)
 	if loginErr != nil {
-		return c.CreateResult(
+		challengeResult := c.CreateResult(
 			challenge.StatusFailed, start, assertions, nil,
 			outputs, fmt.Sprintf("login failed: %v", loginErr),
-		), nil
+		)
+		challengeResult.RecordAction(fmt.Sprintf("%s: failed - %s", c.Name(), fmt.Sprintf("login failed: %v", loginErr)))
+		return challengeResult, nil
 	}
 
 	c.ReportProgress("rapid-requests", nil)
@@ -830,7 +868,9 @@ func (c *ConversionRateLimitChallenge) Execute(
 		}
 	}
 
-	return c.CreateResult(
+	challengeResult := c.CreateResult(
 		resultStatus, start, assertions, nil, outputs, "",
-	), nil
+	)
+	challengeResult.RecordAction(fmt.Sprintf("%s: challenge completed with status %s", c.Name(), resultStatus))
+	return challengeResult, nil
 }

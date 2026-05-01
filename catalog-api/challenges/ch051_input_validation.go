@@ -139,5 +139,7 @@ func (c *InputValidationChallenge) Execute(
 		}
 	}
 
-	return c.CreateResult(status, start, assertions, nil, outputs, ""), nil
+	challengeResult := c.CreateResult(status, start, assertions, nil, outputs, "")
+	challengeResult.RecordAction(fmt.Sprintf("%s: challenge completed with status %s", c.Name(), status))
+	return challengeResult, nil
 }

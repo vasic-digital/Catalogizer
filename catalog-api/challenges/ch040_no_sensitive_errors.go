@@ -183,5 +183,7 @@ func (c *NoSensitiveErrorsChallenge) Execute(
 		}
 	}
 
-	return c.CreateResult(status, start, assertions, metrics, outputs, ""), nil
+	challengeResult := c.CreateResult(status, start, assertions, metrics, outputs, "")
+	challengeResult.RecordAction(fmt.Sprintf("%s: challenge completed with status %s", c.Name(), status))
+	return challengeResult, nil
 }

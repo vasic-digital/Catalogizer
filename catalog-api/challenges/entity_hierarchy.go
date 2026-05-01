@@ -55,10 +55,12 @@ func (c *EntityHierarchyChallenge) Execute(
 			Passed:  false,
 			Message: fmt.Sprintf("Login failed: %v", err),
 		})
-		return c.CreateResult(
+		challengeResult := c.CreateResult(
 			challenge.StatusFailed, start, assertions,
 			nil, outputs, err.Error(),
-		), nil
+		)
+		challengeResult.RecordAction(fmt.Sprintf("%s: failed - %s", c.Name(), err.Error()))
+		return challengeResult, nil
 	}
 
 	// 1. GET /api/v1/entities?type=tv_show - check for TV shows
@@ -258,7 +260,9 @@ func (c *EntityHierarchyChallenge) Execute(
 		}
 	}
 
-	return c.CreateResult(
+	challengeResult := c.CreateResult(
 		status, start, assertions, metrics, outputs, "",
-	), nil
+	)
+	challengeResult.RecordAction(fmt.Sprintf("%s: challenge completed with status %s", c.Name(), status))
+	return challengeResult, nil
 }

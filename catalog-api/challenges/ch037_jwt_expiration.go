@@ -63,9 +63,11 @@ func (c *JWTExpirationChallenge) Execute(
 	})
 
 	if !loginOK {
-		return c.CreateResult(
+		challengeResult := c.CreateResult(
 			challenge.StatusFailed, start, assertions, nil, outputs, "login failed",
-		), nil
+		)
+		challengeResult.RecordAction(fmt.Sprintf("%s: failed - %s", c.Name(), "login failed"))
+		return challengeResult, nil
 	}
 
 	// Step 2: Verify expires_at field exists in login response
@@ -153,5 +155,7 @@ func (c *JWTExpirationChallenge) Execute(
 		}
 	}
 
-	return c.CreateResult(status, start, assertions, metrics, outputs, ""), nil
+	challengeResult := c.CreateResult(status, start, assertions, metrics, outputs, "")
+	challengeResult.RecordAction(fmt.Sprintf("%s: challenge completed with status %s", c.Name(), status))
+	return challengeResult, nil
 }

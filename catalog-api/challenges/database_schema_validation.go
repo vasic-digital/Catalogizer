@@ -53,7 +53,9 @@ func (c *DatabaseSchemaValidationChallenge) Execute(ctx context.Context) (*chall
 		Message:  challenge.Ternary(loginOK, "Admin login succeeded", fmt.Sprintf("Login failed: %v", loginErr)),
 	})
 	if !loginOK {
-		return c.CreateResult(challenge.StatusFailed, start, assertions, nil, outputs, ""), nil
+		challengeResult := c.CreateResult(challenge.StatusFailed, start, assertions, nil, outputs, "")
+		challengeResult.RecordAction(fmt.Sprintf("%s: failed", c.Name()))
+		return challengeResult, nil
 	}
 
 	// Step 2: Health endpoint confirms database type
@@ -162,5 +164,7 @@ func (c *DatabaseSchemaValidationChallenge) Execute(ctx context.Context) (*chall
 		}
 	}
 
-	return c.CreateResult(status, start, assertions, nil, outputs, ""), nil
+	challengeResult := c.CreateResult(status, start, assertions, nil, outputs, "")
+	challengeResult.RecordAction(fmt.Sprintf("%s: challenge completed with status %s", c.Name(), status))
+	return challengeResult, nil
 }

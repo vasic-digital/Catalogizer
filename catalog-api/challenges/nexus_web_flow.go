@@ -63,7 +63,9 @@ func (c *NexusWebFlowChallenge) Execute(ctx context.Context) (*challenge.Result,
 			Type: "not_empty", Target: "login", Passed: false,
 			Message: fmt.Sprintf("login failed: %v", err),
 		})
-		return c.CreateResult(challenge.StatusFailed, start, assertions, nil, outputs, err.Error()), nil
+		challengeResult := c.CreateResult(challenge.StatusFailed, start, assertions, nil, outputs, err.Error())
+		challengeResult.RecordAction(fmt.Sprintf("%s: failed - %s", c.Name(), err.Error()))
+		return challengeResult, nil
 	}
 	assertions = append(assertions, challenge.AssertionResult{
 		Type: "not_empty", Target: "login", Passed: true, Message: "admin login ok",
@@ -76,7 +78,9 @@ func (c *NexusWebFlowChallenge) Execute(ctx context.Context) (*challenge.Result,
 			Type: "status_code", Target: "entities", Passed: false,
 			Message: fmt.Sprintf("entities list errored: %v", err),
 		})
-		return c.CreateResult(challenge.StatusFailed, start, assertions, nil, outputs, err.Error()), nil
+		challengeResult := c.CreateResult(challenge.StatusFailed, start, assertions, nil, outputs, err.Error())
+		challengeResult.RecordAction(fmt.Sprintf("%s: failed - %s", c.Name(), err.Error()))
+		return challengeResult, nil
 	}
 	outputs["entities_status"] = fmt.Sprintf("%d", listStatus)
 	assertions = append(assertions, challenge.AssertionResult{
@@ -100,11 +104,15 @@ func (c *NexusWebFlowChallenge) Execute(ctx context.Context) (*challenge.Result,
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet,
 		fmt.Sprintf("%s/api/v1/cover/%d", c.config.BaseURL, entityID), nil)
 	if err != nil {
-		return c.CreateResult(challenge.StatusFailed, start, assertions, nil, outputs, err.Error()), nil
+		challengeResult := c.CreateResult(challenge.StatusFailed, start, assertions, nil, outputs, err.Error())
+		challengeResult.RecordAction(fmt.Sprintf("%s: failed - %s", c.Name(), err.Error()))
+		return challengeResult, nil
 	}
 	resp, err := authed(client, req)
 	if err != nil {
-		return c.CreateResult(challenge.StatusFailed, start, assertions, nil, outputs, err.Error()), nil
+		challengeResult := c.CreateResult(challenge.StatusFailed, start, assertions, nil, outputs, err.Error())
+		challengeResult.RecordAction(fmt.Sprintf("%s: failed - %s", c.Name(), err.Error()))
+		return challengeResult, nil
 	}
 	verdict := resp.Header.Get("X-Cover-Quality")
 	source := resp.Header.Get("X-Cover-Source")
@@ -131,7 +139,9 @@ func (c *NexusWebFlowChallenge) Execute(ctx context.Context) (*challenge.Result,
 			break
 		}
 	}
-	return c.CreateResult(status, start, assertions, nil, outputs, ""), nil
+	challengeResult := c.CreateResult(status, start, assertions, nil, outputs, "")
+	challengeResult.RecordAction(fmt.Sprintf("%s: challenge completed with status %s", c.Name(), status))
+	return challengeResult, nil
 }
 
 // RegisterNexusChallenges wires every Nexus-authored Catalogizer

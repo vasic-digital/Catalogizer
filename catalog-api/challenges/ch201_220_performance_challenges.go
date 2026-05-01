@@ -64,10 +64,12 @@ func (c *HealthEndpointFastChallenge) Execute(
 	latency := time.Since(reqStart)
 
 	if err != nil {
-		return c.CreateResult(
+		challengeResult := c.CreateResult(
 			challenge.StatusFailed, start, assertions, nil,
 			outputs, fmt.Sprintf("health request failed: %v", err),
-		), nil
+		)
+		challengeResult.RecordAction(fmt.Sprintf("%s: failed - %s", c.Name(), fmt.Sprintf("health request failed: %v", err)))
+		return challengeResult, nil
 	}
 	resp.Body.Close()
 
@@ -92,9 +94,11 @@ func (c *HealthEndpointFastChallenge) Execute(
 		}
 	}
 
-	return c.CreateResult(
+	challengeResult := c.CreateResult(
 		status, start, assertions, nil, outputs, "",
-	), nil
+	)
+	challengeResult.RecordAction(fmt.Sprintf("%s: challenge completed with status %s", c.Name(), status))
+	return challengeResult, nil
 }
 
 // --- CH-202: SearchLatency ---
@@ -135,10 +139,12 @@ func (c *SearchLatencyChallenge) Execute(
 		ctx, c.config.Username, c.config.Password, 3,
 	)
 	if loginErr != nil {
-		return c.CreateResult(
+		challengeResult := c.CreateResult(
 			challenge.StatusFailed, start, assertions, nil,
 			outputs, fmt.Sprintf("login failed: %v", loginErr),
-		), nil
+		)
+		challengeResult.RecordAction(fmt.Sprintf("%s: failed - %s", c.Name(), fmt.Sprintf("login failed: %v", loginErr)))
+		return challengeResult, nil
 	}
 
 	c.ReportProgress("measuring-search-latency", nil)
@@ -173,9 +179,11 @@ func (c *SearchLatencyChallenge) Execute(
 		}
 	}
 
-	return c.CreateResult(
+	challengeResult := c.CreateResult(
 		status, start, assertions, nil, outputs, "",
-	), nil
+	)
+	challengeResult.RecordAction(fmt.Sprintf("%s: challenge completed with status %s", c.Name(), status))
+	return challengeResult, nil
 }
 
 // --- CH-203: BrowseLatency ---
@@ -216,10 +224,12 @@ func (c *BrowseLatencyChallenge) Execute(
 		ctx, c.config.Username, c.config.Password, 3,
 	)
 	if loginErr != nil {
-		return c.CreateResult(
+		challengeResult := c.CreateResult(
 			challenge.StatusFailed, start, assertions, nil,
 			outputs, fmt.Sprintf("login failed: %v", loginErr),
-		), nil
+		)
+		challengeResult.RecordAction(fmt.Sprintf("%s: failed - %s", c.Name(), fmt.Sprintf("login failed: %v", loginErr)))
+		return challengeResult, nil
 	}
 
 	c.ReportProgress("measuring-browse-latency", nil)
@@ -254,9 +264,11 @@ func (c *BrowseLatencyChallenge) Execute(
 		}
 	}
 
-	return c.CreateResult(
+	challengeResult := c.CreateResult(
 		status, start, assertions, nil, outputs, "",
-	), nil
+	)
+	challengeResult.RecordAction(fmt.Sprintf("%s: challenge completed with status %s", c.Name(), status))
+	return challengeResult, nil
 }
 
 // --- CH-204: EntityDetailLatency ---
@@ -298,10 +310,12 @@ func (c *EntityDetailLatencyChallenge) Execute(
 		ctx, c.config.Username, c.config.Password, 3,
 	)
 	if loginErr != nil {
-		return c.CreateResult(
+		challengeResult := c.CreateResult(
 			challenge.StatusFailed, start, assertions, nil,
 			outputs, fmt.Sprintf("login failed: %v", loginErr),
-		), nil
+		)
+		challengeResult.RecordAction(fmt.Sprintf("%s: failed - %s", c.Name(), fmt.Sprintf("login failed: %v", loginErr)))
+		return challengeResult, nil
 	}
 
 	c.ReportProgress("measuring-entity-detail-latency", nil)
@@ -336,9 +350,11 @@ func (c *EntityDetailLatencyChallenge) Execute(
 		}
 	}
 
-	return c.CreateResult(
+	challengeResult := c.CreateResult(
 		status, start, assertions, nil, outputs, "",
-	), nil
+	)
+	challengeResult.RecordAction(fmt.Sprintf("%s: challenge completed with status %s", c.Name(), status))
+	return challengeResult, nil
 }
 
 // --- CH-205: StatsLatency ---
@@ -380,10 +396,12 @@ func (c *StatsLatencyChallenge) Execute(
 		ctx, c.config.Username, c.config.Password, 3,
 	)
 	if loginErr != nil {
-		return c.CreateResult(
+		challengeResult := c.CreateResult(
 			challenge.StatusFailed, start, assertions, nil,
 			outputs, fmt.Sprintf("login failed: %v", loginErr),
-		), nil
+		)
+		challengeResult.RecordAction(fmt.Sprintf("%s: failed - %s", c.Name(), fmt.Sprintf("login failed: %v", loginErr)))
+		return challengeResult, nil
 	}
 
 	c.ReportProgress("measuring-stats-latency", nil)
@@ -418,9 +436,11 @@ func (c *StatsLatencyChallenge) Execute(
 		}
 	}
 
-	return c.CreateResult(
+	challengeResult := c.CreateResult(
 		status, start, assertions, nil, outputs, "",
-	), nil
+	)
+	challengeResult.RecordAction(fmt.Sprintf("%s: challenge completed with status %s", c.Name(), status))
+	return challengeResult, nil
 }
 
 // --- CH-206: ConcurrentReads ---
@@ -462,10 +482,12 @@ func (c *ConcurrentReadsChallenge) Execute(
 		ctx, c.config.Username, c.config.Password, 3,
 	)
 	if loginErr != nil {
-		return c.CreateResult(
+		challengeResult := c.CreateResult(
 			challenge.StatusFailed, start, assertions, nil,
 			outputs, fmt.Sprintf("login failed: %v", loginErr),
-		), nil
+		)
+		challengeResult.RecordAction(fmt.Sprintf("%s: failed - %s", c.Name(), fmt.Sprintf("login failed: %v", loginErr)))
+		return challengeResult, nil
 	}
 
 	c.ReportProgress("running-concurrent-reads", nil)
@@ -510,9 +532,11 @@ func (c *ConcurrentReadsChallenge) Execute(
 		}
 	}
 
-	return c.CreateResult(
+	challengeResult := c.CreateResult(
 		status, start, assertions, nil, outputs, "",
-	), nil
+	)
+	challengeResult.RecordAction(fmt.Sprintf("%s: challenge completed with status %s", c.Name(), status))
+	return challengeResult, nil
 }
 
 // --- CH-207: ConcurrentSearches ---
@@ -554,10 +578,12 @@ func (c *ConcurrentSearchesChallenge) Execute(
 		ctx, c.config.Username, c.config.Password, 3,
 	)
 	if loginErr != nil {
-		return c.CreateResult(
+		challengeResult := c.CreateResult(
 			challenge.StatusFailed, start, assertions, nil,
 			outputs, fmt.Sprintf("login failed: %v", loginErr),
-		), nil
+		)
+		challengeResult.RecordAction(fmt.Sprintf("%s: failed - %s", c.Name(), fmt.Sprintf("login failed: %v", loginErr)))
+		return challengeResult, nil
 	}
 
 	c.ReportProgress("running-concurrent-searches", nil)
@@ -606,9 +632,11 @@ func (c *ConcurrentSearchesChallenge) Execute(
 		}
 	}
 
-	return c.CreateResult(
+	challengeResult := c.CreateResult(
 		status, start, assertions, nil, outputs, "",
-	), nil
+	)
+	challengeResult.RecordAction(fmt.Sprintf("%s: challenge completed with status %s", c.Name(), status))
+	return challengeResult, nil
 }
 
 // --- CH-208: GoroutineStability ---
@@ -650,10 +678,12 @@ func (c *GoroutineStabilityChallenge) Execute(
 		ctx, c.config.Username, c.config.Password, 3,
 	)
 	if loginErr != nil {
-		return c.CreateResult(
+		challengeResult := c.CreateResult(
 			challenge.StatusFailed, start, assertions, nil,
 			outputs, fmt.Sprintf("login failed: %v", loginErr),
-		), nil
+		)
+		challengeResult.RecordAction(fmt.Sprintf("%s: failed - %s", c.Name(), fmt.Sprintf("login failed: %v", loginErr)))
+		return challengeResult, nil
 	}
 
 	c.ReportProgress("measuring-goroutine-stability", nil)
@@ -696,9 +726,11 @@ func (c *GoroutineStabilityChallenge) Execute(
 		}
 	}
 
-	return c.CreateResult(
+	challengeResult := c.CreateResult(
 		status, start, assertions, nil, outputs, "",
-	), nil
+	)
+	challengeResult.RecordAction(fmt.Sprintf("%s: challenge completed with status %s", c.Name(), status))
+	return challengeResult, nil
 }
 
 // --- CH-209: MemoryStability ---
@@ -740,10 +772,12 @@ func (c *MemoryStabilityChallenge) Execute(
 		ctx, c.config.Username, c.config.Password, 3,
 	)
 	if loginErr != nil {
-		return c.CreateResult(
+		challengeResult := c.CreateResult(
 			challenge.StatusFailed, start, assertions, nil,
 			outputs, fmt.Sprintf("login failed: %v", loginErr),
-		), nil
+		)
+		challengeResult.RecordAction(fmt.Sprintf("%s: failed - %s", c.Name(), fmt.Sprintf("login failed: %v", loginErr)))
+		return challengeResult, nil
 	}
 
 	c.ReportProgress("measuring-memory-stability", nil)
@@ -787,9 +821,11 @@ func (c *MemoryStabilityChallenge) Execute(
 		}
 	}
 
-	return c.CreateResult(
+	challengeResult := c.CreateResult(
 		status, start, assertions, nil, outputs, "",
-	), nil
+	)
+	challengeResult.RecordAction(fmt.Sprintf("%s: challenge completed with status %s", c.Name(), status))
+	return challengeResult, nil
 }
 
 // --- CH-210: ConnectionPoolHealth ---
@@ -831,10 +867,12 @@ func (c *ConnectionPoolHealthChallenge) Execute(
 		ctx, c.config.Username, c.config.Password, 3,
 	)
 	if loginErr != nil {
-		return c.CreateResult(
+		challengeResult := c.CreateResult(
 			challenge.StatusFailed, start, assertions, nil,
 			outputs, fmt.Sprintf("login failed: %v", loginErr),
-		), nil
+		)
+		challengeResult.RecordAction(fmt.Sprintf("%s: failed - %s", c.Name(), fmt.Sprintf("login failed: %v", loginErr)))
+		return challengeResult, nil
 	}
 
 	c.ReportProgress("checking-connection-pool", nil)
@@ -879,9 +917,11 @@ func (c *ConnectionPoolHealthChallenge) Execute(
 		}
 	}
 
-	return c.CreateResult(
+	challengeResult := c.CreateResult(
 		status, start, assertions, nil, outputs, "",
-	), nil
+	)
+	challengeResult.RecordAction(fmt.Sprintf("%s: challenge completed with status %s", c.Name(), status))
+	return challengeResult, nil
 }
 
 // --- CH-211: CacheEffectiveness ---
@@ -923,10 +963,12 @@ func (c *CacheEffectivenessChallenge) Execute(
 		ctx, c.config.Username, c.config.Password, 3,
 	)
 	if loginErr != nil {
-		return c.CreateResult(
+		challengeResult := c.CreateResult(
 			challenge.StatusFailed, start, assertions, nil,
 			outputs, fmt.Sprintf("login failed: %v", loginErr),
-		), nil
+		)
+		challengeResult.RecordAction(fmt.Sprintf("%s: failed - %s", c.Name(), fmt.Sprintf("login failed: %v", loginErr)))
+		return challengeResult, nil
 	}
 
 	c.ReportProgress("testing-cache-effectiveness", nil)
@@ -968,9 +1010,11 @@ func (c *CacheEffectivenessChallenge) Execute(
 		}
 	}
 
-	return c.CreateResult(
+	challengeResult := c.CreateResult(
 		status, start, assertions, nil, outputs, "",
-	), nil
+	)
+	challengeResult.RecordAction(fmt.Sprintf("%s: challenge completed with status %s", c.Name(), status))
+	return challengeResult, nil
 }
 
 // --- CH-212: CompressionActive ---
@@ -1021,19 +1065,23 @@ func (c *CompressionActiveChallenge) Execute(
 		c.config.BaseURL+"/health", nil,
 	)
 	if err != nil {
-		return c.CreateResult(
+		challengeResult := c.CreateResult(
 			challenge.StatusFailed, start, assertions, nil,
 			outputs, fmt.Sprintf("request creation failed: %v", err),
-		), nil
+		)
+		challengeResult.RecordAction(fmt.Sprintf("%s: failed - %s", c.Name(), fmt.Sprintf("request creation failed: %v", err)))
+		return challengeResult, nil
 	}
 	req.Header.Set("Accept-Encoding", "br, gzip, deflate")
 
 	resp, doErr := httpClient.Do(req)
 	if doErr != nil {
-		return c.CreateResult(
+		challengeResult := c.CreateResult(
 			challenge.StatusFailed, start, assertions, nil,
 			outputs, fmt.Sprintf("request failed: %v", doErr),
-		), nil
+		)
+		challengeResult.RecordAction(fmt.Sprintf("%s: failed - %s", c.Name(), fmt.Sprintf("request failed: %v", doErr)))
+		return challengeResult, nil
 	}
 	resp.Body.Close()
 
@@ -1062,9 +1110,11 @@ func (c *CompressionActiveChallenge) Execute(
 		}
 	}
 
-	return c.CreateResult(
+	challengeResult := c.CreateResult(
 		status, start, assertions, nil, outputs, "",
-	), nil
+	)
+	challengeResult.RecordAction(fmt.Sprintf("%s: challenge completed with status %s", c.Name(), status))
+	return challengeResult, nil
 }
 
 // --- CH-213: MetricsEndpointPerf ---
@@ -1110,10 +1160,12 @@ func (c *MetricsEndpointPerfChallenge) Execute(
 	)
 	resp, err := httpClient.Do(req)
 	if err != nil {
-		return c.CreateResult(
+		challengeResult := c.CreateResult(
 			challenge.StatusFailed, start, assertions, nil,
 			outputs, fmt.Sprintf("metrics request failed: %v", err),
-		), nil
+		)
+		challengeResult.RecordAction(fmt.Sprintf("%s: failed - %s", c.Name(), fmt.Sprintf("metrics request failed: %v", err)))
+		return challengeResult, nil
 	}
 	resp.Body.Close()
 
@@ -1153,9 +1205,11 @@ func (c *MetricsEndpointPerfChallenge) Execute(
 		}
 	}
 
-	return c.CreateResult(
+	challengeResult := c.CreateResult(
 		status, start, assertions, nil, outputs, "",
-	), nil
+	)
+	challengeResult.RecordAction(fmt.Sprintf("%s: challenge completed with status %s", c.Name(), status))
+	return challengeResult, nil
 }
 
 // --- CH-214: DeepHealthCheck ---
@@ -1197,10 +1251,12 @@ func (c *DeepHealthCheckChallenge) Execute(
 		ctx, c.config.Username, c.config.Password, 3,
 	)
 	if loginErr != nil {
-		return c.CreateResult(
+		challengeResult := c.CreateResult(
 			challenge.StatusFailed, start, assertions, nil,
 			outputs, fmt.Sprintf("login failed: %v", loginErr),
-		), nil
+		)
+		challengeResult.RecordAction(fmt.Sprintf("%s: failed - %s", c.Name(), fmt.Sprintf("login failed: %v", loginErr)))
+		return challengeResult, nil
 	}
 
 	c.ReportProgress("checking-deep-health", nil)
@@ -1249,9 +1305,11 @@ func (c *DeepHealthCheckChallenge) Execute(
 		}
 	}
 
-	return c.CreateResult(
+	challengeResult := c.CreateResult(
 		status, start, assertions, nil, outputs, "",
-	), nil
+	)
+	challengeResult.RecordAction(fmt.Sprintf("%s: challenge completed with status %s", c.Name(), status))
+	return challengeResult, nil
 }
 
 // --- CH-215: WebSocketConnectPerf ---
@@ -1293,10 +1351,12 @@ func (c *WebSocketConnectPerfChallenge) Execute(
 		ctx, c.config.Username, c.config.Password, 3,
 	)
 	if loginErr != nil {
-		return c.CreateResult(
+		challengeResult := c.CreateResult(
 			challenge.StatusFailed, start, assertions, nil,
 			outputs, fmt.Sprintf("login failed: %v", loginErr),
-		), nil
+		)
+		challengeResult.RecordAction(fmt.Sprintf("%s: failed - %s", c.Name(), fmt.Sprintf("login failed: %v", loginErr)))
+		return challengeResult, nil
 	}
 
 	c.ReportProgress("testing-websocket-connect", nil)
@@ -1331,9 +1391,11 @@ func (c *WebSocketConnectPerfChallenge) Execute(
 		}
 	}
 
-	return c.CreateResult(
+	challengeResult := c.CreateResult(
 		status, start, assertions, nil, outputs, "",
-	), nil
+	)
+	challengeResult.RecordAction(fmt.Sprintf("%s: challenge completed with status %s", c.Name(), status))
+	return challengeResult, nil
 }
 
 // --- CH-216: WebSocketMessage ---
@@ -1375,10 +1437,12 @@ func (c *WebSocketMessageChallenge) Execute(
 		ctx, c.config.Username, c.config.Password, 3,
 	)
 	if loginErr != nil {
-		return c.CreateResult(
+		challengeResult := c.CreateResult(
 			challenge.StatusFailed, start, assertions, nil,
 			outputs, fmt.Sprintf("login failed: %v", loginErr),
-		), nil
+		)
+		challengeResult.RecordAction(fmt.Sprintf("%s: failed - %s", c.Name(), fmt.Sprintf("login failed: %v", loginErr)))
+		return challengeResult, nil
 	}
 
 	c.ReportProgress("testing-websocket-message", nil)
@@ -1409,9 +1473,11 @@ func (c *WebSocketMessageChallenge) Execute(
 		}
 	}
 
-	return c.CreateResult(
+	challengeResult := c.CreateResult(
 		status, start, assertions, nil, outputs, "",
-	), nil
+	)
+	challengeResult.RecordAction(fmt.Sprintf("%s: challenge completed with status %s", c.Name(), status))
+	return challengeResult, nil
 }
 
 // --- CH-217: ScanQueueing ---
@@ -1453,10 +1519,12 @@ func (c *ScanQueueingChallenge) Execute(
 		ctx, c.config.Username, c.config.Password, 3,
 	)
 	if loginErr != nil {
-		return c.CreateResult(
+		challengeResult := c.CreateResult(
 			challenge.StatusFailed, start, assertions, nil,
 			outputs, fmt.Sprintf("login failed: %v", loginErr),
-		), nil
+		)
+		challengeResult.RecordAction(fmt.Sprintf("%s: failed - %s", c.Name(), fmt.Sprintf("login failed: %v", loginErr)))
+		return challengeResult, nil
 	}
 
 	c.ReportProgress("testing-scan-queueing", nil)
@@ -1485,9 +1553,11 @@ func (c *ScanQueueingChallenge) Execute(
 		}
 	}
 
-	return c.CreateResult(
+	challengeResult := c.CreateResult(
 		status, start, assertions, nil, outputs, "",
-	), nil
+	)
+	challengeResult.RecordAction(fmt.Sprintf("%s: challenge completed with status %s", c.Name(), status))
+	return challengeResult, nil
 }
 
 // --- CH-218: BackupPerformance ---
@@ -1529,10 +1599,12 @@ func (c *BackupPerformanceChallenge) Execute(
 		ctx, c.config.Username, c.config.Password, 3,
 	)
 	if loginErr != nil {
-		return c.CreateResult(
+		challengeResult := c.CreateResult(
 			challenge.StatusFailed, start, assertions, nil,
 			outputs, fmt.Sprintf("login failed: %v", loginErr),
-		), nil
+		)
+		challengeResult.RecordAction(fmt.Sprintf("%s: failed - %s", c.Name(), fmt.Sprintf("login failed: %v", loginErr)))
+		return challengeResult, nil
 	}
 
 	c.ReportProgress("testing-backup-performance", nil)
@@ -1570,9 +1642,11 @@ func (c *BackupPerformanceChallenge) Execute(
 		}
 	}
 
-	return c.CreateResult(
+	challengeResult := c.CreateResult(
 		status, start, assertions, nil, outputs, "",
-	), nil
+	)
+	challengeResult.RecordAction(fmt.Sprintf("%s: challenge completed with status %s", c.Name(), status))
+	return challengeResult, nil
 }
 
 // --- CH-219: PaginationPerformance ---
@@ -1614,10 +1688,12 @@ func (c *PaginationPerformanceChallenge) Execute(
 		ctx, c.config.Username, c.config.Password, 3,
 	)
 	if loginErr != nil {
-		return c.CreateResult(
+		challengeResult := c.CreateResult(
 			challenge.StatusFailed, start, assertions, nil,
 			outputs, fmt.Sprintf("login failed: %v", loginErr),
-		), nil
+		)
+		challengeResult.RecordAction(fmt.Sprintf("%s: failed - %s", c.Name(), fmt.Sprintf("login failed: %v", loginErr)))
+		return challengeResult, nil
 	}
 
 	c.ReportProgress("testing-pagination-performance", nil)
@@ -1654,9 +1730,11 @@ func (c *PaginationPerformanceChallenge) Execute(
 		}
 	}
 
-	return c.CreateResult(
+	challengeResult := c.CreateResult(
 		status, start, assertions, nil, outputs, "",
-	), nil
+	)
+	challengeResult.RecordAction(fmt.Sprintf("%s: challenge completed with status %s", c.Name(), status))
+	return challengeResult, nil
 }
 
 // --- CH-220: FilterPerformance ---
@@ -1698,10 +1776,12 @@ func (c *FilterPerformanceChallenge) Execute(
 		ctx, c.config.Username, c.config.Password, 3,
 	)
 	if loginErr != nil {
-		return c.CreateResult(
+		challengeResult := c.CreateResult(
 			challenge.StatusFailed, start, assertions, nil,
 			outputs, fmt.Sprintf("login failed: %v", loginErr),
-		), nil
+		)
+		challengeResult.RecordAction(fmt.Sprintf("%s: failed - %s", c.Name(), fmt.Sprintf("login failed: %v", loginErr)))
+		return challengeResult, nil
 	}
 
 	c.ReportProgress("testing-filter-performance", nil)
@@ -1737,7 +1817,9 @@ func (c *FilterPerformanceChallenge) Execute(
 		}
 	}
 
-	return c.CreateResult(
+	challengeResult := c.CreateResult(
 		status, start, assertions, nil, outputs, "",
-	), nil
+	)
+	challengeResult.RecordAction(fmt.Sprintf("%s: challenge completed with status %s", c.Name(), status))
+	return challengeResult, nil
 }

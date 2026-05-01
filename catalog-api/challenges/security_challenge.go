@@ -63,9 +63,11 @@ func (c *SecurityChallenge) Execute(
 	})
 
 	if !loginOK {
-		return c.CreateResult(
+		challengeResult := c.CreateResult(
 			challenge.StatusFailed, start, assertions, nil, outputs, "login failed",
-		), nil
+		)
+		challengeResult.RecordAction(fmt.Sprintf("%s: failed - %s", c.Name(), "login failed"))
+		return challengeResult, nil
 	}
 
 	validToken := client.Token()
@@ -230,7 +232,9 @@ func (c *SecurityChallenge) Execute(
 		}
 	}
 
-	return c.CreateResult(
+	challengeResult := c.CreateResult(
 		status, start, assertions, metrics, outputs, "",
-	), nil
+	)
+	challengeResult.RecordAction(fmt.Sprintf("%s: challenge completed with status %s", c.Name(), status))
+	return challengeResult, nil
 }

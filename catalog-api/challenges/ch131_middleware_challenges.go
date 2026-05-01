@@ -59,10 +59,12 @@ func (c *MiddlewareSecurityHeadersChallenge) Execute(
 			Passed:  false,
 			Message: fmt.Sprintf("Health unreachable: %v", err),
 		})
-		return c.CreateResult(
+		challengeResult := c.CreateResult(
 			challenge.StatusFailed, start, assertions, nil,
 			outputs, err.Error(),
-		), nil
+		)
+		challengeResult.RecordAction(fmt.Sprintf("%s: failed - %s", c.Name(), err.Error()))
+		return challengeResult, nil
 	}
 	resp.Body.Close()
 
@@ -102,9 +104,11 @@ func (c *MiddlewareSecurityHeadersChallenge) Execute(
 		}
 	}
 
-	return c.CreateResult(
+	challengeResult := c.CreateResult(
 		status, start, assertions, nil, outputs, "",
-	), nil
+	)
+	challengeResult.RecordAction(fmt.Sprintf("%s: challenge completed with status %s", c.Name(), status))
+	return challengeResult, nil
 }
 
 // MiddlewareRequestIDChallenge validates that a request ID
@@ -209,9 +213,11 @@ func (c *MiddlewareRequestIDChallenge) Execute(
 		}
 	}
 
-	return c.CreateResult(
+	challengeResult := c.CreateResult(
 		status, start, assertions, nil, outputs, "",
-	), nil
+	)
+	challengeResult.RecordAction(fmt.Sprintf("%s: challenge completed with status %s", c.Name(), status))
+	return challengeResult, nil
 }
 
 // MiddlewareCacheHeadersHealthChallenge validates cache headers
@@ -261,10 +267,12 @@ func (c *MiddlewareCacheHeadersHealthChallenge) Execute(
 			Passed:  false,
 			Message: fmt.Sprintf("Health unreachable: %v", err),
 		})
-		return c.CreateResult(
+		challengeResult := c.CreateResult(
 			challenge.StatusFailed, start, assertions, nil,
 			outputs, err.Error(),
-		), nil
+		)
+		challengeResult.RecordAction(fmt.Sprintf("%s: failed - %s", c.Name(), err.Error()))
+		return challengeResult, nil
 	}
 	resp.Body.Close()
 
@@ -294,9 +302,11 @@ func (c *MiddlewareCacheHeadersHealthChallenge) Execute(
 		}
 	}
 
-	return c.CreateResult(
+	challengeResult := c.CreateResult(
 		status, start, assertions, nil, outputs, "",
-	), nil
+	)
+	challengeResult.RecordAction(fmt.Sprintf("%s: challenge completed with status %s", c.Name(), status))
+	return challengeResult, nil
 }
 
 // MiddlewareCacheHeadersDiscoveryChallenge validates cache
@@ -346,10 +356,12 @@ func (c *MiddlewareCacheHeadersDiscoveryChallenge) Execute(
 			Passed:  false,
 			Message: fmt.Sprintf("Discovery unreachable: %v", err),
 		})
-		return c.CreateResult(
+		challengeResult := c.CreateResult(
 			challenge.StatusFailed, start, assertions, nil,
 			outputs, err.Error(),
-		), nil
+		)
+		challengeResult.RecordAction(fmt.Sprintf("%s: failed - %s", c.Name(), err.Error()))
+		return challengeResult, nil
 	}
 	resp.Body.Close()
 
@@ -380,9 +392,11 @@ func (c *MiddlewareCacheHeadersDiscoveryChallenge) Execute(
 		}
 	}
 
-	return c.CreateResult(
+	challengeResult := c.CreateResult(
 		status, start, assertions, nil, outputs, "",
-	), nil
+	)
+	challengeResult.RecordAction(fmt.Sprintf("%s: challenge completed with status %s", c.Name(), status))
+	return challengeResult, nil
 }
 
 // MiddlewareRateLimitingChallenge validates that rate limiting
@@ -481,9 +495,11 @@ func (c *MiddlewareRateLimitingChallenge) Execute(
 		}
 	}
 
-	return c.CreateResult(
+	challengeResult := c.CreateResult(
 		resultStatus, start, assertions, nil, outputs, "",
-	), nil
+	)
+	challengeResult.RecordAction(fmt.Sprintf("%s: challenge completed with status %s", c.Name(), resultStatus))
+	return challengeResult, nil
 }
 
 // MiddlewareRequestTimeoutChallenge validates that request
@@ -577,9 +593,11 @@ func (c *MiddlewareRequestTimeoutChallenge) Execute(
 		}
 	}
 
-	return c.CreateResult(
+	challengeResult := c.CreateResult(
 		status, start, assertions, nil, outputs, "",
-	), nil
+	)
+	challengeResult.RecordAction(fmt.Sprintf("%s: challenge completed with status %s", c.Name(), status))
+	return challengeResult, nil
 }
 
 // MiddlewareCORSHeadersChallenge validates that CORS headers
@@ -631,10 +649,12 @@ func (c *MiddlewareCORSHeadersChallenge) Execute(
 			Passed:  false,
 			Message: fmt.Sprintf("Endpoint unreachable: %v", err),
 		})
-		return c.CreateResult(
+		challengeResult := c.CreateResult(
 			challenge.StatusFailed, start, assertions, nil,
 			outputs, err.Error(),
-		), nil
+		)
+		challengeResult.RecordAction(fmt.Sprintf("%s: failed - %s", c.Name(), err.Error()))
+		return challengeResult, nil
 	}
 	resp.Body.Close()
 
@@ -669,9 +689,11 @@ func (c *MiddlewareCORSHeadersChallenge) Execute(
 		}
 	}
 
-	return c.CreateResult(
+	challengeResult := c.CreateResult(
 		status, start, assertions, nil, outputs, "",
-	), nil
+	)
+	challengeResult.RecordAction(fmt.Sprintf("%s: challenge completed with status %s", c.Name(), status))
+	return challengeResult, nil
 }
 
 // MiddlewareCompressionChallenge validates that compression
@@ -730,10 +752,12 @@ func (c *MiddlewareCompressionChallenge) Execute(
 			Passed:  false,
 			Message: fmt.Sprintf("Health unreachable: %v", err),
 		})
-		return c.CreateResult(
+		challengeResult := c.CreateResult(
 			challenge.StatusFailed, start, assertions, nil,
 			outputs, err.Error(),
-		), nil
+		)
+		challengeResult.RecordAction(fmt.Sprintf("%s: failed - %s", c.Name(), err.Error()))
+		return challengeResult, nil
 	}
 	resp.Body.Close()
 
@@ -771,9 +795,11 @@ func (c *MiddlewareCompressionChallenge) Execute(
 		}
 	}
 
-	return c.CreateResult(
+	challengeResult := c.CreateResult(
 		status, start, assertions, nil, outputs, "",
-	), nil
+	)
+	challengeResult.RecordAction(fmt.Sprintf("%s: challenge completed with status %s", c.Name(), status))
+	return challengeResult, nil
 }
 
 // MiddlewareSQLInjectionChallenge validates that input
@@ -813,10 +839,12 @@ func (c *MiddlewareSQLInjectionChallenge) Execute(
 		ctx, c.config.Username, c.config.Password, 3,
 	)
 	if loginErr != nil {
-		return c.CreateResult(
+		challengeResult := c.CreateResult(
 			challenge.StatusFailed, start, assertions, nil,
 			outputs, fmt.Sprintf("login failed: %v", loginErr),
-		), nil
+		)
+		challengeResult.RecordAction(fmt.Sprintf("%s: failed - %s", c.Name(), fmt.Sprintf("login failed: %v", loginErr)))
+		return challengeResult, nil
 	}
 
 	c.ReportProgress("testing-injection", nil)
@@ -859,9 +887,11 @@ func (c *MiddlewareSQLInjectionChallenge) Execute(
 		}
 	}
 
-	return c.CreateResult(
+	challengeResult := c.CreateResult(
 		status, start, assertions, nil, outputs, "",
-	), nil
+	)
+	challengeResult.RecordAction(fmt.Sprintf("%s: challenge completed with status %s", c.Name(), status))
+	return challengeResult, nil
 }
 
 // MiddlewareXSSChallenge validates that input validation
@@ -901,10 +931,12 @@ func (c *MiddlewareXSSChallenge) Execute(
 		ctx, c.config.Username, c.config.Password, 3,
 	)
 	if loginErr != nil {
-		return c.CreateResult(
+		challengeResult := c.CreateResult(
 			challenge.StatusFailed, start, assertions, nil,
 			outputs, fmt.Sprintf("login failed: %v", loginErr),
-		), nil
+		)
+		challengeResult.RecordAction(fmt.Sprintf("%s: failed - %s", c.Name(), fmt.Sprintf("login failed: %v", loginErr)))
+		return challengeResult, nil
 	}
 
 	c.ReportProgress("testing-xss", nil)
@@ -971,7 +1003,9 @@ func (c *MiddlewareXSSChallenge) Execute(
 		}
 	}
 
-	return c.CreateResult(
+	challengeResult := c.CreateResult(
 		resultStatus, start, assertions, nil, outputs, "",
-	), nil
+	)
+	challengeResult.RecordAction(fmt.Sprintf("%s: challenge completed with status %s", c.Name(), resultStatus))
+	return challengeResult, nil
 }

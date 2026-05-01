@@ -47,17 +47,23 @@ func (c *IQPlaceholderFallbackChallenge) Execute(ctx context.Context) (*challeng
 
 	client := httpclient.NewAPIClient(c.config.BaseURL)
 	if _, err := client.LoginWithRetry(ctx, c.config.Username, c.config.Password, 3); err != nil {
-		return c.CreateResult(challenge.StatusFailed, start, assertions, nil, outputs, err.Error()), nil
+		challengeResult := c.CreateResult(challenge.StatusFailed, start, assertions, nil, outputs, err.Error())
+		challengeResult.RecordAction(fmt.Sprintf("%s: failed - %s", c.Name(), err.Error()))
+		return challengeResult, nil
 	}
 
 	c.ReportProgress("fetching missing cover", nil)
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, c.config.BaseURL+"/api/v1/cover/99999999", nil)
 	if err != nil {
-		return c.CreateResult(challenge.StatusFailed, start, assertions, nil, outputs, err.Error()), nil
+		challengeResult := c.CreateResult(challenge.StatusFailed, start, assertions, nil, outputs, err.Error())
+		challengeResult.RecordAction(fmt.Sprintf("%s: failed - %s", c.Name(), err.Error()))
+		return challengeResult, nil
 	}
 	resp, err := authed(client, req)
 	if err != nil {
-		return c.CreateResult(challenge.StatusFailed, start, assertions, nil, outputs, err.Error()), nil
+		challengeResult := c.CreateResult(challenge.StatusFailed, start, assertions, nil, outputs, err.Error())
+		challengeResult.RecordAction(fmt.Sprintf("%s: failed - %s", c.Name(), err.Error()))
+		return challengeResult, nil
 	}
 	defer resp.Body.Close()
 
@@ -76,7 +82,9 @@ func (c *IQPlaceholderFallbackChallenge) Execute(ctx context.Context) (*challeng
 			status = challenge.StatusFailed
 		}
 	}
-	return c.CreateResult(status, start, assertions, nil, outputs, ""), nil
+	challengeResult := c.CreateResult(status, start, assertions, nil, outputs, "")
+	challengeResult.RecordAction(fmt.Sprintf("%s: challenge completed with status %s", c.Name(), status))
+	return challengeResult, nil
 }
 
 // -----------------------------------------------------------------------------
@@ -119,13 +127,17 @@ func (c *IQBlocksLowResChallenge) Execute(ctx context.Context) (*challenge.Resul
 
 	client := httpclient.NewAPIClient(c.config.BaseURL)
 	if _, err := client.LoginWithRetry(ctx, c.config.Username, c.config.Password, 3); err != nil {
-		return c.CreateResult(challenge.StatusFailed, start, assertions, nil, outputs, err.Error()), nil
+		challengeResult := c.CreateResult(challenge.StatusFailed, start, assertions, nil, outputs, err.Error())
+		challengeResult.RecordAction(fmt.Sprintf("%s: failed - %s", c.Name(), err.Error()))
+		return challengeResult, nil
 	}
 
 	c.ReportProgress("walking covers", nil)
 	_, body, err := client.Get(ctx, "/api/v1/entities?limit=25")
 	if err != nil {
-		return c.CreateResult(challenge.StatusFailed, start, assertions, nil, outputs, err.Error()), nil
+		challengeResult := c.CreateResult(challenge.StatusFailed, start, assertions, nil, outputs, err.Error())
+		challengeResult.RecordAction(fmt.Sprintf("%s: failed - %s", c.Name(), err.Error()))
+		return challengeResult, nil
 	}
 	items, _ := body["items"].([]interface{})
 	if len(items) == 0 {
@@ -133,7 +145,9 @@ func (c *IQBlocksLowResChallenge) Execute(ctx context.Context) (*challenge.Resul
 			Type: "not_empty", Target: "entities", Passed: true,
 			Message: "no entities to assess; considered vacuously passed",
 		})
-		return c.CreateResult(challenge.StatusPassed, start, assertions, nil, outputs, ""), nil
+		challengeResult := c.CreateResult(challenge.StatusPassed, start, assertions, nil, outputs, "")
+		challengeResult.RecordAction(fmt.Sprintf("%s: challenge completed with status %s", c.Name(), challenge.StatusPassed))
+		return challengeResult, nil
 	}
 
 	checked := 0
@@ -175,7 +189,9 @@ func (c *IQBlocksLowResChallenge) Execute(ctx context.Context) (*challenge.Resul
 	if rejected > 0 {
 		status = challenge.StatusFailed
 	}
-	return c.CreateResult(status, start, assertions, nil, outputs, ""), nil
+	challengeResult := c.CreateResult(status, start, assertions, nil, outputs, "")
+	challengeResult.RecordAction(fmt.Sprintf("%s: challenge completed with status %s", c.Name(), status))
+	return challengeResult, nil
 }
 
 // -----------------------------------------------------------------------------
@@ -215,7 +231,9 @@ func (c *IQHeaderAlwaysPresentChallenge) Execute(ctx context.Context) (*challeng
 
 	client := httpclient.NewAPIClient(c.config.BaseURL)
 	if _, err := client.LoginWithRetry(ctx, c.config.Username, c.config.Password, 3); err != nil {
-		return c.CreateResult(challenge.StatusFailed, start, assertions, nil, outputs, err.Error()), nil
+		challengeResult := c.CreateResult(challenge.StatusFailed, start, assertions, nil, outputs, err.Error())
+		challengeResult.RecordAction(fmt.Sprintf("%s: failed - %s", c.Name(), err.Error()))
+		return challengeResult, nil
 	}
 
 	ids := []int{1, 2, 3, 99999999} // last one intentionally missing
@@ -245,7 +263,9 @@ func (c *IQHeaderAlwaysPresentChallenge) Execute(ctx context.Context) (*challeng
 	if missing > 0 {
 		status = challenge.StatusFailed
 	}
-	return c.CreateResult(status, start, assertions, nil, outputs, ""), nil
+	challengeResult := c.CreateResult(status, start, assertions, nil, outputs, "")
+	challengeResult.RecordAction(fmt.Sprintf("%s: challenge completed with status %s", c.Name(), status))
+	return challengeResult, nil
 }
 
 // -----------------------------------------------------------------------------
@@ -313,7 +333,9 @@ func (c *IQPlaceholderSVGValidChallenge) Execute(ctx context.Context) (*challeng
 	if failures > 0 {
 		status = challenge.StatusFailed
 	}
-	return c.CreateResult(status, start, assertions, nil, outputs, ""), nil
+	challengeResult := c.CreateResult(status, start, assertions, nil, outputs, "")
+	challengeResult.RecordAction(fmt.Sprintf("%s: challenge completed with status %s", c.Name(), status))
+	return challengeResult, nil
 }
 
 // -----------------------------------------------------------------------------
@@ -354,11 +376,15 @@ func (c *IQLLMDisabledByDefaultChallenge) Execute(ctx context.Context) (*challen
 
 	client := httpclient.NewAPIClient(c.config.BaseURL)
 	if _, err := client.LoginWithRetry(ctx, c.config.Username, c.config.Password, 3); err != nil {
-		return c.CreateResult(challenge.StatusFailed, start, assertions, nil, outputs, err.Error()), nil
+		challengeResult := c.CreateResult(challenge.StatusFailed, start, assertions, nil, outputs, err.Error())
+		challengeResult.RecordAction(fmt.Sprintf("%s: failed - %s", c.Name(), err.Error()))
+		return challengeResult, nil
 	}
 	_, body, err := client.Get(ctx, "/api/v1/entities?limit=20")
 	if err != nil {
-		return c.CreateResult(challenge.StatusFailed, start, assertions, nil, outputs, err.Error()), nil
+		challengeResult := c.CreateResult(challenge.StatusFailed, start, assertions, nil, outputs, err.Error())
+		challengeResult.RecordAction(fmt.Sprintf("%s: failed - %s", c.Name(), err.Error()))
+		return challengeResult, nil
 	}
 	items, _ := body["items"].([]interface{})
 
@@ -396,7 +422,9 @@ func (c *IQLLMDisabledByDefaultChallenge) Execute(ctx context.Context) (*challen
 	if llmHits > 0 {
 		status = challenge.StatusFailed
 	}
-	return c.CreateResult(status, start, assertions, nil, outputs, ""), nil
+	challengeResult := c.CreateResult(status, start, assertions, nil, outputs, "")
+	challengeResult.RecordAction(fmt.Sprintf("%s: challenge completed with status %s", c.Name(), status))
+	return challengeResult, nil
 }
 
 // authed issues an HTTP request with the APIClient's JWT token attached and a

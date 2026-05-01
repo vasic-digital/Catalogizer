@@ -48,13 +48,15 @@ func (c *SMBConnectivityChallenge) Execute(ctx context.Context) (*challenge.Resu
 
 	// Pre-check: verify NAS endpoint is reachable.
 	if !isEndpointReachable(c.endpoint.Host, c.endpoint.Port) {
-		return c.CreateResult(challenge.StatusSkipped, start,
+		challengeResult := c.CreateResult(challenge.StatusSkipped, start,
 			[]challenge.AssertionResult{{
 				Type:    "infrastructure",
 				Target:  "nas_reachable",
 				Passed:  false,
 				Message: fmt.Sprintf("NAS at %s:%d not reachable - skipped (requires NAS infrastructure)", c.endpoint.Host, c.endpoint.Port),
-			}}, nil, outputs, ""), nil
+			}}, nil, outputs, "")
+		challengeResult.RecordAction(fmt.Sprintf("%s: failed", c.Name()))
+		return challengeResult, nil
 	}
 
 	// Step 1: TCP dial
@@ -69,7 +71,9 @@ func (c *SMBConnectivityChallenge) Execute(ctx context.Context) (*challenge.Resu
 		Message:  challenge.Ternary(err == nil, "TCP connection succeeded", fmt.Sprintf("TCP dial failed: %v", err)),
 	})
 	if err != nil {
-		return c.CreateResult(challenge.StatusFailed, start, assertions, nil, outputs, err.Error()), nil
+		challengeResult := c.CreateResult(challenge.StatusFailed, start, assertions, nil, outputs, err.Error())
+		challengeResult.RecordAction(fmt.Sprintf("%s: failed - %s", c.Name(), err.Error()))
+		return challengeResult, nil
 	}
 	conn.Close()
 
@@ -84,7 +88,9 @@ func (c *SMBConnectivityChallenge) Execute(ctx context.Context) (*challenge.Resu
 		Message:  challenge.Ternary(err == nil, "SMB session and share mount succeeded", fmt.Sprintf("SMB connection failed: %v", err)),
 	})
 	if err != nil {
-		return c.CreateResult(challenge.StatusFailed, start, assertions, nil, outputs, err.Error()), nil
+		challengeResult := c.CreateResult(challenge.StatusFailed, start, assertions, nil, outputs, err.Error())
+		challengeResult.RecordAction(fmt.Sprintf("%s: failed - %s", c.Name(), err.Error()))
+		return challengeResult, nil
 	}
 	c.client = client
 
@@ -100,7 +106,9 @@ func (c *SMBConnectivityChallenge) Execute(ctx context.Context) (*challenge.Resu
 		Message:  challenge.Ternary(err == nil && entryCount > 0, fmt.Sprintf("Root listing returned %d entries", entryCount), fmt.Sprintf("Root listing failed: entries=%d, err=%v", entryCount, err)),
 	})
 	if err != nil {
-		return c.CreateResult(challenge.StatusFailed, start, assertions, nil, outputs, err.Error()), nil
+		challengeResult := c.CreateResult(challenge.StatusFailed, start, assertions, nil, outputs, err.Error())
+		challengeResult.RecordAction(fmt.Sprintf("%s: failed - %s", c.Name(), err.Error()))
+		return challengeResult, nil
 	}
 
 	outputs["root_entry_count"] = fmt.Sprintf("%d", entryCount)
@@ -126,7 +134,9 @@ func (c *SMBConnectivityChallenge) Execute(ctx context.Context) (*challenge.Resu
 		}
 	}
 
-	return c.CreateResult(status, start, assertions, metrics, outputs, ""), nil
+	challengeResult := c.CreateResult(status, start, assertions, metrics, outputs, "")
+	challengeResult.RecordAction(fmt.Sprintf("%s: challenge completed with status %s", c.Name(), status))
+	return challengeResult, nil
 }
 
 // Cleanup disconnects the SMB client.

@@ -50,10 +50,12 @@ func (c *WebSocketReconnectionChallenge) Execute(
 	apiClient := httpclient.NewAPIClient(c.config.BaseURL)
 	_, loginErr := apiClient.LoginWithRetry(ctx, c.config.Username, c.config.Password, 3)
 	if loginErr != nil {
-		return c.CreateResult(
+		challengeResult := c.CreateResult(
 			challenge.StatusFailed, start, assertions, nil, outputs,
 			fmt.Sprintf("login failed: %v", loginErr),
-		), nil
+		)
+		challengeResult.RecordAction(fmt.Sprintf("%s: failed - %s", c.Name(), fmt.Sprintf("login failed: %v", loginErr)))
+		return challengeResult, nil
 	}
 
 	token := apiClient.Token()
@@ -98,10 +100,12 @@ func (c *WebSocketReconnectionChallenge) Execute(
 			Message:  "WebSocket endpoint not reachable; skipping reconnection probe",
 		})
 		outputs["websocket_available"] = "false"
-		return c.CreateResult(
+		challengeResult := c.CreateResult(
 			challenge.StatusSkipped, start, assertions, nil, outputs,
 			"websocket endpoint not reachable",
-		), nil
+		)
+		challengeResult.RecordAction(fmt.Sprintf("%s: failed - %s", c.Name(), "websocket endpoint not reachable"))
+		return challengeResult, nil
 	}
 
 	outputs["websocket_available"] = "true"
@@ -145,7 +149,9 @@ func (c *WebSocketReconnectionChallenge) Execute(
 		}
 	}
 
-	return c.CreateResult(resultStatus, start, assertions, nil, outputs, ""), nil
+	challengeResult := c.CreateResult(resultStatus, start, assertions, nil, outputs, "")
+	challengeResult.RecordAction(fmt.Sprintf("%s: challenge completed with status %s", c.Name(), resultStatus))
+	return challengeResult, nil
 }
 
 // LazyInitOnFirstRequestChallenge validates that the first request
@@ -226,7 +232,9 @@ func (c *LazyInitOnFirstRequestChallenge) Execute(
 		}
 	}
 
-	return c.CreateResult(resultStatus, start, assertions, nil, outputs, ""), nil
+	challengeResult := c.CreateResult(resultStatus, start, assertions, nil, outputs, "")
+	challengeResult.RecordAction(fmt.Sprintf("%s: challenge completed with status %s", c.Name(), resultStatus))
+	return challengeResult, nil
 }
 
 // SemaphorePreventsOverloadChallenge validates that sending many
@@ -322,7 +330,9 @@ func (c *SemaphorePreventsOverloadChallenge) Execute(
 		}
 	}
 
-	return c.CreateResult(resultStatus, start, assertions, nil, outputs, ""), nil
+	challengeResult := c.CreateResult(resultStatus, start, assertions, nil, outputs, "")
+	challengeResult.RecordAction(fmt.Sprintf("%s: challenge completed with status %s", c.Name(), resultStatus))
+	return challengeResult, nil
 }
 
 // PrometheusMetricsEndpointChallenge validates the /metrics endpoint
@@ -397,7 +407,9 @@ func (c *PrometheusMetricsEndpointChallenge) Execute(
 		}
 	}
 
-	return c.CreateResult(resultStatus, start, assertions, nil, outputs, ""), nil
+	challengeResult := c.CreateResult(resultStatus, start, assertions, nil, outputs, "")
+	challengeResult.RecordAction(fmt.Sprintf("%s: challenge completed with status %s", c.Name(), resultStatus))
+	return challengeResult, nil
 }
 
 // HTTPRequestMetricsIncrementChallenge validates that /metrics shows
@@ -481,7 +493,9 @@ func (c *HTTPRequestMetricsIncrementChallenge) Execute(
 		}
 	}
 
-	return c.CreateResult(resultStatus, start, assertions, nil, outputs, ""), nil
+	challengeResult := c.CreateResult(resultStatus, start, assertions, nil, outputs, "")
+	challengeResult.RecordAction(fmt.Sprintf("%s: challenge completed with status %s", c.Name(), resultStatus))
+	return challengeResult, nil
 }
 
 // RuntimeMetricsCurrentChallenge validates that /metrics contains
@@ -569,7 +583,9 @@ func (c *RuntimeMetricsCurrentChallenge) Execute(
 		}
 	}
 
-	return c.CreateResult(resultStatus, start, assertions, nil, outputs, ""), nil
+	challengeResult := c.CreateResult(resultStatus, start, assertions, nil, outputs, "")
+	challengeResult.RecordAction(fmt.Sprintf("%s: challenge completed with status %s", c.Name(), resultStatus))
+	return challengeResult, nil
 }
 
 // DBQueryDurationTrackedChallenge validates that /metrics contains
@@ -609,10 +625,12 @@ func (c *DBQueryDurationTrackedChallenge) Execute(
 	c.ReportProgress("triggering-db-query", nil)
 	_, loginErr := client.LoginWithRetry(ctx, c.config.Username, c.config.Password, 3)
 	if loginErr != nil {
-		return c.CreateResult(
+		challengeResult := c.CreateResult(
 			challenge.StatusFailed, start, assertions, nil, outputs,
 			fmt.Sprintf("login failed: %v", loginErr),
-		), nil
+		)
+		challengeResult.RecordAction(fmt.Sprintf("%s: failed - %s", c.Name(), fmt.Sprintf("login failed: %v", loginErr)))
+		return challengeResult, nil
 	}
 
 	// Hit a DB-backed endpoint
@@ -660,7 +678,9 @@ func (c *DBQueryDurationTrackedChallenge) Execute(
 		}
 	}
 
-	return c.CreateResult(resultStatus, start, assertions, nil, outputs, ""), nil
+	challengeResult := c.CreateResult(resultStatus, start, assertions, nil, outputs, "")
+	challengeResult.RecordAction(fmt.Sprintf("%s: challenge completed with status %s", c.Name(), resultStatus))
+	return challengeResult, nil
 }
 
 // GrafanaDashboardRendersChallenge validates that a Grafana
@@ -774,5 +794,7 @@ func (c *GrafanaDashboardRendersChallenge) Execute(
 		}
 	}
 
-	return c.CreateResult(resultStatus, start, assertions, nil, outputs, ""), nil
+	challengeResult := c.CreateResult(resultStatus, start, assertions, nil, outputs, "")
+	challengeResult.RecordAction(fmt.Sprintf("%s: challenge completed with status %s", c.Name(), resultStatus))
+	return challengeResult, nil
 }

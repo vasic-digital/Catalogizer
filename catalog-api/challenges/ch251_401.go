@@ -29,8 +29,10 @@ func (c *httpChallenge) run(ctx context.Context, checks []httpCheck) (*challenge
 	client := httpclient.NewAPIClient(c.config.BaseURL)
 	_, loginErr := client.LoginWithRetry(ctx, c.config.Username, c.config.Password, 3)
 	if loginErr != nil {
-		return c.CreateResult(challenge.StatusFailed, start, assertions, nil, outputs,
-			fmt.Sprintf("login failed: %v", loginErr)), nil
+		challengeResult := c.CreateResult(challenge.StatusFailed, start, assertions, nil, outputs,
+			fmt.Sprintf("login failed: %v", loginErr))
+		challengeResult.RecordAction(fmt.Sprintf("%s: failed - %s", c.Name(), fmt.Sprintf("login failed: %v", loginErr)))
+		return challengeResult, nil
 	}
 
 	for _, chk := range checks {
@@ -57,7 +59,9 @@ func (c *httpChallenge) run(ctx context.Context, checks []httpCheck) (*challenge
 			break
 		}
 	}
-	return c.CreateResult(status, start, assertions, nil, outputs, ""), nil
+	challengeResult := c.CreateResult(status, start, assertions, nil, outputs, "")
+	challengeResult.RecordAction(fmt.Sprintf("%s: challenge completed with status %s", c.Name(), status))
+	return challengeResult, nil
 }
 
 type httpCheck struct {

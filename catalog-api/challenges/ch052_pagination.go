@@ -48,10 +48,12 @@ func (c *PaginationChallenge) Execute(
 	c.ReportProgress("authenticating", nil)
 	_, err := client.LoginWithRetry(ctx, c.config.Username, c.config.Password, 5)
 	if err != nil {
-		return c.CreateResult(
+		challengeResult := c.CreateResult(
 			challenge.StatusFailed, start, assertions, nil, outputs,
 			fmt.Sprintf("login failed: %v", err),
-		), nil
+		)
+		challengeResult.RecordAction(fmt.Sprintf("%s: failed - %s", c.Name(), fmt.Sprintf("login failed: %v", err)))
+		return challengeResult, nil
 	}
 
 	// Test pagination endpoints
@@ -106,7 +108,9 @@ func (c *PaginationChallenge) Execute(
 		}
 	}
 
-	return c.CreateResult(status, start, assertions, nil, outputs, ""), nil
+	challengeResult := c.CreateResult(status, start, assertions, nil, outputs, "")
+	challengeResult.RecordAction(fmt.Sprintf("%s: challenge completed with status %s", c.Name(), status))
+	return challengeResult, nil
 }
 
 func getMapKeys(m map[string]interface{}) []string {

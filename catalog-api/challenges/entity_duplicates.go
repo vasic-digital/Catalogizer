@@ -55,10 +55,12 @@ func (c *EntityDuplicatesChallenge) Execute(
 			Passed:  false,
 			Message: fmt.Sprintf("Login failed: %v", err),
 		})
-		return c.CreateResult(
+		challengeResult := c.CreateResult(
 			challenge.StatusFailed, start, assertions,
 			nil, outputs, err.Error(),
-		), nil
+		)
+		challengeResult.RecordAction(fmt.Sprintf("%s: failed - %s", c.Name(), err.Error()))
+		return challengeResult, nil
 	}
 
 	// 1. GET /api/v1/entities/duplicates - returns groups array
@@ -127,10 +129,12 @@ func (c *EntityDuplicatesChallenge) Execute(
 			Passed:  false,
 			Message: "No entities available for per-entity duplicate test",
 		})
-		return c.CreateResult(
+		challengeResult := c.CreateResult(
 			challenge.StatusFailed, start, assertions,
 			nil, outputs, "no entities found",
-		), nil
+		)
+		challengeResult.RecordAction(fmt.Sprintf("%s: failed - %s", c.Name(), "no entities found"))
+		return challengeResult, nil
 	}
 	outputs["test_entity_id"] = fmt.Sprintf("%d", entityID)
 
@@ -192,7 +196,9 @@ func (c *EntityDuplicatesChallenge) Execute(
 		}
 	}
 
-	return c.CreateResult(
+	challengeResult := c.CreateResult(
 		status, start, assertions, metrics, outputs, "",
-	), nil
+	)
+	challengeResult.RecordAction(fmt.Sprintf("%s: challenge completed with status %s", c.Name(), status))
+	return challengeResult, nil
 }

@@ -83,10 +83,12 @@ func (c *PlaybackSessionsAPIChallenge) Execute(
 	c.ReportProgress("authenticating", nil)
 	_, err := client.LoginWithRetry(ctx, c.config.Username, c.config.Password, 5)
 	if err != nil {
-		return c.CreateResult(
+		challengeResult := c.CreateResult(
 			challenge.StatusFailed, start, assertions, nil, outputs,
 			fmt.Sprintf("login failed: %v", err),
-		), nil
+		)
+		challengeResult.RecordAction(fmt.Sprintf("%s: failed - %s", c.Name(), fmt.Sprintf("login failed: %v", err)))
+		return challengeResult, nil
 	}
 
 	// Step 1: pick a real media item id (movie #1 is always
@@ -113,10 +115,12 @@ func (c *PlaybackSessionsAPIChallenge) Execute(
 		Message:  challenge.Ternary(startOK, "Start returns session_id", "Start failed"),
 	})
 	if !startOK {
-		return c.CreateResult(
+		challengeResult := c.CreateResult(
 			challenge.StatusFailed, start, assertions, nil, outputs,
 			"playback start did not return a session_id",
-		), nil
+		)
+		challengeResult.RecordAction(fmt.Sprintf("%s: failed - %s", c.Name(), "playback start did not return a session_id"))
+		return challengeResult, nil
 	}
 
 	sessionID := int64(0)
@@ -239,5 +243,7 @@ func (c *PlaybackSessionsAPIChallenge) Execute(
 		}
 	}
 
-	return c.CreateResult(resultStatus, start, assertions, nil, outputs, ""), nil
+	challengeResult := c.CreateResult(resultStatus, start, assertions, nil, outputs, "")
+	challengeResult.RecordAction(fmt.Sprintf("%s: challenge completed with status %s", c.Name(), resultStatus))
+	return challengeResult, nil
 }

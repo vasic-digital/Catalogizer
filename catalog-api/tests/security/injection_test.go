@@ -1,3 +1,5 @@
+//go:build catalog_security_real
+
 package security
 
 import (

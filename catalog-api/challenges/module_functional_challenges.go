@@ -105,7 +105,9 @@ func (c *moduleFuncChallenge) Execute(ctx context.Context) (*challenge.Result, e
 		"test_files":             {Name: "test_files", Value: float64(testCount), Unit: "count"},
 	}
 
-	return c.CreateResult(status, start, assertions, metrics, outputs, ""), nil
+	challengeResult := c.CreateResult(status, start, assertions, metrics, outputs, "")
+	challengeResult.RecordAction(fmt.Sprintf("%s: challenge completed with status %s", c.Name(), status))
+	return challengeResult, nil
 }
 
 // sourceContains checks if any .go file in the module contains the given string.

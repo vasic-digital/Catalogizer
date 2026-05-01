@@ -55,20 +55,24 @@ func (c *JWTValidationChallenge) Execute(
 		c.config.BaseURL+"/api/v1/storage-roots", nil,
 	)
 	if err != nil {
-		return c.CreateResult(
+		challengeResult := c.CreateResult(
 			challenge.StatusFailed, start, assertions, nil,
 			outputs, fmt.Sprintf("request creation failed: %v", err),
-		), nil
+		)
+		challengeResult.RecordAction(fmt.Sprintf("%s: failed - %s", c.Name(), fmt.Sprintf("request creation failed: %v", err)))
+		return challengeResult, nil
 	}
 
 	c.ReportProgress("testing-invalid-jwt", nil)
 	req.Header.Set("Authorization", "Bearer invalid.jwt.token")
 	resp, doErr := httpClient.Do(req)
 	if doErr != nil {
-		return c.CreateResult(
+		challengeResult := c.CreateResult(
 			challenge.StatusFailed, start, assertions, nil,
 			outputs, fmt.Sprintf("request failed: %v", doErr),
-		), nil
+		)
+		challengeResult.RecordAction(fmt.Sprintf("%s: failed - %s", c.Name(), fmt.Sprintf("request failed: %v", doErr)))
+		return challengeResult, nil
 	}
 	resp.Body.Close()
 
@@ -93,9 +97,11 @@ func (c *JWTValidationChallenge) Execute(
 		}
 	}
 
-	return c.CreateResult(
+	challengeResult := c.CreateResult(
 		status, start, assertions, nil, outputs, "",
-	), nil
+	)
+	challengeResult.RecordAction(fmt.Sprintf("%s: challenge completed with status %s", c.Name(), status))
+	return challengeResult, nil
 }
 
 // --- CH-187: TokenRefreshSecurity ---
@@ -137,10 +143,12 @@ func (c *TokenRefreshSecurityChallenge) Execute(
 		ctx, c.config.Username, c.config.Password, 3,
 	)
 	if loginErr != nil {
-		return c.CreateResult(
+		challengeResult := c.CreateResult(
 			challenge.StatusFailed, start, assertions, nil,
 			outputs, fmt.Sprintf("login failed: %v", loginErr),
-		), nil
+		)
+		challengeResult.RecordAction(fmt.Sprintf("%s: failed - %s", c.Name(), fmt.Sprintf("login failed: %v", loginErr)))
+		return challengeResult, nil
 	}
 
 	c.ReportProgress("testing-token-refresh", nil)
@@ -169,9 +177,11 @@ func (c *TokenRefreshSecurityChallenge) Execute(
 		}
 	}
 
-	return c.CreateResult(
+	challengeResult := c.CreateResult(
 		status, start, assertions, nil, outputs, "",
-	), nil
+	)
+	challengeResult.RecordAction(fmt.Sprintf("%s: challenge completed with status %s", c.Name(), status))
+	return challengeResult, nil
 }
 
 // --- CH-188: RoleBasedAccessSecurity ---
@@ -237,9 +247,11 @@ func (c *RoleBasedAccessSecurityChallenge) Execute(
 		}
 	}
 
-	return c.CreateResult(
+	challengeResult := c.CreateResult(
 		status, start, assertions, nil, outputs, "",
-	), nil
+	)
+	challengeResult.RecordAction(fmt.Sprintf("%s: challenge completed with status %s", c.Name(), status))
+	return challengeResult, nil
 }
 
 // --- CH-189: InputValidationSecurity ---
@@ -281,10 +293,12 @@ func (c *InputValidationSecurityChallenge) Execute(
 		ctx, c.config.Username, c.config.Password, 3,
 	)
 	if loginErr != nil {
-		return c.CreateResult(
+		challengeResult := c.CreateResult(
 			challenge.StatusFailed, start, assertions, nil,
 			outputs, fmt.Sprintf("login failed: %v", loginErr),
-		), nil
+		)
+		challengeResult.RecordAction(fmt.Sprintf("%s: failed - %s", c.Name(), fmt.Sprintf("login failed: %v", loginErr)))
+		return challengeResult, nil
 	}
 
 	c.ReportProgress("testing-xss-sanitization", nil)
@@ -333,9 +347,11 @@ func (c *InputValidationSecurityChallenge) Execute(
 		}
 	}
 
-	return c.CreateResult(
+	challengeResult := c.CreateResult(
 		status, start, assertions, nil, outputs, "",
-	), nil
+	)
+	challengeResult.RecordAction(fmt.Sprintf("%s: challenge completed with status %s", c.Name(), status))
+	return challengeResult, nil
 }
 
 // --- CH-190: SQLInjectionSecurity ---
@@ -377,10 +393,12 @@ func (c *SQLInjectionSecurityChallenge) Execute(
 		ctx, c.config.Username, c.config.Password, 3,
 	)
 	if loginErr != nil {
-		return c.CreateResult(
+		challengeResult := c.CreateResult(
 			challenge.StatusFailed, start, assertions, nil,
 			outputs, fmt.Sprintf("login failed: %v", loginErr),
-		), nil
+		)
+		challengeResult.RecordAction(fmt.Sprintf("%s: failed - %s", c.Name(), fmt.Sprintf("login failed: %v", loginErr)))
+		return challengeResult, nil
 	}
 
 	c.ReportProgress("testing-sql-injection", nil)
@@ -410,9 +428,11 @@ func (c *SQLInjectionSecurityChallenge) Execute(
 		}
 	}
 
-	return c.CreateResult(
+	challengeResult := c.CreateResult(
 		status, start, assertions, nil, outputs, "",
-	), nil
+	)
+	challengeResult.RecordAction(fmt.Sprintf("%s: challenge completed with status %s", c.Name(), status))
+	return challengeResult, nil
 }
 
 // --- CH-191: PathTraversalSecurity ---
@@ -454,10 +474,12 @@ func (c *PathTraversalSecurityChallenge) Execute(
 		ctx, c.config.Username, c.config.Password, 3,
 	)
 	if loginErr != nil {
-		return c.CreateResult(
+		challengeResult := c.CreateResult(
 			challenge.StatusFailed, start, assertions, nil,
 			outputs, fmt.Sprintf("login failed: %v", loginErr),
-		), nil
+		)
+		challengeResult.RecordAction(fmt.Sprintf("%s: failed - %s", c.Name(), fmt.Sprintf("login failed: %v", loginErr)))
+		return challengeResult, nil
 	}
 
 	c.ReportProgress("testing-path-traversal", nil)
@@ -487,9 +509,11 @@ func (c *PathTraversalSecurityChallenge) Execute(
 		}
 	}
 
-	return c.CreateResult(
+	challengeResult := c.CreateResult(
 		status, start, assertions, nil, outputs, "",
-	), nil
+	)
+	challengeResult.RecordAction(fmt.Sprintf("%s: challenge completed with status %s", c.Name(), status))
+	return challengeResult, nil
 }
 
 // --- CH-192: RateLimitingSecurity ---
@@ -535,18 +559,22 @@ func (c *RateLimitingSecurityChallenge) Execute(
 		c.config.BaseURL+"/health", nil,
 	)
 	if err != nil {
-		return c.CreateResult(
+		challengeResult := c.CreateResult(
 			challenge.StatusFailed, start, assertions, nil,
 			outputs, fmt.Sprintf("request creation failed: %v", err),
-		), nil
+		)
+		challengeResult.RecordAction(fmt.Sprintf("%s: failed - %s", c.Name(), fmt.Sprintf("request creation failed: %v", err)))
+		return challengeResult, nil
 	}
 
 	resp, doErr := httpClient.Do(req)
 	if doErr != nil {
-		return c.CreateResult(
+		challengeResult := c.CreateResult(
 			challenge.StatusFailed, start, assertions, nil,
 			outputs, fmt.Sprintf("request failed: %v", doErr),
-		), nil
+		)
+		challengeResult.RecordAction(fmt.Sprintf("%s: failed - %s", c.Name(), fmt.Sprintf("request failed: %v", doErr)))
+		return challengeResult, nil
 	}
 	resp.Body.Close()
 
@@ -574,9 +602,11 @@ func (c *RateLimitingSecurityChallenge) Execute(
 		}
 	}
 
-	return c.CreateResult(
+	challengeResult := c.CreateResult(
 		status, start, assertions, nil, outputs, "",
-	), nil
+	)
+	challengeResult.RecordAction(fmt.Sprintf("%s: challenge completed with status %s", c.Name(), status))
+	return challengeResult, nil
 }
 
 // --- CH-193: CORSHeadersSecurity ---
@@ -621,20 +651,24 @@ func (c *CORSHeadersSecurityChallenge) Execute(
 		c.config.BaseURL+"/api/v1/health", nil,
 	)
 	if err != nil {
-		return c.CreateResult(
+		challengeResult := c.CreateResult(
 			challenge.StatusFailed, start, assertions, nil,
 			outputs, fmt.Sprintf("request creation failed: %v", err),
-		), nil
+		)
+		challengeResult.RecordAction(fmt.Sprintf("%s: failed - %s", c.Name(), fmt.Sprintf("request creation failed: %v", err)))
+		return challengeResult, nil
 	}
 	req.Header.Set("Origin", "http://localhost:3000")
 	req.Header.Set("Access-Control-Request-Method", "GET")
 
 	resp, doErr := httpClient.Do(req)
 	if doErr != nil {
-		return c.CreateResult(
+		challengeResult := c.CreateResult(
 			challenge.StatusFailed, start, assertions, nil,
 			outputs, fmt.Sprintf("request failed: %v", doErr),
-		), nil
+		)
+		challengeResult.RecordAction(fmt.Sprintf("%s: failed - %s", c.Name(), fmt.Sprintf("request failed: %v", doErr)))
+		return challengeResult, nil
 	}
 	resp.Body.Close()
 
@@ -660,9 +694,11 @@ func (c *CORSHeadersSecurityChallenge) Execute(
 		}
 	}
 
-	return c.CreateResult(
+	challengeResult := c.CreateResult(
 		status, start, assertions, nil, outputs, "",
-	), nil
+	)
+	challengeResult.RecordAction(fmt.Sprintf("%s: challenge completed with status %s", c.Name(), status))
+	return challengeResult, nil
 }
 
 // --- CH-194: SecurityHeadersPresent ---
@@ -708,18 +744,22 @@ func (c *SecurityHeadersPresentChallenge) Execute(
 		c.config.BaseURL+"/health", nil,
 	)
 	if err != nil {
-		return c.CreateResult(
+		challengeResult := c.CreateResult(
 			challenge.StatusFailed, start, assertions, nil,
 			outputs, fmt.Sprintf("request creation failed: %v", err),
-		), nil
+		)
+		challengeResult.RecordAction(fmt.Sprintf("%s: failed - %s", c.Name(), fmt.Sprintf("request creation failed: %v", err)))
+		return challengeResult, nil
 	}
 
 	resp, doErr := httpClient.Do(req)
 	if doErr != nil {
-		return c.CreateResult(
+		challengeResult := c.CreateResult(
 			challenge.StatusFailed, start, assertions, nil,
 			outputs, fmt.Sprintf("request failed: %v", doErr),
-		), nil
+		)
+		challengeResult.RecordAction(fmt.Sprintf("%s: failed - %s", c.Name(), fmt.Sprintf("request failed: %v", doErr)))
+		return challengeResult, nil
 	}
 	resp.Body.Close()
 
@@ -750,9 +790,11 @@ func (c *SecurityHeadersPresentChallenge) Execute(
 		}
 	}
 
-	return c.CreateResult(
+	challengeResult := c.CreateResult(
 		status, start, assertions, nil, outputs, "",
-	), nil
+	)
+	challengeResult.RecordAction(fmt.Sprintf("%s: challenge completed with status %s", c.Name(), status))
+	return challengeResult, nil
 }
 
 // --- CH-195: PasswordHashing ---
@@ -794,10 +836,12 @@ func (c *PasswordHashingChallenge) Execute(
 		ctx, c.config.Username, c.config.Password, 3,
 	)
 	if loginErr != nil {
-		return c.CreateResult(
+		challengeResult := c.CreateResult(
 			challenge.StatusFailed, start, assertions, nil,
 			outputs, fmt.Sprintf("login failed: %v", loginErr),
-		), nil
+		)
+		challengeResult.RecordAction(fmt.Sprintf("%s: failed - %s", c.Name(), fmt.Sprintf("login failed: %v", loginErr)))
+		return challengeResult, nil
 	}
 
 	c.ReportProgress("checking-password-exposure", nil)
@@ -842,9 +886,11 @@ func (c *PasswordHashingChallenge) Execute(
 		}
 	}
 
-	return c.CreateResult(
+	challengeResult := c.CreateResult(
 		status, start, assertions, nil, outputs, "",
-	), nil
+	)
+	challengeResult.RecordAction(fmt.Sprintf("%s: challenge completed with status %s", c.Name(), status))
+	return challengeResult, nil
 }
 
 // --- CH-196: SessionTimeout ---
@@ -894,19 +940,23 @@ func (c *SessionTimeoutChallenge) Execute(
 		c.config.BaseURL+"/api/v1/storage-roots", nil,
 	)
 	if err != nil {
-		return c.CreateResult(
+		challengeResult := c.CreateResult(
 			challenge.StatusFailed, start, assertions, nil,
 			outputs, fmt.Sprintf("request creation failed: %v", err),
-		), nil
+		)
+		challengeResult.RecordAction(fmt.Sprintf("%s: failed - %s", c.Name(), fmt.Sprintf("request creation failed: %v", err)))
+		return challengeResult, nil
 	}
 	req.Header.Set("Authorization", "Bearer "+expiredToken)
 
 	resp, doErr := httpClient.Do(req)
 	if doErr != nil {
-		return c.CreateResult(
+		challengeResult := c.CreateResult(
 			challenge.StatusFailed, start, assertions, nil,
 			outputs, fmt.Sprintf("request failed: %v", doErr),
-		), nil
+		)
+		challengeResult.RecordAction(fmt.Sprintf("%s: failed - %s", c.Name(), fmt.Sprintf("request failed: %v", doErr)))
+		return challengeResult, nil
 	}
 	resp.Body.Close()
 
@@ -931,9 +981,11 @@ func (c *SessionTimeoutChallenge) Execute(
 		}
 	}
 
-	return c.CreateResult(
+	challengeResult := c.CreateResult(
 		status, start, assertions, nil, outputs, "",
-	), nil
+	)
+	challengeResult.RecordAction(fmt.Sprintf("%s: challenge completed with status %s", c.Name(), status))
+	return challengeResult, nil
 }
 
 // --- CH-197: BruteForceProtection ---
@@ -1016,9 +1068,11 @@ func (c *BruteForceProtectionChallenge) Execute(
 		}
 	}
 
-	return c.CreateResult(
+	challengeResult := c.CreateResult(
 		status, start, assertions, nil, outputs, "",
-	), nil
+	)
+	challengeResult.RecordAction(fmt.Sprintf("%s: challenge completed with status %s", c.Name(), status))
+	return challengeResult, nil
 }
 
 // --- CH-198: ContentTypeValidation ---
@@ -1060,10 +1114,12 @@ func (c *ContentTypeValidationChallenge) Execute(
 		ctx, c.config.Username, c.config.Password, 3,
 	)
 	if loginErr != nil {
-		return c.CreateResult(
+		challengeResult := c.CreateResult(
 			challenge.StatusFailed, start, assertions, nil,
 			outputs, fmt.Sprintf("login failed: %v", loginErr),
-		), nil
+		)
+		challengeResult.RecordAction(fmt.Sprintf("%s: failed - %s", c.Name(), fmt.Sprintf("login failed: %v", loginErr)))
+		return challengeResult, nil
 	}
 
 	c.ReportProgress("testing-content-type-validation", nil)
@@ -1076,20 +1132,24 @@ func (c *ContentTypeValidationChallenge) Execute(
 		strings.NewReader("not json at all"),
 	)
 	if err != nil {
-		return c.CreateResult(
+		challengeResult := c.CreateResult(
 			challenge.StatusFailed, start, assertions, nil,
 			outputs, fmt.Sprintf("request creation failed: %v", err),
-		), nil
+		)
+		challengeResult.RecordAction(fmt.Sprintf("%s: failed - %s", c.Name(), fmt.Sprintf("request creation failed: %v", err)))
+		return challengeResult, nil
 	}
 	req.Header.Set("Content-Type", "text/plain")
 	req.Header.Set("Authorization", "Bearer "+token)
 
 	resp, doErr := httpClient.Do(req)
 	if doErr != nil {
-		return c.CreateResult(
+		challengeResult := c.CreateResult(
 			challenge.StatusFailed, start, assertions, nil,
 			outputs, fmt.Sprintf("request failed: %v", doErr),
-		), nil
+		)
+		challengeResult.RecordAction(fmt.Sprintf("%s: failed - %s", c.Name(), fmt.Sprintf("request failed: %v", doErr)))
+		return challengeResult, nil
 	}
 	resp.Body.Close()
 
@@ -1115,9 +1175,11 @@ func (c *ContentTypeValidationChallenge) Execute(
 		}
 	}
 
-	return c.CreateResult(
+	challengeResult := c.CreateResult(
 		status, start, assertions, nil, outputs, "",
-	), nil
+	)
+	challengeResult.RecordAction(fmt.Sprintf("%s: challenge completed with status %s", c.Name(), status))
+	return challengeResult, nil
 }
 
 // --- CH-199: MaxBodySize ---
@@ -1159,10 +1221,12 @@ func (c *MaxBodySizeChallenge) Execute(
 		ctx, c.config.Username, c.config.Password, 3,
 	)
 	if loginErr != nil {
-		return c.CreateResult(
+		challengeResult := c.CreateResult(
 			challenge.StatusFailed, start, assertions, nil,
 			outputs, fmt.Sprintf("login failed: %v", loginErr),
-		), nil
+		)
+		challengeResult.RecordAction(fmt.Sprintf("%s: failed - %s", c.Name(), fmt.Sprintf("login failed: %v", loginErr)))
+		return challengeResult, nil
 	}
 
 	c.ReportProgress("testing-max-body-size", nil)
@@ -1200,9 +1264,11 @@ func (c *MaxBodySizeChallenge) Execute(
 		}
 	}
 
-	return c.CreateResult(
+	challengeResult := c.CreateResult(
 		status, start, assertions, nil, outputs, "",
-	), nil
+	)
+	challengeResult.RecordAction(fmt.Sprintf("%s: challenge completed with status %s", c.Name(), status))
+	return challengeResult, nil
 }
 
 // --- CH-200: ErrorInfoLeak ---
@@ -1244,10 +1310,12 @@ func (c *ErrorInfoLeakChallenge) Execute(
 		ctx, c.config.Username, c.config.Password, 3,
 	)
 	if loginErr != nil {
-		return c.CreateResult(
+		challengeResult := c.CreateResult(
 			challenge.StatusFailed, start, assertions, nil,
 			outputs, fmt.Sprintf("login failed: %v", loginErr),
-		), nil
+		)
+		challengeResult.RecordAction(fmt.Sprintf("%s: failed - %s", c.Name(), fmt.Sprintf("login failed: %v", loginErr)))
+		return challengeResult, nil
 	}
 
 	c.ReportProgress("testing-error-info-leak", nil)
@@ -1316,7 +1384,9 @@ func (c *ErrorInfoLeakChallenge) Execute(
 		}
 	}
 
-	return c.CreateResult(
+	challengeResult := c.CreateResult(
 		status, start, assertions, nil, outputs, "",
-	), nil
+	)
+	challengeResult.RecordAction(fmt.Sprintf("%s: challenge completed with status %s", c.Name(), status))
+	return challengeResult, nil
 }

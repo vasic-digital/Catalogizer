@@ -102,9 +102,11 @@ func (c *ConfigDocsChallenge) Execute(
 	})
 
 	if !hasDocFiles {
-		return c.CreateResult(
+		challengeResult := c.CreateResult(
 			challenge.StatusFailed, start, assertions, nil, outputs, "no docs found",
-		), nil
+		)
+		challengeResult.RecordAction(fmt.Sprintf("%s: failed - %s", c.Name(), "no docs found"))
+		return challengeResult, nil
 	}
 
 	// Check each key config is mentioned
@@ -190,5 +192,7 @@ func (c *ConfigDocsChallenge) Execute(
 		}
 	}
 
-	return c.CreateResult(status, start, assertions, metrics, outputs, ""), nil
+	challengeResult := c.CreateResult(status, start, assertions, metrics, outputs, "")
+	challengeResult.RecordAction(fmt.Sprintf("%s: challenge completed with status %s", c.Name(), status))
+	return challengeResult, nil
 }

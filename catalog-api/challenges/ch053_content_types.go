@@ -138,5 +138,7 @@ func (c *ContentTypesChallenge) Execute(
 		}
 	}
 
-	return c.CreateResult(resultStatus, start, assertions, nil, outputs, ""), nil
+	challengeResult := c.CreateResult(resultStatus, start, assertions, nil, outputs, "")
+	challengeResult.RecordAction(fmt.Sprintf("%s: challenge completed with status %s", c.Name(), resultStatus))
+	return challengeResult, nil
 }

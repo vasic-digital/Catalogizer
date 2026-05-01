@@ -47,11 +47,15 @@ func (c *IQNotFoundHeaderChallenge) Execute(ctx context.Context) (*challenge.Res
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet,
 		c.config.BaseURL+"/api/v1/cover/-1", nil)
 	if err != nil {
-		return c.CreateResult(challenge.StatusFailed, start, assertions, nil, outputs, err.Error()), nil
+		challengeResult := c.CreateResult(challenge.StatusFailed, start, assertions, nil, outputs, err.Error())
+		challengeResult.RecordAction(fmt.Sprintf("%s: failed - %s", c.Name(), err.Error()))
+		return challengeResult, nil
 	}
 	resp, err := authed(client, req)
 	if err != nil {
-		return c.CreateResult(challenge.StatusFailed, start, assertions, nil, outputs, err.Error()), nil
+		challengeResult := c.CreateResult(challenge.StatusFailed, start, assertions, nil, outputs, err.Error())
+		challengeResult.RecordAction(fmt.Sprintf("%s: failed - %s", c.Name(), err.Error()))
+		return challengeResult, nil
 	}
 	quality := resp.Header.Get("X-Cover-Quality")
 	resp.Body.Close()
@@ -65,7 +69,9 @@ func (c *IQNotFoundHeaderChallenge) Execute(ctx context.Context) (*challenge.Res
 	if !pass {
 		status = challenge.StatusFailed
 	}
-	return c.CreateResult(status, start, assertions, nil, outputs, ""), nil
+	challengeResult := c.CreateResult(status, start, assertions, nil, outputs, "")
+	challengeResult.RecordAction(fmt.Sprintf("%s: challenge completed with status %s", c.Name(), status))
+	return challengeResult, nil
 }
 
 // -----------------------------------------------------------------------------
@@ -101,11 +107,15 @@ func (c *IQCoverURLChallenge) Execute(ctx context.Context) (*challenge.Result, e
 	outputs := map[string]string{"api_url": c.config.BaseURL}
 	client := httpclient.NewAPIClient(c.config.BaseURL)
 	if _, err := client.LoginWithRetry(ctx, c.config.Username, c.config.Password, 3); err != nil {
-		return c.CreateResult(challenge.StatusFailed, start, assertions, nil, outputs, err.Error()), nil
+		challengeResult := c.CreateResult(challenge.StatusFailed, start, assertions, nil, outputs, err.Error())
+		challengeResult.RecordAction(fmt.Sprintf("%s: failed - %s", c.Name(), err.Error()))
+		return challengeResult, nil
 	}
 	code, body, err := client.Get(ctx, "/api/v1/cover/url/1?type=movie")
 	if err != nil {
-		return c.CreateResult(challenge.StatusFailed, start, assertions, nil, outputs, err.Error()), nil
+		challengeResult := c.CreateResult(challenge.StatusFailed, start, assertions, nil, outputs, err.Error())
+		challengeResult.RecordAction(fmt.Sprintf("%s: failed - %s", c.Name(), err.Error()))
+		return challengeResult, nil
 	}
 	outputs["status"] = fmt.Sprintf("%d", code)
 	_, hasURL := body["cover_url"]
@@ -117,7 +127,9 @@ func (c *IQCoverURLChallenge) Execute(ctx context.Context) (*challenge.Result, e
 	if !hasURL {
 		status = challenge.StatusFailed
 	}
-	return c.CreateResult(status, start, assertions, nil, outputs, ""), nil
+	challengeResult := c.CreateResult(status, start, assertions, nil, outputs, "")
+	challengeResult.RecordAction(fmt.Sprintf("%s: challenge completed with status %s", c.Name(), status))
+	return challengeResult, nil
 }
 
 // -----------------------------------------------------------------------------
@@ -157,11 +169,15 @@ func (c *IQPlaceholderSizeStableChallenge) Execute(ctx context.Context) (*challe
 		req, err := http.NewRequestWithContext(ctx, http.MethodGet,
 			c.config.BaseURL+"/api/v1/cover/placeholder/movie", nil)
 		if err != nil {
-			return c.CreateResult(challenge.StatusFailed, start, assertions, nil, outputs, err.Error()), nil
+			challengeResult := c.CreateResult(challenge.StatusFailed, start, assertions, nil, outputs, err.Error())
+			challengeResult.RecordAction(fmt.Sprintf("%s: failed - %s", c.Name(), err.Error()))
+			return challengeResult, nil
 		}
 		resp, err := authed(client, req)
 		if err != nil {
-			return c.CreateResult(challenge.StatusFailed, start, assertions, nil, outputs, err.Error()), nil
+			challengeResult := c.CreateResult(challenge.StatusFailed, start, assertions, nil, outputs, err.Error())
+			challengeResult.RecordAction(fmt.Sprintf("%s: failed - %s", c.Name(), err.Error()))
+			return challengeResult, nil
 		}
 		sizes[i] = resp.ContentLength
 		resp.Body.Close()
@@ -177,7 +193,9 @@ func (c *IQPlaceholderSizeStableChallenge) Execute(ctx context.Context) (*challe
 	if !stable {
 		status = challenge.StatusFailed
 	}
-	return c.CreateResult(status, start, assertions, nil, outputs, ""), nil
+	challengeResult := c.CreateResult(status, start, assertions, nil, outputs, "")
+	challengeResult.RecordAction(fmt.Sprintf("%s: challenge completed with status %s", c.Name(), status))
+	return challengeResult, nil
 }
 
 // -----------------------------------------------------------------------------
@@ -215,11 +233,15 @@ func (c *IQCacheControlChallenge) Execute(ctx context.Context) (*challenge.Resul
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet,
 		c.config.BaseURL+"/api/v1/cover/1", nil)
 	if err != nil {
-		return c.CreateResult(challenge.StatusFailed, start, assertions, nil, outputs, err.Error()), nil
+		challengeResult := c.CreateResult(challenge.StatusFailed, start, assertions, nil, outputs, err.Error())
+		challengeResult.RecordAction(fmt.Sprintf("%s: failed - %s", c.Name(), err.Error()))
+		return challengeResult, nil
 	}
 	resp, err := authed(client, req)
 	if err != nil {
-		return c.CreateResult(challenge.StatusFailed, start, assertions, nil, outputs, err.Error()), nil
+		challengeResult := c.CreateResult(challenge.StatusFailed, start, assertions, nil, outputs, err.Error())
+		challengeResult.RecordAction(fmt.Sprintf("%s: failed - %s", c.Name(), err.Error()))
+		return challengeResult, nil
 	}
 	cc := resp.Header.Get("Cache-Control")
 	resp.Body.Close()
@@ -233,7 +255,9 @@ func (c *IQCacheControlChallenge) Execute(ctx context.Context) (*challenge.Resul
 	if !pass {
 		status = challenge.StatusFailed
 	}
-	return c.CreateResult(status, start, assertions, nil, outputs, ""), nil
+	challengeResult := c.CreateResult(status, start, assertions, nil, outputs, "")
+	challengeResult.RecordAction(fmt.Sprintf("%s: challenge completed with status %s", c.Name(), status))
+	return challengeResult, nil
 }
 
 // -----------------------------------------------------------------------------
@@ -270,11 +294,15 @@ func (c *IQContentTypeChallenge) Execute(ctx context.Context) (*challenge.Result
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet,
 		c.config.BaseURL+"/api/v1/cover/1", nil)
 	if err != nil {
-		return c.CreateResult(challenge.StatusFailed, start, assertions, nil, outputs, err.Error()), nil
+		challengeResult := c.CreateResult(challenge.StatusFailed, start, assertions, nil, outputs, err.Error())
+		challengeResult.RecordAction(fmt.Sprintf("%s: failed - %s", c.Name(), err.Error()))
+		return challengeResult, nil
 	}
 	resp, err := authed(client, req)
 	if err != nil {
-		return c.CreateResult(challenge.StatusFailed, start, assertions, nil, outputs, err.Error()), nil
+		challengeResult := c.CreateResult(challenge.StatusFailed, start, assertions, nil, outputs, err.Error())
+		challengeResult.RecordAction(fmt.Sprintf("%s: failed - %s", c.Name(), err.Error()))
+		return challengeResult, nil
 	}
 	ct := resp.Header.Get("Content-Type")
 	resp.Body.Close()
@@ -288,7 +316,9 @@ func (c *IQContentTypeChallenge) Execute(ctx context.Context) (*challenge.Result
 	if !pass {
 		status = challenge.StatusFailed
 	}
-	return c.CreateResult(status, start, assertions, nil, outputs, ""), nil
+	challengeResult := c.CreateResult(status, start, assertions, nil, outputs, "")
+	challengeResult.RecordAction(fmt.Sprintf("%s: challenge completed with status %s", c.Name(), status))
+	return challengeResult, nil
 }
 
 // RegisterFinalImageQualityChallenges wires CH-IQ-010..014 into the

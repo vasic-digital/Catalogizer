@@ -75,7 +75,9 @@ func (c *DatabaseConnectivityChallenge) Execute(ctx context.Context) (*challenge
 		Message:  challenge.Ternary(healthPassed, "API health check passed (database connected)", fmt.Sprintf("Health check failed: HTTP %d err=%v", healthCode, healthErr)),
 	})
 	if !healthPassed {
-		return c.CreateResult(challenge.StatusFailed, start, assertions, nil, outputs, ""), nil
+		challengeResult := c.CreateResult(challenge.StatusFailed, start, assertions, nil, outputs, "")
+		challengeResult.RecordAction(fmt.Sprintf("%s: failed", c.Name()))
+		return challengeResult, nil
 	}
 
 	c.reportProgress("step 2/5: admin login")
@@ -91,7 +93,9 @@ func (c *DatabaseConnectivityChallenge) Execute(ctx context.Context) (*challenge
 		Message:  challenge.Ternary(loginOK, "Admin login succeeded", fmt.Sprintf("Login failed: %v", loginErr)),
 	})
 	if !loginOK {
-		return c.CreateResult(challenge.StatusFailed, start, assertions, nil, outputs, ""), nil
+		challengeResult := c.CreateResult(challenge.StatusFailed, start, assertions, nil, outputs, "")
+		challengeResult.RecordAction(fmt.Sprintf("%s: failed", c.Name()))
+		return challengeResult, nil
 	}
 
 	c.reportProgress("step 3/5: stats query")
@@ -156,5 +160,7 @@ func (c *DatabaseConnectivityChallenge) Execute(ctx context.Context) (*challenge
 		}
 	}
 
-	return c.CreateResult(status, start, assertions, nil, outputs, ""), nil
+	challengeResult := c.CreateResult(status, start, assertions, nil, outputs, "")
+	challengeResult.RecordAction(fmt.Sprintf("%s: challenge completed with status %s", c.Name(), status))
+	return challengeResult, nil
 }

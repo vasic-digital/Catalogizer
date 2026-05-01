@@ -67,9 +67,11 @@ func (c *RateLimitAuthChallenge) Execute(
 	})
 
 	if !loginOK {
-		return c.CreateResult(
+		challengeResult := c.CreateResult(
 			challenge.StatusFailed, start, assertions, nil, outputs, "auth unreachable",
-		), nil
+		)
+		challengeResult.RecordAction(fmt.Sprintf("%s: failed - %s", c.Name(), "auth unreachable"))
+		return challengeResult, nil
 	}
 
 	// Step 2: Rapid login requests with invalid credentials
@@ -174,5 +176,7 @@ func (c *RateLimitAuthChallenge) Execute(
 		}
 	}
 
-	return c.CreateResult(status, start, assertions, metrics, outputs, ""), nil
+	challengeResult := c.CreateResult(status, start, assertions, metrics, outputs, "")
+	challengeResult.RecordAction(fmt.Sprintf("%s: challenge completed with status %s", c.Name(), status))
+	return challengeResult, nil
 }

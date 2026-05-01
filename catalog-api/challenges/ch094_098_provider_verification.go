@@ -119,7 +119,9 @@ func (c *OpenLibraryProviderChallenge) Execute(
 		}
 	}
 
-	return c.CreateResult(status, start, assertions, nil, outputs, ""), nil
+	challengeResult := c.CreateResult(status, start, assertions, nil, outputs, "")
+	challengeResult.RecordAction(fmt.Sprintf("%s: challenge completed with status %s", c.Name(), status))
+	return challengeResult, nil
 }
 
 // MusicBrainzProviderChallenge validates the MusicBrainz metadata provider
@@ -241,7 +243,9 @@ func (c *MusicBrainzProviderChallenge) Execute(
 		}
 	}
 
-	return c.CreateResult(status, start, assertions, nil, outputs, ""), nil
+	challengeResult := c.CreateResult(status, start, assertions, nil, outputs, "")
+	challengeResult.RecordAction(fmt.Sprintf("%s: challenge completed with status %s", c.Name(), status))
+	return challengeResult, nil
 }
 
 // ProviderGracefulDegradationChallenge validates that disabled providers
@@ -291,7 +295,9 @@ func (c *ProviderGracefulDegradationChallenge) Execute(
 			Passed:   false,
 			Message:  "Provider source file not found",
 		})
-		return c.CreateResult(challenge.StatusFailed, start, assertions, nil, outputs, ""), nil
+		challengeResult := c.CreateResult(challenge.StatusFailed, start, assertions, nil, outputs, "")
+		challengeResult.RecordAction(fmt.Sprintf("%s: failed", c.Name()))
+		return challengeResult, nil
 	}
 
 	data, readErr := os.ReadFile(providerPath)
@@ -304,7 +310,9 @@ func (c *ProviderGracefulDegradationChallenge) Execute(
 			Passed:   false,
 			Message:  fmt.Sprintf("Cannot read provider source: %v", readErr),
 		})
-		return c.CreateResult(challenge.StatusFailed, start, assertions, nil, outputs, ""), nil
+		challengeResult := c.CreateResult(challenge.StatusFailed, start, assertions, nil, outputs, "")
+		challengeResult.RecordAction(fmt.Sprintf("%s: failed", c.Name()))
+		return challengeResult, nil
 	}
 
 	src := string(data)
@@ -375,7 +383,9 @@ func (c *ProviderGracefulDegradationChallenge) Execute(
 		}
 	}
 
-	return c.CreateResult(status, start, assertions, nil, outputs, ""), nil
+	challengeResult := c.CreateResult(status, start, assertions, nil, outputs, "")
+	challengeResult.RecordAction(fmt.Sprintf("%s: challenge completed with status %s", c.Name(), status))
+	return challengeResult, nil
 }
 
 // ProviderManagerRoutingChallenge validates that the ProviderManager
@@ -426,7 +436,9 @@ func (c *ProviderManagerRoutingChallenge) Execute(
 			Passed:   false,
 			Message:  "Provider source file not found",
 		})
-		return c.CreateResult(challenge.StatusFailed, start, assertions, nil, outputs, ""), nil
+		challengeResult := c.CreateResult(challenge.StatusFailed, start, assertions, nil, outputs, "")
+		challengeResult.RecordAction(fmt.Sprintf("%s: failed", c.Name()))
+		return challengeResult, nil
 	}
 
 	data, readErr := os.ReadFile(providerPath)
@@ -439,7 +451,9 @@ func (c *ProviderManagerRoutingChallenge) Execute(
 			Passed:   false,
 			Message:  fmt.Sprintf("Cannot read provider source: %v", readErr),
 		})
-		return c.CreateResult(challenge.StatusFailed, start, assertions, nil, outputs, ""), nil
+		challengeResult := c.CreateResult(challenge.StatusFailed, start, assertions, nil, outputs, "")
+		challengeResult.RecordAction(fmt.Sprintf("%s: failed", c.Name()))
+		return challengeResult, nil
 	}
 
 	src := string(data)
@@ -516,7 +530,9 @@ func (c *ProviderManagerRoutingChallenge) Execute(
 		}
 	}
 
-	return c.CreateResult(status, start, assertions, nil, outputs, ""), nil
+	challengeResult := c.CreateResult(status, start, assertions, nil, outputs, "")
+	challengeResult.RecordAction(fmt.Sprintf("%s: challenge completed with status %s", c.Name(), status))
+	return challengeResult, nil
 }
 
 // LazyServiceRegistryChallenge validates that the LazyServiceRegistry
@@ -659,7 +675,9 @@ func (c *LazyServiceRegistryChallenge) Execute(
 		}
 	}
 
-	return c.CreateResult(status, start, assertions, nil, outputs, ""), nil
+	challengeResult := c.CreateResult(status, start, assertions, nil, outputs, "")
+	challengeResult.RecordAction(fmt.Sprintf("%s: challenge completed with status %s", c.Name(), status))
+	return challengeResult, nil
 }
 
 // findProviderFile locates the providers.go source file.

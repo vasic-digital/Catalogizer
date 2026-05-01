@@ -72,13 +72,15 @@ func (c *BrowsingWebAppChallenge) Execute(ctx context.Context) (*challenge.Resul
 
 	// Pre-check: verify web app is reachable.
 	if !isWebAppReachable(c.config.WebAppURL) {
-		return c.CreateResult(challenge.StatusSkipped, start,
+		challengeResult := c.CreateResult(challenge.StatusSkipped, start,
 			[]challenge.AssertionResult{{
 				Type:    "infrastructure",
 				Target:  "web_app_reachable",
 				Passed:  false,
 				Message: fmt.Sprintf("Web app at %s not reachable - skipped (requires catalog-web running)", c.config.WebAppURL),
-			}}, nil, outputs, ""), nil
+			}}, nil, outputs, "")
+		challengeResult.RecordAction(fmt.Sprintf("%s: failed", c.Name()))
+		return challengeResult, nil
 	}
 
 	httpClient := &http.Client{
@@ -111,7 +113,9 @@ func (c *BrowsingWebAppChallenge) Execute(ctx context.Context) (*challenge.Resul
 		if rootErr != nil {
 			errMsg = rootErr.Error()
 		}
-		return c.CreateResult(challenge.StatusFailed, start, assertions, nil, outputs, errMsg), nil
+		challengeResult := c.CreateResult(challenge.StatusFailed, start, assertions, nil, outputs, errMsg)
+		challengeResult.RecordAction(fmt.Sprintf("%s: failed - %s", c.Name(), errMsg))
+		return challengeResult, nil
 	}
 
 	// Step 2: HTML contains expected page title
@@ -206,7 +210,9 @@ func (c *BrowsingWebAppChallenge) Execute(ctx context.Context) (*challenge.Resul
 		Message:  challenge.Ternary(loginOK, "API login flow succeeded (simulating web app)", fmt.Sprintf("API login failed: %v", loginErr)),
 	})
 	if !loginOK {
-		return c.CreateResult(challenge.StatusFailed, start, assertions, nil, outputs, "login failed"), nil
+		challengeResult := c.CreateResult(challenge.StatusFailed, start, assertions, nil, outputs, "login failed")
+		challengeResult.RecordAction(fmt.Sprintf("%s: failed - %s", c.Name(), "login failed"))
+		return challengeResult, nil
 	}
 
 	// Step 7: GET /api/v1/auth/status returns authenticated=true (web app polls this)
@@ -390,5 +396,7 @@ func (c *BrowsingWebAppChallenge) Execute(ctx context.Context) (*challenge.Resul
 		}
 	}
 
-	return c.CreateResult(status, start, assertions, metrics, outputs, ""), nil
+	challengeResult := c.CreateResult(status, start, assertions, metrics, outputs, "")
+	challengeResult.RecordAction(fmt.Sprintf("%s: challenge completed with status %s", c.Name(), status))
+	return challengeResult, nil
 }

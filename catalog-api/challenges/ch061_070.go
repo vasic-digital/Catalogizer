@@ -46,10 +46,12 @@ func (c *SearchAPIBasicQueryChallenge) Execute(
 
 	_, loginErr := client.LoginWithRetry(ctx, c.config.Username, c.config.Password, 3)
 	if loginErr != nil {
-		return c.CreateResult(
+		challengeResult := c.CreateResult(
 			challenge.StatusFailed, start, assertions, nil, outputs,
 			fmt.Sprintf("login failed: %v", loginErr),
-		), nil
+		)
+		challengeResult.RecordAction(fmt.Sprintf("%s: failed - %s", c.Name(), fmt.Sprintf("login failed: %v", loginErr)))
+		return challengeResult, nil
 	}
 
 	c.ReportProgress("searching", nil)
@@ -100,7 +102,9 @@ func (c *SearchAPIBasicQueryChallenge) Execute(
 		}
 	}
 
-	return c.CreateResult(status, start, assertions, nil, outputs, ""), nil
+	challengeResult := c.CreateResult(status, start, assertions, nil, outputs, "")
+	challengeResult.RecordAction(fmt.Sprintf("%s: challenge completed with status %s", c.Name(), status))
+	return challengeResult, nil
 }
 
 // SearchAPIDuplicateDetectionChallenge validates the entity
@@ -137,10 +141,12 @@ func (c *SearchAPIDuplicateDetectionChallenge) Execute(
 
 	_, loginErr := client.LoginWithRetry(ctx, c.config.Username, c.config.Password, 3)
 	if loginErr != nil {
-		return c.CreateResult(
+		challengeResult := c.CreateResult(
 			challenge.StatusFailed, start, assertions, nil, outputs,
 			fmt.Sprintf("login failed: %v", loginErr),
-		), nil
+		)
+		challengeResult.RecordAction(fmt.Sprintf("%s: failed - %s", c.Name(), fmt.Sprintf("login failed: %v", loginErr)))
+		return challengeResult, nil
 	}
 
 	c.ReportProgress("checking-duplicates", nil)
@@ -166,7 +172,9 @@ func (c *SearchAPIDuplicateDetectionChallenge) Execute(
 		}
 	}
 
-	return c.CreateResult(status, start, assertions, nil, outputs, ""), nil
+	challengeResult := c.CreateResult(status, start, assertions, nil, outputs, "")
+	challengeResult.RecordAction(fmt.Sprintf("%s: challenge completed with status %s", c.Name(), status))
+	return challengeResult, nil
 }
 
 // SearchAPIAdvancedFiltersChallenge validates that the search API
@@ -204,10 +212,12 @@ func (c *SearchAPIAdvancedFiltersChallenge) Execute(
 
 	_, loginErr := client.LoginWithRetry(ctx, c.config.Username, c.config.Password, 3)
 	if loginErr != nil {
-		return c.CreateResult(
+		challengeResult := c.CreateResult(
 			challenge.StatusFailed, start, assertions, nil, outputs,
 			fmt.Sprintf("login failed: %v", loginErr),
-		), nil
+		)
+		challengeResult.RecordAction(fmt.Sprintf("%s: failed - %s", c.Name(), fmt.Sprintf("login failed: %v", loginErr)))
+		return challengeResult, nil
 	}
 
 	c.ReportProgress("filtered-search", nil)
@@ -233,7 +243,9 @@ func (c *SearchAPIAdvancedFiltersChallenge) Execute(
 		}
 	}
 
-	return c.CreateResult(status, start, assertions, nil, outputs, ""), nil
+	challengeResult := c.CreateResult(status, start, assertions, nil, outputs, "")
+	challengeResult.RecordAction(fmt.Sprintf("%s: challenge completed with status %s", c.Name(), status))
+	return challengeResult, nil
 }
 
 // BrowseAPIStorageRootsChallenge validates the storage-roots
@@ -271,10 +283,12 @@ func (c *BrowseAPIStorageRootsChallenge) Execute(
 
 	_, loginErr := client.LoginWithRetry(ctx, c.config.Username, c.config.Password, 3)
 	if loginErr != nil {
-		return c.CreateResult(
+		challengeResult := c.CreateResult(
 			challenge.StatusFailed, start, assertions, nil, outputs,
 			fmt.Sprintf("login failed: %v", loginErr),
-		), nil
+		)
+		challengeResult.RecordAction(fmt.Sprintf("%s: failed - %s", c.Name(), fmt.Sprintf("login failed: %v", loginErr)))
+		return challengeResult, nil
 	}
 
 	c.ReportProgress("fetching-roots", nil)
@@ -300,7 +314,9 @@ func (c *BrowseAPIStorageRootsChallenge) Execute(
 		}
 	}
 
-	return c.CreateResult(status, start, assertions, nil, outputs, ""), nil
+	challengeResult := c.CreateResult(status, start, assertions, nil, outputs, "")
+	challengeResult.RecordAction(fmt.Sprintf("%s: challenge completed with status %s", c.Name(), status))
+	return challengeResult, nil
 }
 
 // BrowseAPIDirectoryListingChallenge validates that the files
@@ -338,10 +354,12 @@ func (c *BrowseAPIDirectoryListingChallenge) Execute(
 
 	_, loginErr := client.LoginWithRetry(ctx, c.config.Username, c.config.Password, 3)
 	if loginErr != nil {
-		return c.CreateResult(
+		challengeResult := c.CreateResult(
 			challenge.StatusFailed, start, assertions, nil, outputs,
 			fmt.Sprintf("login failed: %v", loginErr),
-		), nil
+		)
+		challengeResult.RecordAction(fmt.Sprintf("%s: failed - %s", c.Name(), fmt.Sprintf("login failed: %v", loginErr)))
+		return challengeResult, nil
 	}
 
 	c.ReportProgress("listing-directory", nil)
@@ -367,7 +385,9 @@ func (c *BrowseAPIDirectoryListingChallenge) Execute(
 		}
 	}
 
-	return c.CreateResult(status, start, assertions, nil, outputs, ""), nil
+	challengeResult := c.CreateResult(status, start, assertions, nil, outputs, "")
+	challengeResult.RecordAction(fmt.Sprintf("%s: challenge completed with status %s", c.Name(), status))
+	return challengeResult, nil
 }
 
 // SyncAPIEndpointCreationChallenge validates that the sync endpoints
@@ -405,10 +425,12 @@ func (c *SyncAPIEndpointCreationChallenge) Execute(
 
 	_, loginErr := client.LoginWithRetry(ctx, c.config.Username, c.config.Password, 3)
 	if loginErr != nil {
-		return c.CreateResult(
+		challengeResult := c.CreateResult(
 			challenge.StatusFailed, start, assertions, nil, outputs,
 			fmt.Sprintf("login failed: %v", loginErr),
-		), nil
+		)
+		challengeResult.RecordAction(fmt.Sprintf("%s: failed - %s", c.Name(), fmt.Sprintf("login failed: %v", loginErr)))
+		return challengeResult, nil
 	}
 
 	c.ReportProgress("creating-endpoint", nil)
@@ -438,7 +460,9 @@ func (c *SyncAPIEndpointCreationChallenge) Execute(
 		}
 	}
 
-	return c.CreateResult(status, start, assertions, nil, outputs, ""), nil
+	challengeResult := c.CreateResult(status, start, assertions, nil, outputs, "")
+	challengeResult.RecordAction(fmt.Sprintf("%s: challenge completed with status %s", c.Name(), status))
+	return challengeResult, nil
 }
 
 // SyncAPICloudProvidersChallenge validates the sync cloud providers
@@ -476,10 +500,12 @@ func (c *SyncAPICloudProvidersChallenge) Execute(
 
 	_, loginErr := client.LoginWithRetry(ctx, c.config.Username, c.config.Password, 3)
 	if loginErr != nil {
-		return c.CreateResult(
+		challengeResult := c.CreateResult(
 			challenge.StatusFailed, start, assertions, nil, outputs,
 			fmt.Sprintf("login failed: %v", loginErr),
-		), nil
+		)
+		challengeResult.RecordAction(fmt.Sprintf("%s: failed - %s", c.Name(), fmt.Sprintf("login failed: %v", loginErr)))
+		return challengeResult, nil
 	}
 
 	c.ReportProgress("fetching-providers", nil)
@@ -505,7 +531,9 @@ func (c *SyncAPICloudProvidersChallenge) Execute(
 		}
 	}
 
-	return c.CreateResult(status, start, assertions, nil, outputs, ""), nil
+	challengeResult := c.CreateResult(status, start, assertions, nil, outputs, "")
+	challengeResult.RecordAction(fmt.Sprintf("%s: challenge completed with status %s", c.Name(), status))
+	return challengeResult, nil
 }
 
 // SyncAPIUserEndpointsChallenge validates the sync user endpoints
@@ -543,10 +571,12 @@ func (c *SyncAPIUserEndpointsChallenge) Execute(
 
 	_, loginErr := client.LoginWithRetry(ctx, c.config.Username, c.config.Password, 3)
 	if loginErr != nil {
-		return c.CreateResult(
+		challengeResult := c.CreateResult(
 			challenge.StatusFailed, start, assertions, nil, outputs,
 			fmt.Sprintf("login failed: %v", loginErr),
-		), nil
+		)
+		challengeResult.RecordAction(fmt.Sprintf("%s: failed - %s", c.Name(), fmt.Sprintf("login failed: %v", loginErr)))
+		return challengeResult, nil
 	}
 
 	c.ReportProgress("fetching-endpoints", nil)
@@ -572,7 +602,9 @@ func (c *SyncAPIUserEndpointsChallenge) Execute(
 		}
 	}
 
-	return c.CreateResult(status, start, assertions, nil, outputs, ""), nil
+	challengeResult := c.CreateResult(status, start, assertions, nil, outputs, "")
+	challengeResult.RecordAction(fmt.Sprintf("%s: challenge completed with status %s", c.Name(), status))
+	return challengeResult, nil
 }
 
 // SecurityHeadersAllChallenge validates that security headers
@@ -621,9 +653,11 @@ func (c *SecurityHeadersAllChallenge) Execute(
 			Passed:  false,
 			Message: fmt.Sprintf("Health endpoint unreachable: %v", err),
 		})
-		return c.CreateResult(
+		challengeResult := c.CreateResult(
 			challenge.StatusFailed, start, assertions, nil, outputs, err.Error(),
-		), nil
+		)
+		challengeResult.RecordAction(fmt.Sprintf("%s: failed - %s", c.Name(), err.Error()))
+		return challengeResult, nil
 	}
 	resp.Body.Close()
 
@@ -665,7 +699,9 @@ func (c *SecurityHeadersAllChallenge) Execute(
 		}
 	}
 
-	return c.CreateResult(status, start, assertions, nil, outputs, ""), nil
+	challengeResult := c.CreateResult(status, start, assertions, nil, outputs, "")
+	challengeResult.RecordAction(fmt.Sprintf("%s: challenge completed with status %s", c.Name(), status))
+	return challengeResult, nil
 }
 
 // CORSRejectsUnauthorizedChallenge validates that CORS rejects
@@ -719,9 +755,11 @@ func (c *CORSRejectsUnauthorizedChallenge) Execute(
 			Passed:  false,
 			Message: fmt.Sprintf("CORS endpoint unreachable: %v", err),
 		})
-		return c.CreateResult(
+		challengeResult := c.CreateResult(
 			challenge.StatusFailed, start, assertions, nil, outputs, err.Error(),
-		), nil
+		)
+		challengeResult.RecordAction(fmt.Sprintf("%s: failed - %s", c.Name(), err.Error()))
+		return challengeResult, nil
 	}
 	resp.Body.Close()
 
@@ -750,5 +788,7 @@ func (c *CORSRejectsUnauthorizedChallenge) Execute(
 		}
 	}
 
-	return c.CreateResult(status, start, assertions, nil, outputs, ""), nil
+	challengeResult := c.CreateResult(status, start, assertions, nil, outputs, "")
+	challengeResult.RecordAction(fmt.Sprintf("%s: challenge completed with status %s", c.Name(), status))
+	return challengeResult, nil
 }

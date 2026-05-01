@@ -79,7 +79,9 @@ func (c *BrowsingAPIHealthChallenge) Execute(ctx context.Context) (*challenge.Re
 		if healthErr != nil {
 			errMsg = healthErr.Error()
 		}
-		return c.CreateResult(challenge.StatusFailed, start, assertions, nil, outputs, errMsg), nil
+		challengeResult := c.CreateResult(challenge.StatusFailed, start, assertions, nil, outputs, errMsg)
+		challengeResult.RecordAction(fmt.Sprintf("%s: failed - %s", c.Name(), errMsg))
+		return challengeResult, nil
 	}
 
 	// Step 2: POST /api/v1/auth/login succeeds
@@ -99,7 +101,9 @@ func (c *BrowsingAPIHealthChallenge) Execute(ctx context.Context) (*challenge.Re
 		if loginErr != nil {
 			errMsg = loginErr.Error()
 		}
-		return c.CreateResult(challenge.StatusFailed, start, assertions, nil, outputs, errMsg), nil
+		challengeResult := c.CreateResult(challenge.StatusFailed, start, assertions, nil, outputs, errMsg)
+		challengeResult.RecordAction(fmt.Sprintf("%s: failed - %s", c.Name(), errMsg))
+		return challengeResult, nil
 	}
 
 	// Step 3: Response contains non-empty token
@@ -182,5 +186,7 @@ func (c *BrowsingAPIHealthChallenge) Execute(ctx context.Context) (*challenge.Re
 		}
 	}
 
-	return c.CreateResult(status, start, assertions, metrics, outputs, ""), nil
+	challengeResult := c.CreateResult(status, start, assertions, metrics, outputs, "")
+	challengeResult.RecordAction(fmt.Sprintf("%s: challenge completed with status %s", c.Name(), status))
+	return challengeResult, nil
 }

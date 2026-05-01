@@ -79,7 +79,9 @@ func (c *IQPerTypeThresholdsChallenge) Execute(ctx context.Context) (*challenge.
 	if mismatches > 0 {
 		status = challenge.StatusFailed
 	}
-	return c.CreateResult(status, start, assertions, nil, outputs, ""), nil
+	challengeResult := c.CreateResult(status, start, assertions, nil, outputs, "")
+	challengeResult.RecordAction(fmt.Sprintf("%s: challenge completed with status %s", c.Name(), status))
+	return challengeResult, nil
 }
 
 // -----------------------------------------------------------------------------
@@ -119,7 +121,9 @@ func (c *IQCacheHitChallenge) Execute(ctx context.Context) (*challenge.Result, e
 
 	client := httpclient.NewAPIClient(c.config.BaseURL)
 	if _, err := client.LoginWithRetry(ctx, c.config.Username, c.config.Password, 3); err != nil {
-		return c.CreateResult(challenge.StatusFailed, start, assertions, nil, outputs, err.Error()), nil
+		challengeResult := c.CreateResult(challenge.StatusFailed, start, assertions, nil, outputs, err.Error())
+		challengeResult.RecordAction(fmt.Sprintf("%s: failed - %s", c.Name(), err.Error()))
+		return challengeResult, nil
 	}
 
 	headers := [2]map[string]string{}
@@ -127,11 +131,15 @@ func (c *IQCacheHitChallenge) Execute(ctx context.Context) (*challenge.Result, e
 		req, err := http.NewRequestWithContext(ctx, http.MethodGet,
 			c.config.BaseURL+"/api/v1/cover/1", nil)
 		if err != nil {
-			return c.CreateResult(challenge.StatusFailed, start, assertions, nil, outputs, err.Error()), nil
+			challengeResult := c.CreateResult(challenge.StatusFailed, start, assertions, nil, outputs, err.Error())
+			challengeResult.RecordAction(fmt.Sprintf("%s: failed - %s", c.Name(), err.Error()))
+			return challengeResult, nil
 		}
 		resp, err := authed(client, req)
 		if err != nil {
-			return c.CreateResult(challenge.StatusFailed, start, assertions, nil, outputs, err.Error()), nil
+			challengeResult := c.CreateResult(challenge.StatusFailed, start, assertions, nil, outputs, err.Error())
+			challengeResult.RecordAction(fmt.Sprintf("%s: failed - %s", c.Name(), err.Error()))
+			return challengeResult, nil
 		}
 		headers[i] = map[string]string{
 			"quality": resp.Header.Get("X-Cover-Quality"),
@@ -152,7 +160,9 @@ func (c *IQCacheHitChallenge) Execute(ctx context.Context) (*challenge.Result, e
 	if !stable {
 		status = challenge.StatusFailed
 	}
-	return c.CreateResult(status, start, assertions, nil, outputs, ""), nil
+	challengeResult := c.CreateResult(status, start, assertions, nil, outputs, "")
+	challengeResult.RecordAction(fmt.Sprintf("%s: challenge completed with status %s", c.Name(), status))
+	return challengeResult, nil
 }
 
 // -----------------------------------------------------------------------------
@@ -191,7 +201,9 @@ func (c *IQConcurrentDedupChallenge) Execute(ctx context.Context) (*challenge.Re
 
 	client := httpclient.NewAPIClient(c.config.BaseURL)
 	if _, err := client.LoginWithRetry(ctx, c.config.Username, c.config.Password, 3); err != nil {
-		return c.CreateResult(challenge.StatusFailed, start, assertions, nil, outputs, err.Error()), nil
+		challengeResult := c.CreateResult(challenge.StatusFailed, start, assertions, nil, outputs, err.Error())
+		challengeResult.RecordAction(fmt.Sprintf("%s: failed - %s", c.Name(), err.Error()))
+		return challengeResult, nil
 	}
 
 	type result struct {
@@ -233,7 +245,9 @@ func (c *IQConcurrentDedupChallenge) Execute(ctx context.Context) (*challenge.Re
 	if missing > 0 {
 		status = challenge.StatusFailed
 	}
-	return c.CreateResult(status, start, assertions, nil, outputs, ""), nil
+	challengeResult := c.CreateResult(status, start, assertions, nil, outputs, "")
+	challengeResult.RecordAction(fmt.Sprintf("%s: challenge completed with status %s", c.Name(), status))
+	return challengeResult, nil
 }
 
 // -----------------------------------------------------------------------------
@@ -273,7 +287,9 @@ func (c *IQXCoverSourceChallenge) Execute(ctx context.Context) (*challenge.Resul
 
 	client := httpclient.NewAPIClient(c.config.BaseURL)
 	if _, err := client.LoginWithRetry(ctx, c.config.Username, c.config.Password, 3); err != nil {
-		return c.CreateResult(challenge.StatusFailed, start, assertions, nil, outputs, err.Error()), nil
+		challengeResult := c.CreateResult(challenge.StatusFailed, start, assertions, nil, outputs, err.Error())
+		challengeResult.RecordAction(fmt.Sprintf("%s: failed - %s", c.Name(), err.Error()))
+		return challengeResult, nil
 	}
 	allowed := map[string]bool{
 		"cache": true, "external_metadata": true, "local_scan": true,
@@ -308,7 +324,9 @@ func (c *IQXCoverSourceChallenge) Execute(ctx context.Context) (*challenge.Resul
 	if unknown > 0 {
 		status = challenge.StatusFailed
 	}
-	return c.CreateResult(status, start, assertions, nil, outputs, ""), nil
+	challengeResult := c.CreateResult(status, start, assertions, nil, outputs, "")
+	challengeResult.RecordAction(fmt.Sprintf("%s: challenge completed with status %s", c.Name(), status))
+	return challengeResult, nil
 }
 
 // RegisterExtendedImageQualityChallenges wires CH-IQ-006..009 into the

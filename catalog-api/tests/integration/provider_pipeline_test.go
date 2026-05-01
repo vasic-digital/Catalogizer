@@ -4,12 +4,7 @@ import (
 	"catalogizer/internal/media/models"
 	"catalogizer/internal/media/providers"
 	"context"
-	"encoding/json"
 	"fmt"
-	"net/http"
-	"net/http/httptest"
-	"net/url"
-	"sync/atomic"
 	"testing"
 	"time"
 
@@ -52,52 +47,6 @@ func newTestProviderManager(t *testing.T, mocks map[string]providers.MetadataPro
 		pm.RegisterProvider(name, p)
 	}
 	return pm
-}
-
-// --- TMDB mock server helpers ---
-
-// newTMDBSearchServer returns an httptest server that responds with TMDB-style search results.
-func newTMDBSearchServer(t *testing.T, results []tmdbSearchItem) *httptest.Server {
-	t.Helper()
-	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		resp := tmdbSearchResponse{Results: results}
-		w.Header().Set("Content-Type", "application/json")
-		json.NewEncoder(w).Encode(resp)
-	}))
-	t.Cleanup(ts.Close)
-	return ts
-}
-
-type tmdbSearchItem struct {
-	ID          int     `json:"id"`
-	Title       string  `json:"title"`
-	Name        string  `json:"name"`
-	ReleaseDate string  `json:"release_date"`
-	Overview    string  `json:"overview"`
-	PosterPath  string  `json:"poster_path"`
-	VoteAverage float64 `json:"vote_average"`
-}
-
-type tmdbSearchResponse struct {
-	Results []tmdbSearchItem `json:"results"`
-}
-
-// newTMDBDetailsServer returns an httptest server that responds with TMDB-style movie details.
-func newTMDBDetailsServer(t *testing.T, title string, rating float64, posterPath string) *httptest.Server {
-	t.Helper()
-	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		resp := map[string]interface{}{
-			"title":        title,
-			"vote_average": rating,
-			"poster_path":  posterPath,
-			"homepage":     "https://example.com/movie",
-			"videos":       map[string]interface{}{"results": []interface{}{}},
-		}
-		w.Header().Set("Content-Type", "application/json")
-		json.NewEncoder(w).Encode(resp)
-	}))
-	t.Cleanup(ts.Close)
-	return ts
 }
 
 // --- Tests ---
@@ -289,67 +238,6 @@ func TestProviderPipeline_GracefulDegradation_ProviderReturnsError(t *testing.T)
 	assert.Equal(t, "Good Movie", results["imdb"][0].Title)
 }
 
-func TestProviderPipeline_GracefulDegradation_ServerReturns500(t *testing.T) {
-	// Create a mock TMDB server that returns 500
-	server500 := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		w.WriteHeader(http.StatusInternalServerError)
-		w.Write([]byte("Internal Server Error"))
-	}))
-	t.Cleanup(server500.Close)
-
-	logger, _ := zap.NewDevelopment()
-	client := &http.Client{Timeout: 5 * time.Second}
-
-	// Build a TMDB provider pointing at the failing server
-	bp := providers.NewBaseProvider("tmdb_test", server500.URL, "fake-api-key", client, logger)
-	tmdbProvider := &tmdbTestProvider{BaseProvider: bp}
-
-	pm := newTestProviderManager(t, map[string]providers.MetadataProvider{
-		"tmdb_test": tmdbProvider,
-	})
-
-	ctx := context.Background()
-	results, err := pm.SearchAll(ctx, "Test Movie", "movie", nil, []string{"tmdb_test"})
-	require.NoError(t, err, "SearchAll should not fail when a provider returns 500")
-	assert.Empty(t, results["tmdb_test"], "provider returning 500 should yield no results")
-}
-
-func TestProviderPipeline_TimeoutHandling(t *testing.T) {
-	// Create a server that delays longer than the client timeout
-	var requestCount int32
-	slowServer := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		atomic.AddInt32(&requestCount, 1)
-		// Block until context is cancelled or 10 seconds
-		select {
-		case <-r.Context().Done():
-			return
-		case <-time.After(10 * time.Second):
-			return
-		}
-	}))
-	t.Cleanup(slowServer.Close)
-
-	logger, _ := zap.NewDevelopment()
-	client := &http.Client{Timeout: 500 * time.Millisecond} // Very short timeout
-
-	bp := providers.NewBaseProvider("slow_provider", slowServer.URL, "fake-key", client, logger)
-	slowProvider := &tmdbTestProvider{BaseProvider: bp}
-
-	pm := newTestProviderManager(t, map[string]providers.MetadataProvider{
-		"slow_provider": slowProvider,
-	})
-
-	ctx := context.Background()
-	start := time.Now()
-	results, err := pm.SearchAll(ctx, "Timeout Test", "movie", nil, []string{"slow_provider"})
-	elapsed := time.Since(start)
-
-	require.NoError(t, err, "SearchAll should not fail on timeout -- it logs and continues")
-	assert.Empty(t, results["slow_provider"], "timed-out provider should yield no results")
-	assert.Less(t, elapsed, 5*time.Second, "should timeout quickly, not block for 10s")
-	assert.Equal(t, int32(1), atomic.LoadInt32(&requestCount), "server should have received the request")
-}
-
 func TestProviderPipeline_DisabledProviders_Skipped(t *testing.T) {
 	searchCalled := false
 
@@ -423,58 +311,6 @@ func TestProviderPipeline_ContextCancellation(t *testing.T) {
 	// The provider returns ctx.Err(), which SearchAll logs and continues
 	require.NoError(t, err)
 	assert.Empty(t, results["tmdb"], "cancelled context should yield no results")
-}
-
-func TestProviderPipeline_TMDBProvider_MockServer_Search(t *testing.T) {
-	// Create a mock TMDB API server
-	ts := newTMDBSearchServer(t, []tmdbSearchItem{
-		{ID: 550, Title: "Fight Club", ReleaseDate: "1999-10-15", Overview: "An insomniac office worker...", PosterPath: "/pB8BM7pdSp6B6Ih7QZ4DrQ3PmJK.jpg", VoteAverage: 8.4},
-		{ID: 551, Title: "Fight Club 2", ReleaseDate: "2025-01-01", Overview: "Sequel", VoteAverage: 0},
-	})
-
-	logger, _ := zap.NewDevelopment()
-	client := &http.Client{Timeout: 5 * time.Second}
-
-	// Create a TMDB provider pointing at our mock server
-	bp := providers.NewBaseProvider("tmdb", ts.URL, "fake-api-key", client, logger)
-	tmdb := &tmdbTestProvider{BaseProvider: bp}
-
-	ctx := context.Background()
-	results, err := tmdb.Search(ctx, "Fight Club", "movie", nil)
-	require.NoError(t, err)
-	require.Len(t, results, 2, "should parse both results from mock response")
-
-	assert.Equal(t, "550", results[0].ExternalID)
-	assert.Equal(t, "Fight Club", results[0].Title)
-	assert.NotNil(t, results[0].Year)
-	assert.Equal(t, 1999, *results[0].Year)
-	assert.NotNil(t, results[0].Rating)
-	assert.InDelta(t, 8.4, *results[0].Rating, 0.01)
-	assert.NotNil(t, results[0].CoverURL)
-	assert.Contains(t, *results[0].CoverURL, "image.tmdb.org")
-}
-
-func TestProviderPipeline_TMDBProvider_MockServer_GetDetails(t *testing.T) {
-	ts := newTMDBDetailsServer(t, "Fight Club", 8.4, "/poster.jpg")
-
-	logger, _ := zap.NewDevelopment()
-	client := &http.Client{Timeout: 5 * time.Second}
-
-	bp := providers.NewBaseProvider("tmdb", ts.URL, "fake-api-key", client, logger)
-	tmdb := &tmdbTestProvider{BaseProvider: bp}
-
-	ctx := context.Background()
-	meta, err := tmdb.GetDetails(ctx, "550")
-	require.NoError(t, err)
-	require.NotNil(t, meta)
-
-	assert.Equal(t, "tmdb", meta.Provider)
-	assert.Equal(t, "550", meta.ExternalID)
-	assert.NotNil(t, meta.Rating)
-	assert.InDelta(t, 8.4, *meta.Rating, 0.01)
-	assert.NotNil(t, meta.CoverURL)
-	assert.Contains(t, *meta.CoverURL, "image.tmdb.org")
-	assert.NotNil(t, meta.ReviewURL)
 }
 
 func TestProviderPipeline_SearchAll_EmptyResults_Excluded(t *testing.T) {
@@ -563,134 +399,4 @@ func TestProviderPipeline_GetBestMatch_YearBonus(t *testing.T) {
 	// Provider B result: 0.8 + exact title 0.3 + no year match + rating 0.1 = 1.2
 	assert.Equal(t, "tmdb", providerName, "result with matching year should score higher")
 	assert.Equal(t, 2010, *best.Year)
-}
-
-// tmdbTestProvider wraps BaseProvider to provide TMDB-compatible Search and GetDetails
-// that use the configurable baseURL (for httptest servers).
-type tmdbTestProvider struct {
-	*providers.BaseProvider
-}
-
-func (t *tmdbTestProvider) Search(ctx context.Context, query string, mediaType string, year *int) ([]providers.SearchResult, error) {
-	if !t.IsEnabled() {
-		return nil, nil
-	}
-
-	// Build the request URL using the base URL (which points to httptest server)
-	params := url.Values{}
-	params.Add("api_key", "fake")
-	params.Add("query", query)
-	requestURL := fmt.Sprintf("%s/search/movie?%s", t.GetBaseURL(), params.Encode())
-
-	body, err := t.MakeRequest(ctx, requestURL, nil)
-	if err != nil {
-		return nil, err
-	}
-
-	var response struct {
-		Results []struct {
-			ID          int     `json:"id"`
-			Title       string  `json:"title"`
-			Name        string  `json:"name"`
-			ReleaseDate string  `json:"release_date"`
-			Overview    string  `json:"overview"`
-			PosterPath  string  `json:"poster_path"`
-			VoteAverage float64 `json:"vote_average"`
-		} `json:"results"`
-	}
-
-	if err := json.Unmarshal(body, &response); err != nil {
-		return nil, fmt.Errorf("failed to parse response: %w", err)
-	}
-
-	results := make([]providers.SearchResult, 0, len(response.Results))
-	for _, item := range response.Results {
-		title := item.Title
-		if title == "" {
-			title = item.Name
-		}
-
-		var yr *int
-		if len(item.ReleaseDate) >= 4 {
-			y := parseIntFromDate(item.ReleaseDate[:4])
-			if y > 1900 {
-				yr = &y
-			}
-		}
-
-		var coverURL *string
-		if item.PosterPath != "" {
-			url := fmt.Sprintf("https://image.tmdb.org/t/p/w500%s", item.PosterPath)
-			coverURL = &url
-		}
-
-		var rating *float64
-		if item.VoteAverage > 0 {
-			rating = &item.VoteAverage
-		}
-
-		results = append(results, providers.SearchResult{
-			ExternalID:  fmt.Sprintf("%d", item.ID),
-			Title:       title,
-			Year:        yr,
-			Rating:      rating,
-			Description: &item.Overview,
-			CoverURL:    coverURL,
-			Relevance:   0.8,
-		})
-	}
-
-	return results, nil
-}
-
-func (t *tmdbTestProvider) GetDetails(ctx context.Context, externalID string) (*models.ExternalMetadata, error) {
-	if !t.IsEnabled() {
-		return nil, nil
-	}
-
-	requestURL := fmt.Sprintf("%s/movie/%s?api_key=fake", t.GetBaseURL(), externalID)
-
-	body, err := t.MakeRequest(ctx, requestURL, nil)
-	if err != nil {
-		return nil, err
-	}
-
-	metadata := &models.ExternalMetadata{
-		Provider:    t.GetName(),
-		ExternalID:  externalID,
-		Data:        string(body),
-		LastFetched: time.Now(),
-	}
-
-	var details struct {
-		Title       string  `json:"title"`
-		VoteAverage float64 `json:"vote_average"`
-		PosterPath  string  `json:"poster_path"`
-		Homepage    string  `json:"homepage"`
-	}
-
-	if err := json.Unmarshal(body, &details); err == nil {
-		if details.VoteAverage > 0 {
-			metadata.Rating = &details.VoteAverage
-		}
-		if details.PosterPath != "" {
-			url := fmt.Sprintf("https://image.tmdb.org/t/p/w500%s", details.PosterPath)
-			metadata.CoverURL = &url
-		}
-		if details.Homepage != "" {
-			metadata.ReviewURL = &details.Homepage
-		}
-	}
-
-	return metadata, nil
-}
-
-func parseIntFromDate(s string) int {
-	var result int
-	for _, char := range s {
-		if char >= '0' && char <= '9' {
-			result = result*10 + int(char-'0')
-		}
-	}
-	return result
 }

@@ -83,9 +83,11 @@ func (c *APIDocsChallenge) Execute(
 	})
 
 	if !docsExist {
-		return c.CreateResult(
+		challengeResult := c.CreateResult(
 			challenge.StatusFailed, start, assertions, nil, outputs, "docs directory not found",
-		), nil
+		)
+		challengeResult.RecordAction(fmt.Sprintf("%s: failed - %s", c.Name(), "docs directory not found"))
+		return challengeResult, nil
 	}
 
 	outputs["docs_dir"] = docsDir
@@ -177,5 +179,7 @@ func (c *APIDocsChallenge) Execute(
 		}
 	}
 
-	return c.CreateResult(status, start, assertions, metrics, outputs, ""), nil
+	challengeResult := c.CreateResult(status, start, assertions, metrics, outputs, "")
+	challengeResult.RecordAction(fmt.Sprintf("%s: challenge completed with status %s", c.Name(), status))
+	return challengeResult, nil
 }

@@ -54,7 +54,9 @@ func (c *AssetServingChallenge) Execute(ctx context.Context) (*challenge.Result,
 		Message:  challenge.Ternary(loginOK, "Login succeeded", fmt.Sprintf("Login failed: %v", loginErr)),
 	})
 	if !loginOK {
-		return c.CreateResult(challenge.StatusFailed, start, assertions, nil, outputs, "login failed"), nil
+		challengeResult := c.CreateResult(challenge.StatusFailed, start, assertions, nil, outputs, "login failed")
+		challengeResult.RecordAction(fmt.Sprintf("%s: failed - %s", c.Name(), "login failed"))
+		return challengeResult, nil
 	}
 
 	// Step 2: POST /api/v1/assets/request — create an asset request
@@ -80,14 +82,18 @@ func (c *AssetServingChallenge) Execute(ctx context.Context) (*challenge.Result,
 	})
 
 	if assetID == "" {
-		return c.CreateResult(challenge.StatusFailed, start, assertions, nil, outputs, "no asset_id returned"), nil
+		challengeResult := c.CreateResult(challenge.StatusFailed, start, assertions, nil, outputs, "no asset_id returned")
+		challengeResult.RecordAction(fmt.Sprintf("%s: failed - %s", c.Name(), "no asset_id returned"))
+		return challengeResult, nil
 	}
 
 	// Step 3: GET /api/v1/assets/:id — verify response
 	assetReq, err := http.NewRequestWithContext(ctx, http.MethodGet,
 		c.config.BaseURL+"/api/v1/assets/"+assetID, nil)
 	if err != nil {
-		return c.CreateResult(challenge.StatusFailed, start, assertions, nil, outputs, err.Error()), nil
+		challengeResult := c.CreateResult(challenge.StatusFailed, start, assertions, nil, outputs, err.Error())
+		challengeResult.RecordAction(fmt.Sprintf("%s: failed - %s", c.Name(), err.Error()))
+		return challengeResult, nil
 	}
 
 	httpClient := &http.Client{Timeout: 10 * time.Second}
@@ -151,5 +157,7 @@ func (c *AssetServingChallenge) Execute(ctx context.Context) (*challenge.Result,
 		}
 	}
 
-	return c.CreateResult(status, start, assertions, nil, outputs, ""), nil
+	challengeResult := c.CreateResult(status, start, assertions, nil, outputs, "")
+	challengeResult.RecordAction(fmt.Sprintf("%s: challenge completed with status %s", c.Name(), status))
+	return challengeResult, nil
 }

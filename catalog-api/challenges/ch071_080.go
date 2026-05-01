@@ -95,7 +95,9 @@ func (c *InputValidationRejectsInjectionChallenge) Execute(
 		}
 	}
 
-	return c.CreateResult(status, start, assertions, nil, outputs, ""), nil
+	challengeResult := c.CreateResult(status, start, assertions, nil, outputs, "")
+	challengeResult.RecordAction(fmt.Sprintf("%s: challenge completed with status %s", c.Name(), status))
+	return challengeResult, nil
 }
 
 // RateLimitAuthEndpointsChallenge validates that hitting the
@@ -194,7 +196,9 @@ func (c *RateLimitAuthEndpointsChallenge) Execute(
 		}
 	}
 
-	return c.CreateResult(resultStatus, start, assertions, nil, outputs, ""), nil
+	challengeResult := c.CreateResult(resultStatus, start, assertions, nil, outputs, "")
+	challengeResult.RecordAction(fmt.Sprintf("%s: challenge completed with status %s", c.Name(), resultStatus))
+	return challengeResult, nil
 }
 
 // JWTTokenLifecycleChallenge validates the full JWT lifecycle:
@@ -247,9 +251,11 @@ func (c *JWTTokenLifecycleChallenge) Execute(
 	})
 
 	if !loginOK {
-		return c.CreateResult(
+		challengeResult := c.CreateResult(
 			challenge.StatusFailed, start, assertions, nil, outputs, "login failed",
-		), nil
+		)
+		challengeResult.RecordAction(fmt.Sprintf("%s: failed - %s", c.Name(), "login failed"))
+		return challengeResult, nil
 	}
 
 	// Step 2: Valid token works
@@ -293,7 +299,9 @@ func (c *JWTTokenLifecycleChallenge) Execute(
 		}
 	}
 
-	return c.CreateResult(resultStatus, start, assertions, nil, outputs, ""), nil
+	challengeResult := c.CreateResult(resultStatus, start, assertions, nil, outputs, "")
+	challengeResult.RecordAction(fmt.Sprintf("%s: challenge completed with status %s", c.Name(), resultStatus))
+	return challengeResult, nil
 }
 
 // FileUploadMagicBytesChallenge validates that the upload endpoint
@@ -331,10 +339,12 @@ func (c *FileUploadMagicBytesChallenge) Execute(
 
 	_, loginErr := client.LoginWithRetry(ctx, c.config.Username, c.config.Password, 3)
 	if loginErr != nil {
-		return c.CreateResult(
+		challengeResult := c.CreateResult(
 			challenge.StatusFailed, start, assertions, nil, outputs,
 			fmt.Sprintf("login failed: %v", loginErr),
-		), nil
+		)
+		challengeResult.RecordAction(fmt.Sprintf("%s: failed - %s", c.Name(), fmt.Sprintf("login failed: %v", loginErr)))
+		return challengeResult, nil
 	}
 
 	c.ReportProgress("testing-upload", nil)
@@ -368,7 +378,9 @@ func (c *FileUploadMagicBytesChallenge) Execute(
 		}
 	}
 
-	return c.CreateResult(resultStatus, start, assertions, nil, outputs, ""), nil
+	challengeResult := c.CreateResult(resultStatus, start, assertions, nil, outputs, "")
+	challengeResult.RecordAction(fmt.Sprintf("%s: challenge completed with status %s", c.Name(), resultStatus))
+	return challengeResult, nil
 }
 
 // ConversionRejectsPathTraversalChallenge validates that the files
@@ -406,10 +418,12 @@ func (c *ConversionRejectsPathTraversalChallenge) Execute(
 
 	_, loginErr := client.LoginWithRetry(ctx, c.config.Username, c.config.Password, 3)
 	if loginErr != nil {
-		return c.CreateResult(
+		challengeResult := c.CreateResult(
 			challenge.StatusFailed, start, assertions, nil, outputs,
 			fmt.Sprintf("login failed: %v", loginErr),
-		), nil
+		)
+		challengeResult.RecordAction(fmt.Sprintf("%s: failed - %s", c.Name(), fmt.Sprintf("login failed: %v", loginErr)))
+		return challengeResult, nil
 	}
 
 	c.ReportProgress("testing-traversal", nil)
@@ -452,7 +466,9 @@ func (c *ConversionRejectsPathTraversalChallenge) Execute(
 		}
 	}
 
-	return c.CreateResult(resultStatus, start, assertions, nil, outputs, ""), nil
+	challengeResult := c.CreateResult(resultStatus, start, assertions, nil, outputs, "")
+	challengeResult.RecordAction(fmt.Sprintf("%s: challenge completed with status %s", c.Name(), resultStatus))
+	return challengeResult, nil
 }
 
 // APIResponseLatencyChallenge validates the health endpoint
@@ -559,7 +575,9 @@ func (c *APIResponseLatencyChallenge) Execute(
 		}
 	}
 
-	return c.CreateResult(resultStatus, start, assertions, metrics, outputs, ""), nil
+	challengeResult := c.CreateResult(resultStatus, start, assertions, metrics, outputs, "")
+	challengeResult.RecordAction(fmt.Sprintf("%s: challenge completed with status %s", c.Name(), resultStatus))
+	return challengeResult, nil
 }
 
 // APIConcurrentRequestsChallenge validates that 50 concurrent GET
@@ -649,7 +667,9 @@ func (c *APIConcurrentRequestsChallenge) Execute(
 		}
 	}
 
-	return c.CreateResult(resultStatus, start, assertions, metrics, outputs, ""), nil
+	challengeResult := c.CreateResult(resultStatus, start, assertions, metrics, outputs, "")
+	challengeResult.RecordAction(fmt.Sprintf("%s: challenge completed with status %s", c.Name(), resultStatus))
+	return challengeResult, nil
 }
 
 // GracefulDegradationChallenge validates that the API does not
@@ -731,7 +751,9 @@ func (c *GracefulDegradationChallenge) Execute(
 		}
 	}
 
-	return c.CreateResult(resultStatus, start, assertions, nil, outputs, ""), nil
+	challengeResult := c.CreateResult(resultStatus, start, assertions, nil, outputs, "")
+	challengeResult.RecordAction(fmt.Sprintf("%s: challenge completed with status %s", c.Name(), resultStatus))
+	return challengeResult, nil
 }
 
 // MemoryStableDuringLoadChallenge validates the API remains healthy
@@ -783,10 +805,12 @@ func (c *MemoryStableDuringLoadChallenge) Execute(
 	})
 
 	if !preOK {
-		return c.CreateResult(
+		challengeResult := c.CreateResult(
 			challenge.StatusFailed, start, assertions, nil, outputs,
 			"API not healthy before load test",
-		), nil
+		)
+		challengeResult.RecordAction(fmt.Sprintf("%s: failed - %s", c.Name(), "API not healthy before load test"))
+		return challengeResult, nil
 	}
 
 	// Send 100 requests
@@ -818,7 +842,9 @@ func (c *MemoryStableDuringLoadChallenge) Execute(
 		}
 	}
 
-	return c.CreateResult(resultStatus, start, assertions, nil, outputs, ""), nil
+	challengeResult := c.CreateResult(resultStatus, start, assertions, nil, outputs, "")
+	challengeResult.RecordAction(fmt.Sprintf("%s: challenge completed with status %s", c.Name(), resultStatus))
+	return challengeResult, nil
 }
 
 // DBPoolRecoveryChallenge validates that DB-backed endpoints
@@ -856,10 +882,12 @@ func (c *DBPoolRecoveryChallenge) Execute(
 
 	_, loginErr := client.LoginWithRetry(ctx, c.config.Username, c.config.Password, 3)
 	if loginErr != nil {
-		return c.CreateResult(
+		challengeResult := c.CreateResult(
 			challenge.StatusFailed, start, assertions, nil, outputs,
 			fmt.Sprintf("login failed: %v", loginErr),
-		), nil
+		)
+		challengeResult.RecordAction(fmt.Sprintf("%s: failed - %s", c.Name(), fmt.Sprintf("login failed: %v", loginErr)))
+		return challengeResult, nil
 	}
 
 	// Stress DB-backed endpoints
@@ -911,5 +939,7 @@ func (c *DBPoolRecoveryChallenge) Execute(
 		}
 	}
 
-	return c.CreateResult(resultStatus, start, assertions, nil, outputs, ""), nil
+	challengeResult := c.CreateResult(resultStatus, start, assertions, nil, outputs, "")
+	challengeResult.RecordAction(fmt.Sprintf("%s: challenge completed with status %s", c.Name(), resultStatus))
+	return challengeResult, nil
 }

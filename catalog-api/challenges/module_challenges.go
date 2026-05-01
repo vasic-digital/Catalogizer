@@ -96,7 +96,9 @@ func (c *moduleDocChallenge) Execute(ctx context.Context) (*challenge.Result, er
 		"test_files": {Name: "test_files", Value: float64(testCount), Unit: "count"},
 	}
 
-	return c.CreateResult(status, start, assertions, metrics, nil, ""), nil
+	challengeResult := c.CreateResult(status, start, assertions, metrics, nil, "")
+	challengeResult.RecordAction(fmt.Sprintf("%s: challenge completed with status %s", c.Name(), status))
+	return challengeResult, nil
 }
 
 // RegisterModuleChallenges registers challenges that verify each decoupled

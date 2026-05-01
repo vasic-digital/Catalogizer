@@ -71,9 +71,11 @@ func (c *GracefulShutdownChallenge) Execute(
 	})
 
 	if !healthOK {
-		return c.CreateResult(
+		challengeResult := c.CreateResult(
 			challenge.StatusFailed, start, assertions, nil, outputs, "API not healthy",
-		), nil
+		)
+		challengeResult.RecordAction(fmt.Sprintf("%s: failed - %s", c.Name(), "API not healthy"))
+		return challengeResult, nil
 	}
 
 	// Step 2: Verify server returns proper HTTP headers for connection handling
@@ -201,5 +203,7 @@ func (c *GracefulShutdownChallenge) Execute(
 		}
 	}
 
-	return c.CreateResult(status, start, assertions, metrics, outputs, ""), nil
+	challengeResult := c.CreateResult(status, start, assertions, metrics, outputs, "")
+	challengeResult.RecordAction(fmt.Sprintf("%s: challenge completed with status %s", c.Name(), status))
+	return challengeResult, nil
 }

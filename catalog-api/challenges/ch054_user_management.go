@@ -48,10 +48,12 @@ func (c *UserManagementChallenge) Execute(
 	c.ReportProgress("authenticating", nil)
 	_, err := client.LoginWithRetry(ctx, c.config.Username, c.config.Password, 5)
 	if err != nil {
-		return c.CreateResult(
+		challengeResult := c.CreateResult(
 			challenge.StatusFailed, start, assertions, nil, outputs,
 			fmt.Sprintf("admin login failed: %v", err),
-		), nil
+		)
+		challengeResult.RecordAction(fmt.Sprintf("%s: failed - %s", c.Name(), fmt.Sprintf("admin login failed: %v", err)))
+		return challengeResult, nil
 	}
 
 	// Test 1: Get current user profile
@@ -133,5 +135,7 @@ func (c *UserManagementChallenge) Execute(
 		}
 	}
 
-	return c.CreateResult(resultStatus, start, assertions, nil, outputs, ""), nil
+	challengeResult := c.CreateResult(resultStatus, start, assertions, nil, outputs, "")
+	challengeResult.RecordAction(fmt.Sprintf("%s: challenge completed with status %s", c.Name(), resultStatus))
+	return challengeResult, nil
 }

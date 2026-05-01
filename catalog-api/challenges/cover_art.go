@@ -53,9 +53,11 @@ func (c *CoverArtChallenge) Execute(
 			Passed:  false,
 			Message: fmt.Sprintf("Login failed: %v", err),
 		})
-		return c.CreateResult(
+		challengeResult := c.CreateResult(
 			challenge.StatusFailed, start, assertions, nil, outputs, err.Error(),
-		), nil
+		)
+		challengeResult.RecordAction(fmt.Sprintf("%s: failed - %s", c.Name(), err.Error()))
+		return challengeResult, nil
 	}
 
 	// Step 1: Find an entity to request cover art for
@@ -100,10 +102,12 @@ func (c *CoverArtChallenge) Execute(
 	outputs["entity_title"] = entityTitle
 
 	if !hasEntity {
-		return c.CreateResult(
+		challengeResult := c.CreateResult(
 			challenge.StatusFailed, start, assertions, nil, outputs,
 			"no entities available for cover art test",
-		), nil
+		)
+		challengeResult.RecordAction(fmt.Sprintf("%s: failed - %s", c.Name(), "no entities available for cover art test"))
+		return challengeResult, nil
 	}
 
 	entityIDStr := fmt.Sprintf("%.0f", entityID)
@@ -221,7 +225,9 @@ func (c *CoverArtChallenge) Execute(
 		}
 	}
 
-	return c.CreateResult(
+	challengeResult := c.CreateResult(
 		status, start, assertions, metrics, outputs, "",
-	), nil
+	)
+	challengeResult.RecordAction(fmt.Sprintf("%s: challenge completed with status %s", c.Name(), status))
+	return challengeResult, nil
 }

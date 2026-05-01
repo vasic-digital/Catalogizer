@@ -246,10 +246,6 @@ func AssertJSONResponse(t *testing.T, response *httptest.ResponseRecorder, expec
 	}
 }
 
-// MockHTTPServer creates a mock HTTP server for testing
-func MockHTTPServer(handler http.HandlerFunc) *httptest.Server {
-	return httptest.NewServer(handler)
-}
 
 // WaitForCondition waits for a condition to be true with timeout
 func WaitForCondition(t *testing.T, condition func() bool, timeout time.Duration, message string) {

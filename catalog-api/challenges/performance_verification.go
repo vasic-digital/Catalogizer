@@ -49,10 +49,12 @@ func (c *ScanSemaphoreLimitsChallenge) Execute(
 	client := httpclient.NewAPIClient(c.config.BaseURL)
 	_, loginErr := client.LoginWithRetry(ctx, c.config.Username, c.config.Password, 3)
 	if loginErr != nil {
-		return c.CreateResult(
+		challengeResult := c.CreateResult(
 			challenge.StatusFailed, start, assertions, nil, outputs,
 			fmt.Sprintf("login failed: %v", loginErr),
-		), nil
+		)
+		challengeResult.RecordAction(fmt.Sprintf("%s: failed - %s", c.Name(), fmt.Sprintf("login failed: %v", loginErr)))
+		return challengeResult, nil
 	}
 
 	token := client.Token()
@@ -142,7 +144,9 @@ func (c *ScanSemaphoreLimitsChallenge) Execute(
 		}
 	}
 
-	return c.CreateResult(resultStatus, start, assertions, nil, outputs, ""), nil
+	challengeResult := c.CreateResult(resultStatus, start, assertions, nil, outputs, "")
+	challengeResult.RecordAction(fmt.Sprintf("%s: challenge completed with status %s", c.Name(), resultStatus))
+	return challengeResult, nil
 }
 
 // RedisConnectionPoolingChallenge verifies that Redis connection
@@ -255,7 +259,9 @@ func (c *RedisConnectionPoolingChallenge) Execute(
 		}
 	}
 
-	return c.CreateResult(resultStatus, start, assertions, nil, outputs, ""), nil
+	challengeResult := c.CreateResult(resultStatus, start, assertions, nil, outputs, "")
+	challengeResult.RecordAction(fmt.Sprintf("%s: challenge completed with status %s", c.Name(), resultStatus))
+	return challengeResult, nil
 }
 
 // HTTPClientPooledTransportChallenge verifies that the HTTP client
@@ -309,10 +315,12 @@ func (c *HTTPClientPooledTransportChallenge) Execute(
 	)
 	resp, err := httpClient.Do(warmupReq)
 	if err != nil {
-		return c.CreateResult(
+		challengeResult := c.CreateResult(
 			challenge.StatusFailed, start, assertions, nil, outputs,
 			fmt.Sprintf("warmup request failed: %v", err),
-		), nil
+		)
+		challengeResult.RecordAction(fmt.Sprintf("%s: failed - %s", c.Name(), fmt.Sprintf("warmup request failed: %v", err)))
+		return challengeResult, nil
 	}
 	resp.Body.Close()
 
@@ -399,7 +407,9 @@ func (c *HTTPClientPooledTransportChallenge) Execute(
 		}
 	}
 
-	return c.CreateResult(resultStatus, start, assertions, nil, outputs, ""), nil
+	challengeResult := c.CreateResult(resultStatus, start, assertions, nil, outputs, "")
+	challengeResult.RecordAction(fmt.Sprintf("%s: challenge completed with status %s", c.Name(), resultStatus))
+	return challengeResult, nil
 }
 
 // GoroutineLeakDetectionChallenge verifies that no goroutine leaks
@@ -449,10 +459,12 @@ func (c *GoroutineLeakDetectionChallenge) Execute(
 	c.ReportProgress("burst-operations", nil)
 	_, loginErr := client.LoginWithRetry(ctx, c.config.Username, c.config.Password, 3)
 	if loginErr != nil {
-		return c.CreateResult(
+		challengeResult := c.CreateResult(
 			challenge.StatusFailed, start, assertions, nil, outputs,
 			fmt.Sprintf("login failed: %v", loginErr),
-		), nil
+		)
+		challengeResult.RecordAction(fmt.Sprintf("%s: failed - %s", c.Name(), fmt.Sprintf("login failed: %v", loginErr)))
+		return challengeResult, nil
 	}
 
 	// Fire 20 requests to various endpoints
@@ -524,7 +536,9 @@ func (c *GoroutineLeakDetectionChallenge) Execute(
 		}
 	}
 
-	return c.CreateResult(resultStatus, start, assertions, nil, outputs, ""), nil
+	challengeResult := c.CreateResult(resultStatus, start, assertions, nil, outputs, "")
+	challengeResult.RecordAction(fmt.Sprintf("%s: challenge completed with status %s", c.Name(), resultStatus))
+	return challengeResult, nil
 }
 
 // getGoroutineCount extracts the go_goroutines value from /metrics.
@@ -614,10 +628,12 @@ func (c *HealthEndpointLatencyChallenge) Execute(
 	}
 
 	if len(latencies) == 0 {
-		return c.CreateResult(
+		challengeResult := c.CreateResult(
 			challenge.StatusFailed, start, assertions, nil, outputs,
 			"all health requests failed",
-		), nil
+		)
+		challengeResult.RecordAction(fmt.Sprintf("%s: failed - %s", c.Name(), "all health requests failed"))
+		return challengeResult, nil
 	}
 
 	// Calculate median latency (simple sort-free approach: sum / count
@@ -701,5 +717,7 @@ func (c *HealthEndpointLatencyChallenge) Execute(
 		}
 	}
 
-	return c.CreateResult(resultStatus, start, assertions, metrics, outputs, ""), nil
+	challengeResult := c.CreateResult(resultStatus, start, assertions, metrics, outputs, "")
+	challengeResult.RecordAction(fmt.Sprintf("%s: challenge completed with status %s", c.Name(), resultStatus))
+	return challengeResult, nil
 }

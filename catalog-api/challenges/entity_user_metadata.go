@@ -57,9 +57,11 @@ func (c *EntityUserMetadataChallenge) Execute(
 			Passed:  false,
 			Message: fmt.Sprintf("Login failed: %v", err),
 		})
-		return c.CreateResult(
+		challengeResult := c.CreateResult(
 			challenge.StatusFailed, start, assertions, nil, outputs, err.Error(),
-		), nil
+		)
+		challengeResult.RecordAction(fmt.Sprintf("%s: failed - %s", c.Name(), err.Error()))
+		return challengeResult, nil
 	}
 
 	// 1. GET /api/v1/entities — find a valid entity ID
@@ -88,10 +90,12 @@ func (c *EntityUserMetadataChallenge) Execute(
 	outputs["test_entity_id"] = fmt.Sprintf("%.0f", entityID)
 
 	if !hasEntity {
-		return c.CreateResult(
+		challengeResult := c.CreateResult(
 			challenge.StatusFailed, start, assertions, nil, outputs,
 			"no entities available for user metadata test",
-		), nil
+		)
+		challengeResult.RecordAction(fmt.Sprintf("%s: failed - %s", c.Name(), "no entities available for user metadata test"))
+		return challengeResult, nil
 	}
 
 	// 2. PUT /api/v1/entities/:id/user-metadata — set is_favorite=true
@@ -166,7 +170,9 @@ func (c *EntityUserMetadataChallenge) Execute(
 		}
 	}
 
-	return c.CreateResult(
+	challengeResult := c.CreateResult(
 		status, start, assertions, metrics, outputs, "",
-	), nil
+	)
+	challengeResult.RecordAction(fmt.Sprintf("%s: challenge completed with status %s", c.Name(), status))
+	return challengeResult, nil
 }

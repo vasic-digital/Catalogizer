@@ -57,9 +57,11 @@ func (c *WebSocketLatencyChallenge) Execute(
 			Passed:  false,
 			Message: fmt.Sprintf("Login failed: %v", loginErr),
 		})
-		return c.CreateResult(
+		challengeResult := c.CreateResult(
 			challenge.StatusFailed, start, assertions, nil, outputs, loginErr.Error(),
-		), nil
+		)
+		challengeResult.RecordAction(fmt.Sprintf("%s: failed - %s", c.Name(), loginErr.Error()))
+		return challengeResult, nil
 	}
 
 	token := apiClient.Token()
@@ -106,10 +108,12 @@ func (c *WebSocketLatencyChallenge) Execute(
 
 		outputs["websocket_available"] = "false"
 
-		return c.CreateResult(
+		challengeResult := c.CreateResult(
 			challenge.StatusSkipped, start, assertions, nil, outputs,
 			"websocket endpoint not reachable",
-		), nil
+		)
+		challengeResult.RecordAction(fmt.Sprintf("%s: failed - %s", c.Name(), "websocket endpoint not reachable"))
+		return challengeResult, nil
 	}
 	defer wsConn.Close()
 
@@ -184,5 +188,7 @@ func (c *WebSocketLatencyChallenge) Execute(
 		}
 	}
 
-	return c.CreateResult(status, start, assertions, metrics, outputs, ""), nil
+	challengeResult := c.CreateResult(status, start, assertions, metrics, outputs, "")
+	challengeResult.RecordAction(fmt.Sprintf("%s: challenge completed with status %s", c.Name(), status))
+	return challengeResult, nil
 }
