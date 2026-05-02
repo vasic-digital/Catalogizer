@@ -49,17 +49,6 @@ func setupTranslationServiceTest() (*TranslationService, *MockTranslationProvide
 	return service, mockProvider
 }
 
-func TestNewTranslationService(t *testing.T) {
-	logger := zap.NewNop()
-	service := NewTranslationService(logger)
-
-	assert.NotNil(t, service)
-	assert.NotNil(t, service.logger)
-	assert.NotNil(t, service.httpClient)
-	assert.NotNil(t, service.providers)
-	assert.NotNil(t, service.cache)
-}
-
 func TestTranslationService_TranslateText_Success(t *testing.T) {
 	service, mockProvider := setupTranslationServiceTest()
 

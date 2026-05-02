@@ -433,11 +433,6 @@ func TestLRUCacheStats_String(t *testing.T) {
 // SafeCache Tests
 // =============================================================================
 
-func TestNewSafeCache(t *testing.T) {
-	sc := NewSafeCache(10)
-	require.NotNil(t, sc)
-}
-
 func TestSafeCache_SetAndGet(t *testing.T) {
 	sc := NewSafeCache(10)
 

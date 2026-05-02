@@ -10,12 +10,6 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestNewLogManagementService(t *testing.T) {
-	service := NewLogManagementService(nil)
-
-	assert.NotNil(t, service)
-}
-
 func TestLogManagementService_IsLogLevelIncluded(t *testing.T) {
 	service := NewLogManagementService(nil)
 

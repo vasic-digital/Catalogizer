@@ -16,14 +16,6 @@ func newTestEngine(t *testing.T) *DetectionEngine {
 	return NewDetectionEngine(logger)
 }
 
-func TestNewDetectionEngine(t *testing.T) {
-	engine := newTestEngine(t)
-	require.NotNil(t, engine)
-	assert.NotNil(t, engine.logger)
-	assert.Empty(t, engine.rules)
-	assert.Empty(t, engine.mediaTypes)
-}
-
 func TestLoadRules(t *testing.T) {
 	engine := newTestEngine(t)
 

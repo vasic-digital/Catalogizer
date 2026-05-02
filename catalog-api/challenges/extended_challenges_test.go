@@ -1,7 +1,9 @@
 package challenges
 
 import (
+	"context"
 	"testing"
+	"time"
 
 	"digital.vasic.challenges/pkg/challenge"
 	"github.com/stretchr/testify/assert"
@@ -232,4 +234,39 @@ func TestExtendedChallenges_CategoryDistribution(t *testing.T) {
 
 	// Verify we have multiple categories (not all lumped together)
 	assert.GreaterOrEqual(t, len(categories), 5, "expected at least 5 distinct categories")
+}
+
+func TestExtendedChallenges_Execute(t *testing.T) {
+	challenges := []challenge.Challenge{
+		NewCollectionsAPIChallenge(),
+		NewEntityUserMetadataChallenge(),
+		NewEntitySearchChallenge(),
+		NewStorageRootsAPIChallenge(),
+		NewAuthTokenRefreshChallenge(),
+		NewStressTestChallenge(),
+		NewRateLimitingChallenge(),
+		NewFavoritesWorkflowChallenge(),
+		NewCollectionManagementChallenge(),
+		NewMediaPlaybackChallenge(),
+		NewSearchFilterChallenge(),
+		NewCoverArtChallenge(),
+		NewWebSocketEventsChallenge(),
+		NewSecurityChallenge(),
+		NewConfigWizardChallenge(),
+	}
+
+	for _, ch := range challenges {
+		ch := ch
+		t.Run(string(ch.ID()), func(t *testing.T) {
+			t.Parallel()
+			ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+			defer cancel()
+
+			result, err := ch.Execute(ctx)
+			require.NoError(t, err)
+			require.NotNil(t, result)
+			assert.True(t, result.IsFinal(), "challenge %s expected terminal status, got %s", ch.ID(), result.Status)
+			assert.NotEmpty(t, result.RecordedActions, "challenge %s must record actions (Constitution v2.1.0)", ch.ID())
+		})
+	}
 }

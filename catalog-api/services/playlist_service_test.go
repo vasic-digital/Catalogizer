@@ -89,11 +89,6 @@ func seedPlaylist(t *testing.T, svc *PlaylistService, name string) int {
 // NewPlaylistService
 // ---------------------------------------------------------------------------
 
-func TestNewPlaylistService(t *testing.T) {
-	svc := NewPlaylistService(nil)
-	assert.NotNil(t, svc)
-}
-
 // ---------------------------------------------------------------------------
 // CreatePlaylist
 // ---------------------------------------------------------------------------

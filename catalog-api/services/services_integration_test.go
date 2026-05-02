@@ -1301,7 +1301,7 @@ func TestReportingService_GenerateReport_MediaAnalytics_Integration(t *testing.T
 	report, err := service.GenerateReport("media_analytics", "json", params)
 	// May fail in test DB due to missing schema columns (e.g. media_items table)
 	if err != nil {
-		t.Skipf("skipping: test DB lacks required schema: %v", err)  // SKIP-OK: #legacy-skip-untriaged-2026-04-29
+		t.Skipf("skipping: test DB lacks required schema: %v", err)
 	}
 	assert.NotNil(t, report)
 }
@@ -1320,7 +1320,7 @@ func TestReportingService_GenerateReport_PerformanceMetrics_Integration(t *testi
 	report, err := service.GenerateReport("performance_metrics", "json", params)
 	// May fail in test DB due to missing schema columns (e.g. last_activity_at)
 	if err != nil {
-		t.Skipf("skipping: test DB lacks required schema: %v", err)  // SKIP-OK: #legacy-skip-untriaged-2026-04-29
+		t.Skipf("skipping: test DB lacks required schema: %v", err)
 	}
 	assert.NotNil(t, report)
 }
@@ -3391,7 +3391,7 @@ func TestReportingService_GenerateReport_PDFFormat_Integration(t *testing.T) {
 	report, err := service.GenerateReport("user_analytics", "pdf", params)
 	if err != nil {
 		// PDF generation requires unipdf license - skip if unavailable
-		t.Skipf("PDF generation not available: %v", err)  // SKIP-OK: #legacy-skip-untriaged-2026-04-29
+		t.Skipf("PDF generation not available: %v", err)
 	}
 	assert.NotNil(t, report)
 	assert.Equal(t, "pdf", report.Format)

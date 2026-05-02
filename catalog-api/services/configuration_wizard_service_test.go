@@ -10,11 +10,6 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestNewConfigurationWizardService(t *testing.T) {
-	service := NewConfigurationWizardService(nil)
-	assert.NotNil(t, service)
-}
-
 func TestConfigurationWizardService_GetAvailableTemplates(t *testing.T) {
 	service := NewConfigurationWizardService(nil)
 

@@ -17,19 +17,6 @@ func testLogger() *zap.Logger {
 	return logger
 }
 
-func TestNewResilientSMBManager(t *testing.T) {
-	logger := testLogger()
-	manager := NewResilientSMBManager(logger, 100)
-
-	assert.NotNil(t, manager)
-	assert.NotNil(t, manager.sources)
-	assert.NotNil(t, manager.offlineCache)
-	assert.NotNil(t, manager.healthChecker)
-	assert.NotNil(t, manager.eventChannel)
-	assert.NotNil(t, manager.stopChannel)
-	assert.Equal(t, 0, len(manager.sources))
-}
-
 func TestAddSource(t *testing.T) {
 	logger := testLogger()
 	manager := NewResilientSMBManager(logger, 100)

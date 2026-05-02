@@ -208,11 +208,6 @@ func TestThrottler_Stop_Idempotent(t *testing.T) {
 // Debouncer Tests
 // =============================================================================
 
-func TestNewDebouncer(t *testing.T) {
-	d := NewDebouncer(50 * time.Millisecond)
-	assert.NotNil(t, d)
-}
-
 func TestDebouncer_Debounce_ExecutesAfterDelay(t *testing.T) {
 	d := NewDebouncer(50 * time.Millisecond)
 

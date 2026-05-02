@@ -31,13 +31,6 @@ func (s *stubProvider) IsEnabled() bool { return s.enabled }
 // NewLazyProvider
 // ---------------------------------------------------------------------------
 
-func TestNewLazyProvider_ReturnsNonNil(t *testing.T) {
-	lp := NewLazyProvider(func() MetadataProvider {
-		return &stubProvider{name: "test", enabled: true}
-	})
-	require.NotNil(t, lp)
-}
-
 // ---------------------------------------------------------------------------
 // Get — basic initialization
 // ---------------------------------------------------------------------------

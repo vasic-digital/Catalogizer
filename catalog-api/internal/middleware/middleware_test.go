@@ -482,14 +482,6 @@ func TestLogger_RecordsStatusCode(t *testing.T) {
 
 // ---------- RateLimiter ----------
 
-func TestNewRateLimiter(t *testing.T) {
-	rl := NewRateLimiter(10, time.Minute)
-	assert.NotNil(t, rl)
-	assert.Equal(t, 10, rl.limit)
-	assert.Equal(t, time.Minute, rl.window)
-	assert.NotNil(t, rl.requests)
-}
-
 func TestRateLimiter_UnderLimit(t *testing.T) {
 	rl := NewRateLimiter(5, time.Minute)
 

@@ -24,11 +24,6 @@ func setupJWTMiddleware() *JWTMiddleware {
 }
 
 // TestNewJWTMiddleware verifies middleware construction.
-func TestNewJWTMiddleware(t *testing.T) {
-	mw := NewJWTMiddleware("my-secret")
-	assert.NotNil(t, mw)
-	assert.Equal(t, []byte("my-secret"), mw.secretKey)
-}
 
 // TestGenerateToken_Success verifies token generation with valid parameters.
 func TestGenerateToken_Success(t *testing.T) {

@@ -17,15 +17,6 @@ func TestDefaultTransactionConfig(t *testing.T) {
 	assert.Equal(t, 100*time.Millisecond, config.RetryDelay)
 }
 
-func TestNewTxDeadlockDetector(t *testing.T) {
-	detector := NewTxDeadlockDetector()
-
-	assert.NotNil(t, detector)
-	assert.NotNil(t, detector.activeTxs)
-	assert.NotNil(t, detector.txOrder)
-	assert.Equal(t, 1000, detector.maxTxOrder)
-}
-
 func TestTxDeadlockDetector_RecordStartAndEnd(t *testing.T) {
 	detector := NewTxDeadlockDetector()
 

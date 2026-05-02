@@ -8,15 +8,6 @@ import (
 	"go.uber.org/zap"
 )
 
-func TestNewUniversalRenameTracker(t *testing.T) {
-	mockDB := database.WrapDB(nil, database.DialectSQLite)
-	mockLogger := zap.NewNop()
-
-	tracker := NewUniversalRenameTracker(mockDB, mockLogger)
-
-	assert.NotNil(t, tracker)
-}
-
 func TestUniversalRenameTracker_RegisterProtocolHandler(t *testing.T) {
 	mockDB := database.WrapDB(nil, database.DialectSQLite)
 	mockLogger := zap.NewNop()

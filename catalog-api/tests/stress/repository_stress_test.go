@@ -21,7 +21,7 @@ import (
 
 func TestRepositoryStress_ConcurrentInserts(t *testing.T) {
 	if testing.Short() {
-		t.Skip("Skipping stress test in short mode")  // SKIP-OK: #legacy-skip-untriaged-2026-04-29
+		t.Skip("Skipping stress test in short mode")
 	}
 
 	db := tests.SetupTestDB(t)
@@ -109,7 +109,7 @@ func TestRepositoryStress_ConcurrentInserts(t *testing.T) {
 
 func TestRepositoryStress_ConcurrentReadsAndWrites(t *testing.T) {
 	if testing.Short() {
-		t.Skip("Skipping stress test in short mode")  // SKIP-OK: #legacy-skip-untriaged-2026-04-29
+		t.Skip("Skipping stress test in short mode")
 	}
 
 	// Use file-based SQLite with WAL mode for concurrent read/write testing.
@@ -291,7 +291,7 @@ func TestRepositoryStress_ConcurrentReadsAndWrites(t *testing.T) {
 
 func TestRepositoryStress_MediaItemCRUD(t *testing.T) {
 	if testing.Short() {
-		t.Skip("Skipping stress test in short mode")  // SKIP-OK: #legacy-skip-untriaged-2026-04-29
+		t.Skip("Skipping stress test in short mode")
 	}
 
 	db := tests.SetupTestDB(t)
@@ -415,7 +415,7 @@ func TestRepositoryStress_MediaItemCRUD(t *testing.T) {
 
 func TestRepositoryStress_UserOperations(t *testing.T) {
 	if testing.Short() {
-		t.Skip("Skipping stress test in short mode")  // SKIP-OK: #legacy-skip-untriaged-2026-04-29
+		t.Skip("Skipping stress test in short mode")
 	}
 
 	db := tests.SetupTestDB(t)
@@ -480,7 +480,7 @@ func TestRepositoryStress_UserOperations(t *testing.T) {
 
 func TestRepositoryStress_PlaylistOperations(t *testing.T) {
 	if testing.Short() {
-		t.Skip("Skipping stress test in short mode")  // SKIP-OK: #legacy-skip-untriaged-2026-04-29
+		t.Skip("Skipping stress test in short mode")
 	}
 
 	db := tests.SetupTestDB(t)
@@ -529,7 +529,7 @@ func TestRepositoryStress_PlaylistOperations(t *testing.T) {
 
 func TestRepositoryStress_TransactionConsistency(t *testing.T) {
 	if testing.Short() {
-		t.Skip("Skipping stress test in short mode")  // SKIP-OK: #legacy-skip-untriaged-2026-04-29
+		t.Skip("Skipping stress test in short mode")
 	}
 
 	db := tests.SetupTestDB(t)

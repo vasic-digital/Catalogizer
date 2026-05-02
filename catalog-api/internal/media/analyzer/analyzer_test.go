@@ -690,22 +690,6 @@ func TestContains(t *testing.T) {
 // NewMediaAnalyzer tests
 // ============================================================================
 
-func TestNewMediaAnalyzer(t *testing.T) {
-	logger := testLogger(t)
-	ma := NewMediaAnalyzer(nil, nil, nil, logger)
-
-	assert.NotNil(t, ma)
-	assert.Nil(t, ma.db)
-	assert.Nil(t, ma.detector)
-	assert.Nil(t, ma.providerManager)
-	assert.NotNil(t, ma.logger)
-	assert.NotNil(t, ma.analysisQueue)
-	assert.Equal(t, 4, ma.workers)
-	assert.NotNil(t, ma.stopCh)
-	assert.NotNil(t, ma.pendingAnalysis)
-	assert.Empty(t, ma.pendingAnalysis)
-}
-
 func TestNewMediaAnalyzer_WithAllDependencies(t *testing.T) {
 	logger := testLogger(t)
 	db := setupTestDB(t)

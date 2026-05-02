@@ -68,7 +68,7 @@ func TestDatabaseQueryRowWithTimeout(t *testing.T) {
 
 func TestDatabaseConcurrentAccess(t *testing.T) {
 	if testing.Short() {
-		t.Skip("skipping concurrent test in short mode")  // SKIP-OK: #legacy-skip-untriaged-2026-04-29
+		t.Skip("skipping concurrent test in short mode")
 	}
 
 	// Use file-based SQLite with WAL mode for true concurrent access.

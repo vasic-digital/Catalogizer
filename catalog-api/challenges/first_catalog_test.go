@@ -1,9 +1,11 @@
 package challenges
 
 import (
+	"context"
 	"os"
 	"path/filepath"
 	"testing"
+	"time"
 
 	"catalogizer/services"
 
@@ -252,5 +254,55 @@ func TestChallengeIDUniqueness(t *testing.T) {
 
 	if len(seen) != 7 {
 		t.Errorf("expected 7 unique challenge IDs, got %d", len(seen))
+	}
+}
+
+func TestFirstCatalogChallenges_Execute(t *testing.T) {
+	ep := &Endpoint{
+		Host:     "127.0.0.1",
+		Port:     445,
+		Share:    "testshare",
+		Username: "testuser",
+		Password: "testpass",
+		Directories: []Directory{
+			{Path: "Music", ContentType: "music"},
+			{Path: "Series", ContentType: "tv_show"},
+			{Path: "Movies", ContentType: "movie"},
+			{Path: "Software", ContentType: "software"},
+			{Path: "Comics", ContentType: "comic"},
+		},
+	}
+
+	challenges := []challenge.Challenge{
+		NewSMBConnectivityChallenge(ep),
+		NewDirectoryDiscoveryChallenge(ep),
+		NewMusicScanChallenge(ep, Directory{Path: "Music", ContentType: "music"}),
+		NewSeriesScanChallenge(ep, Directory{Path: "Series", ContentType: "tv_show"}),
+		NewMoviesScanChallenge(ep, Directory{Path: "Movies", ContentType: "movie"}),
+		NewSoftwareScanChallenge(ep, Directory{Path: "Software", ContentType: "software"}),
+		NewComicsScanChallenge(ep, Directory{Path: "Comics", ContentType: "comic"}),
+	}
+
+	for _, ch := range challenges {
+		ch := ch
+		t.Run(string(ch.ID()), func(t *testing.T) {
+			t.Parallel()
+			ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+			defer cancel()
+
+			result, err := ch.Execute(ctx)
+			if err != nil {
+				t.Fatalf("challenge %s Execute returned error: %v", ch.ID(), err)
+			}
+			if result == nil {
+				t.Fatalf("challenge %s Execute returned nil result", ch.ID())
+			}
+			if !result.IsFinal() {
+				t.Errorf("challenge %s expected terminal status, got %s", ch.ID(), result.Status)
+			}
+			if len(result.RecordedActions) == 0 {
+				t.Errorf("challenge %s must record actions (Constitution v2.1.0)", ch.ID())
+			}
+		})
 	}
 }

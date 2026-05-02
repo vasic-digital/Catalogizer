@@ -535,12 +535,3 @@ func TestAuthService_GenerateSalt(t *testing.T) {
 	assert.NotEqual(t, salt, salt2)
 }
 
-func TestNewAuthService(t *testing.T) {
-	svc := NewAuthService(nil, "test-secret")
-	assert.NotNil(t, svc)
-}
-
-func TestNewAuthService_WithEmptySecret(t *testing.T) {
-	svc := NewAuthService(nil, "")
-	assert.NotNil(t, svc)
-}

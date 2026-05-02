@@ -74,11 +74,6 @@ func setupPlaylistRepoDB(t *testing.T) (*PlaylistRepository, *database.DB) {
 // NewPlaylistRepository
 // ---------------------------------------------------------------------------
 
-func TestNewPlaylistRepository(t *testing.T) {
-	repo := NewPlaylistRepository(nil)
-	assert.NotNil(t, repo)
-}
-
 // ---------------------------------------------------------------------------
 // CreatePlaylist
 // ---------------------------------------------------------------------------

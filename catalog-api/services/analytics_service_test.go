@@ -5,7 +5,6 @@ import (
 	"time"
 
 	"catalogizer/models"
-	"catalogizer/repository"
 
 	"github.com/stretchr/testify/assert"
 )
@@ -986,16 +985,6 @@ func TestAnalyticsService_GetTopLocations(t *testing.T) {
 // ---------------------------------------------------------------------------
 // Constructor tests
 // ---------------------------------------------------------------------------
-
-func TestNewAnalyticsService(t *testing.T) {
-	svc := NewAnalyticsService(nil)
-	assert.NotNil(t, svc)
-}
-
-func TestNewAnalyticsService_WithRepository(t *testing.T) {
-	svc := NewAnalyticsService(&repository.AnalyticsRepository{})
-	assert.NotNil(t, svc)
-}
 
 // ---------------------------------------------------------------------------
 // Stub method tests

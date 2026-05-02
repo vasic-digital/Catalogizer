@@ -7,13 +7,6 @@ import (
 	"go.uber.org/zap"
 )
 
-func TestNewMovieRecognitionProvider(t *testing.T) {
-	mockLogger := zap.NewNop()
-	provider := NewMovieRecognitionProvider(mockLogger)
-
-	assert.NotNil(t, provider)
-}
-
 func TestMovieRecognitionProvider_GetProviderName(t *testing.T) {
 	mockLogger := zap.NewNop()
 	provider := NewMovieRecognitionProvider(mockLogger)

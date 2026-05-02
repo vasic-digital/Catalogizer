@@ -23,7 +23,7 @@ func getEnvOrDefault(key, defaultVal string) string {
 
 func skipIfNoContainer(t *testing.T, envVar, serviceName string) {
 	if os.Getenv(envVar) == "" {
-		t.Skipf("Skipping test: %s not set (start %s container first)", envVar, serviceName)  // SKIP-OK: #legacy-skip-untriaged-2026-04-29
+		t.Skipf("Skipping test: %s not set (start %s container first)", envVar, serviceName)
 	}
 }
 
@@ -100,7 +100,7 @@ func TestSMBProtocolConnectivity(t *testing.T) {
 
 		err := client.Connect(ctx)
 		if err != nil {
-			t.Skipf("Cannot list directory: connection failed: %v", err)  // SKIP-OK: #legacy-skip-untriaged-2026-04-29
+			t.Skipf("Cannot list directory: connection failed: %v", err)
 		}
 
 		files, err := client.ListDirectory(ctx, "/")
@@ -213,7 +213,7 @@ func TestNFSProtocolConnectivity(t *testing.T) {
 
 		client, err := filesystem.NewNFSClient(config)
 		if err != nil {
-			t.Skipf("NFS client creation failed (may require root): %v", err)  // SKIP-OK: #legacy-skip-untriaged-2026-04-29
+			t.Skipf("NFS client creation failed (may require root): %v", err)
 		}
 		require.NotNil(t, client)
 	})

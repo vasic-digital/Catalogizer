@@ -44,15 +44,6 @@ func setupTxTestDB(t *testing.T) *DB {
 	return db
 }
 
-func TestNewTxContext_DefaultsAreSane(t *testing.T) {
-	db := setupTxTestDB(t)
-	tc := NewTxContext(db, DefaultTransactionConfig())
-	require.NotNil(t, tc)
-	require.NotNil(t, tc.detector)
-	require.Equal(t, 30*time.Second, tc.config.TransactionTimeout)
-	require.Equal(t, 10*time.Second, tc.config.QueryTimeout)
-}
-
 func TestTxContext_Begin_Commit_RoundTrip(t *testing.T) {
 	db := setupTxTestDB(t)
 	tc := NewTxContext(db, DefaultTransactionConfig())

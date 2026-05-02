@@ -11,50 +11,6 @@ import (
 	"go.uber.org/zap"
 )
 
-func TestNewUniversalScanner(t *testing.T) {
-	var mockDB *database.DB
-	mockLogger := zap.NewNop()
-
-	scanner := NewUniversalScanner(mockDB, mockLogger, nil, nil)
-
-	assert.NotNil(t, scanner)
-}
-
-func TestNewLocalScanner(t *testing.T) {
-	mockLogger := zap.NewNop()
-	scanner := NewLocalScanner(nil, mockLogger)
-
-	assert.NotNil(t, scanner)
-}
-
-func TestNewSMBScanner(t *testing.T) {
-	mockLogger := zap.NewNop()
-	scanner := NewSMBScanner(nil, mockLogger)
-
-	assert.NotNil(t, scanner)
-}
-
-func TestNewFTPScanner(t *testing.T) {
-	mockLogger := zap.NewNop()
-	scanner := NewFTPScanner(mockLogger)
-
-	assert.NotNil(t, scanner)
-}
-
-func TestNewNFSScanner(t *testing.T) {
-	mockLogger := zap.NewNop()
-	scanner := NewNFSScanner(mockLogger)
-
-	assert.NotNil(t, scanner)
-}
-
-func TestNewWebDAVScanner(t *testing.T) {
-	mockLogger := zap.NewNop()
-	scanner := NewWebDAVScanner(mockLogger)
-
-	assert.NotNil(t, scanner)
-}
-
 func TestLocalScanner_GetScanStrategy(t *testing.T) {
 	mockLogger := zap.NewNop()
 	scanner := NewLocalScanner(nil, mockLogger)

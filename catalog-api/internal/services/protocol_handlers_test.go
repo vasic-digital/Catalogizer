@@ -8,41 +8,6 @@ import (
 	"go.uber.org/zap"
 )
 
-func TestNewLocalProtocolHandler(t *testing.T) {
-	mockLogger := zap.NewNop()
-	handler := NewLocalProtocolHandler(mockLogger)
-
-	assert.NotNil(t, handler)
-}
-
-func TestNewSMBProtocolHandler(t *testing.T) {
-	mockLogger := zap.NewNop()
-	handler := NewSMBProtocolHandler(mockLogger)
-
-	assert.NotNil(t, handler)
-}
-
-func TestNewFTPProtocolHandler(t *testing.T) {
-	mockLogger := zap.NewNop()
-	handler := NewFTPProtocolHandler(mockLogger)
-
-	assert.NotNil(t, handler)
-}
-
-func TestNewNFSProtocolHandler(t *testing.T) {
-	mockLogger := zap.NewNop()
-	handler := NewNFSProtocolHandler(mockLogger)
-
-	assert.NotNil(t, handler)
-}
-
-func TestNewWebDAVProtocolHandler(t *testing.T) {
-	mockLogger := zap.NewNop()
-	handler := NewWebDAVProtocolHandler(mockLogger)
-
-	assert.NotNil(t, handler)
-}
-
 func TestProtocolHandlers_GetMoveWindow(t *testing.T) {
 	mockLogger := zap.NewNop()
 
@@ -127,13 +92,6 @@ func TestProtocolHandlers_SupportsRealTimeNotification(t *testing.T) {
 			assert.Equal(t, tt.expected, result)
 		})
 	}
-}
-
-func TestNewProtocolHandlerFactory(t *testing.T) {
-	mockLogger := zap.NewNop()
-	factory := NewProtocolHandlerFactory(mockLogger)
-
-	assert.NotNil(t, factory)
 }
 
 func TestProtocolHandlerFactory_GetSupportedProtocols(t *testing.T) {

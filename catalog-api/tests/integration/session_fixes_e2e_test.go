@@ -58,7 +58,7 @@ func spawnBinary(t *testing.T, extraEnv ...string) *spawnedBinary {
 	t.Helper()
 
 	if runtime.GOOS != "linux" {
-		t.Skipf("spawned-binary test only supported on Linux (got %s)", runtime.GOOS)  // SKIP-OK: #legacy-skip-untriaged-2026-04-29
+		t.Skipf("spawned-binary test only supported on Linux (got %s)", runtime.GOOS)
 	}
 
 	// Find the catalog-api source dir (we're under tests/integration/).

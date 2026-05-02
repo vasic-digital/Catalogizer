@@ -270,7 +270,7 @@ func assertJSONHasField(t *testing.T, obj map[string]interface{}, field string, 
 // TestContract_HealthResponse validates the health endpoint contract.
 func TestContract_HealthResponse(t *testing.T) {
 	if testing.Short() {
-		t.Skip("skipping contract test in short mode")  // SKIP-OK: #legacy-skip-untriaged-2026-04-29
+		t.Skip("skipping contract test in short mode")
 	}
 
 	router, db := contractTestServer(t)
@@ -300,7 +300,7 @@ func TestContract_HealthResponse(t *testing.T) {
 // TestContract_StorageRootsResponse validates the storage roots listing contract.
 func TestContract_StorageRootsResponse(t *testing.T) {
 	if testing.Short() {
-		t.Skip("skipping contract test in short mode")  // SKIP-OK: #legacy-skip-untriaged-2026-04-29
+		t.Skip("skipping contract test in short mode")
 	}
 
 	router, db := contractTestServer(t)
@@ -339,7 +339,7 @@ func TestContract_StorageRootsResponse(t *testing.T) {
 // TestContract_FilesListResponse validates the files listing contract.
 func TestContract_FilesListResponse(t *testing.T) {
 	if testing.Short() {
-		t.Skip("skipping contract test in short mode")  // SKIP-OK: #legacy-skip-untriaged-2026-04-29
+		t.Skip("skipping contract test in short mode")
 	}
 
 	router, db := contractTestServer(t)
@@ -382,7 +382,7 @@ func TestContract_FilesListResponse(t *testing.T) {
 // TestContract_EntitiesResponse validates the entities listing contract.
 func TestContract_EntitiesResponse(t *testing.T) {
 	if testing.Short() {
-		t.Skip("skipping contract test in short mode")  // SKIP-OK: #legacy-skip-untriaged-2026-04-29
+		t.Skip("skipping contract test in short mode")
 	}
 
 	router, db := contractTestServer(t)
@@ -424,7 +424,7 @@ func TestContract_EntitiesResponse(t *testing.T) {
 // TestContract_ScanHistoryResponse validates the scan history contract.
 func TestContract_ScanHistoryResponse(t *testing.T) {
 	if testing.Short() {
-		t.Skip("skipping contract test in short mode")  // SKIP-OK: #legacy-skip-untriaged-2026-04-29
+		t.Skip("skipping contract test in short mode")
 	}
 
 	router, db := contractTestServer(t)
@@ -464,7 +464,7 @@ func TestContract_ScanHistoryResponse(t *testing.T) {
 // TestContract_ErrorResponse validates that error responses follow a consistent contract.
 func TestContract_ErrorResponse(t *testing.T) {
 	if testing.Short() {
-		t.Skip("skipping contract test in short mode")  // SKIP-OK: #legacy-skip-untriaged-2026-04-29
+		t.Skip("skipping contract test in short mode")
 	}
 
 	gin.SetMode(gin.TestMode)
@@ -518,7 +518,7 @@ func TestContract_ErrorResponse(t *testing.T) {
 // consistent pagination metadata.
 func TestContract_PaginationResponse(t *testing.T) {
 	if testing.Short() {
-		t.Skip("skipping contract test in short mode")  // SKIP-OK: #legacy-skip-untriaged-2026-04-29
+		t.Skip("skipping contract test in short mode")
 	}
 
 	router, db := contractTestServer(t)
@@ -551,7 +551,7 @@ func TestContract_PaginationResponse(t *testing.T) {
 // TestContract_ContentType validates that all API responses use application/json.
 func TestContract_ContentType(t *testing.T) {
 	if testing.Short() {
-		t.Skip("skipping contract test in short mode")  // SKIP-OK: #legacy-skip-untriaged-2026-04-29
+		t.Skip("skipping contract test in short mode")
 	}
 
 	router, db := contractTestServer(t)

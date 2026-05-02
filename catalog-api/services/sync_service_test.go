@@ -12,12 +12,6 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func TestNewSyncService(t *testing.T) {
-	service := NewSyncService(nil, nil, nil)
-
-	assert.NotNil(t, service)
-}
-
 func TestSyncService_ValidateSyncEndpoint(t *testing.T) {
 	service := NewSyncService(nil, nil, nil)
 

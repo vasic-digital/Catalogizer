@@ -8,15 +8,6 @@ import (
 	"go.uber.org/zap"
 )
 
-func TestNewPlaylistService(t *testing.T) {
-	mockDB := database.WrapDB(nil, database.DialectSQLite)
-	mockLogger := zap.NewNop()
-
-	service := NewPlaylistService(mockDB, mockLogger)
-
-	assert.NotNil(t, service)
-}
-
 func TestPlaylistService_BuildSmartPlaylistQuery(t *testing.T) {
 	mockDB := database.WrapDB(nil, database.DialectSQLite)
 	mockLogger := zap.NewNop()

@@ -9,15 +9,6 @@ import (
 	"go.uber.org/zap"
 )
 
-func TestNewCoverArtService(t *testing.T) {
-	mockDB := database.WrapDB(nil, database.DialectSQLite)
-	mockLogger := zap.NewNop()
-
-	service := NewCoverArtService(mockDB, mockLogger)
-
-	assert.NotNil(t, service)
-}
-
 func TestCoverArtService_GetCoverArt_NilDB(t *testing.T) {
 	mockDB := database.WrapDB(nil, database.DialectSQLite)
 	mockLogger := zap.NewNop()

@@ -27,7 +27,7 @@ type ProtocolTestSuite interface {
 // TestProtocolRenameDetection runs rename detection tests for all supported protocols
 func TestProtocolRenameDetection(t *testing.T) {
 	if testing.Short() {
-		t.Skip("Skipping protocol integration tests in short mode")  // SKIP-OK: #legacy-skip-untriaged-2026-04-29
+		t.Skip("Skipping protocol integration tests in short mode")
 	}
 
 	// Test each protocol
@@ -390,7 +390,7 @@ type SMBProtocolTestSuite struct{}
 func (s *SMBProtocolTestSuite) SetupProtocol(t *testing.T) (filesystem.FileSystemClient, func()) {
 	// For testing, we'll use a mock SMB client or skip if no test server available
 	if os.Getenv("SMB_TEST_SERVER") == "" {
-		t.Skip("SMB_TEST_SERVER not set, skipping SMB tests")  // SKIP-OK: #legacy-skip-untriaged-2026-04-29
+		t.Skip("SMB_TEST_SERVER not set, skipping SMB tests")
 	}
 
 	config := &filesystem.SmbConfig{
@@ -427,7 +427,7 @@ type FTPProtocolTestSuite struct{}
 
 func (s *FTPProtocolTestSuite) SetupProtocol(t *testing.T) (filesystem.FileSystemClient, func()) {
 	if os.Getenv("FTP_TEST_SERVER") == "" {
-		t.Skip("FTP_TEST_SERVER not set, skipping FTP tests")  // SKIP-OK: #legacy-skip-untriaged-2026-04-29
+		t.Skip("FTP_TEST_SERVER not set, skipping FTP tests")
 	}
 
 	config := &filesystem.FTPConfig{
@@ -460,7 +460,7 @@ type NFSProtocolTestSuite struct{}
 
 func (s *NFSProtocolTestSuite) SetupProtocol(t *testing.T) (filesystem.FileSystemClient, func()) {
 	if os.Getenv("NFS_TEST_SERVER") == "" {
-		t.Skip("NFS_TEST_SERVER not set, skipping NFS tests")  // SKIP-OK: #legacy-skip-untriaged-2026-04-29
+		t.Skip("NFS_TEST_SERVER not set, skipping NFS tests")
 	}
 
 	config := filesystem.NFSConfig{
@@ -495,7 +495,7 @@ type WebDAVProtocolTestSuite struct{}
 
 func (s *WebDAVProtocolTestSuite) SetupProtocol(t *testing.T) (filesystem.FileSystemClient, func()) {
 	if os.Getenv("WEBDAV_TEST_SERVER") == "" {
-		t.Skip("WEBDAV_TEST_SERVER not set, skipping WebDAV tests")  // SKIP-OK: #legacy-skip-untriaged-2026-04-29
+		t.Skip("WEBDAV_TEST_SERVER not set, skipping WebDAV tests")
 	}
 
 	config := &filesystem.WebDAVConfig{
@@ -589,7 +589,7 @@ func createTestFile(ctx context.Context, client filesystem.FileSystemClient, pat
 // TestUniversalRenameTrackerIntegration tests the complete integration
 func TestUniversalRenameTrackerIntegration(t *testing.T) {
 	if testing.Short() {
-		t.Skip("Skipping integration test in short mode")  // SKIP-OK: #legacy-skip-untriaged-2026-04-29
+		t.Skip("Skipping integration test in short mode")
 	}
 
 	logger := zap.NewNop()

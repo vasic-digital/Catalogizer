@@ -137,26 +137,6 @@ func counterVecValue(cv *prometheus.CounterVec, labels ...string) float64 {
 // NewMetrics
 // ---------------------------------------------------------------------------
 
-func TestNewMetrics(t *testing.T) {
-	// NewMetrics registers on the global default registry.
-	// We can only call it once in the whole test binary, so we
-	// validate the struct it returns.
-	m := newTestMetrics(t)
-
-	require.NotNil(t, m)
-	assert.NotNil(t, m.RequestDuration, "RequestDuration must be set")
-	assert.NotNil(t, m.RequestTotal, "RequestTotal must be set")
-	assert.NotNil(t, m.RequestSize, "RequestSize must be set")
-	assert.NotNil(t, m.ResponseSize, "ResponseSize must be set")
-	assert.NotNil(t, m.ActiveConnections, "ActiveConnections must be set")
-	assert.NotNil(t, m.DatabaseQueries, "DatabaseQueries must be set")
-	assert.NotNil(t, m.CacheHits, "CacheHits must be set")
-	assert.NotNil(t, m.CacheMisses, "CacheMisses must be set")
-	assert.NotNil(t, m.MemoryUsage, "MemoryUsage must be set")
-	assert.NotNil(t, m.Goroutines, "Goroutines must be set")
-	assert.NotNil(t, m.GCCount, "GCCount must be set")
-}
-
 // ---------------------------------------------------------------------------
 // PrometheusMiddleware
 // ---------------------------------------------------------------------------

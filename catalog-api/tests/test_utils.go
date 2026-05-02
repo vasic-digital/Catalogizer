@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"io"
 	"log"
-	"net/http"
 	"net/http/httptest"
 	"os"
 	"path/filepath"

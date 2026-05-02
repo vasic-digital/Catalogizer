@@ -7,19 +7,6 @@ import (
 	"go.uber.org/zap"
 )
 
-func TestNewDuplicateDetectionService(t *testing.T) {
-	mockLogger := zap.NewNop()
-	service := NewDuplicateDetectionService(nil, mockLogger, nil)
-
-	assert.NotNil(t, service)
-}
-
-func TestNewDuplicateDetectionService_NilLogger(t *testing.T) {
-	service := NewDuplicateDetectionService(nil, nil, nil)
-
-	assert.NotNil(t, service)
-}
-
 func TestDuplicateDetectionService_NormalizeText(t *testing.T) {
 	mockLogger := zap.NewNop()
 	service := NewDuplicateDetectionService(nil, mockLogger, nil)

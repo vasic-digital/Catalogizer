@@ -21,7 +21,7 @@ import (
 func TestFilesystemOperationsIntegration(t *testing.T) {
 	// Skip integration tests in short mode
 	if testing.Short() {
-		t.Skip("Skipping integration test in short mode")  // SKIP-OK: #legacy-skip-untriaged-2026-04-29
+		t.Skip("Skipping integration test in short mode")
 	}
 
 	logger := zap.NewNop()

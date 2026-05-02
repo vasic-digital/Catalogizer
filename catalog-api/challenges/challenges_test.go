@@ -4,6 +4,9 @@ import (
 	"context"
 	"encoding/json"
 	"testing"
+	"time"
+
+	"digital.vasic.challenges/pkg/challenge"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -512,4 +515,50 @@ func TestEndpointConfig_JSON(t *testing.T) {
 
 func parseTestJSON(data []byte, v *EndpointConfig) error {
 	return json.Unmarshal(data, v)
+}
+
+func TestAllChallenges_Execute(t *testing.T) {
+	ep := &Endpoint{Host: "127.0.0.1", Port: 445}
+	dir := Directory{Path: "/media", ContentType: "movie"}
+
+	tests := []struct {
+		name      string
+		challenge challenge.Challenge
+		skip      string
+	}{
+		{name: "smb-connectivity", challenge: NewSMBConnectivityChallenge(ep)},
+		{name: "directory-discovery", challenge: NewDirectoryDiscoveryChallenge(ep)},
+		{name: "music-scan", challenge: NewMusicScanChallenge(ep, dir)},
+		{name: "series-scan", challenge: NewSeriesScanChallenge(ep, dir)},
+		{name: "movies-scan", challenge: NewMoviesScanChallenge(ep, dir)},
+		{name: "software-scan", challenge: NewSoftwareScanChallenge(ep, dir)},
+		{name: "comics-scan", challenge: NewComicsScanChallenge(ep, dir)},
+		{name: "first-catalog-populate", challenge: NewFirstCatalogPopulateChallenge(), skip: "requires real infrastructure: contains 120s polling loops"},
+		{name: "browsing-api-health", challenge: NewBrowsingAPIHealthChallenge()},
+		{name: "browsing-api-catalog", challenge: NewBrowsingAPICatalogChallenge(), skip: "requires real infrastructure: contains 25s retry sleep loops"},
+		{name: "browsing-web-app", challenge: NewBrowsingWebAppChallenge()},
+		{name: "asset-serving", challenge: NewAssetServingChallenge()},
+		{name: "asset-lazy-loading", challenge: NewAssetLazyLoadingChallenge(), skip: "requires real infrastructure: contains 30s polling sleep loops"},
+		{name: "auth-token-refresh", challenge: NewAuthTokenRefreshChallenge()},
+		{name: "collection-management", challenge: NewCollectionManagementChallenge()},
+	}
+
+	for _, tc := range tests {
+		tc := tc
+		t.Run(tc.name, func(t *testing.T) {
+			t.Parallel()
+			if tc.skip != "" {
+				t.Skip(tc.skip)
+			}
+
+			ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+			defer cancel()
+
+			result, err := tc.challenge.Execute(ctx)
+			require.NoError(t, err)
+			require.NotNil(t, result)
+			assert.True(t, result.IsFinal(), "challenge %s expected terminal status, got %s", tc.challenge.ID(), result.Status)
+			assert.NotEmpty(t, result.RecordedActions, "challenge %s must record actions (Constitution v2.1.0)", tc.challenge.ID())
+		})
+	}
 }

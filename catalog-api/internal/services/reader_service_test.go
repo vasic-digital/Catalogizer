@@ -111,13 +111,6 @@ func setupReaderTestDB(t *testing.T) *database.DB {
 	return db
 }
 
-func TestNewReaderService(t *testing.T) {
-	mockLogger := zap.NewNop()
-	service := NewReaderService(nil, mockLogger, nil, nil, nil)
-
-	assert.NotNil(t, service)
-}
-
 func TestNewReaderService_AllFields(t *testing.T) {
 	db := setupReaderTestDB(t)
 	defer db.Close()

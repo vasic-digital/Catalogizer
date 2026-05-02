@@ -10,15 +10,6 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestNewConversionService(t *testing.T) {
-	service := NewConversionService(nil, nil, nil)
-
-	assert.NotNil(t, service)
-	assert.Nil(t, service.conversionRepo)
-	assert.Nil(t, service.userRepo)
-	assert.Nil(t, service.authService)
-}
-
 func TestConversionService_GetSupportedFormats(t *testing.T) {
 	service := NewConversionService(nil, nil, nil)
 

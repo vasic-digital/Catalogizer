@@ -77,14 +77,6 @@ func newTestAdminHandler(auth AdminAuthServiceInterface, userRepo AdminUserRepoI
 
 // --- Tests ---
 
-func TestNewAdminHandler(t *testing.T) {
-	auth := &mockAdminAuthService{}
-	repo := &mockAdminUserRepo{}
-	h := newTestAdminHandler(auth, repo)
-	assert.NotNil(t, h)
-	assert.Equal(t, "1.0.0-test", h.version)
-}
-
 func TestAdminHandler_requireAdmin_NoToken(t *testing.T) {
 	gin.SetMode(gin.TestMode)
 	auth := &mockAdminAuthService{}

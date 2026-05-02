@@ -21,7 +21,7 @@ import (
 
 func TestCacheStress_ConcurrentSetGet(t *testing.T) {
 	if testing.Short() {
-		t.Skip("Skipping stress test in short mode")  // SKIP-OK: #legacy-skip-untriaged-2026-04-29
+		t.Skip("Skipping stress test in short mode")
 	}
 
 	db := tests.SetupTestDB(t)
@@ -101,7 +101,7 @@ func TestCacheStress_ConcurrentSetGet(t *testing.T) {
 
 func TestCacheStress_DataConsistency(t *testing.T) {
 	if testing.Short() {
-		t.Skip("Skipping stress test in short mode")  // SKIP-OK: #legacy-skip-untriaged-2026-04-29
+		t.Skip("Skipping stress test in short mode")
 	}
 
 	db := tests.SetupTestDB(t)
@@ -192,7 +192,7 @@ func TestCacheStress_DataConsistency(t *testing.T) {
 
 func TestCacheStress_ExpirationCleanup(t *testing.T) {
 	if testing.Short() {
-		t.Skip("Skipping stress test in short mode")  // SKIP-OK: #legacy-skip-untriaged-2026-04-29
+		t.Skip("Skipping stress test in short mode")
 	}
 
 	db := tests.SetupTestDB(t)
@@ -370,7 +370,7 @@ func TestCacheStress_ExpirationCleanup(t *testing.T) {
 
 func TestCacheStress_HighThroughput(t *testing.T) {
 	if testing.Short() {
-		t.Skip("Skipping stress test in short mode")  // SKIP-OK: #legacy-skip-untriaged-2026-04-29
+		t.Skip("Skipping stress test in short mode")
 	}
 
 	// Use file-based SQLite with WAL mode for concurrent write throughput testing.

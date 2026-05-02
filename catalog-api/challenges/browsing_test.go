@@ -1,10 +1,12 @@
 package challenges
 
 import (
+	"context"
 	"os"
 	"path/filepath"
 	"strings"
 	"testing"
+	"time"
 
 	"catalogizer/services"
 
@@ -573,5 +575,49 @@ func TestNewDatabaseSchemaValidationChallenge(t *testing.T) {
 	deps := ch.Dependencies()
 	if len(deps) != 1 || deps[0] != "database-connectivity" {
 		t.Errorf("expected dependency [database-connectivity], got %v", deps)
+	}
+}
+
+func TestBrowsingChallenges_Execute(t *testing.T) {
+	tests := []struct {
+		name      string
+		challenge challenge.Challenge
+		skip      string
+	}{
+		{name: "first-catalog-populate", challenge: NewFirstCatalogPopulateChallenge(), skip: "requires real infrastructure: contains 120s polling loops"},
+		{name: "browsing-api-health", challenge: NewBrowsingAPIHealthChallenge()},
+		{name: "browsing-api-catalog", challenge: NewBrowsingAPICatalogChallenge(), skip: "requires real infrastructure: contains 25s retry sleep loops"},
+		{name: "browsing-web-app", challenge: NewBrowsingWebAppChallenge()},
+		{name: "asset-serving", challenge: NewAssetServingChallenge()},
+		{name: "asset-lazy-loading", challenge: NewAssetLazyLoadingChallenge(), skip: "requires real infrastructure: contains 30s polling sleep loops"},
+		{name: "database-connectivity", challenge: NewDatabaseConnectivityChallenge()},
+		{name: "database-schema-validation", challenge: NewDatabaseSchemaValidationChallenge()},
+	}
+
+	for _, tc := range tests {
+		tc := tc
+		t.Run(tc.name, func(t *testing.T) {
+			t.Parallel()
+			if tc.skip != "" {
+				t.Skip(tc.skip)
+			}
+
+			ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+			defer cancel()
+
+			result, err := tc.challenge.Execute(ctx)
+			if err != nil {
+				t.Fatalf("challenge %s Execute returned error: %v", tc.challenge.ID(), err)
+			}
+			if result == nil {
+				t.Fatalf("challenge %s Execute returned nil result", tc.challenge.ID())
+			}
+			if !result.IsFinal() {
+				t.Errorf("challenge %s expected terminal status, got %s", tc.challenge.ID(), result.Status)
+			}
+			if len(result.RecordedActions) == 0 {
+				t.Errorf("challenge %s must record actions (Constitution v2.1.0)", tc.challenge.ID())
+			}
+		})
 	}
 }

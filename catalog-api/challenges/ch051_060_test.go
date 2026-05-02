@@ -55,7 +55,7 @@ func TestInputValidationChallenge_Execute_MockServer(t *testing.T) {
 
 func TestInputValidationChallenge_Execute_Unreachable(t *testing.T) {
 	if testing.Short() {
-		t.Skip("Skipping unreachable endpoint test in short mode")  // SKIP-OK: #legacy-skip-untriaged-2026-04-29
+		t.Skip("Skipping unreachable endpoint test in short mode")
 	}
 	ch := NewInputValidationChallenge()
 	ch.config = &BrowsingConfig{BaseURL: "http://127.0.0.1:1"}
@@ -116,7 +116,7 @@ func TestPaginationChallenge_Execute_MockServer(t *testing.T) {
 
 func TestPaginationChallenge_Execute_Unreachable(t *testing.T) {
 	if testing.Short() {
-		t.Skip("Skipping unreachable endpoint test in short mode")  // SKIP-OK: #legacy-skip-untriaged-2026-04-29
+		t.Skip("Skipping unreachable endpoint test in short mode")
 	}
 	ch := NewPaginationChallenge()
 	ch.config = &BrowsingConfig{BaseURL: "http://127.0.0.1:1"}
@@ -168,7 +168,7 @@ func TestContentTypesChallenge_Execute_MockServer(t *testing.T) {
 
 func TestContentTypesChallenge_Execute_Unreachable(t *testing.T) {
 	if testing.Short() {
-		t.Skip("Skipping unreachable endpoint test in short mode")  // SKIP-OK: #legacy-skip-untriaged-2026-04-29
+		t.Skip("Skipping unreachable endpoint test in short mode")
 	}
 	ch := NewContentTypesChallenge()
 	ch.config = &BrowsingConfig{BaseURL: "http://127.0.0.1:1"}
@@ -240,7 +240,7 @@ func TestUserManagementChallenge_Execute_MockServer(t *testing.T) {
 
 func TestUserManagementChallenge_Execute_Unreachable(t *testing.T) {
 	if testing.Short() {
-		t.Skip("Skipping unreachable endpoint test in short mode")  // SKIP-OK: #legacy-skip-untriaged-2026-04-29
+		t.Skip("Skipping unreachable endpoint test in short mode")
 	}
 	ch := NewUserManagementChallenge()
 	ch.config = &BrowsingConfig{BaseURL: "http://127.0.0.1:1"}
@@ -304,7 +304,7 @@ func TestAnalyticsAPIChallenge_Execute_MockServer(t *testing.T) {
 
 func TestAnalyticsAPIChallenge_Execute_Unreachable(t *testing.T) {
 	if testing.Short() {
-		t.Skip("Skipping unreachable endpoint test in short mode")  // SKIP-OK: #legacy-skip-untriaged-2026-04-29
+		t.Skip("Skipping unreachable endpoint test in short mode")
 	}
 	ch := NewAnalyticsAPIChallenge()
 	ch.config = &BrowsingConfig{BaseURL: "http://127.0.0.1:1"}
@@ -364,7 +364,7 @@ func TestEntityCRUDChallenge_Execute_MockServer(t *testing.T) {
 
 func TestEntityCRUDChallenge_Execute_Unreachable(t *testing.T) {
 	if testing.Short() {
-		t.Skip("Skipping unreachable endpoint test in short mode")  // SKIP-OK: #legacy-skip-untriaged-2026-04-29
+		t.Skip("Skipping unreachable endpoint test in short mode")
 	}
 	ch := NewEntityCRUDChallenge()
 	ch.config = &BrowsingConfig{BaseURL: "http://127.0.0.1:1"}
@@ -428,7 +428,7 @@ func TestSyncAPIChallenge_Execute_MockServer(t *testing.T) {
 
 func TestSyncAPIChallenge_Execute_Unreachable(t *testing.T) {
 	if testing.Short() {
-		t.Skip("Skipping unreachable endpoint test in short mode")  // SKIP-OK: #legacy-skip-untriaged-2026-04-29
+		t.Skip("Skipping unreachable endpoint test in short mode")
 	}
 	ch := NewSyncAPIChallenge()
 	ch.config = &BrowsingConfig{BaseURL: "http://127.0.0.1:1"}
@@ -488,7 +488,7 @@ func TestSubtitleAPIChallenge_Execute_MockServer(t *testing.T) {
 
 func TestSubtitleAPIChallenge_Execute_Unreachable(t *testing.T) {
 	if testing.Short() {
-		t.Skip("Skipping unreachable endpoint test in short mode")  // SKIP-OK: #legacy-skip-untriaged-2026-04-29
+		t.Skip("Skipping unreachable endpoint test in short mode")
 	}
 	ch := NewSubtitleAPIChallenge()
 	ch.config = &BrowsingConfig{BaseURL: "http://127.0.0.1:1"}
@@ -544,7 +544,7 @@ func TestRecommendationAPIChallenge_Execute_MockServer(t *testing.T) {
 
 func TestRecommendationAPIChallenge_Execute_Unreachable(t *testing.T) {
 	if testing.Short() {
-		t.Skip("Skipping unreachable endpoint test in short mode")  // SKIP-OK: #legacy-skip-untriaged-2026-04-29
+		t.Skip("Skipping unreachable endpoint test in short mode")
 	}
 	ch := NewRecommendationAPIChallenge()
 	ch.config = &BrowsingConfig{BaseURL: "http://127.0.0.1:1"}
@@ -604,7 +604,7 @@ func TestLocalizationAPIChallenge_Execute_MockServer(t *testing.T) {
 
 func TestLocalizationAPIChallenge_Execute_Unreachable(t *testing.T) {
 	if testing.Short() {
-		t.Skip("Skipping unreachable endpoint test in short mode")  // SKIP-OK: #legacy-skip-untriaged-2026-04-29
+		t.Skip("Skipping unreachable endpoint test in short mode")
 	}
 	ch := NewLocalizationAPIChallenge()
 	ch.config = &BrowsingConfig{BaseURL: "http://127.0.0.1:1"}

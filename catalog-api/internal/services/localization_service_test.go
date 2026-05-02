@@ -9,15 +9,6 @@ import (
 	"go.uber.org/zap"
 )
 
-func TestNewLocalizationService(t *testing.T) {
-	mockDB := database.WrapDB(nil, database.DialectSQLite)
-	mockLogger := zap.NewNop()
-
-	service := NewLocalizationService(mockDB, mockLogger, nil, nil)
-
-	assert.NotNil(t, service)
-}
-
 func TestLocalizationService_IsLanguageSupported(t *testing.T) {
 	mockDB := database.WrapDB(nil, database.DialectSQLite)
 	mockLogger := zap.NewNop()

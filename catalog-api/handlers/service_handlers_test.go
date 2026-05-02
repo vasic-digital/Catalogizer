@@ -21,30 +21,6 @@ func setupTestRouter() *gin.Engine {
 	return gin.New()
 }
 
-func TestNewAnalyticsHandler(t *testing.T) {
-	logger := zap.NewNop()
-	svc := &services.AnalyticsService{}
-	handler := NewAnalyticsHandler(svc, logger)
-
-	assert.NotNil(t, handler)
-}
-
-func TestNewReportingHandler(t *testing.T) {
-	logger := zap.NewNop()
-	svc := &services.ReportingService{}
-	handler := NewReportingHandler(svc, logger)
-
-	assert.NotNil(t, handler)
-}
-
-func TestNewFavoritesHandler(t *testing.T) {
-	logger := zap.NewNop()
-	svc := &services.FavoritesService{}
-	handler := NewFavoritesHandler(svc, logger)
-
-	assert.NotNil(t, handler)
-}
-
 func TestAnalyticsHandler_LogMediaAccess_InvalidBody(t *testing.T) {
 	logger := zap.NewNop()
 	svc := &services.AnalyticsService{}

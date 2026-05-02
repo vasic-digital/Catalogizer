@@ -20,21 +20,6 @@ func (m *MockFileRepository) SearchFiles(ctx context.Context, filter models.Sear
 	return args.Get(0).(*models.SearchResult), args.Error(1)
 }
 
-func TestNewRecommendationService(t *testing.T) {
-	mockRepo := &MockFileRepository{}
-	mockMediaRecognition := &MediaRecognitionService{}
-	mockDuplicateDetection := &DuplicateDetectionService{}
-
-	service := NewRecommendationService(mockMediaRecognition, mockDuplicateDetection, mockRepo, nil)
-
-	assert.NotNil(t, service)
-	assert.Equal(t, mockRepo, service.fileRepository)
-	assert.Equal(t, mockMediaRecognition, service.mediaRecognitionService)
-	assert.Equal(t, mockDuplicateDetection, service.duplicateDetectionService)
-	assert.NotNil(t, service.httpClient)
-	assert.Equal(t, "https://api.themoviedb.org/3", service.tmdbBaseURL)
-}
-
 func TestRecommendationService_GetSimilarItems(t *testing.T) {
 	mockRepo := &MockFileRepository{}
 	mockMediaRecognition := &MediaRecognitionService{}

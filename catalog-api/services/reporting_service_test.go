@@ -10,12 +10,6 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestNewReportingService(t *testing.T) {
-	service := NewReportingService(nil, nil, nil)
-
-	assert.NotNil(t, service)
-}
-
 func TestReportingService_CalculateSystemHealth(t *testing.T) {
 	service := NewReportingService(nil, nil, nil)
 

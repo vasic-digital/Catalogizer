@@ -8,15 +8,6 @@ import (
 	"go.uber.org/zap"
 )
 
-func TestNewMusicPlayerService(t *testing.T) {
-	mockDB := database.WrapDB(nil, database.DialectSQLite)
-	mockLogger := zap.NewNop()
-
-	service := NewMusicPlayerService(mockDB, mockLogger, nil, nil, nil, nil, nil, nil)
-
-	assert.NotNil(t, service)
-}
-
 func TestMusicPlayerService_GetNextTrackIndex(t *testing.T) {
 	mockDB := database.WrapDB(nil, database.DialectSQLite)
 	mockLogger := zap.NewNop()

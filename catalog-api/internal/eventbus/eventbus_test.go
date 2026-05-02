@@ -58,31 +58,6 @@ func TestDefaultConfig_HasSensibleDefaults(t *testing.T) {
 // New tests
 // ---------------------------------------------------------------------------
 
-func TestNew_WithDefaultConfig(t *testing.T) {
-	bus := New(DefaultConfig())
-	require.NotNil(t, bus, "New() with DefaultConfig must return a non-nil *EventBus")
-	defer bus.Close()
-}
-
-func TestNew_WithNilConfig(t *testing.T) {
-	bus := New(nil)
-	require.NotNil(t, bus, "New(nil) must return a non-nil *EventBus (uses defaults)")
-	defer bus.Close()
-}
-
-func TestNew_WithCustomConfig(t *testing.T) {
-	cfg := &Config{
-		BufferSize:      50,
-		PublishTimeout:  5 * time.Millisecond,
-		CleanupInterval: 10 * time.Second,
-		MaxSubscribers:  25,
-	}
-
-	bus := New(cfg)
-	require.NotNil(t, bus, "New() with custom Config must return a non-nil *EventBus")
-	defer bus.Close()
-}
-
 // ---------------------------------------------------------------------------
 // NewEvent tests
 // ---------------------------------------------------------------------------

@@ -9,14 +9,6 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestNewFavoritesService(t *testing.T) {
-	service := NewFavoritesService(nil, nil)
-
-	assert.NotNil(t, service)
-	assert.Nil(t, service.favoritesRepo)
-	assert.Nil(t, service.authService)
-}
-
 func TestFavoritesService_RemoveDuplicateStrings(t *testing.T) {
 	service := NewFavoritesService(nil, nil)
 

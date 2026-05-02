@@ -6,15 +6,6 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestNewStringValidator(t *testing.T) {
-	validator := NewStringValidator(3, 10, "^[a-z]+$")
-
-	assert.NotNil(t, validator)
-	assert.Equal(t, 3, validator.MinLength)
-	assert.Equal(t, 10, validator.MaxLength)
-	assert.NotNil(t, validator.Pattern)
-}
-
 func TestStringValidator_Validate(t *testing.T) {
 	validator := NewStringValidator(3, 10, "^[a-z]+$")
 

@@ -29,13 +29,6 @@ func TestNewPooledClient_TransportExpectContinueTimeout(t *testing.T) {
 	assert.Equal(t, 1*time.Second, transport.ExpectContinueTimeout)
 }
 
-func TestNewPooledClient_DialerSettings(t *testing.T) {
-	client := NewPooledClient()
-	transport := client.Transport.(*http.Transport)
-	// DialContext should be set (non-nil)
-	assert.NotNil(t, transport.DialContext)
-}
-
 // ---------------------------------------------------------------------------
 // NewPooledClientWithTimeout — various durations
 // ---------------------------------------------------------------------------

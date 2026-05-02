@@ -263,22 +263,6 @@ func TestMonitoringConfig_CustomValues(t *testing.T) {
 // NewMetrics — constructor coverage
 // ---------------------------------------------------------------------------
 
-func TestNewMetrics_Constructor(t *testing.T) {
-	// NewMetrics registers against the default Prometheus registry.
-	// We call it once; if it panics on duplicate registration that
-	// indicates the global registry already has these metrics, which
-	// is fine — the constructor still executed.
-	assert.NotPanics(t, func() {
-		m := NewMetrics()
-		assert.NotNil(t, m)
-		assert.NotNil(t, m.RequestDuration)
-		assert.NotNil(t, m.RequestTotal)
-		assert.NotNil(t, m.ActiveConnections)
-		assert.NotNil(t, m.CacheHits)
-		assert.NotNil(t, m.CacheMisses)
-	})
-}
-
 // ---------------------------------------------------------------------------
 // StartPrometheusServer — verify it starts without panic
 // ---------------------------------------------------------------------------
