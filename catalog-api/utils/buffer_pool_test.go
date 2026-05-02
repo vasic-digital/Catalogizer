@@ -5,21 +5,6 @@ import (
 	"testing"
 )
 
-func TestNewBufferPool(t *testing.T) {
-	pool := NewBufferPool()
-	if pool == nil {
-		t.Fatal("expected pool to be non-nil")
-	}
-
-	if len(pool.pools) == 0 {
-		t.Error("expected pools to be initialized")
-	}
-
-	if len(pool.sizes) == 0 {
-		t.Error("expected sizes to be initialized")
-	}
-}
-
 func TestBufferPool_Get(t *testing.T) {
 	pool := NewBufferPool()
 

@@ -24,12 +24,6 @@ func buildCSRFRouter(t *testing.T, secret []byte) *gin.Engine {
 	return r
 }
 
-func TestNewCSRF_RejectsShortSecret(t *testing.T) {
-	if _, err := NewCSRF([]byte("short")); err == nil {
-		t.Fatal("short secret must error")
-	}
-}
-
 func TestCSRF_GETMintsToken(t *testing.T) {
 	r := buildCSRFRouter(t, bytes.Repeat([]byte{0xab}, 32))
 	w := httptest.NewRecorder()

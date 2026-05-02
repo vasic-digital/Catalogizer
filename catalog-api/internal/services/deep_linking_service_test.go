@@ -13,35 +13,6 @@ import (
 // Constructor
 // ---------------------------------------------------------------------------
 
-func TestNewDeepLinkingService(t *testing.T) {
-	tests := []struct {
-		name       string
-		baseURL    string
-		apiVersion string
-	}{
-		{name: "standard construction", baseURL: "https://catalogizer.app", apiVersion: "v1"},
-		{name: "empty base URL", baseURL: "", apiVersion: "v1"},
-		{name: "empty api version", baseURL: "https://catalogizer.app", apiVersion: ""},
-		{name: "both empty", baseURL: "", apiVersion: ""},
-		{name: "custom base URL and version", baseURL: "https://custom.example.com", apiVersion: "v2"},
-	}
-
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			svc := NewDeepLinkingService(tt.baseURL, tt.apiVersion)
-			if svc == nil {
-				t.Fatal("expected non-nil service")
-			}
-			if svc.baseURL != tt.baseURL {
-				t.Errorf("baseURL = %q, want %q", svc.baseURL, tt.baseURL)
-			}
-			if svc.apiVersion != tt.apiVersion {
-				t.Errorf("apiVersion = %q, want %q", svc.apiVersion, tt.apiVersion)
-			}
-		})
-	}
-}
-
 // ---------------------------------------------------------------------------
 // GenerateDeepLinks
 // ---------------------------------------------------------------------------

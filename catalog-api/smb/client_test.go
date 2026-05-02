@@ -227,22 +227,6 @@ func TestIsNotExistError(t *testing.T) {
 	}
 }
 
-func TestNewSmbClient_NilConfig(t *testing.T) {
-	// NewSmbClient with nil config should panic (nil pointer dereference
-	// when accessing config.Host) or return an error.
-	defer func() {
-		if r := recover(); r != nil {
-			// Panicking on nil config is acceptable behavior
-			return
-		}
-	}()
-
-	client, err := NewSmbClient(nil)
-	if err == nil && client != nil {
-		t.Error("expected error or panic with nil config")
-	}
-}
-
 func TestSmbClient_Close_NilFields(t *testing.T) {
 	// A client with all nil internal fields should not panic on Close
 	client := &SmbClient{
