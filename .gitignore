@@ -351,3 +351,4 @@ catalog-api/build/
 # Claude Code session state (machine-local, never commit)
 .claude/
 docs/security/trivy-fs-*.json
+.aider*
