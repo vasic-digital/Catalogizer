@@ -1,5 +1,11 @@
 # AGENTS.md — Catalogizer
 
+> ## INHERITED FROM submodules/constitution/AGENTS.md
+> Base agent rules live in `submodules/constitution/AGENTS.md` — READ IT
+> FIRST. The base file (and `submodules/constitution/Constitution.md`) is
+> authoritative for any topic not covered here. Project-specific rules
+> below extend them; they never weaken them.
+
 > **NON-NEGOTIABLE PRIME DIRECTIVE:**
 > **"We had been in position that all tests do execute with success and
 > all Challenges as well, but in reality the most of the features does

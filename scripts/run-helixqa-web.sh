@@ -18,7 +18,7 @@ SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 PROJECT_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
 TIMESTAMP="$(date +%Y%m%d_%H%M%S)"
 OUTPUT_DIR="$PROJECT_ROOT/qa-results/helixqa-web-${TIMESTAMP}"
-HELIXQA="$PROJECT_ROOT/HelixQA/helixqa"
+HELIXQA="$PROJECT_ROOT/submodules/helix_qa/helixqa"
 FFMPEG="${HELIX_RECORDING_FFMPEG_PATH:-/home/milosvasic/bin/ffmpeg}"
 
 API_URL="${1:-http://localhost:8080}"

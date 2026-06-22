@@ -22,7 +22,7 @@ YELLOW='\033[1;33m'
 BLUE='\033[0;34m'
 NC='\033[0m'
 
-HELIQA_ROOT="$PROJECT_ROOT/HelixQA"
+HELIQA_ROOT="$PROJECT_ROOT/submodules/helix_qa"
 FAILED=0
 
 log_section() {

@@ -3,7 +3,7 @@
 # Usage: ./scripts/deploy-vision-hosts.sh
 #
 # Reads HELIX_VISION_HOSTS and HELIX_VISION_USER from
-# environment or HelixQA/.env. Each host gets llama.cpp
+# environment or submodules/helix_qa/.env. Each host gets llama.cpp
 # cloned, built with -DGGML_RPC=ON (and -DGGML_CUDA=ON
 # if available).
 #
@@ -15,10 +15,10 @@ SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 PROJECT_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
 
 # Source .env if available.
-if [ -f "$PROJECT_ROOT/HelixQA/.env" ]; then
+if [ -f "$PROJECT_ROOT/submodules/helix_qa/.env" ]; then
     set -a
     # shellcheck disable=SC1091
-    source "$PROJECT_ROOT/HelixQA/.env"
+    source "$PROJECT_ROOT/submodules/helix_qa/.env"
     set +a
 fi
 

@@ -25,7 +25,7 @@ PROJECT_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
 TIMESTAMP="$(date +%Y%m%d_%H%M%S)"
 OUTPUT_DIR="$PROJECT_ROOT/qa-results/helixqa-androidtv-${TIMESTAMP}"
 PKG="com.catalogizer.androidtv"
-HELIXQA="$PROJECT_ROOT/HelixQA/helixqa"
+HELIXQA="$PROJECT_ROOT/submodules/helix_qa/helixqa"
 BANKS_DIR="$PROJECT_ROOT/challenges/helixqa-banks"
 FFMPEG="${HELIX_RECORDING_FFMPEG_PATH:-/home/milosvasic/bin/ffmpeg}"
 

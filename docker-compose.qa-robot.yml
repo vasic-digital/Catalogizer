@@ -1,12 +1,12 @@
 version: "3.8"
 services:
   helixqa-robot:
-    build: ./HelixQA
+    build: ./submodules/helix_qa
     network_mode: host
     volumes:
       - .:/project:ro
       - ./qa-results:/output
-      - ./HelixQA/data:/data
+      - ./submodules/helix_qa/data:/data
       - ./docs/issues:/issues
     environment:
       - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY}

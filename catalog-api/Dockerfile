@@ -18,29 +18,29 @@ ENV CGO_ENABLED=1
 WORKDIR /build
 
 # Copy submodules (required by go.mod replace directives)
-COPY Assets/ /build/Assets/
-COPY Auth/ /build/Auth/
-COPY Cache/ /build/Cache/
-COPY Challenges/ /build/Challenges/
-COPY Concurrency/ /build/Concurrency/
-COPY Config/ /build/Config/
-COPY Containers/ /build/Containers/
-COPY Database/ /build/Database/
-COPY Discovery/ /build/Discovery/
-COPY Entities/ /build/Entities/
-COPY EventBus/ /build/EventBus/
-COPY Filesystem/ /build/Filesystem/
-COPY Lazy/ /build/Lazy/
-COPY Media/ /build/Media/
-COPY Memory/ /build/Memory/
-COPY Middleware/ /build/Middleware/
-COPY Observability/ /build/Observability/
-COPY RateLimiter/ /build/RateLimiter/
-COPY Recovery/ /build/Recovery/
-COPY Security/ /build/Security/
-COPY Storage/ /build/Storage/
-COPY Streaming/ /build/Streaming/
-COPY Watcher/ /build/Watcher/
+COPY submodules/assets/ /build/submodules/assets/
+COPY submodules/auth/ /build/submodules/auth/
+COPY submodules/cache/ /build/submodules/cache/
+COPY submodules/challenges/ /build/submodules/challenges/
+COPY submodules/concurrency/ /build/submodules/concurrency/
+COPY submodules/config/ /build/submodules/config/
+COPY submodules/containers/ /build/submodules/containers/
+COPY submodules/database/ /build/submodules/database/
+COPY submodules/discovery/ /build/submodules/discovery/
+COPY submodules/entities/ /build/submodules/entities/
+COPY submodules/event_bus/ /build/submodules/event_bus/
+COPY submodules/filesystem/ /build/submodules/filesystem/
+COPY submodules/lazy/ /build/submodules/lazy/
+COPY submodules/media/ /build/submodules/media/
+COPY submodules/memory/ /build/submodules/memory/
+COPY submodules/middleware/ /build/submodules/middleware/
+COPY submodules/observability/ /build/submodules/observability/
+COPY submodules/rate_limiter/ /build/submodules/rate_limiter/
+COPY submodules/recovery/ /build/submodules/recovery/
+COPY submodules/security/ /build/submodules/security/
+COPY submodules/storage/ /build/submodules/storage/
+COPY submodules/streaming/ /build/submodules/streaming/
+COPY submodules/watcher/ /build/submodules/watcher/
 
 # Copy catalog-api source
 COPY catalog-api/go.mod catalog-api/go.sum /build/catalog-api/

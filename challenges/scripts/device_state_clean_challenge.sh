@@ -9,7 +9,7 @@
 #   - secure.accessibility_font_scaling_has_been_changed != "1"
 #   - wm density                   == "Physical density: <N>" (not "Override density")
 #
-# Why this exists: the deferred restore in HelixQA/pkg/autonomous/pipeline.go
+# Why this exists: the deferred restore in submodules/helix_qa/pkg/autonomous/pipeline.go
 # only fires on normal Run() return. SIGKILL / OOM / panic-without-recover
 # leaves the device polluted. This Challenge is operator-runnable AFTER
 # any session, and is the same assertion HelixQA's `restoreDeviceSettings`

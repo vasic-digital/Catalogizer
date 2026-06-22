@@ -1,5 +1,15 @@
 # CLAUDE.md — Catalogizer
 
+## INHERITED FROM submodules/constitution/CLAUDE.md
+
+All rules in `submodules/constitution/CLAUDE.md` (and the
+`submodules/constitution/Constitution.md` it references) apply
+unconditionally. The project-specific rules below EXTEND them — they do
+NOT weaken any universal clause. When this file disagrees with the
+constitution submodule, the constitution wins.
+
+@submodules/constitution/CLAUDE.md
+
 > **NON-NEGOTIABLE PRIME DIRECTIVE:**
 > **"We had been in position that all tests do execute with success and
 > all Challenges as well, but in reality the most of the features does

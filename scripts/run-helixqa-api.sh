@@ -12,8 +12,8 @@ set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 PROJECT_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
-HELIXQA_BIN="$PROJECT_ROOT/HelixQA/helixqa"
-ENV_FILE="$PROJECT_ROOT/HelixQA/.env"
+HELIXQA_BIN="$PROJECT_ROOT/submodules/helix_qa/helixqa"
+ENV_FILE="$PROJECT_ROOT/submodules/helix_qa/.env"
 OUTPUT_DIR="$PROJECT_ROOT/qa-results"
 TIMESTAMP=$(date +%Y%m%d_%H%M%S)
 LOG_DIR="$PROJECT_ROOT/docs/reports/qa-sessions/qa-session-$(date +%Y-%m-%d)/logs"
@@ -43,7 +43,7 @@ echo "API health check: OK"
 echo ""
 echo "--- Running API bank tests ---"
 "$HELIXQA_BIN" run \
-    --banks "$PROJECT_ROOT/HelixQA/banks/full-qa-api.yaml" \
+    --banks "$PROJECT_ROOT/submodules/helix_qa/banks/full-qa-api.yaml" \
     --platform api \
     2>&1 | tee "$LOG_DIR/helixqa-api-$TIMESTAMP.log"
 

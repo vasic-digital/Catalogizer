@@ -17,7 +17,7 @@ set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 PROJECT_ROOT="$(cd "${SCRIPT_DIR}/.." && pwd)"
-ENV_FILE="${PROJECT_ROOT}/Containers/.env"
+ENV_FILE="${PROJECT_ROOT}/submodules/containers/.env"
 
 # Colors
 RED='\033[0;31m'

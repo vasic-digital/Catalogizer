@@ -15,7 +15,7 @@ of a new user, etc) already had explicit bodies from step 2's
 converter.
 
 Usage:
-  scripts/audit/bank-patch-default-bodies.py HelixQA/banks/full-qa-api.json
+  scripts/audit/bank-patch-default-bodies.py submodules/helix_qa/banks/full-qa-api.json
 """
 
 import json

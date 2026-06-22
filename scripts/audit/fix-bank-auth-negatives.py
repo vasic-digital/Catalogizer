@@ -14,8 +14,8 @@ import re
 import sys
 
 BANK_FILES = [
-    "/run/media/milosvasic/DATA4TB/Projects/Catalogizer/HelixQA/banks/full-qa-api.json",
-    "/run/media/milosvasic/DATA4TB/Projects/Catalogizer/HelixQA/banks/full-qa-api.yaml",
+    "/run/media/milosvasic/DATA4TB/Projects/Catalogizer/submodules/helix_qa/banks/full-qa-api.json",
+    "/run/media/milosvasic/DATA4TB/Projects/Catalogizer/submodules/helix_qa/banks/full-qa-api.yaml",
 ]
 
 # Prose patterns that signal a negative-auth test

@@ -1,5 +1,11 @@
 # GEMINI.md - Catalogizer
 
+> ## INHERITED FROM submodules/constitution/GEMINI.md
+> Base agent rules live in `submodules/constitution/GEMINI.md` — READ IT
+> FIRST. The base file (and `submodules/constitution/Constitution.md`) is
+> authoritative for any topic not covered here. Project-specific rules
+> below extend them; they never weaken them.
+
 ## Project Overview
 
 Catalogizer is a comprehensive media collection management system that automatically detects, categorizes, and organizes your media files across multiple storage protocols including SMB, FTP, NFS, WebDAV, and local filesystem. It provides real-time monitoring, advanced analytics, and a modern web interface for managing your entire media library.

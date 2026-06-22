@@ -80,7 +80,7 @@ services:
       - "28080:28080"
     volumes:
       - ./catalog-api:/app
-      - ../Assets:/app/../Assets:ro
+      - ../submodules/assets:/app/../submodules/assets:ro
       - api_cache:/go/pkg/mod
     depends_on:
       postgres:

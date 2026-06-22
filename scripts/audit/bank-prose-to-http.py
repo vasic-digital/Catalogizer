@@ -35,8 +35,8 @@ WARNING when run, exactly as before this conversion — no
 regression.
 
 Usage:
-  scripts/audit/bank-prose-to-http.py --input HelixQA/banks/full-qa-api.json \
-      --output HelixQA/banks/full-qa-api.executable.json --report
+  scripts/audit/bank-prose-to-http.py --input submodules/helix_qa/banks/full-qa-api.json \
+      --output submodules/helix_qa/banks/full-qa-api.executable.json --report
 
 The "expected" field text patterns are also used to infer
 ExpectStatus / ExpectJSONPath / ExpectBodyContains:

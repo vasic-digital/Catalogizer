@@ -18,7 +18,7 @@ set -e
 
 # Configuration
 PROJECT_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-HELIXQA_BIN="${PROJECT_ROOT}/HelixQA/bin/helixqa"
+HELIXQA_BIN="${PROJECT_ROOT}/submodules/helix_qa/bin/helixqa"
 DEVCONNECT_SCRIPT="${PROJECT_ROOT}/scripts/devconnect.sh"
 QA_RESULTS_DIR="${PROJECT_ROOT}/qa-results"
 LOG_DIR="${QA_RESULTS_DIR}/logs"

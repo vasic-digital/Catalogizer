@@ -33,10 +33,10 @@ set -uo pipefail
 ROOT="${1:-$(cd "$(dirname "$0")/../.." && pwd)}"
 cd "$ROOT" || { echo "cannot cd to $ROOT" >&2; exit 2; }
 
-EXCLUDE_DIRS='\(\./\)\?\(\.git\|node_modules\|target\|vendor\|build\|releases\|qa-results\|docs/reports/qa-sessions\|docs/audits\|HelixQA/banks/templates\|tests/k6/node_modules\|tools/opensource\|tools/external\|HelixQA/tools/opensource\|releases\)'
+EXCLUDE_DIRS='\(\./\)\?\(\.git\|node_modules\|target\|vendor\|build\|releases\|qa-results\|docs/reports/qa-sessions\|docs/audits\|submodules/helix_qa/banks/templates\|tests/k6/node_modules\|tools/opensource\|tools/external\|submodules/helix_qa/tools/opensource\|releases\)'
 
 # Substring match — excludes paths at any depth (not just root prefix).
-# /tools/opensource/ catches HelixQA/tools/opensource and any nested vendor.
+# /tools/opensource/ catches submodules/helix_qa/tools/opensource and any nested vendor.
 # /node_modules/ catches catalog-web/node_modules, installer-wizard/node_modules, etc.
 EXCLUDE_SUBSTRINGS=(
   '/node_modules/'
@@ -240,7 +240,7 @@ scan_helixqa_banks() {
   #      runner cannot execute this without interpretation. IS a bluff.
   #
   # Recognized executable-prefix actions also pass (adb_shell: ... etc).
-  # Files under HelixQA/banks/templates/ are scaffolding examples.
+  # Files under submodules/helix_qa/banks/templates/ are scaffolding examples.
   while IFS= read -r -d '' f; do
     is_excluded "$f" && continue
     case "$f" in *banks/templates/*) continue ;; esac

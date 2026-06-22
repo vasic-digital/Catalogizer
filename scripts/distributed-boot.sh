@@ -9,7 +9,7 @@
 # Options:
 #   --local      Run only locally (no remote distribution)
 #   --dry-run    Show distribution plan without deploying
-#   --env PATH   Path to .env file (default: ../Containers/.env)
+#   --env PATH   Path to .env file (default: ../submodules/containers/.env)
 
 set -euo pipefail
 
@@ -19,7 +19,7 @@ PROJECT_ROOT="$(cd "${SCRIPT_DIR}/.." && pwd)"
 # Default options
 LOCAL_ONLY=""
 DRY_RUN=""
-ENV_FILE="${PROJECT_ROOT}/Containers/.env"
+ENV_FILE="${PROJECT_ROOT}/submodules/containers/.env"
 COMPOSE_FILE="${PROJECT_ROOT}/docker-compose.dev.yml"
 TIMEOUT="5m"
 
@@ -48,7 +48,7 @@ while [[ $# -gt 0 ]]; do
             echo "Options:"
             echo "  --local         Run only locally (no remote distribution)"
             echo "  --dry-run       Show distribution plan without deploying"
-            echo "  --env PATH      Path to .env file (default: Containers/.env)"
+            echo "  --env PATH      Path to .env file (default: submodules/containers/.env)"
             echo "  --timeout DUR   Boot timeout (default: 5m)"
             exit 0
             ;;

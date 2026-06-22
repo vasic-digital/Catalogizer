@@ -12,7 +12,7 @@ list, sets auth to "admin".
 Idempotent: re-running on a patched bank is a no-op.
 
 Usage:
-  scripts/audit/bank-patch-auth.py HelixQA/banks/full-qa-api.json
+  scripts/audit/bank-patch-auth.py submodules/helix_qa/banks/full-qa-api.json
 """
 
 import json

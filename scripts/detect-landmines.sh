@@ -71,12 +71,12 @@ fi
 # ---------------------------------------------------------------------------
 # RULE-CONST-001 — no sudo / no root in scripts
 # ---------------------------------------------------------------------------
-if grep -rnE '^\s*(sudo\b|su -c)' scripts/ deployment/ Containers/ docker/ \
+if grep -rnE '^\s*(sudo\b|su -c)' scripts/ deployment/ submodules/containers/ docker/ \
       --include='*.sh' --include='*.yml' --include='*.yaml' \
       --include='Dockerfile*' --include='Containerfile*' 2>/dev/null \
     | grep -vE '^\s*#|sudoers' | grep -q .; then
   fail "RULE-CONST-001: sudo / su reference in scripts/deployment/containers:"
-  grep -rnE '^\s*(sudo\b|su -c)' scripts/ deployment/ Containers/ docker/ \
+  grep -rnE '^\s*(sudo\b|su -c)' scripts/ deployment/ submodules/containers/ docker/ \
     --include='*.sh' --include='*.yml' --include='*.yaml' \
     --include='Dockerfile*' --include='Containerfile*' 2>/dev/null \
     | grep -vE '^\s*#|sudoers' | sed 's/^/    /' >&2
@@ -125,7 +125,7 @@ fi
 # ---------------------------------------------------------------------------
 if [ -d HelixQA ]; then
   leaks=$(grep -rnE 'com\.catalogizer\.|ru\.iptvremote|com\.atmosphere' \
-            HelixQA/pkg/ HelixQA/cmd/ --include='*.go' 2>/dev/null \
+            submodules/helix_qa/pkg/ submodules/helix_qa/cmd/ --include='*.go' 2>/dev/null \
           | grep -v '_test.go' | grep -vE 'RULE-|//\s' || true)
   if [ -n "$leaks" ]; then
     fail "RULE-HELIX-001: project-specific package names baked into HelixQA library:"
