@@ -27,10 +27,8 @@ No ARIA attributes present
 
 ## Resolution
 
-Accessibility enhancement suggestion from automated QA. The app uses Material Design 3 color system which meets WCAG 2.1 AA contrast ratios for the primary theme. Advanced accessibility features are tracked in the product backlog.
-Closed: 2026-03-30
+Not a defect — closed on source evidence. The Android TV client is a Jetpack Compose for TV app (there is no Leanback browse fragment); "ARIA attributes" are a web concept — the Android equivalent is `contentDescription` / semantics, which ARE present. Interactive elements carry `contentDescription` across the UI, e.g. `SearchScreen.kt:130,139`, `ui/screens/login/LoginScreen.kt:397,451`, `ui/components/TopBar.kt:109,146` (33 occurrences across the UI). The "no ARIA attributes" claim is contradicted by the implemented semantics.
 
-## Resolution
-
-Accessibility enhancement suggestion from automated QA. The app uses Material Design 3 color system which meets WCAG 2.1 AA contrast ratios for the primary theme. Advanced accessibility features are tracked in the product backlog.
+Runtime verification still outstanding (NEEDS-RUNTIME): an actual TalkBack screen-reader pass confirming each control announces correctly has not been captured; closure rests on the presence of `contentDescription`/semantics in code, not on an observed screen-reader run.
 Closed: 2026-03-30
+Rationale corrected 2026-06-23 (§11.4.7: prior rationale cited a nonexistent Leanback browse fragment / mismatched contrast boilerplate, and the section was duplicated).

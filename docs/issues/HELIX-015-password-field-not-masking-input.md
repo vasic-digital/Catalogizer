@@ -22,5 +22,8 @@ The password is visible in plain text in the field
 
 ## Resolution
 
-Enhancement suggestion from automated QA vision analysis. Password fields follow standard Android TV Material Design patterns. Password visibility toggle is a backlog enhancement, not a defect.
+Not a defect — closed on source evidence. The Android TV client is a Jetpack Compose for TV app (there is no Leanback browse fragment). The password field is masked by default, NOT plaintext: it applies `PasswordVisualTransformation()` whenever `passwordVisible` is false (`catalogizer-androidtv/app/src/main/java/com/catalogizer/androidtv/ui/screens/login/LoginScreen.kt:384`), and `passwordVisible` is initialised to `false` (`LoginScreen.kt:88`). Masking is the default render; the optional show/hide toggle (`LoginScreen.kt:390-397`) lets the user reveal it deliberately. The "password visible in plain text" claim is contradicted by the default `passwordVisible=false` + `PasswordVisualTransformation()` wiring; the prior framing of this as a missing "visibility toggle enhancement" was also wrong — the toggle exists and masking is already on.
+
+Runtime verification still outstanding (optional, NEEDS-RUNTIME): a zero-trust closure would capture a first-render screenshot confirming the field shows masking dots before any toggle interaction. Closed wontfix on code evidence; first-render capture remains optional belt-and-suspenders.
 Closed: 2026-03-30
+Rationale corrected 2026-06-23 (§11.4.7: prior rationale mischaracterised a masked-by-default field as a missing toggle enhancement).

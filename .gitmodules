@@ -124,3 +124,6 @@
 [submodule "submodules/constitution"]
 	path = submodules/constitution
 	url = git@github.com:HelixDevelopment/HelixConstitution.git
+[submodule "submodules/helix_memory"]
+	path = submodules/helix_memory
+	url = git@github.com:HelixDevelopment/HelixMemory.git
