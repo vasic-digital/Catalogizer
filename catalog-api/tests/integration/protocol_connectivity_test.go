@@ -23,7 +23,7 @@ func getEnvOrDefault(key, defaultVal string) string {
 
 func skipIfNoContainer(t *testing.T, envVar, serviceName string) {
 	if os.Getenv(envVar) == "" {
-		t.Skipf("Skipping test: %s not set (start %s container first)", envVar, serviceName)
+		t.Skipf("Skipping test: %s not set (start %s container first) (SKIP-OK: #topology-no-container)", envVar, serviceName)
 	}
 }
 
@@ -100,7 +100,7 @@ func TestSMBProtocolConnectivity(t *testing.T) {
 
 		err := client.Connect(ctx)
 		if err != nil {
-			t.Skipf("Cannot list directory: connection failed: %v", err)
+			t.Skipf("Cannot list directory: connection failed: %v (SKIP-OK: #topology-no-container)", err)
 		}
 
 		files, err := client.ListDirectory(ctx, "/")
@@ -213,7 +213,7 @@ func TestNFSProtocolConnectivity(t *testing.T) {
 
 		client, err := filesystem.NewNFSClient(config)
 		if err != nil {
-			t.Skipf("NFS client creation failed (may require root): %v", err)
+			t.Skipf("NFS client creation failed (may require root): %v (SKIP-OK: #nfs-needs-root)", err)
 		}
 		require.NotNil(t, client)
 	})

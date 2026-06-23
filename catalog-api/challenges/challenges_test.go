@@ -548,7 +548,7 @@ func TestAllChallenges_Execute(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
 			if tc.skip != "" {
-				t.Skip(tc.skip)
+				t.Skip("SKIP-OK: #table-driven-conditional-skip: " + tc.skip)
 			}
 
 			ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)

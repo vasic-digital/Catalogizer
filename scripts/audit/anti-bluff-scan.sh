@@ -440,27 +440,59 @@ scan_challenge_scripts() {
       *chaos*|*stress*|*ddos*|*scaling*|*failure_injection*|*sustained_load*|*horizontal*|*flood*|*slow_loris*)
         is_faultinj=1 ;;
     esac
+    # Pre-read the file so the `set +e` lookahead can verify a matching
+    # `set -e` re-enable AND an exit-code capture exist below it (a BOUNDED
+    # intentional-failure probe whose RC is then asserted — not laundering).
+    mapfile -t _clines < "$f" 2>/dev/null || _clines=()
     grep -nE '(\|\|[[:space:]]*true\b|&&[[:space:]]*echo[[:space:]]+(PASS|OK|SUCCESS)\b|\|[[:space:]]*tee[[:space:]]+\S+[[:space:]]*$|set[[:space:]]+\+e\b)' "$f" 2>/dev/null | while IFS=: read -r ln rest; do
       case "$rest" in *'# bluff-scan: ok'*) continue ;; esac
       # Determine whether THIS line is a teardown / best-effort line.
       is_teardown=0
       case "$rest" in
-        *trap\ *|*kill\ *|*kill" "*|*' wait'*|*'wait '*|*'wait;'*|*rm\ -f*|*mv\ -f*|*pkill*|*cleanup*|*killall*)
+        *trap\ *|*kill\ *|*kill" "*|*' wait'*|*'wait '*|*'wait;'*|*rm\ -f*|*rm\ -rf*|*mv\ -f*|*pkill*|*cleanup*|*killall*|*'command -v'*|*xargs*|*reload-or-restart*)
           is_teardown=1 ;;
       esac
-      # A best-effort probe: stdout discarded or captured for a later
-      # awk/wc assertion, ending in `|| true` (not laundering a verdict).
+      # A best-effort probe: stdout discarded or captured (to a file or via
+      # command-substitution) for a LATER assertion, ending in `|| true`
+      # (the exit code is intentionally ignored here, not the verdict).
       case "$rest" in
         *'2>/dev/null'*'|| true'*|*'2>&1'*'|| true'*|*'-o /dev/null'*'|| true'*|*'>> '*'|| true'*|*'>>"'*'|| true'*)
           is_teardown=1 ;;
         *'2>/dev/null || true'*)
           is_teardown=1 ;;
+        # Output captured to a file (`>OUT`, `>"$OUT"`, `>'file'`) then `|| true`:
+        # the command is run for its side-effect/output which a downstream line
+        # asserts; the inline `|| true` only tolerates a non-zero probe exit.
+        *'>'*'|| true'*)
+          is_teardown=1 ;;
+        # Command-substitution capture with `|| true` inside: `x="$(... || true)"`
+        # — the captured value is asserted later; `|| true` guards the subshell.
+        *'$('*'|| true'*')'*|*'`'*'|| true'*'`'*)
+          is_teardown=1 ;;
+      esac
+      # `set +e` is a legitimate bounded-probe disable ONLY when a matching
+      # `set -e` re-enable AND an exit-code capture (`$?` / PIPESTATUS) appear
+      # within the next 8 lines. Bare `set +e` with no re-enable (verdict
+      # laundering for the rest of the script) STAYS flagged.
+      is_bounded_probe=0
+      case "$rest" in
+        *'set +e'*)
+          saw_reenable=0; saw_rc=0; i="$ln"
+          end=$((ln + 8))
+          while [ "$i" -lt "$end" ]; do
+            cur="${_clines[$i]:-}"   # _clines 0-indexed => line ln+1 at idx ln
+            case "$cur" in *'set -e'*) saw_reenable=1 ;; esac
+            case "$cur" in *'$?'*|*'PIPESTATUS'*) saw_rc=1 ;; esac
+            i=$((i + 1))
+          done
+          [ "$saw_reenable" -eq 1 ] && [ "$saw_rc" -eq 1 ] && is_bounded_probe=1 ;;
       esac
       # The `|| true` / `2>/dev/null` exit-suppression and `set +e` forms are
-      # exempt inside fault-injection scripts OR on teardown/best-effort lines.
+      # exempt inside fault-injection scripts, on teardown/best-effort lines,
+      # or for a bounded `set +e`/`set -e` probe whose RC is asserted.
       case "$rest" in
         *'|| true'*|*'set +e'*)
-          if [ "$is_faultinj" -eq 1 ] || [ "$is_teardown" -eq 1 ]; then
+          if [ "$is_faultinj" -eq 1 ] || [ "$is_teardown" -eq 1 ] || [ "$is_bounded_probe" -eq 1 ]; then
             continue
           fi ;;
       esac

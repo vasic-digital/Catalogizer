@@ -390,7 +390,7 @@ type SMBProtocolTestSuite struct{}
 func (s *SMBProtocolTestSuite) SetupProtocol(t *testing.T) (filesystem.FileSystemClient, func()) {
 	// For testing, we'll use a mock SMB client or skip if no test server available
 	if os.Getenv("SMB_TEST_SERVER") == "" {
-		t.Skip("SMB_TEST_SERVER not set, skipping SMB tests")
+		t.Skip("SMB_TEST_SERVER not set, skipping SMB tests (SKIP-OK: #env-no-test-server)")
 	}
 
 	config := &filesystem.SmbConfig{
@@ -427,7 +427,7 @@ type FTPProtocolTestSuite struct{}
 
 func (s *FTPProtocolTestSuite) SetupProtocol(t *testing.T) (filesystem.FileSystemClient, func()) {
 	if os.Getenv("FTP_TEST_SERVER") == "" {
-		t.Skip("FTP_TEST_SERVER not set, skipping FTP tests")
+		t.Skip("FTP_TEST_SERVER not set, skipping FTP tests (SKIP-OK: #env-no-test-server)")
 	}
 
 	config := &filesystem.FTPConfig{
@@ -460,7 +460,7 @@ type NFSProtocolTestSuite struct{}
 
 func (s *NFSProtocolTestSuite) SetupProtocol(t *testing.T) (filesystem.FileSystemClient, func()) {
 	if os.Getenv("NFS_TEST_SERVER") == "" {
-		t.Skip("NFS_TEST_SERVER not set, skipping NFS tests")
+		t.Skip("NFS_TEST_SERVER not set, skipping NFS tests (SKIP-OK: #env-no-test-server)")
 	}
 
 	config := filesystem.NFSConfig{
@@ -495,7 +495,7 @@ type WebDAVProtocolTestSuite struct{}
 
 func (s *WebDAVProtocolTestSuite) SetupProtocol(t *testing.T) (filesystem.FileSystemClient, func()) {
 	if os.Getenv("WEBDAV_TEST_SERVER") == "" {
-		t.Skip("WEBDAV_TEST_SERVER not set, skipping WebDAV tests")
+		t.Skip("WEBDAV_TEST_SERVER not set, skipping WebDAV tests (SKIP-OK: #env-no-test-server)")
 	}
 
 	config := &filesystem.WebDAVConfig{

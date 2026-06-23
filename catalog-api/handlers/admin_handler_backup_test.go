@@ -151,7 +151,7 @@ func TestRestoreBackup_ValidFile(t *testing.T) {
 	// Create a backup file in the default backup directory
 	err := os.MkdirAll(defaultBackupDir, 0750)
 	if err != nil {
-		t.Skip("cannot create backup directory")
+		t.Skip("cannot create backup directory (SKIP-OK: #fs-backup-dir-unwritable)")
 	}
 
 	testFile := filepath.Join(defaultBackupDir, "test_restore_backup.db")
