@@ -2,6 +2,7 @@ package stress
 
 import (
 	"fmt"
+	"io"
 	"net/http"
 	"sort"
 	"sync"
@@ -166,12 +167,18 @@ func TestConcurrentHandlers_HealthCheckUnderLoad(t *testing.T) {
 			concurrency*requestsPerGoroutine)
 		var mu sync.Mutex
 
+		// Use the same high-concurrency tuned client as the load helper
+		// (newLoadTestContext) so the goroutines share a connection pool
+		// sized for the concurrency instead of Go's default per-host cap of
+		// 2 idle connections. Otherwise client-side connection starvation is
+		// measured as if it were server latency and the p95 assertion flakes.
+		client := newLoadTestContext(ts.URL).client
+
 		var wg sync.WaitGroup
 		for i := 0; i < concurrency; i++ {
 			wg.Add(1)
 			go func() {
 				defer wg.Done()
-				client := &http.Client{Timeout: 5 * time.Second}
 				for j := 0; j < requestsPerGoroutine; j++ {
 					start := time.Now()
 					resp, err := client.Get(
@@ -182,6 +189,15 @@ func TestConcurrentHandlers_HealthCheckUnderLoad(t *testing.T) {
 						if resp.StatusCode == http.StatusOK {
 							atomic.AddInt64(&successCount, 1)
 						}
+						// Drain the body before closing so the
+						// keep-alive connection can be returned to
+						// the pool and reused. Closing an undrained
+						// body forces the transport to discard the
+						// connection, so every request opens a fresh
+						// TCP connection and the resulting connection
+						// churn shows up as multi-hundred-ms tail
+						// latency on the p95.
+						_, _ = io.Copy(io.Discard, resp.Body)
 						resp.Body.Close()
 					}
 					mu.Lock()
@@ -202,7 +218,11 @@ func TestConcurrentHandlers_HealthCheckUnderLoad(t *testing.T) {
 		sort.Slice(latencies, func(i, j int) bool {
 			return latencies[i] < latencies[j]
 		})
-		p95 := latencies[int(float64(len(latencies))*0.95)]
+		p95Idx := int(float64(len(latencies)) * 0.95)
+		if p95Idx >= len(latencies) {
+			p95Idx = len(latencies) - 1
+		}
+		p95 := latencies[p95Idx]
 		mu.Unlock()
 
 		t.Logf("Health check: %d/%d succeeded (%.2f%%), P95: %v",
@@ -227,18 +247,27 @@ func TestConcurrentHandlers_ErrorResponseConsistency(t *testing.T) {
 		var notFoundCount int64
 		var otherCount int64
 
+		// Share the same high-concurrency tuned client as the load helper
+		// (newLoadTestContext) so all goroutines draw from a connection pool
+		// sized for the concurrency, rather than Go's default per-host cap of
+		// 2 idle connections that serializes requests and inflates latency.
+		client := newLoadTestContext(ts.URL).client
+
 		var wg sync.WaitGroup
 		for i := 0; i < concurrency; i++ {
 			wg.Add(1)
 			go func(id int) {
 				defer wg.Done()
-				client := &http.Client{Timeout: 5 * time.Second}
 				path := fmt.Sprintf(
 					"/api/v1/nonexistent/%d", id)
 				resp, err := client.Get(ts.URL + path)
 				if err != nil {
 					return
 				}
+				// Drain before closing so the keep-alive connection
+				// is reusable rather than discarded (see the health
+				// check load test for the latency impact of churn).
+				_, _ = io.Copy(io.Discard, resp.Body)
 				resp.Body.Close()
 				if resp.StatusCode == http.StatusNotFound {
 					atomic.AddInt64(&notFoundCount, 1)
