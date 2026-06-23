@@ -97,5 +97,8 @@ func (c *NFSClient) GetProtocol() string {
 }
 
 func (c *NFSClient) GetConfig() interface{} {
-	return c.config
+	// Return a pointer for cross-platform parity (§11.4.81): the generic
+	// nfs_client.go returns &c.config and both NFS tests assert .(*NFSConfig);
+	// returning a value here panicked the tests on darwin/windows only.
+	return &c.config
 }

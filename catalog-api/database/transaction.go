@@ -7,6 +7,7 @@ import (
 	"os"
 	"strings"
 	"sync"
+	"sync/atomic"
 	"time"
 )
 
@@ -323,8 +324,15 @@ func (tc *TxContext) RunInTransactionWithRetry(ctx context.Context, fn func(*Tra
 
 // Helper functions
 
+// txIDCounter guarantees txID uniqueness even when generateTxID is called
+// multiple times within the same clock tick — time.Now() alone can repeat on
+// fast loops / coarse-resolution timers (it did: duplicate
+// "tx_<nano>_<nano>" collisions), so a strictly-increasing atomic counter is
+// the unique component (the timestamp stays for ordering/debugging).
+var txIDCounter atomic.Uint64
+
 func generateTxID() string {
-	return fmt.Sprintf("tx_%d_%d", time.Now().UnixNano(), time.Now().Nanosecond())
+	return fmt.Sprintf("tx_%d_%d", time.Now().UnixNano(), txIDCounter.Add(1))
 }
 
 // isDeadlockError checks if an error is a deadlock error

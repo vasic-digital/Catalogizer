@@ -10,6 +10,7 @@ import (
 	"strconv"
 	"strings"
 	"sync"
+	"sync/atomic"
 	"time"
 
 	"catalogizer/database"
@@ -877,8 +878,13 @@ func detectEncoding(data []byte) string {
 	return "utf-8" // Default assumption
 }
 
+// subtitleIDCounter guarantees uniqueness across calls within the same clock
+// tick — time.Now().UnixNano() alone repeats on back-to-back calls / coarse
+// timers (TestGenerateSubtitleID's two consecutive calls flaked on equality).
+var subtitleIDCounter atomic.Uint64
+
 func generateSubtitleID() string {
-	return fmt.Sprintf("sub_%d", time.Now().UnixNano())
+	return fmt.Sprintf("sub_%d_%d", time.Now().UnixNano(), subtitleIDCounter.Add(1))
 }
 
 func getSubtitleStringValue(s *string) string {
