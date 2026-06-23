@@ -493,11 +493,17 @@ func TestNewMediaManager_DBInitFailure(t *testing.T) {
 		}
 	}()
 
-	// Save and change CWD to /dev/null parent (read-only location)
+	// Force DB-file creation to fail by changing CWD to a read-only directory.
+	// Use a chmod'd temp dir, NOT /proc — /proc is Linux-only and does not
+	// exist on macOS, where os.Chdir("/proc") failed the test (§11.4.81
+	// cross-platform parity). A 0555 dir blocks file creation on any POSIX host
+	// for a non-root user.
+	roDir := t.TempDir()
+	require.NoError(t, os.Chmod(roDir, 0o555))
+	t.Cleanup(func() { _ = os.Chmod(roDir, 0o755) }) // restore so TempDir cleanup can remove it
 	origDir, err := os.Getwd()
 	require.NoError(t, err)
-	err = os.Chdir("/proc") // read-only filesystem
-	require.NoError(t, err)
+	require.NoError(t, os.Chdir(roDir))
 	defer os.Chdir(origDir)
 
 	logger := zap.NewNop()
