@@ -59,10 +59,18 @@ EXCLUDE_DIRS='\(\./\)\?\(\.git\|node_modules\|target\|vendor\|build\|releases\|q
 # Substring match — excludes paths at any depth (not just root prefix).
 # /tools/opensource/ catches submodules/helix_qa/tools/opensource and any nested vendor.
 # /node_modules/ catches catalog-web/node_modules, installer-wizard/node_modules, etc.
+# /submodules/helix_memory/ — helix_memory (HelixDevelopment/HelixMemory) is an
+#   EXTERNAL dependency submodule that catalogizer only CONSUMES; its upstream
+#   tests are authored + owned upstream, not catalogizer code. Per §11.4.28
+#   decoupling we do NOT edit a consumed dependency's tests; per §11.4.74 it is a
+#   reuse (no-match→consume) dependency, so its in-tree test patterns are out of
+#   scope for catalogizer's own anti-bluff gate (same treatment as tools/opensource
+#   vendored code). Kept narrow — only helix_memory, not all submodules.
 EXCLUDE_SUBSTRINGS=(
   '/node_modules/'
   '/tools/opensource/'
   '/tools/external/'
+  '/submodules/helix_memory/'
   '/.git/'
   '/target/'
   '/vendor/'

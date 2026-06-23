@@ -2,7 +2,11 @@
 # scripts/hooks/pre-push-gate.sh — LLM-as-Judge pre-push wire-up
 #
 # Runs before every `git push` to main. Chains:
-#   1. scripts/detect-landmines.sh  (hard gate — exits non-zero on violation)
+#   1. scripts/detect-landmines.sh      (hard gate — exits non-zero on violation)
+#   1b. scripts/audit/anti-bluff-scan.sh (hard gate — §11.4 anti-bluff CI lane;
+#       exits non-zero on ANY in-scope bluff finding so the push is BLOCKED.
+#       This is the LOCAL gate mandated by §11.4.75 — remote CI is forbidden
+#       by §11.4.156, so the anti-bluff lane runs here before every push.)
 #   2. Generates /tmp/judge_prompt.md from templates/LLM_JUDGE_PREMERGE.md
 #      + the current PR diff + docs/LANDMINES.md + docs/API_CONTRACTS.md
 #   3. Prints instructions for the operator to submit the prompt to a
@@ -27,14 +31,44 @@ cd "$REPO_ROOT"
 # Gate 1 — landmine pre-flight (hard)
 # -----------------------------------------------------------------------------
 echo "[pre-push-gate] 1/3 — scripts/detect-landmines.sh"
-if ! bash scripts/detect-landmines.sh; then
-  rc=$?
+# NOTE: capture the command's own exit code DIRECTLY — `if ! cmd; then rc=$?`
+# captures the negated-test result (always 0), not the command's exit code,
+# which would launder a real failure into a 0 exit (push allowed despite the
+# "refusing" message). §11.4.1 FAIL-bluff fix.
+bash scripts/detect-landmines.sh; rc=$?
+if [ "$rc" -ne 0 ]; then
   if [ "${LLM_JUDGE_BYPASS:-0}" = "1" ]; then
     echo "[pre-push-gate] LANDMINE VIOLATION but LLM_JUDGE_BYPASS=1 — continuing (emergency bypass)"
   else
     echo
     echo "[pre-push-gate] ❌ LANDMINE violation — refusing to push"
     echo "   Fix the flagged rule(s) above (see docs/LANDMINES.md) then retry."
+    echo "   Emergency bypass: LLM_JUDGE_BYPASS=1 git push origin main"
+    exit "$rc"
+  fi
+fi
+
+# -----------------------------------------------------------------------------
+# Gate 1b — anti-bluff scanner (hard, §11.4 / §11.4.75 LOCAL gate)
+# -----------------------------------------------------------------------------
+# The static anti-bluff scanner is the §11.4 covenant's mechanical CI lane.
+# Per §11.4.156 server-side CI is disabled, so the lane MUST run locally before
+# every push. The scanner exits non-zero on ANY in-scope bluff finding; a
+# non-zero exit here BLOCKS the push (clean tree => exit 0 per its hardened
+# contract). Same emergency-bypass switch as the landmine gate.
+echo "[pre-push-gate] 1b/3 — scripts/audit/anti-bluff-scan.sh"
+# Capture the scanner's own exit code directly (same §11.4.1 fix as Gate 1).
+bash scripts/audit/anti-bluff-scan.sh; rc=$?
+if [ "$rc" -ne 0 ]; then
+  if [ "${LLM_JUDGE_BYPASS:-0}" = "1" ]; then
+    echo "[pre-push-gate] ANTI-BLUFF finding(s) but LLM_JUDGE_BYPASS=1 — continuing (emergency bypass)"
+  else
+    echo
+    echo "[pre-push-gate] ❌ ANTI-BLUFF finding(s) — refusing to push"
+    echo "   Each TSV line above is file<TAB>line<TAB>kind<TAB>excerpt."
+    echo "   Fix the flagged test/challenge/bank, or add the scanner-honored"
+    echo "   inline marker ('# bluff-scan: ok (<why>)' / 'SKIP-OK: §11.4.3 <reason>')"
+    echo "   for legitimate patterns, then retry."
     echo "   Emergency bypass: LLM_JUDGE_BYPASS=1 git push origin main"
     exit "$rc"
   fi
