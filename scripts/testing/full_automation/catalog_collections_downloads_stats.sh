@@ -97,11 +97,11 @@ set -u
 # Configuration
 # ------------------------------------------------------------------------------
 BASE_URL="${CATALOGIZER_BASE_URL:-http://127.0.0.1:8080}"
-USER="${CATALOGIZER_USER:-admin}"
+USER="${CATALOGIZER_USER:-${ADMIN_USERNAME:-admin}}"
 # §11.4.10: NO hardcoded credential default. Caller MUST export CATALOGIZER_PASS
 # (or CATALOGIZER_TOKEN). Empty here -> login yields no token -> auth tests
 # SKIP-with-reason (§11.4.3), never a fabricated PASS or false FAIL.
-PASS="${CATALOGIZER_PASS:-}"
+PASS="${CATALOGIZER_PASS:-${ADMIN_PASSWORD:-}}"
 TOKEN="${CATALOGIZER_TOKEN:-}"
 
 TS="$(date -u +%Y%m%dT%H%M%SZ)"

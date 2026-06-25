@@ -83,8 +83,8 @@ set -u
 # Configuration
 # ------------------------------------------------------------------------------
 BASE_URL="${CATALOGIZER_BASE_URL:-http://127.0.0.1:8080}"
-USER="${CATALOGIZER_USER:-admin}"
-PASS="${CATALOGIZER_PASS:-}"
+USER="${CATALOGIZER_USER:-${ADMIN_USERNAME:-admin}}"
+PASS="${CATALOGIZER_PASS:-${ADMIN_PASSWORD:-}}"
 TOKEN="${CATALOGIZER_TOKEN:-}"
 
 TS="$(date -u +%Y%m%dT%H%M%SZ)"
@@ -294,6 +294,10 @@ echo
 echo "--- A1: POST /api/v1/auth/login (valid) -> 200 + session_token ---"
 if [ -n "${TOKEN}" ]; then
   ab_skip "A1 login-success" "CATALOGIZER_TOKEN supplied; token acquisition skipped"
+elif [ -z "${PASS}" ]; then
+  # §11.4.3 honest SKIP + §11.4.10 env-required: with no resolvable credential an
+  # empty-password login is NOT a product defect — skip rather than FAIL-bluff.
+  ab_skip "A1 login-success" "no_credential: export CATALOGIZER_PASS or ADMIN_PASSWORD (§11.4.10 env-required, never hardcoded)"
 else
   LOGIN_BODY="{\"username\":\"${USER}\",\"password\":\"${PASS}\"}"
   CODE="$(http_request POST /api/v1/auth/login no "${LOGIN_BODY}" a1_login)"

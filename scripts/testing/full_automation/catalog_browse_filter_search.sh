@@ -71,8 +71,8 @@ set -u
 # Configuration
 # ------------------------------------------------------------------------------
 BASE_URL="${CATALOGIZER_BASE_URL:-http://127.0.0.1:18080}"
-USER="${CATALOGIZER_USER:-admin}"
-PASS="${CATALOGIZER_PASS:-admin}"
+USER="${CATALOGIZER_USER:-${ADMIN_USERNAME:-admin}}"
+PASS="${CATALOGIZER_PASS:-${ADMIN_PASSWORD:-}}"
 TOKEN="${CATALOGIZER_TOKEN:-}"
 MEDIA_ID="${CATALOGIZER_MEDIA_ID:-1}"
 MEDIA_TYPE="${CATALOGIZER_MEDIA_TYPE:-movie}"
