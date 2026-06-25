@@ -6,6 +6,7 @@ import { ReactQueryDevtools } from '@tanstack/react-query-devtools'
 import { Toaster } from 'react-hot-toast'
 
 import App from './App'
+import { ThemeProvider } from '@/contexts/ThemeContext'
 import { logWebVitals, sendToAnalytics } from './lib/webVitals'
 import '@/lib/module-registry'
 import './index.css'
@@ -39,9 +40,10 @@ if (!rootElement) {
 ReactDOM.createRoot(rootElement).render(
   <React.StrictMode>
     <HelmetProvider>
-      <QueryClientProvider client={queryClient}>
-        <App />
-        <Toaster
+      <ThemeProvider>
+        <QueryClientProvider client={queryClient}>
+          <App />
+          <Toaster
           position="top-right"
           toastOptions={{
             duration: 4000,
@@ -61,8 +63,9 @@ ReactDOM.createRoot(rootElement).render(
             },
           }}
         />
-        <ReactQueryDevtools initialIsOpen={false} />
-      </QueryClientProvider>
+          <ReactQueryDevtools initialIsOpen={false} />
+        </QueryClientProvider>
+      </ThemeProvider>
     </HelmetProvider>
   </React.StrictMode>
 )

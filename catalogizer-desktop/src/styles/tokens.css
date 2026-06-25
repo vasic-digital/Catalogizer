@@ -1,0 +1,77 @@
+/*
+ * Catalogizer Blue — Design Tokens (OpenDesign DESIGN.md taxonomy)
+ *
+ * Single source of truth for the catalogizer-desktop palette, typography,
+ * spacing and radius. Authored per Constitution §11.4.162 (OpenDesign UI
+ * design system mandate) — NOT ad-hoc CSS. Values mirror the unified
+ * "Catalogizer Blue" spec in docs/design/OPENDESIGN_INTEGRATION_AUDIT.md §3.
+ *
+ * OpenDesign (nexu-io/open-design) is NOT npm-consumable
+ * (see docs/design/OPENDESIGN_CONSUMABILITY_VERDICT.md) — these tokens are
+ * hand-authored to mirror its `tokens.css` / DESIGN.md structure so a future
+ * OpenDesign export can be diffed against them with no consumer change.
+ *
+ * Colors are stored as bare `H S% L%` HSL triplets so Tailwind can wrap them
+ * with hsl(var(--token)) and `<alpha-value>` modifiers still work.
+ * The TypeScript mirror lives in ./tokens.ts; src/styles/tokens.test.ts
+ * asserts the two stay in lockstep (anti-bluff §11.4.107(10) / §1.1).
+ *
+ * The hex source for each triplet is documented inline for auditability.
+ */
+
+:root {
+  /* ── color.brand ─────────────────────────────────────────────── */
+  --cz-brand-primary: 211.9 80.3% 41.8%;        /* #1565C0 */
+  --cz-brand-primary-hover: 209.8 78.7% 46.1%;  /* #1976D2 */
+  --cz-brand-on-primary: 0 0% 100%;             /* #FFFFFF */
+  --cz-brand-secondary: 215.2 14.9% 38.2%;      /* #535F70 */
+  --cz-brand-on-secondary: 0 0% 100%;           /* #FFFFFF */
+  --cz-brand-accent: 276.4 15.9% 40.6%;         /* #6B5778 */
+
+  /* ── color.semantic ──────────────────────────────────────────── */
+  --cz-semantic-success: 142.1 76.2% 36.3%;     /* #16A34A */
+  --cz-semantic-warning: 32.1 94.6% 43.7%;      /* #D97706 */
+  --cz-semantic-error: 0 72.2% 50.6%;           /* #DC2626 */
+
+  /* ── color.neutral ───────────────────────────────────────────── */
+  --cz-neutral-background: 0 0% 100%;           /* #FFFFFF */
+  --cz-neutral-surface: 210 40% 98%;            /* #F8FAFC */
+  --cz-neutral-foreground: 222.9 84% 4.9%;      /* #020817 */
+  --cz-neutral-muted: 215.4 16.3% 46.9%;        /* #64748B */
+  --cz-neutral-border: 214.3 31.8% 91.4%;       /* #E2E8F0 */
+
+  /* ── color.state ─────────────────────────────────────────────── */
+  --cz-state-ring: 211.9 80.3% 41.8%;           /* #1565C0 (= brand.primary) */
+
+  /* ── typography ──────────────────────────────────────────────── */
+  --cz-font-sans: "Inter", system-ui, -apple-system, sans-serif;
+  --cz-font-mono: "JetBrains Mono", ui-monospace, monospace;
+
+  /* ── radius ──────────────────────────────────────────────────── */
+  --cz-radius-base: 0.75rem;
+}
+
+.dark {
+  /* ── color.brand ─────────────────────────────────────────────── */
+  --cz-brand-primary: 212.8 100% 81%;           /* #9ECAFF */
+  --cz-brand-primary-hover: 213.1 85.5% 72.9%;  /* #7FB4F5 */
+  --cz-brand-on-primary: 205.9 100% 17.3%;      /* #003258 */
+  --cz-brand-secondary: 217.5 30.8% 79.6%;      /* #BBC7DB */
+  --cz-brand-on-secondary: 213.3 26.7% 19.8%;   /* #253140 */
+  --cz-brand-accent: 277.9 41.3% 82%;           /* #D6BEE4 */
+
+  /* ── color.semantic ──────────────────────────────────────────── */
+  --cz-semantic-success: 142.1 70.6% 45.3%;     /* #22C55E */
+  --cz-semantic-warning: 37.7 92.1% 50.2%;      /* #F59E0B */
+  --cz-semantic-error: 0 84.2% 60.2%;           /* #EF4444 */
+
+  /* ── color.neutral ───────────────────────────────────────────── */
+  --cz-neutral-background: 222.9 84% 4.9%;      /* #020817 */
+  --cz-neutral-surface: 222.2 47.4% 11.2%;      /* #0F172A */
+  --cz-neutral-foreground: 210 40% 98%;         /* #F8FAFC */
+  --cz-neutral-muted: 215 20.2% 65.1%;          /* #94A3B8 */
+  --cz-neutral-border: 217.2 32.6% 17.5%;       /* #1E293B */
+
+  /* ── color.state ─────────────────────────────────────────────── */
+  --cz-state-ring: 212.8 100% 81%;              /* #9ECAFF (= brand.primary) */
+}

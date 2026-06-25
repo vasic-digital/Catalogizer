@@ -146,7 +146,7 @@ export default function SettingsPage() {
           {canGoBack && (
             <button
               onClick={() => navigate(-1)}
-              className="p-2 hover:bg-accent rounded-md transition-colors"
+              className="p-2 hover:bg-accent hover:text-accent-foreground rounded-md transition-colors"
             >
               <ArrowLeft className="h-5 w-5" />
             </button>

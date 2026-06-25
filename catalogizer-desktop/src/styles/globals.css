@@ -1,62 +1,84 @@
+/*
+ * Catalogizer Blue design tokens (§11.4.162). tokens.css is the single source
+ * of truth for the palette/typography/radius; the shadcn-shaped variables
+ * below are derived from it so every component (which already consumes
+ * bg-primary / text-foreground / etc.) picks up the brand with no per-file
+ * edits. NO ad-hoc colors are introduced outside the token system.
+ *
+ * @import MUST precede @tailwind (CSS requires @import before other rules).
+ */
+@import "./tokens.css";
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
 @layer base {
   :root {
-    --background: 0 0% 100%;
-    --foreground: 222.2 84% 4.9%;
+    --background: var(--cz-neutral-background);
+    --foreground: var(--cz-neutral-foreground);
 
-    --card: 0 0% 100%;
-    --card-foreground: 222.2 84% 4.9%;
+    --card: var(--cz-neutral-background);
+    --card-foreground: var(--cz-neutral-foreground);
 
-    --primary: 222.2 47.4% 11.2%;
-    --primary-foreground: 210 40% 98%;
+    --primary: var(--cz-brand-primary);
+    --primary-foreground: var(--cz-brand-on-primary);
 
-    --secondary: 210 40% 96%;
-    --secondary-foreground: 222.2 84% 4.9%;
+    --secondary: var(--cz-neutral-surface);
+    --secondary-foreground: var(--cz-neutral-foreground);
 
-    --muted: 210 40% 96%;
-    --muted-foreground: 215.4 16.3% 46.9%;
+    --muted: var(--cz-neutral-surface);
+    --muted-foreground: var(--cz-neutral-muted);
 
-    --accent: 210 40% 96%;
-    --accent-foreground: 222.2 84% 4.9%;
+    /*
+     * shadcn `accent` is the NEUTRAL hover/active surface pair (bg + matched
+     * on-accent fg) — NOT the brand accent hue. Call-sites use
+     * `hover:bg-accent hover:text-accent-foreground`, so these two MUST stay a
+     * WCAG-AA-clearing pair. Mapping --accent to the saturated --cz-brand-accent
+     * collapsed hover contrast (near-white fg on light-lavender ≈1.6:1); the
+     * brand accent token remains defined in tokens.css for surfaces that pair it
+     * with its own on-accent foreground. (Catalogizer Blue identity lives on
+     * --primary / --ring.)
+     */
+    --accent: var(--cz-neutral-surface);
+    --accent-foreground: var(--cz-neutral-foreground);
 
-    --destructive: 0 84.2% 60.2%;
-    --destructive-foreground: 210 40% 98%;
+    --destructive: var(--cz-semantic-error);
+    --destructive-foreground: var(--cz-brand-on-primary);
 
-    --border: 214.3 31.8% 91.4%;
-    --input: 214.3 31.8% 91.4%;
-    --ring: 222.2 84% 4.9%;
+    --border: var(--cz-neutral-border);
+    --input: var(--cz-neutral-border);
+    --ring: var(--cz-state-ring);
 
-    --radius: 0.5rem;
+    --radius: var(--cz-radius-base);
   }
 
   .dark {
-    --background: 222.2 84% 4.9%;
-    --foreground: 210 40% 98%;
+    --background: var(--cz-neutral-background);
+    --foreground: var(--cz-neutral-foreground);
 
-    --card: 222.2 84% 4.9%;
-    --card-foreground: 210 40% 98%;
+    --card: var(--cz-neutral-surface);
+    --card-foreground: var(--cz-neutral-foreground);
 
-    --primary: 210 40% 98%;
-    --primary-foreground: 222.2 47.4% 11.2%;
+    --primary: var(--cz-brand-primary);
+    --primary-foreground: var(--cz-brand-on-primary);
 
-    --secondary: 217.2 32.6% 17.5%;
-    --secondary-foreground: 210 40% 98%;
+    --secondary: var(--cz-neutral-surface);
+    --secondary-foreground: var(--cz-neutral-foreground);
 
-    --muted: 217.2 32.6% 17.5%;
-    --muted-foreground: 215 20.2% 65.1%;
+    --muted: var(--cz-neutral-surface);
+    --muted-foreground: var(--cz-neutral-muted);
 
-    --accent: 217.2 32.6% 17.5%;
-    --accent-foreground: 210 40% 98%;
+    /* See :root note — neutral hover surface pair, AA-clearing (≈17:1 dark). */
+    --accent: var(--cz-neutral-surface);
+    --accent-foreground: var(--cz-neutral-foreground);
 
-    --destructive: 0 62.8% 30.6%;
-    --destructive-foreground: 210 40% 98%;
+    --destructive: var(--cz-semantic-error);
+    --destructive-foreground: var(--cz-neutral-foreground);
 
-    --border: 217.2 32.6% 17.5%;
-    --input: 217.2 32.6% 17.5%;
-    --ring: 212.7 26.8% 83.9%;
+    --border: var(--cz-neutral-border);
+    --input: var(--cz-neutral-border);
+    --ring: var(--cz-state-ring);
   }
 }
 
@@ -65,7 +87,7 @@
     @apply border-border;
   }
   body {
-    @apply bg-background text-foreground;
+    @apply bg-background text-foreground font-sans;
   }
 }
 

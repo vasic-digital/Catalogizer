@@ -1,4 +1,14 @@
 /** @type {import('tailwindcss').Config} */
+//
+// Catalogizer Blue token wiring (§11.4.162 OpenDesign mandate).
+// The shadcn HSL CSS vars (src/index.css :root/.dark) are the runtime theme
+// source; the static colour ramps below are re-anchored so `primary-600`
+// (#1565C0) and `accent-600` (#6B5778) agree with the brand vars — removing the
+// pre-existing drift where the static `primary` scale was an unrelated blue.
+// fontFamily / spacing / radius are sourced from src/styles/tokens.ts so config
+// and CSS share one source of truth.
+import { typography as designTypography, space as designSpace, radius as designRadius } from './src/styles/tokens'
+
 export default {
   content: [
     "./index.html",
@@ -13,18 +23,19 @@ export default {
         ring: "hsl(var(--ring))",
         background: "hsl(var(--background))",
         foreground: "hsl(var(--foreground))",
+        // Catalogizer Blue — anchored on brand primary #1565C0 at the 600 step.
         primary: {
-          50: '#eff6ff',
-          100: '#dbeafe',
-          200: '#bfdbfe',
-          300: '#93c5fd',
-          400: '#60a5fa',
-          500: '#3b82f6',
-          600: '#2563eb',
-          700: '#1d4ed8',
-          800: '#1e40af',
-          900: '#1e3a8a',
-          950: '#172554',
+          50: '#edf4fd',
+          100: '#d1e4fa',
+          200: '#a3c9f5',
+          300: '#6ca9ef',
+          400: '#3086e8',
+          500: '#1872d8',
+          600: '#1565c0',
+          700: '#11529c',
+          800: '#0e417c',
+          900: '#0b3361',
+          950: '#071f3c',
         },
         secondary: {
           50: '#f8fafc',
@@ -39,18 +50,19 @@ export default {
           900: '#0f172a',
           950: '#020617',
         },
+        // Brand accent — anchored on #6B5778 at the 600 step (replaces stray fuchsia).
         accent: {
-          50: '#fdf4ff',
-          100: '#fae8ff',
-          200: '#f5d0fe',
-          300: '#f0abfc',
-          400: '#e879f9',
-          500: '#d946ef',
-          600: '#c026d3',
-          700: '#a21caf',
-          800: '#86198f',
-          900: '#701a75',
-          950: '#4a044e',
+          50: '#f5f3f6',
+          100: '#e6e1ea',
+          200: '#d3cad8',
+          300: '#baacc3',
+          400: '#9883a5',
+          500: '#7f678e',
+          600: '#6b5778',
+          700: '#574762',
+          800: '#45384d',
+          900: '#352b3b',
+          950: '#221c26',
         },
         success: {
           50: '#f0fdf4',
@@ -93,8 +105,8 @@ export default {
         },
       },
       fontFamily: {
-        sans: ['Inter', 'system-ui', 'sans-serif'],
-        mono: ['JetBrains Mono', 'monospace'],
+        sans: designTypography.fontFamily.sans.split(',').map((f) => f.trim()),
+        mono: designTypography.fontFamily.mono.split(',').map((f) => f.trim()),
       },
       animation: {
         'fade-in': 'fadeIn 0.5s ease-in-out',
@@ -133,12 +145,12 @@ export default {
         xs: '2px',
       },
       spacing: {
-        '18': '4.5rem',
-        '88': '22rem',
-        '128': '32rem',
+        '18': designSpace['18'],
+        '88': designSpace['88'],
+        '128': designSpace['128'],
       },
       borderRadius: {
-        '4xl': '2rem',
+        '4xl': designRadius['4xl'],
       },
       maxWidth: {
         '8xl': '88rem',

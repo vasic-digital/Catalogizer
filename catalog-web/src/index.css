@@ -3,49 +3,57 @@
 @tailwind utilities;
 
 @layer base {
+  /*
+   * Catalogizer Blue design tokens (light + dark) — §11.4.162 OpenDesign mandate.
+   * Single source of truth: src/styles/tokens.ts (lightVars / darkVars).
+   * Each value below is the shadcn `H S% L%` triplet for the audit §3.1 hex,
+   * computed exactly via colorsys (§11.4.6 — no hand-eyeballing). Keep in sync
+   * with tokens.ts; the tokens unit test (src/styles/__tests__/tokens.test.ts)
+   * guards against drift.
+   */
   :root {
-    --background: 0 0% 100%;
-    --foreground: 222.2 84% 4.9%;
-    --card: 0 0% 100%;
-    --card-foreground: 222.2 84% 4.9%;
-    --popover: 0 0% 100%;
-    --popover-foreground: 222.2 84% 4.9%;
-    --primary: 221.2 83.2% 53.3%;
-    --primary-foreground: 210 40% 98%;
-    --secondary: 210 40% 96%;
-    --secondary-foreground: 222.2 84% 4.9%;
-    --muted: 210 40% 96%;
-    --muted-foreground: 215.4 16.3% 46.9%;
-    --accent: 210 40% 96%;
-    --accent-foreground: 222.2 84% 4.9%;
-    --destructive: 0 84.2% 60.2%;
-    --destructive-foreground: 210 40% 98%;
-    --border: 214.3 31.8% 91.4%;
-    --input: 214.3 31.8% 91.4%;
-    --ring: 221.2 83.2% 53.3%;
+    --background: 0 0% 100%; /* #FFFFFF */
+    --foreground: 222.9 84% 4.9%; /* #020817 */
+    --card: 0 0% 100%; /* #FFFFFF */
+    --card-foreground: 222.9 84% 4.9%; /* #020817 */
+    --popover: 0 0% 100%; /* #FFFFFF */
+    --popover-foreground: 222.9 84% 4.9%; /* #020817 */
+    --primary: 211.9 80.3% 41.8%; /* #1565C0 Catalogizer Blue */
+    --primary-foreground: 0 0% 100%; /* #FFFFFF onPrimary */
+    --secondary: 210 40% 98%; /* #F8FAFC surface */
+    --secondary-foreground: 222.9 84% 4.9%; /* #020817 */
+    --muted: 210 40% 98%; /* #F8FAFC surface */
+    --muted-foreground: 215.4 16.3% 46.9%; /* #64748B */
+    --accent: 276.4 15.9% 40.6%; /* #6B5778 brand accent */
+    --accent-foreground: 0 0% 100%; /* #FFFFFF onAccent */
+    --destructive: 0 72.2% 50.6%; /* #DC2626 error */
+    --destructive-foreground: 0 0% 100%; /* #FFFFFF */
+    --border: 214.3 31.8% 91.4%; /* #E2E8F0 */
+    --input: 214.3 31.8% 91.4%; /* #E2E8F0 */
+    --ring: 211.9 80.3% 41.8%; /* #1565C0 = primary */
     --radius: 0.75rem;
   }
 
   .dark {
-    --background: 222.2 84% 4.9%;
-    --foreground: 210 40% 98%;
-    --card: 222.2 84% 4.9%;
-    --card-foreground: 210 40% 98%;
-    --popover: 222.2 84% 4.9%;
-    --popover-foreground: 210 40% 98%;
-    --primary: 217.2 91.2% 59.8%;
-    --primary-foreground: 222.2 84% 4.9%;
-    --secondary: 217.2 32.6% 17.5%;
-    --secondary-foreground: 210 40% 98%;
-    --muted: 217.2 32.6% 17.5%;
-    --muted-foreground: 215 20.2% 65.1%;
-    --accent: 217.2 32.6% 17.5%;
-    --accent-foreground: 210 40% 98%;
-    --destructive: 0 62.8% 30.6%;
-    --destructive-foreground: 210 40% 98%;
-    --border: 217.2 32.6% 17.5%;
-    --input: 217.2 32.6% 17.5%;
-    --ring: 224.3 76.3% 94.1%;
+    --background: 222.9 84% 4.9%; /* #020817 */
+    --foreground: 210 40% 98%; /* #F8FAFC */
+    --card: 222.9 84% 4.9%; /* #020817 */
+    --card-foreground: 210 40% 98%; /* #F8FAFC */
+    --popover: 222.9 84% 4.9%; /* #020817 */
+    --popover-foreground: 210 40% 98%; /* #F8FAFC */
+    --primary: 212.8 100% 81%; /* #9ECAFF Catalogizer Blue (dark) */
+    --primary-foreground: 205.9 100% 17.3%; /* #003258 onPrimary (dark) */
+    --secondary: 222.2 47.4% 11.2%; /* #0F172A surface (dark) */
+    --secondary-foreground: 210 40% 98%; /* #F8FAFC */
+    --muted: 222.2 47.4% 11.2%; /* #0F172A surface (dark) */
+    --muted-foreground: 215 20.2% 65.1%; /* #94A3B8 */
+    --accent: 277.9 41.3% 82%; /* #D6BEE4 brand accent (dark) */
+    --accent-foreground: 275.2 42% 13.5%; /* #251431 onAccent (dark) */
+    --destructive: 0 84.2% 60.2%; /* #EF4444 error (dark) */
+    --destructive-foreground: 210 40% 98%; /* #F8FAFC */
+    --border: 217.2 32.6% 17.5%; /* #1E293B */
+    --input: 217.2 32.6% 17.5%; /* #1E293B */
+    --ring: 212.8 100% 81%; /* #9ECAFF = primary (dark) */
   }
 }
 
@@ -65,7 +73,7 @@
   textarea:focus-visible,
   input:focus-visible,
   [tabindex]:focus-visible {
-    @apply outline-none ring-2 ring-blue-500 ring-offset-2 dark:ring-offset-gray-900;
+    @apply outline-none ring-2 ring-ring ring-offset-2 dark:ring-offset-gray-900;
   }
 
   /* Custom scrollbar */

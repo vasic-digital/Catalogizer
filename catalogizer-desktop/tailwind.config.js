@@ -1,11 +1,20 @@
 /** @type {import('tailwindcss').Config} */
 export default {
+  // `.dark` class toggled on documentElement by configStore — make it
+  // authoritative for any `dark:` utility variants (§11.4.162 light+dark).
+  darkMode: 'class',
   content: [
     "./index.html",
     "./src/**/*.{js,ts,jsx,tsx}",
   ],
   theme: {
     extend: {
+      // Catalogizer Blue typography tokens (§11.4.162). Mirrors tokens.ts /
+      // tokens.css `--cz-font-*`; desktop previously declared NO brand font.
+      fontFamily: {
+        sans: ['Inter', 'system-ui', '-apple-system', 'sans-serif'],
+        mono: ['JetBrains Mono', 'ui-monospace', 'monospace'],
+      },
       colors: {
         background: "hsl(var(--background))",
         foreground: "hsl(var(--foreground))",

@@ -15,7 +15,59 @@ interface ConfigState {
   resetConfig: () => Promise<void>;
 }
 
-export const useConfigStore = create<ConfigState>((set) => ({
+const DARK_MEDIA_QUERY = '(prefers-color-scheme: dark)';
+
+/** True when the OS reports a dark color-scheme preference. */
+function systemPrefersDark(): boolean {
+  return (
+    typeof window !== 'undefined' &&
+    typeof window.matchMedia === 'function' &&
+    window.matchMedia(DARK_MEDIA_QUERY).matches
+  );
+}
+
+/**
+ * Apply a theme to <html>. `'light'` removes `.dark`, `'dark'` adds it, and
+ * `'system'` resolves the OS preference via matchMedia. Closes the gap where
+ * `'system'` (a declared Theme value) previously fell through to light.
+ */
+function applyThemeToDocument(theme: Theme): void {
+  if (typeof document === 'undefined') return;
+  const root = document.documentElement;
+  const isDark = theme === 'dark' || (theme === 'system' && systemPrefersDark());
+  root.classList.toggle('dark', isDark);
+}
+
+let systemThemeListenerAttached = false;
+
+/**
+ * Keep the rendered theme in sync with OS preference changes while the user's
+ * chosen theme is `'system'`. Idempotent — attaches the OS listener once.
+ */
+function ensureSystemThemeListener(getTheme: () => Theme): void {
+  if (
+    systemThemeListenerAttached ||
+    typeof window === 'undefined' ||
+    typeof window.matchMedia !== 'function'
+  ) {
+    return;
+  }
+  systemThemeListenerAttached = true;
+  const mql = window.matchMedia(DARK_MEDIA_QUERY);
+  const onChange = () => {
+    if (getTheme() === 'system') {
+      applyThemeToDocument('system');
+    }
+  };
+  // addEventListener is the modern API; older WebViews expose addListener.
+  if (typeof mql.addEventListener === 'function') {
+    mql.addEventListener('change', onChange);
+  } else if (typeof (mql as any).addListener === 'function') {
+    (mql as any).addListener(onChange);
+  }
+}
+
+export const useConfigStore = create<ConfigState>((set, get) => ({
   serverUrl: null,
   theme: 'dark',
   autoStart: false,
@@ -25,20 +77,17 @@ export const useConfigStore = create<ConfigState>((set) => ({
     set({ isLoading: true });
     try {
       const config: AppConfig = await invoke('get_config');
+      const theme = (config.theme as Theme) || 'dark';
       set({
         serverUrl: config.server_url || null,
-        theme: (config.theme as Theme) || 'dark',
+        theme,
         autoStart: config.auto_start || false,
         isLoading: false,
       });
 
-      // Apply theme to document
-      const root = document.documentElement;
-      if (config.theme === 'dark') {
-        root.classList.add('dark');
-      } else {
-        root.classList.remove('dark');
-      }
+      // Apply theme to document (handles light/dark/system).
+      applyThemeToDocument(theme);
+      ensureSystemThemeListener(() => get().theme);
     } catch (error) {
       console.error('Failed to load config:', error);
       set({ isLoading: false });
@@ -63,13 +112,9 @@ export const useConfigStore = create<ConfigState>((set) => ({
 
       set({ theme });
 
-      // Apply theme to document
-      const root = document.documentElement;
-      if (theme === 'dark') {
-        root.classList.add('dark');
-      } else {
-        root.classList.remove('dark');
-      }
+      // Apply theme to document (handles light/dark/system).
+      applyThemeToDocument(theme);
+      ensureSystemThemeListener(() => get().theme);
     } catch (error) {
       console.error('Failed to set theme:', error);
       throw error;
@@ -106,9 +151,8 @@ export const useConfigStore = create<ConfigState>((set) => ({
         autoStart: false,
       });
 
-      // Reset theme
-      const root = document.documentElement;
-      root.classList.add('dark');
+      // Reset theme (default 'dark').
+      applyThemeToDocument('dark');
     } catch (error) {
       console.error('Failed to reset config:', error);
       throw error;

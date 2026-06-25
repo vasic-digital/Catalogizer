@@ -663,8 +663,22 @@ func ensureDirectoryPathExists(ctx context.Context, db *database.DB, storageRoot
 			currentPath, storageRootID,
 		).Scan(&dirID)
 		if err == nil {
-			// Directory exists
+			// Directory exists. BACKFILL its parent_id when we now know the
+			// parent and the row was previously stamped NULL (DEFECT-E #2): the
+			// row may have been created out of order (INSERT OR IGNORE) before
+			// its parent chain was resolved, leaving an inner directory wrongly
+			// at the top level (parent_id IS NULL). Only fill a NULL — never
+			// overwrite an existing parent.
 			logger.Warn("Directory already exists", zap.String("path", currentPath), zap.Int64("id", dirID))
+			if parentID != nil {
+				if _, uerr := db.ExecContext(ctx,
+					`UPDATE files SET parent_id = ? WHERE id = ? AND parent_id IS NULL`,
+					*parentID, dirID,
+				); uerr != nil {
+					logger.Warn("Failed to backfill directory parent_id",
+						zap.String("path", currentPath), zap.Int64("id", dirID), zap.Error(uerr))
+				}
+			}
 			parentID = &dirID
 			continue
 		}

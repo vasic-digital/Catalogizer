@@ -356,3 +356,5 @@ docs/security/trivy-fs-*.json
 # Root-level runtime artifacts (catalog-api run from repo root) — §11.4.30
 /.service-port
 /cache/
+# Root-level catalog-api QA build binary (119MB Mach-O artifact) — §11.4.30
+/catalog-api-qa-bin

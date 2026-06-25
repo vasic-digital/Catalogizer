@@ -12,7 +12,9 @@
     "tauri:build": "tauri build",
     "test": "vitest run",
     "test:watch": "vitest --watch",
-    "test:coverage": "vitest --coverage"
+    "test:coverage": "vitest --coverage",
+    "test:e2e": "playwright test",
+    "test:e2e:update": "playwright test --update-snapshots"
   },
   "dependencies": {
     "@tanstack/react-query": "^4.29.0",
@@ -28,6 +30,7 @@
     "zustand": "^4.3.8"
   },
   "devDependencies": {
+    "@playwright/test": "^1.48.0",
     "@tauri-apps/cli": ">=2.0.0",
     "@testing-library/jest-dom": "^6.0.0",
     "@testing-library/react": "^14.0.0",

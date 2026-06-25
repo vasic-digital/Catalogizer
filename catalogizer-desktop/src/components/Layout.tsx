@@ -51,7 +51,7 @@ export default function Layout({ children }: LayoutProps) {
                       "flex items-center gap-3 px-3 py-2 rounded-md text-sm font-medium transition-colors",
                       isActive
                         ? "bg-primary text-primary-foreground"
-                        : "text-muted-foreground hover:text-foreground hover:bg-accent"
+                        : "text-muted-foreground hover:text-accent-foreground hover:bg-accent"
                     )}
                   >
                     <item.icon className="h-5 w-5" />
@@ -88,7 +88,7 @@ export default function Layout({ children }: LayoutProps) {
                 "flex items-center gap-3 px-3 py-2 rounded-md text-sm font-medium transition-colors w-full",
                 location.pathname === "/settings"
                   ? "bg-primary text-primary-foreground"
-                  : "text-muted-foreground hover:text-foreground hover:bg-accent"
+                  : "text-muted-foreground hover:text-accent-foreground hover:bg-accent"
               )}
             >
               <Settings className="h-4 w-4" />
@@ -97,7 +97,7 @@ export default function Layout({ children }: LayoutProps) {
 
             <button
               onClick={logout}
-              className="flex items-center gap-3 px-3 py-2 rounded-md text-sm font-medium transition-colors w-full text-muted-foreground hover:text-foreground hover:bg-accent"
+              className="flex items-center gap-3 px-3 py-2 rounded-md text-sm font-medium transition-colors w-full text-muted-foreground hover:text-accent-foreground hover:bg-accent"
             >
               <LogOut className="h-4 w-4" />
               Logout

@@ -2,6 +2,7 @@ import React, { useState } from 'react'
 import { Link, useNavigate, useLocation } from 'react-router-dom'
 import { useAuth } from '@/contexts/AuthContext'
 import { Button } from '@/components/ui/Button'
+import { ThemeToggle } from '@/components/ThemeToggle'
 import { Menu, X, User, LogOut, Settings, Search, Folder, Heart, ListMusic, Library, XCircle } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
 
@@ -148,6 +149,7 @@ export const Header: React.FC = () => {
                   Welcome, {user?.first_name || user?.username}
                 </span>
                 <div className="flex items-center space-x-2">
+                  <ThemeToggle />
                   <Button
                     variant="ghost"
                     size="icon"
@@ -176,6 +178,7 @@ export const Header: React.FC = () => {
               </div>
             ) : (
               <div className="flex items-center space-x-4">
+                <ThemeToggle />
                 <Button variant="ghost" onClick={() => navigate('/login')}>
                   Login
                 </Button>
@@ -324,8 +327,11 @@ export const Header: React.FC = () => {
                   </div>
 
                   <div className="border-t border-gray-200 dark:border-gray-700 pt-4">
-                    <div className="text-sm text-gray-700 dark:text-gray-300 mb-3">
-                      {user?.first_name || user?.username}
+                    <div className="flex items-center justify-between mb-3">
+                      <span className="text-sm text-gray-700 dark:text-gray-300">
+                        {user?.first_name || user?.username}
+                      </span>
+                      <ThemeToggle />
                     </div>
                     <div className="space-y-2">
                       <Link
@@ -356,6 +362,10 @@ export const Header: React.FC = () => {
                 </>
               ) : (
                 <div className="space-y-2">
+                  <div className="flex items-center justify-between px-3 pb-1">
+                    <span className="text-sm text-gray-700 dark:text-gray-300">Theme</span>
+                    <ThemeToggle />
+                  </div>
                   <Link
                     to="/login"
                     className="block px-3 py-2 text-center bg-gray-100 text-gray-900 rounded-md hover:bg-gray-200 transition-colors dark:bg-gray-800 dark:text-white dark:hover:bg-gray-700"
