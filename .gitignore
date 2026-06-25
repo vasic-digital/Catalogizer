@@ -358,3 +358,10 @@ docs/security/trivy-fs-*.json
 /cache/
 # Root-level catalog-api QA build binary (119MB Mach-O artifact) — §11.4.30
 /catalog-api-qa-bin
+
+# Root-level DEFECT-E QA build binaries (Mach-O artifacts) — §11.4.30
+/catalog-api-defectE-bin
+/catalog-api/catalog-api-defectE-bin
+catalog-api-*-bin
+# Runtime DB dir (catalog-api run from repo root) — §11.4.30
+/data/

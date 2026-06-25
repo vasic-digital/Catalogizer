@@ -74,7 +74,7 @@ failure mode (an empty-credential login being accepted).
 |---|---|---|
 | `CATALOGIZER_BASE_URL` | `http://127.0.0.1:8080` | API base URL |
 | `CATALOGIZER_USER` | `admin` | login username |
-| `CATALOGIZER_PASS` | `catalogizerqa1` | login password |
+| `CATALOGIZER_PASS` | _(required — §11.4.10)_ | login password |
 | `CATALOGIZER_TOKEN` | _(unset)_ | pre-acquired token; if set, A1 login acquisition is skipped and the token is reused for the pagination tests |
 | `CATALOGIZER_RESULTS_DIR` | `qa-results/auth_pagination/<ts>` | evidence output directory |
 
@@ -94,7 +94,7 @@ environment (with documented defaults), per §11.4.10.
 ## Usage examples
 
 ```bash
-# Default target (127.0.0.1:8080), default admin/catalogizerqa1
+# Default target (127.0.0.1:8080), admin user; export CATALOGIZER_PASS (§11.4.10)
 ./scripts/testing/full_automation/catalog_auth_pagination.sh
 
 # Explicit target + credentials + results dir

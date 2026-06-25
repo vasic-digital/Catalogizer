@@ -84,7 +84,7 @@ Credentials are read from environment only — never hardcoded (§11.4.10).
 
 # Explicit target + credentials + results dir
 CATALOGIZER_BASE_URL=http://127.0.0.1:18080 \
-CATALOGIZER_USER=admin CATALOGIZER_PASS=catalogizerqa1 \
+CATALOGIZER_USER=admin CATALOGIZER_PASS="$YOUR_QA_PASSWORD" \
 CATALOGIZER_RESULTS_DIR=qa-results/favorites_resume_lifecycle/my_run \
 ./scripts/testing/full_automation/catalog_favorites_resume_lifecycle.sh
 

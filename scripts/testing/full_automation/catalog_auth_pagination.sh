@@ -36,7 +36,7 @@
 # Inputs (env vars, all optional with defaults):
 #   CATALOGIZER_BASE_URL   API base URL          (default http://127.0.0.1:8080)
 #   CATALOGIZER_USER       login username        (default admin)
-#   CATALOGIZER_PASS       login password        (default catalogizerqa1)
+#   CATALOGIZER_PASS       login password        (no default — §11.4.10; export it)
 #   CATALOGIZER_TOKEN      pre-acquired token     (skips login acquisition if set)
 #   CATALOGIZER_RESULTS_DIR  evidence output dir  (default qa-results/auth_pagination/<ts>)
 #
@@ -84,7 +84,7 @@ set -u
 # ------------------------------------------------------------------------------
 BASE_URL="${CATALOGIZER_BASE_URL:-http://127.0.0.1:8080}"
 USER="${CATALOGIZER_USER:-admin}"
-PASS="${CATALOGIZER_PASS:-catalogizerqa1}"
+PASS="${CATALOGIZER_PASS:-}"
 TOKEN="${CATALOGIZER_TOKEN:-}"
 
 TS="$(date -u +%Y%m%dT%H%M%SZ)"
