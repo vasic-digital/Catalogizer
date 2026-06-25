@@ -113,12 +113,19 @@ fun MediaCard(
             )
         )
     ) {
-        Column {
+        // Fill the fixed-aspect (2:3) Card. The cover art takes the available
+        // vertical space via weight(1f); the content-info Column below it
+        // reserves a fixed-height caption band so the title is ALWAYS on the
+        // card face (never pushed off-card). Previously the cover Box was
+        // itself aspectRatio(2f/3f) of the full width — equal to the whole
+        // card height — which left zero space for the title and clipped it
+        // off the bottom of the card (DEFECT-G).
+        Column(modifier = Modifier.fillMaxSize()) {
             // Thumbnail / cover art area
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .aspectRatio(2f/3f)
+                    .weight(1f)
                     .background(
                         brush = androidx.compose.ui.graphics.Brush.verticalGradient(
                             colors = mediaTypeGradient(mediaItem.mediaType)
@@ -255,11 +262,15 @@ fun MediaCard(
                 )
             }
 
-            // Content info
+            // Content info — caption band reserved beneath the cover so the
+            // title is always laid out within the card bounds. wrapContentHeight
+            // keeps this band only as tall as its content; the cover above
+            // (weight(1f)) absorbs the remaining vertical space.
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(12.dp)
+                    .wrapContentHeight()
+                    .padding(horizontal = 12.dp, vertical = 8.dp)
             ) {
                 // Title
                 Text(
