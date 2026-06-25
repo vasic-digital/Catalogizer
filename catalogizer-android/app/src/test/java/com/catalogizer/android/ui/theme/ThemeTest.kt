@@ -17,56 +17,57 @@ import org.robolectric.RobolectricTestRunner
 @RunWith(RobolectricTestRunner::class)
 class ThemeTest {
 
-    // Replicate the color constants from Color.kt for verification.
-    // Brand-role values mirror catalog-web/src/styles/tokens.ts (Catalogizer-Blue,
-    // commit e748bba5) so the phone palette stays brand-consistent (§11.4.162).
-    private val lightPrimary = Color(0xFF1565C0)
-    private val lightOnPrimary = Color(0xFFFFFFFF)
-    private val lightPrimaryContainer = Color(0xFFD1E4FF)
-    private val lightOnPrimaryContainer = Color(0xFF001D36)
-    private val lightSecondary = Color(0xFF535F70)
-    private val lightOnSecondary = Color(0xFFFFFFFF)
-    private val lightSecondaryContainer = Color(0xFFD7E3F7)
-    private val lightOnSecondaryContainer = Color(0xFF101C2B)
-    private val lightTertiary = Color(0xFF6B5778)
-    private val lightOnTertiary = Color(0xFFFFFFFF)
-    private val lightTertiaryContainer = Color(0xFFF2DAFF)
-    private val lightOnTertiaryContainer = Color(0xFF251431)
-    private val lightError = Color(0xFFDC2626)
-    private val lightErrorContainer = Color(0xFFFFDAD6)
-    private val lightOnError = Color(0xFFFFFFFF)
-    private val lightOnErrorContainer = Color(0xFF410002)
-    private val lightBackground = Color(0xFFFFFFFF)
-    private val lightOnBackground = Color(0xFF020817)
-    private val lightSurface = Color(0xFFFFFFFF)
-    private val lightOnSurface = Color(0xFF020817)
-    private val lightSurfaceVariant = Color(0xFFF8FAFC)
-    private val lightOnSurfaceVariant = Color(0xFF43474E)
-    private val lightOutline = Color(0xFFE2E8F0)
+    // Bind to the REAL public Color.kt vals (same package, no import) — NOT
+    // replicated copies — so a drift in Color.kt fails these assertions
+    // (§11.4 no-tautology). Brand roles mirror catalog-web/src/styles/tokens.ts
+    // (Catalogizer-Blue, commit e748bba5); §11.4.162 one shared palette.
+    private val lightPrimary = CatalogizerLightPrimary
+    private val lightOnPrimary = CatalogizerLightOnPrimary
+    private val lightPrimaryContainer = CatalogizerLightPrimaryContainer
+    private val lightOnPrimaryContainer = CatalogizerLightOnPrimaryContainer
+    private val lightSecondary = CatalogizerLightSecondary
+    private val lightOnSecondary = CatalogizerLightOnSecondary
+    private val lightSecondaryContainer = CatalogizerLightSecondaryContainer
+    private val lightOnSecondaryContainer = CatalogizerLightOnSecondaryContainer
+    private val lightTertiary = CatalogizerLightTertiary
+    private val lightOnTertiary = CatalogizerLightOnTertiary
+    private val lightTertiaryContainer = CatalogizerLightTertiaryContainer
+    private val lightOnTertiaryContainer = CatalogizerLightOnTertiaryContainer
+    private val lightError = CatalogizerLightError
+    private val lightErrorContainer = CatalogizerLightErrorContainer
+    private val lightOnError = CatalogizerLightOnError
+    private val lightOnErrorContainer = CatalogizerLightOnErrorContainer
+    private val lightBackground = CatalogizerLightBackground
+    private val lightOnBackground = CatalogizerLightOnBackground
+    private val lightSurface = CatalogizerLightSurface
+    private val lightOnSurface = CatalogizerLightOnSurface
+    private val lightSurfaceVariant = CatalogizerLightSurfaceVariant
+    private val lightOnSurfaceVariant = CatalogizerLightOnSurfaceVariant
+    private val lightOutline = CatalogizerLightOutline
 
-    private val darkPrimary = Color(0xFF9ECAFF)
-    private val darkOnPrimary = Color(0xFF003258)
-    private val darkPrimaryContainer = Color(0xFF00497D)
-    private val darkOnPrimaryContainer = Color(0xFFD1E4FF)
-    private val darkSecondary = Color(0xFFBBC7DB)
-    private val darkOnSecondary = Color(0xFF253140)
-    private val darkSecondaryContainer = Color(0xFF3B4858)
-    private val darkOnSecondaryContainer = Color(0xFFD7E3F7)
-    private val darkTertiary = Color(0xFFD6BEE4)
-    private val darkOnTertiary = Color(0xFF3B2948)
-    private val darkTertiaryContainer = Color(0xFF523F5F)
-    private val darkOnTertiaryContainer = Color(0xFFF2DAFF)
-    private val darkError = Color(0xFFEF4444)
-    private val darkErrorContainer = Color(0xFF93000A)
-    private val darkOnError = Color(0xFF690005)
-    private val darkOnErrorContainer = Color(0xFFFFDAD6)
-    private val darkBackground = Color(0xFF020817)
-    private val darkOnBackground = Color(0xFFF8FAFC)
-    private val darkSurface = Color(0xFF0F172A)
-    private val darkOnSurface = Color(0xFFF8FAFC)
-    private val darkSurfaceVariant = Color(0xFF43474E)
-    private val darkOnSurfaceVariant = Color(0xFFC3C7CF)
-    private val darkOutline = Color(0xFF1E293B)
+    private val darkPrimary = CatalogizerDarkPrimary
+    private val darkOnPrimary = CatalogizerDarkOnPrimary
+    private val darkPrimaryContainer = CatalogizerDarkPrimaryContainer
+    private val darkOnPrimaryContainer = CatalogizerDarkOnPrimaryContainer
+    private val darkSecondary = CatalogizerDarkSecondary
+    private val darkOnSecondary = CatalogizerDarkOnSecondary
+    private val darkSecondaryContainer = CatalogizerDarkSecondaryContainer
+    private val darkOnSecondaryContainer = CatalogizerDarkOnSecondaryContainer
+    private val darkTertiary = CatalogizerDarkTertiary
+    private val darkOnTertiary = CatalogizerDarkOnTertiary
+    private val darkTertiaryContainer = CatalogizerDarkTertiaryContainer
+    private val darkOnTertiaryContainer = CatalogizerDarkOnTertiaryContainer
+    private val darkError = CatalogizerDarkError
+    private val darkErrorContainer = CatalogizerDarkErrorContainer
+    private val darkOnError = CatalogizerDarkOnError
+    private val darkOnErrorContainer = CatalogizerDarkOnErrorContainer
+    private val darkBackground = CatalogizerDarkBackground
+    private val darkOnBackground = CatalogizerDarkOnBackground
+    private val darkSurface = CatalogizerDarkSurface
+    private val darkOnSurface = CatalogizerDarkOnSurface
+    private val darkSurfaceVariant = CatalogizerDarkSurfaceVariant
+    private val darkOnSurfaceVariant = CatalogizerDarkOnSurfaceVariant
+    private val darkOutline = CatalogizerDarkOutline
 
     // --- Light Color Definitions ---
 
@@ -111,8 +112,9 @@ class ThemeTest {
     }
 
     @Test
-    fun `light error color is red`() {
-        assertEquals(Color(0xFFDC2626), lightError)
+    fun `light error color is M3-tonal red`() {
+        // M3-tonal #BA1A1A (NOT web semantic.error #DC2626) — see Color.kt.
+        assertEquals(Color(0xFFBA1A1A), lightError)
     }
 
     @Test
@@ -188,8 +190,10 @@ class ThemeTest {
     }
 
     @Test
-    fun `dark error is red`() {
-        assertEquals(Color(0xFFEF4444), darkError)
+    fun `dark error is M3-tonal red`() {
+        // M3-tonal #FFB4AB (NOT web semantic.error #EF4444, which dropped the
+        // onError/error pair to 3.48:1 < WCAG AA) — see Color.kt.
+        assertEquals(Color(0xFFFFB4AB), darkError)
     }
 
     @Test
@@ -474,5 +478,61 @@ class ThemeTest {
         allColors.forEach { color ->
             assertTrue("Color $color should not be fully transparent", color.alpha > 0f)
         }
+    }
+
+    // --- WCAG 2.1 contrast guard (§11.4.135 / §11.4.162) ---------------------
+    // Mechanical, device-independent proof that every text pair clears AA. This
+    // is what catches the surface-vs-foreground error trap: forcing web
+    // semantic.error onto the M3 error SURFACE drops dark onError/error to
+    // 3.48:1 — a hex-only test would pass it silently, this one fails it.
+
+    private fun channelLuminance(v: Float): Double {
+        val cs = v.toDouble()
+        return if (cs <= 0.03928) cs / 12.92 else Math.pow((cs + 0.055) / 1.055, 2.4)
+    }
+
+    private fun relativeLuminance(c: Color): Double =
+        0.2126 * channelLuminance(c.red) +
+            0.7152 * channelLuminance(c.green) +
+            0.0722 * channelLuminance(c.blue)
+
+    private fun contrastRatio(a: Color, b: Color): Double {
+        val la = relativeLuminance(a)
+        val lb = relativeLuminance(b)
+        return (maxOf(la, lb) + 0.05) / (minOf(la, lb) + 0.05)
+    }
+
+    private fun assertAa(label: String, fg: Color, bg: Color) {
+        val ratio = contrastRatio(fg, bg)
+        assertTrue("WCAG AA fail: $label ${"%.2f".format(ratio)}:1 < 4.5:1", ratio >= 4.5)
+    }
+
+    @Test
+    fun `contrast formula is correct (self-validation)`() {
+        // Inverted/mis-coefficiented formula misses these reference points.
+        assertTrue(contrastRatio(Color(0xFF000000), Color(0xFFFFFFFF)) in 20.9..21.1)
+        assertTrue(contrastRatio(Color(0xFF123456), Color(0xFF123456)) in 0.99..1.01)
+    }
+
+    @Test
+    fun `dark scheme text pairs meet WCAG AA`() {
+        assertAa("dark onBackground/background", darkOnBackground, darkBackground)
+        assertAa("dark onSurface/surface", darkOnSurface, darkSurface)
+        assertAa("dark onPrimary/primary", darkOnPrimary, darkPrimary)
+        assertAa("dark onSecondary/secondary", darkOnSecondary, darkSecondary)
+        assertAa("dark onTertiary/tertiary", darkOnTertiary, darkTertiary)
+        assertAa("dark onError/error", darkOnError, darkError)
+        assertAa("dark onSurfaceVariant/surfaceVariant", darkOnSurfaceVariant, darkSurfaceVariant)
+    }
+
+    @Test
+    fun `light scheme text pairs meet WCAG AA`() {
+        assertAa("light onBackground/background", lightOnBackground, lightBackground)
+        assertAa("light onSurface/surface", lightOnSurface, lightSurface)
+        assertAa("light onPrimary/primary", lightOnPrimary, lightPrimary)
+        assertAa("light onSecondary/secondary", lightOnSecondary, lightSecondary)
+        assertAa("light onTertiary/tertiary", lightOnTertiary, lightTertiary)
+        assertAa("light onError/error", lightOnError, lightError)
+        assertAa("light onSurfaceVariant/surfaceVariant", lightOnSurfaceVariant, lightSurfaceVariant)
     }
 }

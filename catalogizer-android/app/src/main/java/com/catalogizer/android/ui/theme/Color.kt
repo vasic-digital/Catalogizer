@@ -26,7 +26,9 @@ import androidx.compose.ui.graphics.Color
  *     color.brand.onSecondary    light #FFFFFF / dark #253140  (identical)
  *     color.brand.accent         light #6B5778 / dark #D6BEE4  (identical, M3 "tertiary")
  *     color.brand.onAccent       light #FFFFFF / dark #3B2948  (light identical; dark = M3-standard onTertiary tonal, NOT web onAccent.dark #251431 which is an onTertiaryContainer-class deep tone unsuited as a foreground)
- *     color.semantic.error       light #DC2626 / dark #EF4444  (identical)
+ *     color.semantic.error       M3-tonal light #BA1A1A / dark #FFB4AB
+ *       (NOT web #DC2626/#EF4444 — those are FOREGROUND tokens; on the M3
+ *        error SURFACE they fail WCAG AA, dark dropping to 3.48:1)
  *     color.neutral.background   light #FFFFFF / dark #020817  (identical)
  *     color.neutral.surface      light #F8FAFC / dark #0F172A  (identical)
  *     color.neutral.foreground   light #020817 / dark #F8FAFC  (identical)
@@ -82,12 +84,16 @@ val CatalogizerDarkOnTertiaryContainer = Color(0xFFF2DAFF)
 // endregion
 
 // region OpenDesign color.semantic.error  (web: light #DC2626 / dark #EF4444)
-val CatalogizerLightError = Color(0xFFDC2626)
+// error SURFACE role stays M3-tonal (#BA1A1A), NOT web semantic.error #DC2626:
+// the web token is a FOREGROUND token; on the M3 error SURFACE (onError text on
+// top) #DC2626 is borderline and the dark #EF4444 dropped to 3.48:1 (< WCAG AA).
+// Mirrors the TV client; proven by ThemeTest's contrast oracle.
+val CatalogizerLightError = Color(0xFFBA1A1A)
 val CatalogizerLightOnError = Color(0xFFFFFFFF)
 val CatalogizerLightErrorContainer = Color(0xFFFFDAD6)
 val CatalogizerLightOnErrorContainer = Color(0xFF410002)
 
-val CatalogizerDarkError = Color(0xFFEF4444)
+val CatalogizerDarkError = Color(0xFFFFB4AB)
 val CatalogizerDarkOnError = Color(0xFF690005)
 val CatalogizerDarkErrorContainer = Color(0xFF93000A)
 val CatalogizerDarkOnErrorContainer = Color(0xFFFFDAD6)
