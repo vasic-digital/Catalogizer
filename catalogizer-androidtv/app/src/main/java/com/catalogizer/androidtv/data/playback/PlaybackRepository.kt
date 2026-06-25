@@ -22,8 +22,16 @@ import kotlinx.serialization.json.longOrNull
  * DependencyContainer can be shared across screens.
  */
 class PlaybackRepository(
-    private val api: CatalogizerApi,
+    // RULE-TV-002 — resolve the live CatalogizerApi per call (see MediaRepository).
+    // PlaybackRepository is also captured once by HomeViewModel at onCreate, so a
+    // snapshot api would keep hitting the stale startup server after switchServer().
+    private val apiProvider: () -> CatalogizerApi,
 ) {
+    constructor(api: CatalogizerApi) : this({ api })
+
+    private val api: CatalogizerApi
+        get() = apiProvider()
+
     /**
      * Fetches the rolled-up progress summary for one entity.
      * Returns null when the user has never reproduced the item

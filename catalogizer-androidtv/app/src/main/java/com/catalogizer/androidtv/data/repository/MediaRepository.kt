@@ -15,7 +15,29 @@ import kotlinx.coroutines.flow.first
  * Supports entity browsing, search, favorites, collections, recommendations,
  * playlists, and watch progress tracking.
  */
-class MediaRepository(private val context: Context, private val api: CatalogizerApi) {
+class MediaRepository(
+    private val context: Context,
+    // RULE-TV-002 (catalog-loads-against-stale-server fix) — resolve the
+    // CatalogizerApi lazily per call rather than capturing one instance at
+    // construction. HomeViewModel (and its MediaRepository) are built once in
+    // MainActivity.onCreate, BEFORE the user picks/enters a server URL via the
+    // login screen's Connect / Sign In. switchServer() rebuilds the Retrofit
+    // client and AuthRepository picks up the new one via setApi(), so login
+    // hits the chosen host — but a captured `api` field kept every catalog
+    // request pointed at the stale startup URL, so the request silently timed
+    // out against an unreachable host with no request ever reaching the new
+    // server (infinite "Loading your media collection…" spinner). Reading the
+    // current api through a provider makes every catalog call follow the active
+    // base URL set by the most recent switchServer().
+    private val apiProvider: () -> CatalogizerApi,
+) {
+    // Convenience: deprecated direct-instance constructor kept for callers/tests
+    // that pass a fixed api. Wraps it in a constant provider.
+    constructor(context: Context, api: CatalogizerApi) : this(context, { api })
+
+    private val api: CatalogizerApi
+        get() = apiProvider()
+
 
     /**
      * Browse entities by type (movie, tv_show, etc.) — includes external metadata with cover URLs.

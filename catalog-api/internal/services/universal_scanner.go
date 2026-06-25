@@ -629,10 +629,14 @@ func ensureDirectoryPathExists(ctx context.Context, db *database.DB, storageRoot
 		return nil, nil
 	}
 
-	// If the path has no directory separator, it's a single filename — no directories to create.
-	if !strings.Contains(fullPath, "/") {
-		return nil, nil
-	}
+	// NOTE: A path with no "/" separator is a single top-level directory
+	// (e.g. "The Matrix (1999)" when scanning the share root). It MUST still
+	// be resolved — a file living directly inside it needs parent_id set to
+	// that directory's id, otherwise aggregation's child-file lookup
+	// (parent_id = dirID) finds nothing and the directory (and all its media)
+	// is dropped from browse-entity creation (entities_created = 0). The loop
+	// below already handles the single-component case correctly, so we do NOT
+	// early-return here.
 
 	// Split fullPath into components and create each directory in the chain.
 	// fullPath is the parent directory path of the file being inserted (e.g. "media/movies"),

@@ -45,11 +45,17 @@ func (c *testChallenge) Execute(
 	if c.shouldFail {
 		status = challenge.StatusFailed
 	}
-	return c.CreateResult(
+	result := c.CreateResult(
 		status, start, assertions, nil,
 		map[string]string{"output": "test"},
 		"",
-	), nil
+	)
+	// Anti-bluff (§11.4 / §11.5.7): a result claiming Status=Passed MUST
+	// carry positive evidence — at least one recorded action. The runner's
+	// ValidateAntiBluff gate flips a Passed result with no RecordedActions
+	// to Failed, so a genuinely-passing challenge has to record an action.
+	result.RecordAction("executed test challenge: " + string(c.ID()))
+	return result, nil
 }
 
 func TestNewChallengeService(t *testing.T) {

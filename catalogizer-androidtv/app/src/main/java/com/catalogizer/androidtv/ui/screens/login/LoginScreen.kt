@@ -378,6 +378,7 @@ fun LoginScreen(
                 keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
                 keyboardActions = KeyboardActions(onDone = {
                     keyboardController?.hide()
+                    applyServerUrlBeforeLogin(serverUrl, container, coroutineScope) { serverUrlError = it }
                     validateAndLogin(username, password, authViewModel, { isLoading = it }, { errorMessage = it },
                         { usernameError = it }, { passwordError = it })
                 }),
@@ -468,6 +469,7 @@ fun LoginScreen(
             Button(
                 onClick = {
                     keyboardController?.hide()
+                    applyServerUrlBeforeLogin(serverUrl, container, coroutineScope) { serverUrlError = it }
                     validateAndLogin(username, password, authViewModel, { isLoading = it }, { errorMessage = it },
                         { usernameError = it }, { passwordError = it })
                 },
@@ -484,6 +486,7 @@ fun LoginScreen(
                             (keyEvent.key == Key.DirectionCenter || keyEvent.key == Key.Enter)
                         ) {
                             keyboardController?.hide()
+                            applyServerUrlBeforeLogin(serverUrl, container, coroutineScope) { serverUrlError = it }
                             validateAndLogin(
                                 username, password, authViewModel,
                                 { isLoading = it }, { errorMessage = it },
@@ -841,6 +844,52 @@ fun LoginScreen(
             try {
                 authViewModel.clearError() 
             } catch (_: Exception) { }
+        }
+    }
+}
+
+/**
+ * Apply the Server URL currently entered in the login form to the active API client
+ * BEFORE dispatching a login request. Without this, pressing Sign In would log in
+ * against the previously-persisted server URL (DataStore) rather than the URL the
+ * user just typed into the field — there is no separate save/apply button on screen.
+ *
+ * The switchServer() call is synchronous so the very next api.login() targets the
+ * entered host; persistence to DataStore happens asynchronously. A blank field is a
+ * no-op (keeps whatever was previously configured/discovered).
+ */
+// internal (not private) so LoginServerUrlAppliedTest can drive the REAL Sign-In
+// apply path as a genuine §11.4.115 regression guard, not a re-implementation.
+internal fun applyServerUrlBeforeLogin(
+    serverUrl: String,
+    container: DependencyContainer,
+    coroutineScope: kotlinx.coroutines.CoroutineScope,
+    setServerUrlError: (String?) -> Unit
+) {
+    val trimmed = serverUrl.trim()
+    if (trimmed.isBlank()) return
+
+    val validationError = validateServerUrl(trimmed)
+    if (validationError != null) {
+        setServerUrlError(validationError)
+        return
+    }
+
+    // Only re-point the client if the entered URL differs from the active one.
+    val active = (container.getServerUrl() ?: "").trimEnd('/')
+    if (trimmed.trimEnd('/') == active) return
+
+    try {
+        container.switchServer(trimmed)
+    } catch (e: Exception) {
+        Log.w(TAG, "Failed to switch server before login: ${e.message}")
+    }
+    coroutineScope.launch {
+        try {
+            container.settingsRepository.updateServerUrl(trimmed)
+            container.settingsRepository.addServer(ServerEntry(url = trimmed, name = "Manual"))
+        } catch (e: Exception) {
+            Log.w(TAG, "Failed to persist server URL before login: ${e.message}")
         }
     }
 }

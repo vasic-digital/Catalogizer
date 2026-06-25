@@ -352,3 +352,7 @@ catalog-api/build/
 .claude/
 docs/security/trivy-fs-*.json
 .aider*
+
+# Root-level runtime artifacts (catalog-api run from repo root) — §11.4.30
+/.service-port
+/cache/

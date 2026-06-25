@@ -131,7 +131,13 @@ class DependencyContainer(private val context: Context) {
     // via switchServer(). Each access creates a fresh instance pointing to the current API.
     val mediaRepository: MediaRepository
         get() = try {
-            MediaRepository(context, api)
+            // RULE-TV-002 — pass a provider that resolves the CURRENT api on
+            // every call, not a snapshot. HomeViewModel captures one
+            // MediaRepository at onCreate (before the user picks a server);
+            // resolving `api` lazily means its catalog calls follow the active
+            // base URL set by the latest switchServer() instead of the stale
+            // startup URL (the infinite-spinner / no-request-to-new-host bug).
+            MediaRepository(context, { api })
         } catch (e: Exception) {
             Log.e(TAG, "Failed to create MediaRepository: ${e.message}")
             throw e
@@ -154,7 +160,7 @@ class DependencyContainer(private val context: Context) {
         }
 
     val playbackRepository: PlaybackRepository
-        get() = PlaybackRepository(api)
+        get() = PlaybackRepository({ api }) // RULE-TV-002 — live api per call
 
     // ViewModels
     fun createAuthViewModel(): AuthViewModel = AuthViewModel(

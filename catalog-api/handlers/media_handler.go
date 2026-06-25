@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"database/sql"
 	"net/http"
 	"strconv"
 
@@ -46,25 +47,39 @@ func (h *AndroidTVMediaHandler) GetMediaByID(c *gin.Context) {
 		return
 	}
 
-	// Query media from database
+	// DEFECT-D (2026-06-25): the prior query selected a FLAT/denormalized
+	// media_items schema (`media_type`, `cover_image`, `quality`,
+	// `file_size`, `directory_path`, `smb_path`, `created_at`,
+	// `external_metadata`, `versions`, `watch_progress`, `last_watched`,
+	// `is_downloaded`) that only ever existed in the in-memory test
+	// helper (internal/tests/test_helper.go). The PRODUCTION schema
+	// (database/migrations_sqlite.go media_items + migration v18) is
+	// NORMALIZED: the type name lives in media_types(name) reached via
+	// media_type_id, and none of the other flat columns exist. Every
+	// real call returned HTTP 500 `no such column: media_type`. This
+	// query is rewritten to the real schema, mirroring the working
+	// entities path (handlers/stub_handler.go, handlers/media_entity_handler.go):
+	// JOIN media_types mt for the type-name string, and select only
+	// columns that actually exist on media_items after migrations.
 	query := `
-		SELECT 
-			id, title, media_type, year, description, cover_image, rating, quality,
-			file_size, duration, directory_path, smb_path, created_at, updated_at,
-			external_metadata, versions, is_favorite, watch_progress, last_watched, is_downloaded
-		FROM media_items 
-		WHERE id = ?
+		SELECT
+			mi.id, mt.name, mi.title, mi.year, mi.description, mi.rating,
+			mi.duration, mi.first_detected, mi.updated_at, mi.is_favorite
+		FROM media_items mi
+		JOIN media_types mt ON mi.media_type_id = mt.id
+		WHERE mi.id = ?
 	`
 
 	var mediaItem models.MediaCatalogItem
+	// duration and updated_at are nullable in the real schema
+	// (v18 added them with NULL-permitting defaults; runtime is NULL for
+	// non-video types), so scan through sql.Null* and convert.
+	var duration sql.NullInt64
+	var updatedAt sql.NullString
 	err = h.db.QueryRowContext(ctx, query, id).Scan(
-		&mediaItem.ID, &mediaItem.Title, &mediaItem.MediaType, &mediaItem.Year,
-		&mediaItem.Description, &mediaItem.CoverImage, &mediaItem.Rating,
-		&mediaItem.Quality, &mediaItem.FileSize, &mediaItem.Duration,
-		&mediaItem.DirectoryPath, &mediaItem.SMBPath, &mediaItem.CreatedAt,
-		&mediaItem.UpdatedAt, &mediaItem.ExternalMetadata, &mediaItem.Versions,
-		&mediaItem.IsFavorite, &mediaItem.WatchProgress, &mediaItem.LastWatched,
-		&mediaItem.IsDownloaded,
+		&mediaItem.ID, &mediaItem.MediaType, &mediaItem.Title,
+		&mediaItem.Year, &mediaItem.Description, &mediaItem.Rating,
+		&duration, &mediaItem.CreatedAt, &updatedAt, &mediaItem.IsFavorite,
 	)
 
 	if err != nil {
@@ -75,6 +90,37 @@ func (h *AndroidTVMediaHandler) GetMediaByID(c *gin.Context) {
 		}
 		return
 	}
+
+	// Map nullable real-schema columns onto the response model.
+	if duration.Valid {
+		mediaItem.Duration = &duration.Int64
+	}
+	if updatedAt.Valid {
+		mediaItem.UpdatedAt = updatedAt.String
+	} else {
+		// Real schema backfills updated_at from last_updated; when still
+		// NULL, fall back to the creation timestamp for a stable value.
+		mediaItem.UpdatedAt = mediaItem.CreatedAt
+	}
+
+	// DEFECT-D: the following response fields have NO column on the real
+	// normalized media_items table and are populated from other tables
+	// elsewhere in the system. GetMediaByID has no user context wired
+	// (route is /api/v1/media/:id with no auth-derived user), so the
+	// per-user fields cannot be resolved here. Each is defaulted to a
+	// safe zero value rather than fabricating wrong data (§11.4.6).
+	//   CoverImage       -> external_metadata.cover_url / cover_art table (per-item)        : default nil
+	//   Quality          -> media_files.quality_info (per-file)                              : default nil
+	//   FileSize         -> files.size via media_files (per-file)                            : default nil
+	//   DirectoryPath    -> not present in normalized schema                                 : default ""
+	//   SMBPath          -> not present in normalized schema                                 : default nil
+	//   ExternalMetadata -> external_metadata table (provider rows, fetched separately)      : default []
+	//   Versions         -> media_files rows (fetched separately)                            : default []
+	//   WatchProgress    -> playback_positions.percent_complete (per-user, needs user_id)    : default 0
+	//   LastWatched      -> playback_positions.last_played (per-user, needs user_id)         : default nil
+	//   IsDownloaded     -> no equivalent concept in the normalized schema                   : default false
+	mediaItem.ExternalMetadata = []models.ExternalMetadata{}
+	mediaItem.Versions = []models.MediaVersion{}
 
 	c.JSON(http.StatusOK, mediaItem)
 }
@@ -122,34 +168,50 @@ func (h *AndroidTVMediaHandler) UpdateWatchProgress(c *gin.Context) {
 		return
 	}
 
-	// Update database
-	query := `
-		UPDATE media_items 
-		SET watch_progress = ?, last_watched = CURRENT_TIMESTAMP, updated_at = CURRENT_TIMESTAMP
-		WHERE id = ?
-	`
-
-	result, err := h.db.ExecContext(ctx, query, progress, id)
+	// DEFECT-D (2026-06-25): the prior query did
+	// `UPDATE media_items SET watch_progress=?, last_watched=..., updated_at=...`
+	// but the real normalized media_items table has NO watch_progress and
+	// NO last_watched column (they only existed in the flat test-helper
+	// schema), so every call returned HTTP 500 `no such column: watch_progress`.
+	//
+	// The genuine progress store is `media_progress` (migration v15),
+	// keyed PRIMARY KEY (user_id, media_item_id) and tracking absolute
+	// position (last_position / duration_total / position_unit) — the
+	// SAME store the canonical authenticated path reads via
+	// PlaybackHandler.GetProgressForEntity / ProgressSession
+	// (GET /api/v1/entities/:id/progress), which derives user_id from the
+	// auth context (c.Get("user_id")).
+	//
+	// HONEST AMBIGUITY (§11.4.6): this AndroidTV route
+	// (PUT /api/v1/media/:id/progress) is registered in the PUBLIC `api`
+	// group with NO auth middleware, so it has no user_id in context, and
+	// media_progress cannot be keyed without one. It also accepts a
+	// fractional 0.0–1.0 progress, whereas media_progress stores absolute
+	// position units. Writing a global, user-less, unit-mismatched row to
+	// media_progress would persist WRONG data and would NOT agree with the
+	// authenticated GetProgressForEntity reader. Per the no-phantom-column
+	// rule, we therefore validate the media item exists against the REAL
+	// schema (correct 404/200) and do NOT write to any phantom or
+	// mis-keyed column. Genuine per-user progress persistence for this
+	// route requires the route to be moved under the authenticated entity
+	// group (tracked follow-up); until then it is a validated no-op write,
+	// reported honestly to the caller.
+	var existsRow int
+	err = h.db.QueryRowContext(ctx, `SELECT 1 FROM media_items WHERE id = ?`, id).Scan(&existsRow)
 	if err != nil {
-		utils.SendErrorResponse(c, http.StatusInternalServerError, "Failed to update watch progress", err)
-		return
-	}
-
-	// Check if media item exists
-	rowsAffected, err := result.RowsAffected()
-	if err != nil {
-		utils.SendErrorResponse(c, http.StatusInternalServerError, "Failed to check update result", err)
-		return
-	}
-
-	if rowsAffected == 0 {
-		utils.SendErrorResponse(c, http.StatusNotFound, "Media not found", nil)
+		if err.Error() == "sql: no rows in result set" {
+			utils.SendErrorResponse(c, http.StatusNotFound, "Media not found", nil)
+		} else {
+			utils.SendErrorResponse(c, http.StatusInternalServerError, "Failed to update watch progress", err)
+		}
 		return
 	}
 
 	c.JSON(http.StatusOK, gin.H{
-		"success": true,
-		"message": "Watch progress updated successfully",
+		"success":   true,
+		"message":   "Watch progress accepted",
+		"persisted": false,
+		"reason":    "per-user progress store (media_progress) requires an authenticated user; this public route has none",
 	})
 }
 

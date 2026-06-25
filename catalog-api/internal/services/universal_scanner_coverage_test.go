@@ -213,11 +213,55 @@ func TestEnsureDirectoryPathExists_EmptyPaths(t *testing.T) {
 	}
 }
 
-func TestEnsureDirectoryPathExists_RootParent(t *testing.T) {
+// §11.4.120 reconciliation of the former _RootParent test (FINDING-3 fix):
+// under the fix a single-component path (e.g. "The Matrix (1999)") is a REAL
+// top-level directory that MUST be resolved so files inside it get parent_id
+// set — it is no longer a no-parent short-circuit. The genuine no-parent cases
+// ("", ".", "/") are covered by TestEnsureDirectoryPathExists_EmptyPaths.
+// This is also the unit-level regression guard for FINDING-3 (§11.4.135):
+// pre-fix this returned nil (parent_id NULL) -> aggregation produced 0 entities.
+func TestEnsureDirectoryPathExists_SingleComponentDir(t *testing.T) {
 	logger := zap.NewNop()
-	parentID, err := ensureDirectoryPathExists(context.Background(), nil, 1, "file.mp4", logger)
+	sqlDB, err := sql.Open("sqlite3", ":memory:")
+	require.NoError(t, err)
+	defer sqlDB.Close()
+
+	db := database.WrapDB(sqlDB, database.DialectSQLite)
+	_, err = db.Exec(`
+		CREATE TABLE IF NOT EXISTS files (
+			id INTEGER PRIMARY KEY AUTOINCREMENT,
+			storage_root_id INTEGER NOT NULL,
+			name TEXT NOT NULL,
+			path TEXT NOT NULL,
+			extension TEXT DEFAULT '',
+			mime_type TEXT DEFAULT '',
+			file_type TEXT DEFAULT 'other',
+			size INTEGER DEFAULT 0,
+			is_directory BOOLEAN DEFAULT 0,
+			modified_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+			last_scan_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+			parent_id INTEGER,
+			deleted BOOLEAN DEFAULT 0,
+			UNIQUE(storage_root_id, path)
+		)
+	`)
+	require.NoError(t, err)
+
+	parentID, err := ensureDirectoryPathExists(context.Background(), db, 1, "The Matrix (1999)", logger)
 	assert.NoError(t, err)
-	assert.Nil(t, parentID)
+	require.NotNil(t, parentID) // FINDING-3: single-component dir MUST resolve (was nil pre-fix)
+
+	// The directory was actually created and is queryable by the returned id.
+	var path string
+	err = db.QueryRow("SELECT path FROM files WHERE id = ? AND is_directory = 1", *parentID).Scan(&path)
+	require.NoError(t, err)
+	assert.Equal(t, "The Matrix (1999)", path)
+
+	// Idempotent: a second call returns the same directory id.
+	parentID2, err := ensureDirectoryPathExists(context.Background(), db, 1, "The Matrix (1999)", logger)
+	assert.NoError(t, err)
+	require.NotNil(t, parentID2)
+	assert.Equal(t, *parentID, *parentID2)
 }
 
 func TestEnsureDirectoryPathExists_CreatesHierarchy(t *testing.T) {

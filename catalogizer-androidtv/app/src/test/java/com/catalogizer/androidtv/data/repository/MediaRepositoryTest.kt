@@ -323,4 +323,74 @@ class MediaRepositoryTest {
         assertEquals(1, result.size)
         assertEquals("Action Movie", result[0].title)
     }
+
+    /**
+     * RULE-TV-002 regression — catalog calls MUST follow the ACTIVE api (the
+     * one the latest switchServer() installed), NOT the api instance present
+     * when MediaRepository was constructed.
+     *
+     * Forensic: HomeViewModel + its MediaRepository are built once in
+     * MainActivity.onCreate, BEFORE the user picks/enters a server. Login
+     * (AuthRepository) followed switchServer() via setApi() and hit the new
+     * host (backend showed 200), but a captured `api` field kept every catalog
+     * request pointed at the stale startup host — the request silently timed
+     * out, NO request ever reached the new server, and the home screen spun
+     * "Loading your media collection…" forever.
+     *
+     * RED_MODE=1 (env or system property) reproduces the bug on the pre-fix
+     * behaviour by binding the repository to the STALE api via the fixed-api
+     * constructor; the assertion then proves the call went to the stale host.
+     * RED_MODE=0 (default) is the standing GREEN guard: the repository is built
+     * with a PROVIDER, the active api is switched after construction, and the
+     * call MUST resolve the switched (new) api.
+     */
+    @Test
+    fun `browseEntities follows active api after server switch`() = runTest {
+        val staleApi = mockk<CatalogizerApi>()
+        val freshApi = mockk<CatalogizerApi>()
+
+        val staleItems = listOf(
+            MediaItem(
+                id = 89L, title = "STALE-HOST", mediaType = "movie",
+                directoryPath = "/stale", createdAt = "2024-01-01T00:00:00Z",
+                updatedAt = "2024-01-01T00:00:00Z"
+            )
+        )
+        val freshItems = listOf(
+            MediaItem(
+                id = 132L, title = "FRESH-HOST", mediaType = "movie",
+                directoryPath = "/fresh", createdAt = "2024-01-01T00:00:00Z",
+                updatedAt = "2024-01-01T00:00:00Z"
+            )
+        )
+        coEvery { staleApi.browseEntities(any(), any()) } returns
+            Response.success(MediaSearchResponse(items = staleItems, total = 1, limit = 10, offset = 0))
+        coEvery { freshApi.browseEntities(any(), any()) } returns
+            Response.success(MediaSearchResponse(items = freshItems, total = 1, limit = 10, offset = 0))
+
+        val redMode = (System.getenv("RED_MODE") ?: System.getProperty("RED_MODE") ?: "0") == "1"
+
+        // The "active" api the container would expose; starts stale, then
+        // switchServer() points it at the fresh client.
+        var activeApi: CatalogizerApi = staleApi
+
+        val repo = if (redMode) {
+            // Pre-fix behaviour: capture the api instance present at construction.
+            MediaRepository(context, staleApi)
+        } else {
+            // Fixed behaviour: resolve the CURRENT active api per call.
+            MediaRepository(context, { activeApi })
+        }
+
+        // User picks the reachable server AFTER the repository was built.
+        activeApi = freshApi
+
+        val result = repo.browseEntities("movie", limit = 10).first()
+
+        // GREEN guard: the catalog call reached the freshly-switched host.
+        // Under RED_MODE=1 this fails (result == STALE-HOST) — proving the
+        // captured-api bug is real and that this test catches it.
+        assertEquals(1, result.size)
+        assertEquals("FRESH-HOST", result[0].title)
+    }
 }
