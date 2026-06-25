@@ -17,8 +17,10 @@ import org.robolectric.RobolectricTestRunner
 @RunWith(RobolectricTestRunner::class)
 class ThemeTest {
 
-    // Replicate the color constants from Theme.kt for verification
-    private val lightPrimary = Color(0xFF1976D2)
+    // Replicate the color constants from Color.kt for verification.
+    // Brand-role values mirror catalog-web/src/styles/tokens.ts (Catalogizer-Blue,
+    // commit e748bba5) so the phone palette stays brand-consistent (§11.4.162).
+    private val lightPrimary = Color(0xFF1565C0)
     private val lightOnPrimary = Color(0xFFFFFFFF)
     private val lightPrimaryContainer = Color(0xFFD1E4FF)
     private val lightOnPrimaryContainer = Color(0xFF001D36)
@@ -30,17 +32,17 @@ class ThemeTest {
     private val lightOnTertiary = Color(0xFFFFFFFF)
     private val lightTertiaryContainer = Color(0xFFF2DAFF)
     private val lightOnTertiaryContainer = Color(0xFF251431)
-    private val lightError = Color(0xFFBA1A1A)
+    private val lightError = Color(0xFFDC2626)
     private val lightErrorContainer = Color(0xFFFFDAD6)
     private val lightOnError = Color(0xFFFFFFFF)
     private val lightOnErrorContainer = Color(0xFF410002)
-    private val lightBackground = Color(0xFFFDFCFF)
-    private val lightOnBackground = Color(0xFF1A1C1E)
-    private val lightSurface = Color(0xFFFDFCFF)
-    private val lightOnSurface = Color(0xFF1A1C1E)
-    private val lightSurfaceVariant = Color(0xFFDFE2EB)
+    private val lightBackground = Color(0xFFFFFFFF)
+    private val lightOnBackground = Color(0xFF020817)
+    private val lightSurface = Color(0xFFFFFFFF)
+    private val lightOnSurface = Color(0xFF020817)
+    private val lightSurfaceVariant = Color(0xFFF8FAFC)
     private val lightOnSurfaceVariant = Color(0xFF43474E)
-    private val lightOutline = Color(0xFF73777F)
+    private val lightOutline = Color(0xFFE2E8F0)
 
     private val darkPrimary = Color(0xFF9ECAFF)
     private val darkOnPrimary = Color(0xFF003258)
@@ -54,23 +56,23 @@ class ThemeTest {
     private val darkOnTertiary = Color(0xFF3B2948)
     private val darkTertiaryContainer = Color(0xFF523F5F)
     private val darkOnTertiaryContainer = Color(0xFFF2DAFF)
-    private val darkError = Color(0xFFFFB4AB)
+    private val darkError = Color(0xFFEF4444)
     private val darkErrorContainer = Color(0xFF93000A)
     private val darkOnError = Color(0xFF690005)
     private val darkOnErrorContainer = Color(0xFFFFDAD6)
-    private val darkBackground = Color(0xFF101214)
-    private val darkOnBackground = Color(0xFFE2E2E6)
-    private val darkSurface = Color(0xFF101214)
-    private val darkOnSurface = Color(0xFFE2E2E6)
+    private val darkBackground = Color(0xFF020817)
+    private val darkOnBackground = Color(0xFFF8FAFC)
+    private val darkSurface = Color(0xFF0F172A)
+    private val darkOnSurface = Color(0xFFF8FAFC)
     private val darkSurfaceVariant = Color(0xFF43474E)
     private val darkOnSurfaceVariant = Color(0xFFC3C7CF)
-    private val darkOutline = Color(0xFF8D9199)
+    private val darkOutline = Color(0xFF1E293B)
 
     // --- Light Color Definitions ---
 
     @Test
     fun `light primary color is correct blue`() {
-        assertEquals(Color(0xFF1976D2), lightPrimary)
+        assertEquals(Color(0xFF1565C0), lightPrimary)
     }
 
     @Test
@@ -110,7 +112,7 @@ class ThemeTest {
 
     @Test
     fun `light error color is red`() {
-        assertEquals(Color(0xFFBA1A1A), lightError)
+        assertEquals(Color(0xFFDC2626), lightError)
     }
 
     @Test
@@ -124,13 +126,13 @@ class ThemeTest {
     }
 
     @Test
-    fun `light background is near white`() {
-        assertEquals(Color(0xFFFDFCFF), lightBackground)
+    fun `light background is white`() {
+        assertEquals(Color(0xFFFFFFFF), lightBackground)
     }
 
     @Test
     fun `light onBackground is dark`() {
-        assertEquals(Color(0xFF1A1C1E), lightOnBackground)
+        assertEquals(Color(0xFF020817), lightOnBackground)
     }
 
     @Test
@@ -145,12 +147,12 @@ class ThemeTest {
 
     @Test
     fun `light surfaceVariant is defined`() {
-        assertEquals(Color(0xFFDFE2EB), lightSurfaceVariant)
+        assertEquals(Color(0xFFF8FAFC), lightSurfaceVariant)
     }
 
     @Test
     fun `light outline is defined`() {
-        assertEquals(Color(0xFF73777F), lightOutline)
+        assertEquals(Color(0xFFE2E8F0), lightOutline)
     }
 
     // --- Dark Color Definitions ---
@@ -186,8 +188,8 @@ class ThemeTest {
     }
 
     @Test
-    fun `dark error is light coral`() {
-        assertEquals(Color(0xFFFFB4AB), darkError)
+    fun `dark error is red`() {
+        assertEquals(Color(0xFFEF4444), darkError)
     }
 
     @Test
@@ -202,17 +204,22 @@ class ThemeTest {
 
     @Test
     fun `dark background is near black`() {
-        assertEquals(Color(0xFF101214), darkBackground)
+        assertEquals(Color(0xFF020817), darkBackground)
     }
 
     @Test
     fun `dark onBackground is light`() {
-        assertEquals(Color(0xFFE2E2E6), darkOnBackground)
+        assertEquals(Color(0xFFF8FAFC), darkOnBackground)
     }
 
     @Test
-    fun `dark surface equals dark background`() {
-        assertEquals(darkBackground, darkSurface)
+    fun `dark surface is distinct elevated layer above background`() {
+        // Catalogizer-Blue dark uses a distinct surface (#0F172A) raised above
+        // the deeper background (#020817), matching the web token model
+        // (color.neutral.surface != color.neutral.background) — gives card/sheet
+        // elevation so surfaces never blend into the background.
+        assertEquals(Color(0xFF0F172A), darkSurface)
+        assertNotEquals(darkBackground, darkSurface)
     }
 
     @Test
@@ -227,7 +234,7 @@ class ThemeTest {
 
     @Test
     fun `dark outline is defined`() {
-        assertEquals(Color(0xFF8D9199), darkOutline)
+        assertEquals(Color(0xFF1E293B), darkOutline)
     }
 
     // --- Contrast and Consistency ---
