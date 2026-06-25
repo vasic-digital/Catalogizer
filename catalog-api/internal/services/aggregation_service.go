@@ -1166,14 +1166,39 @@ func (s *AggregationService) buildTVHierarchy(ctx context.Context, showID, showT
 			}
 		}
 
-		// Create episode if we have one
+		// Create episode if we have one.
+		//
+		// Idempotency (§11.4.115 DEFECT-H): the episode-build path is
+		// invoked twice for the same (season, episode) — once via the
+		// representative-file g.parsed path and once via
+		// buildTVHierarchyFromFiles, whose internal seenEpisode map is
+		// blind to the representative-file insert. Without a guard this
+		// produced two tv_episode rows for one episode. We dedup on the
+		// STABLE key (parent_id=seasonID, episode_number) — NOT title,
+		// because episode titles are mutable (DEFECT-I rewrites them, so
+		// title is not a stable key). If an episode already exists under
+		// this season with the same episode number, reuse/update it
+		// instead of inserting a duplicate.
 		if parsed.Episode != nil {
 			_, epTypeID, err := s.itemRepo.GetMediaTypeByName(ctx, "tv_episode")
 			if err != nil {
 				return
 			}
 
+			// DEFECT-I Layer B (§11.4.108 SOURCE->USER-VISIBLE):
+			// use the real human episode title parsed by
+			// digital.vasic.entities/pkg/parser into ParsedTitle.EpisodeTitle
+			// (Layer A populates it, e.g. "Breaking Bad S01E01.Pilot.mkv" ->
+			// EpisodeTitle="Pilot"). The hardcoded "Episode %d" discarded the
+			// real title so "Pilot" displayed as "Episode 1". Fall back to the
+			// "Episode %d" placeholder ONLY when the filename carries no human
+			// title (EpisodeTitle empty). The dedup key remains the STABLE
+			// (parent_id, episode_number) pair (DEFECT-H) — the title is
+			// display-only and never participates in identity.
 			epTitle := fmt.Sprintf("Episode %d", *parsed.Episode)
+			if parsed.EpisodeTitle != "" {
+				epTitle = parsed.EpisodeTitle
+			}
 			ep := &models.MediaItem{
 				MediaTypeID:   epTypeID,
 				Title:         epTitle,
@@ -1182,9 +1207,34 @@ func (s *AggregationService) buildTVHierarchy(ctx context.Context, showID, showT
 				SeasonNumber:  parsed.Season,
 				EpisodeNumber: parsed.Episode,
 			}
-			_, _ = s.itemRepo.Create(ctx, ep)
+
+			if existingEp := s.findExistingEpisode(ctx, seasonID, *parsed.Episode); existingEp != nil {
+				ep.ID = existingEp.ID
+				_ = s.itemRepo.Update(ctx, ep)
+			} else {
+				_, _ = s.itemRepo.Create(ctx, ep)
+			}
 		}
 	}
+}
+
+// findExistingEpisode returns the existing tv_episode child of seasonID whose
+// EpisodeNumber equals episodeNumber, or nil if none. The lookup is keyed on
+// (parent_id, episode_number) — the stable identity of an episode — rather than
+// on title, which is mutable. This is the single dedup guard both episode-build
+// invocation paths (the representative-file g.parsed path and
+// buildTVHierarchyFromFiles) converge on (§11.4.115 DEFECT-H).
+func (s *AggregationService) findExistingEpisode(ctx context.Context, seasonID int64, episodeNumber int) *models.MediaItem {
+	children, err := s.itemRepo.GetChildren(ctx, seasonID)
+	if err != nil {
+		return nil
+	}
+	for _, child := range children {
+		if child.EpisodeNumber != nil && *child.EpisodeNumber == episodeNumber {
+			return child
+		}
+	}
+	return nil
 }
 
 // GetStorageRootName returns the storage root name for display.
