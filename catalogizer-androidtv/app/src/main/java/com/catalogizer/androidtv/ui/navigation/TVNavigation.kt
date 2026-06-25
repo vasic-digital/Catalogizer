@@ -115,6 +115,12 @@ fun TVNavigation(
                 },
                 onNavigateToPlayer = { id ->
                     navController.navigate(TVScreen.Player.createRoute(id))
+                },
+                // Drill into a child entity's own detail screen (season →
+                // episodes, album → tracks) so the user can pick a specific
+                // title to play (DEFECT-F, §11.4.143).
+                onNavigateToMediaDetail = { id ->
+                    navController.navigate(TVScreen.MediaDetail.createRoute(id))
                 }
             )
         }

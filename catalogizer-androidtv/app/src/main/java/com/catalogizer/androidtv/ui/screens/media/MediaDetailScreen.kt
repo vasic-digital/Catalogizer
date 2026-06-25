@@ -38,15 +38,50 @@ import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 
 /**
+ * Container entity types — a tv_show holds tv_seasons, a tv_season holds
+ * tv_episodes, a music_album holds songs. For these, the detail screen MUST
+ * expose the children so the user can drill down and pick a specific title /
+ * episode / track to play (§11.4.143 — choose a specific title). Leaf types
+ * (movie, tv_episode, song, …) are directly playable and keep the Play button.
+ *
+ * Top-level + pure so it is unit-testable without Compose / Robolectric,
+ * mirroring the existing helper-function test pattern in MediaDetailScreenTest.
+ */
+internal fun isContainerType(mediaType: String?): Boolean = when (mediaType) {
+    "tv_show", "tv_season", "music_album" -> true
+    else -> false
+}
+
+/**
+ * Section heading for a container's children row. Names the child kind so the
+ * user understands what the row contains (Seasons for a show, Episodes for a
+ * season, Tracks for an album).
+ */
+internal fun childSectionTitle(parentMediaType: String?): String = when (parentMediaType) {
+    "tv_show" -> "Seasons"
+    "tv_season" -> "Episodes"
+    "music_album" -> "Tracks"
+    else -> "Episodes"
+}
+
+/**
  * Enhanced media detail screen with improved UI/UX.
  * Features hero poster, metadata badges, action buttons with clear CTAs,
  * synopsis, and file info with proper spacing and visual feedback.
+ *
+ * For container entities (tv_show / tv_season / music_album) it additionally
+ * fetches `GET /api/v1/entities/{id}/children` and renders the children as a
+ * focusable D-pad row, each navigating into its own detail screen so the user
+ * can drill seasons → episodes (or album → tracks) and pick a specific title
+ * to play. Without this row a TV show exposes only Play / Back and the user can
+ * never choose an episode (DEFECT-F, §11.4.143).
  */
 @Composable
 fun MediaDetailScreen(
     mediaId: Long,
     onNavigateBack: () -> Unit,
-    onNavigateToPlayer: (Long) -> Unit
+    onNavigateToPlayer: (Long) -> Unit,
+    onNavigateToMediaDetail: (Long) -> Unit = onNavigateToPlayer
 ) {
     val container = DependencyContainer.getInstance(androidx.compose.ui.platform.LocalContext.current)
     var mediaItem by remember { mutableStateOf<MediaItem?>(null) }
@@ -54,6 +89,10 @@ fun MediaDetailScreen(
     var error by remember { mutableStateOf<String?>(null) }
     var retryCount by remember { mutableStateOf(0) }
     var isFavorite by remember { mutableStateOf(false) }
+    // Children of a container entity (seasons of a show, episodes of a season,
+    // tracks of an album). Empty for leaf types or until the fetch completes.
+    var children by remember { mutableStateOf<List<MediaItem>>(emptyList()) }
+    var childrenLoading by remember { mutableStateOf(false) }
     var showHistory by remember { mutableStateOf(false) }
     // Tracks previous showHistory value so we can detect the
     // true→false transition (dialog dismissed) and restore focus.
@@ -67,6 +106,9 @@ fun MediaDetailScreen(
     // wasHistoryOpen flag to restore focus after HistoryDialog closes
     // (HELIX-154 fix — RULE-TV-002 / master plan §4.4 focus hygiene).
     val historyButtonFocus = remember { FocusRequester() }
+    // Focus target for the first child tile so a container entity (which hides
+    // the Play button) still lands D-pad focus on an actionable element.
+    val firstChildFocus = remember { FocusRequester() }
     val config = LocalConfiguration.current
     val isCompact = config.screenWidthDp < 600
 
@@ -100,6 +142,28 @@ fun MediaDetailScreen(
         }
         error = lastError
         isLoading = false
+    }
+
+    // Fetch children for container entities so the user can drill into
+    // seasons → episodes (or album → tracks) and pick a specific title.
+    // Keyed on the loaded entity's type+id so it re-runs when the item loads
+    // (or changes via retry). Leaf entities clear the children list.
+    LaunchedEffect(mediaItem?.id, mediaItem?.mediaType) {
+        val item = mediaItem
+        if (item != null && isContainerType(item.mediaType)) {
+            childrenLoading = true
+            try {
+                children = container.mediaRepository.getEntityChildren(item.id)
+            } catch (e: Exception) {
+                children = emptyList()
+                android.util.Log.w("MediaDetail", "getEntityChildren failed", e)
+            } finally {
+                childrenLoading = false
+            }
+        } else {
+            children = emptyList()
+            childrenLoading = false
+        }
     }
 
     Box(
@@ -162,6 +226,9 @@ fun MediaDetailScreen(
                 // branch body re-read mediaItem after the when-head
                 // already checked it.
                 val item = mediaItem ?: return@Box
+                // Container entities (show / season / album) are not directly
+                // playable — they expose their children instead of Play Now.
+                val isContainer = isContainerType(item.mediaType)
                 val coverUrl = item.thumbnailUrl?.let { url ->
                     when {
                         url.startsWith("/") ->
@@ -321,40 +388,45 @@ fun MediaDetailScreen(
                             horizontalArrangement = Arrangement.spacedBy(16.dp),
                             verticalAlignment = Alignment.CenterVertically
                         ) {
-                            // Primary Play button with enhanced styling
-                            Button(
-                                onClick = { onNavigateToPlayer(mediaId) },
-                                modifier = Modifier
-                                    .height(52.dp)
-                                    .focusRequester(playButtonFocus)
-                                    .focusable(),
-                                scale = ButtonDefaults.scale(focusedScale = 1.08f),
-                                glow = ButtonDefaults.glow(focusedGlow = Glow(elevation = 8.dp, elevationColor = MaterialTheme.colorScheme.primary)),
-                                border = ButtonDefaults.border(
-                                    focusedBorder = Border(
-                                        androidx.compose.foundation.BorderStroke(2.dp, MaterialTheme.colorScheme.primary),
-                                        shape = RoundedCornerShape(8.dp)
-                                    )
-                                )
-                            ) {
-                                Box(
-                                    modifier = Modifier.fillMaxSize(),
-                                    contentAlignment = Alignment.Center
-                                ) {
-                                    Row(
-                                        verticalAlignment = Alignment.CenterVertically,
-                                        horizontalArrangement = Arrangement.spacedBy(10.dp)
-                                    ) {
-                                        M3Icon(Icons.Default.PlayArrow, "Play", Modifier.size(28.dp))
-                                        Text(
-                                            "Play Now",
-                                            style = MaterialTheme.typography.titleMedium,
-                                            fontWeight = FontWeight.SemiBold
+                            // Primary Play button — only for directly-playable
+                            // leaf types. Container entities (show/season/album)
+                            // can't be played directly; they show their children
+                            // row below so the user picks a specific title.
+                            if (!isContainer) {
+                                Button(
+                                    onClick = { onNavigateToPlayer(mediaId) },
+                                    modifier = Modifier
+                                        .height(52.dp)
+                                        .focusRequester(playButtonFocus)
+                                        .focusable(),
+                                    scale = ButtonDefaults.scale(focusedScale = 1.08f),
+                                    glow = ButtonDefaults.glow(focusedGlow = Glow(elevation = 8.dp, elevationColor = MaterialTheme.colorScheme.primary)),
+                                    border = ButtonDefaults.border(
+                                        focusedBorder = Border(
+                                            androidx.compose.foundation.BorderStroke(2.dp, MaterialTheme.colorScheme.primary),
+                                            shape = RoundedCornerShape(8.dp)
                                         )
+                                    )
+                                ) {
+                                    Box(
+                                        modifier = Modifier.fillMaxSize(),
+                                        contentAlignment = Alignment.Center
+                                    ) {
+                                        Row(
+                                            verticalAlignment = Alignment.CenterVertically,
+                                            horizontalArrangement = Arrangement.spacedBy(10.dp)
+                                        ) {
+                                            M3Icon(Icons.Default.PlayArrow, "Play", Modifier.size(28.dp))
+                                            Text(
+                                                "Play Now",
+                                                style = MaterialTheme.typography.titleMedium,
+                                                fontWeight = FontWeight.SemiBold
+                                            )
+                                        }
                                     }
                                 }
                             }
-                            
+
                             // Favorite button with clear state indication
                             Button(
                                 onClick = {
@@ -446,6 +518,56 @@ fun MediaDetailScreen(
                             }
                         }
 
+                        // Children row for container entities — lets the user
+                        // drill into seasons → episodes (or album → tracks) and
+                        // pick a specific title to play (DEFECT-F, §11.4.143).
+                        if (isContainer) {
+                            Spacer(Modifier.height(32.dp))
+                            Text(
+                                childSectionTitle(item.mediaType),
+                                style = MaterialTheme.typography.titleLarge,
+                                color = Color.White,
+                                fontWeight = FontWeight.Bold
+                            )
+                            Spacer(Modifier.height(12.dp))
+                            when {
+                                childrenLoading -> {
+                                    Box(
+                                        Modifier.fillMaxWidth().height(180.dp),
+                                        contentAlignment = Alignment.CenterStart
+                                    ) {
+                                        CircularProgressIndicator(color = Color.White)
+                                    }
+                                }
+                                children.isEmpty() -> {
+                                    Text(
+                                        "No ${childSectionTitle(item.mediaType).lowercase()} available.",
+                                        style = MaterialTheme.typography.bodyMedium,
+                                        color = Color.White.copy(0.6f)
+                                    )
+                                }
+                                else -> {
+                                    androidx.tv.foundation.lazy.list.TvLazyRow(
+                                        horizontalArrangement = Arrangement.spacedBy(16.dp)
+                                    ) {
+                                        items(children.size) { index ->
+                                            val child = children[index]
+                                            ChildTile(
+                                                child = child,
+                                                serverUrl = container.getServerUrl(),
+                                                onClick = { onNavigateToMediaDetail(child.id) },
+                                                modifier = if (index == 0) {
+                                                    Modifier.focusRequester(firstChildFocus)
+                                                } else {
+                                                    Modifier
+                                                }
+                                            )
+                                        }
+                                    }
+                                }
+                            }
+                        }
+
                         Spacer(Modifier.height(32.dp))
 
                         // Synopsis section
@@ -501,10 +623,16 @@ fun MediaDetailScreen(
         }
     }
 
-    // Auto-focus Play button when content loads
-    LaunchedEffect(mediaItem) {
-        if (mediaItem != null) {
-            kotlinx.coroutines.delay(300)
+    // Auto-focus when content loads. For a container entity (no Play button)
+    // land focus on the first child tile once children are present; otherwise
+    // focus the Play button. Keyed on children.size so a container re-requests
+    // focus after its children arrive.
+    LaunchedEffect(mediaItem, children.size) {
+        val item = mediaItem ?: return@LaunchedEffect
+        kotlinx.coroutines.delay(300)
+        if (isContainerType(item.mediaType) && children.isNotEmpty()) {
+            try { firstChildFocus.requestFocus() } catch (_: Exception) {}
+        } else if (!isContainerType(item.mediaType)) {
             try { playButtonFocus.requestFocus() } catch (_: Exception) {}
         }
     }
@@ -532,6 +660,96 @@ fun MediaDetailScreen(
                 repository = container.playbackRepository,
                 onDismiss = { showHistory = false }
             )
+        }
+    }
+}
+
+/**
+ * Resolve a child entity's cover URL the same way the hero poster is resolved:
+ * relative paths get the server prefix, TMDB urls route through the image proxy,
+ * everything else is used as-is. Pure + internal so it is unit-testable.
+ */
+internal fun resolveChildCoverUrl(rawUrl: String?, serverUrl: String): String? = rawUrl?.let { url ->
+    when {
+        url.startsWith("/") -> serverUrl.trimEnd('/') + url
+        url.contains("image.tmdb.org") -> {
+            val encoded = java.net.URLEncoder.encode(url, "UTF-8")
+            serverUrl.trimEnd('/') + "/api/v1/image-proxy?url=$encoded"
+        }
+        else -> url
+    }
+}
+
+/**
+ * Subtitle for a child tile — surfaces the season/episode/track ordinal so a
+ * row of children is self-describing (e.g. "Season 1", "Episode 3", "Track 5").
+ * Falls back to a humanised media-type label. Pure + internal for unit testing.
+ */
+internal fun childTileSubtitle(child: MediaItem): String? = when {
+    child.seasonNumber != null && child.mediaType == "tv_season" -> "Season ${child.seasonNumber}"
+    child.episodeNumber != null -> "Episode ${child.episodeNumber}"
+    child.trackNumber != null -> "Track ${child.trackNumber}"
+    child.seasonNumber != null -> "Season ${child.seasonNumber}"
+    else -> child.mediaType?.replace("_", " ")?.replaceFirstChar { it.uppercase() }
+}
+
+/**
+ * Focusable D-pad tile for a single child entity (season / episode / track).
+ * Self-contained (does not depend on MediaCard) so it does not couple this
+ * screen to a component under concurrent review.
+ */
+@Composable
+private fun ChildTile(
+    child: MediaItem,
+    serverUrl: String,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    val coverUrl = resolveChildCoverUrl(child.thumbnailUrl, serverUrl)
+    Card(
+        onClick = onClick,
+        modifier = modifier.width(140.dp),
+        scale = CardDefaults.scale(focusedScale = 1.1f),
+        glow = CardDefaults.glow(
+            focusedGlow = Glow(elevation = 8.dp, elevationColor = MaterialTheme.colorScheme.primary)
+        ),
+        border = CardDefaults.border(
+            focusedBorder = Border(
+                androidx.compose.foundation.BorderStroke(2.dp, MaterialTheme.colorScheme.primary),
+                shape = RoundedCornerShape(8.dp)
+            )
+        )
+    ) {
+        Column {
+            CoverImage(
+                url = coverUrl,
+                contentDescription = child.title,
+                modifier = Modifier
+                    .width(140.dp)
+                    .height(200.dp),
+                contentScale = ContentScale.Crop,
+                mediaType = child.mediaType
+            )
+            Column(modifier = Modifier.padding(8.dp)) {
+                Text(
+                    text = child.title,
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = Color.White,
+                    fontWeight = FontWeight.SemiBold,
+                    maxLines = 2,
+                    overflow = TextOverflow.Ellipsis
+                )
+                childTileSubtitle(child)?.let { subtitle ->
+                    Spacer(Modifier.height(2.dp))
+                    Text(
+                        text = subtitle,
+                        style = MaterialTheme.typography.labelSmall,
+                        color = Color.White.copy(0.7f),
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis
+                    )
+                }
+            }
         }
     }
 }
