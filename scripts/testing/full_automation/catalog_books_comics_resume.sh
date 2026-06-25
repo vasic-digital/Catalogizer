@@ -26,16 +26,16 @@
 #   §11.4.69 — never a tautology).
 #
 #   POSITIVE / NEGATIVE assertions:
-#     BCR-A (entity resolves, POSITIVE): browse book and comic types; assert at
+#     BCR-API-001 (entity resolves, POSITIVE): browse book and comic types; assert at
 #        least one of them resolves ≥1 entity with a numeric id + a media_type
 #        in {book, comic, comic_book}. If NEITHER type is seeded, SKIP-with-
 #        reason (§11.4.3) — never a fake PASS, never a FAIL.
-#     BCR-B (chapters/pages via children, POSITIVE-or-honest-zero): for the
+#     BCR-API-002 (chapters/pages via children, POSITIVE-or-honest-zero): for the
 #        resolved entity, GET /entities/{id}/children returns 200 and a JSON
 #        list; assert the list parses (a real array, ≥0 children). A non-200 or
 #        non-array is a FAIL; a genuine empty list PASSes with the captured body
 #        as evidence (honest zero, §11.4.6).
-#     BCR-C (resume round-trip, POSITIVE): read the entity's progress baseline,
+#     BCR-API-003 (resume round-trip, POSITIVE): read the entity's progress baseline,
 #        set a reading position via a real session (start@page0 -> progress@pageN
 #        with position_unit=pages), then read GET /entities/{id}/progress back
 #        and assert progress.last_position EQUALS the position we wrote AND
@@ -46,7 +46,7 @@
 #        asserting the progress endpoint returns a well-formed
 #        {"progress": ...} envelope (200), and SKIPs the write round-trip with a
 #        clear reason.
-#     BCR-D (determinism §11.4.50): the resolved-entity's children-count is
+#     BCR-API-004 (determinism §11.4.50): the resolved-entity's children-count is
 #        stable across two independent reads.
 #
 #   This is a §11.4.135 standing regression guard (book/comic reading surface)
@@ -78,7 +78,7 @@
 #                           per-user playback session is created — read-only by
 #                           default per §11.4.119). Default: unset (read-only).
 #   CATALOGIZER_READ_POSITION
-#                           page number to write+read-back in BCR-C (default 7).
+#                           page number to write+read-back in BCR-API-003 (default 7).
 #
 # Outputs:
 #   - Per-assertion captured-evidence JSON under the results dir (the real HTTP
@@ -88,7 +88,7 @@
 #
 # Side-effects:
 #   - Network calls. By default ONLY read-only GETs (book/comic resolve, children,
-#     progress read). The resume WRITE round-trip (BCR-C write-leg) runs ONLY
+#     progress read). The resume WRITE round-trip (BCR-API-003 write-leg) runs ONLY
 #     when CATALOGIZER_ALLOW_PLAYBACK_WRITE=1; it appends a per-user playback
 #     session row (NOT a scan / clear / aggregate — those are never invoked).
 #     Evidence files written under the results dir. The sourced env file is
@@ -366,10 +366,10 @@ emit_summary() {
 skip_all() {
   sa_reason="$1"
   for lbl in \
-    "BCR-A book-or-comic-entity-resolves" \
-    "BCR-B chapters-pages-via-children" \
-    "BCR-C reading-position-resume-roundtrip" \
-    "BCR-D children-count-determinism"; do
+    "BCR-API-001 book-or-comic-entity-resolves" \
+    "BCR-API-002 chapters-pages-via-children" \
+    "BCR-API-003 reading-position-resume-roundtrip" \
+    "BCR-API-004 children-count-determinism"; do
     ab_skip_with_reason "${lbl}" "${sa_reason}"
   done
 }
@@ -429,7 +429,7 @@ echo "Auth token: acquired (value not printed, §11.4.10)."
 # endpoints. A 400 means the type name is not provisioned in media_types (not a
 # product defect of the reading surface) — treated as "type absent", not FAIL.
 # We accept media_type in {book, comic, comic_book} on the resolved item.
-# Shared by BCR-A / BCR-B / BCR-C / BCR-D.
+# Shared by BCR-API-001 / BCR-API-002 / BCR-API-003 / BCR-API-004.
 # ------------------------------------------------------------------------------
 echo
 echo "--- Resolving a book/comic entity via GET /api/v1/entities/browse/{book,comic} ---"
@@ -465,71 +465,71 @@ for typ in book comic; do
 done
 
 # ------------------------------------------------------------------------------
-# (A) BCR-A — a book or comic entity resolves with a numeric id + media_type.
+# (A) BCR-API-001 — a book or comic entity resolves with a numeric id + media_type.
 # ------------------------------------------------------------------------------
 echo
-echo "--- BCR-A: a book/comic entity resolves ---"
+echo "--- BCR-API-001: a book/comic entity resolves ---"
 if [ -z "${ENTITY_ID}" ]; then
-  ab_skip_with_reason "BCR-A book-or-comic-entity-resolves" \
+  ab_skip_with_reason "BCR-API-001 book-or-comic-entity-resolves" \
     "no_book_or_comic_seeded: ${RESOLVE_NOTE:-no entities}"
 else
   ab_pass_with_evidence \
-    "BCR-A book-or-comic-entity-resolves: entity id=${ENTITY_ID} media_type=${ENTITY_MT} title='${ENTITY_TITLE}'" \
+    "BCR-API-001 book-or-comic-entity-resolves: entity id=${ENTITY_ID} media_type=${ENTITY_MT} title='${ENTITY_TITLE}'" \
     "${RESOLVE_EVIDENCE}"
 fi
 
 # ------------------------------------------------------------------------------
-# (B) BCR-B — chapters / pages list via container children.
+# (B) BCR-API-002 — chapters / pages list via container children.
 # ------------------------------------------------------------------------------
 echo
-echo "--- BCR-B: chapters/pages list via GET /api/v1/entities/{id}/children ---"
+echo "--- BCR-API-002: chapters/pages list via GET /api/v1/entities/{id}/children ---"
 CHILDREN_COUNT=""
 if [ -z "${ENTITY_ID}" ]; then
-  ab_skip_with_reason "BCR-B chapters-pages-via-children" \
+  ab_skip_with_reason "BCR-API-002 chapters-pages-via-children" \
     "no_entity_id: no book/comic resolved"
 else
   CODE="$(http_get "/api/v1/entities/${ENTITY_ID}/children" yes bcr_children)"
   EV_CH="${RESULTS_DIR}/bcr_children.json"
   if [ "${CODE}" != "200" ]; then
-    ab_fail "BCR-B chapters-pages-via-children: expected 200 from children, got ${CODE}" "${EV_CH}"
+    ab_fail "BCR-API-002 chapters-pages-via-children: expected 200 from children, got ${CODE}" "${EV_CH}"
   else
     CHILDREN_COUNT="$(children_count "${EV_CH}")"
     if [ "${CHILDREN_COUNT}" = "-1" ]; then
-      ab_fail "BCR-B chapters-pages-via-children: children body is not a JSON list" "${EV_CH}"
+      ab_fail "BCR-API-002 chapters-pages-via-children: children body is not a JSON list" "${EV_CH}"
     else
       ab_pass_with_evidence \
-        "BCR-B chapters-pages-via-children: children endpoint returned a JSON list of ${CHILDREN_COUNT} chapter/page entit$( [ "${CHILDREN_COUNT}" = "1" ] && echo y || echo ies) (honest zero accepted for single-file books/comics)" \
+        "BCR-API-002 chapters-pages-via-children: children endpoint returned a JSON list of ${CHILDREN_COUNT} chapter/page entit$( [ "${CHILDREN_COUNT}" = "1" ] && echo y || echo ies) (honest zero accepted for single-file books/comics)" \
         "${EV_CH}"
     fi
   fi
 fi
 
 # ------------------------------------------------------------------------------
-# (C) BCR-C — reading-position resume round-trip (the core surface).
+# (C) BCR-API-003 — reading-position resume round-trip (the core surface).
 #   Read baseline -> (gated) set position via real session -> read back EQUAL.
 # ------------------------------------------------------------------------------
 echo
-echo "--- BCR-C: reading-position resume round-trip (set -> read back equal) ---"
+echo "--- BCR-API-003: reading-position resume round-trip (set -> read back equal) ---"
 if [ -z "${ENTITY_ID}" ]; then
-  ab_skip_with_reason "BCR-C reading-position-resume-roundtrip" \
+  ab_skip_with_reason "BCR-API-003 reading-position-resume-roundtrip" \
     "no_entity_id: no book/comic resolved"
 else
   # Baseline read of the progress envelope (always read-only).
   CODE="$(http_get "/api/v1/entities/${ENTITY_ID}/progress" yes bcr_progress_baseline)"
   EV_PB="${RESULTS_DIR}/bcr_progress_baseline.json"
   if [ "${CODE}" != "200" ]; then
-    ab_fail "BCR-C reading-position-resume-roundtrip: progress endpoint expected 200, got ${CODE}" "${EV_PB}"
+    ab_fail "BCR-API-003 reading-position-resume-roundtrip: progress endpoint expected 200, got ${CODE}" "${EV_PB}"
   else
     BASE_SHAPE="$(progress_shape "${EV_PB}")"
     if [ "${BASE_SHAPE}" = "absent" ]; then
-      ab_fail "BCR-C reading-position-resume-roundtrip: progress body malformed (no {\"progress\": object|null} envelope)" "${EV_PB}"
+      ab_fail "BCR-API-003 reading-position-resume-roundtrip: progress body malformed (no {\"progress\": object|null} envelope)" "${EV_PB}"
     elif [ "${ALLOW_WRITE}" != "1" ]; then
       # Read-only mode (§11.4.119 conductor owns the DB): validate the progress
       # READ surface is well-formed, SKIP the write round-trip honestly.
       ab_pass_with_evidence \
-        "BCR-C reading-position-resume-roundtrip [read-only]: GET /entities/${ENTITY_ID}/progress returns a well-formed {\"progress\": ${BASE_SHAPE}} envelope (write round-trip gated behind CATALOGIZER_ALLOW_PLAYBACK_WRITE=1)" \
+        "BCR-API-003 reading-position-resume-roundtrip [read-only]: GET /entities/${ENTITY_ID}/progress returns a well-formed {\"progress\": ${BASE_SHAPE}} envelope (write round-trip gated behind CATALOGIZER_ALLOW_PLAYBACK_WRITE=1)" \
         "${EV_PB}"
-      ab_skip_with_reason "BCR-C reading-position-resume-roundtrip [write-leg]" \
+      ab_skip_with_reason "BCR-API-003 reading-position-resume-roundtrip [write-leg]" \
         "playback_write_disabled: set CATALOGIZER_ALLOW_PLAYBACK_WRITE=1 (conductor-gated, §11.4.119) to exercise the set->read-back round-trip"
     else
       # Write round-trip: start a reading session, advance to READ_POSITION
@@ -539,13 +539,13 @@ else
       EV_SS="${RESULTS_DIR}/bcr_session_start.json"
       SESSION_ID="$(json_field "${EV_SS}" session_id)"
       if [ "${SCODE}" != "200" ] || [ -z "${SESSION_ID}" ]; then
-        ab_fail "BCR-C reading-position-resume-roundtrip: session start failed (http ${SCODE}, session_id='${SESSION_ID}')" "${EV_SS}"
+        ab_fail "BCR-API-003 reading-position-resume-roundtrip: session start failed (http ${SCODE}, session_id='${SESSION_ID}')" "${EV_SS}"
       else
         PROG_BODY="{\"session_id\":${SESSION_ID},\"end_position\":${READ_POSITION},\"total_amount\":${READ_POSITION}}"
         PCODE="$(http_post_json /api/v1/playback/sessions/progress "${PROG_BODY}" bcr_session_progress)"
         EV_SP="${RESULTS_DIR}/bcr_session_progress.json"
         if [ "${PCODE}" != "200" ]; then
-          ab_fail "BCR-C reading-position-resume-roundtrip: session progress write failed (http ${PCODE})" "${EV_SP}"
+          ab_fail "BCR-API-003 reading-position-resume-roundtrip: session progress write failed (http ${PCODE})" "${EV_SP}"
         else
           # Read the per-entity rollup back and assert last_position equals what
           # we wrote AND position_unit is "pages".
@@ -555,11 +555,11 @@ else
           GOT_UNIT="$(json_field "${EV_PA}" progress.position_unit)"
           if [ "${GOT_POS}" = "${READ_POSITION}" ] && [ "${GOT_UNIT}" = "pages" ]; then
             ab_pass_with_evidence \
-              "BCR-C reading-position-resume-roundtrip: wrote page ${READ_POSITION} via a real session and read it back EQUAL (progress.last_position=${GOT_POS}, progress.position_unit=${GOT_UNIT}) — resume-where-left-off works" \
+              "BCR-API-003 reading-position-resume-roundtrip: wrote page ${READ_POSITION} via a real session and read it back EQUAL (progress.last_position=${GOT_POS}, progress.position_unit=${GOT_UNIT}) — resume-where-left-off works" \
               "${EV_PA}"
           else
             ab_fail \
-              "BCR-C reading-position-resume-roundtrip: resume mismatch — wrote page ${READ_POSITION} (pages) but read back last_position='${GOT_POS}', position_unit='${GOT_UNIT}'" \
+              "BCR-API-003 reading-position-resume-roundtrip: resume mismatch — wrote page ${READ_POSITION} (pages) but read back last_position='${GOT_POS}', position_unit='${GOT_UNIT}'" \
               "${EV_PA}"
           fi
         fi
@@ -569,27 +569,27 @@ else
 fi
 
 # ------------------------------------------------------------------------------
-# (D) BCR-D — children-count determinism (§11.4.50): stable across two reads.
+# (D) BCR-API-004 — children-count determinism (§11.4.50): stable across two reads.
 # ------------------------------------------------------------------------------
 echo
-echo "--- BCR-D (determinism §11.4.50): children-count stable across two reads ---"
+echo "--- BCR-API-004 (determinism §11.4.50): children-count stable across two reads ---"
 if [ -z "${ENTITY_ID}" ]; then
-  ab_skip_with_reason "BCR-D children-count-determinism" \
+  ab_skip_with_reason "BCR-API-004 children-count-determinism" \
     "no_entity_id: no book/comic resolved"
 elif [ -z "${CHILDREN_COUNT}" ] || [ "${CHILDREN_COUNT}" = "-1" ]; then
-  ab_skip_with_reason "BCR-D children-count-determinism" \
-    "no_valid_children_read: BCR-B did not produce a parseable children count"
+  ab_skip_with_reason "BCR-API-004 children-count-determinism" \
+    "no_valid_children_read: BCR-API-002 did not produce a parseable children count"
 else
   http_get "/api/v1/entities/${ENTITY_ID}/children" yes bcr_children_read2 >/dev/null
   EV_CH2="${RESULTS_DIR}/bcr_children_read2.json"
   COUNT2="$(children_count "${EV_CH2}")"
   if [ "${CHILDREN_COUNT}" = "${COUNT2}" ]; then
     ab_pass_with_evidence \
-      "BCR-D children-count-determinism: children count stable across two reads (read1=${CHILDREN_COUNT}, read2=${COUNT2})" \
+      "BCR-API-004 children-count-determinism: children count stable across two reads (read1=${CHILDREN_COUNT}, read2=${COUNT2})" \
       "${EV_CH2}"
   else
     ab_fail \
-      "BCR-D children-count-determinism: children count NOT stable (read1=${CHILDREN_COUNT}, read2=${COUNT2})" \
+      "BCR-API-004 children-count-determinism: children count NOT stable (read1=${CHILDREN_COUNT}, read2=${COUNT2})" \
       "${EV_CH2}"
   fi
 fi
