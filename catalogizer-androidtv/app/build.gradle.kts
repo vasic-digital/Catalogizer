@@ -14,6 +14,10 @@ plugins {
     id("org.jetbrains.kotlin.plugin.serialization")
     id("jacoco")
     id("io.github.takahirom.roborazzi")
+    // Firebase plugins
+    id("com.google.gms.google-services")
+    id("com.google.firebase.crashlytics")
+    id("com.google.firebase.firebase-perf")
 }
 
 android {
@@ -212,6 +216,14 @@ dependencies {
     implementation("androidx.work:work-runtime-ktx:2.9.0")
     // WorkManager testing
     testImplementation("androidx.work:work-testing:2.9.0")
+
+    // Firebase BoM — Analytics, Crashlytics, Performance, App Distribution
+    // Pinned to 32.7.0 for Kotlin 1.9.x compatibility (play-services-measurement
+    // in 33.x ships Kotlin 2.1 metadata that Kotlin 1.9.22 cannot parse).
+    implementation(platform("com.google.firebase:firebase-bom:32.7.0"))
+    implementation("com.google.firebase:firebase-analytics")
+    implementation("com.google.firebase:firebase-crashlytics")
+    implementation("com.google.firebase:firebase-perf")
 
     // Testing
     testImplementation("junit:junit:4.13.2")

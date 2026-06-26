@@ -9,6 +9,7 @@ import (
 	"catalogizer/internal/auth"
 	internal_config "catalogizer/internal/config"
 	"catalogizer/internal/eventbus"
+	"catalogizer/internal/firebase"
 	"catalogizer/internal/handlers"
 	"catalogizer/internal/logging"
 	"catalogizer/internal/media/providers"
@@ -290,6 +291,18 @@ func main() {
 	// Register all external Go modules (digital.vasic.* family)
 	moduleRegistry := modules.RegisterModules()
 	defer moduleRegistry.Stop()
+
+	// Initialize Firebase Admin SDK for Analytics + Crashlytics.
+	// When GOOGLE_APPLICATION_CREDENTIALS is unset the app runs
+	// in disabled mode — safe no-ops, no crash, no panic.
+	firebaseApp := firebase.New(firebase.Config{Logger: logger})
+	logging.Info(firebaseApp.Summary())
+
+	// Log a startup event via Firebase Analytics (best-effort, no-op when disabled).
+	firebaseApp.LogEvent(context.Background(), firebase.EventStartup, map[string]string{
+		"version": Version,
+		"build":   BuildNumber,
+	})
 
 	// Load configuration
 	cfg, err := root_config.LoadConfig("config.json")
@@ -941,6 +954,9 @@ func main() {
 	router.Use(metrics.GinMiddleware())
 	router.Use(middleware.Logger(logger))
 	router.Use(middleware.ErrorHandler())
+	// Crashlytics middleware: captures HTTP 5xx responses as non-fatal
+	// errors to Firebase. Safe no-op when Firebase is disabled.
+	router.Use(firebase.GinMiddleware(firebaseApp))
 	router.Use(root_middleware.RequestID())
 	router.Use(root_middleware.InputValidation(root_middleware.DefaultInputValidationConfig()))
 	router.Use(middleware.CompressionMiddleware(middleware.DefaultCompressionConfig()))

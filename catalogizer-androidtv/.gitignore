@@ -7,3 +7,7 @@
 HelixQA/data/*.db-shm
 HelixQA/data/*.db-wal
 
+# Firebase google-services.json (regenerated at build time from .env vars)
+# See scripts/generate_google_services.sh and google-services.json.example.
+google-services.json
+

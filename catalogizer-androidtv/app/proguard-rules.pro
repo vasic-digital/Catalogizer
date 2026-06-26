@@ -69,3 +69,24 @@
 # ExoPlayer / Media3
 -keep class androidx.media3.** { *; }
 -dontwarn androidx.media3.**
+
+# Firebase Crashlytics — keep mapping file + crash data
+-keepattributes SourceFile,LineNumberTable
+-keep class com.google.firebase.crashlytics.** { *; }
+-dontwarn com.google.firebase.crashlytics.**
+
+# Firebase Performance
+-keep class com.google.firebase.perf.** { *; }
+-dontwarn com.google.firebase.perf.**
+
+# Firebase Analytics
+-keep class com.google.firebase.analytics.** { *; }
+-dontwarn com.google.firebase.analytics.**
+
+# Google Services — keep generated classes
+-keep class com.google.android.gms.** { *; }
+-dontwarn com.google.android.gms.**
+
+# Firebase common
+-keep class com.google.firebase.** { *; }
+-dontwarn com.google.firebase.**

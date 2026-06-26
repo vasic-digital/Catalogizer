@@ -315,6 +315,9 @@ catalog-api/cache/
 
 # Runtime config with real credentials (use config.json.example as reference)
 catalog-api/config.json
+
+# Firebase app config files (contain API keys — NEVER commit)
+.firebase/*.json
 qa-results/latest
 .env.remote
 deployment/.env*
