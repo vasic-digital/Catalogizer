@@ -1,0 +1,728 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+  <meta charset="utf-8" />
+  <meta name="generator" content="pandoc" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
+  <title>Secure Identity Store Design</title>
+  <style>
+    /* Default styles provided by pandoc.
+    ** See https://pandoc.org/MANUAL.html#variables-for-html for config info.
+    */
+    html {
+      color: #1a1a1a;
+      background-color: #fdfdfd;
+    }
+    body {
+      margin: 0 auto;
+      max-width: 36em;
+      padding-left: 50px;
+      padding-right: 50px;
+      padding-top: 50px;
+      padding-bottom: 50px;
+      hyphens: auto;
+      overflow-wrap: break-word;
+      text-rendering: optimizeLegibility;
+      font-kerning: normal;
+    }
+    @media (max-width: 600px) {
+      body {
+        font-size: 0.9em;
+        padding: 12px;
+      }
+      h1 {
+        font-size: 1.8em;
+      }
+    }
+    @media print {
+      html {
+        background-color: white;
+      }
+      body {
+        background-color: transparent;
+        color: black;
+        font-size: 12pt;
+      }
+      p, h2, h3 {
+        orphans: 3;
+        widows: 3;
+      }
+      h2, h3, h4 {
+        page-break-after: avoid;
+      }
+    }
+    p {
+      margin: 1em 0;
+    }
+    a {
+      color: #1a1a1a;
+    }
+    a:visited {
+      color: #1a1a1a;
+    }
+    img {
+      max-width: 100%;
+    }
+    svg {
+      height: auto;
+      max-width: 100%;
+    }
+    h1, h2, h3, h4, h5, h6 {
+      margin-top: 1.4em;
+    }
+    h5, h6 {
+      font-size: 1em;
+      font-style: italic;
+    }
+    h6 {
+      font-weight: normal;
+    }
+    ol, ul {
+      padding-left: 1.7em;
+      margin-top: 1em;
+    }
+    li > ol, li > ul {
+      margin-top: 0;
+    }
+    blockquote {
+      margin: 1em 0 1em 1.7em;
+      padding-left: 1em;
+      border-left: 2px solid #e6e6e6;
+      color: #606060;
+    }
+    code {
+      white-space: pre-wrap;
+      font-family: Menlo, Monaco, Consolas, 'Lucida Console', monospace;
+      font-size: 85%;
+      margin: 0;
+      hyphens: manual;
+    }
+    pre {
+      margin: 1em 0;
+      overflow: auto;
+    }
+    pre code {
+      padding: 0;
+      overflow: visible;
+      overflow-wrap: normal;
+    }
+    .sourceCode {
+     background-color: transparent;
+     overflow: visible;
+    }
+    hr {
+      border: none;
+      border-top: 1px solid #1a1a1a;
+      height: 1px;
+      margin: 1em 0;
+    }
+    table {
+      margin: 1em 0;
+      border-collapse: collapse;
+      width: 100%;
+      overflow-x: auto;
+      display: block;
+      font-variant-numeric: lining-nums tabular-nums;
+    }
+    table caption {
+      margin-bottom: 0.75em;
+    }
+    tbody {
+      margin-top: 0.5em;
+      border-top: 1px solid #1a1a1a;
+      border-bottom: 1px solid #1a1a1a;
+    }
+    th {
+      border-top: 1px solid #1a1a1a;
+      padding: 0.25em 0.5em 0.25em 0.5em;
+    }
+    td {
+      padding: 0.125em 0.5em 0.25em 0.5em;
+    }
+    header {
+      margin-bottom: 4em;
+      text-align: center;
+    }
+    #TOC li {
+      list-style: none;
+    }
+    #TOC ul {
+      padding-left: 1.3em;
+    }
+    #TOC > ul {
+      padding-left: 0;
+    }
+    #TOC a:not(:hover) {
+      text-decoration: none;
+    }
+    span.smallcaps{font-variant: small-caps;}
+    div.columns{display: flex; gap: min(4vw, 1.5em);}
+    div.column{flex: auto; overflow-x: auto;}
+    div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+    /* The extra [class] is a hack that increases specificity enough to
+       override a similar rule in reveal.js */
+    ul.task-list[class]{list-style: none;}
+    ul.task-list li input[type="checkbox"] {
+      font-size: inherit;
+      width: 0.8em;
+      margin: 0 0.8em 0.2em -1.6em;
+      vertical-align: middle;
+    }
+    .display.math{display: block; text-align: center; margin: 0.5rem auto;}
+    /* CSS for syntax highlighting */
+    html { -webkit-text-size-adjust: 100%; }
+    pre > code.sourceCode { white-space: pre; position: relative; }
+    pre > code.sourceCode > span { display: inline-block; line-height: 1.25; }
+    pre > code.sourceCode > span:empty { height: 1.2em; }
+    .sourceCode { overflow: visible; }
+    code.sourceCode > span { color: inherit; text-decoration: inherit; }
+    div.sourceCode { margin: 1em 0; }
+    pre.sourceCode { margin: 0; }
+    @media screen {
+    div.sourceCode { overflow: auto; }
+    }
+    @media print {
+    pre > code.sourceCode { white-space: pre-wrap; }
+    pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+    }
+    pre.numberSource code
+      { counter-reset: source-line 0; }
+    pre.numberSource code > span
+      { position: relative; left: -4em; counter-increment: source-line; }
+    pre.numberSource code > span > a:first-child::before
+      { content: counter(source-line);
+        position: relative; left: -1em; text-align: right; vertical-align: baseline;
+        border: none; display: inline-block;
+        -webkit-touch-callout: none; -webkit-user-select: none;
+        -khtml-user-select: none; -moz-user-select: none;
+        -ms-user-select: none; user-select: none;
+        padding: 0 4px; width: 4em;
+        color: #aaaaaa;
+      }
+    pre.numberSource { margin-left: 3em; border-left: 1px solid #aaaaaa;  padding-left: 4px; }
+    div.sourceCode
+      {   }
+    @media screen {
+    pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+    }
+    code span.al { color: #ff0000; font-weight: bold; } /* Alert */
+    code span.an { color: #60a0b0; font-weight: bold; font-style: italic; } /* Annotation */
+    code span.at { color: #7d9029; } /* Attribute */
+    code span.bn { color: #40a070; } /* BaseN */
+    code span.bu { color: #008000; } /* BuiltIn */
+    code span.cf { color: #007020; font-weight: bold; } /* ControlFlow */
+    code span.ch { color: #4070a0; } /* Char */
+    code span.cn { color: #880000; } /* Constant */
+    code span.co { color: #60a0b0; font-style: italic; } /* Comment */
+    code span.cv { color: #60a0b0; font-weight: bold; font-style: italic; } /* CommentVar */
+    code span.do { color: #ba2121; font-style: italic; } /* Documentation */
+    code span.dt { color: #902000; } /* DataType */
+    code span.dv { color: #40a070; } /* DecVal */
+    code span.er { color: #ff0000; font-weight: bold; } /* Error */
+    code span.ex { } /* Extension */
+    code span.fl { color: #40a070; } /* Float */
+    code span.fu { color: #06287e; } /* Function */
+    code span.im { color: #008000; font-weight: bold; } /* Import */
+    code span.in { color: #60a0b0; font-weight: bold; font-style: italic; } /* Information */
+    code span.kw { color: #007020; font-weight: bold; } /* Keyword */
+    code span.op { color: #666666; } /* Operator */
+    code span.ot { color: #007020; } /* Other */
+    code span.pp { color: #bc7a00; } /* Preprocessor */
+    code span.sc { color: #4070a0; } /* SpecialChar */
+    code span.ss { color: #bb6688; } /* SpecialString */
+    code span.st { color: #4070a0; } /* String */
+    code span.va { color: #19177c; } /* Variable */
+    code span.vs { color: #4070a0; } /* VerbatimString */
+    code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warning */
+  </style>
+</head>
+<body>
+<header id="title-block-header">
+<h1 class="title">Secure Identity Store Design</h1>
+</header>
+<h1
+id="secure-identity-store-design-identity-share-discovery-epic">Secure
+Identity Store — Design (identity-share-discovery epic)</h1>
+<p><strong>Revision:</strong> 1 <strong>Last modified:</strong>
+2026-06-26T11:21:58Z <strong>Scope:</strong> Encrypted-at-rest storage
+of network-share identities (credentials = username+password, api_token,
+ssh_key) for the catalog-api scanner, replacing the plaintext
+<code>StorageRoot.Password</code> debt. <strong>Authority:</strong>
+§11.4.10 (no plaintext secret leak), §11.4.74 (catalogue-first reuse),
+§11.4.6 (no guessing — every claim cites a file:line read), §9.2 (data
+safety / rollback).</p>
+<hr />
+<h2 id="the-11.4.10-debt-fact">0. The §11.4.10 debt (FACT)</h2>
+<p>Plaintext credentials are stored today:</p>
+<ul>
+<li><code>catalog-api/models/file.go:56</code> —
+<code>Password *string ... db:"password"</code> on
+<code>StorageRoot</code>.</li>
+<li><code>catalog-api/models/file.go:55</code> —
+<code>Username *string ... db:"username"</code>.</li>
+<li><code>catalog-api/database/migrations/000001_initial_schema.sqlite.up.sql:4</code>
+<code>CREATE TABLE ... storage_roots</code>, line
+<code>:11 username TEXT</code>, line <code>:12 password TEXT</code> —
+the column is plaintext <code>TEXT</code>.</li>
+<li>The value reaches config from the environment in plaintext:
+<code>catalog-api/config/config.go:238-239</code>
+(<code>DATABASE_PASSWORD</code> → <code>config.Database.Password</code>)
+and the <code>.env.example</code> <code>SMB_PASSWORD=password</code>
+placeholder.</li>
+<li><code>StorageRoot</code> is consumed by the scanner/handlers:
+<code>catalog-api/handlers/admin_handler.go</code>,
+<code>catalog-api/handlers/browse.go</code>,
+<code>catalog-api/main.go</code> (verified via grep of non-test
+<code>StorageRoot</code> references).</li>
+</ul>
+<p>A <code>password TEXT</code> column means anyone with read access to
+the SQLite/Postgres file or a DB backup reads every share password. This
+is a §11.4.10 violation that the epic must close.</p>
+<hr />
+<h2 id="submodule-reuse-survey-11.4.74">1. Submodule reuse survey
+(§11.4.74)</h2>
+<p>The catalogue-first survey of <code>submodules/</code> for an
+existing secure-storage / secrets / keyring / encryption capability.</p>
+<h3
+id="candidate-a-digital.vasic.securitypkgsecurestorage-verdict-reuse-primary-80-fit">Candidate
+A — <code>digital.vasic.security/pkg/securestorage</code> — VERDICT:
+<strong>REUSE</strong> (primary, ≥80% fit)</h3>
+<ul>
+<li>Path:
+<code>submodules/security/pkg/securestorage/securestorage.go</code>.</li>
+<li>Module: <code>digital.vasic.security</code>
+(<code>submodules/security/go.mod:1</code>), depends on
+<code>golang.org/x/crypto v0.52.0</code>
+(<code>submodules/security/go.mod:9</code>) but the secure-storage
+primitive itself uses only stdlib <code>crypto/aes</code> +
+<code>crypto/cipher</code> (<code>securestorage.go:4-5</code>).</li>
+<li><strong>Already wired into catalog-api</strong>:
+<code>catalog-api/go.mod:43</code>
+<code>replace digital.vasic.security =&gt; ../submodules/security</code>
+and <code>catalog-api/go.mod:72</code>
+<code>require digital.vasic.security</code>. No new dependency wiring
+needed — this is the strongest reuse signal.</li>
+<li>Exported API (verified by reading the file):
+<ul>
+<li><code>type Storage interface { Store, Retrieve, Delete, Contains, ListKeys, Clear, IsSecure }</code>
+— <code>securestorage.go:18-26</code>.</li>
+<li><code>func NewFileStorage(storageDir string) *FileStorage</code> —
+<code>securestorage.go:41</code>.</li>
+<li>Scheme-aware convenience methods that map 1:1 to the three identity
+schemes the epic needs:
+<ul>
+<li><code>func (fs *FileStorage) StoreCredentials(service, username, password string) error</code>
+— <code>securestorage.go:175</code>; retrieve at
+<code>securestorage.go:181</code> (<code>RetrieveCredentials</code>).
+Length-prefixed encoding (<code>securestorage.go:176</code>) so
+username/password round-trip exactly.</li>
+<li><code>func (fs *FileStorage) StoreToken(service, token string) error</code>
+— <code>securestorage.go:206</code>; <code>RetrieveToken</code>
+<code>securestorage.go:211</code> → covers <code>api_token</code>.</li>
+<li><code>func (fs *FileStorage) StorePrivateKey(service, privateKey string) error</code>
+— <code>securestorage.go:216</code>; <code>RetrievePrivateKey</code>
+<code>securestorage.go:221</code> → covers <code>ssh_key</code>.</li>
+</ul></li>
+</ul></li>
+<li>Crypto primitive (verified): AES-256-GCM. <code>encrypt()</code>
+<code>securestorage.go:332-347</code> — <code>aes.NewCipher</code> +
+<code>cipher.NewGCM</code>, random 12-byte nonce via
+<code>crypto/rand</code> (<code>securestorage.go:341-342</code>), nonce
+prepended to ciphertext, base64 output
+(<code>securestorage.go:345-346</code>). <code>decrypt()</code>
+<code>securestorage.go:349-372</code> with a
+<code>ciphertext too short</code> guard
+(<code>securestorage.go:363-364</code>). 32-byte key ⇒ AES-256.</li>
+<li>Concurrency: <code>sync.RWMutex</code>, and the read paths
+deliberately take the write lock because
+<code>getOrCreateKey</code>/<code>loadCache</code> mutate shared state —
+documented at <code>securestorage.go:74-78</code>, <code>:110</code>,
+<code>:123</code>, <code>:150</code>. This is production-grade, not a
+stub (§11.4.27 — no fakes outside unit tests).</li>
+<li>Hardening already present: input-validation against panics in
+<code>RetrieveCredentials</code> (negative length-prefix guard,
+<code>securestorage.go:194-201</code>); key file <code>0600</code>, dir
+<code>0700</code> (<code>securestorage.go:226</code>,
+<code>:248</code>); test suite is extensive
+(<code>securestorage_race_test.go</code>, <code>_gap_test.go</code>,
+<code>_neglen_test.go</code>, <code>_coverage_test.go</code>).</li>
+</ul>
+<p><strong>Why ≥80%, not 100%:</strong> <code>securestorage</code>
+persists to its OWN files (<code>.storage_key</code> +
+<code>.secure_storage</code>, <code>securestorage.go:44-45</code>,
+<code>persist()</code> <code>:310</code>), not to the catalog-api
+SQLite/Postgres DB, and its AEAD
+<code>encrypt</code>/<code>decrypt</code> are
+<strong>unexported</strong> (<code>securestorage.go:332</code>,
+<code>:349</code>). The master key is a sibling file written
+<code>0600</code> (<code>getOrCreateKey</code>
+<code>securestorage.go:229-253</code>) — there is no env/OS-keyring/KMS
+key source. The two gaps (DB-backed ciphertext column; master-key
+provenance) are what we <strong>extend upstream</strong> (§11.4.74), not
+reimplement.</p>
+<h3
+id="candidate-b-digital.vasic.securitypkge2ee-verdict-reuse-for-the-aead-primitive-if-a-db-column-codec-is-preferred">Candidate
+B — <code>digital.vasic.security/pkg/e2ee</code> — VERDICT:
+<strong>REUSE for the AEAD primitive if a DB-column codec is
+preferred</strong></h3>
+<ul>
+<li>Path: <code>submodules/security/pkg/e2ee/</code>
+(<code>chacha.go</code>, <code>sse.go</code>, <code>package.go</code>,
+<code>transport.go</code>).</li>
+<li>Exported (verified): <code>type AEADSuite uint8</code>
+(<code>chacha.go:26</code>);
+<code>StreamSealer</code>/<code>StreamDecryptor</code> with
+<code>NewStreamSealer(sess, aad)</code> (<code>sse.go:153-161</code>)
+and <code>NewStreamDecryptor(sess, aad)</code>
+(<code>sse.go:45-60</code>). ChaCha20-Poly1305 (RFC 8439) is
+operator-authorized for this module per
+<code>submodules/security/CLAUDE.md</code> (“Dependencies” note).</li>
+<li>Fit: e2ee is built for <strong>session/transport</strong> sealing (a
+<code>Session</code>, AAD, streaming), not at-rest key/value secrets. It
+is heavier than the epic needs. Use it only if we want a single
+project-wide AEAD codec; otherwise Candidate A is the simpler at-rest
+fit.</li>
+</ul>
+<h3
+id="candidate-c-digital.vasic.storagepkgs3-config-verdict-no-match-it-is-a-consumer-of-secrets-not-a-store">Candidate
+C — <code>digital.vasic.storage/pkg/s3</code> (config) — VERDICT:
+<strong>NO-MATCH</strong> (it is a consumer of secrets, not a
+store)</h3>
+<ul>
+<li>Path: <code>submodules/storage/pkg/s3/config.go</code> /
+<code>credentials</code> handling. This module <em>consumes</em>
+access/secret keys to talk to S3; it does not provide encrypted-at-rest
+local secret storage. Not the capability we need.</li>
+</ul>
+<h3
+id="candidate-d-digital.vasic.authpkg-verdict-no-match-token-issuance-not-secret-at-rest">Candidate
+D — <code>digital.vasic.auth/pkg/*</code> — VERDICT:
+<strong>NO-MATCH</strong> (token issuance, not secret-at-rest)</h3>
+<ul>
+<li>Path:
+<code>submodules/auth/pkg/{jwt,token,tokenmanager,apikey,accesstoken}/*.go</code>
+(module <code>digital.vasic.auth</code>,
+<code>submodules/auth/go.mod:1</code>). These issue/verify JWT/API keys;
+they are not an encrypted secret vault for third-party share
+credentials. Not a fit.</li>
+</ul>
+<h3
+id="candidate-e-os-keyring-submodule-verdict-no-match-found">Candidate E
+— OS keyring submodule — VERDICT: <strong>NO-MATCH found</strong></h3>
+<ul>
+<li>No
+<code>keyring</code>/<code>keychain</code>/<code>secret-service</code>
+submodule exists under <code>submodules/</code> (directory listing
+inspected; only <code>security</code>, <code>storage</code>,
+<code>auth</code>, <code>memory</code>, <code>helix_memory</code> carry
+crypto-adjacent code). An OS-keyring backend, if desired, is an
+<strong>upstream extension</strong> of
+<code>digital.vasic.security</code> (§11.4.74), not an in-catalog-api
+reimplementation.</li>
+</ul>
+<h3 id="reuse-decision">Reuse decision</h3>
+<p>Build the secure identity store on
+<strong><code>digital.vasic.security/pkg/securestorage</code></strong>
+(Candidate A). Extend that package <strong>upstream</strong> with
+exactly two additions so it covers 100% of the epic:</p>
+<ol type="1">
+<li><strong>Exported AEAD codec</strong> — promote
+<code>encrypt</code>/<code>decrypt</code>
+(<code>securestorage.go:332</code>,<code>:349</code>) to an exported
+<code>func Seal(plaintext string, key []byte) (string, error)</code> /
+<code>func Open(ciphertext string, key []byte) (string, error)</code>,
+or add a <code>type Cipher</code> so a caller can encrypt a value
+destined for a DB column without the file-backed
+<code>FileStorage</code>. This lets catalog-api keep its single source
+of truth (the DB) while reusing the audited primitive.</li>
+<li><strong>Pluggable master-key source</strong> — add
+<code>func NewFileStorageWithKey(dir string, key []byte) *FileStorage</code>
+(or a <code>KeyProvider</code> interface) so the 32-byte key can come
+from env / OS keyring / KMS instead of the <code>.storage_key</code>
+sibling file (<code>securestorage.go:44</code>). The default file
+behaviour stays for callers that want it.</li>
+</ol>
+<p>Both are generic, project-agnostic additions (they name no consumer)
+— compliant with the security module’s decoupling rules in
+<code>submodules/security/CLAUDE.md</code>.</p>
+<hr />
+<h2 id="secure-identity-store-schema-model">2. Secure identity store —
+schema &amp; model</h2>
+<h3 id="new-table-share_identity">2.1 New table
+<code>share_identity</code></h3>
+<p>A single multi-scheme identity row. The secret material is
+<strong>never</strong> stored plaintext; only an AEAD ciphertext blob is
+persisted.</p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode sql"><code class="sourceCode sql"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="co">-- migration 0NN_create_share_identity (SQLite shown; Postgres variant mirrors it)</span></span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="kw">CREATE</span> <span class="kw">TABLE</span> <span class="cf">IF</span> <span class="kw">NOT</span> <span class="kw">EXISTS</span> share_identity (</span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a>    <span class="kw">id</span>           <span class="dt">INTEGER</span> <span class="kw">PRIMARY</span> <span class="kw">KEY</span> AUTOINCREMENT,</span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a>    name         TEXT <span class="kw">NOT</span> <span class="kw">NULL</span>,                 <span class="co">-- operator-facing label, NOT a secret</span></span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a>    scheme       TEXT <span class="kw">NOT</span> <span class="kw">NULL</span>,                 <span class="co">-- &#39;credentials&#39; | &#39;api_token&#39; | &#39;ssh_key&#39;</span></span>
+<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a>    username     TEXT,                          <span class="co">-- non-secret principal (credentials/ssh user)</span></span>
+<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a>    <span class="kw">domain</span>       TEXT,                          <span class="co">-- SMB domain, non-secret</span></span>
+<span id="cb1-8"><a href="#cb1-8" aria-hidden="true" tabindex="-1"></a>    secret_ct    TEXT <span class="kw">NOT</span> <span class="kw">NULL</span>,                 <span class="co">-- AEAD ciphertext (base64), NEVER plaintext</span></span>
+<span id="cb1-9"><a href="#cb1-9" aria-hidden="true" tabindex="-1"></a>    key_id       TEXT <span class="kw">NOT</span> <span class="kw">NULL</span>,                 <span class="co">-- which master key/DEK encrypted secret_ct</span></span>
+<span id="cb1-10"><a href="#cb1-10" aria-hidden="true" tabindex="-1"></a>    enc_alg      TEXT <span class="kw">NOT</span> <span class="kw">NULL</span> <span class="kw">DEFAULT</span> <span class="st">&#39;AES-256-GCM&#39;</span>,</span>
+<span id="cb1-11"><a href="#cb1-11" aria-hidden="true" tabindex="-1"></a>    created_at   <span class="dt">TIMESTAMP</span> <span class="kw">NOT</span> <span class="kw">NULL</span>,</span>
+<span id="cb1-12"><a href="#cb1-12" aria-hidden="true" tabindex="-1"></a>    updated_at   <span class="dt">TIMESTAMP</span> <span class="kw">NOT</span> <span class="kw">NULL</span></span>
+<span id="cb1-13"><a href="#cb1-13" aria-hidden="true" tabindex="-1"></a>);</span>
+<span id="cb1-14"><a href="#cb1-14" aria-hidden="true" tabindex="-1"></a><span class="kw">CREATE</span> <span class="kw">UNIQUE</span> <span class="kw">INDEX</span> <span class="cf">IF</span> <span class="kw">NOT</span> <span class="kw">EXISTS</span> idx_share_identity_name <span class="kw">ON</span> share_identity(name);</span></code></pre></div>
+<ul>
+<li><code>scheme</code> is a closed set matching the epic’s three
+identity types.</li>
+<li>For <code>scheme='credentials'</code>: plaintext
+<code>username</code> (non-secret) lives in its own column; the
+<strong>password</strong> is inside <code>secret_ct</code>. (Mirrors
+<code>securestorage.StoreCredentials</code> length-prefixed split at
+<code>securestorage.go:176</code>, but we keep the username in the clear
+column for queryability and put only the password under AEAD.)</li>
+<li>For <code>scheme='api_token'</code>: the token is the whole
+<code>secret_ct</code>; <code>username</code> NULL.</li>
+<li>For <code>scheme='ssh_key'</code>: <code>username</code> = ssh login
+(non-secret); the PEM private key is <code>secret_ct</code>. (Maps to
+<code>securestorage.StorePrivateKey</code>,
+<code>securestorage.go:216</code>.)</li>
+<li><code>key_id</code> + <code>enc_alg</code> make key rotation and
+algorithm migration auditable without re-reading every blob
+blindly.</li>
+</ul>
+<h3
+id="share_identity_binding-reference-by-id-never-duplicate-the-secret">2.2
+<code>share_identity_binding</code> — reference by ID, never duplicate
+the secret</h3>
+<div class="sourceCode" id="cb2"><pre
+class="sourceCode sql"><code class="sourceCode sql"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="kw">CREATE</span> <span class="kw">TABLE</span> <span class="cf">IF</span> <span class="kw">NOT</span> <span class="kw">EXISTS</span> share_identity_binding (</span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a>    storage_root_id  <span class="dt">INTEGER</span> <span class="kw">NOT</span> <span class="kw">NULL</span> <span class="kw">REFERENCES</span> storage_roots(<span class="kw">id</span>) <span class="kw">ON</span> <span class="kw">DELETE</span> <span class="kw">CASCADE</span>,</span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a>    identity_id      <span class="dt">INTEGER</span> <span class="kw">NOT</span> <span class="kw">NULL</span> <span class="kw">REFERENCES</span> share_identity(<span class="kw">id</span>) <span class="kw">ON</span> <span class="kw">DELETE</span> <span class="kw">RESTRICT</span>,</span>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a>    <span class="kw">PRIMARY</span> <span class="kw">KEY</span> (storage_root_id, identity_id)</span>
+<span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a>);</span></code></pre></div>
+<ul>
+<li>A <code>StorageRoot</code> (<code>models/file.go:48-70</code>)
+references an identity <strong>by <code>identity_id</code></strong> —
+the secret is stored exactly once in <code>share_identity</code> and
+shared by reference. No password column on <code>storage_roots</code>,
+no copy of the secret anywhere.</li>
+<li><code>ON DELETE RESTRICT</code> on <code>identity_id</code> prevents
+deleting an identity still in use; <code>ON DELETE CASCADE</code> on the
+root cleans the binding when a root is removed.</li>
+<li>The Go model gains
+<code>IdentityID *int64 \</code>json:“identity_id,omitempty”
+db:“identity_id”`<code>on</code>StorageRoot<code>(in</code>models/file.go<code>), and the</code>Password
+*string db:“password”<code>field at</code>models/file.go:56` is
+<strong>removed</strong> (see §3 migration).</li>
+</ul>
+<h3
+id="encryption-approach-envelope-encryption-master-key-not-in-the-db">2.3
+Encryption approach — envelope encryption, master key NOT in the DB</h3>
+<p>Recommended: <strong>envelope encryption</strong> reusing the
+AES-256-GCM primitive that <code>securestorage</code> already ships
+(<code>securestorage.go:332-372</code>).</p>
+<ul>
+<li>A <strong>master key (KEK)</strong>, 32 bytes, sourced (in
+precedence order, mirroring catalog-api’s existing env-first config
+convention at <code>config/config.go:221-298</code>):
+<ol type="1">
+<li><code>HELIX_IDENTITY_MASTER_KEY</code> env var (base64 32 bytes) —
+authoritative, git-ignored per §11.4.10 / §11.4.30, documented as a
+placeholder in <code>.env.example</code> (which today only carries
+<code>SMB_PASSWORD=password</code> — that placeholder is retired).</li>
+<li>OS keyring (upstream <code>securestorage</code>
+<code>KeyProvider</code> extension, §1).</li>
+<li>A <code>0600</code> key file via the existing
+<code>securestorage</code> file behaviour
+(<code>securestorage.go:248</code>) — dev fallback only.</li>
+</ol></li>
+<li>Per-identity <strong>data key (DEK)</strong> OR direct KEK
+encryption: for the volume here (a handful of share identities) direct
+AES-256-GCM under the KEK is sufficient; <code>key_id</code> records the
+KEK version so rotation re-encrypts blobs without ambiguity.</li>
+<li><strong>Why this over alternatives:</strong> the codebase already
+builds on stdlib AES-256-GCM (<code>securestorage.go</code>) and has no
+<code>age</code>/external-KMS dependency in any consumed submodule
+(verified — no <code>filippo.io/age</code> in
+<code>submodules/security/go.mod</code>). Choosing the primitive already
+wired in (<code>go.mod:43/72</code>) honours §11.4.74 (reuse over new
+dependency) and §11.4.8 (no novel crypto). External KMS (AWS/Vault) can
+later become an additional <code>KeyProvider</code> source without
+schema change.</li>
+</ul>
+<hr />
+<h2 id="migration-plan-remove-plaintext-storage_roots.password">3.
+Migration plan — remove plaintext
+<code>storage_roots.password</code></h2>
+<p>catalog-api uses a versioned migration runner
+(<code>database/migrations.go:16</code>, dual SQLite/Postgres variants
+under <code>database/migrations/</code>). Add three forward steps:</p>
+<ol type="1">
+<li><strong>0NN_add_share_identity_up</strong> — create
+<code>share_identity</code> + <code>share_identity_binding</code> (§2).
+No data change yet. Reversible down-migration drops both tables.</li>
+<li><strong>0NN+1_migrate_passwords_up</strong> — a one-shot data
+migration (Go-side, like <code>migrateSMBToStorageRoots</code> at
+<code>database/migrations.go:16</code>):
+<ul>
+<li>For each <code>storage_roots</code> row with non-NULL
+<code>password</code> (column at
+<code>migrations/000001_initial_schema.sqlite.up.sql:12</code>): create
+a <code>share_identity</code> row (<code>scheme='credentials'</code>,
+<code>username</code> from <code>storage_roots.username</code>
+<code>:11</code>, <code>secret_ct = Seal(password, KEK)</code> using the
+extended exported codec from §1), insert a
+<code>share_identity_binding</code>, then <strong>NULL out</strong>
+<code>storage_roots.password</code>.</li>
+<li>Idempotent: skip roots that already have a binding (re-runnable per
+§11.4.50).</li>
+<li>Runs inside a transaction; on any row failure the whole step rolls
+back (the runner already wraps Up funcs).</li>
+</ul></li>
+<li><strong>0NN+2_drop_password_column_up</strong> — drop
+<code>storage_roots.password</code> (SQLite: table-rebuild without the
+column, the pattern this codebase already uses; Postgres:
+<code>ALTER TABLE storage_roots DROP COLUMN password</code>).
+Down-migration re-adds an empty <code>password TEXT</code> (data is NOT
+restorable plaintext — by design; that is the point).
+<ul>
+<li>Step 3 ships only after step 2 is verified GREEN on a real DB copy,
+so the plaintext column is never dropped before its data is safely
+enveloped.</li>
+</ul></li>
+</ol>
+<h3 id="scanners-obtain-the-secret-at-runtime-decrypt-on-use">Scanners
+obtain the secret at runtime (decrypt-on-use)</h3>
+<ul>
+<li>The scanner / filesystem client today reads
+<code>StorageRoot.Password</code> directly
+(<code>models/file.go:56</code>, consumed in
+<code>handlers/admin_handler.go</code>, <code>handlers/browse.go</code>,
+<code>main.go</code>). After migration it instead:
+<ol type="1">
+<li>loads the <code>StorageRoot</code> (now carrying
+<code>IdentityID</code>),</li>
+<li>looks up <code>share_identity</code> by
+<code>identity_id</code>,</li>
+<li>calls the secure store to <strong>decrypt-on-use</strong>
+(<code>Open(secret_ct, KEK)</code> from the §1 exported codec, or
+<code>securestorage.RetrieveCredentials</code> if the file-backed store
+is used) — returning the password ONLY into a short-lived local variable
+passed to the protocol client (SMB/FTP/etc.), never re-persisted, never
+logged.</li>
+</ol></li>
+<li>A thin <code>identity.Service</code> (new, in catalog-api
+<code>services/</code>) wraps the <code>securestorage.Storage</code>
+interface (<code>securestorage.go:18</code>) so call-sites depend on an
+interface (constructor injection per the project’s testing convention)
+and tests inject a fake store (unit-test-only fake, §11.4.27).</li>
+</ul>
+<h3 id="rollback-backup-posture-9.2">Rollback / backup posture
+(§9.2)</h3>
+<ul>
+<li><strong>Backup first, always</strong>: before the destructive step 3
+(column drop), take the §9.2 hardlinked <code>.git</code>/DB-file backup
+and a <code>sqlite3 .backup</code> / <code>pg_dump</code> snapshot. The
+plaintext column is dropped only after step 2 GREEN proof + backup
+captured.</li>
+<li>Steps 1–2 are non-destructive (additive table + NULL-out, with the
+down-migrations restoring structure). Step 3 is the only
+irreversible-for-plaintext step and is operator-gated per §11.4.122 /
+§9.2 sub-clause 6 (no automatic destructive run).</li>
+<li>Roll-forward, never force: migration commits follow §11.4.113 (no
+force-push).</li>
+</ul>
+<hr />
+<h2 id="threat-model">4. Threat model</h2>
+<h3 id="where-the-master-key-lives">4.1 Where the master key lives</h3>
+<ul>
+<li><strong>NOT in the database.</strong> The DB holds only ciphertext
+(<code>share_identity.secret_ct</code>) + <code>key_id</code>. The KEK
+lives outside the DB: env var <code>HELIX_IDENTITY_MASTER_KEY</code>
+(preferred), OS keyring, or a <code>0600</code> key file
+(<code>securestorage.go:248</code>) as dev fallback. A DB dump alone
+yields no plaintext.</li>
+<li>Compromise model: an attacker needs <strong>both</strong> the DB
+(ciphertext) <strong>and</strong> the KEK source (env/keyring/keyfile).
+Separating them is the entire value over today’s
+<code>password TEXT</code>.</li>
+</ul>
+<h3 id="blast-radius">4.2 Blast radius</h3>
+<ul>
+<li><strong>DB leak alone</strong> (file copy, backup, SQL injection
+read): yields ciphertext only — no usable share passwords. Strict
+improvement over
+<code>migrations/000001_initial_schema.sqlite.up.sql:12</code>.</li>
+<li><strong>Host root / process memory</strong>: a process holding the
+KEK can decrypt; this is inherent to any at-rest scheme and is bounded
+by the catalog-api “no sudo/root, user-level only” constraint
+(<code>catalog-api/CLAUDE.md</code>).</li>
+<li><strong>Key rotation</strong>:
+<code>key_id</code>/<code>enc_alg</code> columns let one identity be
+re-enveloped under a new KEK without touching others — bounded rotation
+blast radius.</li>
+<li><strong>Per-identity isolation</strong>: each share’s secret is a
+separate row/ciphertext; cracking one AES-GCM blob does not reveal
+others (independent random nonces,
+<code>securestorage.go:341</code>).</li>
+</ul>
+<h3 id="what-must-never-be-logged-11.4.10">4.3 What must NEVER be logged
+(§11.4.10)</h3>
+<ul>
+<li>Never log: the KEK/DEK bytes; <code>secret_ct</code> decrypted
+plaintext; the <code>HELIX_IDENTITY_MASTER_KEY</code> value; any
+<code>password</code> / <code>api_token</code> / <code>ssh_key</code>
+material; the <code>.storage_key</code> file contents.</li>
+<li>Safe to log: <code>share_identity.id</code>, <code>name</code>,
+<code>scheme</code>, <code>key_id</code>, <code>enc_alg</code>,
+timestamps; the fact that a decrypt succeeded/failed (boolean), never
+the value.</li>
+<li>The decrypt-on-use path returns the secret into a local variable
+only; it is passed to the protocol client and must not be placed in
+struct fields that get JSON-serialized (note
+<code>StorageRoot.Password</code> had <code>json:"password"</code> at
+<code>models/file.go:56</code> — its removal also closes an API-response
+leak vector).</li>
+<li>The credential single-source convention (§11.4.10) means
+<code>.env</code> / <code>secrets/</code> stay git-ignored
+(<code>.env.example</code> carries placeholders only).</li>
+</ul>
+<h3 id="how-tests-avoid-real-secrets-11.4.10-11.4.27">4.4 How tests
+avoid real secrets (§11.4.10 / §11.4.27)</h3>
+<ul>
+<li>Tests use a fixed <strong>test-only</strong> 32-byte KEK from a test
+env var or a <code>t.TempDir()</code> key file — never a production key,
+never a real share password. <code>securestorage</code>’s own suite
+already follows this (<code>securestorage_test.go</code>,
+<code>_race_test.go</code> operate on temp dirs).</li>
+<li>Unit tests may use a fake <code>securestorage.Storage</code>
+implementation (allowed only in unit tests, §11.4.27). Integration tests
+exercise the real <code>FileStorage</code>/DB path with synthetic
+credentials in a temp dir, asserting: (a) the DB column holds ciphertext
+≠ plaintext, (b) round-trip decrypt returns the synthetic value, (c)
+logs contain no plaintext (grep-the-captured-log assertion), (d) a DB
+dump grep finds no synthetic secret in the clear.</li>
+<li>No real <code>.env</code> is read in tests; the §11.4.10 pre-store
+leak audit (<code>git ls-files | grep</code>, <code>git log -S</code>)
+runs before any operator key is committed to gitignored config.</li>
+</ul>
+<hr />
+<h2 id="recommended-approach-summary">5. Recommended approach
+(summary)</h2>
+<p>Reuse <code>digital.vasic.security/pkg/securestorage</code> (already
+wired at <code>catalog-api/go.mod:43/72</code>) as the audited
+AES-256-GCM primitive, extending it <strong>upstream</strong> with an
+exported <code>Seal</code>/<code>Open</code> codec and a pluggable
+master-key source (env/OS-keyring/KMS) so secrets become a DB-column
+ciphertext rather than a sibling file. Store identities in a new
+<code>share_identity</code> table (scheme ∈
+credentials/api_token/ssh_key, only <code>secret_ct</code> enveloped
+under a KEK that lives outside the DB), and have
+<code>StorageRoot</code> reference an identity by
+<code>identity_id</code> via <code>share_identity_binding</code> so the
+secret is stored exactly once and decrypted-on-use at scan time. Migrate
+in three reversible-until-the-last steps (create tables → envelope
+existing <code>storage_roots.password</code> values → drop the plaintext
+column only after a §9.2 backup + GREEN proof), closing the §11.4.10
+plaintext-<code>password TEXT</code> debt at
+<code>models/file.go:56</code> /
+<code>migrations/000001_initial_schema.sqlite.up.sql:12</code>.</p>
+</body>
+</html>
